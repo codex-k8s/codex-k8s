@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
 
 env:
-  STAGING_NAMESPACE: ${{ vars.CODEXK8S_STAGING_NAMESPACE || 'codex-k8s-ai-staging' }}
-  STAGING_DOMAIN: ${{ vars.CODEXK8S_STAGING_DOMAIN || '' }}
+  CODEXK8S_STAGING_NAMESPACE: ${{ vars.CODEXK8S_STAGING_NAMESPACE || 'codex-k8s-ai-staging' }}
+  CODEXK8S_STAGING_DOMAIN: ${{ vars.CODEXK8S_STAGING_DOMAIN || '' }}
   CODEXK8S_IMAGE: ${{ vars.CODEXK8S_IMAGE || 'ghcr.io/codex-k8s/codex-k8s:latest' }}
   CODEXK8S_WAIT_ROLLOUT: ${{ vars.CODEXK8S_WAIT_ROLLOUT || 'false' }}
 
@@ -36,13 +36,13 @@ jobs:
 
       - name: Apply staging manifests
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
-          POSTGRES_DB: ${{ vars.CODEXK8S_POSTGRES_DB || 'codex_k8s' }}
-          POSTGRES_USER: ${{ vars.CODEXK8S_POSTGRES_USER || 'codex_k8s' }}
-          POSTGRES_PASSWORD: ${{ secrets.CODEXK8S_POSTGRES_PASSWORD }}
-          APP_SECRET_KEY: ${{ secrets.CODEXK8S_APP_SECRET_KEY }}
-          TOKEN_ENCRYPTION_KEY: ${{ secrets.CODEXK8S_TOKEN_ENCRYPTION_KEY }}
+          CODEXK8S_OPENAI_API_KEY: ${{ secrets.CODEXK8S_OPENAI_API_KEY }}
+          CODEXK8S_CONTEXT7_API_KEY: ${{ secrets.CODEXK8S_CONTEXT7_API_KEY }}
+          CODEXK8S_POSTGRES_DB: ${{ vars.CODEXK8S_POSTGRES_DB || 'codex_k8s' }}
+          CODEXK8S_POSTGRES_USER: ${{ vars.CODEXK8S_POSTGRES_USER || 'codex_k8s' }}
+          CODEXK8S_POSTGRES_PASSWORD: ${{ secrets.CODEXK8S_POSTGRES_PASSWORD }}
+          CODEXK8S_APP_SECRET_KEY: ${{ secrets.CODEXK8S_APP_SECRET_KEY }}
+          CODEXK8S_TOKEN_ENCRYPTION_KEY: ${{ secrets.CODEXK8S_TOKEN_ENCRYPTION_KEY }}
         run: |
           set -euo pipefail
           bash deploy/scripts/deploy_staging.sh

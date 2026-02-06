@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: codex-k8s-postgres-init
-  namespace: ${STAGING_NAMESPACE}
+  namespace: ${CODEXK8S_STAGING_NAMESPACE}
 data:
   01-pgvector.sql: |
     CREATE EXTENSION IF NOT EXISTS vector;
@@ -11,7 +11,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgres
-  namespace: ${STAGING_NAMESPACE}
+  namespace: ${CODEXK8S_STAGING_NAMESPACE}
   labels:
     app.kubernetes.io/name: postgres
 spec:
@@ -26,7 +26,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgres
-  namespace: ${STAGING_NAMESPACE}
+  namespace: ${CODEXK8S_STAGING_NAMESPACE}
 spec:
   serviceName: postgres
   replicas: 1
@@ -50,17 +50,17 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: codex-k8s-postgres
-                  key: POSTGRES_DB
+                  key: CODEXK8S_POSTGRES_DB
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
                   name: codex-k8s-postgres
-                  key: POSTGRES_USER
+                  key: CODEXK8S_POSTGRES_USER
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: codex-k8s-postgres
-                  key: POSTGRES_PASSWORD
+                  key: CODEXK8S_POSTGRES_PASSWORD
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data

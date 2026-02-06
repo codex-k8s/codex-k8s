@@ -83,7 +83,7 @@ approvals:
 - ставит k3s и сетевой baseline (ingress, cert-manager, network policy baseline);
 - ставит зависимости платформы;
 - разворачивает PostgreSQL и `codex-k8s`;
-- спрашивает внешние креды (`GitHub PAT`, `OPENAI_API_KEY`), внутренние секреты генерирует сам;
+- спрашивает внешние креды (`GitHub PAT`, `CODEXK8S_OPENAI_API_KEY`), внутренние секреты генерирует сам;
 - передаёт default `learning_mode` из `bootstrap/host/config.env` (по умолчанию включён, пустое значение = выключен);
 - настраивает GitHub Actions runner в Kubernetes для staging (ARC или эквивалент);
 - подготавливает deploy workflow и необходимые repo secrets/variables.

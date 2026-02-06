@@ -11,6 +11,8 @@
   - HTTP: OpenAPI YAML
   - async/webhook payloads: AsyncAPI YAML (если используются)
 - Секреты не хардкодятся и не коммитятся; в логах нет секретов/PII.
+- Имена platform env/secrets/CI variables унифицированы с префиксом `CODEXK8S_`;
+  legacy-имена без префикса не добавляются.
 - Вынос общего кода в `libs/*` оправдан (>= 2 потребителя); нет “god-lib”.
 
 ## Специфика codex-k8s

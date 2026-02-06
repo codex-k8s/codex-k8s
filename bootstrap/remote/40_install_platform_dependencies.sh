@@ -7,16 +7,16 @@ load_env_file "${BOOTSTRAP_ENV_FILE:?}"
 
 kube_env
 
-: "${GITHUB_REPO:?GITHUB_REPO is required}"
-: "${GITHUB_PAT:?GITHUB_PAT is required}"
+: "${CODEXK8S_GITHUB_REPO:?CODEXK8S_GITHUB_REPO is required}"
+: "${CODEXK8S_GITHUB_PAT:?CODEXK8S_GITHUB_PAT is required}"
 
 REPO_DIR="$(repo_dir)"
 
 if [ ! -d "$REPO_DIR/.git" ]; then
-  log "Clone repository $GITHUB_REPO"
-  git clone "https://x-access-token:${GITHUB_PAT}@github.com/${GITHUB_REPO}.git" "$REPO_DIR"
+  log "Clone repository $CODEXK8S_GITHUB_REPO"
+  git clone "https://x-access-token:${CODEXK8S_GITHUB_PAT}@github.com/${CODEXK8S_GITHUB_REPO}.git" "$REPO_DIR"
 else
-  log "Update repository $GITHUB_REPO"
+  log "Update repository $CODEXK8S_GITHUB_REPO"
   git -C "$REPO_DIR" fetch --all --prune
   git -C "$REPO_DIR" checkout main
   git -C "$REPO_DIR" pull --ff-only

@@ -1,11 +1,11 @@
-githubConfigUrl: https://github.com/${GITHUB_REPO}
+githubConfigUrl: https://github.com/${CODEXK8S_GITHUB_REPO}
 githubConfigSecret: gha-runner-scale-set-secret
-runnerScaleSetName: ${RUNNER_SCALE_SET_NAME}
-minRunners: ${RUNNER_MIN}
-maxRunners: ${RUNNER_MAX}
+runnerScaleSetName: ${CODEXK8S_RUNNER_SCALE_SET_NAME}
+minRunners: ${CODEXK8S_RUNNER_MIN}
+maxRunners: ${CODEXK8S_RUNNER_MAX}
 template:
   spec:
     containers:
       - name: runner
-        image: ${RUNNER_IMAGE}
+        image: ${CODEXK8S_RUNNER_IMAGE}
         command: ["/home/runner/run.sh"]

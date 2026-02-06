@@ -11,3 +11,5 @@
 - процессы выполняются по webhook-событиям, а не через GitHub Actions workflows;
 - Kubernetes и repository-провайдеры подключаются только через интерфейсы и адаптеры;
 - модель данных и синхронизация multi-pod держатся на PostgreSQL (`JSONB` + `pgvector`).
+- env/secrets/CI variable names для платформы используют префикс `CODEXK8S_`
+  (кроме значений, требуемых внешними runtime-контрактами).

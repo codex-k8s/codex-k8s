@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: codex-k8s
-  namespace: ${STAGING_NAMESPACE}
+  namespace: ${CODEXK8S_STAGING_NAMESPACE}
   labels:
     app.kubernetes.io/name: codex-k8s
 spec:
@@ -17,7 +17,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: codex-k8s
-  namespace: ${STAGING_NAMESPACE}
+  namespace: ${CODEXK8S_STAGING_NAMESPACE}
   labels:
     app.kubernetes.io/name: codex-k8s
 spec:
@@ -52,38 +52,38 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: codex-k8s-postgres
-                  key: POSTGRES_DB
+                  key: CODEXK8S_POSTGRES_DB
             - name: CODEXK8S_DB_USER
               valueFrom:
                 secretKeyRef:
                   name: codex-k8s-postgres
-                  key: POSTGRES_USER
+                  key: CODEXK8S_POSTGRES_USER
             - name: CODEXK8S_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: codex-k8s-postgres
-                  key: POSTGRES_PASSWORD
-            - name: OPENAI_API_KEY
+                  key: CODEXK8S_POSTGRES_PASSWORD
+            - name: CODEXK8S_OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: codex-k8s-runtime
-                  key: OPENAI_API_KEY
-            - name: CONTEXT7_API_KEY
+                  key: CODEXK8S_OPENAI_API_KEY
+            - name: CODEXK8S_CONTEXT7_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: codex-k8s-runtime
-                  key: CONTEXT7_API_KEY
+                  key: CODEXK8S_CONTEXT7_API_KEY
                   optional: true
             - name: CODEXK8S_APP_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: codex-k8s-runtime
-                  key: APP_SECRET_KEY
+                  key: CODEXK8S_APP_SECRET_KEY
             - name: CODEXK8S_TOKEN_ENCRYPTION_KEY
               valueFrom:
                 secretKeyRef:
                   name: codex-k8s-runtime
-                  key: TOKEN_ENCRYPTION_KEY
+                  key: CODEXK8S_TOKEN_ENCRYPTION_KEY
           readinessProbe:
             httpGet:
               path: /readyz

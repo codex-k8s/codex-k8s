@@ -7,15 +7,15 @@ load_env_file "${BOOTSTRAP_ENV_FILE:?}"
 
 kube_env
 
-STAGING_NAMESPACE="${STAGING_NAMESPACE:-codex-k8s-ai-staging}"
-RUNNER_NAMESPACE="${RUNNER_NAMESPACE:-actions-runner-staging}"
-RUNNER_SCALE_SET_NAME="${RUNNER_SCALE_SET_NAME:-codex-k8s-ai-staging}"
+CODEXK8S_STAGING_NAMESPACE="${CODEXK8S_STAGING_NAMESPACE:-codex-k8s-ai-staging}"
+CODEXK8S_RUNNER_NAMESPACE="${CODEXK8S_RUNNER_NAMESPACE:-actions-runner-staging}"
+CODEXK8S_RUNNER_SCALE_SET_NAME="${CODEXK8S_RUNNER_SCALE_SET_NAME:-codex-k8s-ai-staging}"
 
-log "Staging namespace: ${STAGING_NAMESPACE}"
-kubectl get pods -n "$STAGING_NAMESPACE" || true
+log "Staging namespace: ${CODEXK8S_STAGING_NAMESPACE}"
+kubectl get pods -n "$CODEXK8S_STAGING_NAMESPACE" || true
 
 log "Bootstrap finished. Recommended checks:"
-log "  kubectl get pods -n ${STAGING_NAMESPACE}"
-log "  kubectl get pods -n ${RUNNER_NAMESPACE}"
-log "  helm list -n ${RUNNER_NAMESPACE} | grep ${RUNNER_SCALE_SET_NAME}"
+log "  kubectl get pods -n ${CODEXK8S_STAGING_NAMESPACE}"
+log "  kubectl get pods -n ${CODEXK8S_RUNNER_NAMESPACE}"
+log "  helm list -n ${CODEXK8S_RUNNER_NAMESPACE} | grep ${CODEXK8S_RUNNER_SCALE_SET_NAME}"
 log "  git push origin main  # should trigger staging deploy workflow"

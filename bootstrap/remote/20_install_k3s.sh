@@ -18,4 +18,4 @@ else
 fi
 
 kube_env
-kubectl wait --for=condition=Ready node --all --timeout=300s
+kubectl wait --for=condition=Ready node --all --timeout=600s

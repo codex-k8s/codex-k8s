@@ -2,12 +2,12 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: codex-k8s
-  namespace: ${STAGING_NAMESPACE}
+  namespace: ${CODEXK8S_STAGING_NAMESPACE}
   annotations:
     kubernetes.io/ingress.class: nginx
 spec:
   rules:
-    - host: ${STAGING_DOMAIN}
+    - host: ${CODEXK8S_STAGING_DOMAIN}
       http:
         paths:
           - path: /
