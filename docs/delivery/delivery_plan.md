@@ -24,6 +24,7 @@ approvals:
 - Что нужно от Owner: подтверждение deploy-модели и доступов (GitHub fine-grained token/OpenAI key).
 
 ## Входные артефакты
+- Requirements baseline: `docs/product/requirements_machine_driven.md`
 - Brief: `docs/product/brief.md`
 - Constraints: `docs/product/constraints.md`
 - Architecture (C4): `docs/architecture/c4_context.md`, `docs/architecture/c4_container.md`

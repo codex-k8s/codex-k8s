@@ -25,6 +25,7 @@ approvals:
 - **Что считаем успехом:** staging разворачивается одним bootstrap-скриптом, push в `main` обновляет staging, ручные тесты проходят через UI и webhook сценарии.
 - **Дополнительная ценность:** при включённом learning mode платформа объясняет важные инженерные решения и компромиссы, чтобы пользователи учились паттернам, а не только получали код.
 - **Что НЕ делаем:** поддержку не-Kubernetes оркестраторов и self-signup пользователей.
+- **Source of truth требований:** `docs/product/requirements_machine_driven.md`.
 
 ## Контекст
 - Предыстория: в `project-example` и `codexctl` собран рабочий базис, но он распределён по отдельным компонентам.
@@ -99,6 +100,7 @@ approvals:
 - [ ] Отклонить/заморозить инициативу
 
 ## Ссылки
+- Канонические требования: `docs/product/requirements_machine_driven.md`
 - Issue: #1
 - DocSet: `docs/_docset/issues/issue-0001-codex-k8s-bootstrap.md`
 - Связанные ADR: `ADR-0001`, `ADR-0002`, `ADR-0003`, `ADR-0004`

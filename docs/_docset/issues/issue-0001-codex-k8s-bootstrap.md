@@ -21,6 +21,7 @@ approvals:
 ## Обязательные артефакты (для этой категории работы)
 > Ставьте ✅/❌ и ссылки. Заполняется/обновляется через MCP.
 - [x] Brief (BRF-): `docs/product/brief.md`
+- [x] Requirements baseline (REQ-): `docs/product/requirements_machine_driven.md`
 - [x] Constraints (CST-): `docs/product/constraints.md`
 - [ ] PRD (PRD-): TBD
 - [x] Architecture (C4): `docs/architecture/c4_context.md`, `docs/architecture/c4_container.md`
@@ -34,6 +35,7 @@ approvals:
 
 ## Связанные документы (полный список)
 - `docs/product/brief.md`
+- `docs/product/requirements_machine_driven.md`
 - `docs/product/constraints.md`
 - `docs/architecture/c4_context.md`
 - `docs/architecture/c4_container.md`
@@ -47,6 +49,7 @@ approvals:
 - `docs/delivery/roadmap.md`
 - `docs/delivery/epic.md`
 - `docs/delivery/issue_map.md`
+- `docs/delivery/requirements_traceability.md`
 
 ## Связанные PR
 - TBD

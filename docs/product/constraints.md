@@ -19,6 +19,10 @@ approvals:
 ## TL;DR
 Критические ограничения: Kubernetes-only, webhook-driven продуктовые процессы, PostgreSQL (`JSONB` + `pgvector`), GitHub OAuth без self-signup, staging bootstrap по SSH root на Ubuntu 24.04.
 
+## Source of truth
+- Канонический список требований и решений Owner: `docs/product/requirements_machine_driven.md`.
+- Этот документ фиксирует ограничения и NFR-проекцию для реализации baseline требований.
+
 ## Бизнес-ограничения
 - Сроки: нужен ранний staging для ручных тестов до полной функциональной готовности.
 - Бюджет: инфраструктура MVP на одном сервере/staging-кластере.
