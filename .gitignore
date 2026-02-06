@@ -31,3 +31,4 @@ go.work.sum
 # .idea/
 # .vscode/
 /.idea/
+/bootstrap/host/config.env
