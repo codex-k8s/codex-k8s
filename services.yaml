@@ -1,0 +1,11 @@
+project: codex-k8s
+
+# TODO:
+# - описать deploy группами для environments: dev / ai-staging / production
+# - описать сервисы external/staff/internal/jobs/dev
+# - описать codex-k8s как монорепо-проект с единым services.yaml
+
+environments:
+  dev: {}
+  ai-staging: {}
+  production: {}
