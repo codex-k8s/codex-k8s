@@ -10,6 +10,7 @@
 - ставит k3s и базовые сетевые компоненты;
 - разворачивает PostgreSQL и `codex-k8s` в staging namespace;
 - запрашивает внешние креды (`GitHub PAT`, `OPENAI_API_KEY`), внутренние секреты генерирует автоматически;
+- создаёт GHCR image pull secret (`ghcr-pull-secret`) из `GITHUB_USERNAME` + `GITHUB_PAT` (на сервере, без записи этих значений в файлы репозитория);
 - настраивает GitHub repository secrets/variables для staging deploy workflow;
 - устанавливает ARC controller и runner scale set для staging deploy workflow.
 

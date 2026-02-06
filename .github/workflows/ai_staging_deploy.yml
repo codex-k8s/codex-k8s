@@ -1,8 +1,10 @@
 name: "AI Staging deploy 🚀"
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Build and Push GHCR 🐳"]
     branches: [main]
+    types: [completed]
   workflow_dispatch:
 
 env:
@@ -18,11 +20,14 @@ concurrency:
 jobs:
   deploy:
     name: "Deploy codex-k8s to ai-staging"
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ${{ vars.CODEXK8S_STAGING_RUNNER || 'codex-k8s-ai-staging' }}
     environment: ai-staging
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
       - name: Setup kubectl
         uses: azure/setup-kubectl@v4

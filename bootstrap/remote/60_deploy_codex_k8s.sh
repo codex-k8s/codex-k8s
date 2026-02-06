@@ -9,6 +9,15 @@ kube_env
 
 REPO_DIR="$(repo_dir)"
 STAGING_NAMESPACE="${STAGING_NAMESPACE:-codex-k8s-ai-staging}"
+: "${GITHUB_USERNAME:?GITHUB_USERNAME is required}"
+: "${GITHUB_PAT:?GITHUB_PAT is required}"
+
+kubectl -n "$STAGING_NAMESPACE" create secret docker-registry ghcr-pull-secret \
+  --docker-server=ghcr.io \
+  --docker-username="${GITHUB_USERNAME}" \
+  --docker-password="${GITHUB_PAT}" \
+  --docker-email="noreply@codex-k8s.dev" \
+  --dry-run=client -o yaml | kubectl apply -f -
 
 kubectl -n "$STAGING_NAMESPACE" create secret generic codex-k8s-postgres \
   --from-literal=POSTGRES_DB="${POSTGRES_DB}" \

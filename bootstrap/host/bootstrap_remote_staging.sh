@@ -49,6 +49,7 @@ prompt_if_empty TARGET_ROOT_SSH_KEY "Path to root SSH private key"
 prompt_if_empty OPERATOR_USER "Operator username"
 prompt_if_empty OPERATOR_SSH_PUBKEY_PATH "Path to operator public key"
 prompt_if_empty GITHUB_REPO "GitHub repo (owner/name)"
+prompt_if_empty GITHUB_USERNAME "GitHub username (for GHCR pull secret)"
 prompt_if_empty GITHUB_PAT "GitHub PAT" true
 prompt_if_empty OPENAI_API_KEY "OPENAI_API_KEY" true
 prompt_if_empty STAGING_NAMESPACE "Staging namespace"
@@ -85,6 +86,7 @@ cat > "${TMP_DIR}/bootstrap.env" <<ENV
 OPERATOR_USER='$(escape_squote "$OPERATOR_USER")'
 OPERATOR_SSH_PUBKEY='$(escape_squote "$OPERATOR_SSH_PUBKEY")'
 GITHUB_REPO='$(escape_squote "$GITHUB_REPO")'
+GITHUB_USERNAME='$(escape_squote "$GITHUB_USERNAME")'
 GITHUB_PAT='$(escape_squote "$GITHUB_PAT")'
 OPENAI_API_KEY='$(escape_squote "$OPENAI_API_KEY")'
 CONTEXT7_API_KEY='$(escape_squote "${CONTEXT7_API_KEY:-}")'

@@ -1,0 +1,16 @@
+.git
+.github
+.idea
+.vscode
+
+# Local secrets and envs
+.env
+.env.*
+*.env
+**/*.env
+bootstrap/host/config.env
+
+# Local build artifacts
+control-plane
+dist/
+tmp/
