@@ -8,3 +8,4 @@ template:
     containers:
       - name: runner
         image: ${RUNNER_IMAGE}
+        command: ["/home/runner/run.sh"]

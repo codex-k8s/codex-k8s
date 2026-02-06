@@ -15,7 +15,6 @@ rand_hex() {
 }
 
 require_cmd kubectl
-require_cmd envsubst
 
 STAGING_NAMESPACE="${STAGING_NAMESPACE:-codex-k8s-ai-staging}"
 CODEXK8S_IMAGE="${CODEXK8S_IMAGE:-ghcr.io/codex-k8s/codex-k8s:latest}"
@@ -44,7 +43,16 @@ fi
 
 export STAGING_NAMESPACE CODEXK8S_IMAGE STAGING_DOMAIN
 
-envsubst < "${ROOT_DIR}/deploy/base/namespace/namespace.yaml.tpl" | kubectl apply -f -
+render_template() {
+  local tpl="$1"
+  sed \
+    -e "s|\${STAGING_NAMESPACE}|${STAGING_NAMESPACE}|g" \
+    -e "s|\${CODEXK8S_IMAGE}|${CODEXK8S_IMAGE}|g" \
+    -e "s|\${STAGING_DOMAIN}|${STAGING_DOMAIN}|g" \
+    "$tpl"
+}
+
+render_template "${ROOT_DIR}/deploy/base/namespace/namespace.yaml.tpl" | kubectl apply -f -
 
 if ! kubectl -n "$STAGING_NAMESPACE" get secret codex-k8s-postgres >/dev/null 2>&1; then
   kubectl -n "$STAGING_NAMESPACE" create secret generic codex-k8s-postgres \
@@ -61,11 +69,11 @@ if ! kubectl -n "$STAGING_NAMESPACE" get secret codex-k8s-runtime >/dev/null 2>&
     --from-literal=TOKEN_ENCRYPTION_KEY="$TOKEN_ENCRYPTION_KEY"
 fi
 
-envsubst < "${ROOT_DIR}/deploy/base/postgres/postgres.yaml.tpl" | kubectl apply -f -
-envsubst < "${ROOT_DIR}/deploy/base/codex-k8s/app.yaml.tpl" | kubectl apply -f -
+render_template "${ROOT_DIR}/deploy/base/postgres/postgres.yaml.tpl" | kubectl apply -f -
+render_template "${ROOT_DIR}/deploy/base/codex-k8s/app.yaml.tpl" | kubectl apply -f -
 
 if [ -n "$STAGING_DOMAIN" ]; then
-  envsubst < "${ROOT_DIR}/deploy/base/codex-k8s/ingress.yaml.tpl" | kubectl apply -f -
+  render_template "${ROOT_DIR}/deploy/base/codex-k8s/ingress.yaml.tpl" | kubectl apply -f -
 fi
 
 if [ "$CODEXK8S_WAIT_ROLLOUT" = "true" ]; then
