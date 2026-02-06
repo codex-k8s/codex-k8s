@@ -24,6 +24,9 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main
 if [ "$CODEXK8S_INGRESS_HOST_NETWORK" = "true" ]; then
   kubectl -n ingress-nginx patch deployment ingress-nginx-controller --type=merge \
     -p '{"spec":{"template":{"spec":{"hostNetwork":true,"dnsPolicy":"ClusterFirstWithHostNet"}}}}'
+  # In hostNetwork mode ingress is reachable via host :80/:443 directly, NodePorts must stay closed.
+  kubectl -n ingress-nginx patch service ingress-nginx-controller --type=merge \
+    -p '{"spec":{"type":"ClusterIP","externalTrafficPolicy":null,"healthCheckNodePort":null}}'
 fi
 kubectl -n ingress-nginx rollout status deployment/ingress-nginx-controller --timeout="${CODEXK8S_INGRESS_READY_TIMEOUT}"
 
