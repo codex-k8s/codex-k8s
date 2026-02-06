@@ -9,9 +9,10 @@ on:
 
 env:
   CODEXK8S_STAGING_NAMESPACE: ${{ vars.CODEXK8S_STAGING_NAMESPACE || 'codex-k8s-ai-staging' }}
-  CODEXK8S_STAGING_DOMAIN: ${{ vars.CODEXK8S_STAGING_DOMAIN || '' }}
+  CODEXK8S_STAGING_DOMAIN: ${{ vars.CODEXK8S_STAGING_DOMAIN }}
   CODEXK8S_IMAGE: ${{ vars.CODEXK8S_IMAGE || 'ghcr.io/codex-k8s/codex-k8s:latest' }}
-  CODEXK8S_WAIT_ROLLOUT: ${{ vars.CODEXK8S_WAIT_ROLLOUT || 'false' }}
+  CODEXK8S_WAIT_ROLLOUT: ${{ vars.CODEXK8S_WAIT_ROLLOUT || 'true' }}
+  CODEXK8S_ROLLOUT_TIMEOUT: ${{ vars.CODEXK8S_ROLLOUT_TIMEOUT || '1800s' }}
 
 concurrency:
   group: codex-k8s-staging-deploy

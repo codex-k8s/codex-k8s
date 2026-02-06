@@ -9,8 +9,15 @@ kube_env
 
 REPO_DIR="$(repo_dir)"
 CODEXK8S_STAGING_NAMESPACE="${CODEXK8S_STAGING_NAMESPACE:-codex-k8s-ai-staging}"
+CODEXK8S_WAIT_ROLLOUT="${CODEXK8S_WAIT_ROLLOUT:-true}"
+CODEXK8S_ROLLOUT_TIMEOUT="${CODEXK8S_ROLLOUT_TIMEOUT:-1800s}"
+CODEXK8S_LETSENCRYPT_SERVER="${CODEXK8S_LETSENCRYPT_SERVER:-https://acme-v02.api.letsencrypt.org/directory}"
 : "${CODEXK8S_GITHUB_USERNAME:?CODEXK8S_GITHUB_USERNAME is required}"
 : "${CODEXK8S_GITHUB_PAT:?CODEXK8S_GITHUB_PAT is required}"
+: "${CODEXK8S_STAGING_DOMAIN:?CODEXK8S_STAGING_DOMAIN is required}"
+: "${CODEXK8S_LETSENCRYPT_EMAIL:?CODEXK8S_LETSENCRYPT_EMAIL is required}"
+
+ensure_domain_resolves "$CODEXK8S_STAGING_DOMAIN"
 
 kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create secret docker-registry ghcr-pull-secret \
   --docker-server=ghcr.io \
@@ -32,5 +39,11 @@ kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create secret generic codex-k8s-runtime
   --from-literal=CODEXK8S_TOKEN_ENCRYPTION_KEY="${CODEXK8S_TOKEN_ENCRYPTION_KEY}" \
   --dry-run=client -o yaml | kubectl apply -f -
 
-export CODEXK8S_STAGING_NAMESPACE CODEXK8S_IMAGE
+sed \
+  -e "s|\${CODEXK8S_LETSENCRYPT_EMAIL}|${CODEXK8S_LETSENCRYPT_EMAIL}|g" \
+  -e "s|\${CODEXK8S_LETSENCRYPT_SERVER}|${CODEXK8S_LETSENCRYPT_SERVER}|g" \
+  "${REPO_DIR}/deploy/base/cert-manager/clusterissuer.yaml.tpl" | kubectl apply -f -
+kubectl wait --for=condition=Ready clusterissuer/codex-k8s-letsencrypt --timeout=600s
+
+export CODEXK8S_STAGING_NAMESPACE CODEXK8S_STAGING_DOMAIN CODEXK8S_IMAGE CODEXK8S_WAIT_ROLLOUT CODEXK8S_ROLLOUT_TIMEOUT
 bash "${REPO_DIR}/deploy/scripts/deploy_staging.sh"

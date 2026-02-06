@@ -4,8 +4,13 @@ metadata:
   name: codex-k8s
   namespace: ${CODEXK8S_STAGING_NAMESPACE}
   annotations:
-    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: codex-k8s-letsencrypt
 spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - ${CODEXK8S_STAGING_DOMAIN}
+      secretName: codex-k8s-staging-tls
   rules:
     - host: ${CODEXK8S_STAGING_DOMAIN}
       http:

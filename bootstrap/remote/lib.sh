@@ -12,6 +12,14 @@ require_cmd() {
   command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1"
 }
 
+ensure_domain_resolves() {
+  local domain="$1"
+  local ips=""
+  ips="$(getent ahostsv4 "$domain" | awk '{print $1}' | sort -u | paste -sd ',' -)"
+  [ -n "$ips" ] || die "Domain does not resolve via IPv4: $domain"
+  log "Domain resolved: $domain -> $ips"
+}
+
 load_env_file() {
   local env_file="$1"
   [ -f "$env_file" ] || die "Env file not found: $env_file"

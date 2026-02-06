@@ -14,11 +14,13 @@ fi
 
 : "${CODEXK8S_GITHUB_PAT:?CODEXK8S_GITHUB_PAT is required}"
 : "${CODEXK8S_GITHUB_REPO:?CODEXK8S_GITHUB_REPO is required}"
-CODEXK8S_RUNNER_MIN="${CODEXK8S_RUNNER_MIN:-0}"
+CODEXK8S_RUNNER_MIN="${CODEXK8S_RUNNER_MIN:-1}"
 CODEXK8S_RUNNER_MAX="${CODEXK8S_RUNNER_MAX:-2}"
 CODEXK8S_RUNNER_NAMESPACE="${CODEXK8S_RUNNER_NAMESPACE:-actions-runner-staging}"
 CODEXK8S_RUNNER_SCALE_SET_NAME="${CODEXK8S_RUNNER_SCALE_SET_NAME:-codex-k8s-ai-staging}"
 CODEXK8S_RUNNER_IMAGE="${CODEXK8S_RUNNER_IMAGE:-ghcr.io/actions/actions-runner:latest}"
+CODEXK8S_STAGING_NAMESPACE="${CODEXK8S_STAGING_NAMESPACE:-codex-k8s-ai-staging}"
+CODEXK8S_HELM_TIMEOUT="${CODEXK8S_HELM_TIMEOUT:-20m}"
 
 REPO_DIR="$(repo_dir)"
 
@@ -33,7 +35,9 @@ kubectl -n "${CODEXK8S_RUNNER_NAMESPACE}" create secret generic gha-runner-scale
 log "Install ARC runner scale-set controller via Helm"
 helm upgrade --install gha-rs-controller oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller \
   --namespace actions-runner-system \
-  --create-namespace
+  --create-namespace \
+  --wait \
+  --timeout "${CODEXK8S_HELM_TIMEOUT}"
 
 log "Install ARC runner scale set via Helm"
 export CODEXK8S_GITHUB_REPO CODEXK8S_RUNNER_MIN CODEXK8S_RUNNER_MAX CODEXK8S_RUNNER_IMAGE CODEXK8S_RUNNER_SCALE_SET_NAME
@@ -43,5 +47,10 @@ helm upgrade --install "${CODEXK8S_RUNNER_SCALE_SET_NAME}" oci://ghcr.io/actions
   --namespace "${CODEXK8S_RUNNER_NAMESPACE}" \
   --create-namespace \
   -f "${VALUES_FILE}" \
-  --wait
+  --wait \
+  --timeout "${CODEXK8S_HELM_TIMEOUT}"
 rm -f "${VALUES_FILE}"
+
+log "Grant staging deploy RBAC to runner service account"
+export CODEXK8S_STAGING_NAMESPACE CODEXK8S_RUNNER_NAMESPACE CODEXK8S_RUNNER_SCALE_SET_NAME
+envsubst < "${REPO_DIR}/deploy/runner/staging-deployer-rbac.yaml.tpl" | kubectl apply -f -

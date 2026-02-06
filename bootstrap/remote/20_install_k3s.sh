@@ -18,4 +18,21 @@ else
 fi
 
 kube_env
-kubectl wait --for=condition=Ready node --all --timeout=600s
+
+CODEXK8S_NODE_DISCOVERY_TIMEOUT="${CODEXK8S_NODE_DISCOVERY_TIMEOUT:-300}"
+CODEXK8S_NODE_READY_TIMEOUT="${CODEXK8S_NODE_READY_TIMEOUT:-1200s}"
+
+case "$CODEXK8S_NODE_DISCOVERY_TIMEOUT" in
+  ''|*[!0-9]*) die "CODEXK8S_NODE_DISCOVERY_TIMEOUT must be integer seconds";;
+esac
+
+deadline=$((SECONDS + CODEXK8S_NODE_DISCOVERY_TIMEOUT))
+while [ "$SECONDS" -lt "$deadline" ]; do
+  if kubectl get nodes >/dev/null 2>&1; then
+    break
+  fi
+  sleep 5
+done
+
+kubectl get nodes >/dev/null 2>&1 || die "k3s node discovery timed out after ${CODEXK8S_NODE_DISCOVERY_TIMEOUT}s"
+kubectl wait --for=condition=Ready node --all --timeout="${CODEXK8S_NODE_READY_TIMEOUT}"
