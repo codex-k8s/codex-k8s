@@ -95,6 +95,7 @@ approvals:
 - `docs/architecture/api_contract.md`
 - `docs/delivery/delivery_plan.md`
 - `docs/delivery/issue_map.md`
+- `docs/delivery/development_process_requirements.md`
 - `docs/design-guidelines/AGENTS.md`
 
 ## Апрув

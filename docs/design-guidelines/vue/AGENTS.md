@@ -14,3 +14,5 @@
 - основной frontend приложения живет в `services/staff/web-console`;
 - вход в UI защищен GitHub OAuth;
 - пользовательские настройки и права приходят из backend API (PostgreSQL как source of truth).
+- Планирование и закрытие daily задач в спринте — по
+  `docs/delivery/development_process_requirements.md`.

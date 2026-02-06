@@ -13,3 +13,5 @@
 - модель данных и синхронизация multi-pod держатся на PostgreSQL (`JSONB` + `pgvector`).
 - env/secrets/CI variable names для платформы используют префикс `CODEXK8S_`
   (кроме значений, требуемых внешними runtime-контрактами).
+- weekly sprint и doc-governance выполняются по
+  `docs/delivery/development_process_requirements.md`.

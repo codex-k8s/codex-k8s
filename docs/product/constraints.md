@@ -22,6 +22,7 @@ approvals:
 ## Source of truth
 - Канонический список требований и решений Owner: `docs/product/requirements_machine_driven.md`.
 - Этот документ фиксирует ограничения и NFR-проекцию для реализации baseline требований.
+- Процесс delivery и doc-governance: `docs/delivery/development_process_requirements.md`.
 
 ## Бизнес-ограничения
 - Сроки: нужен ранний staging для ручных тестов до полной функциональной готовности.

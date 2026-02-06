@@ -13,3 +13,5 @@
 - `docs/design-guidelines/visual/response_format.md` — рекомендуемый формат ответа агента при описании UI.
 
 Связано с frontend‑гайдами: `docs/design-guidelines/vue/AGENTS.md`.
+Процесс выполнения задач и обязательных артефактов:
+`docs/delivery/development_process_requirements.md`.

@@ -101,6 +101,7 @@ approvals:
 
 ## Ссылки
 - Канонические требования: `docs/product/requirements_machine_driven.md`
+- Процесс разработки и документации: `docs/delivery/development_process_requirements.md`
 - Issue: #1
 - DocSet: `docs/_docset/issues/issue-0001-codex-k8s-bootstrap.md`
 - Связанные ADR: `ADR-0001`, `ADR-0002`, `ADR-0003`, `ADR-0004`
