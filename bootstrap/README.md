@@ -9,7 +9,8 @@
 - создаёт отдельного операционного пользователя;
 - ставит k3s и базовые сетевые компоненты;
 - проверяет DNS до старта раскатки: `CODEXK8S_STAGING_DOMAIN` должен резолвиться в IP `TARGET_HOST`;
-- поднимает внутренний registry в Kubernetes (`ClusterIP`, без auth на уровне registry) и собирает образ через Kaniko;
+- поднимает внутренний registry без auth в loopback-режиме (`127.0.0.1` на node) и собирает образ через Kaniko;
+- автоматически настраивает `/etc/rancher/k3s/registries.yaml` для mirror на локальный registry (`http://127.0.0.1:<port>`);
 - разворачивает PostgreSQL и `codex-k8s` в staging namespace;
 - создаёт `ClusterIssuer` (`codex-k8s-letsencrypt`) и выпускает TLS-сертификат через HTTP-01;
 - запрашивает внешние креды (`GitHub fine-grained token`, `CODEXK8S_OPENAI_API_KEY`), внутренние секреты генерирует автоматически;
@@ -41,4 +42,5 @@ bash bootstrap/host/bootstrap_remote_staging.sh
 - В `bootstrap/host/config.env` используйте только переменные с префиксом `CODEXK8S_` для платформенных параметров и секретов.
 - `CODEXK8S_STAGING_DOMAIN` и `CODEXK8S_LETSENCRYPT_EMAIL` обязательны.
 - Для single-node/bare-metal staging по умолчанию включён `CODEXK8S_INGRESS_HOST_NETWORK=true` (ingress слушает хостовые `:80/:443`).
-- Внутренний registry работает без auth по design MVP и доступен только внутри кластера (`ClusterIP`, без Ingress/NodePort).
+- Внутренний registry работает без auth по design MVP и слушает только `127.0.0.1:<CODEXK8S_INTERNAL_REGISTRY_PORT>` на node.
+- Loopback-режим registry рассчитан на single-node staging; для multi-node нужен отдельный registry-профиль.
