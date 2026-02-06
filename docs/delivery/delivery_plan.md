@@ -30,40 +30,28 @@ approvals:
 - Architecture (C4): `docs/architecture/c4_context.md`, `docs/architecture/c4_container.md`
 - ADR: `docs/architecture/adr/ADR-0001-kubernetes-only.md`, `docs/architecture/adr/ADR-0002-webhook-driven-and-deploy-workflows.md`, `docs/architecture/adr/ADR-0003-postgres-jsonb-pgvector.md`, `docs/architecture/adr/ADR-0004-repository-provider-interface.md`
 - Data model: `docs/architecture/data_model.md`
+- Sprint plan: `docs/delivery/sprint_s1_day0_day7.md`
+- Epic catalog: `docs/delivery/epic.md`
+- Process requirements: `docs/delivery/development_process_requirements.md`
 
 ## Структура работ (WBS)
-### Epic 1: Foundation
-- Репо-каркас, гайды, базовые ADR.
-- Базовый `services.yaml` и deploy skeleton.
+### Sprint S1: Day 0 + Day 1..7 (8 эпиков)
+- Day 0 (completed): `docs/delivery/epics/epic-day0-bootstrap-baseline.md`
+- Day 1: `docs/delivery/epics/epic-day1-webhook-idempotency.md`
+- Day 2: `docs/delivery/epics/epic-day2-worker-slots-k8s.md`
+- Day 3: `docs/delivery/epics/epic-day3-auth-rbac-ui.md`
+- Day 4: `docs/delivery/epics/epic-day4-repository-provider.md`
+- Day 5: `docs/delivery/epics/epic-day5-learning-mode.md`
+- Day 6: `docs/delivery/epics/epic-day6-hardening-observability.md`
+- Day 7: `docs/delivery/epics/epic-day7-stabilization-gate.md`
 
-### Epic 2: Core backend MVP
-- `api-gateway`, `control-plane`, `worker`.
-- База данных + миграции + audit/event model.
-- RepositoryProvider (GitHub adapter).
-
-### Epic 3: Staff UI MVP
-- OAuth login flow.
-- short-lived JWT с ротацией в API gateway.
-- Экраны проектов/репозиториев/агентов/запусков/документов.
-- Управление learning mode toggle (пер-пользователь, пер-проект).
-
-### Epic 3.1: Learning mode MVP
-- Prompt augmentation для user-initiated задач.
-- Сохранение объяснений в БД.
-- Post-PR образовательные комментарии (summary + line-level при необходимости).
-
-### Epic 4: Staging bootstrap and first deploy loop
-- Скрипт запуска с хоста разработчика по SSH root.
-- Автоматическое создание пользователя на сервере и hardening базового доступа.
-- Автоустановка k3s + сеть + зависимости + postgres + codex-k8s (`local-path` storage profile на MVP).
-- Настройка self-hosted runner:
-  - локально: 1 persistent runner (long polling);
-  - на staging/ai-staging/prod при наличии домена: autoscaled runner set.
-- Workflow deploy `main -> staging`.
-
-### Epic 5: Manual staging tests
-- Smoke/functional сценарии вручную на staging.
-- Фиксация дефектов и стабилизация.
+### Daily delivery contract (обязательный)
+- Каждый день задачи дня влиты в `main`.
+- Каждый день изменения автоматически задеплоены на staging.
+- Каждый день выполнен ручной smoke-check.
+- Каждый день актуализированы документы при изменениях API/data model/webhook/RBAC.
+- Для каждого эпика заполнен `Data model impact` по структуре `docs/templates/data_model.md`.
+- Правила спринт-процесса и ownership артефактов выполняются по `docs/delivery/development_process_requirements.md`.
 
 ## Зависимости
 - Внутренние: Core backend до полноценного UI управления.
@@ -97,11 +85,11 @@ approvals:
 - [ ] GitHub fine-grained token и OpenAI ключ доступны.
 
 ### Definition of Done (DoD)
-- [ ] Staging bootstrap выполняется одной командой.
-- [ ] Runner в k8s онлайн и принимает staging deploy job.
-- [ ] Push в `main` обновляет staging.
-- [ ] Manual smoke tests проходят.
-- [ ] Learning mode проверен на тестовом PR: есть объяснение why/tradeoffs в результате и post-PR комментарий.
+- [x] Day 0 baseline bootstrap выполнен.
+- [ ] Для Day 1..7: каждый эпик закрыт по своим acceptance criteria.
+- [ ] Для Day 1..7: ежедневный merge -> auto deploy -> smoke check выполнен.
+- [ ] Webhook -> run -> worker -> k8s -> UI цепочка проходит regression.
+- [ ] Learning mode проверен на staging в on/off режимах.
 
 ## Риски и буферы
 - Риск: нестабильная сеть/доступы при bootstrap.

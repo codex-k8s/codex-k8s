@@ -1,8 +1,8 @@
 ---
 doc_id: EPC-CK8S-0001
 type: epic
-title: "Epic: Staging bootstrap and deploy loop"
-status: draft
+title: "Epic Catalog: Sprint S1 (Day 0..7)"
+status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-06
@@ -11,55 +11,60 @@ related_prs: []
 approvals:
   required: ["Owner"]
   status: approved
-  request_id: "owner-2026-02-06-mvp"
+  request_id: "owner-2026-02-06-sprint-s1"
 ---
 
-# Epic: Staging bootstrap and deploy loop
+# Epic Catalog: Sprint S1 (Day 0..7)
 
 ## TL;DR
-- Цель эпика: получить воспроизводимый запуск staging и автоматический deploy из `main`.
-- Ключевая ценность: минимальный операционный порог для начала ручных тестов.
-- MVP-результат: bootstrap скрипт + self-hosted runner + deploy workflow + smoke checks.
+- Каталог фиксирует 8 эпиков спринта: `Day 0` (выполнен) + `Day 1..7` (в работе по дням).
+- Цель каталога: один источник правды по ежедневному объёму и критериям приёмки.
+- Рабочий режим: каждый день merge в `main` и deploy на `staging`.
+- Процессное управление: `docs/delivery/development_process_requirements.md`.
 
 ## Контекст
-- Почему эпик нужен: без staging невозможно проверять жизненный цикл webhook-driven платформы.
-- Связь с PRD: базовая платформа должна быть deployable и testable ранним этапом.
+- Почему нужен: команда ведёт ежедневную поставку и должна синхронно идти по документированному плану.
+- Связь с требованиями: `docs/product/requirements_machine_driven.md`.
 
 ## Scope
 ### In scope
-- SSH bootstrap launcher с хоста разработчика.
-- Создание отдельного пользователя на сервере и базовый hardening.
-- Установка k3s/сети/зависимостей.
-- Установка PostgreSQL и `codex-k8s`.
-- Настройка GitHub runner в k8s для staging (local=1 persistent; server+domain=autoscaled set).
-- Настройка deploy workflow и секретов.
+- Описание эпиков `Day 0..7`.
+- Ссылки на критерии приемки каждого дня.
+- Единый daily delivery gate.
 
 ### Out of scope
-- Полная production hardening программа.
-- DR multi-region.
+- Подробные технические задачи внутри PR (это уровень story/task в рамках каждого эпика).
 
 ## Декомпозиция (Stories/Tasks)
-- Story-1: host-side bootstrap launcher (`bootstrap/host/bootstrap_remote_staging.sh`).
-- Story-2: remote provisioning scripts (`bootstrap/remote/*.sh`) для Ubuntu 24.04.
-- Story-3: k8s dependencies and base manifests.
-- Story-4: ARC runner install + GitHub repo wiring.
-- Story-5: staging deploy workflow + smoke test job.
-- Story-6: runbook ручного восстановления.
+- Day 0: `docs/delivery/epics/epic-day0-bootstrap-baseline.md`
+- Day 1: `docs/delivery/epics/epic-day1-webhook-idempotency.md`
+- Day 2: `docs/delivery/epics/epic-day2-worker-slots-k8s.md`
+- Day 3: `docs/delivery/epics/epic-day3-auth-rbac-ui.md`
+- Day 4: `docs/delivery/epics/epic-day4-repository-provider.md`
+- Day 5: `docs/delivery/epics/epic-day5-learning-mode.md`
+- Day 6: `docs/delivery/epics/epic-day6-hardening-observability.md`
+- Day 7: `docs/delivery/epics/epic-day7-stabilization-gate.md`
+
+## Приоритеты Sprint S1
+- `P0`: Day 0, Day 1, Day 2, Day 3, Day 4, Day 7.
+- `P1`: Day 5, Day 6.
+- `P2`: не запланирован в Sprint S1.
 
 ## Критерии приемки эпика
-- Один запуск скрипта с host машины разворачивает staging end-to-end.
-- Runner онлайн, deploy workflow выполняется успешно.
-- После push в `main` staging обновляется автоматически.
+- Для каждого эпика заполнен блок `Data model impact` в структуре шаблона `docs/templates/data_model.md`.
+- По завершению каждого дня изменения влиты в `main` и раскатаны на `staging`.
+- Для каждого дня выполнен ручной smoke-check.
 
 ## Риски/зависимости
-- Зависимости: GitHub fine-grained token с правами на repo/actions/secrets/variables, доступ root SSH.
-- Риски: различия cloud image Ubuntu 24.04, сетевые ограничения провайдера.
+- Зависимости: доступный staging, валидные `CODEXK8S_*` секреты, стабильный CI.
+- Риски: ежедневные слияния могут накапливать регрессии без строгого gate.
 
 ## План релиза (верхний уровень)
-- Выпустить как milestone "staging-ready".
-- После стабилизации включить в обязательный gate перед расширением функционала.
+- Day 0 фиксируется как baseline.
+- Day 1..7 выпускаются последовательно с ежедневным staging deploy.
+- По Day 7 формируется go/no-go для следующего спринта.
 
 ## Апрув
-- request_id: owner-2026-02-06-mvp
+- request_id: owner-2026-02-06-sprint-s1
 - Решение: approved
-- Комментарий: Эпик staging bootstrap/deploy loop утверждён.
+- Комментарий: Каталог эпиков Sprint S1 утверждён.

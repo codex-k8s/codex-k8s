@@ -22,6 +22,12 @@ updated_at: 2026-02-06
 - Source of truth требований: `docs/product/requirements_machine_driven.md`.
 - Матрица трассируемости: `docs/delivery/requirements_traceability.md`.
 
+## Sprint S1 артефакты
+- Process requirements: `docs/delivery/development_process_requirements.md`.
+- Sprint plan: `docs/delivery/sprint_s1_day0_day7.md`.
+- Epic catalog: `docs/delivery/epic.md`.
+- Epic docs: `docs/delivery/epics/epic-day0-bootstrap-baseline.md`, `docs/delivery/epics/epic-day1-webhook-idempotency.md`, `docs/delivery/epics/epic-day2-worker-slots-k8s.md`, `docs/delivery/epics/epic-day3-auth-rbac-ui.md`, `docs/delivery/epics/epic-day4-repository-provider.md`, `docs/delivery/epics/epic-day5-learning-mode.md`, `docs/delivery/epics/epic-day6-hardening-observability.md`, `docs/delivery/epics/epic-day7-stabilization-gate.md`.
+
 ## Правила
 - Если нет обязательного документа — статус `blocked`.
 - Ссылки должны быть кликабельны.
