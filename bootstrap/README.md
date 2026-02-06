@@ -35,7 +35,7 @@ bash bootstrap/host/bootstrap_remote_staging.sh
 ## Примечания
 
 - Скрипты — каркас первого этапа. Перед production обязательны hardening и отдельный runbook.
-- Для деплоя через GitHub Actions нужен `CODEXK8S_GITHUB_TOKEN` (fine-grained) с правами на repository actions/secrets/variables и чтение содержимого репозитория.
+- Для деплоя через GitHub Actions нужен `CODEXK8S_GITHUB_PAT` (fine-grained) с правами на repository actions/secrets/variables и чтение содержимого репозитория.
 - Workflow staging должен запускаться на `runs-on: <CODEXK8S_RUNNER_SCALE_SET_NAME>`.
 - `CODEXK8S_LEARNING_MODE_DEFAULT` задаёт default для новых проектов (`true` в шаблоне; пустое значение = выключено).
 - В `bootstrap/host/config.env` используйте только переменные с префиксом `CODEXK8S_` для платформенных параметров и секретов.

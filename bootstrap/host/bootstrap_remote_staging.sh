@@ -91,7 +91,7 @@ prompt_if_empty TARGET_ROOT_SSH_KEY "Path to root SSH private key"
 prompt_if_empty OPERATOR_USER "Operator username"
 prompt_if_empty OPERATOR_SSH_PUBKEY_PATH "Path to operator public key"
 prompt_if_empty CODEXK8S_GITHUB_REPO "GitHub repo (owner/name)"
-prompt_if_empty CODEXK8S_GITHUB_TOKEN "GitHub fine-grained token" true
+prompt_if_empty CODEXK8S_GITHUB_PAT "GitHub fine-grained token" true
 prompt_if_empty CODEXK8S_OPENAI_API_KEY "CODEXK8S_OPENAI_API_KEY" true
 prompt_if_empty CODEXK8S_STAGING_NAMESPACE "Staging namespace"
 prompt_if_empty CODEXK8S_STAGING_DOMAIN "Staging domain (required)"
@@ -155,7 +155,7 @@ cat > "${TMP_DIR}/bootstrap.env" <<ENV
 OPERATOR_USER='$(escape_squote "$OPERATOR_USER")'
 OPERATOR_SSH_PUBKEY='$(escape_squote "$OPERATOR_SSH_PUBKEY")'
 CODEXK8S_GITHUB_REPO='$(escape_squote "$CODEXK8S_GITHUB_REPO")'
-CODEXK8S_GITHUB_TOKEN='$(escape_squote "$CODEXK8S_GITHUB_TOKEN")'
+CODEXK8S_GITHUB_PAT='$(escape_squote "$CODEXK8S_GITHUB_PAT")'
 CODEXK8S_OPENAI_API_KEY='$(escape_squote "$CODEXK8S_OPENAI_API_KEY")'
 CODEXK8S_CONTEXT7_API_KEY='$(escape_squote "${CODEXK8S_CONTEXT7_API_KEY:-}")'
 CODEXK8S_STAGING_NAMESPACE='$(escape_squote "$CODEXK8S_STAGING_NAMESPACE")'

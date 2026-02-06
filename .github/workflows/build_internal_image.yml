@@ -33,7 +33,7 @@ jobs:
           CODEXK8S_INTERNAL_IMAGE_REPOSITORY: ${{ vars.CODEXK8S_INTERNAL_IMAGE_REPOSITORY || 'codex-k8s/codex-k8s' }}
           CODEXK8S_KANIKO_TIMEOUT: ${{ vars.CODEXK8S_KANIKO_TIMEOUT || '1800s' }}
           CODEXK8S_GITHUB_REPO: ${{ github.repository }}
-          CODEXK8S_GITHUB_TOKEN: ${{ secrets.CODEXK8S_GITHUB_TOKEN }}
+          CODEXK8S_GITHUB_PAT: ${{ secrets.CODEXK8S_GITHUB_PAT }}
           CODEXK8S_BUILD_REF: ${{ github.sha }}
         run: |
           set -euo pipefail
