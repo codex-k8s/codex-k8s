@@ -36,3 +36,19 @@ kube_env() {
 repo_dir() {
   echo "/opt/codex-k8s"
 }
+
+set_env_var() {
+  local env_file="$1"
+  local key="$2"
+  local value="$3"
+  local escaped
+
+  [ -f "$env_file" ] || die "Env file not found: $env_file"
+  escaped="$(printf '%s' "$value" | sed "s/'/'\\\\''/g")"
+
+  if grep -q "^${key}=" "$env_file"; then
+    sed -i "s|^${key}=.*$|${key}='${escaped}'|" "$env_file"
+  else
+    printf "%s='%s'\n" "$key" "$escaped" >> "$env_file"
+  fi
+}

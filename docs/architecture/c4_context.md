@@ -49,7 +49,7 @@ Rel(system, openai, "Calls models", "HTTPS")
 
 ## Внешние зависимости
 
-- GitHub: OAuth, repo/webhook operations, PAT/service tokens.
+- GitHub: OAuth, repo/webhook operations, fine-grained tokens/service tokens.
 - Kubernetes: runtime для сервисов платформы и агентных pod/namespace lifecycle.
 - OpenAI: модельные вызовы и токены использования.
 

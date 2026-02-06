@@ -9,7 +9,7 @@
 - `values-ai-staging.yaml.tpl` — values для chart `gha-runner-scale-set`.
 - `staging-deployer-rbac.yaml.tpl` — RBAC для deploy workflow в staging namespace.
 
-Секрет с GitHub PAT в репозитории не хранится. Он создаётся из env (`CODEXK8S_GITHUB_PAT`) во время bootstrap.
+Секрет с GitHub token в репозитории не хранится. Он создаётся из env (`CODEXK8S_GITHUB_TOKEN`) во время bootstrap.
 
 ## Применение
 
@@ -21,13 +21,14 @@ export CODEXK8S_RUNNER_MIN=1
 export CODEXK8S_RUNNER_MAX=2
 export CODEXK8S_RUNNER_IMAGE=ghcr.io/actions/actions-runner:latest
 export CODEXK8S_STAGING_NAMESPACE=codex-k8s-ai-staging
+export CODEXK8S_GITHUB_TOKEN=<fine-grained-token>
 
 kubectl apply -f deploy/runner/namespace.yaml
 envsubst < deploy/runner/runner-namespace.yaml.tpl | kubectl apply -f -
 
-# PAT comes from env only; do not commit token manifests.
+# Fine-grained token comes from env only; do not commit token manifests.
 kubectl -n "${CODEXK8S_RUNNER_NAMESPACE}" create secret generic gha-runner-scale-set-secret \
-  --from-literal=github_token="${CODEXK8S_GITHUB_PAT}" \
+  --from-literal=github_token="${CODEXK8S_GITHUB_TOKEN}" \
   --dry-run=client -o yaml | kubectl apply -f -
 
 helm upgrade --install gha-rs-controller \

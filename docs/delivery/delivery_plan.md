@@ -21,7 +21,7 @@ approvals:
 - Что поставляем: MVP control-plane + staff UI + webhook orchestration + staging bootstrap/deploy loop.
 - Когда: поэтапно, с ранним staging для ручных тестов.
 - Главные риски: bootstrap automation, security hardening, runner stability.
-- Что нужно от Owner: подтверждение deploy-модели и доступов (GitHub PAT/OpenAI key).
+- Что нужно от Owner: подтверждение deploy-модели и доступов (GitHub fine-grained token/OpenAI key).
 
 ## Входные артефакты
 - Brief: `docs/product/brief.md`
@@ -66,7 +66,7 @@ approvals:
 
 ## Зависимости
 - Внутренние: Core backend до полноценного UI управления.
-- Внешние: GitHub PAT с нужными правами, рабочий staging сервер Ubuntu 24.04.
+- Внешние: GitHub fine-grained token с нужными правами, рабочий staging сервер Ubuntu 24.04.
 
 ## План сред/окружений
 - Dev slots: локальный/кластерный dev для компонентов.
@@ -82,8 +82,9 @@ approvals:
 - создаёт отдельного пользователя (sudo + ssh key auth), отключает дальнейший root-password вход;
 - ставит k3s и сетевой baseline (ingress, cert-manager, network policy baseline);
 - ставит зависимости платформы;
+- поднимает внутренний registry (`ClusterIP`, без auth на уровне registry) и Kaniko pipeline для сборки образа в кластере;
 - разворачивает PostgreSQL и `codex-k8s`;
-- спрашивает внешние креды (`GitHub PAT`, `CODEXK8S_OPENAI_API_KEY`), внутренние секреты генерирует сам;
+- спрашивает внешние креды (`GitHub fine-grained token`, `CODEXK8S_OPENAI_API_KEY`), внутренние секреты генерирует сам;
 - передаёт default `learning_mode` из `bootstrap/host/config.env` (по умолчанию включён, пустое значение = выключен);
 - настраивает GitHub Actions runner в Kubernetes для staging (ARC или эквивалент);
 - подготавливает deploy workflow и необходимые repo secrets/variables.
@@ -92,7 +93,7 @@ approvals:
 ### Definition of Ready (DoR)
 - [ ] Brief/Constraints/Architecture/ADR согласованы.
 - [ ] Server access для staging подтверждён.
-- [ ] GitHub PAT и OpenAI ключ доступны.
+- [ ] GitHub fine-grained token и OpenAI ключ доступны.
 
 ### Definition of Done (DoD)
 - [ ] Staging bootstrap выполняется одной командой.

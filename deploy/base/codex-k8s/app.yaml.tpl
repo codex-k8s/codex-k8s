@@ -30,8 +30,6 @@ spec:
       labels:
         app.kubernetes.io/name: codex-k8s
     spec:
-      imagePullSecrets:
-        - name: ghcr-pull-secret
       containers:
         - name: codex-k8s
           image: ${CODEXK8S_IMAGE}

@@ -67,7 +67,7 @@ approvals:
 - Добавить `ai_staging_deploy` workflow для `codex-k8s`.
 - Production deploy workflow оставить как следующий этап после стабилизации staging.
 - Bootstrap-скрипт должен:
-  - запросить GitHub PAT;
+  - запросить GitHub fine-grained token;
   - создать/настроить runner secret;
   - развернуть ARC/runner scale set в k8s;
   - подготовить переменные/секреты репозитория.

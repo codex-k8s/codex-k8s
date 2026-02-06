@@ -12,7 +12,7 @@ if [ "${CODEXK8S_ENABLE_GITHUB_RUNNER:-true}" != "true" ]; then
   exit 0
 fi
 
-: "${CODEXK8S_GITHUB_PAT:?CODEXK8S_GITHUB_PAT is required}"
+: "${CODEXK8S_GITHUB_TOKEN:?CODEXK8S_GITHUB_TOKEN is required}"
 : "${CODEXK8S_GITHUB_REPO:?CODEXK8S_GITHUB_REPO is required}"
 CODEXK8S_RUNNER_MIN="${CODEXK8S_RUNNER_MIN:-1}"
 CODEXK8S_RUNNER_MAX="${CODEXK8S_RUNNER_MAX:-2}"
@@ -29,7 +29,7 @@ export CODEXK8S_RUNNER_NAMESPACE
 envsubst < "${REPO_DIR}/deploy/runner/runner-namespace.yaml.tpl" | kubectl apply -f -
 
 kubectl -n "${CODEXK8S_RUNNER_NAMESPACE}" create secret generic gha-runner-scale-set-secret \
-  --from-literal=github_token="${CODEXK8S_GITHUB_PAT}" \
+  --from-literal=github_token="${CODEXK8S_GITHUB_TOKEN}" \
   --dry-run=client -o yaml | kubectl apply -f -
 
 log "Install ARC runner scale-set controller via Helm"

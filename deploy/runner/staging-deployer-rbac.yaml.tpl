@@ -5,10 +5,13 @@ metadata:
   namespace: ${CODEXK8S_STAGING_NAMESPACE}
 rules:
   - apiGroups: [""]
-    resources: ["secrets", "configmaps", "services", "pods"]
+    resources: ["secrets", "configmaps", "services", "pods", "pods/log"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: ["apps"]
     resources: ["deployments", "statefulsets", "replicasets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: ["networking.k8s.io"]
     resources: ["ingresses"]

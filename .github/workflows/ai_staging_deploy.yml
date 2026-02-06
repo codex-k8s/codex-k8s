@@ -2,7 +2,7 @@ name: "AI Staging deploy 🚀"
 
 on:
   workflow_run:
-    workflows: ["Build and Push GHCR 🐳"]
+    workflows: ["Build Internal Image (Kaniko) 🐳"]
     branches: [main]
     types: [completed]
   workflow_dispatch:
@@ -10,7 +10,10 @@ on:
 env:
   CODEXK8S_STAGING_NAMESPACE: ${{ vars.CODEXK8S_STAGING_NAMESPACE || 'codex-k8s-ai-staging' }}
   CODEXK8S_STAGING_DOMAIN: ${{ vars.CODEXK8S_STAGING_DOMAIN }}
-  CODEXK8S_IMAGE: ${{ vars.CODEXK8S_IMAGE || 'ghcr.io/codex-k8s/codex-k8s:latest' }}
+  CODEXK8S_IMAGE: ${{ vars.CODEXK8S_IMAGE }}
+  CODEXK8S_INTERNAL_REGISTRY_SERVICE: ${{ vars.CODEXK8S_INTERNAL_REGISTRY_SERVICE || 'codex-k8s-registry' }}
+  CODEXK8S_INTERNAL_REGISTRY_PORT: ${{ vars.CODEXK8S_INTERNAL_REGISTRY_PORT || '5000' }}
+  CODEXK8S_INTERNAL_IMAGE_REPOSITORY: ${{ vars.CODEXK8S_INTERNAL_IMAGE_REPOSITORY || 'codex-k8s/codex-k8s' }}
   CODEXK8S_WAIT_ROLLOUT: ${{ vars.CODEXK8S_WAIT_ROLLOUT || 'true' }}
   CODEXK8S_ROLLOUT_TIMEOUT: ${{ vars.CODEXK8S_ROLLOUT_TIMEOUT || '1800s' }}
 

@@ -52,7 +52,7 @@ approvals:
 - После push в `main` staging обновляется автоматически.
 
 ## Риски/зависимости
-- Зависимости: GitHub PAT с admin scope, доступ root SSH.
+- Зависимости: GitHub fine-grained token с правами на repo/actions/secrets/variables, доступ root SSH.
 - Риски: различия cloud image Ubuntu 24.04, сетевые ограничения провайдера.
 
 ## План релиза (верхний уровень)
