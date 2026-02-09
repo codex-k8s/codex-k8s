@@ -57,7 +57,14 @@ spec:
             - |
               for f in /migrations/*.sql; do
                 echo "apply migration: ${f}"
-                PGPASSWORD="$CODEXK8S_POSTGRES_PASSWORD" psql -h postgres -U "$CODEXK8S_POSTGRES_USER" -d "$CODEXK8S_POSTGRES_DB" -v ON_ERROR_STOP=1 -f "$f"
+                # We store migrations as goose-style files with Up/Down in one file.
+                # Apply only the "Up" section to avoid executing the "Down" part.
+                awk '
+                  BEGIN{up=0}
+                  /^-- \\+goose Up/{up=1; next}
+                  /^-- \\+goose Down/{up=0; next}
+                  up{print}
+                ' "$f" | PGPASSWORD="$CODEXK8S_POSTGRES_PASSWORD" psql -h postgres -U "$CODEXK8S_POSTGRES_USER" -d "$CODEXK8S_POSTGRES_DB" -v ON_ERROR_STOP=1
               done
           volumeMounts:
             - name: migrations
@@ -262,7 +269,12 @@ spec:
             - |
               for f in /migrations/*.sql; do
                 echo "apply migration: ${f}"
-                PGPASSWORD="$CODEXK8S_POSTGRES_PASSWORD" psql -h postgres -U "$CODEXK8S_POSTGRES_USER" -d "$CODEXK8S_POSTGRES_DB" -v ON_ERROR_STOP=1 -f "$f"
+                awk '
+                  BEGIN{up=0}
+                  /^-- \\+goose Up/{up=1; next}
+                  /^-- \\+goose Down/{up=0; next}
+                  up{print}
+                ' "$f" | PGPASSWORD="$CODEXK8S_POSTGRES_PASSWORD" psql -h postgres -U "$CODEXK8S_POSTGRES_USER" -d "$CODEXK8S_POSTGRES_DB" -v ON_ERROR_STOP=1
               done
           volumeMounts:
             - name: migrations
