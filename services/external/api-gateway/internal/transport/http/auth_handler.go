@@ -113,6 +113,25 @@ func (h *authHandler) Logout(c *echo.Context) error {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
 	})
+
+	// When running behind oauth2-proxy (staging/dev), the browser session is primarily backed
+	// by oauth2-proxy cookies. If we don't clear them, users may appear "still logged in".
+	//
+	// oauth2-proxy defaults:
+	// - main session cookie: `_oauth2_proxy`
+	// - csrf cookie: `_oauth2_proxy_csrf`
+	for _, name := range []string{"_oauth2_proxy", "_oauth2_proxy_csrf"} {
+		c.SetCookie(&http.Cookie{
+			Name:     name,
+			Value:    "",
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   h.cookieSecure,
+			SameSite: http.SameSiteLaxMode,
+			MaxAge:   -1,
+		})
+	}
+
 	return c.NoContent(http.StatusNoContent)
 }
 
