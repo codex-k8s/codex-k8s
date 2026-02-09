@@ -10,6 +10,7 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    allowedHosts: process.env.VITE_ALLOWED_HOSTS ? [process.env.VITE_ALLOWED_HOSTS] : true,
     proxy: {
       "/api": "http://127.0.0.1:8080",
       "/metrics": "http://127.0.0.1:8080",
@@ -17,4 +18,3 @@ export default defineConfig({
     },
   },
 });
-
