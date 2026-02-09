@@ -24,6 +24,9 @@ type Config struct {
 	SlotsPerProject int
 	// SlotLeaseTTL defines maximum duration of slot ownership.
 	SlotLeaseTTL time.Duration
+
+	// ProjectLearningModeDefault is applied when the worker auto-creates projects from webhook payloads.
+	ProjectLearningModeDefault bool
 }
 
 // Service orchestrates pending runs to Kubernetes Jobs and final statuses.
@@ -126,9 +129,10 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 func (s *Service) launchPending(ctx context.Context) error {
 	for range s.cfg.ClaimLimit {
 		claimed, ok, err := s.runs.ClaimNextPending(ctx, runqueuerepo.ClaimParams{
-			WorkerID:        s.cfg.WorkerID,
-			SlotsPerProject: s.cfg.SlotsPerProject,
-			LeaseTTL:        s.cfg.SlotLeaseTTL,
+			WorkerID:                   s.cfg.WorkerID,
+			SlotsPerProject:            s.cfg.SlotsPerProject,
+			LeaseTTL:                   s.cfg.SlotLeaseTTL,
+			ProjectLearningModeDefault: s.cfg.ProjectLearningModeDefault,
 		})
 		if err != nil {
 			return fmt.Errorf("claim pending run: %w", err)

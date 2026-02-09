@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -43,6 +45,15 @@ func Run() error {
 		return fmt.Errorf("CODEXK8S_WORKER_SLOT_LEASE_TTL must be > 0")
 	}
 
+	learningDefault := false
+	if strings.TrimSpace(cfg.LearningModeDefault) != "" {
+		v, err := strconv.ParseBool(cfg.LearningModeDefault)
+		if err != nil {
+			return fmt.Errorf("parse CODEXK8S_LEARNING_MODE_DEFAULT=%q: %w", cfg.LearningModeDefault, err)
+		}
+		learningDefault = v
+	}
+
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	db, err := openDB(cfg)
@@ -68,11 +79,12 @@ func Run() error {
 	}
 
 	service := worker.NewService(worker.Config{
-		WorkerID:          cfg.WorkerID,
-		ClaimLimit:        cfg.ClaimLimit,
-		RunningCheckLimit: cfg.RunningCheckLimit,
-		SlotsPerProject:   cfg.SlotsPerProject,
-		SlotLeaseTTL:      slotLeaseTTL,
+		WorkerID:                   cfg.WorkerID,
+		ClaimLimit:                 cfg.ClaimLimit,
+		RunningCheckLimit:          cfg.RunningCheckLimit,
+		SlotsPerProject:            cfg.SlotsPerProject,
+		SlotLeaseTTL:               slotLeaseTTL,
+		ProjectLearningModeDefault: learningDefault,
 	}, runs, events, feedback, launcher, logger)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)

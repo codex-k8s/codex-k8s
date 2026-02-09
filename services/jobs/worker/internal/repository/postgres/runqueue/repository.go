@@ -19,6 +19,8 @@ var (
 	queryClaimNextPendingForUpdate string
 	//go:embed sql/upsert_project.sql
 	queryUpsertProject string
+	//go:embed sql/ensure_project_exists.sql
+	queryEnsureProjectExists string
 	//go:embed sql/ensure_project_slots.sql
 	queryEnsureProjectSlots string
 	//go:embed sql/release_expired_slots.sql
@@ -80,13 +82,27 @@ func (r *Repository) ClaimNextPending(ctx context.Context, params domainrepo.Cla
 	}
 
 	projectID := projectIDRaw.String
+	explicitProjectID := projectIDRaw.Valid && strings.TrimSpace(projectIDRaw.String) != ""
 	if projectID == "" {
 		projectID = deriveProjectID(correlationID, runPayload)
 	}
 	projectSlug, projectName := deriveProjectMeta(projectID, correlationID, runPayload)
 
-	if _, err := tx.ExecContext(ctx, queryUpsertProject, projectID, projectSlug, projectName); err != nil {
-		return domainrepo.ClaimedRun{}, false, fmt.Errorf("upsert project %s: %w", projectID, err)
+	settingsJSON, err := json.Marshal(map[string]any{
+		"learning_mode_default": params.ProjectLearningModeDefault,
+	})
+	if err != nil {
+		return domainrepo.ClaimedRun{}, false, fmt.Errorf("marshal project settings: %w", err)
+	}
+
+	if explicitProjectID {
+		if _, err := tx.ExecContext(ctx, queryEnsureProjectExists, projectID, projectSlug, projectName, settingsJSON); err != nil {
+			return domainrepo.ClaimedRun{}, false, fmt.Errorf("ensure project %s exists: %w", projectID, err)
+		}
+	} else {
+		if _, err := tx.ExecContext(ctx, queryUpsertProject, projectID, projectSlug, projectName, settingsJSON); err != nil {
+			return domainrepo.ClaimedRun{}, false, fmt.Errorf("upsert project %s: %w", projectID, err)
+		}
 	}
 
 	if _, err := tx.ExecContext(ctx, queryEnsureProjectSlots, projectID, params.SlotsPerProject); err != nil {
