@@ -22,6 +22,18 @@ type Config struct {
 	// BootstrapOwnerEmail is the first allowed email for GitHub OAuth login (platform admin).
 	BootstrapOwnerEmail string `env:"CODEXK8S_BOOTSTRAP_OWNER_EMAIL,required,notEmpty"`
 
+	// BootstrapAllowedEmails is an optional comma-separated list of additional staff emails
+	// that should be allowed to login (pre-provisioned into DB on startup).
+	//
+	// Example: "dev1@example.com,dev2@example.com"
+	BootstrapAllowedEmails string `env:"CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS"`
+
+	// BootstrapPlatformAdminEmails is an optional comma-separated list of additional platform admins (owners).
+	// These emails will be upserted into `users` with `is_platform_admin=true` on startup.
+	//
+	// Example: "owner2@example.com"
+	BootstrapPlatformAdminEmails string `env:"CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS"`
+
 	// GitHubOAuthClientID is GitHub OAuth App client id.
 	GitHubOAuthClientID string `env:"CODEXK8S_GITHUB_OAUTH_CLIENT_ID,required,notEmpty"`
 	// GitHubOAuthClientSecret is GitHub OAuth App client secret.

@@ -106,6 +106,18 @@ spec:
                 secretKeyRef:
                   name: codex-k8s-runtime
                   key: CODEXK8S_BOOTSTRAP_OWNER_EMAIL
+            - name: CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS
+                  optional: true
+            - name: CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS
+                  optional: true
             - name: CODEXK8S_GITHUB_OAUTH_CLIENT_ID
               valueFrom:
                 secretKeyRef:

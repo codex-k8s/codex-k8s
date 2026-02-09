@@ -47,6 +47,11 @@ bash bootstrap/host/bootstrap_remote_staging.sh
   - заполнить `CODEXK8S_GITHUB_OAUTH_CLIENT_ID` и `CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET` в `bootstrap/host/config.env`.
 - `CODEXK8S_PUBLIC_BASE_URL` должен совпадать с публичным URL (для staging обычно `https://<CODEXK8S_STAGING_DOMAIN>`).
 - `CODEXK8S_BOOTSTRAP_OWNER_EMAIL` задаёт единственный email, которому разрешён первый вход (platform admin). Self-signup запрещён.
+- `CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS` (опционально) — дополнительные staff email'ы (через запятую),
+  которые будут автоматически добавлены в БД при старте `api-gateway`, чтобы первый вход не упирался в
+  `{"code":"forbidden","message":"email is not allowed"}`.
+- `CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS` (опционально) — дополнительные platform admin (owners) email'ы (через запятую),
+  которые будут автоматически добавлены/обновлены в БД при старте `api-gateway` с `is_platform_admin=true`.
 - `CODEXK8S_GITHUB_WEBHOOK_SECRET` используется для валидации `X-Hub-Signature-256`; если переменная пуста, bootstrap генерирует значение автоматически.
 - `CODEXK8S_GITHUB_WEBHOOK_URL` (опционально) позволяет переопределить URL webhook; по умолчанию используется `https://<CODEXK8S_STAGING_DOMAIN>/api/v1/webhooks/github`.
 - `CODEXK8S_GITHUB_WEBHOOK_EVENTS` задаёт список событий webhook (comma-separated).

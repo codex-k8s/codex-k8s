@@ -54,6 +54,15 @@ func Run() error {
 	if _, err := users.EnsureOwner(context.Background(), cfg.BootstrapOwnerEmail); err != nil {
 		return fmt.Errorf("ensure bootstrap owner user: %w", err)
 	}
+	// Optionally pre-provision additional staff emails into DB to avoid "email is not allowed"
+	// on first login.
+	if err := ensureBootstrapAllowedUsers(context.Background(), users, cfg.BootstrapOwnerEmail, cfg.BootstrapAllowedEmails, logger); err != nil {
+		return fmt.Errorf("ensure bootstrap allowed users: %w", err)
+	}
+	// Optionally pre-provision additional platform admins ("owners") into DB.
+	if err := ensureBootstrapPlatformAdmins(context.Background(), users, cfg.BootstrapOwnerEmail, cfg.BootstrapPlatformAdminEmails, logger); err != nil {
+		return fmt.Errorf("ensure bootstrap platform admins: %w", err)
+	}
 
 	jwtTTL, err := time.ParseDuration(cfg.JWTTTL)
 	if err != nil {
