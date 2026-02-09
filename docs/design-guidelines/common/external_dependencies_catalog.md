@@ -28,6 +28,8 @@
 | `k8s.io/client-go` | `v0.35.0` | Kubernetes integration | запуск/проверка Job через Kubernetes SDK |
 | `k8s.io/api` | `v0.35.0` | Kubernetes API types | типы `batch/v1`, `core/v1` для Job/Pod |
 | `k8s.io/apimachinery` | `v0.35.0` | Kubernetes API machinery | ошибки API, meta types, утилиты client-go |
+| `github.com/google/go-github/v75` | `v75.0.0` | Repository provider (GitHub) | настройка вебхуков и валидация доступа к репозиториям через GitHub API v3 |
+| `github.com/google/go-querystring` | `v1.1.0` | Dependency of go-github | сериализация query params для GitHub API клиента |
 
 ## Frontend (Vue/TS) — planned baseline
 

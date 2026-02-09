@@ -42,6 +42,8 @@ type RunningRun struct {
 	CorrelationID string
 	// ProjectID is an effective project scope.
 	ProjectID string
+	// LearningMode is an effective run learning mode flag.
+	LearningMode bool
 	// StartedAt is timestamp when run entered running state.
 	StartedAt time.Time
 }

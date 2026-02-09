@@ -8,6 +8,7 @@ import (
 	"time"
 
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/flowevent"
+	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/learningfeedback"
 	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
 )
 
@@ -30,6 +31,7 @@ type Service struct {
 	cfg      Config
 	runs     runqueuerepo.Repository
 	events   floweventrepo.Repository
+	feedback learningfeedbackrepo.Repository
 	launcher Launcher
 	logger   *slog.Logger
 	now      func() time.Time
@@ -40,6 +42,7 @@ func NewService(
 	cfg Config,
 	runs runqueuerepo.Repository,
 	events floweventrepo.Repository,
+	feedback learningfeedbackrepo.Repository,
 	launcher Launcher,
 	logger *slog.Logger,
 ) *Service {
@@ -63,6 +66,7 @@ func NewService(
 		cfg:      cfg,
 		runs:     runs,
 		events:   events,
+		feedback: feedback,
 		launcher: launcher,
 		logger:   logger,
 		now:      time.Now,
@@ -145,6 +149,7 @@ func (s *Service) launchPending(ctx context.Context) error {
 				RunID:         claimed.RunID,
 				CorrelationID: claimed.CorrelationID,
 				ProjectID:     claimed.ProjectID,
+				LearningMode:  claimed.LearningMode,
 			}, "failed", "run.failed.launch_error", ref, map[string]any{"error": err.Error()}); finishErr != nil {
 				return fmt.Errorf("mark run failed after launch error: %w", finishErr)
 			}
@@ -208,6 +213,26 @@ func (s *Service) finishRun(
 		CreatedAt:     finishedAt,
 	}); err != nil {
 		return fmt.Errorf("insert finish event: %w", err)
+	}
+
+	if run.LearningMode && s.feedback != nil {
+		explanation := fmt.Sprintf(
+			"Learning mode is enabled for this run.\n\n"+
+				"Why this is executed as a Kubernetes Job: it provides isolation, reproducibility and clear lifecycle states.\n"+
+				"Why we use DB-backed slots: it prevents concurrent workers from overloading a project and makes multi-pod behavior deterministic.\n"+
+				"Tradeoffs: Jobs are heavier than in-process execution; DB locking requires careful indexing and timeouts.\n\n"+
+				"Result: status=%s, job=%s/%s.",
+			status,
+			ref.Namespace,
+			ref.Name,
+		)
+		if err := s.feedback.Insert(ctx, learningfeedbackrepo.InsertParams{
+			RunID:       run.RunID,
+			Kind:        "inline",
+			Explanation: explanation,
+		}); err != nil {
+			s.logger.Error("insert learning feedback failed", "run_id", run.RunID, "err", err)
+		}
 	}
 
 	return nil

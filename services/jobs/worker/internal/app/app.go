@@ -16,6 +16,7 @@ import (
 	k8slauncher "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/clients/kubernetes/launcher"
 	"github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/worker"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/flowevent"
+	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/learningfeedback"
 	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/runqueue"
 )
 
@@ -52,6 +53,7 @@ func Run() error {
 
 	runs := runqueuerepo.NewRepository(db)
 	events := floweventrepo.NewRepository(db)
+	feedback := learningfeedbackrepo.NewRepository(db)
 	launcher, err := k8slauncher.NewAdapter(libslauncher.Config{
 		KubeconfigPath:        cfg.KubeconfigPath,
 		Namespace:             cfg.K8sNamespace,
@@ -71,7 +73,7 @@ func Run() error {
 		RunningCheckLimit: cfg.RunningCheckLimit,
 		SlotsPerProject:   cfg.SlotsPerProject,
 		SlotLeaseTTL:      slotLeaseTTL,
-	}, runs, events, launcher, logger)
+	}, runs, events, feedback, launcher, logger)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 	defer stop()

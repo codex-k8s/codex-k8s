@@ -38,7 +38,9 @@ func (r *Repository) CreatePendingIfAbsent(ctx context.Context, params domainrep
 		queryCreatePendingIfAbsent,
 		runID,
 		params.CorrelationID,
+		params.ProjectID,
 		[]byte(params.RunPayload),
+		params.LearningMode,
 	).Scan(&insertedRunID)
 	if err == nil {
 		return domainrepo.CreateResult{

@@ -8,18 +8,25 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
+	"github.com/codex-k8s/codex-k8s/libs/go/crypto/tokencrypt"
+	repoprovider "github.com/codex-k8s/codex-k8s/libs/go/repo/provider"
+	githubprovider "github.com/codex-k8s/codex-k8s/libs/go/repo/provider/github"
 	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/auth"
 	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/staff"
 	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/webhook"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/repository/postgres/agentrun"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/repository/postgres/flowevent"
+	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/repository/postgres/learningfeedback"
 	projectrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/repository/postgres/project"
 	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/repository/postgres/projectmember"
+	repocfgrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/repository/postgres/repocfg"
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/repository/postgres/staffrun"
 	userrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/repository/postgres/user"
 	httptransport "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http"
@@ -42,13 +49,44 @@ func Run() error {
 
 	agentRuns := agentrunrepo.NewRepository(db)
 	flowEvents := floweventrepo.NewRepository(db)
-	webhookService := webhook.NewService(agentRuns, flowEvents)
 
 	users := userrepo.NewRepository(db)
 	projects := projectrepo.NewRepository(db)
 	members := projectmemberrepo.NewRepository(db)
 	runs := staffrunrepo.NewRepository(db)
-	staffService := staff.NewService(users, projects, members, runs)
+	repos := repocfgrepo.NewRepository(db)
+	feedback := learningfeedbackrepo.NewRepository(db)
+
+	webhookService := webhook.NewService(agentRuns, flowEvents, repos, projects, users, members)
+
+	tokenCrypto, err := tokencrypt.NewService(cfg.TokenEncryptionKey)
+	if err != nil {
+		return fmt.Errorf("init token encryption: %w", err)
+	}
+	githubRepoProvider := githubprovider.NewProvider(nil)
+
+	learningDefault := false
+	if strings.TrimSpace(cfg.LearningModeDefault) != "" {
+		v, err := strconv.ParseBool(cfg.LearningModeDefault)
+		if err != nil {
+			return fmt.Errorf("parse CODEXK8S_LEARNING_MODE_DEFAULT=%q: %w", cfg.LearningModeDefault, err)
+		}
+		learningDefault = v
+	}
+
+	webhookURL := strings.TrimSpace(cfg.GitHubWebhookURL)
+	if webhookURL == "" {
+		webhookURL = strings.TrimRight(cfg.PublicBaseURL, "/") + "/api/v1/webhooks/github"
+	}
+	events := splitCSV(cfg.GitHubWebhookEvents)
+	staffService := staff.NewService(staff.Config{
+		LearningModeDefault: learningDefault,
+		WebhookSpec: repoprovider.WebhookSpec{
+			URL:    webhookURL,
+			Secret: cfg.GitHubWebhookSecret,
+			Events: events,
+		},
+	}, users, projects, members, repos, feedback, runs, tokenCrypto, githubRepoProvider)
 
 	// Ensure the bootstrap owner exists so that the first GitHub OAuth login can be matched by email.
 	if _, err := users.EnsureOwner(context.Background(), cfg.BootstrapOwnerEmail); err != nil {
@@ -114,6 +152,19 @@ func Run() error {
 		}
 		return nil
 	}
+}
+
+func splitCSV(v string) []string {
+	parts := strings.Split(v, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		out = append(out, p)
+	}
+	return out
 }
 
 func openDB(cfg Config) (*sql.DB, error) {

@@ -14,7 +14,7 @@ func TestIngestGitHubWebhook_Dedup(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
 	events := &inMemoryEventRepo{}
-	svc := NewService(runs, events)
+	svc := NewService(runs, events, nil, nil, nil, nil)
 
 	payload := json.RawMessage(`{"action":"opened","repository":{"id":1,"full_name":"codex-k8s/codex-k8s"},"sender":{"id":10,"login":"ai-da-stas"}}`)
 	cmd := IngestCommand{

@@ -14,6 +14,7 @@
           <th>Created</th>
           <th>Started</th>
           <th>Finished</th>
+          <th></th>
           <th>ID</th>
         </tr>
       </thead>
@@ -25,6 +26,7 @@
           <td class="mono">{{ r.created_at }}</td>
           <td class="mono">{{ r.started_at || "-" }}</td>
           <td class="mono">{{ r.finished_at || "-" }}</td>
+          <td><RouterLink class="lnk" :to="`/runs/${r.id}`">Details</RouterLink></td>
           <td class="mono">{{ r.id }}</td>
         </tr>
       </tbody>
@@ -35,6 +37,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import { RouterLink } from "vue-router";
 import { api } from "../api";
 
 type Run = {
@@ -139,5 +142,14 @@ h2 {
   background: rgba(37, 99, 235, 0.12);
   border-color: rgba(37, 99, 235, 0.3);
 }
+.lnk {
+  font-weight: 800;
+  text-decoration: none;
+  color: #111827;
+  opacity: 0.8;
+}
+.lnk:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
 </style>
-

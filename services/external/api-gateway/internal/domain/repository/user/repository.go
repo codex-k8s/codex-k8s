@@ -17,6 +17,8 @@ type Repository interface {
 	EnsureOwner(ctx context.Context, email string) (User, error)
 	// GetByEmail returns user by email.
 	GetByEmail(ctx context.Context, email string) (User, bool, error)
+	// GetByGitHubLogin returns user by GitHub login (case-insensitive).
+	GetByGitHubLogin(ctx context.Context, githubLogin string) (User, bool, error)
 	// UpdateGitHubIdentity updates GitHub identity fields.
 	UpdateGitHubIdentity(ctx context.Context, userID string, githubUserID int64, githubLogin string) error
 	// CreateAllowedUser creates a new allowed user (without OAuth identity yet).
@@ -24,4 +26,3 @@ type Repository interface {
 	// List returns all users.
 	List(ctx context.Context, limit int) ([]User, error)
 }
-

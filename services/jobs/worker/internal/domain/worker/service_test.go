@@ -24,7 +24,7 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 	launcher := &fakeLauncher{states: map[string]JobState{}}
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 
-	svc := NewService(Config{WorkerID: "worker-1", ClaimLimit: 2, RunningCheckLimit: 10, SlotsPerProject: 2, SlotLeaseTTL: time.Minute}, runs, events, launcher, logger)
+	svc := NewService(Config{WorkerID: "worker-1", ClaimLimit: 2, RunningCheckLimit: 10, SlotsPerProject: 2, SlotLeaseTTL: time.Minute}, runs, events, nil, launcher, logger)
 	svc.now = func() time.Time { return time.Date(2026, 2, 9, 10, 0, 0, 0, time.UTC) }
 
 	if err := svc.Tick(context.Background()); err != nil {
@@ -52,7 +52,7 @@ func TestTickFinalizesSucceededRun(t *testing.T) {
 	launcher := &fakeLauncher{states: map[string]JobState{"run-2": JobStateSucceeded}}
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 
-	svc := NewService(Config{WorkerID: "worker-1", ClaimLimit: 1, RunningCheckLimit: 10, SlotsPerProject: 2, SlotLeaseTTL: time.Minute}, runs, events, launcher, logger)
+	svc := NewService(Config{WorkerID: "worker-1", ClaimLimit: 1, RunningCheckLimit: 10, SlotsPerProject: 2, SlotLeaseTTL: time.Minute}, runs, events, nil, launcher, logger)
 	svc.now = func() time.Time { return time.Date(2026, 2, 9, 11, 0, 0, 0, time.UTC) }
 
 	if err := svc.Tick(context.Background()); err != nil {

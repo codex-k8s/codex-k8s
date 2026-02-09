@@ -34,6 +34,10 @@ type Config struct {
 	// Example: "owner2@example.com"
 	BootstrapPlatformAdminEmails string `env:"CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS"`
 
+	// LearningModeDefault controls the default for newly created projects.
+	// Keep empty value to disable by default; set to "true" to enable by default.
+	LearningModeDefault string `env:"CODEXK8S_LEARNING_MODE_DEFAULT"`
+
 	// GitHubOAuthClientID is GitHub OAuth App client id.
 	GitHubOAuthClientID string `env:"CODEXK8S_GITHUB_OAUTH_CLIENT_ID,required,notEmpty"`
 	// GitHubOAuthClientSecret is GitHub OAuth App client secret.
@@ -48,8 +52,17 @@ type Config struct {
 
 	// GitHubWebhookSecret is used to validate X-Hub-Signature-256.
 	GitHubWebhookSecret string `env:"CODEXK8S_GITHUB_WEBHOOK_SECRET,required,notEmpty"`
+	// GitHubWebhookURL overrides the public webhook callback URL used when configuring repository hooks.
+	// If empty, api-gateway uses PublicBaseURL + "/api/v1/webhooks/github".
+	GitHubWebhookURL string `env:"CODEXK8S_GITHUB_WEBHOOK_URL"`
+	// GitHubWebhookEvents is a comma-separated list of GitHub webhook events to subscribe to.
+	GitHubWebhookEvents string `env:"CODEXK8S_GITHUB_WEBHOOK_EVENTS" envDefault:"push,pull_request,issues,issue_comment,pull_request_review,pull_request_review_comment"`
 	// WebhookMaxBodyBytes limits accepted webhook payload size.
 	WebhookMaxBodyBytes int64 `env:"CODEXK8S_WEBHOOK_MAX_BODY_BYTES" envDefault:"1048576"`
+
+	// TokenEncryptionKey is used to encrypt/decrypt repository and agent tokens stored in DB.
+	// Must be a hex-encoded 32-byte key (64 hex chars).
+	TokenEncryptionKey string `env:"CODEXK8S_TOKEN_ENCRYPTION_KEY,required,notEmpty"`
 
 	// DBHost is the PostgreSQL host.
 	DBHost string `env:"CODEXK8S_DB_HOST,required,notEmpty"`

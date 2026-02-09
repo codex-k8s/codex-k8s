@@ -15,6 +15,8 @@ var (
 	queryEnsureOwner string
 	//go:embed sql/get_by_email.sql
 	queryGetByEmail string
+	//go:embed sql/get_by_github_login.sql
+	queryGetByGitHubLogin string
 	//go:embed sql/update_github_identity.sql
 	queryUpdateGitHubIdentity string
 	//go:embed sql/create_allowed_user.sql
@@ -52,6 +54,18 @@ func (r *Repository) GetByEmail(ctx context.Context, email string) (domainrepo.U
 		return domainrepo.User{}, false, nil
 	}
 	return domainrepo.User{}, false, fmt.Errorf("get by email: %w", err)
+}
+
+// GetByGitHubLogin returns a user by GitHub login (case-insensitive).
+func (r *Repository) GetByGitHubLogin(ctx context.Context, githubLogin string) (domainrepo.User, bool, error) {
+	u, err := scanUser(r.db.QueryRowContext(ctx, queryGetByGitHubLogin, githubLogin))
+	if err == nil {
+		return u, true, nil
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		return domainrepo.User{}, false, nil
+	}
+	return domainrepo.User{}, false, fmt.Errorf("get by github login: %w", err)
 }
 
 // UpdateGitHubIdentity updates GitHub user id/login for an existing user.
@@ -107,4 +121,3 @@ func scanUser(row rowScanner) (domainrepo.User, error) {
 	}
 	return u, nil
 }
-

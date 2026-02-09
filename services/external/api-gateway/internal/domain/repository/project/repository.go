@@ -9,6 +9,18 @@ type Project struct {
 	Name string
 }
 
+// UpsertParams defines inputs for creating or updating a project.
+type UpsertParams struct {
+	// ID is a project id to use for insert (server-generated in staff API).
+	ID string
+	// Slug is a stable project key (unique).
+	Slug string
+	// Name is a human-readable project name.
+	Name string
+	// SettingsJSON is a jsonb object stored in `projects.settings`.
+	SettingsJSON []byte
+}
+
 // ProjectWithRole extends Project with an effective role for a user.
 type ProjectWithRole struct {
 	Project
@@ -21,5 +33,10 @@ type Repository interface {
 	ListAll(ctx context.Context, limit int) ([]Project, error)
 	// ListForUser returns projects visible to a user with their role.
 	ListForUser(ctx context.Context, userID string, limit int) ([]ProjectWithRole, error)
-}
 
+	// Upsert creates/updates a project by slug.
+	Upsert(ctx context.Context, params UpsertParams) (Project, error)
+
+	// GetLearningModeDefault returns effective project default learning-mode flag.
+	GetLearningModeDefault(ctx context.Context, projectID string) (enabled bool, ok bool, err error)
+}
