@@ -26,6 +26,8 @@ CODEXK8S_INTERNAL_REGISTRY_PORT="${CODEXK8S_INTERNAL_REGISTRY_PORT:-5000}"
 CODEXK8S_INTERNAL_IMAGE_REPOSITORY="${CODEXK8S_INTERNAL_IMAGE_REPOSITORY:-codex-k8s/codex-k8s}"
 CODEXK8S_INTERNAL_REGISTRY_HOST="${CODEXK8S_INTERNAL_REGISTRY_HOST:-127.0.0.1:${CODEXK8S_INTERNAL_REGISTRY_PORT}}"
 CODEXK8S_IMAGE="${CODEXK8S_IMAGE:-${CODEXK8S_INTERNAL_REGISTRY_HOST}/${CODEXK8S_INTERNAL_IMAGE_REPOSITORY}:latest}"
+CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY="${CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY:-codex-k8s/web-console}"
+CODEXK8S_WEB_CONSOLE_IMAGE="${CODEXK8S_WEB_CONSOLE_IMAGE:-${CODEXK8S_INTERNAL_REGISTRY_HOST}/${CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY}:latest}"
 CODEXK8S_STAGING_DOMAIN="${CODEXK8S_STAGING_DOMAIN:-}"
 CODEXK8S_WAIT_ROLLOUT="${CODEXK8S_WAIT_ROLLOUT:-true}"
 CODEXK8S_ROLLOUT_TIMEOUT="${CODEXK8S_ROLLOUT_TIMEOUT:-1800s}"
@@ -57,6 +59,7 @@ CODEXK8S_JWT_SIGNING_KEY="${CODEXK8S_JWT_SIGNING_KEY:-}"
 CODEXK8S_JWT_TTL="${CODEXK8S_JWT_TTL:-15m}"
 CODEXK8S_OPENAI_API_KEY="${CODEXK8S_OPENAI_API_KEY:-}"
 CODEXK8S_CONTEXT7_API_KEY="${CODEXK8S_CONTEXT7_API_KEY:-}"
+CODEXK8S_VITE_DEV_UPSTREAM="${CODEXK8S_VITE_DEV_UPSTREAM:-http://codex-k8s-web-console:5173}"
 
 [ -n "$CODEXK8S_STAGING_DOMAIN" ] || {
   echo "Missing required CODEXK8S_STAGING_DOMAIN" >&2
@@ -110,13 +113,18 @@ render_template() {
   local domain_escaped
   local worker_job_image_escaped
   local worker_job_command_escaped
+  local web_console_image_escaped
+  local vite_dev_upstream_escaped
   image_escaped="$(escape_sed_replacement "$CODEXK8S_IMAGE")"
   domain_escaped="$(escape_sed_replacement "$CODEXK8S_STAGING_DOMAIN")"
   worker_job_image_escaped="$(escape_sed_replacement "$CODEXK8S_WORKER_JOB_IMAGE")"
   worker_job_command_escaped="$(escape_sed_replacement "$CODEXK8S_WORKER_JOB_COMMAND")"
+  web_console_image_escaped="$(escape_sed_replacement "$CODEXK8S_WEB_CONSOLE_IMAGE")"
+  vite_dev_upstream_escaped="$(escape_sed_replacement "$CODEXK8S_VITE_DEV_UPSTREAM")"
   sed \
     -e "s|\${CODEXK8S_STAGING_NAMESPACE}|${CODEXK8S_STAGING_NAMESPACE}|g" \
     -e "s|\${CODEXK8S_IMAGE}|${image_escaped}|g" \
+    -e "s|\${CODEXK8S_WEB_CONSOLE_IMAGE}|${web_console_image_escaped}|g" \
     -e "s|\${CODEXK8S_STAGING_DOMAIN}|${domain_escaped}|g" \
     -e "s|\${CODEXK8S_WORKER_REPLICAS}|${CODEXK8S_WORKER_REPLICAS}|g" \
     -e "s|\${CODEXK8S_WORKER_POLL_INTERVAL}|${CODEXK8S_WORKER_POLL_INTERVAL}|g" \
@@ -130,6 +138,7 @@ render_template() {
     -e "s|\${CODEXK8S_WORKER_JOB_TTL_SECONDS}|${CODEXK8S_WORKER_JOB_TTL_SECONDS}|g" \
     -e "s|\${CODEXK8S_WORKER_JOB_BACKOFF_LIMIT}|${CODEXK8S_WORKER_JOB_BACKOFF_LIMIT}|g" \
     -e "s|\${CODEXK8S_WORKER_JOB_ACTIVE_DEADLINE_SECONDS}|${CODEXK8S_WORKER_JOB_ACTIVE_DEADLINE_SECONDS}|g" \
+    -e "s|\${CODEXK8S_VITE_DEV_UPSTREAM}|${vite_dev_upstream_escaped}|g" \
     "$tpl"
 }
 
@@ -156,13 +165,25 @@ kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create secret generic codex-k8s-runtime
   --from-literal=CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET="$CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET" \
   --from-literal=CODEXK8S_JWT_SIGNING_KEY="$CODEXK8S_JWT_SIGNING_KEY" \
   --from-literal=CODEXK8S_JWT_TTL="$CODEXK8S_JWT_TTL" \
+  --from-literal=CODEXK8S_VITE_DEV_UPSTREAM="$CODEXK8S_VITE_DEV_UPSTREAM" \
   --dry-run=client -o yaml | kubectl apply -f -
+
+if ! kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-oauth2-proxy >/dev/null 2>&1; then
+  # oauth2-proxy expects 32 bytes, base64-encoded.
+  cookie_secret="$(openssl rand -base64 32 | tr -d '\n')"
+  kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create secret generic codex-k8s-oauth2-proxy \
+    --from-literal=OAUTH2_PROXY_CLIENT_ID="$CODEXK8S_GITHUB_OAUTH_CLIENT_ID" \
+    --from-literal=OAUTH2_PROXY_CLIENT_SECRET="$CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET" \
+    --from-literal=OAUTH2_PROXY_COOKIE_SECRET="$cookie_secret"
+fi
 
 kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create configmap codex-k8s-migrations \
   --from-file="${ROOT_DIR}/cmd/cli/migrations" \
   --dry-run=client -o yaml | kubectl apply -f -
 
 render_template "${ROOT_DIR}/deploy/base/postgres/postgres.yaml.tpl" | kubectl apply -f -
+render_template "${ROOT_DIR}/deploy/base/web-console/web-console-dev.yaml.tpl" | kubectl apply -f -
+render_template "${ROOT_DIR}/deploy/base/oauth2-proxy/oauth2-proxy.yaml.tpl" | kubectl apply -f -
 
 # We run DB migrations via goose as a dedicated Job to avoid:
 # - parsing SQL in shell;

@@ -24,6 +24,16 @@ func newHTTPErrorHandler(logger *slog.Logger) func(c *echo.Context, err error) {
 			Message: "internal error",
 		}
 
+		// Echo may return plain sentinel errors for routing/method mismatches.
+		if errors.Is(err, echo.ErrNotFound) {
+			_ = c.NoContent(http.StatusNotFound)
+			return
+		}
+		if errors.Is(err, echo.ErrMethodNotAllowed) {
+			_ = c.NoContent(http.StatusMethodNotAllowed)
+			return
+		}
+
 		var validation errs.Validation
 		var unauthorized errs.Unauthorized
 		var forbidden errs.Forbidden

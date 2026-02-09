@@ -45,6 +45,12 @@ spec:
               value: ai-staging
             - name: CODEXK8S_HTTP_ADDR
               value: ":8080"
+            - name: CODEXK8S_VITE_DEV_UPSTREAM
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_VITE_DEV_UPSTREAM
+                  optional: true
             - name: CODEXK8S_DB_HOST
               value: postgres
             - name: CODEXK8S_DB_PORT

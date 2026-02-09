@@ -19,6 +19,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: codex-k8s
+                name: oauth2-proxy
                 port:
-                  number: 80
+                  number: 4180

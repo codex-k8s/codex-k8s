@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -29,6 +31,9 @@ type ServerConfig struct {
 	CookieSecure bool
 	// StaticDir is a directory with built staff UI (Vue) assets.
 	StaticDir string
+	// ViteDevUpstream enables staff UI in "vite dev server" mode.
+	// When set, non-API GET/HEAD requests are reverse-proxied to this upstream.
+	ViteDevUpstream string
 }
 
 type webhookIngress interface {
@@ -75,7 +80,7 @@ func NewServer(cfg ServerConfig, webhookService webhookIngress, auth authService
 	staffGroup.GET("/projects/:project_id/members", staffH.ListProjectMembers)
 	staffGroup.POST("/projects/:project_id/members", staffH.UpsertProjectMember)
 
-	registerStaticUI(e, cfg.StaticDir)
+	registerStaffUI(e, cfg.StaticDir, cfg.ViteDevUpstream)
 
 	httpServer := &http.Server{
 		Addr:    cfg.HTTPAddr,
@@ -114,7 +119,12 @@ func liveHandler(c *echo.Context) error {
 	return c.String(http.StatusOK, "alive")
 }
 
-func registerStaticUI(e *echo.Echo, staticDir string) {
+func registerStaffUI(e *echo.Echo, staticDir string, viteDevUpstream string) {
+	if viteDevUpstream != "" {
+		registerViteDevUI(e, viteDevUpstream)
+		return
+	}
+
 	if staticDir == "" {
 		staticDir = "/app/web"
 	}
@@ -164,4 +174,41 @@ func registerStaticUI(e *echo.Echo, staticDir string) {
 	// Echo wildcard routes (`/*`) do not match the bare root `/`, so register both.
 	e.GET("/", serveSPA)
 	e.GET("/*", serveSPA)
+}
+
+func registerViteDevUI(e *echo.Echo, upstream string) {
+	u, err := url.Parse(upstream)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		// Invalid config: keep API endpoints working.
+		return
+	}
+
+	rp := httputil.NewSingleHostReverseProxy(u)
+	origDirector := rp.Director
+	rp.Director = func(r *http.Request) {
+		origDirector(r)
+		// Keep original host so Vite can do correct origin checks behind proxy.
+		r.Host = u.Host
+	}
+	rp.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
+		// Surface upstream failures as 502, but don't crash api-gateway.
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadGateway)
+		_, _ = w.Write([]byte(`{"code":"bad_gateway","message":"ui upstream unavailable"}`))
+	}
+
+	proxy := echo.WrapHandler(rp)
+	serve := func(c *echo.Context) error {
+		p := c.Request().URL.Path
+		if strings.HasPrefix(p, "/api/") || strings.HasPrefix(p, "/metrics") || strings.HasPrefix(p, "/health") || strings.HasPrefix(p, "/readyz") || strings.HasPrefix(p, "/healthz") {
+			return echo.ErrNotFound
+		}
+		return proxy(c)
+	}
+
+	// Support Vite module fetches and HMR websocket on arbitrary paths.
+	e.GET("/", serve)
+	e.HEAD("/", serve)
+	e.GET("/*", serve)
+	e.HEAD("/*", serve)
 }

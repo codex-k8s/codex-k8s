@@ -77,6 +77,7 @@ func Run() error {
 		MaxBodyBytes:        cfg.WebhookMaxBodyBytes,
 		CookieSecure:        cfg.CookieSecure,
 		StaticDir:           "/app/web",
+		ViteDevUpstream:     cfg.ViteDevUpstream,
 	}, webhookService, authService, staffService, logger)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
