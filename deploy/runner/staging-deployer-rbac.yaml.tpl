@@ -5,7 +5,7 @@ metadata:
   namespace: ${CODEXK8S_STAGING_NAMESPACE}
 rules:
   - apiGroups: [""]
-    resources: ["secrets", "configmaps", "services", "pods", "pods/log", "persistentvolumeclaims"]
+    resources: ["secrets", "configmaps", "services", "pods", "pods/log", "persistentvolumeclaims", "serviceaccounts"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: ["apps"]
     resources: ["deployments", "statefulsets", "replicasets"]
@@ -15,6 +15,9 @@ rules:
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: ["networking.k8s.io"]
     resources: ["ingresses", "networkpolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles", "rolebindings"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1

@@ -2,10 +2,10 @@
 doc_id: EPC-CK8S-S1-D2
 type: epic
 title: "Epic Day 2: Worker run loop, slots, Kubernetes jobs"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-06
+updated_at: 2026-02-09
 related_issues: [1]
 related_prs: []
 approvals:
@@ -71,6 +71,35 @@ approvals:
 - Worker обрабатывает `pending` run и переводит его в финальный статус.
 - Слот корректно освобождается при успехе и ошибке.
 - После merge изменения задеплоены на staging и пройден e2e smoke.
+
+## Evidence
+- Day2 migration добавлена:
+  - `cmd/cli/migrations/20260207093000_day2_worker_slots_and_status.sql`
+- Реализация worker run-loop добавлена:
+  - `services/jobs/worker/internal/domain/worker/service.go`
+  - `services/jobs/worker/internal/repository/postgres/runqueue/repository.go`
+  - `services/jobs/worker/internal/repository/postgres/runqueue/sql/*.sql`
+  - `services/jobs/worker/internal/repository/postgres/flowevent/repository.go`
+- Kubernetes Job launcher через `client-go` добавлен:
+  - `libs/go/k8s/joblauncher/launcher.go`
+  - `services/jobs/worker/internal/clients/kubernetes/launcher/adapter.go`
+- Worker service wiring добавлен:
+  - `services/jobs/worker/internal/app/config.go`
+  - `services/jobs/worker/internal/app/app.go`
+  - `services/jobs/worker/cmd/worker/main.go`
+- Staging deploy и bootstrap синхронизированы под worker:
+  - `deploy/base/codex-k8s/app.yaml.tpl`
+  - `deploy/scripts/deploy_staging.sh`
+  - `.github/workflows/ai_staging_deploy.yml`
+  - `bootstrap/remote/45_configure_github_repo_ci.sh`
+  - `bootstrap/host/bootstrap_remote_staging.sh`
+  - `bootstrap/host/config.env.example`
+- Unit tests:
+  - `services/jobs/worker/internal/domain/worker/service_test.go`
+  - `services/jobs/worker/internal/app/config_test.go`
+- Verification commands:
+  - `go test ./...`
+  - `bash -n deploy/scripts/deploy_staging.sh bootstrap/host/bootstrap_remote_staging.sh bootstrap/remote/45_configure_github_repo_ci.sh`
 
 ## Риски/зависимости
 - Зависимости: стабильный доступ worker к Kubernetes API.
