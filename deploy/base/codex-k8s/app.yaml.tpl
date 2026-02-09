@@ -8,6 +8,7 @@ metadata:
 spec:
   selector:
     app.kubernetes.io/name: codex-k8s
+    app.kubernetes.io/component: api-gateway
   ports:
     - name: http
       port: 80
@@ -25,6 +26,7 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: codex-k8s
+      app.kubernetes.io/component: api-gateway
   template:
     metadata:
       labels:

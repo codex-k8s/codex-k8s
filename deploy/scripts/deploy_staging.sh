@@ -173,6 +173,21 @@ kubectl -n "$CODEXK8S_STAGING_NAMESPACE" delete job/codex-k8s-migrate >/dev/null
 render_template "${ROOT_DIR}/deploy/base/codex-k8s/migrate-job.yaml.tpl" | kubectl apply -f -
 kubectl -n "$CODEXK8S_STAGING_NAMESPACE" wait --for=condition=complete job/codex-k8s-migrate --timeout="${CODEXK8S_ROLLOUT_TIMEOUT}"
 
+# Deployment selector is immutable; early staging revisions used an overly broad selector
+# (`app.kubernetes.io/name=codex-k8s`) that overlapped with worker pods.
+old_selector_component="$(
+  kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get deployment codex-k8s \
+    -o jsonpath='{.spec.selector.matchLabels.app\.kubernetes\.io/component}' 2>/dev/null || true
+)"
+if [ -n "$old_selector_component" ] && [ "$old_selector_component" != "api-gateway" ]; then
+  echo "Refusing to apply: deployment/codex-k8s has unexpected selector component=${old_selector_component}" >&2
+  exit 1
+fi
+if [ -z "$old_selector_component" ] && kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get deployment codex-k8s >/dev/null 2>&1; then
+  echo "Recreating deployment/codex-k8s to update immutable selector"
+  kubectl -n "$CODEXK8S_STAGING_NAMESPACE" delete deployment codex-k8s
+fi
+
 render_template "${ROOT_DIR}/deploy/base/codex-k8s/app.yaml.tpl" | kubectl apply -f -
 render_template "${ROOT_DIR}/deploy/base/codex-k8s/ingress.yaml.tpl" | kubectl apply -f -
 
