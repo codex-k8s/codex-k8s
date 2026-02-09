@@ -75,3 +75,12 @@ spec:
           port: 80
         - protocol: TCP
           port: 443
+    # Staff UI in staging/dev runs as a Vite dev server, and api-gateway reverse-proxies it.
+    # Allow egress to the in-cluster web-console service port.
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: codex-k8s-web-console
+      ports:
+        - protocol: TCP
+          port: 5173

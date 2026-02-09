@@ -43,7 +43,7 @@ bash bootstrap/host/bootstrap_remote_staging.sh
 - Для staff UI и staff API требуется GitHub OAuth App:
   - создать на `https://github.com/settings/applications/new`;
   - `Homepage URL`: `https://<CODEXK8S_STAGING_DOMAIN>`;
-  - `Authorization callback URL`: `https://<CODEXK8S_STAGING_DOMAIN>/api/v1/auth/github/callback`;
+  - `Authorization callback URL` (staging/dev через `oauth2-proxy`): `https://<CODEXK8S_STAGING_DOMAIN>/oauth2/callback`;
   - заполнить `CODEXK8S_GITHUB_OAUTH_CLIENT_ID` и `CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET` в `bootstrap/host/config.env`.
 - `CODEXK8S_PUBLIC_BASE_URL` должен совпадать с публичным URL (для staging обычно `https://<CODEXK8S_STAGING_DOMAIN>`).
 - `CODEXK8S_BOOTSTRAP_OWNER_EMAIL` задаёт единственный email, которому разрешён первый вход (platform admin). Self-signup запрещён.

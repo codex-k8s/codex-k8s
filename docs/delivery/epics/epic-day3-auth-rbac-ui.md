@@ -19,14 +19,14 @@ approvals:
 ## TL;DR
 - Цель эпика: включить безопасный вход и базовый контроль доступа в staff контуре.
 - Ключевая ценность: управляемый доступ к проектам без self-signup.
-- MVP-результат: OAuth login, short-lived JWT, minimal UI для проектов и запусков.
+- MVP-результат (staging/dev): вход через GitHub OAuth (через `oauth2-proxy`), RBAC на уровне БД, minimal UI для проектов и запусков.
 
 ## Priority
 - `P0` (обязательная безопасность и управление доступом).
 
 ## Ожидаемые артефакты дня
-- OAuth callback/login flow в `services/external/api-gateway/**`.
-- JWT issuance/validation и RBAC middleware в backend сервисах.
+- GitHub OAuth для staff-контура через `oauth2-proxy` (staging/dev) + allowlist по email в БД.
+- RBAC middleware в backend сервисах (roles `read/read_write/admin`).
 - Минимальные staff UI экраны в `services/staff/web-console/**`.
 - Acceptance evidence по ролям `read/read_write/admin` на staging.
 
@@ -36,18 +36,21 @@ approvals:
 
 ## Scope
 ### In scope
-- GitHub OAuth flow и email matching с разрешёнными пользователями.
-- Выдача и валидация short-lived JWT в API gateway.
+- GitHub OAuth flow через `oauth2-proxy` на входе в `Ingress` (staging/dev).
+  - Требуется GitHub OAuth App с callback URL `https://<domain>/oauth2/callback`.
+  - Identity прокидывается в `api-gateway` через `X-Auth-Request-*` / `X-Forwarded-*` headers.
+- Email matching (allowlist) с разрешёнными пользователями в БД (регистрация запрещена).
 - Project RBAC (`read`, `read_write`, `admin`).
 - Минимальные UI страницы: проекты, запуски, события.
 
 ### Out of scope
 - Полный UI функционал для всех настроек платформы.
 - SSO кроме GitHub OAuth.
+ - Production-режим раздачи собранного UI бандла (на production будет `nginx` + bundle).
 
 ## Декомпозиция (Stories/Tasks)
-- Story-1: OAuth callback и user upsert по email policy.
-- Story-2: JWT issue/refresh strategy.
+- Story-1: oauth2-proxy (GitHub OAuth) на ingress + identity headers до `api-gateway`.
+- Story-2: allowlist по email + staff principal resolution (DB-backed).
 - Story-3: RBAC middleware для staff/private API.
 - Story-4: минимальные Vue3 views для проектов и run-листинга.
 

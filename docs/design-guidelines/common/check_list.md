@@ -13,6 +13,8 @@
 - Секреты не хардкодятся и не коммитятся; в логах нет секретов/PII.
 - Имена platform env/secrets/CI variables унифицированы с префиксом `CODEXK8S_`;
   legacy-имена без префикса не добавляются.
+- Kubernetes манифесты не “вшиты” heredoc’ами в bash: шаблоны лежат в `deploy/base/**`,
+  а `deploy/scripts/**` только рендерит и применяет их.
 - Вынос общего кода в `libs/*` оправдан (>= 2 потребителя); нет “god-lib”.
 - Если добавлена/обновлена внешняя зависимость, обновлён
   `docs/design-guidelines/common/external_dependencies_catalog.md`.

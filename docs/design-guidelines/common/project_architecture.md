@@ -21,6 +21,9 @@
 - `libs/` — переиспользуемый код (`go|ts|vue`).
 - `proto/` — gRPC контракты (single source of truth для внутреннего sync API).
 - `deploy/` — Kubernetes манифесты и overlays.
+  - Манифесты и шаблоны YAML (`*.yaml.tpl`) живут в `deploy/base/**`.
+  - Bash-скрипты в `deploy/scripts/**` не должны содержать “встроенные” multi-line YAML/JSON манифесты через heredoc.
+    Скрипты только рендерят и применяют файлы из `deploy/base/**`.
 - `bootstrap/` — скрипты bootstrap (готовый кластер или установка k3s).
 - `docs/` — документация и решения.
 - `tools/` — утилиты и генерация.
