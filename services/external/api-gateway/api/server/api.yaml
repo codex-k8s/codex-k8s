@@ -1,0 +1,94 @@
+openapi: 3.0.3
+info:
+  title: codex-k8s api-gateway
+  version: 0.1.0
+  description: Public webhook ingress contract for codex-k8s MVP.
+servers:
+  - url: https://staging.codex-k8s.dev
+paths:
+  /api/v1/webhooks/github:
+    post:
+      summary: Ingest GitHub webhook delivery
+      operationId: ingestGithubWebhook
+      tags: [webhooks]
+      parameters:
+        - in: header
+          name: X-GitHub-Event
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: X-GitHub-Delivery
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: X-Hub-Signature-256
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "202":
+          description: Accepted and enqueued for processing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookIngestResult"
+        "200":
+          description: Duplicate delivery already ingested
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookIngestResult"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Invalid webhook signature
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  schemas:
+    WebhookIngestResult:
+      type: object
+      required: [correlation_id, status, duplicate]
+      properties:
+        correlation_id:
+          type: string
+        run_id:
+          type: string
+        status:
+          type: string
+          enum: [accepted, duplicate]
+        duplicate:
+          type: boolean
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum: [invalid_argument, unauthorized, conflict, internal]
+        message:
+          type: string
+        field:
+          type: string
+

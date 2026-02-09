@@ -17,6 +17,7 @@
 - включает host firewall hardening: с внешней сети доступны только `SSH`, `HTTP`, `HTTPS`;
 - запрашивает внешние креды (`GitHub fine-grained token`, `CODEXK8S_OPENAI_API_KEY`), внутренние секреты генерирует автоматически;
 - настраивает GitHub repository secrets/variables для staging deploy workflow;
+- создаёт или обновляет GitHub webhook на `https://<CODEXK8S_STAGING_DOMAIN>/api/v1/webhooks/github` и синхронизирует с `CODEXK8S_GITHUB_WEBHOOK_SECRET`;
 - устанавливает ARC controller и runner scale set для staging deploy workflow.
 
 ## Быстрый запуск
@@ -39,6 +40,9 @@ bash bootstrap/host/bootstrap_remote_staging.sh
 
 - Скрипты — каркас первого этапа. Перед production обязательны hardening и отдельный runbook.
 - Для деплоя через GitHub Actions нужен `CODEXK8S_GITHUB_PAT` (fine-grained) с правами на repository actions/secrets/variables и чтение содержимого репозитория.
+- `CODEXK8S_GITHUB_WEBHOOK_SECRET` используется для валидации `X-Hub-Signature-256`; если переменная пуста, bootstrap генерирует значение автоматически.
+- `CODEXK8S_GITHUB_WEBHOOK_URL` (опционально) позволяет переопределить URL webhook; по умолчанию используется `https://<CODEXK8S_STAGING_DOMAIN>/api/v1/webhooks/github`.
+- `CODEXK8S_GITHUB_WEBHOOK_EVENTS` задаёт список событий webhook (comma-separated).
 - Workflow staging должен запускаться на `runs-on: <CODEXK8S_RUNNER_SCALE_SET_NAME>`.
 - `CODEXK8S_LEARNING_MODE_DEFAULT` задаёт default для новых проектов (`true` в шаблоне; пустое значение = выключено).
 - В `bootstrap/host/config.env` используйте только переменные с префиксом `CODEXK8S_` для платформенных параметров и секретов.

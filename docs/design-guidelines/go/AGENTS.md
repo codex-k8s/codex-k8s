@@ -14,6 +14,7 @@
 - `docs/design-guidelines/go/code_commenting_rules.md` — правила комментариев в Go.
 - `docs/design-guidelines/go/error_handling.md` — обязательные правила обработки ошибок в Go.
 - `docs/design-guidelines/go/libraries.md` — что выносить в `libs/go/*` и как.
+- `docs/design-guidelines/common/external_dependencies_catalog.md` — согласованный список внешних библиотек и инструментов.
 
 Специфика `codex-k8s`:
 - Kubernetes интеграция только через `client-go` и адаптеры.

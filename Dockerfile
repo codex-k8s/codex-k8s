@@ -2,10 +2,12 @@ FROM golang:1.25.6-alpine AS builder
 
 WORKDIR /src
 
-COPY go.mod ./
-COPY services/internal/control-plane/cmd/control-plane/main.go services/internal/control-plane/cmd/control-plane/main.go
+COPY go.mod go.sum ./
+COPY libs/go/ libs/go/
+COPY services/external/api-gateway/ services/external/api-gateway/
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/codex-k8s ./services/internal/control-plane/cmd/control-plane
+RUN go mod download
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/codex-k8s ./services/external/api-gateway/cmd/api-gateway
 
 FROM alpine:3.20
 

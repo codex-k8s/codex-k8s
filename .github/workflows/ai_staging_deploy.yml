@@ -48,6 +48,7 @@ jobs:
           CODEXK8S_POSTGRES_PASSWORD: ${{ secrets.CODEXK8S_POSTGRES_PASSWORD }}
           CODEXK8S_APP_SECRET_KEY: ${{ secrets.CODEXK8S_APP_SECRET_KEY }}
           CODEXK8S_TOKEN_ENCRYPTION_KEY: ${{ secrets.CODEXK8S_TOKEN_ENCRYPTION_KEY }}
+          CODEXK8S_GITHUB_WEBHOOK_SECRET: ${{ secrets.CODEXK8S_GITHUB_WEBHOOK_SECRET }}
         run: |
           set -euo pipefail
           bash deploy/scripts/deploy_staging.sh

@@ -44,6 +44,9 @@
 - `internal/domain/repository/<model>/repository.go` — интерфейсы репозиториев.
 - `internal/repository/postgres/<model>/repository.go` — реализации репозиториев.
 - `internal/repository/postgres/<model>/sql/*.sql` — SQL (через `//go:embed`).
+  - запросы именуются комментариями в стиле
+    `-- name: <model>__<operation> :one|:many|:exec`
+    для стабильной привязки SQL к коду;
 - `internal/clients/kubernetes/` — адаптеры Kubernetes SDK.
 - `internal/clients/repository/` — адаптеры provider-интерфейсов (`github`, позже `gitlab`).
 - `internal/observability/` — подключение логов/трейсов/метрик.

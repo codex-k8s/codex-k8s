@@ -82,6 +82,11 @@ spec:
                 secretKeyRef:
                   name: codex-k8s-runtime
                   key: CODEXK8S_TOKEN_ENCRYPTION_KEY
+            - name: CODEXK8S_GITHUB_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GITHUB_WEBHOOK_SECRET
           readinessProbe:
             httpGet:
               path: /readyz

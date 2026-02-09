@@ -6,6 +6,7 @@
 - `docs/design-guidelines/common/project_architecture.md` — зоны, границы ответственности, структура репо.
 - `docs/design-guidelines/common/design_principles.md` — DDD/SOLID/DRY/KISS/Clean Architecture.
 - `docs/design-guidelines/common/libraries_reusable_code_requirements.md` — общие правила выноса кода в `libs/*`.
+- `docs/design-guidelines/common/external_dependencies_catalog.md` — единый каталог внешних библиотек и инструментов.
 
 Дополнительно для `codex-k8s`:
 - процессы выполняются по webhook-событиям, а не через GitHub Actions workflows;

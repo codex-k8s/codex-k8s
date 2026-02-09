@@ -6,6 +6,7 @@
 - `docs/design-guidelines/go/` — правила для Go backend.
 - `docs/design-guidelines/vue/` — правила для frontend (Vue 3 + TypeScript).
 - `docs/design-guidelines/visual/` — визуальный дизайн и UI‑паттерны.
+- `docs/design-guidelines/common/external_dependencies_catalog.md` — единый каталог внешних зависимостей и инструментов.
 
 Стартовая точка перед PR:
 - `docs/design-guidelines/common/check_list.md`

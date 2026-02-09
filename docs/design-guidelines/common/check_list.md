@@ -14,6 +14,8 @@
 - Имена platform env/secrets/CI variables унифицированы с префиксом `CODEXK8S_`;
   legacy-имена без префикса не добавляются.
 - Вынос общего кода в `libs/*` оправдан (>= 2 потребителя); нет “god-lib”.
+- Если добавлена/обновлена внешняя зависимость, обновлён
+  `docs/design-guidelines/common/external_dependencies_catalog.md`.
 
 ## Специфика codex-k8s
 - Поддержка оркестрации ограничена Kubernetes; нет кода под другие оркестраторы.

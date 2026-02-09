@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S1-D1
 type: epic
 title: "Epic Day 1: Webhook ingress and idempotency"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-06
@@ -26,7 +26,7 @@ approvals:
 
 ## Ожидаемые артефакты дня
 - Реализация webhook ingress и signature verification в `services/external/api-gateway/**`.
-- Реализация dedup/idempotency policy и run bootstrap state в `services/internal/control-plane/**`.
+- Реализация dedup/idempotency policy и run bootstrap state в доменном слое `services/external/api-gateway/internal/domain/**`.
 - Миграция/DDL обновления для уникальности `correlation_id` и индексов `flow_events`.
 - Smoke evidence webhook replay на staging и обновление документации контракта API.
 
@@ -56,7 +56,7 @@ approvals:
   - `agent_runs`: использование `correlation_id` как уникального ключа обработки.
   - `flow_events`: append-only запись webhook ingress событий.
 - Связи/FK:
-  - `agent_runs.project_id` и `agent_runs.agent_id` валидируются при создании.
+  - В Day 1 `project_id`/`agent_id` остаются незаполненными (будут заполнены в Day 2+ при orchestration mapping).
 - Индексы и запросы:
   - Проверить наличие/создать индекс `agent_runs(correlation_id)` (unique).
   - Проверить наличие/создать индекс `flow_events(correlation_id, created_at)`.
@@ -69,6 +69,26 @@ approvals:
 - Повторная доставка одного webhook не создаёт второй run.
 - Ошибочная подпись отклоняется.
 - После merge изменения задеплоены на staging и проверены вручную.
+
+## Evidence
+- `POST /api/v1/webhooks/github` реализован в `services/external/api-gateway/internal/transport/http/webhook_handler.go`.
+- Валидация подписи реализована в `libs/go/crypto/githubsignature/verify.go`.
+- Idempotency и запись `agent_runs`/`flow_events` реализованы в:
+  - `services/external/api-gateway/internal/domain/webhook/service.go`
+  - `services/external/api-gateway/internal/repository/postgres/agentrun/repository.go`
+  - `services/external/api-gateway/internal/repository/postgres/flowevent/repository.go`
+- DDL миграция добавлена:
+  - `cmd/cli/migrations/20260206191000_day1_webhook_ingest.sql`
+- Контракт OpenAPI/AsyncAPI добавлен:
+  - `services/external/api-gateway/api/server/api.yaml`
+  - `services/external/api-gateway/api/server/asyncapi.yaml`
+- Unit tests:
+  - `libs/go/crypto/githubsignature/verify_test.go`
+  - `services/external/api-gateway/internal/domain/webhook/service_test.go`
+  - `services/external/api-gateway/internal/transport/http/webhook_handler_test.go`
+- Verification commands:
+  - `go test ./...`
+  - `bash -n deploy/scripts/deploy_staging.sh bootstrap/host/bootstrap_remote_staging.sh bootstrap/remote/45_configure_github_repo_ci.sh bootstrap/remote/60_deploy_codex_k8s.sh`
 
 ## Риски/зависимости
 - Зависимости: корректно настроенный GitHub webhook secret.

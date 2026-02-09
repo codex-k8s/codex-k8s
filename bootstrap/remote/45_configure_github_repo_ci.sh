@@ -11,6 +11,7 @@ load_env_file "${BOOTSTRAP_ENV_FILE:?}"
 : "${CODEXK8S_POSTGRES_PASSWORD:?CODEXK8S_POSTGRES_PASSWORD is required}"
 : "${CODEXK8S_APP_SECRET_KEY:?CODEXK8S_APP_SECRET_KEY is required}"
 : "${CODEXK8S_TOKEN_ENCRYPTION_KEY:?CODEXK8S_TOKEN_ENCRYPTION_KEY is required}"
+: "${CODEXK8S_GITHUB_WEBHOOK_SECRET:?CODEXK8S_GITHUB_WEBHOOK_SECRET is required}"
 : "${CODEXK8S_STAGING_DOMAIN:?CODEXK8S_STAGING_DOMAIN is required}"
 
 CODEXK8S_STAGING_NAMESPACE="${CODEXK8S_STAGING_NAMESPACE:-codex-k8s-ai-staging}"
@@ -25,6 +26,8 @@ CODEXK8S_ROLLOUT_TIMEOUT="${CODEXK8S_ROLLOUT_TIMEOUT:-1800s}"
 CODEXK8S_RUNNER_SCALE_SET_NAME="${CODEXK8S_RUNNER_SCALE_SET_NAME:-codex-k8s-ai-staging}"
 CODEXK8S_LEARNING_MODE_DEFAULT="${CODEXK8S_LEARNING_MODE_DEFAULT-true}"
 CODEXK8S_KANIKO_TIMEOUT="${CODEXK8S_KANIKO_TIMEOUT:-1800s}"
+CODEXK8S_GITHUB_WEBHOOK_URL="${CODEXK8S_GITHUB_WEBHOOK_URL:-https://${CODEXK8S_STAGING_DOMAIN}/api/v1/webhooks/github}"
+CODEXK8S_GITHUB_WEBHOOK_EVENTS="${CODEXK8S_GITHUB_WEBHOOK_EVENTS:-push,pull_request,issue_comment,pull_request_review,pull_request_review_comment}"
 
 log "Configure GitHub repository variables/secrets for ${CODEXK8S_GITHUB_REPO}"
 printf %s "${CODEXK8S_GITHUB_PAT}" | gh auth login --with-token
@@ -59,6 +62,7 @@ gh secret set CODEXK8S_OPENAI_API_KEY -R "${CODEXK8S_GITHUB_REPO}" --body "${COD
 gh secret set CODEXK8S_POSTGRES_PASSWORD -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_POSTGRES_PASSWORD}"
 gh secret set CODEXK8S_APP_SECRET_KEY -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_APP_SECRET_KEY}"
 gh secret set CODEXK8S_TOKEN_ENCRYPTION_KEY -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_TOKEN_ENCRYPTION_KEY}"
+gh secret set CODEXK8S_GITHUB_WEBHOOK_SECRET -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_GITHUB_WEBHOOK_SECRET}"
 gh secret set CODEXK8S_GITHUB_PAT -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_GITHUB_PAT}"
 if [ -n "${CODEXK8S_CONTEXT7_API_KEY:-}" ]; then
   gh secret set CODEXK8S_CONTEXT7_API_KEY -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_CONTEXT7_API_KEY}"
@@ -74,5 +78,35 @@ done
 for legacy_var in STAGING_NAMESPACE STAGING_DOMAIN POSTGRES_DB POSTGRES_USER LEARNING_MODE_DEFAULT RUNNER_NAMESPACE RUNNER_SCALE_SET_NAME RUNNER_MIN RUNNER_MAX RUNNER_IMAGE CODEXK8S_GITHUB_USERNAME; do
   gh variable delete "${legacy_var}" -R "${CODEXK8S_GITHUB_REPO}" >/dev/null 2>&1 || true
 done
+
+log "Configure GitHub repository webhook: ${CODEXK8S_GITHUB_WEBHOOK_URL}"
+HOOK_ID="$(
+  gh api "repos/${CODEXK8S_GITHUB_REPO}/hooks" \
+    --jq ".[] | select(.config.url == \"${CODEXK8S_GITHUB_WEBHOOK_URL}\") | .id" \
+    | head -n1 || true
+)"
+
+IFS=',' read -r -a WEBHOOK_EVENTS <<< "${CODEXK8S_GITHUB_WEBHOOK_EVENTS}"
+WEBHOOK_API_ARGS=(
+  -f "config[url]=${CODEXK8S_GITHUB_WEBHOOK_URL}"
+  -f "config[content_type]=json"
+  -f "config[insecure_ssl]=0"
+  -f "config[secret]=${CODEXK8S_GITHUB_WEBHOOK_SECRET}"
+  -F "active=true"
+)
+
+for event in "${WEBHOOK_EVENTS[@]}"; do
+  trimmed="$(printf '%s' "$event" | xargs)"
+  [ -n "$trimmed" ] || continue
+  WEBHOOK_API_ARGS+=(-f "events[]=${trimmed}")
+done
+
+if [ -n "${HOOK_ID}" ]; then
+  gh api "repos/${CODEXK8S_GITHUB_REPO}/hooks/${HOOK_ID}" -X PATCH "${WEBHOOK_API_ARGS[@]}" >/dev/null
+  log "Updated webhook id=${HOOK_ID}"
+else
+  gh api "repos/${CODEXK8S_GITHUB_REPO}/hooks" -X POST -f "name=web" "${WEBHOOK_API_ARGS[@]}" >/dev/null
+  log "Created webhook for ${CODEXK8S_GITHUB_WEBHOOK_URL}"
+fi
 
 log "GitHub repository bootstrap CI settings configured"

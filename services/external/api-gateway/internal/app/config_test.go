@@ -1,0 +1,42 @@
+package app
+
+import "testing"
+
+func TestLoadConfig_Defaults(t *testing.T) {
+	t.Setenv("CODEXK8S_GITHUB_WEBHOOK_SECRET", "secret")
+	t.Setenv("CODEXK8S_DB_HOST", "postgres")
+	t.Setenv("CODEXK8S_DB_NAME", "codex_k8s")
+	t.Setenv("CODEXK8S_DB_USER", "codex")
+	t.Setenv("CODEXK8S_DB_PASSWORD", "pass")
+
+	cfg, err := LoadConfig()
+	if err != nil {
+		t.Fatalf("LoadConfig returned error: %v", err)
+	}
+
+	if cfg.HTTPAddr != ":8080" {
+		t.Fatalf("expected default http addr :8080, got %q", cfg.HTTPAddr)
+	}
+	if cfg.WebhookMaxBodyBytes != 1048576 {
+		t.Fatalf("expected default webhook body size 1048576, got %d", cfg.WebhookMaxBodyBytes)
+	}
+	if cfg.DBPort != 5432 {
+		t.Fatalf("expected default db port 5432, got %d", cfg.DBPort)
+	}
+	if cfg.DBSSLMode != "disable" {
+		t.Fatalf("expected default sslmode disable, got %q", cfg.DBSSLMode)
+	}
+}
+
+func TestLoadConfig_MissingRequired(t *testing.T) {
+	t.Setenv("CODEXK8S_DB_HOST", "postgres")
+	t.Setenv("CODEXK8S_DB_NAME", "codex_k8s")
+	t.Setenv("CODEXK8S_DB_USER", "codex")
+	t.Setenv("CODEXK8S_DB_PASSWORD", "pass")
+	// CODEXK8S_GITHUB_WEBHOOK_SECRET intentionally unset
+
+	_, err := LoadConfig()
+	if err == nil {
+		t.Fatal("expected error for missing required webhook secret")
+	}
+}

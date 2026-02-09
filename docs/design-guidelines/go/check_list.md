@@ -19,6 +19,7 @@
 - Миграции: `cmd/cli/migrations/*.sql` (goose; timestamp; `-- +goose Up/Down`); история не переписывается.
 - Repo интерфейсы в `internal/domain/repository/<model>/repository.go`; реализации в `internal/repository/postgres/<model>/repository.go`.
 - SQL только в `internal/repository/postgres/<model>/sql/*.sql` + `//go:embed`; SQL-строки в Go запрещены.
+- SQL-запросы именованы комментариями `-- name: <model>__<operation> :one|:many|:exec`.
 - Для динамических данных используются `JSONB`; для векторного поиска корректно применён `pgvector`.
 
 ## Безопасность
@@ -27,6 +28,9 @@
 - OAuth/аутентификация не обходятся через debug или “временные” backdoor-механизмы.
 
 ## Автопроверки (обязательно перед PR)
+- Соблюдён `docs/design-guidelines/go/code_commenting_rules.md`.
 - В каждом изменённом Go-модуле выполнен `go mod tidy`.
+- Если добавлена/обновлена внешняя Go библиотека, обновлён
+  `docs/design-guidelines/common/external_dependencies_catalog.md`.
 - Прогнан `make lint-go` и исправлены нарушения.
 - Прогнан `make dupl-go`; дубли устранены или выделены в отдельную задачу.

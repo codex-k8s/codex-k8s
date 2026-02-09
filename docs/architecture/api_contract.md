@@ -23,7 +23,7 @@ approvals:
 - Основные операции: webhook ingest (public), staff/private operations для project/repository/agents/runs/slots/docs/audit и learning mode.
 
 ## Спецификации (source of truth)
-- OpenAPI: `services/external/api-gateway/api/server/api.yaml` (будет создан)
+- OpenAPI: `services/external/api-gateway/api/server/api.yaml`
 - gRPC proto: `proto/codexk8s/v1/control_plane.proto` (будет создан)
 - AsyncAPI (если есть): `services/external/api-gateway/api/server/asyncapi.yaml` (webhook/event payloads)
 

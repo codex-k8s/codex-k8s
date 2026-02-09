@@ -13,6 +13,7 @@
 - Для Go-изменений обязательно читать профильные документы из `docs/design-guidelines/go/`.
 - Для frontend-изменений обязательно читать `docs/design-guidelines/vue/` и `docs/design-guidelines/visual/`.
 - Для инфраструктурных изменений читать `docs/design-guidelines/common/`.
+- Для выбора/обновления внешних библиотек читать `docs/design-guidelines/common/external_dependencies_catalog.md`.
 - Для планирования и ведения спринта/документации читать `docs/delivery/development_process_requirements.md`.
 - Если запрос пользователя противоречит гайдам, приостановить правки и предложить варианты решения.
 - Не редактировать сами гайды без явной задачи на изменение стандартов.

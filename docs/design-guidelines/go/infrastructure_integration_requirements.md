@@ -12,6 +12,8 @@
   - `pgvector` для векторного индекса документов/чанков.
 - Схема меняется только миграциями: `cmd/cli/migrations/*.sql` (`goose`, `-- +goose Up/Down`).
 - SQL только в `internal/repository/postgres/<model>/sql/*.sql` + `//go:embed`.
+- Каждый SQL-запрос в repo слое должен иметь имя-комментарий
+  `-- name: <model>__<operation> :one|:many|:exec`.
 - Repo слой возвращает доменно-осмысленные ошибки; домен не знает про SQL/pgx.
 
 ## Redis (опционально)

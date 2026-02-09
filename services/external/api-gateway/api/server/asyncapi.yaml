@@ -1,0 +1,35 @@
+asyncapi: 2.6.0
+info:
+  title: codex-k8s webhook ingress events
+  version: 0.1.0
+  description: Internal event model after GitHub webhook ingestion.
+channels:
+  flow-events.webhook:
+    publish:
+      summary: Flow event produced by webhook ingestion
+      message:
+        $ref: "#/components/messages/FlowEvent"
+components:
+  messages:
+    FlowEvent:
+      payload:
+        type: object
+        required: [correlation_id, event_type, actor_type, created_at]
+        properties:
+          correlation_id:
+            type: string
+          event_type:
+            type: string
+            enum: [webhook.received, webhook.duplicate]
+          actor_type:
+            type: string
+            enum: [system]
+          actor_id:
+            type: string
+          created_at:
+            type: string
+            format: date-time
+          payload:
+            type: object
+            additionalProperties: true
+

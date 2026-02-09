@@ -32,11 +32,16 @@ CODEXK8S_POSTGRES_USER="${CODEXK8S_POSTGRES_USER:-codex_k8s}"
 CODEXK8S_POSTGRES_PASSWORD="${CODEXK8S_POSTGRES_PASSWORD:-}"
 CODEXK8S_APP_SECRET_KEY="${CODEXK8S_APP_SECRET_KEY:-}"
 CODEXK8S_TOKEN_ENCRYPTION_KEY="${CODEXK8S_TOKEN_ENCRYPTION_KEY:-}"
+CODEXK8S_GITHUB_WEBHOOK_SECRET="${CODEXK8S_GITHUB_WEBHOOK_SECRET:-}"
 CODEXK8S_OPENAI_API_KEY="${CODEXK8S_OPENAI_API_KEY:-}"
 CODEXK8S_CONTEXT7_API_KEY="${CODEXK8S_CONTEXT7_API_KEY:-}"
 
 [ -n "$CODEXK8S_STAGING_DOMAIN" ] || {
   echo "Missing required CODEXK8S_STAGING_DOMAIN" >&2
+  exit 1
+}
+[ -n "$CODEXK8S_GITHUB_WEBHOOK_SECRET" ] || {
+  echo "Missing required CODEXK8S_GITHUB_WEBHOOK_SECRET" >&2
   exit 1
 }
 
@@ -74,13 +79,13 @@ if ! kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-postgres >/de
     --from-literal=CODEXK8S_POSTGRES_PASSWORD="$CODEXK8S_POSTGRES_PASSWORD"
 fi
 
-if ! kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime >/dev/null 2>&1; then
-  kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create secret generic codex-k8s-runtime \
-    --from-literal=CODEXK8S_OPENAI_API_KEY="$CODEXK8S_OPENAI_API_KEY" \
-    --from-literal=CODEXK8S_CONTEXT7_API_KEY="$CODEXK8S_CONTEXT7_API_KEY" \
-    --from-literal=CODEXK8S_APP_SECRET_KEY="$CODEXK8S_APP_SECRET_KEY" \
-    --from-literal=CODEXK8S_TOKEN_ENCRYPTION_KEY="$CODEXK8S_TOKEN_ENCRYPTION_KEY"
-fi
+kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create secret generic codex-k8s-runtime \
+  --from-literal=CODEXK8S_OPENAI_API_KEY="$CODEXK8S_OPENAI_API_KEY" \
+  --from-literal=CODEXK8S_CONTEXT7_API_KEY="$CODEXK8S_CONTEXT7_API_KEY" \
+  --from-literal=CODEXK8S_APP_SECRET_KEY="$CODEXK8S_APP_SECRET_KEY" \
+  --from-literal=CODEXK8S_TOKEN_ENCRYPTION_KEY="$CODEXK8S_TOKEN_ENCRYPTION_KEY" \
+  --from-literal=CODEXK8S_GITHUB_WEBHOOK_SECRET="$CODEXK8S_GITHUB_WEBHOOK_SECRET" \
+  --dry-run=client -o yaml | kubectl apply -f -
 
 render_template "${ROOT_DIR}/deploy/base/postgres/postgres.yaml.tpl" | kubectl apply -f -
 render_template "${ROOT_DIR}/deploy/base/codex-k8s/app.yaml.tpl" | kubectl apply -f -

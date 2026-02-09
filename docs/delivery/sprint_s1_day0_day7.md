@@ -32,7 +32,7 @@ approvals:
 | День | Эпик | Priority | Ожидаемые артефакты дня | Документ | Статус |
 |---|---|---|---|---|---|
 | Day 0 | Baseline bootstrap complete | P0 | Bootstrap scripts + deploy baseline + подтвержденный staging bootstrap | `docs/delivery/epics/epic-day0-bootstrap-baseline.md` | completed |
-| Day 1 | Webhook ingress + idempotency | P0 | Webhook endpoint + signature verify + dedup + staging smoke evidence | `docs/delivery/epics/epic-day1-webhook-idempotency.md` | planned |
+| Day 1 | Webhook ingress + idempotency | P0 | Webhook endpoint + signature verify + dedup + staging smoke evidence | `docs/delivery/epics/epic-day1-webhook-idempotency.md` | completed |
 | Day 2 | Worker run loop + slots + k8s jobs | P0 | Worker execution loop + slot leasing + run status transitions | `docs/delivery/epics/epic-day2-worker-slots-k8s.md` | planned |
 | Day 3 | OAuth/JWT + project RBAC + minimal staff UI | P0 | OAuth/JWT auth + RBAC middleware + minimal UI screens | `docs/delivery/epics/epic-day3-auth-rbac-ui.md` | planned |
 | Day 4 | Repository provider + project repositories lifecycle | P0 | RepositoryProvider + GitHub adapter + repository CRUD | `docs/delivery/epics/epic-day4-repository-provider.md` | planned |
