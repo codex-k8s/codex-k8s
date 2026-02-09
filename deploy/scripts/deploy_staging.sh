@@ -169,12 +169,30 @@ kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create secret generic codex-k8s-runtime
   --dry-run=client -o yaml | kubectl apply -f -
 
 if ! kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-oauth2-proxy >/dev/null 2>&1; then
-  # oauth2-proxy expects 32 bytes, base64-encoded.
-  cookie_secret="$(openssl rand -base64 32 | tr -d '\n')"
+  cookie_secret="$(openssl rand -hex 16)"
   kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create secret generic codex-k8s-oauth2-proxy \
     --from-literal=OAUTH2_PROXY_CLIENT_ID="$CODEXK8S_GITHUB_OAUTH_CLIENT_ID" \
     --from-literal=OAUTH2_PROXY_CLIENT_SECRET="$CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET" \
     --from-literal=OAUTH2_PROXY_COOKIE_SECRET="$cookie_secret"
+else
+  # oauth2-proxy expects the decoded cookie secret to be 16/24/32 bytes.
+  # Early revisions generated a longer string; self-heal on staging.
+  existing_cookie_secret="$(
+    kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-oauth2-proxy \
+      -o jsonpath='{.data.OAUTH2_PROXY_COOKIE_SECRET}' 2>/dev/null | base64 -d || true
+  )"
+  case "${#existing_cookie_secret}" in
+    16|24|32) ;;
+    *)
+      echo "Fix oauth2-proxy cookie secret length (${#existing_cookie_secret}); rotating secret"
+      cookie_secret="$(openssl rand -hex 16)"
+      kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create secret generic codex-k8s-oauth2-proxy \
+        --from-literal=OAUTH2_PROXY_CLIENT_ID="$CODEXK8S_GITHUB_OAUTH_CLIENT_ID" \
+        --from-literal=OAUTH2_PROXY_CLIENT_SECRET="$CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET" \
+        --from-literal=OAUTH2_PROXY_COOKIE_SECRET="$cookie_secret" \
+        --dry-run=client -o yaml | kubectl apply -f -
+      ;;
+  esac
 fi
 
 kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create configmap codex-k8s-migrations \
