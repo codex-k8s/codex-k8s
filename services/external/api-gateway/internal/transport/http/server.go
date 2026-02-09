@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -189,9 +190,23 @@ func registerViteDevUI(e *echo.Echo, upstream string) {
 	rp := httputil.NewSingleHostReverseProxy(u)
 	origDirector := rp.Director
 	rp.Director = func(r *http.Request) {
+		// Preserve original Host for Vite's host allowlist check.
+		// In staging/dev we allow the public domain (e.g. staging.codex-k8s.dev),
+		// and the UI is accessed through the gateway reverse proxy.
+		origHost := r.Header.Get("X-Forwarded-Host")
+		if origHost == "" {
+			origHost = r.Host
+		}
+		if host, _, err := net.SplitHostPort(origHost); err == nil && host != "" {
+			origHost = host
+		}
 		origDirector(r)
-		// Keep original host so Vite can do correct origin checks behind proxy.
-		r.Host = u.Host
+		if origHost != "" {
+			r.Host = origHost
+			if r.Header.Get("X-Forwarded-Host") == "" {
+				r.Header.Set("X-Forwarded-Host", origHost)
+			}
+		}
 	}
 	rp.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
 		// Surface upstream failures as 502, but don't crash api-gateway.

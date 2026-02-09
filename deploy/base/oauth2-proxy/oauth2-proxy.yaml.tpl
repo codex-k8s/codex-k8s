@@ -24,6 +24,9 @@ spec:
             - --provider=github
             - --http-address=0.0.0.0:4180
             - --upstream=http://codex-k8s
+            # Ensure upstream sees the original public Host (Ingress host).
+            # api-gateway uses it when reverse-proxying the Vite dev server.
+            - --pass-host-header=true
             - --redirect-url=https://${CODEXK8S_STAGING_DOMAIN}/oauth2/callback
             - --email-domain=*
             - --cookie-secure=true
@@ -86,4 +89,3 @@ spec:
     - name: http
       port: 4180
       targetPort: 4180
-
