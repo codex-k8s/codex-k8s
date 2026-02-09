@@ -18,6 +18,7 @@ COPY services/external/api-gateway/ services/external/api-gateway/
 COPY services/jobs/worker/ services/jobs/worker/
 
 RUN go mod download
+RUN go install github.com/pressly/goose/v3/cmd/goose@latest
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/codex-k8s ./services/external/api-gateway/cmd/api-gateway
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/codex-k8s-worker ./services/jobs/worker/cmd/worker
 
@@ -28,6 +29,7 @@ USER app
 
 COPY --from=builder /out/codex-k8s /usr/local/bin/codex-k8s
 COPY --from=builder /out/codex-k8s-worker /usr/local/bin/codex-k8s-worker
+COPY --from=builder /go/bin/goose /usr/local/bin/goose
 COPY --from=web /web/dist /app/web
 
 # Metadata only; runtime listen address is controlled by CODEXK8S_HTTP_ADDR.

@@ -163,11 +163,20 @@ kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create configmap codex-k8s-migrations \
   --dry-run=client -o yaml | kubectl apply -f -
 
 render_template "${ROOT_DIR}/deploy/base/postgres/postgres.yaml.tpl" | kubectl apply -f -
+
+# We run DB migrations via goose as a dedicated Job to avoid:
+# - parsing SQL in shell;
+# - running migrations concurrently in multiple initContainers;
+# - worker starting before schema is ready.
+kubectl -n "$CODEXK8S_STAGING_NAMESPACE" rollout status statefulset/postgres --timeout="${CODEXK8S_ROLLOUT_TIMEOUT}"
+kubectl -n "$CODEXK8S_STAGING_NAMESPACE" delete job/codex-k8s-migrate >/dev/null 2>&1 || true
+render_template "${ROOT_DIR}/deploy/base/codex-k8s/migrate-job.yaml.tpl" | kubectl apply -f -
+kubectl -n "$CODEXK8S_STAGING_NAMESPACE" wait --for=condition=complete job/codex-k8s-migrate --timeout="${CODEXK8S_ROLLOUT_TIMEOUT}"
+
 render_template "${ROOT_DIR}/deploy/base/codex-k8s/app.yaml.tpl" | kubectl apply -f -
 render_template "${ROOT_DIR}/deploy/base/codex-k8s/ingress.yaml.tpl" | kubectl apply -f -
 
 if [ "$CODEXK8S_WAIT_ROLLOUT" = "true" ]; then
-  kubectl -n "$CODEXK8S_STAGING_NAMESPACE" rollout status statefulset/postgres --timeout="${CODEXK8S_ROLLOUT_TIMEOUT}"
   kubectl -n "$CODEXK8S_STAGING_NAMESPACE" rollout status deployment/codex-k8s --timeout="${CODEXK8S_ROLLOUT_TIMEOUT}"
   kubectl -n "$CODEXK8S_STAGING_NAMESPACE" rollout status deployment/codex-k8s-worker --timeout="${CODEXK8S_ROLLOUT_TIMEOUT}"
 fi
