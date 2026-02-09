@@ -30,6 +30,16 @@ spec:
   policyTypes:
     - Egress
   egress:
+    # NOTE: codex-k8s uses Kubernetes API via in-cluster client-go (kubernetes.default.svc).
+    # On some setups (e.g. k3s + certain CNI implementations), egress filtering may be evaluated
+    # against the API server endpoint (nodeIP:6443) rather than the Service port (443).
+    # Keep this rule restrictive by setting CODEXK8S_K8S_API_CIDR to the node IP /32 in staging.
+    - to:
+        - ipBlock:
+            cidr: ${CODEXK8S_K8S_API_CIDR}
+      ports:
+        - protocol: TCP
+          port: ${CODEXK8S_K8S_API_PORT}
     - to:
         - podSelector:
             matchLabels:

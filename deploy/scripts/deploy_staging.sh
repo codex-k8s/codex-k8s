@@ -61,6 +61,9 @@ CODEXK8S_CONTEXT7_API_KEY="${CODEXK8S_CONTEXT7_API_KEY:-}"
   exit 1
 }
 
+echo "Apply network policy baseline (if enabled)"
+bash "${ROOT_DIR}/deploy/scripts/apply_network_policy_baseline.sh"
+
 if [ -z "$CODEXK8S_POSTGRES_PASSWORD" ] && ! kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-postgres >/dev/null 2>&1; then
   CODEXK8S_POSTGRES_PASSWORD="$(rand_hex 24)"
 fi

@@ -6,7 +6,7 @@
 
 - `platform-baseline.yaml.tpl` — безопасный baseline для platform namespace:
   - ограничение ingress в `postgres` только от `codex-k8s`;
-  - ограничение egress у `codex-k8s` до `postgres`, DNS и web (`80/443`).
+  - ограничение egress у `codex-k8s` до `postgres`, DNS, Kubernetes API (обычно `nodeIP:6443`) и web (`80/443`).
 - `project-agent-baseline.yaml.tpl` — шаблон изоляции namespace проектов/агентов:
   - default deny ingress/egress;
   - allow ingress от `platform/system` namespace;
@@ -29,6 +29,8 @@ Platform baseline (по умолчанию в bootstrap):
 ```bash
 export CODEXK8S_STAGING_NAMESPACE=codex-k8s-ai-staging
 export CODEXK8S_RUNNER_NAMESPACE=actions-runner-staging
+export CODEXK8S_K8S_API_CIDR="<node-ip>/32"
+export CODEXK8S_K8S_API_PORT=6443
 bash deploy/scripts/apply_network_policy_baseline.sh
 ```
 

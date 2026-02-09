@@ -199,8 +199,30 @@ func (l *Launcher) Status(ctx context.Context, ref JobRef) (JobState, error) {
 		}
 	}
 
+	// Some failures (e.g. ImagePullBackOff) don't immediately surface as JobFailed
+	// and can keep a run stuck in "pending" forever unless we inspect Pod state.
+	if job.Status.Succeeded > 0 {
+		return JobStateSucceeded, nil
+	}
+	if job.Status.Failed > 0 {
+		return JobStateFailed, nil
+	}
 	if job.Status.Active > 0 {
 		return JobStateRunning, nil
+	}
+
+	pods, err := l.client.CoreV1().Pods(ref.Namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("job-name=%s", ref.Name),
+	})
+	if err == nil {
+		for _, pod := range pods.Items {
+			if pod.Status.Phase == corev1.PodFailed {
+				return JobStateFailed, nil
+			}
+			if hasTerminalWaitingReason(pod.Status.InitContainerStatuses) || hasTerminalWaitingReason(pod.Status.ContainerStatuses) {
+				return JobStateFailed, nil
+			}
+		}
 	}
 
 	return JobStatePending, nil
@@ -271,4 +293,33 @@ func sanitizeLabel(value string) string {
 		return "unknown"
 	}
 	return normalized
+}
+
+func hasTerminalWaitingReason(statuses []corev1.ContainerStatus) bool {
+	for _, cs := range statuses {
+		if cs.State.Waiting == nil {
+			continue
+		}
+		reason := cs.State.Waiting.Reason
+		if reason == "" {
+			continue
+		}
+
+		switch reason {
+		case "ErrImagePull",
+			"ImagePullBackOff",
+			"InvalidImageName",
+			"CreateContainerConfigError",
+			"CreateContainerError",
+			"RunContainerError",
+			"CrashLoopBackOff":
+			return true
+		}
+
+		// Generic backoff reasons are almost always terminal in the context of a Job pod.
+		if strings.Contains(reason, "BackOff") {
+			return true
+		}
+	}
+	return false
 }

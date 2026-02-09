@@ -53,5 +53,9 @@ bash bootstrap/host/bootstrap_remote_staging.sh
 - Внутренний registry работает без auth по design MVP и слушает только `127.0.0.1:<CODEXK8S_INTERNAL_REGISTRY_PORT>` на node.
 - Loopback-режим registry рассчитан на single-node staging; для multi-node нужен отдельный registry-профиль.
 - По умолчанию включён baseline `NetworkPolicy` (`CODEXK8S_NETWORK_POLICY_BASELINE=true`).
+- Чтобы worker мог обращаться к Kubernetes API, baseline также разрешает egress на API endpoint
+  (для k3s обычно это `nodeIP:6443`). Управляется переменными:
+  - `CODEXK8S_K8S_API_CIDR` (рекомендуется `TARGET_HOST/32` для single-node staging);
+  - `CODEXK8S_K8S_API_PORT` (по умолчанию `6443`).
 - Для новых namespace проектов/агентов используйте `deploy/base/network-policies/project-agent-baseline.yaml.tpl` через `deploy/scripts/apply_network_policy_baseline.sh`.
 - По умолчанию включён firewall hardening (`CODEXK8S_FIREWALL_ENABLED=true`), снаружи открыты только `CODEXK8S_SSH_PORT`, `80`, `443`.
