@@ -137,7 +137,7 @@ func registerStaticUI(e *echo.Echo, staticDir string) {
 	})
 
 	// SPA fallback: for any GET not under /api, serve index.html.
-	e.GET("/*", func(c *echo.Context) error {
+	serveSPA := func(c *echo.Context) error {
 		reqPath := c.Request().URL.Path
 		if strings.HasPrefix(reqPath, "/api/") || strings.HasPrefix(reqPath, "/metrics") || strings.HasPrefix(reqPath, "/health") || strings.HasPrefix(reqPath, "/readyz") || strings.HasPrefix(reqPath, "/healthz") {
 			return echo.ErrNotFound
@@ -155,5 +155,9 @@ func registerStaticUI(e *echo.Echo, staticDir string) {
 		c.Response().Header().Set("Cache-Control", "no-store")
 		c.Response().Header().Set("Content-Type", "text/html; charset=utf-8")
 		return c.File(filepath.Join(staticDir, "index.html"))
-	})
+	}
+
+	// Echo wildcard routes (`/*`) do not match the bare root `/`, so register both.
+	e.GET("/", serveSPA)
+	e.GET("/*", serveSPA)
 }
