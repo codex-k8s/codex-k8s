@@ -16,6 +16,7 @@ import (
 	"github.com/labstack/echo/v5/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	userrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/user"
 	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/webhook"
 )
 
@@ -49,7 +50,7 @@ type Server struct {
 }
 
 // NewServer builds and configures HTTP routes and middleware.
-func NewServer(cfg ServerConfig, webhookService webhookIngress, auth authService, staffSvc staffService, logger *slog.Logger) *Server {
+func NewServer(cfg ServerConfig, webhookService webhookIngress, auth authService, users userrepo.Repository, staffSvc staffService, logger *slog.Logger) *Server {
 	e := echo.New()
 	e.Use(middleware.Recover())
 	e.HTTPErrorHandler = newHTTPErrorHandler(logger)
@@ -57,6 +58,8 @@ func NewServer(cfg ServerConfig, webhookService webhookIngress, auth authService
 	h := newWebhookHandler(cfg, webhookService)
 	authH := newAuthHandler(auth, cfg.CookieSecure)
 	staffH := newStaffHandler(staffSvc)
+
+	staffAuthMw := requireStaffAuth(auth, users)
 
 	e.GET("/readyz", readyHandler)
 	e.GET("/healthz", liveHandler)
@@ -68,10 +71,10 @@ func NewServer(cfg ServerConfig, webhookService webhookIngress, auth authService
 
 	e.GET("/api/v1/auth/github/login", authH.LoginGitHub)
 	e.GET("/api/v1/auth/github/callback", authH.CallbackGitHub)
-	e.POST("/api/v1/auth/logout", authH.Logout, requireStaffAuth(auth))
-	e.GET("/api/v1/auth/me", authH.Me, requireStaffAuth(auth))
+	e.POST("/api/v1/auth/logout", authH.Logout, staffAuthMw)
+	e.GET("/api/v1/auth/me", authH.Me, staffAuthMw)
 
-	staffGroup := e.Group("/api/v1/staff", requireStaffAuth(auth))
+	staffGroup := e.Group("/api/v1/staff", staffAuthMw)
 	staffGroup.GET("/projects", staffH.ListProjects)
 	staffGroup.GET("/runs", staffH.ListRuns)
 	staffGroup.GET("/runs/:run_id/events", staffH.ListRunEvents)

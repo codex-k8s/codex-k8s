@@ -78,7 +78,7 @@ func Run() error {
 		CookieSecure:        cfg.CookieSecure,
 		StaticDir:           "/app/web",
 		ViteDevUpstream:     cfg.ViteDevUpstream,
-	}, webhookService, authService, staffService, logger)
+	}, webhookService, authService, users, staffService, logger)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 	defer stop()
