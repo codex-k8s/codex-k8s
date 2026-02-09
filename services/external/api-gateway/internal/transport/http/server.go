@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
@@ -122,6 +123,9 @@ func registerStaticUI(e *echo.Echo, staticDir string) {
 		return
 	}
 
+	webFS := os.DirFS(staticDir)
+	assetsFS := os.DirFS(filepath.Join(staticDir, "assets"))
+
 	// Serve known static assets directly.
 	e.GET("/assets/*", func(c *echo.Context) error {
 		assetPath := c.Param("*")
@@ -133,7 +137,7 @@ func registerStaticUI(e *echo.Echo, staticDir string) {
 		if clean == "." || filepath.IsAbs(clean) || strings.HasPrefix(clean, "..") || strings.Contains(clean, string(filepath.Separator)+".."+string(filepath.Separator)) {
 			return echo.ErrNotFound
 		}
-		return c.File(filepath.Join(staticDir, "assets", clean))
+		return c.FileFS(clean, assetsFS)
 	})
 
 	// SPA fallback: for any GET not under /api, serve index.html.
@@ -148,13 +152,13 @@ func registerStaticUI(e *echo.Echo, staticDir string) {
 		// Attempt to serve an existing file first.
 		clean := filepath.Clean(strings.TrimPrefix(reqPath, "/"))
 		if clean != "." && clean != "/" {
-			if _, err := os.Stat(filepath.Join(staticDir, clean)); err == nil {
-				return c.File(filepath.Join(staticDir, clean))
+			if _, err := fs.Stat(webFS, clean); err == nil {
+				return c.FileFS(clean, webFS)
 			}
 		}
 		c.Response().Header().Set("Cache-Control", "no-store")
 		c.Response().Header().Set("Content-Type", "text/html; charset=utf-8")
-		return c.File(filepath.Join(staticDir, "index.html"))
+		return c.FileFS("index.html", webFS)
 	}
 
 	// Echo wildcard routes (`/*`) do not match the bare root `/`, so register both.
