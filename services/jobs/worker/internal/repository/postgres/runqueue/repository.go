@@ -17,6 +17,8 @@ import (
 var (
 	//go:embed sql/claim_next_pending_for_update.sql
 	queryClaimNextPendingForUpdate string
+	//go:embed sql/upsert_project.sql
+	queryUpsertProject string
 	//go:embed sql/ensure_project_slots.sql
 	queryEnsureProjectSlots string
 	//go:embed sql/release_expired_slots.sql
@@ -80,6 +82,11 @@ func (r *Repository) ClaimNextPending(ctx context.Context, params domainrepo.Cla
 	projectID := projectIDRaw.String
 	if projectID == "" {
 		projectID = deriveProjectID(correlationID, runPayload)
+	}
+	projectSlug, projectName := deriveProjectMeta(projectID, correlationID, runPayload)
+
+	if _, err := tx.ExecContext(ctx, queryUpsertProject, projectID, projectSlug, projectName); err != nil {
+		return domainrepo.ClaimedRun{}, false, fmt.Errorf("upsert project %s: %w", projectID, err)
 	}
 
 	if _, err := tx.ExecContext(ctx, queryEnsureProjectSlots, projectID, params.SlotsPerProject); err != nil {
@@ -208,6 +215,7 @@ func deriveProjectID(correlationID string, runPayload []byte) string {
 	var payload struct {
 		Repository struct {
 			FullName string `json:"full_name"`
+			Name     string `json:"name"`
 		} `json:"repository"`
 	}
 	if err := json.Unmarshal(runPayload, &payload); err == nil && payload.Repository.FullName != "" {
@@ -215,6 +223,33 @@ func deriveProjectID(correlationID string, runPayload []byte) string {
 	}
 
 	return uuid.NewSHA1(uuid.NameSpaceDNS, []byte("correlation:"+correlationID)).String()
+}
+
+func deriveProjectMeta(projectID string, correlationID string, runPayload []byte) (slug string, name string) {
+	var payload struct {
+		Repository struct {
+			FullName string `json:"full_name"`
+			Name     string `json:"name"`
+		} `json:"repository"`
+	}
+
+	if err := json.Unmarshal(runPayload, &payload); err == nil && payload.Repository.FullName != "" {
+		slug = strings.ToLower(strings.TrimSpace(payload.Repository.FullName))
+		name = slug
+		if strings.TrimSpace(payload.Repository.Name) != "" {
+			// Preserve full_name as stable display name; repo name alone is not unique.
+			name = slug
+		}
+		return slug, name
+	}
+
+	// Fallback for synthetic/unknown correlation-driven projects.
+	slug = "project-" + strings.ToLower(strings.ReplaceAll(projectID, "-", ""))[:8]
+	name = slug
+	if correlationID != "" {
+		name = "project-" + correlationID
+	}
+	return slug, name
 }
 
 func maxInt64(a, b int64) int64 {

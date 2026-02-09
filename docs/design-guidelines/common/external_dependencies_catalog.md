@@ -24,6 +24,7 @@
 | `github.com/jackc/pgx/v5` | `v5.8.0` | PostgreSQL driver | доступ к PostgreSQL |
 | `github.com/google/uuid` | `v1.6.0` | Utility | генерация идентификаторов |
 | `github.com/caarlos0/env/v11` | `v11.3.1` | Config | типобезопасный env->struct парсинг конфигурации |
+| `github.com/golang-jwt/jwt/v5` | `v5.3.0` | Auth | выпуск и валидация short-lived JWT для staff API |
 | `k8s.io/client-go` | `v0.35.0` | Kubernetes integration | запуск/проверка Job через Kubernetes SDK |
 | `k8s.io/api` | `v0.35.0` | Kubernetes API types | типы `batch/v1`, `core/v1` для Job/Pod |
 | `k8s.io/apimachinery` | `v0.35.0` | Kubernetes API machinery | ошибки API, meta types, утилиты client-go |
@@ -32,10 +33,10 @@
 
 | Dependency | Status | Scope | Why |
 |---|---|---|---|
-| `vue` | planned | UI framework | staff web-console |
-| `vue-router` | planned | Routing | маршрутизация staff UI |
-| `pinia` | planned | State management | глобальное состояние UI |
-| `axios` | planned | HTTP client | вызовы staff/private API |
+| `vue` | in use (package.json) | UI framework | staff web-console |
+| `vue-router` | in use (package.json) | Routing | маршрутизация staff UI |
+| `pinia` | in use (package.json) | State management | минимальное состояние UI |
+| `axios` | in use (package.json) | HTTP client | вызовы staff/private API |
 
 ## Infrastructure and CI tools — in use
 

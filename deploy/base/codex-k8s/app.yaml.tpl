@@ -31,6 +31,37 @@ spec:
         app.kubernetes.io/name: codex-k8s
         app.kubernetes.io/component: api-gateway
     spec:
+      initContainers:
+        - name: migrate
+          image: pgvector/pgvector:pg16
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: CODEXK8S_POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-postgres
+                  key: CODEXK8S_POSTGRES_DB
+            - name: CODEXK8S_POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-postgres
+                  key: CODEXK8S_POSTGRES_USER
+            - name: CODEXK8S_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-postgres
+                  key: CODEXK8S_POSTGRES_PASSWORD
+          command:
+            - sh
+            - -ec
+            - |
+              for f in /migrations/*.sql; do
+                echo "apply migration: ${f}"
+                PGPASSWORD="$CODEXK8S_POSTGRES_PASSWORD" psql -h postgres -U "$CODEXK8S_POSTGRES_USER" -d "$CODEXK8S_POSTGRES_DB" -v ON_ERROR_STOP=1 -f "$f"
+              done
+          volumeMounts:
+            - name: migrations
+              mountPath: /migrations
       containers:
         - name: codex-k8s
           image: ${CODEXK8S_IMAGE}
@@ -88,6 +119,36 @@ spec:
                 secretKeyRef:
                   name: codex-k8s-runtime
                   key: CODEXK8S_GITHUB_WEBHOOK_SECRET
+            - name: CODEXK8S_PUBLIC_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_PUBLIC_BASE_URL
+            - name: CODEXK8S_BOOTSTRAP_OWNER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_BOOTSTRAP_OWNER_EMAIL
+            - name: CODEXK8S_GITHUB_OAUTH_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GITHUB_OAUTH_CLIENT_ID
+            - name: CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET
+            - name: CODEXK8S_JWT_SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_JWT_SIGNING_KEY
+            - name: CODEXK8S_JWT_TTL
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_JWT_TTL
           readinessProbe:
             httpGet:
               path: /readyz
@@ -107,6 +168,10 @@ spec:
             limits:
               cpu: 1000m
               memory: 1Gi
+      volumes:
+        - name: migrations
+          configMap:
+            name: codex-k8s-migrations
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -171,6 +236,37 @@ spec:
         app.kubernetes.io/component: worker
     spec:
       serviceAccountName: codex-k8s-worker
+      initContainers:
+        - name: migrate
+          image: pgvector/pgvector:pg16
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: CODEXK8S_POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-postgres
+                  key: CODEXK8S_POSTGRES_DB
+            - name: CODEXK8S_POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-postgres
+                  key: CODEXK8S_POSTGRES_USER
+            - name: CODEXK8S_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-postgres
+                  key: CODEXK8S_POSTGRES_PASSWORD
+          command:
+            - sh
+            - -ec
+            - |
+              for f in /migrations/*.sql; do
+                echo "apply migration: ${f}"
+                PGPASSWORD="$CODEXK8S_POSTGRES_PASSWORD" psql -h postgres -U "$CODEXK8S_POSTGRES_USER" -d "$CODEXK8S_POSTGRES_DB" -v ON_ERROR_STOP=1 -f "$f"
+              done
+          volumeMounts:
+            - name: migrations
+              mountPath: /migrations
       containers:
         - name: worker
           image: ${CODEXK8S_IMAGE}
@@ -225,3 +321,7 @@ spec:
             limits:
               cpu: 1000m
               memory: 1Gi
+      volumes:
+        - name: migrations
+          configMap:
+            name: codex-k8s-migrations

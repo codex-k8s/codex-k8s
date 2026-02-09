@@ -40,6 +40,13 @@ bash bootstrap/host/bootstrap_remote_staging.sh
 
 - Скрипты — каркас первого этапа. Перед production обязательны hardening и отдельный runbook.
 - Для деплоя через GitHub Actions нужен `CODEXK8S_GITHUB_PAT` (fine-grained) с правами на repository actions/secrets/variables и чтение содержимого репозитория.
+- Для staff UI и staff API требуется GitHub OAuth App:
+  - создать на `https://github.com/settings/applications/new`;
+  - `Homepage URL`: `https://<CODEXK8S_STAGING_DOMAIN>`;
+  - `Authorization callback URL`: `https://<CODEXK8S_STAGING_DOMAIN>/api/v1/auth/github/callback`;
+  - заполнить `CODEXK8S_GITHUB_OAUTH_CLIENT_ID` и `CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET` в `bootstrap/host/config.env`.
+- `CODEXK8S_PUBLIC_BASE_URL` должен совпадать с публичным URL (для staging обычно `https://<CODEXK8S_STAGING_DOMAIN>`).
+- `CODEXK8S_BOOTSTRAP_OWNER_EMAIL` задаёт единственный email, которому разрешён первый вход (platform admin). Self-signup запрещён.
 - `CODEXK8S_GITHUB_WEBHOOK_SECRET` используется для валидации `X-Hub-Signature-256`; если переменная пуста, bootstrap генерирует значение автоматически.
 - `CODEXK8S_GITHUB_WEBHOOK_URL` (опционально) позволяет переопределить URL webhook; по умолчанию используется `https://<CODEXK8S_STAGING_DOMAIN>/api/v1/webhooks/github`.
 - `CODEXK8S_GITHUB_WEBHOOK_EVENTS` задаёт список событий webhook (comma-separated).

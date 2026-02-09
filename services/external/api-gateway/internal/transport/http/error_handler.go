@@ -26,6 +26,7 @@ func newHTTPErrorHandler(logger *slog.Logger) func(c *echo.Context, err error) {
 
 		var validation errs.Validation
 		var unauthorized errs.Unauthorized
+		var forbidden errs.Forbidden
 		var conflict errs.Conflict
 		var httpErr *echo.HTTPError
 
@@ -42,6 +43,12 @@ func newHTTPErrorHandler(logger *slog.Logger) func(c *echo.Context, err error) {
 			resp = errorResponse{
 				Code:    "unauthorized",
 				Message: unauthorized.Error(),
+			}
+		case errors.As(err, &forbidden):
+			status = http.StatusForbidden
+			resp = errorResponse{
+				Code:    "forbidden",
+				Message: forbidden.Error(),
 			}
 		case errors.As(err, &conflict):
 			status = http.StatusConflict

@@ -3,6 +3,11 @@ package app
 import "testing"
 
 func TestLoadConfig_Defaults(t *testing.T) {
+	t.Setenv("CODEXK8S_PUBLIC_BASE_URL", "https://staging.example.com")
+	t.Setenv("CODEXK8S_BOOTSTRAP_OWNER_EMAIL", "owner@example.com")
+	t.Setenv("CODEXK8S_GITHUB_OAUTH_CLIENT_ID", "client-id")
+	t.Setenv("CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET", "client-secret")
+	t.Setenv("CODEXK8S_JWT_SIGNING_KEY", "jwt-key")
 	t.Setenv("CODEXK8S_GITHUB_WEBHOOK_SECRET", "secret")
 	t.Setenv("CODEXK8S_DB_HOST", "postgres")
 	t.Setenv("CODEXK8S_DB_NAME", "codex_k8s")
@@ -26,9 +31,20 @@ func TestLoadConfig_Defaults(t *testing.T) {
 	if cfg.DBSSLMode != "disable" {
 		t.Fatalf("expected default sslmode disable, got %q", cfg.DBSSLMode)
 	}
+	if cfg.JWTTTL != "15m" {
+		t.Fatalf("expected default jwt ttl 15m, got %q", cfg.JWTTTL)
+	}
+	if !cfg.CookieSecure {
+		t.Fatal("expected default cookie secure=true")
+	}
 }
 
 func TestLoadConfig_MissingRequired(t *testing.T) {
+	t.Setenv("CODEXK8S_PUBLIC_BASE_URL", "https://staging.example.com")
+	t.Setenv("CODEXK8S_BOOTSTRAP_OWNER_EMAIL", "owner@example.com")
+	t.Setenv("CODEXK8S_GITHUB_OAUTH_CLIENT_ID", "client-id")
+	t.Setenv("CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET", "client-secret")
+	t.Setenv("CODEXK8S_JWT_SIGNING_KEY", "jwt-key")
 	t.Setenv("CODEXK8S_DB_HOST", "postgres")
 	t.Setenv("CODEXK8S_DB_NAME", "codex_k8s")
 	t.Setenv("CODEXK8S_DB_USER", "codex")

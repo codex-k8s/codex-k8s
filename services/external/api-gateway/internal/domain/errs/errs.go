@@ -32,6 +32,20 @@ func (e Unauthorized) Error() string {
 	return e.Msg
 }
 
+// Forbidden indicates that a caller is authenticated but not allowed to perform the action.
+type Forbidden struct {
+	// Msg overrides the default forbidden message when provided.
+	Msg string
+}
+
+// Error returns a stable forbidden error message.
+func (e Forbidden) Error() string {
+	if e.Msg == "" {
+		return "forbidden"
+	}
+	return e.Msg
+}
+
 // Conflict indicates a state conflict such as duplicate or race condition.
 type Conflict struct {
 	// Msg overrides the default conflict message when provided.

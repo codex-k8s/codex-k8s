@@ -11,6 +11,25 @@ type Config struct {
 	// HTTPAddr is the bind address for the HTTP server.
 	HTTPAddr string `env:"CODEXK8S_HTTP_ADDR" envDefault:":8080"`
 
+	// PublicBaseURL is a public service base URL, e.g. https://staging.codex-k8s.dev.
+	// Used for OAuth redirect/callback URL generation.
+	PublicBaseURL string `env:"CODEXK8S_PUBLIC_BASE_URL,required,notEmpty"`
+
+	// BootstrapOwnerEmail is the first allowed email for GitHub OAuth login (platform admin).
+	BootstrapOwnerEmail string `env:"CODEXK8S_BOOTSTRAP_OWNER_EMAIL,required,notEmpty"`
+
+	// GitHubOAuthClientID is GitHub OAuth App client id.
+	GitHubOAuthClientID string `env:"CODEXK8S_GITHUB_OAUTH_CLIENT_ID,required,notEmpty"`
+	// GitHubOAuthClientSecret is GitHub OAuth App client secret.
+	GitHubOAuthClientSecret string `env:"CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET,required,notEmpty"`
+
+	// JWTSigningKey is the HMAC key for staff JWT tokens.
+	JWTSigningKey string `env:"CODEXK8S_JWT_SIGNING_KEY,required,notEmpty"`
+	// JWTTTL is the short-lived JWT TTL duration, e.g. 15m.
+	JWTTTL string `env:"CODEXK8S_JWT_TTL" envDefault:"15m"`
+	// CookieSecure controls Secure attribute for auth cookies (should be true under HTTPS).
+	CookieSecure bool `env:"CODEXK8S_COOKIE_SECURE" envDefault:"true"`
+
 	// GitHubWebhookSecret is used to validate X-Hub-Signature-256.
 	GitHubWebhookSecret string `env:"CODEXK8S_GITHUB_WEBHOOK_SECRET,required,notEmpty"`
 	// WebhookMaxBodyBytes limits accepted webhook payload size.

@@ -13,9 +13,15 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
+	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/auth"
+	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/staff"
 	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/webhook"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/repository/postgres/agentrun"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/repository/postgres/flowevent"
+	projectrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/repository/postgres/project"
+	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/repository/postgres/projectmember"
+	staffrunrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/repository/postgres/staffrun"
+	userrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/repository/postgres/user"
 	httptransport "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http"
 )
 
@@ -38,11 +44,40 @@ func Run() error {
 	flowEvents := floweventrepo.NewRepository(db)
 	webhookService := webhook.NewService(agentRuns, flowEvents)
 
+	users := userrepo.NewRepository(db)
+	projects := projectrepo.NewRepository(db)
+	members := projectmemberrepo.NewRepository(db)
+	runs := staffrunrepo.NewRepository(db)
+	staffService := staff.NewService(users, projects, members, runs)
+
+	// Ensure the bootstrap owner exists so that the first GitHub OAuth login can be matched by email.
+	if _, err := users.EnsureOwner(context.Background(), cfg.BootstrapOwnerEmail); err != nil {
+		return fmt.Errorf("ensure bootstrap owner user: %w", err)
+	}
+
+	jwtTTL, err := time.ParseDuration(cfg.JWTTTL)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_JWT_TTL=%q: %w", cfg.JWTTTL, err)
+	}
+	authService, err := auth.NewService(auth.Config{
+		PublicBaseURL:           cfg.PublicBaseURL,
+		GitHubOAuthClientID:     cfg.GitHubOAuthClientID,
+		GitHubOAuthClientSecret: cfg.GitHubOAuthClientSecret,
+		JWTSigningKey:           []byte(cfg.JWTSigningKey),
+		JWTTTL:                  jwtTTL,
+		CookieSecure:            cfg.CookieSecure,
+	}, users)
+	if err != nil {
+		return fmt.Errorf("init auth service: %w", err)
+	}
+
 	server := httptransport.NewServer(httptransport.ServerConfig{
 		HTTPAddr:            cfg.HTTPAddr,
 		GitHubWebhookSecret: cfg.GitHubWebhookSecret,
 		MaxBodyBytes:        cfg.WebhookMaxBodyBytes,
-	}, webhookService, logger)
+		CookieSecure:        cfg.CookieSecure,
+		StaticDir:           "/app/web",
+	}, webhookService, authService, staffService, logger)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 	defer stop()
