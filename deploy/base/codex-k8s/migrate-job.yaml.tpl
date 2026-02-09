@@ -41,7 +41,20 @@ spec:
             - |
               export GOOSE_DRIVER=postgres
               export GOOSE_DBSTRING="postgres://${CODEXK8S_POSTGRES_USER}:${CODEXK8S_POSTGRES_PASSWORD}@postgres:5432/${CODEXK8S_POSTGRES_DB}?sslmode=disable"
-              /usr/local/bin/goose -dir /migrations up
+              # Postgres Service can be routable slightly before the actual server
+              # accepts connections. Keep this step resilient to short transient failures.
+              retries=60
+              i=1
+              while [ "$i" -le "$retries" ]; do
+                if /usr/local/bin/goose -dir /migrations up; then
+                  exit 0
+                fi
+                echo "goose up failed (attempt ${i}/${retries}); retry in 2s..." >&2
+                i=$((i + 1))
+                sleep 2
+              done
+              echo "goose up failed after ${retries} attempts" >&2
+              exit 1
           volumeMounts:
             - name: migrations
               mountPath: /migrations
@@ -49,4 +62,3 @@ spec:
         - name: migrations
           configMap:
             name: codex-k8s-migrations
-
