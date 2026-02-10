@@ -50,7 +50,9 @@
 - `internal/clients/kubernetes/` — адаптеры Kubernetes SDK.
 - `internal/clients/repository/` — адаптеры provider-интерфейсов (`github`, позже `gitlab`).
 - `internal/observability/` — подключение логов/трейсов/метрик.
-- `cmd/cli/migrations/*.sql` — миграции БД (goose).
+- `cmd/cli/migrations/*.sql` — миграции БД (goose) для этого сервиса, если он держатель схемы.
+  - В монорепо это означает путь:
+    `services/<zone>/<service-name>/cmd/cli/migrations/*.sql`.
 - `api/server/api.yaml` — OpenAPI.
 - `api/server/asyncapi.yaml` — async/webhook/event контракты (если используются).
 - `internal/transport/*/generated/**` — только сгенерированный код.

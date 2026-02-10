@@ -28,6 +28,11 @@ updated_at: 2026-02-06
 - Epic catalog: `docs/delivery/epic.md`.
 - Epic docs: `docs/delivery/epics/epic-day0-bootstrap-baseline.md`, `docs/delivery/epics/epic-day1-webhook-idempotency.md`, `docs/delivery/epics/epic-day2-worker-slots-k8s.md`, `docs/delivery/epics/epic-day3-auth-rbac-ui.md`, `docs/delivery/epics/epic-day4-repository-provider.md`, `docs/delivery/epics/epic-day5-learning-mode.md`, `docs/delivery/epics/epic-day6-hardening-observability.md`, `docs/delivery/epics/epic-day7-stabilization-gate.md`.
 
+## Sprint S2 (план) артефакты
+- Sprint plan: `docs/delivery/sprint_s2_dogfooding.md`.
+- Epic catalog: `docs/delivery/epic_s2.md`.
+- Epic docs: `docs/delivery/epics/epic-s2-day0-control-plane-extraction.md`, `docs/delivery/epics/epic-s2-day1-migrations-and-schema-ownership.md`, `docs/delivery/epics/epic-s2-day2-issue-label-triggers-run-dev.md`, `docs/delivery/epics/epic-s2-day3-per-issue-namespace-and-rbac.md`, `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md`, `docs/delivery/epics/epic-s2-day5-staff-ui-dogfooding-observability.md`, `docs/delivery/epics/epic-s2-day6-approval-and-audit-hardening.md`, `docs/delivery/epics/epic-s2-day7-dogfooding-regression-gate.md`.
+
 ## Правила
 - Если нет обязательного документа — статус `blocked`.
 - Ссылки должны быть кликабельны.

@@ -41,6 +41,7 @@
 | `axios` | in use (package.json) | HTTP client | вызовы staff/private API |
 | `vue-i18n` | in use (package.json) | i18n | все пользовательские тексты через i18n ключи |
 | `vue3-cookies` | in use (package.json) | Cookies | хранение UI-настроек (например, язык) и единый cookie-адаптер |
+| `date-fns` | in use (package.json) | Datetime formatting | безопасное форматирование дат/времени без самописных helpers |
 
 ## Infrastructure and CI tools — in use
 
