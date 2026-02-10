@@ -12,6 +12,7 @@ export const ru = {
     back: "Назад",
     refresh: "Обновить",
     save: "Сохранить",
+    cancel: "Отмена",
     delete: "Удалить",
     createOrUpdate: "Создать / Обновить",
     attachEnsureWebhook: "Подключить + настроить вебхук",
@@ -32,7 +33,8 @@ export const ru = {
   placeholders: {
     projectSlug: "codex-k8s",
     projectName: "codex-k8s",
-    userEmail: "user@example.com",
+    // vue-i18n treats `@` as a linked-message marker, so we must use literal interpolation.
+    userEmail: "user{'@'}example.com",
     repoOwner: "codex-k8s",
     repoName: "codex-k8s",
     servicesYamlPath: "services.yaml",
@@ -54,7 +56,7 @@ export const ru = {
     projects: {
       title: "Проекты",
       createTitle: "Создать / Обновить проект",
-      slug: "Slug",
+      slug: "Слаг",
       name: "Название",
       role: "Роль",
       manage: "Управление",
@@ -89,8 +91,15 @@ export const ru = {
     runDetails: {
       title: "Детали запуска",
       runId: "run_id",
+      correlation: "correlation_id",
       flowEvents: "События",
       learningFeedback: "Learning feedback",
+    },
+    projectDetails: {
+      title: "Детали проекта",
+      projectId: "project_id",
+      slug: "Слаг",
+      name: "Название",
     },
     projectRepositories: {
       title: "Репозитории проекта",
@@ -109,12 +118,19 @@ export const ru = {
     projectMembers: {
       title: "Участники проекта",
       projectId: "project_id",
+      addTitle: "Добавить участника проекта",
       email: "Email",
       userId: "User ID",
       role: "Роль",
       learningOverride: "Learning override",
       inherit: "inherit",
     },
+  },
+  crumb: {
+    projectDetails: "Детали проекта",
+    projectRepositories: "Репозитории проекта",
+    projectMembers: "Участники проекта",
+    runDetails: "Детали запуска",
   },
   errors: {
     unknown: "Что-то пошло не так.",
@@ -126,6 +142,10 @@ export const ru = {
     invalidArgument: "Некорректные данные.",
     conflict: "Конфликт.",
     platformAdminRequired: "Требуется platform admin.",
+    platformOwnerRequired: "Требуется овнер платформы.",
+    cannotDeleteSelf: "Нельзя удалить самого себя.",
+    cannotDeletePlatformAdmin: "Нельзя удалить platform admin.",
+    cannotRemovePlatformOwner: "Нельзя удалить овнера платформы из участников проекта.",
   },
   i18n: {
     enFlag: "🇺🇸",

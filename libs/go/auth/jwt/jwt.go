@@ -13,6 +13,7 @@ type Claims struct {
 	Email       string `json:"email"`
 	GitHubLogin string `json:"github_login,omitempty"`
 	IsAdmin     bool   `json:"is_admin"`
+	IsOwner     bool   `json:"is_owner"`
 
 	jwtv5.RegisteredClaims
 }
@@ -24,22 +25,37 @@ type Signer struct {
 	ttl    time.Duration
 }
 
-// NewSigner creates a signer for HS256 tokens.
-func NewSigner(issuer string, key []byte, ttl time.Duration) (*Signer, error) {
+func validateIssuerAndKey(issuer string, key []byte) error {
 	if issuer == "" {
-		return nil, errors.New("issuer is required")
+		return errors.New("issuer is required")
 	}
 	if len(key) == 0 {
-		return nil, errors.New("signing key is required")
+		return errors.New("signing key is required")
 	}
-	if ttl <= 0 {
-		return nil, errors.New("ttl must be > 0")
+	return nil
+}
+
+// NewSigner creates a signer for HS256 tokens.
+func NewSigner(issuer string, key []byte, ttl time.Duration) (*Signer, error) {
+	s := &Signer{issuer: issuer, key: key, ttl: ttl}
+	if err := s.validate(); err != nil {
+		return nil, err
 	}
-	return &Signer{issuer: issuer, key: key, ttl: ttl}, nil
+	return s, nil
+}
+
+func (s *Signer) validate() error {
+	if err := validateIssuerAndKey(s.issuer, s.key); err != nil {
+		return err
+	}
+	if s.ttl <= 0 {
+		return errors.New("ttl must be > 0")
+	}
+	return nil
 }
 
 // Issue creates a signed token for a subject.
-func (s *Signer) Issue(subject string, email string, githubLogin string, isAdmin bool, now time.Time) (token string, expiresAt time.Time, err error) {
+func (s *Signer) Issue(subject string, email string, githubLogin string, isAdmin bool, isOwner bool, now time.Time) (token string, expiresAt time.Time, err error) {
 	if subject == "" {
 		return "", time.Time{}, errors.New("subject is required")
 	}
@@ -55,6 +71,7 @@ func (s *Signer) Issue(subject string, email string, githubLogin string, isAdmin
 		Email:       email,
 		GitHubLogin: githubLogin,
 		IsAdmin:     isAdmin,
+		IsOwner:     isOwner,
 		RegisteredClaims: jwtv5.RegisteredClaims{
 			Issuer:    s.issuer,
 			Subject:   subject,
@@ -80,11 +97,8 @@ type Verifier struct {
 
 // NewVerifier creates a verifier for HS256 tokens.
 func NewVerifier(issuer string, key []byte, leeway time.Duration) (*Verifier, error) {
-	if issuer == "" {
-		return nil, errors.New("issuer is required")
-	}
-	if len(key) == 0 {
-		return nil, errors.New("signing key is required")
+	if err := validateIssuerAndKey(issuer, key); err != nil {
+		return nil, err
 	}
 	if leeway < 0 {
 		return nil, errors.New("leeway must be >= 0")

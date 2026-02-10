@@ -49,7 +49,7 @@ type Config struct {
 	// JWTTTL is the short-lived JWT TTL duration, e.g. 15m.
 	JWTTTL string `env:"CODEXK8S_JWT_TTL" envDefault:"15m"`
 	// CookieSecure controls Secure attribute for auth cookies (should be true under HTTPS).
-	CookieSecure bool `env:"CODEXK8S_COOKIE_SECURE" envDefault:"true"`
+	CookieSecure bool `env:"CODEXK8S_COOKIE_SECURE" envDefault:"false"`
 
 	// GitHubWebhookSecret is used to validate X-Hub-Signature-256.
 	GitHubWebhookSecret string `env:"CODEXK8S_GITHUB_WEBHOOK_SECRET,required,notEmpty"`

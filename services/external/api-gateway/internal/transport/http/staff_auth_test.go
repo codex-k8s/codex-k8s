@@ -50,6 +50,13 @@ func (s *stubUserRepo) EnsureOwner(_ context.Context, _ string) (userrepo.User, 
 	return userrepo.User{}, nil
 }
 
+func (s *stubUserRepo) GetByID(_ context.Context, userID string) (userrepo.User, bool, error) {
+	if userID == s.u.ID {
+		return s.u, true, nil
+	}
+	return userrepo.User{}, false, nil
+}
+
 func (s *stubUserRepo) GetByEmail(_ context.Context, email string) (userrepo.User, bool, error) {
 	if email == s.u.Email {
 		return s.u, true, nil
@@ -78,3 +85,6 @@ func (s *stubUserRepo) List(_ context.Context, _ int) ([]userrepo.User, error) {
 	return nil, nil
 }
 
+func (s *stubUserRepo) DeleteByID(_ context.Context, _ string) error {
+	return nil
+}

@@ -12,6 +12,7 @@ export const en = {
     back: "Back",
     refresh: "Refresh",
     save: "Save",
+    cancel: "Cancel",
     delete: "Delete",
     createOrUpdate: "Create / Update",
     attachEnsureWebhook: "Attach + Ensure Webhook",
@@ -32,7 +33,8 @@ export const en = {
   placeholders: {
     projectSlug: "codex-k8s",
     projectName: "codex-k8s",
-    userEmail: "user@example.com",
+    // vue-i18n treats `@` as a linked-message marker, so we must use literal interpolation.
+    userEmail: "user{'@'}example.com",
     repoOwner: "codex-k8s",
     repoName: "codex-k8s",
     servicesYamlPath: "services.yaml",
@@ -89,8 +91,15 @@ export const en = {
     runDetails: {
       title: "Run Details",
       runId: "run_id",
+      correlation: "correlation_id",
       flowEvents: "Flow Events",
       learningFeedback: "Learning Feedback",
+    },
+    projectDetails: {
+      title: "Project Details",
+      projectId: "project_id",
+      slug: "Slug",
+      name: "Name",
     },
     projectRepositories: {
       title: "Project Repositories",
@@ -109,12 +118,19 @@ export const en = {
     projectMembers: {
       title: "Project Members",
       projectId: "project_id",
+      addTitle: "Add Project Member",
       email: "Email",
       userId: "User ID",
       role: "Role",
       learningOverride: "Learning override",
       inherit: "inherit",
     },
+  },
+  crumb: {
+    projectDetails: "Project details",
+    projectRepositories: "Project repositories",
+    projectMembers: "Project members",
+    runDetails: "Run details",
   },
   errors: {
     unknown: "Something went wrong.",
@@ -126,6 +142,10 @@ export const en = {
     invalidArgument: "Invalid input.",
     conflict: "Conflict.",
     platformAdminRequired: "Platform admin required.",
+    platformOwnerRequired: "Platform owner required.",
+    cannotDeleteSelf: "You cannot delete yourself.",
+    cannotDeletePlatformAdmin: "You cannot delete a platform admin.",
+    cannotRemovePlatformOwner: "You cannot remove the platform owner from a project.",
   },
   i18n: {
     enFlag: "🇺🇸",

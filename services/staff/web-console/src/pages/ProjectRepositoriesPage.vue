@@ -3,11 +3,14 @@
     <div class="row">
       <div>
         <h2>{{ t("pages.projectRepositories.title") }}</h2>
-        <div class="muted mono">{{ t("pages.projectRepositories.projectId") }}: {{ projectId }}</div>
+        <div v-if="details.item" class="muted">
+          <RouterLink class="lnk" :to="{ name: 'project-details', params: { projectId } }">{{ details.item.name }}</RouterLink>
+        </div>
+        <div v-else class="muted mono">{{ t("pages.projectRepositories.projectId") }}: {{ projectId }}</div>
       </div>
       <div class="actions">
-        <RouterLink class="btn" :to="{ name: 'projects' }">{{ t("common.back") }}</RouterLink>
-        <button class="btn" type="button" @click="load" :disabled="repos.loading">{{ t("common.refresh") }}</button>
+        <RouterLink class="btn equal" :to="{ name: 'projects' }">{{ t("common.back") }}</RouterLink>
+        <button class="btn equal" type="button" @click="load" :disabled="repos.loading">{{ t("common.refresh") }}</button>
       </div>
     </div>
 
@@ -16,23 +19,23 @@
     <table v-if="repos.items.length" class="tbl">
       <thead>
         <tr>
-          <th>{{ t("pages.projectRepositories.provider") }}</th>
-          <th>{{ t("pages.projectRepositories.repo") }}</th>
-          <th>{{ t("pages.projectRepositories.servicesYaml") }}</th>
-          <th>{{ t("pages.projectRepositories.externalId") }}</th>
-          <th>{{ t("pages.projectRepositories.id") }}</th>
+          <th class="center">{{ t("pages.projectRepositories.provider") }}</th>
+          <th class="center">{{ t("pages.projectRepositories.repo") }}</th>
+          <th class="center">{{ t("pages.projectRepositories.servicesYaml") }}</th>
+          <th class="center">{{ t("pages.projectRepositories.externalId") }}</th>
+          <th class="center">{{ t("pages.projectRepositories.id") }}</th>
           <th></th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="r in repos.items" :key="r.id">
-          <td>{{ r.provider }}</td>
-          <td class="mono">{{ r.owner }}/{{ r.name }}</td>
-          <td class="mono">{{ r.servicesYamlPath }}</td>
-          <td class="mono">{{ r.externalId }}</td>
-          <td class="mono">{{ r.id }}</td>
+          <td class="center">{{ r.provider }}</td>
+          <td class="mono center">{{ r.owner }}/{{ r.name }}</td>
+          <td class="mono center">{{ r.servicesYamlPath }}</td>
+          <td class="mono center">{{ r.externalId }}</td>
+          <td class="mono center">{{ r.id }}</td>
           <td class="right">
-            <button class="btn danger" type="button" @click="remove(r.id)" :disabled="repos.removing">
+            <button class="btn danger" type="button" @click="askRemove(r.id, r.owner + '/' + r.name)" :disabled="repos.removing">
               {{ t("common.delete") }}
             </button>
           </td>
@@ -71,6 +74,17 @@
 
     <div v-if="repos.attachError" class="err">{{ t(repos.attachError.messageKey) }}</div>
   </section>
+
+  <ConfirmModal
+    :open="confirmOpen"
+    :title="t('common.delete')"
+    :message="confirmName"
+    :confirmText="t('common.delete')"
+    :cancelText="t('common.cancel')"
+    danger
+    @cancel="confirmOpen = false"
+    @confirm="doRemove"
+  />
 </template>
 
 <script setup lang="ts">
@@ -78,19 +92,27 @@ import { onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
+import ConfirmModal from "../shared/ui/ConfirmModal.vue";
 import { useProjectRepositoriesStore } from "../features/projects/repositories-store";
+import { useProjectDetailsStore } from "../features/projects/details-store";
 
 const props = defineProps<{ projectId: string }>();
 
 const { t } = useI18n({ useScope: "global" });
 const repos = useProjectRepositoriesStore();
+const details = useProjectDetailsStore();
 
 const owner = ref("");
 const name = ref("");
 const servicesYamlPath = ref("services.yaml");
 const token = ref("");
 
+const confirmOpen = ref(false);
+const confirmRepoId = ref("");
+const confirmName = ref("");
+
 async function load() {
+  await details.load(props.projectId);
   await repos.load(props.projectId);
 }
 
@@ -104,8 +126,18 @@ async function attach() {
   }
 }
 
-async function remove(repositoryId: string) {
-  await repos.remove(repositoryId);
+function askRemove(repositoryId: string, label: string) {
+  confirmRepoId.value = repositoryId;
+  confirmName.value = label;
+  confirmOpen.value = true;
+}
+
+async function doRemove() {
+  const id = confirmRepoId.value;
+  confirmOpen.value = false;
+  confirmRepoId.value = "";
+  if (!id) return;
+  await repos.remove(id);
 }
 
 onMounted(() => void load());

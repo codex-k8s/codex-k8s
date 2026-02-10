@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
+
 	domainrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/repocfg"
 )
 
@@ -42,7 +44,7 @@ func (r *Repository) ListForProject(ctx context.Context, projectID string, limit
 	if err != nil {
 		return nil, fmt.Errorf("list repositories: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	out := make([]domainrepo.RepositoryBinding, 0, limit)
 	for rows.Next() {
@@ -83,18 +85,7 @@ func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams)
 
 // Delete removes repository binding by id for a project.
 func (r *Repository) Delete(ctx context.Context, projectID string, repositoryID string) error {
-	res, err := r.db.ExecContext(ctx, queryDelete, projectID, repositoryID)
-	if err != nil {
-		return fmt.Errorf("delete repository binding: %w", err)
-	}
-	n, err := res.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("read rows affected for delete: %w", err)
-	}
-	if n == 0 {
-		return sql.ErrNoRows
-	}
-	return nil
+	return postgres.ExecRequireRowOrWrap(ctx, r.db, queryDelete, "delete repository binding", projectID, repositoryID)
 }
 
 // FindByProviderExternalID resolves binding by provider repo id.

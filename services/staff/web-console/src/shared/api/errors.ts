@@ -25,6 +25,10 @@ export class ApiError extends Error {
 function keyForHttp(status: number | undefined, code: string | undefined, message: string | undefined): string {
   if (status === 403 && message === "email is not allowed") return "errors.emailNotAllowed";
   if (status === 403 && message === "platform admin required") return "errors.platformAdminRequired";
+  if (status === 403 && message === "platform owner required") return "errors.platformOwnerRequired";
+  if (status === 403 && message === "cannot delete self") return "errors.cannotDeleteSelf";
+  if (status === 403 && message === "cannot delete platform admin") return "errors.cannotDeletePlatformAdmin";
+  if (status === 403 && message === "cannot remove platform owner from project") return "errors.cannotRemovePlatformOwner";
 
   if (code === "invalid_argument") return "errors.invalidArgument";
   if (code === "unauthorized") return "errors.unauthorized";
@@ -64,4 +68,3 @@ export function normalizeApiError(err: unknown): ApiError {
 
   return new ApiError({ kind: "unknown", messageKey: "errors.unknown" });
 }
-

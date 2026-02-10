@@ -52,7 +52,7 @@ func fetchGitHubUser(ctx context.Context, client *http.Client) (gitHubUser, erro
 	if err != nil {
 		return gitHubUser{}, fmt.Errorf("call github user: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return gitHubUser{}, fmt.Errorf("github user returned %s", resp.Status)
@@ -79,7 +79,7 @@ func fetchGitHubPrimaryVerifiedEmail(ctx context.Context, client *http.Client) (
 	if err != nil {
 		return "", fmt.Errorf("call github emails: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return "", fmt.Errorf("github emails returned %s", resp.Status)

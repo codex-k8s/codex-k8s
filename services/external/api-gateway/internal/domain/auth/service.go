@@ -132,7 +132,7 @@ func (s *Service) ExchangeAndIssueJWT(ctx context.Context, code string) (jwtToke
 	u.GitHubLogin = ghUser.Login
 
 	now := s.now().UTC()
-	jwtToken, expiresAt, err = s.signer.Issue(u.ID, u.Email, u.GitHubLogin, u.IsPlatformAdmin, now)
+	jwtToken, expiresAt, err = s.signer.Issue(u.ID, u.Email, u.GitHubLogin, u.IsPlatformAdmin, u.IsPlatformOwner, now)
 	if err != nil {
 		return "", time.Time{}, err
 	}

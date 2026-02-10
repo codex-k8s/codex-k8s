@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 
 import { normalizeApiError, type ApiError } from "../../shared/api/errors";
-import { listProjects, upsertProject } from "./api";
+import { deleteProject, listProjects, upsertProject } from "./api";
 import type { Project } from "./types";
 
 export const useProjectsStore = defineStore("projects", {
@@ -11,6 +11,8 @@ export const useProjectsStore = defineStore("projects", {
     error: null as ApiError | null,
     saving: false,
     saveError: null as ApiError | null,
+    deleting: false,
+    deleteError: null as ApiError | null,
   }),
   actions: {
     async load(): Promise<void> {
@@ -38,6 +40,18 @@ export const useProjectsStore = defineStore("projects", {
         this.saving = false;
       }
     },
+
+    async remove(projectId: string): Promise<void> {
+      this.deleting = true;
+      this.deleteError = null;
+      try {
+        await deleteProject(projectId);
+        await this.load();
+      } catch (e) {
+        this.deleteError = normalizeApiError(e);
+      } finally {
+        this.deleting = false;
+      }
+    },
   },
 });
-

@@ -1,0 +1,50 @@
+package floweventrepo
+
+import (
+	"context"
+	"database/sql"
+	_ "embed"
+	"time"
+
+	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
+)
+
+var (
+	//go:embed sql/insert.sql
+	queryInsert string
+)
+
+// InsertParams defines a single flow event insertion request.
+type InsertParams struct {
+	CorrelationID string
+	ActorType     string
+	ActorID       string
+	EventType     string
+	Payload       []byte
+	CreatedAt     time.Time
+}
+
+// Repository stores flow events in PostgreSQL.
+type Repository struct {
+	db *sql.DB
+}
+
+// NewRepository constructs a flow event repository.
+func NewRepository(db *sql.DB) *Repository {
+	return &Repository{db: db}
+}
+
+// Insert appends a flow event row.
+func (r *Repository) Insert(ctx context.Context, params InsertParams) error {
+	return postgres.InsertFlowEvent(
+		ctx,
+		r.db,
+		queryInsert,
+		params.CorrelationID,
+		params.ActorType,
+		params.ActorID,
+		params.EventType,
+		params.Payload,
+		params.CreatedAt,
+	)
+}

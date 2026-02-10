@@ -4,6 +4,7 @@ export type UserDto = {
   github_user_id: number | null;
   github_login: string | null;
   is_platform_admin: boolean;
+  is_platform_owner: boolean;
 };
 
 export type User = {
@@ -11,5 +12,5 @@ export type User = {
   email: string;
   githubLogin: string | null;
   isPlatformAdmin: boolean;
+  isPlatformOwner: boolean;
 };
-

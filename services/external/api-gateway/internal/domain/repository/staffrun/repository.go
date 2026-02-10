@@ -1,23 +1,28 @@
 package staffrun
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // Run is a staff-visible run record.
 type Run struct {
 	ID            string
 	CorrelationID string
 	ProjectID     string
+	ProjectSlug   string
+	ProjectName   string
 	Status        string
-	CreatedAt     string
-	StartedAt     string
-	FinishedAt    string
+	CreatedAt     time.Time
+	StartedAt     *time.Time
+	FinishedAt    *time.Time
 }
 
 // FlowEvent is a staff-visible flow event.
 type FlowEvent struct {
 	CorrelationID string
 	EventType     string
-	CreatedAt     string
+	CreatedAt     time.Time
 	PayloadJSON   []byte
 }
 
@@ -27,8 +32,12 @@ type Repository interface {
 	ListAll(ctx context.Context, limit int) ([]Run, error)
 	// ListForUser returns recent runs for user's projects.
 	ListForUser(ctx context.Context, userID string, limit int) ([]Run, error)
+	// GetByID returns a run by id.
+	GetByID(ctx context.Context, runID string) (Run, bool, error)
 	// ListEventsByCorrelation returns flow events for a correlation id.
 	ListEventsByCorrelation(ctx context.Context, correlationID string, limit int) ([]FlowEvent, error)
+	// DeleteFlowEventsByProjectID removes flow_events linked to runs of a project.
+	DeleteFlowEventsByProjectID(ctx context.Context, projectID string) error
 	// GetCorrelationByRunID returns correlation id for a run id.
 	GetCorrelationByRunID(ctx context.Context, runID string) (correlationID string, projectID string, ok bool, err error)
 }

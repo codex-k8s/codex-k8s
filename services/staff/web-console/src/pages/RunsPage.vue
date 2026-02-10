@@ -14,12 +14,10 @@
         <tr>
           <th>{{ t("pages.runs.status") }}</th>
           <th>{{ t("pages.runs.project") }}</th>
-          <th>{{ t("pages.runs.correlation") }}</th>
-          <th>{{ t("pages.runs.created") }}</th>
-          <th>{{ t("pages.runs.started") }}</th>
-          <th>{{ t("pages.runs.finished") }}</th>
-          <th></th>
-          <th>{{ t("pages.runs.id") }}</th>
+          <th class="center">{{ t("pages.runs.created") }}</th>
+          <th class="center">{{ t("pages.runs.started") }}</th>
+          <th class="center">{{ t("pages.runs.finished") }}</th>
+          <th class="center"></th>
         </tr>
       </thead>
       <tbody>
@@ -27,17 +25,20 @@
           <td>
             <span class="pill" :class="'s-' + r.status">{{ r.status }}</span>
           </td>
-          <td class="mono">{{ r.projectId || "-" }}</td>
-          <td class="mono">{{ r.correlationId }}</td>
-          <td class="mono">{{ r.createdAt }}</td>
-          <td class="mono">{{ r.startedAt || "-" }}</td>
-          <td class="mono">{{ r.finishedAt || "-" }}</td>
           <td>
+            <RouterLink v-if="r.projectId" class="lnk" :to="{ name: 'project-details', params: { projectId: r.projectId } }">
+              {{ r.projectName || r.projectSlug || r.projectId }}
+            </RouterLink>
+            <span v-else class="mono">-</span>
+          </td>
+          <td class="mono center">{{ formatDateTime(r.createdAt, locale) }}</td>
+          <td class="mono center">{{ formatDateTime(r.startedAt, locale) }}</td>
+          <td class="mono center">{{ formatDateTime(r.finishedAt, locale) }}</td>
+          <td class="center">
             <RouterLink class="lnk" :to="{ name: 'run-details', params: { runId: r.id } }">
               {{ t("pages.runs.details") }}
             </RouterLink>
           </td>
-          <td class="mono">{{ r.id }}</td>
         </tr>
       </tbody>
     </table>
@@ -50,9 +51,10 @@ import { onMounted } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
+import { formatDateTime } from "../shared/lib/datetime";
 import { useRunsStore } from "../features/runs/store";
 
-const { t } = useI18n({ useScope: "global" });
+const { t, locale } = useI18n({ useScope: "global" });
 const runs = useRunsStore();
 
 async function load() {
@@ -80,4 +82,3 @@ h2 {
   border-color: rgba(37, 99, 235, 0.3);
 }
 </style>
-

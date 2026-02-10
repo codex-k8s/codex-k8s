@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 
 import { normalizeApiError, type ApiError } from "../../shared/api/errors";
-import { createAllowedUser, listUsers } from "./api";
+import { createAllowedUser, deleteUser, listUsers } from "./api";
 import type { User } from "./types";
 
 export const useUsersStore = defineStore("users", {
@@ -11,6 +11,8 @@ export const useUsersStore = defineStore("users", {
     error: null as ApiError | null,
     creating: false,
     createError: null as ApiError | null,
+    deleting: false,
+    deleteError: null as ApiError | null,
   }),
   actions: {
     async load(): Promise<void> {
@@ -23,6 +25,7 @@ export const useUsersStore = defineStore("users", {
           email: u.email,
           githubLogin: u.github_login ?? null,
           isPlatformAdmin: u.is_platform_admin,
+          isPlatformOwner: u.is_platform_owner,
         }));
       } catch (e) {
         this.error = normalizeApiError(e);
@@ -43,6 +46,18 @@ export const useUsersStore = defineStore("users", {
         this.creating = false;
       }
     },
+
+    async remove(userId: string): Promise<void> {
+      this.deleting = true;
+      this.deleteError = null;
+      try {
+        await deleteUser(userId);
+        await this.load();
+      } catch (e) {
+        this.deleteError = normalizeApiError(e);
+      } finally {
+        this.deleting = false;
+      }
+    },
   },
 });
-

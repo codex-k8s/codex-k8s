@@ -38,8 +38,8 @@ func TestLoadConfig_Defaults(t *testing.T) {
 	if cfg.JWTTTL != "15m" {
 		t.Fatalf("expected default jwt ttl 15m, got %q", cfg.JWTTTL)
 	}
-	if !cfg.CookieSecure {
-		t.Fatal("expected default cookie secure=true")
+	if cfg.CookieSecure {
+		t.Fatal("expected default cookie secure=false")
 	}
 }
 

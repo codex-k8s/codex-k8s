@@ -14,21 +14,29 @@
         <thead>
           <tr>
             <th>{{ t("pages.users.email") }}</th>
-            <th>{{ t("pages.users.github") }}</th>
-            <th>{{ t("pages.users.admin") }}</th>
-            <th>{{ t("common.id") }}</th>
+            <th class="center">{{ t("pages.users.github") }}</th>
+            <th class="center">{{ t("pages.users.admin") }}</th>
+            <th class="center">{{ t("common.id") }}</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="u in users.items" :key="u.id">
             <td>{{ u.email }}</td>
-            <td class="mono">{{ u.githubLogin || "-" }}</td>
-            <td>{{ u.isPlatformAdmin ? t("pages.users.yes") : t("pages.users.no") }}</td>
-            <td class="mono">{{ u.id }}</td>
+            <td class="mono center">{{ u.githubLogin || "-" }}</td>
+            <td class="center">{{ u.isPlatformAdmin ? t("pages.users.yes") : t("pages.users.no") }}</td>
+            <td class="mono center">{{ u.id }}</td>
+            <td class="right">
+              <button v-if="canDelete(u.id, u.isPlatformAdmin, u.isPlatformOwner)" class="btn danger" type="button" @click="askRemove(u.id, u.email)" :disabled="users.deleting">
+                {{ t("common.delete") }}
+              </button>
+            </td>
           </tr>
         </tbody>
       </table>
       <div v-else class="muted">{{ t("states.noUsers") }}</div>
+
+      <div v-if="users.deleteError" class="err">{{ t(users.deleteError.messageKey) }}</div>
     </div>
 
     <div class="card">
@@ -54,19 +62,37 @@
       </div>
     </div>
   </section>
+
+  <ConfirmModal
+    :open="confirmOpen"
+    :title="t('common.delete')"
+    :message="confirmName"
+    :confirmText="t('common.delete')"
+    :cancelText="t('common.cancel')"
+    danger
+    @cancel="confirmOpen = false"
+    @confirm="doRemove"
+  />
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
+import ConfirmModal from "../shared/ui/ConfirmModal.vue";
+import { useAuthStore } from "../features/auth/store";
 import { useUsersStore } from "../features/users/store";
 
 const { t } = useI18n({ useScope: "global" });
+const auth = useAuthStore();
 const users = useUsersStore();
 
 const email = ref("");
 const isAdmin = ref(false);
+
+const confirmOpen = ref(false);
+const confirmUserId = ref("");
+const confirmName = ref("");
 
 async function load() {
   await users.load();
@@ -78,6 +104,30 @@ async function create() {
     email.value = "";
     isAdmin.value = false;
   }
+}
+
+function canDelete(userId: string, isPlatformAdmin: boolean, isPlatformOwner: boolean): boolean {
+  if (!auth.me) return false;
+  if (userId === auth.me.id) return false;
+  if (auth.isPlatformOwner) return true;
+  if (!auth.isPlatformAdmin) return false;
+  // Platform admin cannot delete other admins/owner.
+  if (isPlatformOwner || isPlatformAdmin) return false;
+  return true;
+}
+
+function askRemove(userId: string, emailLabel: string) {
+  confirmUserId.value = userId;
+  confirmName.value = emailLabel;
+  confirmOpen.value = true;
+}
+
+async function doRemove() {
+  const id = confirmUserId.value;
+  confirmOpen.value = false;
+  confirmUserId.value = "";
+  if (!id) return;
+  await users.remove(id);
 }
 
 onMounted(() => void load());

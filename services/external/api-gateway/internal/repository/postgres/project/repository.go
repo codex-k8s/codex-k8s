@@ -6,6 +6,8 @@ import (
 	_ "embed"
 	"fmt"
 
+	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
+
 	domainrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/project"
 )
 
@@ -16,6 +18,10 @@ var (
 	queryListForUser string
 	//go:embed sql/upsert.sql
 	queryUpsert string
+	//go:embed sql/get_by_id.sql
+	queryGetByID string
+	//go:embed sql/delete_by_id.sql
+	queryDeleteByID string
 	//go:embed sql/get_learning_mode_default.sql
 	queryGetLearningModeDefault string
 )
@@ -39,7 +45,7 @@ func (r *Repository) ListAll(ctx context.Context, limit int) ([]domainrepo.Proje
 	if err != nil {
 		return nil, fmt.Errorf("list projects: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var out []domainrepo.Project
 	for rows.Next() {
@@ -64,7 +70,7 @@ func (r *Repository) ListForUser(ctx context.Context, userID string, limit int) 
 	if err != nil {
 		return nil, fmt.Errorf("list projects for user: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var out []domainrepo.ProjectWithRole
 	for rows.Next() {
@@ -88,6 +94,24 @@ func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams)
 		return domainrepo.Project{}, fmt.Errorf("upsert project: %w", err)
 	}
 	return out, nil
+}
+
+// GetByID returns a project by id.
+func (r *Repository) GetByID(ctx context.Context, projectID string) (domainrepo.Project, bool, error) {
+	var p domainrepo.Project
+	err := r.db.QueryRowContext(ctx, queryGetByID, projectID).Scan(&p.ID, &p.Slug, &p.Name)
+	if err == nil {
+		return p, true, nil
+	}
+	if err == sql.ErrNoRows {
+		return domainrepo.Project{}, false, nil
+	}
+	return domainrepo.Project{}, false, fmt.Errorf("get project by id: %w", err)
+}
+
+// DeleteByID deletes a project by id.
+func (r *Repository) DeleteByID(ctx context.Context, projectID string) error {
+	return postgres.ExecRequireRowOrWrap(ctx, r.db, queryDeleteByID, "delete project by id", projectID)
 }
 
 // GetLearningModeDefault returns project default learning-mode flag from JSONB settings.

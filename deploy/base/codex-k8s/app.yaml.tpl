@@ -119,6 +119,8 @@ spec:
                 secretKeyRef:
                   name: codex-k8s-runtime
                   key: CODEXK8S_PUBLIC_BASE_URL
+            - name: CODEXK8S_COOKIE_SECURE
+              value: "true"
             - name: CODEXK8S_BOOTSTRAP_OWNER_EMAIL
               valueFrom:
                 secretKeyRef:

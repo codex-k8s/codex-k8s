@@ -46,9 +46,15 @@
     </header>
 
     <nav v-if="auth.status === 'authed'" class="nav">
-      <RouterLink :to="{ name: 'projects' }">{{ t("nav.projects") }}</RouterLink>
-      <RouterLink :to="{ name: 'runs' }">{{ t("nav.runs") }}</RouterLink>
-      <RouterLink v-if="auth.isPlatformAdmin" :to="{ name: 'users' }">{{ t("nav.users") }}</RouterLink>
+      <div class="tabs">
+        <RouterLink :to="{ name: 'projects' }">{{ t("nav.projects") }}</RouterLink>
+        <span v-if="crumbAfterProjectsKey" class="crumb"> &gt; {{ t(crumbAfterProjectsKey) }}</span>
+
+        <RouterLink :to="{ name: 'runs' }">{{ t("nav.runs") }}</RouterLink>
+        <span v-if="crumbAfterRunsKey" class="crumb"> &gt; {{ t(crumbAfterRunsKey) }}</span>
+
+        <RouterLink v-if="auth.isPlatformAdmin" :to="{ name: 'users' }">{{ t("nav.users") }}</RouterLink>
+      </div>
     </nav>
 
     <main class="main">
@@ -63,8 +69,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from "vue";
-import { RouterLink, RouterView } from "vue-router";
+import { computed, onMounted } from "vue";
+import { RouterLink, RouterView, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 
 import { persistLocale, type Locale } from "../i18n/locale";
@@ -72,6 +78,19 @@ import { useAuthStore } from "../features/auth/store";
 
 const auth = useAuthStore();
 const { t, locale } = useI18n({ useScope: "global" });
+const route = useRoute();
+
+const crumbAfterProjectsKey = computed(() => {
+  const meta = route.meta as Record<string, any>;
+  if (meta?.section === "projects" && typeof meta?.crumbKey === "string" && meta.crumbKey) return meta.crumbKey as string;
+  return "";
+});
+
+const crumbAfterRunsKey = computed(() => {
+  const meta = route.meta as Record<string, any>;
+  if (meta?.section === "runs" && typeof meta?.crumbKey === "string" && meta.crumbKey) return meta.crumbKey as string;
+  return "";
+});
 
 function setLocale(next: Locale) {
   locale.value = next;
@@ -95,6 +114,8 @@ onMounted(() => {
     linear-gradient(180deg, #fbfbfc, #f4f5f7);
   color: #111827;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  --link-color: #0b5a83;
+  --link-color-hover: #084a6b;
 }
 .top {
   display: flex;
@@ -121,10 +142,10 @@ onMounted(() => {
 .lang {
   display: inline-flex;
   gap: 6px;
-  padding: 4px;
-  border: 1px solid rgba(17, 24, 39, 0.12);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.55);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 .lang-btn {
   padding: 7px 10px;
@@ -178,13 +199,24 @@ onMounted(() => {
   gap: 10px;
   padding: 12px 20px;
 }
+.tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 .nav a {
   padding: 8px 10px;
   border-radius: 10px;
   text-decoration: none;
-  color: inherit;
+  color: var(--link-color);
   font-weight: 700;
   opacity: 0.8;
+}
+.crumb {
+  opacity: 0.55;
+  font-weight: 800;
+  padding: 0 2px;
 }
 .nav a.router-link-active {
   opacity: 1;

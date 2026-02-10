@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -16,6 +15,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/crypto/tokencrypt"
+	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
 	repoprovider "github.com/codex-k8s/codex-k8s/libs/go/repo/provider"
 	githubprovider "github.com/codex-k8s/codex-k8s/libs/go/repo/provider/github"
 	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/auth"
@@ -41,11 +41,22 @@ func Run() error {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
-	db, err := openDB(cfg)
+	db, err := postgres.Open(context.Background(), postgres.OpenParams{
+		Host:     cfg.DBHost,
+		Port:     cfg.DBPort,
+		DBName:   cfg.DBName,
+		User:     cfg.DBUser,
+		Password: cfg.DBPassword,
+		SSLMode:  cfg.DBSSLMode,
+	})
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			logger.Error("db close failed", "err", err)
+		}
+	}()
 
 	agentRuns := agentrunrepo.NewRepository(db)
 	flowEvents := floweventrepo.NewRepository(db)
@@ -165,29 +176,4 @@ func splitCSV(v string) []string {
 		out = append(out, p)
 	}
 	return out
-}
-
-func openDB(cfg Config) (*sql.DB, error) {
-	dsn := fmt.Sprintf(
-		"host=%s port=%d dbname=%s user=%s password=%s sslmode=%s",
-		cfg.DBHost,
-		cfg.DBPort,
-		cfg.DBName,
-		cfg.DBUser,
-		cfg.DBPassword,
-		cfg.DBSSLMode,
-	)
-
-	db, err := sql.Open("pgx", dsn)
-	if err != nil {
-		return nil, fmt.Errorf("open postgres connection: %w", err)
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := db.PingContext(ctx); err != nil {
-		return nil, fmt.Errorf("ping postgres: %w", err)
-	}
-
-	return db, nil
 }

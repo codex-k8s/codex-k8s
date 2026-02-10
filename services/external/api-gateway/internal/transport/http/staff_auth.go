@@ -83,6 +83,7 @@ func authenticatePrincipal(c *echo.Context, verifier jwtVerifier, users userrepo
 			Email:           u.Email,
 			GitHubLogin:     u.GitHubLogin,
 			IsPlatformAdmin: u.IsPlatformAdmin,
+			IsPlatformOwner: u.IsPlatformOwner,
 		}, nil
 	}
 
@@ -113,6 +114,7 @@ func authenticatePrincipal(c *echo.Context, verifier jwtVerifier, users userrepo
 		Email:           claims.Email,
 		GitHubLogin:     claims.GitHubLogin,
 		IsPlatformAdmin: claims.IsAdmin,
+		IsPlatformOwner: claims.IsOwner,
 	}, nil
 }
 

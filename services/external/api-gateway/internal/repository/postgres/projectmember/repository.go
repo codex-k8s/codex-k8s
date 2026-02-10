@@ -6,6 +6,8 @@ import (
 	_ "embed"
 	"fmt"
 
+	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
+
 	domainrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/projectmember"
 )
 
@@ -14,6 +16,8 @@ var (
 	queryList string
 	//go:embed sql/upsert.sql
 	queryUpsert string
+	//go:embed sql/delete.sql
+	queryDelete string
 	//go:embed sql/get_role.sql
 	queryGetRole string
 	//go:embed sql/set_learning_mode_override.sql
@@ -41,7 +45,7 @@ func (r *Repository) List(ctx context.Context, projectID string, limit int) ([]d
 	if err != nil {
 		return nil, fmt.Errorf("list project members: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var out []domainrepo.Member
 	for rows.Next() {
@@ -66,10 +70,12 @@ func (r *Repository) List(ctx context.Context, projectID string, limit int) ([]d
 
 // Upsert sets membership role for a user.
 func (r *Repository) Upsert(ctx context.Context, projectID string, userID string, role string) error {
-	if _, err := r.db.ExecContext(ctx, queryUpsert, projectID, userID, role); err != nil {
-		return fmt.Errorf("upsert project member: %w", err)
-	}
-	return nil
+	return postgres.ExecOrWrap(ctx, r.db, queryUpsert, "upsert project member", projectID, userID, role)
+}
+
+// Delete removes a user from a project.
+func (r *Repository) Delete(ctx context.Context, projectID string, userID string) error {
+	return postgres.ExecRequireRowOrWrap(ctx, r.db, queryDelete, "delete project member", projectID, userID)
 }
 
 // GetRole returns role for a project member.
@@ -87,18 +93,7 @@ func (r *Repository) GetRole(ctx context.Context, projectID string, userID strin
 
 // SetLearningModeOverride sets per-member learning mode override (nullable).
 func (r *Repository) SetLearningModeOverride(ctx context.Context, projectID string, userID string, enabled *bool) error {
-	res, err := r.db.ExecContext(ctx, querySetLearningModeOverride, projectID, userID, enabled)
-	if err != nil {
-		return fmt.Errorf("set learning mode override: %w", err)
-	}
-	n, err := res.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("read rows affected for set learning mode override: %w", err)
-	}
-	if n == 0 {
-		return sql.ErrNoRows
-	}
-	return nil
+	return postgres.ExecRequireRowOrWrap(ctx, r.db, querySetLearningModeOverride, "set learning mode override", projectID, userID, enabled)
 }
 
 // GetLearningModeOverride returns per-member learning mode override (nullable).
