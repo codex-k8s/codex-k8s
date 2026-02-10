@@ -32,6 +32,7 @@ func Dial(ctx context.Context, target string) (*Client, error) {
 		ctx,
 		target,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithBlock(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("dial control-plane grpc %q: %w", target, err)

@@ -24,7 +24,7 @@ func Run() error {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
-	dialCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	dialCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	cp, err := controlplane.Dial(dialCtx, cfg.ControlPlaneGRPCTarget)
 	if err != nil {
