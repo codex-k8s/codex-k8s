@@ -220,7 +220,7 @@ else
 fi
 
 kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create configmap codex-k8s-migrations \
-  --from-file="${ROOT_DIR}/cmd/cli/migrations" \
+  --from-file="${ROOT_DIR}/services/internal/control-plane/cmd/cli/migrations" \
   --dry-run=client -o yaml | kubectl apply -f -
 
 render_template "${ROOT_DIR}/deploy/base/postgres/postgres.yaml.tpl" | kubectl apply -f -

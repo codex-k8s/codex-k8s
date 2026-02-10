@@ -209,7 +209,8 @@ approvals:
 - PII/комплаенс: email хранится, токены только в шифрованном виде.
 
 ## Миграции (ссылка)
-См. `migrations_policy.md` (будет добавлен на этапе design) + список миграций в `cmd/cli/migrations`.
+См. `migrations_policy.md` (будет добавлен на этапе design) + миграции в держателе схемы:
+`services/<zone>/<db-owner-service>/cmd/cli/migrations`.
 
 ## Решения Owner
 - Размер вектора `3072` подтверждён как базовый для MVP.

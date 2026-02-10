@@ -74,7 +74,7 @@ approvals:
 
 ## Evidence
 - Day2 migration добавлена:
-  - `cmd/cli/migrations/20260207093000_day2_worker_slots_and_status.sql`
+  - `services/internal/control-plane/cmd/cli/migrations/20260207093000_day2_worker_slots_and_status.sql`
 - Реализация worker run-loop добавлена:
   - `services/jobs/worker/internal/domain/worker/service.go`
   - `services/jobs/worker/internal/repository/postgres/runqueue/repository.go`

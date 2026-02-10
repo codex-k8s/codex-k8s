@@ -10,17 +10,17 @@ import (
 
 // Repository stores flow events in PostgreSQL.
 type Repository struct {
-	db *sql.DB
+	inner *libflow.Repository
 }
 
 // NewRepository constructs PostgreSQL flow event repository.
 func NewRepository(db *sql.DB) *Repository {
-	return &Repository{db: db}
+	return &Repository{inner: libflow.NewRepository(db)}
 }
 
 // Insert appends one flow event row.
 func (r *Repository) Insert(ctx context.Context, params domainrepo.InsertParams) error {
-	return libflow.NewRepository(r.db).Insert(ctx, libflow.InsertParams{
+	return r.inner.Insert(ctx, libflow.InsertParams{
 		CorrelationID: params.CorrelationID,
 		ActorType:     params.ActorType,
 		ActorID:       params.ActorID,

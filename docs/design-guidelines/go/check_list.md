@@ -16,7 +16,7 @@
 - Изменения lifecycle pod/slot фиксируются в таблицах состояния и журнале событий.
 
 ## Postgres и SQL
-- Миграции: `cmd/cli/migrations/*.sql` (goose; timestamp; `-- +goose Up/Down`); история не переписывается.
+- Миграции (goose): `services/<zone>/<db-owner-service>/cmd/cli/migrations/*.sql` (timestamp; `-- +goose Up/Down`); история не переписывается.
 - Repo интерфейсы в `internal/domain/repository/<model>/repository.go`; реализации в `internal/repository/postgres/<model>/repository.go`.
 - SQL только в `internal/repository/postgres/<model>/sql/*.sql` + `//go:embed`; SQL-строки в Go запрещены.
 - SQL-запросы именованы комментариями `-- name: <model>__<operation> :one|:many|:exec`.

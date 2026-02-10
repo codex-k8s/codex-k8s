@@ -78,7 +78,7 @@ approvals:
   - `services/external/api-gateway/internal/repository/postgres/agentrun/repository.go`
   - `services/external/api-gateway/internal/repository/postgres/flowevent/repository.go`
 - DDL миграция добавлена:
-  - `cmd/cli/migrations/20260206191000_day1_webhook_ingest.sql`
+  - `services/internal/control-plane/cmd/cli/migrations/20260206191000_day1_webhook_ingest.sql`
 - Контракт OpenAPI/AsyncAPI добавлен:
   - `services/external/api-gateway/api/server/api.yaml`
   - `services/external/api-gateway/api/server/asyncapi.yaml`
