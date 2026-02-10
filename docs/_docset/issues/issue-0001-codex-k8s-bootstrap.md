@@ -28,7 +28,7 @@ approvals:
 - [x] ADR (если нужно): `docs/architecture/adr/ADR-0001-kubernetes-only.md`, `docs/architecture/adr/ADR-0002-webhook-driven-and-deploy-workflows.md`, `docs/architecture/adr/ADR-0003-postgres-jsonb-pgvector.md`, `docs/architecture/adr/ADR-0004-repository-provider-interface.md`
 - [ ] Design Doc: TBD
 - [x] Delivery Plan: `docs/delivery/delivery_plan.md`
-- [x] Sprint Plan: `docs/delivery/sprint_s1_day0_day7.md`
+- [x] Sprint Plan: `docs/delivery/sprint_s1_mvp_vertical_slice.md`
 - [x] Process Requirements: `docs/delivery/development_process_requirements.md`
 - [ ] DoD: TBD
 - [ ] Test Strategy/Plan: TBD
@@ -49,17 +49,17 @@ approvals:
 - `docs/architecture/adr/ADR-0004-repository-provider-interface.md`
 - `docs/delivery/delivery_plan.md`
 - `docs/delivery/roadmap.md`
-- `docs/delivery/epic.md`
+- `docs/delivery/epic_s1.md`
 - `docs/delivery/development_process_requirements.md`
-- `docs/delivery/sprint_s1_day0_day7.md`
-- `docs/delivery/epics/epic-day0-bootstrap-baseline.md`
-- `docs/delivery/epics/epic-day1-webhook-idempotency.md`
-- `docs/delivery/epics/epic-day2-worker-slots-k8s.md`
-- `docs/delivery/epics/epic-day3-auth-rbac-ui.md`
-- `docs/delivery/epics/epic-day4-repository-provider.md`
-- `docs/delivery/epics/epic-day5-learning-mode.md`
-- `docs/delivery/epics/epic-day6-hardening-observability.md`
-- `docs/delivery/epics/epic-day7-stabilization-gate.md`
+- `docs/delivery/sprint_s1_mvp_vertical_slice.md`
+- `docs/delivery/epics/epic-s1-day0-bootstrap-baseline.md`
+- `docs/delivery/epics/epic-s1-day1-webhook-idempotency.md`
+- `docs/delivery/epics/epic-s1-day2-worker-slots-k8s.md`
+- `docs/delivery/epics/epic-s1-day3-auth-rbac-ui.md`
+- `docs/delivery/epics/epic-s1-day4-repository-provider.md`
+- `docs/delivery/epics/epic-s1-day5-learning-mode.md`
+- `docs/delivery/epics/epic-s1-day6-hardening-observability.md`
+- `docs/delivery/epics/epic-s1-day7-stabilization-gate.md`
 - `docs/delivery/issue_map.md`
 - `docs/delivery/requirements_traceability.md`
 

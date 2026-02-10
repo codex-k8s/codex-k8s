@@ -10,7 +10,7 @@
 ## Главные правила
 
 - Перед изменениями читать `docs/design-guidelines/AGENTS.md`.
-- Временные правила текущего ручного dev/staging цикла (до полного dogfooding через `run:dev`) см. `.local/agents-temp-dev-rules.md`.
+- Временные правила текущего ручного dev/staging цикла (до полного dogfooding через `run:dev`) см. `.local/agents-temp-dev-rules.md`. Править `.local/agents-temp-dev-rules.md` строго запрещено, если не стоит явная задача на изменение временных правил.
 - Для Go-изменений обязательно читать профильные документы из `docs/design-guidelines/go/`.
 - Для frontend-изменений обязательно читать `docs/design-guidelines/vue/` и `docs/design-guidelines/visual/`.
 - Для инфраструктурных изменений читать `docs/design-guidelines/common/`.
