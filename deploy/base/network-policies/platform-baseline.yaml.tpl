@@ -47,6 +47,17 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
+    # Allow api-gateway (and other platform pods) to call control-plane over gRPC/HTTP.
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: codex-k8s
+              app.kubernetes.io/component: control-plane
+      ports:
+        - protocol: TCP
+          port: 9090
+        - protocol: TCP
+          port: 8081
     - to:
         - namespaceSelector:
             matchLabels:
