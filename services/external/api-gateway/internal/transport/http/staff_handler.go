@@ -7,50 +7,21 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/errs"
-	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/learningfeedback"
-	projectrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/project"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/projectmember"
-	repocfgrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/repocfg"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/staffrun"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/user"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/staff"
 	"github.com/labstack/echo/v5"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/codex-k8s/codex-k8s/libs/go/errs"
+	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
+	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/controlplane"
 )
-
-type staffService interface {
-	ListProjects(ctx context.Context, principal staff.Principal, limit int) ([]any, error)
-	UpsertProject(ctx context.Context, principal staff.Principal, slug string, name string) (projectrepo.Project, error)
-	GetProject(ctx context.Context, principal staff.Principal, projectID string) (projectrepo.Project, error)
-	DeleteProject(ctx context.Context, principal staff.Principal, projectID string) error
-
-	ListRuns(ctx context.Context, principal staff.Principal, limit int) ([]staffrun.Run, error)
-	GetRun(ctx context.Context, principal staff.Principal, runID string) (staffrun.Run, error)
-	ListRunFlowEvents(ctx context.Context, principal staff.Principal, runID string, limit int) ([]staffrun.FlowEvent, error)
-	ListRunLearningFeedback(ctx context.Context, principal staff.Principal, runID string, limit int) ([]learningfeedbackrepo.Feedback, error)
-
-	ListUsers(ctx context.Context, principal staff.Principal, limit int) ([]user.User, error)
-	CreateAllowedUser(ctx context.Context, principal staff.Principal, email string, isPlatformAdmin bool) (user.User, error)
-	DeleteUser(ctx context.Context, principal staff.Principal, userID string) error
-
-	ListProjectMembers(ctx context.Context, principal staff.Principal, projectID string, limit int) ([]projectmember.Member, error)
-	UpsertProjectMember(ctx context.Context, principal staff.Principal, projectID string, userID string, role string) error
-	UpsertProjectMemberByEmail(ctx context.Context, principal staff.Principal, projectID string, email string, role string) error
-	DeleteProjectMember(ctx context.Context, principal staff.Principal, projectID string, userID string) error
-	SetProjectMemberLearningModeOverride(ctx context.Context, principal staff.Principal, projectID string, userID string, enabled *bool) error
-
-	ListProjectRepositories(ctx context.Context, principal staff.Principal, projectID string, limit int) ([]repocfgrepo.RepositoryBinding, error)
-	UpsertProjectRepository(ctx context.Context, principal staff.Principal, projectID string, provider string, owner string, name string, token string, servicesYAMLPath string) (repocfgrepo.RepositoryBinding, error)
-	DeleteProjectRepository(ctx context.Context, principal staff.Principal, projectID string, repositoryID string) error
-}
 
 // staffHandler implements staff/private JSON endpoints protected by JWT.
 type staffHandler struct {
-	svc staffService
+	cp *controlplane.Client
 }
 
-func newStaffHandler(svc staffService) *staffHandler {
-	return &staffHandler{svc: svc}
+func newStaffHandler(cp *controlplane.Client) *staffHandler {
+	return &staffHandler{cp: cp}
 }
 
 func parseLimit(c *echo.Context, def int) (int, error) {
@@ -68,10 +39,10 @@ func parseLimit(c *echo.Context, def int) (int, error) {
 	return n, nil
 }
 
-func requirePrincipal(c *echo.Context) (staff.Principal, error) {
+func requirePrincipal(c *echo.Context) (*controlplanev1.Principal, error) {
 	p, ok := getPrincipal(c)
-	if !ok {
-		return staff.Principal{}, errs.Unauthorized{Msg: "not authenticated"}
+	if !ok || p == nil || strings.TrimSpace(p.UserId) == "" {
+		return nil, errs.Unauthorized{Msg: "not authenticated"}
 	}
 	return p, nil
 }
@@ -84,7 +55,14 @@ func requirePathParam(c *echo.Context, name string) (string, error) {
 	return v, nil
 }
 
-func (h *staffHandler) deleteWith1Param(c *echo.Context, paramName string, fn func(ctx context.Context, principal staff.Principal, id string) error) error {
+func toRFC3339Nano(ts *timestamppb.Timestamp) any {
+	if ts == nil {
+		return nil
+	}
+	return ts.AsTime().UTC().Format(time.RFC3339Nano)
+}
+
+func (h *staffHandler) deleteWith1Param(c *echo.Context, paramName string, fn func(ctx context.Context, principal *controlplanev1.Principal, id string) error) error {
 	p, err := requirePrincipal(c)
 	if err != nil {
 		return err
@@ -103,7 +81,7 @@ func (h *staffHandler) deleteWith2Params(
 	c *echo.Context,
 	param1 string,
 	param2 string,
-	fn func(ctx context.Context, principal staff.Principal, id1 string, id2 string) error,
+	fn func(ctx context.Context, principal *controlplanev1.Principal, id1 string, id2 string) error,
 ) error {
 	p, err := requirePrincipal(c)
 	if err != nil {
@@ -124,39 +102,47 @@ func (h *staffHandler) deleteWith2Params(
 }
 
 func (h *staffHandler) ListProjects(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
+	p, err := requirePrincipal(c)
+	if err != nil {
+		return err
 	}
 	limit, err := parseLimit(c, 200)
 	if err != nil {
 		return err
 	}
-	items, err := h.svc.ListProjects(c.Request().Context(), p, limit)
+	resp, err := h.cp.ListProjects(c.Request().Context(), p, int32(limit))
 	if err != nil {
 		return err
 	}
-	return c.JSON(http.StatusOK, map[string]any{"items": items})
+	out := make([]any, 0, len(resp.GetItems()))
+	for _, it := range resp.GetItems() {
+		out = append(out, map[string]any{
+			"id":   it.GetId(),
+			"slug": it.GetSlug(),
+			"name": it.GetName(),
+			"role": it.GetRole(),
+		})
+	}
+	return c.JSON(http.StatusOK, map[string]any{"items": out})
 }
 
 func (h *staffHandler) GetProject(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
+	p, err := requirePrincipal(c)
+	if err != nil {
+		return err
 	}
-	projectID := c.Param("project_id")
-	if projectID == "" {
-		return errs.Validation{Field: "project_id", Msg: "is required"}
+	projectID, err := requirePathParam(c, "project_id")
+	if err != nil {
+		return err
 	}
-
-	item, err := h.svc.GetProject(c.Request().Context(), p, projectID)
+	item, err := h.cp.GetProject(c.Request().Context(), p, projectID)
 	if err != nil {
 		return err
 	}
 	return c.JSON(http.StatusOK, map[string]any{
-		"id":   item.ID,
-		"slug": item.Slug,
-		"name": item.Name,
+		"id":   item.GetId(),
+		"slug": item.GetSlug(),
+		"name": item.GetName(),
 	})
 }
 
@@ -166,208 +152,191 @@ type upsertProjectRequest struct {
 }
 
 func (h *staffHandler) UpsertProject(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
+	p, err := requirePrincipal(c)
+	if err != nil {
+		return err
 	}
 	var req upsertProjectRequest
 	if err := c.Bind(&req); err != nil {
 		return errs.Validation{Field: "body", Msg: "invalid JSON"}
 	}
-	item, err := h.svc.UpsertProject(c.Request().Context(), p, req.Slug, req.Name)
+	item, err := h.cp.UpsertProject(c.Request().Context(), p, req.Slug, req.Name)
 	if err != nil {
 		return err
 	}
 	return c.JSON(http.StatusCreated, map[string]any{
-		"id":   item.ID,
-		"slug": item.Slug,
-		"name": item.Name,
+		"id":   item.GetId(),
+		"slug": item.GetSlug(),
+		"name": item.GetName(),
 	})
 }
 
 func (h *staffHandler) DeleteProject(c *echo.Context) error {
-	return h.deleteWith1Param(c, "project_id", h.svc.DeleteProject)
+	return h.deleteWith1Param(c, "project_id", func(ctx context.Context, principal *controlplanev1.Principal, id string) error {
+		return h.cp.DeleteProject(ctx, principal, id)
+	})
 }
 
 func (h *staffHandler) ListRuns(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
+	p, err := requirePrincipal(c)
+	if err != nil {
+		return err
 	}
 	limit, err := parseLimit(c, 200)
 	if err != nil {
 		return err
 	}
-	items, err := h.svc.ListRuns(c.Request().Context(), p, limit)
+	resp, err := h.cp.ListRuns(c.Request().Context(), p, int32(limit))
 	if err != nil {
 		return err
 	}
-	out := make([]any, 0, len(items))
-	for _, r := range items {
-		createdAt := r.CreatedAt.UTC().Format(time.RFC3339Nano)
-		var startedAt any = nil
-		if r.StartedAt != nil {
-			startedAt = r.StartedAt.UTC().Format(time.RFC3339Nano)
-		}
-		var finishedAt any = nil
-		if r.FinishedAt != nil {
-			finishedAt = r.FinishedAt.UTC().Format(time.RFC3339Nano)
-		}
+	out := make([]any, 0, len(resp.GetItems()))
+	for _, r := range resp.GetItems() {
 		var projectID any = nil
-		if r.ProjectID != "" {
-			projectID = r.ProjectID
+		if strings.TrimSpace(r.GetProjectId()) != "" {
+			projectID = r.GetProjectId()
 		}
 		out = append(out, map[string]any{
-			"id":             r.ID,
-			"correlation_id": r.CorrelationID,
+			"id":             r.GetId(),
+			"correlation_id": r.GetCorrelationId(),
 			"project_id":     projectID,
-			"project_slug":   r.ProjectSlug,
-			"project_name":   r.ProjectName,
-			"status":         r.Status,
-			"created_at":     createdAt,
-			"started_at":     startedAt,
-			"finished_at":    finishedAt,
+			"project_slug":   r.GetProjectSlug(),
+			"project_name":   r.GetProjectName(),
+			"status":         r.GetStatus(),
+			"created_at":     toRFC3339Nano(r.GetCreatedAt()),
+			"started_at":     toRFC3339Nano(r.GetStartedAt()),
+			"finished_at":    toRFC3339Nano(r.GetFinishedAt()),
 		})
 	}
 	return c.JSON(http.StatusOK, map[string]any{"items": out})
 }
 
 func (h *staffHandler) GetRun(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
+	p, err := requirePrincipal(c)
+	if err != nil {
+		return err
 	}
-	runID := c.Param("run_id")
-	if runID == "" {
-		return errs.Validation{Field: "run_id", Msg: "is required"}
+	runID, err := requirePathParam(c, "run_id")
+	if err != nil {
+		return err
 	}
-
-	r, err := h.svc.GetRun(c.Request().Context(), p, runID)
+	r, err := h.cp.GetRun(c.Request().Context(), p, runID)
 	if err != nil {
 		return err
 	}
 
-	createdAt := r.CreatedAt.UTC().Format(time.RFC3339Nano)
-	var startedAt any = nil
-	if r.StartedAt != nil {
-		startedAt = r.StartedAt.UTC().Format(time.RFC3339Nano)
-	}
-	var finishedAt any = nil
-	if r.FinishedAt != nil {
-		finishedAt = r.FinishedAt.UTC().Format(time.RFC3339Nano)
-	}
 	var projectID any = nil
-	if r.ProjectID != "" {
-		projectID = r.ProjectID
+	if strings.TrimSpace(r.GetProjectId()) != "" {
+		projectID = r.GetProjectId()
 	}
 
 	return c.JSON(http.StatusOK, map[string]any{
-		"id":             r.ID,
-		"correlation_id": r.CorrelationID,
+		"id":             r.GetId(),
+		"correlation_id": r.GetCorrelationId(),
 		"project_id":     projectID,
-		"project_slug":   r.ProjectSlug,
-		"project_name":   r.ProjectName,
-		"status":         r.Status,
-		"created_at":     createdAt,
-		"started_at":     startedAt,
-		"finished_at":    finishedAt,
+		"project_slug":   r.GetProjectSlug(),
+		"project_name":   r.GetProjectName(),
+		"status":         r.GetStatus(),
+		"created_at":     toRFC3339Nano(r.GetCreatedAt()),
+		"started_at":     toRFC3339Nano(r.GetStartedAt()),
+		"finished_at":    toRFC3339Nano(r.GetFinishedAt()),
 	})
 }
 
 func (h *staffHandler) ListRunEvents(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
+	p, err := requirePrincipal(c)
+	if err != nil {
+		return err
 	}
-	runID := c.Param("run_id")
-	if runID == "" {
-		return errs.Validation{Field: "run_id", Msg: "is required"}
+	runID, err := requirePathParam(c, "run_id")
+	if err != nil {
+		return err
 	}
 	limit, err := parseLimit(c, 500)
 	if err != nil {
 		return err
 	}
-	items, err := h.svc.ListRunFlowEvents(c.Request().Context(), p, runID, limit)
+	resp, err := h.cp.ListRunEvents(c.Request().Context(), p, runID, int32(limit))
 	if err != nil {
 		return err
 	}
-	out := make([]any, 0, len(items))
-	for _, e := range items {
-		createdAt := e.CreatedAt.UTC().Format(time.RFC3339Nano)
+	out := make([]any, 0, len(resp.GetItems()))
+	for _, e := range resp.GetItems() {
 		out = append(out, map[string]any{
-			"correlation_id": e.CorrelationID,
-			"event_type":     e.EventType,
-			"created_at":     createdAt,
-			"payload_json":   string(e.PayloadJSON),
+			"correlation_id": e.GetCorrelationId(),
+			"event_type":     e.GetEventType(),
+			"created_at":     toRFC3339Nano(e.GetCreatedAt()),
+			"payload_json":   e.GetPayloadJson(),
 		})
 	}
 	return c.JSON(http.StatusOK, map[string]any{"items": out})
 }
 
 func (h *staffHandler) ListRunLearningFeedback(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
+	p, err := requirePrincipal(c)
+	if err != nil {
+		return err
 	}
-	runID := c.Param("run_id")
-	if runID == "" {
-		return errs.Validation{Field: "run_id", Msg: "is required"}
+	runID, err := requirePathParam(c, "run_id")
+	if err != nil {
+		return err
 	}
 	limit, err := parseLimit(c, 200)
 	if err != nil {
 		return err
 	}
-	items, err := h.svc.ListRunLearningFeedback(c.Request().Context(), p, runID, limit)
+	resp, err := h.cp.ListRunLearningFeedback(c.Request().Context(), p, runID, int32(limit))
 	if err != nil {
 		return err
 	}
-	out := make([]any, 0, len(items))
-	for _, f := range items {
-		createdAt := f.CreatedAt.UTC().Format(time.RFC3339Nano)
+	out := make([]any, 0, len(resp.GetItems()))
+	for _, f := range resp.GetItems() {
 		out = append(out, map[string]any{
-			"id":            f.ID,
-			"run_id":        f.RunID,
-			"repository_id": f.RepositoryID,
-			"pr_number":     f.PRNumber,
-			"file_path":     f.FilePath,
-			"line":          f.Line,
-			"kind":          f.Kind,
-			"explanation":   f.Explanation,
-			"created_at":    createdAt,
+			"id":            f.GetId(),
+			"run_id":        f.GetRunId(),
+			"repository_id": f.GetRepositoryId(),
+			"pr_number":     f.GetPrNumber(),
+			"file_path":     f.GetFilePath(),
+			"line":          f.GetLine(),
+			"kind":          f.GetKind(),
+			"explanation":   f.GetExplanation(),
+			"created_at":    toRFC3339Nano(f.GetCreatedAt()),
 		})
 	}
 	return c.JSON(http.StatusOK, map[string]any{"items": out})
 }
 
 func (h *staffHandler) ListUsers(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
+	p, err := requirePrincipal(c)
+	if err != nil {
+		return err
 	}
 	limit, err := parseLimit(c, 200)
 	if err != nil {
 		return err
 	}
-	items, err := h.svc.ListUsers(c.Request().Context(), p, limit)
+	resp, err := h.cp.ListUsers(c.Request().Context(), p, int32(limit))
 	if err != nil {
 		return err
 	}
-	out := make([]any, 0, len(items))
-	for _, u := range items {
+	out := make([]any, 0, len(resp.GetItems()))
+	for _, u := range resp.GetItems() {
 		out = append(out, map[string]any{
-			"id":                u.ID,
-			"email":             u.Email,
-			"github_user_id":    u.GitHubUserID,
-			"github_login":      u.GitHubLogin,
-			"is_platform_admin": u.IsPlatformAdmin,
-			"is_platform_owner": u.IsPlatformOwner,
+			"id":                u.GetId(),
+			"email":             u.GetEmail(),
+			"github_user_id":    u.GetGithubUserId(),
+			"github_login":      u.GetGithubLogin(),
+			"is_platform_admin": u.GetIsPlatformAdmin(),
+			"is_platform_owner": u.GetIsPlatformOwner(),
 		})
 	}
 	return c.JSON(http.StatusOK, map[string]any{"items": out})
 }
 
 func (h *staffHandler) DeleteUser(c *echo.Context) error {
-	return h.deleteWith1Param(c, "user_id", h.svc.DeleteUser)
+	return h.deleteWith1Param(c, "user_id", func(ctx context.Context, principal *controlplanev1.Principal, id string) error {
+		return h.cp.DeleteUser(ctx, principal, id)
+	})
 }
 
 type createUserRequest struct {
@@ -376,56 +345,56 @@ type createUserRequest struct {
 }
 
 func (h *staffHandler) CreateUser(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
+	p, err := requirePrincipal(c)
+	if err != nil {
+		return err
 	}
 	var req createUserRequest
 	if err := c.Bind(&req); err != nil {
 		return errs.Validation{Field: "body", Msg: "invalid JSON"}
 	}
-	u, err := h.svc.CreateAllowedUser(c.Request().Context(), p, req.Email, req.IsPlatformAdmin)
+	u, err := h.cp.CreateUser(c.Request().Context(), p, req.Email, req.IsPlatformAdmin)
 	if err != nil {
 		return err
 	}
 	return c.JSON(http.StatusCreated, map[string]any{
-		"id":                u.ID,
-		"email":             u.Email,
-		"github_user_id":    u.GitHubUserID,
-		"github_login":      u.GitHubLogin,
-		"is_platform_admin": u.IsPlatformAdmin,
-		"is_platform_owner": u.IsPlatformOwner,
+		"id":                u.GetId(),
+		"email":             u.GetEmail(),
+		"github_user_id":    u.GetGithubUserId(),
+		"github_login":      u.GetGithubLogin(),
+		"is_platform_admin": u.GetIsPlatformAdmin(),
+		"is_platform_owner": u.GetIsPlatformOwner(),
 	})
 }
 
 func (h *staffHandler) ListProjectMembers(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
+	p, err := requirePrincipal(c)
+	if err != nil {
+		return err
 	}
-	projectID := c.Param("project_id")
-	if projectID == "" {
-		return errs.Validation{Field: "project_id", Msg: "is required"}
+	projectID, err := requirePathParam(c, "project_id")
+	if err != nil {
+		return err
 	}
 	limit, err := parseLimit(c, 200)
 	if err != nil {
 		return err
 	}
-	items, err := h.svc.ListProjectMembers(c.Request().Context(), p, projectID, limit)
+	resp, err := h.cp.ListProjectMembers(c.Request().Context(), p, projectID, int32(limit))
 	if err != nil {
 		return err
 	}
-	out := make([]any, 0, len(items))
-	for _, m := range items {
+	out := make([]any, 0, len(resp.GetItems()))
+	for _, m := range resp.GetItems() {
 		var learningOverride any = nil
-		if m.LearningModeOverride != nil {
-			learningOverride = *m.LearningModeOverride
+		if m.GetLearningModeOverride() != nil {
+			learningOverride = m.GetLearningModeOverride().Value
 		}
 		out = append(out, map[string]any{
-			"project_id":             m.ProjectID,
-			"user_id":                m.UserID,
-			"email":                  m.Email,
-			"role":                   m.Role,
+			"project_id":             m.GetProjectId(),
+			"user_id":                m.GetUserId(),
+			"email":                  m.GetEmail(),
+			"role":                   m.GetRole(),
 			"learning_mode_override": learningOverride,
 		})
 	}
@@ -439,38 +408,38 @@ type upsertMemberRequest struct {
 }
 
 func (h *staffHandler) UpsertProjectMember(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
+	p, err := requirePrincipal(c)
+	if err != nil {
+		return err
 	}
-	projectID := c.Param("project_id")
-	if projectID == "" {
-		return errs.Validation{Field: "project_id", Msg: "is required"}
+	projectID, err := requirePathParam(c, "project_id")
+	if err != nil {
+		return err
 	}
 	var req upsertMemberRequest
 	if err := c.Bind(&req); err != nil {
 		return errs.Validation{Field: "body", Msg: "invalid JSON"}
 	}
-	if strings.TrimSpace(req.Email) != "" && strings.TrimSpace(req.UserID) != "" {
+
+	email := strings.TrimSpace(req.Email)
+	userID := strings.TrimSpace(req.UserID)
+	if email != "" && userID != "" {
 		return errs.Validation{Field: "user_id", Msg: "either user_id or email must be set"}
 	}
-	if strings.TrimSpace(req.Email) != "" {
-		if err := h.svc.UpsertProjectMemberByEmail(c.Request().Context(), p, projectID, req.Email, req.Role); err != nil {
-			return err
-		}
-		return c.NoContent(http.StatusNoContent)
-	}
-	if strings.TrimSpace(req.UserID) == "" {
+	if email == "" && userID == "" {
 		return errs.Validation{Field: "user_id", Msg: "is required"}
 	}
-	if err := h.svc.UpsertProjectMember(c.Request().Context(), p, projectID, req.UserID, req.Role); err != nil {
+
+	if err := h.cp.UpsertProjectMember(c.Request().Context(), p, projectID, userID, email, req.Role); err != nil {
 		return err
 	}
 	return c.NoContent(http.StatusNoContent)
 }
 
 func (h *staffHandler) DeleteProjectMember(c *echo.Context) error {
-	return h.deleteWith2Params(c, "project_id", "user_id", h.svc.DeleteProjectMember)
+	return h.deleteWith2Params(c, "project_id", "user_id", func(ctx context.Context, principal *controlplanev1.Principal, id1 string, id2 string) error {
+		return h.cp.DeleteProjectMember(ctx, principal, id1, id2)
+	})
 }
 
 type setLearningModeRequest struct {
@@ -479,55 +448,55 @@ type setLearningModeRequest struct {
 }
 
 func (h *staffHandler) SetProjectMemberLearningModeOverride(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
+	p, err := requirePrincipal(c)
+	if err != nil {
+		return err
 	}
-	projectID := c.Param("project_id")
-	if projectID == "" {
-		return errs.Validation{Field: "project_id", Msg: "is required"}
+	projectID, err := requirePathParam(c, "project_id")
+	if err != nil {
+		return err
 	}
-	userID := c.Param("user_id")
-	if userID == "" {
-		return errs.Validation{Field: "user_id", Msg: "is required"}
+	userID, err := requirePathParam(c, "user_id")
+	if err != nil {
+		return err
 	}
 	var req setLearningModeRequest
 	if err := c.Bind(&req); err != nil {
 		return errs.Validation{Field: "body", Msg: "invalid JSON"}
 	}
-	if err := h.svc.SetProjectMemberLearningModeOverride(c.Request().Context(), p, projectID, userID, req.Enabled); err != nil {
+	if err := h.cp.SetProjectMemberLearningModeOverride(c.Request().Context(), p, projectID, userID, req.Enabled); err != nil {
 		return err
 	}
 	return c.NoContent(http.StatusNoContent)
 }
 
 func (h *staffHandler) ListProjectRepositories(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
+	p, err := requirePrincipal(c)
+	if err != nil {
+		return err
 	}
-	projectID := c.Param("project_id")
-	if projectID == "" {
-		return errs.Validation{Field: "project_id", Msg: "is required"}
+	projectID, err := requirePathParam(c, "project_id")
+	if err != nil {
+		return err
 	}
 	limit, err := parseLimit(c, 200)
 	if err != nil {
 		return err
 	}
-	items, err := h.svc.ListProjectRepositories(c.Request().Context(), p, projectID, limit)
+	resp, err := h.cp.ListProjectRepositories(c.Request().Context(), p, projectID, int32(limit))
 	if err != nil {
 		return err
 	}
-	out := make([]any, 0, len(items))
-	for _, r := range items {
+	out := make([]any, 0, len(resp.GetItems()))
+	for _, r := range resp.GetItems() {
 		out = append(out, map[string]any{
-			"id":                 r.ID,
-			"project_id":         r.ProjectID,
-			"provider":           r.Provider,
-			"external_id":        r.ExternalID,
-			"owner":              r.Owner,
-			"name":               r.Name,
-			"services_yaml_path": r.ServicesYAMLPath,
+			"id":                 r.GetId(),
+			"project_id":         r.GetProjectId(),
+			"provider":           r.GetProvider(),
+			"external_id":        r.GetExternalId(),
+			"owner":              r.GetOwner(),
+			"name":               r.GetName(),
+			"services_yaml_path": r.GetServicesYamlPath(),
 		})
 	}
 	return c.JSON(http.StatusOK, map[string]any{"items": out})
@@ -542,19 +511,19 @@ type upsertProjectRepositoryRequest struct {
 }
 
 func (h *staffHandler) UpsertProjectRepository(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
+	p, err := requirePrincipal(c)
+	if err != nil {
+		return err
 	}
-	projectID := c.Param("project_id")
-	if projectID == "" {
-		return errs.Validation{Field: "project_id", Msg: "is required"}
+	projectID, err := requirePathParam(c, "project_id")
+	if err != nil {
+		return err
 	}
 	var req upsertProjectRepositoryRequest
 	if err := c.Bind(&req); err != nil {
 		return errs.Validation{Field: "body", Msg: "invalid JSON"}
 	}
-	item, err := h.svc.UpsertProjectRepository(
+	item, err := h.cp.UpsertProjectRepository(
 		c.Request().Context(),
 		p,
 		projectID,
@@ -568,16 +537,18 @@ func (h *staffHandler) UpsertProjectRepository(c *echo.Context) error {
 		return err
 	}
 	return c.JSON(http.StatusCreated, map[string]any{
-		"id":                 item.ID,
-		"project_id":         item.ProjectID,
-		"provider":           item.Provider,
-		"external_id":        item.ExternalID,
-		"owner":              item.Owner,
-		"name":               item.Name,
-		"services_yaml_path": item.ServicesYAMLPath,
+		"id":                 item.GetId(),
+		"project_id":         item.GetProjectId(),
+		"provider":           item.GetProvider(),
+		"external_id":        item.GetExternalId(),
+		"owner":              item.GetOwner(),
+		"name":               item.GetName(),
+		"services_yaml_path": item.GetServicesYamlPath(),
 	})
 }
 
 func (h *staffHandler) DeleteProjectRepository(c *echo.Context) error {
-	return h.deleteWith2Params(c, "project_id", "repository_id", h.svc.DeleteProjectRepository)
+	return h.deleteWith2Params(c, "project_id", "repository_id", func(ctx context.Context, principal *controlplanev1.Principal, id1 string, id2 string) error {
+		return h.cp.DeleteProjectRepository(ctx, principal, id1, id2)
+	})
 }

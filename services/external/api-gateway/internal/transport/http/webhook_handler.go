@@ -1,9 +1,8 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
 	"time"
 
@@ -12,8 +11,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/crypto/githubsignature"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/errs"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/webhook"
+	"github.com/codex-k8s/codex-k8s/libs/go/errs"
+	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 )
 
 const (
@@ -42,16 +41,20 @@ var (
 )
 
 type webhookHandler struct {
-	webhookService webhookIngress
-	secret         []byte
-	maxBodyBytes   int64
+	cp           webhookIngress
+	secret       []byte
+	maxBodyBytes int64
 }
 
-func newWebhookHandler(cfg ServerConfig, webhookService webhookIngress) *webhookHandler {
+type webhookIngress interface {
+	IngestGitHubWebhook(ctx context.Context, correlationID string, eventType string, deliveryID string, receivedAt time.Time, payloadJSON []byte) (*controlplanev1.IngestGitHubWebhookResponse, error)
+}
+
+func newWebhookHandler(cfg ServerConfig, cp webhookIngress) *webhookHandler {
 	return &webhookHandler{
-		webhookService: webhookService,
-		secret:         []byte(cfg.GitHubWebhookSecret),
-		maxBodyBytes:   cfg.MaxBodyBytes,
+		cp:           cp,
+		secret:       []byte(cfg.GitHubWebhookSecret),
+		maxBodyBytes: cfg.MaxBodyBytes,
 	}
 }
 
@@ -88,48 +91,35 @@ func (h *webhookHandler) IngestGitHubWebhook(c *echo.Context) error {
 		return errs.Validation{Field: "body", Msg: "payload must be valid JSON"}
 	}
 
-	result, err := h.webhookService.IngestGitHubWebhook(ctx, webhook.IngestCommand{
-		CorrelationID: deliveryID,
-		EventType:     eventType,
-		DeliveryID:    deliveryID,
-		ReceivedAt:    startedAt,
-		Payload:       rawPayload,
-	})
+	if h.cp == nil {
+		return errs.Unauthorized{Msg: "webhook ingress misconfigured"}
+	}
+	result, err := h.cp.IngestGitHubWebhook(ctx, deliveryID, eventType, deliveryID, startedAt, rawPayload)
 	if err != nil {
 		webhookRequestsTotal.WithLabelValues("error", eventType).Inc()
 		webhookDuration.WithLabelValues("error", eventType).Observe(time.Since(startedAt).Seconds())
-		return fmt.Errorf("ingest github webhook: %w", err)
+		return err
 	}
 
-	if result.Duplicate {
+	if result.GetDuplicate() {
 		webhookRequestsTotal.WithLabelValues("duplicate", eventType).Inc()
 		webhookDuration.WithLabelValues("duplicate", eventType).Observe(time.Since(startedAt).Seconds())
-		return c.JSON(http.StatusOK, result)
+		return c.JSON(http.StatusOK, map[string]any{
+			"correlation_id": result.GetCorrelationId(),
+			"run_id":         result.GetRunId(),
+			"status":         result.GetStatus(),
+			"duplicate":      true,
+		})
 	}
 
 	webhookRequestsTotal.WithLabelValues("accepted", eventType).Inc()
 	webhookDuration.WithLabelValues("accepted", eventType).Observe(time.Since(startedAt).Seconds())
-	return c.JSON(http.StatusAccepted, result)
+	return c.JSON(http.StatusAccepted, map[string]any{
+		"correlation_id": result.GetCorrelationId(),
+		"run_id":         result.GetRunId(),
+		"status":         result.GetStatus(),
+		"duplicate":      false,
+	})
 }
 
-func readRequestBody(body io.ReadCloser, maxBodyBytes int64) ([]byte, error) {
-	defer func() { _ = body.Close() }()
-
-	if maxBodyBytes <= 0 {
-		maxBodyBytes = 1024 * 1024
-	}
-
-	limitedReader := io.LimitReader(body, maxBodyBytes+1)
-	payload, err := io.ReadAll(limitedReader)
-	if err != nil {
-		return nil, fmt.Errorf("read body: %w", err)
-	}
-
-	if int64(len(payload)) > maxBodyBytes {
-		return nil, errs.Validation{
-			Field: "body",
-			Msg:   fmt.Sprintf("payload too large (max %d bytes)", maxBodyBytes),
-		}
-	}
-	return payload, nil
-}
+// readRequestBody lives in request_body.go (shared by webhook + potential future public endpoints).

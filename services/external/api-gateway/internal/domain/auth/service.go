@@ -11,8 +11,8 @@ import (
 	"time"
 
 	jwtlib "github.com/codex-k8s/codex-k8s/libs/go/auth/jwt"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/errs"
-	userrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/user"
+	"github.com/codex-k8s/codex-k8s/libs/go/errs"
+	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
 )
@@ -31,10 +31,14 @@ type Config struct {
 	CookieSecure            bool
 }
 
+type oauthAuthorizer interface {
+	AuthorizeOAuthUser(ctx context.Context, email string, githubUserID int64, githubLogin string) (*controlplanev1.Principal, error)
+}
+
 // Service implements GitHub OAuth login and JWT issuance.
 type Service struct {
 	cfg      Config
-	users    userrepo.Repository
+	authz    oauthAuthorizer
 	oauth    *oauth2.Config
 	signer   *jwtlib.Signer
 	verifier *jwtlib.Verifier
@@ -42,7 +46,7 @@ type Service struct {
 }
 
 // NewService constructs staff auth service.
-func NewService(cfg Config, users userrepo.Repository) (*Service, error) {
+func NewService(cfg Config, authz oauthAuthorizer) (*Service, error) {
 	if cfg.PublicBaseURL == "" {
 		return nil, errors.New("public base url is required")
 	}
@@ -81,7 +85,7 @@ func NewService(cfg Config, users userrepo.Repository) (*Service, error) {
 
 	return &Service{
 		cfg:      cfg,
-		users:    users,
+		authz:    authz,
 		oauth:    oauthCfg,
 		signer:   signer,
 		verifier: verifier,
@@ -117,22 +121,19 @@ func (s *Service) ExchangeAndIssueJWT(ctx context.Context, code string) (jwtToke
 		return "", time.Time{}, errs.Forbidden{Msg: "github account must have a verified email"}
 	}
 
-	u, ok, err := s.users.GetByEmail(ctx, ghEmail)
+	if s.authz == nil {
+		return "", time.Time{}, errs.Unauthorized{Msg: "staff auth misconfigured"}
+	}
+	p, err := s.authz.AuthorizeOAuthUser(ctx, ghEmail, ghUser.ID, ghUser.Login)
 	if err != nil {
 		return "", time.Time{}, err
 	}
-	if !ok {
-		return "", time.Time{}, errs.Forbidden{Msg: "email is not allowed"}
+	if p == nil || strings.TrimSpace(p.UserId) == "" {
+		return "", time.Time{}, errs.Unauthorized{Msg: "staff auth misconfigured"}
 	}
-
-	if err := s.users.UpdateGitHubIdentity(ctx, u.ID, ghUser.ID, ghUser.Login); err != nil {
-		return "", time.Time{}, err
-	}
-	u.GitHubUserID = ghUser.ID
-	u.GitHubLogin = ghUser.Login
 
 	now := s.now().UTC()
-	jwtToken, expiresAt, err = s.signer.Issue(u.ID, u.Email, u.GitHubLogin, u.IsPlatformAdmin, u.IsPlatformOwner, now)
+	jwtToken, expiresAt, err = s.signer.Issue(p.UserId, p.Email, p.GithubLogin, p.IsPlatformAdmin, p.IsPlatformOwner, now)
 	if err != nil {
 		return "", time.Time{}, err
 	}

@@ -1,14 +1,13 @@
 package http
 
 import (
-	"fmt"
+	"context"
 	"net/http"
 	"strings"
 
 	jwtlib "github.com/codex-k8s/codex-k8s/libs/go/auth/jwt"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/errs"
-	userrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/user"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/staff"
+	"github.com/codex-k8s/codex-k8s/libs/go/errs"
+	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	"github.com/labstack/echo/v5"
 )
 
@@ -21,10 +20,13 @@ type jwtVerifier interface {
 	VerifyJWT(token string) (jwtlib.Claims, error)
 }
 
-func requireStaffAuth(verifier jwtVerifier, users userrepo.Repository) echo.MiddlewareFunc {
+// requireStaffAuth authenticates staff requests either via:
+// - oauth2-proxy injected headers (staging/dev): resolve allowlist and identity in control-plane; or
+// - JWT: verify locally and attach claims as principal.
+func requireStaffAuth(verifier jwtVerifier, resolver func(ctx context.Context, email string, githubLogin string) (*controlplanev1.Principal, error)) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
-			p, err := authenticatePrincipal(c, verifier, users)
+			p, err := authenticatePrincipal(c, verifier, resolver)
 			if err != nil {
 				return err
 			}
@@ -34,16 +36,16 @@ func requireStaffAuth(verifier jwtVerifier, users userrepo.Repository) echo.Midd
 	}
 }
 
-func getPrincipal(c *echo.Context) (staff.Principal, bool) {
+func getPrincipal(c *echo.Context) (*controlplanev1.Principal, bool) {
 	v := c.Get(ctxPrincipalKey)
 	if v == nil {
-		return staff.Principal{}, false
+		return nil, false
 	}
-	p, ok := v.(staff.Principal)
+	p, ok := v.(*controlplanev1.Principal)
 	return p, ok
 }
 
-func authenticatePrincipal(c *echo.Context, verifier jwtVerifier, users userrepo.Repository) (staff.Principal, error) {
+func authenticatePrincipal(c *echo.Context, verifier jwtVerifier, resolver func(ctx context.Context, email string, githubLogin string) (*controlplanev1.Principal, error)) (*controlplanev1.Principal, error) {
 	req := c.Request()
 
 	// When running behind oauth2-proxy (dev/staging), accept identity from headers
@@ -58,33 +60,17 @@ func authenticatePrincipal(c *echo.Context, verifier jwtVerifier, users userrepo
 		req.Header.Get("X-Forwarded-User"),
 	)
 	if email != "" {
-		if users == nil {
-			return staff.Principal{}, errs.Unauthorized{Msg: "staff auth misconfigured"}
+		if resolver == nil {
+			return nil, errs.Unauthorized{Msg: "staff auth misconfigured"}
 		}
-		u, ok, err := users.GetByEmail(req.Context(), email)
+		p, err := resolver(req.Context(), email, login)
 		if err != nil {
-			return staff.Principal{}, fmt.Errorf("resolve staff user by email: %w", err)
+			return nil, err
 		}
-		if !ok {
-			return staff.Principal{}, errs.Forbidden{Msg: "email is not allowed"}
+		if p == nil || strings.TrimSpace(p.UserId) == "" {
+			return nil, errs.Unauthorized{Msg: "staff auth misconfigured"}
 		}
-
-		// Persist GitHub login when running behind oauth2-proxy.
-		// This is required for webhook-driven features that need to map `sender.login` -> staff user.
-		if login != "" && !strings.EqualFold(u.GitHubLogin, login) {
-			if err := users.UpdateGitHubIdentity(req.Context(), u.ID, u.GitHubUserID, login); err != nil {
-				return staff.Principal{}, fmt.Errorf("update github login for staff user %s: %w", u.ID, err)
-			}
-			u.GitHubLogin = login
-		}
-
-		return staff.Principal{
-			UserID:          u.ID,
-			Email:           u.Email,
-			GitHubLogin:     u.GitHubLogin,
-			IsPlatformAdmin: u.IsPlatformAdmin,
-			IsPlatformOwner: u.IsPlatformOwner,
-		}, nil
+		return p, nil
 	}
 
 	token := ""
@@ -99,20 +85,20 @@ func authenticatePrincipal(c *echo.Context, verifier jwtVerifier, users userrepo
 	if token == "" {
 		// For GET endpoints, surface unauthorized rather than method-level errors.
 		if req.Method == http.MethodGet || req.Method == http.MethodHead {
-			return staff.Principal{}, errs.Unauthorized{Msg: "missing auth token"}
+			return nil, errs.Unauthorized{Msg: "missing auth token"}
 		}
-		return staff.Principal{}, errs.Unauthorized{Msg: "missing auth token"}
+		return nil, errs.Unauthorized{Msg: "missing auth token"}
 	}
 
 	claims, err := verifier.VerifyJWT(token)
 	if err != nil {
-		return staff.Principal{}, errs.Unauthorized{Msg: "invalid auth token"}
+		return nil, errs.Unauthorized{Msg: "invalid auth token"}
 	}
 
-	return staff.Principal{
-		UserID:          claims.Subject,
+	return &controlplanev1.Principal{
+		UserId:          claims.Subject,
 		Email:           claims.Email,
-		GitHubLogin:     claims.GitHubLogin,
+		GithubLogin:     claims.GitHubLogin,
 		IsPlatformAdmin: claims.IsAdmin,
 		IsPlatformOwner: claims.IsOwner,
 	}, nil

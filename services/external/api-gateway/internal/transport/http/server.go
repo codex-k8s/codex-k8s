@@ -17,8 +17,7 @@ import (
 	"github.com/labstack/echo/v5/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	userrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/user"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/webhook"
+	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/controlplane"
 )
 
 // ServerConfig defines HTTP transport runtime options.
@@ -38,10 +37,6 @@ type ServerConfig struct {
 	ViteDevUpstream string
 }
 
-type webhookIngress interface {
-	IngestGitHubWebhook(ctx context.Context, cmd webhook.IngestCommand) (webhook.IngestResult, error)
-}
-
 // Server is an HTTP transport wrapper around Echo.
 type Server struct {
 	echo   *echo.Echo
@@ -51,16 +46,16 @@ type Server struct {
 }
 
 // NewServer builds and configures HTTP routes and middleware.
-func NewServer(cfg ServerConfig, webhookService webhookIngress, auth authService, users userrepo.Repository, staffSvc staffService, logger *slog.Logger) *Server {
+func NewServer(cfg ServerConfig, cp *controlplane.Client, auth authService, logger *slog.Logger) *Server {
 	e := echo.New()
 	e.Use(middleware.Recover())
 	e.HTTPErrorHandler = newHTTPErrorHandler(logger)
 
-	h := newWebhookHandler(cfg, webhookService)
+	h := newWebhookHandler(cfg, cp)
 	authH := newAuthHandler(auth, cfg.CookieSecure)
-	staffH := newStaffHandler(staffSvc)
+	staffH := newStaffHandler(cp)
 
-	staffAuthMw := requireStaffAuth(auth, users)
+	staffAuthMw := requireStaffAuth(auth, cp.ResolveStaffByEmail)
 
 	e.GET("/readyz", readyHandler)
 	e.GET("/healthz", liveHandler)

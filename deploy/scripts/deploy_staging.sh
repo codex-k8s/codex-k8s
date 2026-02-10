@@ -257,6 +257,7 @@ render_template "${ROOT_DIR}/deploy/base/codex-k8s/ingress.yaml.tpl" | kubectl a
 # When images are referenced via the `:latest` tag, `kubectl apply` won't trigger a rollout by itself.
 # Force a restart so that staging always converges to the newest in-cluster registry images.
 kubectl -n "$CODEXK8S_STAGING_NAMESPACE" rollout restart deployment/codex-k8s >/dev/null 2>&1 || true
+kubectl -n "$CODEXK8S_STAGING_NAMESPACE" rollout restart deployment/codex-k8s-control-plane >/dev/null 2>&1 || true
 kubectl -n "$CODEXK8S_STAGING_NAMESPACE" rollout restart deployment/codex-k8s-worker >/dev/null 2>&1 || true
 kubectl -n "$CODEXK8S_STAGING_NAMESPACE" rollout restart deployment/codex-k8s-web-console >/dev/null 2>&1 || true
 kubectl -n "$CODEXK8S_STAGING_NAMESPACE" rollout restart deployment/oauth2-proxy >/dev/null 2>&1 || true

@@ -10,10 +10,11 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/labstack/echo/v5"
 
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/webhook"
+	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 )
 
 func TestIngestGitHubWebhook_AcceptAndDuplicate(t *testing.T) {
@@ -25,9 +26,9 @@ func TestIngestGitHubWebhook_AcceptAndDuplicate(t *testing.T) {
 	payload := `{"action":"opened","repository":{"id":1,"full_name":"codex-k8s/codex-k8s"}}`
 
 	fake := &fakeWebhookService{
-		sequence: []webhook.IngestResult{
-			{CorrelationID: deliveryID, RunID: "run-1", Status: "accepted", Duplicate: false},
-			{CorrelationID: deliveryID, RunID: "run-1", Status: "duplicate", Duplicate: true},
+		sequence: []*controlplanev1.IngestGitHubWebhookResponse{
+			{CorrelationId: deliveryID, RunId: "run-1", Status: "accepted", Duplicate: false},
+			{CorrelationId: deliveryID, RunId: "run-1", Status: "duplicate", Duplicate: true},
 		},
 	}
 
@@ -100,15 +101,15 @@ func TestIngestGitHubWebhook_InvalidSignature(t *testing.T) {
 }
 
 type fakeWebhookService struct {
-	sequence []webhook.IngestResult
+	sequence []*controlplanev1.IngestGitHubWebhookResponse
 	index    int
 }
 
-func (f *fakeWebhookService) IngestGitHubWebhook(_ context.Context, _ webhook.IngestCommand) (webhook.IngestResult, error) {
+func (f *fakeWebhookService) IngestGitHubWebhook(_ context.Context, _ string, _ string, _ string, _ time.Time, _ []byte) (*controlplanev1.IngestGitHubWebhookResponse, error) {
 	if len(f.sequence) == 0 {
-		return webhook.IngestResult{
-			CorrelationID: "delivery-default",
-			RunID:         "run-default",
+		return &controlplanev1.IngestGitHubWebhookResponse{
+			CorrelationId: "delivery-default",
+			RunId:         "run-default",
 			Status:        "accepted",
 		}, nil
 	}

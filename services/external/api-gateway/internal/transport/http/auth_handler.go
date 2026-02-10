@@ -6,7 +6,7 @@ import (
 	"time"
 
 	jwtlib "github.com/codex-k8s/codex-k8s/libs/go/auth/jwt"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/errs"
+	"github.com/codex-k8s/codex-k8s/libs/go/errs"
 	"github.com/labstack/echo/v5"
 )
 
@@ -142,9 +142,9 @@ func (h *authHandler) Me(c *echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, map[string]any{
 		"user": map[string]any{
-			"id":                p.UserID,
+			"id":                p.UserId,
 			"email":             p.Email,
-			"github_login":      p.GitHubLogin,
+			"github_login":      p.GithubLogin,
 			"is_platform_admin": p.IsPlatformAdmin,
 			"is_platform_owner": p.IsPlatformOwner,
 		},

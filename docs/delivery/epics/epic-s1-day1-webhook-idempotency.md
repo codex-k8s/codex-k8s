@@ -74,9 +74,9 @@ approvals:
 - `POST /api/v1/webhooks/github` реализован в `services/external/api-gateway/internal/transport/http/webhook_handler.go`.
 - Валидация подписи реализована в `libs/go/crypto/githubsignature/verify.go`.
 - Idempotency и запись `agent_runs`/`flow_events` реализованы в:
-  - `services/external/api-gateway/internal/domain/webhook/service.go`
-  - `services/external/api-gateway/internal/repository/postgres/agentrun/repository.go`
-  - `services/external/api-gateway/internal/repository/postgres/flowevent/repository.go`
+  - `services/internal/control-plane/internal/domain/webhook/service.go`
+  - `services/internal/control-plane/internal/repository/postgres/agentrun/repository.go`
+  - `services/internal/control-plane/internal/repository/postgres/flowevent/repository.go`
 - DDL миграция добавлена:
   - `services/internal/control-plane/cmd/cli/migrations/20260206191000_day1_webhook_ingest.sql`
 - Контракт OpenAPI/AsyncAPI добавлен:
@@ -84,7 +84,7 @@ approvals:
   - `services/external/api-gateway/api/server/asyncapi.yaml`
 - Unit tests:
   - `libs/go/crypto/githubsignature/verify_test.go`
-  - `services/external/api-gateway/internal/domain/webhook/service_test.go`
+  - `services/internal/control-plane/internal/domain/webhook/service_test.go`
   - `services/external/api-gateway/internal/transport/http/webhook_handler_test.go`
 - Verification commands:
   - `go test ./...`

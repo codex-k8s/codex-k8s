@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S2-D0
 type: epic
 title: "Epic S2 Day 0: Control-plane extraction and thin-edge api-gateway"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-10
 updated_at: 2026-02-10
@@ -32,7 +32,7 @@ approvals:
 
 ## Scope
 ### In scope
-- Ввести gRPC контракт внутреннего sync API в `proto/` (single source of truth).
+- Ввести gRPC контракт внутреннего sync API в `proto/` (single source of truth) и сгенерировать Go-код в `proto/gen/go/**`.
 - Реализовать `services/internal/control-plane` как сервис:
   - `internal/domain/**` (use-cases/ports),
   - `internal/repository/postgres/**` (repo impl),
@@ -47,10 +47,11 @@ approvals:
 - Полная реализация всех bounded contexts из `services_design_requirements.md` (в Day 0 достаточно вынести то, что уже есть).
 
 ## Декомпозиция (Stories/Tasks)
-- Story-1: proto контракт для control-plane (минимум: webhook ingest, staff read APIs, auth bridge где нужно).
+- Story-1: proto контракт для control-plane (webhook ingest, staff APIs, auth bridge).
 - Story-2: перенос доменных сервисов и репозиториев из `api-gateway` в `control-plane`.
 - Story-3: gRPC server в `control-plane` и gRPC client в `api-gateway`.
-- Story-4: staging deploy smoke: webhook ingest и staff UI продолжают работать.
+- Story-4: deploy wiring: сборка бинарника control-plane и деплой 2х сервисов в staging.
+- Story-5: документация: evidence/verification + каталог внешних зависимостей.
 
 ## Data model impact (по шаблону data_model.md)
 - Схема БД: без изменений.
@@ -60,9 +61,57 @@ approvals:
 
 ## Критерии приемки эпика
 - В `services/external/api-gateway` отсутствует доменная логика (use-cases) и прямые реализации postgres-репозиториев.
-- `services/internal/control-plane` обрабатывает реальные запросы и подключается к PostgreSQL.
-- Staging smoke по базовым сценариям проходит.
+- `services/internal/control-plane` реализует доменные use-cases, подключается к PostgreSQL и обслуживает gRPC API.
+- `api-gateway`:
+  - валидирует подпись GitHub webhook;
+  - проксирует webhook ingest и staff APIs в `control-plane` по gRPC;
+  - выпускает JWT (OAuth callback) и для allowlist/обновления GitHub identity обращается в `control-plane`.
+- Миграции схемы лежат внутри держателя схемы и применяются через `goose` из образа.
+- `go test ./...` зелёный.
 
 ## Риски/зависимости
 - Риск: рост объёма изменения (перенос пакетов) может затронуть CI/deploy.
 - Зависимость: требуется чёткий proto контракт; без него перенос превратится в ad-hoc вызовы.
+
+## Evidence
+- Proto контракт:
+  - `proto/codexk8s/controlplane/v1/controlplane.proto`
+  - `proto/gen/go/codexk8s/controlplane/v1/controlplane.pb.go`
+  - `proto/gen/go/codexk8s/controlplane/v1/controlplane_grpc.pb.go`
+- Control-plane (DB owner + домен + gRPC):
+  - `services/internal/control-plane/cmd/control-plane/main.go`
+  - `services/internal/control-plane/internal/app/app.go`
+  - `services/internal/control-plane/internal/app/config.go`
+  - `services/internal/control-plane/internal/transport/grpc/server.go`
+  - домен и repo impl: `services/internal/control-plane/internal/domain/**`, `services/internal/control-plane/internal/repository/postgres/**`
+- API-gateway (thin-edge + gRPC client):
+  - `services/external/api-gateway/internal/controlplane/client.go`
+  - `services/external/api-gateway/internal/app/app.go`
+  - `services/external/api-gateway/internal/app/config.go`
+  - `services/external/api-gateway/internal/transport/http/server.go`
+  - `services/external/api-gateway/internal/transport/http/webhook_handler.go`
+  - `services/external/api-gateway/internal/transport/http/staff_handler.go`
+  - `services/external/api-gateway/internal/domain/auth/service.go`
+- Миграции держателя схемы:
+  - `services/internal/control-plane/cmd/cli/migrations/*.sql`
+  - `deploy/scripts/deploy_staging.sh` создаёт `configmap/codex-k8s-migrations` из этого пути
+  - `deploy/base/codex-k8s/migrate-job.yaml.tpl` применяет миграции через `goose -dir /migrations up`
+- Сборка/деплой:
+  - `Dockerfile` собирает бинарники `codex-k8s` (gateway), `codex-k8s-control-plane`, `codex-k8s-worker`
+  - `deploy/base/codex-k8s/app.yaml.tpl` деплоит `Deployment/codex-k8s` и `Deployment/codex-k8s-control-plane` (один образ, разные команды)
+- Каталог внешних зависимостей:
+  - `docs/design-guidelines/common/external_dependencies_catalog.md` (grpc/protobuf)
+
+## Verification
+- Unit tests: `go test ./...`
+- Bash syntax: `bash -n deploy/scripts/deploy_staging.sh`
+
+## План релиза (верхний уровень)
+- Контур dev/staging до dogfooding: см. `.local/agents-temp-dev-rules.md`.
+- После merge: push в `codex/dev` должен приводить к автоматическому deploy на staging.
+- Smoke: webhook ingest + staff UI базовые сценарии (проверка логов `codex-k8s` и `codex-k8s-control-plane`).
+
+## Апрув
+- request_id: (to be filled)
+- Решение: (pending)
+- Комментарий: (to be filled)
