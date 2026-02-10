@@ -14,16 +14,21 @@
         <tr>
           <th>{{ t("pages.projects.slug") }}</th>
           <th>{{ t("pages.projects.name") }}</th>
-          <th>{{ t("pages.projects.role") }}</th>
-          <th v-if="auth.isPlatformAdmin">{{ t("pages.projects.manage") }}</th>
-          <th>{{ t("pages.projects.id") }}</th>
+          <th class="center">{{ t("pages.projects.role") }}</th>
+          <th v-if="auth.isPlatformAdmin" class="center">{{ t("pages.projects.manage") }}</th>
+          <th class="center">{{ t("pages.projects.id") }}</th>
+          <th v-if="auth.isPlatformOwner"></th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="p in projects.items" :key="p.id">
           <td>{{ p.slug }}</td>
-          <td>{{ p.name }}</td>
-          <td>{{ roleLabel(p.role) }}</td>
+          <td>
+            <RouterLink class="lnk" :to="{ name: 'project-details', params: { projectId: p.id } }">
+              {{ p.name }}
+            </RouterLink>
+          </td>
+          <td class="center">{{ roleLabel(p.role) }}</td>
           <td v-if="auth.isPlatformAdmin" class="manage">
             <RouterLink class="lnk" :to="{ name: 'project-repositories', params: { projectId: p.id } }">
               {{ t("pages.projects.repos") }}
@@ -32,7 +37,12 @@
               {{ t("pages.projects.members") }}
             </RouterLink>
           </td>
-          <td class="mono">{{ p.id }}</td>
+          <td class="mono center">{{ p.id }}</td>
+          <td v-if="auth.isPlatformOwner" class="right">
+            <button class="btn danger" type="button" @click="askDelete(p.id, p.name)" :disabled="projects.deleting">
+              {{ t("common.delete") }}
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -60,6 +70,7 @@
       </div>
 
       <div v-if="projects.saveError" class="err">{{ t(projects.saveError.messageKey) }}</div>
+      <div v-if="projects.deleteError" class="err">{{ t(projects.deleteError.messageKey) }}</div>
     </template>
 
     <template v-else>
@@ -67,6 +78,17 @@
       <div class="muted">{{ t("pages.projects.adminOnlyHint") }}</div>
     </template>
   </section>
+
+  <ConfirmModal
+    :open="confirmOpen"
+    :title="t('common.delete')"
+    :message="confirmName"
+    :confirmText="t('common.delete')"
+    :cancelText="t('common.cancel')"
+    danger
+    @cancel="confirmOpen = false"
+    @confirm="doDelete"
+  />
 </template>
 
 <script setup lang="ts">
@@ -74,6 +96,7 @@ import { onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
+import ConfirmModal from "../shared/ui/ConfirmModal.vue";
 import { useAuthStore } from "../features/auth/store";
 import { useProjectsStore } from "../features/projects/projects-store";
 
@@ -83,6 +106,10 @@ const projects = useProjectsStore();
 
 const slug = ref("");
 const name = ref("");
+
+const confirmOpen = ref(false);
+const confirmProjectId = ref<string>("");
+const confirmName = ref<string>("");
 
 function roleLabel(role: string): string {
   const normalized = role.trim();
@@ -104,6 +131,20 @@ async function createOrUpdate() {
   }
 }
 
+function askDelete(projectId: string, projectName: string) {
+  confirmProjectId.value = projectId;
+  confirmName.value = projectName;
+  confirmOpen.value = true;
+}
+
+async function doDelete() {
+  const id = confirmProjectId.value;
+  confirmOpen.value = false;
+  confirmProjectId.value = "";
+  if (!id) return;
+  await projects.remove(id);
+}
+
 onMounted(() => void load());
 </script>
 
@@ -123,6 +164,7 @@ h3 {
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
+  justify-content: center;
 }
 .form {
   display: grid;

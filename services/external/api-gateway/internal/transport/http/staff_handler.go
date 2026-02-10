@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/errs"
@@ -20,16 +21,22 @@ import (
 type staffService interface {
 	ListProjects(ctx context.Context, principal staff.Principal, limit int) ([]any, error)
 	UpsertProject(ctx context.Context, principal staff.Principal, slug string, name string) (projectrepo.Project, error)
+	GetProject(ctx context.Context, principal staff.Principal, projectID string) (projectrepo.Project, error)
+	DeleteProject(ctx context.Context, principal staff.Principal, projectID string) error
 
 	ListRuns(ctx context.Context, principal staff.Principal, limit int) ([]staffrun.Run, error)
+	GetRun(ctx context.Context, principal staff.Principal, runID string) (staffrun.Run, error)
 	ListRunFlowEvents(ctx context.Context, principal staff.Principal, runID string, limit int) ([]staffrun.FlowEvent, error)
 	ListRunLearningFeedback(ctx context.Context, principal staff.Principal, runID string, limit int) ([]learningfeedbackrepo.Feedback, error)
 
 	ListUsers(ctx context.Context, principal staff.Principal, limit int) ([]user.User, error)
 	CreateAllowedUser(ctx context.Context, principal staff.Principal, email string, isPlatformAdmin bool) (user.User, error)
+	DeleteUser(ctx context.Context, principal staff.Principal, userID string) error
 
 	ListProjectMembers(ctx context.Context, principal staff.Principal, projectID string, limit int) ([]projectmember.Member, error)
 	UpsertProjectMember(ctx context.Context, principal staff.Principal, projectID string, userID string, role string) error
+	UpsertProjectMemberByEmail(ctx context.Context, principal staff.Principal, projectID string, email string, role string) error
+	DeleteProjectMember(ctx context.Context, principal staff.Principal, projectID string, userID string) error
 	SetProjectMemberLearningModeOverride(ctx context.Context, principal staff.Principal, projectID string, userID string, enabled *bool) error
 
 	ListProjectRepositories(ctx context.Context, principal staff.Principal, projectID string, limit int) ([]repocfgrepo.RepositoryBinding, error)
@@ -77,6 +84,27 @@ func (h *staffHandler) ListProjects(c *echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]any{"items": items})
 }
 
+func (h *staffHandler) GetProject(c *echo.Context) error {
+	p, ok := getPrincipal(c)
+	if !ok {
+		return errs.Unauthorized{Msg: "not authenticated"}
+	}
+	projectID := c.Param("project_id")
+	if projectID == "" {
+		return errs.Validation{Field: "project_id", Msg: "is required"}
+	}
+
+	item, err := h.svc.GetProject(c.Request().Context(), p, projectID)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, map[string]any{
+		"id":   item.ID,
+		"slug": item.Slug,
+		"name": item.Name,
+	})
+}
+
 type upsertProjectRequest struct {
 	Slug string `json:"slug"`
 	Name string `json:"name"`
@@ -102,6 +130,21 @@ func (h *staffHandler) UpsertProject(c *echo.Context) error {
 	})
 }
 
+func (h *staffHandler) DeleteProject(c *echo.Context) error {
+	p, ok := getPrincipal(c)
+	if !ok {
+		return errs.Unauthorized{Msg: "not authenticated"}
+	}
+	projectID := c.Param("project_id")
+	if projectID == "" {
+		return errs.Validation{Field: "project_id", Msg: "is required"}
+	}
+	if err := h.svc.DeleteProject(c.Request().Context(), p, projectID); err != nil {
+		return err
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
 func (h *staffHandler) ListRuns(c *echo.Context) error {
 	p, ok := getPrincipal(c)
 	if !ok {
@@ -117,17 +160,74 @@ func (h *staffHandler) ListRuns(c *echo.Context) error {
 	}
 	out := make([]any, 0, len(items))
 	for _, r := range items {
+		createdAt := r.CreatedAt.UTC().Format(time.RFC3339Nano)
+		var startedAt any = nil
+		if r.StartedAt != nil {
+			startedAt = r.StartedAt.UTC().Format(time.RFC3339Nano)
+		}
+		var finishedAt any = nil
+		if r.FinishedAt != nil {
+			finishedAt = r.FinishedAt.UTC().Format(time.RFC3339Nano)
+		}
+		var projectID any = nil
+		if r.ProjectID != "" {
+			projectID = r.ProjectID
+		}
 		out = append(out, map[string]any{
 			"id":             r.ID,
 			"correlation_id": r.CorrelationID,
-			"project_id":     r.ProjectID,
+			"project_id":     projectID,
+			"project_slug":   r.ProjectSlug,
+			"project_name":   r.ProjectName,
 			"status":         r.Status,
-			"created_at":     r.CreatedAt,
-			"started_at":     r.StartedAt,
-			"finished_at":    r.FinishedAt,
+			"created_at":     createdAt,
+			"started_at":     startedAt,
+			"finished_at":    finishedAt,
 		})
 	}
 	return c.JSON(http.StatusOK, map[string]any{"items": out})
+}
+
+func (h *staffHandler) GetRun(c *echo.Context) error {
+	p, ok := getPrincipal(c)
+	if !ok {
+		return errs.Unauthorized{Msg: "not authenticated"}
+	}
+	runID := c.Param("run_id")
+	if runID == "" {
+		return errs.Validation{Field: "run_id", Msg: "is required"}
+	}
+
+	r, err := h.svc.GetRun(c.Request().Context(), p, runID)
+	if err != nil {
+		return err
+	}
+
+	createdAt := r.CreatedAt.UTC().Format(time.RFC3339Nano)
+	var startedAt any = nil
+	if r.StartedAt != nil {
+		startedAt = r.StartedAt.UTC().Format(time.RFC3339Nano)
+	}
+	var finishedAt any = nil
+	if r.FinishedAt != nil {
+		finishedAt = r.FinishedAt.UTC().Format(time.RFC3339Nano)
+	}
+	var projectID any = nil
+	if r.ProjectID != "" {
+		projectID = r.ProjectID
+	}
+
+	return c.JSON(http.StatusOK, map[string]any{
+		"id":             r.ID,
+		"correlation_id": r.CorrelationID,
+		"project_id":     projectID,
+		"project_slug":   r.ProjectSlug,
+		"project_name":   r.ProjectName,
+		"status":         r.Status,
+		"created_at":     createdAt,
+		"started_at":     startedAt,
+		"finished_at":    finishedAt,
+	})
 }
 
 func (h *staffHandler) ListRunEvents(c *echo.Context) error {
@@ -149,10 +249,11 @@ func (h *staffHandler) ListRunEvents(c *echo.Context) error {
 	}
 	out := make([]any, 0, len(items))
 	for _, e := range items {
+		createdAt := e.CreatedAt.UTC().Format(time.RFC3339Nano)
 		out = append(out, map[string]any{
 			"correlation_id": e.CorrelationID,
 			"event_type":     e.EventType,
-			"created_at":     e.CreatedAt,
+			"created_at":     createdAt,
 			"payload_json":   string(e.PayloadJSON),
 		})
 	}
@@ -215,9 +316,25 @@ func (h *staffHandler) ListUsers(c *echo.Context) error {
 			"github_user_id":    u.GitHubUserID,
 			"github_login":      u.GitHubLogin,
 			"is_platform_admin": u.IsPlatformAdmin,
+			"is_platform_owner": u.IsPlatformOwner,
 		})
 	}
 	return c.JSON(http.StatusOK, map[string]any{"items": out})
+}
+
+func (h *staffHandler) DeleteUser(c *echo.Context) error {
+	p, ok := getPrincipal(c)
+	if !ok {
+		return errs.Unauthorized{Msg: "not authenticated"}
+	}
+	userID := c.Param("user_id")
+	if userID == "" {
+		return errs.Validation{Field: "user_id", Msg: "is required"}
+	}
+	if err := h.svc.DeleteUser(c.Request().Context(), p, userID); err != nil {
+		return err
+	}
+	return c.NoContent(http.StatusNoContent)
 }
 
 type createUserRequest struct {
@@ -244,6 +361,7 @@ func (h *staffHandler) CreateUser(c *echo.Context) error {
 		"github_user_id":    u.GitHubUserID,
 		"github_login":      u.GitHubLogin,
 		"is_platform_admin": u.IsPlatformAdmin,
+		"is_platform_owner": u.IsPlatformOwner,
 	})
 }
 
@@ -283,6 +401,7 @@ func (h *staffHandler) ListProjectMembers(c *echo.Context) error {
 
 type upsertMemberRequest struct {
 	UserID string `json:"user_id"`
+	Email  string `json:"email"`
 	Role   string `json:"role"`
 }
 
@@ -299,7 +418,38 @@ func (h *staffHandler) UpsertProjectMember(c *echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return errs.Validation{Field: "body", Msg: "invalid JSON"}
 	}
+	if strings.TrimSpace(req.Email) != "" && strings.TrimSpace(req.UserID) != "" {
+		return errs.Validation{Field: "user_id", Msg: "either user_id or email must be set"}
+	}
+	if strings.TrimSpace(req.Email) != "" {
+		if err := h.svc.UpsertProjectMemberByEmail(c.Request().Context(), p, projectID, req.Email, req.Role); err != nil {
+			return err
+		}
+		return c.NoContent(http.StatusNoContent)
+	}
+	if strings.TrimSpace(req.UserID) == "" {
+		return errs.Validation{Field: "user_id", Msg: "is required"}
+	}
 	if err := h.svc.UpsertProjectMember(c.Request().Context(), p, projectID, req.UserID, req.Role); err != nil {
+		return err
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (h *staffHandler) DeleteProjectMember(c *echo.Context) error {
+	p, ok := getPrincipal(c)
+	if !ok {
+		return errs.Unauthorized{Msg: "not authenticated"}
+	}
+	projectID := c.Param("project_id")
+	if projectID == "" {
+		return errs.Validation{Field: "project_id", Msg: "is required"}
+	}
+	userID := c.Param("user_id")
+	if userID == "" {
+		return errs.Validation{Field: "user_id", Msg: "is required"}
+	}
+	if err := h.svc.DeleteProjectMember(c.Request().Context(), p, projectID, userID); err != nil {
 		return err
 	}
 	return c.NoContent(http.StatusNoContent)

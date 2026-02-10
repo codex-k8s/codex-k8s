@@ -16,6 +16,7 @@ export const useAuthStore = defineStore("auth", {
   getters: {
     isAuthed: (s) => s.status === "authed",
     isPlatformAdmin: (s) => Boolean(s.me?.isPlatformAdmin),
+    isPlatformOwner: (s) => Boolean(s.me?.isPlatformOwner),
   },
   actions: {
     async refresh(): Promise<void> {
@@ -28,6 +29,7 @@ export const useAuthStore = defineStore("auth", {
           email: dto.user.email,
           githubLogin: dto.user.github_login,
           isPlatformAdmin: dto.user.is_platform_admin,
+          isPlatformOwner: dto.user.is_platform_owner,
         };
         this.status = "authed";
       } catch (e) {
@@ -53,4 +55,3 @@ export const useAuthStore = defineStore("auth", {
     },
   },
 });
-

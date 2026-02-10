@@ -1,4 +1,4 @@
--- name: staffrun__list_all :many
+-- name: staffrun__get_by_id :one
 SELECT
     ar.id,
     ar.correlation_id,
@@ -11,5 +11,5 @@ SELECT
     ar.finished_at
 FROM agent_runs ar
 LEFT JOIN projects p ON p.id = ar.project_id
-ORDER BY created_at DESC
-LIMIT $1;
+WHERE ar.id = $1::uuid;
+

@@ -40,4 +40,8 @@ type RepositoryProvider interface {
 	ValidateRepository(ctx context.Context, token string, owner string, name string) (RepositoryInfo, error)
 	// EnsureWebhook ensures a webhook with desired spec exists on the repo.
 	EnsureWebhook(ctx context.Context, token string, owner string, name string, spec WebhookSpec) error
+	// DeleteWebhook attempts to delete codex-k8s webhook(s) matching webhookURL.
+	//
+	// Callers should treat errors as best-effort failures (tokens may be revoked, permissions missing, etc).
+	DeleteWebhook(ctx context.Context, token string, owner string, name string, webhookURL string) error
 }

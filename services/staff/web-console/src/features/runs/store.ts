@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 
 import { normalizeApiError, type ApiError } from "../../shared/api/errors";
-import { listRunEvents, listRunLearningFeedback, listRuns } from "./api";
+import { getRun, listRunEvents, listRunLearningFeedback, listRuns } from "./api";
 import type { FlowEvent, LearningFeedback, Run } from "./types";
 
 export const useRunsStore = defineStore("runs", {
@@ -20,6 +20,8 @@ export const useRunsStore = defineStore("runs", {
           id: r.id,
           correlationId: r.correlation_id,
           projectId: r.project_id ?? null,
+          projectSlug: r.project_slug,
+          projectName: r.project_name,
           status: r.status,
           createdAt: r.created_at,
           startedAt: r.started_at ?? null,
@@ -37,6 +39,7 @@ export const useRunsStore = defineStore("runs", {
 export const useRunDetailsStore = defineStore("runDetails", {
   state: () => ({
     runId: "" as string,
+    run: null as Run | null,
     loading: false,
     error: null as ApiError | null,
     events: [] as FlowEvent[],
@@ -48,7 +51,18 @@ export const useRunDetailsStore = defineStore("runDetails", {
       this.loading = true;
       this.error = null;
       try {
-        const [ev, fb] = await Promise.all([listRunEvents(runId), listRunLearningFeedback(runId)]);
+        const [r, ev, fb] = await Promise.all([getRun(runId), listRunEvents(runId), listRunLearningFeedback(runId)]);
+        this.run = {
+          id: r.id,
+          correlationId: r.correlation_id,
+          projectId: r.project_id ?? null,
+          projectSlug: r.project_slug,
+          projectName: r.project_name,
+          status: r.status,
+          createdAt: r.created_at,
+          startedAt: r.started_at ?? null,
+          finishedAt: r.finished_at ?? null,
+        };
         this.events = ev.map((e) => ({
           correlationId: e.correlation_id,
           eventType: e.event_type,
@@ -63,6 +77,7 @@ export const useRunDetailsStore = defineStore("runDetails", {
           createdAt: f.created_at,
         }));
       } catch (e) {
+        this.run = null;
         this.error = normalizeApiError(e);
       } finally {
         this.loading = false;
@@ -70,4 +85,3 @@ export const useRunDetailsStore = defineStore("runDetails", {
     },
   },
 });
-

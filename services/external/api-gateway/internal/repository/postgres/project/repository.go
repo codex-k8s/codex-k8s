@@ -16,6 +16,10 @@ var (
 	queryListForUser string
 	//go:embed sql/upsert.sql
 	queryUpsert string
+	//go:embed sql/get_by_id.sql
+	queryGetByID string
+	//go:embed sql/delete_by_id.sql
+	queryDeleteByID string
 	//go:embed sql/get_learning_mode_default.sql
 	queryGetLearningModeDefault string
 )
@@ -88,6 +92,35 @@ func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams)
 		return domainrepo.Project{}, fmt.Errorf("upsert project: %w", err)
 	}
 	return out, nil
+}
+
+// GetByID returns a project by id.
+func (r *Repository) GetByID(ctx context.Context, projectID string) (domainrepo.Project, bool, error) {
+	var p domainrepo.Project
+	err := r.db.QueryRowContext(ctx, queryGetByID, projectID).Scan(&p.ID, &p.Slug, &p.Name)
+	if err == nil {
+		return p, true, nil
+	}
+	if err == sql.ErrNoRows {
+		return domainrepo.Project{}, false, nil
+	}
+	return domainrepo.Project{}, false, fmt.Errorf("get project by id: %w", err)
+}
+
+// DeleteByID deletes a project by id.
+func (r *Repository) DeleteByID(ctx context.Context, projectID string) error {
+	res, err := r.db.ExecContext(ctx, queryDeleteByID, projectID)
+	if err != nil {
+		return fmt.Errorf("delete project by id: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("read rows affected for project delete: %w", err)
+	}
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }
 
 // GetLearningModeDefault returns project default learning-mode flag from JSONB settings.

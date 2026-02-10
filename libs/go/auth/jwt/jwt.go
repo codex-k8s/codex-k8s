@@ -13,6 +13,7 @@ type Claims struct {
 	Email       string `json:"email"`
 	GitHubLogin string `json:"github_login,omitempty"`
 	IsAdmin     bool   `json:"is_admin"`
+	IsOwner     bool   `json:"is_owner"`
 
 	jwtv5.RegisteredClaims
 }
@@ -39,7 +40,7 @@ func NewSigner(issuer string, key []byte, ttl time.Duration) (*Signer, error) {
 }
 
 // Issue creates a signed token for a subject.
-func (s *Signer) Issue(subject string, email string, githubLogin string, isAdmin bool, now time.Time) (token string, expiresAt time.Time, err error) {
+func (s *Signer) Issue(subject string, email string, githubLogin string, isAdmin bool, isOwner bool, now time.Time) (token string, expiresAt time.Time, err error) {
 	if subject == "" {
 		return "", time.Time{}, errors.New("subject is required")
 	}
@@ -55,6 +56,7 @@ func (s *Signer) Issue(subject string, email string, githubLogin string, isAdmin
 		Email:       email,
 		GitHubLogin: githubLogin,
 		IsAdmin:     isAdmin,
+		IsOwner:     isOwner,
 		RegisteredClaims: jwtv5.RegisteredClaims{
 			Issuer:    s.issuer,
 			Subject:   subject,

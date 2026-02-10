@@ -146,6 +146,7 @@ func (h *authHandler) Me(c *echo.Context) error {
 			"email":             p.Email,
 			"github_login":      p.GitHubLogin,
 			"is_platform_admin": p.IsPlatformAdmin,
+			"is_platform_owner": p.IsPlatformOwner,
 		},
 	})
 }

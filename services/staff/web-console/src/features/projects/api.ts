@@ -9,8 +9,17 @@ export async function listProjects(limit = 200): Promise<ProjectDto[]> {
   return (resp.data as ItemsResponse<ProjectDto>).items ?? [];
 }
 
+export async function getProject(projectId: string): Promise<ProjectDto> {
+  const resp = await http.get(`/api/v1/staff/projects/${projectId}`);
+  return resp.data as ProjectDto;
+}
+
 export async function upsertProject(slug: string, name: string): Promise<void> {
   await http.post("/api/v1/staff/projects", { slug, name });
+}
+
+export async function deleteProject(projectId: string): Promise<void> {
+  await http.delete(`/api/v1/staff/projects/${projectId}`);
 }
 
 export async function listProjectRepositories(projectId: string, limit = 200): Promise<RepositoryBindingDto[]> {
@@ -48,7 +57,14 @@ export async function upsertProjectMember(projectId: string, userId: string, rol
   await http.post(`/api/v1/staff/projects/${projectId}/members`, { user_id: userId, role });
 }
 
+export async function upsertProjectMemberByEmail(projectId: string, email: string, role: string): Promise<void> {
+  await http.post(`/api/v1/staff/projects/${projectId}/members`, { email, role });
+}
+
+export async function deleteProjectMember(projectId: string, userId: string): Promise<void> {
+  await http.delete(`/api/v1/staff/projects/${projectId}/members/${userId}`);
+}
+
 export async function setProjectMemberLearningModeOverride(projectId: string, userId: string, enabled: boolean | null): Promise<void> {
   await http.put(`/api/v1/staff/projects/${projectId}/members/${userId}/learning-mode`, { enabled });
 }
-

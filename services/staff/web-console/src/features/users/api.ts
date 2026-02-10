@@ -13,3 +13,6 @@ export async function createAllowedUser(email: string, isPlatformAdmin: boolean)
   await http.post("/api/v1/staff/users", { email, is_platform_admin: isPlatformAdmin });
 }
 
+export async function deleteUser(userId: string): Promise<void> {
+  await http.delete(`/api/v1/staff/users/${userId}`);
+}

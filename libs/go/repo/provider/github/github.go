@@ -96,6 +96,35 @@ func (p *Provider) EnsureWebhook(ctx context.Context, token string, owner string
 	return nil
 }
 
+// DeleteWebhook deletes GitHub repository webhook(s) that match webhookURL.
+func (p *Provider) DeleteWebhook(ctx context.Context, token string, owner string, name string, webhookURL string) error {
+	webhookURL = strings.TrimSpace(webhookURL)
+	if webhookURL == "" {
+		return nil
+	}
+
+	client := gh.NewClient(p.httpClient).WithAuthToken(token)
+	hooks, _, err := client.Repositories.ListHooks(ctx, owner, name, &gh.ListOptions{PerPage: 100})
+	if err != nil {
+		return fmt.Errorf("github list hooks %s/%s: %w", owner, name, err)
+	}
+
+	for _, h := range hooks {
+		cfg := h.GetConfig()
+		if cfg == nil {
+			continue
+		}
+		if strings.EqualFold(cfg.GetURL(), webhookURL) {
+			_, err := client.Repositories.DeleteHook(ctx, owner, name, h.GetID())
+			if err != nil {
+				return fmt.Errorf("github delete hook %s/%s id=%d: %w", owner, name, h.GetID(), err)
+			}
+		}
+	}
+
+	return nil
+}
+
 func normalizeEvents(in []string) []string {
 	out := make([]string, 0, len(in))
 	for _, e := range in {

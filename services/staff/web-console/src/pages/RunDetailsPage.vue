@@ -3,11 +3,19 @@
     <div class="row">
       <div>
         <h2>{{ t("pages.runDetails.title") }}</h2>
-        <div class="muted mono">{{ t("pages.runDetails.runId") }}: {{ runId }}</div>
+        <div class="muted mono">
+          {{ t("pages.runDetails.runId") }}: {{ runId }}
+          <span v-if="details.run?.correlationId"> · {{ t("pages.runDetails.correlation") }}: {{ details.run.correlationId }}</span>
+        </div>
+        <div v-if="details.run?.projectId" class="muted">
+          <RouterLink class="lnk" :to="{ name: 'project-details', params: { projectId: details.run.projectId } }">
+            {{ details.run.projectName || details.run.projectSlug || details.run.projectId }}
+          </RouterLink>
+        </div>
       </div>
       <div class="actions">
-        <RouterLink class="btn" :to="{ name: 'runs' }">{{ t("common.back") }}</RouterLink>
-        <button class="btn" type="button" @click="loadAll" :disabled="details.loading">{{ t("common.refresh") }}</button>
+        <RouterLink class="btn equal" :to="{ name: 'runs' }">{{ t("common.back") }}</RouterLink>
+        <button class="btn equal" type="button" @click="loadAll" :disabled="details.loading">{{ t("common.refresh") }}</button>
       </div>
     </div>
 
@@ -20,7 +28,7 @@
           <div v-for="e in details.events" :key="e.createdAt + ':' + e.eventType" class="item">
             <div class="topline">
               <span class="pill">{{ e.eventType }}</span>
-              <span class="mono muted">{{ e.createdAt }}</span>
+              <span class="mono muted">{{ formatDateTime(e.createdAt, locale) }}</span>
             </div>
             <pre class="pre">{{ e.payloadJson }}</pre>
           </div>
@@ -34,7 +42,7 @@
           <div v-for="f in details.feedback" :key="String(f.id)" class="item">
             <div class="topline">
               <span class="pill">{{ f.kind }}</span>
-              <span class="mono muted">{{ f.createdAt }}</span>
+              <span class="mono muted">{{ formatDateTime(f.createdAt, locale) }}</span>
             </div>
             <pre class="pre">{{ f.explanation }}</pre>
           </div>
@@ -50,11 +58,12 @@ import { onMounted } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
+import { formatDateTime } from "../shared/lib/datetime";
 import { useRunDetailsStore } from "../features/runs/store";
 
 const props = defineProps<{ runId: string }>();
 
-const { t } = useI18n({ useScope: "global" });
+const { t, locale } = useI18n({ useScope: "global" });
 const details = useRunDetailsStore();
 
 async function loadAll() {
@@ -115,4 +124,3 @@ h2 {
   }
 }
 </style>
-

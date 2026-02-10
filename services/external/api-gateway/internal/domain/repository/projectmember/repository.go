@@ -20,6 +20,8 @@ type Repository interface {
 	List(ctx context.Context, projectID string, limit int) ([]Member, error)
 	// Upsert sets role for a user in a project.
 	Upsert(ctx context.Context, projectID string, userID string, role string) error
+	// Delete removes a user from a project.
+	Delete(ctx context.Context, projectID string, userID string) error
 	// GetRole returns membership role for a user in a project.
 	GetRole(ctx context.Context, projectID string, userID string) (role string, ok bool, err error)
 

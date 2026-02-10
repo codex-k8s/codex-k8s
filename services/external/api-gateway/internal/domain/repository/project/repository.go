@@ -37,6 +37,11 @@ type Repository interface {
 	// Upsert creates/updates a project by slug.
 	Upsert(ctx context.Context, params UpsertParams) (Project, error)
 
+	// GetByID returns a project by id.
+	GetByID(ctx context.Context, projectID string) (Project, bool, error)
+	// DeleteByID deletes a project by id.
+	DeleteByID(ctx context.Context, projectID string) error
+
 	// GetLearningModeDefault returns effective project default learning-mode flag.
 	GetLearningModeDefault(ctx context.Context, projectID string) (enabled bool, ok bool, err error)
 }

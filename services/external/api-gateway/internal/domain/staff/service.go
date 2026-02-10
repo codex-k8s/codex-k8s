@@ -104,12 +104,66 @@ func (s *Service) ListProjects(ctx context.Context, principal Principal, limit i
 	return out, nil
 }
 
+// GetProject returns a single project visible to the principal.
+func (s *Service) GetProject(ctx context.Context, principal Principal, projectID string) (projectrepo.Project, error) {
+	if projectID == "" {
+		return projectrepo.Project{}, errs.Validation{Field: "project_id", Msg: "is required"}
+	}
+	if !principal.IsPlatformAdmin {
+		_, ok, err := s.members.GetRole(ctx, projectID, principal.UserID)
+		if err != nil {
+			return projectrepo.Project{}, err
+		}
+		if !ok {
+			return projectrepo.Project{}, errs.Forbidden{Msg: "project access required"}
+		}
+	}
+	p, ok, err := s.projects.GetByID(ctx, projectID)
+	if err != nil {
+		return projectrepo.Project{}, err
+	}
+	if !ok {
+		return projectrepo.Project{}, errs.Validation{Field: "project_id", Msg: "not found"}
+	}
+	return p, nil
+}
+
 // ListRuns returns runs visible to the principal.
 func (s *Service) ListRuns(ctx context.Context, principal Principal, limit int) ([]staffrunrepo.Run, error) {
 	if principal.IsPlatformAdmin {
 		return s.runs.ListAll(ctx, limit)
 	}
 	return s.runs.ListForUser(ctx, principal.UserID, limit)
+}
+
+// GetRun returns a single run record visible to the principal.
+func (s *Service) GetRun(ctx context.Context, principal Principal, runID string) (staffrunrepo.Run, error) {
+	if runID == "" {
+		return staffrunrepo.Run{}, errs.Validation{Field: "run_id", Msg: "is required"}
+	}
+
+	r, ok, err := s.runs.GetByID(ctx, runID)
+	if err != nil {
+		return staffrunrepo.Run{}, err
+	}
+	if !ok {
+		return staffrunrepo.Run{}, errs.Validation{Field: "run_id", Msg: "not found"}
+	}
+
+	if !principal.IsPlatformAdmin {
+		if r.ProjectID == "" {
+			return staffrunrepo.Run{}, errs.Forbidden{Msg: "run is not assigned to a project"}
+		}
+		_, hasRole, err := s.members.GetRole(ctx, r.ProjectID, principal.UserID)
+		if err != nil {
+			return staffrunrepo.Run{}, err
+		}
+		if !hasRole {
+			return staffrunrepo.Run{}, errs.Forbidden{Msg: "project access required"}
+		}
+	}
+
+	return r, nil
 }
 
 // ListRunFlowEvents returns flow events for a run id, enforcing project RBAC.
@@ -161,6 +215,44 @@ func (s *Service) CreateAllowedUser(ctx context.Context, principal Principal, em
 	return s.users.CreateAllowedUser(ctx, email, isPlatformAdmin)
 }
 
+// DeleteUser removes a staff user record (RBAC enforced).
+func (s *Service) DeleteUser(ctx context.Context, principal Principal, userID string) error {
+	if userID == "" {
+		return errs.Validation{Field: "user_id", Msg: "is required"}
+	}
+	if !principal.IsPlatformAdmin {
+		return errs.Forbidden{Msg: "platform admin required"}
+	}
+	if principal.UserID == userID {
+		return errs.Forbidden{Msg: "cannot delete self"}
+	}
+
+	target, ok, err := s.users.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return errs.Validation{Field: "user_id", Msg: "not found"}
+	}
+
+	if principal.IsPlatformOwner {
+		// Owner can delete anyone except themselves (checked above).
+	} else {
+		// Platform admin cannot delete other admins/owner.
+		if target.IsPlatformOwner || target.IsPlatformAdmin {
+			return errs.Forbidden{Msg: "cannot delete platform admin"}
+		}
+	}
+
+	if err := s.users.DeleteByID(ctx, userID); err != nil {
+		if err == sql.ErrNoRows {
+			return errs.Validation{Field: "user_id", Msg: "not found"}
+		}
+		return err
+	}
+	return nil
+}
+
 // ListProjectMembers returns members for a project (platform admin only in MVP).
 func (s *Service) ListProjectMembers(ctx context.Context, principal Principal, projectID string, limit int) ([]projectmemberrepo.Member, error) {
 	if !principal.IsPlatformAdmin {
@@ -170,6 +262,64 @@ func (s *Service) ListProjectMembers(ctx context.Context, principal Principal, p
 		return nil, errs.Validation{Field: "project_id", Msg: "is required"}
 	}
 	return s.members.List(ctx, projectID, limit)
+}
+
+// UpsertProjectMemberByEmail sets a role for a user in a project by email (platform owner only).
+func (s *Service) UpsertProjectMemberByEmail(ctx context.Context, principal Principal, projectID string, email string, role string) error {
+	if !principal.IsPlatformOwner {
+		return errs.Forbidden{Msg: "platform owner required"}
+	}
+	if projectID == "" {
+		return errs.Validation{Field: "project_id", Msg: "is required"}
+	}
+	email = strings.TrimSpace(email)
+	if email == "" {
+		return errs.Validation{Field: "email", Msg: "is required"}
+	}
+	switch role {
+	case "read", "read_write", "admin":
+	default:
+		return errs.Validation{Field: "role", Msg: fmt.Sprintf("invalid role %q", role)}
+	}
+
+	u, ok, err := s.users.GetByEmail(ctx, email)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return errs.Validation{Field: "email", Msg: "not found"}
+	}
+
+	return s.members.Upsert(ctx, projectID, u.ID, role)
+}
+
+// DeleteProjectMember removes a user from a project (platform owner only).
+func (s *Service) DeleteProjectMember(ctx context.Context, principal Principal, projectID string, userID string) error {
+	if !principal.IsPlatformOwner {
+		return errs.Forbidden{Msg: "platform owner required"}
+	}
+	if projectID == "" {
+		return errs.Validation{Field: "project_id", Msg: "is required"}
+	}
+	if userID == "" {
+		return errs.Validation{Field: "user_id", Msg: "is required"}
+	}
+
+	u, ok, err := s.users.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if ok && u.IsPlatformOwner {
+		return errs.Forbidden{Msg: "cannot remove platform owner from project"}
+	}
+
+	if err := s.members.Delete(ctx, projectID, userID); err != nil {
+		if err == sql.ErrNoRows {
+			return errs.Validation{Field: "user_id", Msg: "member not found"}
+		}
+		return err
+	}
+	return nil
 }
 
 // UpsertProjectMember sets a role for a user in a project (platform admin only).
@@ -219,6 +369,53 @@ func (s *Service) UpsertProject(ctx context.Context, principal Principal, slug s
 		Name:         name,
 		SettingsJSON: settingsJSON,
 	})
+}
+
+// DeleteProject deletes a project and all its related data (platform owner only).
+func (s *Service) DeleteProject(ctx context.Context, principal Principal, projectID string) error {
+	if !principal.IsPlatformOwner {
+		return errs.Forbidden{Msg: "platform owner required"}
+	}
+	if projectID == "" {
+		return errs.Validation{Field: "project_id", Msg: "is required"}
+	}
+
+	// Best-effort webhook cleanup before removing bindings.
+	bindings, err := s.repos.ListForProject(ctx, projectID, 500)
+	if err != nil {
+		return err
+	}
+	for _, b := range bindings {
+		if s.github == nil {
+			continue
+		}
+		if provider.Provider(b.Provider) != provider.ProviderGitHub {
+			continue
+		}
+		enc, ok, err := s.repos.GetTokenEncrypted(ctx, b.ID)
+		if err != nil || !ok {
+			continue
+		}
+		token, err := s.tokencrypt.DecryptString(enc)
+		if err != nil || strings.TrimSpace(token) == "" {
+			continue
+		}
+		_ = s.github.DeleteWebhook(ctx, token, b.Owner, b.Name, s.cfg.WebhookSpec.URL)
+	}
+
+	// Flow events are not FK-linked, so remove them explicitly.
+	if err := s.runs.DeleteFlowEventsByProjectID(ctx, projectID); err != nil {
+		return err
+	}
+
+	// The rest is cascaded via FK constraints (projects -> repositories/project_members/slots/agent_runs -> learning_feedback).
+	if err := s.projects.DeleteByID(ctx, projectID); err != nil {
+		if err == sql.ErrNoRows {
+			return errs.Validation{Field: "project_id", Msg: "not found"}
+		}
+		return err
+	}
+	return nil
 }
 
 // ListProjectRepositories returns repository bindings for a project.
@@ -334,6 +531,30 @@ func (s *Service) DeleteProjectRepository(ctx context.Context, principal Princip
 		return errs.Forbidden{Msg: "project write access required"}
 	}
 
+	// Best-effort: attempt to delete the webhook from the provider repo.
+	// Errors are intentionally ignored (revoked token, missing permissions, already deleted, etc).
+	if s.github != nil {
+		bindings, err := s.repos.ListForProject(ctx, projectID, 500)
+		if err == nil {
+			var b *repocfgrepo.RepositoryBinding
+			for i := range bindings {
+				if bindings[i].ID == repositoryID {
+					b = &bindings[i]
+					break
+				}
+			}
+			if b != nil && provider.Provider(b.Provider) == provider.ProviderGitHub {
+				enc, ok, err := s.repos.GetTokenEncrypted(ctx, repositoryID)
+				if err == nil && ok {
+					token, err := s.tokencrypt.DecryptString(enc)
+					if err == nil && strings.TrimSpace(token) != "" {
+						_ = s.github.DeleteWebhook(ctx, token, b.Owner, b.Name, s.cfg.WebhookSpec.URL)
+					}
+				}
+			}
+		}
+	}
+
 	if err := s.repos.Delete(ctx, projectID, repositoryID); err != nil {
 		if err == sql.ErrNoRows {
 			return errs.Validation{Field: "repository_id", Msg: "not found"}
@@ -399,4 +620,5 @@ type Principal struct {
 	Email           string
 	GitHubLogin     string
 	IsPlatformAdmin bool
+	IsPlatformOwner bool
 }

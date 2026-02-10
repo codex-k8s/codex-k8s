@@ -20,7 +20,7 @@ func TestJWT_IssueAndVerify(t *testing.T) {
 		t.Fatalf("NewVerifier: %v", err)
 	}
 
-	token, exp, err := signer.Issue("user-1", "owner@example.com", "ai-da-stas", true, now)
+	token, exp, err := signer.Issue("user-1", "owner@example.com", "ai-da-stas", true, true, now)
 	if err != nil {
 		t.Fatalf("Issue: %v", err)
 	}
@@ -43,5 +43,8 @@ func TestJWT_IssueAndVerify(t *testing.T) {
 	}
 	if !claims.IsAdmin {
 		t.Fatalf("expected is_admin=true")
+	}
+	if !claims.IsOwner {
+		t.Fatalf("expected is_owner=true")
 	}
 }

@@ -14,6 +14,8 @@ var (
 	queryList string
 	//go:embed sql/upsert.sql
 	queryUpsert string
+	//go:embed sql/delete.sql
+	queryDelete string
 	//go:embed sql/get_role.sql
 	queryGetRole string
 	//go:embed sql/set_learning_mode_override.sql
@@ -68,6 +70,22 @@ func (r *Repository) List(ctx context.Context, projectID string, limit int) ([]d
 func (r *Repository) Upsert(ctx context.Context, projectID string, userID string, role string) error {
 	if _, err := r.db.ExecContext(ctx, queryUpsert, projectID, userID, role); err != nil {
 		return fmt.Errorf("upsert project member: %w", err)
+	}
+	return nil
+}
+
+// Delete removes a user from a project.
+func (r *Repository) Delete(ctx context.Context, projectID string, userID string) error {
+	res, err := r.db.ExecContext(ctx, queryDelete, projectID, userID)
+	if err != nil {
+		return fmt.Errorf("delete project member: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("read rows affected for project member delete: %w", err)
+	}
+	if n == 0 {
+		return sql.ErrNoRows
 	}
 	return nil
 }

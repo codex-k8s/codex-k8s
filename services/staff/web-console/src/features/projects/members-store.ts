@@ -1,7 +1,13 @@
 import { defineStore } from "pinia";
 
 import { normalizeApiError, type ApiError } from "../../shared/api/errors";
-import { listProjectMembers, setProjectMemberLearningModeOverride, upsertProjectMember } from "./api";
+import {
+  deleteProjectMember,
+  listProjectMembers,
+  setProjectMemberLearningModeOverride,
+  upsertProjectMember,
+  upsertProjectMemberByEmail,
+} from "./api";
 import type { ProjectMember } from "./types";
 
 export const useProjectMembersStore = defineStore("projectMembers", {
@@ -11,6 +17,9 @@ export const useProjectMembersStore = defineStore("projectMembers", {
     loading: false,
     error: null as ApiError | null,
     saving: false,
+    adding: false,
+    addError: null as ApiError | null,
+    removing: false,
   }),
   actions: {
     async load(projectId: string): Promise<void> {
@@ -47,6 +56,33 @@ export const useProjectMembersStore = defineStore("projectMembers", {
         this.saving = false;
       }
     },
+
+    async addByEmail(email: string, role: string): Promise<void> {
+      if (!this.projectId) return;
+      this.adding = true;
+      this.addError = null;
+      try {
+        await upsertProjectMemberByEmail(this.projectId, email, role);
+        await this.load(this.projectId);
+      } catch (e) {
+        this.addError = normalizeApiError(e);
+      } finally {
+        this.adding = false;
+      }
+    },
+
+    async remove(userId: string): Promise<void> {
+      if (!this.projectId) return;
+      this.removing = true;
+      this.error = null;
+      try {
+        await deleteProjectMember(this.projectId, userId);
+        await this.load(this.projectId);
+      } catch (e) {
+        this.error = normalizeApiError(e);
+      } finally {
+        this.removing = false;
+      }
+    },
   },
 });
-

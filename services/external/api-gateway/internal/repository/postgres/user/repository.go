@@ -13,6 +13,8 @@ import (
 var (
 	//go:embed sql/ensure_owner.sql
 	queryEnsureOwner string
+	//go:embed sql/get_by_id.sql
+	queryGetByID string
 	//go:embed sql/get_by_email.sql
 	queryGetByEmail string
 	//go:embed sql/get_by_github_login.sql
@@ -23,6 +25,8 @@ var (
 	queryCreateAllowedUser string
 	//go:embed sql/list_users.sql
 	queryListUsers string
+	//go:embed sql/delete_by_id.sql
+	queryDeleteByID string
 )
 
 // Repository stores staff users in PostgreSQL.
@@ -42,6 +46,18 @@ func (r *Repository) EnsureOwner(ctx context.Context, email string) (domainrepo.
 		return domainrepo.User{}, fmt.Errorf("ensure owner: %w", err)
 	}
 	return u, nil
+}
+
+// GetByID returns a user by id.
+func (r *Repository) GetByID(ctx context.Context, userID string) (domainrepo.User, bool, error) {
+	u, err := scanUser(r.db.QueryRowContext(ctx, queryGetByID, userID))
+	if err == nil {
+		return u, true, nil
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		return domainrepo.User{}, false, nil
+	}
+	return domainrepo.User{}, false, fmt.Errorf("get by id: %w", err)
 }
 
 // GetByEmail returns a user by email.
@@ -99,7 +115,7 @@ func (r *Repository) List(ctx context.Context, limit int) ([]domainrepo.User, er
 	var out []domainrepo.User
 	for rows.Next() {
 		var u domainrepo.User
-		if err := rows.Scan(&u.ID, &u.Email, &u.GitHubUserID, &u.GitHubLogin, &u.IsPlatformAdmin); err != nil {
+		if err := rows.Scan(&u.ID, &u.Email, &u.GitHubUserID, &u.GitHubLogin, &u.IsPlatformAdmin, &u.IsPlatformOwner); err != nil {
 			return nil, fmt.Errorf("scan user: %w", err)
 		}
 		out = append(out, u)
@@ -110,13 +126,29 @@ func (r *Repository) List(ctx context.Context, limit int) ([]domainrepo.User, er
 	return out, nil
 }
 
+// DeleteByID deletes a user by id.
+func (r *Repository) DeleteByID(ctx context.Context, userID string) error {
+	res, err := r.db.ExecContext(ctx, queryDeleteByID, userID)
+	if err != nil {
+		return fmt.Errorf("delete user by id: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("read rows affected for user delete: %w", err)
+	}
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
 type rowScanner interface {
 	Scan(dest ...any) error
 }
 
 func scanUser(row rowScanner) (domainrepo.User, error) {
 	var u domainrepo.User
-	if err := row.Scan(&u.ID, &u.Email, &u.GitHubUserID, &u.GitHubLogin, &u.IsPlatformAdmin); err != nil {
+	if err := row.Scan(&u.ID, &u.Email, &u.GitHubUserID, &u.GitHubLogin, &u.IsPlatformAdmin, &u.IsPlatformOwner); err != nil {
 		return domainrepo.User{}, err
 	}
 	return u, nil

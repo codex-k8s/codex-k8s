@@ -2,6 +2,8 @@ export type RunDto = {
   id: string;
   correlation_id: string;
   project_id: string | null;
+  project_slug: string;
+  project_name: string;
   status: string;
   created_at: string;
   started_at: string | null;
@@ -12,6 +14,8 @@ export type Run = {
   id: string;
   correlationId: string;
   projectId: string | null;
+  projectSlug: string;
+  projectName: string;
   status: string;
   createdAt: string;
   startedAt: string | null;
@@ -51,4 +55,3 @@ export type LearningFeedback = {
   explanation: string;
   createdAt: string;
 };
-

@@ -35,6 +35,10 @@
   user-select: none;
 }
 
+.btn.equal {
+  min-width: 110px;
+}
+
 .btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
@@ -125,12 +129,16 @@
 .lnk {
   font-weight: 900;
   text-decoration: none;
-  color: #111827;
-  opacity: 0.85;
+  color: var(--link-color, #0b5a83);
+  opacity: 0.9;
 }
 
 .lnk:hover {
   opacity: 1;
+  color: var(--link-color-hover, #084a6b);
   text-decoration: underline;
 }
 
+.center {
+  text-align: center;
+}
