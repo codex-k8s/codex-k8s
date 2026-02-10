@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log/slog"
 	"net"
@@ -43,16 +44,30 @@ func Run() error {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
-	db, err := postgres.Open(context.Background(), postgres.OpenParams{
-		Host:     cfg.DBHost,
-		Port:     cfg.DBPort,
-		DBName:   cfg.DBName,
-		User:     cfg.DBUser,
-		Password: cfg.DBPassword,
-		SSLMode:  cfg.DBSSLMode,
-	})
-	if err != nil {
-		return err
+	// Postgres Service can be routable slightly before the actual server accepts connections.
+	// Keep control-plane startup resilient to short transient failures.
+	var db *sql.DB
+	{
+		deadline := time.Now().Add(60 * time.Second)
+		var lastErr error
+		for attempt := 1; time.Now().Before(deadline); attempt++ {
+			db, lastErr = postgres.Open(context.Background(), postgres.OpenParams{
+				Host:     cfg.DBHost,
+				Port:     cfg.DBPort,
+				DBName:   cfg.DBName,
+				User:     cfg.DBUser,
+				Password: cfg.DBPassword,
+				SSLMode:  cfg.DBSSLMode,
+			})
+			if lastErr == nil {
+				break
+			}
+			logger.Warn("ping postgres failed; retrying", "attempt", attempt, "err", lastErr)
+			time.Sleep(2 * time.Second)
+		}
+		if lastErr != nil {
+			return fmt.Errorf("ping postgres: %w", lastErr)
+		}
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
