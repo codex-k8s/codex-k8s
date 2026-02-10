@@ -9,6 +9,44 @@ import (
 	domainrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/staffrun"
 )
 
+type runScanner interface {
+	Scan(dest ...any) error
+}
+
+func scanRun(scanner runScanner) (domainrepo.Run, error) {
+	var (
+		item      domainrepo.Run
+		projectID sql.NullString
+		startedAt sql.NullTime
+		finished  sql.NullTime
+	)
+	if err := scanner.Scan(
+		&item.ID,
+		&item.CorrelationID,
+		&projectID,
+		&item.ProjectSlug,
+		&item.ProjectName,
+		&item.Status,
+		&item.CreatedAt,
+		&startedAt,
+		&finished,
+	); err != nil {
+		return domainrepo.Run{}, err
+	}
+	if projectID.Valid {
+		item.ProjectID = projectID.String
+	}
+	if startedAt.Valid {
+		v := startedAt.Time
+		item.StartedAt = &v
+	}
+	if finished.Valid {
+		v := finished.Time
+		item.FinishedAt = &v
+	}
+	return item, nil
+}
+
 var (
 	//go:embed sql/list_all.sql
 	queryListAll string
@@ -43,39 +81,13 @@ func (r *Repository) ListAll(ctx context.Context, limit int) ([]domainrepo.Run, 
 	if err != nil {
 		return nil, fmt.Errorf("list runs: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var out []domainrepo.Run
 	for rows.Next() {
-		var (
-			item      domainrepo.Run
-			projectID sql.NullString
-			startedAt sql.NullTime
-			finished  sql.NullTime
-		)
-		if err := rows.Scan(
-			&item.ID,
-			&item.CorrelationID,
-			&projectID,
-			&item.ProjectSlug,
-			&item.ProjectName,
-			&item.Status,
-			&item.CreatedAt,
-			&startedAt,
-			&finished,
-		); err != nil {
+		item, err := scanRun(rows)
+		if err != nil {
 			return nil, fmt.Errorf("scan run: %w", err)
-		}
-		if projectID.Valid {
-			item.ProjectID = projectID.String
-		}
-		if startedAt.Valid {
-			v := startedAt.Time
-			item.StartedAt = &v
-		}
-		if finished.Valid {
-			v := finished.Time
-			item.FinishedAt = &v
 		}
 		out = append(out, item)
 	}
@@ -94,39 +106,13 @@ func (r *Repository) ListForUser(ctx context.Context, userID string, limit int) 
 	if err != nil {
 		return nil, fmt.Errorf("list runs for user: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var out []domainrepo.Run
 	for rows.Next() {
-		var (
-			item      domainrepo.Run
-			projectID sql.NullString
-			startedAt sql.NullTime
-			finished  sql.NullTime
-		)
-		if err := rows.Scan(
-			&item.ID,
-			&item.CorrelationID,
-			&projectID,
-			&item.ProjectSlug,
-			&item.ProjectName,
-			&item.Status,
-			&item.CreatedAt,
-			&startedAt,
-			&finished,
-		); err != nil {
+		item, err := scanRun(rows)
+		if err != nil {
 			return nil, fmt.Errorf("scan run for user: %w", err)
-		}
-		if projectID.Valid {
-			item.ProjectID = projectID.String
-		}
-		if startedAt.Valid {
-			v := startedAt.Time
-			item.StartedAt = &v
-		}
-		if finished.Valid {
-			v := finished.Time
-			item.FinishedAt = &v
 		}
 		out = append(out, item)
 	}
@@ -138,35 +124,8 @@ func (r *Repository) ListForUser(ctx context.Context, userID string, limit int) 
 
 // GetByID returns a run by id.
 func (r *Repository) GetByID(ctx context.Context, runID string) (domainrepo.Run, bool, error) {
-	var (
-		item      domainrepo.Run
-		projectID sql.NullString
-		startedAt sql.NullTime
-		finished  sql.NullTime
-	)
-	err := r.db.QueryRowContext(ctx, queryGetByID, runID).Scan(
-		&item.ID,
-		&item.CorrelationID,
-		&projectID,
-		&item.ProjectSlug,
-		&item.ProjectName,
-		&item.Status,
-		&item.CreatedAt,
-		&startedAt,
-		&finished,
-	)
+	item, err := scanRun(r.db.QueryRowContext(ctx, queryGetByID, runID))
 	if err == nil {
-		if projectID.Valid {
-			item.ProjectID = projectID.String
-		}
-		if startedAt.Valid {
-			v := startedAt.Time
-			item.StartedAt = &v
-		}
-		if finished.Valid {
-			v := finished.Time
-			item.FinishedAt = &v
-		}
 		return item, true, nil
 	}
 	if err == sql.ErrNoRows {
@@ -184,7 +143,7 @@ func (r *Repository) ListEventsByCorrelation(ctx context.Context, correlationID 
 	if err != nil {
 		return nil, fmt.Errorf("list flow events: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var out []domainrepo.FlowEvent
 	for rows.Next() {

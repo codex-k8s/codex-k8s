@@ -61,3 +61,11 @@ done
 
 kubectl get nodes >/dev/null 2>&1 || die "k3s node discovery timed out after ${CODEXK8S_NODE_DISCOVERY_TIMEOUT}s"
 kubectl wait --for=condition=Ready node --all --timeout="${CODEXK8S_NODE_READY_TIMEOUT}"
+
+# Allow the operator user to run kubectl without sudo.
+# Keep the root kubeconfig permissions strict (600) and provision a private copy for the operator.
+if [ -n "${OPERATOR_USER:-}" ] && id -u "${OPERATOR_USER}" >/dev/null 2>&1; then
+  log "Provision kubeconfig for operator user: ${OPERATOR_USER}"
+  install -d -m 700 -o "${OPERATOR_USER}" -g "${OPERATOR_USER}" "/home/${OPERATOR_USER}/.kube"
+  install -m 600 -o "${OPERATOR_USER}" -g "${OPERATOR_USER}" /etc/rancher/k3s/k3s.yaml "/home/${OPERATOR_USER}/.kube/config"
+fi

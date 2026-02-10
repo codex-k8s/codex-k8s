@@ -6,6 +6,8 @@ import (
 	_ "embed"
 	"fmt"
 
+	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
+
 	domainrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/project"
 )
 
@@ -43,7 +45,7 @@ func (r *Repository) ListAll(ctx context.Context, limit int) ([]domainrepo.Proje
 	if err != nil {
 		return nil, fmt.Errorf("list projects: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var out []domainrepo.Project
 	for rows.Next() {
@@ -68,7 +70,7 @@ func (r *Repository) ListForUser(ctx context.Context, userID string, limit int) 
 	if err != nil {
 		return nil, fmt.Errorf("list projects for user: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var out []domainrepo.ProjectWithRole
 	for rows.Next() {
@@ -109,18 +111,7 @@ func (r *Repository) GetByID(ctx context.Context, projectID string) (domainrepo.
 
 // DeleteByID deletes a project by id.
 func (r *Repository) DeleteByID(ctx context.Context, projectID string) error {
-	res, err := r.db.ExecContext(ctx, queryDeleteByID, projectID)
-	if err != nil {
-		return fmt.Errorf("delete project by id: %w", err)
-	}
-	n, err := res.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("read rows affected for project delete: %w", err)
-	}
-	if n == 0 {
-		return sql.ErrNoRows
-	}
-	return nil
+	return postgres.ExecRequireRowOrWrap(ctx, r.db, queryDeleteByID, "delete project by id", projectID)
 }
 
 // GetLearningModeDefault returns project default learning-mode flag from JSONB settings.

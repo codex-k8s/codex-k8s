@@ -113,7 +113,7 @@ func (h *webhookHandler) IngestGitHubWebhook(c *echo.Context) error {
 }
 
 func readRequestBody(body io.ReadCloser, maxBodyBytes int64) ([]byte, error) {
-	defer body.Close()
+	defer func() { _ = body.Close() }()
 
 	if maxBodyBytes <= 0 {
 		maxBodyBytes = 1024 * 1024

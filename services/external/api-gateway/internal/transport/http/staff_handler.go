@@ -68,6 +68,61 @@ func parseLimit(c *echo.Context, def int) (int, error) {
 	return n, nil
 }
 
+func requirePrincipal(c *echo.Context) (staff.Principal, error) {
+	p, ok := getPrincipal(c)
+	if !ok {
+		return staff.Principal{}, errs.Unauthorized{Msg: "not authenticated"}
+	}
+	return p, nil
+}
+
+func requirePathParam(c *echo.Context, name string) (string, error) {
+	v := strings.TrimSpace(c.Param(name))
+	if v == "" {
+		return "", errs.Validation{Field: name, Msg: "is required"}
+	}
+	return v, nil
+}
+
+func (h *staffHandler) deleteWith1Param(c *echo.Context, paramName string, fn func(ctx context.Context, principal staff.Principal, id string) error) error {
+	p, err := requirePrincipal(c)
+	if err != nil {
+		return err
+	}
+	id, err := requirePathParam(c, paramName)
+	if err != nil {
+		return err
+	}
+	if err := fn(c.Request().Context(), p, id); err != nil {
+		return err
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (h *staffHandler) deleteWith2Params(
+	c *echo.Context,
+	param1 string,
+	param2 string,
+	fn func(ctx context.Context, principal staff.Principal, id1 string, id2 string) error,
+) error {
+	p, err := requirePrincipal(c)
+	if err != nil {
+		return err
+	}
+	id1, err := requirePathParam(c, param1)
+	if err != nil {
+		return err
+	}
+	id2, err := requirePathParam(c, param2)
+	if err != nil {
+		return err
+	}
+	if err := fn(c.Request().Context(), p, id1, id2); err != nil {
+		return err
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
 func (h *staffHandler) ListProjects(c *echo.Context) error {
 	p, ok := getPrincipal(c)
 	if !ok {
@@ -131,18 +186,7 @@ func (h *staffHandler) UpsertProject(c *echo.Context) error {
 }
 
 func (h *staffHandler) DeleteProject(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
-	}
-	projectID := c.Param("project_id")
-	if projectID == "" {
-		return errs.Validation{Field: "project_id", Msg: "is required"}
-	}
-	if err := h.svc.DeleteProject(c.Request().Context(), p, projectID); err != nil {
-		return err
-	}
-	return c.NoContent(http.StatusNoContent)
+	return h.deleteWith1Param(c, "project_id", h.svc.DeleteProject)
 }
 
 func (h *staffHandler) ListRuns(c *echo.Context) error {
@@ -323,18 +367,7 @@ func (h *staffHandler) ListUsers(c *echo.Context) error {
 }
 
 func (h *staffHandler) DeleteUser(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
-	}
-	userID := c.Param("user_id")
-	if userID == "" {
-		return errs.Validation{Field: "user_id", Msg: "is required"}
-	}
-	if err := h.svc.DeleteUser(c.Request().Context(), p, userID); err != nil {
-		return err
-	}
-	return c.NoContent(http.StatusNoContent)
+	return h.deleteWith1Param(c, "user_id", h.svc.DeleteUser)
 }
 
 type createUserRequest struct {
@@ -437,22 +470,7 @@ func (h *staffHandler) UpsertProjectMember(c *echo.Context) error {
 }
 
 func (h *staffHandler) DeleteProjectMember(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
-	}
-	projectID := c.Param("project_id")
-	if projectID == "" {
-		return errs.Validation{Field: "project_id", Msg: "is required"}
-	}
-	userID := c.Param("user_id")
-	if userID == "" {
-		return errs.Validation{Field: "user_id", Msg: "is required"}
-	}
-	if err := h.svc.DeleteProjectMember(c.Request().Context(), p, projectID, userID); err != nil {
-		return err
-	}
-	return c.NoContent(http.StatusNoContent)
+	return h.deleteWith2Params(c, "project_id", "user_id", h.svc.DeleteProjectMember)
 }
 
 type setLearningModeRequest struct {
@@ -561,20 +579,5 @@ func (h *staffHandler) UpsertProjectRepository(c *echo.Context) error {
 }
 
 func (h *staffHandler) DeleteProjectRepository(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
-	}
-	projectID := c.Param("project_id")
-	if projectID == "" {
-		return errs.Validation{Field: "project_id", Msg: "is required"}
-	}
-	repositoryID := c.Param("repository_id")
-	if repositoryID == "" {
-		return errs.Validation{Field: "repository_id", Msg: "is required"}
-	}
-	if err := h.svc.DeleteProjectRepository(c.Request().Context(), p, projectID, repositoryID); err != nil {
-		return err
-	}
-	return c.NoContent(http.StatusNoContent)
+	return h.deleteWith2Params(c, "project_id", "repository_id", h.svc.DeleteProjectRepository)
 }

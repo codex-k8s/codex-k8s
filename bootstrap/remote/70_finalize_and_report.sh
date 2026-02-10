@@ -25,6 +25,9 @@ if [ "$CODEXK8S_FIREWALL_ENABLED" = "true" ] && command -v nft >/dev/null 2>&1; 
 fi
 
 log "Bootstrap finished. Recommended checks:"
+if [ -n "${OPERATOR_USER:-}" ] && id -u "${OPERATOR_USER}" >/dev/null 2>&1; then
+  log "  su - ${OPERATOR_USER} -c 'kubectl get pods -n ${CODEXK8S_STAGING_NAMESPACE}'  # operator kubeconfig: /home/${OPERATOR_USER}/.kube/config"
+fi
 log "  kubectl get pods -n ${CODEXK8S_STAGING_NAMESPACE}"
 log "  kubectl get deploy -n ${CODEXK8S_STAGING_NAMESPACE} ${CODEXK8S_INTERNAL_REGISTRY_SERVICE}"
 log "  sudo cat /etc/rancher/k3s/registries.yaml"

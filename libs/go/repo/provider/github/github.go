@@ -52,6 +52,12 @@ func (p *Provider) ValidateRepository(ctx context.Context, token string, owner s
 func (p *Provider) EnsureWebhook(ctx context.Context, token string, owner string, name string, spec provider.WebhookSpec) error {
 	client := gh.NewClient(p.httpClient).WithAuthToken(token)
 
+	desired := &gh.Hook{
+		Active: gh.Ptr(true),
+		Events: normalizeEvents(spec.Events),
+		Config: hookConfig(spec),
+	}
+
 	hooks, _, err := client.Repositories.ListHooks(ctx, owner, name, &gh.ListOptions{PerPage: 100})
 	if err != nil {
 		return fmt.Errorf("github list hooks %s/%s: %w", owner, name, err)
@@ -64,15 +70,7 @@ func (p *Provider) EnsureWebhook(ctx context.Context, token string, owner string
 		}
 		if strings.EqualFold(cfg.GetURL(), spec.URL) {
 			// If URL matches, we assume the hook is ours. Update config and events to desired state.
-			_, _, err := client.Repositories.EditHook(ctx, owner, name, h.GetID(), &gh.Hook{
-				Active: gh.Ptr(true),
-				Events: normalizeEvents(spec.Events),
-				Config: &gh.HookConfig{
-					URL:         gh.Ptr(spec.URL),
-					ContentType: gh.Ptr("json"),
-					Secret:      gh.Ptr(spec.Secret),
-				},
-			})
+			_, _, err := client.Repositories.EditHook(ctx, owner, name, h.GetID(), desired)
 			if err != nil {
 				return fmt.Errorf("github edit hook %s/%s id=%d: %w", owner, name, h.GetID(), err)
 			}
@@ -80,15 +78,7 @@ func (p *Provider) EnsureWebhook(ctx context.Context, token string, owner string
 		}
 	}
 
-	_, _, err = client.Repositories.CreateHook(ctx, owner, name, &gh.Hook{
-		Active: gh.Ptr(true),
-		Events: normalizeEvents(spec.Events),
-		Config: &gh.HookConfig{
-			URL:         gh.Ptr(spec.URL),
-			ContentType: gh.Ptr("json"),
-			Secret:      gh.Ptr(spec.Secret),
-		},
-	})
+	_, _, err = client.Repositories.CreateHook(ctx, owner, name, desired)
 	if err != nil {
 		return fmt.Errorf("github create hook %s/%s: %w", owner, name, err)
 	}
@@ -139,4 +129,12 @@ func normalizeEvents(in []string) []string {
 		out = []string{"push"}
 	}
 	return out
+}
+
+func hookConfig(spec provider.WebhookSpec) *gh.HookConfig {
+	return &gh.HookConfig{
+		URL:         gh.Ptr(spec.URL),
+		ContentType: gh.Ptr("json"),
+		Secret:      gh.Ptr(spec.Secret),
+	}
 }

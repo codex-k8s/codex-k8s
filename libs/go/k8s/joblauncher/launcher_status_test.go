@@ -14,7 +14,7 @@ func TestLauncher_Status_ImagePullBackOffIsFailed(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	client := fake.NewSimpleClientset(
+	client := fake.NewClientset(
 		&batchv1.Job{
 			ObjectMeta: metav1.ObjectMeta{Name: "codex-k8s-run-abc", Namespace: "ns"},
 			Status:     batchv1.JobStatus{},
@@ -55,7 +55,7 @@ func TestLauncher_Status_CompleteConditionIsSucceeded(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	client := fake.NewSimpleClientset(
+	client := fake.NewClientset(
 		&batchv1.Job{
 			ObjectMeta: metav1.ObjectMeta{Name: "job1", Namespace: "ns"},
 			Status: batchv1.JobStatus{
@@ -80,7 +80,7 @@ func TestLauncher_Status_NotFound(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	client := fake.NewSimpleClientset()
+	client := fake.NewClientset()
 
 	l := NewForClient(Config{Namespace: "ns"}, client)
 	state, err := l.Status(ctx, JobRef{Namespace: "ns", Name: "missing"})

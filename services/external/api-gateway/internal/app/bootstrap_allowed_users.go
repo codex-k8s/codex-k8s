@@ -10,32 +10,15 @@ import (
 )
 
 func ensureBootstrapAllowedUsers(ctx context.Context, users userrepo.Repository, ownerEmail string, allowedEmailsCSV string, logger *slog.Logger) error {
-	emails, err := parseAllowedEmailsCSV(allowedEmailsCSV)
-	if err != nil {
-		return err
-	}
-	if len(emails) == 0 {
-		return nil
-	}
-
-	owner := strings.ToLower(strings.TrimSpace(ownerEmail))
-	for _, email := range emails {
-		if email == owner {
-			continue
-		}
-		if _, err := users.CreateAllowedUser(ctx, email, false); err != nil {
-			return fmt.Errorf("create allowed user %q: %w", email, err)
-		}
-	}
-
-	if logger != nil {
-		logger.Info("bootstrap allowed users ensured", "count", len(emails))
-	}
-	return nil
+	return ensureBootstrapUsers(ctx, users, ownerEmail, allowedEmailsCSV, false, "allowed user", logger)
 }
 
 func ensureBootstrapPlatformAdmins(ctx context.Context, users userrepo.Repository, ownerEmail string, adminEmailsCSV string, logger *slog.Logger) error {
-	emails, err := parseAllowedEmailsCSV(adminEmailsCSV)
+	return ensureBootstrapUsers(ctx, users, ownerEmail, adminEmailsCSV, true, "platform admin", logger)
+}
+
+func ensureBootstrapUsers(ctx context.Context, users userrepo.Repository, ownerEmail string, emailsCSV string, isPlatformAdmin bool, label string, logger *slog.Logger) error {
+	emails, err := parseAllowedEmailsCSV(emailsCSV)
 	if err != nil {
 		return err
 	}
@@ -48,13 +31,13 @@ func ensureBootstrapPlatformAdmins(ctx context.Context, users userrepo.Repositor
 		if email == owner {
 			continue
 		}
-		if _, err := users.CreateAllowedUser(ctx, email, true); err != nil {
-			return fmt.Errorf("create platform admin user %q: %w", email, err)
+		if _, err := users.CreateAllowedUser(ctx, email, isPlatformAdmin); err != nil {
+			return fmt.Errorf("create %s user %q: %w", label, email, err)
 		}
 	}
 
 	if logger != nil {
-		logger.Info("bootstrap platform admins ensured", "count", len(emails))
+		logger.Info("bootstrap users ensured", "label", label, "count", len(emails))
 	}
 	return nil
 }

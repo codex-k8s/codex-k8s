@@ -69,6 +69,35 @@ func NewService(
 	}
 }
 
+func (s *Service) resolveRunAccess(ctx context.Context, principal Principal, runID string) (correlationID string, projectID string, err error) {
+	if runID == "" {
+		return "", "", errs.Validation{Field: "run_id", Msg: "is required"}
+	}
+
+	correlationID, projectID, ok, err := s.runs.GetCorrelationByRunID(ctx, runID)
+	if err != nil {
+		return "", "", err
+	}
+	if !ok {
+		return "", "", errs.Validation{Field: "run_id", Msg: "not found"}
+	}
+
+	if !principal.IsPlatformAdmin {
+		if projectID == "" {
+			return "", "", errs.Forbidden{Msg: "run is not assigned to a project"}
+		}
+		_, hasRole, err := s.members.GetRole(ctx, projectID, principal.UserID)
+		if err != nil {
+			return "", "", err
+		}
+		if !hasRole {
+			return "", "", errs.Forbidden{Msg: "project access required"}
+		}
+	}
+
+	return correlationID, projectID, nil
+}
+
 // ListProjects returns projects visible to the principal.
 func (s *Service) ListProjects(ctx context.Context, principal Principal, limit int) ([]any, error) {
 	if principal.IsPlatformAdmin {
@@ -168,29 +197,9 @@ func (s *Service) GetRun(ctx context.Context, principal Principal, runID string)
 
 // ListRunFlowEvents returns flow events for a run id, enforcing project RBAC.
 func (s *Service) ListRunFlowEvents(ctx context.Context, principal Principal, runID string, limit int) ([]staffrunrepo.FlowEvent, error) {
-	if runID == "" {
-		return nil, errs.Validation{Field: "run_id", Msg: "is required"}
-	}
-
-	correlationID, projectID, ok, err := s.runs.GetCorrelationByRunID(ctx, runID)
+	correlationID, _, err := s.resolveRunAccess(ctx, principal, runID)
 	if err != nil {
 		return nil, err
-	}
-	if !ok {
-		return nil, errs.Validation{Field: "run_id", Msg: "not found"}
-	}
-
-	if !principal.IsPlatformAdmin {
-		if projectID == "" {
-			return nil, errs.Forbidden{Msg: "run is not assigned to a project"}
-		}
-		_, hasRole, err := s.members.GetRole(ctx, projectID, principal.UserID)
-		if err != nil {
-			return nil, err
-		}
-		if !hasRole {
-			return nil, errs.Forbidden{Msg: "project access required"}
-		}
 	}
 
 	return s.runs.ListEventsByCorrelation(ctx, correlationID, limit)
@@ -586,29 +595,8 @@ func (s *Service) SetProjectMemberLearningModeOverride(ctx context.Context, prin
 
 // ListRunLearningFeedback returns feedback entries for a run id.
 func (s *Service) ListRunLearningFeedback(ctx context.Context, principal Principal, runID string, limit int) ([]learningfeedbackrepo.Feedback, error) {
-	if runID == "" {
-		return nil, errs.Validation{Field: "run_id", Msg: "is required"}
-	}
-
-	_, projectID, ok, err := s.runs.GetCorrelationByRunID(ctx, runID)
-	if err != nil {
+	if _, _, err := s.resolveRunAccess(ctx, principal, runID); err != nil {
 		return nil, err
-	}
-	if !ok {
-		return nil, errs.Validation{Field: "run_id", Msg: "not found"}
-	}
-
-	if !principal.IsPlatformAdmin {
-		if projectID == "" {
-			return nil, errs.Forbidden{Msg: "run is not assigned to a project"}
-		}
-		_, hasRole, err := s.members.GetRole(ctx, projectID, principal.UserID)
-		if err != nil {
-			return nil, err
-		}
-		if !hasRole {
-			return nil, errs.Forbidden{Msg: "project access required"}
-		}
 	}
 
 	return s.feedback.ListForRun(ctx, runID, limit)

@@ -157,7 +157,7 @@ func (r *Repository) ListRunning(ctx context.Context, limit int) ([]domainrepo.R
 	if err != nil {
 		return nil, fmt.Errorf("list running runs: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	result := make([]domainrepo.RunningRun, 0, limit)
 	for rows.Next() {

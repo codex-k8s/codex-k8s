@@ -5,7 +5,7 @@ title: "Sprint S1 Regression Gate (staging)"
 status: draft
 owner_role: QA
 created_at: 2026-02-09
-updated_at: 2026-02-09
+updated_at: 2026-02-10
 related_issues: [1]
 related_prs: []
 approvals:
@@ -30,14 +30,17 @@ approvals:
    - Invalid signature => `401`.
    - First valid request => `202 accepted`.
    - Replay delivery id => `200 duplicate` (idempotency).
+   - Автоматизация: `bash deploy/scripts/staging_smoke.sh` (проверяет invalid signature + idempotency).
 
 2. Worker run loop
    - pending -> running -> succeeded/failed статусы фиксируются в БД.
    - slot lease корректно освобождается.
+   - Автоматизация: `bash deploy/scripts/staging_smoke.sh` (создаёт run через webhook ping и проверяет финальный статус + отсутствие slot leak).
 
 3. Staff access control
    - OAuth login успешен через `oauth2-proxy`.
    - Неразрешённый email получает `{"code":"forbidden","message":"email is not allowed"}`.
+   - Автоматизация: `bash deploy/scripts/staging_smoke.sh` (проверяет allowlist через `/api/v1/auth/me` по `X-Auth-Request-Email`).
 
 4. Staff UI базовые страницы
    - (manual) `/` Projects загружается.

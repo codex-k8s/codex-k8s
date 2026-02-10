@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log/slog"
 	"os"
@@ -15,6 +14,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 
 	libslauncher "github.com/codex-k8s/codex-k8s/libs/go/k8s/joblauncher"
+	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
 	k8slauncher "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/clients/kubernetes/launcher"
 	"github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/worker"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/flowevent"
@@ -56,11 +56,22 @@ func Run() error {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
-	db, err := openDB(cfg)
+	db, err := postgres.Open(context.Background(), postgres.OpenParams{
+		Host:     cfg.DBHost,
+		Port:     cfg.DBPort,
+		DBName:   cfg.DBName,
+		User:     cfg.DBUser,
+		Password: cfg.DBPassword,
+		SSLMode:  cfg.DBSSLMode,
+	})
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			logger.Error("db close failed", "err", err)
+		}
+	}()
 
 	runs := runqueuerepo.NewRepository(db)
 	events := floweventrepo.NewRepository(db)
@@ -113,29 +124,4 @@ func Run() error {
 			}
 		}
 	}
-}
-
-func openDB(cfg Config) (*sql.DB, error) {
-	dsn := fmt.Sprintf(
-		"host=%s port=%d dbname=%s user=%s password=%s sslmode=%s",
-		cfg.DBHost,
-		cfg.DBPort,
-		cfg.DBName,
-		cfg.DBUser,
-		cfg.DBPassword,
-		cfg.DBSSLMode,
-	)
-
-	db, err := sql.Open("pgx", dsn)
-	if err != nil {
-		return nil, fmt.Errorf("open postgres connection: %w", err)
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := db.PingContext(ctx); err != nil {
-		return nil, fmt.Errorf("ping postgres: %w", err)
-	}
-
-	return db, nil
 }

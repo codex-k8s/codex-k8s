@@ -35,7 +35,7 @@ func (r *Repository) ListForRun(ctx context.Context, runID string, limit int) ([
 	if err != nil {
 		return nil, fmt.Errorf("list learning feedback: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	out := make([]domainrepo.Feedback, 0, limit)
 	for rows.Next() {

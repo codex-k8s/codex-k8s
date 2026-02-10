@@ -41,6 +41,23 @@ echo "[smoke] verify migrate job completed"
 kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" get job codex-k8s-migrate >/dev/null
 kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" wait --for=condition=complete "job/codex-k8s-migrate" --timeout=600s
 
+echo "[smoke] load postgres credentials from secret"
+pg_db="$(
+  kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" get secret codex-k8s-postgres \
+    -o jsonpath='{.data.CODEXK8S_POSTGRES_DB}' | base64 -d
+)"
+pg_user="$(
+  kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" get secret codex-k8s-postgres \
+    -o jsonpath='{.data.CODEXK8S_POSTGRES_USER}' | base64 -d
+)"
+pg_pass="$(
+  kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" get secret codex-k8s-postgres \
+    -o jsonpath='{.data.CODEXK8S_POSTGRES_PASSWORD}' | base64 -d
+)"
+[ -n "${pg_db}" ] || { echo "[smoke] FAIL: empty CODEXK8S_POSTGRES_DB" >&2; exit 1; }
+[ -n "${pg_user}" ] || { echo "[smoke] FAIL: empty CODEXK8S_POSTGRES_USER" >&2; exit 1; }
+[ -n "${pg_pass}" ] || { echo "[smoke] FAIL: empty CODEXK8S_POSTGRES_PASSWORD" >&2; exit 1; }
+
 echo "[smoke] port-forward svc/codex-k8s and check /healthz /readyz /metrics"
 kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" port-forward svc/codex-k8s "${CODEXK8S_SMOKE_PORTFWD_PORT}:80" >/tmp/codexk8s-portfwd.log 2>&1 &
 pf_pid="$!"
@@ -105,6 +122,54 @@ if [ -n "${CODEXK8S_STAGING_DOMAIN}" ]; then
   if [ "${code2}" != "200" ]; then
     echo "[smoke] FAIL: expected 200 for replay webhook, got ${code2}" >&2
     exit 1
+  fi
+
+  echo "[smoke] worker run loop (pending -> running -> succeeded/failed) for correlation_id=${delivery}"
+  deadline=$((SECONDS + 180))
+  run_status=""
+  run_project_id=""
+  while [ "$SECONDS" -lt "$deadline" ]; do
+    row="$(
+      kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" exec postgres-0 -- \
+        env PGPASSWORD="${pg_pass}" psql -U "${pg_user}" -d "${pg_db}" -tA \
+          -c "SELECT status, COALESCE(project_id::text, '') FROM agent_runs WHERE correlation_id='${delivery}' LIMIT 1;" 2>/dev/null || true
+    )"
+    run_status="$(printf '%s' "$row" | awk -F'|' '{print $1}')"
+    run_project_id="$(printf '%s' "$row" | awk -F'|' '{print $2}')"
+
+    if [ -z "${run_status}" ]; then
+      sleep 2
+      continue
+    fi
+
+    if [ "${run_status}" = "succeeded" ] || [ "${run_status}" = "failed" ] || [ "${run_status}" = "canceled" ]; then
+      break
+    fi
+
+    sleep 2
+  done
+
+  if [ -z "${run_status}" ]; then
+    echo "[smoke] FAIL: agent_runs row was not created for correlation_id=${delivery}" >&2
+    exit 1
+  fi
+  if [ "${run_status}" != "succeeded" ] && [ "${run_status}" != "failed" ] && [ "${run_status}" != "canceled" ]; then
+    echo "[smoke] FAIL: run did not reach final status in time (status=${run_status})" >&2
+    exit 1
+  fi
+
+  # Slots are DB-backed: once a run is finished, it should not keep a leased slot.
+  if [ -n "${run_project_id}" ]; then
+    leased="$(
+      kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" exec postgres-0 -- \
+        env PGPASSWORD="${pg_pass}" psql -U "${pg_user}" -d "${pg_db}" -tA \
+          -c "SELECT COUNT(*) FROM slots WHERE project_id='${run_project_id}'::uuid AND state <> 'free';" 2>/dev/null || true
+    )"
+    leased="$(printf '%s' "${leased:-0}" | tr -d '[:space:]')"
+    if [ -n "${leased}" ] && [ "${leased}" != "0" ]; then
+      echo "[smoke] FAIL: slot leak detected for project_id=${run_project_id} leased=${leased}" >&2
+      exit 1
+    fi
   fi
 
   echo "[smoke] staff allowlist enforcement (expected 403 for unknown email via X-Auth-Request-Email)"
