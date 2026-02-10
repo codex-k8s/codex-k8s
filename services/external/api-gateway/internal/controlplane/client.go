@@ -9,6 +9,7 @@ import (
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -28,20 +29,42 @@ func Dial(ctx context.Context, target string) (*Client, error) {
 		return nil, fmt.Errorf("control-plane grpc target is required")
 	}
 
-	conn, err := grpc.DialContext(
-		ctx,
-		target,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
-	)
+	// grpc.DialContext/WithBlock are deprecated; grpc.NewClient creates a virtual connection,
+	// then we optionally wait until it reports Ready (bounded by ctx) to reduce transient 500s on startup.
+	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("dial control-plane grpc %q: %w", target, err)
+	}
+
+	if err := waitForReady(ctx, conn); err != nil {
+		_ = conn.Close()
+		return nil, fmt.Errorf("wait for control-plane grpc ready %q: %w", target, err)
 	}
 
 	return &Client{
 		conn: conn,
 		svc:  controlplanev1.NewControlPlaneServiceClient(conn),
 	}, nil
+}
+
+func waitForReady(ctx context.Context, conn *grpc.ClientConn) error {
+	// Start connecting if the channel is idle.
+	if conn.GetState() == connectivity.Idle {
+		conn.Connect()
+	}
+
+	for {
+		s := conn.GetState()
+		if s == connectivity.Ready {
+			return nil
+		}
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		if !conn.WaitForStateChange(ctx, s) {
+			return ctx.Err()
+		}
+	}
 }
 
 func (c *Client) Close() error {
