@@ -193,14 +193,7 @@ func (s *Server) GetProject(ctx context.Context, req *controlplanev1.GetProjectR
 }
 
 func (s *Server) DeleteProject(ctx context.Context, req *controlplanev1.DeleteProjectRequest) (*emptypb.Empty, error) {
-	p, err := requirePrincipal(req.GetPrincipal())
-	if err != nil {
-		return nil, err
-	}
-	if err := s.staff.DeleteProject(ctx, p, strings.TrimSpace(req.ProjectId)); err != nil {
-		return nil, toStatus(err)
-	}
-	return &emptypb.Empty{}, nil
+	return s.delete1(ctx, req.GetPrincipal(), req.ProjectId, s.staff.DeleteProject)
 }
 
 func (s *Server) ListRuns(ctx context.Context, req *controlplanev1.ListRunsRequest) (*controlplanev1.ListRunsResponse, error) {
@@ -325,14 +318,7 @@ func (s *Server) CreateUser(ctx context.Context, req *controlplanev1.CreateUserR
 }
 
 func (s *Server) DeleteUser(ctx context.Context, req *controlplanev1.DeleteUserRequest) (*emptypb.Empty, error) {
-	p, err := requirePrincipal(req.GetPrincipal())
-	if err != nil {
-		return nil, err
-	}
-	if err := s.staff.DeleteUser(ctx, p, strings.TrimSpace(req.UserId)); err != nil {
-		return nil, toStatus(err)
-	}
-	return &emptypb.Empty{}, nil
+	return s.delete1(ctx, req.GetPrincipal(), req.UserId, s.staff.DeleteUser)
 }
 
 func (s *Server) ListProjectMembers(ctx context.Context, req *controlplanev1.ListProjectMembersRequest) (*controlplanev1.ListProjectMembersResponse, error) {
@@ -468,11 +454,29 @@ func (s *Server) UpsertProjectRepository(ctx context.Context, req *controlplanev
 }
 
 func (s *Server) DeleteProjectRepository(ctx context.Context, req *controlplanev1.DeleteProjectRepositoryRequest) (*emptypb.Empty, error) {
-	p, err := requirePrincipal(req.GetPrincipal())
+	return s.delete2(ctx, req.GetPrincipal(), req.ProjectId, req.RepositoryId, s.staff.DeleteProjectRepository)
+}
+
+type delete1Fn func(context.Context, staff.Principal, string) error
+type delete2Fn func(context.Context, staff.Principal, string, string) error
+
+func (s *Server) delete1(ctx context.Context, principal *controlplanev1.Principal, id string, fn delete1Fn) (*emptypb.Empty, error) {
+	p, err := requirePrincipal(principal)
 	if err != nil {
 		return nil, err
 	}
-	if err := s.staff.DeleteProjectRepository(ctx, p, strings.TrimSpace(req.ProjectId), strings.TrimSpace(req.RepositoryId)); err != nil {
+	if err := fn(ctx, p, strings.TrimSpace(id)); err != nil {
+		return nil, toStatus(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (s *Server) delete2(ctx context.Context, principal *controlplanev1.Principal, id1 string, id2 string, fn delete2Fn) (*emptypb.Empty, error) {
+	p, err := requirePrincipal(principal)
+	if err != nil {
+		return nil, err
+	}
+	if err := fn(ctx, p, strings.TrimSpace(id1), strings.TrimSpace(id2)); err != nil {
 		return nil, toStatus(err)
 	}
 	return &emptypb.Empty{}, nil

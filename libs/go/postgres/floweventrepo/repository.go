@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
-	"time"
 
+	flowdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
 )
 
@@ -14,15 +14,7 @@ var (
 	queryInsert string
 )
 
-// InsertParams defines a single flow event insertion request.
-type InsertParams struct {
-	CorrelationID string
-	ActorType     string
-	ActorID       string
-	EventType     string
-	Payload       []byte
-	CreatedAt     time.Time
-}
+type InsertParams = flowdomain.InsertParams
 
 // Repository stores flow events in PostgreSQL.
 type Repository struct {
@@ -44,7 +36,7 @@ func (r *Repository) Insert(ctx context.Context, params InsertParams) error {
 		params.ActorType,
 		params.ActorID,
 		params.EventType,
-		params.Payload,
+		[]byte(params.Payload),
 		params.CreatedAt,
 	)
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/labstack/echo/v5"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
@@ -110,9 +111,9 @@ func (h *staffHandler) ListProjects(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	resp, err := h.cp.ListProjects(c.Request().Context(), p, int32(limit))
+	resp, err := h.cp.Service().ListProjects(c.Request().Context(), &controlplanev1.ListProjectsRequest{Principal: p, Limit: int32(limit)})
 	if err != nil {
-		return err
+		return controlplane.ToDomainError(err)
 	}
 	out := make([]any, 0, len(resp.GetItems()))
 	for _, it := range resp.GetItems() {
@@ -135,9 +136,9 @@ func (h *staffHandler) GetProject(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	item, err := h.cp.GetProject(c.Request().Context(), p, projectID)
+	item, err := h.cp.Service().GetProject(c.Request().Context(), &controlplanev1.GetProjectRequest{Principal: p, ProjectId: projectID})
 	if err != nil {
-		return err
+		return controlplane.ToDomainError(err)
 	}
 	return c.JSON(http.StatusOK, map[string]any{
 		"id":   item.GetId(),
@@ -160,9 +161,9 @@ func (h *staffHandler) UpsertProject(c *echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return errs.Validation{Field: "body", Msg: "invalid JSON"}
 	}
-	item, err := h.cp.UpsertProject(c.Request().Context(), p, req.Slug, req.Name)
+	item, err := h.cp.Service().UpsertProject(c.Request().Context(), &controlplanev1.UpsertProjectRequest{Principal: p, Slug: req.Slug, Name: req.Name})
 	if err != nil {
-		return err
+		return controlplane.ToDomainError(err)
 	}
 	return c.JSON(http.StatusCreated, map[string]any{
 		"id":   item.GetId(),
@@ -172,9 +173,7 @@ func (h *staffHandler) UpsertProject(c *echo.Context) error {
 }
 
 func (h *staffHandler) DeleteProject(c *echo.Context) error {
-	return h.deleteWith1Param(c, "project_id", func(ctx context.Context, principal *controlplanev1.Principal, id string) error {
-		return h.cp.DeleteProject(ctx, principal, id)
-	})
+	return h.deleteWith1Param(c, "project_id", h.deleteProject)
 }
 
 func (h *staffHandler) ListRuns(c *echo.Context) error {
@@ -186,27 +185,13 @@ func (h *staffHandler) ListRuns(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	resp, err := h.cp.ListRuns(c.Request().Context(), p, int32(limit))
+	resp, err := h.cp.Service().ListRuns(c.Request().Context(), &controlplanev1.ListRunsRequest{Principal: p, Limit: int32(limit)})
 	if err != nil {
-		return err
+		return controlplane.ToDomainError(err)
 	}
 	out := make([]any, 0, len(resp.GetItems()))
 	for _, r := range resp.GetItems() {
-		var projectID any = nil
-		if strings.TrimSpace(r.GetProjectId()) != "" {
-			projectID = r.GetProjectId()
-		}
-		out = append(out, map[string]any{
-			"id":             r.GetId(),
-			"correlation_id": r.GetCorrelationId(),
-			"project_id":     projectID,
-			"project_slug":   r.GetProjectSlug(),
-			"project_name":   r.GetProjectName(),
-			"status":         r.GetStatus(),
-			"created_at":     toRFC3339Nano(r.GetCreatedAt()),
-			"started_at":     toRFC3339Nano(r.GetStartedAt()),
-			"finished_at":    toRFC3339Nano(r.GetFinishedAt()),
-		})
+		out = append(out, runToJSON(r))
 	}
 	return c.JSON(http.StatusOK, map[string]any{"items": out})
 }
@@ -220,27 +205,11 @@ func (h *staffHandler) GetRun(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	r, err := h.cp.GetRun(c.Request().Context(), p, runID)
+	r, err := h.cp.Service().GetRun(c.Request().Context(), &controlplanev1.GetRunRequest{Principal: p, RunId: runID})
 	if err != nil {
-		return err
+		return controlplane.ToDomainError(err)
 	}
-
-	var projectID any = nil
-	if strings.TrimSpace(r.GetProjectId()) != "" {
-		projectID = r.GetProjectId()
-	}
-
-	return c.JSON(http.StatusOK, map[string]any{
-		"id":             r.GetId(),
-		"correlation_id": r.GetCorrelationId(),
-		"project_id":     projectID,
-		"project_slug":   r.GetProjectSlug(),
-		"project_name":   r.GetProjectName(),
-		"status":         r.GetStatus(),
-		"created_at":     toRFC3339Nano(r.GetCreatedAt()),
-		"started_at":     toRFC3339Nano(r.GetStartedAt()),
-		"finished_at":    toRFC3339Nano(r.GetFinishedAt()),
-	})
+	return c.JSON(http.StatusOK, runToJSON(r))
 }
 
 func (h *staffHandler) ListRunEvents(c *echo.Context) error {
@@ -256,9 +225,9 @@ func (h *staffHandler) ListRunEvents(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	resp, err := h.cp.ListRunEvents(c.Request().Context(), p, runID, int32(limit))
+	resp, err := h.cp.Service().ListRunEvents(c.Request().Context(), &controlplanev1.ListRunEventsRequest{Principal: p, RunId: runID, Limit: int32(limit)})
 	if err != nil {
-		return err
+		return controlplane.ToDomainError(err)
 	}
 	out := make([]any, 0, len(resp.GetItems()))
 	for _, e := range resp.GetItems() {
@@ -285,9 +254,9 @@ func (h *staffHandler) ListRunLearningFeedback(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	resp, err := h.cp.ListRunLearningFeedback(c.Request().Context(), p, runID, int32(limit))
+	resp, err := h.cp.Service().ListRunLearningFeedback(c.Request().Context(), &controlplanev1.ListRunLearningFeedbackRequest{Principal: p, RunId: runID, Limit: int32(limit)})
 	if err != nil {
-		return err
+		return controlplane.ToDomainError(err)
 	}
 	out := make([]any, 0, len(resp.GetItems()))
 	for _, f := range resp.GetItems() {
@@ -315,9 +284,9 @@ func (h *staffHandler) ListUsers(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	resp, err := h.cp.ListUsers(c.Request().Context(), p, int32(limit))
+	resp, err := h.cp.Service().ListUsers(c.Request().Context(), &controlplanev1.ListUsersRequest{Principal: p, Limit: int32(limit)})
 	if err != nil {
-		return err
+		return controlplane.ToDomainError(err)
 	}
 	out := make([]any, 0, len(resp.GetItems()))
 	for _, u := range resp.GetItems() {
@@ -334,9 +303,7 @@ func (h *staffHandler) ListUsers(c *echo.Context) error {
 }
 
 func (h *staffHandler) DeleteUser(c *echo.Context) error {
-	return h.deleteWith1Param(c, "user_id", func(ctx context.Context, principal *controlplanev1.Principal, id string) error {
-		return h.cp.DeleteUser(ctx, principal, id)
-	})
+	return h.deleteWith1Param(c, "user_id", h.deleteUser)
 }
 
 type createUserRequest struct {
@@ -353,9 +320,9 @@ func (h *staffHandler) CreateUser(c *echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return errs.Validation{Field: "body", Msg: "invalid JSON"}
 	}
-	u, err := h.cp.CreateUser(c.Request().Context(), p, req.Email, req.IsPlatformAdmin)
+	u, err := h.cp.Service().CreateUser(c.Request().Context(), &controlplanev1.CreateUserRequest{Principal: p, Email: req.Email, IsPlatformAdmin: req.IsPlatformAdmin})
 	if err != nil {
-		return err
+		return controlplane.ToDomainError(err)
 	}
 	return c.JSON(http.StatusCreated, map[string]any{
 		"id":                u.GetId(),
@@ -380,9 +347,9 @@ func (h *staffHandler) ListProjectMembers(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	resp, err := h.cp.ListProjectMembers(c.Request().Context(), p, projectID, int32(limit))
+	resp, err := h.cp.Service().ListProjectMembers(c.Request().Context(), &controlplanev1.ListProjectMembersRequest{Principal: p, ProjectId: projectID, Limit: int32(limit)})
 	if err != nil {
-		return err
+		return controlplane.ToDomainError(err)
 	}
 	out := make([]any, 0, len(resp.GetItems()))
 	for _, m := range resp.GetItems() {
@@ -430,16 +397,20 @@ func (h *staffHandler) UpsertProjectMember(c *echo.Context) error {
 		return errs.Validation{Field: "user_id", Msg: "is required"}
 	}
 
-	if err := h.cp.UpsertProjectMember(c.Request().Context(), p, projectID, userID, email, req.Role); err != nil {
-		return err
+	if _, err := h.cp.Service().UpsertProjectMember(c.Request().Context(), &controlplanev1.UpsertProjectMemberRequest{
+		Principal: p,
+		ProjectId: projectID,
+		UserId:    userID,
+		Email:     email,
+		Role:      req.Role,
+	}); err != nil {
+		return controlplane.ToDomainError(err)
 	}
 	return c.NoContent(http.StatusNoContent)
 }
 
 func (h *staffHandler) DeleteProjectMember(c *echo.Context) error {
-	return h.deleteWith2Params(c, "project_id", "user_id", func(ctx context.Context, principal *controlplanev1.Principal, id1 string, id2 string) error {
-		return h.cp.DeleteProjectMember(ctx, principal, id1, id2)
-	})
+	return h.deleteWith2Params(c, "project_id", "user_id", h.deleteProjectMember)
 }
 
 type setLearningModeRequest struct {
@@ -464,8 +435,17 @@ func (h *staffHandler) SetProjectMemberLearningModeOverride(c *echo.Context) err
 	if err := c.Bind(&req); err != nil {
 		return errs.Validation{Field: "body", Msg: "invalid JSON"}
 	}
-	if err := h.cp.SetProjectMemberLearningModeOverride(c.Request().Context(), p, projectID, userID, req.Enabled); err != nil {
-		return err
+	var enabled *wrapperspb.BoolValue
+	if req.Enabled != nil {
+		enabled = wrapperspb.Bool(*req.Enabled)
+	}
+	if _, err := h.cp.Service().SetProjectMemberLearningModeOverride(c.Request().Context(), &controlplanev1.SetProjectMemberLearningModeOverrideRequest{
+		Principal: p,
+		ProjectId: projectID,
+		UserId:    userID,
+		Enabled:   enabled,
+	}); err != nil {
+		return controlplane.ToDomainError(err)
 	}
 	return c.NoContent(http.StatusNoContent)
 }
@@ -483,9 +463,9 @@ func (h *staffHandler) ListProjectRepositories(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	resp, err := h.cp.ListProjectRepositories(c.Request().Context(), p, projectID, int32(limit))
+	resp, err := h.cp.Service().ListProjectRepositories(c.Request().Context(), &controlplanev1.ListProjectRepositoriesRequest{Principal: p, ProjectId: projectID, Limit: int32(limit)})
 	if err != nil {
-		return err
+		return controlplane.ToDomainError(err)
 	}
 	out := make([]any, 0, len(resp.GetItems()))
 	for _, r := range resp.GetItems() {
@@ -523,18 +503,17 @@ func (h *staffHandler) UpsertProjectRepository(c *echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return errs.Validation{Field: "body", Msg: "invalid JSON"}
 	}
-	item, err := h.cp.UpsertProjectRepository(
-		c.Request().Context(),
-		p,
-		projectID,
-		req.Provider,
-		req.Owner,
-		req.Name,
-		req.Token,
-		req.ServicesYAMLPath,
-	)
+	item, err := h.cp.Service().UpsertProjectRepository(c.Request().Context(), &controlplanev1.UpsertProjectRepositoryRequest{
+		Principal:        p,
+		ProjectId:        projectID,
+		Provider:         req.Provider,
+		Owner:            req.Owner,
+		Name:             req.Name,
+		Token:            req.Token,
+		ServicesYamlPath: req.ServicesYAMLPath,
+	})
 	if err != nil {
-		return err
+		return controlplane.ToDomainError(err)
 	}
 	return c.JSON(http.StatusCreated, map[string]any{
 		"id":                 item.GetId(),
@@ -548,7 +527,51 @@ func (h *staffHandler) UpsertProjectRepository(c *echo.Context) error {
 }
 
 func (h *staffHandler) DeleteProjectRepository(c *echo.Context) error {
-	return h.deleteWith2Params(c, "project_id", "repository_id", func(ctx context.Context, principal *controlplanev1.Principal, id1 string, id2 string) error {
-		return h.cp.DeleteProjectRepository(ctx, principal, id1, id2)
-	})
+	return h.deleteWith2Params(c, "project_id", "repository_id", h.deleteProjectRepository)
+}
+
+func runToJSON(r *controlplanev1.Run) map[string]any {
+	var projectID any = nil
+	if strings.TrimSpace(r.GetProjectId()) != "" {
+		projectID = r.GetProjectId()
+	}
+	return map[string]any{
+		"id":             r.GetId(),
+		"correlation_id": r.GetCorrelationId(),
+		"project_id":     projectID,
+		"project_slug":   r.GetProjectSlug(),
+		"project_name":   r.GetProjectName(),
+		"status":         r.GetStatus(),
+		"created_at":     toRFC3339Nano(r.GetCreatedAt()),
+		"started_at":     toRFC3339Nano(r.GetStartedAt()),
+		"finished_at":    toRFC3339Nano(r.GetFinishedAt()),
+	}
+}
+
+func (h *staffHandler) deleteProject(ctx context.Context, principal *controlplanev1.Principal, id string) error {
+	req := &controlplanev1.DeleteProjectRequest{Principal: principal, ProjectId: id}
+	_, err := h.cp.Service().DeleteProject(ctx, req)
+	return controlplane.ToDomainError(err)
+}
+
+func (h *staffHandler) deleteUser(ctx context.Context, principal *controlplanev1.Principal, id string) error {
+	if _, err := h.cp.Service().DeleteUser(ctx, &controlplanev1.DeleteUserRequest{Principal: principal, UserId: id}); err != nil {
+		return controlplane.ToDomainError(err)
+	}
+	return nil
+}
+
+func (h *staffHandler) deleteProjectMember(ctx context.Context, principal *controlplanev1.Principal, projectID string, userID string) error {
+	svc := h.cp.Service()
+	_, err := svc.DeleteProjectMember(ctx, &controlplanev1.DeleteProjectMemberRequest{Principal: principal, ProjectId: projectID, UserId: userID})
+	return controlplane.ToDomainError(err)
+}
+
+func (h *staffHandler) deleteProjectRepository(ctx context.Context, principal *controlplanev1.Principal, projectID string, repositoryID string) error {
+	req := controlplanev1.DeleteProjectRepositoryRequest{Principal: principal, ProjectId: projectID, RepositoryId: repositoryID}
+	_, err := h.cp.Service().DeleteProjectRepository(ctx, &req)
+	if err != nil {
+		return controlplane.ToDomainError(err)
+	}
+	return nil
 }
