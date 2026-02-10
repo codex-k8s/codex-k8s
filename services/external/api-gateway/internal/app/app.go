@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/auth"
 	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/controlplane"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/auth"
 	httptransport "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http"
 )
 

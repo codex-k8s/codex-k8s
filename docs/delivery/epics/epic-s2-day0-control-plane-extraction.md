@@ -88,10 +88,10 @@ approvals:
   - `services/external/api-gateway/internal/controlplane/client.go`
   - `services/external/api-gateway/internal/app/app.go`
   - `services/external/api-gateway/internal/app/config.go`
+  - staff auth (OAuth+JWT): `services/external/api-gateway/internal/auth/service.go`
   - `services/external/api-gateway/internal/transport/http/server.go`
   - `services/external/api-gateway/internal/transport/http/webhook_handler.go`
   - `services/external/api-gateway/internal/transport/http/staff_handler.go`
-  - `services/external/api-gateway/internal/domain/auth/service.go`
 - Миграции держателя схемы:
   - `services/internal/control-plane/cmd/cli/migrations/*.sql`
   - `deploy/scripts/deploy_staging.sh` создаёт `configmap/codex-k8s-migrations` из этого пути
@@ -99,12 +99,15 @@ approvals:
 - Сборка/деплой:
   - `Dockerfile` собирает бинарники `codex-k8s` (gateway), `codex-k8s-control-plane`, `codex-k8s-worker`
   - `deploy/base/codex-k8s/app.yaml.tpl` деплоит `Deployment/codex-k8s` и `Deployment/codex-k8s-control-plane` (один образ, разные команды)
+- NetworkPolicy baseline:
+  - `deploy/base/network-policies/platform-baseline.yaml.tpl` разрешает egress `api-gateway` -> `control-plane` (gRPC 9090, HTTP 8081)
 - Каталог внешних зависимостей:
   - `docs/design-guidelines/common/external_dependencies_catalog.md` (grpc/protobuf)
 
 ## Verification
 - Unit tests: `go test ./...`
 - Bash syntax: `bash -n deploy/scripts/deploy_staging.sh`
+- Staging smoke: `deploy/scripts/staging_smoke.sh` (OK после деплоя)
 
 ## План релиза (верхний уровень)
 - Контур dev/staging до dogfooding: см. `.local/agents-temp-dev-rules.md`.
