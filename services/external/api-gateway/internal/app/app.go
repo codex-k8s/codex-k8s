@@ -57,8 +57,6 @@ func Run() error {
 	repos := repocfgrepo.NewRepository(db)
 	feedback := learningfeedbackrepo.NewRepository(db)
 
-	webhookService := webhook.NewService(agentRuns, flowEvents, repos, projects, users, members)
-
 	tokenCrypto, err := tokencrypt.NewService(cfg.TokenEncryptionKey)
 	if err != nil {
 		return fmt.Errorf("init token encryption: %w", err)
@@ -73,6 +71,8 @@ func Run() error {
 		}
 		learningDefault = v
 	}
+
+	webhookService := webhook.NewService(agentRuns, flowEvents, repos, projects, users, members, learningDefault)
 
 	webhookURL := strings.TrimSpace(cfg.GitHubWebhookURL)
 	if webhookURL == "" {

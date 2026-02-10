@@ -4,7 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/errs"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/agentrun"
@@ -23,6 +26,8 @@ type Service struct {
 	projects   projectrepo.Repository
 	users      userrepo.Repository
 	members    projectmemberrepo.Repository
+
+	learningModeDefault bool
 }
 
 // NewService wires webhook domain dependencies.
@@ -33,6 +38,7 @@ func NewService(
 	projects projectrepo.Repository,
 	users userrepo.Repository,
 	members projectmemberrepo.Repository,
+	learningModeDefault bool,
 ) *Service {
 	return &Service{
 		agentRuns:  agentRuns,
@@ -41,6 +47,7 @@ func NewService(
 		projects:   projects,
 		users:      users,
 		members:    members,
+		learningModeDefault: learningModeDefault,
 	}
 }
 
@@ -73,12 +80,26 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		return IngestResult{}, fmt.Errorf("resolve project binding: %w", err)
 	}
 
-	learningMode, err := s.resolveLearningMode(ctx, projectID, envelope.Sender.Login)
+	fallbackProjectID := deriveProjectID(cmd.CorrelationID, envelope)
+
+	learningProjectID := projectID
+	if learningProjectID == "" {
+		learningProjectID = fallbackProjectID
+	}
+	payloadProjectID := projectID
+	if payloadProjectID == "" {
+		payloadProjectID = fallbackProjectID
+	}
+	if strings.TrimSpace(servicesYAMLPath) == "" {
+		servicesYAMLPath = "services.yaml"
+	}
+
+	learningMode, err := s.resolveLearningMode(ctx, learningProjectID, envelope.Sender.Login)
 	if err != nil {
 		return IngestResult{}, fmt.Errorf("resolve learning mode: %w", err)
 	}
 
-	runPayload, err := buildRunPayload(cmd, envelope, projectID, repositoryID, servicesYAMLPath, hasBinding, learningMode)
+	runPayload, err := buildRunPayload(cmd, envelope, payloadProjectID, repositoryID, servicesYAMLPath, hasBinding, learningMode)
 	if err != nil {
 		return IngestResult{}, fmt.Errorf("build run payload: %w", err)
 	}
@@ -185,11 +206,14 @@ func (s *Service) resolveProjectBinding(ctx context.Context, envelope githubEnve
 
 func (s *Service) resolveLearningMode(ctx context.Context, projectID string, senderLogin string) (bool, error) {
 	if projectID == "" || s.projects == nil {
-		return false, nil
+		return s.learningModeDefault, nil
 	}
-	projectDefault, _, err := s.projects.GetLearningModeDefault(ctx, projectID)
+	projectDefault, ok, err := s.projects.GetLearningModeDefault(ctx, projectID)
 	if err != nil {
 		return false, err
+	}
+	if !ok {
+		projectDefault = s.learningModeDefault
 	}
 
 	// Member override is optional and best-effort: if we can't map sender->user->member,
@@ -214,4 +238,12 @@ func (s *Service) resolveLearningMode(ctx context.Context, projectID string, sen
 		return projectDefault, nil
 	}
 	return *override, nil
+}
+
+func deriveProjectID(correlationID string, envelope githubEnvelope) string {
+	fullName := strings.TrimSpace(envelope.Repository.FullName)
+	if fullName != "" {
+		return uuid.NewSHA1(uuid.NameSpaceDNS, []byte("repo:"+strings.ToLower(fullName))).String()
+	}
+	return uuid.NewSHA1(uuid.NameSpaceDNS, []byte("correlation:"+correlationID)).String()
 }
