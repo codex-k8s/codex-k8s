@@ -84,7 +84,7 @@ async function load() {
       user_id: String(m.user_id),
       email: String(m.email),
       role: m.role as any,
-      learning_mode_override: "",
+      learning_mode_override: m.learning_mode_override === true ? "true" : m.learning_mode_override === false ? "false" : "",
     }));
   } catch (e: any) {
     error.value = e?.message ?? "Failed to load";
@@ -191,4 +191,3 @@ h2 {
   text-align: right;
 }
 </style>
-

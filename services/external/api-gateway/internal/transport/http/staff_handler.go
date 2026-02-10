@@ -266,11 +266,16 @@ func (h *staffHandler) ListProjectMembers(c *echo.Context) error {
 	}
 	out := make([]any, 0, len(items))
 	for _, m := range items {
+		var learningOverride any = nil
+		if m.LearningModeOverride != nil {
+			learningOverride = *m.LearningModeOverride
+		}
 		out = append(out, map[string]any{
-			"project_id": m.ProjectID,
-			"user_id":    m.UserID,
-			"email":      m.Email,
-			"role":       m.Role,
+			"project_id":             m.ProjectID,
+			"user_id":                m.UserID,
+			"email":                  m.Email,
+			"role":                   m.Role,
+			"learning_mode_override": learningOverride,
 		})
 	}
 	return c.JSON(http.StatusOK, map[string]any{"items": out})

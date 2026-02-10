@@ -45,9 +45,16 @@ func (r *Repository) List(ctx context.Context, projectID string, limit int) ([]d
 
 	var out []domainrepo.Member
 	for rows.Next() {
-		var m domainrepo.Member
-		if err := rows.Scan(&m.ProjectID, &m.UserID, &m.Email, &m.Role); err != nil {
+		var (
+			m        domainrepo.Member
+			override sql.NullBool
+		)
+		if err := rows.Scan(&m.ProjectID, &m.UserID, &m.Email, &m.Role, &override); err != nil {
 			return nil, fmt.Errorf("scan project member: %w", err)
+		}
+		if override.Valid {
+			v := override.Bool
+			m.LearningModeOverride = &v
 		}
 		out = append(out, m)
 	}

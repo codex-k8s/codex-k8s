@@ -8,6 +8,10 @@ type Member struct {
 	UserID    string
 	Email     string
 	Role      string
+
+	// LearningModeOverride is a tri-state override:
+	// nil => inherit project default, true/false => explicit override.
+	LearningModeOverride *bool
 }
 
 // Repository stores and loads project memberships.
