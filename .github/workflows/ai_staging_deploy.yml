@@ -3,7 +3,7 @@ name: "AI Staging deploy 🚀"
 on:
   workflow_run:
     workflows: ["Build Internal Image (Kaniko) 🐳"]
-    branches: [main, dev/day4-7]
+    branches: [main, codex/dev]
     types: [completed]
   workflow_dispatch:
 

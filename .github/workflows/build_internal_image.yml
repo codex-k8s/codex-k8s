@@ -2,7 +2,7 @@ name: "Build Internal Image (Kaniko) 🐳"
 
 on:
   push:
-    branches: [main, dev/day4-7]
+    branches: [main, codex/dev]
     tags:
       - "v*"
   workflow_dispatch:
