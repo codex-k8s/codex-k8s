@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	gh "github.com/google/go-github/v75/github"
+	gh "github.com/google/go-github/v82/github"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/repo/provider"
 )

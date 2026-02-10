@@ -1,5 +1,4 @@
 -- +goose Up
--- Day5: learning mode settings and feedback storage.
 
 ALTER TABLE projects
     ADD COLUMN IF NOT EXISTS settings JSONB NOT NULL DEFAULT '{}'::jsonb;
@@ -36,4 +35,3 @@ ALTER TABLE project_members
 
 ALTER TABLE projects
     DROP COLUMN IF EXISTS settings;
-

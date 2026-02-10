@@ -35,8 +35,9 @@ type Config struct {
 	BootstrapPlatformAdminEmails string `env:"CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS"`
 
 	// LearningModeDefault controls the default for newly created projects.
-	// Keep empty value to disable by default; set to "true" to enable by default.
-	LearningModeDefault string `env:"CODEXK8S_LEARNING_MODE_DEFAULT"`
+	// Set to "true" to enable by default.
+	// Default is "false".
+	LearningModeDefault string `env:"CODEXK8S_LEARNING_MODE_DEFAULT" envDefault:"false"`
 
 	// GitHubOAuthClientID is GitHub OAuth App client id.
 	GitHubOAuthClientID string `env:"CODEXK8S_GITHUB_OAUTH_CLIENT_ID,required,notEmpty"`

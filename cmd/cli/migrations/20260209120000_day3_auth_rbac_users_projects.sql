@@ -1,5 +1,4 @@
 -- +goose Up
--- Day3: staff auth + RBAC baseline schema.
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS citext;
@@ -40,4 +39,3 @@ DROP INDEX IF EXISTS idx_project_members_user_id;
 DROP TABLE IF EXISTS project_members;
 DROP TABLE IF EXISTS projects;
 DROP TABLE IF EXISTS users;
-

@@ -28,6 +28,7 @@ approvals:
 1. Webhook ingress (public)
    - `POST https://<domain>/api/v1/webhooks/github` доступен без OAuth (нет 302 на GitHub login).
    - Invalid signature => `401`.
+   - First valid request => `202 accepted`.
    - Replay delivery id => `200 duplicate` (idempotency).
 
 2. Worker run loop
@@ -39,9 +40,9 @@ approvals:
    - Неразрешённый email получает `{"code":"forbidden","message":"email is not allowed"}`.
 
 4. Staff UI базовые страницы
-   - `/` Projects загружается.
-   - `/runs` Runs загружается.
-   - `/users` Users загружается для platform admin.
+   - (manual) `/` Projects загружается.
+   - (manual) `/runs` Runs загружается.
+   - (manual) `/users` Users загружается для platform admin.
 
 ## P1 scenarios (should pass for Sprint S2 readiness)
 
@@ -68,4 +69,3 @@ approvals:
 ## Go/No-Go criteria
 - Go: все P0 зелёные, нет P0/P1 багов-блокеров.
 - No-Go: любой P0 красный, либо есть регрессии security boundary (webhook не проходит без OAuth / наружу открыт k8s api).
-

@@ -1,5 +1,4 @@
 -- +goose Up
--- Day4: project repositories (provider bindings) and encrypted token storage.
 
 CREATE TABLE IF NOT EXISTS repositories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -27,4 +26,3 @@ CREATE INDEX IF NOT EXISTS idx_repositories_provider_owner_name
 DROP INDEX IF EXISTS idx_repositories_provider_owner_name;
 DROP INDEX IF EXISTS idx_repositories_project_id;
 DROP TABLE IF EXISTS repositories;
-

@@ -28,10 +28,10 @@
 | `k8s.io/client-go` | `v0.35.0` | Kubernetes integration | запуск/проверка Job через Kubernetes SDK |
 | `k8s.io/api` | `v0.35.0` | Kubernetes API types | типы `batch/v1`, `core/v1` для Job/Pod |
 | `k8s.io/apimachinery` | `v0.35.0` | Kubernetes API machinery | ошибки API, meta types, утилиты client-go |
-| `github.com/google/go-github/v75` | `v75.0.0` | Repository provider (GitHub) | настройка вебхуков и валидация доступа к репозиториям через GitHub API v3 |
-| `github.com/google/go-querystring` | `v1.1.0` | Dependency of go-github | сериализация query params для GitHub API клиента |
+| `github.com/google/go-github/v82` | `v82.0.0` | Repository provider (GitHub) | настройка вебхуков и валидация доступа к репозиториям через GitHub API v3 |
+| `github.com/google/go-querystring` | `v1.2.0` | Dependency of go-github | сериализация query params для GitHub API клиента |
 
-## Frontend (Vue/TS) — planned baseline
+## Frontend (Vue/TS) — in use
 
 | Dependency | Status | Scope | Why |
 |---|---|---|---|
@@ -39,6 +39,8 @@
 | `vue-router` | in use (package.json) | Routing | маршрутизация staff UI |
 | `pinia` | in use (package.json) | State management | минимальное состояние UI |
 | `axios` | in use (package.json) | HTTP client | вызовы staff/private API |
+| `vue-i18n` | in use (package.json) | i18n | все пользовательские тексты через i18n ключи |
+| `vue3-cookies` | in use (package.json) | Cookies | хранение UI-настроек (например, язык) и единый cookie-адаптер |
 
 ## Infrastructure and CI tools — in use
 
