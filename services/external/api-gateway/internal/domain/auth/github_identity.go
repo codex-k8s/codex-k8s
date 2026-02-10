@@ -103,4 +103,3 @@ func fetchGitHubPrimaryVerifiedEmail(ctx context.Context, client *http.Client) (
 
 	return "", nil
 }
-

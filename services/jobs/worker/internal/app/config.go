@@ -22,6 +22,10 @@ type Config struct {
 	// SlotLeaseTTL controls for how long slot is leased before expiration.
 	SlotLeaseTTL string `env:"CODEXK8S_WORKER_SLOT_LEASE_TTL" envDefault:"10m"`
 
+	// LearningModeDefault controls default project learning-mode when worker auto-creates projects.
+	// Keep empty value to disable by default; set to "true" to enable by default.
+	LearningModeDefault string `env:"CODEXK8S_LEARNING_MODE_DEFAULT"`
+
 	// DBHost is the PostgreSQL host.
 	DBHost string `env:"CODEXK8S_DB_HOST,required,notEmpty"`
 	// DBPort is the PostgreSQL port.

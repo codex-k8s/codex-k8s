@@ -123,4 +123,3 @@ func (v *Verifier) Verify(tokenString string) (Claims, error) {
 
 	return *claims, nil
 }
-

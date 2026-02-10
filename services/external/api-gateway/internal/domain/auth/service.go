@@ -23,22 +23,22 @@ const (
 
 // Config defines staff authentication settings.
 type Config struct {
-	PublicBaseURL         string
-	GitHubOAuthClientID   string
+	PublicBaseURL           string
+	GitHubOAuthClientID     string
 	GitHubOAuthClientSecret string
-	JWTSigningKey         []byte
-	JWTTTL                time.Duration
-	CookieSecure          bool
+	JWTSigningKey           []byte
+	JWTTTL                  time.Duration
+	CookieSecure            bool
 }
 
 // Service implements GitHub OAuth login and JWT issuance.
 type Service struct {
-	cfg     Config
-	users   userrepo.Repository
-	oauth   *oauth2.Config
-	signer  *jwtlib.Signer
+	cfg      Config
+	users    userrepo.Repository
+	oauth    *oauth2.Config
+	signer   *jwtlib.Signer
 	verifier *jwtlib.Verifier
-	now     func() time.Time
+	now      func() time.Time
 }
 
 // NewService constructs staff auth service.

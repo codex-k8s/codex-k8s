@@ -14,6 +14,9 @@ type ClaimParams struct {
 	SlotsPerProject int
 	// LeaseTTL defines slot lease duration.
 	LeaseTTL time.Duration
+
+	// ProjectLearningModeDefault is the default learning-mode flag to apply when auto-creating projects.
+	ProjectLearningModeDefault bool
 }
 
 // ClaimedRun represents a pending run promoted into running state with slot lease.
@@ -42,6 +45,8 @@ type RunningRun struct {
 	CorrelationID string
 	// ProjectID is an effective project scope.
 	ProjectID string
+	// LearningMode is an effective run learning mode flag.
+	LearningMode bool
 	// StartedAt is timestamp when run entered running state.
 	StartedAt time.Time
 }

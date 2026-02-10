@@ -8,7 +8,6 @@ ALTER TABLE agent_runs
 
 CREATE TABLE IF NOT EXISTS slots (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    -- Day2 scope: projects catalog is introduced later, so FK is added in a follow-up migration.
     project_id UUID NOT NULL,
     slot_no INT NOT NULL,
     state TEXT NOT NULL DEFAULT 'free',

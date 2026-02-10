@@ -1,0 +1,136 @@
+.card {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(17, 24, 39, 0.1);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn {
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  background: rgba(255, 255, 255, 0.75);
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  line-height: 1;
+  user-select: none;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn.primary {
+  border-color: rgba(17, 24, 39, 0.25);
+  background: #111827;
+  color: #fff;
+}
+
+.btn.danger {
+  border-color: rgba(180, 35, 24, 0.35);
+  color: #b42318;
+}
+
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.tbl th,
+.tbl td {
+  border-top: 1px solid rgba(17, 24, 39, 0.1);
+  padding: 10px 8px;
+  vertical-align: top;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.muted {
+  margin-top: 10px;
+  opacity: 0.7;
+}
+
+.err {
+  margin-top: 10px;
+  color: #b42318;
+  font-weight: 800;
+}
+
+.sep {
+  height: 1px;
+  background: rgba(17, 24, 39, 0.08);
+  margin: 16px 0;
+}
+
+.lbl {
+  font-size: 12px;
+  opacity: 0.78;
+  font-weight: 900;
+  margin-bottom: 6px;
+}
+
+.inp,
+.sel {
+  width: 100%;
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  border-radius: 10px;
+  padding: 9px 10px;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.sel {
+  padding: 8px 10px;
+}
+
+.pill {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.right {
+  text-align: right;
+}
+
+.lnk {
+  font-weight: 900;
+  text-decoration: none;
+  color: #111827;
+  opacity: 0.85;
+}
+
+.lnk:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+

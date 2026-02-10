@@ -68,9 +68,16 @@ func authenticatePrincipal(c *echo.Context, verifier jwtVerifier, users userrepo
 		if !ok {
 			return staff.Principal{}, errs.Forbidden{Msg: "email is not allowed"}
 		}
-		if u.GitHubLogin == "" {
+
+		// Persist GitHub login when running behind oauth2-proxy.
+		// This is required for webhook-driven features that need to map `sender.login` -> staff user.
+		if login != "" && !strings.EqualFold(u.GitHubLogin, login) {
+			if err := users.UpdateGitHubIdentity(req.Context(), u.ID, u.GitHubUserID, login); err != nil {
+				return staff.Principal{}, fmt.Errorf("update github login for staff user %s: %w", u.ID, err)
+			}
 			u.GitHubLogin = login
 		}
+
 		return staff.Principal{
 			UserID:          u.ID,
 			Email:           u.Email,

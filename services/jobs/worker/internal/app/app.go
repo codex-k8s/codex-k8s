@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -16,6 +18,7 @@ import (
 	k8slauncher "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/clients/kubernetes/launcher"
 	"github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/worker"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/flowevent"
+	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/learningfeedback"
 	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/runqueue"
 )
 
@@ -42,6 +45,15 @@ func Run() error {
 		return fmt.Errorf("CODEXK8S_WORKER_SLOT_LEASE_TTL must be > 0")
 	}
 
+	learningDefault := false
+	if strings.TrimSpace(cfg.LearningModeDefault) != "" {
+		v, err := strconv.ParseBool(cfg.LearningModeDefault)
+		if err != nil {
+			return fmt.Errorf("parse CODEXK8S_LEARNING_MODE_DEFAULT=%q: %w", cfg.LearningModeDefault, err)
+		}
+		learningDefault = v
+	}
+
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	db, err := openDB(cfg)
@@ -52,6 +64,7 @@ func Run() error {
 
 	runs := runqueuerepo.NewRepository(db)
 	events := floweventrepo.NewRepository(db)
+	feedback := learningfeedbackrepo.NewRepository(db)
 	launcher, err := k8slauncher.NewAdapter(libslauncher.Config{
 		KubeconfigPath:        cfg.KubeconfigPath,
 		Namespace:             cfg.K8sNamespace,
@@ -66,12 +79,13 @@ func Run() error {
 	}
 
 	service := worker.NewService(worker.Config{
-		WorkerID:          cfg.WorkerID,
-		ClaimLimit:        cfg.ClaimLimit,
-		RunningCheckLimit: cfg.RunningCheckLimit,
-		SlotsPerProject:   cfg.SlotsPerProject,
-		SlotLeaseTTL:      slotLeaseTTL,
-	}, runs, events, launcher, logger)
+		WorkerID:                   cfg.WorkerID,
+		ClaimLimit:                 cfg.ClaimLimit,
+		RunningCheckLimit:          cfg.RunningCheckLimit,
+		SlotsPerProject:            cfg.SlotsPerProject,
+		SlotLeaseTTL:               slotLeaseTTL,
+		ProjectLearningModeDefault: learningDefault,
+	}, runs, events, feedback, launcher, logger)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 	defer stop()

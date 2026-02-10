@@ -16,6 +16,10 @@ var (
 	queryUpsert string
 	//go:embed sql/get_role.sql
 	queryGetRole string
+	//go:embed sql/set_learning_mode_override.sql
+	querySetLearningModeOverride string
+	//go:embed sql/get_learning_mode_override.sql
+	queryGetLearningModeOverride string
 )
 
 // Repository stores project members in PostgreSQL.
@@ -41,9 +45,16 @@ func (r *Repository) List(ctx context.Context, projectID string, limit int) ([]d
 
 	var out []domainrepo.Member
 	for rows.Next() {
-		var m domainrepo.Member
-		if err := rows.Scan(&m.ProjectID, &m.UserID, &m.Email, &m.Role); err != nil {
+		var (
+			m        domainrepo.Member
+			override sql.NullBool
+		)
+		if err := rows.Scan(&m.ProjectID, &m.UserID, &m.Email, &m.Role, &override); err != nil {
 			return nil, fmt.Errorf("scan project member: %w", err)
+		}
+		if override.Valid {
+			v := override.Bool
+			m.LearningModeOverride = &v
 		}
 		out = append(out, m)
 	}
@@ -72,4 +83,37 @@ func (r *Repository) GetRole(ctx context.Context, projectID string, userID strin
 		return "", false, nil
 	}
 	return "", false, fmt.Errorf("get project member role: %w", err)
+}
+
+// SetLearningModeOverride sets per-member learning mode override (nullable).
+func (r *Repository) SetLearningModeOverride(ctx context.Context, projectID string, userID string, enabled *bool) error {
+	res, err := r.db.ExecContext(ctx, querySetLearningModeOverride, projectID, userID, enabled)
+	if err != nil {
+		return fmt.Errorf("set learning mode override: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("read rows affected for set learning mode override: %w", err)
+	}
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+// GetLearningModeOverride returns per-member learning mode override (nullable).
+func (r *Repository) GetLearningModeOverride(ctx context.Context, projectID string, userID string) (*bool, bool, error) {
+	var v sql.NullBool
+	err := r.db.QueryRowContext(ctx, queryGetLearningModeOverride, projectID, userID).Scan(&v)
+	if err == nil {
+		if !v.Valid {
+			return nil, true, nil
+		}
+		val := v.Bool
+		return &val, true, nil
+	}
+	if err == sql.ErrNoRows {
+		return nil, false, nil
+	}
+	return nil, false, fmt.Errorf("get learning mode override: %w", err)
 }

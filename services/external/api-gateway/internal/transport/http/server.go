@@ -77,12 +77,18 @@ func NewServer(cfg ServerConfig, webhookService webhookIngress, auth authService
 
 	staffGroup := e.Group("/api/v1/staff", staffAuthMw)
 	staffGroup.GET("/projects", staffH.ListProjects)
+	staffGroup.POST("/projects", staffH.UpsertProject)
 	staffGroup.GET("/runs", staffH.ListRuns)
 	staffGroup.GET("/runs/:run_id/events", staffH.ListRunEvents)
+	staffGroup.GET("/runs/:run_id/learning-feedback", staffH.ListRunLearningFeedback)
 	staffGroup.GET("/users", staffH.ListUsers)
 	staffGroup.POST("/users", staffH.CreateUser)
 	staffGroup.GET("/projects/:project_id/members", staffH.ListProjectMembers)
 	staffGroup.POST("/projects/:project_id/members", staffH.UpsertProjectMember)
+	staffGroup.PUT("/projects/:project_id/members/:user_id/learning-mode", staffH.SetProjectMemberLearningModeOverride)
+	staffGroup.GET("/projects/:project_id/repositories", staffH.ListProjectRepositories)
+	staffGroup.POST("/projects/:project_id/repositories", staffH.UpsertProjectRepository)
+	staffGroup.DELETE("/projects/:project_id/repositories/:repository_id", staffH.DeleteProjectRepository)
 
 	registerStaffUI(e, cfg.StaticDir, cfg.ViteDevUpstream)
 

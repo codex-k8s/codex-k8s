@@ -14,6 +14,10 @@ var (
 	queryListAll string
 	//go:embed sql/list_for_user.sql
 	queryListForUser string
+	//go:embed sql/upsert.sql
+	queryUpsert string
+	//go:embed sql/get_learning_mode_default.sql
+	queryGetLearningModeDefault string
 )
 
 // Repository stores projects in PostgreSQL.
@@ -76,3 +80,25 @@ func (r *Repository) ListForUser(ctx context.Context, userID string, limit int) 
 	return out, nil
 }
 
+// Upsert creates/updates a project by slug.
+func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams) (domainrepo.Project, error) {
+	var out domainrepo.Project
+	err := r.db.QueryRowContext(ctx, queryUpsert, params.ID, params.Slug, params.Name, params.SettingsJSON).Scan(&out.ID, &out.Slug, &out.Name)
+	if err != nil {
+		return domainrepo.Project{}, fmt.Errorf("upsert project: %w", err)
+	}
+	return out, nil
+}
+
+// GetLearningModeDefault returns project default learning-mode flag from JSONB settings.
+func (r *Repository) GetLearningModeDefault(ctx context.Context, projectID string) (bool, bool, error) {
+	var enabled bool
+	err := r.db.QueryRowContext(ctx, queryGetLearningModeDefault, projectID).Scan(&enabled)
+	if err == nil {
+		return enabled, true, nil
+	}
+	if err == sql.ErrNoRows {
+		return false, false, nil
+	}
+	return false, false, fmt.Errorf("get project learning_mode_default: %w", err)
+}
