@@ -30,20 +30,20 @@ approvals:
 - Architecture (C4): `docs/architecture/c4_context.md`, `docs/architecture/c4_container.md`
 - ADR: `docs/architecture/adr/ADR-0001-kubernetes-only.md`, `docs/architecture/adr/ADR-0002-webhook-driven-and-deploy-workflows.md`, `docs/architecture/adr/ADR-0003-postgres-jsonb-pgvector.md`, `docs/architecture/adr/ADR-0004-repository-provider-interface.md`
 - Data model: `docs/architecture/data_model.md`
-- Sprint plan: `docs/delivery/sprint_s1_day0_day7.md`
-- Epic catalog: `docs/delivery/epic.md`
+- Sprint plan: `docs/delivery/sprint_s1_mvp_vertical_slice.md`
+- Epic catalog: `docs/delivery/epic_s1.md`
 - Process requirements: `docs/delivery/development_process_requirements.md`
 
 ## Структура работ (WBS)
 ### Sprint S1: Day 0 + Day 1..7 (8 эпиков)
-- Day 0 (completed): `docs/delivery/epics/epic-day0-bootstrap-baseline.md`
-- Day 1: `docs/delivery/epics/epic-day1-webhook-idempotency.md`
-- Day 2: `docs/delivery/epics/epic-day2-worker-slots-k8s.md`
-- Day 3: `docs/delivery/epics/epic-day3-auth-rbac-ui.md`
-- Day 4: `docs/delivery/epics/epic-day4-repository-provider.md`
-- Day 5: `docs/delivery/epics/epic-day5-learning-mode.md`
-- Day 6: `docs/delivery/epics/epic-day6-hardening-observability.md`
-- Day 7: `docs/delivery/epics/epic-day7-stabilization-gate.md`
+- Day 0 (completed): `docs/delivery/epics/epic-s1-day0-bootstrap-baseline.md`
+- Day 1: `docs/delivery/epics/epic-s1-day1-webhook-idempotency.md`
+- Day 2: `docs/delivery/epics/epic-s1-day2-worker-slots-k8s.md`
+- Day 3: `docs/delivery/epics/epic-s1-day3-auth-rbac-ui.md`
+- Day 4: `docs/delivery/epics/epic-s1-day4-repository-provider.md`
+- Day 5: `docs/delivery/epics/epic-s1-day5-learning-mode.md`
+- Day 6: `docs/delivery/epics/epic-s1-day6-hardening-observability.md`
+- Day 7: `docs/delivery/epics/epic-s1-day7-stabilization-gate.md`
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

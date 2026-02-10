@@ -39,4 +39,3 @@ approvals:
 - Один Issue с лейблом `run:dev` приводит к запуску агентного Job в отдельном namespace и к созданию PR.
 - Один Issue с лейблом `run:dev:revise` запускает цикл ревизии и обновляет PR.
 - `external/api-gateway` остаётся thin-edge и не содержит доменной логики/репозиториев.
-

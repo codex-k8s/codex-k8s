@@ -24,9 +24,9 @@ updated_at: 2026-02-06
 
 ## Sprint S1 артефакты
 - Process requirements: `docs/delivery/development_process_requirements.md`.
-- Sprint plan: `docs/delivery/sprint_s1_day0_day7.md`.
-- Epic catalog: `docs/delivery/epic.md`.
-- Epic docs: `docs/delivery/epics/epic-day0-bootstrap-baseline.md`, `docs/delivery/epics/epic-day1-webhook-idempotency.md`, `docs/delivery/epics/epic-day2-worker-slots-k8s.md`, `docs/delivery/epics/epic-day3-auth-rbac-ui.md`, `docs/delivery/epics/epic-day4-repository-provider.md`, `docs/delivery/epics/epic-day5-learning-mode.md`, `docs/delivery/epics/epic-day6-hardening-observability.md`, `docs/delivery/epics/epic-day7-stabilization-gate.md`.
+- Sprint plan: `docs/delivery/sprint_s1_mvp_vertical_slice.md`.
+- Epic catalog: `docs/delivery/epic_s1.md`.
+- Epic docs: `docs/delivery/epics/epic-s1-day0-bootstrap-baseline.md`, `docs/delivery/epics/epic-s1-day1-webhook-idempotency.md`, `docs/delivery/epics/epic-s1-day2-worker-slots-k8s.md`, `docs/delivery/epics/epic-s1-day3-auth-rbac-ui.md`, `docs/delivery/epics/epic-s1-day4-repository-provider.md`, `docs/delivery/epics/epic-s1-day5-learning-mode.md`, `docs/delivery/epics/epic-s1-day6-hardening-observability.md`, `docs/delivery/epics/epic-s1-day7-stabilization-gate.md`.
 
 ## Sprint S2 (план) артефакты
 - Sprint plan: `docs/delivery/sprint_s2_dogfooding.md`.
