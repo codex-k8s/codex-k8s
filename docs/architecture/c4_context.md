@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - Система в контуре: `codex-k8s` control-plane.
 - Пользователи: Owner/Admin, Project Maintainer, системные и custom-агенты.
-- Внешние зависимости: GitHub API/Webhooks, Kubernetes API, OpenAI API, Telegram approval/executor контур.
+- Внешние зависимости: GitHub API/Webhooks, Kubernetes API, OpenAI API, HTTP approver/executor интеграции (Telegram как первый адаптер).
 
 ## Диаграмма (Mermaid C4Context)
 ```mermaid
@@ -34,7 +34,7 @@ System(system, "codex-k8s", "Webhook-driven control-plane для AI процес
 System_Ext(github, "GitHub", "Repo API, OAuth, webhooks")
 System_Ext(k8s, "Kubernetes cluster", "Runtime для platform/services/agents")
 System_Ext(openai, "OpenAI API", "LLM provider")
-System_Ext(telegram, "Telegram Approver/Executor", "Approval/feedback channel")
+System_Ext(approverexec, "HTTP Approver/Executor integrations", "Approval/feedback channel (Telegram/Slack/etc)")
 
 Rel(owner, system, "Uses", "HTTPS UI/API")
 Rel(maintainer, system, "Uses", "HTTPS UI/API")
@@ -43,7 +43,7 @@ Rel(github, system, "Sends webhooks", "HTTPS")
 Rel(system, github, "Calls API", "HTTPS")
 Rel(system, k8s, "Manages workloads", "Kubernetes API")
 Rel(system, openai, "Calls models", "HTTPS")
-Rel(system, telegram, "Requests approvals/feedback", "HTTPS callback")
+Rel(system, approverexec, "Requests approvals/feedback", "HTTPS callback")
 ```
 
 ## Пояснения
@@ -57,7 +57,7 @@ Rel(system, telegram, "Requests approvals/feedback", "HTTPS callback")
 - GitHub: OAuth, repo/webhook operations, fine-grained tokens/service tokens.
 - Kubernetes: runtime для сервисов платформы и агентных pod/namespace lifecycle.
 - OpenAI: модельные вызовы и токены использования.
-- Telegram approver/executor: канал апрува и уточнений для stage переходов.
+- HTTP approver/executor интеграции: канал апрува и уточнений для stage переходов (Telegram/Slack/Mattermost/Jira adapters).
 
 ## Решения Owner
 

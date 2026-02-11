@@ -8,7 +8,6 @@ created_at: 2026-02-06
 updated_at: 2026-02-11
 related_issues: [1]
 related_prs: []
-related_docsets: ["docs/_docset/issues/issue-0001-codex-k8s-bootstrap.md"]
 approvals:
   required: ["Owner"]
   status: approved
@@ -36,7 +35,7 @@ approvals:
 | FR-003 | Продуктовые процессы webhook-driven: бизнес-процессы запускаются webhook-событиями, а не workflow-first подходом. |
 | FR-004 | Основное хранилище платформы: PostgreSQL с `JSONB` и `pgvector` для chunk-хранилища и векторного поиска. |
 | FR-005 | `codex-k8s` и его PostgreSQL разворачиваются в Kubernetes. |
-| FR-006 | Служебные MCP ручки платформы реализуются в Go внутри `codex-k8s`; `yaml-mcp-server` остаётся пользовательским расширяемым слоем для кастомных ручек. |
+| FR-006 | Служебные MCP ручки платформы реализуются в Go внутри `codex-k8s`; `github.com/codex-k8s/yaml-mcp-server` остаётся пользовательским расширяемым слоем для кастомных ручек. |
 | FR-007 | Staff frontend защищён GitHub OAuth. |
 | FR-008 | Пользовательские настройки платформы хранятся в БД и редактируются через frontend; системные секреты и deploy-настройки `codex-k8s` берутся из env. |
 | FR-009 | Шаблоны инструкций агентов, настройки агентов, сессии и журнал действий хранятся в БД и доступны в минимальном staff UI/API. |
@@ -59,15 +58,17 @@ approvals:
 | FR-026 | В платформе фиксируется канонический каталог лейблов классов `run:*`, `state:*`, `need:*`, с поддержкой label-driven stage pipeline. |
 | FR-027 | Для агент-инициированных trigger/deploy лейблов (`run:*`) обязателен апрув Owner до применения; `state:*` и `need:*` допускают автоустановку по политике проекта. |
 | FR-028 | Процесс поставки фиксируется stage-моделью `intake -> vision -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops` с поддержкой `*:revise`, `run:abort`, `run:rethink`. |
-| FR-029 | Модель ролей агентов: базовый штат из 7 системных ролей + расширяемые custom-агенты на проект (с явными RBAC, execution mode и quota). |
+| FR-029 | Модель ролей агентов: базовый штат из 8 системных ролей (`pm`, `sa`, `em`, `dev`, `reviewer`, `qa`, `sre`, `km`) + расширяемые custom-агенты на проект (с явными RBAC, execution mode и quota). |
 | FR-030 | Для агентных инструкций поддерживаются два класса шаблонов (`work`, `review`) с приоритетом `DB project override -> DB global override -> repo seed`. |
 | FR-031 | Для агентных ролей поддерживается смешанный режим исполнения `full-env`/`code-only`, с политикой выбора режима по роли. |
 | FR-032 | В БД как обязательный контур аудита и учета включены сущности `agent_sessions`, `token_usage`, `links` (в дополнение к `agent_runs` и `flow_events`). |
-| FR-033 | DocSet/traceability поддерживается для всех этапов: связи Issue/PR ↔ docs ↔ stage status обновляются синхронно с выполнением этапов. |
+| FR-033 | Traceability поддерживается для всех этапов: связи Issue/PR ↔ docs ↔ stage status обновляются синхронно с выполнением этапов. |
 | FR-034 | Шаблоны промптов рендерятся с runtime-контекстом (env/namespace/slot, project context, MCP servers/tools, issue/pr/run context). |
 | FR-035 | Шаблоны промптов поддерживают локали; язык выбирается по цепочке `project locale -> system default locale -> en`, с базовой загрузкой `ru` и `en`. |
 | FR-036 | Для каждой agent session сохраняется JSON-снимок `codex-cli` сессии, чтобы возобновлять выполнение с того же места после паузы/перезапуска. |
 | FR-037 | Сущность `agent` остаётся центральной точкой настроек/политик выполнения (runtime mode, timeout policy, approval policy, prompt policy). |
+| FR-038 | Для внешнего/staff HTTP API применяется contract-first OpenAPI: единая спецификация, runtime валидация запросов/ответов, codegen server DTO/backend stubs и frontend API client. |
+| FR-039 | Approver/executor интеграции стандартизованы через HTTP-контракты MCP: платформа поддерживает встроенные MCP-ручки и внешний расширяемый слой (например, `github.com/codex-k8s/yaml-mcp-server` с Telegram/Slack/Mattermost/Jira адаптерами). |
 
 ## Non-Functional Requirements (NFR)
 
@@ -86,6 +87,7 @@ approvals:
 | NFR-011 | Workflow-условия по лейблам используют repository variables (`vars.*`) вместо строковых литералов для предсказуемой переконфигурации. |
 | NFR-012 | Пока агент ожидает ответ от MCP-сервера, timeout-kill pod/run не применяется; таймер выполнения должен быть paused для этого wait-state. |
 | NFR-013 | Снимок `codex-cli` сессии для resumable run должен храниться надёжно и быть доступен для восстановления после перезапуска worker/pod. |
+| NFR-014 | OpenAPI codegen должен быть воспроизводимым в CI: изменения спецификаций сопровождаются регенерацией backend/frontend артефактов и проверкой их актуальности. |
 
 ## Зафиксированные решения Owner (2026-02-06)
 

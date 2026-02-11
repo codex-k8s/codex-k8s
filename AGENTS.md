@@ -5,7 +5,7 @@
 Этот файл задает обязательные правила работы с репозиторием `codex-k8s`.
 Цель: вести код и документацию к целевой архитектуре cloud-сервиса,
 который оркестрирует агентные процессы в Kubernetes и заменяет связку
-`codexctl` + часть сценариев `yaml-mcp-server`.
+`codexctl` + часть сценариев `github.com/codex-k8s/yaml-mcp-server`.
 
 ## Главные правила
 
@@ -35,7 +35,7 @@
 | Продуктовые требования/лейблы/этапы | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md` |
 | Архитектура и модель данных | `docs/architecture/c4_context.md`, `docs/architecture/c4_container.md`, `docs/architecture/api_contract.md`, `docs/architecture/data_model.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/prompt_templates_policy.md` |
 | Delivery/sprint/epics | `docs/delivery/development_process_requirements.md`, `docs/delivery/delivery_plan.md`, `docs/delivery/sprint_s*.md`, `docs/delivery/epic_s*.md`, `docs/delivery/epics/*.md` |
-| Трассируемость и docset | `docs/delivery/requirements_traceability.md`, `docs/delivery/issue_map.md`, `docs/_docset/**` |
+| Трассируемость | `docs/delivery/requirements_traceability.md`, `docs/delivery/issue_map.md`, `docs/delivery/sprint_s*.md`, `docs/delivery/epic_s*.md` |
 | Ops и staging проверки | `.local/agents-temp-dev-rules.md`, `docs/ops/staging_runbook.md` |
 
 ## Архитектурные границы (обязательны)
@@ -55,6 +55,10 @@
   - `docs/design-guidelines/vue/frontend_architecture.md` (frontend).
 - В `transport/http|grpc` запрещены `map[string]any`/`[]any`/`any` как контракт ответа.
 - Handlers возвращают только typed DTO-модели; маппинг transport <-> domain/proto выполняется через явные кастеры.
+- Для `services/external/*` и `services/staff/*` действует contract-first OpenAPI:
+  - любое изменение HTTP endpoint/DTO сначала в `api/server/api.yaml`;
+  - затем регенерация backend/frontend codegen-артефактов;
+  - merge запрещён, если маршруты/DTO в коде расходятся со спецификацией.
 - Для HTTP DTO размещать модели и кастеры в `internal/transport/http/{models,casters}` (или эквивалентно по протоколу в рамках сервиса).
 - Доменные типы размещать в `internal/domain/types/{entity,value,enum,query,mixin}`; не объявлять доменные модели ad-hoc в больших service/handler файлах.
 - Маппинг ошибок выполняется только на границе транспорта (HTTP error handler / gRPC interceptor); в handlers запрещены локальные “переводы” ошибок между слоями.
@@ -98,7 +102,8 @@
   с текущей реализацией GitHub и заделом под GitLab.
 - Модель процессов: webhook-driven, без GitHub Actions workflow как основного механизма выполнения.
 - Хранилище сервиса: PostgreSQL (`JSONB` + `pgvector`) как единая точка синхронизации между pod'ами.
-- MCP служебные ручки: встроенные Go-реализации в `codex-k8s`; `yaml-mcp-server` остаётся расширяемым пользовательским слоем.
+- MCP служебные ручки: встроенные Go-реализации в `codex-k8s`; `github.com/codex-k8s/yaml-mcp-server` остаётся расширяемым пользовательским слоем.
+- Апрувы/экзекьюторы MCP: использовать универсальные HTTP-контракты (Telegram/Slack/Mattermost/Jira и др. как адаптеры), без вендорной привязки в core.
 - Операционная продуктовая модель агентов/лейблов/этапов:
   `docs/product/agents_operating_model.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`.
 - Процесс разработки и doc-governance: `docs/delivery/development_process_requirements.md`.

@@ -29,6 +29,10 @@ approvals:
 | `work` | Выполнение задачи (plan/implement/test/doc update) | `docs/product/prompt-seeds/dev-work.md` |
 | `review` | Ревизия/аудит изменений | `docs/product/prompt-seeds/dev-review.md` |
 
+Примечание:
+- seed-файлы в репозитории задают baseline-структуру и требования;
+- effective prompt в рантайме формируется после resolve override в БД и контекстного рендера.
+
 ## Модель источников
 
 Референс подхода к объёму и структуре шаблонов:

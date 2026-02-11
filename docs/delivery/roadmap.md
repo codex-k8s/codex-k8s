@@ -34,6 +34,7 @@ approvals:
 | Q4 | Extensibility | custom-агенты per project + управляемые prompt templates | configurable custom roles + template policies in UI/API | planned |
 
 ## Backlog кандидатов
+- Contract-first OpenAPI rollout completion: полное покрытие active external/staff API + строгая CI-проверка codegen.
 - Split control-plane по внутренним сервисам при росте нагрузки.
 - Vault/KMS интеграция вместо хранения repo token material в БД.
 - Расширенная политика workflow approvals.

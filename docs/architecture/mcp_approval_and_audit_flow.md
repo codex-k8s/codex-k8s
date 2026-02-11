@@ -20,6 +20,8 @@ approvals:
 - Любые trigger/deploy действия, инициированные агентом, проходят approval gate.
 - Для `run:*` применяется owner approval перед фактическим label apply.
 - Все действия логируются в единый audit-контур (`flow_events`, `agent_sessions`, `links`, `token_usage`).
+- HTTP approver/executor поддерживаются как стандартные контракты интеграции; Telegram — первая реализация, но не единственная.
+- В `codex-k8s` сохраняется двухслойная модель MCP: встроенные Go-ручки платформы + внешний декларативный слой (`github.com/codex-k8s/yaml-mcp-server`).
 
 ## Политика апрувов
 
@@ -27,6 +29,7 @@ approvals:
 - Применяется к агент-инициированным `run:*` label operations.
 - Решение принимает Owner (или делегированный approver policy).
 - До апрува действие остаётся в состоянии `pending approval`.
+- Любые привилегированные runtime-действия (`apply/delete`, rollout/restart, deploy management) допускаются только через MCP-ручки с approver policy.
 
 ### Без обязательного approval gate
 - `state:*` и `need:*` можно применять автоматически по policy.
@@ -39,6 +42,16 @@ approvals:
 3. Owner принимает `approve/deny`.
 4. При `approve` применяется label и создаётся `approval.approved` + `label.applied`.
 5. При `deny` создаётся `approval.denied`; workflow не запускается.
+
+## HTTP-контракты интеграций approver/executor
+
+- Платформа поддерживает внешний расширяемый слой MCP (например, `github.com/codex-k8s/yaml-mcp-server`) с универсальными HTTP-интеграциями.
+- `github.com/codex-k8s/telegram-approver` и `github.com/codex-k8s/telegram-executor` считаются референсными адаптерами этого контракта.
+- Требование к контрактам:
+  - async режим с callback обязателен для долгих операций;
+  - единый `correlation_id` проходит от запроса до callback;
+  - решение/результат фиксируется в `flow_events` и связывается с `agent_sessions`.
+- Это позволяет добавлять Slack/Mattermost/Jira и другие адаптеры без изменений core-кода `codex-k8s`.
 
 ## Timeout поведение во время MCP ожидания
 
@@ -70,7 +83,7 @@ approvals:
 - `run.wait.paused`
 - `run.wait.resumed`
 
-## Интеграция с DocSet/traceability
+## Интеграция с traceability
 
 - Для каждого `run:*` этапа связываются:
   - Issue/PR,

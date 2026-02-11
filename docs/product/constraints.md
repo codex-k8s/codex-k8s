@@ -44,9 +44,12 @@ approvals:
 - Отдельный provider для GitHub Enterprise/GHE на MVP не требуется.
 - Подключение production OpenAI account допускается сразу.
 - Stage-процесс управления задачами фиксирован через label taxonomy `run:*` + `state:*` + `need:*`.
+- Базовый системный штат агентов включает `dev` и `reviewer` как обязательные роли контура разработки (`run:dev`, pre-review перед финальным Owner review).
 - Шаблоны агентных промптов обязаны поддерживать схему: repo seed + DB override (`work` и `review`).
 - Шаблоны промптов хранятся по локалям; выбор языка обязателен по цепочке `project locale -> system default locale -> en`.
 - Для системных агентов обязательно наличие seed-шаблонов минимум для `ru` и `en`.
+- Для external/staff HTTP API обязателен contract-first подход по OpenAPI (spec + runtime validation + codegen backend/frontend).
+- Интеграции approver/executor должны реализовываться через универсальные HTTP-контракты MCP, без вендорной привязки к конкретному мессенджеру.
 
 ## Операционные ограничения
 - SLO/SLA: staging ориентирован на функциональные ручные тесты, не на production SLA.
@@ -59,6 +62,7 @@ approvals:
 - Режимы агентного исполнения:
   - `full-env` и `code-only` используются совместно по роли;
   - для `full-env` запусков обязательна изоляция по namespace и cleanup policy.
+- В `full-env` агент в границах своего namespace может выполнять runtime-диагностику (логи/метрики/DB/cache/exec в pod), но операции изменения окружения выполняются через MCP-инструменты с approver policy.
 - Ограничения по жизненному циклу агента:
   - при ожидании ответа MCP (`wait_state=mcp`) pod/run не может быть завершён по timeout;
   - таймер timeout должен быть paused до завершения MCP ожидания;

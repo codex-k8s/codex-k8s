@@ -26,6 +26,7 @@ approvals:
 
 ## Scope
 ### In scope
+- Предусловие: OpenAPI contract-first baseline из S2 Day1 внедрён и используется как source of truth для HTTP transport.
 - Поддержка GitHub webhook события `issues` (label added).
 - Правила авторизации для trigger-лейблов (`run:*`):
   - учитываем политику “trigger labels только через апрув Owner” (как принцип);

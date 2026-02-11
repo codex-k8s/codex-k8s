@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - Цель Sprint S2: довести `codex-k8s` до режима dogfooding, где разработка `codex-k8s` запускается через GitHub Issue + лейблы `run:dev` и `run:dev:revise`, а агент работает в отдельном namespace со стеком и завершает цикл созданием PR.
 - Первый приоритет: исправить архитектурное отклонение (thin-edge в `external/api-gateway`, домен и БД ownership в `internal/control-plane`).
-- Второй приоритет: реализовать issue-driven run pipeline (webhook issue label -> run request -> namespace -> agent job -> PR).
+- Второй приоритет: зафиксировать contract-first OpenAPI для external/staff API и только после этого расширять issue-driven run pipeline (webhook issue label -> run request -> namespace -> agent job -> PR).
 
 ## Контекст
 - Source of truth требований: `docs/product/requirements_machine_driven.md`.
@@ -28,7 +28,7 @@ approvals:
 
 ## Эпики Sprint S2 (план)
 - Day 0: `docs/delivery/epics/epic-s2-day0-control-plane-extraction.md`
-- Day 1: `docs/delivery/epics/epic-s2-day1-migrations-and-schema-ownership.md`
+- Day 1: `docs/delivery/epics/epic-s2-day1-migrations-and-schema-ownership.md` (включая OpenAPI contract-first baseline)
 - Day 2: `docs/delivery/epics/epic-s2-day2-issue-label-triggers-run-dev.md`
 - Day 3: `docs/delivery/epics/epic-s2-day3-per-issue-namespace-and-rbac.md`
 - Day 4: `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md`

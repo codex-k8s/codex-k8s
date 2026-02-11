@@ -8,7 +8,6 @@ created_at: 2026-02-06
 updated_at: 2026-02-11
 related_issues: [1]
 related_prs: []
-related_docsets: ["docs/_docset/issues/issue-0001-codex-k8s-bootstrap.md"]
 approvals:
   required: ["Owner"]
   status: approved

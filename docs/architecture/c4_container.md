@@ -30,7 +30,7 @@ Person(owner, "Owner/Admin", "Управляет платформой")
 System_Ext(github, "GitHub", "OAuth, API, webhooks")
 System_Ext(k8s, "Kubernetes", "Cluster API")
 System_Ext(openai, "OpenAI API", "LLM")
-System_Ext(telegram, "Telegram Approver/Executor", "Approval and feedback")
+System_Ext(approverexec, "HTTP Approver/Executor integrations", "Approval and feedback (Telegram/Slack/etc)")
 
 System_Boundary(b0, "codex-k8s") {
   Container(web, "Web Console", "Vue3", "UI для настроек, агентов, сессий и запусков")
@@ -51,7 +51,7 @@ Rel(worker, github, "Calls API", "HTTPS")
 Rel(cp, k8s, "Manages resources", "K8s API")
 Rel(worker, k8s, "Executes reconciliations", "K8s API")
 Rel(cp, openai, "Calls models", "HTTPS")
-Rel(cp, telegram, "Requests approvals and gets callbacks", "HTTPS")
+Rel(cp, approverexec, "Requests approvals and gets callbacks", "HTTPS")
 ```
 
 ## Контейнеры (описание)

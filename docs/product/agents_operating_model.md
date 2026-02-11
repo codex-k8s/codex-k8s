@@ -17,7 +17,7 @@ approvals:
 # Agents Operating Model
 
 ## TL;DR
-- Базовый штат платформы: 7 системных агентных ролей (`pm`, `sa`, `em`, `qa`, `sre`, `km`, `auditor`) + человек `Owner`.
+- Базовый штат платформы: 8 системных агентных ролей (`pm`, `sa`, `em`, `dev`, `reviewer`, `qa`, `sre`, `km`) + человек `Owner`.
 - Для каждого проекта допускаются расширяемые custom-агенты без нарушения базовых ролей.
 - Режим исполнения смешанный: часть ролей работает в `full-env`, часть в `code-only`.
 - Шаблоны промптов для работы и ревью имеют seed в репозитории и override в БД.
@@ -36,14 +36,16 @@ approvals:
 | `pm` | Product Manager / BA | brief/PRD/scope/метрики | `code-only` | 1 |
 | `sa` | Solution Architect | C4/ADR/NFR/design decisions | `full-env` (read-only) | 1 |
 | `em` | Engineering Manager | delivery plan/epics/DoR-DoD | `full-env` (read-only) | 1 |
+| `dev` | Software Engineer | реализация `run:dev`/`run:dev:revise`, код + тесты + docs update | `full-env` | 2 |
+| `reviewer` | Pre-review Engineer | предварительное ревью PR: inline findings + summary для Owner | `full-env` (read-mostly) | 2 |
 | `qa` | QA Lead | test strategy/plan/matrix/regression | `full-env` | 2 |
 | `sre` | SRE/OPS | runbook/SLO/alerts/postdeploy | `full-env` | 1 |
-| `km` | DocSet/KM | docset/index/traceability links | `code-only` | 2 |
-| `auditor` | Doc/Checklist Auditor | аудит соответствия код↔доки | `full-env` (read-only) | 2 |
+| `km` | Doc/KM | issue↔docs traceability, индексы, актуальность артефактов | `code-only` | 2 |
 
 Примечания:
 - `Owner` не является агентом, но остаётся финальным апрувером решений и trigger/deploy действий.
-- Технический `run:dev` execution profile может быть реализован как системный или custom-агент проекта, но не заменяет базовый штат.
+- Базовый профиль `run:dev` закреплён за системным агентом `dev`; custom-агенты могут расширять его поведение в рамках project policy.
+- Роль `reviewer` заменяет прежний ad-hoc `auditor` режим для PR-precheck: сначала замечания получает `dev`-агент, затем Owner делает финальное code review.
 
 ## Расширяемые custom-агенты проекта
 
@@ -59,12 +61,29 @@ approvals:
 
 ### `full-env`
 - Запуск в issue/run namespace рядом со стеком.
-- Доступ: логи, events, сервисы, метрики; запись в Kubernetes только по разрешённой роли и политике.
+- Доступ: логи, events, сервисы, метрики, DB/cache в рамках namespace, `exec` в pod'ы namespace.
+- Прямые операции изменения окружения (apply/delete манифестов, rollout/deploy/restart, создание/удаление сервисов) выполняются через MCP-инструменты с approver policy.
 - Используется для ролей, где нужно подтверждать решения по фактическому состоянию окружения.
+
+### Канал апрувов и уточнений
+- Для операций через MCP используются HTTP approver/executor контракты.
+- Telegram (`github.com/codex-k8s/telegram-approver`, `github.com/codex-k8s/telegram-executor`) является первым адаптером, но модель должна поддерживать и другие интеграции без изменений core-кода платформы.
 
 ### `code-only`
 - Доступ только к репозиторию и API контексту без прямого Kubernetes runtime доступа.
 - Используется для продуктовых/документационных задач без необходимости runtime-диагностики.
+
+## Роли в цикле разработки и ревью
+
+- `dev`:
+  - реализует задачу, обновляет тесты и проектную документацию, в процессе выполняет дебаг решений;
+  - формирует PR и прикладывает evidence проверок.
+- `reviewer`:
+  - выполняет предварительное ревью до финального ревью Owner;
+  - проверяет соответствие задаче, проектной документации и `docs/design-guidelines/**`;
+  - оставляет inline-комментарии в PR для `dev`-агента и публикует summary для Owner.
+- `Owner`:
+  - выполняет финальный review/approve после прохождения pre-review.
 
 ## Политика шаблонов промптов (work/review)
 

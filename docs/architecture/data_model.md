@@ -93,7 +93,7 @@ approvals:
 | Field | Type | Nullable | Default | Constraints | Notes |
 |---|---|---:|---|---|---|
 | id | uuid | no | gen_random_uuid() | pk | |
-| agent_key | text | no |  | unique | pm/sa/em/qa/sre/km/auditor или custom key |
+| agent_key | text | no |  | unique | pm/sa/em/dev/reviewer/qa/sre/km или custom key |
 | role_kind | text | no | "system" | check(system/custom) | |
 | policy_id | bigint | yes |  | fk -> agent_policies | null allowed only until policy bootstrap |
 | project_id | uuid | yes |  | fk -> projects | not null for role_kind=custom |
@@ -209,7 +209,7 @@ approvals:
 | actor_type | text | no |  | check enum | human/agent/system |
 | actor_id | text | yes |  |  | |
 | event_type | text | no |  | index | |
-| payload | jsonb | no | '{}'::jsonb |  | |
+| payload | jsonb | no | '{}'::jsonb |  | includes approval/executor callbacks and label/runtime action metadata |
 | created_at | timestamptz | no | now() | index | |
 
 ### Entity: links
@@ -238,7 +238,7 @@ approvals:
 | id | bigserial | no |  | pk | |
 | scope_type | text | no |  | check(global/project) | |
 | scope_id | uuid | yes |  | fk -> projects | null for global |
-| role_key | text | no |  |  | pm/sa/.../custom |
+| role_key | text | no |  |  | pm/sa/em/dev/reviewer/qa/sre/km/custom |
 | template_kind | text | no |  | check(work/review) | |
 | locale | text | no | "en" |  | i18n locale key (`ru`, `en`, ...) |
 | body_markdown | text | no |  |  | |

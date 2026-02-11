@@ -30,13 +30,13 @@ approvals:
 
 | Stage | Trigger labels | Основные артефакты | Основные роли |
 |---|---|---|---|
-| Intake | `run:intake`, `run:intake:revise` | problem, personas, scope, constraints, brief, docset | `pm`, `km` |
+| Intake | `run:intake`, `run:intake:revise` | problem, personas, scope, constraints, brief, traceability bundle | `pm`, `km` |
 | Vision | `run:vision`, `run:vision:revise` | charter, success metrics, risk register | `pm`, `em` |
 | PRD | `run:prd`, `run:prd:revise` | PRD, acceptance criteria, NFR draft | `pm`, `sa` |
 | Architecture | `run:arch`, `run:arch:revise` | C4, ADR backlog/ADR, alternatives | `sa` |
 | Design | `run:design`, `run:design:revise` | design doc, API contract, data model, migration policy | `sa`, `qa` |
 | Plan | `run:plan`, `run:plan:revise` | delivery plan, epics/stories, DoD | `em`, `km` |
-| Development | `run:dev`, `run:dev:revise` | code changes, PR, docs updates | `dev profile`, `auditor` |
+| Development | `run:dev`, `run:dev:revise` | code changes, PR, docs updates | `dev`, `reviewer` |
 | QA | `run:qa` | test strategy/plan/matrix, regression result | `qa` |
 | Release | `run:release` | release plan/notes, rollback plan | `em`, `sre` |
 | Postdeploy | `run:postdeploy` | postdeploy review, postmortem | `qa`, `sre` |
@@ -58,9 +58,14 @@ approvals:
 - отсутствует незакрытый `need:input`.
 
 Общие правила выхода:
-- артефакты этапа обновлены и связаны с Issue/PR в docset;
+- артефакты этапа обновлены и связаны с Issue/PR в traceability документах (`issue_map`, sprint/epic docs);
 - статус этапа отражён через `state:*` лейблы;
 - события перехода записаны в аудит.
+
+### Дополнительное правило для Development stage
+- Перед финальным review Owner обязателен pre-review от `reviewer`:
+  - inline комментарии в PR для `dev`;
+  - summary по рискам/остаточным вопросам для Owner.
 
 ## Паузы и таймауты в stage execution
 

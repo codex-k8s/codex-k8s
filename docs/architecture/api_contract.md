@@ -21,11 +21,20 @@ approvals:
 - Аутентификация: GitHub OAuth login + short-lived JWT в API gateway + project RBAC.
 - Версионирование: `/api/v1/...`.
 - Основные операции: webhook ingest (public), staff/private operations для project/repository/agents/runs/labels/docs/audit и learning mode.
+- Для external/staff транспорта целевая модель S2: contract-first OpenAPI + codegen backend/frontend.
 
 ## Спецификации (source of truth)
-- OpenAPI: `services/external/api-gateway/api/server/api.yaml`
+- OpenAPI (api-gateway): `services/external/api-gateway/api/server/api.yaml`
 - gRPC proto: `proto/codexk8s/controlplane/v1/controlplane.proto`
 - AsyncAPI (если есть): `services/external/api-gateway/api/server/asyncapi.yaml` (webhook/event payloads)
+
+## Текущее состояние и gap по OpenAPI
+- Сейчас OpenAPI-спека покрывает webhook ingress и используется как контрактный baseline.
+- Текущий runtime пока не использует полный OpenAPI validation/codegen pipeline для всех staff endpoint'ов.
+- Обязательная доработка в S2 до расширения транспорта:
+  - расширить OpenAPI до полного покрытия external/staff API;
+  - включить runtime validation на gateway;
+  - включить codegen для backend DTO/server stubs и frontend client.
 
 ## Endpoints / Methods (кратко)
 | Operation | Method/Topic | Path/Name | Auth | Idempotency | Notes |
@@ -47,6 +56,10 @@ approvals:
 | List learning feedback | GET | `/api/v1/agent-runs/{id}/learning-feedback` | jwt | n/a | inline + post-PR notes, staff/private |
 | Update doc template | PUT | `/api/v1/docs/{doc_id}` | jwt+rw | by doc_id/version | markdown body, staff/private |
 | Search docs | POST | `/api/v1/docs/search` | jwt | request hash | pgvector search, staff/private |
+
+Примечание:
+- таблица фиксирует целевой контракт;
+- до завершения S2 OpenAPI rollout фактические маршруты сверяются с `services/external/api-gateway/internal/transport/http/server.go`.
 
 ## Public API boundary (MVP)
 - Публично (outside/stable): только `POST /api/v1/webhooks/github`.
@@ -78,6 +91,11 @@ approvals:
 - Trigger/deploy label, инициированный агентом, проходит owner approval до применения.
 - `state:*` и `need:*` могут применяться автоматически в рамках project policy.
 - Любая операция с label фиксируется в `flow_events` и связывается с `agent_sessions`/`links`.
+
+## MCP approver/executor contract behavior
+- Approver/executor интеграции подключаются по HTTP-контрактам через MCP-слой.
+- Telegram (`github.com/codex-k8s/telegram-approver`, `github.com/codex-k8s/telegram-executor`) рассматривается как первый адаптер контракта, но не как единственный канал.
+- Контракт должен поддерживать async callbacks и единый `correlation_id` для аудита.
 
 ## Session resume and timeout behavior
 - run/session поддерживает paused states `waiting_owner_review` и `waiting_mcp`.

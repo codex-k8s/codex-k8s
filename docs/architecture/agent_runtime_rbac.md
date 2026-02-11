@@ -34,15 +34,16 @@ approvals:
 
 ## RBAC-матрица (baseline)
 
-| Роль | Default mode | K8s read | K8s write | DB access | Secrets |
+| Роль | Default mode | K8s read | K8s write | DB/cache access | Secrets |
 |---|---|---|---|---|---|
 | `pm` | `code-only` | optional | no | no direct | no |
 | `sa` | `full-env` | yes | no | schema/read-only via API | no |
 | `em` | `full-env` | yes | limited (slot orchestration only) | no direct | no |
+| `dev` | `full-env` | yes | via MCP tools + approval policy | read/write in run namespace scope | no direct |
+| `reviewer` | `full-env` | yes | no direct (only diagnostic MCP calls) | read-only in run namespace scope | no |
 | `qa` | `full-env` | yes | limited (test jobs) | read-only test scope | no |
 | `sre` | `full-env` | yes | yes (via policy + approval) | diagnostic read-only | via controlled tools |
 | `km` | `code-only` | optional read | no | docs/meta via API | no |
-| `auditor` | `full-env` | yes | no | no direct | no |
 | `custom` | policy-defined | policy-defined | policy-defined | policy-defined | policy-defined |
 
 ## Namespace и ресурсная изоляция
@@ -53,6 +54,16 @@ approvals:
   - service account per role/profile,
   - network policy baseline.
 - Cleanup обязателен после завершения run (или по `run:abort`).
+
+## Права `full-env` в рамках namespace
+
+- Разрешено:
+  - читать логи/события/метрики;
+  - выполнять диагностический `exec` в pod'ы namespace;
+  - обращаться к DB/cache сервисам проекта в границах namespace policy.
+- Запрещено прямое изменение runtime без policy:
+  - `kubectl apply/delete`, rollout/restart, создание/удаление workload выполняются только через MCP-инструменты.
+- Для write-операций через MCP обязателен approver flow и аудит (`approval.requested/approved/denied`, `label.applied`, `run.wait.*`).
 
 ## Timeout и возобновление сессий
 

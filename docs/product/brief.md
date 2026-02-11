@@ -8,7 +8,6 @@ created_at: 2026-02-06
 updated_at: 2026-02-11
 related_issues: [1]
 related_prs: []
-related_docsets: ["docs/_docset/issues/issue-0001-codex-k8s-bootstrap.md"]
 approvals:
   required: ["Owner"]
   status: approved
@@ -18,7 +17,7 @@ approvals:
 # Brief: codex-k8s platform bootstrap
 
 ## TL;DR (1 абзац)
-- **Проблема:** текущая связка `codexctl` + `yaml-mcp-server` + ручные практики разнесена по репозиториям и не даёт единого control-plane.
+- **Проблема:** текущая связка `codexctl` + `github.com/codex-k8s/yaml-mcp-server` + ручные практики разнесена по репозиториям и не даёт единого control-plane.
 - **Для кого:** Owner и команда, управляющие несколькими проектами и агентами в Kubernetes.
 - **Предлагаемое решение:** единый сервис `codex-k8s` (Go + Vue3), webhook-driven, с хранением состояния и знаний в PostgreSQL (`JSONB` + `pgvector`).
 - **Почему сейчас:** принято решение консолидировать архитектуру и убрать workflow-first оркестрацию продуктовых процессов.
@@ -51,9 +50,12 @@ approvals:
 - Включить CI/CD deploy для самой платформы через self-hosted runner в Kubernetes (staging first).
 - Зафиксировать stage-driven delivery модель и label taxonomy (`run:*`, `state:*`, `need:*`) как единый процессный контракт.
 - Зафиксировать operating model агентов: базовый штат из 7 ролей + custom-агенты проекта, mixed runtime (`full-env`/`code-only`).
+- Зафиксировать operating model агентов: базовый штат из 8 ролей (включая `dev` и `reviewer`) + custom-агенты проекта, mixed runtime (`full-env`/`code-only`).
+- Зафиксировать pre-review контур: `reviewer` оставляет inline замечания в PR для `dev` и summary для Owner до финального review.
 - Зафиксировать policy шаблонов промптов: seed в репозитории + override в БД (`work/review`).
 - Добавить locale-aware prompt policy: `project locale -> system default -> en`, с baseline локалями `ru` и `en`.
 - Добавить resumable lifecycle для agent runs: сохранение `codex-cli` session JSON и возобновление после пауз.
+- Ввести contract-first OpenAPI для external/staff API с codegen server/client до расширения транспорта внешних клиентов.
 - Добавить режим обучения для пользовательских задач:
   - подмешивание в инструкции требований объяснять "почему так";
   - дополнительный post-PR образовательный комментарий по ключевым файлам/строкам.
@@ -111,7 +113,7 @@ approvals:
 - Stage-модель процесса: `docs/product/stage_process_model.md`
 - Процесс разработки и документации: `docs/delivery/development_process_requirements.md`
 - Issue: #1
-- DocSet: `docs/_docset/issues/issue-0001-codex-k8s-bootstrap.md`
+- Трассируемость Issue/PR ↔ документы: `docs/delivery/issue_map.md`
 - Связанные ADR: `ADR-0001`, `ADR-0002`, `ADR-0003`, `ADR-0004`
 
 ## Апрув
