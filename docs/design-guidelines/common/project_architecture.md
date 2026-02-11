@@ -24,11 +24,12 @@
   - Манифесты и шаблоны YAML (`*.yaml.tpl`) живут в `deploy/base/**`.
   - Bash-скрипты в `deploy/scripts/**` не должны содержать “встроенные” multi-line YAML/JSON манифесты через heredoc.
     Скрипты только рендерят и применяют файлы из `deploy/base/**`.
-  - Для staging порядок выкладки фиксированный:
-    `PostgreSQL -> migrations -> control-plane -> api-gateway -> frontend`.
+  - Для staging порядок выкладки задаётся по слоям:
+    `stateful dependencies -> migrations -> internal domain services -> edge services -> frontend`.
     Ожидание зависимостей оформляется через `initContainers` в манифестах сервисов.
-  - Для monorepo multi-service deploy используются раздельные образы/репозитории по сервисам
-    (`api-gateway`, `control-plane`, `worker`, `web-console`), а не единый legacy image.
+  - Для monorepo multi-service deploy используются раздельные образы/репозитории для каждого
+    deployable-сервиса (шаблон нейминга: `CODEXK8S_<SERVICE>_IMAGE`,
+    `CODEXK8S_<SERVICE>_INTERNAL_IMAGE_REPOSITORY`).
 - `bootstrap/` — скрипты bootstrap (готовый кластер или установка k3s).
 - `docs/` — документация и решения.
 - `tools/` — утилиты и генерация.

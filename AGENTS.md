@@ -28,16 +28,19 @@
 
 ## Архитектурные границы (обязательны)
 
-- `services/external/api-gateway` = thin-edge:
+- `services/external/*` = thin-edge:
   - HTTP ingress (webhooks/public endpoints), валидация, authn/authz, rate limiting, аудит, маршрутизация;
   - без доменной логики (use-cases) и без прямых postgres-репозиториев.
-- `services/internal/control-plane` = доменная логика и владелец БД:
+- `services/internal/*` = доменная логика и владельцы БД:
   - доменные модели/use-cases, репозитории, интеграции через интерфейсы/адаптеры;
   - внутреннее service-to-service взаимодействие через gRPC по контрактам в `proto/`.
-- `services/jobs/worker` = фоновые процессы и reconciliation (идемпотентно, состояние в БД).
+- `services/jobs/*` = фоновые процессы и reconciliation (идемпотентно, состояние в БД).
 
 ## Транспортные контракты и модели (обязательны)
 
+- При изменениях transport-слоя, DTO/кастеров и доменных моделей обязательно читать:
+  - `docs/design-guidelines/go/services_design_requirements.md` (backend);
+  - `docs/design-guidelines/vue/frontend_architecture.md` (frontend).
 - В `transport/http|grpc` запрещены `map[string]any`/`[]any`/`any` как контракт ответа.
 - Handlers возвращают только typed DTO-модели; маппинг transport <-> domain/proto выполняется через явные кастеры.
 - Для HTTP DTO размещать модели и кастеры в `internal/transport/http/{models,casters}` (или эквивалентно по протоколу в рамках сервиса).
@@ -52,14 +55,14 @@
   - `prod` (runtime на веб-сервере, например `nginx`, со статическим бандлом).
 - Для каждого frontend-сервиса обязателен отдельный манифест в `deploy/base/<service>/*.yaml.tpl`.
 - Раздутый “общий” Dockerfile для нескольких сервисов не используется как основной путь сборки/deploy.
-- Для staging/CI обязательны раздельные image vars и image repositories:
-  - `CODEXK8S_API_GATEWAY_IMAGE`, `CODEXK8S_CONTROL_PLANE_IMAGE`, `CODEXK8S_WORKER_IMAGE`, `CODEXK8S_WEB_CONSOLE_IMAGE`
-  - `CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY`, `CODEXK8S_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY`, `CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY`, `CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY`
-- Переменные legacy-совместимости `CODEXK8S_IMAGE` и `CODEXK8S_INTERNAL_IMAGE_REPOSITORY` запрещены в новом коде, bootstrap и workflow.
+- Для staging/CI обязательны раздельные image vars и image repositories на каждый deployable-сервис:
+  - шаблон: `CODEXK8S_<SERVICE>_IMAGE`;
+  - шаблон: `CODEXK8S_<SERVICE>_INTERNAL_IMAGE_REPOSITORY`.
 
 ## Порядок выкладки staging (обязателен)
 
-- Применяется последовательность: `PostgreSQL -> migrations -> control-plane -> api-gateway -> frontend`.
+- Применяется последовательность:
+  `stateful dependencies -> migrations -> internal domain services -> edge services -> frontend`.
 - Ожидание готовности зависимостей выполняется через `initContainers` в манифестах сервисов, а не через retry-циклы старта в Go-коде.
 
 ## Миграции и schema governance (обязательны)
