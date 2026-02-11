@@ -21,10 +21,6 @@ const (
 	runNamespaceRunIDLabel          = metadataLabelRunID
 	runNamespaceCorrelationAnnotKey = metadataAnnotationCorrelationID
 
-	legacyRunNamespaceManagedByLabel   = legacyMetadataLabelManagedBy
-	legacyRunNamespacePurposeLabel     = legacyMetadataLabelNamespacePurpose
-	legacyRunNamespaceRuntimeModeLabel = legacyMetadataLabelRuntimeMode
-
 	runNamespaceManagedByValue = "codex-k8s-worker"
 	runNamespacePurposeValue   = "run"
 )
@@ -81,13 +77,13 @@ func (l *Launcher) CleanupNamespace(ctx context.Context, spec NamespaceSpec) err
 		}
 		return fmt.Errorf("get namespace %s: %w", namespace, err)
 	}
-	if strings.TrimSpace(firstNonEmptyValue(ns.Labels, runNamespaceManagedByLabel, legacyRunNamespaceManagedByLabel)) != runNamespaceManagedByValue {
+	if strings.TrimSpace(ns.Labels[runNamespaceManagedByLabel]) != runNamespaceManagedByValue {
 		return nil
 	}
-	if strings.TrimSpace(firstNonEmptyValue(ns.Labels, runNamespacePurposeLabel, legacyRunNamespacePurposeLabel)) != runNamespacePurposeValue {
+	if strings.TrimSpace(ns.Labels[runNamespacePurposeLabel]) != runNamespacePurposeValue {
 		return nil
 	}
-	if strings.TrimSpace(firstNonEmptyValue(ns.Labels, runNamespaceRuntimeModeLabel, legacyRunNamespaceRuntimeModeLabel)) != string(agentdomain.RuntimeModeFullEnv) {
+	if strings.TrimSpace(ns.Labels[runNamespaceRuntimeModeLabel]) != string(agentdomain.RuntimeModeFullEnv) {
 		return nil
 	}
 
