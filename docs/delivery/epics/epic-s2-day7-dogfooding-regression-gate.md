@@ -5,7 +5,7 @@ title: "Epic S2 Day 7: Dogfooding regression and release gate"
 status: planned
 owner_role: EM
 created_at: 2026-02-10
-updated_at: 2026-02-10
+updated_at: 2026-02-11
 related_issues: []
 related_prs: []
 approvals:
@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - Цель эпика: зафиксировать “работает end-to-end” для dogfooding цикла.
 - Ключевая ценность: дальше можно расширять label-набор и переносить больше этапов разработки в платформу.
-- MVP-результат: regression матрица пройдена, есть go/no-go и список next labels.
+- MVP-результат: regression матрица пройдена, есть go/no-go и готовый backlog на включение остальных `run:*` этапов.
 
 ## Priority
 - `P0`.
@@ -36,4 +36,3 @@ approvals:
 ## Критерии приемки эпика
 - End-to-end проходит на staging.
 - Нет известных P0 блокеров для продолжения dogfooding.
-

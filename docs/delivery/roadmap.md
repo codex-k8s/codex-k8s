@@ -5,7 +5,7 @@ title: "codex-k8s — Roadmap"
 status: draft
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-06
+updated_at: 2026-02-11
 approvals:
   required: ["Owner"]
   status: approved
@@ -16,9 +16,9 @@ approvals:
 
 ## TL;DR
 - Q1: foundation + core backend + bootstrap staging.
-- Q2: hardened staging + richer UI + learning mode + docs/agent/session observability.
-- Q3: production readiness + GitLab provider onboarding.
-- Q4: extensibility for custom agents/process templates.
+- Q2: dogfooding и stage-driven execution через labels (`run:*`), с observability/audit.
+- Q3: production readiness + full stage coverage (`intake..ops`) + GitLab provider onboarding.
+- Q4: расширяемость custom-агентов и шаблонов процессов/промптов.
 
 ## Принципы приоритизации
 - Сначала контроль рисков и deployability.
@@ -29,14 +29,18 @@ approvals:
 | Период | Инициатива | Цель | Метрики | Статус |
 |---|---|---|---|---|
 | Q1 | MVP core + staging bootstrap | запустить рабочий staging и ручные тесты | one-command bootstrap, green deploy from main | planned |
-| Q2 | UX и learning mode | контроль проектов/агентов/слотов в UI + обучающие explain-потоки | >=80% действий через UI и >=70% learner-runs с полезным feedback | planned |
-| Q3 | Production readiness | безопасный production deploy | prod runbook + approval gates + rollback drills | planned |
-| Q4 | Extensibility | задел на пользовательских агентов и процессы | configurable agent templates (phase-1) | planned |
+| Q2 | Dogfooding via labels | довести `run:dev`/`run:dev:revise` до устойчивого E2E + заложить полный label taxonomy | >=95% run:dev запускаются через Issue label без ручного вмешательства | in-progress |
+| Q3 | Stage coverage + production readiness | включить этапы `run:intake..run:ops`, усилить release/postdeploy gate | prod runbook + approval gates + full stage traceability | planned |
+| Q4 | Extensibility | custom-агенты per project + управляемые prompt templates | configurable custom roles + template policies in UI/API | planned |
 
 ## Backlog кандидатов
+- Contract-first OpenAPI rollout completion: полное покрытие active external/staff API + строгая CI-проверка codegen.
 - Split control-plane по внутренним сервисам при росте нагрузки.
 - Vault/KMS интеграция вместо хранения repo token material в БД.
 - Расширенная политика workflow approvals.
+- Автоматическое управление labels-as-vars через staff UI.
+- Квоты и policy packs для custom-агентов по проектам.
+- Расширение i18n prompt templates: добавление locale + авто-перевод шаблонов через ИИ.
 
 ## Риски roadmap
 - Задержка из-за инфраструктурной автоматизации bootstrap.

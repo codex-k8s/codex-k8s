@@ -5,7 +5,7 @@ title: "Requirements Traceability Matrix"
 status: draft
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-06
+updated_at: 2026-02-11
 related_issues: [1]
 related_prs: []
 approvals:
@@ -49,6 +49,20 @@ approvals:
 | FR-023 | Learning mode + educational PR comments | `docs/product/requirements_machine_driven.md`, `docs/product/brief.md`, `docs/architecture/api_contract.md`, `docs/delivery/delivery_plan.md`, `docs/architecture/data_model.md` | covered |
 | FR-024 | CODEXK8S_ prefix для env/secrets/CI vars | `docs/product/requirements_machine_driven.md`, `AGENTS.md` | covered |
 | FR-025 | MVP public API: only webhook ingress | `docs/product/requirements_machine_driven.md`, `docs/product/constraints.md`, `docs/architecture/api_contract.md` | covered |
+| FR-026 | Канонический каталог лейблов run/state/need | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md` | covered |
+| FR-027 | Approval policy для trigger/deploy labels | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/architecture/mcp_approval_and_audit_flow.md` | covered |
+| FR-028 | Stage process model с revise/abort/rethink | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/delivery/sprint_s2_dogfooding.md` | covered |
+| FR-029 | Базовый штат агентов (включая `dev` и `reviewer`) + custom роли проекта | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/data_model.md`, `docs/architecture/agent_runtime_rbac.md` | covered |
+| FR-030 | Prompt templates policy: seed + DB override | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/prompt_templates_policy.md` | covered |
+| FR-031 | Mixed runtime mode full-env/code-only | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/agent_runtime_rbac.md` | covered |
+| FR-032 | Обязательные audit сущности agent_sessions/token_usage/links | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/architecture/mcp_approval_and_audit_flow.md` | covered |
+| FR-033 | Traceability для stage pipeline | `docs/product/requirements_machine_driven.md`, `docs/delivery/issue_map.md`, `docs/delivery/requirements_traceability.md` | covered |
+| FR-034 | Контекстный рендер prompt templates | `docs/product/requirements_machine_driven.md`, `docs/architecture/prompt_templates_policy.md`, `docs/product/agents_operating_model.md` | covered |
+| FR-035 | Локали prompt templates и fallback по locale | `docs/product/requirements_machine_driven.md`, `docs/architecture/prompt_templates_policy.md`, `docs/product/constraints.md` | covered |
+| FR-036 | Сохранение/возобновление codex-cli session JSON | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/architecture/agent_runtime_rbac.md` | covered |
+| FR-037 | `agent` как центр настроек и политик выполнения | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/agents_operating_model.md` | covered |
+| FR-038 | Contract-first OpenAPI + backend/frontend codegen | `docs/product/requirements_machine_driven.md`, `docs/architecture/api_contract.md`, `docs/delivery/sprint_s2_dogfooding.md`, `docs/delivery/epics/epic-s2-day1-migrations-and-schema-ownership.md` | planned |
+| FR-039 | Универсальные HTTP-контракты approver/executor через MCP | `docs/product/requirements_machine_driven.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/c4_context.md` | covered |
 | NFR-001 | Security baseline | `docs/product/requirements_machine_driven.md`, `docs/product/constraints.md`, `AGENTS.md` | covered |
 | NFR-002 | Multi-pod consistency | `docs/product/requirements_machine_driven.md`, `docs/architecture/c4_container.md`, `docs/architecture/data_model.md` | covered |
 | NFR-003 | No event outbox on MVP | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/constraints.md` | covered |
@@ -57,6 +71,12 @@ approvals:
 | NFR-006 | One-command staging bootstrap via SSH | `docs/product/requirements_machine_driven.md`, `docs/delivery/delivery_plan.md`, `docs/product/brief.md` | covered |
 | NFR-007 | CI/CD model (main->staging, prod gated) | `docs/product/requirements_machine_driven.md`, `docs/product/brief.md`, `docs/product/constraints.md`, `docs/delivery/delivery_plan.md` | covered |
 | NFR-008 | MVP storage profile local-path | `docs/product/requirements_machine_driven.md`, `docs/product/constraints.md`, `docs/delivery/delivery_plan.md` | covered |
+| NFR-009 | Управляемые лимиты параллелизма agent-runs | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/agent_runtime_rbac.md` | covered |
+| NFR-010 | Полная audit-трассировка stage/label действий | `docs/product/requirements_machine_driven.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/data_model.md` | covered |
+| NFR-011 | Labels-as-vars в workflow | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/delivery/epics/epic-s2-day2-issue-label-triggers-run-dev.md` | covered |
+| NFR-012 | Запрет timeout-kill при ожидании MCP | `docs/product/requirements_machine_driven.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/agent_runtime_rbac.md` | covered |
+| NFR-013 | Надёжное хранение resumable session snapshot | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/constraints.md` | covered |
+| NFR-014 | Воспроизводимый OpenAPI codegen в CI | `docs/product/requirements_machine_driven.md`, `docs/architecture/api_contract.md`, `docs/delivery/epics/epic-s2-day1-migrations-and-schema-ownership.md` | planned |
 
 ## Правило актуализации
 - Любое новое требование сначала добавляется в `docs/product/requirements_machine_driven.md`, затем отражается в этой матрице.

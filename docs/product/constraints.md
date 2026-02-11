@@ -5,7 +5,7 @@ title: "codex-k8s — Constraints"
 status: draft
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-06
+updated_at: 2026-02-11
 related_issues: [1]
 related_prs: []
 approvals:
@@ -36,12 +36,20 @@ approvals:
 - Ограничения по данным: `JSONB` для гибких payload, `pgvector` для chunk search, шифрование repo токенов.
 - Размер эмбеддинга для `doc_chunks.embedding`: `vector(3072)`.
 - Event outbox table на MVP не вводим; достаточно `agent_runs` + `flow_events`.
+- В audit-контуре обязательны сущности `agent_sessions`, `token_usage`, `links` как часть трассировки agent lifecycle.
 - Learning mode должен работать как feature toggle на уровне пользователя/проекта и не ломать стандартный pipeline.
 - Learning mode default управляется из `bootstrap/host/config.env` (в шаблоне default включён; пустое значение трактуется как выключено).
 - Staff API использует short-lived JWT (через API gateway), cookie-session не используется как основной runtime-механизм.
 - В первой поставке public API ограничен webhook ingress (`/api/v1/webhooks/github`).
 - Отдельный provider для GitHub Enterprise/GHE на MVP не требуется.
 - Подключение production OpenAI account допускается сразу.
+- Stage-процесс управления задачами фиксирован через label taxonomy `run:*` + `state:*` + `need:*`.
+- Базовый системный штат агентов включает `dev` и `reviewer` как обязательные роли контура разработки (`run:dev`, pre-review перед финальным Owner review).
+- Шаблоны агентных промптов обязаны поддерживать схему: repo seed + DB override (`work` и `review`).
+- Шаблоны промптов хранятся по локалям; выбор языка обязателен по цепочке `project locale -> system default locale -> en`.
+- Для системных агентов обязательно наличие seed-шаблонов минимум для `ru` и `en`.
+- Для external/staff HTTP API обязателен contract-first подход по OpenAPI (spec + runtime validation + codegen backend/frontend).
+- Интеграции approver/executor должны реализовываться через универсальные HTTP-контракты MCP, без вендорной привязки к конкретному мессенджеру.
 
 ## Операционные ограничения
 - SLO/SLA: staging ориентирован на функциональные ручные тесты, не на production SLA.
@@ -51,6 +59,14 @@ approvals:
 - Режим runner:
   - локальные запуски: 1 persistent runner (long polling);
   - staging/ai-staging/prod при наличии домена: autoscaled runner set.
+- Режимы агентного исполнения:
+  - `full-env` и `code-only` используются совместно по роли;
+  - для `full-env` запусков обязательна изоляция по namespace и cleanup policy.
+- В `full-env` агент в границах своего namespace может выполнять runtime-диагностику (логи/метрики/DB/cache/exec в pod), но операции изменения окружения выполняются через MCP-инструменты с approver policy.
+- Ограничения по жизненному циклу агента:
+  - при ожидании ответа MCP (`wait_state=mcp`) pod/run не может быть завершён по timeout;
+  - таймер timeout должен быть paused до завершения MCP ожидания;
+  - `codex-cli` session JSON сохраняется для resumable восстановления run после паузы/перезапуска.
 - Ограничения по деплою:
   - staging deploy: автоматический workflow на push в `main`;
   - production deploy: отдельный workflow с ручным запуском и approval gate;
@@ -58,6 +74,7 @@ approvals:
 
 ## Security/Privacy ограничения
 - Доступы: GitHub OAuth + внутренняя RBAC матрица по проектам.
+- Trigger/deploy labels (`run:*`) при агент-инициации применяются только после апрува Owner.
 - Секреты: платформенные из env; внутренние генерируются bootstrap-скриптом.
 - PII/персональные данные: минимум (email и аудит), без утечки в логи.
 - Обучающие комментарии не должны раскрывать секреты, внутренние токены и чувствительные данные.

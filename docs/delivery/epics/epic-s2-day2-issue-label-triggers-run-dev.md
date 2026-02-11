@@ -5,7 +5,7 @@ title: "Epic S2 Day 2: Issue label triggers for run:dev and run:dev:revise"
 status: planned
 owner_role: EM
 created_at: 2026-02-10
-updated_at: 2026-02-10
+updated_at: 2026-02-11
 related_issues: []
 related_prs: []
 approvals:
@@ -26,10 +26,12 @@ approvals:
 
 ## Scope
 ### In scope
+- Предусловие: OpenAPI contract-first baseline из S2 Day1 внедрён и используется как source of truth для HTTP transport.
 - Поддержка GitHub webhook события `issues` (label added).
 - Правила авторизации для trigger-лейблов (`run:*`):
   - учитываем политику “trigger labels только через апрув Owner” (как принцип);
   - на MVP: allowlist/роль, проверка sender в webhook payload, запись audit события.
+- Зафиксировать полный каталог `run:*`, `state:*`, `need:*` в документации и GitHub vars (даже если часть run labels пока не активна).
 - Маппинг лейблов:
   - `run:dev` -> создать dev run;
   - `run:dev:revise` -> запустить revise run (на существующий PR/ветку).
@@ -45,4 +47,4 @@ approvals:
 ## Критерии приемки эпика
 - Добавление лейбла `run:dev` на Issue приводит к созданию run request и появлению в UI/логах.
 - Несанкционированный actor не может триггерить запуск (событие отклоняется и логируется).
-
+- Workflow-условия для активных labels используют `vars.*`, а не строковые литералы.

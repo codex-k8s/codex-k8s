@@ -5,7 +5,7 @@ title: "codex-k8s — Development and Documentation Process Requirements"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-10
+updated_at: 2026-02-11
 related_issues: [1]
 related_prs: []
 approvals:
@@ -25,6 +25,9 @@ approvals:
 - `AGENTS.md`
 - `docs/product/requirements_machine_driven.md`
 - `docs/product/constraints.md`
+- `docs/product/agents_operating_model.md`
+- `docs/product/labels_and_trigger_policy.md`
+- `docs/product/stage_process_model.md`
 - `docs/delivery/delivery_plan.md`
 - `docs/delivery/sprint_s1_mvp_vertical_slice.md`
 - `docs/delivery/sprint_s2_dogfooding.md`
@@ -50,9 +53,10 @@ approvals:
 | EM | Ведёт спринт-план, эпики, daily delivery gate | `docs/delivery/sprint_s*.md`, `docs/delivery/epic_s*.md`, `docs/delivery/epics/epic-s*-day*.md` |
 | SA | Архитектурная и data-model консистентность | `docs/architecture/*.md`, миграционная стратегия |
 | Dev | Реализация задач и технические проверки | код, тесты, миграции, изменения API/контрактов |
+| Reviewer | Предварительное ревью PR до Owner | inline findings в PR + summary для Owner |
 | QA | Ручной smoke/regression на staging, acceptance evidence | test evidence, regression checklist |
 | SRE | Bootstrap/deploy/runbook/операционная устойчивость | bootstrap scripts, deploy manifests, runbook |
-| KM | Трассируемость документации и docset-актуальность | `docs/delivery/issue_map.md`, docset документы |
+| KM | Трассируемость документации и актуальность карты связей | `docs/delivery/issue_map.md`, `docs/delivery/requirements_traceability.md` |
 
 ## Нейминг артефактов (обязателен)
 
@@ -121,7 +125,7 @@ Daily gate (must pass):
 
 ## Обязательные quality gates
 - Planning gate: DoR пройден, приоритеты и артефакты на день назначены.
-- Merge gate: green CI + код ревью + синхронная документация.
+- Merge gate: green CI + pre-review (`reviewer`) + финальное ревью Owner + синхронная документация.
 - Deploy gate: staging deployment success + ручной smoke.
 - Close gate: regression pass + согласованный backlog следующего спринта.
 

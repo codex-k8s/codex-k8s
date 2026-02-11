@@ -5,7 +5,7 @@ title: "Epic Catalog: Sprint S1 (MVP vertical slice, Day 0..7)"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-10
+updated_at: 2026-02-11
 related_issues: [1]
 related_prs: []
 approvals:
@@ -17,7 +17,7 @@ approvals:
 # Epic Catalog: Sprint S1 (MVP vertical slice, Day 0..7)
 
 ## TL;DR
-- Каталог фиксирует 8 эпиков спринта: `Day 0` (выполнен) + `Day 1..7` (в работе по дням).
+- Каталог фиксирует 8 эпиков спринта: `Day 0..7` выполнены и приняты.
 - Цель каталога: один источник правды по ежедневному объёму и критериям приёмки.
 - Рабочий режим: каждый день merge в `main` и deploy на `staging`.
 - Процессное управление: `docs/delivery/development_process_requirements.md`.

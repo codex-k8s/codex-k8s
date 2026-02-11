@@ -10,8 +10,8 @@ related_issues: []
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
-  request_id: ""
+  status: approved
+  request_id: "owner-2026-02-11-s2-day0"
 ---
 
 # Epic S2 Day 0: Control-plane extraction and thin-edge api-gateway
@@ -119,6 +119,6 @@ approvals:
 - Smoke: webhook ingest + staff UI базовые сценарии (проверка логов `codex-k8s` и `codex-k8s-control-plane`).
 
 ## Апрув
-- request_id: (to be filled)
-- Решение: (pending)
-- Комментарий: (to be filled)
+- request_id: owner-2026-02-11-s2-day0
+- Решение: approved
+- Комментарий: Day 0 scope закрыт, архитектурное выравнивание и перенос ownership схемы приняты.

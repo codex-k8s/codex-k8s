@@ -1,7 +1,7 @@
 # codex-k8s
 
 `codex-k8s` — cloud-сервис (Go + Vue3), который объединяет функциональные требования
-`codexctl`, `yaml-mcp-server` и `machine_driven_company_requirements` в единую
+`codexctl`, `github.com/codex-k8s/yaml-mcp-server` и `machine_driven_company_requirements` в единую
 webhook-driven платформу для работы AI-агентов в Kubernetes.
 
 ## Базовые принципы
