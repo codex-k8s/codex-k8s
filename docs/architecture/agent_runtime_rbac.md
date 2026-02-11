@@ -58,6 +58,8 @@ approvals:
 Текущий baseline реализации (S2 Day3):
 - Worker создаёт namespace idempotent, применяет `ServiceAccount + Role + RoleBinding + ResourceQuota + LimitRange`.
 - В `flow_events` пишутся lifecycle события `run.namespace.prepared|cleaned|cleanup_failed`.
+- Runtime metadata namespace/job унифицированы через labels/annotations с префиксом `codex-k8s.dev/*`.
+- Cleanup удаляет только managed namespaces с `codex-k8s.dev/managed-by=codex-k8s-worker` и `codex-k8s.dev/namespace-purpose=run`.
 
 ## Права `full-env` в рамках namespace
 

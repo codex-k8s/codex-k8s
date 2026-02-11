@@ -46,3 +46,10 @@ approvals:
 - Активные trigger labels в исполнении: `run:dev`, `run:dev:revise`.
 - Каталог `run:*` фиксируется полностью в документации и GitHub vars, остальные trigger labels остаются `planned`.
 - `state:*` и `need:*` используются для служебной оркестрации и блокировок, без прямого запуска deploy.
+
+## Фактический прогресс (2026-02-11)
+- Day 0: completed + approved.
+- Day 1: completed + approved.
+- Day 2: completed + approved.
+- Day 3: completed + approved.
+- Текущее окно работ: Day 4.

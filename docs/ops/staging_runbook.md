@@ -72,11 +72,14 @@ kubectl -n "$ns" describe ingress codex-k8s
 kubectl -n "$ns" get certificate,order,challenge -A
 
 # Full-env run namespaces (S2 Day3 baseline)
-kubectl get ns -l codexk8s.io/managed-by=codex-k8s-worker,codexk8s.io/namespace-purpose=run
-for run_ns in $(kubectl get ns -l codexk8s.io/managed-by=codex-k8s-worker,codexk8s.io/namespace-purpose=run -o jsonpath='{.items[*].metadata.name}'); do
+kubectl get ns -l codex-k8s.dev/managed-by=codex-k8s-worker,codex-k8s.dev/namespace-purpose=run
+for run_ns in $(kubectl get ns -l codex-k8s.dev/managed-by=codex-k8s-worker,codex-k8s.dev/namespace-purpose=run -o jsonpath='{.items[*].metadata.name}'); do
   echo "=== ${run_ns} ==="
   kubectl -n "${run_ns}" get sa,role,rolebinding,resourcequota,limitrange,job,pod
 done
+
+# Legacy runtime keys must not appear after Day3 rollout
+kubectl get ns -o json | grep -E 'codexk8s.io/(managed-by|namespace-purpose|runtime-mode|project-id|run-id|correlation-id)' || true
 ```
 
 ## Типовые проблемы
