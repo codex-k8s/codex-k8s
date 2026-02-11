@@ -29,6 +29,8 @@ func Run() error {
 		return err
 	}
 
+	appCtx := context.Background()
+
 	pollInterval, err := time.ParseDuration(cfg.PollInterval)
 	if err != nil {
 		return fmt.Errorf("parse CODEXK8S_WORKER_POLL_INTERVAL: %w", err)
@@ -56,7 +58,7 @@ func Run() error {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
-	db, err := postgres.Open(context.Background(), postgres.OpenParams{
+	db, err := postgres.Open(appCtx, postgres.OpenParams{
 		Host:     cfg.DBHost,
 		Port:     cfg.DBPort,
 		DBName:   cfg.DBName,
@@ -98,7 +100,7 @@ func Run() error {
 		ProjectLearningModeDefault: learningDefault,
 	}, runs, events, feedback, launcher, logger)
 
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
+	ctx, stop := signal.NotifyContext(appCtx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 	defer stop()
 
 	logger.Info("worker started", "worker_id", cfg.WorkerID, "poll_interval", pollInterval.String())

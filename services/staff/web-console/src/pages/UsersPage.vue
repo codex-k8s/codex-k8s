@@ -23,11 +23,11 @@
         <tbody>
           <tr v-for="u in users.items" :key="u.id">
             <td>{{ u.email }}</td>
-            <td class="mono center">{{ u.githubLogin || "-" }}</td>
-            <td class="center">{{ u.isPlatformAdmin ? t("pages.users.yes") : t("pages.users.no") }}</td>
+            <td class="mono center">{{ u.github_login || "-" }}</td>
+            <td class="center">{{ u.is_platform_admin ? t("pages.users.yes") : t("pages.users.no") }}</td>
             <td class="mono center">{{ u.id }}</td>
             <td class="right">
-              <button v-if="canDelete(u.id, u.isPlatformAdmin, u.isPlatformOwner)" class="btn danger" type="button" @click="askRemove(u.id, u.email)" :disabled="users.deleting">
+              <button v-if="canDelete(u.id, u.is_platform_admin, u.is_platform_owner)" class="btn danger" type="button" @click="askRemove(u.id, u.email)" :disabled="users.deleting">
                 {{ t("common.delete") }}
               </button>
             </td>

@@ -6,6 +6,10 @@
 
 - Любой сгенерированный код живет только в `**/generated/**`.
 - Сгенерированное руками не правим.
+- Изменение перечня сервисов/приложений, участвующих в codegen, должно синхронно обновлять:
+  - цели `gen-openapi-*` в `Makefile`;
+  - конфиги codegen в `tools/codegen/**`;
+  - CI-проверку `.github/workflows/contracts_codegen_check.yml`.
 - Источник правды транспорта:
   - REST: `api/server/api.yaml` (OpenAPI YAML)
   - gRPC: `proto/**/*.proto`
@@ -23,6 +27,11 @@
 ```bash
 make gen-openapi-go SVC=services/<zone>/<service>
 ```
+
+Обязательный make-блок:
+- `gen-openapi-go` — генерация Go transport-артефактов;
+- `gen-openapi-ts` — генерация TS-клиента для frontend;
+- `gen-openapi` — агрегирующая цель для CI и локальной проверки.
 
 ## Protobuf/gRPC -> Go
 
@@ -55,7 +64,7 @@ make validate-asyncapi SVC=services/<zone>/<service>
 ## Frontend codegen по OpenAPI (TypeScript + Axios)
 
 Рекомендуемый инструмент:
-- `@hey-api/openapi-ts` + `@hey-api/client-axios`
+- `@hey-api/openapi-ts` (клиенты `@hey-api/client-*` встроены начиная с `v0.73.0`; отдельная установка `@hey-api/client-axios` не требуется)
 
 Выход:
 - `src/shared/api/generated/**`
@@ -64,3 +73,12 @@ make validate-asyncapi SVC=services/<zone>/<service>
 ```bash
 make gen-openapi-ts APP=services/<zone>/<app> SPEC=services/<zone>/<service>/api/server/api.yaml
 ```
+
+## Проверка консистентности generated-кода в CI
+
+- Обязательная проверка: `.github/workflows/contracts_codegen_check.yml`.
+- Workflow должен выполнять:
+  - установку зависимостей frontend;
+  - `make gen-openapi`;
+  - `git diff --exit-code` по OpenAPI-generated артефактам.
+- Любое расширение/изменение codegen-охвата (новый backend service или frontend app) сопровождается правкой этого workflow.

@@ -41,8 +41,9 @@ func Run() error {
 		return err
 	}
 
+	appCtx := context.Background()
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	runCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
+	runCtx, stop := signal.NotifyContext(appCtx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 	defer stop()
 
 	// DB readiness is handled by initContainer in deployment; control-plane starts fail-fast.
@@ -170,7 +171,7 @@ func Run() error {
 
 		grpcServer.GracefulStop()
 
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		shutdownCtx, cancel := context.WithTimeout(appCtx, 15*time.Second)
 		defer cancel()
 		if err := httpServer.Shutdown(shutdownCtx); err != nil {
 			return fmt.Errorf("shutdown control-plane http: %w", err)

@@ -97,6 +97,7 @@
 - Structured logs, без секретов/PII.
 - OTel tracing и пропагация контекста.
 - Graceful shutdown по `SIGINT|SIGTERM|SIGQUIT|SIGHUP`.
+- Базовый контекст приложения (`context.Background()`) создаётся только в `internal/app/*` (composition root) и прокидывается зависимостям через конструкторы/методы; в transport/domain/repository-слоях прямой вызов `context.Background()` запрещён.
 
 ## Запрещено
 

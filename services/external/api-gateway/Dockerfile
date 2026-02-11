@@ -27,6 +27,7 @@ USER app
 
 COPY --from=builder /out/codex-k8s /usr/local/bin/codex-k8s
 COPY --from=web /web/dist /app/web
+COPY services/external/api-gateway/api/server/api.yaml /app/api/server/api.yaml
 
 EXPOSE 8080
 

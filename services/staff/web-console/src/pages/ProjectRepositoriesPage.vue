@@ -31,8 +31,8 @@
         <tr v-for="r in repos.items" :key="r.id">
           <td class="center">{{ r.provider }}</td>
           <td class="mono center">{{ r.owner }}/{{ r.name }}</td>
-          <td class="mono center">{{ r.servicesYamlPath }}</td>
-          <td class="mono center">{{ r.externalId }}</td>
+          <td class="mono center">{{ r.services_yaml_path }}</td>
+          <td class="mono center">{{ r.external_id }}</td>
           <td class="mono center">{{ r.id }}</td>
           <td class="right">
             <button class="btn danger" type="button" @click="askRemove(r.id, r.owner + '/' + r.name)" :disabled="repos.removing">

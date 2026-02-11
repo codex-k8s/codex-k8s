@@ -35,6 +35,10 @@ type ServerConfig struct {
 	// ViteDevUpstream enables staff UI in "vite dev server" mode.
 	// When set, non-API GET/HEAD requests are reverse-proxied to this upstream.
 	ViteDevUpstream string
+	// OpenAPISpecPath is an optional path to OpenAPI specification.
+	OpenAPISpecPath string
+	// OpenAPIValidationEnabled enables request validation middleware.
+	OpenAPIValidationEnabled bool
 }
 
 // Server is an HTTP transport wrapper around Echo.
@@ -46,10 +50,23 @@ type Server struct {
 }
 
 // NewServer builds and configures HTTP routes and middleware.
-func NewServer(cfg ServerConfig, cp *controlplane.Client, auth authService, logger *slog.Logger) *Server {
+func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Client, auth authService, logger *slog.Logger) (*Server, error) {
+	if initCtx == nil {
+		return nil, fmt.Errorf("init context is nil")
+	}
+
 	e := echo.New()
 	e.Use(middleware.Recover())
 	e.HTTPErrorHandler = newHTTPErrorHandler(logger)
+
+	if cfg.OpenAPIValidationEnabled {
+		validator, err := newOpenAPIRequestValidator(initCtx, cfg.OpenAPISpecPath)
+		if err != nil {
+			return nil, fmt.Errorf("init openapi validator: %w", err)
+		}
+		e.Use(validator.middleware())
+		logger.Info("openapi request validation enabled", "spec_path", validator.specPath)
+	}
 
 	h := newWebhookHandler(cfg, cp)
 	authH := newAuthHandler(auth, cfg.CookieSecure)
@@ -102,7 +119,7 @@ func NewServer(cfg ServerConfig, cp *controlplane.Client, auth authService, logg
 		server: httpServer,
 		addr:   cfg.HTTPAddr,
 		logger: logger,
-	}
+	}, nil
 }
 
 // Start runs the HTTP server until shutdown or fatal error.

@@ -26,14 +26,14 @@
             <span class="pill" :class="'s-' + r.status">{{ r.status }}</span>
           </td>
           <td>
-            <RouterLink v-if="r.projectId" class="lnk" :to="{ name: 'project-details', params: { projectId: r.projectId } }">
-              {{ r.projectName || r.projectSlug || r.projectId }}
+            <RouterLink v-if="r.project_id" class="lnk" :to="{ name: 'project-details', params: { projectId: r.project_id } }">
+              {{ r.project_name || r.project_slug || r.project_id }}
             </RouterLink>
             <span v-else class="mono">-</span>
           </td>
-          <td class="mono center">{{ formatDateTime(r.createdAt, locale) }}</td>
-          <td class="mono center">{{ formatDateTime(r.startedAt, locale) }}</td>
-          <td class="mono center">{{ formatDateTime(r.finishedAt, locale) }}</td>
+          <td class="mono center">{{ formatDateTime(r.created_at, locale) }}</td>
+          <td class="mono center">{{ formatDateTime(r.started_at, locale) }}</td>
+          <td class="mono center">{{ formatDateTime(r.finished_at, locale) }}</td>
           <td class="center">
             <RouterLink class="lnk" :to="{ name: 'run-details', params: { runId: r.id } }">
               {{ t("pages.runs.details") }}

@@ -28,7 +28,7 @@ approvals:
 | День | Эпик | Priority | Документ | Статус |
 |---|---|---|---|---|
 | Day 0 | Control-plane extraction + thin-edge gateway | P0 | `docs/delivery/epics/epic-s2-day0-control-plane-extraction.md` | completed |
-| Day 1 | Migrations/schema ownership + OpenAPI contract-first baseline | P0 | `docs/delivery/epics/epic-s2-day1-migrations-and-schema-ownership.md` | planned |
+| Day 1 | Migrations/schema ownership + OpenAPI contract-first baseline | P0 | `docs/delivery/epics/epic-s2-day1-migrations-and-schema-ownership.md` | completed |
 | Day 2 | Issue label triggers: `run:dev`, `run:dev:revise` | P0 | `docs/delivery/epics/epic-s2-day2-issue-label-triggers-run-dev.md` | planned |
 | Day 3 | Per-issue namespace + RBAC/resource policy baseline | P0 | `docs/delivery/epics/epic-s2-day3-per-issue-namespace-and-rbac.md` | planned |
 | Day 4 | Agent job image + git/gh PR flow | P0 | `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md` | planned |

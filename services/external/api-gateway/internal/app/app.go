@@ -22,9 +22,10 @@ func Run() error {
 		return err
 	}
 
+	appCtx := context.Background()
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
-	dialCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	dialCtx, cancel := context.WithTimeout(appCtx, 30*time.Second)
 	defer cancel()
 	cp, err := controlplane.Dial(dialCtx, cfg.ControlPlaneGRPCTarget)
 	if err != nil {
@@ -48,16 +49,21 @@ func Run() error {
 		return fmt.Errorf("init auth service: %w", err)
 	}
 
-	server := httptransport.NewServer(httptransport.ServerConfig{
-		HTTPAddr:            cfg.HTTPAddr,
-		GitHubWebhookSecret: cfg.GitHubWebhookSecret,
-		MaxBodyBytes:        cfg.WebhookMaxBodyBytes,
-		CookieSecure:        cfg.CookieSecure,
-		StaticDir:           "/app/web",
-		ViteDevUpstream:     cfg.ViteDevUpstream,
+	server, err := httptransport.NewServer(appCtx, httptransport.ServerConfig{
+		HTTPAddr:                 cfg.HTTPAddr,
+		GitHubWebhookSecret:      cfg.GitHubWebhookSecret,
+		MaxBodyBytes:             cfg.WebhookMaxBodyBytes,
+		CookieSecure:             cfg.CookieSecure,
+		StaticDir:                "/app/web",
+		ViteDevUpstream:          cfg.ViteDevUpstream,
+		OpenAPISpecPath:          cfg.OpenAPISpecPath,
+		OpenAPIValidationEnabled: cfg.OpenAPIValidationEnabled,
 	}, cp, authService, logger)
+	if err != nil {
+		return fmt.Errorf("init http server: %w", err)
+	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
+	ctx, stop := signal.NotifyContext(appCtx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 	defer stop()
 
 	serverErr := make(chan error, 1)
@@ -68,7 +74,7 @@ func Run() error {
 
 	select {
 	case <-ctx.Done():
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		shutdownCtx, cancel := context.WithTimeout(appCtx, 15*time.Second)
 		defer cancel()
 
 		logger.Info("shutting down api-gateway")

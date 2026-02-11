@@ -20,46 +20,55 @@ approvals:
 - Тип API: REST (public webhook + staff/private), internal gRPC между edge и control-plane.
 - Аутентификация: GitHub OAuth login + short-lived JWT в API gateway + project RBAC.
 - Версионирование: `/api/v1/...`.
-- Основные операции: webhook ingest (public), staff/private operations для project/repository/agents/runs/labels/docs/audit и learning mode.
-- Для external/staff транспорта целевая модель S2: contract-first OpenAPI + codegen backend/frontend.
+- Основные операции текущего среза: webhook ingest (public) + staff/private operations для auth, project/repository/user/run/learning-mode.
+- Для external/staff транспорта в S2 Day1 внедрён contract-first OpenAPI (validation + backend/frontend codegen).
 
 ## Спецификации (source of truth)
 - OpenAPI (api-gateway): `services/external/api-gateway/api/server/api.yaml`
 - gRPC proto: `proto/codexk8s/controlplane/v1/controlplane.proto`
 - AsyncAPI (если есть): `services/external/api-gateway/api/server/asyncapi.yaml` (webhook/event payloads)
 
-## Текущее состояние и gap по OpenAPI
-- Сейчас OpenAPI-спека покрывает webhook ingress и используется как контрактный baseline.
-- Текущий runtime пока не использует полный OpenAPI validation/codegen pipeline для всех staff endpoint'ов.
-- Обязательная доработка в S2 до расширения транспорта:
-  - расширить OpenAPI до полного покрытия external/staff API;
-  - включить runtime validation на gateway;
-  - включить codegen для backend DTO/server stubs и frontend client.
+## Состояние OpenAPI после S2 Day1
+- OpenAPI-спека (`services/external/api-gateway/api/server/api.yaml`) покрывает все активные external/staff endpoint'ы текущего среза.
+- В `api-gateway` включена runtime валидация request/response по OpenAPI (через `kin-openapi`) для `/api/*`.
+- Включён backend codegen:
+  - `make gen-openapi-go`
+  - output: `services/external/api-gateway/internal/transport/http/generated/openapi.gen.go`
+- Включён frontend codegen:
+  - `make gen-openapi-ts`
+  - output: `services/staff/web-console/src/shared/api/generated/**`
+- В CI добавлена проверка консистентности codegen:
+  - `.github/workflows/contracts_codegen_check.yml` (`make gen-openapi` + `git diff --exit-code`).
 
-## Endpoints / Methods (кратко)
-| Operation | Method/Topic | Path/Name | Auth | Idempotency | Notes |
-|---|---|---|---|---|---|
-| Ingest GitHub webhook | POST | `/api/v1/webhooks/github` | signature | by delivery id | enqueue/dispatch |
-| Get current user | GET | `/api/v1/me` | jwt | n/a | staff/private |
-| List projects | GET | `/api/v1/projects` | jwt | n/a | RBAC-filtered, staff/private |
-| Upsert project | POST | `/api/v1/projects` | jwt+admin | by project key | staff/private |
-| Add project member | POST | `/api/v1/projects/{id}/members` | jwt+admin | by (project,user) | staff/private |
-| Add repository | POST | `/api/v1/projects/{id}/repositories` | jwt+rw | by provider/repo | token encrypted, staff/private |
-| List agents | GET | `/api/v1/agents` | jwt | n/a | fixed roster, staff/private |
-| Start agent run | POST | `/api/v1/agent-runs` | jwt+rw | by correlation_id | manual trigger/override, staff/private |
-| List runs | GET | `/api/v1/agent-runs` | jwt | n/a | filters/status, staff/private |
-| Resume agent run | POST | `/api/v1/agent-runs/{id}:resume` | jwt+rw | by run id + session snapshot | resume from saved codex-cli session |
-| Apply stage label request | POST | `/api/v1/issues/{id}/labels:request` | jwt+rw | by issue+label+correlation | trigger/deploy labels via policy |
-| List label policy | GET | `/api/v1/labels/policy` | jwt | n/a | run/state/need taxonomy and permissions |
-| List prompt locales | GET | `/api/v1/prompt-templates/locales` | jwt | n/a | available locales and fallback defaults |
-| Set learning mode | PUT | `/api/v1/projects/{id}/members/{user_id}/learning-mode` | jwt+admin | by member | toggle per user/project, staff/private |
-| List learning feedback | GET | `/api/v1/agent-runs/{id}/learning-feedback` | jwt | n/a | inline + post-PR notes, staff/private |
-| Update doc template | PUT | `/api/v1/docs/{doc_id}` | jwt+rw | by doc_id/version | markdown body, staff/private |
-| Search docs | POST | `/api/v1/docs/search` | jwt | request hash | pgvector search, staff/private |
+## Endpoints / Methods (текущий срез)
+| Operation | Method | Path | Auth | Notes |
+|---|---|---|---|---|
+| Ingest GitHub webhook | POST | `/api/v1/webhooks/github` | webhook signature | idempotency по `X-GitHub-Delivery` |
+| Start GitHub OAuth | GET | `/api/v1/auth/github/login` | public | redirect |
+| Complete GitHub OAuth callback | GET | `/api/v1/auth/github/callback` | public | set auth cookie |
+| Logout | POST | `/api/v1/auth/logout` | staff JWT | clears auth cookies |
+| Get current principal | GET | `/api/v1/auth/me` | staff JWT | staff/private |
+| List projects | GET | `/api/v1/staff/projects` | staff JWT | RBAC filtered |
+| Upsert project | POST | `/api/v1/staff/projects` | staff JWT + admin | create/update by slug |
+| Get project | GET | `/api/v1/staff/projects/{project_id}` | staff JWT | details |
+| Delete project | DELETE | `/api/v1/staff/projects/{project_id}` | staff JWT + admin | hard delete |
+| List runs | GET | `/api/v1/staff/runs` | staff JWT | run list |
+| Get run | GET | `/api/v1/staff/runs/{run_id}` | staff JWT | run details |
+| List run events | GET | `/api/v1/staff/runs/{run_id}/events` | staff JWT | flow events |
+| List run learning feedback | GET | `/api/v1/staff/runs/{run_id}/learning-feedback` | staff JWT | educational feedback |
+| List users | GET | `/api/v1/staff/users` | staff JWT | allowed users |
+| Create user | POST | `/api/v1/staff/users` | staff JWT + admin | allowlist entry |
+| Delete user | DELETE | `/api/v1/staff/users/{user_id}` | staff JWT + admin | remove allowlist entry |
+| List project members | GET | `/api/v1/staff/projects/{project_id}/members` | staff JWT | members and roles |
+| Upsert project member | POST | `/api/v1/staff/projects/{project_id}/members` | staff JWT + admin | by `user_id` or `email` |
+| Delete project member | DELETE | `/api/v1/staff/projects/{project_id}/members/{user_id}` | staff JWT + admin | remove member |
+| Set member learning mode override | PUT | `/api/v1/staff/projects/{project_id}/members/{user_id}/learning-mode` | staff JWT + admin | true/false/null |
+| List project repositories | GET | `/api/v1/staff/projects/{project_id}/repositories` | staff JWT | repository bindings |
+| Upsert project repository | POST | `/api/v1/staff/projects/{project_id}/repositories` | staff JWT + admin | token encrypted in backend |
+| Delete project repository | DELETE | `/api/v1/staff/projects/{project_id}/repositories/{repository_id}` | staff JWT + admin | unbind repository |
 
 Примечание:
-- таблица фиксирует целевой контракт;
-- до завершения S2 OpenAPI rollout фактические маршруты сверяются с `services/external/api-gateway/internal/transport/http/server.go`.
+- будущие маршруты (`run:*`, stage labels, prompt locale management, docs search/edit и т.д.) вводятся отдельными эпиками S2 Day2+.
 
 ## Public API boundary (MVP)
 - Публично (outside/stable): только `POST /api/v1/webhooks/github`.

@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S2-D1
 type: epic
 title: "Epic S2 Day 1: Migrations, schema ownership and OpenAPI contract-first baseline"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-10
 updated_at: 2026-02-11
@@ -25,14 +25,14 @@ approvals:
 ## Priority
 - `P0`.
 
-## Контекст (важное противоречие, требуется решение Owner)
+## Контекст (важное противоречие, решение зафиксировано)
 В монорепо миграции должны находиться *внутри держателя схемы*.
 Ранее формулировка `cmd/cli/migrations/*.sql` в гайдах была написана в предположении “репозиторий = один сервис”.
 Для `codex-k8s` стандарт уточняется:
 - миграции лежат в `services/<zone>/<db-owner-service>/cmd/cli/migrations/*.sql`;
 - владелец схемы обязан быть один (shared DB без владельца запрещён).
 
-Текущее состояние transport-контрактов:
+Стартовая точка transport-контрактов:
 - `services/external/api-gateway/api/server/api.yaml` существует, но покрывает только webhook ingress;
 - runtime валидация по OpenAPI и codegen server/client пока не включены;
 - frontend (`services/staff/web-console`) использует ручные API-обёртки.
@@ -70,3 +70,17 @@ approvals:
 - OpenAPI покрывает все активные external/staff endpoint'ы S2 scope.
 - Backend и frontend используют сгенерированные артефакты контракта, ручные несогласованные DTO не остаются в транспортном слое.
 - В CI есть проверка актуальности codegen-артефактов.
+
+## Статус выполнения (2026-02-11)
+- Миграции закреплены в держателе схемы:
+  - `services/internal/control-plane/cmd/cli/migrations/*.sql`
+- OpenAPI rollout выполнен:
+  - `services/external/api-gateway/api/server/api.yaml` расширен до текущего active external/staff API.
+  - В `api-gateway` включена runtime request/response validation по OpenAPI.
+- Codegen pipeline внедрён:
+  - Go: `make gen-openapi-go` -> `services/external/api-gateway/internal/transport/http/generated/openapi.gen.go`
+  - TS: `make gen-openapi-ts` -> `services/staff/web-console/src/shared/api/generated/**`
+  - Общая цель: `make gen-openapi`
+- Frontend API переведён на generated client (`services/staff/web-console/src/shared/api/generated/**`), ручные endpoint-строки в feature API-слое удалены.
+- CI-проверка актуальности codegen добавлена:
+  - `.github/workflows/contracts_codegen_check.yml`.

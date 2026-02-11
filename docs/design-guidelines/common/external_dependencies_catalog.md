@@ -19,7 +19,8 @@
 | Dependency | Version | Scope | Why |
 |---|---|---|---|
 | `github.com/labstack/echo/v5` | `v5.0.3` | HTTP transport | единый REST стек для gateway/staff API |
-| `github.com/getkin/kin-openapi` | n/a (planned in runtime usage) | OpenAPI validation | валидация request/response по контракту |
+| `github.com/getkin/kin-openapi` | `v0.133.0` | OpenAPI validation | загрузка/валидация OpenAPI и runtime request-validation в `api-gateway` |
+| `github.com/oapi-codegen/runtime` | `v1.1.2` | OpenAPI generated transport runtime | типы/утилиты для сгенерированного OpenAPI Go-кода |
 | `github.com/prometheus/client_golang` | `v1.23.2` | Observability | `/metrics` и базовые метрики сервиса |
 | `github.com/jackc/pgx/v5` | `v5.8.0` | PostgreSQL driver | доступ к PostgreSQL |
 | `github.com/google/uuid` | `v1.6.0` | Utility | генерация идентификаторов |
@@ -44,6 +45,8 @@
 | `vue-i18n` | in use (package.json) | i18n | все пользовательские тексты через i18n ключи |
 | `vue3-cookies` | in use (package.json) | Cookies | хранение UI-настроек (например, язык) и единый cookie-адаптер |
 | `date-fns` | in use (package.json) | Datetime formatting | безопасное форматирование дат/времени без самописных helpers |
+| `@hey-api/openapi-ts` | in use (devDependency, `v0.92.3`) | OpenAPI codegen (TS) | генерация typed API-клиента для frontend из `api.yaml` |
+| `@hey-api/client-axios` | deprecated (bundled in `@hey-api/openapi-ts` since `v0.73.0`) | OpenAPI axios client plugin | отдельная установка не требуется, использовать встроенный плагин через конфиг `openapi-ts` |
 
 ## Infrastructure and CI tools — in use
 
@@ -54,6 +57,7 @@
 | `helm` | bootstrap scripts | установка ARC и инфраструктурных компонентов |
 | `openssl` | bootstrap scripts | генерация секретов |
 | `kaniko` | CI build pipeline | сборка образа внутри кластера |
+| `github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen` | Make codegen pipeline | генерация Go transport-артефактов из OpenAPI |
 
 ## Процесс изменений каталога
 
