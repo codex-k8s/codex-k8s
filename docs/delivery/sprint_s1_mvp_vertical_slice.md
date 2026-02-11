@@ -5,7 +5,7 @@ title: "Sprint S1: MVP vertical slice (Day 0..7)"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-10
+updated_at: 2026-02-11
 related_issues: [1]
 related_prs: []
 approvals:
@@ -17,7 +17,7 @@ approvals:
 # Sprint S1: MVP vertical slice (Day 0..7)
 
 ## TL;DR
-- Спринт фиксирует 8 эпиков: `Day 0` (уже выполнен) + `Day 1..7` для инкрементальной поставки MVP.
+- Спринт фиксирует 8 эпиков и закрыт по результатам поставки `Day 0..7`.
 - Режим работы: каждый день закрываем задачи, сливаем в `main`, автоматически деплоим в `staging`, делаем ручной smoke.
 - Source of truth требований: `docs/product/requirements_machine_driven.md`.
 - Source of truth процесса: `docs/delivery/development_process_requirements.md`.
@@ -34,11 +34,11 @@ approvals:
 | Day 0 | Baseline bootstrap complete | P0 | Bootstrap scripts + deploy baseline + подтвержденный staging bootstrap | `docs/delivery/epics/epic-s1-day0-bootstrap-baseline.md` | completed |
 | Day 1 | Webhook ingress + idempotency | P0 | Webhook endpoint + signature verify + dedup + staging smoke evidence | `docs/delivery/epics/epic-s1-day1-webhook-idempotency.md` | completed |
 | Day 2 | Worker run loop + slots + k8s jobs | P0 | Worker execution loop + slot leasing + run status transitions | `docs/delivery/epics/epic-s1-day2-worker-slots-k8s.md` | completed |
-| Day 3 | OAuth/JWT + project RBAC + minimal staff UI | P0 | OAuth/JWT auth + RBAC middleware + minimal UI screens | `docs/delivery/epics/epic-s1-day3-auth-rbac-ui.md` | planned |
-| Day 4 | Repository provider + project repositories lifecycle | P0 | RepositoryProvider + GitHub adapter + repository CRUD | `docs/delivery/epics/epic-s1-day4-repository-provider.md` | planned |
-| Day 5 | Learning mode MVP (prompt augmentation + storage) | P1 | Learning toggle + augmentation + feedback persistence | `docs/delivery/epics/epic-s1-day5-learning-mode.md` | planned |
-| Day 6 | Security/Network/Observability hardening for staging | P1 | DNS/TLS/firewall checks + observability baseline | `docs/delivery/epics/epic-s1-day6-hardening-observability.md` | planned |
-| Day 7 | Stabilization, regression, release gate for next sprint | P0 | Regression report + go/no-go + Sprint S2 backlog draft | `docs/delivery/epics/epic-s1-day7-stabilization-gate.md` | planned |
+| Day 3 | OAuth/JWT + project RBAC + minimal staff UI | P0 | OAuth/JWT auth + RBAC middleware + minimal UI screens | `docs/delivery/epics/epic-s1-day3-auth-rbac-ui.md` | completed |
+| Day 4 | Repository provider + project repositories lifecycle | P0 | RepositoryProvider + GitHub adapter + repository CRUD | `docs/delivery/epics/epic-s1-day4-repository-provider.md` | completed |
+| Day 5 | Learning mode MVP (prompt augmentation + storage) | P1 | Learning toggle + augmentation + feedback persistence | `docs/delivery/epics/epic-s1-day5-learning-mode.md` | completed |
+| Day 6 | Security/Network/Observability hardening for staging | P1 | DNS/TLS/firewall checks + observability baseline | `docs/delivery/epics/epic-s1-day6-hardening-observability.md` | completed |
+| Day 7 | Stabilization, regression, release gate for next sprint | P0 | Regression report + go/no-go + Sprint S2 backlog draft | `docs/delivery/epics/epic-s1-day7-stabilization-gate.md` | completed |
 
 ## Ежедневный delivery-гейт (обязательно)
 - Изменения дня влиты в `main`.

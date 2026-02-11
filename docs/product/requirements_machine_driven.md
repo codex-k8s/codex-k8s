@@ -5,7 +5,7 @@ title: "codex-k8s — Machine-Driven Requirements Baseline"
 status: draft
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-06
+updated_at: 2026-02-11
 related_issues: [1]
 related_prs: []
 related_docsets: ["docs/_docset/issues/issue-0001-codex-k8s-bootstrap.md"]
@@ -56,6 +56,18 @@ approvals:
 | FR-023 | Learning mode: при user-initiated задачах в инструкции подмешивается блок объяснений (`почему так`, `что это даёт`, `какие альтернативы и почему хуже`), плюс после PR возможны образовательные комментарии по ключевым файлам/строкам. |
 | FR-024 | Имена env/secrets/CI variables платформы используют префикс `CODEXK8S_` (исключения только для внешних контрактов). |
 | FR-025 | На MVP public API ограничен webhook ingress; staff/private API используется для управления платформой. |
+| FR-026 | В платформе фиксируется канонический каталог лейблов классов `run:*`, `state:*`, `need:*`, с поддержкой label-driven stage pipeline. |
+| FR-027 | Для агент-инициированных trigger/deploy лейблов (`run:*`) обязателен апрув Owner до применения; `state:*` и `need:*` допускают автоустановку по политике проекта. |
+| FR-028 | Процесс поставки фиксируется stage-моделью `intake -> vision -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops` с поддержкой `*:revise`, `run:abort`, `run:rethink`. |
+| FR-029 | Модель ролей агентов: базовый штат из 7 системных ролей + расширяемые custom-агенты на проект (с явными RBAC, execution mode и quota). |
+| FR-030 | Для агентных инструкций поддерживаются два класса шаблонов (`work`, `review`) с приоритетом `DB project override -> DB global override -> repo seed`. |
+| FR-031 | Для агентных ролей поддерживается смешанный режим исполнения `full-env`/`code-only`, с политикой выбора режима по роли. |
+| FR-032 | В БД как обязательный контур аудита и учета включены сущности `agent_sessions`, `token_usage`, `links` (в дополнение к `agent_runs` и `flow_events`). |
+| FR-033 | DocSet/traceability поддерживается для всех этапов: связи Issue/PR ↔ docs ↔ stage status обновляются синхронно с выполнением этапов. |
+| FR-034 | Шаблоны промптов рендерятся с runtime-контекстом (env/namespace/slot, project context, MCP servers/tools, issue/pr/run context). |
+| FR-035 | Шаблоны промптов поддерживают локали; язык выбирается по цепочке `project locale -> system default locale -> en`, с базовой загрузкой `ru` и `en`. |
+| FR-036 | Для каждой agent session сохраняется JSON-снимок `codex-cli` сессии, чтобы возобновлять выполнение с того же места после паузы/перезапуска. |
+| FR-037 | Сущность `agent` остаётся центральной точкой настроек/политик выполнения (runtime mode, timeout policy, approval policy, prompt policy). |
 
 ## Non-Functional Requirements (NFR)
 
@@ -69,6 +81,11 @@ approvals:
 | NFR-006 | Развёртывание staging: выполняется bootstrap-скриптом с хоста разработчика по SSH на Ubuntu 24.04, включая настройку зависимостей и окружения. |
 | NFR-007 | CI/CD для платформы: staging deploy автоматический на push в `main`; production deploy отдельным вручную запускаемым workflow с approval gate. |
 | NFR-008 | Storage профиль MVP: `local-path`; переход на Longhorn отложен на следующий этап. |
+| NFR-009 | Для agent-runs применяются управляемые лимиты параллелизма по ролям/проектам, чтобы избежать деградации кластера и гонок ресурсов. |
+| NFR-010 | Любое stage/label действие трассируется с actor/correlation/approval state и доступно для аудита через БД и staff UI/API. |
+| NFR-011 | Workflow-условия по лейблам используют repository variables (`vars.*`) вместо строковых литералов для предсказуемой переконфигурации. |
+| NFR-012 | Пока агент ожидает ответ от MCP-сервера, timeout-kill pod/run не применяется; таймер выполнения должен быть paused для этого wait-state. |
+| NFR-013 | Снимок `codex-cli` сессии для resumable run должен храниться надёжно и быть доступен для восстановления после перезапуска worker/pod. |
 
 ## Зафиксированные решения Owner (2026-02-06)
 
@@ -89,10 +106,16 @@ approvals:
 ## Ссылки
 - `docs/product/brief.md`
 - `docs/product/constraints.md`
+- `docs/product/agents_operating_model.md`
+- `docs/product/labels_and_trigger_policy.md`
+- `docs/product/stage_process_model.md`
 - `docs/architecture/c4_context.md`
 - `docs/architecture/c4_container.md`
 - `docs/architecture/data_model.md`
 - `docs/architecture/api_contract.md`
+- `docs/architecture/agent_runtime_rbac.md`
+- `docs/architecture/mcp_approval_and_audit_flow.md`
+- `docs/architecture/prompt_templates_policy.md`
 - `docs/delivery/delivery_plan.md`
 - `docs/delivery/issue_map.md`
 - `docs/delivery/development_process_requirements.md`

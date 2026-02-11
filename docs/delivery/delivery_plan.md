@@ -5,7 +5,7 @@ title: "codex-k8s — Delivery Plan"
 status: draft
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-06
+updated_at: 2026-02-11
 related_issues: [1]
 related_prs: []
 related_docsets: ["docs/_docset/issues/issue-0001-codex-k8s-bootstrap.md"]
@@ -27,11 +27,19 @@ approvals:
 - Requirements baseline: `docs/product/requirements_machine_driven.md`
 - Brief: `docs/product/brief.md`
 - Constraints: `docs/product/constraints.md`
+- Agents operating model: `docs/product/agents_operating_model.md`
+- Labels policy: `docs/product/labels_and_trigger_policy.md`
+- Stage process model: `docs/product/stage_process_model.md`
 - Architecture (C4): `docs/architecture/c4_context.md`, `docs/architecture/c4_container.md`
 - ADR: `docs/architecture/adr/ADR-0001-kubernetes-only.md`, `docs/architecture/adr/ADR-0002-webhook-driven-and-deploy-workflows.md`, `docs/architecture/adr/ADR-0003-postgres-jsonb-pgvector.md`, `docs/architecture/adr/ADR-0004-repository-provider-interface.md`
 - Data model: `docs/architecture/data_model.md`
+- Runtime/RBAC model: `docs/architecture/agent_runtime_rbac.md`
+- MCP approval/audit flow: `docs/architecture/mcp_approval_and_audit_flow.md`
+- Prompt templates policy: `docs/architecture/prompt_templates_policy.md`
 - Sprint plan: `docs/delivery/sprint_s1_mvp_vertical_slice.md`
 - Epic catalog: `docs/delivery/epic_s1.md`
+- Sprint S2 plan: `docs/delivery/sprint_s2_dogfooding.md`
+- Epic S2 catalog: `docs/delivery/epic_s2.md`
 - Process requirements: `docs/delivery/development_process_requirements.md`
 
 ## Структура работ (WBS)
@@ -86,10 +94,10 @@ approvals:
 
 ### Definition of Done (DoD)
 - [x] Day 0 baseline bootstrap выполнен.
-- [ ] Для Day 1..7: каждый эпик закрыт по своим acceptance criteria.
-- [ ] Для Day 1..7: ежедневный merge -> auto deploy -> smoke check выполнен.
-- [ ] Webhook -> run -> worker -> k8s -> UI цепочка проходит regression.
-- [ ] Learning mode проверен на staging в on/off режимах.
+- [x] Для Day 1..7: каждый эпик закрыт по своим acceptance criteria.
+- [x] Для Day 1..7: ежедневный merge -> auto deploy -> smoke check выполнен.
+- [x] Webhook -> run -> worker -> k8s -> UI цепочка проходит regression.
+- [x] Learning mode проверен на staging в on/off режимах.
 
 ## Риски и буферы
 - Риск: нестабильная сеть/доступы при bootstrap.

@@ -5,7 +5,7 @@ title: "codex-k8s — Data Model"
 status: draft
 owner_role: SA
 created_at: 2026-02-06
-updated_at: 2026-02-06
+updated_at: 2026-02-11
 related_issues: [1]
 related_prs: []
 approvals:
@@ -17,7 +17,7 @@ approvals:
 # Data Model: codex-k8s
 
 ## TL;DR
-- Ключевые сущности: users, projects, repositories, agents, agent_runs, slots, flow_events, docs_meta, doc_chunks.
+- Ключевые сущности: users, projects, system_settings, repositories, agent_policies, agents, agent_runs, agent_sessions, token_usage, slots, flow_events, links, prompt_templates, docs_meta, doc_chunks.
 - Основные связи: user<->project (RBAC), project->repositories, agent->agent_runs, issue/pr->doc links.
 - Риски миграций: ранний выбор индексов для webhook/event throughput и vector search.
 
@@ -45,7 +45,7 @@ approvals:
 | id | uuid | no | gen_random_uuid() | pk | |
 | key | text | no |  | unique | short id |
 | name | text | no |  | unique | |
-| settings | jsonb | no | '{}'::jsonb |  | user-configurable (`learning_mode_default`, etc.) |
+| settings | jsonb | no | '{}'::jsonb |  | user-configurable (`learning_mode_default`, `locale`, etc.) |
 
 ### Entity: project_members
 - Назначение: доступы пользователей к проектам.
@@ -58,6 +58,17 @@ approvals:
 | user_id | uuid | no |  | fk -> users | |
 | role | text | no |  | check(read/read_write/admin) | |
 | learning_mode_enabled | bool | no | false |  | user-level override |
+
+### Entity: system_settings
+- Назначение: глобальные настройки платформы (включая default locale).
+- Важные инварианты: ключ уникален.
+- Поля:
+
+| Field | Type | Nullable | Default | Constraints | Notes |
+|---|---|---:|---|---|---|
+| key | text | no |  | pk | |
+| value | jsonb | no | '{}'::jsonb |  | e.g. `{"default_locale":"ru"}` |
+| updated_at | timestamptz | no | now() |  | |
 
 ### Entity: repositories
 - Назначение: подключённые репозитории проектов.
@@ -75,20 +86,43 @@ approvals:
 | services_yaml_path | text | no | "services.yaml" |  | per-repo override |
 
 ### Entity: agents
-- Назначение: штатные агенты (фиксированный набор ролей).
-- Важные инварианты: уникальный agent_key.
+- Назначение: системные и project-scoped custom-агенты.
+- Важные инварианты: уникальный agent_key; для custom-агента обязательна привязка к проекту.
 - Поля:
 
 | Field | Type | Nullable | Default | Constraints | Notes |
 |---|---|---:|---|---|---|
 | id | uuid | no | gen_random_uuid() | pk | |
-| agent_key | text | no |  | unique | pm/sa/em/qa/sre/km/auditor |
+| agent_key | text | no |  | unique | pm/sa/em/qa/sre/km/auditor или custom key |
+| role_kind | text | no | "system" | check(system/custom) | |
+| policy_id | bigint | yes |  | fk -> agent_policies | null allowed only until policy bootstrap |
+| project_id | uuid | yes |  | fk -> projects | not null for role_kind=custom |
 | name | text | no |  |  | |
 | github_nick | text | yes |  |  | |
 | email | text | yes |  |  | |
 | token_encrypted | bytea | yes |  |  | rotated by worker |
-| instruction_template | text | no |  |  | markdown |
-| settings | jsonb | no | '{}'::jsonb |  | |
+| instruction_template | text | no |  |  | fallback markdown |
+| review_template | text | yes |  |  | optional review fallback |
+| settings | jsonb | no | '{}'::jsonb |  | runtime/options |
+| policies | jsonb | no | '{}'::jsonb |  | execution/timeout/approval policy snapshot |
+
+### Entity: agent_policies
+- Назначение: централизованные policy-профили работы агентов.
+- Важные инварианты: `agents` всегда ссылается на policy (явно или через default).
+- Поля:
+
+| Field | Type | Nullable | Default | Constraints | Notes |
+|---|---|---:|---|---|---|
+| id | bigserial | no |  | pk | |
+| policy_key | text | no |  | unique | e.g. `default-dev`, `default-review` |
+| runtime_mode | text | no |  | check(full-env/code-only) | |
+| max_parallel_runs | int | no | 1 |  | per project baseline |
+| run_timeout_sec | int | no | 0 |  | 0 = no hard timeout |
+| owner_review_timeout_sec | int | yes |  |  | pause/resume aware |
+| kill_on_mcp_wait_timeout | bool | no | false |  | must stay false |
+| approval_required_for_run_labels | bool | no | true |  | |
+| config | jsonb | no | '{}'::jsonb |  | extensible policy fields |
+| created_at | timestamptz | no | now() |  | |
 
 ### Entity: agent_runs
 - Назначение: запуски и сессии агентов.
@@ -101,11 +135,53 @@ approvals:
 | correlation_id | text | no |  | unique | webhook/job correlation |
 | project_id | uuid | no |  | fk -> projects | |
 | agent_id | uuid | no |  | fk -> agents | |
-| status | text | no | "pending" | check enum | |
+| status | text | no | "pending" | check enum | pending/running/waiting_owner_review/waiting_mcp/succeeded/failed/timed_out/cancelled |
 | run_payload | jsonb | no | '{}'::jsonb |  | session metadata/log refs |
 | learning_mode | bool | no | false |  | run-level effective mode |
+| timeout_at | timestamptz | yes |  |  | hard timeout deadline |
+| timeout_paused | bool | no | false |  | true while paused on allowed waits |
+| wait_reason | text | yes |  |  | owner_review/mcp/none |
 | started_at | timestamptz | yes |  |  | |
 | finished_at | timestamptz | yes |  |  | |
+
+### Entity: agent_sessions
+- Назначение: детальная телеметрия и аудит выполнения агентной сессии.
+- Важные инварианты: один `session_id` уникален; сессия связана с run.
+- Поля:
+
+| Field | Type | Nullable | Default | Constraints | Notes |
+|---|---|---:|---|---|---|
+| id | bigserial | no |  | pk | |
+| session_id | text | no |  | unique | external/model session id |
+| run_id | uuid | no |  | fk -> agent_runs | |
+| agent_id | uuid | no |  | fk -> agents | |
+| role_key | text | no |  |  | effective role key |
+| namespace | text | yes |  |  | run namespace if full-env |
+| status | text | no | "running" | check enum | running/succeeded/failed/cancelled |
+| session_json | jsonb | no | '{}'::jsonb |  | tool calls, summarized context |
+| codex_cli_session_path | text | yes |  |  | path to saved session file in workspace/storage |
+| codex_cli_session_json | jsonb | yes |  |  | persisted codex-cli session snapshot for resume |
+| wait_state | text | no | "none" | check(none,owner_review,mcp) | current blocking wait |
+| timeout_guard_disabled | bool | no | false |  | true while wait_state=mcp |
+| last_heartbeat_at | timestamptz | yes |  |  | liveness/resume support |
+| started_at | timestamptz | no | now() |  | |
+| finished_at | timestamptz | yes |  |  | |
+
+### Entity: token_usage
+- Назначение: учёт токенов/стоимости по сессиям и моделям.
+- Важные инварианты: запись append-only.
+- Поля:
+
+| Field | Type | Nullable | Default | Constraints | Notes |
+|---|---|---:|---|---|---|
+| id | bigserial | no |  | pk | |
+| session_id | text | no |  | fk/logical -> agent_sessions.session_id | |
+| model | text | no |  |  | |
+| prompt_tokens | int | no | 0 |  | |
+| completion_tokens | int | no | 0 |  | |
+| total_tokens | int | no | 0 |  | |
+| cost_usd | numeric(18,6) | yes |  |  | optional |
+| created_at | timestamptz | no | now() | index | |
 
 ### Entity: slots
 - Назначение: слоты и их lease-состояние для конкурентных pod.
@@ -135,6 +211,42 @@ approvals:
 | event_type | text | no |  | index | |
 | payload | jsonb | no | '{}'::jsonb |  | |
 | created_at | timestamptz | no | now() | index | |
+
+### Entity: links
+- Назначение: трассировка связей между Issue/PR/run/doc/ADR.
+- Важные инварианты: уникальность пары source-target по типу связи.
+- Поля:
+
+| Field | Type | Nullable | Default | Constraints | Notes |
+|---|---|---:|---|---|---|
+| id | bigserial | no |  | pk | |
+| source_type | text | no |  |  | issue/pr/run/doc/adr |
+| source_id | text | no |  |  | |
+| target_type | text | no |  |  | issue/pr/run/doc/adr |
+| target_id | text | no |  |  | |
+| link_type | text | no |  |  | references/implements/supersedes |
+| metadata | jsonb | no | '{}'::jsonb |  | |
+| created_at | timestamptz | no | now() | index | |
+
+### Entity: prompt_templates
+- Назначение: хранение global/project override шаблонов промптов (`work`/`review`).
+- Важные инварианты: уникальность active версии по `(scope_type, scope_id, role_key, template_kind, locale)`.
+- Поля:
+
+| Field | Type | Nullable | Default | Constraints | Notes |
+|---|---|---:|---|---|---|
+| id | bigserial | no |  | pk | |
+| scope_type | text | no |  | check(global/project) | |
+| scope_id | uuid | yes |  | fk -> projects | null for global |
+| role_key | text | no |  |  | pm/sa/.../custom |
+| template_kind | text | no |  | check(work/review) | |
+| locale | text | no | "en" |  | i18n locale key (`ru`, `en`, ...) |
+| body_markdown | text | no |  |  | |
+| source | text | no | "db_override" |  | db_override/repo_seed_ref |
+| render_context_version | text | no | "v1" |  | contract version for template context |
+| version | int | no | 1 |  | |
+| is_active | bool | no | true |  | |
+| created_at | timestamptz | no | now() |  | |
 
 ### Entity: docs_meta
 - Назначение: шаблоны и документы платформы.
@@ -183,28 +295,43 @@ approvals:
 | metadata | jsonb | no | '{}'::jsonb |  | headings, links |
 
 ## Связи
+- `system_settings` задаёт глобальные fallback policy (включая default locale)
 - `projects` 1:N `repositories`
 - `projects` M:N `users` через `project_members`
+- `agent_policies` 1:N `agents`
 - `agents` 1:N `agent_runs`
+- `projects` 1:N `agents` (для custom-агентов)
+- `agent_runs` 1:N `agent_sessions`
+- `agent_sessions` 1:N `token_usage`
 - `projects` 1:N `slots`
 - `docs_meta` 1:N `doc_chunks`
 - `agent_runs` 1:N `flow_events` (по `correlation_id`)
 - `agent_runs` 1:N `learning_feedback`
+- `projects` 1:N `prompt_templates` (scope=project)
+- `links` хранит M:N трассировки между `issue/pr/run/doc/adr`
 
 ## Логическое размещение по БД-контурам (MVP)
 - PostgreSQL cluster единый.
-- Core contour: `users`, `projects`, `project_members`, `repositories`, `agents`, `agent_runs`, `slots`, `docs_meta`, `learning_feedback`.
-- Audit/chunks contour: `flow_events`, `doc_chunks`.
+- Core contour: `users`, `projects`, `project_members`, `system_settings`, `repositories`, `agent_policies`, `agents`, `agent_runs`, `slots`, `docs_meta`, `learning_feedback`, `prompt_templates`.
+- Audit/chunks contour: `agent_sessions`, `token_usage`, `flow_events`, `links`, `doc_chunks`.
 - Связи между контурами — через устойчивые ключи (`correlation_id`, `doc_id`), без требования к cross-contour FK.
 
 ## Индексы и запросы (критичные)
 - Запрос: выбрать ожидающие webhook jobs по статусу/времени.
 - Индексы: `agent_runs(status, started_at)`, `flow_events(correlation_id, created_at)`.
+- Запрос: аудит сессий и стоимости по run/agent/model.
+- Индексы: `agent_sessions(run_id, started_at)`, `token_usage(session_id, created_at)`.
+- Запрос: возобновление прерванной/ожидающей сессии по run.
+- Индексы: `agent_sessions(run_id, wait_state, last_heartbeat_at)`.
+- Запрос: выбор effective prompt template по role/kind/locale.
+- Индексы: `prompt_templates(scope_type, scope_id, role_key, template_kind, locale, is_active)`.
+- Запрос: traceability issue/pr/run/doc.
+- Индексы: `links(source_type, source_id, created_at)`, `links(target_type, target_id, created_at)`.
 - Запрос: поиск релевантных doc chunks.
 - Индексы: `doc_chunks using ivfflat/hnsw (embedding)`, плюс `metadata` GIN.
 
 ## Политика хранения данных
-- Retention: flow_events и session JSON с ротацией/архивом по сроку.
+- Retention: flow_events, agent_sessions.session_json, agent_sessions.codex_cli_session_json и token_usage с ротацией/архивом по сроку.
 - Архивирование: ежедневный backup БД в staging.
 - PII/комплаенс: email хранится, токены только в шифрованном виде.
 
@@ -215,6 +342,10 @@ approvals:
 ## Решения Owner
 - Размер вектора `3072` подтверждён как базовый для MVP.
 - Отдельный `event_outbox` на MVP не вводится; используем статусы `agent_runs` + `flow_events`.
+- Контур аудита и учета обязателен: `agent_sessions`, `token_usage`, `links`.
+- Шаблоны промптов поддерживают модель `repo seed + DB override` c фиксацией effective version/hash.
+- Для paused-состояний сохраняется `codex-cli` session snapshot, чтобы run можно было продолжить с того же места.
+- При ожидании ответа MCP (`wait_state=mcp`) timeout-kill для pod/run не применяется до завершения ожидания.
 
 ## Апрув
 - request_id: owner-2026-02-06-mvp

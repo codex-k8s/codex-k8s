@@ -20,11 +20,23 @@
 - Если контекст сессии был сжат/потерян (например, `context compacted`) или есть сомнение, что требования/архитектура актуальны:
   - перечитать `AGENTS.md` и `docs/design-guidelines/AGENTS.md`;
   - перечитать релевантные гайды по области изменения (`docs/design-guidelines/{go,vue,visual,common}/`);
-  - сверить задачу с `docs/product/requirements_machine_driven.md`;
+  - сверить задачу с `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`;
   - только после этого планировать и править код.
 - Не редактировать сами гайды без явной задачи на изменение стандартов.
 - При разработке и доработке проектной документации (бизнес-документов), сверять ее с `docs/research/src_idea-machine_driven_company_requirements.md`. `docs/research/src_idea-machine_driven_company_requirements.md` - это документ, перенесенный из изначального репозитория
 `github.com/codex-k8s/codexctl` (`../codexctl`), которая в части бизнес-идеи остается действующей, за исключением подходов к реализации (там все планировалось делать через консольную утилиту, воркфлоу и лейблы, а тут полноценный сервис управления агентами, задачами и т.д.).
+
+## Матрица чтения проектной документации (обязательна)
+
+Перед началом работ по типу задачи читать минимум указанный набор:
+
+| Тип задачи | Обязательные документы |
+|---|---|
+| Продуктовые требования/лейблы/этапы | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md` |
+| Архитектура и модель данных | `docs/architecture/c4_context.md`, `docs/architecture/c4_container.md`, `docs/architecture/api_contract.md`, `docs/architecture/data_model.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/prompt_templates_policy.md` |
+| Delivery/sprint/epics | `docs/delivery/development_process_requirements.md`, `docs/delivery/delivery_plan.md`, `docs/delivery/sprint_s*.md`, `docs/delivery/epic_s*.md`, `docs/delivery/epics/*.md` |
+| Трассируемость и docset | `docs/delivery/requirements_traceability.md`, `docs/delivery/issue_map.md`, `docs/_docset/**` |
+| Ops и staging проверки | `.local/agents-temp-dev-rules.md`, `docs/ops/staging_runbook.md` |
 
 ## Архитектурные границы (обязательны)
 
@@ -87,6 +99,8 @@
 - Модель процессов: webhook-driven, без GitHub Actions workflow как основного механизма выполнения.
 - Хранилище сервиса: PostgreSQL (`JSONB` + `pgvector`) как единая точка синхронизации между pod'ами.
 - MCP служебные ручки: встроенные Go-реализации в `codex-k8s`; `yaml-mcp-server` остаётся расширяемым пользовательским слоем.
+- Операционная продуктовая модель агентов/лейблов/этапов:
+  `docs/product/agents_operating_model.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`.
 - Процесс разработки и doc-governance: `docs/delivery/development_process_requirements.md`.
 
 ## Неподвижные ограничения продукта

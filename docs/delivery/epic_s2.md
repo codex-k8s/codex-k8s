@@ -2,16 +2,16 @@
 doc_id: EPC-CK8S-0002
 type: epic
 title: "Epic Catalog: Sprint S2 (Dogfooding via Issues)"
-status: draft
+status: active
 owner_role: EM
 created_at: 2026-02-10
-updated_at: 2026-02-10
+updated_at: 2026-02-11
 related_issues: []
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
-  request_id: ""
+  status: approved
+  request_id: "owner-2026-02-11-s2-progress"
 ---
 
 # Epic Catalog: Sprint S2 (Dogfooding via Issues)
@@ -23,6 +23,7 @@ approvals:
 
 ## Контекст
 - Source of truth требований: `docs/product/requirements_machine_driven.md`.
+- Процессная продуктовая модель: `docs/product/agents_operating_model.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`.
 - Source of truth инженерных ограничений: `docs/design-guidelines/**` (особенно `common/project_architecture.md`, `go/services_design_requirements.md`).
 
 ## Эпики Sprint S2 (план)
@@ -34,6 +35,11 @@ approvals:
 - Day 5: `docs/delivery/epics/epic-s2-day5-staff-ui-dogfooding-observability.md`
 - Day 6: `docs/delivery/epics/epic-s2-day6-approval-and-audit-hardening.md`
 - Day 7: `docs/delivery/epics/epic-s2-day7-dogfooding-regression-gate.md`
+
+## Текущий прогресс
+- Day 0: completed + approved.
+- Day 1: planned (следующий активный эпик).
+- Day 2..7: planned.
 
 ## Критерий успеха Sprint S2 (выжимка)
 - Один Issue с лейблом `run:dev` приводит к запуску агентного Job в отдельном namespace и к созданию PR.

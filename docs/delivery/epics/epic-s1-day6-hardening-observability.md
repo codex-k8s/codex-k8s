@@ -2,10 +2,10 @@
 doc_id: EPC-CK8S-S1-D6
 type: epic
 title: "Epic Day 6: Staging hardening, network controls, observability"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-06
+updated_at: 2026-02-11
 related_issues: [1]
 related_prs: []
 approvals:

@@ -5,7 +5,7 @@ title: "codex-k8s platform bootstrap"
 status: draft
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-06
+updated_at: 2026-02-11
 related_issues: [1]
 related_prs: []
 related_docsets: ["docs/_docset/issues/issue-0001-codex-k8s-bootstrap.md"]
@@ -49,6 +49,11 @@ approvals:
 - Защитить UI через GitHub OAuth с матчингом email.
 - Добавить bootstrap-скрипт развёртывания staging по SSH на Ubuntu 24.04.
 - Включить CI/CD deploy для самой платформы через self-hosted runner в Kubernetes (staging first).
+- Зафиксировать stage-driven delivery модель и label taxonomy (`run:*`, `state:*`, `need:*`) как единый процессный контракт.
+- Зафиксировать operating model агентов: базовый штат из 7 ролей + custom-агенты проекта, mixed runtime (`full-env`/`code-only`).
+- Зафиксировать policy шаблонов промптов: seed в репозитории + override в БД (`work/review`).
+- Добавить locale-aware prompt policy: `project locale -> system default -> en`, с baseline локалями `ru` и `en`.
+- Добавить resumable lifecycle для agent runs: сохранение `codex-cli` session JSON и возобновление после пауз.
 - Добавить режим обучения для пользовательских задач:
   - подмешивание в инструкции требований объяснять "почему так";
   - дополнительный post-PR образовательный комментарий по ключевым файлам/строкам.
@@ -101,6 +106,9 @@ approvals:
 
 ## Ссылки
 - Канонические требования: `docs/product/requirements_machine_driven.md`
+- Операционная модель агентов: `docs/product/agents_operating_model.md`
+- Политика лейблов: `docs/product/labels_and_trigger_policy.md`
+- Stage-модель процесса: `docs/product/stage_process_model.md`
 - Процесс разработки и документации: `docs/delivery/development_process_requirements.md`
 - Issue: #1
 - DocSet: `docs/_docset/issues/issue-0001-codex-k8s-bootstrap.md`

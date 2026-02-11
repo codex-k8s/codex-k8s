@@ -2,10 +2,10 @@
 doc_id: EPC-CK8S-S1-D5
 type: epic
 title: "Epic Day 5: Learning mode MVP"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-06
+updated_at: 2026-02-11
 related_issues: [1]
 related_prs: []
 approvals:

@@ -5,7 +5,7 @@ title: "Epic S2 Day 3: Per-issue namespace orchestration and RBAC baseline"
 status: planned
 owner_role: EM
 created_at: 2026-02-10
-updated_at: 2026-02-10
+updated_at: 2026-02-11
 related_issues: []
 related_prs: []
 approvals:
@@ -28,6 +28,9 @@ approvals:
 ### In scope
 - Создание namespace по шаблону имени (например, `codex-issue-<id>` или `codex-run-<run_id>`).
 - Создание/применение RBAC для агентного service account (минимально необходимые права).
+- Поддержка mixed runtime policy:
+  - `full-env` для ролей/профилей, где нужен доступ к runtime;
+  - `code-only` профили без k8s runtime доступа.
 - Политики ресурсов: quotas/limits (минимальный baseline).
 - Запись lifecycle событий namespace/job в БД (audit/flow_events).
 
@@ -37,4 +40,3 @@ approvals:
 ## Критерии приемки эпика
 - Run исполняется в отдельном namespace.
 - Namespace может быть безопасно убран/переиспользован без утечек слотов и объектов.
-

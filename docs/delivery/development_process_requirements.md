@@ -5,7 +5,7 @@ title: "codex-k8s — Development and Documentation Process Requirements"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-10
+updated_at: 2026-02-11
 related_issues: [1]
 related_prs: []
 approvals:
@@ -25,6 +25,9 @@ approvals:
 - `AGENTS.md`
 - `docs/product/requirements_machine_driven.md`
 - `docs/product/constraints.md`
+- `docs/product/agents_operating_model.md`
+- `docs/product/labels_and_trigger_policy.md`
+- `docs/product/stage_process_model.md`
 - `docs/delivery/delivery_plan.md`
 - `docs/delivery/sprint_s1_mvp_vertical_slice.md`
 - `docs/delivery/sprint_s2_dogfooding.md`
