@@ -45,6 +45,10 @@
 
 - В монорепо у каждого Go-сервиса собственный Dockerfile в `services/<zone>/<service>/Dockerfile`.
 - Раздутый “общий” Dockerfile для нескольких сервисов не используется как основной путь сборки/deploy.
+- Для staging/CI обязательны раздельные image vars и image repositories:
+  - `CODEXK8S_API_GATEWAY_IMAGE`, `CODEXK8S_CONTROL_PLANE_IMAGE`, `CODEXK8S_WORKER_IMAGE`
+  - `CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY`, `CODEXK8S_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY`, `CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY`
+- Legacy fallback `CODEXK8S_IMAGE` допускается только как временная совместимость; запрещено оставлять multi-service конфигурацию в состоянии, где все сервисы фактически публикуются в один legacy-репозиторий.
 
 ## Миграции и schema governance (обязательны)
 
