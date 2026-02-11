@@ -12,9 +12,57 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-and-push:
-    name: "Build and Push image to in-cluster registry"
+  prepare-registry:
+    name: "Prepare in-cluster registry for Kaniko matrix build"
     runs-on: ${{ vars.CODEXK8S_STAGING_RUNNER || 'codex-k8s-ai-staging' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: "latest"
+
+      - name: Prepare registry and git token secret
+        env:
+          CODEXK8S_STAGING_NAMESPACE: ${{ vars.CODEXK8S_STAGING_NAMESPACE || 'codex-k8s-ai-staging' }}
+          CODEXK8S_INTERNAL_REGISTRY_SERVICE: ${{ vars.CODEXK8S_INTERNAL_REGISTRY_SERVICE || 'codex-k8s-registry' }}
+          CODEXK8S_INTERNAL_REGISTRY_PORT: ${{ vars.CODEXK8S_INTERNAL_REGISTRY_PORT || '5000' }}
+          CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE: ${{ vars.CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE || '20Gi' }}
+          CODEXK8S_INTERNAL_REGISTRY_HOST: ${{ vars.CODEXK8S_INTERNAL_REGISTRY_HOST || '127.0.0.1:5000' }}
+          CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY: ${{ vars.CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY || 'codex-k8s/api-gateway' }}
+          CODEXK8S_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY: ${{ vars.CODEXK8S_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY || 'codex-k8s/control-plane' }}
+          CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY: ${{ vars.CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY || 'codex-k8s/worker' }}
+          CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY: ${{ vars.CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY || 'codex-k8s/web-console' }}
+          CODEXK8S_KANIKO_TIMEOUT: ${{ vars.CODEXK8S_KANIKO_TIMEOUT || '1800s' }}
+          CODEXK8S_KANIKO_CACHE_ENABLED: ${{ vars.CODEXK8S_KANIKO_CACHE_ENABLED || 'true' }}
+          CODEXK8S_KANIKO_CACHE_REPO: ${{ vars.CODEXK8S_KANIKO_CACHE_REPO || '' }}
+          CODEXK8S_KANIKO_CACHE_TTL: ${{ vars.CODEXK8S_KANIKO_CACHE_TTL || '168h' }}
+          CODEXK8S_KANIKO_CACHE_COMPRESSED: ${{ vars.CODEXK8S_KANIKO_CACHE_COMPRESSED || 'false' }}
+          CODEXK8S_KANIKO_RESOURCES_REQUEST_CPU: ${{ vars.CODEXK8S_KANIKO_RESOURCES_REQUEST_CPU || '8' }}
+          CODEXK8S_KANIKO_RESOURCES_REQUEST_MEMORY: ${{ vars.CODEXK8S_KANIKO_RESOURCES_REQUEST_MEMORY || '16Gi' }}
+          CODEXK8S_KANIKO_RESOURCES_LIMIT_CPU: ${{ vars.CODEXK8S_KANIKO_RESOURCES_LIMIT_CPU || '16' }}
+          CODEXK8S_KANIKO_RESOURCES_LIMIT_MEMORY: ${{ vars.CODEXK8S_KANIKO_RESOURCES_LIMIT_MEMORY || '32Gi' }}
+          CODEXK8S_GITHUB_REPO: ${{ github.repository }}
+          CODEXK8S_GITHUB_PAT: ${{ secrets.CODEXK8S_GITHUB_PAT }}
+          CODEXK8S_BUILD_REF: ${{ github.sha }}
+          CODEXK8S_PREPARE_ONLY: "true"
+          CODEXK8S_ENSURE_REGISTRY: "true"
+          CODEXK8S_BUILD_COMPONENTS: "api-gateway"
+        run: |
+          set -euo pipefail
+          bash deploy/scripts/build_internal_image.sh
+
+  build-and-push:
+    name: "Build and Push image (${{ matrix.component }}) to in-cluster registry"
+    needs: [prepare-registry]
+    runs-on: ${{ vars.CODEXK8S_STAGING_RUNNER || 'codex-k8s-ai-staging' }}
+    strategy:
+      fail-fast: false
+      max-parallel: ${{ fromJSON(vars.CODEXK8S_KANIKO_MATRIX_MAX_PARALLEL || '4') }}
+      matrix:
+        component: [api-gateway, control-plane, worker, web-console]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,6 +84,10 @@ jobs:
           CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY: ${{ vars.CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY || 'codex-k8s/worker' }}
           CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY: ${{ vars.CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY || 'codex-k8s/web-console' }}
           CODEXK8S_KANIKO_TIMEOUT: ${{ vars.CODEXK8S_KANIKO_TIMEOUT || '1800s' }}
+          CODEXK8S_KANIKO_CACHE_ENABLED: ${{ vars.CODEXK8S_KANIKO_CACHE_ENABLED || 'true' }}
+          CODEXK8S_KANIKO_CACHE_REPO: ${{ vars.CODEXK8S_KANIKO_CACHE_REPO || '' }}
+          CODEXK8S_KANIKO_CACHE_TTL: ${{ vars.CODEXK8S_KANIKO_CACHE_TTL || '168h' }}
+          CODEXK8S_KANIKO_CACHE_COMPRESSED: ${{ vars.CODEXK8S_KANIKO_CACHE_COMPRESSED || 'false' }}
           CODEXK8S_KANIKO_RESOURCES_REQUEST_CPU: ${{ vars.CODEXK8S_KANIKO_RESOURCES_REQUEST_CPU || '8' }}
           CODEXK8S_KANIKO_RESOURCES_REQUEST_MEMORY: ${{ vars.CODEXK8S_KANIKO_RESOURCES_REQUEST_MEMORY || '16Gi' }}
           CODEXK8S_KANIKO_RESOURCES_LIMIT_CPU: ${{ vars.CODEXK8S_KANIKO_RESOURCES_LIMIT_CPU || '16' }}
@@ -43,6 +95,9 @@ jobs:
           CODEXK8S_GITHUB_REPO: ${{ github.repository }}
           CODEXK8S_GITHUB_PAT: ${{ secrets.CODEXK8S_GITHUB_PAT }}
           CODEXK8S_BUILD_REF: ${{ github.sha }}
+          CODEXK8S_PREPARE_ONLY: "false"
+          CODEXK8S_ENSURE_REGISTRY: "false"
+          CODEXK8S_BUILD_COMPONENTS: ${{ matrix.component }}
         run: |
           set -euo pipefail
           bash deploy/scripts/build_internal_image.sh

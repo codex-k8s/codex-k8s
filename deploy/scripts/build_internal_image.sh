@@ -33,6 +33,10 @@ render_kaniko_job_template() {
     -e "s|\${CODEXK8S_KANIKO_DOCKERFILE}|${CODEXK8S_KANIKO_DOCKERFILE}|g" \
     -e "s|\${CODEXK8S_KANIKO_DESTINATION_LATEST}|${CODEXK8S_KANIKO_DESTINATION_LATEST}|g" \
     -e "s|\${CODEXK8S_KANIKO_DESTINATION_SHA}|${CODEXK8S_KANIKO_DESTINATION_SHA}|g" \
+    -e "s|\${CODEXK8S_KANIKO_CACHE_ENABLED}|${CODEXK8S_KANIKO_CACHE_ENABLED}|g" \
+    -e "s|\${CODEXK8S_KANIKO_CACHE_REPO}|${CODEXK8S_KANIKO_CACHE_REPO}|g" \
+    -e "s|\${CODEXK8S_KANIKO_CACHE_TTL}|${CODEXK8S_KANIKO_CACHE_TTL}|g" \
+    -e "s|\${CODEXK8S_KANIKO_CACHE_COMPRESSED}|${CODEXK8S_KANIKO_CACHE_COMPRESSED}|g" \
     -e "s|\${CODEXK8S_KANIKO_RESOURCES_REQUEST_CPU}|${CODEXK8S_KANIKO_RESOURCES_REQUEST_CPU}|g" \
     -e "s|\${CODEXK8S_KANIKO_RESOURCES_REQUEST_MEMORY}|${CODEXK8S_KANIKO_RESOURCES_REQUEST_MEMORY}|g" \
     -e "s|\${CODEXK8S_KANIKO_RESOURCES_LIMIT_CPU}|${CODEXK8S_KANIKO_RESOURCES_LIMIT_CPU}|g" \
@@ -47,6 +51,52 @@ normalize_sha_tag() {
     return 0
   fi
   printf '%s' "$ref" | sha256sum | awk '{print $1}' | cut -c1-12
+}
+
+build_component() {
+  local component="$1"
+  case "$component" in
+    api-gateway)
+      build_with_kaniko \
+        "codex-k8s-kaniko-api-gateway-${CODEXK8S_BUILD_SHA}" \
+        "api-gateway" \
+        "dir:///workspace" \
+        "/workspace/services/external/api-gateway/Dockerfile" \
+        "${CODEXK8S_API_GATEWAY_IMAGE_LATEST}" \
+        "${CODEXK8S_API_GATEWAY_IMAGE_SHA}"
+      ;;
+    control-plane)
+      build_with_kaniko \
+        "codex-k8s-kaniko-control-plane-${CODEXK8S_BUILD_SHA}" \
+        "control-plane" \
+        "dir:///workspace" \
+        "/workspace/services/internal/control-plane/Dockerfile" \
+        "${CODEXK8S_CONTROL_PLANE_IMAGE_LATEST}" \
+        "${CODEXK8S_CONTROL_PLANE_IMAGE_SHA}"
+      ;;
+    worker)
+      build_with_kaniko \
+        "codex-k8s-kaniko-worker-${CODEXK8S_BUILD_SHA}" \
+        "worker" \
+        "dir:///workspace" \
+        "/workspace/services/jobs/worker/Dockerfile" \
+        "${CODEXK8S_WORKER_IMAGE_LATEST}" \
+        "${CODEXK8S_WORKER_IMAGE_SHA}"
+      ;;
+    web-console)
+      build_with_kaniko \
+        "codex-k8s-kaniko-web-console-${CODEXK8S_BUILD_SHA}" \
+        "web-console" \
+        "dir:///workspace/services/staff/web-console" \
+        "/workspace/services/staff/web-console/Dockerfile" \
+        "${CODEXK8S_WEB_CONSOLE_IMAGE_LATEST}" \
+        "${CODEXK8S_WEB_CONSOLE_IMAGE_SHA}"
+      ;;
+    *)
+      echo "Unknown component in CODEXK8S_BUILD_COMPONENTS: ${component}" >&2
+      return 1
+      ;;
+  esac
 }
 
 build_with_kaniko() {
@@ -90,11 +140,17 @@ CODEXK8S_INTERNAL_REGISTRY_PORT="${CODEXK8S_INTERNAL_REGISTRY_PORT:-5000}"
 CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE="${CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE:-20Gi}"
 CODEXK8S_INTERNAL_REGISTRY_HOST="${CODEXK8S_INTERNAL_REGISTRY_HOST:-127.0.0.1:${CODEXK8S_INTERNAL_REGISTRY_PORT}}"
 CODEXK8S_KANIKO_TIMEOUT="${CODEXK8S_KANIKO_TIMEOUT:-1800s}"
+CODEXK8S_KANIKO_CACHE_ENABLED="${CODEXK8S_KANIKO_CACHE_ENABLED:-true}"
+CODEXK8S_KANIKO_CACHE_REPO="${CODEXK8S_KANIKO_CACHE_REPO:-${CODEXK8S_INTERNAL_REGISTRY_HOST}/codex-k8s/kaniko-cache}"
+CODEXK8S_KANIKO_CACHE_TTL="${CODEXK8S_KANIKO_CACHE_TTL:-168h}"
+CODEXK8S_KANIKO_CACHE_COMPRESSED="${CODEXK8S_KANIKO_CACHE_COMPRESSED:-false}"
 CODEXK8S_KANIKO_RESOURCES_REQUEST_CPU="${CODEXK8S_KANIKO_RESOURCES_REQUEST_CPU:-8}"
 CODEXK8S_KANIKO_RESOURCES_REQUEST_MEMORY="${CODEXK8S_KANIKO_RESOURCES_REQUEST_MEMORY:-16Gi}"
 CODEXK8S_KANIKO_RESOURCES_LIMIT_CPU="${CODEXK8S_KANIKO_RESOURCES_LIMIT_CPU:-16}"
 CODEXK8S_KANIKO_RESOURCES_LIMIT_MEMORY="${CODEXK8S_KANIKO_RESOURCES_LIMIT_MEMORY:-32Gi}"
 CODEXK8S_ENSURE_REGISTRY="${CODEXK8S_ENSURE_REGISTRY:-true}"
+CODEXK8S_PREPARE_ONLY="${CODEXK8S_PREPARE_ONLY:-false}"
+CODEXK8S_BUILD_COMPONENTS="${CODEXK8S_BUILD_COMPONENTS:-api-gateway,control-plane,worker,web-console}"
 CODEXK8S_REGISTRY_ROLLOUT_TIMEOUT="${CODEXK8S_REGISTRY_ROLLOUT_TIMEOUT:-600s}"
 CODEXK8S_BUILD_REF="${CODEXK8S_BUILD_REF:-main}"
 : "${CODEXK8S_GITHUB_REPO:?CODEXK8S_GITHUB_REPO is required}"
@@ -120,9 +176,7 @@ CODEXK8S_WEB_CONSOLE_IMAGE_LATEST="${CODEXK8S_INTERNAL_REGISTRY_HOST}/${CODEXK8S
 CODEXK8S_WEB_CONSOLE_IMAGE_SHA="${CODEXK8S_INTERNAL_REGISTRY_HOST}/${CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY}:sha-${CODEXK8S_BUILD_SHA}"
 
 if [ "$CODEXK8S_ENSURE_REGISTRY" = "true" ]; then
-  kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" delete statefulset "${CODEXK8S_INTERNAL_REGISTRY_SERVICE}" --ignore-not-found=true >/dev/null 2>&1 || true
   render_registry_template "${ROOT_DIR}/deploy/base/registry/registry.yaml.tpl" | kubectl apply -f -
-  kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" delete service "${CODEXK8S_INTERNAL_REGISTRY_SERVICE}" --ignore-not-found=true >/dev/null 2>&1 || true
   kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" rollout status "deployment/${CODEXK8S_INTERNAL_REGISTRY_SERVICE}" --timeout="${CODEXK8S_REGISTRY_ROLLOUT_TIMEOUT}"
 fi
 
@@ -130,44 +184,45 @@ kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" create secret generic codex-k8s-git-t
   --from-literal=token="${CODEXK8S_GITHUB_PAT}" \
   --dry-run=client -o yaml | kubectl apply -f -
 
-build_with_kaniko \
-  "codex-k8s-kaniko-api-gateway-${CODEXK8S_BUILD_SHA}" \
-  "api-gateway" \
-  "dir:///workspace" \
-  "/workspace/services/external/api-gateway/Dockerfile" \
-  "${CODEXK8S_API_GATEWAY_IMAGE_LATEST}" \
-  "${CODEXK8S_API_GATEWAY_IMAGE_SHA}"
+if [ "${CODEXK8S_PREPARE_ONLY}" = "true" ]; then
+  echo "Kaniko build prerequisites are prepared (registry + git token secret)."
+  exit 0
+fi
 
-build_with_kaniko \
-  "codex-k8s-kaniko-control-plane-${CODEXK8S_BUILD_SHA}" \
-  "control-plane" \
-  "dir:///workspace" \
-  "/workspace/services/internal/control-plane/Dockerfile" \
-  "${CODEXK8S_CONTROL_PLANE_IMAGE_LATEST}" \
-  "${CODEXK8S_CONTROL_PLANE_IMAGE_SHA}"
+IFS=',' read -r -a build_components <<< "${CODEXK8S_BUILD_COMPONENTS}"
+declare -a built_components
 
-build_with_kaniko \
-  "codex-k8s-kaniko-worker-${CODEXK8S_BUILD_SHA}" \
-  "worker" \
-  "dir:///workspace" \
-  "/workspace/services/jobs/worker/Dockerfile" \
-  "${CODEXK8S_WORKER_IMAGE_LATEST}" \
-  "${CODEXK8S_WORKER_IMAGE_SHA}"
+for raw_component in "${build_components[@]}"; do
+  component="${raw_component//[[:space:]]/}"
+  component="${component,,}"
+  [ -n "$component" ] || continue
+  build_component "$component"
+  built_components+=("$component")
+done
 
-build_with_kaniko \
-  "codex-k8s-kaniko-web-console-${CODEXK8S_BUILD_SHA}" \
-  "web-console" \
-  "dir:///workspace/services/staff/web-console" \
-  "/workspace/services/staff/web-console/Dockerfile" \
-  "${CODEXK8S_WEB_CONSOLE_IMAGE_LATEST}" \
-  "${CODEXK8S_WEB_CONSOLE_IMAGE_SHA}"
+if [ "${#built_components[@]}" -eq 0 ]; then
+  echo "CODEXK8S_BUILD_COMPONENTS does not include any known components." >&2
+  exit 1
+fi
 
 echo "Internal images build completed:"
-echo "  api-gateway: ${CODEXK8S_API_GATEWAY_IMAGE_LATEST}"
-echo "  api-gateway: ${CODEXK8S_API_GATEWAY_IMAGE_SHA}"
-echo "  control-plane: ${CODEXK8S_CONTROL_PLANE_IMAGE_LATEST}"
-echo "  control-plane: ${CODEXK8S_CONTROL_PLANE_IMAGE_SHA}"
-echo "  worker: ${CODEXK8S_WORKER_IMAGE_LATEST}"
-echo "  worker: ${CODEXK8S_WORKER_IMAGE_SHA}"
-echo "  web-console(dev target): ${CODEXK8S_WEB_CONSOLE_IMAGE_LATEST}"
-echo "  web-console(dev target): ${CODEXK8S_WEB_CONSOLE_IMAGE_SHA}"
+for component in "${built_components[@]}"; do
+  case "$component" in
+    api-gateway)
+      echo "  api-gateway: ${CODEXK8S_API_GATEWAY_IMAGE_LATEST}"
+      echo "  api-gateway: ${CODEXK8S_API_GATEWAY_IMAGE_SHA}"
+      ;;
+    control-plane)
+      echo "  control-plane: ${CODEXK8S_CONTROL_PLANE_IMAGE_LATEST}"
+      echo "  control-plane: ${CODEXK8S_CONTROL_PLANE_IMAGE_SHA}"
+      ;;
+    worker)
+      echo "  worker: ${CODEXK8S_WORKER_IMAGE_LATEST}"
+      echo "  worker: ${CODEXK8S_WORKER_IMAGE_SHA}"
+      ;;
+    web-console)
+      echo "  web-console(dev target): ${CODEXK8S_WEB_CONSOLE_IMAGE_LATEST}"
+      echo "  web-console(dev target): ${CODEXK8S_WEB_CONSOLE_IMAGE_SHA}"
+      ;;
+  esac
+done
