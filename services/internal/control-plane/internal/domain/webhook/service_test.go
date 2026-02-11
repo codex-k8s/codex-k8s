@@ -18,7 +18,10 @@ func TestIngestGitHubWebhook_Dedup(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
 	events := &inMemoryEventRepo{}
-	svc := NewService(runs, events, nil, nil, nil, nil, false, TriggerLabels{})
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		FlowEvents: events,
+	})
 
 	payload := json.RawMessage(`{"action":"opened","repository":{"id":1,"full_name":"codex-k8s/codex-k8s"},"sender":{"id":10,"login":"ai-da-stas"}}`)
 	cmd := IngestCommand{
@@ -54,7 +57,11 @@ func TestIngestGitHubWebhook_LearningMode_DefaultFallback(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
 	events := &inMemoryEventRepo{}
-	svc := NewService(runs, events, nil, nil, nil, nil, true, TriggerLabels{})
+	svc := NewService(Config{
+		AgentRuns:           runs,
+		FlowEvents:          events,
+		LearningModeDefault: true,
+	})
 
 	payload := json.RawMessage(`{"action":"opened","repository":{"id":1,"full_name":"codex-k8s/codex-k8s"},"sender":{"id":10,"login":"ai-da-stas"}}`)
 	cmd := IngestCommand{
@@ -99,7 +106,13 @@ func TestIngestGitHubWebhook_IssueRunDev_CreatesRunForAllowedMember(t *testing.T
 			"project-1|user-1": "read_write",
 		},
 	}
-	svc := NewService(runs, events, repos, nil, users, members, false, TriggerLabels{})
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
+	})
 
 	payload := json.RawMessage(`{
 		"action":"labeled",
@@ -127,19 +140,18 @@ func TestIngestGitHubWebhook_IssueRunDev_CreatesRunForAllowedMember(t *testing.T
 		t.Fatalf("expected run id for issue trigger")
 	}
 
-	var runPayload map[string]any
+	var runPayload githubRunPayload
 	if err := json.Unmarshal(runs.last.RunPayload, &runPayload); err != nil {
 		t.Fatalf("unmarshal run payload: %v", err)
 	}
-	trigger, ok := runPayload["trigger"].(map[string]any)
-	if !ok {
+	if runPayload.Trigger == nil {
 		t.Fatalf("expected trigger object in run payload")
 	}
-	if trigger["kind"] != "dev" {
-		t.Fatalf("unexpected trigger kind: %#v", trigger["kind"])
+	if runPayload.Trigger.Kind != "dev" {
+		t.Fatalf("unexpected trigger kind: %#v", runPayload.Trigger.Kind)
 	}
-	if trigger["label"] != "run:dev" {
-		t.Fatalf("unexpected trigger label: %#v", trigger["label"])
+	if runPayload.Trigger.Label != "run:dev" {
+		t.Fatalf("unexpected trigger label: %#v", runPayload.Trigger.Label)
 	}
 }
 
@@ -156,7 +168,13 @@ func TestIngestGitHubWebhook_IssueRunDev_DeniesUnknownSender(t *testing.T) {
 			},
 		},
 	}
-	svc := NewService(runs, events, repos, nil, &inMemoryUserRepo{}, &inMemoryProjectMemberRepo{}, false, TriggerLabels{})
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      &inMemoryUserRepo{},
+		Members:    &inMemoryProjectMemberRepo{},
+	})
 
 	payload := json.RawMessage(`{
 		"action":"labeled",
@@ -195,7 +213,10 @@ func TestIngestGitHubWebhook_IssueNonTriggerLabelIgnored(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
 	events := &inMemoryEventRepo{}
-	svc := NewService(runs, events, nil, nil, nil, nil, false, TriggerLabels{})
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		FlowEvents: events,
+	})
 
 	payload := json.RawMessage(`{
 		"action":"labeled",

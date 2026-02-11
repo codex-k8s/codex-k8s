@@ -49,37 +49,48 @@ type issueRunTrigger struct {
 	Kind  string
 }
 
-type githubEnvelope struct {
-	Action       string `json:"action"`
-	Installation struct {
-		ID int64 `json:"id"`
-	} `json:"installation"`
-	Repository struct {
-		ID       int64  `json:"id"`
-		FullName string `json:"full_name"`
-		Name     string `json:"name"`
-		Private  bool   `json:"private"`
-	} `json:"repository"`
-	Issue struct {
-		ID      int64  `json:"id"`
-		Number  int64  `json:"number"`
-		Title   string `json:"title"`
-		HTMLURL string `json:"html_url"`
-		State   string `json:"state"`
-		User    struct {
-			Login string `json:"login"`
-			ID    int64  `json:"id"`
-		} `json:"user"`
-		PullRequest *struct {
-			URL     string `json:"url"`
-			HTMLURL string `json:"html_url"`
-		} `json:"pull_request"`
-	} `json:"issue"`
-	Label struct {
-		Name string `json:"name"`
-	} `json:"label"`
-	Sender struct {
-		Login string `json:"login"`
-		ID    int64  `json:"id"`
-	} `json:"sender"`
+// githubWebhookEnvelope is a local transport DTO for fields used by the domain.
+// It is intentionally minimal and independent from provider SDK structs.
+type githubWebhookEnvelope struct {
+	Action       string                   `json:"action"`
+	Installation githubInstallationRecord `json:"installation"`
+	Repository   githubRepositoryRecord   `json:"repository"`
+	Issue        githubIssueRecord        `json:"issue"`
+	Label        githubLabelRecord        `json:"label"`
+	Sender       githubActorRecord        `json:"sender"`
+}
+
+type githubInstallationRecord struct {
+	ID int64 `json:"id"`
+}
+
+type githubRepositoryRecord struct {
+	ID       int64  `json:"id"`
+	FullName string `json:"full_name"`
+	Name     string `json:"name"`
+	Private  bool   `json:"private"`
+}
+
+type githubIssueRecord struct {
+	ID          int64                 `json:"id"`
+	Number      int64                 `json:"number"`
+	Title       string                `json:"title"`
+	HTMLURL     string                `json:"html_url"`
+	State       string                `json:"state"`
+	User        githubActorRecord     `json:"user"`
+	PullRequest *githubPullRequestRef `json:"pull_request"`
+}
+
+type githubLabelRecord struct {
+	Name string `json:"name"`
+}
+
+type githubActorRecord struct {
+	Login string `json:"login"`
+	ID    int64  `json:"id"`
+}
+
+type githubPullRequestRef struct {
+	URL     string `json:"url"`
+	HTMLURL string `json:"html_url"`
 }
