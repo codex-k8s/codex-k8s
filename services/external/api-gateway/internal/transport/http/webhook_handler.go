@@ -103,12 +103,28 @@ func (h *webhookHandler) IngestGitHubWebhook(c *echo.Context) error {
 		return err
 	}
 
+	status := result.GetStatus()
+	switch status {
+	case "duplicate":
+		webhookRequestsTotal.WithLabelValues("duplicate", eventType).Inc()
+		webhookDuration.WithLabelValues("duplicate", eventType).Observe(time.Since(startedAt).Seconds())
+		return c.JSON(http.StatusOK, casters.IngestGitHubWebhook(result))
+	case "ignored":
+		webhookRequestsTotal.WithLabelValues("ignored", eventType).Inc()
+		webhookDuration.WithLabelValues("ignored", eventType).Observe(time.Since(startedAt).Seconds())
+		return c.JSON(http.StatusOK, casters.IngestGitHubWebhook(result))
+	case "accepted":
+		webhookRequestsTotal.WithLabelValues("accepted", eventType).Inc()
+		webhookDuration.WithLabelValues("accepted", eventType).Observe(time.Since(startedAt).Seconds())
+		return c.JSON(http.StatusAccepted, casters.IngestGitHubWebhook(result))
+	}
+
+	// Backward-compatible fallback for older control-plane responses.
 	if result.GetDuplicate() {
 		webhookRequestsTotal.WithLabelValues("duplicate", eventType).Inc()
 		webhookDuration.WithLabelValues("duplicate", eventType).Observe(time.Since(startedAt).Seconds())
 		return c.JSON(http.StatusOK, casters.IngestGitHubWebhook(result))
 	}
-
 	webhookRequestsTotal.WithLabelValues("accepted", eventType).Inc()
 	webhookDuration.WithLabelValues("accepted", eventType).Observe(time.Since(startedAt).Seconds())
 	return c.JSON(http.StatusAccepted, casters.IngestGitHubWebhook(result))

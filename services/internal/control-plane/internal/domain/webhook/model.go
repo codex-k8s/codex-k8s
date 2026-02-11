@@ -25,10 +25,28 @@ type IngestResult struct {
 	CorrelationID string `json:"correlation_id"`
 	// RunID references an agent run linked to this webhook.
 	RunID string `json:"run_id,omitempty"`
-	// Status is either accepted or duplicate for now.
+	// Status is accepted, duplicate, or ignored.
 	Status string `json:"status"`
 	// Duplicate is true when webhook was already processed before.
 	Duplicate bool `json:"duplicate"`
+}
+
+// TriggerLabels defines active issue labels that create development runs.
+type TriggerLabels struct {
+	RunDev       string
+	RunDevRevise string
+}
+
+func defaultTriggerLabels() TriggerLabels {
+	return TriggerLabels{
+		RunDev:       "run:dev",
+		RunDevRevise: "run:dev:revise",
+	}
+}
+
+type issueRunTrigger struct {
+	Label string
+	Kind  string
 }
 
 type githubEnvelope struct {
@@ -42,6 +60,24 @@ type githubEnvelope struct {
 		Name     string `json:"name"`
 		Private  bool   `json:"private"`
 	} `json:"repository"`
+	Issue struct {
+		ID      int64  `json:"id"`
+		Number  int64  `json:"number"`
+		Title   string `json:"title"`
+		HTMLURL string `json:"html_url"`
+		State   string `json:"state"`
+		User    struct {
+			Login string `json:"login"`
+			ID    int64  `json:"id"`
+		} `json:"user"`
+		PullRequest *struct {
+			URL     string `json:"url"`
+			HTMLURL string `json:"html_url"`
+		} `json:"pull_request"`
+	} `json:"issue"`
+	Label struct {
+		Name string `json:"name"`
+	} `json:"label"`
 	Sender struct {
 		Login string `json:"login"`
 		ID    int64  `json:"id"`

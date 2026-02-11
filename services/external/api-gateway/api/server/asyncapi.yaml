@@ -20,7 +20,7 @@ components:
             type: string
           event_type:
             type: string
-            enum: [webhook.received, webhook.duplicate]
+            enum: [webhook.received, webhook.duplicate, webhook.ignored]
           actor_type:
             type: string
             enum: [system]
@@ -32,4 +32,3 @@ components:
           payload:
             type: object
             additionalProperties: true
-

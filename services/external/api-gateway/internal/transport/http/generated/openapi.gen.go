@@ -36,6 +36,7 @@ const (
 const (
 	Accepted  IngestGitHubWebhookResponseStatus = "accepted"
 	Duplicate IngestGitHubWebhookResponseStatus = "duplicate"
+	Ignored   IngestGitHubWebhookResponseStatus = "ignored"
 )
 
 // Defines values for ProjectMemberRole.

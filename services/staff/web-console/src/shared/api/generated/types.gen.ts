@@ -13,7 +13,7 @@ export type ErrorResponse = {
 export type IngestGitHubWebhookResponse = {
     correlation_id: string;
     run_id?: string;
-    status: 'accepted' | 'duplicate';
+    status: 'accepted' | 'duplicate' | 'ignored';
     duplicate: boolean;
 };
 

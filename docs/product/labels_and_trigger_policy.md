@@ -88,11 +88,12 @@ approvals:
 ## Требования к GitHub variables (labels-as-vars)
 
 - Все workflow условия сравнения label должны использовать `vars.*`, а не строковые литералы.
-- Минимально обязательные vars:
-  - `RUN_DEV_LABEL`, `RUN_DEV_REVISE_LABEL`,
-  - `STATE_BLOCKED_LABEL`, `STATE_IN_REVIEW_LABEL`, `STATE_APPROVED_LABEL`,
-  - `NEED_INPUT_LABEL`, `NEED_PM_LABEL`, `NEED_SA_LABEL`, `NEED_QA_LABEL`, `NEED_SRE_LABEL`.
+- В GitHub Variables хранится **полный каталог** `run:*`, `state:*`, `need:*`:
+  - для `run:*`: `RUN_<STAGE>_LABEL` и `RUN_<STAGE>_REVISE_LABEL` (где применимо),
+  - для `state:*`: `STATE_*_LABEL`,
+  - для `need:*`: `NEED_*_LABEL`.
 - Для planned `run:*` лейблов vars заводятся заранее, даже если этап ещё не активирован.
+- Bootstrap синхронизация каталога выполняется скриптом `bootstrap/remote/45_configure_github_repo_ci.sh`.
 
 ## Аудит и наблюдаемость
 

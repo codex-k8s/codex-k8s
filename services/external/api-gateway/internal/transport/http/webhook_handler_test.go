@@ -67,6 +67,42 @@ func TestIngestGitHubWebhook_AcceptAndDuplicate(t *testing.T) {
 	}
 }
 
+func TestIngestGitHubWebhook_Ignored(t *testing.T) {
+	t.Parallel()
+
+	secret := "test-secret"
+	event := "issues"
+	deliveryID := "delivery-ignored"
+	payload := `{"action":"labeled","label":{"name":"bug"}}`
+
+	fake := &fakeWebhookService{
+		sequence: []*controlplanev1.IngestGitHubWebhookResponse{
+			{CorrelationId: deliveryID, Status: "ignored", Duplicate: false},
+		},
+	}
+
+	h := newWebhookHandler(ServerConfig{
+		GitHubWebhookSecret: secret,
+		MaxBodyBytes:        1024 * 1024,
+	}, fake)
+
+	e := echo.New()
+	e.HTTPErrorHandler = newHTTPErrorHandler(slog.New(slog.NewTextHandler(ioDiscard{}, nil)))
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/webhooks/github", strings.NewReader(payload))
+	req.Header.Set(headerGitHubEvent, event)
+	req.Header.Set(headerGitHubDelivery, deliveryID)
+	req.Header.Set(headerGitHubSignature256, sign(secret, payload))
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	if err := h.IngestGitHubWebhook(c); err != nil {
+		t.Fatalf("unexpected error on ignored request: %v", err)
+	}
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 on ignored request, got %d", rec.Code)
+	}
+}
+
 func TestIngestGitHubWebhook_InvalidSignature(t *testing.T) {
 	t.Parallel()
 

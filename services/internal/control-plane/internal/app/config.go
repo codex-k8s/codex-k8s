@@ -31,6 +31,8 @@ type Config struct {
 	GitHubWebhookSecret string   `env:"CODEXK8S_GITHUB_WEBHOOK_SECRET,required,notEmpty"`
 	GitHubWebhookURL    string   `env:"CODEXK8S_GITHUB_WEBHOOK_URL"`
 	GitHubWebhookEvents []string `env:"CODEXK8S_GITHUB_WEBHOOK_EVENTS" envDefault:"push,pull_request,issues,issue_comment,pull_request_review,pull_request_review_comment"`
+	RunDevLabel         string   `env:"CODEXK8S_RUN_DEV_LABEL" envDefault:"run:dev"`
+	RunDevReviseLabel   string   `env:"CODEXK8S_RUN_DEV_REVISE_LABEL" envDefault:"run:dev:revise"`
 
 	// TokenEncryptionKey is used to encrypt/decrypt repository tokens stored in DB.
 	TokenEncryptionKey string `env:"CODEXK8S_TOKEN_ENCRYPTION_KEY,required,notEmpty"`

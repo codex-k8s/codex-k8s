@@ -590,7 +590,7 @@ components:
           type: string
         status:
           type: string
-          enum: [accepted, duplicate]
+          enum: [accepted, duplicate, ignored]
         duplicate:
           type: boolean
 
