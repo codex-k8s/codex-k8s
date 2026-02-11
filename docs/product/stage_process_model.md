@@ -5,7 +5,7 @@ title: "codex-k8s — Stage Process Model"
 status: draft
 owner_role: EM
 created_at: 2026-02-11
-updated_at: 2026-02-11
+updated_at: 2026-02-12
 related_issues: [1]
 related_prs: []
 approvals:
@@ -82,3 +82,11 @@ approvals:
 - `run:dev:revise`
 
 Остальные `run:*` зафиксированы как целевая модель и поэтапно вводятся в следующих итерациях.
+
+## Конфигурационные labels для исполнения stage
+
+- Помимо trigger/status labels используются конфигурационные labels:
+  - `[ai-model-*]` — выбор модели;
+  - `[ai-reasoning-*]` — выбор уровня рассуждений.
+- Эти labels не запускают stage сами по себе, но влияют на effective runtime profile.
+- Для `run:dev:revise` профиль model/reasoning перечитывается перед каждым запуском.

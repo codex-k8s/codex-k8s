@@ -5,7 +5,7 @@ title: "Epic S2 Day 5: Staff UI for dogfooding visibility (runs/issues/PRs)"
 status: planned
 owner_role: EM
 created_at: 2026-02-10
-updated_at: 2026-02-11
+updated_at: 2026-02-12
 related_issues: []
 related_prs: []
 approvals:
@@ -30,6 +30,10 @@ approvals:
 - Отображение связанного PR и ссылок.
 - Базовый drilldown по `flow_events`, `agent_sessions`, `token_usage` и traceability `links`.
 - Видимость paused/waiting статусов (`waiting_owner_review`, `waiting_mcp`) и resumable признака сессии.
+- Видимость Day4 execution-артефактов:
+  - branch name, PR link/number;
+  - `template_source/template_locale/template_version`;
+  - session/thread identity для resume диагностики.
 
 ### Out of scope
 - Полный UI для управления документами/шаблонами (отдельный этап).

@@ -5,7 +5,7 @@ title: "codex-k8s — Labels and Trigger Policy"
 status: draft
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-02-11
+updated_at: 2026-02-12
 related_issues: [1]
 related_prs: []
 approvals:
@@ -72,6 +72,23 @@ approvals:
 | `need:qa` | нужен QA-вход или тест-дизайн |
 | `need:sre` | нужно участие SRE/OPS |
 
+## Конфигурационные лейблы модели/рассуждений
+
+Лейблы модели (одновременно активен один):
+- `[ai-model-gpt-5.3-codex]`
+- `[ai-model-gpt-5.2]`
+- `[ai-model-gpt-5.1-codex-max]`
+- `[ai-model-gpt-5.1-codex-mini]`
+
+Лейблы рассуждений (одновременно активен один):
+- `[ai-reasoning-low]`
+- `[ai-reasoning-medium]`
+- `[ai-reasoning-high]`
+- `[ai-reasoning-extra-high]`
+
+Правило при конфликте:
+- если на issue выставлено несколько лейблов одной группы (`ai-model` или `ai-reasoning`), run отклоняется как `failed_precondition` с диагностикой в `flow_events`.
+
 ## Политика постановки лейблов
 
 ### Trigger/deploy (`run:*`)
@@ -85,6 +102,11 @@ approvals:
 - Не должны запускать workflow/deploy напрямую.
 - Обязательна запись в аудит с actor/correlation.
 
+### Model/reasoning labels (`[ai-model-*]`, `[ai-reasoning-*]`)
+- Не запускают workflow/deploy напрямую.
+- Могут применяться агентом автоматически по policy проекта через MCP.
+- Эффективные значения читаются на каждый запуск (`run:dev` и `run:dev:revise`), что позволяет менять модель/reasoning между итерациями ревью.
+
 ## Требования к GitHub variables (labels-as-vars)
 
 - Все workflow условия сравнения label должны использовать `vars.*`, а не строковые литералы.
@@ -92,6 +114,9 @@ approvals:
   - для `run:*`: `RUN_<STAGE>_LABEL` и `RUN_<STAGE>_REVISE_LABEL` (где применимо),
   - для `state:*`: `STATE_*_LABEL`,
   - для `need:*`: `NEED_*_LABEL`.
+- Для model/reasoning также хранится каталог vars:
+  - `AI_MODEL_GPT_5_3_CODEX_LABEL`, `AI_MODEL_GPT_5_2_LABEL`, `AI_MODEL_GPT_5_1_CODEX_MAX_LABEL`, `AI_MODEL_GPT_5_1_CODEX_MINI_LABEL`,
+  - `AI_REASONING_LOW_LABEL`, `AI_REASONING_MEDIUM_LABEL`, `AI_REASONING_HIGH_LABEL`, `AI_REASONING_EXTRA_HIGH_LABEL`.
 - Для planned `run:*` лейблов vars заводятся заранее, даже если этап ещё не активирован.
 - Bootstrap синхронизация каталога выполняется скриптом `bootstrap/remote/45_configure_github_repo_ci.sh`.
 

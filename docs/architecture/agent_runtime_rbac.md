@@ -5,7 +5,7 @@ title: "codex-k8s — Agent Runtime and RBAC Model"
 status: draft
 owner_role: SA
 created_at: 2026-02-11
-updated_at: 2026-02-11
+updated_at: 2026-02-12
 related_issues: [1]
 related_prs: []
 approvals:

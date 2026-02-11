@@ -5,7 +5,7 @@ title: "Epic S2 Day 7: Dogfooding regression and release gate"
 status: planned
 owner_role: EM
 created_at: 2026-02-10
-updated_at: 2026-02-11
+updated_at: 2026-02-12
 related_issues: []
 related_prs: []
 approvals:
@@ -30,9 +30,15 @@ approvals:
   - `issues.labeled(run:dev)` -> run -> job -> PR;
   - `issues.labeled(run:dev:revise)` -> revise -> update PR;
   - отказ запуска при отсутствии прав.
+- Регрессионный сценарий Day4 E2E:
+  - создание ветки и изменения файла агентом;
+  - создание PR;
+  - добавление комментария на правку;
+  - повторный запуск `run:dev:revise` и проверка устранения замечаний в том же PR.
 - Проверка утечек слотов/namespaces/job объектов.
 - Обновление runbook/smoke checklist.
 
 ## Критерии приемки эпика
 - End-to-end проходит на staging.
 - Нет известных P0 блокеров для продолжения dogfooding.
+- Для Day4 сценария есть воспроизводимые evidence (flow_events + links + PR timeline).

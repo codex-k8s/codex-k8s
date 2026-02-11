@@ -5,7 +5,7 @@ title: "codex-k8s — MCP Approval and Audit Flow"
 status: draft
 owner_role: SA
 created_at: 2026-02-11
-updated_at: 2026-02-11
+updated_at: 2026-02-12
 related_issues: [1]
 related_prs: []
 approvals:
@@ -42,6 +42,12 @@ approvals:
 3. Owner принимает `approve/deny`.
 4. При `approve` применяется label и создаётся `approval.approved` + `label.applied`.
 5. При `deny` создаётся `approval.denied`; workflow не запускается.
+
+## Базовый режим S2 Day4+
+
+- Начиная с Day4, агентный pod не получает прямые GitHub/Kubernetes креды для write-операций.
+- GitHub/Kubernetes write-действия выполняются только через MCP approver/executor ручки.
+- Day6 расширяет и ужесточает policy (матрица апрувов, единообразные события, тесты отказоустойчивости), но не переводит систему с direct-path, так как direct-path не является базовым режимом.
 
 ## HTTP-контракты интеграций approver/executor
 

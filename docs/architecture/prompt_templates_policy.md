@@ -5,7 +5,7 @@ title: "codex-k8s — Prompt Templates Policy"
 status: draft
 owner_role: SA
 created_at: 2026-02-11
-updated_at: 2026-02-11
+updated_at: 2026-02-12
 related_issues: [1]
 related_prs: []
 approvals:
@@ -33,6 +33,18 @@ approvals:
 - seed-файлы в репозитории задают baseline-структуру и требования;
 - effective prompt в рантайме формируется после resolve override в БД и контекстного рендера.
 
+## Seed vs final prompt
+
+- `docs/product/prompt-seeds/*.md` не отправляются агенту "как есть" в изоляции.
+- Seed/override — это только task-body слой шаблона.
+- В рантайме формируется final prompt, который включает:
+  1. system policy envelope (правила безопасности, source-of-truth документы, формат результата);
+  2. runtime context block;
+  3. MCP capabilities block;
+  4. issue/pr context block;
+  5. task-body (DB override или repo seed);
+  6. output contract block (проверки, PR/audit требования, learning mode при необходимости).
+
 ## Модель источников
 
 Референс подхода к объёму и структуре шаблонов:
@@ -41,6 +53,8 @@ approvals:
 ### Repo seeds
 - Базовые шаблоны в репозитории.
 - Используются как fallback при отсутствии override в БД.
+- В seed-файлах хранится только prompt body (инструкции агенту).
+- В seed-файлах не допускаются документные секции и мета-описания.
 
 ### DB global overrides
 - Шаблоны уровня платформы.
@@ -81,9 +95,33 @@ approvals:
 - Перед выполнением шаблон рендерится с runtime-контекстом, включающим:
   - environment (`env`, namespace, slot, run/issue/pr identifiers),
   - доступные MCP servers/tools,
+  - policy metadata по MCP-ручкам (approval-required, allowed scopes, denied actions),
   - project context и services overview,
+  - effective model/reasoning profile (включая источник: issue labels или defaults),
   - режим исполнения агента (`full-env`/`code-only`) и feature flags.
+- Минимальный обязательный набор runtime context полей:
+  - run metadata: `run_id`, `correlation_id`, `project_id`, `agent_id`, `role_key`, `mode`;
+  - repo/issue metadata: repo slug, issue number/title/body, labels, PR refs;
+  - environment/services: namespace, сервисы проекта, основные endpoints, диагностические команды;
+  - MCP catalog: серверы, инструменты, категории (read/write), approval policy;
+  - template metadata: source/version/hash/locale, render context version.
 - Формат контекста должен быть версионирован; изменения контракта рендера должны быть обратно совместимы либо сопровождаться миграцией шаблонов.
+
+## Переходный профиль Day3.5 -> Day4
+
+- Day3.5 формирует минимально полный runtime context для запуска Day4.
+- На Day4 недопустимо убирать обязательные блоки:
+  - source-of-truth документы и архитектурные ограничения;
+  - runtime metadata (`run/issue/pr/namespace/mode`);
+  - MCP catalog и policy flags;
+  - требования по тестам/документации/PR flow;
+  - правила безопасности (секреты, policy, аудит).
+- Допускается отложить только необязательные расширенные поля (например, расширенную observability телеметрию), если это явно зафиксировано в `flow_events` как технический долг.
+- Для `run:dev:revise` используется `review`-класс шаблонов, даже если запуск идет через resume-path.
+- Для `run:dev:revise` effective model/reasoning перечитываются из актуальных issue labels перед запуском.
+- Долг/план замены:
+  - Day5: расширить наблюдаемость effective prompt/session/template metadata в UI;
+  - Day6: синхронизировать prompt-контекст с MCP approval-flow и убрать временные упрощения.
 
 ## Требования безопасности и качества
 
