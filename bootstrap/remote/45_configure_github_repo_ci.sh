@@ -87,6 +87,25 @@ set_repo_var() {
   gh variable set "${key}" -R "${CODEXK8S_GITHUB_REPO}" --body "${value}"
 }
 
+get_repo_var() {
+  local key="$1"
+  local default_value="$2"
+  printf '%s' "${!key:-$default_value}"
+}
+
+ensure_repo_label() {
+  local name="$1"
+  local description="$2"
+  [ -n "$name" ] || return 0
+
+  if gh label view "$name" -R "${CODEXK8S_GITHUB_REPO}" >/dev/null 2>&1; then
+    gh label edit "$name" -R "${CODEXK8S_GITHUB_REPO}" --description "$description" >/dev/null
+    return 0
+  fi
+
+  gh label create "$name" -R "${CODEXK8S_GITHUB_REPO}" --description "$description" >/dev/null
+}
+
 # Variables used by staging deploy workflow.
 gh variable set CODEXK8S_STAGING_NAMESPACE -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_STAGING_NAMESPACE}"
 gh variable set CODEXK8S_INTERNAL_REGISTRY_SERVICE -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_INTERNAL_REGISTRY_SERVICE}"
@@ -177,6 +196,40 @@ set_repo_var NEED_PM_LABEL "need:pm"
 set_repo_var NEED_SA_LABEL "need:sa"
 set_repo_var NEED_QA_LABEL "need:qa"
 set_repo_var NEED_SRE_LABEL "need:sre"
+
+# Ensure label catalog exists in repository (color is intentionally omitted;
+# GitHub assigns one automatically if not provided).
+ensure_repo_label "$(get_repo_var RUN_INTAKE_LABEL "run:intake")" "Start intake stage run"
+ensure_repo_label "$(get_repo_var RUN_INTAKE_REVISE_LABEL "run:intake:revise")" "Request intake stage revision"
+ensure_repo_label "$(get_repo_var RUN_VISION_LABEL "run:vision")" "Start vision stage run"
+ensure_repo_label "$(get_repo_var RUN_VISION_REVISE_LABEL "run:vision:revise")" "Request vision stage revision"
+ensure_repo_label "$(get_repo_var RUN_PRD_LABEL "run:prd")" "Start PRD stage run"
+ensure_repo_label "$(get_repo_var RUN_PRD_REVISE_LABEL "run:prd:revise")" "Request PRD stage revision"
+ensure_repo_label "$(get_repo_var RUN_ARCH_LABEL "run:arch")" "Start architecture stage run"
+ensure_repo_label "$(get_repo_var RUN_ARCH_REVISE_LABEL "run:arch:revise")" "Request architecture stage revision"
+ensure_repo_label "$(get_repo_var RUN_DESIGN_LABEL "run:design")" "Start design stage run"
+ensure_repo_label "$(get_repo_var RUN_DESIGN_REVISE_LABEL "run:design:revise")" "Request design stage revision"
+ensure_repo_label "$(get_repo_var RUN_PLAN_LABEL "run:plan")" "Start planning stage run"
+ensure_repo_label "$(get_repo_var RUN_PLAN_REVISE_LABEL "run:plan:revise")" "Request planning stage revision"
+ensure_repo_label "$(get_repo_var RUN_DEV_LABEL "run:dev")" "Start development run"
+ensure_repo_label "$(get_repo_var RUN_DEV_REVISE_LABEL "run:dev:revise")" "Request development revision"
+ensure_repo_label "$(get_repo_var RUN_DOC_AUDIT_LABEL "run:doc-audit")" "Start documentation audit run"
+ensure_repo_label "$(get_repo_var RUN_QA_LABEL "run:qa")" "Start QA run"
+ensure_repo_label "$(get_repo_var RUN_RELEASE_LABEL "run:release")" "Start release run"
+ensure_repo_label "$(get_repo_var RUN_POSTDEPLOY_LABEL "run:postdeploy")" "Start post-deploy checks run"
+ensure_repo_label "$(get_repo_var RUN_OPS_LABEL "run:ops")" "Start operations run"
+ensure_repo_label "$(get_repo_var RUN_ABORT_LABEL "run:abort")" "Abort current stage run"
+ensure_repo_label "$(get_repo_var RUN_RETHINK_LABEL "run:rethink")" "Reopen problem framing and scope"
+ensure_repo_label "$(get_repo_var STATE_BLOCKED_LABEL "state:blocked")" "Issue is blocked"
+ensure_repo_label "$(get_repo_var STATE_IN_REVIEW_LABEL "state:in-review")" "Work is in review"
+ensure_repo_label "$(get_repo_var STATE_APPROVED_LABEL "state:approved")" "Work is approved"
+ensure_repo_label "$(get_repo_var STATE_SUPERSEDED_LABEL "state:superseded")" "Issue superseded by newer scope"
+ensure_repo_label "$(get_repo_var STATE_ABANDONED_LABEL "state:abandoned")" "Issue intentionally abandoned"
+ensure_repo_label "$(get_repo_var NEED_INPUT_LABEL "need:input")" "Need additional input"
+ensure_repo_label "$(get_repo_var NEED_PM_LABEL "need:pm")" "Need product management input"
+ensure_repo_label "$(get_repo_var NEED_SA_LABEL "need:sa")" "Need solution architecture input"
+ensure_repo_label "$(get_repo_var NEED_QA_LABEL "need:qa")" "Need QA input"
+ensure_repo_label "$(get_repo_var NEED_SRE_LABEL "need:sre")" "Need SRE input"
 gh variable set CODEXK8S_STAGING_DOMAIN -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_STAGING_DOMAIN}"
 gh variable set CODEXK8S_PUBLIC_BASE_URL -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_PUBLIC_BASE_URL}"
 gh variable set CODEXK8S_BOOTSTRAP_OWNER_EMAIL -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_BOOTSTRAP_OWNER_EMAIL}"
