@@ -1,18 +1,23 @@
-import { http } from "../../shared/api/http";
+import {
+  createUser as createUserRequest,
+  deleteUser as deleteUserRequest,
+  listUsers as listUsersRequest,
+} from "../../shared/api/sdk";
 
 import type { UserDto } from "./types";
 
-type ItemsResponse<T> = { items: T[] };
-
 export async function listUsers(limit = 200): Promise<UserDto[]> {
-  const resp = await http.get("/api/v1/staff/users", { params: { limit } });
-  return (resp.data as ItemsResponse<UserDto>).items ?? [];
+  const resp = await listUsersRequest({ query: { limit }, throwOnError: true });
+  return resp.data.items ?? [];
 }
 
 export async function createAllowedUser(email: string, isPlatformAdmin: boolean): Promise<void> {
-  await http.post("/api/v1/staff/users", { email, is_platform_admin: isPlatformAdmin });
+  await createUserRequest({
+    body: { email, is_platform_admin: isPlatformAdmin },
+    throwOnError: true,
+  });
 }
 
 export async function deleteUser(userId: string): Promise<void> {
-  await http.delete(`/api/v1/staff/users/${userId}`);
+  await deleteUserRequest({ path: { user_id: userId }, throwOnError: true });
 }

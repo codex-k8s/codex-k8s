@@ -1,9 +1,10 @@
-export type ProjectDto = {
-  id: string;
-  slug: string;
-  name: string;
-  role: "read" | "read_write" | "admin" | string;
-};
+import type {
+  Project as ProjectAPIModel,
+  ProjectMember as ProjectMemberAPIModel,
+  RepositoryBinding as RepositoryBindingAPIModel,
+} from "../../shared/api/generated";
+
+export type ProjectDto = ProjectAPIModel;
 
 export type Project = {
   id: string;
@@ -12,15 +13,7 @@ export type Project = {
   role: string;
 };
 
-export type RepositoryBindingDto = {
-  id: string;
-  project_id: string;
-  provider: string;
-  external_id: number;
-  owner: string;
-  name: string;
-  services_yaml_path: string;
-};
+export type RepositoryBindingDto = RepositoryBindingAPIModel;
 
 export type RepositoryBinding = {
   id: string;
@@ -32,13 +25,7 @@ export type RepositoryBinding = {
   servicesYamlPath: string;
 };
 
-export type ProjectMemberDto = {
-  project_id: string;
-  user_id: string;
-  email: string;
-  role: "read" | "read_write" | "admin";
-  learning_mode_override: boolean | null;
-};
+export type ProjectMemberDto = ProjectMemberAPIModel;
 
 export type ProjectMember = {
   projectId: string;
@@ -47,4 +34,3 @@ export type ProjectMember = {
   role: "read" | "read_write" | "admin";
   learningModeOverride: boolean | null;
 };
-

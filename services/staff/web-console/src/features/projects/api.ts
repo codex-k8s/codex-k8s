@@ -1,30 +1,43 @@
-import { http } from "../../shared/api/http";
-
+import {
+  deleteProject as deleteProjectRequest,
+  deleteProjectMember as deleteProjectMemberRequest,
+  deleteProjectRepository as deleteProjectRepositoryRequest,
+  getProject as getProjectRequest,
+  listProjectMembers as listProjectMembersRequest,
+  listProjectRepositories as listProjectRepositoriesRequest,
+  listProjects as listProjectsRequest,
+  setProjectMemberLearningModeOverride as setProjectMemberLearningModeOverrideRequest,
+  upsertProject as upsertProjectRequest,
+  upsertProjectMember as upsertProjectMemberRequest,
+  upsertProjectRepository as upsertProjectRepositoryRequest,
+} from "../../shared/api/sdk";
 import type { ProjectDto, ProjectMemberDto, RepositoryBindingDto } from "./types";
 
-type ItemsResponse<T> = { items: T[] };
-
 export async function listProjects(limit = 200): Promise<ProjectDto[]> {
-  const resp = await http.get("/api/v1/staff/projects", { params: { limit } });
-  return (resp.data as ItemsResponse<ProjectDto>).items ?? [];
+  const resp = await listProjectsRequest({ query: { limit }, throwOnError: true });
+  return resp.data.items ?? [];
 }
 
 export async function getProject(projectId: string): Promise<ProjectDto> {
-  const resp = await http.get(`/api/v1/staff/projects/${projectId}`);
-  return resp.data as ProjectDto;
+  const resp = await getProjectRequest({ path: { project_id: projectId }, throwOnError: true });
+  return resp.data;
 }
 
 export async function upsertProject(slug: string, name: string): Promise<void> {
-  await http.post("/api/v1/staff/projects", { slug, name });
+  await upsertProjectRequest({ body: { slug, name }, throwOnError: true });
 }
 
 export async function deleteProject(projectId: string): Promise<void> {
-  await http.delete(`/api/v1/staff/projects/${projectId}`);
+  await deleteProjectRequest({ path: { project_id: projectId }, throwOnError: true });
 }
 
 export async function listProjectRepositories(projectId: string, limit = 200): Promise<RepositoryBindingDto[]> {
-  const resp = await http.get(`/api/v1/staff/projects/${projectId}/repositories`, { params: { limit } });
-  return (resp.data as ItemsResponse<RepositoryBindingDto>).items ?? [];
+  const resp = await listProjectRepositoriesRequest({
+    path: { project_id: projectId },
+    query: { limit },
+    throwOnError: true,
+  });
+  return resp.data.items ?? [];
 }
 
 export async function upsertProjectRepository(params: {
@@ -35,36 +48,62 @@ export async function upsertProjectRepository(params: {
   token: string;
   servicesYamlPath: string;
 }): Promise<void> {
-  await http.post(`/api/v1/staff/projects/${params.projectId}/repositories`, {
-    provider: params.provider,
-    owner: params.owner,
-    name: params.name,
-    token: params.token,
-    services_yaml_path: params.servicesYamlPath,
+  await upsertProjectRepositoryRequest({
+    path: { project_id: params.projectId },
+    body: {
+      provider: params.provider,
+      owner: params.owner,
+      name: params.name,
+      token: params.token,
+      services_yaml_path: params.servicesYamlPath,
+    },
+    throwOnError: true,
   });
 }
 
 export async function deleteProjectRepository(projectId: string, repositoryId: string): Promise<void> {
-  await http.delete(`/api/v1/staff/projects/${projectId}/repositories/${repositoryId}`);
+  await deleteProjectRepositoryRequest({
+    path: { project_id: projectId, repository_id: repositoryId },
+    throwOnError: true,
+  });
 }
 
 export async function listProjectMembers(projectId: string, limit = 200): Promise<ProjectMemberDto[]> {
-  const resp = await http.get(`/api/v1/staff/projects/${projectId}/members`, { params: { limit } });
-  return (resp.data as ItemsResponse<ProjectMemberDto>).items ?? [];
+  const resp = await listProjectMembersRequest({
+    path: { project_id: projectId },
+    query: { limit },
+    throwOnError: true,
+  });
+  return resp.data.items ?? [];
 }
 
-export async function upsertProjectMember(projectId: string, userId: string, role: string): Promise<void> {
-  await http.post(`/api/v1/staff/projects/${projectId}/members`, { user_id: userId, role });
+export async function upsertProjectMember(projectId: string, userId: string, role: ProjectMemberDto["role"]): Promise<void> {
+  await upsertProjectMemberRequest({
+    path: { project_id: projectId },
+    body: { user_id: userId, role },
+    throwOnError: true,
+  });
 }
 
-export async function upsertProjectMemberByEmail(projectId: string, email: string, role: string): Promise<void> {
-  await http.post(`/api/v1/staff/projects/${projectId}/members`, { email, role });
+export async function upsertProjectMemberByEmail(projectId: string, email: string, role: ProjectMemberDto["role"]): Promise<void> {
+  await upsertProjectMemberRequest({
+    path: { project_id: projectId },
+    body: { email, role },
+    throwOnError: true,
+  });
 }
 
 export async function deleteProjectMember(projectId: string, userId: string): Promise<void> {
-  await http.delete(`/api/v1/staff/projects/${projectId}/members/${userId}`);
+  await deleteProjectMemberRequest({
+    path: { project_id: projectId, user_id: userId },
+    throwOnError: true,
+  });
 }
 
 export async function setProjectMemberLearningModeOverride(projectId: string, userId: string, enabled: boolean | null): Promise<void> {
-  await http.put(`/api/v1/staff/projects/${projectId}/members/${userId}/learning-mode`, { enabled });
+  await setProjectMemberLearningModeOverrideRequest({
+    path: { project_id: projectId, user_id: userId },
+    body: { enabled },
+    throwOnError: true,
+  });
 }

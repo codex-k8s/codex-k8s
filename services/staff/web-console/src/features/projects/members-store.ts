@@ -8,7 +8,7 @@ import {
   upsertProjectMember,
   upsertProjectMemberByEmail,
 } from "./api";
-import type { ProjectMember } from "./types";
+import type { ProjectMember, ProjectMemberDto } from "./types";
 
 export const useProjectMembersStore = defineStore("projectMembers", {
   state: () => ({
@@ -33,7 +33,7 @@ export const useProjectMembersStore = defineStore("projectMembers", {
           userId: m.user_id,
           email: m.email,
           role: m.role,
-          learningModeOverride: m.learning_mode_override,
+          learningModeOverride: m.learning_mode_override ?? null,
         }));
       } catch (e) {
         this.error = normalizeApiError(e);
@@ -42,7 +42,7 @@ export const useProjectMembersStore = defineStore("projectMembers", {
       }
     },
 
-    async save(member: { userId: string; role: string; learningModeOverride: boolean | null }): Promise<void> {
+    async save(member: { userId: string; role: ProjectMemberDto["role"]; learningModeOverride: boolean | null }): Promise<void> {
       if (!this.projectId) return;
       this.saving = true;
       this.error = null;
@@ -57,7 +57,7 @@ export const useProjectMembersStore = defineStore("projectMembers", {
       }
     },
 
-    async addByEmail(email: string, role: string): Promise<void> {
+    async addByEmail(email: string, role: ProjectMemberDto["role"]): Promise<void> {
       if (!this.projectId) return;
       this.adding = true;
       this.addError = null;
