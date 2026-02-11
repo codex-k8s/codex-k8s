@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S2-D3
 type: epic
 title: "Epic S2 Day 3: Per-issue namespace orchestration and RBAC baseline"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-10
 updated_at: 2026-02-11
@@ -40,3 +40,28 @@ approvals:
 ## Критерии приемки эпика
 - Run исполняется в отдельном namespace.
 - Namespace может быть безопасно убран/переиспользован без утечек слотов и объектов.
+
+## Прогресс реализации (2026-02-11)
+- Реализована runtime-классификация run по режимам:
+  - `full-env` для issue-trigger `run:dev`/`run:dev:revise`;
+  - `code-only` для остальных run без issue-trigger контекста.
+- Для `full-env` реализована подготовка отдельного run namespace:
+  - namespace naming: issue-aware шаблон с суффиксом run-id (deterministic, без коллизий);
+  - idempotent apply baseline ресурсов:
+    - `ServiceAccount`,
+    - `Role`,
+    - `RoleBinding`,
+    - `ResourceQuota`,
+    - `LimitRange`.
+- Worker запускает Job в целевом namespace и передаёт runtime metadata в env/payload.
+- Добавлен cleanup baseline:
+  - по завершении `full-env` run namespace удаляется (управляемо через env-флаг cleanup),
+  - удаляются только managed namespace’ы, промаркированные worker’ом.
+- Добавлен audit lifecycle в `flow_events`:
+  - `run.namespace.prepared`,
+  - `run.namespace.cleaned`,
+  - `run.namespace.cleanup_failed`.
+- Для reconciliation running runs расширено чтение `agent_runs.run_payload`, чтобы namespace/runtime mode определялись детерминированно и после рестартов worker.
+- Deploy baseline обновлён:
+  - worker получил cluster-scope RBAC для lifecycle namespace и runtime-объектов;
+  - добавлены env/vars для namespace policy и quota/limitrange baseline в bootstrap/deploy/CI.

@@ -1,5 +1,5 @@
 -- name: runqueue__list_running :many
-SELECT id, correlation_id, project_id, learning_mode, started_at
+SELECT id, correlation_id, project_id, learning_mode, run_payload, started_at
 FROM agent_runs
 WHERE status = 'running'
   AND project_id IS NOT NULL

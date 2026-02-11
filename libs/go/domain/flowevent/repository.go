@@ -24,14 +24,17 @@ const (
 type EventType string
 
 const (
-	EventTypeWebhookReceived      EventType = "webhook.received"
-	EventTypeWebhookDuplicate     EventType = "webhook.duplicate"
-	EventTypeWebhookIgnored       EventType = "webhook.ignored"
-	EventTypeRunStarted           EventType = "run.started"
-	EventTypeRunSucceeded         EventType = "run.succeeded"
-	EventTypeRunFailed            EventType = "run.failed"
-	EventTypeRunFailedJobNotFound EventType = "run.failed.job_not_found"
-	EventTypeRunFailedLaunchError EventType = "run.failed.launch_error"
+	EventTypeWebhookReceived           EventType = "webhook.received"
+	EventTypeWebhookDuplicate          EventType = "webhook.duplicate"
+	EventTypeWebhookIgnored            EventType = "webhook.ignored"
+	EventTypeRunNamespacePrepared      EventType = "run.namespace.prepared"
+	EventTypeRunNamespaceCleaned       EventType = "run.namespace.cleaned"
+	EventTypeRunNamespaceCleanupFailed EventType = "run.namespace.cleanup_failed"
+	EventTypeRunStarted                EventType = "run.started"
+	EventTypeRunSucceeded              EventType = "run.succeeded"
+	EventTypeRunFailed                 EventType = "run.failed"
+	EventTypeRunFailedJobNotFound      EventType = "run.failed.job_not_found"
+	EventTypeRunFailedLaunchError      EventType = "run.failed.launch_error"
 )
 
 // InsertParams defines a single flow event record.

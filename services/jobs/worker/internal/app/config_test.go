@@ -22,6 +22,12 @@ func TestLoadConfigDefaults(t *testing.T) {
 	if cfg.JobImage != "busybox:1.36" {
 		t.Fatalf("expected default job image busybox:1.36, got %s", cfg.JobImage)
 	}
+	if cfg.RunNamespacePrefix != "codex-issue" {
+		t.Fatalf("expected default run namespace prefix codex-issue, got %s", cfg.RunNamespacePrefix)
+	}
+	if !cfg.RunNamespaceCleanup {
+		t.Fatal("expected run namespace cleanup to be enabled by default")
+	}
 }
 
 func TestLoadConfigMissingDB(t *testing.T) {

@@ -53,6 +53,38 @@ type Config struct {
 	JobBackoffLimit int32 `env:"CODEXK8S_WORKER_JOB_BACKOFF_LIMIT" envDefault:"0"`
 	// JobActiveDeadlineSeconds controls max run duration before termination.
 	JobActiveDeadlineSeconds int64 `env:"CODEXK8S_WORKER_JOB_ACTIVE_DEADLINE_SECONDS" envDefault:"900"`
+	// RunNamespacePrefix defines prefix for full-env runtime namespaces.
+	RunNamespacePrefix string `env:"CODEXK8S_WORKER_RUN_NAMESPACE_PREFIX" envDefault:"codex-issue"`
+	// RunNamespaceCleanup enables namespace cleanup after run completion.
+	RunNamespaceCleanup bool `env:"CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP" envDefault:"true"`
+	// RunServiceAccountName is service account for full-env run jobs.
+	RunServiceAccountName string `env:"CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT" envDefault:"codex-runner"`
+	// RunRoleName is RBAC role name for full-env run jobs.
+	RunRoleName string `env:"CODEXK8S_WORKER_RUN_ROLE_NAME" envDefault:"codex-runner"`
+	// RunRoleBindingName is RBAC role binding name for full-env run jobs.
+	RunRoleBindingName string `env:"CODEXK8S_WORKER_RUN_ROLE_BINDING_NAME" envDefault:"codex-runner"`
+	// RunResourceQuotaName is ResourceQuota name in runtime namespaces.
+	RunResourceQuotaName string `env:"CODEXK8S_WORKER_RUN_RESOURCE_QUOTA_NAME" envDefault:"codex-run-quota"`
+	// RunLimitRangeName is LimitRange name in runtime namespaces.
+	RunLimitRangeName string `env:"CODEXK8S_WORKER_RUN_LIMIT_RANGE_NAME" envDefault:"codex-run-limits"`
+	// RunResourceQuotaPods controls max pods per run namespace.
+	RunResourceQuotaPods int64 `env:"CODEXK8S_WORKER_RUN_QUOTA_PODS" envDefault:"20"`
+	// RunResourceRequestsCPU controls requests.cpu hard quota.
+	RunResourceRequestsCPU string `env:"CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_CPU" envDefault:"4"`
+	// RunResourceRequestsMemory controls requests.memory hard quota.
+	RunResourceRequestsMemory string `env:"CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_MEMORY" envDefault:"8Gi"`
+	// RunResourceLimitsCPU controls limits.cpu hard quota.
+	RunResourceLimitsCPU string `env:"CODEXK8S_WORKER_RUN_QUOTA_LIMITS_CPU" envDefault:"8"`
+	// RunResourceLimitsMemory controls limits.memory hard quota.
+	RunResourceLimitsMemory string `env:"CODEXK8S_WORKER_RUN_QUOTA_LIMITS_MEMORY" envDefault:"16Gi"`
+	// RunDefaultRequestCPU controls default CPU request via LimitRange.
+	RunDefaultRequestCPU string `env:"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_CPU" envDefault:"250m"`
+	// RunDefaultRequestMemory controls default memory request via LimitRange.
+	RunDefaultRequestMemory string `env:"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_MEMORY" envDefault:"256Mi"`
+	// RunDefaultLimitCPU controls default CPU limit via LimitRange.
+	RunDefaultLimitCPU string `env:"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_CPU" envDefault:"1"`
+	// RunDefaultLimitMemory controls default memory limit via LimitRange.
+	RunDefaultLimitMemory string `env:"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY" envDefault:"1Gi"`
 }
 
 // LoadConfig parses and validates worker configuration from environment.

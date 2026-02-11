@@ -33,3 +33,25 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: codex-k8s-staging-deployer
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: codex-k8s-staging-deployer-cluster
+rules:
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles", "clusterrolebindings"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: codex-k8s-staging-deployer-cluster
+subjects:
+  - kind: ServiceAccount
+    name: ${CODEXK8S_RUNNER_SCALE_SET_NAME}-gha-rs-no-permission
+    namespace: ${CODEXK8S_RUNNER_NAMESPACE}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: codex-k8s-staging-deployer-cluster

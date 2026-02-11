@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S2-D2
 type: epic
 title: "Epic S2 Day 2: Issue label triggers for run:dev and run:dev:revise"
-status: active
+status: completed
 owner_role: EM
 created_at: 2026-02-10
 updated_at: 2026-02-11
@@ -10,8 +10,8 @@ related_issues: []
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
-  request_id: ""
+  status: approved
+  request_id: "owner-2026-02-11-s2-day2-complete"
 ---
 
 # Epic S2 Day 2: Issue label triggers for run:dev and run:dev:revise

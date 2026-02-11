@@ -2,12 +2,14 @@ package worker
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"log/slog"
 	"strings"
 	"testing"
 	"time"
 
+	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/flowevent"
@@ -75,6 +77,93 @@ func TestTickFinalizesSucceededRun(t *testing.T) {
 	}
 }
 
+func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
+	t.Parallel()
+
+	payload := json.RawMessage(`{"trigger":{"kind":"dev"},"issue":{"number":77}}`)
+	runs := &fakeRunQueue{
+		claims: []runqueuerepo.ClaimedRun{
+			{RunID: "run-3", CorrelationID: "corr-3", ProjectID: "550e8400-e29b-41d4-a716-446655440000", RunPayload: payload, SlotNo: 1},
+		},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{states: map[string]JobState{}}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:                "worker-1",
+		ClaimLimit:              1,
+		RunningCheckLimit:       10,
+		SlotsPerProject:         2,
+		SlotLeaseTTL:            time.Minute,
+		RunNamespacePrefix:      "codex-issue",
+		CleanupFullEnvNamespace: true,
+	}, runs, events, nil, launcher, logger)
+	svc.now = func() time.Time { return time.Date(2026, 2, 11, 10, 0, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if len(launcher.prepared) != 1 {
+		t.Fatalf("expected 1 prepared namespace, got %d", len(launcher.prepared))
+	}
+	if launcher.prepared[0].RuntimeMode != agentdomain.RuntimeModeFullEnv {
+		t.Fatalf("expected full-env runtime mode, got %q", launcher.prepared[0].RuntimeMode)
+	}
+	if launcher.prepared[0].Namespace == "" {
+		t.Fatal("expected non-empty namespace for full-env run")
+	}
+	if len(launcher.launched) != 1 {
+		t.Fatalf("expected 1 launched job, got %d", len(launcher.launched))
+	}
+	if launcher.launched[0].RuntimeMode != agentdomain.RuntimeModeFullEnv {
+		t.Fatalf("expected launched runtime mode full-env, got %q", launcher.launched[0].RuntimeMode)
+	}
+	if launcher.launched[0].Namespace == "" {
+		t.Fatal("expected launched job namespace to be set")
+	}
+}
+
+func TestTickFinalizesFullEnvRunAndCleansNamespace(t *testing.T) {
+	t.Parallel()
+
+	payload := json.RawMessage(`{"trigger":{"kind":"dev_revise"},"issue":{"number":10}}`)
+	runs := &fakeRunQueue{
+		running: []runqueuerepo.RunningRun{{
+			RunID:         "run-4",
+			CorrelationID: "corr-4",
+			ProjectID:     "550e8400-e29b-41d4-a716-446655440000",
+			RunPayload:    payload,
+		}},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{states: map[string]JobState{"run-4": JobStateSucceeded}}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:                "worker-1",
+		ClaimLimit:              1,
+		RunningCheckLimit:       10,
+		SlotsPerProject:         2,
+		SlotLeaseTTL:            time.Minute,
+		RunNamespacePrefix:      "codex-issue",
+		CleanupFullEnvNamespace: true,
+	}, runs, events, nil, launcher, logger)
+	svc.now = func() time.Time { return time.Date(2026, 2, 11, 11, 0, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if len(launcher.cleaned) != 1 {
+		t.Fatalf("expected 1 cleaned namespace, got %d", len(launcher.cleaned))
+	}
+	if launcher.cleaned[0].Namespace == "" {
+		t.Fatal("expected cleaned namespace to be set")
+	}
+}
+
 type fakeRunQueue struct {
 	claims     []runqueuerepo.ClaimedRun
 	claimCalls int
@@ -128,12 +217,27 @@ func (f *fakeFlowEvents) Insert(_ context.Context, params floweventrepo.InsertPa
 type fakeLauncher struct {
 	states    map[string]JobState
 	launched  []JobSpec
+	prepared  []NamespaceSpec
+	cleaned   []NamespaceSpec
 	launchErr error
 	statusErr error
 }
 
-func (f *fakeLauncher) JobRef(runID string) JobRef {
-	return JobRef{Namespace: "ns", Name: "job-" + runID}
+func (f *fakeLauncher) JobRef(runID string, namespace string) JobRef {
+	if namespace == "" {
+		namespace = "ns"
+	}
+	return JobRef{Namespace: namespace, Name: "job-" + runID}
+}
+
+func (f *fakeLauncher) EnsureNamespace(_ context.Context, spec NamespaceSpec) error {
+	f.prepared = append(f.prepared, spec)
+	return nil
+}
+
+func (f *fakeLauncher) CleanupNamespace(_ context.Context, spec NamespaceSpec) error {
+	f.cleaned = append(f.cleaned, spec)
+	return nil
 }
 
 func (f *fakeLauncher) Launch(_ context.Context, spec JobSpec) (JobRef, error) {
@@ -141,7 +245,7 @@ func (f *fakeLauncher) Launch(_ context.Context, spec JobSpec) (JobRef, error) {
 		return JobRef{}, f.launchErr
 	}
 	f.launched = append(f.launched, spec)
-	return f.JobRef(spec.RunID), nil
+	return f.JobRef(spec.RunID, spec.Namespace), nil
 }
 
 func (f *fakeLauncher) Status(_ context.Context, ref JobRef) (JobState, error) {

@@ -70,6 +70,13 @@ kubectl -n "$ns" logs deploy/codex-k8s-worker --tail=200
 kubectl -n "$ns" get ingress
 kubectl -n "$ns" describe ingress codex-k8s
 kubectl -n "$ns" get certificate,order,challenge -A
+
+# Full-env run namespaces (S2 Day3 baseline)
+kubectl get ns -l codexk8s.io/managed-by=codex-k8s-worker,codexk8s.io/namespace-purpose=run
+for run_ns in $(kubectl get ns -l codexk8s.io/managed-by=codex-k8s-worker,codexk8s.io/namespace-purpose=run -o jsonpath='{.items[*].metadata.name}'); do
+  echo "=== ${run_ns} ==="
+  kubectl -n "${run_ns}" get sa,role,rolebinding,resourcequota,limitrange,job,pod
+done
 ```
 
 ## Типовые проблемы

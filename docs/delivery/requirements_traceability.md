@@ -35,7 +35,7 @@ approvals:
 | FR-009 | Агенты/сессии/журналы в БД + UI | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/architecture/c4_container.md` | covered |
 | FR-010 | Фиксированный roster агентов + задел на расширение | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/delivery/roadmap.md` | covered |
 | FR-011 | Агентные токены: генерация/ротация/шифрование | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/constraints.md` | covered |
-| FR-012 | Жизненный цикл run/pod/namespace в БД + UI | `docs/product/requirements_machine_driven.md`, `docs/architecture/c4_container.md`, `docs/architecture/data_model.md` | covered |
+| FR-012 | Жизненный цикл run/pod/namespace в БД + UI | `docs/product/requirements_machine_driven.md`, `docs/architecture/c4_container.md`, `docs/architecture/data_model.md`, `docs/delivery/epics/epic-s2-day3-per-issue-namespace-and-rbac.md` | covered |
 | FR-013 | Многоподовость + split service/job zones | `docs/product/requirements_machine_driven.md`, `AGENTS.md`, `docs/design-guidelines/common/project_architecture.md` | covered |
 | FR-014 | Слоты через БД | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md` | covered |
 | FR-015 | Шаблоны документов в БД + markdown editor | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/architecture/api_contract.md` | covered |
@@ -54,7 +54,7 @@ approvals:
 | FR-028 | Stage process model с revise/abort/rethink | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/delivery/sprint_s2_dogfooding.md` | covered |
 | FR-029 | Базовый штат агентов (включая `dev` и `reviewer`) + custom роли проекта | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/data_model.md`, `docs/architecture/agent_runtime_rbac.md` | covered |
 | FR-030 | Prompt templates policy: seed + DB override | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/prompt_templates_policy.md` | covered |
-| FR-031 | Mixed runtime mode full-env/code-only | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/agent_runtime_rbac.md` | covered |
+| FR-031 | Mixed runtime mode full-env/code-only | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/delivery/epics/epic-s2-day3-per-issue-namespace-and-rbac.md` | covered |
 | FR-032 | Обязательные audit сущности agent_sessions/token_usage/links | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/architecture/mcp_approval_and_audit_flow.md` | covered |
 | FR-033 | Traceability для stage pipeline | `docs/product/requirements_machine_driven.md`, `docs/delivery/issue_map.md`, `docs/delivery/requirements_traceability.md` | covered |
 | FR-034 | Контекстный рендер prompt templates | `docs/product/requirements_machine_driven.md`, `docs/architecture/prompt_templates_policy.md`, `docs/product/agents_operating_model.md` | covered |
@@ -71,7 +71,7 @@ approvals:
 | NFR-006 | One-command staging bootstrap via SSH | `docs/product/requirements_machine_driven.md`, `docs/delivery/delivery_plan.md`, `docs/product/brief.md` | covered |
 | NFR-007 | CI/CD model (main->staging, prod gated) | `docs/product/requirements_machine_driven.md`, `docs/product/brief.md`, `docs/product/constraints.md`, `docs/delivery/delivery_plan.md` | covered |
 | NFR-008 | MVP storage profile local-path | `docs/product/requirements_machine_driven.md`, `docs/product/constraints.md`, `docs/delivery/delivery_plan.md` | covered |
-| NFR-009 | Управляемые лимиты параллелизма agent-runs | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/agent_runtime_rbac.md` | covered |
+| NFR-009 | Управляемые лимиты параллелизма agent-runs | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/delivery/epics/epic-s2-day3-per-issue-namespace-and-rbac.md` | covered |
 | NFR-010 | Полная audit-трассировка stage/label действий | `docs/product/requirements_machine_driven.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/data_model.md` | covered |
 | NFR-011 | Labels-as-vars в workflow | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/delivery/epics/epic-s2-day2-issue-label-triggers-run-dev.md` | covered |
 | NFR-012 | Запрет timeout-kill при ожидании MCP | `docs/product/requirements_machine_driven.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/agent_runtime_rbac.md` | covered |

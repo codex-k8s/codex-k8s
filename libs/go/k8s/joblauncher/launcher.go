@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -51,13 +52,26 @@ type JobSpec struct {
 	ProjectID string
 	// SlotNo stores slot number assigned to run.
 	SlotNo int
+	// RuntimeMode controls run profile in Kubernetes namespace.
+	RuntimeMode agentdomain.RuntimeMode
+	// Namespace is preferred namespace for this run.
+	Namespace string
+}
+
+// NamespaceSpec defines runtime namespace metadata.
+type NamespaceSpec struct {
+	RunID         string
+	ProjectID     string
+	CorrelationID string
+	RuntimeMode   agentdomain.RuntimeMode
+	Namespace     string
 }
 
 // Config defines Job launcher runtime options.
 type Config struct {
 	// KubeconfigPath points to local kubeconfig for out-of-cluster execution.
 	KubeconfigPath string
-	// Namespace defines namespace for run Jobs.
+	// Namespace defines shared namespace for code-only runs.
 	Namespace string
 	// Image defines container image used by run Jobs.
 	Image string
@@ -69,6 +83,34 @@ type Config struct {
 	BackoffLimit int32
 	// ActiveDeadlineSeconds controls max execution duration.
 	ActiveDeadlineSeconds int64
+	// RunServiceAccountName defines service account for full-env run jobs.
+	RunServiceAccountName string
+	// RunRoleName defines RBAC role name for full-env run jobs.
+	RunRoleName string
+	// RunRoleBindingName defines RBAC role binding name for full-env run jobs.
+	RunRoleBindingName string
+	// RunResourceQuotaName defines resource quota object name in runtime namespaces.
+	RunResourceQuotaName string
+	// RunLimitRangeName defines limit range object name in runtime namespaces.
+	RunLimitRangeName string
+	// RunResourceQuotaPods defines max pod count in runtime namespace.
+	RunResourceQuotaPods int64
+	// RunResourceRequestsCPU defines requests.cpu hard quota in runtime namespace.
+	RunResourceRequestsCPU string
+	// RunResourceRequestsMemory defines requests.memory hard quota in runtime namespace.
+	RunResourceRequestsMemory string
+	// RunResourceLimitsCPU defines limits.cpu hard quota in runtime namespace.
+	RunResourceLimitsCPU string
+	// RunResourceLimitsMemory defines limits.memory hard quota in runtime namespace.
+	RunResourceLimitsMemory string
+	// RunDefaultRequestCPU defines default container CPU request in runtime namespace.
+	RunDefaultRequestCPU string
+	// RunDefaultRequestMemory defines default container memory request in runtime namespace.
+	RunDefaultRequestMemory string
+	// RunDefaultLimitCPU defines default container CPU limit in runtime namespace.
+	RunDefaultLimitCPU string
+	// RunDefaultLimitMemory defines default container memory limit in runtime namespace.
+	RunDefaultLimitMemory string
 }
 
 // Launcher creates and reconciles run Jobs in Kubernetes.
@@ -109,21 +151,88 @@ func NewForClient(cfg Config, client kubernetes.Interface) *Launcher {
 	if cfg.ActiveDeadlineSeconds <= 0 {
 		cfg.ActiveDeadlineSeconds = 900
 	}
+	if cfg.RunServiceAccountName == "" {
+		cfg.RunServiceAccountName = "codex-runner"
+	}
+	if cfg.RunRoleName == "" {
+		cfg.RunRoleName = "codex-runner"
+	}
+	if cfg.RunRoleBindingName == "" {
+		cfg.RunRoleBindingName = "codex-runner"
+	}
+	if cfg.RunResourceQuotaName == "" {
+		cfg.RunResourceQuotaName = "codex-run-quota"
+	}
+	if cfg.RunLimitRangeName == "" {
+		cfg.RunLimitRangeName = "codex-run-limits"
+	}
+	if cfg.RunResourceQuotaPods <= 0 {
+		cfg.RunResourceQuotaPods = 20
+	}
+	if strings.TrimSpace(cfg.RunResourceRequestsCPU) == "" {
+		cfg.RunResourceRequestsCPU = "4"
+	}
+	if strings.TrimSpace(cfg.RunResourceRequestsMemory) == "" {
+		cfg.RunResourceRequestsMemory = "8Gi"
+	}
+	if strings.TrimSpace(cfg.RunResourceLimitsCPU) == "" {
+		cfg.RunResourceLimitsCPU = "8"
+	}
+	if strings.TrimSpace(cfg.RunResourceLimitsMemory) == "" {
+		cfg.RunResourceLimitsMemory = "16Gi"
+	}
+	if strings.TrimSpace(cfg.RunDefaultRequestCPU) == "" {
+		cfg.RunDefaultRequestCPU = "250m"
+	}
+	if strings.TrimSpace(cfg.RunDefaultRequestMemory) == "" {
+		cfg.RunDefaultRequestMemory = "256Mi"
+	}
+	if strings.TrimSpace(cfg.RunDefaultLimitCPU) == "" {
+		cfg.RunDefaultLimitCPU = "1"
+	}
+	if strings.TrimSpace(cfg.RunDefaultLimitMemory) == "" {
+		cfg.RunDefaultLimitMemory = "1Gi"
+	}
 
 	return &Launcher{cfg: cfg, client: client}
 }
 
 // JobRef builds deterministic Job reference for run.
-func (l *Launcher) JobRef(runID string) JobRef {
+func (l *Launcher) JobRef(runID string, namespace string) JobRef {
+	ns := strings.TrimSpace(namespace)
+	if ns == "" {
+		ns = l.cfg.Namespace
+	}
 	return JobRef{
-		Namespace: l.cfg.Namespace,
+		Namespace: ns,
 		Name:      BuildRunJobName(runID),
 	}
 }
 
 // Launch creates Kubernetes Job or returns existing one when already present.
 func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
-	ref := l.JobRef(spec.RunID)
+	ref := l.JobRef(spec.RunID, spec.Namespace)
+	podSpec := corev1.PodSpec{
+		RestartPolicy: corev1.RestartPolicyNever,
+		Containers: []corev1.Container{
+			{
+				Name:    "run",
+				Image:   l.cfg.Image,
+				Command: []string{"/bin/sh", "-c", l.cfg.Command},
+				Env: []corev1.EnvVar{
+					{Name: "CODEXK8S_RUN_ID", Value: spec.RunID},
+					{Name: "CODEXK8S_CORRELATION_ID", Value: spec.CorrelationID},
+					{Name: "CODEXK8S_PROJECT_ID", Value: spec.ProjectID},
+					{Name: "CODEXK8S_SLOT_NO", Value: fmt.Sprintf("%d", spec.SlotNo)},
+					{Name: "CODEXK8S_RUNTIME_MODE", Value: string(spec.RuntimeMode)},
+				},
+			},
+		},
+	}
+	if spec.RuntimeMode == agentdomain.RuntimeModeFullEnv {
+		podSpec.ServiceAccountName = l.cfg.RunServiceAccountName
+	}
+
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ref.Name,
@@ -149,22 +258,7 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 						"codexk8s.io/run-id":     spec.RunID,
 					},
 				},
-				Spec: corev1.PodSpec{
-					RestartPolicy: corev1.RestartPolicyNever,
-					Containers: []corev1.Container{
-						{
-							Name:    "run",
-							Image:   l.cfg.Image,
-							Command: []string{"/bin/sh", "-c", l.cfg.Command},
-							Env: []corev1.EnvVar{
-								{Name: "CODEXK8S_RUN_ID", Value: spec.RunID},
-								{Name: "CODEXK8S_CORRELATION_ID", Value: spec.CorrelationID},
-								{Name: "CODEXK8S_PROJECT_ID", Value: spec.ProjectID},
-								{Name: "CODEXK8S_SLOT_NO", Value: fmt.Sprintf("%d", spec.SlotNo)},
-							},
-						},
-					},
-				},
+				Spec: podSpec,
 			},
 		},
 	}

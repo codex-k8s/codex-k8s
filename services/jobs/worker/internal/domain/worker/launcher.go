@@ -1,6 +1,10 @@
 package worker
 
-import "context"
+import (
+	"context"
+
+	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
+)
 
 // JobState is an external run workload state in Kubernetes.
 type JobState string
@@ -26,6 +30,15 @@ type JobRef struct {
 	Name string
 }
 
+// NamespaceSpec defines namespace baseline that should exist before launching a run job.
+type NamespaceSpec struct {
+	RunID         string
+	ProjectID     string
+	CorrelationID string
+	RuntimeMode   agentdomain.RuntimeMode
+	Namespace     string
+}
+
 // JobSpec defines parameters for Job launch.
 type JobSpec struct {
 	// RunID is a unique run identifier.
@@ -36,12 +49,20 @@ type JobSpec struct {
 	ProjectID string
 	// SlotNo is a leased slot number.
 	SlotNo int
+	// RuntimeMode defines execution profile for run.
+	RuntimeMode agentdomain.RuntimeMode
+	// Namespace is target namespace for Job.
+	Namespace string
 }
 
 // Launcher creates and reconciles Kubernetes Jobs for runs.
 type Launcher interface {
 	// JobRef builds deterministic Job reference for run id.
-	JobRef(runID string) JobRef
+	JobRef(runID string, namespace string) JobRef
+	// EnsureNamespace prepares namespace baseline for full-env execution.
+	EnsureNamespace(ctx context.Context, spec NamespaceSpec) error
+	// CleanupNamespace removes runtime namespace after run completion.
+	CleanupNamespace(ctx context.Context, spec NamespaceSpec) error
 	// Launch creates Job if needed and returns its reference.
 	Launch(ctx context.Context, spec JobSpec) (JobRef, error)
 	// Status returns current workload state for a given Job reference.

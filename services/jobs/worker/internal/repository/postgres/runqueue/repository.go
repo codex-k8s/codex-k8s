@@ -167,9 +167,10 @@ func (r *Repository) ListRunning(ctx context.Context, limit int) ([]domainrepo.R
 			correlationID string
 			projectID     string
 			learningMode  bool
+			runPayload    []byte
 			startedAt     sql.NullTime
 		)
-		if err := rows.Scan(&runID, &correlationID, &projectID, &learningMode, &startedAt); err != nil {
+		if err := rows.Scan(&runID, &correlationID, &projectID, &learningMode, &runPayload, &startedAt); err != nil {
 			return nil, fmt.Errorf("scan running run row: %w", err)
 		}
 		item := domainrepo.RunningRun{
@@ -177,6 +178,7 @@ func (r *Repository) ListRunning(ctx context.Context, limit int) ([]domainrepo.R
 			CorrelationID: correlationID,
 			ProjectID:     projectID,
 			LearningMode:  learningMode,
+			RunPayload:    json.RawMessage(runPayload),
 		}
 		if startedAt.Valid {
 			item.StartedAt = startedAt.Time.UTC()

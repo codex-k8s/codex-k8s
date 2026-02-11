@@ -55,6 +55,10 @@ approvals:
   - network policy baseline.
 - Cleanup обязателен после завершения run (или по `run:abort`).
 
+Текущий baseline реализации (S2 Day3):
+- Worker создаёт namespace idempotent, применяет `ServiceAccount + Role + RoleBinding + ResourceQuota + LimitRange`.
+- В `flow_events` пишутся lifecycle события `run.namespace.prepared|cleaned|cleanup_failed`.
+
 ## Права `full-env` в рамках namespace
 
 - Разрешено:
