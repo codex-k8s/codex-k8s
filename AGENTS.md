@@ -59,9 +59,15 @@
   - любое изменение HTTP endpoint/DTO сначала в `api/server/api.yaml`;
   - затем регенерация backend/frontend codegen-артефактов;
   - merge запрещён, если маршруты/DTO в коде расходятся со спецификацией.
+  - при любом изменении codegen-охвата (новый сервис/app или изменение путей/целей генерации) обязательно синхронно обновлять:
+    - `Makefile` (`gen-openapi-*`);
+    - `tools/codegen/**`;
+    - `.github/workflows/contracts_codegen_check.yml`;
+    - `docs/design-guidelines/go/code_generation.md`.
 - Для HTTP DTO размещать модели и кастеры в `internal/transport/http/{models,casters}` (или эквивалентно по протоколу в рамках сервиса).
 - Доменные типы размещать в `internal/domain/types/{entity,value,enum,query,mixin}`; не объявлять доменные модели ad-hoc в больших service/handler файлах.
 - Маппинг ошибок выполняется только на границе транспорта (HTTP error handler / gRPC interceptor); в handlers запрещены локальные “переводы” ошибок между слоями.
+- `context.Background()` создаётся только в composition root (`internal/app/*`); в transport/domain/repository-слоях использовать только прокинутый контекст.
 
 ## Образы сервисов (обязательны)
 

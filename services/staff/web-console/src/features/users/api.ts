@@ -4,9 +4,9 @@ import {
   listUsers as listUsersRequest,
 } from "../../shared/api/sdk";
 
-import type { UserDto } from "./types";
+import type { User } from "./types";
 
-export async function listUsers(limit = 200): Promise<UserDto[]> {
+export async function listUsers(limit = 200): Promise<User[]> {
   const resp = await listUsersRequest({ query: { limit }, throwOnError: true });
   return resp.data.items ?? [];
 }

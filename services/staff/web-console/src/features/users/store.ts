@@ -19,14 +19,7 @@ export const useUsersStore = defineStore("users", {
       this.loading = true;
       this.error = null;
       try {
-        const dtos = await listUsers();
-        this.items = dtos.map((u) => ({
-          id: u.id,
-          email: u.email,
-          githubLogin: u.github_login ?? null,
-          isPlatformAdmin: u.is_platform_admin,
-          isPlatformOwner: u.is_platform_owner,
-        }));
+        this.items = await listUsers();
       } catch (e) {
         this.error = normalizeApiError(e);
       } finally {

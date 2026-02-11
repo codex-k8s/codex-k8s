@@ -50,13 +50,17 @@ type Server struct {
 }
 
 // NewServer builds and configures HTTP routes and middleware.
-func NewServer(cfg ServerConfig, cp *controlplane.Client, auth authService, logger *slog.Logger) (*Server, error) {
+func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Client, auth authService, logger *slog.Logger) (*Server, error) {
+	if initCtx == nil {
+		return nil, fmt.Errorf("init context is nil")
+	}
+
 	e := echo.New()
 	e.Use(middleware.Recover())
 	e.HTTPErrorHandler = newHTTPErrorHandler(logger)
 
 	if cfg.OpenAPIValidationEnabled {
-		validator, err := newOpenAPIRequestValidator(cfg.OpenAPISpecPath)
+		validator, err := newOpenAPIRequestValidator(initCtx, cfg.OpenAPISpecPath)
 		if err != nil {
 			return nil, fmt.Errorf("init openapi validator: %w", err)
 		}

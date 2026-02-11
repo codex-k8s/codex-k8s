@@ -11,14 +11,14 @@ import {
   upsertProjectMember as upsertProjectMemberRequest,
   upsertProjectRepository as upsertProjectRepositoryRequest,
 } from "../../shared/api/sdk";
-import type { ProjectDto, ProjectMemberDto, RepositoryBindingDto } from "./types";
+import type { Project, ProjectMember, RepositoryBinding } from "./types";
 
-export async function listProjects(limit = 200): Promise<ProjectDto[]> {
+export async function listProjects(limit = 200): Promise<Project[]> {
   const resp = await listProjectsRequest({ query: { limit }, throwOnError: true });
   return resp.data.items ?? [];
 }
 
-export async function getProject(projectId: string): Promise<ProjectDto> {
+export async function getProject(projectId: string): Promise<Project> {
   const resp = await getProjectRequest({ path: { project_id: projectId }, throwOnError: true });
   return resp.data;
 }
@@ -31,7 +31,7 @@ export async function deleteProject(projectId: string): Promise<void> {
   await deleteProjectRequest({ path: { project_id: projectId }, throwOnError: true });
 }
 
-export async function listProjectRepositories(projectId: string, limit = 200): Promise<RepositoryBindingDto[]> {
+export async function listProjectRepositories(projectId: string, limit = 200): Promise<RepositoryBinding[]> {
   const resp = await listProjectRepositoriesRequest({
     path: { project_id: projectId },
     query: { limit },
@@ -68,7 +68,7 @@ export async function deleteProjectRepository(projectId: string, repositoryId: s
   });
 }
 
-export async function listProjectMembers(projectId: string, limit = 200): Promise<ProjectMemberDto[]> {
+export async function listProjectMembers(projectId: string, limit = 200): Promise<ProjectMember[]> {
   const resp = await listProjectMembersRequest({
     path: { project_id: projectId },
     query: { limit },
@@ -77,7 +77,7 @@ export async function listProjectMembers(projectId: string, limit = 200): Promis
   return resp.data.items ?? [];
 }
 
-export async function upsertProjectMember(projectId: string, userId: string, role: ProjectMemberDto["role"]): Promise<void> {
+export async function upsertProjectMember(projectId: string, userId: string, role: ProjectMember["role"]): Promise<void> {
   await upsertProjectMemberRequest({
     path: { project_id: projectId },
     body: { user_id: userId, role },
@@ -85,7 +85,7 @@ export async function upsertProjectMember(projectId: string, userId: string, rol
   });
 }
 
-export async function upsertProjectMemberByEmail(projectId: string, email: string, role: ProjectMemberDto["role"]): Promise<void> {
+export async function upsertProjectMemberByEmail(projectId: string, email: string, role: ProjectMember["role"]): Promise<void> {
   await upsertProjectMemberRequest({
     path: { project_id: projectId },
     body: { email, role },

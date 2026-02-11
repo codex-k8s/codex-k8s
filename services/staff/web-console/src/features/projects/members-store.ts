@@ -8,7 +8,7 @@ import {
   upsertProjectMember,
   upsertProjectMemberByEmail,
 } from "./api";
-import type { ProjectMember, ProjectMemberDto } from "./types";
+import type { ProjectMember } from "./types";
 
 export const useProjectMembersStore = defineStore("projectMembers", {
   state: () => ({
@@ -27,13 +27,10 @@ export const useProjectMembersStore = defineStore("projectMembers", {
       this.loading = true;
       this.error = null;
       try {
-        const dtos = await listProjectMembers(projectId);
-        this.items = dtos.map((m) => ({
-          projectId: m.project_id,
-          userId: m.user_id,
-          email: m.email,
-          role: m.role,
-          learningModeOverride: m.learning_mode_override ?? null,
+        const members = await listProjectMembers(projectId);
+        this.items = members.map((m) => ({
+          ...m,
+          learning_mode_override: m.learning_mode_override ?? null,
         }));
       } catch (e) {
         this.error = normalizeApiError(e);
@@ -42,13 +39,13 @@ export const useProjectMembersStore = defineStore("projectMembers", {
       }
     },
 
-    async save(member: { userId: string; role: ProjectMemberDto["role"]; learningModeOverride: boolean | null }): Promise<void> {
+    async save(member: { user_id: string; role: ProjectMember["role"]; learning_mode_override: boolean | null }): Promise<void> {
       if (!this.projectId) return;
       this.saving = true;
       this.error = null;
       try {
-        await upsertProjectMember(this.projectId, member.userId, member.role);
-        await setProjectMemberLearningModeOverride(this.projectId, member.userId, member.learningModeOverride);
+        await upsertProjectMember(this.projectId, member.user_id, member.role);
+        await setProjectMemberLearningModeOverride(this.projectId, member.user_id, member.learning_mode_override);
         await this.load(this.projectId);
       } catch (e) {
         this.error = normalizeApiError(e);
@@ -57,7 +54,7 @@ export const useProjectMembersStore = defineStore("projectMembers", {
       }
     },
 
-    async addByEmail(email: string, role: ProjectMemberDto["role"]): Promise<void> {
+    async addByEmail(email: string, role: ProjectMember["role"]): Promise<void> {
       if (!this.projectId) return;
       this.adding = true;
       this.addError = null;

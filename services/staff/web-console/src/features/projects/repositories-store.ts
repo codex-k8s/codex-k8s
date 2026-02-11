@@ -20,16 +20,7 @@ export const useProjectRepositoriesStore = defineStore("projectRepositories", {
       this.loading = true;
       this.error = null;
       try {
-        const dtos = await listProjectRepositories(projectId);
-        this.items = dtos.map((r) => ({
-          id: r.id,
-          projectId: r.project_id,
-          provider: r.provider,
-          externalId: r.external_id,
-          owner: r.owner,
-          name: r.name,
-          servicesYamlPath: r.services_yaml_path,
-        }));
+        this.items = await listProjectRepositories(projectId);
       } catch (e) {
         this.error = normalizeApiError(e);
       } finally {
@@ -72,4 +63,3 @@ export const useProjectRepositoriesStore = defineStore("projectRepositories", {
     },
   },
 });
-

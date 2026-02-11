@@ -27,9 +27,9 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="m in members.items" :key="m.userId">
+        <tr v-for="m in members.items" :key="m.user_id">
           <td>{{ m.email }}</td>
-          <td class="mono center">{{ m.userId }}</td>
+          <td class="mono center">{{ m.user_id }}</td>
           <td class="center">
             <select class="sel mono" v-model="m.role">
               <option value="read">{{ t("roles.read") }}</option>
@@ -38,7 +38,7 @@
             </select>
           </td>
           <td class="center">
-            <select class="sel mono" v-model="m.learningModeOverride">
+            <select class="sel mono" v-model="m.learning_mode_override">
               <option :value="null">{{ t("pages.projectMembers.inherit") }}</option>
               <option :value="true">{{ t("bool.true") }}</option>
               <option :value="false">{{ t("bool.false") }}</option>
@@ -53,7 +53,7 @@
                 v-if="auth.isPlatformOwner"
                 class="btn danger"
                 type="button"
-                @click="askRemove(m.userId, m.email)"
+                @click="askRemove(m.user_id, m.email)"
                 :disabled="members.removing"
               >
                 {{ t("common.delete") }}
@@ -139,7 +139,11 @@ async function load() {
 }
 
 async function save(m: ProjectMember) {
-  await members.save({ userId: m.userId, role: m.role, learningModeOverride: m.learningModeOverride });
+  await members.save({
+    user_id: m.user_id,
+    role: m.role,
+    learning_mode_override: m.learning_mode_override ?? null,
+  });
 }
 
 async function add() {

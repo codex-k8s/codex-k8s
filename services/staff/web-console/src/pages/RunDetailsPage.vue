@@ -5,11 +5,11 @@
         <h2>{{ t("pages.runDetails.title") }}</h2>
         <div class="muted mono">
           {{ t("pages.runDetails.runId") }}: {{ runId }}
-          <span v-if="details.run?.correlationId"> · {{ t("pages.runDetails.correlation") }}: {{ details.run.correlationId }}</span>
+          <span v-if="details.run?.correlation_id"> · {{ t("pages.runDetails.correlation") }}: {{ details.run.correlation_id }}</span>
         </div>
-        <div v-if="details.run?.projectId" class="muted">
-          <RouterLink class="lnk" :to="{ name: 'project-details', params: { projectId: details.run.projectId } }">
-            {{ details.run.projectName || details.run.projectSlug || details.run.projectId }}
+        <div v-if="details.run?.project_id" class="muted">
+          <RouterLink class="lnk" :to="{ name: 'project-details', params: { projectId: details.run.project_id } }">
+            {{ details.run.project_name || details.run.project_slug || details.run.project_id }}
           </RouterLink>
         </div>
       </div>
@@ -25,12 +25,12 @@
       <div class="pane">
         <div class="pane-h">{{ t("pages.runDetails.flowEvents") }}</div>
         <div v-if="details.events.length" class="list">
-          <div v-for="e in details.events" :key="e.createdAt + ':' + e.eventType" class="item">
+          <div v-for="e in details.events" :key="e.created_at + ':' + e.event_type" class="item">
             <div class="topline">
-              <span class="pill">{{ e.eventType }}</span>
-              <span class="mono muted">{{ formatDateTime(e.createdAt, locale) }}</span>
+              <span class="pill">{{ e.event_type }}</span>
+              <span class="mono muted">{{ formatDateTime(e.created_at, locale) }}</span>
             </div>
-            <pre class="pre">{{ e.payloadJson }}</pre>
+            <pre class="pre">{{ e.payload_json }}</pre>
           </div>
         </div>
         <div v-else class="muted">{{ t("states.noEvents") }}</div>
@@ -42,7 +42,7 @@
           <div v-for="f in details.feedback" :key="String(f.id)" class="item">
             <div class="topline">
               <span class="pill">{{ f.kind }}</span>
-              <span class="mono muted">{{ formatDateTime(f.createdAt, locale) }}</span>
+              <span class="mono muted">{{ formatDateTime(f.created_at, locale) }}</span>
             </div>
             <pre class="pre">{{ f.explanation }}</pre>
           </div>

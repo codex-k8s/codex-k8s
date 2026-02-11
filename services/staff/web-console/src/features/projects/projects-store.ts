@@ -19,8 +19,7 @@ export const useProjectsStore = defineStore("projects", {
       this.loading = true;
       this.error = null;
       try {
-        const dtos = await listProjects();
-        this.items = dtos.map((p) => ({ id: p.id, slug: p.slug, name: p.name, role: p.role }));
+        this.items = await listProjects();
       } catch (e) {
         this.error = normalizeApiError(e);
       } finally {

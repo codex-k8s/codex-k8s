@@ -15,18 +15,7 @@ export const useRunsStore = defineStore("runs", {
       this.loading = true;
       this.error = null;
       try {
-        const dtos = await listRuns();
-        this.items = dtos.map((r) => ({
-          id: r.id,
-          correlationId: r.correlation_id,
-          projectId: r.project_id ?? null,
-          projectSlug: r.project_slug,
-          projectName: r.project_name,
-          status: r.status,
-          createdAt: r.created_at,
-          startedAt: r.started_at ?? null,
-          finishedAt: r.finished_at ?? null,
-        }));
+        this.items = await listRuns();
       } catch (e) {
         this.error = normalizeApiError(e);
       } finally {
@@ -51,31 +40,14 @@ export const useRunDetailsStore = defineStore("runDetails", {
       this.loading = true;
       this.error = null;
       try {
-        const [r, ev, fb] = await Promise.all([getRun(runId), listRunEvents(runId), listRunLearningFeedback(runId)]);
-        this.run = {
-          id: r.id,
-          correlationId: r.correlation_id,
-          projectId: r.project_id ?? null,
-          projectSlug: r.project_slug,
-          projectName: r.project_name,
-          status: r.status,
-          createdAt: r.created_at,
-          startedAt: r.started_at ?? null,
-          finishedAt: r.finished_at ?? null,
-        };
-        this.events = ev.map((e) => ({
-          correlationId: e.correlation_id,
-          eventType: e.event_type,
-          createdAt: e.created_at,
-          payloadJson: e.payload_json,
-        }));
-        this.feedback = fb.map((f) => ({
-          id: f.id,
-          runId: f.run_id,
-          kind: f.kind,
-          explanation: f.explanation,
-          createdAt: f.created_at,
-        }));
+        const [run, events, feedback] = await Promise.all([
+          getRun(runId),
+          listRunEvents(runId),
+          listRunLearningFeedback(runId),
+        ]);
+        this.run = run;
+        this.events = events;
+        this.feedback = feedback;
       } catch (e) {
         this.run = null;
         this.error = normalizeApiError(e);

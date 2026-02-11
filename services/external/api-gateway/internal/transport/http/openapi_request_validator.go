@@ -23,14 +23,18 @@ type openAPIRequestValidator struct {
 	specPath string
 }
 
-func newOpenAPIRequestValidator(specPath string) (*openAPIRequestValidator, error) {
+func newOpenAPIRequestValidator(initCtx context.Context, specPath string) (*openAPIRequestValidator, error) {
+	if initCtx == nil {
+		return nil, fmt.Errorf("init context is nil")
+	}
+
 	resolvedPath, err := resolveOpenAPISpecPath(specPath)
 	if err != nil {
 		return nil, err
 	}
 
 	loader := &openapi3.Loader{
-		Context:               context.Background(),
+		Context:               initCtx,
 		IsExternalRefsAllowed: true,
 	}
 
@@ -38,7 +42,7 @@ func newOpenAPIRequestValidator(specPath string) (*openAPIRequestValidator, erro
 	if err != nil {
 		return nil, fmt.Errorf("load openapi spec %q: %w", resolvedPath, err)
 	}
-	if err := doc.Validate(context.Background()); err != nil {
+	if err := doc.Validate(initCtx); err != nil {
 		return nil, fmt.Errorf("validate openapi spec %q: %w", resolvedPath, err)
 	}
 
@@ -61,17 +65,17 @@ func (v *openAPIRequestValidator) middleware() echo.MiddlewareFunc {
 				return next(c)
 			}
 
-			validationReq, err := cloneRequestWithBufferedBody(req)
-			if err != nil {
-				return err
-			}
-
-			route, pathParams, err := v.router.FindRoute(validationReq)
+			route, pathParams, err := v.router.FindRoute(req)
 			if err != nil {
 				// Keep legacy handler behavior for requests that router cannot resolve
 				// (e.g. non-contract content-type quirks). Echo routing will still return
 				// proper 404/405 for unknown endpoints.
 				return next(c)
+			}
+
+			validationReq, err := cloneRequestWithBufferedBody(req)
+			if err != nil {
+				return err
 			}
 
 			input := &openapi3filter.RequestValidationInput{
@@ -119,9 +123,9 @@ func validateOpenAPIResponse(
 		RequestValidationInput: input,
 		Status:                 status,
 		Header:                 c.Response().Header().Clone(),
-		Body:                   io.NopCloser(bytes.NewReader(recorder.body.Bytes())),
 		Options:                input.Options,
 	}
+	validationResp.SetBodyBytes(recorder.body.Bytes())
 	return openapi3filter.ValidateResponse(ctx, validationResp)
 }
 

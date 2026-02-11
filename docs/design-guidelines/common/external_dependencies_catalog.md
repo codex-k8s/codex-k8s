@@ -45,8 +45,8 @@
 | `vue-i18n` | in use (package.json) | i18n | все пользовательские тексты через i18n ключи |
 | `vue3-cookies` | in use (package.json) | Cookies | хранение UI-настроек (например, язык) и единый cookie-адаптер |
 | `date-fns` | in use (package.json) | Datetime formatting | безопасное форматирование дат/времени без самописных helpers |
-| `@hey-api/openapi-ts` | in use (devDependency) | OpenAPI codegen (TS) | генерация typed API-клиента для frontend из `api.yaml` |
-| `@hey-api/client-axios` | in use (devDependency) | OpenAPI axios client plugin | генерация axios-совместимого runtime-клиента для frontend |
+| `@hey-api/openapi-ts` | in use (devDependency, `v0.92.3`) | OpenAPI codegen (TS) | генерация typed API-клиента для frontend из `api.yaml` |
+| `@hey-api/client-axios` | deprecated (bundled in `@hey-api/openapi-ts` since `v0.73.0`) | OpenAPI axios client plugin | отдельная установка не требуется, использовать встроенный плагин через конфиг `openapi-ts` |
 
 ## Infrastructure and CI tools — in use
 

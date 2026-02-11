@@ -2,17 +2,12 @@ import { defineStore } from "pinia";
 
 import { normalizeApiError, type ApiError } from "../../shared/api/errors";
 import { getProject } from "./api";
-
-export type ProjectDetails = {
-  id: string;
-  slug: string;
-  name: string;
-};
+import type { Project } from "./types";
 
 export const useProjectDetailsStore = defineStore("projectDetails", {
   state: () => ({
     projectId: "" as string,
-    item: null as ProjectDetails | null,
+    item: null as Project | null,
     loading: false,
     error: null as ApiError | null,
   }),
@@ -22,8 +17,7 @@ export const useProjectDetailsStore = defineStore("projectDetails", {
       this.loading = true;
       this.error = null;
       try {
-        const dto = await getProject(projectId);
-        this.item = { id: dto.id, slug: dto.slug, name: dto.name };
+        this.item = await getProject(projectId);
       } catch (e) {
         this.item = null;
         this.error = normalizeApiError(e);
@@ -33,4 +27,3 @@ export const useProjectDetailsStore = defineStore("projectDetails", {
     },
   },
 });
-
