@@ -38,7 +38,7 @@ approvals:
 
 ## Текущий прогресс
 - Day 0: completed + approved.
-- Day 1: planned (следующий активный эпик).
+- Day 1: completed (OpenAPI rollout + codegen baseline внедрены).
 - Day 2..7: planned.
 
 ## Критерий успеха Sprint S2 (выжимка)
