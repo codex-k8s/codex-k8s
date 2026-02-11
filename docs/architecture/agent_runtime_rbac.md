@@ -71,10 +71,6 @@ approvals:
   - `kubectl apply/delete`, rollout/restart, создание/удаление workload выполняются только через MCP-инструменты.
 - Для write-операций через MCP обязателен approver flow и аудит (`approval.requested/approved/denied`, `label.applied`, `run.wait.*`).
 
-Временный режим Day4:
-- до полного MCP enforcement (Day6) для agent job допускается direct toolset (`gh`, `kubectl`) в рамках собственного run namespace;
-- это временное послабление не отменяет аудит и должно быть снято/ограничено в Day6.
-
 ## Timeout и возобновление сессий
 
 - Для paused wait-state `owner_review` run может иметь длительную паузу и возобновляться по решению Owner.

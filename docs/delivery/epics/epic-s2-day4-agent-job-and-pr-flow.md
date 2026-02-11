@@ -17,44 +17,50 @@ approvals:
 # Epic S2 Day 4: Agent job image, git workflow and PR creation
 
 ## TL;DR
-- Цель эпика: довести run до результата “создан PR” (для dev) и “обновлён PR” (для revise).
+- Цель эпика: довести run до результата "создан PR" (для dev) и "обновлен PR" (для revise).
 - Ключевая ценность: полный dogfooding цикл без ручного вмешательства.
-- MVP-результат: агентный Job клонирует repo, вносит изменения, пушит ветку и открывает PR.
+- MVP-результат: агентный Job через MCP-ручки выполняет изменения, фиксирует их в git и ведет PR-цикл.
 
 ## Priority
 - `P0`.
 
 ## Scope
 ### In scope
-- Определить image/entrypoint агентного Job (инструменты: `git`, `gh`, `kubectl`, `@openai/codex`, `go`/`node` по проектным потребностям).
-- Политика кредов:
-  - repo token берётся из БД (шифрованно), расшифровывается в control-plane и прокидывается в Job безопасно;
-  - исключить попадание токенов в логи.
+- Определить image/entrypoint агентного Job (инструменты: `@openai/codex`, `git`, `jq`, `curl`, `bash`, проектные toolchain `go`/`node`).
+- Политика доступа и секретов:
+  - агентный pod не получает прямые секреты/креды GitHub и Kubernetes;
+  - любые write-операции в GitHub/Kubernetes выполняются только через MCP approver/executor ручки;
+  - в pod доступен только `CODEXK8S_OPENAI_API_KEY` и технич. параметры run.
 - Policy шаблонов промптов:
   - `work`/`review` шаблоны для запуска берутся по приоритету `DB override -> repo seed`;
   - шаблоны выбираются по locale policy `project locale -> system default -> en`;
   - для системных агентов baseline заполняется минимум `ru` и `en`;
   - для run фиксируется effective template source/version/locale в аудит-контуре.
+- Policy выбора модели и уровня рассуждения:
+  - effective model/reasoning определяется по labels issue (`[ai-model-*]`, `[ai-reasoning-*]`) с fallback к настройкам агента/проекта;
+  - для `run:dev:revise` параметры читаются повторно на момент запуска, чтобы Owner мог сменить модель/reasoning между итерациями ревью;
+  - effective `model` и `reasoning_effort` пишутся в `agent_sessions`/`flow_events`.
 - Resume policy:
   - сохранять `codex-cli` session JSON в `agent_sessions`;
-  - при перезапуске/возобновлении run восстанавливать сессию с того же места.
+  - при завершении каждого run пересохранять актуальный session snapshot;
+  - если локальная session в pod отсутствует, перед `resume` восстановить ее из `agent_sessions.codex_cli_session_json`.
 - PR flow:
   - детерминированное имя ветки;
-  - создание PR с ссылкой на Issue;
+  - создание/обновление PR с ссылкой на Issue;
   - запись PR URL/номер в БД.
 - Dev/revise runtime orchestration:
-  - `run:dev` запускает `work` prompt и ведёт цикл до открытия PR;
+  - `run:dev` запускает `work` prompt и ведет цикл до открытия PR;
   - `run:dev:revise` запускает `review` prompt, применяет фиксы в ту же ветку и обновляет существующий PR;
   - при отсутствии связанного PR в revise-режиме запуск отклоняется с явной диагностикой в `flow_events` (без автосоздания нового PR).
 
 ### Out of scope
-- Автоматический code review (финальный ревью остаётся за Owner).
-- Полный MCP-driven контроль всех runtime write-операций (переносится в Day6).
+- Автоматический final code review вместо Owner (финальный review остается за Owner).
 
 ## Критерии приемки эпика
-- `run:dev` создаёт PR.
+- `run:dev` создает PR.
 - `run:dev:revise` обновляет существующий PR; при отсутствии PR запуск отклоняется с диагностикой.
 - В `flow_events` есть трасса: issue -> run -> namespace -> job -> pr.
+- Агентный pod не содержит GitHub/Kubernetes секретов; write-действия проходят через MCP-контур.
 
 ## Контекст и референсы реализации
 
@@ -65,13 +71,21 @@ approvals:
 - `../codexctl/internal/prompt/templates/config_default.toml`
 - `../project-example/deploy/codex/Dockerfile`
 
-Актуальные сведения по Codex (через Context7):
+Актуальные сведения по Codex (через Context7 и upstream docs):
 - библиотека: `/openai/codex`
+- SDK (`@openai/codex-sdk`) оборачивает CLI-бинарь `codex` (spawn + JSONL events);
 - CLI resume/exec:
   - `codex resume --last`
   - `codex exec resume --last "<prompt>"`
 - SDK resume:
   - восстановление thread из persisted данных в `~/.codex/sessions` через `resumeThread(...)`.
+
+### Решение Day4: CLI-first, SDK-next
+
+- Для Day4 фиксируется CLI-first подход:
+  - текущий worker/control-plane стек написан на Go;
+  - `@openai/codex-sdk` требует Node runtime-слой и все равно использует тот же CLI-бинарь и ту же persistence модель.
+- SDK рассматривается как следующий шаг для richer event-stream/typed integrations в отдельном подпроекте, когда базовый cycle (`run:dev`/`run:dev:revise`) стабилизирован.
 
 ## Проектное решение Day4 (детализация)
 
@@ -81,22 +95,25 @@ approvals:
 2. Worker claim -> runtime mode + namespace (из Day3 baseline).
 3. Worker запускает agent Job в per-issue namespace.
 4. Job:
-   - подготавливает `git`/`gh`/`codex` окружение;
-   - рендерит effective prompt и `~/.codex/config.toml`;
-   - выполняет `codex exec ...` (для dev) или `codex exec resume --last ...` (для revise при наличии сессии);
-   - выполняет commit/push/PR операции через `gh`.
+   - подготавливает `codex` окружение и MCP-коннекторы;
+   - резолвит effective prompt/config/model/reasoning;
+   - при revise:
+     - сначала пытается resume активной локальной session;
+     - если локальной session нет, восстанавливает ее из БД snapshot в `~/.codex/sessions` и затем выполняет `resume`;
+   - выполняет разработку/ревизию;
+   - инициирует git/PR операции через MCP-инструменты GitHub (без прямого `gh auth` в pod).
 5. Control-plane фиксирует результаты (PR link, branch, session snapshot refs, audit events).
 
 ### 2. Agent job image и entrypoint
 
 Обязательное содержимое image:
 - `@openai/codex` CLI;
-- `git`, `gh`, `kubectl`, `jq`, `curl`, `bash`;
+- `git`, `jq`, `curl`, `bash`;
 - базовые toolchains для проекта (`go`, `node`, при необходимости `python3`);
 - runtime-конфиг для Codex через `~/.codex/config.toml`.
 
 Требования к entrypoint:
-- fail-fast по критическим ошибкам auth/checkout/push;
+- fail-fast по критическим ошибкам auth/session-restore/MCP connectivity;
 - mask секретов в логах;
 - структурированный stdout/stderr для последующего audit/парсинга.
 
@@ -118,27 +135,41 @@ approvals:
   - правилам обновления документации,
   - требованиям к проверкам и PR.
 
-### 4. Auth и креды в Job
+### 4. Model/reasoning policy
+
+- Источник конфигурации:
+  1. labels issue (`[ai-model-*]`, `[ai-reasoning-*]`);
+  2. project/agent defaults;
+  3. system defaults.
+- Для `run:dev:revise` effective параметры перечитываются на каждый запуск.
+- В аудит пишутся:
+  - source (`issue_label`/`agent_default`/`system_default`);
+  - selected `model`;
+  - selected `reasoning_effort`.
+
+### 5. Auth и креды в Job
 
 - Для `codex login` используется `CODEXK8S_OPENAI_API_KEY`:
   - `printenv CODEXK8S_OPENAI_API_KEY | codex login --with-api-key`
-- Для GitHub операций используется расшифрованный repo token из БД:
-  - auth через `gh auth login --with-token`.
+- Прямые креды GitHub/Kubernetes в агентный pod не выдаются.
+- GitHub/Kubernetes операции делаются через MCP-ручки approver/executor с отдельным контуром авторизации.
 - Секреты не логируются и не пишутся в итоговые комментарии/PR body.
 
-### 5. Session/resume стратегия
+### 6. Session/resume стратегия
 
 Обязательные принципы:
 - после каждого run сохраняется codex session snapshot в БД (`agent_sessions.codex_cli_session_json` + metadata);
-- для resume используется persisted session/thread identity;
-- файловый слой Codex в контейнере (`~/.codex/sessions`) рассматривается как runtime-source, но источником восстановления в платформе является запись в БД.
+- snapshot обновляется при завершении каждого последующего run по той же issue/PR ветке;
+- файловый слой Codex в контейнере (`~/.codex/sessions`) считается runtime-кешем;
+- источником восстановления является запись в БД.
 
 Поведение для `run:dev:revise`:
 - если есть связанная успешная/активная сессия по текущему PR/issue -> resume;
+- если локальной сессии нет, но есть БД snapshot -> восстановить runtime session из JSON и resume;
 - если сессии нет, но PR существует -> новый `review` запуск в той же ветке;
 - если PR не найден -> отклонить запуск с event `run.revise.pr_not_found`, статусом `failed_precondition` и рекомендацией использовать `run:dev`.
 
-### 6. Branch/PR policy
+### 7. Branch/PR policy
 
 Детерминированный naming:
 - ветка: `codex/issue-<issue-number>` (опционально суффикс run-id при коллизии);
@@ -147,54 +178,47 @@ approvals:
 PR policy:
 - `run:dev`: создать PR в `main` и связать с Issue (`Closes #<issue>`).
 - `run:dev:revise`: обновить существующий PR в той же ветке.
+- операции PR/labels/comments выполняются через MCP GitHub-инструменты.
 - в БД/links фиксировать:
   - `issue -> run`,
   - `run -> branch`,
   - `run -> pr`.
 
-## Временные решения Day4 и план замены
-
-Временное решение (Day4):
-- до внедрения MCP approval-flow агентный контейнер содержит `gh` и `kubectl` для самостоятельного дебага/доработок в границах своего namespace.
-- write-операции выполняются напрямую в рамках runtime job.
-
-План замены:
-- Day6: перевести привилегированные runtime write-операции на MCP approver/executor flow, ограничив прямые write-действия агента.
-- Day7: закрепить регрессией, что direct-write path выключен/ограничен согласно policy.
-
 ## Детализация задач (Stories/Tasks)
 
 ### Story-1: Agent execution image
 - Добавить отдельный Dockerfile/target для agent job runtime.
-- Установить `@openai/codex`, `gh`, `kubectl` и обязательные утилиты.
-- Согласовать переменные окружения (`CODEXK8S_OPENAI_API_KEY`, repo token, repo slug, issue/pr/run ids).
+- Установить `@openai/codex` и обязательные утилиты.
+- Согласовать переменные окружения (`CODEXK8S_OPENAI_API_KEY`, repo slug, issue/pr/run ids, MCP endpoint/token).
 
-### Story-2: Prompt/config render and launch
+### Story-2: Prompt/config/model render and launch
 - Реализовать резолв effective template (`work`/`review`, locale fallback).
+- Реализовать резолв effective model/reasoning из labels с fallback.
 - Рендерить `~/.codex/config.toml` перед запуском.
 - Запускать:
   - dev: `codex exec "<work-prompt>" ...`
   - revise: `codex exec resume --last "<review-prompt>"` при наличии сессии.
 
-### Story-3: Git/PR workflow
+### Story-3: Git/PR workflow via MCP
 - Checkout/cd в рабочий repo.
 - Детерминированно создавать/использовать ветку.
-- Делать commit/push, создавать/обновлять PR через `gh`.
+- Делать commit/push, создавать/обновлять PR через MCP GitHub ручки.
 - Писать PR ссылку/номер в БД и `flow_events`.
 
-### Story-4: Session persistence
+### Story-4: Session persistence and restore
 - Сохранять session metadata и JSON snapshot в `agent_sessions`.
 - Привязывать session к run/issue/PR.
-- Реализовать восстановление при `run:dev:revise`/перезапуске run.
+- Реализовать восстановление `~/.codex/sessions` из БД snapshot и resume при `run:dev:revise`/перезапуске run.
 
 ### Story-5: Observability and audit
 - Добавить события:
   - `run.agent.started`,
+  - `run.agent.session.restored`,
   - `run.agent.session.saved`,
   - `run.pr.created`,
   - `run.pr.updated`,
   - `run.agent.resume.used`.
-- Расширить payload audit-полями (branch, pr_number, session_id/thread_id, template source/locale/version).
+- Расширить payload audit-полями (branch, pr_number, session_id/thread_id, template source/locale/version, model/reasoning source/value).
 
 ## Тестовый контур приемки (обязательный)
 
@@ -206,20 +230,21 @@ PR policy:
    - в ветке появился тестовый/целевой файл с изменением,
    - создан PR, привязанный к Issue.
 4. Добавить review-комментарий в PR.
-5. Поставить `run:dev:revise`.
+5. Поменять label модели/рассуждений (при необходимости) и поставить `run:dev:revise`.
 6. Проверить:
    - в ту же ветку добавлен фикс,
-   - PR обновлён,
-   - комментарий закрыт/адресован.
+   - PR обновлен,
+   - комментарий закрыт/адресован,
+   - effective model/reasoning в run отражает актуальные labels.
 7. Проверить аудит:
    - trace `issue -> run -> namespace -> job -> pr`,
-   - session snapshot сохранён и связан с run.
+   - session snapshot сохранен и связан с run;
+   - при эмуляции потери локальной session восстановление из БД snapshot отрабатывает корректно.
 
 ## Риски и открытые вопросы
 
-- Риск несовместимости prompt-структуры и реального runtime-контекста на раннем этапе.
-- Риск неполного/хрупкого resume при рестартах pod.
-- Риск избыточных прав в Day4 (временное решение до Day6).
+- Риск неполного/хрупкого resume при несовместимых версиях формата session snapshot.
+- Риск зависимостей от стабильности MCP-контуров GitHub/Kubernetes на раннем этапе.
 - Открытый выбор для long-term:
-  - оставить CLI-first путь;
-  - или перейти на SDK/app-server control loop (спайк/решение фиксируется отдельно после Day4).
+  - оставить CLI-first runtime как baseline;
+  - или вынести control loop в отдельный SDK/app-server слой (без потери совместимости с CLI-сессиями).

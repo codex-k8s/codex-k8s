@@ -5,7 +5,7 @@ title: "codex-k8s — Agents Operating Model"
 status: draft
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-02-11
+updated_at: 2026-02-12
 related_issues: [1]
 related_prs: []
 approvals:
@@ -119,6 +119,14 @@ Seed-файлы:
 ### Контекстный рендер шаблонов
 - Effective prompt рендерится с runtime-контекстом (окружение, namespace/slot, доступные MCP-сервера и инструменты, project/services context, issue/pr/run identifiers).
 - Контракт контекстного рендера должен быть стабильным между версиями рантайма, чтобы избежать несовместимости seed/override шаблонов.
+
+### Модель и степень рассуждения
+- По умолчанию профиль модели/рассуждений задается в настройках агента/проекта.
+- На конкретном issue профиль может быть переопределен конфигурационными лейблами:
+  - `[ai-model-*]` для модели;
+  - `[ai-reasoning-*]` для уровня рассуждений.
+- Для `run:dev:revise` effective model/reasoning перечитываются на каждый запуск, чтобы Owner мог поменять профиль между итерациями review.
+- При конфликтующих лейблах одной группы запуск отклоняется как `failed_precondition` и требует ручного исправления labels.
 
 ## Инфраструктурная модель и capacity baseline
 

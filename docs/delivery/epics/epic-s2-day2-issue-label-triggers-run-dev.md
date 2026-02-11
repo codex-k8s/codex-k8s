@@ -5,7 +5,7 @@ title: "Epic S2 Day 2: Issue label triggers for run:dev and run:dev:revise"
 status: completed
 owner_role: EM
 created_at: 2026-02-10
-updated_at: 2026-02-11
+updated_at: 2026-02-12
 related_issues: []
 related_prs: []
 approvals:
@@ -31,7 +31,9 @@ approvals:
 - Правила авторизации для trigger-лейблов (`run:*`):
   - учитываем политику “trigger labels только через апрув Owner” (как принцип);
   - на MVP: allowlist/роль, проверка sender в webhook payload, запись audit события.
-- Зафиксировать полный каталог `run:*`, `state:*`, `need:*` в документации и GitHub vars (даже если часть run labels пока не активна).
+- Зафиксировать полный каталог labels в документации и GitHub vars:
+  - `run:*`, `state:*`, `need:*`;
+  - конфигурационные `[ai-model-*]`, `[ai-reasoning-*]`.
 - Маппинг лейблов:
   - `run:dev` -> создать dev run;
   - `run:dev:revise` -> запустить revise run (на существующий PR/ветку).

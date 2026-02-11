@@ -82,6 +82,7 @@ approvals:
   - environment (`env`, namespace, slot, run/issue/pr identifiers),
   - доступные MCP servers/tools,
   - project context и services overview,
+  - effective model/reasoning profile (включая источник: issue labels или defaults),
   - режим исполнения агента (`full-env`/`code-only`) и feature flags.
 - Формат контекста должен быть версионирован; изменения контракта рендера должны быть обратно совместимы либо сопровождаться миграцией шаблонов.
 
@@ -92,6 +93,7 @@ approvals:
   - требования по тестам/документации/PR flow;
   - правила безопасности (секреты, policy, аудит).
 - Для `run:dev:revise` используется `review`-класс шаблонов, даже если запуск идет через resume-path.
+- Для `run:dev:revise` effective model/reasoning перечитываются из актуальных issue labels перед запуском.
 - Долг/план замены:
   - Day5: расширить наблюдаемость effective prompt/session/template metadata в UI;
   - Day6: синхронизировать prompt-контекст с MCP approval-flow и убрать временные упрощения.
