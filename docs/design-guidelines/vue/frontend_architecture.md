@@ -6,6 +6,15 @@
 - Дополнительные публичные страницы (если появятся) размещаются в `services/external/*`.
 - Dev-only frontend размещается в `services/dev/*` и не деплоится в production.
 
+## Container и deploy требования
+
+- Каждый frontend-сервис обязан иметь `Dockerfile` в корне сервиса.
+- В Dockerfile обязательно поддерживаются target:
+  - `dev` — для staging/dev (например, Vite dev server);
+  - `prod` — для production runtime со статическим бандлом (например, `nginx`).
+- Для каждого frontend-сервиса обязателен отдельный Kubernetes manifest-шаблон
+  в `deploy/base/<service>/*.yaml.tpl`.
+
 ## Технологический стек
 
 - Vue 3

@@ -39,16 +39,26 @@
 - В `transport/http|grpc` запрещены `map[string]any`/`[]any`/`any` как контракт ответа.
 - Handlers возвращают только typed DTO-модели; маппинг transport <-> domain/proto выполняется через явные кастеры.
 - Для HTTP DTO размещать модели и кастеры в `internal/transport/http/{models,casters}` (или эквивалентно по протоколу в рамках сервиса).
+- Доменные типы размещать в `internal/domain/types/{entity,value,enum,query,mixin}`; не объявлять доменные модели ad-hoc в больших service/handler файлах.
 - Маппинг ошибок выполняется только на границе транспорта (HTTP error handler / gRPC interceptor); в handlers запрещены локальные “переводы” ошибок между слоями.
 
 ## Образы сервисов (обязательны)
 
 - В монорепо у каждого Go-сервиса собственный Dockerfile в `services/<zone>/<service>/Dockerfile`.
+- У каждого frontend-сервиса обязателен `services/<zone>/<service>/Dockerfile` с минимум двумя target:
+  - `dev` (staging/dev runtime);
+  - `prod` (runtime на веб-сервере, например `nginx`, со статическим бандлом).
+- Для каждого frontend-сервиса обязателен отдельный манифест в `deploy/base/<service>/*.yaml.tpl`.
 - Раздутый “общий” Dockerfile для нескольких сервисов не используется как основной путь сборки/deploy.
 - Для staging/CI обязательны раздельные image vars и image repositories:
-  - `CODEXK8S_API_GATEWAY_IMAGE`, `CODEXK8S_CONTROL_PLANE_IMAGE`, `CODEXK8S_WORKER_IMAGE`
-  - `CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY`, `CODEXK8S_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY`, `CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY`
-- Legacy fallback `CODEXK8S_IMAGE` допускается только как временная совместимость; запрещено оставлять multi-service конфигурацию в состоянии, где все сервисы фактически публикуются в один legacy-репозиторий.
+  - `CODEXK8S_API_GATEWAY_IMAGE`, `CODEXK8S_CONTROL_PLANE_IMAGE`, `CODEXK8S_WORKER_IMAGE`, `CODEXK8S_WEB_CONSOLE_IMAGE`
+  - `CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY`, `CODEXK8S_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY`, `CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY`, `CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY`
+- Переменные legacy-совместимости `CODEXK8S_IMAGE` и `CODEXK8S_INTERNAL_IMAGE_REPOSITORY` запрещены в новом коде, bootstrap и workflow.
+
+## Порядок выкладки staging (обязателен)
+
+- Применяется последовательность: `PostgreSQL -> migrations -> control-plane -> api-gateway -> frontend`.
+- Ожидание готовности зависимостей выполняется через `initContainers` в манифестах сервисов, а не через retry-циклы старта в Go-коде.
 
 ## Миграции и schema governance (обязательны)
 

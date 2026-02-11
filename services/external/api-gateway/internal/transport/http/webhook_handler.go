@@ -9,8 +9,6 @@ import (
 	"github.com/labstack/echo/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/crypto/githubsignature"
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
@@ -98,22 +96,7 @@ func (h *webhookHandler) IngestGitHubWebhook(c *echo.Context) error {
 		return errs.Unauthorized{Msg: "webhook ingress misconfigured"}
 	}
 
-	// During rollout, the control-plane Service may temporarily have no ready endpoints,
-	// which kube-proxy surfaces as "connection refused". Retry short-term Unavailable
-	// to keep webhook ingestion resilient.
-	var result *controlplanev1.IngestGitHubWebhookResponse
-	for attempt := 1; attempt <= 10; attempt++ {
-		result, err = h.cp.IngestGitHubWebhook(ctx, deliveryID, eventType, deliveryID, startedAt, rawPayload)
-		if err == nil {
-			break
-		}
-
-		st, ok := status.FromError(err)
-		if !ok || st.Code() != codes.Unavailable {
-			break
-		}
-		time.Sleep(time.Duration(attempt) * 150 * time.Millisecond)
-	}
+	result, err := h.cp.IngestGitHubWebhook(ctx, deliveryID, eventType, deliveryID, startedAt, rawPayload)
 	if err != nil {
 		webhookRequestsTotal.WithLabelValues("error", eventType).Inc()
 		webhookDuration.WithLabelValues("error", eventType).Observe(time.Since(startedAt).Seconds())

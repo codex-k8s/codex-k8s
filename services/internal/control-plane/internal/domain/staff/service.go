@@ -601,23 +601,6 @@ func (s *Service) ListRunLearningFeedback(ctx context.Context, principal Princip
 	return s.feedback.ListForRun(ctx, runID, limit)
 }
 
-// Principal is an authenticated staff identity.
-type Principal struct {
-	UserID          string
-	Email           string
-	GitHubLogin     string
-	IsPlatformAdmin bool
-	IsPlatformOwner bool
-}
-
-// ProjectView is a typed projection for staff project list responses.
-type ProjectView struct {
-	ID   string
-	Slug string
-	Name string
-	Role string
-}
-
 type projectSettings struct {
 	LearningModeDefault bool `json:"learning_mode_default"`
 }

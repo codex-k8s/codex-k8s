@@ -43,6 +43,16 @@
 - `internal/transport/{http,grpc,ws}/models/` — typed DTO контракты конкретного транспорта.
 - `internal/transport/{http,grpc,ws}/casters/` — явный маппинг transport DTO <-> domain/proto.
 - `internal/domain/` — бизнес-правила, модели, use-cases, порты.
+  - `internal/domain/service/` — доменная бизнес-логика (use-cases).
+  - `internal/domain/errs/` — доменные typed errors (если нужны).
+  - `internal/domain/casters/` — маппинг persistence <-> domain (без transport/pgx зависимостей).
+  - `internal/domain/helpers/` — локальные доменные helpers (валидация, нормализация, конвертеры).
+  - `internal/domain/types/` — доменные типы, разнесённые по категориям:
+    - `internal/domain/types/entity/*.go` — сущности;
+    - `internal/domain/types/value/*.go` — value objects;
+    - `internal/domain/types/enum/*.go` — enum-подобные типы;
+    - `internal/domain/types/query/*.go` — фильтры/параметры use-case;
+    - `internal/domain/types/mixin/*.go` — общие встраиваемые фрагменты (paging/time-range).
 - `internal/domain/repository/<model>/repository.go` — интерфейсы репозиториев.
 - `internal/repository/postgres/<model>/repository.go` — реализации репозиториев.
 - `internal/repository/postgres/<model>/sql/*.sql` — SQL (через `//go:embed`).

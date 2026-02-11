@@ -5,7 +5,7 @@ title: "Staging Runbook (MVP)"
 status: draft
 owner_role: SRE
 created_at: 2026-02-09
-updated_at: 2026-02-09
+updated_at: 2026-02-11
 related_issues: [1]
 related_prs: []
 approvals:
@@ -34,11 +34,15 @@ bash deploy/scripts/staging_smoke.sh
 ```
 
 Ожидаемо:
-- rollout `codex-k8s`, `codex-k8s-worker`, `oauth2-proxy`, `codex-k8s-web-console` успешен;
+- rollout `codex-k8s-control-plane`, `codex-k8s`, `codex-k8s-worker`, `oauth2-proxy`, `codex-k8s-web-console` успешен;
 - последний `codex-k8s-migrate-*` job completed;
 - `/healthz`, `/readyz`, `/metrics` доступны через `kubectl port-forward`;
 - `codex-k8s-staging-tls` secret существует;
 - webhook endpoint отвечает **401** на invalid signature (и не редиректит в OAuth).
+
+Порядок выкладки staging:
+- `PostgreSQL -> migrations -> control-plane -> api-gateway -> frontend`.
+- Зависимости между сервисами ожидаются через `initContainers` в манифестах.
 
 ## Проверка внешних портов (снаружи)
 
@@ -61,6 +65,7 @@ done
 ns="codex-k8s-ai-staging"
 kubectl -n "$ns" get pods -o wide
 kubectl -n "$ns" logs deploy/codex-k8s --tail=200
+kubectl -n "$ns" logs deploy/codex-k8s-control-plane --tail=200
 kubectl -n "$ns" logs deploy/codex-k8s-worker --tail=200
 kubectl -n "$ns" get ingress
 kubectl -n "$ns" describe ingress codex-k8s
@@ -81,4 +86,3 @@ kubectl -n "$ns" get certificate,order,challenge -A
 - Убедиться, что path пропущен без auth:
   - `oauth2-proxy --skip-auth-regex=^/api/v1/webhooks/.*`
 - Проверить `CODEXK8S_GITHUB_WEBHOOK_SECRET` совпадает с секретом вебхука в GitHub.
-

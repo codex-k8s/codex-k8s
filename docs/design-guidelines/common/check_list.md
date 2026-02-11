@@ -16,9 +16,11 @@
 - Kubernetes манифесты не “вшиты” heredoc’ами в bash: шаблоны лежат в `deploy/base/**`,
   а `deploy/scripts/**` только рендерит и применяет их.
 - Для multi-service deploy настроены раздельные image vars/repositories:
-  - `CODEXK8S_API_GATEWAY_IMAGE`, `CODEXK8S_CONTROL_PLANE_IMAGE`, `CODEXK8S_WORKER_IMAGE`
-  - `CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY`, `CODEXK8S_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY`, `CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY`
-- Legacy `CODEXK8S_IMAGE` не является единственным/основным источником образа для всех сервисов.
+  - `CODEXK8S_API_GATEWAY_IMAGE`, `CODEXK8S_CONTROL_PLANE_IMAGE`, `CODEXK8S_WORKER_IMAGE`, `CODEXK8S_WEB_CONSOLE_IMAGE`
+  - `CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY`, `CODEXK8S_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY`, `CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY`, `CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY`
+- Legacy-переменные `CODEXK8S_IMAGE` и `CODEXK8S_INTERNAL_IMAGE_REPOSITORY` не используются.
+- Порядок выкладки staging соблюдён: `PostgreSQL -> migrations -> control-plane -> api-gateway -> frontend`;
+  ожидание зависимостей выполнено через `initContainers` в Kubernetes-манифестах.
 - Вынос общего кода в `libs/*` оправдан (>= 2 потребителя); нет “god-lib”.
 - Если добавлена/обновлена внешняя зависимость, обновлён
   `docs/design-guidelines/common/external_dependencies_catalog.md`.

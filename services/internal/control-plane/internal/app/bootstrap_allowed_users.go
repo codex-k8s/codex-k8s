@@ -9,16 +9,16 @@ import (
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
 )
 
-func ensureBootstrapAllowedUsers(ctx context.Context, users userrepo.Repository, ownerEmail string, allowedEmailsCSV string, logger *slog.Logger) error {
-	return ensureBootstrapUsers(ctx, users, ownerEmail, allowedEmailsCSV, false, "allowed user", logger)
+func ensureBootstrapAllowedUsers(ctx context.Context, users userrepo.Repository, ownerEmail string, allowedEmails []string, logger *slog.Logger) error {
+	return ensureBootstrapUsers(ctx, users, ownerEmail, allowedEmails, false, "allowed user", "CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS", logger)
 }
 
-func ensureBootstrapPlatformAdmins(ctx context.Context, users userrepo.Repository, ownerEmail string, adminEmailsCSV string, logger *slog.Logger) error {
-	return ensureBootstrapUsers(ctx, users, ownerEmail, adminEmailsCSV, true, "platform admin", logger)
+func ensureBootstrapPlatformAdmins(ctx context.Context, users userrepo.Repository, ownerEmail string, adminEmails []string, logger *slog.Logger) error {
+	return ensureBootstrapUsers(ctx, users, ownerEmail, adminEmails, true, "platform admin", "CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS", logger)
 }
 
-func ensureBootstrapUsers(ctx context.Context, users userrepo.Repository, ownerEmail string, emailsCSV string, isPlatformAdmin bool, label string, logger *slog.Logger) error {
-	emails, err := parseAllowedEmailsCSV(emailsCSV)
+func ensureBootstrapUsers(ctx context.Context, users userrepo.Repository, ownerEmail string, emails []string, isPlatformAdmin bool, label string, envVarName string, logger *slog.Logger) error {
+	emails, err := normalizeBootstrapEmails(emails, envVarName)
 	if err != nil {
 		return err
 	}
@@ -42,21 +42,20 @@ func ensureBootstrapUsers(ctx context.Context, users userrepo.Repository, ownerE
 	return nil
 }
 
-func parseAllowedEmailsCSV(s string) ([]string, error) {
-	s = strings.TrimSpace(s)
-	if s == "" {
+func normalizeBootstrapEmails(values []string, envVarName string) ([]string, error) {
+	if len(values) == 0 {
 		return nil, nil
 	}
 
 	seen := make(map[string]struct{})
-	var out []string
-	for _, part := range strings.Split(s, ",") {
-		email := strings.ToLower(strings.TrimSpace(part))
+	out := make([]string, 0, len(values))
+	for _, value := range values {
+		email := strings.ToLower(strings.TrimSpace(value))
 		if email == "" {
 			continue
 		}
 		if !strings.Contains(email, "@") {
-			return nil, fmt.Errorf("invalid email in CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS: %q", email)
+			return nil, fmt.Errorf("invalid email in %s: %q", envVarName, email)
 		}
 		if _, ok := seen[email]; ok {
 			continue

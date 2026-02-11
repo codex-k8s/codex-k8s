@@ -3,9 +3,9 @@ package controlplane
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
+	"github.com/codex-k8s/codex-k8s/libs/go/cast"
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
@@ -79,7 +79,7 @@ func (c *Client) Service() controlplanev1.ControlPlaneServiceClient {
 func (c *Client) ResolveStaffByEmail(ctx context.Context, email string, githubLogin string) (*controlplanev1.Principal, error) {
 	resp, err := c.svc.ResolveStaffByEmail(ctx, &controlplanev1.ResolveStaffByEmailRequest{
 		Email:       email,
-		GithubLogin: optionalString(githubLogin),
+		GithubLogin: cast.TrimmedStringPtr(githubLogin),
 	})
 	if err != nil {
 		return nil, err
@@ -111,12 +111,4 @@ func (c *Client) IngestGitHubWebhook(ctx context.Context, correlationID string, 
 		return nil, err
 	}
 	return resp, nil
-}
-
-func optionalString(value string) *string {
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return nil
-	}
-	return &value
 }

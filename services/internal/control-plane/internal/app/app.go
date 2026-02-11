@@ -2,8 +2,6 @@ package app
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -47,42 +45,17 @@ func Run() error {
 	runCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 	defer stop()
 
-	// Postgres Service can be routable slightly before the actual server accepts connections.
-	// Keep control-plane startup resilient to short transient failures.
-	var db *sql.DB
-	{
-		deadline := time.Now().Add(60 * time.Second)
-		var lastErr error
-	connectLoop:
-		for attempt := 1; time.Now().Before(deadline); attempt++ {
-			db, lastErr = postgres.Open(runCtx, postgres.OpenParams{
-				Host:     cfg.DBHost,
-				Port:     cfg.DBPort,
-				DBName:   cfg.DBName,
-				User:     cfg.DBUser,
-				Password: cfg.DBPassword,
-				SSLMode:  cfg.DBSSLMode,
-			})
-			switch {
-			case lastErr == nil:
-				break connectLoop
-			case errors.Is(lastErr, context.Canceled), errors.Is(lastErr, context.DeadlineExceeded):
-				return fmt.Errorf("ping postgres canceled: %w", lastErr)
-			default:
-				if runCtx.Err() != nil {
-					return fmt.Errorf("control-plane init canceled: %w", runCtx.Err())
-				}
-				logger.Warn("ping postgres failed; retrying", "attempt", attempt, "err", lastErr)
-				select {
-				case <-runCtx.Done():
-					return fmt.Errorf("control-plane init canceled: %w", runCtx.Err())
-				case <-time.After(2 * time.Second):
-				}
-			}
-		}
-		if lastErr != nil {
-			return fmt.Errorf("ping postgres: %w", lastErr)
-		}
+	// DB readiness is handled by initContainer in deployment; control-plane starts fail-fast.
+	db, err := postgres.Open(runCtx, postgres.OpenParams{
+		Host:     cfg.DBHost,
+		Port:     cfg.DBPort,
+		DBName:   cfg.DBName,
+		User:     cfg.DBUser,
+		Password: cfg.DBPassword,
+		SSLMode:  cfg.DBSSLMode,
+	})
+	if err != nil {
+		return fmt.Errorf("open postgres: %w", err)
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
@@ -117,7 +90,14 @@ func Run() error {
 	if webhookURL == "" {
 		webhookURL = strings.TrimRight(cfg.PublicBaseURL, "/") + "/api/v1/webhooks/github"
 	}
-	events := splitCSV(cfg.GitHubWebhookEvents)
+	events := make([]string, 0, len(cfg.GitHubWebhookEvents))
+	for _, event := range cfg.GitHubWebhookEvents {
+		event = strings.TrimSpace(event)
+		if event == "" {
+			continue
+		}
+		events = append(events, event)
+	}
 	staffService := staff.NewService(staff.Config{
 		LearningModeDefault: learningDefault,
 		WebhookSpec: repoprovider.WebhookSpec{
@@ -205,17 +185,4 @@ func Run() error {
 		}
 		return fmt.Errorf("control-plane server failed: %w", err)
 	}
-}
-
-func splitCSV(v string) []string {
-	parts := strings.Split(v, ",")
-	out := make([]string, 0, len(parts))
-	for _, p := range parts {
-		p = strings.TrimSpace(p)
-		if p == "" {
-			continue
-		}
-		out = append(out, p)
-	}
-	return out
 }

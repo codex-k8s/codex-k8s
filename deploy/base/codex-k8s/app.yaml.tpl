@@ -33,6 +33,18 @@ spec:
         app.kubernetes.io/name: codex-k8s
         app.kubernetes.io/component: api-gateway
     spec:
+      initContainers:
+        - name: wait-control-plane
+          image: busybox:1.36
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -ec
+            - |
+              until wget -q -O /dev/null http://codex-k8s-control-plane:8081/health/readyz; do
+                echo "waiting for control-plane readiness..."
+                sleep 2
+              done
       containers:
         - name: codex-k8s
           image: ${CODEXK8S_API_GATEWAY_IMAGE}
@@ -99,11 +111,11 @@ spec:
             periodSeconds: 20
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
+              cpu: ${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_CPU}
+              memory: ${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_MEMORY}
             limits:
-              cpu: 1000m
-              memory: 1Gi
+              cpu: ${CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_CPU}
+              memory: ${CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_MEMORY}
 ---
 apiVersion: v1
 kind: Service
@@ -143,6 +155,18 @@ spec:
         app.kubernetes.io/name: codex-k8s
         app.kubernetes.io/component: control-plane
     spec:
+      initContainers:
+        - name: wait-postgres
+          image: busybox:1.36
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -ec
+            - |
+              until nc -z postgres 5432; do
+                echo "waiting for postgres tcp:5432..."
+                sleep 2
+              done
       containers:
         - name: control-plane
           image: ${CODEXK8S_CONTROL_PLANE_IMAGE}
@@ -243,11 +267,11 @@ spec:
             periodSeconds: 20
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
+              cpu: ${CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_CPU}
+              memory: ${CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_MEMORY}
             limits:
-              cpu: 1000m
-              memory: 1Gi
+              cpu: ${CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_CPU}
+              memory: ${CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_MEMORY}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -361,8 +385,8 @@ spec:
               value: "${CODEXK8S_WORKER_JOB_ACTIVE_DEADLINE_SECONDS}"
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
+              cpu: ${CODEXK8S_WORKER_RESOURCES_REQUEST_CPU}
+              memory: ${CODEXK8S_WORKER_RESOURCES_REQUEST_MEMORY}
             limits:
-              cpu: 1000m
-              memory: 1Gi
+              cpu: ${CODEXK8S_WORKER_RESOURCES_LIMIT_CPU}
+              memory: ${CODEXK8S_WORKER_RESOURCES_LIMIT_MEMORY}

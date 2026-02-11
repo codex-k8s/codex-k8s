@@ -59,8 +59,8 @@ spec:
             periodSeconds: 20
           resources:
             requests:
-              cpu: 50m
-              memory: 128Mi
+              cpu: ${CODEXK8S_WEB_CONSOLE_RESOURCES_REQUEST_CPU}
+              memory: ${CODEXK8S_WEB_CONSOLE_RESOURCES_REQUEST_MEMORY}
             limits:
-              cpu: 500m
-              memory: 512Mi
+              cpu: ${CODEXK8S_WEB_CONSOLE_RESOURCES_LIMIT_CPU}
+              memory: ${CODEXK8S_WEB_CONSOLE_RESOURCES_LIMIT_MEMORY}
