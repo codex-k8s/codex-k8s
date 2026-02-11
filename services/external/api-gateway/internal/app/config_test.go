@@ -27,6 +27,9 @@ func TestLoadConfig_Defaults(t *testing.T) {
 	if cfg.CookieSecure {
 		t.Fatal("expected default cookie secure=false")
 	}
+	if !cfg.OpenAPIValidationEnabled {
+		t.Fatal("expected default openapi validation enabled=true")
+	}
 }
 
 func TestLoadConfig_MissingRequired(t *testing.T) {

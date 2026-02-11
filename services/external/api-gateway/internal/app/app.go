@@ -48,14 +48,19 @@ func Run() error {
 		return fmt.Errorf("init auth service: %w", err)
 	}
 
-	server := httptransport.NewServer(httptransport.ServerConfig{
-		HTTPAddr:            cfg.HTTPAddr,
-		GitHubWebhookSecret: cfg.GitHubWebhookSecret,
-		MaxBodyBytes:        cfg.WebhookMaxBodyBytes,
-		CookieSecure:        cfg.CookieSecure,
-		StaticDir:           "/app/web",
-		ViteDevUpstream:     cfg.ViteDevUpstream,
+	server, err := httptransport.NewServer(httptransport.ServerConfig{
+		HTTPAddr:                 cfg.HTTPAddr,
+		GitHubWebhookSecret:      cfg.GitHubWebhookSecret,
+		MaxBodyBytes:             cfg.WebhookMaxBodyBytes,
+		CookieSecure:             cfg.CookieSecure,
+		StaticDir:                "/app/web",
+		ViteDevUpstream:          cfg.ViteDevUpstream,
+		OpenAPISpecPath:          cfg.OpenAPISpecPath,
+		OpenAPIValidationEnabled: cfg.OpenAPIValidationEnabled,
 	}, cp, authService, logger)
+	if err != nil {
+		return fmt.Errorf("init http server: %w", err)
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 	defer stop()
