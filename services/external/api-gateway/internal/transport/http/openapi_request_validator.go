@@ -68,7 +68,10 @@ func (v *openAPIRequestValidator) middleware() echo.MiddlewareFunc {
 
 			route, pathParams, err := v.router.FindRoute(validationReq)
 			if err != nil {
-				return echo.ErrNotFound
+				// Keep legacy handler behavior for requests that router cannot resolve
+				// (e.g. non-contract content-type quirks). Echo routing will still return
+				// proper 404/405 for unknown endpoints.
+				return next(c)
 			}
 
 			input := &openapi3filter.RequestValidationInput{
