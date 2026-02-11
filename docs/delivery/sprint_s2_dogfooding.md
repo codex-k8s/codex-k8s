@@ -31,7 +31,7 @@ approvals:
 | Day 1 | Migrations/schema ownership + OpenAPI contract-first baseline | P0 | `docs/delivery/epics/epic-s2-day1-migrations-and-schema-ownership.md` | completed |
 | Day 2 | Issue label triggers: `run:dev`, `run:dev:revise` | P0 | `docs/delivery/epics/epic-s2-day2-issue-label-triggers-run-dev.md` | completed |
 | Day 3 | Per-issue namespace + RBAC/resource policy baseline | P0 | `docs/delivery/epics/epic-s2-day3-per-issue-namespace-and-rbac.md` | completed |
-| Day 3.5 | MCP GitHub/K8s tools + prompt context assembler | P0 | `docs/delivery/epics/epic-s2-day35-mcp-github-k8s-and-prompt-context.md` | planned |
+| Day 3.5 | MCP GitHub/K8s tools + prompt context assembler | P0 | `docs/delivery/epics/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md` | planned |
 | Day 4 | Agent job image + git/PR flow via MCP | P0 | `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md` | planned |
 | Day 5 | Staff UI: dogfooding visibility + drilldowns | P1 | `docs/delivery/epics/epic-s2-day5-staff-ui-dogfooding-observability.md` | planned |
 | Day 6 | Approvals/audit hardening for trigger actions | P1 | `docs/delivery/epics/epic-s2-day6-approval-and-audit-hardening.md` | planned |
