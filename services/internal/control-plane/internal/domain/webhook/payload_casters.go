@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 )
 
 type runPayloadInput struct {
@@ -30,13 +32,13 @@ type ignoredEventPayloadInput struct {
 	Command    IngestCommand
 	Envelope   githubWebhookEnvelope
 	Reason     string
-	RunKind    string
+	RunKind    webhookdomain.TriggerKind
 	HasBinding bool
 }
 
 type ignoredWebhookParams struct {
 	Reason     string
-	RunKind    string
+	RunKind    webhookdomain.TriggerKind
 	HasBinding bool
 }
 
@@ -93,7 +95,7 @@ func buildRunPayload(input runPayloadInput) (json.RawMessage, error) {
 
 	if input.Trigger != nil {
 		payload.Trigger = &githubIssueTriggerPayload{
-			Source: "issue_label",
+			Source: webhookdomain.TriggerSourceIssueLabel,
 			Label:  input.Trigger.Label,
 			Kind:   input.Trigger.Kind,
 		}
@@ -133,7 +135,7 @@ func buildIgnoredEventPayload(input ignoredEventPayloadInput) (json.RawMessage, 
 	if strings.TrimSpace(input.Envelope.Label.Name) != "" {
 		payload.Label = input.Envelope.Label.Name
 	}
-	if strings.TrimSpace(input.RunKind) != "" {
+	if strings.TrimSpace(string(input.RunKind)) != "" {
 		payload.RunKind = input.RunKind
 	}
 	if input.Envelope.Issue.Number > 0 {

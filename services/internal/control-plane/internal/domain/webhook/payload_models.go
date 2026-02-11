@@ -1,6 +1,10 @@
 package webhook
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
+)
 
 type githubRunPayload struct {
 	Source        string                     `json:"source"`
@@ -58,9 +62,9 @@ type githubPullRequestPayload struct {
 }
 
 type githubIssueTriggerPayload struct {
-	Source string `json:"source"`
-	Label  string `json:"label"`
-	Kind   string `json:"kind"`
+	Source string                    `json:"source"`
+	Label  string                    `json:"label"`
+	Kind   webhookdomain.TriggerKind `json:"kind"`
 }
 
 type githubFlowEventPayload struct {
@@ -74,7 +78,7 @@ type githubFlowEventPayload struct {
 	Inserted        *bool                       `json:"inserted,omitempty"`
 	RunID           string                      `json:"run_id,omitempty"`
 	Label           string                      `json:"label,omitempty"`
-	RunKind         string                      `json:"run_kind,omitempty"`
+	RunKind         webhookdomain.TriggerKind   `json:"run_kind,omitempty"`
 	IssueNumber     int64                       `json:"issue_number,omitempty"`
 	Reason          string                      `json:"reason,omitempty"`
 	BindingResolved *bool                       `json:"binding_resolved,omitempty"`

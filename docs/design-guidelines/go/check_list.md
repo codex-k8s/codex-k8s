@@ -7,6 +7,7 @@
 - Доменные модели разложены системно (`internal/domain/types/{entity,value,enum,query,mixin}`), а не объявлены ad-hoc внутри service/handler файлов.
 - В transport-слое ответы типизированы (DTO модели + кастеры); нет `map[string]any`/`[]any`/`any` как API-контрактов.
 - JSON payload, сохраняемые в БД/события (например `*_payload`), типизированы через struct + caster; нет `map[string]any` в коммитнутом production-коде.
+- Повторяющиеся строковые доменные значения (`status`, `event_type`, `actor_type`, `actor_id`, `kind`) вынесены в typed-константы (без копипасты литералов по коду).
 - Ошибки маппятся на границе транспорта (HTTP error handler / gRPC interceptor); в handlers нет ad-hoc маппинга межслойных ошибок.
 - `context.Background()` создан только в composition root (`internal/app/*`); в transport/domain/repository используется прокинутый контекст.
 - Функции/методы оформлены с компактными сигнатурами (предпочтительно в одну строку); при большом числе аргументов используется `Config/Params/Input` структура.

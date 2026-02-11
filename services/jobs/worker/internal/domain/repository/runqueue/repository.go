@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"time"
+
+	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
 )
 
 // ClaimParams defines constraints for claiming a pending run.
@@ -58,7 +60,7 @@ type FinishParams struct {
 	// ProjectID is a project scope used for slot release.
 	ProjectID string
 	// Status must be succeeded, failed, or canceled.
-	Status string
+	Status rundomain.Status
 	// FinishedAt is a final status timestamp.
 	FinishedAt time.Time
 }

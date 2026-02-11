@@ -1,0 +1,10 @@
+# Generated protobuf artifacts
+proto/gen/** linguist-generated=true
+**/*.pb.go linguist-generated=true
+**/*_grpc.pb.go linguist-generated=true
+
+# Generated OpenAPI backend artifacts
+services/external/api-gateway/internal/transport/http/generated/** linguist-generated=true
+
+# Generated OpenAPI frontend artifacts
+services/staff/web-console/src/shared/api/generated/** linguist-generated=true

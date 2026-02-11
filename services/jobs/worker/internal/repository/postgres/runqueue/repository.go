@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 
+	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
 	domainrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
 )
 
@@ -191,7 +192,7 @@ func (r *Repository) ListRunning(ctx context.Context, limit int) ([]domainrepo.R
 
 // FinishRun sets final status and releases leased slot.
 func (r *Repository) FinishRun(ctx context.Context, params domainrepo.FinishParams) (bool, error) {
-	if params.Status != "succeeded" && params.Status != "failed" && params.Status != "canceled" {
+	if params.Status != rundomain.StatusSucceeded && params.Status != rundomain.StatusFailed && params.Status != rundomain.StatusCanceled {
 		return false, fmt.Errorf("unsupported final run status %q", params.Status)
 	}
 
@@ -203,7 +204,7 @@ func (r *Repository) FinishRun(ctx context.Context, params domainrepo.FinishPara
 		_ = tx.Rollback()
 	}()
 
-	res, err := tx.ExecContext(ctx, queryMarkRunFinished, params.RunID, params.Status, params.FinishedAt.UTC())
+	res, err := tx.ExecContext(ctx, queryMarkRunFinished, params.RunID, string(params.Status), params.FinishedAt.UTC())
 	if err != nil {
 		return false, fmt.Errorf("mark run %s as %s: %w", params.RunID, params.Status, err)
 	}

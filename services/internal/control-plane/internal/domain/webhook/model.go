@@ -3,6 +3,8 @@ package webhook
 import (
 	"encoding/json"
 	"time"
+
+	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 )
 
 // IngestCommand is a normalized webhook command accepted by the domain service.
@@ -26,7 +28,7 @@ type IngestResult struct {
 	// RunID references an agent run linked to this webhook.
 	RunID string `json:"run_id,omitempty"`
 	// Status is accepted, duplicate, or ignored.
-	Status string `json:"status"`
+	Status webhookdomain.IngestStatus `json:"status"`
 	// Duplicate is true when webhook was already processed before.
 	Duplicate bool `json:"duplicate"`
 }
@@ -39,14 +41,14 @@ type TriggerLabels struct {
 
 func defaultTriggerLabels() TriggerLabels {
 	return TriggerLabels{
-		RunDev:       "run:dev",
-		RunDevRevise: "run:dev:revise",
+		RunDev:       webhookdomain.DefaultRunDevLabel,
+		RunDevRevise: webhookdomain.DefaultRunDevReviseLabel,
 	}
 }
 
 type issueRunTrigger struct {
 	Label string
-	Kind  string
+	Kind  webhookdomain.TriggerKind
 }
 
 // githubWebhookEnvelope is a local transport DTO for fields used by the domain.

@@ -33,9 +33,9 @@ func (r *Repository) Insert(ctx context.Context, params InsertParams) error {
 		r.db,
 		queryInsert,
 		params.CorrelationID,
-		params.ActorType,
-		params.ActorID,
-		params.EventType,
+		string(params.ActorType),
+		string(params.ActorID),
+		string(params.EventType),
 		[]byte(params.Payload),
 		params.CreatedAt,
 	)

@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
+	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
 	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projectmember"
@@ -27,7 +29,7 @@ func TestIngestGitHubWebhook_Dedup(t *testing.T) {
 	cmd := IngestCommand{
 		CorrelationID: "delivery-1",
 		DeliveryID:    "delivery-1",
-		EventType:     "pull_request",
+		EventType:     string(webhookdomain.GitHubEventPullRequest),
 		ReceivedAt:    time.Now().UTC(),
 		Payload:       payload,
 	}
@@ -67,7 +69,7 @@ func TestIngestGitHubWebhook_LearningMode_DefaultFallback(t *testing.T) {
 	cmd := IngestCommand{
 		CorrelationID: "delivery-1",
 		DeliveryID:    "delivery-1",
-		EventType:     "pull_request",
+		EventType:     string(webhookdomain.GitHubEventPullRequest),
 		ReceivedAt:    time.Now().UTC(),
 		Payload:       payload,
 	}
@@ -124,7 +126,7 @@ func TestIngestGitHubWebhook_IssueRunDev_CreatesRunForAllowedMember(t *testing.T
 	cmd := IngestCommand{
 		CorrelationID: "delivery-77",
 		DeliveryID:    "delivery-77",
-		EventType:     "issues",
+		EventType:     string(webhookdomain.GitHubEventIssues),
 		ReceivedAt:    time.Now().UTC(),
 		Payload:       payload,
 	}
@@ -133,7 +135,7 @@ func TestIngestGitHubWebhook_IssueRunDev_CreatesRunForAllowedMember(t *testing.T
 	if err != nil {
 		t.Fatalf("ingest failed: %v", err)
 	}
-	if got.Status != "accepted" || got.Duplicate {
+	if got.Status != webhookdomain.IngestStatusAccepted || got.Duplicate {
 		t.Fatalf("unexpected result: %+v", got)
 	}
 	if got.RunID == "" {
@@ -147,10 +149,10 @@ func TestIngestGitHubWebhook_IssueRunDev_CreatesRunForAllowedMember(t *testing.T
 	if runPayload.Trigger == nil {
 		t.Fatalf("expected trigger object in run payload")
 	}
-	if runPayload.Trigger.Kind != "dev" {
+	if runPayload.Trigger.Kind != webhookdomain.TriggerKindDev {
 		t.Fatalf("unexpected trigger kind: %#v", runPayload.Trigger.Kind)
 	}
-	if runPayload.Trigger.Label != "run:dev" {
+	if runPayload.Trigger.Label != webhookdomain.DefaultRunDevLabel {
 		t.Fatalf("unexpected trigger label: %#v", runPayload.Trigger.Label)
 	}
 }
@@ -186,7 +188,7 @@ func TestIngestGitHubWebhook_IssueRunDev_DeniesUnknownSender(t *testing.T) {
 	cmd := IngestCommand{
 		CorrelationID: "delivery-78",
 		DeliveryID:    "delivery-78",
-		EventType:     "issues",
+		EventType:     string(webhookdomain.GitHubEventIssues),
 		ReceivedAt:    time.Now().UTC(),
 		Payload:       payload,
 	}
@@ -195,7 +197,7 @@ func TestIngestGitHubWebhook_IssueRunDev_DeniesUnknownSender(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ingest failed: %v", err)
 	}
-	if got.Status != "ignored" || got.RunID != "" || got.Duplicate {
+	if got.Status != webhookdomain.IngestStatusIgnored || got.RunID != "" || got.Duplicate {
 		t.Fatalf("unexpected result: %+v", got)
 	}
 	if len(runs.items) != 0 {
@@ -204,7 +206,7 @@ func TestIngestGitHubWebhook_IssueRunDev_DeniesUnknownSender(t *testing.T) {
 	if len(events.items) != 1 {
 		t.Fatalf("expected one flow event, got %d", len(events.items))
 	}
-	if events.items[0].EventType != "webhook.ignored" {
+	if events.items[0].EventType != floweventdomain.EventTypeWebhookIgnored {
 		t.Fatalf("unexpected event type: %s", events.items[0].EventType)
 	}
 }
@@ -228,7 +230,7 @@ func TestIngestGitHubWebhook_IssueNonTriggerLabelIgnored(t *testing.T) {
 	cmd := IngestCommand{
 		CorrelationID: "delivery-79",
 		DeliveryID:    "delivery-79",
-		EventType:     "issues",
+		EventType:     string(webhookdomain.GitHubEventIssues),
 		ReceivedAt:    time.Now().UTC(),
 		Payload:       payload,
 	}
@@ -237,7 +239,7 @@ func TestIngestGitHubWebhook_IssueNonTriggerLabelIgnored(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ingest failed: %v", err)
 	}
-	if got.Status != "ignored" || got.RunID != "" || got.Duplicate {
+	if got.Status != webhookdomain.IngestStatusIgnored || got.RunID != "" || got.Duplicate {
 		t.Fatalf("unexpected result: %+v", got)
 	}
 	if len(runs.items) != 0 {

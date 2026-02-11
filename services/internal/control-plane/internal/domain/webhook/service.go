@@ -7,8 +7,10 @@ import (
 	"strings"
 	"time"
 
+	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	"github.com/google/uuid"
 
+	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
@@ -17,6 +19,8 @@ import (
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
 )
+
+const githubWebhookActorID = floweventdomain.ActorIDGitHubWebhook
 
 // Service ingests provider webhooks into idempotent run and flow-event records.
 type Service struct {
@@ -96,7 +100,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 	}
 
 	trigger, hasIssueRunTrigger := s.resolveIssueRunTrigger(cmd.EventType, envelope)
-	if strings.EqualFold(strings.TrimSpace(cmd.EventType), "issues") && !hasIssueRunTrigger {
+	if strings.EqualFold(strings.TrimSpace(cmd.EventType), string(webhookdomain.GitHubEventIssues)) && !hasIssueRunTrigger {
 		return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
 			Reason:     "issue_event_not_trigger_label",
 			RunKind:    "",
@@ -179,17 +183,17 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		return IngestResult{}, fmt.Errorf("build event payload: %w", err)
 	}
 
-	eventType := "webhook.received"
-	status := "accepted"
+	eventType := floweventdomain.EventTypeWebhookReceived
+	status := webhookdomain.IngestStatusAccepted
 	if !createResult.Inserted {
-		eventType = "webhook.duplicate"
-		status = "duplicate"
+		eventType = floweventdomain.EventTypeWebhookDuplicate
+		status = webhookdomain.IngestStatusDuplicate
 	}
 
 	if err := s.flowEvents.Insert(ctx, floweventrepo.InsertParams{
 		CorrelationID: cmd.CorrelationID,
-		ActorType:     "system",
-		ActorID:       "github-webhook",
+		ActorType:     floweventdomain.ActorTypeSystem,
+		ActorID:       githubWebhookActorID,
 		EventType:     eventType,
 		Payload:       eventPayload,
 		CreatedAt:     cmd.ReceivedAt,
@@ -219,9 +223,9 @@ func (s *Service) recordIgnoredWebhook(ctx context.Context, cmd IngestCommand, e
 
 	if err := s.flowEvents.Insert(ctx, floweventrepo.InsertParams{
 		CorrelationID: cmd.CorrelationID,
-		ActorType:     "system",
-		ActorID:       "github-webhook",
-		EventType:     "webhook.ignored",
+		ActorType:     floweventdomain.ActorTypeSystem,
+		ActorID:       githubWebhookActorID,
+		EventType:     floweventdomain.EventTypeWebhookIgnored,
 		Payload:       payload,
 		CreatedAt:     cmd.ReceivedAt,
 	}); err != nil {
@@ -230,16 +234,16 @@ func (s *Service) recordIgnoredWebhook(ctx context.Context, cmd IngestCommand, e
 
 	return IngestResult{
 		CorrelationID: cmd.CorrelationID,
-		Status:        "ignored",
+		Status:        webhookdomain.IngestStatusIgnored,
 		Duplicate:     false,
 	}, nil
 }
 
 func (s *Service) resolveIssueRunTrigger(eventType string, envelope githubWebhookEnvelope) (issueRunTrigger, bool) {
-	if !strings.EqualFold(strings.TrimSpace(eventType), "issues") {
+	if !strings.EqualFold(strings.TrimSpace(eventType), string(webhookdomain.GitHubEventIssues)) {
 		return issueRunTrigger{}, false
 	}
-	if !strings.EqualFold(strings.TrimSpace(envelope.Action), "labeled") {
+	if !strings.EqualFold(strings.TrimSpace(envelope.Action), string(webhookdomain.GitHubActionLabeled)) {
 		return issueRunTrigger{}, false
 	}
 
@@ -251,12 +255,12 @@ func (s *Service) resolveIssueRunTrigger(eventType string, envelope githubWebhoo
 	case strings.EqualFold(label, s.triggerLabels.RunDev):
 		return issueRunTrigger{
 			Label: label,
-			Kind:  "dev",
+			Kind:  webhookdomain.TriggerKindDev,
 		}, true
 	case strings.EqualFold(label, s.triggerLabels.RunDevRevise):
 		return issueRunTrigger{
 			Label: label,
-			Kind:  "dev_revise",
+			Kind:  webhookdomain.TriggerKindDevRevise,
 		}, true
 	default:
 		return issueRunTrigger{}, false
