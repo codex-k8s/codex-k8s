@@ -53,6 +53,10 @@ approvals:
   - `run:dev:revise` запускает `review` prompt, применяет фиксы в ту же ветку и обновляет существующий PR;
   - при отсутствии связанного PR в revise-режиме запуск отклоняется с явной диагностикой в `flow_events` (без автосоздания нового PR).
 
+### Dependency from Day3.5
+- Day3.5 предоставляет встроенный MCP tool layer (GitHub/Kubernetes) и prompt context assembler.
+- Day4 не реализует собственный обходной доступ к GitHub/Kubernetes и использует только подготовленные Day3.5 MCP-контракты.
+
 ### Out of scope
 - Автоматический final code review вместо Owner (финальный review остается за Owner).
 
@@ -124,6 +128,16 @@ approvals:
 2. `global override` в БД;
 3. `repo seed` (`docs/product/prompt-seeds/dev-work.md`, `docs/product/prompt-seeds/dev-review.md`).
 
+Seed usage:
+- `prompt-seeds` используются как task-body шаблоны.
+- В агентный runtime передается final prompt, собранный из:
+  - system policy envelope,
+  - runtime context,
+  - MCP/tool context,
+  - issue/pr context,
+  - task-body (override/seed),
+  - output contract.
+
 Локаль prompt:
 1. locale проекта;
 2. system default locale;
@@ -192,7 +206,7 @@ PR policy:
 - Согласовать переменные окружения (`CODEXK8S_OPENAI_API_KEY`, repo slug, issue/pr/run ids, MCP endpoint/token).
 
 ### Story-2: Prompt/config/model render and launch
-- Реализовать резолв effective template (`work`/`review`, locale fallback).
+- Реализовать резолв effective template (`work`/`review`, locale fallback) через Day3.5 context assembler.
 - Реализовать резолв effective model/reasoning из labels с fallback.
 - Рендерить `~/.codex/config.toml` перед запуском.
 - Запускать:
@@ -203,6 +217,7 @@ PR policy:
 - Checkout/cd в рабочий repo.
 - Детерминированно создавать/использовать ветку.
 - Делать commit/push, создавать/обновлять PR через MCP GitHub ручки.
+- Явно использовать policy metadata от Day3.5 (approval-required флаги и ограничения ролей/режимов).
 - Писать PR ссылку/номер в БД и `flow_events`.
 
 ### Story-4: Session persistence and restore

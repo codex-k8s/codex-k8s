@@ -5,7 +5,7 @@ title: "Sprint S2: Dogfooding via Issue labels (run:dev / run:dev:revise)"
 status: active
 owner_role: EM
 created_at: 2026-02-10
-updated_at: 2026-02-11
+updated_at: 2026-02-12
 related_issues: []
 related_prs: []
 approvals:
@@ -20,7 +20,7 @@ approvals:
 - Спринт доводит платформу до режима dogfooding: разработка запускается от GitHub Issue лейблов и завершается PR.
 - Сначала: архитектурное выравнивание (thin-edge gateway + домен в control-plane).
 - До расширения внешнего транспорта: contract-first OpenAPI (api-gateway + web-console client codegen).
-- Потом: label-driven orchestration + отдельные namespaces + agent job + PR flow + UI наблюдение.
+- Потом: label-driven orchestration + отдельные namespaces + MCP-first tool layer + agent job + PR flow + UI наблюдение.
 - Параллельно: фиксируется канонический каталог `run:*`, `state:*`, `need:*` и policy апрувов для trigger/deploy действий.
 
 ## План эпиков по дням
@@ -31,7 +31,8 @@ approvals:
 | Day 1 | Migrations/schema ownership + OpenAPI contract-first baseline | P0 | `docs/delivery/epics/epic-s2-day1-migrations-and-schema-ownership.md` | completed |
 | Day 2 | Issue label triggers: `run:dev`, `run:dev:revise` | P0 | `docs/delivery/epics/epic-s2-day2-issue-label-triggers-run-dev.md` | completed |
 | Day 3 | Per-issue namespace + RBAC/resource policy baseline | P0 | `docs/delivery/epics/epic-s2-day3-per-issue-namespace-and-rbac.md` | completed |
-| Day 4 | Agent job image + git/gh PR flow | P0 | `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md` | planned |
+| Day 3.5 | MCP GitHub/K8s tools + prompt context assembler | P0 | `docs/delivery/epics/epic-s2-day35-mcp-github-k8s-and-prompt-context.md` | planned |
+| Day 4 | Agent job image + git/PR flow via MCP | P0 | `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md` | planned |
 | Day 5 | Staff UI: dogfooding visibility + drilldowns | P1 | `docs/delivery/epics/epic-s2-day5-staff-ui-dogfooding-observability.md` | planned |
 | Day 6 | Approvals/audit hardening for trigger actions | P1 | `docs/delivery/epics/epic-s2-day6-approval-and-audit-hardening.md` | planned |
 | Day 7 | Regression gate for dogfooding end-to-end | P0 | `docs/delivery/epics/epic-s2-day7-dogfooding-regression-gate.md` | planned |
@@ -52,4 +53,4 @@ approvals:
 - Day 1: completed + approved.
 - Day 2: completed + approved.
 - Day 3: completed + approved.
-- Текущее окно работ: Day 4.
+- Текущее окно работ: Day 3.5 -> Day 4.
