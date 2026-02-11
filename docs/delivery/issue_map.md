@@ -5,7 +5,7 @@ title: "Issue ↔ Docs Map"
 status: draft
 owner_role: KM
 created_at: 2026-02-06
-updated_at: 2026-02-11
+updated_at: 2026-02-12
 ---
 
 # Issue ↔ Docs Map
@@ -33,6 +33,7 @@ updated_at: 2026-02-11
 - Epic catalog: `docs/delivery/epic_s2.md`.
 - Epic docs: `docs/delivery/epics/epic-s2-day0-control-plane-extraction.md`, `docs/delivery/epics/epic-s2-day1-migrations-and-schema-ownership.md`, `docs/delivery/epics/epic-s2-day2-issue-label-triggers-run-dev.md`, `docs/delivery/epics/epic-s2-day3-per-issue-namespace-and-rbac.md`, `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md`, `docs/delivery/epics/epic-s2-day5-staff-ui-dogfooding-observability.md`, `docs/delivery/epics/epic-s2-day6-approval-and-audit-hardening.md`, `docs/delivery/epics/epic-s2-day7-dogfooding-regression-gate.md`.
 - Product process model docs: `docs/product/agents_operating_model.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`.
+- Day4 pre-implementation detail baseline: `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md` (prompt/config/resume/session/PR flow + temporary decisions).
 - Факт на 2026-02-11: Day0..Day3 приняты Owner (`approved`), активный фронт работ — Day4.
 
 ## Правила

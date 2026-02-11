@@ -5,7 +5,7 @@ title: "codex-k8s — MCP Approval and Audit Flow"
 status: draft
 owner_role: SA
 created_at: 2026-02-11
-updated_at: 2026-02-11
+updated_at: 2026-02-12
 related_issues: [1]
 related_prs: []
 approvals:
@@ -42,6 +42,14 @@ approvals:
 3. Owner принимает `approve/deny`.
 4. При `approve` применяется label и создаётся `approval.approved` + `label.applied`.
 5. При `deny` создаётся `approval.denied`; workflow не запускается.
+
+## Временный переходный режим (S2 Day4 -> Day6)
+
+- Day4 допускает временный direct runtime путь внутри agent job для завершения dogfooding-цикла (`run:dev` -> PR, `run:dev:revise` -> update PR) до полного MCP enforcement.
+- Этот путь ограничивается рамками run namespace и фиксируется в аудит-событиях.
+- Day6 обязан:
+  - перевести привилегированные write-операции на MCP approver/executor контур;
+  - зафиксировать policy, какие действия остаются direct (диагностика/read-only), а какие только через approval.
 
 ## HTTP-контракты интеграций approver/executor
 

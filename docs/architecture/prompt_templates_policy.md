@@ -5,7 +5,7 @@ title: "codex-k8s — Prompt Templates Policy"
 status: draft
 owner_role: SA
 created_at: 2026-02-11
-updated_at: 2026-02-11
+updated_at: 2026-02-12
 related_issues: [1]
 related_prs: []
 approvals:
@@ -84,6 +84,17 @@ approvals:
   - project context и services overview,
   - режим исполнения агента (`full-env`/`code-only`) и feature flags.
 - Формат контекста должен быть версионирован; изменения контракта рендера должны быть обратно совместимы либо сопровождаться миграцией шаблонов.
+
+## Временный профиль Day4 (до полноты MCP/runtime context)
+
+- На Day4 допускается сокращённый runtime-контекст в prompt (без полного набора MCP metadata), но обязательные блоки не сокращаются:
+  - source-of-truth документы и архитектурные ограничения;
+  - требования по тестам/документации/PR flow;
+  - правила безопасности (секреты, policy, аудит).
+- Для `run:dev:revise` используется `review`-класс шаблонов, даже если запуск идет через resume-path.
+- Долг/план замены:
+  - Day5: расширить наблюдаемость effective prompt/session/template metadata в UI;
+  - Day6: синхронизировать prompt-контекст с MCP approval-flow и убрать временные упрощения.
 
 ## Требования безопасности и качества
 

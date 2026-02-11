@@ -5,7 +5,7 @@ title: "Epic Catalog: Sprint S2 (Dogfooding via Issues)"
 status: active
 owner_role: EM
 created_at: 2026-02-10
-updated_at: 2026-02-11
+updated_at: 2026-02-12
 related_issues: []
 related_prs: []
 approvals:
@@ -41,7 +41,8 @@ approvals:
 - Day 1: completed + approved (OpenAPI rollout + codegen baseline внедрены).
 - Day 2: completed + approved.
 - Day 3: completed + approved.
-- Day 4..7: planned.
+- Day 4: planned (детализация execution/prompt/resume/PR-flow зафиксирована до начала реализации).
+- Day 5..7: planned.
 
 ## Критерий успеха Sprint S2 (выжимка)
 - Один Issue с лейблом `run:dev` приводит к запуску агентного Job в отдельном namespace и к созданию PR.
