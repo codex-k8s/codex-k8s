@@ -34,6 +34,24 @@
 - `docs/` — документация и решения.
 - `tools/` — утилиты и генерация.
 
+### Изменение состава deployable-сервисов (обязательно синхронно)
+
+Если в монорепо добавляется/удаляется deployable-сервис, либо меняются его docker context / Dockerfile / image repository:
+- обновлять build matrix и env:
+  `.github/workflows/build_internal_image.yml`;
+- обновлять карту компонентов Kaniko build:
+  `deploy/scripts/build_internal_image.sh`;
+- обновлять staging deploy env/vars:
+  `.github/workflows/ai_staging_deploy.yml` и `deploy/scripts/deploy_staging.sh`;
+- обновлять bootstrap-синхронизацию GitHub vars/secrets:
+  `bootstrap/host/config.env.example`,
+  `bootstrap/host/bootstrap_remote_staging.sh`,
+  `bootstrap/remote/45_configure_github_repo_ci.sh`,
+  `bootstrap/remote/55_setup_internal_registry_and_build_image.sh`,
+  `bootstrap/remote/60_deploy_codex_k8s.sh`;
+- обновлять deploy manifests сервиса в `deploy/base/<service>/*.yaml.tpl`
+  и Dockerfile сервиса в `services/<zone>/<service>/Dockerfile`.
+
 Рекомендуемое ядро сервиса:
 - `services/internal/control-plane` — доменная логика платформы (проекты, репозитории, агенты, слоты, webhook orchestration, audit).
 - `services/external/api-gateway` — внешний API для webhook/публичных интеграций.

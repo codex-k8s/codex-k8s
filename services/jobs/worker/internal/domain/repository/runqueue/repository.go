@@ -49,6 +49,8 @@ type RunningRun struct {
 	ProjectID string
 	// LearningMode is an effective run learning mode flag.
 	LearningMode bool
+	// RunPayload stores normalized webhook payload.
+	RunPayload json.RawMessage
 	// StartedAt is timestamp when run entered running state.
 	StartedAt time.Time
 }

@@ -283,33 +283,46 @@ metadata:
     app.kubernetes.io/component: worker
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
-  name: codex-k8s-worker
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  name: codex-k8s-worker-runtime
   labels:
     app.kubernetes.io/name: codex-k8s
     app.kubernetes.io/component: worker
 rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles", "rolebindings"]
+    verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["serviceaccounts", "resourcequotas", "limitranges", "pods", "pods/log", "events"]
+    verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["configmaps", "endpoints", "services"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["daemonsets", "deployments", "replicasets", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
   - apiGroups: ["batch"]
     resources: ["jobs"]
     verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
-  - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
-  name: codex-k8s-worker
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  name: codex-k8s-worker-runtime
   labels:
     app.kubernetes.io/name: codex-k8s
     app.kubernetes.io/component: worker
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: codex-k8s-worker
+  kind: ClusterRole
+  name: codex-k8s-worker-runtime
 subjects:
   - kind: ServiceAccount
     name: codex-k8s-worker
@@ -383,6 +396,38 @@ spec:
               value: "${CODEXK8S_WORKER_JOB_BACKOFF_LIMIT}"
             - name: CODEXK8S_WORKER_JOB_ACTIVE_DEADLINE_SECONDS
               value: "${CODEXK8S_WORKER_JOB_ACTIVE_DEADLINE_SECONDS}"
+            - name: CODEXK8S_WORKER_RUN_NAMESPACE_PREFIX
+              value: "${CODEXK8S_WORKER_RUN_NAMESPACE_PREFIX}"
+            - name: CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP
+              value: "${CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP}"
+            - name: CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT
+              value: "${CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT}"
+            - name: CODEXK8S_WORKER_RUN_ROLE_NAME
+              value: "${CODEXK8S_WORKER_RUN_ROLE_NAME}"
+            - name: CODEXK8S_WORKER_RUN_ROLE_BINDING_NAME
+              value: "${CODEXK8S_WORKER_RUN_ROLE_BINDING_NAME}"
+            - name: CODEXK8S_WORKER_RUN_RESOURCE_QUOTA_NAME
+              value: "${CODEXK8S_WORKER_RUN_RESOURCE_QUOTA_NAME}"
+            - name: CODEXK8S_WORKER_RUN_LIMIT_RANGE_NAME
+              value: "${CODEXK8S_WORKER_RUN_LIMIT_RANGE_NAME}"
+            - name: CODEXK8S_WORKER_RUN_QUOTA_PODS
+              value: "${CODEXK8S_WORKER_RUN_QUOTA_PODS}"
+            - name: CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_CPU
+              value: "${CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_CPU}"
+            - name: CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_MEMORY
+              value: "${CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_MEMORY}"
+            - name: CODEXK8S_WORKER_RUN_QUOTA_LIMITS_CPU
+              value: "${CODEXK8S_WORKER_RUN_QUOTA_LIMITS_CPU}"
+            - name: CODEXK8S_WORKER_RUN_QUOTA_LIMITS_MEMORY
+              value: "${CODEXK8S_WORKER_RUN_QUOTA_LIMITS_MEMORY}"
+            - name: CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_CPU
+              value: "${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_CPU}"
+            - name: CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_MEMORY
+              value: "${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_MEMORY}"
+            - name: CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_CPU
+              value: "${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_CPU}"
+            - name: CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY
+              value: "${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY}"
           resources:
             requests:
               cpu: ${CODEXK8S_WORKER_RESOURCES_REQUEST_CPU}

@@ -2,16 +2,16 @@
 doc_id: EPC-CK8S-S2-D3
 type: epic
 title: "Epic S2 Day 3: Per-issue namespace orchestration and RBAC baseline"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-10
 updated_at: 2026-02-11
 related_issues: []
-related_prs: []
+related_prs: [9]
 approvals:
   required: ["Owner"]
-  status: pending
-  request_id: ""
+  status: approved
+  request_id: "owner-2026-02-11-s2-day3"
 ---
 
 # Epic S2 Day 3: Per-issue namespace orchestration and RBAC baseline
@@ -40,3 +40,61 @@ approvals:
 ## Критерии приемки эпика
 - Run исполняется в отдельном namespace.
 - Namespace может быть безопасно убран/переиспользован без утечек слотов и объектов.
+
+## Прогресс реализации (2026-02-11)
+- Реализована runtime-классификация run по режимам:
+  - `full-env` для issue-trigger `run:dev`/`run:dev:revise`;
+  - `code-only` для остальных run без issue-trigger контекста.
+- Для `full-env` реализована подготовка отдельного run namespace:
+  - namespace naming: issue-aware шаблон с суффиксом run-id (deterministic, без коллизий);
+  - idempotent apply baseline ресурсов:
+    - `ServiceAccount`,
+    - `Role`,
+    - `RoleBinding`,
+    - `ResourceQuota`,
+    - `LimitRange`.
+- Worker запускает Job в целевом namespace и передаёт runtime metadata в env/payload.
+- Добавлен cleanup baseline:
+  - по завершении `full-env` run namespace удаляется (управляемо через env-флаг cleanup),
+  - удаляются только managed namespace’ы, промаркированные worker’ом.
+- Для runtime metadata закреплён доменный префикс:
+  - labels/annotations в namespace/job используют `codex-k8s.dev/*`.
+- Добавлен audit lifecycle в `flow_events`:
+  - `run.namespace.prepared`,
+  - `run.namespace.cleaned`,
+  - `run.namespace.cleanup_failed`.
+- Для reconciliation running runs расширено чтение `agent_runs.run_payload`, чтобы namespace/runtime mode определялись детерминированно и после рестартов worker.
+- Deploy baseline обновлён:
+  - worker получил cluster-scope RBAC для lifecycle namespace и runtime-объектов;
+  - добавлены env/vars для namespace policy и quota/limitrange baseline в bootstrap/deploy/CI.
+
+## Evidence
+- Runtime namespace orchestration и cleanup:
+  - `libs/go/k8s/joblauncher/runtime_namespace.go`
+  - `libs/go/k8s/joblauncher/metadata.go`
+  - `services/jobs/worker/internal/domain/worker/run_runtime.go`
+  - `services/jobs/worker/internal/domain/worker/service.go`
+- Worker runtime contracts:
+  - `services/jobs/worker/internal/domain/worker/launcher.go`
+  - `services/jobs/worker/internal/clients/kubernetes/launcher/adapter.go`
+- Runtime policy env wiring:
+  - `services/jobs/worker/internal/app/config.go`
+  - `.github/workflows/ai_staging_deploy.yml`
+  - `deploy/scripts/deploy_staging.sh`
+- Staging runbook checks:
+  - `docs/ops/staging_runbook.md`
+
+## Verification
+- Unit tests:
+  - `go test ./libs/go/k8s/joblauncher ./services/jobs/worker/...`
+- Static checks:
+  - `make lint-go`
+  - `make dupl-go`
+- Staging:
+  - `AI Staging deploy 🚀` success для `codex/dev` (manual dispatch на целевой SHA).
+  - `deploy/scripts/staging_smoke.sh` -> `OK`.
+
+## Апрув
+- request_id: owner-2026-02-11-s2-day3
+- Решение: approved
+- Комментарий: Day 3 scope принят; per-issue namespace/RBAC/resource policy baseline закреплён.

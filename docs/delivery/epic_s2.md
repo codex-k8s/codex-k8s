@@ -38,9 +38,10 @@ approvals:
 
 ## Текущий прогресс
 - Day 0: completed + approved.
-- Day 1: completed (OpenAPI rollout + codegen baseline внедрены).
-- Day 2: active (issue label webhook triggers `run:dev`/`run:dev:revise` в реализации).
-- Day 3..7: planned.
+- Day 1: completed + approved (OpenAPI rollout + codegen baseline внедрены).
+- Day 2: completed + approved.
+- Day 3: completed + approved.
+- Day 4..7: planned.
 
 ## Критерий успеха Sprint S2 (выжимка)
 - Один Issue с лейблом `run:dev` приводит к запуску агентного Job в отдельном namespace и к созданию PR.

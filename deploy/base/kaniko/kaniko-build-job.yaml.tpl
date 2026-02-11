@@ -55,6 +55,10 @@ spec:
             - --dockerfile=${CODEXK8S_KANIKO_DOCKERFILE}
             - --destination=${CODEXK8S_KANIKO_DESTINATION_LATEST}
             - --destination=${CODEXK8S_KANIKO_DESTINATION_SHA}
+            - --cache=${CODEXK8S_KANIKO_CACHE_ENABLED}
+            - --cache-repo=${CODEXK8S_KANIKO_CACHE_REPO}
+            - --cache-ttl=${CODEXK8S_KANIKO_CACHE_TTL}
+            - --compressed-caching=${CODEXK8S_KANIKO_CACHE_COMPRESSED}
             - --insecure
             - --insecure-registry=${CODEXK8S_INTERNAL_REGISTRY_HOST}
             - --skip-tls-verify-registry=${CODEXK8S_INTERNAL_REGISTRY_HOST}

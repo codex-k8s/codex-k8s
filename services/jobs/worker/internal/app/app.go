@@ -79,13 +79,27 @@ func Run() error {
 	events := floweventrepo.NewRepository(db)
 	feedback := learningfeedbackrepo.NewRepository(db)
 	launcher, err := k8slauncher.NewAdapter(libslauncher.Config{
-		KubeconfigPath:        cfg.KubeconfigPath,
-		Namespace:             cfg.K8sNamespace,
-		Image:                 cfg.JobImage,
-		Command:               cfg.JobCommand,
-		TTLSeconds:            cfg.JobTTLSeconds,
-		BackoffLimit:          cfg.JobBackoffLimit,
-		ActiveDeadlineSeconds: cfg.JobActiveDeadlineSeconds,
+		KubeconfigPath:            cfg.KubeconfigPath,
+		Namespace:                 cfg.K8sNamespace,
+		Image:                     cfg.JobImage,
+		Command:                   cfg.JobCommand,
+		TTLSeconds:                cfg.JobTTLSeconds,
+		BackoffLimit:              cfg.JobBackoffLimit,
+		ActiveDeadlineSeconds:     cfg.JobActiveDeadlineSeconds,
+		RunServiceAccountName:     cfg.RunServiceAccountName,
+		RunRoleName:               cfg.RunRoleName,
+		RunRoleBindingName:        cfg.RunRoleBindingName,
+		RunResourceQuotaName:      cfg.RunResourceQuotaName,
+		RunLimitRangeName:         cfg.RunLimitRangeName,
+		RunResourceQuotaPods:      cfg.RunResourceQuotaPods,
+		RunResourceRequestsCPU:    cfg.RunResourceRequestsCPU,
+		RunResourceRequestsMemory: cfg.RunResourceRequestsMemory,
+		RunResourceLimitsCPU:      cfg.RunResourceLimitsCPU,
+		RunResourceLimitsMemory:   cfg.RunResourceLimitsMemory,
+		RunDefaultRequestCPU:      cfg.RunDefaultRequestCPU,
+		RunDefaultRequestMemory:   cfg.RunDefaultRequestMemory,
+		RunDefaultLimitCPU:        cfg.RunDefaultLimitCPU,
+		RunDefaultLimitMemory:     cfg.RunDefaultLimitMemory,
 	})
 	if err != nil {
 		return fmt.Errorf("create kubernetes launcher: %w", err)
@@ -98,7 +112,15 @@ func Run() error {
 		SlotsPerProject:            cfg.SlotsPerProject,
 		SlotLeaseTTL:               slotLeaseTTL,
 		ProjectLearningModeDefault: learningDefault,
-	}, runs, events, feedback, launcher, logger)
+		RunNamespacePrefix:         cfg.RunNamespacePrefix,
+		CleanupFullEnvNamespace:    cfg.RunNamespaceCleanup,
+	}, worker.Dependencies{
+		Runs:     runs,
+		Events:   events,
+		Feedback: feedback,
+		Launcher: launcher,
+		Logger:   logger,
+	})
 
 	ctx, stop := signal.NotifyContext(appCtx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 	defer stop()

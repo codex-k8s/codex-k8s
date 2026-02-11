@@ -17,6 +17,12 @@
   а `deploy/scripts/**` только рендерит и применяет их.
 - Для multi-service deploy у каждого deployable-сервиса есть собственные image vars/repositories
   (шаблон нейминга: `CODEXK8S_<SERVICE>_IMAGE` и `CODEXK8S_<SERVICE>_INTERNAL_IMAGE_REPOSITORY`).
+- При изменении состава deployable-сервисов синхронно обновлены:
+  `.github/workflows/build_internal_image.yml`, `deploy/scripts/build_internal_image.sh`,
+  `.github/workflows/ai_staging_deploy.yml`, `deploy/scripts/deploy_staging.sh`,
+  bootstrap-синхронизация vars (`bootstrap/host/config.env.example`,
+  `bootstrap/host/bootstrap_remote_staging.sh`, `bootstrap/remote/45_configure_github_repo_ci.sh`,
+  `bootstrap/remote/55_setup_internal_registry_and_build_image.sh`, `bootstrap/remote/60_deploy_codex_k8s.sh`).
 - Порядок выкладки staging задан явно и соблюдён:
   stateful dependencies -> migrations -> internal domain services -> edge services -> frontend;
   ожидание зависимостей выполнено через `initContainers` в Kubernetes-манифестах.
