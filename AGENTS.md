@@ -3,26 +3,24 @@
 ## Назначение
 
 Этот файл задает обязательные правила работы с репозиторием `codex-k8s`.
-Цель: вести код и документацию к целевой архитектуре cloud-сервиса,
-который оркестрирует агентные процессы в Kubernetes и заменяет связку
-`codexctl` + часть сценариев `github.com/codex-k8s/yaml-mcp-server`.
 
-## Главные правила
+## Главные **требования**
 
-- Перед изменениями читать `docs/design-guidelines/AGENTS.md`.
+- Перед изменениями читать `docs/design-guidelines/AGENTS.md` и файлы, на которые он ссылается с учетом контекста текущей задачи.
 - Временные правила текущего ручного dev/staging цикла (до полного dogfooding через `run:dev`) см. `.local/agents-temp-dev-rules.md`. Править `.local/agents-temp-dev-rules.md` строго запрещено, если не стоит явная задача на изменение временных правил.
-- Для Go-изменений обязательно читать профильные документы из `docs/design-guidelines/go/`.
-- Для frontend-изменений обязательно читать `docs/design-guidelines/vue/` и `docs/design-guidelines/visual/`.
-- Для инфраструктурных изменений читать `docs/design-guidelines/common/`.
-- Для выбора/обновления внешних библиотек читать `docs/design-guidelines/common/external_dependencies_catalog.md`.
-- Для планирования и ведения спринта/документации читать `docs/delivery/development_process_requirements.md`.
+- Для Go-изменений обязательно исполнять требования из `docs/design-guidelines/go/**.md`, как до правок, так и перед подготовкой PR.
+- Для frontend-изменений обязательно исполнять требования из `docs/design-guidelines/vue/**.md` и `docs/design-guidelines/visual/**.md`.
+- Для любых изменений читать `docs/design-guidelines/common/**.md`, который содержит общие требования проектирования для всех частей системы и языков программирования.
+- Для выбора/обновления внешних библиотек читать `docs/design-guidelines/common/external_dependencies_catalog.md`. Каждую новую библиотеку подбирать с использованием Context7 и уточнять последнюю стабильную версию, а также добавлять в `docs/design-guidelines/common/external_dependencies_catalog.md`.
+- Для планирования и ведения спринта/документации выполнять требования `docs/delivery/development_process_requirements.md`.
 - Если запрос пользователя противоречит гайдам, приостановить правки и предложить варианты решения.
 - Если контекст сессии был сжат/потерян (например, `context compacted`) или есть сомнение, что требования/архитектура актуальны:
   - перечитать `AGENTS.md` и `docs/design-guidelines/AGENTS.md`;
   - перечитать релевантные гайды по области изменения (`docs/design-guidelines/{go,vue,visual,common}/`);
-  - сверить задачу с `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`;
+  - сверить задачу с `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`, спринтом и эпиком.
   - только после этого планировать и править код.
 - Не редактировать сами гайды без явной задачи на изменение стандартов.
+- При исправлении замечаний по PR, если для предотвращения подобных замечаний в будущем требуется изменение гайдов, внести изменения в гайды в рамках текущего PR.
 - При разработке и доработке проектной документации (бизнес-документов), сверять ее с `docs/research/src_idea-machine_driven_company_requirements.md`. `docs/research/src_idea-machine_driven_company_requirements.md` - это документ, перенесенный из изначального репозитория
 `github.com/codex-k8s/codexctl` (`../codexctl`), которая в части бизнес-идеи остается действующей, за исключением подходов к реализации (там все планировалось делать через консольную утилиту, воркфлоу и лейблы, а тут полноценный сервис управления агентами, задачами и т.д.).
 
@@ -113,6 +111,7 @@
 - Операционная продуктовая модель агентов/лейблов/этапов:
   `docs/product/agents_operating_model.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`.
 - Процесс разработки и doc-governance: `docs/delivery/development_process_requirements.md`.
+- Справка по внешним библиотекам - через Context7.
 
 ## Неподвижные ограничения продукта
 
