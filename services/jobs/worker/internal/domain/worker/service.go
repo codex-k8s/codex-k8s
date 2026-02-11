@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"time"
@@ -14,6 +13,8 @@ import (
 	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/learningfeedback"
 	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
 )
+
+const defaultWorkerID = "worker"
 
 // Config defines worker run-loop behavior.
 type Config struct {
@@ -36,6 +37,20 @@ type Config struct {
 	CleanupFullEnvNamespace bool
 }
 
+// Dependencies groups service collaborators to keep constructor signatures compact.
+type Dependencies struct {
+	// Runs provides queue and lifecycle operations over agent runs.
+	Runs runqueuerepo.Repository
+	// Events persists flow lifecycle events.
+	Events floweventrepo.Repository
+	// Feedback persists optional learning-mode explanations.
+	Feedback learningfeedbackrepo.Repository
+	// Launcher starts and reconciles Kubernetes jobs.
+	Launcher Launcher
+	// Logger records worker diagnostics.
+	Logger *slog.Logger
+}
+
 // Service orchestrates pending runs to Kubernetes Jobs and final statuses.
 type Service struct {
 	cfg      Config
@@ -47,15 +62,28 @@ type Service struct {
 	now      func() time.Time
 }
 
+// finishRunParams carries all fields required to finalize a run and publish final events.
+type finishRunParams struct {
+	Run       runqueuerepo.RunningRun
+	Execution runExecutionContext
+	Status    rundomain.Status
+	EventType floweventdomain.EventType
+	Ref       JobRef
+	Extra     runFinishedEventExtra
+}
+
+// namespaceLifecycleEventParams describes one namespace lifecycle flow event.
+type namespaceLifecycleEventParams struct {
+	CorrelationID string
+	EventType     floweventdomain.EventType
+	RunID         string
+	ProjectID     string
+	Execution     runExecutionContext
+	Extra         namespaceLifecycleEventExtra
+}
+
 // NewService creates worker orchestrator instance.
-func NewService(
-	cfg Config,
-	runs runqueuerepo.Repository,
-	events floweventrepo.Repository,
-	feedback learningfeedbackrepo.Repository,
-	launcher Launcher,
-	logger *slog.Logger,
-) *Service {
+func NewService(cfg Config, deps Dependencies) *Service {
 	if cfg.ClaimLimit <= 0 {
 		cfg.ClaimLimit = 1
 	}
@@ -69,19 +97,22 @@ func NewService(
 		cfg.SlotLeaseTTL = 5 * time.Minute
 	}
 	if cfg.WorkerID == "" {
-		cfg.WorkerID = "worker"
+		cfg.WorkerID = defaultWorkerID
 	}
 	if cfg.RunNamespacePrefix == "" {
 		cfg.RunNamespacePrefix = defaultRunNamespacePrefix
 	}
+	if deps.Logger == nil {
+		deps.Logger = slog.Default()
+	}
 
 	return &Service{
 		cfg:      cfg,
-		runs:     runs,
-		events:   events,
-		feedback: feedback,
-		launcher: launcher,
-		logger:   logger,
+		runs:     deps.Runs,
+		events:   deps.Events,
+		feedback: deps.Feedback,
+		launcher: deps.Launcher,
+		logger:   deps.Logger,
 		now:      time.Now,
 	}
 }
@@ -97,6 +128,7 @@ func (s *Service) Tick(ctx context.Context) error {
 	return nil
 }
 
+// reconcileRunning polls active runs and finalizes those with terminal Kubernetes job states.
 func (s *Service) reconcileRunning(ctx context.Context) error {
 	running, err := s.runs.ListRunning(ctx, s.cfg.RunningCheckLimit)
 	if err != nil {
@@ -114,17 +146,39 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 
 		switch state {
 		case JobStateSucceeded:
-			if err := s.finishRun(ctx, run, execution, rundomain.StatusSucceeded, floweventdomain.EventTypeRunSucceeded, ref, nil); err != nil {
+			if err := s.finishRun(ctx, finishRunParams{
+				Run:       run,
+				Execution: execution,
+				Status:    rundomain.StatusSucceeded,
+				EventType: floweventdomain.EventTypeRunSucceeded,
+				Ref:       ref,
+			}); err != nil {
 				return err
 			}
 		case JobStateFailed:
-			failure := map[string]any{"reason": "kubernetes job failed"}
-			if err := s.finishRun(ctx, run, execution, rundomain.StatusFailed, floweventdomain.EventTypeRunFailed, ref, failure); err != nil {
+			if err := s.finishRun(ctx, finishRunParams{
+				Run:       run,
+				Execution: execution,
+				Status:    rundomain.StatusFailed,
+				EventType: floweventdomain.EventTypeRunFailed,
+				Ref:       ref,
+				Extra: runFinishedEventExtra{
+					Reason: runFailureReasonKubernetesJobFailed,
+				},
+			}); err != nil {
 				return err
 			}
 		case JobStateNotFound:
-			failure := map[string]any{"reason": "kubernetes job not found"}
-			if err := s.finishRun(ctx, run, execution, rundomain.StatusFailed, floweventdomain.EventTypeRunFailedJobNotFound, ref, failure); err != nil {
+			if err := s.finishRun(ctx, finishRunParams{
+				Run:       run,
+				Execution: execution,
+				Status:    rundomain.StatusFailed,
+				EventType: floweventdomain.EventTypeRunFailedJobNotFound,
+				Ref:       ref,
+				Extra: runFinishedEventExtra{
+					Reason: runFailureReasonKubernetesJobNotFound,
+				},
+			}); err != nil {
 				return err
 			}
 		case JobStatePending, JobStateRunning:
@@ -137,6 +191,7 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 	return nil
 }
 
+// launchPending claims pending runs, prepares runtime namespace (for full-env), and launches Kubernetes jobs.
 func (s *Service) launchPending(ctx context.Context) error {
 	for range s.cfg.ClaimLimit {
 		claimed, ok, err := s.runs.ClaimNextPending(ctx, runqueuerepo.ClaimParams{
@@ -160,6 +215,7 @@ func (s *Service) launchPending(ctx context.Context) error {
 			RuntimeMode:   execution.RuntimeMode,
 			Namespace:     execution.Namespace,
 		}
+		runningRun := runningRunFromClaimed(claimed)
 		if execution.RuntimeMode == agentdomain.RuntimeModeFullEnv {
 			if err := s.launcher.EnsureNamespace(ctx, namespaceSpec); err != nil {
 				s.logger.Error(
@@ -169,32 +225,28 @@ func (s *Service) launchPending(ctx context.Context) error {
 					"runtime_mode", execution.RuntimeMode,
 					"err", err,
 				)
-				if finishErr := s.finishRun(ctx, runqueuerepo.RunningRun{
-					RunID:         claimed.RunID,
-					CorrelationID: claimed.CorrelationID,
-					ProjectID:     claimed.ProjectID,
-					LearningMode:  claimed.LearningMode,
-					RunPayload:    claimed.RunPayload,
-				}, execution, rundomain.StatusFailed, floweventdomain.EventTypeRunFailedLaunchError, JobRef{}, map[string]any{
-					"error":        err.Error(),
-					"reason":       "namespace_prepare_failed",
-					"runtime_mode": execution.RuntimeMode,
-					"namespace":    execution.Namespace,
+				if finishErr := s.finishRun(ctx, finishRunParams{
+					Run:       runningRun,
+					Execution: execution,
+					Status:    rundomain.StatusFailed,
+					EventType: floweventdomain.EventTypeRunFailedLaunchError,
+					Extra: runFinishedEventExtra{
+						Error:  err.Error(),
+						Reason: runFailureReasonNamespacePrepareFailed,
+					},
 				}); finishErr != nil {
 					return fmt.Errorf("mark run failed after namespace prepare error: %w", finishErr)
 				}
 				continue
 			}
 
-			if err := s.insertNamespaceLifecycleEvent(
-				ctx,
-				claimed.CorrelationID,
-				floweventdomain.EventTypeRunNamespacePrepared,
-				claimed.RunID,
-				claimed.ProjectID,
-				execution,
-				nil,
-			); err != nil {
+			if err := s.insertNamespaceLifecycleEvent(ctx, namespaceLifecycleEventParams{
+				CorrelationID: claimed.CorrelationID,
+				EventType:     floweventdomain.EventTypeRunNamespacePrepared,
+				RunID:         claimed.RunID,
+				ProjectID:     claimed.ProjectID,
+				Execution:     execution,
+			}); err != nil {
 				return fmt.Errorf("insert run.namespace.prepared event: %w", err)
 			}
 		}
@@ -209,16 +261,15 @@ func (s *Service) launchPending(ctx context.Context) error {
 		})
 		if err != nil {
 			s.logger.Error("launch run job failed", "run_id", claimed.RunID, "err", err)
-			if finishErr := s.finishRun(ctx, runqueuerepo.RunningRun{
-				RunID:         claimed.RunID,
-				CorrelationID: claimed.CorrelationID,
-				ProjectID:     claimed.ProjectID,
-				LearningMode:  claimed.LearningMode,
-				RunPayload:    claimed.RunPayload,
-			}, execution, rundomain.StatusFailed, floweventdomain.EventTypeRunFailedLaunchError, ref, map[string]any{
-				"error":        err.Error(),
-				"runtime_mode": execution.RuntimeMode,
-				"namespace":    execution.Namespace,
+			if finishErr := s.finishRun(ctx, finishRunParams{
+				Run:       runningRun,
+				Execution: execution,
+				Status:    rundomain.StatusFailed,
+				EventType: floweventdomain.EventTypeRunFailedLaunchError,
+				Ref:       ref,
+				Extra: runFinishedEventExtra{
+					Error: err.Error(),
+				},
 			}); finishErr != nil {
 				return fmt.Errorf("mark run failed after launch error: %w", finishErr)
 			}
@@ -230,13 +281,13 @@ func (s *Service) launchPending(ctx context.Context) error {
 			ActorType:     floweventdomain.ActorTypeSystem,
 			ActorID:       floweventdomain.ActorID(s.cfg.WorkerID),
 			EventType:     floweventdomain.EventTypeRunStarted,
-			Payload: mustJSON(map[string]any{
-				"run_id":        claimed.RunID,
-				"project_id":    claimed.ProjectID,
-				"slot_no":       claimed.SlotNo,
-				"job_name":      ref.Name,
-				"job_namespace": ref.Namespace,
-				"runtime_mode":  execution.RuntimeMode,
+			Payload: encodeRunStartedEventPayload(runStartedEventPayload{
+				RunID:        claimed.RunID,
+				ProjectID:    claimed.ProjectID,
+				SlotNo:       claimed.SlotNo,
+				JobName:      ref.Name,
+				JobNamespace: ref.Namespace,
+				RuntimeMode:  execution.RuntimeMode,
 			}),
 			CreatedAt: s.now().UTC(),
 		}); err != nil {
@@ -247,59 +298,49 @@ func (s *Service) launchPending(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) finishRun(
-	ctx context.Context,
-	run runqueuerepo.RunningRun,
-	execution runExecutionContext,
-	status rundomain.Status,
-	eventType floweventdomain.EventType,
-	ref JobRef,
-	extra map[string]any,
-) error {
+// finishRun persists terminal run state, emits flow events, and finalizes runtime namespace lifecycle.
+func (s *Service) finishRun(ctx context.Context, params finishRunParams) error {
 	finishedAt := s.now().UTC()
 	updated, err := s.runs.FinishRun(ctx, runqueuerepo.FinishParams{
-		RunID:      run.RunID,
-		ProjectID:  run.ProjectID,
-		Status:     status,
+		RunID:      params.Run.RunID,
+		ProjectID:  params.Run.ProjectID,
+		Status:     params.Status,
 		FinishedAt: finishedAt,
 	})
 	if err != nil {
-		return fmt.Errorf("finish run %s as %s: %w", run.RunID, status, err)
+		return fmt.Errorf("finish run %s as %s: %w", params.Run.RunID, params.Status, err)
 	}
 	if !updated {
 		return nil
 	}
 
-	payload := map[string]any{
-		"run_id":        run.RunID,
-		"project_id":    run.ProjectID,
-		"status":        string(status),
-		"job_name":      ref.Name,
-		"job_namespace": ref.Namespace,
-		"runtime_mode":  execution.RuntimeMode,
-	}
-	if execution.Namespace != "" {
-		payload["namespace"] = execution.Namespace
-	}
-	for k, v := range extra {
-		payload[k] = v
+	payload := runFinishedEventPayload{
+		RunID:        params.Run.RunID,
+		ProjectID:    params.Run.ProjectID,
+		Status:       params.Status,
+		JobName:      params.Ref.Name,
+		JobNamespace: params.Ref.Namespace,
+		RuntimeMode:  params.Execution.RuntimeMode,
+		Namespace:    params.Execution.Namespace,
+		Error:        params.Extra.Error,
+		Reason:       params.Extra.Reason,
 	}
 
 	if err := s.insertEvent(ctx, floweventrepo.InsertParams{
-		CorrelationID: run.CorrelationID,
+		CorrelationID: params.Run.CorrelationID,
 		ActorType:     floweventdomain.ActorTypeSystem,
 		ActorID:       floweventdomain.ActorID(s.cfg.WorkerID),
-		EventType:     eventType,
-		Payload:       mustJSON(payload),
+		EventType:     params.EventType,
+		Payload:       encodeRunFinishedEventPayload(payload),
 		CreatedAt:     finishedAt,
 	}); err != nil {
 		return fmt.Errorf("insert finish event: %w", err)
 	}
 
-	if run.LearningMode && s.feedback != nil {
-		namespace := ref.Namespace
-		if execution.Namespace != "" {
-			namespace = execution.Namespace
+	if params.Run.LearningMode && s.feedback != nil {
+		namespace := params.Ref.Namespace
+		if params.Execution.Namespace != "" {
+			namespace = params.Execution.Namespace
 		}
 		explanation := fmt.Sprintf(
 			"Learning mode is enabled for this run.\n\n"+
@@ -307,57 +348,58 @@ func (s *Service) finishRun(
 				"Why we use DB-backed slots: it prevents concurrent workers from overloading a project and makes multi-pod behavior deterministic.\n"+
 				"Tradeoffs: Jobs are heavier than in-process execution; DB locking requires careful indexing and timeouts.\n\n"+
 				"Result: status=%s, job=%s/%s.",
-			status,
+			params.Status,
 			namespace,
-			ref.Name,
+			params.Ref.Name,
 		)
 		if err := s.feedback.Insert(ctx, learningfeedbackrepo.InsertParams{
-			RunID:       run.RunID,
-			Kind:        "inline",
+			RunID:       params.Run.RunID,
+			Kind:        learningfeedbackrepo.KindInline,
 			Explanation: explanation,
 		}); err != nil {
-			s.logger.Error("insert learning feedback failed", "run_id", run.RunID, "err", err)
+			s.logger.Error("insert learning feedback failed", "run_id", params.Run.RunID, "err", err)
 		}
 	}
 
-	if execution.RuntimeMode == agentdomain.RuntimeModeFullEnv && execution.Namespace != "" && s.cfg.CleanupFullEnvNamespace {
+	if params.Execution.RuntimeMode == agentdomain.RuntimeModeFullEnv &&
+		params.Execution.Namespace != "" &&
+		s.cfg.CleanupFullEnvNamespace {
 		cleanupSpec := NamespaceSpec{
-			RunID:         run.RunID,
-			ProjectID:     run.ProjectID,
-			CorrelationID: run.CorrelationID,
-			RuntimeMode:   execution.RuntimeMode,
-			Namespace:     execution.Namespace,
+			RunID:         params.Run.RunID,
+			ProjectID:     params.Run.ProjectID,
+			CorrelationID: params.Run.CorrelationID,
+			RuntimeMode:   params.Execution.RuntimeMode,
+			Namespace:     params.Execution.Namespace,
 		}
 		cleanupErr := s.launcher.CleanupNamespace(ctx, cleanupSpec)
 		if cleanupErr != nil {
 			s.logger.Error(
 				"cleanup run namespace failed",
-				"run_id", run.RunID,
-				"namespace", execution.Namespace,
+				"run_id", params.Run.RunID,
+				"namespace", params.Execution.Namespace,
 				"err", cleanupErr,
 			)
-			if err := s.insertNamespaceLifecycleEvent(
-				ctx,
-				run.CorrelationID,
-				floweventdomain.EventTypeRunNamespaceCleanupFailed,
-				run.RunID,
-				run.ProjectID,
-				execution,
-				map[string]any{"error": cleanupErr.Error()},
-			); err != nil {
-				s.logger.Error("insert run.namespace.cleanup_failed event failed", "run_id", run.RunID, "err", err)
+			if err := s.insertNamespaceLifecycleEvent(ctx, namespaceLifecycleEventParams{
+				CorrelationID: params.Run.CorrelationID,
+				EventType:     floweventdomain.EventTypeRunNamespaceCleanupFailed,
+				RunID:         params.Run.RunID,
+				ProjectID:     params.Run.ProjectID,
+				Execution:     params.Execution,
+				Extra: namespaceLifecycleEventExtra{
+					Error: cleanupErr.Error(),
+				},
+			}); err != nil {
+				s.logger.Error("insert run.namespace.cleanup_failed event failed", "run_id", params.Run.RunID, "err", err)
 			}
 		} else {
-			if err := s.insertNamespaceLifecycleEvent(
-				ctx,
-				run.CorrelationID,
-				floweventdomain.EventTypeRunNamespaceCleaned,
-				run.RunID,
-				run.ProjectID,
-				execution,
-				nil,
-			); err != nil {
-				s.logger.Error("insert run.namespace.cleaned event failed", "run_id", run.RunID, "err", err)
+			if err := s.insertNamespaceLifecycleEvent(ctx, namespaceLifecycleEventParams{
+				CorrelationID: params.Run.CorrelationID,
+				EventType:     floweventdomain.EventTypeRunNamespaceCleaned,
+				RunID:         params.Run.RunID,
+				ProjectID:     params.Run.ProjectID,
+				Execution:     params.Execution,
+			}); err != nil {
+				s.logger.Error("insert run.namespace.cleaned event failed", "run_id", params.Run.RunID, "err", err)
 			}
 		}
 	}
@@ -365,6 +407,7 @@ func (s *Service) finishRun(
 	return nil
 }
 
+// insertEvent persists one flow event with contextual error wrapping.
 func (s *Service) insertEvent(ctx context.Context, params floweventrepo.InsertParams) error {
 	if err := s.events.Insert(ctx, params); err != nil {
 		return fmt.Errorf("insert flow event %s for correlation %s: %w", params.EventType, params.CorrelationID, err)
@@ -372,42 +415,31 @@ func (s *Service) insertEvent(ctx context.Context, params floweventrepo.InsertPa
 	return nil
 }
 
-func (s *Service) insertNamespaceLifecycleEvent(
-	ctx context.Context,
-	correlationID string,
-	eventType floweventdomain.EventType,
-	runID string,
-	projectID string,
-	execution runExecutionContext,
-	extra map[string]any,
-) error {
+// insertNamespaceLifecycleEvent records namespace lifecycle transitions in flow_events.
+func (s *Service) insertNamespaceLifecycleEvent(ctx context.Context, params namespaceLifecycleEventParams) error {
 	return s.insertEvent(ctx, floweventrepo.InsertParams{
-		CorrelationID: correlationID,
+		CorrelationID: params.CorrelationID,
 		ActorType:     floweventdomain.ActorTypeSystem,
 		ActorID:       floweventdomain.ActorID(s.cfg.WorkerID),
-		EventType:     eventType,
-		Payload:       mustJSON(buildNamespaceLifecyclePayload(runID, projectID, execution, extra)),
-		CreatedAt:     s.now().UTC(),
+		EventType:     params.EventType,
+		Payload: encodeNamespaceLifecycleEventPayload(namespaceLifecycleEventPayload{
+			RunID:       params.RunID,
+			ProjectID:   params.ProjectID,
+			RuntimeMode: params.Execution.RuntimeMode,
+			Namespace:   params.Execution.Namespace,
+			Error:       params.Extra.Error,
+		}),
+		CreatedAt: s.now().UTC(),
 	})
 }
 
-func buildNamespaceLifecyclePayload(runID string, projectID string, execution runExecutionContext, extra map[string]any) map[string]any {
-	payload := map[string]any{
-		"run_id":       runID,
-		"project_id":   projectID,
-		"runtime_mode": execution.RuntimeMode,
-		"namespace":    execution.Namespace,
+// runningRunFromClaimed reuses claimed fields for failure finalization paths before the next reconcile tick.
+func runningRunFromClaimed(claimed runqueuerepo.ClaimedRun) runqueuerepo.RunningRun {
+	return runqueuerepo.RunningRun{
+		RunID:         claimed.RunID,
+		CorrelationID: claimed.CorrelationID,
+		ProjectID:     claimed.ProjectID,
+		LearningMode:  claimed.LearningMode,
+		RunPayload:    claimed.RunPayload,
 	}
-	for key, value := range extra {
-		payload[key] = value
-	}
-	return payload
-}
-
-func mustJSON(v any) json.RawMessage {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return json.RawMessage(`{"error":"payload_marshal_failed"}`)
-	}
-	return b
 }

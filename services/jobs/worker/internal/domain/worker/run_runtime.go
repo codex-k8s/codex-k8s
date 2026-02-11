@@ -18,25 +18,30 @@ const (
 
 var nonDNSLabel = regexp.MustCompile(`[^a-z0-9-]`)
 
+// runRuntimePayload keeps only fields that influence worker runtime decisions.
 type runRuntimePayload struct {
 	Trigger *runRuntimeTrigger `json:"trigger"`
 	Issue   *runRuntimeIssue   `json:"issue"`
 }
 
+// runRuntimeTrigger captures normalized trigger kind from webhook payload.
 type runRuntimeTrigger struct {
 	Kind webhookdomain.TriggerKind `json:"kind"`
 }
 
+// runRuntimeIssue captures optional issue metadata used in namespace naming.
 type runRuntimeIssue struct {
 	Number int64 `json:"number"`
 }
 
+// runExecutionContext contains resolved execution mode and namespace metadata for one run.
 type runExecutionContext struct {
 	RuntimeMode agentdomain.RuntimeMode
 	Namespace   string
 	IssueNumber int64
 }
 
+// resolveRunExecutionContext derives runtime mode and namespace strategy from run payload.
 func resolveRunExecutionContext(runID string, projectID string, runPayload json.RawMessage, namespacePrefix string) runExecutionContext {
 	meta := parseRunRuntimePayload(runPayload)
 	mode := resolveRuntimeMode(meta)
@@ -51,6 +56,7 @@ func resolveRunExecutionContext(runID string, projectID string, runPayload json.
 	return context
 }
 
+// parseRunRuntimePayload parses only fields required for runtime routing and tolerates malformed payloads.
 func parseRunRuntimePayload(raw json.RawMessage) runRuntimePayload {
 	if len(raw) == 0 {
 		return runRuntimePayload{}
@@ -62,6 +68,7 @@ func parseRunRuntimePayload(raw json.RawMessage) runRuntimePayload {
 	return payload
 }
 
+// resolveRuntimeMode maps trigger kind to execution profile with code-only fallback.
 func resolveRuntimeMode(payload runRuntimePayload) agentdomain.RuntimeMode {
 	if payload.Trigger == nil {
 		return agentdomain.RuntimeModeCodeOnly
@@ -74,6 +81,7 @@ func resolveRuntimeMode(payload runRuntimePayload) agentdomain.RuntimeMode {
 	}
 }
 
+// resolveIssueNumber returns positive issue number or zero when not provided.
 func resolveIssueNumber(payload runRuntimePayload) int64 {
 	if payload.Issue == nil {
 		return 0
@@ -84,6 +92,7 @@ func resolveIssueNumber(payload runRuntimePayload) int64 {
 	return payload.Issue.Number
 }
 
+// buildRunNamespace composes deterministic DNS-safe namespace name for full-env runs.
 func buildRunNamespace(prefix string, projectID string, runID string, issueNumber int64) string {
 	basePrefix := sanitizeDNSLabelValue(prefix)
 	if basePrefix == "" {
@@ -127,6 +136,7 @@ func buildRunNamespace(prefix string, projectID string, runID string, issueNumbe
 	return candidate
 }
 
+// compactIdentifier strips non-essential separators and truncates identifier to fixed length.
 func compactIdentifier(value string, max int) string {
 	if max <= 0 {
 		return ""
@@ -145,6 +155,7 @@ func compactIdentifier(value string, max int) string {
 	return clean
 }
 
+// sanitizeDNSLabelValue converts arbitrary text into Kubernetes DNS label format.
 func sanitizeDNSLabelValue(value string) string {
 	normalized := strings.ToLower(strings.TrimSpace(value))
 	if normalized == "" {

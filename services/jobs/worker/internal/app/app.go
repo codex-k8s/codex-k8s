@@ -114,7 +114,13 @@ func Run() error {
 		ProjectLearningModeDefault: learningDefault,
 		RunNamespacePrefix:         cfg.RunNamespacePrefix,
 		CleanupFullEnvNamespace:    cfg.RunNamespaceCleanup,
-	}, runs, events, feedback, launcher, logger)
+	}, worker.Dependencies{
+		Runs:     runs,
+		Events:   events,
+		Feedback: feedback,
+		Launcher: launcher,
+		Logger:   logger,
+	})
 
 	ctx, stop := signal.NotifyContext(appCtx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 	defer stop()

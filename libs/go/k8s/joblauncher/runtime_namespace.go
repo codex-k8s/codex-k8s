@@ -14,12 +14,19 @@ import (
 )
 
 const (
-	runNamespaceManagedByLabel   = "codexk8s.io/managed-by"
-	runNamespacePurposeLabel     = "codexk8s.io/namespace-purpose"
-	runNamespaceRuntimeModeLabel = "codexk8s.io/runtime-mode"
-	runNamespaceProjectIDLabel   = "codexk8s.io/project-id"
-	runNamespaceManagedByValue   = "codex-k8s-worker"
-	runNamespacePurposeValue     = "run"
+	runNamespaceManagedByLabel      = metadataLabelManagedBy
+	runNamespacePurposeLabel        = metadataLabelNamespacePurpose
+	runNamespaceRuntimeModeLabel    = metadataLabelRuntimeMode
+	runNamespaceProjectIDLabel      = metadataLabelProjectID
+	runNamespaceRunIDLabel          = metadataLabelRunID
+	runNamespaceCorrelationAnnotKey = metadataAnnotationCorrelationID
+
+	legacyRunNamespaceManagedByLabel   = legacyMetadataLabelManagedBy
+	legacyRunNamespacePurposeLabel     = legacyMetadataLabelNamespacePurpose
+	legacyRunNamespaceRuntimeModeLabel = legacyMetadataLabelRuntimeMode
+
+	runNamespaceManagedByValue = "codex-k8s-worker"
+	runNamespacePurposeValue   = "run"
 )
 
 // EnsureNamespace prepares baseline runtime resources for full-env execution.
@@ -74,13 +81,13 @@ func (l *Launcher) CleanupNamespace(ctx context.Context, spec NamespaceSpec) err
 		}
 		return fmt.Errorf("get namespace %s: %w", namespace, err)
 	}
-	if strings.TrimSpace(ns.Labels[runNamespaceManagedByLabel]) != runNamespaceManagedByValue {
+	if strings.TrimSpace(firstNonEmptyValue(ns.Labels, runNamespaceManagedByLabel, legacyRunNamespaceManagedByLabel)) != runNamespaceManagedByValue {
 		return nil
 	}
-	if strings.TrimSpace(ns.Labels[runNamespacePurposeLabel]) != runNamespacePurposeValue {
+	if strings.TrimSpace(firstNonEmptyValue(ns.Labels, runNamespacePurposeLabel, legacyRunNamespacePurposeLabel)) != runNamespacePurposeValue {
 		return nil
 	}
-	if strings.TrimSpace(ns.Labels[runNamespaceRuntimeModeLabel]) != string(agentdomain.RuntimeModeFullEnv) {
+	if strings.TrimSpace(firstNonEmptyValue(ns.Labels, runNamespaceRuntimeModeLabel, legacyRunNamespaceRuntimeModeLabel)) != string(agentdomain.RuntimeModeFullEnv) {
 		return nil
 	}
 
@@ -93,21 +100,22 @@ func (l *Launcher) CleanupNamespace(ctx context.Context, spec NamespaceSpec) err
 	return nil
 }
 
+// ensureNamespaceObject upserts namespace metadata required for managed runtime namespaces.
 func (l *Launcher) ensureNamespaceObject(ctx context.Context, spec NamespaceSpec) error {
 	namespace := strings.TrimSpace(spec.Namespace)
 	labels := map[string]string{
 		runNamespaceManagedByLabel:   runNamespaceManagedByValue,
 		runNamespacePurposeLabel:     runNamespacePurposeValue,
 		runNamespaceRuntimeModeLabel: string(spec.RuntimeMode),
-		"codexk8s.io/run-id":         sanitizeLabel(spec.RunID),
-		"codexk8s.io/project-id":     sanitizeLabel(spec.ProjectID),
+		runNamespaceRunIDLabel:       sanitizeLabel(spec.RunID),
+		runNamespaceProjectIDLabel:   sanitizeLabel(spec.ProjectID),
 	}
 	projectLabel := sanitizeLabel(spec.ProjectID)
 	if projectLabel != "unknown" {
 		labels[runNamespaceProjectIDLabel] = projectLabel
 	}
 	annotations := map[string]string{
-		"codexk8s.io/correlation-id": spec.CorrelationID,
+		runNamespaceCorrelationAnnotKey: spec.CorrelationID,
 	}
 
 	existing, err := l.client.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
@@ -148,6 +156,7 @@ func (l *Launcher) ensureNamespaceObject(ctx context.Context, spec NamespaceSpec
 	return nil
 }
 
+// ensureRunServiceAccount ensures ServiceAccount exists for in-namespace run access.
 func (l *Launcher) ensureRunServiceAccount(ctx context.Context, namespace string) error {
 	name := l.cfg.RunServiceAccountName
 	existing, err := l.client.CoreV1().ServiceAccounts(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -180,6 +189,7 @@ func (l *Launcher) ensureRunServiceAccount(ctx context.Context, namespace string
 	return nil
 }
 
+// ensureRunRole ensures least-privilege Role for runtime namespace debug/deploy scenarios.
 func (l *Launcher) ensureRunRole(ctx context.Context, namespace string) error {
 	name := l.cfg.RunRoleName
 	expectedRules := []rbacv1.PolicyRule{
@@ -238,6 +248,7 @@ func (l *Launcher) ensureRunRole(ctx context.Context, namespace string) error {
 	return nil
 }
 
+// ensureRunRoleBinding binds runtime ServiceAccount to the managed Role.
 func (l *Launcher) ensureRunRoleBinding(ctx context.Context, namespace string) error {
 	name := l.cfg.RunRoleBindingName
 	expectedSubjects := []rbacv1.Subject{
@@ -288,6 +299,7 @@ func (l *Launcher) ensureRunRoleBinding(ctx context.Context, namespace string) e
 	return nil
 }
 
+// ensureResourceQuota limits aggregate namespace resource consumption per run namespace.
 func (l *Launcher) ensureResourceQuota(ctx context.Context, namespace string) error {
 	requestsCPU, err := resource.ParseQuantity(l.cfg.RunResourceRequestsCPU)
 	if err != nil {
@@ -347,6 +359,7 @@ func (l *Launcher) ensureResourceQuota(ctx context.Context, namespace string) er
 	return nil
 }
 
+// ensureLimitRange defines default per-container requests/limits within run namespaces.
 func (l *Launcher) ensureLimitRange(ctx context.Context, namespace string) error {
 	defaultReqCPU, err := resource.ParseQuantity(l.cfg.RunDefaultRequestCPU)
 	if err != nil {

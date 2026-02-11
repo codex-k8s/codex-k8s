@@ -40,6 +40,11 @@ var (
 	queryMarkSlotFree string
 )
 
+// projectSettings stores project-level defaults in JSONB settings.
+type projectSettings struct {
+	LearningModeDefault bool `json:"learning_mode_default"`
+}
+
 // Repository persists run queue state in PostgreSQL.
 type Repository struct {
 	db *sql.DB
@@ -89,9 +94,7 @@ func (r *Repository) ClaimNextPending(ctx context.Context, params domainrepo.Cla
 	}
 	projectSlug, projectName := deriveProjectMeta(projectID, correlationID, runPayload)
 
-	settingsJSON, err := json.Marshal(map[string]any{
-		"learning_mode_default": params.ProjectLearningModeDefault,
-	})
+	settingsJSON, err := json.Marshal(projectSettings{LearningModeDefault: params.ProjectLearningModeDefault})
 	if err != nil {
 		return domainrepo.ClaimedRun{}, false, fmt.Errorf("marshal project settings: %w", err)
 	}
@@ -232,6 +235,7 @@ func (r *Repository) FinishRun(ctx context.Context, params domainrepo.FinishPara
 	return true, nil
 }
 
+// deriveProjectID prefers repository identity and falls back to correlation-scoped synthetic id.
 func deriveProjectID(correlationID string, runPayload []byte) string {
 	var payload struct {
 		Repository struct {
@@ -246,6 +250,7 @@ func deriveProjectID(correlationID string, runPayload []byte) string {
 	return uuid.NewSHA1(uuid.NameSpaceDNS, []byte("correlation:"+correlationID)).String()
 }
 
+// deriveProjectMeta builds stable project slug/name values from payload or synthetic fallback.
 func deriveProjectMeta(projectID string, correlationID string, runPayload []byte) (slug string, name string) {
 	var payload struct {
 		Repository struct {
@@ -273,6 +278,7 @@ func deriveProjectMeta(projectID string, correlationID string, runPayload []byte
 	return slug, name
 }
 
+// maxInt64 returns the greater of two int64 values.
 func maxInt64(a, b int64) int64 {
 	if a > b {
 		return a

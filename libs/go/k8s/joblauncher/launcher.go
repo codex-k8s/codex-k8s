@@ -60,11 +60,16 @@ type JobSpec struct {
 
 // NamespaceSpec defines runtime namespace metadata.
 type NamespaceSpec struct {
-	RunID         string
-	ProjectID     string
+	// RunID identifies run owning namespace lifecycle.
+	RunID string
+	// ProjectID identifies project scope for namespace metadata.
+	ProjectID string
+	// CorrelationID links namespace events to webhook flow.
 	CorrelationID string
-	RuntimeMode   agentdomain.RuntimeMode
-	Namespace     string
+	// RuntimeMode controls whether namespace should be managed.
+	RuntimeMode agentdomain.RuntimeMode
+	// Namespace is target namespace name.
+	Namespace string
 }
 
 // Config defines Job launcher runtime options.
@@ -240,11 +245,11 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       "codex-k8s-run",
 				"app.kubernetes.io/managed-by": "codex-k8s-worker",
-				"codexk8s.io/run-id":           spec.RunID,
-				"codexk8s.io/project-id":       sanitizeLabel(spec.ProjectID),
+				metadataLabelRunID:             spec.RunID,
+				metadataLabelProjectID:         sanitizeLabel(spec.ProjectID),
 			},
 			Annotations: map[string]string{
-				"codexk8s.io/correlation-id": spec.CorrelationID,
+				metadataAnnotationCorrelationID: spec.CorrelationID,
 			},
 		},
 		Spec: batchv1.JobSpec{
@@ -255,7 +260,7 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
 						"app.kubernetes.io/name": "codex-k8s-run",
-						"codexk8s.io/run-id":     spec.RunID,
+						metadataLabelRunID:       spec.RunID,
 					},
 				},
 				Spec: podSpec,
@@ -343,6 +348,7 @@ func BuildRunJobName(runID string) string {
 	return name
 }
 
+// buildRESTConfig resolves Kubernetes REST config from explicit kubeconfig, in-cluster env, or default kubeconfig.
 func buildRESTConfig(kubeconfigPath string) (*rest.Config, error) {
 	if kubeconfigPath != "" {
 		cfg, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
@@ -368,6 +374,7 @@ func buildRESTConfig(kubeconfigPath string) (*rest.Config, error) {
 	return fallbackCfg, nil
 }
 
+// sanitizeLabel converts arbitrary string to Kubernetes label-safe value.
 func sanitizeLabel(value string) string {
 	if value == "" {
 		return "unknown"
@@ -389,6 +396,7 @@ func sanitizeLabel(value string) string {
 	return normalized
 }
 
+// hasTerminalWaitingReason marks waiting container reasons that should fail run reconciliation early.
 func hasTerminalWaitingReason(statuses []corev1.ContainerStatus) bool {
 	for _, cs := range statuses {
 		if cs.State.Waiting == nil {

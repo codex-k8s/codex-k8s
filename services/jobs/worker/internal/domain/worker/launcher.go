@@ -32,11 +32,16 @@ type JobRef struct {
 
 // NamespaceSpec defines namespace baseline that should exist before launching a run job.
 type NamespaceSpec struct {
-	RunID         string
-	ProjectID     string
+	// RunID identifies run owning namespace lifecycle.
+	RunID string
+	// ProjectID identifies project scope for namespace metadata.
+	ProjectID string
+	// CorrelationID links namespace events to webhook flow.
 	CorrelationID string
-	RuntimeMode   agentdomain.RuntimeMode
-	Namespace     string
+	// RuntimeMode controls whether namespace should be managed.
+	RuntimeMode agentdomain.RuntimeMode
+	// Namespace is target namespace name.
+	Namespace string
 }
 
 // JobSpec defines parameters for Job launch.

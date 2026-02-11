@@ -78,6 +78,7 @@ func (a *Adapter) Status(ctx context.Context, ref worker.JobRef) (worker.JobStat
 	}
 }
 
+// toLibNamespaceSpec maps worker namespace contract to library launcher contract.
 func toLibNamespaceSpec(spec worker.NamespaceSpec) libslauncher.NamespaceSpec {
 	return libslauncher.NamespaceSpec{
 		RunID:         spec.RunID,
