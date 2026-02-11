@@ -5,52 +5,30 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/errs"
-	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/learningfeedback"
-	projectrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/project"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/projectmember"
-	repocfgrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/repocfg"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/staffrun"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/user"
-	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/staff"
 	"github.com/labstack/echo/v5"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
+	"github.com/codex-k8s/codex-k8s/libs/go/errs"
+	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
+	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/controlplane"
+	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/casters"
+	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/models"
 )
-
-type staffService interface {
-	ListProjects(ctx context.Context, principal staff.Principal, limit int) ([]any, error)
-	UpsertProject(ctx context.Context, principal staff.Principal, slug string, name string) (projectrepo.Project, error)
-	GetProject(ctx context.Context, principal staff.Principal, projectID string) (projectrepo.Project, error)
-	DeleteProject(ctx context.Context, principal staff.Principal, projectID string) error
-
-	ListRuns(ctx context.Context, principal staff.Principal, limit int) ([]staffrun.Run, error)
-	GetRun(ctx context.Context, principal staff.Principal, runID string) (staffrun.Run, error)
-	ListRunFlowEvents(ctx context.Context, principal staff.Principal, runID string, limit int) ([]staffrun.FlowEvent, error)
-	ListRunLearningFeedback(ctx context.Context, principal staff.Principal, runID string, limit int) ([]learningfeedbackrepo.Feedback, error)
-
-	ListUsers(ctx context.Context, principal staff.Principal, limit int) ([]user.User, error)
-	CreateAllowedUser(ctx context.Context, principal staff.Principal, email string, isPlatformAdmin bool) (user.User, error)
-	DeleteUser(ctx context.Context, principal staff.Principal, userID string) error
-
-	ListProjectMembers(ctx context.Context, principal staff.Principal, projectID string, limit int) ([]projectmember.Member, error)
-	UpsertProjectMember(ctx context.Context, principal staff.Principal, projectID string, userID string, role string) error
-	UpsertProjectMemberByEmail(ctx context.Context, principal staff.Principal, projectID string, email string, role string) error
-	DeleteProjectMember(ctx context.Context, principal staff.Principal, projectID string, userID string) error
-	SetProjectMemberLearningModeOverride(ctx context.Context, principal staff.Principal, projectID string, userID string, enabled *bool) error
-
-	ListProjectRepositories(ctx context.Context, principal staff.Principal, projectID string, limit int) ([]repocfgrepo.RepositoryBinding, error)
-	UpsertProjectRepository(ctx context.Context, principal staff.Principal, projectID string, provider string, owner string, name string, token string, servicesYAMLPath string) (repocfgrepo.RepositoryBinding, error)
-	DeleteProjectRepository(ctx context.Context, principal staff.Principal, projectID string, repositoryID string) error
-}
 
 // staffHandler implements staff/private JSON endpoints protected by JWT.
 type staffHandler struct {
-	svc staffService
+	cp *controlplane.Client
 }
 
-func newStaffHandler(svc staffService) *staffHandler {
-	return &staffHandler{svc: svc}
+func newStaffHandler(cp *controlplane.Client) *staffHandler {
+	return &staffHandler{cp: cp}
+}
+
+type pathLimit struct {
+	id    string
+	limit int
 }
 
 func parseLimit(c *echo.Context, def int) (int, error) {
@@ -68,10 +46,10 @@ func parseLimit(c *echo.Context, def int) (int, error) {
 	return n, nil
 }
 
-func requirePrincipal(c *echo.Context) (staff.Principal, error) {
+func requirePrincipal(c *echo.Context) (*controlplanev1.Principal, error) {
 	p, ok := getPrincipal(c)
-	if !ok {
-		return staff.Principal{}, errs.Unauthorized{Msg: "not authenticated"}
+	if !ok || p == nil || strings.TrimSpace(p.UserId) == "" {
+		return nil, errs.Unauthorized{Msg: "not authenticated"}
 	}
 	return p, nil
 }
@@ -84,80 +62,178 @@ func requirePathParam(c *echo.Context, name string) (string, error) {
 	return v, nil
 }
 
-func (h *staffHandler) deleteWith1Param(c *echo.Context, paramName string, fn func(ctx context.Context, principal staff.Principal, id string) error) error {
-	p, err := requirePrincipal(c)
+func bindBody(c *echo.Context, target interface{}) error {
+	if err := c.Bind(target); err != nil {
+		return errs.Validation{Field: "body", Msg: "invalid JSON"}
+	}
+	return nil
+}
+
+func resolvePath(param string) func(c *echo.Context) (string, error) {
+	return func(c *echo.Context) (string, error) {
+		return requirePathParam(c, param)
+	}
+}
+
+func resolveLimit(defLimit int) func(c *echo.Context) (int, error) {
+	return func(c *echo.Context) (int, error) {
+		return parseLimit(c, defLimit)
+	}
+}
+
+func resolvePathLimit(param string, defLimit int) func(c *echo.Context) (pathLimit, error) {
+	return func(c *echo.Context) (pathLimit, error) {
+		id, err := requirePathParam(c, param)
+		if err != nil {
+			return pathLimit{}, err
+		}
+		limit, err := parseLimit(c, defLimit)
+		if err != nil {
+			return pathLimit{}, err
+		}
+		return pathLimit{id: id, limit: limit}, nil
+	}
+}
+
+func withPrincipal(c *echo.Context, fn func(principal *controlplanev1.Principal) error) error {
+	principal, err := requirePrincipal(c)
 	if err != nil {
 		return err
 	}
-	id, err := requirePathParam(c, paramName)
-	if err != nil {
-		return err
-	}
-	if err := fn(c.Request().Context(), p, id); err != nil {
-		return err
-	}
-	return c.NoContent(http.StatusNoContent)
+	return fn(principal)
+}
+
+func withPrincipalAndResolved[T any](
+	c *echo.Context,
+	resolve func(c *echo.Context) (T, error),
+	fn func(principal *controlplanev1.Principal, value T) error,
+) error {
+	return withPrincipal(c, func(principal *controlplanev1.Principal) error {
+		value, err := resolve(c)
+		if err != nil {
+			return err
+		}
+		return fn(principal, value)
+	})
+}
+
+func withPrincipalAndTwoPaths(
+	c *echo.Context,
+	param1 string,
+	param2 string,
+	fn func(principal *controlplanev1.Principal, id1 string, id2 string) error,
+) error {
+	return withPrincipal(c, func(principal *controlplanev1.Principal) error {
+		id1, err := requirePathParam(c, param1)
+		if err != nil {
+			return err
+		}
+		id2, err := requirePathParam(c, param2)
+		if err != nil {
+			return err
+		}
+		return fn(principal, id1, id2)
+	})
+}
+
+type itemsGetter[Proto any] interface {
+	GetItems() []Proto
+}
+
+func listByLimitResp[Proto any, Resp itemsGetter[Proto], Out any](
+	c *echo.Context,
+	defLimit int,
+	call func(ctx context.Context, principal *controlplanev1.Principal, limit int32) (Resp, error),
+	cast func(items []Proto) []Out,
+) error {
+	return withPrincipalAndResolved(c, resolveLimit(defLimit), func(principal *controlplanev1.Principal, limit int) error {
+		resp, err := call(c.Request().Context(), principal, int32(limit))
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, models.ItemsResponse[Out]{Items: cast(resp.GetItems())})
+	})
+}
+
+func listByPathLimitResp[Proto any, Resp itemsGetter[Proto], Out any](
+	c *echo.Context,
+	param string,
+	defLimit int,
+	call func(ctx context.Context, principal *controlplanev1.Principal, id string, limit int32) (Resp, error),
+	cast func(items []Proto) []Out,
+) error {
+	return withPrincipalAndResolved(c, resolvePathLimit(param, defLimit), func(principal *controlplanev1.Principal, value pathLimit) error {
+		resp, err := call(c.Request().Context(), principal, value.id, int32(value.limit))
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, models.ItemsResponse[Out]{Items: cast(resp.GetItems())})
+	})
+}
+
+func getByPathResp[Proto any, Out any](
+	c *echo.Context,
+	param string,
+	call func(ctx context.Context, principal *controlplanev1.Principal, id string) (Proto, error),
+	cast func(item Proto) Out,
+) error {
+	return withPrincipalAndResolved(c, resolvePath(param), func(principal *controlplanev1.Principal, id string) error {
+		item, err := call(c.Request().Context(), principal, id)
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, cast(item))
+	})
+}
+
+func createByBodyResp[Req any, Proto any, Out any](
+	c *echo.Context,
+	statusCode int,
+	call func(ctx context.Context, principal *controlplanev1.Principal, req Req) (Proto, error),
+	cast func(item Proto) Out,
+) error {
+	return withPrincipal(c, func(principal *controlplanev1.Principal) error {
+		var req Req
+		if err := bindBody(c, &req); err != nil {
+			return err
+		}
+		item, err := call(c.Request().Context(), principal, req)
+		if err != nil {
+			return err
+		}
+		return c.JSON(statusCode, cast(item))
+	})
+}
+
+func (h *staffHandler) deleteWith1Param(c *echo.Context, paramName string, fn func(ctx context.Context, principal *controlplanev1.Principal, id string) error) error {
+	return withPrincipalAndResolved(c, resolvePath(paramName), func(principal *controlplanev1.Principal, id string) error {
+		if err := fn(c.Request().Context(), principal, id); err != nil {
+			return err
+		}
+		return c.NoContent(http.StatusNoContent)
+	})
 }
 
 func (h *staffHandler) deleteWith2Params(
 	c *echo.Context,
 	param1 string,
 	param2 string,
-	fn func(ctx context.Context, principal staff.Principal, id1 string, id2 string) error,
+	fn func(ctx context.Context, principal *controlplanev1.Principal, id1 string, id2 string) error,
 ) error {
-	p, err := requirePrincipal(c)
-	if err != nil {
-		return err
-	}
-	id1, err := requirePathParam(c, param1)
-	if err != nil {
-		return err
-	}
-	id2, err := requirePathParam(c, param2)
-	if err != nil {
-		return err
-	}
-	if err := fn(c.Request().Context(), p, id1, id2); err != nil {
-		return err
-	}
-	return c.NoContent(http.StatusNoContent)
+	return withPrincipalAndTwoPaths(c, param1, param2, func(principal *controlplanev1.Principal, id1 string, id2 string) error {
+		if err := fn(c.Request().Context(), principal, id1, id2); err != nil {
+			return err
+		}
+		return c.NoContent(http.StatusNoContent)
+	})
 }
 
 func (h *staffHandler) ListProjects(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
-	}
-	limit, err := parseLimit(c, 200)
-	if err != nil {
-		return err
-	}
-	items, err := h.svc.ListProjects(c.Request().Context(), p, limit)
-	if err != nil {
-		return err
-	}
-	return c.JSON(http.StatusOK, map[string]any{"items": items})
+	return listByLimitResp(c, 200, h.listProjectsCall, casters.Projects)
 }
 
 func (h *staffHandler) GetProject(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
-	}
-	projectID := c.Param("project_id")
-	if projectID == "" {
-		return errs.Validation{Field: "project_id", Msg: "is required"}
-	}
-
-	item, err := h.svc.GetProject(c.Request().Context(), p, projectID)
-	if err != nil {
-		return err
-	}
-	return c.JSON(http.StatusOK, map[string]any{
-		"id":   item.ID,
-		"slug": item.Slug,
-		"name": item.Name,
-	})
+	return getByPathResp(c, "project_id", h.getProjectCall, casters.Project)
 }
 
 type upsertProjectRequest struct {
@@ -166,208 +242,35 @@ type upsertProjectRequest struct {
 }
 
 func (h *staffHandler) UpsertProject(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
-	}
-	var req upsertProjectRequest
-	if err := c.Bind(&req); err != nil {
-		return errs.Validation{Field: "body", Msg: "invalid JSON"}
-	}
-	item, err := h.svc.UpsertProject(c.Request().Context(), p, req.Slug, req.Name)
-	if err != nil {
-		return err
-	}
-	return c.JSON(http.StatusCreated, map[string]any{
-		"id":   item.ID,
-		"slug": item.Slug,
-		"name": item.Name,
-	})
+	return createByBodyResp(c, http.StatusCreated, h.upsertProjectCall, casters.Project)
 }
 
 func (h *staffHandler) DeleteProject(c *echo.Context) error {
-	return h.deleteWith1Param(c, "project_id", h.svc.DeleteProject)
+	return h.deleteWith1Param(c, "project_id", h.deleteProject)
 }
 
 func (h *staffHandler) ListRuns(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
-	}
-	limit, err := parseLimit(c, 200)
-	if err != nil {
-		return err
-	}
-	items, err := h.svc.ListRuns(c.Request().Context(), p, limit)
-	if err != nil {
-		return err
-	}
-	out := make([]any, 0, len(items))
-	for _, r := range items {
-		createdAt := r.CreatedAt.UTC().Format(time.RFC3339Nano)
-		var startedAt any = nil
-		if r.StartedAt != nil {
-			startedAt = r.StartedAt.UTC().Format(time.RFC3339Nano)
-		}
-		var finishedAt any = nil
-		if r.FinishedAt != nil {
-			finishedAt = r.FinishedAt.UTC().Format(time.RFC3339Nano)
-		}
-		var projectID any = nil
-		if r.ProjectID != "" {
-			projectID = r.ProjectID
-		}
-		out = append(out, map[string]any{
-			"id":             r.ID,
-			"correlation_id": r.CorrelationID,
-			"project_id":     projectID,
-			"project_slug":   r.ProjectSlug,
-			"project_name":   r.ProjectName,
-			"status":         r.Status,
-			"created_at":     createdAt,
-			"started_at":     startedAt,
-			"finished_at":    finishedAt,
-		})
-	}
-	return c.JSON(http.StatusOK, map[string]any{"items": out})
+	return listByLimitResp(c, 200, h.listRunsCall, casters.Runs)
 }
 
 func (h *staffHandler) GetRun(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
-	}
-	runID := c.Param("run_id")
-	if runID == "" {
-		return errs.Validation{Field: "run_id", Msg: "is required"}
-	}
-
-	r, err := h.svc.GetRun(c.Request().Context(), p, runID)
-	if err != nil {
-		return err
-	}
-
-	createdAt := r.CreatedAt.UTC().Format(time.RFC3339Nano)
-	var startedAt any = nil
-	if r.StartedAt != nil {
-		startedAt = r.StartedAt.UTC().Format(time.RFC3339Nano)
-	}
-	var finishedAt any = nil
-	if r.FinishedAt != nil {
-		finishedAt = r.FinishedAt.UTC().Format(time.RFC3339Nano)
-	}
-	var projectID any = nil
-	if r.ProjectID != "" {
-		projectID = r.ProjectID
-	}
-
-	return c.JSON(http.StatusOK, map[string]any{
-		"id":             r.ID,
-		"correlation_id": r.CorrelationID,
-		"project_id":     projectID,
-		"project_slug":   r.ProjectSlug,
-		"project_name":   r.ProjectName,
-		"status":         r.Status,
-		"created_at":     createdAt,
-		"started_at":     startedAt,
-		"finished_at":    finishedAt,
-	})
+	return getByPathResp(c, "run_id", h.getRunCall, casters.Run)
 }
 
 func (h *staffHandler) ListRunEvents(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
-	}
-	runID := c.Param("run_id")
-	if runID == "" {
-		return errs.Validation{Field: "run_id", Msg: "is required"}
-	}
-	limit, err := parseLimit(c, 500)
-	if err != nil {
-		return err
-	}
-	items, err := h.svc.ListRunFlowEvents(c.Request().Context(), p, runID, limit)
-	if err != nil {
-		return err
-	}
-	out := make([]any, 0, len(items))
-	for _, e := range items {
-		createdAt := e.CreatedAt.UTC().Format(time.RFC3339Nano)
-		out = append(out, map[string]any{
-			"correlation_id": e.CorrelationID,
-			"event_type":     e.EventType,
-			"created_at":     createdAt,
-			"payload_json":   string(e.PayloadJSON),
-		})
-	}
-	return c.JSON(http.StatusOK, map[string]any{"items": out})
+	return listByPathLimitResp(c, "run_id", 500, h.listRunEventsCall, casters.FlowEvents)
 }
 
 func (h *staffHandler) ListRunLearningFeedback(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
-	}
-	runID := c.Param("run_id")
-	if runID == "" {
-		return errs.Validation{Field: "run_id", Msg: "is required"}
-	}
-	limit, err := parseLimit(c, 200)
-	if err != nil {
-		return err
-	}
-	items, err := h.svc.ListRunLearningFeedback(c.Request().Context(), p, runID, limit)
-	if err != nil {
-		return err
-	}
-	out := make([]any, 0, len(items))
-	for _, f := range items {
-		createdAt := f.CreatedAt.UTC().Format(time.RFC3339Nano)
-		out = append(out, map[string]any{
-			"id":            f.ID,
-			"run_id":        f.RunID,
-			"repository_id": f.RepositoryID,
-			"pr_number":     f.PRNumber,
-			"file_path":     f.FilePath,
-			"line":          f.Line,
-			"kind":          f.Kind,
-			"explanation":   f.Explanation,
-			"created_at":    createdAt,
-		})
-	}
-	return c.JSON(http.StatusOK, map[string]any{"items": out})
+	return listByPathLimitResp(c, "run_id", 200, h.listRunLearningFeedbackCall, casters.LearningFeedbackList)
 }
 
 func (h *staffHandler) ListUsers(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
-	}
-	limit, err := parseLimit(c, 200)
-	if err != nil {
-		return err
-	}
-	items, err := h.svc.ListUsers(c.Request().Context(), p, limit)
-	if err != nil {
-		return err
-	}
-	out := make([]any, 0, len(items))
-	for _, u := range items {
-		out = append(out, map[string]any{
-			"id":                u.ID,
-			"email":             u.Email,
-			"github_user_id":    u.GitHubUserID,
-			"github_login":      u.GitHubLogin,
-			"is_platform_admin": u.IsPlatformAdmin,
-			"is_platform_owner": u.IsPlatformOwner,
-		})
-	}
-	return c.JSON(http.StatusOK, map[string]any{"items": out})
+	return listByLimitResp(c, 200, h.listUsersCall, casters.Users)
 }
 
 func (h *staffHandler) DeleteUser(c *echo.Context) error {
-	return h.deleteWith1Param(c, "user_id", h.svc.DeleteUser)
+	return h.deleteWith1Param(c, "user_id", h.deleteUser)
 }
 
 type createUserRequest struct {
@@ -376,60 +279,11 @@ type createUserRequest struct {
 }
 
 func (h *staffHandler) CreateUser(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
-	}
-	var req createUserRequest
-	if err := c.Bind(&req); err != nil {
-		return errs.Validation{Field: "body", Msg: "invalid JSON"}
-	}
-	u, err := h.svc.CreateAllowedUser(c.Request().Context(), p, req.Email, req.IsPlatformAdmin)
-	if err != nil {
-		return err
-	}
-	return c.JSON(http.StatusCreated, map[string]any{
-		"id":                u.ID,
-		"email":             u.Email,
-		"github_user_id":    u.GitHubUserID,
-		"github_login":      u.GitHubLogin,
-		"is_platform_admin": u.IsPlatformAdmin,
-		"is_platform_owner": u.IsPlatformOwner,
-	})
+	return createByBodyResp(c, http.StatusCreated, h.createUserCall, casters.User)
 }
 
 func (h *staffHandler) ListProjectMembers(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
-	}
-	projectID := c.Param("project_id")
-	if projectID == "" {
-		return errs.Validation{Field: "project_id", Msg: "is required"}
-	}
-	limit, err := parseLimit(c, 200)
-	if err != nil {
-		return err
-	}
-	items, err := h.svc.ListProjectMembers(c.Request().Context(), p, projectID, limit)
-	if err != nil {
-		return err
-	}
-	out := make([]any, 0, len(items))
-	for _, m := range items {
-		var learningOverride any = nil
-		if m.LearningModeOverride != nil {
-			learningOverride = *m.LearningModeOverride
-		}
-		out = append(out, map[string]any{
-			"project_id":             m.ProjectID,
-			"user_id":                m.UserID,
-			"email":                  m.Email,
-			"role":                   m.Role,
-			"learning_mode_override": learningOverride,
-		})
-	}
-	return c.JSON(http.StatusOK, map[string]any{"items": out})
+	return listByPathLimitResp(c, "project_id", 200, h.listProjectMembersCall, casters.ProjectMembers)
 }
 
 type upsertMemberRequest struct {
@@ -439,38 +293,36 @@ type upsertMemberRequest struct {
 }
 
 func (h *staffHandler) UpsertProjectMember(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
-	}
-	projectID := c.Param("project_id")
-	if projectID == "" {
-		return errs.Validation{Field: "project_id", Msg: "is required"}
-	}
-	var req upsertMemberRequest
-	if err := c.Bind(&req); err != nil {
-		return errs.Validation{Field: "body", Msg: "invalid JSON"}
-	}
-	if strings.TrimSpace(req.Email) != "" && strings.TrimSpace(req.UserID) != "" {
-		return errs.Validation{Field: "user_id", Msg: "either user_id or email must be set"}
-	}
-	if strings.TrimSpace(req.Email) != "" {
-		if err := h.svc.UpsertProjectMemberByEmail(c.Request().Context(), p, projectID, req.Email, req.Role); err != nil {
+	return withPrincipalAndResolved(c, resolvePath("project_id"), func(principal *controlplanev1.Principal, projectID string) error {
+		var req upsertMemberRequest
+		if err := bindBody(c, &req); err != nil {
+			return err
+		}
+
+		email := strings.TrimSpace(req.Email)
+		userID := strings.TrimSpace(req.UserID)
+		if email != "" && userID != "" {
+			return errs.Validation{Field: "user_id", Msg: "either user_id or email must be set"}
+		}
+		if email == "" && userID == "" {
+			return errs.Validation{Field: "user_id", Msg: "is required"}
+		}
+
+		if _, err := h.cp.Service().UpsertProjectMember(c.Request().Context(), &controlplanev1.UpsertProjectMemberRequest{
+			Principal: principal,
+			ProjectId: projectID,
+			UserId:    optionalStringPtr(userID),
+			Email:     optionalStringPtr(email),
+			Role:      req.Role,
+		}); err != nil {
 			return err
 		}
 		return c.NoContent(http.StatusNoContent)
-	}
-	if strings.TrimSpace(req.UserID) == "" {
-		return errs.Validation{Field: "user_id", Msg: "is required"}
-	}
-	if err := h.svc.UpsertProjectMember(c.Request().Context(), p, projectID, req.UserID, req.Role); err != nil {
-		return err
-	}
-	return c.NoContent(http.StatusNoContent)
+	})
 }
 
 func (h *staffHandler) DeleteProjectMember(c *echo.Context) error {
-	return h.deleteWith2Params(c, "project_id", "user_id", h.svc.DeleteProjectMember)
+	return h.deleteWith2Params(c, "project_id", "user_id", h.deleteProjectMember)
 }
 
 type setLearningModeRequest struct {
@@ -479,58 +331,29 @@ type setLearningModeRequest struct {
 }
 
 func (h *staffHandler) SetProjectMemberLearningModeOverride(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
-	}
-	projectID := c.Param("project_id")
-	if projectID == "" {
-		return errs.Validation{Field: "project_id", Msg: "is required"}
-	}
-	userID := c.Param("user_id")
-	if userID == "" {
-		return errs.Validation{Field: "user_id", Msg: "is required"}
-	}
-	var req setLearningModeRequest
-	if err := c.Bind(&req); err != nil {
-		return errs.Validation{Field: "body", Msg: "invalid JSON"}
-	}
-	if err := h.svc.SetProjectMemberLearningModeOverride(c.Request().Context(), p, projectID, userID, req.Enabled); err != nil {
-		return err
-	}
-	return c.NoContent(http.StatusNoContent)
+	return withPrincipalAndTwoPaths(c, "project_id", "user_id", func(principal *controlplanev1.Principal, projectID string, userID string) error {
+		var req setLearningModeRequest
+		if err := bindBody(c, &req); err != nil {
+			return err
+		}
+		var enabled *wrapperspb.BoolValue
+		if req.Enabled != nil {
+			enabled = wrapperspb.Bool(*req.Enabled)
+		}
+		if _, err := h.cp.Service().SetProjectMemberLearningModeOverride(c.Request().Context(), &controlplanev1.SetProjectMemberLearningModeOverrideRequest{
+			Principal: principal,
+			ProjectId: projectID,
+			UserId:    userID,
+			Enabled:   enabled,
+		}); err != nil {
+			return err
+		}
+		return c.NoContent(http.StatusNoContent)
+	})
 }
 
 func (h *staffHandler) ListProjectRepositories(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
-	}
-	projectID := c.Param("project_id")
-	if projectID == "" {
-		return errs.Validation{Field: "project_id", Msg: "is required"}
-	}
-	limit, err := parseLimit(c, 200)
-	if err != nil {
-		return err
-	}
-	items, err := h.svc.ListProjectRepositories(c.Request().Context(), p, projectID, limit)
-	if err != nil {
-		return err
-	}
-	out := make([]any, 0, len(items))
-	for _, r := range items {
-		out = append(out, map[string]any{
-			"id":                 r.ID,
-			"project_id":         r.ProjectID,
-			"provider":           r.Provider,
-			"external_id":        r.ExternalID,
-			"owner":              r.Owner,
-			"name":               r.Name,
-			"services_yaml_path": r.ServicesYAMLPath,
-		})
-	}
-	return c.JSON(http.StatusOK, map[string]any{"items": out})
+	return listByPathLimitResp(c, "project_id", 200, h.listProjectRepositoriesCall, casters.RepositoryBindings)
 }
 
 type upsertProjectRepositoryRequest struct {
@@ -542,42 +365,165 @@ type upsertProjectRepositoryRequest struct {
 }
 
 func (h *staffHandler) UpsertProjectRepository(c *echo.Context) error {
-	p, ok := getPrincipal(c)
-	if !ok {
-		return errs.Unauthorized{Msg: "not authenticated"}
-	}
-	projectID := c.Param("project_id")
-	if projectID == "" {
-		return errs.Validation{Field: "project_id", Msg: "is required"}
-	}
-	var req upsertProjectRepositoryRequest
-	if err := c.Bind(&req); err != nil {
-		return errs.Validation{Field: "body", Msg: "invalid JSON"}
-	}
-	item, err := h.svc.UpsertProjectRepository(
-		c.Request().Context(),
-		p,
-		projectID,
-		req.Provider,
-		req.Owner,
-		req.Name,
-		req.Token,
-		req.ServicesYAMLPath,
-	)
-	if err != nil {
-		return err
-	}
-	return c.JSON(http.StatusCreated, map[string]any{
-		"id":                 item.ID,
-		"project_id":         item.ProjectID,
-		"provider":           item.Provider,
-		"external_id":        item.ExternalID,
-		"owner":              item.Owner,
-		"name":               item.Name,
-		"services_yaml_path": item.ServicesYAMLPath,
+	return withPrincipalAndResolved(c, resolvePath("project_id"), func(principal *controlplanev1.Principal, projectID string) error {
+		var req upsertProjectRepositoryRequest
+		if err := bindBody(c, &req); err != nil {
+			return err
+		}
+		item, err := h.cp.Service().UpsertProjectRepository(c.Request().Context(), &controlplanev1.UpsertProjectRepositoryRequest{
+			Principal:        principal,
+			ProjectId:        projectID,
+			Provider:         req.Provider,
+			Owner:            req.Owner,
+			Name:             req.Name,
+			Token:            req.Token,
+			ServicesYamlPath: req.ServicesYAMLPath,
+		})
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusCreated, casters.RepositoryBinding(item))
 	})
 }
 
 func (h *staffHandler) DeleteProjectRepository(c *echo.Context) error {
-	return h.deleteWith2Params(c, "project_id", "repository_id", h.svc.DeleteProjectRepository)
+	return h.deleteWith2Params(c, "project_id", "repository_id", h.deleteProjectRepository)
+}
+
+type idLimitArg struct {
+	id    string
+	limit int32
+}
+
+func callUnaryWithArg[Arg any, Req any, Resp any](
+	ctx context.Context,
+	principal *controlplanev1.Principal,
+	arg Arg,
+	build func(principal *controlplanev1.Principal, arg Arg) *Req,
+	call func(ctx context.Context, req *Req, opts ...grpc.CallOption) (Resp, error),
+) (Resp, error) {
+	return call(ctx, build(principal, arg))
+}
+
+func buildListProjectsRequest(principal *controlplanev1.Principal, limit int32) *controlplanev1.ListProjectsRequest {
+	return &controlplanev1.ListProjectsRequest{Principal: principal, Limit: limit}
+}
+
+func buildGetProjectRequest(principal *controlplanev1.Principal, id string) *controlplanev1.GetProjectRequest {
+	return &controlplanev1.GetProjectRequest{Principal: principal, ProjectId: id}
+}
+
+func buildUpsertProjectRequest(principal *controlplanev1.Principal, req upsertProjectRequest) *controlplanev1.UpsertProjectRequest {
+	return &controlplanev1.UpsertProjectRequest{Principal: principal, Slug: req.Slug, Name: req.Name}
+}
+
+func buildListRunsRequest(principal *controlplanev1.Principal, limit int32) *controlplanev1.ListRunsRequest {
+	return &controlplanev1.ListRunsRequest{Principal: principal, Limit: limit}
+}
+
+func buildGetRunRequest(principal *controlplanev1.Principal, id string) *controlplanev1.GetRunRequest {
+	return &controlplanev1.GetRunRequest{Principal: principal, RunId: id}
+}
+
+func buildListRunEventsRequest(principal *controlplanev1.Principal, arg idLimitArg) *controlplanev1.ListRunEventsRequest {
+	return &controlplanev1.ListRunEventsRequest{Principal: principal, RunId: arg.id, Limit: arg.limit}
+}
+
+func buildListRunLearningFeedbackRequest(principal *controlplanev1.Principal, arg idLimitArg) *controlplanev1.ListRunLearningFeedbackRequest {
+	return &controlplanev1.ListRunLearningFeedbackRequest{Principal: principal, RunId: arg.id, Limit: arg.limit}
+}
+
+func buildListUsersRequest(principal *controlplanev1.Principal, limit int32) *controlplanev1.ListUsersRequest {
+	return &controlplanev1.ListUsersRequest{Principal: principal, Limit: limit}
+}
+
+func buildCreateUserRequest(principal *controlplanev1.Principal, req createUserRequest) *controlplanev1.CreateUserRequest {
+	return &controlplanev1.CreateUserRequest{Principal: principal, Email: req.Email, IsPlatformAdmin: req.IsPlatformAdmin}
+}
+
+func buildListProjectMembersRequest(principal *controlplanev1.Principal, arg idLimitArg) *controlplanev1.ListProjectMembersRequest {
+	return &controlplanev1.ListProjectMembersRequest{Principal: principal, ProjectId: arg.id, Limit: arg.limit}
+}
+
+func buildListProjectRepositoriesRequest(principal *controlplanev1.Principal, arg idLimitArg) *controlplanev1.ListProjectRepositoriesRequest {
+	return &controlplanev1.ListProjectRepositoriesRequest{Principal: principal, ProjectId: arg.id, Limit: arg.limit}
+}
+
+func (h *staffHandler) listProjectsCall(ctx context.Context, principal *controlplanev1.Principal, limit int32) (*controlplanev1.ListProjectsResponse, error) {
+	return callUnaryWithArg(ctx, principal, limit, buildListProjectsRequest, h.cp.Service().ListProjects)
+}
+
+func (h *staffHandler) getProjectCall(ctx context.Context, principal *controlplanev1.Principal, id string) (*controlplanev1.Project, error) {
+	return callUnaryWithArg(ctx, principal, id, buildGetProjectRequest, h.cp.Service().GetProject)
+}
+
+func (h *staffHandler) upsertProjectCall(ctx context.Context, principal *controlplanev1.Principal, req upsertProjectRequest) (*controlplanev1.Project, error) {
+	return callUnaryWithArg(ctx, principal, req, buildUpsertProjectRequest, h.cp.Service().UpsertProject)
+}
+
+func (h *staffHandler) listRunsCall(ctx context.Context, principal *controlplanev1.Principal, limit int32) (*controlplanev1.ListRunsResponse, error) {
+	return callUnaryWithArg(ctx, principal, limit, buildListRunsRequest, h.cp.Service().ListRuns)
+}
+
+func (h *staffHandler) getRunCall(ctx context.Context, principal *controlplanev1.Principal, id string) (*controlplanev1.Run, error) {
+	return callUnaryWithArg(ctx, principal, id, buildGetRunRequest, h.cp.Service().GetRun)
+}
+
+func (h *staffHandler) listRunEventsCall(ctx context.Context, principal *controlplanev1.Principal, id string, limit int32) (*controlplanev1.ListRunEventsResponse, error) {
+	arg := idLimitArg{id: id, limit: limit}
+	return callUnaryWithArg(ctx, principal, arg, buildListRunEventsRequest, h.cp.Service().ListRunEvents)
+}
+
+func (h *staffHandler) listRunLearningFeedbackCall(ctx context.Context, principal *controlplanev1.Principal, id string, limit int32) (*controlplanev1.ListRunLearningFeedbackResponse, error) {
+	req := buildListRunLearningFeedbackRequest(principal, idLimitArg{id: id, limit: limit})
+	return h.cp.Service().ListRunLearningFeedback(ctx, req)
+}
+
+func (h *staffHandler) listUsersCall(ctx context.Context, principal *controlplanev1.Principal, limit int32) (*controlplanev1.ListUsersResponse, error) {
+	return callUnaryWithArg(ctx, principal, limit, buildListUsersRequest, h.cp.Service().ListUsers)
+}
+
+func (h *staffHandler) createUserCall(ctx context.Context, principal *controlplanev1.Principal, req createUserRequest) (*controlplanev1.User, error) {
+	return callUnaryWithArg(ctx, principal, req, buildCreateUserRequest, h.cp.Service().CreateUser)
+}
+
+func (h *staffHandler) listProjectMembersCall(ctx context.Context, principal *controlplanev1.Principal, id string, limit int32) (*controlplanev1.ListProjectMembersResponse, error) {
+	builder := buildListProjectMembersRequest
+	return callUnaryWithArg(ctx, principal, idLimitArg{id: id, limit: limit}, builder, h.cp.Service().ListProjectMembers)
+}
+
+func (h *staffHandler) listProjectRepositoriesCall(ctx context.Context, principal *controlplanev1.Principal, id string, limit int32) (*controlplanev1.ListProjectRepositoriesResponse, error) {
+	req := buildListProjectRepositoriesRequest(principal, idLimitArg{id: id, limit: limit})
+	svc := h.cp.Service()
+	return svc.ListProjectRepositories(ctx, req)
+}
+
+func (h *staffHandler) deleteProject(ctx context.Context, principal *controlplanev1.Principal, id string) error {
+	req := &controlplanev1.DeleteProjectRequest{Principal: principal, ProjectId: id}
+	_, err := h.cp.Service().DeleteProject(ctx, req)
+	return err
+}
+
+func (h *staffHandler) deleteUser(ctx context.Context, principal *controlplanev1.Principal, id string) error {
+	_, err := h.cp.Service().DeleteUser(ctx, &controlplanev1.DeleteUserRequest{Principal: principal, UserId: id})
+	return err
+}
+
+func (h *staffHandler) deleteProjectMember(ctx context.Context, principal *controlplanev1.Principal, projectID string, userID string) error {
+	_, err := h.cp.Service().DeleteProjectMember(ctx, &controlplanev1.DeleteProjectMemberRequest{Principal: principal, ProjectId: projectID, UserId: userID})
+	return err
+}
+
+func (h *staffHandler) deleteProjectRepository(ctx context.Context, principal *controlplanev1.Principal, projectID string, repositoryID string) error {
+	req := controlplanev1.DeleteProjectRepositoryRequest{Principal: principal, ProjectId: projectID, RepositoryId: repositoryID}
+	_, err := h.cp.Service().DeleteProjectRepository(ctx, &req)
+	return err
+}
+
+func optionalStringPtr(value string) *string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil
+	}
+	return &value
 }

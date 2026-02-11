@@ -23,17 +23,47 @@
   - сверить задачу с `docs/product/requirements_machine_driven.md`;
   - только после этого планировать и править код.
 - Не редактировать сами гайды без явной задачи на изменение стандартов.
-- Коммиты/ветки и PR не делать, если об этом не было явных указаний в запросе пользователя.
+- При разработке и доработке проектной документации (бизнес-документов), сверять ее с `docs/research/src_idea-machine_driven_company_requirements.md`. `docs/research/src_idea-machine_driven_company_requirements.md` - это документ, перенесенный из изначального репозитория
+`github.com/codex-k8s/codexctl` (`../codexctl`), которая в части бизнес-идеи остается действующей, за исключением подходов к реализации (там все планировалось делать через консольную утилиту, воркфлоу и лейблы, а тут полноценный сервис управления агентами, задачами и т.д.).
 
 ## Архитектурные границы (обязательны)
 
-- `services/external/api-gateway` = thin-edge:
+- `services/external/*` = thin-edge:
   - HTTP ingress (webhooks/public endpoints), валидация, authn/authz, rate limiting, аудит, маршрутизация;
   - без доменной логики (use-cases) и без прямых postgres-репозиториев.
-- `services/internal/control-plane` = доменная логика и владелец БД:
+- `services/internal/*` = доменная логика и владельцы БД:
   - доменные модели/use-cases, репозитории, интеграции через интерфейсы/адаптеры;
   - внутреннее service-to-service взаимодействие через gRPC по контрактам в `proto/`.
-- `services/jobs/worker` = фоновые процессы и reconciliation (идемпотентно, состояние в БД).
+- `services/jobs/*` = фоновые процессы и reconciliation (идемпотентно, состояние в БД).
+
+## Транспортные контракты и модели (обязательны)
+
+- При изменениях transport-слоя, DTO/кастеров и доменных моделей обязательно читать:
+  - `docs/design-guidelines/go/services_design_requirements.md` (backend);
+  - `docs/design-guidelines/vue/frontend_architecture.md` (frontend).
+- В `transport/http|grpc` запрещены `map[string]any`/`[]any`/`any` как контракт ответа.
+- Handlers возвращают только typed DTO-модели; маппинг transport <-> domain/proto выполняется через явные кастеры.
+- Для HTTP DTO размещать модели и кастеры в `internal/transport/http/{models,casters}` (или эквивалентно по протоколу в рамках сервиса).
+- Доменные типы размещать в `internal/domain/types/{entity,value,enum,query,mixin}`; не объявлять доменные модели ad-hoc в больших service/handler файлах.
+- Маппинг ошибок выполняется только на границе транспорта (HTTP error handler / gRPC interceptor); в handlers запрещены локальные “переводы” ошибок между слоями.
+
+## Образы сервисов (обязательны)
+
+- В монорепо у каждого Go-сервиса собственный Dockerfile в `services/<zone>/<service>/Dockerfile`.
+- У каждого frontend-сервиса обязателен `services/<zone>/<service>/Dockerfile` с минимум двумя target:
+  - `dev` (staging/dev runtime);
+  - `prod` (runtime на веб-сервере, например `nginx`, со статическим бандлом).
+- Для каждого frontend-сервиса обязателен отдельный манифест в `deploy/base/<service>/*.yaml.tpl`.
+- Раздутый “общий” Dockerfile для нескольких сервисов не используется как основной путь сборки/deploy.
+- Для staging/CI обязательны раздельные image vars и image repositories на каждый deployable-сервис:
+  - шаблон: `CODEXK8S_<SERVICE>_IMAGE`;
+  - шаблон: `CODEXK8S_<SERVICE>_INTERNAL_IMAGE_REPOSITORY`.
+
+## Порядок выкладки staging (обязателен)
+
+- Применяется последовательность:
+  `stateful dependencies -> migrations -> internal domain services -> edge services -> frontend`.
+- Ожидание готовности зависимостей выполняется через `initContainers` в манифестах сервисов, а не через retry-циклы старта в Go-коде.
 
 ## Миграции и schema governance (обязательны)
 

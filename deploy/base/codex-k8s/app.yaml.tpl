@@ -33,9 +33,21 @@ spec:
         app.kubernetes.io/name: codex-k8s
         app.kubernetes.io/component: api-gateway
     spec:
+      initContainers:
+        - name: wait-control-plane
+          image: busybox:1.36
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -ec
+            - |
+              until wget -q -O /dev/null http://codex-k8s-control-plane:8081/health/readyz; do
+                echo "waiting for control-plane readiness..."
+                sleep 2
+              done
       containers:
         - name: codex-k8s
-          image: ${CODEXK8S_IMAGE}
+          image: ${CODEXK8S_API_GATEWAY_IMAGE}
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -45,75 +57,19 @@ spec:
               value: ai-staging
             - name: CODEXK8S_HTTP_ADDR
               value: ":8080"
+            - name: CODEXK8S_CONTROL_PLANE_GRPC_TARGET
+              value: "codex-k8s-control-plane:9090"
             - name: CODEXK8S_VITE_DEV_UPSTREAM
               valueFrom:
                 secretKeyRef:
                   name: codex-k8s-runtime
                   key: CODEXK8S_VITE_DEV_UPSTREAM
                   optional: true
-            - name: CODEXK8S_DB_HOST
-              value: postgres
-            - name: CODEXK8S_DB_PORT
-              value: "5432"
-            - name: CODEXK8S_DB_NAME
-              valueFrom:
-                secretKeyRef:
-                  name: codex-k8s-postgres
-                  key: CODEXK8S_POSTGRES_DB
-            - name: CODEXK8S_DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: codex-k8s-postgres
-                  key: CODEXK8S_POSTGRES_USER
-            - name: CODEXK8S_DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: codex-k8s-postgres
-                  key: CODEXK8S_POSTGRES_PASSWORD
-            - name: CODEXK8S_OPENAI_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: codex-k8s-runtime
-                  key: CODEXK8S_OPENAI_API_KEY
-            - name: CODEXK8S_CONTEXT7_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: codex-k8s-runtime
-                  key: CODEXK8S_CONTEXT7_API_KEY
-                  optional: true
-            - name: CODEXK8S_APP_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: codex-k8s-runtime
-                  key: CODEXK8S_APP_SECRET_KEY
-            - name: CODEXK8S_TOKEN_ENCRYPTION_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: codex-k8s-runtime
-                  key: CODEXK8S_TOKEN_ENCRYPTION_KEY
-            - name: CODEXK8S_LEARNING_MODE_DEFAULT
-              valueFrom:
-                secretKeyRef:
-                  name: codex-k8s-runtime
-                  key: CODEXK8S_LEARNING_MODE_DEFAULT
-                  optional: true
             - name: CODEXK8S_GITHUB_WEBHOOK_SECRET
               valueFrom:
                 secretKeyRef:
                   name: codex-k8s-runtime
                   key: CODEXK8S_GITHUB_WEBHOOK_SECRET
-            - name: CODEXK8S_GITHUB_WEBHOOK_URL
-              valueFrom:
-                secretKeyRef:
-                  name: codex-k8s-runtime
-                  key: CODEXK8S_GITHUB_WEBHOOK_URL
-                  optional: true
-            - name: CODEXK8S_GITHUB_WEBHOOK_EVENTS
-              valueFrom:
-                secretKeyRef:
-                  name: codex-k8s-runtime
-                  key: CODEXK8S_GITHUB_WEBHOOK_EVENTS
-                  optional: true
             - name: CODEXK8S_PUBLIC_BASE_URL
               valueFrom:
                 secretKeyRef:
@@ -121,23 +77,6 @@ spec:
                   key: CODEXK8S_PUBLIC_BASE_URL
             - name: CODEXK8S_COOKIE_SECURE
               value: "true"
-            - name: CODEXK8S_BOOTSTRAP_OWNER_EMAIL
-              valueFrom:
-                secretKeyRef:
-                  name: codex-k8s-runtime
-                  key: CODEXK8S_BOOTSTRAP_OWNER_EMAIL
-            - name: CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS
-              valueFrom:
-                secretKeyRef:
-                  name: codex-k8s-runtime
-                  key: CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS
-                  optional: true
-            - name: CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS
-              valueFrom:
-                secretKeyRef:
-                  name: codex-k8s-runtime
-                  key: CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS
-                  optional: true
             - name: CODEXK8S_GITHUB_OAUTH_CLIENT_ID
               valueFrom:
                 secretKeyRef:
@@ -172,11 +111,167 @@ spec:
             periodSeconds: 20
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
+              cpu: ${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_CPU}
+              memory: ${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_MEMORY}
             limits:
-              cpu: 1000m
-              memory: 1Gi
+              cpu: ${CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_CPU}
+              memory: ${CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_MEMORY}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: codex-k8s-control-plane
+  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  labels:
+    app.kubernetes.io/name: codex-k8s
+spec:
+  selector:
+    app.kubernetes.io/name: codex-k8s
+    app.kubernetes.io/component: control-plane
+  ports:
+    - name: grpc
+      port: 9090
+      targetPort: 9090
+    - name: http
+      port: 8081
+      targetPort: 8081
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: codex-k8s-control-plane
+  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  labels:
+    app.kubernetes.io/name: codex-k8s
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: codex-k8s
+      app.kubernetes.io/component: control-plane
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: codex-k8s
+        app.kubernetes.io/component: control-plane
+    spec:
+      initContainers:
+        - name: wait-postgres
+          image: busybox:1.36
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -ec
+            - |
+              until nc -z postgres 5432; do
+                echo "waiting for postgres tcp:5432..."
+                sleep 2
+              done
+      containers:
+        - name: control-plane
+          image: ${CODEXK8S_CONTROL_PLANE_IMAGE}
+          imagePullPolicy: Always
+          command: ["/usr/local/bin/codex-k8s-control-plane"]
+          ports:
+            - containerPort: 9090
+              name: grpc
+            - containerPort: 8081
+              name: http
+          env:
+            - name: CODEXK8S_ENV
+              value: ai-staging
+            - name: CODEXK8S_CONTROL_PLANE_GRPC_ADDR
+              value: ":9090"
+            - name: CODEXK8S_CONTROL_PLANE_HTTP_ADDR
+              value: ":8081"
+            - name: CODEXK8S_DB_HOST
+              value: postgres
+            - name: CODEXK8S_DB_PORT
+              value: "5432"
+            - name: CODEXK8S_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-postgres
+                  key: CODEXK8S_POSTGRES_DB
+            - name: CODEXK8S_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-postgres
+                  key: CODEXK8S_POSTGRES_USER
+            - name: CODEXK8S_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-postgres
+                  key: CODEXK8S_POSTGRES_PASSWORD
+            - name: CODEXK8S_TOKEN_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_TOKEN_ENCRYPTION_KEY
+            - name: CODEXK8S_LEARNING_MODE_DEFAULT
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_LEARNING_MODE_DEFAULT
+                  optional: true
+            - name: CODEXK8S_GITHUB_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GITHUB_WEBHOOK_SECRET
+            - name: CODEXK8S_GITHUB_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GITHUB_WEBHOOK_URL
+                  optional: true
+            - name: CODEXK8S_GITHUB_WEBHOOK_EVENTS
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GITHUB_WEBHOOK_EVENTS
+                  optional: true
+            - name: CODEXK8S_PUBLIC_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_PUBLIC_BASE_URL
+            - name: CODEXK8S_BOOTSTRAP_OWNER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_BOOTSTRAP_OWNER_EMAIL
+            - name: CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS
+                  optional: true
+            - name: CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS
+                  optional: true
+          readinessProbe:
+            httpGet:
+              path: /health/readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health/livez
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: ${CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_CPU}
+              memory: ${CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_MEMORY}
+            limits:
+              cpu: ${CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_CPU}
+              memory: ${CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_MEMORY}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -243,7 +338,7 @@ spec:
       serviceAccountName: codex-k8s-worker
       containers:
         - name: worker
-          image: ${CODEXK8S_IMAGE}
+          image: ${CODEXK8S_WORKER_IMAGE}
           imagePullPolicy: Always
           command: ["/usr/local/bin/codex-k8s-worker"]
           env:
@@ -290,8 +385,8 @@ spec:
               value: "${CODEXK8S_WORKER_JOB_ACTIVE_DEADLINE_SECONDS}"
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
+              cpu: ${CODEXK8S_WORKER_RESOURCES_REQUEST_CPU}
+              memory: ${CODEXK8S_WORKER_RESOURCES_REQUEST_MEMORY}
             limits:
-              cpu: 1000m
-              memory: 1Gi
+              cpu: ${CODEXK8S_WORKER_RESOURCES_LIMIT_CPU}
+              memory: ${CODEXK8S_WORKER_RESOURCES_LIMIT_MEMORY}

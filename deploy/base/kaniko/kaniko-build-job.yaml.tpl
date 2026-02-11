@@ -58,6 +58,13 @@ spec:
             - --insecure
             - --insecure-registry=${CODEXK8S_INTERNAL_REGISTRY_HOST}
             - --skip-tls-verify-registry=${CODEXK8S_INTERNAL_REGISTRY_HOST}
+          resources:
+            requests:
+              cpu: ${CODEXK8S_KANIKO_RESOURCES_REQUEST_CPU}
+              memory: ${CODEXK8S_KANIKO_RESOURCES_REQUEST_MEMORY}
+            limits:
+              cpu: ${CODEXK8S_KANIKO_RESOURCES_LIMIT_CPU}
+              memory: ${CODEXK8S_KANIKO_RESOURCES_LIMIT_MEMORY}
           volumeMounts:
             - name: workspace
               mountPath: /workspace

@@ -30,6 +30,7 @@ echo "[smoke] namespace=${CODEXK8S_STAGING_NAMESPACE}"
 
 echo "[smoke] rollout status"
 kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" rollout status deploy/codex-k8s --timeout=600s
+kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" rollout status deploy/codex-k8s-control-plane --timeout=600s
 kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" rollout status deploy/codex-k8s-worker --timeout=600s
 kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" rollout status deploy/oauth2-proxy --timeout=600s
 kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" rollout status deploy/codex-k8s-web-console --timeout=600s

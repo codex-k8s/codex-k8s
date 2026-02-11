@@ -6,11 +6,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	userrepo "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/domain/repository/user"
+	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	"github.com/labstack/echo/v5"
 )
 
-func TestAuthenticatePrincipal_OAuth2ProxyHeaders_PersistGitHubLogin(t *testing.T) {
+func TestAuthenticatePrincipal_OAuth2ProxyHeaders_DelegatesToControlPlane(t *testing.T) {
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/me", nil)
 	req.Header.Set("X-Auth-Request-Email", "user@example.com")
@@ -18,73 +18,36 @@ func TestAuthenticatePrincipal_OAuth2ProxyHeaders_PersistGitHubLogin(t *testing.
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	users := &stubUserRepo{
-		u: userrepo.User{
-			ID:    "00000000-0000-0000-0000-000000000001",
-			Email: "user@example.com",
-		},
+	calls := 0
+	var gotEmail string
+	var gotLogin string
+	resolver := func(_ context.Context, email string, githubLogin string) (*controlplanev1.Principal, error) {
+		calls++
+		gotEmail = email
+		gotLogin = githubLogin
+		return &controlplanev1.Principal{
+			UserId:          "00000000-0000-0000-0000-000000000001",
+			Email:           email,
+			GithubLogin:     githubLogin,
+			IsPlatformAdmin: true,
+			IsPlatformOwner: false,
+		}, nil
 	}
 
-	p, err := authenticatePrincipal(c, nil, users)
+	p, err := authenticatePrincipal(c, nil, resolver)
 	if err != nil {
 		t.Fatalf("authenticatePrincipal failed: %v", err)
 	}
-	if p.GitHubLogin != "ai-da-stas" {
-		t.Fatalf("expected principal github login to be persisted, got %q", p.GitHubLogin)
+	if p.GetGithubLogin() != "ai-da-stas" {
+		t.Fatalf("expected principal github login %q, got %q", "ai-da-stas", p.GetGithubLogin())
 	}
-	if users.updateCalls != 1 {
-		t.Fatalf("expected UpdateGitHubIdentity to be called once, got %d", users.updateCalls)
+	if calls != 1 {
+		t.Fatalf("expected resolver to be called once, got %d", calls)
 	}
-	if users.updatedLogin != "ai-da-stas" {
-		t.Fatalf("expected updated login to be %q, got %q", "ai-da-stas", users.updatedLogin)
+	if gotEmail != "user@example.com" {
+		t.Fatalf("expected resolver email %q, got %q", "user@example.com", gotEmail)
 	}
-}
-
-type stubUserRepo struct {
-	u           userrepo.User
-	updateCalls int
-	updatedLogin string
-}
-
-func (s *stubUserRepo) EnsureOwner(_ context.Context, _ string) (userrepo.User, error) {
-	return userrepo.User{}, nil
-}
-
-func (s *stubUserRepo) GetByID(_ context.Context, userID string) (userrepo.User, bool, error) {
-	if userID == s.u.ID {
-		return s.u, true, nil
+	if gotLogin != "ai-da-stas" {
+		t.Fatalf("expected resolver login %q, got %q", "ai-da-stas", gotLogin)
 	}
-	return userrepo.User{}, false, nil
-}
-
-func (s *stubUserRepo) GetByEmail(_ context.Context, email string) (userrepo.User, bool, error) {
-	if email == s.u.Email {
-		return s.u, true, nil
-	}
-	return userrepo.User{}, false, nil
-}
-
-func (s *stubUserRepo) GetByGitHubLogin(_ context.Context, _ string) (userrepo.User, bool, error) {
-	return userrepo.User{}, false, nil
-}
-
-func (s *stubUserRepo) UpdateGitHubIdentity(_ context.Context, userID string, githubUserID int64, githubLogin string) error {
-	s.updateCalls++
-	s.updatedLogin = githubLogin
-	s.u.ID = userID
-	s.u.GitHubUserID = githubUserID
-	s.u.GitHubLogin = githubLogin
-	return nil
-}
-
-func (s *stubUserRepo) CreateAllowedUser(_ context.Context, _ string, _ bool) (userrepo.User, error) {
-	return userrepo.User{}, nil
-}
-
-func (s *stubUserRepo) List(_ context.Context, _ int) ([]userrepo.User, error) {
-	return nil, nil
-}
-
-func (s *stubUserRepo) DeleteByID(_ context.Context, _ string) error {
-	return nil
 }

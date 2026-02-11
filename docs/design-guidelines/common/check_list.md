@@ -12,9 +12,14 @@
   - async/webhook payloads: AsyncAPI YAML (если используются)
 - Секреты не хардкодятся и не коммитятся; в логах нет секретов/PII.
 - Имена platform env/secrets/CI variables унифицированы с префиксом `CODEXK8S_`;
-  legacy-имена без префикса не добавляются.
+  имена без префикса `CODEXK8S_` не добавляются.
 - Kubernetes манифесты не “вшиты” heredoc’ами в bash: шаблоны лежат в `deploy/base/**`,
   а `deploy/scripts/**` только рендерит и применяет их.
+- Для multi-service deploy у каждого deployable-сервиса есть собственные image vars/repositories
+  (шаблон нейминга: `CODEXK8S_<SERVICE>_IMAGE` и `CODEXK8S_<SERVICE>_INTERNAL_IMAGE_REPOSITORY`).
+- Порядок выкладки staging задан явно и соблюдён:
+  stateful dependencies -> migrations -> internal domain services -> edge services -> frontend;
+  ожидание зависимостей выполнено через `initContainers` в Kubernetes-манифестах.
 - Вынос общего кода в `libs/*` оправдан (>= 2 потребителя); нет “god-lib”.
 - Если добавлена/обновлена внешняя зависимость, обновлён
   `docs/design-guidelines/common/external_dependencies_catalog.md`.
