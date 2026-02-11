@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S2-D2
 type: epic
 title: "Epic S2 Day 2: Issue label triggers for run:dev and run:dev:revise"
-status: planned
+status: active
 owner_role: EM
 created_at: 2026-02-10
 updated_at: 2026-02-11
@@ -48,3 +48,21 @@ approvals:
 - Добавление лейбла `run:dev` на Issue приводит к созданию run request и появлению в UI/логах.
 - Несанкционированный actor не может триггерить запуск (событие отклоняется и логируется).
 - Workflow-условия для активных labels используют `vars.*`, а не строковые литералы.
+
+## Прогресс реализации (2026-02-11)
+- Реализован ingest `issues.labeled` в `control-plane`:
+  - trigger labels `run:dev` и `run:dev:revise` читаются из env (`CODEXK8S_RUN_DEV_LABEL`, `CODEXK8S_RUN_DEV_REVISE_LABEL`);
+  - нетриггерные issue label события помечаются как `ignored` с записью `webhook.ignored` в `flow_events`.
+- Добавлена авторизация sender для issue-trigger:
+  - разрешены `platform_owner`, `platform_admin`, `project_member` c ролями `admin|read_write`;
+  - неразрешённые попытки фиксируются в `flow_events` с причиной.
+- Расширен payload run/event:
+  - в `agent_runs.run_payload` добавляются `issue` + `trigger` metadata;
+  - в `flow_events.payload` добавляются `action/sender/repository/label/run_kind`.
+- Обновлён HTTP контракт webhook ingest:
+  - `status` enum: `accepted|duplicate|ignored`;
+  - `api-gateway` возвращает `200` для `duplicate|ignored`, `202` для `accepted`.
+- Bootstrap/deploy синхронизация:
+  - `CODEXK8S_GITHUB_WEBHOOK_EVENTS` включает `issues`;
+  - каталог vars `run:*|state:*|need:*` синхронизируется в GitHub Variables;
+  - runtime secret пополнен `CODEXK8S_RUN_DEV_LABEL` и `CODEXK8S_RUN_DEV_REVISE_LABEL`.

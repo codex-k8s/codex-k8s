@@ -3,7 +3,9 @@ import { client } from "./generated/client.gen";
 import { normalizeApiError } from "./errors";
 
 client.setConfig({
-  baseURL: "/",
+  // Empty base URL keeps generated paths absolute-from-origin (`/api/...`) and
+  // avoids accidental protocol-relative `//api/...` URLs.
+  baseURL: "",
   withCredentials: true,
   timeout: 15000,
   throwOnError: true,

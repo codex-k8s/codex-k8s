@@ -10,8 +10,8 @@ related_issues: []
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
-  request_id: ""
+  status: approved
+  request_id: "owner-2026-02-11-s2-day1"
 ---
 
 # Epic S2 Day 1: Migrations, schema ownership and OpenAPI contract-first baseline
@@ -84,3 +84,8 @@ approvals:
 - Frontend API переведён на generated client (`services/staff/web-console/src/shared/api/generated/**`), ручные endpoint-строки в feature API-слое удалены.
 - CI-проверка актуальности codegen добавлена:
   - `.github/workflows/contracts_codegen_check.yml`.
+
+## Апрув
+- request_id: owner-2026-02-11-s2-day1
+- Решение: approved
+- Комментарий: Day1 принят, migration ownership и OpenAPI/codegen baseline внедрены.

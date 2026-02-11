@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/crypto/githubsignature"
+	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/casters"
@@ -20,6 +21,7 @@ const (
 	headerGitHubEvent        = "X-GitHub-Event"
 	headerGitHubDelivery     = "X-GitHub-Delivery"
 	headerGitHubSignature256 = "X-Hub-Signature-256"
+	webhookResultError       = "error"
 )
 
 var (
@@ -98,18 +100,33 @@ func (h *webhookHandler) IngestGitHubWebhook(c *echo.Context) error {
 
 	result, err := h.cp.IngestGitHubWebhook(ctx, deliveryID, eventType, deliveryID, startedAt, rawPayload)
 	if err != nil {
-		webhookRequestsTotal.WithLabelValues("error", eventType).Inc()
-		webhookDuration.WithLabelValues("error", eventType).Observe(time.Since(startedAt).Seconds())
+		recordWebhookMetrics(webhookResultError, eventType, startedAt)
 		return err
 	}
 
-	if result.GetDuplicate() {
-		webhookRequestsTotal.WithLabelValues("duplicate", eventType).Inc()
-		webhookDuration.WithLabelValues("duplicate", eventType).Observe(time.Since(startedAt).Seconds())
+	status := result.GetStatus()
+	switch status {
+	case string(webhookdomain.IngestStatusDuplicate):
+		recordWebhookMetrics(string(webhookdomain.IngestStatusDuplicate), eventType, startedAt)
 		return c.JSON(http.StatusOK, casters.IngestGitHubWebhook(result))
+	case string(webhookdomain.IngestStatusIgnored):
+		recordWebhookMetrics(string(webhookdomain.IngestStatusIgnored), eventType, startedAt)
+		return c.JSON(http.StatusOK, casters.IngestGitHubWebhook(result))
+	case string(webhookdomain.IngestStatusAccepted):
+		recordWebhookMetrics(string(webhookdomain.IngestStatusAccepted), eventType, startedAt)
+		return c.JSON(http.StatusAccepted, casters.IngestGitHubWebhook(result))
 	}
 
-	webhookRequestsTotal.WithLabelValues("accepted", eventType).Inc()
-	webhookDuration.WithLabelValues("accepted", eventType).Observe(time.Since(startedAt).Seconds())
+	// Backward-compatible fallback for older control-plane responses.
+	if result.GetDuplicate() {
+		recordWebhookMetrics(string(webhookdomain.IngestStatusDuplicate), eventType, startedAt)
+		return c.JSON(http.StatusOK, casters.IngestGitHubWebhook(result))
+	}
+	recordWebhookMetrics(string(webhookdomain.IngestStatusAccepted), eventType, startedAt)
 	return c.JSON(http.StatusAccepted, casters.IngestGitHubWebhook(result))
+}
+
+func recordWebhookMetrics(result string, eventType string, startedAt time.Time) {
+	webhookRequestsTotal.WithLabelValues(result, eventType).Inc()
+	webhookDuration.WithLabelValues(result, eventType).Observe(time.Since(startedAt).Seconds())
 }

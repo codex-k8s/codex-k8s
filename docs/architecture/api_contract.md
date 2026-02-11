@@ -43,7 +43,7 @@ approvals:
 ## Endpoints / Methods (текущий срез)
 | Operation | Method | Path | Auth | Notes |
 |---|---|---|---|---|
-| Ingest GitHub webhook | POST | `/api/v1/webhooks/github` | webhook signature | idempotency по `X-GitHub-Delivery` |
+| Ingest GitHub webhook | POST | `/api/v1/webhooks/github` | webhook signature | idempotency по `X-GitHub-Delivery`, response status: `accepted|duplicate|ignored` |
 | Start GitHub OAuth | GET | `/api/v1/auth/github/login` | public | redirect |
 | Complete GitHub OAuth callback | GET | `/api/v1/auth/github/callback` | public | set auth cookie |
 | Logout | POST | `/api/v1/auth/logout` | staff JWT | clears auth cookies |

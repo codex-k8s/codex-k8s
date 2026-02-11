@@ -69,7 +69,7 @@ func (s *Server) IngestGitHubWebhook(ctx context.Context, req *controlplanev1.In
 	return &controlplanev1.IngestGitHubWebhookResponse{
 		CorrelationId: res.CorrelationID,
 		RunId:         res.RunID,
-		Status:        res.Status,
+		Status:        string(res.Status),
 		Duplicate:     res.Duplicate,
 	}, nil
 }

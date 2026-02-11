@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
+	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/flowevent"
 	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
 )
@@ -37,7 +39,7 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 	if len(events.inserted) != 1 {
 		t.Fatalf("expected 1 flow event, got %d", len(events.inserted))
 	}
-	if events.inserted[0].EventType != "run.started" {
+	if events.inserted[0].EventType != floweventdomain.EventTypeRunStarted {
 		t.Fatalf("expected run.started event, got %s", events.inserted[0].EventType)
 	}
 }
@@ -62,13 +64,13 @@ func TestTickFinalizesSucceededRun(t *testing.T) {
 	if len(runs.finished) != 1 {
 		t.Fatalf("expected 1 finished run, got %d", len(runs.finished))
 	}
-	if runs.finished[0].Status != "succeeded" {
+	if runs.finished[0].Status != rundomain.StatusSucceeded {
 		t.Fatalf("expected succeeded status, got %s", runs.finished[0].Status)
 	}
 	if len(events.inserted) != 1 {
 		t.Fatalf("expected 1 flow event, got %d", len(events.inserted))
 	}
-	if events.inserted[0].EventType != "run.succeeded" {
+	if events.inserted[0].EventType != floweventdomain.EventTypeRunSucceeded {
 		t.Fatalf("expected run.succeeded event, got %s", events.inserted[0].EventType)
 	}
 }

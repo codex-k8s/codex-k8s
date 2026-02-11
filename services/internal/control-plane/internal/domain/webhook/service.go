@@ -7,8 +7,10 @@ import (
 	"strings"
 	"time"
 
+	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	"github.com/google/uuid"
 
+	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
@@ -17,6 +19,8 @@ import (
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
 )
+
+const githubWebhookActorID = floweventdomain.ActorIDGitHubWebhook
 
 // Service ingests provider webhooks into idempotent run and flow-event records.
 type Service struct {
@@ -28,26 +32,41 @@ type Service struct {
 	members    projectmemberrepo.Repository
 
 	learningModeDefault bool
+	triggerLabels       TriggerLabels
+}
+
+// Config wires webhook domain dependencies.
+type Config struct {
+	AgentRuns           agentrunrepo.Repository
+	FlowEvents          floweventrepo.Repository
+	Repos               repocfgrepo.Repository
+	Projects            projectrepo.Repository
+	Users               userrepo.Repository
+	Members             projectmemberrepo.Repository
+	LearningModeDefault bool
+	TriggerLabels       TriggerLabels
 }
 
 // NewService wires webhook domain dependencies.
-func NewService(
-	agentRuns agentrunrepo.Repository,
-	flowEvents floweventrepo.Repository,
-	repos repocfgrepo.Repository,
-	projects projectrepo.Repository,
-	users userrepo.Repository,
-	members projectmemberrepo.Repository,
-	learningModeDefault bool,
-) *Service {
+func NewService(cfg Config) *Service {
+	defaults := defaultTriggerLabels()
+	triggerLabels := cfg.TriggerLabels
+	if strings.TrimSpace(triggerLabels.RunDev) == "" {
+		triggerLabels.RunDev = defaults.RunDev
+	}
+	if strings.TrimSpace(triggerLabels.RunDevRevise) == "" {
+		triggerLabels.RunDevRevise = defaults.RunDevRevise
+	}
+
 	return &Service{
-		agentRuns:           agentRuns,
-		flowEvents:          flowEvents,
-		repos:               repos,
-		projects:            projects,
-		users:               users,
-		members:             members,
-		learningModeDefault: learningModeDefault,
+		agentRuns:           cfg.AgentRuns,
+		flowEvents:          cfg.FlowEvents,
+		repos:               cfg.Repos,
+		projects:            cfg.Projects,
+		users:               cfg.Users,
+		members:             cfg.Members,
+		learningModeDefault: cfg.LearningModeDefault,
+		triggerLabels:       triggerLabels,
 	}
 }
 
@@ -70,7 +89,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		cmd.ReceivedAt = time.Now().UTC()
 	}
 
-	var envelope githubEnvelope
+	var envelope githubWebhookEnvelope
 	if err := json.Unmarshal(cmd.Payload, &envelope); err != nil {
 		return IngestResult{}, errs.Validation{Field: "payload", Msg: "must be valid JSON"}
 	}
@@ -78,6 +97,36 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 	projectID, repositoryID, servicesYAMLPath, hasBinding, err := s.resolveProjectBinding(ctx, envelope)
 	if err != nil {
 		return IngestResult{}, fmt.Errorf("resolve project binding: %w", err)
+	}
+
+	trigger, hasIssueRunTrigger := s.resolveIssueRunTrigger(cmd.EventType, envelope)
+	if strings.EqualFold(strings.TrimSpace(cmd.EventType), string(webhookdomain.GitHubEventIssues)) && !hasIssueRunTrigger {
+		return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
+			Reason:     "issue_event_not_trigger_label",
+			RunKind:    "",
+			HasBinding: hasBinding,
+		})
+	}
+	if hasIssueRunTrigger {
+		if !hasBinding || strings.TrimSpace(projectID) == "" {
+			return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
+				Reason:     "repository_not_bound_for_issue_label",
+				RunKind:    trigger.Kind,
+				HasBinding: hasBinding,
+			})
+		}
+
+		allowed, reason, err := s.isActorAllowedForIssueTrigger(ctx, projectID, envelope.Sender.Login)
+		if err != nil {
+			return IngestResult{}, fmt.Errorf("authorize issue label trigger actor: %w", err)
+		}
+		if !allowed {
+			return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
+				Reason:     reason,
+				RunKind:    trigger.Kind,
+				HasBinding: hasBinding,
+			})
+		}
 	}
 
 	fallbackProjectID := deriveProjectID(cmd.CorrelationID, envelope)
@@ -99,7 +148,16 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		return IngestResult{}, fmt.Errorf("resolve learning mode: %w", err)
 	}
 
-	runPayload, err := buildRunPayload(cmd, envelope, payloadProjectID, repositoryID, servicesYAMLPath, hasBinding, learningMode)
+	runPayload, err := buildRunPayload(runPayloadInput{
+		Command:          cmd,
+		Envelope:         envelope,
+		ProjectID:        payloadProjectID,
+		RepositoryID:     repositoryID,
+		ServicesYAMLPath: servicesYAMLPath,
+		HasBinding:       hasBinding,
+		LearningMode:     learningMode,
+		Trigger:          triggerPtr(trigger, hasIssueRunTrigger),
+	})
 	if err != nil {
 		return IngestResult{}, fmt.Errorf("build run payload: %w", err)
 	}
@@ -114,22 +172,28 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		return IngestResult{}, fmt.Errorf("create pending agent run: %w", err)
 	}
 
-	eventPayload, err := buildEventPayload(cmd, createResult.Inserted, createResult.RunID)
+	eventPayload, err := buildEventPayload(eventPayloadInput{
+		Command:  cmd,
+		Envelope: envelope,
+		Inserted: createResult.Inserted,
+		RunID:    createResult.RunID,
+		Trigger:  triggerPtr(trigger, hasIssueRunTrigger),
+	})
 	if err != nil {
 		return IngestResult{}, fmt.Errorf("build event payload: %w", err)
 	}
 
-	eventType := "webhook.received"
-	status := "accepted"
+	eventType := floweventdomain.EventTypeWebhookReceived
+	status := webhookdomain.IngestStatusAccepted
 	if !createResult.Inserted {
-		eventType = "webhook.duplicate"
-		status = "duplicate"
+		eventType = floweventdomain.EventTypeWebhookDuplicate
+		status = webhookdomain.IngestStatusDuplicate
 	}
 
 	if err := s.flowEvents.Insert(ctx, floweventrepo.InsertParams{
 		CorrelationID: cmd.CorrelationID,
-		ActorType:     "system",
-		ActorID:       "github-webhook",
+		ActorType:     floweventdomain.ActorTypeSystem,
+		ActorID:       githubWebhookActorID,
 		EventType:     eventType,
 		Payload:       eventPayload,
 		CreatedAt:     cmd.ReceivedAt,
@@ -145,52 +209,118 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 	}, nil
 }
 
-func buildRunPayload(cmd IngestCommand, envelope githubEnvelope, projectID string, repositoryID string, servicesYAMLPath string, hasBinding bool, learningMode bool) (json.RawMessage, error) {
-	payload := map[string]any{
-		"source":         "github",
-		"delivery_id":    cmd.DeliveryID,
-		"event_type":     cmd.EventType,
-		"received_at":    cmd.ReceivedAt.UTC().Format(time.RFC3339Nano),
-		"repository":     map[string]any{"id": envelope.Repository.ID, "full_name": envelope.Repository.FullName, "name": envelope.Repository.Name, "private": envelope.Repository.Private},
-		"installation":   map[string]any{"id": envelope.Installation.ID},
-		"sender":         map[string]any{"id": envelope.Sender.ID, "login": envelope.Sender.Login},
-		"action":         envelope.Action,
-		"raw_payload":    json.RawMessage(cmd.Payload),
-		"correlation_id": cmd.CorrelationID,
-		"project": map[string]any{
-			"id":               projectID,
-			"repository_id":    repositoryID,
-			"services_yaml":    servicesYAMLPath,
-			"binding_resolved": hasBinding,
-		},
-		"learning_mode": learningMode,
+func (s *Service) recordIgnoredWebhook(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope, params ignoredWebhookParams) (IngestResult, error) {
+	payload, err := buildIgnoredEventPayload(ignoredEventPayloadInput{
+		Command:    cmd,
+		Envelope:   envelope,
+		Reason:     params.Reason,
+		RunKind:    params.RunKind,
+		HasBinding: params.HasBinding,
+	})
+	if err != nil {
+		return IngestResult{}, fmt.Errorf("build ignored flow event payload: %w", err)
 	}
 
-	b, err := json.Marshal(payload)
-	if err != nil {
-		return nil, fmt.Errorf("marshal run payload: %w", err)
+	if err := s.flowEvents.Insert(ctx, floweventrepo.InsertParams{
+		CorrelationID: cmd.CorrelationID,
+		ActorType:     floweventdomain.ActorTypeSystem,
+		ActorID:       githubWebhookActorID,
+		EventType:     floweventdomain.EventTypeWebhookIgnored,
+		Payload:       payload,
+		CreatedAt:     cmd.ReceivedAt,
+	}); err != nil {
+		return IngestResult{}, fmt.Errorf("insert ignored flow event: %w", err)
 	}
-	return b, nil
+
+	return IngestResult{
+		CorrelationID: cmd.CorrelationID,
+		Status:        webhookdomain.IngestStatusIgnored,
+		Duplicate:     false,
+	}, nil
 }
 
-func buildEventPayload(cmd IngestCommand, inserted bool, runID string) (json.RawMessage, error) {
-	payload := map[string]any{
-		"source":         "github",
-		"delivery_id":    cmd.DeliveryID,
-		"event_type":     cmd.EventType,
-		"correlation_id": cmd.CorrelationID,
-		"inserted":       inserted,
-		"run_id":         runID,
+func (s *Service) resolveIssueRunTrigger(eventType string, envelope githubWebhookEnvelope) (issueRunTrigger, bool) {
+	if !strings.EqualFold(strings.TrimSpace(eventType), string(webhookdomain.GitHubEventIssues)) {
+		return issueRunTrigger{}, false
+	}
+	if !strings.EqualFold(strings.TrimSpace(envelope.Action), string(webhookdomain.GitHubActionLabeled)) {
+		return issueRunTrigger{}, false
 	}
 
-	b, err := json.Marshal(payload)
-	if err != nil {
-		return nil, fmt.Errorf("marshal flow event payload: %w", err)
+	label := strings.TrimSpace(envelope.Label.Name)
+	if label == "" {
+		return issueRunTrigger{}, false
 	}
-	return b, nil
+	switch {
+	case strings.EqualFold(label, s.triggerLabels.RunDev):
+		return issueRunTrigger{
+			Label: label,
+			Kind:  webhookdomain.TriggerKindDev,
+		}, true
+	case strings.EqualFold(label, s.triggerLabels.RunDevRevise):
+		return issueRunTrigger{
+			Label: label,
+			Kind:  webhookdomain.TriggerKindDevRevise,
+		}, true
+	default:
+		return issueRunTrigger{}, false
+	}
 }
 
-func (s *Service) resolveProjectBinding(ctx context.Context, envelope githubEnvelope) (projectID string, repositoryID string, servicesYAMLPath string, ok bool, err error) {
+func (s *Service) isActorAllowedForIssueTrigger(ctx context.Context, projectID string, senderLogin string) (bool, string, error) {
+	login := strings.TrimSpace(senderLogin)
+	if login == "" {
+		return false, "sender_login_missing", nil
+	}
+	if s.users == nil {
+		return false, "users_repository_unavailable", nil
+	}
+
+	u, ok, err := s.users.GetByGitHubLogin(ctx, login)
+	if err != nil {
+		return false, "", err
+	}
+	if !ok || u.ID == "" {
+		return false, "sender_not_allowed", nil
+	}
+	if u.IsPlatformOwner {
+		return true, "platform_owner", nil
+	}
+	if u.IsPlatformAdmin {
+		return true, "platform_admin", nil
+	}
+	if s.members == nil {
+		return false, "project_membership_repository_unavailable", nil
+	}
+
+	role, ok, err := s.members.GetRole(ctx, projectID, u.ID)
+	if err != nil {
+		return false, "", err
+	}
+	if !ok {
+		return false, "sender_not_project_member", nil
+	}
+
+	switch strings.ToLower(strings.TrimSpace(role)) {
+	case "admin", "read_write":
+		return true, "project_member_" + strings.ToLower(strings.TrimSpace(role)), nil
+	default:
+		if strings.TrimSpace(role) == "" {
+			return false, "sender_role_not_permitted", nil
+		}
+		return false, "sender_role_" + strings.ToLower(strings.TrimSpace(role)) + "_not_permitted", nil
+	}
+}
+
+func triggerPtr(trigger issueRunTrigger, ok bool) *issueRunTrigger {
+	if !ok {
+		return nil
+	}
+	t := trigger
+	return &t
+}
+
+func (s *Service) resolveProjectBinding(ctx context.Context, envelope githubWebhookEnvelope) (projectID string, repositoryID string, servicesYAMLPath string, ok bool, err error) {
 	if s.repos == nil || envelope.Repository.ID == 0 {
 		return "", "", "", false, nil
 	}
@@ -240,7 +370,7 @@ func (s *Service) resolveLearningMode(ctx context.Context, projectID string, sen
 	return *override, nil
 }
 
-func deriveProjectID(correlationID string, envelope githubEnvelope) string {
+func deriveProjectID(correlationID string, envelope githubWebhookEnvelope) string {
 	fullName := strings.TrimSpace(envelope.Repository.FullName)
 	if fullName != "" {
 		return uuid.NewSHA1(uuid.NameSpaceDNS, []byte("repo:"+strings.ToLower(fullName))).String()

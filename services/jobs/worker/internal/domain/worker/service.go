@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"time"
 
+	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
+	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/flowevent"
 	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/learningfeedback"
 	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
@@ -103,17 +105,17 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 
 		switch state {
 		case JobStateSucceeded:
-			if err := s.finishRun(ctx, run, "succeeded", "run.succeeded", ref, nil); err != nil {
+			if err := s.finishRun(ctx, run, rundomain.StatusSucceeded, floweventdomain.EventTypeRunSucceeded, ref, nil); err != nil {
 				return err
 			}
 		case JobStateFailed:
 			failure := map[string]any{"reason": "kubernetes job failed"}
-			if err := s.finishRun(ctx, run, "failed", "run.failed", ref, failure); err != nil {
+			if err := s.finishRun(ctx, run, rundomain.StatusFailed, floweventdomain.EventTypeRunFailed, ref, failure); err != nil {
 				return err
 			}
 		case JobStateNotFound:
 			failure := map[string]any{"reason": "kubernetes job not found"}
-			if err := s.finishRun(ctx, run, "failed", "run.failed.job_not_found", ref, failure); err != nil {
+			if err := s.finishRun(ctx, run, rundomain.StatusFailed, floweventdomain.EventTypeRunFailedJobNotFound, ref, failure); err != nil {
 				return err
 			}
 		case JobStatePending, JobStateRunning:
@@ -154,7 +156,7 @@ func (s *Service) launchPending(ctx context.Context) error {
 				CorrelationID: claimed.CorrelationID,
 				ProjectID:     claimed.ProjectID,
 				LearningMode:  claimed.LearningMode,
-			}, "failed", "run.failed.launch_error", ref, map[string]any{"error": err.Error()}); finishErr != nil {
+			}, rundomain.StatusFailed, floweventdomain.EventTypeRunFailedLaunchError, ref, map[string]any{"error": err.Error()}); finishErr != nil {
 				return fmt.Errorf("mark run failed after launch error: %w", finishErr)
 			}
 			continue
@@ -162,9 +164,9 @@ func (s *Service) launchPending(ctx context.Context) error {
 
 		if err := s.insertEvent(ctx, floweventrepo.InsertParams{
 			CorrelationID: claimed.CorrelationID,
-			ActorType:     "system",
-			ActorID:       s.cfg.WorkerID,
-			EventType:     "run.started",
+			ActorType:     floweventdomain.ActorTypeSystem,
+			ActorID:       floweventdomain.ActorID(s.cfg.WorkerID),
+			EventType:     floweventdomain.EventTypeRunStarted,
 			Payload:       mustJSON(map[string]any{"run_id": claimed.RunID, "project_id": claimed.ProjectID, "slot_no": claimed.SlotNo, "job_name": ref.Name, "job_namespace": ref.Namespace}),
 			CreatedAt:     s.now().UTC(),
 		}); err != nil {
@@ -178,8 +180,8 @@ func (s *Service) launchPending(ctx context.Context) error {
 func (s *Service) finishRun(
 	ctx context.Context,
 	run runqueuerepo.RunningRun,
-	status string,
-	eventType string,
+	status rundomain.Status,
+	eventType floweventdomain.EventType,
 	ref JobRef,
 	extra map[string]any,
 ) error {
@@ -200,7 +202,7 @@ func (s *Service) finishRun(
 	payload := map[string]any{
 		"run_id":        run.RunID,
 		"project_id":    run.ProjectID,
-		"status":        status,
+		"status":        string(status),
 		"job_name":      ref.Name,
 		"job_namespace": ref.Namespace,
 	}
@@ -210,8 +212,8 @@ func (s *Service) finishRun(
 
 	if err := s.insertEvent(ctx, floweventrepo.InsertParams{
 		CorrelationID: run.CorrelationID,
-		ActorType:     "system",
-		ActorID:       s.cfg.WorkerID,
+		ActorType:     floweventdomain.ActorTypeSystem,
+		ActorID:       floweventdomain.ActorID(s.cfg.WorkerID),
 		EventType:     eventType,
 		Payload:       mustJSON(payload),
 		CreatedAt:     finishedAt,

@@ -85,7 +85,19 @@ func Run() error {
 		return err
 	}
 
-	webhookService := webhook.NewService(agentRuns, flowEvents, repos, projects, users, members, learningDefault)
+	webhookService := webhook.NewService(webhook.Config{
+		AgentRuns:           agentRuns,
+		FlowEvents:          flowEvents,
+		Repos:               repos,
+		Projects:            projects,
+		Users:               users,
+		Members:             members,
+		LearningModeDefault: learningDefault,
+		TriggerLabels: webhook.TriggerLabels{
+			RunDev:       cfg.RunDevLabel,
+			RunDevRevise: cfg.RunDevReviseLabel,
+		},
+	})
 
 	webhookURL := strings.TrimSpace(cfg.GitHubWebhookURL)
 	if webhookURL == "" {
