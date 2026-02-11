@@ -45,6 +45,34 @@ normalize_sha_tag() {
   printf '%s' "$ref" | sha256sum | awk '{print $1}' | cut -c1-12
 }
 
+build_with_kaniko() {
+  local job_name="$1"
+  local component="$2"
+  local context="$3"
+  local dockerfile="$4"
+  local image_latest="$5"
+  local image_sha="$6"
+
+  kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" delete job "${job_name}" --ignore-not-found=true >/dev/null 2>&1 || true
+  kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" wait --for=delete "job/${job_name}" --timeout=120s >/dev/null 2>&1 || true
+
+  CODEXK8S_KANIKO_JOB_NAME="${job_name}"
+  CODEXK8S_KANIKO_COMPONENT="${component}"
+  CODEXK8S_KANIKO_CONTEXT="${context}"
+  CODEXK8S_KANIKO_DOCKERFILE="${dockerfile}"
+  CODEXK8S_KANIKO_DESTINATION_LATEST="${image_latest}"
+  CODEXK8S_KANIKO_DESTINATION_SHA="${image_sha}"
+  export CODEXK8S_KANIKO_JOB_NAME CODEXK8S_KANIKO_COMPONENT CODEXK8S_KANIKO_CONTEXT CODEXK8S_KANIKO_DOCKERFILE CODEXK8S_KANIKO_DESTINATION_LATEST CODEXK8S_KANIKO_DESTINATION_SHA
+
+  render_kaniko_job_template "${ROOT_DIR}/deploy/base/kaniko/kaniko-build-job.yaml.tpl" | kubectl apply -f -
+
+  if ! kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" wait --for=condition=complete "job/${job_name}" --timeout="${CODEXK8S_KANIKO_TIMEOUT}"; then
+    kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" get pods -l "job-name=${job_name}" -o wide || true
+    kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" logs "job/${job_name}" --all-containers=true --tail=200 || true
+    exit 1
+  fi
+}
+
 require_cmd kubectl
 require_cmd sed
 require_cmd sha256sum
@@ -57,26 +85,38 @@ CODEXK8S_INTERNAL_REGISTRY_SERVICE="${CODEXK8S_INTERNAL_REGISTRY_SERVICE:-codex-
 CODEXK8S_INTERNAL_REGISTRY_PORT="${CODEXK8S_INTERNAL_REGISTRY_PORT:-5000}"
 CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE="${CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE:-20Gi}"
 CODEXK8S_INTERNAL_REGISTRY_HOST="${CODEXK8S_INTERNAL_REGISTRY_HOST:-127.0.0.1:${CODEXK8S_INTERNAL_REGISTRY_PORT}}"
-CODEXK8S_INTERNAL_IMAGE_REPOSITORY="${CODEXK8S_INTERNAL_IMAGE_REPOSITORY:-codex-k8s/codex-k8s}"
-CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY="${CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY:-codex-k8s/web-console}"
-CODEXK8S_BUILD_REF="${CODEXK8S_BUILD_REF:-main}"
 CODEXK8S_KANIKO_TIMEOUT="${CODEXK8S_KANIKO_TIMEOUT:-1800s}"
 CODEXK8S_ENSURE_REGISTRY="${CODEXK8S_ENSURE_REGISTRY:-true}"
 CODEXK8S_REGISTRY_ROLLOUT_TIMEOUT="${CODEXK8S_REGISTRY_ROLLOUT_TIMEOUT:-600s}"
+CODEXK8S_BUILD_REF="${CODEXK8S_BUILD_REF:-main}"
 : "${CODEXK8S_GITHUB_REPO:?CODEXK8S_GITHUB_REPO is required}"
 : "${CODEXK8S_GITHUB_PAT:?CODEXK8S_GITHUB_PAT is required}"
 
+legacy_repo="${CODEXK8S_INTERNAL_IMAGE_REPOSITORY:-}"
+if [ -n "${legacy_repo}" ]; then
+  CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY="${CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY:-${legacy_repo}}"
+  CODEXK8S_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY="${CODEXK8S_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY:-${legacy_repo}}"
+  CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY="${CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY:-${legacy_repo}}"
+else
+  CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY="${CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY:-codex-k8s/api-gateway}"
+  CODEXK8S_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY="${CODEXK8S_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY:-codex-k8s/control-plane}"
+  CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY="${CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY:-codex-k8s/worker}"
+fi
+CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY="${CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY:-codex-k8s/web-console}"
+
 CODEXK8S_BUILD_SHA="$(normalize_sha_tag "$CODEXK8S_BUILD_REF")"
-CODEXK8S_IMAGE_LATEST="${CODEXK8S_INTERNAL_REGISTRY_HOST}/${CODEXK8S_INTERNAL_IMAGE_REPOSITORY}:latest"
-CODEXK8S_IMAGE_SHA="${CODEXK8S_INTERNAL_REGISTRY_HOST}/${CODEXK8S_INTERNAL_IMAGE_REPOSITORY}:sha-${CODEXK8S_BUILD_SHA}"
-CODEXK8S_KANIKO_JOB_NAME="codex-k8s-kaniko-${CODEXK8S_BUILD_SHA}"
+
+CODEXK8S_API_GATEWAY_IMAGE_LATEST="${CODEXK8S_INTERNAL_REGISTRY_HOST}/${CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY}:latest"
+CODEXK8S_API_GATEWAY_IMAGE_SHA="${CODEXK8S_INTERNAL_REGISTRY_HOST}/${CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY}:sha-${CODEXK8S_BUILD_SHA}"
+
+CODEXK8S_CONTROL_PLANE_IMAGE_LATEST="${CODEXK8S_INTERNAL_REGISTRY_HOST}/${CODEXK8S_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY}:latest"
+CODEXK8S_CONTROL_PLANE_IMAGE_SHA="${CODEXK8S_INTERNAL_REGISTRY_HOST}/${CODEXK8S_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY}:sha-${CODEXK8S_BUILD_SHA}"
+
+CODEXK8S_WORKER_IMAGE_LATEST="${CODEXK8S_INTERNAL_REGISTRY_HOST}/${CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY}:latest"
+CODEXK8S_WORKER_IMAGE_SHA="${CODEXK8S_INTERNAL_REGISTRY_HOST}/${CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY}:sha-${CODEXK8S_BUILD_SHA}"
 
 CODEXK8S_WEB_CONSOLE_IMAGE_LATEST="${CODEXK8S_INTERNAL_REGISTRY_HOST}/${CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY}:latest"
 CODEXK8S_WEB_CONSOLE_IMAGE_SHA="${CODEXK8S_INTERNAL_REGISTRY_HOST}/${CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY}:sha-${CODEXK8S_BUILD_SHA}"
-CODEXK8S_WEB_CONSOLE_KANIKO_JOB_NAME="codex-k8s-kaniko-web-console-${CODEXK8S_BUILD_SHA}"
-
-# Keep a stable name for the primary build job (api-gateway/worker image).
-CODEXK8S_PRIMARY_KANIKO_JOB_NAME="${CODEXK8S_KANIKO_JOB_NAME}"
 
 if [ "$CODEXK8S_ENSURE_REGISTRY" = "true" ]; then
   kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" delete statefulset "${CODEXK8S_INTERNAL_REGISTRY_SERVICE}" --ignore-not-found=true >/dev/null 2>&1 || true
@@ -89,42 +129,44 @@ kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" create secret generic codex-k8s-git-t
   --from-literal=token="${CODEXK8S_GITHUB_PAT}" \
   --dry-run=client -o yaml | kubectl apply -f -
 
-kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" delete job "${CODEXK8S_KANIKO_JOB_NAME}" --ignore-not-found=true >/dev/null 2>&1 || true
-kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" wait --for=delete "job/${CODEXK8S_KANIKO_JOB_NAME}" --timeout=120s >/dev/null 2>&1 || true
+build_with_kaniko \
+  "codex-k8s-kaniko-api-gateway-${CODEXK8S_BUILD_SHA}" \
+  "api-gateway" \
+  "dir:///workspace" \
+  "/workspace/services/external/api-gateway/Dockerfile" \
+  "${CODEXK8S_API_GATEWAY_IMAGE_LATEST}" \
+  "${CODEXK8S_API_GATEWAY_IMAGE_SHA}"
 
-CODEXK8S_KANIKO_JOB_NAME="${CODEXK8S_PRIMARY_KANIKO_JOB_NAME}"
-CODEXK8S_KANIKO_COMPONENT="platform"
-CODEXK8S_KANIKO_CONTEXT="dir:///workspace"
-CODEXK8S_KANIKO_DOCKERFILE="/workspace/Dockerfile"
-CODEXK8S_KANIKO_DESTINATION_LATEST="${CODEXK8S_IMAGE_LATEST}"
-CODEXK8S_KANIKO_DESTINATION_SHA="${CODEXK8S_IMAGE_SHA}"
-render_kaniko_job_template "${ROOT_DIR}/deploy/base/kaniko/kaniko-build-job.yaml.tpl" | kubectl apply -f -
+build_with_kaniko \
+  "codex-k8s-kaniko-control-plane-${CODEXK8S_BUILD_SHA}" \
+  "control-plane" \
+  "dir:///workspace" \
+  "/workspace/services/internal/control-plane/Dockerfile" \
+  "${CODEXK8S_CONTROL_PLANE_IMAGE_LATEST}" \
+  "${CODEXK8S_CONTROL_PLANE_IMAGE_SHA}"
 
-if ! kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" wait --for=condition=complete "job/${CODEXK8S_KANIKO_JOB_NAME}" --timeout="${CODEXK8S_KANIKO_TIMEOUT}"; then
-  kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" get pods -l "job-name=${CODEXK8S_KANIKO_JOB_NAME}" -o wide || true
-  kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" logs "job/${CODEXK8S_KANIKO_JOB_NAME}" --all-containers=true --tail=200 || true
-  exit 1
-fi
+build_with_kaniko \
+  "codex-k8s-kaniko-worker-${CODEXK8S_BUILD_SHA}" \
+  "worker" \
+  "dir:///workspace" \
+  "/workspace/services/jobs/worker/Dockerfile" \
+  "${CODEXK8S_WORKER_IMAGE_LATEST}" \
+  "${CODEXK8S_WORKER_IMAGE_SHA}"
 
-kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" delete job "${CODEXK8S_WEB_CONSOLE_KANIKO_JOB_NAME}" --ignore-not-found=true >/dev/null 2>&1 || true
-kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" wait --for=delete "job/${CODEXK8S_WEB_CONSOLE_KANIKO_JOB_NAME}" --timeout=120s >/dev/null 2>&1 || true
-
-CODEXK8S_KANIKO_JOB_NAME="${CODEXK8S_WEB_CONSOLE_KANIKO_JOB_NAME}"
-CODEXK8S_KANIKO_COMPONENT="web-console"
-CODEXK8S_KANIKO_CONTEXT="dir:///workspace/services/staff/web-console"
-CODEXK8S_KANIKO_DOCKERFILE="/workspace/services/staff/web-console/Dockerfile.dev"
-CODEXK8S_KANIKO_DESTINATION_LATEST="${CODEXK8S_WEB_CONSOLE_IMAGE_LATEST}"
-CODEXK8S_KANIKO_DESTINATION_SHA="${CODEXK8S_WEB_CONSOLE_IMAGE_SHA}"
-render_kaniko_job_template "${ROOT_DIR}/deploy/base/kaniko/kaniko-build-job.yaml.tpl" | kubectl apply -f -
-
-if ! kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" wait --for=condition=complete "job/${CODEXK8S_WEB_CONSOLE_KANIKO_JOB_NAME}" --timeout="${CODEXK8S_KANIKO_TIMEOUT}"; then
-  kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" get pods -l "job-name=${CODEXK8S_WEB_CONSOLE_KANIKO_JOB_NAME}" -o wide || true
-  kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" logs "job/${CODEXK8S_WEB_CONSOLE_KANIKO_JOB_NAME}" --all-containers=true --tail=200 || true
-  exit 1
-fi
+build_with_kaniko \
+  "codex-k8s-kaniko-web-console-${CODEXK8S_BUILD_SHA}" \
+  "web-console" \
+  "dir:///workspace/services/staff/web-console" \
+  "/workspace/services/staff/web-console/Dockerfile.dev" \
+  "${CODEXK8S_WEB_CONSOLE_IMAGE_LATEST}" \
+  "${CODEXK8S_WEB_CONSOLE_IMAGE_SHA}"
 
 echo "Internal images build completed:"
-echo "  api-gateway/worker: ${CODEXK8S_IMAGE_LATEST}"
-echo "  api-gateway/worker: ${CODEXK8S_IMAGE_SHA}"
+echo "  api-gateway: ${CODEXK8S_API_GATEWAY_IMAGE_LATEST}"
+echo "  api-gateway: ${CODEXK8S_API_GATEWAY_IMAGE_SHA}"
+echo "  control-plane: ${CODEXK8S_CONTROL_PLANE_IMAGE_LATEST}"
+echo "  control-plane: ${CODEXK8S_CONTROL_PLANE_IMAGE_SHA}"
+echo "  worker: ${CODEXK8S_WORKER_IMAGE_LATEST}"
+echo "  worker: ${CODEXK8S_WORKER_IMAGE_SHA}"
 echo "  web-console(vite dev): ${CODEXK8S_WEB_CONSOLE_IMAGE_LATEST}"
 echo "  web-console(vite dev): ${CODEXK8S_WEB_CONSOLE_IMAGE_SHA}"

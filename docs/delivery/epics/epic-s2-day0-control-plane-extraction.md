@@ -5,7 +5,7 @@ title: "Epic S2 Day 0: Control-plane extraction and thin-edge api-gateway"
 status: completed
 owner_role: EM
 created_at: 2026-02-10
-updated_at: 2026-02-10
+updated_at: 2026-02-11
 related_issues: []
 related_prs: []
 approvals:
@@ -97,8 +97,12 @@ approvals:
   - `deploy/scripts/deploy_staging.sh` создаёт `configmap/codex-k8s-migrations` из этого пути
   - `deploy/base/codex-k8s/migrate-job.yaml.tpl` применяет миграции через `goose -dir /migrations up`
 - Сборка/деплой:
-  - `Dockerfile` собирает бинарники `codex-k8s` (gateway), `codex-k8s-control-plane`, `codex-k8s-worker`
-  - `deploy/base/codex-k8s/app.yaml.tpl` деплоит `Deployment/codex-k8s` и `Deployment/codex-k8s-control-plane` (один образ, разные команды)
+  - отдельные Dockerfile по сервисам:
+    - `services/external/api-gateway/Dockerfile`
+    - `services/internal/control-plane/Dockerfile`
+    - `services/jobs/worker/Dockerfile`
+  - `deploy/base/codex-k8s/app.yaml.tpl` и `deploy/base/codex-k8s/migrate-job.yaml.tpl` используют отдельные образа
+    (`CODEXK8S_API_GATEWAY_IMAGE`, `CODEXK8S_CONTROL_PLANE_IMAGE`, `CODEXK8S_WORKER_IMAGE`)
 - NetworkPolicy baseline:
   - `deploy/base/network-policies/platform-baseline.yaml.tpl` разрешает egress `api-gateway` -> `control-plane` (gRPC 9090, HTTP 8081)
 - Каталог внешних зависимостей:

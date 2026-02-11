@@ -40,6 +40,8 @@
 - `cmd/<service-name>/main.go` — thin entrypoint.
 - `internal/app/` — composition root + lifecycle + graceful shutdown.
 - `internal/transport/{http,grpc,ws}/` — handlers и middleware, без доменной логики.
+- `internal/transport/{http,grpc,ws}/models/` — typed DTO контракты конкретного транспорта.
+- `internal/transport/{http,grpc,ws}/casters/` — явный маппинг transport DTO <-> domain/proto.
 - `internal/domain/` — бизнес-правила, модели, use-cases, порты.
 - `internal/domain/repository/<model>/repository.go` — интерфейсы репозиториев.
 - `internal/repository/postgres/<model>/repository.go` — реализации репозиториев.
@@ -56,6 +58,13 @@
 - `api/server/api.yaml` — OpenAPI.
 - `api/server/asyncapi.yaml` — async/webhook/event контракты (если используются).
 - `internal/transport/*/generated/**` — только сгенерированный код.
+
+## Требования к transport DTO и кастерам
+
+- Контракт ответа transport-ручек должен быть строго типизирован.
+- Для HTTP/gRPC handlers запрещено возвращать `map[string]any`, `[]any`, `any`.
+- Маппинг между transport DTO, proto и доменными моделями должен быть вынесен в отдельные `casters`.
+- Handler’ы не содержат доменных преобразований “вручную” и не агрегируют произвольные структуры ad-hoc.
 
 ## Доменные контексты (минимум)
 
@@ -85,3 +94,4 @@
 - Прямой импорт `client-go`/`go-github` в домене.
 - SQL строками в Go-коде.
 - Обход interface-layer и вызов vendor SDK из use-case слоя.
+- Использование `map[string]any`/`any` как публичного transport-контракта.

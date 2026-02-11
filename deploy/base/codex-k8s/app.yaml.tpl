@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: codex-k8s
-          image: ${CODEXK8S_IMAGE}
+          image: ${CODEXK8S_API_GATEWAY_IMAGE}
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -145,7 +145,7 @@ spec:
     spec:
       containers:
         - name: control-plane
-          image: ${CODEXK8S_IMAGE}
+          image: ${CODEXK8S_CONTROL_PLANE_IMAGE}
           imagePullPolicy: Always
           command: ["/usr/local/bin/codex-k8s-control-plane"]
           ports:
@@ -314,7 +314,7 @@ spec:
       serviceAccountName: codex-k8s-worker
       containers:
         - name: worker
-          image: ${CODEXK8S_IMAGE}
+          image: ${CODEXK8S_WORKER_IMAGE}
           imagePullPolicy: Always
           command: ["/usr/local/bin/codex-k8s-worker"]
           env:

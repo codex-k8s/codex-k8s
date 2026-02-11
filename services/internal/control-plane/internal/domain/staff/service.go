@@ -99,19 +99,19 @@ func (s *Service) resolveRunAccess(ctx context.Context, principal Principal, run
 }
 
 // ListProjects returns projects visible to the principal.
-func (s *Service) ListProjects(ctx context.Context, principal Principal, limit int) ([]any, error) {
+func (s *Service) ListProjects(ctx context.Context, principal Principal, limit int) ([]ProjectView, error) {
 	if principal.IsPlatformAdmin {
 		items, err := s.projects.ListAll(ctx, limit)
 		if err != nil {
 			return nil, err
 		}
-		out := make([]any, 0, len(items))
+		out := make([]ProjectView, 0, len(items))
 		for _, p := range items {
-			out = append(out, map[string]any{
-				"id":   p.ID,
-				"slug": p.Slug,
-				"name": p.Name,
-				"role": "admin",
+			out = append(out, ProjectView{
+				ID:   p.ID,
+				Slug: p.Slug,
+				Name: p.Name,
+				Role: "admin",
 			})
 		}
 		return out, nil
@@ -121,13 +121,13 @@ func (s *Service) ListProjects(ctx context.Context, principal Principal, limit i
 	if err != nil {
 		return nil, err
 	}
-	out := make([]any, 0, len(items))
+	out := make([]ProjectView, 0, len(items))
 	for _, p := range items {
-		out = append(out, map[string]any{
-			"id":   p.ID,
-			"slug": p.Slug,
-			"name": p.Name,
-			"role": p.Role,
+		out = append(out, ProjectView{
+			ID:   p.ID,
+			Slug: p.Slug,
+			Name: p.Name,
+			Role: p.Role,
 		})
 	}
 	return out, nil
@@ -364,10 +364,9 @@ func (s *Service) UpsertProject(ctx context.Context, principal Principal, slug s
 		return projectrepo.Project{}, errs.Validation{Field: "name", Msg: "is required"}
 	}
 
-	settings := map[string]any{
-		"learning_mode_default": s.cfg.LearningModeDefault,
-	}
-	settingsJSON, err := json.Marshal(settings)
+	settingsJSON, err := json.Marshal(projectSettings{
+		LearningModeDefault: s.cfg.LearningModeDefault,
+	})
 	if err != nil {
 		return projectrepo.Project{}, fmt.Errorf("marshal project settings: %w", err)
 	}
@@ -609,4 +608,16 @@ type Principal struct {
 	GitHubLogin     string
 	IsPlatformAdmin bool
 	IsPlatformOwner bool
+}
+
+// ProjectView is a typed projection for staff project list responses.
+type ProjectView struct {
+	ID   string
+	Slug string
+	Name string
+	Role string
+}
+
+type projectSettings struct {
+	LearningModeDefault bool `json:"learning_mode_default"`
 }

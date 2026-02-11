@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -43,6 +44,8 @@ func Run() error {
 	}
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	runCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
+	defer stop()
 
 	// Postgres Service can be routable slightly before the actual server accepts connections.
 	// Keep control-plane startup resilient to short transient failures.
@@ -50,8 +53,9 @@ func Run() error {
 	{
 		deadline := time.Now().Add(60 * time.Second)
 		var lastErr error
+	connectLoop:
 		for attempt := 1; time.Now().Before(deadline); attempt++ {
-			db, lastErr = postgres.Open(context.Background(), postgres.OpenParams{
+			db, lastErr = postgres.Open(runCtx, postgres.OpenParams{
 				Host:     cfg.DBHost,
 				Port:     cfg.DBPort,
 				DBName:   cfg.DBName,
@@ -59,11 +63,22 @@ func Run() error {
 				Password: cfg.DBPassword,
 				SSLMode:  cfg.DBSSLMode,
 			})
-			if lastErr == nil {
-				break
+			switch {
+			case lastErr == nil:
+				break connectLoop
+			case errors.Is(lastErr, context.Canceled), errors.Is(lastErr, context.DeadlineExceeded):
+				return fmt.Errorf("ping postgres canceled: %w", lastErr)
+			default:
+				if runCtx.Err() != nil {
+					return fmt.Errorf("control-plane init canceled: %w", runCtx.Err())
+				}
+				logger.Warn("ping postgres failed; retrying", "attempt", attempt, "err", lastErr)
+				select {
+				case <-runCtx.Done():
+					return fmt.Errorf("control-plane init canceled: %w", runCtx.Err())
+				case <-time.After(2 * time.Second):
+				}
 			}
-			logger.Warn("ping postgres failed; retrying", "attempt", attempt, "err", lastErr)
-			time.Sleep(2 * time.Second)
 		}
 		if lastErr != nil {
 			return fmt.Errorf("ping postgres: %w", lastErr)
@@ -113,13 +128,13 @@ func Run() error {
 	}, users, projects, members, repos, feedback, runs, tokenCrypto, githubRepoProvider)
 
 	// Ensure bootstrap users exist so that the first login can be matched by email.
-	if _, err := users.EnsureOwner(context.Background(), cfg.BootstrapOwnerEmail); err != nil {
+	if _, err := users.EnsureOwner(runCtx, cfg.BootstrapOwnerEmail); err != nil {
 		return fmt.Errorf("ensure bootstrap owner user: %w", err)
 	}
-	if err := ensureBootstrapAllowedUsers(context.Background(), users, cfg.BootstrapOwnerEmail, cfg.BootstrapAllowedEmails, logger); err != nil {
+	if err := ensureBootstrapAllowedUsers(runCtx, users, cfg.BootstrapOwnerEmail, cfg.BootstrapAllowedEmails, logger); err != nil {
 		return fmt.Errorf("ensure bootstrap allowed users: %w", err)
 	}
-	if err := ensureBootstrapPlatformAdmins(context.Background(), users, cfg.BootstrapOwnerEmail, cfg.BootstrapPlatformAdminEmails, logger); err != nil {
+	if err := ensureBootstrapPlatformAdmins(runCtx, users, cfg.BootstrapOwnerEmail, cfg.BootstrapPlatformAdminEmails, logger); err != nil {
 		return fmt.Errorf("ensure bootstrap platform admins: %w", err)
 	}
 
@@ -159,9 +174,6 @@ func Run() error {
 
 	httpServer := &http.Server{Addr: cfg.HTTPAddr, Handler: httpMux}
 
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
-	defer stop()
-
 	errCh := make(chan error, 2)
 	go func() {
 		logger.Info("control-plane grpc started", "addr", cfg.GRPCAddr)
@@ -173,7 +185,7 @@ func Run() error {
 	}()
 
 	select {
-	case <-ctx.Done():
+	case <-runCtx.Done():
 		logger.Info("shutting down control-plane")
 
 		grpcServer.GracefulStop()

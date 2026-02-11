@@ -247,7 +247,7 @@ func (x *IngestGitHubWebhookResponse) GetDuplicate() bool {
 type ResolveStaffByEmailRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
-	GithubLogin   string                 `protobuf:"bytes,2,opt,name=github_login,json=githubLogin,proto3" json:"github_login,omitempty"`
+	GithubLogin   *string                `protobuf:"bytes,2,opt,name=github_login,json=githubLogin,proto3,oneof" json:"github_login,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -290,8 +290,8 @@ func (x *ResolveStaffByEmailRequest) GetEmail() string {
 }
 
 func (x *ResolveStaffByEmailRequest) GetGithubLogin() string {
-	if x != nil {
-		return x.GithubLogin
+	if x != nil && x.GithubLogin != nil {
+		return *x.GithubLogin
 	}
 	return ""
 }
@@ -776,9 +776,9 @@ type Run struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	CorrelationId string                 `protobuf:"bytes,2,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
-	ProjectId     string                 `protobuf:"bytes,3,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
-	ProjectSlug   string                 `protobuf:"bytes,4,opt,name=project_slug,json=projectSlug,proto3" json:"project_slug,omitempty"`
-	ProjectName   string                 `protobuf:"bytes,5,opt,name=project_name,json=projectName,proto3" json:"project_name,omitempty"`
+	ProjectId     *string                `protobuf:"bytes,3,opt,name=project_id,json=projectId,proto3,oneof" json:"project_id,omitempty"`
+	ProjectSlug   *string                `protobuf:"bytes,4,opt,name=project_slug,json=projectSlug,proto3,oneof" json:"project_slug,omitempty"`
+	ProjectName   *string                `protobuf:"bytes,5,opt,name=project_name,json=projectName,proto3,oneof" json:"project_name,omitempty"`
 	Status        string                 `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	StartedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
@@ -832,22 +832,22 @@ func (x *Run) GetCorrelationId() string {
 }
 
 func (x *Run) GetProjectId() string {
-	if x != nil {
-		return x.ProjectId
+	if x != nil && x.ProjectId != nil {
+		return *x.ProjectId
 	}
 	return ""
 }
 
 func (x *Run) GetProjectSlug() string {
-	if x != nil {
-		return x.ProjectSlug
+	if x != nil && x.ProjectSlug != nil {
+		return *x.ProjectSlug
 	}
 	return ""
 }
 
 func (x *Run) GetProjectName() string {
-	if x != nil {
-		return x.ProjectName
+	if x != nil && x.ProjectName != nil {
+		return *x.ProjectName
 	}
 	return ""
 }
@@ -1204,10 +1204,10 @@ type LearningFeedback struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	RunId         string                 `protobuf:"bytes,2,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
-	RepositoryId  string                 `protobuf:"bytes,3,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	PrNumber      int32                  `protobuf:"varint,4,opt,name=pr_number,json=prNumber,proto3" json:"pr_number,omitempty"`
-	FilePath      string                 `protobuf:"bytes,5,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
-	Line          int32                  `protobuf:"varint,6,opt,name=line,proto3" json:"line,omitempty"`
+	RepositoryId  *string                `protobuf:"bytes,3,opt,name=repository_id,json=repositoryId,proto3,oneof" json:"repository_id,omitempty"`
+	PrNumber      *int32                 `protobuf:"varint,4,opt,name=pr_number,json=prNumber,proto3,oneof" json:"pr_number,omitempty"`
+	FilePath      *string                `protobuf:"bytes,5,opt,name=file_path,json=filePath,proto3,oneof" json:"file_path,omitempty"`
+	Line          *int32                 `protobuf:"varint,6,opt,name=line,proto3,oneof" json:"line,omitempty"`
 	Kind          string                 `protobuf:"bytes,7,opt,name=kind,proto3" json:"kind,omitempty"`
 	Explanation   string                 `protobuf:"bytes,8,opt,name=explanation,proto3" json:"explanation,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
@@ -1260,29 +1260,29 @@ func (x *LearningFeedback) GetRunId() string {
 }
 
 func (x *LearningFeedback) GetRepositoryId() string {
-	if x != nil {
-		return x.RepositoryId
+	if x != nil && x.RepositoryId != nil {
+		return *x.RepositoryId
 	}
 	return ""
 }
 
 func (x *LearningFeedback) GetPrNumber() int32 {
-	if x != nil {
-		return x.PrNumber
+	if x != nil && x.PrNumber != nil {
+		return *x.PrNumber
 	}
 	return 0
 }
 
 func (x *LearningFeedback) GetFilePath() string {
-	if x != nil {
-		return x.FilePath
+	if x != nil && x.FilePath != nil {
+		return *x.FilePath
 	}
 	return ""
 }
 
 func (x *LearningFeedback) GetLine() int32 {
-	if x != nil {
-		return x.Line
+	if x != nil && x.Line != nil {
+		return *x.Line
 	}
 	return 0
 }
@@ -1416,8 +1416,8 @@ type User struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Email           string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
-	GithubUserId    int64                  `protobuf:"varint,3,opt,name=github_user_id,json=githubUserId,proto3" json:"github_user_id,omitempty"`
-	GithubLogin     string                 `protobuf:"bytes,4,opt,name=github_login,json=githubLogin,proto3" json:"github_login,omitempty"`
+	GithubUserId    *int64                 `protobuf:"varint,3,opt,name=github_user_id,json=githubUserId,proto3,oneof" json:"github_user_id,omitempty"`
+	GithubLogin     *string                `protobuf:"bytes,4,opt,name=github_login,json=githubLogin,proto3,oneof" json:"github_login,omitempty"`
 	IsPlatformAdmin bool                   `protobuf:"varint,5,opt,name=is_platform_admin,json=isPlatformAdmin,proto3" json:"is_platform_admin,omitempty"`
 	IsPlatformOwner bool                   `protobuf:"varint,6,opt,name=is_platform_owner,json=isPlatformOwner,proto3" json:"is_platform_owner,omitempty"`
 	unknownFields   protoimpl.UnknownFields
@@ -1469,15 +1469,15 @@ func (x *User) GetEmail() string {
 }
 
 func (x *User) GetGithubUserId() int64 {
-	if x != nil {
-		return x.GithubUserId
+	if x != nil && x.GithubUserId != nil {
+		return *x.GithubUserId
 	}
 	return 0
 }
 
 func (x *User) GetGithubLogin() string {
-	if x != nil {
-		return x.GithubLogin
+	if x != nil && x.GithubLogin != nil {
+		return *x.GithubLogin
 	}
 	return ""
 }
@@ -1888,8 +1888,8 @@ type UpsertProjectMemberRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Principal     *Principal             `protobuf:"bytes,1,opt,name=principal,proto3" json:"principal,omitempty"`
 	ProjectId     string                 `protobuf:"bytes,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
-	UserId        string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Email         string                 `protobuf:"bytes,4,opt,name=email,proto3" json:"email,omitempty"`
+	UserId        *string                `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3,oneof" json:"user_id,omitempty"`
+	Email         *string                `protobuf:"bytes,4,opt,name=email,proto3,oneof" json:"email,omitempty"`
 	Role          string                 `protobuf:"bytes,5,opt,name=role,proto3" json:"role,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1940,15 +1940,15 @@ func (x *UpsertProjectMemberRequest) GetProjectId() string {
 }
 
 func (x *UpsertProjectMemberRequest) GetUserId() string {
-	if x != nil {
-		return x.UserId
+	if x != nil && x.UserId != nil {
+		return *x.UserId
 	}
 	return ""
 }
 
 func (x *UpsertProjectMemberRequest) GetEmail() string {
-	if x != nil {
-		return x.Email
+	if x != nil && x.Email != nil {
+		return *x.Email
 	}
 	return ""
 }
@@ -2460,10 +2460,11 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\x0ecorrelation_id\x18\x01 \x01(\tR\rcorrelationId\x12\x15\n" +
 	"\x06run_id\x18\x02 \x01(\tR\x05runId\x12\x16\n" +
 	"\x06status\x18\x03 \x01(\tR\x06status\x12\x1c\n" +
-	"\tduplicate\x18\x04 \x01(\bR\tduplicate\"U\n" +
+	"\tduplicate\x18\x04 \x01(\bR\tduplicate\"k\n" +
 	"\x1aResolveStaffByEmailRequest\x12\x14\n" +
-	"\x05email\x18\x01 \x01(\tR\x05email\x12!\n" +
-	"\fgithub_login\x18\x02 \x01(\tR\vgithubLogin\"`\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12&\n" +
+	"\fgithub_login\x18\x02 \x01(\tH\x00R\vgithubLogin\x88\x01\x01B\x0f\n" +
+	"\r_github_login\"`\n" +
 	"\x1bResolveStaffByEmailResponse\x12A\n" +
 	"\tprincipal\x18\x01 \x01(\v2#.codexk8s.controlplane.v1.PrincipalR\tprincipal\"z\n" +
 	"\x19AuthorizeOAuthUserRequest\x12\x14\n" +
@@ -2493,21 +2494,24 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\x14DeleteProjectRequest\x12A\n" +
 	"\tprincipal\x18\x01 \x01(\v2#.codexk8s.controlplane.v1.PrincipalR\tprincipal\x12\x1d\n" +
 	"\n" +
-	"project_id\x18\x02 \x01(\tR\tprojectId\"\xec\x02\n" +
+	"project_id\x18\x02 \x01(\tR\tprojectId\"\xac\x03\n" +
 	"\x03Run\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12%\n" +
-	"\x0ecorrelation_id\x18\x02 \x01(\tR\rcorrelationId\x12\x1d\n" +
+	"\x0ecorrelation_id\x18\x02 \x01(\tR\rcorrelationId\x12\"\n" +
 	"\n" +
-	"project_id\x18\x03 \x01(\tR\tprojectId\x12!\n" +
-	"\fproject_slug\x18\x04 \x01(\tR\vprojectSlug\x12!\n" +
-	"\fproject_name\x18\x05 \x01(\tR\vprojectName\x12\x16\n" +
+	"project_id\x18\x03 \x01(\tH\x00R\tprojectId\x88\x01\x01\x12&\n" +
+	"\fproject_slug\x18\x04 \x01(\tH\x01R\vprojectSlug\x88\x01\x01\x12&\n" +
+	"\fproject_name\x18\x05 \x01(\tH\x02R\vprojectName\x88\x01\x01\x12\x16\n" +
 	"\x06status\x18\x06 \x01(\tR\x06status\x129\n" +
 	"\n" +
 	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
 	"started_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x12;\n" +
 	"\vfinished_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"finishedAt\"j\n" +
+	"finishedAtB\r\n" +
+	"\v_project_idB\x0f\n" +
+	"\r_project_slugB\x0f\n" +
+	"\r_project_name\"j\n" +
 	"\x0fListRunsRequest\x12A\n" +
 	"\tprincipal\x18\x01 \x01(\v2#.codexk8s.controlplane.v1.PrincipalR\tprincipal\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\"G\n" +
@@ -2528,31 +2532,39 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\x06run_id\x18\x02 \x01(\tR\x05runId\x12\x14\n" +
 	"\x05limit\x18\x03 \x01(\x05R\x05limit\"R\n" +
 	"\x15ListRunEventsResponse\x129\n" +
-	"\x05items\x18\x01 \x03(\v2#.codexk8s.controlplane.v1.FlowEventR\x05items\"\x9d\x02\n" +
+	"\x05items\x18\x01 \x03(\v2#.codexk8s.controlplane.v1.FlowEventR\x05items\"\xe8\x02\n" +
 	"\x10LearningFeedback\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x15\n" +
-	"\x06run_id\x18\x02 \x01(\tR\x05runId\x12#\n" +
-	"\rrepository_id\x18\x03 \x01(\tR\frepositoryId\x12\x1b\n" +
-	"\tpr_number\x18\x04 \x01(\x05R\bprNumber\x12\x1b\n" +
-	"\tfile_path\x18\x05 \x01(\tR\bfilePath\x12\x12\n" +
-	"\x04line\x18\x06 \x01(\x05R\x04line\x12\x12\n" +
+	"\x06run_id\x18\x02 \x01(\tR\x05runId\x12(\n" +
+	"\rrepository_id\x18\x03 \x01(\tH\x00R\frepositoryId\x88\x01\x01\x12 \n" +
+	"\tpr_number\x18\x04 \x01(\x05H\x01R\bprNumber\x88\x01\x01\x12 \n" +
+	"\tfile_path\x18\x05 \x01(\tH\x02R\bfilePath\x88\x01\x01\x12\x17\n" +
+	"\x04line\x18\x06 \x01(\x05H\x03R\x04line\x88\x01\x01\x12\x12\n" +
 	"\x04kind\x18\a \x01(\tR\x04kind\x12 \n" +
 	"\vexplanation\x18\b \x01(\tR\vexplanation\x129\n" +
 	"\n" +
-	"created_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\x90\x01\n" +
+	"created_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAtB\x10\n" +
+	"\x0e_repository_idB\f\n" +
+	"\n" +
+	"_pr_numberB\f\n" +
+	"\n" +
+	"_file_pathB\a\n" +
+	"\x05_line\"\x90\x01\n" +
 	"\x1eListRunLearningFeedbackRequest\x12A\n" +
 	"\tprincipal\x18\x01 \x01(\v2#.codexk8s.controlplane.v1.PrincipalR\tprincipal\x12\x15\n" +
 	"\x06run_id\x18\x02 \x01(\tR\x05runId\x12\x14\n" +
 	"\x05limit\x18\x03 \x01(\x05R\x05limit\"c\n" +
 	"\x1fListRunLearningFeedbackResponse\x12@\n" +
-	"\x05items\x18\x01 \x03(\v2*.codexk8s.controlplane.v1.LearningFeedbackR\x05items\"\xcd\x01\n" +
+	"\x05items\x18\x01 \x03(\v2*.codexk8s.controlplane.v1.LearningFeedbackR\x05items\"\xfb\x01\n" +
 	"\x04User\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05email\x18\x02 \x01(\tR\x05email\x12$\n" +
-	"\x0egithub_user_id\x18\x03 \x01(\x03R\fgithubUserId\x12!\n" +
-	"\fgithub_login\x18\x04 \x01(\tR\vgithubLogin\x12*\n" +
+	"\x05email\x18\x02 \x01(\tR\x05email\x12)\n" +
+	"\x0egithub_user_id\x18\x03 \x01(\x03H\x00R\fgithubUserId\x88\x01\x01\x12&\n" +
+	"\fgithub_login\x18\x04 \x01(\tH\x01R\vgithubLogin\x88\x01\x01\x12*\n" +
 	"\x11is_platform_admin\x18\x05 \x01(\bR\x0fisPlatformAdmin\x12*\n" +
-	"\x11is_platform_owner\x18\x06 \x01(\bR\x0fisPlatformOwner\"k\n" +
+	"\x11is_platform_owner\x18\x06 \x01(\bR\x0fisPlatformOwnerB\x11\n" +
+	"\x0f_github_user_idB\x0f\n" +
+	"\r_github_login\"k\n" +
 	"\x10ListUsersRequest\x12A\n" +
 	"\tprincipal\x18\x01 \x01(\v2#.codexk8s.controlplane.v1.PrincipalR\tprincipal\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\"I\n" +
@@ -2578,14 +2590,17 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x14\n" +
 	"\x05limit\x18\x03 \x01(\x05R\x05limit\"[\n" +
 	"\x1aListProjectMembersResponse\x12=\n" +
-	"\x05items\x18\x01 \x03(\v2'.codexk8s.controlplane.v1.ProjectMemberR\x05items\"\xc1\x01\n" +
+	"\x05items\x18\x01 \x03(\v2'.codexk8s.controlplane.v1.ProjectMemberR\x05items\"\xe1\x01\n" +
 	"\x1aUpsertProjectMemberRequest\x12A\n" +
 	"\tprincipal\x18\x01 \x01(\v2#.codexk8s.controlplane.v1.PrincipalR\tprincipal\x12\x1d\n" +
 	"\n" +
-	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x17\n" +
-	"\auser_id\x18\x03 \x01(\tR\x06userId\x12\x14\n" +
-	"\x05email\x18\x04 \x01(\tR\x05email\x12\x12\n" +
-	"\x04role\x18\x05 \x01(\tR\x04role\"\x97\x01\n" +
+	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x1c\n" +
+	"\auser_id\x18\x03 \x01(\tH\x00R\x06userId\x88\x01\x01\x12\x19\n" +
+	"\x05email\x18\x04 \x01(\tH\x01R\x05email\x88\x01\x01\x12\x12\n" +
+	"\x04role\x18\x05 \x01(\tR\x04roleB\n" +
+	"\n" +
+	"\b_user_idB\b\n" +
+	"\x06_email\"\x97\x01\n" +
 	"\x1aDeleteProjectMemberRequest\x12A\n" +
 	"\tprincipal\x18\x01 \x01(\v2#.codexk8s.controlplane.v1.PrincipalR\tprincipal\x12\x1d\n" +
 	"\n" +
@@ -2801,6 +2816,11 @@ func file_codexk8s_controlplane_v1_controlplane_proto_init() {
 	if File_codexk8s_controlplane_v1_controlplane_proto != nil {
 		return
 	}
+	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[3].OneofWrappers = []any{}
+	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[13].OneofWrappers = []any{}
+	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[20].OneofWrappers = []any{}
+	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[23].OneofWrappers = []any{}
+	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[31].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

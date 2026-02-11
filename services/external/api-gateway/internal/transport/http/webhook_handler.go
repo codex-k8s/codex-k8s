@@ -15,6 +15,7 @@ import (
 	"github.com/codex-k8s/codex-k8s/libs/go/crypto/githubsignature"
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
+	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/casters"
 )
 
 const (
@@ -122,22 +123,10 @@ func (h *webhookHandler) IngestGitHubWebhook(c *echo.Context) error {
 	if result.GetDuplicate() {
 		webhookRequestsTotal.WithLabelValues("duplicate", eventType).Inc()
 		webhookDuration.WithLabelValues("duplicate", eventType).Observe(time.Since(startedAt).Seconds())
-		return c.JSON(http.StatusOK, map[string]any{
-			"correlation_id": result.GetCorrelationId(),
-			"run_id":         result.GetRunId(),
-			"status":         result.GetStatus(),
-			"duplicate":      true,
-		})
+		return c.JSON(http.StatusOK, casters.IngestGitHubWebhook(result))
 	}
 
 	webhookRequestsTotal.WithLabelValues("accepted", eventType).Inc()
 	webhookDuration.WithLabelValues("accepted", eventType).Observe(time.Since(startedAt).Seconds())
-	return c.JSON(http.StatusAccepted, map[string]any{
-		"correlation_id": result.GetCorrelationId(),
-		"run_id":         result.GetRunId(),
-		"status":         result.GetStatus(),
-		"duplicate":      false,
-	})
+	return c.JSON(http.StatusAccepted, casters.IngestGitHubWebhook(result))
 }
-
-// readRequestBody lives in request_body.go (shared by webhook + potential future public endpoints).

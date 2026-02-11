@@ -33,7 +33,7 @@ message IngestGitHubWebhookResponse {
 
 message ResolveStaffByEmailRequest {
   string email = 1;
-  string github_login = 2;
+  optional string github_login = 2;
 }
 
 message ResolveStaffByEmailResponse {
@@ -85,9 +85,9 @@ message DeleteProjectRequest {
 message Run {
   string id = 1;
   string correlation_id = 2;
-  string project_id = 3;
-  string project_slug = 4;
-  string project_name = 5;
+  optional string project_id = 3;
+  optional string project_slug = 4;
+  optional string project_name = 5;
   string status = 6;
   google.protobuf.Timestamp created_at = 7;
   google.protobuf.Timestamp started_at = 8;
@@ -128,10 +128,10 @@ message ListRunEventsResponse {
 message LearningFeedback {
   int64 id = 1;
   string run_id = 2;
-  string repository_id = 3;
-  int32 pr_number = 4;
-  string file_path = 5;
-  int32 line = 6;
+  optional string repository_id = 3;
+  optional int32 pr_number = 4;
+  optional string file_path = 5;
+  optional int32 line = 6;
   string kind = 7;
   string explanation = 8;
   google.protobuf.Timestamp created_at = 9;
@@ -150,8 +150,8 @@ message ListRunLearningFeedbackResponse {
 message User {
   string id = 1;
   string email = 2;
-  int64 github_user_id = 3;
-  string github_login = 4;
+  optional int64 github_user_id = 3;
+  optional string github_login = 4;
   bool is_platform_admin = 5;
   bool is_platform_owner = 6;
 }
@@ -197,8 +197,8 @@ message ListProjectMembersResponse {
 message UpsertProjectMemberRequest {
   Principal principal = 1;
   string project_id = 2;
-  string user_id = 3;
-  string email = 4;
+  optional string user_id = 3;
+  optional string email = 4;
   string role = 5;
 }
 
@@ -283,4 +283,3 @@ service ControlPlaneService {
   rpc UpsertProjectRepository(UpsertProjectRepositoryRequest) returns (RepositoryBinding);
   rpc DeleteProjectRepository(DeleteProjectRepositoryRequest) returns (google.protobuf.Empty);
 }
-

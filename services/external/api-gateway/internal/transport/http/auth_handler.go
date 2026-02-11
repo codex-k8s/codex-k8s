@@ -7,6 +7,7 @@ import (
 
 	jwtlib "github.com/codex-k8s/codex-k8s/libs/go/auth/jwt"
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
+	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/casters"
 	"github.com/labstack/echo/v5"
 )
 
@@ -140,13 +141,5 @@ func (h *authHandler) Me(c *echo.Context) error {
 	if !ok {
 		return errs.Unauthorized{Msg: "not authenticated"}
 	}
-	return c.JSON(http.StatusOK, map[string]any{
-		"user": map[string]any{
-			"id":                p.UserId,
-			"email":             p.Email,
-			"github_login":      p.GithubLogin,
-			"is_platform_admin": p.IsPlatformAdmin,
-			"is_platform_owner": p.IsPlatformOwner,
-		},
-	})
+	return c.JSON(http.StatusOK, casters.Me(p))
 }

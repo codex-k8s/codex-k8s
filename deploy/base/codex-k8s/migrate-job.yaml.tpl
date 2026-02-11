@@ -17,7 +17,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: migrate
-          image: ${CODEXK8S_IMAGE}
+          image: ${CODEXK8S_CONTROL_PLANE_IMAGE}
           imagePullPolicy: Always
           env:
             - name: CODEXK8S_POSTGRES_DB

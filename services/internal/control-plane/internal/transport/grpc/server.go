@@ -91,7 +91,7 @@ func (s *Server) ResolveStaffByEmail(ctx context.Context, req *controlplanev1.Re
 		return nil, toStatus(errs.Forbidden{Msg: "email is not allowed"})
 	}
 
-	login := strings.TrimSpace(req.GithubLogin)
+	login := strings.TrimSpace(req.GetGithubLogin())
 	if login != "" && !strings.EqualFold(u.GitHubLogin, login) {
 		if err := s.users.UpdateGitHubIdentity(ctx, u.ID, u.GitHubUserID, login); err != nil {
 			return nil, toStatus(err)
@@ -146,15 +146,11 @@ func (s *Server) ListProjects(ctx context.Context, req *controlplanev1.ListProje
 	}
 	out := make([]*controlplanev1.Project, 0, len(items))
 	for _, it := range items {
-		m, ok := it.(map[string]any)
-		if !ok {
-			continue
-		}
 		out = append(out, &controlplanev1.Project{
-			Id:   asString(m["id"]),
-			Slug: asString(m["slug"]),
-			Name: asString(m["name"]),
-			Role: asString(m["role"]),
+			Id:   it.ID,
+			Slug: it.Slug,
+			Name: it.Name,
+			Role: it.Role,
 		})
 	}
 	return &controlplanev1.ListProjectsResponse{Items: out}, nil
@@ -262,10 +258,10 @@ func (s *Server) ListRunLearningFeedback(ctx context.Context, req *controlplanev
 		out = append(out, &controlplanev1.LearningFeedback{
 			Id:           f.ID,
 			RunId:        f.RunID,
-			RepositoryId: f.RepositoryID,
-			PrNumber:     int32(f.PRNumber),
-			FilePath:     f.FilePath,
-			Line:         int32(f.Line),
+			RepositoryId: stringPtrOrNil(f.RepositoryID),
+			PrNumber:     int32PtrOrNil(int32(f.PRNumber)),
+			FilePath:     stringPtrOrNil(f.FilePath),
+			Line:         int32PtrOrNil(int32(f.Line)),
 			Kind:         f.Kind,
 			Explanation:  f.Explanation,
 			CreatedAt:    timestamppb.New(f.CreatedAt.UTC()),
@@ -289,8 +285,8 @@ func (s *Server) ListUsers(ctx context.Context, req *controlplanev1.ListUsersReq
 		out = append(out, &controlplanev1.User{
 			Id:              u.ID,
 			Email:           u.Email,
-			GithubUserId:    u.GitHubUserID,
-			GithubLogin:     u.GitHubLogin,
+			GithubUserId:    int64PtrOrNil(u.GitHubUserID),
+			GithubLogin:     stringPtrOrNil(u.GitHubLogin),
 			IsPlatformAdmin: u.IsPlatformAdmin,
 			IsPlatformOwner: u.IsPlatformOwner,
 		})
@@ -310,8 +306,8 @@ func (s *Server) CreateUser(ctx context.Context, req *controlplanev1.CreateUserR
 	return &controlplanev1.User{
 		Id:              u.ID,
 		Email:           u.Email,
-		GithubUserId:    u.GitHubUserID,
-		GithubLogin:     u.GitHubLogin,
+		GithubUserId:    int64PtrOrNil(u.GitHubUserID),
+		GithubLogin:     stringPtrOrNil(u.GitHubLogin),
 		IsPlatformAdmin: u.IsPlatformAdmin,
 		IsPlatformOwner: u.IsPlatformOwner,
 	}, nil
@@ -354,10 +350,10 @@ func (s *Server) UpsertProjectMember(ctx context.Context, req *controlplanev1.Up
 		return nil, err
 	}
 
-	projectID := strings.TrimSpace(req.ProjectId)
-	userID := strings.TrimSpace(req.UserId)
-	email := strings.TrimSpace(req.Email)
-	role := strings.TrimSpace(req.Role)
+	projectID := strings.TrimSpace(req.GetProjectId())
+	userID := strings.TrimSpace(req.GetUserId())
+	email := strings.TrimSpace(req.GetEmail())
+	role := strings.TrimSpace(req.GetRole())
 
 	if email != "" {
 		if err := s.staff.UpsertProjectMemberByEmail(ctx, p, projectID, email, role); err != nil {
@@ -554,9 +550,9 @@ func runToProto(r staffrunrepo.Run) *controlplanev1.Run {
 	out := &controlplanev1.Run{
 		Id:            r.ID,
 		CorrelationId: r.CorrelationID,
-		ProjectId:     r.ProjectID,
-		ProjectSlug:   r.ProjectSlug,
-		ProjectName:   r.ProjectName,
+		ProjectId:     stringPtrOrNil(r.ProjectID),
+		ProjectSlug:   stringPtrOrNil(r.ProjectSlug),
+		ProjectName:   stringPtrOrNil(r.ProjectName),
 		Status:        r.Status,
 		CreatedAt:     timestamppb.New(r.CreatedAt.UTC()),
 	}
@@ -569,14 +565,24 @@ func runToProto(r staffrunrepo.Run) *controlplanev1.Run {
 	return out
 }
 
-func asString(v any) string {
-	if v == nil {
-		return ""
+func stringPtrOrNil(value string) *string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil
 	}
-	switch t := v.(type) {
-	case string:
-		return t
-	default:
-		return fmt.Sprintf("%v", v)
+	return &value
+}
+
+func int32PtrOrNil(value int32) *int32 {
+	if value <= 0 {
+		return nil
 	}
+	return &value
+}
+
+func int64PtrOrNil(value int64) *int64 {
+	if value <= 0 {
+		return nil
+	}
+	return &value
 }

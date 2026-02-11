@@ -3,20 +3,17 @@ package controlplane
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
-	"github.com/codex-k8s/codex-k8s/libs/go/errs"
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // Client is a small api-gateway wrapper over the internal control-plane gRPC API.
-// It converts gRPC status codes into platform domain errors (errs.*) suitable for HTTP mapping.
 type Client struct {
 	conn *grpc.ClientConn
 	svc  controlplanev1.ControlPlaneServiceClient
@@ -82,10 +79,10 @@ func (c *Client) Service() controlplanev1.ControlPlaneServiceClient {
 func (c *Client) ResolveStaffByEmail(ctx context.Context, email string, githubLogin string) (*controlplanev1.Principal, error) {
 	resp, err := c.svc.ResolveStaffByEmail(ctx, &controlplanev1.ResolveStaffByEmailRequest{
 		Email:       email,
-		GithubLogin: githubLogin,
+		GithubLogin: optionalString(githubLogin),
 	})
 	if err != nil {
-		return nil, ToDomainError(err)
+		return nil, err
 	}
 	return resp.GetPrincipal(), nil
 }
@@ -97,7 +94,7 @@ func (c *Client) AuthorizeOAuthUser(ctx context.Context, email string, githubUse
 		GithubLogin:  githubLogin,
 	})
 	if err != nil {
-		return nil, ToDomainError(err)
+		return nil, err
 	}
 	return resp.GetPrincipal(), nil
 }
@@ -111,31 +108,15 @@ func (c *Client) IngestGitHubWebhook(ctx context.Context, correlationID string, 
 		PayloadJson:   payloadJSON,
 	})
 	if err != nil {
-		return nil, ToDomainError(err)
+		return nil, err
 	}
 	return resp, nil
 }
 
-func ToDomainError(err error) error {
-	if err == nil {
+func optionalString(value string) *string {
+	value = strings.TrimSpace(value)
+	if value == "" {
 		return nil
 	}
-	st, ok := status.FromError(err)
-	if !ok {
-		return err
-	}
-	switch st.Code() {
-	case codes.InvalidArgument:
-		return errs.Validation{Msg: st.Message()}
-	case codes.NotFound:
-		return errs.Validation{Msg: st.Message()}
-	case codes.Unauthenticated:
-		return errs.Unauthorized{Msg: st.Message()}
-	case codes.PermissionDenied:
-		return errs.Forbidden{Msg: st.Message()}
-	case codes.AlreadyExists:
-		return errs.Conflict{Msg: st.Message()}
-	default:
-		return err
-	}
+	return &value
 }

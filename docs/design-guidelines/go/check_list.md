@@ -4,6 +4,8 @@
 
 ## Архитектура и структура
 - Структура сервиса соответствует `docs/design-guidelines/go/services_design_requirements.md` (domain/transport/repository разделены; нет доменной логики в transport).
+- В transport-слое ответы типизированы (DTO модели + кастеры); нет `map[string]any`/`[]any`/`any` как API-контрактов.
+- Ошибки маппятся на границе транспорта (HTTP error handler / gRPC interceptor); в handlers нет ad-hoc маппинга межслойных ошибок.
 - Интеграция с Kubernetes идёт через интерфейс/адаптер; прямой shell-first сценарий не является основным путём.
 - Интеграция с репозиториями идёт через provider-интерфейсы (без GitHub-specific логики в домене).
 - HTTP (если есть): OpenAPI в `api/server/api.yaml`; validation/codegen выполнены.
