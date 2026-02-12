@@ -4,6 +4,7 @@ WORKDIR /src
 
 COPY go.mod go.sum ./
 COPY libs/go/ libs/go/
+COPY proto/ proto/
 COPY services/jobs/worker/ services/jobs/worker/
 
 RUN go mod download
