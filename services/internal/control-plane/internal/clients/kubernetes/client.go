@@ -127,45 +127,47 @@ func (c *Client) ListEvents(ctx context.Context, namespace string, limit int) ([
 
 // ListResources lists supported Kubernetes resources for one kind.
 func (c *Client) ListResources(ctx context.Context, namespace string, kind mcpdomain.KubernetesResourceKind, limit int) ([]mcpdomain.KubernetesResourceRef, error) {
+	operation := resourceListOperationForKind(kind)
+
 	switch kind {
 	case mcpdomain.KubernetesResourceKindDeployment:
-		return c.listResourceRefs(ctx, limit, k8sKindDeployment, "list deployments", listAsAny(c.clientset.AppsV1().Deployments(namespace).List), true)
+		return c.listResourceRefs(ctx, limit, k8sKindDeployment, operation, listAsAny(c.clientset.AppsV1().Deployments(namespace).List), true)
 	case mcpdomain.KubernetesResourceKindDaemonSet:
-		return c.listResourceRefs(ctx, limit, k8sKindDaemonSet, "list daemonsets", listAsAny(c.clientset.AppsV1().DaemonSets(namespace).List), true)
+		return c.listResourceRefs(ctx, limit, k8sKindDaemonSet, operation, listAsAny(c.clientset.AppsV1().DaemonSets(namespace).List), true)
 	case mcpdomain.KubernetesResourceKindStatefulSet:
-		return c.listResourceRefs(ctx, limit, k8sKindStatefulSet, "list statefulsets", listAsAny(c.clientset.AppsV1().StatefulSets(namespace).List), true)
+		return c.listResourceRefs(ctx, limit, k8sKindStatefulSet, operation, listAsAny(c.clientset.AppsV1().StatefulSets(namespace).List), true)
 	case mcpdomain.KubernetesResourceKindReplicaSet:
-		return c.listResourceRefs(ctx, limit, k8sKindReplicaSet, "list replicasets", listAsAny(c.clientset.AppsV1().ReplicaSets(namespace).List), true)
+		return c.listResourceRefs(ctx, limit, k8sKindReplicaSet, operation, listAsAny(c.clientset.AppsV1().ReplicaSets(namespace).List), true)
 	case mcpdomain.KubernetesResourceKindReplicationController:
-		return c.listResourceRefs(ctx, limit, k8sKindReplicationController, "list replicationcontrollers", listAsAny(c.clientset.CoreV1().ReplicationControllers(namespace).List), true)
+		return c.listResourceRefs(ctx, limit, k8sKindReplicationController, operation, listAsAny(c.clientset.CoreV1().ReplicationControllers(namespace).List), true)
 	case mcpdomain.KubernetesResourceKindJob:
-		return c.listResourceRefs(ctx, limit, k8sKindJob, "list jobs", listAsAny(c.clientset.BatchV1().Jobs(namespace).List), true)
+		return c.listResourceRefs(ctx, limit, k8sKindJob, operation, listAsAny(c.clientset.BatchV1().Jobs(namespace).List), true)
 	case mcpdomain.KubernetesResourceKindCronJob:
-		return c.listResourceRefs(ctx, limit, k8sKindCronJob, "list cronjobs", listAsAny(c.clientset.BatchV1().CronJobs(namespace).List), true)
+		return c.listResourceRefs(ctx, limit, k8sKindCronJob, operation, listAsAny(c.clientset.BatchV1().CronJobs(namespace).List), true)
 	case mcpdomain.KubernetesResourceKindConfigMap:
-		return c.listResourceRefs(ctx, limit, k8sKindConfigMap, "list configmaps", listAsAny(c.clientset.CoreV1().ConfigMaps(namespace).List), true)
+		return c.listResourceRefs(ctx, limit, k8sKindConfigMap, operation, listAsAny(c.clientset.CoreV1().ConfigMaps(namespace).List), true)
 	case mcpdomain.KubernetesResourceKindSecret:
-		return c.listResourceRefs(ctx, limit, k8sKindSecret, "list secrets", listAsAny(c.clientset.CoreV1().Secrets(namespace).List), true)
+		return c.listResourceRefs(ctx, limit, k8sKindSecret, operation, listAsAny(c.clientset.CoreV1().Secrets(namespace).List), true)
 	case mcpdomain.KubernetesResourceKindResourceQuota:
-		return c.listResourceRefs(ctx, limit, k8sKindResourceQuota, "list resourcequotas", listAsAny(c.clientset.CoreV1().ResourceQuotas(namespace).List), true)
+		return c.listResourceRefs(ctx, limit, k8sKindResourceQuota, operation, listAsAny(c.clientset.CoreV1().ResourceQuotas(namespace).List), true)
 	case mcpdomain.KubernetesResourceKindHPA:
-		return c.listResourceRefs(ctx, limit, k8sKindHorizontalPodAutoscaler, "list hpas", listAsAny(c.clientset.AutoscalingV2().HorizontalPodAutoscalers(namespace).List), true)
+		return c.listResourceRefs(ctx, limit, k8sKindHorizontalPodAutoscaler, operation, listAsAny(c.clientset.AutoscalingV2().HorizontalPodAutoscalers(namespace).List), true)
 	case mcpdomain.KubernetesResourceKindService:
-		return c.listResourceRefs(ctx, limit, k8sKindService, "list services", listAsAny(c.clientset.CoreV1().Services(namespace).List), true)
+		return c.listResourceRefs(ctx, limit, k8sKindService, operation, listAsAny(c.clientset.CoreV1().Services(namespace).List), true)
 	case mcpdomain.KubernetesResourceKindEndpoints:
-		return c.listResourceRefs(ctx, limit, k8sKindEndpoints, "list endpoints", listAsAny(c.clientset.CoreV1().Endpoints(namespace).List), true)
+		return c.listResourceRefs(ctx, limit, k8sKindEndpoints, operation, listAsAny(c.clientset.CoreV1().Endpoints(namespace).List), true)
 	case mcpdomain.KubernetesResourceKindIngress:
-		return c.listResourceRefs(ctx, limit, k8sKindIngress, "list ingresses", listAsAny(c.clientset.NetworkingV1().Ingresses(namespace).List), true)
+		return c.listResourceRefs(ctx, limit, k8sKindIngress, operation, listAsAny(c.clientset.NetworkingV1().Ingresses(namespace).List), true)
 	case mcpdomain.KubernetesResourceKindIngressClass:
-		return c.listResourceRefs(ctx, limit, k8sKindIngressClass, "list ingressclasses", listAsAny(c.clientset.NetworkingV1().IngressClasses().List), false)
+		return c.listResourceRefs(ctx, limit, k8sKindIngressClass, operation, listAsAny(c.clientset.NetworkingV1().IngressClasses().List), false)
 	case mcpdomain.KubernetesResourceKindNetworkPolicy:
-		return c.listResourceRefs(ctx, limit, k8sKindNetworkPolicy, "list networkpolicies", listAsAny(c.clientset.NetworkingV1().NetworkPolicies(namespace).List), true)
+		return c.listResourceRefs(ctx, limit, k8sKindNetworkPolicy, operation, listAsAny(c.clientset.NetworkingV1().NetworkPolicies(namespace).List), true)
 	case mcpdomain.KubernetesResourceKindPVC:
-		return c.listResourceRefs(ctx, limit, k8sKindPersistentVolumeClaim, "list pvcs", listAsAny(c.clientset.CoreV1().PersistentVolumeClaims(namespace).List), true)
+		return c.listResourceRefs(ctx, limit, k8sKindPersistentVolumeClaim, operation, listAsAny(c.clientset.CoreV1().PersistentVolumeClaims(namespace).List), true)
 	case mcpdomain.KubernetesResourceKindPV:
-		return c.listResourceRefs(ctx, limit, k8sKindPersistentVolume, "list pvs", listAsAny(c.clientset.CoreV1().PersistentVolumes().List), false)
+		return c.listResourceRefs(ctx, limit, k8sKindPersistentVolume, operation, listAsAny(c.clientset.CoreV1().PersistentVolumes().List), false)
 	case mcpdomain.KubernetesResourceKindStorageClass:
-		return c.listResourceRefs(ctx, limit, k8sKindStorageClass, "list storageclasses", listAsAny(c.clientset.StorageV1().StorageClasses().List), false)
+		return c.listResourceRefs(ctx, limit, k8sKindStorageClass, operation, listAsAny(c.clientset.StorageV1().StorageClasses().List), false)
 	default:
 		return nil, fmt.Errorf("unsupported kubernetes resource kind %q", kind)
 	}
@@ -242,7 +244,7 @@ func (c *Client) listResourceRefs(
 	ctx context.Context,
 	limit int,
 	kind string,
-	operation string,
+	operation resourceListOperation,
 	listFn func(context.Context, metav1.ListOptions) (any, error),
 	includeNamespace bool,
 ) ([]mcpdomain.KubernetesResourceRef, error) {

@@ -3,6 +3,8 @@ package mcp
 import (
 	"context"
 	"strings"
+
+	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
 func (s *Service) PromptContext(ctx context.Context, session SessionContext) (PromptContextResult, error) {
@@ -56,7 +58,7 @@ func (s *Service) PromptContext(ctx context.Context, session SessionContext) (Pr
 	return result, nil
 }
 
-func buildPromptIssueContext(issue *runPayloadIssue) *PromptIssueContext {
+func buildPromptIssueContext(issue *querytypes.RunPayloadIssue) *PromptIssueContext {
 	if issue == nil {
 		return nil
 	}

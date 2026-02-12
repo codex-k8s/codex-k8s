@@ -2,7 +2,6 @@ package mcp
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -280,55 +279,6 @@ func (s *Service) auditRunTokenIssued(ctx context.Context, run agentrunrepo.Run,
 		Payload:       payload,
 		CreatedAt:     s.now().UTC(),
 	})
-}
-
-type resolvedRunContext struct {
-	Session    SessionContext
-	Run        agentrunrepo.Run
-	Repository repocfgrepo.RepositoryBinding
-	Token      string
-	Payload    runPayload
-}
-
-type runPayload struct {
-	Project    runPayloadProject    `json:"project"`
-	Repository runPayloadRepository `json:"repository"`
-	Issue      *runPayloadIssue     `json:"issue,omitempty"`
-	Trigger    *runPayloadTrigger   `json:"trigger,omitempty"`
-}
-
-type runPayloadProject struct {
-	ID           string `json:"id"`
-	RepositoryID string `json:"repository_id"`
-	ServicesYAML string `json:"services_yaml"`
-}
-
-type runPayloadRepository struct {
-	FullName string `json:"full_name"`
-	Name     string `json:"name"`
-}
-
-type runPayloadIssue struct {
-	Number  int64  `json:"number"`
-	Title   string `json:"title"`
-	State   string `json:"state"`
-	HTMLURL string `json:"html_url"`
-}
-
-type runPayloadTrigger struct {
-	Label string `json:"label"`
-	Kind  string `json:"kind"`
-}
-
-func parseRunPayload(raw json.RawMessage) (runPayload, error) {
-	if len(raw) == 0 {
-		return runPayload{}, fmt.Errorf("run payload is empty")
-	}
-	var payload runPayload
-	if err := json.Unmarshal(raw, &payload); err != nil {
-		return runPayload{}, fmt.Errorf("decode run payload: %w", err)
-	}
-	return payload, nil
 }
 
 func splitRepoFullName(fullName string) (owner string, name string) {
