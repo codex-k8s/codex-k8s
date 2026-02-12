@@ -30,6 +30,14 @@
   - `docs/design-guidelines/go/check_list.md` (если затронут Go-код);
   - `docs/design-guidelines/vue/check_list.md` (если затронут Vue-код).
 - Без этой проверки пуш в PR считается нарушением процесса.
+- Перед началом написания кода обязательно перечитать профильные гайды по размещению кода:
+  - backend: `docs/design-guidelines/go/services_design_requirements.md`;
+  - frontend: `docs/design-guidelines/vue/frontend_architecture.md`, `docs/design-guidelines/vue/frontend_code_rules.md`, `docs/design-guidelines/vue/frontend_data_and_state.md`;
+  - общие принципы: `docs/design-guidelines/common/design_principles.md`.
+- Перед пушем обязательно повторно свериться с чек-листами и убедиться, что правила размещения кода соблюдены:
+  - модели/типы;
+  - константы и type-alias/enum;
+  - helper-код и его уровень (локальный файл / пакет-модуль / `libs/*`).
 - Если в комментарии содержится замечание в вопросительной форме, то убедись в его справедливости и если в правках нет необходиости то ответь на комментарий, объяснив свою позицию, и попроси пометить его как resolved. Если же замечание справедливо и требует правок, то внеси правки и после этого пометь комментарий как resolved.
 
 ## Матрица чтения проектной документации (обязательна)
@@ -74,6 +82,23 @@
 - Доменные типы размещать в `internal/domain/types/{entity,value,enum,query,mixin}`; не объявлять доменные модели ad-hoc в больших service/handler файлах.
 - Маппинг ошибок выполняется только на границе транспорта (HTTP error handler / gRPC interceptor); в handlers запрещены локальные “переводы” ошибок между слоями.
 - `context.Background()` создаётся только в composition root (`internal/app/*`); в transport/domain/repository-слоях использовать только прокинутый контекст.
+
+## Размещение кода (Go + TS/Vue) — обязательно
+
+- Запрещено оставлять ad-hoc модели/типы, если они описывают доменную сущность, контракт транспорта или переиспользуемый payload.
+- Размещение моделей и типов:
+  - Go domain-модели: `internal/domain/types/{entity,value,enum,query,mixin}`;
+  - Go transport DTO: `internal/transport/<proto>/models` + `casters`;
+  - TS/Vue API DTO: `src/shared/api/generated/**` и/или `src/shared/api/*`;
+  - TS/Vue feature/view types: `src/features/*/types.ts` и `src/shared/types/*`.
+- Размещение констант:
+  - повторяющиеся строковые/числовые литералы выносятся в константы;
+  - для закрытых наборов значений использовать type-alias/enum (Go/TS).
+- Размещение helper-кода:
+  - helper остаётся локальным в файле только если используется в одном месте и не выражает самостоятельную модель/контракт;
+  - если helper используется в нескольких файлах пакета/модуля — вынести в `*_helpers.*`/`lib/*`;
+  - если код переиспользуется между сервисами/приложениями — вынести в `libs/*` по правилам common/vue/go гайдов.
+- Для больших `service.go`/`handler.go` обязательно выносить вспомогательные модели/типы/no-op реализации в отдельные файлы пакета (`*_types.go`, `*_helpers.go`, `*_noop.go`), чтобы не смешивать use-case и вспомогательные структуры.
 
 ## Образы сервисов (обязательны)
 
