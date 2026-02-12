@@ -23,17 +23,48 @@ func TestIngestGitHubWebhook_Dedup(t *testing.T) {
 	runs := &inMemoryRunRepo{items: map[string]string{}}
 	events := &inMemoryEventRepo{}
 	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {
+				ID:          "user-1",
+				GitHubLogin: "member",
+			},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{
+			"project-1|user-1": "read_write",
+		},
+	}
 	svc := NewService(Config{
 		AgentRuns:  runs,
 		Agents:     agents,
 		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
 	})
 
-	payload := json.RawMessage(`{"action":"opened","repository":{"id":1,"full_name":"codex-k8s/codex-k8s"},"sender":{"id":10,"login":"ai-da-stas"}}`)
+	payload := json.RawMessage(`{
+		"action":"labeled",
+		"label":{"name":"run:dev"},
+		"issue":{"id":1001,"number":77,"title":"Implement feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/77","state":"open"},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`)
 	cmd := IngestCommand{
 		CorrelationID: "delivery-1",
 		DeliveryID:    "delivery-1",
-		EventType:     string(webhookdomain.GitHubEventPullRequest),
+		EventType:     string(webhookdomain.GitHubEventIssues),
 		ReceivedAt:    time.Now().UTC(),
 		Payload:       payload,
 	}
@@ -57,6 +88,58 @@ func TestIngestGitHubWebhook_Dedup(t *testing.T) {
 	if len(events.items) != 2 {
 		t.Fatalf("expected 2 flow events, got %d", len(events.items))
 	}
+	if events.items[0].EventType != floweventdomain.EventTypeWebhookReceived {
+		t.Fatalf("expected first event webhook.received, got %s", events.items[0].EventType)
+	}
+	if events.items[1].EventType != floweventdomain.EventTypeWebhookDuplicate {
+		t.Fatalf("expected second event webhook.duplicate, got %s", events.items[1].EventType)
+	}
+}
+
+func TestIngestGitHubWebhook_NonTriggerEventsDoNotCreateRun(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"created",
+		"issue":{"id":1001,"number":77,"title":"Implement feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/77","state":"open"},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-nt-1",
+		DeliveryID:    "delivery-nt-1",
+		EventType:     "issue_comment",
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.Status != webhookdomain.IngestStatusAccepted || got.Duplicate {
+		t.Fatalf("unexpected result: %+v", got)
+	}
+	if got.RunID != "" {
+		t.Fatalf("expected no run for non-trigger event, got run id %q", got.RunID)
+	}
+	if len(runs.items) != 0 {
+		t.Fatalf("expected no run records for non-trigger event, got %d", len(runs.items))
+	}
+	if len(events.items) != 1 {
+		t.Fatalf("expected 1 flow event, got %d", len(events.items))
+	}
+	if events.items[0].EventType != floweventdomain.EventTypeWebhookReceived {
+		t.Fatalf("expected webhook.received event, got %s", events.items[0].EventType)
+	}
 }
 
 func TestIngestGitHubWebhook_LearningMode_DefaultFallback(t *testing.T) {
@@ -64,18 +147,49 @@ func TestIngestGitHubWebhook_LearningMode_DefaultFallback(t *testing.T) {
 	runs := &inMemoryRunRepo{items: map[string]string{}}
 	events := &inMemoryEventRepo{}
 	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {
+				ID:          "user-1",
+				GitHubLogin: "member",
+			},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{
+			"project-1|user-1": "read_write",
+		},
+	}
 	svc := NewService(Config{
 		AgentRuns:           runs,
 		Agents:              agents,
 		FlowEvents:          events,
 		LearningModeDefault: true,
+		Repos:               repos,
+		Users:               users,
+		Members:             members,
 	})
 
-	payload := json.RawMessage(`{"action":"opened","repository":{"id":1,"full_name":"codex-k8s/codex-k8s"},"sender":{"id":10,"login":"ai-da-stas"}}`)
+	payload := json.RawMessage(`{
+		"action":"labeled",
+		"label":{"name":"run:dev"},
+		"issue":{"id":1001,"number":77,"title":"Implement feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/77","state":"open"},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`)
 	cmd := IngestCommand{
 		CorrelationID: "delivery-1",
 		DeliveryID:    "delivery-1",
-		EventType:     string(webhookdomain.GitHubEventPullRequest),
+		EventType:     string(webhookdomain.GitHubEventIssues),
 		ReceivedAt:    time.Now().UTC(),
 		Payload:       payload,
 	}

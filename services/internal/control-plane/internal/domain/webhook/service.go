@@ -134,6 +134,9 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 			})
 		}
 	}
+	if !hasIssueRunTrigger {
+		return s.recordReceivedWebhookWithoutRun(ctx, cmd, envelope)
+	}
 
 	fallbackProjectID := deriveProjectID(cmd.CorrelationID, envelope)
 
@@ -247,6 +250,30 @@ func (s *Service) recordIgnoredWebhook(ctx context.Context, cmd IngestCommand, e
 	return IngestResult{
 		CorrelationID: cmd.CorrelationID,
 		Status:        webhookdomain.IngestStatusIgnored,
+		Duplicate:     false,
+	}, nil
+}
+
+func (s *Service) recordReceivedWebhookWithoutRun(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope) (IngestResult, error) {
+	payload, err := buildReceivedEventPayload(cmd, envelope)
+	if err != nil {
+		return IngestResult{}, fmt.Errorf("build flow event payload: %w", err)
+	}
+
+	if err := s.flowEvents.Insert(ctx, floweventrepo.InsertParams{
+		CorrelationID: cmd.CorrelationID,
+		ActorType:     floweventdomain.ActorTypeSystem,
+		ActorID:       githubWebhookActorID,
+		EventType:     floweventdomain.EventTypeWebhookReceived,
+		Payload:       payload,
+		CreatedAt:     cmd.ReceivedAt,
+	}); err != nil {
+		return IngestResult{}, fmt.Errorf("insert flow event: %w", err)
+	}
+
+	return IngestResult{
+		CorrelationID: cmd.CorrelationID,
+		Status:        webhookdomain.IngestStatusAccepted,
 		Duplicate:     false,
 	}, nil
 }

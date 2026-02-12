@@ -133,6 +133,19 @@ func buildEventPayload(input eventPayloadInput) (json.RawMessage, error) {
 	return raw, nil
 }
 
+func buildReceivedEventPayload(cmd IngestCommand, envelope githubWebhookEnvelope) (json.RawMessage, error) {
+	payload := buildBaseFlowEventPayload(cmd, envelope)
+	if envelope.Issue.Number > 0 {
+		payload.IssueNumber = envelope.Issue.Number
+	}
+
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("marshal flow event payload: %w", err)
+	}
+	return raw, nil
+}
+
 func buildIgnoredEventPayload(input ignoredEventPayloadInput) (json.RawMessage, error) {
 	payload := buildBaseFlowEventPayload(input.Command, input.Envelope)
 	payload.Reason = input.Reason
