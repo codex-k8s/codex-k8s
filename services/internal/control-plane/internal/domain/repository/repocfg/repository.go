@@ -52,6 +52,8 @@ type FindResult struct {
 type Repository interface {
 	// ListForProject returns repository bindings for a project.
 	ListForProject(ctx context.Context, projectID string, limit int) ([]RepositoryBinding, error)
+	// GetByID returns one repository binding by id.
+	GetByID(ctx context.Context, repositoryID string) (RepositoryBinding, bool, error)
 	// Upsert creates/updates a binding (unique by provider+external_id).
 	Upsert(ctx context.Context, params UpsertParams) (RepositoryBinding, error)
 	// Delete removes a binding by id within a project.

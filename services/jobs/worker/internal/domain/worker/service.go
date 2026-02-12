@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
@@ -35,6 +36,8 @@ type Config struct {
 	RunNamespacePrefix string
 	// CleanupFullEnvNamespace enables namespace cleanup after run completion.
 	CleanupFullEnvNamespace bool
+	// ControlPlaneMCPBaseURL is MCP endpoint passed to run job environment.
+	ControlPlaneMCPBaseURL string
 }
 
 // Dependencies groups service collaborators to keep constructor signatures compact.
@@ -47,19 +50,22 @@ type Dependencies struct {
 	Feedback learningfeedbackrepo.Repository
 	// Launcher starts and reconciles Kubernetes jobs.
 	Launcher Launcher
+	// MCPTokenIssuer issues short-lived MCP token for run pods.
+	MCPTokenIssuer MCPTokenIssuer
 	// Logger records worker diagnostics.
 	Logger *slog.Logger
 }
 
 // Service orchestrates pending runs to Kubernetes Jobs and final statuses.
 type Service struct {
-	cfg      Config
-	runs     runqueuerepo.Repository
-	events   floweventrepo.Repository
-	feedback learningfeedbackrepo.Repository
-	launcher Launcher
-	logger   *slog.Logger
-	now      func() time.Time
+	cfg       Config
+	runs      runqueuerepo.Repository
+	events    floweventrepo.Repository
+	feedback  learningfeedbackrepo.Repository
+	launcher  Launcher
+	mcpTokens MCPTokenIssuer
+	logger    *slog.Logger
+	now       func() time.Time
 }
 
 // finishRunParams carries all fields required to finalize a run and publish final events.
@@ -102,19 +108,30 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if cfg.RunNamespacePrefix == "" {
 		cfg.RunNamespacePrefix = defaultRunNamespacePrefix
 	}
+	cfg.ControlPlaneMCPBaseURL = strings.TrimSpace(cfg.ControlPlaneMCPBaseURL)
 	if deps.Logger == nil {
 		deps.Logger = slog.Default()
 	}
+	if deps.MCPTokenIssuer == nil {
+		deps.MCPTokenIssuer = noopMCPTokenIssuer{}
+	}
 
 	return &Service{
-		cfg:      cfg,
-		runs:     deps.Runs,
-		events:   deps.Events,
-		feedback: deps.Feedback,
-		launcher: deps.Launcher,
-		logger:   deps.Logger,
-		now:      time.Now,
+		cfg:       cfg,
+		runs:      deps.Runs,
+		events:    deps.Events,
+		feedback:  deps.Feedback,
+		launcher:  deps.Launcher,
+		mcpTokens: deps.MCPTokenIssuer,
+		logger:    deps.Logger,
+		now:       time.Now,
 	}
+}
+
+type noopMCPTokenIssuer struct{}
+
+func (noopMCPTokenIssuer) IssueRunMCPToken(_ context.Context, _ IssueMCPTokenParams) (IssuedMCPToken, error) {
+	return IssuedMCPToken{}, nil
 }
 
 // Tick executes one reconciliation iteration.
@@ -225,16 +242,7 @@ func (s *Service) launchPending(ctx context.Context) error {
 					"runtime_mode", execution.RuntimeMode,
 					"err", err,
 				)
-				if finishErr := s.finishRun(ctx, finishRunParams{
-					Run:       runningRun,
-					Execution: execution,
-					Status:    rundomain.StatusFailed,
-					EventType: floweventdomain.EventTypeRunFailedLaunchError,
-					Extra: runFinishedEventExtra{
-						Error:  err.Error(),
-						Reason: runFailureReasonNamespacePrepareFailed,
-					},
-				}); finishErr != nil {
+				if finishErr := s.finishLaunchFailedRun(ctx, runningRun, execution, err, runFailureReasonNamespacePrepareFailed); finishErr != nil {
 					return fmt.Errorf("mark run failed after namespace prepare error: %w", finishErr)
 				}
 				continue
@@ -251,13 +259,28 @@ func (s *Service) launchPending(ctx context.Context) error {
 			}
 		}
 
+		issuedMCPToken, err := s.mcpTokens.IssueRunMCPToken(ctx, IssueMCPTokenParams{
+			RunID:       claimed.RunID,
+			Namespace:   execution.Namespace,
+			RuntimeMode: execution.RuntimeMode,
+		})
+		if err != nil {
+			s.logger.Error("issue run mcp token failed", "run_id", claimed.RunID, "err", err)
+			if finishErr := s.finishLaunchFailedRun(ctx, runningRun, execution, err, runFailureReasonMCPTokenIssueFailed); finishErr != nil {
+				return fmt.Errorf("mark run failed after mcp token issue error: %w", finishErr)
+			}
+			continue
+		}
+
 		ref, err := s.launcher.Launch(ctx, JobSpec{
-			RunID:         claimed.RunID,
-			CorrelationID: claimed.CorrelationID,
-			ProjectID:     claimed.ProjectID,
-			SlotNo:        claimed.SlotNo,
-			RuntimeMode:   execution.RuntimeMode,
-			Namespace:     execution.Namespace,
+			RunID:          claimed.RunID,
+			CorrelationID:  claimed.CorrelationID,
+			ProjectID:      claimed.ProjectID,
+			SlotNo:         claimed.SlotNo,
+			RuntimeMode:    execution.RuntimeMode,
+			Namespace:      execution.Namespace,
+			MCPBaseURL:     s.cfg.ControlPlaneMCPBaseURL,
+			MCPBearerToken: issuedMCPToken.Token,
 		})
 		if err != nil {
 			s.logger.Error("launch run job failed", "run_id", claimed.RunID, "err", err)
@@ -405,6 +428,19 @@ func (s *Service) finishRun(ctx context.Context, params finishRunParams) error {
 	}
 
 	return nil
+}
+
+func (s *Service) finishLaunchFailedRun(ctx context.Context, run runqueuerepo.RunningRun, execution runExecutionContext, failure error, reason runFailureReason) error {
+	return s.finishRun(ctx, finishRunParams{
+		Run:       run,
+		Execution: execution,
+		Status:    rundomain.StatusFailed,
+		EventType: floweventdomain.EventTypeRunFailedLaunchError,
+		Extra: runFinishedEventExtra{
+			Error:  failure.Error(),
+			Reason: reason,
+		},
+	})
 }
 
 // insertEvent persists one flow event with contextual error wrapping.

@@ -268,6 +268,21 @@ func (r *inMemoryRunRepo) CreatePendingIfAbsent(_ context.Context, params agentr
 	}, nil
 }
 
+func (r *inMemoryRunRepo) GetByID(_ context.Context, runID string) (agentrunrepo.Run, bool, error) {
+	for correlationID, existingRunID := range r.items {
+		if existingRunID == runID {
+			return agentrunrepo.Run{
+				ID:            existingRunID,
+				CorrelationID: correlationID,
+				ProjectID:     r.last.ProjectID,
+				Status:        "pending",
+				RunPayload:    r.last.RunPayload,
+			}, true, nil
+		}
+	}
+	return agentrunrepo.Run{}, false, nil
+}
+
 type inMemoryEventRepo struct {
 	items []floweventrepo.InsertParams
 }
@@ -283,6 +298,22 @@ type inMemoryRepoCfgRepo struct {
 
 func (r *inMemoryRepoCfgRepo) ListForProject(_ context.Context, _ string, _ int) ([]repocfgrepo.RepositoryBinding, error) {
 	return nil, nil
+}
+
+func (r *inMemoryRepoCfgRepo) GetByID(_ context.Context, repositoryID string) (repocfgrepo.RepositoryBinding, bool, error) {
+	for _, item := range r.byExternalID {
+		if item.RepositoryID == repositoryID {
+			return repocfgrepo.RepositoryBinding{
+				ID:               item.RepositoryID,
+				ProjectID:        item.ProjectID,
+				Provider:         "github",
+				Owner:            "codex-k8s",
+				Name:             "codex-k8s",
+				ServicesYAMLPath: item.ServicesYAMLPath,
+			}, true, nil
+		}
+	}
+	return repocfgrepo.RepositoryBinding{}, false, nil
 }
 
 func (r *inMemoryRepoCfgRepo) Upsert(_ context.Context, _ repocfgrepo.UpsertParams) (repocfgrepo.RepositoryBinding, error) {

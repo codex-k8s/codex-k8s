@@ -21,6 +21,9 @@ import (
 	repoprovider "github.com/codex-k8s/codex-k8s/libs/go/repo/provider"
 	githubprovider "github.com/codex-k8s/codex-k8s/libs/go/repo/provider/github"
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
+	githubclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/github"
+	kubernetesclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/kubernetes"
+	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentrun"
@@ -32,6 +35,7 @@ import (
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/staffrun"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/user"
 	grpctransport "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/grpc"
+	mcptransport "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/mcp"
 )
 
 // Run starts control-plane servers and blocks until shutdown or fatal error.
@@ -78,7 +82,37 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("init token encryption: %w", err)
 	}
+	k8sClient, err := kubernetesclient.NewClient(cfg.KubeconfigPath)
+	if err != nil {
+		return fmt.Errorf("init kubernetes mcp client: %w", err)
+	}
+	githubMCPClient := githubclient.NewClient(nil)
 	githubRepoProvider := githubprovider.NewProvider(nil)
+
+	mcpTokenTTL, err := time.ParseDuration(cfg.MCPTokenTTL)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_MCP_TOKEN_TTL=%q: %w", cfg.MCPTokenTTL, err)
+	}
+	mcpSigningKey := strings.TrimSpace(cfg.MCPTokenSigningKey)
+	if mcpSigningKey == "" {
+		mcpSigningKey = cfg.TokenEncryptionKey
+	}
+	mcpService, err := mcpdomain.NewService(mcpdomain.Config{
+		TokenSigningKey:    mcpSigningKey,
+		PublicBaseURL:      cfg.PublicBaseURL,
+		InternalMCPBaseURL: cfg.ControlPlaneMCPBaseURL,
+		DefaultTokenTTL:    mcpTokenTTL,
+	}, mcpdomain.Dependencies{
+		Runs:       agentRuns,
+		FlowEvents: flowEvents,
+		Repos:      repos,
+		TokenCrypt: tokenCrypto,
+		GitHub:     githubMCPClient,
+		Kubernetes: k8sClient,
+	})
+	if err != nil {
+		return fmt.Errorf("init mcp domain service: %w", err)
+	}
 
 	learningDefault, err := cfg.LearningModeDefaultBool()
 	if err != nil {
@@ -142,10 +176,14 @@ func Run() error {
 		Webhook: webhookService,
 		Staff:   staffService,
 		Users:   users,
+		MCP:     mcpService,
 		Logger:  logger,
 	}))
 
+	mcpHandler := mcptransport.NewHandler(mcpService, logger)
 	httpMux := http.NewServeMux()
+	httpMux.Handle("/mcp", mcpHandler)
+	httpMux.Handle("/mcp/", mcpHandler)
 	httpMux.Handle("/metrics", promhttp.Handler())
 	httpMux.HandleFunc("/health/readyz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)

@@ -5,6 +5,15 @@ import (
 	"encoding/json"
 )
 
+// Run stores the subset of agent_runs required by runtime services.
+type Run struct {
+	ID            string
+	CorrelationID string
+	ProjectID     string
+	Status        string
+	RunPayload    json.RawMessage
+}
+
 // CreateParams defines data required to create a pending agent run.
 type CreateParams struct {
 	// CorrelationID deduplicates webhook processing across retries.
@@ -30,4 +39,6 @@ type CreateResult struct {
 type Repository interface {
 	// CreatePendingIfAbsent inserts a pending run unless it already exists.
 	CreatePendingIfAbsent(ctx context.Context, params CreateParams) (CreateResult, error)
+	// GetByID returns one run by id.
+	GetByID(ctx context.Context, runID string) (Run, bool, error)
 }

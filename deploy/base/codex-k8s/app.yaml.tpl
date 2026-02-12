@@ -208,6 +208,20 @@ spec:
                 secretKeyRef:
                   name: codex-k8s-runtime
                   key: CODEXK8S_TOKEN_ENCRYPTION_KEY
+            - name: CODEXK8S_MCP_TOKEN_SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_MCP_TOKEN_SIGNING_KEY
+                  optional: true
+            - name: CODEXK8S_MCP_TOKEN_TTL
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_MCP_TOKEN_TTL
+                  optional: true
+            - name: CODEXK8S_CONTROL_PLANE_MCP_BASE_URL
+              value: "${CODEXK8S_CONTROL_PLANE_MCP_BASE_URL}"
             - name: CODEXK8S_LEARNING_MODE_DEFAULT
               valueFrom:
                 secretKeyRef:
@@ -374,6 +388,10 @@ spec:
                 secretKeyRef:
                   name: codex-k8s-postgres
                   key: CODEXK8S_POSTGRES_PASSWORD
+            - name: CODEXK8S_CONTROL_PLANE_GRPC_TARGET
+              value: "codex-k8s-control-plane:9090"
+            - name: CODEXK8S_CONTROL_PLANE_MCP_BASE_URL
+              value: "${CODEXK8S_CONTROL_PLANE_MCP_BASE_URL}"
             - name: CODEXK8S_WORKER_POLL_INTERVAL
               value: "${CODEXK8S_WORKER_POLL_INTERVAL}"
             - name: CODEXK8S_WORKER_CLAIM_LIMIT

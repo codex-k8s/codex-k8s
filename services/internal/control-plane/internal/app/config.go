@@ -14,6 +14,8 @@ type Config struct {
 	GRPCAddr string `env:"CODEXK8S_CONTROL_PLANE_GRPC_ADDR" envDefault:":9090"`
 	// HTTPAddr is the bind address for the HTTP health/metrics server.
 	HTTPAddr string `env:"CODEXK8S_CONTROL_PLANE_HTTP_ADDR" envDefault:":8081"`
+	// KubeconfigPath is optional kubeconfig path for local development.
+	KubeconfigPath string `env:"CODEXK8S_KUBECONFIG"`
 
 	// PublicBaseURL is used to build default webhook URL when CODEXK8S_GITHUB_WEBHOOK_URL is empty.
 	PublicBaseURL string `env:"CODEXK8S_PUBLIC_BASE_URL,required,notEmpty"`
@@ -36,6 +38,13 @@ type Config struct {
 
 	// TokenEncryptionKey is used to encrypt/decrypt repository tokens stored in DB.
 	TokenEncryptionKey string `env:"CODEXK8S_TOKEN_ENCRYPTION_KEY,required,notEmpty"`
+	// MCPTokenSigningKey is used to sign short-lived MCP bearer tokens.
+	// If empty, TokenEncryptionKey is used as fallback.
+	MCPTokenSigningKey string `env:"CODEXK8S_MCP_TOKEN_SIGNING_KEY"`
+	// MCPTokenTTL defines default TTL for run-bound MCP tokens.
+	MCPTokenTTL string `env:"CODEXK8S_MCP_TOKEN_TTL" envDefault:"30m"`
+	// ControlPlaneMCPBaseURL is effective MCP endpoint included in prompt context and run env.
+	ControlPlaneMCPBaseURL string `env:"CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" envDefault:"http://codex-k8s-control-plane:8081/mcp"`
 
 	// DBHost is the PostgreSQL host.
 	DBHost string `env:"CODEXK8S_DB_HOST,required,notEmpty"`

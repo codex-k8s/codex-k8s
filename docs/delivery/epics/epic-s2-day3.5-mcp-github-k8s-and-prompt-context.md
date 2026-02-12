@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S2-D35
 type: epic
 title: "Epic S2 Day 3.5: MCP GitHub/K8s tools and prompt context assembly"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-12
 updated_at: 2026-02-12
@@ -70,3 +70,31 @@ approvals:
 - Output to Day4:
   - готовый MCP tool layer для git/PR/debug операций;
   - готовый prompt context assembler для рендера `work/review` шаблонов.
+
+## Фактическая реализация (2026-02-12)
+- В `services/internal/control-plane` добавлен встроенный MCP transport (`/mcp`, StreamableHTTP) на `github.com/modelcontextprotocol/go-sdk v1.3.0` с bearer auth и run-bound валидацией токена.
+- В `control-plane` реализована доменная служба MCP:
+  - выпуск и проверка short-lived run токенов;
+  - deterministic tool catalog;
+  - GitHub read/write ручки (issue/pr/comments/labels/branches/ensure/upsert/comment);
+  - Kubernetes ручки в пределах runtime namespace (`pods`, `events`, `pod logs`, `pod exec`) и policy-gated write ручки (`manifest apply/delete` -> `approval_required`).
+- В `flow_events` добавлены audit-события MCP:
+  - `run.mcp.token.issued`,
+  - `prompt.context.assembled`,
+  - `mcp.tool.called|succeeded|failed|approval_pending`.
+- В `control-plane` gRPC контракт добавлен RPC `IssueRunMCPToken`; worker получает run-bound MCP токен перед запуском job.
+- В job env run pod теперь передаются только:
+  - `CODEXK8S_MCP_BASE_URL`,
+  - `CODEXK8S_MCP_BEARER_TOKEN`,
+  без прямых GitHub/Kubernetes write-секретов.
+- Добавлен MCP prompt context resource `codex://prompt/context` и одноимённый tool для рендера final prompt в Day4.
+- Обновлены deploy/bootstrap/workflow переменные и секреты:
+  - `CODEXK8S_CONTROL_PLANE_MCP_BASE_URL`,
+  - `CODEXK8S_MCP_TOKEN_SIGNING_KEY`,
+  - `CODEXK8S_MCP_TOKEN_TTL`.
+
+## Критерии приемки эпика — статус
+- Выполнено: write-действия для Day4 вынесены в MCP tool layer, прямой write-path в агентный pod не закладывается.
+- Выполнено: run pod не требует прямые GitHub/Kubernetes секреты для MCP-операций.
+- Выполнено: MCP вызовы и token issue трассируются в `flow_events` с `correlation_id`.
+- Выполнено: prompt runtime context формируется детерминированно и доступен через MCP tool/resource.

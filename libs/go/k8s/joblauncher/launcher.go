@@ -7,13 +7,12 @@ import (
 	"strings"
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
+	"github.com/codex-k8s/codex-k8s/libs/go/k8s/clientcfg"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 var nonDNSLabel = regexp.MustCompile(`[^a-z0-9-]`)
@@ -56,6 +55,10 @@ type JobSpec struct {
 	RuntimeMode agentdomain.RuntimeMode
 	// Namespace is preferred namespace for this run.
 	Namespace string
+	// MCPBaseURL is control-plane MCP StreamableHTTP endpoint for run pod.
+	MCPBaseURL string
+	// MCPBearerToken is short-lived token bound to run and used for MCP auth.
+	MCPBearerToken string
 }
 
 // NamespaceSpec defines runtime namespace metadata.
@@ -126,7 +129,7 @@ type Launcher struct {
 
 // New creates launcher with auto-detected Kubernetes client configuration.
 func New(cfg Config) (*Launcher, error) {
-	restCfg, err := buildRESTConfig(cfg.KubeconfigPath)
+	restCfg, err := clientcfg.BuildRESTConfig(cfg.KubeconfigPath)
 	if err != nil {
 		return nil, fmt.Errorf("build kubernetes rest config: %w", err)
 	}
@@ -230,6 +233,8 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 					{Name: "CODEXK8S_PROJECT_ID", Value: spec.ProjectID},
 					{Name: "CODEXK8S_SLOT_NO", Value: fmt.Sprintf("%d", spec.SlotNo)},
 					{Name: "CODEXK8S_RUNTIME_MODE", Value: string(spec.RuntimeMode)},
+					{Name: "CODEXK8S_MCP_BASE_URL", Value: strings.TrimSpace(spec.MCPBaseURL)},
+					{Name: "CODEXK8S_MCP_BEARER_TOKEN", Value: strings.TrimSpace(spec.MCPBearerToken)},
 				},
 			},
 		},
@@ -349,31 +354,6 @@ func BuildRunJobName(runID string) string {
 }
 
 // buildRESTConfig resolves Kubernetes REST config from explicit kubeconfig, in-cluster env, or default kubeconfig.
-func buildRESTConfig(kubeconfigPath string) (*rest.Config, error) {
-	if kubeconfigPath != "" {
-		cfg, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
-		if err != nil {
-			return nil, fmt.Errorf("build kubeconfig from path %q: %w", kubeconfigPath, err)
-		}
-		return cfg, nil
-	}
-
-	cfg, err := rest.InClusterConfig()
-	if err == nil {
-		return cfg, nil
-	}
-
-	fallbackCfg, fallbackErr := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-		clientcmd.NewDefaultClientConfigLoadingRules(),
-		&clientcmd.ConfigOverrides{},
-	).ClientConfig()
-	if fallbackErr != nil {
-		return nil, fmt.Errorf("build in-cluster config: %w; fallback config: %v", err, fallbackErr)
-	}
-
-	return fallbackCfg, nil
-}
-
 // sanitizeLabel converts arbitrary string to Kubernetes label-safe value.
 func sanitizeLabel(value string) string {
 	if value == "" {

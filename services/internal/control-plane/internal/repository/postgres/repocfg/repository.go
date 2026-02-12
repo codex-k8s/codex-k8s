@@ -15,6 +15,8 @@ import (
 var (
 	//go:embed sql/list_for_project.sql
 	queryListForProject string
+	//go:embed sql/get_by_id.sql
+	queryGetByID string
 	//go:embed sql/upsert.sql
 	queryUpsert string
 	//go:embed sql/delete.sql
@@ -58,6 +60,27 @@ func (r *Repository) ListForProject(ctx context.Context, projectID string, limit
 		return nil, fmt.Errorf("iterate repositories: %w", err)
 	}
 	return out, nil
+}
+
+// GetByID returns one repository binding by id.
+func (r *Repository) GetByID(ctx context.Context, repositoryID string) (domainrepo.RepositoryBinding, bool, error) {
+	var item domainrepo.RepositoryBinding
+	err := r.db.QueryRowContext(ctx, queryGetByID, repositoryID).Scan(
+		&item.ID,
+		&item.ProjectID,
+		&item.Provider,
+		&item.ExternalID,
+		&item.Owner,
+		&item.Name,
+		&item.ServicesYAMLPath,
+	)
+	if err == nil {
+		return item, true, nil
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		return domainrepo.RepositoryBinding{}, false, nil
+	}
+	return domainrepo.RepositoryBinding{}, false, fmt.Errorf("get repository binding by id: %w", err)
 }
 
 // Upsert creates or updates a repository binding.

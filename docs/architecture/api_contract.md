@@ -5,7 +5,7 @@ title: "codex-k8s — API Contract Overview"
 status: draft
 owner_role: SA
 created_at: 2026-02-06
-updated_at: 2026-02-11
+updated_at: 2026-02-12
 related_issues: [1]
 related_prs: []
 approvals:
@@ -18,6 +18,7 @@ approvals:
 
 ## TL;DR
 - Тип API: REST (public webhook + staff/private), internal gRPC между edge и control-plane.
+- Для agent runtime добавлен internal MCP StreamableHTTP endpoint в `control-plane` с run-bound bearer auth.
 - Аутентификация: GitHub OAuth login + short-lived JWT в API gateway + project RBAC.
 - Версионирование: `/api/v1/...`.
 - Основные операции текущего среза: webhook ingest (public) + staff/private operations для auth, project/repository/user/run/learning-mode.
@@ -27,6 +28,15 @@ approvals:
 - OpenAPI (api-gateway): `services/external/api-gateway/api/server/api.yaml`
 - gRPC proto: `proto/codexk8s/controlplane/v1/controlplane.proto`
 - AsyncAPI (если есть): `services/external/api-gateway/api/server/asyncapi.yaml` (webhook/event payloads)
+
+## Состояние MCP после S2 Day3.5
+- В `control-plane` поднят MCP StreamableHTTP endpoint: `/mcp`.
+- Аутентификация MCP: short-lived run-bound bearer token.
+- Внутренний gRPC контракт расширен RPC `IssueRunMCPToken` для выдачи MCP токена worker-у перед запуском run pod.
+- MCP tool/resource слой включает:
+  - GitHub tools (issue/pr/comments/labels/branches);
+  - Kubernetes tools (namespace-scoped diagnostics + policy-gated write operations);
+  - prompt context (`codex://prompt/context` + tool `codex_prompt_context_get`).
 
 ## Состояние OpenAPI после S2 Day1
 - OpenAPI-спека (`services/external/api-gateway/api/server/api.yaml`) покрывает все активные external/staff endpoint'ы текущего среза.

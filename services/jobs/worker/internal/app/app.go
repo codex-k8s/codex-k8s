@@ -16,6 +16,7 @@ import (
 	libslauncher "github.com/codex-k8s/codex-k8s/libs/go/k8s/joblauncher"
 	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
 	k8slauncher "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/clients/kubernetes/launcher"
+	"github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/controlplane"
 	"github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/worker"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/flowevent"
 	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/learningfeedback"
@@ -57,6 +58,14 @@ func Run() error {
 	}
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+	dialCtx, cancelDial := context.WithTimeout(appCtx, 30*time.Second)
+	defer cancelDial()
+	controlPlane, err := controlplane.Dial(dialCtx, cfg.ControlPlaneGRPCTarget)
+	if err != nil {
+		return fmt.Errorf("dial control-plane grpc: %w", err)
+	}
+	defer func() { _ = controlPlane.Close() }()
 
 	db, err := postgres.Open(appCtx, postgres.OpenParams{
 		Host:     cfg.DBHost,
@@ -114,12 +123,14 @@ func Run() error {
 		ProjectLearningModeDefault: learningDefault,
 		RunNamespacePrefix:         cfg.RunNamespacePrefix,
 		CleanupFullEnvNamespace:    cfg.RunNamespaceCleanup,
+		ControlPlaneMCPBaseURL:     cfg.ControlPlaneMCPBaseURL,
 	}, worker.Dependencies{
-		Runs:     runs,
-		Events:   events,
-		Feedback: feedback,
-		Launcher: launcher,
-		Logger:   logger,
+		Runs:           runs,
+		Events:         events,
+		Feedback:       feedback,
+		Launcher:       launcher,
+		MCPTokenIssuer: controlPlane,
+		Logger:         logger,
 	})
 
 	ctx, stop := signal.NotifyContext(appCtx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
