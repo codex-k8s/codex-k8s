@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1.4
 ARG NODE_IMAGE_VERSION=22-bookworm
 ARG NGINX_IMAGE_VERSION=1.27-alpine
+ARG NODE_IMAGE_REPOSITORY=mirror.gcr.io/library/node
 
-FROM node:${NODE_IMAGE_VERSION} AS deps
+FROM ${NODE_IMAGE_REPOSITORY}:${NODE_IMAGE_VERSION} AS deps
 
 WORKDIR /app
 

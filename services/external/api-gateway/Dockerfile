@@ -1,4 +1,4 @@
-FROM node:22-alpine AS web
+FROM mirror.gcr.io/library/node:22-alpine AS web
 
 WORKDIR /web
 
@@ -8,7 +8,7 @@ RUN npm ci
 COPY services/staff/web-console/ ./
 RUN npm run build
 
-FROM golang:1.25.6-alpine AS builder
+FROM mirror.gcr.io/library/golang:1.25.6-alpine AS builder
 
 WORKDIR /src
 

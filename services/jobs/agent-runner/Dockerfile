@@ -1,4 +1,4 @@
-FROM golang:1.25.6-bookworm AS go-builder
+FROM mirror.gcr.io/library/golang:1.25.6-bookworm AS go-builder
 
 WORKDIR /workspace
 
@@ -11,7 +11,7 @@ COPY services/jobs/agent-runner ./services/jobs/agent-runner
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -o /out/codex-k8s-agent-runner ./services/jobs/agent-runner/cmd/agent-runner
 
-FROM node:22-bookworm
+FROM mirror.gcr.io/library/node:22-bookworm
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
