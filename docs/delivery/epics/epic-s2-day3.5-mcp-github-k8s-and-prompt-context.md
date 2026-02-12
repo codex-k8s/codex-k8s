@@ -97,6 +97,16 @@ approvals:
   - `CODEXK8S_MCP_TOKEN_SIGNING_KEY`,
   - `CODEXK8S_MCP_TOKEN_TTL` (default `24h`, не меньше baseline lifetime агентного контейнера).
 
+### Актуализация после S2 Day4 hardening (2026-02-12)
+- Текущий runtime baseline упрощён: из MCP удалены все non-label ручки.
+- Активный MCP catalog:
+  - `github_labels_list`,
+  - `github_labels_add`,
+  - `github_labels_remove`,
+  - `github_labels_transition`.
+- GitHub issue/PR/comments и Kubernetes runtime операции выполняются агентом напрямую через `gh`/`kubectl` в рамках выданных прав.
+- Prompt context больше не поставляется отдельным MCP resource/tool в runtime-контуре.
+
 ## Следующий шаг по policy (handoff в Day6)
 - Вынести effective policy управления MCP-ручками/ресурсами в платформенную модель:
   - связка `agent_key + run label`;

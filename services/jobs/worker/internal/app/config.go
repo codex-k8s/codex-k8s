@@ -84,6 +84,8 @@ type Config struct {
 	RunNamespaceCleanup bool `env:"CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP" envDefault:"true"`
 	// RunDebugLabel keeps full-env namespace for post-run debugging when present on issue labels.
 	RunDebugLabel string `env:"CODEXK8S_RUN_DEBUG_LABEL" envDefault:"run:debug"`
+	// StateInReviewLabel is applied to PR when agent run is ready for owner review.
+	StateInReviewLabel string `env:"CODEXK8S_STATE_IN_REVIEW_LABEL" envDefault:"state:in-review"`
 	// RunServiceAccountName is service account for full-env run jobs.
 	RunServiceAccountName string `env:"CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT" envDefault:"codex-runner"`
 	// RunRoleName is RBAC role name for full-env run jobs.

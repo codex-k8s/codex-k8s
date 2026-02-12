@@ -31,6 +31,8 @@ esac
 	previousAskPass, hadAskPass := os.LookupEnv(envGitAskPass)
 	previousPrompt, hadPrompt := os.LookupEnv(envGitTerminalPrompt)
 	previousAskPassRequire, hadAskPassRequire := os.LookupEnv(envGitAskPassRequire)
+	previousGHToken, hadGHToken := os.LookupEnv(envGHToken)
+	previousGitHubToken, hadGitHubToken := os.LookupEnv(envGitHubToken)
 
 	if err := os.Setenv(envGitAskPass, scriptPath); err != nil {
 		return nil, fmt.Errorf("set %s: %w", envGitAskPass, err)
@@ -41,11 +43,19 @@ esac
 	if err := os.Setenv(envGitAskPassRequire, gitAskPassRequireForce); err != nil {
 		return nil, fmt.Errorf("set %s: %w", envGitAskPassRequire, err)
 	}
+	if err := os.Setenv(envGHToken, strings.TrimSpace(s.cfg.GitBotToken)); err != nil {
+		return nil, fmt.Errorf("set %s: %w", envGHToken, err)
+	}
+	if err := os.Setenv(envGitHubToken, strings.TrimSpace(s.cfg.GitBotToken)); err != nil {
+		return nil, fmt.Errorf("set %s: %w", envGitHubToken, err)
+	}
 
 	cleanup := func() {
 		restoreEnvVariable(envGitAskPass, previousAskPass, hadAskPass)
 		restoreEnvVariable(envGitTerminalPrompt, previousPrompt, hadPrompt)
 		restoreEnvVariable(envGitAskPassRequire, previousAskPassRequire, hadAskPassRequire)
+		restoreEnvVariable(envGHToken, previousGHToken, hadGHToken)
+		restoreEnvVariable(envGitHubToken, previousGitHubToken, hadGitHubToken)
 		_ = os.Remove(scriptPath)
 	}
 	return cleanup, nil

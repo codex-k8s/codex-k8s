@@ -17,6 +17,7 @@ import (
 )
 
 const defaultWorkerID = "worker"
+const defaultStateInReviewLabel = "state:in-review"
 
 // Config defines worker run-loop behavior.
 type Config struct {
@@ -39,6 +40,8 @@ type Config struct {
 	CleanupFullEnvNamespace bool
 	// RunDebugLabel keeps namespace for post-run debugging when present on the issue.
 	RunDebugLabel string
+	// StateInReviewLabel is applied to PR when run is ready for owner review.
+	StateInReviewLabel string
 	// ControlPlaneGRPCTarget is control-plane gRPC endpoint used by run jobs for callbacks.
 	ControlPlaneGRPCTarget string
 	// ControlPlaneMCPBaseURL is MCP endpoint passed to run job environment.
@@ -119,6 +122,10 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	cfg.RunDebugLabel = strings.TrimSpace(cfg.RunDebugLabel)
 	if cfg.RunDebugLabel == "" {
 		cfg.RunDebugLabel = defaultRunDebugLabel
+	}
+	cfg.StateInReviewLabel = strings.TrimSpace(cfg.StateInReviewLabel)
+	if cfg.StateInReviewLabel == "" {
+		cfg.StateInReviewLabel = defaultStateInReviewLabel
 	}
 	cfg.ControlPlaneGRPCTarget = strings.TrimSpace(cfg.ControlPlaneGRPCTarget)
 	if cfg.ControlPlaneGRPCTarget == "" {
@@ -382,12 +389,15 @@ func (s *Service) launchPending(ctx context.Context) error {
 			IssueNumber:            agentCtx.IssueNumber,
 			TriggerKind:            agentCtx.TriggerKind,
 			TriggerLabel:           agentCtx.TriggerLabel,
+			TargetBranch:           agentCtx.TargetBranch,
+			ExistingPRNumber:       agentCtx.ExistingPRNumber,
 			AgentKey:               agentCtx.AgentKey,
 			AgentModel:             agentCtx.Model,
 			AgentReasoningEffort:   agentCtx.ReasoningEffort,
 			PromptTemplateKind:     agentCtx.PromptTemplateKind,
 			PromptTemplateSource:   agentCtx.PromptTemplateSource,
 			PromptTemplateLocale:   agentCtx.PromptTemplateLocale,
+			StateInReviewLabel:     s.cfg.StateInReviewLabel,
 			BaseBranch:             s.cfg.AgentBaseBranch,
 			OpenAIAPIKey:           s.cfg.OpenAIAPIKey,
 			OpenAIAuthFile:         s.cfg.OpenAIAuthFile,

@@ -47,8 +47,9 @@ func defaultTriggerLabels() TriggerLabels {
 }
 
 type issueRunTrigger struct {
-	Label string
-	Kind  webhookdomain.TriggerKind
+	Source string
+	Label  string
+	Kind   webhookdomain.TriggerKind
 }
 
 type runAgentProfile struct {
@@ -64,6 +65,8 @@ type githubWebhookEnvelope struct {
 	Installation githubInstallationRecord `json:"installation"`
 	Repository   githubRepositoryRecord   `json:"repository"`
 	Issue        githubIssueRecord        `json:"issue"`
+	PullRequest  githubPullRequestRecord  `json:"pull_request"`
+	Review       githubReviewRecord       `json:"review"`
 	Label        githubLabelRecord        `json:"label"`
 	Sender       githubActorRecord        `json:"sender"`
 }
@@ -101,4 +104,27 @@ type githubActorRecord struct {
 type githubPullRequestRef struct {
 	URL     string `json:"url"`
 	HTMLURL string `json:"html_url"`
+}
+
+type githubPullRequestRecord struct {
+	ID      int64                 `json:"id"`
+	Number  int64                 `json:"number"`
+	Title   string                `json:"title"`
+	HTMLURL string                `json:"html_url"`
+	State   string                `json:"state"`
+	Head    githubPullRequestHead `json:"head"`
+	User    githubActorRecord     `json:"user"`
+	Base    githubPullRequestBase `json:"base"`
+}
+
+type githubPullRequestHead struct {
+	Ref string `json:"ref"`
+}
+
+type githubPullRequestBase struct {
+	Ref string `json:"ref"`
+}
+
+type githubReviewRecord struct {
+	State string `json:"state"`
 }

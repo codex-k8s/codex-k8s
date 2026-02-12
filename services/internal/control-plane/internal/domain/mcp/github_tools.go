@@ -308,3 +308,68 @@ func (s *Service) GitHubLabelsAdd(ctx context.Context, session SessionContext, i
 func (s *Service) GitHubLabelsRemove(ctx context.Context, session SessionContext, input GitHubLabelsRemoveInput) (GitHubLabelsMutationResult, error) {
 	return s.githubLabelsMutate(ctx, session, ToolGitHubLabelsRemove, input.IssueNumber, input.Labels, "github remove labels", s.github.RemoveLabels)
 }
+
+func (s *Service) GitHubLabelsTransition(ctx context.Context, session SessionContext, input GitHubLabelsTransitionInput) (GitHubLabelsMutationResult, error) {
+	tool, err := s.toolCapability(ToolGitHubLabelsTransition)
+	if err != nil {
+		return GitHubLabelsMutationResult{}, err
+	}
+
+	runCtx, issueNumber, err := s.resolveGitHubIssueRunContext(ctx, session, tool, input.IssueNumber)
+	if err != nil {
+		return GitHubLabelsMutationResult{}, err
+	}
+
+	removeLabels := normalizeLabels(input.RemoveLabels)
+	addLabels := normalizeLabels(input.AddLabels)
+	if len(removeLabels) == 0 && len(addLabels) == 0 {
+		err := fmt.Errorf("remove_labels or add_labels is required")
+		s.auditToolFailed(ctx, runCtx.Session, tool, err)
+		return GitHubLabelsMutationResult{}, err
+	}
+
+	if len(removeLabels) > 0 {
+		if _, err := s.github.RemoveLabels(ctx, GitHubMutateLabelsParams{
+			Token:       runCtx.Token,
+			Owner:       runCtx.Repository.Owner,
+			Repository:  runCtx.Repository.Name,
+			IssueNumber: issueNumber,
+			Labels:      removeLabels,
+		}); err != nil {
+			s.auditToolFailed(ctx, runCtx.Session, tool, err)
+			return GitHubLabelsMutationResult{}, fmt.Errorf("github transition remove labels: %w", err)
+		}
+	}
+
+	var resultLabels []GitHubLabel
+	if len(addLabels) > 0 {
+		resultLabels, err = s.github.AddLabels(ctx, GitHubMutateLabelsParams{
+			Token:       runCtx.Token,
+			Owner:       runCtx.Repository.Owner,
+			Repository:  runCtx.Repository.Name,
+			IssueNumber: issueNumber,
+			Labels:      addLabels,
+		})
+		if err != nil {
+			s.auditToolFailed(ctx, runCtx.Session, tool, err)
+			return GitHubLabelsMutationResult{}, fmt.Errorf("github transition add labels: %w", err)
+		}
+	} else {
+		resultLabels, err = s.github.ListIssueLabels(ctx, GitHubListIssueLabelsParams{
+			Token:       runCtx.Token,
+			Owner:       runCtx.Repository.Owner,
+			Repository:  runCtx.Repository.Name,
+			IssueNumber: issueNumber,
+		})
+		if err != nil {
+			s.auditToolFailed(ctx, runCtx.Session, tool, err)
+			return GitHubLabelsMutationResult{}, fmt.Errorf("github transition list labels: %w", err)
+		}
+	}
+
+	s.auditToolSucceeded(ctx, runCtx.Session, tool)
+	return GitHubLabelsMutationResult{
+		Status: ToolExecutionStatusOK,
+		Labels: resultLabels,
+	}, nil
+}

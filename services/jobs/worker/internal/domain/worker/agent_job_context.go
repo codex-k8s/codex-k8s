@@ -30,6 +30,8 @@ type runAgentContext struct {
 	RepositoryFullName   string
 	AgentKey             string
 	IssueNumber          int64
+	TargetBranch         string
+	ExistingPRNumber     int
 	TriggerKind          string
 	TriggerLabel         string
 	AgentDisplayName     string
@@ -75,6 +77,8 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 		RepositoryFullName: strings.TrimSpace(payload.repositoryFullName),
 		AgentKey:           strings.TrimSpace(payload.agentKey),
 		IssueNumber:        payload.issueNumber,
+		TargetBranch:       strings.TrimSpace(payload.targetBranch),
+		ExistingPRNumber:   payload.existingPRNumber,
 		TriggerKind:        normalizeTriggerKind(payload.triggerKind),
 		TriggerLabel:       strings.TrimSpace(payload.triggerLabel),
 		AgentDisplayName:   strings.TrimSpace(payload.agentDisplayName),
@@ -134,6 +138,8 @@ type parsedRunAgentPayload struct {
 	repositoryFullName string
 	agentKey           string
 	issueNumber        int64
+	targetBranch       string
+	existingPRNumber   int
 	triggerKind        string
 	triggerLabel       string
 	agentDisplayName   string
@@ -155,6 +161,14 @@ func parseRunAgentPayload(raw json.RawMessage) parsedRunAgentPayload {
 	if payload.Issue != nil && payload.Issue.Number > 0 {
 		out.issueNumber = payload.Issue.Number
 	}
+	prNumber, targetBranch := extractPullRequestHints(payload.RawPayload)
+	if out.issueNumber <= 0 && prNumber > 0 {
+		out.issueNumber = prNumber
+	}
+	if prNumber > 0 {
+		out.existingPRNumber = int(prNumber)
+	}
+	out.targetBranch = strings.TrimSpace(targetBranch)
 	if payload.Trigger != nil {
 		out.triggerKind = strings.TrimSpace(payload.Trigger.Kind)
 		out.triggerLabel = strings.TrimSpace(payload.Trigger.Label)
@@ -165,6 +179,36 @@ func parseRunAgentPayload(raw json.RawMessage) parsedRunAgentPayload {
 	}
 	out.issueLabels = extractIssueLabels(payload.RawPayload)
 	return out
+}
+
+type pullRequestHintsPayload struct {
+	PullRequest *pullRequestHintsItem `json:"pull_request"`
+}
+
+type pullRequestHintsItem struct {
+	Number int64                 `json:"number"`
+	Head   *pullRequestHintsHead `json:"head"`
+}
+
+type pullRequestHintsHead struct {
+	Ref string `json:"ref"`
+}
+
+func extractPullRequestHints(raw json.RawMessage) (number int64, targetBranch string) {
+	if len(raw) == 0 {
+		return 0, ""
+	}
+
+	var payload pullRequestHintsPayload
+	if err := json.Unmarshal(raw, &payload); err != nil || payload.PullRequest == nil {
+		return 0, ""
+	}
+
+	number = payload.PullRequest.Number
+	if payload.PullRequest.Head != nil {
+		targetBranch = strings.TrimSpace(payload.PullRequest.Head.Ref)
+	}
+	return number, targetBranch
 }
 
 func normalizeTriggerKind(value string) string {

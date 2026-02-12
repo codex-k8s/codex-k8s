@@ -30,6 +30,9 @@ const (
 	envGitAskPass        = "GIT_ASKPASS"
 	envGitTerminalPrompt = "GIT_TERMINAL_PROMPT"
 	envGitAskPassRequire = "GIT_ASKPASS_REQUIRE"
+	envGHToken           = "GH_TOKEN"
+	envGitHubToken       = "GITHUB_TOKEN"
+	envKubeconfig        = "KUBECONFIG"
 
 	gitAskPassRequireForce = "force"
 	redactedSecretValue    = "[REDACTED]"

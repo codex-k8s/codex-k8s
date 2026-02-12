@@ -62,8 +62,11 @@ approvals:
 ### `full-env`
 - Запуск в issue/run namespace рядом со стеком.
 - Доступ: логи, events, сервисы, метрики, DB/cache в рамках namespace, `exec` в pod'ы namespace.
-- В pod передаются только минимальные runtime-секреты (`CODEXK8S_OPENAI_API_KEY`, `CODEXK8S_GIT_BOT_TOKEN`), без прямых Kubernetes credentials.
-- Прямые операции изменения окружения (apply/delete манифестов, rollout/deploy/restart, создание/удаление сервисов) выполняются через MCP-инструменты с approver policy.
+- В pod передаются минимальные runtime-секреты (`CODEXK8S_OPENAI_API_KEY`, `CODEXK8S_GIT_BOT_TOKEN`) и формируется namespaced `KUBECONFIG`.
+- GitHub операции (issue/PR/comments/review + git push) выполняются напрямую через `gh`/`git` с bot-token.
+- Kubernetes runtime-дебаг и изменения в своём namespace выполняются напрямую через `kubectl`.
+- Исключение: прямой доступ к `secrets` (read/write) запрещён RBAC.
+- MCP в текущем baseline используется только для label-операций; secret-management через MCP+approver фиксируется как следующий этап.
 - Используется для ролей, где нужно подтверждать решения по фактическому состоянию окружения.
 
 ### Канал апрувов и уточнений

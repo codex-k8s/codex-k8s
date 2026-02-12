@@ -69,6 +69,10 @@ type JobSpec struct {
 	TriggerKind string
 	// TriggerLabel is original label that created this run.
 	TriggerLabel string
+	// TargetBranch overrides deterministic branch naming when already known.
+	TargetBranch string
+	// ExistingPRNumber preloads PR reference for revise flows when already known.
+	ExistingPRNumber int
 	// AgentKey is stable system-agent key used for session ownership.
 	AgentKey string
 	// AgentModel is effective model selected for this run.
@@ -91,6 +95,8 @@ type JobSpec struct {
 	Context7APIKey string
 	// AgentDisplayName is human-readable agent name used for commit author.
 	AgentDisplayName string
+	// StateInReviewLabel is status label applied to PR when run waits owner review.
+	StateInReviewLabel string
 	// GitBotToken is passed to run pod for git transport operations.
 	GitBotToken string
 	// GitBotUsername is GitHub username used with token for git transport auth.
@@ -283,12 +289,15 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 					{Name: "CODEXK8S_ISSUE_NUMBER", Value: fmt.Sprintf("%d", spec.IssueNumber)},
 					{Name: "CODEXK8S_RUN_TRIGGER_KIND", Value: strings.TrimSpace(spec.TriggerKind)},
 					{Name: "CODEXK8S_RUN_TRIGGER_LABEL", Value: strings.TrimSpace(spec.TriggerLabel)},
+					{Name: "CODEXK8S_RUN_TARGET_BRANCH", Value: strings.TrimSpace(spec.TargetBranch)},
+					{Name: "CODEXK8S_EXISTING_PR_NUMBER", Value: fmt.Sprintf("%d", spec.ExistingPRNumber)},
 					{Name: "CODEXK8S_AGENT_KEY", Value: strings.TrimSpace(spec.AgentKey)},
 					{Name: "CODEXK8S_AGENT_MODEL", Value: strings.TrimSpace(spec.AgentModel)},
 					{Name: "CODEXK8S_AGENT_REASONING_EFFORT", Value: strings.TrimSpace(spec.AgentReasoningEffort)},
 					{Name: "CODEXK8S_PROMPT_TEMPLATE_KIND", Value: strings.TrimSpace(spec.PromptTemplateKind)},
 					{Name: "CODEXK8S_PROMPT_TEMPLATE_SOURCE", Value: strings.TrimSpace(spec.PromptTemplateSource)},
 					{Name: "CODEXK8S_PROMPT_TEMPLATE_LOCALE", Value: strings.TrimSpace(spec.PromptTemplateLocale)},
+					{Name: "CODEXK8S_STATE_IN_REVIEW_LABEL", Value: strings.TrimSpace(spec.StateInReviewLabel)},
 					{Name: "CODEXK8S_AGENT_BASE_BRANCH", Value: strings.TrimSpace(spec.BaseBranch)},
 					{Name: "CODEXK8S_OPENAI_API_KEY", Value: strings.TrimSpace(spec.OpenAIAPIKey)},
 					{Name: "CODEXK8S_OPENAI_AUTH_FILE", Value: strings.TrimSpace(spec.OpenAIAuthFile)},

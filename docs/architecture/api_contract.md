@@ -29,27 +29,32 @@ approvals:
 - gRPC proto: `proto/codexk8s/controlplane/v1/controlplane.proto`
 - AsyncAPI (если есть): `services/external/api-gateway/api/server/asyncapi.yaml` (webhook/event payloads)
 
-## Состояние MCP после S2 Day3.5
+## Состояние MCP после S2 Day4
 - В `control-plane` поднят MCP StreamableHTTP endpoint: `/mcp`.
 - Аутентификация MCP: short-lived run-bound bearer token.
 - Внутренний gRPC контракт расширен RPC `IssueRunMCPToken` для выдачи MCP токена worker-у перед запуском run pod.
-- MCP tool/resource слой включает:
-  - GitHub tools (issue/pr/comments/labels/branches);
-  - Kubernetes tools (namespaced diagnostics/read для workload/network/storage сущностей + cluster-scope read для storage/ingress classes + policy-gated write operations);
-  - prompt context (`codex://prompt/context` + tool `codex_prompt_context_get`).
-- Для `github_issue_comments_list` по умолчанию скрываются комментарии владельца используемого GitHub token (служебные комментарии платформы/бота); для явного показа доступен флаг `include_token_owner_comments=true`.
+- MCP-слой в текущем baseline ограничен только label-операциями:
+  - `github_labels_list`;
+  - `github_labels_add`;
+  - `github_labels_remove`;
+  - `github_labels_transition` (remove+add).
+- Остальные GitHub/Kubernetes операции выполняются напрямую из agent pod через `gh`/`kubectl`.
 
 ## Модель доступа GitHub для агентного pod (S2 Day4)
-- Агентный pod получает отдельный bot-token только для git transport операций в рабочем репозитории:
+- Агентный pod получает отдельный `CODEXK8S_GIT_BOT_TOKEN`.
+- Токен используется напрямую через `gh` и `git`:
   - clone/fetch/commit/push в рабочую ветку;
-  - без governance-операций по issue/pr/labels/moderation.
-- MCP слой остаётся единственной точкой для:
-  - issue/pr/comments/labels операций;
-  - детерминированных branch-context операций (`ensure/get branch for task`, policy audit);
-  - Kubernetes governance/runtime write-path.
-- Таким образом разделяются контуры:
-  - git transport path (минимальный bot-token в pod);
-  - governance path (MCP policy + audit + approval flow).
+  - issue/PR/review/comments операции.
+- Разрешённые scopes для bot-token:
+  - Read: actions, actions variables, artifact metadata, custom properties for repositories, deployments, environments, merge queues, metadata, secrets;
+  - Read/Write: code, commit statuses, discussions, issues, pages, pull requests, workflows.
+- Через MCP выполняются только операции с лейблами (единый policy/audit контур для transitions).
+
+## Модель доступа Kubernetes для агентного pod (S2 Day4)
+- Для `full-env` runner формирует `~/.kube/config` из namespaced ServiceAccount и экспортирует `KUBECONFIG`.
+- Агент может выполнять через `kubectl` почти все namespaced операции runtime-диагностики и дебага.
+- Исключение: прямой доступ к `secrets` (read/write) запрещён RBAC.
+- Управление секретами (create/update с генерацией значений и approver flow) фиксируется как отдельный следующий этап через MCP/control-plane.
 
 ## Internal agent callbacks (S2 Day4)
 - Для agent-runner добавлены внутренние gRPC callback RPC в `control-plane`:

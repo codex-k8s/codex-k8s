@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - Поддерживаются два режима исполнения: `full-env` и `code-only`.
 - Права назначаются по роли агента и окружению запуска.
-- Для `full-env` обязательно изолированное namespace-исполнение и аудит всех write-операций.
+- Для `full-env` обязательно изолированное namespace-исполнение; agent pod получает прямой `kubectl` доступ в свой namespace, кроме `secrets`.
 
 ## Режимы исполнения
 
@@ -39,8 +39,8 @@ approvals:
 | `pm` | `code-only` | optional | no | no direct | no |
 | `sa` | `full-env` | yes | no | schema/read-only via API | no |
 | `em` | `full-env` | yes | limited (slot orchestration only) | no direct | no |
-| `dev` | `full-env` | yes | via MCP tools + approval policy | read/write in run namespace scope | git transport token only |
-| `reviewer` | `full-env` | yes | no direct (only diagnostic MCP calls) | read-only in run namespace scope | no |
+| `dev` | `full-env` | yes | yes (почти все namespaced операции, кроме secrets) | read/write in run namespace scope | no direct secrets access |
+| `reviewer` | `full-env` | yes | yes (диагностика/дебаг в namespace, кроме secrets) | read-only in run namespace scope | no direct secrets access |
 | `qa` | `full-env` | yes | limited (test jobs) | read-only test scope | no |
 | `sre` | `full-env` | yes | yes (via policy + approval) | diagnostic read-only | via controlled tools |
 | `km` | `code-only` | optional read | no | docs/meta via API | no |
@@ -66,11 +66,13 @@ approvals:
 - Разрешено:
   - читать логи/события/метрики;
   - выполнять диагностический `exec` в pod'ы namespace;
-  - читать runtime-сущности namespace через MCP (`deployments`, `daemonsets`, `statefulsets`, `replicasets`, `jobs`, `cronjobs`, `configmaps`, `secrets`, `resourcequotas`, `hpa`, `services`, `endpoints`, `ingresses`, `networkpolicies`, `pvcs`);
+  - выполнять через `kubectl` namespaced операции для runtime-сущностей (`pods`, `deployments`, `statefulsets`, `daemonsets`, `replicasets`, `jobs`, `cronjobs`, `services`, `ingresses`, `networkpolicies`, `configmaps`, `pvcs`, `resourcequotas`, `limitranges`, `events`);
   - обращаться к DB/cache сервисам проекта в границах namespace policy.
-- Запрещено прямое изменение runtime без policy:
-  - `kubectl apply/delete`, rollout/restart, создание/удаление workload выполняются только через MCP-инструменты.
-- Для write-операций через MCP обязателен approver flow и аудит (`approval.requested/approved/denied`, `label.applied`, `run.wait.*`).
+- Запрещено:
+  - прямое чтение/запись `secrets`;
+  - выход за пределы своего namespace и cluster-scope операции.
+- MCP в текущем baseline используется только для label-операций (`github_labels_*`), включая transition `run:* -> state:*`.
+- Для секретов закладывается отдельный future-path: MCP tools + approver flow + аудит.
 
 Эволюция policy (Day6+):
 - effective MCP права вычисляются по связке `agent_key + run label`;
@@ -86,10 +88,12 @@ approvals:
 ## Контроль доступа к данным и секретам
 
 - Repo tokens хранятся в БД в шифрованном виде и не логируются.
-- Agent pod получает только минимально необходимые runtime-секреты на время run:
+- Agent pod получает минимально необходимые runtime-секреты на время run:
   - `CODEXK8S_OPENAI_API_KEY` для codex auth;
   - `CODEXK8S_GIT_BOT_TOKEN` для git transport path.
-- Прямой доступ агента к cluster secrets запрещён; Kubernetes/GitHub governance операции идут через MCP policy path.
+- Для `full-env` pod формируется `KUBECONFIG` из namespaced ServiceAccount.
+- Прямой доступ агента к Kubernetes `secrets` запрещён RBAC (read/write).
+- Создание/обновление секретов с генерацией значений и approver-политикой планируется отдельным MCP-потоком в следующих эпиках.
 
 ## Аудит
 

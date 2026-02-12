@@ -41,8 +41,13 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		return fmt.Errorf("configure git auth environment: %w", err)
 	}
 	defer cleanupGitAuthEnv()
+	cleanupKubectlEnv, err := s.configureKubectlAccess(state.homeDir)
+	if err != nil {
+		return fmt.Errorf("configure kubectl access: %w", err)
+	}
+	defer cleanupKubectlEnv()
 
-	targetBranch := buildTargetBranch(s.cfg.RunID, s.cfg.IssueNumber)
+	targetBranch := buildTargetBranch(s.cfg.RunTargetBranch, s.cfg.RunID, s.cfg.IssueNumber)
 	triggerKind := normalizeTriggerKind(s.cfg.TriggerKind)
 	templateKind := normalizeTemplateKind(s.cfg.PromptTemplateKind, triggerKind)
 	runtimeMode := normalizeRuntimeMode(s.cfg.RuntimeMode)
@@ -50,9 +55,10 @@ func (s *Service) Run(ctx context.Context) (err error) {
 
 	runStartedAt := time.Now().UTC()
 	result := runResult{
-		targetBranch: targetBranch,
-		triggerKind:  triggerKind,
-		templateKind: templateKind,
+		targetBranch:     targetBranch,
+		triggerKind:      triggerKind,
+		templateKind:     templateKind,
+		existingPRNumber: s.cfg.ExistingPRNumber,
 	}
 	finalized := false
 
@@ -238,6 +244,9 @@ func (s *Service) restoreLatestSession(ctx context.Context, branch string, sessi
 	}
 
 	if snapshot.PRNumber <= 0 {
+		if s.cfg.ExistingPRNumber > 0 {
+			return restoredSession{existingPRNumber: s.cfg.ExistingPRNumber}, nil
+		}
 		return restoredSession{prNotFound: true}, nil
 	}
 

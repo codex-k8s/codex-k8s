@@ -1,6 +1,9 @@
 package worker
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+)
 
 func TestResolveModelFromLabels(t *testing.T) {
 	t.Parallel()
@@ -84,5 +87,44 @@ func TestResolveModelFromLabels_ConflictingLabels(t *testing.T) {
 	}, "gpt-5.2-codex")
 	if err == nil {
 		t.Fatal("expected conflict error for multiple ai-model labels")
+	}
+}
+
+func TestResolveRunAgentContext_UsesPullRequestHintsForRevise(t *testing.T) {
+	t.Parallel()
+
+	runPayload := json.RawMessage(`{
+		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"agent":{"key":"dev","name":"AI Developer"},
+		"trigger":{"kind":"dev_revise","label":"run:dev:revise"},
+		"raw_payload":{
+			"pull_request":{
+				"number":200,
+				"head":{"ref":"codex/issue-13"},
+				"labels":[{"name":"[ai-model-gpt-5.2-codex]"}]
+			}
+		}
+	}`)
+
+	got, err := resolveRunAgentContext(runPayload, runAgentDefaults{
+		DefaultModel:           modelGPT52Codex,
+		DefaultReasoningEffort: "high",
+		DefaultLocale:          "ru",
+		AllowGPT53:             true,
+	})
+	if err != nil {
+		t.Fatalf("resolveRunAgentContext() error = %v", err)
+	}
+	if got.IssueNumber != 200 {
+		t.Fatalf("IssueNumber = %d, want 200", got.IssueNumber)
+	}
+	if got.TargetBranch != "codex/issue-13" {
+		t.Fatalf("TargetBranch = %q, want codex/issue-13", got.TargetBranch)
+	}
+	if got.ExistingPRNumber != 200 {
+		t.Fatalf("ExistingPRNumber = %d, want 200", got.ExistingPRNumber)
+	}
+	if got.PromptTemplateKind != promptTemplateKindReview {
+		t.Fatalf("PromptTemplateKind = %q, want %q", got.PromptTemplateKind, promptTemplateKindReview)
 	}
 }

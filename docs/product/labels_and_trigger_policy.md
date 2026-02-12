@@ -125,8 +125,14 @@ approvals:
 - На issue одновременно допускается только один активный trigger label из группы `run:*`.
 - `run:dev` используется для первичного запуска цикла разработки и создания PR.
 - `run:dev:revise` используется только для итерации по уже существующему PR.
+- `run:dev:revise` может запускаться:
+  - по label `run:dev:revise` на Issue;
+  - по webhook `pull_request_review` с `action=submitted` и `review.state=changes_requested`.
 - Для `run:dev:revise` при отсутствии связанного PR run отклоняется с `failed_precondition` и событием `run.revise.pr_not_found`.
 - Label transitions после завершения run должны выполняться через MCP (а не вручную в коде агента), чтобы сохранять единый policy/audit контур.
+- Для dev/dev:revise transition выполняется так:
+  - снять trigger label с Issue;
+  - поставить `state:in-review` на PR (не на Issue).
 - S2 baseline:
   - pre-review остается обязательным шагом перед финальным Owner review;
   - post-run transitions `run:* -> state:*` фиксируются в Day5/Day6 как отдельные доработки policy и аудита.

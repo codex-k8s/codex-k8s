@@ -111,6 +111,8 @@ func (s *Service) buildPrompt(taskBody string, result runResult) (string, error)
 		TriggerKind:        result.triggerKind,
 		HasExistingPR:      result.triggerKind == triggerKindDevRevise && result.existingPRNumber > 0,
 		ExistingPRNumber:   result.existingPRNumber,
+		TriggerLabel:       strings.TrimSpace(s.cfg.TriggerLabel),
+		StateInReviewLabel: strings.TrimSpace(s.cfg.StateInReviewLabel),
 		HasContext7:        hasContext7,
 		PromptLocale:       normalizePromptLocale(s.cfg.PromptTemplateLocale),
 		TaskBody:           taskBody,
@@ -141,7 +143,11 @@ func normalizeTemplateKind(value string, triggerKind string) string {
 	return promptTemplateKindWork
 }
 
-func buildTargetBranch(runID string, issueNumber int64) string {
+func buildTargetBranch(explicitBranch string, runID string, issueNumber int64) string {
+	trimmedExplicit := strings.TrimSpace(explicitBranch)
+	if trimmedExplicit != "" {
+		return trimmedExplicit
+	}
 	if issueNumber > 0 {
 		return fmt.Sprintf("codex/issue-%d", issueNumber)
 	}

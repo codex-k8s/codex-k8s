@@ -97,11 +97,26 @@ func buildRunPayload(input runPayloadInput) (json.RawMessage, error) {
 				HTMLURL: input.Envelope.Issue.PullRequest.HTMLURL,
 			}
 		}
+	} else if input.Envelope.PullRequest.Number > 0 {
+		payload.Issue = &githubRunIssuePayload{
+			ID:      input.Envelope.PullRequest.ID,
+			Number:  input.Envelope.PullRequest.Number,
+			Title:   input.Envelope.PullRequest.Title,
+			HTMLURL: input.Envelope.PullRequest.HTMLURL,
+			State:   input.Envelope.PullRequest.State,
+			User: githubActorPayload{
+				ID:    input.Envelope.PullRequest.User.ID,
+				Login: input.Envelope.PullRequest.User.Login,
+			},
+			PullRequest: &githubPullRequestPayload{
+				HTMLURL: input.Envelope.PullRequest.HTMLURL,
+			},
+		}
 	}
 
 	if input.Trigger != nil {
 		payload.Trigger = &githubIssueTriggerPayload{
-			Source: webhookdomain.TriggerSourceIssueLabel,
+			Source: input.Trigger.Source,
 			Label:  input.Trigger.Label,
 			Kind:   input.Trigger.Kind,
 		}
@@ -124,6 +139,8 @@ func buildEventPayload(input eventPayloadInput) (json.RawMessage, error) {
 	}
 	if input.Envelope.Issue.Number > 0 {
 		payload.IssueNumber = input.Envelope.Issue.Number
+	} else if input.Envelope.PullRequest.Number > 0 {
+		payload.IssueNumber = input.Envelope.PullRequest.Number
 	}
 
 	raw, err := json.Marshal(payload)
@@ -137,6 +154,8 @@ func buildReceivedEventPayload(cmd IngestCommand, envelope githubWebhookEnvelope
 	payload := buildBaseFlowEventPayload(cmd, envelope)
 	if envelope.Issue.Number > 0 {
 		payload.IssueNumber = envelope.Issue.Number
+	} else if envelope.PullRequest.Number > 0 {
+		payload.IssueNumber = envelope.PullRequest.Number
 	}
 
 	raw, err := json.Marshal(payload)
@@ -164,6 +183,14 @@ func buildIgnoredEventPayload(input ignoredEventPayloadInput) (json.RawMessage, 
 			Title:   input.Envelope.Issue.Title,
 			HTMLURL: input.Envelope.Issue.HTMLURL,
 			State:   input.Envelope.Issue.State,
+		}
+	} else if input.Envelope.PullRequest.Number > 0 {
+		payload.Issue = &githubIgnoredIssuePayload{
+			ID:      input.Envelope.PullRequest.ID,
+			Number:  input.Envelope.PullRequest.Number,
+			Title:   input.Envelope.PullRequest.Title,
+			HTMLURL: input.Envelope.PullRequest.HTMLURL,
+			State:   input.Envelope.PullRequest.State,
 		}
 	}
 

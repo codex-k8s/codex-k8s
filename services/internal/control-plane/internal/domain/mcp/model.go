@@ -22,6 +22,7 @@ const (
 	ToolGitHubIssueCommentCreate ToolName = "github_issue_comment_create"
 	ToolGitHubLabelsAdd          ToolName = "github_labels_add"
 	ToolGitHubLabelsRemove       ToolName = "github_labels_remove"
+	ToolGitHubLabelsTransition   ToolName = "github_labels_transition"
 )
 
 const (
@@ -239,6 +240,13 @@ type GitHubLabelsAddInput struct {
 type GitHubLabelsRemoveInput struct {
 	IssueNumber int      `json:"issue_number,omitempty"`
 	Labels      []string `json:"labels"`
+}
+
+// GitHubLabelsTransitionInput describes one labels transition request.
+type GitHubLabelsTransitionInput struct {
+	IssueNumber  int      `json:"issue_number,omitempty"`
+	RemoveLabels []string `json:"remove_labels,omitempty"`
+	AddLabels    []string `json:"add_labels,omitempty"`
 }
 
 // KubernetesPodsListInput describes pod list input.

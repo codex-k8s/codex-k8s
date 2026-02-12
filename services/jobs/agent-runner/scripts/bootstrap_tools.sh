@@ -8,7 +8,7 @@ export GOBIN="${GOBIN:-/usr/local/bin}"
 apt-get update -y
 apt-get install -y --no-install-recommends \
   ca-certificates curl \
-  git jq bash openssh-client make python3 \
+  git jq gh kubernetes-client bash openssh-client make python3 \
   unzip zip ripgrep
 rm -rf /var/lib/apt/lists/*
 

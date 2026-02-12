@@ -30,9 +30,11 @@ func (e ExitError) Unwrap() error {
 // PromptConfig defines per-run prompt rendering and model settings.
 type PromptConfig struct {
 	TriggerKind          string
+	TriggerLabel         string
 	PromptTemplateKind   string
 	PromptTemplateSource string
 	PromptTemplateLocale string
+	StateInReviewLabel   string
 	AgentModel           string
 	AgentReasoningEffort string
 	AgentBaseBranch      string
@@ -60,6 +62,8 @@ type Config struct {
 	RepositoryFullName string
 	AgentKey           string
 	IssueNumber        int64
+	RunTargetBranch    string
+	ExistingPRNumber   int
 	RuntimeMode        string
 
 	PromptConfig
@@ -150,6 +154,8 @@ type promptEnvelopeTemplateData struct {
 	TriggerKind        string
 	HasExistingPR      bool
 	ExistingPRNumber   int
+	TriggerLabel       string
+	StateInReviewLabel string
 	HasContext7        bool
 	PromptLocale       string
 	TaskBody           string

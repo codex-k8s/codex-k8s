@@ -276,27 +276,43 @@ func (s *Service) insertSystemFlowEvent(ctx context.Context, correlationID strin
 }
 
 func (s *Service) resolveIssueRunTrigger(eventType string, envelope githubWebhookEnvelope) (issueRunTrigger, bool) {
-	if !strings.EqualFold(strings.TrimSpace(eventType), string(webhookdomain.GitHubEventIssues)) {
-		return issueRunTrigger{}, false
-	}
-	if !strings.EqualFold(strings.TrimSpace(envelope.Action), string(webhookdomain.GitHubActionLabeled)) {
-		return issueRunTrigger{}, false
-	}
+	switch strings.TrimSpace(strings.ToLower(eventType)) {
+	case string(webhookdomain.GitHubEventIssues):
+		if !strings.EqualFold(strings.TrimSpace(envelope.Action), string(webhookdomain.GitHubActionLabeled)) {
+			return issueRunTrigger{}, false
+		}
 
-	label := strings.TrimSpace(envelope.Label.Name)
-	if label == "" {
-		return issueRunTrigger{}, false
-	}
-	switch {
-	case strings.EqualFold(label, s.triggerLabels.RunDev):
+		label := strings.TrimSpace(envelope.Label.Name)
+		if label == "" {
+			return issueRunTrigger{}, false
+		}
+		switch {
+		case strings.EqualFold(label, s.triggerLabels.RunDev):
+			return issueRunTrigger{
+				Source: webhookdomain.TriggerSourceIssueLabel,
+				Label:  label,
+				Kind:   webhookdomain.TriggerKindDev,
+			}, true
+		case strings.EqualFold(label, s.triggerLabels.RunDevRevise):
+			return issueRunTrigger{
+				Source: webhookdomain.TriggerSourceIssueLabel,
+				Label:  label,
+				Kind:   webhookdomain.TriggerKindDevRevise,
+			}, true
+		default:
+			return issueRunTrigger{}, false
+		}
+	case string(webhookdomain.GitHubEventPullRequestReview):
+		if !strings.EqualFold(strings.TrimSpace(envelope.Action), string(webhookdomain.GitHubActionSubmitted)) {
+			return issueRunTrigger{}, false
+		}
+		if !strings.EqualFold(strings.TrimSpace(envelope.Review.State), webhookdomain.GitHubReviewStateChangesRequested) {
+			return issueRunTrigger{}, false
+		}
 		return issueRunTrigger{
-			Label: label,
-			Kind:  webhookdomain.TriggerKindDev,
-		}, true
-	case strings.EqualFold(label, s.triggerLabels.RunDevRevise):
-		return issueRunTrigger{
-			Label: label,
-			Kind:  webhookdomain.TriggerKindDevRevise,
+			Source: webhookdomain.TriggerSourcePullRequestReview,
+			Label:  s.triggerLabels.RunDevRevise,
+			Kind:   webhookdomain.TriggerKindDevRevise,
 		}, true
 	default:
 		return issueRunTrigger{}, false

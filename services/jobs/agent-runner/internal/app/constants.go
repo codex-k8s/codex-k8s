@@ -15,6 +15,10 @@ const (
 
 	runtimeModeFullEnv  = "full-env"
 	runtimeModeCodeOnly = "code-only"
+
+	runDevLabelDefault        = "run:dev"
+	runDevReviseLabelDefault  = "run:dev:revise"
+	stateInReviewLabelDefault = "state:in-review"
 )
 
 func normalizeTriggerKind(value string) string {

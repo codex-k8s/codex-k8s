@@ -15,6 +15,8 @@ type Config struct {
 	RepositoryFullName string `env:"CODEXK8S_REPOSITORY_FULL_NAME,required,notEmpty"`
 	AgentKey           string `env:"CODEXK8S_AGENT_KEY,required,notEmpty"`
 	IssueNumber        int64  `env:"CODEXK8S_ISSUE_NUMBER"`
+	RunTargetBranch    string `env:"CODEXK8S_RUN_TARGET_BRANCH"`
+	ExistingPRNumber   int    `env:"CODEXK8S_EXISTING_PR_NUMBER"`
 	RuntimeMode        string `env:"CODEXK8S_RUNTIME_MODE" envDefault:"code-only"`
 
 	ControlPlaneGRPCTarget string `env:"CODEXK8S_CONTROL_PLANE_GRPC_TARGET,required,notEmpty"`
@@ -22,9 +24,11 @@ type Config struct {
 	MCPBearerToken         string `env:"CODEXK8S_MCP_BEARER_TOKEN,required,notEmpty"`
 
 	TriggerKind          string `env:"CODEXK8S_RUN_TRIGGER_KIND" envDefault:"dev"`
+	TriggerLabel         string `env:"CODEXK8S_RUN_TRIGGER_LABEL"`
 	PromptTemplateKind   string `env:"CODEXK8S_PROMPT_TEMPLATE_KIND" envDefault:"work"`
 	PromptTemplateSource string `env:"CODEXK8S_PROMPT_TEMPLATE_SOURCE" envDefault:"repo_seed"`
 	PromptTemplateLocale string `env:"CODEXK8S_PROMPT_TEMPLATE_LOCALE" envDefault:"ru"`
+	StateInReviewLabel   string `env:"CODEXK8S_STATE_IN_REVIEW_LABEL" envDefault:"state:in-review"`
 	AgentModel           string `env:"CODEXK8S_AGENT_MODEL"`
 	AgentReasoningEffort string `env:"CODEXK8S_AGENT_REASONING_EFFORT" envDefault:"high"`
 	AgentBaseBranch      string `env:"CODEXK8S_AGENT_BASE_BRANCH" envDefault:"main"`
@@ -45,6 +49,14 @@ func LoadConfig() (Config, error) {
 	}
 
 	cfg.TriggerKind = normalizeTriggerKind(cfg.TriggerKind)
+	cfg.TriggerLabel = strings.TrimSpace(cfg.TriggerLabel)
+	if cfg.TriggerLabel == "" {
+		if cfg.TriggerKind == triggerKindDevRevise {
+			cfg.TriggerLabel = runDevReviseLabelDefault
+		} else {
+			cfg.TriggerLabel = runDevLabelDefault
+		}
+	}
 	cfg.PromptTemplateKind = strings.TrimSpace(strings.ToLower(cfg.PromptTemplateKind))
 	if cfg.TriggerKind == triggerKindDevRevise {
 		cfg.PromptTemplateKind = promptTemplateKindReview
@@ -60,6 +72,10 @@ func LoadConfig() (Config, error) {
 	cfg.PromptTemplateLocale = strings.TrimSpace(cfg.PromptTemplateLocale)
 	if cfg.PromptTemplateLocale == "" {
 		cfg.PromptTemplateLocale = "ru"
+	}
+	cfg.StateInReviewLabel = strings.TrimSpace(cfg.StateInReviewLabel)
+	if cfg.StateInReviewLabel == "" {
+		cfg.StateInReviewLabel = stateInReviewLabelDefault
 	}
 	cfg.OpenAIAuthFile = strings.TrimSpace(cfg.OpenAIAuthFile)
 	hasOpenAIAuthFile := cfg.OpenAIAuthFile != ""
@@ -93,6 +109,10 @@ func LoadConfig() (Config, error) {
 	cfg.MCPBearerToken = strings.TrimSpace(cfg.MCPBearerToken)
 	cfg.RepositoryFullName = strings.TrimSpace(cfg.RepositoryFullName)
 	cfg.AgentKey = strings.TrimSpace(cfg.AgentKey)
+	cfg.RunTargetBranch = strings.TrimSpace(cfg.RunTargetBranch)
+	if cfg.ExistingPRNumber < 0 {
+		cfg.ExistingPRNumber = 0
+	}
 	cfg.AgentDisplayName = strings.TrimSpace(cfg.AgentDisplayName)
 	cfg.GitBotUsername = strings.TrimSpace(cfg.GitBotUsername)
 	cfg.GitBotMail = strings.TrimSpace(cfg.GitBotMail)

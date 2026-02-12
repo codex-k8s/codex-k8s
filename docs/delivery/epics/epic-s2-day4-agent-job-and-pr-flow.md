@@ -299,6 +299,13 @@ PR policy:
   - добавлены image/env/secret/variable (`CODEXK8S_AGENT_RUNNER_IMAGE`, `CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME`, `CODEXK8S_AGENT_DEFAULT_*`, `CODEXK8S_AGENT_BASE_BRANCH`, `CODEXK8S_GIT_BOT_TOKEN`);
   - `CODEXK8S_WORKER_JOB_IMAGE` по умолчанию переключен на `agent-runner`.
 
+### Актуализация baseline (post-Day4 hardening, 2026-02-12)
+- Для agent pod закреплён direct execution path:
+  - GitHub операции (issue/PR/comments/review + git push) выполняются через `gh`/`git` с `CODEXK8S_GIT_BOT_TOKEN`;
+  - в `full-env` для namespace выдаётся `KUBECONFIG`, runtime-дебаг выполняется через `kubectl`.
+- MCP-контур сокращён до label-операций (`github_labels_*`) для детерминированных transitions и аудита.
+- Прямой доступ к Kubernetes `secrets` в run namespace запрещён RBAC; future secret-management через MCP+approver вынесен в последующие эпики.
+
 ### Label flow (S2 baseline + next)
 - S2 baseline: `run:dev` и `run:dev:revise` остаются единственными активными trigger-labels для dev цикла.
 - После выполнения run управление label/state выполняется через MCP-ручки, чтобы исключить гонки ручных и агентных изменений.
@@ -310,5 +317,5 @@ PR policy:
 - Выполнено: `run:dev` запускает агентный Job и поддерживает PR-flow.
 - Выполнено: `run:dev:revise` работает с resume-path, при отсутствии PR отклоняется с `failed_precondition` и событием `run.revise.pr_not_found`.
 - Выполнено: `flow_events` содержит трассу `issue -> run -> namespace -> job -> pr` с Day4 событиями агента.
-- Выполнено: agent pod не получает прямые Kubernetes credentials; governance-операции по GitHub/Kubernetes проходят через MCP-контур.
-- Выполнено: split access model введена (минимальный git transport token + MCP governance path).
+- Выполнено: split access model введена (direct `gh`/`kubectl` в рамках выданных прав + MCP только для labels).
+- Выполнено: для run namespace запрещён прямой доступ к Kubernetes `secrets` (read/write).

@@ -466,6 +466,12 @@ spec:
                   name: codex-k8s-runtime
                   key: CODEXK8S_RUN_DEBUG_LABEL
                   optional: true
+            - name: CODEXK8S_STATE_IN_REVIEW_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: STATE_IN_REVIEW_LABEL
+                  optional: true
             - name: CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT
               value: "${CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT}"
             - name: CODEXK8S_WORKER_RUN_ROLE_NAME

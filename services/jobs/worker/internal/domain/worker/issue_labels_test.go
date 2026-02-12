@@ -29,3 +29,25 @@ func TestExtractIssueLabelsFromRunPayload_InvalidPayload(t *testing.T) {
 		t.Fatalf("expected nil labels for invalid payload, got %#v", labels)
 	}
 }
+
+func TestExtractIssueLabelsFromRunPayload_PullRequestLabels(t *testing.T) {
+	t.Parallel()
+
+	runPayload := json.RawMessage(`{
+		"raw_payload":{
+			"pull_request":{
+				"labels":[
+					{"name":"run:dev:revise"},
+					{"name":"[ai-model-gpt-5.2-codex]"}
+				]
+			}
+		}
+	}`)
+
+	if !hasIssueLabelInRunPayload(runPayload, "run:dev:revise") {
+		t.Fatal("expected to find run:dev:revise label in pull_request.labels")
+	}
+	if !hasIssueLabelInRunPayload(runPayload, "[ai-model-gpt-5.2-codex]") {
+		t.Fatal("expected to find ai-model label in pull_request.labels")
+	}
+}

@@ -78,3 +78,45 @@ func TestLauncher_CleanupNamespace_DeletesManagedNamespace(t *testing.T) {
 		t.Fatalf("expected namespace %s to be deleted", namespace)
 	}
 }
+
+func TestLauncher_EnsureNamespace_RunRoleDoesNotGrantSecretsAccess(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	client := fake.NewClientset()
+	launcher := NewForClient(Config{Namespace: "codex-k8s-ai-staging"}, client)
+
+	spec := NamespaceSpec{
+		RunID:         "run-2",
+		ProjectID:     "project-2",
+		CorrelationID: "corr-2",
+		RuntimeMode:   agentdomain.RuntimeModeFullEnv,
+		Namespace:     "codex-issue-p2-i2-r2",
+	}
+	if err := launcher.EnsureNamespace(ctx, spec); err != nil {
+		t.Fatalf("EnsureNamespace() error = %v", err)
+	}
+
+	role, err := client.RbacV1().Roles(spec.Namespace).Get(ctx, launcher.cfg.RunRoleName, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("load role failed: %v", err)
+	}
+
+	for _, rule := range role.Rules {
+		isCoreGroup := false
+		for _, apiGroup := range rule.APIGroups {
+			if apiGroup == "" {
+				isCoreGroup = true
+				break
+			}
+		}
+		if !isCoreGroup {
+			continue
+		}
+		for _, resource := range rule.Resources {
+			if resource == "secrets" || resource == "secrets/*" {
+				t.Fatalf("unexpected secrets access in role rules: %+v", role.Rules)
+			}
+		}
+	}
+}
