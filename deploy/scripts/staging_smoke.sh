@@ -59,6 +59,13 @@ pg_pass="$(
 [ -n "${pg_user}" ] || { echo "[smoke] FAIL: empty CODEXK8S_POSTGRES_USER" >&2; exit 1; }
 [ -n "${pg_pass}" ] || { echo "[smoke] FAIL: empty CODEXK8S_POSTGRES_PASSWORD" >&2; exit 1; }
 
+psql_query() {
+  local sql="$1"
+  kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" exec postgres-0 -- \
+    env PGPASSWORD="${pg_pass}" psql -U "${pg_user}" -d "${pg_db}" -tA \
+      -c "${sql}" 2>/dev/null || true
+}
+
 echo "[smoke] port-forward svc/codex-k8s and check /healthz /readyz /metrics"
 kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" port-forward svc/codex-k8s "${CODEXK8S_SMOKE_PORTFWD_PORT}:80" >/tmp/codexk8s-portfwd.log 2>&1 &
 pf_pid="$!"
@@ -92,7 +99,43 @@ if [ -n "${CODEXK8S_STAGING_DOMAIN}" ]; then
     kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" get secret codex-k8s-runtime \
       -o jsonpath='{.data.CODEXK8S_GITHUB_WEBHOOK_SECRET}' | base64 -d
   )"
-  payload='{"installation":{"id":1},"repository":{"id":1,"full_name":"smoke/test","name":"test","private":true},"sender":{"id":1,"login":"smoke"}}'
+  run_dev_label="$(
+    kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" get configmap codex-k8s-runtime \
+      -o jsonpath='{.data.CODEXK8S_RUN_DEV_LABEL}' 2>/dev/null || true
+  )"
+  run_dev_label="${run_dev_label:-run:dev}"
+
+  repo_row="$(psql_query "SELECT external_id, owner, name FROM repositories WHERE provider='github' ORDER BY created_at ASC LIMIT 1;")"
+  repo_external_id="$(printf '%s' "${repo_row}" | awk -F'|' '{print $1}')"
+  repo_owner="$(printf '%s' "${repo_row}" | awk -F'|' '{print $2}')"
+  repo_name="$(printf '%s' "${repo_row}" | awk -F'|' '{print $3}')"
+  if [ -z "${repo_external_id}" ] || [ -z "${repo_owner}" ] || [ -z "${repo_name}" ]; then
+    echo "[smoke] FAIL: github repository binding is required for trigger smoke" >&2
+    exit 1
+  fi
+
+  sender_row="$(psql_query "SELECT COALESCE(github_user_id, 1), github_login FROM users WHERE is_platform_owner = true AND github_login IS NOT NULL AND github_login <> '' ORDER BY created_at ASC LIMIT 1;")"
+  if [ -z "${sender_row}" ]; then
+    sender_row="$(psql_query "SELECT COALESCE(github_user_id, 1), github_login FROM users WHERE is_platform_admin = true AND github_login IS NOT NULL AND github_login <> '' ORDER BY created_at ASC LIMIT 1;")"
+  fi
+  if [ -z "${sender_row}" ]; then
+    sender_row="$(psql_query "SELECT COALESCE(u.github_user_id, 1), u.github_login FROM project_members pm JOIN users u ON u.id = pm.user_id WHERE pm.role IN ('admin', 'read_write') AND u.github_login IS NOT NULL AND u.github_login <> '' ORDER BY pm.created_at ASC LIMIT 1;")"
+  fi
+  sender_id="$(printf '%s' "${sender_row}" | awk -F'|' '{print $1}')"
+  sender_login="$(printf '%s' "${sender_row}" | awk -F'|' '{print $2}')"
+  if [ -z "${sender_id}" ] || [ -z "${sender_login}" ]; then
+    echo "[smoke] FAIL: no allowed sender found for trigger smoke" >&2
+    exit 1
+  fi
+
+  issue_number="$((900000 + (RANDOM % 9999)))"
+  issue_id="$((1770000000 + issue_number))"
+  repo_full_name="${repo_owner}/${repo_name}"
+  issue_url="https://github.com/${repo_full_name}/issues/${issue_number}"
+  payload="$(cat <<EOF
+{"action":"labeled","label":{"name":"${run_dev_label}"},"issue":{"id":${issue_id},"number":${issue_number},"title":"staging smoke trigger","html_url":"${issue_url}","state":"open"},"repository":{"id":${repo_external_id},"full_name":"${repo_full_name}","name":"${repo_name}","private":true},"sender":{"id":${sender_id},"login":"${sender_login}"}}
+EOF
+)"
   sig_hex="$(printf '%s' "${payload}" | openssl dgst -sha256 -hmac "${webhook_secret}" | awk '{print $2}')"
   sig="sha256=${sig_hex}"
   delivery="smoke-$(date +%s)-$$"
@@ -100,7 +143,7 @@ if [ -n "${CODEXK8S_STAGING_DOMAIN}" ]; then
   code1="$(
     curl -sk -o /dev/null -w '%{http_code}' \
       -X POST "https://${CODEXK8S_STAGING_DOMAIN}/api/v1/webhooks/github" \
-      -H 'X-GitHub-Event: ping' \
+      -H 'X-GitHub-Event: issues' \
       -H "X-GitHub-Delivery: ${delivery}" \
       -H "X-Hub-Signature-256: ${sig}" \
       -d "${payload}" || true
@@ -114,7 +157,7 @@ if [ -n "${CODEXK8S_STAGING_DOMAIN}" ]; then
   code2="$(
     curl -sk -o /dev/null -w '%{http_code}' \
       -X POST "https://${CODEXK8S_STAGING_DOMAIN}/api/v1/webhooks/github" \
-      -H 'X-GitHub-Event: ping' \
+      -H 'X-GitHub-Event: issues' \
       -H "X-GitHub-Delivery: ${delivery}" \
       -H "X-Hub-Signature-256: ${sig}" \
       -d "${payload}" || true
@@ -130,11 +173,7 @@ if [ -n "${CODEXK8S_STAGING_DOMAIN}" ]; then
   run_status=""
   run_project_id=""
   while [ "$SECONDS" -lt "$deadline" ]; do
-    row="$(
-      kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" exec postgres-0 -- \
-        env PGPASSWORD="${pg_pass}" psql -U "${pg_user}" -d "${pg_db}" -tA \
-          -c "SELECT status, COALESCE(project_id::text, '') FROM agent_runs WHERE correlation_id='${delivery}' LIMIT 1;" 2>/dev/null || true
-    )"
+    row="$(psql_query "SELECT status, COALESCE(project_id::text, '') FROM agent_runs WHERE correlation_id='${delivery}' LIMIT 1;")"
     run_status="$(printf '%s' "$row" | awk -F'|' '{print $1}')"
     run_project_id="$(printf '%s' "$row" | awk -F'|' '{print $2}')"
 
@@ -161,11 +200,7 @@ if [ -n "${CODEXK8S_STAGING_DOMAIN}" ]; then
 
   # Slots are DB-backed: once a run is finished, it should not keep a leased slot.
   if [ -n "${run_project_id}" ]; then
-    leased="$(
-      kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" exec postgres-0 -- \
-        env PGPASSWORD="${pg_pass}" psql -U "${pg_user}" -d "${pg_db}" -tA \
-          -c "SELECT COUNT(*) FROM slots WHERE project_id='${run_project_id}'::uuid AND state <> 'free';" 2>/dev/null || true
-    )"
+    leased="$(psql_query "SELECT COUNT(*) FROM slots WHERE project_id='${run_project_id}'::uuid AND state <> 'free';")"
     leased="$(printf '%s' "${leased:-0}" | tr -d '[:space:]')"
     if [ -n "${leased}" ] && [ "${leased}" != "0" ]; then
       echo "[smoke] FAIL: slot leak detected for project_id=${run_project_id} leased=${leased}" >&2

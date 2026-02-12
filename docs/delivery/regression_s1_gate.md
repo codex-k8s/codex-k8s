@@ -5,7 +5,7 @@ title: "Sprint S1 Regression Gate (staging)"
 status: draft
 owner_role: QA
 created_at: 2026-02-09
-updated_at: 2026-02-10
+updated_at: 2026-02-12
 related_issues: [1]
 related_prs: []
 approvals:
@@ -35,7 +35,7 @@ approvals:
 2. Worker run loop
    - pending -> running -> succeeded/failed статусы фиксируются в БД.
    - slot lease корректно освобождается.
-   - Автоматизация: `bash deploy/scripts/staging_smoke.sh` (создаёт run через webhook ping и проверяет финальный статус + отсутствие slot leak).
+   - Автоматизация: `bash deploy/scripts/staging_smoke.sh` (создаёт run через `issues:labeled` + `run:dev` и проверяет финальный статус + отсутствие slot leak).
 
 3. Staff access control
    - OAuth login успешен через `oauth2-proxy`.
