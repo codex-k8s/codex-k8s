@@ -167,3 +167,39 @@
 - Если затронут Vue-код, пройти `docs/design-guidelines/vue/check_list.md`.
 - Обновить документацию, если меняется поведение API, webhook-процессы,
   модель данных, RBAC, формат `services.yaml` или MCP-контракты.
+
+### CI/CD staging для `codex/dev` (важно)
+
+- Для ветки `codex/dev` билд и деплой идут **в одном workflow**:
+  - `.github/workflows/build_internal_image.yml`
+  - после matrix build автоматически запускается job:
+    `Deploy codex-k8s to ai-staging (after build on codex/dev)`.
+- Отдельный workflow `.github/workflows/ai_staging_deploy.yml` автотриггерится от `workflow_run` только для `main` и для `codex/dev` обычно не нужен (только ручной `workflow_dispatch` при необходимости).
+
+### Как правильно проверять статус
+
+```bash
+source bootstrap/host/config.env
+export GH_TOKEN="$CODEXK8S_GITHUB_PAT"
+
+1. Статус workflow run:
+
+gh run view -R "$CODEXK8S_GITHUB_REPO" <run_id> \
+  --json workflowName,status,conclusion,headBranch,headSha,url
+
+2. Статус всех job в run:
+
+gh run view -R "$CODEXK8S_GITHUB_REPO" <run_id> --json jobs \
+  | jq -r '.jobs[] | [.databaseId,.name,.status,.conclusion] | @tsv'
+
+3. Статус конкретной job (самый надежный способ):
+
+gh api repos/codex-k8s/codex-k8s/actions/jobs/<job_id> \
+  | jq -r '.name,.status,.conclusion'
+
+4. Логи конкретной job (только после завершения job):
+
+gh run view -R "$CODEXK8S_GITHUB_REPO" <run_id> --job <job_id> --log
+
+- Если job in_progress, команда логов вернет ошибку — это нормальное поведение.
+```
