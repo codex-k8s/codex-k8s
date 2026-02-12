@@ -25,7 +25,7 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 				RunID:         "run-1",
 				CorrelationID: "corr-1",
 				ProjectID:     "proj-1",
-				RunPayload:    json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"agent":{"key":"dev","name":"AI Developer"}}`),
+				RunPayload:    json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev"},"issue":{"number":1},"agent":{"key":"dev","name":"AI Developer"}}`),
 				SlotNo:        1,
 			},
 		},
@@ -64,11 +64,64 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 	if launcher.launched[0].MCPBearerToken != "token-run-1" {
 		t.Fatalf("expected mcp token to be propagated, got %q", launcher.launched[0].MCPBearerToken)
 	}
-	if len(events.inserted) != 1 {
-		t.Fatalf("expected 1 flow event, got %d", len(events.inserted))
+	if len(events.inserted) != 2 {
+		t.Fatalf("expected run.namespace.prepared + run.started events, got %d", len(events.inserted))
 	}
-	if events.inserted[0].EventType != floweventdomain.EventTypeRunStarted {
-		t.Fatalf("expected run.started event, got %s", events.inserted[0].EventType)
+	if events.inserted[0].EventType != floweventdomain.EventTypeRunNamespacePrepared {
+		t.Fatalf("expected first event run.namespace.prepared, got %s", events.inserted[0].EventType)
+	}
+	if events.inserted[1].EventType != floweventdomain.EventTypeRunStarted {
+		t.Fatalf("expected second event run.started, got %s", events.inserted[1].EventType)
+	}
+}
+
+func TestTickSkipsCodeOnlyRun(t *testing.T) {
+	t.Parallel()
+
+	runs := &fakeRunQueue{
+		claims: []runqueuerepo.ClaimedRun{
+			{
+				RunID:         "run-code-only",
+				CorrelationID: "corr-code-only",
+				ProjectID:     "proj-1",
+				RunPayload:    json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"issue":{"number":123},"agent":{"key":"dev","name":"AI Developer"}}`),
+				SlotNo:        1,
+			},
+		},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{states: map[string]JobState{}}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:          "worker-1",
+		ClaimLimit:        1,
+		RunningCheckLimit: 10,
+		SlotsPerProject:   2,
+		SlotLeaseTTL:      time.Minute,
+	}, Dependencies{
+		Runs:     runs,
+		Events:   events,
+		Launcher: launcher,
+		Logger:   logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 2, 12, 10, 0, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if len(launcher.launched) != 0 {
+		t.Fatalf("expected no launched jobs for code-only run, got %d", len(launcher.launched))
+	}
+	if len(runs.finished) != 1 {
+		t.Fatalf("expected 1 finished run, got %d", len(runs.finished))
+	}
+	if runs.finished[0].Status != rundomain.StatusSucceeded {
+		t.Fatalf("expected code-only run to finish as succeeded, got %s", runs.finished[0].Status)
+	}
+	if len(events.inserted) != 1 || events.inserted[0].EventType != floweventdomain.EventTypeRunSucceeded {
+		t.Fatalf("expected single run.succeeded event, got %#v", events.inserted)
 	}
 }
 
@@ -208,6 +261,61 @@ func TestTickFinalizesFullEnvRunAndCleansNamespace(t *testing.T) {
 	}
 	if launcher.cleaned[0].Namespace == "" {
 		t.Fatal("expected cleaned namespace to be set")
+	}
+}
+
+func TestTickFinalizesFullEnvRunSkipsCleanupForDebugLabel(t *testing.T) {
+	t.Parallel()
+
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev"},"issue":{"number":10},"agent":{"key":"dev","name":"AI Developer"},"raw_payload":{"issue":{"labels":[{"name":"run:debug"}]}}}`)
+	runs := &fakeRunQueue{
+		running: []runqueuerepo.RunningRun{{
+			RunID:         "run-5",
+			CorrelationID: "corr-5",
+			ProjectID:     "550e8400-e29b-41d4-a716-446655440000",
+			RunPayload:    payload,
+		}},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{states: map[string]JobState{"run-5": JobStateSucceeded}}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:                "worker-1",
+		ClaimLimit:              1,
+		RunningCheckLimit:       10,
+		SlotsPerProject:         2,
+		SlotLeaseTTL:            time.Minute,
+		RunNamespacePrefix:      "codex-issue",
+		CleanupFullEnvNamespace: true,
+		RunDebugLabel:           "run:debug",
+	}, Dependencies{
+		Runs:     runs,
+		Events:   events,
+		Launcher: launcher,
+		Logger:   logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 2, 11, 12, 0, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if len(launcher.cleaned) != 0 {
+		t.Fatalf("expected namespace cleanup to be skipped, got %d cleanups", len(launcher.cleaned))
+	}
+
+	if len(events.inserted) != 2 {
+		t.Fatalf("expected run.succeeded + run.namespace.cleanup_skipped events, got %d", len(events.inserted))
+	}
+	if events.inserted[0].EventType != floweventdomain.EventTypeRunSucceeded {
+		t.Fatalf("expected first event run.succeeded, got %s", events.inserted[0].EventType)
+	}
+	if events.inserted[1].EventType != floweventdomain.EventTypeRunNamespaceCleanupSkipped {
+		t.Fatalf("expected second event run.namespace.cleanup_skipped, got %s", events.inserted[1].EventType)
+	}
+	if !strings.Contains(string(events.inserted[1].Payload), "debug_label_present") {
+		t.Fatalf("expected cleanup_skipped payload to include debug reason, got %s", string(events.inserted[1].Payload))
 	}
 }
 

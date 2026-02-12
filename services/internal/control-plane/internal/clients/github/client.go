@@ -60,6 +60,19 @@ func (c *Client) GetPullRequest(ctx context.Context, params mcpdomain.GitHubGetP
 	}, nil
 }
 
+func (c *Client) GetAuthenticatedUserLogin(ctx context.Context, token string) (string, error) {
+	client := c.clientWithToken(token)
+	user, _, err := client.Users.Get(ctx, "")
+	if err != nil {
+		return "", err
+	}
+	login := strings.TrimSpace(user.GetLogin())
+	if login == "" {
+		return "", fmt.Errorf("github token owner login is empty")
+	}
+	return login, nil
+}
+
 func (c *Client) ListIssueComments(ctx context.Context, params mcpdomain.GitHubListIssueCommentsParams) ([]mcpdomain.GitHubIssueComment, error) {
 	client := c.clientWithToken(params.Token)
 	limit := clampLimit(params.Limit, defaultPageSize, maxPageSize)
@@ -213,20 +226,58 @@ func (c *Client) UpsertPullRequest(ctx context.Context, params mcpdomain.GitHubU
 }
 
 func (c *Client) CreateIssueComment(ctx context.Context, params mcpdomain.GitHubCreateIssueCommentParams) (mcpdomain.GitHubIssueComment, error) {
-	client := c.clientWithToken(params.Token)
+	return c.mutateIssueComment(ctx, newCreateIssueCommentMutationParams(params))
+}
 
-	comment, _, err := client.Issues.CreateComment(ctx, params.Owner, params.Repository, params.IssueNumber, &gh.IssueComment{
-		Body: gh.Ptr(params.Body),
-	})
+func (c *Client) EditIssueComment(ctx context.Context, params mcpdomain.GitHubEditIssueCommentParams) (mcpdomain.GitHubIssueComment, error) {
+	return c.mutateIssueComment(ctx, newEditIssueCommentMutationParams(params))
+}
+
+type issueCommentMutationParams struct {
+	Token       string
+	Owner       string
+	Repository  string
+	IssueNumber int
+	CommentID   int64
+	Body        string
+}
+
+func newCreateIssueCommentMutationParams(params mcpdomain.GitHubCreateIssueCommentParams) issueCommentMutationParams {
+	return issueCommentMutationParams{
+		Token:       params.Token,
+		Owner:       params.Owner,
+		Repository:  params.Repository,
+		IssueNumber: params.IssueNumber,
+		Body:        params.Body,
+	}
+}
+
+func newEditIssueCommentMutationParams(params mcpdomain.GitHubEditIssueCommentParams) issueCommentMutationParams {
+	return issueCommentMutationParams{
+		Token:      params.Token,
+		Owner:      params.Owner,
+		Repository: params.Repository,
+		CommentID:  params.CommentID,
+		Body:       params.Body,
+	}
+}
+
+func (c *Client) mutateIssueComment(ctx context.Context, params issueCommentMutationParams) (mcpdomain.GitHubIssueComment, error) {
+	client := c.clientWithToken(params.Token)
+	request := &gh.IssueComment{Body: gh.Ptr(params.Body)}
+	var (
+		comment *gh.IssueComment
+		err     error
+	)
+	if params.CommentID > 0 {
+		comment, _, err = client.Issues.EditComment(ctx, params.Owner, params.Repository, params.CommentID, request)
+	} else {
+		comment, _, err = client.Issues.CreateComment(ctx, params.Owner, params.Repository, params.IssueNumber, request)
+	}
 	if err != nil {
 		return mcpdomain.GitHubIssueComment{}, err
 	}
-	return mcpdomain.GitHubIssueComment{
-		ID:   comment.GetID(),
-		Body: comment.GetBody(),
-		URL:  comment.GetHTMLURL(),
-		User: comment.GetUser().GetLogin(),
-	}, nil
+	return toIssueComment(comment), nil
 }
 
 func (c *Client) AddLabels(ctx context.Context, params mcpdomain.GitHubMutateLabelsParams) ([]mcpdomain.GitHubLabel, error) {
@@ -307,5 +358,17 @@ func toPullRequest(item *gh.PullRequest) mcpdomain.GitHubPullRequest {
 		URL:    item.GetHTMLURL(),
 		Head:   item.GetHead().GetRef(),
 		Base:   item.GetBase().GetRef(),
+	}
+}
+
+func toIssueComment(item *gh.IssueComment) mcpdomain.GitHubIssueComment {
+	if item == nil {
+		return mcpdomain.GitHubIssueComment{}
+	}
+	return mcpdomain.GitHubIssueComment{
+		ID:   item.GetID(),
+		Body: item.GetBody(),
+		URL:  item.GetHTMLURL(),
+		User: item.GetUser().GetLogin(),
 	}
 }

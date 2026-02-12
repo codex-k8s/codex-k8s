@@ -17,9 +17,9 @@ approvals:
 # Labels and Trigger Policy
 
 ## TL;DR
-- Канонический набор лейблов включает классы `run:*`, `state:*`, `need:*`.
+- Канонический набор лейблов включает классы `run:*`, `state:*`, `need:*` и диагностические labels.
 - Trigger/deploy лейблы управляют запуском этапов и требуют апрува Owner при агент-инициации.
-- `state:*` и `need:*` не запускают деплой/исполнение и могут ставиться автоматически по политике.
+- `state:*`, `need:*` и диагностические labels не запускают деплой/исполнение и могут ставиться автоматически по политике.
 
 ## Source of truth
 - `docs/product/stage_process_model.md`
@@ -72,12 +72,19 @@ approvals:
 | `need:qa` | нужен QA-вход или тест-дизайн |
 | `need:sre` | нужно участие SRE/OPS |
 
+## Диагностические labels
+
+| Label | Назначение |
+|---|---|
+| `run:debug` | не запускает run сам по себе; при наличии на issue в момент `run:dev`/`run:dev:revise` worker сохраняет namespace/job после завершения и пишет `run.namespace.cleanup_skipped` |
+
 ## Конфигурационные лейблы модели/рассуждений
 
 Лейблы модели (одновременно активен один):
 - `[ai-model-gpt-5.3-codex]`
-- `[ai-model-gpt-5.2]`
+- `[ai-model-gpt-5.2-codex]`
 - `[ai-model-gpt-5.1-codex-max]`
+- `[ai-model-gpt-5.2]`
 - `[ai-model-gpt-5.1-codex-mini]`
 
 Лейблы рассуждений (одновременно активен один):
@@ -96,6 +103,11 @@ approvals:
 - Если лейбл инициирует человек с правами admin/owner, применяется по правам GitHub и политике репозитория.
 - Любая операция с `run:*` логируется в `flow_events`.
 - Для цикла `run:dev`/`run:dev:revise` перед финальным Owner review обязателен pre-review от системного `reviewer`.
+### Diagnostic labels (`run:debug`)
+- `run:debug` не запускает workflow/deploy напрямую.
+- Если label присутствует на issue при старте `run:dev`/`run:dev:revise`, worker не удаляет run-namespace автоматически.
+- Для такого случая пишется событие `run.namespace.cleanup_skipped` с `cleanup_command` для ручного удаления namespace.
+
 
 ### Service (`state:*`, `need:*`)
 - Могут ставиться агентом автоматически в рамках политики проекта.
@@ -113,8 +125,14 @@ approvals:
 - На issue одновременно допускается только один активный trigger label из группы `run:*`.
 - `run:dev` используется для первичного запуска цикла разработки и создания PR.
 - `run:dev:revise` используется только для итерации по уже существующему PR.
+- `run:dev:revise` может запускаться:
+  - по label `run:dev:revise` на Issue;
+  - по webhook `pull_request_review` с `action=submitted` и `review.state=changes_requested`.
 - Для `run:dev:revise` при отсутствии связанного PR run отклоняется с `failed_precondition` и событием `run.revise.pr_not_found`.
 - Label transitions после завершения run должны выполняться через MCP (а не вручную в коде агента), чтобы сохранять единый policy/audit контур.
+- Для dev/dev:revise transition выполняется так:
+  - снять trigger label с Issue;
+  - поставить `state:in-review` на PR (не на Issue).
 - S2 baseline:
   - pre-review остается обязательным шагом перед финальным Owner review;
   - post-run transitions `run:* -> state:*` фиксируются в Day5/Day6 как отдельные доработки policy и аудита.
@@ -123,11 +141,11 @@ approvals:
 
 - Все workflow условия сравнения label должны использовать `vars.*`, а не строковые литералы.
 - В GitHub Variables хранится **полный каталог** `run:*`, `state:*`, `need:*`:
-  - для `run:*`: `RUN_<STAGE>_LABEL` и `RUN_<STAGE>_REVISE_LABEL` (где применимо),
+  - для `run:*`: `RUN_<STAGE>_LABEL` и `RUN_<STAGE>_REVISE_LABEL` (где применимо), плюс `RUN_DEBUG_LABEL`,
   - для `state:*`: `STATE_*_LABEL`,
   - для `need:*`: `NEED_*_LABEL`.
 - Для model/reasoning также хранится каталог vars:
-  - `AI_MODEL_GPT_5_3_CODEX_LABEL`, `AI_MODEL_GPT_5_2_LABEL`, `AI_MODEL_GPT_5_1_CODEX_MAX_LABEL`, `AI_MODEL_GPT_5_1_CODEX_MINI_LABEL`,
+  - `AI_MODEL_GPT_5_3_CODEX_LABEL`, `AI_MODEL_GPT_5_2_CODEX_LABEL`, `AI_MODEL_GPT_5_1_CODEX_MAX_LABEL`, `AI_MODEL_GPT_5_2_LABEL`, `AI_MODEL_GPT_5_1_CODEX_MINI_LABEL`,
   - `AI_REASONING_LOW_LABEL`, `AI_REASONING_MEDIUM_LABEL`, `AI_REASONING_HIGH_LABEL`, `AI_REASONING_EXTRA_HIGH_LABEL`.
 - Для planned `run:*` лейблов vars заводятся заранее, даже если этап ещё не активирован.
 - Bootstrap синхронизация каталога выполняется скриптом `bootstrap/remote/45_configure_github_repo_ci.sh`.

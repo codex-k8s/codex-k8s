@@ -15,16 +15,21 @@ type Config struct {
 	RepositoryFullName string `env:"CODEXK8S_REPOSITORY_FULL_NAME,required,notEmpty"`
 	AgentKey           string `env:"CODEXK8S_AGENT_KEY,required,notEmpty"`
 	IssueNumber        int64  `env:"CODEXK8S_ISSUE_NUMBER"`
+	RunTargetBranch    string `env:"CODEXK8S_RUN_TARGET_BRANCH"`
+	ExistingPRNumber   int    `env:"CODEXK8S_EXISTING_PR_NUMBER"`
+	RuntimeMode        string `env:"CODEXK8S_RUNTIME_MODE" envDefault:"code-only"`
 
 	ControlPlaneGRPCTarget string `env:"CODEXK8S_CONTROL_PLANE_GRPC_TARGET,required,notEmpty"`
 	MCPBaseURL             string `env:"CODEXK8S_MCP_BASE_URL,required,notEmpty"`
 	MCPBearerToken         string `env:"CODEXK8S_MCP_BEARER_TOKEN,required,notEmpty"`
 
-	TriggerKind        string `env:"CODEXK8S_RUN_TRIGGER_KIND" envDefault:"dev"`
-	PromptTemplateKind string `env:"CODEXK8S_PROMPT_TEMPLATE_KIND" envDefault:"work"`
+	TriggerKind          string `env:"CODEXK8S_RUN_TRIGGER_KIND" envDefault:"dev"`
+	TriggerLabel         string `env:"CODEXK8S_RUN_TRIGGER_LABEL"`
+	PromptTemplateKind   string `env:"CODEXK8S_PROMPT_TEMPLATE_KIND" envDefault:"work"`
 	PromptTemplateSource string `env:"CODEXK8S_PROMPT_TEMPLATE_SOURCE" envDefault:"repo_seed"`
 	PromptTemplateLocale string `env:"CODEXK8S_PROMPT_TEMPLATE_LOCALE" envDefault:"ru"`
-	AgentModel           string `env:"CODEXK8S_AGENT_MODEL" envDefault:"gpt-5.3-codex"`
+	StateInReviewLabel   string `env:"CODEXK8S_STATE_IN_REVIEW_LABEL" envDefault:"state:in-review"`
+	AgentModel           string `env:"CODEXK8S_AGENT_MODEL"`
 	AgentReasoningEffort string `env:"CODEXK8S_AGENT_REASONING_EFFORT" envDefault:"high"`
 	AgentBaseBranch      string `env:"CODEXK8S_AGENT_BASE_BRANCH" envDefault:"main"`
 	AgentDisplayName     string `env:"CODEXK8S_AGENT_DISPLAY_NAME,required,notEmpty"`
@@ -32,7 +37,8 @@ type Config struct {
 	GitBotToken    string `env:"CODEXK8S_GIT_BOT_TOKEN,required,notEmpty"`
 	GitBotUsername string `env:"CODEXK8S_GIT_BOT_USERNAME,required,notEmpty"`
 	GitBotMail     string `env:"CODEXK8S_GIT_BOT_MAIL,required,notEmpty"`
-	OpenAIAPIKey   string `env:"CODEXK8S_OPENAI_API_KEY,required,notEmpty"`
+	OpenAIAPIKey   string `env:"CODEXK8S_OPENAI_API_KEY"`
+	OpenAIAuthFile string `env:"CODEXK8S_OPENAI_AUTH_FILE"`
 }
 
 // LoadConfig parses and validates configuration from environment.
@@ -43,6 +49,14 @@ func LoadConfig() (Config, error) {
 	}
 
 	cfg.TriggerKind = normalizeTriggerKind(cfg.TriggerKind)
+	cfg.TriggerLabel = strings.TrimSpace(cfg.TriggerLabel)
+	if cfg.TriggerLabel == "" {
+		if cfg.TriggerKind == triggerKindDevRevise {
+			cfg.TriggerLabel = runDevReviseLabelDefault
+		} else {
+			cfg.TriggerLabel = runDevLabelDefault
+		}
+	}
 	cfg.PromptTemplateKind = strings.TrimSpace(strings.ToLower(cfg.PromptTemplateKind))
 	if cfg.TriggerKind == triggerKindDevRevise {
 		cfg.PromptTemplateKind = promptTemplateKindReview
@@ -59,9 +73,22 @@ func LoadConfig() (Config, error) {
 	if cfg.PromptTemplateLocale == "" {
 		cfg.PromptTemplateLocale = "ru"
 	}
+	cfg.StateInReviewLabel = strings.TrimSpace(cfg.StateInReviewLabel)
+	if cfg.StateInReviewLabel == "" {
+		cfg.StateInReviewLabel = stateInReviewLabelDefault
+	}
+	cfg.OpenAIAuthFile = strings.TrimSpace(cfg.OpenAIAuthFile)
+	hasOpenAIAuthFile := cfg.OpenAIAuthFile != ""
+
 	cfg.AgentModel = strings.TrimSpace(cfg.AgentModel)
 	if cfg.AgentModel == "" {
-		cfg.AgentModel = "gpt-5.3-codex"
+		if hasOpenAIAuthFile {
+			cfg.AgentModel = modelGPT53Codex
+		} else {
+			cfg.AgentModel = modelGPT52Codex
+		}
+	} else if strings.EqualFold(cfg.AgentModel, modelGPT53Codex) && !hasOpenAIAuthFile {
+		cfg.AgentModel = modelGPT52Codex
 	}
 	cfg.AgentReasoningEffort = strings.TrimSpace(strings.ToLower(cfg.AgentReasoningEffort))
 	if cfg.AgentReasoningEffort == "" {
@@ -71,6 +98,10 @@ func LoadConfig() (Config, error) {
 	if cfg.AgentBaseBranch == "" {
 		cfg.AgentBaseBranch = "main"
 	}
+	cfg.RuntimeMode = strings.TrimSpace(strings.ToLower(cfg.RuntimeMode))
+	if cfg.RuntimeMode != runtimeModeFullEnv {
+		cfg.RuntimeMode = runtimeModeCodeOnly
+	}
 
 	cfg.ProjectID = strings.TrimSpace(cfg.ProjectID)
 	cfg.ControlPlaneGRPCTarget = strings.TrimSpace(cfg.ControlPlaneGRPCTarget)
@@ -78,9 +109,17 @@ func LoadConfig() (Config, error) {
 	cfg.MCPBearerToken = strings.TrimSpace(cfg.MCPBearerToken)
 	cfg.RepositoryFullName = strings.TrimSpace(cfg.RepositoryFullName)
 	cfg.AgentKey = strings.TrimSpace(cfg.AgentKey)
+	cfg.RunTargetBranch = strings.TrimSpace(cfg.RunTargetBranch)
+	if cfg.ExistingPRNumber < 0 {
+		cfg.ExistingPRNumber = 0
+	}
 	cfg.AgentDisplayName = strings.TrimSpace(cfg.AgentDisplayName)
 	cfg.GitBotUsername = strings.TrimSpace(cfg.GitBotUsername)
 	cfg.GitBotMail = strings.TrimSpace(cfg.GitBotMail)
+	cfg.OpenAIAPIKey = strings.TrimSpace(cfg.OpenAIAPIKey)
+	if !hasOpenAIAuthFile && cfg.OpenAIAPIKey == "" {
+		return Config{}, fmt.Errorf("CODEXK8S_OPENAI_API_KEY is required when CODEXK8S_OPENAI_AUTH_FILE is empty")
+	}
 
 	return cfg, nil
 }

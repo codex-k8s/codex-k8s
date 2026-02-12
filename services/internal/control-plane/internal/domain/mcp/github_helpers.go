@@ -135,3 +135,19 @@ func normalizeLabels(in []string) []string {
 	}
 	return out
 }
+
+func filterIssueCommentsByAuthor(comments []GitHubIssueComment, excludedAuthor string) []GitHubIssueComment {
+	excluded := strings.TrimSpace(excludedAuthor)
+	if excluded == "" {
+		return comments
+	}
+
+	filtered := make([]GitHubIssueComment, 0, len(comments))
+	for _, item := range comments {
+		if strings.EqualFold(strings.TrimSpace(item.User), excluded) {
+			continue
+		}
+		filtered = append(filtered, item)
+	}
+	return filtered
+}

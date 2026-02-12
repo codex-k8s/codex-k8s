@@ -238,6 +238,27 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /api/v1/staff/runs/{run_id}/namespace:
+    delete:
+      summary: Force delete run namespace
+      operationId: deleteRunNamespace
+      tags: [staff-runs]
+      parameters:
+        - $ref: "#/components/parameters/RunID"
+      responses:
+        "200":
+          description: Namespace cleanup result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunNamespaceCleanupResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /api/v1/staff/runs/{run_id}/events:
     get:
       summary: List run flow events
@@ -515,7 +536,6 @@ components:
         type: integer
         minimum: 1
         maximum: 1000
-
   responses:
     BadRequest:
       description: Invalid request
@@ -617,6 +637,23 @@ components:
       properties:
         user:
           $ref: "#/components/schemas/MeUser"
+
+    RunNamespaceCleanupResponse:
+      type: object
+      additionalProperties: false
+      required: [run_id, namespace, deleted, already_deleted]
+      properties:
+        run_id:
+          type: string
+        namespace:
+          type: string
+        deleted:
+          type: boolean
+        already_deleted:
+          type: boolean
+        comment_url:
+          type: string
+          nullable: true
 
     Project:
       type: object

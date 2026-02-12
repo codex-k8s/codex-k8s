@@ -17,6 +17,7 @@ import (
 )
 
 const defaultWorkerID = "worker"
+const defaultStateInReviewLabel = "state:in-review"
 
 // Config defines worker run-loop behavior.
 type Config struct {
@@ -37,12 +38,18 @@ type Config struct {
 	RunNamespacePrefix string
 	// CleanupFullEnvNamespace enables namespace cleanup after run completion.
 	CleanupFullEnvNamespace bool
+	// RunDebugLabel keeps namespace for post-run debugging when present on the issue.
+	RunDebugLabel string
+	// StateInReviewLabel is applied to PR when run is ready for owner review.
+	StateInReviewLabel string
 	// ControlPlaneGRPCTarget is control-plane gRPC endpoint used by run jobs for callbacks.
 	ControlPlaneGRPCTarget string
 	// ControlPlaneMCPBaseURL is MCP endpoint passed to run job environment.
 	ControlPlaneMCPBaseURL string
 	// OpenAIAPIKey is injected into run pods for codex login.
 	OpenAIAPIKey string
+	// OpenAIAuthFile is optional Codex auth.json payload injected into run pods.
+	OpenAIAuthFile string
 	// Context7APIKey enables Context7 documentation calls from run pods when set.
 	Context7APIKey string
 	// GitBotToken is injected into run pods for git transport only.
@@ -73,6 +80,8 @@ type Dependencies struct {
 	Launcher Launcher
 	// MCPTokenIssuer issues short-lived MCP token for run pods.
 	MCPTokenIssuer MCPTokenIssuer
+	// RunStatus updates one run-bound issue status comment.
+	RunStatus RunStatusNotifier
 	// Logger records worker diagnostics.
 	Logger *slog.Logger
 }
@@ -85,6 +94,7 @@ type Service struct {
 	feedback  learningfeedbackrepo.Repository
 	launcher  Launcher
 	mcpTokens MCPTokenIssuer
+	runStatus RunStatusNotifier
 	logger    *slog.Logger
 	now       func() time.Time
 }
@@ -109,12 +119,21 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if cfg.RunNamespacePrefix == "" {
 		cfg.RunNamespacePrefix = defaultRunNamespacePrefix
 	}
+	cfg.RunDebugLabel = strings.TrimSpace(cfg.RunDebugLabel)
+	if cfg.RunDebugLabel == "" {
+		cfg.RunDebugLabel = defaultRunDebugLabel
+	}
+	cfg.StateInReviewLabel = strings.TrimSpace(cfg.StateInReviewLabel)
+	if cfg.StateInReviewLabel == "" {
+		cfg.StateInReviewLabel = defaultStateInReviewLabel
+	}
 	cfg.ControlPlaneGRPCTarget = strings.TrimSpace(cfg.ControlPlaneGRPCTarget)
 	if cfg.ControlPlaneGRPCTarget == "" {
 		cfg.ControlPlaneGRPCTarget = "codex-k8s-control-plane:9090"
 	}
 	cfg.ControlPlaneMCPBaseURL = strings.TrimSpace(cfg.ControlPlaneMCPBaseURL)
 	cfg.OpenAIAPIKey = strings.TrimSpace(cfg.OpenAIAPIKey)
+	cfg.OpenAIAuthFile = strings.TrimSpace(cfg.OpenAIAuthFile)
 	cfg.Context7APIKey = strings.TrimSpace(cfg.Context7APIKey)
 	cfg.GitBotToken = strings.TrimSpace(cfg.GitBotToken)
 	cfg.GitBotUsername = strings.TrimSpace(cfg.GitBotUsername)
@@ -125,9 +144,20 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if cfg.GitBotMail == "" {
 		cfg.GitBotMail = "codex-bot@codex-k8s.local"
 	}
+	hasOpenAIAuthFile := cfg.OpenAIAuthFile != ""
 	cfg.AgentDefaultModel = strings.TrimSpace(cfg.AgentDefaultModel)
 	if cfg.AgentDefaultModel == "" {
-		cfg.AgentDefaultModel = "gpt-5.3-codex"
+		if hasOpenAIAuthFile {
+			cfg.AgentDefaultModel = modelGPT53Codex
+		} else {
+			cfg.AgentDefaultModel = modelGPT52Codex
+		}
+	}
+	if hasOpenAIAuthFile && strings.EqualFold(cfg.AgentDefaultModel, modelGPT52Codex) {
+		cfg.AgentDefaultModel = modelGPT53Codex
+	}
+	if !hasOpenAIAuthFile && strings.EqualFold(cfg.AgentDefaultModel, modelGPT53Codex) {
+		cfg.AgentDefaultModel = modelGPT52Codex
 	}
 	cfg.AgentDefaultReasoningEffort = strings.TrimSpace(cfg.AgentDefaultReasoningEffort)
 	if cfg.AgentDefaultReasoningEffort == "" {
@@ -147,6 +177,9 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if deps.MCPTokenIssuer == nil {
 		deps.MCPTokenIssuer = noopMCPTokenIssuer{}
 	}
+	if deps.RunStatus == nil {
+		deps.RunStatus = noopRunStatusNotifier{}
+	}
 
 	return &Service{
 		cfg:       cfg,
@@ -155,6 +188,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 		feedback:  deps.Feedback,
 		launcher:  deps.Launcher,
 		mcpTokens: deps.MCPTokenIssuer,
+		runStatus: deps.RunStatus,
 		logger:    deps.Logger,
 		now:       time.Now,
 	}
@@ -251,10 +285,25 @@ func (s *Service) launchPending(ctx context.Context) error {
 		}
 
 		execution := resolveRunExecutionContext(claimed.RunID, claimed.ProjectID, claimed.RunPayload, s.cfg.RunNamespacePrefix)
+		runningRun := runningRunFromClaimed(claimed)
+		if execution.RuntimeMode != agentdomain.RuntimeModeFullEnv {
+			if err := s.finishRun(ctx, finishRunParams{
+				Run:       runningRun,
+				Execution: execution,
+				Status:    rundomain.StatusSucceeded,
+				EventType: floweventdomain.EventTypeRunSucceeded,
+				Ref:       s.launcher.JobRef(claimed.RunID, execution.Namespace),
+			}); err != nil {
+				return fmt.Errorf("finish code-only run: %w", err)
+			}
+			continue
+		}
+
 		agentCtx, err := resolveRunAgentContext(claimed.RunPayload, runAgentDefaults{
 			DefaultModel:           s.cfg.AgentDefaultModel,
 			DefaultReasoningEffort: s.cfg.AgentDefaultReasoningEffort,
 			DefaultLocale:          s.cfg.AgentDefaultLocale,
+			AllowGPT53:             strings.TrimSpace(s.cfg.OpenAIAuthFile) != "",
 		})
 		if err != nil {
 			s.logger.Error("resolve run agent context failed", "run_id", claimed.RunID, "err", err)
@@ -287,7 +336,6 @@ func (s *Service) launchPending(ctx context.Context) error {
 			RuntimeMode:   execution.RuntimeMode,
 			Namespace:     execution.Namespace,
 		}
-		runningRun := runningRunFromClaimed(claimed)
 		if execution.RuntimeMode == agentdomain.RuntimeModeFullEnv {
 			if err := s.launcher.EnsureNamespace(ctx, namespaceSpec); err != nil {
 				s.logger.Error(
@@ -341,14 +389,18 @@ func (s *Service) launchPending(ctx context.Context) error {
 			IssueNumber:            agentCtx.IssueNumber,
 			TriggerKind:            agentCtx.TriggerKind,
 			TriggerLabel:           agentCtx.TriggerLabel,
+			TargetBranch:           agentCtx.TargetBranch,
+			ExistingPRNumber:       agentCtx.ExistingPRNumber,
 			AgentKey:               agentCtx.AgentKey,
 			AgentModel:             agentCtx.Model,
 			AgentReasoningEffort:   agentCtx.ReasoningEffort,
 			PromptTemplateKind:     agentCtx.PromptTemplateKind,
 			PromptTemplateSource:   agentCtx.PromptTemplateSource,
 			PromptTemplateLocale:   agentCtx.PromptTemplateLocale,
+			StateInReviewLabel:     s.cfg.StateInReviewLabel,
 			BaseBranch:             s.cfg.AgentBaseBranch,
 			OpenAIAPIKey:           s.cfg.OpenAIAPIKey,
+			OpenAIAuthFile:         s.cfg.OpenAIAuthFile,
 			Context7APIKey:         s.cfg.Context7APIKey,
 			GitBotToken:            s.cfg.GitBotToken,
 			AgentDisplayName:       agentCtx.AgentDisplayName,
@@ -402,6 +454,20 @@ func (s *Service) launchPending(ctx context.Context) error {
 		}); err != nil {
 			return fmt.Errorf("insert run.started event: %w", err)
 		}
+
+		if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
+			RunID:        claimed.RunID,
+			Phase:        RunStatusPhaseStarted,
+			JobName:      ref.Name,
+			JobNamespace: ref.Namespace,
+			RuntimeMode:  string(execution.RuntimeMode),
+			Namespace:    execution.Namespace,
+			TriggerKind:  agentCtx.TriggerKind,
+			PromptLocale: agentCtx.PromptTemplateLocale,
+			RunStatus:    string(rundomain.StatusRunning),
+		}); err != nil {
+			s.logger.Warn("upsert run status comment (started) failed", "run_id", claimed.RunID, "err", err)
+		}
 	}
 
 	return nil
@@ -446,6 +512,20 @@ func (s *Service) finishRun(ctx context.Context, params finishRunParams) error {
 		return fmt.Errorf("insert finish event: %w", err)
 	}
 
+	if params.Execution.RuntimeMode == agentdomain.RuntimeModeFullEnv {
+		if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
+			RunID:        params.Run.RunID,
+			Phase:        RunStatusPhaseFinished,
+			JobName:      params.Ref.Name,
+			JobNamespace: params.Ref.Namespace,
+			RuntimeMode:  string(params.Execution.RuntimeMode),
+			Namespace:    params.Execution.Namespace,
+			RunStatus:    string(params.Status),
+		}); err != nil {
+			s.logger.Warn("upsert run status comment (finished) failed", "run_id", params.Run.RunID, "err", err)
+		}
+	}
+
 	if params.Run.LearningMode && s.feedback != nil {
 		namespace := params.Ref.Namespace
 		if params.Execution.Namespace != "" {
@@ -471,8 +551,25 @@ func (s *Service) finishRun(ctx context.Context, params finishRunParams) error {
 	}
 
 	if params.Execution.RuntimeMode == agentdomain.RuntimeModeFullEnv &&
-		params.Execution.Namespace != "" &&
-		s.cfg.CleanupFullEnvNamespace {
+		params.Execution.Namespace != "" {
+		debugPolicy := s.resolveRunDebugPolicy(params.Run.RunPayload)
+		if debugPolicy.SkipCleanup {
+			if err := s.insertNamespaceLifecycleEvent(ctx, namespaceLifecycleEventParams{
+				CorrelationID: params.Run.CorrelationID,
+				EventType:     floweventdomain.EventTypeRunNamespaceCleanupSkipped,
+				RunID:         params.Run.RunID,
+				ProjectID:     params.Run.ProjectID,
+				Execution:     params.Execution,
+				Extra: namespaceLifecycleEventExtra{
+					Reason:         debugPolicy.Reason,
+					CleanupCommand: buildNamespaceCleanupCommand(params.Execution.Namespace),
+				},
+			}); err != nil {
+				s.logger.Error("insert run.namespace.cleanup_skipped event failed", "run_id", params.Run.RunID, "err", err)
+			}
+			return nil
+		}
+
 		cleanupSpec := NamespaceSpec{
 			RunID:         params.Run.RunID,
 			ProjectID:     params.Run.ProjectID,
@@ -510,6 +607,18 @@ func (s *Service) finishRun(ctx context.Context, params finishRunParams) error {
 			}); err != nil {
 				s.logger.Error("insert run.namespace.cleaned event failed", "run_id", params.Run.RunID, "err", err)
 			}
+			if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
+				RunID:        params.Run.RunID,
+				Phase:        RunStatusPhaseNamespaceDeleted,
+				JobName:      params.Ref.Name,
+				JobNamespace: params.Ref.Namespace,
+				RuntimeMode:  string(params.Execution.RuntimeMode),
+				Namespace:    params.Execution.Namespace,
+				RunStatus:    string(params.Status),
+				Deleted:      true,
+			}); err != nil {
+				s.logger.Warn("upsert run status comment (namespace deleted) failed", "run_id", params.Run.RunID, "err", err)
+			}
 		}
 	}
 
@@ -545,11 +654,13 @@ func (s *Service) insertNamespaceLifecycleEvent(ctx context.Context, params name
 		ActorID:       floweventdomain.ActorID(s.cfg.WorkerID),
 		EventType:     params.EventType,
 		Payload: encodeNamespaceLifecycleEventPayload(namespaceLifecycleEventPayload{
-			RunID:       params.RunID,
-			ProjectID:   params.ProjectID,
-			RuntimeMode: params.Execution.RuntimeMode,
-			Namespace:   params.Execution.Namespace,
-			Error:       params.Extra.Error,
+			RunID:          params.RunID,
+			ProjectID:      params.ProjectID,
+			RuntimeMode:    params.Execution.RuntimeMode,
+			Namespace:      params.Execution.Namespace,
+			Error:          params.Extra.Error,
+			Reason:         params.Extra.Reason,
+			CleanupCommand: params.Extra.CleanupCommand,
 		}),
 		CreatedAt: s.now().UTC(),
 	})

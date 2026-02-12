@@ -32,6 +32,8 @@ type Config struct {
 	ControlPlaneMCPBaseURL string `env:"CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" envDefault:"http://codex-k8s-control-plane:8081/mcp"`
 	// OpenAIAPIKey is injected into run pods for codex login.
 	OpenAIAPIKey string `env:"CODEXK8S_OPENAI_API_KEY"`
+	// OpenAIAuthFile stores optional Codex auth.json content for run pods.
+	OpenAIAuthFile string `env:"CODEXK8S_OPENAI_AUTH_FILE"`
 	// Context7APIKey enables Context7 documentation calls from run pods when set.
 	Context7APIKey string `env:"CODEXK8S_CONTEXT7_API_KEY"`
 	// GitBotToken is injected into run pods for git transport (fetch/push only).
@@ -80,6 +82,10 @@ type Config struct {
 	RunNamespacePrefix string `env:"CODEXK8S_WORKER_RUN_NAMESPACE_PREFIX" envDefault:"codex-issue"`
 	// RunNamespaceCleanup enables namespace cleanup after run completion.
 	RunNamespaceCleanup bool `env:"CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP" envDefault:"true"`
+	// RunDebugLabel keeps full-env namespace for post-run debugging when present on issue labels.
+	RunDebugLabel string `env:"CODEXK8S_RUN_DEBUG_LABEL" envDefault:"run:debug"`
+	// StateInReviewLabel is applied to PR when agent run is ready for owner review.
+	StateInReviewLabel string `env:"CODEXK8S_STATE_IN_REVIEW_LABEL" envDefault:"state:in-review"`
 	// RunServiceAccountName is service account for full-env run jobs.
 	RunServiceAccountName string `env:"CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT" envDefault:"codex-runner"`
 	// RunRoleName is RBAC role name for full-env run jobs.

@@ -9,6 +9,16 @@ const (
 	promptTemplateKindWork   = "work"
 	promptTemplateKindReview = "review"
 	promptTemplateSourceSeed = "repo_seed"
+
+	modelGPT53Codex = "gpt-5.3-codex"
+	modelGPT52Codex = "gpt-5.2-codex"
+
+	runtimeModeFullEnv  = "full-env"
+	runtimeModeCodeOnly = "code-only"
+
+	runDevLabelDefault        = "run:dev"
+	runDevReviseLabelDefault  = "run:dev:revise"
+	stateInReviewLabelDefault = "state:in-review"
 )
 
 func normalizeTriggerKind(value string) string {

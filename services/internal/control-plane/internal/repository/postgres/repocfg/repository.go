@@ -25,6 +25,8 @@ var (
 	queryFindByProviderExternalID string
 	//go:embed sql/get_token_encrypted.sql
 	queryGetTokenEncrypted string
+	//go:embed sql/set_token_encrypted_for_all.sql
+	querySetTokenEncryptedForAll string
 )
 
 // Repository stores project repository bindings in PostgreSQL.
@@ -135,4 +137,17 @@ func (r *Repository) GetTokenEncrypted(ctx context.Context, repositoryID string)
 		return nil, false, nil
 	}
 	return nil, false, fmt.Errorf("get repository token: %w", err)
+}
+
+// SetTokenEncryptedForAll updates encrypted token for all repository bindings.
+func (r *Repository) SetTokenEncryptedForAll(ctx context.Context, tokenEncrypted []byte) (int64, error) {
+	res, err := r.db.ExecContext(ctx, querySetTokenEncryptedForAll, tokenEncrypted)
+	if err != nil {
+		return 0, fmt.Errorf("set repository token for all: %w", err)
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("rows affected for repository token update: %w", err)
+	}
+	return affected, nil
 }

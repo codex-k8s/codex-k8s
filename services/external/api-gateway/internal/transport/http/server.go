@@ -94,6 +94,7 @@ func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Clien
 	staffGroup.DELETE("/projects/:project_id", staffH.DeleteProject)
 	staffGroup.GET("/runs", staffH.ListRuns)
 	staffGroup.GET("/runs/:run_id", staffH.GetRun)
+	staffGroup.DELETE("/runs/:run_id/namespace", staffH.DeleteRunNamespace)
 	staffGroup.GET("/runs/:run_id/events", staffH.ListRunEvents)
 	staffGroup.GET("/runs/:run_id/learning-feedback", staffH.ListRunLearningFeedback)
 	staffGroup.GET("/users", staffH.ListUsers)

@@ -185,29 +185,55 @@ func (l *Launcher) ensureRunServiceAccount(ctx context.Context, namespace string
 	return nil
 }
 
-// ensureRunRole ensures least-privilege Role for runtime namespace debug/deploy scenarios.
+// ensureRunRole ensures broad full-env namespace permissions except direct secrets access.
 func (l *Launcher) ensureRunRole(ctx context.Context, namespace string) error {
 	name := l.cfg.RunRoleName
 	expectedRules := []rbacv1.PolicyRule{
 		{
 			APIGroups: []string{""},
-			Resources: []string{"pods", "pods/log", "events", "services", "endpoints", "configmaps"},
-			Verbs:     []string{"get", "list", "watch"},
-		},
-		{
-			APIGroups: []string{""},
-			Resources: []string{"pods/exec"},
-			Verbs:     []string{"create"},
+			Resources: []string{
+				"configmaps",
+				"endpoints",
+				"events",
+				"limitranges",
+				"persistentvolumeclaims",
+				"pods",
+				"pods/attach",
+				"pods/exec",
+				"pods/log",
+				"pods/portforward",
+				"replicationcontrollers",
+				"resourcequotas",
+				"serviceaccounts",
+				"services",
+				"services/proxy",
+			},
+			Verbs: []string{"*"},
 		},
 		{
 			APIGroups: []string{"apps"},
-			Resources: []string{"deployments", "replicasets", "statefulsets", "daemonsets"},
-			Verbs:     []string{"get", "list", "watch"},
+			Resources: []string{"*"},
+			Verbs:     []string{"*"},
 		},
 		{
 			APIGroups: []string{"batch"},
-			Resources: []string{"jobs"},
-			Verbs:     []string{"get", "list", "watch"},
+			Resources: []string{"*"},
+			Verbs:     []string{"*"},
+		},
+		{
+			APIGroups: []string{"autoscaling"},
+			Resources: []string{"*"},
+			Verbs:     []string{"*"},
+		},
+		{
+			APIGroups: []string{"networking.k8s.io"},
+			Resources: []string{"*"},
+			Verbs:     []string{"*"},
+		},
+		{
+			APIGroups: []string{"policy"},
+			Resources: []string{"*"},
+			Verbs:     []string{"*"},
 		},
 	}
 

@@ -13,16 +13,18 @@ const (
 type GitHubEventType string
 
 const (
-	GitHubEventIssues      GitHubEventType = "issues"
-	GitHubEventPullRequest GitHubEventType = "pull_request"
-	GitHubEventPush        GitHubEventType = "push"
+	GitHubEventIssues            GitHubEventType = "issues"
+	GitHubEventPullRequest       GitHubEventType = "pull_request"
+	GitHubEventPullRequestReview GitHubEventType = "pull_request_review"
+	GitHubEventPush              GitHubEventType = "push"
 )
 
 // GitHubAction is an action field from GitHub webhook payload.
 type GitHubAction string
 
 const (
-	GitHubActionLabeled GitHubAction = "labeled"
+	GitHubActionLabeled   GitHubAction = "labeled"
+	GitHubActionSubmitted GitHubAction = "submitted"
 )
 
 // TriggerKind is an issue-label trigger flavor that maps to run behavior.
@@ -34,7 +36,9 @@ const (
 )
 
 const (
-	TriggerSourceIssueLabel  = "issue_label"
-	DefaultRunDevLabel       = "run:dev"
-	DefaultRunDevReviseLabel = "run:dev:revise"
+	GitHubReviewStateChangesRequested = "changes_requested"
+	TriggerSourceIssueLabel           = "issue_label"
+	TriggerSourcePullRequestReview    = "pull_request_review"
+	DefaultRunDevLabel                = "run:dev"
+	DefaultRunDevReviseLabel          = "run:dev:revise"
 )

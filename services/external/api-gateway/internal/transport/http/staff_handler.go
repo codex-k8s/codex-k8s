@@ -247,6 +247,16 @@ func (h *staffHandler) GetRun(c *echo.Context) error {
 	return getByPathResp(c, "run_id", h.getRunCall, casters.Run)
 }
 
+func (h *staffHandler) DeleteRunNamespace(c *echo.Context) error {
+	return withPrincipalAndResolved(c, resolvePath("run_id"), func(principal *controlplanev1.Principal, runID string) error {
+		item, err := h.deleteRunNamespaceCall(c.Request().Context(), principal, runID)
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, casters.RunNamespaceDelete(item))
+	})
+}
+
 func (h *staffHandler) ListRunEvents(c *echo.Context) error {
 	return listByPathLimitResp(c, "run_id", 500, h.listRunEventsCall, casters.FlowEvents)
 }
@@ -386,6 +396,10 @@ func buildGetRunRequest(principal *controlplanev1.Principal, id string) *control
 	return &controlplanev1.GetRunRequest{Principal: principal, RunId: id}
 }
 
+func buildDeleteRunNamespaceRequest(principal *controlplanev1.Principal, id string) *controlplanev1.DeleteRunNamespaceRequest {
+	return &controlplanev1.DeleteRunNamespaceRequest{Principal: principal, RunId: id}
+}
+
 func buildListRunEventsRequest(principal *controlplanev1.Principal, arg idLimitArg) *controlplanev1.ListRunEventsRequest {
 	return &controlplanev1.ListRunEventsRequest{Principal: principal, RunId: arg.id, Limit: arg.limit}
 }
@@ -428,6 +442,10 @@ func (h *staffHandler) listRunsCall(ctx context.Context, principal *controlplane
 
 func (h *staffHandler) getRunCall(ctx context.Context, principal *controlplanev1.Principal, id string) (*controlplanev1.Run, error) {
 	return callUnaryWithArg(ctx, principal, id, buildGetRunRequest, h.cp.Service().GetRun)
+}
+
+func (h *staffHandler) deleteRunNamespaceCall(ctx context.Context, principal *controlplanev1.Principal, id string) (*controlplanev1.DeleteRunNamespaceResponse, error) {
+	return callUnaryWithArg(ctx, principal, id, buildDeleteRunNamespaceRequest, h.cp.Service().DeleteRunNamespace)
 }
 
 func (h *staffHandler) listRunEventsCall(ctx context.Context, principal *controlplanev1.Principal, id string, limit int32) (*controlplanev1.ListRunEventsResponse, error) {

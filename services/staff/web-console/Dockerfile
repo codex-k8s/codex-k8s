@@ -1,8 +1,10 @@
 # syntax=docker/dockerfile:1.4
 ARG NODE_IMAGE_VERSION=22-bookworm
 ARG NGINX_IMAGE_VERSION=1.27-alpine
+ARG NODE_IMAGE_REPOSITORY=mirror.gcr.io/library/node
+ARG NGINX_IMAGE_REPOSITORY=mirror.gcr.io/library/nginx
 
-FROM node:${NODE_IMAGE_VERSION} AS deps
+FROM ${NODE_IMAGE_REPOSITORY}:${NODE_IMAGE_VERSION} AS deps
 
 WORKDIR /app
 
@@ -14,7 +16,7 @@ FROM deps AS build
 COPY . .
 RUN npm run build
 
-FROM nginx:${NGINX_IMAGE_VERSION} AS prod
+FROM ${NGINX_IMAGE_REPOSITORY}:${NGINX_IMAGE_VERSION} AS prod
 
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html

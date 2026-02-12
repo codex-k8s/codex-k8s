@@ -20,6 +20,7 @@ type ActorID string
 const (
 	ActorIDGitHubWebhook   ActorID = "github-webhook"
 	ActorIDWorker          ActorID = "worker"
+	ActorIDControlPlane    ActorID = "control-plane"
 	ActorIDControlPlaneMCP ActorID = "control-plane-mcp"
 	ActorIDAgentRunner     ActorID = "agent-runner"
 )
@@ -28,18 +29,25 @@ const (
 type EventType string
 
 const (
-	EventTypeWebhookReceived           EventType = "webhook.received"
-	EventTypeWebhookDuplicate          EventType = "webhook.duplicate"
-	EventTypeWebhookIgnored            EventType = "webhook.ignored"
-	EventTypeRunNamespacePrepared      EventType = "run.namespace.prepared"
-	EventTypeRunNamespaceCleaned       EventType = "run.namespace.cleaned"
-	EventTypeRunNamespaceCleanupFailed EventType = "run.namespace.cleanup_failed"
-	EventTypeRunStarted                EventType = "run.started"
-	EventTypeRunSucceeded              EventType = "run.succeeded"
-	EventTypeRunFailed                 EventType = "run.failed"
-	EventTypeRunFailedJobNotFound      EventType = "run.failed.job_not_found"
-	EventTypeRunFailedLaunchError      EventType = "run.failed.launch_error"
-	EventTypeRunFailedPrecondition     EventType = "run.failed.precondition"
+	EventTypeWebhookReceived  EventType = "webhook.received"
+	EventTypeWebhookDuplicate EventType = "webhook.duplicate"
+	EventTypeWebhookIgnored   EventType = "webhook.ignored"
+)
+
+const (
+	EventTypeRunNamespacePrepared       EventType = "run.namespace.prepared"
+	EventTypeRunNamespaceCleaned        EventType = "run.namespace.cleaned"
+	EventTypeRunNamespaceCleanupFailed  EventType = "run.namespace.cleanup_failed"
+	EventTypeRunNamespaceCleanupSkipped EventType = "run.namespace.cleanup_skipped"
+	EventTypeRunStarted                 EventType = "run.started"
+	EventTypeRunSucceeded               EventType = "run.succeeded"
+	EventTypeRunFailed                  EventType = "run.failed"
+	EventTypeRunFailedJobNotFound       EventType = "run.failed.job_not_found"
+	EventTypeRunFailedLaunchError       EventType = "run.failed.launch_error"
+	EventTypeRunFailedPrecondition      EventType = "run.failed.precondition"
+)
+
+const (
 	EventTypeRunMCPTokenIssued         EventType = "run.mcp.token.issued"
 	EventTypeRunAgentStarted           EventType = "run.agent.started"
 	EventTypeRunAgentSessionRestored   EventType = "run.agent.session.restored"
@@ -48,11 +56,16 @@ const (
 	EventTypeRunPRCreated              EventType = "run.pr.created"
 	EventTypeRunPRUpdated              EventType = "run.pr.updated"
 	EventTypeRunRevisePRNotFound       EventType = "run.revise.pr_not_found"
-	EventTypePromptContextAssembled    EventType = "prompt.context.assembled"
-	EventTypeMCPToolCalled             EventType = "mcp.tool.called"
-	EventTypeMCPToolSucceeded          EventType = "mcp.tool.succeeded"
-	EventTypeMCPToolFailed             EventType = "mcp.tool.failed"
-	EventTypeMCPToolApprovalPending    EventType = "mcp.tool.approval_pending"
+	EventTypeRunStatusCommentUpserted  EventType = "run.status.comment.upserted"
+	EventTypeRunNamespaceDeleteByStaff EventType = "run.namespace.delete_by_staff"
+)
+
+const (
+	EventTypePromptContextAssembled EventType = "prompt.context.assembled"
+	EventTypeMCPToolCalled          EventType = "mcp.tool.called"
+	EventTypeMCPToolSucceeded       EventType = "mcp.tool.succeeded"
+	EventTypeMCPToolFailed          EventType = "mcp.tool.failed"
+	EventTypeMCPToolApprovalPending EventType = "mcp.tool.approval_pending"
 )
 
 // InsertParams defines a single flow event record.

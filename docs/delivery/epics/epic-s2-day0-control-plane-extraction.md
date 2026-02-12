@@ -111,7 +111,7 @@ approvals:
 ## Verification
 - Unit tests: `go test ./...`
 - Bash syntax: `bash -n deploy/scripts/deploy_staging.sh`
-- Staging smoke: `deploy/scripts/staging_smoke.sh` (OK после деплоя)
+- Staging smoke: ручной smoke/regression по runbook (OK после деплоя)
 
 ## План релиза (верхний уровень)
 - Контур dev/staging до dogfooding: см. `.local/agents-temp-dev-rules.md`.

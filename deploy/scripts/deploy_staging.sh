@@ -71,6 +71,7 @@ CODEXK8S_AGENT_DEFAULT_MODEL="${CODEXK8S_AGENT_DEFAULT_MODEL:-gpt-5.3-codex}"
 CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT="${CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT:-high}"
 CODEXK8S_AGENT_DEFAULT_LOCALE="${CODEXK8S_AGENT_DEFAULT_LOCALE:-ru}"
 CODEXK8S_AGENT_BASE_BRANCH="${CODEXK8S_AGENT_BASE_BRANCH:-main}"
+CODEXK8S_CONTROL_PLANE_GRPC_TARGET="${CODEXK8S_CONTROL_PLANE_GRPC_TARGET:-codex-k8s-control-plane.${CODEXK8S_STAGING_NAMESPACE}.svc.cluster.local:9090}"
 CODEXK8S_CONTROL_PLANE_MCP_BASE_URL="${CODEXK8S_CONTROL_PLANE_MCP_BASE_URL:-http://codex-k8s-control-plane.${CODEXK8S_STAGING_NAMESPACE}.svc.cluster.local:8081/mcp}"
 CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_CPU="${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_CPU:-100m}"
 CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_MEMORY="${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_MEMORY:-256Mi}"
@@ -105,6 +106,7 @@ CODEXK8S_APP_SECRET_KEY="${CODEXK8S_APP_SECRET_KEY:-}"
 CODEXK8S_TOKEN_ENCRYPTION_KEY="${CODEXK8S_TOKEN_ENCRYPTION_KEY:-}"
 CODEXK8S_MCP_TOKEN_SIGNING_KEY="${CODEXK8S_MCP_TOKEN_SIGNING_KEY:-}"
 CODEXK8S_MCP_TOKEN_TTL="${CODEXK8S_MCP_TOKEN_TTL:-24h}"
+CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS="${CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS:-}"
 CODEXK8S_GITHUB_WEBHOOK_SECRET="${CODEXK8S_GITHUB_WEBHOOK_SECRET:-}"
 CODEXK8S_GITHUB_WEBHOOK_URL="${CODEXK8S_GITHUB_WEBHOOK_URL:-}"
 CODEXK8S_GITHUB_WEBHOOK_EVENTS="${CODEXK8S_GITHUB_WEBHOOK_EVENTS:-}"
@@ -131,6 +133,7 @@ RUN_PLAN_LABEL="${RUN_PLAN_LABEL:-run:plan}"
 RUN_PLAN_REVISE_LABEL="${RUN_PLAN_REVISE_LABEL:-run:plan:revise}"
 RUN_DEV_LABEL="${RUN_DEV_LABEL:-${CODEXK8S_RUN_DEV_LABEL:-run:dev}}"
 RUN_DEV_REVISE_LABEL="${RUN_DEV_REVISE_LABEL:-${CODEXK8S_RUN_DEV_REVISE_LABEL:-run:dev:revise}}"
+RUN_DEBUG_LABEL="${RUN_DEBUG_LABEL:-${CODEXK8S_RUN_DEBUG_LABEL:-run:debug}}"
 RUN_DOC_AUDIT_LABEL="${RUN_DOC_AUDIT_LABEL:-run:doc-audit}"
 RUN_QA_LABEL="${RUN_QA_LABEL:-run:qa}"
 RUN_RELEASE_LABEL="${RUN_RELEASE_LABEL:-run:release}"
@@ -150,7 +153,10 @@ NEED_QA_LABEL="${NEED_QA_LABEL:-need:qa}"
 NEED_SRE_LABEL="${NEED_SRE_LABEL:-need:sre}"
 CODEXK8S_RUN_DEV_LABEL="${CODEXK8S_RUN_DEV_LABEL:-$RUN_DEV_LABEL}"
 CODEXK8S_RUN_DEV_REVISE_LABEL="${CODEXK8S_RUN_DEV_REVISE_LABEL:-$RUN_DEV_REVISE_LABEL}"
+CODEXK8S_RUN_DEBUG_LABEL="${CODEXK8S_RUN_DEBUG_LABEL:-$RUN_DEBUG_LABEL}"
+CODEXK8S_GITHUB_PAT="${CODEXK8S_GITHUB_PAT:-}"
 CODEXK8S_OPENAI_API_KEY="${CODEXK8S_OPENAI_API_KEY:-}"
+CODEXK8S_OPENAI_AUTH_FILE="${CODEXK8S_OPENAI_AUTH_FILE:-}"
 CODEXK8S_GIT_BOT_TOKEN="${CODEXK8S_GIT_BOT_TOKEN:-}"
 CODEXK8S_GIT_BOT_USERNAME="${CODEXK8S_GIT_BOT_USERNAME:-}"
 CODEXK8S_GIT_BOT_MAIL="${CODEXK8S_GIT_BOT_MAIL:-}"
@@ -202,6 +208,24 @@ if [ -z "$CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS" ] && kubectl -n "$CODEXK8S_S
       -o jsonpath='{.data.CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS}' 2>/dev/null | base64 -d || true
   )"
 fi
+if [ -z "$CODEXK8S_OPENAI_API_KEY" ] && kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime >/dev/null 2>&1; then
+  CODEXK8S_OPENAI_API_KEY="$(
+    kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime \
+      -o jsonpath='{.data.CODEXK8S_OPENAI_API_KEY}' 2>/dev/null | base64 -d || true
+  )"
+fi
+if [ -z "$CODEXK8S_OPENAI_AUTH_FILE" ] && kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime >/dev/null 2>&1; then
+  CODEXK8S_OPENAI_AUTH_FILE="$(
+    kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime \
+      -o jsonpath='{.data.CODEXK8S_OPENAI_AUTH_FILE}' 2>/dev/null | base64 -d || true
+  )"
+fi
+if [ -z "$CODEXK8S_GITHUB_PAT" ] && kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime >/dev/null 2>&1; then
+  CODEXK8S_GITHUB_PAT="$(
+    kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime \
+      -o jsonpath='{.data.CODEXK8S_GITHUB_PAT}' 2>/dev/null | base64 -d || true
+  )"
+fi
 if [ -z "$CODEXK8S_GIT_BOT_TOKEN" ] && kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime >/dev/null 2>&1; then
   CODEXK8S_GIT_BOT_TOKEN="$(
     kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime \
@@ -220,6 +244,13 @@ if [ -z "$CODEXK8S_GIT_BOT_MAIL" ] && kubectl -n "$CODEXK8S_STAGING_NAMESPACE" g
       -o jsonpath='{.data.CODEXK8S_GIT_BOT_MAIL}' 2>/dev/null | base64 -d || true
   )"
 fi
+if [ -z "$CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS" ] && kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime >/dev/null 2>&1; then
+  CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS="$(
+    kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime \
+      -o jsonpath='{.data.CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS}' 2>/dev/null | base64 -d || true
+  )"
+fi
+CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS="${CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS:-14}"
 if [ -z "$CODEXK8S_GIT_BOT_TOKEN" ]; then
   echo "Missing required CODEXK8S_GIT_BOT_TOKEN" >&2
   exit 1
@@ -257,6 +288,7 @@ render_template() {
   local worker_job_command_escaped
   local web_console_image_escaped
   local vite_dev_upstream_escaped
+  local control_plane_grpc_target_escaped
   local control_plane_mcp_base_url_escaped
   local agent_default_model_escaped
   local agent_default_reasoning_effort_escaped
@@ -270,6 +302,7 @@ render_template() {
   worker_job_command_escaped="$(escape_sed_replacement "$CODEXK8S_WORKER_JOB_COMMAND")"
   web_console_image_escaped="$(escape_sed_replacement "$CODEXK8S_WEB_CONSOLE_IMAGE")"
   vite_dev_upstream_escaped="$(escape_sed_replacement "$CODEXK8S_VITE_DEV_UPSTREAM")"
+  control_plane_grpc_target_escaped="$(escape_sed_replacement "$CODEXK8S_CONTROL_PLANE_GRPC_TARGET")"
   control_plane_mcp_base_url_escaped="$(escape_sed_replacement "$CODEXK8S_CONTROL_PLANE_MCP_BASE_URL")"
   agent_default_model_escaped="$(escape_sed_replacement "$CODEXK8S_AGENT_DEFAULT_MODEL")"
   agent_default_reasoning_effort_escaped="$(escape_sed_replacement "$CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT")"
@@ -315,6 +348,7 @@ render_template() {
     -e "s|\${CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT}|${agent_default_reasoning_effort_escaped}|g" \
     -e "s|\${CODEXK8S_AGENT_DEFAULT_LOCALE}|${agent_default_locale_escaped}|g" \
     -e "s|\${CODEXK8S_AGENT_BASE_BRANCH}|${agent_base_branch_escaped}|g" \
+    -e "s|\${CODEXK8S_CONTROL_PLANE_GRPC_TARGET}|${control_plane_grpc_target_escaped}|g" \
     -e "s|\${CODEXK8S_CONTROL_PLANE_MCP_BASE_URL}|${control_plane_mcp_base_url_escaped}|g" \
     -e "s|\${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_CPU}|${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_CPU}|g" \
     -e "s|\${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_MEMORY}|${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_MEMORY}|g" \
@@ -348,7 +382,9 @@ if ! kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-postgres >/de
 fi
 
 kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create secret generic codex-k8s-runtime \
+  --from-literal=CODEXK8S_GITHUB_PAT="$CODEXK8S_GITHUB_PAT" \
   --from-literal=CODEXK8S_OPENAI_API_KEY="$CODEXK8S_OPENAI_API_KEY" \
+  --from-literal=CODEXK8S_OPENAI_AUTH_FILE="$CODEXK8S_OPENAI_AUTH_FILE" \
   --from-literal=CODEXK8S_GIT_BOT_TOKEN="$CODEXK8S_GIT_BOT_TOKEN" \
   --from-literal=CODEXK8S_GIT_BOT_USERNAME="$CODEXK8S_GIT_BOT_USERNAME" \
   --from-literal=CODEXK8S_GIT_BOT_MAIL="$CODEXK8S_GIT_BOT_MAIL" \
@@ -357,6 +393,7 @@ kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create secret generic codex-k8s-runtime
   --from-literal=CODEXK8S_TOKEN_ENCRYPTION_KEY="$CODEXK8S_TOKEN_ENCRYPTION_KEY" \
   --from-literal=CODEXK8S_MCP_TOKEN_SIGNING_KEY="$CODEXK8S_MCP_TOKEN_SIGNING_KEY" \
   --from-literal=CODEXK8S_MCP_TOKEN_TTL="$CODEXK8S_MCP_TOKEN_TTL" \
+  --from-literal=CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS="$CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS" \
   --from-literal=CODEXK8S_LEARNING_MODE_DEFAULT="$CODEXK8S_LEARNING_MODE_DEFAULT" \
   --from-literal=CODEXK8S_GITHUB_WEBHOOK_SECRET="$CODEXK8S_GITHUB_WEBHOOK_SECRET" \
   --from-literal=CODEXK8S_GITHUB_WEBHOOK_URL="$CODEXK8S_GITHUB_WEBHOOK_URL" \
@@ -371,6 +408,7 @@ kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create secret generic codex-k8s-runtime
   --from-literal=CODEXK8S_JWT_TTL="$CODEXK8S_JWT_TTL" \
   --from-literal=CODEXK8S_RUN_DEV_LABEL="$CODEXK8S_RUN_DEV_LABEL" \
   --from-literal=CODEXK8S_RUN_DEV_REVISE_LABEL="$CODEXK8S_RUN_DEV_REVISE_LABEL" \
+  --from-literal=CODEXK8S_RUN_DEBUG_LABEL="$CODEXK8S_RUN_DEBUG_LABEL" \
   --from-literal=CODEXK8S_VITE_DEV_UPSTREAM="$CODEXK8S_VITE_DEV_UPSTREAM" \
   --dry-run=client -o yaml | kubectl apply -f -
 
@@ -442,6 +480,7 @@ kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create configmap codex-k8s-label-catalo
   --from-literal=RUN_PLAN_REVISE_LABEL="$RUN_PLAN_REVISE_LABEL" \
   --from-literal=RUN_DEV_LABEL="$RUN_DEV_LABEL" \
   --from-literal=RUN_DEV_REVISE_LABEL="$RUN_DEV_REVISE_LABEL" \
+  --from-literal=RUN_DEBUG_LABEL="$RUN_DEBUG_LABEL" \
   --from-literal=RUN_DOC_AUDIT_LABEL="$RUN_DOC_AUDIT_LABEL" \
   --from-literal=RUN_QA_LABEL="$RUN_QA_LABEL" \
   --from-literal=RUN_RELEASE_LABEL="$RUN_RELEASE_LABEL" \
@@ -461,6 +500,7 @@ kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create configmap codex-k8s-label-catalo
   --from-literal=NEED_SRE_LABEL="$NEED_SRE_LABEL" \
   --from-literal=CODEXK8S_RUN_DEV_LABEL="$CODEXK8S_RUN_DEV_LABEL" \
   --from-literal=CODEXK8S_RUN_DEV_REVISE_LABEL="$CODEXK8S_RUN_DEV_REVISE_LABEL" \
+  --from-literal=CODEXK8S_RUN_DEBUG_LABEL="$CODEXK8S_RUN_DEBUG_LABEL" \
   --dry-run=client -o yaml | kubectl apply -f -
 
 if ! kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-oauth2-proxy >/dev/null 2>&1; then

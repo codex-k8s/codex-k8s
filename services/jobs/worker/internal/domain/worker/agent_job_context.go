@@ -17,12 +17,21 @@ const (
 
 	modelSourceDefault    = "agent_default"
 	modelSourceIssueLabel = "issue_label"
+	modelSourceFallback   = "auth_file_fallback"
+
+	modelGPT53Codex     = "gpt-5.3-codex"
+	modelGPT52Codex     = "gpt-5.2-codex"
+	modelGPT52          = "gpt-5.2"
+	modelGPT51CodexMax  = "gpt-5.1-codex-max"
+	modelGPT51CodexMini = "gpt-5.1-codex-mini"
 )
 
 type runAgentContext struct {
 	RepositoryFullName   string
 	AgentKey             string
 	IssueNumber          int64
+	TargetBranch         string
+	ExistingPRNumber     int
 	TriggerKind          string
 	TriggerLabel         string
 	AgentDisplayName     string
@@ -61,18 +70,6 @@ type runAgentDescriptor struct {
 	Name string `json:"name"`
 }
 
-type githubRawIssueEvent struct {
-	Issue *githubRawIssue `json:"issue"`
-}
-
-type githubRawIssue struct {
-	Labels []githubRawIssueLabel `json:"labels"`
-}
-
-type githubRawIssueLabel struct {
-	Name string `json:"name"`
-}
-
 func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefaults) (runAgentContext, error) {
 	payload := parseRunAgentPayload(runPayload)
 
@@ -80,6 +77,8 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 		RepositoryFullName: strings.TrimSpace(payload.repositoryFullName),
 		AgentKey:           strings.TrimSpace(payload.agentKey),
 		IssueNumber:        payload.issueNumber,
+		TargetBranch:       strings.TrimSpace(payload.targetBranch),
+		ExistingPRNumber:   payload.existingPRNumber,
 		TriggerKind:        normalizeTriggerKind(payload.triggerKind),
 		TriggerLabel:       strings.TrimSpace(payload.triggerLabel),
 		AgentDisplayName:   strings.TrimSpace(payload.agentDisplayName),
@@ -118,6 +117,10 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 	}
 	ctx.Model = model
 	ctx.ModelSource = modelSource
+	if !defaults.AllowGPT53 && strings.EqualFold(ctx.Model, modelGPT53Codex) {
+		ctx.Model = modelGPT52Codex
+		ctx.ModelSource = modelSourceFallback
+	}
 	ctx.ReasoningEffort = reasoning
 	ctx.ReasoningSource = reasoningSource
 
@@ -128,12 +131,15 @@ type runAgentDefaults struct {
 	DefaultModel           string
 	DefaultReasoningEffort string
 	DefaultLocale          string
+	AllowGPT53             bool
 }
 
 type parsedRunAgentPayload struct {
 	repositoryFullName string
 	agentKey           string
 	issueNumber        int64
+	targetBranch       string
+	existingPRNumber   int
 	triggerKind        string
 	triggerLabel       string
 	agentDisplayName   string
@@ -155,6 +161,14 @@ func parseRunAgentPayload(raw json.RawMessage) parsedRunAgentPayload {
 	if payload.Issue != nil && payload.Issue.Number > 0 {
 		out.issueNumber = payload.Issue.Number
 	}
+	prNumber, targetBranch := extractPullRequestHints(payload.RawPayload)
+	if out.issueNumber <= 0 && prNumber > 0 {
+		out.issueNumber = prNumber
+	}
+	if prNumber > 0 {
+		out.existingPRNumber = int(prNumber)
+	}
+	out.targetBranch = strings.TrimSpace(targetBranch)
 	if payload.Trigger != nil {
 		out.triggerKind = strings.TrimSpace(payload.Trigger.Kind)
 		out.triggerLabel = strings.TrimSpace(payload.Trigger.Label)
@@ -167,23 +181,34 @@ func parseRunAgentPayload(raw json.RawMessage) parsedRunAgentPayload {
 	return out
 }
 
-func extractIssueLabels(raw json.RawMessage) []string {
+type pullRequestHintsPayload struct {
+	PullRequest *pullRequestHintsItem `json:"pull_request"`
+}
+
+type pullRequestHintsItem struct {
+	Number int64                 `json:"number"`
+	Head   *pullRequestHintsHead `json:"head"`
+}
+
+type pullRequestHintsHead struct {
+	Ref string `json:"ref"`
+}
+
+func extractPullRequestHints(raw json.RawMessage) (number int64, targetBranch string) {
 	if len(raw) == 0 {
-		return nil
+		return 0, ""
 	}
-	var event githubRawIssueEvent
-	if err := json.Unmarshal(raw, &event); err != nil || event.Issue == nil {
-		return nil
+
+	var payload pullRequestHintsPayload
+	if err := json.Unmarshal(raw, &payload); err != nil || payload.PullRequest == nil {
+		return 0, ""
 	}
-	labels := make([]string, 0, len(event.Issue.Labels))
-	for _, label := range event.Issue.Labels {
-		name := strings.TrimSpace(label.Name)
-		if name == "" {
-			continue
-		}
-		labels = append(labels, name)
+
+	number = payload.PullRequest.Number
+	if payload.PullRequest.Head != nil {
+		targetBranch = strings.TrimSpace(payload.PullRequest.Head.Ref)
 	}
-	return labels
+	return number, targetBranch
 }
 
 func normalizeTriggerKind(value string) string {
@@ -197,10 +222,11 @@ func normalizeTriggerKind(value string) string {
 
 func resolveModelFromLabels(labels []string, defaultModel string) (model string, source string, err error) {
 	modelByLabel := map[string]string{
-		"ai-model-gpt-5.3-codex":      "gpt-5.3-codex",
-		"ai-model-gpt-5.2":            "gpt-5.2",
-		"ai-model-gpt-5.1-codex-max":  "gpt-5.1-codex-max",
-		"ai-model-gpt-5.1-codex-mini": "gpt-5.1-codex-mini",
+		"ai-model-gpt-5.3-codex":      modelGPT53Codex,
+		"ai-model-gpt-5.2-codex":      modelGPT52Codex,
+		"ai-model-gpt-5.2":            modelGPT52,
+		"ai-model-gpt-5.1-codex-max":  modelGPT51CodexMax,
+		"ai-model-gpt-5.1-codex-mini": modelGPT51CodexMini,
 	}
 	return resolveSingleLabelValue(labels, defaultModel, modelByLabel, "ai-model")
 }
@@ -229,7 +255,7 @@ func resolveSingleLabelValue(labels []string, defaultValue string, known map[str
 func collectResolvedLabelValues(labels []string, known map[string]string) []string {
 	found := make([]string, 0, 1)
 	for _, rawLabel := range labels {
-		normalized := normalizeAIConfigLabel(rawLabel)
+		normalized := normalizeLabelToken(rawLabel)
 		if normalized == "" {
 			continue
 		}
@@ -241,11 +267,4 @@ func collectResolvedLabelValues(labels []string, known map[string]string) []stri
 		}
 	}
 	return found
-}
-
-func normalizeAIConfigLabel(value string) string {
-	trimmed := strings.TrimSpace(value)
-	trimmed = strings.TrimPrefix(trimmed, "[")
-	trimmed = strings.TrimSuffix(trimmed, "]")
-	return strings.ToLower(strings.TrimSpace(trimmed))
 }

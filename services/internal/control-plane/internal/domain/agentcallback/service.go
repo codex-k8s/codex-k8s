@@ -8,6 +8,7 @@ import (
 	"time"
 
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
+	agentrunlogrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrunlog"
 	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentsession"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
 )
@@ -37,11 +38,12 @@ type InsertRunFlowEventParams struct {
 type Service struct {
 	sessions   agentsessionrepo.Repository
 	flowEvents floweventrepo.Repository
+	runLogs    agentrunlogrepo.Repository
 }
 
 // NewService constructs callback domain service.
-func NewService(sessions agentsessionrepo.Repository, flowEvents floweventrepo.Repository) *Service {
-	return &Service{sessions: sessions, flowEvents: flowEvents}
+func NewService(sessions agentsessionrepo.Repository, flowEvents floweventrepo.Repository, runLogs agentrunlogrepo.Repository) *Service {
+	return &Service{sessions: sessions, flowEvents: flowEvents, runLogs: runLogs}
 }
 
 // UpsertAgentSession stores or updates run session snapshot.
@@ -49,7 +51,15 @@ func (s *Service) UpsertAgentSession(ctx context.Context, params UpsertAgentSess
 	if s == nil || s.sessions == nil {
 		return errors.New("agent session repository is not configured")
 	}
-	return s.sessions.Upsert(ctx, params)
+	if err := s.sessions.Upsert(ctx, params); err != nil {
+		return err
+	}
+	if s.runLogs != nil {
+		if err := s.runLogs.UpsertRunAgentLogs(ctx, strings.TrimSpace(params.RunID), params.SessionJSON); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // GetLatestAgentSession returns latest persisted snapshot by repo/branch/agent.
@@ -87,4 +97,12 @@ func (s *Service) InsertRunFlowEvent(ctx context.Context, params InsertRunFlowEv
 		Payload:       payload,
 		CreatedAt:     createdAt,
 	})
+}
+
+// CleanupRunAgentLogs clears stored run logs for finished runs older than cutoff.
+func (s *Service) CleanupRunAgentLogs(ctx context.Context, finishedBefore time.Time) (int64, error) {
+	if s == nil || s.runLogs == nil {
+		return 0, errors.New("run logs repository is not configured")
+	}
+	return s.runLogs.CleanupRunAgentLogsFinishedBefore(ctx, finishedBefore.UTC())
 }

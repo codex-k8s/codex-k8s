@@ -25,6 +25,7 @@ import (
 	kubernetesclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/kubernetes"
 	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
+	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
 	agentrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agent"
@@ -32,6 +33,7 @@ import (
 	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentsession"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/flowevent"
 	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/learningfeedback"
+	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/platformtoken"
 	projectrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/project"
 	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projectmember"
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/repocfg"
@@ -82,10 +84,21 @@ func Run() error {
 	repos := repocfgrepo.NewRepository(db)
 	feedback := learningfeedbackrepo.NewRepository(db)
 	agentSessions := agentsessionrepo.NewRepository(db)
+	platformTokens := platformtokenrepo.NewRepository(db)
 
 	tokenCrypto, err := tokencrypt.NewService(cfg.TokenEncryptionKey)
 	if err != nil {
 		return fmt.Errorf("init token encryption: %w", err)
+	}
+	if err := syncGitHubTokens(runCtx, syncGitHubTokensParams{
+		PlatformTokenRaw: strings.TrimSpace(cfg.GitHubPAT),
+		BotTokenRaw:      strings.TrimSpace(cfg.GitBotToken),
+		PlatformTokens:   platformTokens,
+		Repos:            repos,
+		TokenCrypt:       tokenCrypto,
+		Logger:           logger,
+	}); err != nil {
+		return fmt.Errorf("sync github tokens: %w", err)
 	}
 	k8sClient, err := kubernetesclient.NewClient(cfg.KubeconfigPath)
 	if err != nil {
@@ -111,12 +124,27 @@ func Run() error {
 		Runs:       agentRuns,
 		FlowEvents: flowEvents,
 		Repos:      repos,
+		Platform:   platformTokens,
 		TokenCrypt: tokenCrypto,
 		GitHub:     githubMCPClient,
 		Kubernetes: k8sClient,
 	})
 	if err != nil {
 		return fmt.Errorf("init mcp domain service: %w", err)
+	}
+	runStatusService, err := runstatusdomain.NewService(runstatusdomain.Config{
+		PublicBaseURL: cfg.PublicBaseURL,
+		DefaultLocale: "ru",
+	}, runstatusdomain.Dependencies{
+		Runs:       agentRuns,
+		Platform:   platformTokens,
+		TokenCrypt: tokenCrypto,
+		GitHub:     githubMCPClient,
+		Kubernetes: k8sClient,
+		FlowEvents: flowEvents,
+	})
+	if err != nil {
+		return fmt.Errorf("init runstatus domain service: %w", err)
 	}
 
 	learningDefault, err := cfg.LearningModeDefaultBool()
@@ -158,7 +186,7 @@ func Run() error {
 			Secret: cfg.GitHubWebhookSecret,
 			Events: events,
 		},
-	}, users, projects, members, repos, feedback, runs, tokenCrypto, githubRepoProvider)
+	}, users, projects, members, repos, feedback, runs, tokenCrypto, githubRepoProvider, runStatusService)
 
 	// Ensure bootstrap users exist so that the first login can be matched by email.
 	if _, err := users.EnsureOwner(runCtx, cfg.BootstrapOwnerEmail); err != nil {
@@ -177,7 +205,10 @@ func Run() error {
 	}
 	defer func() { _ = grpcLis.Close() }()
 
-	agentCallbackService := agentcallbackdomain.NewService(agentSessions, flowEvents)
+	agentCallbackService := agentcallbackdomain.NewService(agentSessions, flowEvents, agentRuns)
+	if err := startRunAgentLogsCleanupLoop(runCtx, agentCallbackService, logger, cfg.RunAgentLogsRetentionDays); err != nil {
+		return fmt.Errorf("start run agent logs cleanup loop: %w", err)
+	}
 
 	grpcServer := grpc.NewServer()
 	controlplanev1.RegisterControlPlaneServiceServer(grpcServer, grpctransport.NewServer(grpctransport.Dependencies{
@@ -185,6 +216,7 @@ func Run() error {
 		Staff:          staffService,
 		Users:          users,
 		AgentCallbacks: agentCallbackService,
+		RunStatus:      runStatusService,
 		MCP:            mcpService,
 		Logger:         logger,
 	}))

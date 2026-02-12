@@ -16,10 +16,22 @@
       <div class="actions">
         <RouterLink class="btn equal" :to="{ name: 'runs' }">{{ t("common.back") }}</RouterLink>
         <button class="btn equal" type="button" @click="loadAll" :disabled="details.loading">{{ t("common.refresh") }}</button>
+        <button class="btn equal danger" type="button" @click="askDeleteNamespace" :disabled="details.deletingNamespace">
+          {{ t("pages.runDetails.deleteNamespace") }}
+        </button>
       </div>
     </div>
 
     <div v-if="details.error" class="err">{{ t(details.error.messageKey) }}</div>
+    <div v-if="details.deleteNamespaceError" class="err">{{ t(details.deleteNamespaceError.messageKey) }}</div>
+    <div v-if="details.namespaceDeleteResult" class="muted mono">
+      {{ t("pages.runDetails.namespace") }}: {{ details.namespaceDeleteResult.namespace }} ·
+      {{
+        details.namespaceDeleteResult.already_deleted
+          ? t("pages.runDetails.namespaceAlreadyDeleted")
+          : t("pages.runDetails.namespaceDeleted")
+      }}
+    </div>
 
     <div class="grid">
       <div class="pane">
@@ -51,13 +63,25 @@
       </div>
     </div>
   </section>
+
+  <ConfirmModal
+    :open="confirmDeleteNamespaceOpen"
+    :title="t('pages.runDetails.deleteNamespace')"
+    :message="t('pages.runDetails.deleteNamespaceConfirm')"
+    :confirmText="t('pages.runDetails.deleteNamespace')"
+    :cancelText="t('common.cancel')"
+    danger
+    @cancel="confirmDeleteNamespaceOpen = false"
+    @confirm="doDeleteNamespace"
+  />
 </template>
 
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
+import ConfirmModal from "../shared/ui/ConfirmModal.vue";
 import { formatDateTime } from "../shared/lib/datetime";
 import { useRunDetailsStore } from "../features/runs/store";
 
@@ -65,9 +89,19 @@ const props = defineProps<{ runId: string }>();
 
 const { t, locale } = useI18n({ useScope: "global" });
 const details = useRunDetailsStore();
+const confirmDeleteNamespaceOpen = ref(false);
 
 async function loadAll() {
   await details.load(props.runId);
+}
+
+function askDeleteNamespace() {
+  confirmDeleteNamespaceOpen.value = true;
+}
+
+async function doDeleteNamespace() {
+  confirmDeleteNamespaceOpen.value = false;
+  await details.deleteNamespace(props.runId);
 }
 
 onMounted(() => void loadAll());

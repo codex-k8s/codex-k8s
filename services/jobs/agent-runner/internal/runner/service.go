@@ -36,16 +36,29 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	if mkErr := os.MkdirAll(state.workspaceDir, 0o755); mkErr != nil {
 		return fmt.Errorf("create workspace dir: %w", mkErr)
 	}
+	cleanupGitAuthEnv, err := s.configureGitAuthEnvironment(state.workspaceDir)
+	if err != nil {
+		return fmt.Errorf("configure git auth environment: %w", err)
+	}
+	defer cleanupGitAuthEnv()
+	cleanupKubectlEnv, err := s.configureKubectlAccess(state.homeDir)
+	if err != nil {
+		return fmt.Errorf("configure kubectl access: %w", err)
+	}
+	defer cleanupKubectlEnv()
 
-	targetBranch := buildTargetBranch(s.cfg.RunID, s.cfg.IssueNumber)
+	targetBranch := buildTargetBranch(s.cfg.RunTargetBranch, s.cfg.RunID, s.cfg.IssueNumber)
 	triggerKind := normalizeTriggerKind(s.cfg.TriggerKind)
 	templateKind := normalizeTemplateKind(s.cfg.PromptTemplateKind, triggerKind)
+	runtimeMode := normalizeRuntimeMode(s.cfg.RuntimeMode)
+	sensitiveValues := s.sensitiveValues()
 
 	runStartedAt := time.Now().UTC()
 	result := runResult{
-		targetBranch: targetBranch,
-		triggerKind:  triggerKind,
-		templateKind: templateKind,
+		targetBranch:     targetBranch,
+		triggerKind:      triggerKind,
+		templateKind:     templateKind,
+		existingPRNumber: s.cfg.ExistingPRNumber,
 	}
 	finalized := false
 
@@ -67,6 +80,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	if err := s.emitEvent(ctx, floweventdomain.EventTypeRunAgentStarted, map[string]string{
 		"branch":           targetBranch,
 		"trigger_kind":     triggerKind,
+		"runtime_mode":     runtimeMode,
 		"model":            s.cfg.AgentModel,
 		"reasoning_effort": s.cfg.AgentReasoningEffort,
 		"agent_key":        s.cfg.AgentKey,
@@ -90,8 +104,17 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		return err
 	}
 
-	if err := runCommandWithInput(ctx, []byte(s.cfg.OpenAIAPIKey), io.Discard, io.Discard, "codex", "login", "--with-api-key"); err != nil {
-		return fmt.Errorf("codex login failed: %w", err)
+	authFromFileConfigured, err := s.writeCodexAuthFile(state.codexDir)
+	if err != nil {
+		return err
+	}
+	if !authFromFileConfigured {
+		if strings.TrimSpace(s.cfg.OpenAIAPIKey) == "" {
+			return fmt.Errorf("CODEXK8S_OPENAI_API_KEY is required when CODEXK8S_OPENAI_AUTH_FILE is empty")
+		}
+		if err := runCommandWithInput(ctx, []byte(s.cfg.OpenAIAPIKey), io.Discard, io.Discard, "codex", "login", "--with-api-key"); err != nil {
+			return fmt.Errorf("codex login failed: %w", err)
+		}
 	}
 
 	if err := s.writeCodexConfig(state.codexDir); err != nil {
@@ -112,12 +135,12 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		return fmt.Errorf("write output schema: %w", err)
 	}
 
-	lastMessageFile := filepath.Join(os.TempDir(), "codex-last-message.json")
+	var codexOutput []byte
 	if result.restoredSessionPath != "" {
 		if err := s.emitEvent(ctx, floweventdomain.EventTypeRunAgentResumeUsed, map[string]string{"restored_session_path": result.restoredSessionPath}); err != nil {
 			s.logger.Warn("emit run.agent.resume.used failed", "err", err)
 		}
-		err = runCommandLogged(
+		codexOutput, err = runCommandCaptureOutput(
 			ctx,
 			"codex",
 			"exec",
@@ -125,34 +148,28 @@ func (s *Service) Run(ctx context.Context) (err error) {
 			"--last",
 			"--cd", state.repoDir,
 			"--output-schema", outputSchemaFile,
-			"--last-message-file", lastMessageFile,
 			prompt,
 		)
 	} else {
-		err = runCommandLogged(
+		codexOutput, err = runCommandCaptureOutput(
 			ctx,
 			"codex",
 			"exec",
 			"--cd", state.repoDir,
 			"--output-schema", outputSchemaFile,
-			"--last-message-file", lastMessageFile,
 			prompt,
 		)
 	}
+	result.codexExecOutput = redactSensitiveOutput(trimCapturedOutput(string(codexOutput), maxCapturedCommandOutput), sensitiveValues)
 	if err != nil {
 		return fmt.Errorf("codex exec failed: %w", err)
 	}
 
-	reportBytes, reportErr := os.ReadFile(lastMessageFile)
-	if reportErr != nil {
-		return fmt.Errorf("read codex result: %w", reportErr)
+	report, _, err := parseCodexReportOutput(codexOutput)
+	if err != nil {
+		return err
 	}
-	result.reportJSON = json.RawMessage(reportBytes)
-
-	var report codexReport
-	if err := json.Unmarshal(reportBytes, &report); err != nil {
-		return fmt.Errorf("decode codex result: %w", err)
-	}
+	result.report = report
 	if report.PRNumber <= 0 {
 		return fmt.Errorf("invalid codex result: pr_number is required")
 	}
@@ -172,7 +189,11 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		result.sessionID = extractSessionIDFromFile(result.sessionFilePath)
 	}
 
-	_ = runCommandQuiet(ctx, state.repoDir, "git", "push", "origin", result.targetBranch)
+	gitPushOutput, pushErr := runCommandCaptureCombinedOutput(ctx, state.repoDir, "git", "push", "origin", result.targetBranch)
+	result.gitPushOutput = redactSensitiveOutput(gitPushOutput, sensitiveValues)
+	if pushErr != nil {
+		return fmt.Errorf("git push failed: %w", pushErr)
+	}
 
 	finishedAt := time.Now().UTC()
 	if err := s.persistSessionSnapshot(ctx, result, state, runStartedAt, runStatusSucceeded, &finishedAt); err != nil {
@@ -223,6 +244,9 @@ func (s *Service) restoreLatestSession(ctx context.Context, branch string, sessi
 	}
 
 	if snapshot.PRNumber <= 0 {
+		if s.cfg.ExistingPRNumber > 0 {
+			return restoredSession{existingPRNumber: s.cfg.ExistingPRNumber}, nil
+		}
 		return restoredSession{prNotFound: true}, nil
 	}
 
@@ -245,7 +269,7 @@ func (s *Service) prepareRepository(ctx context.Context, result runResult, state
 		return fmt.Errorf("cleanup repo dir: %w", err)
 	}
 
-	repoURL := fmt.Sprintf("https://%s:%s@github.com/%s.git", s.cfg.GitBotUsername, s.cfg.GitBotToken, s.cfg.RepositoryFullName)
+	repoURL := fmt.Sprintf("https://github.com/%s.git", s.cfg.RepositoryFullName)
 	if err := runCommandQuiet(ctx, "", "git", "clone", repoURL, state.repoDir); err != nil {
 		return fmt.Errorf("git clone failed")
 	}
@@ -276,12 +300,8 @@ func (s *Service) persistSessionSnapshot(ctx context.Context, result runResult, 
 	issueNumber := optionalIssueNumber(s.cfg.IssueNumber)
 	prNumber := optionalInt(result.prNumber)
 
-	reportJSON := json.RawMessage(`{}`)
-	if len(result.reportJSON) > 0 && json.Valid(result.reportJSON) {
-		reportJSON = result.reportJSON
-	}
-
 	codexSessionJSON := readJSONFileOrNil(result.sessionFilePath)
+	sessionJSON := buildSessionLogJSON(result, status)
 
 	params := cpclient.AgentSessionUpsertParams{
 		Identity: cpclient.SessionIdentity{
@@ -306,7 +326,7 @@ func (s *Service) persistSessionSnapshot(ctx context.Context, result runResult, 
 		Runtime: cpclient.SessionRuntimeState{
 			Status:           status,
 			SessionID:        result.sessionID,
-			SessionJSON:      reportJSON,
+			SessionJSON:      sessionJSON,
 			CodexSessionPath: result.sessionFilePath,
 			CodexSessionJSON: codexSessionJSON,
 			StartedAt:        startedAt.UTC(),

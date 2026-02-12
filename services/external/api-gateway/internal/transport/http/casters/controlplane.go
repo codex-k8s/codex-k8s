@@ -185,3 +185,16 @@ func IngestGitHubWebhook(item *controlplanev1.IngestGitHubWebhookResponse) model
 	out.Duplicate = item.GetDuplicate()
 	return out
 }
+
+func RunNamespaceDelete(item *controlplanev1.DeleteRunNamespaceResponse) models.RunNamespaceCleanupResponse {
+	out := models.RunNamespaceCleanupResponse{}
+	if item == nil {
+		return out
+	}
+	out.RunID = item.GetRunId()
+	out.Namespace = item.GetNamespace()
+	out.Deleted = item.GetDeleted()
+	out.AlreadyDeleted = item.GetAlreadyDeleted()
+	out.CommentURL = item.GetCommentUrl()
+	return out
+}

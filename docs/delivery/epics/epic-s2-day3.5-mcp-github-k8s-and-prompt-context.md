@@ -77,6 +77,7 @@ approvals:
   - выпуск и проверка short-lived run токенов;
   - deterministic tool catalog;
   - GitHub read/write ручки (issue/pr/comments/labels/branches/ensure/upsert/comment);
+  - для `github_issue_comments_list` введена фильтрация служебных комментариев владельца token по умолчанию с опциональным override (`include_token_owner_comments=true`);
   - Kubernetes ручки:
     - namespaced diagnostics/read: `pods`, `events`, `deployments`, `daemonsets`, `statefulsets`, `replicasets`, `replicationcontrollers`, `jobs`, `cronjobs`, `configmaps`, `secrets`, `resourcequotas`, `hpa`, `services`, `endpoints`, `ingresses`, `networkpolicies`, `pvcs`;
     - cluster-scope read: `ingressclasses`, `pvs`, `storageclasses`;
@@ -95,6 +96,16 @@ approvals:
   - `CODEXK8S_CONTROL_PLANE_MCP_BASE_URL`,
   - `CODEXK8S_MCP_TOKEN_SIGNING_KEY`,
   - `CODEXK8S_MCP_TOKEN_TTL` (default `24h`, не меньше baseline lifetime агентного контейнера).
+
+### Актуализация после S2 Day4 hardening (2026-02-12)
+- Текущий runtime baseline упрощён: из MCP удалены все non-label ручки.
+- Активный MCP catalog:
+  - `github_labels_list`,
+  - `github_labels_add`,
+  - `github_labels_remove`,
+  - `github_labels_transition`.
+- GitHub issue/PR/comments и Kubernetes runtime операции выполняются агентом напрямую через `gh`/`kubectl` в рамках выданных прав.
+- Prompt context больше не поставляется отдельным MCP resource/tool в runtime-контуре.
 
 ## Следующий шаг по policy (handoff в Day6)
 - Вынести effective policy управления MCP-ручками/ресурсами в платформенную модель:

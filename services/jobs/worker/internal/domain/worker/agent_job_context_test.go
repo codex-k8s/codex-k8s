@@ -1,0 +1,130 @@
+package worker
+
+import (
+	"encoding/json"
+	"testing"
+)
+
+func TestResolveModelFromLabels(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name         string
+		labels       []string
+		defaultModel string
+		wantModel    string
+		wantSource   string
+	}{
+		{
+			name:         "default",
+			labels:       nil,
+			defaultModel: "gpt-5.2-codex",
+			wantModel:    "gpt-5.2-codex",
+			wantSource:   modelSourceDefault,
+		},
+		{
+			name:         "gpt-5.3-codex",
+			labels:       []string{"[ai-model-gpt-5.3-codex]"},
+			defaultModel: "gpt-5.2-codex",
+			wantModel:    "gpt-5.3-codex",
+			wantSource:   modelSourceIssueLabel,
+		},
+		{
+			name:         "gpt-5.2-codex",
+			labels:       []string{"[ai-model-gpt-5.2-codex]"},
+			defaultModel: "gpt-5.2-codex",
+			wantModel:    "gpt-5.2-codex",
+			wantSource:   modelSourceIssueLabel,
+		},
+		{
+			name:         "gpt-5.1-codex-max",
+			labels:       []string{"[ai-model-gpt-5.1-codex-max]"},
+			defaultModel: "gpt-5.2-codex",
+			wantModel:    "gpt-5.1-codex-max",
+			wantSource:   modelSourceIssueLabel,
+		},
+		{
+			name:         "gpt-5.2",
+			labels:       []string{"[ai-model-gpt-5.2]"},
+			defaultModel: "gpt-5.2-codex",
+			wantModel:    "gpt-5.2",
+			wantSource:   modelSourceIssueLabel,
+		},
+		{
+			name:         "gpt-5.1-codex-mini",
+			labels:       []string{"[ai-model-gpt-5.1-codex-mini]"},
+			defaultModel: "gpt-5.2-codex",
+			wantModel:    "gpt-5.1-codex-mini",
+			wantSource:   modelSourceIssueLabel,
+		},
+	}
+
+	for _, testCase := range testCases {
+		testCase := testCase
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			gotModel, gotSource, err := resolveModelFromLabels(testCase.labels, testCase.defaultModel)
+			if err != nil {
+				t.Fatalf("resolveModelFromLabels() error = %v", err)
+			}
+			if gotModel != testCase.wantModel {
+				t.Fatalf("resolveModelFromLabels() model = %q, want %q", gotModel, testCase.wantModel)
+			}
+			if gotSource != testCase.wantSource {
+				t.Fatalf("resolveModelFromLabels() source = %q, want %q", gotSource, testCase.wantSource)
+			}
+		})
+	}
+}
+
+func TestResolveModelFromLabels_ConflictingLabels(t *testing.T) {
+	t.Parallel()
+
+	_, _, err := resolveModelFromLabels([]string{
+		"[ai-model-gpt-5.2-codex]",
+		"[ai-model-gpt-5.1-codex-mini]",
+	}, "gpt-5.2-codex")
+	if err == nil {
+		t.Fatal("expected conflict error for multiple ai-model labels")
+	}
+}
+
+func TestResolveRunAgentContext_UsesPullRequestHintsForRevise(t *testing.T) {
+	t.Parallel()
+
+	runPayload := json.RawMessage(`{
+		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"agent":{"key":"dev","name":"AI Developer"},
+		"trigger":{"kind":"dev_revise","label":"run:dev:revise"},
+		"raw_payload":{
+			"pull_request":{
+				"number":200,
+				"head":{"ref":"codex/issue-13"},
+				"labels":[{"name":"[ai-model-gpt-5.2-codex]"}]
+			}
+		}
+	}`)
+
+	got, err := resolveRunAgentContext(runPayload, runAgentDefaults{
+		DefaultModel:           modelGPT52Codex,
+		DefaultReasoningEffort: "high",
+		DefaultLocale:          "ru",
+		AllowGPT53:             true,
+	})
+	if err != nil {
+		t.Fatalf("resolveRunAgentContext() error = %v", err)
+	}
+	if got.IssueNumber != 200 {
+		t.Fatalf("IssueNumber = %d, want 200", got.IssueNumber)
+	}
+	if got.TargetBranch != "codex/issue-13" {
+		t.Fatalf("TargetBranch = %q, want codex/issue-13", got.TargetBranch)
+	}
+	if got.ExistingPRNumber != 200 {
+		t.Fatalf("ExistingPRNumber = %d, want 200", got.ExistingPRNumber)
+	}
+	if got.PromptTemplateKind != promptTemplateKindReview {
+		t.Fatalf("PromptTemplateKind = %q, want %q", got.PromptTemplateKind, promptTemplateKindReview)
+	}
+}

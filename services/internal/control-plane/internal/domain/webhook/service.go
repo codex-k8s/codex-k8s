@@ -134,6 +134,9 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 			})
 		}
 	}
+	if !hasIssueRunTrigger {
+		return s.recordReceivedWebhookWithoutRun(ctx, cmd, envelope)
+	}
 
 	fallbackProjectID := deriveProjectID(cmd.CorrelationID, envelope)
 
@@ -233,14 +236,7 @@ func (s *Service) recordIgnoredWebhook(ctx context.Context, cmd IngestCommand, e
 		return IngestResult{}, fmt.Errorf("build ignored flow event payload: %w", err)
 	}
 
-	if err := s.flowEvents.Insert(ctx, floweventrepo.InsertParams{
-		CorrelationID: cmd.CorrelationID,
-		ActorType:     floweventdomain.ActorTypeSystem,
-		ActorID:       githubWebhookActorID,
-		EventType:     floweventdomain.EventTypeWebhookIgnored,
-		Payload:       payload,
-		CreatedAt:     cmd.ReceivedAt,
-	}); err != nil {
+	if err := s.insertSystemFlowEvent(ctx, cmd.CorrelationID, floweventdomain.EventTypeWebhookIgnored, payload, cmd.ReceivedAt); err != nil {
 		return IngestResult{}, fmt.Errorf("insert ignored flow event: %w", err)
 	}
 
@@ -251,28 +247,72 @@ func (s *Service) recordIgnoredWebhook(ctx context.Context, cmd IngestCommand, e
 	}, nil
 }
 
-func (s *Service) resolveIssueRunTrigger(eventType string, envelope githubWebhookEnvelope) (issueRunTrigger, bool) {
-	if !strings.EqualFold(strings.TrimSpace(eventType), string(webhookdomain.GitHubEventIssues)) {
-		return issueRunTrigger{}, false
-	}
-	if !strings.EqualFold(strings.TrimSpace(envelope.Action), string(webhookdomain.GitHubActionLabeled)) {
-		return issueRunTrigger{}, false
+func (s *Service) recordReceivedWebhookWithoutRun(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope) (IngestResult, error) {
+	payload, err := buildReceivedEventPayload(cmd, envelope)
+	if err != nil {
+		return IngestResult{}, fmt.Errorf("build flow event payload: %w", err)
 	}
 
-	label := strings.TrimSpace(envelope.Label.Name)
-	if label == "" {
-		return issueRunTrigger{}, false
+	if err := s.insertSystemFlowEvent(ctx, cmd.CorrelationID, floweventdomain.EventTypeWebhookReceived, payload, cmd.ReceivedAt); err != nil {
+		return IngestResult{}, fmt.Errorf("insert flow event: %w", err)
 	}
-	switch {
-	case strings.EqualFold(label, s.triggerLabels.RunDev):
+
+	return IngestResult{
+		CorrelationID: cmd.CorrelationID,
+		Status:        webhookdomain.IngestStatusAccepted,
+		Duplicate:     false,
+	}, nil
+}
+
+func (s *Service) insertSystemFlowEvent(ctx context.Context, correlationID string, eventType floweventdomain.EventType, payload json.RawMessage, createdAt time.Time) error {
+	return s.flowEvents.Insert(ctx, floweventrepo.InsertParams{
+		CorrelationID: correlationID,
+		ActorType:     floweventdomain.ActorTypeSystem,
+		ActorID:       githubWebhookActorID,
+		EventType:     eventType,
+		Payload:       payload,
+		CreatedAt:     createdAt,
+	})
+}
+
+func (s *Service) resolveIssueRunTrigger(eventType string, envelope githubWebhookEnvelope) (issueRunTrigger, bool) {
+	switch strings.TrimSpace(strings.ToLower(eventType)) {
+	case string(webhookdomain.GitHubEventIssues):
+		if !strings.EqualFold(strings.TrimSpace(envelope.Action), string(webhookdomain.GitHubActionLabeled)) {
+			return issueRunTrigger{}, false
+		}
+
+		label := strings.TrimSpace(envelope.Label.Name)
+		if label == "" {
+			return issueRunTrigger{}, false
+		}
+		switch {
+		case strings.EqualFold(label, s.triggerLabels.RunDev):
+			return issueRunTrigger{
+				Source: webhookdomain.TriggerSourceIssueLabel,
+				Label:  label,
+				Kind:   webhookdomain.TriggerKindDev,
+			}, true
+		case strings.EqualFold(label, s.triggerLabels.RunDevRevise):
+			return issueRunTrigger{
+				Source: webhookdomain.TriggerSourceIssueLabel,
+				Label:  label,
+				Kind:   webhookdomain.TriggerKindDevRevise,
+			}, true
+		default:
+			return issueRunTrigger{}, false
+		}
+	case string(webhookdomain.GitHubEventPullRequestReview):
+		if !strings.EqualFold(strings.TrimSpace(envelope.Action), string(webhookdomain.GitHubActionSubmitted)) {
+			return issueRunTrigger{}, false
+		}
+		if !strings.EqualFold(strings.TrimSpace(envelope.Review.State), webhookdomain.GitHubReviewStateChangesRequested) {
+			return issueRunTrigger{}, false
+		}
 		return issueRunTrigger{
-			Label: label,
-			Kind:  webhookdomain.TriggerKindDev,
-		}, true
-	case strings.EqualFold(label, s.triggerLabels.RunDevRevise):
-		return issueRunTrigger{
-			Label: label,
-			Kind:  webhookdomain.TriggerKindDevRevise,
+			Source: webhookdomain.TriggerSourcePullRequestReview,
+			Label:  s.triggerLabels.RunDevRevise,
+			Kind:   webhookdomain.TriggerKindDevRevise,
 		}, true
 	default:
 		return issueRunTrigger{}, false

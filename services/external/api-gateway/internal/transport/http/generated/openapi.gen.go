@@ -189,6 +189,15 @@ type RunItemsResponse struct {
 	Items []Run `json:"items"`
 }
 
+// RunNamespaceCleanupResponse defines model for RunNamespaceCleanupResponse.
+type RunNamespaceCleanupResponse struct {
+	AlreadyDeleted bool    `json:"already_deleted"`
+	CommentUrl     *string `json:"comment_url"`
+	Deleted        bool    `json:"deleted"`
+	Namespace      string  `json:"namespace"`
+	RunId          string  `json:"run_id"`
+}
+
 // SetProjectMemberLearningModeRequest defines model for SetProjectMemberLearningModeRequest.
 type SetProjectMemberLearningModeRequest struct {
 	Enabled *bool `json:"enabled"`
@@ -523,6 +532,9 @@ type ServerInterface interface {
 	// List run learning feedback
 	// (GET /api/v1/staff/runs/{run_id}/learning-feedback)
 	ListRunLearningFeedback(w http.ResponseWriter, r *http.Request, runId RunID, params ListRunLearningFeedbackParams)
+	// Force delete run namespace
+	// (DELETE /api/v1/staff/runs/{run_id}/namespace)
+	DeleteRunNamespace(w http.ResponseWriter, r *http.Request, runId RunID)
 	// List users
 	// (GET /api/v1/staff/users)
 	ListUsers(w http.ResponseWriter, r *http.Request, params ListUsersParams)
@@ -1076,6 +1088,31 @@ func (siw *ServerInterfaceWrapper) ListRunLearningFeedback(w http.ResponseWriter
 	handler.ServeHTTP(w, r)
 }
 
+// DeleteRunNamespace operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRunNamespace(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "run_id" -------------
+	var runId RunID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "run_id", r.PathValue("run_id"), &runId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "run_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteRunNamespace(w, r, runId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListUsers operation middleware
 func (siw *ServerInterfaceWrapper) ListUsers(w http.ResponseWriter, r *http.Request) {
 
@@ -1371,6 +1408,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}", wrapper.GetRun)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}/events", wrapper.ListRunEvents)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}/learning-feedback", wrapper.ListRunLearningFeedback)
+	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/staff/runs/{run_id}/namespace", wrapper.DeleteRunNamespace)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/users", wrapper.ListUsers)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/users", wrapper.CreateUser)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/staff/users/{user_id}", wrapper.DeleteUser)
@@ -2127,6 +2165,50 @@ func (response ListRunLearningFeedback401JSONResponse) VisitListRunLearningFeedb
 	return json.NewEncoder(w).Encode(response)
 }
 
+type DeleteRunNamespaceRequestObject struct {
+	RunId RunID `json:"run_id"`
+}
+
+type DeleteRunNamespaceResponseObject interface {
+	VisitDeleteRunNamespaceResponse(w http.ResponseWriter) error
+}
+
+type DeleteRunNamespace200JSONResponse RunNamespaceCleanupResponse
+
+func (response DeleteRunNamespace200JSONResponse) VisitDeleteRunNamespaceResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteRunNamespace400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response DeleteRunNamespace400JSONResponse) VisitDeleteRunNamespaceResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteRunNamespace401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteRunNamespace401JSONResponse) VisitDeleteRunNamespaceResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteRunNamespace403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteRunNamespace403JSONResponse) VisitDeleteRunNamespaceResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListUsersRequestObject struct {
 	Params ListUsersParams
 }
@@ -2362,6 +2444,9 @@ type StrictServerInterface interface {
 	// List run learning feedback
 	// (GET /api/v1/staff/runs/{run_id}/learning-feedback)
 	ListRunLearningFeedback(ctx context.Context, request ListRunLearningFeedbackRequestObject) (ListRunLearningFeedbackResponseObject, error)
+	// Force delete run namespace
+	// (DELETE /api/v1/staff/runs/{run_id}/namespace)
+	DeleteRunNamespace(ctx context.Context, request DeleteRunNamespaceRequestObject) (DeleteRunNamespaceResponseObject, error)
 	// List users
 	// (GET /api/v1/staff/users)
 	ListUsers(ctx context.Context, request ListUsersRequestObject) (ListUsersResponseObject, error)
@@ -2919,6 +3004,32 @@ func (sh *strictHandler) ListRunLearningFeedback(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListRunLearningFeedbackResponseObject); ok {
 		if err := validResponse.VisitListRunLearningFeedbackResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteRunNamespace operation middleware
+func (sh *strictHandler) DeleteRunNamespace(w http.ResponseWriter, r *http.Request, runId RunID) {
+	var request DeleteRunNamespaceRequestObject
+
+	request.RunId = runId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteRunNamespace(ctx, request.(DeleteRunNamespaceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteRunNamespace")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteRunNamespaceResponseObject); ok {
+		if err := validResponse.VisitDeleteRunNamespaceResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

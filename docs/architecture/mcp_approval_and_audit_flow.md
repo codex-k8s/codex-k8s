@@ -17,23 +17,23 @@ approvals:
 # MCP Approval and Audit Flow
 
 ## TL;DR
-- Любые trigger/deploy действия, инициированные агентом, проходят approval gate.
-- Для `run:*` применяется owner approval перед фактическим label apply.
+- MCP в текущем baseline используется только для GitHub label-операций.
+- GitHub issue/PR/comments и Kubernetes runtime-операции выполняются агентом напрямую через `gh`/`kubectl`.
+- Approval gate в MCP на текущем этапе включается только для отдельных инструментов по policy; для label-инструментов baseline = `approval:none`.
 - Все действия логируются в единый audit-контур (`flow_events`, `agent_sessions`, `links`, `token_usage`).
 - HTTP approver/executor поддерживаются как стандартные контракты интеграции; Telegram — первая реализация, но не единственная.
 - В `codex-k8s` сохраняется двухслойная модель MCP: встроенные Go-ручки платформы + внешний декларативный слой (`github.com/codex-k8s/yaml-mcp-server`).
 
 ## Политика апрувов
 
-### Обязательный approval gate
-- Применяется к агент-инициированным `run:*` label operations.
-- Решение принимает Owner (или делегированный approver policy).
-- До апрува действие остаётся в состоянии `pending approval`.
-- Любые привилегированные runtime-действия (`apply/delete`, rollout/restart, deploy management) допускаются только через MCP-ручки с approver policy.
+### Baseline (текущий этап)
+- Для MCP label-инструментов (`github_labels_list|add|remove|transition`) используется `approval:none`.
+- Label transitions всё равно проходят через control-plane MCP, чтобы сохранять единый audit-контур.
 
-### Без обязательного approval gate
-- `state:*` и `need:*` можно применять автоматически по policy.
-- Не допускается их использование как скрытых trigger/deploy сигналов.
+### Planned (следующие этапы)
+- Для части label/runtime/secret инструментов будет включаться обязательный approver gate.
+- Решение будет принимать Owner или делегированный approver policy.
+- До апрува действие остаётся в состоянии `pending approval`.
 
 ## Последовательность (высокоуровнево)
 
@@ -46,10 +46,13 @@ approvals:
 ## Базовый режим S2 Day4+
 
 - Начиная с Day4, для agent pod действует split access model:
-  - прямые Kubernetes credentials не выдаются;
-  - governance-операции GitHub/Kubernetes (issue/pr/comments/labels/runtime write-path) выполняются через MCP approver/executor ручки;
-  - в pod выдаётся только отдельный минимальный Git bot-token для git transport path (clone/fetch/commit/push в рабочую ветку).
-- Day6 расширяет и ужесточает policy (матрица апрувов, единообразные события, тесты отказоустойчивости), но не переводит систему с direct-path, так как direct-path не является базовым режимом.
+  - в pod выдаётся отдельный Git bot-token (`CODEXK8S_GIT_BOT_TOKEN`) для `gh/git` операций;
+  - control-plane MCP инструменты используют bot-token из `platform_github_tokens.bot_token_encrypted`;
+  - для `full-env` формируется namespaced `KUBECONFIG` и разрешён direct `kubectl` в рамках namespace;
+  - MCP остаётся для label operations и policy-аудита transitions.
+- `repositories.token_encrypted` в этом режиме не используется MCP runtime-контуром
+  и остаётся в domain-path управления репозиториями (staff/project management).
+- Day6+ расширяет policy: approver matrix, secret-management инструменты через MCP, единообразные события и отказоустойчивость.
 
 ## Политики доступа к MCP (roadmap Day6)
 

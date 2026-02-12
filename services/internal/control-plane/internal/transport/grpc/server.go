@@ -16,6 +16,7 @@ import (
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/staffrun"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
+	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
 	agentcallback "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/agentcallback"
@@ -42,12 +43,17 @@ type agentCallbackService interface {
 	InsertRunFlowEvent(ctx context.Context, params agentcallbackdomain.InsertRunFlowEventParams) error
 }
 
+type runStatusService interface {
+	UpsertRunStatusComment(ctx context.Context, params runstatusdomain.UpsertCommentParams) (runstatusdomain.UpsertCommentResult, error)
+}
+
 // Dependencies wires domain services and repositories into the gRPC transport.
 type Dependencies struct {
 	Webhook        webhookIngress
 	Staff          *staff.Service
 	Users          userrepo.Repository
 	AgentCallbacks agentCallbackService
+	RunStatus      runStatusService
 	MCP            mcpRunTokenService
 	Logger         *slog.Logger
 }
@@ -60,6 +66,7 @@ type Server struct {
 	staff          *staff.Service
 	users          userrepo.Repository
 	agentCallbacks agentCallbackService
+	runStatus      runStatusService
 	mcp            mcpRunTokenService
 	logger         *slog.Logger
 }
@@ -70,6 +77,7 @@ func NewServer(deps Dependencies) *Server {
 		staff:          deps.Staff,
 		users:          deps.Users,
 		agentCallbacks: deps.AgentCallbacks,
+		runStatus:      deps.RunStatus,
 		mcp:            deps.MCP,
 		logger:         deps.Logger,
 	}
@@ -291,6 +299,31 @@ func (s *Server) ListRunLearningFeedback(ctx context.Context, req *controlplanev
 		})
 	}
 	return &controlplanev1.ListRunLearningFeedbackResponse{Items: out}, nil
+}
+
+func (s *Server) DeleteRunNamespace(ctx context.Context, req *controlplanev1.DeleteRunNamespaceRequest) (*controlplanev1.DeleteRunNamespaceResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := s.staff.DeleteRunNamespace(ctx, p, strings.TrimSpace(req.GetRunId()))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+
+	return &controlplanev1.DeleteRunNamespaceResponse{
+		Ok:             true,
+		RunId:          result.RunID,
+		Namespace:      result.Namespace,
+		Deleted:        result.Deleted,
+		AlreadyDeleted: result.AlreadyDeleted,
+		CommentUrl:     stringPtrOrNil(result.CommentURL),
+	}, nil
 }
 
 func (s *Server) ListUsers(ctx context.Context, req *controlplanev1.ListUsersRequest) (*controlplanev1.ListUsersResponse, error) {
@@ -703,6 +736,50 @@ func (s *Server) InsertRunFlowEvent(ctx context.Context, req *controlplanev1.Ins
 	return &controlplanev1.InsertRunFlowEventResponse{Ok: true, EventType: string(eventType)}, nil
 }
 
+func (s *Server) UpsertRunStatusComment(ctx context.Context, req *controlplanev1.UpsertRunStatusCommentRequest) (*controlplanev1.UpsertRunStatusCommentResponse, error) {
+	if s.runStatus == nil {
+		return nil, status.Error(codes.FailedPrecondition, "run status service is not configured")
+	}
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	runID := strings.TrimSpace(req.GetRunId())
+	if runID == "" {
+		return nil, status.Error(codes.InvalidArgument, "run_id is required")
+	}
+
+	phase, err := parseRunStatusPhase(req.GetPhase())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	result, err := s.runStatus.UpsertRunStatusComment(ctx, runstatusdomain.UpsertCommentParams{
+		RunID:          runID,
+		Phase:          phase,
+		JobName:        strings.TrimSpace(req.GetJobName()),
+		JobNamespace:   strings.TrimSpace(req.GetJobNamespace()),
+		RuntimeMode:    strings.TrimSpace(req.GetRuntimeMode()),
+		Namespace:      strings.TrimSpace(req.GetNamespace()),
+		TriggerKind:    strings.TrimSpace(req.GetTriggerKind()),
+		PromptLocale:   strings.TrimSpace(req.GetPromptLocale()),
+		RunStatus:      strings.TrimSpace(req.GetRunStatus()),
+		Deleted:        req.GetDeleted(),
+		AlreadyDeleted: req.GetAlreadyDeleted(),
+	})
+	if err != nil {
+		s.logger.Error("upsert run status comment via grpc failed", "run_id", runID, "phase", phase, "err", err)
+		return nil, status.Error(codes.Internal, "failed to upsert run status comment")
+	}
+
+	return &controlplanev1.UpsertRunStatusCommentResponse{
+		Ok:         true,
+		RunId:      runID,
+		CommentId:  result.CommentID,
+		CommentUrl: stringPtrOrNil(result.CommentURL),
+	}, nil
+}
+
 const sessionStatusRunning = "running"
 
 func (s *Server) authenticateRunToken(ctx context.Context) (mcpdomain.SessionContext, error) {
@@ -905,4 +982,17 @@ func parseRuntimeMode(value string) agentdomain.RuntimeMode {
 		return agentdomain.RuntimeModeFullEnv
 	}
 	return agentdomain.RuntimeModeCodeOnly
+}
+
+func parseRunStatusPhase(value string) (runstatusdomain.Phase, error) {
+	switch strings.TrimSpace(value) {
+	case string(runstatusdomain.PhaseStarted):
+		return runstatusdomain.PhaseStarted, nil
+	case string(runstatusdomain.PhaseFinished):
+		return runstatusdomain.PhaseFinished, nil
+	case string(runstatusdomain.PhaseNamespaceDeleted):
+		return runstatusdomain.PhaseNamespaceDeleted, nil
+	default:
+		return "", fmt.Errorf("unsupported phase %q", value)
+	}
 }

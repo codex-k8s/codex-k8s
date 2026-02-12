@@ -29,6 +29,9 @@ func TestLoadConfigDefaults(t *testing.T) {
 	if !cfg.RunNamespaceCleanup {
 		t.Fatal("expected run namespace cleanup to be enabled by default")
 	}
+	if cfg.RunDebugLabel != "run:debug" {
+		t.Fatalf("expected default run debug label run:debug, got %s", cfg.RunDebugLabel)
+	}
 	if cfg.ControlPlaneMCPBaseURL != "http://codex-k8s-control-plane:8081/mcp" {
 		t.Fatalf("expected default control-plane mcp url, got %s", cfg.ControlPlaneMCPBaseURL)
 	}

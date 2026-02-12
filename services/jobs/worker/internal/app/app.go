@@ -124,9 +124,12 @@ func Run() error {
 		ProjectLearningModeDefault:  learningDefault,
 		RunNamespacePrefix:          cfg.RunNamespacePrefix,
 		CleanupFullEnvNamespace:     cfg.RunNamespaceCleanup,
+		RunDebugLabel:               cfg.RunDebugLabel,
+		StateInReviewLabel:          cfg.StateInReviewLabel,
 		ControlPlaneGRPCTarget:      cfg.ControlPlaneGRPCTarget,
 		ControlPlaneMCPBaseURL:      cfg.ControlPlaneMCPBaseURL,
 		OpenAIAPIKey:                cfg.OpenAIAPIKey,
+		OpenAIAuthFile:              cfg.OpenAIAuthFile,
 		Context7APIKey:              cfg.Context7APIKey,
 		GitBotToken:                 cfg.GitBotToken,
 		GitBotUsername:              cfg.GitBotUsername,
@@ -141,6 +144,7 @@ func Run() error {
 		Feedback:       feedback,
 		Launcher:       launcher,
 		MCPTokenIssuer: controlPlane,
+		RunStatus:      controlPlane,
 		Logger:         logger,
 	})
 

@@ -27,6 +27,33 @@ func (e ExitError) Unwrap() error {
 	return e.Err
 }
 
+// PromptConfig defines per-run prompt rendering and model settings.
+type PromptConfig struct {
+	TriggerKind          string
+	TriggerLabel         string
+	PromptTemplateKind   string
+	PromptTemplateSource string
+	PromptTemplateLocale string
+	StateInReviewLabel   string
+	AgentModel           string
+	AgentReasoningEffort string
+	AgentBaseBranch      string
+	AgentDisplayName     string
+}
+
+// GitBotConfig defines git transport credentials for runner pod.
+type GitBotConfig struct {
+	GitBotToken    string
+	GitBotUsername string
+	GitBotMail     string
+}
+
+// OpenAIConfig defines codex-cli authentication inputs.
+type OpenAIConfig struct {
+	OpenAIAPIKey   string
+	OpenAIAuthFile string
+}
+
 // Config defines runtime parameters for one agent-runner job.
 type Config struct {
 	RunID              string
@@ -35,24 +62,18 @@ type Config struct {
 	RepositoryFullName string
 	AgentKey           string
 	IssueNumber        int64
+	RunTargetBranch    string
+	ExistingPRNumber   int
+	RuntimeMode        string
 
-	TriggerKind          string
-	PromptTemplateKind   string
-	PromptTemplateSource string
-	PromptTemplateLocale string
-	AgentModel           string
-	AgentReasoningEffort string
-	AgentBaseBranch      string
-	AgentDisplayName     string
+	PromptConfig
 
 	ControlPlaneGRPCTarget string
 	MCPBaseURL             string
 	MCPBearerToken         string
 
-	GitBotToken    string
-	GitBotUsername string
-	GitBotMail     string
-	OpenAIAPIKey   string
+	GitBotConfig
+	OpenAIConfig
 }
 
 // ControlPlaneCallbacks defines required control-plane callbacks for runner lifecycle.
@@ -87,7 +108,9 @@ type runResult struct {
 	existingPRNumber    int
 	prNumber            int
 	prURL               string
-	reportJSON          json.RawMessage
+	report              codexReport
+	codexExecOutput     string
+	gitPushOutput       string
 }
 
 type restoredSession struct {
@@ -124,11 +147,15 @@ type promptEnvelopeTemplateData struct {
 	RunID              string
 	IssueNumber        int64
 	AgentKey           string
+	RuntimeMode        string
+	IsFullEnv          bool
 	TargetBranch       string
 	BaseBranch         string
 	TriggerKind        string
 	HasExistingPR      bool
 	ExistingPRNumber   int
+	TriggerLabel       string
+	StateInReviewLabel string
 	HasContext7        bool
 	PromptLocale       string
 	TaskBody           string
@@ -139,4 +166,18 @@ type codexConfigTemplateData struct {
 	ReasoningEffort string
 	MCPBaseURL      string
 	HasContext7     bool
+}
+
+type sessionLogSnapshot struct {
+	Version string                  `json:"version"`
+	Status  string                  `json:"status"`
+	Report  codexReport             `json:"report"`
+	Runtime sessionRuntimeLogFields `json:"runtime"`
+}
+
+type sessionRuntimeLogFields struct {
+	TargetBranch     string `json:"target_branch"`
+	CodexExecOutput  string `json:"codex_exec_output,omitempty"`
+	GitPushOutput    string `json:"git_push_output,omitempty"`
+	ExistingPRNumber int    `json:"existing_pr_number,omitempty"`
 }

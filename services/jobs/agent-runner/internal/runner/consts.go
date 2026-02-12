@@ -15,11 +15,27 @@ const (
 	triggerKindDev       = "dev"
 	triggerKindDevRevise = "dev_revise"
 
+	runtimeModeFullEnv  = "full-env"
+	runtimeModeCodeOnly = "code-only"
+
 	runStatusSucceeded          = "succeeded"
 	runStatusFailed             = "failed"
 	runStatusFailedPrecondition = "failed_precondition"
 
 	envContext7APIKey = "CODEXK8S_CONTEXT7_API_KEY"
+
+	sessionLogVersionV1      = "v1"
+	maxCapturedCommandOutput = 256 * 1024
+
+	envGitAskPass        = "GIT_ASKPASS"
+	envGitTerminalPrompt = "GIT_TERMINAL_PROMPT"
+	envGitAskPassRequire = "GIT_ASKPASS_REQUIRE"
+	envGHToken           = "GH_TOKEN"
+	envGitHubToken       = "GITHUB_TOKEN"
+	envKubeconfig        = "KUBECONFIG"
+
+	gitAskPassRequireForce = "force"
+	redactedSecretValue    = "[REDACTED]"
 )
 
 const outputSchemaJSON = `{
@@ -33,6 +49,6 @@ const outputSchemaJSON = `{
     "model": { "type": "string" },
     "reasoning_effort": { "type": "string" }
   },
-  "required": ["summary", "branch", "pr_number", "pr_url"],
-  "additionalProperties": true
+  "required": ["summary", "branch", "pr_number", "pr_url", "session_id", "model", "reasoning_effort"],
+  "additionalProperties": false
 }`

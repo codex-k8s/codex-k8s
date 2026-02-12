@@ -1,4 +1,4 @@
-FROM node:22-alpine AS web
+FROM mirror.gcr.io/library/node:22-alpine AS web
 
 WORKDIR /web
 
@@ -8,7 +8,7 @@ RUN npm ci
 COPY services/staff/web-console/ ./
 RUN npm run build
 
-FROM golang:1.25.6-alpine AS builder
+FROM mirror.gcr.io/library/golang:1.25.6-alpine AS builder
 
 WORKDIR /src
 
@@ -20,7 +20,7 @@ COPY services/external/api-gateway/ services/external/api-gateway/
 RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/codex-k8s ./services/external/api-gateway/cmd/api-gateway
 
-FROM alpine:3.20
+FROM mirror.gcr.io/library/alpine:3.20
 
 RUN addgroup -S app && adduser -S app -G app
 USER app

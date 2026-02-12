@@ -342,6 +342,41 @@ message InsertRunFlowEventResponse {
   string event_type = 2;
 }
 
+message UpsertRunStatusCommentRequest {
+  string run_id = 1;
+  string phase = 2;
+  optional string job_name = 3;
+  optional string job_namespace = 4;
+  optional string runtime_mode = 5;
+  optional string namespace = 6;
+  optional string trigger_kind = 7;
+  optional string prompt_locale = 8;
+  optional string run_status = 9;
+  bool deleted = 10;
+  bool already_deleted = 11;
+}
+
+message UpsertRunStatusCommentResponse {
+  bool ok = 1;
+  string run_id = 2;
+  int64 comment_id = 3;
+  optional string comment_url = 4;
+}
+
+message DeleteRunNamespaceRequest {
+  Principal principal = 1;
+  string run_id = 2;
+}
+
+message DeleteRunNamespaceResponse {
+  bool ok = 1;
+  string run_id = 2;
+  string namespace = 3;
+  bool deleted = 4;
+  bool already_deleted = 5;
+  optional string comment_url = 6;
+}
+
 service ControlPlaneService {
   rpc IngestGitHubWebhook(IngestGitHubWebhookRequest) returns (IngestGitHubWebhookResponse);
 
@@ -379,4 +414,6 @@ service ControlPlaneService {
   rpc UpsertAgentSession(UpsertAgentSessionRequest) returns (UpsertAgentSessionResponse);
   rpc GetLatestAgentSession(GetLatestAgentSessionRequest) returns (GetLatestAgentSessionResponse);
   rpc InsertRunFlowEvent(InsertRunFlowEventRequest) returns (InsertRunFlowEventResponse);
+  rpc UpsertRunStatusComment(UpsertRunStatusCommentRequest) returns (UpsertRunStatusCommentResponse);
+  rpc DeleteRunNamespace(DeleteRunNamespaceRequest) returns (DeleteRunNamespaceResponse);
 }

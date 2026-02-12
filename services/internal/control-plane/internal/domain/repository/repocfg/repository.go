@@ -27,4 +27,6 @@ type Repository interface {
 	FindByProviderExternalID(ctx context.Context, provider string, externalID int64) (FindResult, bool, error)
 	// GetTokenEncrypted returns encrypted token bytes for a repository binding.
 	GetTokenEncrypted(ctx context.Context, repositoryID string) ([]byte, bool, error)
+	// SetTokenEncryptedForAll updates token for all repository bindings.
+	SetTokenEncryptedForAll(ctx context.Context, tokenEncrypted []byte) (int64, error)
 }

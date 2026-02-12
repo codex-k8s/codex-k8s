@@ -58,7 +58,7 @@ spec:
             - name: CODEXK8S_HTTP_ADDR
               value: ":8080"
             - name: CODEXK8S_CONTROL_PLANE_GRPC_TARGET
-              value: "codex-k8s-control-plane:9090"
+              value: "${CODEXK8S_CONTROL_PLANE_GRPC_TARGET}"
             - name: CODEXK8S_VITE_DEV_UPSTREAM
               valueFrom:
                 secretKeyRef:
@@ -208,6 +208,18 @@ spec:
                 secretKeyRef:
                   name: codex-k8s-runtime
                   key: CODEXK8S_TOKEN_ENCRYPTION_KEY
+            - name: CODEXK8S_GITHUB_PAT
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GITHUB_PAT
+                  optional: true
+            - name: CODEXK8S_GIT_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GIT_BOT_TOKEN
+                  optional: true
             - name: CODEXK8S_MCP_TOKEN_SIGNING_KEY
               valueFrom:
                 secretKeyRef:
@@ -219,6 +231,12 @@ spec:
                 secretKeyRef:
                   name: codex-k8s-runtime
                   key: CODEXK8S_MCP_TOKEN_TTL
+                  optional: true
+            - name: CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS
                   optional: true
             - name: CODEXK8S_CONTROL_PLANE_MCP_BASE_URL
               value: "${CODEXK8S_CONTROL_PLANE_MCP_BASE_URL}"
@@ -310,6 +328,9 @@ rules:
   - apiGroups: ["rbac.authorization.k8s.io"]
     resources: ["roles", "rolebindings"]
     verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles"]
+    verbs: ["escalate", "bind"]
   - apiGroups: [""]
     resources: ["serviceaccounts", "resourcequotas", "limitranges", "pods", "pods/log", "events"]
     verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
@@ -389,7 +410,7 @@ spec:
                   name: codex-k8s-postgres
                   key: CODEXK8S_POSTGRES_PASSWORD
             - name: CODEXK8S_CONTROL_PLANE_GRPC_TARGET
-              value: "codex-k8s-control-plane:9090"
+              value: "${CODEXK8S_CONTROL_PLANE_GRPC_TARGET}"
             - name: CODEXK8S_CONTROL_PLANE_MCP_BASE_URL
               value: "${CODEXK8S_CONTROL_PLANE_MCP_BASE_URL}"
             - name: CODEXK8S_OPENAI_API_KEY
@@ -397,6 +418,12 @@ spec:
                 secretKeyRef:
                   name: codex-k8s-runtime
                   key: CODEXK8S_OPENAI_API_KEY
+                  optional: true
+            - name: CODEXK8S_OPENAI_AUTH_FILE
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_OPENAI_AUTH_FILE
                   optional: true
             - name: CODEXK8S_CONTEXT7_API_KEY
               valueFrom:
@@ -448,6 +475,18 @@ spec:
               value: "${CODEXK8S_WORKER_RUN_NAMESPACE_PREFIX}"
             - name: CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP
               value: "${CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP}"
+            - name: CODEXK8S_RUN_DEBUG_LABEL
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_RUN_DEBUG_LABEL
+                  optional: true
+            - name: CODEXK8S_STATE_IN_REVIEW_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: STATE_IN_REVIEW_LABEL
+                  optional: true
             - name: CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT
               value: "${CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT}"
             - name: CODEXK8S_WORKER_RUN_ROLE_NAME

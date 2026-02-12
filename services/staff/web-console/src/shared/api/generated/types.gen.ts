@@ -29,6 +29,14 @@ export type MeResponse = {
     user: MeUser;
 };
 
+export type RunNamespaceCleanupResponse = {
+    run_id: string;
+    namespace: string;
+    deleted: boolean;
+    already_deleted: boolean;
+    comment_url?: string | null;
+};
+
 export type Project = {
     id: string;
     slug: string;
@@ -498,6 +506,41 @@ export type GetRunResponses = {
 };
 
 export type GetRunResponse = GetRunResponses[keyof GetRunResponses];
+
+export type DeleteRunNamespaceData = {
+    body?: never;
+    path: {
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/runs/{run_id}/namespace';
+};
+
+export type DeleteRunNamespaceErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type DeleteRunNamespaceError = DeleteRunNamespaceErrors[keyof DeleteRunNamespaceErrors];
+
+export type DeleteRunNamespaceResponses = {
+    /**
+     * Namespace cleanup result
+     */
+    200: RunNamespaceCleanupResponse;
+};
+
+export type DeleteRunNamespaceResponse = DeleteRunNamespaceResponses[keyof DeleteRunNamespaceResponses];
 
 export type ListRunEventsData = {
     body?: never;

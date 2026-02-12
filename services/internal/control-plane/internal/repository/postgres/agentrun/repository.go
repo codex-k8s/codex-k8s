@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -20,6 +22,10 @@ var (
 	queryGetRunIDByCorrelationID string
 	//go:embed sql/get_by_id.sql
 	queryGetByID string
+	//go:embed sql/upsert_run_agent_logs.sql
+	queryUpsertRunAgentLogs string
+	//go:embed sql/cleanup_run_agent_logs_finished_before.sql
+	queryCleanupRunAgentLogsFinishedBefore string
 )
 
 // Repository stores agent runs in PostgreSQL.
@@ -98,4 +104,39 @@ func (r *Repository) GetByID(ctx context.Context, runID string) (domainrepo.Run,
 		return domainrepo.Run{}, false, nil
 	}
 	return domainrepo.Run{}, false, fmt.Errorf("get run by id: %w", err)
+}
+
+// UpsertRunAgentLogs stores latest agent execution logs for one run.
+func (r *Repository) UpsertRunAgentLogs(ctx context.Context, runID string, logs json.RawMessage) error {
+	trimmedRunID := strings.TrimSpace(runID)
+	if trimmedRunID == "" {
+		return fmt.Errorf("run_id is required")
+	}
+
+	payload := logs
+	if len(payload) == 0 || !json.Valid(payload) {
+		payload = json.RawMessage(`{}`)
+	}
+
+	if _, err := r.db.ExecContext(ctx, queryUpsertRunAgentLogs, trimmedRunID, []byte(payload)); err != nil {
+		return fmt.Errorf("upsert run agent logs: %w", err)
+	}
+	return nil
+}
+
+// CleanupRunAgentLogsFinishedBefore clears logs for finished runs older than cutoff.
+func (r *Repository) CleanupRunAgentLogsFinishedBefore(ctx context.Context, finishedBefore time.Time) (int64, error) {
+	if finishedBefore.IsZero() {
+		return 0, fmt.Errorf("finished_before is required")
+	}
+
+	res, err := r.db.ExecContext(ctx, queryCleanupRunAgentLogsFinishedBefore, finishedBefore.UTC())
+	if err != nil {
+		return 0, fmt.Errorf("cleanup run agent logs: %w", err)
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("cleanup run agent logs rows affected: %w", err)
+	}
+	return rows, nil
 }
