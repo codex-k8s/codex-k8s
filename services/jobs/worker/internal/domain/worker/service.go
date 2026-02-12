@@ -109,12 +109,6 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	}
 }
 
-type noopMCPTokenIssuer struct{}
-
-func (noopMCPTokenIssuer) IssueRunMCPToken(_ context.Context, _ IssueMCPTokenParams) (IssuedMCPToken, error) {
-	return IssuedMCPToken{}, nil
-}
-
 // Tick executes one reconciliation iteration.
 func (s *Service) Tick(ctx context.Context) error {
 	if err := s.reconcileRunning(ctx); err != nil {

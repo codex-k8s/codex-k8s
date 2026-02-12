@@ -11,20 +11,15 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
+	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/models"
 )
 
 const statusClientClosedRequest = 499
 
-type errorResponse struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-	Field   string `json:"field,omitempty"`
-}
-
 func newHTTPErrorHandler(logger *slog.Logger) func(c *echo.Context, err error) {
 	return func(c *echo.Context, err error) {
 		statusCode := http.StatusInternalServerError
-		resp := errorResponse{
+		resp := models.ErrorResponse{
 			Code:    "internal",
 			Message: "internal error",
 		}
@@ -51,14 +46,14 @@ func newHTTPErrorHandler(logger *slog.Logger) func(c *echo.Context, err error) {
 		switch {
 		case errors.Is(err, context.Canceled):
 			statusCode = statusClientClosedRequest
-			resp = errorResponse{
+			resp = models.ErrorResponse{
 				Code:    "canceled",
 				Message: "request canceled",
 			}
 			logAsError = false
 		case errors.Is(err, context.DeadlineExceeded):
 			statusCode = http.StatusGatewayTimeout
-			resp = errorResponse{
+			resp = models.ErrorResponse{
 				Code:    "deadline_exceeded",
 				Message: "request deadline exceeded",
 			}
@@ -66,7 +61,7 @@ func newHTTPErrorHandler(logger *slog.Logger) func(c *echo.Context, err error) {
 			logAsWarn = true
 		case errors.As(err, &validation):
 			statusCode = http.StatusBadRequest
-			resp = errorResponse{
+			resp = models.ErrorResponse{
 				Code:    "invalid_argument",
 				Message: validation.Msg,
 				Field:   validation.Field,
@@ -74,21 +69,21 @@ func newHTTPErrorHandler(logger *slog.Logger) func(c *echo.Context, err error) {
 			logAsError = false
 		case errors.As(err, &unauthorized):
 			statusCode = http.StatusUnauthorized
-			resp = errorResponse{
+			resp = models.ErrorResponse{
 				Code:    "unauthorized",
 				Message: unauthorized.Error(),
 			}
 			logAsError = false
 		case errors.As(err, &forbidden):
 			statusCode = http.StatusForbidden
-			resp = errorResponse{
+			resp = models.ErrorResponse{
 				Code:    "forbidden",
 				Message: forbidden.Error(),
 			}
 			logAsError = false
 		case errors.As(err, &conflict):
 			statusCode = http.StatusConflict
-			resp = errorResponse{
+			resp = models.ErrorResponse{
 				Code:    "conflict",
 				Message: conflict.Error(),
 			}
@@ -97,7 +92,7 @@ func newHTTPErrorHandler(logger *slog.Logger) func(c *echo.Context, err error) {
 			statusCode, resp, logAsError, logAsWarn = mapGRPCStatus(grpcErr)
 		case errors.As(err, &httpErr):
 			statusCode = httpErr.Code
-			resp = errorResponse{
+			resp = models.ErrorResponse{
 				Code:    "invalid_argument",
 				Message: http.StatusText(httpErr.Code),
 			}
@@ -136,60 +131,60 @@ func grpcStatus(err error) *status.Status {
 	return st
 }
 
-func mapGRPCStatus(st *status.Status) (int, errorResponse, bool, bool) {
+func mapGRPCStatus(st *status.Status) (int, models.ErrorResponse, bool, bool) {
 	switch st.Code() {
 	case codes.InvalidArgument:
-		return http.StatusBadRequest, errorResponse{
+		return http.StatusBadRequest, models.ErrorResponse{
 			Code:    "invalid_argument",
 			Message: defaultMessage(st.Message(), "invalid request"),
 		}, false, false
 	case codes.Unauthenticated:
-		return http.StatusUnauthorized, errorResponse{
+		return http.StatusUnauthorized, models.ErrorResponse{
 			Code:    "unauthorized",
 			Message: defaultMessage(st.Message(), "not authenticated"),
 		}, false, false
 	case codes.PermissionDenied:
-		return http.StatusForbidden, errorResponse{
+		return http.StatusForbidden, models.ErrorResponse{
 			Code:    "forbidden",
 			Message: defaultMessage(st.Message(), "forbidden"),
 		}, false, false
 	case codes.NotFound:
-		return http.StatusNotFound, errorResponse{
+		return http.StatusNotFound, models.ErrorResponse{
 			Code:    "not_found",
 			Message: defaultMessage(st.Message(), "resource not found"),
 		}, false, false
 	case codes.AlreadyExists:
-		return http.StatusConflict, errorResponse{
+		return http.StatusConflict, models.ErrorResponse{
 			Code:    "conflict",
 			Message: defaultMessage(st.Message(), "resource already exists"),
 		}, false, false
 	case codes.FailedPrecondition:
-		return http.StatusConflict, errorResponse{
+		return http.StatusConflict, models.ErrorResponse{
 			Code:    "failed_precondition",
 			Message: defaultMessage(st.Message(), "operation precondition failed"),
 		}, false, false
 	case codes.ResourceExhausted:
-		return http.StatusTooManyRequests, errorResponse{
+		return http.StatusTooManyRequests, models.ErrorResponse{
 			Code:    "resource_exhausted",
 			Message: "rate limit exceeded",
 		}, false, false
 	case codes.Canceled:
-		return statusClientClosedRequest, errorResponse{
+		return statusClientClosedRequest, models.ErrorResponse{
 			Code:    "canceled",
 			Message: "request canceled",
 		}, false, false
 	case codes.DeadlineExceeded:
-		return http.StatusGatewayTimeout, errorResponse{
+		return http.StatusGatewayTimeout, models.ErrorResponse{
 			Code:    "deadline_exceeded",
 			Message: "request deadline exceeded",
 		}, false, true
 	case codes.Unavailable:
-		return http.StatusServiceUnavailable, errorResponse{
+		return http.StatusServiceUnavailable, models.ErrorResponse{
 			Code:    "unavailable",
 			Message: "service unavailable",
 		}, false, true
 	default:
-		return http.StatusInternalServerError, errorResponse{
+		return http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "internal",
 			Message: "internal error",
 		}, true, false

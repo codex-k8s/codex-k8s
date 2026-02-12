@@ -26,11 +26,6 @@ func newStaffHandler(cp *controlplane.Client) *staffHandler {
 	return &staffHandler{cp: cp}
 }
 
-type pathLimit struct {
-	id    string
-	limit int
-}
-
 func parseLimit(c *echo.Context, def int) (int, error) {
 	limitStr := c.QueryParam("limit")
 	if limitStr == "" {
@@ -359,11 +354,6 @@ func (h *staffHandler) UpsertProjectRepository(c *echo.Context) error {
 
 func (h *staffHandler) DeleteProjectRepository(c *echo.Context) error {
 	return h.deleteWith2Params(c, "project_id", "repository_id", h.deleteProjectRepository)
-}
-
-type idLimitArg struct {
-	id    string
-	limit int32
 }
 
 func callUnaryWithArg[Arg any, Req any, Resp any](
