@@ -71,6 +71,7 @@ CODEXK8S_AGENT_DEFAULT_MODEL="${CODEXK8S_AGENT_DEFAULT_MODEL:-gpt-5.3-codex}"
 CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT="${CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT:-high}"
 CODEXK8S_AGENT_DEFAULT_LOCALE="${CODEXK8S_AGENT_DEFAULT_LOCALE:-ru}"
 CODEXK8S_AGENT_BASE_BRANCH="${CODEXK8S_AGENT_BASE_BRANCH:-main}"
+CODEXK8S_CONTROL_PLANE_GRPC_TARGET="${CODEXK8S_CONTROL_PLANE_GRPC_TARGET:-codex-k8s-control-plane.${CODEXK8S_STAGING_NAMESPACE}.svc.cluster.local:9090}"
 CODEXK8S_CONTROL_PLANE_MCP_BASE_URL="${CODEXK8S_CONTROL_PLANE_MCP_BASE_URL:-http://codex-k8s-control-plane.${CODEXK8S_STAGING_NAMESPACE}.svc.cluster.local:8081/mcp}"
 CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_CPU="${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_CPU:-100m}"
 CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_MEMORY="${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_MEMORY:-256Mi}"
@@ -259,6 +260,7 @@ render_template() {
   local worker_job_command_escaped
   local web_console_image_escaped
   local vite_dev_upstream_escaped
+  local control_plane_grpc_target_escaped
   local control_plane_mcp_base_url_escaped
   local agent_default_model_escaped
   local agent_default_reasoning_effort_escaped
@@ -272,6 +274,7 @@ render_template() {
   worker_job_command_escaped="$(escape_sed_replacement "$CODEXK8S_WORKER_JOB_COMMAND")"
   web_console_image_escaped="$(escape_sed_replacement "$CODEXK8S_WEB_CONSOLE_IMAGE")"
   vite_dev_upstream_escaped="$(escape_sed_replacement "$CODEXK8S_VITE_DEV_UPSTREAM")"
+  control_plane_grpc_target_escaped="$(escape_sed_replacement "$CODEXK8S_CONTROL_PLANE_GRPC_TARGET")"
   control_plane_mcp_base_url_escaped="$(escape_sed_replacement "$CODEXK8S_CONTROL_PLANE_MCP_BASE_URL")"
   agent_default_model_escaped="$(escape_sed_replacement "$CODEXK8S_AGENT_DEFAULT_MODEL")"
   agent_default_reasoning_effort_escaped="$(escape_sed_replacement "$CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT")"
@@ -317,6 +320,7 @@ render_template() {
     -e "s|\${CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT}|${agent_default_reasoning_effort_escaped}|g" \
     -e "s|\${CODEXK8S_AGENT_DEFAULT_LOCALE}|${agent_default_locale_escaped}|g" \
     -e "s|\${CODEXK8S_AGENT_BASE_BRANCH}|${agent_base_branch_escaped}|g" \
+    -e "s|\${CODEXK8S_CONTROL_PLANE_GRPC_TARGET}|${control_plane_grpc_target_escaped}|g" \
     -e "s|\${CODEXK8S_CONTROL_PLANE_MCP_BASE_URL}|${control_plane_mcp_base_url_escaped}|g" \
     -e "s|\${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_CPU}|${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_CPU}|g" \
     -e "s|\${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_MEMORY}|${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_MEMORY}|g" \

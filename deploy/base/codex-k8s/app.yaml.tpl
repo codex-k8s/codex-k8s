@@ -58,7 +58,7 @@ spec:
             - name: CODEXK8S_HTTP_ADDR
               value: ":8080"
             - name: CODEXK8S_CONTROL_PLANE_GRPC_TARGET
-              value: "codex-k8s-control-plane:9090"
+              value: "${CODEXK8S_CONTROL_PLANE_GRPC_TARGET}"
             - name: CODEXK8S_VITE_DEV_UPSTREAM
               valueFrom:
                 secretKeyRef:
@@ -389,7 +389,7 @@ spec:
                   name: codex-k8s-postgres
                   key: CODEXK8S_POSTGRES_PASSWORD
             - name: CODEXK8S_CONTROL_PLANE_GRPC_TARGET
-              value: "codex-k8s-control-plane:9090"
+              value: "${CODEXK8S_CONTROL_PLANE_GRPC_TARGET}"
             - name: CODEXK8S_CONTROL_PLANE_MCP_BASE_URL
               value: "${CODEXK8S_CONTROL_PLANE_MCP_BASE_URL}"
             - name: CODEXK8S_OPENAI_API_KEY
