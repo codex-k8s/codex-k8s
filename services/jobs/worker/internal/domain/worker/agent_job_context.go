@@ -61,18 +61,6 @@ type runAgentDescriptor struct {
 	Name string `json:"name"`
 }
 
-type githubRawIssueEvent struct {
-	Issue *githubRawIssue `json:"issue"`
-}
-
-type githubRawIssue struct {
-	Labels []githubRawIssueLabel `json:"labels"`
-}
-
-type githubRawIssueLabel struct {
-	Name string `json:"name"`
-}
-
 func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefaults) (runAgentContext, error) {
 	payload := parseRunAgentPayload(runPayload)
 
@@ -167,25 +155,6 @@ func parseRunAgentPayload(raw json.RawMessage) parsedRunAgentPayload {
 	return out
 }
 
-func extractIssueLabels(raw json.RawMessage) []string {
-	if len(raw) == 0 {
-		return nil
-	}
-	var event githubRawIssueEvent
-	if err := json.Unmarshal(raw, &event); err != nil || event.Issue == nil {
-		return nil
-	}
-	labels := make([]string, 0, len(event.Issue.Labels))
-	for _, label := range event.Issue.Labels {
-		name := strings.TrimSpace(label.Name)
-		if name == "" {
-			continue
-		}
-		labels = append(labels, name)
-	}
-	return labels
-}
-
 func normalizeTriggerKind(value string) string {
 	switch strings.ToLower(strings.TrimSpace(value)) {
 	case triggerKindDevRevise:
@@ -229,7 +198,7 @@ func resolveSingleLabelValue(labels []string, defaultValue string, known map[str
 func collectResolvedLabelValues(labels []string, known map[string]string) []string {
 	found := make([]string, 0, 1)
 	for _, rawLabel := range labels {
-		normalized := normalizeAIConfigLabel(rawLabel)
+		normalized := normalizeLabelToken(rawLabel)
 		if normalized == "" {
 			continue
 		}
@@ -241,11 +210,4 @@ func collectResolvedLabelValues(labels []string, known map[string]string) []stri
 		}
 	}
 	return found
-}
-
-func normalizeAIConfigLabel(value string) string {
-	trimmed := strings.TrimSpace(value)
-	trimmed = strings.TrimPrefix(trimmed, "[")
-	trimmed = strings.TrimSuffix(trimmed, "]")
-	return strings.ToLower(strings.TrimSpace(trimmed))
 }

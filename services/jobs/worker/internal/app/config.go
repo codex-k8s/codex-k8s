@@ -80,6 +80,8 @@ type Config struct {
 	RunNamespacePrefix string `env:"CODEXK8S_WORKER_RUN_NAMESPACE_PREFIX" envDefault:"codex-issue"`
 	// RunNamespaceCleanup enables namespace cleanup after run completion.
 	RunNamespaceCleanup bool `env:"CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP" envDefault:"true"`
+	// RunDebugLabel keeps full-env namespace for post-run debugging when present on issue labels.
+	RunDebugLabel string `env:"CODEXK8S_RUN_DEBUG_LABEL" envDefault:"run:debug"`
 	// RunServiceAccountName is service account for full-env run jobs.
 	RunServiceAccountName string `env:"CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT" envDefault:"codex-runner"`
 	// RunRoleName is RBAC role name for full-env run jobs.

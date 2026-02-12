@@ -211,6 +211,61 @@ func TestTickFinalizesFullEnvRunAndCleansNamespace(t *testing.T) {
 	}
 }
 
+func TestTickFinalizesFullEnvRunSkipsCleanupForDebugLabel(t *testing.T) {
+	t.Parallel()
+
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev"},"issue":{"number":10},"agent":{"key":"dev","name":"AI Developer"},"raw_payload":{"issue":{"labels":[{"name":"run:debug"}]}}}`)
+	runs := &fakeRunQueue{
+		running: []runqueuerepo.RunningRun{{
+			RunID:         "run-5",
+			CorrelationID: "corr-5",
+			ProjectID:     "550e8400-e29b-41d4-a716-446655440000",
+			RunPayload:    payload,
+		}},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{states: map[string]JobState{"run-5": JobStateSucceeded}}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:                "worker-1",
+		ClaimLimit:              1,
+		RunningCheckLimit:       10,
+		SlotsPerProject:         2,
+		SlotLeaseTTL:            time.Minute,
+		RunNamespacePrefix:      "codex-issue",
+		CleanupFullEnvNamespace: true,
+		RunDebugLabel:           "run:debug",
+	}, Dependencies{
+		Runs:     runs,
+		Events:   events,
+		Launcher: launcher,
+		Logger:   logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 2, 11, 12, 0, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if len(launcher.cleaned) != 0 {
+		t.Fatalf("expected namespace cleanup to be skipped, got %d cleanups", len(launcher.cleaned))
+	}
+
+	if len(events.inserted) != 2 {
+		t.Fatalf("expected run.succeeded + run.namespace.cleanup_skipped events, got %d", len(events.inserted))
+	}
+	if events.inserted[0].EventType != floweventdomain.EventTypeRunSucceeded {
+		t.Fatalf("expected first event run.succeeded, got %s", events.inserted[0].EventType)
+	}
+	if events.inserted[1].EventType != floweventdomain.EventTypeRunNamespaceCleanupSkipped {
+		t.Fatalf("expected second event run.namespace.cleanup_skipped, got %s", events.inserted[1].EventType)
+	}
+	if !strings.Contains(string(events.inserted[1].Payload), "debug_label_present") {
+		t.Fatalf("expected cleanup_skipped payload to include debug reason, got %s", string(events.inserted[1].Payload))
+	}
+}
+
 type fakeRunQueue struct {
 	claims     []runqueuerepo.ClaimedRun
 	claimCalls int

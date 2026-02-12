@@ -448,6 +448,12 @@ spec:
               value: "${CODEXK8S_WORKER_RUN_NAMESPACE_PREFIX}"
             - name: CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP
               value: "${CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP}"
+            - name: CODEXK8S_RUN_DEBUG_LABEL
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_RUN_DEBUG_LABEL
+                  optional: true
             - name: CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT
               value: "${CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT}"
             - name: CODEXK8S_WORKER_RUN_ROLE_NAME

@@ -65,16 +65,20 @@ type runFinishedEventExtra struct {
 
 // namespaceLifecycleEventPayload defines payload shape for namespace lifecycle flow events.
 type namespaceLifecycleEventPayload struct {
-	RunID       string                  `json:"run_id"`
-	ProjectID   string                  `json:"project_id"`
-	RuntimeMode agentdomain.RuntimeMode `json:"runtime_mode"`
-	Namespace   string                  `json:"namespace"`
-	Error       string                  `json:"error,omitempty"`
+	RunID          string                     `json:"run_id"`
+	ProjectID      string                     `json:"project_id"`
+	RuntimeMode    agentdomain.RuntimeMode    `json:"runtime_mode"`
+	Namespace      string                     `json:"namespace"`
+	Error          string                     `json:"error,omitempty"`
+	Reason         namespaceCleanupSkipReason `json:"reason,omitempty"`
+	CleanupCommand string                     `json:"cleanup_command,omitempty"`
 }
 
 // namespaceLifecycleEventExtra carries optional namespace lifecycle diagnostics.
 type namespaceLifecycleEventExtra struct {
-	Error string
+	Error          string
+	Reason         namespaceCleanupSkipReason
+	CleanupCommand string
 }
 
 // payloadMarshalError is fallback payload shape used when JSON serialization unexpectedly fails.

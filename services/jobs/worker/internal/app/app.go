@@ -124,6 +124,7 @@ func Run() error {
 		ProjectLearningModeDefault:  learningDefault,
 		RunNamespacePrefix:          cfg.RunNamespacePrefix,
 		CleanupFullEnvNamespace:     cfg.RunNamespaceCleanup,
+		RunDebugLabel:               cfg.RunDebugLabel,
 		ControlPlaneGRPCTarget:      cfg.ControlPlaneGRPCTarget,
 		ControlPlaneMCPBaseURL:      cfg.ControlPlaneMCPBaseURL,
 		OpenAIAPIKey:                cfg.OpenAIAPIKey,

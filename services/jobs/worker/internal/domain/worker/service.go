@@ -37,6 +37,8 @@ type Config struct {
 	RunNamespacePrefix string
 	// CleanupFullEnvNamespace enables namespace cleanup after run completion.
 	CleanupFullEnvNamespace bool
+	// RunDebugLabel keeps namespace for post-run debugging when present on the issue.
+	RunDebugLabel string
 	// ControlPlaneGRPCTarget is control-plane gRPC endpoint used by run jobs for callbacks.
 	ControlPlaneGRPCTarget string
 	// ControlPlaneMCPBaseURL is MCP endpoint passed to run job environment.
@@ -108,6 +110,10 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	}
 	if cfg.RunNamespacePrefix == "" {
 		cfg.RunNamespacePrefix = defaultRunNamespacePrefix
+	}
+	cfg.RunDebugLabel = strings.TrimSpace(cfg.RunDebugLabel)
+	if cfg.RunDebugLabel == "" {
+		cfg.RunDebugLabel = defaultRunDebugLabel
 	}
 	cfg.ControlPlaneGRPCTarget = strings.TrimSpace(cfg.ControlPlaneGRPCTarget)
 	if cfg.ControlPlaneGRPCTarget == "" {
@@ -471,8 +477,25 @@ func (s *Service) finishRun(ctx context.Context, params finishRunParams) error {
 	}
 
 	if params.Execution.RuntimeMode == agentdomain.RuntimeModeFullEnv &&
-		params.Execution.Namespace != "" &&
-		s.cfg.CleanupFullEnvNamespace {
+		params.Execution.Namespace != "" {
+		debugPolicy := s.resolveRunDebugPolicy(params.Run.RunPayload)
+		if debugPolicy.SkipCleanup {
+			if err := s.insertNamespaceLifecycleEvent(ctx, namespaceLifecycleEventParams{
+				CorrelationID: params.Run.CorrelationID,
+				EventType:     floweventdomain.EventTypeRunNamespaceCleanupSkipped,
+				RunID:         params.Run.RunID,
+				ProjectID:     params.Run.ProjectID,
+				Execution:     params.Execution,
+				Extra: namespaceLifecycleEventExtra{
+					Reason:         debugPolicy.Reason,
+					CleanupCommand: buildNamespaceCleanupCommand(params.Execution.Namespace),
+				},
+			}); err != nil {
+				s.logger.Error("insert run.namespace.cleanup_skipped event failed", "run_id", params.Run.RunID, "err", err)
+			}
+			return nil
+		}
+
 		cleanupSpec := NamespaceSpec{
 			RunID:         params.Run.RunID,
 			ProjectID:     params.Run.ProjectID,
@@ -545,11 +568,13 @@ func (s *Service) insertNamespaceLifecycleEvent(ctx context.Context, params name
 		ActorID:       floweventdomain.ActorID(s.cfg.WorkerID),
 		EventType:     params.EventType,
 		Payload: encodeNamespaceLifecycleEventPayload(namespaceLifecycleEventPayload{
-			RunID:       params.RunID,
-			ProjectID:   params.ProjectID,
-			RuntimeMode: params.Execution.RuntimeMode,
-			Namespace:   params.Execution.Namespace,
-			Error:       params.Extra.Error,
+			RunID:          params.RunID,
+			ProjectID:      params.ProjectID,
+			RuntimeMode:    params.Execution.RuntimeMode,
+			Namespace:      params.Execution.Namespace,
+			Error:          params.Extra.Error,
+			Reason:         params.Extra.Reason,
+			CleanupCommand: params.Extra.CleanupCommand,
 		}),
 		CreatedAt: s.now().UTC(),
 	})

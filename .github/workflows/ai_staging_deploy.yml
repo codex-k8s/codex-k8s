@@ -132,6 +132,7 @@ jobs:
           CODEXK8S_JWT_TTL: ${{ vars.CODEXK8S_JWT_TTL || '15m' }}
           CODEXK8S_RUN_DEV_LABEL: ${{ vars.RUN_DEV_LABEL || 'run:dev' }}
           CODEXK8S_RUN_DEV_REVISE_LABEL: ${{ vars.RUN_DEV_REVISE_LABEL || 'run:dev:revise' }}
+          CODEXK8S_RUN_DEBUG_LABEL: ${{ vars.RUN_DEBUG_LABEL || 'run:debug' }}
           CODEXK8S_WEB_CONSOLE_IMAGE: ${{ vars.CODEXK8S_WEB_CONSOLE_IMAGE || '127.0.0.1:5000/codex-k8s/web-console:latest' }}
         run: |
           set -euo pipefail

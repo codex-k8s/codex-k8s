@@ -17,9 +17,9 @@ approvals:
 # Labels and Trigger Policy
 
 ## TL;DR
-- Канонический набор лейблов включает классы `run:*`, `state:*`, `need:*`.
+- Канонический набор лейблов включает классы `run:*`, `state:*`, `need:*` и диагностические labels.
 - Trigger/deploy лейблы управляют запуском этапов и требуют апрува Owner при агент-инициации.
-- `state:*` и `need:*` не запускают деплой/исполнение и могут ставиться автоматически по политике.
+- `state:*`, `need:*` и диагностические labels не запускают деплой/исполнение и могут ставиться автоматически по политике.
 
 ## Source of truth
 - `docs/product/stage_process_model.md`
@@ -72,6 +72,12 @@ approvals:
 | `need:qa` | нужен QA-вход или тест-дизайн |
 | `need:sre` | нужно участие SRE/OPS |
 
+## Диагностические labels
+
+| Label | Назначение |
+|---|---|
+| `run:debug` | не запускает run сам по себе; при наличии на issue в момент `run:dev`/`run:dev:revise` worker сохраняет namespace/job после завершения и пишет `run.namespace.cleanup_skipped` |
+
 ## Конфигурационные лейблы модели/рассуждений
 
 Лейблы модели (одновременно активен один):
@@ -96,6 +102,11 @@ approvals:
 - Если лейбл инициирует человек с правами admin/owner, применяется по правам GitHub и политике репозитория.
 - Любая операция с `run:*` логируется в `flow_events`.
 - Для цикла `run:dev`/`run:dev:revise` перед финальным Owner review обязателен pre-review от системного `reviewer`.
+### Diagnostic labels (`run:debug`)
+- `run:debug` не запускает workflow/deploy напрямую.
+- Если label присутствует на issue при старте `run:dev`/`run:dev:revise`, worker не удаляет run-namespace автоматически.
+- Для такого случая пишется событие `run.namespace.cleanup_skipped` с `cleanup_command` для ручного удаления namespace.
+
 
 ### Service (`state:*`, `need:*`)
 - Могут ставиться агентом автоматически в рамках политики проекта.
@@ -123,7 +134,7 @@ approvals:
 
 - Все workflow условия сравнения label должны использовать `vars.*`, а не строковые литералы.
 - В GitHub Variables хранится **полный каталог** `run:*`, `state:*`, `need:*`:
-  - для `run:*`: `RUN_<STAGE>_LABEL` и `RUN_<STAGE>_REVISE_LABEL` (где применимо),
+  - для `run:*`: `RUN_<STAGE>_LABEL` и `RUN_<STAGE>_REVISE_LABEL` (где применимо), плюс `RUN_DEBUG_LABEL`,
   - для `state:*`: `STATE_*_LABEL`,
   - для `need:*`: `NEED_*_LABEL`.
 - Для model/reasoning также хранится каталог vars:

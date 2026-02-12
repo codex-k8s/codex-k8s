@@ -55,14 +55,16 @@ approvals:
     - `LimitRange`.
 - Worker запускает Job в целевом namespace и передаёт runtime metadata в env/payload.
 - Добавлен cleanup baseline:
-  - по завершении `full-env` run namespace удаляется (управляемо через env-флаг cleanup),
+  - по завершении `full-env` run namespace удаляется (управляемо через env-флаг cleanup);
+  - при `run:debug` cleanup пропускается, namespace сохраняется для отладки и фиксируется в `flow_events`.
   - удаляются только managed namespace’ы, промаркированные worker’ом.
 - Для runtime metadata закреплён доменный префикс:
   - labels/annotations в namespace/job используют `codex-k8s.dev/*`.
 - Добавлен audit lifecycle в `flow_events`:
   - `run.namespace.prepared`,
   - `run.namespace.cleaned`,
-  - `run.namespace.cleanup_failed`.
+  - `run.namespace.cleanup_failed`,
+  - `run.namespace.cleanup_skipped` (например, из-за `run:debug`).
 - Для reconciliation running runs расширено чтение `agent_runs.run_payload`, чтобы namespace/runtime mode определялись детерминированно и после рестартов worker.
 - Deploy baseline обновлён:
   - worker получил cluster-scope RBAC для lifecycle namespace и runtime-объектов;
