@@ -306,6 +306,14 @@ PR policy:
   - Day5: детерминированные post-run label transitions для owner flow (`run:* -> state:*`),
   - Day6: policy/audit hardening для автоматических label transitions и конфликтов.
   - Day6+: вынести `mcp_servers.codex_k8s.tool_timeout_sec` в настраиваемую policy/runtime-конфигурацию (пер-run/пер-agent), чтобы поддержать долгие approver flow (часы) без ручных правок шаблона.
+
+### E2E-верификация `run:dev -> PR` (Issue #13)
+- Дата: `2026-02-12`.
+- Issue: `#13` (`[E2E Day4] Проверка run:dev -> PR (20260212-140628)`).
+- Run context: `run_id=3a0c0406-3ca7-4caa-894c-214ad26917d9`, `agent_key=dev`, `trigger=run:dev`.
+- Целевая ветка: `codex/issue-13`, базовая ветка: `main`.
+- Ожидаемый результат проверки: создание или обновление PR в `main` из ветки `codex/issue-13` с фиксацией traceability в документации Sprint S2.
+
 ## Критерии приемки эпика — статус
 - Выполнено: `run:dev` запускает агентный Job и поддерживает PR-flow.
 - Выполнено: `run:dev:revise` работает с resume-path, при отсутствии PR отклоняется с `failed_precondition` и событием `run.revise.pr_not_found`.
