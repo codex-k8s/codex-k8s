@@ -404,6 +404,12 @@ spec:
                   name: codex-k8s-runtime
                   key: CODEXK8S_OPENAI_API_KEY
                   optional: true
+            - name: CODEXK8S_OPENAI_AUTH_FILE
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_OPENAI_AUTH_FILE
+                  optional: true
             - name: CODEXK8S_CONTEXT7_API_KEY
               valueFrom:
                 secretKeyRef:

@@ -90,8 +90,17 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		return err
 	}
 
-	if err := runCommandWithInput(ctx, []byte(s.cfg.OpenAIAPIKey), io.Discard, io.Discard, "codex", "login", "--with-api-key"); err != nil {
-		return fmt.Errorf("codex login failed: %w", err)
+	authFromFileConfigured, err := s.writeCodexAuthFile(state.codexDir)
+	if err != nil {
+		return err
+	}
+	if !authFromFileConfigured {
+		if strings.TrimSpace(s.cfg.OpenAIAPIKey) == "" {
+			return fmt.Errorf("CODEXK8S_OPENAI_API_KEY is required when CODEXK8S_OPENAI_AUTH_FILE is empty")
+		}
+		if err := runCommandWithInput(ctx, []byte(s.cfg.OpenAIAPIKey), io.Discard, io.Discard, "codex", "login", "--with-api-key"); err != nil {
+			return fmt.Errorf("codex login failed: %w", err)
+		}
 	}
 
 	if err := s.writeCodexConfig(state.codexDir); err != nil {

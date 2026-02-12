@@ -80,6 +80,22 @@ func (s *Service) writeCodexConfig(codexDir string) error {
 	return nil
 }
 
+func (s *Service) writeCodexAuthFile(codexDir string) (bool, error) {
+	authContent := strings.TrimSpace(s.cfg.OpenAIAuthFile)
+	if authContent == "" {
+		return false, nil
+	}
+	if !json.Valid([]byte(authContent)) {
+		return false, fmt.Errorf("CODEXK8S_OPENAI_AUTH_FILE must be valid JSON")
+	}
+
+	authPath := filepath.Join(codexDir, "auth.json")
+	if err := os.WriteFile(authPath, []byte(authContent), 0o600); err != nil {
+		return false, fmt.Errorf("write codex auth file: %w", err)
+	}
+	return true, nil
+}
+
 func (s *Service) buildPrompt(taskBody string, result runResult) (string, error) {
 	hasContext7 := strings.TrimSpace(os.Getenv(envContext7APIKey)) != ""
 	return renderTemplate(templateNamePromptEnvelope, promptEnvelopeTemplateData{

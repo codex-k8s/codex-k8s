@@ -236,14 +236,7 @@ func (s *Service) recordIgnoredWebhook(ctx context.Context, cmd IngestCommand, e
 		return IngestResult{}, fmt.Errorf("build ignored flow event payload: %w", err)
 	}
 
-	if err := s.flowEvents.Insert(ctx, floweventrepo.InsertParams{
-		CorrelationID: cmd.CorrelationID,
-		ActorType:     floweventdomain.ActorTypeSystem,
-		ActorID:       githubWebhookActorID,
-		EventType:     floweventdomain.EventTypeWebhookIgnored,
-		Payload:       payload,
-		CreatedAt:     cmd.ReceivedAt,
-	}); err != nil {
+	if err := s.insertSystemFlowEvent(ctx, cmd.CorrelationID, floweventdomain.EventTypeWebhookIgnored, payload, cmd.ReceivedAt); err != nil {
 		return IngestResult{}, fmt.Errorf("insert ignored flow event: %w", err)
 	}
 
@@ -260,14 +253,7 @@ func (s *Service) recordReceivedWebhookWithoutRun(ctx context.Context, cmd Inges
 		return IngestResult{}, fmt.Errorf("build flow event payload: %w", err)
 	}
 
-	if err := s.flowEvents.Insert(ctx, floweventrepo.InsertParams{
-		CorrelationID: cmd.CorrelationID,
-		ActorType:     floweventdomain.ActorTypeSystem,
-		ActorID:       githubWebhookActorID,
-		EventType:     floweventdomain.EventTypeWebhookReceived,
-		Payload:       payload,
-		CreatedAt:     cmd.ReceivedAt,
-	}); err != nil {
+	if err := s.insertSystemFlowEvent(ctx, cmd.CorrelationID, floweventdomain.EventTypeWebhookReceived, payload, cmd.ReceivedAt); err != nil {
 		return IngestResult{}, fmt.Errorf("insert flow event: %w", err)
 	}
 
@@ -276,6 +262,17 @@ func (s *Service) recordReceivedWebhookWithoutRun(ctx context.Context, cmd Inges
 		Status:        webhookdomain.IngestStatusAccepted,
 		Duplicate:     false,
 	}, nil
+}
+
+func (s *Service) insertSystemFlowEvent(ctx context.Context, correlationID string, eventType floweventdomain.EventType, payload json.RawMessage, createdAt time.Time) error {
+	return s.flowEvents.Insert(ctx, floweventrepo.InsertParams{
+		CorrelationID: correlationID,
+		ActorType:     floweventdomain.ActorTypeSystem,
+		ActorID:       githubWebhookActorID,
+		EventType:     eventType,
+		Payload:       payload,
+		CreatedAt:     createdAt,
+	})
 }
 
 func (s *Service) resolveIssueRunTrigger(eventType string, envelope githubWebhookEnvelope) (issueRunTrigger, bool) {

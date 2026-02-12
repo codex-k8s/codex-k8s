@@ -45,6 +45,8 @@ type Config struct {
 	ControlPlaneMCPBaseURL string
 	// OpenAIAPIKey is injected into run pods for codex login.
 	OpenAIAPIKey string
+	// OpenAIAuthFile is optional Codex auth.json payload injected into run pods.
+	OpenAIAuthFile string
 	// Context7APIKey enables Context7 documentation calls from run pods when set.
 	Context7APIKey string
 	// GitBotToken is injected into run pods for git transport only.
@@ -124,6 +126,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	}
 	cfg.ControlPlaneMCPBaseURL = strings.TrimSpace(cfg.ControlPlaneMCPBaseURL)
 	cfg.OpenAIAPIKey = strings.TrimSpace(cfg.OpenAIAPIKey)
+	cfg.OpenAIAuthFile = strings.TrimSpace(cfg.OpenAIAuthFile)
 	cfg.Context7APIKey = strings.TrimSpace(cfg.Context7APIKey)
 	cfg.GitBotToken = strings.TrimSpace(cfg.GitBotToken)
 	cfg.GitBotUsername = strings.TrimSpace(cfg.GitBotUsername)
@@ -134,9 +137,20 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if cfg.GitBotMail == "" {
 		cfg.GitBotMail = "codex-bot@codex-k8s.local"
 	}
+	hasOpenAIAuthFile := cfg.OpenAIAuthFile != ""
 	cfg.AgentDefaultModel = strings.TrimSpace(cfg.AgentDefaultModel)
 	if cfg.AgentDefaultModel == "" {
-		cfg.AgentDefaultModel = "gpt-5.2-codex"
+		if hasOpenAIAuthFile {
+			cfg.AgentDefaultModel = modelGPT53Codex
+		} else {
+			cfg.AgentDefaultModel = modelGPT52Codex
+		}
+	}
+	if hasOpenAIAuthFile && strings.EqualFold(cfg.AgentDefaultModel, modelGPT52Codex) {
+		cfg.AgentDefaultModel = modelGPT53Codex
+	}
+	if !hasOpenAIAuthFile && strings.EqualFold(cfg.AgentDefaultModel, modelGPT53Codex) {
+		cfg.AgentDefaultModel = modelGPT52Codex
 	}
 	cfg.AgentDefaultReasoningEffort = strings.TrimSpace(cfg.AgentDefaultReasoningEffort)
 	if cfg.AgentDefaultReasoningEffort == "" {
@@ -282,6 +296,7 @@ func (s *Service) launchPending(ctx context.Context) error {
 			DefaultModel:           s.cfg.AgentDefaultModel,
 			DefaultReasoningEffort: s.cfg.AgentDefaultReasoningEffort,
 			DefaultLocale:          s.cfg.AgentDefaultLocale,
+			AllowGPT53:             strings.TrimSpace(s.cfg.OpenAIAuthFile) != "",
 		})
 		if err != nil {
 			s.logger.Error("resolve run agent context failed", "run_id", claimed.RunID, "err", err)
@@ -375,6 +390,7 @@ func (s *Service) launchPending(ctx context.Context) error {
 			PromptTemplateLocale:   agentCtx.PromptTemplateLocale,
 			BaseBranch:             s.cfg.AgentBaseBranch,
 			OpenAIAPIKey:           s.cfg.OpenAIAPIKey,
+			OpenAIAuthFile:         s.cfg.OpenAIAuthFile,
 			Context7APIKey:         s.cfg.Context7APIKey,
 			GitBotToken:            s.cfg.GitBotToken,
 			AgentDisplayName:       agentCtx.AgentDisplayName,

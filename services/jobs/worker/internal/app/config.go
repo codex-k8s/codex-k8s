@@ -32,6 +32,8 @@ type Config struct {
 	ControlPlaneMCPBaseURL string `env:"CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" envDefault:"http://codex-k8s-control-plane:8081/mcp"`
 	// OpenAIAPIKey is injected into run pods for codex login.
 	OpenAIAPIKey string `env:"CODEXK8S_OPENAI_API_KEY"`
+	// OpenAIAuthFile stores optional Codex auth.json content for run pods.
+	OpenAIAuthFile string `env:"CODEXK8S_OPENAI_AUTH_FILE"`
 	// Context7APIKey enables Context7 documentation calls from run pods when set.
 	Context7APIKey string `env:"CODEXK8S_CONTEXT7_API_KEY"`
 	// GitBotToken is injected into run pods for git transport (fetch/push only).
@@ -41,7 +43,7 @@ type Config struct {
 	// GitBotMail is git author email configured in run pods.
 	GitBotMail string `env:"CODEXK8S_GIT_BOT_MAIL" envDefault:"codex-bot@codex-k8s.local"`
 	// AgentDefaultModel is fallback model when issue labels do not override model.
-	AgentDefaultModel string `env:"CODEXK8S_AGENT_DEFAULT_MODEL" envDefault:"gpt-5.2-codex"`
+	AgentDefaultModel string `env:"CODEXK8S_AGENT_DEFAULT_MODEL" envDefault:"gpt-5.3-codex"`
 	// AgentDefaultReasoningEffort is fallback reasoning profile when issue labels do not override reasoning.
 	AgentDefaultReasoningEffort string `env:"CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT" envDefault:"high"`
 	// AgentDefaultLocale is fallback prompt locale.

@@ -17,6 +17,13 @@ const (
 
 	modelSourceDefault    = "agent_default"
 	modelSourceIssueLabel = "issue_label"
+	modelSourceFallback   = "auth_file_fallback"
+
+	modelGPT53Codex     = "gpt-5.3-codex"
+	modelGPT52Codex     = "gpt-5.2-codex"
+	modelGPT52          = "gpt-5.2"
+	modelGPT51CodexMax  = "gpt-5.1-codex-max"
+	modelGPT51CodexMini = "gpt-5.1-codex-mini"
 )
 
 type runAgentContext struct {
@@ -106,6 +113,10 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 	}
 	ctx.Model = model
 	ctx.ModelSource = modelSource
+	if !defaults.AllowGPT53 && strings.EqualFold(ctx.Model, modelGPT53Codex) {
+		ctx.Model = modelGPT52Codex
+		ctx.ModelSource = modelSourceFallback
+	}
 	ctx.ReasoningEffort = reasoning
 	ctx.ReasoningSource = reasoningSource
 
@@ -116,6 +127,7 @@ type runAgentDefaults struct {
 	DefaultModel           string
 	DefaultReasoningEffort string
 	DefaultLocale          string
+	AllowGPT53             bool
 }
 
 type parsedRunAgentPayload struct {
@@ -166,11 +178,11 @@ func normalizeTriggerKind(value string) string {
 
 func resolveModelFromLabels(labels []string, defaultModel string) (model string, source string, err error) {
 	modelByLabel := map[string]string{
-		"ai-model-gpt-5.3-codex":      "gpt-5.3-codex",
-		"ai-model-gpt-5.2-codex":      "gpt-5.2-codex",
-		"ai-model-gpt-5.2":            "gpt-5.2",
-		"ai-model-gpt-5.1-codex-max":  "gpt-5.1-codex-max",
-		"ai-model-gpt-5.1-codex-mini": "gpt-5.1-codex-mini",
+		"ai-model-gpt-5.3-codex":      modelGPT53Codex,
+		"ai-model-gpt-5.2-codex":      modelGPT52Codex,
+		"ai-model-gpt-5.2":            modelGPT52,
+		"ai-model-gpt-5.1-codex-max":  modelGPT51CodexMax,
+		"ai-model-gpt-5.1-codex-mini": modelGPT51CodexMini,
 	}
 	return resolveSingleLabelValue(labels, defaultModel, modelByLabel, "ai-model")
 }
