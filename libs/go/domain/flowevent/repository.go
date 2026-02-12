@@ -21,6 +21,7 @@ const (
 	ActorIDGitHubWebhook   ActorID = "github-webhook"
 	ActorIDWorker          ActorID = "worker"
 	ActorIDControlPlaneMCP ActorID = "control-plane-mcp"
+	ActorIDAgentRunner     ActorID = "agent-runner"
 )
 
 // EventType is a normalized lifecycle event name.
@@ -38,7 +39,15 @@ const (
 	EventTypeRunFailed                 EventType = "run.failed"
 	EventTypeRunFailedJobNotFound      EventType = "run.failed.job_not_found"
 	EventTypeRunFailedLaunchError      EventType = "run.failed.launch_error"
+	EventTypeRunFailedPrecondition     EventType = "run.failed.precondition"
 	EventTypeRunMCPTokenIssued         EventType = "run.mcp.token.issued"
+	EventTypeRunAgentStarted           EventType = "run.agent.started"
+	EventTypeRunAgentSessionRestored   EventType = "run.agent.session.restored"
+	EventTypeRunAgentSessionSaved      EventType = "run.agent.session.saved"
+	EventTypeRunAgentResumeUsed        EventType = "run.agent.resume.used"
+	EventTypeRunPRCreated              EventType = "run.pr.created"
+	EventTypeRunPRUpdated              EventType = "run.pr.updated"
+	EventTypeRunRevisePRNotFound       EventType = "run.revise.pr_not_found"
 	EventTypePromptContextAssembled    EventType = "prompt.context.assembled"
 	EventTypeMCPToolCalled             EventType = "mcp.tool.called"
 	EventTypeMCPToolSucceeded          EventType = "mcp.tool.succeeded"

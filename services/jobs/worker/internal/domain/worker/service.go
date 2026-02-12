@@ -39,6 +39,18 @@ type Config struct {
 	CleanupFullEnvNamespace bool
 	// ControlPlaneMCPBaseURL is MCP endpoint passed to run job environment.
 	ControlPlaneMCPBaseURL string
+	// OpenAIAPIKey is injected into run pods for codex login.
+	OpenAIAPIKey string
+	// GitBotToken is injected into run pods for git transport only.
+	GitBotToken string
+	// AgentDefaultModel is fallback model when issue labels do not override model.
+	AgentDefaultModel string
+	// AgentDefaultReasoningEffort is fallback reasoning profile when issue labels do not override reasoning.
+	AgentDefaultReasoningEffort string
+	// AgentDefaultLocale is fallback prompt locale.
+	AgentDefaultLocale string
+	// AgentBaseBranch is default base branch for PR flow.
+	AgentBaseBranch string
 }
 
 // Dependencies groups service collaborators to keep constructor signatures compact.
@@ -90,6 +102,24 @@ func NewService(cfg Config, deps Dependencies) *Service {
 		cfg.RunNamespacePrefix = defaultRunNamespacePrefix
 	}
 	cfg.ControlPlaneMCPBaseURL = strings.TrimSpace(cfg.ControlPlaneMCPBaseURL)
+	cfg.OpenAIAPIKey = strings.TrimSpace(cfg.OpenAIAPIKey)
+	cfg.GitBotToken = strings.TrimSpace(cfg.GitBotToken)
+	cfg.AgentDefaultModel = strings.TrimSpace(cfg.AgentDefaultModel)
+	if cfg.AgentDefaultModel == "" {
+		cfg.AgentDefaultModel = "gpt-5.3-codex"
+	}
+	cfg.AgentDefaultReasoningEffort = strings.TrimSpace(cfg.AgentDefaultReasoningEffort)
+	if cfg.AgentDefaultReasoningEffort == "" {
+		cfg.AgentDefaultReasoningEffort = "medium"
+	}
+	cfg.AgentDefaultLocale = strings.TrimSpace(cfg.AgentDefaultLocale)
+	if cfg.AgentDefaultLocale == "" {
+		cfg.AgentDefaultLocale = "ru"
+	}
+	cfg.AgentBaseBranch = strings.TrimSpace(cfg.AgentBaseBranch)
+	if cfg.AgentBaseBranch == "" {
+		cfg.AgentBaseBranch = "main"
+	}
 	if deps.Logger == nil {
 		deps.Logger = slog.Default()
 	}
@@ -200,6 +230,35 @@ func (s *Service) launchPending(ctx context.Context) error {
 		}
 
 		execution := resolveRunExecutionContext(claimed.RunID, claimed.ProjectID, claimed.RunPayload, s.cfg.RunNamespacePrefix)
+		agentCtx, err := resolveRunAgentContext(claimed.RunPayload, runAgentDefaults{
+			DefaultModel:           s.cfg.AgentDefaultModel,
+			DefaultReasoningEffort: s.cfg.AgentDefaultReasoningEffort,
+			DefaultLocale:          s.cfg.AgentDefaultLocale,
+		})
+		if err != nil {
+			s.logger.Error("resolve run agent context failed", "run_id", claimed.RunID, "err", err)
+			eventType := floweventdomain.EventTypeRunFailedLaunchError
+			reason := runFailureReasonAgentContextResolve
+			if isFailedPreconditionError(err) {
+				eventType = floweventdomain.EventTypeRunFailedPrecondition
+				reason = runFailureReasonPreconditionFailed
+			}
+			if finishErr := s.finishRun(ctx, finishRunParams{
+				Run:       runningRunFromClaimed(claimed),
+				Execution: execution,
+				Status:    rundomain.StatusFailed,
+				EventType: eventType,
+				Ref:       s.launcher.JobRef(claimed.RunID, execution.Namespace),
+				Extra: runFinishedEventExtra{
+					Error:  err.Error(),
+					Reason: reason,
+				},
+			}); finishErr != nil {
+				return fmt.Errorf("mark run failed after context resolve error: %w", finishErr)
+			}
+			continue
+		}
+
 		namespaceSpec := NamespaceSpec{
 			RunID:         claimed.RunID,
 			ProjectID:     claimed.ProjectID,
@@ -248,14 +307,26 @@ func (s *Service) launchPending(ctx context.Context) error {
 		}
 
 		ref, err := s.launcher.Launch(ctx, JobSpec{
-			RunID:          claimed.RunID,
-			CorrelationID:  claimed.CorrelationID,
-			ProjectID:      claimed.ProjectID,
-			SlotNo:         claimed.SlotNo,
-			RuntimeMode:    execution.RuntimeMode,
-			Namespace:      execution.Namespace,
-			MCPBaseURL:     s.cfg.ControlPlaneMCPBaseURL,
-			MCPBearerToken: issuedMCPToken.Token,
+			RunID:                claimed.RunID,
+			CorrelationID:        claimed.CorrelationID,
+			ProjectID:            claimed.ProjectID,
+			SlotNo:               claimed.SlotNo,
+			RuntimeMode:          execution.RuntimeMode,
+			Namespace:            execution.Namespace,
+			MCPBaseURL:           s.cfg.ControlPlaneMCPBaseURL,
+			MCPBearerToken:       issuedMCPToken.Token,
+			RepositoryFullName:   agentCtx.RepositoryFullName,
+			IssueNumber:          agentCtx.IssueNumber,
+			TriggerKind:          agentCtx.TriggerKind,
+			TriggerLabel:         agentCtx.TriggerLabel,
+			AgentModel:           agentCtx.Model,
+			AgentReasoningEffort: agentCtx.ReasoningEffort,
+			PromptTemplateKind:   agentCtx.PromptTemplateKind,
+			PromptTemplateSource: agentCtx.PromptTemplateSource,
+			PromptTemplateLocale: agentCtx.PromptTemplateLocale,
+			BaseBranch:           s.cfg.AgentBaseBranch,
+			OpenAIAPIKey:         s.cfg.OpenAIAPIKey,
+			GitBotToken:          s.cfg.GitBotToken,
 		})
 		if err != nil {
 			s.logger.Error("launch run job failed", "run_id", claimed.RunID, "err", err)
@@ -280,12 +351,24 @@ func (s *Service) launchPending(ctx context.Context) error {
 			ActorID:       floweventdomain.ActorID(s.cfg.WorkerID),
 			EventType:     floweventdomain.EventTypeRunStarted,
 			Payload: encodeRunStartedEventPayload(runStartedEventPayload{
-				RunID:        claimed.RunID,
-				ProjectID:    claimed.ProjectID,
-				SlotNo:       claimed.SlotNo,
-				JobName:      ref.Name,
-				JobNamespace: ref.Namespace,
-				RuntimeMode:  execution.RuntimeMode,
+				RunID:                claimed.RunID,
+				ProjectID:            claimed.ProjectID,
+				SlotNo:               claimed.SlotNo,
+				JobName:              ref.Name,
+				JobNamespace:         ref.Namespace,
+				RuntimeMode:          execution.RuntimeMode,
+				RepositoryFullName:   agentCtx.RepositoryFullName,
+				IssueNumber:          agentCtx.IssueNumber,
+				TriggerKind:          agentCtx.TriggerKind,
+				TriggerLabel:         agentCtx.TriggerLabel,
+				Model:                agentCtx.Model,
+				ModelSource:          agentCtx.ModelSource,
+				ReasoningEffort:      agentCtx.ReasoningEffort,
+				ReasoningSource:      agentCtx.ReasoningSource,
+				PromptTemplateKind:   agentCtx.PromptTemplateKind,
+				PromptTemplateSource: agentCtx.PromptTemplateSource,
+				PromptTemplateLocale: agentCtx.PromptTemplateLocale,
+				BaseBranch:           s.cfg.AgentBaseBranch,
 			}),
 			CreatedAt: s.now().UTC(),
 		}); err != nil {
@@ -453,4 +536,11 @@ func runningRunFromClaimed(claimed runqueuerepo.ClaimedRun) runqueuerepo.Running
 		LearningMode:  claimed.LearningMode,
 		RunPayload:    claimed.RunPayload,
 	}
+}
+
+func isFailedPreconditionError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.HasPrefix(strings.TrimSpace(err.Error()), "failed_precondition:")
 }

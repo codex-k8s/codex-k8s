@@ -27,6 +27,7 @@ import (
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentrun"
+	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentsession"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/flowevent"
 	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/learningfeedback"
 	projectrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/project"
@@ -35,6 +36,7 @@ import (
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/staffrun"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/user"
 	grpctransport "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/grpc"
+	internalapitransport "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/http/internalapi"
 	mcptransport "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/mcp"
 )
 
@@ -77,6 +79,7 @@ func Run() error {
 	runs := staffrunrepo.NewRepository(db)
 	repos := repocfgrepo.NewRepository(db)
 	feedback := learningfeedbackrepo.NewRepository(db)
+	agentSessions := agentsessionrepo.NewRepository(db)
 
 	tokenCrypto, err := tokencrypt.NewService(cfg.TokenEncryptionKey)
 	if err != nil {
@@ -181,9 +184,18 @@ func Run() error {
 	}))
 
 	mcpHandler := mcptransport.NewHandler(mcpService, logger)
+	internalAgentHandler := internalapitransport.NewHandler(internalapitransport.Dependencies{
+		Sessions:   agentSessions,
+		FlowEvents: flowEvents,
+		MCP:        mcpService,
+		Logger:     logger,
+	})
 	httpMux := http.NewServeMux()
 	httpMux.Handle("/mcp", mcpHandler)
 	httpMux.Handle("/mcp/", mcpHandler)
+	httpMux.Handle("/internal/agent/session", internalAgentHandler)
+	httpMux.Handle("/internal/agent/session/latest", internalAgentHandler)
+	httpMux.Handle("/internal/agent/event", internalAgentHandler)
 	httpMux.Handle("/metrics", promhttp.Handler())
 	httpMux.HandleFunc("/health/readyz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)

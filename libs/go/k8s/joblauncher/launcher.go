@@ -59,6 +59,30 @@ type JobSpec struct {
 	MCPBaseURL string
 	// MCPBearerToken is short-lived token bound to run and used for MCP auth.
 	MCPBearerToken string
+	// RepositoryFullName is repository slug in owner/name format.
+	RepositoryFullName string
+	// IssueNumber is issue number for deterministic branch policy.
+	IssueNumber int64
+	// TriggerKind defines run mode source (`dev`/`dev_revise`).
+	TriggerKind string
+	// TriggerLabel is original label that created this run.
+	TriggerLabel string
+	// AgentModel is effective model selected for this run.
+	AgentModel string
+	// AgentReasoningEffort is effective reasoning profile selected for this run.
+	AgentReasoningEffort string
+	// PromptTemplateKind is effective prompt kind (`work`/`review`).
+	PromptTemplateKind string
+	// PromptTemplateSource is effective prompt source (`repo_seed` for Day4 baseline).
+	PromptTemplateSource string
+	// PromptTemplateLocale is effective prompt locale.
+	PromptTemplateLocale string
+	// BaseBranch is base branch for PR flow.
+	BaseBranch string
+	// OpenAIAPIKey is passed to run pod for codex login.
+	OpenAIAPIKey string
+	// GitBotToken is passed to run pod for git transport operations.
+	GitBotToken string
 }
 
 // NamespaceSpec defines runtime namespace metadata.
@@ -101,6 +125,8 @@ type Config struct {
 	RunResourceQuotaName string
 	// RunLimitRangeName defines limit range object name in runtime namespaces.
 	RunLimitRangeName string
+	// RunCredentialsSecretName defines secret object with run credentials in runtime namespaces.
+	RunCredentialsSecretName string
 	// RunResourceQuotaPods defines max pod count in runtime namespace.
 	RunResourceQuotaPods int64
 	// RunResourceRequestsCPU defines requests.cpu hard quota in runtime namespace.
@@ -151,7 +177,7 @@ func NewForClient(cfg Config, client kubernetes.Interface) *Launcher {
 		cfg.Image = "busybox:1.36"
 	}
 	if cfg.Command == "" {
-		cfg.Command = "echo codex-k8s run && sleep 2"
+		cfg.Command = "/usr/local/bin/codex-k8s-agent-runner"
 	}
 	if cfg.TTLSeconds <= 0 {
 		cfg.TTLSeconds = 600
@@ -173,6 +199,9 @@ func NewForClient(cfg Config, client kubernetes.Interface) *Launcher {
 	}
 	if cfg.RunLimitRangeName == "" {
 		cfg.RunLimitRangeName = "codex-run-limits"
+	}
+	if cfg.RunCredentialsSecretName == "" {
+		cfg.RunCredentialsSecretName = "codex-run-credentials"
 	}
 	if cfg.RunResourceQuotaPods <= 0 {
 		cfg.RunResourceQuotaPods = 20
@@ -235,6 +264,36 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 					{Name: "CODEXK8S_RUNTIME_MODE", Value: string(spec.RuntimeMode)},
 					{Name: "CODEXK8S_MCP_BASE_URL", Value: strings.TrimSpace(spec.MCPBaseURL)},
 					{Name: "CODEXK8S_MCP_BEARER_TOKEN", Value: strings.TrimSpace(spec.MCPBearerToken)},
+					{Name: "CODEXK8S_REPOSITORY_FULL_NAME", Value: strings.TrimSpace(spec.RepositoryFullName)},
+					{Name: "CODEXK8S_ISSUE_NUMBER", Value: fmt.Sprintf("%d", spec.IssueNumber)},
+					{Name: "CODEXK8S_RUN_TRIGGER_KIND", Value: strings.TrimSpace(spec.TriggerKind)},
+					{Name: "CODEXK8S_RUN_TRIGGER_LABEL", Value: strings.TrimSpace(spec.TriggerLabel)},
+					{Name: "CODEXK8S_AGENT_MODEL", Value: strings.TrimSpace(spec.AgentModel)},
+					{Name: "CODEXK8S_AGENT_REASONING_EFFORT", Value: strings.TrimSpace(spec.AgentReasoningEffort)},
+					{Name: "CODEXK8S_PROMPT_TEMPLATE_KIND", Value: strings.TrimSpace(spec.PromptTemplateKind)},
+					{Name: "CODEXK8S_PROMPT_TEMPLATE_SOURCE", Value: strings.TrimSpace(spec.PromptTemplateSource)},
+					{Name: "CODEXK8S_PROMPT_TEMPLATE_LOCALE", Value: strings.TrimSpace(spec.PromptTemplateLocale)},
+					{Name: "CODEXK8S_AGENT_BASE_BRANCH", Value: strings.TrimSpace(spec.BaseBranch)},
+					{
+						Name: "CODEXK8S_OPENAI_API_KEY",
+						ValueFrom: &corev1.EnvVarSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{Name: l.cfg.RunCredentialsSecretName},
+								Key:                  "CODEXK8S_OPENAI_API_KEY",
+								Optional:             ptrBool(true),
+							},
+						},
+					},
+					{
+						Name: "CODEXK8S_GIT_BOT_TOKEN",
+						ValueFrom: &corev1.EnvVarSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{Name: l.cfg.RunCredentialsSecretName},
+								Key:                  "CODEXK8S_GIT_BOT_TOKEN",
+								Optional:             ptrBool(true),
+							},
+						},
+					},
 				},
 			},
 		},
@@ -271,6 +330,10 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 				Spec: podSpec,
 			},
 		},
+	}
+
+	if err := l.ensureRunCredentialsSecret(ctx, ref.Namespace, spec); err != nil {
+		return JobRef{}, fmt.Errorf("ensure run credentials secret for %s/%s: %w", ref.Namespace, ref.Name, err)
 	}
 
 	_, err := l.client.BatchV1().Jobs(ref.Namespace).Create(ctx, job, metav1.CreateOptions{})
@@ -404,4 +467,9 @@ func hasTerminalWaitingReason(statuses []corev1.ContainerStatus) bool {
 		}
 	}
 	return false
+}
+
+func ptrBool(value bool) *bool {
+	v := value
+	return &v
 }

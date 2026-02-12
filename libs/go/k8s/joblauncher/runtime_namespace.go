@@ -152,6 +152,52 @@ func (l *Launcher) ensureNamespaceObject(ctx context.Context, spec NamespaceSpec
 	return nil
 }
 
+// ensureRunCredentialsSecret stores runtime credentials consumed by run pod env.
+func (l *Launcher) ensureRunCredentialsSecret(ctx context.Context, namespace string, spec JobSpec) error {
+	name := l.cfg.RunCredentialsSecretName
+	if strings.TrimSpace(name) == "" {
+		return nil
+	}
+
+	secretData := map[string][]byte{
+		"CODEXK8S_OPENAI_API_KEY": []byte(strings.TrimSpace(spec.OpenAIAPIKey)),
+		"CODEXK8S_GIT_BOT_TOKEN":  []byte(strings.TrimSpace(spec.GitBotToken)),
+	}
+
+	existing, err := l.client.CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return fmt.Errorf("get secret %s: %w", name, err)
+		}
+		_, createErr := l.client.CoreV1().Secrets(namespace).Create(ctx, &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+				Labels: map[string]string{
+					runNamespaceManagedByLabel: runNamespaceManagedByValue,
+				},
+			},
+			Type: corev1.SecretTypeOpaque,
+			Data: secretData,
+		}, metav1.CreateOptions{})
+		if createErr != nil && !apierrors.IsAlreadyExists(createErr) {
+			return fmt.Errorf("create secret %s: %w", name, createErr)
+		}
+		return nil
+	}
+
+	if existing.Labels == nil {
+		existing.Labels = map[string]string{}
+	}
+	existing.Labels[runNamespaceManagedByLabel] = runNamespaceManagedByValue
+	existing.Type = corev1.SecretTypeOpaque
+	existing.Data = secretData
+
+	if _, err := l.client.CoreV1().Secrets(namespace).Update(ctx, existing, metav1.UpdateOptions{}); err != nil {
+		return fmt.Errorf("update secret %s: %w", name, err)
+	}
+	return nil
+}
+
 // ensureRunServiceAccount ensures ServiceAccount exists for in-namespace run access.
 func (l *Launcher) ensureRunServiceAccount(ctx context.Context, namespace string) error {
 	name := l.cfg.RunServiceAccountName
