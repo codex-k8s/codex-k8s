@@ -107,6 +107,18 @@ approvals:
 - Могут применяться агентом автоматически по policy проекта через MCP.
 - Эффективные значения читаются на каждый запуск (`run:dev` и `run:dev:revise`), что позволяет менять модель/reasoning между итерациями ревью.
 
+
+## Оркестрационный flow для `run:dev` / `run:dev:revise`
+
+- На issue одновременно допускается только один активный trigger label из группы `run:*`.
+- `run:dev` используется для первичного запуска цикла разработки и создания PR.
+- `run:dev:revise` используется только для итерации по уже существующему PR.
+- Для `run:dev:revise` при отсутствии связанного PR run отклоняется с `failed_precondition` и событием `run.revise.pr_not_found`.
+- Label transitions после завершения run должны выполняться через MCP (а не вручную в коде агента), чтобы сохранять единый policy/audit контур.
+- S2 baseline:
+  - pre-review остается обязательным шагом перед финальным Owner review;
+  - post-run transitions `run:* -> state:*` фиксируются в Day5/Day6 как отдельные доработки policy и аудита.
+
 ## Требования к GitHub variables (labels-as-vars)
 
 - Все workflow условия сравнения label должны использовать `vars.*`, а не строковые литералы.

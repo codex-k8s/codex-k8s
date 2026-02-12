@@ -51,6 +51,12 @@ type issueRunTrigger struct {
 	Kind  webhookdomain.TriggerKind
 }
 
+type runAgentProfile struct {
+	ID   string
+	Key  string
+	Name string
+}
+
 // githubWebhookEnvelope is a local transport DTO for fields used by the domain.
 // It is intentionally minimal and independent from provider SDK structs.
 type githubWebhookEnvelope struct {

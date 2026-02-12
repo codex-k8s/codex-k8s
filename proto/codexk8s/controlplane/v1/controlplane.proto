@@ -263,6 +263,85 @@ message IssueRunMCPTokenResponse {
   google.protobuf.Timestamp expires_at = 2;
 }
 
+message UpsertAgentSessionRequest {
+  string run_id = 1;
+  string correlation_id = 2;
+  optional string project_id = 3;
+  string repository_full_name = 4;
+  string agent_key = 5;
+  google.protobuf.Int32Value issue_number = 6;
+  string branch_name = 7;
+  google.protobuf.Int32Value pr_number = 8;
+  optional string pr_url = 9;
+  optional string trigger_kind = 10;
+  optional string template_kind = 11;
+  optional string template_source = 12;
+  optional string template_locale = 13;
+  optional string model = 14;
+  optional string reasoning_effort = 15;
+  optional string status = 16;
+  optional string session_id = 17;
+  optional bytes session_json = 18;
+  optional string codex_cli_session_path = 19;
+  optional bytes codex_cli_session_json = 20;
+  google.protobuf.Timestamp started_at = 21;
+  google.protobuf.Timestamp finished_at = 22;
+}
+
+message UpsertAgentSessionResponse {
+  bool ok = 1;
+  string run_id = 2;
+}
+
+message AgentSessionSnapshot {
+  string run_id = 1;
+  string correlation_id = 2;
+  optional string project_id = 3;
+  string repository_full_name = 4;
+  string agent_key = 5;
+  google.protobuf.Int32Value issue_number = 6;
+  string branch_name = 7;
+  google.protobuf.Int32Value pr_number = 8;
+  optional string pr_url = 9;
+  optional string trigger_kind = 10;
+  optional string template_kind = 11;
+  optional string template_source = 12;
+  optional string template_locale = 13;
+  optional string model = 14;
+  optional string reasoning_effort = 15;
+  optional string status = 16;
+  optional string session_id = 17;
+  optional bytes session_json = 18;
+  optional string codex_cli_session_path = 19;
+  optional bytes codex_cli_session_json = 20;
+  google.protobuf.Timestamp started_at = 21;
+  google.protobuf.Timestamp finished_at = 22;
+  google.protobuf.Timestamp created_at = 23;
+  google.protobuf.Timestamp updated_at = 24;
+}
+
+message GetLatestAgentSessionRequest {
+  string repository_full_name = 1;
+  string branch_name = 2;
+  string agent_key = 3;
+}
+
+message GetLatestAgentSessionResponse {
+  bool found = 1;
+  AgentSessionSnapshot session = 2;
+}
+
+message InsertRunFlowEventRequest {
+  string run_id = 1;
+  string event_type = 2;
+  bytes payload_json = 3;
+}
+
+message InsertRunFlowEventResponse {
+  bool ok = 1;
+  string event_type = 2;
+}
+
 service ControlPlaneService {
   rpc IngestGitHubWebhook(IngestGitHubWebhookRequest) returns (IngestGitHubWebhookResponse);
 
@@ -295,4 +374,9 @@ service ControlPlaneService {
   rpc UpsertProjectRepository(UpsertProjectRepositoryRequest) returns (RepositoryBinding);
   rpc DeleteProjectRepository(DeleteProjectRepositoryRequest) returns (google.protobuf.Empty);
   rpc IssueRunMCPToken(IssueRunMCPTokenRequest) returns (IssueRunMCPTokenResponse);
+
+  // Used by agent-runner for run-bound session persistence and event callbacks.
+  rpc UpsertAgentSession(UpsertAgentSessionRequest) returns (UpsertAgentSessionResponse);
+  rpc GetLatestAgentSession(GetLatestAgentSessionRequest) returns (GetLatestAgentSessionResponse);
+  rpc InsertRunFlowEvent(InsertRunFlowEventRequest) returns (InsertRunFlowEventResponse);
 }

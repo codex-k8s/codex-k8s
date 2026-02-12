@@ -4,6 +4,7 @@ package query
 type RunPayload struct {
 	Project    RunPayloadProject    `json:"project"`
 	Repository RunPayloadRepository `json:"repository"`
+	Agent      *RunPayloadAgent     `json:"agent,omitempty"`
 	Issue      *RunPayloadIssue     `json:"issue,omitempty"`
 	Trigger    *RunPayloadTrigger   `json:"trigger,omitempty"`
 }
@@ -19,6 +20,13 @@ type RunPayloadProject struct {
 type RunPayloadRepository struct {
 	FullName string `json:"full_name"`
 	Name     string `json:"name"`
+}
+
+// RunPayloadAgent is agent context section of run payload.
+type RunPayloadAgent struct {
+	ID   string `json:"id,omitempty"`
+	Key  string `json:"key"`
+	Name string `json:"name"`
 }
 
 // RunPayloadIssue is issue section of run payload.

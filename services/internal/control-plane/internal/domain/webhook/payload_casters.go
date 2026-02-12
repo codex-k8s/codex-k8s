@@ -18,6 +18,7 @@ type runPayloadInput struct {
 	HasBinding       bool
 	LearningMode     bool
 	Trigger          *issueRunTrigger
+	Agent            runAgentProfile
 }
 
 type eventPayloadInput struct {
@@ -71,6 +72,11 @@ func buildRunPayload(input runPayloadInput) (json.RawMessage, error) {
 			BindingResolved: input.HasBinding,
 		},
 		LearningMode: input.LearningMode,
+		Agent: githubRunAgentPayload{
+			ID:   input.Agent.ID,
+			Key:  input.Agent.Key,
+			Name: input.Agent.Name,
+		},
 	}
 
 	if input.Envelope.Issue.Number > 0 {

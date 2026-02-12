@@ -9,6 +9,8 @@ type AgentRunCreateParams struct {
 	// ProjectID optionally assigns run to a configured project scope.
 	// When empty, project will be derived by the worker.
 	ProjectID string
+	// AgentID assigns run to resolved agent profile.
+	AgentID string
 	// RunPayload stores normalized webhook payload for further processing.
 	RunPayload json.RawMessage
 	// LearningMode is an effective run-level learning mode flag.

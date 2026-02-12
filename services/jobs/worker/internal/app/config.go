@@ -30,6 +30,24 @@ type Config struct {
 	ControlPlaneGRPCTarget string `env:"CODEXK8S_CONTROL_PLANE_GRPC_TARGET,required,notEmpty"`
 	// ControlPlaneMCPBaseURL is MCP HTTP endpoint passed into spawned run pods.
 	ControlPlaneMCPBaseURL string `env:"CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" envDefault:"http://codex-k8s-control-plane:8081/mcp"`
+	// OpenAIAPIKey is injected into run pods for codex login.
+	OpenAIAPIKey string `env:"CODEXK8S_OPENAI_API_KEY"`
+	// Context7APIKey enables Context7 documentation calls from run pods when set.
+	Context7APIKey string `env:"CODEXK8S_CONTEXT7_API_KEY"`
+	// GitBotToken is injected into run pods for git transport (fetch/push only).
+	GitBotToken string `env:"CODEXK8S_GIT_BOT_TOKEN"`
+	// GitBotUsername is GitHub username used with bot token for git transport auth.
+	GitBotUsername string `env:"CODEXK8S_GIT_BOT_USERNAME" envDefault:"codex-bot"`
+	// GitBotMail is git author email configured in run pods.
+	GitBotMail string `env:"CODEXK8S_GIT_BOT_MAIL" envDefault:"codex-bot@codex-k8s.local"`
+	// AgentDefaultModel is fallback model when issue labels do not override model.
+	AgentDefaultModel string `env:"CODEXK8S_AGENT_DEFAULT_MODEL" envDefault:"gpt-5.3-codex"`
+	// AgentDefaultReasoningEffort is fallback reasoning profile when issue labels do not override reasoning.
+	AgentDefaultReasoningEffort string `env:"CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT" envDefault:"high"`
+	// AgentDefaultLocale is fallback prompt locale.
+	AgentDefaultLocale string `env:"CODEXK8S_AGENT_DEFAULT_LOCALE" envDefault:"ru"`
+	// AgentBaseBranch is default base branch for PR flow.
+	AgentBaseBranch string `env:"CODEXK8S_AGENT_BASE_BRANCH" envDefault:"main"`
 
 	// DBHost is the PostgreSQL host.
 	DBHost string `env:"CODEXK8S_DB_HOST,required,notEmpty"`
@@ -51,7 +69,7 @@ type Config struct {
 	// JobImage is a container image used for spawned run Jobs.
 	JobImage string `env:"CODEXK8S_WORKER_JOB_IMAGE" envDefault:"busybox:1.36"`
 	// JobCommand is a shell command executed by run Jobs.
-	JobCommand string `env:"CODEXK8S_WORKER_JOB_COMMAND" envDefault:"echo codex-k8s run && sleep 2"`
+	JobCommand string `env:"CODEXK8S_WORKER_JOB_COMMAND" envDefault:"/usr/local/bin/codex-k8s-agent-runner"`
 	// JobTTLSeconds controls ttlSecondsAfterFinished for run Jobs.
 	JobTTLSeconds int32 `env:"CODEXK8S_WORKER_JOB_TTL_SECONDS" envDefault:"600"`
 	// JobBackoffLimit controls Job retry attempts.
@@ -72,6 +90,8 @@ type Config struct {
 	RunResourceQuotaName string `env:"CODEXK8S_WORKER_RUN_RESOURCE_QUOTA_NAME" envDefault:"codex-run-quota"`
 	// RunLimitRangeName is LimitRange name in runtime namespaces.
 	RunLimitRangeName string `env:"CODEXK8S_WORKER_RUN_LIMIT_RANGE_NAME" envDefault:"codex-run-limits"`
+	// RunCredentialsSecretName is Secret name used for run pod credentials in runtime namespaces.
+	RunCredentialsSecretName string `env:"CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME" envDefault:"codex-run-credentials"`
 	// RunResourceQuotaPods controls max pods per run namespace.
 	RunResourceQuotaPods int64 `env:"CODEXK8S_WORKER_RUN_QUOTA_PODS" envDefault:"20"`
 	// RunResourceRequestsCPU controls requests.cpu hard quota.

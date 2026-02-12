@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -11,12 +12,15 @@ import (
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
+	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/staffrun"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
+	agentcallback "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/agentcallback"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -27,37 +31,47 @@ type webhookIngress interface {
 	IngestGitHubWebhook(ctx context.Context, cmd webhook.IngestCommand) (webhook.IngestResult, error)
 }
 
-type mcpTokenIssuer interface {
+type mcpRunTokenService interface {
 	IssueRunToken(ctx context.Context, params mcpdomain.IssueRunTokenParams) (mcpdomain.IssuedToken, error)
+	VerifyRunToken(ctx context.Context, rawToken string) (mcpdomain.SessionContext, error)
+}
+
+type agentCallbackService interface {
+	UpsertAgentSession(ctx context.Context, params agentcallbackdomain.UpsertAgentSessionParams) error
+	GetLatestAgentSession(ctx context.Context, query agentcallbackdomain.GetLatestAgentSessionQuery) (agentcallbackdomain.Session, bool, error)
+	InsertRunFlowEvent(ctx context.Context, params agentcallbackdomain.InsertRunFlowEventParams) error
 }
 
 // Dependencies wires domain services and repositories into the gRPC transport.
 type Dependencies struct {
-	Webhook webhookIngress
-	Staff   *staff.Service
-	Users   userrepo.Repository
-	MCP     mcpTokenIssuer
-	Logger  *slog.Logger
+	Webhook        webhookIngress
+	Staff          *staff.Service
+	Users          userrepo.Repository
+	AgentCallbacks agentCallbackService
+	MCP            mcpRunTokenService
+	Logger         *slog.Logger
 }
 
 // Server implements ControlPlaneServiceServer.
 type Server struct {
 	controlplanev1.UnimplementedControlPlaneServiceServer
 
-	webhook webhookIngress
-	staff   *staff.Service
-	users   userrepo.Repository
-	mcp     mcpTokenIssuer
-	logger  *slog.Logger
+	webhook        webhookIngress
+	staff          *staff.Service
+	users          userrepo.Repository
+	agentCallbacks agentCallbackService
+	mcp            mcpRunTokenService
+	logger         *slog.Logger
 }
 
 func NewServer(deps Dependencies) *Server {
 	return &Server{
-		webhook: deps.Webhook,
-		staff:   deps.Staff,
-		users:   deps.Users,
-		mcp:     deps.MCP,
-		logger:  deps.Logger,
+		webhook:        deps.Webhook,
+		staff:          deps.Staff,
+		users:          deps.Users,
+		agentCallbacks: deps.AgentCallbacks,
+		mcp:            deps.MCP,
+		logger:         deps.Logger,
 	}
 }
 
@@ -492,6 +506,259 @@ func (s *Server) IssueRunMCPToken(ctx context.Context, req *controlplanev1.Issue
 	}, nil
 }
 
+func (s *Server) UpsertAgentSession(ctx context.Context, req *controlplanev1.UpsertAgentSessionRequest) (*controlplanev1.UpsertAgentSessionResponse, error) {
+	if s.agentCallbacks == nil {
+		return nil, status.Error(codes.FailedPrecondition, "agent callback service is not configured")
+	}
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	runSession, err := s.authenticateRunToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	runID := strings.TrimSpace(req.GetRunId())
+	if runID == "" {
+		runID = runSession.RunID
+	}
+	if runID == "" {
+		return nil, status.Error(codes.InvalidArgument, "run_id is required")
+	}
+	if runID != runSession.RunID {
+		return nil, status.Error(codes.PermissionDenied, "run_id mismatch with token")
+	}
+
+	repositoryFullName := strings.TrimSpace(req.GetRepositoryFullName())
+	if repositoryFullName == "" {
+		return nil, status.Error(codes.InvalidArgument, "repository_full_name is required")
+	}
+	branchName := strings.TrimSpace(req.GetBranchName())
+	if branchName == "" {
+		return nil, status.Error(codes.InvalidArgument, "branch_name is required")
+	}
+	agentKey := strings.TrimSpace(req.GetAgentKey())
+	if agentKey == "" {
+		return nil, status.Error(codes.InvalidArgument, "agent_key is required")
+	}
+
+	correlationID := strings.TrimSpace(req.GetCorrelationId())
+	if correlationID == "" {
+		correlationID = runSession.CorrelationID
+	}
+	if correlationID == "" {
+		return nil, status.Error(codes.InvalidArgument, "correlation_id is required")
+	}
+
+	projectID := strings.TrimSpace(req.GetProjectId())
+	if projectID == "" {
+		projectID = runSession.ProjectID
+	}
+
+	statusValue := strings.TrimSpace(req.GetStatus())
+	if statusValue == "" {
+		statusValue = sessionStatusRunning
+	}
+
+	startedAt := time.Now().UTC()
+	if req.GetStartedAt() != nil {
+		startedAt = req.GetStartedAt().AsTime().UTC()
+	}
+
+	if err := s.agentCallbacks.UpsertAgentSession(ctx, agentcallbackdomain.UpsertAgentSessionParams{
+		RunID:              runID,
+		CorrelationID:      correlationID,
+		ProjectID:          projectID,
+		RepositoryFullName: repositoryFullName,
+		AgentKey:           agentKey,
+		IssueNumber:        intPtrFromOptional(req.GetIssueNumber()),
+		BranchName:         branchName,
+		PRNumber:           intPtrFromOptional(req.GetPrNumber()),
+		PRURL:              strings.TrimSpace(req.GetPrUrl()),
+		TriggerKind:        strings.TrimSpace(req.GetTriggerKind()),
+		TemplateKind:       strings.TrimSpace(req.GetTemplateKind()),
+		TemplateSource:     strings.TrimSpace(req.GetTemplateSource()),
+		TemplateLocale:     strings.TrimSpace(req.GetTemplateLocale()),
+		Model:              strings.TrimSpace(req.GetModel()),
+		ReasoningEffort:    strings.TrimSpace(req.GetReasoningEffort()),
+		Status:             statusValue,
+		SessionID:          strings.TrimSpace(req.GetSessionId()),
+		SessionJSON:        json.RawMessage(req.GetSessionJson()),
+		CodexSessionPath:   strings.TrimSpace(req.GetCodexCliSessionPath()),
+		CodexSessionJSON:   json.RawMessage(req.GetCodexCliSessionJson()),
+		StartedAt:          startedAt,
+		FinishedAt:         optionalTime(req.GetFinishedAt()),
+	}); err != nil {
+		s.logger.Error("upsert agent session via grpc failed", "run_id", runID, "err", err)
+		return nil, status.Error(codes.Internal, "failed to persist agent session")
+	}
+
+	return &controlplanev1.UpsertAgentSessionResponse{Ok: true, RunId: runID}, nil
+}
+
+func (s *Server) GetLatestAgentSession(ctx context.Context, req *controlplanev1.GetLatestAgentSessionRequest) (*controlplanev1.GetLatestAgentSessionResponse, error) {
+	if s.agentCallbacks == nil {
+		return nil, status.Error(codes.FailedPrecondition, "agent callback service is not configured")
+	}
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	if _, err := s.authenticateRunToken(ctx); err != nil {
+		return nil, err
+	}
+
+	repositoryFullName := strings.TrimSpace(req.GetRepositoryFullName())
+	branchName := strings.TrimSpace(req.GetBranchName())
+	agentKey := strings.TrimSpace(req.GetAgentKey())
+	if repositoryFullName == "" || branchName == "" || agentKey == "" {
+		return nil, status.Error(codes.InvalidArgument, "repository_full_name, branch_name and agent_key are required")
+	}
+
+	item, found, err := s.agentCallbacks.GetLatestAgentSession(ctx, agentcallbackdomain.GetLatestAgentSessionQuery{
+		RepositoryFullName: repositoryFullName,
+		BranchName:         branchName,
+		AgentKey:           agentKey,
+	})
+	if err != nil {
+		s.logger.Error("get latest agent session via grpc failed", "repository_full_name", repositoryFullName, "branch_name", branchName, "agent_key", agentKey, "err", err)
+		return nil, status.Error(codes.Internal, "failed to load latest agent session")
+	}
+	if !found {
+		return &controlplanev1.GetLatestAgentSessionResponse{Found: false}, nil
+	}
+
+	snapshot := &controlplanev1.AgentSessionSnapshot{
+		RunId:               item.RunID,
+		CorrelationId:       item.CorrelationID,
+		ProjectId:           stringPtrOrNil(item.ProjectID),
+		RepositoryFullName:  item.RepositoryFullName,
+		AgentKey:            item.AgentKey,
+		IssueNumber:         intToOptional(int32(item.IssueNumber)),
+		BranchName:          item.BranchName,
+		PrNumber:            intToOptional(int32(item.PRNumber)),
+		PrUrl:               stringPtrOrNil(item.PRURL),
+		TriggerKind:         stringPtrOrNil(item.TriggerKind),
+		TemplateKind:        stringPtrOrNil(item.TemplateKind),
+		TemplateSource:      stringPtrOrNil(item.TemplateSource),
+		TemplateLocale:      stringPtrOrNil(item.TemplateLocale),
+		Model:               stringPtrOrNil(item.Model),
+		ReasoningEffort:     stringPtrOrNil(item.ReasoningEffort),
+		Status:              stringPtrOrNil(item.Status),
+		SessionId:           stringPtrOrNil(item.SessionID),
+		SessionJson:         bytesOrNil(item.SessionJSON),
+		CodexCliSessionPath: stringPtrOrNil(item.CodexSessionPath),
+		CodexCliSessionJson: bytesOrNil(item.CodexSessionJSON),
+		StartedAt:           timestamppb.New(item.StartedAt.UTC()),
+		CreatedAt:           timestamppb.New(item.CreatedAt.UTC()),
+		UpdatedAt:           timestamppb.New(item.UpdatedAt.UTC()),
+	}
+	if !item.FinishedAt.IsZero() {
+		snapshot.FinishedAt = timestamppb.New(item.FinishedAt.UTC())
+	}
+
+	return &controlplanev1.GetLatestAgentSessionResponse{
+		Found:   true,
+		Session: snapshot,
+	}, nil
+}
+
+func (s *Server) InsertRunFlowEvent(ctx context.Context, req *controlplanev1.InsertRunFlowEventRequest) (*controlplanev1.InsertRunFlowEventResponse, error) {
+	if s.agentCallbacks == nil {
+		return nil, status.Error(codes.FailedPrecondition, "agent callback service is not configured")
+	}
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	runSession, err := s.authenticateRunToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	runID := strings.TrimSpace(req.GetRunId())
+	if runID == "" {
+		runID = runSession.RunID
+	}
+	if runID != runSession.RunID {
+		return nil, status.Error(codes.PermissionDenied, "run_id mismatch with token")
+	}
+
+	eventType, err := agentcallback.ParseEventType(req.GetEventType())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	if err := s.agentCallbacks.InsertRunFlowEvent(ctx, agentcallbackdomain.InsertRunFlowEventParams{
+		CorrelationID: runSession.CorrelationID,
+		EventType:     eventType,
+		Payload:       json.RawMessage(req.GetPayloadJson()),
+		CreatedAt:     time.Now().UTC(),
+	}); err != nil {
+		s.logger.Error("insert run flow event via grpc failed", "run_id", runID, "event_type", eventType, "err", err)
+		return nil, status.Error(codes.Internal, "failed to persist flow event")
+	}
+
+	return &controlplanev1.InsertRunFlowEventResponse{Ok: true, EventType: string(eventType)}, nil
+}
+
+const sessionStatusRunning = "running"
+
+func (s *Server) authenticateRunToken(ctx context.Context) (mcpdomain.SessionContext, error) {
+	if s.mcp == nil {
+		return mcpdomain.SessionContext{}, status.Error(codes.FailedPrecondition, "mcp service is not configured")
+	}
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return mcpdomain.SessionContext{}, status.Error(codes.Unauthenticated, "missing bearer token")
+	}
+
+	rawToken := bearerTokenFromMetadata(md)
+	if rawToken == "" {
+		return mcpdomain.SessionContext{}, status.Error(codes.Unauthenticated, "missing bearer token")
+	}
+
+	runSession, err := s.mcp.VerifyRunToken(ctx, rawToken)
+	if err != nil {
+		return mcpdomain.SessionContext{}, status.Error(codes.Unauthenticated, "invalid bearer token")
+	}
+	return runSession, nil
+}
+
+func bearerTokenFromMetadata(md metadata.MD) string {
+	for _, value := range md.Get("authorization") {
+		token := agentcallback.ParseBearerToken(value)
+		if token != "" {
+			return token
+		}
+	}
+	return ""
+}
+
+func intPtrFromOptional(value *wrapperspb.Int32Value) *int {
+	if value == nil || value.Value <= 0 {
+		return nil
+	}
+	v := int(value.Value)
+	return &v
+}
+
+func intToOptional(value int32) *wrapperspb.Int32Value {
+	if value <= 0 {
+		return nil
+	}
+	return wrapperspb.Int32(value)
+}
+
+func optionalTime(ts *timestamppb.Timestamp) *time.Time {
+	if ts == nil {
+		return nil
+	}
+	value := ts.AsTime().UTC()
+	return &value
+}
+
 type delete1Fn func(context.Context, staff.Principal, string) error
 type delete2Fn func(context.Context, staff.Principal, string, string) error
 
@@ -624,6 +891,13 @@ func int64PtrOrNil(value int64) *int64 {
 		return nil
 	}
 	return &value
+}
+
+func bytesOrNil(value []byte) []byte {
+	if len(value) == 0 {
+		return nil
+	}
+	return value
 }
 
 func parseRuntimeMode(value string) agentdomain.RuntimeMode {

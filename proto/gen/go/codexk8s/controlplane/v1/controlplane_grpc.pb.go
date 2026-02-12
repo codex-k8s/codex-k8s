@@ -42,6 +42,9 @@ const (
 	ControlPlaneService_UpsertProjectRepository_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertProjectRepository"
 	ControlPlaneService_DeleteProjectRepository_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/DeleteProjectRepository"
 	ControlPlaneService_IssueRunMCPToken_FullMethodName                     = "/codexk8s.controlplane.v1.ControlPlaneService/IssueRunMCPToken"
+	ControlPlaneService_UpsertAgentSession_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertAgentSession"
+	ControlPlaneService_GetLatestAgentSession_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/GetLatestAgentSession"
+	ControlPlaneService_InsertRunFlowEvent_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/InsertRunFlowEvent"
 )
 
 // ControlPlaneServiceClient is the client API for ControlPlaneService service.
@@ -72,6 +75,10 @@ type ControlPlaneServiceClient interface {
 	UpsertProjectRepository(ctx context.Context, in *UpsertProjectRepositoryRequest, opts ...grpc.CallOption) (*RepositoryBinding, error)
 	DeleteProjectRepository(ctx context.Context, in *DeleteProjectRepositoryRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	IssueRunMCPToken(ctx context.Context, in *IssueRunMCPTokenRequest, opts ...grpc.CallOption) (*IssueRunMCPTokenResponse, error)
+	// Used by agent-runner for run-bound session persistence and event callbacks.
+	UpsertAgentSession(ctx context.Context, in *UpsertAgentSessionRequest, opts ...grpc.CallOption) (*UpsertAgentSessionResponse, error)
+	GetLatestAgentSession(ctx context.Context, in *GetLatestAgentSessionRequest, opts ...grpc.CallOption) (*GetLatestAgentSessionResponse, error)
+	InsertRunFlowEvent(ctx context.Context, in *InsertRunFlowEventRequest, opts ...grpc.CallOption) (*InsertRunFlowEventResponse, error)
 }
 
 type controlPlaneServiceClient struct {
@@ -302,6 +309,36 @@ func (c *controlPlaneServiceClient) IssueRunMCPToken(ctx context.Context, in *Is
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) UpsertAgentSession(ctx context.Context, in *UpsertAgentSessionRequest, opts ...grpc.CallOption) (*UpsertAgentSessionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpsertAgentSessionResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_UpsertAgentSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) GetLatestAgentSession(ctx context.Context, in *GetLatestAgentSessionRequest, opts ...grpc.CallOption) (*GetLatestAgentSessionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetLatestAgentSessionResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_GetLatestAgentSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) InsertRunFlowEvent(ctx context.Context, in *InsertRunFlowEventRequest, opts ...grpc.CallOption) (*InsertRunFlowEventResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(InsertRunFlowEventResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_InsertRunFlowEvent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ControlPlaneServiceServer is the server API for ControlPlaneService service.
 // All implementations must embed UnimplementedControlPlaneServiceServer
 // for forward compatibility.
@@ -330,6 +367,10 @@ type ControlPlaneServiceServer interface {
 	UpsertProjectRepository(context.Context, *UpsertProjectRepositoryRequest) (*RepositoryBinding, error)
 	DeleteProjectRepository(context.Context, *DeleteProjectRepositoryRequest) (*emptypb.Empty, error)
 	IssueRunMCPToken(context.Context, *IssueRunMCPTokenRequest) (*IssueRunMCPTokenResponse, error)
+	// Used by agent-runner for run-bound session persistence and event callbacks.
+	UpsertAgentSession(context.Context, *UpsertAgentSessionRequest) (*UpsertAgentSessionResponse, error)
+	GetLatestAgentSession(context.Context, *GetLatestAgentSessionRequest) (*GetLatestAgentSessionResponse, error)
+	InsertRunFlowEvent(context.Context, *InsertRunFlowEventRequest) (*InsertRunFlowEventResponse, error)
 	mustEmbedUnimplementedControlPlaneServiceServer()
 }
 
@@ -405,6 +446,15 @@ func (UnimplementedControlPlaneServiceServer) DeleteProjectRepository(context.Co
 }
 func (UnimplementedControlPlaneServiceServer) IssueRunMCPToken(context.Context, *IssueRunMCPTokenRequest) (*IssueRunMCPTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IssueRunMCPToken not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) UpsertAgentSession(context.Context, *UpsertAgentSessionRequest) (*UpsertAgentSessionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpsertAgentSession not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) GetLatestAgentSession(context.Context, *GetLatestAgentSessionRequest) (*GetLatestAgentSessionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLatestAgentSession not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) InsertRunFlowEvent(context.Context, *InsertRunFlowEventRequest) (*InsertRunFlowEventResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InsertRunFlowEvent not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) mustEmbedUnimplementedControlPlaneServiceServer() {}
 func (UnimplementedControlPlaneServiceServer) testEmbeddedByValue()                             {}
@@ -823,6 +873,60 @@ func _ControlPlaneService_IssueRunMCPToken_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_UpsertAgentSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertAgentSessionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).UpsertAgentSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_UpsertAgentSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).UpsertAgentSession(ctx, req.(*UpsertAgentSessionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_GetLatestAgentSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLatestAgentSessionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).GetLatestAgentSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_GetLatestAgentSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).GetLatestAgentSession(ctx, req.(*GetLatestAgentSessionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_InsertRunFlowEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InsertRunFlowEventRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).InsertRunFlowEvent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_InsertRunFlowEvent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).InsertRunFlowEvent(ctx, req.(*InsertRunFlowEventRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ControlPlaneService_ServiceDesc is the grpc.ServiceDesc for ControlPlaneService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -917,6 +1021,18 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IssueRunMCPToken",
 			Handler:    _ControlPlaneService_IssueRunMCPToken_Handler,
+		},
+		{
+			MethodName: "UpsertAgentSession",
+			Handler:    _ControlPlaneService_UpsertAgentSession_Handler,
+		},
+		{
+			MethodName: "GetLatestAgentSession",
+			Handler:    _ControlPlaneService_GetLatestAgentSession_Handler,
+		},
+		{
+			MethodName: "InsertRunFlowEvent",
+			Handler:    _ControlPlaneService_InsertRunFlowEvent_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

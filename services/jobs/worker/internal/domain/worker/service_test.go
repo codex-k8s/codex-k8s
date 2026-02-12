@@ -21,7 +21,13 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 
 	runs := &fakeRunQueue{
 		claims: []runqueuerepo.ClaimedRun{
-			{RunID: "run-1", CorrelationID: "corr-1", ProjectID: "proj-1", SlotNo: 1},
+			{
+				RunID:         "run-1",
+				CorrelationID: "corr-1",
+				ProjectID:     "proj-1",
+				RunPayload:    json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"agent":{"key":"dev","name":"AI Developer"}}`),
+				SlotNo:        1,
+			},
 		},
 	}
 	events := &fakeFlowEvents{}
@@ -105,7 +111,7 @@ func TestTickFinalizesSucceededRun(t *testing.T) {
 func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 	t.Parallel()
 
-	payload := json.RawMessage(`{"trigger":{"kind":"dev"},"issue":{"number":77}}`)
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev"},"issue":{"number":77},"agent":{"key":"dev","name":"AI Developer"}}`)
 	runs := &fakeRunQueue{
 		claims: []runqueuerepo.ClaimedRun{
 			{RunID: "run-3", CorrelationID: "corr-3", ProjectID: "550e8400-e29b-41d4-a716-446655440000", RunPayload: payload, SlotNo: 1},
@@ -164,7 +170,7 @@ func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 func TestTickFinalizesFullEnvRunAndCleansNamespace(t *testing.T) {
 	t.Parallel()
 
-	payload := json.RawMessage(`{"trigger":{"kind":"dev_revise"},"issue":{"number":10}}`)
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev_revise"},"issue":{"number":10},"agent":{"key":"dev","name":"AI Developer"}}`)
 	runs := &fakeRunQueue{
 		running: []runqueuerepo.RunningRun{{
 			RunID:         "run-4",

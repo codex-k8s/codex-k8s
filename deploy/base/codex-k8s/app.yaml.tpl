@@ -392,6 +392,36 @@ spec:
               value: "codex-k8s-control-plane:9090"
             - name: CODEXK8S_CONTROL_PLANE_MCP_BASE_URL
               value: "${CODEXK8S_CONTROL_PLANE_MCP_BASE_URL}"
+            - name: CODEXK8S_OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_OPENAI_API_KEY
+                  optional: true
+            - name: CODEXK8S_CONTEXT7_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_CONTEXT7_API_KEY
+                  optional: true
+            - name: CODEXK8S_GIT_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GIT_BOT_TOKEN
+                  optional: true
+            - name: CODEXK8S_GIT_BOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GIT_BOT_USERNAME
+                  optional: true
+            - name: CODEXK8S_GIT_BOT_MAIL
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GIT_BOT_MAIL
+                  optional: true
             - name: CODEXK8S_WORKER_POLL_INTERVAL
               value: "${CODEXK8S_WORKER_POLL_INTERVAL}"
             - name: CODEXK8S_WORKER_CLAIM_LIMIT
@@ -428,6 +458,8 @@ spec:
               value: "${CODEXK8S_WORKER_RUN_RESOURCE_QUOTA_NAME}"
             - name: CODEXK8S_WORKER_RUN_LIMIT_RANGE_NAME
               value: "${CODEXK8S_WORKER_RUN_LIMIT_RANGE_NAME}"
+            - name: CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME
+              value: "${CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME}"
             - name: CODEXK8S_WORKER_RUN_QUOTA_PODS
               value: "${CODEXK8S_WORKER_RUN_QUOTA_PODS}"
             - name: CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_CPU
@@ -446,6 +478,14 @@ spec:
               value: "${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_CPU}"
             - name: CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY
               value: "${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY}"
+            - name: CODEXK8S_AGENT_DEFAULT_MODEL
+              value: "${CODEXK8S_AGENT_DEFAULT_MODEL}"
+            - name: CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT
+              value: "${CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT}"
+            - name: CODEXK8S_AGENT_DEFAULT_LOCALE
+              value: "${CODEXK8S_AGENT_DEFAULT_LOCALE}"
+            - name: CODEXK8S_AGENT_BASE_BRANCH
+              value: "${CODEXK8S_AGENT_BASE_BRANCH}"
           resources:
             requests:
               cpu: ${CODEXK8S_WORKER_RESOURCES_REQUEST_CPU}

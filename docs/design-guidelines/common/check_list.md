@@ -6,10 +6,21 @@
 - Не размыты доменные границы: один сервис/приложение = один bounded context; нет “service-олигарха”.
 - Зона выбрана корректно: `internal|external|staff|jobs|dev` (см. `docs/design-guidelines/common/project_architecture.md`).
 - Для `external|staff` edge остаётся thin-edge (валидация/auth/маршрутизация), без доменной логики backend.
+- Перед написанием кода перечитаны профильные гайды по размещению:
+  - backend: `docs/design-guidelines/go/services_design_requirements.md`;
+  - frontend: `docs/design-guidelines/vue/frontend_architecture.md`, `docs/design-guidelines/vue/frontend_code_rules.md`, `docs/design-guidelines/vue/frontend_data_and_state.md`;
+  - общие принципы: `docs/design-guidelines/common/design_principles.md`.
 - Контракты транспорта не “вшиты в код строками” и имеют источник правды:
   - gRPC: `proto/` (версионирование/совместимость)
   - HTTP: OpenAPI YAML
   - async/webhook payloads: AsyncAPI YAML (если используются)
+- Модели/типы/DTO размещены по слоям, а не ad-hoc в service/handler/component файлах.
+- Повторяющиеся литералы и ключи вынесены в централизованные константы/enum/type-alias.
+- Helper-код размещён по уровню переиспользования:
+  - локальный файл (только одно место использования);
+  - пакет/модуль (`*_helpers.*`, `lib/*`);
+  - `libs/*` (если используется в нескольких сервисах/приложениях).
+- В production-коде нет анонимных структур/объектов для контрактов/персистентных payload-моделей.
 - Секреты не хардкодятся и не коммитятся; в логах нет секретов/PII.
 - Имена platform env/secrets/CI variables унифицированы с префиксом `CODEXK8S_`;
   имена без префикса `CODEXK8S_` не добавляются.
@@ -48,3 +59,4 @@
 - Если PR затрагивает Go: выполнен `docs/design-guidelines/go/check_list.md`.
 - Если PR затрагивает Vue: выполнен `docs/design-guidelines/vue/check_list.md`.
 - Если PR затрагивает Go: выполнен `go mod tidy` в изменённых модулях и прогнаны `make lint-go` и `make dupl-go` (или `make lint`) с устранением нарушений.
+- Перед пушем выполнена повторная сверка с релевантными чек-листами и устранены все нарушения по размещению моделей/типов/констант/helper-кода.

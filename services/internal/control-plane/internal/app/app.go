@@ -23,10 +23,13 @@ import (
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	githubclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/github"
 	kubernetesclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/kubernetes"
+	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
+	agentrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agent"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentrun"
+	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentsession"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/flowevent"
 	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/learningfeedback"
 	projectrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/project"
@@ -69,6 +72,7 @@ func Run() error {
 	}()
 
 	agentRuns := agentrunrepo.NewRepository(db)
+	agents := agentrepo.NewRepository(db)
 	flowEvents := floweventrepo.NewRepository(db)
 
 	users := userrepo.NewRepository(db)
@@ -77,6 +81,7 @@ func Run() error {
 	runs := staffrunrepo.NewRepository(db)
 	repos := repocfgrepo.NewRepository(db)
 	feedback := learningfeedbackrepo.NewRepository(db)
+	agentSessions := agentsessionrepo.NewRepository(db)
 
 	tokenCrypto, err := tokencrypt.NewService(cfg.TokenEncryptionKey)
 	if err != nil {
@@ -121,6 +126,7 @@ func Run() error {
 
 	webhookService := webhook.NewService(webhook.Config{
 		AgentRuns:           agentRuns,
+		Agents:              agents,
 		FlowEvents:          flowEvents,
 		Repos:               repos,
 		Projects:            projects,
@@ -171,13 +177,16 @@ func Run() error {
 	}
 	defer func() { _ = grpcLis.Close() }()
 
+	agentCallbackService := agentcallbackdomain.NewService(agentSessions, flowEvents)
+
 	grpcServer := grpc.NewServer()
 	controlplanev1.RegisterControlPlaneServiceServer(grpcServer, grpctransport.NewServer(grpctransport.Dependencies{
-		Webhook: webhookService,
-		Staff:   staffService,
-		Users:   users,
-		MCP:     mcpService,
-		Logger:  logger,
+		Webhook:        webhookService,
+		Staff:          staffService,
+		Users:          users,
+		AgentCallbacks: agentCallbackService,
+		MCP:            mcpService,
+		Logger:         logger,
 	}))
 
 	mcpHandler := mcptransport.NewHandler(mcpService, logger)

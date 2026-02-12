@@ -1,11 +1,10 @@
 # Инструкции для ИИ-агентов (обязательно)
 
-## Назначение
-
-Этот файл задает обязательные правила работы с репозиторием `codex-k8s`.
+Этот файл задает обязательные правила работы с репозиторием `codex-k8s` а также ссылается на обязательные требования в смежных документах проекта.
 
 ## Главные **требования**
 
+- Ответы пользователю и оформление PR на русском языке, тексты коммитов на английском языке.
 - Перед изменениями читать `docs/design-guidelines/AGENTS.md` и файлы, на которые он ссылается с учетом контекста текущей задачи. Если я пишу тебе про "гайды", то это именно `docs/design-guidelines/AGENTS.md` и связанные с ним документы и тебе обязательно надо найти релевантные разделы в этих документах, которые относятся к твоей задаче или замечанию, и прочитать их. 
 - Временные правила текущего ручного dev/staging цикла (до полного dogfooding через `run:dev`) см. `.local/agents-temp-dev-rules.md`. Править `.local/agents-temp-dev-rules.md` строго запрещено, если не стоит явная задача на изменение временных правил.
 - Для Go-изменений обязательно исполнять требования из `docs/design-guidelines/go/**.md`, как до правок, так и перед подготовкой PR.
@@ -30,7 +29,16 @@
   - `docs/design-guidelines/go/check_list.md` (если затронут Go-код);
   - `docs/design-guidelines/vue/check_list.md` (если затронут Vue-код).
 - Без этой проверки пуш в PR считается нарушением процесса.
-- Если в комментарии содержится замечание в вопросительной форме, то убедись в его справедливости и если в правках нет необходиости то ответь на комментарий, объяснив свою позицию, и попроси пометить его как resolved. Если же замечание справедливо и требует правок, то внеси правки и после этого пометь комментарий как resolved.
+- Перед началом написания кода обязательно перечитать профильные гайды по размещению кода:
+  - backend: `docs/design-guidelines/go/services_design_requirements.md`;
+  - frontend: `docs/design-guidelines/vue/frontend_architecture.md`, `docs/design-guidelines/vue/frontend_code_rules.md`, `docs/design-guidelines/vue/frontend_data_and_state.md`;
+  - общие принципы: `docs/design-guidelines/common/design_principles.md`.
+- Перед пушем обязательно повторно свериться с чек-листами и убедиться, что правила размещения кода соблюдены:
+  - модели/типы;
+  - константы и type-alias/enum;
+  - helper-код и его уровень (локальный файл / пакет-модуль / `libs/*`).
+- Если в комментарии содержится замечание в вопросительной форме, то убедись в его справедливости и если в правках нет необходимости, то ответь на комментарий, объяснив свою позицию, и попроси пометить его как resolved. Если же замечание справедливо и требует правок, то внеси правки и после этого пометь комментарий как resolved.
+- Проект в начальной стадии разработки и нигде еще не используется. Сохранять обратную совместимость не нужно, легаси тоже поддерживать не нужно.
 
 ## Матрица чтения проектной документации (обязательна)
 
@@ -74,6 +82,23 @@
 - Доменные типы размещать в `internal/domain/types/{entity,value,enum,query,mixin}`; не объявлять доменные модели ad-hoc в больших service/handler файлах.
 - Маппинг ошибок выполняется только на границе транспорта (HTTP error handler / gRPC interceptor); в handlers запрещены локальные “переводы” ошибок между слоями.
 - `context.Background()` создаётся только в composition root (`internal/app/*`); в transport/domain/repository-слоях использовать только прокинутый контекст.
+
+## Размещение кода (Go + TS/Vue) — обязательно
+
+- Запрещено оставлять ad-hoc модели/типы, если они описывают доменную сущность, контракт транспорта или переиспользуемый payload.
+- Размещение моделей и типов:
+  - Go domain-модели: `internal/domain/types/{entity,value,enum,query,mixin}`;
+  - Go transport DTO: `internal/transport/<proto>/models` + `casters`;
+  - TS/Vue API DTO: `src/shared/api/generated/**` и/или `src/shared/api/*`;
+  - TS/Vue feature/view types: `src/features/*/types.ts` и `src/shared/types/*`.
+- Размещение констант:
+  - повторяющиеся строковые/числовые литералы выносятся в константы;
+  - для закрытых наборов значений использовать type-alias/enum (Go/TS).
+- Размещение helper-кода:
+  - helper остаётся локальным в файле только если используется в одном месте и не выражает самостоятельную модель/контракт;
+  - если helper используется в нескольких файлах пакета/модуля — вынести в `*_helpers.*`/`lib/*`;
+  - если код переиспользуется между сервисами/приложениями — вынести в `libs/*` по правилам common/vue/go гайдов.
+- Для больших `service.go`/`handler.go` обязательно выносить вспомогательные модели/типы/no-op реализации в отдельные файлы пакета (`*_types.go`, `*_helpers.go`, `*_noop.go`), чтобы не смешивать use-case и вспомогательные структуры.
 
 ## Образы сервисов (обязательны)
 
@@ -142,3 +167,39 @@
 - Если затронут Vue-код, пройти `docs/design-guidelines/vue/check_list.md`.
 - Обновить документацию, если меняется поведение API, webhook-процессы,
   модель данных, RBAC, формат `services.yaml` или MCP-контракты.
+
+### CI/CD staging для `codex/dev` (важно)
+
+- Для ветки `codex/dev` билд и деплой идут **в одном workflow**:
+  - `.github/workflows/build_internal_image.yml`
+  - после matrix build автоматически запускается job:
+    `Deploy codex-k8s to ai-staging (after build on codex/dev)`.
+- Отдельный workflow `.github/workflows/ai_staging_deploy.yml` автотриггерится от `workflow_run` только для `main` и для `codex/dev` обычно не нужен (только ручной `workflow_dispatch` при необходимости).
+
+### Как правильно проверять статус
+
+```bash
+source bootstrap/host/config.env
+export GH_TOKEN="$CODEXK8S_GITHUB_PAT"
+
+1. Статус workflow run:
+
+gh run view -R "$CODEXK8S_GITHUB_REPO" <run_id> \
+  --json workflowName,status,conclusion,headBranch,headSha,url
+
+2. Статус всех job в run:
+
+gh run view -R "$CODEXK8S_GITHUB_REPO" <run_id> --json jobs \
+  | jq -r '.jobs[] | [.databaseId,.name,.status,.conclusion] | @tsv'
+
+3. Статус конкретной job (самый надежный способ):
+
+gh api repos/codex-k8s/codex-k8s/actions/jobs/<job_id> \
+  | jq -r '.name,.status,.conclusion'
+
+4. Логи конкретной job (только после завершения job):
+
+gh run view -R "$CODEXK8S_GITHUB_REPO" <run_id> --job <job_id> --log
+
+- Если job in_progress, команда логов вернет ошибку — это нормальное поведение.
+```

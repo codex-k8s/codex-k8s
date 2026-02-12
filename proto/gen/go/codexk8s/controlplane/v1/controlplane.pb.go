@@ -2556,6 +2556,722 @@ func (x *IssueRunMCPTokenResponse) GetExpiresAt() *timestamppb.Timestamp {
 	return nil
 }
 
+type UpsertAgentSessionRequest struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	RunId               string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
+	CorrelationId       string                 `protobuf:"bytes,2,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
+	ProjectId           *string                `protobuf:"bytes,3,opt,name=project_id,json=projectId,proto3,oneof" json:"project_id,omitempty"`
+	RepositoryFullName  string                 `protobuf:"bytes,4,opt,name=repository_full_name,json=repositoryFullName,proto3" json:"repository_full_name,omitempty"`
+	AgentKey            string                 `protobuf:"bytes,5,opt,name=agent_key,json=agentKey,proto3" json:"agent_key,omitempty"`
+	IssueNumber         *wrapperspb.Int32Value `protobuf:"bytes,6,opt,name=issue_number,json=issueNumber,proto3" json:"issue_number,omitempty"`
+	BranchName          string                 `protobuf:"bytes,7,opt,name=branch_name,json=branchName,proto3" json:"branch_name,omitempty"`
+	PrNumber            *wrapperspb.Int32Value `protobuf:"bytes,8,opt,name=pr_number,json=prNumber,proto3" json:"pr_number,omitempty"`
+	PrUrl               *string                `protobuf:"bytes,9,opt,name=pr_url,json=prUrl,proto3,oneof" json:"pr_url,omitempty"`
+	TriggerKind         *string                `protobuf:"bytes,10,opt,name=trigger_kind,json=triggerKind,proto3,oneof" json:"trigger_kind,omitempty"`
+	TemplateKind        *string                `protobuf:"bytes,11,opt,name=template_kind,json=templateKind,proto3,oneof" json:"template_kind,omitempty"`
+	TemplateSource      *string                `protobuf:"bytes,12,opt,name=template_source,json=templateSource,proto3,oneof" json:"template_source,omitempty"`
+	TemplateLocale      *string                `protobuf:"bytes,13,opt,name=template_locale,json=templateLocale,proto3,oneof" json:"template_locale,omitempty"`
+	Model               *string                `protobuf:"bytes,14,opt,name=model,proto3,oneof" json:"model,omitempty"`
+	ReasoningEffort     *string                `protobuf:"bytes,15,opt,name=reasoning_effort,json=reasoningEffort,proto3,oneof" json:"reasoning_effort,omitempty"`
+	Status              *string                `protobuf:"bytes,16,opt,name=status,proto3,oneof" json:"status,omitempty"`
+	SessionId           *string                `protobuf:"bytes,17,opt,name=session_id,json=sessionId,proto3,oneof" json:"session_id,omitempty"`
+	SessionJson         []byte                 `protobuf:"bytes,18,opt,name=session_json,json=sessionJson,proto3,oneof" json:"session_json,omitempty"`
+	CodexCliSessionPath *string                `protobuf:"bytes,19,opt,name=codex_cli_session_path,json=codexCliSessionPath,proto3,oneof" json:"codex_cli_session_path,omitempty"`
+	CodexCliSessionJson []byte                 `protobuf:"bytes,20,opt,name=codex_cli_session_json,json=codexCliSessionJson,proto3,oneof" json:"codex_cli_session_json,omitempty"`
+	StartedAt           *timestamppb.Timestamp `protobuf:"bytes,21,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
+	FinishedAt          *timestamppb.Timestamp `protobuf:"bytes,22,opt,name=finished_at,json=finishedAt,proto3" json:"finished_at,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *UpsertAgentSessionRequest) Reset() {
+	*x = UpsertAgentSessionRequest{}
+	mi := &file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpsertAgentSessionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpsertAgentSessionRequest) ProtoMessage() {}
+
+func (x *UpsertAgentSessionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpsertAgentSessionRequest.ProtoReflect.Descriptor instead.
+func (*UpsertAgentSessionRequest) Descriptor() ([]byte, []int) {
+	return file_codexk8s_controlplane_v1_controlplane_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *UpsertAgentSessionRequest) GetRunId() string {
+	if x != nil {
+		return x.RunId
+	}
+	return ""
+}
+
+func (x *UpsertAgentSessionRequest) GetCorrelationId() string {
+	if x != nil {
+		return x.CorrelationId
+	}
+	return ""
+}
+
+func (x *UpsertAgentSessionRequest) GetProjectId() string {
+	if x != nil && x.ProjectId != nil {
+		return *x.ProjectId
+	}
+	return ""
+}
+
+func (x *UpsertAgentSessionRequest) GetRepositoryFullName() string {
+	if x != nil {
+		return x.RepositoryFullName
+	}
+	return ""
+}
+
+func (x *UpsertAgentSessionRequest) GetAgentKey() string {
+	if x != nil {
+		return x.AgentKey
+	}
+	return ""
+}
+
+func (x *UpsertAgentSessionRequest) GetIssueNumber() *wrapperspb.Int32Value {
+	if x != nil {
+		return x.IssueNumber
+	}
+	return nil
+}
+
+func (x *UpsertAgentSessionRequest) GetBranchName() string {
+	if x != nil {
+		return x.BranchName
+	}
+	return ""
+}
+
+func (x *UpsertAgentSessionRequest) GetPrNumber() *wrapperspb.Int32Value {
+	if x != nil {
+		return x.PrNumber
+	}
+	return nil
+}
+
+func (x *UpsertAgentSessionRequest) GetPrUrl() string {
+	if x != nil && x.PrUrl != nil {
+		return *x.PrUrl
+	}
+	return ""
+}
+
+func (x *UpsertAgentSessionRequest) GetTriggerKind() string {
+	if x != nil && x.TriggerKind != nil {
+		return *x.TriggerKind
+	}
+	return ""
+}
+
+func (x *UpsertAgentSessionRequest) GetTemplateKind() string {
+	if x != nil && x.TemplateKind != nil {
+		return *x.TemplateKind
+	}
+	return ""
+}
+
+func (x *UpsertAgentSessionRequest) GetTemplateSource() string {
+	if x != nil && x.TemplateSource != nil {
+		return *x.TemplateSource
+	}
+	return ""
+}
+
+func (x *UpsertAgentSessionRequest) GetTemplateLocale() string {
+	if x != nil && x.TemplateLocale != nil {
+		return *x.TemplateLocale
+	}
+	return ""
+}
+
+func (x *UpsertAgentSessionRequest) GetModel() string {
+	if x != nil && x.Model != nil {
+		return *x.Model
+	}
+	return ""
+}
+
+func (x *UpsertAgentSessionRequest) GetReasoningEffort() string {
+	if x != nil && x.ReasoningEffort != nil {
+		return *x.ReasoningEffort
+	}
+	return ""
+}
+
+func (x *UpsertAgentSessionRequest) GetStatus() string {
+	if x != nil && x.Status != nil {
+		return *x.Status
+	}
+	return ""
+}
+
+func (x *UpsertAgentSessionRequest) GetSessionId() string {
+	if x != nil && x.SessionId != nil {
+		return *x.SessionId
+	}
+	return ""
+}
+
+func (x *UpsertAgentSessionRequest) GetSessionJson() []byte {
+	if x != nil {
+		return x.SessionJson
+	}
+	return nil
+}
+
+func (x *UpsertAgentSessionRequest) GetCodexCliSessionPath() string {
+	if x != nil && x.CodexCliSessionPath != nil {
+		return *x.CodexCliSessionPath
+	}
+	return ""
+}
+
+func (x *UpsertAgentSessionRequest) GetCodexCliSessionJson() []byte {
+	if x != nil {
+		return x.CodexCliSessionJson
+	}
+	return nil
+}
+
+func (x *UpsertAgentSessionRequest) GetStartedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.StartedAt
+	}
+	return nil
+}
+
+func (x *UpsertAgentSessionRequest) GetFinishedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.FinishedAt
+	}
+	return nil
+}
+
+type UpsertAgentSessionResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	RunId         string                 `protobuf:"bytes,2,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpsertAgentSessionResponse) Reset() {
+	*x = UpsertAgentSessionResponse{}
+	mi := &file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpsertAgentSessionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpsertAgentSessionResponse) ProtoMessage() {}
+
+func (x *UpsertAgentSessionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpsertAgentSessionResponse.ProtoReflect.Descriptor instead.
+func (*UpsertAgentSessionResponse) Descriptor() ([]byte, []int) {
+	return file_codexk8s_controlplane_v1_controlplane_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *UpsertAgentSessionResponse) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
+func (x *UpsertAgentSessionResponse) GetRunId() string {
+	if x != nil {
+		return x.RunId
+	}
+	return ""
+}
+
+type AgentSessionSnapshot struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	RunId               string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
+	CorrelationId       string                 `protobuf:"bytes,2,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
+	ProjectId           *string                `protobuf:"bytes,3,opt,name=project_id,json=projectId,proto3,oneof" json:"project_id,omitempty"`
+	RepositoryFullName  string                 `protobuf:"bytes,4,opt,name=repository_full_name,json=repositoryFullName,proto3" json:"repository_full_name,omitempty"`
+	AgentKey            string                 `protobuf:"bytes,5,opt,name=agent_key,json=agentKey,proto3" json:"agent_key,omitempty"`
+	IssueNumber         *wrapperspb.Int32Value `protobuf:"bytes,6,opt,name=issue_number,json=issueNumber,proto3" json:"issue_number,omitempty"`
+	BranchName          string                 `protobuf:"bytes,7,opt,name=branch_name,json=branchName,proto3" json:"branch_name,omitempty"`
+	PrNumber            *wrapperspb.Int32Value `protobuf:"bytes,8,opt,name=pr_number,json=prNumber,proto3" json:"pr_number,omitempty"`
+	PrUrl               *string                `protobuf:"bytes,9,opt,name=pr_url,json=prUrl,proto3,oneof" json:"pr_url,omitempty"`
+	TriggerKind         *string                `protobuf:"bytes,10,opt,name=trigger_kind,json=triggerKind,proto3,oneof" json:"trigger_kind,omitempty"`
+	TemplateKind        *string                `protobuf:"bytes,11,opt,name=template_kind,json=templateKind,proto3,oneof" json:"template_kind,omitempty"`
+	TemplateSource      *string                `protobuf:"bytes,12,opt,name=template_source,json=templateSource,proto3,oneof" json:"template_source,omitempty"`
+	TemplateLocale      *string                `protobuf:"bytes,13,opt,name=template_locale,json=templateLocale,proto3,oneof" json:"template_locale,omitempty"`
+	Model               *string                `protobuf:"bytes,14,opt,name=model,proto3,oneof" json:"model,omitempty"`
+	ReasoningEffort     *string                `protobuf:"bytes,15,opt,name=reasoning_effort,json=reasoningEffort,proto3,oneof" json:"reasoning_effort,omitempty"`
+	Status              *string                `protobuf:"bytes,16,opt,name=status,proto3,oneof" json:"status,omitempty"`
+	SessionId           *string                `protobuf:"bytes,17,opt,name=session_id,json=sessionId,proto3,oneof" json:"session_id,omitempty"`
+	SessionJson         []byte                 `protobuf:"bytes,18,opt,name=session_json,json=sessionJson,proto3,oneof" json:"session_json,omitempty"`
+	CodexCliSessionPath *string                `protobuf:"bytes,19,opt,name=codex_cli_session_path,json=codexCliSessionPath,proto3,oneof" json:"codex_cli_session_path,omitempty"`
+	CodexCliSessionJson []byte                 `protobuf:"bytes,20,opt,name=codex_cli_session_json,json=codexCliSessionJson,proto3,oneof" json:"codex_cli_session_json,omitempty"`
+	StartedAt           *timestamppb.Timestamp `protobuf:"bytes,21,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
+	FinishedAt          *timestamppb.Timestamp `protobuf:"bytes,22,opt,name=finished_at,json=finishedAt,proto3" json:"finished_at,omitempty"`
+	CreatedAt           *timestamppb.Timestamp `protobuf:"bytes,23,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt           *timestamppb.Timestamp `protobuf:"bytes,24,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *AgentSessionSnapshot) Reset() {
+	*x = AgentSessionSnapshot{}
+	mi := &file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AgentSessionSnapshot) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AgentSessionSnapshot) ProtoMessage() {}
+
+func (x *AgentSessionSnapshot) ProtoReflect() protoreflect.Message {
+	mi := &file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AgentSessionSnapshot.ProtoReflect.Descriptor instead.
+func (*AgentSessionSnapshot) Descriptor() ([]byte, []int) {
+	return file_codexk8s_controlplane_v1_controlplane_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *AgentSessionSnapshot) GetRunId() string {
+	if x != nil {
+		return x.RunId
+	}
+	return ""
+}
+
+func (x *AgentSessionSnapshot) GetCorrelationId() string {
+	if x != nil {
+		return x.CorrelationId
+	}
+	return ""
+}
+
+func (x *AgentSessionSnapshot) GetProjectId() string {
+	if x != nil && x.ProjectId != nil {
+		return *x.ProjectId
+	}
+	return ""
+}
+
+func (x *AgentSessionSnapshot) GetRepositoryFullName() string {
+	if x != nil {
+		return x.RepositoryFullName
+	}
+	return ""
+}
+
+func (x *AgentSessionSnapshot) GetAgentKey() string {
+	if x != nil {
+		return x.AgentKey
+	}
+	return ""
+}
+
+func (x *AgentSessionSnapshot) GetIssueNumber() *wrapperspb.Int32Value {
+	if x != nil {
+		return x.IssueNumber
+	}
+	return nil
+}
+
+func (x *AgentSessionSnapshot) GetBranchName() string {
+	if x != nil {
+		return x.BranchName
+	}
+	return ""
+}
+
+func (x *AgentSessionSnapshot) GetPrNumber() *wrapperspb.Int32Value {
+	if x != nil {
+		return x.PrNumber
+	}
+	return nil
+}
+
+func (x *AgentSessionSnapshot) GetPrUrl() string {
+	if x != nil && x.PrUrl != nil {
+		return *x.PrUrl
+	}
+	return ""
+}
+
+func (x *AgentSessionSnapshot) GetTriggerKind() string {
+	if x != nil && x.TriggerKind != nil {
+		return *x.TriggerKind
+	}
+	return ""
+}
+
+func (x *AgentSessionSnapshot) GetTemplateKind() string {
+	if x != nil && x.TemplateKind != nil {
+		return *x.TemplateKind
+	}
+	return ""
+}
+
+func (x *AgentSessionSnapshot) GetTemplateSource() string {
+	if x != nil && x.TemplateSource != nil {
+		return *x.TemplateSource
+	}
+	return ""
+}
+
+func (x *AgentSessionSnapshot) GetTemplateLocale() string {
+	if x != nil && x.TemplateLocale != nil {
+		return *x.TemplateLocale
+	}
+	return ""
+}
+
+func (x *AgentSessionSnapshot) GetModel() string {
+	if x != nil && x.Model != nil {
+		return *x.Model
+	}
+	return ""
+}
+
+func (x *AgentSessionSnapshot) GetReasoningEffort() string {
+	if x != nil && x.ReasoningEffort != nil {
+		return *x.ReasoningEffort
+	}
+	return ""
+}
+
+func (x *AgentSessionSnapshot) GetStatus() string {
+	if x != nil && x.Status != nil {
+		return *x.Status
+	}
+	return ""
+}
+
+func (x *AgentSessionSnapshot) GetSessionId() string {
+	if x != nil && x.SessionId != nil {
+		return *x.SessionId
+	}
+	return ""
+}
+
+func (x *AgentSessionSnapshot) GetSessionJson() []byte {
+	if x != nil {
+		return x.SessionJson
+	}
+	return nil
+}
+
+func (x *AgentSessionSnapshot) GetCodexCliSessionPath() string {
+	if x != nil && x.CodexCliSessionPath != nil {
+		return *x.CodexCliSessionPath
+	}
+	return ""
+}
+
+func (x *AgentSessionSnapshot) GetCodexCliSessionJson() []byte {
+	if x != nil {
+		return x.CodexCliSessionJson
+	}
+	return nil
+}
+
+func (x *AgentSessionSnapshot) GetStartedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.StartedAt
+	}
+	return nil
+}
+
+func (x *AgentSessionSnapshot) GetFinishedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.FinishedAt
+	}
+	return nil
+}
+
+func (x *AgentSessionSnapshot) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *AgentSessionSnapshot) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+type GetLatestAgentSessionRequest struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	RepositoryFullName string                 `protobuf:"bytes,1,opt,name=repository_full_name,json=repositoryFullName,proto3" json:"repository_full_name,omitempty"`
+	BranchName         string                 `protobuf:"bytes,2,opt,name=branch_name,json=branchName,proto3" json:"branch_name,omitempty"`
+	AgentKey           string                 `protobuf:"bytes,3,opt,name=agent_key,json=agentKey,proto3" json:"agent_key,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *GetLatestAgentSessionRequest) Reset() {
+	*x = GetLatestAgentSessionRequest{}
+	mi := &file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLatestAgentSessionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLatestAgentSessionRequest) ProtoMessage() {}
+
+func (x *GetLatestAgentSessionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLatestAgentSessionRequest.ProtoReflect.Descriptor instead.
+func (*GetLatestAgentSessionRequest) Descriptor() ([]byte, []int) {
+	return file_codexk8s_controlplane_v1_controlplane_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *GetLatestAgentSessionRequest) GetRepositoryFullName() string {
+	if x != nil {
+		return x.RepositoryFullName
+	}
+	return ""
+}
+
+func (x *GetLatestAgentSessionRequest) GetBranchName() string {
+	if x != nil {
+		return x.BranchName
+	}
+	return ""
+}
+
+func (x *GetLatestAgentSessionRequest) GetAgentKey() string {
+	if x != nil {
+		return x.AgentKey
+	}
+	return ""
+}
+
+type GetLatestAgentSessionResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Found         bool                   `protobuf:"varint,1,opt,name=found,proto3" json:"found,omitempty"`
+	Session       *AgentSessionSnapshot  `protobuf:"bytes,2,opt,name=session,proto3" json:"session,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLatestAgentSessionResponse) Reset() {
+	*x = GetLatestAgentSessionResponse{}
+	mi := &file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLatestAgentSessionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLatestAgentSessionResponse) ProtoMessage() {}
+
+func (x *GetLatestAgentSessionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLatestAgentSessionResponse.ProtoReflect.Descriptor instead.
+func (*GetLatestAgentSessionResponse) Descriptor() ([]byte, []int) {
+	return file_codexk8s_controlplane_v1_controlplane_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *GetLatestAgentSessionResponse) GetFound() bool {
+	if x != nil {
+		return x.Found
+	}
+	return false
+}
+
+func (x *GetLatestAgentSessionResponse) GetSession() *AgentSessionSnapshot {
+	if x != nil {
+		return x.Session
+	}
+	return nil
+}
+
+type InsertRunFlowEventRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RunId         string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
+	EventType     string                 `protobuf:"bytes,2,opt,name=event_type,json=eventType,proto3" json:"event_type,omitempty"`
+	PayloadJson   []byte                 `protobuf:"bytes,3,opt,name=payload_json,json=payloadJson,proto3" json:"payload_json,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InsertRunFlowEventRequest) Reset() {
+	*x = InsertRunFlowEventRequest{}
+	mi := &file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InsertRunFlowEventRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InsertRunFlowEventRequest) ProtoMessage() {}
+
+func (x *InsertRunFlowEventRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InsertRunFlowEventRequest.ProtoReflect.Descriptor instead.
+func (*InsertRunFlowEventRequest) Descriptor() ([]byte, []int) {
+	return file_codexk8s_controlplane_v1_controlplane_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *InsertRunFlowEventRequest) GetRunId() string {
+	if x != nil {
+		return x.RunId
+	}
+	return ""
+}
+
+func (x *InsertRunFlowEventRequest) GetEventType() string {
+	if x != nil {
+		return x.EventType
+	}
+	return ""
+}
+
+func (x *InsertRunFlowEventRequest) GetPayloadJson() []byte {
+	if x != nil {
+		return x.PayloadJson
+	}
+	return nil
+}
+
+type InsertRunFlowEventResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	EventType     string                 `protobuf:"bytes,2,opt,name=event_type,json=eventType,proto3" json:"event_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InsertRunFlowEventResponse) Reset() {
+	*x = InsertRunFlowEventResponse{}
+	mi := &file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InsertRunFlowEventResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InsertRunFlowEventResponse) ProtoMessage() {}
+
+func (x *InsertRunFlowEventResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InsertRunFlowEventResponse.ProtoReflect.Descriptor instead.
+func (*InsertRunFlowEventResponse) Descriptor() ([]byte, []int) {
+	return file_codexk8s_controlplane_v1_controlplane_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *InsertRunFlowEventResponse) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
+func (x *InsertRunFlowEventResponse) GetEventType() string {
+	if x != nil {
+		return x.EventType
+	}
+	return ""
+}
+
 var File_codexk8s_controlplane_v1_controlplane_proto protoreflect.FileDescriptor
 
 const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
@@ -2772,7 +3488,118 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\x18IssueRunMCPTokenResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x129\n" +
 	"\n" +
-	"expires_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt2\xc5\x13\n" +
+	"expires_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"\xb6\t\n" +
+	"\x19UpsertAgentSessionRequest\x12\x15\n" +
+	"\x06run_id\x18\x01 \x01(\tR\x05runId\x12%\n" +
+	"\x0ecorrelation_id\x18\x02 \x01(\tR\rcorrelationId\x12\"\n" +
+	"\n" +
+	"project_id\x18\x03 \x01(\tH\x00R\tprojectId\x88\x01\x01\x120\n" +
+	"\x14repository_full_name\x18\x04 \x01(\tR\x12repositoryFullName\x12\x1b\n" +
+	"\tagent_key\x18\x05 \x01(\tR\bagentKey\x12>\n" +
+	"\fissue_number\x18\x06 \x01(\v2\x1b.google.protobuf.Int32ValueR\vissueNumber\x12\x1f\n" +
+	"\vbranch_name\x18\a \x01(\tR\n" +
+	"branchName\x128\n" +
+	"\tpr_number\x18\b \x01(\v2\x1b.google.protobuf.Int32ValueR\bprNumber\x12\x1a\n" +
+	"\x06pr_url\x18\t \x01(\tH\x01R\x05prUrl\x88\x01\x01\x12&\n" +
+	"\ftrigger_kind\x18\n" +
+	" \x01(\tH\x02R\vtriggerKind\x88\x01\x01\x12(\n" +
+	"\rtemplate_kind\x18\v \x01(\tH\x03R\ftemplateKind\x88\x01\x01\x12,\n" +
+	"\x0ftemplate_source\x18\f \x01(\tH\x04R\x0etemplateSource\x88\x01\x01\x12,\n" +
+	"\x0ftemplate_locale\x18\r \x01(\tH\x05R\x0etemplateLocale\x88\x01\x01\x12\x19\n" +
+	"\x05model\x18\x0e \x01(\tH\x06R\x05model\x88\x01\x01\x12.\n" +
+	"\x10reasoning_effort\x18\x0f \x01(\tH\aR\x0freasoningEffort\x88\x01\x01\x12\x1b\n" +
+	"\x06status\x18\x10 \x01(\tH\bR\x06status\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"session_id\x18\x11 \x01(\tH\tR\tsessionId\x88\x01\x01\x12&\n" +
+	"\fsession_json\x18\x12 \x01(\fH\n" +
+	"R\vsessionJson\x88\x01\x01\x128\n" +
+	"\x16codex_cli_session_path\x18\x13 \x01(\tH\vR\x13codexCliSessionPath\x88\x01\x01\x128\n" +
+	"\x16codex_cli_session_json\x18\x14 \x01(\fH\fR\x13codexCliSessionJson\x88\x01\x01\x129\n" +
+	"\n" +
+	"started_at\x18\x15 \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x12;\n" +
+	"\vfinished_at\x18\x16 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"finishedAtB\r\n" +
+	"\v_project_idB\t\n" +
+	"\a_pr_urlB\x0f\n" +
+	"\r_trigger_kindB\x10\n" +
+	"\x0e_template_kindB\x12\n" +
+	"\x10_template_sourceB\x12\n" +
+	"\x10_template_localeB\b\n" +
+	"\x06_modelB\x13\n" +
+	"\x11_reasoning_effortB\t\n" +
+	"\a_statusB\r\n" +
+	"\v_session_idB\x0f\n" +
+	"\r_session_jsonB\x19\n" +
+	"\x17_codex_cli_session_pathB\x19\n" +
+	"\x17_codex_cli_session_json\"C\n" +
+	"\x1aUpsertAgentSessionResponse\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x15\n" +
+	"\x06run_id\x18\x02 \x01(\tR\x05runId\"\xa7\n" +
+	"\n" +
+	"\x14AgentSessionSnapshot\x12\x15\n" +
+	"\x06run_id\x18\x01 \x01(\tR\x05runId\x12%\n" +
+	"\x0ecorrelation_id\x18\x02 \x01(\tR\rcorrelationId\x12\"\n" +
+	"\n" +
+	"project_id\x18\x03 \x01(\tH\x00R\tprojectId\x88\x01\x01\x120\n" +
+	"\x14repository_full_name\x18\x04 \x01(\tR\x12repositoryFullName\x12\x1b\n" +
+	"\tagent_key\x18\x05 \x01(\tR\bagentKey\x12>\n" +
+	"\fissue_number\x18\x06 \x01(\v2\x1b.google.protobuf.Int32ValueR\vissueNumber\x12\x1f\n" +
+	"\vbranch_name\x18\a \x01(\tR\n" +
+	"branchName\x128\n" +
+	"\tpr_number\x18\b \x01(\v2\x1b.google.protobuf.Int32ValueR\bprNumber\x12\x1a\n" +
+	"\x06pr_url\x18\t \x01(\tH\x01R\x05prUrl\x88\x01\x01\x12&\n" +
+	"\ftrigger_kind\x18\n" +
+	" \x01(\tH\x02R\vtriggerKind\x88\x01\x01\x12(\n" +
+	"\rtemplate_kind\x18\v \x01(\tH\x03R\ftemplateKind\x88\x01\x01\x12,\n" +
+	"\x0ftemplate_source\x18\f \x01(\tH\x04R\x0etemplateSource\x88\x01\x01\x12,\n" +
+	"\x0ftemplate_locale\x18\r \x01(\tH\x05R\x0etemplateLocale\x88\x01\x01\x12\x19\n" +
+	"\x05model\x18\x0e \x01(\tH\x06R\x05model\x88\x01\x01\x12.\n" +
+	"\x10reasoning_effort\x18\x0f \x01(\tH\aR\x0freasoningEffort\x88\x01\x01\x12\x1b\n" +
+	"\x06status\x18\x10 \x01(\tH\bR\x06status\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"session_id\x18\x11 \x01(\tH\tR\tsessionId\x88\x01\x01\x12&\n" +
+	"\fsession_json\x18\x12 \x01(\fH\n" +
+	"R\vsessionJson\x88\x01\x01\x128\n" +
+	"\x16codex_cli_session_path\x18\x13 \x01(\tH\vR\x13codexCliSessionPath\x88\x01\x01\x128\n" +
+	"\x16codex_cli_session_json\x18\x14 \x01(\fH\fR\x13codexCliSessionJson\x88\x01\x01\x129\n" +
+	"\n" +
+	"started_at\x18\x15 \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x12;\n" +
+	"\vfinished_at\x18\x16 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"finishedAt\x129\n" +
+	"\n" +
+	"created_at\x18\x17 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\x18 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAtB\r\n" +
+	"\v_project_idB\t\n" +
+	"\a_pr_urlB\x0f\n" +
+	"\r_trigger_kindB\x10\n" +
+	"\x0e_template_kindB\x12\n" +
+	"\x10_template_sourceB\x12\n" +
+	"\x10_template_localeB\b\n" +
+	"\x06_modelB\x13\n" +
+	"\x11_reasoning_effortB\t\n" +
+	"\a_statusB\r\n" +
+	"\v_session_idB\x0f\n" +
+	"\r_session_jsonB\x19\n" +
+	"\x17_codex_cli_session_pathB\x19\n" +
+	"\x17_codex_cli_session_json\"\x8e\x01\n" +
+	"\x1cGetLatestAgentSessionRequest\x120\n" +
+	"\x14repository_full_name\x18\x01 \x01(\tR\x12repositoryFullName\x12\x1f\n" +
+	"\vbranch_name\x18\x02 \x01(\tR\n" +
+	"branchName\x12\x1b\n" +
+	"\tagent_key\x18\x03 \x01(\tR\bagentKey\"\x7f\n" +
+	"\x1dGetLatestAgentSessionResponse\x12\x14\n" +
+	"\x05found\x18\x01 \x01(\bR\x05found\x12H\n" +
+	"\asession\x18\x02 \x01(\v2..codexk8s.controlplane.v1.AgentSessionSnapshotR\asession\"t\n" +
+	"\x19InsertRunFlowEventRequest\x12\x15\n" +
+	"\x06run_id\x18\x01 \x01(\tR\x05runId\x12\x1d\n" +
+	"\n" +
+	"event_type\x18\x02 \x01(\tR\teventType\x12!\n" +
+	"\fpayload_json\x18\x03 \x01(\fR\vpayloadJson\"K\n" +
+	"\x1aInsertRunFlowEventResponse\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x1d\n" +
+	"\n" +
+	"event_type\x18\x02 \x01(\tR\teventType2\xd2\x16\n" +
 	"\x13ControlPlaneService\x12\x82\x01\n" +
 	"\x13IngestGitHubWebhook\x124.codexk8s.controlplane.v1.IngestGitHubWebhookRequest\x1a5.codexk8s.controlplane.v1.IngestGitHubWebhookResponse\x12\x82\x01\n" +
 	"\x13ResolveStaffByEmail\x124.codexk8s.controlplane.v1.ResolveStaffByEmailRequest\x1a5.codexk8s.controlplane.v1.ResolveStaffByEmailResponse\x12\x7f\n" +
@@ -2798,7 +3625,10 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\x17ListProjectRepositories\x128.codexk8s.controlplane.v1.ListProjectRepositoriesRequest\x1a9.codexk8s.controlplane.v1.ListProjectRepositoriesResponse\x12\x80\x01\n" +
 	"\x17UpsertProjectRepository\x128.codexk8s.controlplane.v1.UpsertProjectRepositoryRequest\x1a+.codexk8s.controlplane.v1.RepositoryBinding\x12k\n" +
 	"\x17DeleteProjectRepository\x128.codexk8s.controlplane.v1.DeleteProjectRepositoryRequest\x1a\x16.google.protobuf.Empty\x12y\n" +
-	"\x10IssueRunMCPToken\x121.codexk8s.controlplane.v1.IssueRunMCPTokenRequest\x1a2.codexk8s.controlplane.v1.IssueRunMCPTokenResponseBUZSgithub.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1;controlplanev1b\x06proto3"
+	"\x10IssueRunMCPToken\x121.codexk8s.controlplane.v1.IssueRunMCPTokenRequest\x1a2.codexk8s.controlplane.v1.IssueRunMCPTokenResponse\x12\x7f\n" +
+	"\x12UpsertAgentSession\x123.codexk8s.controlplane.v1.UpsertAgentSessionRequest\x1a4.codexk8s.controlplane.v1.UpsertAgentSessionResponse\x12\x88\x01\n" +
+	"\x15GetLatestAgentSession\x126.codexk8s.controlplane.v1.GetLatestAgentSessionRequest\x1a7.codexk8s.controlplane.v1.GetLatestAgentSessionResponse\x12\x7f\n" +
+	"\x12InsertRunFlowEvent\x123.codexk8s.controlplane.v1.InsertRunFlowEventRequest\x1a4.codexk8s.controlplane.v1.InsertRunFlowEventResponseBUZSgithub.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1;controlplanev1b\x06proto3"
 
 var (
 	file_codexk8s_controlplane_v1_controlplane_proto_rawDescOnce sync.Once
@@ -2812,7 +3642,7 @@ func file_codexk8s_controlplane_v1_controlplane_proto_rawDescGZIP() []byte {
 	return file_codexk8s_controlplane_v1_controlplane_proto_rawDescData
 }
 
-var file_codexk8s_controlplane_v1_controlplane_proto_msgTypes = make([]protoimpl.MessageInfo, 41)
+var file_codexk8s_controlplane_v1_controlplane_proto_msgTypes = make([]protoimpl.MessageInfo, 48)
 var file_codexk8s_controlplane_v1_controlplane_proto_goTypes = []any{
 	(*Principal)(nil),                                   // 0: codexk8s.controlplane.v1.Principal
 	(*IngestGitHubWebhookRequest)(nil),                  // 1: codexk8s.controlplane.v1.IngestGitHubWebhookRequest
@@ -2855,12 +3685,20 @@ var file_codexk8s_controlplane_v1_controlplane_proto_goTypes = []any{
 	(*DeleteProjectRepositoryRequest)(nil),              // 38: codexk8s.controlplane.v1.DeleteProjectRepositoryRequest
 	(*IssueRunMCPTokenRequest)(nil),                     // 39: codexk8s.controlplane.v1.IssueRunMCPTokenRequest
 	(*IssueRunMCPTokenResponse)(nil),                    // 40: codexk8s.controlplane.v1.IssueRunMCPTokenResponse
-	(*timestamppb.Timestamp)(nil),                       // 41: google.protobuf.Timestamp
-	(*wrapperspb.BoolValue)(nil),                        // 42: google.protobuf.BoolValue
-	(*emptypb.Empty)(nil),                               // 43: google.protobuf.Empty
+	(*UpsertAgentSessionRequest)(nil),                   // 41: codexk8s.controlplane.v1.UpsertAgentSessionRequest
+	(*UpsertAgentSessionResponse)(nil),                  // 42: codexk8s.controlplane.v1.UpsertAgentSessionResponse
+	(*AgentSessionSnapshot)(nil),                        // 43: codexk8s.controlplane.v1.AgentSessionSnapshot
+	(*GetLatestAgentSessionRequest)(nil),                // 44: codexk8s.controlplane.v1.GetLatestAgentSessionRequest
+	(*GetLatestAgentSessionResponse)(nil),               // 45: codexk8s.controlplane.v1.GetLatestAgentSessionResponse
+	(*InsertRunFlowEventRequest)(nil),                   // 46: codexk8s.controlplane.v1.InsertRunFlowEventRequest
+	(*InsertRunFlowEventResponse)(nil),                  // 47: codexk8s.controlplane.v1.InsertRunFlowEventResponse
+	(*timestamppb.Timestamp)(nil),                       // 48: google.protobuf.Timestamp
+	(*wrapperspb.BoolValue)(nil),                        // 49: google.protobuf.BoolValue
+	(*wrapperspb.Int32Value)(nil),                       // 50: google.protobuf.Int32Value
+	(*emptypb.Empty)(nil),                               // 51: google.protobuf.Empty
 }
 var file_codexk8s_controlplane_v1_controlplane_proto_depIdxs = []int32{
-	41, // 0: codexk8s.controlplane.v1.IngestGitHubWebhookRequest.received_at:type_name -> google.protobuf.Timestamp
+	48, // 0: codexk8s.controlplane.v1.IngestGitHubWebhookRequest.received_at:type_name -> google.protobuf.Timestamp
 	0,  // 1: codexk8s.controlplane.v1.ResolveStaffByEmailResponse.principal:type_name -> codexk8s.controlplane.v1.Principal
 	0,  // 2: codexk8s.controlplane.v1.AuthorizeOAuthUserResponse.principal:type_name -> codexk8s.controlplane.v1.Principal
 	0,  // 3: codexk8s.controlplane.v1.ListProjectsRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
@@ -2868,83 +3706,100 @@ var file_codexk8s_controlplane_v1_controlplane_proto_depIdxs = []int32{
 	0,  // 5: codexk8s.controlplane.v1.UpsertProjectRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
 	0,  // 6: codexk8s.controlplane.v1.GetProjectRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
 	0,  // 7: codexk8s.controlplane.v1.DeleteProjectRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	41, // 8: codexk8s.controlplane.v1.Run.created_at:type_name -> google.protobuf.Timestamp
-	41, // 9: codexk8s.controlplane.v1.Run.started_at:type_name -> google.protobuf.Timestamp
-	41, // 10: codexk8s.controlplane.v1.Run.finished_at:type_name -> google.protobuf.Timestamp
+	48, // 8: codexk8s.controlplane.v1.Run.created_at:type_name -> google.protobuf.Timestamp
+	48, // 9: codexk8s.controlplane.v1.Run.started_at:type_name -> google.protobuf.Timestamp
+	48, // 10: codexk8s.controlplane.v1.Run.finished_at:type_name -> google.protobuf.Timestamp
 	0,  // 11: codexk8s.controlplane.v1.ListRunsRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
 	13, // 12: codexk8s.controlplane.v1.ListRunsResponse.items:type_name -> codexk8s.controlplane.v1.Run
 	0,  // 13: codexk8s.controlplane.v1.GetRunRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	41, // 14: codexk8s.controlplane.v1.FlowEvent.created_at:type_name -> google.protobuf.Timestamp
+	48, // 14: codexk8s.controlplane.v1.FlowEvent.created_at:type_name -> google.protobuf.Timestamp
 	0,  // 15: codexk8s.controlplane.v1.ListRunEventsRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
 	17, // 16: codexk8s.controlplane.v1.ListRunEventsResponse.items:type_name -> codexk8s.controlplane.v1.FlowEvent
-	41, // 17: codexk8s.controlplane.v1.LearningFeedback.created_at:type_name -> google.protobuf.Timestamp
+	48, // 17: codexk8s.controlplane.v1.LearningFeedback.created_at:type_name -> google.protobuf.Timestamp
 	0,  // 18: codexk8s.controlplane.v1.ListRunLearningFeedbackRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
 	20, // 19: codexk8s.controlplane.v1.ListRunLearningFeedbackResponse.items:type_name -> codexk8s.controlplane.v1.LearningFeedback
 	0,  // 20: codexk8s.controlplane.v1.ListUsersRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
 	23, // 21: codexk8s.controlplane.v1.ListUsersResponse.items:type_name -> codexk8s.controlplane.v1.User
 	0,  // 22: codexk8s.controlplane.v1.CreateUserRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
 	0,  // 23: codexk8s.controlplane.v1.DeleteUserRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	42, // 24: codexk8s.controlplane.v1.ProjectMember.learning_mode_override:type_name -> google.protobuf.BoolValue
+	49, // 24: codexk8s.controlplane.v1.ProjectMember.learning_mode_override:type_name -> google.protobuf.BoolValue
 	0,  // 25: codexk8s.controlplane.v1.ListProjectMembersRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
 	28, // 26: codexk8s.controlplane.v1.ListProjectMembersResponse.items:type_name -> codexk8s.controlplane.v1.ProjectMember
 	0,  // 27: codexk8s.controlplane.v1.UpsertProjectMemberRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
 	0,  // 28: codexk8s.controlplane.v1.DeleteProjectMemberRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
 	0,  // 29: codexk8s.controlplane.v1.SetProjectMemberLearningModeOverrideRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	42, // 30: codexk8s.controlplane.v1.SetProjectMemberLearningModeOverrideRequest.enabled:type_name -> google.protobuf.BoolValue
+	49, // 30: codexk8s.controlplane.v1.SetProjectMemberLearningModeOverrideRequest.enabled:type_name -> google.protobuf.BoolValue
 	0,  // 31: codexk8s.controlplane.v1.ListProjectRepositoriesRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
 	34, // 32: codexk8s.controlplane.v1.ListProjectRepositoriesResponse.items:type_name -> codexk8s.controlplane.v1.RepositoryBinding
 	0,  // 33: codexk8s.controlplane.v1.UpsertProjectRepositoryRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
 	0,  // 34: codexk8s.controlplane.v1.DeleteProjectRepositoryRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	41, // 35: codexk8s.controlplane.v1.IssueRunMCPTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
-	1,  // 36: codexk8s.controlplane.v1.ControlPlaneService.IngestGitHubWebhook:input_type -> codexk8s.controlplane.v1.IngestGitHubWebhookRequest
-	3,  // 37: codexk8s.controlplane.v1.ControlPlaneService.ResolveStaffByEmail:input_type -> codexk8s.controlplane.v1.ResolveStaffByEmailRequest
-	5,  // 38: codexk8s.controlplane.v1.ControlPlaneService.AuthorizeOAuthUser:input_type -> codexk8s.controlplane.v1.AuthorizeOAuthUserRequest
-	8,  // 39: codexk8s.controlplane.v1.ControlPlaneService.ListProjects:input_type -> codexk8s.controlplane.v1.ListProjectsRequest
-	10, // 40: codexk8s.controlplane.v1.ControlPlaneService.UpsertProject:input_type -> codexk8s.controlplane.v1.UpsertProjectRequest
-	11, // 41: codexk8s.controlplane.v1.ControlPlaneService.GetProject:input_type -> codexk8s.controlplane.v1.GetProjectRequest
-	12, // 42: codexk8s.controlplane.v1.ControlPlaneService.DeleteProject:input_type -> codexk8s.controlplane.v1.DeleteProjectRequest
-	14, // 43: codexk8s.controlplane.v1.ControlPlaneService.ListRuns:input_type -> codexk8s.controlplane.v1.ListRunsRequest
-	16, // 44: codexk8s.controlplane.v1.ControlPlaneService.GetRun:input_type -> codexk8s.controlplane.v1.GetRunRequest
-	18, // 45: codexk8s.controlplane.v1.ControlPlaneService.ListRunEvents:input_type -> codexk8s.controlplane.v1.ListRunEventsRequest
-	21, // 46: codexk8s.controlplane.v1.ControlPlaneService.ListRunLearningFeedback:input_type -> codexk8s.controlplane.v1.ListRunLearningFeedbackRequest
-	24, // 47: codexk8s.controlplane.v1.ControlPlaneService.ListUsers:input_type -> codexk8s.controlplane.v1.ListUsersRequest
-	26, // 48: codexk8s.controlplane.v1.ControlPlaneService.CreateUser:input_type -> codexk8s.controlplane.v1.CreateUserRequest
-	27, // 49: codexk8s.controlplane.v1.ControlPlaneService.DeleteUser:input_type -> codexk8s.controlplane.v1.DeleteUserRequest
-	29, // 50: codexk8s.controlplane.v1.ControlPlaneService.ListProjectMembers:input_type -> codexk8s.controlplane.v1.ListProjectMembersRequest
-	31, // 51: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectMember:input_type -> codexk8s.controlplane.v1.UpsertProjectMemberRequest
-	32, // 52: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectMember:input_type -> codexk8s.controlplane.v1.DeleteProjectMemberRequest
-	33, // 53: codexk8s.controlplane.v1.ControlPlaneService.SetProjectMemberLearningModeOverride:input_type -> codexk8s.controlplane.v1.SetProjectMemberLearningModeOverrideRequest
-	35, // 54: codexk8s.controlplane.v1.ControlPlaneService.ListProjectRepositories:input_type -> codexk8s.controlplane.v1.ListProjectRepositoriesRequest
-	37, // 55: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectRepository:input_type -> codexk8s.controlplane.v1.UpsertProjectRepositoryRequest
-	38, // 56: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectRepository:input_type -> codexk8s.controlplane.v1.DeleteProjectRepositoryRequest
-	39, // 57: codexk8s.controlplane.v1.ControlPlaneService.IssueRunMCPToken:input_type -> codexk8s.controlplane.v1.IssueRunMCPTokenRequest
-	2,  // 58: codexk8s.controlplane.v1.ControlPlaneService.IngestGitHubWebhook:output_type -> codexk8s.controlplane.v1.IngestGitHubWebhookResponse
-	4,  // 59: codexk8s.controlplane.v1.ControlPlaneService.ResolveStaffByEmail:output_type -> codexk8s.controlplane.v1.ResolveStaffByEmailResponse
-	6,  // 60: codexk8s.controlplane.v1.ControlPlaneService.AuthorizeOAuthUser:output_type -> codexk8s.controlplane.v1.AuthorizeOAuthUserResponse
-	9,  // 61: codexk8s.controlplane.v1.ControlPlaneService.ListProjects:output_type -> codexk8s.controlplane.v1.ListProjectsResponse
-	7,  // 62: codexk8s.controlplane.v1.ControlPlaneService.UpsertProject:output_type -> codexk8s.controlplane.v1.Project
-	7,  // 63: codexk8s.controlplane.v1.ControlPlaneService.GetProject:output_type -> codexk8s.controlplane.v1.Project
-	43, // 64: codexk8s.controlplane.v1.ControlPlaneService.DeleteProject:output_type -> google.protobuf.Empty
-	15, // 65: codexk8s.controlplane.v1.ControlPlaneService.ListRuns:output_type -> codexk8s.controlplane.v1.ListRunsResponse
-	13, // 66: codexk8s.controlplane.v1.ControlPlaneService.GetRun:output_type -> codexk8s.controlplane.v1.Run
-	19, // 67: codexk8s.controlplane.v1.ControlPlaneService.ListRunEvents:output_type -> codexk8s.controlplane.v1.ListRunEventsResponse
-	22, // 68: codexk8s.controlplane.v1.ControlPlaneService.ListRunLearningFeedback:output_type -> codexk8s.controlplane.v1.ListRunLearningFeedbackResponse
-	25, // 69: codexk8s.controlplane.v1.ControlPlaneService.ListUsers:output_type -> codexk8s.controlplane.v1.ListUsersResponse
-	23, // 70: codexk8s.controlplane.v1.ControlPlaneService.CreateUser:output_type -> codexk8s.controlplane.v1.User
-	43, // 71: codexk8s.controlplane.v1.ControlPlaneService.DeleteUser:output_type -> google.protobuf.Empty
-	30, // 72: codexk8s.controlplane.v1.ControlPlaneService.ListProjectMembers:output_type -> codexk8s.controlplane.v1.ListProjectMembersResponse
-	43, // 73: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectMember:output_type -> google.protobuf.Empty
-	43, // 74: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectMember:output_type -> google.protobuf.Empty
-	43, // 75: codexk8s.controlplane.v1.ControlPlaneService.SetProjectMemberLearningModeOverride:output_type -> google.protobuf.Empty
-	36, // 76: codexk8s.controlplane.v1.ControlPlaneService.ListProjectRepositories:output_type -> codexk8s.controlplane.v1.ListProjectRepositoriesResponse
-	34, // 77: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectRepository:output_type -> codexk8s.controlplane.v1.RepositoryBinding
-	43, // 78: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectRepository:output_type -> google.protobuf.Empty
-	40, // 79: codexk8s.controlplane.v1.ControlPlaneService.IssueRunMCPToken:output_type -> codexk8s.controlplane.v1.IssueRunMCPTokenResponse
-	58, // [58:80] is the sub-list for method output_type
-	36, // [36:58] is the sub-list for method input_type
-	36, // [36:36] is the sub-list for extension type_name
-	36, // [36:36] is the sub-list for extension extendee
-	0,  // [0:36] is the sub-list for field type_name
+	48, // 35: codexk8s.controlplane.v1.IssueRunMCPTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
+	50, // 36: codexk8s.controlplane.v1.UpsertAgentSessionRequest.issue_number:type_name -> google.protobuf.Int32Value
+	50, // 37: codexk8s.controlplane.v1.UpsertAgentSessionRequest.pr_number:type_name -> google.protobuf.Int32Value
+	48, // 38: codexk8s.controlplane.v1.UpsertAgentSessionRequest.started_at:type_name -> google.protobuf.Timestamp
+	48, // 39: codexk8s.controlplane.v1.UpsertAgentSessionRequest.finished_at:type_name -> google.protobuf.Timestamp
+	50, // 40: codexk8s.controlplane.v1.AgentSessionSnapshot.issue_number:type_name -> google.protobuf.Int32Value
+	50, // 41: codexk8s.controlplane.v1.AgentSessionSnapshot.pr_number:type_name -> google.protobuf.Int32Value
+	48, // 42: codexk8s.controlplane.v1.AgentSessionSnapshot.started_at:type_name -> google.protobuf.Timestamp
+	48, // 43: codexk8s.controlplane.v1.AgentSessionSnapshot.finished_at:type_name -> google.protobuf.Timestamp
+	48, // 44: codexk8s.controlplane.v1.AgentSessionSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	48, // 45: codexk8s.controlplane.v1.AgentSessionSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	43, // 46: codexk8s.controlplane.v1.GetLatestAgentSessionResponse.session:type_name -> codexk8s.controlplane.v1.AgentSessionSnapshot
+	1,  // 47: codexk8s.controlplane.v1.ControlPlaneService.IngestGitHubWebhook:input_type -> codexk8s.controlplane.v1.IngestGitHubWebhookRequest
+	3,  // 48: codexk8s.controlplane.v1.ControlPlaneService.ResolveStaffByEmail:input_type -> codexk8s.controlplane.v1.ResolveStaffByEmailRequest
+	5,  // 49: codexk8s.controlplane.v1.ControlPlaneService.AuthorizeOAuthUser:input_type -> codexk8s.controlplane.v1.AuthorizeOAuthUserRequest
+	8,  // 50: codexk8s.controlplane.v1.ControlPlaneService.ListProjects:input_type -> codexk8s.controlplane.v1.ListProjectsRequest
+	10, // 51: codexk8s.controlplane.v1.ControlPlaneService.UpsertProject:input_type -> codexk8s.controlplane.v1.UpsertProjectRequest
+	11, // 52: codexk8s.controlplane.v1.ControlPlaneService.GetProject:input_type -> codexk8s.controlplane.v1.GetProjectRequest
+	12, // 53: codexk8s.controlplane.v1.ControlPlaneService.DeleteProject:input_type -> codexk8s.controlplane.v1.DeleteProjectRequest
+	14, // 54: codexk8s.controlplane.v1.ControlPlaneService.ListRuns:input_type -> codexk8s.controlplane.v1.ListRunsRequest
+	16, // 55: codexk8s.controlplane.v1.ControlPlaneService.GetRun:input_type -> codexk8s.controlplane.v1.GetRunRequest
+	18, // 56: codexk8s.controlplane.v1.ControlPlaneService.ListRunEvents:input_type -> codexk8s.controlplane.v1.ListRunEventsRequest
+	21, // 57: codexk8s.controlplane.v1.ControlPlaneService.ListRunLearningFeedback:input_type -> codexk8s.controlplane.v1.ListRunLearningFeedbackRequest
+	24, // 58: codexk8s.controlplane.v1.ControlPlaneService.ListUsers:input_type -> codexk8s.controlplane.v1.ListUsersRequest
+	26, // 59: codexk8s.controlplane.v1.ControlPlaneService.CreateUser:input_type -> codexk8s.controlplane.v1.CreateUserRequest
+	27, // 60: codexk8s.controlplane.v1.ControlPlaneService.DeleteUser:input_type -> codexk8s.controlplane.v1.DeleteUserRequest
+	29, // 61: codexk8s.controlplane.v1.ControlPlaneService.ListProjectMembers:input_type -> codexk8s.controlplane.v1.ListProjectMembersRequest
+	31, // 62: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectMember:input_type -> codexk8s.controlplane.v1.UpsertProjectMemberRequest
+	32, // 63: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectMember:input_type -> codexk8s.controlplane.v1.DeleteProjectMemberRequest
+	33, // 64: codexk8s.controlplane.v1.ControlPlaneService.SetProjectMemberLearningModeOverride:input_type -> codexk8s.controlplane.v1.SetProjectMemberLearningModeOverrideRequest
+	35, // 65: codexk8s.controlplane.v1.ControlPlaneService.ListProjectRepositories:input_type -> codexk8s.controlplane.v1.ListProjectRepositoriesRequest
+	37, // 66: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectRepository:input_type -> codexk8s.controlplane.v1.UpsertProjectRepositoryRequest
+	38, // 67: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectRepository:input_type -> codexk8s.controlplane.v1.DeleteProjectRepositoryRequest
+	39, // 68: codexk8s.controlplane.v1.ControlPlaneService.IssueRunMCPToken:input_type -> codexk8s.controlplane.v1.IssueRunMCPTokenRequest
+	41, // 69: codexk8s.controlplane.v1.ControlPlaneService.UpsertAgentSession:input_type -> codexk8s.controlplane.v1.UpsertAgentSessionRequest
+	44, // 70: codexk8s.controlplane.v1.ControlPlaneService.GetLatestAgentSession:input_type -> codexk8s.controlplane.v1.GetLatestAgentSessionRequest
+	46, // 71: codexk8s.controlplane.v1.ControlPlaneService.InsertRunFlowEvent:input_type -> codexk8s.controlplane.v1.InsertRunFlowEventRequest
+	2,  // 72: codexk8s.controlplane.v1.ControlPlaneService.IngestGitHubWebhook:output_type -> codexk8s.controlplane.v1.IngestGitHubWebhookResponse
+	4,  // 73: codexk8s.controlplane.v1.ControlPlaneService.ResolveStaffByEmail:output_type -> codexk8s.controlplane.v1.ResolveStaffByEmailResponse
+	6,  // 74: codexk8s.controlplane.v1.ControlPlaneService.AuthorizeOAuthUser:output_type -> codexk8s.controlplane.v1.AuthorizeOAuthUserResponse
+	9,  // 75: codexk8s.controlplane.v1.ControlPlaneService.ListProjects:output_type -> codexk8s.controlplane.v1.ListProjectsResponse
+	7,  // 76: codexk8s.controlplane.v1.ControlPlaneService.UpsertProject:output_type -> codexk8s.controlplane.v1.Project
+	7,  // 77: codexk8s.controlplane.v1.ControlPlaneService.GetProject:output_type -> codexk8s.controlplane.v1.Project
+	51, // 78: codexk8s.controlplane.v1.ControlPlaneService.DeleteProject:output_type -> google.protobuf.Empty
+	15, // 79: codexk8s.controlplane.v1.ControlPlaneService.ListRuns:output_type -> codexk8s.controlplane.v1.ListRunsResponse
+	13, // 80: codexk8s.controlplane.v1.ControlPlaneService.GetRun:output_type -> codexk8s.controlplane.v1.Run
+	19, // 81: codexk8s.controlplane.v1.ControlPlaneService.ListRunEvents:output_type -> codexk8s.controlplane.v1.ListRunEventsResponse
+	22, // 82: codexk8s.controlplane.v1.ControlPlaneService.ListRunLearningFeedback:output_type -> codexk8s.controlplane.v1.ListRunLearningFeedbackResponse
+	25, // 83: codexk8s.controlplane.v1.ControlPlaneService.ListUsers:output_type -> codexk8s.controlplane.v1.ListUsersResponse
+	23, // 84: codexk8s.controlplane.v1.ControlPlaneService.CreateUser:output_type -> codexk8s.controlplane.v1.User
+	51, // 85: codexk8s.controlplane.v1.ControlPlaneService.DeleteUser:output_type -> google.protobuf.Empty
+	30, // 86: codexk8s.controlplane.v1.ControlPlaneService.ListProjectMembers:output_type -> codexk8s.controlplane.v1.ListProjectMembersResponse
+	51, // 87: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectMember:output_type -> google.protobuf.Empty
+	51, // 88: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectMember:output_type -> google.protobuf.Empty
+	51, // 89: codexk8s.controlplane.v1.ControlPlaneService.SetProjectMemberLearningModeOverride:output_type -> google.protobuf.Empty
+	36, // 90: codexk8s.controlplane.v1.ControlPlaneService.ListProjectRepositories:output_type -> codexk8s.controlplane.v1.ListProjectRepositoriesResponse
+	34, // 91: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectRepository:output_type -> codexk8s.controlplane.v1.RepositoryBinding
+	51, // 92: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectRepository:output_type -> google.protobuf.Empty
+	40, // 93: codexk8s.controlplane.v1.ControlPlaneService.IssueRunMCPToken:output_type -> codexk8s.controlplane.v1.IssueRunMCPTokenResponse
+	42, // 94: codexk8s.controlplane.v1.ControlPlaneService.UpsertAgentSession:output_type -> codexk8s.controlplane.v1.UpsertAgentSessionResponse
+	45, // 95: codexk8s.controlplane.v1.ControlPlaneService.GetLatestAgentSession:output_type -> codexk8s.controlplane.v1.GetLatestAgentSessionResponse
+	47, // 96: codexk8s.controlplane.v1.ControlPlaneService.InsertRunFlowEvent:output_type -> codexk8s.controlplane.v1.InsertRunFlowEventResponse
+	72, // [72:97] is the sub-list for method output_type
+	47, // [47:72] is the sub-list for method input_type
+	47, // [47:47] is the sub-list for extension type_name
+	47, // [47:47] is the sub-list for extension extendee
+	0,  // [0:47] is the sub-list for field type_name
 }
 
 func init() { file_codexk8s_controlplane_v1_controlplane_proto_init() }
@@ -2957,13 +3812,15 @@ func file_codexk8s_controlplane_v1_controlplane_proto_init() {
 	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[20].OneofWrappers = []any{}
 	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[23].OneofWrappers = []any{}
 	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[31].OneofWrappers = []any{}
+	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[41].OneofWrappers = []any{}
+	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[43].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_codexk8s_controlplane_v1_controlplane_proto_rawDesc), len(file_codexk8s_controlplane_v1_controlplane_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   41,
+			NumMessages:   48,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -39,7 +39,7 @@ approvals:
 | `pm` | `code-only` | optional | no | no direct | no |
 | `sa` | `full-env` | yes | no | schema/read-only via API | no |
 | `em` | `full-env` | yes | limited (slot orchestration only) | no direct | no |
-| `dev` | `full-env` | yes | via MCP tools + approval policy | read/write in run namespace scope | no direct |
+| `dev` | `full-env` | yes | via MCP tools + approval policy | read/write in run namespace scope | git transport token only |
 | `reviewer` | `full-env` | yes | no direct (only diagnostic MCP calls) | read-only in run namespace scope | no |
 | `qa` | `full-env` | yes | limited (test jobs) | read-only test scope | no |
 | `sre` | `full-env` | yes | yes (via policy + approval) | diagnostic read-only | via controlled tools |
@@ -86,8 +86,10 @@ approvals:
 ## Контроль доступа к данным и секретам
 
 - Repo tokens хранятся в БД в шифрованном виде и не логируются.
-- Agent pod получает только минимально необходимый секрет на время run.
-- Прямой доступ агента к cluster secrets запрещён, кроме управляемых MCP-инструментов с policy.
+- Agent pod получает только минимально необходимые runtime-секреты на время run:
+  - `CODEXK8S_OPENAI_API_KEY` для codex auth;
+  - `CODEXK8S_GIT_BOT_TOKEN` для git transport path.
+- Прямой доступ агента к cluster secrets запрещён; Kubernetes/GitHub governance операции идут через MCP policy path.
 
 ## Аудит
 

@@ -1,0 +1,142 @@
+package runner
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log/slog"
+
+	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
+	cpclient "github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/controlplane"
+)
+
+// ExitError allows caller to map runner failures to process exit code.
+type ExitError struct {
+	ExitCode int
+	Err      error
+}
+
+func (e ExitError) Error() string {
+	if e.Err == nil {
+		return fmt.Sprintf("runner failed with exit code %d", e.ExitCode)
+	}
+	return e.Err.Error()
+}
+
+func (e ExitError) Unwrap() error {
+	return e.Err
+}
+
+// Config defines runtime parameters for one agent-runner job.
+type Config struct {
+	RunID              string
+	CorrelationID      string
+	ProjectID          string
+	RepositoryFullName string
+	AgentKey           string
+	IssueNumber        int64
+
+	TriggerKind          string
+	PromptTemplateKind   string
+	PromptTemplateSource string
+	PromptTemplateLocale string
+	AgentModel           string
+	AgentReasoningEffort string
+	AgentBaseBranch      string
+	AgentDisplayName     string
+
+	ControlPlaneGRPCTarget string
+	MCPBaseURL             string
+	MCPBearerToken         string
+
+	GitBotToken    string
+	GitBotUsername string
+	GitBotMail     string
+	OpenAIAPIKey   string
+}
+
+// ControlPlaneCallbacks defines required control-plane callbacks for runner lifecycle.
+type ControlPlaneCallbacks interface {
+	UpsertAgentSession(ctx context.Context, params cpclient.AgentSessionUpsertParams) error
+	GetLatestAgentSession(ctx context.Context, query cpclient.LatestAgentSessionQuery) (cpclient.AgentSessionSnapshot, bool, error)
+	InsertRunFlowEvent(ctx context.Context, runID string, eventType floweventdomain.EventType, payload json.RawMessage) error
+}
+
+// Service runs one codex-driven development/revise cycle.
+type Service struct {
+	cfg    Config
+	cp     ControlPlaneCallbacks
+	logger *slog.Logger
+}
+
+// NewService creates runner service.
+func NewService(cfg Config, cp ControlPlaneCallbacks, logger *slog.Logger) *Service {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &Service{cfg: cfg, cp: cp, logger: logger}
+}
+
+type runResult struct {
+	targetBranch        string
+	triggerKind         string
+	templateKind        string
+	restoredSessionPath string
+	sessionFilePath     string
+	sessionID           string
+	existingPRNumber    int
+	prNumber            int
+	prURL               string
+	reportJSON          json.RawMessage
+}
+
+type restoredSession struct {
+	restoredSessionPath string
+	existingPRNumber    int
+	prNotFound          bool
+}
+
+type codexState struct {
+	homeDir      string
+	codexDir     string
+	sessionsDir  string
+	workspaceDir string
+	repoDir      string
+}
+
+type codexReport struct {
+	Summary         string `json:"summary"`
+	Branch          string `json:"branch"`
+	PRNumber        int    `json:"pr_number"`
+	PRURL           string `json:"pr_url"`
+	SessionID       string `json:"session_id"`
+	Model           string `json:"model"`
+	ReasoningEffort string `json:"reasoning_effort"`
+}
+
+type promptTaskTemplateData struct {
+	BaseBranch   string
+	PromptLocale string
+}
+
+type promptEnvelopeTemplateData struct {
+	RepositoryFullName string
+	RunID              string
+	IssueNumber        int64
+	AgentKey           string
+	TargetBranch       string
+	BaseBranch         string
+	TriggerKind        string
+	HasExistingPR      bool
+	ExistingPRNumber   int
+	HasContext7        bool
+	PromptLocale       string
+	TaskBody           string
+}
+
+type codexConfigTemplateData struct {
+	Model           string
+	ReasoningEffort string
+	MCPBaseURL      string
+	HasContext7     bool
+}

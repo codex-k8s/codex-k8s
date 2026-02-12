@@ -19,6 +19,7 @@ type githubRunPayload struct {
 	CorrelationID string                     `json:"correlation_id"`
 	Project       githubRunProjectPayload    `json:"project"`
 	LearningMode  bool                       `json:"learning_mode"`
+	Agent         githubRunAgentPayload      `json:"agent"`
 	Issue         *githubRunIssuePayload     `json:"issue,omitempty"`
 	Trigger       *githubIssueTriggerPayload `json:"trigger,omitempty"`
 }
@@ -44,6 +45,12 @@ type githubRunProjectPayload struct {
 	RepositoryID    string `json:"repository_id"`
 	ServicesYAML    string `json:"services_yaml"`
 	BindingResolved bool   `json:"binding_resolved"`
+}
+
+type githubRunAgentPayload struct {
+	ID   string `json:"id,omitempty"`
+	Key  string `json:"key"`
+	Name string `json:"name"`
 }
 
 type githubRunIssuePayload struct {

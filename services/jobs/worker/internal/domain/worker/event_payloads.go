@@ -17,16 +17,31 @@ const (
 	runFailureReasonKubernetesJobNotFound  runFailureReason = "kubernetes job not found"
 	runFailureReasonNamespacePrepareFailed runFailureReason = "namespace_prepare_failed"
 	runFailureReasonMCPTokenIssueFailed    runFailureReason = "mcp_token_issue_failed"
+	runFailureReasonAgentContextResolve    runFailureReason = "agent_context_resolve_failed"
+	runFailureReasonPreconditionFailed     runFailureReason = "failed_precondition"
 )
 
 // runStartedEventPayload defines payload shape for run.started flow events.
 type runStartedEventPayload struct {
-	RunID        string                  `json:"run_id"`
-	ProjectID    string                  `json:"project_id"`
-	SlotNo       int                     `json:"slot_no"`
-	JobName      string                  `json:"job_name"`
-	JobNamespace string                  `json:"job_namespace"`
-	RuntimeMode  agentdomain.RuntimeMode `json:"runtime_mode"`
+	RunID                string                  `json:"run_id"`
+	ProjectID            string                  `json:"project_id"`
+	SlotNo               int                     `json:"slot_no"`
+	JobName              string                  `json:"job_name"`
+	JobNamespace         string                  `json:"job_namespace"`
+	RuntimeMode          agentdomain.RuntimeMode `json:"runtime_mode"`
+	RepositoryFullName   string                  `json:"repository_full_name,omitempty"`
+	AgentKey             string                  `json:"agent_key,omitempty"`
+	IssueNumber          int64                   `json:"issue_number,omitempty"`
+	TriggerKind          string                  `json:"trigger_kind,omitempty"`
+	TriggerLabel         string                  `json:"trigger_label,omitempty"`
+	Model                string                  `json:"model,omitempty"`
+	ModelSource          string                  `json:"model_source,omitempty"`
+	ReasoningEffort      string                  `json:"reasoning_effort,omitempty"`
+	ReasoningSource      string                  `json:"reasoning_source,omitempty"`
+	PromptTemplateKind   string                  `json:"prompt_template_kind,omitempty"`
+	PromptTemplateSource string                  `json:"prompt_template_source,omitempty"`
+	PromptTemplateLocale string                  `json:"prompt_template_locale,omitempty"`
+	BaseBranch           string                  `json:"base_branch,omitempty"`
 }
 
 // runFinishedEventPayload defines payload shape for run finish flow events.

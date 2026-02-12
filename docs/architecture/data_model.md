@@ -5,7 +5,7 @@ title: "codex-k8s — Data Model"
 status: draft
 owner_role: SA
 created_at: 2026-02-06
-updated_at: 2026-02-11
+updated_at: 2026-02-12
 related_issues: [1]
 related_prs: []
 approvals:
@@ -152,26 +152,39 @@ Planned extension (Day6+):
 
 ### Entity: agent_sessions
 - Назначение: детальная телеметрия и аудит выполнения агентной сессии.
-- Важные инварианты: один `session_id` уникален; сессия связана с run.
+- Важные инварианты (текущий baseline Day4): одна запись на `run_id` (unique), сессия связана с run.
 - Поля:
 
 | Field | Type | Nullable | Default | Constraints | Notes |
 |---|---|---:|---|---|---|
 | id | bigserial | no |  | pk | |
-| session_id | text | no |  | unique | external/model session id |
 | run_id | uuid | no |  | fk -> agent_runs | |
-| agent_id | uuid | no |  | fk -> agents | |
-| role_key | text | no |  |  | effective role key |
-| namespace | text | yes |  |  | run namespace if full-env |
-| status | text | no | "running" | check enum | running/succeeded/failed/cancelled |
+| correlation_id | text | no |  |  | |
+| project_id | uuid | yes |  | fk -> projects | |
+| repository_full_name | text | no |  |  | |
+| issue_number | int | yes |  |  | |
+| branch_name | text | yes |  |  | |
+| pr_number | int | yes |  |  | |
+| pr_url | text | yes |  |  | |
+| trigger_kind | text | yes |  |  | |
+| template_kind | text | yes |  |  | |
+| template_source | text | yes |  |  | |
+| template_locale | text | yes |  |  | |
+| model | text | yes |  |  | |
+| reasoning_effort | text | yes |  |  | |
+| status | text | no | "running" | check enum | running/succeeded/failed/cancelled/failed_precondition |
+| session_id | text | yes |  |  | external/model session id |
 | session_json | jsonb | no | '{}'::jsonb |  | tool calls, summarized context |
 | codex_cli_session_path | text | yes |  |  | path to saved session file in workspace/storage |
 | codex_cli_session_json | jsonb | yes |  |  | persisted codex-cli session snapshot for resume |
-| wait_state | text | no | "none" | check(none,owner_review,mcp) | current blocking wait |
-| timeout_guard_disabled | bool | no | false |  | true while wait_state=mcp |
-| last_heartbeat_at | timestamptz | yes |  |  | liveness/resume support |
 | started_at | timestamptz | no | now() |  | |
 | finished_at | timestamptz | yes |  |  | |
+| created_at | timestamptz | no | now() |  | |
+| updated_at | timestamptz | no | now() |  | |
+
+Планируемое расширение (Day6+):
+- добавить wait-state/time-guard поля (`wait_state`, `timeout_guard_disabled`, `last_heartbeat_at`);
+- расширить связи по `agent_id` и policy snapshot для более детального governance-аудита.
 
 ### Entity: token_usage
 - Назначение: учёт токенов/стоимости по сессиям и моделям.
@@ -307,7 +320,7 @@ Planned extension (Day6+):
 - `agent_policies` 1:N `agents`
 - `agents` 1:N `agent_runs`
 - `projects` 1:N `agents` (для custom-агентов)
-- `agent_runs` 1:N `agent_sessions`
+- `agent_runs` 1:1 `agent_sessions` (текущий baseline Day4 по `run_id unique`; может эволюционировать до 1:N при multi-session run)
 - `agent_sessions` 1:N `token_usage`
 - `projects` 1:N `slots`
 - `docs_meta` 1:N `doc_chunks`

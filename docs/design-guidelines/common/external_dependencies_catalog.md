@@ -58,6 +58,7 @@
 | `helm` | bootstrap scripts | установка ARC и инфраструктурных компонентов |
 | `openssl` | bootstrap scripts | генерация секретов |
 | `kaniko` | CI build pipeline | сборка образа внутри кластера |
+| `@openai/codex` (CLI) | `services/jobs/agent-runner` runtime | выполнение `codex exec`/`resume` в агентном Job-контуре Day4 |
 | `github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen` | Make codegen pipeline | генерация Go transport-артефактов из OpenAPI |
 
 ## Процесс изменений каталога

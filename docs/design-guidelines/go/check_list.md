@@ -6,9 +6,12 @@
 - Структура сервиса соответствует `docs/design-guidelines/go/services_design_requirements.md` (domain/transport/repository разделены; нет доменной логики в transport).
 - Доменные модели разложены системно (`internal/domain/types/{entity,value,enum,query,mixin}`), а не объявлены ad-hoc внутри service/handler файлов.
 - Репозиторные контракты не хранят доменные модели “вперемешку” в `repository.go`: модели вынесены в `internal/domain/types/**` и подключаются как aliases/imports.
+- Для transport/domain persistence payload-моделей нет anonymous `struct{...}` в production-коде: используются именованные типы в профильных пакетах (`types/*`, `transport/*/models`, `casters`).
 - В transport-слое ответы типизированы (DTO модели + кастеры); нет `map[string]any`/`[]any`/`any` как API-контрактов.
 - JSON payload, сохраняемые в БД/события (например `*_payload`), типизированы через struct + caster; нет `map[string]any` в коммитнутом production-коде.
 - Повторяющиеся строковые доменные значения вынесены в typed-константы (без копипасты литералов по коду).
+- В больших `service.go`/`handler.go` вспомогательные модели/типы/no-op реализации вынесены в отдельные файлы пакета (`*_types.go`, `*_helpers.go`, `*_noop.go`).
+- Helper-код разложен по уровню переиспользования: локальный helper только для одного места; общий для пакета в `*_helpers.go`; межсервисный в `libs/*`.
 - Ошибки маппятся на границе транспорта (HTTP error handler / gRPC interceptor); в handlers нет ad-hoc маппинга межслойных ошибок.
 - `context.Background()` создан только в composition root (`internal/app/*`); в transport/domain/repository используется прокинутый контекст.
 - Функции/методы оформлены с компактными сигнатурами (предпочтительно в одну строку); при большом числе аргументов используется `Config/Params/Input` структура.

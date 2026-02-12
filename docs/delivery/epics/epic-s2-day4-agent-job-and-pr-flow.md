@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S2-D4
 type: epic
 title: "Epic S2 Day 4: Agent job image, git workflow and PR creation"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-10
 updated_at: 2026-02-12
@@ -65,7 +65,7 @@ approvals:
 - `run:dev` создает PR.
 - `run:dev:revise` обновляет существующий PR; при отсутствии PR запуск отклоняется с диагностикой.
 - В `flow_events` есть трасса: issue -> run -> namespace -> job -> pr.
-- Агентный pod не содержит GitHub/Kubernetes секретов; write-действия проходят через MCP-контур.
+- Агентный pod не содержит Kubernetes секретов и не получает GitHub governance credentials; governance write-действия проходят через MCP-контур.
 - Агентный pod содержит только минимальный GitHub bot-token для git push-path; governance действия по GitHub/Kubernetes проходят через MCP-контур.
 
 ## Контекст и референсы реализации
@@ -266,3 +266,49 @@ PR policy:
 - Открытый выбор для long-term:
   - оставить CLI-first runtime как baseline;
   - или вынести control loop в отдельный SDK/app-server слой (без потери совместимости с CLI-сессиями).
+
+## Фактическая реализация (2026-02-12)
+- Добавлен отдельный runtime image `services/jobs/agent-runner/Dockerfile` и Go-бинарь `services/jobs/agent-runner/cmd/agent-runner`:
+  - инструменты runtime устанавливаются проектным bootstrap-скриптом `services/jobs/agent-runner/scripts/bootstrap_tools.sh` (после установки `@openai/codex`);
+  - baseline toolchain включает `go`, `protoc` + `protoc-gen-go`/`protoc-gen-go-grpc`, `oapi-codegen`, `openapi-ts`, `golangci-lint`, `dupl`, а также базовые утилиты (`git`, `jq`, `bash`);
+  - governance write-действия по GitHub/Kubernetes выполняются через MCP policy/audit контур;
+- В `control-plane` добавлены gRPC callback методы для agent-runner:
+  - `UpsertAgentSession`,
+  - `GetLatestAgentSession`,
+  - `InsertRunFlowEvent`.
+- Персистентность resumable session расширена до multi-agent сценария:
+  - в `agent_sessions` добавлен `agent_key`;
+  - latest-session lookup выполняется по `repository_full_name + branch_name + agent_key`;
+  - revise-path восстанавливает только сессию соответствующего системного агента.
+- В worker runtime-context протащен `agent_key` и `CODEXK8S_CONTROL_PLANE_GRPC_TARGET` в run job env.
+- В `flow_events` сохранены события Day4:
+  - `run.agent.started`,
+  - `run.agent.session.restored`,
+  - `run.agent.session.saved`,
+  - `run.agent.resume.used`,
+  - `run.pr.created`,
+  - `run.pr.updated`,
+  - `run.revise.pr_not_found`,
+  - `run.failed.precondition`.
+- В run pod реализована split access model:
+  - прямых Kubernetes credentials нет;
+  - GitHub/Kubernetes governance-операции выполняются через MCP;
+  - для git transport path используется выделенный `CODEXK8S_GIT_BOT_TOKEN`.
+- Обновлены CI/deploy/bootstrap pipeline:
+  - добавлен компонент сборки `agent-runner`;
+  - добавлены image/env/secret/variable (`CODEXK8S_AGENT_RUNNER_IMAGE`, `CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME`, `CODEXK8S_AGENT_DEFAULT_*`, `CODEXK8S_AGENT_BASE_BRANCH`, `CODEXK8S_GIT_BOT_TOKEN`);
+  - `CODEXK8S_WORKER_JOB_IMAGE` по умолчанию переключен на `agent-runner`.
+
+### Label flow (S2 baseline + next)
+- S2 baseline: `run:dev` и `run:dev:revise` остаются единственными активными trigger-labels для dev цикла.
+- После выполнения run управление label/state выполняется через MCP-ручки, чтобы исключить гонки ручных и агентных изменений.
+- Follow-up в плане:
+  - Day5: детерминированные post-run label transitions для owner flow (`run:* -> state:*`),
+  - Day6: policy/audit hardening для автоматических label transitions и конфликтов.
+  - Day6+: вынести `mcp_servers.codex_k8s.tool_timeout_sec` в настраиваемую policy/runtime-конфигурацию (пер-run/пер-agent), чтобы поддержать долгие approver flow (часы) без ручных правок шаблона.
+## Критерии приемки эпика — статус
+- Выполнено: `run:dev` запускает агентный Job и поддерживает PR-flow.
+- Выполнено: `run:dev:revise` работает с resume-path, при отсутствии PR отклоняется с `failed_precondition` и событием `run.revise.pr_not_found`.
+- Выполнено: `flow_events` содержит трассу `issue -> run -> namespace -> job -> pr` с Day4 событиями агента.
+- Выполнено: agent pod не получает прямые Kubernetes credentials; governance-операции по GitHub/Kubernetes проходят через MCP-контур.
+- Выполнено: split access model введена (минимальный git transport token + MCP governance path).
