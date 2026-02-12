@@ -274,26 +274,8 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 					{Name: "CODEXK8S_PROMPT_TEMPLATE_SOURCE", Value: strings.TrimSpace(spec.PromptTemplateSource)},
 					{Name: "CODEXK8S_PROMPT_TEMPLATE_LOCALE", Value: strings.TrimSpace(spec.PromptTemplateLocale)},
 					{Name: "CODEXK8S_AGENT_BASE_BRANCH", Value: strings.TrimSpace(spec.BaseBranch)},
-					{
-						Name: "CODEXK8S_OPENAI_API_KEY",
-						ValueFrom: &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{Name: l.cfg.RunCredentialsSecretName},
-								Key:                  "CODEXK8S_OPENAI_API_KEY",
-								Optional:             ptrBool(true),
-							},
-						},
-					},
-					{
-						Name: "CODEXK8S_GIT_BOT_TOKEN",
-						ValueFrom: &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{Name: l.cfg.RunCredentialsSecretName},
-								Key:                  "CODEXK8S_GIT_BOT_TOKEN",
-								Optional:             ptrBool(true),
-							},
-						},
-					},
+					{Name: "CODEXK8S_OPENAI_API_KEY", Value: strings.TrimSpace(spec.OpenAIAPIKey)},
+					{Name: "CODEXK8S_GIT_BOT_TOKEN", Value: strings.TrimSpace(spec.GitBotToken)},
 				},
 			},
 		},
@@ -330,10 +312,6 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 				Spec: podSpec,
 			},
 		},
-	}
-
-	if err := l.ensureRunCredentialsSecret(ctx, ref.Namespace, spec); err != nil {
-		return JobRef{}, fmt.Errorf("ensure run credentials secret for %s/%s: %w", ref.Namespace, ref.Name, err)
 	}
 
 	_, err := l.client.BatchV1().Jobs(ref.Namespace).Create(ctx, job, metav1.CreateOptions{})
@@ -467,9 +445,4 @@ func hasTerminalWaitingReason(statuses []corev1.ContainerStatus) bool {
 		}
 	}
 	return false
-}
-
-func ptrBool(value bool) *bool {
-	v := value
-	return &v
 }

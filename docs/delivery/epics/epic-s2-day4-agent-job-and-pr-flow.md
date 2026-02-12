@@ -297,7 +297,7 @@ PR policy:
   - прямых Kubernetes credentials нет;
   - GitHub governance-операции выполняются через MCP;
   - для git transport path используется выделенный `CODEXK8S_GIT_BOT_TOKEN`;
-  - `CODEXK8S_OPENAI_API_KEY` и `CODEXK8S_GIT_BOT_TOKEN` передаются через runtime secret в per-run namespace.
+  - `CODEXK8S_OPENAI_API_KEY` и `CODEXK8S_GIT_BOT_TOKEN` инжектятся в run pod как env без выдачи Kubernetes credentials агенту.
 - Обновлены CI/deploy/bootstrap pipeline:
   - добавлен компонент сборки `agent-runner`;
   - добавлены image/env/secret/variable (`CODEXK8S_AGENT_RUNNER_IMAGE`, `CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME`, `CODEXK8S_AGENT_DEFAULT_*`, `CODEXK8S_AGENT_BASE_BRANCH`, `CODEXK8S_GIT_BOT_TOKEN`);

@@ -311,7 +311,7 @@ rules:
     resources: ["roles", "rolebindings"]
     verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
   - apiGroups: [""]
-    resources: ["serviceaccounts", "resourcequotas", "limitranges", "secrets", "pods", "pods/log", "events"]
+    resources: ["serviceaccounts", "resourcequotas", "limitranges", "pods", "pods/log", "events"]
     verbs: ["get", "list", "watch", "create", "delete", "patch", "update"]
   - apiGroups: [""]
     resources: ["configmaps", "endpoints", "services"]

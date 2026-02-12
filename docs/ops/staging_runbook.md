@@ -78,13 +78,13 @@ for run_ns in $(kubectl get ns -l codex-k8s.dev/managed-by=codex-k8s-worker,code
   kubectl -n "${run_ns}" get sa,role,rolebinding,resourcequota,limitrange,job,pod
 done
 
-# Day4: проверить runtime secret и логи agent-runner job
+# Day4: проверить env wiring и логи agent-runner job
 for run_ns in $(kubectl get ns -l codex-k8s.dev/managed-by=codex-k8s-worker,codex-k8s.dev/namespace-purpose=run -o jsonpath='{.items[*].metadata.name}'); do
-  echo "=== ${run_ns} runtime secret ==="
-  kubectl -n "${run_ns}" get secret codex-run-credentials -o jsonpath='{.data.CODEXK8S_OPENAI_API_KEY}' | wc -c
-  kubectl -n "${run_ns}" get secret codex-run-credentials -o jsonpath='{.data.CODEXK8S_GIT_BOT_TOKEN}' | wc -c
   echo "=== ${run_ns} agent jobs ==="
   kubectl -n "${run_ns}" get jobs,pods
+  kubectl -n "${run_ns}" get pod -l app.kubernetes.io/name=codex-k8s-run \
+    -o jsonpath='{range .items[*].spec.containers[*].env[*]}{.name}{"\n"}{end}' \
+    | grep -E 'CODEXK8S_OPENAI_API_KEY|CODEXK8S_GIT_BOT_TOKEN' || true
 done
 
 # Legacy runtime keys must not appear after Day3 rollout
