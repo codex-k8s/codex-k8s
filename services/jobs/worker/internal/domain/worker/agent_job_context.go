@@ -21,6 +21,7 @@ const (
 
 type runAgentContext struct {
 	RepositoryFullName   string
+	AgentKey             string
 	IssueNumber          int64
 	TriggerKind          string
 	TriggerLabel         string
@@ -56,6 +57,7 @@ type runAgentTrigger struct {
 }
 
 type runAgentDescriptor struct {
+	Key  string `json:"key"`
 	Name string `json:"name"`
 }
 
@@ -76,6 +78,7 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 
 	ctx := runAgentContext{
 		RepositoryFullName: strings.TrimSpace(payload.repositoryFullName),
+		AgentKey:           strings.TrimSpace(payload.agentKey),
 		IssueNumber:        payload.issueNumber,
 		TriggerKind:        normalizeTriggerKind(payload.triggerKind),
 		TriggerLabel:       strings.TrimSpace(payload.triggerLabel),
@@ -96,6 +99,9 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 	}
 	if ctx.TriggerKind == triggerKindDevRevise {
 		ctx.PromptTemplateKind = promptTemplateKindReview
+	}
+	if ctx.AgentKey == "" {
+		return runAgentContext{}, fmt.Errorf("failed_precondition: run payload missing agent.key")
 	}
 	if ctx.AgentDisplayName == "" {
 		return runAgentContext{}, fmt.Errorf("failed_precondition: run payload missing agent.name")
@@ -126,6 +132,7 @@ type runAgentDefaults struct {
 
 type parsedRunAgentPayload struct {
 	repositoryFullName string
+	agentKey           string
 	issueNumber        int64
 	triggerKind        string
 	triggerLabel       string
@@ -153,6 +160,7 @@ func parseRunAgentPayload(raw json.RawMessage) parsedRunAgentPayload {
 		out.triggerLabel = strings.TrimSpace(payload.Trigger.Label)
 	}
 	if payload.Agent != nil {
+		out.agentKey = strings.TrimSpace(payload.Agent.Key)
 		out.agentDisplayName = strings.TrimSpace(payload.Agent.Name)
 	}
 	out.issueLabels = extractIssueLabels(payload.RawPayload)

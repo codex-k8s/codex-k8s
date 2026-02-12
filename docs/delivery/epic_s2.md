@@ -33,6 +33,7 @@ approvals:
 - Day 3: `docs/delivery/epics/epic-s2-day3-per-issue-namespace-and-rbac.md`
 - Day 3.5: `docs/delivery/epics/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md`
 - Day 4: `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md`
+- Day 4.5: `docs/delivery/epics/epic-s2-day4.5-pgx-db-models-and-repository-refactor.md`
 - Day 5: `docs/delivery/epics/epic-s2-day5-staff-ui-dogfooding-observability.md`
 - Day 6: `docs/delivery/epics/epic-s2-day6-approval-and-audit-hardening.md`
 - Day 7: `docs/delivery/epics/epic-s2-day7-dogfooding-regression-gate.md`
@@ -44,6 +45,7 @@ approvals:
 - Day 3: completed + approved.
 - Day 3.5: completed (MCP-first tool layer + prompt context assembler готовы как dependency для Day4).
 - Day 4: completed (agent-runner runtime, session persistence/resume, split access model и PR-flow через MCP).
+- Day 4.5: planned (pgx + db-model rollout).
 - Day 5..7: planned.
 
 ## Критерий успеха Sprint S2 (выжимка)

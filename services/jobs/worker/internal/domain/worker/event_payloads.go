@@ -30,6 +30,7 @@ type runStartedEventPayload struct {
 	JobNamespace         string                  `json:"job_namespace"`
 	RuntimeMode          agentdomain.RuntimeMode `json:"runtime_mode"`
 	RepositoryFullName   string                  `json:"repository_full_name,omitempty"`
+	AgentKey             string                  `json:"agent_key,omitempty"`
 	IssueNumber          int64                   `json:"issue_number,omitempty"`
 	TriggerKind          string                  `json:"trigger_kind,omitempty"`
 	TriggerLabel         string                  `json:"trigger_label,omitempty"`

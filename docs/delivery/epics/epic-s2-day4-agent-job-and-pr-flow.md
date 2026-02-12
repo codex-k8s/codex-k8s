@@ -268,23 +268,20 @@ PR policy:
   - или вынести control loop в отдельный SDK/app-server слой (без потери совместимости с CLI-сессиями).
 
 ## Фактическая реализация (2026-02-12)
-- Добавлен отдельный runtime image `services/jobs/agent-runner/Dockerfile` и entrypoint `services/jobs/agent-runner/scripts/entrypoint.sh`:
-  - инструменты: `@openai/codex`, `git`, `jq`, `curl`, `bash`, `gh`, `kubectl`, `go`;
-  - запуск `codex exec` (dev) и `codex exec resume --last` (revise при восстановленной session);
-  - сохранение snapshot сессии и событий в control-plane internal callbacks.
-- В `control-plane` добавлены internal callback endpoint'ы для agent-runner:
-  - `POST /internal/agent/session`,
-  - `GET /internal/agent/session/latest`,
-  - `POST /internal/agent/event`.
-- Добавлена персистентность resumable session:
-  - миграция `services/internal/control-plane/cmd/cli/migrations/20260212113000_day9_agent_sessions.sql`;
-  - postgres-repository `agentsession` + доменные типы/контракты;
-  - восстановление `codex-cli` session JSON при revise.
-- В worker реализован runtime context resolver для запуска Job:
-  - repository/issue/trigger;
-  - effective model/reasoning из issue labels (`ai-model-*`, `ai-reasoning-*`) с fallback к default env;
-  - конфликт labels одной группы -> `failed_precondition`.
-- В `flow_events` добавлены события Day4:
+- Добавлен отдельный runtime image `services/jobs/agent-runner/Dockerfile` и Go-бинарь `services/jobs/agent-runner/cmd/agent-runner`:
+  - инструменты runtime: `@openai/codex`, `git`, `jq`, `bash`, базовые toolchain (`go` + `node`);
+  - governance-инструменты (`gh`, `kubectl`) из runtime исключены: операции issue/pr/comments/labels и k8s governance выполняются через MCP;
+  - entrypoint shell-логика заменена Go-реализацией, shell-wrapper оставлен только как thin launcher.
+- В `control-plane` добавлены gRPC callback методы для agent-runner:
+  - `UpsertAgentSession`,
+  - `GetLatestAgentSession`,
+  - `InsertRunFlowEvent`.
+- Персистентность resumable session расширена до multi-agent сценария:
+  - в `agent_sessions` добавлен `agent_key`;
+  - latest-session lookup выполняется по `repository_full_name + branch_name + agent_key`;
+  - revise-path восстанавливает только сессию соответствующего системного агента.
+- В worker runtime-context протащен `agent_key` и `CODEXK8S_CONTROL_PLANE_GRPC_TARGET` в run job env.
+- В `flow_events` сохранены события Day4:
   - `run.agent.started`,
   - `run.agent.session.restored`,
   - `run.agent.session.saved`,
@@ -295,14 +292,19 @@ PR policy:
   - `run.failed.precondition`.
 - В run pod реализована split access model:
   - прямых Kubernetes credentials нет;
-  - GitHub governance-операции выполняются через MCP;
-  - для git transport path используется выделенный `CODEXK8S_GIT_BOT_TOKEN`;
-  - `CODEXK8S_OPENAI_API_KEY` и `CODEXK8S_GIT_BOT_TOKEN` инжектятся в run pod как env без выдачи Kubernetes credentials агенту.
+  - GitHub/Kubernetes governance-операции выполняются через MCP;
+  - для git transport path используется выделенный `CODEXK8S_GIT_BOT_TOKEN`.
 - Обновлены CI/deploy/bootstrap pipeline:
   - добавлен компонент сборки `agent-runner`;
   - добавлены image/env/secret/variable (`CODEXK8S_AGENT_RUNNER_IMAGE`, `CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME`, `CODEXK8S_AGENT_DEFAULT_*`, `CODEXK8S_AGENT_BASE_BRANCH`, `CODEXK8S_GIT_BOT_TOKEN`);
   - `CODEXK8S_WORKER_JOB_IMAGE` по умолчанию переключен на `agent-runner`.
 
+### Label flow (S2 baseline + next)
+- S2 baseline: `run:dev` и `run:dev:revise` остаются единственными активными trigger-labels для dev цикла.
+- После выполнения run управление label/state выполняется через MCP-ручки, чтобы исключить гонки ручных и агентных изменений.
+- Follow-up в плане:
+  - Day5: детерминированные post-run label transitions для owner flow (`run:* -> state:*`),
+  - Day6: policy/audit hardening для автоматических label transitions и конфликтов.
 ## Критерии приемки эпика — статус
 - Выполнено: `run:dev` запускает агентный Job и поддерживает PR-flow.
 - Выполнено: `run:dev:revise` работает с resume-path, при отсутствии PR отклоняется с `failed_precondition` и событием `run.revise.pr_not_found`.

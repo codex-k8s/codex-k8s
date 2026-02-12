@@ -179,11 +179,13 @@ func Run() error {
 
 	grpcServer := grpc.NewServer()
 	controlplanev1.RegisterControlPlaneServiceServer(grpcServer, grpctransport.NewServer(grpctransport.Dependencies{
-		Webhook: webhookService,
-		Staff:   staffService,
-		Users:   users,
-		MCP:     mcpService,
-		Logger:  logger,
+		Webhook:    webhookService,
+		Staff:      staffService,
+		Users:      users,
+		Sessions:   agentSessions,
+		FlowEvents: flowEvents,
+		MCP:        mcpService,
+		Logger:     logger,
 	}))
 
 	mcpHandler := mcptransport.NewHandler(mcpService, logger)

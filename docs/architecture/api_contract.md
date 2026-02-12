@@ -51,12 +51,12 @@ approvals:
   - governance path (MCP policy + audit + approval flow).
 
 ## Internal agent callbacks (S2 Day4)
-- Для agent-runner добавлены внутренние HTTP callback endpoint'ы в `control-plane`:
-  - `POST /internal/agent/session` — upsert session snapshot;
-  - `GET /internal/agent/session/latest` — latest session by `(repository_full_name, branch_name)`;
-  - `POST /internal/agent/event` — append Day4 run events.
-- Авторизация callback'ов: run-bound MCP bearer token (`Authorization: Bearer ...`), проверка через `VerifyRunToken`.
-- Эти endpoint'ы внутренние (service-to-service), не входят в public/staff OpenAPI контракт.
+- Для agent-runner добавлены внутренние gRPC callback RPC в `control-plane`:
+  - `UpsertAgentSession` — upsert session snapshot;
+  - `GetLatestAgentSession` — latest session by `(repository_full_name, branch_name, agent_key)`;
+  - `InsertRunFlowEvent` — append Day4 run events.
+- Авторизация callback'ов: run-bound MCP bearer token в gRPC metadata (`authorization: Bearer ...`), проверка через `VerifyRunToken`.
+- Эти RPC внутренние (service-to-service), не входят в public/staff OpenAPI контракт.
 
 ## Состояние OpenAPI после S2 Day1
 - OpenAPI-спека (`services/external/api-gateway/api/server/api.yaml`) покрывает все активные external/staff endpoint'ы текущего среза.

@@ -12,6 +12,7 @@ type sessionUpsertRequest struct {
 	CorrelationID      string          `json:"correlation_id,omitempty"`
 	ProjectID          string          `json:"project_id,omitempty"`
 	RepositoryFullName string          `json:"repository_full_name"`
+	AgentKey           string          `json:"agent_key"`
 	IssueNumber        *int            `json:"issue_number,omitempty"`
 	BranchName         string          `json:"branch_name"`
 	PRNumber           *int            `json:"pr_number,omitempty"`
@@ -41,6 +42,7 @@ type sessionSnapshotDTO struct {
 	CorrelationID      string          `json:"correlation_id"`
 	ProjectID          string          `json:"project_id,omitempty"`
 	RepositoryFullName string          `json:"repository_full_name"`
+	AgentKey           string          `json:"agent_key"`
 	IssueNumber        int             `json:"issue_number,omitempty"`
 	BranchName         string          `json:"branch_name"`
 	PRNumber           int             `json:"pr_number,omitempty"`

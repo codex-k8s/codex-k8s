@@ -16,6 +16,6 @@ type (
 type Repository interface {
 	// Upsert stores or updates run session snapshot by run_id.
 	Upsert(ctx context.Context, params UpsertParams) error
-	// GetLatestByRepositoryBranch returns latest snapshot by repository + branch.
-	GetLatestByRepositoryBranch(ctx context.Context, repositoryFullName string, branchName string) (Session, bool, error)
+	// GetLatestByRepositoryBranchAndAgent returns latest snapshot by repository + branch + agent key.
+	GetLatestByRepositoryBranchAndAgent(ctx context.Context, repositoryFullName string, branchName string, agentKey string) (Session, bool, error)
 }

@@ -41,7 +41,7 @@ type Config struct {
 	// AgentDefaultModel is fallback model when issue labels do not override model.
 	AgentDefaultModel string `env:"CODEXK8S_AGENT_DEFAULT_MODEL" envDefault:"gpt-5.3-codex"`
 	// AgentDefaultReasoningEffort is fallback reasoning profile when issue labels do not override reasoning.
-	AgentDefaultReasoningEffort string `env:"CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT" envDefault:"medium"`
+	AgentDefaultReasoningEffort string `env:"CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT" envDefault:"high"`
 	// AgentDefaultLocale is fallback prompt locale.
 	AgentDefaultLocale string `env:"CODEXK8S_AGENT_DEFAULT_LOCALE" envDefault:"ru"`
 	// AgentBaseBranch is default base branch for PR flow.

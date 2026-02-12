@@ -12,6 +12,7 @@ type AgentSession struct {
 	CorrelationID      string
 	ProjectID          string
 	RepositoryFullName string
+	AgentKey           string
 	IssueNumber        int
 	BranchName         string
 	PRNumber           int

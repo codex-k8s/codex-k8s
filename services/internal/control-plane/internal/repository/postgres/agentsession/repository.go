@@ -15,8 +15,8 @@ import (
 var (
 	//go:embed sql/upsert.sql
 	queryUpsert string
-	//go:embed sql/get_latest_by_repository_branch.sql
-	queryGetLatestByRepositoryBranch string
+	//go:embed sql/get_latest_by_repository_branch_and_agent.sql
+	queryGetLatestByRepositoryBranchAndAgent string
 )
 
 // Repository stores resumable agent sessions in PostgreSQL.
@@ -36,30 +36,32 @@ func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams)
 		status = "running"
 	}
 
-	var (
-		issueNumber any
-		prNumber    any
-		finishedAt  any
-		startedAt   any
-		sessionJSON any
-		codexJSON   any
-	)
-
+	issueNumber := sql.NullInt64{}
 	if params.IssueNumber != nil {
-		issueNumber = *params.IssueNumber
+		issueNumber = sql.NullInt64{Int64: int64(*params.IssueNumber), Valid: true}
 	}
+
+	prNumber := sql.NullInt64{}
 	if params.PRNumber != nil {
-		prNumber = *params.PRNumber
+		prNumber = sql.NullInt64{Int64: int64(*params.PRNumber), Valid: true}
 	}
+
+	finishedAt := sql.NullTime{}
 	if params.FinishedAt != nil {
-		finishedAt = params.FinishedAt.UTC()
+		finishedAt = sql.NullTime{Time: params.FinishedAt.UTC(), Valid: true}
 	}
+
+	startedAt := sql.NullTime{}
 	if !params.StartedAt.IsZero() {
-		startedAt = params.StartedAt.UTC()
+		startedAt = sql.NullTime{Time: params.StartedAt.UTC(), Valid: true}
 	}
+
+	var sessionJSON []byte
 	if len(params.SessionJSON) > 0 {
 		sessionJSON = []byte(params.SessionJSON)
 	}
+
+	var codexJSON []byte
 	if len(params.CodexSessionJSON) > 0 {
 		codexJSON = []byte(params.CodexSessionJSON)
 	}
@@ -69,8 +71,9 @@ func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams)
 		queryUpsert,
 		params.RunID,
 		params.CorrelationID,
-		params.ProjectID,
+		strings.TrimSpace(params.ProjectID),
 		strings.TrimSpace(params.RepositoryFullName),
+		strings.TrimSpace(params.AgentKey),
 		issueNumber,
 		strings.TrimSpace(params.BranchName),
 		prNumber,
@@ -95,8 +98,8 @@ func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams)
 	return nil
 }
 
-// GetLatestByRepositoryBranch returns latest snapshot by repository + branch.
-func (r *Repository) GetLatestByRepositoryBranch(ctx context.Context, repositoryFullName string, branchName string) (domainrepo.Session, bool, error) {
+// GetLatestByRepositoryBranchAndAgent returns latest snapshot by repository + branch + agent key.
+func (r *Repository) GetLatestByRepositoryBranchAndAgent(ctx context.Context, repositoryFullName string, branchName string, agentKey string) (domainrepo.Session, bool, error) {
 	var (
 		item       domainrepo.Session
 		projectID  sql.NullString
@@ -118,15 +121,17 @@ func (r *Repository) GetLatestByRepositoryBranch(ctx context.Context, repository
 
 	err := r.db.QueryRowContext(
 		ctx,
-		queryGetLatestByRepositoryBranch,
+		queryGetLatestByRepositoryBranchAndAgent,
 		strings.TrimSpace(repositoryFullName),
 		strings.TrimSpace(branchName),
+		strings.TrimSpace(agentKey),
 	).Scan(
 		&item.ID,
 		&item.RunID,
 		&item.CorrelationID,
 		&projectID,
 		&item.RepositoryFullName,
+		&item.AgentKey,
 		&issueNum,
 		&item.BranchName,
 		&prNum,
@@ -151,7 +156,7 @@ func (r *Repository) GetLatestByRepositoryBranch(ctx context.Context, repository
 		if errors.Is(err, sql.ErrNoRows) {
 			return domainrepo.Session{}, false, nil
 		}
-		return domainrepo.Session{}, false, fmt.Errorf("get latest agent session by repository+branch: %w", err)
+		return domainrepo.Session{}, false, fmt.Errorf("get latest agent session by repository+branch+agent: %w", err)
 	}
 
 	if projectID.Valid {

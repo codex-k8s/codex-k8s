@@ -3,7 +3,6 @@ package internalapi
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentsession"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
+	agentcallback "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/agentcallback"
 )
 
 type mcpTokenVerifier interface {
@@ -99,6 +99,11 @@ func (h *handler) handleSessionUpsert(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "branch_name is required", http.StatusBadRequest)
 		return
 	}
+	agentKey := strings.TrimSpace(req.AgentKey)
+	if agentKey == "" {
+		http.Error(w, "agent_key is required", http.StatusBadRequest)
+		return
+	}
 
 	startedAt := h.now().UTC()
 	if req.StartedAt != nil {
@@ -129,6 +134,7 @@ func (h *handler) handleSessionUpsert(w http.ResponseWriter, r *http.Request) {
 		CorrelationID:      correlationID,
 		ProjectID:          projectID,
 		RepositoryFullName: repositoryFullName,
+		AgentKey:           agentKey,
 		IssueNumber:        req.IssueNumber,
 		BranchName:         branchName,
 		PRNumber:           req.PRNumber,
@@ -174,14 +180,15 @@ func (h *handler) handleSessionLatest(w http.ResponseWriter, r *http.Request) {
 
 	repositoryFullName := strings.TrimSpace(r.URL.Query().Get("repository_full_name"))
 	branchName := strings.TrimSpace(r.URL.Query().Get("branch_name"))
-	if repositoryFullName == "" || branchName == "" {
-		http.Error(w, "repository_full_name and branch_name are required", http.StatusBadRequest)
+	agentKey := strings.TrimSpace(r.URL.Query().Get("agent_key"))
+	if repositoryFullName == "" || branchName == "" || agentKey == "" {
+		http.Error(w, "repository_full_name, branch_name and agent_key are required", http.StatusBadRequest)
 		return
 	}
 
-	item, found, err := h.sessions.GetLatestByRepositoryBranch(r.Context(), repositoryFullName, branchName)
+	item, found, err := h.sessions.GetLatestByRepositoryBranchAndAgent(r.Context(), repositoryFullName, branchName, agentKey)
 	if err != nil {
-		h.logger.Error("get latest agent session failed", "repository_full_name", repositoryFullName, "branch_name", branchName, "err", err)
+		h.logger.Error("get latest agent session failed", "repository_full_name", repositoryFullName, "branch_name", branchName, "agent_key", agentKey, "err", err)
 		http.Error(w, "failed to load latest agent session", http.StatusInternalServerError)
 		return
 	}
@@ -197,6 +204,7 @@ func (h *handler) handleSessionLatest(w http.ResponseWriter, r *http.Request) {
 			CorrelationID:      item.CorrelationID,
 			ProjectID:          item.ProjectID,
 			RepositoryFullName: item.RepositoryFullName,
+			AgentKey:           item.AgentKey,
 			IssueNumber:        item.IssueNumber,
 			BranchName:         item.BranchName,
 			PRNumber:           item.PRNumber,
@@ -255,7 +263,7 @@ func (h *handler) handleEventInsert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eventType, err := parseAgentEventType(req.EventType)
+	eventType, err := agentcallback.ParseEventType(req.EventType)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -291,7 +299,7 @@ func (h *handler) authenticate(w http.ResponseWriter, r *http.Request) (mcpdomai
 		return mcpdomain.SessionContext{}, false
 	}
 
-	rawToken := bearerToken(r.Header.Get("Authorization"))
+	rawToken := agentcallback.ParseBearerToken(r.Header.Get("Authorization"))
 	if rawToken == "" {
 		http.Error(w, "missing bearer token", http.StatusUnauthorized)
 		return mcpdomain.SessionContext{}, false
@@ -304,38 +312,6 @@ func (h *handler) authenticate(w http.ResponseWriter, r *http.Request) (mcpdomai
 	}
 
 	return session, true
-}
-
-func bearerToken(value string) string {
-	token := strings.TrimSpace(value)
-	if token == "" {
-		return ""
-	}
-	parts := strings.SplitN(token, " ", 2)
-	if len(parts) != 2 {
-		return ""
-	}
-	if !strings.EqualFold(parts[0], "bearer") {
-		return ""
-	}
-	return strings.TrimSpace(parts[1])
-}
-
-func parseAgentEventType(value string) (floweventdomain.EventType, error) {
-	eventType := floweventdomain.EventType(strings.TrimSpace(value))
-	switch eventType {
-	case floweventdomain.EventTypeRunAgentStarted,
-		floweventdomain.EventTypeRunAgentSessionRestored,
-		floweventdomain.EventTypeRunAgentSessionSaved,
-		floweventdomain.EventTypeRunAgentResumeUsed,
-		floweventdomain.EventTypeRunPRCreated,
-		floweventdomain.EventTypeRunPRUpdated,
-		floweventdomain.EventTypeRunRevisePRNotFound,
-		floweventdomain.EventTypeRunFailedPrecondition:
-		return eventType, nil
-	default:
-		return "", fmt.Errorf("unsupported event_type %q", value)
-	}
 }
 
 func normalizeOptionalTime(value *time.Time) *time.Time {

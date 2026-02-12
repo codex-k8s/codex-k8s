@@ -55,6 +55,8 @@ type JobSpec struct {
 	RuntimeMode agentdomain.RuntimeMode
 	// Namespace is preferred namespace for this run.
 	Namespace string
+	// ControlPlaneGRPCTarget is control-plane gRPC endpoint for run callbacks.
+	ControlPlaneGRPCTarget string
 	// MCPBaseURL is control-plane MCP StreamableHTTP endpoint for run pod.
 	MCPBaseURL string
 	// MCPBearerToken is short-lived token bound to run and used for MCP auth.
@@ -67,6 +69,8 @@ type JobSpec struct {
 	TriggerKind string
 	// TriggerLabel is original label that created this run.
 	TriggerLabel string
+	// AgentKey is stable system-agent key used for session ownership.
+	AgentKey string
 	// AgentModel is effective model selected for this run.
 	AgentModel string
 	// AgentReasoningEffort is effective reasoning profile selected for this run.
@@ -268,12 +272,14 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 					{Name: "CODEXK8S_PROJECT_ID", Value: spec.ProjectID},
 					{Name: "CODEXK8S_SLOT_NO", Value: fmt.Sprintf("%d", spec.SlotNo)},
 					{Name: "CODEXK8S_RUNTIME_MODE", Value: string(spec.RuntimeMode)},
+					{Name: "CODEXK8S_CONTROL_PLANE_GRPC_TARGET", Value: strings.TrimSpace(spec.ControlPlaneGRPCTarget)},
 					{Name: "CODEXK8S_MCP_BASE_URL", Value: strings.TrimSpace(spec.MCPBaseURL)},
 					{Name: "CODEXK8S_MCP_BEARER_TOKEN", Value: strings.TrimSpace(spec.MCPBearerToken)},
 					{Name: "CODEXK8S_REPOSITORY_FULL_NAME", Value: strings.TrimSpace(spec.RepositoryFullName)},
 					{Name: "CODEXK8S_ISSUE_NUMBER", Value: fmt.Sprintf("%d", spec.IssueNumber)},
 					{Name: "CODEXK8S_RUN_TRIGGER_KIND", Value: strings.TrimSpace(spec.TriggerKind)},
 					{Name: "CODEXK8S_RUN_TRIGGER_LABEL", Value: strings.TrimSpace(spec.TriggerLabel)},
+					{Name: "CODEXK8S_AGENT_KEY", Value: strings.TrimSpace(spec.AgentKey)},
 					{Name: "CODEXK8S_AGENT_MODEL", Value: strings.TrimSpace(spec.AgentModel)},
 					{Name: "CODEXK8S_AGENT_REASONING_EFFORT", Value: strings.TrimSpace(spec.AgentReasoningEffort)},
 					{Name: "CODEXK8S_PROMPT_TEMPLATE_KIND", Value: strings.TrimSpace(spec.PromptTemplateKind)},

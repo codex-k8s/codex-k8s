@@ -37,6 +37,8 @@ type Config struct {
 	RunNamespacePrefix string
 	// CleanupFullEnvNamespace enables namespace cleanup after run completion.
 	CleanupFullEnvNamespace bool
+	// ControlPlaneGRPCTarget is control-plane gRPC endpoint used by run jobs for callbacks.
+	ControlPlaneGRPCTarget string
 	// ControlPlaneMCPBaseURL is MCP endpoint passed to run job environment.
 	ControlPlaneMCPBaseURL string
 	// OpenAIAPIKey is injected into run pods for codex login.
@@ -105,6 +107,10 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if cfg.RunNamespacePrefix == "" {
 		cfg.RunNamespacePrefix = defaultRunNamespacePrefix
 	}
+	cfg.ControlPlaneGRPCTarget = strings.TrimSpace(cfg.ControlPlaneGRPCTarget)
+	if cfg.ControlPlaneGRPCTarget == "" {
+		cfg.ControlPlaneGRPCTarget = "codex-k8s-control-plane:9090"
+	}
 	cfg.ControlPlaneMCPBaseURL = strings.TrimSpace(cfg.ControlPlaneMCPBaseURL)
 	cfg.OpenAIAPIKey = strings.TrimSpace(cfg.OpenAIAPIKey)
 	cfg.GitBotToken = strings.TrimSpace(cfg.GitBotToken)
@@ -122,7 +128,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	}
 	cfg.AgentDefaultReasoningEffort = strings.TrimSpace(cfg.AgentDefaultReasoningEffort)
 	if cfg.AgentDefaultReasoningEffort == "" {
-		cfg.AgentDefaultReasoningEffort = "medium"
+		cfg.AgentDefaultReasoningEffort = "high"
 	}
 	cfg.AgentDefaultLocale = strings.TrimSpace(cfg.AgentDefaultLocale)
 	if cfg.AgentDefaultLocale == "" {
@@ -319,29 +325,31 @@ func (s *Service) launchPending(ctx context.Context) error {
 		}
 
 		ref, err := s.launcher.Launch(ctx, JobSpec{
-			RunID:                claimed.RunID,
-			CorrelationID:        claimed.CorrelationID,
-			ProjectID:            claimed.ProjectID,
-			SlotNo:               claimed.SlotNo,
-			RuntimeMode:          execution.RuntimeMode,
-			Namespace:            execution.Namespace,
-			MCPBaseURL:           s.cfg.ControlPlaneMCPBaseURL,
-			MCPBearerToken:       issuedMCPToken.Token,
-			RepositoryFullName:   agentCtx.RepositoryFullName,
-			IssueNumber:          agentCtx.IssueNumber,
-			TriggerKind:          agentCtx.TriggerKind,
-			TriggerLabel:         agentCtx.TriggerLabel,
-			AgentModel:           agentCtx.Model,
-			AgentReasoningEffort: agentCtx.ReasoningEffort,
-			PromptTemplateKind:   agentCtx.PromptTemplateKind,
-			PromptTemplateSource: agentCtx.PromptTemplateSource,
-			PromptTemplateLocale: agentCtx.PromptTemplateLocale,
-			BaseBranch:           s.cfg.AgentBaseBranch,
-			OpenAIAPIKey:         s.cfg.OpenAIAPIKey,
-			GitBotToken:          s.cfg.GitBotToken,
-			AgentDisplayName:     agentCtx.AgentDisplayName,
-			GitBotUsername:       s.cfg.GitBotUsername,
-			GitBotMail:           s.cfg.GitBotMail,
+			RunID:                  claimed.RunID,
+			CorrelationID:          claimed.CorrelationID,
+			ProjectID:              claimed.ProjectID,
+			SlotNo:                 claimed.SlotNo,
+			RuntimeMode:            execution.RuntimeMode,
+			Namespace:              execution.Namespace,
+			ControlPlaneGRPCTarget: s.cfg.ControlPlaneGRPCTarget,
+			MCPBaseURL:             s.cfg.ControlPlaneMCPBaseURL,
+			MCPBearerToken:         issuedMCPToken.Token,
+			RepositoryFullName:     agentCtx.RepositoryFullName,
+			IssueNumber:            agentCtx.IssueNumber,
+			TriggerKind:            agentCtx.TriggerKind,
+			TriggerLabel:           agentCtx.TriggerLabel,
+			AgentKey:               agentCtx.AgentKey,
+			AgentModel:             agentCtx.Model,
+			AgentReasoningEffort:   agentCtx.ReasoningEffort,
+			PromptTemplateKind:     agentCtx.PromptTemplateKind,
+			PromptTemplateSource:   agentCtx.PromptTemplateSource,
+			PromptTemplateLocale:   agentCtx.PromptTemplateLocale,
+			BaseBranch:             s.cfg.AgentBaseBranch,
+			OpenAIAPIKey:           s.cfg.OpenAIAPIKey,
+			GitBotToken:            s.cfg.GitBotToken,
+			AgentDisplayName:       agentCtx.AgentDisplayName,
+			GitBotUsername:         s.cfg.GitBotUsername,
+			GitBotMail:             s.cfg.GitBotMail,
 		})
 		if err != nil {
 			s.logger.Error("launch run job failed", "run_id", claimed.RunID, "err", err)
@@ -373,6 +381,7 @@ func (s *Service) launchPending(ctx context.Context) error {
 				JobNamespace:         ref.Namespace,
 				RuntimeMode:          execution.RuntimeMode,
 				RepositoryFullName:   agentCtx.RepositoryFullName,
+				AgentKey:             agentCtx.AgentKey,
 				IssueNumber:          agentCtx.IssueNumber,
 				TriggerKind:          agentCtx.TriggerKind,
 				TriggerLabel:         agentCtx.TriggerLabel,

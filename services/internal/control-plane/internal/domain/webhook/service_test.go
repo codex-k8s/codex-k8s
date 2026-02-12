@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -269,8 +270,20 @@ type inMemoryAgentRepo struct {
 }
 
 func (r *inMemoryAgentRepo) FindEffectiveByKey(_ context.Context, _ string, agentKey string) (agentrepo.Agent, bool, error) {
-	item, ok := r.items[agentKey]
+	if len(r.items) == 0 {
+		return agentrepo.Agent{}, false, nil
+	}
+	lookupKey := strings.TrimSpace(agentKey)
+	if lookupKey == "" {
+		return agentrepo.Agent{}, false, nil
+	}
+	item, ok := r.items[lookupKey]
 	if !ok {
+		for key, value := range r.items {
+			if strings.EqualFold(key, lookupKey) {
+				return value, true, nil
+			}
+		}
 		return agentrepo.Agent{}, false, nil
 	}
 	return item, true, nil
