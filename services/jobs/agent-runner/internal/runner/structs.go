@@ -138,4 +138,5 @@ type codexConfigTemplateData struct {
 	Model           string
 	ReasoningEffort string
 	MCPBaseURL      string
+	HasContext7     bool
 }

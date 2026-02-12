@@ -62,10 +62,12 @@ func (s *Service) renderTaskTemplate(templateKind string) (string, error) {
 }
 
 func (s *Service) writeCodexConfig(codexDir string) error {
+	hasContext7 := strings.TrimSpace(os.Getenv(envContext7APIKey)) != ""
 	content, err := renderTemplate(templateNameCodexConfig, codexConfigTemplateData{
 		Model:           s.cfg.AgentModel,
 		ReasoningEffort: s.cfg.AgentReasoningEffort,
 		MCPBaseURL:      s.cfg.MCPBaseURL,
+		HasContext7:     hasContext7,
 	})
 	if err != nil {
 		return err
