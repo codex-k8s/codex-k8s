@@ -264,6 +264,20 @@ func (s *Service) launchPending(ctx context.Context) error {
 		}
 
 		execution := resolveRunExecutionContext(claimed.RunID, claimed.ProjectID, claimed.RunPayload, s.cfg.RunNamespacePrefix)
+		runningRun := runningRunFromClaimed(claimed)
+		if execution.RuntimeMode != agentdomain.RuntimeModeFullEnv {
+			if err := s.finishRun(ctx, finishRunParams{
+				Run:       runningRun,
+				Execution: execution,
+				Status:    rundomain.StatusSucceeded,
+				EventType: floweventdomain.EventTypeRunSucceeded,
+				Ref:       s.launcher.JobRef(claimed.RunID, execution.Namespace),
+			}); err != nil {
+				return fmt.Errorf("finish code-only run: %w", err)
+			}
+			continue
+		}
+
 		agentCtx, err := resolveRunAgentContext(claimed.RunPayload, runAgentDefaults{
 			DefaultModel:           s.cfg.AgentDefaultModel,
 			DefaultReasoningEffort: s.cfg.AgentDefaultReasoningEffort,
@@ -300,7 +314,6 @@ func (s *Service) launchPending(ctx context.Context) error {
 			RuntimeMode:   execution.RuntimeMode,
 			Namespace:     execution.Namespace,
 		}
-		runningRun := runningRunFromClaimed(claimed)
 		if execution.RuntimeMode == agentdomain.RuntimeModeFullEnv {
 			if err := s.launcher.EnsureNamespace(ctx, namespaceSpec); err != nil {
 				s.logger.Error(
@@ -473,16 +486,18 @@ func (s *Service) finishRun(ctx context.Context, params finishRunParams) error {
 		return fmt.Errorf("insert finish event: %w", err)
 	}
 
-	if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
-		RunID:        params.Run.RunID,
-		Phase:        RunStatusPhaseFinished,
-		JobName:      params.Ref.Name,
-		JobNamespace: params.Ref.Namespace,
-		RuntimeMode:  string(params.Execution.RuntimeMode),
-		Namespace:    params.Execution.Namespace,
-		RunStatus:    string(params.Status),
-	}); err != nil {
-		s.logger.Warn("upsert run status comment (finished) failed", "run_id", params.Run.RunID, "err", err)
+	if params.Execution.RuntimeMode == agentdomain.RuntimeModeFullEnv {
+		if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
+			RunID:        params.Run.RunID,
+			Phase:        RunStatusPhaseFinished,
+			JobName:      params.Ref.Name,
+			JobNamespace: params.Ref.Namespace,
+			RuntimeMode:  string(params.Execution.RuntimeMode),
+			Namespace:    params.Execution.Namespace,
+			RunStatus:    string(params.Status),
+		}); err != nil {
+			s.logger.Warn("upsert run status comment (finished) failed", "run_id", params.Run.RunID, "err", err)
+		}
 	}
 
 	if params.Run.LearningMode && s.feedback != nil {

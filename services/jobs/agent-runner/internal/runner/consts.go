@@ -34,5 +34,5 @@ const outputSchemaJSON = `{
     "reasoning_effort": { "type": "string" }
   },
   "required": ["summary", "branch", "pr_number", "pr_url"],
-  "additionalProperties": true
+  "additionalProperties": false
 }`
