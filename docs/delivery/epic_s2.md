@@ -31,7 +31,7 @@ approvals:
 - Day 1: `docs/delivery/epics/epic-s2-day1-migrations-and-schema-ownership.md` (включая OpenAPI contract-first baseline)
 - Day 2: `docs/delivery/epics/epic-s2-day2-issue-label-triggers-run-dev.md`
 - Day 3: `docs/delivery/epics/epic-s2-day3-per-issue-namespace-and-rbac.md`
-- Day 3.5: `docs/delivery/epics/epic-s2-day35-mcp-github-k8s-and-prompt-context.md`
+- Day 3.5: `docs/delivery/epics/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md`
 - Day 4: `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md`
 - Day 5: `docs/delivery/epics/epic-s2-day5-staff-ui-dogfooding-observability.md`
 - Day 6: `docs/delivery/epics/epic-s2-day6-approval-and-audit-hardening.md`
@@ -42,7 +42,7 @@ approvals:
 - Day 1: completed + approved (OpenAPI rollout + codegen baseline внедрены).
 - Day 2: completed + approved.
 - Day 3: completed + approved.
-- Day 3.5: planned (MCP-first tool layer + prompt context assembler как dependency для Day4).
+- Day 3.5: completed (MCP-first tool layer + prompt context assembler готовы как dependency для Day4).
 - Day 4: planned (детализация execution/prompt/resume/PR-flow зафиксирована; старт после Day3.5 dependency).
 - Day 5..7: planned.
 

@@ -16,6 +16,7 @@ const (
 	runFailureReasonKubernetesJobFailed    runFailureReason = "kubernetes job failed"
 	runFailureReasonKubernetesJobNotFound  runFailureReason = "kubernetes job not found"
 	runFailureReasonNamespacePrepareFailed runFailureReason = "namespace_prepare_failed"
+	runFailureReasonMCPTokenIssueFailed    runFailureReason = "mcp_token_issue_failed"
 )
 
 // runStartedEventPayload defines payload shape for run.started flow events.

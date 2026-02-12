@@ -1,31 +1,17 @@
 package project
 
-import "context"
+import (
+	"context"
 
-// Project is a persisted project catalog entry.
-type Project struct {
-	ID   string
-	Slug string
-	Name string
-}
+	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
+)
 
-// UpsertParams defines inputs for creating or updating a project.
-type UpsertParams struct {
-	// ID is a project id to use for insert (server-generated in staff API).
-	ID string
-	// Slug is a stable project key (unique).
-	Slug string
-	// Name is a human-readable project name.
-	Name string
-	// SettingsJSON is a jsonb object stored in `projects.settings`.
-	SettingsJSON []byte
-}
-
-// ProjectWithRole extends Project with an effective role for a user.
-type ProjectWithRole struct {
-	Project
-	Role string
-}
+type (
+	Project         = entitytypes.Project
+	UpsertParams    = querytypes.ProjectUpsertParams
+	ProjectWithRole = entitytypes.ProjectWithRole
+)
 
 // Repository stores and loads projects.
 type Repository interface {

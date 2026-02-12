@@ -11,13 +11,16 @@ type ActorType string
 
 const (
 	ActorTypeSystem ActorType = "system"
+	ActorTypeAgent  ActorType = "agent"
 )
 
 // ActorID is a concrete source identifier within ActorType.
 type ActorID string
 
 const (
-	ActorIDGitHubWebhook ActorID = "github-webhook"
+	ActorIDGitHubWebhook   ActorID = "github-webhook"
+	ActorIDWorker          ActorID = "worker"
+	ActorIDControlPlaneMCP ActorID = "control-plane-mcp"
 )
 
 // EventType is a normalized lifecycle event name.
@@ -35,6 +38,12 @@ const (
 	EventTypeRunFailed                 EventType = "run.failed"
 	EventTypeRunFailedJobNotFound      EventType = "run.failed.job_not_found"
 	EventTypeRunFailedLaunchError      EventType = "run.failed.launch_error"
+	EventTypeRunMCPTokenIssued         EventType = "run.mcp.token.issued"
+	EventTypePromptContextAssembled    EventType = "prompt.context.assembled"
+	EventTypeMCPToolCalled             EventType = "mcp.tool.called"
+	EventTypeMCPToolSucceeded          EventType = "mcp.tool.succeeded"
+	EventTypeMCPToolFailed             EventType = "mcp.tool.failed"
+	EventTypeMCPToolApprovalPending    EventType = "mcp.tool.approval_pending"
 )
 
 // InsertParams defines a single flow event record.

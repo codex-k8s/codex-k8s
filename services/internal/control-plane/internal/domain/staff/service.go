@@ -14,6 +14,7 @@ import (
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/staffrun"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
+	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 
 	"github.com/google/uuid"
 
@@ -364,7 +365,7 @@ func (s *Service) UpsertProject(ctx context.Context, principal Principal, slug s
 		return projectrepo.Project{}, errs.Validation{Field: "name", Msg: "is required"}
 	}
 
-	settingsJSON, err := json.Marshal(projectSettings{
+	settingsJSON, err := json.Marshal(querytypes.ProjectSettings{
 		LearningModeDefault: s.cfg.LearningModeDefault,
 	})
 	if err != nil {
@@ -599,8 +600,4 @@ func (s *Service) ListRunLearningFeedback(ctx context.Context, principal Princip
 	}
 
 	return s.feedback.ListForRun(ctx, runID, limit)
-}
-
-type projectSettings struct {
-	LearningModeDefault bool `json:"learning_mode_default"`
 }

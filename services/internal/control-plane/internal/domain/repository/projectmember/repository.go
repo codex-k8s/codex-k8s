@@ -1,18 +1,12 @@
 package projectmember
 
-import "context"
+import (
+	"context"
 
-// Member is a project membership record (joined with user email for listing).
-type Member struct {
-	ProjectID string
-	UserID    string
-	Email     string
-	Role      string
+	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+)
 
-	// LearningModeOverride is a tri-state override:
-	// nil => inherit project default, true/false => explicit override.
-	LearningModeOverride *bool
-}
+type Member = entitytypes.ProjectMember
 
 // Repository stores and loads project memberships.
 type Repository interface {

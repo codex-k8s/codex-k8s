@@ -26,11 +26,6 @@ func newStaffHandler(cp *controlplane.Client) *staffHandler {
 	return &staffHandler{cp: cp}
 }
 
-type pathLimit struct {
-	id    string
-	limit int
-}
-
 func parseLimit(c *echo.Context, def int) (int, error) {
 	limitStr := c.QueryParam("limit")
 	if limitStr == "" {
@@ -236,11 +231,6 @@ func (h *staffHandler) GetProject(c *echo.Context) error {
 	return getByPathResp(c, "project_id", h.getProjectCall, casters.Project)
 }
 
-type upsertProjectRequest struct {
-	Slug string `json:"slug"`
-	Name string `json:"name"`
-}
-
 func (h *staffHandler) UpsertProject(c *echo.Context) error {
 	return createByBodyResp(c, http.StatusCreated, h.upsertProjectCall, casters.Project)
 }
@@ -273,11 +263,6 @@ func (h *staffHandler) DeleteUser(c *echo.Context) error {
 	return h.deleteWith1Param(c, "user_id", h.deleteUser)
 }
 
-type createUserRequest struct {
-	Email           string `json:"email"`
-	IsPlatformAdmin bool   `json:"is_platform_admin"`
-}
-
 func (h *staffHandler) CreateUser(c *echo.Context) error {
 	return createByBodyResp(c, http.StatusCreated, h.createUserCall, casters.User)
 }
@@ -286,15 +271,9 @@ func (h *staffHandler) ListProjectMembers(c *echo.Context) error {
 	return listByPathLimitResp(c, "project_id", 200, h.listProjectMembersCall, casters.ProjectMembers)
 }
 
-type upsertMemberRequest struct {
-	UserID string `json:"user_id"`
-	Email  string `json:"email"`
-	Role   string `json:"role"`
-}
-
 func (h *staffHandler) UpsertProjectMember(c *echo.Context) error {
 	return withPrincipalAndResolved(c, resolvePath("project_id"), func(principal *controlplanev1.Principal, projectID string) error {
-		var req upsertMemberRequest
+		var req models.UpsertProjectMemberRequest
 		if err := bindBody(c, &req); err != nil {
 			return err
 		}
@@ -325,14 +304,9 @@ func (h *staffHandler) DeleteProjectMember(c *echo.Context) error {
 	return h.deleteWith2Params(c, "project_id", "user_id", h.deleteProjectMember)
 }
 
-type setLearningModeRequest struct {
-	// Enabled can be true/false or null to inherit project default.
-	Enabled *bool `json:"enabled"`
-}
-
 func (h *staffHandler) SetProjectMemberLearningModeOverride(c *echo.Context) error {
 	return withPrincipalAndTwoPaths(c, "project_id", "user_id", func(principal *controlplanev1.Principal, projectID string, userID string) error {
-		var req setLearningModeRequest
+		var req models.SetProjectMemberLearningModeRequest
 		if err := bindBody(c, &req); err != nil {
 			return err
 		}
@@ -356,17 +330,9 @@ func (h *staffHandler) ListProjectRepositories(c *echo.Context) error {
 	return listByPathLimitResp(c, "project_id", 200, h.listProjectRepositoriesCall, casters.RepositoryBindings)
 }
 
-type upsertProjectRepositoryRequest struct {
-	Provider         string `json:"provider"`
-	Owner            string `json:"owner"`
-	Name             string `json:"name"`
-	Token            string `json:"token"`
-	ServicesYAMLPath string `json:"services_yaml_path"`
-}
-
 func (h *staffHandler) UpsertProjectRepository(c *echo.Context) error {
 	return withPrincipalAndResolved(c, resolvePath("project_id"), func(principal *controlplanev1.Principal, projectID string) error {
-		var req upsertProjectRepositoryRequest
+		var req models.UpsertProjectRepositoryRequest
 		if err := bindBody(c, &req); err != nil {
 			return err
 		}
@@ -390,11 +356,6 @@ func (h *staffHandler) DeleteProjectRepository(c *echo.Context) error {
 	return h.deleteWith2Params(c, "project_id", "repository_id", h.deleteProjectRepository)
 }
 
-type idLimitArg struct {
-	id    string
-	limit int32
-}
-
 func callUnaryWithArg[Arg any, Req any, Resp any](
 	ctx context.Context,
 	principal *controlplanev1.Principal,
@@ -413,7 +374,7 @@ func buildGetProjectRequest(principal *controlplanev1.Principal, id string) *con
 	return &controlplanev1.GetProjectRequest{Principal: principal, ProjectId: id}
 }
 
-func buildUpsertProjectRequest(principal *controlplanev1.Principal, req upsertProjectRequest) *controlplanev1.UpsertProjectRequest {
+func buildUpsertProjectRequest(principal *controlplanev1.Principal, req models.UpsertProjectRequest) *controlplanev1.UpsertProjectRequest {
 	return &controlplanev1.UpsertProjectRequest{Principal: principal, Slug: req.Slug, Name: req.Name}
 }
 
@@ -437,7 +398,7 @@ func buildListUsersRequest(principal *controlplanev1.Principal, limit int32) *co
 	return &controlplanev1.ListUsersRequest{Principal: principal, Limit: limit}
 }
 
-func buildCreateUserRequest(principal *controlplanev1.Principal, req createUserRequest) *controlplanev1.CreateUserRequest {
+func buildCreateUserRequest(principal *controlplanev1.Principal, req models.CreateUserRequest) *controlplanev1.CreateUserRequest {
 	return &controlplanev1.CreateUserRequest{Principal: principal, Email: req.Email, IsPlatformAdmin: req.IsPlatformAdmin}
 }
 
@@ -457,7 +418,7 @@ func (h *staffHandler) getProjectCall(ctx context.Context, principal *controlpla
 	return callUnaryWithArg(ctx, principal, id, buildGetProjectRequest, h.cp.Service().GetProject)
 }
 
-func (h *staffHandler) upsertProjectCall(ctx context.Context, principal *controlplanev1.Principal, req upsertProjectRequest) (*controlplanev1.Project, error) {
+func (h *staffHandler) upsertProjectCall(ctx context.Context, principal *controlplanev1.Principal, req models.UpsertProjectRequest) (*controlplanev1.Project, error) {
 	return callUnaryWithArg(ctx, principal, req, buildUpsertProjectRequest, h.cp.Service().UpsertProject)
 }
 
@@ -483,7 +444,7 @@ func (h *staffHandler) listUsersCall(ctx context.Context, principal *controlplan
 	return callUnaryWithArg(ctx, principal, limit, buildListUsersRequest, h.cp.Service().ListUsers)
 }
 
-func (h *staffHandler) createUserCall(ctx context.Context, principal *controlplanev1.Principal, req createUserRequest) (*controlplanev1.User, error) {
+func (h *staffHandler) createUserCall(ctx context.Context, principal *controlplanev1.Principal, req models.CreateUserRequest) (*controlplanev1.User, error) {
 	return callUnaryWithArg(ctx, principal, req, buildCreateUserRequest, h.cp.Service().CreateUser)
 }
 

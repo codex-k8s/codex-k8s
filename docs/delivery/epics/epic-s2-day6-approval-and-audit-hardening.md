@@ -32,6 +32,10 @@ approvals:
 - Ужесточение MCP-first policy:
   - верифицировать, что привилегированные write-операции доступны только через MCP approver/executor маршрут;
   - запретить обход policy через альтернативные каналы выполнения.
+- Ввести платформенно-управляемую матрицу MCP policy:
+  - effective policy для `agent_key + run label`;
+  - явное разделение scope/action по сущностям Kubernetes и GitHub;
+  - поддержка composite tools (например GitHub+Kubernetes secret sync) как отдельного класса policy.
 - Единообразные audit-события по ключевым действиям (label, approval, run request, job, pr).
 - Timeout guard policy:
   - при `wait_state=mcp` pod/run не завершается по timeout;

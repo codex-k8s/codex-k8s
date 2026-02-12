@@ -28,8 +28,9 @@ approvals:
 ### In scope
 - Определить image/entrypoint агентного Job (инструменты: `@openai/codex`, `git`, `jq`, `curl`, `bash`, проектные toolchain `go`/`node`).
 - Политика доступа и секретов:
-  - агентный pod не получает прямые секреты/креды GitHub и Kubernetes;
-  - любые write-операции в GitHub/Kubernetes выполняются только через MCP approver/executor ручки;
+  - агентный pod не получает прямые Kubernetes креды;
+  - агентный pod получает отдельный bot-token только для git transport (commit/push в незащищенные ветки);
+  - issue/pr/comments/labels и branch-context операции выполняются через MCP ручки (policy + audit);
   - в pod доступен только `CODEXK8S_OPENAI_API_KEY` и технич. параметры run.
 - Policy шаблонов промптов:
   - `work`/`review` шаблоны для запуска берутся по приоритету `DB override -> repo seed`;
@@ -65,6 +66,7 @@ approvals:
 - `run:dev:revise` обновляет существующий PR; при отсутствии PR запуск отклоняется с диагностикой.
 - В `flow_events` есть трасса: issue -> run -> namespace -> job -> pr.
 - Агентный pod не содержит GitHub/Kubernetes секретов; write-действия проходят через MCP-контур.
+- Агентный pod содержит только минимальный GitHub bot-token для git push-path; governance действия по GitHub/Kubernetes проходят через MCP-контур.
 
 ## Контекст и референсы реализации
 
@@ -165,8 +167,9 @@ Seed usage:
 
 - Для `codex login` используется `CODEXK8S_OPENAI_API_KEY`:
   - `printenv CODEXK8S_OPENAI_API_KEY | codex login --with-api-key`
-- Прямые креды GitHub/Kubernetes в агентный pod не выдаются.
-- GitHub/Kubernetes операции делаются через MCP-ручки approver/executor с отдельным контуром авторизации.
+- Прямые Kubernetes креды в агентный pod не выдаются.
+- В pod выдаётся только GitHub bot-token для git transport (`git fetch/pull/push` в незащищённые ветки).
+- GitHub governance операции (issue/pr/comments/labels/branch context) и Kubernetes операции делаются через MCP-ручки approver/executor.
 - Секреты не логируются и не пишутся в итоговые комментарии/PR body.
 
 ### 6. Session/resume стратегия

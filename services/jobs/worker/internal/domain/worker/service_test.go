@@ -26,13 +26,22 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 	}
 	events := &fakeFlowEvents{}
 	launcher := &fakeLauncher{states: map[string]JobState{}}
+	mcpTokens := &fakeMCPTokenIssuer{token: "token-run-1"}
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 
-	svc := NewService(Config{WorkerID: "worker-1", ClaimLimit: 2, RunningCheckLimit: 10, SlotsPerProject: 2, SlotLeaseTTL: time.Minute}, Dependencies{
-		Runs:     runs,
-		Events:   events,
-		Launcher: launcher,
-		Logger:   logger,
+	svc := NewService(Config{
+		WorkerID:               "worker-1",
+		ClaimLimit:             2,
+		RunningCheckLimit:      10,
+		SlotsPerProject:        2,
+		SlotLeaseTTL:           time.Minute,
+		ControlPlaneMCPBaseURL: "http://codex-k8s-control-plane.test.svc:8081/mcp",
+	}, Dependencies{
+		Runs:           runs,
+		Events:         events,
+		Launcher:       launcher,
+		MCPTokenIssuer: mcpTokens,
+		Logger:         logger,
 	})
 	svc.now = func() time.Time { return time.Date(2026, 2, 9, 10, 0, 0, 0, time.UTC) }
 
@@ -42,6 +51,12 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 
 	if len(launcher.launched) != 1 {
 		t.Fatalf("expected 1 launched job, got %d", len(launcher.launched))
+	}
+	if launcher.launched[0].MCPBaseURL != "http://codex-k8s-control-plane.test.svc:8081/mcp" {
+		t.Fatalf("expected mcp base url to be propagated, got %q", launcher.launched[0].MCPBaseURL)
+	}
+	if launcher.launched[0].MCPBearerToken != "token-run-1" {
+		t.Fatalf("expected mcp token to be propagated, got %q", launcher.launched[0].MCPBearerToken)
 	}
 	if len(events.inserted) != 1 {
 		t.Fatalf("expected 1 flow event, got %d", len(events.inserted))
@@ -98,6 +113,7 @@ func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 	}
 	events := &fakeFlowEvents{}
 	launcher := &fakeLauncher{states: map[string]JobState{}}
+	mcpTokens := &fakeMCPTokenIssuer{token: "token-run-3"}
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 
 	svc := NewService(Config{
@@ -108,11 +124,13 @@ func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 		SlotLeaseTTL:            time.Minute,
 		RunNamespacePrefix:      "codex-issue",
 		CleanupFullEnvNamespace: true,
+		ControlPlaneMCPBaseURL:  "http://codex-k8s-control-plane.test.svc:8081/mcp",
 	}, Dependencies{
-		Runs:     runs,
-		Events:   events,
-		Launcher: launcher,
-		Logger:   logger,
+		Runs:           runs,
+		Events:         events,
+		Launcher:       launcher,
+		MCPTokenIssuer: mcpTokens,
+		Logger:         logger,
 	})
 	svc.now = func() time.Time { return time.Date(2026, 2, 11, 10, 0, 0, 0, time.UTC) }
 
@@ -137,6 +155,9 @@ func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 	}
 	if launcher.launched[0].Namespace == "" {
 		t.Fatal("expected launched job namespace to be set")
+	}
+	if launcher.launched[0].MCPBearerToken != "token-run-3" {
+		t.Fatalf("expected mcp token to be set, got %q", launcher.launched[0].MCPBearerToken)
 	}
 }
 
@@ -241,6 +262,18 @@ type fakeLauncher struct {
 	cleaned   []NamespaceSpec
 	launchErr error
 	statusErr error
+}
+
+type fakeMCPTokenIssuer struct {
+	token string
+	err   error
+}
+
+func (f *fakeMCPTokenIssuer) IssueRunMCPToken(_ context.Context, _ IssueMCPTokenParams) (IssuedMCPToken, error) {
+	if f.err != nil {
+		return IssuedMCPToken{}, f.err
+	}
+	return IssuedMCPToken{Token: f.token, ExpiresAt: time.Now().Add(time.Hour)}, nil
 }
 
 func (f *fakeLauncher) JobRef(runID string, namespace string) JobRef {

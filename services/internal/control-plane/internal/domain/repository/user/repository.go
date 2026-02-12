@@ -1,17 +1,12 @@
 package user
 
-import "context"
+import (
+	"context"
 
-// User is a persisted staff user record.
-type User struct {
-	ID              string
-	Email           string
-	GitHubUserID    int64
-	GitHubLogin     string
-	IsPlatformAdmin bool
-	// IsPlatformOwner marks the single platform owner (highest privileges).
-	IsPlatformOwner bool
-}
+	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+)
+
+type User = entitytypes.User
 
 // Repository stores and loads users.
 type Repository interface {

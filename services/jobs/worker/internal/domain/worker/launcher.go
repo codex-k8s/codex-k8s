@@ -58,6 +58,10 @@ type JobSpec struct {
 	RuntimeMode agentdomain.RuntimeMode
 	// Namespace is target namespace for Job.
 	Namespace string
+	// MCPBaseURL is MCP HTTP endpoint used by agent runtime.
+	MCPBaseURL string
+	// MCPBearerToken is short-lived MCP auth token for this run.
+	MCPBearerToken string
 }
 
 // Launcher creates and reconciles Kubernetes Jobs for runs.

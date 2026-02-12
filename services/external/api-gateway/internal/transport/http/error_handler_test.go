@@ -11,6 +11,8 @@ import (
 	"github.com/labstack/echo/v5"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/models"
 )
 
 func TestHTTPErrorHandler_GRPCStatusMapping(t *testing.T) {
@@ -65,7 +67,7 @@ func TestHTTPErrorHandler_GRPCStatusMapping(t *testing.T) {
 	}
 }
 
-func runErrorHandler(err error) (int, errorResponse) {
+func runErrorHandler(err error) (int, models.ErrorResponse) {
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/staff/projects", nil)
 	rec := httptest.NewRecorder()
@@ -73,7 +75,7 @@ func runErrorHandler(err error) (int, errorResponse) {
 
 	newHTTPErrorHandler(slog.New(slog.NewTextHandler(ioDiscard{}, nil)))(ctx, err)
 
-	var resp errorResponse
+	var resp models.ErrorResponse
 	_ = json.Unmarshal(rec.Body.Bytes(), &resp)
 	return rec.Code, resp
 }

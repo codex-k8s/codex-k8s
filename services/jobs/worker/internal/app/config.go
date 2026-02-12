@@ -26,6 +26,11 @@ type Config struct {
 	// Keep empty value to disable by default; set to "true" to enable by default.
 	LearningModeDefault string `env:"CODEXK8S_LEARNING_MODE_DEFAULT"`
 
+	// ControlPlaneGRPCTarget is control-plane gRPC address used for internal worker calls.
+	ControlPlaneGRPCTarget string `env:"CODEXK8S_CONTROL_PLANE_GRPC_TARGET,required,notEmpty"`
+	// ControlPlaneMCPBaseURL is MCP HTTP endpoint passed into spawned run pods.
+	ControlPlaneMCPBaseURL string `env:"CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" envDefault:"http://codex-k8s-control-plane:8081/mcp"`
+
 	// DBHost is the PostgreSQL host.
 	DBHost string `env:"CODEXK8S_DB_HOST,required,notEmpty"`
 	// DBPort is the PostgreSQL port.

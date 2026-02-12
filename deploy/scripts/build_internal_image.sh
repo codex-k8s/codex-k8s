@@ -99,6 +99,50 @@ build_component() {
   esac
 }
 
+wait_for_kaniko_job() {
+  local job_name="$1"
+  local wait_status=0
+
+  if timeout "${CODEXK8S_KANIKO_TIMEOUT}" bash -s -- "${CODEXK8S_STAGING_NAMESPACE}" "${job_name}" <<'EOF'
+set -euo pipefail
+
+namespace="$1"
+job_name="$2"
+
+while true; do
+  complete_status="$(kubectl -n "${namespace}" get "job/${job_name}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}' 2>/dev/null || true)"
+  failed_status="$(kubectl -n "${namespace}" get "job/${job_name}" -o jsonpath='{.status.conditions[?(@.type=="Failed")].status}' 2>/dev/null || true)"
+
+  if [ "${complete_status}" = "True" ]; then
+    exit 0
+  fi
+  if [ "${failed_status}" = "True" ]; then
+    exit 10
+  fi
+
+  sleep 5
+done
+EOF
+  then
+    return 0
+  else
+    wait_status=$?
+  fi
+
+  case "${wait_status}" in
+    10)
+      echo "Kaniko job ${job_name} failed before completion" >&2
+      ;;
+    124)
+      echo "Timed out waiting for Kaniko job ${job_name} (timeout=${CODEXK8S_KANIKO_TIMEOUT})" >&2
+      ;;
+    *)
+      echo "Kaniko job ${job_name} watcher exited with status ${wait_status}" >&2
+      ;;
+  esac
+  return 1
+}
+
 build_with_kaniko() {
   local job_name="$1"
   local component="$2"
@@ -120,8 +164,10 @@ build_with_kaniko() {
 
   render_kaniko_job_template "${ROOT_DIR}/deploy/base/kaniko/kaniko-build-job.yaml.tpl" | kubectl apply -f -
 
-  if ! kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" wait --for=condition=complete "job/${job_name}" --timeout="${CODEXK8S_KANIKO_TIMEOUT}"; then
+  if ! wait_for_kaniko_job "${job_name}"; then
+    kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" get "job/${job_name}" -o wide || true
     kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" get pods -l "job-name=${job_name}" -o wide || true
+    kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" describe "job/${job_name}" || true
     kubectl -n "${CODEXK8S_STAGING_NAMESPACE}" logs "job/${job_name}" --all-containers=true --tail=200 || true
     exit 1
   fi
@@ -130,6 +176,7 @@ build_with_kaniko() {
 require_cmd kubectl
 require_cmd sed
 require_cmd sha256sum
+require_cmd timeout
 require_cmd awk
 require_cmd tr
 require_cmd cut

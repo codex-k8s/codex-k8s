@@ -42,12 +42,14 @@ func (a *Adapter) CleanupNamespace(ctx context.Context, spec worker.NamespaceSpe
 // Launch creates Kubernetes Job for run.
 func (a *Adapter) Launch(ctx context.Context, spec worker.JobSpec) (worker.JobRef, error) {
 	ref, err := a.impl.Launch(ctx, libslauncher.JobSpec{
-		RunID:         spec.RunID,
-		CorrelationID: spec.CorrelationID,
-		ProjectID:     spec.ProjectID,
-		SlotNo:        spec.SlotNo,
-		RuntimeMode:   agentdomain.RuntimeMode(spec.RuntimeMode),
-		Namespace:     spec.Namespace,
+		RunID:          spec.RunID,
+		CorrelationID:  spec.CorrelationID,
+		ProjectID:      spec.ProjectID,
+		SlotNo:         spec.SlotNo,
+		RuntimeMode:    agentdomain.RuntimeMode(spec.RuntimeMode),
+		Namespace:      spec.Namespace,
+		MCPBaseURL:     spec.MCPBaseURL,
+		MCPBearerToken: spec.MCPBearerToken,
 	})
 	if err != nil {
 		return worker.JobRef{}, err

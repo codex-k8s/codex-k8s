@@ -41,6 +41,7 @@ const (
 	ControlPlaneService_ListProjectRepositories_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/ListProjectRepositories"
 	ControlPlaneService_UpsertProjectRepository_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertProjectRepository"
 	ControlPlaneService_DeleteProjectRepository_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/DeleteProjectRepository"
+	ControlPlaneService_IssueRunMCPToken_FullMethodName                     = "/codexk8s.controlplane.v1.ControlPlaneService/IssueRunMCPToken"
 )
 
 // ControlPlaneServiceClient is the client API for ControlPlaneService service.
@@ -70,6 +71,7 @@ type ControlPlaneServiceClient interface {
 	ListProjectRepositories(ctx context.Context, in *ListProjectRepositoriesRequest, opts ...grpc.CallOption) (*ListProjectRepositoriesResponse, error)
 	UpsertProjectRepository(ctx context.Context, in *UpsertProjectRepositoryRequest, opts ...grpc.CallOption) (*RepositoryBinding, error)
 	DeleteProjectRepository(ctx context.Context, in *DeleteProjectRepositoryRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	IssueRunMCPToken(ctx context.Context, in *IssueRunMCPTokenRequest, opts ...grpc.CallOption) (*IssueRunMCPTokenResponse, error)
 }
 
 type controlPlaneServiceClient struct {
@@ -290,6 +292,16 @@ func (c *controlPlaneServiceClient) DeleteProjectRepository(ctx context.Context,
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) IssueRunMCPToken(ctx context.Context, in *IssueRunMCPTokenRequest, opts ...grpc.CallOption) (*IssueRunMCPTokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IssueRunMCPTokenResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_IssueRunMCPToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ControlPlaneServiceServer is the server API for ControlPlaneService service.
 // All implementations must embed UnimplementedControlPlaneServiceServer
 // for forward compatibility.
@@ -317,6 +329,7 @@ type ControlPlaneServiceServer interface {
 	ListProjectRepositories(context.Context, *ListProjectRepositoriesRequest) (*ListProjectRepositoriesResponse, error)
 	UpsertProjectRepository(context.Context, *UpsertProjectRepositoryRequest) (*RepositoryBinding, error)
 	DeleteProjectRepository(context.Context, *DeleteProjectRepositoryRequest) (*emptypb.Empty, error)
+	IssueRunMCPToken(context.Context, *IssueRunMCPTokenRequest) (*IssueRunMCPTokenResponse, error)
 	mustEmbedUnimplementedControlPlaneServiceServer()
 }
 
@@ -389,6 +402,9 @@ func (UnimplementedControlPlaneServiceServer) UpsertProjectRepository(context.Co
 }
 func (UnimplementedControlPlaneServiceServer) DeleteProjectRepository(context.Context, *DeleteProjectRepositoryRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteProjectRepository not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) IssueRunMCPToken(context.Context, *IssueRunMCPTokenRequest) (*IssueRunMCPTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IssueRunMCPToken not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) mustEmbedUnimplementedControlPlaneServiceServer() {}
 func (UnimplementedControlPlaneServiceServer) testEmbeddedByValue()                             {}
@@ -789,6 +805,24 @@ func _ControlPlaneService_DeleteProjectRepository_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_IssueRunMCPToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IssueRunMCPTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).IssueRunMCPToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_IssueRunMCPToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).IssueRunMCPToken(ctx, req.(*IssueRunMCPTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ControlPlaneService_ServiceDesc is the grpc.ServiceDesc for ControlPlaneService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -879,6 +913,10 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteProjectRepository",
 			Handler:    _ControlPlaneService_DeleteProjectRepository_Handler,
+		},
+		{
+			MethodName: "IssueRunMCPToken",
+			Handler:    _ControlPlaneService_IssueRunMCPToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

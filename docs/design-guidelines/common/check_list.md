@@ -15,6 +15,8 @@
   имена без префикса `CODEXK8S_` не добавляются.
 - Kubernetes манифесты не “вшиты” heredoc’ами в bash: шаблоны лежат в `deploy/base/**`,
   а `deploy/scripts/**` только рендерит и применяет их.
+- Для runtime-токенов дефолтные TTL не меньше времени жизни соответствующих контейнеров;
+  для MCP baseline TTL не ниже `24h`.
 - Для multi-service deploy у каждого deployable-сервиса есть собственные image vars/repositories
   (шаблон нейминга: `CODEXK8S_<SERVICE>_IMAGE` и `CODEXK8S_<SERVICE>_INTERNAL_IMAGE_REPOSITORY`).
 - При изменении состава deployable-сервисов синхронно обновлены:
@@ -34,6 +36,9 @@
 - Поддержка оркестрации ограничена Kubernetes; нет кода под другие оркестраторы.
 - Kubernetes-операции выполняются через SDK/интерфейсы (не shell-first как основной путь).
 - Интеграция с репозиториями идет через интерфейс провайдера; GitHub-специфика не просачивается в домен.
+- Для agent runtime соблюдён split access model:
+  - git transport (commit/push в рабочую ветку) допускает отдельный bot-token в pod;
+  - governance-операции GitHub/Kubernetes (issue/pr/comments/labels/branch context/runtime actions) выполняются через MCP policy/audit контур.
 - Процессы запускаются webhook-событиями; workflow-first сценарии не добавлены в обход архитектуры.
 - Состояние long-running процессов, слотов, агентных запусков и блокировок хранится в PostgreSQL.
 - Данные, требующие гибкой структуры, хранятся в `JSONB`; векторный поиск использует `pgvector`.

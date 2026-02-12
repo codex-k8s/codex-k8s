@@ -33,6 +33,7 @@
 | `github.com/google/go-querystring` | `v1.2.0` | Dependency of go-github | сериализация query params для GitHub API клиента |
 | `google.golang.org/grpc` | `v1.78.0` | Internal transport | внутреннее service-to-service взаимодействие (`api-gateway` -> `control-plane`) |
 | `google.golang.org/protobuf` | `v1.36.10` | Internal contracts | protobuf runtime для gRPC контрактов и сгенерированного кода в `proto/gen/go/**` |
+| `github.com/modelcontextprotocol/go-sdk` | `v1.3.0` | MCP transport | встроенный StreamableHTTP MCP transport/auth/resource/tool runtime для `control-plane` |
 
 ## Frontend (Vue/TS) — in use
 

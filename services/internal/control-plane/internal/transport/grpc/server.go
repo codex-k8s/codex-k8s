@@ -8,8 +8,10 @@ import (
 	"strings"
 	"time"
 
+	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
+	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/staffrun"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
@@ -25,11 +27,16 @@ type webhookIngress interface {
 	IngestGitHubWebhook(ctx context.Context, cmd webhook.IngestCommand) (webhook.IngestResult, error)
 }
 
+type mcpTokenIssuer interface {
+	IssueRunToken(ctx context.Context, params mcpdomain.IssueRunTokenParams) (mcpdomain.IssuedToken, error)
+}
+
 // Dependencies wires domain services and repositories into the gRPC transport.
 type Dependencies struct {
 	Webhook webhookIngress
 	Staff   *staff.Service
 	Users   userrepo.Repository
+	MCP     mcpTokenIssuer
 	Logger  *slog.Logger
 }
 
@@ -40,6 +47,7 @@ type Server struct {
 	webhook webhookIngress
 	staff   *staff.Service
 	users   userrepo.Repository
+	mcp     mcpTokenIssuer
 	logger  *slog.Logger
 }
 
@@ -48,6 +56,7 @@ func NewServer(deps Dependencies) *Server {
 		webhook: deps.Webhook,
 		staff:   deps.Staff,
 		users:   deps.Users,
+		mcp:     deps.MCP,
 		logger:  deps.Logger,
 	}
 }
@@ -453,6 +462,36 @@ func (s *Server) DeleteProjectRepository(ctx context.Context, req *controlplanev
 	return s.delete2(ctx, req.GetPrincipal(), req.ProjectId, req.RepositoryId, s.staff.DeleteProjectRepository)
 }
 
+func (s *Server) IssueRunMCPToken(ctx context.Context, req *controlplanev1.IssueRunMCPTokenRequest) (*controlplanev1.IssueRunMCPTokenResponse, error) {
+	if s.mcp == nil {
+		return nil, status.Error(codes.FailedPrecondition, "mcp service is not configured")
+	}
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	runID := strings.TrimSpace(req.GetRunId())
+	if runID == "" {
+		return nil, status.Error(codes.InvalidArgument, "run_id is required")
+	}
+	ttl := time.Duration(req.GetTtlSeconds()) * time.Second
+
+	issuedToken, err := s.mcp.IssueRunToken(ctx, mcpdomain.IssueRunTokenParams{
+		RunID:       runID,
+		Namespace:   strings.TrimSpace(req.GetNamespace()),
+		RuntimeMode: parseRuntimeMode(req.GetRuntimeMode()),
+		TTL:         ttl,
+	})
+	if err != nil {
+		return nil, toStatus(err)
+	}
+
+	return &controlplanev1.IssueRunMCPTokenResponse{
+		Token:     issuedToken.Token,
+		ExpiresAt: timestamppb.New(issuedToken.ExpiresAt.UTC()),
+	}, nil
+}
+
 type delete1Fn func(context.Context, staff.Principal, string) error
 type delete2Fn func(context.Context, staff.Principal, string, string) error
 
@@ -585,4 +624,11 @@ func int64PtrOrNil(value int64) *int64 {
 		return nil
 	}
 	return &value
+}
+
+func parseRuntimeMode(value string) agentdomain.RuntimeMode {
+	if strings.EqualFold(strings.TrimSpace(value), string(agentdomain.RuntimeModeFullEnv)) {
+		return agentdomain.RuntimeModeFullEnv
+	}
+	return agentdomain.RuntimeModeCodeOnly
 }

@@ -13,6 +13,7 @@ import (
 
 	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
 	domainrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
+	querytypes "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/types/query"
 )
 
 var (
@@ -39,11 +40,6 @@ var (
 	//go:embed sql/mark_slot_free.sql
 	queryMarkSlotFree string
 )
-
-// projectSettings stores project-level defaults in JSONB settings.
-type projectSettings struct {
-	LearningModeDefault bool `json:"learning_mode_default"`
-}
 
 // Repository persists run queue state in PostgreSQL.
 type Repository struct {
@@ -94,7 +90,7 @@ func (r *Repository) ClaimNextPending(ctx context.Context, params domainrepo.Cla
 	}
 	projectSlug, projectName := deriveProjectMeta(projectID, correlationID, runPayload)
 
-	settingsJSON, err := json.Marshal(projectSettings{LearningModeDefault: params.ProjectLearningModeDefault})
+	settingsJSON, err := json.Marshal(querytypes.ProjectSettings{LearningModeDefault: params.ProjectLearningModeDefault})
 	if err != nil {
 		return domainrepo.ClaimedRun{}, false, fmt.Errorf("marshal project settings: %w", err)
 	}
@@ -237,12 +233,7 @@ func (r *Repository) FinishRun(ctx context.Context, params domainrepo.FinishPara
 
 // deriveProjectID prefers repository identity and falls back to correlation-scoped synthetic id.
 func deriveProjectID(correlationID string, runPayload []byte) string {
-	var payload struct {
-		Repository struct {
-			FullName string `json:"full_name"`
-			Name     string `json:"name"`
-		} `json:"repository"`
-	}
+	var payload querytypes.RunQueuePayload
 	if err := json.Unmarshal(runPayload, &payload); err == nil && payload.Repository.FullName != "" {
 		return uuid.NewSHA1(uuid.NameSpaceDNS, []byte("repo:"+strings.ToLower(payload.Repository.FullName))).String()
 	}
@@ -252,12 +243,7 @@ func deriveProjectID(correlationID string, runPayload []byte) string {
 
 // deriveProjectMeta builds stable project slug/name values from payload or synthetic fallback.
 func deriveProjectMeta(projectID string, correlationID string, runPayload []byte) (slug string, name string) {
-	var payload struct {
-		Repository struct {
-			FullName string `json:"full_name"`
-			Name     string `json:"name"`
-		} `json:"repository"`
-	}
+	var payload querytypes.RunQueuePayload
 
 	if err := json.Unmarshal(runPayload, &payload); err == nil && payload.Repository.FullName != "" {
 		slug = strings.ToLower(strings.TrimSpace(payload.Repository.FullName))

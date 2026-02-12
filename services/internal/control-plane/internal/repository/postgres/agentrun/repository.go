@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -17,6 +18,8 @@ var (
 	queryCreatePendingIfAbsent string
 	//go:embed sql/get_run_id_by_correlation_id.sql
 	queryGetRunIDByCorrelationID string
+	//go:embed sql/get_by_id.sql
+	queryGetByID string
 )
 
 // Repository stores agent runs in PostgreSQL.
@@ -66,4 +69,32 @@ func (r *Repository) CreatePendingIfAbsent(ctx context.Context, params domainrep
 		RunID:    existingRunID,
 		Inserted: false,
 	}, nil
+}
+
+// GetByID returns one run by id.
+func (r *Repository) GetByID(ctx context.Context, runID string) (domainrepo.Run, bool, error) {
+	var (
+		item       domainrepo.Run
+		projectID  sql.NullString
+		runPayload []byte
+	)
+
+	err := r.db.QueryRowContext(ctx, queryGetByID, runID).Scan(
+		&item.ID,
+		&item.CorrelationID,
+		&projectID,
+		&item.Status,
+		&runPayload,
+	)
+	if err == nil {
+		if projectID.Valid {
+			item.ProjectID = projectID.String
+		}
+		item.RunPayload = json.RawMessage(runPayload)
+		return item, true, nil
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		return domainrepo.Run{}, false, nil
+	}
+	return domainrepo.Run{}, false, fmt.Errorf("get run by id: %w", err)
 }

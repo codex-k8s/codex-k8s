@@ -251,6 +251,18 @@ message DeleteProjectRepositoryRequest {
   string repository_id = 3;
 }
 
+message IssueRunMCPTokenRequest {
+  string run_id = 1;
+  string namespace = 2;
+  string runtime_mode = 3;
+  int32 ttl_seconds = 4;
+}
+
+message IssueRunMCPTokenResponse {
+  string token = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
 service ControlPlaneService {
   rpc IngestGitHubWebhook(IngestGitHubWebhookRequest) returns (IngestGitHubWebhookResponse);
 
@@ -282,4 +294,5 @@ service ControlPlaneService {
   rpc ListProjectRepositories(ListProjectRepositoriesRequest) returns (ListProjectRepositoriesResponse);
   rpc UpsertProjectRepository(UpsertProjectRepositoryRequest) returns (RepositoryBinding);
   rpc DeleteProjectRepository(DeleteProjectRepositoryRequest) returns (google.protobuf.Empty);
+  rpc IssueRunMCPToken(IssueRunMCPTokenRequest) returns (IssueRunMCPTokenResponse);
 }

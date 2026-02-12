@@ -2,32 +2,15 @@ package learningfeedback
 
 import (
 	"context"
-	"time"
+
+	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
-// Feedback is a persisted learning-mode explanation bound to an agent run.
-type Feedback struct {
-	ID           int64
-	RunID        string
-	RepositoryID string
-	PRNumber     int
-	FilePath     string
-	Line         int
-	Kind         string
-	Explanation  string
-	CreatedAt    time.Time
-}
-
-// InsertParams defines inputs for creating a feedback record.
-type InsertParams struct {
-	RunID        string
-	RepositoryID string
-	PRNumber     *int
-	FilePath     *string
-	Line         *int
-	Kind         string
-	Explanation  string
-}
+type (
+	Feedback     = entitytypes.LearningFeedback
+	InsertParams = querytypes.LearningFeedbackInsertParams
+)
 
 // Repository persists learning feedback records.
 type Repository interface {
