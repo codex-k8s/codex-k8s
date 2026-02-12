@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S2-D4
 type: epic
 title: "Epic S2 Day 4: Agent job image, git workflow and PR creation"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-10
 updated_at: 2026-02-12
@@ -65,7 +65,7 @@ approvals:
 - `run:dev` создает PR.
 - `run:dev:revise` обновляет существующий PR; при отсутствии PR запуск отклоняется с диагностикой.
 - В `flow_events` есть трасса: issue -> run -> namespace -> job -> pr.
-- Агентный pod не содержит GitHub/Kubernetes секретов; write-действия проходят через MCP-контур.
+- Агентный pod не содержит Kubernetes секретов и не получает GitHub governance credentials; governance write-действия проходят через MCP-контур.
 - Агентный pod содержит только минимальный GitHub bot-token для git push-path; governance действия по GitHub/Kubernetes проходят через MCP-контур.
 
 ## Контекст и референсы реализации
@@ -266,3 +266,46 @@ PR policy:
 - Открытый выбор для long-term:
   - оставить CLI-first runtime как baseline;
   - или вынести control loop в отдельный SDK/app-server слой (без потери совместимости с CLI-сессиями).
+
+## Фактическая реализация (2026-02-12)
+- Добавлен отдельный runtime image `services/jobs/agent-runner/Dockerfile` и entrypoint `services/jobs/agent-runner/scripts/entrypoint.sh`:
+  - инструменты: `@openai/codex`, `git`, `jq`, `curl`, `bash`, `gh`, `kubectl`, `go`;
+  - запуск `codex exec` (dev) и `codex exec resume --last` (revise при восстановленной session);
+  - сохранение snapshot сессии и событий в control-plane internal callbacks.
+- В `control-plane` добавлены internal callback endpoint'ы для agent-runner:
+  - `POST /internal/agent/session`,
+  - `GET /internal/agent/session/latest`,
+  - `POST /internal/agent/event`.
+- Добавлена персистентность resumable session:
+  - миграция `services/internal/control-plane/cmd/cli/migrations/20260212113000_day9_agent_sessions.sql`;
+  - postgres-repository `agentsession` + доменные типы/контракты;
+  - восстановление `codex-cli` session JSON при revise.
+- В worker реализован runtime context resolver для запуска Job:
+  - repository/issue/trigger;
+  - effective model/reasoning из issue labels (`ai-model-*`, `ai-reasoning-*`) с fallback к default env;
+  - конфликт labels одной группы -> `failed_precondition`.
+- В `flow_events` добавлены события Day4:
+  - `run.agent.started`,
+  - `run.agent.session.restored`,
+  - `run.agent.session.saved`,
+  - `run.agent.resume.used`,
+  - `run.pr.created`,
+  - `run.pr.updated`,
+  - `run.revise.pr_not_found`,
+  - `run.failed.precondition`.
+- В run pod реализована split access model:
+  - прямых Kubernetes credentials нет;
+  - GitHub governance-операции выполняются через MCP;
+  - для git transport path используется выделенный `CODEXK8S_GIT_BOT_TOKEN`;
+  - `CODEXK8S_OPENAI_API_KEY` и `CODEXK8S_GIT_BOT_TOKEN` передаются через runtime secret в per-run namespace.
+- Обновлены CI/deploy/bootstrap pipeline:
+  - добавлен компонент сборки `agent-runner`;
+  - добавлены image/env/secret/variable (`CODEXK8S_AGENT_RUNNER_IMAGE`, `CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME`, `CODEXK8S_AGENT_DEFAULT_*`, `CODEXK8S_AGENT_BASE_BRANCH`, `CODEXK8S_GIT_BOT_TOKEN`);
+  - `CODEXK8S_WORKER_JOB_IMAGE` по умолчанию переключен на `agent-runner`.
+
+## Критерии приемки эпика — статус
+- Выполнено: `run:dev` запускает агентный Job и поддерживает PR-flow.
+- Выполнено: `run:dev:revise` работает с resume-path, при отсутствии PR отклоняется с `failed_precondition` и событием `run.revise.pr_not_found`.
+- Выполнено: `flow_events` содержит трассу `issue -> run -> namespace -> job -> pr` с Day4 событиями агента.
+- Выполнено: agent pod не получает прямые Kubernetes credentials; governance-операции по GitHub/Kubernetes проходят через MCP-контур.
+- Выполнено: split access model введена (минимальный git transport token + MCP governance path).

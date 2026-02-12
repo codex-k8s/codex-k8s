@@ -62,6 +62,7 @@ approvals:
 ### `full-env`
 - Запуск в issue/run namespace рядом со стеком.
 - Доступ: логи, events, сервисы, метрики, DB/cache в рамках namespace, `exec` в pod'ы namespace.
+- В pod передаются только минимальные runtime-секреты (`CODEXK8S_OPENAI_API_KEY`, `CODEXK8S_GIT_BOT_TOKEN`), без прямых Kubernetes credentials.
 - Прямые операции изменения окружения (apply/delete манифестов, rollout/deploy/restart, создание/удаление сервисов) выполняются через MCP-инструменты с approver policy.
 - Используется для ролей, где нужно подтверждать решения по фактическому состоянию окружения.
 

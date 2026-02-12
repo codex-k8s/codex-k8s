@@ -32,7 +32,7 @@ approvals:
 | Day 2 | Issue label triggers: `run:dev`, `run:dev:revise` | P0 | `docs/delivery/epics/epic-s2-day2-issue-label-triggers-run-dev.md` | completed |
 | Day 3 | Per-issue namespace + RBAC/resource policy baseline | P0 | `docs/delivery/epics/epic-s2-day3-per-issue-namespace-and-rbac.md` | completed |
 | Day 3.5 | MCP GitHub/K8s tools + prompt context assembler | P0 | `docs/delivery/epics/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md` | completed |
-| Day 4 | Agent job image + git/PR flow via MCP | P0 | `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md` | planned |
+| Day 4 | Agent job image + git/PR flow via MCP | P0 | `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md` | completed |
 | Day 5 | Staff UI: dogfooding visibility + drilldowns | P1 | `docs/delivery/epics/epic-s2-day5-staff-ui-dogfooding-observability.md` | planned |
 | Day 6 | Approvals/audit hardening for trigger actions | P1 | `docs/delivery/epics/epic-s2-day6-approval-and-audit-hardening.md` | planned |
 | Day 7 | Regression gate for dogfooding end-to-end | P0 | `docs/delivery/epics/epic-s2-day7-dogfooding-regression-gate.md` | planned |
@@ -54,4 +54,5 @@ approvals:
 - Day 2: completed + approved.
 - Day 3: completed + approved.
 - Day 3.5: completed (ready for Day4 integration).
-- Текущее окно работ: Day 4.
+- Day 4: completed (agent-runner runtime + resume/session persistence + PR flow via MCP baseline).
+- Текущее окно работ: Day 5.

@@ -45,8 +45,10 @@ approvals:
 
 ## Базовый режим S2 Day4+
 
-- Начиная с Day4, агентный pod не получает прямые GitHub/Kubernetes креды для write-операций.
-- GitHub/Kubernetes write-действия выполняются только через MCP approver/executor ручки.
+- Начиная с Day4, для agent pod действует split access model:
+  - прямые Kubernetes credentials не выдаются;
+  - governance-операции GitHub/Kubernetes (issue/pr/comments/labels/runtime write-path) выполняются через MCP approver/executor ручки;
+  - в pod выдаётся только отдельный минимальный Git bot-token для git transport path (clone/fetch/commit/push в рабочую ветку).
 - Day6 расширяет и ужесточает policy (матрица апрувов, единообразные события, тесты отказоустойчивости), но не переводит систему с direct-path, так как direct-path не является базовым режимом.
 
 ## Политики доступа к MCP (roadmap Day6)

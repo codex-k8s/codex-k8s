@@ -38,16 +38,25 @@ approvals:
   - Kubernetes tools (namespaced diagnostics/read для workload/network/storage сущностей + cluster-scope read для storage/ingress classes + policy-gated write operations);
   - prompt context (`codex://prompt/context` + tool `codex_prompt_context_get`).
 
-## Модель доступа GitHub для агентного pod (S2 Day4 target)
+## Модель доступа GitHub для агентного pod (S2 Day4)
 - Агентный pod получает отдельный bot-token только для git transport операций в рабочем репозитории:
-  - commit/push в незащищённые ветки;
-  - без прав на issue/pr/labels/moderation операции.
+  - clone/fetch/commit/push в рабочую ветку;
+  - без governance-операций по issue/pr/labels/moderation.
 - MCP слой остаётся единственной точкой для:
   - issue/pr/comments/labels операций;
-  - детерминированных branch-context операций (`ensure/get branch for task`, policy audit).
+  - детерминированных branch-context операций (`ensure/get branch for task`, policy audit);
+  - Kubernetes governance/runtime write-path.
 - Таким образом разделяются контуры:
-  - git transport path (bot-token в pod);
+  - git transport path (минимальный bot-token в pod);
   - governance path (MCP policy + audit + approval flow).
+
+## Internal agent callbacks (S2 Day4)
+- Для agent-runner добавлены внутренние HTTP callback endpoint'ы в `control-plane`:
+  - `POST /internal/agent/session` — upsert session snapshot;
+  - `GET /internal/agent/session/latest` — latest session by `(repository_full_name, branch_name)`;
+  - `POST /internal/agent/event` — append Day4 run events.
+- Авторизация callback'ов: run-bound MCP bearer token (`Authorization: Bearer ...`), проверка через `VerifyRunToken`.
+- Эти endpoint'ы внутренние (service-to-service), не входят в public/staff OpenAPI контракт.
 
 ## Состояние OpenAPI после S2 Day1
 - OpenAPI-спека (`services/external/api-gateway/api/server/api.yaml`) покрывает все активные external/staff endpoint'ы текущего среза.

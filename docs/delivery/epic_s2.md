@@ -43,7 +43,7 @@ approvals:
 - Day 2: completed + approved.
 - Day 3: completed + approved.
 - Day 3.5: completed (MCP-first tool layer + prompt context assembler готовы как dependency для Day4).
-- Day 4: planned (детализация execution/prompt/resume/PR-flow зафиксирована; старт после Day3.5 dependency).
+- Day 4: completed (agent-runner runtime, session persistence/resume, split access model и PR-flow через MCP).
 - Day 5..7: planned.
 
 ## Критерий успеха Sprint S2 (выжимка)
