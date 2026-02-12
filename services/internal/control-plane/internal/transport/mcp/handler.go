@@ -35,8 +35,10 @@ type domainService interface {
 	GitHubLabelsRemove(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.GitHubLabelsRemoveInput) (mcpdomain.GitHubLabelsMutationResult, error)
 	KubernetesPodsList(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.KubernetesPodsListInput) (mcpdomain.KubernetesPodsListResult, error)
 	KubernetesEventsList(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.KubernetesEventsListInput) (mcpdomain.KubernetesEventsListResult, error)
+	KubernetesResourcesList(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.KubernetesResourceListInput) (mcpdomain.KubernetesResourceListResult, error)
 	KubernetesPodLogsGet(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.KubernetesPodLogsGetInput) (mcpdomain.KubernetesPodLogsGetResult, error)
 	KubernetesPodExec(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.KubernetesPodExecInput) (mcpdomain.KubernetesPodExecToolResult, error)
+	KubernetesPodPortForward(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.KubernetesPodPortForwardInput) (mcpdomain.KubernetesPodPortForwardResult, error)
 	KubernetesManifestApply(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.KubernetesManifestApplyInput) (mcpdomain.ApprovalRequiredResult, error)
 	KubernetesManifestDelete(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.KubernetesManifestDeleteInput) (mcpdomain.ApprovalRequiredResult, error)
 }
@@ -54,7 +56,7 @@ func NewHandler(service domainService, logger *slog.Logger) http.Handler {
 
 	server := sdkmcp.NewServer(&sdkmcp.Implementation{
 		Name:    "codex-k8s-control-plane-mcp",
-		Version: "s2-day3.5",
+		Version: "v0.0.1",
 	}, nil)
 
 	registerTools(server, service)

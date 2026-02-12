@@ -77,7 +77,10 @@ approvals:
   - выпуск и проверка short-lived run токенов;
   - deterministic tool catalog;
   - GitHub read/write ручки (issue/pr/comments/labels/branches/ensure/upsert/comment);
-  - Kubernetes ручки в пределах runtime namespace (`pods`, `events`, `pod logs`, `pod exec`) и policy-gated write ручки (`manifest apply/delete` -> `approval_required`).
+  - Kubernetes ручки:
+    - namespaced diagnostics/read: `pods`, `events`, `deployments`, `daemonsets`, `statefulsets`, `replicasets`, `replicationcontrollers`, `jobs`, `cronjobs`, `configmaps`, `secrets`, `resourcequotas`, `hpa`, `services`, `endpoints`, `ingresses`, `networkpolicies`, `pvcs`;
+    - cluster-scope read: `ingressclasses`, `pvs`, `storageclasses`;
+    - policy-gated write: `pod port-forward`, `manifest apply/delete` -> `approval_required`.
 - В `flow_events` добавлены audit-события MCP:
   - `run.mcp.token.issued`,
   - `prompt.context.assembled`,
@@ -91,7 +94,14 @@ approvals:
 - Обновлены deploy/bootstrap/workflow переменные и секреты:
   - `CODEXK8S_CONTROL_PLANE_MCP_BASE_URL`,
   - `CODEXK8S_MCP_TOKEN_SIGNING_KEY`,
-  - `CODEXK8S_MCP_TOKEN_TTL`.
+  - `CODEXK8S_MCP_TOKEN_TTL` (default `24h`, не меньше baseline lifetime агентного контейнера).
+
+## Следующий шаг по policy (handoff в Day6)
+- Вынести effective policy управления MCP-ручками/ресурсами в платформенную модель:
+  - связка `agent_key + run label`;
+  - action/scope матрица (`read/write/approval_required`) по категориям сущностей.
+- Добавить composite tools roadmap:
+  - комбинированные ручки (например синхронизация секретов GitHub+Kubernetes) с отдельными approval правилами и аудитом.
 
 ## Критерии приемки эпика — статус
 - Выполнено: write-действия для Day4 вынесены в MCP tool layer, прямой write-path в агентный pod не закладывается.

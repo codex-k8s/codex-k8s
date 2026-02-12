@@ -42,7 +42,7 @@ type Config struct {
 	// If empty, TokenEncryptionKey is used as fallback.
 	MCPTokenSigningKey string `env:"CODEXK8S_MCP_TOKEN_SIGNING_KEY"`
 	// MCPTokenTTL defines default TTL for run-bound MCP tokens.
-	MCPTokenTTL string `env:"CODEXK8S_MCP_TOKEN_TTL" envDefault:"30m"`
+	MCPTokenTTL string `env:"CODEXK8S_MCP_TOKEN_TTL" envDefault:"24h"`
 	// ControlPlaneMCPBaseURL is effective MCP endpoint included in prompt context and run env.
 	ControlPlaneMCPBaseURL string `env:"CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" envDefault:"http://codex-k8s-control-plane:8081/mcp"`
 

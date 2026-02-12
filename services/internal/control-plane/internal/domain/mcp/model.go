@@ -25,12 +25,32 @@ const (
 )
 
 const (
-	ToolKubernetesPodsList       ToolName = "k8s_pods_list"
-	ToolKubernetesEventsList     ToolName = "k8s_events_list"
-	ToolKubernetesPodLogsGet     ToolName = "k8s_pod_logs_get"
-	ToolKubernetesPodExec        ToolName = "k8s_pod_exec"
-	ToolKubernetesManifestApply  ToolName = "k8s_manifest_apply"
-	ToolKubernetesManifestDelete ToolName = "k8s_manifest_delete"
+	ToolKubernetesPodsList                     ToolName = "k8s_pods_list"
+	ToolKubernetesEventsList                   ToolName = "k8s_events_list"
+	ToolKubernetesDeploymentsList              ToolName = "k8s_deployments_list"
+	ToolKubernetesDaemonSetsList               ToolName = "k8s_daemonsets_list"
+	ToolKubernetesStatefulSetsList             ToolName = "k8s_statefulsets_list"
+	ToolKubernetesReplicaSetsList              ToolName = "k8s_replicasets_list"
+	ToolKubernetesReplicationControllersList   ToolName = "k8s_replicationcontrollers_list"
+	ToolKubernetesJobsList                     ToolName = "k8s_jobs_list"
+	ToolKubernetesCronJobsList                 ToolName = "k8s_cronjobs_list"
+	ToolKubernetesConfigMapsList               ToolName = "k8s_configmaps_list"
+	ToolKubernetesSecretsList                  ToolName = "k8s_secrets_list"
+	ToolKubernetesResourceQuotasList           ToolName = "k8s_resourcequotas_list"
+	ToolKubernetesHorizontalPodAutoscalersList ToolName = "k8s_hpas_list"
+	ToolKubernetesServicesList                 ToolName = "k8s_services_list"
+	ToolKubernetesEndpointsList                ToolName = "k8s_endpoints_list"
+	ToolKubernetesIngressesList                ToolName = "k8s_ingresses_list"
+	ToolKubernetesIngressClassesList           ToolName = "k8s_ingressclasses_list"
+	ToolKubernetesNetworkPoliciesList          ToolName = "k8s_networkpolicies_list"
+	ToolKubernetesPersistentVolumeClaimsList   ToolName = "k8s_pvcs_list"
+	ToolKubernetesPersistentVolumesList        ToolName = "k8s_pvs_list"
+	ToolKubernetesStorageClassesList           ToolName = "k8s_storageclasses_list"
+	ToolKubernetesPodLogsGet                   ToolName = "k8s_pod_logs_get"
+	ToolKubernetesPodExec                      ToolName = "k8s_pod_exec"
+	ToolKubernetesPodPortForward               ToolName = "k8s_pod_port_forward"
+	ToolKubernetesManifestApply                ToolName = "k8s_manifest_apply"
+	ToolKubernetesManifestDelete               ToolName = "k8s_manifest_delete"
 )
 
 // ToolCategory marks read/write class used by policy and audit.
@@ -230,6 +250,37 @@ type KubernetesEventsListInput struct {
 	Limit int `json:"limit,omitempty"`
 }
 
+// KubernetesResourceListInput describes generic list input for namespace resources.
+type KubernetesResourceListInput struct {
+	Kind  KubernetesResourceKind `json:"kind,omitempty"`
+	Limit int                    `json:"limit,omitempty"`
+}
+
+// KubernetesResourceKind identifies one supported Kubernetes resource class for list tools.
+type KubernetesResourceKind string
+
+const (
+	KubernetesResourceKindDeployment            KubernetesResourceKind = "deployment"
+	KubernetesResourceKindDaemonSet             KubernetesResourceKind = "daemonset"
+	KubernetesResourceKindStatefulSet           KubernetesResourceKind = "statefulset"
+	KubernetesResourceKindReplicaSet            KubernetesResourceKind = "replicaset"
+	KubernetesResourceKindReplicationController KubernetesResourceKind = "replicationcontroller"
+	KubernetesResourceKindJob                   KubernetesResourceKind = "job"
+	KubernetesResourceKindCronJob               KubernetesResourceKind = "cronjob"
+	KubernetesResourceKindConfigMap             KubernetesResourceKind = "configmap"
+	KubernetesResourceKindSecret                KubernetesResourceKind = "secret"
+	KubernetesResourceKindResourceQuota         KubernetesResourceKind = "resourcequota"
+	KubernetesResourceKindHPA                   KubernetesResourceKind = "horizontalpodautoscaler"
+	KubernetesResourceKindService               KubernetesResourceKind = "service"
+	KubernetesResourceKindEndpoints             KubernetesResourceKind = "endpoints"
+	KubernetesResourceKindIngress               KubernetesResourceKind = "ingress"
+	KubernetesResourceKindIngressClass          KubernetesResourceKind = "ingressclass"
+	KubernetesResourceKindNetworkPolicy         KubernetesResourceKind = "networkpolicy"
+	KubernetesResourceKindPVC                   KubernetesResourceKind = "persistentvolumeclaim"
+	KubernetesResourceKindPV                    KubernetesResourceKind = "persistentvolume"
+	KubernetesResourceKindStorageClass          KubernetesResourceKind = "storageclass"
+)
+
 // KubernetesPodLogsGetInput describes pod logs input.
 type KubernetesPodLogsGetInput struct {
 	Pod       string `json:"pod"`
@@ -242,6 +293,14 @@ type KubernetesPodExecInput struct {
 	Pod       string   `json:"pod"`
 	Container string   `json:"container,omitempty"`
 	Command   []string `json:"command"`
+}
+
+// KubernetesPodPortForwardInput describes pod port-forward request.
+type KubernetesPodPortForwardInput struct {
+	Pod        string `json:"pod"`
+	Container  string `json:"container,omitempty"`
+	LocalPort  int32  `json:"local_port"`
+	RemotePort int32  `json:"remote_port"`
 }
 
 // KubernetesManifestApplyInput describes manifest apply request.
@@ -315,6 +374,13 @@ type KubernetesExecResult struct {
 	Stderr string `json:"stderr,omitempty"`
 }
 
+// KubernetesResourceRef describes one Kubernetes object in list-like tools.
+type KubernetesResourceRef struct {
+	Kind      string `json:"kind"`
+	Name      string `json:"name"`
+	Namespace string `json:"namespace,omitempty"`
+}
+
 // GitHubIssueGetResult is output for issue lookup tool.
 type GitHubIssueGetResult struct {
 	Status ToolExecutionStatus `json:"status"`
@@ -385,6 +451,12 @@ type KubernetesEventsListResult struct {
 	Events []KubernetesEvent   `json:"events"`
 }
 
+// KubernetesResourceListResult is output for generic Kubernetes resource list tools.
+type KubernetesResourceListResult struct {
+	Status ToolExecutionStatus     `json:"status"`
+	Items  []KubernetesResourceRef `json:"items"`
+}
+
 // KubernetesPodLogsGetResult is output for pod logs tool.
 type KubernetesPodLogsGetResult struct {
 	Status ToolExecutionStatus `json:"status"`
@@ -396,4 +468,10 @@ type KubernetesPodExecToolResult struct {
 	Status  ToolExecutionStatus  `json:"status"`
 	Exec    KubernetesExecResult `json:"exec"`
 	Message string               `json:"message,omitempty"`
+}
+
+// KubernetesPodPortForwardResult is output for pod port-forward tool.
+type KubernetesPodPortForwardResult struct {
+	Status  ToolExecutionStatus `json:"status"`
+	Message string              `json:"message,omitempty"`
 }

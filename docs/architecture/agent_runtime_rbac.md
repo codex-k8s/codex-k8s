@@ -66,10 +66,16 @@ approvals:
 - Разрешено:
   - читать логи/события/метрики;
   - выполнять диагностический `exec` в pod'ы namespace;
+  - читать runtime-сущности namespace через MCP (`deployments`, `daemonsets`, `statefulsets`, `replicasets`, `jobs`, `cronjobs`, `configmaps`, `secrets`, `resourcequotas`, `hpa`, `services`, `endpoints`, `ingresses`, `networkpolicies`, `pvcs`);
   - обращаться к DB/cache сервисам проекта в границах namespace policy.
 - Запрещено прямое изменение runtime без policy:
   - `kubectl apply/delete`, rollout/restart, создание/удаление workload выполняются только через MCP-инструменты.
 - Для write-операций через MCP обязателен approver flow и аудит (`approval.requested/approved/denied`, `label.applied`, `run.wait.*`).
+
+Эволюция policy (Day6+):
+- effective MCP права вычисляются по связке `agent_key + run label`;
+- для cluster-scope сущностей (`ingressclasses`, `pvs`, `storageclasses`) применяются отдельные ограничения;
+- комбинированные MCP-ручки (например GitHub+Kubernetes) имеют отдельные policy-профили и approvals.
 
 ## Timeout и возобновление сессий
 

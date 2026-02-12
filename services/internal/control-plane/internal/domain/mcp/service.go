@@ -22,8 +22,9 @@ const (
 	defaultTokenIssuer        = "codex-k8s/control-plane/mcp"
 	defaultServerName         = "codex-k8s-control-plane-mcp"
 	defaultInternalMCPBaseURL = "http://codex-k8s-control-plane:8081/mcp"
-	defaultTokenTTL           = 30 * time.Minute
-	maxTokenTTL               = 6 * time.Hour
+	minTokenTTL               = 24 * time.Hour
+	defaultTokenTTL           = minTokenTTL
+	maxTokenTTL               = 7 * 24 * time.Hour
 )
 
 // Config defines MCP domain behavior.
@@ -54,6 +55,7 @@ type GitHubClient interface {
 type KubernetesClient interface {
 	ListPods(ctx context.Context, namespace string, limit int) ([]KubernetesPod, error)
 	ListEvents(ctx context.Context, namespace string, limit int) ([]KubernetesEvent, error)
+	ListResources(ctx context.Context, namespace string, kind KubernetesResourceKind, limit int) ([]KubernetesResourceRef, error)
 	GetPodLogs(ctx context.Context, namespace string, pod string, container string, tailLines int64) (string, error)
 	ExecPod(ctx context.Context, namespace string, pod string, container string, command []string) (KubernetesExecResult, error)
 }
@@ -103,6 +105,9 @@ func NewService(cfg Config, deps Dependencies) (*Service, error) {
 	}
 	if cfg.DefaultTokenTTL <= 0 {
 		cfg.DefaultTokenTTL = defaultTokenTTL
+	}
+	if cfg.DefaultTokenTTL < minTokenTTL {
+		cfg.DefaultTokenTTL = minTokenTTL
 	}
 	if cfg.DefaultTokenTTL > maxTokenTTL {
 		cfg.DefaultTokenTTL = maxTokenTTL
@@ -172,6 +177,9 @@ func (s *Service) IssueRunToken(ctx context.Context, params IssueRunTokenParams)
 	ttl := params.TTL
 	if ttl <= 0 {
 		ttl = s.cfg.DefaultTokenTTL
+	}
+	if ttl < minTokenTTL {
+		ttl = minTokenTTL
 	}
 	if ttl > maxTokenTTL {
 		ttl = maxTokenTTL

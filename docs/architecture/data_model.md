@@ -121,8 +121,14 @@ approvals:
 | owner_review_timeout_sec | int | yes |  |  | pause/resume aware |
 | kill_on_mcp_wait_timeout | bool | no | false |  | must stay false |
 | approval_required_for_run_labels | bool | no | true |  | |
-| config | jsonb | no | '{}'::jsonb |  | extensible policy fields |
+| config | jsonb | no | '{}'::jsonb |  | extensible policy fields, включая MCP tool/resource matrix и label-based overrides |
 | created_at | timestamptz | no | now() |  | |
+
+Planned extension (Day6+):
+- policy snapshot хранит отдельные блоки:
+  - `mcp.default_capabilities` (базовый набор ручек/ресурсов по агенту);
+  - `mcp.label_overrides` (дополнительные ограничения/разрешения по типу задачи, например `run:dev`, `run:dev:revise`);
+  - `mcp.composite_tools` (профили для комбинированных ручек вида GitHub+Kubernetes).
 
 ### Entity: agent_runs
 - Назначение: запуски и сессии агентов.

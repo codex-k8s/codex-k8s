@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"reflect"
 	"sort"
 	"strings"
 	"time"
@@ -24,6 +25,28 @@ type Client struct {
 	clientset  kubernetes.Interface
 	restConfig *rest.Config
 }
+
+const (
+	k8sKindDeployment              = "Deployment"
+	k8sKindDaemonSet               = "DaemonSet"
+	k8sKindStatefulSet             = "StatefulSet"
+	k8sKindReplicaSet              = "ReplicaSet"
+	k8sKindReplicationController   = "ReplicationController"
+	k8sKindJob                     = "Job"
+	k8sKindCronJob                 = "CronJob"
+	k8sKindConfigMap               = "ConfigMap"
+	k8sKindSecret                  = "Secret"
+	k8sKindResourceQuota           = "ResourceQuota"
+	k8sKindHorizontalPodAutoscaler = "HorizontalPodAutoscaler"
+	k8sKindService                 = "Service"
+	k8sKindEndpoints               = "Endpoints"
+	k8sKindIngress                 = "Ingress"
+	k8sKindIngressClass            = "IngressClass"
+	k8sKindNetworkPolicy           = "NetworkPolicy"
+	k8sKindPersistentVolumeClaim   = "PersistentVolumeClaim"
+	k8sKindPersistentVolume        = "PersistentVolume"
+	k8sKindStorageClass            = "StorageClass"
+)
 
 // NewClient creates Kubernetes MCP adapter with auto-detected REST config.
 func NewClient(kubeconfigPath string) (*Client, error) {
@@ -102,6 +125,52 @@ func (c *Client) ListEvents(ctx context.Context, namespace string, limit int) ([
 	return out, nil
 }
 
+// ListResources lists supported Kubernetes resources for one kind.
+func (c *Client) ListResources(ctx context.Context, namespace string, kind mcpdomain.KubernetesResourceKind, limit int) ([]mcpdomain.KubernetesResourceRef, error) {
+	switch kind {
+	case mcpdomain.KubernetesResourceKindDeployment:
+		return c.listResourceRefs(ctx, limit, k8sKindDeployment, "list deployments", listAsAny(c.clientset.AppsV1().Deployments(namespace).List), true)
+	case mcpdomain.KubernetesResourceKindDaemonSet:
+		return c.listResourceRefs(ctx, limit, k8sKindDaemonSet, "list daemonsets", listAsAny(c.clientset.AppsV1().DaemonSets(namespace).List), true)
+	case mcpdomain.KubernetesResourceKindStatefulSet:
+		return c.listResourceRefs(ctx, limit, k8sKindStatefulSet, "list statefulsets", listAsAny(c.clientset.AppsV1().StatefulSets(namespace).List), true)
+	case mcpdomain.KubernetesResourceKindReplicaSet:
+		return c.listResourceRefs(ctx, limit, k8sKindReplicaSet, "list replicasets", listAsAny(c.clientset.AppsV1().ReplicaSets(namespace).List), true)
+	case mcpdomain.KubernetesResourceKindReplicationController:
+		return c.listResourceRefs(ctx, limit, k8sKindReplicationController, "list replicationcontrollers", listAsAny(c.clientset.CoreV1().ReplicationControllers(namespace).List), true)
+	case mcpdomain.KubernetesResourceKindJob:
+		return c.listResourceRefs(ctx, limit, k8sKindJob, "list jobs", listAsAny(c.clientset.BatchV1().Jobs(namespace).List), true)
+	case mcpdomain.KubernetesResourceKindCronJob:
+		return c.listResourceRefs(ctx, limit, k8sKindCronJob, "list cronjobs", listAsAny(c.clientset.BatchV1().CronJobs(namespace).List), true)
+	case mcpdomain.KubernetesResourceKindConfigMap:
+		return c.listResourceRefs(ctx, limit, k8sKindConfigMap, "list configmaps", listAsAny(c.clientset.CoreV1().ConfigMaps(namespace).List), true)
+	case mcpdomain.KubernetesResourceKindSecret:
+		return c.listResourceRefs(ctx, limit, k8sKindSecret, "list secrets", listAsAny(c.clientset.CoreV1().Secrets(namespace).List), true)
+	case mcpdomain.KubernetesResourceKindResourceQuota:
+		return c.listResourceRefs(ctx, limit, k8sKindResourceQuota, "list resourcequotas", listAsAny(c.clientset.CoreV1().ResourceQuotas(namespace).List), true)
+	case mcpdomain.KubernetesResourceKindHPA:
+		return c.listResourceRefs(ctx, limit, k8sKindHorizontalPodAutoscaler, "list hpas", listAsAny(c.clientset.AutoscalingV2().HorizontalPodAutoscalers(namespace).List), true)
+	case mcpdomain.KubernetesResourceKindService:
+		return c.listResourceRefs(ctx, limit, k8sKindService, "list services", listAsAny(c.clientset.CoreV1().Services(namespace).List), true)
+	case mcpdomain.KubernetesResourceKindEndpoints:
+		return c.listResourceRefs(ctx, limit, k8sKindEndpoints, "list endpoints", listAsAny(c.clientset.CoreV1().Endpoints(namespace).List), true)
+	case mcpdomain.KubernetesResourceKindIngress:
+		return c.listResourceRefs(ctx, limit, k8sKindIngress, "list ingresses", listAsAny(c.clientset.NetworkingV1().Ingresses(namespace).List), true)
+	case mcpdomain.KubernetesResourceKindIngressClass:
+		return c.listResourceRefs(ctx, limit, k8sKindIngressClass, "list ingressclasses", listAsAny(c.clientset.NetworkingV1().IngressClasses().List), false)
+	case mcpdomain.KubernetesResourceKindNetworkPolicy:
+		return c.listResourceRefs(ctx, limit, k8sKindNetworkPolicy, "list networkpolicies", listAsAny(c.clientset.NetworkingV1().NetworkPolicies(namespace).List), true)
+	case mcpdomain.KubernetesResourceKindPVC:
+		return c.listResourceRefs(ctx, limit, k8sKindPersistentVolumeClaim, "list pvcs", listAsAny(c.clientset.CoreV1().PersistentVolumeClaims(namespace).List), true)
+	case mcpdomain.KubernetesResourceKindPV:
+		return c.listResourceRefs(ctx, limit, k8sKindPersistentVolume, "list pvs", listAsAny(c.clientset.CoreV1().PersistentVolumes().List), false)
+	case mcpdomain.KubernetesResourceKindStorageClass:
+		return c.listResourceRefs(ctx, limit, k8sKindStorageClass, "list storageclasses", listAsAny(c.clientset.StorageV1().StorageClasses().List), false)
+	default:
+		return nil, fmt.Errorf("unsupported kubernetes resource kind %q", kind)
+	}
+}
+
 // GetPodLogs returns pod logs from namespace.
 func (c *Client) GetPodLogs(ctx context.Context, namespace string, pod string, container string, tailLines int64) (string, error) {
 	options := &corev1.PodLogOptions{
@@ -161,6 +230,100 @@ func (c *Client) ExecPod(ctx context.Context, namespace string, pod string, cont
 		Stdout: stdout.String(),
 		Stderr: stderr.String(),
 	}, nil
+}
+
+func listAsAny[T any](fn func(context.Context, metav1.ListOptions) (*T, error)) func(context.Context, metav1.ListOptions) (any, error) {
+	return func(ctx context.Context, options metav1.ListOptions) (any, error) {
+		return fn(ctx, options)
+	}
+}
+
+func (c *Client) listResourceRefs(
+	ctx context.Context,
+	limit int,
+	kind string,
+	operation string,
+	listFn func(context.Context, metav1.ListOptions) (any, error),
+	includeNamespace bool,
+) ([]mcpdomain.KubernetesResourceRef, error) {
+	list, err := listFn(ctx, metav1.ListOptions{
+		Limit: int64(limit),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", operation, err)
+	}
+
+	refs, err := resourceRefsFromList(kind, list, includeNamespace)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", operation, err)
+	}
+	sortResourceRefs(refs)
+	return refs, nil
+}
+
+func resourceRefsFromList(kind string, list any, includeNamespace bool) ([]mcpdomain.KubernetesResourceRef, error) {
+	value := reflect.ValueOf(list)
+	if !value.IsValid() {
+		return nil, fmt.Errorf("kubernetes list response is invalid")
+	}
+	if value.Kind() == reflect.Pointer {
+		if value.IsNil() {
+			return nil, fmt.Errorf("kubernetes list response is nil")
+		}
+		value = value.Elem()
+	}
+	if value.Kind() != reflect.Struct {
+		return nil, fmt.Errorf("kubernetes list response must be struct, got %s", value.Kind())
+	}
+
+	itemsField := value.FieldByName("Items")
+	if !itemsField.IsValid() || itemsField.Kind() != reflect.Slice {
+		return nil, fmt.Errorf("kubernetes list response does not expose Items")
+	}
+
+	out := make([]mcpdomain.KubernetesResourceRef, 0, itemsField.Len())
+	for i := 0; i < itemsField.Len(); i++ {
+		item := itemsField.Index(i)
+		var obj metav1.Object
+
+		if item.Kind() == reflect.Pointer {
+			if item.IsNil() {
+				continue
+			}
+			if casted, ok := item.Interface().(metav1.Object); ok {
+				obj = casted
+			}
+		} else if item.CanAddr() {
+			if casted, ok := item.Addr().Interface().(metav1.Object); ok {
+				obj = casted
+			}
+		}
+		if obj == nil {
+			continue
+		}
+
+		ref := mcpdomain.KubernetesResourceRef{
+			Kind: kind,
+			Name: strings.TrimSpace(obj.GetName()),
+		}
+		if includeNamespace {
+			ref.Namespace = strings.TrimSpace(obj.GetNamespace())
+		}
+		out = append(out, ref)
+	}
+	return out, nil
+}
+
+func sortResourceRefs(items []mcpdomain.KubernetesResourceRef) {
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].Kind == items[j].Kind {
+			if items[i].Namespace == items[j].Namespace {
+				return items[i].Name < items[j].Name
+			}
+			return items[i].Namespace < items[j].Namespace
+		}
+		return items[i].Kind < items[j].Kind
+	})
 }
 
 func formatInvolvedObject(ref corev1.ObjectReference) string {

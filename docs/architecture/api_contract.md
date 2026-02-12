@@ -35,8 +35,19 @@ approvals:
 - Внутренний gRPC контракт расширен RPC `IssueRunMCPToken` для выдачи MCP токена worker-у перед запуском run pod.
 - MCP tool/resource слой включает:
   - GitHub tools (issue/pr/comments/labels/branches);
-  - Kubernetes tools (namespace-scoped diagnostics + policy-gated write operations);
+  - Kubernetes tools (namespaced diagnostics/read для workload/network/storage сущностей + cluster-scope read для storage/ingress classes + policy-gated write operations);
   - prompt context (`codex://prompt/context` + tool `codex_prompt_context_get`).
+
+## Модель доступа GitHub для агентного pod (S2 Day4 target)
+- Агентный pod получает отдельный bot-token только для git transport операций в рабочем репозитории:
+  - commit/push в незащищённые ветки;
+  - без прав на issue/pr/labels/moderation операции.
+- MCP слой остаётся единственной точкой для:
+  - issue/pr/comments/labels операций;
+  - детерминированных branch-context операций (`ensure/get branch for task`, policy audit).
+- Таким образом разделяются контуры:
+  - git transport path (bot-token в pod);
+  - governance path (MCP policy + audit + approval flow).
 
 ## Состояние OpenAPI после S2 Day1
 - OpenAPI-спека (`services/external/api-gateway/api/server/api.yaml`) покрывает все активные external/staff endpoint'ы текущего среза.

@@ -5,6 +5,7 @@
 ## Архитектура и структура
 - Структура сервиса соответствует `docs/design-guidelines/go/services_design_requirements.md` (domain/transport/repository разделены; нет доменной логики в transport).
 - Доменные модели разложены системно (`internal/domain/types/{entity,value,enum,query,mixin}`), а не объявлены ad-hoc внутри service/handler файлов.
+- Репозиторные контракты не хранят доменные модели “вперемешку” в `repository.go`: модели вынесены в `internal/domain/types/**` и подключаются как aliases/imports.
 - В transport-слое ответы типизированы (DTO модели + кастеры); нет `map[string]any`/`[]any`/`any` как API-контрактов.
 - JSON payload, сохраняемые в БД/события (например `*_payload`), типизированы через struct + caster; нет `map[string]any` в коммитнутом production-коде.
 - Повторяющиеся строковые доменные значения вынесены в typed-константы (без копипасты литералов по коду).
@@ -27,7 +28,16 @@
 - Repo интерфейсы в `internal/domain/repository/<model>/repository.go`; реализации в `internal/repository/postgres/<model>/repository.go`.
 - SQL только в `internal/repository/postgres/<model>/sql/*.sql` + `//go:embed`; SQL-строки в Go запрещены.
 - SQL-запросы именованы комментариями `-- name: <model>__<operation> :one|:many|:exec`.
+- Нет SQL-файлов без `-- name` header (включая простые `get_by_id.sql`).
 - Для динамических данных используются `JSONB`; для векторного поиска корректно применён `pgvector`.
+
+## MCP-специфика (если затронута)
+- MCP tool catalog синхронен между:
+  - `internal/domain/mcp/tool_policy.go`,
+  - `internal/transport/mcp/tools.go`,
+  - интерфейсом `domainService` в `internal/transport/mcp/handler.go`.
+- Изменения policy/tool scope сопровождаются синхронным обновлением проектной документации
+  (`docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/agent_runtime_rbac.md`, профильные эпики).
 
 ## Безопасность
 - Секреты платформы читаются из env; не хардкодятся и не логируются.

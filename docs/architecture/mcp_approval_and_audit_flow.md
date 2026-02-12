@@ -49,6 +49,23 @@ approvals:
 - GitHub/Kubernetes write-действия выполняются только через MCP approver/executor ручки.
 - Day6 расширяет и ужесточает policy (матрица апрувов, единообразные события, тесты отказоустойчивости), но не переводит систему с direct-path, так как direct-path не является базовым режимом.
 
+## Политики доступа к MCP (roadmap Day6)
+
+- Политики MCP управляются через платформенные данные (а не хардкодом в prompt):
+  - baseline policy по `agent_key`;
+  - уточнение policy по `run:*` label/типу задачи;
+  - финальная effective policy на запуск = merge(`agent policy`, `label policy`, `project overrides`).
+- Для каждого инструмента/ресурса фиксируются:
+  - scope (`namespace`, `cluster`, `repository`);
+  - allowed actions (`read`, `write`, `approve-required`);
+  - actor constraints (каким ролям и при каких label доступно).
+- В `flow_events` сохраняется snapshot effective policy (ключ policy + источник), чтобы audit был воспроизводимым.
+
+### Комбинированные ручки
+- В roadmap закладываются composite MCP-ручки для атомарных операций между системами:
+  - пример: `secret.sync.github_to_k8s` (создание/обновление секрета одновременно в GitHub и Kubernetes);
+  - composite-ручки имеют отдельный approval профиль и отдельные события аудита.
+
 ## HTTP-контракты интеграций approver/executor
 
 - Платформа поддерживает внешний расширяемый слой MCP (например, `github.com/codex-k8s/yaml-mcp-server`) с универсальными HTTP-интеграциями.
