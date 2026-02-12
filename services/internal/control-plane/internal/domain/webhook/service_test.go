@@ -9,6 +9,7 @@ import (
 
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
+	agentrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agent"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
 	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projectmember"
@@ -20,8 +21,10 @@ func TestIngestGitHubWebhook_Dedup(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
 	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
 	svc := NewService(Config{
 		AgentRuns:  runs,
+		Agents:     agents,
 		FlowEvents: events,
 	})
 
@@ -59,8 +62,10 @@ func TestIngestGitHubWebhook_LearningMode_DefaultFallback(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
 	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
 	svc := NewService(Config{
 		AgentRuns:           runs,
+		Agents:              agents,
 		FlowEvents:          events,
 		LearningModeDefault: true,
 	})
@@ -86,6 +91,7 @@ func TestIngestGitHubWebhook_IssueRunDev_CreatesRunForAllowedMember(t *testing.T
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
 	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
 	repos := &inMemoryRepoCfgRepo{
 		byExternalID: map[int64]repocfgrepo.FindResult{
 			42: {
@@ -110,6 +116,7 @@ func TestIngestGitHubWebhook_IssueRunDev_CreatesRunForAllowedMember(t *testing.T
 	}
 	svc := NewService(Config{
 		AgentRuns:  runs,
+		Agents:     agents,
 		FlowEvents: events,
 		Repos:      repos,
 		Users:      users,
@@ -155,12 +162,19 @@ func TestIngestGitHubWebhook_IssueRunDev_CreatesRunForAllowedMember(t *testing.T
 	if runPayload.Trigger.Label != webhookdomain.DefaultRunDevLabel {
 		t.Fatalf("unexpected trigger label: %#v", runPayload.Trigger.Label)
 	}
+	if runPayload.Agent.Key != "dev" {
+		t.Fatalf("unexpected agent key: %#v", runPayload.Agent.Key)
+	}
+	if runPayload.Agent.Name != "AI Developer" {
+		t.Fatalf("unexpected agent name: %#v", runPayload.Agent.Name)
+	}
 }
 
 func TestIngestGitHubWebhook_IssueRunDev_DeniesUnknownSender(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
 	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
 	repos := &inMemoryRepoCfgRepo{
 		byExternalID: map[int64]repocfgrepo.FindResult{
 			42: {
@@ -172,6 +186,7 @@ func TestIngestGitHubWebhook_IssueRunDev_DeniesUnknownSender(t *testing.T) {
 	}
 	svc := NewService(Config{
 		AgentRuns:  runs,
+		Agents:     agents,
 		FlowEvents: events,
 		Repos:      repos,
 		Users:      &inMemoryUserRepo{},
@@ -215,8 +230,10 @@ func TestIngestGitHubWebhook_IssueNonTriggerLabelIgnored(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
 	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
 	svc := NewService(Config{
 		AgentRuns:  runs,
+		Agents:     agents,
 		FlowEvents: events,
 	})
 
@@ -245,6 +262,18 @@ func TestIngestGitHubWebhook_IssueNonTriggerLabelIgnored(t *testing.T) {
 	if len(runs.items) != 0 {
 		t.Fatalf("expected no run creation for non-trigger issue label")
 	}
+}
+
+type inMemoryAgentRepo struct {
+	items map[string]agentrepo.Agent
+}
+
+func (r *inMemoryAgentRepo) FindEffectiveByKey(_ context.Context, _ string, agentKey string) (agentrepo.Agent, bool, error) {
+	item, ok := r.items[agentKey]
+	if !ok {
+		return agentrepo.Agent{}, false, nil
+	}
+	return item, true, nil
 }
 
 type inMemoryRunRepo struct {

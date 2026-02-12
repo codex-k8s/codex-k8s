@@ -404,6 +404,18 @@ spec:
                   name: codex-k8s-runtime
                   key: CODEXK8S_GIT_BOT_TOKEN
                   optional: true
+            - name: CODEXK8S_GIT_BOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GIT_BOT_USERNAME
+                  optional: true
+            - name: CODEXK8S_GIT_BOT_MAIL
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GIT_BOT_MAIL
+                  optional: true
             - name: CODEXK8S_WORKER_POLL_INTERVAL
               value: "${CODEXK8S_WORKER_POLL_INTERVAL}"
             - name: CODEXK8S_WORKER_CLAIM_LIMIT

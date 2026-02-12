@@ -34,6 +34,10 @@ type Config struct {
 	OpenAIAPIKey string `env:"CODEXK8S_OPENAI_API_KEY"`
 	// GitBotToken is injected into run pods for git transport (fetch/push only).
 	GitBotToken string `env:"CODEXK8S_GIT_BOT_TOKEN"`
+	// GitBotUsername is GitHub username used with bot token for git transport auth.
+	GitBotUsername string `env:"CODEXK8S_GIT_BOT_USERNAME" envDefault:"codex-bot"`
+	// GitBotMail is git author email configured in run pods.
+	GitBotMail string `env:"CODEXK8S_GIT_BOT_MAIL" envDefault:"codex-bot@codex-k8s.local"`
 	// AgentDefaultModel is fallback model when issue labels do not override model.
 	AgentDefaultModel string `env:"CODEXK8S_AGENT_DEFAULT_MODEL" envDefault:"gpt-5.3-codex"`
 	// AgentDefaultReasoningEffort is fallback reasoning profile when issue labels do not override reasoning.

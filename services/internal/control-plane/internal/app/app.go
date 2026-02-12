@@ -26,6 +26,7 @@ import (
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
+	agentrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agent"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentrun"
 	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentsession"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/flowevent"
@@ -71,6 +72,7 @@ func Run() error {
 	}()
 
 	agentRuns := agentrunrepo.NewRepository(db)
+	agents := agentrepo.NewRepository(db)
 	flowEvents := floweventrepo.NewRepository(db)
 
 	users := userrepo.NewRepository(db)
@@ -124,6 +126,7 @@ func Run() error {
 
 	webhookService := webhook.NewService(webhook.Config{
 		AgentRuns:           agentRuns,
+		Agents:              agents,
 		FlowEvents:          flowEvents,
 		Repos:               repos,
 		Projects:            projects,

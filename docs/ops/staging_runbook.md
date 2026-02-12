@@ -84,7 +84,7 @@ for run_ns in $(kubectl get ns -l codex-k8s.dev/managed-by=codex-k8s-worker,code
   kubectl -n "${run_ns}" get jobs,pods
   kubectl -n "${run_ns}" get pod -l app.kubernetes.io/name=codex-k8s-run \
     -o jsonpath='{range .items[*].spec.containers[*].env[*]}{.name}{"\n"}{end}' \
-    | grep -E 'CODEXK8S_OPENAI_API_KEY|CODEXK8S_GIT_BOT_TOKEN' || true
+    | grep -E 'CODEXK8S_OPENAI_API_KEY|CODEXK8S_GIT_BOT_TOKEN|CODEXK8S_GIT_BOT_USERNAME|CODEXK8S_GIT_BOT_MAIL|CODEXK8S_AGENT_DISPLAY_NAME' || true
 done
 
 # Legacy runtime keys must not appear after Day3 rollout

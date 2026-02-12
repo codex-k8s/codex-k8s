@@ -12,6 +12,7 @@ import (
 
 	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
+	agentrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agent"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
 	projectrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/project"
@@ -22,9 +23,12 @@ import (
 
 const githubWebhookActorID = floweventdomain.ActorIDGitHubWebhook
 
+const defaultRunAgentKey = "dev"
+
 // Service ingests provider webhooks into idempotent run and flow-event records.
 type Service struct {
 	agentRuns  agentrunrepo.Repository
+	agents     agentrepo.Repository
 	flowEvents floweventrepo.Repository
 	repos      repocfgrepo.Repository
 	projects   projectrepo.Repository
@@ -38,6 +42,7 @@ type Service struct {
 // Config wires webhook domain dependencies.
 type Config struct {
 	AgentRuns           agentrunrepo.Repository
+	Agents              agentrepo.Repository
 	FlowEvents          floweventrepo.Repository
 	Repos               repocfgrepo.Repository
 	Projects            projectrepo.Repository
@@ -60,6 +65,7 @@ func NewService(cfg Config) *Service {
 
 	return &Service{
 		agentRuns:           cfg.AgentRuns,
+		agents:              cfg.Agents,
 		flowEvents:          cfg.FlowEvents,
 		repos:               cfg.Repos,
 		projects:            cfg.Projects,
@@ -147,6 +153,10 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 	if err != nil {
 		return IngestResult{}, fmt.Errorf("resolve learning mode: %w", err)
 	}
+	agent, err := s.resolveRunAgent(ctx, payloadProjectID, triggerPtr(trigger, hasIssueRunTrigger))
+	if err != nil {
+		return IngestResult{}, fmt.Errorf("resolve run agent: %w", err)
+	}
 
 	runPayload, err := buildRunPayload(runPayloadInput{
 		Command:          cmd,
@@ -157,6 +167,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		HasBinding:       hasBinding,
 		LearningMode:     learningMode,
 		Trigger:          triggerPtr(trigger, hasIssueRunTrigger),
+		Agent:            agent,
 	})
 	if err != nil {
 		return IngestResult{}, fmt.Errorf("build run payload: %w", err)
@@ -165,6 +176,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 	createResult, err := s.agentRuns.CreatePendingIfAbsent(ctx, agentrunrepo.CreateParams{
 		CorrelationID: cmd.CorrelationID,
 		ProjectID:     projectID,
+		AgentID:       agent.ID,
 		RunPayload:    runPayload,
 		LearningMode:  learningMode,
 	})
@@ -318,6 +330,39 @@ func triggerPtr(trigger issueRunTrigger, ok bool) *issueRunTrigger {
 	}
 	t := trigger
 	return &t
+}
+
+func (s *Service) resolveRunAgent(ctx context.Context, projectID string, trigger *issueRunTrigger) (runAgentProfile, error) {
+	agentKey := resolveRunAgentKey(trigger)
+	if s.agents == nil {
+		return runAgentProfile{}, fmt.Errorf("agent repository is not configured")
+	}
+
+	agent, ok, err := s.agents.FindEffectiveByKey(ctx, projectID, agentKey)
+	if err != nil {
+		return runAgentProfile{}, err
+	}
+	if !ok {
+		return runAgentProfile{}, fmt.Errorf("failed_precondition: no active agent configured for key %q", agentKey)
+	}
+
+	return runAgentProfile{
+		ID:   agent.ID,
+		Key:  agent.AgentKey,
+		Name: agent.Name,
+	}, nil
+}
+
+func resolveRunAgentKey(trigger *issueRunTrigger) string {
+	if trigger == nil {
+		return defaultRunAgentKey
+	}
+	switch trigger.Kind {
+	case webhookdomain.TriggerKindDev, webhookdomain.TriggerKindDevRevise:
+		return defaultRunAgentKey
+	default:
+		return defaultRunAgentKey
+	}
 }
 
 func (s *Service) resolveProjectBinding(ctx context.Context, envelope githubWebhookEnvelope) (projectID string, repositoryID string, servicesYAMLPath string, ok bool, err error) {

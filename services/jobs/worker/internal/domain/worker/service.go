@@ -43,6 +43,10 @@ type Config struct {
 	OpenAIAPIKey string
 	// GitBotToken is injected into run pods for git transport only.
 	GitBotToken string
+	// GitBotUsername is GitHub username used with bot token for git transport auth.
+	GitBotUsername string
+	// GitBotMail is git author email configured in run pods.
+	GitBotMail string
 	// AgentDefaultModel is fallback model when issue labels do not override model.
 	AgentDefaultModel string
 	// AgentDefaultReasoningEffort is fallback reasoning profile when issue labels do not override reasoning.
@@ -104,6 +108,14 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	cfg.ControlPlaneMCPBaseURL = strings.TrimSpace(cfg.ControlPlaneMCPBaseURL)
 	cfg.OpenAIAPIKey = strings.TrimSpace(cfg.OpenAIAPIKey)
 	cfg.GitBotToken = strings.TrimSpace(cfg.GitBotToken)
+	cfg.GitBotUsername = strings.TrimSpace(cfg.GitBotUsername)
+	if cfg.GitBotUsername == "" {
+		cfg.GitBotUsername = "codex-bot"
+	}
+	cfg.GitBotMail = strings.TrimSpace(cfg.GitBotMail)
+	if cfg.GitBotMail == "" {
+		cfg.GitBotMail = "codex-bot@codex-k8s.local"
+	}
 	cfg.AgentDefaultModel = strings.TrimSpace(cfg.AgentDefaultModel)
 	if cfg.AgentDefaultModel == "" {
 		cfg.AgentDefaultModel = "gpt-5.3-codex"
@@ -327,6 +339,9 @@ func (s *Service) launchPending(ctx context.Context) error {
 			BaseBranch:           s.cfg.AgentBaseBranch,
 			OpenAIAPIKey:         s.cfg.OpenAIAPIKey,
 			GitBotToken:          s.cfg.GitBotToken,
+			AgentDisplayName:     agentCtx.AgentDisplayName,
+			GitBotUsername:       s.cfg.GitBotUsername,
+			GitBotMail:           s.cfg.GitBotMail,
 		})
 		if err != nil {
 			s.logger.Error("launch run job failed", "run_id", claimed.RunID, "err", err)

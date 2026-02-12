@@ -81,8 +81,14 @@ type JobSpec struct {
 	BaseBranch string
 	// OpenAIAPIKey is passed to run pod for codex login.
 	OpenAIAPIKey string
+	// AgentDisplayName is human-readable agent name used for commit author.
+	AgentDisplayName string
 	// GitBotToken is passed to run pod for git transport operations.
 	GitBotToken string
+	// GitBotUsername is GitHub username used with token for git transport auth.
+	GitBotUsername string
+	// GitBotMail is git author email configured inside run pod.
+	GitBotMail string
 }
 
 // NamespaceSpec defines runtime namespace metadata.
@@ -275,7 +281,10 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 					{Name: "CODEXK8S_PROMPT_TEMPLATE_LOCALE", Value: strings.TrimSpace(spec.PromptTemplateLocale)},
 					{Name: "CODEXK8S_AGENT_BASE_BRANCH", Value: strings.TrimSpace(spec.BaseBranch)},
 					{Name: "CODEXK8S_OPENAI_API_KEY", Value: strings.TrimSpace(spec.OpenAIAPIKey)},
+					{Name: "CODEXK8S_AGENT_DISPLAY_NAME", Value: strings.TrimSpace(spec.AgentDisplayName)},
 					{Name: "CODEXK8S_GIT_BOT_TOKEN", Value: strings.TrimSpace(spec.GitBotToken)},
+					{Name: "CODEXK8S_GIT_BOT_USERNAME", Value: strings.TrimSpace(spec.GitBotUsername)},
+					{Name: "CODEXK8S_GIT_BOT_MAIL", Value: strings.TrimSpace(spec.GitBotMail)},
 				},
 			},
 		},

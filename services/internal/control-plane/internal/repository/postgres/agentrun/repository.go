@@ -42,6 +42,7 @@ func (r *Repository) CreatePendingIfAbsent(ctx context.Context, params domainrep
 		runID,
 		params.CorrelationID,
 		params.ProjectID,
+		params.AgentID,
 		[]byte(params.RunPayload),
 		params.LearningMode,
 	).Scan(&insertedRunID)

@@ -197,7 +197,10 @@ require_env CODEXK8S_CORRELATION_ID
 require_env CODEXK8S_REPOSITORY_FULL_NAME
 require_env CODEXK8S_MCP_BASE_URL
 require_env CODEXK8S_MCP_BEARER_TOKEN
+require_env CODEXK8S_AGENT_DISPLAY_NAME
 require_env CODEXK8S_GIT_BOT_TOKEN
+require_env CODEXK8S_GIT_BOT_USERNAME
+require_env CODEXK8S_GIT_BOT_MAIL
 require_env CODEXK8S_OPENAI_API_KEY
 
 HOME_DIR="${HOME:-/root}"
@@ -290,11 +293,11 @@ if [ "${TRIGGER_KIND}" = "dev_revise" ]; then
   fi
 fi
 
-REPO_URL="https://x-access-token:${CODEXK8S_GIT_BOT_TOKEN}@github.com/${CODEXK8S_REPOSITORY_FULL_NAME}.git"
+REPO_URL="https://${CODEXK8S_GIT_BOT_USERNAME}:${CODEXK8S_GIT_BOT_TOKEN}@github.com/${CODEXK8S_REPOSITORY_FULL_NAME}.git"
 rm -rf "${REPO_DIR}"
 git clone "${REPO_URL}" "${REPO_DIR}" >/dev/null 2>&1
-git -C "${REPO_DIR}" config user.name "${CODEXK8S_GIT_AUTHOR_NAME:-codex-bot}"
-git -C "${REPO_DIR}" config user.email "${CODEXK8S_GIT_AUTHOR_EMAIL:-codex-bot@codex-k8s.local}"
+git -C "${REPO_DIR}" config user.name "${CODEXK8S_AGENT_DISPLAY_NAME}"
+git -C "${REPO_DIR}" config user.email "${CODEXK8S_GIT_BOT_MAIL}"
 git -C "${REPO_DIR}" fetch origin "${BASE_BRANCH}" --depth=50 >/dev/null 2>&1 || true
 
 if git -C "${REPO_DIR}" ls-remote --exit-code --heads origin "${TARGET_BRANCH}" >/dev/null 2>&1; then

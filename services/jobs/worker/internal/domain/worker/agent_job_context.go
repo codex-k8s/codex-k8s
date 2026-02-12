@@ -24,6 +24,7 @@ type runAgentContext struct {
 	IssueNumber          int64
 	TriggerKind          string
 	TriggerLabel         string
+	AgentDisplayName     string
 	PromptTemplateKind   string
 	PromptTemplateSource string
 	PromptTemplateLocale string
@@ -37,6 +38,7 @@ type runAgentPayload struct {
 	Repository *runAgentRepository `json:"repository"`
 	Issue      *runAgentIssue      `json:"issue"`
 	Trigger    *runAgentTrigger    `json:"trigger"`
+	Agent      *runAgentDescriptor `json:"agent"`
 	RawPayload json.RawMessage     `json:"raw_payload"`
 }
 
@@ -51,6 +53,10 @@ type runAgentIssue struct {
 type runAgentTrigger struct {
 	Kind  string `json:"kind"`
 	Label string `json:"label"`
+}
+
+type runAgentDescriptor struct {
+	Name string `json:"name"`
 }
 
 type githubRawIssueEvent struct {
@@ -73,6 +79,7 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 		IssueNumber:        payload.issueNumber,
 		TriggerKind:        normalizeTriggerKind(payload.triggerKind),
 		TriggerLabel:       strings.TrimSpace(payload.triggerLabel),
+		AgentDisplayName:   strings.TrimSpace(payload.agentDisplayName),
 		PromptTemplateKind: promptTemplateKindWork,
 		Model:              defaults.DefaultModel,
 		ModelSource:        modelSourceDefault,
@@ -89,6 +96,9 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 	}
 	if ctx.TriggerKind == triggerKindDevRevise {
 		ctx.PromptTemplateKind = promptTemplateKindReview
+	}
+	if ctx.AgentDisplayName == "" {
+		return runAgentContext{}, fmt.Errorf("failed_precondition: run payload missing agent.name")
 	}
 
 	labels := payload.issueLabels
@@ -119,6 +129,7 @@ type parsedRunAgentPayload struct {
 	issueNumber        int64
 	triggerKind        string
 	triggerLabel       string
+	agentDisplayName   string
 	issueLabels        []string
 }
 
@@ -140,6 +151,9 @@ func parseRunAgentPayload(raw json.RawMessage) parsedRunAgentPayload {
 	if payload.Trigger != nil {
 		out.triggerKind = strings.TrimSpace(payload.Trigger.Kind)
 		out.triggerLabel = strings.TrimSpace(payload.Trigger.Label)
+	}
+	if payload.Agent != nil {
+		out.agentDisplayName = strings.TrimSpace(payload.Agent.Name)
 	}
 	out.issueLabels = extractIssueLabels(payload.RawPayload)
 	return out
