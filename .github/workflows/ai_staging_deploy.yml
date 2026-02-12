@@ -1,8 +1,6 @@
 name: "AI Staging deploy 🚀"
 
 on:
-  push:
-    branches: [codex/dev]
   workflow_run:
     workflows: ["Build Internal Image (Kaniko) 🐳"]
     branches: [main]
@@ -94,7 +92,7 @@ concurrency:
 jobs:
   deploy:
     name: "Deploy codex-k8s to ai-staging"
-    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ${{ vars.CODEXK8S_STAGING_RUNNER || 'codex-k8s-ai-staging' }}
     environment: ai-staging
     steps:
