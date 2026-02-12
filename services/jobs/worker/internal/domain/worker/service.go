@@ -136,7 +136,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	}
 	cfg.AgentDefaultModel = strings.TrimSpace(cfg.AgentDefaultModel)
 	if cfg.AgentDefaultModel == "" {
-		cfg.AgentDefaultModel = "gpt-5.3-codex"
+		cfg.AgentDefaultModel = "gpt-5-codex"
 	}
 	cfg.AgentDefaultReasoningEffort = strings.TrimSpace(cfg.AgentDefaultReasoningEffort)
 	if cfg.AgentDefaultReasoningEffort == "" {

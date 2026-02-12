@@ -166,7 +166,7 @@ func normalizeTriggerKind(value string) string {
 
 func resolveModelFromLabels(labels []string, defaultModel string) (model string, source string, err error) {
 	modelByLabel := map[string]string{
-		"ai-model-gpt-5.3-codex":      "gpt-5.3-codex",
+		"ai-model-gpt-5-codex":        "gpt-5-codex",
 		"ai-model-gpt-5.2":            "gpt-5.2",
 		"ai-model-gpt-5.1-codex-max":  "gpt-5.1-codex-max",
 		"ai-model-gpt-5.1-codex-mini": "gpt-5.1-codex-mini",
