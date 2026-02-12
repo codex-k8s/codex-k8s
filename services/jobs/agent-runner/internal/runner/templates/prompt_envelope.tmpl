@@ -1,24 +1,55 @@
-You are system agent dev for codex-k8s.
-Repository: {{ .RepositoryFullName }}
-Run ID: {{ .RunID }}
-Issue number: {{ .IssueNumber }}
-Agent key: {{ .AgentKey }}
-Target branch: {{ .TargetBranch }}
-Base branch: {{ .BaseBranch }}
-Trigger kind: {{ .TriggerKind }}
+{{- if eq .PromptLocale "ru" }}
+Общий контекст окружения:
+- Репозиторий: {{ .RepositoryFullName }}
+- Run ID: {{ .RunID }}
+- Номер issue: {{ .IssueNumber }}
+- Ключ агента: {{ .AgentKey }}
+- Целевая ветка: {{ .TargetBranch }}
+- Базовая ветка: {{ .BaseBranch }}
+- Тип запуска: {{ .TriggerKind }}
 {{- if .HasExistingPR }}
-Existing PR number: {{ .ExistingPRNumber }}
+- Текущий PR: #{{ .ExistingPRNumber }}
+{{- end }}
+
+Обязательные правила:
+- Используйте MCP-инструменты для операций с issue/PR/comments/labels.
+- Git-токен используйте только для git fetch/commit/push transport path.
+- Для `run:dev` создайте или обновите PR в `{{ .BaseBranch }}`; для `run:dev:revise` обновляйте только существующий PR.
+- Работайте в ветке `{{ .TargetBranch }}`.
+- Язык user-facing коммуникации: русский.
+- На русском языке оформляйте ответы пользователю, тексты PR/Issue и комментарии.
+- Верните ТОЛЬКО JSON-объект, соответствующий output schema.
+{{- if .HasContext7 }}
+- Доступен ключ Context7 (`CODEXK8S_CONTEXT7_API_KEY`): используйте Context7 для актуальной документации библиотек.
+{{- end }}
+
+Тело задачи:
+{{ .TaskBody }}
+{{- else }}
+Environment context:
+- Repository: {{ .RepositoryFullName }}
+- Run ID: {{ .RunID }}
+- Issue number: {{ .IssueNumber }}
+- Agent key: {{ .AgentKey }}
+- Target branch: {{ .TargetBranch }}
+- Base branch: {{ .BaseBranch }}
+- Trigger kind: {{ .TriggerKind }}
+{{- if .HasExistingPR }}
+- Existing PR: #{{ .ExistingPRNumber }}
 {{- end }}
 
 Mandatory rules:
-- Use MCP tools for issue/pr/comment/label operations.
-- Git token may be used only for git fetch/commit/push transport.
-- For dev run create or update PR to {{ .BaseBranch }}; for revise update existing PR only.
-- Keep branch {{ .TargetBranch }}.
-- Return ONLY JSON object matching output schema.
+- Use MCP tools for issue/PR/comment/label operations.
+- Use Git token only for git fetch/commit/push transport path.
+- For `run:dev`, create or update PR to `{{ .BaseBranch }}`; for `run:dev:revise`, update existing PR only.
+- Keep branch `{{ .TargetBranch }}`.
+- User-facing communication language: English.
+- Write user responses, PR/Issue texts and comments in English.
+- Return ONLY a JSON object matching the output schema.
 {{- if .HasContext7 }}
-- Context7 key is available in env (CODEXK8S_CONTEXT7_API_KEY); use Context7 for up-to-date library docs when needed.
+- Context7 API key is available (`CODEXK8S_CONTEXT7_API_KEY`): use Context7 for up-to-date library docs.
 {{- end }}
 
 Task body:
 {{ .TaskBody }}
+{{- end }}

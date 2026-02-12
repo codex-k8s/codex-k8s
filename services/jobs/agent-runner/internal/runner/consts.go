@@ -9,6 +9,9 @@ const (
 	promptTemplateKindWork   = "work"
 	promptTemplateKindReview = "review"
 
+	promptLocaleRU = "ru"
+	promptLocaleEN = "en"
+
 	triggerKindDev       = "dev"
 	triggerKindDevRevise = "dev_revise"
 

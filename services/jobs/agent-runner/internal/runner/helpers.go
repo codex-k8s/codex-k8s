@@ -37,6 +37,18 @@ func renderTemplate(templateName string, data any) (string, error) {
 	return out.String(), nil
 }
 
+func normalizePromptLocale(value string) string {
+	normalized := strings.ToLower(strings.TrimSpace(value))
+	switch {
+	case strings.HasPrefix(normalized, promptLocaleRU):
+		return promptLocaleRU
+	case strings.HasPrefix(normalized, promptLocaleEN):
+		return promptLocaleEN
+	default:
+		return promptLocaleEN
+	}
+}
+
 func (s *Service) renderTaskTemplate(templateKind string) (string, error) {
 	templateName := templateNamePromptWork
 	if templateKind == promptTemplateKindReview {
@@ -44,7 +56,8 @@ func (s *Service) renderTaskTemplate(templateKind string) (string, error) {
 	}
 
 	return renderTemplate(templateName, promptTaskTemplateData{
-		BaseBranch: s.cfg.AgentBaseBranch,
+		BaseBranch:   s.cfg.AgentBaseBranch,
+		PromptLocale: normalizePromptLocale(s.cfg.PromptTemplateLocale),
 	})
 }
 
@@ -78,6 +91,7 @@ func (s *Service) buildPrompt(taskBody string, result runResult) (string, error)
 		HasExistingPR:      result.triggerKind == triggerKindDevRevise && result.existingPRNumber > 0,
 		ExistingPRNumber:   result.existingPRNumber,
 		HasContext7:        hasContext7,
+		PromptLocale:       normalizePromptLocale(s.cfg.PromptTemplateLocale),
 		TaskBody:           taskBody,
 	})
 }

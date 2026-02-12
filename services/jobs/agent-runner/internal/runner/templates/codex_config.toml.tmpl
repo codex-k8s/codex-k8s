@@ -11,4 +11,5 @@ persistence = "save-all"
 [mcp_servers.codex_k8s]
 url = "{{ .MCPBaseURL }}"
 bearer_token_env_var = "CODEXK8S_MCP_BEARER_TOKEN"
+# Day5+ follow-up: make tool_timeout_sec configurable per run/agent for long approver waits (hours).
 tool_timeout_sec = 180

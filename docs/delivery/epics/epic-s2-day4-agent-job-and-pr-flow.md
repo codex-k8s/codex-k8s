@@ -270,7 +270,7 @@ PR policy:
 ## Фактическая реализация (2026-02-12)
 - Добавлен отдельный runtime image `services/jobs/agent-runner/Dockerfile` и Go-бинарь `services/jobs/agent-runner/cmd/agent-runner`:
   - инструменты runtime устанавливаются проектным bootstrap-скриптом `services/jobs/agent-runner/scripts/bootstrap_tools.sh` (после установки `@openai/codex`);
-  - baseline toolchain включает `go`, `protoc` + `protoc-gen-go`/`protoc-gen-go-grpc`, `oapi-codegen`, `openapi-ts`, `golangci-lint`, `dupl`, `gh`, `kubectl`, а также базовые утилиты (`git`, `jq`, `bash`);
+  - baseline toolchain включает `go`, `protoc` + `protoc-gen-go`/`protoc-gen-go-grpc`, `oapi-codegen`, `openapi-ts`, `golangci-lint`, `dupl`, а также базовые утилиты (`git`, `jq`, `bash`);
   - governance write-действия по GitHub/Kubernetes выполняются через MCP policy/audit контур;
 - В `control-plane` добавлены gRPC callback методы для agent-runner:
   - `UpsertAgentSession`,
@@ -305,6 +305,7 @@ PR policy:
 - Follow-up в плане:
   - Day5: детерминированные post-run label transitions для owner flow (`run:* -> state:*`),
   - Day6: policy/audit hardening для автоматических label transitions и конфликтов.
+  - Day6+: вынести `mcp_servers.codex_k8s.tool_timeout_sec` в настраиваемую policy/runtime-конфигурацию (пер-run/пер-agent), чтобы поддержать долгие approver flow (часы) без ручных правок шаблона.
 ## Критерии приемки эпика — статус
 - Выполнено: `run:dev` запускает агентный Job и поддерживает PR-flow.
 - Выполнено: `run:dev:revise` работает с resume-path, при отсутствии PR отклоняется с `failed_precondition` и событием `run.revise.pr_not_found`.

@@ -115,7 +115,8 @@ type codexReport struct {
 }
 
 type promptTaskTemplateData struct {
-	BaseBranch string
+	BaseBranch   string
+	PromptLocale string
 }
 
 type promptEnvelopeTemplateData struct {
@@ -129,6 +130,7 @@ type promptEnvelopeTemplateData struct {
 	HasExistingPR      bool
 	ExistingPRNumber   int
 	HasContext7        bool
+	PromptLocale       string
 	TaskBody           string
 }
 
