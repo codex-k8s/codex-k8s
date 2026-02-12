@@ -25,6 +25,7 @@ import (
 	kubernetesclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/kubernetes"
 	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
+	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
 	agentrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agent"
@@ -118,6 +119,21 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("init mcp domain service: %w", err)
 	}
+	runStatusService, err := runstatusdomain.NewService(runstatusdomain.Config{
+		PublicBaseURL:   cfg.PublicBaseURL,
+		TokenSigningKey: mcpSigningKey,
+		DefaultLocale:   "ru",
+	}, runstatusdomain.Dependencies{
+		Runs:       agentRuns,
+		Repos:      repos,
+		TokenCrypt: tokenCrypto,
+		GitHub:     githubMCPClient,
+		Kubernetes: k8sClient,
+		FlowEvents: flowEvents,
+	})
+	if err != nil {
+		return fmt.Errorf("init runstatus domain service: %w", err)
+	}
 
 	learningDefault, err := cfg.LearningModeDefaultBool()
 	if err != nil {
@@ -185,6 +201,7 @@ func Run() error {
 		Staff:          staffService,
 		Users:          users,
 		AgentCallbacks: agentCallbackService,
+		RunStatus:      runStatusService,
 		MCP:            mcpService,
 		Logger:         logger,
 	}))

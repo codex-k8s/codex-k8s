@@ -20,6 +20,7 @@ type ActorID string
 const (
 	ActorIDGitHubWebhook   ActorID = "github-webhook"
 	ActorIDWorker          ActorID = "worker"
+	ActorIDControlPlane    ActorID = "control-plane"
 	ActorIDControlPlaneMCP ActorID = "control-plane-mcp"
 	ActorIDAgentRunner     ActorID = "agent-runner"
 )
@@ -47,14 +48,16 @@ const (
 )
 
 const (
-	EventTypeRunMCPTokenIssued       EventType = "run.mcp.token.issued"
-	EventTypeRunAgentStarted         EventType = "run.agent.started"
-	EventTypeRunAgentSessionRestored EventType = "run.agent.session.restored"
-	EventTypeRunAgentSessionSaved    EventType = "run.agent.session.saved"
-	EventTypeRunAgentResumeUsed      EventType = "run.agent.resume.used"
-	EventTypeRunPRCreated            EventType = "run.pr.created"
-	EventTypeRunPRUpdated            EventType = "run.pr.updated"
-	EventTypeRunRevisePRNotFound     EventType = "run.revise.pr_not_found"
+	EventTypeRunMCPTokenIssued         EventType = "run.mcp.token.issued"
+	EventTypeRunAgentStarted           EventType = "run.agent.started"
+	EventTypeRunAgentSessionRestored   EventType = "run.agent.session.restored"
+	EventTypeRunAgentSessionSaved      EventType = "run.agent.session.saved"
+	EventTypeRunAgentResumeUsed        EventType = "run.agent.resume.used"
+	EventTypeRunPRCreated              EventType = "run.pr.created"
+	EventTypeRunPRUpdated              EventType = "run.pr.updated"
+	EventTypeRunRevisePRNotFound       EventType = "run.revise.pr_not_found"
+	EventTypeRunStatusCommentUpserted  EventType = "run.status.comment.upserted"
+	EventTypeRunNamespaceDeleteByToken EventType = "run.namespace.delete_by_token"
 )
 
 const (

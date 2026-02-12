@@ -142,6 +142,7 @@ func Run() error {
 		Feedback:       feedback,
 		Launcher:       launcher,
 		MCPTokenIssuer: controlPlane,
+		RunStatus:      controlPlane,
 		Logger:         logger,
 	})
 

@@ -71,6 +71,7 @@ func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Clien
 	h := newWebhookHandler(cfg, cp)
 	authH := newAuthHandler(auth, cfg.CookieSecure)
 	staffH := newStaffHandler(cp)
+	runNamespaceH := newRunNamespaceHandler(cp)
 
 	staffAuthMw := requireStaffAuth(auth, cp.ResolveStaffByEmail)
 
@@ -81,6 +82,7 @@ func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Clien
 	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
 
 	e.POST("/api/v1/webhooks/github", h.IngestGitHubWebhook)
+	e.GET("/api/v1/runs/namespace/cleanup/:token", runNamespaceH.DeleteRunNamespaceByToken)
 
 	e.GET("/api/v1/auth/github/login", authH.LoginGitHub)
 	e.GET("/api/v1/auth/github/callback", authH.CallbackGitHub)

@@ -63,3 +63,35 @@ func (c *Client) IssueRunMCPToken(ctx context.Context, params workerdomain.Issue
 		ExpiresAt: expiresAt,
 	}, nil
 }
+
+// UpsertRunStatusComment updates one run status comment in issue thread.
+func (c *Client) UpsertRunStatusComment(ctx context.Context, params workerdomain.RunStatusCommentParams) (workerdomain.RunStatusCommentResult, error) {
+	resp, err := c.svc.UpsertRunStatusComment(ctx, &controlplanev1.UpsertRunStatusCommentRequest{
+		RunId:          strings.TrimSpace(params.RunID),
+		Phase:          strings.TrimSpace(string(params.Phase)),
+		JobName:        optionalString(strings.TrimSpace(params.JobName)),
+		JobNamespace:   optionalString(strings.TrimSpace(params.JobNamespace)),
+		RuntimeMode:    optionalString(strings.TrimSpace(params.RuntimeMode)),
+		Namespace:      optionalString(strings.TrimSpace(params.Namespace)),
+		TriggerKind:    optionalString(strings.TrimSpace(params.TriggerKind)),
+		PromptLocale:   optionalString(strings.TrimSpace(params.PromptLocale)),
+		RunStatus:      optionalString(strings.TrimSpace(params.RunStatus)),
+		Deleted:        params.Deleted,
+		AlreadyDeleted: params.AlreadyDeleted,
+	})
+	if err != nil {
+		return workerdomain.RunStatusCommentResult{}, err
+	}
+	return workerdomain.RunStatusCommentResult{
+		CommentID:          resp.GetCommentId(),
+		CommentURL:         strings.TrimSpace(resp.GetCommentUrl()),
+		DeleteNamespaceURL: strings.TrimSpace(resp.GetDeleteNamespaceUrl()),
+	}, nil
+}
+
+func optionalString(value string) *string {
+	if value == "" {
+		return nil
+	}
+	return &value
+}

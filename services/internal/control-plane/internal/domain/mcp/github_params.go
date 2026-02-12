@@ -33,7 +33,7 @@ type GitHubListIssueLabelsParams struct {
 	IssueNumber int
 }
 
-// GitHubListBranchesParams describes branch list operation in adapter.
+// GitHubListBranchesParams describes branches list operation in adapter.
 type GitHubListBranchesParams struct {
 	Token      string
 	Owner      string
@@ -72,6 +72,15 @@ type GitHubCreateIssueCommentParams struct {
 	Repository  string
 	IssueNumber int
 	Body        string
+}
+
+// GitHubEditIssueCommentParams describes issue/PR comment update operation in adapter.
+type GitHubEditIssueCommentParams struct {
+	Token      string
+	Owner      string
+	Repository string
+	CommentID  int64
+	Body       string
 }
 
 // GitHubMutateLabelsParams describes labels add/remove operation in adapter.

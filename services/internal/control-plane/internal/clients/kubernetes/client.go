@@ -13,6 +13,7 @@ import (
 	"github.com/codex-k8s/codex-k8s/libs/go/k8s/clientcfg"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -46,6 +47,13 @@ const (
 	k8sKindPersistentVolumeClaim   = "PersistentVolumeClaim"
 	k8sKindPersistentVolume        = "PersistentVolume"
 	k8sKindStorageClass            = "StorageClass"
+
+	runNamespaceManagedByLabel   = "codex-k8s.dev/managed-by"
+	runNamespaceManagedByValue   = "codex-k8s-worker"
+	runNamespacePurposeLabel     = "codex-k8s.dev/namespace-purpose"
+	runNamespacePurposeValue     = "run"
+	runNamespaceRuntimeModeLabel = "codex-k8s.dev/runtime-mode"
+	runNamespaceRuntimeModeValue = "full-env"
 )
 
 // NewClient creates Kubernetes MCP adapter with auto-detected REST config.
@@ -232,6 +240,41 @@ func (c *Client) ExecPod(ctx context.Context, namespace string, pod string, cont
 		Stdout: stdout.String(),
 		Stderr: stderr.String(),
 	}, nil
+}
+
+// DeleteManagedRunNamespace deletes a full-env run namespace when it is marked as worker-managed.
+func (c *Client) DeleteManagedRunNamespace(ctx context.Context, namespace string) (bool, error) {
+	targetNamespace := strings.TrimSpace(namespace)
+	if targetNamespace == "" {
+		return false, fmt.Errorf("namespace is required")
+	}
+
+	ns, err := c.clientset.CoreV1().Namespaces().Get(ctx, targetNamespace, metav1.GetOptions{})
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("get namespace %s: %w", targetNamespace, err)
+	}
+
+	if strings.TrimSpace(ns.Labels[runNamespaceManagedByLabel]) != runNamespaceManagedByValue {
+		return false, fmt.Errorf("namespace %s is not managed by codex-k8s-worker", targetNamespace)
+	}
+	if strings.TrimSpace(ns.Labels[runNamespacePurposeLabel]) != runNamespacePurposeValue {
+		return false, fmt.Errorf("namespace %s is not a run namespace", targetNamespace)
+	}
+	if strings.TrimSpace(ns.Labels[runNamespaceRuntimeModeLabel]) != runNamespaceRuntimeModeValue {
+		return false, fmt.Errorf("namespace %s is not full-env runtime namespace", targetNamespace)
+	}
+
+	if err := c.clientset.CoreV1().Namespaces().Delete(ctx, targetNamespace, metav1.DeleteOptions{}); err != nil {
+		if k8serrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("delete namespace %s: %w", targetNamespace, err)
+	}
+
+	return true, nil
 }
 
 func listAsAny[T any](fn func(context.Context, metav1.ListOptions) (*T, error)) func(context.Context, metav1.ListOptions) (any, error) {

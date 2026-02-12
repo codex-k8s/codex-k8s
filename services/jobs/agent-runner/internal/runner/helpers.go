@@ -229,9 +229,48 @@ func runCommandWithInput(ctx context.Context, input []byte, stdout io.Writer, st
 	return cmd.Run()
 }
 
-func runCommandLogged(ctx context.Context, name string, args ...string) error {
+func runCommandCaptureOutput(ctx context.Context, name string, args ...string) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, name, args...)
-	cmd.Stdout = os.Stdout
+	var stdoutBuffer bytes.Buffer
+	cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuffer)
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+	return stdoutBuffer.Bytes(), nil
+}
+
+func parseCodexReportOutput(output []byte) (codexReport, json.RawMessage, error) {
+	trimmedOutput := strings.TrimSpace(string(output))
+	if trimmedOutput == "" {
+		return codexReport{}, nil, fmt.Errorf("empty codex output")
+	}
+
+	tryDecode := func(raw []byte) (codexReport, bool) {
+		if !json.Valid(raw) {
+			return codexReport{}, false
+		}
+		var report codexReport
+		if err := json.Unmarshal(raw, &report); err != nil {
+			return codexReport{}, false
+		}
+		return report, true
+	}
+
+	if report, ok := tryDecode([]byte(trimmedOutput)); ok {
+		return report, json.RawMessage(trimmedOutput), nil
+	}
+
+	lines := strings.Split(trimmedOutput, "\n")
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+		if line == "" {
+			continue
+		}
+		if report, ok := tryDecode([]byte(line)); ok {
+			return report, json.RawMessage(line), nil
+		}
+	}
+
+	return codexReport{}, nil, fmt.Errorf("failed to parse codex structured output")
 }

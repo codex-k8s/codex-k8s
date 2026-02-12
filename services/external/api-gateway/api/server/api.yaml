@@ -118,6 +118,25 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /api/v1/runs/namespace/cleanup/{token}:
+    get:
+      summary: Force delete run namespace by signed token
+      operationId: deleteRunNamespaceByToken
+      tags: [run-runtime]
+      parameters:
+        - $ref: "#/components/parameters/RunNamespaceCleanupToken"
+      responses:
+        "200":
+          description: Namespace cleanup result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunNamespaceCleanupResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/Internal"
+
   /api/v1/staff/projects:
     get:
       summary: List projects
@@ -515,6 +534,12 @@ components:
         type: integer
         minimum: 1
         maximum: 1000
+    RunNamespaceCleanupToken:
+      in: path
+      name: token
+      required: true
+      schema:
+        type: string
 
   responses:
     BadRequest:
@@ -617,6 +642,23 @@ components:
       properties:
         user:
           $ref: "#/components/schemas/MeUser"
+
+    RunNamespaceCleanupResponse:
+      type: object
+      additionalProperties: false
+      required: [run_id, namespace, deleted, already_deleted]
+      properties:
+        run_id:
+          type: string
+        namespace:
+          type: string
+        deleted:
+          type: boolean
+        already_deleted:
+          type: boolean
+        comment_url:
+          type: string
+          nullable: true
 
     Project:
       type: object

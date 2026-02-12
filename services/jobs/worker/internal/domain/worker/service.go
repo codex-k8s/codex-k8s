@@ -75,6 +75,8 @@ type Dependencies struct {
 	Launcher Launcher
 	// MCPTokenIssuer issues short-lived MCP token for run pods.
 	MCPTokenIssuer MCPTokenIssuer
+	// RunStatus updates one run-bound issue status comment.
+	RunStatus RunStatusNotifier
 	// Logger records worker diagnostics.
 	Logger *slog.Logger
 }
@@ -87,6 +89,7 @@ type Service struct {
 	feedback  learningfeedbackrepo.Repository
 	launcher  Launcher
 	mcpTokens MCPTokenIssuer
+	runStatus RunStatusNotifier
 	logger    *slog.Logger
 	now       func() time.Time
 }
@@ -153,6 +156,9 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if deps.MCPTokenIssuer == nil {
 		deps.MCPTokenIssuer = noopMCPTokenIssuer{}
 	}
+	if deps.RunStatus == nil {
+		deps.RunStatus = noopRunStatusNotifier{}
+	}
 
 	return &Service{
 		cfg:       cfg,
@@ -161,6 +167,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 		feedback:  deps.Feedback,
 		launcher:  deps.Launcher,
 		mcpTokens: deps.MCPTokenIssuer,
+		runStatus: deps.RunStatus,
 		logger:    deps.Logger,
 		now:       time.Now,
 	}
@@ -408,6 +415,20 @@ func (s *Service) launchPending(ctx context.Context) error {
 		}); err != nil {
 			return fmt.Errorf("insert run.started event: %w", err)
 		}
+
+		if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
+			RunID:        claimed.RunID,
+			Phase:        RunStatusPhaseStarted,
+			JobName:      ref.Name,
+			JobNamespace: ref.Namespace,
+			RuntimeMode:  string(execution.RuntimeMode),
+			Namespace:    execution.Namespace,
+			TriggerKind:  agentCtx.TriggerKind,
+			PromptLocale: agentCtx.PromptTemplateLocale,
+			RunStatus:    string(rundomain.StatusRunning),
+		}); err != nil {
+			s.logger.Warn("upsert run status comment (started) failed", "run_id", claimed.RunID, "err", err)
+		}
 	}
 
 	return nil
@@ -450,6 +471,18 @@ func (s *Service) finishRun(ctx context.Context, params finishRunParams) error {
 		CreatedAt:     finishedAt,
 	}); err != nil {
 		return fmt.Errorf("insert finish event: %w", err)
+	}
+
+	if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
+		RunID:        params.Run.RunID,
+		Phase:        RunStatusPhaseFinished,
+		JobName:      params.Ref.Name,
+		JobNamespace: params.Ref.Namespace,
+		RuntimeMode:  string(params.Execution.RuntimeMode),
+		Namespace:    params.Execution.Namespace,
+		RunStatus:    string(params.Status),
+	}); err != nil {
+		s.logger.Warn("upsert run status comment (finished) failed", "run_id", params.Run.RunID, "err", err)
 	}
 
 	if params.Run.LearningMode && s.feedback != nil {
@@ -532,6 +565,18 @@ func (s *Service) finishRun(ctx context.Context, params finishRunParams) error {
 				Execution:     params.Execution,
 			}); err != nil {
 				s.logger.Error("insert run.namespace.cleaned event failed", "run_id", params.Run.RunID, "err", err)
+			}
+			if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
+				RunID:        params.Run.RunID,
+				Phase:        RunStatusPhaseNamespaceDeleted,
+				JobName:      params.Ref.Name,
+				JobNamespace: params.Ref.Namespace,
+				RuntimeMode:  string(params.Execution.RuntimeMode),
+				Namespace:    params.Execution.Namespace,
+				RunStatus:    string(params.Status),
+				Deleted:      true,
+			}); err != nil {
+				s.logger.Warn("upsert run status comment (namespace deleted) failed", "run_id", params.Run.RunID, "err", err)
 			}
 		}
 	}

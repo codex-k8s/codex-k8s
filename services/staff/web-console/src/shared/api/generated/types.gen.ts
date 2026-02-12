@@ -29,6 +29,14 @@ export type MeResponse = {
     user: MeUser;
 };
 
+export type RunNamespaceCleanupResponse = {
+    run_id: string;
+    namespace: string;
+    deleted: boolean;
+    already_deleted: boolean;
+    comment_url?: string | null;
+};
+
 export type Project = {
     id: string;
     slug: string;
@@ -157,6 +165,8 @@ export type RunId = string;
 export type UserId = string;
 
 export type Limit = number;
+
+export type RunNamespaceCleanupToken = string;
 
 export type IngestGithubWebhookData = {
     body: {
@@ -294,6 +304,37 @@ export type GetMeResponses = {
 };
 
 export type GetMeResponse = GetMeResponses[keyof GetMeResponses];
+
+export type DeleteRunNamespaceByTokenData = {
+    body?: never;
+    path: {
+        token: string;
+    };
+    query?: never;
+    url: '/api/v1/runs/namespace/cleanup/{token}';
+};
+
+export type DeleteRunNamespaceByTokenErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Internal error
+     */
+    500: ErrorResponse;
+};
+
+export type DeleteRunNamespaceByTokenError = DeleteRunNamespaceByTokenErrors[keyof DeleteRunNamespaceByTokenErrors];
+
+export type DeleteRunNamespaceByTokenResponses = {
+    /**
+     * Namespace cleanup result
+     */
+    200: RunNamespaceCleanupResponse;
+};
+
+export type DeleteRunNamespaceByTokenResponse = DeleteRunNamespaceByTokenResponses[keyof DeleteRunNamespaceByTokenResponses];
 
 export type ListProjectsData = {
     body?: never;

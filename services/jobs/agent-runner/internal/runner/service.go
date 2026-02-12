@@ -112,12 +112,12 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		return fmt.Errorf("write output schema: %w", err)
 	}
 
-	lastMessageFile := filepath.Join(os.TempDir(), "codex-last-message.json")
+	var codexOutput []byte
 	if result.restoredSessionPath != "" {
 		if err := s.emitEvent(ctx, floweventdomain.EventTypeRunAgentResumeUsed, map[string]string{"restored_session_path": result.restoredSessionPath}); err != nil {
 			s.logger.Warn("emit run.agent.resume.used failed", "err", err)
 		}
-		err = runCommandLogged(
+		codexOutput, err = runCommandCaptureOutput(
 			ctx,
 			"codex",
 			"exec",
@@ -125,17 +125,15 @@ func (s *Service) Run(ctx context.Context) (err error) {
 			"--last",
 			"--cd", state.repoDir,
 			"--output-schema", outputSchemaFile,
-			"--last-message-file", lastMessageFile,
 			prompt,
 		)
 	} else {
-		err = runCommandLogged(
+		codexOutput, err = runCommandCaptureOutput(
 			ctx,
 			"codex",
 			"exec",
 			"--cd", state.repoDir,
 			"--output-schema", outputSchemaFile,
-			"--last-message-file", lastMessageFile,
 			prompt,
 		)
 	}
@@ -143,16 +141,11 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		return fmt.Errorf("codex exec failed: %w", err)
 	}
 
-	reportBytes, reportErr := os.ReadFile(lastMessageFile)
-	if reportErr != nil {
-		return fmt.Errorf("read codex result: %w", reportErr)
+	report, reportBytes, err := parseCodexReportOutput(codexOutput)
+	if err != nil {
+		return err
 	}
-	result.reportJSON = json.RawMessage(reportBytes)
-
-	var report codexReport
-	if err := json.Unmarshal(reportBytes, &report); err != nil {
-		return fmt.Errorf("decode codex result: %w", err)
-	}
+	result.reportJSON = reportBytes
 	if report.PRNumber <= 0 {
 		return fmt.Errorf("invalid codex result: pr_number is required")
 	}
