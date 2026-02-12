@@ -25,8 +25,8 @@ func NewService(cfg Config, deps Dependencies) (*Service, error) {
 	if deps.Runs == nil {
 		return nil, fmt.Errorf("runs repository is required")
 	}
-	if deps.Repos == nil {
-		return nil, fmt.Errorf("repository config repository is required")
+	if deps.Platform == nil {
+		return nil, fmt.Errorf("platform token repository is required")
 	}
 	if deps.TokenCrypt == nil {
 		return nil, fmt.Errorf("token crypt service is required")
@@ -41,7 +41,7 @@ func NewService(cfg Config, deps Dependencies) (*Service, error) {
 	return &Service{
 		cfg:        cfg,
 		runs:       deps.Runs,
-		repos:      deps.Repos,
+		platform:   deps.Platform,
 		tokenCrypt: deps.TokenCrypt,
 		github:     deps.GitHub,
 		kubernetes: deps.Kubernetes,
@@ -97,7 +97,7 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 	var savedComment mcpdomain.GitHubIssueComment
 	if existingCommentID > 0 {
 		savedComment, err = s.github.EditIssueComment(ctx, mcpdomain.GitHubEditIssueCommentParams{
-			Token:      runCtx.repoToken,
+			Token:      runCtx.githubToken,
 			Owner:      runCtx.repoOwner,
 			Repository: runCtx.repoName,
 			CommentID:  existingCommentID,
@@ -108,7 +108,7 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		}
 	} else {
 		savedComment, err = s.github.CreateIssueComment(ctx, mcpdomain.GitHubCreateIssueCommentParams{
-			Token:       runCtx.repoToken,
+			Token:       runCtx.githubToken,
 			Owner:       runCtx.repoOwner,
 			Repository:  runCtx.repoName,
 			IssueNumber: runCtx.issueNumber,
@@ -243,21 +243,9 @@ func (s *Service) loadRunContext(ctx context.Context, runID string) (runContext,
 	if repoOwner == "" || repoName == "" {
 		return runContext{}, errRunRepoNameMissing
 	}
-	repositoryID := strings.TrimSpace(payload.Project.RepositoryID)
-	if repositoryID == "" {
-		return runContext{}, errRunRepoBindingRequired
-	}
-
-	tokenEncrypted, found, err := s.repos.GetTokenEncrypted(ctx, repositoryID)
+	token, err := s.loadBotToken(ctx)
 	if err != nil {
-		return runContext{}, fmt.Errorf("load repository token: %w", err)
-	}
-	if !found || len(tokenEncrypted) == 0 {
-		return runContext{}, errRunRepoTokenMissing
-	}
-	token, err := s.tokenCrypt.DecryptString(tokenEncrypted)
-	if err != nil {
-		return runContext{}, errRunRepoTokenDecrypt
+		return runContext{}, err
 	}
 
 	triggerKind := triggerKindDev
@@ -271,7 +259,7 @@ func (s *Service) loadRunContext(ctx context.Context, runID string) (runContext,
 		issueNumber: issueNumber,
 		repoOwner:   repoOwner,
 		repoName:    repoName,
-		repoToken:   token,
+		githubToken: token,
 		triggerKind: triggerKind,
 	}, nil
 }
@@ -296,7 +284,7 @@ func (s *Service) insertFlowEvent(ctx context.Context, correlationID string, eve
 
 func (s *Service) listRunIssueComments(ctx context.Context, runCtx runContext) ([]mcpdomain.GitHubIssueComment, error) {
 	comments, err := s.github.ListIssueComments(ctx, mcpdomain.GitHubListIssueCommentsParams{
-		Token:       runCtx.repoToken,
+		Token:       runCtx.githubToken,
 		Owner:       runCtx.repoOwner,
 		Repository:  runCtx.repoName,
 		IssueNumber: runCtx.issueNumber,
@@ -306,6 +294,24 @@ func (s *Service) listRunIssueComments(ctx context.Context, runCtx runContext) (
 		return nil, fmt.Errorf("list issue comments: %w", err)
 	}
 	return comments, nil
+}
+
+func (s *Service) loadBotToken(ctx context.Context) (string, error) {
+	item, found, err := s.platform.Get(ctx)
+	if err != nil {
+		return "", fmt.Errorf("load platform github tokens: %w", err)
+	}
+	if !found || len(item.BotTokenEncrypted) == 0 {
+		return "", errRunBotTokenMissing
+	}
+	token, err := s.tokenCrypt.DecryptString(item.BotTokenEncrypted)
+	if err != nil {
+		return "", errRunBotTokenDecrypt
+	}
+	if strings.TrimSpace(token) == "" {
+		return "", errRunBotTokenMissing
+	}
+	return token, nil
 }
 
 func (s *Service) buildRunManagementURL(runID string) string {

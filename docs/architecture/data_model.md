@@ -85,6 +85,24 @@ approvals:
 | token_encrypted | bytea | no |  |  | app-level encrypted |
 | services_yaml_path | text | no | "services.yaml" |  | per-repo override |
 
+Примечание по token scope (S2 Day4+):
+- `repositories.token_encrypted` используется только для операций управления проектом/репозиторием
+  (validate repository, ensure/delete webhook и т.п. staff management path).
+- Runtime сообщения и label-операции в run/mcp контуре используют bot-token из singleton сущности `platform_github_tokens`.
+
+### Entity: platform_github_tokens
+- Назначение: singleton-хранилище платформенных GitHub токенов.
+- Важные инварианты: в таблице всегда максимум одна запись (`id=1`).
+- Поля:
+
+| Field | Type | Nullable | Default | Constraints | Notes |
+|---|---|---:|---|---|---|
+| id | smallint | no |  | pk, check(id=1) | singleton row |
+| platform_token_encrypted | bytea | yes |  |  | platform token (wide scope, management paths) |
+| bot_token_encrypted | bytea | yes |  |  | bot token (run/messaging/labels paths) |
+| created_at | timestamptz | no | now() |  | |
+| updated_at | timestamptz | no | now() |  | |
+
 ### Entity: agents
 - Назначение: системные и project-scoped custom-агенты.
 - Важные инварианты: уникальный agent_key; для custom-агента обязательна привязка к проекту.

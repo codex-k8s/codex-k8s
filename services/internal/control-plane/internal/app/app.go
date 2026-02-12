@@ -33,6 +33,7 @@ import (
 	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentsession"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/flowevent"
 	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/learningfeedback"
+	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/platformtoken"
 	projectrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/project"
 	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projectmember"
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/repocfg"
@@ -83,10 +84,21 @@ func Run() error {
 	repos := repocfgrepo.NewRepository(db)
 	feedback := learningfeedbackrepo.NewRepository(db)
 	agentSessions := agentsessionrepo.NewRepository(db)
+	platformTokens := platformtokenrepo.NewRepository(db)
 
 	tokenCrypto, err := tokencrypt.NewService(cfg.TokenEncryptionKey)
 	if err != nil {
 		return fmt.Errorf("init token encryption: %w", err)
+	}
+	if err := syncGitHubTokens(runCtx, syncGitHubTokensParams{
+		PlatformTokenRaw: strings.TrimSpace(cfg.GitHubPAT),
+		BotTokenRaw:      strings.TrimSpace(cfg.GitBotToken),
+		PlatformTokens:   platformTokens,
+		Repos:            repos,
+		TokenCrypt:       tokenCrypto,
+		Logger:           logger,
+	}); err != nil {
+		return fmt.Errorf("sync github tokens: %w", err)
 	}
 	k8sClient, err := kubernetesclient.NewClient(cfg.KubeconfigPath)
 	if err != nil {
@@ -112,6 +124,7 @@ func Run() error {
 		Runs:       agentRuns,
 		FlowEvents: flowEvents,
 		Repos:      repos,
+		Platform:   platformTokens,
 		TokenCrypt: tokenCrypto,
 		GitHub:     githubMCPClient,
 		Kubernetes: k8sClient,
@@ -124,7 +137,7 @@ func Run() error {
 		DefaultLocale: "ru",
 	}, runstatusdomain.Dependencies{
 		Runs:       agentRuns,
-		Repos:      repos,
+		Platform:   platformTokens,
 		TokenCrypt: tokenCrypto,
 		GitHub:     githubMCPClient,
 		Kubernetes: k8sClient,

@@ -13,6 +13,7 @@ import (
 	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
+	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/platformtoken"
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -67,6 +68,7 @@ type Service struct {
 	runs       agentrunrepo.Repository
 	flowEvents floweventrepo.Repository
 	repos      repocfgrepo.Repository
+	platform   platformtokenrepo.Repository
 	tokenCrypt *tokencrypt.Service
 	github     GitHubClient
 	kubernetes KubernetesClient
@@ -80,6 +82,7 @@ type Dependencies struct {
 	Runs       agentrunrepo.Repository
 	FlowEvents floweventrepo.Repository
 	Repos      repocfgrepo.Repository
+	Platform   platformtokenrepo.Repository
 	TokenCrypt *tokencrypt.Service
 	GitHub     GitHubClient
 	Kubernetes KubernetesClient
@@ -118,6 +121,9 @@ func NewService(cfg Config, deps Dependencies) (*Service, error) {
 	if deps.Repos == nil {
 		return nil, fmt.Errorf("repositories repository is required")
 	}
+	if deps.Platform == nil {
+		return nil, fmt.Errorf("platform token repository is required")
+	}
 	if deps.TokenCrypt == nil {
 		return nil, fmt.Errorf("token crypto service is required")
 	}
@@ -136,6 +142,7 @@ func NewService(cfg Config, deps Dependencies) (*Service, error) {
 		runs:        deps.Runs,
 		flowEvents:  deps.FlowEvents,
 		repos:       deps.Repos,
+		platform:    deps.Platform,
 		tokenCrypt:  deps.TokenCrypt,
 		github:      deps.GitHub,
 		kubernetes:  deps.Kubernetes,

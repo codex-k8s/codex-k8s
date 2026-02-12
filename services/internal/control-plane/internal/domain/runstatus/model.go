@@ -7,7 +7,7 @@ import (
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
-	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
+	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/platformtoken"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
@@ -86,7 +86,7 @@ type GitHubClient interface {
 // Dependencies wires required adapters for runstatus service.
 type Dependencies struct {
 	Runs       agentrunrepo.Repository
-	Repos      repocfgrepo.Repository
+	Platform   platformtokenrepo.Repository
 	TokenCrypt *tokencrypt.Service
 	GitHub     GitHubClient
 	Kubernetes KubernetesClient
@@ -98,7 +98,7 @@ type Service struct {
 	cfg Config
 
 	runs       agentrunrepo.Repository
-	repos      repocfgrepo.Repository
+	platform   platformtokenrepo.Repository
 	tokenCrypt *tokencrypt.Service
 	github     GitHubClient
 	kubernetes KubernetesClient
@@ -111,7 +111,7 @@ type runContext struct {
 	issueNumber int
 	repoOwner   string
 	repoName    string
-	repoToken   string
+	githubToken string
 	triggerKind string
 }
 

@@ -35,6 +35,10 @@ type Config struct {
 	GitHubWebhookEvents []string `env:"CODEXK8S_GITHUB_WEBHOOK_EVENTS" envDefault:"push,pull_request,issues,issue_comment,pull_request_review,pull_request_review_comment"`
 	RunDevLabel         string   `env:"CODEXK8S_RUN_DEV_LABEL" envDefault:"run:dev"`
 	RunDevReviseLabel   string   `env:"CODEXK8S_RUN_DEV_REVISE_LABEL" envDefault:"run:dev:revise"`
+	// GitHubPAT is platform-scoped GitHub token used for repository/project management paths.
+	GitHubPAT string `env:"CODEXK8S_GITHUB_PAT"`
+	// GitBotToken is runtime GitHub bot token used for comments/labels and run messaging paths.
+	GitBotToken string `env:"CODEXK8S_GIT_BOT_TOKEN"`
 
 	// TokenEncryptionKey is used to encrypt/decrypt repository tokens stored in DB.
 	TokenEncryptionKey string `env:"CODEXK8S_TOKEN_ENCRYPTION_KEY,required,notEmpty"`

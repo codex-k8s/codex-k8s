@@ -47,8 +47,11 @@ approvals:
 
 - Начиная с Day4, для agent pod действует split access model:
   - в pod выдаётся отдельный Git bot-token (`CODEXK8S_GIT_BOT_TOKEN`) для `gh/git` операций;
+  - control-plane MCP инструменты используют bot-token из `platform_github_tokens.bot_token_encrypted`;
   - для `full-env` формируется namespaced `KUBECONFIG` и разрешён direct `kubectl` в рамках namespace;
   - MCP остаётся для label operations и policy-аудита transitions.
+- `repositories.token_encrypted` в этом режиме не используется MCP runtime-контуром
+  и остаётся в domain-path управления репозиториями (staff/project management).
 - Day6+ расширяет policy: approver matrix, secret-management инструменты через MCP, единообразные события и отказоустойчивость.
 
 ## Политики доступа к MCP (roadmap Day6)

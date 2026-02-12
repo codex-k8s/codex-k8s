@@ -88,6 +88,8 @@ approvals:
 ## Контроль доступа к данным и секретам
 
 - Repo tokens хранятся в БД в шифрованном виде и не логируются.
+- Platform/bot GitHub токены хранятся в singleton таблице `platform_github_tokens`
+  (поля `platform_token_encrypted`, `bot_token_encrypted`) и синхронизируются из env на старте control-plane.
 - Agent pod получает минимально необходимые runtime-секреты на время run:
   - `CODEXK8S_OPENAI_API_KEY` для codex auth;
   - `CODEXK8S_GIT_BOT_TOKEN` для git transport path.

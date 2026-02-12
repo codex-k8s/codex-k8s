@@ -154,6 +154,7 @@ NEED_SRE_LABEL="${NEED_SRE_LABEL:-need:sre}"
 CODEXK8S_RUN_DEV_LABEL="${CODEXK8S_RUN_DEV_LABEL:-$RUN_DEV_LABEL}"
 CODEXK8S_RUN_DEV_REVISE_LABEL="${CODEXK8S_RUN_DEV_REVISE_LABEL:-$RUN_DEV_REVISE_LABEL}"
 CODEXK8S_RUN_DEBUG_LABEL="${CODEXK8S_RUN_DEBUG_LABEL:-$RUN_DEBUG_LABEL}"
+CODEXK8S_GITHUB_PAT="${CODEXK8S_GITHUB_PAT:-}"
 CODEXK8S_OPENAI_API_KEY="${CODEXK8S_OPENAI_API_KEY:-}"
 CODEXK8S_OPENAI_AUTH_FILE="${CODEXK8S_OPENAI_AUTH_FILE:-}"
 CODEXK8S_GIT_BOT_TOKEN="${CODEXK8S_GIT_BOT_TOKEN:-}"
@@ -217,6 +218,12 @@ if [ -z "$CODEXK8S_OPENAI_AUTH_FILE" ] && kubectl -n "$CODEXK8S_STAGING_NAMESPAC
   CODEXK8S_OPENAI_AUTH_FILE="$(
     kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime \
       -o jsonpath='{.data.CODEXK8S_OPENAI_AUTH_FILE}' 2>/dev/null | base64 -d || true
+  )"
+fi
+if [ -z "$CODEXK8S_GITHUB_PAT" ] && kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime >/dev/null 2>&1; then
+  CODEXK8S_GITHUB_PAT="$(
+    kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime \
+      -o jsonpath='{.data.CODEXK8S_GITHUB_PAT}' 2>/dev/null | base64 -d || true
   )"
 fi
 if [ -z "$CODEXK8S_GIT_BOT_TOKEN" ] && kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime >/dev/null 2>&1; then
@@ -375,6 +382,7 @@ if ! kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-postgres >/de
 fi
 
 kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create secret generic codex-k8s-runtime \
+  --from-literal=CODEXK8S_GITHUB_PAT="$CODEXK8S_GITHUB_PAT" \
   --from-literal=CODEXK8S_OPENAI_API_KEY="$CODEXK8S_OPENAI_API_KEY" \
   --from-literal=CODEXK8S_OPENAI_AUTH_FILE="$CODEXK8S_OPENAI_AUTH_FILE" \
   --from-literal=CODEXK8S_GIT_BOT_TOKEN="$CODEXK8S_GIT_BOT_TOKEN" \

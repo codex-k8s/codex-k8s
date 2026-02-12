@@ -208,6 +208,18 @@ spec:
                 secretKeyRef:
                   name: codex-k8s-runtime
                   key: CODEXK8S_TOKEN_ENCRYPTION_KEY
+            - name: CODEXK8S_GITHUB_PAT
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GITHUB_PAT
+                  optional: true
+            - name: CODEXK8S_GIT_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GIT_BOT_TOKEN
+                  optional: true
             - name: CODEXK8S_MCP_TOKEN_SIGNING_KEY
               valueFrom:
                 secretKeyRef:

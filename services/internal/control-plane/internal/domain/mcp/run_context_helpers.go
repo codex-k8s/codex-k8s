@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (s *Service) resolveRunContext(ctx context.Context, session SessionContext, requireRepoToken bool) (resolvedRunContext, error) {
+func (s *Service) resolveRunContext(ctx context.Context, session SessionContext, requireGitHubToken bool) (resolvedRunContext, error) {
 	runID := strings.TrimSpace(session.RunID)
 	if runID == "" {
 		return resolvedRunContext{}, fmt.Errorf("run_id is required")
@@ -62,17 +62,10 @@ func (s *Service) resolveRunContext(ctx context.Context, session SessionContext,
 	}
 
 	token := ""
-	if requireRepoToken {
-		encrypted, ok, err := s.repos.GetTokenEncrypted(ctx, repository.ID)
+	if requireGitHubToken {
+		token, err = s.loadBotToken(ctx)
 		if err != nil {
-			return resolvedRunContext{}, fmt.Errorf("get repository token: %w", err)
-		}
-		if !ok || len(encrypted) == 0 {
-			return resolvedRunContext{}, fmt.Errorf("repository token is not configured")
-		}
-		token, err = s.tokenCrypt.DecryptString(encrypted)
-		if err != nil {
-			return resolvedRunContext{}, fmt.Errorf("decrypt repository token: %w", err)
+			return resolvedRunContext{}, err
 		}
 	}
 

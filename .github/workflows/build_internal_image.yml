@@ -199,6 +199,7 @@ jobs:
 
       - name: Apply staging manifests
         env:
+          CODEXK8S_GITHUB_PAT: ${{ secrets.CODEXK8S_GITHUB_PAT }}
           CODEXK8S_OPENAI_API_KEY: ${{ secrets.CODEXK8S_OPENAI_API_KEY }}
           CODEXK8S_OPENAI_AUTH_FILE: ${{ secrets.CODEXK8S_OPENAI_AUTH_FILE || '' }}
           CODEXK8S_GIT_BOT_TOKEN: ${{ secrets.CODEXK8S_GIT_BOT_TOKEN }}

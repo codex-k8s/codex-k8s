@@ -583,6 +583,10 @@ func (r *inMemoryRepoCfgRepo) GetTokenEncrypted(_ context.Context, _ string) ([]
 	return nil, false, nil
 }
 
+func (r *inMemoryRepoCfgRepo) SetTokenEncryptedForAll(_ context.Context, _ []byte) (int64, error) {
+	return 0, nil
+}
+
 type inMemoryUserRepo struct {
 	byLogin map[string]userrepo.User
 }
