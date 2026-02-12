@@ -220,6 +220,12 @@ spec:
                   name: codex-k8s-runtime
                   key: CODEXK8S_MCP_TOKEN_TTL
                   optional: true
+            - name: CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS
+                  optional: true
             - name: CODEXK8S_CONTROL_PLANE_MCP_BASE_URL
               value: "${CODEXK8S_CONTROL_PLANE_MCP_BASE_URL}"
             - name: CODEXK8S_LEARNING_MODE_DEFAULT

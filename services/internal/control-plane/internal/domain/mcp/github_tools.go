@@ -92,6 +92,12 @@ func (s *Service) GitHubIssueCommentsList(ctx context.Context, session SessionCo
 		s.auditToolFailed(ctx, runCtx.Session, tool, err)
 		return GitHubIssueCommentsListResult{}, fmt.Errorf("github issue comments list: %w", err)
 	}
+	authenticatedUserLogin, err := s.github.GetAuthenticatedUserLogin(ctx, runCtx.Token)
+	if err != nil {
+		s.auditToolFailed(ctx, runCtx.Session, tool, err)
+		return GitHubIssueCommentsListResult{}, fmt.Errorf("resolve github token owner login: %w", err)
+	}
+	comments = filterIssueCommentsByAuthor(comments, authenticatedUserLogin)
 
 	s.auditToolSucceeded(ctx, runCtx.Session, tool)
 	return GitHubIssueCommentsListResult{

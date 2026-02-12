@@ -87,7 +87,9 @@ type runResult struct {
 	existingPRNumber    int
 	prNumber            int
 	prURL               string
-	reportJSON          json.RawMessage
+	report              codexReport
+	codexExecOutput     string
+	gitPushOutput       string
 }
 
 type restoredSession struct {
@@ -139,4 +141,18 @@ type codexConfigTemplateData struct {
 	ReasoningEffort string
 	MCPBaseURL      string
 	HasContext7     bool
+}
+
+type sessionLogSnapshot struct {
+	Version string                  `json:"version"`
+	Status  string                  `json:"status"`
+	Report  codexReport             `json:"report"`
+	Runtime sessionRuntimeLogFields `json:"runtime"`
+}
+
+type sessionRuntimeLogFields struct {
+	TargetBranch     string `json:"target_branch"`
+	CodexExecOutput  string `json:"codex_exec_output,omitempty"`
+	GitPushOutput    string `json:"git_push_output,omitempty"`
+	ExistingPRNumber int    `json:"existing_pr_number,omitempty"`
 }

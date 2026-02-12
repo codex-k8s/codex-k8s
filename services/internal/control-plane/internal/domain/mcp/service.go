@@ -40,6 +40,7 @@ type Config struct {
 type GitHubClient interface {
 	GetIssue(ctx context.Context, params GitHubGetIssueParams) (GitHubIssue, error)
 	GetPullRequest(ctx context.Context, params GitHubGetPullRequestParams) (GitHubPullRequest, error)
+	GetAuthenticatedUserLogin(ctx context.Context, token string) (string, error)
 	ListIssueComments(ctx context.Context, params GitHubListIssueCommentsParams) ([]GitHubIssueComment, error)
 	ListIssueLabels(ctx context.Context, params GitHubListIssueLabelsParams) ([]GitHubLabel, error)
 	ListBranches(ctx context.Context, params GitHubListBranchesParams) ([]GitHubBranch, error)

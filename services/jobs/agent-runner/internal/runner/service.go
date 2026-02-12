@@ -140,12 +140,13 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	if err != nil {
 		return fmt.Errorf("codex exec failed: %w", err)
 	}
+	result.codexExecOutput = trimCapturedOutput(string(codexOutput), maxCapturedCommandOutput)
 
-	report, reportBytes, err := parseCodexReportOutput(codexOutput)
+	report, _, err := parseCodexReportOutput(codexOutput)
 	if err != nil {
 		return err
 	}
-	result.reportJSON = reportBytes
+	result.report = report
 	if report.PRNumber <= 0 {
 		return fmt.Errorf("invalid codex result: pr_number is required")
 	}
@@ -165,7 +166,11 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		result.sessionID = extractSessionIDFromFile(result.sessionFilePath)
 	}
 
-	_ = runCommandQuiet(ctx, state.repoDir, "git", "push", "origin", result.targetBranch)
+	gitPushOutput, pushErr := runCommandCaptureCombinedOutput(ctx, state.repoDir, "git", "push", "origin", result.targetBranch)
+	result.gitPushOutput = gitPushOutput
+	if pushErr != nil {
+		return fmt.Errorf("git push failed: %w", pushErr)
+	}
 
 	finishedAt := time.Now().UTC()
 	if err := s.persistSessionSnapshot(ctx, result, state, runStartedAt, runStatusSucceeded, &finishedAt); err != nil {
@@ -269,12 +274,8 @@ func (s *Service) persistSessionSnapshot(ctx context.Context, result runResult, 
 	issueNumber := optionalIssueNumber(s.cfg.IssueNumber)
 	prNumber := optionalInt(result.prNumber)
 
-	reportJSON := json.RawMessage(`{}`)
-	if len(result.reportJSON) > 0 && json.Valid(result.reportJSON) {
-		reportJSON = result.reportJSON
-	}
-
 	codexSessionJSON := readJSONFileOrNil(result.sessionFilePath)
+	sessionJSON := buildSessionLogJSON(result, status)
 
 	params := cpclient.AgentSessionUpsertParams{
 		Identity: cpclient.SessionIdentity{
@@ -299,7 +300,7 @@ func (s *Service) persistSessionSnapshot(ctx context.Context, result runResult, 
 		Runtime: cpclient.SessionRuntimeState{
 			Status:           status,
 			SessionID:        result.sessionID,
-			SessionJSON:      reportJSON,
+			SessionJSON:      sessionJSON,
 			CodexSessionPath: result.sessionFilePath,
 			CodexSessionJSON: codexSessionJSON,
 			StartedAt:        startedAt.UTC(),

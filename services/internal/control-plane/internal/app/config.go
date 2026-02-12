@@ -45,6 +45,8 @@ type Config struct {
 	MCPTokenTTL string `env:"CODEXK8S_MCP_TOKEN_TTL" envDefault:"24h"`
 	// ControlPlaneMCPBaseURL is effective MCP endpoint included in prompt context and run env.
 	ControlPlaneMCPBaseURL string `env:"CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" envDefault:"http://codex-k8s-control-plane:8081/mcp"`
+	// RunAgentLogsRetentionDays controls how long run-scoped agent logs are retained in agent_runs.
+	RunAgentLogsRetentionDays int `env:"CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS" envDefault:"14"`
 
 	// DBHost is the PostgreSQL host.
 	DBHost string `env:"CODEXK8S_DB_HOST,required,notEmpty"`

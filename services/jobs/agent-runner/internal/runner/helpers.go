@@ -240,6 +240,15 @@ func runCommandCaptureOutput(ctx context.Context, name string, args ...string) (
 	return stdoutBuffer.Bytes(), nil
 }
 
+func runCommandCaptureCombinedOutput(ctx context.Context, dir string, name string, args ...string) (string, error) {
+	cmd := exec.CommandContext(ctx, name, args...)
+	if strings.TrimSpace(dir) != "" {
+		cmd.Dir = dir
+	}
+	output, err := cmd.CombinedOutput()
+	return trimCapturedOutput(string(output), maxCapturedCommandOutput), err
+}
+
 func parseCodexReportOutput(output []byte) (codexReport, json.RawMessage, error) {
 	trimmedOutput := strings.TrimSpace(string(output))
 	if trimmedOutput == "" {
@@ -273,4 +282,35 @@ func parseCodexReportOutput(output []byte) (codexReport, json.RawMessage, error)
 	}
 
 	return codexReport{}, nil, fmt.Errorf("failed to parse codex structured output")
+}
+
+func trimCapturedOutput(raw string, maxBytes int) string {
+	trimmed := strings.TrimSpace(raw)
+	if maxBytes <= 0 || len(trimmed) <= maxBytes {
+		return trimmed
+	}
+	if maxBytes < len("...(truncated)") {
+		return trimmed[:maxBytes]
+	}
+	cutoff := maxBytes - len("...(truncated)")
+	return trimmed[:cutoff] + "...(truncated)"
+}
+
+func buildSessionLogJSON(result runResult, status string) json.RawMessage {
+	payload := sessionLogSnapshot{
+		Version: sessionLogVersionV1,
+		Status:  strings.TrimSpace(status),
+		Report:  result.report,
+		Runtime: sessionRuntimeLogFields{
+			TargetBranch:     strings.TrimSpace(result.targetBranch),
+			CodexExecOutput:  strings.TrimSpace(result.codexExecOutput),
+			GitPushOutput:    strings.TrimSpace(result.gitPushOutput),
+			ExistingPRNumber: result.existingPRNumber,
+		},
+	}
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return json.RawMessage(`{}`)
+	}
+	return json.RawMessage(raw)
 }

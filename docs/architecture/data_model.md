@@ -143,6 +143,7 @@ Planned extension (Day6+):
 | agent_id | uuid | no |  | fk -> agents | |
 | status | text | no | "pending" | check enum | pending/running/waiting_owner_review/waiting_mcp/succeeded/failed/timed_out/cancelled |
 | run_payload | jsonb | no | '{}'::jsonb |  | session metadata/log refs |
+| agent_logs_json | jsonb | yes |  |  | persisted agent execution logs snapshot for staff observability |
 | learning_mode | bool | no | false |  | run-level effective mode |
 | timeout_at | timestamptz | yes |  |  | hard timeout deadline |
 | timeout_paused | bool | no | false |  | true while paused on allowed waits |
@@ -174,7 +175,7 @@ Planned extension (Day6+):
 | reasoning_effort | text | yes |  |  | |
 | status | text | no | "running" | check enum | running/succeeded/failed/cancelled/failed_precondition |
 | session_id | text | yes |  |  | external/model session id |
-| session_json | jsonb | no | '{}'::jsonb |  | tool calls, summarized context |
+| session_json | jsonb | no | '{}'::jsonb |  | run execution snapshot (report + condensed runtime logs) |
 | codex_cli_session_path | text | yes |  |  | path to saved session file in workspace/storage |
 | codex_cli_session_json | jsonb | yes |  |  | persisted codex-cli session snapshot for resume |
 | started_at | timestamptz | no | now() |  | |
@@ -351,8 +352,13 @@ Planned extension (Day6+):
 
 ## Политика хранения данных
 - Retention: flow_events, agent_sessions.session_json, agent_sessions.codex_cli_session_json и token_usage с ротацией/архивом по сроку.
+- `agent_runs.agent_logs_json` очищается периодическим cleanup loop в `control-plane` для завершённых run старше `CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS` (default: `14`).
 - Архивирование: ежедневный backup БД в staging.
 - PII/комплаенс: email хранится, токены только в шифрованном виде.
+
+Roadmap (Day5+):
+- добавить live-stream канал логов (SSE/WebSocket) и отдельную staff UI вьюшку run-деталей с обновлением действий агента в реальном времени;
+- после включения стриминга оставить `agent_runs.agent_logs_json` как fallback snapshot для пост-фактум аудита.
 
 ## Миграции (ссылка)
 См. `migrations_policy.md` (будет добавлен на этапе design) + миграции в держателе схемы:

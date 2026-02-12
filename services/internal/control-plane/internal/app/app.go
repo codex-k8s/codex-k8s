@@ -192,7 +192,10 @@ func Run() error {
 	}
 	defer func() { _ = grpcLis.Close() }()
 
-	agentCallbackService := agentcallbackdomain.NewService(agentSessions, flowEvents)
+	agentCallbackService := agentcallbackdomain.NewService(agentSessions, flowEvents, agentRuns)
+	if err := startRunAgentLogsCleanupLoop(runCtx, agentCallbackService, logger, cfg.RunAgentLogsRetentionDays); err != nil {
+		return fmt.Errorf("start run agent logs cleanup loop: %w", err)
+	}
 
 	grpcServer := grpc.NewServer()
 	controlplanev1.RegisterControlPlaneServiceServer(grpcServer, grpctransport.NewServer(grpctransport.Dependencies{

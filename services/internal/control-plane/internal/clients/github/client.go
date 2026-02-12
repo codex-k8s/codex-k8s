@@ -60,6 +60,19 @@ func (c *Client) GetPullRequest(ctx context.Context, params mcpdomain.GitHubGetP
 	}, nil
 }
 
+func (c *Client) GetAuthenticatedUserLogin(ctx context.Context, token string) (string, error) {
+	client := c.clientWithToken(token)
+	user, _, err := client.Users.Get(ctx, "")
+	if err != nil {
+		return "", err
+	}
+	login := strings.TrimSpace(user.GetLogin())
+	if login == "" {
+		return "", fmt.Errorf("github token owner login is empty")
+	}
+	return login, nil
+}
+
 func (c *Client) ListIssueComments(ctx context.Context, params mcpdomain.GitHubListIssueCommentsParams) ([]mcpdomain.GitHubIssueComment, error) {
 	client := c.clientWithToken(params.Token)
 	limit := clampLimit(params.Limit, defaultPageSize, maxPageSize)

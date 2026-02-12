@@ -20,6 +20,9 @@ const (
 	runStatusFailedPrecondition = "failed_precondition"
 
 	envContext7APIKey = "CODEXK8S_CONTEXT7_API_KEY"
+
+	sessionLogVersionV1      = "v1"
+	maxCapturedCommandOutput = 256 * 1024
 )
 
 const outputSchemaJSON = `{
