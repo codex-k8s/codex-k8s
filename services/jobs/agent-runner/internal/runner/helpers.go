@@ -248,7 +248,7 @@ func runCommandWithInput(ctx context.Context, input []byte, stdout io.Writer, st
 func runCommandCaptureOutput(ctx context.Context, name string, args ...string) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, name, args...)
 	var stdoutBuffer bytes.Buffer
-	cmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuffer)
+	cmd.Stdout = &stdoutBuffer
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return nil, err

@@ -23,6 +23,13 @@ const (
 
 	sessionLogVersionV1      = "v1"
 	maxCapturedCommandOutput = 256 * 1024
+
+	envGitAskPass        = "GIT_ASKPASS"
+	envGitTerminalPrompt = "GIT_TERMINAL_PROMPT"
+	envGitAskPassRequire = "GIT_ASKPASS_REQUIRE"
+
+	gitAskPassRequireForce = "force"
+	redactedSecretValue    = "[REDACTED]"
 )
 
 const outputSchemaJSON = `{

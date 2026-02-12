@@ -36,10 +36,16 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	if mkErr := os.MkdirAll(state.workspaceDir, 0o755); mkErr != nil {
 		return fmt.Errorf("create workspace dir: %w", mkErr)
 	}
+	cleanupGitAuthEnv, err := s.configureGitAuthEnvironment(state.workspaceDir)
+	if err != nil {
+		return fmt.Errorf("configure git auth environment: %w", err)
+	}
+	defer cleanupGitAuthEnv()
 
 	targetBranch := buildTargetBranch(s.cfg.RunID, s.cfg.IssueNumber)
 	triggerKind := normalizeTriggerKind(s.cfg.TriggerKind)
 	templateKind := normalizeTemplateKind(s.cfg.PromptTemplateKind, triggerKind)
+	sensitiveValues := s.sensitiveValues()
 
 	runStartedAt := time.Now().UTC()
 	result := runResult{
@@ -146,10 +152,10 @@ func (s *Service) Run(ctx context.Context) (err error) {
 			prompt,
 		)
 	}
+	result.codexExecOutput = redactSensitiveOutput(trimCapturedOutput(string(codexOutput), maxCapturedCommandOutput), sensitiveValues)
 	if err != nil {
 		return fmt.Errorf("codex exec failed: %w", err)
 	}
-	result.codexExecOutput = trimCapturedOutput(string(codexOutput), maxCapturedCommandOutput)
 
 	report, _, err := parseCodexReportOutput(codexOutput)
 	if err != nil {
@@ -176,7 +182,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	}
 
 	gitPushOutput, pushErr := runCommandCaptureCombinedOutput(ctx, state.repoDir, "git", "push", "origin", result.targetBranch)
-	result.gitPushOutput = gitPushOutput
+	result.gitPushOutput = redactSensitiveOutput(gitPushOutput, sensitiveValues)
 	if pushErr != nil {
 		return fmt.Errorf("git push failed: %w", pushErr)
 	}
@@ -252,7 +258,7 @@ func (s *Service) prepareRepository(ctx context.Context, result runResult, state
 		return fmt.Errorf("cleanup repo dir: %w", err)
 	}
 
-	repoURL := fmt.Sprintf("https://%s:%s@github.com/%s.git", s.cfg.GitBotUsername, s.cfg.GitBotToken, s.cfg.RepositoryFullName)
+	repoURL := fmt.Sprintf("https://github.com/%s.git", s.cfg.RepositoryFullName)
 	if err := runCommandQuiet(ctx, "", "git", "clone", repoURL, state.repoDir); err != nil {
 		return fmt.Errorf("git clone failed")
 	}
