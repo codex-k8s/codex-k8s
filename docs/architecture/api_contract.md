@@ -37,6 +37,7 @@ approvals:
   - GitHub tools (issue/pr/comments/labels/branches);
   - Kubernetes tools (namespaced diagnostics/read для workload/network/storage сущностей + cluster-scope read для storage/ingress classes + policy-gated write operations);
   - prompt context (`codex://prompt/context` + tool `codex_prompt_context_get`).
+- Для `github_issue_comments_list` по умолчанию скрываются комментарии владельца используемого GitHub token (служебные комментарии платформы/бота); для явного показа доступен флаг `include_token_owner_comments=true`.
 
 ## Модель доступа GitHub для агентного pod (S2 Day4)
 - Агентный pod получает отдельный bot-token только для git transport операций в рабочем репозитории:

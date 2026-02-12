@@ -190,8 +190,9 @@ type GitHubPullRequestGetInput struct {
 
 // GitHubIssueCommentsListInput describes issue comments list input.
 type GitHubIssueCommentsListInput struct {
-	IssueNumber int `json:"issue_number,omitempty"`
-	Limit       int `json:"limit,omitempty"`
+	IssueNumber               int  `json:"issue_number,omitempty"`
+	Limit                     int  `json:"limit,omitempty"`
+	IncludeTokenOwnerComments bool `json:"include_token_owner_comments,omitempty"`
 }
 
 // GitHubLabelsListInput describes issue labels list input.

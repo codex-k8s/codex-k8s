@@ -77,6 +77,7 @@ approvals:
   - выпуск и проверка short-lived run токенов;
   - deterministic tool catalog;
   - GitHub read/write ручки (issue/pr/comments/labels/branches/ensure/upsert/comment);
+  - для `github_issue_comments_list` введена фильтрация служебных комментариев владельца token по умолчанию с опциональным override (`include_token_owner_comments=true`);
   - Kubernetes ручки:
     - namespaced diagnostics/read: `pods`, `events`, `deployments`, `daemonsets`, `statefulsets`, `replicasets`, `replicationcontrollers`, `jobs`, `cronjobs`, `configmaps`, `secrets`, `resourcequotas`, `hpa`, `services`, `endpoints`, `ingresses`, `networkpolicies`, `pvcs`;
     - cluster-scope read: `ingressclasses`, `pvs`, `storageclasses`;
