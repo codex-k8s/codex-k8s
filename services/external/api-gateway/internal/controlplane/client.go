@@ -3,7 +3,6 @@ package controlplane
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/cast"
@@ -79,17 +78,6 @@ func (c *Client) IngestGitHubWebhook(ctx context.Context, correlationID string, 
 		DeliveryId:    deliveryID,
 		ReceivedAt:    timestamppb.New(receivedAt.UTC()),
 		PayloadJson:   payloadJSON,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
-}
-
-// DeleteRunNamespaceByToken calls control-plane force cleanup endpoint with signed token.
-func (c *Client) DeleteRunNamespaceByToken(ctx context.Context, token string) (*controlplanev1.DeleteRunNamespaceByTokenResponse, error) {
-	resp, err := c.svc.DeleteRunNamespaceByToken(ctx, &controlplanev1.DeleteRunNamespaceByTokenRequest{
-		Token: strings.TrimSpace(token),
 	})
 	if err != nil {
 		return nil, err

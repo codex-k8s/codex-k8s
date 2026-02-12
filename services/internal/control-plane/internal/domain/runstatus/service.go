@@ -3,10 +3,12 @@ package runstatus
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
+	"github.com/codex-k8s/codex-k8s/libs/go/errs"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
@@ -15,14 +17,10 @@ import (
 // NewService creates run-status domain service.
 func NewService(cfg Config, deps Dependencies) (*Service, error) {
 	cfg.PublicBaseURL = strings.TrimRight(strings.TrimSpace(cfg.PublicBaseURL), "/")
-	cfg.TokenSigningKey = strings.TrimSpace(cfg.TokenSigningKey)
 	cfg.DefaultLocale = normalizeLocale(cfg.DefaultLocale, localeEN)
 
 	if cfg.PublicBaseURL == "" {
 		return nil, fmt.Errorf("public base url is required")
-	}
-	if cfg.TokenSigningKey == "" {
-		return nil, fmt.Errorf("token signing key is required")
 	}
 	if deps.Runs == nil {
 		return nil, fmt.Errorf("runs repository is required")
@@ -80,43 +78,18 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		AlreadyDeleted: params.AlreadyDeleted,
 	}
 
-	comments, err := s.github.ListIssueComments(ctx, mcpdomain.GitHubListIssueCommentsParams{
-		Token:       runCtx.repoToken,
-		Owner:       runCtx.repoOwner,
-		Repository:  runCtx.repoName,
-		IssueNumber: runCtx.issueNumber,
-		Limit:       200,
-	})
+	comments, err := s.listRunIssueComments(ctx, runCtx)
 	if err != nil {
-		return UpsertCommentResult{}, fmt.Errorf("list issue comments: %w", err)
+		return UpsertCommentResult{}, err
 	}
 
 	existingCommentID := int64(0)
-	for _, comment := range comments {
-		if !commentContainsRunID(comment.Body, runID) {
-			continue
-		}
-		existingCommentID = comment.ID
-		existingState, ok := extractStateMarker(comment.Body)
-		if ok {
-			currentState = mergeState(existingState, currentState)
-		}
-		break
+	if existingComment, existingState, found := findRunStatusComment(comments, runID); found {
+		existingCommentID = existingComment.ID
+		currentState = mergeState(existingState, currentState)
 	}
 
-	deleteURL := ""
-	if currentState.RuntimeMode == runtimeModeFullEnv && strings.TrimSpace(currentState.Namespace) != "" {
-		token, err := s.signDeleteToken(deleteTokenPayload{
-			RunID:     currentState.RunID,
-			Namespace: currentState.Namespace,
-		})
-		if err != nil {
-			return UpsertCommentResult{}, err
-		}
-		deleteURL = s.cfg.PublicBaseURL + deleteNamespacePath + token
-	}
-
-	body, err := renderCommentBody(currentState, deleteURL)
+	body, err := renderCommentBody(currentState, s.buildRunManagementURL(runID))
 	if err != nil {
 		return UpsertCommentResult{}, err
 	}
@@ -156,58 +129,79 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 	})
 
 	return UpsertCommentResult{
-		CommentID:          savedComment.ID,
-		CommentURL:         savedComment.URL,
-		DeleteNamespaceURL: deleteURL,
+		CommentID:  savedComment.ID,
+		CommentURL: savedComment.URL,
 	}, nil
 }
 
-// DeleteRunNamespaceByToken verifies one signed token and deletes run namespace.
-func (s *Service) DeleteRunNamespaceByToken(ctx context.Context, rawToken string) (DeleteByTokenResult, error) {
-	payload, err := s.verifyDeleteToken(rawToken)
-	if err != nil {
-		return DeleteByTokenResult{}, err
+// DeleteRunNamespace deletes one managed run namespace and updates the run status comment.
+func (s *Service) DeleteRunNamespace(ctx context.Context, params DeleteNamespaceParams) (DeleteNamespaceResult, error) {
+	runID := strings.TrimSpace(params.RunID)
+	if runID == "" {
+		return DeleteNamespaceResult{}, errs.Validation{Field: "run_id", Msg: "is required"}
 	}
 
-	runCtx, err := s.loadRunContext(ctx, payload.RunID)
+	runCtx, err := s.loadRunContext(ctx, runID)
 	if err != nil {
-		return DeleteByTokenResult{}, err
+		if errors.Is(err, errRunNotFound) {
+			return DeleteNamespaceResult{}, errs.Validation{Field: "run_id", Msg: "not found"}
+		}
+		return DeleteNamespaceResult{}, err
 	}
 
-	deleted, err := s.kubernetes.DeleteManagedRunNamespace(ctx, payload.Namespace)
+	comments, err := s.listRunIssueComments(ctx, runCtx)
 	if err != nil {
-		return DeleteByTokenResult{}, fmt.Errorf("delete managed run namespace: %w", err)
+		return DeleteNamespaceResult{}, err
+	}
+
+	_, state, found := findRunStatusComment(comments, runID)
+	if !found {
+		return DeleteNamespaceResult{}, errs.Validation{Field: "run_id", Msg: errRunStatusCommentNotFound.Error()}
+	}
+
+	namespace := strings.TrimSpace(state.Namespace)
+	if namespace == "" {
+		return DeleteNamespaceResult{}, errs.Validation{Field: "run_id", Msg: errRunNamespaceMissing.Error()}
+	}
+
+	deleted, err := s.kubernetes.DeleteManagedRunNamespace(ctx, namespace)
+	if err != nil {
+		return DeleteNamespaceResult{}, fmt.Errorf("delete managed run namespace: %w", err)
 	}
 
 	upsertResult, upsertErr := s.UpsertRunStatusComment(ctx, UpsertCommentParams{
-		RunID:          payload.RunID,
+		RunID:          runID,
 		Phase:          PhaseNamespaceDeleted,
-		JobName:        "",
-		JobNamespace:   "",
-		RuntimeMode:    runtimeModeFullEnv,
-		Namespace:      payload.Namespace,
+		JobName:        state.JobName,
+		JobNamespace:   state.JobNamespace,
+		RuntimeMode:    state.RuntimeMode,
+		Namespace:      namespace,
 		TriggerKind:    runCtx.triggerKind,
-		PromptLocale:   s.cfg.DefaultLocale,
+		PromptLocale:   state.PromptLocale,
 		RunStatus:      strings.TrimSpace(runCtx.run.Status),
 		Deleted:        deleted,
 		AlreadyDeleted: !deleted,
 	})
 	if upsertErr != nil {
-		return DeleteByTokenResult{}, upsertErr
+		return DeleteNamespaceResult{}, upsertErr
 	}
 
-	s.insertFlowEvent(ctx, runCtx.run.CorrelationID, floweventdomain.EventTypeRunNamespaceDeleteByToken, runNamespaceDeleteByTokenPayload{
-		RunID:              payload.RunID,
-		Namespace:          payload.Namespace,
+	requestedByType := normalizeRequestedByType(params.RequestedByType)
+	requestedByID := strings.TrimSpace(params.RequestedByID)
+	s.insertFlowEvent(ctx, runCtx.run.CorrelationID, floweventdomain.EventTypeRunNamespaceDeleteByStaff, runNamespaceDeleteByStaffPayload{
+		RunID:              runID,
+		Namespace:          namespace,
 		Deleted:            deleted,
 		AlreadyDeleted:     !deleted,
 		RunStatusURL:       upsertResult.CommentURL,
 		RunStatusCommentID: upsertResult.CommentID,
+		RequestedByType:    string(requestedByType),
+		RequestedByID:      requestedByID,
 	})
 
-	return DeleteByTokenResult{
-		RunID:          payload.RunID,
-		Namespace:      payload.Namespace,
+	return DeleteNamespaceResult{
+		RunID:          runID,
+		Namespace:      namespace,
 		Deleted:        deleted,
 		AlreadyDeleted: !deleted,
 		CommentURL:     upsertResult.CommentURL,
@@ -298,4 +292,40 @@ func (s *Service) insertFlowEvent(ctx context.Context, correlationID string, eve
 		Payload:       rawPayload,
 		CreatedAt:     nowUTC(),
 	})
+}
+
+func (s *Service) listRunIssueComments(ctx context.Context, runCtx runContext) ([]mcpdomain.GitHubIssueComment, error) {
+	comments, err := s.github.ListIssueComments(ctx, mcpdomain.GitHubListIssueCommentsParams{
+		Token:       runCtx.repoToken,
+		Owner:       runCtx.repoOwner,
+		Repository:  runCtx.repoName,
+		IssueNumber: runCtx.issueNumber,
+		Limit:       200,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list issue comments: %w", err)
+	}
+	return comments, nil
+}
+
+func (s *Service) buildRunManagementURL(runID string) string {
+	id := strings.TrimSpace(runID)
+	if s.cfg.PublicBaseURL == "" || id == "" {
+		return ""
+	}
+	return s.cfg.PublicBaseURL + runManagementPathPrefix + id
+}
+
+func findRunStatusComment(comments []mcpdomain.GitHubIssueComment, runID string) (mcpdomain.GitHubIssueComment, commentState, bool) {
+	for _, comment := range comments {
+		if !commentContainsRunID(comment.Body, runID) {
+			continue
+		}
+		state, ok := extractStateMarker(comment.Body)
+		if !ok {
+			return mcpdomain.GitHubIssueComment{}, commentState{}, false
+		}
+		return comment, state, true
+	}
+	return mcpdomain.GitHubIssueComment{}, commentState{}, false
 }

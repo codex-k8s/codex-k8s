@@ -28,9 +28,8 @@ type RunStatusCommentParams struct {
 
 // RunStatusCommentResult is a worker-side run status update response.
 type RunStatusCommentResult struct {
-	CommentID          int64
-	CommentURL         string
-	DeleteNamespaceURL string
+	CommentID  int64
+	CommentURL string
 }
 
 // RunStatusNotifier updates one per-run status comment through control-plane.

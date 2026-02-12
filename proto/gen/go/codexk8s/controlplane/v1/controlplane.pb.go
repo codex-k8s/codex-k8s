@@ -3397,14 +3397,13 @@ func (x *UpsertRunStatusCommentRequest) GetAlreadyDeleted() bool {
 }
 
 type UpsertRunStatusCommentResponse struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	Ok                 bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
-	RunId              string                 `protobuf:"bytes,2,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
-	CommentId          int64                  `protobuf:"varint,3,opt,name=comment_id,json=commentId,proto3" json:"comment_id,omitempty"`
-	CommentUrl         *string                `protobuf:"bytes,4,opt,name=comment_url,json=commentUrl,proto3,oneof" json:"comment_url,omitempty"`
-	DeleteNamespaceUrl *string                `protobuf:"bytes,5,opt,name=delete_namespace_url,json=deleteNamespaceUrl,proto3,oneof" json:"delete_namespace_url,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	RunId         string                 `protobuf:"bytes,2,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
+	CommentId     int64                  `protobuf:"varint,3,opt,name=comment_id,json=commentId,proto3" json:"comment_id,omitempty"`
+	CommentUrl    *string                `protobuf:"bytes,4,opt,name=comment_url,json=commentUrl,proto3,oneof" json:"comment_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpsertRunStatusCommentResponse) Reset() {
@@ -3465,34 +3464,28 @@ func (x *UpsertRunStatusCommentResponse) GetCommentUrl() string {
 	return ""
 }
 
-func (x *UpsertRunStatusCommentResponse) GetDeleteNamespaceUrl() string {
-	if x != nil && x.DeleteNamespaceUrl != nil {
-		return *x.DeleteNamespaceUrl
-	}
-	return ""
-}
-
-type DeleteRunNamespaceByTokenRequest struct {
+type DeleteRunNamespaceRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	Principal     *Principal             `protobuf:"bytes,1,opt,name=principal,proto3" json:"principal,omitempty"`
+	RunId         string                 `protobuf:"bytes,2,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *DeleteRunNamespaceByTokenRequest) Reset() {
-	*x = DeleteRunNamespaceByTokenRequest{}
+func (x *DeleteRunNamespaceRequest) Reset() {
+	*x = DeleteRunNamespaceRequest{}
 	mi := &file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *DeleteRunNamespaceByTokenRequest) String() string {
+func (x *DeleteRunNamespaceRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DeleteRunNamespaceByTokenRequest) ProtoMessage() {}
+func (*DeleteRunNamespaceRequest) ProtoMessage() {}
 
-func (x *DeleteRunNamespaceByTokenRequest) ProtoReflect() protoreflect.Message {
+func (x *DeleteRunNamespaceRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3504,19 +3497,26 @@ func (x *DeleteRunNamespaceByTokenRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeleteRunNamespaceByTokenRequest.ProtoReflect.Descriptor instead.
-func (*DeleteRunNamespaceByTokenRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use DeleteRunNamespaceRequest.ProtoReflect.Descriptor instead.
+func (*DeleteRunNamespaceRequest) Descriptor() ([]byte, []int) {
 	return file_codexk8s_controlplane_v1_controlplane_proto_rawDescGZIP(), []int{50}
 }
 
-func (x *DeleteRunNamespaceByTokenRequest) GetToken() string {
+func (x *DeleteRunNamespaceRequest) GetPrincipal() *Principal {
 	if x != nil {
-		return x.Token
+		return x.Principal
+	}
+	return nil
+}
+
+func (x *DeleteRunNamespaceRequest) GetRunId() string {
+	if x != nil {
+		return x.RunId
 	}
 	return ""
 }
 
-type DeleteRunNamespaceByTokenResponse struct {
+type DeleteRunNamespaceResponse struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Ok             bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
 	RunId          string                 `protobuf:"bytes,2,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
@@ -3528,20 +3528,20 @@ type DeleteRunNamespaceByTokenResponse struct {
 	sizeCache      protoimpl.SizeCache
 }
 
-func (x *DeleteRunNamespaceByTokenResponse) Reset() {
-	*x = DeleteRunNamespaceByTokenResponse{}
+func (x *DeleteRunNamespaceResponse) Reset() {
+	*x = DeleteRunNamespaceResponse{}
 	mi := &file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *DeleteRunNamespaceByTokenResponse) String() string {
+func (x *DeleteRunNamespaceResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DeleteRunNamespaceByTokenResponse) ProtoMessage() {}
+func (*DeleteRunNamespaceResponse) ProtoMessage() {}
 
-func (x *DeleteRunNamespaceByTokenResponse) ProtoReflect() protoreflect.Message {
+func (x *DeleteRunNamespaceResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3553,47 +3553,47 @@ func (x *DeleteRunNamespaceByTokenResponse) ProtoReflect() protoreflect.Message 
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeleteRunNamespaceByTokenResponse.ProtoReflect.Descriptor instead.
-func (*DeleteRunNamespaceByTokenResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use DeleteRunNamespaceResponse.ProtoReflect.Descriptor instead.
+func (*DeleteRunNamespaceResponse) Descriptor() ([]byte, []int) {
 	return file_codexk8s_controlplane_v1_controlplane_proto_rawDescGZIP(), []int{51}
 }
 
-func (x *DeleteRunNamespaceByTokenResponse) GetOk() bool {
+func (x *DeleteRunNamespaceResponse) GetOk() bool {
 	if x != nil {
 		return x.Ok
 	}
 	return false
 }
 
-func (x *DeleteRunNamespaceByTokenResponse) GetRunId() string {
+func (x *DeleteRunNamespaceResponse) GetRunId() string {
 	if x != nil {
 		return x.RunId
 	}
 	return ""
 }
 
-func (x *DeleteRunNamespaceByTokenResponse) GetNamespace() string {
+func (x *DeleteRunNamespaceResponse) GetNamespace() string {
 	if x != nil {
 		return x.Namespace
 	}
 	return ""
 }
 
-func (x *DeleteRunNamespaceByTokenResponse) GetDeleted() bool {
+func (x *DeleteRunNamespaceResponse) GetDeleted() bool {
 	if x != nil {
 		return x.Deleted
 	}
 	return false
 }
 
-func (x *DeleteRunNamespaceByTokenResponse) GetAlreadyDeleted() bool {
+func (x *DeleteRunNamespaceResponse) GetAlreadyDeleted() bool {
 	if x != nil {
 		return x.AlreadyDeleted
 	}
 	return false
 }
 
-func (x *DeleteRunNamespaceByTokenResponse) GetCommentUrl() string {
+func (x *DeleteRunNamespaceResponse) GetCommentUrl() string {
 	if x != nil && x.CommentUrl != nil {
 		return *x.CommentUrl
 	}
@@ -3949,20 +3949,19 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"_namespaceB\x0f\n" +
 	"\r_trigger_kindB\x10\n" +
 	"\x0e_prompt_localeB\r\n" +
-	"\v_run_status\"\xec\x01\n" +
+	"\v_run_status\"\x9c\x01\n" +
 	"\x1eUpsertRunStatusCommentResponse\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x15\n" +
 	"\x06run_id\x18\x02 \x01(\tR\x05runId\x12\x1d\n" +
 	"\n" +
 	"comment_id\x18\x03 \x01(\x03R\tcommentId\x12$\n" +
 	"\vcomment_url\x18\x04 \x01(\tH\x00R\n" +
-	"commentUrl\x88\x01\x01\x125\n" +
-	"\x14delete_namespace_url\x18\x05 \x01(\tH\x01R\x12deleteNamespaceUrl\x88\x01\x01B\x0e\n" +
-	"\f_comment_urlB\x17\n" +
-	"\x15_delete_namespace_url\"8\n" +
-	" DeleteRunNamespaceByTokenRequest\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\"\xe1\x01\n" +
-	"!DeleteRunNamespaceByTokenResponse\x12\x0e\n" +
+	"commentUrl\x88\x01\x01B\x0e\n" +
+	"\f_comment_url\"u\n" +
+	"\x19DeleteRunNamespaceRequest\x12A\n" +
+	"\tprincipal\x18\x01 \x01(\v2#.codexk8s.controlplane.v1.PrincipalR\tprincipal\x12\x15\n" +
+	"\x06run_id\x18\x02 \x01(\tR\x05runId\"\xda\x01\n" +
+	"\x1aDeleteRunNamespaceResponse\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x15\n" +
 	"\x06run_id\x18\x02 \x01(\tR\x05runId\x12\x1c\n" +
 	"\tnamespace\x18\x03 \x01(\tR\tnamespace\x12\x18\n" +
@@ -3970,7 +3969,7 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\x0falready_deleted\x18\x05 \x01(\bR\x0ealreadyDeleted\x12$\n" +
 	"\vcomment_url\x18\x06 \x01(\tH\x00R\n" +
 	"commentUrl\x88\x01\x01B\x0e\n" +
-	"\f_comment_url2\xf7\x18\n" +
+	"\f_comment_url2\xe1\x18\n" +
 	"\x13ControlPlaneService\x12\x82\x01\n" +
 	"\x13IngestGitHubWebhook\x124.codexk8s.controlplane.v1.IngestGitHubWebhookRequest\x1a5.codexk8s.controlplane.v1.IngestGitHubWebhookResponse\x12\x82\x01\n" +
 	"\x13ResolveStaffByEmail\x124.codexk8s.controlplane.v1.ResolveStaffByEmailRequest\x1a5.codexk8s.controlplane.v1.ResolveStaffByEmailResponse\x12\x7f\n" +
@@ -4000,8 +3999,8 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\x12UpsertAgentSession\x123.codexk8s.controlplane.v1.UpsertAgentSessionRequest\x1a4.codexk8s.controlplane.v1.UpsertAgentSessionResponse\x12\x88\x01\n" +
 	"\x15GetLatestAgentSession\x126.codexk8s.controlplane.v1.GetLatestAgentSessionRequest\x1a7.codexk8s.controlplane.v1.GetLatestAgentSessionResponse\x12\x7f\n" +
 	"\x12InsertRunFlowEvent\x123.codexk8s.controlplane.v1.InsertRunFlowEventRequest\x1a4.codexk8s.controlplane.v1.InsertRunFlowEventResponse\x12\x8b\x01\n" +
-	"\x16UpsertRunStatusComment\x127.codexk8s.controlplane.v1.UpsertRunStatusCommentRequest\x1a8.codexk8s.controlplane.v1.UpsertRunStatusCommentResponse\x12\x94\x01\n" +
-	"\x19DeleteRunNamespaceByToken\x12:.codexk8s.controlplane.v1.DeleteRunNamespaceByTokenRequest\x1a;.codexk8s.controlplane.v1.DeleteRunNamespaceByTokenResponseBUZSgithub.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1;controlplanev1b\x06proto3"
+	"\x16UpsertRunStatusComment\x127.codexk8s.controlplane.v1.UpsertRunStatusCommentRequest\x1a8.codexk8s.controlplane.v1.UpsertRunStatusCommentResponse\x12\x7f\n" +
+	"\x12DeleteRunNamespace\x123.codexk8s.controlplane.v1.DeleteRunNamespaceRequest\x1a4.codexk8s.controlplane.v1.DeleteRunNamespaceResponseBUZSgithub.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1;controlplanev1b\x06proto3"
 
 var (
 	file_codexk8s_controlplane_v1_controlplane_proto_rawDescOnce sync.Once
@@ -4067,8 +4066,8 @@ var file_codexk8s_controlplane_v1_controlplane_proto_goTypes = []any{
 	(*InsertRunFlowEventResponse)(nil),                  // 47: codexk8s.controlplane.v1.InsertRunFlowEventResponse
 	(*UpsertRunStatusCommentRequest)(nil),               // 48: codexk8s.controlplane.v1.UpsertRunStatusCommentRequest
 	(*UpsertRunStatusCommentResponse)(nil),              // 49: codexk8s.controlplane.v1.UpsertRunStatusCommentResponse
-	(*DeleteRunNamespaceByTokenRequest)(nil),            // 50: codexk8s.controlplane.v1.DeleteRunNamespaceByTokenRequest
-	(*DeleteRunNamespaceByTokenResponse)(nil),           // 51: codexk8s.controlplane.v1.DeleteRunNamespaceByTokenResponse
+	(*DeleteRunNamespaceRequest)(nil),                   // 50: codexk8s.controlplane.v1.DeleteRunNamespaceRequest
+	(*DeleteRunNamespaceResponse)(nil),                  // 51: codexk8s.controlplane.v1.DeleteRunNamespaceResponse
 	(*timestamppb.Timestamp)(nil),                       // 52: google.protobuf.Timestamp
 	(*wrapperspb.BoolValue)(nil),                        // 53: google.protobuf.BoolValue
 	(*wrapperspb.Int32Value)(nil),                       // 54: google.protobuf.Int32Value
@@ -4122,65 +4121,66 @@ var file_codexk8s_controlplane_v1_controlplane_proto_depIdxs = []int32{
 	52, // 44: codexk8s.controlplane.v1.AgentSessionSnapshot.created_at:type_name -> google.protobuf.Timestamp
 	52, // 45: codexk8s.controlplane.v1.AgentSessionSnapshot.updated_at:type_name -> google.protobuf.Timestamp
 	43, // 46: codexk8s.controlplane.v1.GetLatestAgentSessionResponse.session:type_name -> codexk8s.controlplane.v1.AgentSessionSnapshot
-	1,  // 47: codexk8s.controlplane.v1.ControlPlaneService.IngestGitHubWebhook:input_type -> codexk8s.controlplane.v1.IngestGitHubWebhookRequest
-	3,  // 48: codexk8s.controlplane.v1.ControlPlaneService.ResolveStaffByEmail:input_type -> codexk8s.controlplane.v1.ResolveStaffByEmailRequest
-	5,  // 49: codexk8s.controlplane.v1.ControlPlaneService.AuthorizeOAuthUser:input_type -> codexk8s.controlplane.v1.AuthorizeOAuthUserRequest
-	8,  // 50: codexk8s.controlplane.v1.ControlPlaneService.ListProjects:input_type -> codexk8s.controlplane.v1.ListProjectsRequest
-	10, // 51: codexk8s.controlplane.v1.ControlPlaneService.UpsertProject:input_type -> codexk8s.controlplane.v1.UpsertProjectRequest
-	11, // 52: codexk8s.controlplane.v1.ControlPlaneService.GetProject:input_type -> codexk8s.controlplane.v1.GetProjectRequest
-	12, // 53: codexk8s.controlplane.v1.ControlPlaneService.DeleteProject:input_type -> codexk8s.controlplane.v1.DeleteProjectRequest
-	14, // 54: codexk8s.controlplane.v1.ControlPlaneService.ListRuns:input_type -> codexk8s.controlplane.v1.ListRunsRequest
-	16, // 55: codexk8s.controlplane.v1.ControlPlaneService.GetRun:input_type -> codexk8s.controlplane.v1.GetRunRequest
-	18, // 56: codexk8s.controlplane.v1.ControlPlaneService.ListRunEvents:input_type -> codexk8s.controlplane.v1.ListRunEventsRequest
-	21, // 57: codexk8s.controlplane.v1.ControlPlaneService.ListRunLearningFeedback:input_type -> codexk8s.controlplane.v1.ListRunLearningFeedbackRequest
-	24, // 58: codexk8s.controlplane.v1.ControlPlaneService.ListUsers:input_type -> codexk8s.controlplane.v1.ListUsersRequest
-	26, // 59: codexk8s.controlplane.v1.ControlPlaneService.CreateUser:input_type -> codexk8s.controlplane.v1.CreateUserRequest
-	27, // 60: codexk8s.controlplane.v1.ControlPlaneService.DeleteUser:input_type -> codexk8s.controlplane.v1.DeleteUserRequest
-	29, // 61: codexk8s.controlplane.v1.ControlPlaneService.ListProjectMembers:input_type -> codexk8s.controlplane.v1.ListProjectMembersRequest
-	31, // 62: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectMember:input_type -> codexk8s.controlplane.v1.UpsertProjectMemberRequest
-	32, // 63: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectMember:input_type -> codexk8s.controlplane.v1.DeleteProjectMemberRequest
-	33, // 64: codexk8s.controlplane.v1.ControlPlaneService.SetProjectMemberLearningModeOverride:input_type -> codexk8s.controlplane.v1.SetProjectMemberLearningModeOverrideRequest
-	35, // 65: codexk8s.controlplane.v1.ControlPlaneService.ListProjectRepositories:input_type -> codexk8s.controlplane.v1.ListProjectRepositoriesRequest
-	37, // 66: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectRepository:input_type -> codexk8s.controlplane.v1.UpsertProjectRepositoryRequest
-	38, // 67: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectRepository:input_type -> codexk8s.controlplane.v1.DeleteProjectRepositoryRequest
-	39, // 68: codexk8s.controlplane.v1.ControlPlaneService.IssueRunMCPToken:input_type -> codexk8s.controlplane.v1.IssueRunMCPTokenRequest
-	41, // 69: codexk8s.controlplane.v1.ControlPlaneService.UpsertAgentSession:input_type -> codexk8s.controlplane.v1.UpsertAgentSessionRequest
-	44, // 70: codexk8s.controlplane.v1.ControlPlaneService.GetLatestAgentSession:input_type -> codexk8s.controlplane.v1.GetLatestAgentSessionRequest
-	46, // 71: codexk8s.controlplane.v1.ControlPlaneService.InsertRunFlowEvent:input_type -> codexk8s.controlplane.v1.InsertRunFlowEventRequest
-	48, // 72: codexk8s.controlplane.v1.ControlPlaneService.UpsertRunStatusComment:input_type -> codexk8s.controlplane.v1.UpsertRunStatusCommentRequest
-	50, // 73: codexk8s.controlplane.v1.ControlPlaneService.DeleteRunNamespaceByToken:input_type -> codexk8s.controlplane.v1.DeleteRunNamespaceByTokenRequest
-	2,  // 74: codexk8s.controlplane.v1.ControlPlaneService.IngestGitHubWebhook:output_type -> codexk8s.controlplane.v1.IngestGitHubWebhookResponse
-	4,  // 75: codexk8s.controlplane.v1.ControlPlaneService.ResolveStaffByEmail:output_type -> codexk8s.controlplane.v1.ResolveStaffByEmailResponse
-	6,  // 76: codexk8s.controlplane.v1.ControlPlaneService.AuthorizeOAuthUser:output_type -> codexk8s.controlplane.v1.AuthorizeOAuthUserResponse
-	9,  // 77: codexk8s.controlplane.v1.ControlPlaneService.ListProjects:output_type -> codexk8s.controlplane.v1.ListProjectsResponse
-	7,  // 78: codexk8s.controlplane.v1.ControlPlaneService.UpsertProject:output_type -> codexk8s.controlplane.v1.Project
-	7,  // 79: codexk8s.controlplane.v1.ControlPlaneService.GetProject:output_type -> codexk8s.controlplane.v1.Project
-	55, // 80: codexk8s.controlplane.v1.ControlPlaneService.DeleteProject:output_type -> google.protobuf.Empty
-	15, // 81: codexk8s.controlplane.v1.ControlPlaneService.ListRuns:output_type -> codexk8s.controlplane.v1.ListRunsResponse
-	13, // 82: codexk8s.controlplane.v1.ControlPlaneService.GetRun:output_type -> codexk8s.controlplane.v1.Run
-	19, // 83: codexk8s.controlplane.v1.ControlPlaneService.ListRunEvents:output_type -> codexk8s.controlplane.v1.ListRunEventsResponse
-	22, // 84: codexk8s.controlplane.v1.ControlPlaneService.ListRunLearningFeedback:output_type -> codexk8s.controlplane.v1.ListRunLearningFeedbackResponse
-	25, // 85: codexk8s.controlplane.v1.ControlPlaneService.ListUsers:output_type -> codexk8s.controlplane.v1.ListUsersResponse
-	23, // 86: codexk8s.controlplane.v1.ControlPlaneService.CreateUser:output_type -> codexk8s.controlplane.v1.User
-	55, // 87: codexk8s.controlplane.v1.ControlPlaneService.DeleteUser:output_type -> google.protobuf.Empty
-	30, // 88: codexk8s.controlplane.v1.ControlPlaneService.ListProjectMembers:output_type -> codexk8s.controlplane.v1.ListProjectMembersResponse
-	55, // 89: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectMember:output_type -> google.protobuf.Empty
-	55, // 90: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectMember:output_type -> google.protobuf.Empty
-	55, // 91: codexk8s.controlplane.v1.ControlPlaneService.SetProjectMemberLearningModeOverride:output_type -> google.protobuf.Empty
-	36, // 92: codexk8s.controlplane.v1.ControlPlaneService.ListProjectRepositories:output_type -> codexk8s.controlplane.v1.ListProjectRepositoriesResponse
-	34, // 93: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectRepository:output_type -> codexk8s.controlplane.v1.RepositoryBinding
-	55, // 94: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectRepository:output_type -> google.protobuf.Empty
-	40, // 95: codexk8s.controlplane.v1.ControlPlaneService.IssueRunMCPToken:output_type -> codexk8s.controlplane.v1.IssueRunMCPTokenResponse
-	42, // 96: codexk8s.controlplane.v1.ControlPlaneService.UpsertAgentSession:output_type -> codexk8s.controlplane.v1.UpsertAgentSessionResponse
-	45, // 97: codexk8s.controlplane.v1.ControlPlaneService.GetLatestAgentSession:output_type -> codexk8s.controlplane.v1.GetLatestAgentSessionResponse
-	47, // 98: codexk8s.controlplane.v1.ControlPlaneService.InsertRunFlowEvent:output_type -> codexk8s.controlplane.v1.InsertRunFlowEventResponse
-	49, // 99: codexk8s.controlplane.v1.ControlPlaneService.UpsertRunStatusComment:output_type -> codexk8s.controlplane.v1.UpsertRunStatusCommentResponse
-	51, // 100: codexk8s.controlplane.v1.ControlPlaneService.DeleteRunNamespaceByToken:output_type -> codexk8s.controlplane.v1.DeleteRunNamespaceByTokenResponse
-	74, // [74:101] is the sub-list for method output_type
-	47, // [47:74] is the sub-list for method input_type
-	47, // [47:47] is the sub-list for extension type_name
-	47, // [47:47] is the sub-list for extension extendee
-	0,  // [0:47] is the sub-list for field type_name
+	0,  // 47: codexk8s.controlplane.v1.DeleteRunNamespaceRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
+	1,  // 48: codexk8s.controlplane.v1.ControlPlaneService.IngestGitHubWebhook:input_type -> codexk8s.controlplane.v1.IngestGitHubWebhookRequest
+	3,  // 49: codexk8s.controlplane.v1.ControlPlaneService.ResolveStaffByEmail:input_type -> codexk8s.controlplane.v1.ResolveStaffByEmailRequest
+	5,  // 50: codexk8s.controlplane.v1.ControlPlaneService.AuthorizeOAuthUser:input_type -> codexk8s.controlplane.v1.AuthorizeOAuthUserRequest
+	8,  // 51: codexk8s.controlplane.v1.ControlPlaneService.ListProjects:input_type -> codexk8s.controlplane.v1.ListProjectsRequest
+	10, // 52: codexk8s.controlplane.v1.ControlPlaneService.UpsertProject:input_type -> codexk8s.controlplane.v1.UpsertProjectRequest
+	11, // 53: codexk8s.controlplane.v1.ControlPlaneService.GetProject:input_type -> codexk8s.controlplane.v1.GetProjectRequest
+	12, // 54: codexk8s.controlplane.v1.ControlPlaneService.DeleteProject:input_type -> codexk8s.controlplane.v1.DeleteProjectRequest
+	14, // 55: codexk8s.controlplane.v1.ControlPlaneService.ListRuns:input_type -> codexk8s.controlplane.v1.ListRunsRequest
+	16, // 56: codexk8s.controlplane.v1.ControlPlaneService.GetRun:input_type -> codexk8s.controlplane.v1.GetRunRequest
+	18, // 57: codexk8s.controlplane.v1.ControlPlaneService.ListRunEvents:input_type -> codexk8s.controlplane.v1.ListRunEventsRequest
+	21, // 58: codexk8s.controlplane.v1.ControlPlaneService.ListRunLearningFeedback:input_type -> codexk8s.controlplane.v1.ListRunLearningFeedbackRequest
+	24, // 59: codexk8s.controlplane.v1.ControlPlaneService.ListUsers:input_type -> codexk8s.controlplane.v1.ListUsersRequest
+	26, // 60: codexk8s.controlplane.v1.ControlPlaneService.CreateUser:input_type -> codexk8s.controlplane.v1.CreateUserRequest
+	27, // 61: codexk8s.controlplane.v1.ControlPlaneService.DeleteUser:input_type -> codexk8s.controlplane.v1.DeleteUserRequest
+	29, // 62: codexk8s.controlplane.v1.ControlPlaneService.ListProjectMembers:input_type -> codexk8s.controlplane.v1.ListProjectMembersRequest
+	31, // 63: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectMember:input_type -> codexk8s.controlplane.v1.UpsertProjectMemberRequest
+	32, // 64: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectMember:input_type -> codexk8s.controlplane.v1.DeleteProjectMemberRequest
+	33, // 65: codexk8s.controlplane.v1.ControlPlaneService.SetProjectMemberLearningModeOverride:input_type -> codexk8s.controlplane.v1.SetProjectMemberLearningModeOverrideRequest
+	35, // 66: codexk8s.controlplane.v1.ControlPlaneService.ListProjectRepositories:input_type -> codexk8s.controlplane.v1.ListProjectRepositoriesRequest
+	37, // 67: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectRepository:input_type -> codexk8s.controlplane.v1.UpsertProjectRepositoryRequest
+	38, // 68: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectRepository:input_type -> codexk8s.controlplane.v1.DeleteProjectRepositoryRequest
+	39, // 69: codexk8s.controlplane.v1.ControlPlaneService.IssueRunMCPToken:input_type -> codexk8s.controlplane.v1.IssueRunMCPTokenRequest
+	41, // 70: codexk8s.controlplane.v1.ControlPlaneService.UpsertAgentSession:input_type -> codexk8s.controlplane.v1.UpsertAgentSessionRequest
+	44, // 71: codexk8s.controlplane.v1.ControlPlaneService.GetLatestAgentSession:input_type -> codexk8s.controlplane.v1.GetLatestAgentSessionRequest
+	46, // 72: codexk8s.controlplane.v1.ControlPlaneService.InsertRunFlowEvent:input_type -> codexk8s.controlplane.v1.InsertRunFlowEventRequest
+	48, // 73: codexk8s.controlplane.v1.ControlPlaneService.UpsertRunStatusComment:input_type -> codexk8s.controlplane.v1.UpsertRunStatusCommentRequest
+	50, // 74: codexk8s.controlplane.v1.ControlPlaneService.DeleteRunNamespace:input_type -> codexk8s.controlplane.v1.DeleteRunNamespaceRequest
+	2,  // 75: codexk8s.controlplane.v1.ControlPlaneService.IngestGitHubWebhook:output_type -> codexk8s.controlplane.v1.IngestGitHubWebhookResponse
+	4,  // 76: codexk8s.controlplane.v1.ControlPlaneService.ResolveStaffByEmail:output_type -> codexk8s.controlplane.v1.ResolveStaffByEmailResponse
+	6,  // 77: codexk8s.controlplane.v1.ControlPlaneService.AuthorizeOAuthUser:output_type -> codexk8s.controlplane.v1.AuthorizeOAuthUserResponse
+	9,  // 78: codexk8s.controlplane.v1.ControlPlaneService.ListProjects:output_type -> codexk8s.controlplane.v1.ListProjectsResponse
+	7,  // 79: codexk8s.controlplane.v1.ControlPlaneService.UpsertProject:output_type -> codexk8s.controlplane.v1.Project
+	7,  // 80: codexk8s.controlplane.v1.ControlPlaneService.GetProject:output_type -> codexk8s.controlplane.v1.Project
+	55, // 81: codexk8s.controlplane.v1.ControlPlaneService.DeleteProject:output_type -> google.protobuf.Empty
+	15, // 82: codexk8s.controlplane.v1.ControlPlaneService.ListRuns:output_type -> codexk8s.controlplane.v1.ListRunsResponse
+	13, // 83: codexk8s.controlplane.v1.ControlPlaneService.GetRun:output_type -> codexk8s.controlplane.v1.Run
+	19, // 84: codexk8s.controlplane.v1.ControlPlaneService.ListRunEvents:output_type -> codexk8s.controlplane.v1.ListRunEventsResponse
+	22, // 85: codexk8s.controlplane.v1.ControlPlaneService.ListRunLearningFeedback:output_type -> codexk8s.controlplane.v1.ListRunLearningFeedbackResponse
+	25, // 86: codexk8s.controlplane.v1.ControlPlaneService.ListUsers:output_type -> codexk8s.controlplane.v1.ListUsersResponse
+	23, // 87: codexk8s.controlplane.v1.ControlPlaneService.CreateUser:output_type -> codexk8s.controlplane.v1.User
+	55, // 88: codexk8s.controlplane.v1.ControlPlaneService.DeleteUser:output_type -> google.protobuf.Empty
+	30, // 89: codexk8s.controlplane.v1.ControlPlaneService.ListProjectMembers:output_type -> codexk8s.controlplane.v1.ListProjectMembersResponse
+	55, // 90: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectMember:output_type -> google.protobuf.Empty
+	55, // 91: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectMember:output_type -> google.protobuf.Empty
+	55, // 92: codexk8s.controlplane.v1.ControlPlaneService.SetProjectMemberLearningModeOverride:output_type -> google.protobuf.Empty
+	36, // 93: codexk8s.controlplane.v1.ControlPlaneService.ListProjectRepositories:output_type -> codexk8s.controlplane.v1.ListProjectRepositoriesResponse
+	34, // 94: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectRepository:output_type -> codexk8s.controlplane.v1.RepositoryBinding
+	55, // 95: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectRepository:output_type -> google.protobuf.Empty
+	40, // 96: codexk8s.controlplane.v1.ControlPlaneService.IssueRunMCPToken:output_type -> codexk8s.controlplane.v1.IssueRunMCPTokenResponse
+	42, // 97: codexk8s.controlplane.v1.ControlPlaneService.UpsertAgentSession:output_type -> codexk8s.controlplane.v1.UpsertAgentSessionResponse
+	45, // 98: codexk8s.controlplane.v1.ControlPlaneService.GetLatestAgentSession:output_type -> codexk8s.controlplane.v1.GetLatestAgentSessionResponse
+	47, // 99: codexk8s.controlplane.v1.ControlPlaneService.InsertRunFlowEvent:output_type -> codexk8s.controlplane.v1.InsertRunFlowEventResponse
+	49, // 100: codexk8s.controlplane.v1.ControlPlaneService.UpsertRunStatusComment:output_type -> codexk8s.controlplane.v1.UpsertRunStatusCommentResponse
+	51, // 101: codexk8s.controlplane.v1.ControlPlaneService.DeleteRunNamespace:output_type -> codexk8s.controlplane.v1.DeleteRunNamespaceResponse
+	75, // [75:102] is the sub-list for method output_type
+	48, // [48:75] is the sub-list for method input_type
+	48, // [48:48] is the sub-list for extension type_name
+	48, // [48:48] is the sub-list for extension extendee
+	0,  // [0:48] is the sub-list for field type_name
 }
 
 func init() { file_codexk8s_controlplane_v1_controlplane_proto_init() }

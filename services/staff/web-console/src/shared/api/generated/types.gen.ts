@@ -166,8 +166,6 @@ export type UserId = string;
 
 export type Limit = number;
 
-export type RunNamespaceCleanupToken = string;
-
 export type IngestGithubWebhookData = {
     body: {
         [key: string]: unknown;
@@ -304,37 +302,6 @@ export type GetMeResponses = {
 };
 
 export type GetMeResponse = GetMeResponses[keyof GetMeResponses];
-
-export type DeleteRunNamespaceByTokenData = {
-    body?: never;
-    path: {
-        token: string;
-    };
-    query?: never;
-    url: '/api/v1/runs/namespace/cleanup/{token}';
-};
-
-export type DeleteRunNamespaceByTokenErrors = {
-    /**
-     * Invalid request
-     */
-    400: ErrorResponse;
-    /**
-     * Internal error
-     */
-    500: ErrorResponse;
-};
-
-export type DeleteRunNamespaceByTokenError = DeleteRunNamespaceByTokenErrors[keyof DeleteRunNamespaceByTokenErrors];
-
-export type DeleteRunNamespaceByTokenResponses = {
-    /**
-     * Namespace cleanup result
-     */
-    200: RunNamespaceCleanupResponse;
-};
-
-export type DeleteRunNamespaceByTokenResponse = DeleteRunNamespaceByTokenResponses[keyof DeleteRunNamespaceByTokenResponses];
 
 export type ListProjectsData = {
     body?: never;
@@ -539,6 +506,41 @@ export type GetRunResponses = {
 };
 
 export type GetRunResponse = GetRunResponses[keyof GetRunResponses];
+
+export type DeleteRunNamespaceData = {
+    body?: never;
+    path: {
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/runs/{run_id}/namespace';
+};
+
+export type DeleteRunNamespaceErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type DeleteRunNamespaceError = DeleteRunNamespaceErrors[keyof DeleteRunNamespaceErrors];
+
+export type DeleteRunNamespaceResponses = {
+    /**
+     * Namespace cleanup result
+     */
+    200: RunNamespaceCleanupResponse;
+};
+
+export type DeleteRunNamespaceResponse = DeleteRunNamespaceResponses[keyof DeleteRunNamespaceResponses];
 
 export type ListRunEventsData = {
     body?: never;

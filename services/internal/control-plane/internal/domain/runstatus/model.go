@@ -37,13 +37,27 @@ type UpsertCommentParams struct {
 
 // UpsertCommentResult returns tracked issue comment metadata.
 type UpsertCommentResult struct {
-	CommentID          int64
-	CommentURL         string
-	DeleteNamespaceURL string
+	CommentID  int64
+	CommentURL string
 }
 
-// DeleteByTokenResult describes namespace delete operation outcome.
-type DeleteByTokenResult struct {
+// RequestedByType identifies who requested run namespace deletion.
+type RequestedByType string
+
+const (
+	RequestedByTypeSystem    RequestedByType = "system"
+	RequestedByTypeStaffUser RequestedByType = "staff_user"
+)
+
+// DeleteNamespaceParams describes one namespace delete request for a run.
+type DeleteNamespaceParams struct {
+	RunID           string
+	RequestedByType RequestedByType
+	RequestedByID   string
+}
+
+// DeleteNamespaceResult describes namespace delete operation outcome.
+type DeleteNamespaceResult struct {
 	RunID          string
 	Namespace      string
 	Deleted        bool
@@ -53,9 +67,8 @@ type DeleteByTokenResult struct {
 
 // Config controls run status operations.
 type Config struct {
-	PublicBaseURL   string
-	TokenSigningKey string
-	DefaultLocale   string
+	PublicBaseURL string
+	DefaultLocale string
 }
 
 // KubernetesClient provides namespace cleanup operation for runstatus service.
@@ -114,9 +127,4 @@ type commentState struct {
 	RunStatus      string `json:"run_status,omitempty"`
 	Deleted        bool   `json:"deleted,omitempty"`
 	AlreadyDeleted bool   `json:"already_deleted,omitempty"`
-}
-
-type deleteTokenPayload struct {
-	RunID     string `json:"run_id"`
-	Namespace string `json:"namespace"`
 }

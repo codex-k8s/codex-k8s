@@ -361,14 +361,14 @@ message UpsertRunStatusCommentResponse {
   string run_id = 2;
   int64 comment_id = 3;
   optional string comment_url = 4;
-  optional string delete_namespace_url = 5;
 }
 
-message DeleteRunNamespaceByTokenRequest {
-  string token = 1;
+message DeleteRunNamespaceRequest {
+  Principal principal = 1;
+  string run_id = 2;
 }
 
-message DeleteRunNamespaceByTokenResponse {
+message DeleteRunNamespaceResponse {
   bool ok = 1;
   string run_id = 2;
   string namespace = 3;
@@ -415,5 +415,5 @@ service ControlPlaneService {
   rpc GetLatestAgentSession(GetLatestAgentSessionRequest) returns (GetLatestAgentSessionResponse);
   rpc InsertRunFlowEvent(InsertRunFlowEventRequest) returns (InsertRunFlowEventResponse);
   rpc UpsertRunStatusComment(UpsertRunStatusCommentRequest) returns (UpsertRunStatusCommentResponse);
-  rpc DeleteRunNamespaceByToken(DeleteRunNamespaceByTokenRequest) returns (DeleteRunNamespaceByTokenResponse);
+  rpc DeleteRunNamespace(DeleteRunNamespaceRequest) returns (DeleteRunNamespaceResponse);
 }

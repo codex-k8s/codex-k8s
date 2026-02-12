@@ -186,7 +186,7 @@ func IngestGitHubWebhook(item *controlplanev1.IngestGitHubWebhookResponse) model
 	return out
 }
 
-func RunNamespaceCleanup(item *controlplanev1.DeleteRunNamespaceByTokenResponse) models.RunNamespaceCleanupResponse {
+func RunNamespaceDelete(item *controlplanev1.DeleteRunNamespaceResponse) models.RunNamespaceCleanupResponse {
 	out := models.RunNamespaceCleanupResponse{}
 	if item == nil {
 		return out

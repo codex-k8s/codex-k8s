@@ -94,6 +94,11 @@ export const en = {
       correlation: "correlation_id",
       flowEvents: "Flow Events",
       learningFeedback: "Learning Feedback",
+      deleteNamespace: "Stop and delete namespace",
+      deleteNamespaceConfirm: "Force delete namespace for this run?",
+      namespace: "namespace",
+      namespaceDeleted: "deleted",
+      namespaceAlreadyDeleted: "already deleted",
     },
     projectDetails: {
       title: "Project Details",

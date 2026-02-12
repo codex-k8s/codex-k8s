@@ -43,6 +43,7 @@ type Service struct {
 
 	tokencrypt *tokencrypt.Service
 	github     provider.RepositoryProvider
+	runStatus  runNamespaceService
 }
 
 // NewService constructs staff service.
@@ -56,6 +57,7 @@ func NewService(
 	runs staffrunrepo.Repository,
 	tokencrypt *tokencrypt.Service,
 	github provider.RepositoryProvider,
+	runStatus runNamespaceService,
 ) *Service {
 	return &Service{
 		cfg:        cfg,
@@ -67,6 +69,7 @@ func NewService(
 		runs:       runs,
 		tokencrypt: tokencrypt,
 		github:     github,
+		runStatus:  runStatus,
 	}
 }
 

@@ -120,9 +120,8 @@ func Run() error {
 		return fmt.Errorf("init mcp domain service: %w", err)
 	}
 	runStatusService, err := runstatusdomain.NewService(runstatusdomain.Config{
-		PublicBaseURL:   cfg.PublicBaseURL,
-		TokenSigningKey: mcpSigningKey,
-		DefaultLocale:   "ru",
+		PublicBaseURL: cfg.PublicBaseURL,
+		DefaultLocale: "ru",
 	}, runstatusdomain.Dependencies{
 		Runs:       agentRuns,
 		Repos:      repos,
@@ -174,7 +173,7 @@ func Run() error {
 			Secret: cfg.GitHubWebhookSecret,
 			Events: events,
 		},
-	}, users, projects, members, repos, feedback, runs, tokenCrypto, githubRepoProvider)
+	}, users, projects, members, repos, feedback, runs, tokenCrypto, githubRepoProvider, runStatusService)
 
 	// Ensure bootstrap users exist so that the first login can be matched by email.
 	if _, err := users.EnsureOwner(runCtx, cfg.BootstrapOwnerEmail); err != nil {

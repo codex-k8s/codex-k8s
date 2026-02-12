@@ -11,7 +11,7 @@ const (
 )
 
 const (
-	deleteNamespacePath = "/api/v1/runs/namespace/cleanup/"
+	runManagementPathPrefix = "/runs/"
 )
 
 const (

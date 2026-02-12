@@ -83,9 +83,8 @@ func (c *Client) UpsertRunStatusComment(ctx context.Context, params workerdomain
 		return workerdomain.RunStatusCommentResult{}, err
 	}
 	return workerdomain.RunStatusCommentResult{
-		CommentID:          resp.GetCommentId(),
-		CommentURL:         strings.TrimSpace(resp.GetCommentUrl()),
-		DeleteNamespaceURL: strings.TrimSpace(resp.GetDeleteNamespaceUrl()),
+		CommentID:  resp.GetCommentId(),
+		CommentURL: strings.TrimSpace(resp.GetCommentUrl()),
 	}, nil
 }
 

@@ -1,8 +1,8 @@
 import { defineStore } from "pinia";
 
 import { normalizeApiError, type ApiError } from "../../shared/api/errors";
-import { getRun, listRunEvents, listRunLearningFeedback, listRuns } from "./api";
-import type { FlowEvent, LearningFeedback, Run } from "./types";
+import { deleteRunNamespace, getRun, listRunEvents, listRunLearningFeedback, listRuns } from "./api";
+import type { FlowEvent, LearningFeedback, Run, RunNamespaceCleanupResponse } from "./types";
 
 export const useRunsStore = defineStore("runs", {
   state: () => ({
@@ -33,6 +33,9 @@ export const useRunDetailsStore = defineStore("runDetails", {
     error: null as ApiError | null,
     events: [] as FlowEvent[],
     feedback: [] as LearningFeedback[],
+    deletingNamespace: false,
+    deleteNamespaceError: null as ApiError | null,
+    namespaceDeleteResult: null as RunNamespaceCleanupResponse | null,
   }),
   actions: {
     async load(runId: string): Promise<void> {
@@ -53,6 +56,20 @@ export const useRunDetailsStore = defineStore("runDetails", {
         this.error = normalizeApiError(e);
       } finally {
         this.loading = false;
+      }
+    },
+
+    async deleteNamespace(runId: string): Promise<void> {
+      this.deletingNamespace = true;
+      this.deleteNamespaceError = null;
+      this.namespaceDeleteResult = null;
+      try {
+        this.namespaceDeleteResult = await deleteRunNamespace(runId);
+        await this.load(runId);
+      } catch (e) {
+        this.deleteNamespaceError = normalizeApiError(e);
+      } finally {
+        this.deletingNamespace = false;
       }
     },
   },

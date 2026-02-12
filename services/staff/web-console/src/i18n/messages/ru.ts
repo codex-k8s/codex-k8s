@@ -94,6 +94,11 @@ export const ru = {
       correlation: "correlation_id",
       flowEvents: "События",
       learningFeedback: "Learning feedback",
+      deleteNamespace: "Остановить и удалить namespace",
+      deleteNamespaceConfirm: "Выполнить принудительное удаление namespace для этого запуска?",
+      namespace: "namespace",
+      namespaceDeleted: "удален",
+      namespaceAlreadyDeleted: "уже удален",
     },
     projectDetails: {
       title: "Детали проекта",

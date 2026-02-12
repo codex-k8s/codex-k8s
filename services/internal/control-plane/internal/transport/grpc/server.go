@@ -45,7 +45,6 @@ type agentCallbackService interface {
 
 type runStatusService interface {
 	UpsertRunStatusComment(ctx context.Context, params runstatusdomain.UpsertCommentParams) (runstatusdomain.UpsertCommentResult, error)
-	DeleteRunNamespaceByToken(ctx context.Context, rawToken string) (runstatusdomain.DeleteByTokenResult, error)
 }
 
 // Dependencies wires domain services and repositories into the gRPC transport.
@@ -300,6 +299,31 @@ func (s *Server) ListRunLearningFeedback(ctx context.Context, req *controlplanev
 		})
 	}
 	return &controlplanev1.ListRunLearningFeedbackResponse{Items: out}, nil
+}
+
+func (s *Server) DeleteRunNamespace(ctx context.Context, req *controlplanev1.DeleteRunNamespaceRequest) (*controlplanev1.DeleteRunNamespaceResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := s.staff.DeleteRunNamespace(ctx, p, strings.TrimSpace(req.GetRunId()))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+
+	return &controlplanev1.DeleteRunNamespaceResponse{
+		Ok:             true,
+		RunId:          result.RunID,
+		Namespace:      result.Namespace,
+		Deleted:        result.Deleted,
+		AlreadyDeleted: result.AlreadyDeleted,
+		CommentUrl:     stringPtrOrNil(result.CommentURL),
+	}, nil
 }
 
 func (s *Server) ListUsers(ctx context.Context, req *controlplanev1.ListUsersRequest) (*controlplanev1.ListUsersResponse, error) {
@@ -749,35 +773,10 @@ func (s *Server) UpsertRunStatusComment(ctx context.Context, req *controlplanev1
 	}
 
 	return &controlplanev1.UpsertRunStatusCommentResponse{
-		Ok:                 true,
-		RunId:              runID,
-		CommentId:          result.CommentID,
-		CommentUrl:         stringPtrOrNil(result.CommentURL),
-		DeleteNamespaceUrl: stringPtrOrNil(result.DeleteNamespaceURL),
-	}, nil
-}
-
-func (s *Server) DeleteRunNamespaceByToken(ctx context.Context, req *controlplanev1.DeleteRunNamespaceByTokenRequest) (*controlplanev1.DeleteRunNamespaceByTokenResponse, error) {
-	if s.runStatus == nil {
-		return nil, status.Error(codes.FailedPrecondition, "run status service is not configured")
-	}
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "request is required")
-	}
-
-	result, err := s.runStatus.DeleteRunNamespaceByToken(ctx, req.GetToken())
-	if err != nil {
-		s.logger.Error("delete run namespace by token via grpc failed", "err", err)
-		return nil, status.Error(codes.InvalidArgument, "invalid or expired cleanup token")
-	}
-
-	return &controlplanev1.DeleteRunNamespaceByTokenResponse{
-		Ok:             true,
-		RunId:          result.RunID,
-		Namespace:      result.Namespace,
-		Deleted:        result.Deleted,
-		AlreadyDeleted: result.AlreadyDeleted,
-		CommentUrl:     stringPtrOrNil(result.CommentURL),
+		Ok:         true,
+		RunId:      runID,
+		CommentId:  result.CommentID,
+		CommentUrl: stringPtrOrNil(result.CommentURL),
 	}, nil
 }
 

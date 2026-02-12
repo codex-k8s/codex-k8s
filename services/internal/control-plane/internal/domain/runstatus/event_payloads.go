@@ -10,12 +10,14 @@ type runStatusCommentUpsertedPayload struct {
 	Phase              Phase  `json:"phase"`
 }
 
-// runNamespaceDeleteByTokenPayload is stored in flow_events for force cleanup requests.
-type runNamespaceDeleteByTokenPayload struct {
+// runNamespaceDeleteByStaffPayload is stored in flow_events for manual cleanup requests from staff UI.
+type runNamespaceDeleteByStaffPayload struct {
 	RunID              string `json:"run_id"`
 	Namespace          string `json:"namespace"`
 	Deleted            bool   `json:"deleted"`
 	AlreadyDeleted     bool   `json:"already_deleted"`
 	RunStatusCommentID int64  `json:"run_status_comment_id"`
 	RunStatusURL       string `json:"run_status_url"`
+	RequestedByType    string `json:"requested_by_type"`
+	RequestedByID      string `json:"requested_by_id,omitempty"`
 }

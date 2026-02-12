@@ -10,8 +10,7 @@ type localizedCommentCopy struct {
 	Title                string
 	TriggerLabel         string
 	TimelineTitle        string
-	NamespaceControls    string
-	DeleteNamespaceLabel string
+	ManagementLinkFormat string
 	StartedText          string
 	FinishedDefault      string
 	FinishedSuccess      string
@@ -21,7 +20,7 @@ type localizedCommentCopy struct {
 	NamespacePending     string
 }
 
-func renderCommentBody(state commentState, deleteURL string) (string, error) {
+func renderCommentBody(state commentState, managementURL string) (string, error) {
 	copy := resolveLocalizedCommentCopy(normalizeLocale(state.PromptLocale, localeEN))
 	var b strings.Builder
 
@@ -38,6 +37,12 @@ func renderCommentBody(state commentState, deleteURL string) (string, error) {
 		b.WriteString(fmt.Sprintf("- Namespace: `%s`\n", state.Namespace))
 	}
 
+	if strings.TrimSpace(managementURL) != "" {
+		b.WriteString("\n")
+		b.WriteString(fmt.Sprintf(copy.ManagementLinkFormat, managementURL))
+		b.WriteString("\n")
+	}
+
 	b.WriteString("\n### ")
 	b.WriteString(copy.TimelineTitle)
 	b.WriteString("\n")
@@ -45,13 +50,6 @@ func renderCommentBody(state commentState, deleteURL string) (string, error) {
 	b.WriteString(fmt.Sprintf("- %s %s\n", phaseStatusEmoji(PhaseFinished, state.Phase), finishedLabel(state, copy)))
 	if strings.TrimSpace(state.Namespace) != "" {
 		b.WriteString(fmt.Sprintf("- %s %s\n", phaseStatusEmoji(PhaseNamespaceDeleted, state.Phase), namespaceLabel(state, copy)))
-	}
-
-	if deleteURL != "" {
-		b.WriteString("\n### ")
-		b.WriteString(copy.NamespaceControls)
-		b.WriteString("\n")
-		b.WriteString(fmt.Sprintf("- %s %s\n", copy.DeleteNamespaceLabel, deleteURL))
 	}
 
 	marker, err := renderStateMarker(state)
@@ -70,8 +68,7 @@ func resolveLocalizedCommentCopy(locale string) localizedCommentCopy {
 			Title:                "## 🤖 Статус агентного запуска",
 			TriggerLabel:         "Режим запуска",
 			TimelineTitle:        "Таймлайн",
-			NamespaceControls:    "Управление namespace",
-			DeleteNamespaceLabel: "🧹 Принудительное удаление namespace:",
+			ManagementLinkFormat: "🚦 Ран запущен: [управление](%s)",
 			StartedText:          "Запуск задачи создан и выполняется",
 			FinishedDefault:      "Задача завершена",
 			FinishedSuccess:      "Задача завершена успешно",
@@ -86,8 +83,7 @@ func resolveLocalizedCommentCopy(locale string) localizedCommentCopy {
 		Title:                "## 🤖 Agent Run Status",
 		TriggerLabel:         "Trigger mode",
 		TimelineTitle:        "Timeline",
-		NamespaceControls:    "Namespace Controls",
-		DeleteNamespaceLabel: "🧹 Force namespace cleanup:",
+		ManagementLinkFormat: "🚦 Run started: [manage](%s)",
 		StartedText:          "Run job was created and is running",
 		FinishedDefault:      "Run finished",
 		FinishedSuccess:      "Run finished successfully",

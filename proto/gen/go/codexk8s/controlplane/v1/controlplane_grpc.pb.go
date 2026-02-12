@@ -46,7 +46,7 @@ const (
 	ControlPlaneService_GetLatestAgentSession_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/GetLatestAgentSession"
 	ControlPlaneService_InsertRunFlowEvent_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/InsertRunFlowEvent"
 	ControlPlaneService_UpsertRunStatusComment_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertRunStatusComment"
-	ControlPlaneService_DeleteRunNamespaceByToken_FullMethodName            = "/codexk8s.controlplane.v1.ControlPlaneService/DeleteRunNamespaceByToken"
+	ControlPlaneService_DeleteRunNamespace_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/DeleteRunNamespace"
 )
 
 // ControlPlaneServiceClient is the client API for ControlPlaneService service.
@@ -82,7 +82,7 @@ type ControlPlaneServiceClient interface {
 	GetLatestAgentSession(ctx context.Context, in *GetLatestAgentSessionRequest, opts ...grpc.CallOption) (*GetLatestAgentSessionResponse, error)
 	InsertRunFlowEvent(ctx context.Context, in *InsertRunFlowEventRequest, opts ...grpc.CallOption) (*InsertRunFlowEventResponse, error)
 	UpsertRunStatusComment(ctx context.Context, in *UpsertRunStatusCommentRequest, opts ...grpc.CallOption) (*UpsertRunStatusCommentResponse, error)
-	DeleteRunNamespaceByToken(ctx context.Context, in *DeleteRunNamespaceByTokenRequest, opts ...grpc.CallOption) (*DeleteRunNamespaceByTokenResponse, error)
+	DeleteRunNamespace(ctx context.Context, in *DeleteRunNamespaceRequest, opts ...grpc.CallOption) (*DeleteRunNamespaceResponse, error)
 }
 
 type controlPlaneServiceClient struct {
@@ -353,10 +353,10 @@ func (c *controlPlaneServiceClient) UpsertRunStatusComment(ctx context.Context, 
 	return out, nil
 }
 
-func (c *controlPlaneServiceClient) DeleteRunNamespaceByToken(ctx context.Context, in *DeleteRunNamespaceByTokenRequest, opts ...grpc.CallOption) (*DeleteRunNamespaceByTokenResponse, error) {
+func (c *controlPlaneServiceClient) DeleteRunNamespace(ctx context.Context, in *DeleteRunNamespaceRequest, opts ...grpc.CallOption) (*DeleteRunNamespaceResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(DeleteRunNamespaceByTokenResponse)
-	err := c.cc.Invoke(ctx, ControlPlaneService_DeleteRunNamespaceByToken_FullMethodName, in, out, cOpts...)
+	out := new(DeleteRunNamespaceResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_DeleteRunNamespace_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -396,7 +396,7 @@ type ControlPlaneServiceServer interface {
 	GetLatestAgentSession(context.Context, *GetLatestAgentSessionRequest) (*GetLatestAgentSessionResponse, error)
 	InsertRunFlowEvent(context.Context, *InsertRunFlowEventRequest) (*InsertRunFlowEventResponse, error)
 	UpsertRunStatusComment(context.Context, *UpsertRunStatusCommentRequest) (*UpsertRunStatusCommentResponse, error)
-	DeleteRunNamespaceByToken(context.Context, *DeleteRunNamespaceByTokenRequest) (*DeleteRunNamespaceByTokenResponse, error)
+	DeleteRunNamespace(context.Context, *DeleteRunNamespaceRequest) (*DeleteRunNamespaceResponse, error)
 	mustEmbedUnimplementedControlPlaneServiceServer()
 }
 
@@ -485,8 +485,8 @@ func (UnimplementedControlPlaneServiceServer) InsertRunFlowEvent(context.Context
 func (UnimplementedControlPlaneServiceServer) UpsertRunStatusComment(context.Context, *UpsertRunStatusCommentRequest) (*UpsertRunStatusCommentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpsertRunStatusComment not implemented")
 }
-func (UnimplementedControlPlaneServiceServer) DeleteRunNamespaceByToken(context.Context, *DeleteRunNamespaceByTokenRequest) (*DeleteRunNamespaceByTokenResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteRunNamespaceByToken not implemented")
+func (UnimplementedControlPlaneServiceServer) DeleteRunNamespace(context.Context, *DeleteRunNamespaceRequest) (*DeleteRunNamespaceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteRunNamespace not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) mustEmbedUnimplementedControlPlaneServiceServer() {}
 func (UnimplementedControlPlaneServiceServer) testEmbeddedByValue()                             {}
@@ -977,20 +977,20 @@ func _ControlPlaneService_UpsertRunStatusComment_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ControlPlaneService_DeleteRunNamespaceByToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteRunNamespaceByTokenRequest)
+func _ControlPlaneService_DeleteRunNamespace_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRunNamespaceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ControlPlaneServiceServer).DeleteRunNamespaceByToken(ctx, in)
+		return srv.(ControlPlaneServiceServer).DeleteRunNamespace(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ControlPlaneService_DeleteRunNamespaceByToken_FullMethodName,
+		FullMethod: ControlPlaneService_DeleteRunNamespace_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ControlPlaneServiceServer).DeleteRunNamespaceByToken(ctx, req.(*DeleteRunNamespaceByTokenRequest))
+		return srv.(ControlPlaneServiceServer).DeleteRunNamespace(ctx, req.(*DeleteRunNamespaceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1107,8 +1107,8 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ControlPlaneService_UpsertRunStatusComment_Handler,
 		},
 		{
-			MethodName: "DeleteRunNamespaceByToken",
-			Handler:    _ControlPlaneService_DeleteRunNamespaceByToken_Handler,
+			MethodName: "DeleteRunNamespace",
+			Handler:    _ControlPlaneService_DeleteRunNamespace_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -35,6 +35,15 @@ func normalizeRuntimeMode(value string, triggerKind string) string {
 	return runtimeModeCode
 }
 
+func normalizeRequestedByType(value RequestedByType) RequestedByType {
+	switch value {
+	case RequestedByTypeStaffUser:
+		return RequestedByTypeStaffUser
+	default:
+		return RequestedByTypeSystem
+	}
+}
+
 func phaseOrder(phase Phase) int {
 	switch phase {
 	case PhaseNamespaceDeleted:
