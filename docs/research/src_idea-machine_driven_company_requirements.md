@@ -395,7 +395,7 @@ Postgres/pgvector — **индекс/метаданные/аудит**, но н�
 
 Конфигурационные лейблы модели/рассуждений:
 
-* `[ai-model-gpt-5-codex]`, `[ai-model-gpt-5.2]`, `[ai-model-gpt-5.1-codex-max]`, `[ai-model-gpt-5.1-codex-mini]`
+* `[ai-model-gpt-5.3-codex]`, `[ai-model-gpt-5.2-codex]`, `[ai-model-gpt-5.1-codex-max]`, `[ai-model-gpt-5.2]`, `[ai-model-gpt-5.1-codex-mini]`
 * `[ai-reasoning-low]`, `[ai-reasoning-medium]`, `[ai-reasoning-high]`, `[ai-reasoning-extra-high]`
 
 ### 8.5. Политика постановки лейблов агентами

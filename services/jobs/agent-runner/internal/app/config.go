@@ -24,7 +24,7 @@ type Config struct {
 	PromptTemplateKind string `env:"CODEXK8S_PROMPT_TEMPLATE_KIND" envDefault:"work"`
 	PromptTemplateSource string `env:"CODEXK8S_PROMPT_TEMPLATE_SOURCE" envDefault:"repo_seed"`
 	PromptTemplateLocale string `env:"CODEXK8S_PROMPT_TEMPLATE_LOCALE" envDefault:"ru"`
-	AgentModel           string `env:"CODEXK8S_AGENT_MODEL" envDefault:"gpt-5-codex"`
+	AgentModel           string `env:"CODEXK8S_AGENT_MODEL" envDefault:"gpt-5.2-codex"`
 	AgentReasoningEffort string `env:"CODEXK8S_AGENT_REASONING_EFFORT" envDefault:"high"`
 	AgentBaseBranch      string `env:"CODEXK8S_AGENT_BASE_BRANCH" envDefault:"main"`
 	AgentDisplayName     string `env:"CODEXK8S_AGENT_DISPLAY_NAME,required,notEmpty"`
@@ -61,7 +61,7 @@ func LoadConfig() (Config, error) {
 	}
 	cfg.AgentModel = strings.TrimSpace(cfg.AgentModel)
 	if cfg.AgentModel == "" {
-		cfg.AgentModel = "gpt-5-codex"
+		cfg.AgentModel = "gpt-5.2-codex"
 	}
 	cfg.AgentReasoningEffort = strings.TrimSpace(strings.ToLower(cfg.AgentReasoningEffort))
 	if cfg.AgentReasoningEffort == "" {

@@ -8,12 +8,12 @@ import (
 func TestHasIssueLabelInRunPayload(t *testing.T) {
 	t.Parallel()
 
-	runPayload := json.RawMessage(`{"raw_payload":{"issue":{"labels":[{"name":"run:debug"},{"name":"[ai-model-gpt-5-codex]"}]}}}`)
+	runPayload := json.RawMessage(`{"raw_payload":{"issue":{"labels":[{"name":"run:debug"},{"name":"[ai-model-gpt-5.2-codex]"}]}}}`)
 
 	if !hasIssueLabelInRunPayload(runPayload, "run:debug") {
 		t.Fatal("expected to find run:debug label")
 	}
-	if !hasIssueLabelInRunPayload(runPayload, "[ai-model-gpt-5-codex]") {
+	if !hasIssueLabelInRunPayload(runPayload, "[ai-model-gpt-5.2-codex]") {
 		t.Fatal("expected to find bracketed ai-model label")
 	}
 	if hasIssueLabelInRunPayload(runPayload, "run:dev") {
