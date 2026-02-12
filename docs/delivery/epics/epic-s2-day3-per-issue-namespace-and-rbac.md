@@ -94,7 +94,7 @@ approvals:
   - `make dupl-go`
 - Staging:
   - `AI Staging deploy 🚀` success для `codex/dev` (manual dispatch на целевой SHA).
-  - `deploy/scripts/staging_smoke.sh` -> `OK`.
+  - ручной smoke/regression по runbook -> `OK`.
 
 ## Апрув
 - request_id: owner-2026-02-11-s2-day3

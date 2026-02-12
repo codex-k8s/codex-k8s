@@ -30,17 +30,17 @@ approvals:
    - Invalid signature => `401`.
    - First valid request => `202 accepted`.
    - Replay delivery id => `200 duplicate` (idempotency).
-   - Автоматизация: `bash deploy/scripts/staging_smoke.sh` (проверяет invalid signature + idempotency).
+   - Проверка выполняется вручную по `docs/ops/staging_runbook.md` (invalid signature + idempotency).
 
 2. Worker run loop
    - pending -> running -> succeeded/failed статусы фиксируются в БД.
    - slot lease корректно освобождается.
-   - Автоматизация: `bash deploy/scripts/staging_smoke.sh` (создаёт run через `issues:labeled` + `run:dev` и проверяет финальный статус + отсутствие slot leak).
+   - Проверка выполняется вручную (запуск через `issues:labeled` + `run:dev`, финальный статус + отсутствие slot leak).
 
 3. Staff access control
    - OAuth login успешен через `oauth2-proxy`.
    - Неразрешённый email получает `{"code":"forbidden","message":"email is not allowed"}`.
-   - Автоматизация: `bash deploy/scripts/staging_smoke.sh` (проверяет allowlist через `/api/v1/auth/me` по `X-Auth-Request-Email`).
+   - Проверка выполняется вручную через `/api/v1/auth/me` и allowlist.
 
 4. Staff UI базовые страницы
    - (manual) `/` Projects загружается.
@@ -64,7 +64,7 @@ approvals:
    - staff UI `/runs/:id` показывает learning feedback.
 
 ## Evidence capture
-- Сохранить вывод `bash deploy/scripts/staging_smoke.sh` в заметки релиза (или issue comment).
+- Сохранить результаты ручного smoke/regression в заметки релиза (или issue comment).
 - Зафиксировать run_id и screenshots для:
   - Projects -> Repos attach,
   - Runs -> Details (events + feedback).

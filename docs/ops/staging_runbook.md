@@ -18,19 +18,23 @@ approvals:
 
 Цель: минимальный набор проверок и действий для ежедневного деплоя и ручного smoke/regression на staging.
 
-## Быстрый smoke (на сервере)
+## Быстрый ручной smoke (на сервере)
 
 Предпосылки:
 - есть доступ по SSH на staging host (Ubuntu 24.04);
 - на host установлен `kubectl` (k3s) и кластер поднят;
 - namespace по умолчанию: `codex-k8s-ai-staging`.
 
-Команда:
+Базовые команды:
 
 ```bash
 export CODEXK8S_STAGING_NAMESPACE="codex-k8s-ai-staging"
 export CODEXK8S_STAGING_DOMAIN="staging.codex-k8s.dev"
-bash deploy/scripts/staging_smoke.sh
+
+kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get pods -o wide
+kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get deploy,job,ingress
+kubectl -n "$CODEXK8S_STAGING_NAMESPACE" logs deploy/codex-k8s --tail=200
+kubectl -n "$CODEXK8S_STAGING_NAMESPACE" logs deploy/codex-k8s-worker --tail=200
 ```
 
 Ожидаемо:
