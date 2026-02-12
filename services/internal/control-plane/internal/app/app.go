@@ -23,6 +23,7 @@ import (
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	githubclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/github"
 	kubernetesclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/kubernetes"
+	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
@@ -37,7 +38,6 @@ import (
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/staffrun"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/user"
 	grpctransport "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/grpc"
-	internalapitransport "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/http/internalapi"
 	mcptransport "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/mcp"
 )
 
@@ -177,30 +177,22 @@ func Run() error {
 	}
 	defer func() { _ = grpcLis.Close() }()
 
+	agentCallbackService := agentcallbackdomain.NewService(agentSessions, flowEvents)
+
 	grpcServer := grpc.NewServer()
 	controlplanev1.RegisterControlPlaneServiceServer(grpcServer, grpctransport.NewServer(grpctransport.Dependencies{
-		Webhook:    webhookService,
-		Staff:      staffService,
-		Users:      users,
-		Sessions:   agentSessions,
-		FlowEvents: flowEvents,
-		MCP:        mcpService,
-		Logger:     logger,
+		Webhook:        webhookService,
+		Staff:          staffService,
+		Users:          users,
+		AgentCallbacks: agentCallbackService,
+		MCP:            mcpService,
+		Logger:         logger,
 	}))
 
 	mcpHandler := mcptransport.NewHandler(mcpService, logger)
-	internalAgentHandler := internalapitransport.NewHandler(internalapitransport.Dependencies{
-		Sessions:   agentSessions,
-		FlowEvents: flowEvents,
-		MCP:        mcpService,
-		Logger:     logger,
-	})
 	httpMux := http.NewServeMux()
 	httpMux.Handle("/mcp", mcpHandler)
 	httpMux.Handle("/mcp/", mcpHandler)
-	httpMux.Handle("/internal/agent/session", internalAgentHandler)
-	httpMux.Handle("/internal/agent/session/latest", internalAgentHandler)
-	httpMux.Handle("/internal/agent/event", internalAgentHandler)
 	httpMux.Handle("/metrics", promhttp.Handler())
 	httpMux.HandleFunc("/health/readyz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)

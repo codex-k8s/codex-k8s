@@ -5,6 +5,7 @@ WORKDIR /workspace
 COPY go.mod go.sum ./
 COPY libs ./libs
 COPY proto ./proto
+COPY tools ./tools
 COPY services/jobs/agent-runner ./services/jobs/agent-runner
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
@@ -26,8 +27,11 @@ RUN apt-get update -y \
 
 COPY --from=go-builder /usr/local/go /usr/local/go
 COPY --from=go-builder /out/codex-k8s-agent-runner /usr/local/bin/codex-k8s-agent-runner
+COPY services/jobs/agent-runner/scripts/bootstrap_tools.sh /tmp/bootstrap_tools.sh
 
-RUN chmod +x /usr/local/bin/codex-k8s-agent-runner \
-  && npm install -g @openai/codex
+RUN chmod +x /usr/local/bin/codex-k8s-agent-runner /tmp/bootstrap_tools.sh \
+  && npm install -g @openai/codex \
+  && /tmp/bootstrap_tools.sh \
+  && rm -f /tmp/bootstrap_tools.sh
 
 ENTRYPOINT ["/usr/local/bin/codex-k8s-agent-runner"]

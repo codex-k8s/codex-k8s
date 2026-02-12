@@ -269,9 +269,9 @@ PR policy:
 
 ## Фактическая реализация (2026-02-12)
 - Добавлен отдельный runtime image `services/jobs/agent-runner/Dockerfile` и Go-бинарь `services/jobs/agent-runner/cmd/agent-runner`:
-  - инструменты runtime: `@openai/codex`, `git`, `jq`, `bash`, базовые toolchain (`go` + `node`);
-  - governance-инструменты (`gh`, `kubectl`) из runtime исключены: операции issue/pr/comments/labels и k8s governance выполняются через MCP;
-  - entrypoint shell-логика заменена Go-реализацией, shell-wrapper оставлен только как thin launcher.
+  - инструменты runtime устанавливаются проектным bootstrap-скриптом `services/jobs/agent-runner/scripts/bootstrap_tools.sh` (после установки `@openai/codex`);
+  - baseline toolchain включает `go`, `protoc` + `protoc-gen-go`/`protoc-gen-go-grpc`, `oapi-codegen`, `openapi-ts`, `golangci-lint`, `dupl`, `gh`, `kubectl`, а также базовые утилиты (`git`, `jq`, `bash`);
+  - governance write-действия по GitHub/Kubernetes выполняются через MCP policy/audit контур;
 - В `control-plane` добавлены gRPC callback методы для agent-runner:
   - `UpsertAgentSession`,
   - `GetLatestAgentSession`,

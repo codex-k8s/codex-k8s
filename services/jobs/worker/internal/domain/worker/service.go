@@ -43,6 +43,8 @@ type Config struct {
 	ControlPlaneMCPBaseURL string
 	// OpenAIAPIKey is injected into run pods for codex login.
 	OpenAIAPIKey string
+	// Context7APIKey enables Context7 documentation calls from run pods when set.
+	Context7APIKey string
 	// GitBotToken is injected into run pods for git transport only.
 	GitBotToken string
 	// GitBotUsername is GitHub username used with bot token for git transport auth.
@@ -113,6 +115,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	}
 	cfg.ControlPlaneMCPBaseURL = strings.TrimSpace(cfg.ControlPlaneMCPBaseURL)
 	cfg.OpenAIAPIKey = strings.TrimSpace(cfg.OpenAIAPIKey)
+	cfg.Context7APIKey = strings.TrimSpace(cfg.Context7APIKey)
 	cfg.GitBotToken = strings.TrimSpace(cfg.GitBotToken)
 	cfg.GitBotUsername = strings.TrimSpace(cfg.GitBotUsername)
 	if cfg.GitBotUsername == "" {
@@ -346,6 +349,7 @@ func (s *Service) launchPending(ctx context.Context) error {
 			PromptTemplateLocale:   agentCtx.PromptTemplateLocale,
 			BaseBranch:             s.cfg.AgentBaseBranch,
 			OpenAIAPIKey:           s.cfg.OpenAIAPIKey,
+			Context7APIKey:         s.cfg.Context7APIKey,
 			GitBotToken:            s.cfg.GitBotToken,
 			AgentDisplayName:       agentCtx.AgentDisplayName,
 			GitBotUsername:         s.cfg.GitBotUsername,

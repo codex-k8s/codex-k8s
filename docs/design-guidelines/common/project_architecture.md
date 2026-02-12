@@ -51,6 +51,8 @@
   `bootstrap/remote/60_deploy_codex_k8s.sh`;
 - обновлять deploy manifests сервиса в `deploy/base/<service>/*.yaml.tpl`
   и Dockerfile сервиса в `services/<zone>/<service>/Dockerfile`.
+- если меняется набор инструментов для agent-runner (dogfooding), обновлять
+  `services/jobs/agent-runner/scripts/bootstrap_tools.sh` и документировать изменения в релевантном эпике/операционном runbook.
 
 Рекомендуемое ядро сервиса:
 - `services/internal/control-plane` — доменная логика платформы (проекты, репозитории, агенты, слоты, webhook orchestration, audit).

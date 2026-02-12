@@ -2560,24 +2560,24 @@ type UpsertAgentSessionRequest struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
 	RunId               string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
 	CorrelationId       string                 `protobuf:"bytes,2,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
-	ProjectId           string                 `protobuf:"bytes,3,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	ProjectId           *string                `protobuf:"bytes,3,opt,name=project_id,json=projectId,proto3,oneof" json:"project_id,omitempty"`
 	RepositoryFullName  string                 `protobuf:"bytes,4,opt,name=repository_full_name,json=repositoryFullName,proto3" json:"repository_full_name,omitempty"`
 	AgentKey            string                 `protobuf:"bytes,5,opt,name=agent_key,json=agentKey,proto3" json:"agent_key,omitempty"`
 	IssueNumber         *wrapperspb.Int32Value `protobuf:"bytes,6,opt,name=issue_number,json=issueNumber,proto3" json:"issue_number,omitempty"`
 	BranchName          string                 `protobuf:"bytes,7,opt,name=branch_name,json=branchName,proto3" json:"branch_name,omitempty"`
 	PrNumber            *wrapperspb.Int32Value `protobuf:"bytes,8,opt,name=pr_number,json=prNumber,proto3" json:"pr_number,omitempty"`
-	PrUrl               string                 `protobuf:"bytes,9,opt,name=pr_url,json=prUrl,proto3" json:"pr_url,omitempty"`
-	TriggerKind         string                 `protobuf:"bytes,10,opt,name=trigger_kind,json=triggerKind,proto3" json:"trigger_kind,omitempty"`
-	TemplateKind        string                 `protobuf:"bytes,11,opt,name=template_kind,json=templateKind,proto3" json:"template_kind,omitempty"`
-	TemplateSource      string                 `protobuf:"bytes,12,opt,name=template_source,json=templateSource,proto3" json:"template_source,omitempty"`
-	TemplateLocale      string                 `protobuf:"bytes,13,opt,name=template_locale,json=templateLocale,proto3" json:"template_locale,omitempty"`
-	Model               string                 `protobuf:"bytes,14,opt,name=model,proto3" json:"model,omitempty"`
-	ReasoningEffort     string                 `protobuf:"bytes,15,opt,name=reasoning_effort,json=reasoningEffort,proto3" json:"reasoning_effort,omitempty"`
-	Status              string                 `protobuf:"bytes,16,opt,name=status,proto3" json:"status,omitempty"`
-	SessionId           string                 `protobuf:"bytes,17,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	SessionJson         []byte                 `protobuf:"bytes,18,opt,name=session_json,json=sessionJson,proto3" json:"session_json,omitempty"`
-	CodexCliSessionPath string                 `protobuf:"bytes,19,opt,name=codex_cli_session_path,json=codexCliSessionPath,proto3" json:"codex_cli_session_path,omitempty"`
-	CodexCliSessionJson []byte                 `protobuf:"bytes,20,opt,name=codex_cli_session_json,json=codexCliSessionJson,proto3" json:"codex_cli_session_json,omitempty"`
+	PrUrl               *string                `protobuf:"bytes,9,opt,name=pr_url,json=prUrl,proto3,oneof" json:"pr_url,omitempty"`
+	TriggerKind         *string                `protobuf:"bytes,10,opt,name=trigger_kind,json=triggerKind,proto3,oneof" json:"trigger_kind,omitempty"`
+	TemplateKind        *string                `protobuf:"bytes,11,opt,name=template_kind,json=templateKind,proto3,oneof" json:"template_kind,omitempty"`
+	TemplateSource      *string                `protobuf:"bytes,12,opt,name=template_source,json=templateSource,proto3,oneof" json:"template_source,omitempty"`
+	TemplateLocale      *string                `protobuf:"bytes,13,opt,name=template_locale,json=templateLocale,proto3,oneof" json:"template_locale,omitempty"`
+	Model               *string                `protobuf:"bytes,14,opt,name=model,proto3,oneof" json:"model,omitempty"`
+	ReasoningEffort     *string                `protobuf:"bytes,15,opt,name=reasoning_effort,json=reasoningEffort,proto3,oneof" json:"reasoning_effort,omitempty"`
+	Status              *string                `protobuf:"bytes,16,opt,name=status,proto3,oneof" json:"status,omitempty"`
+	SessionId           *string                `protobuf:"bytes,17,opt,name=session_id,json=sessionId,proto3,oneof" json:"session_id,omitempty"`
+	SessionJson         []byte                 `protobuf:"bytes,18,opt,name=session_json,json=sessionJson,proto3,oneof" json:"session_json,omitempty"`
+	CodexCliSessionPath *string                `protobuf:"bytes,19,opt,name=codex_cli_session_path,json=codexCliSessionPath,proto3,oneof" json:"codex_cli_session_path,omitempty"`
+	CodexCliSessionJson []byte                 `protobuf:"bytes,20,opt,name=codex_cli_session_json,json=codexCliSessionJson,proto3,oneof" json:"codex_cli_session_json,omitempty"`
 	StartedAt           *timestamppb.Timestamp `protobuf:"bytes,21,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
 	FinishedAt          *timestamppb.Timestamp `protobuf:"bytes,22,opt,name=finished_at,json=finishedAt,proto3" json:"finished_at,omitempty"`
 	unknownFields       protoimpl.UnknownFields
@@ -2629,8 +2629,8 @@ func (x *UpsertAgentSessionRequest) GetCorrelationId() string {
 }
 
 func (x *UpsertAgentSessionRequest) GetProjectId() string {
-	if x != nil {
-		return x.ProjectId
+	if x != nil && x.ProjectId != nil {
+		return *x.ProjectId
 	}
 	return ""
 }
@@ -2671,64 +2671,64 @@ func (x *UpsertAgentSessionRequest) GetPrNumber() *wrapperspb.Int32Value {
 }
 
 func (x *UpsertAgentSessionRequest) GetPrUrl() string {
-	if x != nil {
-		return x.PrUrl
+	if x != nil && x.PrUrl != nil {
+		return *x.PrUrl
 	}
 	return ""
 }
 
 func (x *UpsertAgentSessionRequest) GetTriggerKind() string {
-	if x != nil {
-		return x.TriggerKind
+	if x != nil && x.TriggerKind != nil {
+		return *x.TriggerKind
 	}
 	return ""
 }
 
 func (x *UpsertAgentSessionRequest) GetTemplateKind() string {
-	if x != nil {
-		return x.TemplateKind
+	if x != nil && x.TemplateKind != nil {
+		return *x.TemplateKind
 	}
 	return ""
 }
 
 func (x *UpsertAgentSessionRequest) GetTemplateSource() string {
-	if x != nil {
-		return x.TemplateSource
+	if x != nil && x.TemplateSource != nil {
+		return *x.TemplateSource
 	}
 	return ""
 }
 
 func (x *UpsertAgentSessionRequest) GetTemplateLocale() string {
-	if x != nil {
-		return x.TemplateLocale
+	if x != nil && x.TemplateLocale != nil {
+		return *x.TemplateLocale
 	}
 	return ""
 }
 
 func (x *UpsertAgentSessionRequest) GetModel() string {
-	if x != nil {
-		return x.Model
+	if x != nil && x.Model != nil {
+		return *x.Model
 	}
 	return ""
 }
 
 func (x *UpsertAgentSessionRequest) GetReasoningEffort() string {
-	if x != nil {
-		return x.ReasoningEffort
+	if x != nil && x.ReasoningEffort != nil {
+		return *x.ReasoningEffort
 	}
 	return ""
 }
 
 func (x *UpsertAgentSessionRequest) GetStatus() string {
-	if x != nil {
-		return x.Status
+	if x != nil && x.Status != nil {
+		return *x.Status
 	}
 	return ""
 }
 
 func (x *UpsertAgentSessionRequest) GetSessionId() string {
-	if x != nil {
-		return x.SessionId
+	if x != nil && x.SessionId != nil {
+		return *x.SessionId
 	}
 	return ""
 }
@@ -2741,8 +2741,8 @@ func (x *UpsertAgentSessionRequest) GetSessionJson() []byte {
 }
 
 func (x *UpsertAgentSessionRequest) GetCodexCliSessionPath() string {
-	if x != nil {
-		return x.CodexCliSessionPath
+	if x != nil && x.CodexCliSessionPath != nil {
+		return *x.CodexCliSessionPath
 	}
 	return ""
 }
@@ -2824,24 +2824,24 @@ type AgentSessionSnapshot struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
 	RunId               string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
 	CorrelationId       string                 `protobuf:"bytes,2,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
-	ProjectId           string                 `protobuf:"bytes,3,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	ProjectId           *string                `protobuf:"bytes,3,opt,name=project_id,json=projectId,proto3,oneof" json:"project_id,omitempty"`
 	RepositoryFullName  string                 `protobuf:"bytes,4,opt,name=repository_full_name,json=repositoryFullName,proto3" json:"repository_full_name,omitempty"`
 	AgentKey            string                 `protobuf:"bytes,5,opt,name=agent_key,json=agentKey,proto3" json:"agent_key,omitempty"`
 	IssueNumber         *wrapperspb.Int32Value `protobuf:"bytes,6,opt,name=issue_number,json=issueNumber,proto3" json:"issue_number,omitempty"`
 	BranchName          string                 `protobuf:"bytes,7,opt,name=branch_name,json=branchName,proto3" json:"branch_name,omitempty"`
 	PrNumber            *wrapperspb.Int32Value `protobuf:"bytes,8,opt,name=pr_number,json=prNumber,proto3" json:"pr_number,omitempty"`
-	PrUrl               string                 `protobuf:"bytes,9,opt,name=pr_url,json=prUrl,proto3" json:"pr_url,omitempty"`
-	TriggerKind         string                 `protobuf:"bytes,10,opt,name=trigger_kind,json=triggerKind,proto3" json:"trigger_kind,omitempty"`
-	TemplateKind        string                 `protobuf:"bytes,11,opt,name=template_kind,json=templateKind,proto3" json:"template_kind,omitempty"`
-	TemplateSource      string                 `protobuf:"bytes,12,opt,name=template_source,json=templateSource,proto3" json:"template_source,omitempty"`
-	TemplateLocale      string                 `protobuf:"bytes,13,opt,name=template_locale,json=templateLocale,proto3" json:"template_locale,omitempty"`
-	Model               string                 `protobuf:"bytes,14,opt,name=model,proto3" json:"model,omitempty"`
-	ReasoningEffort     string                 `protobuf:"bytes,15,opt,name=reasoning_effort,json=reasoningEffort,proto3" json:"reasoning_effort,omitempty"`
-	Status              string                 `protobuf:"bytes,16,opt,name=status,proto3" json:"status,omitempty"`
-	SessionId           string                 `protobuf:"bytes,17,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	SessionJson         []byte                 `protobuf:"bytes,18,opt,name=session_json,json=sessionJson,proto3" json:"session_json,omitempty"`
-	CodexCliSessionPath string                 `protobuf:"bytes,19,opt,name=codex_cli_session_path,json=codexCliSessionPath,proto3" json:"codex_cli_session_path,omitempty"`
-	CodexCliSessionJson []byte                 `protobuf:"bytes,20,opt,name=codex_cli_session_json,json=codexCliSessionJson,proto3" json:"codex_cli_session_json,omitempty"`
+	PrUrl               *string                `protobuf:"bytes,9,opt,name=pr_url,json=prUrl,proto3,oneof" json:"pr_url,omitempty"`
+	TriggerKind         *string                `protobuf:"bytes,10,opt,name=trigger_kind,json=triggerKind,proto3,oneof" json:"trigger_kind,omitempty"`
+	TemplateKind        *string                `protobuf:"bytes,11,opt,name=template_kind,json=templateKind,proto3,oneof" json:"template_kind,omitempty"`
+	TemplateSource      *string                `protobuf:"bytes,12,opt,name=template_source,json=templateSource,proto3,oneof" json:"template_source,omitempty"`
+	TemplateLocale      *string                `protobuf:"bytes,13,opt,name=template_locale,json=templateLocale,proto3,oneof" json:"template_locale,omitempty"`
+	Model               *string                `protobuf:"bytes,14,opt,name=model,proto3,oneof" json:"model,omitempty"`
+	ReasoningEffort     *string                `protobuf:"bytes,15,opt,name=reasoning_effort,json=reasoningEffort,proto3,oneof" json:"reasoning_effort,omitempty"`
+	Status              *string                `protobuf:"bytes,16,opt,name=status,proto3,oneof" json:"status,omitempty"`
+	SessionId           *string                `protobuf:"bytes,17,opt,name=session_id,json=sessionId,proto3,oneof" json:"session_id,omitempty"`
+	SessionJson         []byte                 `protobuf:"bytes,18,opt,name=session_json,json=sessionJson,proto3,oneof" json:"session_json,omitempty"`
+	CodexCliSessionPath *string                `protobuf:"bytes,19,opt,name=codex_cli_session_path,json=codexCliSessionPath,proto3,oneof" json:"codex_cli_session_path,omitempty"`
+	CodexCliSessionJson []byte                 `protobuf:"bytes,20,opt,name=codex_cli_session_json,json=codexCliSessionJson,proto3,oneof" json:"codex_cli_session_json,omitempty"`
 	StartedAt           *timestamppb.Timestamp `protobuf:"bytes,21,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
 	FinishedAt          *timestamppb.Timestamp `protobuf:"bytes,22,opt,name=finished_at,json=finishedAt,proto3" json:"finished_at,omitempty"`
 	CreatedAt           *timestamppb.Timestamp `protobuf:"bytes,23,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
@@ -2895,8 +2895,8 @@ func (x *AgentSessionSnapshot) GetCorrelationId() string {
 }
 
 func (x *AgentSessionSnapshot) GetProjectId() string {
-	if x != nil {
-		return x.ProjectId
+	if x != nil && x.ProjectId != nil {
+		return *x.ProjectId
 	}
 	return ""
 }
@@ -2937,64 +2937,64 @@ func (x *AgentSessionSnapshot) GetPrNumber() *wrapperspb.Int32Value {
 }
 
 func (x *AgentSessionSnapshot) GetPrUrl() string {
-	if x != nil {
-		return x.PrUrl
+	if x != nil && x.PrUrl != nil {
+		return *x.PrUrl
 	}
 	return ""
 }
 
 func (x *AgentSessionSnapshot) GetTriggerKind() string {
-	if x != nil {
-		return x.TriggerKind
+	if x != nil && x.TriggerKind != nil {
+		return *x.TriggerKind
 	}
 	return ""
 }
 
 func (x *AgentSessionSnapshot) GetTemplateKind() string {
-	if x != nil {
-		return x.TemplateKind
+	if x != nil && x.TemplateKind != nil {
+		return *x.TemplateKind
 	}
 	return ""
 }
 
 func (x *AgentSessionSnapshot) GetTemplateSource() string {
-	if x != nil {
-		return x.TemplateSource
+	if x != nil && x.TemplateSource != nil {
+		return *x.TemplateSource
 	}
 	return ""
 }
 
 func (x *AgentSessionSnapshot) GetTemplateLocale() string {
-	if x != nil {
-		return x.TemplateLocale
+	if x != nil && x.TemplateLocale != nil {
+		return *x.TemplateLocale
 	}
 	return ""
 }
 
 func (x *AgentSessionSnapshot) GetModel() string {
-	if x != nil {
-		return x.Model
+	if x != nil && x.Model != nil {
+		return *x.Model
 	}
 	return ""
 }
 
 func (x *AgentSessionSnapshot) GetReasoningEffort() string {
-	if x != nil {
-		return x.ReasoningEffort
+	if x != nil && x.ReasoningEffort != nil {
+		return *x.ReasoningEffort
 	}
 	return ""
 }
 
 func (x *AgentSessionSnapshot) GetStatus() string {
-	if x != nil {
-		return x.Status
+	if x != nil && x.Status != nil {
+		return *x.Status
 	}
 	return ""
 }
 
 func (x *AgentSessionSnapshot) GetSessionId() string {
-	if x != nil {
-		return x.SessionId
+	if x != nil && x.SessionId != nil {
+		return *x.SessionId
 	}
 	return ""
 }
@@ -3007,8 +3007,8 @@ func (x *AgentSessionSnapshot) GetSessionJson() []byte {
 }
 
 func (x *AgentSessionSnapshot) GetCodexCliSessionPath() string {
-	if x != nil {
-		return x.CodexCliSessionPath
+	if x != nil && x.CodexCliSessionPath != nil {
+		return *x.CodexCliSessionPath
 	}
 	return ""
 }
@@ -3488,64 +3488,80 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\x18IssueRunMCPTokenResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x129\n" +
 	"\n" +
-	"expires_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"\x90\a\n" +
+	"expires_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"\xb6\t\n" +
 	"\x19UpsertAgentSessionRequest\x12\x15\n" +
 	"\x06run_id\x18\x01 \x01(\tR\x05runId\x12%\n" +
-	"\x0ecorrelation_id\x18\x02 \x01(\tR\rcorrelationId\x12\x1d\n" +
+	"\x0ecorrelation_id\x18\x02 \x01(\tR\rcorrelationId\x12\"\n" +
 	"\n" +
-	"project_id\x18\x03 \x01(\tR\tprojectId\x120\n" +
+	"project_id\x18\x03 \x01(\tH\x00R\tprojectId\x88\x01\x01\x120\n" +
 	"\x14repository_full_name\x18\x04 \x01(\tR\x12repositoryFullName\x12\x1b\n" +
 	"\tagent_key\x18\x05 \x01(\tR\bagentKey\x12>\n" +
 	"\fissue_number\x18\x06 \x01(\v2\x1b.google.protobuf.Int32ValueR\vissueNumber\x12\x1f\n" +
 	"\vbranch_name\x18\a \x01(\tR\n" +
 	"branchName\x128\n" +
-	"\tpr_number\x18\b \x01(\v2\x1b.google.protobuf.Int32ValueR\bprNumber\x12\x15\n" +
-	"\x06pr_url\x18\t \x01(\tR\x05prUrl\x12!\n" +
+	"\tpr_number\x18\b \x01(\v2\x1b.google.protobuf.Int32ValueR\bprNumber\x12\x1a\n" +
+	"\x06pr_url\x18\t \x01(\tH\x01R\x05prUrl\x88\x01\x01\x12&\n" +
 	"\ftrigger_kind\x18\n" +
-	" \x01(\tR\vtriggerKind\x12#\n" +
-	"\rtemplate_kind\x18\v \x01(\tR\ftemplateKind\x12'\n" +
-	"\x0ftemplate_source\x18\f \x01(\tR\x0etemplateSource\x12'\n" +
-	"\x0ftemplate_locale\x18\r \x01(\tR\x0etemplateLocale\x12\x14\n" +
-	"\x05model\x18\x0e \x01(\tR\x05model\x12)\n" +
-	"\x10reasoning_effort\x18\x0f \x01(\tR\x0freasoningEffort\x12\x16\n" +
-	"\x06status\x18\x10 \x01(\tR\x06status\x12\x1d\n" +
+	" \x01(\tH\x02R\vtriggerKind\x88\x01\x01\x12(\n" +
+	"\rtemplate_kind\x18\v \x01(\tH\x03R\ftemplateKind\x88\x01\x01\x12,\n" +
+	"\x0ftemplate_source\x18\f \x01(\tH\x04R\x0etemplateSource\x88\x01\x01\x12,\n" +
+	"\x0ftemplate_locale\x18\r \x01(\tH\x05R\x0etemplateLocale\x88\x01\x01\x12\x19\n" +
+	"\x05model\x18\x0e \x01(\tH\x06R\x05model\x88\x01\x01\x12.\n" +
+	"\x10reasoning_effort\x18\x0f \x01(\tH\aR\x0freasoningEffort\x88\x01\x01\x12\x1b\n" +
+	"\x06status\x18\x10 \x01(\tH\bR\x06status\x88\x01\x01\x12\"\n" +
 	"\n" +
-	"session_id\x18\x11 \x01(\tR\tsessionId\x12!\n" +
-	"\fsession_json\x18\x12 \x01(\fR\vsessionJson\x123\n" +
-	"\x16codex_cli_session_path\x18\x13 \x01(\tR\x13codexCliSessionPath\x123\n" +
-	"\x16codex_cli_session_json\x18\x14 \x01(\fR\x13codexCliSessionJson\x129\n" +
+	"session_id\x18\x11 \x01(\tH\tR\tsessionId\x88\x01\x01\x12&\n" +
+	"\fsession_json\x18\x12 \x01(\fH\n" +
+	"R\vsessionJson\x88\x01\x01\x128\n" +
+	"\x16codex_cli_session_path\x18\x13 \x01(\tH\vR\x13codexCliSessionPath\x88\x01\x01\x128\n" +
+	"\x16codex_cli_session_json\x18\x14 \x01(\fH\fR\x13codexCliSessionJson\x88\x01\x01\x129\n" +
 	"\n" +
 	"started_at\x18\x15 \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x12;\n" +
 	"\vfinished_at\x18\x16 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"finishedAt\"C\n" +
+	"finishedAtB\r\n" +
+	"\v_project_idB\t\n" +
+	"\a_pr_urlB\x0f\n" +
+	"\r_trigger_kindB\x10\n" +
+	"\x0e_template_kindB\x12\n" +
+	"\x10_template_sourceB\x12\n" +
+	"\x10_template_localeB\b\n" +
+	"\x06_modelB\x13\n" +
+	"\x11_reasoning_effortB\t\n" +
+	"\a_statusB\r\n" +
+	"\v_session_idB\x0f\n" +
+	"\r_session_jsonB\x19\n" +
+	"\x17_codex_cli_session_pathB\x19\n" +
+	"\x17_codex_cli_session_json\"C\n" +
 	"\x1aUpsertAgentSessionResponse\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x15\n" +
-	"\x06run_id\x18\x02 \x01(\tR\x05runId\"\x81\b\n" +
+	"\x06run_id\x18\x02 \x01(\tR\x05runId\"\xa7\n" +
+	"\n" +
 	"\x14AgentSessionSnapshot\x12\x15\n" +
 	"\x06run_id\x18\x01 \x01(\tR\x05runId\x12%\n" +
-	"\x0ecorrelation_id\x18\x02 \x01(\tR\rcorrelationId\x12\x1d\n" +
+	"\x0ecorrelation_id\x18\x02 \x01(\tR\rcorrelationId\x12\"\n" +
 	"\n" +
-	"project_id\x18\x03 \x01(\tR\tprojectId\x120\n" +
+	"project_id\x18\x03 \x01(\tH\x00R\tprojectId\x88\x01\x01\x120\n" +
 	"\x14repository_full_name\x18\x04 \x01(\tR\x12repositoryFullName\x12\x1b\n" +
 	"\tagent_key\x18\x05 \x01(\tR\bagentKey\x12>\n" +
 	"\fissue_number\x18\x06 \x01(\v2\x1b.google.protobuf.Int32ValueR\vissueNumber\x12\x1f\n" +
 	"\vbranch_name\x18\a \x01(\tR\n" +
 	"branchName\x128\n" +
-	"\tpr_number\x18\b \x01(\v2\x1b.google.protobuf.Int32ValueR\bprNumber\x12\x15\n" +
-	"\x06pr_url\x18\t \x01(\tR\x05prUrl\x12!\n" +
+	"\tpr_number\x18\b \x01(\v2\x1b.google.protobuf.Int32ValueR\bprNumber\x12\x1a\n" +
+	"\x06pr_url\x18\t \x01(\tH\x01R\x05prUrl\x88\x01\x01\x12&\n" +
 	"\ftrigger_kind\x18\n" +
-	" \x01(\tR\vtriggerKind\x12#\n" +
-	"\rtemplate_kind\x18\v \x01(\tR\ftemplateKind\x12'\n" +
-	"\x0ftemplate_source\x18\f \x01(\tR\x0etemplateSource\x12'\n" +
-	"\x0ftemplate_locale\x18\r \x01(\tR\x0etemplateLocale\x12\x14\n" +
-	"\x05model\x18\x0e \x01(\tR\x05model\x12)\n" +
-	"\x10reasoning_effort\x18\x0f \x01(\tR\x0freasoningEffort\x12\x16\n" +
-	"\x06status\x18\x10 \x01(\tR\x06status\x12\x1d\n" +
+	" \x01(\tH\x02R\vtriggerKind\x88\x01\x01\x12(\n" +
+	"\rtemplate_kind\x18\v \x01(\tH\x03R\ftemplateKind\x88\x01\x01\x12,\n" +
+	"\x0ftemplate_source\x18\f \x01(\tH\x04R\x0etemplateSource\x88\x01\x01\x12,\n" +
+	"\x0ftemplate_locale\x18\r \x01(\tH\x05R\x0etemplateLocale\x88\x01\x01\x12\x19\n" +
+	"\x05model\x18\x0e \x01(\tH\x06R\x05model\x88\x01\x01\x12.\n" +
+	"\x10reasoning_effort\x18\x0f \x01(\tH\aR\x0freasoningEffort\x88\x01\x01\x12\x1b\n" +
+	"\x06status\x18\x10 \x01(\tH\bR\x06status\x88\x01\x01\x12\"\n" +
 	"\n" +
-	"session_id\x18\x11 \x01(\tR\tsessionId\x12!\n" +
-	"\fsession_json\x18\x12 \x01(\fR\vsessionJson\x123\n" +
-	"\x16codex_cli_session_path\x18\x13 \x01(\tR\x13codexCliSessionPath\x123\n" +
-	"\x16codex_cli_session_json\x18\x14 \x01(\fR\x13codexCliSessionJson\x129\n" +
+	"session_id\x18\x11 \x01(\tH\tR\tsessionId\x88\x01\x01\x12&\n" +
+	"\fsession_json\x18\x12 \x01(\fH\n" +
+	"R\vsessionJson\x88\x01\x01\x128\n" +
+	"\x16codex_cli_session_path\x18\x13 \x01(\tH\vR\x13codexCliSessionPath\x88\x01\x01\x128\n" +
+	"\x16codex_cli_session_json\x18\x14 \x01(\fH\fR\x13codexCliSessionJson\x88\x01\x01\x129\n" +
 	"\n" +
 	"started_at\x18\x15 \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x12;\n" +
 	"\vfinished_at\x18\x16 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
@@ -3553,7 +3569,20 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x17 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\x18 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x8e\x01\n" +
+	"updated_at\x18\x18 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAtB\r\n" +
+	"\v_project_idB\t\n" +
+	"\a_pr_urlB\x0f\n" +
+	"\r_trigger_kindB\x10\n" +
+	"\x0e_template_kindB\x12\n" +
+	"\x10_template_sourceB\x12\n" +
+	"\x10_template_localeB\b\n" +
+	"\x06_modelB\x13\n" +
+	"\x11_reasoning_effortB\t\n" +
+	"\a_statusB\r\n" +
+	"\v_session_idB\x0f\n" +
+	"\r_session_jsonB\x19\n" +
+	"\x17_codex_cli_session_pathB\x19\n" +
+	"\x17_codex_cli_session_json\"\x8e\x01\n" +
 	"\x1cGetLatestAgentSessionRequest\x120\n" +
 	"\x14repository_full_name\x18\x01 \x01(\tR\x12repositoryFullName\x12\x1f\n" +
 	"\vbranch_name\x18\x02 \x01(\tR\n" +
@@ -3783,6 +3812,8 @@ func file_codexk8s_controlplane_v1_controlplane_proto_init() {
 	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[20].OneofWrappers = []any{}
 	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[23].OneofWrappers = []any{}
 	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[31].OneofWrappers = []any{}
+	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[41].OneofWrappers = []any{}
+	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[43].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

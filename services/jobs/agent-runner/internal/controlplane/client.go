@@ -129,24 +129,24 @@ func (c *Client) UpsertAgentSession(ctx context.Context, params AgentSessionUpse
 	request := &controlplanev1.UpsertAgentSessionRequest{
 		RunId:               strings.TrimSpace(identity.RunID),
 		CorrelationId:       strings.TrimSpace(identity.CorrelationID),
-		ProjectId:           strings.TrimSpace(identity.ProjectID),
+		ProjectId:           optionalString(strings.TrimSpace(identity.ProjectID)),
 		RepositoryFullName:  strings.TrimSpace(identity.RepositoryFullName),
 		AgentKey:            strings.TrimSpace(identity.AgentKey),
 		IssueNumber:         intToOptional(identity.IssueNumber),
 		BranchName:          strings.TrimSpace(identity.BranchName),
 		PrNumber:            intToOptional(identity.PRNumber),
-		PrUrl:               strings.TrimSpace(identity.PRURL),
-		TriggerKind:         strings.TrimSpace(template.TriggerKind),
-		TemplateKind:        strings.TrimSpace(template.TemplateKind),
-		TemplateSource:      strings.TrimSpace(template.TemplateSource),
-		TemplateLocale:      strings.TrimSpace(template.TemplateLocale),
-		Model:               strings.TrimSpace(template.Model),
-		ReasoningEffort:     strings.TrimSpace(template.ReasoningEffort),
-		Status:              strings.TrimSpace(runtime.Status),
-		SessionId:           strings.TrimSpace(runtime.SessionID),
-		SessionJson:         []byte(runtime.SessionJSON),
-		CodexCliSessionPath: strings.TrimSpace(runtime.CodexSessionPath),
-		CodexCliSessionJson: []byte(runtime.CodexSessionJSON),
+		PrUrl:               optionalString(strings.TrimSpace(identity.PRURL)),
+		TriggerKind:         optionalString(strings.TrimSpace(template.TriggerKind)),
+		TemplateKind:        optionalString(strings.TrimSpace(template.TemplateKind)),
+		TemplateSource:      optionalString(strings.TrimSpace(template.TemplateSource)),
+		TemplateLocale:      optionalString(strings.TrimSpace(template.TemplateLocale)),
+		Model:               optionalString(strings.TrimSpace(template.Model)),
+		ReasoningEffort:     optionalString(strings.TrimSpace(template.ReasoningEffort)),
+		Status:              optionalString(strings.TrimSpace(runtime.Status)),
+		SessionId:           optionalString(strings.TrimSpace(runtime.SessionID)),
+		SessionJson:         optionalBytes(runtime.SessionJSON),
+		CodexCliSessionPath: optionalString(strings.TrimSpace(runtime.CodexSessionPath)),
+		CodexCliSessionJson: optionalBytes(runtime.CodexSessionJSON),
 		StartedAt:           timestamppb.New(runtime.StartedAt.UTC()),
 		FinishedAt:          optionalTimestamp(runtime.FinishedAt),
 	}
@@ -225,6 +225,21 @@ func (c *Client) withAuth(ctx context.Context) context.Context {
 		return ctx
 	}
 	return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token)
+}
+
+func optionalString(value string) *string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return nil
+	}
+	return &trimmed
+}
+
+func optionalBytes(value json.RawMessage) []byte {
+	if len(value) == 0 {
+		return nil
+	}
+	return []byte(value)
 }
 
 func intToOptional(value *int) *wrapperspb.Int32Value {
