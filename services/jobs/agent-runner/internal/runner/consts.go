@@ -15,6 +15,9 @@ const (
 	triggerKindDev       = "dev"
 	triggerKindDevRevise = "dev_revise"
 
+	runtimeModeFullEnv  = "full-env"
+	runtimeModeCodeOnly = "code-only"
+
 	runStatusSucceeded          = "succeeded"
 	runStatusFailed             = "failed"
 	runStatusFailedPrecondition = "failed_precondition"

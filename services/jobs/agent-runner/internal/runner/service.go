@@ -45,6 +45,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	targetBranch := buildTargetBranch(s.cfg.RunID, s.cfg.IssueNumber)
 	triggerKind := normalizeTriggerKind(s.cfg.TriggerKind)
 	templateKind := normalizeTemplateKind(s.cfg.PromptTemplateKind, triggerKind)
+	runtimeMode := normalizeRuntimeMode(s.cfg.RuntimeMode)
 	sensitiveValues := s.sensitiveValues()
 
 	runStartedAt := time.Now().UTC()
@@ -73,6 +74,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	if err := s.emitEvent(ctx, floweventdomain.EventTypeRunAgentStarted, map[string]string{
 		"branch":           targetBranch,
 		"trigger_kind":     triggerKind,
+		"runtime_mode":     runtimeMode,
 		"model":            s.cfg.AgentModel,
 		"reasoning_effort": s.cfg.AgentReasoningEffort,
 		"agent_key":        s.cfg.AgentKey,

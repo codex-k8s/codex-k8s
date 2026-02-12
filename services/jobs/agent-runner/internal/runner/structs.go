@@ -60,6 +60,7 @@ type Config struct {
 	RepositoryFullName string
 	AgentKey           string
 	IssueNumber        int64
+	RuntimeMode        string
 
 	PromptConfig
 
@@ -142,6 +143,8 @@ type promptEnvelopeTemplateData struct {
 	RunID              string
 	IssueNumber        int64
 	AgentKey           string
+	RuntimeMode        string
+	IsFullEnv          bool
 	TargetBranch       string
 	BaseBranch         string
 	TriggerKind        string

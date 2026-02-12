@@ -52,6 +52,8 @@
 | Трассируемость | `docs/delivery/requirements_traceability.md`, `docs/delivery/issue_map.md`, `docs/delivery/sprint_s*.md`, `docs/delivery/epic_s*.md` |
 | Ops и staging проверки | `.local/agents-temp-dev-rules.md`, `docs/ops/staging_runbook.md` |
 
+- Уточнение для agent-run pod: файл `.local/agents-temp-dev-rules.md` может отсутствовать/быть недоступен в runtime-контейнере. В этом случае не блокируй выполнение задачи, а используй `AGENTS.md`, `docs/design-guidelines/**` и релевантные `docs/product/**`, `docs/architecture/**`, `docs/delivery/**` как источник правил.
+
 ## Архитектурные границы (обязательны)
 
 - `services/external/*` = thin-edge:

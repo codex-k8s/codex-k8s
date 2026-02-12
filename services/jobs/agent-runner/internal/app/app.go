@@ -49,6 +49,7 @@ func Run() error {
 		RepositoryFullName: cfg.RepositoryFullName,
 		AgentKey:           cfg.AgentKey,
 		IssueNumber:        cfg.IssueNumber,
+		RuntimeMode:        cfg.RuntimeMode,
 		PromptConfig: runner.PromptConfig{
 			TriggerKind:          cfg.TriggerKind,
 			PromptTemplateKind:   cfg.PromptTemplateKind,

@@ -12,6 +12,9 @@ const (
 
 	modelGPT53Codex = "gpt-5.3-codex"
 	modelGPT52Codex = "gpt-5.2-codex"
+
+	runtimeModeFullEnv  = "full-env"
+	runtimeModeCodeOnly = "code-only"
 )
 
 func normalizeTriggerKind(value string) string {

@@ -98,11 +98,14 @@ func (s *Service) writeCodexAuthFile(codexDir string) (bool, error) {
 
 func (s *Service) buildPrompt(taskBody string, result runResult) (string, error) {
 	hasContext7 := strings.TrimSpace(os.Getenv(envContext7APIKey)) != ""
+	runtimeMode := normalizeRuntimeMode(s.cfg.RuntimeMode)
 	return renderTemplate(templateNamePromptEnvelope, promptEnvelopeTemplateData{
 		RepositoryFullName: s.cfg.RepositoryFullName,
 		RunID:              s.cfg.RunID,
 		IssueNumber:        s.cfg.IssueNumber,
 		AgentKey:           s.cfg.AgentKey,
+		RuntimeMode:        runtimeMode,
+		IsFullEnv:          runtimeMode == runtimeModeFullEnv,
 		TargetBranch:       result.targetBranch,
 		BaseBranch:         s.cfg.AgentBaseBranch,
 		TriggerKind:        result.triggerKind,
@@ -119,6 +122,13 @@ func normalizeTriggerKind(value string) string {
 		return triggerKindDevRevise
 	}
 	return triggerKindDev
+}
+
+func normalizeRuntimeMode(value string) string {
+	if strings.EqualFold(strings.TrimSpace(value), runtimeModeFullEnv) {
+		return runtimeModeFullEnv
+	}
+	return runtimeModeCodeOnly
 }
 
 func normalizeTemplateKind(value string, triggerKind string) string {

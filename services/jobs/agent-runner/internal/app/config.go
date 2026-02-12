@@ -15,6 +15,7 @@ type Config struct {
 	RepositoryFullName string `env:"CODEXK8S_REPOSITORY_FULL_NAME,required,notEmpty"`
 	AgentKey           string `env:"CODEXK8S_AGENT_KEY,required,notEmpty"`
 	IssueNumber        int64  `env:"CODEXK8S_ISSUE_NUMBER"`
+	RuntimeMode        string `env:"CODEXK8S_RUNTIME_MODE" envDefault:"code-only"`
 
 	ControlPlaneGRPCTarget string `env:"CODEXK8S_CONTROL_PLANE_GRPC_TARGET,required,notEmpty"`
 	MCPBaseURL             string `env:"CODEXK8S_MCP_BASE_URL,required,notEmpty"`
@@ -80,6 +81,10 @@ func LoadConfig() (Config, error) {
 	cfg.AgentBaseBranch = strings.TrimSpace(cfg.AgentBaseBranch)
 	if cfg.AgentBaseBranch == "" {
 		cfg.AgentBaseBranch = "main"
+	}
+	cfg.RuntimeMode = strings.TrimSpace(strings.ToLower(cfg.RuntimeMode))
+	if cfg.RuntimeMode != runtimeModeFullEnv {
+		cfg.RuntimeMode = runtimeModeCodeOnly
 	}
 
 	cfg.ProjectID = strings.TrimSpace(cfg.ProjectID)

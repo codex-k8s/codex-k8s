@@ -7,8 +7,19 @@
 - Целевая ветка: {{ .TargetBranch }}
 - Базовая ветка: {{ .BaseBranch }}
 - Тип запуска: {{ .TriggerKind }}
+- Режим рантайма: {{ .RuntimeMode }}
 {{- if .HasExistingPR }}
 - Текущий PR: #{{ .ExistingPRNumber }}
+{{- end }}
+
+Контур выполнения:
+- Вы запущены в headless-режиме внутри выделенного Kubernetes pod (без интерактивного TTY).
+{{- if .IsFullEnv }}
+- Текущий профиль: `full-env`; в вашем namespace поднят полный рабочий стек (сервисы, БД, кеши и служебные компоненты).
+- Используйте это реальное окружение для активного runtime-дебага и верификации изменений.
+{{- else }}
+- Текущий профиль: `code-only`; полный стек сервисов/БД/кешей в namespace не гарантирован.
+- Основной фокус: код, тесты и статические проверки; runtime-дебаг требует запуска в `full-env`.
 {{- end }}
 
 Обязательные правила:
@@ -42,8 +53,19 @@ Environment context:
 - Target branch: {{ .TargetBranch }}
 - Base branch: {{ .BaseBranch }}
 - Trigger kind: {{ .TriggerKind }}
+- Runtime mode: {{ .RuntimeMode }}
 {{- if .HasExistingPR }}
 - Existing PR: #{{ .ExistingPRNumber }}
+{{- end }}
+
+Execution context:
+- You are running headless inside a dedicated Kubernetes pod (no interactive TTY).
+{{- if .IsFullEnv }}
+- Current profile: `full-env`; your namespace contains the full working stack (services, databases, caches, and support components).
+- Use this real environment for active runtime debugging and verification.
+{{- else }}
+- Current profile: `code-only`; a full services/databases/caches stack is not guaranteed in the namespace.
+- Focus on code, tests, and static checks; runtime debugging requires a `full-env` run.
 {{- end }}
 
 Mandatory rules:
