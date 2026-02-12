@@ -33,6 +33,6 @@ const outputSchemaJSON = `{
     "model": { "type": "string" },
     "reasoning_effort": { "type": "string" }
   },
-  "required": ["summary", "branch", "pr_number", "pr_url"],
+  "required": ["summary", "branch", "pr_number", "pr_url", "session_id", "model", "reasoning_effort"],
   "additionalProperties": false
 }`
