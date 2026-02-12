@@ -10,7 +10,7 @@ COPY services/jobs/worker/ services/jobs/worker/
 RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/codex-k8s-worker ./services/jobs/worker/cmd/worker
 
-FROM alpine:3.20
+FROM mirror.gcr.io/library/alpine:3.20
 
 RUN addgroup -S app && adduser -S app -G app
 USER app
