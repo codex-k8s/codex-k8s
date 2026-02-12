@@ -13,6 +13,7 @@ import (
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/flowevent"
 	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/learningfeedback"
 	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
+	valuetypes "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/types/value"
 )
 
 const defaultWorkerID = "worker"
@@ -66,26 +67,6 @@ type Service struct {
 	mcpTokens MCPTokenIssuer
 	logger    *slog.Logger
 	now       func() time.Time
-}
-
-// finishRunParams carries all fields required to finalize a run and publish final events.
-type finishRunParams struct {
-	Run       runqueuerepo.RunningRun
-	Execution runExecutionContext
-	Status    rundomain.Status
-	EventType floweventdomain.EventType
-	Ref       JobRef
-	Extra     runFinishedEventExtra
-}
-
-// namespaceLifecycleEventParams describes one namespace lifecycle flow event.
-type namespaceLifecycleEventParams struct {
-	CorrelationID string
-	EventType     floweventdomain.EventType
-	RunID         string
-	ProjectID     string
-	Execution     runExecutionContext
-	Extra         namespaceLifecycleEventExtra
 }
 
 // NewService creates worker orchestrator instance.
@@ -430,7 +411,7 @@ func (s *Service) finishRun(ctx context.Context, params finishRunParams) error {
 	return nil
 }
 
-func (s *Service) finishLaunchFailedRun(ctx context.Context, run runqueuerepo.RunningRun, execution runExecutionContext, failure error, reason runFailureReason) error {
+func (s *Service) finishLaunchFailedRun(ctx context.Context, run runqueuerepo.RunningRun, execution valuetypes.RunExecutionContext, failure error, reason runFailureReason) error {
 	return s.finishRun(ctx, finishRunParams{
 		Run:       run,
 		Execution: execution,

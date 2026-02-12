@@ -2,29 +2,14 @@ package staffrun
 
 import (
 	"context"
-	"time"
+
+	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 )
 
-// Run is a staff-visible run record.
-type Run struct {
-	ID            string
-	CorrelationID string
-	ProjectID     string
-	ProjectSlug   string
-	ProjectName   string
-	Status        string
-	CreatedAt     time.Time
-	StartedAt     *time.Time
-	FinishedAt    *time.Time
-}
-
-// FlowEvent is a staff-visible flow event.
-type FlowEvent struct {
-	CorrelationID string
-	EventType     string
-	CreatedAt     time.Time
-	PayloadJSON   []byte
-}
+type (
+	Run       = entitytypes.StaffRun
+	FlowEvent = entitytypes.StaffFlowEvent
+)
 
 // Repository loads staff run state from PostgreSQL.
 type Repository interface {

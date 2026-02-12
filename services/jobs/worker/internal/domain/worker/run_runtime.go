@@ -9,6 +9,8 @@ import (
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
+	querytypes "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/types/query"
+	valuetypes "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/types/value"
 )
 
 const (
@@ -18,34 +20,11 @@ const (
 
 var nonDNSLabel = regexp.MustCompile(`[^a-z0-9-]`)
 
-// runRuntimePayload keeps only fields that influence worker runtime decisions.
-type runRuntimePayload struct {
-	Trigger *runRuntimeTrigger `json:"trigger"`
-	Issue   *runRuntimeIssue   `json:"issue"`
-}
-
-// runRuntimeTrigger captures normalized trigger kind from webhook payload.
-type runRuntimeTrigger struct {
-	Kind webhookdomain.TriggerKind `json:"kind"`
-}
-
-// runRuntimeIssue captures optional issue metadata used in namespace naming.
-type runRuntimeIssue struct {
-	Number int64 `json:"number"`
-}
-
-// runExecutionContext contains resolved execution mode and namespace metadata for one run.
-type runExecutionContext struct {
-	RuntimeMode agentdomain.RuntimeMode
-	Namespace   string
-	IssueNumber int64
-}
-
 // resolveRunExecutionContext derives runtime mode and namespace strategy from run payload.
-func resolveRunExecutionContext(runID string, projectID string, runPayload json.RawMessage, namespacePrefix string) runExecutionContext {
+func resolveRunExecutionContext(runID string, projectID string, runPayload json.RawMessage, namespacePrefix string) valuetypes.RunExecutionContext {
 	meta := parseRunRuntimePayload(runPayload)
 	mode := resolveRuntimeMode(meta)
-	context := runExecutionContext{
+	context := valuetypes.RunExecutionContext{
 		RuntimeMode: mode,
 		IssueNumber: resolveIssueNumber(meta),
 	}
@@ -57,19 +36,19 @@ func resolveRunExecutionContext(runID string, projectID string, runPayload json.
 }
 
 // parseRunRuntimePayload parses only fields required for runtime routing and tolerates malformed payloads.
-func parseRunRuntimePayload(raw json.RawMessage) runRuntimePayload {
+func parseRunRuntimePayload(raw json.RawMessage) querytypes.RunRuntimePayload {
 	if len(raw) == 0 {
-		return runRuntimePayload{}
+		return querytypes.RunRuntimePayload{}
 	}
-	var payload runRuntimePayload
+	var payload querytypes.RunRuntimePayload
 	if err := json.Unmarshal(raw, &payload); err != nil {
-		return runRuntimePayload{}
+		return querytypes.RunRuntimePayload{}
 	}
 	return payload
 }
 
 // resolveRuntimeMode maps trigger kind to execution profile with code-only fallback.
-func resolveRuntimeMode(payload runRuntimePayload) agentdomain.RuntimeMode {
+func resolveRuntimeMode(payload querytypes.RunRuntimePayload) agentdomain.RuntimeMode {
 	if payload.Trigger == nil {
 		return agentdomain.RuntimeModeCodeOnly
 	}
@@ -82,7 +61,7 @@ func resolveRuntimeMode(payload runRuntimePayload) agentdomain.RuntimeMode {
 }
 
 // resolveIssueNumber returns positive issue number or zero when not provided.
-func resolveIssueNumber(payload runRuntimePayload) int64 {
+func resolveIssueNumber(payload querytypes.RunRuntimePayload) int64 {
 	if payload.Issue == nil {
 		return 0
 	}

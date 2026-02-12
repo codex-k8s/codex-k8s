@@ -1,52 +1,17 @@
 package repocfg
 
-import "context"
+import (
+	"context"
 
-// RepositoryBinding represents a repository attached to a project.
-//
-// This record contains an encrypted access token (stored in DB) and per-repository configuration,
-// such as `services.yaml` path override.
-type RepositoryBinding struct {
-	ID string
+	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
+)
 
-	ProjectID string
-
-	// Provider is a repository hosting provider id (e.g. "github").
-	Provider string
-
-	// ExternalID is a provider-specific repository id (e.g. GitHub repository numeric id).
-	ExternalID int64
-
-	// Owner is a repository owner/namespace (e.g. "codex-k8s").
-	Owner string
-
-	// Name is a repository short name (e.g. "codex-k8s").
-	Name string
-
-	// ServicesYAMLPath is a path to services.yaml within the repository.
-	ServicesYAMLPath string
-}
-
-// UpsertParams defines inputs for repository binding upsert.
-type UpsertParams struct {
-	ProjectID  string
-	Provider   string
-	ExternalID int64
-	Owner      string
-	Name       string
-
-	// TokenEncrypted stores encrypted token bytes (nonce||ciphertext) for DB BYTEA column.
-	TokenEncrypted []byte
-
-	ServicesYAMLPath string
-}
-
-// FindResult is a lookup result for webhook->project binding resolution.
-type FindResult struct {
-	ProjectID        string
-	RepositoryID     string
-	ServicesYAMLPath string
-}
+type (
+	RepositoryBinding = entitytypes.RepositoryBinding
+	UpsertParams      = querytypes.RepositoryBindingUpsertParams
+	FindResult        = querytypes.RepositoryBindingFindResult
+)
 
 // Repository persists project repository bindings.
 type Repository interface {
