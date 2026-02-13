@@ -5,8 +5,8 @@ title: "codex-k8s — Data Model"
 status: draft
 owner_role: SA
 created_at: 2026-02-06
-updated_at: 2026-02-12
-related_issues: [1]
+updated_at: 2026-02-13
+related_issues: [1, 19]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -318,6 +318,45 @@ Planned extension (Day6+):
 | explanation | text | no |  |  | why/tradeoffs/better patterns |
 | created_at | timestamptz | no | now() |  | |
 
+### Entity: mcp_action_requests
+- Назначение: журнал запросов к MCP control tools и их approval lifecycle.
+- Важные инварианты: один action request имеет единственный current status, переходы append-only в `flow_events`.
+- Поля:
+
+| Field | Type | Nullable | Default | Constraints | Notes |
+|---|---|---:|---|---|---|
+| id | bigserial | no |  | pk | |
+| correlation_id | text | no |  | index | |
+| run_id | uuid | yes |  | fk -> agent_runs | |
+| tool_name | text | no |  |  | e.g. `secret.sync.github_k8s` |
+| action | text | no |  |  | create/update/delete/request |
+| target_ref | jsonb | no | '{}'::jsonb |  | project/repo/env refs |
+| approval_state | text | no | "requested" | check enum | requested/approved/denied/expired/failed/applied |
+| requested_by | text | no |  |  | actor id |
+| applied_by | text | yes |  |  | actor id |
+| payload | jsonb | no | '{}'::jsonb |  | masked request/result metadata |
+| created_at | timestamptz | no | now() | index | |
+| updated_at | timestamptz | no | now() |  | |
+
+### Entity: self_improve_reports
+- Назначение: результаты `run:self-improve` (диагностика + рекомендованные/применённые улучшения).
+- Важные инварианты: отчёт связан с конкретным run и источниками evidence.
+- Поля:
+
+| Field | Type | Nullable | Default | Constraints | Notes |
+|---|---|---:|---|---|---|
+| id | bigserial | no |  | pk | |
+| run_id | uuid | no |  | fk -> agent_runs | |
+| issue_number | int | yes |  |  | |
+| pr_number | int | yes |  |  | |
+| diagnosis | jsonb | no | '{}'::jsonb |  | grouped findings by class |
+| recommended_actions | jsonb | no | '[]'::jsonb |  | docs/prompts/instructions/tools |
+| applied_actions | jsonb | no | '[]'::jsonb |  | accepted items and refs |
+| source_refs | jsonb | no | '[]'::jsonb |  | links to logs/comments/artifacts |
+| status | text | no | "draft" | check enum | draft/proposed/applied/rejected |
+| created_at | timestamptz | no | now() | index | |
+| updated_at | timestamptz | no | now() |  | |
+
 ### Entity: doc_chunks
 - Назначение: чанки документов для поиска.
 - Важные инварианты: уникальный (doc_id, chunk_no).
@@ -345,13 +384,15 @@ Planned extension (Day6+):
 - `docs_meta` 1:N `doc_chunks`
 - `agent_runs` 1:N `flow_events` (по `correlation_id`)
 - `agent_runs` 1:N `learning_feedback`
+- `agent_runs` 1:N `mcp_action_requests`
+- `agent_runs` 1:N `self_improve_reports`
 - `projects` 1:N `prompt_templates` (scope=project)
 - `links` хранит M:N трассировки между `issue/pr/run/doc/adr`
 
 ## Логическое размещение по БД-контурам (MVP)
 - PostgreSQL cluster единый.
-- Core contour: `users`, `projects`, `project_members`, `system_settings`, `repositories`, `agent_policies`, `agents`, `agent_runs`, `slots`, `docs_meta`, `learning_feedback`, `prompt_templates`.
-- Audit/chunks contour: `agent_sessions`, `token_usage`, `flow_events`, `links`, `doc_chunks`.
+- Core contour: `users`, `projects`, `project_members`, `system_settings`, `repositories`, `agent_policies`, `agents`, `agent_runs`, `slots`, `docs_meta`, `learning_feedback`, `prompt_templates`, `self_improve_reports`.
+- Audit/chunks contour: `agent_sessions`, `token_usage`, `flow_events`, `links`, `doc_chunks`, `mcp_action_requests`.
 - Связи между контурами — через устойчивые ключи (`correlation_id`, `doc_id`), без требования к cross-contour FK.
 
 ## Индексы и запросы (критичные)
@@ -359,6 +400,10 @@ Planned extension (Day6+):
 - Индексы: `agent_runs(status, started_at)`, `flow_events(correlation_id, created_at)`.
 - Запрос: аудит сессий и стоимости по run/agent/model.
 - Индексы: `agent_sessions(run_id, started_at)`, `token_usage(session_id, created_at)`.
+- Запрос: найти pending/failed MCP action requests.
+- Индексы: `mcp_action_requests(approval_state, created_at)`, `mcp_action_requests(correlation_id)`.
+- Запрос: self-improve history по issue/pr и статусу.
+- Индексы: `self_improve_reports(issue_number, created_at)`, `self_improve_reports(pr_number, created_at)`, `self_improve_reports(status, updated_at)`.
 - Запрос: возобновление прерванной/ожидающей сессии по run.
 - Индексы: `agent_sessions(run_id, wait_state, last_heartbeat_at)`.
 - Запрос: выбор effective prompt template по role/kind/locale.

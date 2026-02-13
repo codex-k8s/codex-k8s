@@ -5,8 +5,8 @@ title: "codex-k8s — Prompt Templates Policy"
 status: draft
 owner_role: SA
 created_at: 2026-02-11
-updated_at: 2026-02-12
-related_issues: [1]
+updated_at: 2026-02-13
+related_issues: [1, 19]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -21,6 +21,7 @@ approvals:
 - Источник шаблона определяется по приоритету: project override в БД -> global override в БД -> seed в репозитории.
 - Для каждого run фиксируется effective template version/hash для аудита и воспроизводимости.
 - Шаблоны хранятся по локалям; выбор языка выполняется по цепочке project locale -> system default locale -> `en`.
+- Контур `run:self-improve` использует тот же policy resolve, но дополняется обязательным блоком evidence-trace по источникам улучшений.
 
 ## Классы шаблонов
 
@@ -122,6 +123,17 @@ approvals:
 - Долг/план замены:
   - Day5: расширить наблюдаемость effective prompt/session/template metadata в UI;
   - Day6: синхронизировать prompt-контекст с MCP approval-flow и убрать временные упрощения.
+
+## Политика `run:self-improve` для шаблонов
+
+- Для `run:self-improve` используется `review`-класс шаблонов с расширенным output contract:
+  - классификация findings (`docs`, `prompts`, `instructions`, `tools`);
+  - ссылки на источники (`flow_events`, `agent_sessions`, PR/Issue comments);
+  - proposal diff с оценкой риска.
+- Изменения seed/override, внесённые через self-improve, проходят стандартный PR/review цикл.
+- Для предотвращения drift:
+  - каждый self-improve diff должен содержать traceable rationale;
+  - шаблон не может ослаблять security/policy блоки final prompt.
 
 ## Требования безопасности и качества
 

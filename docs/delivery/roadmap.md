@@ -5,7 +5,7 @@ title: "codex-k8s — Roadmap"
 status: draft
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-11
+updated_at: 2026-02-13
 approvals:
   required: ["Owner"]
   status: approved
@@ -16,9 +16,9 @@ approvals:
 
 ## TL;DR
 - Q1: foundation + core backend + bootstrap staging.
-- Q2: dogfooding и stage-driven execution через labels (`run:*`), с observability/audit.
-- Q3: production readiness + full stage coverage (`intake..ops`) + GitLab provider onboarding.
-- Q4: расширяемость custom-агентов и шаблонов процессов/промптов.
+- Q2: dogfooding, approval/audit hardening и MVP completion (`run:self-improve`, MCP control tools, runtime debug UI).
+- Q3: production readiness + масштабирование governance и knowledge-платформы.
+- Q4: расширяемость custom-агентов, A2A swarm и периодические автономные циклы улучшения.
 
 ## Принципы приоритизации
 - Сначала контроль рисков и deployability.
@@ -29,9 +29,9 @@ approvals:
 | Период | Инициатива | Цель | Метрики | Статус |
 |---|---|---|---|---|
 | Q1 | MVP core + staging bootstrap | запустить рабочий staging и ручные тесты | one-command bootstrap, green deploy from main | planned |
-| Q2 | Dogfooding via labels | довести `run:dev`/`run:dev:revise` до устойчивого E2E + заложить полный label taxonomy | >=95% run:dev запускаются через Issue label без ручного вмешательства | in-progress |
-| Q3 | Stage coverage + production readiness | включить этапы `run:intake..run:ops`, усилить release/postdeploy gate | prod runbook + approval gates + full stage traceability | planned |
-| Q4 | Extensibility | custom-агенты per project + управляемые prompt templates | configurable custom roles + template policies in UI/API | planned |
+| Q2 | Dogfooding + MVP completion | довести `run:*` контур до полного stage-цикла, добавить MCP control tools и `run:self-improve` | >=95% run:dev и >=85% self-improve проходят без ручного обхода policy | in-progress |
+| Q3 | Stage coverage + production readiness | усилить release/postdeploy gate, стабилизировать governance, подготовить prod hardening | prod runbook + approval latency SLO + full stage traceability | planned |
+| Q4 | Extensibility and autonomy | custom-агенты, A2A swarm, периодические автозапуски улучшений/проверок | configurable agent factory + scheduled autonomous runs | planned |
 
 ## Backlog кандидатов
 - Contract-first OpenAPI rollout completion: полное покрытие active external/staff API + строгая CI-проверка codegen.
@@ -41,6 +41,14 @@ approvals:
 - Автоматическое управление labels-as-vars через staff UI.
 - Квоты и policy packs для custom-агентов по проектам.
 - Расширение i18n prompt templates: добавление locale + авто-перевод шаблонов через ИИ.
+- Система управления prompt templates/agent parameters через UI (versioning, preview, rollback, diff).
+- Конструктор агентов в web-консоли (роль, права, режим, лимиты, набор инструментов).
+- Управление label taxonomy и stage policy через UI с change audit.
+- Систематизированное хранение проектной документации (repo + DB) с операциями через MCP.
+- Индексация документации в `pgvector` и MCP ручки для semantic retrieval/change impact analysis.
+- Полноценная web-console на компонентной UI-библиотеке (кандидат baseline: `Vuetify` для Vue 3 admin-паттернов, проверено по Context7).
+- Рой агентов с A2A шиной для параллельной работы над одной задачей и синхронизации решений.
+- Периодические автозапуски (`security scan`, `dependency freshness`, `ops drift`, `self-improve` cadence).
 
 ## Риски roadmap
 - Задержка из-за инфраструктурной автоматизации bootstrap.

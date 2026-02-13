@@ -5,7 +5,7 @@ title: "Issue ↔ Docs Map"
 status: draft
 owner_role: KM
 created_at: 2026-02-06
-updated_at: 2026-02-12
+updated_at: 2026-02-13
 ---
 
 # Issue ↔ Docs Map
@@ -17,6 +17,7 @@ updated_at: 2026-02-12
 | Issue/PR | Traceability bundle | PRD | Design | ADRs | Test Plan | Release Notes | Postdeploy | Status |
 |---|---|---|---|---|---|---|---|---|
 | #1 | `docs/delivery/issue_map.md` + `docs/delivery/requirements_traceability.md` + `docs/delivery/sprint_s1_mvp_vertical_slice.md` + `docs/delivery/sprint_s2_dogfooding.md` | `docs/product/requirements_machine_driven.md` + `docs/product/brief.md` + `docs/product/constraints.md` + `docs/product/agents_operating_model.md` + `docs/product/labels_and_trigger_policy.md` + `docs/product/stage_process_model.md` | `docs/architecture/c4_context.md`, `docs/architecture/c4_container.md`, `docs/architecture/data_model.md`, `docs/architecture/api_contract.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/prompt_templates_policy.md` | `ADR-0001..0004` | S2 dogfooding test plan pending | TBD | TBD | in-progress |
+| #19 | `docs/delivery/issue_map.md` + `docs/delivery/requirements_traceability.md` + `docs/delivery/sprint_s2_dogfooding.md` + `docs/delivery/sprint_s3_mvp_completion.md` | `docs/product/requirements_machine_driven.md` + `docs/product/brief.md` + `docs/product/constraints.md` + `docs/product/agents_operating_model.md` + `docs/product/labels_and_trigger_policy.md` + `docs/product/stage_process_model.md` | `docs/architecture/api_contract.md`, `docs/architecture/data_model.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/prompt_templates_policy.md` | `ADR-0001..0004` | S2 Day7 + S3 Day9 regression package planned | TBD | TBD | in-progress |
 
 ## Требования и трассировка
 - Source of truth требований: `docs/product/requirements_machine_driven.md`.
@@ -35,7 +36,13 @@ updated_at: 2026-02-12
 - Product process model docs: `docs/product/agents_operating_model.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`.
 - Day4 implementation (completed): `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md` (agent-runner runtime, session persistence/resume, PR flow via MCP governance path).
 - Day3.5 dependency: `docs/delivery/epics/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md` (MCP tool layer + prompt context assembler).
-- Факт на 2026-02-12: Day0..Day4 выполнены; текущий фронт работ — Day5.
+- Факт на 2026-02-13: Day0..Day4 выполнены; Day6/Day7 расширены под MVP readiness и запуск Sprint S3.
+
+## Sprint S3 (план) артефакты
+- Sprint plan: `docs/delivery/sprint_s3_mvp_completion.md`.
+- Epic catalog: `docs/delivery/epic_s3.md`.
+- Epic docs: `docs/delivery/epics/epic-s3-day1-full-stage-and-label-activation.md`, `docs/delivery/epics/epic-s3-day2-staff-runtime-debug-console.md`, `docs/delivery/epics/epic-s3-day3-mcp-deterministic-secret-sync.md`, `docs/delivery/epics/epic-s3-day4-mcp-database-lifecycle.md`, `docs/delivery/epics/epic-s3-day5-feedback-and-approver-interfaces.md`, `docs/delivery/epics/epic-s3-day6-self-improve-ingestion-and-diagnostics.md`, `docs/delivery/epics/epic-s3-day7-self-improve-updater-and-pr-flow.md`, `docs/delivery/epics/epic-s3-day8-agent-toolchain-auto-extension.md`, `docs/delivery/epics/epic-s3-day9-mvp-regression-and-security-gate.md`, `docs/delivery/epics/epic-s3-day10-mvp-closeout-and-handover.md`.
+- Ключевые deliverables: полный stage label coverage, staff debug observability, MCP control tools, `run:self-improve`.
 
 ## Правила
 - Если нет обязательного документа — статус `blocked`.

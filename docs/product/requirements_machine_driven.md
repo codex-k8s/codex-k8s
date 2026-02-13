@@ -5,7 +5,7 @@ title: "codex-k8s — Machine-Driven Requirements Baseline"
 status: draft
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-11
+updated_at: 2026-02-13
 related_issues: [1]
 related_prs: []
 approvals:
@@ -69,6 +69,13 @@ approvals:
 | FR-037 | Сущность `agent` остаётся центральной точкой настроек/политик выполнения (runtime mode, timeout policy, approval policy, prompt policy). |
 | FR-038 | Для внешнего/staff HTTP API применяется contract-first OpenAPI: единая спецификация, runtime валидация запросов/ответов, codegen server DTO/backend stubs и frontend API client. |
 | FR-039 | Approver/executor интеграции стандартизованы через HTTP-контракты MCP: платформа поддерживает встроенные MCP-ручки и внешний расширяемый слой (например, `github.com/codex-k8s/yaml-mcp-server` с Telegram/Slack/Mattermost/Jira адаптерами). |
+| FR-040 | Staff UI на MVP предоставляет runtime-debug контур: список активных jobs, live/historical логи агентов, очередь ожидающих запусков с причинами ожидания (`waiting_mcp`, `waiting_owner_review`). |
+| FR-041 | На MVP реализован минимальный набор MCP control tools: детерминированный secret sync (GitHub + Kubernetes) по окружению, database create/delete по окружению, owner feedback handle с вариантами ответа и custom input. |
+| FR-042 | Для MCP control tools обязателен policy-driven approval matrix и audit trail с `correlation_id`, `approval_state`, `requested_by`, `applied_by`. |
+| FR-043 | В stage taxonomy включён `run:self-improve`: агент анализирует логи запусков/комментарии/артефакты по Issue/PR и формирует улучшения docs/prompt templates/instructions/tooling. |
+| FR-044 | `run:self-improve` поддерживает управляемое применение результатов: change-set публикуется через PR с явной трассировкой источников и rationale. |
+| FR-045 | Для full MVP этапов поддерживается исполняемый контур полного stage-flow (`run:intake..run:ops`, `run:*:revise`, `run:abort`, `run:rethink`) с traceability и audit-событиями. |
+| FR-046 | Post-MVP roadmap фиксирует расширяемость платформы: управление prompt templates/агентами/лейблами через UI, knowledge lifecycle в `pgvector`, A2A swarm, периодические автономные run-циклы. |
 
 ## Non-Functional Requirements (NFR)
 
@@ -88,6 +95,10 @@ approvals:
 | NFR-012 | Пока агент ожидает ответ от MCP-сервера, timeout-kill pod/run не применяется; таймер выполнения должен быть paused для этого wait-state. |
 | NFR-013 | Снимок `codex-cli` сессии для resumable run должен храниться надёжно и быть доступен для восстановления после перезапуска worker/pod. |
 | NFR-014 | OpenAPI codegen должен быть воспроизводимым в CI: изменения спецификаций сопровождаются регенерацией backend/frontend артефактов и проверкой их актуальности. |
+| NFR-015 | Для live/historical логов и wait-очереди в staff UI latency обновления должна быть достаточно низкой для операционной диагностики (целевой p95 UI refresh <= 5s на staging). |
+| NFR-016 | MCP control tools должны быть идемпотентны и безопасны при retries/duplicate callbacks; secret material не должен попадать в model-visible output. |
+| NFR-017 | Контур self-improve должен быть воспроизводим: одинаковый входной набор (логи/комментарии/артефакты) приводит к детерминированному diff-предложению в пределах версии шаблонов и policy. |
+| NFR-018 | Полный stage-flow должен сохранять консистентность переходов и запрет недопустимых шагов даже при конкурирующих label-событиях. |
 
 ## Зафиксированные решения Owner (2026-02-06)
 
@@ -104,6 +115,22 @@ approvals:
 | Runner scale | Локально: 1 persistent runner; staging/prod при наличии домена: autoscaled set. |
 | Storage during bootstrap | `local-path` на MVP, Longhorn позже. |
 | Learning mode default | Управляется через `bootstrap/host/config.env`; в шаблоне включён по умолчанию, пустое значение трактуется как выключено. |
+| MVP completion scope | В MVP входят S2 Day6/Day7 + Sprint S3 Day1..Day10 (full stage labels, MCP control tools, `run:self-improve`, staff debug observability). |
+
+## Post-MVP направления (декомпозиция идей)
+- Управление prompt templates и параметрами агентов через UI: версионирование, diff, rollout policy, rollback.
+- Конструктор custom-агентов через web-console: role template, runtime mode, RBAC, quota, policy pack.
+- Управление label taxonomy и stage policies через UI с governance approvals.
+- Централизованный lifecycle документации (repo + DB + `pgvector`) с MCP-инструментами для поиска, impact-analysis и автообновления связей.
+- Полноценная web-консоль нового поколения:
+  - единый операционный workspace (runs, approvals, docs, agents, labels, metrics);
+  - компонентная UI-библиотека для admin-паттернов (кандидат baseline: `Vuetify`, проверка capabilities выполнена через Context7).
+- A2A swarm контур: несколько агентов разных ролей работают параллельно в общем контексте задачи с protocol-level coordination.
+- Периодические автономные run-циклы:
+  - dependency freshness;
+  - proactive security checks;
+  - quality/doc drift detection;
+  - scheduled `run:self-improve`.
 
 ## Ссылки
 - `docs/product/brief.md`
@@ -119,6 +146,8 @@ approvals:
 - `docs/architecture/mcp_approval_and_audit_flow.md`
 - `docs/architecture/prompt_templates_policy.md`
 - `docs/delivery/delivery_plan.md`
+- `docs/delivery/sprint_s3_mvp_completion.md`
+- `docs/delivery/epic_s3.md`
 - `docs/delivery/issue_map.md`
 - `docs/delivery/development_process_requirements.md`
 - `docs/design-guidelines/AGENTS.md`

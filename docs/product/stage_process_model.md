@@ -5,8 +5,8 @@ title: "codex-k8s — Stage Process Model"
 status: draft
 owner_role: EM
 created_at: 2026-02-11
-updated_at: 2026-02-12
-related_issues: [1]
+updated_at: 2026-02-13
+related_issues: [1, 19]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -20,6 +20,7 @@ approvals:
 - Целевая модель: `intake -> vision -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops`.
 - Для каждого этапа есть `run:*` и `run:*:revise` петля.
 - Переход между этапами требует формального подтверждения артефактов и фиксируется в audit.
+- Дополнительный служебный цикл `run:self-improve` работает поверх stage-контура и улучшает docs/prompts/tools по итогам запусков.
 
 ## Source of truth
 - `docs/product/labels_and_trigger_policy.md`
@@ -41,6 +42,7 @@ approvals:
 | Release | `run:release` | release plan/notes, rollback plan | `em`, `sre` |
 | Postdeploy | `run:postdeploy` | postdeploy review, postmortem | `qa`, `sre` |
 | Ops | `run:ops` | SLO/alerts/runbook improvements | `sre`, `km` |
+| Self-Improve | `run:self-improve` | improvement diagnosis, change-set PR, policy/tooling recommendations | `km`, `dev`, `reviewer` |
 
 ## Петли ревизии и отката
 
@@ -82,6 +84,12 @@ approvals:
 - `run:dev:revise`
 
 Остальные `run:*` зафиксированы как целевая модель и поэтапно вводятся в следующих итерациях.
+
+## План активации контуров
+
+- S2 baseline: обязательны `run:dev` и `run:dev:revise`.
+- S2 Day6/Day7: approval/audit hardening и regression gate под полный MVP.
+- S3 target: активация полного stage-flow (`run:intake..run:ops`) и `run:self-improve`.
 
 ## Конфигурационные labels для исполнения stage
 

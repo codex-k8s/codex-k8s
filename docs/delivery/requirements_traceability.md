@@ -5,8 +5,8 @@ title: "Requirements Traceability Matrix"
 status: draft
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-12
-related_issues: [1]
+updated_at: 2026-02-13
+related_issues: [1, 19]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -63,6 +63,13 @@ approvals:
 | FR-037 | `agent` как центр настроек и политик выполнения | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/agents_operating_model.md` | covered |
 | FR-038 | Contract-first OpenAPI + backend/frontend codegen | `docs/product/requirements_machine_driven.md`, `docs/architecture/api_contract.md`, `docs/delivery/sprint_s2_dogfooding.md`, `docs/delivery/epics/epic-s2-day1-migrations-and-schema-ownership.md` | covered |
 | FR-039 | Универсальные HTTP-контракты approver/executor через MCP | `docs/product/requirements_machine_driven.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/c4_context.md`, `docs/delivery/epics/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md` | covered |
+| FR-040 | Staff UI runtime debug: jobs/logs/wait queue | `docs/product/requirements_machine_driven.md`, `docs/architecture/api_contract.md`, `docs/delivery/epics/epic-s3-day2-staff-runtime-debug-console.md` | covered |
+| FR-041 | MCP control tools: secret sync + db lifecycle + owner feedback | `docs/product/requirements_machine_driven.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/delivery/epics/epic-s3-day3-mcp-deterministic-secret-sync.md`, `docs/delivery/epics/epic-s3-day4-mcp-database-lifecycle.md`, `docs/delivery/epics/epic-s3-day5-feedback-and-approver-interfaces.md` | covered |
+| FR-042 | Approval matrix для MCP control tools | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/delivery/epics/epic-s2-day6-approval-and-audit-hardening.md` | covered |
+| FR-043 | `run:self-improve` trigger и диагностика | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`, `docs/delivery/epics/epic-s3-day6-self-improve-ingestion-and-diagnostics.md` | covered |
+| FR-044 | `run:self-improve` updater + PR flow | `docs/product/requirements_machine_driven.md`, `docs/architecture/prompt_templates_policy.md`, `docs/delivery/epics/epic-s3-day7-self-improve-updater-and-pr-flow.md` | covered |
+| FR-045 | Full stage-flow activation `run:intake..run:ops` + revise/abort/rethink | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/delivery/epics/epic-s3-day1-full-stage-and-label-activation.md` | covered |
+| FR-046 | Post-MVP roadmap направлений | `docs/product/requirements_machine_driven.md`, `docs/product/brief.md`, `docs/delivery/roadmap.md` | covered |
 | NFR-001 | Security baseline | `docs/product/requirements_machine_driven.md`, `docs/product/constraints.md`, `AGENTS.md` | covered |
 | NFR-002 | Multi-pod consistency | `docs/product/requirements_machine_driven.md`, `docs/architecture/c4_container.md`, `docs/architecture/data_model.md` | covered |
 | NFR-003 | No event outbox on MVP | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/constraints.md` | covered |
@@ -77,6 +84,10 @@ approvals:
 | NFR-012 | Запрет timeout-kill при ожидании MCP | `docs/product/requirements_machine_driven.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/agent_runtime_rbac.md` | covered |
 | NFR-013 | Надёжное хранение resumable session snapshot | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/constraints.md`, `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md` | covered |
 | NFR-014 | Воспроизводимый OpenAPI codegen в CI | `docs/product/requirements_machine_driven.md`, `docs/architecture/api_contract.md`, `docs/delivery/epics/epic-s2-day1-migrations-and-schema-ownership.md`, `.github/workflows/contracts_codegen_check.yml` | covered |
+| NFR-015 | Операционная latency для runtime debug UI | `docs/product/requirements_machine_driven.md`, `docs/architecture/api_contract.md`, `docs/delivery/epics/epic-s3-day2-staff-runtime-debug-console.md` | covered |
+| NFR-016 | Idempotent и secret-safe поведение MCP control tools | `docs/product/requirements_machine_driven.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/delivery/epics/epic-s3-day3-mcp-deterministic-secret-sync.md`, `docs/delivery/epics/epic-s3-day4-mcp-database-lifecycle.md` | covered |
+| NFR-017 | Воспроизводимость self-improve цикла | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/delivery/epics/epic-s3-day6-self-improve-ingestion-and-diagnostics.md`, `docs/delivery/epics/epic-s3-day7-self-improve-updater-and-pr-flow.md` | covered |
+| NFR-018 | Консистентность переходов full stage-flow | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/delivery/epics/epic-s3-day1-full-stage-and-label-activation.md`, `docs/delivery/epics/epic-s3-day9-mvp-regression-and-security-gate.md` | covered |
 
 ## Правило актуализации
 - Любое новое требование сначала добавляется в `docs/product/requirements_machine_driven.md`, затем отражается в этой матрице.

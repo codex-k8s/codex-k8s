@@ -5,8 +5,8 @@ title: "codex-k8s — Agent Runtime and RBAC Model"
 status: draft
 owner_role: SA
 created_at: 2026-02-11
-updated_at: 2026-02-12
-related_issues: [1]
+updated_at: 2026-02-13
+related_issues: [1, 19]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -20,6 +20,7 @@ approvals:
 - Поддерживаются два режима исполнения: `full-env` и `code-only`.
 - Права назначаются по роли агента и окружению запуска.
 - Для `full-env` обязательно изолированное namespace-исполнение; agent pod получает прямой `kubectl` доступ в свой namespace, кроме `secrets`.
+- Привилегированные операции с секретами/БД выполняются через MCP control tools с approval policy, а не прямым `kubectl`/SQL доступом.
 
 ## Режимы исполнения
 
@@ -71,8 +72,7 @@ approvals:
 - Запрещено:
   - прямое чтение/запись `secrets`;
   - выход за пределы своего namespace и cluster-scope операции.
-- MCP в текущем baseline используется только для label-операций (`github_labels_*`), включая transition `run:* -> state:*`.
-- Для секретов закладывается отдельный future-path: MCP tools + approver flow + аудит.
+- MCP в MVP baseline используется для label-операций и control tools (`secret sync`, `database lifecycle`, `owner feedback`) с approval/audit контуром.
 
 Эволюция policy (Day6+):
 - effective MCP права вычисляются по связке `agent_key + run label`;
@@ -95,7 +95,7 @@ approvals:
   - `CODEXK8S_GIT_BOT_TOKEN` для git transport path.
 - Для `full-env` pod формируется `KUBECONFIG` из namespaced ServiceAccount.
 - Прямой доступ агента к Kubernetes `secrets` запрещён RBAC (read/write).
-- Создание/обновление секретов с генерацией значений и approver-политикой планируется отдельным MCP-потоком в следующих эпиках.
+- Создание/обновление секретов с генерацией значений и approver-политикой выполняется через MCP control tools.
 
 ## Аудит
 

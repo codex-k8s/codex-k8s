@@ -5,8 +5,8 @@ title: "codex-k8s — Constraints"
 status: draft
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-11
-related_issues: [1]
+updated_at: 2026-02-13
+related_issues: [1, 19]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -44,12 +44,17 @@ approvals:
 - Отдельный provider для GitHub Enterprise/GHE на MVP не требуется.
 - Подключение production OpenAI account допускается сразу.
 - Stage-процесс управления задачами фиксирован через label taxonomy `run:*` + `state:*` + `need:*`.
+- Для MVP обязательна активация полного stage-каталога (`run:intake..run:ops`, `run:*:revise`, `run:abort`, `run:rethink`) и `run:self-improve`.
 - Базовый системный штат агентов включает `dev` и `reviewer` как обязательные роли контура разработки (`run:dev`, pre-review перед финальным Owner review).
 - Шаблоны агентных промптов обязаны поддерживать схему: repo seed + DB override (`work` и `review`).
 - Шаблоны промптов хранятся по локалям; выбор языка обязателен по цепочке `project locale -> system default locale -> en`.
 - Для системных агентов обязательно наличие seed-шаблонов минимум для `ru` и `en`.
 - Для external/staff HTTP API обязателен contract-first подход по OpenAPI (spec + runtime validation + codegen backend/frontend).
 - Интеграции approver/executor должны реализовываться через универсальные HTTP-контракты MCP, без вендорной привязки к конкретному мессенджеру.
+- Для MVP обязателен минимальный контур MCP control tools:
+  - deterministic secret sync между GitHub и Kubernetes;
+  - database create/delete по окружениям;
+  - owner feedback handle с вариантами ответа + custom input.
 
 ## Операционные ограничения
 - SLO/SLA: staging ориентирован на функциональные ручные тесты, не на production SLA.
@@ -67,6 +72,9 @@ approvals:
   - при ожидании ответа MCP (`wait_state=mcp`) pod/run не может быть завершён по timeout;
   - таймер timeout должен быть paused до завершения MCP ожидания;
   - `codex-cli` session JSON сохраняется для resumable восстановления run после паузы/перезапуска.
+- Для self-improve режима:
+  - изменения применяются только через PR и owner review;
+  - вывод self-improve обязан содержать трассировку: какие логи/комментарии/артефакты привели к конкретному улучшению.
 - Ограничения по деплою:
   - staging deploy: автоматический workflow на push в `main`;
   - production deploy: отдельный workflow с ручным запуском и approval gate;

@@ -5,8 +5,8 @@ title: "codex-k8s — MCP Approval and Audit Flow"
 status: draft
 owner_role: SA
 created_at: 2026-02-11
-updated_at: 2026-02-12
-related_issues: [1]
+updated_at: 2026-02-13
+related_issues: [1, 19]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -17,9 +17,9 @@ approvals:
 # MCP Approval and Audit Flow
 
 ## TL;DR
-- MCP в текущем baseline используется только для GitHub label-операций.
+- MCP в MVP baseline используется для GitHub label-операций и control tools (secret sync, database lifecycle, owner feedback).
 - GitHub issue/PR/comments и Kubernetes runtime-операции выполняются агентом напрямую через `gh`/`kubectl`.
-- Approval gate в MCP на текущем этапе включается только для отдельных инструментов по policy; для label-инструментов baseline = `approval:none`.
+- Approval gate в MCP управляется policy matrix: для label-инструментов возможен `approval:none`, для privileged control tools — `approval:required`.
 - Все действия логируются в единый audit-контур (`flow_events`, `agent_sessions`, `links`, `token_usage`).
 - HTTP approver/executor поддерживаются как стандартные контракты интеграции; Telegram — первая реализация, но не единственная.
 - В `codex-k8s` сохраняется двухслойная модель MCP: встроенные Go-ручки платформы + внешний декларативный слой (`github.com/codex-k8s/yaml-mcp-server`).
@@ -29,6 +29,7 @@ approvals:
 ### Baseline (текущий этап)
 - Для MCP label-инструментов (`github_labels_list|add|remove|transition`) используется `approval:none`.
 - Label transitions всё равно проходят через control-plane MCP, чтобы сохранять единый audit-контур.
+- Для control tools (`secret.sync.github_to_k8s`, `database.lifecycle`, `owner.feedback.request`) включается approver gate по policy.
 
 ### Planned (следующие этапы)
 - Для части label/runtime/secret инструментов будет включаться обязательный approver gate.
@@ -37,11 +38,11 @@ approvals:
 
 ## Последовательность (высокоуровнево)
 
-1. Агент формирует `label apply request`.
+1. Агент формирует MCP request (label/control tool).
 2. Запрос фиксируется в audit (`approval.requested`).
 3. Owner принимает `approve/deny`.
-4. При `approve` применяется label и создаётся `approval.approved` + `label.applied`.
-5. При `deny` создаётся `approval.denied`; workflow не запускается.
+4. При `approve` выполняется действие и создаётся `approval.approved` + `mcp.tool.applied`.
+5. При `deny` создаётся `approval.denied`; действие не выполняется.
 
 ## Базовый режим S2 Day4+
 
@@ -53,6 +54,7 @@ approvals:
 - `repositories.token_encrypted` в этом режиме не используется MCP runtime-контуром
   и остаётся в domain-path управления репозиториями (staff/project management).
 - Day6+ расширяет policy: approver matrix, secret-management инструменты через MCP, единообразные события и отказоустойчивость.
+- Day6+ также включает контур `run:self-improve`, где MCP используется для traceable transitions и owner feedback loops.
 
 ## Политики доступа к MCP (roadmap Day6)
 
@@ -105,6 +107,9 @@ approvals:
 - `approval.denied`
 - `label.applied`
 - `label.rejected`
+- `mcp.tool.requested`
+- `mcp.tool.applied`
+- `mcp.tool.failed`
 - `run.enqueued`
 - `run.started`
 - `run.finished`

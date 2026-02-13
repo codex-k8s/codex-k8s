@@ -5,8 +5,8 @@ title: "codex-k8s — API Contract Overview"
 status: draft
 owner_role: SA
 created_at: 2026-02-06
-updated_at: 2026-02-12
-related_issues: [1]
+updated_at: 2026-02-13
+related_issues: [1, 19]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -23,22 +23,28 @@ approvals:
 - Версионирование: `/api/v1/...`.
 - Основные операции текущего среза: webhook ingest (public) + staff/private operations для auth, project/repository/user/run/learning-mode.
 - Для external/staff транспорта в S2 Day1 внедрён contract-first OpenAPI (validation + backend/frontend codegen).
+- В MVP completion (S2 Day6 + S3) добавляются API-контракты для runtime debug observability и MCP control tools orchestration.
 
 ## Спецификации (source of truth)
 - OpenAPI (api-gateway): `services/external/api-gateway/api/server/api.yaml`
 - gRPC proto: `proto/codexk8s/controlplane/v1/controlplane.proto`
 - AsyncAPI (если есть): `services/external/api-gateway/api/server/asyncapi.yaml` (webhook/event payloads)
 
-## Состояние MCP после S2 Day4
+## Состояние MCP после S2 Day6 / S3 target
 - В `control-plane` поднят MCP StreamableHTTP endpoint: `/mcp`.
 - Аутентификация MCP: short-lived run-bound bearer token.
 - Внутренний gRPC контракт расширен RPC `IssueRunMCPToken` для выдачи MCP токена worker-у перед запуском run pod.
-- MCP-слой в текущем baseline ограничен только label-операциями:
+- MCP-слой в текущем MVP baseline покрывает:
+  - label-операции (`github_labels_*`);
+  - deterministic secret sync (GitHub + Kubernetes);
+  - database lifecycle (`create/delete/describe`);
+  - owner feedback request (options + custom answer).
+- Базовые MCP label-инструменты:
   - `github_labels_list`;
   - `github_labels_add`;
   - `github_labels_remove`;
   - `github_labels_transition` (remove+add).
-- Остальные GitHub/Kubernetes операции выполняются напрямую из agent pod через `gh`/`kubectl`.
+- Остальные GitHub/Kubernetes runtime-операции выполняются напрямую из agent pod через `gh`/`kubectl` в рамках RBAC/policy.
 
 ## Модель доступа GitHub для агентного pod (S2 Day4)
 - Агентный pod получает отдельный `CODEXK8S_GIT_BOT_TOKEN`.
@@ -48,13 +54,13 @@ approvals:
 - Разрешённые scopes для bot-token:
   - Read: actions, actions variables, artifact metadata, custom properties for repositories, deployments, environments, merge queues, metadata, secrets;
   - Read/Write: code, commit statuses, discussions, issues, pages, pull requests, workflows.
-- Через MCP выполняются только операции с лейблами (единый policy/audit контур для transitions).
+- Через MCP выполняются label transitions и control tools, требующие governance approvals и единый audit контур.
 
 ## Модель доступа Kubernetes для агентного pod (S2 Day4)
 - Для `full-env` runner формирует `~/.kube/config` из namespaced ServiceAccount и экспортирует `KUBECONFIG`.
 - Агент может выполнять через `kubectl` почти все namespaced операции runtime-диагностики и дебага.
 - Исключение: прямой доступ к `secrets` (read/write) запрещён RBAC.
-- Управление секретами (create/update с генерацией значений и approver flow) фиксируется как отдельный следующий этап через MCP/control-plane.
+- Управление секретами через MCP/control-plane является частью MVP completion scope.
 
 ## Internal agent callbacks (S2 Day4)
 - Для agent-runner добавлены внутренние gRPC callback RPC в `control-plane`:
@@ -76,7 +82,7 @@ approvals:
 - В CI добавлена проверка консистентности codegen:
   - `.github/workflows/contracts_codegen_check.yml` (`make gen-openapi` + `git diff --exit-code`).
 
-## Endpoints / Methods (текущий срез)
+## Endpoints / Methods (текущий и MVP target срез)
 | Operation | Method | Path | Auth | Notes |
 |---|---|---|---|---|
 | Ingest GitHub webhook | POST | `/api/v1/webhooks/github` | webhook signature | idempotency по `X-GitHub-Delivery`, response status: `accepted|duplicate|ignored` |
@@ -92,6 +98,10 @@ approvals:
 | Get run | GET | `/api/v1/staff/runs/{run_id}` | staff JWT | run details |
 | List run events | GET | `/api/v1/staff/runs/{run_id}/events` | staff JWT | flow events |
 | List run learning feedback | GET | `/api/v1/staff/runs/{run_id}/learning-feedback` | staff JWT | educational feedback |
+| List running jobs | GET | `/api/v1/staff/runs/jobs` | staff JWT | runtime jobs monitor |
+| Stream run logs | GET | `/api/v1/staff/runs/{run_id}/logs/stream` | staff JWT | live tail (SSE/WebSocket) |
+| List run log snapshots | GET | `/api/v1/staff/runs/{run_id}/logs` | staff JWT | historical logs |
+| List wait queue | GET | `/api/v1/staff/runs/waits` | staff JWT | `waiting_mcp`/`waiting_owner_review` with reasons |
 | List users | GET | `/api/v1/staff/users` | staff JWT | allowed users |
 | Create user | POST | `/api/v1/staff/users` | staff JWT + admin | allowlist entry |
 | Delete user | DELETE | `/api/v1/staff/users/{user_id}` | staff JWT + admin | remove allowlist entry |
@@ -104,7 +114,8 @@ approvals:
 | Delete project repository | DELETE | `/api/v1/staff/projects/{project_id}/repositories/{repository_id}` | staff JWT + admin | unbind repository |
 
 Примечание:
-- будущие маршруты (`run:*`, stage labels, prompt locale management, docs search/edit и т.д.) вводятся отдельными эпиками S2 Day2+.
+- маршруты staff runtime debug (`/runs/jobs`, `/runs/{run_id}/logs*`, `/runs/waits`) относятся к MVP target и вводятся в Sprint S3.
+- будущие маршруты сверх MVP (`docs search/edit`, advanced policy management UI и т.д.) вводятся отдельными эпиками post-MVP.
 
 ## Public API boundary (MVP)
 - Публично (outside/stable): только `POST /api/v1/webhooks/github`.
@@ -132,7 +143,8 @@ approvals:
 
 ## Label and stage policy behavior
 - Поддерживаются классы лейблов: `run:*`, `state:*`, `need:*`.
-- На текущем этапе исполнения активны триггеры `run:dev` и `run:dev:revise`; остальные `run:*` зарезервированы под поэтапное включение.
+- S2 baseline: активны `run:dev` и `run:dev:revise`.
+- S3 target: активируется полный stage-контур `run:intake..run:ops` и `run:self-improve`.
 - Trigger/deploy label, инициированный агентом, проходит owner approval до применения.
 - `state:*` и `need:*` могут применяться автоматически в рамках project policy.
 - Любая операция с label фиксируется в `flow_events` и связывается с `agent_sessions`/`links`.
@@ -141,6 +153,7 @@ approvals:
 - Approver/executor интеграции подключаются по HTTP-контрактам через MCP-слой.
 - Telegram (`github.com/codex-k8s/telegram-approver`, `github.com/codex-k8s/telegram-executor`) рассматривается как первый адаптер контракта, но не как единственный канал.
 - Контракт должен поддерживать async callbacks и единый `correlation_id` для аудита.
+- Для control tools обязателен `approval_required` режим по policy matrix.
 
 ## Session resume and timeout behavior
 - run/session поддерживает paused states `waiting_owner_review` и `waiting_mcp`.

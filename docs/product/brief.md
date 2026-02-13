@@ -5,8 +5,8 @@ title: "codex-k8s platform bootstrap"
 status: draft
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-11
-related_issues: [1]
+updated_at: 2026-02-13
+related_issues: [1, 19]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -22,6 +22,7 @@ approvals:
 - **Предлагаемое решение:** единый сервис `codex-k8s` (Go + Vue3), webhook-driven, с хранением состояния и знаний в PostgreSQL (`JSONB` + `pgvector`).
 - **Почему сейчас:** принято решение консолидировать архитектуру и убрать workflow-first оркестрацию продуктовых процессов.
 - **Что считаем успехом:** staging разворачивается одним bootstrap-скриптом, push в `main` обновляет staging, ручные тесты проходят через UI и webhook сценарии.
+- **Что считаем успехом (расширено):** кроме базового dogfooding, в MVP работают full stage labels, MCP control tools (secret/db/feedback), staff debug observability и `run:self-improve`.
 - **Дополнительная ценность:** при включённом learning mode платформа объясняет важные инженерные решения и компромиссы, чтобы пользователи учились паттернам, а не только получали код.
 - **Что НЕ делаем:** поддержку не-Kubernetes оркестраторов и self-signup пользователей.
 - **Source of truth требований:** `docs/product/requirements_machine_driven.md`.
@@ -49,7 +50,6 @@ approvals:
 - Добавить bootstrap-скрипт развёртывания staging по SSH на Ubuntu 24.04.
 - Включить CI/CD deploy для самой платформы через self-hosted runner в Kubernetes (staging first).
 - Зафиксировать stage-driven delivery модель и label taxonomy (`run:*`, `state:*`, `need:*`) как единый процессный контракт.
-- Зафиксировать operating model агентов: базовый штат из 7 ролей + custom-агенты проекта, mixed runtime (`full-env`/`code-only`).
 - Зафиксировать operating model агентов: базовый штат из 8 ролей (включая `dev` и `reviewer`) + custom-агенты проекта, mixed runtime (`full-env`/`code-only`).
 - Зафиксировать pre-review контур: `reviewer` оставляет inline замечания в PR для `dev` и summary для Owner до финального review.
 - Зафиксировать policy шаблонов промптов: seed в репозитории + override в БД (`work/review`).
@@ -59,6 +59,9 @@ approvals:
 - Добавить режим обучения для пользовательских задач:
   - подмешивание в инструкции требований объяснять "почему так";
   - дополнительный post-PR образовательный комментарий по ключевым файлам/строкам.
+- Добавить self-improve контур `run:self-improve`:
+  - анализ логов запусков + комментариев Owner/бота;
+  - автоматическое предложение улучшений docs/prompt templates/instructions/tooling через PR.
 
 ## Границы
 ### In scope (входит)
@@ -100,6 +103,17 @@ approvals:
 - Staff API auth: short-lived JWT через API gateway.
 - GitHub Enterprise/GHE provider: не требуется на этапе MVP.
 - Production OpenAI account: подключается сразу.
+
+## Post-MVP идеи и направления
+- Управление prompt templates и agent policies через web-console: версия, diff, rollout, rollback, аудит.
+- Конструктор custom-агентов: создание роли через UI, выбор runtime mode, tool-policy, quotas и RBAC.
+- Управление лейблами/stage-политикой через UI с апрувами изменений.
+- Единый контур документации (repo + DB + `pgvector`) с MCP-ручками поиска, анализа влияния и синхронизации.
+- Новая полноценная staff-консоль:
+  - единый рабочий стол операций по run/approval/docs/agents;
+  - компонентный подход на UI-библиотеке для admin-сценариев (кандидат: `Vuetify`, capabilities сверены через Context7).
+- A2A swarm концепция: параллельные агенты разных ролей в одном процессе с протоколом координации.
+- Периодические автономные циклы: security/dependency/docs drift checks, плановые `run:self-improve`, поиск улучшений по телеметрии.
 
 ## Решение от Owner (что нужно утвердить)
 - [x] Принять brief как базу и перейти к Vision/Architecture
