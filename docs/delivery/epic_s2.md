@@ -5,8 +5,8 @@ title: "Epic Catalog: Sprint S2 (Dogfooding via Issues)"
 status: active
 owner_role: EM
 created_at: 2026-02-10
-updated_at: 2026-02-12
-related_issues: []
+updated_at: 2026-02-13
+related_issues: [19]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -20,6 +20,7 @@ approvals:
 - Цель Sprint S2: довести `codex-k8s` до режима dogfooding, где разработка `codex-k8s` запускается через GitHub Issue + лейблы `run:dev` и `run:dev:revise`, а агент работает в отдельном namespace со стеком и завершает цикл созданием PR.
 - Первый приоритет: исправить архитектурное отклонение (thin-edge в `external/api-gateway`, домен и БД ownership в `internal/control-plane`).
 - Второй приоритет: зафиксировать contract-first OpenAPI для external/staff API и только после этого расширять issue-driven run pipeline (webhook issue label -> run request -> namespace -> agent job -> PR).
+- Завершающий приоритет S2: подготовить governance baseline для Sprint S3 (approval matrix, MCP control tools, regression gate).
 
 ## Контекст
 - Source of truth требований: `docs/product/requirements_machine_driven.md`.
@@ -47,8 +48,11 @@ approvals:
 - Day 4: completed (agent-runner runtime, session persistence/resume, split access model и PR-flow через MCP).
 - Day 4.5: planned (pgx + db-model rollout).
 - Day 5..7: planned.
+- Day 6: scope расширен до approval matrix + MCP control tools (secret/db/feedback) + audit hardening.
+- Day 7: scope расширен до MVP readiness regression gate + Sprint S3 kickoff package.
 
 ## Критерий успеха Sprint S2 (выжимка)
 - Один Issue с лейблом `run:dev` приводит к запуску агентного Job в отдельном namespace и к созданию PR.
 - Один Issue с лейблом `run:dev:revise` запускает цикл ревизии и обновляет PR.
 - `external/api-gateway` остаётся thin-edge и не содержит доменной логики/репозиториев.
+- Sprint S3 стартует без P0-блокеров и с зафиксированным планом `Day1..Day12`.

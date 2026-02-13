@@ -5,8 +5,8 @@ title: "codex-k8s — Agents Operating Model"
 status: draft
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-02-12
-related_issues: [1]
+updated_at: 2026-02-13
+related_issues: [1, 19]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -22,6 +22,7 @@ approvals:
 - Режим исполнения смешанный: часть ролей работает в `full-env`, часть в `code-only`.
 - Шаблоны промптов для работы и ревью имеют seed в репозитории и override в БД.
 - Для каждого системного агента шаблоны поддерживаются минимум в `ru` и `en`; язык выбирается по locale с fallback до `en`.
+- Для `run:self-improve` применяется совместный контур `km + dev + reviewer` с обязательной трассировкой источников улучшений.
 
 ## Source of truth
 - `docs/product/requirements_machine_driven.md`
@@ -40,7 +41,7 @@ approvals:
 | `reviewer` | Pre-review Engineer | предварительное ревью PR: inline findings + summary для Owner | `full-env` (read-mostly) | 2 |
 | `qa` | QA Lead | test strategy/plan/matrix/regression | `full-env` | 2 |
 | `sre` | SRE/OPS | runbook/SLO/alerts/postdeploy | `full-env` | 1 |
-| `km` | Doc/KM | issue↔docs traceability, индексы, актуальность артефактов | `code-only` | 2 |
+| `km` | Doc/KM | issue↔docs traceability, индексы, self-improve диагностика и обновление знаний | `code-only` | 2 |
 
 Примечания:
 - `Owner` не является агентом, но остаётся финальным апрувером решений и trigger/deploy действий.
@@ -66,7 +67,7 @@ approvals:
 - GitHub операции (issue/PR/comments/review + git push) выполняются напрямую через `gh`/`git` с bot-token.
 - Kubernetes runtime-дебаг и изменения в своём namespace выполняются напрямую через `kubectl`.
 - Исключение: прямой доступ к `secrets` (read/write) запрещён RBAC.
-- MCP в текущем baseline используется только для label-операций; secret-management через MCP+approver фиксируется как следующий этап.
+- MCP в MVP baseline используется для label-операций и control tools (`secret sync`, `database lifecycle`, `owner feedback`) по approval policy.
 - Используется для ролей, где нужно подтверждать решения по фактическому состоянию окружения.
 
 ### Канал апрувов и уточнений
@@ -88,6 +89,10 @@ approvals:
   - оставляет inline-комментарии в PR для `dev`-агента и публикует summary для Owner.
 - `Owner`:
   - выполняет финальный review/approve после прохождения pre-review.
+- `km`:
+  - ведёт цикл `run:self-improve`: анализирует повторяющиеся замечания/сбои, формирует и вносит улучшения в docs/prompt templates.
+- `dev` (в self-improve контуре):
+  - дорабатывает toolchain/agent image, если self-improve выявил отсутствие инструментов или runtime-gap.
 
 ## Политика шаблонов промптов (work/review)
 
@@ -135,6 +140,7 @@ Seed-файлы:
 ## Инфраструктурная модель и capacity baseline
 
 - По умолчанию одновременно активен максимум 1 `run:dev` на issue.
+- Для `run:self-improve` допускается не более 1 активного запуска на issue/PR связку, чтобы избежать конфликтующих улучшений.
 - Лимиты параллелизма на проект задаются в настройках проекта и применяются worker-очередью.
 - Для `full-env` запусков обязателен отдельный namespace на run/issue с контролем cleanup.
 - MCP policy для инструментов/ресурсов определяется по связке:

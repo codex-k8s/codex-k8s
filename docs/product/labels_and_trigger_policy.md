@@ -5,8 +5,8 @@ title: "codex-k8s — Labels and Trigger Policy"
 status: draft
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-02-12
-related_issues: [1]
+updated_at: 2026-02-13
+related_issues: [1, 19]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -49,6 +49,7 @@ approvals:
 | `run:release` | релиз и release artifacts | planned |
 | `run:postdeploy` | post-deploy review / postmortem | planned |
 | `run:ops` | эксплуатационные улучшения | planned |
+| `run:self-improve` | анализ запусков/комментариев и подготовка улучшений docs/prompts/tools | planned (S3) |
 | `run:abort` | остановка/cleanup текущей инициативы | planned |
 | `run:rethink` | переоткрытие этапа и смена траектории | planned |
 
@@ -103,6 +104,7 @@ approvals:
 - Если лейбл инициирует человек с правами admin/owner, применяется по правам GitHub и политике репозитория.
 - Любая операция с `run:*` логируется в `flow_events`.
 - Для цикла `run:dev`/`run:dev:revise` перед финальным Owner review обязателен pre-review от системного `reviewer`.
+- Для control tools (`secret sync`, `database lifecycle`, `owner feedback`) применяется policy-driven approval matrix по связке `agent_key + run_label + action`.
 ### Diagnostic labels (`run:debug`)
 - `run:debug` не запускает workflow/deploy напрямую.
 - Если label присутствует на issue при старте `run:dev`/`run:dev:revise`, worker не удаляет run-namespace автоматически.
@@ -136,12 +138,24 @@ approvals:
 - S2 baseline:
   - pre-review остается обязательным шагом перед финальным Owner review;
   - post-run transitions `run:* -> state:*` фиксируются в Day5/Day6 как отдельные доработки policy и аудита.
+- S3 target:
+  - активируется полный stage-контур `run:intake..run:ops` + revise/abort/rethink;
+  - вводится `run:self-improve` с отдельным post-run transition policy.
+
+## Оркестрационный flow для `run:self-improve`
+
+- На входе: issue/pr с лейблом `run:self-improve` и доступным audit trail (`agent_sessions`, `flow_events`, comments, links).
+- Агент собирает источники замечаний (Owner/бот), релевантные логи и артефакты.
+- Результат оформляется как change-set (docs/prompts/instructions/tooling) в PR с обязательной трассировкой источников.
+- Transition по завершению:
+  - снять `run:self-improve` с Issue;
+  - поставить `state:in-review` на PR и на Issue (для явного owner decision по улучшениям).
 
 ## Требования к GitHub variables (labels-as-vars)
 
 - Все workflow условия сравнения label должны использовать `vars.*`, а не строковые литералы.
 - В GitHub Variables хранится **полный каталог** `run:*`, `state:*`, `need:*`:
-  - для `run:*`: `RUN_<STAGE>_LABEL` и `RUN_<STAGE>_REVISE_LABEL` (где применимо), плюс `RUN_DEBUG_LABEL`,
+  - для `run:*`: `RUN_<STAGE>_LABEL` и `RUN_<STAGE>_REVISE_LABEL` (где применимо), плюс `RUN_DEBUG_LABEL`, `RUN_SELF_IMPROVE_LABEL`,
   - для `state:*`: `STATE_*_LABEL`,
   - для `need:*`: `NEED_*_LABEL`.
 - Для model/reasoning также хранится каталог vars:

@@ -5,8 +5,8 @@ title: "codex-k8s — Delivery Plan"
 status: draft
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-11
-related_issues: [1]
+updated_at: 2026-02-13
+related_issues: [1, 19]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -17,9 +17,9 @@ approvals:
 # Delivery Plan: codex-k8s
 
 ## TL;DR
-- Что поставляем: MVP control-plane + staff UI + webhook orchestration + staging bootstrap/deploy loop.
+- Что поставляем: MVP control-plane + staff UI + webhook orchestration + MCP governance + self-improve loop + staging bootstrap/deploy loop.
 - Когда: поэтапно, с ранним staging для ручных тестов.
-- Главные риски: bootstrap automation, security hardening, runner stability.
+- Главные риски: bootstrap automation, security/governance hardening, runner stability.
 - Что нужно от Owner: подтверждение deploy-модели и доступов (GitHub fine-grained token/OpenAI key).
 
 ## Входные артефакты
@@ -39,6 +39,8 @@ approvals:
 - Epic catalog: `docs/delivery/epic_s1.md`
 - Sprint S2 plan: `docs/delivery/sprint_s2_dogfooding.md`
 - Epic S2 catalog: `docs/delivery/epic_s2.md`
+- Sprint S3 plan: `docs/delivery/sprint_s3_mvp_completion.md`
+- Epic S3 catalog: `docs/delivery/epic_s3.md`
 - Process requirements: `docs/delivery/development_process_requirements.md`
 
 ## Структура работ (WBS)
@@ -51,6 +53,26 @@ approvals:
 - Day 5: `docs/delivery/epics/epic-s1-day5-learning-mode.md`
 - Day 6: `docs/delivery/epics/epic-s1-day6-hardening-observability.md`
 - Day 7: `docs/delivery/epics/epic-s1-day7-stabilization-gate.md`
+
+### Sprint S2: Dogfooding baseline + hardening (Day 0..7)
+- Day 0..4: архитектурное выравнивание, label triggers, namespace/RBAC, MCP prompt context, agent PR flow.
+- Day 4.5: pgx/db-model refactor.
+- Day 5: staff UI observability baseline.
+- Day 6: approval matrix + MCP control tools + audit hardening.
+- Day 7: MVP readiness regression gate + Sprint S3 kickoff package.
+
+### Sprint S3: MVP completion (Day 1..12)
+- Day 1: full stage/label activation.
+- Day 2: staff runtime debug console.
+- Day 3: deterministic secret sync (GitHub + Kubernetes).
+- Day 4: database lifecycle MCP tools.
+- Day 5: owner feedback handle + HTTP approver/executor + Telegram adapter.
+- Day 6..7: `run:self-improve` ingestion + updater + PR flow.
+- Day 8: agent toolchain auto-extension safeguards.
+- Day 9: declarative full-env deploy, `services.yaml` orchestration, runtime parity/hot-reload.
+- Day 10: полный redesign staff-консоли на Vuetify.
+- Day 11: full MVP regression/security gate.
+- Day 12: closeout/handover и переход к post-MVP roadmap.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
@@ -93,10 +115,11 @@ approvals:
 
 ### Definition of Done (DoD)
 - [x] Day 0 baseline bootstrap выполнен.
-- [x] Для Day 1..7: каждый эпик закрыт по своим acceptance criteria.
-- [x] Для Day 1..7: ежедневный merge -> auto deploy -> smoke check выполнен.
-- [x] Webhook -> run -> worker -> k8s -> UI цепочка проходит regression.
-- [x] Learning mode проверен на staging в on/off режимах.
+- [ ] Для активного спринта: каждый эпик закрыт по своим acceptance criteria.
+- [ ] Для активного спринта: ежедневный merge -> auto deploy -> smoke check выполнен.
+- [ ] Webhook -> run -> worker -> k8s -> UI цепочка проходит regression.
+- [ ] Learning mode и self-improve mode проверены на staging.
+- [ ] MCP governance tools (secret/db/feedback) прошли approve/deny regression.
 
 ## Риски и буферы
 - Риск: нестабильная сеть/доступы при bootstrap.
