@@ -54,25 +54,19 @@ func (s *Service) configureKubectlAccess(homeDir string) (func(), error) {
 		return nil, fmt.Errorf("create kube dir: %w", err)
 	}
 	kubeconfigPath := filepath.Join(kubeDir, kubectlKubeconfigFileName)
-	kubeconfigContent := fmt.Sprintf(`apiVersion: v1
-kind: Config
-clusters:
-- cluster:
-    certificate-authority: %s
-    server: https://%s:%s
-  name: %s
-contexts:
-- context:
-    cluster: %s
-    namespace: %s
-    user: %s
-  name: %s
-current-context: %s
-users:
-- name: %s
-  user:
-    token: %s
-`, k8sServiceAccountCA, serviceHost, servicePort, kubectlClusterName, kubectlClusterName, namespace, kubectlUserName, kubectlContextName, kubectlContextName, kubectlUserName, token)
+	kubeconfigContent, err := renderTemplate(templateNameKubeconfig, kubectlKubeconfigTemplateData{
+		CACertificatePath: k8sServiceAccountCA,
+		ServiceHost:       serviceHost,
+		ServicePort:       servicePort,
+		ClusterName:       kubectlClusterName,
+		Namespace:         namespace,
+		UserName:          kubectlUserName,
+		ContextName:       kubectlContextName,
+		Token:             token,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("render kubeconfig template: %w", err)
+	}
 
 	if err := os.WriteFile(kubeconfigPath, []byte(kubeconfigContent), 0o600); err != nil {
 		return nil, fmt.Errorf("write kubeconfig: %w", err)

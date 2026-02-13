@@ -8,6 +8,7 @@ import (
 
 type localizedCommentCopy struct {
 	Title                string
+	AgentStartedText     string
 	TriggerLabel         string
 	TimelineTitle        string
 	ManagementLinkFormat string
@@ -25,6 +26,8 @@ func renderCommentBody(state commentState, managementURL string) (string, error)
 	var b strings.Builder
 
 	b.WriteString(copy.Title)
+	b.WriteString("\n")
+	b.WriteString(copy.AgentStartedText)
 	b.WriteString("\n\n")
 	b.WriteString(fmt.Sprintf("- Run ID: `%s`\n", state.RunID))
 	if strings.TrimSpace(state.TriggerKind) != "" {
@@ -46,10 +49,12 @@ func renderCommentBody(state commentState, managementURL string) (string, error)
 	b.WriteString("\n### ")
 	b.WriteString(copy.TimelineTitle)
 	b.WriteString("\n")
-	b.WriteString(fmt.Sprintf("- %s %s\n", phaseStatusEmoji(PhaseStarted, state.Phase), copy.StartedText))
-	b.WriteString(fmt.Sprintf("- %s %s\n", phaseStatusEmoji(PhaseFinished, state.Phase), finishedLabel(state, copy)))
-	if strings.TrimSpace(state.Namespace) != "" {
-		b.WriteString(fmt.Sprintf("- %s %s\n", phaseStatusEmoji(PhaseNamespaceDeleted, state.Phase), namespaceLabel(state, copy)))
+	b.WriteString(fmt.Sprintf("- ✅ %s\n", copy.StartedText))
+	if phaseOrder(state.Phase) >= phaseOrder(PhaseFinished) {
+		b.WriteString(fmt.Sprintf("- %s %s\n", finishedEmoji(state), finishedLabel(state, copy)))
+	}
+	if strings.TrimSpace(state.Namespace) != "" && phaseOrder(state.Phase) >= phaseOrder(PhaseNamespaceDeleted) {
+		b.WriteString(fmt.Sprintf("- 🗑️ %s\n", namespaceLabel(state, copy)))
 	}
 
 	marker, err := renderStateMarker(state)
@@ -65,11 +70,12 @@ func renderCommentBody(state commentState, managementURL string) (string, error)
 func resolveLocalizedCommentCopy(locale string) localizedCommentCopy {
 	if locale == localeRU {
 		return localizedCommentCopy{
-			Title:                "## 🤖 Статус агентного запуска",
+			Title:                "Статус агентного запуска",
+			AgentStartedText:     "✅ Агент запущен",
 			TriggerLabel:         "Режим запуска",
 			TimelineTitle:        "Таймлайн",
-			ManagementLinkFormat: "🚦 Ран запущен: [управление](%s)",
-			StartedText:          "Запуск задачи создан и выполняется",
+			ManagementLinkFormat: "🚦 Ран запущен: управление -> 🔗 [Ссылка на запуск](%s)",
+			StartedText:          "Запуск создан и выполняется",
 			FinishedDefault:      "Задача завершена",
 			FinishedSuccess:      "Задача завершена успешно",
 			FinishedFailed:       "Задача завершена с ошибкой",
@@ -80,11 +86,12 @@ func resolveLocalizedCommentCopy(locale string) localizedCommentCopy {
 	}
 
 	return localizedCommentCopy{
-		Title:                "## 🤖 Agent Run Status",
+		Title:                "Agent Run Status",
+		AgentStartedText:     "✅ Agent started",
 		TriggerLabel:         "Trigger mode",
 		TimelineTitle:        "Timeline",
-		ManagementLinkFormat: "🚦 Run started: [manage](%s)",
-		StartedText:          "Run job was created and is running",
+		ManagementLinkFormat: "🚦 Run started: manage -> 🔗 [Run link](%s)",
+		StartedText:          "Run was created and is running",
 		FinishedDefault:      "Run finished",
 		FinishedSuccess:      "Run finished successfully",
 		FinishedFailed:       "Run finished with errors",
@@ -115,11 +122,15 @@ func namespaceLabel(state commentState, copy localizedCommentCopy) string {
 	return copy.NamespacePending
 }
 
-func phaseStatusEmoji(target Phase, current Phase) string {
-	if phaseOrder(current) < phaseOrder(target) {
-		return "🕒"
+func finishedEmoji(state commentState) string {
+	switch strings.ToLower(strings.TrimSpace(state.RunStatus)) {
+	case runStatusSucceeded:
+		return "👌"
+	case runStatusFailed:
+		return "⚠️"
+	default:
+		return "✅"
 	}
-	return "✅"
 }
 
 func renderStateMarker(state commentState) (string, error) {

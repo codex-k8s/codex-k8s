@@ -773,18 +773,29 @@ func (x *DeleteProjectRequest) GetProjectId() string {
 }
 
 type Run struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	CorrelationId string                 `protobuf:"bytes,2,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
-	ProjectId     *string                `protobuf:"bytes,3,opt,name=project_id,json=projectId,proto3,oneof" json:"project_id,omitempty"`
-	ProjectSlug   *string                `protobuf:"bytes,4,opt,name=project_slug,json=projectSlug,proto3,oneof" json:"project_slug,omitempty"`
-	ProjectName   *string                `protobuf:"bytes,5,opt,name=project_name,json=projectName,proto3,oneof" json:"project_name,omitempty"`
-	Status        string                 `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	StartedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
-	FinishedAt    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=finished_at,json=finishedAt,proto3" json:"finished_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	CorrelationId   string                 `protobuf:"bytes,2,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
+	ProjectId       *string                `protobuf:"bytes,3,opt,name=project_id,json=projectId,proto3,oneof" json:"project_id,omitempty"`
+	ProjectSlug     *string                `protobuf:"bytes,4,opt,name=project_slug,json=projectSlug,proto3,oneof" json:"project_slug,omitempty"`
+	ProjectName     *string                `protobuf:"bytes,5,opt,name=project_name,json=projectName,proto3,oneof" json:"project_name,omitempty"`
+	Status          string                 `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
+	CreatedAt       *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	StartedAt       *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
+	FinishedAt      *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=finished_at,json=finishedAt,proto3" json:"finished_at,omitempty"`
+	IssueNumber     *int32                 `protobuf:"varint,10,opt,name=issue_number,json=issueNumber,proto3,oneof" json:"issue_number,omitempty"`
+	IssueUrl        *string                `protobuf:"bytes,11,opt,name=issue_url,json=issueUrl,proto3,oneof" json:"issue_url,omitempty"`
+	PrNumber        *int32                 `protobuf:"varint,12,opt,name=pr_number,json=prNumber,proto3,oneof" json:"pr_number,omitempty"`
+	PrUrl           *string                `protobuf:"bytes,13,opt,name=pr_url,json=prUrl,proto3,oneof" json:"pr_url,omitempty"`
+	TriggerKind     *string                `protobuf:"bytes,14,opt,name=trigger_kind,json=triggerKind,proto3,oneof" json:"trigger_kind,omitempty"`
+	TriggerLabel    *string                `protobuf:"bytes,15,opt,name=trigger_label,json=triggerLabel,proto3,oneof" json:"trigger_label,omitempty"`
+	JobName         *string                `protobuf:"bytes,16,opt,name=job_name,json=jobName,proto3,oneof" json:"job_name,omitempty"`
+	JobNamespace    *string                `protobuf:"bytes,17,opt,name=job_namespace,json=jobNamespace,proto3,oneof" json:"job_namespace,omitempty"`
+	Namespace       *string                `protobuf:"bytes,18,opt,name=namespace,proto3,oneof" json:"namespace,omitempty"`
+	JobExists       bool                   `protobuf:"varint,19,opt,name=job_exists,json=jobExists,proto3" json:"job_exists,omitempty"`
+	NamespaceExists bool                   `protobuf:"varint,20,opt,name=namespace_exists,json=namespaceExists,proto3" json:"namespace_exists,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Run) Reset() {
@@ -878,6 +889,83 @@ func (x *Run) GetFinishedAt() *timestamppb.Timestamp {
 		return x.FinishedAt
 	}
 	return nil
+}
+
+func (x *Run) GetIssueNumber() int32 {
+	if x != nil && x.IssueNumber != nil {
+		return *x.IssueNumber
+	}
+	return 0
+}
+
+func (x *Run) GetIssueUrl() string {
+	if x != nil && x.IssueUrl != nil {
+		return *x.IssueUrl
+	}
+	return ""
+}
+
+func (x *Run) GetPrNumber() int32 {
+	if x != nil && x.PrNumber != nil {
+		return *x.PrNumber
+	}
+	return 0
+}
+
+func (x *Run) GetPrUrl() string {
+	if x != nil && x.PrUrl != nil {
+		return *x.PrUrl
+	}
+	return ""
+}
+
+func (x *Run) GetTriggerKind() string {
+	if x != nil && x.TriggerKind != nil {
+		return *x.TriggerKind
+	}
+	return ""
+}
+
+func (x *Run) GetTriggerLabel() string {
+	if x != nil && x.TriggerLabel != nil {
+		return *x.TriggerLabel
+	}
+	return ""
+}
+
+func (x *Run) GetJobName() string {
+	if x != nil && x.JobName != nil {
+		return *x.JobName
+	}
+	return ""
+}
+
+func (x *Run) GetJobNamespace() string {
+	if x != nil && x.JobNamespace != nil {
+		return *x.JobNamespace
+	}
+	return ""
+}
+
+func (x *Run) GetNamespace() string {
+	if x != nil && x.Namespace != nil {
+		return *x.Namespace
+	}
+	return ""
+}
+
+func (x *Run) GetJobExists() bool {
+	if x != nil {
+		return x.JobExists
+	}
+	return false
+}
+
+func (x *Run) GetNamespaceExists() bool {
+	if x != nil {
+		return x.NamespaceExists
+	}
+	return false
 }
 
 type ListRunsRequest struct {
@@ -3658,7 +3746,7 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\x14DeleteProjectRequest\x12A\n" +
 	"\tprincipal\x18\x01 \x01(\v2#.codexk8s.controlplane.v1.PrincipalR\tprincipal\x12\x1d\n" +
 	"\n" +
-	"project_id\x18\x02 \x01(\tR\tprojectId\"\xac\x03\n" +
+	"project_id\x18\x02 \x01(\tR\tprojectId\"\xc5\a\n" +
 	"\x03Run\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12%\n" +
 	"\x0ecorrelation_id\x18\x02 \x01(\tR\rcorrelationId\x12\"\n" +
@@ -3672,10 +3760,36 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\n" +
 	"started_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x12;\n" +
 	"\vfinished_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"finishedAtB\r\n" +
+	"finishedAt\x12&\n" +
+	"\fissue_number\x18\n" +
+	" \x01(\x05H\x03R\vissueNumber\x88\x01\x01\x12 \n" +
+	"\tissue_url\x18\v \x01(\tH\x04R\bissueUrl\x88\x01\x01\x12 \n" +
+	"\tpr_number\x18\f \x01(\x05H\x05R\bprNumber\x88\x01\x01\x12\x1a\n" +
+	"\x06pr_url\x18\r \x01(\tH\x06R\x05prUrl\x88\x01\x01\x12&\n" +
+	"\ftrigger_kind\x18\x0e \x01(\tH\aR\vtriggerKind\x88\x01\x01\x12(\n" +
+	"\rtrigger_label\x18\x0f \x01(\tH\bR\ftriggerLabel\x88\x01\x01\x12\x1e\n" +
+	"\bjob_name\x18\x10 \x01(\tH\tR\ajobName\x88\x01\x01\x12(\n" +
+	"\rjob_namespace\x18\x11 \x01(\tH\n" +
+	"R\fjobNamespace\x88\x01\x01\x12!\n" +
+	"\tnamespace\x18\x12 \x01(\tH\vR\tnamespace\x88\x01\x01\x12\x1d\n" +
+	"\n" +
+	"job_exists\x18\x13 \x01(\bR\tjobExists\x12)\n" +
+	"\x10namespace_exists\x18\x14 \x01(\bR\x0fnamespaceExistsB\r\n" +
 	"\v_project_idB\x0f\n" +
 	"\r_project_slugB\x0f\n" +
-	"\r_project_name\"j\n" +
+	"\r_project_nameB\x0f\n" +
+	"\r_issue_numberB\f\n" +
+	"\n" +
+	"_issue_urlB\f\n" +
+	"\n" +
+	"_pr_numberB\t\n" +
+	"\a_pr_urlB\x0f\n" +
+	"\r_trigger_kindB\x10\n" +
+	"\x0e_trigger_labelB\v\n" +
+	"\t_job_nameB\x10\n" +
+	"\x0e_job_namespaceB\f\n" +
+	"\n" +
+	"_namespace\"j\n" +
 	"\x0fListRunsRequest\x12A\n" +
 	"\tprincipal\x18\x01 \x01(\v2#.codexk8s.controlplane.v1.PrincipalR\tprincipal\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\"G\n" +

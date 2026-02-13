@@ -160,6 +160,7 @@ func Run() error {
 		Projects:            projects,
 		Users:               users,
 		Members:             members,
+		RunStatus:           runStatusService,
 		LearningModeDefault: learningDefault,
 		TriggerLabels: webhook.TriggerLabels{
 			RunDev:       cfg.RunDevLabel,

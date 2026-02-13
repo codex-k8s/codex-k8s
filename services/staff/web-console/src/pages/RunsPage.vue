@@ -14,14 +14,17 @@
         <tr>
           <th>{{ t("pages.runs.status") }}</th>
           <th>{{ t("pages.runs.project") }}</th>
-          <th class="center">{{ t("pages.runs.created") }}</th>
+          <th>{{ t("pages.runs.issue") }}</th>
+          <th>{{ t("pages.runs.pr") }}</th>
+          <th class="center">{{ t("pages.runs.runType") }}</th>
+          <th class="center">{{ t("pages.runs.triggerLabel") }}</th>
           <th class="center">{{ t("pages.runs.started") }}</th>
           <th class="center">{{ t("pages.runs.finished") }}</th>
           <th class="center"></th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="r in runs.items" :key="r.id">
+        <tr v-for="r in pageItems" :key="r.id">
           <td>
             <span class="pill" :class="'s-' + r.status">{{ r.status }}</span>
           </td>
@@ -31,7 +34,20 @@
             </RouterLink>
             <span v-else class="mono">-</span>
           </td>
-          <td class="mono center">{{ formatDateTime(r.created_at, locale) }}</td>
+          <td>
+            <a v-if="r.issue_url && r.issue_number" class="lnk mono" :href="r.issue_url" target="_blank" rel="noopener noreferrer">
+              #{{ r.issue_number }}
+            </a>
+            <span v-else class="mono">-</span>
+          </td>
+          <td>
+            <a v-if="r.pr_url && r.pr_number" class="lnk mono" :href="r.pr_url" target="_blank" rel="noopener noreferrer">
+              #{{ r.pr_number }}
+            </a>
+            <span v-else class="mono">-</span>
+          </td>
+          <td class="mono center">{{ r.trigger_kind || "-" }}</td>
+          <td class="mono center">{{ r.trigger_label || "-" }}</td>
           <td class="mono center">{{ formatDateTime(r.started_at, locale) }}</td>
           <td class="mono center">{{ formatDateTime(r.finished_at, locale) }}</td>
           <td class="center">
@@ -43,11 +59,21 @@
       </tbody>
     </table>
     <div v-else class="muted">{{ t("states.noRuns") }}</div>
+
+    <div v-if="runs.items.length" class="row pager">
+      <button class="btn equal" type="button" @click="prevPage" :disabled="currentPage <= 1">
+        {{ t("pages.runs.prevPage") }}
+      </button>
+      <span class="mono">{{ t("pages.runs.pageInfo", { current: currentPage, total: totalPages }) }}</span>
+      <button class="btn equal" type="button" @click="nextPage" :disabled="currentPage >= totalPages">
+        {{ t("pages.runs.nextPage") }}
+      </button>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
@@ -56,12 +82,45 @@ import { useRunsStore } from "../features/runs/store";
 
 const { t, locale } = useI18n({ useScope: "global" });
 const runs = useRunsStore();
+const pageSize = 20;
+const currentPage = ref(1);
+
+const totalPages = computed(() => Math.max(1, Math.ceil(runs.items.length / pageSize)));
+const pageItems = computed(() => {
+  const start = (currentPage.value - 1) * pageSize;
+  const end = start + pageSize;
+  return runs.items.slice(start, end);
+});
 
 async function load() {
   await runs.load();
+  if (currentPage.value > totalPages.value) {
+    currentPage.value = totalPages.value;
+  }
+}
+
+function prevPage() {
+  if (currentPage.value > 1) {
+    currentPage.value -= 1;
+  }
+}
+
+function nextPage() {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value += 1;
+  }
 }
 
 onMounted(() => void load());
+
+watch(
+  () => runs.items.length,
+  () => {
+    if (currentPage.value > totalPages.value) {
+      currentPage.value = totalPages.value;
+    }
+  },
+);
 </script>
 
 <style scoped>
@@ -80,5 +139,8 @@ h2 {
 .pill.s-running {
   background: rgba(37, 99, 235, 0.12);
   border-color: rgba(37, 99, 235, 0.3);
+}
+.pager {
+  margin-top: 12px;
 }
 </style>

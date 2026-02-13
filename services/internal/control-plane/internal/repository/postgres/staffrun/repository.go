@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/staffrun"
+	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/staffrun/dbmodel"
 )
 
 type runScanner interface {
@@ -14,37 +15,27 @@ type runScanner interface {
 }
 
 func scanRun(scanner runScanner) (domainrepo.Run, error) {
-	var (
-		item      domainrepo.Run
-		projectID sql.NullString
-		startedAt sql.NullTime
-		finished  sql.NullTime
-	)
+	var row dbmodel.RunRow
 	if err := scanner.Scan(
-		&item.ID,
-		&item.CorrelationID,
-		&projectID,
-		&item.ProjectSlug,
-		&item.ProjectName,
-		&item.Status,
-		&item.CreatedAt,
-		&startedAt,
-		&finished,
+		&row.ID,
+		&row.CorrelationID,
+		&row.ProjectID,
+		&row.ProjectSlug,
+		&row.ProjectName,
+		&row.IssueNumber,
+		&row.IssueURL,
+		&row.TriggerKind,
+		&row.TriggerLabel,
+		&row.PRURL,
+		&row.PRNumber,
+		&row.Status,
+		&row.CreatedAt,
+		&row.StartedAt,
+		&row.FinishedAt,
 	); err != nil {
 		return domainrepo.Run{}, err
 	}
-	if projectID.Valid {
-		item.ProjectID = projectID.String
-	}
-	if startedAt.Valid {
-		v := startedAt.Time
-		item.StartedAt = &v
-	}
-	if finished.Valid {
-		v := finished.Time
-		item.FinishedAt = &v
-	}
-	return item, nil
+	return runFromDBModel(row), nil
 }
 
 var (

@@ -65,6 +65,39 @@ type DeleteNamespaceResult struct {
 	CommentURL     string
 }
 
+// RuntimeState describes current run runtime artifacts from status comment and Kubernetes.
+type RuntimeState struct {
+	HasStatusComment bool
+	JobName          string
+	JobNamespace     string
+	Namespace        string
+	JobExists        bool
+	NamespaceExists  bool
+}
+
+// CleanupByIssueParams describes auto-cleanup scope for issue/pr close events.
+type CleanupByIssueParams struct {
+	RepositoryFullName string
+	IssueNumber        int64
+	RequestedByID      string
+}
+
+// CleanupByPullRequestParams describes auto-cleanup scope for pull request close/merge events.
+type CleanupByPullRequestParams struct {
+	RepositoryFullName string
+	PRNumber           int64
+	RequestedByID      string
+}
+
+// CleanupByIssueResult summarizes auto-cleanup outcomes.
+type CleanupByIssueResult struct {
+	MatchedRuns         int
+	CleanedNamespaces   int
+	AlreadyDeletedCount int
+	SkippedRuns         int
+	FailedRuns          int
+}
+
 // Config controls run status operations.
 type Config struct {
 	PublicBaseURL string
@@ -74,6 +107,9 @@ type Config struct {
 // KubernetesClient provides namespace cleanup operation for runstatus service.
 type KubernetesClient interface {
 	DeleteManagedRunNamespace(ctx context.Context, namespace string) (bool, error)
+	NamespaceExists(ctx context.Context, namespace string) (bool, error)
+	JobExists(ctx context.Context, namespace string, jobName string) (bool, error)
+	FindManagedRunNamespaceByRunID(ctx context.Context, runID string) (string, bool, error)
 }
 
 // GitHubClient provides issue comment operations for runstatus service.

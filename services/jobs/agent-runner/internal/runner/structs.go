@@ -168,6 +168,17 @@ type codexConfigTemplateData struct {
 	HasContext7     bool
 }
 
+type kubectlKubeconfigTemplateData struct {
+	CACertificatePath string
+	ServiceHost       string
+	ServicePort       string
+	ClusterName       string
+	Namespace         string
+	UserName          string
+	ContextName       string
+	Token             string
+}
+
 type sessionLogSnapshot struct {
 	Version string                  `json:"version"`
 	Status  string                  `json:"status"`

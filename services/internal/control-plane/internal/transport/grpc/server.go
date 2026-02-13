@@ -931,13 +931,24 @@ func tsToTime(ts *timestamppb.Timestamp) time.Time {
 
 func runToProto(r staffrunrepo.Run) *controlplanev1.Run {
 	out := &controlplanev1.Run{
-		Id:            r.ID,
-		CorrelationId: r.CorrelationID,
-		ProjectId:     stringPtrOrNil(r.ProjectID),
-		ProjectSlug:   stringPtrOrNil(r.ProjectSlug),
-		ProjectName:   stringPtrOrNil(r.ProjectName),
-		Status:        r.Status,
-		CreatedAt:     timestamppb.New(r.CreatedAt.UTC()),
+		Id:              r.ID,
+		CorrelationId:   r.CorrelationID,
+		ProjectId:       stringPtrOrNil(r.ProjectID),
+		ProjectSlug:     stringPtrOrNil(r.ProjectSlug),
+		ProjectName:     stringPtrOrNil(r.ProjectName),
+		IssueNumber:     int32PtrOrNil(int32(r.IssueNumber)),
+		IssueUrl:        stringPtrOrNil(r.IssueURL),
+		PrNumber:        int32PtrOrNil(int32(r.PRNumber)),
+		PrUrl:           stringPtrOrNil(r.PRURL),
+		TriggerKind:     stringPtrOrNil(r.TriggerKind),
+		TriggerLabel:    stringPtrOrNil(r.TriggerLabel),
+		JobName:         stringPtrOrNil(r.JobName),
+		JobNamespace:    stringPtrOrNil(r.JobNamespace),
+		Namespace:       stringPtrOrNil(r.Namespace),
+		JobExists:       r.JobExists,
+		NamespaceExists: r.NamespaceExists,
+		Status:          r.Status,
+		CreatedAt:       timestamppb.New(r.CreatedAt.UTC()),
 	}
 	if r.StartedAt != nil {
 		out.StartedAt = timestamppb.New(r.StartedAt.UTC())

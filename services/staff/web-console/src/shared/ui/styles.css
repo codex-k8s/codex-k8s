@@ -36,7 +36,7 @@
 }
 
 .btn.equal {
-  min-width: 110px;
+  width: 132px;
 }
 
 .btn:disabled {

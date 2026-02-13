@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 
 	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
+	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentrun/dbmodel"
 )
 
 var (
@@ -22,6 +23,10 @@ var (
 	queryGetRunIDByCorrelationID string
 	//go:embed sql/get_by_id.sql
 	queryGetByID string
+	//go:embed sql/list_run_ids_by_repository_issue.sql
+	queryListRunIDsByRepositoryIssue string
+	//go:embed sql/list_run_ids_by_repository_pull_request.sql
+	queryListRunIDsByRepositoryPullRequest string
 	//go:embed sql/upsert_run_agent_logs.sql
 	queryUpsertRunAgentLogs string
 	//go:embed sql/cleanup_run_agent_logs_finished_before.sql
@@ -80,30 +85,31 @@ func (r *Repository) CreatePendingIfAbsent(ctx context.Context, params domainrep
 
 // GetByID returns one run by id.
 func (r *Repository) GetByID(ctx context.Context, runID string) (domainrepo.Run, bool, error) {
-	var (
-		item       domainrepo.Run
-		projectID  sql.NullString
-		runPayload []byte
-	)
-
+	var row dbmodel.RunRow
 	err := r.db.QueryRowContext(ctx, queryGetByID, runID).Scan(
-		&item.ID,
-		&item.CorrelationID,
-		&projectID,
-		&item.Status,
-		&runPayload,
+		&row.ID,
+		&row.CorrelationID,
+		&row.ProjectID,
+		&row.Status,
+		&row.RunPayload,
 	)
 	if err == nil {
-		if projectID.Valid {
-			item.ProjectID = projectID.String
-		}
-		item.RunPayload = json.RawMessage(runPayload)
-		return item, true, nil
+		return runFromDBModel(row), true, nil
 	}
 	if errors.Is(err, sql.ErrNoRows) {
 		return domainrepo.Run{}, false, nil
 	}
 	return domainrepo.Run{}, false, fmt.Errorf("get run by id: %w", err)
+}
+
+// ListRunIDsByRepositoryIssue returns run ids for one repository/issue pair.
+func (r *Repository) ListRunIDsByRepositoryIssue(ctx context.Context, repositoryFullName string, issueNumber int64, limit int) ([]string, error) {
+	return r.listRunIDsByRepositoryReference(ctx, queryListRunIDsByRepositoryIssue, repositoryFullName, issueNumber, limit, "issue_number", "repository/issue")
+}
+
+// ListRunIDsByRepositoryPullRequest returns run ids for one repository/pull request pair.
+func (r *Repository) ListRunIDsByRepositoryPullRequest(ctx context.Context, repositoryFullName string, prNumber int64, limit int) ([]string, error) {
+	return r.listRunIDsByRepositoryReference(ctx, queryListRunIDsByRepositoryPullRequest, repositoryFullName, prNumber, limit, "pr_number", "repository/pull request")
 }
 
 // UpsertRunAgentLogs stores latest agent execution logs for one run.
@@ -139,4 +145,37 @@ func (r *Repository) CleanupRunAgentLogsFinishedBefore(ctx context.Context, fini
 		return 0, fmt.Errorf("cleanup run agent logs rows affected: %w", err)
 	}
 	return rows, nil
+}
+
+func (r *Repository) listRunIDsByRepositoryReference(ctx context.Context, query string, repositoryFullName string, referenceNumber int64, limit int, referenceField string, operationLabel string) ([]string, error) {
+	normalizedRepositoryFullName := strings.TrimSpace(repositoryFullName)
+	if normalizedRepositoryFullName == "" {
+		return nil, fmt.Errorf("repository_full_name is required")
+	}
+	if referenceNumber <= 0 {
+		return nil, fmt.Errorf("%s must be positive", referenceField)
+	}
+	if limit <= 0 {
+		limit = 200
+	}
+
+	rows, err := r.db.QueryContext(ctx, query, normalizedRepositoryFullName, referenceNumber, limit)
+	if err != nil {
+		return nil, fmt.Errorf("list run ids by %s: %w", operationLabel, err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	result := make([]string, 0, limit)
+	for rows.Next() {
+		var runID string
+		if err := rows.Scan(&runID); err != nil {
+			return nil, fmt.Errorf("scan run id by %s: %w", operationLabel, err)
+		}
+		result = append(result, runID)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate run ids by %s: %w", operationLabel, err)
+	}
+
+	return result, nil
 }

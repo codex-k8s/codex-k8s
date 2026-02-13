@@ -78,6 +78,7 @@ approvals:
 | Label | Назначение |
 |---|---|
 | `run:debug` | не запускает run сам по себе; при наличии на issue в момент `run:dev`/`run:dev:revise` worker сохраняет namespace/job после завершения и пишет `run.namespace.cleanup_skipped` |
+| `mode:discussion` | planned: диалоговый pre-run режим для brainstorming под Issue; сам по себе run не запускает |
 
 ## Конфигурационные лейблы модели/рассуждений
 
@@ -115,6 +116,14 @@ approvals:
 - Могут ставиться агентом автоматически в рамках политики проекта.
 - Не должны запускать workflow/deploy напрямую.
 - Обязательна запись в аудит с actor/correlation.
+
+### Discussion mode (`mode:discussion`, planned)
+- Если `mode:discussion` присутствует на Issue в момент `run:dev`/`run:dev:revise`, запуск работает в режиме обсуждения:
+  - агент изучает код/окружение и отвечает комментариями под Issue;
+  - PR/commit/push не выполняются;
+  - сохраняется текущая `codex-cli` session snapshot для продолжения.
+- После снятия `mode:discussion` и повторного trigger (`run:dev`/`run:dev:revise`) агент продолжает ту же сессию и выполняет согласованный план реализации.
+- Политика вводится как planned-фича следующих спринтов (после стабилизации базового dogfooding контура).
 
 ### Model/reasoning labels (`[ai-model-*]`, `[ai-reasoning-*]`)
 - Не запускают workflow/deploy напрямую.

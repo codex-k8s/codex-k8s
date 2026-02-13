@@ -8,15 +8,26 @@ type Project struct {
 }
 
 type Run struct {
-	ID            string  `json:"id"`
-	CorrelationID string  `json:"correlation_id"`
-	ProjectID     *string `json:"project_id"`
-	ProjectSlug   string  `json:"project_slug"`
-	ProjectName   string  `json:"project_name"`
-	Status        string  `json:"status"`
-	CreatedAt     string  `json:"created_at"`
-	StartedAt     *string `json:"started_at"`
-	FinishedAt    *string `json:"finished_at"`
+	ID              string  `json:"id"`
+	CorrelationID   string  `json:"correlation_id"`
+	ProjectID       *string `json:"project_id"`
+	ProjectSlug     string  `json:"project_slug"`
+	ProjectName     string  `json:"project_name"`
+	IssueNumber     *int32  `json:"issue_number"`
+	IssueURL        *string `json:"issue_url"`
+	PRNumber        *int32  `json:"pr_number"`
+	PRURL           *string `json:"pr_url"`
+	TriggerKind     *string `json:"trigger_kind"`
+	TriggerLabel    *string `json:"trigger_label"`
+	JobName         *string `json:"job_name"`
+	JobNamespace    *string `json:"job_namespace"`
+	Namespace       *string `json:"namespace"`
+	JobExists       bool    `json:"job_exists"`
+	NamespaceExists bool    `json:"namespace_exists"`
+	Status          string  `json:"status"`
+	CreatedAt       string  `json:"created_at"`
+	StartedAt       *string `json:"started_at"`
+	FinishedAt      *string `json:"finished_at"`
 }
 
 type FlowEvent struct {

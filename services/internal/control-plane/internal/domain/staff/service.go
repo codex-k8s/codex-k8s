@@ -196,6 +196,17 @@ func (s *Service) GetRun(ctx context.Context, principal Principal, runID string)
 		}
 	}
 
+	if s.runStatus != nil {
+		runtimeState, runtimeErr := s.runStatus.GetRunRuntimeState(ctx, r.ID)
+		if runtimeErr == nil {
+			r.JobName = runtimeState.JobName
+			r.JobNamespace = runtimeState.JobNamespace
+			r.Namespace = runtimeState.Namespace
+			r.JobExists = runtimeState.JobExists
+			r.NamespaceExists = runtimeState.NamespaceExists
+		}
+	}
+
 	return r, nil
 }
 

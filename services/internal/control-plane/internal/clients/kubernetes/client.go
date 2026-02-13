@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -55,6 +56,8 @@ const (
 	runNamespaceRuntimeModeLabel = "codex-k8s.dev/runtime-mode"
 	runNamespaceRuntimeModeValue = "full-env"
 )
+
+var nonDNSLabel = regexp.MustCompile(`[^a-z0-9-]`)
 
 // NewClient creates Kubernetes MCP adapter with auto-detected REST config.
 func NewClient(kubeconfigPath string) (*Client, error) {
@@ -277,6 +280,78 @@ func (c *Client) DeleteManagedRunNamespace(ctx context.Context, namespace string
 	return true, nil
 }
 
+// FindManagedRunNamespaceByRunID resolves one managed full-env run namespace by run id label.
+func (c *Client) FindManagedRunNamespaceByRunID(ctx context.Context, runID string) (string, bool, error) {
+	targetRunID := sanitizeRunLabelValue(runID)
+	if targetRunID == "" {
+		return "", false, fmt.Errorf("run id is required")
+	}
+
+	items, err := c.clientset.CoreV1().Namespaces().List(ctx, metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("codex-k8s.dev/run-id=%s", targetRunID),
+	})
+	if err != nil {
+		return "", false, fmt.Errorf("list namespaces by run id %s: %w", targetRunID, err)
+	}
+
+	names := make([]string, 0, len(items.Items))
+	for _, item := range items.Items {
+		if strings.TrimSpace(item.Labels[runNamespaceManagedByLabel]) != runNamespaceManagedByValue {
+			continue
+		}
+		if strings.TrimSpace(item.Labels[runNamespacePurposeLabel]) != runNamespacePurposeValue {
+			continue
+		}
+		if strings.TrimSpace(item.Labels[runNamespaceRuntimeModeLabel]) != runNamespaceRuntimeModeValue {
+			continue
+		}
+		names = append(names, strings.TrimSpace(item.Name))
+	}
+	if len(names) == 0 {
+		return "", false, nil
+	}
+	sort.Strings(names)
+	return names[0], true, nil
+}
+
+// NamespaceExists reports whether namespace exists.
+func (c *Client) NamespaceExists(ctx context.Context, namespace string) (bool, error) {
+	targetNamespace := strings.TrimSpace(namespace)
+	if targetNamespace == "" {
+		return false, fmt.Errorf("namespace is required")
+	}
+
+	_, err := c.clientset.CoreV1().Namespaces().Get(ctx, targetNamespace, metav1.GetOptions{})
+	if err == nil {
+		return true, nil
+	}
+	if k8serrors.IsNotFound(err) {
+		return false, nil
+	}
+	return false, fmt.Errorf("get namespace %s: %w", targetNamespace, err)
+}
+
+// JobExists reports whether one Kubernetes Job exists.
+func (c *Client) JobExists(ctx context.Context, namespace string, jobName string) (bool, error) {
+	targetNamespace := strings.TrimSpace(namespace)
+	targetJobName := strings.TrimSpace(jobName)
+	if targetNamespace == "" {
+		return false, fmt.Errorf("namespace is required")
+	}
+	if targetJobName == "" {
+		return false, fmt.Errorf("job name is required")
+	}
+
+	_, err := c.clientset.BatchV1().Jobs(targetNamespace).Get(ctx, targetJobName, metav1.GetOptions{})
+	if err == nil {
+		return true, nil
+	}
+	if k8serrors.IsNotFound(err) {
+		return false, nil
+	}
+	return false, fmt.Errorf("get job %s/%s: %w", targetNamespace, targetJobName, err)
+}
+
 func listAsAny[T any](fn func(context.Context, metav1.ListOptions) (*T, error)) func(context.Context, metav1.ListOptions) (any, error) {
 	return func(ctx context.Context, options metav1.ListOptions) (any, error) {
 		return fn(ctx, options)
@@ -369,6 +444,23 @@ func sortResourceRefs(items []mcpdomain.KubernetesResourceRef) {
 		}
 		return items[i].Kind < items[j].Kind
 	})
+}
+
+func sanitizeRunLabelValue(value string) string {
+	normalized := strings.ToLower(strings.TrimSpace(value))
+	if normalized == "" {
+		return ""
+	}
+	normalized = strings.ReplaceAll(normalized, "_", "-")
+	normalized = nonDNSLabel.ReplaceAllString(normalized, "-")
+	normalized = strings.Trim(normalized, "-")
+	if normalized == "" {
+		return ""
+	}
+	if len(normalized) > 63 {
+		normalized = strings.TrimRight(normalized[:63], "-")
+	}
+	return normalized
 }
 
 func formatInvolvedObject(ref corev1.ObjectReference) string {

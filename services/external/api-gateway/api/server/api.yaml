@@ -691,6 +691,39 @@ components:
           type: string
         project_name:
           type: string
+        issue_number:
+          type: integer
+          format: int32
+          nullable: true
+        issue_url:
+          type: string
+          nullable: true
+        pr_number:
+          type: integer
+          format: int32
+          nullable: true
+        pr_url:
+          type: string
+          nullable: true
+        trigger_kind:
+          type: string
+          nullable: true
+        trigger_label:
+          type: string
+          nullable: true
+        job_name:
+          type: string
+          nullable: true
+        job_namespace:
+          type: string
+          nullable: true
+        namespace:
+          type: string
+          nullable: true
+        job_exists:
+          type: boolean
+        namespace_exists:
+          type: boolean
         status:
           type: string
         created_at:

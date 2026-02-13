@@ -2,10 +2,10 @@
 doc_id: EPC-CK8S-S2-D5
 type: epic
 title: "Epic S2 Day 5: Staff UI for dogfooding visibility (runs/issues/PRs)"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-10
-updated_at: 2026-02-12
+updated_at: 2026-02-13
 related_issues: []
 related_prs: []
 approvals:
@@ -42,3 +42,24 @@ approvals:
 
 ## Критерии приемки эпика
 - По одному экрану можно понять: что запущено, где работает (namespace/job) и что получилось (PR).
+
+## Реализация (2026-02-13)
+- Run details API/UI доведены до операторского сценария удаления namespace:
+  - runtime state (`job_name`, `job_namespace`, `namespace`, `job_exists`, `namespace_exists`) отдается в `GET /staff/runs/{id}`;
+  - кнопка удаления namespace отображается только если есть активная job.
+- Исправлен сценарий `DELETE /staff/runs/{id}/namespace` для кейсов без status-comment:
+  - добавлен fallback поиска namespace по `run_id` label;
+  - создается/обновляется статус-комментарий с фазой удаления.
+- Доработан run details UX:
+  - явные блоки Проект/Issue/PR/Trigger;
+  - события в обратной сортировке (свежее сверху);
+  - learning feedback убран из run-details сценария;
+  - даты/время в UI форматируются без timezone suffix.
+- Доработан runs list UX:
+  - убран столбец `Создано`;
+  - добавлены столбцы Issue/PR, run type, trigger label;
+  - добавлена пагинация по 20 элементов на страницу.
+- Ошибки в UI автоскрываются через 5 секунд.
+- Контракт синхронизирован:
+  - обновлены `proto`/gRPC модели run;
+  - обновлен OpenAPI и codegen backend/frontend артефактов.

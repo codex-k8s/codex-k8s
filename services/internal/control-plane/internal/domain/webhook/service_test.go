@@ -15,6 +15,7 @@ import (
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
 	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projectmember"
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
+	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
 )
 
@@ -139,6 +140,108 @@ func TestIngestGitHubWebhook_NonTriggerEventsDoNotCreateRun(t *testing.T) {
 	}
 	if events.items[0].EventType != floweventdomain.EventTypeWebhookReceived {
 		t.Fatalf("expected webhook.received event, got %s", events.items[0].EventType)
+	}
+}
+
+func TestIngestGitHubWebhook_IssueClosed_TriggersNamespaceCleanup(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	runStatus := &inMemoryRunStatusService{}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+		Repos:      repos,
+		RunStatus:  runStatus,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"closed",
+		"issue":{"id":1001,"number":77},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-issue-close-1",
+		DeliveryID:    "delivery-issue-close-1",
+		EventType:     string(webhookdomain.GitHubEventIssues),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	if _, err := svc.IngestGitHubWebhook(ctx, cmd); err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if runStatus.issueCleanupCalls != 1 {
+		t.Fatalf("expected one issue cleanup call, got %d", runStatus.issueCleanupCalls)
+	}
+	if runStatus.lastIssueCleanup.RepositoryFullName != "codex-k8s/codex-k8s" {
+		t.Fatalf("unexpected repository full name: %s", runStatus.lastIssueCleanup.RepositoryFullName)
+	}
+	if runStatus.lastIssueCleanup.IssueNumber != 77 {
+		t.Fatalf("unexpected issue number: %d", runStatus.lastIssueCleanup.IssueNumber)
+	}
+}
+
+func TestIngestGitHubWebhook_PullRequestClosed_TriggersNamespaceCleanup(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	runStatus := &inMemoryRunStatusService{}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+		Repos:      repos,
+		RunStatus:  runStatus,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"closed",
+		"pull_request":{"id":501,"number":200},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-pr-close-1",
+		DeliveryID:    "delivery-pr-close-1",
+		EventType:     string(webhookdomain.GitHubEventPullRequest),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	if _, err := svc.IngestGitHubWebhook(ctx, cmd); err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if runStatus.pullRequestCleanupCalls != 1 {
+		t.Fatalf("expected one pull request cleanup call, got %d", runStatus.pullRequestCleanupCalls)
+	}
+	if runStatus.lastPullRequestCleanup.RepositoryFullName != "codex-k8s/codex-k8s" {
+		t.Fatalf("unexpected repository full name: %s", runStatus.lastPullRequestCleanup.RepositoryFullName)
+	}
+	if runStatus.lastPullRequestCleanup.PRNumber != 200 {
+		t.Fatalf("unexpected pull request number: %d", runStatus.lastPullRequestCleanup.PRNumber)
 	}
 }
 
@@ -528,6 +631,33 @@ func (r *inMemoryRunRepo) GetByID(_ context.Context, runID string) (agentrunrepo
 		}
 	}
 	return agentrunrepo.Run{}, false, nil
+}
+
+func (r *inMemoryRunRepo) ListRunIDsByRepositoryIssue(_ context.Context, _ string, _ int64, _ int) ([]string, error) {
+	return nil, nil
+}
+
+func (r *inMemoryRunRepo) ListRunIDsByRepositoryPullRequest(_ context.Context, _ string, _ int64, _ int) ([]string, error) {
+	return nil, nil
+}
+
+type inMemoryRunStatusService struct {
+	issueCleanupCalls       int
+	pullRequestCleanupCalls int
+	lastIssueCleanup        runstatusdomain.CleanupByIssueParams
+	lastPullRequestCleanup  runstatusdomain.CleanupByPullRequestParams
+}
+
+func (s *inMemoryRunStatusService) CleanupNamespacesByIssue(_ context.Context, params runstatusdomain.CleanupByIssueParams) (runstatusdomain.CleanupByIssueResult, error) {
+	s.issueCleanupCalls++
+	s.lastIssueCleanup = params
+	return runstatusdomain.CleanupByIssueResult{}, nil
+}
+
+func (s *inMemoryRunStatusService) CleanupNamespacesByPullRequest(_ context.Context, params runstatusdomain.CleanupByPullRequestParams) (runstatusdomain.CleanupByIssueResult, error) {
+	s.pullRequestCleanupCalls++
+	s.lastPullRequestCleanup = params
+	return runstatusdomain.CleanupByIssueResult{}, nil
 }
 
 type inMemoryEventRepo struct {
