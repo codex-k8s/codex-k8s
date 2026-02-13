@@ -76,29 +76,67 @@
     </div>
 
     <div class="pane runtime-pane">
-      <div class="row">
-        <h3>{{ t("pages.runs.runningJobs") }}</h3>
-        <button class="btn" type="button" @click="runs.loadRunJobs()" :disabled="runs.jobsLoading">
-          {{ t("common.refresh") }}
-        </button>
+      <div class="row pane-head">
+        <div>
+          <h3>{{ t("pages.runs.runningJobs") }}</h3>
+          <p class="muted pane-note">{{ t("pages.runs.runningJobsHint") }}</p>
+        </div>
+        <div class="pane-head-actions">
+          <span v-if="jobsActiveFilters > 0" class="mono muted">
+            {{ t("pages.runs.activeFilters", { count: jobsActiveFilters }) }}
+          </span>
+          <button class="btn" type="button" @click="showJobsFilters = !showJobsFilters">
+            {{ showJobsFilters ? t("pages.runs.hideFilters") : t("pages.runs.showFilters") }}
+          </button>
+          <button class="btn" type="button" @click="runs.loadRunJobs()" :disabled="runs.jobsLoading">
+            {{ t("common.refresh") }}
+          </button>
+        </div>
       </div>
-      <div class="row runtime-filters">
-        <label class="runtime-filter">
-          <span class="muted">{{ t("pages.runs.runType") }}</span>
-          <input v-model.trim="runs.jobsFilters.triggerKind" class="in" type="text" />
-        </label>
-        <label class="runtime-filter">
-          <span class="muted">{{ t("pages.runs.status") }}</span>
-          <input v-model.trim="runs.jobsFilters.status" class="in" type="text" />
-        </label>
-        <label class="runtime-filter">
-          <span class="muted">{{ t("pages.runs.agentKey") }}</span>
-          <input v-model.trim="runs.jobsFilters.agentKey" class="in" type="text" />
-        </label>
-        <button class="btn" type="button" @click="runs.loadRunJobs()" :disabled="runs.jobsLoading">
-          {{ t("common.refresh") }}
-        </button>
-      </div>
+      <form v-if="showJobsFilters" class="filters-panel" @submit.prevent="applyJobsFilters">
+        <div class="runtime-filters-grid">
+          <label class="runtime-filter">
+            <span class="muted">{{ t("pages.runs.runType") }}</span>
+            <input
+              v-model.trim="runs.jobsFilters.triggerKind"
+              class="in"
+              type="text"
+              :placeholder="t('pages.runs.triggerKindPlaceholder')"
+              list="run-trigger-kind-options"
+            />
+          </label>
+          <label class="runtime-filter">
+            <span class="muted">{{ t("pages.runs.status") }}</span>
+            <input
+              v-model.trim="runs.jobsFilters.status"
+              class="in"
+              type="text"
+              :placeholder="t('pages.runs.statusPlaceholder')"
+              list="run-status-options"
+            />
+          </label>
+          <label class="runtime-filter">
+            <span class="muted">{{ t("pages.runs.agentKey") }}</span>
+            <input
+              v-model.trim="runs.jobsFilters.agentKey"
+              class="in"
+              type="text"
+              :placeholder="t('pages.runs.agentKeyPlaceholder')"
+            />
+          </label>
+        </div>
+        <div class="runtime-filter-hint muted">
+          {{ t("pages.runs.jobsFiltersHint") }}
+        </div>
+        <div class="runtime-filter-actions">
+          <button class="btn" type="submit" :disabled="runs.jobsLoading">
+            {{ t("pages.runs.applyFilters") }}
+          </button>
+          <button class="btn" type="button" :disabled="runs.jobsLoading" @click="resetJobsFilters">
+            {{ t("pages.runs.resetFilters") }}
+          </button>
+        </div>
+      </form>
       <table v-if="runs.runningJobs.length" class="tbl">
         <thead>
           <tr>
@@ -148,37 +186,83 @@
           </tr>
         </tbody>
       </table>
-      <div v-else class="muted">{{ t("states.noRunningJobs") }}</div>
+      <div v-else class="muted">
+        {{ jobsActiveFilters > 0 ? t("states.noRunningJobsByFilters") : t("states.noRunningJobs") }}
+      </div>
     </div>
 
     <div class="pane runtime-pane">
-      <div class="row">
-        <h3>{{ t("pages.runs.waitQueue") }}</h3>
-        <button class="btn" type="button" @click="runs.loadRunWaits()" :disabled="runs.waitsLoading">
-          {{ t("common.refresh") }}
-        </button>
+      <div class="row pane-head">
+        <div>
+          <h3>{{ t("pages.runs.waitQueue") }}</h3>
+          <p class="muted pane-note">{{ t("pages.runs.waitQueueHint") }}</p>
+        </div>
+        <div class="pane-head-actions">
+          <span v-if="waitsActiveFilters > 0" class="mono muted">
+            {{ t("pages.runs.activeFilters", { count: waitsActiveFilters }) }}
+          </span>
+          <button class="btn" type="button" @click="showWaitsFilters = !showWaitsFilters">
+            {{ showWaitsFilters ? t("pages.runs.hideFilters") : t("pages.runs.showFilters") }}
+          </button>
+          <button class="btn" type="button" @click="runs.loadRunWaits()" :disabled="runs.waitsLoading">
+            {{ t("common.refresh") }}
+          </button>
+        </div>
       </div>
-      <div class="row runtime-filters">
-        <label class="runtime-filter">
-          <span class="muted">{{ t("pages.runs.runType") }}</span>
-          <input v-model.trim="runs.waitsFilters.triggerKind" class="in" type="text" />
-        </label>
-        <label class="runtime-filter">
-          <span class="muted">{{ t("pages.runs.status") }}</span>
-          <input v-model.trim="runs.waitsFilters.status" class="in" type="text" />
-        </label>
-        <label class="runtime-filter">
-          <span class="muted">{{ t("pages.runs.agentKey") }}</span>
-          <input v-model.trim="runs.waitsFilters.agentKey" class="in" type="text" />
-        </label>
-        <label class="runtime-filter">
-          <span class="muted">{{ t("pages.runs.waitState") }}</span>
-          <input v-model.trim="runs.waitsFilters.waitState" class="in" type="text" />
-        </label>
-        <button class="btn" type="button" @click="runs.loadRunWaits()" :disabled="runs.waitsLoading">
-          {{ t("common.refresh") }}
-        </button>
-      </div>
+      <form v-if="showWaitsFilters" class="filters-panel" @submit.prevent="applyWaitsFilters">
+        <div class="runtime-filters-grid">
+          <label class="runtime-filter">
+            <span class="muted">{{ t("pages.runs.runType") }}</span>
+            <input
+              v-model.trim="runs.waitsFilters.triggerKind"
+              class="in"
+              type="text"
+              :placeholder="t('pages.runs.triggerKindPlaceholder')"
+              list="run-trigger-kind-options"
+            />
+          </label>
+          <label class="runtime-filter">
+            <span class="muted">{{ t("pages.runs.status") }}</span>
+            <input
+              v-model.trim="runs.waitsFilters.status"
+              class="in"
+              type="text"
+              :placeholder="t('pages.runs.statusPlaceholder')"
+              list="run-status-options"
+            />
+          </label>
+          <label class="runtime-filter">
+            <span class="muted">{{ t("pages.runs.agentKey") }}</span>
+            <input
+              v-model.trim="runs.waitsFilters.agentKey"
+              class="in"
+              type="text"
+              :placeholder="t('pages.runs.agentKeyPlaceholder')"
+            />
+          </label>
+          <label class="runtime-filter">
+            <span class="muted">{{ t("pages.runs.waitState") }}</span>
+            <input
+              v-model.trim="runs.waitsFilters.waitState"
+              class="in"
+              type="text"
+              :placeholder="t('pages.runs.waitStatePlaceholder')"
+              list="run-wait-state-options"
+            />
+          </label>
+        </div>
+        <div class="runtime-filter-hint muted">
+          {{ t("pages.runs.waitsFiltersHint") }}
+        </div>
+        <div class="runtime-filter-actions">
+          <button class="btn" type="submit" :disabled="runs.waitsLoading">
+            {{ t("pages.runs.applyFilters") }}
+          </button>
+          <button class="btn" type="button" :disabled="runs.waitsLoading" @click="resetWaitsFilters">
+            {{ t("pages.runs.resetFilters") }}
+          </button>
+        </div>
+      </form>
       <table v-if="runs.waitQueue.length" class="tbl">
         <thead>
           <tr>
@@ -230,8 +314,20 @@
           </tr>
         </tbody>
       </table>
-      <div v-else class="muted">{{ t("states.noWaitQueue") }}</div>
+      <div v-else class="muted">
+        {{ waitsActiveFilters > 0 ? t("states.noWaitQueueByFilters") : t("states.noWaitQueue") }}
+      </div>
     </div>
+
+    <datalist id="run-trigger-kind-options">
+      <option v-for="item in triggerKindOptions" :key="item" :value="item" />
+    </datalist>
+    <datalist id="run-status-options">
+      <option v-for="item in runStatusOptions" :key="item" :value="item" />
+    </datalist>
+    <datalist id="run-wait-state-options">
+      <option v-for="item in waitStateOptions" :key="item" :value="item" />
+    </datalist>
 
     <div class="pane approvals">
       <div class="row">
@@ -309,6 +405,37 @@ const { t, locale } = useI18n({ useScope: "global" });
 const runs = useRunsStore();
 const pageSize = 20;
 const currentPage = ref(1);
+const showJobsFilters = ref(false);
+const showWaitsFilters = ref(false);
+
+const triggerKindOptions = [
+  "intake",
+  "vision",
+  "prd",
+  "arch",
+  "design",
+  "plan",
+  "dev",
+  "dev_revise",
+  "qa",
+  "qa_revise",
+  "release",
+  "release_revise",
+  "postdeploy",
+  "ops",
+  "self_improve",
+];
+
+const runStatusOptions = [
+  "pending",
+  "running",
+  "succeeded",
+  "failed",
+  "failed_precondition",
+  "canceled",
+];
+
+const waitStateOptions = ["mcp", "owner_review"];
 
 const totalPages = computed(() => Math.max(1, Math.ceil(runs.items.length / pageSize)));
 const pageItems = computed(() => {
@@ -316,6 +443,21 @@ const pageItems = computed(() => {
   const end = start + pageSize;
   return runs.items.slice(start, end);
 });
+const jobsActiveFilters = computed(() =>
+  countActiveFilters([
+    runs.jobsFilters.triggerKind,
+    runs.jobsFilters.status,
+    runs.jobsFilters.agentKey,
+  ]),
+);
+const waitsActiveFilters = computed(() =>
+  countActiveFilters([
+    runs.waitsFilters.triggerKind,
+    runs.waitsFilters.status,
+    runs.waitsFilters.agentKey,
+    runs.waitsFilters.waitState,
+  ]),
+);
 
 async function loadAll() {
   await Promise.all([runs.load(), runs.loadRuntimeViews(), runs.loadPendingApprovals()]);
@@ -342,6 +484,33 @@ function runBadgeValue(value: string | null | undefined): string {
     return "-";
   }
   return trimmed;
+}
+
+async function applyJobsFilters() {
+  await runs.loadRunJobs();
+}
+
+async function resetJobsFilters() {
+  runs.jobsFilters.triggerKind = "";
+  runs.jobsFilters.status = "";
+  runs.jobsFilters.agentKey = "";
+  await runs.loadRunJobs();
+}
+
+async function applyWaitsFilters() {
+  await runs.loadRunWaits();
+}
+
+async function resetWaitsFilters() {
+  runs.waitsFilters.triggerKind = "";
+  runs.waitsFilters.status = "";
+  runs.waitsFilters.agentKey = "";
+  runs.waitsFilters.waitState = "";
+  await runs.loadRunWaits();
+}
+
+function countActiveFilters(values: Array<string | undefined>): number {
+  return values.filter((value) => value?.trim()).length;
 }
 
 async function resolveApproval(id: number, decision: "approved" | "denied" | "expired" | "failed") {
@@ -402,15 +571,43 @@ h2 {
   padding: 12px;
   background: rgba(255, 255, 255, 0.6);
 }
-.runtime-filters {
-  margin-bottom: 10px;
-  gap: 10px;
+.pane-head {
+  align-items: flex-start;
+  gap: 12px;
+}
+.pane-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
+}
+.pane-note {
+  margin: 6px 0 0;
+  max-width: 700px;
+}
+.filters-panel {
+  margin: 10px 0 12px;
+  border: 1px solid rgba(17, 24, 39, 0.1);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(248, 250, 252, 0.7);
+}
+.runtime-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
 }
 .runtime-filter {
   display: grid;
   gap: 4px;
-  min-width: 180px;
+}
+.runtime-filter-hint {
+  margin-top: 8px;
+}
+.runtime-filter-actions {
+  display: inline-flex;
+  gap: 8px;
+  margin-top: 10px;
 }
 h3 {
   margin: 0;
