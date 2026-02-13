@@ -93,6 +93,8 @@ func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Clien
 	staffGroup.GET("/projects/:project_id", staffH.GetProject)
 	staffGroup.DELETE("/projects/:project_id", staffH.DeleteProject)
 	staffGroup.GET("/runs", staffH.ListRuns)
+	staffGroup.GET("/approvals", staffH.ListPendingApprovals)
+	staffGroup.POST("/approvals/:approval_request_id/decision", staffH.ResolveApprovalDecision)
 	staffGroup.GET("/runs/:run_id", staffH.GetRun)
 	staffGroup.DELETE("/runs/:run_id/namespace", staffH.DeleteRunNamespace)
 	staffGroup.GET("/runs/:run_id/events", staffH.ListRunEvents)
