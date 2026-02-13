@@ -33,4 +33,5 @@ const (
 	controlToolMessageApplied          = "applied"
 	controlToolMessageDryRun           = "dry_run"
 	controlToolMessageApprovalRequired = "approval_required"
+	controlToolMessageIdempotentReplay = "idempotent_replay"
 )

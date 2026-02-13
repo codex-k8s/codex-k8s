@@ -13,21 +13,29 @@ import (
 )
 
 type approvalTargetRef struct {
+	ProjectID            string `json:"project_id,omitempty"`
+	Repository           string `json:"repository,omitempty"`
 	Environment          string `json:"environment,omitempty"`
 	GitHubSecretName     string `json:"github_secret_name,omitempty"`
 	KubernetesNamespace  string `json:"kubernetes_namespace,omitempty"`
 	KubernetesSecretName string `json:"kubernetes_secret_name,omitempty"`
 	KubernetesSecretKey  string `json:"kubernetes_secret_key,omitempty"`
+	Policy               string `json:"policy,omitempty"`
+	IdempotencyKey       string `json:"idempotency_key,omitempty"`
 	DatabaseName         string `json:"database_name,omitempty"`
 }
 
 type secretSyncPayload struct {
-	Environment          string `json:"environment"`
-	GitHubSecretName     string `json:"github_secret_name"`
-	KubernetesNamespace  string `json:"kubernetes_namespace"`
-	KubernetesSecretName string `json:"kubernetes_secret_name"`
-	KubernetesSecretKey  string `json:"kubernetes_secret_key"`
-	SecretValueEncrypted string `json:"secret_value_encrypted"`
+	ProjectID            string           `json:"project_id,omitempty"`
+	Repository           string           `json:"repository,omitempty"`
+	Environment          string           `json:"environment"`
+	GitHubSecretName     string           `json:"github_secret_name"`
+	KubernetesNamespace  string           `json:"kubernetes_namespace"`
+	KubernetesSecretName string           `json:"kubernetes_secret_name"`
+	KubernetesSecretKey  string           `json:"kubernetes_secret_key"`
+	Policy               SecretSyncPolicy `json:"policy,omitempty"`
+	IdempotencyKey       string           `json:"idempotency_key,omitempty"`
+	SecretValueEncrypted string           `json:"secret_value_encrypted"`
 }
 
 type databaseLifecyclePayload struct {

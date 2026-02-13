@@ -20,6 +20,8 @@ type Repository interface {
 	Create(ctx context.Context, params CreateParams) (Item, error)
 	// GetByID returns one request by id.
 	GetByID(ctx context.Context, id int64) (Item, bool, error)
+	// FindLatestBySignature returns latest request with the same action signature.
+	FindLatestBySignature(ctx context.Context, runID string, toolName string, action string, targetRefJSON []byte) (Item, bool, error)
 	// FindPendingBySignature returns latest pending request for idempotent retries.
 	FindPendingBySignature(ctx context.Context, runID string, toolName string, action string, targetRefJSON []byte) (Item, bool, error)
 	// ListPending returns pending approval queue.

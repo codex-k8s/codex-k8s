@@ -10,8 +10,8 @@ related_issues: [19]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
-  request_id: ""
+  status: approved
+  request_id: "owner-2026-02-13-s3-day2"
 ---
 
 # Epic S3 Day 2: Staff runtime debug console

@@ -31,7 +31,7 @@ approvals:
   - явное разделение `approval:none` / `approval:owner` / `approval:delegated`;
   - запрет обхода через прямые write-каналы для операций, отмеченных как privileged.
 - MCP control tools (минимальный MVP-набор):
-  - `mcp_secret_sync_env`: детерминированное создание/обновление секрета в GitHub и Kubernetes для выбранного окружения;
+  - `secret.sync.github_k8s` (legacy alias: `mcp_secret_sync_env`): детерминированное создание/обновление секрета в GitHub и Kubernetes для выбранного окружения;
   - `mcp_database_lifecycle`: create/delete database в выбранном окружении по policy;
   - `mcp_owner_feedback_request`: оперативный вопрос владельцу с 2-5 вариантами + `custom` ответ.
 - Безопасность control tools:
@@ -63,7 +63,7 @@ approvals:
 
 ## Критерии приемки эпика
 - Любая privileged операция без апрува отклоняется и логируется как `approval.denied` или `failed_precondition`.
-- `mcp_secret_sync_env` не раскрывает секретный материал в логах/PR/comments/flow events.
+- `secret.sync.github_k8s` не раскрывает секретный материал в логах/PR/comments/flow events.
 - `mcp_database_lifecycle` корректно обрабатывает create/delete и повторные вызовы без дрейфа состояния.
 - `mcp_owner_feedback_request` поддерживает вариантные ответы и корректно резюмируется в run context.
 - Voice/STT ответы owner (feedback + deny reason) корректно принимаются через HTTP contract и фиксируются в audit без утечки секретов.
@@ -74,7 +74,7 @@ approvals:
   - `mcp_action_requests` (approval queue, state transitions, target/payload snapshots);
   - расширение `agent_sessions` полями wait-state (`wait_state`, `timeout_guard_disabled`, `last_heartbeat_at`).
 - Реализованы MCP control tools в domain/service слое:
-  - `mcp_secret_sync_env`;
+  - `secret.sync.github_k8s` (legacy alias: `mcp_secret_sync_env`);
   - `mcp_database_lifecycle`;
   - `mcp_owner_feedback_request`.
 - Добавлен approval lifecycle:
