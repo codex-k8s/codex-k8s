@@ -103,11 +103,12 @@ func Run() error {
 		return fmt.Errorf("init kubernetes mcp client: %w", err)
 	}
 	postgresAdminClient, err := postgresadminclient.NewClient(runCtx, postgresadminclient.Config{
-		Host:         cfg.DBHost,
-		Port:         cfg.DBPort,
-		User:         cfg.DBUser,
-		Password:     cfg.DBPassword,
-		SSLMode:      cfg.DBSSLMode,
+		Host:         cfg.ProjectDBAdminHost,
+		Port:         cfg.ProjectDBAdminPort,
+		User:         cfg.ProjectDBAdminUser,
+		Password:     cfg.ProjectDBAdminPassword,
+		SSLMode:      cfg.ProjectDBAdminSSLMode,
+		AdminDBName:  cfg.ProjectDBAdminDatabase,
 		ProtectedDBs: []string{cfg.DBName},
 	})
 	if err != nil {

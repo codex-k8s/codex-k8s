@@ -64,6 +64,19 @@ type Config struct {
 	DBPassword string `env:"CODEXK8S_DB_PASSWORD,required,notEmpty"`
 	// DBSSLMode is the PostgreSQL SSL mode.
 	DBSSLMode string `env:"CODEXK8S_DB_SSLMODE" envDefault:"disable"`
+
+	// ProjectDBAdminHost is PostgreSQL admin host used by MCP database lifecycle tool.
+	ProjectDBAdminHost string `env:"CODEXK8S_PROJECT_DB_ADMIN_HOST,required,notEmpty"`
+	// ProjectDBAdminPort is PostgreSQL admin port used by MCP database lifecycle tool.
+	ProjectDBAdminPort int `env:"CODEXK8S_PROJECT_DB_ADMIN_PORT" envDefault:"5432"`
+	// ProjectDBAdminUser is PostgreSQL superuser/login used by MCP database lifecycle tool.
+	ProjectDBAdminUser string `env:"CODEXK8S_PROJECT_DB_ADMIN_USER,required,notEmpty"`
+	// ProjectDBAdminPassword is PostgreSQL superuser password used by MCP database lifecycle tool.
+	ProjectDBAdminPassword string `env:"CODEXK8S_PROJECT_DB_ADMIN_PASSWORD,required,notEmpty"`
+	// ProjectDBAdminSSLMode is PostgreSQL SSL mode for admin connection.
+	ProjectDBAdminSSLMode string `env:"CODEXK8S_PROJECT_DB_ADMIN_SSLMODE" envDefault:"disable"`
+	// ProjectDBAdminDatabase is admin database name for lifecycle connection.
+	ProjectDBAdminDatabase string `env:"CODEXK8S_PROJECT_DB_ADMIN_DATABASE" envDefault:"postgres"`
 }
 
 func (c Config) LearningModeDefaultBool() (bool, error) {

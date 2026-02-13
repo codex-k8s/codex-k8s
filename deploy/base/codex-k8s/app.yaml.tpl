@@ -203,6 +203,38 @@ spec:
                 secretKeyRef:
                   name: codex-k8s-postgres
                   key: CODEXK8S_POSTGRES_PASSWORD
+            - name: CODEXK8S_PROJECT_DB_ADMIN_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_PROJECT_DB_ADMIN_HOST
+            - name: CODEXK8S_PROJECT_DB_ADMIN_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_PROJECT_DB_ADMIN_PORT
+            - name: CODEXK8S_PROJECT_DB_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_PROJECT_DB_ADMIN_USER
+            - name: CODEXK8S_PROJECT_DB_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_PROJECT_DB_ADMIN_PASSWORD
+            - name: CODEXK8S_PROJECT_DB_ADMIN_SSLMODE
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_PROJECT_DB_ADMIN_SSLMODE
+                  optional: true
+            - name: CODEXK8S_PROJECT_DB_ADMIN_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_PROJECT_DB_ADMIN_DATABASE
+                  optional: true
             - name: CODEXK8S_TOKEN_ENCRYPTION_KEY
               valueFrom:
                 secretKeyRef:
