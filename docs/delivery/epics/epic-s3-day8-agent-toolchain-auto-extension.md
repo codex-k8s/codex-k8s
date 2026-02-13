@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S3-D8
 type: epic
 title: "Epic S3 Day 8: Agent toolchain auto-extension with policy safeguards"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-13
 updated_at: 2026-02-13
@@ -35,3 +35,18 @@ approvals:
 
 ## Критерии приемки
 - Для подтвержденного tool-gap создаётся воспроизводимый PR с изменением образа и evidence проверок.
+
+## Фактический результат (выполнено)
+- В agent-runner добавлен baseline-механизм детекции `tool-gap`:
+  - источники: structured output `tool_gaps[]`, `codex exec` output, `git push` output;
+  - детекция команд с паттернами `command not found` / `executable file not found`.
+- Для подтверждённых gap публикуется отдельное audit-событие:
+  - `run.toolchain.gap_detected`.
+- Событие содержит воспроизводимый remediation-контекст:
+  - список `tool_gaps`;
+  - источники обнаружения;
+  - рекомендуемые пути изменения toolchain/image (`bootstrap_tools.sh`, `Dockerfile`).
+- `tool_gaps` сохраняются в session snapshot (`session_json`) и доступны для self-improve diagnostics/updater цикла.
+
+## Проверки
+- `go test ./services/jobs/agent-runner/internal/runner` — passed.

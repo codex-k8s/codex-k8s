@@ -371,7 +371,10 @@ func TestIngestGitHubWebhook_IssueRunVision_CreatesStageRunForAllowedMember(t *t
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
 	events := &inMemoryEventRepo{}
-	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{
+		"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"},
+		"pm":  {ID: "agent-pm", AgentKey: "pm", Name: "AI Product Manager"},
+	}}
 	repos := &inMemoryRepoCfgRepo{
 		byExternalID: map[int64]repocfgrepo.FindResult{
 			42: {
@@ -441,6 +444,20 @@ func TestIngestGitHubWebhook_IssueRunVision_CreatesStageRunForAllowedMember(t *t
 	}
 	if runPayload.Trigger.Label != webhookdomain.DefaultRunVisionLabel {
 		t.Fatalf("unexpected trigger label: %#v", runPayload.Trigger.Label)
+	}
+	if runPayload.Agent.Key != "pm" {
+		t.Fatalf("unexpected agent key: %#v", runPayload.Agent.Key)
+	}
+}
+
+func TestResolveRunAgentKey_SelfImproveUsesKM(t *testing.T) {
+	t.Parallel()
+
+	key := resolveRunAgentKey(&issueRunTrigger{
+		Kind: webhookdomain.TriggerKindSelfImprove,
+	})
+	if key != "km" {
+		t.Fatalf("resolveRunAgentKey() = %q, want %q", key, "km")
 	}
 }
 

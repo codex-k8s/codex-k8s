@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -48,10 +49,15 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("init auth service: %w", err)
 	}
+	mcpCallbackToken := strings.TrimSpace(cfg.MCPCallbackToken)
+	if mcpCallbackToken == "" {
+		mcpCallbackToken = cfg.GitHubWebhookSecret
+	}
 
 	server, err := httptransport.NewServer(appCtx, httptransport.ServerConfig{
 		HTTPAddr:                 cfg.HTTPAddr,
 		GitHubWebhookSecret:      cfg.GitHubWebhookSecret,
+		MCPCallbackToken:         mcpCallbackToken,
 		MaxBodyBytes:             cfg.WebhookMaxBodyBytes,
 		CookieSecure:             cfg.CookieSecure,
 		StaticDir:                "/app/web",

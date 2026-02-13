@@ -85,6 +85,10 @@ approvals:
 
 - Платформа поддерживает внешний расширяемый слой MCP (например, `github.com/codex-k8s/yaml-mcp-server`) с универсальными HTTP-интеграциями.
 - `github.com/codex-k8s/telegram-approver` и `github.com/codex-k8s/telegram-executor` считаются референсными адаптерами этого контракта.
+- Day5 baseline в `api-gateway`:
+  - `POST /api/v1/mcp/approver/callback`;
+  - `POST /api/v1/mcp/executor/callback`;
+  - shared-token auth (`X-Codex-MCP-Token` или `Authorization: Bearer ...`).
 - Требование к контрактам:
   - async режим с callback обязателен для долгих операций;
   - единый `correlation_id` проходит от запроса до callback;

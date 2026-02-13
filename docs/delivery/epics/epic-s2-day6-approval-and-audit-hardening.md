@@ -33,7 +33,7 @@ approvals:
 - MCP control tools (минимальный MVP-набор):
   - `secret.sync.github_k8s`: детерминированное создание/обновление секрета в GitHub и Kubernetes для выбранного окружения;
   - `database.lifecycle`: create/delete/describe database в выбранном окружении по policy;
-  - `mcp_owner_feedback_request`: оперативный вопрос владельцу с 2-5 вариантами + `custom` ответ.
+  - `owner.feedback.request`: оперативный вопрос владельцу с 2-5 вариантами + `custom` ответ.
 - Безопасность control tools:
   - автогенерация секрет-значений внутри инструмента без вывода в модель;
   - идемпотентность повторных вызовов;
@@ -65,7 +65,7 @@ approvals:
 - Любая privileged операция без апрува отклоняется и логируется как `approval.denied` или `failed_precondition`.
 - `secret.sync.github_k8s` не раскрывает секретный материал в логах/PR/comments/flow events.
 - `database.lifecycle` корректно обрабатывает create/delete и повторные вызовы без дрейфа состояния.
-- `mcp_owner_feedback_request` поддерживает вариантные ответы и корректно резюмируется в run context.
+- `owner.feedback.request` поддерживает вариантные ответы и корректно резюмируется в run context.
 - Voice/STT ответы owner (feedback + deny reason) корректно принимаются через HTTP contract и фиксируются в audit без утечки секретов.
 - В staff UI видны pending approvals, wait reason и итог апрува по каждому run.
 
@@ -76,7 +76,7 @@ approvals:
 - Реализованы MCP control tools в domain/service слое:
   - `secret.sync.github_k8s`;
   - `database.lifecycle`;
-  - `mcp_owner_feedback_request`.
+  - `owner.feedback.request`.
 - Добавлен approval lifecycle:
   - создание pending request;
   - approve/deny/expired/failed/apply transitions;

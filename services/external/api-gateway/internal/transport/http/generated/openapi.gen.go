@@ -46,6 +46,15 @@ const (
 	Ignored   IngestGitHubWebhookResponseStatus = "ignored"
 )
 
+// Defines values for MCPApprovalCallbackRequestDecision.
+const (
+	MCPApprovalCallbackRequestDecisionApplied  MCPApprovalCallbackRequestDecision = "applied"
+	MCPApprovalCallbackRequestDecisionApproved MCPApprovalCallbackRequestDecision = "approved"
+	MCPApprovalCallbackRequestDecisionDenied   MCPApprovalCallbackRequestDecision = "denied"
+	MCPApprovalCallbackRequestDecisionExpired  MCPApprovalCallbackRequestDecision = "expired"
+	MCPApprovalCallbackRequestDecisionFailed   MCPApprovalCallbackRequestDecision = "failed"
+)
+
 // Defines values for ProjectMemberRole.
 const (
 	ProjectMemberRoleAdmin     ProjectMemberRole = "admin"
@@ -63,12 +72,12 @@ const (
 
 // Defines values for ResolveApprovalDecisionResponseApprovalState.
 const (
-	ResolveApprovalDecisionResponseApprovalStateApplied   ResolveApprovalDecisionResponseApprovalState = "applied"
-	ResolveApprovalDecisionResponseApprovalStateApproved  ResolveApprovalDecisionResponseApprovalState = "approved"
-	ResolveApprovalDecisionResponseApprovalStateDenied    ResolveApprovalDecisionResponseApprovalState = "denied"
-	ResolveApprovalDecisionResponseApprovalStateExpired   ResolveApprovalDecisionResponseApprovalState = "expired"
-	ResolveApprovalDecisionResponseApprovalStateFailed    ResolveApprovalDecisionResponseApprovalState = "failed"
-	ResolveApprovalDecisionResponseApprovalStateRequested ResolveApprovalDecisionResponseApprovalState = "requested"
+	Applied   ResolveApprovalDecisionResponseApprovalState = "applied"
+	Approved  ResolveApprovalDecisionResponseApprovalState = "approved"
+	Denied    ResolveApprovalDecisionResponseApprovalState = "denied"
+	Expired   ResolveApprovalDecisionResponseApprovalState = "expired"
+	Failed    ResolveApprovalDecisionResponseApprovalState = "failed"
+	Requested ResolveApprovalDecisionResponseApprovalState = "requested"
 )
 
 // Defines values for UpsertProjectMemberRequestRole.
@@ -161,6 +170,17 @@ type LearningFeedback struct {
 type LearningFeedbackItemsResponse struct {
 	Items []LearningFeedback `json:"items"`
 }
+
+// MCPApprovalCallbackRequest defines model for MCPApprovalCallbackRequest.
+type MCPApprovalCallbackRequest struct {
+	ActorId           *string                            `json:"actor_id"`
+	ApprovalRequestId int64                              `json:"approval_request_id"`
+	Decision          MCPApprovalCallbackRequestDecision `json:"decision"`
+	Reason            *string                            `json:"reason"`
+}
+
+// MCPApprovalCallbackRequestDecision defines model for MCPApprovalCallbackRequest.Decision.
+type MCPApprovalCallbackRequestDecision string
 
 // MeResponse defines model for MeResponse.
 type MeResponse struct {
@@ -357,6 +377,9 @@ type ApprovalRequestID = int64
 // Limit defines model for Limit.
 type Limit = int
 
+// MCPCallbackToken defines model for MCPCallbackToken.
+type MCPCallbackToken = string
+
 // ProjectID defines model for ProjectID.
 type ProjectID = string
 
@@ -400,6 +423,16 @@ type Unauthorized = ErrorResponse
 type CallbackGithubParams struct {
 	State string `form:"state" json:"state"`
 	Code  string `form:"code" json:"code"`
+}
+
+// McpApproverCallbackParams defines parameters for McpApproverCallback.
+type McpApproverCallbackParams struct {
+	XCodexMCPToken MCPCallbackToken `json:"X-Codex-MCP-Token"`
+}
+
+// McpExecutorCallbackParams defines parameters for McpExecutorCallback.
+type McpExecutorCallbackParams struct {
+	XCodexMCPToken MCPCallbackToken `json:"X-Codex-MCP-Token"`
 }
 
 // ListPendingApprovalsParams defines parameters for ListPendingApprovals.
@@ -473,6 +506,12 @@ type IngestGithubWebhookParams struct {
 	XGitHubDelivery  string `json:"X-GitHub-Delivery"`
 	XHubSignature256 string `json:"X-Hub-Signature-256"`
 }
+
+// McpApproverCallbackJSONRequestBody defines body for McpApproverCallback for application/json ContentType.
+type McpApproverCallbackJSONRequestBody = MCPApprovalCallbackRequest
+
+// McpExecutorCallbackJSONRequestBody defines body for McpExecutorCallback for application/json ContentType.
+type McpExecutorCallbackJSONRequestBody = MCPApprovalCallbackRequest
 
 // ResolveApprovalDecisionJSONRequestBody defines body for ResolveApprovalDecision for application/json ContentType.
 type ResolveApprovalDecisionJSONRequestBody = ResolveApprovalDecisionRequest
@@ -633,6 +672,12 @@ type ServerInterface interface {
 	// Get current authenticated staff principal
 	// (GET /api/v1/auth/me)
 	GetMe(w http.ResponseWriter, r *http.Request)
+	// Resolve one MCP approval request from external approver callback
+	// (POST /api/v1/mcp/approver/callback)
+	McpApproverCallback(w http.ResponseWriter, r *http.Request, params McpApproverCallbackParams)
+	// Resolve one MCP approval request from external executor callback
+	// (POST /api/v1/mcp/executor/callback)
+	McpExecutorCallback(w http.ResponseWriter, r *http.Request, params McpExecutorCallbackParams)
 	// List pending approval requests
 	// (GET /api/v1/staff/approvals)
 	ListPendingApprovals(w http.ResponseWriter, r *http.Request, params ListPendingApprovalsParams)
@@ -801,6 +846,94 @@ func (siw *ServerInterfaceWrapper) GetMe(w http.ResponseWriter, r *http.Request)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetMe(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// McpApproverCallback operation middleware
+func (siw *ServerInterfaceWrapper) McpApproverCallback(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params McpApproverCallbackParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-Codex-MCP-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Codex-MCP-Token")]; found {
+		var XCodexMCPToken MCPCallbackToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Codex-MCP-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Codex-MCP-Token", valueList[0], &XCodexMCPToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Codex-MCP-Token", Err: err})
+			return
+		}
+
+		params.XCodexMCPToken = XCodexMCPToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-Codex-MCP-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-Codex-MCP-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.McpApproverCallback(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// McpExecutorCallback operation middleware
+func (siw *ServerInterfaceWrapper) McpExecutorCallback(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params McpExecutorCallbackParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-Codex-MCP-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Codex-MCP-Token")]; found {
+		var XCodexMCPToken MCPCallbackToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Codex-MCP-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Codex-MCP-Token", valueList[0], &XCodexMCPToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Codex-MCP-Token", Err: err})
+			return
+		}
+
+		params.XCodexMCPToken = XCodexMCPToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-Codex-MCP-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-Codex-MCP-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.McpExecutorCallback(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1752,6 +1885,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/auth/github/login", wrapper.LoginGithub)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/auth/logout", wrapper.Logout)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/auth/me", wrapper.GetMe)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/mcp/approver/callback", wrapper.McpApproverCallback)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/mcp/executor/callback", wrapper.McpExecutorCallback)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/approvals", wrapper.ListPendingApprovals)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/approvals/{approval_request_id}/decision", wrapper.ResolveApprovalDecision)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/projects", wrapper.ListProjects)
@@ -1905,6 +2040,96 @@ type GetMe401JSONResponse struct{ UnauthorizedJSONResponse }
 func (response GetMe401JSONResponse) VisitGetMeResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type McpApproverCallbackRequestObject struct {
+	Params McpApproverCallbackParams
+	Body   *McpApproverCallbackJSONRequestBody
+}
+
+type McpApproverCallbackResponseObject interface {
+	VisitMcpApproverCallbackResponse(w http.ResponseWriter) error
+}
+
+type McpApproverCallback200JSONResponse ResolveApprovalDecisionResponse
+
+func (response McpApproverCallback200JSONResponse) VisitMcpApproverCallbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type McpApproverCallback400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response McpApproverCallback400JSONResponse) VisitMcpApproverCallbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type McpApproverCallback401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response McpApproverCallback401JSONResponse) VisitMcpApproverCallbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type McpApproverCallback500JSONResponse struct{ InternalJSONResponse }
+
+func (response McpApproverCallback500JSONResponse) VisitMcpApproverCallbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type McpExecutorCallbackRequestObject struct {
+	Params McpExecutorCallbackParams
+	Body   *McpExecutorCallbackJSONRequestBody
+}
+
+type McpExecutorCallbackResponseObject interface {
+	VisitMcpExecutorCallbackResponse(w http.ResponseWriter) error
+}
+
+type McpExecutorCallback200JSONResponse ResolveApprovalDecisionResponse
+
+func (response McpExecutorCallback200JSONResponse) VisitMcpExecutorCallbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type McpExecutorCallback400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response McpExecutorCallback400JSONResponse) VisitMcpExecutorCallbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type McpExecutorCallback401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response McpExecutorCallback401JSONResponse) VisitMcpExecutorCallbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type McpExecutorCallback500JSONResponse struct{ InternalJSONResponse }
+
+func (response McpExecutorCallback500JSONResponse) VisitMcpExecutorCallbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -2976,6 +3201,12 @@ type StrictServerInterface interface {
 	// Get current authenticated staff principal
 	// (GET /api/v1/auth/me)
 	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
+	// Resolve one MCP approval request from external approver callback
+	// (POST /api/v1/mcp/approver/callback)
+	McpApproverCallback(ctx context.Context, request McpApproverCallbackRequestObject) (McpApproverCallbackResponseObject, error)
+	// Resolve one MCP approval request from external executor callback
+	// (POST /api/v1/mcp/executor/callback)
+	McpExecutorCallback(ctx context.Context, request McpExecutorCallbackRequestObject) (McpExecutorCallbackResponseObject, error)
 	// List pending approval requests
 	// (GET /api/v1/staff/approvals)
 	ListPendingApprovals(ctx context.Context, request ListPendingApprovalsRequestObject) (ListPendingApprovalsResponseObject, error)
@@ -3173,6 +3404,72 @@ func (sh *strictHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetMeResponseObject); ok {
 		if err := validResponse.VisitGetMeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// McpApproverCallback operation middleware
+func (sh *strictHandler) McpApproverCallback(w http.ResponseWriter, r *http.Request, params McpApproverCallbackParams) {
+	var request McpApproverCallbackRequestObject
+
+	request.Params = params
+
+	var body McpApproverCallbackJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.McpApproverCallback(ctx, request.(McpApproverCallbackRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "McpApproverCallback")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(McpApproverCallbackResponseObject); ok {
+		if err := validResponse.VisitMcpApproverCallbackResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// McpExecutorCallback operation middleware
+func (sh *strictHandler) McpExecutorCallback(w http.ResponseWriter, r *http.Request, params McpExecutorCallbackParams) {
+	var request McpExecutorCallbackRequestObject
+
+	request.Params = params
+
+	var body McpExecutorCallbackJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.McpExecutorCallback(ctx, request.(McpExecutorCallbackRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "McpExecutorCallback")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(McpExecutorCallbackResponseObject); ok {
+		if err := validResponse.VisitMcpExecutorCallbackResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

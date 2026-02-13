@@ -144,6 +144,9 @@ approvals:
   - классификация findings (`docs`, `prompts`, `instructions`, `tools`);
   - ссылки на источники (`flow_events`, `agent_sessions`, PR/Issue comments);
   - proposal diff с оценкой риска.
+- Repo seed baseline для этого контура:
+  - `docs/product/prompt-seeds/self-improve-work.md`;
+  - `docs/product/prompt-seeds/self-improve-review.md`.
 - Изменения seed/override, внесённые через self-improve, проходят стандартный PR/review цикл.
 - Для предотвращения drift:
   - каждый self-improve diff должен содержать traceable rationale;

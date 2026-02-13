@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"text/template"
@@ -21,6 +22,12 @@ import (
 
 //go:embed templates/*.tmpl
 var runnerTemplates embed.FS
+
+var (
+	toolGapNotFoundQuotedPattern  = regexp.MustCompile(`['"]([a-zA-Z0-9._-]+)['"]:\s+executable file not found`)
+	toolGapCommandNotFoundPattern = regexp.MustCompile(`(?m)(?:^|:\s)([a-zA-Z0-9._-]+):\s+command not found$`)
+	toolGapMissingCommandPattern  = regexp.MustCompile(`(?m)missing (?:required )?command[:\s]+([a-zA-Z0-9._-]+)$`)
+)
 
 func renderTemplate(templateName string, data any) (string, error) {
 	tplBytes, err := runnerTemplates.ReadFile(templateName)
@@ -156,7 +163,8 @@ func normalizeRuntimeMode(value string) string {
 }
 
 func normalizeTemplateKind(value string, triggerKind string) string {
-	if webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(triggerKind)) {
+	normalizedTrigger := webhookdomain.NormalizeTriggerKind(triggerKind)
+	if webhookdomain.IsReviseTriggerKind(normalizedTrigger) || normalizedTrigger == webhookdomain.TriggerKindSelfImprove {
 		return promptTemplateKindReview
 	}
 	if strings.EqualFold(strings.TrimSpace(value), promptTemplateKindReview) {
@@ -351,10 +359,14 @@ func trimCapturedOutput(raw string, maxBytes int) string {
 }
 
 func buildSessionLogJSON(result runResult, status string) json.RawMessage {
+	report := result.report
+	report.ActionItems = normalizeStringList(report.ActionItems)
+	report.EvidenceRefs = normalizeStringList(report.EvidenceRefs)
+	report.ToolGaps = normalizeStringList(result.toolGaps)
 	payload := sessionLogSnapshot{
 		Version: sessionLogVersionV1,
 		Status:  strings.TrimSpace(status),
-		Report:  result.report,
+		Report:  report,
 		Runtime: sessionRuntimeLogFields{
 			TargetBranch:     strings.TrimSpace(result.targetBranch),
 			CodexExecOutput:  strings.TrimSpace(result.codexExecOutput),
@@ -367,4 +379,63 @@ func buildSessionLogJSON(result runResult, status string) json.RawMessage {
 		return json.RawMessage(`{}`)
 	}
 	return json.RawMessage(raw)
+}
+
+func normalizeStringList(values []string) []string {
+	if len(values) == 0 {
+		return nil
+	}
+	normalized := make([]string, 0, len(values))
+	seen := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		item := strings.TrimSpace(value)
+		if item == "" {
+			continue
+		}
+		lower := strings.ToLower(item)
+		if _, exists := seen[lower]; exists {
+			continue
+		}
+		seen[lower] = struct{}{}
+		normalized = append(normalized, item)
+	}
+	if len(normalized) == 0 {
+		return nil
+	}
+	return normalized
+}
+
+func detectToolGaps(report codexReport, outputs ...string) []string {
+	candidates := make([]string, 0, len(report.ToolGaps)+4)
+	candidates = append(candidates, report.ToolGaps...)
+	for _, output := range outputs {
+		trimmed := strings.TrimSpace(output)
+		if trimmed == "" {
+			continue
+		}
+		candidates = append(candidates, extractToolGapCandidates(trimmed)...)
+	}
+	return normalizeStringList(candidates)
+}
+
+func extractToolGapCandidates(output string) []string {
+	candidates := make([]string, 0, 4)
+
+	for _, match := range toolGapNotFoundQuotedPattern.FindAllStringSubmatch(output, -1) {
+		if len(match) >= 2 {
+			candidates = append(candidates, strings.TrimSpace(match[1]))
+		}
+	}
+	for _, match := range toolGapCommandNotFoundPattern.FindAllStringSubmatch(output, -1) {
+		if len(match) >= 2 {
+			candidates = append(candidates, strings.TrimSpace(match[1]))
+		}
+	}
+	for _, match := range toolGapMissingCommandPattern.FindAllStringSubmatch(strings.ToLower(output), -1) {
+		if len(match) >= 2 {
+			candidates = append(candidates, strings.TrimSpace(match[1]))
+		}
+	}
+
+	return candidates
 }

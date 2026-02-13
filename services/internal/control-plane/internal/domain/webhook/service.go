@@ -24,7 +24,16 @@ import (
 
 const githubWebhookActorID = floweventdomain.ActorIDGitHubWebhook
 
-const defaultRunAgentKey = "dev"
+const (
+	agentKeyPM         = "pm"
+	agentKeySA         = "sa"
+	agentKeyEM         = "em"
+	defaultRunAgentKey = "dev"
+	agentKeyReviewer   = "reviewer"
+	agentKeyQA         = "qa"
+	agentKeySRE        = "sre"
+	agentKeyKM         = "km"
+)
 
 type runStatusService interface {
 	CleanupNamespacesByIssue(ctx context.Context, params runstatusdomain.CleanupByIssueParams) (runstatusdomain.CleanupByIssueResult, error)
@@ -476,6 +485,31 @@ func resolveRunAgentKey(trigger *issueRunTrigger) string {
 	switch trigger.Kind {
 	case webhookdomain.TriggerKindDev, webhookdomain.TriggerKindDevRevise:
 		return defaultRunAgentKey
+	case webhookdomain.TriggerKindIntake,
+		webhookdomain.TriggerKindIntakeRevise,
+		webhookdomain.TriggerKindVision,
+		webhookdomain.TriggerKindVisionRevise,
+		webhookdomain.TriggerKindPRD,
+		webhookdomain.TriggerKindPRDRevise:
+		return agentKeyPM
+	case webhookdomain.TriggerKindArch,
+		webhookdomain.TriggerKindArchRevise,
+		webhookdomain.TriggerKindDesign,
+		webhookdomain.TriggerKindDesignRevise:
+		return agentKeySA
+	case webhookdomain.TriggerKindPlan,
+		webhookdomain.TriggerKindPlanRevise,
+		webhookdomain.TriggerKindRelease,
+		webhookdomain.TriggerKindRethink:
+		return agentKeyEM
+	case webhookdomain.TriggerKindDocAudit:
+		return agentKeyReviewer
+	case webhookdomain.TriggerKindQA:
+		return agentKeyQA
+	case webhookdomain.TriggerKindPostDeploy, webhookdomain.TriggerKindOps:
+		return agentKeySRE
+	case webhookdomain.TriggerKindSelfImprove:
+		return agentKeyKM
 	default:
 		return defaultRunAgentKey
 	}

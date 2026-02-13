@@ -38,7 +38,10 @@ approvals:
   - label-операции (`github_labels_*`);
   - `secret.sync.github_k8s` (deterministic secret sync GitHub + Kubernetes);
   - `database.lifecycle` (`create/delete/describe`);
-  - owner feedback request (options + custom answer).
+  - `owner.feedback.request` (options + custom answer).
+- Для внешних approver/executor адаптеров активированы callback endpoint'ы:
+  - `POST /api/v1/mcp/approver/callback`;
+  - `POST /api/v1/mcp/executor/callback`.
 - Базовые MCP label-инструменты:
   - `github_labels_list`;
   - `github_labels_add`;
@@ -86,6 +89,8 @@ approvals:
 | Operation | Method | Path | Auth | Notes |
 |---|---|---|---|---|
 | Ingest GitHub webhook | POST | `/api/v1/webhooks/github` | webhook signature | idempotency по `X-GitHub-Delivery`, response status: `accepted|duplicate|ignored` |
+| MCP approver callback | POST | `/api/v1/mcp/approver/callback` | callback token | external approver decision (`approved|denied|expired|failed|applied`) |
+| MCP executor callback | POST | `/api/v1/mcp/executor/callback` | callback token | external executor decision (`approved|denied|expired|failed|applied`) |
 | Start GitHub OAuth | GET | `/api/v1/auth/github/login` | public | redirect |
 | Complete GitHub OAuth callback | GET | `/api/v1/auth/github/callback` | public | set auth cookie |
 | Logout | POST | `/api/v1/auth/logout` | staff JWT | clears auth cookies |

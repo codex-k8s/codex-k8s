@@ -164,31 +164,59 @@ func TestResolveRunAgentContext_UsesPullRequestHintsForRevise(t *testing.T) {
 	}
 }
 
-func TestResolveRunAgentContext_StageReviseUsesReviewTemplate(t *testing.T) {
+func TestResolveRunAgentContext_ReviewTemplateKinds(t *testing.T) {
 	t.Parallel()
 
-	runPayload := json.RawMessage(`{
-		"repository":{"full_name":"codex-k8s/codex-k8s"},
-		"issue":{"number":201},
-		"agent":{"key":"dev","name":"AI Developer"},
-		"trigger":{"kind":"vision_revise","label":"run:vision:revise"},
-		"raw_payload":{"issue":{"labels":[{"name":"run:vision:revise"}]}}
-	}`)
+	tests := []struct {
+		name            string
+		runPayload      json.RawMessage
+		wantTriggerKind string
+	}{
+		{
+			name: "stage revise uses review template",
+			runPayload: json.RawMessage(`{
+				"repository":{"full_name":"codex-k8s/codex-k8s"},
+				"issue":{"number":201},
+				"agent":{"key":"dev","name":"AI Developer"},
+				"trigger":{"kind":"vision_revise","label":"run:vision:revise"},
+				"raw_payload":{"issue":{"labels":[{"name":"run:vision:revise"}]}}
+			}`),
+			wantTriggerKind: "vision_revise",
+		},
+		{
+			name: "self improve uses review template",
+			runPayload: json.RawMessage(`{
+				"repository":{"full_name":"codex-k8s/codex-k8s"},
+				"issue":{"number":202},
+				"agent":{"key":"km","name":"AI Knowledge Manager"},
+				"trigger":{"kind":"self_improve","label":"run:self-improve"},
+				"raw_payload":{"issue":{"labels":[{"name":"run:self-improve"}]}}
+			}`),
+			wantTriggerKind: "self_improve",
+		},
+	}
 
-	got, err := resolveRunAgentContext(runPayload, runAgentDefaults{
-		DefaultModel:           modelGPT52Codex,
-		DefaultReasoningEffort: "high",
-		DefaultLocale:          "ru",
-		AllowGPT53:             true,
-	})
-	if err != nil {
-		t.Fatalf("resolveRunAgentContext() error = %v", err)
-	}
-	if got.TriggerKind != "vision_revise" {
-		t.Fatalf("TriggerKind = %q, want vision_revise", got.TriggerKind)
-	}
-	if got.PromptTemplateKind != promptTemplateKindReview {
-		t.Fatalf("PromptTemplateKind = %q, want %q", got.PromptTemplateKind, promptTemplateKindReview)
+	for _, testCase := range tests {
+		testCase := testCase
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := resolveRunAgentContext(testCase.runPayload, runAgentDefaults{
+				DefaultModel:           modelGPT52Codex,
+				DefaultReasoningEffort: "high",
+				DefaultLocale:          "ru",
+				AllowGPT53:             true,
+			})
+			if err != nil {
+				t.Fatalf("resolveRunAgentContext() error = %v", err)
+			}
+			if got.TriggerKind != testCase.wantTriggerKind {
+				t.Fatalf("TriggerKind = %q, want %q", got.TriggerKind, testCase.wantTriggerKind)
+			}
+			if got.PromptTemplateKind != promptTemplateKindReview {
+				t.Fatalf("PromptTemplateKind = %q, want %q", got.PromptTemplateKind, promptTemplateKindReview)
+			}
+		})
 	}
 }
 

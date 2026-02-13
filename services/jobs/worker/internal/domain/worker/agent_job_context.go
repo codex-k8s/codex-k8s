@@ -97,7 +97,7 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 		}(),
 		PromptTemplateSource: promptTemplateSourceSeed,
 	}
-	if webhookdomain.IsReviseTriggerKind(webhookdomain.TriggerKind(ctx.TriggerKind)) {
+	if resolvePromptTemplateKindForTrigger(ctx.TriggerKind) == promptTemplateKindReview {
 		ctx.PromptTemplateKind = promptTemplateKindReview
 	}
 	if ctx.AgentKey == "" {
@@ -136,6 +136,14 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 	ctx.ReasoningSource = reasoningSource
 
 	return ctx, nil
+}
+
+func resolvePromptTemplateKindForTrigger(triggerKind string) string {
+	normalized := webhookdomain.NormalizeTriggerKind(triggerKind)
+	if webhookdomain.IsReviseTriggerKind(normalized) || normalized == webhookdomain.TriggerKindSelfImprove {
+		return promptTemplateKindReview
+	}
+	return promptTemplateKindWork
 }
 
 type runAgentDefaults struct {

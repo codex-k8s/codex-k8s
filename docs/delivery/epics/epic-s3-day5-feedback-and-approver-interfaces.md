@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S3-D5
 type: epic
 title: "Epic S3 Day 5: Owner feedback handle and HTTP approver/executor interfaces"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-13
 updated_at: 2026-02-13
@@ -39,3 +39,26 @@ approvals:
 ## Критерии приемки
 - Агент может получить структурированный ответ Owner и продолжить run без ручного вмешательства в БД.
 - Callback-события корректно обновляют state run и audit.
+
+## Фактический результат (выполнено)
+- MCP control tool приведён к каноническому имени:
+  - `owner.feedback.request`.
+- Добавлены и задокументированы HTTP callback-контракты для внешних approver/executor адаптеров:
+  - `POST /api/v1/mcp/approver/callback`;
+  - `POST /api/v1/mcp/executor/callback`.
+- В callback-контракте поддержаны решения:
+  - `approved`, `denied`, `expired`, `failed`, `applied`.
+- Защита callback-контуров реализована shared-token политикой:
+  - заголовок `X-Codex-MCP-Token` или `Authorization: Bearer ...`.
+- В control-plane доработан lifecycle approval state:
+  - добавлен `applied` в нормализованный decision/state flow;
+  - реализованы допустимые переходы `requested -> approved|applied|denied|expired|failed` и `approved -> applied|failed`;
+  - подтверждён idempotent-путь повторных callback-решений без повторного side effect.
+- При callback-решении синхронизируется run wait-state:
+  - снимается `waiting_mcp`, возобновляется timeout-guard логика.
+
+## Проверки
+- `make gen-openapi-go` — passed.
+- `make gen-openapi-ts` — passed.
+- `go test ./services/external/api-gateway/internal/...` — passed.
+- `go test ./services/internal/control-plane/internal/domain/mcp` — passed.

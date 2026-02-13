@@ -46,7 +46,20 @@ const outputSchemaJSON = `{
     "pr_url": { "type": "string", "minLength": 1 },
     "session_id": { "type": "string" },
     "model": { "type": "string" },
-    "reasoning_effort": { "type": "string" }
+    "reasoning_effort": { "type": "string" },
+    "diagnosis": { "type": "string" },
+    "action_items": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "tool_gaps": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
   },
   "required": ["summary", "branch", "pr_number", "pr_url", "session_id", "model", "reasoning_effort"],
   "additionalProperties": false

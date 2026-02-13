@@ -46,10 +46,10 @@ approvals:
 | Day 2 | Staff runtime debug console (jobs/logs/waits) | P0 | `docs/delivery/epics/epic-s3-day2-staff-runtime-debug-console.md` | completed (approved) |
 | Day 3 | MCP deterministic secret sync (GitHub + K8s) | P0 | `docs/delivery/epics/epic-s3-day3-mcp-deterministic-secret-sync.md` | completed |
 | Day 4 | MCP database lifecycle (create/delete/describe per env) | P0 | `docs/delivery/epics/epic-s3-day4-mcp-database-lifecycle.md` | completed |
-| Day 5 | Owner feedback handle + HTTP approver/executor + Telegram adapter | P0 | `docs/delivery/epics/epic-s3-day5-feedback-and-approver-interfaces.md` | planned |
-| Day 6 | `run:self-improve`: ingestion and diagnostics | P0 | `docs/delivery/epics/epic-s3-day6-self-improve-ingestion-and-diagnostics.md` | planned |
-| Day 7 | `run:self-improve`: docs/prompt/instruction updater + minimal stage prompt matrix | P0 | `docs/delivery/epics/epic-s3-day7-self-improve-updater-and-pr-flow.md` | planned |
-| Day 8 | Agent toolchain auto-extension and policy safeguards | P1 | `docs/delivery/epics/epic-s3-day8-agent-toolchain-auto-extension.md` | planned |
+| Day 5 | Owner feedback handle + HTTP approver/executor + Telegram adapter | P0 | `docs/delivery/epics/epic-s3-day5-feedback-and-approver-interfaces.md` | completed |
+| Day 6 | `run:self-improve`: ingestion and diagnostics | P0 | `docs/delivery/epics/epic-s3-day6-self-improve-ingestion-and-diagnostics.md` | completed |
+| Day 7 | `run:self-improve`: docs/prompt/instruction updater + minimal stage prompt matrix | P0 | `docs/delivery/epics/epic-s3-day7-self-improve-updater-and-pr-flow.md` | completed |
+| Day 8 | Agent toolchain auto-extension and policy safeguards | P1 | `docs/delivery/epics/epic-s3-day8-agent-toolchain-auto-extension.md` | completed |
 | Day 9 | Declarative full-env deploy and runtime parity | P0 | `docs/delivery/epics/epic-s3-day9-declarative-full-env-deploy-and-runtime-parity.md` | planned |
 | Day 10 | Staff console full redesign on Vuetify | P0 | `docs/delivery/epics/epic-s3-day10-staff-console-vuetify-redesign.md` | planned |
 | Day 11 | MVP regression and security gate | P0 | `docs/delivery/epics/epic-s3-day11-mvp-regression-and-security-gate.md` | planned |

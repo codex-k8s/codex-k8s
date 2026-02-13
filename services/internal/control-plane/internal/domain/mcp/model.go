@@ -14,7 +14,7 @@ const ToolPromptContextGet ToolName = "codex_prompt_context_get"
 const (
 	ToolMCPSecretSyncEnv        ToolName = "secret.sync.github_k8s"
 	ToolMCPDatabaseLifecycle    ToolName = "database.lifecycle"
-	ToolMCPOwnerFeedbackRequest ToolName = "mcp_owner_feedback_request"
+	ToolMCPOwnerFeedbackRequest ToolName = "owner.feedback.request"
 )
 
 const (
@@ -574,7 +574,7 @@ type OwnerFeedbackRequestInput struct {
 	DryRun      bool     `json:"dry_run,omitempty"`
 }
 
-// OwnerFeedbackRequestResult is output for mcp_owner_feedback_request tool.
+// OwnerFeedbackRequestResult is output for owner.feedback.request tool.
 type OwnerFeedbackRequestResult struct {
 	Status        ToolExecutionStatus `json:"status"`
 	RequestID     int64               `json:"request_id,omitempty"`
@@ -593,6 +593,7 @@ const (
 	ApprovalDecisionDenied   ApprovalDecision = "denied"
 	ApprovalDecisionExpired  ApprovalDecision = "expired"
 	ApprovalDecisionFailed   ApprovalDecision = "failed"
+	ApprovalDecisionApplied  ApprovalDecision = "applied"
 )
 
 // ResolveApprovalParams describes one approval decision update.

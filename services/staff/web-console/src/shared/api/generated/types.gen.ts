@@ -94,6 +94,13 @@ export type ResolveApprovalDecisionRequest = {
     reason?: string | null;
 };
 
+export type McpApprovalCallbackRequest = {
+    approval_request_id: number;
+    decision: 'approved' | 'denied' | 'expired' | 'failed' | 'applied';
+    reason?: string | null;
+    actor_id?: string | null;
+};
+
 export type ResolveApprovalDecisionResponse = {
     id: number;
     correlation_id: string;
@@ -237,6 +244,8 @@ export type WaitStateFilter = string;
 
 export type TailLines = number;
 
+export type McpCallbackToken = string;
+
 export type IngestGithubWebhookData = {
     body: {
         [key: string]: unknown;
@@ -280,6 +289,78 @@ export type IngestGithubWebhookResponses = {
 };
 
 export type IngestGithubWebhookResponse = IngestGithubWebhookResponses[keyof IngestGithubWebhookResponses];
+
+export type McpApproverCallbackData = {
+    body: McpApprovalCallbackRequest;
+    headers: {
+        'X-Codex-MCP-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/mcp/approver/callback';
+};
+
+export type McpApproverCallbackErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Internal error
+     */
+    500: ErrorResponse;
+};
+
+export type McpApproverCallbackError = McpApproverCallbackErrors[keyof McpApproverCallbackErrors];
+
+export type McpApproverCallbackResponses = {
+    /**
+     * Approval callback applied
+     */
+    200: ResolveApprovalDecisionResponse;
+};
+
+export type McpApproverCallbackResponse = McpApproverCallbackResponses[keyof McpApproverCallbackResponses];
+
+export type McpExecutorCallbackData = {
+    body: McpApprovalCallbackRequest;
+    headers: {
+        'X-Codex-MCP-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/mcp/executor/callback';
+};
+
+export type McpExecutorCallbackErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Internal error
+     */
+    500: ErrorResponse;
+};
+
+export type McpExecutorCallbackError = McpExecutorCallbackErrors[keyof McpExecutorCallbackErrors];
+
+export type McpExecutorCallbackResponses = {
+    /**
+     * Executor callback applied
+     */
+    200: ResolveApprovalDecisionResponse;
+};
+
+export type McpExecutorCallbackResponse = McpExecutorCallbackResponses[keyof McpExecutorCallbackResponses];
 
 export type LoginGithubData = {
     body?: never;

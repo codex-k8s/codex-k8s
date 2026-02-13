@@ -66,5 +66,5 @@ go test ./services/jobs/worker/internal/domain/worker \
 - Основание: нет открытых P0 блокеров в S2 runtime контуре, deploy/staging стабильны, dogfooding цикл `run:dev`/`run:dev:revise` воспроизводим.
 
 ## Residual risks / follow-ups
-- Полный runtime e2e для Day6 control tools (`secret.sync.github_k8s`, `database.lifecycle`, `mcp_owner_feedback_request`) в production-режиме approval/deny закреплён в Sprint S3 Day3..Day5.
+- Полный runtime e2e для Day6 control tools (`secret.sync.github_k8s`, `database.lifecycle`, `owner.feedback.request`) в production-режиме approval/deny закреплён в Sprint S3 Day3..Day5.
 - Исторические неуспешные S2 прогоны (RBAC/escalate и ранние PR edge-cases) закрыты как известные инциденты и не воспроизводятся в актуальном контуре.

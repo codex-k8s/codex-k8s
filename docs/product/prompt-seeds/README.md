@@ -23,7 +23,7 @@
 - `release-work.md`
 - `postdeploy-work.md`
 - `ops-work.md`
-- `self-improve-work.md`
+- `self-improve-work.md`, `self-improve-review.md`
 - `rethink-work.md`
 
 Важно:

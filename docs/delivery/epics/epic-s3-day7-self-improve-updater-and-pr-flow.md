@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S3-D7
 type: epic
 title: "Epic S3 Day 7: run:self-improve updater and PR flow"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-13
 updated_at: 2026-02-13
@@ -43,3 +43,20 @@ approvals:
 
 ## Критерии приемки
 - Минимум один self-improve PR создаётся end-to-end с проверяемым улучшением и понятной аргументацией.
+
+## Фактический результат (выполнено)
+- Для `run:self-improve` закреплён review-контур шаблонов:
+  - в runtime self-improve trigger всегда использует `template_kind=review`.
+- В stage prompt matrix добавлен self-improve review seed:
+  - `docs/product/prompt-seeds/self-improve-review.md`.
+- Обновлены seed-инструкции self-improve work/review:
+  - сначала `AGENTS.md`, затем Issue/comments, затем связанная документация;
+  - обязательный traceability output (`diagnosis`, `action_items`, `evidence_refs`, `tool_gaps`);
+  - требования к PR flow, проверкам и ограничениям policy/security.
+- В runner-контракт добавлены поля structured output для self-improve updater:
+  - `diagnosis`, `action_items`, `evidence_refs`, `tool_gaps`.
+- Session snapshot сохраняет structured self-improve поля в `session_json`, что упрощает последующий audit/review цикл.
+
+## Проверки
+- `go test ./services/jobs/worker/internal/domain/worker` — passed.
+- `go test ./services/jobs/agent-runner/internal/runner` — passed.
