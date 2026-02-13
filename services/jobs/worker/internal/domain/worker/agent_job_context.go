@@ -19,11 +19,12 @@ const (
 	modelSourceIssueLabel = "issue_label"
 	modelSourceFallback   = "auth_file_fallback"
 
-	modelGPT53Codex     = "gpt-5.3-codex"
-	modelGPT52Codex     = "gpt-5.2-codex"
-	modelGPT52          = "gpt-5.2"
-	modelGPT51CodexMax  = "gpt-5.1-codex-max"
-	modelGPT51CodexMini = "gpt-5.1-codex-mini"
+	modelGPT53Codex      = "gpt-5.3-codex"
+	modelGPT53CodexSpark = "gpt-5.3-codex-spark"
+	modelGPT52Codex      = "gpt-5.2-codex"
+	modelGPT52           = "gpt-5.2"
+	modelGPT51CodexMax   = "gpt-5.1-codex-max"
+	modelGPT51CodexMini  = "gpt-5.1-codex-mini"
 )
 
 type runAgentContext struct {
@@ -117,7 +118,7 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 	}
 	ctx.Model = model
 	ctx.ModelSource = modelSource
-	if !defaults.AllowGPT53 && strings.EqualFold(ctx.Model, modelGPT53Codex) {
+	if !defaults.AllowGPT53 && isGPT53Model(ctx.Model) {
 		ctx.Model = modelGPT52Codex
 		ctx.ModelSource = modelSourceFallback
 	}
@@ -222,11 +223,12 @@ func normalizeTriggerKind(value string) string {
 
 func resolveModelFromLabels(labels []string, defaultModel string) (model string, source string, err error) {
 	modelByLabel := map[string]string{
-		"ai-model-gpt-5.3-codex":      modelGPT53Codex,
-		"ai-model-gpt-5.2-codex":      modelGPT52Codex,
-		"ai-model-gpt-5.2":            modelGPT52,
-		"ai-model-gpt-5.1-codex-max":  modelGPT51CodexMax,
-		"ai-model-gpt-5.1-codex-mini": modelGPT51CodexMini,
+		"ai-model-gpt-5.3-codex":       modelGPT53Codex,
+		"ai-model-gpt-5.3-codex-spark": modelGPT53CodexSpark,
+		"ai-model-gpt-5.2-codex":       modelGPT52Codex,
+		"ai-model-gpt-5.2":             modelGPT52,
+		"ai-model-gpt-5.1-codex-max":   modelGPT51CodexMax,
+		"ai-model-gpt-5.1-codex-mini":  modelGPT51CodexMini,
 	}
 	return resolveSingleLabelValue(labels, defaultModel, modelByLabel, "ai-model")
 }
@@ -267,4 +269,9 @@ func collectResolvedLabelValues(labels []string, known map[string]string) []stri
 		}
 	}
 	return found
+}
+
+func isGPT53Model(model string) bool {
+	normalizedModel := strings.TrimSpace(model)
+	return strings.EqualFold(normalizedModel, modelGPT53Codex) || strings.EqualFold(normalizedModel, modelGPT53CodexSpark)
 }

@@ -30,6 +30,13 @@ func TestResolveModelFromLabels(t *testing.T) {
 			wantSource:   modelSourceIssueLabel,
 		},
 		{
+			name:         "gpt-5.3-codex-spark",
+			labels:       []string{"[ai-model-gpt-5.3-codex-spark]"},
+			defaultModel: "gpt-5.2-codex",
+			wantModel:    "gpt-5.3-codex-spark",
+			wantSource:   modelSourceIssueLabel,
+		},
+		{
 			name:         "gpt-5.2-codex",
 			labels:       []string{"[ai-model-gpt-5.2-codex]"},
 			defaultModel: "gpt-5.2-codex",
@@ -75,6 +82,34 @@ func TestResolveModelFromLabels(t *testing.T) {
 				t.Fatalf("resolveModelFromLabels() source = %q, want %q", gotSource, testCase.wantSource)
 			}
 		})
+	}
+}
+
+func TestResolveRunAgentContext_FallbackFromGPT53SparkWithoutAuth(t *testing.T) {
+	t.Parallel()
+
+	runPayload := json.RawMessage(`{
+		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"issue":{"number":13},
+		"agent":{"key":"dev","name":"AI Developer"},
+		"trigger":{"kind":"dev","label":"run:dev"},
+		"raw_payload":{"issue":{"labels":[{"name":"[ai-model-gpt-5.3-codex-spark]"}]}}
+	}`)
+
+	got, err := resolveRunAgentContext(runPayload, runAgentDefaults{
+		DefaultModel:           modelGPT52Codex,
+		DefaultReasoningEffort: "high",
+		DefaultLocale:          "ru",
+		AllowGPT53:             false,
+	})
+	if err != nil {
+		t.Fatalf("resolveRunAgentContext() error = %v", err)
+	}
+	if got.Model != modelGPT52Codex {
+		t.Fatalf("Model = %q, want %q", got.Model, modelGPT52Codex)
+	}
+	if got.ModelSource != modelSourceFallback {
+		t.Fatalf("ModelSource = %q, want %q", got.ModelSource, modelSourceFallback)
 	}
 }
 

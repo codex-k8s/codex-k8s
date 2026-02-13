@@ -156,7 +156,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if hasOpenAIAuthFile && strings.EqualFold(cfg.AgentDefaultModel, modelGPT52Codex) {
 		cfg.AgentDefaultModel = modelGPT53Codex
 	}
-	if !hasOpenAIAuthFile && strings.EqualFold(cfg.AgentDefaultModel, modelGPT53Codex) {
+	if !hasOpenAIAuthFile && isGPT53Model(cfg.AgentDefaultModel) {
 		cfg.AgentDefaultModel = modelGPT52Codex
 	}
 	cfg.AgentDefaultReasoningEffort = strings.TrimSpace(cfg.AgentDefaultReasoningEffort)

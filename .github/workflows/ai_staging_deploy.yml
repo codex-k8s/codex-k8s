@@ -57,6 +57,16 @@ env:
   CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT: ${{ vars.CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT || 'high' }}
   CODEXK8S_AGENT_DEFAULT_LOCALE: ${{ vars.CODEXK8S_AGENT_DEFAULT_LOCALE || 'ru' }}
   CODEXK8S_AGENT_BASE_BRANCH: ${{ vars.CODEXK8S_AGENT_BASE_BRANCH || 'main' }}
+  AI_MODEL_GPT_5_3_CODEX_LABEL: ${{ vars.AI_MODEL_GPT_5_3_CODEX_LABEL || '[ai-model-gpt-5.3-codex]' }}
+  AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL: ${{ vars.AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL || '[ai-model-gpt-5.3-codex-spark]' }}
+  AI_MODEL_GPT_5_2_CODEX_LABEL: ${{ vars.AI_MODEL_GPT_5_2_CODEX_LABEL || '[ai-model-gpt-5.2-codex]' }}
+  AI_MODEL_GPT_5_1_CODEX_MAX_LABEL: ${{ vars.AI_MODEL_GPT_5_1_CODEX_MAX_LABEL || '[ai-model-gpt-5.1-codex-max]' }}
+  AI_MODEL_GPT_5_2_LABEL: ${{ vars.AI_MODEL_GPT_5_2_LABEL || '[ai-model-gpt-5.2]' }}
+  AI_MODEL_GPT_5_1_CODEX_MINI_LABEL: ${{ vars.AI_MODEL_GPT_5_1_CODEX_MINI_LABEL || '[ai-model-gpt-5.1-codex-mini]' }}
+  AI_REASONING_LOW_LABEL: ${{ vars.AI_REASONING_LOW_LABEL || '[ai-reasoning-low]' }}
+  AI_REASONING_MEDIUM_LABEL: ${{ vars.AI_REASONING_MEDIUM_LABEL || '[ai-reasoning-medium]' }}
+  AI_REASONING_HIGH_LABEL: ${{ vars.AI_REASONING_HIGH_LABEL || '[ai-reasoning-high]' }}
+  AI_REASONING_EXTRA_HIGH_LABEL: ${{ vars.AI_REASONING_EXTRA_HIGH_LABEL || '[ai-reasoning-extra-high]' }}
   CODEXK8S_GIT_BOT_USERNAME: ${{ vars.CODEXK8S_GIT_BOT_USERNAME || '' }}
   CODEXK8S_GIT_BOT_MAIL: ${{ vars.CODEXK8S_GIT_BOT_MAIL || '' }}
   CODEXK8S_MCP_TOKEN_TTL: ${{ vars.CODEXK8S_MCP_TOKEN_TTL || '24h' }}
