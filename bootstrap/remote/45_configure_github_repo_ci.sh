@@ -146,7 +146,11 @@ set_repo_var() {
   local key="$1"
   local default_value="$2"
   local value="${!key:-$default_value}"
-  gh variable set "${key}" -R "${CODEXK8S_GITHUB_REPO}" --body "${value}"
+  if [ -n "${value}" ]; then
+    gh variable set "${key}" -R "${CODEXK8S_GITHUB_REPO}" --body "${value}"
+    return 0
+  fi
+  gh variable delete "${key}" -R "${CODEXK8S_GITHUB_REPO}" >/dev/null 2>&1 || true
 }
 
 get_repo_var() {
