@@ -72,15 +72,27 @@ func Run() error {
 			logger.Error("db close failed", "err", err)
 		}
 	}()
+	pgxPool, err := postgres.OpenPGXPool(runCtx, postgres.OpenParams{
+		Host:     cfg.DBHost,
+		Port:     cfg.DBPort,
+		DBName:   cfg.DBName,
+		User:     cfg.DBUser,
+		Password: cfg.DBPassword,
+		SSLMode:  cfg.DBSSLMode,
+	})
+	if err != nil {
+		return fmt.Errorf("open postgres pgx pool: %w", err)
+	}
+	defer pgxPool.Close()
 
-	agentRuns := agentrunrepo.NewRepository(db)
+	agentRuns := agentrunrepo.NewRepository(pgxPool)
 	agents := agentrepo.NewRepository(db)
 	flowEvents := floweventrepo.NewRepository(db)
 
 	users := userrepo.NewRepository(db)
 	projects := projectrepo.NewRepository(db)
 	members := projectmemberrepo.NewRepository(db)
-	runs := staffrunrepo.NewRepository(db)
+	runs := staffrunrepo.NewRepository(pgxPool)
 	repos := repocfgrepo.NewRepository(db)
 	feedback := learningfeedbackrepo.NewRepository(db)
 	agentSessions := agentsessionrepo.NewRepository(db)

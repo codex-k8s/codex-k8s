@@ -1,4 +1,6 @@
 -- name: runqueue__upsert_project :exec
+-- Preserve existing explicit learning_mode_default in project settings.
+-- Merge incoming defaults only when the key is still absent.
 INSERT INTO projects (id, slug, name, settings, created_at, updated_at)
 VALUES ($1::uuid, $2, $3, COALESCE($4::jsonb, '{}'::jsonb), NOW(), NOW())
 ON CONFLICT (id) DO UPDATE

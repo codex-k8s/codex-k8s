@@ -1,4 +1,8 @@
 -- name: staffrun__list_for_user :many
+-- This query is the member-scoped counterpart of list_all:
+-- - restricts runs to projects where the user is a member;
+-- - enriches each run with latest PR and runtime artifacts from flow events.
+-- LATERAL subqueries ensure we always read the freshest non-empty values.
 SELECT
     ar.id,
     ar.correlation_id,

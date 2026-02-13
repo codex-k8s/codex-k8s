@@ -1,4 +1,6 @@
 -- name: agentrun__list_run_ids_by_repository_pull_request :many
+-- Resolve run ids by repository and latest PR number.
+-- LATERAL subquery selects the newest run.pr.* event per correlation_id and extracts pr_number safely.
 SELECT ar.id
 FROM agent_runs ar
 JOIN LATERAL (

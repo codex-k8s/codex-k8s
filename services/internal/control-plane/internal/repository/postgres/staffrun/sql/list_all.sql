@@ -1,4 +1,9 @@
 -- name: staffrun__list_all :many
+-- This query builds the runs table for platform admins.
+-- It joins run/project metadata and enriches each row with:
+-- - newest PR reference;
+-- - newest runtime artifacts (job_name, job_namespace, namespace) derived from flow events.
+-- LATERAL blocks keep enrichment deterministic by selecting latest non-empty values.
 SELECT
     ar.id,
     ar.correlation_id,

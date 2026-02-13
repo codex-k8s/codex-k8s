@@ -1,4 +1,6 @@
 -- name: agentrun__list_run_ids_by_repository_issue :many
+-- Filter runs by repository full name and issue number parsed from JSON payload.
+-- CASE + regex keeps the query safe when payload.issue.number is missing or malformed.
 SELECT ar.id
 FROM agent_runs ar
 WHERE LOWER(COALESCE(ar.run_payload->'repository'->>'full_name', '')) = LOWER($1)

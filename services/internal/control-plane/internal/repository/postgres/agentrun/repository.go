@@ -2,7 +2,6 @@ package agentrun
 
 import (
 	"context"
-	"database/sql"
 	_ "embed"
 	"encoding/json"
 	"errors"
@@ -11,6 +10,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentrun/dbmodel"
@@ -35,11 +36,11 @@ var (
 
 // Repository stores agent runs in PostgreSQL.
 type Repository struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
 // NewRepository constructs PostgreSQL agent run repository.
-func NewRepository(db *sql.DB) *Repository {
+func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
@@ -47,7 +48,7 @@ func NewRepository(db *sql.DB) *Repository {
 func (r *Repository) CreatePendingIfAbsent(ctx context.Context, params domainrepo.CreateParams) (domainrepo.CreateResult, error) {
 	runID := uuid.NewString()
 	var insertedRunID string
-	err := r.db.QueryRowContext(
+	err := r.db.QueryRow(
 		ctx,
 		queryCreatePendingIfAbsent,
 		runID,
@@ -64,12 +65,12 @@ func (r *Repository) CreatePendingIfAbsent(ctx context.Context, params domainrep
 		}, nil
 	}
 
-	if !errors.Is(err, sql.ErrNoRows) {
+	if !errors.Is(err, pgx.ErrNoRows) {
 		return domainrepo.CreateResult{}, fmt.Errorf("insert agent run: %w", err)
 	}
 
 	var existingRunID string
-	if err := r.db.QueryRowContext(
+	if err := r.db.QueryRow(
 		ctx,
 		queryGetRunIDByCorrelationID,
 		params.CorrelationID,
@@ -86,20 +87,19 @@ func (r *Repository) CreatePendingIfAbsent(ctx context.Context, params domainrep
 // GetByID returns one run by id.
 func (r *Repository) GetByID(ctx context.Context, runID string) (domainrepo.Run, bool, error) {
 	var row dbmodel.RunRow
-	err := r.db.QueryRowContext(ctx, queryGetByID, runID).Scan(
-		&row.ID,
-		&row.CorrelationID,
-		&row.ProjectID,
-		&row.Status,
-		&row.RunPayload,
-	)
-	if err == nil {
-		return runFromDBModel(row), true, nil
+	rows, err := r.db.Query(ctx, queryGetByID, runID)
+	if err != nil {
+		return domainrepo.Run{}, false, fmt.Errorf("query run by id: %w", err)
 	}
-	if errors.Is(err, sql.ErrNoRows) {
+	items, err := pgx.CollectRows(rows, pgx.RowToStructByName[dbmodel.RunRow])
+	if err != nil {
+		return domainrepo.Run{}, false, fmt.Errorf("collect run by id: %w", err)
+	}
+	if len(items) == 0 {
 		return domainrepo.Run{}, false, nil
 	}
-	return domainrepo.Run{}, false, fmt.Errorf("get run by id: %w", err)
+	row = items[0]
+	return runFromDBModel(row), true, nil
 }
 
 // ListRunIDsByRepositoryIssue returns run ids for one repository/issue pair.
@@ -124,7 +124,7 @@ func (r *Repository) UpsertRunAgentLogs(ctx context.Context, runID string, logs 
 		payload = json.RawMessage(`{}`)
 	}
 
-	if _, err := r.db.ExecContext(ctx, queryUpsertRunAgentLogs, trimmedRunID, []byte(payload)); err != nil {
+	if _, err := r.db.Exec(ctx, queryUpsertRunAgentLogs, trimmedRunID, []byte(payload)); err != nil {
 		return fmt.Errorf("upsert run agent logs: %w", err)
 	}
 	return nil
@@ -136,15 +136,11 @@ func (r *Repository) CleanupRunAgentLogsFinishedBefore(ctx context.Context, fini
 		return 0, fmt.Errorf("finished_before is required")
 	}
 
-	res, err := r.db.ExecContext(ctx, queryCleanupRunAgentLogsFinishedBefore, finishedBefore.UTC())
+	res, err := r.db.Exec(ctx, queryCleanupRunAgentLogsFinishedBefore, finishedBefore.UTC())
 	if err != nil {
 		return 0, fmt.Errorf("cleanup run agent logs: %w", err)
 	}
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return 0, fmt.Errorf("cleanup run agent logs rows affected: %w", err)
-	}
-	return rows, nil
+	return res.RowsAffected(), nil
 }
 
 func (r *Repository) listRunIDsByRepositoryReference(ctx context.Context, query string, repositoryFullName string, referenceNumber int64, limit int, referenceField string, operationLabel string) ([]string, error) {
@@ -159,23 +155,13 @@ func (r *Repository) listRunIDsByRepositoryReference(ctx context.Context, query 
 		limit = 200
 	}
 
-	rows, err := r.db.QueryContext(ctx, query, normalizedRepositoryFullName, referenceNumber, limit)
+	rows, err := r.db.Query(ctx, query, normalizedRepositoryFullName, referenceNumber, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list run ids by %s: %w", operationLabel, err)
 	}
-	defer func() { _ = rows.Close() }()
-
-	result := make([]string, 0, limit)
-	for rows.Next() {
-		var runID string
-		if err := rows.Scan(&runID); err != nil {
-			return nil, fmt.Errorf("scan run id by %s: %w", operationLabel, err)
-		}
-		result = append(result, runID)
+	runIDs, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		return nil, fmt.Errorf("collect run ids by %s: %w", operationLabel, err)
 	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate run ids by %s: %w", operationLabel, err)
-	}
-
-	return result, nil
+	return runIDs, nil
 }

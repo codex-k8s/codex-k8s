@@ -54,3 +54,12 @@ func runFromDBModel(row dbmodel.RunRow) domainrepo.Run {
 	}
 	return item
 }
+
+func flowEventFromDBModel(row dbmodel.FlowEventRow) domainrepo.FlowEvent {
+	return domainrepo.FlowEvent{
+		CorrelationID: row.CorrelationID,
+		EventType:     row.EventType,
+		CreatedAt:     row.CreatedAt,
+		PayloadJSON:   []byte(row.PayloadText),
+	}
+}

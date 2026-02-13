@@ -1,4 +1,9 @@
 -- name: staffrun__get_by_id :one
+-- This query assembles one operator-facing run snapshot:
+-- - base run/project metadata from agent_runs/projects;
+-- - latest PR reference from flow_events;
+-- - latest runtime artifacts (job_name, job_namespace, namespace) from run lifecycle events.
+-- LATERAL subqueries are used to pick the newest non-empty values per correlation_id.
 SELECT
     ar.id,
     ar.correlation_id,

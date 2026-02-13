@@ -1,4 +1,5 @@
 -- name: runqueue__lease_slot :one
+-- Atomically lease one free slot using SKIP LOCKED to avoid worker contention.
 WITH candidate AS (
     SELECT id
     FROM slots
