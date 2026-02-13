@@ -4,6 +4,7 @@ import (
 	"github.com/codex-k8s/codex-k8s/libs/go/cast"
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/models"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func Project(item *controlplanev1.Project) models.Project {
@@ -47,6 +48,8 @@ func Run(item *controlplanev1.Run) models.Run {
 		Namespace:       cast.OptionalTrimmedString(item.Namespace),
 		JobExists:       item.GetJobExists(),
 		NamespaceExists: item.GetNamespaceExists(),
+		WaitState:       cast.OptionalTrimmedString(item.WaitState),
+		WaitReason:      cast.OptionalTrimmedString(item.WaitReason),
 		Status:          item.GetStatus(),
 		CreatedAt:       cast.TimestampRFC3339Nano(item.GetCreatedAt()),
 		StartedAt:       cast.OptionalTimestampRFC3339Nano(item.GetStartedAt()),
@@ -60,6 +63,58 @@ func Runs(items []*controlplanev1.Run) []models.Run {
 		out = append(out, Run(item))
 	}
 	return out
+}
+
+func ApprovalRequest(item *controlplanev1.ApprovalRequest) models.ApprovalRequest {
+	if item == nil {
+		return models.ApprovalRequest{}
+	}
+	return models.ApprovalRequest{
+		ID:            item.GetId(),
+		CorrelationID: item.GetCorrelationId(),
+		RunID:         cast.OptionalTrimmedString(item.RunId),
+		ProjectID:     cast.OptionalTrimmedString(item.ProjectId),
+		ProjectSlug:   cast.OptionalTrimmedString(item.ProjectSlug),
+		ProjectName:   cast.OptionalTrimmedString(item.ProjectName),
+		IssueNumber:   int32PtrFromWrapper(item.GetIssueNumber()),
+		PRNumber:      int32PtrFromWrapper(item.GetPrNumber()),
+		TriggerLabel:  cast.OptionalTrimmedString(item.TriggerLabel),
+		ToolName:      item.GetToolName(),
+		Action:        item.GetAction(),
+		ApprovalMode:  item.GetApprovalMode(),
+		RequestedBy:   item.GetRequestedBy(),
+		CreatedAt:     cast.TimestampRFC3339Nano(item.GetCreatedAt()),
+	}
+}
+
+func ApprovalRequests(items []*controlplanev1.ApprovalRequest) []models.ApprovalRequest {
+	out := make([]models.ApprovalRequest, 0, len(items))
+	for _, item := range items {
+		out = append(out, ApprovalRequest(item))
+	}
+	return out
+}
+
+func ResolveApprovalDecision(item *controlplanev1.ResolveApprovalDecisionResponse) models.ResolveApprovalDecisionResponse {
+	if item == nil {
+		return models.ResolveApprovalDecisionResponse{}
+	}
+	return models.ResolveApprovalDecisionResponse{
+		ID:            item.GetId(),
+		CorrelationID: item.GetCorrelationId(),
+		RunID:         cast.OptionalTrimmedString(item.RunId),
+		ToolName:      item.GetToolName(),
+		Action:        item.GetAction(),
+		ApprovalState: item.GetApprovalState(),
+	}
+}
+
+func int32PtrFromWrapper(value *wrapperspb.Int32Value) *int32 {
+	if value == nil || value.GetValue() <= 0 {
+		return nil
+	}
+	item := value.GetValue()
+	return &item
 }
 
 func FlowEvent(item *controlplanev1.FlowEvent) models.FlowEvent {

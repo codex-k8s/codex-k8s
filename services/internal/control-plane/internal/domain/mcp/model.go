@@ -12,6 +12,12 @@ type ToolName string
 const ToolPromptContextGet ToolName = "codex_prompt_context_get"
 
 const (
+	ToolMCPSecretSyncEnv        ToolName = "mcp_secret_sync_env"
+	ToolMCPDatabaseLifecycle    ToolName = "mcp_database_lifecycle"
+	ToolMCPOwnerFeedbackRequest ToolName = "mcp_owner_feedback_request"
+)
+
+const (
 	ToolGitHubIssueGet           ToolName = "github_issue_get"
 	ToolGitHubPullRequestGet     ToolName = "github_pull_request_get"
 	ToolGitHubIssueComments      ToolName = "github_issue_comments_list"
@@ -66,8 +72,10 @@ const (
 type ToolApprovalPolicy string
 
 const (
-	ToolApprovalNone     ToolApprovalPolicy = "none"
-	ToolApprovalRequired ToolApprovalPolicy = "required"
+	ToolApprovalNone      ToolApprovalPolicy = "none"
+	ToolApprovalOwner     ToolApprovalPolicy = "owner"
+	ToolApprovalDelegated ToolApprovalPolicy = "delegated"
+	ToolApprovalRequired  ToolApprovalPolicy = ToolApprovalOwner
 )
 
 // ToolExecutionStatus is a normalized result status returned by tools.
@@ -483,4 +491,121 @@ type KubernetesPodExecToolResult struct {
 type KubernetesPodPortForwardResult struct {
 	Status  ToolExecutionStatus `json:"status"`
 	Message string              `json:"message,omitempty"`
+}
+
+// SecretSyncEnvInput describes deterministic secret sync request across GitHub and Kubernetes.
+type SecretSyncEnvInput struct {
+	Environment          string `json:"environment"`
+	GitHubSecretName     string `json:"github_secret_name"`
+	KubernetesNamespace  string `json:"kubernetes_namespace,omitempty"`
+	KubernetesSecretName string `json:"kubernetes_secret_name"`
+	KubernetesSecretKey  string `json:"kubernetes_secret_key,omitempty"`
+	SecretValue          string `json:"secret_value,omitempty"`
+	DryRun               bool   `json:"dry_run,omitempty"`
+}
+
+// SecretSyncEnvResult is output for mcp_secret_sync_env tool.
+type SecretSyncEnvResult struct {
+	Status        ToolExecutionStatus `json:"status"`
+	RequestID     int64               `json:"request_id,omitempty"`
+	ApprovalState string              `json:"approval_state,omitempty"`
+	Environment   string              `json:"environment,omitempty"`
+	GitHubSecret  string              `json:"github_secret,omitempty"`
+	KubernetesRef string              `json:"kubernetes_ref,omitempty"`
+	DryRun        bool                `json:"dry_run,omitempty"`
+	Message       string              `json:"message,omitempty"`
+}
+
+// DatabaseLifecycleAction defines supported database lifecycle actions.
+type DatabaseLifecycleAction string
+
+const (
+	DatabaseLifecycleActionCreate DatabaseLifecycleAction = "create"
+	DatabaseLifecycleActionDelete DatabaseLifecycleAction = "delete"
+)
+
+// DatabaseLifecycleInput describes database create/delete request.
+type DatabaseLifecycleInput struct {
+	Environment  string                  `json:"environment"`
+	Action       DatabaseLifecycleAction `json:"action"`
+	DatabaseName string                  `json:"database_name"`
+	DryRun       bool                    `json:"dry_run,omitempty"`
+}
+
+// DatabaseLifecycleResult is output for mcp_database_lifecycle tool.
+type DatabaseLifecycleResult struct {
+	Status        ToolExecutionStatus `json:"status"`
+	RequestID     int64               `json:"request_id,omitempty"`
+	ApprovalState string              `json:"approval_state,omitempty"`
+	Environment   string              `json:"environment,omitempty"`
+	Action        string              `json:"action,omitempty"`
+	DatabaseName  string              `json:"database_name,omitempty"`
+	Applied       bool                `json:"applied,omitempty"`
+	DryRun        bool                `json:"dry_run,omitempty"`
+	Message       string              `json:"message,omitempty"`
+}
+
+// OwnerFeedbackRequestInput describes owner feedback request with fixed options and optional custom answer.
+type OwnerFeedbackRequestInput struct {
+	Question    string   `json:"question"`
+	Options     []string `json:"options"`
+	AllowCustom bool     `json:"allow_custom,omitempty"`
+	DryRun      bool     `json:"dry_run,omitempty"`
+}
+
+// OwnerFeedbackRequestResult is output for mcp_owner_feedback_request tool.
+type OwnerFeedbackRequestResult struct {
+	Status        ToolExecutionStatus `json:"status"`
+	RequestID     int64               `json:"request_id,omitempty"`
+	ApprovalState string              `json:"approval_state,omitempty"`
+	Question      string              `json:"question,omitempty"`
+	Options       []string            `json:"options,omitempty"`
+	DryRun        bool                `json:"dry_run,omitempty"`
+	Message       string              `json:"message,omitempty"`
+}
+
+// ApprovalDecision describes external decision for one mcp_action_request.
+type ApprovalDecision string
+
+const (
+	ApprovalDecisionApproved ApprovalDecision = "approved"
+	ApprovalDecisionDenied   ApprovalDecision = "denied"
+	ApprovalDecisionExpired  ApprovalDecision = "expired"
+	ApprovalDecisionFailed   ApprovalDecision = "failed"
+)
+
+// ResolveApprovalParams describes one approval decision update.
+type ResolveApprovalParams struct {
+	RequestID int64
+	Decision  ApprovalDecision
+	ActorID   string
+	Reason    string
+}
+
+// ApprovalListItem is staff-facing pending approval queue entry.
+type ApprovalListItem struct {
+	ID            int64     `json:"id"`
+	CorrelationID string    `json:"correlation_id"`
+	RunID         string    `json:"run_id,omitempty"`
+	ProjectID     string    `json:"project_id,omitempty"`
+	ProjectSlug   string    `json:"project_slug,omitempty"`
+	ProjectName   string    `json:"project_name,omitempty"`
+	IssueNumber   int       `json:"issue_number,omitempty"`
+	PRNumber      int       `json:"pr_number,omitempty"`
+	TriggerLabel  string    `json:"trigger_label,omitempty"`
+	ToolName      string    `json:"tool_name"`
+	Action        string    `json:"action"`
+	ApprovalMode  string    `json:"approval_mode"`
+	RequestedBy   string    `json:"requested_by"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+
+// ResolveApprovalResult returns updated approval request summary.
+type ResolveApprovalResult struct {
+	ID            int64  `json:"id"`
+	CorrelationID string `json:"correlation_id"`
+	RunID         string `json:"run_id,omitempty"`
+	ToolName      string `json:"tool_name"`
+	Action        string `json:"action"`
+	ApprovalState string `json:"approval_state"`
 }

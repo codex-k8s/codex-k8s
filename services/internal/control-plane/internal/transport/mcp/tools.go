@@ -13,6 +13,9 @@ func registerTools(server *sdkmcp.Server, service domainService) {
 	addTool(server, mcpdomain.ToolGitHubLabelsAdd, "Add labels to issue or pull request", service.GitHubLabelsAdd)
 	addTool(server, mcpdomain.ToolGitHubLabelsRemove, "Remove labels from issue or pull request", service.GitHubLabelsRemove)
 	addTool(server, mcpdomain.ToolGitHubLabelsTransition, "Transition labels (remove + add) on issue or pull request", service.GitHubLabelsTransition)
+	addTool(server, mcpdomain.ToolMCPSecretSyncEnv, "Sync one secret to GitHub repository and Kubernetes namespace", service.MCPSecretSyncEnv)
+	addTool(server, mcpdomain.ToolMCPDatabaseLifecycle, "Create or drop one environment database", service.MCPDatabaseLifecycle)
+	addTool(server, mcpdomain.ToolMCPOwnerFeedbackRequest, "Request owner feedback with predefined options", service.MCPOwnerFeedbackRequest)
 }
 
 func addTool[In any, Out any](server *sdkmcp.Server, name mcpdomain.ToolName, description string, run func(context.Context, mcpdomain.SessionContext, In) (Out, error)) {

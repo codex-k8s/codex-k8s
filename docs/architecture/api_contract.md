@@ -97,6 +97,8 @@ approvals:
 | List runs | GET | `/api/v1/staff/runs` | staff JWT | run list |
 | Get run | GET | `/api/v1/staff/runs/{run_id}` | staff JWT | run details |
 | List run events | GET | `/api/v1/staff/runs/{run_id}/events` | staff JWT | flow events |
+| List pending approvals | GET | `/api/v1/staff/approvals` | staff JWT | MCP approval queue for privileged actions |
+| Resolve approval decision | POST | `/api/v1/staff/approvals/{approval_request_id}/decision` | staff JWT | approve/deny/expire/fail action request |
 | List run learning feedback | GET | `/api/v1/staff/runs/{run_id}/learning-feedback` | staff JWT | educational feedback |
 | List running jobs | GET | `/api/v1/staff/runs/jobs` | staff JWT | runtime jobs monitor |
 | Stream run logs | GET | `/api/v1/staff/runs/{run_id}/logs/stream` | staff JWT | live tail (SSE/WebSocket) |

@@ -22,6 +22,7 @@ import (
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	githubclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/github"
 	kubernetesclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/kubernetes"
+	postgresadminclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/postgresadmin"
 	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
@@ -32,6 +33,7 @@ import (
 	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentsession"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/flowevent"
 	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/learningfeedback"
+	mcpactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/mcpactionrequest"
 	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/platformtoken"
 	projectrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/project"
 	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projectmember"
@@ -80,6 +82,7 @@ func Run() error {
 	feedback := learningfeedbackrepo.NewRepository(pgxPool)
 	agentSessions := agentsessionrepo.NewRepository(pgxPool)
 	platformTokens := platformtokenrepo.NewRepository(pgxPool)
+	mcpActionRequests := mcpactionrequestrepo.NewRepository(pgxPool)
 
 	tokenCrypto, err := tokencrypt.NewService(cfg.TokenEncryptionKey)
 	if err != nil {
@@ -99,6 +102,18 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("init kubernetes mcp client: %w", err)
 	}
+	postgresAdminClient, err := postgresadminclient.NewClient(runCtx, postgresadminclient.Config{
+		Host:         cfg.DBHost,
+		Port:         cfg.DBPort,
+		User:         cfg.DBUser,
+		Password:     cfg.DBPassword,
+		SSLMode:      cfg.DBSSLMode,
+		ProtectedDBs: []string{cfg.DBName},
+	})
+	if err != nil {
+		return fmt.Errorf("init postgres admin client: %w", err)
+	}
+	defer postgresAdminClient.Close()
 	githubMCPClient := githubclient.NewClient(nil)
 	githubRepoProvider := githubprovider.NewProvider(nil)
 
@@ -120,9 +135,12 @@ func Run() error {
 		FlowEvents: flowEvents,
 		Repos:      repos,
 		Platform:   platformTokens,
+		Actions:    mcpActionRequests,
+		Sessions:   agentSessions,
 		TokenCrypt: tokenCrypto,
 		GitHub:     githubMCPClient,
 		Kubernetes: k8sClient,
+		Database:   postgresAdminClient,
 	})
 	if err != nil {
 		return fmt.Errorf("init mcp domain service: %w", err)

@@ -24,10 +24,38 @@ type Run struct {
 	Namespace       *string `json:"namespace"`
 	JobExists       bool    `json:"job_exists"`
 	NamespaceExists bool    `json:"namespace_exists"`
+	WaitState       *string `json:"wait_state"`
+	WaitReason      *string `json:"wait_reason"`
 	Status          string  `json:"status"`
 	CreatedAt       string  `json:"created_at"`
 	StartedAt       *string `json:"started_at"`
 	FinishedAt      *string `json:"finished_at"`
+}
+
+type ApprovalRequest struct {
+	ID            int64   `json:"id"`
+	CorrelationID string  `json:"correlation_id"`
+	RunID         *string `json:"run_id"`
+	ProjectID     *string `json:"project_id"`
+	ProjectSlug   *string `json:"project_slug"`
+	ProjectName   *string `json:"project_name"`
+	IssueNumber   *int32  `json:"issue_number"`
+	PRNumber      *int32  `json:"pr_number"`
+	TriggerLabel  *string `json:"trigger_label"`
+	ToolName      string  `json:"tool_name"`
+	Action        string  `json:"action"`
+	ApprovalMode  string  `json:"approval_mode"`
+	RequestedBy   string  `json:"requested_by"`
+	CreatedAt     string  `json:"created_at"`
+}
+
+type ResolveApprovalDecisionResponse struct {
+	ID            int64   `json:"id"`
+	CorrelationID string  `json:"correlation_id"`
+	RunID         *string `json:"run_id"`
+	ToolName      string  `json:"tool_name"`
+	Action        string  `json:"action"`
+	ApprovalState string  `json:"approval_state"`
 }
 
 type FlowEvent struct {

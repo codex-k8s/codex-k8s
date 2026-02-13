@@ -30,6 +30,13 @@
           <span class="field-label">{{ t("pages.runDetails.triggerLabel") }}:</span>
           <span class="mono">{{ details.run?.trigger_label || "-" }}</span>
         </div>
+        <div class="muted">
+          <span class="field-label">{{ t("pages.runDetails.waitState") }}:</span>
+          <span class="mono">{{ details.run?.wait_state || "-" }}</span>
+          ·
+          <span class="field-label">{{ t("pages.runDetails.waitReason") }}:</span>
+          <span class="mono">{{ details.run?.wait_reason || "-" }}</span>
+        </div>
       </div>
       <div class="actions">
         <button class="btn equal" type="button" @click="goBack">{{ t("common.back") }}</button>

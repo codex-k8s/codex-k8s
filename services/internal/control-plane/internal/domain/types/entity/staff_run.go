@@ -20,6 +20,8 @@ type StaffRun struct {
 	Namespace       string
 	JobExists       bool
 	NamespaceExists bool
+	WaitState       string
+	WaitReason      string
 	Status          string
 	CreatedAt       time.Time
 	StartedAt       *time.Time

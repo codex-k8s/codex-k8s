@@ -196,14 +196,17 @@ Planned extension (Day6+):
 | session_json | jsonb | no | '{}'::jsonb |  | run execution snapshot (report + condensed runtime logs) |
 | codex_cli_session_path | text | yes |  |  | path to saved session file in workspace/storage |
 | codex_cli_session_json | jsonb | yes |  |  | persisted codex-cli session snapshot for resume |
+| wait_state | text | yes |  | check(owner_review/mcp) | current wait-state for timeout governance |
+| timeout_guard_disabled | bool | no | false |  | `true` while timeout-kill must stay paused |
+| last_heartbeat_at | timestamptz | yes |  |  | heartbeat for wait-state/recovery |
 | started_at | timestamptz | no | now() |  | |
 | finished_at | timestamptz | yes |  |  | |
 | created_at | timestamptz | no | now() |  | |
 | updated_at | timestamptz | no | now() |  | |
 
-Планируемое расширение (Day6+):
-- добавить wait-state/time-guard поля (`wait_state`, `timeout_guard_disabled`, `last_heartbeat_at`);
-- расширить связи по `agent_id` и policy snapshot для более детального governance-аудита.
+Реализовано в S2 Day6:
+- wait-state/time-guard поля добавлены и используются в approval lifecycle (`wait_state`, `timeout_guard_disabled`, `last_heartbeat_at`);
+- pause/resume ожидания MCP синхронизируется через `agent_sessions` + `flow_events`.
 
 ### Entity: token_usage
 - Назначение: учёт токенов/стоимости по сессиям и моделям.
@@ -331,6 +334,7 @@ Planned extension (Day6+):
 | tool_name | text | no |  |  | e.g. `secret.sync.github_k8s` |
 | action | text | no |  |  | create/update/delete/request |
 | target_ref | jsonb | no | '{}'::jsonb |  | project/repo/env refs |
+| approval_mode | text | no | "owner" | check enum | none/owner/delegated |
 | approval_state | text | no | "requested" | check enum | requested/approved/denied/expired/failed/applied |
 | requested_by | text | no |  |  | actor id |
 | applied_by | text | yes |  |  | actor id |

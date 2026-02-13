@@ -20,6 +20,8 @@ type RunRow struct {
 	JobName       pgtype.Text        `db:"job_name"`
 	JobNamespace  pgtype.Text        `db:"job_namespace"`
 	Namespace     pgtype.Text        `db:"namespace"`
+	WaitState     pgtype.Text        `db:"wait_state"`
+	WaitReason    pgtype.Text        `db:"wait_reason"`
 	PRURL         pgtype.Text        `db:"pr_url"`
 	PRNumber      pgtype.Int4        `db:"pr_number"`
 	Status        string             `db:"status"`

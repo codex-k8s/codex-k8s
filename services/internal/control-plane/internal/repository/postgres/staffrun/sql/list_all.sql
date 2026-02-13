@@ -21,6 +21,8 @@ SELECT
     COALESCE(rt.job_name, '') AS job_name,
     COALESCE(rt.job_namespace, '') AS job_namespace,
     COALESCE(rt.namespace, '') AS namespace,
+    COALESCE(ws.wait_state, '') AS wait_state,
+    COALESCE(ws.wait_state, '') AS wait_reason,
     COALESCE(pr.pr_url, '') AS pr_url,
     pr.pr_number,
     ar.status,
@@ -83,5 +85,13 @@ LEFT JOIN LATERAL (
             LIMIT 1
         ), '') AS namespace
 ) rt ON true
+LEFT JOIN LATERAL (
+    SELECT
+        COALESCE(ags.wait_state, '') AS wait_state
+    FROM agent_sessions ags
+    WHERE ags.run_id = ar.id
+    ORDER BY ags.updated_at DESC
+    LIMIT 1
+) ws ON true
 ORDER BY created_at DESC
 LIMIT $1;

@@ -1,17 +1,35 @@
 import { defineStore } from "pinia";
 
 import { normalizeApiError, type ApiError } from "../../shared/api/errors";
-import { deleteRunNamespace, getRun, listRunEvents, listRuns } from "./api";
-import type { FlowEvent, Run, RunNamespaceCleanupResponse } from "./types";
+import {
+  deleteRunNamespace,
+  getRun,
+  listPendingApprovals,
+  listRunEvents,
+  listRuns,
+  resolveApprovalDecision,
+} from "./api";
+import type {
+  ApprovalRequest,
+  FlowEvent,
+  ResolveApprovalDecisionResponse,
+  Run,
+  RunNamespaceCleanupResponse,
+} from "./types";
 
 const errorAutoHideMs = 5000;
 
 export const useRunsStore = defineStore("runs", {
   state: () => ({
     items: [] as Run[],
+    pendingApprovals: [] as ApprovalRequest[],
     loading: false,
+    approvalsLoading: false,
+    resolvingApprovalID: null as number | null,
     error: null as ApiError | null,
+    approvalsError: null as ApiError | null,
     errorTimerId: null as number | null,
+    approvalsErrorTimerId: null as number | null,
   }),
   actions: {
     clearErrorTimer(): void {
@@ -27,6 +45,19 @@ export const useRunsStore = defineStore("runs", {
         this.errorTimerId = null;
       }, errorAutoHideMs);
     },
+    clearApprovalsErrorTimer(): void {
+      if (this.approvalsErrorTimerId !== null) {
+        window.clearTimeout(this.approvalsErrorTimerId);
+        this.approvalsErrorTimerId = null;
+      }
+    },
+    scheduleApprovalsErrorHide(): void {
+      this.clearApprovalsErrorTimer();
+      this.approvalsErrorTimerId = window.setTimeout(() => {
+        this.approvalsError = null;
+        this.approvalsErrorTimerId = null;
+      }, errorAutoHideMs);
+    },
     async load(): Promise<void> {
       this.loading = true;
       this.error = null;
@@ -37,6 +68,37 @@ export const useRunsStore = defineStore("runs", {
         this.scheduleErrorHide();
       } finally {
         this.loading = false;
+      }
+    },
+    async loadPendingApprovals(): Promise<void> {
+      this.approvalsLoading = true;
+      this.approvalsError = null;
+      try {
+        this.pendingApprovals = await listPendingApprovals();
+      } catch (e) {
+        this.approvalsError = normalizeApiError(e);
+        this.scheduleApprovalsErrorHide();
+      } finally {
+        this.approvalsLoading = false;
+      }
+    },
+    async resolvePendingApproval(
+      approvalRequestId: number,
+      decision: "approved" | "denied" | "expired" | "failed",
+      reason = "",
+    ): Promise<ResolveApprovalDecisionResponse | null> {
+      this.resolvingApprovalID = approvalRequestId;
+      this.approvalsError = null;
+      try {
+        const response = await resolveApprovalDecision(approvalRequestId, decision, reason);
+        await this.loadPendingApprovals();
+        return response;
+      } catch (e) {
+        this.approvalsError = normalizeApiError(e);
+        this.scheduleApprovalsErrorHide();
+        return null;
+      } finally {
+        this.resolvingApprovalID = null;
       }
     },
   },

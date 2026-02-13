@@ -19,6 +19,8 @@ var (
 	queryUpsert string
 	//go:embed sql/get_latest_by_repository_branch_and_agent.sql
 	queryGetLatestByRepositoryBranchAndAgent string
+	//go:embed sql/set_wait_state_by_run_id.sql
+	querySetWaitStateByRunID string
 )
 
 // Repository stores resumable agent sessions in PostgreSQL.
@@ -100,6 +102,28 @@ func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams)
 	return nil
 }
 
+// SetWaitStateByRunID updates wait-state and timeout guard fields for run session.
+func (r *Repository) SetWaitStateByRunID(ctx context.Context, params domainrepo.SetWaitStateParams) (bool, error) {
+	lastHeartbeatAt := pgtype.Timestamptz{}
+	if params.LastHeartbeatAt != nil {
+		lastHeartbeatAt = pgtype.Timestamptz{Time: params.LastHeartbeatAt.UTC(), Valid: true}
+	}
+
+	waitState := nullableTrimmedText(params.WaitState)
+	res, err := r.db.Exec(
+		ctx,
+		querySetWaitStateByRunID,
+		strings.TrimSpace(params.RunID),
+		waitState,
+		params.TimeoutGuardDisabled,
+		lastHeartbeatAt,
+	)
+	if err != nil {
+		return false, fmt.Errorf("set wait state by run id: %w", err)
+	}
+	return res.RowsAffected() > 0, nil
+}
+
 // GetLatestByRepositoryBranchAndAgent returns latest snapshot by repository + branch + agent key.
 func (r *Repository) GetLatestByRepositoryBranchAndAgent(ctx context.Context, repositoryFullName string, branchName string, agentKey string) (domainrepo.Session, bool, error) {
 	var (
@@ -114,10 +138,13 @@ func (r *Repository) GetLatestByRepositoryBranchAndAgent(ctx context.Context, re
 		tplLocale  pgtype.Text
 		model      pgtype.Text
 		reasoning  pgtype.Text
+		waitState  pgtype.Text
+		heartbeat  pgtype.Timestamptz
 		sessionID  pgtype.Text
 		sessionRaw []byte
 		path       pgtype.Text
 		codexRaw   []byte
+		guardOff   bool
 		startedAt  pgtype.Timestamptz
 		finishedAt pgtype.Timestamptz
 	)
@@ -146,6 +173,9 @@ func (r *Repository) GetLatestByRepositoryBranchAndAgent(ctx context.Context, re
 		&model,
 		&reasoning,
 		&item.Status,
+		&waitState,
+		&guardOff,
+		&heartbeat,
 		&sessionID,
 		&sessionRaw,
 		&path,
@@ -192,6 +222,13 @@ func (r *Repository) GetLatestByRepositoryBranchAndAgent(ctx context.Context, re
 	if reasoning.Valid {
 		item.ReasoningEffort = reasoning.String
 	}
+	if waitState.Valid {
+		item.WaitState = waitState.String
+	}
+	item.TimeoutGuardDisabled = guardOff
+	if heartbeat.Valid {
+		item.LastHeartbeatAt = heartbeat.Time.UTC()
+	}
 	if sessionID.Valid {
 		item.SessionID = sessionID.String
 	}
@@ -212,4 +249,12 @@ func (r *Repository) GetLatestByRepositoryBranchAndAgent(ctx context.Context, re
 	item.UpdatedAt = item.UpdatedAt.UTC()
 
 	return item, true, nil
+}
+
+func nullableTrimmedText(value string) any {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return nil
+	}
+	return trimmed
 }

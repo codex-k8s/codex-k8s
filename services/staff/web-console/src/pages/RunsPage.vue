@@ -2,12 +2,13 @@
   <section class="card">
     <div class="row">
       <h2>{{ t("pages.runs.title") }}</h2>
-      <button class="btn" type="button" @click="load" :disabled="runs.loading">
+      <button class="btn" type="button" @click="loadAll" :disabled="runs.loading">
         {{ t("common.refresh") }}
       </button>
     </div>
 
     <div v-if="runs.error" class="err">{{ t(runs.error.messageKey) }}</div>
+    <div v-if="runs.approvalsError" class="err">{{ t(runs.approvalsError.messageKey) }}</div>
 
     <table v-if="runs.items.length" class="tbl">
       <thead>
@@ -73,6 +74,68 @@
         {{ t("pages.runs.nextPage") }}
       </button>
     </div>
+
+    <div class="pane approvals">
+      <div class="row">
+        <h3>{{ t("pages.runs.pendingApprovals") }}</h3>
+        <button class="btn" type="button" @click="runs.loadPendingApprovals()" :disabled="runs.approvalsLoading">
+          {{ t("common.refresh") }}
+        </button>
+      </div>
+      <table v-if="runs.pendingApprovals.length" class="tbl">
+        <thead>
+          <tr>
+            <th class="center">{{ t("pages.runs.project") }}</th>
+            <th class="center">{{ t("pages.runs.issue") }}</th>
+            <th class="center">{{ t("pages.runs.pr") }}</th>
+            <th class="center">{{ t("pages.runs.tool") }}</th>
+            <th class="center">{{ t("pages.runs.action") }}</th>
+            <th class="center">{{ t("pages.runs.requestedBy") }}</th>
+            <th class="center">{{ t("pages.runs.created") }}</th>
+            <th class="center">{{ t("pages.runs.resolve") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in runs.pendingApprovals" :key="item.id">
+            <td class="center">
+              <RouterLink v-if="item.project_id" class="lnk" :to="{ name: 'project-details', params: { projectId: item.project_id } }">
+                {{ item.project_name || item.project_slug || item.project_id }}
+              </RouterLink>
+              <span v-else class="mono">-</span>
+            </td>
+            <td class="center">
+              <span class="mono">{{ item.issue_number ? `#${item.issue_number}` : "-" }}</span>
+            </td>
+            <td class="center">
+              <span class="mono">{{ item.pr_number ? `#${item.pr_number}` : "-" }}</span>
+            </td>
+            <td class="center"><span class="pill run-badge mono">{{ item.tool_name }}</span></td>
+            <td class="center"><span class="pill run-badge mono">{{ item.action }}</span></td>
+            <td class="center"><span class="mono">{{ item.requested_by }}</span></td>
+            <td class="center"><span class="mono">{{ formatDateTime(item.created_at, locale) }}</span></td>
+            <td class="center actions-inline">
+              <button
+                class="btn"
+                type="button"
+                :disabled="runs.resolvingApprovalID === item.id"
+                @click="resolveApproval(item.id, 'approved')"
+              >
+                {{ t("pages.runs.approve") }}
+              </button>
+              <button
+                class="btn danger"
+                type="button"
+                :disabled="runs.resolvingApprovalID === item.id"
+                @click="resolveApproval(item.id, 'denied')"
+              >
+                {{ t("pages.runs.deny") }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-else class="muted">{{ t("states.noPendingApprovals") }}</div>
+    </div>
   </section>
 </template>
 
@@ -96,8 +159,8 @@ const pageItems = computed(() => {
   return runs.items.slice(start, end);
 });
 
-async function load() {
-  await runs.load();
+async function loadAll() {
+  await Promise.all([runs.load(), runs.loadPendingApprovals()]);
   if (currentPage.value > totalPages.value) {
     currentPage.value = totalPages.value;
   }
@@ -123,7 +186,15 @@ function runBadgeValue(value: string | null | undefined): string {
   return trimmed;
 }
 
-onMounted(() => void load());
+async function resolveApproval(id: number, decision: "approved" | "denied" | "expired" | "failed") {
+  let reason = "";
+  if (decision !== "approved") {
+    reason = window.prompt(t("pages.runs.reasonPrompt"), "") ?? "";
+  }
+  await runs.resolvePendingApproval(id, decision, reason);
+}
+
+onMounted(() => void loadAll());
 
 watch(
   () => runs.items.length,
@@ -158,5 +229,19 @@ h2 {
 }
 .pager {
   margin-top: 12px;
+}
+.approvals {
+  margin-top: 12px;
+  border: 1px solid rgba(17, 24, 39, 0.1);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.6);
+}
+h3 {
+  margin: 0;
+}
+.actions-inline {
+  display: inline-flex;
+  gap: 8px;
 }
 </style>

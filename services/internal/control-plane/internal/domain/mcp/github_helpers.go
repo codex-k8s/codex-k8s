@@ -119,21 +119,7 @@ func resolveIssueNumber(explicit int, payload querytypes.RunPayload) (int, error
 }
 
 func normalizeLabels(in []string) []string {
-	out := make([]string, 0, len(in))
-	seen := make(map[string]struct{}, len(in))
-	for _, value := range in {
-		label := strings.TrimSpace(value)
-		if label == "" {
-			continue
-		}
-		key := strings.ToLower(label)
-		if _, exists := seen[key]; exists {
-			continue
-		}
-		seen[key] = struct{}{}
-		out = append(out, label)
-	}
-	return out
+	return normalizeDistinctStrings(in)
 }
 
 func filterIssueCommentsByAuthor(comments []GitHubIssueComment, excludedAuthor string) []GitHubIssueComment {

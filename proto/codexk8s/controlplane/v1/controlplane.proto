@@ -103,6 +103,50 @@ message Run {
   optional string namespace = 18;
   bool job_exists = 19;
   bool namespace_exists = 20;
+  optional string wait_state = 21;
+  optional string wait_reason = 22;
+}
+
+message ApprovalRequest {
+  int64 id = 1;
+  string correlation_id = 2;
+  optional string run_id = 3;
+  optional string project_id = 4;
+  optional string project_slug = 5;
+  optional string project_name = 6;
+  google.protobuf.Int32Value issue_number = 7;
+  google.protobuf.Int32Value pr_number = 8;
+  optional string trigger_label = 9;
+  string tool_name = 10;
+  string action = 11;
+  string approval_mode = 12;
+  string requested_by = 13;
+  google.protobuf.Timestamp created_at = 14;
+}
+
+message ListPendingApprovalsRequest {
+  Principal principal = 1;
+  int32 limit = 2;
+}
+
+message ListPendingApprovalsResponse {
+  repeated ApprovalRequest items = 1;
+}
+
+message ResolveApprovalDecisionRequest {
+  Principal principal = 1;
+  int64 approval_request_id = 2;
+  string decision = 3;
+  optional string reason = 4;
+}
+
+message ResolveApprovalDecisionResponse {
+  int64 id = 1;
+  string correlation_id = 2;
+  optional string run_id = 3;
+  string tool_name = 4;
+  string action = 5;
+  string approval_state = 6;
 }
 
 message ListRunsRequest {
@@ -406,6 +450,8 @@ service ControlPlaneService {
 
   rpc ListRuns(ListRunsRequest) returns (ListRunsResponse);
   rpc GetRun(GetRunRequest) returns (Run);
+  rpc ListPendingApprovals(ListPendingApprovalsRequest) returns (ListPendingApprovalsResponse);
+  rpc ResolveApprovalDecision(ResolveApprovalDecisionRequest) returns (ResolveApprovalDecisionResponse);
   rpc ListRunEvents(ListRunEventsRequest) returns (ListRunEventsResponse);
   rpc ListRunLearningFeedback(ListRunLearningFeedbackRequest) returns (ListRunLearningFeedbackResponse);
 

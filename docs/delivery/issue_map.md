@@ -38,7 +38,7 @@ updated_at: 2026-02-13
 - Day4.5 implementation (completed): `docs/delivery/epics/epic-s2-day4.5-pgx-db-models-and-repository-refactor.md` (typed db-model/caster rollout в repository слое).
 - Day5 implementation (completed): `docs/delivery/epics/epic-s2-day5-staff-ui-dogfooding-observability.md` (runs observability, drilldown и namespace lifecycle controls).
 - Day3.5 dependency: `docs/delivery/epics/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md` (MCP tool layer + prompt context assembler).
-- Факт на 2026-02-13: Day0..Day5 выполнены; Day6/Day7 расширены под MVP readiness и запуск Sprint S3.
+- Факт на 2026-02-13: Day0..Day6 выполнены; Day7 расширен под MVP readiness и запуск Sprint S3.
 
 ## Sprint S3 (план) артефакты
 - Sprint plan: `docs/delivery/sprint_s3_mvp_completion.md`.

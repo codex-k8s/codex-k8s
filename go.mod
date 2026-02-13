@@ -15,6 +15,7 @@ require (
 	github.com/modelcontextprotocol/go-sdk v1.3.0
 	github.com/oapi-codegen/runtime v1.1.2
 	github.com/prometheus/client_golang v1.23.2
+	golang.org/x/crypto v0.47.0
 	golang.org/x/oauth2 v0.32.0
 	google.golang.org/grpc v1.78.0
 	google.golang.org/protobuf v1.36.10

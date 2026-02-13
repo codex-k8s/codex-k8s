@@ -8,14 +8,17 @@ import (
 )
 
 type (
-	Session      = entitytypes.AgentSession
-	UpsertParams = querytypes.AgentSessionUpsertParams
+	Session            = entitytypes.AgentSession
+	UpsertParams       = querytypes.AgentSessionUpsertParams
+	SetWaitStateParams = querytypes.AgentSessionSetWaitStateParams
 )
 
 // Repository persists resumable codex-cli sessions for agent runs.
 type Repository interface {
 	// Upsert stores or updates run session snapshot by run_id.
 	Upsert(ctx context.Context, params UpsertParams) error
+	// SetWaitStateByRunID updates wait-state and timeout guard fields for the latest run session.
+	SetWaitStateByRunID(ctx context.Context, params SetWaitStateParams) (bool, error)
 	// GetLatestByRepositoryBranchAndAgent returns latest snapshot by repository + branch + agent key.
 	GetLatestByRepositoryBranchAndAgent(ctx context.Context, repositoryFullName string, branchName string, agentKey string) (Session, bool, error)
 }

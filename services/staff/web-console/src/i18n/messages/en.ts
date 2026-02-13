@@ -51,6 +51,7 @@ export const en = {
     noRepos: "No repositories attached yet.",
     noEvents: "No events.",
     noLearningFeedback: "No learning feedback.",
+    noPendingApprovals: "No pending approvals.",
   },
   pages: {
     projects: {
@@ -94,6 +95,14 @@ export const en = {
       prevPage: "Prev",
       nextPage: "Next",
       pageInfo: "Page {current} of {total}",
+      pendingApprovals: "Pending approvals",
+      tool: "Tool",
+      action: "Action",
+      requestedBy: "Requested by",
+      resolve: "Decision",
+      approve: "Approve",
+      deny: "Deny",
+      reasonPrompt: "Reason (optional)",
     },
     runDetails: {
       title: "Run Details",
@@ -114,6 +123,8 @@ export const en = {
       namespace: "namespace",
       namespaceDeleted: "deleted",
       namespaceAlreadyDeleted: "already deleted",
+      waitState: "wait_state",
+      waitReason: "wait_reason",
     },
     projectDetails: {
       title: "Project Details",
