@@ -51,7 +51,6 @@ const (
 	TriggerKindPostDeploy   TriggerKind = "postdeploy"
 	TriggerKindOps          TriggerKind = "ops"
 	TriggerKindSelfImprove  TriggerKind = "self_improve"
-	TriggerKindAbort        TriggerKind = "abort"
 	TriggerKindRethink      TriggerKind = "rethink"
 )
 
@@ -100,6 +99,5 @@ const (
 const (
 	DefaultRunOpsLabel         = "run:ops"
 	DefaultRunSelfImproveLabel = "run:self-improve"
-	DefaultRunAbortLabel       = "run:abort"
 	DefaultRunRethinkLabel     = "run:rethink"
 )

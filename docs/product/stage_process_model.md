@@ -44,11 +44,10 @@ approvals:
 | Ops | `run:ops` | SLO/alerts/runbook improvements | `sre`, `km` |
 | Self-Improve | `run:self-improve` | improvement diagnosis, change-set PR, policy/tooling recommendations | `km`, `dev`, `reviewer` |
 
-## Петли ревизии и отката
+## Петли ревизии и переосмысления
 
 - На каждом этапе доступны:
   - `run:<stage>:revise` для доработки артефактов;
-  - `run:abort` для остановки и cleanup;
   - `run:rethink` для возврата на более ранний этап.
 - После `run:rethink` предыдущие версии артефактов маркируются как `state:superseded`.
 
@@ -65,13 +64,12 @@ approvals:
 - события перехода записаны в аудит.
 
 ### Правило review gate для всех этапов
-- Для всех `run:*`, кроме `run:abort`, выход этапа проходит через review gate перед финальным review Owner:
+- Для всех `run:*` выход этапа проходит через review gate перед финальным review Owner:
   - pre-review от `reviewer` (для технических артефактов) и/или профильной роли через `need:*`;
   - финальное решение Owner по принятию артефактов.
 - Постановка `state:in-review` выполняется так:
   - на PR и на Issue, если run завершился артефактами в PR;
   - только на Issue, если run завершился без PR.
-- `run:abort` выполняет остановку/cleanup и фиксацию аудита без обязательного review gate.
 
 ## Паузы и таймауты в stage execution
 
@@ -86,7 +84,7 @@ approvals:
 На текущем этапе реализации активирован полный trigger-контур:
 - `run:intake..run:ops`;
 - `run:<stage>:revise`;
-- `run:abort`, `run:rethink`, `run:self-improve`.
+- `run:rethink`, `run:self-improve`.
 
 Ограничение текущего этапа:
 - для части стадий пока активирован базовый orchestration path (routing/audit/policy),

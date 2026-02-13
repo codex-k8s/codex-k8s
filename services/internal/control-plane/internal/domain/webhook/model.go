@@ -45,7 +45,7 @@ type TriggerLabels struct {
 	RunDocAudit, RunQA         string
 	RunRelease, RunPostDeploy  string
 	RunOps, RunSelfImprove     string
-	RunAbort, RunRethink       string
+	RunRethink                 string
 }
 
 func defaultTriggerLabels() TriggerLabels {
@@ -70,7 +70,6 @@ func defaultTriggerLabels() TriggerLabels {
 		RunPostDeploy:   webhookdomain.DefaultRunPostDeployLabel,
 		RunOps:          webhookdomain.DefaultRunOpsLabel,
 		RunSelfImprove:  webhookdomain.DefaultRunSelfImproveLabel,
-		RunAbort:        webhookdomain.DefaultRunAbortLabel,
 		RunRethink:      webhookdomain.DefaultRunRethinkLabel,
 	}
 }

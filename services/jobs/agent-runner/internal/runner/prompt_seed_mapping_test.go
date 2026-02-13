@@ -23,7 +23,6 @@ func TestPromptSeedStageByTriggerKind(t *testing.T) {
 		{name: "postdeploy", trigger: "postdeploy", wantStage: "postdeploy"},
 		{name: "ops", trigger: "ops", wantStage: "ops"},
 		{name: "self improve", trigger: "self_improve", wantStage: "self-improve"},
-		{name: "abort", trigger: "abort", wantStage: "abort"},
 		{name: "rethink", trigger: "rethink", wantStage: "rethink"},
 		{name: "unknown fallback", trigger: "unknown", wantStage: "dev"},
 	}

@@ -260,7 +260,6 @@ jobs:
           CODEXK8S_RUN_POSTDEPLOY_LABEL: ${{ vars.CODEXK8S_RUN_POSTDEPLOY_LABEL || 'run:postdeploy' }}
           CODEXK8S_RUN_OPS_LABEL: ${{ vars.CODEXK8S_RUN_OPS_LABEL || 'run:ops' }}
           CODEXK8S_RUN_SELF_IMPROVE_LABEL: ${{ vars.CODEXK8S_RUN_SELF_IMPROVE_LABEL || 'run:self-improve' }}
-          CODEXK8S_RUN_ABORT_LABEL: ${{ vars.CODEXK8S_RUN_ABORT_LABEL || 'run:abort' }}
           CODEXK8S_RUN_RETHINK_LABEL: ${{ vars.CODEXK8S_RUN_RETHINK_LABEL || 'run:rethink' }}
           CODEXK8S_MODE_DISCUSSION_LABEL: ${{ vars.CODEXK8S_MODE_DISCUSSION_LABEL || 'mode:discussion' }}
           CODEXK8S_STATE_BLOCKED_LABEL: ${{ vars.CODEXK8S_STATE_BLOCKED_LABEL || 'state:blocked' }}

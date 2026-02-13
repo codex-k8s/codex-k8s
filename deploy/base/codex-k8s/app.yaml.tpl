@@ -415,12 +415,6 @@ spec:
                   name: codex-k8s-label-catalog
                   key: CODEXK8S_RUN_SELF_IMPROVE_LABEL
                   optional: true
-            - name: CODEXK8S_RUN_ABORT_LABEL
-              valueFrom:
-                configMapKeyRef:
-                  name: codex-k8s-label-catalog
-                  key: CODEXK8S_RUN_ABORT_LABEL
-                  optional: true
             - name: CODEXK8S_RUN_RETHINK_LABEL
               valueFrom:
                 configMapKeyRef:

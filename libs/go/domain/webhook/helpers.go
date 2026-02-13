@@ -23,7 +23,6 @@ var triggerKinds = [...]TriggerKind{
 	TriggerKindPostDeploy,
 	TriggerKindOps,
 	TriggerKindSelfImprove,
-	TriggerKindAbort,
 	TriggerKindRethink,
 }
 
@@ -48,7 +47,6 @@ var defaultLabelByTriggerKind = map[TriggerKind]string{
 	TriggerKindPostDeploy:   DefaultRunPostDeployLabel,
 	TriggerKindOps:          DefaultRunOpsLabel,
 	TriggerKindSelfImprove:  DefaultRunSelfImproveLabel,
-	TriggerKindAbort:        DefaultRunAbortLabel,
 	TriggerKindRethink:      DefaultRunRethinkLabel,
 }
 

@@ -44,8 +44,6 @@ func promptSeedStageByTriggerKind(triggerKind string) string {
 		return "ops"
 	case webhookdomain.TriggerKindSelfImprove:
 		return "self-improve"
-	case webhookdomain.TriggerKindAbort:
-		return "abort"
 	case webhookdomain.TriggerKindRethink:
 		return "rethink"
 	default:

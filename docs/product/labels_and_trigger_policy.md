@@ -50,7 +50,6 @@ approvals:
 | `run:postdeploy` | post-deploy review / postmortem | active (S3 Day1 trigger path) |
 | `run:ops` | эксплуатационные улучшения | active (S3 Day1 trigger path) |
 | `run:self-improve` | анализ запусков/комментариев и подготовка улучшений docs/prompts/tools | active (S3 Day1 trigger path; deep logic S3 Day6+) |
-| `run:abort` | остановка/cleanup текущей инициативы | active (S3 Day1 trigger path) |
 | `run:rethink` | переоткрытие этапа и смена траектории | active (S3 Day1 trigger path) |
 
 ## Класс `state:*` (служебные статусы)
@@ -108,7 +107,7 @@ approvals:
 - Если лейбл инициирует агент, требуется апрув Owner до фактического применения.
 - Если лейбл инициирует человек с правами admin/owner, применяется по правам GitHub и политике репозитория.
 - Любая операция с `run:*` логируется в `flow_events`.
-- Для всех `run:*`, кроме `run:abort`, обязателен review gate перед финальным Owner review:
+- Для всех `run:*` обязателен review gate перед финальным Owner review:
   - pre-review от системного `reviewer` для технических артефактов;
   - role-specific review через `need:*` labels для профильных артефактов.
 - Для control tools (`secret sync`, `database lifecycle`, `owner feedback`) применяется policy-driven approval matrix по связке `agent_key + run_label + action`.
@@ -123,7 +122,7 @@ approvals:
 - Не должны запускать workflow/deploy напрямую.
 - Обязательна запись в аудит с actor/correlation.
 - Для role-specific ревью артефактов используются `need:*` labels (вместе с `state:in-review`).
-- Для всех `run:*`, кроме `run:abort`, при наличии артефактов для проверки Owner ставится `state:in-review`:
+- Для всех `run:*` при наличии артефактов для проверки Owner ставится `state:in-review`:
   - на PR и на Issue, если run сформировал PR;
   - только на Issue, если run не формирует PR.
 
@@ -165,7 +164,7 @@ approvals:
   - pre-review остается обязательным шагом перед финальным Owner review;
   - post-run transitions `run:* -> state:*` фиксируются в Day5/Day6 как отдельные доработки policy и аудита.
 - S3 Day1 факт:
-  - активирован полный stage-контур `run:intake..run:ops` + revise/abort/rethink;
+- активирован полный stage-контур `run:intake..run:ops` + revise/rethink;
   - активирован trigger path для `run:self-improve` (расширенная бизнес-логика дорабатывается по S3 Day6+).
 
 ## Оркестрационный flow для `run:self-improve`

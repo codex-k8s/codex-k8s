@@ -25,7 +25,7 @@ approvals:
 
 ## Scope
 ### In scope
-- Активация trigger-label обработки для `run:intake..run:ops`, `run:*:revise`, `run:abort`, `run:rethink`, `run:self-improve`.
+- Активация trigger-label обработки для `run:intake..run:ops`, `run:*:revise`, `run:rethink`, `run:self-improve`.
 - Обновление state machine переходов между стадиями и revise/rollback петлями.
 - Валидация конфликтов labels и preconditions на вход stage.
 - Синхронизация labels-as-vars каталога и audit событий.
@@ -45,7 +45,7 @@ approvals:
 - Активирован полный каталог trigger-kind и labels:
   - `run:intake..run:ops`,
   - revise-контур `run:<stage>:revise`,
-  - служебные `run:abort`, `run:rethink`, `run:self-improve`.
+  - служебные `run:rethink`, `run:self-improve`.
 - Включена унифицированная нормализация/проверка trigger-kind в shared domain:
   - `NormalizeTriggerKind`,
   - `IsKnownTriggerKind`,

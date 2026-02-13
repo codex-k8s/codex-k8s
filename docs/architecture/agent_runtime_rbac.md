@@ -54,7 +54,7 @@ approvals:
   - `ResourceQuota`/`LimitRange`,
   - service account per role/profile,
   - network policy baseline.
-- Cleanup обязателен после завершения run (или по `run:abort`). Если на issue присутствует `run:debug`, cleanup пропускается и namespace сохраняется для отладки.
+- Cleanup обязателен после завершения run. Если на issue присутствует `run:debug`, cleanup пропускается и namespace сохраняется для отладки.
 
 Текущий baseline реализации (S2 Day3):
 - Worker создаёт namespace idempotent, применяет `ServiceAccount + Role + RoleBinding + ResourceQuota + LimitRange`.

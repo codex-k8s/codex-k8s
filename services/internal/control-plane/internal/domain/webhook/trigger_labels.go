@@ -69,9 +69,6 @@ func (labels TriggerLabels) withDefaults() TriggerLabels {
 	if strings.TrimSpace(labels.RunSelfImprove) == "" {
 		labels.RunSelfImprove = defaults.RunSelfImprove
 	}
-	if strings.TrimSpace(labels.RunAbort) == "" {
-		labels.RunAbort = defaults.RunAbort
-	}
 	if strings.TrimSpace(labels.RunRethink) == "" {
 		labels.RunRethink = defaults.RunRethink
 	}
@@ -101,7 +98,6 @@ func (labels TriggerLabels) labelToKind() map[string]webhookdomain.TriggerKind {
 		normalizeLabelToken(normalized.RunPostDeploy):   webhookdomain.TriggerKindPostDeploy,
 		normalizeLabelToken(normalized.RunOps):          webhookdomain.TriggerKindOps,
 		normalizeLabelToken(normalized.RunSelfImprove):  webhookdomain.TriggerKindSelfImprove,
-		normalizeLabelToken(normalized.RunAbort):        webhookdomain.TriggerKindAbort,
 		normalizeLabelToken(normalized.RunRethink):      webhookdomain.TriggerKindRethink,
 	}
 }

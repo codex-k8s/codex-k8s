@@ -38,7 +38,7 @@ approvals:
 | `sa` | Solution Architect | C4/ADR/NFR/design decisions | `full-env` (read-only) | 1 |
 | `em` | Engineering Manager | delivery plan/epics/DoR-DoD | `full-env` (read-only) | 1 |
 | `dev` | Software Engineer | реализация `run:dev`/`run:dev:revise`, код + тесты + docs update | `full-env` | 2 |
-| `reviewer` | Pre-review Engineer | предварительное ревью артефактов `run:*` (кроме `run:abort`): inline findings + summary для Owner | `full-env` (read-mostly) | 2 |
+| `reviewer` | Pre-review Engineer | предварительное ревью артефактов `run:*`: inline findings + summary для Owner | `full-env` (read-mostly) | 2 |
 | `qa` | QA Lead | test strategy/plan/matrix/regression | `full-env` | 2 |
 | `sre` | SRE/OPS | runbook/SLO/alerts/postdeploy | `full-env` | 1 |
 | `km` | Doc/KM | issue↔docs traceability, индексы, self-improve диагностика и обновление знаний | `code-only` | 2 |
@@ -46,7 +46,7 @@ approvals:
 Примечания:
 - `Owner` не является агентом, но остаётся финальным апрувером решений и trigger/deploy действий.
 - Базовый профиль `run:dev` закреплён за системным агентом `dev`; custom-агенты могут расширять его поведение в рамках project policy.
-- Роль `reviewer` заменяет прежний ad-hoc `auditor` режим: выполняет pre-review для всех `run:*` (кроме `run:abort`), где формируются артефакты на проверку Owner.
+- Роль `reviewer` заменяет прежний ad-hoc `auditor` режим: выполняет pre-review для всех `run:*`, где формируются артефакты на проверку Owner.
 
 ## Расширяемые custom-агенты проекта
 
@@ -84,7 +84,7 @@ approvals:
   - реализует задачу, обновляет тесты и проектную документацию, в процессе выполняет дебаг решений;
   - формирует PR и прикладывает evidence проверок.
 - `reviewer`:
-  - выполняет предварительное ревью до финального ревью Owner для всех `run:*`, кроме `run:abort`;
+  - выполняет предварительное ревью до финального ревью Owner для всех `run:*`;
   - проверяет соответствие задаче, проектной документации и `docs/design-guidelines/**`;
   - оставляет inline-комментарии в PR (если PR есть) и публикует summary для Owner.
 - `Owner`:

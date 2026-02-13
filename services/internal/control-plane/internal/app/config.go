@@ -53,7 +53,6 @@ type Config struct {
 	RunPostDeployLabel   string   `env:"CODEXK8S_RUN_POSTDEPLOY_LABEL" envDefault:"run:postdeploy"`
 	RunOpsLabel          string   `env:"CODEXK8S_RUN_OPS_LABEL" envDefault:"run:ops"`
 	RunSelfImproveLabel  string   `env:"CODEXK8S_RUN_SELF_IMPROVE_LABEL" envDefault:"run:self-improve"`
-	RunAbortLabel        string   `env:"CODEXK8S_RUN_ABORT_LABEL" envDefault:"run:abort"`
 	RunRethinkLabel      string   `env:"CODEXK8S_RUN_RETHINK_LABEL" envDefault:"run:rethink"`
 	// GitHubPAT is platform-scoped GitHub token used for repository/project management paths.
 	GitHubPAT string `env:"CODEXK8S_GITHUB_PAT"`

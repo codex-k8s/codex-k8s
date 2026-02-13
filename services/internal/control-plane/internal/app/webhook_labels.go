@@ -24,7 +24,6 @@ func buildWebhookTriggerLabels(cfg Config) webhook.TriggerLabels {
 	labels.RunPostDeploy = cfg.RunPostDeployLabel
 	labels.RunOps = cfg.RunOpsLabel
 	labels.RunSelfImprove = cfg.RunSelfImproveLabel
-	labels.RunAbort = cfg.RunAbortLabel
 	labels.RunRethink = cfg.RunRethinkLabel
 	return labels
 }

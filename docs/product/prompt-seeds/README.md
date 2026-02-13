@@ -24,7 +24,6 @@
 - `postdeploy-work.md`
 - `ops-work.md`
 - `self-improve-work.md`
-- `abort-work.md` (reserved: no-agent path, direct platform cleanup)
 - `rethink-work.md`
 
 Важно:

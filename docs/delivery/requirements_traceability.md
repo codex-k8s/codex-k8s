@@ -51,7 +51,7 @@ approvals:
 | FR-025 | MVP public API: only webhook ingress | `docs/product/requirements_machine_driven.md`, `docs/product/constraints.md`, `docs/architecture/api_contract.md` | covered |
 | FR-026 | Канонический каталог лейблов run/state/need | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md` | covered |
 | FR-027 | Approval policy для trigger/deploy labels | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/architecture/mcp_approval_and_audit_flow.md` | covered |
-| FR-028 | Stage process model с revise/abort/rethink | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/delivery/sprint_s2_dogfooding.md` | covered |
+| FR-028 | Stage process model с revise/rethink | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/delivery/sprint_s2_dogfooding.md` | covered |
 | FR-029 | Базовый штат агентов (включая `dev` и `reviewer`) + custom роли проекта | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/data_model.md`, `docs/architecture/agent_runtime_rbac.md` | covered |
 | FR-030 | Prompt templates policy: seed + DB override | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/prompt_templates_policy.md`, `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md` | covered |
 | FR-031 | Mixed runtime mode full-env/code-only | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/delivery/epics/epic-s2-day3-per-issue-namespace-and-rbac.md` | covered |
@@ -68,7 +68,7 @@ approvals:
 | FR-042 | Approval matrix для MCP control tools | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/delivery/epics/epic-s2-day6-approval-and-audit-hardening.md` | covered |
 | FR-043 | `run:self-improve` trigger и диагностика | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`, `docs/delivery/epics/epic-s3-day6-self-improve-ingestion-and-diagnostics.md` | covered |
 | FR-044 | `run:self-improve` updater + PR flow | `docs/product/requirements_machine_driven.md`, `docs/architecture/prompt_templates_policy.md`, `docs/delivery/epics/epic-s3-day7-self-improve-updater-and-pr-flow.md` | covered |
-| FR-045 | Full stage-flow activation `run:intake..run:ops` + revise/abort/rethink | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/delivery/epics/epic-s3-day1-full-stage-and-label-activation.md` | covered |
+| FR-045 | Full stage-flow activation `run:intake..run:ops` + revise/rethink | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/delivery/epics/epic-s3-day1-full-stage-and-label-activation.md` | covered |
 | FR-046 | Post-MVP roadmap направлений | `docs/product/requirements_machine_driven.md`, `docs/product/brief.md`, `docs/delivery/roadmap.md` | covered |
 | NFR-001 | Security baseline | `docs/product/requirements_machine_driven.md`, `docs/product/constraints.md`, `AGENTS.md` | covered |
 | NFR-002 | Multi-pod consistency | `docs/product/requirements_machine_driven.md`, `docs/architecture/c4_container.md`, `docs/architecture/data_model.md` | covered |

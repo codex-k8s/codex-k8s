@@ -23,7 +23,7 @@ approvals:
 - Результат спринта: платформа поддерживает полный цикл разработки в GitHub, с проверяемым аудитом и формализованным go/no-go.
 
 ## Scope спринта
-- Полный run-label контур: `run:intake -> run:vision -> run:prd -> run:arch -> run:design -> run:plan -> run:dev -> run:qa -> run:release -> run:postdeploy -> run:ops` + revise/abort/rethink.
+- Полный run-label контур: `run:intake -> run:vision -> run:prd -> run:arch -> run:design -> run:plan -> run:dev -> run:qa -> run:release -> run:postdeploy -> run:ops` + revise/rethink.
 - Staff UI debug baseline:
   - running jobs;
   - live/historical logs;
