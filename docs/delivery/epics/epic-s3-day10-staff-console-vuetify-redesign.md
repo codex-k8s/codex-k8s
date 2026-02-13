@@ -26,8 +26,17 @@ approvals:
 ## Scope
 ### In scope
 - Полная миграция staff-консоли на `Vuetify` (Vue 3):
+  - полноценный app-shell на `VApp` + `VAppBar` + `VNavigationDrawer` + `VMain`;
+  - header с логотипом `codex-k8s` (источник: `https://github.com/codex-k8s/codexctl/blob/5a0825435d9eaad9f9e52e745f9dcc5d683e59e6/docs/media/logo.png`) и базовыми глобальными действиями;
   - layout/navigation/table/form patterns для админ-сценариев;
   - унифицированные компоненты для run list, run details, wait queue, approvals.
+- Обязательное покрытие ключевых UI-элементов `Vuetify` в первом production-ready варианте консоли:
+  - карточки/метрики: `VCard`;
+  - списки и меню навигации: `VList`, `VListItem`, `VMenu`;
+  - статусы и бейджи: `VChip`, `VBadge`;
+  - селекторы и фильтры: `VSelect` (где уместно вместе с поиском);
+  - таблицы и пагинация: `VDataTable`, `VPagination`;
+  - действия и иконки: `VBtn`, `VIcon`.
 - UI/UX паритет с `telegram-executor` для feedback/approval сценариев:
   - вариантные ответы + custom input;
   - поддержка voice/STT маршрута для отказа/комментария через соответствующий HTTP-аппрувер.
@@ -46,4 +55,5 @@ approvals:
 ## Критерии приемки
 - Ключевые MVP-сценарии staff-консоли работают на новой Vuetify-базе без регрессии по API.
 - Сценарии feedback/approve/deny/voice-STT воспроизводимы и документированы.
+- На ключевых экранах применены базовые компоненты app-shell и data/UI-набора (`VAppBar`, `VNavigationDrawer`, `VCard`, `VList`, `VChip`/`VBadge`, `VSelect`, `VDataTable`, `VPagination`, `VMenu`, `VBtn`, `VIcon`) без временной "черновой" верстки.
 - UX-паттерны консоли единообразны и готовы к последующему масштабированию post-MVP.

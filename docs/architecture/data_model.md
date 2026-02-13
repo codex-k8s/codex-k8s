@@ -338,13 +338,6 @@ Planned extension (Day6+):
 | created_at | timestamptz | no | now() | index | |
 | updated_at | timestamptz | no | now() |  | |
 
-### Self-improve evidence storage (без отдельной таблицы)
-- Контур `run:self-improve` не вводит отдельную доменную сущность отчёта в БД.
-- Диагностика/решения оформляются как обычный PR-поток:
-  - ссылки на исходные run/comment/artifact источники фиксируются через `links`;
-  - состояние выполнения берётся из `agent_runs`/`flow_events`;
-  - рабочие runtime-логи и промежуточные self-improve артефакты сохраняются в gitignored workspace-папке и не считаются persisted contract-моделью БД.
-
 ### Entity: doc_chunks
 - Назначение: чанки документов для поиска.
 - Важные инварианты: уникальный (doc_id, chunk_no).
