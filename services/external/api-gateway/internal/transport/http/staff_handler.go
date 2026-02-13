@@ -90,6 +90,48 @@ func resolvePathLimit(param string, defLimit int) func(c *echo.Context) (pathLim
 	}
 }
 
+func resolveRunListFilters(defLimit int, includeWaitState bool) func(c *echo.Context) (runListFilterArg, error) {
+	return func(c *echo.Context) (runListFilterArg, error) {
+		limit, err := parseLimit(c, defLimit)
+		if err != nil {
+			return runListFilterArg{}, err
+		}
+		result := runListFilterArg{
+			limit:       int32(limit),
+			triggerKind: strings.TrimSpace(c.QueryParam("trigger_kind")),
+			status:      strings.TrimSpace(c.QueryParam("status")),
+			agentKey:    strings.TrimSpace(c.QueryParam("agent_key")),
+		}
+		if includeWaitState {
+			result.waitState = strings.TrimSpace(c.QueryParam("wait_state"))
+		}
+		return result, nil
+	}
+}
+
+func resolveRunLogsArg(defTailLines int) func(c *echo.Context) (runLogsArg, error) {
+	return func(c *echo.Context) (runLogsArg, error) {
+		runID, err := requirePathParam(c, "run_id")
+		if err != nil {
+			return runLogsArg{}, err
+		}
+
+		tailLines := defTailLines
+		if rawTailLines := strings.TrimSpace(c.QueryParam("tail_lines")); rawTailLines != "" {
+			value, convErr := strconv.Atoi(rawTailLines)
+			if convErr != nil || value <= 0 {
+				return runLogsArg{}, errs.Validation{Field: "tail_lines", Msg: "must be a positive integer"}
+			}
+			if value > 2000 {
+				value = 2000
+			}
+			tailLines = value
+		}
+
+		return runLogsArg{runID: runID, tailLines: int32(tailLines)}, nil
+	}
+}
+
 func withPrincipal(c *echo.Context, fn func(principal *controlplanev1.Principal) error) error {
 	principal, err := requirePrincipal(c)
 	if err != nil {
@@ -135,6 +177,12 @@ type itemsGetter[Proto any] interface {
 	GetItems() []Proto
 }
 
+type runItemsGetter interface {
+	GetItems() []*controlplanev1.Run
+}
+
+type runListCallFn func(ctx context.Context, principal *controlplanev1.Principal, arg runListFilterArg) (runItemsGetter, error)
+
 func listByLimitResp[Proto any, Resp itemsGetter[Proto], Out any](
 	c *echo.Context,
 	defLimit int,
@@ -178,6 +226,35 @@ func getByPathResp[Proto any, Out any](
 			return err
 		}
 		return c.JSON(http.StatusOK, cast(item))
+	})
+}
+
+func withPrincipalAndResolvedJSON[Req any, Proto any, Out any](
+	c *echo.Context,
+	resolve func(c *echo.Context) (Req, error),
+	call func(ctx context.Context, principal *controlplanev1.Principal, req Req) (Proto, error),
+	cast func(item Proto) Out,
+) error {
+	return withPrincipalAndResolved(c, resolve, func(principal *controlplanev1.Principal, req Req) error {
+		item, err := call(c.Request().Context(), principal, req)
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, cast(item))
+	})
+}
+
+func (h *staffHandler) listRunsByFilter(
+	c *echo.Context,
+	includeWaitState bool,
+	call runListCallFn,
+) error {
+	return withPrincipalAndResolved(c, resolveRunListFilters(200, includeWaitState), func(principal *controlplanev1.Principal, arg runListFilterArg) error {
+		resp, err := call(c.Request().Context(), principal, arg)
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, models.ItemsResponse[models.Run]{Items: casters.Runs(resp.GetItems())})
 	})
 }
 
@@ -243,6 +320,14 @@ func (h *staffHandler) ListRuns(c *echo.Context) error {
 	return listByLimitResp(c, 200, h.listRunsCall, casters.Runs)
 }
 
+func (h *staffHandler) ListRunJobs(c *echo.Context) error {
+	return h.listRunsByFilter(c, false, h.listRunJobsAsGetter)
+}
+
+func (h *staffHandler) ListRunWaits(c *echo.Context) error {
+	return h.listRunsByFilter(c, true, h.listRunWaitsAsGetter)
+}
+
 func (h *staffHandler) ListPendingApprovals(c *echo.Context) error {
 	return listByLimitResp(c, 200, h.listPendingApprovalsCall, casters.ApprovalRequests)
 }
@@ -274,14 +359,12 @@ func (h *staffHandler) GetRun(c *echo.Context) error {
 	return getByPathResp(c, "run_id", h.getRunCall, casters.Run)
 }
 
+func (h *staffHandler) GetRunLogs(c *echo.Context) error {
+	return withPrincipalAndResolvedJSON(c, resolveRunLogsArg(200), h.getRunLogsCall, casters.RunLogs)
+}
+
 func (h *staffHandler) DeleteRunNamespace(c *echo.Context) error {
-	return withPrincipalAndResolved(c, resolvePath("run_id"), func(principal *controlplanev1.Principal, runID string) error {
-		item, err := h.deleteRunNamespaceCall(c.Request().Context(), principal, runID)
-		if err != nil {
-			return err
-		}
-		return c.JSON(http.StatusOK, casters.RunNamespaceDelete(item))
-	})
+	return withPrincipalAndResolvedJSON(c, resolvePath("run_id"), h.deleteRunNamespaceCall, casters.RunNamespaceDelete)
 }
 
 func (h *staffHandler) ListRunEvents(c *echo.Context) error {
@@ -419,12 +502,41 @@ func buildListRunsRequest(principal *controlplanev1.Principal, limit int32) *con
 	return &controlplanev1.ListRunsRequest{Principal: principal, Limit: limit}
 }
 
+func buildListRunJobsRequest(principal *controlplanev1.Principal, arg runListFilterArg) *controlplanev1.ListRunJobsRequest {
+	return &controlplanev1.ListRunJobsRequest{
+		Principal:   principal,
+		Limit:       arg.limit,
+		TriggerKind: optionalStringPtr(arg.triggerKind),
+		Status:      optionalStringPtr(arg.status),
+		AgentKey:    optionalStringPtr(arg.agentKey),
+	}
+}
+
+func buildListRunWaitsRequest(principal *controlplanev1.Principal, arg runListFilterArg) *controlplanev1.ListRunWaitsRequest {
+	return &controlplanev1.ListRunWaitsRequest{
+		Principal:   principal,
+		Limit:       arg.limit,
+		TriggerKind: optionalStringPtr(arg.triggerKind),
+		Status:      optionalStringPtr(arg.status),
+		AgentKey:    optionalStringPtr(arg.agentKey),
+		WaitState:   optionalStringPtr(arg.waitState),
+	}
+}
+
 func buildListPendingApprovalsRequest(principal *controlplanev1.Principal, limit int32) *controlplanev1.ListPendingApprovalsRequest {
 	return &controlplanev1.ListPendingApprovalsRequest{Principal: principal, Limit: limit}
 }
 
 func buildGetRunRequest(principal *controlplanev1.Principal, id string) *controlplanev1.GetRunRequest {
 	return &controlplanev1.GetRunRequest{Principal: principal, RunId: id}
+}
+
+func buildGetRunLogsRequest(principal *controlplanev1.Principal, arg runLogsArg) *controlplanev1.GetRunLogsRequest {
+	return &controlplanev1.GetRunLogsRequest{
+		Principal: principal,
+		RunId:     arg.runID,
+		TailLines: arg.tailLines,
+	}
 }
 
 type approvalDecisionArg struct {
@@ -485,12 +597,32 @@ func (h *staffHandler) listRunsCall(ctx context.Context, principal *controlplane
 	return callUnaryWithArg(ctx, principal, limit, buildListRunsRequest, h.cp.Service().ListRuns)
 }
 
+func (h *staffHandler) listRunJobsCall(ctx context.Context, principal *controlplanev1.Principal, arg runListFilterArg) (*controlplanev1.ListRunJobsResponse, error) {
+	return callUnaryWithArg(ctx, principal, arg, buildListRunJobsRequest, h.cp.Service().ListRunJobs)
+}
+
+func (h *staffHandler) listRunJobsAsGetter(ctx context.Context, principal *controlplanev1.Principal, arg runListFilterArg) (runItemsGetter, error) {
+	return h.listRunJobsCall(ctx, principal, arg)
+}
+
+func (h *staffHandler) listRunWaitsCall(ctx context.Context, principal *controlplanev1.Principal, arg runListFilterArg) (*controlplanev1.ListRunWaitsResponse, error) {
+	return callUnaryWithArg(ctx, principal, arg, buildListRunWaitsRequest, h.cp.Service().ListRunWaits)
+}
+
+func (h *staffHandler) listRunWaitsAsGetter(ctx context.Context, principal *controlplanev1.Principal, arg runListFilterArg) (runItemsGetter, error) {
+	return h.listRunWaitsCall(ctx, principal, arg)
+}
+
 func (h *staffHandler) listPendingApprovalsCall(ctx context.Context, principal *controlplanev1.Principal, limit int32) (*controlplanev1.ListPendingApprovalsResponse, error) {
 	return callUnaryWithArg(ctx, principal, limit, buildListPendingApprovalsRequest, h.cp.Service().ListPendingApprovals)
 }
 
 func (h *staffHandler) getRunCall(ctx context.Context, principal *controlplanev1.Principal, id string) (*controlplanev1.Run, error) {
 	return callUnaryWithArg(ctx, principal, id, buildGetRunRequest, h.cp.Service().GetRun)
+}
+
+func (h *staffHandler) getRunLogsCall(ctx context.Context, principal *controlplanev1.Principal, arg runLogsArg) (*controlplanev1.RunLogs, error) {
+	return callUnaryWithArg(ctx, principal, arg, buildGetRunLogsRequest, h.cp.Service().GetRunLogs)
 }
 
 func (h *staffHandler) resolveApprovalDecisionCall(

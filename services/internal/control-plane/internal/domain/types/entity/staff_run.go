@@ -15,6 +15,7 @@ type StaffRun struct {
 	PRURL           string
 	TriggerKind     string
 	TriggerLabel    string
+	AgentKey        string
 	JobName         string
 	JobNamespace    string
 	Namespace       string
@@ -22,10 +23,21 @@ type StaffRun struct {
 	NamespaceExists bool
 	WaitState       string
 	WaitReason      string
+	WaitSince       *time.Time
+	LastHeartbeatAt *time.Time
 	Status          string
 	CreatedAt       time.Time
 	StartedAt       *time.Time
 	FinishedAt      *time.Time
+}
+
+// StaffRunLogs is a staff-visible logs snapshot for one run.
+type StaffRunLogs struct {
+	RunID        string
+	Status       string
+	UpdatedAt    *time.Time
+	SnapshotJSON []byte
+	TailLines    []string
 }
 
 // StaffFlowEvent is a staff-visible flow event.

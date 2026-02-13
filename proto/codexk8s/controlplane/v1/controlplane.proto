@@ -105,6 +105,9 @@ message Run {
   bool namespace_exists = 20;
   optional string wait_state = 21;
   optional string wait_reason = 22;
+  optional string agent_key = 23;
+  google.protobuf.Timestamp wait_since = 24;
+  google.protobuf.Timestamp last_heartbeat_at = 25;
 }
 
 message ApprovalRequest {
@@ -158,9 +161,48 @@ message ListRunsResponse {
   repeated Run items = 1;
 }
 
+message ListRunJobsRequest {
+  Principal principal = 1;
+  int32 limit = 2;
+  optional string trigger_kind = 3;
+  optional string status = 4;
+  optional string agent_key = 5;
+}
+
+message ListRunJobsResponse {
+  repeated Run items = 1;
+}
+
+message ListRunWaitsRequest {
+  Principal principal = 1;
+  int32 limit = 2;
+  optional string trigger_kind = 3;
+  optional string status = 4;
+  optional string agent_key = 5;
+  optional string wait_state = 6;
+}
+
+message ListRunWaitsResponse {
+  repeated Run items = 1;
+}
+
 message GetRunRequest {
   Principal principal = 1;
   string run_id = 2;
+}
+
+message GetRunLogsRequest {
+  Principal principal = 1;
+  string run_id = 2;
+  int32 tail_lines = 3;
+}
+
+message RunLogs {
+  string run_id = 1;
+  string status = 2;
+  google.protobuf.Timestamp updated_at = 3;
+  string snapshot_json = 4;
+  repeated string tail_lines = 5;
 }
 
 message FlowEvent {
@@ -449,7 +491,10 @@ service ControlPlaneService {
   rpc DeleteProject(DeleteProjectRequest) returns (google.protobuf.Empty);
 
   rpc ListRuns(ListRunsRequest) returns (ListRunsResponse);
+  rpc ListRunJobs(ListRunJobsRequest) returns (ListRunJobsResponse);
+  rpc ListRunWaits(ListRunWaitsRequest) returns (ListRunWaitsResponse);
   rpc GetRun(GetRunRequest) returns (Run);
+  rpc GetRunLogs(GetRunLogsRequest) returns (RunLogs);
   rpc ListPendingApprovals(ListPendingApprovalsRequest) returns (ListPendingApprovalsResponse);
   rpc ResolveApprovalDecision(ResolveApprovalDecisionRequest) returns (ResolveApprovalDecisionResponse);
   rpc ListRunEvents(ListRunEventsRequest) returns (ListRunEventsResponse);

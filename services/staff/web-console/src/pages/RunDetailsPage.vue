@@ -37,6 +37,16 @@
           <span class="field-label">{{ t("pages.runDetails.waitReason") }}:</span>
           <span class="mono">{{ details.run?.wait_reason || "-" }}</span>
         </div>
+        <div class="muted">
+          <span class="field-label">{{ t("pages.runDetails.agentKey") }}:</span>
+          <span class="mono">{{ details.run?.agent_key || "-" }}</span>
+          ·
+          <span class="field-label">{{ t("pages.runDetails.waitSince") }}:</span>
+          <span class="mono">{{ formatDateTime(details.run?.wait_since, locale) }}</span>
+          ·
+          <span class="field-label">{{ t("pages.runDetails.lastHeartbeatAt") }}:</span>
+          <span class="mono">{{ formatDateTime(details.run?.last_heartbeat_at, locale) }}</span>
+        </div>
       </div>
       <div class="actions">
         <button class="btn equal" type="button" @click="goBack">{{ t("common.back") }}</button>
@@ -74,10 +84,39 @@
         <span class="field-label">{{ t("pages.runDetails.job") }}:</span>
         {{ details.run?.job_name || "-" }}
       </div>
+      <div class="muted mono">
+        <span class="field-label">{{ t("pages.runDetails.namespace") }}:</span>
+        {{ details.run?.namespace || "-" }}
+      </div>
       <div class="muted">
         <span v-if="details.run?.job_exists" class="pill">active</span>
         <span v-else>{{ t("pages.runDetails.noJob") }}</span>
       </div>
+    </div>
+
+    <div class="pane events-pane">
+      <div class="row">
+        <div class="pane-h">{{ t("pages.runDetails.runLogs") }}</div>
+        <button class="btn" type="button" @click="details.refreshLogs(runId, 200)" :disabled="details.loading">
+          {{ t("common.refresh") }}
+        </button>
+      </div>
+      <div class="muted mono">
+        <span class="field-label">{{ t("pages.runs.status") }}:</span> {{ details.logs?.status || "-" }}
+        ·
+        <span class="field-label">{{ t("pages.runDetails.logsUpdatedAt") }}:</span>
+        {{ formatDateTime(details.logs?.updated_at, locale) }}
+      </div>
+      <div v-if="details.logs?.tail_lines?.length" class="log-lines">
+        <div v-for="(line, idx) in details.logs.tail_lines" :key="`line-${idx}`" class="log-line mono">
+          {{ line }}
+        </div>
+      </div>
+      <div v-else class="muted">{{ t("states.noRunLogs") }}</div>
+      <details class="logs-raw">
+        <summary class="mono">{{ t("pages.runDetails.rawLogsSnapshot") }}</summary>
+        <pre class="pre">{{ details.logs?.snapshot_json || "{}" }}</pre>
+      </details>
     </div>
 
     <div class="pane events-pane">
@@ -192,5 +231,24 @@ h2 {
   white-space: pre-wrap;
   font-size: 12px;
   opacity: 0.9;
+}
+.log-lines {
+  margin-top: 8px;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  border-radius: 12px;
+  background: rgba(17, 24, 39, 0.03);
+  max-height: 280px;
+  overflow: auto;
+}
+.log-line {
+  padding: 6px 10px;
+  border-bottom: 1px dashed rgba(17, 24, 39, 0.1);
+  font-size: 12px;
+}
+.log-line:last-child {
+  border-bottom: none;
+}
+.logs-raw {
+  margin-top: 8px;
 }
 </style>

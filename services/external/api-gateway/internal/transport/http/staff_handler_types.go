@@ -11,3 +11,18 @@ type idLimitArg struct {
 	id    string
 	limit int32
 }
+
+// runListFilterArg keeps query filters for jobs/waits staff endpoints.
+type runListFilterArg struct {
+	limit       int32
+	triggerKind string
+	status      string
+	agentKey    string
+	waitState   string
+}
+
+// runLogsArg keeps path+query input for run logs endpoint.
+type runLogsArg struct {
+	runID     string
+	tailLines int32
+}

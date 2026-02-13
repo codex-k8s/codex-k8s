@@ -242,6 +242,55 @@ func (s *Server) ListRuns(ctx context.Context, req *controlplanev1.ListRunsReque
 	return &controlplanev1.ListRunsResponse{Items: out}, nil
 }
 
+func (s *Server) ListRunJobs(ctx context.Context, req *controlplanev1.ListRunJobsRequest) (*controlplanev1.ListRunJobsResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	items, err := s.staff.ListRunJobs(ctx, p, staffrunrepo.ListFilter{
+		Limit:       clampLimit(req.GetLimit(), 200),
+		TriggerKind: optionalProtoString(req.TriggerKind),
+		Status:      optionalProtoString(req.Status),
+		AgentKey:    optionalProtoString(req.AgentKey),
+	})
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	out := make([]*controlplanev1.Run, 0, len(items))
+	for _, item := range items {
+		out = append(out, runToProto(item))
+	}
+	return &controlplanev1.ListRunJobsResponse{Items: out}, nil
+}
+
+func (s *Server) ListRunWaits(ctx context.Context, req *controlplanev1.ListRunWaitsRequest) (*controlplanev1.ListRunWaitsResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	items, err := s.staff.ListRunWaits(ctx, p, staffrunrepo.ListFilter{
+		Limit:       clampLimit(req.GetLimit(), 200),
+		TriggerKind: optionalProtoString(req.TriggerKind),
+		Status:      optionalProtoString(req.Status),
+		AgentKey:    optionalProtoString(req.AgentKey),
+		WaitState:   optionalProtoString(req.WaitState),
+	})
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	out := make([]*controlplanev1.Run, 0, len(items))
+	for _, item := range items {
+		out = append(out, runToProto(item))
+	}
+	return &controlplanev1.ListRunWaitsResponse{Items: out}, nil
+}
+
 func (s *Server) GetRun(ctx context.Context, req *controlplanev1.GetRunRequest) (*controlplanev1.Run, error) {
 	p, err := requirePrincipal(req.GetPrincipal())
 	if err != nil {
@@ -252,6 +301,35 @@ func (s *Server) GetRun(ctx context.Context, req *controlplanev1.GetRunRequest) 
 		return nil, toStatus(err)
 	}
 	return runToProto(r), nil
+}
+
+func (s *Server) GetRunLogs(ctx context.Context, req *controlplanev1.GetRunLogsRequest) (*controlplanev1.RunLogs, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	item, err := s.staff.GetRunLogs(ctx, p, strings.TrimSpace(req.RunId), int(req.GetTailLines()))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+
+	snapshotJSON := strings.TrimSpace(string(item.SnapshotJSON))
+	if snapshotJSON == "" {
+		snapshotJSON = "{}"
+	}
+	out := &controlplanev1.RunLogs{
+		RunId:        item.RunID,
+		Status:       item.Status,
+		SnapshotJson: snapshotJSON,
+		TailLines:    item.TailLines,
+	}
+	if item.UpdatedAt != nil {
+		out.UpdatedAt = timestamppb.New(item.UpdatedAt.UTC())
+	}
+	return out, nil
 }
 
 func (s *Server) ListPendingApprovals(ctx context.Context, req *controlplanev1.ListPendingApprovalsRequest) (*controlplanev1.ListPendingApprovalsResponse, error) {
@@ -1014,6 +1092,7 @@ func runToProto(r staffrunrepo.Run) *controlplanev1.Run {
 		PrUrl:           stringPtrOrNil(r.PRURL),
 		TriggerKind:     stringPtrOrNil(r.TriggerKind),
 		TriggerLabel:    stringPtrOrNil(r.TriggerLabel),
+		AgentKey:        stringPtrOrNil(r.AgentKey),
 		JobName:         stringPtrOrNil(r.JobName),
 		JobNamespace:    stringPtrOrNil(r.JobNamespace),
 		Namespace:       stringPtrOrNil(r.Namespace),
@@ -1029,6 +1108,12 @@ func runToProto(r staffrunrepo.Run) *controlplanev1.Run {
 	}
 	if r.FinishedAt != nil {
 		out.FinishedAt = timestamppb.New(r.FinishedAt.UTC())
+	}
+	if r.WaitSince != nil {
+		out.WaitSince = timestamppb.New(r.WaitSince.UTC())
+	}
+	if r.LastHeartbeatAt != nil {
+		out.LastHeartbeatAt = timestamppb.New(r.LastHeartbeatAt.UTC())
 	}
 	return out
 }
@@ -1082,6 +1167,13 @@ func int64PtrOrNil(value int64) *int64 {
 		return nil
 	}
 	return &value
+}
+
+func optionalProtoString(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return strings.TrimSpace(*value)
 }
 
 func bytesOrNil(value []byte) []byte {

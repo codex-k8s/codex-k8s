@@ -43,6 +43,7 @@ func Run(item *controlplanev1.Run) models.Run {
 		PRURL:           cast.OptionalTrimmedString(item.PrUrl),
 		TriggerKind:     cast.OptionalTrimmedString(item.TriggerKind),
 		TriggerLabel:    cast.OptionalTrimmedString(item.TriggerLabel),
+		AgentKey:        cast.OptionalTrimmedString(item.AgentKey),
 		JobName:         cast.OptionalTrimmedString(item.JobName),
 		JobNamespace:    cast.OptionalTrimmedString(item.JobNamespace),
 		Namespace:       cast.OptionalTrimmedString(item.Namespace),
@@ -50,6 +51,8 @@ func Run(item *controlplanev1.Run) models.Run {
 		NamespaceExists: item.GetNamespaceExists(),
 		WaitState:       cast.OptionalTrimmedString(item.WaitState),
 		WaitReason:      cast.OptionalTrimmedString(item.WaitReason),
+		WaitSince:       cast.OptionalTimestampRFC3339Nano(item.GetWaitSince()),
+		LastHeartbeatAt: cast.OptionalTimestampRFC3339Nano(item.GetLastHeartbeatAt()),
 		Status:          item.GetStatus(),
 		CreatedAt:       cast.TimestampRFC3339Nano(item.GetCreatedAt()),
 		StartedAt:       cast.OptionalTimestampRFC3339Nano(item.GetStartedAt()),
@@ -249,6 +252,19 @@ func IngestGitHubWebhook(item *controlplanev1.IngestGitHubWebhookResponse) model
 	out.RunID = item.GetRunId()
 	out.Status = item.GetStatus()
 	out.Duplicate = item.GetDuplicate()
+	return out
+}
+
+func RunLogs(item *controlplanev1.RunLogs) models.RunLogs {
+	out := models.RunLogs{}
+	if item == nil {
+		return out
+	}
+	out.RunID = item.GetRunId()
+	out.Status = item.GetStatus()
+	out.UpdatedAt = cast.OptionalTimestampRFC3339Nano(item.GetUpdatedAt())
+	out.SnapshotJSON = item.GetSnapshotJson()
+	out.TailLines = item.GetTailLines()
 	return out
 }
 

@@ -75,6 +75,164 @@
       </button>
     </div>
 
+    <div class="pane runtime-pane">
+      <div class="row">
+        <h3>{{ t("pages.runs.runningJobs") }}</h3>
+        <button class="btn" type="button" @click="runs.loadRunJobs()" :disabled="runs.jobsLoading">
+          {{ t("common.refresh") }}
+        </button>
+      </div>
+      <div class="row runtime-filters">
+        <label class="runtime-filter">
+          <span class="muted">{{ t("pages.runs.runType") }}</span>
+          <input v-model.trim="runs.jobsFilters.triggerKind" class="in" type="text" />
+        </label>
+        <label class="runtime-filter">
+          <span class="muted">{{ t("pages.runs.status") }}</span>
+          <input v-model.trim="runs.jobsFilters.status" class="in" type="text" />
+        </label>
+        <label class="runtime-filter">
+          <span class="muted">{{ t("pages.runs.agentKey") }}</span>
+          <input v-model.trim="runs.jobsFilters.agentKey" class="in" type="text" />
+        </label>
+        <button class="btn" type="button" @click="runs.loadRunJobs()" :disabled="runs.jobsLoading">
+          {{ t("common.refresh") }}
+        </button>
+      </div>
+      <table v-if="runs.runningJobs.length" class="tbl">
+        <thead>
+          <tr>
+            <th class="center">{{ t("pages.runs.status") }}</th>
+            <th class="center">{{ t("pages.runs.project") }}</th>
+            <th class="center">{{ t("pages.runs.issue") }}</th>
+            <th class="center">{{ t("pages.runs.pr") }}</th>
+            <th class="center">{{ t("pages.runs.runType") }}</th>
+            <th class="center">{{ t("pages.runs.agentKey") }}</th>
+            <th class="center">{{ t("pages.runs.jobNamespace") }}</th>
+            <th class="center">{{ t("pages.runs.jobName") }}</th>
+            <th class="center">{{ t("pages.runs.started") }}</th>
+            <th class="center"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="r in runs.runningJobs" :key="`job-${r.id}`">
+            <td class="center"><span class="pill" :class="'s-' + r.status">{{ r.status }}</span></td>
+            <td class="center">
+              <RouterLink v-if="r.project_id" class="lnk" :to="{ name: 'project-details', params: { projectId: r.project_id } }">
+                {{ r.project_name || r.project_slug || r.project_id }}
+              </RouterLink>
+              <span v-else class="mono">-</span>
+            </td>
+            <td class="center">
+              <a v-if="r.issue_url && r.issue_number" class="lnk mono" :href="r.issue_url" target="_blank" rel="noopener noreferrer">
+                #{{ r.issue_number }}
+              </a>
+              <span v-else class="mono">-</span>
+            </td>
+            <td class="center">
+              <a v-if="r.pr_url && r.pr_number" class="lnk mono" :href="r.pr_url" target="_blank" rel="noopener noreferrer">
+                #{{ r.pr_number }}
+              </a>
+              <span v-else class="mono">-</span>
+            </td>
+            <td class="center"><span class="pill run-badge mono">{{ runBadgeValue(r.trigger_kind) }}</span></td>
+            <td class="center"><span class="pill run-badge mono">{{ runBadgeValue(r.agent_key) }}</span></td>
+            <td class="mono center">{{ runBadgeValue(r.job_namespace || r.namespace) }}</td>
+            <td class="mono center">{{ runBadgeValue(r.job_name) }}</td>
+            <td class="mono center">{{ formatDateTime(r.started_at, locale) }}</td>
+            <td class="center">
+              <RouterLink class="lnk" :to="{ name: 'run-details', params: { runId: r.id } }">
+                {{ t("pages.runs.details") }}
+              </RouterLink>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-else class="muted">{{ t("states.noRunningJobs") }}</div>
+    </div>
+
+    <div class="pane runtime-pane">
+      <div class="row">
+        <h3>{{ t("pages.runs.waitQueue") }}</h3>
+        <button class="btn" type="button" @click="runs.loadRunWaits()" :disabled="runs.waitsLoading">
+          {{ t("common.refresh") }}
+        </button>
+      </div>
+      <div class="row runtime-filters">
+        <label class="runtime-filter">
+          <span class="muted">{{ t("pages.runs.runType") }}</span>
+          <input v-model.trim="runs.waitsFilters.triggerKind" class="in" type="text" />
+        </label>
+        <label class="runtime-filter">
+          <span class="muted">{{ t("pages.runs.status") }}</span>
+          <input v-model.trim="runs.waitsFilters.status" class="in" type="text" />
+        </label>
+        <label class="runtime-filter">
+          <span class="muted">{{ t("pages.runs.agentKey") }}</span>
+          <input v-model.trim="runs.waitsFilters.agentKey" class="in" type="text" />
+        </label>
+        <label class="runtime-filter">
+          <span class="muted">{{ t("pages.runs.waitState") }}</span>
+          <input v-model.trim="runs.waitsFilters.waitState" class="in" type="text" />
+        </label>
+        <button class="btn" type="button" @click="runs.loadRunWaits()" :disabled="runs.waitsLoading">
+          {{ t("common.refresh") }}
+        </button>
+      </div>
+      <table v-if="runs.waitQueue.length" class="tbl">
+        <thead>
+          <tr>
+            <th class="center">{{ t("pages.runs.status") }}</th>
+            <th class="center">{{ t("pages.runs.project") }}</th>
+            <th class="center">{{ t("pages.runs.issue") }}</th>
+            <th class="center">{{ t("pages.runs.pr") }}</th>
+            <th class="center">{{ t("pages.runs.runType") }}</th>
+            <th class="center">{{ t("pages.runs.agentKey") }}</th>
+            <th class="center">{{ t("pages.runs.waitState") }}</th>
+            <th class="center">{{ t("pages.runs.waitSince") }}</th>
+            <th class="center">{{ t("pages.runs.waitSla") }}</th>
+            <th class="center">{{ t("pages.runs.lastHeartbeatAt") }}</th>
+            <th class="center"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="r in runs.waitQueue" :key="`wait-${r.id}`">
+            <td class="center"><span class="pill" :class="'s-' + r.status">{{ r.status }}</span></td>
+            <td class="center">
+              <RouterLink v-if="r.project_id" class="lnk" :to="{ name: 'project-details', params: { projectId: r.project_id } }">
+                {{ r.project_name || r.project_slug || r.project_id }}
+              </RouterLink>
+              <span v-else class="mono">-</span>
+            </td>
+            <td class="center">
+              <a v-if="r.issue_url && r.issue_number" class="lnk mono" :href="r.issue_url" target="_blank" rel="noopener noreferrer">
+                #{{ r.issue_number }}
+              </a>
+              <span v-else class="mono">-</span>
+            </td>
+            <td class="center">
+              <a v-if="r.pr_url && r.pr_number" class="lnk mono" :href="r.pr_url" target="_blank" rel="noopener noreferrer">
+                #{{ r.pr_number }}
+              </a>
+              <span v-else class="mono">-</span>
+            </td>
+            <td class="center"><span class="pill run-badge mono">{{ runBadgeValue(r.trigger_kind) }}</span></td>
+            <td class="center"><span class="pill run-badge mono">{{ runBadgeValue(r.agent_key) }}</span></td>
+            <td class="center"><span class="pill run-badge mono">{{ runBadgeValue(r.wait_state) }}</span></td>
+            <td class="mono center">{{ formatDateTime(r.wait_since, locale) }}</td>
+            <td class="mono center">{{ formatDurationSince(r.wait_since, locale) }}</td>
+            <td class="mono center">{{ formatDateTime(r.last_heartbeat_at, locale) }}</td>
+            <td class="center">
+              <RouterLink class="lnk" :to="{ name: 'run-details', params: { runId: r.id } }">
+                {{ t("pages.runs.details") }}
+              </RouterLink>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-else class="muted">{{ t("states.noWaitQueue") }}</div>
+    </div>
+
     <div class="pane approvals">
       <div class="row">
         <h3>{{ t("pages.runs.pendingApprovals") }}</h3>
@@ -144,7 +302,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
-import { formatDateTime } from "../shared/lib/datetime";
+import { formatDateTime, formatDurationSince } from "../shared/lib/datetime";
 import { useRunsStore } from "../features/runs/store";
 
 const { t, locale } = useI18n({ useScope: "global" });
@@ -160,7 +318,7 @@ const pageItems = computed(() => {
 });
 
 async function loadAll() {
-  await Promise.all([runs.load(), runs.loadPendingApprovals()]);
+  await Promise.all([runs.load(), runs.loadRuntimeViews(), runs.loadPendingApprovals()]);
   if (currentPage.value > totalPages.value) {
     currentPage.value = totalPages.value;
   }
@@ -236,6 +394,23 @@ h2 {
   border-radius: 14px;
   padding: 12px;
   background: rgba(255, 255, 255, 0.6);
+}
+.runtime-pane {
+  margin-top: 12px;
+  border: 1px solid rgba(17, 24, 39, 0.1);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.6);
+}
+.runtime-filters {
+  margin-bottom: 10px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.runtime-filter {
+  display: grid;
+  gap: 4px;
+  min-width: 180px;
 }
 h3 {
   margin: 0;

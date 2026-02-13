@@ -1,9 +1,4 @@
--- name: staffrun__list_all :many
--- This query builds the runs table for platform admins.
--- It joins run/project metadata and enriches each row with:
--- - newest PR reference;
--- - newest runtime artifacts (job_name, job_namespace, namespace) derived from flow events.
--- LATERAL blocks keep enrichment deterministic by selecting latest non-empty values.
+-- name: staffrun__list_waits_for_user :many
 SELECT
     ar.id,
     ar.correlation_id,
@@ -37,7 +32,8 @@ SELECT
     ar.started_at,
     ar.finished_at
 FROM agent_runs ar
-LEFT JOIN projects p ON p.id = ar.project_id
+JOIN project_members pm ON pm.project_id = ar.project_id
+JOIN projects p ON p.id = ar.project_id
 LEFT JOIN LATERAL (
     SELECT
         COALESCE(fe.payload->>'pr_url', '') AS pr_url,
@@ -103,5 +99,12 @@ LEFT JOIN LATERAL (
     ORDER BY ags.updated_at DESC
     LIMIT 1
 ) ws ON true
-ORDER BY created_at DESC
-LIMIT $1;
+WHERE pm.user_id = $1::uuid
+  AND ar.project_id IS NOT NULL
+  AND COALESCE(ws.wait_state, '') <> ''
+  AND ar.status = COALESCE(NULLIF($4::text, ''), 'running')
+  AND ($3::text = '' OR COALESCE(ar.run_payload->'trigger'->>'kind', '') = $3::text)
+  AND ($5::text = '' OR COALESCE(ws.agent_key, '') = $5::text)
+  AND ($6::text = '' OR COALESCE(ws.wait_state, '') = $6::text)
+ORDER BY ar.created_at DESC
+LIMIT $2;

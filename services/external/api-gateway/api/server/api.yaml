@@ -217,6 +217,51 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /api/v1/staff/runs/jobs:
+    get:
+      summary: List running jobs
+      operationId: listRunJobs
+      tags: [staff-runs]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/TriggerKindFilter"
+        - $ref: "#/components/parameters/RunStatusFilter"
+        - $ref: "#/components/parameters/AgentKeyFilter"
+      responses:
+        "200":
+          description: Running jobs list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunItemsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/staff/runs/waits:
+    get:
+      summary: List wait queue runs
+      operationId: listRunWaits
+      tags: [staff-runs]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/TriggerKindFilter"
+        - $ref: "#/components/parameters/RunStatusFilter"
+        - $ref: "#/components/parameters/AgentKeyFilter"
+        - $ref: "#/components/parameters/WaitStateFilter"
+      responses:
+        "200":
+          description: Wait queue list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunItemsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /api/v1/staff/approvals:
     get:
       summary: List pending approval requests
@@ -328,6 +373,28 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/staff/runs/{run_id}/logs:
+    get:
+      summary: Get run logs snapshot with tail lines
+      operationId: getRunLogs
+      tags: [staff-runs]
+      parameters:
+        - $ref: "#/components/parameters/RunID"
+        - $ref: "#/components/parameters/TailLines"
+      responses:
+        "200":
+          description: Run logs snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunLogs"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/v1/staff/runs/{run_id}/learning-feedback:
     get:
@@ -593,6 +660,38 @@ components:
         type: integer
         minimum: 1
         maximum: 1000
+    TriggerKindFilter:
+      in: query
+      name: trigger_kind
+      required: false
+      schema:
+        type: string
+    RunStatusFilter:
+      in: query
+      name: status
+      required: false
+      schema:
+        type: string
+    AgentKeyFilter:
+      in: query
+      name: agent_key
+      required: false
+      schema:
+        type: string
+    WaitStateFilter:
+      in: query
+      name: wait_state
+      required: false
+      schema:
+        type: string
+    TailLines:
+      in: query
+      name: tail_lines
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 2000
   responses:
     BadRequest:
       description: Invalid request
@@ -787,6 +886,17 @@ components:
         wait_reason:
           type: string
           nullable: true
+        agent_key:
+          type: string
+          nullable: true
+        wait_since:
+          type: string
+          format: date-time
+          nullable: true
+        last_heartbeat_at:
+          type: string
+          format: date-time
+          nullable: true
         status:
           type: string
         created_at:
@@ -901,6 +1011,26 @@ components:
           format: date-time
         payload_json:
           type: string
+
+    RunLogs:
+      type: object
+      additionalProperties: false
+      required: [run_id, status, snapshot_json, tail_lines]
+      properties:
+        run_id:
+          type: string
+        status:
+          type: string
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        snapshot_json:
+          type: string
+        tail_lines:
+          type: array
+          items:
+            type: string
 
     LearningFeedback:
       type: object

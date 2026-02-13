@@ -4,16 +4,22 @@ import { normalizeApiError, type ApiError } from "../../shared/api/errors";
 import {
   deleteRunNamespace,
   getRun,
+  getRunLogs,
   listPendingApprovals,
+  listRunJobs,
   listRunEvents,
+  listRunWaits,
   listRuns,
   resolveApprovalDecision,
+  type RunListFilters,
+  type RunWaitFilters,
 } from "./api";
 import type {
   ApprovalRequest,
   FlowEvent,
   ResolveApprovalDecisionResponse,
   Run,
+  RunLogs,
   RunNamespaceCleanupResponse,
 } from "./types";
 
@@ -22,8 +28,23 @@ const errorAutoHideMs = 5000;
 export const useRunsStore = defineStore("runs", {
   state: () => ({
     items: [] as Run[],
+    runningJobs: [] as Run[],
+    waitQueue: [] as Run[],
     pendingApprovals: [] as ApprovalRequest[],
+    jobsFilters: {
+      triggerKind: "",
+      status: "",
+      agentKey: "",
+    } as RunListFilters,
+    waitsFilters: {
+      triggerKind: "",
+      status: "",
+      agentKey: "",
+      waitState: "",
+    } as RunWaitFilters,
     loading: false,
+    jobsLoading: false,
+    waitsLoading: false,
     approvalsLoading: false,
     resolvingApprovalID: null as number | null,
     error: null as ApiError | null,
@@ -70,6 +91,33 @@ export const useRunsStore = defineStore("runs", {
         this.loading = false;
       }
     },
+    async loadRuntimeViews(): Promise<void> {
+      await Promise.all([this.loadRunJobs(), this.loadRunWaits()]);
+    },
+    async loadRunJobs(): Promise<void> {
+      this.jobsLoading = true;
+      this.error = null;
+      try {
+        this.runningJobs = await listRunJobs(this.jobsFilters, 200);
+      } catch (e) {
+        this.error = normalizeApiError(e);
+        this.scheduleErrorHide();
+      } finally {
+        this.jobsLoading = false;
+      }
+    },
+    async loadRunWaits(): Promise<void> {
+      this.waitsLoading = true;
+      this.error = null;
+      try {
+        this.waitQueue = await listRunWaits(this.waitsFilters, 200);
+      } catch (e) {
+        this.error = normalizeApiError(e);
+        this.scheduleErrorHide();
+      } finally {
+        this.waitsLoading = false;
+      }
+    },
     async loadPendingApprovals(): Promise<void> {
       this.approvalsLoading = true;
       this.approvalsError = null;
@@ -111,6 +159,7 @@ export const useRunDetailsStore = defineStore("runDetails", {
     loading: false,
     error: null as ApiError | null,
     events: [] as FlowEvent[],
+    logs: null as RunLogs | null,
     deletingNamespace: false,
     deleteNamespaceError: null as ApiError | null,
     namespaceDeleteResult: null as RunNamespaceCleanupResponse | null,
@@ -137,19 +186,31 @@ export const useRunDetailsStore = defineStore("runDetails", {
       this.loading = true;
       this.error = null;
       try {
-        const [run, events] = await Promise.all([
+        const [run, events, logs] = await Promise.all([
           getRun(runId),
           listRunEvents(runId),
+          getRunLogs(runId, 200),
         ]);
         this.run = run;
         this.events = [...events].sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0));
+        this.logs = logs;
       } catch (e) {
         this.run = null;
         this.events = [];
+        this.logs = null;
         this.error = normalizeApiError(e);
         this.scheduleErrorHide("error", "errorTimerId");
       } finally {
         this.loading = false;
+      }
+    },
+
+    async refreshLogs(runId: string, tailLines = 200): Promise<void> {
+      try {
+        this.logs = await getRunLogs(runId, tailLines);
+      } catch (e) {
+        this.error = normalizeApiError(e);
+        this.scheduleErrorHide("error", "errorTimerId");
       }
     },
 

@@ -246,6 +246,7 @@ type ResolveApprovalDecisionResponseApprovalState string
 
 // Run defines model for Run.
 type Run struct {
+	AgentKey        *string    `json:"agent_key"`
 	CorrelationId   string     `json:"correlation_id"`
 	CreatedAt       time.Time  `json:"created_at"`
 	FinishedAt      *time.Time `json:"finished_at"`
@@ -255,6 +256,7 @@ type Run struct {
 	JobExists       *bool      `json:"job_exists,omitempty"`
 	JobName         *string    `json:"job_name"`
 	JobNamespace    *string    `json:"job_namespace"`
+	LastHeartbeatAt *time.Time `json:"last_heartbeat_at"`
 	Namespace       *string    `json:"namespace"`
 	NamespaceExists *bool      `json:"namespace_exists,omitempty"`
 	PrNumber        *int32     `json:"pr_number"`
@@ -267,12 +269,22 @@ type Run struct {
 	TriggerKind     *string    `json:"trigger_kind"`
 	TriggerLabel    *string    `json:"trigger_label"`
 	WaitReason      *string    `json:"wait_reason"`
+	WaitSince       *time.Time `json:"wait_since"`
 	WaitState       *string    `json:"wait_state"`
 }
 
 // RunItemsResponse defines model for RunItemsResponse.
 type RunItemsResponse struct {
 	Items []Run `json:"items"`
+}
+
+// RunLogs defines model for RunLogs.
+type RunLogs struct {
+	RunId        string     `json:"run_id"`
+	SnapshotJson string     `json:"snapshot_json"`
+	Status       string     `json:"status"`
+	TailLines    []string   `json:"tail_lines"`
+	UpdatedAt    *time.Time `json:"updated_at"`
 }
 
 // RunNamespaceCleanupResponse defines model for RunNamespaceCleanupResponse.
@@ -336,6 +348,9 @@ type UserItemsResponse struct {
 	Items []User `json:"items"`
 }
 
+// AgentKeyFilter defines model for AgentKeyFilter.
+type AgentKeyFilter = string
+
 // ApprovalRequestID defines model for ApprovalRequestID.
 type ApprovalRequestID = int64
 
@@ -348,8 +363,20 @@ type ProjectID = string
 // RunID defines model for RunID.
 type RunID = string
 
+// RunStatusFilter defines model for RunStatusFilter.
+type RunStatusFilter = string
+
+// TailLines defines model for TailLines.
+type TailLines = int
+
+// TriggerKindFilter defines model for TriggerKindFilter.
+type TriggerKindFilter = string
+
 // UserID defines model for UserID.
 type UserID = string
+
+// WaitStateFilter defines model for WaitStateFilter.
+type WaitStateFilter = string
 
 // BadRequest defines model for BadRequest.
 type BadRequest = ErrorResponse
@@ -400,6 +427,23 @@ type ListRunsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListRunJobsParams defines parameters for ListRunJobs.
+type ListRunJobsParams struct {
+	Limit       *Limit             `form:"limit,omitempty" json:"limit,omitempty"`
+	TriggerKind *TriggerKindFilter `form:"trigger_kind,omitempty" json:"trigger_kind,omitempty"`
+	Status      *RunStatusFilter   `form:"status,omitempty" json:"status,omitempty"`
+	AgentKey    *AgentKeyFilter    `form:"agent_key,omitempty" json:"agent_key,omitempty"`
+}
+
+// ListRunWaitsParams defines parameters for ListRunWaits.
+type ListRunWaitsParams struct {
+	Limit       *Limit             `form:"limit,omitempty" json:"limit,omitempty"`
+	TriggerKind *TriggerKindFilter `form:"trigger_kind,omitempty" json:"trigger_kind,omitempty"`
+	Status      *RunStatusFilter   `form:"status,omitempty" json:"status,omitempty"`
+	AgentKey    *AgentKeyFilter    `form:"agent_key,omitempty" json:"agent_key,omitempty"`
+	WaitState   *WaitStateFilter   `form:"wait_state,omitempty" json:"wait_state,omitempty"`
+}
+
 // ListRunEventsParams defines parameters for ListRunEvents.
 type ListRunEventsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
@@ -408,6 +452,11 @@ type ListRunEventsParams struct {
 // ListRunLearningFeedbackParams defines parameters for ListRunLearningFeedback.
 type ListRunLearningFeedbackParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// GetRunLogsParams defines parameters for GetRunLogs.
+type GetRunLogsParams struct {
+	TailLines *TailLines `form:"tail_lines,omitempty" json:"tail_lines,omitempty"`
 }
 
 // ListUsersParams defines parameters for ListUsers.
@@ -626,6 +675,12 @@ type ServerInterface interface {
 	// List runs
 	// (GET /api/v1/staff/runs)
 	ListRuns(w http.ResponseWriter, r *http.Request, params ListRunsParams)
+	// List running jobs
+	// (GET /api/v1/staff/runs/jobs)
+	ListRunJobs(w http.ResponseWriter, r *http.Request, params ListRunJobsParams)
+	// List wait queue runs
+	// (GET /api/v1/staff/runs/waits)
+	ListRunWaits(w http.ResponseWriter, r *http.Request, params ListRunWaitsParams)
 	// Get run by id
 	// (GET /api/v1/staff/runs/{run_id})
 	GetRun(w http.ResponseWriter, r *http.Request, runId RunID)
@@ -635,6 +690,9 @@ type ServerInterface interface {
 	// List run learning feedback
 	// (GET /api/v1/staff/runs/{run_id}/learning-feedback)
 	ListRunLearningFeedback(w http.ResponseWriter, r *http.Request, runId RunID, params ListRunLearningFeedbackParams)
+	// Get run logs snapshot with tail lines
+	// (GET /api/v1/staff/runs/{run_id}/logs)
+	GetRunLogs(w http.ResponseWriter, r *http.Request, runId RunID, params GetRunLogsParams)
 	// Force delete run namespace
 	// (DELETE /api/v1/staff/runs/{run_id}/namespace)
 	DeleteRunNamespace(w http.ResponseWriter, r *http.Request, runId RunID)
@@ -1146,6 +1204,116 @@ func (siw *ServerInterfaceWrapper) ListRuns(w http.ResponseWriter, r *http.Reque
 	handler.ServeHTTP(w, r)
 }
 
+// ListRunJobs operation middleware
+func (siw *ServerInterfaceWrapper) ListRunJobs(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRunJobsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "trigger_kind" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "trigger_kind", r.URL.Query(), &params.TriggerKind)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "trigger_kind", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "status", r.URL.Query(), &params.Status)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "agent_key" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "agent_key", r.URL.Query(), &params.AgentKey)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agent_key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRunJobs(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListRunWaits operation middleware
+func (siw *ServerInterfaceWrapper) ListRunWaits(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRunWaitsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "trigger_kind" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "trigger_kind", r.URL.Query(), &params.TriggerKind)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "trigger_kind", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "status", r.URL.Query(), &params.Status)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "agent_key" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "agent_key", r.URL.Query(), &params.AgentKey)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agent_key", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "wait_state" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "wait_state", r.URL.Query(), &params.WaitState)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "wait_state", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRunWaits(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetRun operation middleware
 func (siw *ServerInterfaceWrapper) GetRun(w http.ResponseWriter, r *http.Request) {
 
@@ -1234,6 +1402,42 @@ func (siw *ServerInterfaceWrapper) ListRunLearningFeedback(w http.ResponseWriter
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListRunLearningFeedback(w, r, runId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetRunLogs operation middleware
+func (siw *ServerInterfaceWrapper) GetRunLogs(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "run_id" -------------
+	var runId RunID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "run_id", r.PathValue("run_id"), &runId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "run_id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetRunLogsParams
+
+	// ------------- Optional query parameter "tail_lines" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "tail_lines", r.URL.Query(), &params.TailLines)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tail_lines", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRunLogs(w, r, runId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1562,9 +1766,12 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/projects/{project_id}/repositories", wrapper.UpsertProjectRepository)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/staff/projects/{project_id}/repositories/{repository_id}", wrapper.DeleteProjectRepository)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs", wrapper.ListRuns)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/jobs", wrapper.ListRunJobs)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/waits", wrapper.ListRunWaits)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}", wrapper.GetRun)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}/events", wrapper.ListRunEvents)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}/learning-feedback", wrapper.ListRunLearningFeedback)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}/logs", wrapper.GetRunLogs)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/staff/runs/{run_id}/namespace", wrapper.DeleteRunNamespace)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/users", wrapper.ListUsers)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/users", wrapper.CreateUser)
@@ -2304,6 +2511,76 @@ func (response ListRuns401JSONResponse) VisitListRunsResponse(w http.ResponseWri
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ListRunJobsRequestObject struct {
+	Params ListRunJobsParams
+}
+
+type ListRunJobsResponseObject interface {
+	VisitListRunJobsResponse(w http.ResponseWriter) error
+}
+
+type ListRunJobs200JSONResponse RunItemsResponse
+
+func (response ListRunJobs200JSONResponse) VisitListRunJobsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRunJobs400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListRunJobs400JSONResponse) VisitListRunJobsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRunJobs401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListRunJobs401JSONResponse) VisitListRunJobsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRunWaitsRequestObject struct {
+	Params ListRunWaitsParams
+}
+
+type ListRunWaitsResponseObject interface {
+	VisitListRunWaitsResponse(w http.ResponseWriter) error
+}
+
+type ListRunWaits200JSONResponse RunItemsResponse
+
+func (response ListRunWaits200JSONResponse) VisitListRunWaitsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRunWaits400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListRunWaits400JSONResponse) VisitListRunWaitsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRunWaits401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListRunWaits401JSONResponse) VisitListRunWaitsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type GetRunRequestObject struct {
 	RunId RunID `json:"run_id"`
 }
@@ -2416,6 +2693,51 @@ type ListRunLearningFeedback401JSONResponse struct{ UnauthorizedJSONResponse }
 func (response ListRunLearningFeedback401JSONResponse) VisitListRunLearningFeedbackResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRunLogsRequestObject struct {
+	RunId  RunID `json:"run_id"`
+	Params GetRunLogsParams
+}
+
+type GetRunLogsResponseObject interface {
+	VisitGetRunLogsResponse(w http.ResponseWriter) error
+}
+
+type GetRunLogs200JSONResponse RunLogs
+
+func (response GetRunLogs200JSONResponse) VisitGetRunLogsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRunLogs400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetRunLogs400JSONResponse) VisitGetRunLogsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRunLogs401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetRunLogs401JSONResponse) VisitGetRunLogsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRunLogs404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetRunLogs404JSONResponse) VisitGetRunLogsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -2696,6 +3018,12 @@ type StrictServerInterface interface {
 	// List runs
 	// (GET /api/v1/staff/runs)
 	ListRuns(ctx context.Context, request ListRunsRequestObject) (ListRunsResponseObject, error)
+	// List running jobs
+	// (GET /api/v1/staff/runs/jobs)
+	ListRunJobs(ctx context.Context, request ListRunJobsRequestObject) (ListRunJobsResponseObject, error)
+	// List wait queue runs
+	// (GET /api/v1/staff/runs/waits)
+	ListRunWaits(ctx context.Context, request ListRunWaitsRequestObject) (ListRunWaitsResponseObject, error)
 	// Get run by id
 	// (GET /api/v1/staff/runs/{run_id})
 	GetRun(ctx context.Context, request GetRunRequestObject) (GetRunResponseObject, error)
@@ -2705,6 +3033,9 @@ type StrictServerInterface interface {
 	// List run learning feedback
 	// (GET /api/v1/staff/runs/{run_id}/learning-feedback)
 	ListRunLearningFeedback(ctx context.Context, request ListRunLearningFeedbackRequestObject) (ListRunLearningFeedbackResponseObject, error)
+	// Get run logs snapshot with tail lines
+	// (GET /api/v1/staff/runs/{run_id}/logs)
+	GetRunLogs(ctx context.Context, request GetRunLogsRequestObject) (GetRunLogsResponseObject, error)
 	// Force delete run namespace
 	// (DELETE /api/v1/staff/runs/{run_id}/namespace)
 	DeleteRunNamespace(ctx context.Context, request DeleteRunNamespaceRequestObject) (DeleteRunNamespaceResponseObject, error)
@@ -3251,6 +3582,58 @@ func (sh *strictHandler) ListRuns(w http.ResponseWriter, r *http.Request, params
 	}
 }
 
+// ListRunJobs operation middleware
+func (sh *strictHandler) ListRunJobs(w http.ResponseWriter, r *http.Request, params ListRunJobsParams) {
+	var request ListRunJobsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListRunJobs(ctx, request.(ListRunJobsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListRunJobs")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListRunJobsResponseObject); ok {
+		if err := validResponse.VisitListRunJobsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListRunWaits operation middleware
+func (sh *strictHandler) ListRunWaits(w http.ResponseWriter, r *http.Request, params ListRunWaitsParams) {
+	var request ListRunWaitsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListRunWaits(ctx, request.(ListRunWaitsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListRunWaits")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListRunWaitsResponseObject); ok {
+		if err := validResponse.VisitListRunWaitsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetRun operation middleware
 func (sh *strictHandler) GetRun(w http.ResponseWriter, r *http.Request, runId RunID) {
 	var request GetRunRequestObject
@@ -3324,6 +3707,33 @@ func (sh *strictHandler) ListRunLearningFeedback(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListRunLearningFeedbackResponseObject); ok {
 		if err := validResponse.VisitListRunLearningFeedbackResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetRunLogs operation middleware
+func (sh *strictHandler) GetRunLogs(w http.ResponseWriter, r *http.Request, runId RunID, params GetRunLogsParams) {
+	var request GetRunLogsRequestObject
+
+	request.RunId = runId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetRunLogs(ctx, request.(GetRunLogsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetRunLogs")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetRunLogsResponseObject); ok {
+		if err := validResponse.VisitGetRunLogsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
