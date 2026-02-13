@@ -55,9 +55,9 @@ approvals:
 - Day 7: `docs/delivery/epics/epic-s1-day7-stabilization-gate.md`
 
 ### Sprint S2: Dogfooding baseline + hardening (Day 0..7)
-- Day 0..4: архитектурное выравнивание, label triggers, namespace/RBAC, MCP prompt context, agent PR flow.
-- Day 4.5: pgx/db-model refactor.
-- Day 5: staff UI observability baseline.
+- Day 0..4 (completed): архитектурное выравнивание, label triggers, namespace/RBAC, MCP prompt context, agent PR flow.
+- Day 4.5 (completed): pgx/db-model refactor.
+- Day 5 (completed): staff UI observability baseline.
 - Day 6: approval matrix + MCP control tools + audit hardening.
 - Day 7: MVP readiness regression gate + Sprint S3 kickoff package.
 
