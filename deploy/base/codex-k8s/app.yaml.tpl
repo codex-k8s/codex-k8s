@@ -299,133 +299,133 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_INTAKE_LABEL
+                  key: CODEXK8S_RUN_INTAKE_LABEL
                   optional: true
             - name: CODEXK8S_RUN_INTAKE_REVISE_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_INTAKE_REVISE_LABEL
+                  key: CODEXK8S_RUN_INTAKE_REVISE_LABEL
                   optional: true
             - name: CODEXK8S_RUN_VISION_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_VISION_LABEL
+                  key: CODEXK8S_RUN_VISION_LABEL
                   optional: true
             - name: CODEXK8S_RUN_VISION_REVISE_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_VISION_REVISE_LABEL
+                  key: CODEXK8S_RUN_VISION_REVISE_LABEL
                   optional: true
             - name: CODEXK8S_RUN_PRD_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_PRD_LABEL
+                  key: CODEXK8S_RUN_PRD_LABEL
                   optional: true
             - name: CODEXK8S_RUN_PRD_REVISE_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_PRD_REVISE_LABEL
+                  key: CODEXK8S_RUN_PRD_REVISE_LABEL
                   optional: true
             - name: CODEXK8S_RUN_ARCH_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_ARCH_LABEL
+                  key: CODEXK8S_RUN_ARCH_LABEL
                   optional: true
             - name: CODEXK8S_RUN_ARCH_REVISE_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_ARCH_REVISE_LABEL
+                  key: CODEXK8S_RUN_ARCH_REVISE_LABEL
                   optional: true
             - name: CODEXK8S_RUN_DESIGN_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_DESIGN_LABEL
+                  key: CODEXK8S_RUN_DESIGN_LABEL
                   optional: true
             - name: CODEXK8S_RUN_DESIGN_REVISE_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_DESIGN_REVISE_LABEL
+                  key: CODEXK8S_RUN_DESIGN_REVISE_LABEL
                   optional: true
             - name: CODEXK8S_RUN_PLAN_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_PLAN_LABEL
+                  key: CODEXK8S_RUN_PLAN_LABEL
                   optional: true
             - name: CODEXK8S_RUN_PLAN_REVISE_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_PLAN_REVISE_LABEL
+                  key: CODEXK8S_RUN_PLAN_REVISE_LABEL
                   optional: true
             - name: CODEXK8S_RUN_DEV_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_DEV_LABEL
+                  key: CODEXK8S_RUN_DEV_LABEL
                   optional: true
             - name: CODEXK8S_RUN_DEV_REVISE_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_DEV_REVISE_LABEL
+                  key: CODEXK8S_RUN_DEV_REVISE_LABEL
                   optional: true
             - name: CODEXK8S_RUN_DOC_AUDIT_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_DOC_AUDIT_LABEL
+                  key: CODEXK8S_RUN_DOC_AUDIT_LABEL
                   optional: true
             - name: CODEXK8S_RUN_QA_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_QA_LABEL
+                  key: CODEXK8S_RUN_QA_LABEL
                   optional: true
             - name: CODEXK8S_RUN_RELEASE_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_RELEASE_LABEL
+                  key: CODEXK8S_RUN_RELEASE_LABEL
                   optional: true
             - name: CODEXK8S_RUN_POSTDEPLOY_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_POSTDEPLOY_LABEL
+                  key: CODEXK8S_RUN_POSTDEPLOY_LABEL
                   optional: true
             - name: CODEXK8S_RUN_OPS_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_OPS_LABEL
+                  key: CODEXK8S_RUN_OPS_LABEL
                   optional: true
             - name: CODEXK8S_RUN_SELF_IMPROVE_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_SELF_IMPROVE_LABEL
+                  key: CODEXK8S_RUN_SELF_IMPROVE_LABEL
                   optional: true
             - name: CODEXK8S_RUN_ABORT_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_ABORT_LABEL
+                  key: CODEXK8S_RUN_ABORT_LABEL
                   optional: true
             - name: CODEXK8S_RUN_RETHINK_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_RETHINK_LABEL
+                  key: CODEXK8S_RUN_RETHINK_LABEL
                   optional: true
             - name: CODEXK8S_PUBLIC_BASE_URL
               valueFrom:
@@ -643,73 +643,73 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: RUN_DEBUG_LABEL
+                  key: CODEXK8S_RUN_DEBUG_LABEL
                   optional: true
             - name: CODEXK8S_STATE_IN_REVIEW_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: STATE_IN_REVIEW_LABEL
+                  key: CODEXK8S_STATE_IN_REVIEW_LABEL
                   optional: true
-            - name: AI_MODEL_GPT_5_3_CODEX_LABEL
+            - name: CODEXK8S_AI_MODEL_GPT_5_3_CODEX_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: AI_MODEL_GPT_5_3_CODEX_LABEL
+                  key: CODEXK8S_AI_MODEL_GPT_5_3_CODEX_LABEL
                   optional: true
-            - name: AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL
+            - name: CODEXK8S_AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL
+                  key: CODEXK8S_AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL
                   optional: true
-            - name: AI_MODEL_GPT_5_2_CODEX_LABEL
+            - name: CODEXK8S_AI_MODEL_GPT_5_2_CODEX_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: AI_MODEL_GPT_5_2_CODEX_LABEL
+                  key: CODEXK8S_AI_MODEL_GPT_5_2_CODEX_LABEL
                   optional: true
-            - name: AI_MODEL_GPT_5_1_CODEX_MAX_LABEL
+            - name: CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MAX_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: AI_MODEL_GPT_5_1_CODEX_MAX_LABEL
+                  key: CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MAX_LABEL
                   optional: true
-            - name: AI_MODEL_GPT_5_2_LABEL
+            - name: CODEXK8S_AI_MODEL_GPT_5_2_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: AI_MODEL_GPT_5_2_LABEL
+                  key: CODEXK8S_AI_MODEL_GPT_5_2_LABEL
                   optional: true
-            - name: AI_MODEL_GPT_5_1_CODEX_MINI_LABEL
+            - name: CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MINI_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: AI_MODEL_GPT_5_1_CODEX_MINI_LABEL
+                  key: CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MINI_LABEL
                   optional: true
-            - name: AI_REASONING_LOW_LABEL
+            - name: CODEXK8S_AI_REASONING_LOW_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: AI_REASONING_LOW_LABEL
+                  key: CODEXK8S_AI_REASONING_LOW_LABEL
                   optional: true
-            - name: AI_REASONING_MEDIUM_LABEL
+            - name: CODEXK8S_AI_REASONING_MEDIUM_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: AI_REASONING_MEDIUM_LABEL
+                  key: CODEXK8S_AI_REASONING_MEDIUM_LABEL
                   optional: true
-            - name: AI_REASONING_HIGH_LABEL
+            - name: CODEXK8S_AI_REASONING_HIGH_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: AI_REASONING_HIGH_LABEL
+                  key: CODEXK8S_AI_REASONING_HIGH_LABEL
                   optional: true
-            - name: AI_REASONING_EXTRA_HIGH_LABEL
+            - name: CODEXK8S_AI_REASONING_EXTRA_HIGH_LABEL
               valueFrom:
                 configMapKeyRef:
                   name: codex-k8s-label-catalog
-                  key: AI_REASONING_EXTRA_HIGH_LABEL
+                  key: CODEXK8S_AI_REASONING_EXTRA_HIGH_LABEL
                   optional: true
             - name: CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT
               value: "${CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT}"

@@ -137,7 +137,10 @@ Seed-файлы:
 - Для каждого `agent_key` вводятся отдельные шаблоны `work/review`:
   - `pm`, `sa`, `em`, `dev`, `reviewer`, `qa`, `sre`, `km`;
   - отдельные шаблоны для специализированных режимов: `run:self-improve`, `mode:discussion`.
-- Для `mode:discussion` шаблон обязан явно запрещать commit/push/PR и требовать работу только комментариями под Issue.
+- Для `mode:discussion` шаблон обязан:
+  - явно запрещать commit/push/PR;
+  - требовать работу только комментариями под Issue;
+  - требовать обработку новых пользовательских комментариев как продолжение той же сессии.
 - Для стадий с артефактным ревью шаблон должен завершать run переходом в `state:in-review` и постановкой role-specific `need:*` labels.
 
 ### Модель и степень рассуждения
@@ -167,8 +170,10 @@ Seed-файлы:
 ## Planned: discussion-mode before implementation
 
 - Для `run:dev`/`run:dev:revise` планируется режим `mode:discussion`:
-  - агент работает только в комментариях Issue (brainstorming/уточнения);
-  - commit/push/PR не выполняются;
+  - запускается отдельный `discussion` pod (не job) с сохранением `codex-cli` session snapshot;
+  - агент работает только в комментариях Issue (brainstorming/уточнения), commit/push/PR не выполняются;
+  - pod живёт до первого события: idle timeout `8h`, закрытие Issue или постановка любого `run:*` label;
+  - на webhook `issue_comment`, если автор комментария не агент, сессия продолжается и агент публикует ответ под Issue;
   - после снятия `mode:discussion` следующий trigger продолжает ту же session snapshot и переходит к реализации.
 
 ## Управление изменениями модели

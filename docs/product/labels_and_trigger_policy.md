@@ -126,7 +126,14 @@ approvals:
 - Если `mode:discussion` присутствует на Issue в момент `run:dev`/`run:dev:revise`, запуск работает в режиме обсуждения:
   - агент изучает код/окружение и отвечает комментариями под Issue;
   - PR/commit/push не выполняются;
-  - сохраняется текущая `codex-cli` session snapshot для продолжения.
+  - вместо job поднимается отдельный `discussion` pod с `codex-cli` session snapshot.
+- `discussion` pod живёт до первого из событий:
+  - idle timeout `8h`;
+  - закрытие Issue;
+  - постановка на Issue любого trigger `run:*`.
+- На webhook `issue_comment`:
+  - если комментарий оставил не агент, раннер продолжает текущую discussion-сессию и публикует ответ под Issue;
+  - служебные комментарии платформы и комментарии агента не считаются пользовательским входом.
 - После снятия `mode:discussion` и повторного trigger (`run:dev`/`run:dev:revise`) агент продолжает ту же сессию и выполняет согласованный план реализации.
 - Политика вводится как planned-фича следующих спринтов (после стабилизации базового dogfooding контура).
 
@@ -169,12 +176,12 @@ approvals:
 
 - Все workflow условия сравнения label должны использовать `vars.*`, а не строковые литералы.
 - В GitHub Variables хранится **полный каталог** `run:*`, `state:*`, `need:*`:
-  - для `run:*`: `RUN_<STAGE>_LABEL` и `RUN_<STAGE>_REVISE_LABEL` (где применимо), плюс `RUN_DEBUG_LABEL`, `RUN_SELF_IMPROVE_LABEL`, `MODE_DISCUSSION_LABEL`,
-  - для `state:*`: `STATE_*_LABEL`,
-  - для `need:*`: `NEED_*_LABEL`.
+  - для `run:*`: `CODEXK8S_RUN_<STAGE>_LABEL` и `CODEXK8S_RUN_<STAGE>_REVISE_LABEL` (где применимо), плюс `CODEXK8S_RUN_DEBUG_LABEL`, `CODEXK8S_RUN_SELF_IMPROVE_LABEL`, `CODEXK8S_MODE_DISCUSSION_LABEL`,
+  - для `state:*`: `CODEXK8S_STATE_*_LABEL`,
+  - для `need:*`: `CODEXK8S_NEED_*_LABEL`.
 - Для model/reasoning также хранится каталог vars:
-  - `AI_MODEL_GPT_5_3_CODEX_LABEL`, `AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL`, `AI_MODEL_GPT_5_2_CODEX_LABEL`, `AI_MODEL_GPT_5_1_CODEX_MAX_LABEL`, `AI_MODEL_GPT_5_2_LABEL`, `AI_MODEL_GPT_5_1_CODEX_MINI_LABEL`,
-  - `AI_REASONING_LOW_LABEL`, `AI_REASONING_MEDIUM_LABEL`, `AI_REASONING_HIGH_LABEL`, `AI_REASONING_EXTRA_HIGH_LABEL`.
+  - `CODEXK8S_AI_MODEL_GPT_5_3_CODEX_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_2_CODEX_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MAX_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_2_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MINI_LABEL`,
+  - `CODEXK8S_AI_REASONING_LOW_LABEL`, `CODEXK8S_AI_REASONING_MEDIUM_LABEL`, `CODEXK8S_AI_REASONING_HIGH_LABEL`, `CODEXK8S_AI_REASONING_EXTRA_HIGH_LABEL`.
 - Для новых `run:*` лейблов vars заводятся заранее до активации соответствующего этапа.
 - Bootstrap синхронизация каталога выполняется скриптом `bootstrap/remote/45_configure_github_repo_ci.sh`.
 
