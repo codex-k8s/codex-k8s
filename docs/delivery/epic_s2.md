@@ -2,12 +2,12 @@
 doc_id: EPC-CK8S-0002
 type: epic
 title: "Epic Catalog: Sprint S2 (Dogfooding via Issues)"
-status: active
+status: completed
 owner_role: EM
 created_at: 2026-02-10
 updated_at: 2026-02-13
 related_issues: [19]
-related_prs: []
+related_prs: [20, 22, 23]
 approvals:
   required: ["Owner"]
   status: approved
@@ -49,7 +49,7 @@ approvals:
 - Day 4.5: completed (pgx + db-model rollout в repository слое, typed persistence модели и cleanup SQL-paths).
 - Day 5: completed (staff UI dogfooding visibility, runtime drilldown и namespace lifecycle controls).
 - Day 6: completed (approval matrix + MCP control tools baseline + audit/wait-state hardening + staff approvals API/UI).
-- Day 7: scope расширен до MVP readiness regression gate + Sprint S3 kickoff package.
+- Day 7: completed (MVP readiness regression gate + Sprint S3 kickoff package, см. `docs/delivery/regression_s2_gate.md`).
 
 ## Критерий успеха Sprint S2 (выжимка)
 - Один Issue с лейблом `run:dev` приводит к запуску агентного Job в отдельном namespace и к созданию PR.
