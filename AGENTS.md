@@ -6,6 +6,14 @@
 
 - Ответы пользователю и оформление PR на русском языке, тексты коммитов на английском языке.
 - Перед изменениями читать `docs/design-guidelines/AGENTS.md` и файлы, на которые он ссылается с учетом контекста текущей задачи. Если я пишу тебе про "гайды", то это именно `docs/design-guidelines/AGENTS.md` и связанные с ним документы и тебе обязательно надо найти релевантные разделы в этих документах, которые относятся к твоей задаче или замечанию, и прочитать их. 
+- Для быстрой навигации по структуре репозитория и сервисов обязательно использовать:
+  - `README.md` (корневая карта репозитория);
+  - `services/dev/webhook-simulator/README.md`;
+  - `services/external/api-gateway/README.md`;
+  - `services/internal/control-plane/README.md`;
+  - `services/jobs/agent-runner/README.md`;
+  - `services/jobs/worker/README.md`;
+  - `services/staff/web-console/README.md`.
 - Временные правила текущего ручного dev/staging цикла (до полного dogfooding через `run:dev`) см. `.local/agents-temp-dev-rules.md`. Править `.local/agents-temp-dev-rules.md` строго запрещено, если не стоит явная задача на изменение временных правил.
 - Для Go-изменений обязательно исполнять требования из `docs/design-guidelines/go/**.md`, как до правок, так и перед подготовкой PR.
 - Для frontend-изменений обязательно исполнять требования из `docs/design-guidelines/vue/**.md` и `docs/design-guidelines/visual/**.md`.
