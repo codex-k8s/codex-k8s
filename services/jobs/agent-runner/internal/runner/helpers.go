@@ -14,6 +14,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 )
 
 //go:embed templates/*.tmpl
@@ -99,6 +101,7 @@ func (s *Service) writeCodexAuthFile(codexDir string) (bool, error) {
 func (s *Service) buildPrompt(taskBody string, result runResult) (string, error) {
 	hasContext7 := strings.TrimSpace(os.Getenv(envContext7APIKey)) != ""
 	runtimeMode := normalizeRuntimeMode(s.cfg.RuntimeMode)
+	isReviseTrigger := webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(result.triggerKind))
 	return renderTemplate(templateNamePromptEnvelope, promptEnvelopeTemplateData{
 		RepositoryFullName: s.cfg.RepositoryFullName,
 		RunID:              s.cfg.RunID,
@@ -109,7 +112,8 @@ func (s *Service) buildPrompt(taskBody string, result runResult) (string, error)
 		TargetBranch:       result.targetBranch,
 		BaseBranch:         s.cfg.AgentBaseBranch,
 		TriggerKind:        result.triggerKind,
-		HasExistingPR:      result.triggerKind == triggerKindDevRevise && result.existingPRNumber > 0,
+		IsReviseTrigger:    isReviseTrigger,
+		HasExistingPR:      isReviseTrigger && result.existingPRNumber > 0,
 		ExistingPRNumber:   result.existingPRNumber,
 		TriggerLabel:       strings.TrimSpace(s.cfg.TriggerLabel),
 		StateInReviewLabel: strings.TrimSpace(s.cfg.StateInReviewLabel),
@@ -120,10 +124,7 @@ func (s *Service) buildPrompt(taskBody string, result runResult) (string, error)
 }
 
 func normalizeTriggerKind(value string) string {
-	if strings.EqualFold(strings.TrimSpace(value), triggerKindDevRevise) {
-		return triggerKindDevRevise
-	}
-	return triggerKindDev
+	return string(webhookdomain.NormalizeTriggerKind(value))
 }
 
 func normalizeRuntimeMode(value string) string {
@@ -134,7 +135,7 @@ func normalizeRuntimeMode(value string) string {
 }
 
 func normalizeTemplateKind(value string, triggerKind string) string {
-	if triggerKind == triggerKindDevRevise {
+	if webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(triggerKind)) {
 		return promptTemplateKindReview
 	}
 	if strings.EqualFold(strings.TrimSpace(value), promptTemplateKindReview) {

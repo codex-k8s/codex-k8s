@@ -1,11 +1,8 @@
 package app
 
-import "strings"
+import webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 
 const (
-	triggerKindDev       = "dev"
-	triggerKindDevRevise = "dev_revise"
-
 	promptTemplateKindWork   = "work"
 	promptTemplateKindReview = "review"
 	promptTemplateSourceSeed = "repo_seed"
@@ -17,14 +14,13 @@ const (
 	runtimeModeFullEnv  = "full-env"
 	runtimeModeCodeOnly = "code-only"
 
-	runDevLabelDefault        = "run:dev"
-	runDevReviseLabelDefault  = "run:dev:revise"
 	stateInReviewLabelDefault = "state:in-review"
 )
 
 func normalizeTriggerKind(value string) string {
-	if strings.EqualFold(strings.TrimSpace(value), triggerKindDevRevise) {
-		return triggerKindDevRevise
-	}
-	return triggerKindDev
+	return string(webhookdomain.NormalizeTriggerKind(value))
+}
+
+func isReviseTriggerKind(value string) bool {
+	return webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(value))
 }

@@ -295,6 +295,138 @@ spec:
                   name: codex-k8s-runtime
                   key: CODEXK8S_GITHUB_WEBHOOK_EVENTS
                   optional: true
+            - name: CODEXK8S_RUN_INTAKE_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_INTAKE_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_INTAKE_REVISE_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_INTAKE_REVISE_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_VISION_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_VISION_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_VISION_REVISE_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_VISION_REVISE_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_PRD_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_PRD_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_PRD_REVISE_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_PRD_REVISE_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_ARCH_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_ARCH_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_ARCH_REVISE_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_ARCH_REVISE_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_DESIGN_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_DESIGN_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_DESIGN_REVISE_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_DESIGN_REVISE_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_PLAN_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_PLAN_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_PLAN_REVISE_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_PLAN_REVISE_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_DEV_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_DEV_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_DEV_REVISE_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_DEV_REVISE_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_DOC_AUDIT_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_DOC_AUDIT_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_QA_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_QA_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_RELEASE_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_RELEASE_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_POSTDEPLOY_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_POSTDEPLOY_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_OPS_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_OPS_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_SELF_IMPROVE_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_SELF_IMPROVE_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_ABORT_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_ABORT_LABEL
+                  optional: true
+            - name: CODEXK8S_RUN_RETHINK_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_RETHINK_LABEL
+                  optional: true
             - name: CODEXK8S_PUBLIC_BASE_URL
               valueFrom:
                 secretKeyRef:

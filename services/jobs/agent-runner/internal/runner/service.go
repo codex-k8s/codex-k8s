@@ -12,6 +12,7 @@ import (
 	"time"
 
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
+	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 	cpclient "github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/controlplane"
 )
 
@@ -88,7 +89,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		s.logger.Warn("emit run.agent.started failed", "err", err)
 	}
 
-	if triggerKind == triggerKindDevRevise {
+	if webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(triggerKind)) {
 		restored, restoreErr := s.restoreLatestSession(ctx, result.targetBranch, state.sessionsDir)
 		if restoreErr != nil {
 			return ExitError{ExitCode: 5, Err: fmt.Errorf("restore latest session: %w", restoreErr)}
@@ -203,7 +204,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		s.logger.Warn("emit run.agent.session.saved failed", "err", err)
 	}
 
-	if triggerKind == triggerKindDevRevise {
+	if webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(triggerKind)) {
 		if err := s.emitEvent(ctx, floweventdomain.EventTypeRunPRUpdated, map[string]any{"branch": result.targetBranch, "pr_url": result.prURL, "pr_number": result.prNumber}); err != nil {
 			s.logger.Warn("emit run.pr.updated failed", "err", err)
 		}
@@ -286,7 +287,7 @@ func (s *Service) prepareRepository(ctx context.Context, result runResult, state
 		return nil
 	}
 
-	if result.triggerKind == triggerKindDevRevise {
+	if webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(result.triggerKind)) {
 		return s.failRevisePRNotFound(ctx, result, state, "branch_not_found")
 	}
 

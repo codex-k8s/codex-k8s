@@ -1,0 +1,13 @@
+### ⚠️ Trigger Label Conflict
+
+Label `{{ .TriggerLabel }}` was added, but the Issue already contains other `run:*` trigger labels.
+
+Conflicting labels:
+{{- range .ConflictingLabels }}
+- `{{ . }}`
+{{- end }}
+
+How to fix:
+1. Remove conflicting labels.
+2. Keep only one valid trigger label for the current stage.
+3. Re-run after the labels are fixed.

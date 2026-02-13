@@ -58,6 +58,7 @@ const (
 	EventTypeRunPRUpdated               EventType = "run.pr.updated"
 	EventTypeRunRevisePRNotFound        EventType = "run.revise.pr_not_found"
 	EventTypeRunStatusCommentUpserted   EventType = "run.status.comment.upserted"
+	EventTypeRunTriggerConflictComment  EventType = "run.trigger.conflict.comment"
 	EventTypeRunNamespaceDeleteByStaff  EventType = "run.namespace.delete_by_staff"
 	EventTypeRunNamespaceDeleteBySystem EventType = "run.namespace.delete_by_system"
 )

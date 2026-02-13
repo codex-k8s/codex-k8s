@@ -31,14 +31,75 @@ const (
 type TriggerKind string
 
 const (
-	TriggerKindDev       TriggerKind = "dev"
-	TriggerKindDevRevise TriggerKind = "dev_revise"
+	TriggerKindIntake       TriggerKind = "intake"
+	TriggerKindIntakeRevise TriggerKind = "intake_revise"
+	TriggerKindVision       TriggerKind = "vision"
+	TriggerKindVisionRevise TriggerKind = "vision_revise"
+	TriggerKindPRD          TriggerKind = "prd"
+	TriggerKindPRDRevise    TriggerKind = "prd_revise"
+	TriggerKindArch         TriggerKind = "arch"
+	TriggerKindArchRevise   TriggerKind = "arch_revise"
+	TriggerKindDesign       TriggerKind = "design"
+	TriggerKindDesignRevise TriggerKind = "design_revise"
+	TriggerKindPlan         TriggerKind = "plan"
+	TriggerKindPlanRevise   TriggerKind = "plan_revise"
+	TriggerKindDev          TriggerKind = "dev"
+	TriggerKindDevRevise    TriggerKind = "dev_revise"
+	TriggerKindDocAudit     TriggerKind = "doc_audit"
+	TriggerKindQA           TriggerKind = "qa"
+	TriggerKindRelease      TriggerKind = "release"
+	TriggerKindPostDeploy   TriggerKind = "postdeploy"
+	TriggerKindOps          TriggerKind = "ops"
+	TriggerKindSelfImprove  TriggerKind = "self_improve"
+	TriggerKindAbort        TriggerKind = "abort"
+	TriggerKindRethink      TriggerKind = "rethink"
 )
 
 const (
 	GitHubReviewStateChangesRequested = "changes_requested"
 	TriggerSourceIssueLabel           = "issue_label"
 	TriggerSourcePullRequestReview    = "pull_request_review"
-	DefaultRunDevLabel                = "run:dev"
-	DefaultRunDevReviseLabel          = "run:dev:revise"
+)
+
+const (
+	DefaultRunIntakeLabel       = "run:intake"
+	DefaultRunIntakeReviseLabel = "run:intake:revise"
+	DefaultRunVisionLabel       = "run:vision"
+)
+
+const (
+	DefaultRunVisionReviseLabel = "run:vision:revise"
+	DefaultRunPRDLabel          = "run:prd"
+	DefaultRunPRDReviseLabel    = "run:prd:revise"
+)
+
+const (
+	DefaultRunArchLabel       = "run:arch"
+	DefaultRunArchReviseLabel = "run:arch:revise"
+	DefaultRunDesignLabel     = "run:design"
+)
+
+const (
+	DefaultRunDesignReviseLabel = "run:design:revise"
+	DefaultRunPlanLabel         = "run:plan"
+	DefaultRunPlanReviseLabel   = "run:plan:revise"
+)
+
+const (
+	DefaultRunDevLabel       = "run:dev"
+	DefaultRunDevReviseLabel = "run:dev:revise"
+	DefaultRunDocAuditLabel  = "run:doc-audit"
+)
+
+const (
+	DefaultRunQALabel         = "run:qa"
+	DefaultRunReleaseLabel    = "run:release"
+	DefaultRunPostDeployLabel = "run:postdeploy"
+)
+
+const (
+	DefaultRunOpsLabel         = "run:ops"
+	DefaultRunSelfImproveLabel = "run:self-improve"
+	DefaultRunAbortLabel       = "run:abort"
+	DefaultRunRethinkLabel     = "run:rethink"
 )

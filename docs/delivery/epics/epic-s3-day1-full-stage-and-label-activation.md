@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S3-D1
 type: epic
 title: "Epic S3 Day 1: Full stage and label activation"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-13
 updated_at: 2026-02-13
@@ -40,3 +40,31 @@ approvals:
 - Все stage labels маршрутизируются и пишут события переходов в audit.
 - Ошибочные/конфликтные переходы отклоняются детерминированно с диагностикой.
 - Для конфликтов labels публикуется человекочитаемое сообщение в Issue/PR с конкретным remediation-шагом.
+
+## Фактический результат (выполнено)
+- Активирован полный каталог trigger-kind и labels:
+  - `run:intake..run:ops`,
+  - revise-контур `run:<stage>:revise`,
+  - служебные `run:abort`, `run:rethink`, `run:self-improve`.
+- Включена унифицированная нормализация/проверка trigger-kind в shared domain:
+  - `NormalizeTriggerKind`,
+  - `IsKnownTriggerKind`,
+  - `IsReviseTriggerKind`,
+  - `DefaultTriggerLabel`.
+- В webhook ingestion реализована детерминированная обработка конфликтных `run:*` labels:
+  - run не создаётся;
+  - фиксируется `webhook.ignored` с reason `issue_trigger_label_conflict`;
+  - публикуется локализованная диагностическая отбивка в Issue через шаблон run-status.
+- Введено новое audit-событие `run.trigger.conflict.comment` для трассировки публикации конфликтной диагностики.
+- Runtime-профиль и template selection синхронизированы с full-stage моделью:
+  - `full-env` применяется для всех известных stage-trigger;
+  - revise-шаблон выбирается по общему правилу revise-trigger (не только `dev_revise`).
+- Каталог labels-as-vars синхронизирован в bootstrap/deploy/workflows:
+  - добавлен `RUN_SELF_IMPROVE_LABEL`,
+  - полный `RUN_* / STATE_* / NEED_*` прокинут в deploy pipeline и ConfigMap.
+- Для control-plane/worker/agent-runner добавлены/обновлены тесты на full-stage trigger routing и conflict handling.
+
+## Проверки
+- `make lint-go` — passed.
+- `make dupl-go` — passed.
+- `go test ./libs/... ./services/internal/control-plane/... ./services/jobs/worker/... ./services/jobs/agent-runner/...` — passed.

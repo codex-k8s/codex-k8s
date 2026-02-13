@@ -30,28 +30,28 @@ approvals:
 
 | Label | Назначение | Статус в платформе |
 |---|---|---|
-| `run:intake` | старт проработки идеи/инициативы | planned |
-| `run:intake:revise` | ревизия intake артефактов | planned |
-| `run:vision` | формирование charter/vision/metrics | planned |
-| `run:vision:revise` | ревизия vision | planned |
-| `run:prd` | формирование PRD | planned |
-| `run:prd:revise` | ревизия PRD | planned |
-| `run:arch` | формирование C4/ADR/NFR | planned |
-| `run:arch:revise` | ревизия архитектуры | planned |
-| `run:design` | detailed design + API/data model | planned |
-| `run:design:revise` | ревизия design | planned |
-| `run:plan` | delivery plan + epics/stories | planned |
-| `run:plan:revise` | ревизия плана | planned |
+| `run:intake` | старт проработки идеи/инициативы | active (S3 Day1 trigger path) |
+| `run:intake:revise` | ревизия intake артефактов | active (S3 Day1 trigger path) |
+| `run:vision` | формирование charter/vision/metrics | active (S3 Day1 trigger path) |
+| `run:vision:revise` | ревизия vision | active (S3 Day1 trigger path) |
+| `run:prd` | формирование PRD | active (S3 Day1 trigger path) |
+| `run:prd:revise` | ревизия PRD | active (S3 Day1 trigger path) |
+| `run:arch` | формирование C4/ADR/NFR | active (S3 Day1 trigger path) |
+| `run:arch:revise` | ревизия архитектуры | active (S3 Day1 trigger path) |
+| `run:design` | detailed design + API/data model | active (S3 Day1 trigger path) |
+| `run:design:revise` | ревизия design | active (S3 Day1 trigger path) |
+| `run:plan` | delivery plan + epics/stories | active (S3 Day1 trigger path) |
+| `run:plan:revise` | ревизия плана | active (S3 Day1 trigger path) |
 | `run:dev` | разработка и создание PR | active (S2) |
 | `run:dev:revise` | доработка существующего PR | active (S2) |
-| `run:doc-audit` | аудит код↔доки↔чек-листы | planned |
-| `run:qa` | тест-артефакты и прогоны | planned |
-| `run:release` | релиз и release artifacts | planned |
-| `run:postdeploy` | post-deploy review / postmortem | planned |
-| `run:ops` | эксплуатационные улучшения | planned |
-| `run:self-improve` | анализ запусков/комментариев и подготовка улучшений docs/prompts/tools | planned (S3) |
-| `run:abort` | остановка/cleanup текущей инициативы | planned |
-| `run:rethink` | переоткрытие этапа и смена траектории | planned |
+| `run:doc-audit` | аудит код↔доки↔чек-листы | active (S3 Day1 trigger path) |
+| `run:qa` | тест-артефакты и прогоны | active (S3 Day1 trigger path) |
+| `run:release` | релиз и release artifacts | active (S3 Day1 trigger path) |
+| `run:postdeploy` | post-deploy review / postmortem | active (S3 Day1 trigger path) |
+| `run:ops` | эксплуатационные улучшения | active (S3 Day1 trigger path) |
+| `run:self-improve` | анализ запусков/комментариев и подготовка улучшений docs/prompts/tools | active (S3 Day1 trigger path; deep logic S3 Day6+) |
+| `run:abort` | остановка/cleanup текущей инициативы | active (S3 Day1 trigger path) |
+| `run:rethink` | переоткрытие этапа и смена траектории | active (S3 Day1 trigger path) |
 
 ## Класс `state:*` (служебные статусы)
 
@@ -148,9 +148,9 @@ approvals:
 - S2 baseline:
   - pre-review остается обязательным шагом перед финальным Owner review;
   - post-run transitions `run:* -> state:*` фиксируются в Day5/Day6 как отдельные доработки policy и аудита.
-- S3 target:
-  - активируется полный stage-контур `run:intake..run:ops` + revise/abort/rethink;
-  - вводится `run:self-improve` с отдельным post-run transition policy.
+- S3 Day1 факт:
+  - активирован полный stage-контур `run:intake..run:ops` + revise/abort/rethink;
+  - активирован trigger path для `run:self-improve` (расширенная бизнес-логика дорабатывается по S3 Day6+).
 
 ## Оркестрационный flow для `run:self-improve`
 
@@ -171,7 +171,7 @@ approvals:
 - Для model/reasoning также хранится каталог vars:
   - `AI_MODEL_GPT_5_3_CODEX_LABEL`, `AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL`, `AI_MODEL_GPT_5_2_CODEX_LABEL`, `AI_MODEL_GPT_5_1_CODEX_MAX_LABEL`, `AI_MODEL_GPT_5_2_LABEL`, `AI_MODEL_GPT_5_1_CODEX_MINI_LABEL`,
   - `AI_REASONING_LOW_LABEL`, `AI_REASONING_MEDIUM_LABEL`, `AI_REASONING_HIGH_LABEL`, `AI_REASONING_EXTRA_HIGH_LABEL`.
-- Для planned `run:*` лейблов vars заводятся заранее, даже если этап ещё не активирован.
+- Для новых `run:*` лейблов vars заводятся заранее до активации соответствующего этапа.
 - Bootstrap синхронизация каталога выполняется скриптом `bootstrap/remote/45_configure_github_repo_ci.sh`.
 
 ## Аудит и наблюдаемость

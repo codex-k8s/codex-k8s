@@ -367,6 +367,167 @@ func TestIngestGitHubWebhook_IssueRunDev_CreatesRunForAllowedMember(t *testing.T
 	}
 }
 
+func TestIngestGitHubWebhook_IssueRunVision_CreatesStageRunForAllowedMember(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {
+				ID:          "user-1",
+				GitHubLogin: "member",
+			},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{
+			"project-1|user-1": "read_write",
+		},
+	}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"labeled",
+		"label":{"name":"run:vision"},
+		"issue":{"id":1001,"number":78,"title":"Vision stage","html_url":"https://github.com/codex-k8s/codex-k8s/issues/78","state":"open","labels":[{"name":"run:vision"}],"user":{"id":55,"login":"owner"}},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-vision-78",
+		DeliveryID:    "delivery-vision-78",
+		EventType:     string(webhookdomain.GitHubEventIssues),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.Status != webhookdomain.IngestStatusAccepted || got.Duplicate {
+		t.Fatalf("unexpected result: %+v", got)
+	}
+	if got.RunID == "" {
+		t.Fatalf("expected run id for issue trigger")
+	}
+
+	var runPayload githubRunPayload
+	if err := json.Unmarshal(runs.last.RunPayload, &runPayload); err != nil {
+		t.Fatalf("unmarshal run payload: %v", err)
+	}
+	if runPayload.Trigger == nil {
+		t.Fatalf("expected trigger object in run payload")
+	}
+	if runPayload.Trigger.Kind != webhookdomain.TriggerKindVision {
+		t.Fatalf("unexpected trigger kind: %#v", runPayload.Trigger.Kind)
+	}
+	if runPayload.Trigger.Label != webhookdomain.DefaultRunVisionLabel {
+		t.Fatalf("unexpected trigger label: %#v", runPayload.Trigger.Label)
+	}
+}
+
+func TestIngestGitHubWebhook_IssueTriggerConflict_IgnoredWithDiagnosticComment(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {
+				ID:          "user-1",
+				GitHubLogin: "member",
+			},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{
+			"project-1|user-1": "read_write",
+		},
+	}
+	runStatus := &inMemoryRunStatusService{}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
+		RunStatus:  runStatus,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"labeled",
+		"label":{"name":"run:vision"},
+		"issue":{"id":1001,"number":79,"title":"Conflict stage","html_url":"https://github.com/codex-k8s/codex-k8s/issues/79","state":"open","labels":[{"name":"run:dev"},{"name":"run:vision"}],"user":{"id":55,"login":"owner"}},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-conflict-79",
+		DeliveryID:    "delivery-conflict-79",
+		EventType:     string(webhookdomain.GitHubEventIssues),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.Status != webhookdomain.IngestStatusIgnored || got.RunID != "" || got.Duplicate {
+		t.Fatalf("unexpected result: %+v", got)
+	}
+	if len(runs.items) != 0 {
+		t.Fatalf("expected no run creation for conflicting trigger labels")
+	}
+	if runStatus.conflictCommentCalls != 1 {
+		t.Fatalf("expected conflict comment call, got %d", runStatus.conflictCommentCalls)
+	}
+	if runStatus.lastConflictComment.IssueNumber != 79 {
+		t.Fatalf("unexpected issue number in conflict comment params: %d", runStatus.lastConflictComment.IssueNumber)
+	}
+	if len(events.items) != 1 {
+		t.Fatalf("expected one flow event, got %d", len(events.items))
+	}
+	if events.items[0].EventType != floweventdomain.EventTypeWebhookIgnored {
+		t.Fatalf("unexpected event type: %s", events.items[0].EventType)
+	}
+	var payloadJSON map[string]any
+	if err := json.Unmarshal(events.items[0].Payload, &payloadJSON); err != nil {
+		t.Fatalf("decode ignored event payload: %v", err)
+	}
+	if payloadJSON["reason"] != "issue_trigger_label_conflict" {
+		t.Fatalf("unexpected reason: %#v", payloadJSON["reason"])
+	}
+}
+
 func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_CreatesReviseRun(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
@@ -628,6 +789,8 @@ type inMemoryRunStatusService struct {
 	pullRequestCleanupCalls int
 	lastIssueCleanup        runstatusdomain.CleanupByIssueParams
 	lastPullRequestCleanup  runstatusdomain.CleanupByPullRequestParams
+	conflictCommentCalls    int
+	lastConflictComment     runstatusdomain.TriggerLabelConflictCommentParams
 }
 
 func (s *inMemoryRunStatusService) CleanupNamespacesByIssue(_ context.Context, params runstatusdomain.CleanupByIssueParams) (runstatusdomain.CleanupByIssueResult, error) {
@@ -640,6 +803,15 @@ func (s *inMemoryRunStatusService) CleanupNamespacesByPullRequest(_ context.Cont
 	s.pullRequestCleanupCalls++
 	s.lastPullRequestCleanup = params
 	return runstatusdomain.CleanupByIssueResult{}, nil
+}
+
+func (s *inMemoryRunStatusService) PostTriggerLabelConflictComment(_ context.Context, params runstatusdomain.TriggerLabelConflictCommentParams) (runstatusdomain.TriggerLabelConflictCommentResult, error) {
+	s.conflictCommentCalls++
+	s.lastConflictComment = params
+	return runstatusdomain.TriggerLabelConflictCommentResult{
+		CommentID:  1,
+		CommentURL: "https://example.test/comment/1",
+	}, nil
 }
 
 type inMemoryEventRepo struct {

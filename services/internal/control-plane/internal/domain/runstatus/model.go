@@ -43,6 +43,22 @@ type UpsertCommentResult struct {
 	CommentURL string
 }
 
+// TriggerLabelConflictCommentParams describes one localized conflict comment request.
+type TriggerLabelConflictCommentParams struct {
+	CorrelationID      string
+	RepositoryFullName string
+	IssueNumber        int
+	Locale             string
+	TriggerLabel       string
+	ConflictingLabels  []string
+}
+
+// TriggerLabelConflictCommentResult returns posted GitHub comment metadata.
+type TriggerLabelConflictCommentResult struct {
+	CommentID  int64
+	CommentURL string
+}
+
 // RequestedByType identifies who requested run namespace deletion.
 type RequestedByType string
 

@@ -149,6 +149,39 @@ jobs:
           CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET: ${{ secrets.CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET }}
           CODEXK8S_JWT_SIGNING_KEY: ${{ secrets.CODEXK8S_JWT_SIGNING_KEY }}
           CODEXK8S_JWT_TTL: ${{ vars.CODEXK8S_JWT_TTL || '15m' }}
+          RUN_INTAKE_LABEL: ${{ vars.RUN_INTAKE_LABEL || 'run:intake' }}
+          RUN_INTAKE_REVISE_LABEL: ${{ vars.RUN_INTAKE_REVISE_LABEL || 'run:intake:revise' }}
+          RUN_VISION_LABEL: ${{ vars.RUN_VISION_LABEL || 'run:vision' }}
+          RUN_VISION_REVISE_LABEL: ${{ vars.RUN_VISION_REVISE_LABEL || 'run:vision:revise' }}
+          RUN_PRD_LABEL: ${{ vars.RUN_PRD_LABEL || 'run:prd' }}
+          RUN_PRD_REVISE_LABEL: ${{ vars.RUN_PRD_REVISE_LABEL || 'run:prd:revise' }}
+          RUN_ARCH_LABEL: ${{ vars.RUN_ARCH_LABEL || 'run:arch' }}
+          RUN_ARCH_REVISE_LABEL: ${{ vars.RUN_ARCH_REVISE_LABEL || 'run:arch:revise' }}
+          RUN_DESIGN_LABEL: ${{ vars.RUN_DESIGN_LABEL || 'run:design' }}
+          RUN_DESIGN_REVISE_LABEL: ${{ vars.RUN_DESIGN_REVISE_LABEL || 'run:design:revise' }}
+          RUN_PLAN_LABEL: ${{ vars.RUN_PLAN_LABEL || 'run:plan' }}
+          RUN_PLAN_REVISE_LABEL: ${{ vars.RUN_PLAN_REVISE_LABEL || 'run:plan:revise' }}
+          RUN_DEV_LABEL: ${{ vars.RUN_DEV_LABEL || 'run:dev' }}
+          RUN_DEV_REVISE_LABEL: ${{ vars.RUN_DEV_REVISE_LABEL || 'run:dev:revise' }}
+          RUN_DEBUG_LABEL: ${{ vars.RUN_DEBUG_LABEL || 'run:debug' }}
+          RUN_DOC_AUDIT_LABEL: ${{ vars.RUN_DOC_AUDIT_LABEL || 'run:doc-audit' }}
+          RUN_QA_LABEL: ${{ vars.RUN_QA_LABEL || 'run:qa' }}
+          RUN_RELEASE_LABEL: ${{ vars.RUN_RELEASE_LABEL || 'run:release' }}
+          RUN_POSTDEPLOY_LABEL: ${{ vars.RUN_POSTDEPLOY_LABEL || 'run:postdeploy' }}
+          RUN_OPS_LABEL: ${{ vars.RUN_OPS_LABEL || 'run:ops' }}
+          RUN_SELF_IMPROVE_LABEL: ${{ vars.RUN_SELF_IMPROVE_LABEL || 'run:self-improve' }}
+          RUN_ABORT_LABEL: ${{ vars.RUN_ABORT_LABEL || 'run:abort' }}
+          RUN_RETHINK_LABEL: ${{ vars.RUN_RETHINK_LABEL || 'run:rethink' }}
+          STATE_BLOCKED_LABEL: ${{ vars.STATE_BLOCKED_LABEL || 'state:blocked' }}
+          STATE_IN_REVIEW_LABEL: ${{ vars.STATE_IN_REVIEW_LABEL || 'state:in-review' }}
+          STATE_APPROVED_LABEL: ${{ vars.STATE_APPROVED_LABEL || 'state:approved' }}
+          STATE_SUPERSEDED_LABEL: ${{ vars.STATE_SUPERSEDED_LABEL || 'state:superseded' }}
+          STATE_ABANDONED_LABEL: ${{ vars.STATE_ABANDONED_LABEL || 'state:abandoned' }}
+          NEED_INPUT_LABEL: ${{ vars.NEED_INPUT_LABEL || 'need:input' }}
+          NEED_PM_LABEL: ${{ vars.NEED_PM_LABEL || 'need:pm' }}
+          NEED_SA_LABEL: ${{ vars.NEED_SA_LABEL || 'need:sa' }}
+          NEED_QA_LABEL: ${{ vars.NEED_QA_LABEL || 'need:qa' }}
+          NEED_SRE_LABEL: ${{ vars.NEED_SRE_LABEL || 'need:sre' }}
           CODEXK8S_RUN_DEV_LABEL: ${{ vars.RUN_DEV_LABEL || 'run:dev' }}
           CODEXK8S_RUN_DEV_REVISE_LABEL: ${{ vars.RUN_DEV_REVISE_LABEL || 'run:dev:revise' }}
           CODEXK8S_RUN_DEBUG_LABEL: ${{ vars.RUN_DEBUG_LABEL || 'run:debug' }}

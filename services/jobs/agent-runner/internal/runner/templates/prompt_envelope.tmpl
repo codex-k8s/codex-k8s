@@ -41,18 +41,18 @@
 - Финальный ответ модели должен быть ТОЛЬКО JSON-объект по output schema.
 
 Требования к завершению:
-{{- if eq .TriggerKind "dev" }}
-- Создайте/обновите PR в `{{ .BaseBranch }}`.
-- PR body должен быть валидным Markdown на русском языке.
-- После успешного создания/обновления PR:
-  - через `github_labels_transition` снимите триггер-лейбл `{{ .TriggerLabel }}` с Issue #{{ .IssueNumber }};
-  - через `github_labels_transition` установите `{{ .StateInReviewLabel }}` на PR;
-  - через `github_labels_transition` установите `{{ .StateInReviewLabel }}` на Issue #{{ .IssueNumber }}.
-{{- else if eq .TriggerKind "dev_revise" }}
+{{- if .IsReviseTrigger }}
 - Обновляйте существующий PR в той же ветке.
 - Соберите все unresolved inline review-комментарии и ответьте на КАЖДЫЙ (или явно закройте аргументированным ответом).
 - Запушьте исправления в ту же ветку.
 - После обновления PR:
+  - через `github_labels_transition` снимите триггер-лейбл `{{ .TriggerLabel }}` с Issue #{{ .IssueNumber }};
+  - через `github_labels_transition` установите `{{ .StateInReviewLabel }}` на PR;
+  - через `github_labels_transition` установите `{{ .StateInReviewLabel }}` на Issue #{{ .IssueNumber }}.
+{{- else }}
+- Создайте/обновите PR в `{{ .BaseBranch }}`.
+- PR body должен быть валидным Markdown на русском языке.
+- После успешного создания/обновления PR:
   - через `github_labels_transition` снимите триггер-лейбл `{{ .TriggerLabel }}` с Issue #{{ .IssueNumber }};
   - через `github_labels_transition` установите `{{ .StateInReviewLabel }}` на PR;
   - через `github_labels_transition` установите `{{ .StateInReviewLabel }}` на Issue #{{ .IssueNumber }}.
@@ -107,18 +107,18 @@ Mandatory rules:
 - Return ONLY a JSON object matching the output schema.
 
 Completion requirements:
-{{- if eq .TriggerKind "dev" }}
-- Create/update PR to `{{ .BaseBranch }}`.
-- PR body must be valid Markdown in English.
-- After PR creation/update:
-  - use `github_labels_transition` to remove trigger label `{{ .TriggerLabel }}` from Issue #{{ .IssueNumber }};
-  - use `github_labels_transition` to apply `{{ .StateInReviewLabel }}` on PR;
-  - use `github_labels_transition` to apply `{{ .StateInReviewLabel }}` on Issue #{{ .IssueNumber }}.
-{{- else if eq .TriggerKind "dev_revise" }}
+{{- if .IsReviseTrigger }}
 - Update the existing PR in the same branch.
 - Collect all unresolved inline review comments and respond to EVERY one.
 - Push fixes to the same branch.
 - After PR update:
+  - use `github_labels_transition` to remove trigger label `{{ .TriggerLabel }}` from Issue #{{ .IssueNumber }};
+  - use `github_labels_transition` to apply `{{ .StateInReviewLabel }}` on PR;
+  - use `github_labels_transition` to apply `{{ .StateInReviewLabel }}` on Issue #{{ .IssueNumber }}.
+{{- else }}
+- Create/update PR to `{{ .BaseBranch }}`.
+- PR body must be valid Markdown in English.
+- After PR creation/update:
   - use `github_labels_transition` to remove trigger label `{{ .TriggerLabel }}` from Issue #{{ .IssueNumber }};
   - use `github_labels_transition` to apply `{{ .StateInReviewLabel }}` on PR;
   - use `github_labels_transition` to apply `{{ .StateInReviewLabel }}` on Issue #{{ .IssueNumber }}.

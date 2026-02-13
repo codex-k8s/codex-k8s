@@ -33,16 +33,45 @@ type IngestResult struct {
 	Duplicate bool `json:"duplicate"`
 }
 
-// TriggerLabels defines active issue labels that create development runs.
+// TriggerLabels defines active run:* labels that create stage runs.
 type TriggerLabels struct {
-	RunDev       string
-	RunDevRevise string
+	RunIntake, RunIntakeRevise string
+	RunVision, RunVisionRevise string
+	RunPRD, RunPRDRevise       string
+	RunArch, RunArchRevise     string
+	RunDesign, RunDesignRevise string
+	RunPlan, RunPlanRevise     string
+	RunDev, RunDevRevise       string
+	RunDocAudit, RunQA         string
+	RunRelease, RunPostDeploy  string
+	RunOps, RunSelfImprove     string
+	RunAbort, RunRethink       string
 }
 
 func defaultTriggerLabels() TriggerLabels {
 	return TriggerLabels{
-		RunDev:       webhookdomain.DefaultRunDevLabel,
-		RunDevRevise: webhookdomain.DefaultRunDevReviseLabel,
+		RunIntake:       webhookdomain.DefaultRunIntakeLabel,
+		RunIntakeRevise: webhookdomain.DefaultRunIntakeReviseLabel,
+		RunVision:       webhookdomain.DefaultRunVisionLabel,
+		RunVisionRevise: webhookdomain.DefaultRunVisionReviseLabel,
+		RunPRD:          webhookdomain.DefaultRunPRDLabel,
+		RunPRDRevise:    webhookdomain.DefaultRunPRDReviseLabel,
+		RunArch:         webhookdomain.DefaultRunArchLabel,
+		RunArchRevise:   webhookdomain.DefaultRunArchReviseLabel,
+		RunDesign:       webhookdomain.DefaultRunDesignLabel,
+		RunDesignRevise: webhookdomain.DefaultRunDesignReviseLabel,
+		RunPlan:         webhookdomain.DefaultRunPlanLabel,
+		RunPlanRevise:   webhookdomain.DefaultRunPlanReviseLabel,
+		RunDev:          webhookdomain.DefaultRunDevLabel,
+		RunDevRevise:    webhookdomain.DefaultRunDevReviseLabel,
+		RunDocAudit:     webhookdomain.DefaultRunDocAuditLabel,
+		RunQA:           webhookdomain.DefaultRunQALabel,
+		RunRelease:      webhookdomain.DefaultRunReleaseLabel,
+		RunPostDeploy:   webhookdomain.DefaultRunPostDeployLabel,
+		RunOps:          webhookdomain.DefaultRunOpsLabel,
+		RunSelfImprove:  webhookdomain.DefaultRunSelfImproveLabel,
+		RunAbort:        webhookdomain.DefaultRunAbortLabel,
+		RunRethink:      webhookdomain.DefaultRunRethinkLabel,
 	}
 }
 
@@ -50,6 +79,10 @@ type issueRunTrigger struct {
 	Source string
 	Label  string
 	Kind   webhookdomain.TriggerKind
+}
+
+type triggerConflictResult struct {
+	ConflictingLabels []string
 }
 
 type runAgentProfile struct {
@@ -88,6 +121,7 @@ type githubIssueRecord struct {
 	Title       string                `json:"title"`
 	HTMLURL     string                `json:"html_url"`
 	State       string                `json:"state"`
+	Labels      []githubLabelRecord   `json:"labels"`
 	User        githubActorRecord     `json:"user"`
 	PullRequest *githubPullRequestRef `json:"pull_request"`
 }

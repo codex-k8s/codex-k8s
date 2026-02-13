@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/caarlos0/env/v11"
+	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 )
 
 // Config defines environment-backed runtime settings for agent-runner job.
@@ -51,14 +52,10 @@ func LoadConfig() (Config, error) {
 	cfg.TriggerKind = normalizeTriggerKind(cfg.TriggerKind)
 	cfg.TriggerLabel = strings.TrimSpace(cfg.TriggerLabel)
 	if cfg.TriggerLabel == "" {
-		if cfg.TriggerKind == triggerKindDevRevise {
-			cfg.TriggerLabel = runDevReviseLabelDefault
-		} else {
-			cfg.TriggerLabel = runDevLabelDefault
-		}
+		cfg.TriggerLabel = webhookdomain.DefaultTriggerLabel(webhookdomain.NormalizeTriggerKind(cfg.TriggerKind))
 	}
 	cfg.PromptTemplateKind = strings.TrimSpace(strings.ToLower(cfg.PromptTemplateKind))
-	if cfg.TriggerKind == triggerKindDevRevise {
+	if isReviseTriggerKind(cfg.TriggerKind) {
 		cfg.PromptTemplateKind = promptTemplateKindReview
 	}
 	if cfg.PromptTemplateKind != promptTemplateKindReview {

@@ -22,3 +22,13 @@ type runNamespaceDeleteByStaffPayload struct {
 	RequestedByType    string `json:"requested_by_type"`
 	RequestedByID      string `json:"requested_by_id,omitempty"`
 }
+
+// triggerLabelConflictCommentPayload is stored in flow_events for conflict diagnostics.
+type triggerLabelConflictCommentPayload struct {
+	RepositoryFullName string   `json:"repository_full_name"`
+	IssueNumber        int      `json:"issue_number"`
+	TriggerLabel       string   `json:"trigger_label"`
+	ConflictingLabels  []string `json:"conflicting_labels"`
+	CommentID          int64    `json:"comment_id"`
+	CommentURL         string   `json:"comment_url"`
+}

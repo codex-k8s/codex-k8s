@@ -77,20 +77,24 @@ approvals:
 - Для `waiting_mcp` timeout-kill не применяется до завершения ожидания.
 - Для длительных пауз run должен оставаться resumable за счёт сохранения `codex-cli` session snapshot.
 
-## Текущий активный контур (S2)
+## Текущий активный контур (S3 Day1)
 
-На текущем этапе реализации обязательны в работе:
-- `run:dev`
-- `run:dev:revise`
+На текущем этапе реализации активирован полный trigger-контур:
+- `run:intake..run:ops`;
+- `run:<stage>:revise`;
+- `run:abort`, `run:rethink`, `run:self-improve`.
 
-Остальные `run:*` зафиксированы как целевая модель и поэтапно вводятся в следующих итерациях.
+Ограничение текущего этапа:
+- для части стадий пока активирован базовый orchestration path (routing/audit/policy),
+  а специализированная бизнес-логика стадий дорабатывается следующими S3 эпиками.
 
 ## План активации контуров
 
-- S2 baseline: обязательны `run:dev` и `run:dev:revise`.
+- S2 baseline: `run:dev` и `run:dev:revise` (completed).
 - S2 Day6: approval/audit hardening (completed).
-- S2 Day7: regression gate под полный MVP.
-- S3 target: активация полного stage-flow (`run:intake..run:ops`) и `run:self-improve`.
+- S2 Day7: regression gate под полный MVP (completed).
+- S3 Day1: активация полного stage-flow (`run:intake..run:ops`) и trigger path для `run:self-improve` (completed).
+- S3 Day2+ : поэтапное насыщение stage-specific логики и observability.
 
 ## Конфигурационные labels для исполнения stage
 

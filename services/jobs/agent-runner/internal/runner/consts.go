@@ -13,9 +13,6 @@ const (
 	promptLocaleRU = "ru"
 	promptLocaleEN = "en"
 
-	triggerKindDev       = "dev"
-	triggerKindDevRevise = "dev_revise"
-
 	runtimeModeFullEnv  = "full-env"
 	runtimeModeCodeOnly = "code-only"
 
