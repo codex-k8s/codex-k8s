@@ -50,6 +50,26 @@ type Config struct {
 	AgentDefaultLocale string `env:"CODEXK8S_AGENT_DEFAULT_LOCALE" envDefault:"ru"`
 	// AgentBaseBranch is default base branch for PR flow.
 	AgentBaseBranch string `env:"CODEXK8S_AGENT_BASE_BRANCH" envDefault:"main"`
+	// AIModelGPT53CodexLabel configures label -> model mapping for gpt-5.3-codex.
+	AIModelGPT53CodexLabel string `env:"AI_MODEL_GPT_5_3_CODEX_LABEL" envDefault:"[ai-model-gpt-5.3-codex]"`
+	// AIModelGPT53CodexSparkLabel configures label -> model mapping for gpt-5.3-codex-spark.
+	AIModelGPT53CodexSparkLabel string `env:"AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL" envDefault:"[ai-model-gpt-5.3-codex-spark]"`
+	// AIModelGPT52CodexLabel configures label -> model mapping for gpt-5.2-codex.
+	AIModelGPT52CodexLabel string `env:"AI_MODEL_GPT_5_2_CODEX_LABEL" envDefault:"[ai-model-gpt-5.2-codex]"`
+	// AIModelGPT52Label configures label -> model mapping for gpt-5.2.
+	AIModelGPT52Label string `env:"AI_MODEL_GPT_5_2_LABEL" envDefault:"[ai-model-gpt-5.2]"`
+	// AIModelGPT51CodexMaxLabel configures label -> model mapping for gpt-5.1-codex-max.
+	AIModelGPT51CodexMaxLabel string `env:"AI_MODEL_GPT_5_1_CODEX_MAX_LABEL" envDefault:"[ai-model-gpt-5.1-codex-max]"`
+	// AIModelGPT51CodexMiniLabel configures label -> model mapping for gpt-5.1-codex-mini.
+	AIModelGPT51CodexMiniLabel string `env:"AI_MODEL_GPT_5_1_CODEX_MINI_LABEL" envDefault:"[ai-model-gpt-5.1-codex-mini]"`
+	// AIReasoningLowLabel configures label -> reasoning mapping for low profile.
+	AIReasoningLowLabel string `env:"AI_REASONING_LOW_LABEL" envDefault:"[ai-reasoning-low]"`
+	// AIReasoningMediumLabel configures label -> reasoning mapping for medium profile.
+	AIReasoningMediumLabel string `env:"AI_REASONING_MEDIUM_LABEL" envDefault:"[ai-reasoning-medium]"`
+	// AIReasoningHighLabel configures label -> reasoning mapping for high profile.
+	AIReasoningHighLabel string `env:"AI_REASONING_HIGH_LABEL" envDefault:"[ai-reasoning-high]"`
+	// AIReasoningExtraHighLabel configures label -> reasoning mapping for extra-high profile.
+	AIReasoningExtraHighLabel string `env:"AI_REASONING_EXTRA_HIGH_LABEL" envDefault:"[ai-reasoning-extra-high]"`
 
 	// DBHost is the PostgreSQL host.
 	DBHost string `env:"CODEXK8S_DB_HOST,required,notEmpty"`

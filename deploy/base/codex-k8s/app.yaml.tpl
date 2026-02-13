@@ -487,6 +487,66 @@ spec:
                   name: codex-k8s-label-catalog
                   key: STATE_IN_REVIEW_LABEL
                   optional: true
+            - name: AI_MODEL_GPT_5_3_CODEX_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: AI_MODEL_GPT_5_3_CODEX_LABEL
+                  optional: true
+            - name: AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL
+                  optional: true
+            - name: AI_MODEL_GPT_5_2_CODEX_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: AI_MODEL_GPT_5_2_CODEX_LABEL
+                  optional: true
+            - name: AI_MODEL_GPT_5_1_CODEX_MAX_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: AI_MODEL_GPT_5_1_CODEX_MAX_LABEL
+                  optional: true
+            - name: AI_MODEL_GPT_5_2_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: AI_MODEL_GPT_5_2_LABEL
+                  optional: true
+            - name: AI_MODEL_GPT_5_1_CODEX_MINI_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: AI_MODEL_GPT_5_1_CODEX_MINI_LABEL
+                  optional: true
+            - name: AI_REASONING_LOW_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: AI_REASONING_LOW_LABEL
+                  optional: true
+            - name: AI_REASONING_MEDIUM_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: AI_REASONING_MEDIUM_LABEL
+                  optional: true
+            - name: AI_REASONING_HIGH_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: AI_REASONING_HIGH_LABEL
+                  optional: true
+            - name: AI_REASONING_EXTRA_HIGH_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: AI_REASONING_EXTRA_HIGH_LABEL
+                  optional: true
             - name: CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT
               value: "${CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT}"
             - name: CODEXK8S_WORKER_RUN_ROLE_NAME

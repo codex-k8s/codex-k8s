@@ -108,11 +108,22 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 		return runAgentContext{}, fmt.Errorf("failed_precondition: run payload missing agent.name")
 	}
 
-	model, modelSource, err := resolveModelFromLabelsWithPriority(payload.pullRequestLabels, payload.issueLabels, defaults.DefaultModel)
+	labelCatalog := normalizeRunAgentLabelCatalog(defaults.LabelCatalog)
+	model, modelSource, err := resolveModelFromLabelsWithPriorityAndCatalog(
+		payload.pullRequestLabels,
+		payload.issueLabels,
+		defaults.DefaultModel,
+		labelCatalog,
+	)
 	if err != nil {
 		return runAgentContext{}, err
 	}
-	reasoning, reasoningSource, err := resolveReasoningFromLabelsWithPriority(payload.pullRequestLabels, payload.issueLabels, defaults.DefaultReasoningEffort)
+	reasoning, reasoningSource, err := resolveReasoningFromLabelsWithPriorityAndCatalog(
+		payload.pullRequestLabels,
+		payload.issueLabels,
+		defaults.DefaultReasoningEffort,
+		labelCatalog,
+	)
 	if err != nil {
 		return runAgentContext{}, err
 	}
@@ -133,6 +144,7 @@ type runAgentDefaults struct {
 	DefaultReasoningEffort string
 	DefaultLocale          string
 	AllowGPT53             bool
+	LabelCatalog           runAgentLabelCatalog
 }
 
 type parsedRunAgentPayload struct {
@@ -224,37 +236,41 @@ func normalizeTriggerKind(value string) string {
 }
 
 func resolveModelFromLabels(labels []string, defaultModel string) (model string, source string, err error) {
-	modelByLabel := map[string]string{
-		"ai-model-gpt-5.3-codex":       modelGPT53Codex,
-		"ai-model-gpt-5.3-codex-spark": modelGPT53CodexSpark,
-		"ai-model-gpt-5.2-codex":       modelGPT52Codex,
-		"ai-model-gpt-5.2":             modelGPT52,
-		"ai-model-gpt-5.1-codex-max":   modelGPT51CodexMax,
-		"ai-model-gpt-5.1-codex-mini":  modelGPT51CodexMini,
-	}
-	return resolveSingleLabelValue(labels, defaultModel, modelByLabel, "ai-model")
+	return resolveModelFromLabelsAndCatalog(labels, defaultModel, defaultRunAgentLabelCatalog())
 }
 
-func resolveModelFromLabelsWithPriority(pullRequestLabels []string, issueLabels []string, defaultModel string) (model string, source string, err error) {
-	modelByLabel := map[string]string{
-		"ai-model-gpt-5.3-codex":       modelGPT53Codex,
-		"ai-model-gpt-5.3-codex-spark": modelGPT53CodexSpark,
-		"ai-model-gpt-5.2-codex":       modelGPT52Codex,
-		"ai-model-gpt-5.2":             modelGPT52,
-		"ai-model-gpt-5.1-codex-max":   modelGPT51CodexMax,
-		"ai-model-gpt-5.1-codex-mini":  modelGPT51CodexMini,
-	}
-	return resolveSingleLabelValueWithPriority(pullRequestLabels, issueLabels, defaultModel, modelByLabel, "ai-model")
+func resolveModelFromLabelsAndCatalog(labels []string, defaultModel string, labelCatalog runAgentLabelCatalog) (model string, source string, err error) {
+	return resolveSingleLabelValue(labels, defaultModel, labelCatalog.modelByLabel(), labelKindAIModel)
 }
 
-func resolveReasoningFromLabelsWithPriority(pullRequestLabels []string, issueLabels []string, defaultReasoning string) (reasoning string, source string, err error) {
-	reasoningByLabel := map[string]string{
-		"ai-reasoning-low":        "low",
-		"ai-reasoning-medium":     "medium",
-		"ai-reasoning-high":       "high",
-		"ai-reasoning-extra-high": "high",
-	}
-	return resolveSingleLabelValueWithPriority(pullRequestLabels, issueLabels, defaultReasoning, reasoningByLabel, "ai-reasoning")
+func resolveModelFromLabelsWithPriorityAndCatalog(
+	pullRequestLabels []string,
+	issueLabels []string,
+	defaultModel string,
+	labelCatalog runAgentLabelCatalog,
+) (model string, source string, err error) {
+	return resolveSingleLabelValueWithPriority(
+		pullRequestLabels,
+		issueLabels,
+		defaultModel,
+		labelCatalog.modelByLabel(),
+		labelKindAIModel,
+	)
+}
+
+func resolveReasoningFromLabelsWithPriorityAndCatalog(
+	pullRequestLabels []string,
+	issueLabels []string,
+	defaultReasoning string,
+	labelCatalog runAgentLabelCatalog,
+) (reasoning string, source string, err error) {
+	return resolveSingleLabelValueWithPriority(
+		pullRequestLabels,
+		issueLabels,
+		defaultReasoning,
+		labelCatalog.reasoningByLabel(),
+		labelKindAIReasoning,
+	)
 }
 
 func resolveSingleLabelValue(labels []string, defaultValue string, known map[string]string, labelKind string) (value string, source string, err error) {
