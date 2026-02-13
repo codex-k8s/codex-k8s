@@ -42,9 +42,9 @@ type Config struct {
 	GitBotUsername string `env:"CODEXK8S_GIT_BOT_USERNAME" envDefault:"codex-bot"`
 	// GitBotMail is git author email configured in run pods.
 	GitBotMail string `env:"CODEXK8S_GIT_BOT_MAIL" envDefault:"codex-bot@codex-k8s.local"`
-	// AgentDefaultModel is fallback model when issue labels do not override model.
+	// AgentDefaultModel is fallback model when run config labels do not override model.
 	AgentDefaultModel string `env:"CODEXK8S_AGENT_DEFAULT_MODEL" envDefault:"gpt-5.3-codex"`
-	// AgentDefaultReasoningEffort is fallback reasoning profile when issue labels do not override reasoning.
+	// AgentDefaultReasoningEffort is fallback reasoning profile when run config labels do not override reasoning.
 	AgentDefaultReasoningEffort string `env:"CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT" envDefault:"high"`
 	// AgentDefaultLocale is fallback prompt locale.
 	AgentDefaultLocale string `env:"CODEXK8S_AGENT_DEFAULT_LOCALE" envDefault:"ru"`

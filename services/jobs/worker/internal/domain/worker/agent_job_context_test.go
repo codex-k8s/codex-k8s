@@ -163,3 +163,88 @@ func TestResolveRunAgentContext_UsesPullRequestHintsForRevise(t *testing.T) {
 		t.Fatalf("PromptTemplateKind = %q, want %q", got.PromptTemplateKind, promptTemplateKindReview)
 	}
 }
+
+func TestResolveRunAgentContext_ConfigLabelsPullRequestOverrideIssue(t *testing.T) {
+	t.Parallel()
+
+	runPayload := json.RawMessage(`{
+		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"agent":{"key":"dev","name":"AI Developer"},
+		"trigger":{"kind":"dev_revise","label":"run:dev:revise"},
+		"raw_payload":{
+			"issue":{
+				"number":20,
+				"labels":[
+					{"name":"[ai-model-gpt-5.1-codex-mini]"},
+					{"name":"[ai-reasoning-low]"}
+				]
+			},
+			"pull_request":{
+				"number":200,
+				"head":{"ref":"codex/issue-20"},
+				"labels":[
+					{"name":"[ai-model-gpt-5.2-codex]"},
+					{"name":"[ai-reasoning-high]"}
+				]
+			}
+		}
+	}`)
+
+	got, err := resolveRunAgentContext(runPayload, runAgentDefaults{
+		DefaultModel:           modelGPT52Codex,
+		DefaultReasoningEffort: "high",
+		DefaultLocale:          "ru",
+		AllowGPT53:             true,
+	})
+	if err != nil {
+		t.Fatalf("resolveRunAgentContext() error = %v", err)
+	}
+	if got.Model != modelGPT52Codex {
+		t.Fatalf("Model = %q, want %q", got.Model, modelGPT52Codex)
+	}
+	if got.ModelSource != modelSourcePullRequestLabel {
+		t.Fatalf("ModelSource = %q, want %q", got.ModelSource, modelSourcePullRequestLabel)
+	}
+	if got.ReasoningEffort != "high" {
+		t.Fatalf("ReasoningEffort = %q, want high", got.ReasoningEffort)
+	}
+	if got.ReasoningSource != modelSourcePullRequestLabel {
+		t.Fatalf("ReasoningSource = %q, want %q", got.ReasoningSource, modelSourcePullRequestLabel)
+	}
+}
+
+func TestResolveRunAgentContext_ConflictingPullRequestLabelsFail(t *testing.T) {
+	t.Parallel()
+
+	runPayload := json.RawMessage(`{
+		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"agent":{"key":"dev","name":"AI Developer"},
+		"trigger":{"kind":"dev_revise","label":"run:dev:revise"},
+		"raw_payload":{
+			"issue":{
+				"number":20,
+				"labels":[
+					{"name":"[ai-model-gpt-5.2-codex]"}
+				]
+			},
+			"pull_request":{
+				"number":200,
+				"head":{"ref":"codex/issue-20"},
+				"labels":[
+					{"name":"[ai-model-gpt-5.2-codex]"},
+					{"name":"[ai-model-gpt-5.1-codex-mini]"}
+				]
+			}
+		}
+	}`)
+
+	_, err := resolveRunAgentContext(runPayload, runAgentDefaults{
+		DefaultModel:           modelGPT52Codex,
+		DefaultReasoningEffort: "high",
+		DefaultLocale:          "ru",
+		AllowGPT53:             true,
+	})
+	if err == nil {
+		t.Fatal("expected conflict error for multiple pull_request ai-model labels")
+	}
+}

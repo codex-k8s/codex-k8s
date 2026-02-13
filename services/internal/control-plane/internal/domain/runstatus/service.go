@@ -50,7 +50,7 @@ func NewService(cfg Config, deps Dependencies) (*Service, error) {
 	}, nil
 }
 
-// UpsertRunStatusComment creates or updates one run status comment in the linked issue.
+// UpsertRunStatusComment creates or updates one run status comment in the linked issue/PR thread.
 func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertCommentParams) (UpsertCommentResult, error) {
 	runID := strings.TrimSpace(params.RunID)
 	if runID == "" {
@@ -112,7 +112,7 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 			Token:       runCtx.githubToken,
 			Owner:       runCtx.repoOwner,
 			Repository:  runCtx.repoName,
-			IssueNumber: runCtx.issueNumber,
+			IssueNumber: runCtx.commentTargetNumber,
 			Body:        body,
 		})
 		if err != nil {
@@ -122,7 +122,8 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 
 	s.insertFlowEvent(ctx, runCtx.run.CorrelationID, floweventdomain.EventTypeRunStatusCommentUpserted, runStatusCommentUpsertedPayload{
 		RunID:              runID,
-		IssueNumber:        runCtx.issueNumber,
+		IssueNumber:        runCtx.commentTargetNumber,
+		ThreadKind:         string(runCtx.commentTargetKind),
 		RepositoryFullName: runCtx.payload.Repository.FullName,
 		CommentID:          savedComment.ID,
 		CommentURL:         savedComment.URL,
@@ -324,12 +325,9 @@ func (s *Service) loadRunContext(ctx context.Context, runID string) (runContext,
 	if err := json.Unmarshal(run.RunPayload, &payload); err != nil {
 		return runContext{}, errRunPayloadDecode
 	}
-	issueNumber := 0
-	if payload.Issue != nil {
-		issueNumber = int(payload.Issue.Number)
-	}
-	if issueNumber <= 0 {
-		return runContext{}, errRunIssueNumberMissing
+	targetKind, targetNumber, err := resolveCommentTarget(payload)
+	if err != nil {
+		return runContext{}, err
 	}
 
 	repoOwner := ""
@@ -354,13 +352,14 @@ func (s *Service) loadRunContext(ctx context.Context, runID string) (runContext,
 	}
 
 	return runContext{
-		run:         run,
-		payload:     payload,
-		issueNumber: issueNumber,
-		repoOwner:   repoOwner,
-		repoName:    repoName,
-		githubToken: token,
-		triggerKind: triggerKind,
+		run:                 run,
+		payload:             payload,
+		commentTargetNumber: targetNumber,
+		commentTargetKind:   targetKind,
+		repoOwner:           repoOwner,
+		repoName:            repoName,
+		githubToken:         token,
+		triggerKind:         triggerKind,
 	}, nil
 }
 
@@ -387,7 +386,7 @@ func (s *Service) listRunIssueComments(ctx context.Context, runCtx runContext) (
 		Token:       runCtx.githubToken,
 		Owner:       runCtx.repoOwner,
 		Repository:  runCtx.repoName,
-		IssueNumber: runCtx.issueNumber,
+		IssueNumber: runCtx.commentTargetNumber,
 		Limit:       200,
 	})
 	if err != nil {

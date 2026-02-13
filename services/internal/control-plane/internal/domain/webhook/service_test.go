@@ -15,8 +15,8 @@ import (
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
 	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projectmember"
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
-	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
+	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
 )
 
 func TestIngestGitHubWebhook_Dedup(t *testing.T) {
@@ -476,6 +476,9 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_CreatesReviseRun(
 	}
 	if runPayload.Issue == nil || runPayload.Issue.Number != 200 {
 		t.Fatalf("expected issue payload with number=200, got %#v", runPayload.Issue)
+	}
+	if runPayload.PullRequest == nil || runPayload.PullRequest.Number != 200 {
+		t.Fatalf("expected pull_request payload with number=200, got %#v", runPayload.PullRequest)
 	}
 }
 

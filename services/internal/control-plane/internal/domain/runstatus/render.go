@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	commentTemplatePathRU = "templates/comment_ru.md.tmpl"
-	commentTemplatePathEN = "templates/comment_en.md.tmpl"
+	commentTemplateNameRU = "comment_ru.md.tmpl"
+	commentTemplateNameEN = "comment_en.md.tmpl"
 )
 
 //go:embed templates/comment_*.md.tmpl
@@ -51,10 +51,10 @@ func renderCommentBody(state commentState, managementURL string) (string, error)
 	}
 
 	ctx := buildCommentTemplateContext(state, strings.TrimSpace(managementURL), marker)
-	templatePath := resolveCommentTemplatePath(normalizeLocale(state.PromptLocale, localeEN))
+	templateName := resolveCommentTemplateName(normalizeLocale(state.PromptLocale, localeEN))
 	var out bytes.Buffer
-	if err := commentTemplates.ExecuteTemplate(&out, templatePath, ctx); err != nil {
-		return "", fmt.Errorf("render run status template %s: %w", templatePath, err)
+	if err := commentTemplates.ExecuteTemplate(&out, templateName, ctx); err != nil {
+		return "", fmt.Errorf("render run status template %s: %w", templateName, err)
 	}
 	return strings.TrimSpace(out.String()) + "\n", nil
 }
@@ -93,11 +93,11 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 	}
 }
 
-func resolveCommentTemplatePath(locale string) string {
+func resolveCommentTemplateName(locale string) string {
 	if locale == localeRU {
-		return commentTemplatePathRU
+		return commentTemplateNameRU
 	}
-	return commentTemplatePathEN
+	return commentTemplateNameEN
 }
 
 func renderStateMarker(state commentState) (string, error) {

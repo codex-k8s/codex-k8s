@@ -20,6 +20,11 @@ const (
 )
 
 const (
+	triggerSourceIssueLabel        = "issue_label"
+	triggerSourcePullRequestReview = "pull_request_review"
+)
+
+const (
 	runtimeModeFullEnv = "full-env"
 	runtimeModeCode    = "code-only"
 )
@@ -27,4 +32,11 @@ const (
 const (
 	runStatusSucceeded = "succeeded"
 	runStatusFailed    = "failed"
+)
+
+type commentTargetKind string
+
+const (
+	commentTargetKindIssue       commentTargetKind = "issue"
+	commentTargetKindPullRequest commentTargetKind = "pull_request"
 )

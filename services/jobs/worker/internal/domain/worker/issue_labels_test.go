@@ -51,3 +51,26 @@ func TestExtractIssueLabelsFromRunPayload_PullRequestLabels(t *testing.T) {
 		t.Fatal("expected to find ai-model label in pull_request.labels")
 	}
 }
+
+func TestExtractIssueAndPullRequestLabels(t *testing.T) {
+	t.Parallel()
+
+	rawPayload := json.RawMessage(`{
+		"issue":{"labels":[{"name":"issue-label-1"},{"name":"issue-label-2"}]},
+		"pull_request":{"labels":[{"name":"pr-label-1"}]}
+	}`)
+
+	issueLabels, pullRequestLabels := extractIssueAndPullRequestLabels(rawPayload)
+	if len(issueLabels) != 2 {
+		t.Fatalf("expected 2 issue labels, got %d", len(issueLabels))
+	}
+	if len(pullRequestLabels) != 1 {
+		t.Fatalf("expected 1 pull request label, got %d", len(pullRequestLabels))
+	}
+	if issueLabels[0] != "issue-label-1" || issueLabels[1] != "issue-label-2" {
+		t.Fatalf("unexpected issue labels: %#v", issueLabels)
+	}
+	if pullRequestLabels[0] != "pr-label-1" {
+		t.Fatalf("unexpected pull request labels: %#v", pullRequestLabels)
+	}
+}

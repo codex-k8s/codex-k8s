@@ -142,13 +142,14 @@ type Service struct {
 }
 
 type runContext struct {
-	run         agentrunrepo.Run
-	payload     querytypes.RunPayload
-	issueNumber int
-	repoOwner   string
-	repoName    string
-	githubToken string
-	triggerKind string
+	run                 agentrunrepo.Run
+	payload             querytypes.RunPayload
+	commentTargetNumber int
+	commentTargetKind   commentTargetKind
+	repoOwner           string
+	repoName            string
+	githubToken         string
+	triggerKind         string
 }
 
 type commentState struct {

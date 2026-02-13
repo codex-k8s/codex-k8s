@@ -15,9 +15,10 @@ const (
 	promptTemplateKindReview = "review"
 	promptTemplateSourceSeed = "repo_seed"
 
-	modelSourceDefault    = "agent_default"
-	modelSourceIssueLabel = "issue_label"
-	modelSourceFallback   = "auth_file_fallback"
+	modelSourceDefault          = "agent_default"
+	modelSourceIssueLabel       = "issue_label"
+	modelSourcePullRequestLabel = "pull_request_label"
+	modelSourceFallback         = "auth_file_fallback"
 
 	modelGPT53Codex      = "gpt-5.3-codex"
 	modelGPT53CodexSpark = "gpt-5.3-codex-spark"
@@ -107,12 +108,11 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 		return runAgentContext{}, fmt.Errorf("failed_precondition: run payload missing agent.name")
 	}
 
-	labels := payload.issueLabels
-	model, modelSource, err := resolveModelFromLabels(labels, defaults.DefaultModel)
+	model, modelSource, err := resolveModelFromLabelsWithPriority(payload.pullRequestLabels, payload.issueLabels, defaults.DefaultModel)
 	if err != nil {
 		return runAgentContext{}, err
 	}
-	reasoning, reasoningSource, err := resolveReasoningFromLabels(labels, defaults.DefaultReasoningEffort)
+	reasoning, reasoningSource, err := resolveReasoningFromLabelsWithPriority(payload.pullRequestLabels, payload.issueLabels, defaults.DefaultReasoningEffort)
 	if err != nil {
 		return runAgentContext{}, err
 	}
@@ -145,6 +145,7 @@ type parsedRunAgentPayload struct {
 	triggerLabel       string
 	agentDisplayName   string
 	issueLabels        []string
+	pullRequestLabels  []string
 }
 
 func parseRunAgentPayload(raw json.RawMessage) parsedRunAgentPayload {
@@ -154,7 +155,8 @@ func parseRunAgentPayload(raw json.RawMessage) parsedRunAgentPayload {
 	}
 
 	out := parsedRunAgentPayload{
-		issueLabels: make([]string, 0, 4),
+		issueLabels:       make([]string, 0, 4),
+		pullRequestLabels: make([]string, 0, 4),
 	}
 	if payload.Repository != nil {
 		out.repositoryFullName = strings.TrimSpace(payload.Repository.FullName)
@@ -178,7 +180,7 @@ func parseRunAgentPayload(raw json.RawMessage) parsedRunAgentPayload {
 		out.agentKey = strings.TrimSpace(payload.Agent.Key)
 		out.agentDisplayName = strings.TrimSpace(payload.Agent.Name)
 	}
-	out.issueLabels = extractIssueLabels(payload.RawPayload)
+	out.issueLabels, out.pullRequestLabels = extractIssueAndPullRequestLabels(payload.RawPayload)
 	return out
 }
 
@@ -233,14 +235,26 @@ func resolveModelFromLabels(labels []string, defaultModel string) (model string,
 	return resolveSingleLabelValue(labels, defaultModel, modelByLabel, "ai-model")
 }
 
-func resolveReasoningFromLabels(labels []string, defaultReasoning string) (reasoning string, source string, err error) {
+func resolveModelFromLabelsWithPriority(pullRequestLabels []string, issueLabels []string, defaultModel string) (model string, source string, err error) {
+	modelByLabel := map[string]string{
+		"ai-model-gpt-5.3-codex":       modelGPT53Codex,
+		"ai-model-gpt-5.3-codex-spark": modelGPT53CodexSpark,
+		"ai-model-gpt-5.2-codex":       modelGPT52Codex,
+		"ai-model-gpt-5.2":             modelGPT52,
+		"ai-model-gpt-5.1-codex-max":   modelGPT51CodexMax,
+		"ai-model-gpt-5.1-codex-mini":  modelGPT51CodexMini,
+	}
+	return resolveSingleLabelValueWithPriority(pullRequestLabels, issueLabels, defaultModel, modelByLabel, "ai-model")
+}
+
+func resolveReasoningFromLabelsWithPriority(pullRequestLabels []string, issueLabels []string, defaultReasoning string) (reasoning string, source string, err error) {
 	reasoningByLabel := map[string]string{
 		"ai-reasoning-low":        "low",
 		"ai-reasoning-medium":     "medium",
 		"ai-reasoning-high":       "high",
 		"ai-reasoning-extra-high": "high",
 	}
-	return resolveSingleLabelValue(labels, defaultReasoning, reasoningByLabel, "ai-reasoning")
+	return resolveSingleLabelValueWithPriority(pullRequestLabels, issueLabels, defaultReasoning, reasoningByLabel, "ai-reasoning")
 }
 
 func resolveSingleLabelValue(labels []string, defaultValue string, known map[string]string, labelKind string) (value string, source string, err error) {
@@ -251,6 +265,32 @@ func resolveSingleLabelValue(labels []string, defaultValue string, known map[str
 	if len(matches) == 1 {
 		return known[matches[0]], modelSourceIssueLabel, nil
 	}
+	return defaultValue, modelSourceDefault, nil
+}
+
+func resolveSingleLabelValueWithPriority(
+	primaryLabels []string,
+	fallbackLabels []string,
+	defaultValue string,
+	known map[string]string,
+	labelKind string,
+) (value string, source string, err error) {
+	primaryMatches := collectResolvedLabelValues(primaryLabels, known)
+	if len(primaryMatches) > 1 {
+		return "", "", fmt.Errorf("failed_precondition: multiple %s labels found on pull_request: %s", labelKind, strings.Join(primaryMatches, ", "))
+	}
+	if len(primaryMatches) == 1 {
+		return known[primaryMatches[0]], modelSourcePullRequestLabel, nil
+	}
+
+	fallbackMatches := collectResolvedLabelValues(fallbackLabels, known)
+	if len(fallbackMatches) > 1 {
+		return "", "", fmt.Errorf("failed_precondition: multiple %s labels found on issue: %s", labelKind, strings.Join(fallbackMatches, ", "))
+	}
+	if len(fallbackMatches) == 1 {
+		return known[fallbackMatches[0]], modelSourceIssueLabel, nil
+	}
+
 	return defaultValue, modelSourceDefault, nil
 }
 

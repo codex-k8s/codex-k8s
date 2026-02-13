@@ -2,7 +2,10 @@ package runstatus
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
+
+	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
 func normalizeLocale(value string, fallback string) string {
@@ -22,6 +25,15 @@ func normalizeTriggerKind(value string) string {
 		return triggerKindDevRevise
 	default:
 		return triggerKindDev
+	}
+}
+
+func normalizeTriggerSource(value string) string {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case triggerSourcePullRequestReview:
+		return triggerSourcePullRequestReview
+	default:
+		return triggerSourceIssueLabel
 	}
 }
 
@@ -115,4 +127,39 @@ func commentContainsRunID(body string, runID string) bool {
 		return false
 	}
 	return strings.TrimSpace(state.RunID) == strings.TrimSpace(runID)
+}
+
+func resolveCommentTarget(payload querytypes.RunPayload) (commentTargetKind, int, error) {
+	issueNumber := int64(0)
+	if payload.Issue != nil {
+		issueNumber = payload.Issue.Number
+	}
+	pullRequestNumber := int64(0)
+	if payload.PullRequest != nil {
+		pullRequestNumber = payload.PullRequest.Number
+	}
+	triggerSource := triggerSourceIssueLabel
+	if payload.Trigger != nil {
+		triggerSource = normalizeTriggerSource(payload.Trigger.Source)
+	}
+
+	if triggerSource == triggerSourcePullRequestReview {
+		switch {
+		case pullRequestNumber > 0:
+			return commentTargetKindPullRequest, int(pullRequestNumber), nil
+		case issueNumber > 0:
+			return commentTargetKindPullRequest, int(issueNumber), nil
+		default:
+			return "", 0, fmt.Errorf("%w", errRunCommentTargetMissing)
+		}
+	}
+
+	switch {
+	case issueNumber > 0:
+		return commentTargetKindIssue, int(issueNumber), nil
+	case pullRequestNumber > 0:
+		return commentTargetKindPullRequest, int(pullRequestNumber), nil
+	default:
+		return "", 0, fmt.Errorf("%w", errRunCommentTargetMissing)
+	}
 }

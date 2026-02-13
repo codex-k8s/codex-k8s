@@ -58,9 +58,9 @@ type Config struct {
 	GitBotUsername string
 	// GitBotMail is git author email configured in run pods.
 	GitBotMail string
-	// AgentDefaultModel is fallback model when issue labels do not override model.
+	// AgentDefaultModel is fallback model when run config labels do not override model.
 	AgentDefaultModel string
-	// AgentDefaultReasoningEffort is fallback reasoning profile when issue labels do not override reasoning.
+	// AgentDefaultReasoningEffort is fallback reasoning profile when run config labels do not override reasoning.
 	AgentDefaultReasoningEffort string
 	// AgentDefaultLocale is fallback prompt locale.
 	AgentDefaultLocale string

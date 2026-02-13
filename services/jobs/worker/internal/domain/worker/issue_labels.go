@@ -38,25 +38,38 @@ type githubIssueLabelsLabel struct {
 
 // extractIssueLabels returns raw issue label names from GitHub event payload.
 func extractIssueLabels(raw json.RawMessage) []string {
-	if len(raw) == 0 {
+	issueLabels, pullRequestLabels := extractIssueAndPullRequestLabels(raw)
+	if issueLabels == nil && pullRequestLabels == nil {
 		return nil
+	}
+	labels := make([]string, 0, len(issueLabels)+len(pullRequestLabels))
+	labels = append(labels, issueLabels...)
+	labels = append(labels, pullRequestLabels...)
+	return labels
+}
+
+// extractIssueAndPullRequestLabels returns label names split by GitHub payload scope.
+func extractIssueAndPullRequestLabels(raw json.RawMessage) (issueLabels []string, pullRequestLabels []string) {
+	if len(raw) == 0 {
+		return nil, nil
 	}
 	var event githubIssueLabelsEvent
 	if err := json.Unmarshal(raw, &event); err != nil {
-		return nil
+		return nil, nil
 	}
 	if event.Issue == nil && event.PullRequest == nil {
-		return nil
+		return nil, nil
 	}
 
-	labels := make([]string, 0, 8)
+	issueLabels = make([]string, 0, 8)
+	pullRequestLabels = make([]string, 0, 8)
 	if event.Issue != nil {
-		labels = appendRawLabelNames(labels, event.Issue.Labels)
+		issueLabels = appendRawLabelNames(issueLabels, event.Issue.Labels)
 	}
 	if event.PullRequest != nil {
-		labels = appendRawLabelNames(labels, event.PullRequest.Labels)
+		pullRequestLabels = appendRawLabelNames(pullRequestLabels, event.PullRequest.Labels)
 	}
-	return labels
+	return issueLabels, pullRequestLabels
 }
 
 func appendRawLabelNames(labels []string, source []githubIssueLabelsLabel) []string {
