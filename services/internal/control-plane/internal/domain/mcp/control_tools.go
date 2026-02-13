@@ -703,14 +703,14 @@ func (s *Service) applyApprovedControlAction(
 		CorrelationID: item.CorrelationID,
 		ProjectID:     item.ProjectID,
 	}
-	requiresGitHubToken := item.ToolName == string(ToolMCPSecretSyncEnv) || item.ToolName == string(ToolMCPSecretSyncEnvLegacy)
+	requiresGitHubToken := item.ToolName == string(ToolMCPSecretSyncEnv)
 	runCtx, err := s.resolveRunContext(ctx, session, requiresGitHubToken)
 	if err != nil {
 		return entitytypes.MCPActionRequest{}, err
 	}
 
 	switch ToolName(item.ToolName) {
-	case ToolMCPSecretSyncEnv, ToolMCPSecretSyncEnvLegacy:
+	case ToolMCPSecretSyncEnv:
 		if err := s.applySecretSync(ctx, runCtx, item.Payload); err != nil {
 			return entitytypes.MCPActionRequest{}, err
 		}

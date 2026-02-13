@@ -42,8 +42,7 @@ approvals:
 
 ## Фактический результат (выполнено)
 - Канонизирован MCP tool name для секрета:
-  - `secret.sync.github_k8s` (основной);
-  - `mcp_secret_sync_env` оставлен как legacy alias на transport-уровне для мягкого перехода.
+  - `secret.sync.github_k8s`.
 - Расширен вход `SecretSyncEnvInput`:
   - `project_id`, `repository`, `environment`, `github_secret_name`, `kubernetes_secret_name`, `kubernetes_namespace`, `kubernetes_secret_key`;
   - `policy` (`deterministic|random|provided`);

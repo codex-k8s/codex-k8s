@@ -31,7 +31,7 @@ approvals:
   - явное разделение `approval:none` / `approval:owner` / `approval:delegated`;
   - запрет обхода через прямые write-каналы для операций, отмеченных как privileged.
 - MCP control tools (минимальный MVP-набор):
-  - `secret.sync.github_k8s` (legacy alias: `mcp_secret_sync_env`): детерминированное создание/обновление секрета в GitHub и Kubernetes для выбранного окружения;
+  - `secret.sync.github_k8s`: детерминированное создание/обновление секрета в GitHub и Kubernetes для выбранного окружения;
   - `mcp_database_lifecycle`: create/delete database в выбранном окружении по policy;
   - `mcp_owner_feedback_request`: оперативный вопрос владельцу с 2-5 вариантами + `custom` ответ.
 - Безопасность control tools:
@@ -74,7 +74,7 @@ approvals:
   - `mcp_action_requests` (approval queue, state transitions, target/payload snapshots);
   - расширение `agent_sessions` полями wait-state (`wait_state`, `timeout_guard_disabled`, `last_heartbeat_at`).
 - Реализованы MCP control tools в domain/service слое:
-  - `secret.sync.github_k8s` (legacy alias: `mcp_secret_sync_env`);
+  - `secret.sync.github_k8s`;
   - `mcp_database_lifecycle`;
   - `mcp_owner_feedback_request`.
 - Добавлен approval lifecycle:

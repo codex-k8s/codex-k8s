@@ -13,7 +13,6 @@ const ToolPromptContextGet ToolName = "codex_prompt_context_get"
 
 const (
 	ToolMCPSecretSyncEnv        ToolName = "secret.sync.github_k8s"
-	ToolMCPSecretSyncEnvLegacy  ToolName = "mcp_secret_sync_env"
 	ToolMCPDatabaseLifecycle    ToolName = "mcp_database_lifecycle"
 	ToolMCPOwnerFeedbackRequest ToolName = "mcp_owner_feedback_request"
 )
