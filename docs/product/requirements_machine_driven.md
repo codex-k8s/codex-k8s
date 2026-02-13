@@ -115,7 +115,7 @@ approvals:
 | Runner scale | Локально: 1 persistent runner; staging/prod при наличии домена: autoscaled set. |
 | Storage during bootstrap | `local-path` на MVP, Longhorn позже. |
 | Learning mode default | Управляется через `bootstrap/host/config.env`; в шаблоне включён по умолчанию, пустое значение трактуется как выключено. |
-| MVP completion scope | В MVP входят S2 Day6/Day7 + Sprint S3 Day1..Day10 (full stage labels, MCP control tools, `run:self-improve`, staff debug observability). |
+| MVP completion scope | В MVP входят S2 Day6/Day7 + Sprint S3 Day1..Day12 (full stage labels, MCP control tools, `run:self-improve`, staff debug observability, declarative full-env deploy и Vuetify staff-console redesign). |
 
 ## Post-MVP направления (декомпозиция идей)
 - Управление prompt templates и параметрами агентов через UI: версионирование, diff, rollout policy, rollback.

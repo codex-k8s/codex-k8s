@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - Цель эпика: подтвердить, что S2 baseline + Day6 hardening готовы к расширению MVP в Sprint S3.
 - Ключевая ценность: снимаем риски регрессий перед включением полного набора stage-flow и `run:self-improve`.
-- MVP-результат: воспроизводимый regression bundle, формальный go/no-go и зафиксированный backlog Sprint S3 Day1..Day10.
+- MVP-результат: воспроизводимый regression bundle, формальный go/no-go и зафиксированный backlog Sprint S3 Day1..Day12.
 
 ## Priority
 - `P0`.
@@ -31,6 +31,9 @@ approvals:
   - `run:dev:revise` -> changes -> update PR;
   - отказ при конфликтных `ai-model` / `ai-reasoning` labels;
   - отказ privileged MCP операций без required approval.
+- Операционная модель выполнения:
+  - процесс ведут агенты end-to-end;
+  - Owner участвует в контрольных точках и принимает `approve/deny` решения по запросам агента.
 - Regression matrix по Day6 control tools:
   - deterministic secret sync (GitHub + Kubernetes) с проверкой idempotency;
   - database create/delete по окружению;
@@ -44,7 +47,7 @@ approvals:
   - поведение `run:debug` (cleanup skip + audit evidence).
 - Документационный gate:
   - синхронизация product/architecture/delivery docs с расширенным MVP scope;
-  - готовый Sprint S3 plan с 7-12 эпиками (в этом пакете: Day1..Day10).
+  - готовый Sprint S3 plan с 7-12 эпиками (в этом пакете: Day1..Day12).
 
 ### Out of scope
 - Полный e2e regression по всем `run:*` стадиям до их реализации в Sprint S3.

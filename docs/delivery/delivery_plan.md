@@ -61,7 +61,7 @@ approvals:
 - Day 6: approval matrix + MCP control tools + audit hardening.
 - Day 7: MVP readiness regression gate + Sprint S3 kickoff package.
 
-### Sprint S3: MVP completion (Day 1..10)
+### Sprint S3: MVP completion (Day 1..12)
 - Day 1: full stage/label activation.
 - Day 2: staff runtime debug console.
 - Day 3: deterministic secret sync (GitHub + Kubernetes).
@@ -69,8 +69,10 @@ approvals:
 - Day 5: owner feedback handle + HTTP approver/executor + Telegram adapter.
 - Day 6..7: `run:self-improve` ingestion + updater + PR flow.
 - Day 8: agent toolchain auto-extension safeguards.
-- Day 9: full MVP regression/security gate.
-- Day 10: closeout/handover и переход к post-MVP roadmap.
+- Day 9: declarative full-env deploy, `services.yaml` orchestration, runtime parity/hot-reload.
+- Day 10: полный redesign staff-консоли на Vuetify.
+- Day 11: full MVP regression/security gate.
+- Day 12: closeout/handover и переход к post-MVP roadmap.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

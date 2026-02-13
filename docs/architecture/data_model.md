@@ -338,24 +338,12 @@ Planned extension (Day6+):
 | created_at | timestamptz | no | now() | index | |
 | updated_at | timestamptz | no | now() |  | |
 
-### Entity: self_improve_reports
-- Назначение: результаты `run:self-improve` (диагностика + рекомендованные/применённые улучшения).
-- Важные инварианты: отчёт связан с конкретным run и источниками evidence.
-- Поля:
-
-| Field | Type | Nullable | Default | Constraints | Notes |
-|---|---|---:|---|---|---|
-| id | bigserial | no |  | pk | |
-| run_id | uuid | no |  | fk -> agent_runs | |
-| issue_number | int | yes |  |  | |
-| pr_number | int | yes |  |  | |
-| diagnosis | jsonb | no | '{}'::jsonb |  | grouped findings by class |
-| recommended_actions | jsonb | no | '[]'::jsonb |  | docs/prompts/instructions/tools |
-| applied_actions | jsonb | no | '[]'::jsonb |  | accepted items and refs |
-| source_refs | jsonb | no | '[]'::jsonb |  | links to logs/comments/artifacts |
-| status | text | no | "draft" | check enum | draft/proposed/applied/rejected |
-| created_at | timestamptz | no | now() | index | |
-| updated_at | timestamptz | no | now() |  | |
+### Self-improve evidence storage (без отдельной таблицы)
+- Контур `run:self-improve` не вводит отдельную доменную сущность отчёта в БД.
+- Диагностика/решения оформляются как обычный PR-поток:
+  - ссылки на исходные run/comment/artifact источники фиксируются через `links`;
+  - состояние выполнения берётся из `agent_runs`/`flow_events`;
+  - рабочие runtime-логи и промежуточные self-improve артефакты сохраняются в gitignored workspace-папке и не считаются persisted contract-моделью БД.
 
 ### Entity: doc_chunks
 - Назначение: чанки документов для поиска.
@@ -385,13 +373,12 @@ Planned extension (Day6+):
 - `agent_runs` 1:N `flow_events` (по `correlation_id`)
 - `agent_runs` 1:N `learning_feedback`
 - `agent_runs` 1:N `mcp_action_requests`
-- `agent_runs` 1:N `self_improve_reports`
 - `projects` 1:N `prompt_templates` (scope=project)
 - `links` хранит M:N трассировки между `issue/pr/run/doc/adr`
 
 ## Логическое размещение по БД-контурам (MVP)
 - PostgreSQL cluster единый.
-- Core contour: `users`, `projects`, `project_members`, `system_settings`, `repositories`, `agent_policies`, `agents`, `agent_runs`, `slots`, `docs_meta`, `learning_feedback`, `prompt_templates`, `self_improve_reports`.
+- Core contour: `users`, `projects`, `project_members`, `system_settings`, `repositories`, `agent_policies`, `agents`, `agent_runs`, `slots`, `docs_meta`, `learning_feedback`, `prompt_templates`.
 - Audit/chunks contour: `agent_sessions`, `token_usage`, `flow_events`, `links`, `doc_chunks`, `mcp_action_requests`.
 - Связи между контурами — через устойчивые ключи (`correlation_id`, `doc_id`), без требования к cross-contour FK.
 
@@ -402,8 +389,6 @@ Planned extension (Day6+):
 - Индексы: `agent_sessions(run_id, started_at)`, `token_usage(session_id, created_at)`.
 - Запрос: найти pending/failed MCP action requests.
 - Индексы: `mcp_action_requests(approval_state, created_at)`, `mcp_action_requests(correlation_id)`.
-- Запрос: self-improve history по issue/pr и статусу.
-- Индексы: `self_improve_reports(issue_number, created_at)`, `self_improve_reports(pr_number, created_at)`, `self_improve_reports(status, updated_at)`.
 - Запрос: возобновление прерванной/ожидающей сессии по run.
 - Индексы: `agent_sessions(run_id, wait_state, last_heartbeat_at)`.
 - Запрос: выбор effective prompt template по role/kind/locale.

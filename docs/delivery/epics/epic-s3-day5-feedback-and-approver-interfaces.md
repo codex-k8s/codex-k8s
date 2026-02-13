@@ -29,6 +29,9 @@ approvals:
 - HTTP contracts для approver/executor (request, callback, retry, idempotency).
 - Telegram adapter baseline с поддержкой approve/deny/option/custom.
 - Интеграция с wait queue и timeout pause/resume.
+- Контрактная политика:
+  - контракт публикуется и поддерживается платформой `codex-k8s`;
+  - внешние команды самостоятельно реализуют совместимые адаптеры без изменений core.
 
 ### Out of scope
 - Нативные UI-адаптеры под Slack/Jira/Mattermost (только контрактная совместимость).

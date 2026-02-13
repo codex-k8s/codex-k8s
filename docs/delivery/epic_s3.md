@@ -18,7 +18,7 @@ approvals:
 
 ## TL;DR
 - Sprint S3 завершает MVP и переносит платформу от узкого `run:dev` контура к полному stage-driven циклу.
-- Центральные deliverables: full stage labels, staff debug observability, MCP control tools, `run:self-improve` loop.
+- Центральные deliverables: full stage labels, staff debug observability, MCP control tools, `run:self-improve` loop, declarative full-env deploy и новый staff UI контур на Vuetify.
 
 ## Эпики Sprint S3
 - Day 1: `docs/delivery/epics/epic-s3-day1-full-stage-and-label-activation.md`
@@ -29,8 +29,10 @@ approvals:
 - Day 6: `docs/delivery/epics/epic-s3-day6-self-improve-ingestion-and-diagnostics.md`
 - Day 7: `docs/delivery/epics/epic-s3-day7-self-improve-updater-and-pr-flow.md`
 - Day 8: `docs/delivery/epics/epic-s3-day8-agent-toolchain-auto-extension.md`
-- Day 9: `docs/delivery/epics/epic-s3-day9-mvp-regression-and-security-gate.md`
-- Day 10: `docs/delivery/epics/epic-s3-day10-mvp-closeout-and-handover.md`
+- Day 9: `docs/delivery/epics/epic-s3-day9-declarative-full-env-deploy-and-runtime-parity.md`
+- Day 10: `docs/delivery/epics/epic-s3-day10-staff-console-vuetify-redesign.md`
+- Day 11: `docs/delivery/epics/epic-s3-day11-mvp-regression-and-security-gate.md`
+- Day 12: `docs/delivery/epics/epic-s3-day12-mvp-closeout-and-handover.md`
 
 ## Критерий успеха Sprint S3 (выжимка)
 - Все MVP-сценарии из Issue #19 покрыты кодом, тестами и эксплуатационной документацией.

@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - Цель эпика: закрыть security/governance контур для MVP перед финальным regression gate.
 - Ключевая ценность: привилегированные действия переходят на детерминированные MCP-инструменты с явным approval и полным audit-trail.
-- MVP-результат: готова policy-матрица, минимальные control tools (secrets/db/feedback), HTTP approver contracts и Telegram adapter baseline.
+- MVP-результат: готова policy-матрица, минимальные control tools (secrets/db/feedback), HTTP approver contracts и Telegram adapter baseline с UX-паттернами feedback/approve.
 
 ## Priority
 - `P0`.
@@ -42,6 +42,9 @@ approvals:
   - унифицированный контракт request/callback с обязательным `correlation_id`;
   - поддержка статусов `approved` / `denied` / `expired` / `failed`;
   - Telegram approver/executor baseline как первый production adapter.
+- UX feedback/approval (по референсу `telegram-executor` + `telegram-approver`):
+  - `owner feedback` поддерживает не только текстовый `custom`, но и voice/STT вариант ответа;
+  - при `deny` для privileged action поддерживается диктовка причины (voice/STT) на стороне адаптера.
 - Wait-state governance:
   - `waiting_mcp` и `waiting_owner_review` отражаются в БД/аудите;
   - timeout для `waiting_mcp` всегда paused;
@@ -63,4 +66,5 @@ approvals:
 - `mcp_secret_sync_env` не раскрывает секретный материал в логах/PR/comments/flow events.
 - `mcp_database_lifecycle` корректно обрабатывает create/delete и повторные вызовы без дрейфа состояния.
 - `mcp_owner_feedback_request` поддерживает вариантные ответы и корректно резюмируется в run context.
+- Voice/STT ответы owner (feedback + deny reason) корректно принимаются через HTTP contract и фиксируются в audit без утечки секретов.
 - В staff UI видны pending approvals, wait reason и итог апрува по каждому run.

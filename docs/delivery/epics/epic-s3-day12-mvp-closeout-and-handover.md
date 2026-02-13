@@ -1,7 +1,7 @@
 ---
-doc_id: EPC-CK8S-S3-D10
+doc_id: EPC-CK8S-S3-D12
 type: epic
-title: "Epic S3 Day 10: MVP closeout and handover"
+title: "Epic S3 Day 12: MVP closeout and handover"
 status: planned
 owner_role: EM
 created_at: 2026-02-13
@@ -14,7 +14,7 @@ approvals:
   request_id: ""
 ---
 
-# Epic S3 Day 10: MVP closeout and handover
+# Epic S3 Day 12: MVP closeout and handover
 
 ## TL;DR
 - Цель: формально закрыть MVP и подготовить переход к post-MVP roadmap.

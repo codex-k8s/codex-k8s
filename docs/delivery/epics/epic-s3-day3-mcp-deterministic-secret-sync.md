@@ -29,6 +29,9 @@ approvals:
 - Генерация секрета внутри trusted tool runtime, masking в логах и callback payload.
 - Idempotency-key и retry-safe поведение.
 - Approval policy и детальный audit trail.
+- Вендор-нейтральный approver слой:
+  - аппрувером может быть любой HTTP-адаптер, поддерживающий утвержденный контракт;
+  - Telegram-адаптер (`telegram-approver`) и `yaml-mcp-server` используются как референсные реализации контракта.
 
 ### Out of scope
 - Массовая миграция существующих секретов и интеграция с Vault/KMS.
