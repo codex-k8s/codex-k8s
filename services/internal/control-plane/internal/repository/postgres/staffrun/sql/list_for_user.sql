@@ -13,6 +13,9 @@ SELECT
     COALESCE(ar.run_payload->'issue'->>'html_url', '') AS issue_url,
     COALESCE(ar.run_payload->'trigger'->>'kind', '') AS trigger_kind,
     COALESCE(ar.run_payload->'trigger'->>'label', '') AS trigger_label,
+    COALESCE(rt.job_name, '') AS job_name,
+    COALESCE(rt.job_namespace, '') AS job_namespace,
+    COALESCE(rt.namespace, '') AS namespace,
     COALESCE(pr.pr_url, '') AS pr_url,
     pr.pr_number,
     ar.status,
@@ -36,6 +39,46 @@ LEFT JOIN LATERAL (
     ORDER BY fe.created_at DESC
     LIMIT 1
 ) pr ON true
+LEFT JOIN LATERAL (
+    SELECT
+        COALESCE((
+            SELECT COALESCE(fe.payload->>'job_name', '')
+            FROM flow_events fe
+            WHERE fe.correlation_id = ar.correlation_id
+              AND fe.event_type IN ('run.started', 'run.namespace.prepared')
+              AND COALESCE(fe.payload->>'job_name', '') <> ''
+            ORDER BY fe.created_at DESC
+            LIMIT 1
+        ), '') AS job_name,
+        COALESCE((
+            SELECT
+                CASE
+                    WHEN COALESCE(fe.payload->>'job_namespace', '') <> ''
+                        THEN fe.payload->>'job_namespace'
+                    WHEN COALESCE(fe.payload->>'namespace', '') <> ''
+                        THEN fe.payload->>'namespace'
+                    ELSE ''
+                END
+            FROM flow_events fe
+            WHERE fe.correlation_id = ar.correlation_id
+              AND fe.event_type IN ('run.started', 'run.namespace.prepared')
+              AND (
+                    COALESCE(fe.payload->>'job_namespace', '') <> ''
+                    OR COALESCE(fe.payload->>'namespace', '') <> ''
+              )
+            ORDER BY fe.created_at DESC
+            LIMIT 1
+        ), '') AS job_namespace,
+        COALESCE((
+            SELECT COALESCE(fe.payload->>'namespace', '')
+            FROM flow_events fe
+            WHERE fe.correlation_id = ar.correlation_id
+              AND fe.event_type IN ('run.started', 'run.namespace.prepared')
+              AND COALESCE(fe.payload->>'namespace', '') <> ''
+            ORDER BY fe.created_at DESC
+            LIMIT 1
+        ), '') AS namespace
+) rt ON true
 WHERE pm.user_id = $1::uuid
   AND ar.project_id IS NOT NULL
 ORDER BY ar.created_at DESC

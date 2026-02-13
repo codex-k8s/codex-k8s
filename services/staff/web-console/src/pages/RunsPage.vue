@@ -12,10 +12,10 @@
     <table v-if="runs.items.length" class="tbl">
       <thead>
         <tr>
-          <th>{{ t("pages.runs.status") }}</th>
-          <th>{{ t("pages.runs.project") }}</th>
-          <th>{{ t("pages.runs.issue") }}</th>
-          <th>{{ t("pages.runs.pr") }}</th>
+          <th class="center">{{ t("pages.runs.status") }}</th>
+          <th class="center">{{ t("pages.runs.project") }}</th>
+          <th class="center">{{ t("pages.runs.issue") }}</th>
+          <th class="center">{{ t("pages.runs.pr") }}</th>
           <th class="center">{{ t("pages.runs.runType") }}</th>
           <th class="center">{{ t("pages.runs.triggerLabel") }}</th>
           <th class="center">{{ t("pages.runs.started") }}</th>
@@ -25,29 +25,33 @@
       </thead>
       <tbody>
         <tr v-for="r in pageItems" :key="r.id">
-          <td>
+          <td class="center">
             <span class="pill" :class="'s-' + r.status">{{ r.status }}</span>
           </td>
-          <td>
+          <td class="center">
             <RouterLink v-if="r.project_id" class="lnk" :to="{ name: 'project-details', params: { projectId: r.project_id } }">
               {{ r.project_name || r.project_slug || r.project_id }}
             </RouterLink>
             <span v-else class="mono">-</span>
           </td>
-          <td>
+          <td class="center">
             <a v-if="r.issue_url && r.issue_number" class="lnk mono" :href="r.issue_url" target="_blank" rel="noopener noreferrer">
               #{{ r.issue_number }}
             </a>
             <span v-else class="mono">-</span>
           </td>
-          <td>
+          <td class="center">
             <a v-if="r.pr_url && r.pr_number" class="lnk mono" :href="r.pr_url" target="_blank" rel="noopener noreferrer">
               #{{ r.pr_number }}
             </a>
             <span v-else class="mono">-</span>
           </td>
-          <td class="mono center">{{ r.trigger_kind || "-" }}</td>
-          <td class="mono center">{{ r.trigger_label || "-" }}</td>
+          <td class="center">
+            <span class="pill run-badge mono">{{ runBadgeValue(r.trigger_kind) }}</span>
+          </td>
+          <td class="center">
+            <span class="pill run-badge mono">{{ runBadgeValue(r.trigger_label) }}</span>
+          </td>
           <td class="mono center">{{ formatDateTime(r.started_at, locale) }}</td>
           <td class="mono center">{{ formatDateTime(r.finished_at, locale) }}</td>
           <td class="center">
@@ -111,6 +115,14 @@ function nextPage() {
   }
 }
 
+function runBadgeValue(value: string | null | undefined): string {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return "-";
+  }
+  return trimmed;
+}
+
 onMounted(() => void load());
 
 watch(
@@ -139,6 +151,10 @@ h2 {
 .pill.s-running {
   background: rgba(37, 99, 235, 0.12);
   border-color: rgba(37, 99, 235, 0.3);
+}
+.run-badge {
+  min-width: 88px;
+  text-align: center;
 }
 .pager {
   margin-top: 12px;

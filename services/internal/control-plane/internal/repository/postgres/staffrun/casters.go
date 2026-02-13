@@ -29,6 +29,15 @@ func runFromDBModel(row dbmodel.RunRow) domainrepo.Run {
 	if row.TriggerLabel.Valid {
 		item.TriggerLabel = row.TriggerLabel.String
 	}
+	if row.JobName.Valid {
+		item.JobName = row.JobName.String
+	}
+	if row.JobNamespace.Valid {
+		item.JobNamespace = row.JobNamespace.String
+	}
+	if row.Namespace.Valid {
+		item.Namespace = row.Namespace.String
+	}
 	if row.PRURL.Valid {
 		item.PRURL = row.PRURL.String
 	}

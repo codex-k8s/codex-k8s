@@ -23,6 +23,8 @@
   background: rgba(255, 255, 255, 0.75);
   padding: 9px 12px;
   border-radius: 10px;
+  font-family: inherit;
+  font-size: inherit;
   font-weight: 800;
   cursor: pointer;
   text-decoration: none;

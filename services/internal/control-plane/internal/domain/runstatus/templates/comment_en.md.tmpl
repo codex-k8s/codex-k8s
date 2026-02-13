@@ -1,0 +1,46 @@
+### 🧠 AI Agent Run
+✅ Agent started
+
+- Run ID: `{{ .RunID }}`
+{{- if .ShowTriggerKind }}
+- Trigger mode: `{{ .TriggerKind }}`
+{{- end }}
+{{- if .ShowRuntimeMode }}
+- Runtime mode: `{{ .RuntimeMode }}`
+{{- end }}
+{{- if .ShowJobRef }}
+- Job: `{{ .JobNamespace }}/{{ .JobName }}`
+{{- end }}
+{{- if .ShowNamespace }}
+- Namespace: `{{ .Namespace }}`
+{{- end }}
+{{- if .RunStatus }}
+- Run status: `{{ .RunStatus }}`
+{{- end }}
+
+{{- if .ManagementURL }}
+📎 [Run link]({{ .ManagementURL }})
+{{- end }}
+
+### 🕒 Timeline
+- ✅ Run was created and is running
+{{- if .ShowFinished }}
+{{- if .IsRunSucceeded }}
+- 👌 Run finished successfully
+{{- else if .IsRunFailed }}
+- ⚠️ Run finished with errors
+{{- else }}
+- ✅ Run finished
+{{- end }}
+{{- end }}
+{{- if .ShowNamespaceAction }}
+{{- if .AlreadyDeleted }}
+- 🗑️ Namespace was already deleted
+{{- else if .Deleted }}
+- 🗑️ Namespace deleted
+{{- else }}
+- 🗑️ Namespace is waiting for cleanup
+{{- end }}
+{{- end }}
+
+{{ .StateMarker }}

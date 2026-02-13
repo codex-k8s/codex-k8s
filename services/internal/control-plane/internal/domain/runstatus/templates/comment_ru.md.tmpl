@@ -1,0 +1,46 @@
+### 🧠 Запуск ИИ-агента
+✅ Агент запущен
+
+- Run ID: `{{ .RunID }}`
+{{- if .ShowTriggerKind }}
+- Режим запуска: `{{ .TriggerKind }}`
+{{- end }}
+{{- if .ShowRuntimeMode }}
+- Runtime mode: `{{ .RuntimeMode }}`
+{{- end }}
+{{- if .ShowJobRef }}
+- Job: `{{ .JobNamespace }}/{{ .JobName }}`
+{{- end }}
+{{- if .ShowNamespace }}
+- Namespace: `{{ .Namespace }}`
+{{- end }}
+{{- if .RunStatus }}
+- Статус рана: `{{ .RunStatus }}`
+{{- end }}
+
+{{- if .ManagementURL }}
+📎 [Ссылка на запуск]({{ .ManagementURL }})
+{{- end }}
+
+### 🕒 Таймлайн
+- ✅ Запуск создан и выполняется
+{{- if .ShowFinished }}
+{{- if .IsRunSucceeded }}
+- 👌 Задача завершена успешно
+{{- else if .IsRunFailed }}
+- ⚠️ Задача завершена с ошибкой
+{{- else }}
+- ✅ Задача завершена
+{{- end }}
+{{- end }}
+{{- if .ShowNamespaceAction }}
+{{- if .AlreadyDeleted }}
+- 🗑️ Namespace уже был удален ранее
+{{- else if .Deleted }}
+- 🗑️ Namespace удален
+{{- else }}
+- 🗑️ Namespace ожидает удаления
+{{- end }}
+{{- end }}
+
+{{ .StateMarker }}
