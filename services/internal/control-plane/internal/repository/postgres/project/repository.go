@@ -2,11 +2,13 @@ package project
 
 import (
 	"context"
-	"database/sql"
 	_ "embed"
+	"errors"
 	"fmt"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/project"
 )
@@ -28,11 +30,11 @@ var (
 
 // Repository stores projects in PostgreSQL.
 type Repository struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
 // NewRepository constructs PostgreSQL project repository.
-func NewRepository(db *sql.DB) *Repository {
+func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
@@ -41,11 +43,11 @@ func (r *Repository) ListAll(ctx context.Context, limit int) ([]domainrepo.Proje
 	if limit <= 0 {
 		limit = 200
 	}
-	rows, err := r.db.QueryContext(ctx, queryListAll, limit)
+	rows, err := r.db.Query(ctx, queryListAll, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list projects: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	var out []domainrepo.Project
 	for rows.Next() {
@@ -66,11 +68,11 @@ func (r *Repository) ListForUser(ctx context.Context, userID string, limit int) 
 	if limit <= 0 {
 		limit = 200
 	}
-	rows, err := r.db.QueryContext(ctx, queryListForUser, userID, limit)
+	rows, err := r.db.Query(ctx, queryListForUser, userID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list projects for user: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	var out []domainrepo.ProjectWithRole
 	for rows.Next() {
@@ -89,7 +91,7 @@ func (r *Repository) ListForUser(ctx context.Context, userID string, limit int) 
 // Upsert creates/updates a project by slug.
 func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams) (domainrepo.Project, error) {
 	var out domainrepo.Project
-	err := r.db.QueryRowContext(ctx, queryUpsert, params.ID, params.Slug, params.Name, params.SettingsJSON).Scan(&out.ID, &out.Slug, &out.Name)
+	err := r.db.QueryRow(ctx, queryUpsert, params.ID, params.Slug, params.Name, params.SettingsJSON).Scan(&out.ID, &out.Slug, &out.Name)
 	if err != nil {
 		return domainrepo.Project{}, fmt.Errorf("upsert project: %w", err)
 	}
@@ -99,11 +101,11 @@ func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams)
 // GetByID returns a project by id.
 func (r *Repository) GetByID(ctx context.Context, projectID string) (domainrepo.Project, bool, error) {
 	var p domainrepo.Project
-	err := r.db.QueryRowContext(ctx, queryGetByID, projectID).Scan(&p.ID, &p.Slug, &p.Name)
+	err := r.db.QueryRow(ctx, queryGetByID, projectID).Scan(&p.ID, &p.Slug, &p.Name)
 	if err == nil {
 		return p, true, nil
 	}
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return domainrepo.Project{}, false, nil
 	}
 	return domainrepo.Project{}, false, fmt.Errorf("get project by id: %w", err)
@@ -117,11 +119,11 @@ func (r *Repository) DeleteByID(ctx context.Context, projectID string) error {
 // GetLearningModeDefault returns project default learning-mode flag from JSONB settings.
 func (r *Repository) GetLearningModeDefault(ctx context.Context, projectID string) (bool, bool, error) {
 	var enabled bool
-	err := r.db.QueryRowContext(ctx, queryGetLearningModeDefault, projectID).Scan(&enabled)
+	err := r.db.QueryRow(ctx, queryGetLearningModeDefault, projectID).Scan(&enabled)
 	if err == nil {
 		return enabled, true, nil
 	}
-	if err == sql.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return false, false, nil
 	}
 	return false, false, fmt.Errorf("get project learning_mode_default: %w", err)

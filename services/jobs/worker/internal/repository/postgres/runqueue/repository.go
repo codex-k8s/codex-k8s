@@ -2,7 +2,6 @@ package runqueue
 
 import (
 	"context"
-	"database/sql"
 	_ "embed"
 	"encoding/json"
 	"errors"
@@ -10,6 +9,9 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
 	domainrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
@@ -43,33 +45,33 @@ var (
 
 // Repository persists run queue state in PostgreSQL.
 type Repository struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
 // NewRepository constructs PostgreSQL run queue repository.
-func NewRepository(db *sql.DB) *Repository {
+func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
 // ClaimNextPending atomically claims one pending run and leases a slot.
 func (r *Repository) ClaimNextPending(ctx context.Context, params domainrepo.ClaimParams) (domainrepo.ClaimedRun, bool, error) {
-	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{})
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return domainrepo.ClaimedRun{}, false, fmt.Errorf("begin claim transaction: %w", err)
 	}
 	defer func() {
-		_ = tx.Rollback()
+		_ = tx.Rollback(ctx)
 	}()
 
 	var (
 		runID         string
 		correlationID string
-		projectIDRaw  sql.NullString
+		projectIDRaw  pgtype.Text
 		learningMode  bool
 		runPayload    []byte
 	)
 
-	err = tx.QueryRowContext(ctx, queryClaimNextPendingForUpdate).Scan(
+	err = tx.QueryRow(ctx, queryClaimNextPendingForUpdate).Scan(
 		&runID,
 		&correlationID,
 		&projectIDRaw,
@@ -77,7 +79,7 @@ func (r *Repository) ClaimNextPending(ctx context.Context, params domainrepo.Cla
 		&runPayload,
 	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return domainrepo.ClaimedRun{}, false, nil
 		}
 		return domainrepo.ClaimedRun{}, false, fmt.Errorf("select pending run for claim: %w", err)
@@ -96,19 +98,19 @@ func (r *Repository) ClaimNextPending(ctx context.Context, params domainrepo.Cla
 	}
 
 	if explicitProjectID {
-		if _, err := tx.ExecContext(ctx, queryEnsureProjectExists, projectID, projectSlug, projectName, settingsJSON); err != nil {
+		if _, err := tx.Exec(ctx, queryEnsureProjectExists, projectID, projectSlug, projectName, settingsJSON); err != nil {
 			return domainrepo.ClaimedRun{}, false, fmt.Errorf("ensure project %s exists: %w", projectID, err)
 		}
 	} else {
-		if _, err := tx.ExecContext(ctx, queryUpsertProject, projectID, projectSlug, projectName, settingsJSON); err != nil {
+		if _, err := tx.Exec(ctx, queryUpsertProject, projectID, projectSlug, projectName, settingsJSON); err != nil {
 			return domainrepo.ClaimedRun{}, false, fmt.Errorf("upsert project %s: %w", projectID, err)
 		}
 	}
 
-	if _, err := tx.ExecContext(ctx, queryEnsureProjectSlots, projectID, params.SlotsPerProject); err != nil {
+	if _, err := tx.Exec(ctx, queryEnsureProjectSlots, projectID, params.SlotsPerProject); err != nil {
 		return domainrepo.ClaimedRun{}, false, fmt.Errorf("ensure slots for project %s: %w", projectID, err)
 	}
-	if _, err := tx.ExecContext(ctx, queryReleaseExpiredSlots, projectID); err != nil {
+	if _, err := tx.Exec(ctx, queryReleaseExpiredSlots, projectID); err != nil {
 		return domainrepo.ClaimedRun{}, false, fmt.Errorf("release expired slots for project %s: %w", projectID, err)
 	}
 
@@ -117,26 +119,23 @@ func (r *Repository) ClaimNextPending(ctx context.Context, params domainrepo.Cla
 		slotID string
 		slotNo int
 	)
-	if err := tx.QueryRowContext(ctx, queryLeaseSlot, projectID, runID, leaseUntilInterval).Scan(&slotID, &slotNo); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+	if err := tx.QueryRow(ctx, queryLeaseSlot, projectID, runID, leaseUntilInterval).Scan(&slotID, &slotNo); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return domainrepo.ClaimedRun{}, false, nil
 		}
 		return domainrepo.ClaimedRun{}, false, fmt.Errorf("lease slot for run %s: %w", runID, err)
 	}
 
-	res, err := tx.ExecContext(ctx, queryMarkRunRunning, runID, projectID)
+	res, err := tx.Exec(ctx, queryMarkRunRunning, runID, projectID)
 	if err != nil {
 		return domainrepo.ClaimedRun{}, false, fmt.Errorf("mark run %s as running: %w", runID, err)
 	}
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return domainrepo.ClaimedRun{}, false, fmt.Errorf("read rows affected when mark run %s as running: %w", runID, err)
-	}
+	rows := res.RowsAffected()
 	if rows == 0 {
 		return domainrepo.ClaimedRun{}, false, fmt.Errorf("mark run %s as running affected 0 rows", runID)
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err := tx.Commit(ctx); err != nil {
 		return domainrepo.ClaimedRun{}, false, fmt.Errorf("commit claim transaction: %w", err)
 	}
 
@@ -153,11 +152,11 @@ func (r *Repository) ClaimNextPending(ctx context.Context, params domainrepo.Cla
 
 // ListRunning returns active runs eligible for job reconciliation.
 func (r *Repository) ListRunning(ctx context.Context, limit int) ([]domainrepo.RunningRun, error) {
-	rows, err := r.db.QueryContext(ctx, queryListRunning, limit)
+	rows, err := r.db.Query(ctx, queryListRunning, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list running runs: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	result := make([]domainrepo.RunningRun, 0, limit)
 	for rows.Next() {
@@ -167,7 +166,7 @@ func (r *Repository) ListRunning(ctx context.Context, limit int) ([]domainrepo.R
 			projectID     string
 			learningMode  bool
 			runPayload    []byte
-			startedAt     sql.NullTime
+			startedAt     pgtype.Timestamptz
 		)
 		if err := rows.Scan(&runID, &correlationID, &projectID, &learningMode, &runPayload, &startedAt); err != nil {
 			return nil, fmt.Errorf("scan running run row: %w", err)
@@ -197,34 +196,31 @@ func (r *Repository) FinishRun(ctx context.Context, params domainrepo.FinishPara
 		return false, fmt.Errorf("unsupported final run status %q", params.Status)
 	}
 
-	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{})
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return false, fmt.Errorf("begin finish transaction: %w", err)
 	}
 	defer func() {
-		_ = tx.Rollback()
+		_ = tx.Rollback(ctx)
 	}()
 
-	res, err := tx.ExecContext(ctx, queryMarkRunFinished, params.RunID, string(params.Status), params.FinishedAt.UTC())
+	res, err := tx.Exec(ctx, queryMarkRunFinished, params.RunID, string(params.Status), params.FinishedAt.UTC())
 	if err != nil {
 		return false, fmt.Errorf("mark run %s as %s: %w", params.RunID, params.Status, err)
 	}
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return false, fmt.Errorf("read rows affected for finish run %s: %w", params.RunID, err)
-	}
+	rows := res.RowsAffected()
 	if rows == 0 {
 		return false, nil
 	}
 
-	if _, err := tx.ExecContext(ctx, queryMarkSlotReleasing, params.ProjectID, params.RunID); err != nil {
+	if _, err := tx.Exec(ctx, queryMarkSlotReleasing, params.ProjectID, params.RunID); err != nil {
 		return false, fmt.Errorf("mark slot releasing for run %s: %w", params.RunID, err)
 	}
-	if _, err := tx.ExecContext(ctx, queryMarkSlotFree, params.ProjectID, params.RunID); err != nil {
+	if _, err := tx.Exec(ctx, queryMarkSlotFree, params.ProjectID, params.RunID); err != nil {
 		return false, fmt.Errorf("mark slot free for run %s: %w", params.RunID, err)
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err := tx.Commit(ctx); err != nil {
 		return false, fmt.Errorf("commit finish transaction: %w", err)
 	}
 

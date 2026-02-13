@@ -2,12 +2,13 @@ package repocfg
 
 import (
 	"context"
-	"database/sql"
 	_ "embed"
 	"errors"
 	"fmt"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
 )
@@ -31,11 +32,11 @@ var (
 
 // Repository stores project repository bindings in PostgreSQL.
 type Repository struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
 // NewRepository constructs PostgreSQL repository binding repository.
-func NewRepository(db *sql.DB) *Repository {
+func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
@@ -44,11 +45,11 @@ func (r *Repository) ListForProject(ctx context.Context, projectID string, limit
 	if limit <= 0 {
 		limit = 200
 	}
-	rows, err := r.db.QueryContext(ctx, queryListForProject, projectID, limit)
+	rows, err := r.db.Query(ctx, queryListForProject, projectID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list repositories: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	out := make([]domainrepo.RepositoryBinding, 0, limit)
 	for rows.Next() {
@@ -67,7 +68,7 @@ func (r *Repository) ListForProject(ctx context.Context, projectID string, limit
 // GetByID returns one repository binding by id.
 func (r *Repository) GetByID(ctx context.Context, repositoryID string) (domainrepo.RepositoryBinding, bool, error) {
 	var item domainrepo.RepositoryBinding
-	err := r.db.QueryRowContext(ctx, queryGetByID, repositoryID).Scan(
+	err := r.db.QueryRow(ctx, queryGetByID, repositoryID).Scan(
 		&item.ID,
 		&item.ProjectID,
 		&item.Provider,
@@ -79,7 +80,7 @@ func (r *Repository) GetByID(ctx context.Context, repositoryID string) (domainre
 	if err == nil {
 		return item, true, nil
 	}
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return domainrepo.RepositoryBinding{}, false, nil
 	}
 	return domainrepo.RepositoryBinding{}, false, fmt.Errorf("get repository binding by id: %w", err)
@@ -88,7 +89,7 @@ func (r *Repository) GetByID(ctx context.Context, repositoryID string) (domainre
 // Upsert creates or updates a repository binding.
 func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams) (domainrepo.RepositoryBinding, error) {
 	var item domainrepo.RepositoryBinding
-	err := r.db.QueryRowContext(
+	err := r.db.QueryRow(
 		ctx,
 		queryUpsert,
 		params.ProjectID,
@@ -102,7 +103,7 @@ func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams)
 	if err == nil {
 		return item, nil
 	}
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return domainrepo.RepositoryBinding{}, fmt.Errorf("repository is already attached to another project (provider=%s external_id=%d)", params.Provider, params.ExternalID)
 	}
 	return domainrepo.RepositoryBinding{}, fmt.Errorf("upsert repository binding: %w", err)
@@ -116,11 +117,11 @@ func (r *Repository) Delete(ctx context.Context, projectID string, repositoryID 
 // FindByProviderExternalID resolves binding by provider repo id.
 func (r *Repository) FindByProviderExternalID(ctx context.Context, provider string, externalID int64) (domainrepo.FindResult, bool, error) {
 	var res domainrepo.FindResult
-	err := r.db.QueryRowContext(ctx, queryFindByProviderExternalID, provider, externalID).Scan(&res.ProjectID, &res.RepositoryID, &res.ServicesYAMLPath)
+	err := r.db.QueryRow(ctx, queryFindByProviderExternalID, provider, externalID).Scan(&res.ProjectID, &res.RepositoryID, &res.ServicesYAMLPath)
 	if err == nil {
 		return res, true, nil
 	}
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return domainrepo.FindResult{}, false, nil
 	}
 	return domainrepo.FindResult{}, false, fmt.Errorf("find repository binding: %w", err)
@@ -129,11 +130,11 @@ func (r *Repository) FindByProviderExternalID(ctx context.Context, provider stri
 // GetTokenEncrypted returns encrypted token bytes for a repository binding.
 func (r *Repository) GetTokenEncrypted(ctx context.Context, repositoryID string) ([]byte, bool, error) {
 	var token []byte
-	err := r.db.QueryRowContext(ctx, queryGetTokenEncrypted, repositoryID).Scan(&token)
+	err := r.db.QueryRow(ctx, queryGetTokenEncrypted, repositoryID).Scan(&token)
 	if err == nil {
 		return token, true, nil
 	}
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, false, nil
 	}
 	return nil, false, fmt.Errorf("get repository token: %w", err)
@@ -141,13 +142,9 @@ func (r *Repository) GetTokenEncrypted(ctx context.Context, repositoryID string)
 
 // SetTokenEncryptedForAll updates encrypted token for all repository bindings.
 func (r *Repository) SetTokenEncryptedForAll(ctx context.Context, tokenEncrypted []byte) (int64, error) {
-	res, err := r.db.ExecContext(ctx, querySetTokenEncryptedForAll, tokenEncrypted)
+	res, err := r.db.Exec(ctx, querySetTokenEncryptedForAll, tokenEncrypted)
 	if err != nil {
 		return 0, fmt.Errorf("set repository token for all: %w", err)
 	}
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return 0, fmt.Errorf("rows affected for repository token update: %w", err)
-	}
-	return affected, nil
+	return res.RowsAffected(), nil
 }

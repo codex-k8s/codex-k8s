@@ -12,7 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 
@@ -56,22 +55,6 @@ func Run() error {
 	defer stop()
 
 	// DB readiness is handled by initContainer in deployment; control-plane starts fail-fast.
-	db, err := postgres.Open(runCtx, postgres.OpenParams{
-		Host:     cfg.DBHost,
-		Port:     cfg.DBPort,
-		DBName:   cfg.DBName,
-		User:     cfg.DBUser,
-		Password: cfg.DBPassword,
-		SSLMode:  cfg.DBSSLMode,
-	})
-	if err != nil {
-		return fmt.Errorf("open postgres: %w", err)
-	}
-	defer func() {
-		if err := db.Close(); err != nil {
-			logger.Error("db close failed", "err", err)
-		}
-	}()
 	pgxPool, err := postgres.OpenPGXPool(runCtx, postgres.OpenParams{
 		Host:     cfg.DBHost,
 		Port:     cfg.DBPort,
@@ -86,17 +69,17 @@ func Run() error {
 	defer pgxPool.Close()
 
 	agentRuns := agentrunrepo.NewRepository(pgxPool)
-	agents := agentrepo.NewRepository(db)
-	flowEvents := floweventrepo.NewRepository(db)
+	agents := agentrepo.NewRepository(pgxPool)
+	flowEvents := floweventrepo.NewRepository(pgxPool)
 
-	users := userrepo.NewRepository(db)
-	projects := projectrepo.NewRepository(db)
-	members := projectmemberrepo.NewRepository(db)
+	users := userrepo.NewRepository(pgxPool)
+	projects := projectrepo.NewRepository(pgxPool)
+	members := projectmemberrepo.NewRepository(pgxPool)
 	runs := staffrunrepo.NewRepository(pgxPool)
-	repos := repocfgrepo.NewRepository(db)
-	feedback := learningfeedbackrepo.NewRepository(db)
-	agentSessions := agentsessionrepo.NewRepository(db)
-	platformTokens := platformtokenrepo.NewRepository(db)
+	repos := repocfgrepo.NewRepository(pgxPool)
+	feedback := learningfeedbackrepo.NewRepository(pgxPool)
+	agentSessions := agentsessionrepo.NewRepository(pgxPool)
+	platformTokens := platformtokenrepo.NewRepository(pgxPool)
 
 	tokenCrypto, err := tokencrypt.NewService(cfg.TokenEncryptionKey)
 	if err != nil {

@@ -11,8 +11,6 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
-
 	libslauncher "github.com/codex-k8s/codex-k8s/libs/go/k8s/joblauncher"
 	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
 	k8slauncher "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/clients/kubernetes/launcher"
@@ -67,7 +65,7 @@ func Run() error {
 	}
 	defer func() { _ = controlPlane.Close() }()
 
-	db, err := postgres.Open(appCtx, postgres.OpenParams{
+	db, err := postgres.OpenPGXPool(appCtx, postgres.OpenParams{
 		Host:     cfg.DBHost,
 		Port:     cfg.DBPort,
 		DBName:   cfg.DBName,
@@ -78,11 +76,7 @@ func Run() error {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err := db.Close(); err != nil {
-			logger.Error("db close failed", "err", err)
-		}
-	}()
+	defer db.Close()
 
 	runs := runqueuerepo.NewRepository(db)
 	events := floweventrepo.NewRepository(db)

@@ -2,12 +2,14 @@ package agent
 
 import (
 	"context"
-	"database/sql"
 	_ "embed"
 	"errors"
 	"fmt"
 
 	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agent"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
@@ -17,11 +19,11 @@ var (
 
 // Repository stores agent profiles in PostgreSQL.
 type Repository struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
 // NewRepository constructs PostgreSQL agent profile repository.
-func NewRepository(db *sql.DB) *Repository {
+func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
@@ -29,10 +31,10 @@ func NewRepository(db *sql.DB) *Repository {
 func (r *Repository) FindEffectiveByKey(ctx context.Context, projectID string, agentKey string) (domainrepo.Agent, bool, error) {
 	var (
 		item           domainrepo.Agent
-		projectIDValue sql.NullString
+		projectIDValue pgtype.Text
 	)
 
-	err := r.db.QueryRowContext(ctx, queryFindEffectiveByKey, agentKey, projectID).Scan(
+	err := r.db.QueryRow(ctx, queryFindEffectiveByKey, agentKey, projectID).Scan(
 		&item.ID,
 		&item.AgentKey,
 		&item.RoleKind,
@@ -45,7 +47,7 @@ func (r *Repository) FindEffectiveByKey(ctx context.Context, projectID string, a
 		}
 		return item, true, nil
 	}
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return domainrepo.Agent{}, false, nil
 	}
 	return domainrepo.Agent{}, false, fmt.Errorf("find effective agent by key: %w", err)

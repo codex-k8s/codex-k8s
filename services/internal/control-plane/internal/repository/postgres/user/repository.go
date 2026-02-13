@@ -2,12 +2,13 @@ package user
 
 import (
 	"context"
-	"database/sql"
 	_ "embed"
 	"errors"
 	"fmt"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
 )
@@ -33,17 +34,17 @@ var (
 
 // Repository stores staff users in PostgreSQL.
 type Repository struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
 // NewRepository constructs PostgreSQL user repository.
-func NewRepository(db *sql.DB) *Repository {
+func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
 // EnsureOwner inserts owner email as platform admin when missing.
 func (r *Repository) EnsureOwner(ctx context.Context, email string) (domainrepo.User, error) {
-	u, err := scanUser(r.db.QueryRowContext(ctx, queryEnsureOwner, email))
+	u, err := scanUser(r.db.QueryRow(ctx, queryEnsureOwner, email))
 	if err != nil {
 		return domainrepo.User{}, fmt.Errorf("ensure owner: %w", err)
 	}
@@ -51,11 +52,11 @@ func (r *Repository) EnsureOwner(ctx context.Context, email string) (domainrepo.
 }
 
 func (r *Repository) getOne(ctx context.Context, query string, errContext string, args ...any) (domainrepo.User, bool, error) {
-	u, err := scanUser(r.db.QueryRowContext(ctx, query, args...))
+	u, err := scanUser(r.db.QueryRow(ctx, query, args...))
 	if err == nil {
 		return u, true, nil
 	}
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return domainrepo.User{}, false, nil
 	}
 	return domainrepo.User{}, false, fmt.Errorf("%s: %w", errContext, err)
@@ -83,7 +84,7 @@ func (r *Repository) UpdateGitHubIdentity(ctx context.Context, userID string, gi
 
 // CreateAllowedUser creates or updates an allowed user record.
 func (r *Repository) CreateAllowedUser(ctx context.Context, email string, isPlatformAdmin bool) (domainrepo.User, error) {
-	u, err := scanUser(r.db.QueryRowContext(ctx, queryCreateAllowedUser, email, isPlatformAdmin))
+	u, err := scanUser(r.db.QueryRow(ctx, queryCreateAllowedUser, email, isPlatformAdmin))
 	if err != nil {
 		return domainrepo.User{}, fmt.Errorf("create allowed user: %w", err)
 	}
@@ -95,11 +96,11 @@ func (r *Repository) List(ctx context.Context, limit int) ([]domainrepo.User, er
 	if limit <= 0 {
 		limit = 200
 	}
-	rows, err := r.db.QueryContext(ctx, queryListUsers, limit)
+	rows, err := r.db.Query(ctx, queryListUsers, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list users: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	var out []domainrepo.User
 	for rows.Next() {
