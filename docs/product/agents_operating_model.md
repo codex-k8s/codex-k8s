@@ -20,7 +20,7 @@ approvals:
 - Базовый штат платформы: 8 системных агентных ролей (`pm`, `sa`, `em`, `dev`, `reviewer`, `qa`, `sre`, `km`) + человек `Owner`.
 - Для каждого проекта допускаются расширяемые custom-агенты без нарушения базовых ролей.
 - Режим исполнения смешанный: часть ролей работает в `full-env`, часть в `code-only`.
-- Шаблоны промптов для работы и ревью имеют seed в репозитории и override в БД.
+- Шаблоны промптов ведутся в role-specific матрице: для каждого `agent_key` отдельные body-шаблоны `work/review`, с override в БД и seed fallback.
 - Для каждого системного агента шаблоны поддерживаются минимум в `ru` и `en`; язык выбирается по locale с fallback до `en`.
 - Для `run:self-improve` применяется совместный контур `km + dev + reviewer` с обязательной трассировкой источников улучшений.
 
@@ -38,7 +38,7 @@ approvals:
 | `sa` | Solution Architect | C4/ADR/NFR/design decisions | `full-env` (read-only) | 1 |
 | `em` | Engineering Manager | delivery plan/epics/DoR-DoD | `full-env` (read-only) | 1 |
 | `dev` | Software Engineer | реализация `run:dev`/`run:dev:revise`, код + тесты + docs update | `full-env` | 2 |
-| `reviewer` | Pre-review Engineer | предварительное ревью PR: inline findings + summary для Owner | `full-env` (read-mostly) | 2 |
+| `reviewer` | Pre-review Engineer | предварительное ревью артефактов `run:*` (кроме `run:abort`): inline findings + summary для Owner | `full-env` (read-mostly) | 2 |
 | `qa` | QA Lead | test strategy/plan/matrix/regression | `full-env` | 2 |
 | `sre` | SRE/OPS | runbook/SLO/alerts/postdeploy | `full-env` | 1 |
 | `km` | Doc/KM | issue↔docs traceability, индексы, self-improve диагностика и обновление знаний | `code-only` | 2 |
@@ -46,7 +46,7 @@ approvals:
 Примечания:
 - `Owner` не является агентом, но остаётся финальным апрувером решений и trigger/deploy действий.
 - Базовый профиль `run:dev` закреплён за системным агентом `dev`; custom-агенты могут расширять его поведение в рамках project policy.
-- Роль `reviewer` заменяет прежний ad-hoc `auditor` режим для PR-precheck: сначала замечания получает `dev`-агент, затем Owner делает финальное code review.
+- Роль `reviewer` заменяет прежний ad-hoc `auditor` режим: выполняет pre-review для всех `run:*` (кроме `run:abort`), где формируются артефакты на проверку Owner.
 
 ## Расширяемые custom-агенты проекта
 
@@ -84,9 +84,9 @@ approvals:
   - реализует задачу, обновляет тесты и проектную документацию, в процессе выполняет дебаг решений;
   - формирует PR и прикладывает evidence проверок.
 - `reviewer`:
-  - выполняет предварительное ревью до финального ревью Owner;
+  - выполняет предварительное ревью до финального ревью Owner для всех `run:*`, кроме `run:abort`;
   - проверяет соответствие задаче, проектной документации и `docs/design-guidelines/**`;
-  - оставляет inline-комментарии в PR для `dev`-агента и публикует summary для Owner.
+  - оставляет inline-комментарии в PR (если PR есть) и публикует summary для Owner.
 - `Owner`:
   - выполняет финальный review/approve после прохождения pre-review.
 - `km`:
@@ -106,12 +106,16 @@ approvals:
 3. seed-файл в репозитории.
 
 Seed-файлы:
-- каталог `docs/product/prompt-seeds/*.md` (минимальная stage-матрица, включая `dev-work`/`dev-review`).
+- каталог `docs/product/prompt-seeds/*.md` как bootstrap/fallback слой (минимальная stage-матрица, включая `dev-work`/`dev-review`).
 
-Текущий baseline (S3 Day1):
-- в runtime активно используется минимальная stage-матрица seed-шаблонов (`<stage>-work.md` и `<stage>-review.md` для revise-этапов);
-- `dev-work`/`dev-review` остаются отдельными шаблонами для цикла разработки;
-- комплексная проработка role-specific матрицы остаётся следующим этапом.
+Обязательная целевая модель:
+- для каждого `agent_key` поддерживаются отдельные body-шаблоны `work` и `review`;
+- для каждого `(agent_key, kind)` поддерживаются минимум локали `ru` и `en`;
+- резолв в runtime выполняется по цепочке `project override -> global override -> repo seed`, с language fallback `project locale -> system default -> en`.
+
+Текущий переходный профиль:
+- stage-specific seed-шаблоны в репозитории остаются bootstrap/fallback источником до полного заполнения role-specific матрицы в БД;
+- по мере наполнения role-specific матрицы stage seed остаются резервным fallback и не отменяют требования к отдельному body по роли.
 
 Требования:
 - изменение seed/override должно быть трассируемо через `flow_events`;
@@ -133,10 +137,12 @@ Seed-файлы:
 - Effective prompt рендерится с runtime-контекстом (окружение, namespace/slot, доступные MCP-сервера и инструменты, project/services context, issue/pr/run identifiers).
 - Контракт контекстного рендера должен быть стабильным между версиями рантайма, чтобы избежать несовместимости seed/override шаблонов.
 
-### Planned: role-specific prompt template matrix
-- Для каждого `agent_key` вводятся отдельные шаблоны `work/review`:
+### Role-specific prompt template matrix
+- Для каждого `agent_key` используются отдельные шаблоны `work/review`:
   - `pm`, `sa`, `em`, `dev`, `reviewer`, `qa`, `sre`, `km`;
   - отдельные шаблоны для специализированных режимов: `run:self-improve`, `mode:discussion`.
+- Для каждого `(agent_key, kind)` обязательны минимум локали `ru` и `en`.
+- Использование единого общего body-шаблона для всех ролей запрещено.
 - Для `mode:discussion` шаблон обязан:
   - явно запрещать commit/push/PR;
   - требовать работу только комментариями под Issue;

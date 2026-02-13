@@ -108,7 +108,9 @@ approvals:
 - Если лейбл инициирует агент, требуется апрув Owner до фактического применения.
 - Если лейбл инициирует человек с правами admin/owner, применяется по правам GitHub и политике репозитория.
 - Любая операция с `run:*` логируется в `flow_events`.
-- Для цикла `run:dev`/`run:dev:revise` перед финальным Owner review обязателен pre-review от системного `reviewer`.
+- Для всех `run:*`, кроме `run:abort`, обязателен review gate перед финальным Owner review:
+  - pre-review от системного `reviewer` для технических артефактов;
+  - role-specific review через `need:*` labels для профильных артефактов.
 - Для control tools (`secret sync`, `database lifecycle`, `owner feedback`) применяется policy-driven approval matrix по связке `agent_key + run_label + action`.
 ### Diagnostic labels (`run:debug`)
 - `run:debug` не запускает workflow/deploy напрямую.
@@ -121,6 +123,9 @@ approvals:
 - Не должны запускать workflow/deploy напрямую.
 - Обязательна запись в аудит с actor/correlation.
 - Для role-specific ревью артефактов используются `need:*` labels (вместе с `state:in-review`).
+- Для всех `run:*`, кроме `run:abort`, при наличии артефактов для проверки Owner ставится `state:in-review`:
+  - на PR и на Issue, если run сформировал PR;
+  - только на Issue, если run не формирует PR.
 
 ### Discussion mode (`mode:discussion`, planned)
 - Если `mode:discussion` присутствует на Issue в момент `run:dev`/`run:dev:revise`, запуск работает в режиме обсуждения:
@@ -155,7 +160,7 @@ approvals:
 - Label transitions после завершения run должны выполняться через MCP (а не вручную в коде агента), чтобы сохранять единый policy/audit контур.
 - Для dev/dev:revise transition выполняется так:
   - снять trigger label с Issue;
-  - поставить `state:in-review` на PR (не на Issue).
+  - поставить `state:in-review` на PR и на Issue.
 - S2 baseline:
   - pre-review остается обязательным шагом перед финальным Owner review;
   - post-run transitions `run:* -> state:*` фиксируются в Day5/Day6 как отдельные доработки policy и аудита.

@@ -18,6 +18,7 @@ approvals:
 
 ## TL;DR
 - Поддерживаются два класса шаблонов: `work` и `review`.
+- Каноническая модель шаблонов role-specific: отдельный body для каждого `agent_key` в каждой ветке `work/review`.
 - Источник шаблона определяется по приоритету: project override в БД -> global override в БД -> seed в репозитории.
 - Для каждого run фиксируется effective template version/hash для аудита и воспроизводимости.
 - Шаблоны хранятся по локалям; выбор языка выполняется по цепочке project locale -> system default locale -> `en`.
@@ -33,6 +34,18 @@ approvals:
 Примечание:
 - seed-файлы в репозитории задают baseline-структуру и требования;
 - effective prompt в рантайме формируется после resolve override в БД и контекстного рендера.
+
+## Каноническая template-матрица
+
+- Ключ шаблона: `(scope, role, kind, locale, version)`.
+- Для каждого `agent_key` обязателен отдельный body-шаблон:
+  - `kind=work`;
+  - `kind=review`.
+- Для каждого `(agent_key, kind)` обязательны минимум локали:
+  - `ru`;
+  - `en`.
+- Использование одного общего body-шаблона для разных ролей не допускается.
+- Stage-specific seed-файлы в репозитории являются bootstrap/fallback и не заменяют role-specific модель.
 
 ## Seed vs final prompt
 
@@ -54,7 +67,7 @@ approvals:
 ### Repo seeds
 - Базовые stage-specific шаблоны в `docs/product/prompt-seeds/*.md`.
 - Нейминг baseline: `<stage>-work.md` и `<stage>-review.md` (для revise-loop стадий).
-- Используются как fallback при отсутствии override в БД.
+- Используются как fallback при отсутствии override в БД по `(role, kind, locale)`.
 - В seed-файлах хранится только prompt body (инструкции агенту).
 - В seed-файлах не допускаются документные секции и мета-описания.
 

@@ -3,6 +3,7 @@
 Назначение:
 - `prompt-seeds` — это базовые task-body шаблоны для runtime prompt.
 - Финальный prompt формируется рантаймом поверх этих seed (envelope + context + policy).
+- Каноническая модель шаблонов — role-specific (`agent_key + work/review + locale`); этот каталог используется как bootstrap/fallback слой.
 
 Нейминг:
 - `<stage>-work.md` — шаблон выполнения этапа.
@@ -29,3 +30,4 @@
 Важно:
 - шаблон должен описывать цель этапа, обязательные шаги, ожидаемые артефакты и критерий завершения;
 - секреты, токены и обход policy в шаблонах запрещены.
+- stage-specific seed-файлы не отменяют requirement на отдельные role-specific body-шаблоны `work/review` в локалях минимум `ru` и `en`.
