@@ -35,7 +35,7 @@ approvals:
 | Day 4 | Agent job image + git/PR flow via MCP | P0 | `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md` | completed |
 | Day 4.5 | PGX + db-model rollout for repository layer | P0 | `docs/delivery/epics/epic-s2-day4.5-pgx-db-models-and-repository-refactor.md` | completed |
 | Day 5 | Staff UI: dogfooding visibility + drilldowns | P1 | `docs/delivery/epics/epic-s2-day5-staff-ui-dogfooding-observability.md` | completed |
-| Day 6 | Approval matrix + MCP control tools + audit hardening | P0 | `docs/delivery/epics/epic-s2-day6-approval-and-audit-hardening.md` | planned |
+| Day 6 | Approval matrix + MCP control tools + audit hardening | P0 | `docs/delivery/epics/epic-s2-day6-approval-and-audit-hardening.md` | completed |
 | Day 7 | MVP readiness regression gate + Sprint S3 kickoff package | P0 | `docs/delivery/epics/epic-s2-day7-dogfooding-regression-gate.md` | planned |
 
 ## Daily gate (обязательно)
@@ -59,4 +59,5 @@ approvals:
 - Day 4: completed (agent-runner runtime + resume/session persistence + PR flow via MCP baseline).
 - Day 4.5: completed (PGX/db-model rollout и repository refactor baseline).
 - Day 5: completed (staff observability/drilldown + namespace lifecycle controls).
-- Текущее окно работ: Day 6 -> Day 7 (hardening + regression gate + Sprint S3 package).
+- Day 6: completed (approval matrix, MCP control tools baseline, wait-state/audit hardening, staff approvals UI/API).
+- Текущее окно работ: Day 7 (regression gate + Sprint S3 package).

@@ -248,3 +248,70 @@ func TestResolveRunAgentContext_ConflictingPullRequestLabelsFail(t *testing.T) {
 		t.Fatal("expected conflict error for multiple pull_request ai-model labels")
 	}
 }
+
+func TestResolveRunAgentContext_ReasoningExtraHighLabel(t *testing.T) {
+	t.Parallel()
+
+	runPayload := json.RawMessage(`{
+		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"agent":{"key":"dev","name":"AI Developer"},
+		"trigger":{"kind":"dev","label":"run:dev"},
+		"raw_payload":{
+			"issue":{
+				"number":21,
+				"labels":[{"name":"[ai-reasoning-extra-high]"}]
+			}
+		}
+	}`)
+
+	got, err := resolveRunAgentContext(runPayload, runAgentDefaults{
+		DefaultModel:           modelGPT52Codex,
+		DefaultReasoningEffort: reasoningEffortHigh,
+		DefaultLocale:          "ru",
+		AllowGPT53:             true,
+	})
+	if err != nil {
+		t.Fatalf("resolveRunAgentContext() error = %v", err)
+	}
+	if got.ReasoningEffort != reasoningEffortExtraHigh {
+		t.Fatalf("ReasoningEffort = %q, want %q", got.ReasoningEffort, reasoningEffortExtraHigh)
+	}
+	if got.ReasoningSource != modelSourceIssueLabel {
+		t.Fatalf("ReasoningSource = %q, want %q", got.ReasoningSource, modelSourceIssueLabel)
+	}
+}
+
+func TestResolveRunAgentContext_CustomReasoningLabelFromCatalog(t *testing.T) {
+	t.Parallel()
+
+	runPayload := json.RawMessage(`{
+		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"agent":{"key":"dev","name":"AI Developer"},
+		"trigger":{"kind":"dev","label":"run:dev"},
+		"raw_payload":{
+			"issue":{
+				"number":22,
+				"labels":[{"name":"[team-reasoning-ultra]"}]
+			}
+		}
+	}`)
+
+	got, err := resolveRunAgentContext(runPayload, runAgentDefaults{
+		DefaultModel:           modelGPT52Codex,
+		DefaultReasoningEffort: reasoningEffortHigh,
+		DefaultLocale:          "ru",
+		AllowGPT53:             true,
+		LabelCatalog: runAgentLabelCatalog{
+			AIReasoningExtraHighLabel: "[team-reasoning-ultra]",
+		},
+	})
+	if err != nil {
+		t.Fatalf("resolveRunAgentContext() error = %v", err)
+	}
+	if got.ReasoningEffort != reasoningEffortExtraHigh {
+		t.Fatalf("ReasoningEffort = %q, want %q", got.ReasoningEffort, reasoningEffortExtraHigh)
+	}
+	if got.ReasoningSource != modelSourceIssueLabel {
+		t.Fatalf("ReasoningSource = %q, want %q", got.ReasoningSource, modelSourceIssueLabel)
+	}
+}

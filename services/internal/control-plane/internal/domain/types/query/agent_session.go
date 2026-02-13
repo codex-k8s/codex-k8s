@@ -30,3 +30,11 @@ type AgentSessionUpsertParams struct {
 	StartedAt          time.Time
 	FinishedAt         *time.Time
 }
+
+// AgentSessionSetWaitStateParams describes wait-state transition for run-bound session.
+type AgentSessionSetWaitStateParams struct {
+	RunID                string
+	WaitState            string
+	TimeoutGuardDisabled bool
+	LastHeartbeatAt      *time.Time
+}

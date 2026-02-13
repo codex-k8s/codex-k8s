@@ -7,6 +7,7 @@ import (
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
+	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 )
 
 const payloadMarshalFailedMessage = "payload_marshal_failed"
@@ -43,6 +44,28 @@ type mcpToolEventPayload struct {
 	Message     string                  `json:"message,omitempty"`
 }
 
+type approvalEventPayload struct {
+	RequestID     int64           `json:"request_id"`
+	RunID         string          `json:"run_id,omitempty"`
+	ProjectID     string          `json:"project_id,omitempty"`
+	ToolName      string          `json:"tool_name"`
+	Action        string          `json:"action"`
+	ApprovalMode  string          `json:"approval_mode"`
+	ApprovalState string          `json:"approval_state"`
+	RequestedBy   string          `json:"requested_by,omitempty"`
+	AppliedBy     string          `json:"applied_by,omitempty"`
+	ActorID       string          `json:"actor_id,omitempty"`
+	Reason        string          `json:"reason,omitempty"`
+	TargetRef     json.RawMessage `json:"target_ref,omitempty"`
+	ToolCategory  ToolCategory    `json:"tool_category,omitempty"`
+}
+
+type runWaitEventPayload struct {
+	RunID                string `json:"run_id"`
+	WaitState            string `json:"wait_state,omitempty"`
+	TimeoutGuardDisabled bool   `json:"timeout_guard_disabled"`
+}
+
 type marshalErrorPayload struct {
 	Error string `json:"error"`
 }
@@ -59,6 +82,14 @@ func encodeMCPToolEventPayload(payload mcpToolEventPayload) json.RawMessage {
 	return marshalEventPayload(payload)
 }
 
+func encodeApprovalEventPayload(payload approvalEventPayload) json.RawMessage {
+	return marshalEventPayload(payload)
+}
+
+func encodeRunWaitEventPayload(payload runWaitEventPayload) json.RawMessage {
+	return marshalEventPayload(payload)
+}
+
 func marshalEventPayload(payload any) json.RawMessage {
 	raw, err := json.Marshal(payload)
 	if err == nil {
@@ -69,6 +100,151 @@ func marshalEventPayload(payload any) json.RawMessage {
 		return json.RawMessage(`{"error":"payload_marshal_failed"}`)
 	}
 	return fallback
+}
+
+func (s *Service) auditApprovalRequested(ctx context.Context, session SessionContext, request entitytypes.MCPActionRequest, tool ToolCapability) {
+	s.insertApprovalEvent(ctx, session, floweventdomain.ActorTypeSystem, floweventdomain.ActorIDControlPlaneMCP, floweventdomain.EventTypeApprovalRequested, approvalEventPayload{
+		RequestID:     request.ID,
+		RunID:         request.RunID,
+		ProjectID:     request.ProjectID,
+		ToolName:      request.ToolName,
+		Action:        request.Action,
+		ApprovalMode:  string(request.ApprovalMode),
+		ApprovalState: string(request.ApprovalState),
+		RequestedBy:   request.RequestedBy,
+		TargetRef:     request.TargetRef,
+		ToolCategory:  tool.Category,
+	})
+}
+
+func (s *Service) auditApprovalApproved(ctx context.Context, session SessionContext, request entitytypes.MCPActionRequest, actorID string, reason string) {
+	s.auditApprovalStateChange(
+		ctx,
+		session,
+		request,
+		floweventdomain.ActorTypeHuman,
+		floweventdomain.EventTypeApprovalApproved,
+		actorID,
+		reason,
+	)
+}
+
+func (s *Service) auditApprovalDenied(ctx context.Context, session SessionContext, request entitytypes.MCPActionRequest, actorID string, reason string) {
+	s.auditApprovalStateChange(
+		ctx,
+		session,
+		request,
+		floweventdomain.ActorTypeHuman,
+		floweventdomain.EventTypeApprovalDenied,
+		actorID,
+		reason,
+	)
+}
+
+func (s *Service) auditApprovalExpired(ctx context.Context, session SessionContext, request entitytypes.MCPActionRequest, actorID string, reason string) {
+	s.auditApprovalStateChange(
+		ctx,
+		session,
+		request,
+		floweventdomain.ActorTypeHuman,
+		floweventdomain.EventTypeApprovalExpired,
+		actorID,
+		reason,
+	)
+}
+
+func (s *Service) auditApprovalFailed(ctx context.Context, session SessionContext, request entitytypes.MCPActionRequest, actorID string, reason string) {
+	s.auditApprovalStateChange(
+		ctx,
+		session,
+		request,
+		floweventdomain.ActorTypeSystem,
+		floweventdomain.EventTypeApprovalFailed,
+		actorID,
+		reason,
+	)
+}
+
+func (s *Service) auditApprovalApplied(ctx context.Context, session SessionContext, request entitytypes.MCPActionRequest, actorID string) {
+	s.auditApprovalStateChange(
+		ctx,
+		session,
+		request,
+		floweventdomain.ActorTypeSystem,
+		floweventdomain.EventTypeApprovalApplied,
+		actorID,
+		"",
+	)
+}
+
+func (s *Service) auditRunWaitPaused(ctx context.Context, session SessionContext, payload runWaitPayload) {
+	s.insertRunWaitEvent(ctx, session, floweventdomain.EventTypeRunWaitPaused, runWaitEventPayload(payload))
+}
+
+func (s *Service) auditRunWaitResumed(ctx context.Context, session SessionContext, payload runWaitPayload) {
+	eventPayload := runWaitEventPayload(payload)
+	eventPayload.WaitState = ""
+	s.insertRunWaitEvent(ctx, session, floweventdomain.EventTypeRunWaitResumed, eventPayload)
+}
+
+func (s *Service) auditApprovalStateChange(
+	ctx context.Context,
+	session SessionContext,
+	request entitytypes.MCPActionRequest,
+	actorType floweventdomain.ActorType,
+	eventType floweventdomain.EventType,
+	actorID string,
+	reason string,
+) {
+	s.insertApprovalEvent(ctx, session, actorType, "", eventType, approvalEventPayload{
+		RequestID:     request.ID,
+		RunID:         request.RunID,
+		ProjectID:     request.ProjectID,
+		ToolName:      request.ToolName,
+		Action:        request.Action,
+		ApprovalMode:  string(request.ApprovalMode),
+		ApprovalState: string(request.ApprovalState),
+		RequestedBy:   request.RequestedBy,
+		AppliedBy:     request.AppliedBy,
+		ActorID:       actorID,
+		Reason:        reason,
+		TargetRef:     request.TargetRef,
+	})
+}
+
+func (s *Service) insertApprovalEvent(
+	ctx context.Context,
+	session SessionContext,
+	actorType floweventdomain.ActorType,
+	actorID floweventdomain.ActorID,
+	eventType floweventdomain.EventType,
+	payload approvalEventPayload,
+) {
+	if s.flowEvents == nil {
+		return
+	}
+	_ = s.flowEvents.Insert(ctx, floweventrepo.InsertParams{
+		CorrelationID: session.CorrelationID,
+		ActorType:     actorType,
+		ActorID:       actorID,
+		EventType:     eventType,
+		Payload:       encodeApprovalEventPayload(payload),
+		CreatedAt:     s.now().UTC(),
+	})
+}
+
+func (s *Service) insertRunWaitEvent(ctx context.Context, session SessionContext, eventType floweventdomain.EventType, payload runWaitEventPayload) {
+	if s.flowEvents == nil {
+		return
+	}
+	_ = s.flowEvents.Insert(ctx, floweventrepo.InsertParams{
+		CorrelationID: session.CorrelationID,
+		ActorType:     floweventdomain.ActorTypeSystem,
+		ActorID:       floweventdomain.ActorIDControlPlaneMCP,
+		EventType:     eventType,
+		Payload:       encodeRunWaitEventPayload(payload),
+		CreatedAt:     s.now().UTC(),
+	})
 }
 
 func (s *Service) auditPromptContextAssembled(ctx context.Context, runCtx resolvedRunContext) {

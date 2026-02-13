@@ -38,6 +38,12 @@ func runFromDBModel(row dbmodel.RunRow) domainrepo.Run {
 	if row.Namespace.Valid {
 		item.Namespace = row.Namespace.String
 	}
+	if row.WaitState.Valid {
+		item.WaitState = row.WaitState.String
+	}
+	if row.WaitReason.Valid {
+		item.WaitReason = row.WaitReason.String
+	}
 	if row.PRURL.Valid {
 		item.PRURL = row.PRURL.String
 	}

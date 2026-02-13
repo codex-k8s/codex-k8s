@@ -10,8 +10,8 @@ related_issues: []
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
-  request_id: ""
+  status: approved
+  request_id: "owner-2026-02-13-s2-day5"
 ---
 
 # Epic S2 Day 5: Staff UI for dogfooding visibility (runs/issues/PRs)

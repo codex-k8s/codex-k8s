@@ -88,7 +88,8 @@ approvals:
 ## План активации контуров
 
 - S2 baseline: обязательны `run:dev` и `run:dev:revise`.
-- S2 Day6/Day7: approval/audit hardening и regression gate под полный MVP.
+- S2 Day6: approval/audit hardening (completed).
+- S2 Day7: regression gate под полный MVP.
 - S3 target: активация полного stage-flow (`run:intake..run:ops`) и `run:self-improve`.
 
 ## Конфигурационные labels для исполнения stage

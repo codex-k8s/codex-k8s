@@ -217,6 +217,56 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /api/v1/staff/approvals:
+    get:
+      summary: List pending approval requests
+      operationId: listPendingApprovals
+      tags: [staff-runs]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Pending approvals list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRequestItemsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/staff/approvals/{approval_request_id}/decision:
+    post:
+      summary: Resolve one approval request (approve/deny/expire/fail)
+      operationId: resolveApprovalDecision
+      tags: [staff-runs]
+      parameters:
+        - $ref: "#/components/parameters/ApprovalRequestID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveApprovalDecisionRequest"
+      responses:
+        "200":
+          description: Approval resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResolveApprovalDecisionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /api/v1/staff/runs/{run_id}:
     get:
       summary: Get run by id
@@ -522,6 +572,13 @@ components:
       required: true
       schema:
         type: string
+    ApprovalRequestID:
+      in: path
+      name: approval_request_id
+      required: true
+      schema:
+        type: integer
+        format: int64
     UserID:
       in: path
       name: user_id
@@ -724,6 +781,12 @@ components:
           type: boolean
         namespace_exists:
           type: boolean
+        wait_state:
+          type: string
+          nullable: true
+        wait_reason:
+          type: string
+          nullable: true
         status:
           type: string
         created_at:
@@ -737,6 +800,92 @@ components:
           type: string
           format: date-time
           nullable: true
+
+    ApprovalRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - correlation_id
+        - tool_name
+        - action
+        - approval_mode
+        - requested_by
+        - created_at
+      properties:
+        id:
+          type: integer
+          format: int64
+        correlation_id:
+          type: string
+        run_id:
+          type: string
+          nullable: true
+        project_id:
+          type: string
+          nullable: true
+        project_slug:
+          type: string
+          nullable: true
+        project_name:
+          type: string
+          nullable: true
+        issue_number:
+          type: integer
+          format: int32
+          nullable: true
+        pr_number:
+          type: integer
+          format: int32
+          nullable: true
+        trigger_label:
+          type: string
+          nullable: true
+        tool_name:
+          type: string
+        action:
+          type: string
+        approval_mode:
+          type: string
+          enum: [none, owner, delegated]
+        requested_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    ResolveApprovalDecisionRequest:
+      type: object
+      additionalProperties: false
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [approved, denied, expired, failed]
+        reason:
+          type: string
+          nullable: true
+
+    ResolveApprovalDecisionResponse:
+      type: object
+      additionalProperties: false
+      required: [id, correlation_id, tool_name, action, approval_state]
+      properties:
+        id:
+          type: integer
+          format: int64
+        correlation_id:
+          type: string
+        run_id:
+          type: string
+          nullable: true
+        tool_name:
+          type: string
+        action:
+          type: string
+        approval_state:
+          type: string
+          enum: [requested, approved, denied, expired, failed, applied]
 
     FlowEvent:
       type: object
@@ -864,6 +1013,16 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Run"
+
+    ApprovalRequestItemsResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalRequest"
 
     FlowEventItemsResponse:
       type: object

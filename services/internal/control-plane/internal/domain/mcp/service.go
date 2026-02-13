@@ -10,11 +10,13 @@ import (
 	"github.com/codex-k8s/codex-k8s/libs/go/crypto/tokencrypt"
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
+	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentsession"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
+	mcpactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/mcpactionrequest"
 	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/platformtoken"
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
+	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -50,6 +52,7 @@ type GitHubClient interface {
 	CreateIssueComment(ctx context.Context, params GitHubCreateIssueCommentParams) (GitHubIssueComment, error)
 	AddLabels(ctx context.Context, params GitHubMutateLabelsParams) ([]GitHubLabel, error)
 	RemoveLabels(ctx context.Context, params GitHubMutateLabelsParams) ([]GitHubLabel, error)
+	UpsertRepositorySecret(ctx context.Context, params GitHubUpsertRepositorySecretParams) error
 }
 
 // KubernetesClient defines Kubernetes operations used by MCP tools.
@@ -59,6 +62,13 @@ type KubernetesClient interface {
 	ListResources(ctx context.Context, namespace string, kind KubernetesResourceKind, limit int) ([]KubernetesResourceRef, error)
 	GetPodLogs(ctx context.Context, namespace string, pod string, container string, tailLines int64) (string, error)
 	ExecPod(ctx context.Context, namespace string, pod string, container string, command []string) (KubernetesExecResult, error)
+	UpsertSecret(ctx context.Context, namespace string, secretName string, data map[string][]byte) error
+}
+
+// DatabaseClient defines database lifecycle operations used by MCP control tools.
+type DatabaseClient interface {
+	EnsureDatabase(ctx context.Context, databaseName string) (bool, error)
+	DropDatabase(ctx context.Context, databaseName string) (bool, error)
 }
 
 // Service provides MCP token handling, prompt context building and tool operations.
@@ -69,9 +79,12 @@ type Service struct {
 	flowEvents floweventrepo.Repository
 	repos      repocfgrepo.Repository
 	platform   platformtokenrepo.Repository
+	actions    mcpactionrequestrepo.Repository
+	sessions   agentsessionrepo.Repository
 	tokenCrypt *tokencrypt.Service
 	github     GitHubClient
 	kubernetes KubernetesClient
+	database   DatabaseClient
 
 	toolCatalog []ToolCapability
 	now         func() time.Time
@@ -83,9 +96,12 @@ type Dependencies struct {
 	FlowEvents floweventrepo.Repository
 	Repos      repocfgrepo.Repository
 	Platform   platformtokenrepo.Repository
+	Actions    mcpactionrequestrepo.Repository
+	Sessions   agentsessionrepo.Repository
 	TokenCrypt *tokencrypt.Service
 	GitHub     GitHubClient
 	Kubernetes KubernetesClient
+	Database   DatabaseClient
 }
 
 // NewService creates MCP domain service.
@@ -133,6 +149,15 @@ func NewService(cfg Config, deps Dependencies) (*Service, error) {
 	if deps.Kubernetes == nil {
 		return nil, fmt.Errorf("kubernetes client is required")
 	}
+	if deps.Actions == nil {
+		return nil, fmt.Errorf("mcp action requests repository is required")
+	}
+	if deps.Sessions == nil {
+		return nil, fmt.Errorf("agent sessions repository is required")
+	}
+	if deps.Database == nil {
+		return nil, fmt.Errorf("database client is required")
+	}
 
 	catalog := DefaultToolCatalog()
 	sort.Slice(catalog, func(i, j int) bool { return catalog[i].Name < catalog[j].Name })
@@ -143,9 +168,12 @@ func NewService(cfg Config, deps Dependencies) (*Service, error) {
 		flowEvents:  deps.FlowEvents,
 		repos:       deps.Repos,
 		platform:    deps.Platform,
+		actions:     deps.Actions,
+		sessions:    deps.Sessions,
 		tokenCrypt:  deps.TokenCrypt,
 		github:      deps.GitHub,
 		kubernetes:  deps.Kubernetes,
+		database:    deps.Database,
 		toolCatalog: catalog,
 		now:         time.Now,
 	}, nil
@@ -260,11 +288,16 @@ func parseRuntimeMode(value string) agentdomain.RuntimeMode {
 }
 
 func isRunActive(status string) bool {
-	switch strings.TrimSpace(strings.ToLower(status)) {
-	case string(rundomain.StatusPending), string(rundomain.StatusRunning):
-		return true
+	normalized := strings.ToLower(strings.TrimSpace(status))
+	return normalized == "pending" || normalized == "running"
+}
+
+func normalizeApprovalMode(mode entitytypes.MCPApprovalMode) entitytypes.MCPApprovalMode {
+	switch mode {
+	case entitytypes.MCPApprovalModeNone, entitytypes.MCPApprovalModeOwner, entitytypes.MCPApprovalModeDelegated:
+		return mode
 	default:
-		return false
+		return entitytypes.MCPApprovalModeOwner
 	}
 }
 

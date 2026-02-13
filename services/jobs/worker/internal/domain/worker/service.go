@@ -66,6 +66,26 @@ type Config struct {
 	AgentDefaultLocale string
 	// AgentBaseBranch is default base branch for PR flow.
 	AgentBaseBranch string
+	// AIModelGPT53CodexLabel maps GitHub label to gpt-5.3-codex model.
+	AIModelGPT53CodexLabel string
+	// AIModelGPT53CodexSparkLabel maps GitHub label to gpt-5.3-codex-spark model.
+	AIModelGPT53CodexSparkLabel string
+	// AIModelGPT52CodexLabel maps GitHub label to gpt-5.2-codex model.
+	AIModelGPT52CodexLabel string
+	// AIModelGPT52Label maps GitHub label to gpt-5.2 model.
+	AIModelGPT52Label string
+	// AIModelGPT51CodexMaxLabel maps GitHub label to gpt-5.1-codex-max model.
+	AIModelGPT51CodexMaxLabel string
+	// AIModelGPT51CodexMiniLabel maps GitHub label to gpt-5.1-codex-mini model.
+	AIModelGPT51CodexMiniLabel string
+	// AIReasoningLowLabel maps GitHub label to low reasoning profile.
+	AIReasoningLowLabel string
+	// AIReasoningMediumLabel maps GitHub label to medium reasoning profile.
+	AIReasoningMediumLabel string
+	// AIReasoningHighLabel maps GitHub label to high reasoning profile.
+	AIReasoningHighLabel string
+	// AIReasoningExtraHighLabel maps GitHub label to extra-high reasoning profile.
+	AIReasoningExtraHighLabel string
 }
 
 // Dependencies groups service collaborators to keep constructor signatures compact.
@@ -96,6 +116,7 @@ type Service struct {
 	mcpTokens MCPTokenIssuer
 	runStatus RunStatusNotifier
 	logger    *slog.Logger
+	labels    runAgentLabelCatalog
 	now       func() time.Time
 }
 
@@ -171,6 +192,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if cfg.AgentBaseBranch == "" {
 		cfg.AgentBaseBranch = "main"
 	}
+	labelCatalog := runAgentLabelCatalogFromConfig(cfg)
 	if deps.Logger == nil {
 		deps.Logger = slog.Default()
 	}
@@ -190,6 +212,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 		mcpTokens: deps.MCPTokenIssuer,
 		runStatus: deps.RunStatus,
 		logger:    deps.Logger,
+		labels:    labelCatalog,
 		now:       time.Now,
 	}
 }
@@ -304,6 +327,7 @@ func (s *Service) launchPending(ctx context.Context) error {
 			DefaultReasoningEffort: s.cfg.AgentDefaultReasoningEffort,
 			DefaultLocale:          s.cfg.AgentDefaultLocale,
 			AllowGPT53:             strings.TrimSpace(s.cfg.OpenAIAuthFile) != "",
+			LabelCatalog:           s.labels,
 		})
 		if err != nil {
 			s.logger.Error("resolve run agent context failed", "run_id", claimed.RunID, "err", err)

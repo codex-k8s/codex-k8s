@@ -12,6 +12,7 @@ type ActorType string
 const (
 	ActorTypeSystem ActorType = "system"
 	ActorTypeAgent  ActorType = "agent"
+	ActorTypeHuman  ActorType = "human"
 )
 
 // ActorID is a concrete source identifier within ActorType.
@@ -67,6 +68,14 @@ const (
 	EventTypeMCPToolSucceeded       EventType = "mcp.tool.succeeded"
 	EventTypeMCPToolFailed          EventType = "mcp.tool.failed"
 	EventTypeMCPToolApprovalPending EventType = "mcp.tool.approval_pending"
+	EventTypeApprovalRequested      EventType = "approval.requested"
+	EventTypeApprovalApproved       EventType = "approval.approved"
+	EventTypeApprovalDenied         EventType = "approval.denied"
+	EventTypeApprovalExpired        EventType = "approval.expired"
+	EventTypeApprovalFailed         EventType = "approval.failed"
+	EventTypeApprovalApplied        EventType = "approval.applied"
+	EventTypeRunWaitPaused          EventType = "run.wait.paused"
+	EventTypeRunWaitResumed         EventType = "run.wait.resumed"
 )
 
 // InsertParams defines a single flow event record.

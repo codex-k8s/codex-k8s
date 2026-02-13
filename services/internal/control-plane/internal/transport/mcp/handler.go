@@ -22,6 +22,9 @@ type domainService interface {
 	GitHubLabelsAdd(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.GitHubLabelsAddInput) (mcpdomain.GitHubLabelsMutationResult, error)
 	GitHubLabelsRemove(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.GitHubLabelsRemoveInput) (mcpdomain.GitHubLabelsMutationResult, error)
 	GitHubLabelsTransition(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.GitHubLabelsTransitionInput) (mcpdomain.GitHubLabelsMutationResult, error)
+	MCPSecretSyncEnv(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.SecretSyncEnvInput) (mcpdomain.SecretSyncEnvResult, error)
+	MCPDatabaseLifecycle(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.DatabaseLifecycleInput) (mcpdomain.DatabaseLifecycleResult, error)
+	MCPOwnerFeedbackRequest(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.OwnerFeedbackRequestInput) (mcpdomain.OwnerFeedbackRequestResult, error)
 }
 
 // NewHandler constructs authenticated MCP StreamableHTTP handler.

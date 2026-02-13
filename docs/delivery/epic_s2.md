@@ -48,8 +48,7 @@ approvals:
 - Day 4: completed (agent-runner runtime, session persistence/resume, split access model и PR-flow через MCP).
 - Day 4.5: completed (pgx + db-model rollout в repository слое, typed persistence модели и cleanup SQL-paths).
 - Day 5: completed (staff UI dogfooding visibility, runtime drilldown и namespace lifecycle controls).
-- Day 6..7: planned.
-- Day 6: scope расширен до approval matrix + MCP control tools (secret/db/feedback) + audit hardening.
+- Day 6: completed (approval matrix + MCP control tools baseline + audit/wait-state hardening + staff approvals API/UI).
 - Day 7: scope расширен до MVP readiness regression gate + Sprint S3 kickoff package.
 
 ## Критерий успеха Sprint S2 (выжимка)

@@ -17,6 +17,13 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for ApprovalRequestApprovalMode.
+const (
+	Delegated ApprovalRequestApprovalMode = "delegated"
+	None      ApprovalRequestApprovalMode = "none"
+	Owner     ApprovalRequestApprovalMode = "owner"
+)
+
 // Defines values for ErrorResponseCode.
 const (
 	ErrorResponseCodeCanceled           ErrorResponseCode = "canceled"
@@ -46,12 +53,56 @@ const (
 	ProjectMemberRoleReadWrite ProjectMemberRole = "read_write"
 )
 
+// Defines values for ResolveApprovalDecisionRequestDecision.
+const (
+	ResolveApprovalDecisionRequestDecisionApproved ResolveApprovalDecisionRequestDecision = "approved"
+	ResolveApprovalDecisionRequestDecisionDenied   ResolveApprovalDecisionRequestDecision = "denied"
+	ResolveApprovalDecisionRequestDecisionExpired  ResolveApprovalDecisionRequestDecision = "expired"
+	ResolveApprovalDecisionRequestDecisionFailed   ResolveApprovalDecisionRequestDecision = "failed"
+)
+
+// Defines values for ResolveApprovalDecisionResponseApprovalState.
+const (
+	ResolveApprovalDecisionResponseApprovalStateApplied   ResolveApprovalDecisionResponseApprovalState = "applied"
+	ResolveApprovalDecisionResponseApprovalStateApproved  ResolveApprovalDecisionResponseApprovalState = "approved"
+	ResolveApprovalDecisionResponseApprovalStateDenied    ResolveApprovalDecisionResponseApprovalState = "denied"
+	ResolveApprovalDecisionResponseApprovalStateExpired   ResolveApprovalDecisionResponseApprovalState = "expired"
+	ResolveApprovalDecisionResponseApprovalStateFailed    ResolveApprovalDecisionResponseApprovalState = "failed"
+	ResolveApprovalDecisionResponseApprovalStateRequested ResolveApprovalDecisionResponseApprovalState = "requested"
+)
+
 // Defines values for UpsertProjectMemberRequestRole.
 const (
 	UpsertProjectMemberRequestRoleAdmin     UpsertProjectMemberRequestRole = "admin"
 	UpsertProjectMemberRequestRoleRead      UpsertProjectMemberRequestRole = "read"
 	UpsertProjectMemberRequestRoleReadWrite UpsertProjectMemberRequestRole = "read_write"
 )
+
+// ApprovalRequest defines model for ApprovalRequest.
+type ApprovalRequest struct {
+	Action        string                      `json:"action"`
+	ApprovalMode  ApprovalRequestApprovalMode `json:"approval_mode"`
+	CorrelationId string                      `json:"correlation_id"`
+	CreatedAt     time.Time                   `json:"created_at"`
+	Id            int64                       `json:"id"`
+	IssueNumber   *int32                      `json:"issue_number"`
+	PrNumber      *int32                      `json:"pr_number"`
+	ProjectId     *string                     `json:"project_id"`
+	ProjectName   *string                     `json:"project_name"`
+	ProjectSlug   *string                     `json:"project_slug"`
+	RequestedBy   string                      `json:"requested_by"`
+	RunId         *string                     `json:"run_id"`
+	ToolName      string                      `json:"tool_name"`
+	TriggerLabel  *string                     `json:"trigger_label"`
+}
+
+// ApprovalRequestApprovalMode defines model for ApprovalRequest.ApprovalMode.
+type ApprovalRequestApprovalMode string
+
+// ApprovalRequestItemsResponse defines model for ApprovalRequestItemsResponse.
+type ApprovalRequestItemsResponse struct {
+	Items []ApprovalRequest `json:"items"`
+}
 
 // CreateUserRequest defines model for CreateUserRequest.
 type CreateUserRequest struct {
@@ -171,6 +222,28 @@ type RepositoryBindingItemsResponse struct {
 	Items []RepositoryBinding `json:"items"`
 }
 
+// ResolveApprovalDecisionRequest defines model for ResolveApprovalDecisionRequest.
+type ResolveApprovalDecisionRequest struct {
+	Decision ResolveApprovalDecisionRequestDecision `json:"decision"`
+	Reason   *string                                `json:"reason"`
+}
+
+// ResolveApprovalDecisionRequestDecision defines model for ResolveApprovalDecisionRequest.Decision.
+type ResolveApprovalDecisionRequestDecision string
+
+// ResolveApprovalDecisionResponse defines model for ResolveApprovalDecisionResponse.
+type ResolveApprovalDecisionResponse struct {
+	Action        string                                       `json:"action"`
+	ApprovalState ResolveApprovalDecisionResponseApprovalState `json:"approval_state"`
+	CorrelationId string                                       `json:"correlation_id"`
+	Id            int64                                        `json:"id"`
+	RunId         *string                                      `json:"run_id"`
+	ToolName      string                                       `json:"tool_name"`
+}
+
+// ResolveApprovalDecisionResponseApprovalState defines model for ResolveApprovalDecisionResponse.ApprovalState.
+type ResolveApprovalDecisionResponseApprovalState string
+
 // Run defines model for Run.
 type Run struct {
 	CorrelationId   string     `json:"correlation_id"`
@@ -193,6 +266,8 @@ type Run struct {
 	Status          string     `json:"status"`
 	TriggerKind     *string    `json:"trigger_kind"`
 	TriggerLabel    *string    `json:"trigger_label"`
+	WaitReason      *string    `json:"wait_reason"`
+	WaitState       *string    `json:"wait_state"`
 }
 
 // RunItemsResponse defines model for RunItemsResponse.
@@ -261,6 +336,9 @@ type UserItemsResponse struct {
 	Items []User `json:"items"`
 }
 
+// ApprovalRequestID defines model for ApprovalRequestID.
+type ApprovalRequestID = int64
+
 // Limit defines model for Limit.
 type Limit = int
 
@@ -295,6 +373,11 @@ type Unauthorized = ErrorResponse
 type CallbackGithubParams struct {
 	State string `form:"state" json:"state"`
 	Code  string `form:"code" json:"code"`
+}
+
+// ListPendingApprovalsParams defines parameters for ListPendingApprovals.
+type ListPendingApprovalsParams struct {
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // ListProjectsParams defines parameters for ListProjects.
@@ -341,6 +424,9 @@ type IngestGithubWebhookParams struct {
 	XGitHubDelivery  string `json:"X-GitHub-Delivery"`
 	XHubSignature256 string `json:"X-Hub-Signature-256"`
 }
+
+// ResolveApprovalDecisionJSONRequestBody defines body for ResolveApprovalDecision for application/json ContentType.
+type ResolveApprovalDecisionJSONRequestBody = ResolveApprovalDecisionRequest
 
 // UpsertProjectJSONRequestBody defines body for UpsertProject for application/json ContentType.
 type UpsertProjectJSONRequestBody = UpsertProjectRequest
@@ -498,6 +584,12 @@ type ServerInterface interface {
 	// Get current authenticated staff principal
 	// (GET /api/v1/auth/me)
 	GetMe(w http.ResponseWriter, r *http.Request)
+	// List pending approval requests
+	// (GET /api/v1/staff/approvals)
+	ListPendingApprovals(w http.ResponseWriter, r *http.Request, params ListPendingApprovalsParams)
+	// Resolve one approval request (approve/deny/expire/fail)
+	// (POST /api/v1/staff/approvals/{approval_request_id}/decision)
+	ResolveApprovalDecision(w http.ResponseWriter, r *http.Request, approvalRequestId ApprovalRequestID)
 	// List projects
 	// (GET /api/v1/staff/projects)
 	ListProjects(w http.ResponseWriter, r *http.Request, params ListProjectsParams)
@@ -651,6 +743,58 @@ func (siw *ServerInterfaceWrapper) GetMe(w http.ResponseWriter, r *http.Request)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetMe(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListPendingApprovals operation middleware
+func (siw *ServerInterfaceWrapper) ListPendingApprovals(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListPendingApprovalsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListPendingApprovals(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ResolveApprovalDecision operation middleware
+func (siw *ServerInterfaceWrapper) ResolveApprovalDecision(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "approval_request_id" -------------
+	var approvalRequestId ApprovalRequestID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "approval_request_id", r.PathValue("approval_request_id"), &approvalRequestId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "approval_request_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ResolveApprovalDecision(w, r, approvalRequestId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1404,6 +1548,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/auth/github/login", wrapper.LoginGithub)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/auth/logout", wrapper.Logout)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/auth/me", wrapper.GetMe)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/approvals", wrapper.ListPendingApprovals)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/approvals/{approval_request_id}/decision", wrapper.ResolveApprovalDecision)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/projects", wrapper.ListProjects)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/projects", wrapper.UpsertProject)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/staff/projects/{project_id}", wrapper.DeleteProject)
@@ -1552,6 +1698,104 @@ type GetMe401JSONResponse struct{ UnauthorizedJSONResponse }
 func (response GetMe401JSONResponse) VisitGetMeResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListPendingApprovalsRequestObject struct {
+	Params ListPendingApprovalsParams
+}
+
+type ListPendingApprovalsResponseObject interface {
+	VisitListPendingApprovalsResponse(w http.ResponseWriter) error
+}
+
+type ListPendingApprovals200JSONResponse ApprovalRequestItemsResponse
+
+func (response ListPendingApprovals200JSONResponse) VisitListPendingApprovalsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListPendingApprovals400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListPendingApprovals400JSONResponse) VisitListPendingApprovalsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListPendingApprovals401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListPendingApprovals401JSONResponse) VisitListPendingApprovalsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListPendingApprovals403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListPendingApprovals403JSONResponse) VisitListPendingApprovalsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ResolveApprovalDecisionRequestObject struct {
+	ApprovalRequestId ApprovalRequestID `json:"approval_request_id"`
+	Body              *ResolveApprovalDecisionJSONRequestBody
+}
+
+type ResolveApprovalDecisionResponseObject interface {
+	VisitResolveApprovalDecisionResponse(w http.ResponseWriter) error
+}
+
+type ResolveApprovalDecision200JSONResponse ResolveApprovalDecisionResponse
+
+func (response ResolveApprovalDecision200JSONResponse) VisitResolveApprovalDecisionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ResolveApprovalDecision400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ResolveApprovalDecision400JSONResponse) VisitResolveApprovalDecisionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ResolveApprovalDecision401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ResolveApprovalDecision401JSONResponse) VisitResolveApprovalDecisionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ResolveApprovalDecision403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ResolveApprovalDecision403JSONResponse) VisitResolveApprovalDecisionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ResolveApprovalDecision404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ResolveApprovalDecision404JSONResponse) VisitResolveApprovalDecisionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -2410,6 +2654,12 @@ type StrictServerInterface interface {
 	// Get current authenticated staff principal
 	// (GET /api/v1/auth/me)
 	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
+	// List pending approval requests
+	// (GET /api/v1/staff/approvals)
+	ListPendingApprovals(ctx context.Context, request ListPendingApprovalsRequestObject) (ListPendingApprovalsResponseObject, error)
+	// Resolve one approval request (approve/deny/expire/fail)
+	// (POST /api/v1/staff/approvals/{approval_request_id}/decision)
+	ResolveApprovalDecision(ctx context.Context, request ResolveApprovalDecisionRequestObject) (ResolveApprovalDecisionResponseObject, error)
 	// List projects
 	// (GET /api/v1/staff/projects)
 	ListProjects(ctx context.Context, request ListProjectsRequestObject) (ListProjectsResponseObject, error)
@@ -2592,6 +2842,65 @@ func (sh *strictHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetMeResponseObject); ok {
 		if err := validResponse.VisitGetMeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListPendingApprovals operation middleware
+func (sh *strictHandler) ListPendingApprovals(w http.ResponseWriter, r *http.Request, params ListPendingApprovalsParams) {
+	var request ListPendingApprovalsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListPendingApprovals(ctx, request.(ListPendingApprovalsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListPendingApprovals")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListPendingApprovalsResponseObject); ok {
+		if err := validResponse.VisitListPendingApprovalsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ResolveApprovalDecision operation middleware
+func (sh *strictHandler) ResolveApprovalDecision(w http.ResponseWriter, r *http.Request, approvalRequestId ApprovalRequestID) {
+	var request ResolveApprovalDecisionRequestObject
+
+	request.ApprovalRequestId = approvalRequestId
+
+	var body ResolveApprovalDecisionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ResolveApprovalDecision(ctx, request.(ResolveApprovalDecisionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ResolveApprovalDecision")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ResolveApprovalDecisionResponseObject); ok {
+		if err := validResponse.VisitResolveApprovalDecisionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

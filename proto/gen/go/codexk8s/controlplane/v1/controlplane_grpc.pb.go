@@ -29,6 +29,8 @@ const (
 	ControlPlaneService_DeleteProject_FullMethodName                        = "/codexk8s.controlplane.v1.ControlPlaneService/DeleteProject"
 	ControlPlaneService_ListRuns_FullMethodName                             = "/codexk8s.controlplane.v1.ControlPlaneService/ListRuns"
 	ControlPlaneService_GetRun_FullMethodName                               = "/codexk8s.controlplane.v1.ControlPlaneService/GetRun"
+	ControlPlaneService_ListPendingApprovals_FullMethodName                 = "/codexk8s.controlplane.v1.ControlPlaneService/ListPendingApprovals"
+	ControlPlaneService_ResolveApprovalDecision_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/ResolveApprovalDecision"
 	ControlPlaneService_ListRunEvents_FullMethodName                        = "/codexk8s.controlplane.v1.ControlPlaneService/ListRunEvents"
 	ControlPlaneService_ListRunLearningFeedback_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/ListRunLearningFeedback"
 	ControlPlaneService_ListUsers_FullMethodName                            = "/codexk8s.controlplane.v1.ControlPlaneService/ListUsers"
@@ -64,6 +66,8 @@ type ControlPlaneServiceClient interface {
 	DeleteProject(ctx context.Context, in *DeleteProjectRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListRuns(ctx context.Context, in *ListRunsRequest, opts ...grpc.CallOption) (*ListRunsResponse, error)
 	GetRun(ctx context.Context, in *GetRunRequest, opts ...grpc.CallOption) (*Run, error)
+	ListPendingApprovals(ctx context.Context, in *ListPendingApprovalsRequest, opts ...grpc.CallOption) (*ListPendingApprovalsResponse, error)
+	ResolveApprovalDecision(ctx context.Context, in *ResolveApprovalDecisionRequest, opts ...grpc.CallOption) (*ResolveApprovalDecisionResponse, error)
 	ListRunEvents(ctx context.Context, in *ListRunEventsRequest, opts ...grpc.CallOption) (*ListRunEventsResponse, error)
 	ListRunLearningFeedback(ctx context.Context, in *ListRunLearningFeedbackRequest, opts ...grpc.CallOption) (*ListRunLearningFeedbackResponse, error)
 	ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error)
@@ -177,6 +181,26 @@ func (c *controlPlaneServiceClient) GetRun(ctx context.Context, in *GetRunReques
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Run)
 	err := c.cc.Invoke(ctx, ControlPlaneService_GetRun_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) ListPendingApprovals(ctx context.Context, in *ListPendingApprovalsRequest, opts ...grpc.CallOption) (*ListPendingApprovalsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPendingApprovalsResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ListPendingApprovals_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) ResolveApprovalDecision(ctx context.Context, in *ResolveApprovalDecisionRequest, opts ...grpc.CallOption) (*ResolveApprovalDecisionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResolveApprovalDecisionResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ResolveApprovalDecision_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -378,6 +402,8 @@ type ControlPlaneServiceServer interface {
 	DeleteProject(context.Context, *DeleteProjectRequest) (*emptypb.Empty, error)
 	ListRuns(context.Context, *ListRunsRequest) (*ListRunsResponse, error)
 	GetRun(context.Context, *GetRunRequest) (*Run, error)
+	ListPendingApprovals(context.Context, *ListPendingApprovalsRequest) (*ListPendingApprovalsResponse, error)
+	ResolveApprovalDecision(context.Context, *ResolveApprovalDecisionRequest) (*ResolveApprovalDecisionResponse, error)
 	ListRunEvents(context.Context, *ListRunEventsRequest) (*ListRunEventsResponse, error)
 	ListRunLearningFeedback(context.Context, *ListRunLearningFeedbackRequest) (*ListRunLearningFeedbackResponse, error)
 	ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error)
@@ -433,6 +459,12 @@ func (UnimplementedControlPlaneServiceServer) ListRuns(context.Context, *ListRun
 }
 func (UnimplementedControlPlaneServiceServer) GetRun(context.Context, *GetRunRequest) (*Run, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRun not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ListPendingApprovals(context.Context, *ListPendingApprovalsRequest) (*ListPendingApprovalsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListPendingApprovals not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ResolveApprovalDecision(context.Context, *ResolveApprovalDecisionRequest) (*ResolveApprovalDecisionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResolveApprovalDecision not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) ListRunEvents(context.Context, *ListRunEventsRequest) (*ListRunEventsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRunEvents not implemented")
@@ -667,6 +699,42 @@ func _ControlPlaneService_GetRun_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ControlPlaneServiceServer).GetRun(ctx, req.(*GetRunRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_ListPendingApprovals_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPendingApprovalsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ListPendingApprovals(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ListPendingApprovals_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ListPendingApprovals(ctx, req.(*ListPendingApprovalsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_ResolveApprovalDecision_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResolveApprovalDecisionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ResolveApprovalDecision(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ResolveApprovalDecision_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ResolveApprovalDecision(ctx, req.(*ResolveApprovalDecisionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1037,6 +1105,14 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRun",
 			Handler:    _ControlPlaneService_GetRun_Handler,
+		},
+		{
+			MethodName: "ListPendingApprovals",
+			Handler:    _ControlPlaneService_ListPendingApprovals_Handler,
+		},
+		{
+			MethodName: "ResolveApprovalDecision",
+			Handler:    _ControlPlaneService_ResolveApprovalDecision_Handler,
 		},
 		{
 			MethodName: "ListRunEvents",

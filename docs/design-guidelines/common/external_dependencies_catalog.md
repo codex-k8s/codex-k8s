@@ -26,6 +26,7 @@
 | `github.com/google/uuid` | `v1.6.0` | Utility | генерация идентификаторов |
 | `github.com/caarlos0/env/v11` | `v11.3.1` | Config | типобезопасный env->struct парсинг конфигурации |
 | `github.com/golang-jwt/jwt/v5` | `v5.3.0` | Auth | выпуск и валидация short-lived JWT для staff API |
+| `golang.org/x/crypto` | `v0.47.0` | Security | sealed-box шифрование значений для GitHub repository secrets (`CreateOrUpdateRepoSecret`) |
 | `k8s.io/client-go` | `v0.35.0` | Kubernetes integration | запуск/проверка Job через Kubernetes SDK |
 | `k8s.io/api` | `v0.35.0` | Kubernetes API types | типы `batch/v1`, `core/v1` для Job/Pod |
 | `k8s.io/apimachinery` | `v0.35.0` | Kubernetes API machinery | ошибки API, meta types, утилиты client-go |

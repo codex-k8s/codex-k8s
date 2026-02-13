@@ -51,6 +51,7 @@ export const ru = {
     noRepos: "Пока нет подключенных репозиториев.",
     noEvents: "Событий нет.",
     noLearningFeedback: "Пока нет learning feedback.",
+    noPendingApprovals: "Ожидающих апрувов нет.",
   },
   pages: {
     projects: {
@@ -94,6 +95,14 @@ export const ru = {
       prevPage: "Назад",
       nextPage: "Далее",
       pageInfo: "Страница {current} из {total}",
+      pendingApprovals: "Ожидающие апрувы",
+      tool: "Инструмент",
+      action: "Действие",
+      requestedBy: "Запросил",
+      resolve: "Решение",
+      approve: "Одобрить",
+      deny: "Отклонить",
+      reasonPrompt: "Причина (опционально)",
     },
     runDetails: {
       title: "Детали запуска",
@@ -114,6 +123,8 @@ export const ru = {
       namespace: "namespace",
       namespaceDeleted: "удален",
       namespaceAlreadyDeleted: "уже удален",
+      waitState: "wait_state",
+      waitReason: "wait_reason",
     },
     projectDetails: {
       title: "Детали проекта",

@@ -61,10 +61,43 @@ export type Run = {
     namespace?: string | null;
     job_exists?: boolean;
     namespace_exists?: boolean;
+    wait_state?: string | null;
+    wait_reason?: string | null;
     status: string;
     created_at: string;
     started_at?: string | null;
     finished_at?: string | null;
+};
+
+export type ApprovalRequest = {
+    id: number;
+    correlation_id: string;
+    run_id?: string | null;
+    project_id?: string | null;
+    project_slug?: string | null;
+    project_name?: string | null;
+    issue_number?: number | null;
+    pr_number?: number | null;
+    trigger_label?: string | null;
+    tool_name: string;
+    action: string;
+    approval_mode: 'none' | 'owner' | 'delegated';
+    requested_by: string;
+    created_at: string;
+};
+
+export type ResolveApprovalDecisionRequest = {
+    decision: 'approved' | 'denied' | 'expired' | 'failed';
+    reason?: string | null;
+};
+
+export type ResolveApprovalDecisionResponse = {
+    id: number;
+    correlation_id: string;
+    run_id?: string | null;
+    tool_name: string;
+    action: string;
+    approval_state: 'requested' | 'approved' | 'denied' | 'expired' | 'failed' | 'applied';
 };
 
 export type FlowEvent = {
@@ -121,6 +154,10 @@ export type RunItemsResponse = {
     items: Array<Run>;
 };
 
+export type ApprovalRequestItemsResponse = {
+    items: Array<ApprovalRequest>;
+};
+
 export type FlowEventItemsResponse = {
     items: Array<FlowEvent>;
 };
@@ -172,6 +209,8 @@ export type UpsertProjectRepositoryRequest = {
 export type ProjectId = string;
 
 export type RunId = string;
+
+export type ApprovalRequestId = number;
 
 export type UserId = string;
 
@@ -482,6 +521,80 @@ export type ListRunsResponses = {
 };
 
 export type ListRunsResponse = ListRunsResponses[keyof ListRunsResponses];
+
+export type ListPendingApprovalsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+    };
+    url: '/api/v1/staff/approvals';
+};
+
+export type ListPendingApprovalsErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type ListPendingApprovalsError = ListPendingApprovalsErrors[keyof ListPendingApprovalsErrors];
+
+export type ListPendingApprovalsResponses = {
+    /**
+     * Pending approvals list
+     */
+    200: ApprovalRequestItemsResponse;
+};
+
+export type ListPendingApprovalsResponse = ListPendingApprovalsResponses[keyof ListPendingApprovalsResponses];
+
+export type ResolveApprovalDecisionData = {
+    body: ResolveApprovalDecisionRequest;
+    path: {
+        approval_request_id: number;
+    };
+    query?: never;
+    url: '/api/v1/staff/approvals/{approval_request_id}/decision';
+};
+
+export type ResolveApprovalDecisionErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+};
+
+export type ResolveApprovalDecisionError = ResolveApprovalDecisionErrors[keyof ResolveApprovalDecisionErrors];
+
+export type ResolveApprovalDecisionResponses = {
+    /**
+     * Approval resolved
+     */
+    200: ResolveApprovalDecisionResponse;
+};
+
+export type ResolveApprovalDecisionResponse2 = ResolveApprovalDecisionResponses[keyof ResolveApprovalDecisionResponses];
 
 export type GetRunData = {
     body?: never;

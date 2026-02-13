@@ -243,6 +243,33 @@ func (h *staffHandler) ListRuns(c *echo.Context) error {
 	return listByLimitResp(c, 200, h.listRunsCall, casters.Runs)
 }
 
+func (h *staffHandler) ListPendingApprovals(c *echo.Context) error {
+	return listByLimitResp(c, 200, h.listPendingApprovalsCall, casters.ApprovalRequests)
+}
+
+func (h *staffHandler) ResolveApprovalDecision(c *echo.Context) error {
+	return withPrincipalAndResolved(c, resolvePath("approval_request_id"), func(principal *controlplanev1.Principal, rawID string) error {
+		approvalRequestID, err := strconv.ParseInt(strings.TrimSpace(rawID), 10, 64)
+		if err != nil || approvalRequestID <= 0 {
+			return errs.Validation{Field: "approval_request_id", Msg: "must be a positive int64"}
+		}
+
+		var req models.ResolveApprovalDecisionRequest
+		if err := bindBody(c, &req); err != nil {
+			return err
+		}
+
+		item, err := h.resolveApprovalDecisionCall(c.Request().Context(), principal, approvalDecisionArg{
+			approvalRequestID: approvalRequestID,
+			body:              req,
+		})
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, casters.ResolveApprovalDecision(item))
+	})
+}
+
 func (h *staffHandler) GetRun(c *echo.Context) error {
 	return getByPathResp(c, "run_id", h.getRunCall, casters.Run)
 }
@@ -392,8 +419,26 @@ func buildListRunsRequest(principal *controlplanev1.Principal, limit int32) *con
 	return &controlplanev1.ListRunsRequest{Principal: principal, Limit: limit}
 }
 
+func buildListPendingApprovalsRequest(principal *controlplanev1.Principal, limit int32) *controlplanev1.ListPendingApprovalsRequest {
+	return &controlplanev1.ListPendingApprovalsRequest{Principal: principal, Limit: limit}
+}
+
 func buildGetRunRequest(principal *controlplanev1.Principal, id string) *controlplanev1.GetRunRequest {
 	return &controlplanev1.GetRunRequest{Principal: principal, RunId: id}
+}
+
+type approvalDecisionArg struct {
+	approvalRequestID int64
+	body              models.ResolveApprovalDecisionRequest
+}
+
+func buildResolveApprovalDecisionRequest(principal *controlplanev1.Principal, arg approvalDecisionArg) *controlplanev1.ResolveApprovalDecisionRequest {
+	return &controlplanev1.ResolveApprovalDecisionRequest{
+		Principal:         principal,
+		ApprovalRequestId: arg.approvalRequestID,
+		Decision:          arg.body.Decision,
+		Reason:            optionalStringPtr(arg.body.Reason),
+	}
 }
 
 func buildDeleteRunNamespaceRequest(principal *controlplanev1.Principal, id string) *controlplanev1.DeleteRunNamespaceRequest {
@@ -440,8 +485,20 @@ func (h *staffHandler) listRunsCall(ctx context.Context, principal *controlplane
 	return callUnaryWithArg(ctx, principal, limit, buildListRunsRequest, h.cp.Service().ListRuns)
 }
 
+func (h *staffHandler) listPendingApprovalsCall(ctx context.Context, principal *controlplanev1.Principal, limit int32) (*controlplanev1.ListPendingApprovalsResponse, error) {
+	return callUnaryWithArg(ctx, principal, limit, buildListPendingApprovalsRequest, h.cp.Service().ListPendingApprovals)
+}
+
 func (h *staffHandler) getRunCall(ctx context.Context, principal *controlplanev1.Principal, id string) (*controlplanev1.Run, error) {
 	return callUnaryWithArg(ctx, principal, id, buildGetRunRequest, h.cp.Service().GetRun)
+}
+
+func (h *staffHandler) resolveApprovalDecisionCall(
+	ctx context.Context,
+	principal *controlplanev1.Principal,
+	arg approvalDecisionArg,
+) (*controlplanev1.ResolveApprovalDecisionResponse, error) {
+	return callUnaryWithArg(ctx, principal, arg, buildResolveApprovalDecisionRequest, h.cp.Service().ResolveApprovalDecision)
 }
 
 func (h *staffHandler) deleteRunNamespaceCall(ctx context.Context, principal *controlplanev1.Principal, id string) (*controlplanev1.DeleteRunNamespaceResponse, error) {

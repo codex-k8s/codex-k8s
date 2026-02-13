@@ -21,7 +21,7 @@ approvals:
 - GitHub issue/PR/comments и Kubernetes runtime-операции выполняются агентом напрямую через `gh`/`kubectl`.
 - Approval gate в MCP управляется policy matrix: для label-инструментов возможен `approval:none`, для privileged control tools — `approval:required`.
 - Все действия логируются в единый audit-контур (`flow_events`, `agent_sessions`, `links`, `token_usage`).
-- HTTP approver/executor поддерживаются как стандартные контракты интеграции; Telegram — первая реализация, но не единственная.
+- HTTP approver/executor поддерживаются как стандартные контракты интеграции; Telegram зафиксирован как приоритетный adapter path для следующего этапа.
 - В `codex-k8s` сохраняется двухслойная модель MCP: встроенные Go-ручки платформы + внешний декларативный слой (`github.com/codex-k8s/yaml-mcp-server`).
 
 ## Политика апрувов
@@ -56,7 +56,7 @@ approvals:
 - Day6+ расширяет policy: approver matrix, secret-management инструменты через MCP, единообразные события и отказоустойчивость.
 - Day6+ также включает контур `run:self-improve`, где MCP используется для traceable transitions и owner feedback loops.
 
-## Политики доступа к MCP (roadmap Day6)
+## Политики доступа к MCP (S2 Day6 baseline + roadmap)
 
 - Политики MCP управляются через платформенные данные (а не хардкодом в prompt):
   - baseline policy по `agent_key`;

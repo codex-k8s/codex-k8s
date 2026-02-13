@@ -35,6 +35,8 @@ type webhookIngress interface {
 type mcpRunTokenService interface {
 	IssueRunToken(ctx context.Context, params mcpdomain.IssueRunTokenParams) (mcpdomain.IssuedToken, error)
 	VerifyRunToken(ctx context.Context, rawToken string) (mcpdomain.SessionContext, error)
+	ListPendingApprovals(ctx context.Context, limit int) ([]mcpdomain.ApprovalListItem, error)
+	ResolveApproval(ctx context.Context, params mcpdomain.ResolveApprovalParams) (mcpdomain.ResolveApprovalResult, error)
 }
 
 type agentCallbackService interface {
@@ -250,6 +252,74 @@ func (s *Server) GetRun(ctx context.Context, req *controlplanev1.GetRunRequest) 
 		return nil, toStatus(err)
 	}
 	return runToProto(r), nil
+}
+
+func (s *Server) ListPendingApprovals(ctx context.Context, req *controlplanev1.ListPendingApprovalsRequest) (*controlplanev1.ListPendingApprovalsResponse, error) {
+	if s.mcp == nil {
+		return nil, status.Error(codes.FailedPrecondition, "mcp service is not configured")
+	}
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	if !p.IsPlatformAdmin {
+		return nil, status.Error(codes.PermissionDenied, "platform admin required")
+	}
+
+	limit := clampLimit(req.GetLimit(), 200)
+	items, err := s.mcp.ListPendingApprovals(ctx, limit)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+
+	out := make([]*controlplanev1.ApprovalRequest, 0, len(items))
+	for _, item := range items {
+		out = append(out, approvalToProto(item))
+	}
+	return &controlplanev1.ListPendingApprovalsResponse{Items: out}, nil
+}
+
+func (s *Server) ResolveApprovalDecision(ctx context.Context, req *controlplanev1.ResolveApprovalDecisionRequest) (*controlplanev1.ResolveApprovalDecisionResponse, error) {
+	if s.mcp == nil {
+		return nil, status.Error(codes.FailedPrecondition, "mcp service is not configured")
+	}
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	if !p.IsPlatformAdmin {
+		return nil, status.Error(codes.PermissionDenied, "platform admin required")
+	}
+
+	if req.GetApprovalRequestId() <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "approval_request_id is required")
+	}
+	decision := strings.TrimSpace(req.GetDecision())
+	if decision == "" {
+		return nil, status.Error(codes.InvalidArgument, "decision is required")
+	}
+
+	item, err := s.mcp.ResolveApproval(ctx, mcpdomain.ResolveApprovalParams{
+		RequestID: req.GetApprovalRequestId(),
+		Decision:  mcpdomain.ApprovalDecision(decision),
+		ActorID:   approvalActorID(p),
+		Reason:    strings.TrimSpace(req.GetReason()),
+	})
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return &controlplanev1.ResolveApprovalDecisionResponse{
+		Id:            item.ID,
+		CorrelationId: item.CorrelationID,
+		RunId:         stringPtrOrNil(item.RunID),
+		ToolName:      item.ToolName,
+		Action:        item.Action,
+		ApprovalState: item.ApprovalState,
+	}, nil
 }
 
 func (s *Server) ListRunEvents(ctx context.Context, req *controlplanev1.ListRunEventsRequest) (*controlplanev1.ListRunEventsResponse, error) {
@@ -949,6 +1019,8 @@ func runToProto(r staffrunrepo.Run) *controlplanev1.Run {
 		Namespace:       stringPtrOrNil(r.Namespace),
 		JobExists:       r.JobExists,
 		NamespaceExists: r.NamespaceExists,
+		WaitState:       stringPtrOrNil(r.WaitState),
+		WaitReason:      stringPtrOrNil(r.WaitReason),
 		Status:          r.Status,
 		CreatedAt:       timestamppb.New(r.CreatedAt.UTC()),
 	}
@@ -959,6 +1031,35 @@ func runToProto(r staffrunrepo.Run) *controlplanev1.Run {
 		out.FinishedAt = timestamppb.New(r.FinishedAt.UTC())
 	}
 	return out
+}
+
+func approvalToProto(item mcpdomain.ApprovalListItem) *controlplanev1.ApprovalRequest {
+	return &controlplanev1.ApprovalRequest{
+		Id:            item.ID,
+		CorrelationId: item.CorrelationID,
+		RunId:         stringPtrOrNil(item.RunID),
+		ProjectId:     stringPtrOrNil(item.ProjectID),
+		ProjectSlug:   stringPtrOrNil(item.ProjectSlug),
+		ProjectName:   stringPtrOrNil(item.ProjectName),
+		IssueNumber:   intToOptional(int32(item.IssueNumber)),
+		PrNumber:      intToOptional(int32(item.PRNumber)),
+		TriggerLabel:  stringPtrOrNil(item.TriggerLabel),
+		ToolName:      item.ToolName,
+		Action:        item.Action,
+		ApprovalMode:  item.ApprovalMode,
+		RequestedBy:   item.RequestedBy,
+		CreatedAt:     timestamppb.New(item.CreatedAt.UTC()),
+	}
+}
+
+func approvalActorID(principal staff.Principal) string {
+	if value := strings.TrimSpace(principal.GitHubLogin); value != "" {
+		return "staff:" + value
+	}
+	if value := strings.TrimSpace(principal.Email); value != "" {
+		return "staff:" + value
+	}
+	return "staff:" + strings.TrimSpace(principal.UserID)
 }
 
 func stringPtrOrNil(value string) *string {

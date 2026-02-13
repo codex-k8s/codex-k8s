@@ -2,12 +2,15 @@ package github
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
 	gh "github.com/google/go-github/v82/github"
+	"golang.org/x/crypto/nacl/box"
 
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 )
@@ -308,6 +311,53 @@ func (c *Client) RemoveLabels(ctx context.Context, params mcpdomain.GitHubMutate
 		Repository:  params.Repository,
 		IssueNumber: params.IssueNumber,
 	})
+}
+
+func (c *Client) UpsertRepositorySecret(ctx context.Context, params mcpdomain.GitHubUpsertRepositorySecretParams) error {
+	client := c.clientWithToken(params.Token)
+	secretName := strings.TrimSpace(params.SecretName)
+	if secretName == "" {
+		return fmt.Errorf("secret name is required")
+	}
+	value := params.Value
+	if value == "" {
+		return fmt.Errorf("secret value is required")
+	}
+
+	publicKey, _, err := client.Actions.GetRepoPublicKey(ctx, params.Owner, params.Repository)
+	if err != nil {
+		return fmt.Errorf("get github repository public key: %w", err)
+	}
+	keyID := strings.TrimSpace(publicKey.GetKeyID())
+	publicKeyEncoded := strings.TrimSpace(publicKey.GetKey())
+	if keyID == "" || publicKeyEncoded == "" {
+		return fmt.Errorf("github repository public key is invalid")
+	}
+
+	publicKeyRaw, err := base64.StdEncoding.DecodeString(publicKeyEncoded)
+	if err != nil {
+		return fmt.Errorf("decode github repository public key: %w", err)
+	}
+	if len(publicKeyRaw) != 32 {
+		return fmt.Errorf("github repository public key length is invalid")
+	}
+
+	var recipient [32]byte
+	copy(recipient[:], publicKeyRaw)
+	encryptedRaw, err := box.SealAnonymous(nil, []byte(value), &recipient, rand.Reader)
+	if err != nil {
+		return fmt.Errorf("encrypt github secret value: %w", err)
+	}
+
+	if _, err := client.Actions.CreateOrUpdateRepoSecret(ctx, params.Owner, params.Repository, &gh.EncryptedSecret{
+		Name:           secretName,
+		KeyID:          keyID,
+		EncryptedValue: base64.StdEncoding.EncodeToString(encryptedRaw),
+	}); err != nil {
+		return fmt.Errorf("upsert github repository secret: %w", err)
+	}
+
+	return nil
 }
 
 func (c *Client) resolveBaseSHA(ctx context.Context, client *gh.Client, params mcpdomain.GitHubEnsureBranchParams) (string, error) {

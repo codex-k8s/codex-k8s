@@ -245,6 +245,57 @@ func (c *Client) ExecPod(ctx context.Context, namespace string, pod string, cont
 	}, nil
 }
 
+// UpsertSecret creates or updates one namespaced Kubernetes Secret with deterministic data keys.
+func (c *Client) UpsertSecret(ctx context.Context, namespace string, secretName string, data map[string][]byte) error {
+	targetNamespace := strings.TrimSpace(namespace)
+	if targetNamespace == "" {
+		return fmt.Errorf("kubernetes namespace is required")
+	}
+	targetSecretName := strings.TrimSpace(secretName)
+	if targetSecretName == "" {
+		return fmt.Errorf("kubernetes secret name is required")
+	}
+	if len(data) == 0 {
+		return fmt.Errorf("kubernetes secret data is required")
+	}
+
+	existing, err := c.clientset.CoreV1().Secrets(targetNamespace).Get(ctx, targetSecretName, metav1.GetOptions{})
+	if err != nil {
+		if !k8serrors.IsNotFound(err) {
+			return fmt.Errorf("get kubernetes secret %s/%s: %w", targetNamespace, targetSecretName, err)
+		}
+
+		secretData := make(map[string][]byte, len(data))
+		for key, value := range data {
+			secretData[key] = append([]byte(nil), value...)
+		}
+		_, createErr := c.clientset.CoreV1().Secrets(targetNamespace).Create(ctx, &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: targetSecretName,
+			},
+			Type: corev1.SecretTypeOpaque,
+			Data: secretData,
+		}, metav1.CreateOptions{})
+		if createErr != nil {
+			return fmt.Errorf("create kubernetes secret %s/%s: %w", targetNamespace, targetSecretName, createErr)
+		}
+		return nil
+	}
+
+	secretData := make(map[string][]byte, len(data))
+	for key, value := range data {
+		secretData[key] = append([]byte(nil), value...)
+	}
+	existing.Data = secretData
+	if existing.Type == "" {
+		existing.Type = corev1.SecretTypeOpaque
+	}
+	if _, err := c.clientset.CoreV1().Secrets(targetNamespace).Update(ctx, existing, metav1.UpdateOptions{}); err != nil {
+		return fmt.Errorf("update kubernetes secret %s/%s: %w", targetNamespace, targetSecretName, err)
+	}
+	return nil
+}
+
 // DeleteManagedRunNamespace deletes a full-env run namespace when it is marked as worker-managed.
 func (c *Client) DeleteManagedRunNamespace(ctx context.Context, namespace string) (bool, error) {
 	targetNamespace := strings.TrimSpace(namespace)
