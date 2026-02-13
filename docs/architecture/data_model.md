@@ -17,8 +17,8 @@ approvals:
 # Data Model: codex-k8s
 
 ## TL;DR
-- Ключевые сущности: users, projects, system_settings, repositories, agent_policies, agents, agent_runs, agent_sessions, token_usage, slots, flow_events, links, prompt_templates, docs_meta, doc_chunks.
-- Основные связи: user<->project (RBAC), project->repositories, agent->agent_runs, issue/pr->doc links.
+- Ключевые сущности: users, projects, system_settings, repositories, project_databases, agent_policies, agents, agent_runs, agent_sessions, token_usage, slots, flow_events, links, prompt_templates, docs_meta, doc_chunks.
+- Основные связи: user<->project (RBAC), project->repositories, project->project_databases, agent->agent_runs, issue/pr->doc links.
 - Риски миграций: ранний выбор индексов для webhook/event throughput и vector search.
 
 ## Сущности
@@ -89,6 +89,19 @@ approvals:
 - `repositories.token_encrypted` используется только для операций управления проектом/репозиторием
   (validate repository, ensure/delete webhook и т.п. staff management path).
 - Runtime сообщения и label-операции в run/mcp контуре используют bot-token из singleton сущности `platform_github_tokens`.
+
+### Entity: project_databases
+- Назначение: ownership registry для MCP tool `database.lifecycle`.
+- Важные инварианты: одна БД принадлежит только одному проекту; delete/describe разрешены только владельцу.
+- Поля:
+
+| Field | Type | Nullable | Default | Constraints | Notes |
+|---|---|---:|---|---|---|
+| project_id | uuid | no |  | fk -> projects | ownership project |
+| environment | text | no |  | check not empty | env scope (`dev/staging/prod/...`) |
+| database_name | text | no |  | pk | global DB identifier |
+| created_at | timestamptz | no | now() |  | |
+| updated_at | timestamptz | no | now() |  | |
 
 ### Entity: platform_github_tokens
 - Назначение: singleton-хранилище платформенных GitHub токенов.

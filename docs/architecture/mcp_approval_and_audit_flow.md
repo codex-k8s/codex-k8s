@@ -31,6 +31,12 @@ approvals:
 - Label transitions всё равно проходят через control-plane MCP, чтобы сохранять единый audit-контур.
 - Для control tools (`secret.sync.github_k8s`, `database.lifecycle`, `owner.feedback.request`) включается approver gate по policy.
 - Для `secret.sync.github_k8s` действует idempotency-key и retry-safe replay без повторного side effect.
+- Для `database.lifecycle`:
+  - `create/delete` идут через approval flow;
+  - `describe` выполняется как read-only action без side effects;
+  - `delete` требует явного `confirm_delete=true`;
+  - ownership-check выполняется по таблице `project_databases`;
+  - окружения ограничиваются allowlist (`CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS`, fallback `dev,staging,prod`).
 
 ### Planned (следующие этапы)
 - Для части label/runtime/secret инструментов будет включаться обязательный approver gate.

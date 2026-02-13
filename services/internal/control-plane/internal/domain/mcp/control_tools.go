@@ -10,6 +10,7 @@ import (
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentsession"
 	mcpactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/mcpactionrequest"
+	projectdatabaserepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projectdatabase"
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 )
 
@@ -286,53 +287,140 @@ func (s *Service) MCPDatabaseLifecycle(ctx context.Context, session SessionConte
 	}
 	s.auditToolCalled(ctx, runCtx.Session, tool)
 
+	projectID := strings.TrimSpace(runCtx.Session.ProjectID)
+	if projectID == "" {
+		projectID = strings.TrimSpace(runCtx.Repository.ProjectID)
+	}
+	if projectID == "" {
+		projectID = strings.TrimSpace(runCtx.Payload.Project.ID)
+	}
+	if projectID == "" {
+		err := fmt.Errorf("project_id is required")
+		s.auditToolFailed(ctx, runCtx.Session, tool, err)
+		return DatabaseLifecycleResult{}, err
+	}
+
 	environment := normalizeEnvName(input.Environment)
 	if environment == "" {
 		err := fmt.Errorf("environment is required")
 		s.auditToolFailed(ctx, runCtx.Session, tool, err)
 		return DatabaseLifecycleResult{}, err
 	}
+	if !isDatabaseLifecycleEnvironmentAllowed(s.databaseLifecycleAllowedEnvs, environment) {
+		allowed := strings.Join(listDatabaseLifecycleAllowedEnvs(s.databaseLifecycleAllowedEnvs), ",")
+		err := fmt.Errorf("environment %q is not allowed; allowed=%s", environment, allowed)
+		s.auditToolFailed(ctx, runCtx.Session, tool, err)
+		return DatabaseLifecycleResult{}, err
+	}
 	action := DatabaseLifecycleAction(strings.ToLower(strings.TrimSpace(string(input.Action))))
 	switch action {
-	case DatabaseLifecycleActionCreate, DatabaseLifecycleActionDelete:
+	case DatabaseLifecycleActionCreate, DatabaseLifecycleActionDelete, DatabaseLifecycleActionDescribe:
 	default:
 		err := fmt.Errorf("action is invalid")
 		s.auditToolFailed(ctx, runCtx.Session, tool, err)
 		return DatabaseLifecycleResult{}, err
 	}
-	databaseName := strings.TrimSpace(input.DatabaseName)
-	if databaseName == "" {
-		err := fmt.Errorf("database_name is required")
+	databaseName, err := normalizeDatabaseLifecycleName(input.DatabaseName)
+	if err != nil {
+		s.auditToolFailed(ctx, runCtx.Session, tool, err)
+		return DatabaseLifecycleResult{}, err
+	}
+	if action == DatabaseLifecycleActionDelete && !input.ConfirmDelete {
+		err := fmt.Errorf("confirm_delete is required for delete action")
 		s.auditToolFailed(ctx, runCtx.Session, tool, err)
 		return DatabaseLifecycleResult{}, err
 	}
 
+	ownership, ownershipFound, err := s.projectDatabases.GetByDatabaseName(ctx, databaseName)
+	if err != nil {
+		err = fmt.Errorf("resolve database ownership: %w", err)
+		s.auditToolFailed(ctx, runCtx.Session, tool, err)
+		return DatabaseLifecycleResult{}, err
+	}
+
+	switch action {
+	case DatabaseLifecycleActionCreate:
+		if ownershipFound && ownership.ProjectID != projectID {
+			err = fmt.Errorf("database %q belongs to another project", databaseName)
+			s.auditToolFailed(ctx, runCtx.Session, tool, err)
+			return DatabaseLifecycleResult{}, err
+		}
+		if ownershipFound && ownership.Environment != environment {
+			err = fmt.Errorf("database %q is already registered for environment %q", databaseName, ownership.Environment)
+			s.auditToolFailed(ctx, runCtx.Session, tool, err)
+			return DatabaseLifecycleResult{}, err
+		}
+	case DatabaseLifecycleActionDelete, DatabaseLifecycleActionDescribe:
+		if !ownershipFound {
+			err = fmt.Errorf("database %q is not registered in project ownership", databaseName)
+			s.auditToolFailed(ctx, runCtx.Session, tool, err)
+			return DatabaseLifecycleResult{}, err
+		}
+		if ownership.ProjectID != projectID {
+			err = fmt.Errorf("database %q belongs to another project", databaseName)
+			s.auditToolFailed(ctx, runCtx.Session, tool, err)
+			return DatabaseLifecycleResult{}, err
+		}
+		if ownership.Environment != environment {
+			err = fmt.Errorf("database %q is registered for environment %q", databaseName, ownership.Environment)
+			s.auditToolFailed(ctx, runCtx.Session, tool, err)
+			return DatabaseLifecycleResult{}, err
+		}
+	}
+
+	if action == DatabaseLifecycleActionDescribe {
+		exists, err := s.database.DatabaseExists(ctx, databaseName)
+		if err != nil {
+			err = fmt.Errorf("describe database: %w", err)
+			s.auditToolFailed(ctx, runCtx.Session, tool, err)
+			return DatabaseLifecycleResult{}, err
+		}
+		s.auditToolSucceeded(ctx, runCtx.Session, tool)
+		return DatabaseLifecycleResult{
+			Status:         ToolExecutionStatusOK,
+			ApprovalState:  string(entitytypes.MCPApprovalModeNone),
+			Environment:    environment,
+			Action:         string(action),
+			DatabaseName:   databaseName,
+			Exists:         exists,
+			OwnedByProject: true,
+			OwnerProjectID: projectID,
+			Message:        controlToolMessageDescribed,
+		}, nil
+	}
+
 	targetRef := marshalRawJSON(approvalTargetRef{
+		ProjectID:    projectID,
 		Environment:  environment,
 		DatabaseName: databaseName,
 	})
 	payload := marshalRawJSON(databaseLifecyclePayload{
-		Environment:  environment,
-		Action:       action,
-		DatabaseName: databaseName,
+		ProjectID:     projectID,
+		Environment:   environment,
+		Action:        action,
+		DatabaseName:  databaseName,
+		ConfirmDelete: input.ConfirmDelete,
 	})
 
 	if input.DryRun {
 		s.auditToolSucceeded(ctx, runCtx.Session, tool)
 		return DatabaseLifecycleResult{
-			Status:        ToolExecutionStatusOK,
-			ApprovalState: string(entitytypes.MCPApprovalModeNone),
-			Environment:   environment,
-			Action:        string(action),
-			DatabaseName:  databaseName,
-			DryRun:        true,
-			Message:       controlToolMessageDryRun,
+			Status:         ToolExecutionStatusOK,
+			ApprovalState:  string(entitytypes.MCPApprovalModeNone),
+			Environment:    environment,
+			Action:         string(action),
+			DatabaseName:   databaseName,
+			OwnedByProject: true,
+			OwnerProjectID: projectID,
+			DryRun:         true,
+			Message:        controlToolMessageDryRun,
 		}, nil
 	}
 
 	approvalMode := normalizeApprovalMode(resolveControlApprovalMode(tool.Name, runCtx))
 	if approvalMode == entitytypes.MCPApprovalModeNone {
-		if _, err := s.applyDatabaseLifecycle(ctx, payload); err != nil {
+		applied, err := s.applyDatabaseLifecycle(ctx, payload)
+		if err != nil {
 			s.auditToolFailed(ctx, runCtx.Session, tool, err)
 			return DatabaseLifecycleResult{}, err
 		}
@@ -352,14 +440,16 @@ func (s *Service) MCPDatabaseLifecycle(ctx context.Context, session SessionConte
 		s.auditApprovalApplied(ctx, runCtx.Session, item, string(floweventdomain.ActorIDControlPlaneMCP))
 		s.auditToolSucceeded(ctx, runCtx.Session, tool)
 		return DatabaseLifecycleResult{
-			Status:        ToolExecutionStatusOK,
-			RequestID:     item.ID,
-			ApprovalState: string(item.ApprovalState),
-			Environment:   environment,
-			Action:        string(action),
-			DatabaseName:  databaseName,
-			Applied:       true,
-			Message:       controlToolMessageApplied,
+			Status:         ToolExecutionStatusOK,
+			RequestID:      item.ID,
+			ApprovalState:  string(item.ApprovalState),
+			Environment:    environment,
+			Action:         string(action),
+			DatabaseName:   databaseName,
+			Applied:        applied,
+			OwnedByProject: true,
+			OwnerProjectID: projectID,
+			Message:        controlToolMessageApplied,
 		}, nil
 	}
 
@@ -373,13 +463,15 @@ func (s *Service) MCPDatabaseLifecycle(ctx context.Context, session SessionConte
 		s.auditApprovalRequested(ctx, runCtx.Session, request, tool)
 	}
 	return DatabaseLifecycleResult{
-		Status:        ToolExecutionStatusApprovalRequired,
-		RequestID:     request.ID,
-		ApprovalState: string(request.ApprovalState),
-		Environment:   environment,
-		Action:        string(action),
-		DatabaseName:  databaseName,
-		Message:       controlToolMessageApprovalRequired,
+		Status:         ToolExecutionStatusApprovalRequired,
+		RequestID:      request.ID,
+		ApprovalState:  string(request.ApprovalState),
+		Environment:    environment,
+		Action:         string(action),
+		DatabaseName:   databaseName,
+		OwnedByProject: true,
+		OwnerProjectID: projectID,
+		Message:        controlToolMessageApprovalRequired,
 	}, nil
 }
 
@@ -715,6 +807,13 @@ func (s *Service) applyApprovedControlAction(
 			return entitytypes.MCPActionRequest{}, err
 		}
 	case ToolMCPDatabaseLifecycle:
+		payload, err := decodeDatabaseLifecyclePayload(item.Payload)
+		if err != nil {
+			return entitytypes.MCPActionRequest{}, err
+		}
+		if strings.TrimSpace(runCtx.Session.ProjectID) != "" && payload.ProjectID != strings.TrimSpace(runCtx.Session.ProjectID) {
+			return entitytypes.MCPActionRequest{}, fmt.Errorf("database lifecycle payload project_id mismatch")
+		}
 		if _, err := s.applyDatabaseLifecycle(ctx, item.Payload); err != nil {
 			return entitytypes.MCPActionRequest{}, err
 		}
@@ -791,18 +890,53 @@ func (s *Service) applyDatabaseLifecycle(ctx context.Context, payloadRaw json.Ra
 	if err != nil {
 		return false, err
 	}
+	if !isDatabaseLifecycleEnvironmentAllowed(s.databaseLifecycleAllowedEnvs, payload.Environment) {
+		return false, fmt.Errorf("environment %q is not allowed", payload.Environment)
+	}
+	ownership, ownershipFound, err := s.projectDatabases.GetByDatabaseName(ctx, payload.DatabaseName)
+	if err != nil {
+		return false, fmt.Errorf("resolve database ownership: %w", err)
+	}
 
 	switch payload.Action {
 	case DatabaseLifecycleActionCreate:
+		if ownershipFound && ownership.ProjectID != payload.ProjectID {
+			return false, fmt.Errorf("database %q belongs to another project", payload.DatabaseName)
+		}
+		if ownershipFound && ownership.Environment != payload.Environment {
+			return false, fmt.Errorf("database %q is already registered for environment %q", payload.DatabaseName, ownership.Environment)
+		}
 		created, err := s.database.EnsureDatabase(ctx, payload.DatabaseName)
 		if err != nil {
 			return false, fmt.Errorf("create database: %w", err)
 		}
+		if _, err := s.projectDatabases.Upsert(ctx, projectdatabaserepo.UpsertParams{
+			ProjectID:    payload.ProjectID,
+			Environment:  payload.Environment,
+			DatabaseName: payload.DatabaseName,
+		}); err != nil {
+			return false, fmt.Errorf("upsert database ownership: %w", err)
+		}
 		return created, nil
 	case DatabaseLifecycleActionDelete:
+		if !payload.ConfirmDelete {
+			return false, fmt.Errorf("confirm_delete is required for delete action")
+		}
+		if !ownershipFound {
+			return false, fmt.Errorf("database %q is not registered in project ownership", payload.DatabaseName)
+		}
+		if ownership.ProjectID != payload.ProjectID {
+			return false, fmt.Errorf("database %q belongs to another project", payload.DatabaseName)
+		}
+		if ownership.Environment != payload.Environment {
+			return false, fmt.Errorf("database %q is registered for environment %q", payload.DatabaseName, ownership.Environment)
+		}
 		deleted, err := s.database.DropDatabase(ctx, payload.DatabaseName)
 		if err != nil {
 			return false, fmt.Errorf("delete database: %w", err)
+		}
+		if _, err := s.projectDatabases.DeleteByDatabaseName(ctx, payload.DatabaseName); err != nil {
+			return false, fmt.Errorf("delete database ownership: %w", err)
 		}
 		return deleted, nil
 	default:
@@ -867,18 +1001,26 @@ func decodeDatabaseLifecyclePayload(raw json.RawMessage) (databaseLifecyclePaylo
 	}
 	payload.Environment = normalizeEnvName(payload.Environment)
 	payload.Action = DatabaseLifecycleAction(strings.ToLower(strings.TrimSpace(string(payload.Action))))
-	payload.DatabaseName = strings.TrimSpace(payload.DatabaseName)
+	databaseName, nameErr := normalizeDatabaseLifecycleName(payload.DatabaseName)
+	if nameErr != nil {
+		return payload, nameErr
+	}
+	payload.DatabaseName = databaseName
+	payload.ProjectID = strings.TrimSpace(payload.ProjectID)
 
+	if payload.ProjectID == "" {
+		return payload, fmt.Errorf("database lifecycle payload project_id is required")
+	}
 	if payload.Environment == "" {
 		return payload, fmt.Errorf("database lifecycle payload environment is required")
 	}
 	switch payload.Action {
-	case DatabaseLifecycleActionCreate, DatabaseLifecycleActionDelete:
+	case DatabaseLifecycleActionCreate, DatabaseLifecycleActionDelete, DatabaseLifecycleActionDescribe:
 	default:
 		return payload, fmt.Errorf("database lifecycle payload action is invalid")
 	}
-	if payload.DatabaseName == "" {
-		return payload, fmt.Errorf("database lifecycle payload database_name is required")
+	if payload.Action == DatabaseLifecycleActionDelete && !payload.ConfirmDelete {
+		return payload, fmt.Errorf("database lifecycle payload confirm_delete is required for delete action")
 	}
 	return payload, nil
 }
@@ -914,6 +1056,8 @@ func databaseActionName(action DatabaseLifecycleAction) string {
 		return string(controlActionDatabaseCreate)
 	case DatabaseLifecycleActionDelete:
 		return string(controlActionDatabaseDelete)
+	case DatabaseLifecycleActionDescribe:
+		return string(controlActionDatabaseDescribe)
 	default:
 		return string(action)
 	}

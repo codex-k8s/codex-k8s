@@ -235,6 +235,12 @@ spec:
                   name: codex-k8s-runtime
                   key: CODEXK8S_PROJECT_DB_ADMIN_DATABASE
                   optional: true
+            - name: CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS
+                  optional: true
             - name: CODEXK8S_TOKEN_ENCRYPTION_KEY
               valueFrom:
                 secretKeyRef:

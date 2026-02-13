@@ -38,7 +38,8 @@ approvals:
 - Day 1 (`full stage and label activation`) завершён и согласован Owner.
 - Day 2 (`staff runtime debug console`) завершён и согласован Owner.
 - Day 3 (`mcp deterministic secret sync`) завершён.
-- Day 4..Day12 остаются в статусе planned.
+- Day 4 (`mcp database lifecycle`) завершён.
+- Day 5..Day12 остаются в статусе planned.
 
 ## Критерий успеха Sprint S3 (выжимка)
 - Все MVP-сценарии из Issue #19 покрыты кодом, тестами и эксплуатационной документацией.
