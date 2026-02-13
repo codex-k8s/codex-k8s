@@ -72,6 +72,9 @@ approvals:
 | `need:sa` | нужно архитектурное уточнение |
 | `need:qa` | нужен QA-вход или тест-дизайн |
 | `need:sre` | нужно участие SRE/OPS |
+| `need:em` | нужен review/решение Engineering Manager |
+| `need:km` | нужен review по документации/трассировке |
+| `need:reviewer` | нужен предварительный технический pre-review |
 
 ## Диагностические labels
 
@@ -117,6 +120,7 @@ approvals:
 - Могут ставиться агентом автоматически в рамках политики проекта.
 - Не должны запускать workflow/deploy напрямую.
 - Обязательна запись в аудит с actor/correlation.
+- Для role-specific ревью артефактов используются `need:*` labels (вместе с `state:in-review`).
 
 ### Discussion mode (`mode:discussion`, planned)
 - Если `mode:discussion` присутствует на Issue в момент `run:dev`/`run:dev:revise`, запуск работает в режиме обсуждения:
@@ -165,7 +169,7 @@ approvals:
 
 - Все workflow условия сравнения label должны использовать `vars.*`, а не строковые литералы.
 - В GitHub Variables хранится **полный каталог** `run:*`, `state:*`, `need:*`:
-  - для `run:*`: `RUN_<STAGE>_LABEL` и `RUN_<STAGE>_REVISE_LABEL` (где применимо), плюс `RUN_DEBUG_LABEL`, `RUN_SELF_IMPROVE_LABEL`,
+  - для `run:*`: `RUN_<STAGE>_LABEL` и `RUN_<STAGE>_REVISE_LABEL` (где применимо), плюс `RUN_DEBUG_LABEL`, `RUN_SELF_IMPROVE_LABEL`, `MODE_DISCUSSION_LABEL`,
   - для `state:*`: `STATE_*_LABEL`,
   - для `need:*`: `NEED_*_LABEL`.
 - Для model/reasoning также хранится каталог vars:

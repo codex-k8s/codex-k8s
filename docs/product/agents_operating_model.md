@@ -109,6 +109,10 @@ Seed-файлы:
 - `docs/product/prompt-seeds/dev-work.md`
 - `docs/product/prompt-seeds/dev-review.md`
 
+Текущий baseline (S3 Day1):
+- в runtime активно используются `dev-work` и `dev-review`;
+- для остальных ролей и специализированных режимов используется planned matrix ниже.
+
 Требования:
 - изменение seed/override должно быть трассируемо через `flow_events`;
 - в рантайме сохраняется effective template version/hash;
@@ -128,6 +132,13 @@ Seed-файлы:
 ### Контекстный рендер шаблонов
 - Effective prompt рендерится с runtime-контекстом (окружение, namespace/slot, доступные MCP-сервера и инструменты, project/services context, issue/pr/run identifiers).
 - Контракт контекстного рендера должен быть стабильным между версиями рантайма, чтобы избежать несовместимости seed/override шаблонов.
+
+### Planned: role-specific prompt template matrix
+- Для каждого `agent_key` вводятся отдельные шаблоны `work/review`:
+  - `pm`, `sa`, `em`, `dev`, `reviewer`, `qa`, `sre`, `km`;
+  - отдельные шаблоны для специализированных режимов: `run:self-improve`, `mode:discussion`.
+- Для `mode:discussion` шаблон обязан явно запрещать commit/push/PR и требовать работу только комментариями под Issue.
+- Для стадий с артефактным ревью шаблон должен завершать run переходом в `state:in-review` и постановкой role-specific `need:*` labels.
 
 ### Модель и степень рассуждения
 - По умолчанию профиль модели/рассуждений задается в настройках агента/проекта.

@@ -641,9 +641,9 @@ spec:
               value: "${CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP}"
             - name: CODEXK8S_RUN_DEBUG_LABEL
               valueFrom:
-                secretKeyRef:
-                  name: codex-k8s-runtime
-                  key: CODEXK8S_RUN_DEBUG_LABEL
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: RUN_DEBUG_LABEL
                   optional: true
             - name: CODEXK8S_STATE_IN_REVIEW_LABEL
               valueFrom:

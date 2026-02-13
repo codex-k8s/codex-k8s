@@ -239,42 +239,43 @@ jobs:
           CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET: ${{ secrets.CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET }}
           CODEXK8S_JWT_SIGNING_KEY: ${{ secrets.CODEXK8S_JWT_SIGNING_KEY }}
           CODEXK8S_JWT_TTL: ${{ vars.CODEXK8S_JWT_TTL || '15m' }}
-          RUN_INTAKE_LABEL: ${{ vars.RUN_INTAKE_LABEL || 'run:intake' }}
-          RUN_INTAKE_REVISE_LABEL: ${{ vars.RUN_INTAKE_REVISE_LABEL || 'run:intake:revise' }}
-          RUN_VISION_LABEL: ${{ vars.RUN_VISION_LABEL || 'run:vision' }}
-          RUN_VISION_REVISE_LABEL: ${{ vars.RUN_VISION_REVISE_LABEL || 'run:vision:revise' }}
-          RUN_PRD_LABEL: ${{ vars.RUN_PRD_LABEL || 'run:prd' }}
-          RUN_PRD_REVISE_LABEL: ${{ vars.RUN_PRD_REVISE_LABEL || 'run:prd:revise' }}
-          RUN_ARCH_LABEL: ${{ vars.RUN_ARCH_LABEL || 'run:arch' }}
-          RUN_ARCH_REVISE_LABEL: ${{ vars.RUN_ARCH_REVISE_LABEL || 'run:arch:revise' }}
-          RUN_DESIGN_LABEL: ${{ vars.RUN_DESIGN_LABEL || 'run:design' }}
-          RUN_DESIGN_REVISE_LABEL: ${{ vars.RUN_DESIGN_REVISE_LABEL || 'run:design:revise' }}
-          RUN_PLAN_LABEL: ${{ vars.RUN_PLAN_LABEL || 'run:plan' }}
-          RUN_PLAN_REVISE_LABEL: ${{ vars.RUN_PLAN_REVISE_LABEL || 'run:plan:revise' }}
-          RUN_DEV_LABEL: ${{ vars.RUN_DEV_LABEL || 'run:dev' }}
-          RUN_DEV_REVISE_LABEL: ${{ vars.RUN_DEV_REVISE_LABEL || 'run:dev:revise' }}
-          RUN_DEBUG_LABEL: ${{ vars.RUN_DEBUG_LABEL || 'run:debug' }}
-          RUN_DOC_AUDIT_LABEL: ${{ vars.RUN_DOC_AUDIT_LABEL || 'run:doc-audit' }}
-          RUN_QA_LABEL: ${{ vars.RUN_QA_LABEL || 'run:qa' }}
-          RUN_RELEASE_LABEL: ${{ vars.RUN_RELEASE_LABEL || 'run:release' }}
-          RUN_POSTDEPLOY_LABEL: ${{ vars.RUN_POSTDEPLOY_LABEL || 'run:postdeploy' }}
-          RUN_OPS_LABEL: ${{ vars.RUN_OPS_LABEL || 'run:ops' }}
-          RUN_SELF_IMPROVE_LABEL: ${{ vars.RUN_SELF_IMPROVE_LABEL || 'run:self-improve' }}
-          RUN_ABORT_LABEL: ${{ vars.RUN_ABORT_LABEL || 'run:abort' }}
-          RUN_RETHINK_LABEL: ${{ vars.RUN_RETHINK_LABEL || 'run:rethink' }}
-          STATE_BLOCKED_LABEL: ${{ vars.STATE_BLOCKED_LABEL || 'state:blocked' }}
-          STATE_IN_REVIEW_LABEL: ${{ vars.STATE_IN_REVIEW_LABEL || 'state:in-review' }}
-          STATE_APPROVED_LABEL: ${{ vars.STATE_APPROVED_LABEL || 'state:approved' }}
-          STATE_SUPERSEDED_LABEL: ${{ vars.STATE_SUPERSEDED_LABEL || 'state:superseded' }}
-          STATE_ABANDONED_LABEL: ${{ vars.STATE_ABANDONED_LABEL || 'state:abandoned' }}
-          NEED_INPUT_LABEL: ${{ vars.NEED_INPUT_LABEL || 'need:input' }}
-          NEED_PM_LABEL: ${{ vars.NEED_PM_LABEL || 'need:pm' }}
-          NEED_SA_LABEL: ${{ vars.NEED_SA_LABEL || 'need:sa' }}
-          NEED_QA_LABEL: ${{ vars.NEED_QA_LABEL || 'need:qa' }}
-          NEED_SRE_LABEL: ${{ vars.NEED_SRE_LABEL || 'need:sre' }}
+          CODEXK8S_RUN_INTAKE_LABEL: ${{ vars.RUN_INTAKE_LABEL || 'run:intake' }}
+          CODEXK8S_RUN_INTAKE_REVISE_LABEL: ${{ vars.RUN_INTAKE_REVISE_LABEL || 'run:intake:revise' }}
+          CODEXK8S_RUN_VISION_LABEL: ${{ vars.RUN_VISION_LABEL || 'run:vision' }}
+          CODEXK8S_RUN_VISION_REVISE_LABEL: ${{ vars.RUN_VISION_REVISE_LABEL || 'run:vision:revise' }}
+          CODEXK8S_RUN_PRD_LABEL: ${{ vars.RUN_PRD_LABEL || 'run:prd' }}
+          CODEXK8S_RUN_PRD_REVISE_LABEL: ${{ vars.RUN_PRD_REVISE_LABEL || 'run:prd:revise' }}
+          CODEXK8S_RUN_ARCH_LABEL: ${{ vars.RUN_ARCH_LABEL || 'run:arch' }}
+          CODEXK8S_RUN_ARCH_REVISE_LABEL: ${{ vars.RUN_ARCH_REVISE_LABEL || 'run:arch:revise' }}
+          CODEXK8S_RUN_DESIGN_LABEL: ${{ vars.RUN_DESIGN_LABEL || 'run:design' }}
+          CODEXK8S_RUN_DESIGN_REVISE_LABEL: ${{ vars.RUN_DESIGN_REVISE_LABEL || 'run:design:revise' }}
+          CODEXK8S_RUN_PLAN_LABEL: ${{ vars.RUN_PLAN_LABEL || 'run:plan' }}
+          CODEXK8S_RUN_PLAN_REVISE_LABEL: ${{ vars.RUN_PLAN_REVISE_LABEL || 'run:plan:revise' }}
           CODEXK8S_RUN_DEV_LABEL: ${{ vars.RUN_DEV_LABEL || 'run:dev' }}
           CODEXK8S_RUN_DEV_REVISE_LABEL: ${{ vars.RUN_DEV_REVISE_LABEL || 'run:dev:revise' }}
           CODEXK8S_RUN_DEBUG_LABEL: ${{ vars.RUN_DEBUG_LABEL || 'run:debug' }}
+          CODEXK8S_RUN_DOC_AUDIT_LABEL: ${{ vars.RUN_DOC_AUDIT_LABEL || 'run:doc-audit' }}
+          CODEXK8S_RUN_QA_LABEL: ${{ vars.RUN_QA_LABEL || 'run:qa' }}
+          CODEXK8S_RUN_RELEASE_LABEL: ${{ vars.RUN_RELEASE_LABEL || 'run:release' }}
+          CODEXK8S_RUN_POSTDEPLOY_LABEL: ${{ vars.RUN_POSTDEPLOY_LABEL || 'run:postdeploy' }}
+          CODEXK8S_RUN_OPS_LABEL: ${{ vars.RUN_OPS_LABEL || 'run:ops' }}
+          CODEXK8S_RUN_SELF_IMPROVE_LABEL: ${{ vars.RUN_SELF_IMPROVE_LABEL || 'run:self-improve' }}
+          CODEXK8S_RUN_ABORT_LABEL: ${{ vars.RUN_ABORT_LABEL || 'run:abort' }}
+          CODEXK8S_RUN_RETHINK_LABEL: ${{ vars.RUN_RETHINK_LABEL || 'run:rethink' }}
+          CODEXK8S_MODE_DISCUSSION_LABEL: ${{ vars.MODE_DISCUSSION_LABEL || 'mode:discussion' }}
+          CODEXK8S_STATE_BLOCKED_LABEL: ${{ vars.STATE_BLOCKED_LABEL || 'state:blocked' }}
+          CODEXK8S_STATE_IN_REVIEW_LABEL: ${{ vars.STATE_IN_REVIEW_LABEL || 'state:in-review' }}
+          CODEXK8S_STATE_APPROVED_LABEL: ${{ vars.STATE_APPROVED_LABEL || 'state:approved' }}
+          CODEXK8S_STATE_SUPERSEDED_LABEL: ${{ vars.STATE_SUPERSEDED_LABEL || 'state:superseded' }}
+          CODEXK8S_STATE_ABANDONED_LABEL: ${{ vars.STATE_ABANDONED_LABEL || 'state:abandoned' }}
+          CODEXK8S_NEED_INPUT_LABEL: ${{ vars.NEED_INPUT_LABEL || 'need:input' }}
+          CODEXK8S_NEED_PM_LABEL: ${{ vars.NEED_PM_LABEL || 'need:pm' }}
+          CODEXK8S_NEED_SA_LABEL: ${{ vars.NEED_SA_LABEL || 'need:sa' }}
+          CODEXK8S_NEED_QA_LABEL: ${{ vars.NEED_QA_LABEL || 'need:qa' }}
+          CODEXK8S_NEED_SRE_LABEL: ${{ vars.NEED_SRE_LABEL || 'need:sre' }}
+          CODEXK8S_NEED_EM_LABEL: ${{ vars.NEED_EM_LABEL || 'need:em' }}
+          CODEXK8S_NEED_KM_LABEL: ${{ vars.NEED_KM_LABEL || 'need:km' }}
+          CODEXK8S_NEED_REVIEWER_LABEL: ${{ vars.NEED_REVIEWER_LABEL || 'need:reviewer' }}
           CODEXK8S_WEB_CONSOLE_IMAGE: ${{ vars.CODEXK8S_WEB_CONSOLE_IMAGE || '127.0.0.1:5000/codex-k8s/web-console:latest' }}
         run: |
           set -euo pipefail

@@ -39,6 +39,10 @@ approvals:
 - Shared workspace volume:
   - один и тот же PVC монтируется во все сервисы слота и в agent job для консистентного контекста исходников/артефактов;
   - read/write policy описывается явно в манифестах и проверяется на RBAC/namespace уровне.
+- Reuse full-env namespace между итерациями ревью:
+  - для `run:*:revise` namespace не пересоздаётся на каждую итерацию, если предыдущий full-env ещё активен;
+  - вводится idle TTL для auto-cleanup warm namespace (default `8h`);
+  - при истечении TTL следующий revise-trigger поднимает окружение заново и продолжает цикл.
 
 ### Out of scope
 - Полная замена всех исторических deploy-скриптов вне MVP-контура.
@@ -49,3 +53,4 @@ approvals:
 - Порядок deploy-этапов детерминированный и подтверждён audit/evidence.
 - В non-prod окружениях подтверждён hot-reload для frontend и Go-сервисов.
 - Shared PVC подключён ко всем сервисам слота и agent job без конфликтов прав доступа.
+- Для revise-итераций подтверждён namespace reuse в пределах idle TTL и корректный auto-cleanup после TTL.
