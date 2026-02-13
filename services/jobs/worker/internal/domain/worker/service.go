@@ -456,15 +456,17 @@ func (s *Service) launchPending(ctx context.Context) error {
 		}
 
 		if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
-			RunID:        claimed.RunID,
-			Phase:        RunStatusPhaseStarted,
-			JobName:      ref.Name,
-			JobNamespace: ref.Namespace,
-			RuntimeMode:  string(execution.RuntimeMode),
-			Namespace:    execution.Namespace,
-			TriggerKind:  agentCtx.TriggerKind,
-			PromptLocale: agentCtx.PromptTemplateLocale,
-			RunStatus:    string(rundomain.StatusRunning),
+			RunID:           claimed.RunID,
+			Phase:           RunStatusPhaseStarted,
+			JobName:         ref.Name,
+			JobNamespace:    ref.Namespace,
+			RuntimeMode:     string(execution.RuntimeMode),
+			Namespace:       execution.Namespace,
+			TriggerKind:     agentCtx.TriggerKind,
+			PromptLocale:    agentCtx.PromptTemplateLocale,
+			Model:           agentCtx.Model,
+			ReasoningEffort: agentCtx.ReasoningEffort,
+			RunStatus:       string(rundomain.StatusRunning),
 		}); err != nil {
 			s.logger.Warn("upsert run status comment (started) failed", "run_id", claimed.RunID, "err", err)
 		}

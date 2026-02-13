@@ -89,6 +89,12 @@ func mergeState(base commentState, update commentState) commentState {
 	if strings.TrimSpace(update.PromptLocale) != "" {
 		base.PromptLocale = normalizeLocale(update.PromptLocale, localeEN)
 	}
+	if strings.TrimSpace(update.Model) != "" {
+		base.Model = strings.TrimSpace(update.Model)
+	}
+	if strings.TrimSpace(update.ReasoningEffort) != "" {
+		base.ReasoningEffort = strings.TrimSpace(update.ReasoningEffort)
+	}
 	if strings.TrimSpace(update.RunStatus) != "" {
 		base.RunStatus = strings.TrimSpace(update.RunStatus)
 	}

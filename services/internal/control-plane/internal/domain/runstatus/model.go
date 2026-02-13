@@ -22,17 +22,19 @@ const (
 
 // UpsertCommentParams describes one run status comment update request.
 type UpsertCommentParams struct {
-	RunID          string
-	Phase          Phase
-	JobName        string
-	JobNamespace   string
-	RuntimeMode    string
-	Namespace      string
-	TriggerKind    string
-	PromptLocale   string
-	RunStatus      string
-	Deleted        bool
-	AlreadyDeleted bool
+	RunID           string
+	Phase           Phase
+	JobName         string
+	JobNamespace    string
+	RuntimeMode     string
+	Namespace       string
+	TriggerKind     string
+	PromptLocale    string
+	Model           string
+	ReasoningEffort string
+	RunStatus       string
+	Deleted         bool
+	AlreadyDeleted  bool
 }
 
 // UpsertCommentResult returns tracked issue comment metadata.
@@ -153,15 +155,17 @@ type runContext struct {
 }
 
 type commentState struct {
-	RunID          string `json:"run_id"`
-	Phase          Phase  `json:"phase"`
-	JobName        string `json:"job_name,omitempty"`
-	JobNamespace   string `json:"job_namespace,omitempty"`
-	RuntimeMode    string `json:"runtime_mode,omitempty"`
-	Namespace      string `json:"namespace,omitempty"`
-	TriggerKind    string `json:"trigger_kind,omitempty"`
-	PromptLocale   string `json:"prompt_locale,omitempty"`
-	RunStatus      string `json:"run_status,omitempty"`
-	Deleted        bool   `json:"deleted,omitempty"`
-	AlreadyDeleted bool   `json:"already_deleted,omitempty"`
+	RunID           string `json:"run_id"`
+	Phase           Phase  `json:"phase"`
+	JobName         string `json:"job_name,omitempty"`
+	JobNamespace    string `json:"job_namespace,omitempty"`
+	RuntimeMode     string `json:"runtime_mode,omitempty"`
+	Namespace       string `json:"namespace,omitempty"`
+	TriggerKind     string `json:"trigger_kind,omitempty"`
+	PromptLocale    string `json:"prompt_locale,omitempty"`
+	Model           string `json:"model,omitempty"`
+	ReasoningEffort string `json:"reasoning_effort,omitempty"`
+	RunStatus       string `json:"run_status,omitempty"`
+	Deleted         bool   `json:"deleted,omitempty"`
+	AlreadyDeleted  bool   `json:"already_deleted,omitempty"`
 }

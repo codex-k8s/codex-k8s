@@ -365,6 +365,8 @@ message UpsertRunStatusCommentRequest {
   optional string run_status = 9;
   bool deleted = 10;
   bool already_deleted = 11;
+  optional string model = 12;
+  optional string reasoning_effort = 13;
 }
 
 message UpsertRunStatusCommentResponse {

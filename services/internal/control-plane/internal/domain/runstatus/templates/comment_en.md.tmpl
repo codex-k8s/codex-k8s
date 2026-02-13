@@ -1,5 +1,5 @@
 ### 🧠 AI Agent Run
-✅ Agent started
+✅ Agent started{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Run link]({{ .ManagementURL }}){{- end }}
 
 - Run ID: `{{ .RunID }}`
 {{- if .ShowTriggerKind }}
@@ -14,12 +14,14 @@
 {{- if .ShowNamespace }}
 - Namespace: `{{ .Namespace }}`
 {{- end }}
+{{- if .ShowModel }}
+- Model: `{{ .Model }}`
+{{- end }}
+{{- if .ShowReasoningEffort }}
+- Reasoning effort: `{{ .ReasoningEffort }}`
+{{- end }}
 {{- if .RunStatus }}
 - Run status: `{{ .RunStatus }}`
-{{- end }}
-
-{{- if .ManagementURL }}
-📎 [Run link]({{ .ManagementURL }})
 {{- end }}
 
 ### 🕒 Timeline

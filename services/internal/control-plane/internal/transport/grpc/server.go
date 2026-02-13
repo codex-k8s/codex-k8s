@@ -755,17 +755,19 @@ func (s *Server) UpsertRunStatusComment(ctx context.Context, req *controlplanev1
 	}
 
 	result, err := s.runStatus.UpsertRunStatusComment(ctx, runstatusdomain.UpsertCommentParams{
-		RunID:          runID,
-		Phase:          phase,
-		JobName:        strings.TrimSpace(req.GetJobName()),
-		JobNamespace:   strings.TrimSpace(req.GetJobNamespace()),
-		RuntimeMode:    strings.TrimSpace(req.GetRuntimeMode()),
-		Namespace:      strings.TrimSpace(req.GetNamespace()),
-		TriggerKind:    strings.TrimSpace(req.GetTriggerKind()),
-		PromptLocale:   strings.TrimSpace(req.GetPromptLocale()),
-		RunStatus:      strings.TrimSpace(req.GetRunStatus()),
-		Deleted:        req.GetDeleted(),
-		AlreadyDeleted: req.GetAlreadyDeleted(),
+		RunID:           runID,
+		Phase:           phase,
+		JobName:         strings.TrimSpace(req.GetJobName()),
+		JobNamespace:    strings.TrimSpace(req.GetJobNamespace()),
+		RuntimeMode:     strings.TrimSpace(req.GetRuntimeMode()),
+		Namespace:       strings.TrimSpace(req.GetNamespace()),
+		TriggerKind:     strings.TrimSpace(req.GetTriggerKind()),
+		PromptLocale:    strings.TrimSpace(req.GetPromptLocale()),
+		Model:           strings.TrimSpace(req.GetModel()),
+		ReasoningEffort: strings.TrimSpace(req.GetReasoningEffort()),
+		RunStatus:       strings.TrimSpace(req.GetRunStatus()),
+		Deleted:         req.GetDeleted(),
+		AlreadyDeleted:  req.GetAlreadyDeleted(),
 	})
 	if err != nil {
 		s.logger.Error("upsert run status comment via grpc failed", "run_id", runID, "phase", phase, "err", err)

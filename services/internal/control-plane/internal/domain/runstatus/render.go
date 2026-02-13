@@ -20,13 +20,15 @@ var commentTemplatesFS embed.FS
 var commentTemplates = template.Must(template.New("runstatus-comments").ParseFS(commentTemplatesFS, "templates/comment_*.md.tmpl"))
 
 type commentTemplateContext struct {
-	RunID        string
-	TriggerKind  string
-	RuntimeMode  string
-	JobName      string
-	JobNamespace string
-	Namespace    string
-	RunStatus    string
+	RunID           string
+	TriggerKind     string
+	RuntimeMode     string
+	JobName         string
+	JobNamespace    string
+	Namespace       string
+	Model           string
+	ReasoningEffort string
+	RunStatus       string
 
 	ManagementURL string
 	StateMarker   string
@@ -35,6 +37,8 @@ type commentTemplateContext struct {
 	ShowRuntimeMode     bool
 	ShowJobRef          bool
 	ShowNamespace       bool
+	ShowModel           bool
+	ShowReasoningEffort bool
 	ShowFinished        bool
 	ShowNamespaceAction bool
 
@@ -65,16 +69,20 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 	trimmedJobName := strings.TrimSpace(state.JobName)
 	trimmedJobNamespace := strings.TrimSpace(state.JobNamespace)
 	trimmedNamespace := strings.TrimSpace(state.Namespace)
+	trimmedModel := strings.TrimSpace(state.Model)
+	trimmedReasoningEffort := strings.TrimSpace(state.ReasoningEffort)
 	normalizedRunStatus := strings.ToLower(strings.TrimSpace(state.RunStatus))
 
 	return commentTemplateContext{
-		RunID:        strings.TrimSpace(state.RunID),
-		TriggerKind:  normalizeTriggerKind(trimmedTriggerKind),
-		RuntimeMode:  trimmedRuntimeMode,
-		JobName:      trimmedJobName,
-		JobNamespace: trimmedJobNamespace,
-		Namespace:    trimmedNamespace,
-		RunStatus:    strings.TrimSpace(state.RunStatus),
+		RunID:           strings.TrimSpace(state.RunID),
+		TriggerKind:     normalizeTriggerKind(trimmedTriggerKind),
+		RuntimeMode:     trimmedRuntimeMode,
+		JobName:         trimmedJobName,
+		JobNamespace:    trimmedJobNamespace,
+		Namespace:       trimmedNamespace,
+		Model:           trimmedModel,
+		ReasoningEffort: trimmedReasoningEffort,
+		RunStatus:       strings.TrimSpace(state.RunStatus),
 
 		ManagementURL: managementURL,
 		StateMarker:   marker,
@@ -83,6 +91,8 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 		ShowRuntimeMode:     trimmedRuntimeMode != "",
 		ShowJobRef:          trimmedJobName != "" && trimmedJobNamespace != "",
 		ShowNamespace:       trimmedNamespace != "",
+		ShowModel:           trimmedModel != "",
+		ShowReasoningEffort: trimmedReasoningEffort != "",
 		ShowFinished:        phaseOrder(state.Phase) >= phaseOrder(PhaseFinished),
 		ShowNamespaceAction: trimmedNamespace != "" && phaseOrder(state.Phase) >= phaseOrder(PhaseNamespaceDeleted),
 

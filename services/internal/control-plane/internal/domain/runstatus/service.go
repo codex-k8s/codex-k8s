@@ -66,17 +66,19 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 	}
 
 	currentState := commentState{
-		RunID:          runID,
-		Phase:          params.Phase,
-		JobName:        strings.TrimSpace(params.JobName),
-		JobNamespace:   strings.TrimSpace(params.JobNamespace),
-		RuntimeMode:    normalizeRuntimeMode(params.RuntimeMode, params.TriggerKind),
-		Namespace:      strings.TrimSpace(params.Namespace),
-		TriggerKind:    normalizeTriggerKind(params.TriggerKind),
-		PromptLocale:   normalizeLocale(params.PromptLocale, s.cfg.DefaultLocale),
-		RunStatus:      strings.TrimSpace(params.RunStatus),
-		Deleted:        params.Deleted,
-		AlreadyDeleted: params.AlreadyDeleted,
+		RunID:           runID,
+		Phase:           params.Phase,
+		JobName:         strings.TrimSpace(params.JobName),
+		JobNamespace:    strings.TrimSpace(params.JobNamespace),
+		RuntimeMode:     normalizeRuntimeMode(params.RuntimeMode, params.TriggerKind),
+		Namespace:       strings.TrimSpace(params.Namespace),
+		TriggerKind:     normalizeTriggerKind(params.TriggerKind),
+		PromptLocale:    normalizeLocale(params.PromptLocale, s.cfg.DefaultLocale),
+		Model:           strings.TrimSpace(params.Model),
+		ReasoningEffort: strings.TrimSpace(params.ReasoningEffort),
+		RunStatus:       strings.TrimSpace(params.RunStatus),
+		Deleted:         params.Deleted,
+		AlreadyDeleted:  params.AlreadyDeleted,
 	}
 
 	comments, err := s.listRunIssueComments(ctx, runCtx)

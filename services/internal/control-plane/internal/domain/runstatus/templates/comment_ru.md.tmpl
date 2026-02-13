@@ -1,5 +1,5 @@
 ### 🧠 Запуск ИИ-агента
-✅ Агент запущен
+✅ Агент запущен{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Ссылка на запуск]({{ .ManagementURL }}){{- end }}
 
 - Run ID: `{{ .RunID }}`
 {{- if .ShowTriggerKind }}
@@ -14,12 +14,14 @@
 {{- if .ShowNamespace }}
 - Namespace: `{{ .Namespace }}`
 {{- end }}
+{{- if .ShowModel }}
+- Модель: `{{ .Model }}`
+{{- end }}
+{{- if .ShowReasoningEffort }}
+- Степень рассуждения: `{{ .ReasoningEffort }}`
+{{- end }}
 {{- if .RunStatus }}
 - Статус рана: `{{ .RunStatus }}`
-{{- end }}
-
-{{- if .ManagementURL }}
-📎 [Ссылка на запуск]({{ .ManagementURL }})
 {{- end }}
 
 ### 🕒 Таймлайн
