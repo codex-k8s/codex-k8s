@@ -44,8 +44,8 @@ approvals:
 - Отдельный provider для GitHub Enterprise/GHE на MVP не требуется.
 - Подключение production OpenAI account допускается сразу.
 - Stage-процесс управления задачами фиксирован через label taxonomy `run:*` + `state:*` + `need:*`.
-- Для MVP обязательна активация полного stage-каталога (`run:intake..run:ops`, `run:*:revise`, `run:abort`, `run:rethink`) и `run:self-improve`.
-- Базовый системный штат агентов включает `dev` и `reviewer` как обязательные роли контура разработки (`run:dev`, pre-review перед финальным Owner review).
+- Для MVP обязательна активация полного stage-каталога (`run:intake..run:ops`, `run:*:revise`, `run:rethink`) и `run:self-improve`.
+- Базовый системный штат агентов включает `dev` и `reviewer` как обязательные роли review-контура: для всех `run:*` pre-review обязателен перед финальным Owner review.
 - Шаблоны агентных промптов обязаны поддерживать схему: repo seed + DB override (`work` и `review`).
 - Шаблоны промптов хранятся по локалям; выбор языка обязателен по цепочке `project locale -> system default locale -> en`.
 - Для системных агентов обязательно наличие seed-шаблонов минимум для `ru` и `en`.

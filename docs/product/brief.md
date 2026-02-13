@@ -51,7 +51,7 @@ approvals:
 - Включить CI/CD deploy для самой платформы через self-hosted runner в Kubernetes (staging first).
 - Зафиксировать stage-driven delivery модель и label taxonomy (`run:*`, `state:*`, `need:*`) как единый процессный контракт.
 - Зафиксировать operating model агентов: базовый штат из 8 ролей (включая `dev` и `reviewer`) + custom-агенты проекта, mixed runtime (`full-env`/`code-only`).
-- Зафиксировать pre-review контур: `reviewer` оставляет inline замечания в PR для `dev` и summary для Owner до финального review.
+- Зафиксировать review контур: для всех `run:*` выполняется pre-review (`reviewer` и/или профильная роль), затем финальный Owner review.
 - Зафиксировать policy шаблонов промптов: seed в репозитории + override в БД (`work/review`).
 - Добавить locale-aware prompt policy: `project locale -> system default -> en`, с baseline локалями `ru` и `en`.
 - Добавить resumable lifecycle для agent runs: сохранение `codex-cli` session JSON и возобновление после пауз.

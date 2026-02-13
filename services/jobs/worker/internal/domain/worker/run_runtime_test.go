@@ -30,6 +30,25 @@ func TestResolveRunExecutionContext_FullEnvForDevTrigger(t *testing.T) {
 	}
 }
 
+func TestResolveRunExecutionContext_FullEnvForStageTrigger(t *testing.T) {
+	t.Parallel()
+
+	payload := json.RawMessage(`{"trigger":{"kind":"vision"},"issue":{"number":43}}`)
+	ctx := resolveRunExecutionContext(
+		"run-vision-123",
+		"550e8400-e29b-41d4-a716-446655440001",
+		payload,
+		"codex-issue",
+	)
+
+	if ctx.RuntimeMode != agentdomain.RuntimeModeFullEnv {
+		t.Fatalf("expected full-env runtime mode, got %q", ctx.RuntimeMode)
+	}
+	if ctx.Namespace == "" {
+		t.Fatal("expected non-empty namespace for full-env stage run")
+	}
+}
+
 func TestResolveRunExecutionContext_CodeOnlyWithoutTrigger(t *testing.T) {
 	t.Parallel()
 

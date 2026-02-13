@@ -65,7 +65,7 @@ type JobSpec struct {
 	RepositoryFullName string
 	// IssueNumber is issue number for deterministic branch policy.
 	IssueNumber int64
-	// TriggerKind defines run mode source (`dev`/`dev_revise`).
+	// TriggerKind defines run stage source (`run:*` catalog, e.g. `dev`, `vision`, `plan_revise`).
 	TriggerKind string
 	// TriggerLabel is original label that created this run.
 	TriggerLabel string

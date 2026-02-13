@@ -44,11 +44,10 @@ approvals:
 | Ops | `run:ops` | SLO/alerts/runbook improvements | `sre`, `km` |
 | Self-Improve | `run:self-improve` | improvement diagnosis, change-set PR, policy/tooling recommendations | `km`, `dev`, `reviewer` |
 
-## Петли ревизии и отката
+## Петли ревизии и переосмысления
 
 - На каждом этапе доступны:
   - `run:<stage>:revise` для доработки артефактов;
-  - `run:abort` для остановки и cleanup;
   - `run:rethink` для возврата на более ранний этап.
 - После `run:rethink` предыдущие версии артефактов маркируются как `state:superseded`.
 
@@ -64,10 +63,13 @@ approvals:
 - статус этапа отражён через `state:*` лейблы;
 - события перехода записаны в аудит.
 
-### Дополнительное правило для Development stage
-- Перед финальным review Owner обязателен pre-review от `reviewer`:
-  - inline комментарии в PR для `dev`;
-  - summary по рискам/остаточным вопросам для Owner.
+### Правило review gate для всех этапов
+- Для всех `run:*` выход этапа проходит через review gate перед финальным review Owner:
+  - pre-review от `reviewer` (для технических артефактов) и/или профильной роли через `need:*`;
+  - финальное решение Owner по принятию артефактов.
+- Постановка `state:in-review` выполняется так:
+  - на PR и на Issue, если run завершился артефактами в PR;
+  - только на Issue, если run завершился без PR.
 
 ## Паузы и таймауты в stage execution
 
@@ -77,20 +79,26 @@ approvals:
 - Для `waiting_mcp` timeout-kill не применяется до завершения ожидания.
 - Для длительных пауз run должен оставаться resumable за счёт сохранения `codex-cli` session snapshot.
 
-## Текущий активный контур (S2)
+## Текущий активный контур (S3 Day1)
 
-На текущем этапе реализации обязательны в работе:
-- `run:dev`
-- `run:dev:revise`
+На текущем этапе реализации активирован полный trigger-контур:
+- `run:intake..run:ops`;
+- `run:<stage>:revise`;
+- `run:rethink`, `run:self-improve`.
 
-Остальные `run:*` зафиксированы как целевая модель и поэтапно вводятся в следующих итерациях.
+Ограничение текущего этапа:
+- для части стадий пока активирован базовый orchestration path (routing/audit/policy),
+  а специализированная бизнес-логика стадий дорабатывается следующими S3 эпиками.
+- для prompt-body используется минимальная stage-matrix seed-шаблонов в `docs/product/prompt-seeds/`
+  (по схеме `<stage>-work.md` и `<stage>-review.md` для revise-loop стадий).
 
 ## План активации контуров
 
-- S2 baseline: обязательны `run:dev` и `run:dev:revise`.
+- S2 baseline: `run:dev` и `run:dev:revise` (completed).
 - S2 Day6: approval/audit hardening (completed).
-- S2 Day7: regression gate под полный MVP.
-- S3 target: активация полного stage-flow (`run:intake..run:ops`) и `run:self-improve`.
+- S2 Day7: regression gate под полный MVP (completed).
+- S3 Day1: активация полного stage-flow (`run:intake..run:ops`) и trigger path для `run:self-improve` (completed).
+- S3 Day2+ : поэтапное насыщение stage-specific логики и observability.
 
 ## Конфигурационные labels для исполнения stage
 

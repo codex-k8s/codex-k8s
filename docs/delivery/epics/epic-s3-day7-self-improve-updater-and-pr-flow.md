@@ -29,6 +29,14 @@ approvals:
 - PR flow с traceability: что исправлено, из каких run/log/comment выводов.
 - Guardrails против деградации стандартов (checks против ослабления policy/security).
 - Привязка результата к исходному issue/pr через `links`.
+- Подготовка и сопровождение минимальной stage-matrix prompt seeds (`docs/product/prompt-seeds/<stage>-work.md`, `<stage>-review.md`) для изоляции dev-шаблона при тестировании остальных stage-run.
+
+### Planned follow-up (post-MVP hardening)
+- Комплексная проработка role-specific prompt matrix:
+  - отдельные `work/review` шаблоны для всех системных ролей (`pm`, `sa`, `em`, `dev`, `reviewer`, `qa`, `sre`, `km`);
+  - отдельные шаблоны для специальных режимов (`mode:discussion`, `run:self-improve`);
+  - унификация locale-пакетов (`ru`/`en`) и проверка консистентности policy-blocks;
+  - автоматические quality checks для prompt templates (lint/validation/traceability coverage).
 
 ### Out of scope
 - Автоматический merge без review.

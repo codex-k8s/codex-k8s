@@ -91,21 +91,22 @@ type githubIssueTriggerPayload struct {
 }
 
 type githubFlowEventPayload struct {
-	Source          string                      `json:"source"`
-	DeliveryID      string                      `json:"delivery_id"`
-	EventType       string                      `json:"event_type"`
-	Action          string                      `json:"action"`
-	CorrelationID   string                      `json:"correlation_id"`
-	Sender          githubActorPayload          `json:"sender"`
-	Repository      githubFlowRepositoryPayload `json:"repository"`
-	Inserted        *bool                       `json:"inserted,omitempty"`
-	RunID           string                      `json:"run_id,omitempty"`
-	Label           string                      `json:"label,omitempty"`
-	RunKind         webhookdomain.TriggerKind   `json:"run_kind,omitempty"`
-	IssueNumber     int64                       `json:"issue_number,omitempty"`
-	Reason          string                      `json:"reason,omitempty"`
-	BindingResolved *bool                       `json:"binding_resolved,omitempty"`
-	Issue           *githubIgnoredIssuePayload  `json:"issue,omitempty"`
+	Source            string                      `json:"source"`
+	DeliveryID        string                      `json:"delivery_id"`
+	EventType         string                      `json:"event_type"`
+	Action            string                      `json:"action"`
+	CorrelationID     string                      `json:"correlation_id"`
+	Sender            githubActorPayload          `json:"sender"`
+	Repository        githubFlowRepositoryPayload `json:"repository"`
+	Inserted          *bool                       `json:"inserted,omitempty"`
+	RunID             string                      `json:"run_id,omitempty"`
+	Label             string                      `json:"label,omitempty"`
+	RunKind           webhookdomain.TriggerKind   `json:"run_kind,omitempty"`
+	IssueNumber       int64                       `json:"issue_number,omitempty"`
+	Reason            string                      `json:"reason,omitempty"`
+	ConflictingLabels []string                    `json:"conflicting_labels,omitempty"`
+	BindingResolved   *bool                       `json:"binding_resolved,omitempty"`
+	Issue             *githubIgnoredIssuePayload  `json:"issue,omitempty"`
 }
 
 type githubFlowRepositoryPayload struct {

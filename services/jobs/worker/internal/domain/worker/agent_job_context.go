@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+
+	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 )
 
 const (
-	triggerKindDev       = "dev"
-	triggerKindDevRevise = "dev_revise"
-
 	promptTemplateKindWork   = "work"
 	promptTemplateKindReview = "review"
 	promptTemplateSourceSeed = "repo_seed"
@@ -98,7 +97,7 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 		}(),
 		PromptTemplateSource: promptTemplateSourceSeed,
 	}
-	if ctx.TriggerKind == triggerKindDevRevise {
+	if webhookdomain.IsReviseTriggerKind(webhookdomain.TriggerKind(ctx.TriggerKind)) {
 		ctx.PromptTemplateKind = promptTemplateKindReview
 	}
 	if ctx.AgentKey == "" {
@@ -227,12 +226,7 @@ func extractPullRequestHints(raw json.RawMessage) (number int64, targetBranch st
 }
 
 func normalizeTriggerKind(value string) string {
-	switch strings.ToLower(strings.TrimSpace(value)) {
-	case triggerKindDevRevise:
-		return triggerKindDevRevise
-	default:
-		return triggerKindDev
-	}
+	return string(webhookdomain.NormalizeTriggerKind(value))
 }
 
 func resolveModelFromLabels(labels []string, defaultModel string) (model string, source string, err error) {

@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-0003
 type: epic
 title: "Epic Catalog: Sprint S3 (MVP completion)"
-status: planned
+status: in-progress
 owner_role: EM
 created_at: 2026-02-13
 updated_at: 2026-02-13
@@ -33,6 +33,10 @@ approvals:
 - Day 10: `docs/delivery/epics/epic-s3-day10-staff-console-vuetify-redesign.md`
 - Day 11: `docs/delivery/epics/epic-s3-day11-mvp-regression-and-security-gate.md`
 - Day 12: `docs/delivery/epics/epic-s3-day12-mvp-closeout-and-handover.md`
+
+## Прогресс
+- Day 1 (`full stage and label activation`) завершён.
+- Day 2..Day12 остаются в статусе planned.
 
 ## Критерий успеха Sprint S3 (выжимка)
 - Все MVP-сценарии из Issue #19 покрыты кодом, тестами и эксплуатационной документацией.

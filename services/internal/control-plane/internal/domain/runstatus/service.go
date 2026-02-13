@@ -138,6 +138,61 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 	}, nil
 }
 
+// PostTriggerLabelConflictComment posts localized diagnostics when multiple run:* labels conflict.
+func (s *Service) PostTriggerLabelConflictComment(ctx context.Context, params TriggerLabelConflictCommentParams) (TriggerLabelConflictCommentResult, error) {
+	repositoryFullName := strings.TrimSpace(params.RepositoryFullName)
+	if repositoryFullName == "" {
+		return TriggerLabelConflictCommentResult{}, errs.Validation{Field: "repository_full_name", Msg: "is required"}
+	}
+	if params.IssueNumber <= 0 {
+		return TriggerLabelConflictCommentResult{}, errs.Validation{Field: "issue_number", Msg: "must be positive"}
+	}
+	conflictingLabels := normalizeConflictLabels(params.ConflictingLabels)
+	if len(conflictingLabels) < 2 {
+		return TriggerLabelConflictCommentResult{}, errs.Validation{Field: "conflicting_labels", Msg: "must contain at least two labels"}
+	}
+
+	owner, repository, ok := strings.Cut(repositoryFullName, "/")
+	if !ok || strings.TrimSpace(owner) == "" || strings.TrimSpace(repository) == "" {
+		return TriggerLabelConflictCommentResult{}, errs.Validation{Field: "repository_full_name", Msg: "must be owner/name"}
+	}
+
+	token, err := s.loadBotToken(ctx)
+	if err != nil {
+		return TriggerLabelConflictCommentResult{}, err
+	}
+
+	body, err := renderTriggerLabelConflictCommentBody(params.Locale, params.TriggerLabel, conflictingLabels)
+	if err != nil {
+		return TriggerLabelConflictCommentResult{}, err
+	}
+
+	comment, err := s.github.CreateIssueComment(ctx, mcpdomain.GitHubCreateIssueCommentParams{
+		Token:       token,
+		Owner:       strings.TrimSpace(owner),
+		Repository:  strings.TrimSpace(repository),
+		IssueNumber: params.IssueNumber,
+		Body:        body,
+	})
+	if err != nil {
+		return TriggerLabelConflictCommentResult{}, fmt.Errorf("create trigger conflict issue comment: %w", err)
+	}
+
+	s.insertFlowEvent(ctx, strings.TrimSpace(params.CorrelationID), floweventdomain.EventTypeRunTriggerConflictComment, triggerLabelConflictCommentPayload{
+		RepositoryFullName: repositoryFullName,
+		IssueNumber:        params.IssueNumber,
+		TriggerLabel:       strings.TrimSpace(params.TriggerLabel),
+		ConflictingLabels:  conflictingLabels,
+		CommentID:          comment.ID,
+		CommentURL:         comment.URL,
+	})
+
+	return TriggerLabelConflictCommentResult{
+		CommentID:  comment.ID,
+		CommentURL: comment.URL,
+	}, nil
+}
+
 // DeleteRunNamespace deletes one managed run namespace and updates the run status comment.
 func (s *Service) DeleteRunNamespace(ctx context.Context, params DeleteNamespaceParams) (DeleteNamespaceResult, error) {
 	runID := strings.TrimSpace(params.RunID)

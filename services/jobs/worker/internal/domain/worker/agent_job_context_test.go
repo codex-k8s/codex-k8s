@@ -164,6 +164,34 @@ func TestResolveRunAgentContext_UsesPullRequestHintsForRevise(t *testing.T) {
 	}
 }
 
+func TestResolveRunAgentContext_StageReviseUsesReviewTemplate(t *testing.T) {
+	t.Parallel()
+
+	runPayload := json.RawMessage(`{
+		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"issue":{"number":201},
+		"agent":{"key":"dev","name":"AI Developer"},
+		"trigger":{"kind":"vision_revise","label":"run:vision:revise"},
+		"raw_payload":{"issue":{"labels":[{"name":"run:vision:revise"}]}}
+	}`)
+
+	got, err := resolveRunAgentContext(runPayload, runAgentDefaults{
+		DefaultModel:           modelGPT52Codex,
+		DefaultReasoningEffort: "high",
+		DefaultLocale:          "ru",
+		AllowGPT53:             true,
+	})
+	if err != nil {
+		t.Fatalf("resolveRunAgentContext() error = %v", err)
+	}
+	if got.TriggerKind != "vision_revise" {
+		t.Fatalf("TriggerKind = %q, want vision_revise", got.TriggerKind)
+	}
+	if got.PromptTemplateKind != promptTemplateKindReview {
+		t.Fatalf("PromptTemplateKind = %q, want %q", got.PromptTemplateKind, promptTemplateKindReview)
+	}
+}
+
 func TestResolveRunAgentContext_ConfigLabelsPullRequestOverrideIssue(t *testing.T) {
 	t.Parallel()
 

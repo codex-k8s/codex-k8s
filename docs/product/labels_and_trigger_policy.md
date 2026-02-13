@@ -30,28 +30,27 @@ approvals:
 
 | Label | Назначение | Статус в платформе |
 |---|---|---|
-| `run:intake` | старт проработки идеи/инициативы | planned |
-| `run:intake:revise` | ревизия intake артефактов | planned |
-| `run:vision` | формирование charter/vision/metrics | planned |
-| `run:vision:revise` | ревизия vision | planned |
-| `run:prd` | формирование PRD | planned |
-| `run:prd:revise` | ревизия PRD | planned |
-| `run:arch` | формирование C4/ADR/NFR | planned |
-| `run:arch:revise` | ревизия архитектуры | planned |
-| `run:design` | detailed design + API/data model | planned |
-| `run:design:revise` | ревизия design | planned |
-| `run:plan` | delivery plan + epics/stories | planned |
-| `run:plan:revise` | ревизия плана | planned |
+| `run:intake` | старт проработки идеи/инициативы | active (S3 Day1 trigger path) |
+| `run:intake:revise` | ревизия intake артефактов | active (S3 Day1 trigger path) |
+| `run:vision` | формирование charter/vision/metrics | active (S3 Day1 trigger path) |
+| `run:vision:revise` | ревизия vision | active (S3 Day1 trigger path) |
+| `run:prd` | формирование PRD | active (S3 Day1 trigger path) |
+| `run:prd:revise` | ревизия PRD | active (S3 Day1 trigger path) |
+| `run:arch` | формирование C4/ADR/NFR | active (S3 Day1 trigger path) |
+| `run:arch:revise` | ревизия архитектуры | active (S3 Day1 trigger path) |
+| `run:design` | detailed design + API/data model | active (S3 Day1 trigger path) |
+| `run:design:revise` | ревизия design | active (S3 Day1 trigger path) |
+| `run:plan` | delivery plan + epics/stories | active (S3 Day1 trigger path) |
+| `run:plan:revise` | ревизия плана | active (S3 Day1 trigger path) |
 | `run:dev` | разработка и создание PR | active (S2) |
 | `run:dev:revise` | доработка существующего PR | active (S2) |
-| `run:doc-audit` | аудит код↔доки↔чек-листы | planned |
-| `run:qa` | тест-артефакты и прогоны | planned |
-| `run:release` | релиз и release artifacts | planned |
-| `run:postdeploy` | post-deploy review / postmortem | planned |
-| `run:ops` | эксплуатационные улучшения | planned |
-| `run:self-improve` | анализ запусков/комментариев и подготовка улучшений docs/prompts/tools | planned (S3) |
-| `run:abort` | остановка/cleanup текущей инициативы | planned |
-| `run:rethink` | переоткрытие этапа и смена траектории | planned |
+| `run:doc-audit` | аудит код↔доки↔чек-листы | active (S3 Day1 trigger path) |
+| `run:qa` | тест-артефакты и прогоны | active (S3 Day1 trigger path) |
+| `run:release` | релиз и release artifacts | active (S3 Day1 trigger path) |
+| `run:postdeploy` | post-deploy review / postmortem | active (S3 Day1 trigger path) |
+| `run:ops` | эксплуатационные улучшения | active (S3 Day1 trigger path) |
+| `run:self-improve` | анализ запусков/комментариев и подготовка улучшений docs/prompts/tools | active (S3 Day1 trigger path; deep logic S3 Day6+) |
+| `run:rethink` | переоткрытие этапа и смена траектории | active (S3 Day1 trigger path) |
 
 ## Класс `state:*` (служебные статусы)
 
@@ -72,6 +71,9 @@ approvals:
 | `need:sa` | нужно архитектурное уточнение |
 | `need:qa` | нужен QA-вход или тест-дизайн |
 | `need:sre` | нужно участие SRE/OPS |
+| `need:em` | нужен review/решение Engineering Manager |
+| `need:km` | нужен review по документации/трассировке |
+| `need:reviewer` | нужен предварительный технический pre-review |
 
 ## Диагностические labels
 
@@ -105,7 +107,9 @@ approvals:
 - Если лейбл инициирует агент, требуется апрув Owner до фактического применения.
 - Если лейбл инициирует человек с правами admin/owner, применяется по правам GitHub и политике репозитория.
 - Любая операция с `run:*` логируется в `flow_events`.
-- Для цикла `run:dev`/`run:dev:revise` перед финальным Owner review обязателен pre-review от системного `reviewer`.
+- Для всех `run:*` обязателен review gate перед финальным Owner review:
+  - pre-review от системного `reviewer` для технических артефактов;
+  - role-specific review через `need:*` labels для профильных артефактов.
 - Для control tools (`secret sync`, `database lifecycle`, `owner feedback`) применяется policy-driven approval matrix по связке `agent_key + run_label + action`.
 ### Diagnostic labels (`run:debug`)
 - `run:debug` не запускает workflow/deploy напрямую.
@@ -117,12 +121,23 @@ approvals:
 - Могут ставиться агентом автоматически в рамках политики проекта.
 - Не должны запускать workflow/deploy напрямую.
 - Обязательна запись в аудит с actor/correlation.
+- Для role-specific ревью артефактов используются `need:*` labels (вместе с `state:in-review`).
+- Для всех `run:*` при наличии артефактов для проверки Owner ставится `state:in-review`:
+  - на PR и на Issue, если run сформировал PR;
+  - только на Issue, если run не формирует PR.
 
 ### Discussion mode (`mode:discussion`, planned)
 - Если `mode:discussion` присутствует на Issue в момент `run:dev`/`run:dev:revise`, запуск работает в режиме обсуждения:
   - агент изучает код/окружение и отвечает комментариями под Issue;
   - PR/commit/push не выполняются;
-  - сохраняется текущая `codex-cli` session snapshot для продолжения.
+  - вместо job поднимается отдельный `discussion` pod с `codex-cli` session snapshot.
+- `discussion` pod живёт до первого из событий:
+  - idle timeout `8h`;
+  - закрытие Issue;
+  - постановка на Issue любого trigger `run:*`.
+- На webhook `issue_comment`:
+  - если комментарий оставил не агент, раннер продолжает текущую discussion-сессию и публикует ответ под Issue;
+  - служебные комментарии платформы и комментарии агента не считаются пользовательским входом.
 - После снятия `mode:discussion` и повторного trigger (`run:dev`/`run:dev:revise`) агент продолжает ту же сессию и выполняет согласованный план реализации.
 - Политика вводится как planned-фича следующих спринтов (после стабилизации базового dogfooding контура).
 
@@ -144,13 +159,13 @@ approvals:
 - Label transitions после завершения run должны выполняться через MCP (а не вручную в коде агента), чтобы сохранять единый policy/audit контур.
 - Для dev/dev:revise transition выполняется так:
   - снять trigger label с Issue;
-  - поставить `state:in-review` на PR (не на Issue).
+  - поставить `state:in-review` на PR и на Issue.
 - S2 baseline:
   - pre-review остается обязательным шагом перед финальным Owner review;
   - post-run transitions `run:* -> state:*` фиксируются в Day5/Day6 как отдельные доработки policy и аудита.
-- S3 target:
-  - активируется полный stage-контур `run:intake..run:ops` + revise/abort/rethink;
-  - вводится `run:self-improve` с отдельным post-run transition policy.
+- S3 Day1 факт:
+- активирован полный stage-контур `run:intake..run:ops` + revise/rethink;
+  - активирован trigger path для `run:self-improve` (расширенная бизнес-логика дорабатывается по S3 Day6+).
 
 ## Оркестрационный flow для `run:self-improve`
 
@@ -165,13 +180,13 @@ approvals:
 
 - Все workflow условия сравнения label должны использовать `vars.*`, а не строковые литералы.
 - В GitHub Variables хранится **полный каталог** `run:*`, `state:*`, `need:*`:
-  - для `run:*`: `RUN_<STAGE>_LABEL` и `RUN_<STAGE>_REVISE_LABEL` (где применимо), плюс `RUN_DEBUG_LABEL`, `RUN_SELF_IMPROVE_LABEL`,
-  - для `state:*`: `STATE_*_LABEL`,
-  - для `need:*`: `NEED_*_LABEL`.
+  - для `run:*`: `CODEXK8S_RUN_<STAGE>_LABEL` и `CODEXK8S_RUN_<STAGE>_REVISE_LABEL` (где применимо), плюс `CODEXK8S_RUN_DEBUG_LABEL`, `CODEXK8S_RUN_SELF_IMPROVE_LABEL`, `CODEXK8S_MODE_DISCUSSION_LABEL`,
+  - для `state:*`: `CODEXK8S_STATE_*_LABEL`,
+  - для `need:*`: `CODEXK8S_NEED_*_LABEL`.
 - Для model/reasoning также хранится каталог vars:
-  - `AI_MODEL_GPT_5_3_CODEX_LABEL`, `AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL`, `AI_MODEL_GPT_5_2_CODEX_LABEL`, `AI_MODEL_GPT_5_1_CODEX_MAX_LABEL`, `AI_MODEL_GPT_5_2_LABEL`, `AI_MODEL_GPT_5_1_CODEX_MINI_LABEL`,
-  - `AI_REASONING_LOW_LABEL`, `AI_REASONING_MEDIUM_LABEL`, `AI_REASONING_HIGH_LABEL`, `AI_REASONING_EXTRA_HIGH_LABEL`.
-- Для planned `run:*` лейблов vars заводятся заранее, даже если этап ещё не активирован.
+  - `CODEXK8S_AI_MODEL_GPT_5_3_CODEX_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_2_CODEX_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MAX_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_2_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MINI_LABEL`,
+  - `CODEXK8S_AI_REASONING_LOW_LABEL`, `CODEXK8S_AI_REASONING_MEDIUM_LABEL`, `CODEXK8S_AI_REASONING_HIGH_LABEL`, `CODEXK8S_AI_REASONING_EXTRA_HIGH_LABEL`.
+- Для новых `run:*` лейблов vars заводятся заранее до активации соответствующего этапа.
 - Bootstrap синхронизация каталога выполняется скриптом `bootstrap/remote/45_configure_github_repo_ci.sh`.
 
 ## Аудит и наблюдаемость

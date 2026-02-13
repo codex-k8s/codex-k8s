@@ -52,12 +52,10 @@ func resolveRuntimeMode(payload querytypes.RunRuntimePayload) agentdomain.Runtim
 	if payload.Trigger == nil {
 		return agentdomain.RuntimeModeCodeOnly
 	}
-	switch payload.Trigger.Kind {
-	case webhookdomain.TriggerKindDev, webhookdomain.TriggerKindDevRevise:
+	if webhookdomain.IsKnownTriggerKind(webhookdomain.NormalizeTriggerKind(string(payload.Trigger.Kind))) {
 		return agentdomain.RuntimeModeFullEnv
-	default:
-		return agentdomain.RuntimeModeCodeOnly
 	}
+	return agentdomain.RuntimeModeCodeOnly
 }
 
 // resolveIssueNumber returns positive issue number or zero when not provided.

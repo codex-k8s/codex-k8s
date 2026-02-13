@@ -152,6 +152,7 @@ type promptEnvelopeTemplateData struct {
 	TargetBranch       string
 	BaseBranch         string
 	TriggerKind        string
+	IsReviseTrigger    bool
 	HasExistingPR      bool
 	ExistingPRNumber   int
 	TriggerLabel       string

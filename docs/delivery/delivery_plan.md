@@ -58,8 +58,8 @@ approvals:
 - Day 0..4 (completed): архитектурное выравнивание, label triggers, namespace/RBAC, MCP prompt context, agent PR flow.
 - Day 4.5 (completed): pgx/db-model refactor.
 - Day 5 (completed): staff UI observability baseline.
-- Day 6: approval matrix + MCP control tools + audit hardening.
-- Day 7: MVP readiness regression gate + Sprint S3 kickoff package.
+- Day 6 (completed): approval matrix + MCP control tools + audit hardening.
+- Day 7 (completed): MVP readiness regression gate + Sprint S3 kickoff package (`docs/delivery/regression_s2_gate.md`).
 
 ### Sprint S3: MVP completion (Day 1..12)
 - Day 1: full stage/label activation.

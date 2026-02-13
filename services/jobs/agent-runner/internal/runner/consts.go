@@ -6,15 +6,13 @@ const (
 	templateNamePromptReview   = "templates/prompt_review.tmpl"
 	templateNameCodexConfig    = "templates/codex_config.toml.tmpl"
 	templateNameKubeconfig     = "templates/kubeconfig.tmpl"
+	promptSeedsDirRelativePath = "docs/product/prompt-seeds"
 
 	promptTemplateKindWork   = "work"
 	promptTemplateKindReview = "review"
 
 	promptLocaleRU = "ru"
 	promptLocaleEN = "en"
-
-	triggerKindDev       = "dev"
-	triggerKindDevRevise = "dev_revise"
 
 	runtimeModeFullEnv  = "full-env"
 	runtimeModeCodeOnly = "code-only"

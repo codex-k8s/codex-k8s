@@ -5,6 +5,7 @@ import (
 	"context"
 	"embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -14,6 +15,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 )
 
 //go:embed templates/*.tmpl
@@ -49,16 +52,36 @@ func normalizePromptLocale(value string) string {
 	}
 }
 
-func (s *Service) renderTaskTemplate(templateKind string) (string, error) {
-	templateName := templateNamePromptWork
-	if templateKind == promptTemplateKindReview {
-		templateName = templateNamePromptReview
-	}
-
-	return renderTemplate(templateName, promptTaskTemplateData{
+func (s *Service) renderTaskTemplate(templateKind string, repoDir string) (string, error) {
+	templateData := promptTaskTemplateData{
 		BaseBranch:   s.cfg.AgentBaseBranch,
 		PromptLocale: normalizePromptLocale(s.cfg.PromptTemplateLocale),
-	})
+	}
+	for _, candidate := range promptSeedCandidates(s.cfg.TriggerKind, templateKind, s.cfg.PromptTemplateLocale) {
+		seedPath := filepath.Join(repoDir, promptSeedsDirRelativePath, candidate)
+		seedBytes, err := os.ReadFile(seedPath)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				continue
+			}
+			return "", fmt.Errorf("read prompt seed %s: %w", seedPath, err)
+		}
+		seedTemplate, err := template.New(candidate).Option("missingkey=error").Parse(string(seedBytes))
+		if err != nil {
+			return "", fmt.Errorf("parse prompt seed %s: %w", seedPath, err)
+		}
+		var out strings.Builder
+		if err := seedTemplate.Execute(&out, templateData); err != nil {
+			return "", fmt.Errorf("render prompt seed %s: %w", seedPath, err)
+		}
+		return out.String(), nil
+	}
+
+	templateName := templateNamePromptWork
+	if normalizePromptTemplateKind(templateKind) == promptTemplateKindReview {
+		templateName = templateNamePromptReview
+	}
+	return renderTemplate(templateName, templateData)
 }
 
 func (s *Service) writeCodexConfig(codexDir string) error {
@@ -99,6 +122,7 @@ func (s *Service) writeCodexAuthFile(codexDir string) (bool, error) {
 func (s *Service) buildPrompt(taskBody string, result runResult) (string, error) {
 	hasContext7 := strings.TrimSpace(os.Getenv(envContext7APIKey)) != ""
 	runtimeMode := normalizeRuntimeMode(s.cfg.RuntimeMode)
+	isReviseTrigger := webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(result.triggerKind))
 	return renderTemplate(templateNamePromptEnvelope, promptEnvelopeTemplateData{
 		RepositoryFullName: s.cfg.RepositoryFullName,
 		RunID:              s.cfg.RunID,
@@ -109,7 +133,8 @@ func (s *Service) buildPrompt(taskBody string, result runResult) (string, error)
 		TargetBranch:       result.targetBranch,
 		BaseBranch:         s.cfg.AgentBaseBranch,
 		TriggerKind:        result.triggerKind,
-		HasExistingPR:      result.triggerKind == triggerKindDevRevise && result.existingPRNumber > 0,
+		IsReviseTrigger:    isReviseTrigger,
+		HasExistingPR:      isReviseTrigger && result.existingPRNumber > 0,
 		ExistingPRNumber:   result.existingPRNumber,
 		TriggerLabel:       strings.TrimSpace(s.cfg.TriggerLabel),
 		StateInReviewLabel: strings.TrimSpace(s.cfg.StateInReviewLabel),
@@ -120,10 +145,7 @@ func (s *Service) buildPrompt(taskBody string, result runResult) (string, error)
 }
 
 func normalizeTriggerKind(value string) string {
-	if strings.EqualFold(strings.TrimSpace(value), triggerKindDevRevise) {
-		return triggerKindDevRevise
-	}
-	return triggerKindDev
+	return string(webhookdomain.NormalizeTriggerKind(value))
 }
 
 func normalizeRuntimeMode(value string) string {
@@ -134,7 +156,7 @@ func normalizeRuntimeMode(value string) string {
 }
 
 func normalizeTemplateKind(value string, triggerKind string) string {
-	if triggerKind == triggerKindDevRevise {
+	if webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(triggerKind)) {
 		return promptTemplateKindReview
 	}
 	if strings.EqualFold(strings.TrimSpace(value), promptTemplateKindReview) {

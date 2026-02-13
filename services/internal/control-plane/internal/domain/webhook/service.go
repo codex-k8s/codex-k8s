@@ -29,6 +29,7 @@ const defaultRunAgentKey = "dev"
 type runStatusService interface {
 	CleanupNamespacesByIssue(ctx context.Context, params runstatusdomain.CleanupByIssueParams) (runstatusdomain.CleanupByIssueResult, error)
 	CleanupNamespacesByPullRequest(ctx context.Context, params runstatusdomain.CleanupByPullRequestParams) (runstatusdomain.CleanupByIssueResult, error)
+	PostTriggerLabelConflictComment(ctx context.Context, params runstatusdomain.TriggerLabelConflictCommentParams) (runstatusdomain.TriggerLabelConflictCommentResult, error)
 }
 
 // Service ingests provider webhooks into idempotent run and flow-event records.
@@ -62,14 +63,7 @@ type Config struct {
 
 // NewService wires webhook domain dependencies.
 func NewService(cfg Config) *Service {
-	defaults := defaultTriggerLabels()
-	triggerLabels := cfg.TriggerLabels
-	if strings.TrimSpace(triggerLabels.RunDev) == "" {
-		triggerLabels.RunDev = defaults.RunDev
-	}
-	if strings.TrimSpace(triggerLabels.RunDevRevise) == "" {
-		triggerLabels.RunDevRevise = defaults.RunDevRevise
-	}
+	triggerLabels := cfg.TriggerLabels.withDefaults()
 
 	return &Service{
 		agentRuns:           cfg.AgentRuns,
@@ -117,12 +111,23 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		return IngestResult{}, fmt.Errorf("cleanup run namespaces on close event: %w", err)
 	}
 
-	trigger, hasIssueRunTrigger := s.resolveIssueRunTrigger(cmd.EventType, envelope)
+	trigger, hasIssueRunTrigger, conflict := s.resolveIssueRunTrigger(cmd.EventType, envelope)
 	if strings.EqualFold(strings.TrimSpace(cmd.EventType), string(webhookdomain.GitHubEventIssues)) && !hasIssueRunTrigger {
 		return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
 			Reason:     "issue_event_not_trigger_label",
 			RunKind:    "",
 			HasBinding: hasBinding,
+		})
+	}
+	if hasIssueRunTrigger && len(conflict.ConflictingLabels) > 1 {
+		if err := s.postTriggerConflictComment(ctx, cmd, envelope, trigger, conflict.ConflictingLabels); err != nil {
+			return IngestResult{}, fmt.Errorf("post trigger conflict comment: %w", err)
+		}
+		return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
+			Reason:            "issue_trigger_label_conflict",
+			RunKind:           trigger.Kind,
+			HasBinding:        hasBinding,
+			ConflictingLabels: conflict.ConflictingLabels,
 		})
 	}
 	if hasIssueRunTrigger {
@@ -238,11 +243,12 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 
 func (s *Service) recordIgnoredWebhook(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope, params ignoredWebhookParams) (IngestResult, error) {
 	payload, err := buildIgnoredEventPayload(ignoredEventPayloadInput{
-		Command:    cmd,
-		Envelope:   envelope,
-		Reason:     params.Reason,
-		RunKind:    params.RunKind,
-		HasBinding: params.HasBinding,
+		Command:           cmd,
+		Envelope:          envelope,
+		Reason:            params.Reason,
+		RunKind:           params.RunKind,
+		HasBinding:        params.HasBinding,
+		ConflictingLabels: params.ConflictingLabels,
 	})
 	if err != nil {
 		return IngestResult{}, fmt.Errorf("build ignored flow event payload: %w", err)
@@ -326,48 +332,67 @@ func (s *Service) maybeCleanupRunNamespaces(ctx context.Context, cmd IngestComma
 	return nil
 }
 
-func (s *Service) resolveIssueRunTrigger(eventType string, envelope githubWebhookEnvelope) (issueRunTrigger, bool) {
+func (s *Service) resolveIssueRunTrigger(eventType string, envelope githubWebhookEnvelope) (issueRunTrigger, bool, triggerConflictResult) {
 	switch strings.TrimSpace(strings.ToLower(eventType)) {
 	case string(webhookdomain.GitHubEventIssues):
 		if !strings.EqualFold(strings.TrimSpace(envelope.Action), string(webhookdomain.GitHubActionLabeled)) {
-			return issueRunTrigger{}, false
+			return issueRunTrigger{}, false, triggerConflictResult{}
 		}
 
 		label := strings.TrimSpace(envelope.Label.Name)
 		if label == "" {
-			return issueRunTrigger{}, false
+			return issueRunTrigger{}, false, triggerConflictResult{}
 		}
-		switch {
-		case strings.EqualFold(label, s.triggerLabels.RunDev):
-			return issueRunTrigger{
+		kind, ok := s.triggerLabels.resolveKind(label)
+		if !ok {
+			return issueRunTrigger{}, false, triggerConflictResult{}
+		}
+		conflictingLabels := s.triggerLabels.collectIssueTriggerLabels(envelope.Issue.Labels)
+		return issueRunTrigger{
 				Source: webhookdomain.TriggerSourceIssueLabel,
 				Label:  label,
-				Kind:   webhookdomain.TriggerKindDev,
-			}, true
-		case strings.EqualFold(label, s.triggerLabels.RunDevRevise):
-			return issueRunTrigger{
-				Source: webhookdomain.TriggerSourceIssueLabel,
-				Label:  label,
-				Kind:   webhookdomain.TriggerKindDevRevise,
-			}, true
-		default:
-			return issueRunTrigger{}, false
-		}
+				Kind:   kind,
+			}, true, triggerConflictResult{
+				ConflictingLabels: conflictingLabels,
+			}
 	case string(webhookdomain.GitHubEventPullRequestReview):
 		if !strings.EqualFold(strings.TrimSpace(envelope.Action), string(webhookdomain.GitHubActionSubmitted)) {
-			return issueRunTrigger{}, false
+			return issueRunTrigger{}, false, triggerConflictResult{}
 		}
 		if !strings.EqualFold(strings.TrimSpace(envelope.Review.State), webhookdomain.GitHubReviewStateChangesRequested) {
-			return issueRunTrigger{}, false
+			return issueRunTrigger{}, false, triggerConflictResult{}
 		}
 		return issueRunTrigger{
 			Source: webhookdomain.TriggerSourcePullRequestReview,
 			Label:  s.triggerLabels.RunDevRevise,
 			Kind:   webhookdomain.TriggerKindDevRevise,
-		}, true
+		}, true, triggerConflictResult{}
 	default:
-		return issueRunTrigger{}, false
+		return issueRunTrigger{}, false, triggerConflictResult{}
 	}
+}
+
+func (s *Service) postTriggerConflictComment(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope, trigger issueRunTrigger, conflictingLabels []string) error {
+	if s.runStatus == nil || envelope.Issue.Number <= 0 {
+		return nil
+	}
+	repositoryFullName := strings.TrimSpace(envelope.Repository.FullName)
+	if repositoryFullName == "" {
+		return nil
+	}
+	_, err := s.runStatus.PostTriggerLabelConflictComment(ctx, runstatusdomain.TriggerLabelConflictCommentParams{
+		CorrelationID:      cmd.CorrelationID,
+		RepositoryFullName: repositoryFullName,
+		IssueNumber:        int(envelope.Issue.Number),
+		Locale:             localeFromEventType(cmd.EventType),
+		TriggerLabel:       strings.TrimSpace(trigger.Label),
+		ConflictingLabels:  conflictingLabels,
+	})
+	return err
+}
+
+func localeFromEventType(_ string) string {
+	return "ru"
 }
 
 func (s *Service) isActorAllowedForIssueTrigger(ctx context.Context, projectID string, senderLogin string) (bool, string, error) {

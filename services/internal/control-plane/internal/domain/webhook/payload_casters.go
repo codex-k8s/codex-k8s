@@ -30,17 +30,19 @@ type eventPayloadInput struct {
 }
 
 type ignoredEventPayloadInput struct {
-	Command    IngestCommand
-	Envelope   githubWebhookEnvelope
-	Reason     string
-	RunKind    webhookdomain.TriggerKind
-	HasBinding bool
+	Command           IngestCommand
+	Envelope          githubWebhookEnvelope
+	Reason            string
+	RunKind           webhookdomain.TriggerKind
+	HasBinding        bool
+	ConflictingLabels []string
 }
 
 type ignoredWebhookParams struct {
-	Reason     string
-	RunKind    webhookdomain.TriggerKind
-	HasBinding bool
+	Reason            string
+	RunKind           webhookdomain.TriggerKind
+	HasBinding        bool
+	ConflictingLabels []string
 }
 
 func buildRunPayload(input runPayloadInput) (json.RawMessage, error) {
@@ -189,6 +191,7 @@ func buildIgnoredEventPayload(input ignoredEventPayloadInput) (json.RawMessage, 
 	payload := buildBaseFlowEventPayload(input.Command, input.Envelope)
 	payload.Reason = input.Reason
 	payload.BindingResolved = &input.HasBinding
+	payload.ConflictingLabels = input.ConflictingLabels
 
 	if strings.TrimSpace(input.Envelope.Label.Name) != "" {
 		payload.Label = input.Envelope.Label.Name

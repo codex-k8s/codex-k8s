@@ -57,9 +57,9 @@ approvals:
 | FR-025 | На MVP public API ограничен webhook ingress; staff/private API используется для управления платформой. |
 | FR-026 | В платформе фиксируется канонический каталог лейблов классов `run:*`, `state:*`, `need:*`, с поддержкой label-driven stage pipeline. |
 | FR-027 | Для агент-инициированных trigger/deploy лейблов (`run:*`) обязателен апрув Owner до применения; `state:*` и `need:*` допускают автоустановку по политике проекта. |
-| FR-028 | Процесс поставки фиксируется stage-моделью `intake -> vision -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops` с поддержкой `*:revise`, `run:abort`, `run:rethink`. |
+| FR-028 | Процесс поставки фиксируется stage-моделью `intake -> vision -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops` с поддержкой `*:revise`, `run:rethink`. |
 | FR-029 | Модель ролей агентов: базовый штат из 8 системных ролей (`pm`, `sa`, `em`, `dev`, `reviewer`, `qa`, `sre`, `km`) + расширяемые custom-агенты на проект (с явными RBAC, execution mode и quota). |
-| FR-030 | Для агентных инструкций поддерживаются два класса шаблонов (`work`, `review`) с приоритетом `DB project override -> DB global override -> repo seed`. |
+| FR-030 | Для агентных инструкций поддерживается role-specific матрица шаблонов: для каждого `agent_key` отдельные body-шаблоны `work/review`, с приоритетом `DB project override -> DB global override -> repo seed`. |
 | FR-031 | Для агентных ролей поддерживается смешанный режим исполнения `full-env`/`code-only`, с политикой выбора режима по роли. |
 | FR-032 | В БД как обязательный контур аудита и учета включены сущности `agent_sessions`, `token_usage`, `links` (в дополнение к `agent_runs` и `flow_events`). |
 | FR-033 | Traceability поддерживается для всех этапов: связи Issue/PR ↔ docs ↔ stage status обновляются синхронно с выполнением этапов. |
@@ -74,7 +74,7 @@ approvals:
 | FR-042 | Для MCP control tools обязателен policy-driven approval matrix и audit trail с `correlation_id`, `approval_state`, `requested_by`, `applied_by`. |
 | FR-043 | В stage taxonomy включён `run:self-improve`: агент анализирует логи запусков/комментарии/артефакты по Issue/PR и формирует улучшения docs/prompt templates/instructions/tooling. |
 | FR-044 | `run:self-improve` поддерживает управляемое применение результатов: change-set публикуется через PR с явной трассировкой источников и rationale. |
-| FR-045 | Для full MVP этапов поддерживается исполняемый контур полного stage-flow (`run:intake..run:ops`, `run:*:revise`, `run:abort`, `run:rethink`) с traceability и audit-событиями. |
+| FR-045 | Для full MVP этапов поддерживается исполняемый контур полного stage-flow (`run:intake..run:ops`, `run:*:revise`, `run:rethink`) с traceability и audit-событиями. |
 | FR-046 | Post-MVP roadmap фиксирует расширяемость платформы: управление prompt templates/агентами/лейблами через UI, knowledge lifecycle в `pgvector`, A2A swarm, периодические автономные run-циклы. |
 
 ## Non-Functional Requirements (NFR)

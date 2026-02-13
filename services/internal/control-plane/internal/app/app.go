@@ -176,10 +176,7 @@ func Run() error {
 		Members:             members,
 		RunStatus:           runStatusService,
 		LearningModeDefault: learningDefault,
-		TriggerLabels: webhook.TriggerLabels{
-			RunDev:       cfg.RunDevLabel,
-			RunDevRevise: cfg.RunDevReviseLabel,
-		},
+		TriggerLabels:       buildWebhookTriggerLabels(cfg),
 	})
 
 	webhookURL := strings.TrimSpace(cfg.GitHubWebhookURL)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
@@ -20,12 +21,7 @@ func normalizeLocale(value string, fallback string) string {
 }
 
 func normalizeTriggerKind(value string) string {
-	switch strings.ToLower(strings.TrimSpace(value)) {
-	case triggerKindDevRevise:
-		return triggerKindDevRevise
-	default:
-		return triggerKindDev
-	}
+	return string(webhookdomain.NormalizeTriggerKind(value))
 }
 
 func normalizeTriggerSource(value string) string {
@@ -41,7 +37,7 @@ func normalizeRuntimeMode(value string, triggerKind string) string {
 	if strings.EqualFold(strings.TrimSpace(value), runtimeModeFullEnv) {
 		return runtimeModeFullEnv
 	}
-	if normalizeTriggerKind(triggerKind) == triggerKindDevRevise || normalizeTriggerKind(triggerKind) == triggerKindDev {
+	if webhookdomain.IsKnownTriggerKind(webhookdomain.NormalizeTriggerKind(triggerKind)) {
 		return runtimeModeFullEnv
 	}
 	return runtimeModeCode

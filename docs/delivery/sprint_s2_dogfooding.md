@@ -2,7 +2,7 @@
 doc_id: SPR-CK8S-0002
 type: sprint-plan
 title: "Sprint S2: Dogfooding via Issue labels (run:dev / run:dev:revise)"
-status: active
+status: completed
 owner_role: EM
 created_at: 2026-02-10
 updated_at: 2026-02-13
@@ -36,7 +36,7 @@ approvals:
 | Day 4.5 | PGX + db-model rollout for repository layer | P0 | `docs/delivery/epics/epic-s2-day4.5-pgx-db-models-and-repository-refactor.md` | completed |
 | Day 5 | Staff UI: dogfooding visibility + drilldowns | P1 | `docs/delivery/epics/epic-s2-day5-staff-ui-dogfooding-observability.md` | completed |
 | Day 6 | Approval matrix + MCP control tools + audit hardening | P0 | `docs/delivery/epics/epic-s2-day6-approval-and-audit-hardening.md` | completed |
-| Day 7 | MVP readiness regression gate + Sprint S3 kickoff package | P0 | `docs/delivery/epics/epic-s2-day7-dogfooding-regression-gate.md` | planned |
+| Day 7 | MVP readiness regression gate + Sprint S3 kickoff package | P0 | `docs/delivery/epics/epic-s2-day7-dogfooding-regression-gate.md` | completed |
 
 ## Daily gate (обязательно)
 - Планирование/DoR на день выполнены.
@@ -60,4 +60,5 @@ approvals:
 - Day 4.5: completed (PGX/db-model rollout и repository refactor baseline).
 - Day 5: completed (staff observability/drilldown + namespace lifecycle controls).
 - Day 6: completed (approval matrix, MCP control tools baseline, wait-state/audit hardening, staff approvals UI/API).
-- Текущее окно работ: Day 7 (regression gate + Sprint S3 package).
+- Day 7: completed (regression gate + go/no-go + Sprint S3 kickoff package, см. `docs/delivery/regression_s2_gate.md`).
+- Sprint S2 закрыт без открытых `P0` блокеров.
