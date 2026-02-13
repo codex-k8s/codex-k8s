@@ -29,6 +29,9 @@ func runFromDBModel(row dbmodel.RunRow) domainrepo.Run {
 	if row.TriggerLabel.Valid {
 		item.TriggerLabel = row.TriggerLabel.String
 	}
+	if row.AgentKey.Valid {
+		item.AgentKey = row.AgentKey.String
+	}
 	if row.JobName.Valid {
 		item.JobName = row.JobName.String
 	}
@@ -44,6 +47,14 @@ func runFromDBModel(row dbmodel.RunRow) domainrepo.Run {
 	if row.WaitReason.Valid {
 		item.WaitReason = row.WaitReason.String
 	}
+	if row.WaitSince.Valid {
+		v := row.WaitSince.Time
+		item.WaitSince = &v
+	}
+	if row.LastHeartbeat.Valid {
+		v := row.LastHeartbeat.Time
+		item.LastHeartbeatAt = &v
+	}
 	if row.PRURL.Valid {
 		item.PRURL = row.PRURL.String
 	}
@@ -57,6 +68,19 @@ func runFromDBModel(row dbmodel.RunRow) domainrepo.Run {
 	if row.FinishedAt.Valid {
 		v := row.FinishedAt.Time
 		item.FinishedAt = &v
+	}
+	return item
+}
+
+func runLogsFromDBModel(row dbmodel.RunLogsRow) domainrepo.RunLogs {
+	item := domainrepo.RunLogs{
+		RunID:        row.RunID,
+		Status:       row.Status,
+		SnapshotJSON: row.SnapshotJSON,
+	}
+	if row.UpdatedAt.Valid {
+		v := row.UpdatedAt.Time
+		item.UpdatedAt = &v
 	}
 	return item
 }

@@ -42,8 +42,8 @@ approvals:
 
 | День | Эпик | Priority | Документ | Статус |
 |---|---|---|---|---|
-| Day 1 | Full stage and label activation | P0 | `docs/delivery/epics/epic-s3-day1-full-stage-and-label-activation.md` | completed |
-| Day 2 | Staff runtime debug console (jobs/logs/waits) | P0 | `docs/delivery/epics/epic-s3-day2-staff-runtime-debug-console.md` | planned |
+| Day 1 | Full stage and label activation | P0 | `docs/delivery/epics/epic-s3-day1-full-stage-and-label-activation.md` | completed (approved) |
+| Day 2 | Staff runtime debug console (jobs/logs/waits) | P0 | `docs/delivery/epics/epic-s3-day2-staff-runtime-debug-console.md` | completed (awaiting Owner approval) |
 | Day 3 | MCP deterministic secret sync (GitHub + K8s) | P0 | `docs/delivery/epics/epic-s3-day3-mcp-deterministic-secret-sync.md` | planned |
 | Day 4 | MCP database lifecycle (create/delete per env) | P0 | `docs/delivery/epics/epic-s3-day4-mcp-database-lifecycle.md` | planned |
 | Day 5 | Owner feedback handle + HTTP approver/executor + Telegram adapter | P0 | `docs/delivery/epics/epic-s3-day5-feedback-and-approver-interfaces.md` | planned |

@@ -35,8 +35,9 @@ approvals:
 - Day 12: `docs/delivery/epics/epic-s3-day12-mvp-closeout-and-handover.md`
 
 ## Прогресс
-- Day 1 (`full stage and label activation`) завершён.
-- Day 2..Day12 остаются в статусе planned.
+- Day 1 (`full stage and label activation`) завершён и согласован Owner.
+- Day 2 (`staff runtime debug console`) завершён, ожидает Owner approval.
+- Day 3..Day12 остаются в статусе planned.
 
 ## Критерий успеха Sprint S3 (выжимка)
 - Все MVP-сценарии из Issue #19 покрыты кодом, тестами и эксплуатационной документацией.

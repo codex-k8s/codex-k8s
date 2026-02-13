@@ -19,6 +19,7 @@ type Run struct {
 	PRURL           *string `json:"pr_url"`
 	TriggerKind     *string `json:"trigger_kind"`
 	TriggerLabel    *string `json:"trigger_label"`
+	AgentKey        *string `json:"agent_key"`
 	JobName         *string `json:"job_name"`
 	JobNamespace    *string `json:"job_namespace"`
 	Namespace       *string `json:"namespace"`
@@ -26,10 +27,20 @@ type Run struct {
 	NamespaceExists bool    `json:"namespace_exists"`
 	WaitState       *string `json:"wait_state"`
 	WaitReason      *string `json:"wait_reason"`
+	WaitSince       *string `json:"wait_since"`
+	LastHeartbeatAt *string `json:"last_heartbeat_at"`
 	Status          string  `json:"status"`
 	CreatedAt       string  `json:"created_at"`
 	StartedAt       *string `json:"started_at"`
 	FinishedAt      *string `json:"finished_at"`
+}
+
+type RunLogs struct {
+	RunID        string   `json:"run_id"`
+	Status       string   `json:"status"`
+	UpdatedAt    *string  `json:"updated_at"`
+	SnapshotJSON string   `json:"snapshot_json"`
+	TailLines    []string `json:"tail_lines"`
 }
 
 type ApprovalRequest struct {

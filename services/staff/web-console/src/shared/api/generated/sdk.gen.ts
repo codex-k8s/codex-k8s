@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CallbackGithubData, CallbackGithubErrors, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteProjectData, DeleteProjectErrors, DeleteProjectMemberData, DeleteProjectMemberErrors, DeleteProjectMemberResponses, DeleteProjectRepositoryData, DeleteProjectRepositoryErrors, DeleteProjectRepositoryResponses, DeleteProjectResponses, DeleteRunNamespaceData, DeleteRunNamespaceErrors, DeleteRunNamespaceResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, GetMeData, GetMeErrors, GetMeResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetRunData, GetRunErrors, GetRunResponses, IngestGithubWebhookData, IngestGithubWebhookErrors, IngestGithubWebhookResponses, ListPendingApprovalsData, ListPendingApprovalsErrors, ListPendingApprovalsResponses, ListProjectMembersData, ListProjectMembersErrors, ListProjectMembersResponses, ListProjectRepositoriesData, ListProjectRepositoriesErrors, ListProjectRepositoriesResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRunEventsData, ListRunEventsErrors, ListRunEventsResponses, ListRunLearningFeedbackData, ListRunLearningFeedbackErrors, ListRunLearningFeedbackResponses, ListRunsData, ListRunsErrors, ListRunsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginGithubData, LoginGithubErrors, LogoutData, LogoutErrors, LogoutResponses, ResolveApprovalDecisionData, ResolveApprovalDecisionErrors, ResolveApprovalDecisionResponses, SetProjectMemberLearningModeOverrideData, SetProjectMemberLearningModeOverrideErrors, SetProjectMemberLearningModeOverrideResponses, UpsertProjectData, UpsertProjectErrors, UpsertProjectMemberData, UpsertProjectMemberErrors, UpsertProjectMemberResponses, UpsertProjectRepositoryData, UpsertProjectRepositoryErrors, UpsertProjectRepositoryResponses, UpsertProjectResponses } from './types.gen';
+import type { CallbackGithubData, CallbackGithubErrors, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteProjectData, DeleteProjectErrors, DeleteProjectMemberData, DeleteProjectMemberErrors, DeleteProjectMemberResponses, DeleteProjectRepositoryData, DeleteProjectRepositoryErrors, DeleteProjectRepositoryResponses, DeleteProjectResponses, DeleteRunNamespaceData, DeleteRunNamespaceErrors, DeleteRunNamespaceResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, GetMeData, GetMeErrors, GetMeResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetRunData, GetRunErrors, GetRunLogsData, GetRunLogsErrors, GetRunLogsResponses, GetRunResponses, IngestGithubWebhookData, IngestGithubWebhookErrors, IngestGithubWebhookResponses, ListPendingApprovalsData, ListPendingApprovalsErrors, ListPendingApprovalsResponses, ListProjectMembersData, ListProjectMembersErrors, ListProjectMembersResponses, ListProjectRepositoriesData, ListProjectRepositoriesErrors, ListProjectRepositoriesResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRunEventsData, ListRunEventsErrors, ListRunEventsResponses, ListRunJobsData, ListRunJobsErrors, ListRunJobsResponses, ListRunLearningFeedbackData, ListRunLearningFeedbackErrors, ListRunLearningFeedbackResponses, ListRunsData, ListRunsErrors, ListRunsResponses, ListRunWaitsData, ListRunWaitsErrors, ListRunWaitsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginGithubData, LoginGithubErrors, LogoutData, LogoutErrors, LogoutResponses, ResolveApprovalDecisionData, ResolveApprovalDecisionErrors, ResolveApprovalDecisionResponses, SetProjectMemberLearningModeOverrideData, SetProjectMemberLearningModeOverrideErrors, SetProjectMemberLearningModeOverrideResponses, UpsertProjectData, UpsertProjectErrors, UpsertProjectMemberData, UpsertProjectMemberErrors, UpsertProjectMemberResponses, UpsertProjectRepositoryData, UpsertProjectRepositoryErrors, UpsertProjectRepositoryResponses, UpsertProjectResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -101,6 +101,24 @@ export const listRuns = <ThrowOnError extends boolean = false>(options?: Options
 });
 
 /**
+ * List running jobs
+ */
+export const listRunJobs = <ThrowOnError extends boolean = false>(options?: Options<ListRunJobsData, ThrowOnError>) => (options?.client ?? client).get<ListRunJobsResponses, ListRunJobsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/runs/jobs',
+    ...options
+});
+
+/**
+ * List wait queue runs
+ */
+export const listRunWaits = <ThrowOnError extends boolean = false>(options?: Options<ListRunWaitsData, ThrowOnError>) => (options?.client ?? client).get<ListRunWaitsResponses, ListRunWaitsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/runs/waits',
+    ...options
+});
+
+/**
  * List pending approval requests
  */
 export const listPendingApprovals = <ThrowOnError extends boolean = false>(options?: Options<ListPendingApprovalsData, ThrowOnError>) => (options?.client ?? client).get<ListPendingApprovalsResponses, ListPendingApprovalsErrors, ThrowOnError>({
@@ -146,6 +164,15 @@ export const deleteRunNamespace = <ThrowOnError extends boolean = false>(options
 export const listRunEvents = <ThrowOnError extends boolean = false>(options: Options<ListRunEventsData, ThrowOnError>) => (options.client ?? client).get<ListRunEventsResponses, ListRunEventsErrors, ThrowOnError>({
     responseType: 'json',
     url: '/api/v1/staff/runs/{run_id}/events',
+    ...options
+});
+
+/**
+ * Get run logs snapshot with tail lines
+ */
+export const getRunLogs = <ThrowOnError extends boolean = false>(options: Options<GetRunLogsData, ThrowOnError>) => (options.client ?? client).get<GetRunLogsResponses, GetRunLogsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/runs/{run_id}/logs',
     ...options
 });
 

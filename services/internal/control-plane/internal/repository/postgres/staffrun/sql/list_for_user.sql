@@ -17,11 +17,18 @@ SELECT
     COALESCE(ar.run_payload->'issue'->>'html_url', '') AS issue_url,
     COALESCE(ar.run_payload->'trigger'->>'kind', '') AS trigger_kind,
     COALESCE(ar.run_payload->'trigger'->>'label', '') AS trigger_label,
+    COALESCE(ws.agent_key, '') AS agent_key,
     COALESCE(rt.job_name, '') AS job_name,
     COALESCE(rt.job_namespace, '') AS job_namespace,
     COALESCE(rt.namespace, '') AS namespace,
     COALESCE(ws.wait_state, '') AS wait_state,
-    COALESCE(ws.wait_state, '') AS wait_reason,
+    CASE
+        WHEN COALESCE(ws.wait_state, '') = 'mcp' THEN 'waiting_mcp'
+        WHEN COALESCE(ws.wait_state, '') = 'owner_review' THEN 'waiting_owner_review'
+        ELSE ''
+    END AS wait_reason,
+    ws.wait_since,
+    ws.last_heartbeat_at,
     COALESCE(pr.pr_url, '') AS pr_url,
     pr.pr_number,
     ar.status,
@@ -87,7 +94,10 @@ LEFT JOIN LATERAL (
 ) rt ON true
 LEFT JOIN LATERAL (
     SELECT
-        COALESCE(ags.wait_state, '') AS wait_state
+        COALESCE(ags.agent_key, '') AS agent_key,
+        COALESCE(ags.wait_state, '') AS wait_state,
+        ags.updated_at AS wait_since,
+        ags.last_heartbeat_at
     FROM agent_sessions ags
     WHERE ags.run_id = ar.id
     ORDER BY ags.updated_at DESC

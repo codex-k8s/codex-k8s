@@ -28,7 +28,10 @@ const (
 	ControlPlaneService_GetProject_FullMethodName                           = "/codexk8s.controlplane.v1.ControlPlaneService/GetProject"
 	ControlPlaneService_DeleteProject_FullMethodName                        = "/codexk8s.controlplane.v1.ControlPlaneService/DeleteProject"
 	ControlPlaneService_ListRuns_FullMethodName                             = "/codexk8s.controlplane.v1.ControlPlaneService/ListRuns"
+	ControlPlaneService_ListRunJobs_FullMethodName                          = "/codexk8s.controlplane.v1.ControlPlaneService/ListRunJobs"
+	ControlPlaneService_ListRunWaits_FullMethodName                         = "/codexk8s.controlplane.v1.ControlPlaneService/ListRunWaits"
 	ControlPlaneService_GetRun_FullMethodName                               = "/codexk8s.controlplane.v1.ControlPlaneService/GetRun"
+	ControlPlaneService_GetRunLogs_FullMethodName                           = "/codexk8s.controlplane.v1.ControlPlaneService/GetRunLogs"
 	ControlPlaneService_ListPendingApprovals_FullMethodName                 = "/codexk8s.controlplane.v1.ControlPlaneService/ListPendingApprovals"
 	ControlPlaneService_ResolveApprovalDecision_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/ResolveApprovalDecision"
 	ControlPlaneService_ListRunEvents_FullMethodName                        = "/codexk8s.controlplane.v1.ControlPlaneService/ListRunEvents"
@@ -65,7 +68,10 @@ type ControlPlaneServiceClient interface {
 	GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*Project, error)
 	DeleteProject(ctx context.Context, in *DeleteProjectRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListRuns(ctx context.Context, in *ListRunsRequest, opts ...grpc.CallOption) (*ListRunsResponse, error)
+	ListRunJobs(ctx context.Context, in *ListRunJobsRequest, opts ...grpc.CallOption) (*ListRunJobsResponse, error)
+	ListRunWaits(ctx context.Context, in *ListRunWaitsRequest, opts ...grpc.CallOption) (*ListRunWaitsResponse, error)
 	GetRun(ctx context.Context, in *GetRunRequest, opts ...grpc.CallOption) (*Run, error)
+	GetRunLogs(ctx context.Context, in *GetRunLogsRequest, opts ...grpc.CallOption) (*RunLogs, error)
 	ListPendingApprovals(ctx context.Context, in *ListPendingApprovalsRequest, opts ...grpc.CallOption) (*ListPendingApprovalsResponse, error)
 	ResolveApprovalDecision(ctx context.Context, in *ResolveApprovalDecisionRequest, opts ...grpc.CallOption) (*ResolveApprovalDecisionResponse, error)
 	ListRunEvents(ctx context.Context, in *ListRunEventsRequest, opts ...grpc.CallOption) (*ListRunEventsResponse, error)
@@ -177,10 +183,40 @@ func (c *controlPlaneServiceClient) ListRuns(ctx context.Context, in *ListRunsRe
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) ListRunJobs(ctx context.Context, in *ListRunJobsRequest, opts ...grpc.CallOption) (*ListRunJobsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListRunJobsResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ListRunJobs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) ListRunWaits(ctx context.Context, in *ListRunWaitsRequest, opts ...grpc.CallOption) (*ListRunWaitsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListRunWaitsResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ListRunWaits_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) GetRun(ctx context.Context, in *GetRunRequest, opts ...grpc.CallOption) (*Run, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Run)
 	err := c.cc.Invoke(ctx, ControlPlaneService_GetRun_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) GetRunLogs(ctx context.Context, in *GetRunLogsRequest, opts ...grpc.CallOption) (*RunLogs, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RunLogs)
+	err := c.cc.Invoke(ctx, ControlPlaneService_GetRunLogs_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +437,10 @@ type ControlPlaneServiceServer interface {
 	GetProject(context.Context, *GetProjectRequest) (*Project, error)
 	DeleteProject(context.Context, *DeleteProjectRequest) (*emptypb.Empty, error)
 	ListRuns(context.Context, *ListRunsRequest) (*ListRunsResponse, error)
+	ListRunJobs(context.Context, *ListRunJobsRequest) (*ListRunJobsResponse, error)
+	ListRunWaits(context.Context, *ListRunWaitsRequest) (*ListRunWaitsResponse, error)
 	GetRun(context.Context, *GetRunRequest) (*Run, error)
+	GetRunLogs(context.Context, *GetRunLogsRequest) (*RunLogs, error)
 	ListPendingApprovals(context.Context, *ListPendingApprovalsRequest) (*ListPendingApprovalsResponse, error)
 	ResolveApprovalDecision(context.Context, *ResolveApprovalDecisionRequest) (*ResolveApprovalDecisionResponse, error)
 	ListRunEvents(context.Context, *ListRunEventsRequest) (*ListRunEventsResponse, error)
@@ -457,8 +496,17 @@ func (UnimplementedControlPlaneServiceServer) DeleteProject(context.Context, *De
 func (UnimplementedControlPlaneServiceServer) ListRuns(context.Context, *ListRunsRequest) (*ListRunsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRuns not implemented")
 }
+func (UnimplementedControlPlaneServiceServer) ListRunJobs(context.Context, *ListRunJobsRequest) (*ListRunJobsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRunJobs not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ListRunWaits(context.Context, *ListRunWaitsRequest) (*ListRunWaitsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRunWaits not implemented")
+}
 func (UnimplementedControlPlaneServiceServer) GetRun(context.Context, *GetRunRequest) (*Run, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRun not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) GetRunLogs(context.Context, *GetRunLogsRequest) (*RunLogs, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRunLogs not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) ListPendingApprovals(context.Context, *ListPendingApprovalsRequest) (*ListPendingApprovalsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPendingApprovals not implemented")
@@ -685,6 +733,42 @@ func _ControlPlaneService_ListRuns_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_ListRunJobs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRunJobsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ListRunJobs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ListRunJobs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ListRunJobs(ctx, req.(*ListRunJobsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_ListRunWaits_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRunWaitsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ListRunWaits(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ListRunWaits_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ListRunWaits(ctx, req.(*ListRunWaitsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_GetRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRunRequest)
 	if err := dec(in); err != nil {
@@ -699,6 +783,24 @@ func _ControlPlaneService_GetRun_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ControlPlaneServiceServer).GetRun(ctx, req.(*GetRunRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_GetRunLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRunLogsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).GetRunLogs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_GetRunLogs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).GetRunLogs(ctx, req.(*GetRunLogsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1103,8 +1205,20 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ControlPlaneService_ListRuns_Handler,
 		},
 		{
+			MethodName: "ListRunJobs",
+			Handler:    _ControlPlaneService_ListRunJobs_Handler,
+		},
+		{
+			MethodName: "ListRunWaits",
+			Handler:    _ControlPlaneService_ListRunWaits_Handler,
+		},
+		{
 			MethodName: "GetRun",
 			Handler:    _ControlPlaneService_GetRun_Handler,
+		},
+		{
+			MethodName: "GetRunLogs",
+			Handler:    _ControlPlaneService_GetRunLogs_Handler,
 		},
 		{
 			MethodName: "ListPendingApprovals",

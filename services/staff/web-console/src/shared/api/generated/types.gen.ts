@@ -63,6 +63,9 @@ export type Run = {
     namespace_exists?: boolean;
     wait_state?: string | null;
     wait_reason?: string | null;
+    agent_key?: string | null;
+    wait_since?: string | null;
+    last_heartbeat_at?: string | null;
     status: string;
     created_at: string;
     started_at?: string | null;
@@ -105,6 +108,14 @@ export type FlowEvent = {
     event_type: string;
     created_at: string;
     payload_json: string;
+};
+
+export type RunLogs = {
+    run_id: string;
+    status: string;
+    updated_at?: string | null;
+    snapshot_json: string;
+    tail_lines: Array<string>;
 };
 
 export type LearningFeedback = {
@@ -215,6 +226,16 @@ export type ApprovalRequestId = number;
 export type UserId = string;
 
 export type Limit = number;
+
+export type TriggerKindFilter = string;
+
+export type RunStatusFilter = string;
+
+export type AgentKeyFilter = string;
+
+export type WaitStateFilter = string;
+
+export type TailLines = number;
 
 export type IngestGithubWebhookData = {
     body: {
@@ -522,6 +543,75 @@ export type ListRunsResponses = {
 
 export type ListRunsResponse = ListRunsResponses[keyof ListRunsResponses];
 
+export type ListRunJobsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+        trigger_kind?: string;
+        status?: string;
+        agent_key?: string;
+    };
+    url: '/api/v1/staff/runs/jobs';
+};
+
+export type ListRunJobsErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+};
+
+export type ListRunJobsError = ListRunJobsErrors[keyof ListRunJobsErrors];
+
+export type ListRunJobsResponses = {
+    /**
+     * Running jobs list
+     */
+    200: RunItemsResponse;
+};
+
+export type ListRunJobsResponse = ListRunJobsResponses[keyof ListRunJobsResponses];
+
+export type ListRunWaitsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+        trigger_kind?: string;
+        status?: string;
+        agent_key?: string;
+        wait_state?: string;
+    };
+    url: '/api/v1/staff/runs/waits';
+};
+
+export type ListRunWaitsErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+};
+
+export type ListRunWaitsError = ListRunWaitsErrors[keyof ListRunWaitsErrors];
+
+export type ListRunWaitsResponses = {
+    /**
+     * Wait queue list
+     */
+    200: RunItemsResponse;
+};
+
+export type ListRunWaitsResponse = ListRunWaitsResponses[keyof ListRunWaitsResponses];
+
 export type ListPendingApprovalsData = {
     body?: never;
     path?: never;
@@ -698,6 +788,43 @@ export type ListRunEventsResponses = {
 };
 
 export type ListRunEventsResponse = ListRunEventsResponses[keyof ListRunEventsResponses];
+
+export type GetRunLogsData = {
+    body?: never;
+    path: {
+        run_id: string;
+    };
+    query?: {
+        tail_lines?: number;
+    };
+    url: '/api/v1/staff/runs/{run_id}/logs';
+};
+
+export type GetRunLogsErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+};
+
+export type GetRunLogsError = GetRunLogsErrors[keyof GetRunLogsErrors];
+
+export type GetRunLogsResponses = {
+    /**
+     * Run logs snapshot
+     */
+    200: RunLogs;
+};
+
+export type GetRunLogsResponse = GetRunLogsResponses[keyof GetRunLogsResponses];
 
 export type ListRunLearningFeedbackData = {
     body?: never;

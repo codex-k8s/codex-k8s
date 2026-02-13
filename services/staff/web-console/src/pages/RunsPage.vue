@@ -75,6 +75,260 @@
       </button>
     </div>
 
+    <div class="pane runtime-pane">
+      <div class="row pane-head">
+        <div>
+          <h3>{{ t("pages.runs.runningJobs") }}</h3>
+          <p class="muted pane-note">{{ t("pages.runs.runningJobsHint") }}</p>
+        </div>
+        <div class="pane-head-actions">
+          <span v-if="jobsActiveFilters > 0" class="mono muted">
+            {{ t("pages.runs.activeFilters", { count: jobsActiveFilters }) }}
+          </span>
+          <button class="btn" type="button" @click="showJobsFilters = !showJobsFilters">
+            {{ showJobsFilters ? t("pages.runs.hideFilters") : t("pages.runs.showFilters") }}
+          </button>
+          <button class="btn" type="button" @click="runs.loadRunJobs()" :disabled="runs.jobsLoading">
+            {{ t("common.refresh") }}
+          </button>
+        </div>
+      </div>
+      <form v-if="showJobsFilters" class="filters-panel" @submit.prevent="applyJobsFilters">
+        <div class="runtime-filters-grid">
+          <label class="runtime-filter">
+            <span class="muted">{{ t("pages.runs.runType") }}</span>
+            <input
+              v-model.trim="runs.jobsFilters.triggerKind"
+              class="in"
+              type="text"
+              :placeholder="t('pages.runs.triggerKindPlaceholder')"
+              list="run-trigger-kind-options"
+            />
+          </label>
+          <label class="runtime-filter">
+            <span class="muted">{{ t("pages.runs.status") }}</span>
+            <input
+              v-model.trim="runs.jobsFilters.status"
+              class="in"
+              type="text"
+              :placeholder="t('pages.runs.statusPlaceholder')"
+              list="run-status-options"
+            />
+          </label>
+          <label class="runtime-filter">
+            <span class="muted">{{ t("pages.runs.agentKey") }}</span>
+            <input
+              v-model.trim="runs.jobsFilters.agentKey"
+              class="in"
+              type="text"
+              :placeholder="t('pages.runs.agentKeyPlaceholder')"
+            />
+          </label>
+        </div>
+        <div class="runtime-filter-hint muted">
+          {{ t("pages.runs.jobsFiltersHint") }}
+        </div>
+        <div class="runtime-filter-actions">
+          <button class="btn" type="submit" :disabled="runs.jobsLoading">
+            {{ t("pages.runs.applyFilters") }}
+          </button>
+          <button class="btn" type="button" :disabled="runs.jobsLoading" @click="resetJobsFilters">
+            {{ t("pages.runs.resetFilters") }}
+          </button>
+        </div>
+      </form>
+      <table v-if="runs.runningJobs.length" class="tbl">
+        <thead>
+          <tr>
+            <th class="center">{{ t("pages.runs.status") }}</th>
+            <th class="center">{{ t("pages.runs.project") }}</th>
+            <th class="center">{{ t("pages.runs.issue") }}</th>
+            <th class="center">{{ t("pages.runs.pr") }}</th>
+            <th class="center">{{ t("pages.runs.runType") }}</th>
+            <th class="center">{{ t("pages.runs.agentKey") }}</th>
+            <th class="center">{{ t("pages.runs.jobNamespace") }}</th>
+            <th class="center">{{ t("pages.runs.jobName") }}</th>
+            <th class="center">{{ t("pages.runs.started") }}</th>
+            <th class="center"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="r in runs.runningJobs" :key="`job-${r.id}`">
+            <td class="center"><span class="pill" :class="'s-' + r.status">{{ r.status }}</span></td>
+            <td class="center">
+              <RouterLink v-if="r.project_id" class="lnk" :to="{ name: 'project-details', params: { projectId: r.project_id } }">
+                {{ r.project_name || r.project_slug || r.project_id }}
+              </RouterLink>
+              <span v-else class="mono">-</span>
+            </td>
+            <td class="center">
+              <a v-if="r.issue_url && r.issue_number" class="lnk mono" :href="r.issue_url" target="_blank" rel="noopener noreferrer">
+                #{{ r.issue_number }}
+              </a>
+              <span v-else class="mono">-</span>
+            </td>
+            <td class="center">
+              <a v-if="r.pr_url && r.pr_number" class="lnk mono" :href="r.pr_url" target="_blank" rel="noopener noreferrer">
+                #{{ r.pr_number }}
+              </a>
+              <span v-else class="mono">-</span>
+            </td>
+            <td class="center"><span class="pill run-badge mono">{{ runBadgeValue(r.trigger_kind) }}</span></td>
+            <td class="center"><span class="pill run-badge mono">{{ runBadgeValue(r.agent_key) }}</span></td>
+            <td class="mono center">{{ runBadgeValue(r.job_namespace || r.namespace) }}</td>
+            <td class="mono center">{{ runBadgeValue(r.job_name) }}</td>
+            <td class="mono center">{{ formatDateTime(r.started_at, locale) }}</td>
+            <td class="center">
+              <RouterLink class="lnk" :to="{ name: 'run-details', params: { runId: r.id } }">
+                {{ t("pages.runs.details") }}
+              </RouterLink>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-else class="muted">
+        {{ jobsActiveFilters > 0 ? t("states.noRunningJobsByFilters") : t("states.noRunningJobs") }}
+      </div>
+    </div>
+
+    <div class="pane runtime-pane">
+      <div class="row pane-head">
+        <div>
+          <h3>{{ t("pages.runs.waitQueue") }}</h3>
+          <p class="muted pane-note">{{ t("pages.runs.waitQueueHint") }}</p>
+        </div>
+        <div class="pane-head-actions">
+          <span v-if="waitsActiveFilters > 0" class="mono muted">
+            {{ t("pages.runs.activeFilters", { count: waitsActiveFilters }) }}
+          </span>
+          <button class="btn" type="button" @click="showWaitsFilters = !showWaitsFilters">
+            {{ showWaitsFilters ? t("pages.runs.hideFilters") : t("pages.runs.showFilters") }}
+          </button>
+          <button class="btn" type="button" @click="runs.loadRunWaits()" :disabled="runs.waitsLoading">
+            {{ t("common.refresh") }}
+          </button>
+        </div>
+      </div>
+      <form v-if="showWaitsFilters" class="filters-panel" @submit.prevent="applyWaitsFilters">
+        <div class="runtime-filters-grid">
+          <label class="runtime-filter">
+            <span class="muted">{{ t("pages.runs.runType") }}</span>
+            <input
+              v-model.trim="runs.waitsFilters.triggerKind"
+              class="in"
+              type="text"
+              :placeholder="t('pages.runs.triggerKindPlaceholder')"
+              list="run-trigger-kind-options"
+            />
+          </label>
+          <label class="runtime-filter">
+            <span class="muted">{{ t("pages.runs.status") }}</span>
+            <input
+              v-model.trim="runs.waitsFilters.status"
+              class="in"
+              type="text"
+              :placeholder="t('pages.runs.statusPlaceholder')"
+              list="run-status-options"
+            />
+          </label>
+          <label class="runtime-filter">
+            <span class="muted">{{ t("pages.runs.agentKey") }}</span>
+            <input
+              v-model.trim="runs.waitsFilters.agentKey"
+              class="in"
+              type="text"
+              :placeholder="t('pages.runs.agentKeyPlaceholder')"
+            />
+          </label>
+          <label class="runtime-filter">
+            <span class="muted">{{ t("pages.runs.waitState") }}</span>
+            <input
+              v-model.trim="runs.waitsFilters.waitState"
+              class="in"
+              type="text"
+              :placeholder="t('pages.runs.waitStatePlaceholder')"
+              list="run-wait-state-options"
+            />
+          </label>
+        </div>
+        <div class="runtime-filter-hint muted">
+          {{ t("pages.runs.waitsFiltersHint") }}
+        </div>
+        <div class="runtime-filter-actions">
+          <button class="btn" type="submit" :disabled="runs.waitsLoading">
+            {{ t("pages.runs.applyFilters") }}
+          </button>
+          <button class="btn" type="button" :disabled="runs.waitsLoading" @click="resetWaitsFilters">
+            {{ t("pages.runs.resetFilters") }}
+          </button>
+        </div>
+      </form>
+      <table v-if="runs.waitQueue.length" class="tbl">
+        <thead>
+          <tr>
+            <th class="center">{{ t("pages.runs.status") }}</th>
+            <th class="center">{{ t("pages.runs.project") }}</th>
+            <th class="center">{{ t("pages.runs.issue") }}</th>
+            <th class="center">{{ t("pages.runs.pr") }}</th>
+            <th class="center">{{ t("pages.runs.runType") }}</th>
+            <th class="center">{{ t("pages.runs.agentKey") }}</th>
+            <th class="center">{{ t("pages.runs.waitState") }}</th>
+            <th class="center">{{ t("pages.runs.waitSince") }}</th>
+            <th class="center">{{ t("pages.runs.waitSla") }}</th>
+            <th class="center">{{ t("pages.runs.lastHeartbeatAt") }}</th>
+            <th class="center"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="r in runs.waitQueue" :key="`wait-${r.id}`">
+            <td class="center"><span class="pill" :class="'s-' + r.status">{{ r.status }}</span></td>
+            <td class="center">
+              <RouterLink v-if="r.project_id" class="lnk" :to="{ name: 'project-details', params: { projectId: r.project_id } }">
+                {{ r.project_name || r.project_slug || r.project_id }}
+              </RouterLink>
+              <span v-else class="mono">-</span>
+            </td>
+            <td class="center">
+              <a v-if="r.issue_url && r.issue_number" class="lnk mono" :href="r.issue_url" target="_blank" rel="noopener noreferrer">
+                #{{ r.issue_number }}
+              </a>
+              <span v-else class="mono">-</span>
+            </td>
+            <td class="center">
+              <a v-if="r.pr_url && r.pr_number" class="lnk mono" :href="r.pr_url" target="_blank" rel="noopener noreferrer">
+                #{{ r.pr_number }}
+              </a>
+              <span v-else class="mono">-</span>
+            </td>
+            <td class="center"><span class="pill run-badge mono">{{ runBadgeValue(r.trigger_kind) }}</span></td>
+            <td class="center"><span class="pill run-badge mono">{{ runBadgeValue(r.agent_key) }}</span></td>
+            <td class="center"><span class="pill run-badge mono">{{ runBadgeValue(r.wait_state) }}</span></td>
+            <td class="mono center">{{ formatDateTime(r.wait_since, locale) }}</td>
+            <td class="mono center">{{ formatDurationSince(r.wait_since, locale) }}</td>
+            <td class="mono center">{{ formatDateTime(r.last_heartbeat_at, locale) }}</td>
+            <td class="center">
+              <RouterLink class="lnk" :to="{ name: 'run-details', params: { runId: r.id } }">
+                {{ t("pages.runs.details") }}
+              </RouterLink>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-else class="muted">
+        {{ waitsActiveFilters > 0 ? t("states.noWaitQueueByFilters") : t("states.noWaitQueue") }}
+      </div>
+    </div>
+
+    <datalist id="run-trigger-kind-options">
+      <option v-for="item in triggerKindOptions" :key="item" :value="item" />
+    </datalist>
+    <datalist id="run-status-options">
+      <option v-for="item in runStatusOptions" :key="item" :value="item" />
+    </datalist>
+    <datalist id="run-wait-state-options">
+      <option v-for="item in waitStateOptions" :key="item" :value="item" />
+    </datalist>
+
     <div class="pane approvals">
       <div class="row">
         <h3>{{ t("pages.runs.pendingApprovals") }}</h3>
@@ -144,13 +398,44 @@ import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
-import { formatDateTime } from "../shared/lib/datetime";
+import { formatDateTime, formatDurationSince } from "../shared/lib/datetime";
 import { useRunsStore } from "../features/runs/store";
 
 const { t, locale } = useI18n({ useScope: "global" });
 const runs = useRunsStore();
 const pageSize = 20;
 const currentPage = ref(1);
+const showJobsFilters = ref(false);
+const showWaitsFilters = ref(false);
+
+const triggerKindOptions = [
+  "intake",
+  "vision",
+  "prd",
+  "arch",
+  "design",
+  "plan",
+  "dev",
+  "dev_revise",
+  "qa",
+  "qa_revise",
+  "release",
+  "release_revise",
+  "postdeploy",
+  "ops",
+  "self_improve",
+];
+
+const runStatusOptions = [
+  "pending",
+  "running",
+  "succeeded",
+  "failed",
+  "failed_precondition",
+  "canceled",
+];
+
+const waitStateOptions = ["mcp", "owner_review"];
 
 const totalPages = computed(() => Math.max(1, Math.ceil(runs.items.length / pageSize)));
 const pageItems = computed(() => {
@@ -158,9 +443,24 @@ const pageItems = computed(() => {
   const end = start + pageSize;
   return runs.items.slice(start, end);
 });
+const jobsActiveFilters = computed(() =>
+  countActiveFilters([
+    runs.jobsFilters.triggerKind,
+    runs.jobsFilters.status,
+    runs.jobsFilters.agentKey,
+  ]),
+);
+const waitsActiveFilters = computed(() =>
+  countActiveFilters([
+    runs.waitsFilters.triggerKind,
+    runs.waitsFilters.status,
+    runs.waitsFilters.agentKey,
+    runs.waitsFilters.waitState,
+  ]),
+);
 
 async function loadAll() {
-  await Promise.all([runs.load(), runs.loadPendingApprovals()]);
+  await Promise.all([runs.load(), runs.loadRuntimeViews(), runs.loadPendingApprovals()]);
   if (currentPage.value > totalPages.value) {
     currentPage.value = totalPages.value;
   }
@@ -184,6 +484,33 @@ function runBadgeValue(value: string | null | undefined): string {
     return "-";
   }
   return trimmed;
+}
+
+async function applyJobsFilters() {
+  await runs.loadRunJobs();
+}
+
+async function resetJobsFilters() {
+  runs.jobsFilters.triggerKind = "";
+  runs.jobsFilters.status = "";
+  runs.jobsFilters.agentKey = "";
+  await runs.loadRunJobs();
+}
+
+async function applyWaitsFilters() {
+  await runs.loadRunWaits();
+}
+
+async function resetWaitsFilters() {
+  runs.waitsFilters.triggerKind = "";
+  runs.waitsFilters.status = "";
+  runs.waitsFilters.agentKey = "";
+  runs.waitsFilters.waitState = "";
+  await runs.loadRunWaits();
+}
+
+function countActiveFilters(values: Array<string | undefined>): number {
+  return values.filter((value) => value?.trim()).length;
 }
 
 async function resolveApproval(id: number, decision: "approved" | "denied" | "expired" | "failed") {
@@ -236,6 +563,51 @@ h2 {
   border-radius: 14px;
   padding: 12px;
   background: rgba(255, 255, 255, 0.6);
+}
+.runtime-pane {
+  margin-top: 12px;
+  border: 1px solid rgba(17, 24, 39, 0.1);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.6);
+}
+.pane-head {
+  align-items: flex-start;
+  gap: 12px;
+}
+.pane-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pane-note {
+  margin: 6px 0 0;
+  max-width: 700px;
+}
+.filters-panel {
+  margin: 10px 0 12px;
+  border: 1px solid rgba(17, 24, 39, 0.1);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(248, 250, 252, 0.7);
+}
+.runtime-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+.runtime-filter {
+  display: grid;
+  gap: 4px;
+}
+.runtime-filter-hint {
+  margin-top: 8px;
+}
+.runtime-filter-actions {
+  display: inline-flex;
+  gap: 8px;
+  margin-top: 10px;
 }
 h3 {
   margin: 0;
