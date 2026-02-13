@@ -36,7 +36,7 @@ approvals:
   - `describe` выполняется как read-only action без side effects;
   - `delete` требует явного `confirm_delete=true`;
   - ownership-check выполняется по таблице `project_databases`;
-  - окружения ограничиваются allowlist (`CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS`, fallback `dev,staging,prod`).
+  - окружения ограничиваются allowlist (`CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS`, fallback `dev,staging,ai-staging,prod`).
 
 ### Planned (следующие этапы)
 - Для части label/runtime/secret инструментов будет включаться обязательный approver gate.

@@ -101,7 +101,7 @@ prompt_if_empty CODEXK8S_PROJECT_DB_ADMIN_USER "CODEXK8S_PROJECT_DB_ADMIN_USER (
 prompt_if_empty CODEXK8S_PROJECT_DB_ADMIN_PASSWORD "CODEXK8S_PROJECT_DB_ADMIN_PASSWORD (optional; default: CODEXK8S_POSTGRES_PASSWORD)" true
 prompt_if_empty CODEXK8S_PROJECT_DB_ADMIN_SSLMODE "CODEXK8S_PROJECT_DB_ADMIN_SSLMODE (optional; default: disable)"
 prompt_if_empty CODEXK8S_PROJECT_DB_ADMIN_DATABASE "CODEXK8S_PROJECT_DB_ADMIN_DATABASE (optional; default: postgres)"
-prompt_if_empty CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS "CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS (optional; default in app: dev,staging,prod)"
+prompt_if_empty CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS "CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS (optional; default in app: dev,staging,ai-staging,prod)"
 prompt_if_empty CODEXK8S_OPENAI_AUTH_FILE "CODEXK8S_OPENAI_AUTH_FILE (optional, one-line JSON from ~/.codex/auth.json)" true
 if [ -z "${CODEXK8S_OPENAI_AUTH_FILE:-}" ]; then
   prompt_if_empty CODEXK8S_OPENAI_API_KEY "CODEXK8S_OPENAI_API_KEY (required if CODEXK8S_OPENAI_AUTH_FILE is empty)" true
