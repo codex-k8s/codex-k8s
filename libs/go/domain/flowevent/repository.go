@@ -48,16 +48,17 @@ const (
 )
 
 const (
-	EventTypeRunMCPTokenIssued         EventType = "run.mcp.token.issued"
-	EventTypeRunAgentStarted           EventType = "run.agent.started"
-	EventTypeRunAgentSessionRestored   EventType = "run.agent.session.restored"
-	EventTypeRunAgentSessionSaved      EventType = "run.agent.session.saved"
-	EventTypeRunAgentResumeUsed        EventType = "run.agent.resume.used"
-	EventTypeRunPRCreated              EventType = "run.pr.created"
-	EventTypeRunPRUpdated              EventType = "run.pr.updated"
-	EventTypeRunRevisePRNotFound       EventType = "run.revise.pr_not_found"
-	EventTypeRunStatusCommentUpserted  EventType = "run.status.comment.upserted"
-	EventTypeRunNamespaceDeleteByStaff EventType = "run.namespace.delete_by_staff"
+	EventTypeRunMCPTokenIssued          EventType = "run.mcp.token.issued"
+	EventTypeRunAgentStarted            EventType = "run.agent.started"
+	EventTypeRunAgentSessionRestored    EventType = "run.agent.session.restored"
+	EventTypeRunAgentSessionSaved       EventType = "run.agent.session.saved"
+	EventTypeRunAgentResumeUsed         EventType = "run.agent.resume.used"
+	EventTypeRunPRCreated               EventType = "run.pr.created"
+	EventTypeRunPRUpdated               EventType = "run.pr.updated"
+	EventTypeRunRevisePRNotFound        EventType = "run.revise.pr_not_found"
+	EventTypeRunStatusCommentUpserted   EventType = "run.status.comment.upserted"
+	EventTypeRunNamespaceDeleteByStaff  EventType = "run.namespace.delete_by_staff"
+	EventTypeRunNamespaceDeleteBySystem EventType = "run.namespace.delete_by_system"
 )
 
 const (

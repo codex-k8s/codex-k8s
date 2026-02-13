@@ -21,6 +21,7 @@ type githubRunPayload struct {
 	LearningMode  bool                       `json:"learning_mode"`
 	Agent         githubRunAgentPayload      `json:"agent"`
 	Issue         *githubRunIssuePayload     `json:"issue,omitempty"`
+	PullRequest   *githubRunPRPayload        `json:"pull_request,omitempty"`
 	Trigger       *githubIssueTriggerPayload `json:"trigger,omitempty"`
 }
 
@@ -66,6 +67,21 @@ type githubRunIssuePayload struct {
 type githubPullRequestPayload struct {
 	URL     string `json:"url"`
 	HTMLURL string `json:"html_url"`
+}
+
+type githubRunPRPayload struct {
+	ID      int64              `json:"id"`
+	Number  int64              `json:"number"`
+	Title   string             `json:"title"`
+	HTMLURL string             `json:"html_url"`
+	State   string             `json:"state"`
+	Head    githubRunPRRef     `json:"head"`
+	Base    githubRunPRRef     `json:"base"`
+	User    githubActorPayload `json:"user"`
+}
+
+type githubRunPRRef struct {
+	Ref string `json:"ref"`
 }
 
 type githubIssueTriggerPayload struct {

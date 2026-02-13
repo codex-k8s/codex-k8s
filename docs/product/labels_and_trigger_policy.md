@@ -78,11 +78,13 @@ approvals:
 | Label | Назначение |
 |---|---|
 | `run:debug` | не запускает run сам по себе; при наличии на issue в момент `run:dev`/`run:dev:revise` worker сохраняет namespace/job после завершения и пишет `run.namespace.cleanup_skipped` |
+| `mode:discussion` | planned: диалоговый pre-run режим для brainstorming под Issue; сам по себе run не запускает |
 
 ## Конфигурационные лейблы модели/рассуждений
 
 Лейблы модели (одновременно активен один):
 - `[ai-model-gpt-5.3-codex]`
+- `[ai-model-gpt-5.3-codex-spark]`
 - `[ai-model-gpt-5.2-codex]`
 - `[ai-model-gpt-5.1-codex-max]`
 - `[ai-model-gpt-5.2]`
@@ -115,6 +117,14 @@ approvals:
 - Могут ставиться агентом автоматически в рамках политики проекта.
 - Не должны запускать workflow/deploy напрямую.
 - Обязательна запись в аудит с actor/correlation.
+
+### Discussion mode (`mode:discussion`, planned)
+- Если `mode:discussion` присутствует на Issue в момент `run:dev`/`run:dev:revise`, запуск работает в режиме обсуждения:
+  - агент изучает код/окружение и отвечает комментариями под Issue;
+  - PR/commit/push не выполняются;
+  - сохраняется текущая `codex-cli` session snapshot для продолжения.
+- После снятия `mode:discussion` и повторного trigger (`run:dev`/`run:dev:revise`) агент продолжает ту же сессию и выполняет согласованный план реализации.
+- Политика вводится как planned-фича следующих спринтов (после стабилизации базового dogfooding контура).
 
 ### Model/reasoning labels (`[ai-model-*]`, `[ai-reasoning-*]`)
 - Не запускают workflow/deploy напрямую.
@@ -159,7 +169,7 @@ approvals:
   - для `state:*`: `STATE_*_LABEL`,
   - для `need:*`: `NEED_*_LABEL`.
 - Для model/reasoning также хранится каталог vars:
-  - `AI_MODEL_GPT_5_3_CODEX_LABEL`, `AI_MODEL_GPT_5_2_CODEX_LABEL`, `AI_MODEL_GPT_5_1_CODEX_MAX_LABEL`, `AI_MODEL_GPT_5_2_LABEL`, `AI_MODEL_GPT_5_1_CODEX_MINI_LABEL`,
+  - `AI_MODEL_GPT_5_3_CODEX_LABEL`, `AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL`, `AI_MODEL_GPT_5_2_CODEX_LABEL`, `AI_MODEL_GPT_5_1_CODEX_MAX_LABEL`, `AI_MODEL_GPT_5_2_LABEL`, `AI_MODEL_GPT_5_1_CODEX_MINI_LABEL`,
   - `AI_REASONING_LOW_LABEL`, `AI_REASONING_MEDIUM_LABEL`, `AI_REASONING_HIGH_LABEL`, `AI_REASONING_EXTRA_HIGH_LABEL`.
 - Для planned `run:*` лейблов vars заводятся заранее, даже если этап ещё не активирован.
 - Bootstrap синхронизация каталога выполняется скриптом `bootstrap/remote/45_configure_github_repo_ci.sh`.

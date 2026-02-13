@@ -2,8 +2,8 @@ package staff
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -20,6 +20,7 @@ import (
 
 	"github.com/codex-k8s/codex-k8s/libs/go/crypto/tokencrypt"
 	"github.com/codex-k8s/codex-k8s/libs/go/repo/provider"
+	"github.com/jackc/pgx/v5"
 )
 
 // Config defines staff service behavior.
@@ -196,6 +197,17 @@ func (s *Service) GetRun(ctx context.Context, principal Principal, runID string)
 		}
 	}
 
+	if s.runStatus != nil {
+		runtimeState, runtimeErr := s.runStatus.GetRunRuntimeState(ctx, r.ID)
+		if runtimeErr == nil {
+			r.JobName = runtimeState.JobName
+			r.JobNamespace = runtimeState.JobNamespace
+			r.Namespace = runtimeState.Namespace
+			r.JobExists = runtimeState.JobExists
+			r.NamespaceExists = runtimeState.NamespaceExists
+		}
+	}
+
 	return r, nil
 }
 
@@ -258,7 +270,7 @@ func (s *Service) DeleteUser(ctx context.Context, principal Principal, userID st
 	}
 
 	if err := s.users.DeleteByID(ctx, userID); err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return errs.Validation{Field: "user_id", Msg: "not found"}
 		}
 		return err
@@ -327,7 +339,7 @@ func (s *Service) DeleteProjectMember(ctx context.Context, principal Principal, 
 	}
 
 	if err := s.members.Delete(ctx, projectID, userID); err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return errs.Validation{Field: "user_id", Msg: "member not found"}
 		}
 		return err
@@ -422,7 +434,7 @@ func (s *Service) DeleteProject(ctx context.Context, principal Principal, projec
 
 	// The rest is cascaded via FK constraints (projects -> repositories/project_members/slots/agent_runs -> learning_feedback).
 	if err := s.projects.DeleteByID(ctx, projectID); err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return errs.Validation{Field: "project_id", Msg: "not found"}
 		}
 		return err
@@ -568,7 +580,7 @@ func (s *Service) DeleteProjectRepository(ctx context.Context, principal Princip
 	}
 
 	if err := s.repos.Delete(ctx, projectID, repositoryID); err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return errs.Validation{Field: "repository_id", Msg: "not found"}
 		}
 		return err
@@ -588,7 +600,7 @@ func (s *Service) SetProjectMemberLearningModeOverride(ctx context.Context, prin
 		return errs.Validation{Field: "user_id", Msg: "is required"}
 	}
 	if err := s.members.SetLearningModeOverride(ctx, projectID, userID, enabled); err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return errs.Validation{Field: "user_id", Msg: "member not found"}
 		}
 		return err

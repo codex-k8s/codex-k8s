@@ -67,17 +67,19 @@ func (c *Client) IssueRunMCPToken(ctx context.Context, params workerdomain.Issue
 // UpsertRunStatusComment updates one run status comment in issue thread.
 func (c *Client) UpsertRunStatusComment(ctx context.Context, params workerdomain.RunStatusCommentParams) (workerdomain.RunStatusCommentResult, error) {
 	resp, err := c.svc.UpsertRunStatusComment(ctx, &controlplanev1.UpsertRunStatusCommentRequest{
-		RunId:          strings.TrimSpace(params.RunID),
-		Phase:          strings.TrimSpace(string(params.Phase)),
-		JobName:        optionalString(strings.TrimSpace(params.JobName)),
-		JobNamespace:   optionalString(strings.TrimSpace(params.JobNamespace)),
-		RuntimeMode:    optionalString(strings.TrimSpace(params.RuntimeMode)),
-		Namespace:      optionalString(strings.TrimSpace(params.Namespace)),
-		TriggerKind:    optionalString(strings.TrimSpace(params.TriggerKind)),
-		PromptLocale:   optionalString(strings.TrimSpace(params.PromptLocale)),
-		RunStatus:      optionalString(strings.TrimSpace(params.RunStatus)),
-		Deleted:        params.Deleted,
-		AlreadyDeleted: params.AlreadyDeleted,
+		RunId:           strings.TrimSpace(params.RunID),
+		Phase:           strings.TrimSpace(string(params.Phase)),
+		JobName:         optionalString(strings.TrimSpace(params.JobName)),
+		JobNamespace:    optionalString(strings.TrimSpace(params.JobNamespace)),
+		RuntimeMode:     optionalString(strings.TrimSpace(params.RuntimeMode)),
+		Namespace:       optionalString(strings.TrimSpace(params.Namespace)),
+		TriggerKind:     optionalString(strings.TrimSpace(params.TriggerKind)),
+		PromptLocale:    optionalString(strings.TrimSpace(params.PromptLocale)),
+		Model:           optionalString(strings.TrimSpace(params.Model)),
+		ReasoningEffort: optionalString(strings.TrimSpace(params.ReasoningEffort)),
+		RunStatus:       optionalString(strings.TrimSpace(params.RunStatus)),
+		Deleted:         params.Deleted,
+		AlreadyDeleted:  params.AlreadyDeleted,
 	})
 	if err != nil {
 		return workerdomain.RunStatusCommentResult{}, err

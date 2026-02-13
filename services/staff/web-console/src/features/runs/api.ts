@@ -2,13 +2,12 @@ import {
   deleteRunNamespace as deleteRunNamespaceRequest,
   getRun as getRunRequest,
   listRunEvents as listRunEventsRequest,
-  listRunLearningFeedback as listRunLearningFeedbackRequest,
   listRuns as listRunsRequest,
 } from "../../shared/api/sdk";
 
-import type { FlowEvent, LearningFeedback, Run, RunNamespaceCleanupResponse } from "./types";
+import type { FlowEvent, Run, RunNamespaceCleanupResponse } from "./types";
 
-export async function listRuns(limit = 200): Promise<Run[]> {
+export async function listRuns(limit = 1000): Promise<Run[]> {
   const resp = await listRunsRequest({ query: { limit }, throwOnError: true });
   return resp.data.items ?? [];
 }
@@ -25,15 +24,6 @@ export async function deleteRunNamespace(runId: string): Promise<RunNamespaceCle
 
 export async function listRunEvents(runId: string, limit = 500): Promise<FlowEvent[]> {
   const resp = await listRunEventsRequest({
-    path: { run_id: runId },
-    query: { limit },
-    throwOnError: true,
-  });
-  return resp.data.items ?? [];
-}
-
-export async function listRunLearningFeedback(runId: string, limit = 200): Promise<LearningFeedback[]> {
-  const resp = await listRunLearningFeedbackRequest({
     path: { run_id: runId },
     query: { limit },
     throwOnError: true,

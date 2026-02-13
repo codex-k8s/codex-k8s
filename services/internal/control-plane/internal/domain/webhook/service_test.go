@@ -16,6 +16,7 @@ import (
 	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projectmember"
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
+	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
 )
 
 func TestIngestGitHubWebhook_Dedup(t *testing.T) {
@@ -140,6 +141,87 @@ func TestIngestGitHubWebhook_NonTriggerEventsDoNotCreateRun(t *testing.T) {
 	if events.items[0].EventType != floweventdomain.EventTypeWebhookReceived {
 		t.Fatalf("expected webhook.received event, got %s", events.items[0].EventType)
 	}
+}
+
+func TestIngestGitHubWebhook_ClosedEvents_TriggersNamespaceCleanup(t *testing.T) {
+	t.Parallel()
+
+	runCase := func(t *testing.T, name string, correlationID string, eventType string, payload json.RawMessage, expectedIssueNumber int64, expectedPRNumber int64) {
+		t.Helper()
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx := context.Background()
+			runs := &inMemoryRunRepo{items: map[string]string{}}
+			events := &inMemoryEventRepo{}
+			agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
+			repos := &inMemoryRepoCfgRepo{
+				byExternalID: map[int64]repocfgrepo.FindResult{
+					42: {
+						ProjectID:        "project-1",
+						RepositoryID:     "repo-1",
+						ServicesYAMLPath: "services.yaml",
+					},
+				},
+			}
+			runStatus := &inMemoryRunStatusService{}
+			svc := NewService(Config{
+				AgentRuns:  runs,
+				Agents:     agents,
+				FlowEvents: events,
+				Repos:      repos,
+				RunStatus:  runStatus,
+			})
+
+			cmd := IngestCommand{
+				CorrelationID: correlationID,
+				DeliveryID:    correlationID,
+				EventType:     eventType,
+				ReceivedAt:    time.Now().UTC(),
+				Payload:       payload,
+			}
+
+			if _, err := svc.IngestGitHubWebhook(ctx, cmd); err != nil {
+				t.Fatalf("ingest failed: %v", err)
+			}
+			if expectedIssueNumber > 0 {
+				if runStatus.issueCleanupCalls != 1 {
+					t.Fatalf("expected one issue cleanup call, got %d", runStatus.issueCleanupCalls)
+				}
+				if runStatus.lastIssueCleanup.RepositoryFullName != "codex-k8s/codex-k8s" {
+					t.Fatalf("unexpected repository full name: %s", runStatus.lastIssueCleanup.RepositoryFullName)
+				}
+				if runStatus.lastIssueCleanup.IssueNumber != expectedIssueNumber {
+					t.Fatalf("unexpected issue number: %d", runStatus.lastIssueCleanup.IssueNumber)
+				}
+				return
+			}
+
+			if runStatus.pullRequestCleanupCalls != 1 {
+				t.Fatalf("expected one pull request cleanup call, got %d", runStatus.pullRequestCleanupCalls)
+			}
+			if runStatus.lastPullRequestCleanup.RepositoryFullName != "codex-k8s/codex-k8s" {
+				t.Fatalf("unexpected repository full name: %s", runStatus.lastPullRequestCleanup.RepositoryFullName)
+			}
+			if runStatus.lastPullRequestCleanup.PRNumber != expectedPRNumber {
+				t.Fatalf("unexpected pull request number: %d", runStatus.lastPullRequestCleanup.PRNumber)
+			}
+		})
+	}
+
+	runCase(t, "issue_closed", "delivery-issue-close-1", string(webhookdomain.GitHubEventIssues), json.RawMessage(`{
+		"action":"closed",
+		"issue":{"id":1001,"number":77},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`), 77, 0)
+
+	runCase(t, "pull_request_closed", "delivery-pr-close-1", string(webhookdomain.GitHubEventPullRequest), json.RawMessage(`{
+		"action":"closed",
+		"pull_request":{"id":501,"number":200},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`), 0, 200)
 }
 
 func TestIngestGitHubWebhook_LearningMode_DefaultFallback(t *testing.T) {
@@ -374,6 +456,9 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_CreatesReviseRun(
 	if runPayload.Issue == nil || runPayload.Issue.Number != 200 {
 		t.Fatalf("expected issue payload with number=200, got %#v", runPayload.Issue)
 	}
+	if runPayload.PullRequest == nil || runPayload.PullRequest.Number != 200 {
+		t.Fatalf("expected pull_request payload with number=200, got %#v", runPayload.PullRequest)
+	}
 }
 
 func TestIngestGitHubWebhook_IssueRunDev_DeniesUnknownSender(t *testing.T) {
@@ -528,6 +613,33 @@ func (r *inMemoryRunRepo) GetByID(_ context.Context, runID string) (agentrunrepo
 		}
 	}
 	return agentrunrepo.Run{}, false, nil
+}
+
+func (r *inMemoryRunRepo) ListRunIDsByRepositoryIssue(_ context.Context, _ string, _ int64, _ int) ([]string, error) {
+	return nil, nil
+}
+
+func (r *inMemoryRunRepo) ListRunIDsByRepositoryPullRequest(_ context.Context, _ string, _ int64, _ int) ([]string, error) {
+	return nil, nil
+}
+
+type inMemoryRunStatusService struct {
+	issueCleanupCalls       int
+	pullRequestCleanupCalls int
+	lastIssueCleanup        runstatusdomain.CleanupByIssueParams
+	lastPullRequestCleanup  runstatusdomain.CleanupByPullRequestParams
+}
+
+func (s *inMemoryRunStatusService) CleanupNamespacesByIssue(_ context.Context, params runstatusdomain.CleanupByIssueParams) (runstatusdomain.CleanupByIssueResult, error) {
+	s.issueCleanupCalls++
+	s.lastIssueCleanup = params
+	return runstatusdomain.CleanupByIssueResult{}, nil
+}
+
+func (s *inMemoryRunStatusService) CleanupNamespacesByPullRequest(_ context.Context, params runstatusdomain.CleanupByPullRequestParams) (runstatusdomain.CleanupByIssueResult, error) {
+	s.pullRequestCleanupCalls++
+	s.lastPullRequestCleanup = params
+	return runstatusdomain.CleanupByIssueResult{}, nil
 }
 
 type inMemoryEventRepo struct {

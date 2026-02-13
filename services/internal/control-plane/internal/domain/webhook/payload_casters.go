@@ -114,6 +114,26 @@ func buildRunPayload(input runPayloadInput) (json.RawMessage, error) {
 		}
 	}
 
+	if input.Envelope.PullRequest.Number > 0 {
+		payload.PullRequest = &githubRunPRPayload{
+			ID:      input.Envelope.PullRequest.ID,
+			Number:  input.Envelope.PullRequest.Number,
+			Title:   input.Envelope.PullRequest.Title,
+			HTMLURL: input.Envelope.PullRequest.HTMLURL,
+			State:   input.Envelope.PullRequest.State,
+			Head: githubRunPRRef{
+				Ref: input.Envelope.PullRequest.Head.Ref,
+			},
+			Base: githubRunPRRef{
+				Ref: input.Envelope.PullRequest.Base.Ref,
+			},
+			User: githubActorPayload{
+				ID:    input.Envelope.PullRequest.User.ID,
+				Login: input.Envelope.PullRequest.User.Login,
+			},
+		}
+	}
+
 	if input.Trigger != nil {
 		payload.Trigger = &githubIssueTriggerPayload{
 			Source: input.Trigger.Source,

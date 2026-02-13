@@ -153,6 +153,13 @@ Seed-файлы:
 - Во время ожидания ответа MCP (`wait_state=mcp`) pod/run не должен завершаться по timeout.
 - Для resumable выполнения в сессии сохраняется `codex-cli` session JSON, чтобы продолжать с того же места.
 
+## Planned: discussion-mode before implementation
+
+- Для `run:dev`/`run:dev:revise` планируется режим `mode:discussion`:
+  - агент работает только в комментариях Issue (brainstorming/уточнения);
+  - commit/push/PR не выполняются;
+  - после снятия `mode:discussion` следующий trigger продолжает ту же session snapshot и переходит к реализации.
+
 ## Управление изменениями модели
 
 - Изменения состава базового штата, execution modes или policy шаблонов фиксируются в:

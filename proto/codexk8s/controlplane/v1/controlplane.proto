@@ -92,6 +92,17 @@ message Run {
   google.protobuf.Timestamp created_at = 7;
   google.protobuf.Timestamp started_at = 8;
   google.protobuf.Timestamp finished_at = 9;
+  optional int32 issue_number = 10;
+  optional string issue_url = 11;
+  optional int32 pr_number = 12;
+  optional string pr_url = 13;
+  optional string trigger_kind = 14;
+  optional string trigger_label = 15;
+  optional string job_name = 16;
+  optional string job_namespace = 17;
+  optional string namespace = 18;
+  bool job_exists = 19;
+  bool namespace_exists = 20;
 }
 
 message ListRunsRequest {
@@ -354,6 +365,8 @@ message UpsertRunStatusCommentRequest {
   optional string run_status = 9;
   bool deleted = 10;
   bool already_deleted = 11;
+  optional string model = 12;
+  optional string reasoning_effort = 13;
 }
 
 message UpsertRunStatusCommentResponse {

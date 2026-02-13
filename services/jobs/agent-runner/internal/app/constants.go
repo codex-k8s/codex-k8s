@@ -10,8 +10,9 @@ const (
 	promptTemplateKindReview = "review"
 	promptTemplateSourceSeed = "repo_seed"
 
-	modelGPT53Codex = "gpt-5.3-codex"
-	modelGPT52Codex = "gpt-5.2-codex"
+	modelGPT53Codex      = "gpt-5.3-codex"
+	modelGPT53CodexSpark = "gpt-5.3-codex-spark"
+	modelGPT52Codex      = "gpt-5.2-codex"
 
 	runtimeModeFullEnv  = "full-env"
 	runtimeModeCodeOnly = "code-only"

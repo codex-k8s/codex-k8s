@@ -4,6 +4,7 @@ package runstatus
 type runStatusCommentUpsertedPayload struct {
 	RunID              string `json:"run_id"`
 	IssueNumber        int    `json:"issue_number"`
+	ThreadKind         string `json:"thread_kind,omitempty"`
 	RepositoryFullName string `json:"repository_full_name"`
 	CommentID          int64  `json:"comment_id"`
 	CommentURL         string `json:"comment_url"`

@@ -5,6 +5,7 @@ const (
 	templateNamePromptWork     = "templates/prompt_work.tmpl"
 	templateNamePromptReview   = "templates/prompt_review.tmpl"
 	templateNameCodexConfig    = "templates/codex_config.toml.tmpl"
+	templateNameKubeconfig     = "templates/kubeconfig.tmpl"
 
 	promptTemplateKindWork   = "work"
 	promptTemplateKindReview = "review"

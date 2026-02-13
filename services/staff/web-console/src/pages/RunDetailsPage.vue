@@ -4,19 +4,43 @@
       <div>
         <h2>{{ t("pages.runDetails.title") }}</h2>
         <div class="muted mono">
-          {{ t("pages.runDetails.runId") }}: {{ runId }}
-          <span v-if="details.run?.correlation_id"> · {{ t("pages.runDetails.correlation") }}: {{ details.run.correlation_id }}</span>
+          <span class="field-label">{{ t("pages.runDetails.runId") }}:</span> {{ runId }}
+          <span v-if="details.run?.correlation_id">
+            · <span class="field-label">{{ t("pages.runDetails.correlation") }}:</span> {{ details.run.correlation_id }}
+          </span>
         </div>
         <div v-if="details.run?.project_id" class="muted">
+          <span class="field-label">{{ t("pages.runDetails.project") }}:</span>
           <RouterLink class="lnk" :to="{ name: 'project-details', params: { projectId: details.run.project_id } }">
             {{ details.run.project_name || details.run.project_slug || details.run.project_id }}
           </RouterLink>
         </div>
+        <div v-if="details.run?.issue_url && details.run?.issue_number" class="muted">
+          <span class="field-label">{{ t("pages.runDetails.issue") }}:</span>
+          <a class="lnk mono" :href="details.run.issue_url" target="_blank" rel="noopener noreferrer">#{{ details.run.issue_number }}</a>
+        </div>
+        <div v-if="details.run?.pr_url && details.run?.pr_number" class="muted">
+          <span class="field-label">{{ t("pages.runDetails.pr") }}:</span>
+          <a class="lnk mono" :href="details.run.pr_url" target="_blank" rel="noopener noreferrer">#{{ details.run.pr_number }}</a>
+        </div>
+        <div class="muted">
+          <span class="field-label">{{ t("pages.runDetails.triggerKind") }}:</span>
+          <span class="mono">{{ details.run?.trigger_kind || "-" }}</span>
+          ·
+          <span class="field-label">{{ t("pages.runDetails.triggerLabel") }}:</span>
+          <span class="mono">{{ details.run?.trigger_label || "-" }}</span>
+        </div>
       </div>
       <div class="actions">
-        <RouterLink class="btn equal" :to="{ name: 'runs' }">{{ t("common.back") }}</RouterLink>
+        <button class="btn equal" type="button" @click="goBack">{{ t("common.back") }}</button>
         <button class="btn equal" type="button" @click="loadAll" :disabled="details.loading">{{ t("common.refresh") }}</button>
-        <button class="btn equal danger" type="button" @click="askDeleteNamespace" :disabled="details.deletingNamespace">
+        <button
+          v-if="canDeleteNamespace"
+          class="btn equal danger"
+          type="button"
+          @click="askDeleteNamespace"
+          :disabled="details.deletingNamespace"
+        >
           {{ t("pages.runDetails.deleteNamespace") }}
         </button>
       </div>
@@ -33,34 +57,34 @@
       }}
     </div>
 
-    <div class="grid">
-      <div class="pane">
-        <div class="pane-h">{{ t("pages.runDetails.flowEvents") }}</div>
-        <div v-if="details.events.length" class="list">
-          <div v-for="e in details.events" :key="e.created_at + ':' + e.event_type" class="item">
-            <div class="topline">
-              <span class="pill">{{ e.event_type }}</span>
-              <span class="mono muted">{{ formatDateTime(e.created_at, locale) }}</span>
-            </div>
-            <pre class="pre">{{ e.payload_json }}</pre>
-          </div>
-        </div>
-        <div v-else class="muted">{{ t("states.noEvents") }}</div>
+    <div class="pane runtime">
+      <div class="pane-h">{{ t("pages.runDetails.job") }}</div>
+      <div class="muted mono">
+        <span class="field-label">{{ t("pages.runDetails.jobNamespace") }}:</span>
+        {{ details.run?.job_namespace || details.run?.namespace || "-" }}
       </div>
+      <div class="muted mono">
+        <span class="field-label">{{ t("pages.runDetails.job") }}:</span>
+        {{ details.run?.job_name || "-" }}
+      </div>
+      <div class="muted">
+        <span v-if="details.run?.job_exists" class="pill">active</span>
+        <span v-else>{{ t("pages.runDetails.noJob") }}</span>
+      </div>
+    </div>
 
-      <div class="pane">
-        <div class="pane-h">{{ t("pages.runDetails.learningFeedback") }}</div>
-        <div v-if="details.feedback.length" class="list">
-          <div v-for="f in details.feedback" :key="String(f.id)" class="item">
-            <div class="topline">
-              <span class="pill">{{ f.kind }}</span>
-              <span class="mono muted">{{ formatDateTime(f.created_at, locale) }}</span>
-            </div>
-            <pre class="pre">{{ f.explanation }}</pre>
+    <div class="pane events-pane">
+      <div class="pane-h">{{ t("pages.runDetails.flowEvents") }}</div>
+      <div v-if="details.events.length" class="list">
+        <div v-for="e in details.events" :key="e.created_at + ':' + e.event_type" class="item">
+          <div class="topline">
+            <span class="pill">{{ e.event_type }}</span>
+            <span class="mono muted">{{ formatDateTime(e.created_at, locale) }}</span>
           </div>
+          <pre class="pre">{{ e.payload_json }}</pre>
         </div>
-        <div v-else class="muted">{{ t("states.noLearningFeedback") }}</div>
       </div>
+      <div v-else class="muted">{{ t("states.noEvents") }}</div>
     </div>
   </section>
 
@@ -77,8 +101,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
+import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 
 import ConfirmModal from "../shared/ui/ConfirmModal.vue";
@@ -89,7 +114,9 @@ const props = defineProps<{ runId: string }>();
 
 const { t, locale } = useI18n({ useScope: "global" });
 const details = useRunDetailsStore();
+const router = useRouter();
 const confirmDeleteNamespaceOpen = ref(false);
+const canDeleteNamespace = computed(() => Boolean(details.run?.job_exists && details.run?.namespace));
 
 async function loadAll() {
   await details.load(props.runId);
@@ -97,6 +124,10 @@ async function loadAll() {
 
 function askDeleteNamespace() {
   confirmDeleteNamespaceOpen.value = true;
+}
+
+function goBack() {
+  void router.push({ name: "runs" });
 }
 
 async function doDeleteNamespace() {
@@ -112,22 +143,25 @@ h2 {
   margin: 0;
   letter-spacing: -0.01em;
 }
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-top: 12px;
-}
 .pane {
   border: 1px solid rgba(17, 24, 39, 0.1);
   border-radius: 14px;
   padding: 12px;
   background: rgba(255, 255, 255, 0.6);
 }
+.runtime {
+  margin-top: 12px;
+}
+.events-pane {
+  margin-top: 12px;
+}
 .pane-h {
   font-weight: 900;
   letter-spacing: -0.01em;
   margin-bottom: 10px;
+}
+.field-label {
+  font-weight: 800;
 }
 .list {
   display: grid;
@@ -151,10 +185,5 @@ h2 {
   white-space: pre-wrap;
   font-size: 12px;
   opacity: 0.9;
-}
-@media (max-width: 960px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
 }
 </style>

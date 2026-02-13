@@ -173,15 +173,26 @@ type RepositoryBindingItemsResponse struct {
 
 // Run defines model for Run.
 type Run struct {
-	CorrelationId string     `json:"correlation_id"`
-	CreatedAt     time.Time  `json:"created_at"`
-	FinishedAt    *time.Time `json:"finished_at"`
-	Id            string     `json:"id"`
-	ProjectId     *string    `json:"project_id"`
-	ProjectName   string     `json:"project_name"`
-	ProjectSlug   string     `json:"project_slug"`
-	StartedAt     *time.Time `json:"started_at"`
-	Status        string     `json:"status"`
+	CorrelationId   string     `json:"correlation_id"`
+	CreatedAt       time.Time  `json:"created_at"`
+	FinishedAt      *time.Time `json:"finished_at"`
+	Id              string     `json:"id"`
+	IssueNumber     *int32     `json:"issue_number"`
+	IssueUrl        *string    `json:"issue_url"`
+	JobExists       *bool      `json:"job_exists,omitempty"`
+	JobName         *string    `json:"job_name"`
+	JobNamespace    *string    `json:"job_namespace"`
+	Namespace       *string    `json:"namespace"`
+	NamespaceExists *bool      `json:"namespace_exists,omitempty"`
+	PrNumber        *int32     `json:"pr_number"`
+	PrUrl           *string    `json:"pr_url"`
+	ProjectId       *string    `json:"project_id"`
+	ProjectName     string     `json:"project_name"`
+	ProjectSlug     string     `json:"project_slug"`
+	StartedAt       *time.Time `json:"started_at"`
+	Status          string     `json:"status"`
+	TriggerKind     *string    `json:"trigger_kind"`
+	TriggerLabel    *string    `json:"trigger_label"`
 }
 
 // RunItemsResponse defines model for RunItemsResponse.

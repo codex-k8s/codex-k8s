@@ -2,10 +2,10 @@
 doc_id: EPC-CK8S-S2-D4.5
 type: epic
 title: "Epic S2 Day 4.5: PGX repository baseline and db-model rollout"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-12
-updated_at: 2026-02-12
+updated_at: 2026-02-13
 related_issues: []
 related_prs: []
 approvals:
@@ -93,3 +93,17 @@ approvals:
 ## Acceptance
 - Минимум `control-plane` и `worker` покрыты новым паттерном на критических read/write path.
 - PR-ревью не содержит замечаний класса "ad-hoc persistence model / any in repository".
+
+## Реализация (2026-02-13)
+- В `control-plane` репозиториях `agentrun` и `staffrun` введены typed persistence модели:
+  - `internal/repository/postgres/agentrun/dbmodel/*.go` + `casters.go`;
+  - `internal/repository/postgres/staffrun/dbmodel/*.go` + `casters.go`.
+- Убраны ad-hoc persistence структуры из `repository.go` в пользу `dbmodel` + явных кастеров.
+- Добавлены SQL-paths и методы для namespace-cleanup по lifecycle событий:
+  - `list_run_ids_by_repository_issue.sql`;
+  - `list_run_ids_by_repository_pull_request.sql`.
+- Устранены дубли в domain/repository слое (`make dupl-go` зелёный).
+- Проверки эпика выполнены:
+  - `go test ./...`;
+  - `make lint-go`;
+  - `make dupl-go`.

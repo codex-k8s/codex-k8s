@@ -31,15 +31,26 @@ func Run(item *controlplanev1.Run) models.Run {
 		return models.Run{}
 	}
 	return models.Run{
-		ID:            item.GetId(),
-		CorrelationID: item.GetCorrelationId(),
-		ProjectID:     cast.OptionalTrimmedString(item.ProjectId),
-		ProjectSlug:   cast.TrimmedStringValue(item.ProjectSlug),
-		ProjectName:   cast.TrimmedStringValue(item.ProjectName),
-		Status:        item.GetStatus(),
-		CreatedAt:     cast.TimestampRFC3339Nano(item.GetCreatedAt()),
-		StartedAt:     cast.OptionalTimestampRFC3339Nano(item.GetStartedAt()),
-		FinishedAt:    cast.OptionalTimestampRFC3339Nano(item.GetFinishedAt()),
+		ID:              item.GetId(),
+		CorrelationID:   item.GetCorrelationId(),
+		ProjectID:       cast.OptionalTrimmedString(item.ProjectId),
+		ProjectSlug:     cast.TrimmedStringValue(item.ProjectSlug),
+		ProjectName:     cast.TrimmedStringValue(item.ProjectName),
+		IssueNumber:     cast.PositiveInt32Ptr(item.IssueNumber),
+		IssueURL:        cast.OptionalTrimmedString(item.IssueUrl),
+		PRNumber:        cast.PositiveInt32Ptr(item.PrNumber),
+		PRURL:           cast.OptionalTrimmedString(item.PrUrl),
+		TriggerKind:     cast.OptionalTrimmedString(item.TriggerKind),
+		TriggerLabel:    cast.OptionalTrimmedString(item.TriggerLabel),
+		JobName:         cast.OptionalTrimmedString(item.JobName),
+		JobNamespace:    cast.OptionalTrimmedString(item.JobNamespace),
+		Namespace:       cast.OptionalTrimmedString(item.Namespace),
+		JobExists:       item.GetJobExists(),
+		NamespaceExists: item.GetNamespaceExists(),
+		Status:          item.GetStatus(),
+		CreatedAt:       cast.TimestampRFC3339Nano(item.GetCreatedAt()),
+		StartedAt:       cast.OptionalTimestampRFC3339Nano(item.GetStartedAt()),
+		FinishedAt:      cast.OptionalTimestampRFC3339Nano(item.GetFinishedAt()),
 	}
 }
 

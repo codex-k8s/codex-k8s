@@ -1,4 +1,6 @@
 -- name: user__ensure_owner :one
+-- Ensure there is exactly one platform owner:
+-- reset previous owner flags first, then upsert requested owner account.
 WITH clear_prev_owner AS (
     UPDATE users
     SET is_platform_owner = false,

@@ -2,7 +2,6 @@ package agentsession
 
 import (
 	"context"
-	"database/sql"
 	_ "embed"
 	"encoding/json"
 	"errors"
@@ -10,6 +9,9 @@ import (
 	"strings"
 
 	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentsession"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
@@ -21,11 +23,11 @@ var (
 
 // Repository stores resumable agent sessions in PostgreSQL.
 type Repository struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
 // NewRepository constructs PostgreSQL agent session repository.
-func NewRepository(db *sql.DB) *Repository {
+func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
@@ -36,24 +38,24 @@ func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams)
 		status = "running"
 	}
 
-	issueNumber := sql.NullInt64{}
+	issueNumber := pgtype.Int8{}
 	if params.IssueNumber != nil {
-		issueNumber = sql.NullInt64{Int64: int64(*params.IssueNumber), Valid: true}
+		issueNumber = pgtype.Int8{Int64: int64(*params.IssueNumber), Valid: true}
 	}
 
-	prNumber := sql.NullInt64{}
+	prNumber := pgtype.Int8{}
 	if params.PRNumber != nil {
-		prNumber = sql.NullInt64{Int64: int64(*params.PRNumber), Valid: true}
+		prNumber = pgtype.Int8{Int64: int64(*params.PRNumber), Valid: true}
 	}
 
-	finishedAt := sql.NullTime{}
+	finishedAt := pgtype.Timestamptz{}
 	if params.FinishedAt != nil {
-		finishedAt = sql.NullTime{Time: params.FinishedAt.UTC(), Valid: true}
+		finishedAt = pgtype.Timestamptz{Time: params.FinishedAt.UTC(), Valid: true}
 	}
 
-	startedAt := sql.NullTime{}
+	startedAt := pgtype.Timestamptz{}
 	if !params.StartedAt.IsZero() {
-		startedAt = sql.NullTime{Time: params.StartedAt.UTC(), Valid: true}
+		startedAt = pgtype.Timestamptz{Time: params.StartedAt.UTC(), Valid: true}
 	}
 
 	var sessionJSON []byte
@@ -66,7 +68,7 @@ func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams)
 		codexJSON = []byte(params.CodexSessionJSON)
 	}
 
-	if _, err := r.db.ExecContext(
+	if _, err := r.db.Exec(
 		ctx,
 		queryUpsert,
 		params.RunID,
@@ -102,24 +104,25 @@ func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams)
 func (r *Repository) GetLatestByRepositoryBranchAndAgent(ctx context.Context, repositoryFullName string, branchName string, agentKey string) (domainrepo.Session, bool, error) {
 	var (
 		item       domainrepo.Session
-		projectID  sql.NullString
-		issueNum   sql.NullInt64
-		prNum      sql.NullInt64
-		prURL      sql.NullString
-		trigger    sql.NullString
-		tplKind    sql.NullString
-		tplSource  sql.NullString
-		tplLocale  sql.NullString
-		model      sql.NullString
-		reasoning  sql.NullString
-		sessionID  sql.NullString
+		projectID  pgtype.Text
+		issueNum   pgtype.Int8
+		prNum      pgtype.Int8
+		prURL      pgtype.Text
+		trigger    pgtype.Text
+		tplKind    pgtype.Text
+		tplSource  pgtype.Text
+		tplLocale  pgtype.Text
+		model      pgtype.Text
+		reasoning  pgtype.Text
+		sessionID  pgtype.Text
 		sessionRaw []byte
-		path       sql.NullString
+		path       pgtype.Text
 		codexRaw   []byte
-		finishedAt sql.NullTime
+		startedAt  pgtype.Timestamptz
+		finishedAt pgtype.Timestamptz
 	)
 
-	err := r.db.QueryRowContext(
+	err := r.db.QueryRow(
 		ctx,
 		queryGetLatestByRepositoryBranchAndAgent,
 		strings.TrimSpace(repositoryFullName),
@@ -147,13 +150,13 @@ func (r *Repository) GetLatestByRepositoryBranchAndAgent(ctx context.Context, re
 		&sessionRaw,
 		&path,
 		&codexRaw,
-		&item.StartedAt,
+		&startedAt,
 		&finishedAt,
 		&item.CreatedAt,
 		&item.UpdatedAt,
 	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return domainrepo.Session{}, false, nil
 		}
 		return domainrepo.Session{}, false, fmt.Errorf("get latest agent session by repository+branch+agent: %w", err)
@@ -199,10 +202,12 @@ func (r *Repository) GetLatestByRepositoryBranchAndAgent(ctx context.Context, re
 	if len(codexRaw) > 0 {
 		item.CodexSessionJSON = json.RawMessage(codexRaw)
 	}
+	if startedAt.Valid {
+		item.StartedAt = startedAt.Time.UTC()
+	}
 	if finishedAt.Valid {
 		item.FinishedAt = finishedAt.Time.UTC()
 	}
-	item.StartedAt = item.StartedAt.UTC()
 	item.CreatedAt = item.CreatedAt.UTC()
 	item.UpdatedAt = item.UpdatedAt.UTC()
 

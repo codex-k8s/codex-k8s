@@ -2,11 +2,11 @@ package learningfeedback
 
 import (
 	"context"
-	"database/sql"
 	_ "embed"
 	"fmt"
 
 	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/learningfeedback"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
@@ -18,11 +18,11 @@ var (
 
 // Repository stores learning feedback in PostgreSQL.
 type Repository struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
 // NewRepository constructs PostgreSQL learning feedback repository.
-func NewRepository(db *sql.DB) *Repository {
+func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
@@ -31,11 +31,11 @@ func (r *Repository) ListForRun(ctx context.Context, runID string, limit int) ([
 	if limit <= 0 {
 		limit = 200
 	}
-	rows, err := r.db.QueryContext(ctx, queryListForRun, runID, limit)
+	rows, err := r.db.Query(ctx, queryListForRun, runID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list learning feedback: %w", err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer rows.Close()
 
 	out := make([]domainrepo.Feedback, 0, limit)
 	for rows.Next() {
@@ -54,7 +54,7 @@ func (r *Repository) ListForRun(ctx context.Context, runID string, limit int) ([
 // Insert stores a new feedback record and returns its id.
 func (r *Repository) Insert(ctx context.Context, params domainrepo.InsertParams) (int64, error) {
 	var id int64
-	err := r.db.QueryRowContext(
+	err := r.db.QueryRow(
 		ctx,
 		queryInsert,
 		params.RunID,

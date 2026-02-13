@@ -19,11 +19,17 @@ import (
 	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projectmember"
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
+	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
 )
 
 const githubWebhookActorID = floweventdomain.ActorIDGitHubWebhook
 
 const defaultRunAgentKey = "dev"
+
+type runStatusService interface {
+	CleanupNamespacesByIssue(ctx context.Context, params runstatusdomain.CleanupByIssueParams) (runstatusdomain.CleanupByIssueResult, error)
+	CleanupNamespacesByPullRequest(ctx context.Context, params runstatusdomain.CleanupByPullRequestParams) (runstatusdomain.CleanupByIssueResult, error)
+}
 
 // Service ingests provider webhooks into idempotent run and flow-event records.
 type Service struct {
@@ -34,6 +40,7 @@ type Service struct {
 	projects   projectrepo.Repository
 	users      userrepo.Repository
 	members    projectmemberrepo.Repository
+	runStatus  runStatusService
 
 	learningModeDefault bool
 	triggerLabels       TriggerLabels
@@ -48,6 +55,7 @@ type Config struct {
 	Projects            projectrepo.Repository
 	Users               userrepo.Repository
 	Members             projectmemberrepo.Repository
+	RunStatus           runStatusService
 	LearningModeDefault bool
 	TriggerLabels       TriggerLabels
 }
@@ -71,6 +79,7 @@ func NewService(cfg Config) *Service {
 		projects:            cfg.Projects,
 		users:               cfg.Users,
 		members:             cfg.Members,
+		runStatus:           cfg.RunStatus,
 		learningModeDefault: cfg.LearningModeDefault,
 		triggerLabels:       triggerLabels,
 	}
@@ -103,6 +112,9 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 	projectID, repositoryID, servicesYAMLPath, hasBinding, err := s.resolveProjectBinding(ctx, envelope)
 	if err != nil {
 		return IngestResult{}, fmt.Errorf("resolve project binding: %w", err)
+	}
+	if err := s.maybeCleanupRunNamespaces(ctx, cmd, envelope, hasBinding); err != nil {
+		return IngestResult{}, fmt.Errorf("cleanup run namespaces on close event: %w", err)
 	}
 
 	trigger, hasIssueRunTrigger := s.resolveIssueRunTrigger(cmd.EventType, envelope)
@@ -273,6 +285,45 @@ func (s *Service) insertSystemFlowEvent(ctx context.Context, correlationID strin
 		Payload:       payload,
 		CreatedAt:     createdAt,
 	})
+}
+
+func (s *Service) maybeCleanupRunNamespaces(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope, hasBinding bool) error {
+	if s.runStatus == nil || !hasBinding {
+		return nil
+	}
+
+	repositoryFullName := strings.TrimSpace(envelope.Repository.FullName)
+	if repositoryFullName == "" {
+		return nil
+	}
+
+	eventType := strings.ToLower(strings.TrimSpace(cmd.EventType))
+	action := strings.ToLower(strings.TrimSpace(envelope.Action))
+	requestedByID := strings.TrimSpace(envelope.Sender.Login)
+	if requestedByID == "" {
+		requestedByID = string(githubWebhookActorID)
+	}
+
+	var cleanupErr error
+	switch {
+	case eventType == string(webhookdomain.GitHubEventIssues) && action == "closed" && envelope.Issue.Number > 0:
+		_, cleanupErr = s.runStatus.CleanupNamespacesByIssue(ctx, runstatusdomain.CleanupByIssueParams{
+			RepositoryFullName: repositoryFullName,
+			IssueNumber:        envelope.Issue.Number,
+			RequestedByID:      requestedByID,
+		})
+	case eventType == string(webhookdomain.GitHubEventPullRequest) && action == "closed" && envelope.PullRequest.Number > 0:
+		_, cleanupErr = s.runStatus.CleanupNamespacesByPullRequest(ctx, runstatusdomain.CleanupByPullRequestParams{
+			RepositoryFullName: repositoryFullName,
+			PRNumber:           envelope.PullRequest.Number,
+			RequestedByID:      requestedByID,
+		})
+	}
+	if cleanupErr != nil {
+		return cleanupErr
+	}
+
+	return nil
 }
 
 func (s *Service) resolveIssueRunTrigger(eventType string, envelope githubWebhookEnvelope) (issueRunTrigger, bool) {

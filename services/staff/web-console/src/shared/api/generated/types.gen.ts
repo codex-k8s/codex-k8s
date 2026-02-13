@@ -50,6 +50,17 @@ export type Run = {
     project_id?: string | null;
     project_slug: string;
     project_name: string;
+    issue_number?: number | null;
+    issue_url?: string | null;
+    pr_number?: number | null;
+    pr_url?: string | null;
+    trigger_kind?: string | null;
+    trigger_label?: string | null;
+    job_name?: string | null;
+    job_namespace?: string | null;
+    namespace?: string | null;
+    job_exists?: boolean;
+    namespace_exists?: boolean;
     status: string;
     created_at: string;
     started_at?: string | null;

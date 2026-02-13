@@ -42,9 +42,9 @@ type Config struct {
 	GitBotUsername string `env:"CODEXK8S_GIT_BOT_USERNAME" envDefault:"codex-bot"`
 	// GitBotMail is git author email configured in run pods.
 	GitBotMail string `env:"CODEXK8S_GIT_BOT_MAIL" envDefault:"codex-bot@codex-k8s.local"`
-	// AgentDefaultModel is fallback model when issue labels do not override model.
+	// AgentDefaultModel is fallback model when run config labels do not override model.
 	AgentDefaultModel string `env:"CODEXK8S_AGENT_DEFAULT_MODEL" envDefault:"gpt-5.3-codex"`
-	// AgentDefaultReasoningEffort is fallback reasoning profile when issue labels do not override reasoning.
+	// AgentDefaultReasoningEffort is fallback reasoning profile when run config labels do not override reasoning.
 	AgentDefaultReasoningEffort string `env:"CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT" envDefault:"high"`
 	// AgentDefaultLocale is fallback prompt locale.
 	AgentDefaultLocale string `env:"CODEXK8S_AGENT_DEFAULT_LOCALE" envDefault:"ru"`
@@ -101,21 +101,21 @@ type Config struct {
 	// RunResourceQuotaPods controls max pods per run namespace.
 	RunResourceQuotaPods int64 `env:"CODEXK8S_WORKER_RUN_QUOTA_PODS" envDefault:"20"`
 	// RunResourceRequestsCPU controls requests.cpu hard quota.
-	RunResourceRequestsCPU string `env:"CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_CPU" envDefault:"4"`
+	RunResourceRequestsCPU string `env:"CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_CPU" envDefault:"6"`
 	// RunResourceRequestsMemory controls requests.memory hard quota.
-	RunResourceRequestsMemory string `env:"CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_MEMORY" envDefault:"8Gi"`
+	RunResourceRequestsMemory string `env:"CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_MEMORY" envDefault:"24Gi"`
 	// RunResourceLimitsCPU controls limits.cpu hard quota.
 	RunResourceLimitsCPU string `env:"CODEXK8S_WORKER_RUN_QUOTA_LIMITS_CPU" envDefault:"8"`
 	// RunResourceLimitsMemory controls limits.memory hard quota.
-	RunResourceLimitsMemory string `env:"CODEXK8S_WORKER_RUN_QUOTA_LIMITS_MEMORY" envDefault:"16Gi"`
+	RunResourceLimitsMemory string `env:"CODEXK8S_WORKER_RUN_QUOTA_LIMITS_MEMORY" envDefault:"32Gi"`
 	// RunDefaultRequestCPU controls default CPU request via LimitRange.
-	RunDefaultRequestCPU string `env:"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_CPU" envDefault:"250m"`
+	RunDefaultRequestCPU string `env:"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_CPU" envDefault:"4"`
 	// RunDefaultRequestMemory controls default memory request via LimitRange.
-	RunDefaultRequestMemory string `env:"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_MEMORY" envDefault:"256Mi"`
+	RunDefaultRequestMemory string `env:"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_MEMORY" envDefault:"16Gi"`
 	// RunDefaultLimitCPU controls default CPU limit via LimitRange.
-	RunDefaultLimitCPU string `env:"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_CPU" envDefault:"1"`
+	RunDefaultLimitCPU string `env:"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_CPU" envDefault:"6"`
 	// RunDefaultLimitMemory controls default memory limit via LimitRange.
-	RunDefaultLimitMemory string `env:"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY" envDefault:"1Gi"`
+	RunDefaultLimitMemory string `env:"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY" envDefault:"24Gi"`
 }
 
 // LoadConfig parses and validates worker configuration from environment.

@@ -2,11 +2,11 @@ package floweventrepo
 
 import (
 	"context"
-	"database/sql"
 	_ "embed"
 
 	flowdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
@@ -18,11 +18,11 @@ type InsertParams = flowdomain.InsertParams
 
 // Repository stores flow events in PostgreSQL.
 type Repository struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
 // NewRepository constructs a flow event repository.
-func NewRepository(db *sql.DB) *Repository {
+func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 

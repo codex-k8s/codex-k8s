@@ -12,7 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 
@@ -56,7 +55,7 @@ func Run() error {
 	defer stop()
 
 	// DB readiness is handled by initContainer in deployment; control-plane starts fail-fast.
-	db, err := postgres.Open(runCtx, postgres.OpenParams{
+	pgxPool, err := postgres.OpenPGXPool(runCtx, postgres.OpenParams{
 		Host:     cfg.DBHost,
 		Port:     cfg.DBPort,
 		DBName:   cfg.DBName,
@@ -65,26 +64,22 @@ func Run() error {
 		SSLMode:  cfg.DBSSLMode,
 	})
 	if err != nil {
-		return fmt.Errorf("open postgres: %w", err)
+		return fmt.Errorf("open postgres pgx pool: %w", err)
 	}
-	defer func() {
-		if err := db.Close(); err != nil {
-			logger.Error("db close failed", "err", err)
-		}
-	}()
+	defer pgxPool.Close()
 
-	agentRuns := agentrunrepo.NewRepository(db)
-	agents := agentrepo.NewRepository(db)
-	flowEvents := floweventrepo.NewRepository(db)
+	agentRuns := agentrunrepo.NewRepository(pgxPool)
+	agents := agentrepo.NewRepository(pgxPool)
+	flowEvents := floweventrepo.NewRepository(pgxPool)
 
-	users := userrepo.NewRepository(db)
-	projects := projectrepo.NewRepository(db)
-	members := projectmemberrepo.NewRepository(db)
-	runs := staffrunrepo.NewRepository(db)
-	repos := repocfgrepo.NewRepository(db)
-	feedback := learningfeedbackrepo.NewRepository(db)
-	agentSessions := agentsessionrepo.NewRepository(db)
-	platformTokens := platformtokenrepo.NewRepository(db)
+	users := userrepo.NewRepository(pgxPool)
+	projects := projectrepo.NewRepository(pgxPool)
+	members := projectmemberrepo.NewRepository(pgxPool)
+	runs := staffrunrepo.NewRepository(pgxPool)
+	repos := repocfgrepo.NewRepository(pgxPool)
+	feedback := learningfeedbackrepo.NewRepository(pgxPool)
+	agentSessions := agentsessionrepo.NewRepository(pgxPool)
+	platformTokens := platformtokenrepo.NewRepository(pgxPool)
 
 	tokenCrypto, err := tokencrypt.NewService(cfg.TokenEncryptionKey)
 	if err != nil {
@@ -160,6 +155,7 @@ func Run() error {
 		Projects:            projects,
 		Users:               users,
 		Members:             members,
+		RunStatus:           runStatusService,
 		LearningModeDefault: learningDefault,
 		TriggerLabels: webhook.TriggerLabels{
 			RunDev:       cfg.RunDevLabel,

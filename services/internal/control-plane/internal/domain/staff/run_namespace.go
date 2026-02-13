@@ -16,6 +16,7 @@ const (
 
 type runNamespaceService interface {
 	DeleteRunNamespace(ctx context.Context, params runstatusdomain.DeleteNamespaceParams) (runstatusdomain.DeleteNamespaceResult, error)
+	GetRunRuntimeState(ctx context.Context, runID string) (runstatusdomain.RuntimeState, error)
 }
 
 // RunNamespaceDeleteResult describes one manual namespace deletion outcome.

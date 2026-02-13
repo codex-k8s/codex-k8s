@@ -58,9 +58,9 @@ type Config struct {
 	GitBotUsername string
 	// GitBotMail is git author email configured in run pods.
 	GitBotMail string
-	// AgentDefaultModel is fallback model when issue labels do not override model.
+	// AgentDefaultModel is fallback model when run config labels do not override model.
 	AgentDefaultModel string
-	// AgentDefaultReasoningEffort is fallback reasoning profile when issue labels do not override reasoning.
+	// AgentDefaultReasoningEffort is fallback reasoning profile when run config labels do not override reasoning.
 	AgentDefaultReasoningEffort string
 	// AgentDefaultLocale is fallback prompt locale.
 	AgentDefaultLocale string
@@ -156,7 +156,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if hasOpenAIAuthFile && strings.EqualFold(cfg.AgentDefaultModel, modelGPT52Codex) {
 		cfg.AgentDefaultModel = modelGPT53Codex
 	}
-	if !hasOpenAIAuthFile && strings.EqualFold(cfg.AgentDefaultModel, modelGPT53Codex) {
+	if !hasOpenAIAuthFile && isGPT53Model(cfg.AgentDefaultModel) {
 		cfg.AgentDefaultModel = modelGPT52Codex
 	}
 	cfg.AgentDefaultReasoningEffort = strings.TrimSpace(cfg.AgentDefaultReasoningEffort)
@@ -456,15 +456,17 @@ func (s *Service) launchPending(ctx context.Context) error {
 		}
 
 		if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
-			RunID:        claimed.RunID,
-			Phase:        RunStatusPhaseStarted,
-			JobName:      ref.Name,
-			JobNamespace: ref.Namespace,
-			RuntimeMode:  string(execution.RuntimeMode),
-			Namespace:    execution.Namespace,
-			TriggerKind:  agentCtx.TriggerKind,
-			PromptLocale: agentCtx.PromptTemplateLocale,
-			RunStatus:    string(rundomain.StatusRunning),
+			RunID:           claimed.RunID,
+			Phase:           RunStatusPhaseStarted,
+			JobName:         ref.Name,
+			JobNamespace:    ref.Namespace,
+			RuntimeMode:     string(execution.RuntimeMode),
+			Namespace:       execution.Namespace,
+			TriggerKind:     agentCtx.TriggerKind,
+			PromptLocale:    agentCtx.PromptTemplateLocale,
+			Model:           agentCtx.Model,
+			ReasoningEffort: agentCtx.ReasoningEffort,
+			RunStatus:       string(rundomain.StatusRunning),
 		}); err != nil {
 			s.logger.Warn("upsert run status comment (started) failed", "run_id", claimed.RunID, "err", err)
 		}

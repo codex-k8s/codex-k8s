@@ -1,4 +1,5 @@
 -- name: agent__find_effective_by_key :one
+-- Prefer project-scoped active agent config over global fallback for the same key.
 SELECT
     id,
     agent_key,

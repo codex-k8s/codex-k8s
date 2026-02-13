@@ -2,11 +2,12 @@ package query
 
 // RunPayload represents normalized run payload persisted in agent_runs.
 type RunPayload struct {
-	Project    RunPayloadProject    `json:"project"`
-	Repository RunPayloadRepository `json:"repository"`
-	Agent      *RunPayloadAgent     `json:"agent,omitempty"`
-	Issue      *RunPayloadIssue     `json:"issue,omitempty"`
-	Trigger    *RunPayloadTrigger   `json:"trigger,omitempty"`
+	Project     RunPayloadProject      `json:"project"`
+	Repository  RunPayloadRepository   `json:"repository"`
+	Agent       *RunPayloadAgent       `json:"agent,omitempty"`
+	Issue       *RunPayloadIssue       `json:"issue,omitempty"`
+	PullRequest *RunPayloadPullRequest `json:"pull_request,omitempty"`
+	Trigger     *RunPayloadTrigger     `json:"trigger,omitempty"`
 }
 
 // RunPayloadProject is project section of run payload.
@@ -37,8 +38,19 @@ type RunPayloadIssue struct {
 	HTMLURL string `json:"html_url"`
 }
 
+// RunPayloadPullRequest is pull request section of run payload.
+type RunPayloadPullRequest struct {
+	Number  int64  `json:"number"`
+	Title   string `json:"title"`
+	State   string `json:"state"`
+	HTMLURL string `json:"html_url"`
+	HeadRef string `json:"head_ref,omitempty"`
+	BaseRef string `json:"base_ref,omitempty"`
+}
+
 // RunPayloadTrigger is trigger section of run payload.
 type RunPayloadTrigger struct {
-	Label string `json:"label"`
-	Kind  string `json:"kind"`
+	Source string `json:"source,omitempty"`
+	Label  string `json:"label"`
+	Kind   string `json:"kind"`
 }

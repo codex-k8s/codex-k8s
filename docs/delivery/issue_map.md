@@ -29,14 +29,16 @@ updated_at: 2026-02-13
 - Epic catalog: `docs/delivery/epic_s1.md`.
 - Epic docs: `docs/delivery/epics/epic-s1-day0-bootstrap-baseline.md`, `docs/delivery/epics/epic-s1-day1-webhook-idempotency.md`, `docs/delivery/epics/epic-s1-day2-worker-slots-k8s.md`, `docs/delivery/epics/epic-s1-day3-auth-rbac-ui.md`, `docs/delivery/epics/epic-s1-day4-repository-provider.md`, `docs/delivery/epics/epic-s1-day5-learning-mode.md`, `docs/delivery/epics/epic-s1-day6-hardening-observability.md`, `docs/delivery/epics/epic-s1-day7-stabilization-gate.md`.
 
-## Sprint S2 (план) артефакты
+## Sprint S2 артефакты
 - Sprint plan: `docs/delivery/sprint_s2_dogfooding.md`.
 - Epic catalog: `docs/delivery/epic_s2.md`.
-- Epic docs: `docs/delivery/epics/epic-s2-day0-control-plane-extraction.md`, `docs/delivery/epics/epic-s2-day1-migrations-and-schema-ownership.md`, `docs/delivery/epics/epic-s2-day2-issue-label-triggers-run-dev.md`, `docs/delivery/epics/epic-s2-day3-per-issue-namespace-and-rbac.md`, `docs/delivery/epics/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md`, `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md`, `docs/delivery/epics/epic-s2-day5-staff-ui-dogfooding-observability.md`, `docs/delivery/epics/epic-s2-day6-approval-and-audit-hardening.md`, `docs/delivery/epics/epic-s2-day7-dogfooding-regression-gate.md`.
+- Epic docs: `docs/delivery/epics/epic-s2-day0-control-plane-extraction.md`, `docs/delivery/epics/epic-s2-day1-migrations-and-schema-ownership.md`, `docs/delivery/epics/epic-s2-day2-issue-label-triggers-run-dev.md`, `docs/delivery/epics/epic-s2-day3-per-issue-namespace-and-rbac.md`, `docs/delivery/epics/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md`, `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md`, `docs/delivery/epics/epic-s2-day4.5-pgx-db-models-and-repository-refactor.md`, `docs/delivery/epics/epic-s2-day5-staff-ui-dogfooding-observability.md`, `docs/delivery/epics/epic-s2-day6-approval-and-audit-hardening.md`, `docs/delivery/epics/epic-s2-day7-dogfooding-regression-gate.md`.
 - Product process model docs: `docs/product/agents_operating_model.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`.
 - Day4 implementation (completed): `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md` (agent-runner runtime, session persistence/resume, PR flow via MCP governance path).
+- Day4.5 implementation (completed): `docs/delivery/epics/epic-s2-day4.5-pgx-db-models-and-repository-refactor.md` (typed db-model/caster rollout в repository слое).
+- Day5 implementation (completed): `docs/delivery/epics/epic-s2-day5-staff-ui-dogfooding-observability.md` (runs observability, drilldown и namespace lifecycle controls).
 - Day3.5 dependency: `docs/delivery/epics/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md` (MCP tool layer + prompt context assembler).
-- Факт на 2026-02-13: Day0..Day4 выполнены; Day6/Day7 расширены под MVP readiness и запуск Sprint S3.
+- Факт на 2026-02-13: Day0..Day5 выполнены; Day6/Day7 расширены под MVP readiness и запуск Sprint S3.
 
 ## Sprint S3 (план) артефакты
 - Sprint plan: `docs/delivery/sprint_s3_mvp_completion.md`.

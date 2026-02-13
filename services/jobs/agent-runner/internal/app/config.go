@@ -87,7 +87,7 @@ func LoadConfig() (Config, error) {
 		} else {
 			cfg.AgentModel = modelGPT52Codex
 		}
-	} else if strings.EqualFold(cfg.AgentModel, modelGPT53Codex) && !hasOpenAIAuthFile {
+	} else if (strings.EqualFold(cfg.AgentModel, modelGPT53Codex) || strings.EqualFold(cfg.AgentModel, modelGPT53CodexSpark)) && !hasOpenAIAuthFile {
 		cfg.AgentModel = modelGPT52Codex
 	}
 	cfg.AgentReasoningEffort = strings.TrimSpace(strings.ToLower(cfg.AgentReasoningEffort))

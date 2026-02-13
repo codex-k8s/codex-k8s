@@ -13,17 +13,19 @@ const (
 
 // RunStatusCommentParams describes one run status comment upsert request.
 type RunStatusCommentParams struct {
-	RunID          string
-	Phase          RunStatusPhase
-	JobName        string
-	JobNamespace   string
-	RuntimeMode    string
-	Namespace      string
-	TriggerKind    string
-	PromptLocale   string
-	RunStatus      string
-	Deleted        bool
-	AlreadyDeleted bool
+	RunID           string
+	Phase           RunStatusPhase
+	JobName         string
+	JobNamespace    string
+	RuntimeMode     string
+	Namespace       string
+	TriggerKind     string
+	PromptLocale    string
+	Model           string
+	ReasoningEffort string
+	RunStatus       string
+	Deleted         bool
+	AlreadyDeleted  bool
 }
 
 // RunStatusCommentResult is a worker-side run status update response.
