@@ -12,7 +12,7 @@ type ToolName string
 const ToolPromptContextGet ToolName = "codex_prompt_context_get"
 
 const (
-	ToolMCPSecretSyncEnv        ToolName = "mcp_secret_sync_env"
+	ToolMCPSecretSyncEnv        ToolName = "secret.sync.github_k8s"
 	ToolMCPDatabaseLifecycle    ToolName = "mcp_database_lifecycle"
 	ToolMCPOwnerFeedbackRequest ToolName = "mcp_owner_feedback_request"
 )
@@ -493,27 +493,43 @@ type KubernetesPodPortForwardResult struct {
 	Message string              `json:"message,omitempty"`
 }
 
+// SecretSyncPolicy describes secret generation behavior for sync requests.
+type SecretSyncPolicy string
+
+const (
+	SecretSyncPolicyDeterministic SecretSyncPolicy = "deterministic"
+	SecretSyncPolicyRandom        SecretSyncPolicy = "random"
+	SecretSyncPolicyProvided      SecretSyncPolicy = "provided"
+)
+
 // SecretSyncEnvInput describes deterministic secret sync request across GitHub and Kubernetes.
 type SecretSyncEnvInput struct {
-	Environment          string `json:"environment"`
-	GitHubSecretName     string `json:"github_secret_name"`
-	KubernetesNamespace  string `json:"kubernetes_namespace,omitempty"`
-	KubernetesSecretName string `json:"kubernetes_secret_name"`
-	KubernetesSecretKey  string `json:"kubernetes_secret_key,omitempty"`
-	SecretValue          string `json:"secret_value,omitempty"`
-	DryRun               bool   `json:"dry_run,omitempty"`
+	ProjectID            string           `json:"project_id,omitempty"`
+	Repository           string           `json:"repository,omitempty"`
+	Environment          string           `json:"environment"`
+	GitHubSecretName     string           `json:"github_secret_name"`
+	KubernetesNamespace  string           `json:"kubernetes_namespace,omitempty"`
+	KubernetesSecretName string           `json:"kubernetes_secret_name"`
+	KubernetesSecretKey  string           `json:"kubernetes_secret_key,omitempty"`
+	Policy               SecretSyncPolicy `json:"policy,omitempty"`
+	SecretValue          string           `json:"secret_value,omitempty"`
+	IdempotencyKey       string           `json:"idempotency_key,omitempty"`
+	DryRun               bool             `json:"dry_run,omitempty"`
 }
 
-// SecretSyncEnvResult is output for mcp_secret_sync_env tool.
+// SecretSyncEnvResult is output for secret.sync.github_k8s tool.
 type SecretSyncEnvResult struct {
-	Status        ToolExecutionStatus `json:"status"`
-	RequestID     int64               `json:"request_id,omitempty"`
-	ApprovalState string              `json:"approval_state,omitempty"`
-	Environment   string              `json:"environment,omitempty"`
-	GitHubSecret  string              `json:"github_secret,omitempty"`
-	KubernetesRef string              `json:"kubernetes_ref,omitempty"`
-	DryRun        bool                `json:"dry_run,omitempty"`
-	Message       string              `json:"message,omitempty"`
+	Status         ToolExecutionStatus `json:"status"`
+	RequestID      int64               `json:"request_id,omitempty"`
+	ApprovalState  string              `json:"approval_state,omitempty"`
+	Environment    string              `json:"environment,omitempty"`
+	GitHubSecret   string              `json:"github_secret,omitempty"`
+	KubernetesRef  string              `json:"kubernetes_ref,omitempty"`
+	Policy         string              `json:"policy,omitempty"`
+	IdempotencyKey string              `json:"idempotency_key,omitempty"`
+	Reused         bool                `json:"reused,omitempty"`
+	DryRun         bool                `json:"dry_run,omitempty"`
+	Message        string              `json:"message,omitempty"`
 }
 
 // DatabaseLifecycleAction defines supported database lifecycle actions.

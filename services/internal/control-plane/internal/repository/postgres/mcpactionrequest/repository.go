@@ -17,6 +17,8 @@ var (
 	queryCreate string
 	//go:embed sql/get_by_id.sql
 	queryGetByID string
+	//go:embed sql/find_latest_by_signature.sql
+	queryFindLatestBySignature string
 	//go:embed sql/find_pending_by_signature.sql
 	queryFindPendingBySignature string
 	//go:embed sql/list_pending.sql
@@ -87,18 +89,27 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (domainrepo.Item, bo
 	return fromDBModel(item), true, nil
 }
 
+// FindLatestBySignature returns latest request for idempotent retries.
+func (r *Repository) FindLatestBySignature(ctx context.Context, runID string, toolName string, action string, targetRefJSON []byte) (domainrepo.Item, bool, error) {
+	return r.findBySignature(ctx, runID, toolName, action, targetRefJSON, queryFindLatestBySignature, "latest")
+}
+
 // FindPendingBySignature returns latest pending request for idempotent retries.
 func (r *Repository) FindPendingBySignature(ctx context.Context, runID string, toolName string, action string, targetRefJSON []byte) (domainrepo.Item, bool, error) {
+	return r.findBySignature(ctx, runID, toolName, action, targetRefJSON, queryFindPendingBySignature, "pending")
+}
+
+func (r *Repository) findBySignature(ctx context.Context, runID string, toolName string, action string, targetRefJSON []byte, sqlQuery string, queryKind string) (domainrepo.Item, bool, error) {
 	if runID == "" {
 		return domainrepo.Item{}, false, nil
 	}
-	rows, err := r.db.Query(ctx, queryFindPendingBySignature, runID, toolName, action, jsonOrEmptyObject(targetRefJSON))
+	rows, err := r.db.Query(ctx, sqlQuery, runID, toolName, action, jsonOrEmptyObject(targetRefJSON))
 	if err != nil {
-		return domainrepo.Item{}, false, fmt.Errorf("query pending mcp action request by signature: %w", err)
+		return domainrepo.Item{}, false, fmt.Errorf("query %s mcp action request by signature: %w", queryKind, err)
 	}
 	items, err := pgx.CollectRows(rows, pgx.RowToStructByName[dbmodel.ActionRequestRow])
 	if err != nil {
-		return domainrepo.Item{}, false, fmt.Errorf("collect pending mcp action request by signature: %w", err)
+		return domainrepo.Item{}, false, fmt.Errorf("collect %s mcp action request by signature: %w", queryKind, err)
 	}
 	if len(items) == 0 {
 		return domainrepo.Item{}, false, nil

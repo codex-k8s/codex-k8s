@@ -333,12 +333,12 @@ Planned extension (Day6+):
 | run_id | uuid | yes |  | fk -> agent_runs | |
 | tool_name | text | no |  |  | e.g. `secret.sync.github_k8s` |
 | action | text | no |  |  | create/update/delete/request |
-| target_ref | jsonb | no | '{}'::jsonb |  | project/repo/env refs |
+| target_ref | jsonb | no | '{}'::jsonb |  | project/repo/env refs + policy/idempotency_key |
 | approval_mode | text | no | "owner" | check enum | none/owner/delegated |
 | approval_state | text | no | "requested" | check enum | requested/approved/denied/expired/failed/applied |
 | requested_by | text | no |  |  | actor id |
 | applied_by | text | yes |  |  | actor id |
-| payload | jsonb | no | '{}'::jsonb |  | masked request/result metadata |
+| payload | jsonb | no | '{}'::jsonb |  | masked request/result metadata (для secret sync хранится encrypted value) |
 | created_at | timestamptz | no | now() | index | |
 | updated_at | timestamptz | no | now() |  | |
 

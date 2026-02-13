@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S3-D3
 type: epic
 title: "Epic S3 Day 3: MCP deterministic secret sync (GitHub + Kubernetes)"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-13
 updated_at: 2026-02-13
@@ -39,3 +39,36 @@ approvals:
 ## Критерии приемки
 - Повторный вызов не приводит к дрейфу состояния.
 - Секретный материал недоступен в model output и user-facing логах.
+
+## Фактический результат (выполнено)
+- Канонизирован MCP tool name для секрета:
+  - `secret.sync.github_k8s`.
+- Расширен вход `SecretSyncEnvInput`:
+  - `project_id`, `repository`, `environment`, `github_secret_name`, `kubernetes_secret_name`, `kubernetes_namespace`, `kubernetes_secret_key`;
+  - `policy` (`deterministic|random|provided`);
+  - `idempotency_key` (опциональный; при отсутствии вычисляется детерминированно).
+- Реализована детерминированная генерация секрета (default policy):
+  - значение выводится через HMAC-SHA256 от стабильного material (`project/repository/env/secret refs`) и platform seed;
+  - при `policy=random` генерируется криптографически случайное значение;
+  - при `policy=provided` обязателен `secret_value`.
+- Реализован retry-safe idempotency для secret sync:
+  - action signature расширена `project/repository/policy/idempotency_key`;
+  - добавлен repo-метод `FindLatestBySignature`;
+  - если найден уже `requested/approved` — возвращается existing approval request;
+  - если найден `applied` — side effects не повторяются, возвращается `reused=true`, `message=idempotent_replay`.
+- Секретный материал остаётся hidden:
+  - секрет не возвращается в tool output;
+  - в аудит/flow events пишутся только безопасные метаданные;
+  - в `mcp_action_requests.payload` хранится только encrypted blob.
+- Усилен payload apply-path:
+  - проверка `project_id`/`repository` из payload против run context перед фактическим apply.
+
+## Data model impact
+- Схема БД не менялась.
+- Логическая модель `mcp_action_requests` расширена на уровне `target_ref/payload` (JSONB):
+  - `project_id`, `repository`, `policy`, `idempotency_key`.
+
+## Проверки
+- `go test ./services/internal/control-plane/...` — passed.
+- `make lint-go` — passed.
+- `make dupl-go` — passed.

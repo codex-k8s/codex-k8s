@@ -29,7 +29,8 @@ approvals:
 ### Baseline (текущий этап)
 - Для MCP label-инструментов (`github_labels_list|add|remove|transition`) используется `approval:none`.
 - Label transitions всё равно проходят через control-plane MCP, чтобы сохранять единый audit-контур.
-- Для control tools (`secret.sync.github_to_k8s`, `database.lifecycle`, `owner.feedback.request`) включается approver gate по policy.
+- Для control tools (`secret.sync.github_k8s`, `database.lifecycle`, `owner.feedback.request`) включается approver gate по policy.
+- Для `secret.sync.github_k8s` действует idempotency-key и retry-safe replay без повторного side effect.
 
 ### Planned (следующие этапы)
 - Для части label/runtime/secret инструментов будет включаться обязательный approver gate.
@@ -55,6 +56,7 @@ approvals:
   и остаётся в domain-path управления репозиториями (staff/project management).
 - Day6+ расширяет policy: approver matrix, secret-management инструменты через MCP, единообразные события и отказоустойчивость.
 - Day6+ также включает контур `run:self-improve`, где MCP используется для traceable transitions и owner feedback loops.
+- В Day3 добавлен deterministic secret materialization для `secret.sync.github_k8s` (policy-driven generation + idempotent apply/replay).
 
 ## Политики доступа к MCP (S2 Day6 baseline + roadmap)
 
@@ -70,7 +72,7 @@ approvals:
 
 ### Комбинированные ручки
 - В roadmap закладываются composite MCP-ручки для атомарных операций между системами:
-  - пример: `secret.sync.github_to_k8s` (создание/обновление секрета одновременно в GitHub и Kubernetes);
+  - пример: `secret.sync.github_k8s` (создание/обновление секрета одновременно в GitHub и Kubernetes);
   - composite-ручки имеют отдельный approval профиль и отдельные события аудита.
 
 ## HTTP-контракты интеграций approver/executor

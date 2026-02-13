@@ -26,6 +26,42 @@ func (s *Service) MCPSecretSyncEnv(ctx context.Context, session SessionContext, 
 	}
 	s.auditToolCalled(ctx, runCtx.Session, tool)
 
+	projectID := strings.TrimSpace(runCtx.Session.ProjectID)
+	if projectID == "" {
+		projectID = strings.TrimSpace(runCtx.Repository.ProjectID)
+	}
+	inputProjectID := strings.TrimSpace(input.ProjectID)
+	if inputProjectID != "" && projectID != "" && inputProjectID != projectID {
+		err := fmt.Errorf("project_id does not match run project")
+		s.auditToolFailed(ctx, runCtx.Session, tool, err)
+		return SecretSyncEnvResult{}, err
+	}
+	if inputProjectID != "" {
+		projectID = inputProjectID
+	}
+	if projectID == "" {
+		err := fmt.Errorf("project_id is required")
+		s.auditToolFailed(ctx, runCtx.Session, tool, err)
+		return SecretSyncEnvResult{}, err
+	}
+
+	repositoryFullName := strings.TrimSpace(runCtx.Repository.Owner) + "/" + strings.TrimSpace(runCtx.Repository.Name)
+	if strings.TrimSpace(runCtx.Repository.Owner) == "" || strings.TrimSpace(runCtx.Repository.Name) == "" {
+		err := fmt.Errorf("repository owner/name is required")
+		s.auditToolFailed(ctx, runCtx.Session, tool, err)
+		return SecretSyncEnvResult{}, err
+	}
+	requestedRepository, err := normalizeSecretSyncRepository(input.Repository)
+	if err != nil {
+		s.auditToolFailed(ctx, runCtx.Session, tool, err)
+		return SecretSyncEnvResult{}, err
+	}
+	if requestedRepository != "" && !strings.EqualFold(requestedRepository, repositoryFullName) {
+		err := fmt.Errorf("repository does not match run repository")
+		s.auditToolFailed(ctx, runCtx.Session, tool, err)
+		return SecretSyncEnvResult{}, err
+	}
+
 	environment := normalizeEnvName(input.Environment)
 	if environment == "" {
 		err := fmt.Errorf("environment is required")
@@ -51,15 +87,54 @@ func (s *Service) MCPSecretSyncEnv(ctx context.Context, session SessionContext, 
 		return SecretSyncEnvResult{}, err
 	}
 	kubernetesSecretKey := normalizeKubernetesSecretDataKey(input.KubernetesSecretKey)
+	policy, err := normalizeSecretSyncPolicy(input.Policy)
+	if err != nil {
+		s.auditToolFailed(ctx, runCtx.Session, tool, err)
+		return SecretSyncEnvResult{}, err
+	}
 
 	secretValue := strings.TrimSpace(input.SecretValue)
 	if secretValue == "" {
-		secretValue, err = newGeneratedSecretValue()
+		switch policy {
+		case SecretSyncPolicyProvided:
+			err := fmt.Errorf("secret_value is required for policy=provided")
+			s.auditToolFailed(ctx, runCtx.Session, tool, err)
+			return SecretSyncEnvResult{}, err
+		case SecretSyncPolicyRandom:
+			secretValue, err = newGeneratedSecretValue()
+		default:
+			secretValue, err = deriveDeterministicSecretValue(s.cfg.TokenSigningKey, secretSyncDeterministicParams{
+				ProjectID:            projectID,
+				Repository:           repositoryFullName,
+				Environment:          environment,
+				GitHubSecretName:     githubSecretName,
+				KubernetesNamespace:  kubernetesNamespace,
+				KubernetesSecretName: kubernetesSecretName,
+				KubernetesSecretKey:  kubernetesSecretKey,
+			})
+		}
 		if err != nil {
 			s.auditToolFailed(ctx, runCtx.Session, tool, err)
 			return SecretSyncEnvResult{}, err
 		}
 	}
+	idempotencyKey, err := deriveSecretSyncIdempotencyKey(s.cfg.TokenSigningKey, secretSyncIdempotencyParams{
+		ExplicitKey:          input.IdempotencyKey,
+		ProjectID:            projectID,
+		Repository:           repositoryFullName,
+		Environment:          environment,
+		GitHubSecretName:     githubSecretName,
+		KubernetesNamespace:  kubernetesNamespace,
+		KubernetesSecretName: kubernetesSecretName,
+		KubernetesSecretKey:  kubernetesSecretKey,
+		Policy:               policy,
+		SecretValue:          secretValue,
+	})
+	if err != nil {
+		s.auditToolFailed(ctx, runCtx.Session, tool, err)
+		return SecretSyncEnvResult{}, err
+	}
+
 	encryptedSecret, err := s.tokenCrypt.EncryptString(secretValue)
 	if err != nil {
 		s.auditToolFailed(ctx, runCtx.Session, tool, err)
@@ -67,32 +142,79 @@ func (s *Service) MCPSecretSyncEnv(ctx context.Context, session SessionContext, 
 	}
 
 	targetRef := marshalRawJSON(approvalTargetRef{
+		ProjectID:            projectID,
+		Repository:           repositoryFullName,
 		Environment:          environment,
 		GitHubSecretName:     githubSecretName,
 		KubernetesNamespace:  kubernetesNamespace,
 		KubernetesSecretName: kubernetesSecretName,
 		KubernetesSecretKey:  kubernetesSecretKey,
+		Policy:               string(policy),
+		IdempotencyKey:       idempotencyKey,
 	})
 	payload := marshalRawJSON(secretSyncPayload{
+		ProjectID:            projectID,
+		Repository:           repositoryFullName,
 		Environment:          environment,
 		GitHubSecretName:     githubSecretName,
 		KubernetesNamespace:  kubernetesNamespace,
 		KubernetesSecretName: kubernetesSecretName,
 		KubernetesSecretKey:  kubernetesSecretKey,
+		Policy:               policy,
+		IdempotencyKey:       idempotencyKey,
 		SecretValueEncrypted: encryptedValueBase64(encryptedSecret),
 	})
 
 	if input.DryRun {
 		s.auditToolSucceeded(ctx, runCtx.Session, tool)
 		return SecretSyncEnvResult{
-			Status:        ToolExecutionStatusOK,
-			ApprovalState: string(entitytypes.MCPApprovalModeNone),
-			Environment:   environment,
-			GitHubSecret:  githubSecretName,
-			KubernetesRef: kubernetesNamespace + "/" + kubernetesSecretName + "#" + kubernetesSecretKey,
-			DryRun:        true,
-			Message:       controlToolMessageDryRun,
+			Status:         ToolExecutionStatusOK,
+			ApprovalState:  string(entitytypes.MCPApprovalModeNone),
+			Environment:    environment,
+			GitHubSecret:   githubSecretName,
+			KubernetesRef:  kubernetesNamespace + "/" + kubernetesSecretName + "#" + kubernetesSecretKey,
+			Policy:         string(policy),
+			IdempotencyKey: idempotencyKey,
+			DryRun:         true,
+			Message:        controlToolMessageDryRun,
 		}, nil
+	}
+
+	existing, found, err := s.actions.FindLatestBySignature(ctx, runCtx.Session.RunID, string(tool.Name), string(controlActionSecretSyncEnv), targetRef)
+	if err != nil {
+		s.auditToolFailed(ctx, runCtx.Session, tool, fmt.Errorf("find existing secret sync action: %w", err))
+		return SecretSyncEnvResult{}, fmt.Errorf("find existing secret sync action: %w", err)
+	}
+	if found {
+		switch existing.ApprovalState {
+		case entitytypes.MCPApprovalStateRequested, entitytypes.MCPApprovalStateApproved:
+			s.auditToolApprovalPending(ctx, runCtx.Session, tool, controlToolMessageApprovalRequired)
+			return SecretSyncEnvResult{
+				Status:         ToolExecutionStatusApprovalRequired,
+				RequestID:      existing.ID,
+				ApprovalState:  string(existing.ApprovalState),
+				Environment:    environment,
+				GitHubSecret:   githubSecretName,
+				KubernetesRef:  kubernetesNamespace + "/" + kubernetesSecretName + "#" + kubernetesSecretKey,
+				Policy:         string(policy),
+				IdempotencyKey: idempotencyKey,
+				Message:        controlToolMessageApprovalRequired,
+			}, nil
+		case entitytypes.MCPApprovalStateApplied:
+			s.auditToolSucceeded(ctx, runCtx.Session, tool)
+			return SecretSyncEnvResult{
+				Status:         ToolExecutionStatusOK,
+				RequestID:      existing.ID,
+				ApprovalState:  string(existing.ApprovalState),
+				Environment:    environment,
+				GitHubSecret:   githubSecretName,
+				KubernetesRef:  kubernetesNamespace + "/" + kubernetesSecretName + "#" + kubernetesSecretKey,
+				Policy:         string(policy),
+				IdempotencyKey: idempotencyKey,
+				Reused:         true,
+				Message:        controlToolMessageIdempotentReplay,
+			}, nil
+		}
 	}
 
 	approvalMode := normalizeApprovalMode(resolveControlApprovalMode(tool.Name, runCtx))
@@ -117,13 +239,15 @@ func (s *Service) MCPSecretSyncEnv(ctx context.Context, session SessionContext, 
 		s.auditApprovalApplied(ctx, runCtx.Session, item, string(floweventdomain.ActorIDControlPlaneMCP))
 		s.auditToolSucceeded(ctx, runCtx.Session, tool)
 		return SecretSyncEnvResult{
-			Status:        ToolExecutionStatusOK,
-			RequestID:     item.ID,
-			ApprovalState: string(item.ApprovalState),
-			Environment:   environment,
-			GitHubSecret:  githubSecretName,
-			KubernetesRef: kubernetesNamespace + "/" + kubernetesSecretName + "#" + kubernetesSecretKey,
-			Message:       controlToolMessageApplied,
+			Status:         ToolExecutionStatusOK,
+			RequestID:      item.ID,
+			ApprovalState:  string(item.ApprovalState),
+			Environment:    environment,
+			GitHubSecret:   githubSecretName,
+			KubernetesRef:  kubernetesNamespace + "/" + kubernetesSecretName + "#" + kubernetesSecretKey,
+			Policy:         string(policy),
+			IdempotencyKey: idempotencyKey,
+			Message:        controlToolMessageApplied,
 		}, nil
 	}
 
@@ -137,13 +261,15 @@ func (s *Service) MCPSecretSyncEnv(ctx context.Context, session SessionContext, 
 		s.auditApprovalRequested(ctx, runCtx.Session, request, tool)
 	}
 	return SecretSyncEnvResult{
-		Status:        ToolExecutionStatusApprovalRequired,
-		RequestID:     request.ID,
-		ApprovalState: string(request.ApprovalState),
-		Environment:   environment,
-		GitHubSecret:  githubSecretName,
-		KubernetesRef: kubernetesNamespace + "/" + kubernetesSecretName + "#" + kubernetesSecretKey,
-		Message:       controlToolMessageApprovalRequired,
+		Status:         ToolExecutionStatusApprovalRequired,
+		RequestID:      request.ID,
+		ApprovalState:  string(request.ApprovalState),
+		Environment:    environment,
+		GitHubSecret:   githubSecretName,
+		KubernetesRef:  kubernetesNamespace + "/" + kubernetesSecretName + "#" + kubernetesSecretKey,
+		Policy:         string(policy),
+		IdempotencyKey: idempotencyKey,
+		Message:        controlToolMessageApprovalRequired,
 	}, nil
 }
 
@@ -577,7 +703,8 @@ func (s *Service) applyApprovedControlAction(
 		CorrelationID: item.CorrelationID,
 		ProjectID:     item.ProjectID,
 	}
-	runCtx, err := s.resolveRunContext(ctx, session, item.ToolName == string(ToolMCPSecretSyncEnv))
+	requiresGitHubToken := item.ToolName == string(ToolMCPSecretSyncEnv)
+	runCtx, err := s.resolveRunContext(ctx, session, requiresGitHubToken)
 	if err != nil {
 		return entitytypes.MCPActionRequest{}, err
 	}
@@ -621,6 +748,13 @@ func (s *Service) applySecretSync(ctx context.Context, runCtx resolvedRunContext
 	payload, err := decodeSecretSyncPayload(payloadRaw)
 	if err != nil {
 		return err
+	}
+	if payload.ProjectID != "" && strings.TrimSpace(runCtx.Session.ProjectID) != "" && payload.ProjectID != strings.TrimSpace(runCtx.Session.ProjectID) {
+		return fmt.Errorf("secret sync payload project_id mismatch")
+	}
+	repositoryFullName := strings.TrimSpace(runCtx.Repository.Owner) + "/" + strings.TrimSpace(runCtx.Repository.Name)
+	if payload.Repository != "" && !strings.EqualFold(payload.Repository, repositoryFullName) {
+		return fmt.Errorf("secret sync payload repository mismatch")
 	}
 	encryptedValue, err := decodeEncryptedValueBase64(payload.SecretValueEncrypted)
 	if err != nil {
@@ -684,11 +818,23 @@ func decodeSecretSyncPayload(raw json.RawMessage) (secretSyncPayload, error) {
 	if err := json.Unmarshal(raw, &payload); err != nil {
 		return payload, fmt.Errorf("decode secret sync payload: %w", err)
 	}
+	payload.ProjectID = strings.TrimSpace(payload.ProjectID)
+	payload.Repository = strings.TrimSpace(payload.Repository)
 	payload.Environment = normalizeEnvName(payload.Environment)
 	payload.GitHubSecretName = strings.TrimSpace(payload.GitHubSecretName)
 	payload.KubernetesNamespace = strings.TrimSpace(payload.KubernetesNamespace)
 	payload.KubernetesSecretName = strings.TrimSpace(payload.KubernetesSecretName)
 	payload.KubernetesSecretKey = normalizeKubernetesSecretDataKey(payload.KubernetesSecretKey)
+	policy, err := normalizeSecretSyncPolicy(payload.Policy)
+	if err != nil {
+		return payload, fmt.Errorf("secret sync payload policy is invalid")
+	}
+	payload.Policy = policy
+	idempotencyKey, err := normalizeSecretSyncIdempotencyKey(payload.IdempotencyKey)
+	if err != nil {
+		return payload, fmt.Errorf("secret sync payload idempotency_key is invalid")
+	}
+	payload.IdempotencyKey = idempotencyKey
 
 	if payload.Environment == "" {
 		return payload, fmt.Errorf("secret sync payload environment is required")
@@ -701,6 +847,9 @@ func decodeSecretSyncPayload(raw json.RawMessage) (secretSyncPayload, error) {
 	}
 	if payload.KubernetesSecretName == "" {
 		return payload, fmt.Errorf("secret sync payload kubernetes_secret_name is required")
+	}
+	if payload.IdempotencyKey == "" {
+		payload.IdempotencyKey = "legacy"
 	}
 	if strings.TrimSpace(payload.SecretValueEncrypted) == "" {
 		return payload, fmt.Errorf("secret sync payload secret value is missing")
