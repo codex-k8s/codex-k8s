@@ -96,6 +96,8 @@ type Config struct {
 	ProjectDBAdminSSLMode string `env:"CODEXK8S_PROJECT_DB_ADMIN_SSLMODE" envDefault:"disable"`
 	// ProjectDBAdminDatabase is admin database name for lifecycle connection.
 	ProjectDBAdminDatabase string `env:"CODEXK8S_PROJECT_DB_ADMIN_DATABASE" envDefault:"postgres"`
+	// ProjectDBLifecycleAllowedEnvs contains allowed environment names for MCP database lifecycle tool.
+	ProjectDBLifecycleAllowedEnvs []string `env:"CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS" envDefault:"dev,staging,ai-staging,prod"`
 }
 
 func (c Config) LearningModeDefaultBool() (bool, error) {

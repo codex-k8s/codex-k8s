@@ -45,7 +45,7 @@ approvals:
 | Day 1 | Full stage and label activation | P0 | `docs/delivery/epics/epic-s3-day1-full-stage-and-label-activation.md` | completed (approved) |
 | Day 2 | Staff runtime debug console (jobs/logs/waits) | P0 | `docs/delivery/epics/epic-s3-day2-staff-runtime-debug-console.md` | completed (approved) |
 | Day 3 | MCP deterministic secret sync (GitHub + K8s) | P0 | `docs/delivery/epics/epic-s3-day3-mcp-deterministic-secret-sync.md` | completed |
-| Day 4 | MCP database lifecycle (create/delete per env) | P0 | `docs/delivery/epics/epic-s3-day4-mcp-database-lifecycle.md` | planned |
+| Day 4 | MCP database lifecycle (create/delete/describe per env) | P0 | `docs/delivery/epics/epic-s3-day4-mcp-database-lifecycle.md` | completed |
 | Day 5 | Owner feedback handle + HTTP approver/executor + Telegram adapter | P0 | `docs/delivery/epics/epic-s3-day5-feedback-and-approver-interfaces.md` | planned |
 | Day 6 | `run:self-improve`: ingestion and diagnostics | P0 | `docs/delivery/epics/epic-s3-day6-self-improve-ingestion-and-diagnostics.md` | planned |
 | Day 7 | `run:self-improve`: docs/prompt/instruction updater + minimal stage prompt matrix | P0 | `docs/delivery/epics/epic-s3-day7-self-improve-updater-and-pr-flow.md` | planned |

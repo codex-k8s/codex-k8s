@@ -15,6 +15,7 @@ import (
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
 	mcpactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/mcpactionrequest"
 	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/platformtoken"
+	projectdatabaserepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projectdatabase"
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 	"github.com/golang-jwt/jwt/v5"
@@ -31,12 +32,13 @@ const (
 
 // Config defines MCP domain behavior.
 type Config struct {
-	TokenSigningKey    string
-	TokenIssuer        string
-	ServerName         string
-	PublicBaseURL      string
-	InternalMCPBaseURL string
-	DefaultTokenTTL    time.Duration
+	TokenSigningKey              string
+	TokenIssuer                  string
+	ServerName                   string
+	PublicBaseURL                string
+	InternalMCPBaseURL           string
+	DefaultTokenTTL              time.Duration
+	DatabaseLifecycleAllowedEnvs []string
 }
 
 // GitHubClient defines GitHub operations used by MCP tools.
@@ -69,22 +71,25 @@ type KubernetesClient interface {
 type DatabaseClient interface {
 	EnsureDatabase(ctx context.Context, databaseName string) (bool, error)
 	DropDatabase(ctx context.Context, databaseName string) (bool, error)
+	DatabaseExists(ctx context.Context, databaseName string) (bool, error)
 }
 
 // Service provides MCP token handling, prompt context building and tool operations.
 type Service struct {
 	cfg Config
 
-	runs       agentrunrepo.Repository
-	flowEvents floweventrepo.Repository
-	repos      repocfgrepo.Repository
-	platform   platformtokenrepo.Repository
-	actions    mcpactionrequestrepo.Repository
-	sessions   agentsessionrepo.Repository
-	tokenCrypt *tokencrypt.Service
-	github     GitHubClient
-	kubernetes KubernetesClient
-	database   DatabaseClient
+	runs                         agentrunrepo.Repository
+	flowEvents                   floweventrepo.Repository
+	repos                        repocfgrepo.Repository
+	platform                     platformtokenrepo.Repository
+	actions                      mcpactionrequestrepo.Repository
+	sessions                     agentsessionrepo.Repository
+	projectDatabases             projectdatabaserepo.Repository
+	tokenCrypt                   *tokencrypt.Service
+	github                       GitHubClient
+	kubernetes                   KubernetesClient
+	database                     DatabaseClient
+	databaseLifecycleAllowedEnvs map[string]struct{}
 
 	toolCatalog []ToolCapability
 	now         func() time.Time
@@ -92,16 +97,17 @@ type Service struct {
 
 // Dependencies wires infrastructure for MCP domain service.
 type Dependencies struct {
-	Runs       agentrunrepo.Repository
-	FlowEvents floweventrepo.Repository
-	Repos      repocfgrepo.Repository
-	Platform   platformtokenrepo.Repository
-	Actions    mcpactionrequestrepo.Repository
-	Sessions   agentsessionrepo.Repository
-	TokenCrypt *tokencrypt.Service
-	GitHub     GitHubClient
-	Kubernetes KubernetesClient
-	Database   DatabaseClient
+	Runs             agentrunrepo.Repository
+	FlowEvents       floweventrepo.Repository
+	Repos            repocfgrepo.Repository
+	Platform         platformtokenrepo.Repository
+	Actions          mcpactionrequestrepo.Repository
+	Sessions         agentsessionrepo.Repository
+	ProjectDatabases projectdatabaserepo.Repository
+	TokenCrypt       *tokencrypt.Service
+	GitHub           GitHubClient
+	Kubernetes       KubernetesClient
+	Database         DatabaseClient
 }
 
 // NewService creates MCP domain service.
@@ -155,27 +161,34 @@ func NewService(cfg Config, deps Dependencies) (*Service, error) {
 	if deps.Sessions == nil {
 		return nil, fmt.Errorf("agent sessions repository is required")
 	}
+	if deps.ProjectDatabases == nil {
+		return nil, fmt.Errorf("project database repository is required")
+	}
 	if deps.Database == nil {
 		return nil, fmt.Errorf("database client is required")
 	}
+
+	databaseAllowedEnvs := normalizeDatabaseLifecycleAllowedEnvs(cfg.DatabaseLifecycleAllowedEnvs)
 
 	catalog := DefaultToolCatalog()
 	sort.Slice(catalog, func(i, j int) bool { return catalog[i].Name < catalog[j].Name })
 
 	return &Service{
-		cfg:         cfg,
-		runs:        deps.Runs,
-		flowEvents:  deps.FlowEvents,
-		repos:       deps.Repos,
-		platform:    deps.Platform,
-		actions:     deps.Actions,
-		sessions:    deps.Sessions,
-		tokenCrypt:  deps.TokenCrypt,
-		github:      deps.GitHub,
-		kubernetes:  deps.Kubernetes,
-		database:    deps.Database,
-		toolCatalog: catalog,
-		now:         time.Now,
+		cfg:                          cfg,
+		runs:                         deps.Runs,
+		flowEvents:                   deps.FlowEvents,
+		repos:                        deps.Repos,
+		platform:                     deps.Platform,
+		actions:                      deps.Actions,
+		sessions:                     deps.Sessions,
+		projectDatabases:             deps.ProjectDatabases,
+		tokenCrypt:                   deps.TokenCrypt,
+		github:                       deps.GitHub,
+		kubernetes:                   deps.Kubernetes,
+		database:                     deps.Database,
+		databaseLifecycleAllowedEnvs: databaseAllowedEnvs,
+		toolCatalog:                  catalog,
+		now:                          time.Now,
 	}, nil
 }
 

@@ -36,8 +36,8 @@ approvals:
 - Внутренний gRPC контракт расширен RPC `IssueRunMCPToken` для выдачи MCP токена worker-у перед запуском run pod.
 - MCP-слой в текущем MVP baseline покрывает:
   - label-операции (`github_labels_*`);
-  - deterministic secret sync (GitHub + Kubernetes);
-  - database lifecycle (`create/delete/describe`);
+  - `secret.sync.github_k8s` (deterministic secret sync GitHub + Kubernetes);
+  - `database.lifecycle` (`create/delete/describe`);
   - owner feedback request (options + custom answer).
 - Базовые MCP label-инструменты:
   - `github_labels_list`;

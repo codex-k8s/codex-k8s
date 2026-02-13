@@ -13,7 +13,7 @@ const ToolPromptContextGet ToolName = "codex_prompt_context_get"
 
 const (
 	ToolMCPSecretSyncEnv        ToolName = "secret.sync.github_k8s"
-	ToolMCPDatabaseLifecycle    ToolName = "mcp_database_lifecycle"
+	ToolMCPDatabaseLifecycle    ToolName = "database.lifecycle"
 	ToolMCPOwnerFeedbackRequest ToolName = "mcp_owner_feedback_request"
 )
 
@@ -536,29 +536,34 @@ type SecretSyncEnvResult struct {
 type DatabaseLifecycleAction string
 
 const (
-	DatabaseLifecycleActionCreate DatabaseLifecycleAction = "create"
-	DatabaseLifecycleActionDelete DatabaseLifecycleAction = "delete"
+	DatabaseLifecycleActionCreate   DatabaseLifecycleAction = "create"
+	DatabaseLifecycleActionDelete   DatabaseLifecycleAction = "delete"
+	DatabaseLifecycleActionDescribe DatabaseLifecycleAction = "describe"
 )
 
-// DatabaseLifecycleInput describes database create/delete request.
+// DatabaseLifecycleInput describes database lifecycle request.
 type DatabaseLifecycleInput struct {
-	Environment  string                  `json:"environment"`
-	Action       DatabaseLifecycleAction `json:"action"`
-	DatabaseName string                  `json:"database_name"`
-	DryRun       bool                    `json:"dry_run,omitempty"`
+	Environment   string                  `json:"environment"`
+	Action        DatabaseLifecycleAction `json:"action"`
+	DatabaseName  string                  `json:"database_name"`
+	ConfirmDelete bool                    `json:"confirm_delete,omitempty"`
+	DryRun        bool                    `json:"dry_run,omitempty"`
 }
 
-// DatabaseLifecycleResult is output for mcp_database_lifecycle tool.
+// DatabaseLifecycleResult is output for database.lifecycle tool.
 type DatabaseLifecycleResult struct {
-	Status        ToolExecutionStatus `json:"status"`
-	RequestID     int64               `json:"request_id,omitempty"`
-	ApprovalState string              `json:"approval_state,omitempty"`
-	Environment   string              `json:"environment,omitempty"`
-	Action        string              `json:"action,omitempty"`
-	DatabaseName  string              `json:"database_name,omitempty"`
-	Applied       bool                `json:"applied,omitempty"`
-	DryRun        bool                `json:"dry_run,omitempty"`
-	Message       string              `json:"message,omitempty"`
+	Status         ToolExecutionStatus `json:"status"`
+	RequestID      int64               `json:"request_id,omitempty"`
+	ApprovalState  string              `json:"approval_state,omitempty"`
+	Environment    string              `json:"environment,omitempty"`
+	Action         string              `json:"action,omitempty"`
+	DatabaseName   string              `json:"database_name,omitempty"`
+	Applied        bool                `json:"applied,omitempty"`
+	Exists         bool                `json:"exists"`
+	OwnedByProject bool                `json:"owned_by_project"`
+	OwnerProjectID string              `json:"owner_project_id,omitempty"`
+	DryRun         bool                `json:"dry_run,omitempty"`
+	Message        string              `json:"message,omitempty"`
 }
 
 // OwnerFeedbackRequestInput describes owner feedback request with fixed options and optional custom answer.

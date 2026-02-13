@@ -3,16 +3,14 @@ package postgresadmin
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 
+	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const defaultAdminDatabase = "postgres"
-
-var databaseNamePattern = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_-]{0,62}$`)
 
 // Config defines PostgreSQL admin connection parameters.
 type Config struct {
@@ -124,6 +122,15 @@ func (c *Client) DropDatabase(ctx context.Context, databaseName string) (bool, e
 	return true, nil
 }
 
+// DatabaseExists reports whether database is present.
+func (c *Client) DatabaseExists(ctx context.Context, databaseName string) (bool, error) {
+	name, err := normalizeDatabaseName(databaseName)
+	if err != nil {
+		return false, err
+	}
+	return c.databaseExists(ctx, name)
+}
+
 func (c *Client) databaseExists(ctx context.Context, databaseName string) (bool, error) {
 	var exists bool
 	if err := c.pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = $1)", databaseName).Scan(&exists); err != nil {
@@ -133,12 +140,5 @@ func (c *Client) databaseExists(ctx context.Context, databaseName string) (bool,
 }
 
 func normalizeDatabaseName(databaseName string) (string, error) {
-	name := strings.TrimSpace(databaseName)
-	if name == "" {
-		return "", fmt.Errorf("database_name is required")
-	}
-	if !databaseNamePattern.MatchString(name) {
-		return "", fmt.Errorf("database_name %q is invalid", name)
-	}
-	return name, nil
+	return postgres.NormalizeDatabaseName(databaseName)
 }

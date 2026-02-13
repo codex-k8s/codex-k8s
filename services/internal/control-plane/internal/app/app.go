@@ -36,6 +36,7 @@ import (
 	mcpactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/mcpactionrequest"
 	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/platformtoken"
 	projectrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/project"
+	projectdatabaserepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projectdatabase"
 	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projectmember"
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/repocfg"
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/staffrun"
@@ -83,6 +84,7 @@ func Run() error {
 	agentSessions := agentsessionrepo.NewRepository(pgxPool)
 	platformTokens := platformtokenrepo.NewRepository(pgxPool)
 	mcpActionRequests := mcpactionrequestrepo.NewRepository(pgxPool)
+	projectDatabases := projectdatabaserepo.NewRepository(pgxPool)
 
 	tokenCrypto, err := tokencrypt.NewService(cfg.TokenEncryptionKey)
 	if err != nil {
@@ -127,21 +129,23 @@ func Run() error {
 		mcpSigningKey = cfg.TokenEncryptionKey
 	}
 	mcpService, err := mcpdomain.NewService(mcpdomain.Config{
-		TokenSigningKey:    mcpSigningKey,
-		PublicBaseURL:      cfg.PublicBaseURL,
-		InternalMCPBaseURL: cfg.ControlPlaneMCPBaseURL,
-		DefaultTokenTTL:    mcpTokenTTL,
+		TokenSigningKey:              mcpSigningKey,
+		PublicBaseURL:                cfg.PublicBaseURL,
+		InternalMCPBaseURL:           cfg.ControlPlaneMCPBaseURL,
+		DefaultTokenTTL:              mcpTokenTTL,
+		DatabaseLifecycleAllowedEnvs: cfg.ProjectDBLifecycleAllowedEnvs,
 	}, mcpdomain.Dependencies{
-		Runs:       agentRuns,
-		FlowEvents: flowEvents,
-		Repos:      repos,
-		Platform:   platformTokens,
-		Actions:    mcpActionRequests,
-		Sessions:   agentSessions,
-		TokenCrypt: tokenCrypto,
-		GitHub:     githubMCPClient,
-		Kubernetes: k8sClient,
-		Database:   postgresAdminClient,
+		Runs:             agentRuns,
+		FlowEvents:       flowEvents,
+		Repos:            repos,
+		Platform:         platformTokens,
+		Actions:          mcpActionRequests,
+		Sessions:         agentSessions,
+		ProjectDatabases: projectDatabases,
+		TokenCrypt:       tokenCrypto,
+		GitHub:           githubMCPClient,
+		Kubernetes:       k8sClient,
+		Database:         postgresAdminClient,
 	})
 	if err != nil {
 		return fmt.Errorf("init mcp domain service: %w", err)

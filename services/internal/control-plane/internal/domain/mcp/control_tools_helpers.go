@@ -5,10 +5,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
+	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 )
 
@@ -39,9 +41,11 @@ type secretSyncPayload struct {
 }
 
 type databaseLifecyclePayload struct {
-	Environment  string                  `json:"environment"`
-	Action       DatabaseLifecycleAction `json:"action"`
-	DatabaseName string                  `json:"database_name"`
+	ProjectID     string                  `json:"project_id"`
+	Environment   string                  `json:"environment"`
+	Action        DatabaseLifecycleAction `json:"action"`
+	DatabaseName  string                  `json:"database_name"`
+	ConfirmDelete bool                    `json:"confirm_delete,omitempty"`
 }
 
 type ownerFeedbackPayload struct {
@@ -68,6 +72,8 @@ type runWaitPayload struct {
 	WaitState            string `json:"wait_state,omitempty"`
 	TimeoutGuardDisabled bool   `json:"timeout_guard_disabled"`
 }
+
+var defaultDatabaseLifecycleAllowedEnvs = []string{"dev", "staging", "prod"}
 
 func resolveControlApprovalMode(tool ToolName, runCtx resolvedRunContext) entitytypes.MCPApprovalMode {
 	triggerLabel := ""
@@ -107,6 +113,49 @@ func resolveControlApprovalMode(tool ToolName, runCtx resolvedRunContext) entity
 
 func normalizeEnvName(value string) string {
 	return strings.ToLower(strings.TrimSpace(value))
+}
+
+func normalizeDatabaseLifecycleAllowedEnvs(values []string) map[string]struct{} {
+	out := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		env := normalizeEnvName(value)
+		if env == "" {
+			continue
+		}
+		out[env] = struct{}{}
+	}
+	if len(out) > 0 {
+		return out
+	}
+	out = make(map[string]struct{}, len(defaultDatabaseLifecycleAllowedEnvs))
+	for _, env := range defaultDatabaseLifecycleAllowedEnvs {
+		out[env] = struct{}{}
+	}
+	return out
+}
+
+func isDatabaseLifecycleEnvironmentAllowed(allowed map[string]struct{}, env string) bool {
+	if len(allowed) == 0 {
+		return true
+	}
+	_, ok := allowed[normalizeEnvName(env)]
+	return ok
+}
+
+func listDatabaseLifecycleAllowedEnvs(allowed map[string]struct{}) []string {
+	if len(allowed) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(allowed))
+	for env := range allowed {
+		out = append(out, env)
+	}
+	slices.Sort(out)
+	return out
+}
+
+func normalizeDatabaseLifecycleName(value string) (string, error) {
+	return postgres.NormalizeDatabaseName(value)
 }
 
 func normalizeKubernetesSecretDataKey(value string) string {
