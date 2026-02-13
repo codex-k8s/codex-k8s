@@ -48,7 +48,7 @@ approvals:
 | Day 4 | MCP database lifecycle (create/delete per env) | P0 | `docs/delivery/epics/epic-s3-day4-mcp-database-lifecycle.md` | planned |
 | Day 5 | Owner feedback handle + HTTP approver/executor + Telegram adapter | P0 | `docs/delivery/epics/epic-s3-day5-feedback-and-approver-interfaces.md` | planned |
 | Day 6 | `run:self-improve`: ingestion and diagnostics | P0 | `docs/delivery/epics/epic-s3-day6-self-improve-ingestion-and-diagnostics.md` | planned |
-| Day 7 | `run:self-improve`: docs/prompt/instruction updater | P0 | `docs/delivery/epics/epic-s3-day7-self-improve-updater-and-pr-flow.md` | planned |
+| Day 7 | `run:self-improve`: docs/prompt/instruction updater + minimal stage prompt matrix | P0 | `docs/delivery/epics/epic-s3-day7-self-improve-updater-and-pr-flow.md` | planned |
 | Day 8 | Agent toolchain auto-extension and policy safeguards | P1 | `docs/delivery/epics/epic-s3-day8-agent-toolchain-auto-extension.md` | planned |
 | Day 9 | Declarative full-env deploy and runtime parity | P0 | `docs/delivery/epics/epic-s3-day9-declarative-full-env-deploy-and-runtime-parity.md` | planned |
 | Day 10 | Staff console full redesign on Vuetify | P0 | `docs/delivery/epics/epic-s3-day10-staff-console-vuetify-redesign.md` | planned |

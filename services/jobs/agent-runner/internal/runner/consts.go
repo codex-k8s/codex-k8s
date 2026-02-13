@@ -6,6 +6,7 @@ const (
 	templateNamePromptReview   = "templates/prompt_review.tmpl"
 	templateNameCodexConfig    = "templates/codex_config.toml.tmpl"
 	templateNameKubeconfig     = "templates/kubeconfig.tmpl"
+	promptSeedsDirRelativePath = "docs/product/prompt-seeds"
 
 	promptTemplateKindWork   = "work"
 	promptTemplateKindReview = "review"

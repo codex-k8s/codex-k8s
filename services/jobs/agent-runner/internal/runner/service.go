@@ -122,7 +122,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		return err
 	}
 
-	taskBody, err := s.renderTaskTemplate(result.templateKind)
+	taskBody, err := s.renderTaskTemplate(result.templateKind, state.repoDir)
 	if err != nil {
 		return err
 	}

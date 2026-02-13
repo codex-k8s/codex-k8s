@@ -27,8 +27,8 @@ approvals:
 
 | Kind | Назначение | Пример seed |
 |---|---|---|
-| `work` | Выполнение задачи (plan/implement/test/doc update) | `docs/product/prompt-seeds/dev-work.md` |
-| `review` | Ревизия/аудит изменений | `docs/product/prompt-seeds/dev-review.md` |
+| `work` | Выполнение задачи (plan/implement/test/doc update) | `docs/product/prompt-seeds/dev-work.md`, `docs/product/prompt-seeds/plan-work.md` |
+| `review` | Ревизия/аудит изменений | `docs/product/prompt-seeds/dev-review.md`, `docs/product/prompt-seeds/plan-review.md` |
 
 Примечание:
 - seed-файлы в репозитории задают baseline-структуру и требования;
@@ -52,7 +52,8 @@ approvals:
 - `../codexctl/internal/prompt/templates/*.tmpl` (кроме `env_comment_*.tmpl`).
 
 ### Repo seeds
-- Базовые шаблоны в репозитории.
+- Базовые stage-specific шаблоны в `docs/product/prompt-seeds/*.md`.
+- Нейминг baseline: `<stage>-work.md` и `<stage>-review.md` (для revise-loop стадий).
 - Используются как fallback при отсутствии override в БД.
 - В seed-файлах хранится только prompt body (инструкции агенту).
 - В seed-файлах не допускаются документные секции и мета-описания.
@@ -143,6 +144,7 @@ approvals:
 
 ## Связанные документы
 - `docs/product/agents_operating_model.md`
+- `docs/product/prompt-seeds/README.md`
 - `docs/product/prompt-seeds/dev-work.md`
 - `docs/product/prompt-seeds/dev-review.md`
 - `docs/architecture/data_model.md`

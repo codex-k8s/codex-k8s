@@ -106,12 +106,12 @@ approvals:
 3. seed-файл в репозитории.
 
 Seed-файлы:
-- `docs/product/prompt-seeds/dev-work.md`
-- `docs/product/prompt-seeds/dev-review.md`
+- каталог `docs/product/prompt-seeds/*.md` (минимальная stage-матрица, включая `dev-work`/`dev-review`).
 
 Текущий baseline (S3 Day1):
-- в runtime активно используются `dev-work` и `dev-review`;
-- для остальных ролей и специализированных режимов используется planned matrix ниже.
+- в runtime активно используется минимальная stage-матрица seed-шаблонов (`<stage>-work.md` и `<stage>-review.md` для revise-этапов);
+- `dev-work`/`dev-review` остаются отдельными шаблонами для цикла разработки;
+- комплексная проработка role-specific матрицы остаётся следующим этапом.
 
 Требования:
 - изменение seed/override должно быть трассируемо через `flow_events`;

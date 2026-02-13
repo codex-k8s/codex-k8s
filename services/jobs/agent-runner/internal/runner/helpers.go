@@ -5,6 +5,7 @@ import (
 	"context"
 	"embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -51,16 +52,36 @@ func normalizePromptLocale(value string) string {
 	}
 }
 
-func (s *Service) renderTaskTemplate(templateKind string) (string, error) {
-	templateName := templateNamePromptWork
-	if templateKind == promptTemplateKindReview {
-		templateName = templateNamePromptReview
-	}
-
-	return renderTemplate(templateName, promptTaskTemplateData{
+func (s *Service) renderTaskTemplate(templateKind string, repoDir string) (string, error) {
+	templateData := promptTaskTemplateData{
 		BaseBranch:   s.cfg.AgentBaseBranch,
 		PromptLocale: normalizePromptLocale(s.cfg.PromptTemplateLocale),
-	})
+	}
+	for _, candidate := range promptSeedCandidates(s.cfg.TriggerKind, templateKind, s.cfg.PromptTemplateLocale) {
+		seedPath := filepath.Join(repoDir, promptSeedsDirRelativePath, candidate)
+		seedBytes, err := os.ReadFile(seedPath)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				continue
+			}
+			return "", fmt.Errorf("read prompt seed %s: %w", seedPath, err)
+		}
+		seedTemplate, err := template.New(candidate).Option("missingkey=error").Parse(string(seedBytes))
+		if err != nil {
+			return "", fmt.Errorf("parse prompt seed %s: %w", seedPath, err)
+		}
+		var out strings.Builder
+		if err := seedTemplate.Execute(&out, templateData); err != nil {
+			return "", fmt.Errorf("render prompt seed %s: %w", seedPath, err)
+		}
+		return out.String(), nil
+	}
+
+	templateName := templateNamePromptWork
+	if normalizePromptTemplateKind(templateKind) == promptTemplateKindReview {
+		templateName = templateNamePromptReview
+	}
+	return renderTemplate(templateName, templateData)
 }
 
 func (s *Service) writeCodexConfig(codexDir string) error {
