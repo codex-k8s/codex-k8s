@@ -18,6 +18,8 @@ const tokenInfoSessionKey = "codexk8s_session"
 
 type domainService interface {
 	VerifyRunToken(ctx context.Context, rawToken string) (mcpdomain.SessionContext, error)
+	AllowedTools(ctx context.Context, session mcpdomain.SessionContext) ([]mcpdomain.ToolCapability, error)
+	IsToolAllowed(ctx context.Context, session mcpdomain.SessionContext, toolName mcpdomain.ToolName) (bool, error)
 	GitHubLabelsList(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.GitHubLabelsListInput) (mcpdomain.GitHubLabelsListResult, error)
 	GitHubLabelsAdd(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.GitHubLabelsAddInput) (mcpdomain.GitHubLabelsMutationResult, error)
 	GitHubLabelsRemove(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.GitHubLabelsRemoveInput) (mcpdomain.GitHubLabelsMutationResult, error)
@@ -47,6 +49,7 @@ func NewHandler(service domainService, logger *slog.Logger) http.Handler {
 		Version: "v0.0.1",
 	}, nil)
 
+	registerToolAccessMiddleware(server, service)
 	registerTools(server, service)
 
 	streamHandler := sdkmcp.NewStreamableHTTPHandler(func(_ *http.Request) *sdkmcp.Server {

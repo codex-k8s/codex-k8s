@@ -149,6 +149,9 @@ approvals:
 
 ## Оркестрационный flow для `run:dev` / `run:dev:revise`
 
+- Для каждого запуска MCP выдает только run-scoped список ручек:
+  - для `run:dev`/`run:dev:revise` baseline = только label-ручки;
+  - недоступные ручки скрываются из `tools/list` и блокируются на `tools/call`.
 - На issue одновременно допускается только один активный trigger label из группы `run:*`.
 - `run:dev` используется для первичного запуска цикла разработки и создания PR.
 - `run:dev:revise` используется только для итерации по уже существующему PR.
@@ -171,6 +174,7 @@ approvals:
 
 - На входе: issue/pr с лейблом `run:self-improve` и доступным audit trail (`agent_sessions`, `flow_events`, comments, links).
 - Это основной и единственный use-case self-improve: анализ качества предыдущих запусков и выпуск PR с улучшениями платформы.
+- В run-scoped MCP-каталоге для `run:self-improve` доступны label-ручки и diagnostic self-improve ручки; остальные ручки скрыты и недоступны.
 - Агент обязан работать через связку MCP+GitHub CLI:
   - MCP `self_improve_runs_list`: список запусков с пагинацией (по 50, newest-first);
   - MCP `self_improve_run_lookup`: поиск запусков по `issue_number`/`pull_request_number`;

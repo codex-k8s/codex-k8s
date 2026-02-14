@@ -27,6 +27,9 @@ approvals:
 ## Политика апрувов
 
 ### Baseline (текущий этап)
+- MCP сервер формирует run-scoped каталог инструментов:
+  - `tools/list` возвращает только ручки, разрешённые для текущего `trigger/agent_key/runtime`;
+  - `tools/call` повторно валидирует доступность ручки и отклоняет недоступные вызовы.
 - Для MCP label-инструментов (`github_labels_list|add|remove|transition`) используется `approval:none`.
 - Для self-improve read-инструментов (`self_improve_runs_list`, `self_improve_run_lookup`, `self_improve_session_get`) используется `approval:none`.
 - Label transitions всё равно проходят через control-plane MCP, чтобы сохранять единый audit-контур.

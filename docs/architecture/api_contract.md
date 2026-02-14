@@ -165,6 +165,9 @@ approvals:
   - `self_improve_runs_list` (page/limit, newest-first),
   - `self_improve_run_lookup` (поиск run по Issue/PR),
   - `self_improve_session_get` (извлечение `codex-cli` session JSON + target path в `/tmp/codex-sessions/...`).
+- MCP tools экспонируются как run-scoped каталог:
+  - `tools/list` возвращает только ручки, разрешённые для текущего профиля запуска;
+  - `tools/call` отклоняет вызовы ручек вне разрешённого профиля.
 
 ## Session resume and timeout behavior
 - run/session поддерживает paused states `waiting_owner_review` и `waiting_mcp`.
