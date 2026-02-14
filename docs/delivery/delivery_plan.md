@@ -13,7 +13,7 @@ approvals:
   status: approved
   request_id: "owner-2026-02-12-project-docs-approval"
   approved_by: "ai-da-stas"
-  approved_at: 2026-02-12
+  approved_at: 2026-02-11
 ---
 
 # Delivery Plan: codex-k8s
