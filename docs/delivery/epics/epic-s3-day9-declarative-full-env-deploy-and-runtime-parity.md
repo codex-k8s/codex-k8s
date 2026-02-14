@@ -17,37 +17,44 @@ approvals:
 # Epic S3 Day 9: Declarative full-env deploy and runtime parity
 
 ## TL;DR
-- Цель: перейти от shell-first деплоя к декларативному `services.yaml` и Go-движку оркестрации full-env.
-- Входная обязательная подзадача (из референса): добавить `partials` для шаблонного рендера манифестов без перехода на Helm.
-- MVP-результат Day9: детерминированный full-env deploy по typed inventory, reusable шаблоны манифестов, runtime parity для non-prod (`dev/staging/ai-slot`).
+- Цель: перейти от shell-first деплоя/установки к декларативному `services.yaml` и Go-движку оркестрации full-env.
+- Входная обязательная подзадача: добавить `partials` для шаблонного рендера без Helm.
+- Day9 охватывает не только deploy, но и bootstrap-first-install на новой машине, чтобы подход был применим для любых проектов на `codex-k8s`.
+- MVP-результат Day9: детерминированные bootstrap + deploy + runtime parity для non-prod (`dev/staging/ai-slot`) на основе typed inventory.
 
 ## Priority
 - `P0`.
 
 ## Контекст и проблема
 - Сейчас основной контур staging/full-env деплоя завязан на shell-скрипты и ручной рендер `*.yaml.tpl`.
+- Bootstrap нового окружения (`bootstrap/remote/**.sh`) также реализован shell-first и слабо переиспользуем между проектами.
 - `services.yaml` в `codex-k8s` пока не является реальным source of truth для состава сервисов и порядка оркестрации.
 - В манифестах много повторяющихся блоков (labels/annotations/env/probes/ingress/tls/wait initContainers), которые сложно сопровождать без reusable partial-шаблонов.
-- Нужно упростить DX для разработчиков и агентов: меньше копипасты, меньше скрытой логики в bash, больше детерминизма в typed config + Go runtime.
+- Нужно упростить DX для разработчиков и агентов: меньше копипасты, меньше скрытой логики в bash, больше детерминизма в typed config + Go runtime на всем цикле `bootstrap -> deploy -> AI-slot development`.
 
 ## Scope
 ### In scope
 - D9-T1. Template partials для манифестов (обязательная подзадача из референса):
   - добавить поддержку partial-файлов с `{{ define "..." }}` и вызовами через `{{ template "..." . }}` и helper `include`;
-  - подключение partials через `services.yaml` (`templates.partials`) и/или конвенцию (решение фиксируется перед реализацией);
+  - подключение partials только через явный конфиг в `services.yaml`: `templates.partials`;
+  - partials доступны для всех template-consumers: deploy manifests, prompt templates, codex config templates, hook templates;
   - сохранить текущий TemplateContext-модель (`.Env`, `.Namespace`, `.Slot`, `.Versions`, ...), не ломая текущие шаблоны;
-  - добавить читаемые ошибки при конфликте `define`/ошибках парсинга.
+  - добавить fail-fast ошибки при конфликте `define`/ошибках парсинга.
 - D9-T2. Typed inventory в `services.yaml` для full-env deploy:
-  - описать infra/services/deploy groups/dependencies/overlays как source of truth;
+  - описать infra/services/bootstrap/deploy groups/dependencies/overlays как source of truth;
   - закрепить порядок выкладки:
     `stateful dependencies -> migrations -> internal domain services -> edge services -> frontend`.
-- D9-T3. Go-orchestrator деплоя:
-  - основной путь apply/readiness должен исполняться через Go-движок;
-  - shell остается thin-wrapper entrypoint без бизнес-логики оркестрации.
+- D9-T3. Go-orchestrator установки и деплоя:
+  - основной путь bootstrap/apply/readiness исполняется через Go-движок;
+  - shell остается thin-wrapper entrypoint без бизнес-логики оркестрации;
+  - логика из `deploy/scripts/**` и `bootstrap/remote/**` переносится в декларативный контур в рамках Day9 (одним проходом, без отложенной "второй волны").
 - D9-T4. Runtime parity non-prod:
-  - зафиксировать dev/full-env режимы для Go и frontend сервисов;
-  - унифицировать поведение окружения agent-run и сервисов слота.
-- D9-T5. Документация и трассировка:
+  - для всех non-prod окружений (`dev`, `staging`, `ai-slot`) обязателен hot-reload для Go и frontend сервисов;
+  - `prod` остается без hot-reload;
+  - унифицировать поведение окружения agent-run и сервисов слота для live-debug.
+- D9-T5. Размещение нового модуля конфигурации и рендера:
+  - реализовать движок в `libs/go/servicescfg` как переиспользуемый слой для worker/bootstrap/control-plane/CLI-контуров.
+- D9-T6. Документация и трассировка:
   - обновить `docs/architecture/*`, `docs/product/*` (где затронуты process/runtime), `docs/delivery/*`, `docs/ops/staging_runbook.md`;
   - синхронизировать `issue_map` и `requirements_traceability`.
 
@@ -56,24 +63,26 @@ approvals:
 
 ## Критерии приемки
 - Partials:
-  - проект может определить один или несколько partial-файлов;
-  - partial-шаблоны доступны в любом манифесте при рендере;
-  - тесты покрывают: загрузку partials, вызов через `template/include`, конфликт имен.
-- Declarative deploy:
-  - для `codex-k8s` full-env можно поднять из `services.yaml` без ручной правки deploy shell-скриптов;
-  - порядок deploy-этапов детерминирован и подтвержден событиями/логами.
+  - проект может определить один или несколько partial-файлов через `templates.partials`;
+  - partial-шаблоны доступны во всех template-consumers;
+  - тесты покрывают: загрузку partials, вызов через `template/include`, fail-fast при конфликте имен.
+- Declarative bootstrap/deploy:
+  - для `codex-k8s` и нового проекта полный цикл `bootstrap-first-install + full-env deploy` поднимается из `services.yaml` без ручной правки shell-скриптов;
+  - порядок bootstrap/deploy этапов детерминирован и подтвержден событиями/логами.
 - Runtime parity:
+  - во всех non-prod окружениях включен hot-reload для Go и frontend сервисов;
   - non-prod режимы запуска сервисов и agent-run согласованы и воспроизводимы;
   - shared workspace volume и права доступа описаны декларативно.
 - Документация:
   - проектная документация и трассировка синхронно обновлены по итогам реализации.
 
 ## План реализации (Day9)
-1. Ввести модуль рендера шаблонов с partials (без изменения текущего контекста).
-2. Добавить typed-модель `services.yaml` для deploy inventory и загрузчик с валидацией.
-3. Перенести deploy orchestration в Go-движок с тем же порядком зависимостей.
-4. Подключить движок в существующий staging/dev pipeline через thin wrappers.
-5. Обновить docs + tests + regression checks.
+1. Ввести модуль `libs/go/servicescfg` с рендером partials, `include` helper и fail-fast валидаторами.
+2. Добавить typed-модель `services.yaml` для `bootstrap + deploy + runtime parity` inventory и загрузчик с валидацией.
+3. Перенести в Go-orchestrator всю бизнес-логику из `deploy/scripts/**` и `bootstrap/remote/**` (одним проходом).
+4. Подключить thin-wrapper shell entrypoints к новому движку без дублирования оркестрации.
+5. Зафиксировать hot-reload для всех non-prod окружений.
+6. Обновить docs + tests + regression checks.
 
 ## DoD (engineering)
 - Unit tests:
@@ -81,9 +90,20 @@ approvals:
   - negative cases (conflict/missing template/invalid glob).
 - Integration checks:
   - dry-run render/plan;
-  - staging deploy path через новый orchestrator.
+  - bootstrap-first-install path через новый orchestrator;
+  - staging deploy path через новый orchestrator;
+  - smoke сценарий разработки в AI-slot с hot-reload.
 - Documentation:
   - обновлены связанные продуктовые/архитектурные/delivery/ops документы.
+
+## Зафиксированные решения перед реализацией
+- `templates.partials`: только явный список в `services.yaml`.
+- Partials активны для всех template-consumers.
+- Поддерживается `template` + `include` helper.
+- Конфликты `define` обрабатываются только fail-fast.
+- Общий движок размещается в `libs/go/servicescfg`.
+- Day9 выполняется полным проходом, без инкрементального переноса "на потом".
+- Hot-reload обязателен для всех non-prod окружений, включая staging; `prod` без hot-reload.
 
 ## Референсы и источники
 - Внутренние:
