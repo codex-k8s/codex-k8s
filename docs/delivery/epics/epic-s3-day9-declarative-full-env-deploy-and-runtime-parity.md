@@ -56,7 +56,7 @@ approvals:
   - для `codex-k8s` `ai-staging` задаётся шаблоном `{{ .Project }}-ai-staging`.
 - Bootstrap binary (одноразовый):
   - настройка чистого Ubuntu 24.04: зависимости, Kubernetes, базовые скрипты/секреты/env;
-  - раздельная подготовка GitHub-репозиториев: platform repo для CI/runtime secrets и first-project repo для webhook/labels;
+  - раздельная подготовка GitHub-репозиториев: platform repo для CI/runtime secrets + webhook/labels, first-project repo (если отдельный) для дополнительной настройки webhook/labels;
   - деплой `codex-k8s` и handoff в webhook-driven `control-plane`.
 - E2E маршрут на отдельном чистом VPS через `bootstrap/host/config-e2e-test.env`.
 
@@ -108,7 +108,7 @@ approvals:
   - входной конфиг: `bootstrap/host/config-e2e-test.env`;
   - сценарий: установка зависимостей на Ubuntu 24.04, поднятие Kubernetes, деплой `codex-k8s`, проверка webhook-driven lifecycle;
   - отдельный пустой GitHub repo проекта-примера подключается в e2e и проходит provisioning/deploy smoke;
-  - проверка, что platform secrets/variables пишутся только в platform repo, а в проектный repo настраиваются только webhook/labels.
+  - проверка, что platform secrets/variables пишутся только в platform repo, webhook/labels всегда настраиваются в platform repo и дополнительно в first-project repo (если он отдельный).
 
 ## Критерии приемки
 - Для минимум двух проектов (`project-example` и `codex-k8s`) full-env поднимается из `services.yaml` через typed execution-plan.
@@ -117,7 +117,7 @@ approvals:
 - Для `codex-k8s` подтверждено правило шаблона: `ai-staging` задаётся как `{{ .Project }}-ai-staging` и для `project=codex-k8s` резолвится в `codex-k8s-ai-staging`.
 - Для ai-slot dogfooding подтверждено отсутствие конфликтов со staging/prod платформой (namespace и runtime resources).
 - Bootstrap binary успешно отрабатывает e2e на чистом Ubuntu 24.04 с входом `bootstrap/host/config-e2e-test.env`.
-- Подтверждена repo-isolation политика bootstrap: platform secrets/variables не записываются в first-project repo.
+- Подтверждена repo-isolation политика bootstrap: platform secrets/variables не записываются в first-project repo; webhook/labels настраиваются в platform repo и в first-project repo только при его отдельном указании.
 - По e2e опубликован evidence bundle:
   - команды/логи bootstrap;
   - состояние k8s ресурсов;
