@@ -135,7 +135,15 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	}
 
 	outputSchemaFile := filepath.Join(os.TempDir(), "codex-output-schema.json")
-	if err := os.WriteFile(outputSchemaFile, []byte(outputSchemaJSON), 0o644); err != nil {
+	outputSchemaJSON, err := buildOutputSchemaJSON(outputSchemaParams{
+		TriggerKind:  result.triggerKind,
+		TemplateKind: result.templateKind,
+		AgentKey:     s.cfg.AgentKey,
+	})
+	if err != nil {
+		return fmt.Errorf("build output schema: %w", err)
+	}
+	if err := os.WriteFile(outputSchemaFile, outputSchemaJSON, 0o644); err != nil {
 		return fmt.Errorf("write output schema: %w", err)
 	}
 
