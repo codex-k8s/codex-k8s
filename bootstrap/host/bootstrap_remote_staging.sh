@@ -78,6 +78,7 @@ require_cmd getent
 require_cmd awk
 require_cmd paste
 require_cmd sort
+require_cmd base64
 
 if [ -f "$CONFIG_FILE" ]; then
   # shellcheck disable=SC1090
@@ -281,9 +282,55 @@ fi
 
 CODEXK8S_POSTGRES_DB="codex_k8s"
 CODEXK8S_POSTGRES_USER="codex_k8s"
-CODEXK8S_POSTGRES_PASSWORD="$(rand_hex 24)"
-CODEXK8S_APP_SECRET_KEY="$(rand_hex 32)"
-CODEXK8S_TOKEN_ENCRYPTION_KEY="$(rand_hex 32)"
+CODEXK8S_POSTGRES_PASSWORD="${CODEXK8S_POSTGRES_PASSWORD:-}"
+CODEXK8S_APP_SECRET_KEY="${CODEXK8S_APP_SECRET_KEY:-}"
+CODEXK8S_TOKEN_ENCRYPTION_KEY="${CODEXK8S_TOKEN_ENCRYPTION_KEY:-}"
+CODEXK8S_MCP_TOKEN_SIGNING_KEY="${CODEXK8S_MCP_TOKEN_SIGNING_KEY:-}"
+CODEXK8S_JWT_SIGNING_KEY="${CODEXK8S_JWT_SIGNING_KEY:-}"
+CODEXK8S_GITHUB_WEBHOOK_SECRET="${CODEXK8S_GITHUB_WEBHOOK_SECRET:-}"
+
+remote_secret_value() {
+  local namespace="$1"
+  local secret_name="$2"
+  local key="$3"
+  local raw=""
+
+  raw="$(
+    ssh -o BatchMode=yes -o ConnectTimeout=5 -i "$TARGET_ROOT_SSH_KEY" -p "$TARGET_PORT" "${TARGET_ROOT_USER}@${TARGET_HOST}" \
+      "KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl -n \"${namespace}\" get secret \"${secret_name}\" -o jsonpath=\"{.data.${key}}\" 2>/dev/null" \
+      2>/dev/null || true
+  )"
+
+  if [ -n "$raw" ]; then
+    printf '%s' "$raw" | base64 -d 2>/dev/null || true
+  fi
+}
+
+if ssh -o BatchMode=yes -o ConnectTimeout=5 -i "$TARGET_ROOT_SSH_KEY" -p "$TARGET_PORT" "${TARGET_ROOT_USER}@${TARGET_HOST}" \
+  "test -f /etc/rancher/k3s/k3s.yaml" 2>/dev/null; then
+  if [ -z "$CODEXK8S_POSTGRES_PASSWORD" ]; then
+    CODEXK8S_POSTGRES_PASSWORD="$(remote_secret_value "$CODEXK8S_STAGING_NAMESPACE" "codex-k8s-postgres" "CODEXK8S_POSTGRES_PASSWORD")"
+  fi
+  if [ -z "$CODEXK8S_APP_SECRET_KEY" ]; then
+    CODEXK8S_APP_SECRET_KEY="$(remote_secret_value "$CODEXK8S_STAGING_NAMESPACE" "codex-k8s-runtime" "CODEXK8S_APP_SECRET_KEY")"
+  fi
+  if [ -z "$CODEXK8S_TOKEN_ENCRYPTION_KEY" ]; then
+    CODEXK8S_TOKEN_ENCRYPTION_KEY="$(remote_secret_value "$CODEXK8S_STAGING_NAMESPACE" "codex-k8s-runtime" "CODEXK8S_TOKEN_ENCRYPTION_KEY")"
+  fi
+  if [ -z "$CODEXK8S_MCP_TOKEN_SIGNING_KEY" ]; then
+    CODEXK8S_MCP_TOKEN_SIGNING_KEY="$(remote_secret_value "$CODEXK8S_STAGING_NAMESPACE" "codex-k8s-runtime" "CODEXK8S_MCP_TOKEN_SIGNING_KEY")"
+  fi
+  if [ -z "$CODEXK8S_JWT_SIGNING_KEY" ]; then
+    CODEXK8S_JWT_SIGNING_KEY="$(remote_secret_value "$CODEXK8S_STAGING_NAMESPACE" "codex-k8s-runtime" "CODEXK8S_JWT_SIGNING_KEY")"
+  fi
+  if [ -z "$CODEXK8S_GITHUB_WEBHOOK_SECRET" ]; then
+    CODEXK8S_GITHUB_WEBHOOK_SECRET="$(remote_secret_value "$CODEXK8S_STAGING_NAMESPACE" "codex-k8s-runtime" "CODEXK8S_GITHUB_WEBHOOK_SECRET")"
+  fi
+fi
+
+CODEXK8S_POSTGRES_PASSWORD="${CODEXK8S_POSTGRES_PASSWORD:-$(rand_hex 24)}"
+CODEXK8S_APP_SECRET_KEY="${CODEXK8S_APP_SECRET_KEY:-$(rand_hex 32)}"
+CODEXK8S_TOKEN_ENCRYPTION_KEY="${CODEXK8S_TOKEN_ENCRYPTION_KEY:-$(rand_hex 32)}"
 CODEXK8S_MCP_TOKEN_SIGNING_KEY="${CODEXK8S_MCP_TOKEN_SIGNING_KEY:-$(rand_hex 32)}"
 CODEXK8S_JWT_SIGNING_KEY="${CODEXK8S_JWT_SIGNING_KEY:-$(rand_hex 32)}"
 CODEXK8S_GITHUB_WEBHOOK_SECRET="${CODEXK8S_GITHUB_WEBHOOK_SECRET:-$(rand_hex 32)}"
