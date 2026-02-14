@@ -23,6 +23,28 @@ apt-get update -y
 apt-get install -y curl ca-certificates jq git gh tar unzip gettext-base open-iscsi nfs-common
 systemctl enable --now iscsid || true
 
+GO_VERSION="${CODEXK8S_GO_VERSION:-1.25.6}"
+
+if ! command -v go >/dev/null 2>&1 || ! go version | grep -q "go${GO_VERSION}"; then
+  log "Install Go ${GO_VERSION}"
+  arch="$(uname -m)"
+  case "${arch}" in
+    x86_64) go_arch="amd64" ;;
+    aarch64) go_arch="arm64" ;;
+    *)
+      die "Unsupported CPU architecture for Go install: ${arch}"
+      ;;
+  esac
+  tmp="$(mktemp -d)"
+  tarball="go${GO_VERSION}.linux-${go_arch}.tar.gz"
+  curl -fsSL -o "${tmp}/${tarball}" "https://go.dev/dl/${tarball}"
+  rm -rf /usr/local/go
+  tar -C /usr/local -xzf "${tmp}/${tarball}"
+  ln -sf /usr/local/go/bin/go /usr/local/bin/go
+  ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt
+  rm -rf "${tmp}"
+fi
+
 if ! command -v helm >/dev/null 2>&1; then
   log "Install helm"
   tmp="$(mktemp -d)"

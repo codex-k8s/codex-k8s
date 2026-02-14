@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S3-D9
 type: epic
 title: "Epic S3 Day 9: Declarative full-env deploy and runtime parity"
-status: in-progress
+status: completed
 owner_role: EM
 created_at: 2026-02-13
 updated_at: 2026-02-14
@@ -133,3 +133,23 @@ approvals:
 
 ## Примечание по реализации
 - Подход из `codexctl` используется как референс, но реализация в `codex-k8s` должна быть проще для сопровождения и строго соответствовать текущей архитектуре платформы (control-plane + worker + agent-runner, без возврата к workflow-first парадигме).
+
+## Статус выполнения
+- `D9-T1` выполнен:
+  - реализован `libs/go/servicescfg` (`load`, `render`, `partials`, `include`, conflict fail-fast);
+  - добавлены unit-тесты на partials/load/conflict.
+- `D9-T2` выполнен:
+  - `services.yaml` переведен на typed inventory (`templates`, `bootstrap`, `deploy`, `runtime`).
+- `D9-T3` выполнен:
+  - внедрён `bin/codex-bootstrap` с командами `install`, `validate`, `reconcile`;
+  - `deploy/scripts/deploy_staging.sh` переведен на thin-wrapper и вызывает только `codex-bootstrap reconcile`.
+- `D9-T3.1` выполнен:
+  - bootstrap remote path использует declarative reconcile;
+  - `bootstrap/remote/00_prepare_host.sh` устанавливает Go toolchain (`CODEXK8S_GO_VERSION`, default `1.25.6`) для запуска CLI на чистом хосте.
+- `D9-T4` выполнен:
+  - runtime parity зафиксирован в `services.yaml` (`runtime.non_prod`/`runtime.prod`).
+- `D9-T5` выполнен:
+  - общий движок размещён в `libs/go/servicescfg`.
+- `D9-T6` выполнен:
+  - обновлены `README.md`, `bootstrap/README.md`, `docs/ops/staging_runbook.md`, `docs/design-guidelines/common/external_dependencies_catalog.md`;
+  - прогресс Sprint S3/каталог эпиков и map-трассировка синхронизированы.

@@ -5,7 +5,7 @@ title: "Epic Catalog: Sprint S3 (MVP completion)"
 status: in-progress
 owner_role: EM
 created_at: 2026-02-13
-updated_at: 2026-02-13
+updated_at: 2026-02-14
 related_issues: [19]
 related_prs: []
 approvals:
@@ -43,7 +43,8 @@ approvals:
 - Day 6 (`run:self-improve` ingestion/diagnostics) завершён.
 - Day 7 (`run:self-improve` updater/PR flow) завершён.
 - Day 8 (`agent toolchain auto-extension`) завершён.
-- Day 9..Day12 остаются в статусе planned.
+- Day 9 (`declarative full-env deploy and runtime parity`) завершён.
+- Day 10..Day12 остаются в статусе planned.
 
 ## Критерий успеха Sprint S3 (выжимка)
 - Все MVP-сценарии из Issue #19 покрыты кодом, тестами и эксплуатационной документацией.

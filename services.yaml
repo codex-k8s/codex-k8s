@@ -1,11 +1,158 @@
 project: codex-k8s
 
-# TODO:
-# - описать deploy группами для environments: dev / ai-staging / production
-# - описать сервисы external/staff/internal/jobs/dev
-# - описать codex-k8s как монорепо-проект с единым services.yaml
+templates:
+  partials:
+    - deploy/_tpl/*.gohtml
+
+bootstrap:
+  env_file_path: bootstrap/host/config.env
+  install_script_path: bootstrap/host/bootstrap_remote_staging.sh
+  required_env_install:
+    - TARGET_HOST
+    - TARGET_PORT
+    - TARGET_ROOT_USER
+    - TARGET_ROOT_SSH_KEY
+    - OPERATOR_USER
+    - OPERATOR_SSH_PUBKEY_PATH
+    - CODEXK8S_GITHUB_REPO
+    - CODEXK8S_GITHUB_PAT
+    - CODEXK8S_GIT_BOT_TOKEN
+    - CODEXK8S_GIT_BOT_USERNAME
+    - CODEXK8S_GIT_BOT_MAIL
+    - CODEXK8S_BOOTSTRAP_OWNER_EMAIL
+    - CODEXK8S_STAGING_DOMAIN
+    - CODEXK8S_GITHUB_OAUTH_CLIENT_ID
+    - CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET
+    - CODEXK8S_LETSENCRYPT_EMAIL
+  required_env_validate:
+    - CODEXK8S_STAGING_NAMESPACE
+    - CODEXK8S_STAGING_DOMAIN
+    - CODEXK8S_GITHUB_PAT
+    - CODEXK8S_GIT_BOT_TOKEN
+    - CODEXK8S_GIT_BOT_USERNAME
+    - CODEXK8S_GIT_BOT_MAIL
+    - CODEXK8S_GITHUB_WEBHOOK_SECRET
+    - CODEXK8S_PUBLIC_BASE_URL
+    - CODEXK8S_BOOTSTRAP_OWNER_EMAIL
+    - CODEXK8S_GITHUB_OAUTH_CLIENT_ID
+    - CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET
+    - CODEXK8S_JWT_SIGNING_KEY
+  required_env_reconcile:
+    - CODEXK8S_STAGING_NAMESPACE
+    - CODEXK8S_STAGING_DOMAIN
+    - CODEXK8S_GITHUB_PAT
+    - CODEXK8S_GIT_BOT_TOKEN
+    - CODEXK8S_GIT_BOT_USERNAME
+    - CODEXK8S_GIT_BOT_MAIL
+    - CODEXK8S_GITHUB_WEBHOOK_SECRET
+    - CODEXK8S_PUBLIC_BASE_URL
+    - CODEXK8S_BOOTSTRAP_OWNER_EMAIL
+    - CODEXK8S_GITHUB_OAUTH_CLIENT_ID
+    - CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET
+    - CODEXK8S_JWT_SIGNING_KEY
+  secret_env_keys:
+    - CODEXK8S_GITHUB_PAT
+    - CODEXK8S_OPENAI_API_KEY
+    - CODEXK8S_OPENAI_AUTH_FILE
+    - CODEXK8S_GIT_BOT_TOKEN
+    - CODEXK8S_PROJECT_DB_ADMIN_PASSWORD
+    - CODEXK8S_APP_SECRET_KEY
+    - CODEXK8S_TOKEN_ENCRYPTION_KEY
+    - CODEXK8S_MCP_TOKEN_SIGNING_KEY
+    - CODEXK8S_GITHUB_WEBHOOK_SECRET
+    - CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET
+    - CODEXK8S_JWT_SIGNING_KEY
+    - CODEXK8S_POSTGRES_PASSWORD
+
+deploy:
+  environments:
+    ai-staging:
+      namespace_env_var: CODEXK8S_STAGING_NAMESPACE
+      wait_rollout_env_var: CODEXK8S_WAIT_ROLLOUT
+      rollout_timeout_env_var: CODEXK8S_ROLLOUT_TIMEOUT
+      apply_namespace_env_var: CODEXK8S_APPLY_NAMESPACE
+      network_policy_script: deploy/scripts/apply_network_policy_baseline.sh
+      postgres_secret_name: codex-k8s-postgres
+      runtime_secret_name: codex-k8s-runtime
+      oauth_secret_name: codex-k8s-oauth2-proxy
+      migrations_configmap: codex-k8s-migrations
+      migrations_directory: services/internal/control-plane/cmd/cli/migrations
+      resources_configmap: codex-k8s-deploy-resources
+      label_catalog_configmap: codex-k8s-label-catalog
+      manifest_phases:
+        - name: namespace
+          enabled_when_env: CODEXK8S_APPLY_NAMESPACE
+          enabled_when_equals: "true"
+          manifests:
+            - deploy/base/namespace/namespace.yaml.tpl
+        - name: postgres
+          manifests:
+            - deploy/base/postgres/postgres.yaml.tpl
+          wait_for:
+            - type: rollout
+              resource: statefulset/postgres
+        - name: migrations
+          pre_delete:
+            - job/codex-k8s-migrate
+          manifests:
+            - deploy/base/codex-k8s/migrate-job.yaml.tpl
+          wait_for:
+            - type: job-complete
+              resource: job/codex-k8s-migrate
+        - name: platform-core
+          manifests:
+            - deploy/base/codex-k8s/app.yaml.tpl
+          rollout_restart:
+            - deployment/codex-k8s-control-plane
+            - deployment/codex-k8s
+            - deployment/codex-k8s-worker
+          wait_for:
+            - type: rollout
+              resource: deployment/codex-k8s-control-plane
+            - type: rollout
+              resource: deployment/codex-k8s
+            - type: rollout
+              resource: deployment/codex-k8s-worker
+        - name: oauth2-proxy
+          manifests:
+            - deploy/base/oauth2-proxy/oauth2-proxy.yaml.tpl
+          rollout_restart:
+            - deployment/oauth2-proxy
+          wait_for:
+            - type: rollout
+              resource: deployment/oauth2-proxy
+              optional: true
+        - name: web-console
+          manifests:
+            - deploy/base/web-console/web-console.yaml.tpl
+          rollout_restart:
+            - deployment/codex-k8s-web-console
+          wait_for:
+            - type: rollout
+              resource: deployment/codex-k8s-web-console
+              optional: true
+        - name: ingress
+          manifests:
+            - deploy/base/codex-k8s/ingress.yaml.tpl
+
+runtime:
+  non_prod:
+    go_hot_reload: true
+    frontend_hot_reload: true
+  prod:
+    go_hot_reload: false
+    frontend_hot_reload: false
 
 environments:
-  dev: {}
-  ai-staging: {}
-  production: {}
+  dev:
+    from: ai-staging
+    image_pull_policy: Always
+  ai-staging:
+    image_pull_policy: Always
+    slot_bootstrap_infra:
+      - postgres
+      - control-plane
+      - api-gateway
+      - web-console
+  production:
+    image_pull_policy: IfNotPresent

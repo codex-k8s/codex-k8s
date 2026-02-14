@@ -2,9 +2,9 @@ apiVersion: v1
 kind: Service
 metadata:
   name: codex-k8s-web-console
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ include "namespace.staging" . }}
   labels:
-    app.kubernetes.io/name: codex-k8s-web-console
+{{ include "labels.web_console" . | indent 4 }}
 spec:
   selector:
     app.kubernetes.io/name: codex-k8s-web-console
@@ -17,9 +17,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: codex-k8s-web-console
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ include "namespace.staging" . }}
   labels:
-    app.kubernetes.io/name: codex-k8s-web-console
+{{ include "labels.web_console" . | indent 4 }}
 spec:
   replicas: 1
   selector:

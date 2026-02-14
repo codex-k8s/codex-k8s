@@ -7,6 +7,7 @@ codex-k8s/                                                монорепозит
 ├── AGENTS.md                                             обязательные правила для всех агентов; ОБЯЗАТЕЛЬНО читать первым перед любыми правками
 ├── README.md                                             карта структуры репозитория; смотреть при онбординге и перед поиском нужного контекста
 ├── services.yaml                                         инвентарь deployable-сервисов и окружений; ОБЯЗАТЕЛЬНО смотреть при изменениях состава сервисов
+├── bin/codex-bootstrap/                                  install/validate/reconcile CLI для declarative bootstrap/deploy контуров
 ├── services/                                             сервисный код по архитектурным зонам
 │   ├── dev/webhook-simulator/                            dev-only симулятор webhook; смотреть при локальной/стендовой отладке входящих событий
 │   ├── external/api-gateway/                             внешний ingress и edge-слой; смотреть при изменениях OpenAPI/webhook/auth
@@ -15,6 +16,7 @@ codex-k8s/                                                монорепозит
 │   ├── jobs/worker/                                      фоновые jobs/reconciliation; смотреть при изменениях очередей, ретраев и cleanup
 │   └── staff/web-console/                                staff UI на Vue; смотреть при изменениях интерфейса и staff API-клиента
 ├── libs/                                                 общий переиспользуемый код; ОБЯЗАТЕЛЬНО смотреть перед выносом helper-кода
+│   └── go/servicescfg/                                   typed services.yaml + template partials рендерер для bootstrap/deploy
 ├── proto/                                                gRPC-контракты internal сервисов; ОБЯЗАТЕЛЬНО смотреть при изменениях внутренних API
 ├── deploy/                                               Kubernetes-манифесты и deploy-скрипты; смотреть при изменениях staging/prod выкладки
 ├── bootstrap/                                            bootstrap и CI/CD подготовка окружений; смотреть при изменениях env/vars/secrets/процесса выкладки

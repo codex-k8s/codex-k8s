@@ -77,7 +77,7 @@ approvals:
 | NFR-003 | No event outbox on MVP | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/constraints.md` | covered |
 | NFR-004 | Embedding vector(3072) | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/constraints.md` | covered |
 | NFR-005 | Read-replica baseline | `docs/product/requirements_machine_driven.md`, `docs/architecture/c4_container.md`, `docs/product/constraints.md` | covered |
-| NFR-006 | One-command staging bootstrap via SSH | `docs/product/requirements_machine_driven.md`, `docs/delivery/delivery_plan.md`, `docs/product/brief.md` | covered |
+| NFR-006 | One-command staging bootstrap via SSH | `docs/product/requirements_machine_driven.md`, `docs/delivery/delivery_plan.md`, `docs/product/brief.md`, `docs/delivery/epics/epic-s3-day9-declarative-full-env-deploy-and-runtime-parity.md` | covered |
 | NFR-007 | CI/CD model (main->staging, prod gated) | `docs/product/requirements_machine_driven.md`, `docs/product/brief.md`, `docs/product/constraints.md`, `docs/delivery/delivery_plan.md` | covered |
 | NFR-008 | MVP storage profile local-path | `docs/product/requirements_machine_driven.md`, `docs/product/constraints.md`, `docs/delivery/delivery_plan.md` | covered |
 | NFR-009 | Управляемые лимиты параллелизма agent-runs | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/delivery/epics/epic-s2-day3-per-issue-namespace-and-rbac.md` | covered |

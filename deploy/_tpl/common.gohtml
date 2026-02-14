@@ -1,0 +1,18 @@
+{{ define "namespace.staging" -}}
+${CODEXK8S_STAGING_NAMESPACE}
+{{- end }}
+
+{{ define "labels.platform" -}}
+app.kubernetes.io/name: codex-k8s
+app.kubernetes.io/part-of: codex-k8s
+{{- end }}
+
+{{ define "labels.web_console" -}}
+app.kubernetes.io/name: codex-k8s-web-console
+app.kubernetes.io/part-of: codex-k8s
+{{- end }}
+
+{{ define "labels.oauth2_proxy" -}}
+app.kubernetes.io/name: oauth2-proxy
+app.kubernetes.io/part-of: codex-k8s
+{{- end }}

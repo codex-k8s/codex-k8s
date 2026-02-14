@@ -50,6 +50,23 @@ kubectl -n "$CODEXK8S_STAGING_NAMESPACE" logs deploy/codex-k8s-worker --tail=200
 - `PostgreSQL -> migrations -> control-plane -> api-gateway -> frontend`.
 - Зависимости между сервисами ожидаются через `initContainers` в манифестах.
 
+## Ручной reconcile (Day9 declarative path)
+
+Из корня репозитория:
+
+```bash
+# thin-wrapper (предпочтительный путь)
+bash deploy/scripts/deploy_staging.sh
+
+# прямой вызов CLI
+go run ./bin/codex-bootstrap reconcile --services services.yaml --environment ai-staging --no-prompt
+```
+
+Примечания:
+- `deploy/scripts/deploy_staging.sh` — thin-wrapper вокруг `codex-bootstrap reconcile`;
+- source of truth для deploy-фаз: `services.yaml`;
+- общий шаблонный рендер (включая partials) реализован в `libs/go/servicescfg`.
+
 ## Проверка внешних портов (снаружи)
 
 Требование staging (MVP):

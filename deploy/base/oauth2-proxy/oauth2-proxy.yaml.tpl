@@ -2,9 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: oauth2-proxy
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ include "namespace.staging" . }}
   labels:
-    app.kubernetes.io/name: oauth2-proxy
+{{ include "labels.oauth2_proxy" . | indent 4 }}
 spec:
   replicas: 1
   selector:
@@ -79,9 +79,9 @@ apiVersion: v1
 kind: Service
 metadata:
   name: oauth2-proxy
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ include "namespace.staging" . }}
   labels:
-    app.kubernetes.io/name: oauth2-proxy
+{{ include "labels.oauth2_proxy" . | indent 4 }}
 spec:
   selector:
     app.kubernetes.io/name: oauth2-proxy

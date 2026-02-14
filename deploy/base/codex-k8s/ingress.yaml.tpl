@@ -2,7 +2,9 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: codex-k8s
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ include "namespace.staging" . }}
+  labels:
+{{ include "labels.platform" . | indent 4 }}
   annotations:
     cert-manager.io/cluster-issuer: codex-k8s-letsencrypt
 spec:
