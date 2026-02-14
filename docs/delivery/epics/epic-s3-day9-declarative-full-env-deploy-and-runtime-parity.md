@@ -20,6 +20,7 @@ approvals:
 - Цель: перейти от shell-first деплоя/установки к декларативному `services.yaml` и Go-движку оркестрации full-env.
 - Входная обязательная подзадача: добавить `partials` для шаблонного рендера без Helm.
 - Day9 охватывает не только deploy, но и bootstrap-first-install на новой машине, чтобы подход был применим для любых проектов на `codex-k8s`.
+- Для bootstrap самого `codex-k8s` вводится отдельный консольный install-бинарник с интерактивным дозапросом недостающих переменных/секретов.
 - MVP-результат Day9: детерминированные bootstrap + deploy + runtime parity для non-prod (`dev/staging/ai-slot`) на основе typed inventory.
 
 ## Priority
@@ -48,6 +49,13 @@ approvals:
   - основной путь bootstrap/apply/readiness исполняется через Go-движок;
   - shell остается thin-wrapper entrypoint без бизнес-логики оркестрации;
   - логика из `deploy/scripts/**` и `bootstrap/remote/**` переносится в декларативный контур в рамках Day9 (одним проходом, без отложенной "второй волны").
+- D9-T3.1 Bootstrap CLI binary (install UX):
+  - добавить install CLI-бинарник для первичной установки `codex-k8s` и последующей переинициализации окружения;
+  - CLI реализуется на `github.com/spf13/cobra v1.10.2`;
+  - CLI поддерживает консольный дозапрос недостающих обязательных параметров (`CODEXK8S_*`, токены, секреты, домен, SSH/K8s контекст и т.д.);
+  - CLI умеет читать существующий `bootstrap/host/config.env`, валидировать заполненность и интерактивно дополнять отсутствующие значения;
+  - зафиксированный набор команд CLI: `install`, `validate`, `reconcile`;
+  - результатом CLI является детерминированный запуск bootstrap/deploy orchestration без ручного редактирования shell-скриптов.
 - D9-T4. Runtime parity non-prod:
   - для всех non-prod окружений (`dev`, `staging`, `ai-slot`) обязателен hot-reload для Go и frontend сервисов;
   - `prod` остается без hot-reload;
@@ -69,6 +77,10 @@ approvals:
 - Declarative bootstrap/deploy:
   - для `codex-k8s` и нового проекта полный цикл `bootstrap-first-install + full-env deploy` поднимается из `services.yaml` без ручной правки shell-скриптов;
   - порядок bootstrap/deploy этапов детерминирован и подтвержден событиями/логами.
+- Bootstrap CLI:
+  - доступен отдельный install-бинарник с командами `install`, `validate`, `reconcile`;
+  - при отсутствии обязательных данных CLI задает интерактивные вопросы в консоли и сохраняет значения в конфиг;
+  - CLI использует `cobra v1.10.2` и формирует единый UX для локального оператора и агента.
 - Runtime parity:
   - во всех non-prod окружениях включен hot-reload для Go и frontend сервисов;
   - non-prod режимы запуска сервисов и agent-run согласованы и воспроизводимы;
@@ -79,10 +91,11 @@ approvals:
 ## План реализации (Day9)
 1. Ввести модуль `libs/go/servicescfg` с рендером partials, `include` helper и fail-fast валидаторами.
 2. Добавить typed-модель `services.yaml` для `bootstrap + deploy + runtime parity` inventory и загрузчик с валидацией.
-3. Перенести в Go-orchestrator всю бизнес-логику из `deploy/scripts/**` и `bootstrap/remote/**` (одним проходом).
-4. Подключить thin-wrapper shell entrypoints к новому движку без дублирования оркестрации.
-5. Зафиксировать hot-reload для всех non-prod окружений.
-6. Обновить docs + tests + regression checks.
+3. Реализовать install CLI на `cobra v1.10.2` с интерактивным config/secrets intake.
+4. Перенести в Go-orchestrator всю бизнес-логику из `deploy/scripts/**` и `bootstrap/remote/**` (одним проходом).
+5. Подключить thin-wrapper shell entrypoints к новому движку без дублирования оркестрации.
+6. Зафиксировать hot-reload для всех non-prod окружений.
+7. Обновить docs + tests + regression checks.
 
 ## DoD (engineering)
 - Unit tests:
@@ -90,6 +103,7 @@ approvals:
   - negative cases (conflict/missing template/invalid glob).
 - Integration checks:
   - dry-run render/plan;
+  - интерактивный bootstrap CLI flow с неполным конфигом;
   - bootstrap-first-install path через новый orchestrator;
   - staging deploy path через новый orchestrator;
   - smoke сценарий разработки в AI-slot с hot-reload.
