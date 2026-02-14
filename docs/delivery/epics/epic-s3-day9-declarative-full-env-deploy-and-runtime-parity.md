@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S3-D9
 type: epic
 title: "Epic S3 Day 9: Declarative full-env deploy and runtime parity"
-status: planned
+status: in_progress
 owner_role: EM
 created_at: 2026-02-13
 updated_at: 2026-02-14
@@ -109,6 +109,37 @@ approvals:
   - сценарий: установка зависимостей на Ubuntu 24.04, поднятие Kubernetes, деплой `codex-k8s`, проверка webhook-driven lifecycle;
   - отдельный пустой GitHub repo проекта-примера подключается в e2e и проходит provisioning/deploy smoke;
   - проверка, что platform secrets/variables пишутся только в platform repo, webhook/labels всегда настраиваются в platform repo и дополнительно в first-project repo (если он отдельный).
+
+## Фактический статус реализации (2026-02-14)
+- Story-1 (`in_progress`):
+  - typed контракт `services.yaml` зафиксирован в `libs/go/servicescfg` (`apiVersion=codex-k8s.dev/v1alpha1`, `kind=ServiceStack`);
+  - JSON Schema как отдельный артефакт ещё не введена.
+- Story-2 (`done`):
+  - общая Go-библиотека `servicescfg` используется и в runtime (`control-plane`), и в `cmd/codex-bootstrap`.
+- Story-3 (`done`):
+  - реализованы `imports`, `components`, deep-merge defaults, детект циклов inheritance и schema-like validation на уровне typed loader.
+- Story-4 (`done`):
+  - webhook-runtime mode резолвится из `services.yaml` (`webhookRuntime.defaultMode/triggerModes`);
+  - full-env deploy вынесен в persisted reconcile-контур: `runtime_deploy_tasks` + lease/lock + idempotent reconcile loop;
+  - `control-plane` ставит desired state, выполнение делает отдельный worker/reconciler.
+- Story-5 (`planned`):
+  - экспорт `codeUpdateStrategy` в prompt context и inventory-hints ещё не завершён.
+- Story-6 (`in_progress`):
+  - `codex-bootstrap` уже валидирует/рендерит `services.yaml` и запускает bootstrap сценарий;
+  - финальная проверка repo-isolation политики переносится в Story-8 e2e.
+- Story-7 (`done`):
+  - правило `codex-k8s ai-staging => {{ .Project }}-ai-staging` валидируется в loader;
+  - namespace-level изоляция runtime и anti-conflict guardrails включены в текущий full-env путь.
+- Story-8 (`planned`):
+  - ожидает выполнения на отдельном чистом VPS с `bootstrap/host/config-e2e-test.env` и новым repo `codex-k8s/test`.
+
+## Текущий статус критериев приемки (2026-02-14)
+- `in_progress`: full-env сценарий для `codex-k8s` подтверждён на staging; cross-project e2e (`project-example` + новый чистый VPS) остаётся открытым.
+- `in_progress`: `imports/components/deep-merge` и validation покрыты тестами `libs/go/servicescfg`; отдельная JSON Schema остаётся открытой.
+- `in_progress`: `codeUpdateStrategy` присутствует и учитывается в runtime-рендере; экспорт в prompt context остаётся открытым.
+- `done`: правило `ai-staging={{ .Project }}-ai-staging` для `codex-k8s` соблюдается и валидируется.
+- `in_progress`: dogfooding isolation на staging подтверждён; финальная проверка через e2e runbook остаётся открытой.
+- `planned`: bootstrap e2e + evidence bundle будут закрыты после выполнения Story-8.
 
 ## Критерии приемки
 - Для минимум двух проектов (`project-example` и `codex-k8s`) full-env поднимается из `services.yaml` через typed execution-plan.

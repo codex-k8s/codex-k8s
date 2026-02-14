@@ -16,11 +16,14 @@ services/internal/control-plane/                     доменный backend (�
     │   ├── agentcallback/                           обработка callback из agent runtime
     │   ├── mcp/                                     доменная оркестрация MCP tools/policy
     │   ├── repository/                              контракты provider/repository для доменного слоя
+    │   │   └── runtimedeploytask/                   persisted desired/actual state контур full-env deploy
     │   ├── runstatus/                               use-cases статусов run и state transitions
+    │   ├── runtimedeploy/                           декларативный full-env deploy/reconcile из `services.yaml`
     │   ├── staff/                                   внутренние staff use-cases управления платформой
     │   ├── types/                                   доменные entity/value/enum/query типы
     │   └── webhook/                                 обработка webhook-driven сценариев
     ├── repository/postgres/                         PostgreSQL-реализации доменных репозиториев
+    │   └── runtimedeploytask/                       lease-aware очередь runtime deploy задач в БД
     └── transport/                                   транспортные адаптеры сервиса
         ├── grpc/                                    внутренний gRPC API
         ├── mcp/                                     MCP StreamableHTTP/control tools endpoint
