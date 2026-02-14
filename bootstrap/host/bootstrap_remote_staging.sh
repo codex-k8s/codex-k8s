@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-CONFIG_FILE="${ROOT_DIR}/host/config.env"
+CONFIG_FILE="${CODEXK8S_BOOTSTRAP_CONFIG_FILE:-${ROOT_DIR}/host/config.env}"
 
 log() { echo "[$(date -Is)] $*"; }
 die() { echo "ERROR: $*" >&2; exit 1; }

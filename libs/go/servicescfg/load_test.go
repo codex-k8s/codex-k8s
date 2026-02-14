@@ -1,0 +1,191 @@
+package servicescfg
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+func TestLoad_WithImportsComponentsAndTemplates(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	baseFile := filepath.Join(tmpDir, "base.yaml")
+	rootFile := filepath.Join(tmpDir, "services.yaml")
+
+	base := `
+apiVersion: codex-k8s.io/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    ai-staging:
+      namespaceTemplate: "{{ .Project }}-ai-staging"
+  components:
+    - name: go-default
+      serviceDefaults:
+        codeUpdateStrategy: hot-reload
+        deployGroup: internal
+`
+	root := `
+apiVersion: codex-k8s.io/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  imports:
+    - path: base.yaml
+  services:
+    - name: control-plane
+      use: [go-default]
+      codeUpdateStrategy: restart
+    - name: worker
+`
+
+	writeFile(t, baseFile, base)
+	writeFile(t, rootFile, root)
+
+	result, err := Load(rootFile, LoadOptions{Env: "ai-staging"})
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+
+	if got, want := result.Context.Namespace, "demo-ai-staging"; got != want {
+		t.Fatalf("unexpected namespace: got %q want %q", got, want)
+	}
+
+	if len(result.Stack.Spec.Services) != 2 {
+		t.Fatalf("unexpected services count: %d", len(result.Stack.Spec.Services))
+	}
+
+	controlPlane := result.Stack.Spec.Services[0]
+	if got, want := controlPlane.CodeUpdateStrategy, CodeUpdateStrategyRestart; got != want {
+		t.Fatalf("unexpected control-plane strategy: got %q want %q", got, want)
+	}
+	if got, want := controlPlane.DeployGroup, "internal"; got != want {
+		t.Fatalf("unexpected control-plane deployGroup: got %q want %q", got, want)
+	}
+
+	worker := result.Stack.Spec.Services[1]
+	if got, want := worker.CodeUpdateStrategy, CodeUpdateStrategyRebuild; got != want {
+		t.Fatalf("unexpected worker strategy: got %q want %q", got, want)
+	}
+}
+
+func TestLoad_ImportCycle(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	first := filepath.Join(tmpDir, "first.yaml")
+	second := filepath.Join(tmpDir, "second.yaml")
+
+	writeFile(t, first, `
+apiVersion: codex-k8s.io/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  imports:
+    - path: second.yaml
+  environments:
+    ai-staging:
+      namespaceTemplate: "{{ .Project }}-ai-staging"
+`)
+	writeFile(t, second, `
+spec:
+  imports:
+    - path: first.yaml
+`)
+
+	_, err := Load(first, LoadOptions{Env: "ai-staging"})
+	if err == nil {
+		t.Fatalf("expected cycle error")
+	}
+	if !strings.Contains(err.Error(), "imports cycle detected") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestLoad_UnknownComponentReference(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "services.yaml")
+	writeFile(t, path, `
+apiVersion: codex-k8s.io/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    ai-staging:
+      namespaceTemplate: "{{ .Project }}-ai-staging"
+  services:
+    - name: api
+      use: [unknown-component]
+`)
+
+	_, err := Load(path, LoadOptions{Env: "ai-staging"})
+	if err == nil {
+		t.Fatalf("expected unknown component error")
+	}
+	if !strings.Contains(err.Error(), "unknown component") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestLoad_CodexK8sRequiresAISTagingTemplate(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "services.yaml")
+	writeFile(t, path, `
+apiVersion: codex-k8s.io/v1alpha1
+kind: ServiceStack
+metadata:
+  name: codex-k8s
+spec:
+  environments:
+    ai-staging:
+      namespaceTemplate: "hardcoded-namespace"
+`)
+
+	_, err := Load(path, LoadOptions{Env: "ai-staging"})
+	if err == nil {
+		t.Fatalf("expected codex-k8s ai-staging template error")
+	}
+	if !strings.Contains(err.Error(), "codex-k8s requires ai-staging namespace template") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestResolveEnvironment_Inheritance(t *testing.T) {
+	t.Parallel()
+
+	stack := &Stack{
+		Spec: Spec{
+			Environments: map[string]Environment{
+				"ai-staging": {NamespaceTemplate: "{{ .Project }}-ai-staging", ImagePullPolicy: "Always"},
+				"ai":         {From: "ai-staging"},
+			},
+		},
+	}
+
+	resolved, err := ResolveEnvironment(stack, "ai")
+	if err != nil {
+		t.Fatalf("resolve environment: %v", err)
+	}
+	if got, want := resolved.NamespaceTemplate, "{{ .Project }}-ai-staging"; got != want {
+		t.Fatalf("unexpected namespaceTemplate: got %q want %q", got, want)
+	}
+	if got, want := resolved.ImagePullPolicy, "Always"; got != want {
+		t.Fatalf("unexpected imagePullPolicy: got %q want %q", got, want)
+	}
+}
+
+func writeFile(t *testing.T, path string, content string) {
+	t.Helper()
+	if err := os.WriteFile(path, []byte(strings.TrimSpace(content)+"\n"), 0o644); err != nil {
+		t.Fatalf("write %s: %v", path, err)
+	}
+}

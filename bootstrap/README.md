@@ -36,9 +36,31 @@ cp bootstrap/host/config.env.example bootstrap/host/config.env
 bash bootstrap/host/bootstrap_remote_staging.sh
 ```
 
+Альтернатива через бинарник (использует typed `services.yaml` loader):
+
+```bash
+go run ./cmd/codex-bootstrap validate \
+  --config services.yaml \
+  --env ai-staging
+
+go run ./cmd/codex-bootstrap bootstrap \
+  --config services.yaml \
+  --env-file bootstrap/host/config.env
+```
+
+Для отдельного e2e контура:
+
+```bash
+go run ./cmd/codex-bootstrap bootstrap \
+  --config services.yaml \
+  --env-file bootstrap/host/config-e2e-test.env \
+  --dry-run
+```
+
 ## Примечания
 
 - Скрипты — каркас первого этапа. Перед production обязательны hardening и отдельный runbook.
+- `bootstrap/host/bootstrap_remote_staging.sh` может читать env из кастомного файла через `CODEXK8S_BOOTSTRAP_CONFIG_FILE`; по умолчанию используется `bootstrap/host/config.env`.
 - Для деплоя через GitHub Actions нужен `CODEXK8S_GITHUB_PAT` (fine-grained) с правами на repository actions/secrets/variables и чтение содержимого репозитория.
 - Для staff UI и staff API требуется GitHub OAuth App:
   - создать на `https://github.com/settings/applications/new`;

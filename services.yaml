@@ -1,11 +1,82 @@
-project: codex-k8s
+apiVersion: codex-k8s.io/v1alpha1
+kind: ServiceStack
+metadata:
+  name: codex-k8s
 
-# TODO:
-# - описать deploy группами для environments: dev / ai-staging / production
-# - описать сервисы external/staff/internal/jobs/dev
-# - описать codex-k8s как монорепо-проект с единым services.yaml
+spec:
+  project: codex-k8s
 
-environments:
-  dev: {}
-  ai-staging: {}
-  production: {}
+  components:
+    - name: go-service-defaults
+      serviceDefaults:
+        codeUpdateStrategy: rebuild
+        deployGroup: internal
+    - name: frontend-defaults
+      serviceDefaults:
+        codeUpdateStrategy: hot-reload
+        deployGroup: frontend
+
+  environments:
+    dev:
+      namespaceTemplate: "{{ .Project }}-dev"
+    ai-staging:
+      namespaceTemplate: "{{ .Project }}-ai-staging"
+    ai:
+      from: ai-staging
+      namespaceTemplate: "{{ .Project }}-dev-{{ .Slot }}"
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+
+  orchestration:
+    deployOrder:
+      - stateful
+      - migrations
+      - internal
+      - edge
+      - frontend
+    cleanupPolicy:
+      fullEnvIdleTTL: "8h"
+
+  infrastructure:
+    - name: namespace
+      manifests:
+        - path: deploy/base/namespace/namespace.yaml.tpl
+    - name: postgres
+      dependsOn:
+        - namespace
+      manifests:
+        - path: deploy/base/postgres/postgres.yaml.tpl
+    - name: registry
+      dependsOn:
+        - namespace
+      manifests:
+        - path: deploy/base/registry/registry.yaml.tpl
+
+  services:
+    - name: codex-k8s-app
+      use:
+        - go-service-defaults
+      deployGroup: edge
+      codeUpdateStrategy: restart
+      dependsOn:
+        - postgres
+      manifests:
+        - path: deploy/base/codex-k8s/app.yaml.tpl
+        - path: deploy/base/codex-k8s/ingress.yaml.tpl
+    - name: codex-k8s-migrate
+      use:
+        - go-service-defaults
+      deployGroup: migrations
+      codeUpdateStrategy: restart
+      dependsOn:
+        - postgres
+      manifests:
+        - path: deploy/base/codex-k8s/migrate-job.yaml.tpl
+    - name: web-console
+      use:
+        - frontend-defaults
+      codeUpdateStrategy: hot-reload
+      dependsOn:
+        - codex-k8s-app
+      manifests:
+        - path: deploy/base/web-console/web-console.yaml.tpl
