@@ -62,6 +62,18 @@ const outputSchemaJSON = `{
       "items": { "type": "string" }
     }
   },
-  "required": ["summary", "branch", "pr_number", "pr_url", "session_id", "model", "reasoning_effort"],
+  "required": [
+    "summary",
+    "branch",
+    "pr_number",
+    "pr_url",
+    "session_id",
+    "model",
+    "reasoning_effort",
+    "diagnosis",
+    "action_items",
+    "evidence_refs",
+    "tool_gaps"
+  ],
   "additionalProperties": false
 }`

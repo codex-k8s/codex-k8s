@@ -152,7 +152,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if cfg.ControlPlaneGRPCTarget == "" {
 		cfg.ControlPlaneGRPCTarget = "codex-k8s-control-plane:9090"
 	}
-	cfg.ControlPlaneMCPBaseURL = strings.TrimSpace(cfg.ControlPlaneMCPBaseURL)
+	cfg.ControlPlaneMCPBaseURL = resolveControlPlaneMCPBaseURL(cfg.ControlPlaneMCPBaseURL, cfg.ControlPlaneGRPCTarget)
 	cfg.OpenAIAPIKey = strings.TrimSpace(cfg.OpenAIAPIKey)
 	cfg.OpenAIAuthFile = strings.TrimSpace(cfg.OpenAIAuthFile)
 	cfg.Context7APIKey = strings.TrimSpace(cfg.Context7APIKey)

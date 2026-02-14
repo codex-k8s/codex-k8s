@@ -32,8 +32,8 @@ func TestLoadConfigDefaults(t *testing.T) {
 	if cfg.RunDebugLabel != "run:debug" {
 		t.Fatalf("expected default run debug label run:debug, got %s", cfg.RunDebugLabel)
 	}
-	if cfg.ControlPlaneMCPBaseURL != "http://codex-k8s-control-plane:8081/mcp" {
-		t.Fatalf("expected default control-plane mcp url, got %s", cfg.ControlPlaneMCPBaseURL)
+	if cfg.ControlPlaneMCPBaseURL != "" {
+		t.Fatalf("expected empty control-plane mcp url before runtime fallback, got %s", cfg.ControlPlaneMCPBaseURL)
 	}
 }
 

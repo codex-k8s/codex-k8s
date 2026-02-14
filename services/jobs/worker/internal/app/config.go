@@ -28,8 +28,9 @@ type Config struct {
 
 	// ControlPlaneGRPCTarget is control-plane gRPC address used for internal worker calls.
 	ControlPlaneGRPCTarget string `env:"CODEXK8S_CONTROL_PLANE_GRPC_TARGET,required,notEmpty"`
-	// ControlPlaneMCPBaseURL is MCP HTTP endpoint passed into spawned run pods.
-	ControlPlaneMCPBaseURL string `env:"CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" envDefault:"http://codex-k8s-control-plane:8081/mcp"`
+	// ControlPlaneMCPBaseURL is optional MCP HTTP endpoint passed into spawned run pods.
+	// When empty, worker derives it from ControlPlaneGRPCTarget.
+	ControlPlaneMCPBaseURL string `env:"CODEXK8S_CONTROL_PLANE_MCP_BASE_URL"`
 	// OpenAIAPIKey is injected into run pods for codex login.
 	OpenAIAPIKey string `env:"CODEXK8S_OPENAI_API_KEY"`
 	// OpenAIAuthFile stores optional Codex auth.json content for run pods.
