@@ -31,7 +31,7 @@ approvals:
     `stateful dependencies -> migrations -> internal domain services -> edge services -> frontend`.
 - Оркестрация через бинарник `codex-k8s`:
   - основной путь build/deploy/readiness переезжает из shell-скриптов в typed YAML-конфиг + Go-реализацию;
-  - shell-скрипты остаются только как thin wrappers для вызова основного движка.
+  - shell-скрипты остаются только как thin wrappers для вызова основного движка, и то в случае если без них не обойтись (кол-во скриптов должно быть сведено к минимуму).
 - Runtime parity для non-prod (`dev/staging/ai-slot`):
   - frontend сервисы запускаются через hot-reload (`vite run dev`);
   - Go-сервисы запускаются через hot-reload (`CompileDaemon` или эквивалентный watcher);
@@ -45,12 +45,15 @@ approvals:
   - при истечении TTL следующий revise-trigger поднимает окружение заново и продолжает цикл.
 
 ### Out of scope
-- Полная замена всех исторических deploy-скриптов вне MVP-контура.
 - Production-оптимизации (autoscaling tuning, cost-optimization).
 
 ## Критерии приемки
-- Для минимум одного проекта full-env поднимается полностью из `services.yaml` без ручной правки shell-скриптов.
+- Для минимум одного проекта full-env поднимается полностью из `services.yaml` без ручной правки shell-скриптов. С учетом dogfooding, это будет `codex-k8s`.
 - Порядок deploy-этапов детерминированный и подтверждён audit/evidence.
 - В non-prod окружениях подтверждён hot-reload для frontend и Go-сервисов.
 - Shared PVC подключён ко всем сервисам слота и agent job без конфликтов прав доступа.
 - Для revise-итераций подтверждён namespace reuse в пределах idle TTL и корректный auto-cleanup после TTL.
+
+## Референсы
+- [services.yaml reference](../project-example/services.yaml)
+- [codexctl reference](../codexctl)
