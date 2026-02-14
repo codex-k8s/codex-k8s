@@ -2,16 +2,18 @@
 doc_id: OPS-CK8S-STAGING-0001
 type: runbook
 title: "Staging Runbook (MVP)"
-status: draft
+status: active
 owner_role: SRE
 created_at: 2026-02-09
-updated_at: 2026-02-12
+updated_at: 2026-02-14
 related_issues: [1]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
-  request_id: ""
+  status: approved
+  request_id: "owner-2026-02-12-project-docs-approval"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-12
 ---
 
 # Staging Runbook (MVP)

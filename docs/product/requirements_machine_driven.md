@@ -2,16 +2,18 @@
 doc_id: REQ-CK8S-0001
 type: requirements
 title: "codex-k8s — Machine-Driven Requirements Baseline"
-status: draft
+status: active
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-13
+updated_at: 2026-02-14
 related_issues: [1]
 related_prs: []
 approvals:
   required: ["Owner"]
   status: approved
-  request_id: "owner-2026-02-06-mvp"
+  request_id: "owner-2026-02-12-project-docs-approval"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-12
 ---
 
 # Requirements Baseline: codex-k8s

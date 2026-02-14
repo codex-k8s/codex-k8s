@@ -2,16 +2,18 @@
 doc_id: REG-CK8S-S1-0001
 type: regression
 title: "Sprint S1 Regression Gate (staging)"
-status: draft
+status: active
 owner_role: QA
 created_at: 2026-02-09
-updated_at: 2026-02-12
+updated_at: 2026-02-14
 related_issues: [1]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
-  request_id: ""
+  status: approved
+  request_id: "owner-2026-02-12-project-docs-approval"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-12
 ---
 
 # Sprint S1 Regression Gate (staging)

@@ -2,16 +2,18 @@
 doc_id: LBL-CK8S-0001
 type: labels-policy
 title: "codex-k8s — Labels and Trigger Policy"
-status: draft
+status: active
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-02-13
+updated_at: 2026-02-14
 related_issues: [1, 19]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
-  request_id: ""
+  status: approved
+  request_id: "owner-2026-02-12-project-docs-approval"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-12
 ---
 
 # Labels and Trigger Policy
