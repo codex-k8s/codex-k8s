@@ -1,0 +1,34 @@
+-- name: agentsession__get_by_run_id :one
+SELECT
+    id,
+    run_id,
+    correlation_id,
+    project_id,
+    repository_full_name,
+    agent_key,
+    issue_number,
+    branch_name,
+    pr_number,
+    pr_url,
+    trigger_kind,
+    template_kind,
+    template_source,
+    template_locale,
+    model,
+    reasoning_effort,
+    status,
+    wait_state,
+    timeout_guard_disabled,
+    last_heartbeat_at,
+    session_id,
+    session_json,
+    codex_cli_session_path,
+    codex_cli_session_json,
+    started_at,
+    finished_at,
+    created_at,
+    updated_at
+FROM agent_sessions
+WHERE run_id = $1::uuid
+ORDER BY updated_at DESC, created_at DESC
+LIMIT 1;

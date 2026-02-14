@@ -37,6 +37,9 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	if mkErr := os.MkdirAll(state.workspaceDir, 0o755); mkErr != nil {
 		return fmt.Errorf("create workspace dir: %w", mkErr)
 	}
+	if mkErr := os.MkdirAll(selfImproveSessionsDir, 0o755); mkErr != nil {
+		return fmt.Errorf("create self-improve sessions dir: %w", mkErr)
+	}
 	cleanupGitAuthEnv, err := s.configureGitAuthEnvironment(state.workspaceDir)
 	if err != nil {
 		return fmt.Errorf("configure git auth environment: %w", err)

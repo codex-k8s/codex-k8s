@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"encoding/json"
 	"time"
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
@@ -15,6 +16,9 @@ const (
 	ToolMCPSecretSyncEnv        ToolName = "secret.sync.github_k8s"
 	ToolMCPDatabaseLifecycle    ToolName = "database.lifecycle"
 	ToolMCPOwnerFeedbackRequest ToolName = "owner.feedback.request"
+	ToolSelfImproveRunsList     ToolName = "self_improve_runs_list"
+	ToolSelfImproveRunLookup    ToolName = "self_improve_run_lookup"
+	ToolSelfImproveSessionGet   ToolName = "self_improve_session_get"
 )
 
 const (
@@ -583,6 +587,69 @@ type OwnerFeedbackRequestResult struct {
 	Options       []string            `json:"options,omitempty"`
 	DryRun        bool                `json:"dry_run,omitempty"`
 	Message       string              `json:"message,omitempty"`
+}
+
+// SelfImproveRunsListInput describes paginated run history request.
+type SelfImproveRunsListInput struct {
+	RepositoryFullName string `json:"repository_full_name,omitempty"`
+	Page               int    `json:"page,omitempty"`
+	Limit              int    `json:"limit,omitempty"`
+}
+
+// SelfImproveRunLookupInput describes run search by issue/pr references.
+type SelfImproveRunLookupInput struct {
+	RepositoryFullName string `json:"repository_full_name,omitempty"`
+	IssueNumber        int64  `json:"issue_number,omitempty"`
+	PullRequestNumber  int64  `json:"pull_request_number,omitempty"`
+	Limit              int    `json:"limit,omitempty"`
+}
+
+// SelfImproveSessionGetInput describes codex session retrieval input.
+type SelfImproveSessionGetInput struct {
+	RunID string `json:"run_id"`
+}
+
+// SelfImproveRunRef describes one run item in self-improve diagnostics.
+type SelfImproveRunRef struct {
+	RunID              string `json:"run_id"`
+	CorrelationID      string `json:"correlation_id"`
+	ProjectID          string `json:"project_id,omitempty"`
+	RepositoryFullName string `json:"repository_full_name,omitempty"`
+	AgentKey           string `json:"agent_key,omitempty"`
+	IssueNumber        int64  `json:"issue_number,omitempty"`
+	IssueURL           string `json:"issue_url,omitempty"`
+	PullRequestNumber  int64  `json:"pull_request_number,omitempty"`
+	PullRequestURL     string `json:"pull_request_url,omitempty"`
+	TriggerKind        string `json:"trigger_kind,omitempty"`
+	TriggerLabel       string `json:"trigger_label,omitempty"`
+	Status             string `json:"status"`
+	CreatedAt          string `json:"created_at,omitempty"`
+	StartedAt          string `json:"started_at,omitempty"`
+	FinishedAt         string `json:"finished_at,omitempty"`
+}
+
+// SelfImproveRunsListResult is output for paginated run history.
+type SelfImproveRunsListResult struct {
+	Status  ToolExecutionStatus `json:"status"`
+	Page    int                 `json:"page"`
+	Limit   int                 `json:"limit"`
+	HasNext bool                `json:"has_next"`
+	Items   []SelfImproveRunRef `json:"items"`
+}
+
+// SelfImproveRunLookupResult is output for run search by issue/pr references.
+type SelfImproveRunLookupResult struct {
+	Status ToolExecutionStatus `json:"status"`
+	Items  []SelfImproveRunRef `json:"items"`
+}
+
+// SelfImproveSessionGetResult is output for codex session extraction.
+type SelfImproveSessionGetResult struct {
+	Status           ToolExecutionStatus `json:"status"`
+	Run              SelfImproveRunRef   `json:"run"`
+	TmpDirectory     string              `json:"tmp_directory"`
+	TmpFilePath      string              `json:"tmp_file_path"`
+	CodexSessionJSON json.RawMessage     `json:"codex_session_json"`
 }
 
 // ApprovalDecision describes external decision for one mcp_action_request.

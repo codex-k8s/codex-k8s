@@ -42,7 +42,7 @@ approvals:
 | Release | `run:release` | release plan/notes, rollback plan | `em`, `sre` |
 | Postdeploy | `run:postdeploy` | postdeploy review, postmortem | `qa`, `sre` |
 | Ops | `run:ops` | SLO/alerts/runbook improvements | `sre`, `km` |
-| Self-Improve | `run:self-improve` | improvement diagnosis, change-set PR, policy/tooling recommendations | `km`, `dev`, `reviewer` |
+| Self-Improve | `run:self-improve` | run/session diagnosis (MCP), change-set PR, policy/tooling recommendations | `km`, `dev`, `reviewer` |
 
 ## Петли ревизии и переосмысления
 

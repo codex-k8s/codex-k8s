@@ -51,6 +51,8 @@ approvals:
   - `docs/product/prompt-seeds/self-improve-review.md`.
 - Обновлены seed-инструкции self-improve work/review:
   - сначала `AGENTS.md`, затем Issue/comments, затем связанная документация;
+  - обязательная MCP-диагностика run/session (`self_improve_runs_list`, `self_improve_run_lookup`, `self_improve_session_get`);
+  - обязательное сохранение session JSON во временный каталог `/tmp/codex-sessions/<run-id>`;
   - обязательный traceability output (`diagnosis`, `action_items`, `evidence_refs`, `tool_gaps`);
   - требования к PR flow, проверкам и ограничениям policy/security.
 - В runner-контракт добавлены поля structured output для self-improve updater:

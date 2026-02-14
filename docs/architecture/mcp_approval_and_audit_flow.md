@@ -17,7 +17,7 @@ approvals:
 # MCP Approval and Audit Flow
 
 ## TL;DR
-- MCP в MVP baseline используется для GitHub label-операций и control tools (secret sync, database lifecycle, owner feedback).
+- MCP в MVP baseline используется для GitHub label-операций, self-improve diagnostics tools и control tools (secret sync, database lifecycle, owner feedback).
 - GitHub issue/PR/comments и Kubernetes runtime-операции выполняются агентом напрямую через `gh`/`kubectl`.
 - Approval gate в MCP управляется policy matrix: для label-инструментов возможен `approval:none`, для privileged control tools — `approval:required`.
 - Все действия логируются в единый audit-контур (`flow_events`, `agent_sessions`, `links`, `token_usage`).
@@ -28,6 +28,7 @@ approvals:
 
 ### Baseline (текущий этап)
 - Для MCP label-инструментов (`github_labels_list|add|remove|transition`) используется `approval:none`.
+- Для self-improve read-инструментов (`self_improve_runs_list`, `self_improve_run_lookup`, `self_improve_session_get`) используется `approval:none`.
 - Label transitions всё равно проходят через control-plane MCP, чтобы сохранять единый audit-контур.
 - Для control tools (`secret.sync.github_k8s`, `database.lifecycle`, `owner.feedback.request`) включается approver gate по policy.
 - Для `secret.sync.github_k8s` действует idempotency-key и retry-safe replay без повторного side effect.
@@ -61,7 +62,7 @@ approvals:
 - `repositories.token_encrypted` в этом режиме не используется MCP runtime-контуром
   и остаётся в domain-path управления репозиториями (staff/project management).
 - Day6+ расширяет policy: approver matrix, secret-management инструменты через MCP, единообразные события и отказоустойчивость.
-- Day6+ также включает контур `run:self-improve`, где MCP используется для traceable transitions и owner feedback loops.
+- Day6+ также включает контур `run:self-improve`, где MCP используется для traceable diagnostics (runs/session evidence), label transitions и owner feedback loops.
 - В Day3 добавлен deterministic secret materialization для `secret.sync.github_k8s` (policy-driven generation + idempotent apply/replay).
 
 ## Политики доступа к MCP (S2 Day6 baseline + roadmap)

@@ -72,8 +72,8 @@ approvals:
 | FR-040 | Staff UI на MVP предоставляет runtime-debug контур: список активных jobs, live/historical логи агентов, очередь ожидающих запусков с причинами ожидания (`waiting_mcp`, `waiting_owner_review`). |
 | FR-041 | На MVP реализован минимальный набор MCP control tools: детерминированный secret sync (GitHub + Kubernetes) по окружению, database create/delete по окружению, owner feedback handle с вариантами ответа и custom input. |
 | FR-042 | Для MCP control tools обязателен policy-driven approval matrix и audit trail с `correlation_id`, `approval_state`, `requested_by`, `applied_by`. |
-| FR-043 | В stage taxonomy включён `run:self-improve`: агент анализирует логи запусков/комментарии/артефакты по Issue/PR и формирует улучшения docs/prompt templates/instructions/tooling. |
-| FR-044 | `run:self-improve` поддерживает управляемое применение результатов: change-set публикуется через PR с явной трассировкой источников и rationale. |
+| FR-043 | В stage taxonomy включён `run:self-improve` как основной контур самоулучшения: агент через MCP (`self_improve_runs_list`, `self_improve_run_lookup`, `self_improve_session_get`) анализирует run/session evidence, комментарии и артефакты по Issue/PR. |
+| FR-044 | `run:self-improve` поддерживает управляемое применение результатов: change-set публикуется через PR с явной трассировкой `run/session source -> diagnosis -> change`, включая улучшения prompts/docs/guidelines/toolchain. |
 | FR-045 | Для full MVP этапов поддерживается исполняемый контур полного stage-flow (`run:intake..run:ops`, `run:*:revise`, `run:rethink`) с traceability и audit-событиями. |
 | FR-046 | Post-MVP roadmap фиксирует расширяемость платформы: управление prompt templates/агентами/лейблами через UI, knowledge lifecycle в `pgvector`, A2A swarm, периодические автономные run-циклы. |
 

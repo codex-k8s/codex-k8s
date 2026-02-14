@@ -161,6 +161,10 @@ approvals:
 - Telegram (`github.com/codex-k8s/telegram-approver`, `github.com/codex-k8s/telegram-executor`) рассматривается как первый адаптер контракта, но не как единственный канал.
 - Контракт должен поддерживать async callbacks и единый `correlation_id` для аудита.
 - Для control tools обязателен `approval_required` режим по policy matrix.
+- Для `run:self-improve` в MCP включены read-only diagnostic ручки:
+  - `self_improve_runs_list` (page/limit, newest-first),
+  - `self_improve_run_lookup` (поиск run по Issue/PR),
+  - `self_improve_session_get` (извлечение `codex-cli` session JSON + target path в `/tmp/codex-sessions/...`).
 
 ## Session resume and timeout behavior
 - run/session поддерживает paused states `waiting_owner_review` и `waiting_mcp`.

@@ -35,6 +35,7 @@ const (
 
 	gitAskPassRequireForce = "force"
 	redactedSecretValue    = "[REDACTED]"
+	selfImproveSessionsDir = "/tmp/codex-sessions"
 )
 
 const outputSchemaJSON = `{

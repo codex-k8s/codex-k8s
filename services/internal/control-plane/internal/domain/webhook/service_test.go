@@ -793,6 +793,14 @@ func (r *inMemoryRunRepo) GetByID(_ context.Context, runID string) (agentrunrepo
 	return agentrunrepo.Run{}, false, nil
 }
 
+func (r *inMemoryRunRepo) ListRecentByProject(_ context.Context, _ string, _ string, _ int, _ int) ([]agentrunrepo.RunLookupItem, error) {
+	return nil, nil
+}
+
+func (r *inMemoryRunRepo) SearchRecentByProjectIssueOrPullRequest(_ context.Context, _ string, _ string, _ int64, _ int64, _ int) ([]agentrunrepo.RunLookupItem, error) {
+	return nil, nil
+}
+
 func (r *inMemoryRunRepo) ListRunIDsByRepositoryIssue(_ context.Context, _ string, _ int64, _ int) ([]string, error) {
 	return nil, nil
 }

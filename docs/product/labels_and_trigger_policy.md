@@ -170,8 +170,14 @@ approvals:
 ## Оркестрационный flow для `run:self-improve`
 
 - На входе: issue/pr с лейблом `run:self-improve` и доступным audit trail (`agent_sessions`, `flow_events`, comments, links).
-- Агент собирает источники замечаний (Owner/бот), релевантные логи и артефакты.
-- Результат оформляется как change-set (docs/prompts/instructions/tooling) в PR с обязательной трассировкой источников.
+- Это основной и единственный use-case self-improve: анализ качества предыдущих запусков и выпуск PR с улучшениями платформы.
+- Агент обязан работать через связку MCP+GitHub CLI:
+  - MCP `self_improve_runs_list`: список запусков с пагинацией (по 50, newest-first);
+  - MCP `self_improve_run_lookup`: поиск запусков по `issue_number`/`pull_request_number`;
+  - MCP `self_improve_session_get`: извлечение `codex-cli` session JSON выбранного run;
+  - `gh`: чтение Issue/PR, комментариев и review-диагностики.
+- Для анализа session JSON используется временный каталог `/tmp/codex-sessions/<run-id>` (создается до записи).
+- Результат оформляется как change-set (docs/prompts/instructions/tooling/image/scripts) в PR с обязательной трассировкой источников.
 - Transition по завершению:
   - снять `run:self-improve` с Issue;
   - поставить `state:in-review` на PR и на Issue (для явного owner decision по улучшениям).

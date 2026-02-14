@@ -30,3 +30,6 @@
 - шаблон должен описывать цель этапа, обязательные шаги, ожидаемые артефакты и критерий завершения;
 - секреты, токены и обход policy в шаблонах запрещены.
 - stage-specific seed-файлы не отменяют requirement на отдельные role-specific body-шаблоны `work/review` в локалях минимум `ru` и `en`.
+- Для `self-improve-*` seed обязателен диагностический контур:
+  - MCP `self_improve_runs_list` / `self_improve_run_lookup` / `self_improve_session_get`;
+  - сохранение извлеченного `codex-cli` session JSON в `/tmp/codex-sessions/<run-id>`.

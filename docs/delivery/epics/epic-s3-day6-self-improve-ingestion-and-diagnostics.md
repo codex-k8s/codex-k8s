@@ -46,6 +46,10 @@ approvals:
   - `action_items[]`;
   - `evidence_refs[]`;
   - `tool_gaps[]` (опционально).
+- В MCP добавлены read-only диагностические ручки self-improve:
+  - `self_improve_runs_list` (history pagination 50/page, newest-first);
+  - `self_improve_run_lookup` (поиск run по Issue/PR);
+  - `self_improve_session_get` (получение `codex-cli` session JSON и target path в `/tmp/codex-sessions/...`).
 - При self-improve run публикуется audit-событие:
   - `run.self_improve.diagnosis_ready`.
 - Prompt-body для self-improve актуализирован под ingestion-диагностику:

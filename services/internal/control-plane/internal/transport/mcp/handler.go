@@ -25,6 +25,9 @@ type domainService interface {
 	MCPSecretSyncEnv(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.SecretSyncEnvInput) (mcpdomain.SecretSyncEnvResult, error)
 	MCPDatabaseLifecycle(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.DatabaseLifecycleInput) (mcpdomain.DatabaseLifecycleResult, error)
 	MCPOwnerFeedbackRequest(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.OwnerFeedbackRequestInput) (mcpdomain.OwnerFeedbackRequestResult, error)
+	SelfImproveRunsList(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.SelfImproveRunsListInput) (mcpdomain.SelfImproveRunsListResult, error)
+	SelfImproveRunLookup(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.SelfImproveRunLookupInput) (mcpdomain.SelfImproveRunLookupResult, error)
+	SelfImproveSessionGet(ctx context.Context, session mcpdomain.SessionContext, input mcpdomain.SelfImproveSessionGetInput) (mcpdomain.SelfImproveSessionGetResult, error)
 }
 
 // NewHandler constructs authenticated MCP StreamableHTTP handler.

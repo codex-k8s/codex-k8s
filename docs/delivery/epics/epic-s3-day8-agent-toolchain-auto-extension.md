@@ -46,6 +46,7 @@ approvals:
   - список `tool_gaps`;
   - источники обнаружения;
   - рекомендуемые пути изменения toolchain/image (`bootstrap_tools.sh`, `Dockerfile`).
+- В runtime baseline добавлена подготовка диагностического каталога `/tmp/codex-sessions` для self-improve session extraction-процесса.
 - `tool_gaps` сохраняются в session snapshot (`session_json`) и доступны для self-improve diagnostics/updater цикла.
 
 ## Проверки
