@@ -15,7 +15,7 @@ func TestLoad_WithImportsComponentsAndTemplates(t *testing.T) {
 	rootFile := filepath.Join(tmpDir, "services.yaml")
 
 	base := `
-apiVersion: codex-k8s.io/v1alpha1
+apiVersion: codex-k8s.dev/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -30,7 +30,7 @@ spec:
         deployGroup: internal
 `
 	root := `
-apiVersion: codex-k8s.io/v1alpha1
+apiVersion: codex-k8s.dev/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -82,7 +82,7 @@ func TestLoad_ImportCycle(t *testing.T) {
 	second := filepath.Join(tmpDir, "second.yaml")
 
 	writeFile(t, first, `
-apiVersion: codex-k8s.io/v1alpha1
+apiVersion: codex-k8s.dev/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -113,7 +113,7 @@ func TestLoad_UnknownComponentReference(t *testing.T) {
 
 	path := filepath.Join(t.TempDir(), "services.yaml")
 	writeFile(t, path, `
-apiVersion: codex-k8s.io/v1alpha1
+apiVersion: codex-k8s.dev/v1alpha1
 kind: ServiceStack
 metadata:
   name: demo
@@ -140,7 +140,7 @@ func TestLoad_CodexK8sRequiresAISTagingTemplate(t *testing.T) {
 
 	path := filepath.Join(t.TempDir(), "services.yaml")
 	writeFile(t, path, `
-apiVersion: codex-k8s.io/v1alpha1
+apiVersion: codex-k8s.dev/v1alpha1
 kind: ServiceStack
 metadata:
   name: codex-k8s

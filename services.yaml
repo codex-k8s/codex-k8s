@@ -1,4 +1,4 @@
-apiVersion: codex-k8s.io/v1alpha1
+apiVersion: codex-k8s.dev/v1alpha1
 kind: ServiceStack
 metadata:
   name: codex-k8s

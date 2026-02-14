@@ -7,7 +7,7 @@ import (
 
 const (
 	// APIVersionV1Alpha1 identifies current typed services.yaml contract version.
-	APIVersionV1Alpha1 = "codex-k8s.io/v1alpha1"
+	APIVersionV1Alpha1 = "codex-k8s.dev/v1alpha1"
 	// KindServiceStack is the root object kind for services config.
 	KindServiceStack = "ServiceStack"
 )
