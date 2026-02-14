@@ -2,10 +2,10 @@
 doc_id: EPC-CK8S-S3-D9
 type: epic
 title: "Epic S3 Day 9: Declarative full-env deploy and runtime parity"
-status: planned
+status: in-progress
 owner_role: EM
 created_at: 2026-02-13
-updated_at: 2026-02-13
+updated_at: 2026-02-14
 related_issues: [19]
 related_prs: []
 approvals:
@@ -17,43 +17,85 @@ approvals:
 # Epic S3 Day 9: Declarative full-env deploy and runtime parity
 
 ## TL;DR
-- Цель: реализовать детерминированное разворачивание полного окружения выполнения задач на основе декларативного `services.yaml`.
-- MVP-результат: build/deploy orchestration переносится из shell-first подхода в YAML + бинарник `codex-k8s` с единым порядком зависимостей и runtime parity для non-prod.
+- Цель: перейти от shell-first деплоя к декларативному `services.yaml` и Go-движку оркестрации full-env.
+- Входная обязательная подзадача (из референса): добавить `partials` для шаблонного рендера манифестов без перехода на Helm.
+- MVP-результат Day9: детерминированный full-env deploy по typed inventory, reusable шаблоны манифестов, runtime parity для non-prod (`dev/staging/ai-slot`).
 
 ## Priority
 - `P0`.
 
+## Контекст и проблема
+- Сейчас основной контур staging/full-env деплоя завязан на shell-скрипты и ручной рендер `*.yaml.tpl`.
+- `services.yaml` в `codex-k8s` пока не является реальным source of truth для состава сервисов и порядка оркестрации.
+- В манифестах много повторяющихся блоков (labels/annotations/env/probes/ingress/tls/wait initContainers), которые сложно сопровождать без reusable partial-шаблонов.
+- Нужно упростить DX для разработчиков и агентов: меньше копипасты, меньше скрытой логики в bash, больше детерминизма в typed config + Go runtime.
+
 ## Scope
 ### In scope
-- Декларативный inventory окружения на базе `services.yaml` (по референсам `codexctl` и `project-example`):
-  - описание инфраструктуры, сервисов, образов, overlays и зависимостей в одном source of truth;
-  - поддержка явного порядка развёртывания:
+- D9-T1. Template partials для манифестов (обязательная подзадача из референса):
+  - добавить поддержку partial-файлов с `{{ define "..." }}` и вызовами через `{{ template "..." . }}` и helper `include`;
+  - подключение partials через `services.yaml` (`templates.partials`) и/или конвенцию (решение фиксируется перед реализацией);
+  - сохранить текущий TemplateContext-модель (`.Env`, `.Namespace`, `.Slot`, `.Versions`, ...), не ломая текущие шаблоны;
+  - добавить читаемые ошибки при конфликте `define`/ошибках парсинга.
+- D9-T2. Typed inventory в `services.yaml` для full-env deploy:
+  - описать infra/services/deploy groups/dependencies/overlays как source of truth;
+  - закрепить порядок выкладки:
     `stateful dependencies -> migrations -> internal domain services -> edge services -> frontend`.
-- Оркестрация через бинарник `codex-k8s`:
-  - основной путь build/deploy/readiness переезжает из shell-скриптов в typed YAML-конфиг + Go-реализацию;
-  - shell-скрипты остаются только как thin wrappers для вызова основного движка, и то в случае если без них не обойтись (кол-во скриптов должно быть сведено к минимуму).
-- Runtime parity для non-prod (`dev/staging/ai-slot`):
-  - frontend сервисы запускаются через hot-reload (`vite run dev`);
-  - Go-сервисы запускаются через hot-reload (`CompileDaemon` или эквивалентный watcher);
-  - Dockerfile/manifests фиксируют отдельные dev-target/runtime поведение.
-- Shared workspace volume:
-  - один и тот же PVC монтируется во все сервисы слота и в agent job для консистентного контекста исходников/артефактов;
-  - read/write policy описывается явно в манифестах и проверяется на RBAC/namespace уровне.
-- Reuse full-env namespace между итерациями ревью:
-  - для `run:*:revise` namespace не пересоздаётся на каждую итерацию, если предыдущий full-env ещё активен;
-  - вводится idle TTL для auto-cleanup warm namespace (default `8h`);
-  - при истечении TTL следующий revise-trigger поднимает окружение заново и продолжает цикл.
+- D9-T3. Go-orchestrator деплоя:
+  - основной путь apply/readiness должен исполняться через Go-движок;
+  - shell остается thin-wrapper entrypoint без бизнес-логики оркестрации.
+- D9-T4. Runtime parity non-prod:
+  - зафиксировать dev/full-env режимы для Go и frontend сервисов;
+  - унифицировать поведение окружения agent-run и сервисов слота.
+- D9-T5. Документация и трассировка:
+  - обновить `docs/architecture/*`, `docs/product/*` (где затронуты process/runtime), `docs/delivery/*`, `docs/ops/staging_runbook.md`;
+  - синхронизировать `issue_map` и `requirements_traceability`.
 
 ### Out of scope
 - Production-оптимизации (autoscaling tuning, cost-optimization).
 
 ## Критерии приемки
-- Для минимум одного проекта full-env поднимается полностью из `services.yaml` без ручной правки shell-скриптов. С учетом dogfooding, это будет `codex-k8s`.
-- Порядок deploy-этапов детерминированный и подтверждён audit/evidence.
-- В non-prod окружениях подтверждён hot-reload для frontend и Go-сервисов.
-- Shared PVC подключён ко всем сервисам слота и agent job без конфликтов прав доступа.
-- Для revise-итераций подтверждён namespace reuse в пределах idle TTL и корректный auto-cleanup после TTL.
+- Partials:
+  - проект может определить один или несколько partial-файлов;
+  - partial-шаблоны доступны в любом манифесте при рендере;
+  - тесты покрывают: загрузку partials, вызов через `template/include`, конфликт имен.
+- Declarative deploy:
+  - для `codex-k8s` full-env можно поднять из `services.yaml` без ручной правки deploy shell-скриптов;
+  - порядок deploy-этапов детерминирован и подтвержден событиями/логами.
+- Runtime parity:
+  - non-prod режимы запуска сервисов и agent-run согласованы и воспроизводимы;
+  - shared workspace volume и права доступа описаны декларативно.
+- Документация:
+  - проектная документация и трассировка синхронно обновлены по итогам реализации.
 
-## Референсы
-- [services.yaml reference](../project-example/services.yaml)
-- [codexctl reference](../codexctl)
+## План реализации (Day9)
+1. Ввести модуль рендера шаблонов с partials (без изменения текущего контекста).
+2. Добавить typed-модель `services.yaml` для deploy inventory и загрузчик с валидацией.
+3. Перенести deploy orchestration в Go-движок с тем же порядком зависимостей.
+4. Подключить движок в существующий staging/dev pipeline через thin wrappers.
+5. Обновить docs + tests + regression checks.
+
+## DoD (engineering)
+- Unit tests:
+  - parser/render tests для `services.yaml` и partials;
+  - negative cases (conflict/missing template/invalid glob).
+- Integration checks:
+  - dry-run render/plan;
+  - staging deploy path через новый orchestrator.
+- Documentation:
+  - обновлены связанные продуктовые/архитектурные/delivery/ops документы.
+
+## Референсы и источники
+- Внутренние:
+  - `services.yaml`
+  - `deploy/base/**`
+  - `deploy/scripts/deploy_staging.sh`
+  - `docs/design-guidelines/common/project_architecture.md`
+  - `docs/design-guidelines/go/services_design_requirements.md`
+- Внешние референсы (подход, не копирование 1:1):
+  - `../codexctl/internal/config/config.go`
+  - `../project-example/services.yaml`
+  - `../codexctl/internal/engine/*`
+
+## Примечание по реализации
+- Подход из `codexctl` используется как референс, но реализация в `codex-k8s` должна быть проще для сопровождения и строго соответствовать текущей архитектуре платформы (control-plane + worker + agent-runner, без возврата к workflow-first парадигме).
