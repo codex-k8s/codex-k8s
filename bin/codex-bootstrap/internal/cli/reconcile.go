@@ -22,6 +22,11 @@ import (
 	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
 )
 
+const (
+	defaultNamespaceEnvVar = "CODEXK8S_STAGING_NAMESPACE"
+	defaultNamespaceName   = "default"
+)
+
 type reconcileParams struct {
 	Config      *servicescfg.Config
 	RootDir     string
@@ -38,22 +43,37 @@ type manifestTemplateData struct {
 	Env         map[string]string
 }
 
+type actionExecutor struct {
+	clientset   *kubernetes.Clientset
+	envCfg      servicescfg.DeployEnvironment
+	environment string
+	namespace   string
+	project     string
+	rootDir     string
+	env         map[string]string
+	renderer    *servicescfg.Renderer
+	stdout      io.Writer
+}
+
 func runReconcile(ctx context.Context, params reconcileParams) error {
 	envCfg, ok := params.Config.Deploy.Environments[params.Environment]
 	if !ok {
 		return fmt.Errorf("deploy environment %q is not configured in services.yaml", params.Environment)
 	}
-	namespaceEnv := strings.TrimSpace(envCfg.NamespaceEnvVar)
-	if namespaceEnv == "" {
-		namespaceEnv = "CODEXK8S_STAGING_NAMESPACE"
-	}
-	namespace := strings.TrimSpace(params.EnvMap[namespaceEnv])
-	if namespace == "" {
-		namespace = "codex-k8s-ai-staging"
-		params.EnvMap[namespaceEnv] = namespace
+
+	namespaceEnvVar := strings.TrimSpace(envCfg.Namespace.EnvVar)
+	if namespaceEnvVar == "" {
+		namespaceEnvVar = defaultNamespaceEnvVar
 	}
 
-	applyDeployDefaults(params.EnvMap)
+	namespace := strings.TrimSpace(params.EnvMap[namespaceEnvVar])
+	if namespace == "" {
+		namespace = strings.TrimSpace(envCfg.Namespace.Default)
+	}
+	if namespace == "" {
+		namespace = defaultNamespaceName
+	}
+
 	renderer, err := servicescfg.NewRenderer(params.Config, params.RootDir, servicescfg.RenderContext{
 		Env:        params.Environment,
 		Namespace:  namespace,
@@ -66,6 +86,29 @@ func runReconcile(ctx context.Context, params reconcileParams) error {
 		return err
 	}
 
+	if strings.TrimSpace(envCfg.Namespace.Pattern) != "" && strings.TrimSpace(params.EnvMap[namespaceEnvVar]) == "" {
+		resolvedNamespace, resolveErr := renderer.ResolveNamespace(envCfg.Namespace.Pattern)
+		if resolveErr != nil {
+			return fmt.Errorf("resolve namespace pattern: %w", resolveErr)
+		}
+		namespace = strings.TrimSpace(resolvedNamespace)
+		if namespace == "" {
+			return fmt.Errorf("resolved namespace is empty for environment %q", params.Environment)
+		}
+		params.EnvMap[namespaceEnvVar] = namespace
+		renderer, err = servicescfg.NewRenderer(params.Config, params.RootDir, servicescfg.RenderContext{
+			Env:        params.Environment,
+			Namespace:  namespace,
+			Project:    params.Config.Project,
+			ProjectDir: params.RootDir,
+			Now:        time.Now().UTC(),
+			EnvMap:     params.EnvMap,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	restCfg, err := clientcfg.BuildRESTConfig(strings.TrimSpace(params.Kubeconfig))
 	if err != nil {
 		return fmt.Errorf("build kubernetes rest config: %w", err)
@@ -75,32 +118,16 @@ func runReconcile(ctx context.Context, params reconcileParams) error {
 		return fmt.Errorf("create kubernetes clientset: %w", err)
 	}
 
-	if err := hydrateFromExistingSecrets(ctx, clientset, namespace, envCfg, params.EnvMap); err != nil {
-		return err
-	}
-	if err := ensurePostgresSecret(ctx, clientset, namespace, envCfg, params.EnvMap); err != nil {
-		return err
-	}
-	if err := ensureRuntimeSecret(ctx, clientset, namespace, envCfg, params.EnvMap); err != nil {
-		return err
-	}
-	if err := ensureResourcesConfigMap(ctx, clientset, namespace, envCfg, params.EnvMap); err != nil {
-		return err
-	}
-	if err := ensureLabelCatalogConfigMap(ctx, clientset, namespace, envCfg, params.EnvMap); err != nil {
-		return err
-	}
-	if err := ensureOAuthSecret(ctx, clientset, namespace, envCfg, params.EnvMap); err != nil {
-		return err
-	}
-	if err := ensureMigrationsConfigMap(ctx, clientset, namespace, envCfg, params.RootDir); err != nil {
-		return err
-	}
-
-	if script := strings.TrimSpace(envCfg.NetworkPolicyScript); script != "" {
-		if err := runLocalScript(ctx, params.RootDir, script, params.EnvMap, params.Stdout); err != nil {
-			return fmt.Errorf("run network policy baseline script: %w", err)
-		}
+	executor := &actionExecutor{
+		clientset:   clientset,
+		envCfg:      envCfg,
+		environment: params.Environment,
+		namespace:   namespace,
+		project:     params.Config.Project,
+		rootDir:     params.RootDir,
+		env:         params.EnvMap,
+		renderer:    renderer,
+		stdout:      params.Stdout,
 	}
 
 	for _, phase := range envCfg.ManifestPhases {
@@ -110,44 +137,9 @@ func runReconcile(ctx context.Context, params reconcileParams) error {
 		if _, err := fmt.Fprintf(params.Stdout, "Phase %s: start\n", phase.Name); err != nil {
 			return err
 		}
-		for _, resource := range phase.PreDelete {
-			if err := kubectlDeleteResource(ctx, namespace, resource, params.EnvMap, params.Stdout); err != nil {
-				return fmt.Errorf("phase %s pre-delete %s: %w", phase.Name, resource, err)
-			}
-		}
-		for _, manifestPath := range phase.Manifests {
-			manifestData := manifestTemplateData{
-				Environment: params.Environment,
-				Namespace:   namespace,
-				Project:     params.Config.Project,
-				Env:         params.EnvMap,
-			}
-			rendered, err := renderer.RenderFile(manifestPath, manifestData)
-			if err != nil {
-				return fmt.Errorf("phase %s render manifest %s: %w", phase.Name, manifestPath, err)
-			}
-			if err := kubectlApplyYAML(ctx, namespace, rendered, params.EnvMap, params.Stdout); err != nil {
-				return fmt.Errorf("phase %s apply manifest %s: %w", phase.Name, manifestPath, err)
-			}
-		}
-		for _, resource := range phase.RolloutRestart {
-			if err := kubectlRolloutRestart(ctx, namespace, resource, params.EnvMap, params.Stdout); err != nil {
-				return fmt.Errorf("phase %s rollout restart %s: %w", phase.Name, resource, err)
-			}
-		}
-		waitEnabled := strings.EqualFold(strings.TrimSpace(params.EnvMap[envCfg.WaitRolloutEnvVar]), "true") || strings.TrimSpace(envCfg.WaitRolloutEnvVar) == ""
-		for _, wait := range phase.WaitFor {
-			if !waitEnabled && wait.Type == "rollout" {
-				continue
-			}
-			if err := waitForTarget(ctx, namespace, wait, envCfg, params.EnvMap, params.Stdout); err != nil {
-				if wait.Optional {
-					if _, writeErr := fmt.Fprintf(params.Stdout, "Phase %s optional wait failed (%s): %v\n", phase.Name, wait.Resource, err); writeErr != nil {
-						return writeErr
-					}
-					continue
-				}
-				return fmt.Errorf("phase %s wait %s: %w", phase.Name, wait.Resource, err)
+		for _, action := range phase.Actions {
+			if err := executor.executeAction(ctx, action); err != nil {
+				return fmt.Errorf("phase %s action %s: %w", phase.Name, action.Type, err)
 			}
 		}
 	}
@@ -156,6 +148,316 @@ func runReconcile(ctx context.Context, params reconcileParams) error {
 		return err
 	}
 	return nil
+}
+
+func (e *actionExecutor) executeAction(ctx context.Context, action servicescfg.DeployAction) error {
+	switch strings.TrimSpace(action.Type) {
+	case "set_defaults":
+		e.setDefaults(action.Defaults)
+		return nil
+	case "set_from_env":
+		e.setFromEnv(action.Assign)
+		return nil
+	case "import_secret":
+		return e.importSecret(ctx, action)
+	case "generate_hex":
+		return e.generateHex(action.Generate)
+	case "assert_env":
+		return e.assertEnv(action.Keys)
+	case "upsert_secret_from_env":
+		return e.upsertSecretFromEnv(ctx, action)
+	case "upsert_configmap_from_env":
+		return e.upsertConfigMapFromEnv(ctx, action)
+	case "upsert_configmap_from_dir":
+		return e.upsertConfigMapFromDir(ctx, action)
+	case "run_script":
+		return e.runScript(ctx, action)
+	case "apply_manifests":
+		return e.applyManifests(ctx, action)
+	case "delete_resources":
+		return e.deleteResources(ctx, action.Resources)
+	case "rollout_restart":
+		return e.rolloutRestart(ctx, action.Resources)
+	case "wait_targets":
+		return e.waitTargets(ctx, action.WaitFor)
+	default:
+		return fmt.Errorf("unsupported action type %q", action.Type)
+	}
+}
+
+func (e *actionExecutor) setDefaults(defaults map[string]string) {
+	for key, rawValue := range defaults {
+		if strings.TrimSpace(key) == "" {
+			continue
+		}
+		if strings.TrimSpace(e.env[key]) != "" {
+			continue
+		}
+		e.env[key] = expandWithEnv(rawValue, e.env)
+	}
+}
+
+func (e *actionExecutor) setFromEnv(assignments []servicescfg.EnvAssign) {
+	for _, assignment := range assignments {
+		target := strings.TrimSpace(assignment.Target)
+		source := strings.TrimSpace(assignment.Source)
+		if target == "" || source == "" {
+			continue
+		}
+		if strings.TrimSpace(e.env[target]) != "" {
+			continue
+		}
+		sourceValue := strings.TrimSpace(e.env[source])
+		if sourceValue != "" {
+			e.env[target] = sourceValue
+		}
+	}
+}
+
+func (e *actionExecutor) importSecret(ctx context.Context, action servicescfg.DeployAction) error {
+	secretName := strings.TrimSpace(action.Name)
+	if secretName == "" {
+		return fmt.Errorf("import_secret requires action.name")
+	}
+	values, err := getSecretData(ctx, e.clientset, e.namespace, secretName)
+	if err != nil {
+		return err
+	}
+
+	for _, key := range action.Keys {
+		normalized := strings.TrimSpace(key)
+		if normalized == "" {
+			continue
+		}
+		if strings.TrimSpace(e.env[normalized]) != "" {
+			continue
+		}
+		if value := strings.TrimSpace(values[normalized]); value != "" {
+			e.env[normalized] = value
+		}
+	}
+	for _, mapping := range action.Mappings {
+		valueKey := strings.TrimSpace(mapping.Key)
+		if valueKey == "" {
+			continue
+		}
+		targetEnv := strings.TrimSpace(mapping.Env)
+		if targetEnv == "" {
+			targetEnv = valueKey
+		}
+		if strings.TrimSpace(e.env[targetEnv]) != "" {
+			continue
+		}
+		if value := strings.TrimSpace(values[valueKey]); value != "" {
+			e.env[targetEnv] = value
+		}
+	}
+	return nil
+}
+
+func (e *actionExecutor) generateHex(rules []servicescfg.EnvGenerate) error {
+	for _, rule := range rules {
+		key := strings.TrimSpace(rule.Key)
+		if key == "" {
+			continue
+		}
+		currentValue := strings.TrimSpace(e.env[key])
+		generateForEmpty := rule.IfEmpty || (!rule.IfEmpty && len(rule.RegenerateIfLengthNotIn) == 0)
+		needsGeneration := generateForEmpty && currentValue == ""
+		if !needsGeneration && currentValue != "" && len(rule.RegenerateIfLengthNotIn) > 0 && !intInSlice(len(currentValue), rule.RegenerateIfLengthNotIn) {
+			needsGeneration = true
+		}
+		if !needsGeneration {
+			continue
+		}
+		if rule.HexBytes <= 0 {
+			return fmt.Errorf("generate_hex requires positive hex_bytes for key %q", key)
+		}
+		generated, err := randomHex(rule.HexBytes)
+		if err != nil {
+			return err
+		}
+		e.env[key] = generated
+	}
+	return nil
+}
+
+func (e *actionExecutor) assertEnv(keys []string) error {
+	missing := make([]string, 0, len(keys))
+	for _, key := range keys {
+		normalized := strings.TrimSpace(key)
+		if normalized == "" {
+			continue
+		}
+		if strings.TrimSpace(e.env[normalized]) == "" {
+			missing = append(missing, normalized)
+		}
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("missing required env keys: %s", strings.Join(missing, ", "))
+	}
+	return nil
+}
+
+func (e *actionExecutor) upsertSecretFromEnv(ctx context.Context, action servicescfg.DeployAction) error {
+	secretName := strings.TrimSpace(action.Name)
+	if secretName == "" {
+		return fmt.Errorf("upsert_secret_from_env requires action.name")
+	}
+	data, err := e.collectData(action)
+	if err != nil {
+		return err
+	}
+	return upsertSecret(ctx, e.clientset, e.namespace, secretName, data)
+}
+
+func (e *actionExecutor) upsertConfigMapFromEnv(ctx context.Context, action servicescfg.DeployAction) error {
+	configMapName := strings.TrimSpace(action.Name)
+	if configMapName == "" {
+		return fmt.Errorf("upsert_configmap_from_env requires action.name")
+	}
+	data, err := e.collectData(action)
+	if err != nil {
+		return err
+	}
+	return upsertConfigMap(ctx, e.clientset, e.namespace, configMapName, data)
+}
+
+func (e *actionExecutor) upsertConfigMapFromDir(ctx context.Context, action servicescfg.DeployAction) error {
+	configMapName := strings.TrimSpace(action.Name)
+	if configMapName == "" {
+		return fmt.Errorf("upsert_configmap_from_dir requires action.name")
+	}
+	directory := strings.TrimSpace(action.Directory)
+	if directory == "" {
+		return fmt.Errorf("upsert_configmap_from_dir requires action.directory")
+	}
+	if !filepath.IsAbs(directory) {
+		directory = filepath.Join(e.rootDir, directory)
+	}
+	entries, err := os.ReadDir(directory)
+	if err != nil {
+		return fmt.Errorf("read directory %q: %w", directory, err)
+	}
+	data := make(map[string]string, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		content, readErr := os.ReadFile(filepath.Join(directory, entry.Name()))
+		if readErr != nil {
+			return fmt.Errorf("read file %q: %w", entry.Name(), readErr)
+		}
+		data[entry.Name()] = string(content)
+	}
+	return upsertConfigMap(ctx, e.clientset, e.namespace, configMapName, data)
+}
+
+func (e *actionExecutor) runScript(ctx context.Context, action servicescfg.DeployAction) error {
+	scriptPath := strings.TrimSpace(action.Path)
+	if scriptPath == "" {
+		return fmt.Errorf("run_script requires action.path")
+	}
+	return runLocalScript(ctx, e.rootDir, scriptPath, e.env, e.stdout)
+}
+
+func (e *actionExecutor) applyManifests(ctx context.Context, action servicescfg.DeployAction) error {
+	if len(action.Paths) == 0 {
+		return fmt.Errorf("apply_manifests requires action.paths")
+	}
+	for _, manifestPath := range action.Paths {
+		rendered, err := e.renderer.RenderFile(manifestPath, manifestTemplateData{
+			Environment: e.environment,
+			Namespace:   e.namespace,
+			Project:     e.project,
+			Env:         e.env,
+		})
+		if err != nil {
+			return fmt.Errorf("render manifest %q: %w", manifestPath, err)
+		}
+		if err := kubectlApplyYAML(ctx, e.namespace, rendered, e.env, e.stdout); err != nil {
+			return fmt.Errorf("apply manifest %q: %w", manifestPath, err)
+		}
+	}
+	return nil
+}
+
+func (e *actionExecutor) deleteResources(ctx context.Context, resources []string) error {
+	for _, resource := range resources {
+		if err := kubectlDeleteResource(ctx, e.namespace, resource, e.env, e.stdout); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *actionExecutor) rolloutRestart(ctx context.Context, resources []string) error {
+	for _, resource := range resources {
+		if err := kubectlRolloutRestart(ctx, e.namespace, resource, e.env, e.stdout); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *actionExecutor) waitTargets(ctx context.Context, targets []servicescfg.WaitTarget) error {
+	if len(targets) == 0 {
+		return nil
+	}
+	waitRolloutEnabled := true
+	waitRolloutKey := strings.TrimSpace(e.envCfg.WaitRolloutEnvVar)
+	if waitRolloutKey != "" {
+		waitRolloutEnabled = isTrue(e.env[waitRolloutKey])
+	}
+	for _, target := range targets {
+		if strings.TrimSpace(target.Type) == "rollout" && !waitRolloutEnabled {
+			continue
+		}
+		if err := waitForTarget(ctx, e.namespace, target, e.envCfg, e.env, e.stdout); err != nil {
+			if target.Optional {
+				if _, writeErr := fmt.Fprintf(e.stdout, "Optional wait failed for %s: %v\n", target.Resource, err); writeErr != nil {
+					return writeErr
+				}
+				continue
+			}
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *actionExecutor) collectData(action servicescfg.DeployAction) (map[string]string, error) {
+	data := make(map[string]string, len(action.Keys)+len(action.Mappings)+len(action.Values))
+	for key, value := range action.Values {
+		normalized := strings.TrimSpace(key)
+		if normalized == "" {
+			continue
+		}
+		data[normalized] = expandWithEnv(value, e.env)
+	}
+	for _, key := range action.Keys {
+		normalized := strings.TrimSpace(key)
+		if normalized == "" {
+			continue
+		}
+		data[normalized] = strings.TrimSpace(e.env[normalized])
+	}
+	for _, mapping := range action.Mappings {
+		targetKey := strings.TrimSpace(mapping.Key)
+		if targetKey == "" {
+			continue
+		}
+		sourceKey := strings.TrimSpace(mapping.Env)
+		if sourceKey == "" {
+			sourceKey = targetKey
+		}
+		value := strings.TrimSpace(e.env[sourceKey])
+		if mapping.Required && value == "" {
+			return nil, fmt.Errorf("required env %q for mapping %q is empty", sourceKey, targetKey)
+		}
+		data[targetKey] = value
+	}
+	return data, nil
 }
 
 func phaseEnabled(phase servicescfg.DeployPhase, envMap map[string]string) bool {
@@ -169,238 +471,6 @@ func phaseEnabled(phase servicescfg.DeployPhase, envMap map[string]string) bool 
 		return actual != ""
 	}
 	return strings.EqualFold(actual, expected)
-}
-
-func applyDeployDefaults(env map[string]string) {
-	defaults := map[string]string{
-		"CODEXK8S_POSTGRES_DB":                             "codex_k8s",
-		"CODEXK8S_POSTGRES_USER":                           "codex_k8s",
-		"CODEXK8S_PROJECT_DB_ADMIN_HOST":                   "postgres",
-		"CODEXK8S_PROJECT_DB_ADMIN_PORT":                   "5432",
-		"CODEXK8S_PROJECT_DB_ADMIN_SSLMODE":                "disable",
-		"CODEXK8S_PROJECT_DB_ADMIN_DATABASE":               "postgres",
-		"CODEXK8S_WAIT_ROLLOUT":                            "true",
-		"CODEXK8S_ROLLOUT_TIMEOUT":                         "1800s",
-		"CODEXK8S_WORKER_RUN_NAMESPACE_PREFIX":             "codex-issue",
-		"CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP":            "true",
-		"CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT":              "codex-runner",
-		"CODEXK8S_WORKER_RUN_ROLE_NAME":                    "codex-runner",
-		"CODEXK8S_WORKER_RUN_ROLE_BINDING_NAME":            "codex-runner",
-		"CODEXK8S_WORKER_RUN_RESOURCE_QUOTA_NAME":          "codex-run-quota",
-		"CODEXK8S_WORKER_RUN_LIMIT_RANGE_NAME":             "codex-run-limits",
-		"CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME":      "codex-run-credentials",
-		"CODEXK8S_WORKER_RUN_QUOTA_PODS":                   "20",
-		"CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_CPU":           "6",
-		"CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_MEMORY":        "24Gi",
-		"CODEXK8S_WORKER_RUN_QUOTA_LIMITS_CPU":             "8",
-		"CODEXK8S_WORKER_RUN_QUOTA_LIMITS_MEMORY":          "32Gi",
-		"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_CPU":    "4",
-		"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_MEMORY": "16Gi",
-		"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_CPU":            "6",
-		"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY":         "24Gi",
-		"CODEXK8S_RUN_INTAKE_LABEL":                        "run:intake",
-		"CODEXK8S_RUN_INTAKE_REVISE_LABEL":                 "run:intake:revise",
-		"CODEXK8S_RUN_VISION_LABEL":                        "run:vision",
-		"CODEXK8S_RUN_VISION_REVISE_LABEL":                 "run:vision:revise",
-		"CODEXK8S_RUN_PRD_LABEL":                           "run:prd",
-		"CODEXK8S_RUN_PRD_REVISE_LABEL":                    "run:prd:revise",
-		"CODEXK8S_RUN_ARCH_LABEL":                          "run:arch",
-		"CODEXK8S_RUN_ARCH_REVISE_LABEL":                   "run:arch:revise",
-		"CODEXK8S_RUN_DESIGN_LABEL":                        "run:design",
-		"CODEXK8S_RUN_DESIGN_REVISE_LABEL":                 "run:design:revise",
-		"CODEXK8S_RUN_PLAN_LABEL":                          "run:plan",
-		"CODEXK8S_RUN_PLAN_REVISE_LABEL":                   "run:plan:revise",
-		"CODEXK8S_RUN_DEV_LABEL":                           "run:dev",
-		"CODEXK8S_RUN_DEV_REVISE_LABEL":                    "run:dev:revise",
-		"CODEXK8S_RUN_DEBUG_LABEL":                         "run:debug",
-		"CODEXK8S_RUN_DOC_AUDIT_LABEL":                     "run:doc-audit",
-		"CODEXK8S_RUN_QA_LABEL":                            "run:qa",
-		"CODEXK8S_RUN_RELEASE_LABEL":                       "run:release",
-		"CODEXK8S_RUN_POSTDEPLOY_LABEL":                    "run:postdeploy",
-		"CODEXK8S_RUN_OPS_LABEL":                           "run:ops",
-		"CODEXK8S_RUN_SELF_IMPROVE_LABEL":                  "run:self-improve",
-		"CODEXK8S_RUN_RETHINK_LABEL":                       "run:rethink",
-		"CODEXK8S_MODE_DISCUSSION_LABEL":                   "mode:discussion",
-		"CODEXK8S_STATE_BLOCKED_LABEL":                     "state:blocked",
-		"CODEXK8S_STATE_IN_REVIEW_LABEL":                   "state:in-review",
-		"CODEXK8S_STATE_APPROVED_LABEL":                    "state:approved",
-		"CODEXK8S_STATE_SUPERSEDED_LABEL":                  "state:superseded",
-		"CODEXK8S_STATE_ABANDONED_LABEL":                   "state:abandoned",
-		"CODEXK8S_NEED_INPUT_LABEL":                        "need:input",
-		"CODEXK8S_NEED_PM_LABEL":                           "need:pm",
-		"CODEXK8S_NEED_SA_LABEL":                           "need:sa",
-		"CODEXK8S_NEED_QA_LABEL":                           "need:qa",
-		"CODEXK8S_NEED_SRE_LABEL":                          "need:sre",
-		"CODEXK8S_NEED_EM_LABEL":                           "need:em",
-		"CODEXK8S_NEED_KM_LABEL":                           "need:km",
-		"CODEXK8S_NEED_REVIEWER_LABEL":                     "need:reviewer",
-		"CODEXK8S_VITE_DEV_UPSTREAM":                       "http://codex-k8s-web-console:5173",
-	}
-	for key, value := range defaults {
-		if strings.TrimSpace(env[key]) == "" {
-			env[key] = value
-		}
-	}
-	if strings.TrimSpace(env["CODEXK8S_PROJECT_DB_ADMIN_USER"]) == "" {
-		env["CODEXK8S_PROJECT_DB_ADMIN_USER"] = env["CODEXK8S_POSTGRES_USER"]
-	}
-	if strings.TrimSpace(env["CODEXK8S_PROJECT_DB_ADMIN_PASSWORD"]) == "" {
-		env["CODEXK8S_PROJECT_DB_ADMIN_PASSWORD"] = env["CODEXK8S_POSTGRES_PASSWORD"]
-	}
-}
-
-func hydrateFromExistingSecrets(ctx context.Context, clientset *kubernetes.Clientset, namespace string, envCfg servicescfg.DeployEnvironment, env map[string]string) error {
-	runtimeSecret := strings.TrimSpace(envCfg.RuntimeSecretName)
-	if runtimeSecret == "" {
-		runtimeSecret = "codex-k8s-runtime"
-	}
-	postgresSecret := strings.TrimSpace(envCfg.PostgresSecretName)
-	if postgresSecret == "" {
-		postgresSecret = "codex-k8s-postgres"
-	}
-
-	existingRuntime, err := getSecretData(ctx, clientset, namespace, runtimeSecret)
-	if err != nil {
-		return err
-	}
-	for _, key := range runtimeSecretKeys {
-		if strings.TrimSpace(env[key]) == "" && strings.TrimSpace(existingRuntime[key]) != "" {
-			env[key] = existingRuntime[key]
-		}
-	}
-
-	existingPostgres, err := getSecretData(ctx, clientset, namespace, postgresSecret)
-	if err != nil {
-		return err
-	}
-	if strings.TrimSpace(env["CODEXK8S_POSTGRES_PASSWORD"]) == "" {
-		env["CODEXK8S_POSTGRES_PASSWORD"] = strings.TrimSpace(existingPostgres["CODEXK8S_POSTGRES_PASSWORD"])
-	}
-	if strings.TrimSpace(env["CODEXK8S_POSTGRES_PASSWORD"]) == "" {
-		generated, genErr := randomHex(24)
-		if genErr != nil {
-			return genErr
-		}
-		env["CODEXK8S_POSTGRES_PASSWORD"] = generated
-	}
-	if strings.TrimSpace(env["CODEXK8S_APP_SECRET_KEY"]) == "" {
-		generated, genErr := randomHex(32)
-		if genErr != nil {
-			return genErr
-		}
-		env["CODEXK8S_APP_SECRET_KEY"] = generated
-	}
-	if strings.TrimSpace(env["CODEXK8S_TOKEN_ENCRYPTION_KEY"]) == "" {
-		generated, genErr := randomHex(32)
-		if genErr != nil {
-			return genErr
-		}
-		env["CODEXK8S_TOKEN_ENCRYPTION_KEY"] = generated
-	}
-	return nil
-}
-
-func ensurePostgresSecret(ctx context.Context, clientset *kubernetes.Clientset, namespace string, envCfg servicescfg.DeployEnvironment, env map[string]string) error {
-	secretName := strings.TrimSpace(envCfg.PostgresSecretName)
-	if secretName == "" {
-		secretName = "codex-k8s-postgres"
-	}
-	data := map[string]string{
-		"CODEXK8S_POSTGRES_DB":       env["CODEXK8S_POSTGRES_DB"],
-		"CODEXK8S_POSTGRES_USER":     env["CODEXK8S_POSTGRES_USER"],
-		"CODEXK8S_POSTGRES_PASSWORD": env["CODEXK8S_POSTGRES_PASSWORD"],
-	}
-	return upsertSecret(ctx, clientset, namespace, secretName, data)
-}
-
-func ensureRuntimeSecret(ctx context.Context, clientset *kubernetes.Clientset, namespace string, envCfg servicescfg.DeployEnvironment, env map[string]string) error {
-	secretName := strings.TrimSpace(envCfg.RuntimeSecretName)
-	if secretName == "" {
-		secretName = "codex-k8s-runtime"
-	}
-	data := make(map[string]string, len(runtimeSecretKeys))
-	for _, key := range runtimeSecretKeys {
-		data[key] = strings.TrimSpace(env[key])
-	}
-	return upsertSecret(ctx, clientset, namespace, secretName, data)
-}
-
-func ensureResourcesConfigMap(ctx context.Context, clientset *kubernetes.Clientset, namespace string, envCfg servicescfg.DeployEnvironment, env map[string]string) error {
-	configMapName := strings.TrimSpace(envCfg.ResourcesConfigMap)
-	if configMapName == "" {
-		configMapName = "codex-k8s-deploy-resources"
-	}
-	data := make(map[string]string, len(resourcesConfigMapKeys))
-	for _, key := range resourcesConfigMapKeys {
-		data[key] = strings.TrimSpace(env[key])
-	}
-	return upsertConfigMap(ctx, clientset, namespace, configMapName, data)
-}
-
-func ensureLabelCatalogConfigMap(ctx context.Context, clientset *kubernetes.Clientset, namespace string, envCfg servicescfg.DeployEnvironment, env map[string]string) error {
-	configMapName := strings.TrimSpace(envCfg.LabelCatalogConfigMap)
-	if configMapName == "" {
-		configMapName = "codex-k8s-label-catalog"
-	}
-	data := make(map[string]string, len(labelCatalogKeys))
-	for _, key := range labelCatalogKeys {
-		data[key] = strings.TrimSpace(env[key])
-	}
-	return upsertConfigMap(ctx, clientset, namespace, configMapName, data)
-}
-
-func ensureOAuthSecret(ctx context.Context, clientset *kubernetes.Clientset, namespace string, envCfg servicescfg.DeployEnvironment, env map[string]string) error {
-	secretName := strings.TrimSpace(envCfg.OAuthSecretName)
-	if secretName == "" {
-		secretName = "codex-k8s-oauth2-proxy"
-	}
-	existing, err := getSecretData(ctx, clientset, namespace, secretName)
-	if err != nil {
-		return err
-	}
-	cookieSecret := strings.TrimSpace(existing["OAUTH2_PROXY_COOKIE_SECRET"])
-	if len(cookieSecret) != 16 && len(cookieSecret) != 24 && len(cookieSecret) != 32 {
-		generated, genErr := randomHex(16)
-		if genErr != nil {
-			return genErr
-		}
-		cookieSecret = generated
-	}
-	return upsertSecret(ctx, clientset, namespace, secretName, map[string]string{
-		"OAUTH2_PROXY_CLIENT_ID":     env["CODEXK8S_GITHUB_OAUTH_CLIENT_ID"],
-		"OAUTH2_PROXY_CLIENT_SECRET": env["CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET"],
-		"OAUTH2_PROXY_COOKIE_SECRET": cookieSecret,
-	})
-}
-
-func ensureMigrationsConfigMap(ctx context.Context, clientset *kubernetes.Clientset, namespace string, envCfg servicescfg.DeployEnvironment, rootDir string) error {
-	configMapName := strings.TrimSpace(envCfg.MigrationsConfigMap)
-	if configMapName == "" {
-		configMapName = "codex-k8s-migrations"
-	}
-	migrationsDir := strings.TrimSpace(envCfg.MigrationsDirectory)
-	if migrationsDir == "" {
-		migrationsDir = "services/internal/control-plane/cmd/cli/migrations"
-	}
-	if !filepath.IsAbs(migrationsDir) {
-		migrationsDir = filepath.Join(rootDir, migrationsDir)
-	}
-	entries, err := os.ReadDir(migrationsDir)
-	if err != nil {
-		return fmt.Errorf("read migrations directory %q: %w", migrationsDir, err)
-	}
-	data := make(map[string]string, len(entries))
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		content, readErr := os.ReadFile(filepath.Join(migrationsDir, entry.Name()))
-		if readErr != nil {
-			return fmt.Errorf("read migration file %q: %w", entry.Name(), readErr)
-		}
-		data[entry.Name()] = string(content)
-	}
-	return upsertConfigMap(ctx, clientset, namespace, configMapName, data)
 }
 
 func upsertSecret(ctx context.Context, clientset *kubernetes.Clientset, namespace string, name string, values map[string]string) error {
@@ -526,139 +596,30 @@ func randomHex(length int) (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-var runtimeSecretKeys = []string{
-	"CODEXK8S_GITHUB_PAT",
-	"CODEXK8S_OPENAI_API_KEY",
-	"CODEXK8S_OPENAI_AUTH_FILE",
-	"CODEXK8S_PROJECT_DB_ADMIN_HOST",
-	"CODEXK8S_PROJECT_DB_ADMIN_PORT",
-	"CODEXK8S_PROJECT_DB_ADMIN_USER",
-	"CODEXK8S_PROJECT_DB_ADMIN_PASSWORD",
-	"CODEXK8S_PROJECT_DB_ADMIN_SSLMODE",
-	"CODEXK8S_PROJECT_DB_ADMIN_DATABASE",
-	"CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS",
-	"CODEXK8S_GIT_BOT_TOKEN",
-	"CODEXK8S_GIT_BOT_USERNAME",
-	"CODEXK8S_GIT_BOT_MAIL",
-	"CODEXK8S_CONTEXT7_API_KEY",
-	"CODEXK8S_APP_SECRET_KEY",
-	"CODEXK8S_TOKEN_ENCRYPTION_KEY",
-	"CODEXK8S_MCP_TOKEN_SIGNING_KEY",
-	"CODEXK8S_MCP_TOKEN_TTL",
-	"CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS",
-	"CODEXK8S_LEARNING_MODE_DEFAULT",
-	"CODEXK8S_GITHUB_WEBHOOK_SECRET",
-	"CODEXK8S_GITHUB_WEBHOOK_URL",
-	"CODEXK8S_GITHUB_WEBHOOK_EVENTS",
-	"CODEXK8S_PUBLIC_BASE_URL",
-	"CODEXK8S_BOOTSTRAP_OWNER_EMAIL",
-	"CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS",
-	"CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS",
-	"CODEXK8S_GITHUB_OAUTH_CLIENT_ID",
-	"CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET",
-	"CODEXK8S_JWT_SIGNING_KEY",
-	"CODEXK8S_JWT_TTL",
-	"CODEXK8S_VITE_DEV_UPSTREAM",
+func intInSlice(value int, allowed []int) bool {
+	for _, candidate := range allowed {
+		if value == candidate {
+			return true
+		}
+	}
+	return false
 }
 
-var resourcesConfigMapKeys = []string{
-	"CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_CPU",
-	"CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_MEMORY",
-	"CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_CPU",
-	"CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_MEMORY",
-	"CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_CPU",
-	"CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_MEMORY",
-	"CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_CPU",
-	"CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_MEMORY",
-	"CODEXK8S_WORKER_RESOURCES_REQUEST_CPU",
-	"CODEXK8S_WORKER_RESOURCES_REQUEST_MEMORY",
-	"CODEXK8S_WORKER_RESOURCES_LIMIT_CPU",
-	"CODEXK8S_WORKER_RESOURCES_LIMIT_MEMORY",
-	"CODEXK8S_WORKER_RUN_NAMESPACE_PREFIX",
-	"CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP",
-	"CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT",
-	"CODEXK8S_WORKER_RUN_ROLE_NAME",
-	"CODEXK8S_WORKER_RUN_ROLE_BINDING_NAME",
-	"CODEXK8S_WORKER_RUN_RESOURCE_QUOTA_NAME",
-	"CODEXK8S_WORKER_RUN_LIMIT_RANGE_NAME",
-	"CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME",
-	"CODEXK8S_WORKER_RUN_QUOTA_PODS",
-	"CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_CPU",
-	"CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_MEMORY",
-	"CODEXK8S_WORKER_RUN_QUOTA_LIMITS_CPU",
-	"CODEXK8S_WORKER_RUN_QUOTA_LIMITS_MEMORY",
-	"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_CPU",
-	"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_MEMORY",
-	"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_CPU",
-	"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY",
-	"CODEXK8S_WORKER_JOB_IMAGE",
-	"CODEXK8S_WORKER_JOB_COMMAND",
-	"CODEXK8S_GIT_BOT_USERNAME",
-	"CODEXK8S_GIT_BOT_MAIL",
-	"CODEXK8S_AGENT_DEFAULT_MODEL",
-	"CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT",
-	"CODEXK8S_AGENT_DEFAULT_LOCALE",
-	"CODEXK8S_AGENT_BASE_BRANCH",
-	"CODEXK8S_WEB_CONSOLE_RESOURCES_REQUEST_CPU",
-	"CODEXK8S_WEB_CONSOLE_RESOURCES_REQUEST_MEMORY",
-	"CODEXK8S_WEB_CONSOLE_RESOURCES_LIMIT_CPU",
-	"CODEXK8S_WEB_CONSOLE_RESOURCES_LIMIT_MEMORY",
-	"CODEXK8S_KANIKO_RESOURCES_REQUEST_CPU",
-	"CODEXK8S_KANIKO_RESOURCES_REQUEST_MEMORY",
-	"CODEXK8S_KANIKO_RESOURCES_LIMIT_CPU",
-	"CODEXK8S_KANIKO_RESOURCES_LIMIT_MEMORY",
-	"CODEXK8S_KANIKO_CACHE_ENABLED",
-	"CODEXK8S_KANIKO_CACHE_REPO",
-	"CODEXK8S_KANIKO_CACHE_TTL",
-	"CODEXK8S_KANIKO_CACHE_COMPRESSED",
-	"CODEXK8S_KANIKO_MATRIX_MAX_PARALLEL",
+func isTrue(raw string) bool {
+	normalized := strings.TrimSpace(strings.ToLower(raw))
+	switch normalized {
+	case "1", "true", "yes", "on":
+		return true
+	default:
+		return false
+	}
 }
 
-var labelCatalogKeys = []string{
-	"CODEXK8S_RUN_INTAKE_LABEL",
-	"CODEXK8S_RUN_INTAKE_REVISE_LABEL",
-	"CODEXK8S_RUN_VISION_LABEL",
-	"CODEXK8S_RUN_VISION_REVISE_LABEL",
-	"CODEXK8S_RUN_PRD_LABEL",
-	"CODEXK8S_RUN_PRD_REVISE_LABEL",
-	"CODEXK8S_RUN_ARCH_LABEL",
-	"CODEXK8S_RUN_ARCH_REVISE_LABEL",
-	"CODEXK8S_RUN_DESIGN_LABEL",
-	"CODEXK8S_RUN_DESIGN_REVISE_LABEL",
-	"CODEXK8S_RUN_PLAN_LABEL",
-	"CODEXK8S_RUN_PLAN_REVISE_LABEL",
-	"CODEXK8S_RUN_DEV_LABEL",
-	"CODEXK8S_RUN_DEV_REVISE_LABEL",
-	"CODEXK8S_RUN_DEBUG_LABEL",
-	"CODEXK8S_RUN_DOC_AUDIT_LABEL",
-	"CODEXK8S_RUN_QA_LABEL",
-	"CODEXK8S_RUN_RELEASE_LABEL",
-	"CODEXK8S_RUN_POSTDEPLOY_LABEL",
-	"CODEXK8S_RUN_OPS_LABEL",
-	"CODEXK8S_RUN_SELF_IMPROVE_LABEL",
-	"CODEXK8S_RUN_RETHINK_LABEL",
-	"CODEXK8S_MODE_DISCUSSION_LABEL",
-	"CODEXK8S_STATE_BLOCKED_LABEL",
-	"CODEXK8S_STATE_IN_REVIEW_LABEL",
-	"CODEXK8S_STATE_APPROVED_LABEL",
-	"CODEXK8S_STATE_SUPERSEDED_LABEL",
-	"CODEXK8S_STATE_ABANDONED_LABEL",
-	"CODEXK8S_NEED_INPUT_LABEL",
-	"CODEXK8S_NEED_PM_LABEL",
-	"CODEXK8S_NEED_SA_LABEL",
-	"CODEXK8S_NEED_QA_LABEL",
-	"CODEXK8S_NEED_SRE_LABEL",
-	"CODEXK8S_NEED_EM_LABEL",
-	"CODEXK8S_NEED_KM_LABEL",
-	"CODEXK8S_NEED_REVIEWER_LABEL",
-	"CODEXK8S_AI_MODEL_GPT_5_3_CODEX_LABEL",
-	"CODEXK8S_AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL",
-	"CODEXK8S_AI_MODEL_GPT_5_2_CODEX_LABEL",
-	"CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MAX_LABEL",
-	"CODEXK8S_AI_MODEL_GPT_5_2_LABEL",
-	"CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MINI_LABEL",
-	"CODEXK8S_AI_REASONING_LOW_LABEL",
-	"CODEXK8S_AI_REASONING_MEDIUM_LABEL",
-	"CODEXK8S_AI_REASONING_HIGH_LABEL",
-	"CODEXK8S_AI_REASONING_EXTRA_HIGH_LABEL",
+func expandWithEnv(raw string, env map[string]string) string {
+	return os.Expand(raw, func(key string) string {
+		if value, ok := env[key]; ok {
+			return value
+		}
+		return "${" + key + "}"
+	})
 }

@@ -32,33 +32,80 @@ type DeployConfig struct {
 
 // DeployEnvironment describes deploy orchestration for a named environment.
 type DeployEnvironment struct {
-	NamespaceEnvVar       string        `yaml:"namespace_env_var,omitempty"`
-	WaitRolloutEnvVar     string        `yaml:"wait_rollout_env_var,omitempty"`
-	RolloutTimeoutEnvVar  string        `yaml:"rollout_timeout_env_var,omitempty"`
-	ApplyNamespaceEnvVar  string        `yaml:"apply_namespace_env_var,omitempty"`
-	NetworkPolicyScript   string        `yaml:"network_policy_script,omitempty"`
-	PostgresSecretName    string        `yaml:"postgres_secret_name,omitempty"`
-	RuntimeSecretName     string        `yaml:"runtime_secret_name,omitempty"`
-	OAuthSecretName       string        `yaml:"oauth_secret_name,omitempty"`
-	MigrationsConfigMap   string        `yaml:"migrations_configmap,omitempty"`
-	MigrationsDirectory   string        `yaml:"migrations_directory,omitempty"`
-	ResourcesConfigMap    string        `yaml:"resources_configmap,omitempty"`
-	LabelCatalogConfigMap string        `yaml:"label_catalog_configmap,omitempty"`
-	ManifestPhases        []DeployPhase `yaml:"manifest_phases,omitempty"`
+	Namespace            DeployNamespace `yaml:"namespace,omitempty"`
+	WaitRolloutEnvVar    string          `yaml:"wait_rollout_env_var,omitempty"`
+	RolloutTimeoutEnvVar string          `yaml:"rollout_timeout_env_var,omitempty"`
+	ManifestPhases       []DeployPhase   `yaml:"manifest_phases,omitempty"`
+}
+
+// DeployNamespace configures namespace resolution for reconcile.
+type DeployNamespace struct {
+	EnvVar  string `yaml:"env_var,omitempty"`
+	Default string `yaml:"default,omitempty"`
+	Pattern string `yaml:"pattern,omitempty"`
 }
 
 // DeployPhase is one ordered deploy phase.
 type DeployPhase struct {
-	Name              string       `yaml:"name"`
-	EnabledWhenEnv    string       `yaml:"enabled_when_env,omitempty"`
-	EnabledWhenEquals string       `yaml:"enabled_when_equals,omitempty"`
-	PreDelete         []string     `yaml:"pre_delete,omitempty"`
-	Manifests         []string     `yaml:"manifests,omitempty"`
-	RolloutRestart    []string     `yaml:"rollout_restart,omitempty"`
-	WaitFor           []WaitTarget `yaml:"wait_for,omitempty"`
+	Name              string         `yaml:"name"`
+	EnabledWhenEnv    string         `yaml:"enabled_when_env,omitempty"`
+	EnabledWhenEquals string         `yaml:"enabled_when_equals,omitempty"`
+	Actions           []DeployAction `yaml:"actions,omitempty"`
 }
 
-// WaitTarget describes one wait rule after phase apply/restart.
+// DeployAction is a generic action for declarative deploy plan execution.
+// Supported types:
+// - set_defaults
+// - set_from_env
+// - import_secret
+// - generate_hex
+// - assert_env
+// - upsert_secret_from_env
+// - upsert_configmap_from_env
+// - upsert_configmap_from_dir
+// - run_script
+// - apply_manifests
+// - delete_resources
+// - rollout_restart
+// - wait_targets
+type DeployAction struct {
+	Type      string            `yaml:"type"`
+	Name      string            `yaml:"name,omitempty"`
+	Path      string            `yaml:"path,omitempty"`
+	Directory string            `yaml:"directory,omitempty"`
+	Paths     []string          `yaml:"paths,omitempty"`
+	Resources []string          `yaml:"resources,omitempty"`
+	Keys      []string          `yaml:"keys,omitempty"`
+	Defaults  map[string]string `yaml:"defaults,omitempty"`
+	Assign    []EnvAssign       `yaml:"assign,omitempty"`
+	Generate  []EnvGenerate     `yaml:"generate,omitempty"`
+	Mappings  []EnvDataMapping  `yaml:"mappings,omitempty"`
+	Values    map[string]string `yaml:"values,omitempty"`
+	WaitFor   []WaitTarget      `yaml:"wait_for,omitempty"`
+}
+
+// EnvAssign copies value from Source env key to Target env key when Target is empty.
+type EnvAssign struct {
+	Target string `yaml:"target"`
+	Source string `yaml:"source"`
+}
+
+// EnvGenerate describes generation policy for env values.
+type EnvGenerate struct {
+	Key                     string `yaml:"key"`
+	HexBytes                int    `yaml:"hex_bytes,omitempty"`
+	IfEmpty                 bool   `yaml:"if_empty,omitempty"`
+	RegenerateIfLengthNotIn []int  `yaml:"regenerate_if_length_not_in,omitempty"`
+}
+
+// EnvDataMapping maps an env value to specific output key in secret/configmap.
+type EnvDataMapping struct {
+	Key      string `yaml:"key"`
+	Env      string `yaml:"env,omitempty"`
+	Required bool   `yaml:"required,omitempty"`
+}
+
+// WaitTarget describes one wait rule.
 type WaitTarget struct {
 	Type       string `yaml:"type"` // rollout|job-complete
 	Resource   string `yaml:"resource"`

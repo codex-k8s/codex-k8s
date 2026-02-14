@@ -52,10 +52,12 @@ approvals:
 - D9-T3.1 Bootstrap CLI binary (install UX):
   - добавить install CLI-бинарник для первичной установки `codex-k8s` и последующей переинициализации окружения;
   - CLI реализуется на `github.com/spf13/cobra v1.10.2`;
+  - CLI запускается локально с машины разработчика/оператора, подключается по SSH к чистому Ubuntu серверу и оркестрирует шаги `bootstrap/remote/*.sh`;
   - CLI поддерживает консольный дозапрос недостающих обязательных параметров (`CODEXK8S_*`, токены, секреты, домен, SSH/K8s контекст и т.д.);
   - CLI умеет читать существующий `bootstrap/host/config.env`, валидировать заполненность и интерактивно дополнять отсутствующие значения;
   - зафиксированный набор команд CLI: `install`, `validate`, `reconcile`;
-  - результатом CLI является детерминированный запуск bootstrap/deploy orchestration без ручного редактирования shell-скриптов.
+  - результатом CLI является детерминированный запуск bootstrap/deploy orchestration без ручного редактирования shell-скриптов;
+  - runtime full-env deploy для задач (issue/pr slot lifecycle) выполняется платформой (`control-plane + worker`), а не через ручной запуск bootstrap CLI.
 - D9-T4. Runtime parity non-prod:
   - для всех non-prod окружений (`dev`, `staging`, `ai-slot`) обязателен hot-reload для Go и frontend сервисов;
   - `prod` остается без hot-reload;
@@ -145,6 +147,7 @@ approvals:
   - `deploy/scripts/deploy_staging.sh` переведен на thin-wrapper и вызывает только `codex-bootstrap reconcile`.
 - `D9-T3.1` выполнен:
   - bootstrap remote path использует declarative reconcile;
+  - зафиксировано разделение ответственности: `codex-bootstrap` используется для first-install/операторского reconcile с локальной машины, а runtime-разворачивание task namespace остаётся в контуре платформы (`control-plane + worker`);
   - `bootstrap/remote/00_prepare_host.sh` устанавливает Go toolchain (`CODEXK8S_GO_VERSION`, default `1.25.6`) для запуска CLI на чистом хосте.
 - `D9-T4` выполнен:
   - runtime parity зафиксирован в `services.yaml` (`runtime.non_prod`/`runtime.prod`).

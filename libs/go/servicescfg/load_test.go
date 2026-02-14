@@ -17,7 +17,8 @@ templates:
 deploy:
   environments:
     ai-staging:
-      namespace_env_var: CODEXK8S_STAGING_NAMESPACE
+      namespace:
+        env_var: CODEXK8S_STAGING_NAMESPACE
 `
 	if err := os.WriteFile(cfgPath, []byte(content), 0o644); err != nil {
 		t.Fatalf("write config: %v", err)
@@ -33,7 +34,7 @@ deploy:
 	if root != tmpDir {
 		t.Fatalf("unexpected root = %q", root)
 	}
-	if got := cfg.Deploy.Environments["ai-staging"].NamespaceEnvVar; got != "CODEXK8S_STAGING_NAMESPACE" {
+	if got := cfg.Deploy.Environments["ai-staging"].Namespace.EnvVar; got != "CODEXK8S_STAGING_NAMESPACE" {
 		t.Fatalf("unexpected namespace env var = %q", got)
 	}
 }

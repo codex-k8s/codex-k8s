@@ -13,6 +13,7 @@
 - автоматически настраивает `/etc/rancher/k3s/registries.yaml` для mirror на локальный registry (`http://127.0.0.1:<port>`);
 - разворачивает PostgreSQL и `codex-k8s` в staging namespace;
 - запускает декларативный deploy через `codex-bootstrap reconcile` (source of truth: `services.yaml`);
+- после первичного bootstrap дальнейший runtime lifecycle task-namespace выполняется платформой (`control-plane + worker`), а не ручным запуском `codex-bootstrap`;
 - создаёт `ClusterIssuer` (`codex-k8s-letsencrypt`) и выпускает TLS-сертификат через HTTP-01;
 - применяет baseline `NetworkPolicy` (platform namespace + labels для `system/platform` зон);
 - включает host firewall hardening: с внешней сети доступны только `SSH`, `HTTP`, `HTTPS`;

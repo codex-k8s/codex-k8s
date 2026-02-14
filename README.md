@@ -7,7 +7,7 @@ codex-k8s/                                                монорепозит
 ├── AGENTS.md                                             обязательные правила для всех агентов; ОБЯЗАТЕЛЬНО читать первым перед любыми правками
 ├── README.md                                             карта структуры репозитория; смотреть при онбординге и перед поиском нужного контекста
 ├── services.yaml                                         инвентарь deployable-сервисов и окружений; ОБЯЗАТЕЛЬНО смотреть при изменениях состава сервисов
-├── bin/codex-bootstrap/                                  install/validate/reconcile CLI для declarative bootstrap/deploy контуров
+├── bin/codex-bootstrap/                                  install/validate/reconcile CLI для операторского bootstrap/deploy (first-install/reconcile)
 ├── services/                                             сервисный код по архитектурным зонам
 │   ├── dev/webhook-simulator/                            dev-only симулятор webhook; смотреть при локальной/стендовой отладке входящих событий
 │   ├── external/api-gateway/                             внешний ingress и edge-слой; смотреть при изменениях OpenAPI/webhook/auth

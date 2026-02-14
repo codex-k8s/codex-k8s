@@ -67,73 +67,390 @@ bootstrap:
 deploy:
   environments:
     ai-staging:
-      namespace_env_var: CODEXK8S_STAGING_NAMESPACE
+      namespace:
+        env_var: CODEXK8S_STAGING_NAMESPACE
+        default: codex-k8s-ai-staging
       wait_rollout_env_var: CODEXK8S_WAIT_ROLLOUT
       rollout_timeout_env_var: CODEXK8S_ROLLOUT_TIMEOUT
-      apply_namespace_env_var: CODEXK8S_APPLY_NAMESPACE
-      network_policy_script: deploy/scripts/apply_network_policy_baseline.sh
-      postgres_secret_name: codex-k8s-postgres
-      runtime_secret_name: codex-k8s-runtime
-      oauth_secret_name: codex-k8s-oauth2-proxy
-      migrations_configmap: codex-k8s-migrations
-      migrations_directory: services/internal/control-plane/cmd/cli/migrations
-      resources_configmap: codex-k8s-deploy-resources
-      label_catalog_configmap: codex-k8s-label-catalog
       manifest_phases:
+        - name: bootstrap-config
+          actions:
+            - type: set_defaults
+              defaults:
+                CODEXK8S_POSTGRES_DB: codex_k8s
+                CODEXK8S_POSTGRES_USER: codex_k8s
+                CODEXK8S_PROJECT_DB_ADMIN_HOST: postgres
+                CODEXK8S_PROJECT_DB_ADMIN_PORT: "5432"
+                CODEXK8S_PROJECT_DB_ADMIN_SSLMODE: disable
+                CODEXK8S_PROJECT_DB_ADMIN_DATABASE: postgres
+                CODEXK8S_WAIT_ROLLOUT: "true"
+                CODEXK8S_ROLLOUT_TIMEOUT: 1800s
+                CODEXK8S_WORKER_RUN_NAMESPACE_PREFIX: codex-issue
+                CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP: "true"
+                CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT: codex-runner
+                CODEXK8S_WORKER_RUN_ROLE_NAME: codex-runner
+                CODEXK8S_WORKER_RUN_ROLE_BINDING_NAME: codex-runner
+                CODEXK8S_WORKER_RUN_RESOURCE_QUOTA_NAME: codex-run-quota
+                CODEXK8S_WORKER_RUN_LIMIT_RANGE_NAME: codex-run-limits
+                CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME: codex-run-credentials
+                CODEXK8S_WORKER_RUN_QUOTA_PODS: "20"
+                CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_CPU: "6"
+                CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_MEMORY: 24Gi
+                CODEXK8S_WORKER_RUN_QUOTA_LIMITS_CPU: "8"
+                CODEXK8S_WORKER_RUN_QUOTA_LIMITS_MEMORY: 32Gi
+                CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_CPU: "4"
+                CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_MEMORY: 16Gi
+                CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_CPU: "6"
+                CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY: 24Gi
+                CODEXK8S_RUN_INTAKE_LABEL: "run:intake"
+                CODEXK8S_RUN_INTAKE_REVISE_LABEL: "run:intake:revise"
+                CODEXK8S_RUN_VISION_LABEL: "run:vision"
+                CODEXK8S_RUN_VISION_REVISE_LABEL: "run:vision:revise"
+                CODEXK8S_RUN_PRD_LABEL: "run:prd"
+                CODEXK8S_RUN_PRD_REVISE_LABEL: "run:prd:revise"
+                CODEXK8S_RUN_ARCH_LABEL: "run:arch"
+                CODEXK8S_RUN_ARCH_REVISE_LABEL: "run:arch:revise"
+                CODEXK8S_RUN_DESIGN_LABEL: "run:design"
+                CODEXK8S_RUN_DESIGN_REVISE_LABEL: "run:design:revise"
+                CODEXK8S_RUN_PLAN_LABEL: "run:plan"
+                CODEXK8S_RUN_PLAN_REVISE_LABEL: "run:plan:revise"
+                CODEXK8S_RUN_DEV_LABEL: "run:dev"
+                CODEXK8S_RUN_DEV_REVISE_LABEL: "run:dev:revise"
+                CODEXK8S_RUN_DEBUG_LABEL: "run:debug"
+                CODEXK8S_RUN_DOC_AUDIT_LABEL: "run:doc-audit"
+                CODEXK8S_RUN_QA_LABEL: "run:qa"
+                CODEXK8S_RUN_RELEASE_LABEL: "run:release"
+                CODEXK8S_RUN_POSTDEPLOY_LABEL: "run:postdeploy"
+                CODEXK8S_RUN_OPS_LABEL: "run:ops"
+                CODEXK8S_RUN_SELF_IMPROVE_LABEL: "run:self-improve"
+                CODEXK8S_RUN_RETHINK_LABEL: "run:rethink"
+                CODEXK8S_MODE_DISCUSSION_LABEL: "mode:discussion"
+                CODEXK8S_STATE_BLOCKED_LABEL: "state:blocked"
+                CODEXK8S_STATE_IN_REVIEW_LABEL: "state:in-review"
+                CODEXK8S_STATE_APPROVED_LABEL: "state:approved"
+                CODEXK8S_STATE_SUPERSEDED_LABEL: "state:superseded"
+                CODEXK8S_STATE_ABANDONED_LABEL: "state:abandoned"
+                CODEXK8S_NEED_INPUT_LABEL: "need:input"
+                CODEXK8S_NEED_PM_LABEL: "need:pm"
+                CODEXK8S_NEED_SA_LABEL: "need:sa"
+                CODEXK8S_NEED_QA_LABEL: "need:qa"
+                CODEXK8S_NEED_SRE_LABEL: "need:sre"
+                CODEXK8S_NEED_EM_LABEL: "need:em"
+                CODEXK8S_NEED_KM_LABEL: "need:km"
+                CODEXK8S_NEED_REVIEWER_LABEL: "need:reviewer"
+                CODEXK8S_AI_MODEL_GPT_5_3_CODEX_LABEL: "[ai-model-gpt-5.3-codex]"
+                CODEXK8S_AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL: "[ai-model-gpt-5.3-codex-spark]"
+                CODEXK8S_AI_MODEL_GPT_5_2_CODEX_LABEL: "[ai-model-gpt-5.2-codex]"
+                CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MAX_LABEL: "[ai-model-gpt-5.1-codex-max]"
+                CODEXK8S_AI_MODEL_GPT_5_2_LABEL: "[ai-model-gpt-5.2]"
+                CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MINI_LABEL: "[ai-model-gpt-5.1-codex-mini]"
+                CODEXK8S_AI_REASONING_LOW_LABEL: "[ai-reasoning-low]"
+                CODEXK8S_AI_REASONING_MEDIUM_LABEL: "[ai-reasoning-medium]"
+                CODEXK8S_AI_REASONING_HIGH_LABEL: "[ai-reasoning-high]"
+                CODEXK8S_AI_REASONING_EXTRA_HIGH_LABEL: "[ai-reasoning-extra-high]"
+                CODEXK8S_VITE_DEV_UPSTREAM: http://codex-k8s-web-console:5173
+            - type: set_from_env
+              assign:
+                - target: CODEXK8S_PROJECT_DB_ADMIN_USER
+                  source: CODEXK8S_POSTGRES_USER
+                - target: CODEXK8S_PROJECT_DB_ADMIN_PASSWORD
+                  source: CODEXK8S_POSTGRES_PASSWORD
+            - type: import_secret
+              name: codex-k8s-runtime
+              keys:
+                - CODEXK8S_GITHUB_PAT
+                - CODEXK8S_OPENAI_API_KEY
+                - CODEXK8S_OPENAI_AUTH_FILE
+                - CODEXK8S_PROJECT_DB_ADMIN_HOST
+                - CODEXK8S_PROJECT_DB_ADMIN_PORT
+                - CODEXK8S_PROJECT_DB_ADMIN_USER
+                - CODEXK8S_PROJECT_DB_ADMIN_PASSWORD
+                - CODEXK8S_PROJECT_DB_ADMIN_SSLMODE
+                - CODEXK8S_PROJECT_DB_ADMIN_DATABASE
+                - CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS
+                - CODEXK8S_GIT_BOT_TOKEN
+                - CODEXK8S_GIT_BOT_USERNAME
+                - CODEXK8S_GIT_BOT_MAIL
+                - CODEXK8S_CONTEXT7_API_KEY
+                - CODEXK8S_APP_SECRET_KEY
+                - CODEXK8S_TOKEN_ENCRYPTION_KEY
+                - CODEXK8S_MCP_TOKEN_SIGNING_KEY
+                - CODEXK8S_MCP_TOKEN_TTL
+                - CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS
+                - CODEXK8S_LEARNING_MODE_DEFAULT
+                - CODEXK8S_GITHUB_WEBHOOK_SECRET
+                - CODEXK8S_GITHUB_WEBHOOK_URL
+                - CODEXK8S_GITHUB_WEBHOOK_EVENTS
+                - CODEXK8S_PUBLIC_BASE_URL
+                - CODEXK8S_BOOTSTRAP_OWNER_EMAIL
+                - CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS
+                - CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS
+                - CODEXK8S_GITHUB_OAUTH_CLIENT_ID
+                - CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET
+                - CODEXK8S_JWT_SIGNING_KEY
+                - CODEXK8S_JWT_TTL
+                - CODEXK8S_VITE_DEV_UPSTREAM
+            - type: import_secret
+              name: codex-k8s-postgres
+              keys:
+                - CODEXK8S_POSTGRES_PASSWORD
+            - type: generate_hex
+              generate:
+                - key: CODEXK8S_POSTGRES_PASSWORD
+                  hex_bytes: 24
+                  if_empty: true
+                - key: CODEXK8S_APP_SECRET_KEY
+                  hex_bytes: 32
+                  if_empty: true
+                - key: CODEXK8S_TOKEN_ENCRYPTION_KEY
+                  hex_bytes: 32
+                  if_empty: true
+            - type: upsert_secret_from_env
+              name: codex-k8s-postgres
+              keys:
+                - CODEXK8S_POSTGRES_DB
+                - CODEXK8S_POSTGRES_USER
+                - CODEXK8S_POSTGRES_PASSWORD
+            - type: upsert_secret_from_env
+              name: codex-k8s-runtime
+              keys:
+                - CODEXK8S_GITHUB_PAT
+                - CODEXK8S_OPENAI_API_KEY
+                - CODEXK8S_OPENAI_AUTH_FILE
+                - CODEXK8S_PROJECT_DB_ADMIN_HOST
+                - CODEXK8S_PROJECT_DB_ADMIN_PORT
+                - CODEXK8S_PROJECT_DB_ADMIN_USER
+                - CODEXK8S_PROJECT_DB_ADMIN_PASSWORD
+                - CODEXK8S_PROJECT_DB_ADMIN_SSLMODE
+                - CODEXK8S_PROJECT_DB_ADMIN_DATABASE
+                - CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS
+                - CODEXK8S_GIT_BOT_TOKEN
+                - CODEXK8S_GIT_BOT_USERNAME
+                - CODEXK8S_GIT_BOT_MAIL
+                - CODEXK8S_CONTEXT7_API_KEY
+                - CODEXK8S_APP_SECRET_KEY
+                - CODEXK8S_TOKEN_ENCRYPTION_KEY
+                - CODEXK8S_MCP_TOKEN_SIGNING_KEY
+                - CODEXK8S_MCP_TOKEN_TTL
+                - CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS
+                - CODEXK8S_LEARNING_MODE_DEFAULT
+                - CODEXK8S_GITHUB_WEBHOOK_SECRET
+                - CODEXK8S_GITHUB_WEBHOOK_URL
+                - CODEXK8S_GITHUB_WEBHOOK_EVENTS
+                - CODEXK8S_PUBLIC_BASE_URL
+                - CODEXK8S_BOOTSTRAP_OWNER_EMAIL
+                - CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS
+                - CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS
+                - CODEXK8S_GITHUB_OAUTH_CLIENT_ID
+                - CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET
+                - CODEXK8S_JWT_SIGNING_KEY
+                - CODEXK8S_JWT_TTL
+                - CODEXK8S_VITE_DEV_UPSTREAM
+            - type: upsert_configmap_from_env
+              name: codex-k8s-deploy-resources
+              keys:
+                - CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_CPU
+                - CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_MEMORY
+                - CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_CPU
+                - CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_MEMORY
+                - CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_CPU
+                - CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_MEMORY
+                - CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_CPU
+                - CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_MEMORY
+                - CODEXK8S_WORKER_RESOURCES_REQUEST_CPU
+                - CODEXK8S_WORKER_RESOURCES_REQUEST_MEMORY
+                - CODEXK8S_WORKER_RESOURCES_LIMIT_CPU
+                - CODEXK8S_WORKER_RESOURCES_LIMIT_MEMORY
+                - CODEXK8S_WORKER_RUN_NAMESPACE_PREFIX
+                - CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP
+                - CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT
+                - CODEXK8S_WORKER_RUN_ROLE_NAME
+                - CODEXK8S_WORKER_RUN_ROLE_BINDING_NAME
+                - CODEXK8S_WORKER_RUN_RESOURCE_QUOTA_NAME
+                - CODEXK8S_WORKER_RUN_LIMIT_RANGE_NAME
+                - CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME
+                - CODEXK8S_WORKER_RUN_QUOTA_PODS
+                - CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_CPU
+                - CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_MEMORY
+                - CODEXK8S_WORKER_RUN_QUOTA_LIMITS_CPU
+                - CODEXK8S_WORKER_RUN_QUOTA_LIMITS_MEMORY
+                - CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_CPU
+                - CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_MEMORY
+                - CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_CPU
+                - CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY
+                - CODEXK8S_WORKER_JOB_IMAGE
+                - CODEXK8S_WORKER_JOB_COMMAND
+                - CODEXK8S_GIT_BOT_USERNAME
+                - CODEXK8S_GIT_BOT_MAIL
+                - CODEXK8S_AGENT_DEFAULT_MODEL
+                - CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT
+                - CODEXK8S_AGENT_DEFAULT_LOCALE
+                - CODEXK8S_AGENT_BASE_BRANCH
+                - CODEXK8S_WEB_CONSOLE_RESOURCES_REQUEST_CPU
+                - CODEXK8S_WEB_CONSOLE_RESOURCES_REQUEST_MEMORY
+                - CODEXK8S_WEB_CONSOLE_RESOURCES_LIMIT_CPU
+                - CODEXK8S_WEB_CONSOLE_RESOURCES_LIMIT_MEMORY
+                - CODEXK8S_KANIKO_RESOURCES_REQUEST_CPU
+                - CODEXK8S_KANIKO_RESOURCES_REQUEST_MEMORY
+                - CODEXK8S_KANIKO_RESOURCES_LIMIT_CPU
+                - CODEXK8S_KANIKO_RESOURCES_LIMIT_MEMORY
+                - CODEXK8S_KANIKO_CACHE_ENABLED
+                - CODEXK8S_KANIKO_CACHE_REPO
+                - CODEXK8S_KANIKO_CACHE_TTL
+                - CODEXK8S_KANIKO_CACHE_COMPRESSED
+                - CODEXK8S_KANIKO_MATRIX_MAX_PARALLEL
+            - type: upsert_configmap_from_env
+              name: codex-k8s-label-catalog
+              keys:
+                - CODEXK8S_RUN_INTAKE_LABEL
+                - CODEXK8S_RUN_INTAKE_REVISE_LABEL
+                - CODEXK8S_RUN_VISION_LABEL
+                - CODEXK8S_RUN_VISION_REVISE_LABEL
+                - CODEXK8S_RUN_PRD_LABEL
+                - CODEXK8S_RUN_PRD_REVISE_LABEL
+                - CODEXK8S_RUN_ARCH_LABEL
+                - CODEXK8S_RUN_ARCH_REVISE_LABEL
+                - CODEXK8S_RUN_DESIGN_LABEL
+                - CODEXK8S_RUN_DESIGN_REVISE_LABEL
+                - CODEXK8S_RUN_PLAN_LABEL
+                - CODEXK8S_RUN_PLAN_REVISE_LABEL
+                - CODEXK8S_RUN_DEV_LABEL
+                - CODEXK8S_RUN_DEV_REVISE_LABEL
+                - CODEXK8S_RUN_DEBUG_LABEL
+                - CODEXK8S_RUN_DOC_AUDIT_LABEL
+                - CODEXK8S_RUN_QA_LABEL
+                - CODEXK8S_RUN_RELEASE_LABEL
+                - CODEXK8S_RUN_POSTDEPLOY_LABEL
+                - CODEXK8S_RUN_OPS_LABEL
+                - CODEXK8S_RUN_SELF_IMPROVE_LABEL
+                - CODEXK8S_RUN_RETHINK_LABEL
+                - CODEXK8S_MODE_DISCUSSION_LABEL
+                - CODEXK8S_STATE_BLOCKED_LABEL
+                - CODEXK8S_STATE_IN_REVIEW_LABEL
+                - CODEXK8S_STATE_APPROVED_LABEL
+                - CODEXK8S_STATE_SUPERSEDED_LABEL
+                - CODEXK8S_STATE_ABANDONED_LABEL
+                - CODEXK8S_NEED_INPUT_LABEL
+                - CODEXK8S_NEED_PM_LABEL
+                - CODEXK8S_NEED_SA_LABEL
+                - CODEXK8S_NEED_QA_LABEL
+                - CODEXK8S_NEED_SRE_LABEL
+                - CODEXK8S_NEED_EM_LABEL
+                - CODEXK8S_NEED_KM_LABEL
+                - CODEXK8S_NEED_REVIEWER_LABEL
+                - CODEXK8S_AI_MODEL_GPT_5_3_CODEX_LABEL
+                - CODEXK8S_AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL
+                - CODEXK8S_AI_MODEL_GPT_5_2_CODEX_LABEL
+                - CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MAX_LABEL
+                - CODEXK8S_AI_MODEL_GPT_5_2_LABEL
+                - CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MINI_LABEL
+                - CODEXK8S_AI_REASONING_LOW_LABEL
+                - CODEXK8S_AI_REASONING_MEDIUM_LABEL
+                - CODEXK8S_AI_REASONING_HIGH_LABEL
+                - CODEXK8S_AI_REASONING_EXTRA_HIGH_LABEL
+            - type: import_secret
+              name: codex-k8s-oauth2-proxy
+              mappings:
+                - key: OAUTH2_PROXY_COOKIE_SECRET
+            - type: generate_hex
+              generate:
+                - key: OAUTH2_PROXY_COOKIE_SECRET
+                  hex_bytes: 16
+                  if_empty: true
+                  regenerate_if_length_not_in: [16, 24, 32]
+            - type: upsert_secret_from_env
+              name: codex-k8s-oauth2-proxy
+              mappings:
+                - key: OAUTH2_PROXY_CLIENT_ID
+                  env: CODEXK8S_GITHUB_OAUTH_CLIENT_ID
+                  required: true
+                - key: OAUTH2_PROXY_CLIENT_SECRET
+                  env: CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET
+                  required: true
+                - key: OAUTH2_PROXY_COOKIE_SECRET
+                  required: true
+            - type: upsert_configmap_from_dir
+              name: codex-k8s-migrations
+              directory: services/internal/control-plane/cmd/cli/migrations
+            - type: run_script
+              path: deploy/scripts/apply_network_policy_baseline.sh
         - name: namespace
           enabled_when_env: CODEXK8S_APPLY_NAMESPACE
           enabled_when_equals: "true"
-          manifests:
-            - deploy/base/namespace/namespace.yaml.tpl
+          actions:
+            - type: apply_manifests
+              paths:
+                - deploy/base/namespace/namespace.yaml.tpl
         - name: postgres
-          manifests:
-            - deploy/base/postgres/postgres.yaml.tpl
-          wait_for:
-            - type: rollout
-              resource: statefulset/postgres
+          actions:
+            - type: apply_manifests
+              paths:
+                - deploy/base/postgres/postgres.yaml.tpl
+            - type: wait_targets
+              wait_for:
+                - type: rollout
+                  resource: statefulset/postgres
         - name: migrations
-          pre_delete:
-            - job/codex-k8s-migrate
-          manifests:
-            - deploy/base/codex-k8s/migrate-job.yaml.tpl
-          wait_for:
-            - type: job-complete
-              resource: job/codex-k8s-migrate
+          actions:
+            - type: delete_resources
+              resources:
+                - job/codex-k8s-migrate
+            - type: apply_manifests
+              paths:
+                - deploy/base/codex-k8s/migrate-job.yaml.tpl
+            - type: wait_targets
+              wait_for:
+                - type: job-complete
+                  resource: job/codex-k8s-migrate
         - name: platform-core
-          manifests:
-            - deploy/base/codex-k8s/app.yaml.tpl
-          rollout_restart:
-            - deployment/codex-k8s-control-plane
-            - deployment/codex-k8s
-            - deployment/codex-k8s-worker
-          wait_for:
-            - type: rollout
-              resource: deployment/codex-k8s-control-plane
-            - type: rollout
-              resource: deployment/codex-k8s
-            - type: rollout
-              resource: deployment/codex-k8s-worker
+          actions:
+            - type: apply_manifests
+              paths:
+                - deploy/base/codex-k8s/app.yaml.tpl
+            - type: rollout_restart
+              resources:
+                - deployment/codex-k8s-control-plane
+                - deployment/codex-k8s
+                - deployment/codex-k8s-worker
+            - type: wait_targets
+              wait_for:
+                - type: rollout
+                  resource: deployment/codex-k8s-control-plane
+                - type: rollout
+                  resource: deployment/codex-k8s
+                - type: rollout
+                  resource: deployment/codex-k8s-worker
         - name: oauth2-proxy
-          manifests:
-            - deploy/base/oauth2-proxy/oauth2-proxy.yaml.tpl
-          rollout_restart:
-            - deployment/oauth2-proxy
-          wait_for:
-            - type: rollout
-              resource: deployment/oauth2-proxy
-              optional: true
+          actions:
+            - type: apply_manifests
+              paths:
+                - deploy/base/oauth2-proxy/oauth2-proxy.yaml.tpl
+            - type: rollout_restart
+              resources:
+                - deployment/oauth2-proxy
+            - type: wait_targets
+              wait_for:
+                - type: rollout
+                  resource: deployment/oauth2-proxy
+                  optional: true
         - name: web-console
-          manifests:
-            - deploy/base/web-console/web-console.yaml.tpl
-          rollout_restart:
-            - deployment/codex-k8s-web-console
-          wait_for:
-            - type: rollout
-              resource: deployment/codex-k8s-web-console
-              optional: true
+          actions:
+            - type: apply_manifests
+              paths:
+                - deploy/base/web-console/web-console.yaml.tpl
+            - type: rollout_restart
+              resources:
+                - deployment/codex-k8s-web-console
+            - type: wait_targets
+              wait_for:
+                - type: rollout
+                  resource: deployment/codex-k8s-web-console
+                  optional: true
         - name: ingress
-          manifests:
-            - deploy/base/codex-k8s/ingress.yaml.tpl
+          actions:
+            - type: apply_manifests
+              paths:
+                - deploy/base/codex-k8s/ingress.yaml.tpl
 
 runtime:
   non_prod:
