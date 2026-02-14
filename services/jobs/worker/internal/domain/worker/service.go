@@ -31,6 +31,10 @@ type Config struct {
 	SlotsPerProject int
 	// SlotLeaseTTL defines maximum duration of slot ownership.
 	SlotLeaseTTL time.Duration
+	// RuntimePrepareRetryTimeout limits total retry time for runtime deploy preparation.
+	RuntimePrepareRetryTimeout time.Duration
+	// RuntimePrepareRetryInterval defines delay between retryable runtime deploy attempts.
+	RuntimePrepareRetryInterval time.Duration
 
 	// ProjectLearningModeDefault is applied when the worker auto-creates projects from webhook payloads.
 	ProjectLearningModeDefault bool
@@ -136,6 +140,12 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	}
 	if cfg.SlotLeaseTTL <= 0 {
 		cfg.SlotLeaseTTL = 5 * time.Minute
+	}
+	if cfg.RuntimePrepareRetryTimeout <= 0 {
+		cfg.RuntimePrepareRetryTimeout = 30 * time.Minute
+	}
+	if cfg.RuntimePrepareRetryInterval <= 0 {
+		cfg.RuntimePrepareRetryInterval = 3 * time.Second
 	}
 	if cfg.WorkerID == "" {
 		cfg.WorkerID = defaultWorkerID
@@ -332,7 +342,7 @@ func (s *Service) launchPending(ctx context.Context) error {
 			continue
 		}
 
-		prepared, err := s.deployer.PrepareRunEnvironment(ctx, prepareParams)
+		prepared, err := s.prepareRuntimeEnvironmentWithRetry(ctx, prepareParams)
 		if err != nil {
 			s.logger.Error("prepare runtime environment failed", "run_id", claimed.RunID, "err", err)
 			if finishErr := s.finishLaunchFailedRun(ctx, runningRun, execution, err, runFailureReasonRuntimeDeployFailed); finishErr != nil {

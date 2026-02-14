@@ -45,6 +45,27 @@ func Run() error {
 	if slotLeaseTTL <= 0 {
 		return fmt.Errorf("CODEXK8S_WORKER_SLOT_LEASE_TTL must be > 0")
 	}
+	tickTimeout, err := time.ParseDuration(cfg.TickTimeout)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_WORKER_TICK_TIMEOUT: %w", err)
+	}
+	if tickTimeout <= 0 {
+		return fmt.Errorf("CODEXK8S_WORKER_TICK_TIMEOUT must be > 0")
+	}
+	runtimePrepareRetryTimeout, err := time.ParseDuration(cfg.RuntimePrepareRetryTimeout)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_TIMEOUT: %w", err)
+	}
+	if runtimePrepareRetryTimeout <= 0 {
+		return fmt.Errorf("CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_TIMEOUT must be > 0")
+	}
+	runtimePrepareRetryInterval, err := time.ParseDuration(cfg.RuntimePrepareRetryInterval)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_INTERVAL: %w", err)
+	}
+	if runtimePrepareRetryInterval <= 0 {
+		return fmt.Errorf("CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_INTERVAL must be > 0")
+	}
 
 	learningDefault := false
 	if strings.TrimSpace(cfg.LearningModeDefault) != "" {
@@ -107,6 +128,8 @@ func Run() error {
 		RunningCheckLimit:           cfg.RunningCheckLimit,
 		SlotsPerProject:             cfg.SlotsPerProject,
 		SlotLeaseTTL:                slotLeaseTTL,
+		RuntimePrepareRetryTimeout:  runtimePrepareRetryTimeout,
+		RuntimePrepareRetryInterval: runtimePrepareRetryInterval,
 		ProjectLearningModeDefault:  learningDefault,
 		RunNamespacePrefix:          cfg.RunNamespacePrefix,
 		CleanupFullEnvNamespace:     cfg.RunNamespaceCleanup,
@@ -163,7 +186,7 @@ func Run() error {
 			logger.Info("worker stopped")
 			return nil
 		case <-ticker.C:
-			tickCtx, cancel := context.WithTimeout(ctx, pollInterval)
+			tickCtx, cancel := context.WithTimeout(ctx, tickTimeout)
 			err := service.Tick(tickCtx)
 			cancel()
 			if err != nil {

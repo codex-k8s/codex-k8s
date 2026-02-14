@@ -40,6 +40,7 @@ import (
 	projectdatabaserepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projectdatabase"
 	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projectmember"
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/repocfg"
+	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/runtimedeploytask"
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/staffrun"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/user"
 	grpctransport "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/grpc"
@@ -86,6 +87,7 @@ func Run() error {
 	platformTokens := platformtokenrepo.NewRepository(pgxPool)
 	mcpActionRequests := mcpactionrequestrepo.NewRepository(pgxPool)
 	projectDatabases := projectdatabaserepo.NewRepository(pgxPool)
+	runtimeDeployTasks := runtimedeploytaskrepo.NewRepository(pgxPool)
 
 	tokenCrypto, err := tokencrypt.NewService(cfg.TokenEncryptionKey)
 	if err != nil {
@@ -173,15 +175,38 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("parse CODEXK8S_RUNTIME_DEPLOY_KANIKO_TIMEOUT=%q: %w", cfg.RuntimeDeployKanikoTimeout, err)
 	}
+	runtimeDeployWaitPollInterval, err := time.ParseDuration(cfg.RuntimeDeployWaitPollInterval)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_RUNTIME_DEPLOY_WAIT_POLL_INTERVAL=%q: %w", cfg.RuntimeDeployWaitPollInterval, err)
+	}
+	runtimeDeployReconcileInterval, err := time.ParseDuration(cfg.RuntimeDeployReconcileInterval)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_RUNTIME_DEPLOY_RECONCILE_INTERVAL=%q: %w", cfg.RuntimeDeployReconcileInterval, err)
+	}
+	runtimeDeployLeaseTTL, err := time.ParseDuration(cfg.RuntimeDeployLeaseTTL)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_RUNTIME_DEPLOY_LEASE_TTL=%q: %w", cfg.RuntimeDeployLeaseTTL, err)
+	}
+	runtimeDeployWorkerID := strings.TrimSpace(cfg.RuntimeDeployWorkerID)
+	if runtimeDeployWorkerID == "" {
+		hostname, hostErr := os.Hostname()
+		if hostErr != nil || strings.TrimSpace(hostname) == "" {
+			runtimeDeployWorkerID = "runtime-deploy-control-plane"
+		} else {
+			runtimeDeployWorkerID = "runtime-deploy-" + strings.TrimSpace(hostname)
+		}
+	}
 	runtimeDeployService, err := runtimedeploydomain.NewService(runtimedeploydomain.Config{
 		ServicesConfigPath: cfg.ServicesConfigPath,
 		RepositoryRoot:     cfg.RepositoryRoot,
 		RolloutTimeout:     runtimeDeployRolloutTimeout,
 		KanikoTimeout:      runtimeDeployKanikoTimeout,
+		WaitPollInterval:   runtimeDeployWaitPollInterval,
 		KanikoFieldManager: cfg.RuntimeDeployFieldManager,
 		GitHubPAT:          strings.TrimSpace(cfg.GitHubPAT),
 	}, runtimedeploydomain.Dependencies{
 		Kubernetes: newRuntimeDeployKubernetesAdapter(k8sClient),
+		Tasks:      runtimeDeployTasks,
 		Logger:     logger,
 	})
 	if err != nil {
@@ -249,6 +274,9 @@ func Run() error {
 	agentCallbackService := agentcallbackdomain.NewService(agentSessions, flowEvents, agentRuns)
 	if err := startRunAgentLogsCleanupLoop(runCtx, agentCallbackService, logger, cfg.RunAgentLogsRetentionDays); err != nil {
 		return fmt.Errorf("start run agent logs cleanup loop: %w", err)
+	}
+	if err := startRuntimeDeployReconcilerLoop(runCtx, runtimeDeployService, logger, runtimeDeployWorkerID, runtimeDeployReconcileInterval, runtimeDeployLeaseTTL); err != nil {
+		return fmt.Errorf("start runtime deploy reconciler loop: %w", err)
 	}
 
 	grpcServer := grpc.NewServer()

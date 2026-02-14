@@ -64,6 +64,14 @@ type Config struct {
 	RuntimeDeployRolloutTimeout string `env:"CODEXK8S_RUNTIME_DEPLOY_ROLLOUT_TIMEOUT" envDefault:"20m"`
 	// RuntimeDeployKanikoTimeout controls timeout for kaniko build jobs.
 	RuntimeDeployKanikoTimeout string `env:"CODEXK8S_RUNTIME_DEPLOY_KANIKO_TIMEOUT" envDefault:"30m"`
+	// RuntimeDeployWaitPollInterval controls polling interval for waiting on deploy task completion.
+	RuntimeDeployWaitPollInterval string `env:"CODEXK8S_RUNTIME_DEPLOY_WAIT_POLL_INTERVAL" envDefault:"2s"`
+	// RuntimeDeployReconcileInterval controls background deploy reconciler tick interval.
+	RuntimeDeployReconcileInterval string `env:"CODEXK8S_RUNTIME_DEPLOY_RECONCILE_INTERVAL" envDefault:"3s"`
+	// RuntimeDeployLeaseTTL controls deploy task lease duration for reconciler lock.
+	RuntimeDeployLeaseTTL string `env:"CODEXK8S_RUNTIME_DEPLOY_LEASE_TTL" envDefault:"90m"`
+	// RuntimeDeployWorkerID identifies current deploy reconciler instance.
+	RuntimeDeployWorkerID string `env:"CODEXK8S_RUNTIME_DEPLOY_WORKER_ID"`
 	// RuntimeDeployFieldManager is a server-side apply field manager name.
 	RuntimeDeployFieldManager string `env:"CODEXK8S_RUNTIME_DEPLOY_FIELD_MANAGER" envDefault:"codex-k8s-control-plane"`
 	// GitHubPAT is platform-scoped GitHub token used for repository/project management paths.

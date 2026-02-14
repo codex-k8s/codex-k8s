@@ -1,0 +1,43 @@
+-- name: runtimedeploytask__reset_desired_to_pending :one
+UPDATE runtime_deploy_tasks
+SET
+    runtime_mode = $2,
+    namespace = $3,
+    target_env = $4,
+    slot_no = $5,
+    repository_full_name = $6,
+    services_yaml_path = $7,
+    build_ref = $8,
+    deploy_only = $9,
+    status = 'pending',
+    lease_owner = NULL,
+    lease_until = NULL,
+    attempts = 0,
+    last_error = NULL,
+    result_namespace = NULL,
+    result_target_env = NULL,
+    started_at = NULL,
+    finished_at = NULL,
+    updated_at = NOW()
+WHERE run_id = $1::uuid
+RETURNING
+    run_id::text AS run_id,
+    runtime_mode,
+    namespace,
+    target_env,
+    slot_no,
+    repository_full_name,
+    services_yaml_path,
+    build_ref,
+    deploy_only,
+    status,
+    COALESCE(lease_owner, '') AS lease_owner,
+    lease_until,
+    attempts,
+    COALESCE(last_error, '') AS last_error,
+    COALESCE(result_namespace, '') AS result_namespace,
+    COALESCE(result_target_env, '') AS result_target_env,
+    created_at,
+    updated_at,
+    started_at,
+    finished_at;

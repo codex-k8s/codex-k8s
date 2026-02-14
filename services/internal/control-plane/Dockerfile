@@ -28,6 +28,7 @@ COPY services.yaml /app/services.yaml
 COPY go.mod go.sum ./
 COPY libs/go/ libs/go/
 COPY proto/ proto/
+COPY deploy/ deploy/
 COPY services/internal/control-plane/ services/internal/control-plane/
 RUN chown -R app:app /tmp/.cache
 

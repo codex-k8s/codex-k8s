@@ -21,6 +21,12 @@ type Config struct {
 	SlotsPerProject int `env:"CODEXK8S_WORKER_SLOTS_PER_PROJECT" envDefault:"2"`
 	// SlotLeaseTTL controls for how long slot is leased before expiration.
 	SlotLeaseTTL string `env:"CODEXK8S_WORKER_SLOT_LEASE_TTL" envDefault:"10m"`
+	// TickTimeout limits one worker Tick execution duration.
+	TickTimeout string `env:"CODEXK8S_WORKER_TICK_TIMEOUT" envDefault:"45m"`
+	// RuntimePrepareRetryTimeout limits total retry time for runtime deploy preparation RPC.
+	RuntimePrepareRetryTimeout string `env:"CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_TIMEOUT" envDefault:"30m"`
+	// RuntimePrepareRetryInterval defines delay between retryable runtime deploy preparation attempts.
+	RuntimePrepareRetryInterval string `env:"CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_INTERVAL" envDefault:"3s"`
 
 	// LearningModeDefault controls default project learning-mode when worker auto-creates projects.
 	// Keep empty value to disable by default; set to "true" to enable by default.

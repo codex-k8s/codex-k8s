@@ -4,6 +4,8 @@ import (
 	"context"
 	"log/slog"
 	"time"
+
+	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
 )
 
 // PrepareParams describes one run-bound environment preparation request.
@@ -31,6 +33,7 @@ type Config struct {
 	RepositoryRoot     string
 	RolloutTimeout     time.Duration
 	KanikoTimeout      time.Duration
+	WaitPollInterval   time.Duration
 	KanikoFieldManager string
 	GitHubPAT          string
 }
@@ -59,5 +62,6 @@ type AppliedResourceRef struct {
 // Dependencies wires runtime deployment collaborators.
 type Dependencies struct {
 	Kubernetes KubernetesClient
+	Tasks      runtimedeploytaskrepo.Repository
 	Logger     *slog.Logger
 }

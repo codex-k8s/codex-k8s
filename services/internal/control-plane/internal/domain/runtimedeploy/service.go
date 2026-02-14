@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -17,6 +18,8 @@ import (
 	"time"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
+	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
+	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 )
@@ -26,6 +29,7 @@ const (
 	defaultRepositoryRoot     = "."
 	defaultRolloutTimeout     = 20 * time.Minute
 	defaultKanikoTimeout      = 30 * time.Minute
+	defaultWaitPollInterval   = 2 * time.Second
 	defaultFieldManager       = "codex-k8s-control-plane"
 )
 
@@ -36,6 +40,7 @@ var imageTagSanitizer = regexp.MustCompile(`[^a-zA-Z0-9._-]`)
 type Service struct {
 	cfg    Config
 	k8s    KubernetesClient
+	tasks  runtimedeploytaskrepo.Repository
 	logger *slog.Logger
 }
 
@@ -43,6 +48,9 @@ type Service struct {
 func NewService(cfg Config, deps Dependencies) (*Service, error) {
 	if deps.Kubernetes == nil {
 		return nil, fmt.Errorf("kubernetes client is required")
+	}
+	if deps.Tasks == nil {
+		return nil, fmt.Errorf("runtime deploy task repository is required")
 	}
 	cfg.ServicesConfigPath = strings.TrimSpace(cfg.ServicesConfigPath)
 	if cfg.ServicesConfigPath == "" {
@@ -62,18 +70,158 @@ func NewService(cfg Config, deps Dependencies) (*Service, error) {
 	if cfg.KanikoTimeout <= 0 {
 		cfg.KanikoTimeout = defaultKanikoTimeout
 	}
+	if cfg.WaitPollInterval <= 0 {
+		cfg.WaitPollInterval = defaultWaitPollInterval
+	}
 	if deps.Logger == nil {
 		deps.Logger = slog.Default()
 	}
 	return &Service{
 		cfg:    cfg,
 		k8s:    deps.Kubernetes,
+		tasks:  deps.Tasks,
 		logger: deps.Logger,
 	}, nil
 }
 
-// PrepareRunEnvironment builds images and applies infrastructure/services for one runtime target namespace.
+// PrepareRunEnvironment stores desired deploy state and waits for reconciler completion.
 func (s *Service) PrepareRunEnvironment(ctx context.Context, params PrepareParams) (PrepareResult, error) {
+	params = normalizePrepareParams(params)
+	if strings.TrimSpace(params.RunID) == "" {
+		return PrepareResult{}, fmt.Errorf("run_id is required")
+	}
+
+	task, err := s.tasks.UpsertDesired(ctx, runtimedeploytaskrepo.UpsertDesiredParams{
+		RunID:              params.RunID,
+		RuntimeMode:        params.RuntimeMode,
+		Namespace:          params.Namespace,
+		TargetEnv:          params.TargetEnv,
+		SlotNo:             params.SlotNo,
+		RepositoryFullName: params.RepositoryFullName,
+		ServicesYAMLPath:   params.ServicesYAMLPath,
+		BuildRef:           params.BuildRef,
+		DeployOnly:         params.DeployOnly,
+	})
+	if err != nil {
+		return PrepareResult{}, fmt.Errorf("upsert runtime deploy task: %w", err)
+	}
+	if task.Status == entitytypes.RuntimeDeployTaskStatusSucceeded {
+		return taskToPrepareResult(task), nil
+	}
+
+	return s.waitForTaskResult(ctx, params.RunID)
+}
+
+// ReconcileNext claims one pending deploy task and applies desired state.
+func (s *Service) ReconcileNext(ctx context.Context, leaseOwner string, leaseTTL time.Duration) (bool, error) {
+	leaseOwner = strings.TrimSpace(leaseOwner)
+	if leaseOwner == "" {
+		return false, fmt.Errorf("runtime deploy reconciler lease owner is required")
+	}
+	if leaseTTL < time.Second {
+		leaseTTL = time.Second
+	}
+
+	task, ok, err := s.tasks.ClaimNext(ctx, runtimedeploytaskrepo.ClaimParams{
+		LeaseOwner: leaseOwner,
+		LeaseTTL:   fmt.Sprintf("%d seconds", int64(leaseTTL.Seconds())),
+	})
+	if err != nil {
+		return false, fmt.Errorf("claim runtime deploy task: %w", err)
+	}
+	if !ok {
+		return false, nil
+	}
+
+	result, runErr := s.applyDesiredState(ctx, PrepareParams{
+		RunID:              task.RunID,
+		RuntimeMode:        task.RuntimeMode,
+		Namespace:          task.Namespace,
+		TargetEnv:          task.TargetEnv,
+		SlotNo:             task.SlotNo,
+		RepositoryFullName: task.RepositoryFullName,
+		ServicesYAMLPath:   task.ServicesYAMLPath,
+		BuildRef:           task.BuildRef,
+		DeployOnly:         task.DeployOnly,
+	})
+	if runErr != nil {
+		if errors.Is(runErr, context.Canceled) || errors.Is(runErr, context.DeadlineExceeded) {
+			if ctx.Err() != nil {
+				return true, runErr
+			}
+		}
+		lastError := strings.TrimSpace(runErr.Error())
+		if len(lastError) > 4000 {
+			lastError = lastError[:4000]
+		}
+		updated, markErr := s.tasks.MarkFailed(ctx, runtimedeploytaskrepo.MarkFailedParams{
+			RunID:      task.RunID,
+			LeaseOwner: leaseOwner,
+			LastError:  lastError,
+		})
+		if markErr != nil {
+			return true, fmt.Errorf("mark runtime deploy task %s as failed: %w", task.RunID, markErr)
+		}
+		if !updated {
+			return true, fmt.Errorf("mark runtime deploy task %s as failed: lease lost", task.RunID)
+		}
+		s.logger.Error("runtime deploy task failed", "run_id", task.RunID, "err", runErr)
+		return true, nil
+	}
+
+	updated, err := s.tasks.MarkSucceeded(ctx, runtimedeploytaskrepo.MarkSucceededParams{
+		RunID:           task.RunID,
+		LeaseOwner:      leaseOwner,
+		ResultNamespace: result.Namespace,
+		ResultTargetEnv: result.TargetEnv,
+	})
+	if err != nil {
+		return true, fmt.Errorf("mark runtime deploy task %s as succeeded: %w", task.RunID, err)
+	}
+	if !updated {
+		return true, fmt.Errorf("mark runtime deploy task %s as succeeded: lease lost", task.RunID)
+	}
+	s.logger.Info("runtime deploy task completed", "run_id", task.RunID, "namespace", result.Namespace, "target_env", result.TargetEnv)
+	return true, nil
+}
+
+func (s *Service) waitForTaskResult(ctx context.Context, runID string) (PrepareResult, error) {
+	runID = strings.TrimSpace(runID)
+	if runID == "" {
+		return PrepareResult{}, fmt.Errorf("run_id is required")
+	}
+
+	for {
+		task, ok, err := s.tasks.GetByRunID(ctx, runID)
+		if err != nil {
+			return PrepareResult{}, fmt.Errorf("load runtime deploy task run_id=%s: %w", runID, err)
+		}
+		if !ok {
+			return PrepareResult{}, fmt.Errorf("runtime deploy task for run_id=%s not found", runID)
+		}
+
+		switch task.Status {
+		case entitytypes.RuntimeDeployTaskStatusSucceeded:
+			return taskToPrepareResult(task), nil
+		case entitytypes.RuntimeDeployTaskStatusFailed:
+			if strings.TrimSpace(task.LastError) == "" {
+				return PrepareResult{}, fmt.Errorf("runtime deploy task failed for run_id=%s", runID)
+			}
+			return PrepareResult{}, fmt.Errorf("runtime deploy task failed for run_id=%s: %s", runID, task.LastError)
+		}
+
+		timer := time.NewTimer(s.cfg.WaitPollInterval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return PrepareResult{}, ctx.Err()
+		case <-timer.C:
+		}
+	}
+}
+
+// applyDesiredState builds images and applies infrastructure/services for one runtime target namespace.
+func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (PrepareResult, error) {
 	zero := PrepareResult{}
 	runID := strings.TrimSpace(params.RunID)
 	if runID == "" {
@@ -140,6 +288,44 @@ func (s *Service) PrepareRunEnvironment(ctx context.Context, params PrepareParam
 		Namespace: targetNamespace,
 		TargetEnv: targetEnv,
 	}, nil
+}
+
+func normalizePrepareParams(params PrepareParams) PrepareParams {
+	params.RunID = strings.TrimSpace(params.RunID)
+	params.RuntimeMode = strings.TrimSpace(params.RuntimeMode)
+	if params.RuntimeMode == "" {
+		params.RuntimeMode = "full-env"
+	}
+	params.Namespace = strings.TrimSpace(params.Namespace)
+	params.TargetEnv = strings.TrimSpace(params.TargetEnv)
+	if params.TargetEnv == "" {
+		params.TargetEnv = "ai"
+	}
+	if params.SlotNo < 0 {
+		params.SlotNo = 0
+	}
+	params.RepositoryFullName = strings.TrimSpace(params.RepositoryFullName)
+	params.ServicesYAMLPath = strings.TrimSpace(params.ServicesYAMLPath)
+	params.BuildRef = strings.TrimSpace(params.BuildRef)
+	return params
+}
+
+func taskToPrepareResult(task runtimedeploytaskrepo.Task) PrepareResult {
+	namespace := strings.TrimSpace(task.ResultNamespace)
+	if namespace == "" {
+		namespace = strings.TrimSpace(task.Namespace)
+	}
+	targetEnv := strings.TrimSpace(task.ResultTargetEnv)
+	if targetEnv == "" {
+		targetEnv = strings.TrimSpace(task.TargetEnv)
+	}
+	if targetEnv == "" {
+		targetEnv = "ai"
+	}
+	return PrepareResult{
+		Namespace: namespace,
+		TargetEnv: targetEnv,
+	}
 }
 
 func (s *Service) resolveServicesConfigPath(pathFromRun string) string {
