@@ -224,9 +224,9 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	result.toolGaps = detectToolGaps(result.report, result.codexExecOutput, result.gitPushOutput)
 	result.report.ToolGaps = result.toolGaps
 	if len(result.toolGaps) > 0 {
-		// Этот event уходит в flow_events и потом используется self-improve циклом:
-		// агент km анализирует gap, вносит изменения в prompts/docs/toolchain (Dockerfile/bootstrap_tools)
-		// и отдает их отдельным PR на review Owner.
+		// This event is stored in flow_events and consumed by the self-improve loop:
+		// km agent analyzes gaps, updates prompts/docs/toolchain (Dockerfile/bootstrap_tools),
+		// and submits those updates as a separate PR for Owner review.
 		if err := s.emitEvent(ctx, floweventdomain.EventTypeRunToolchainGapDetected, toolchainGapDetectedPayload{
 			ToolGaps: result.toolGaps,
 			Sources: []string{

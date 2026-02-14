@@ -25,16 +25,16 @@ import (
 const githubWebhookActorID = floweventdomain.ActorIDGitHubWebhook
 
 const (
-	agentKeyPM = "pm" // Product manager: формирует и уточняет продуктовые артефакты.
-	agentKeySA = "sa" // Solution architect: ведет архитектурные решения и ограничения.
+	agentKeyPM = "pm" // Product manager: defines and refines product artifacts.
+	agentKeySA = "sa" // Solution architect: drives architecture decisions and constraints.
 
-	agentKeyEM = "em" // Engineering manager: координирует delivery/процесс и gate-решения.
+	agentKeyEM = "em" // Engineering manager: coordinates delivery process and gates.
 
-	defaultRunAgentKey = "dev"      // Developer: реализует изменения в коде и документации.
-	agentKeyReviewer   = "reviewer" // Reviewer: выполняет предварительный технический review.
-	agentKeyQA         = "qa"       // QA: проверяет качество, тестовые сценарии и регрессии.
-	agentKeySRE        = "sre"      // SRE/OPS: эксплуатация, стабильность и runtime-диагностика.
-	agentKeyKM         = "km"       // Knowledge manager: ведет traceability и self-improve контур.
+	defaultRunAgentKey = "dev"      // Developer: implements code and documentation changes.
+	agentKeyReviewer   = "reviewer" // Reviewer: performs preliminary technical review.
+	agentKeyQA         = "qa"       // QA: validates quality, test scenarios, and regressions.
+	agentKeySRE        = "sre"      // SRE/OPS: handles operations, stability, and runtime diagnostics.
+	agentKeyKM         = "km"       // Knowledge manager: maintains traceability and self-improve loop.
 )
 
 type runStatusService interface {
