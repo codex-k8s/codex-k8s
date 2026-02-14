@@ -27,6 +27,7 @@ type ServerConfig struct {
 	// GitHubWebhookSecret is used by webhook handler to verify signatures.
 	GitHubWebhookSecret string
 	// MCPCallbackToken is shared token for external approver/executor callback contracts.
+	// Empty value means callback auth is disabled on HTTP level.
 	MCPCallbackToken string
 	// MaxBodyBytes sets webhook body size limit.
 	MaxBodyBytes int64

@@ -42,6 +42,10 @@ approvals:
   - детекция команд с паттернами `command not found` / `executable file not found`.
 - Для подтверждённых gap публикуется отдельное audit-событие:
   - `run.toolchain.gap_detected`.
+- Дальнейший follow-up для этого события:
+  - self-improve агент (`km`) поднимает событие из `flow_events`/`session_json`;
+  - готовит PR с доработками prompts/docs и при необходимости `agent-runner` toolchain (`Dockerfile`, `bootstrap_tools.sh`);
+  - Owner принимает решение по merge через обычный review-процесс.
 - Событие содержит воспроизводимый remediation-контекст:
   - список `tool_gaps`;
   - источники обнаружения;

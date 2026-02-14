@@ -292,8 +292,8 @@ export type IngestGithubWebhookResponse = IngestGithubWebhookResponses[keyof Ing
 
 export type McpApproverCallbackData = {
     body: McpApprovalCallbackRequest;
-    headers: {
-        'X-Codex-MCP-Token': string;
+    headers?: {
+        'X-Codex-MCP-Token'?: string;
     };
     path?: never;
     query?: never;
@@ -328,8 +328,8 @@ export type McpApproverCallbackResponse = McpApproverCallbackResponses[keyof Mcp
 
 export type McpExecutorCallbackData = {
     body: McpApprovalCallbackRequest;
-    headers: {
-        'X-Codex-MCP-Token': string;
+    headers?: {
+        'X-Codex-MCP-Token'?: string;
     };
     path?: never;
     query?: never;

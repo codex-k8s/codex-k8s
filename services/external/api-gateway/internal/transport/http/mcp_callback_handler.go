@@ -46,11 +46,11 @@ func (h *mcpCallbackHandler) CallbackExecutor(c *echo.Context) error {
 }
 
 func (h *mcpCallbackHandler) handleDecisionCallback(c *echo.Context) error {
-	if strings.TrimSpace(h.callbackToken) == "" {
-		return errs.Unauthorized{Msg: "mcp callback is not configured"}
-	}
-	if strings.TrimSpace(resolveMCPCallbackToken(c.Request().Header.Get(headerMCPCallbackToken), c.Request().Header.Get(echo.HeaderAuthorization))) != h.callbackToken {
-		return errs.Unauthorized{Msg: "invalid mcp callback token"}
+	callbackToken := strings.TrimSpace(h.callbackToken)
+	if callbackToken != "" {
+		if strings.TrimSpace(resolveMCPCallbackToken(c.Request().Header.Get(headerMCPCallbackToken), c.Request().Header.Get(echo.HeaderAuthorization))) != callbackToken {
+			return errs.Unauthorized{Msg: "invalid mcp callback token"}
+		}
 	}
 	if h.cp == nil || h.cp.Service() == nil {
 		return errs.Unauthorized{Msg: "mcp callback service is unavailable"}

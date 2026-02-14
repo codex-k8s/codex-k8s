@@ -427,12 +427,12 @@ type CallbackGithubParams struct {
 
 // McpApproverCallbackParams defines parameters for McpApproverCallback.
 type McpApproverCallbackParams struct {
-	XCodexMCPToken MCPCallbackToken `json:"X-Codex-MCP-Token"`
+	XCodexMCPToken *MCPCallbackToken `json:"X-Codex-MCP-Token,omitempty"`
 }
 
 // McpExecutorCallbackParams defines parameters for McpExecutorCallback.
 type McpExecutorCallbackParams struct {
-	XCodexMCPToken MCPCallbackToken `json:"X-Codex-MCP-Token"`
+	XCodexMCPToken *MCPCallbackToken `json:"X-Codex-MCP-Token,omitempty"`
 }
 
 // ListPendingApprovalsParams defines parameters for ListPendingApprovals.
@@ -865,7 +865,7 @@ func (siw *ServerInterfaceWrapper) McpApproverCallback(w http.ResponseWriter, r 
 
 	headers := r.Header
 
-	// ------------- Required header parameter "X-Codex-MCP-Token" -------------
+	// ------------- Optional header parameter "X-Codex-MCP-Token" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-Codex-MCP-Token")]; found {
 		var XCodexMCPToken MCPCallbackToken
 		n := len(valueList)
@@ -874,18 +874,14 @@ func (siw *ServerInterfaceWrapper) McpApproverCallback(w http.ResponseWriter, r 
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-Codex-MCP-Token", valueList[0], &XCodexMCPToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Codex-MCP-Token", valueList[0], &XCodexMCPToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Codex-MCP-Token", Err: err})
 			return
 		}
 
-		params.XCodexMCPToken = XCodexMCPToken
+		params.XCodexMCPToken = &XCodexMCPToken
 
-	} else {
-		err := fmt.Errorf("Header parameter X-Codex-MCP-Token is required, but not found")
-		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-Codex-MCP-Token", Err: err})
-		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -909,7 +905,7 @@ func (siw *ServerInterfaceWrapper) McpExecutorCallback(w http.ResponseWriter, r 
 
 	headers := r.Header
 
-	// ------------- Required header parameter "X-Codex-MCP-Token" -------------
+	// ------------- Optional header parameter "X-Codex-MCP-Token" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-Codex-MCP-Token")]; found {
 		var XCodexMCPToken MCPCallbackToken
 		n := len(valueList)
@@ -918,18 +914,14 @@ func (siw *ServerInterfaceWrapper) McpExecutorCallback(w http.ResponseWriter, r 
 			return
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-Codex-MCP-Token", valueList[0], &XCodexMCPToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Codex-MCP-Token", valueList[0], &XCodexMCPToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Codex-MCP-Token", Err: err})
 			return
 		}
 
-		params.XCodexMCPToken = XCodexMCPToken
+		params.XCodexMCPToken = &XCodexMCPToken
 
-	} else {
-		err := fmt.Errorf("Header parameter X-Codex-MCP-Token is required, but not found")
-		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-Codex-MCP-Token", Err: err})
-		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

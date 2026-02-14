@@ -749,7 +749,7 @@ components:
     MCPCallbackToken:
       in: header
       name: X-Codex-MCP-Token
-      required: true
+      required: false
       schema:
         type: string
   responses:

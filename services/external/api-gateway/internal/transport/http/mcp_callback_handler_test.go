@@ -79,7 +79,7 @@ func TestIsMCPDecisionAllowed(t *testing.T) {
 	}
 }
 
-func TestMCPCallbackHandlerRejectsWhenNotConfigured(t *testing.T) {
+func TestMCPCallbackHandlerRejectsWhenServiceUnavailable(t *testing.T) {
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/mcp/approver/callback", strings.NewReader(`{"approval_request_id":1,"decision":"approved"}`))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -95,5 +95,31 @@ func TestMCPCallbackHandlerRejectsWhenNotConfigured(t *testing.T) {
 	var unauthorized errs.Unauthorized
 	if !errors.As(err, &unauthorized) {
 		t.Fatalf("expected errs.Unauthorized, got %T", err)
+	}
+	if unauthorized.Msg != "mcp callback service is unavailable" {
+		t.Fatalf("unexpected unauthorized message: %q", unauthorized.Msg)
+	}
+}
+
+func TestMCPCallbackHandlerRejectsInvalidTokenWhenConfigured(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/mcp/approver/callback", strings.NewReader(`{"approval_request_id":1,"decision":"approved"}`))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(headerMCPCallbackToken, "wrong-token")
+	rec := httptest.NewRecorder()
+	ctx := e.NewContext(req, rec)
+
+	h := &mcpCallbackHandler{callbackToken: "expected-token"}
+	err := h.CallbackApprover(ctx)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	var unauthorized errs.Unauthorized
+	if !errors.As(err, &unauthorized) {
+		t.Fatalf("expected errs.Unauthorized, got %T", err)
+	}
+	if unauthorized.Msg != "invalid mcp callback token" {
+		t.Fatalf("unexpected unauthorized message: %q", unauthorized.Msg)
 	}
 }
