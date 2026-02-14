@@ -20,11 +20,13 @@ WORKDIR /workspace
 COPY --from=builder /go/pkg/mod /go/pkg/mod
 COPY --from=builder /go/bin/CompileDaemon /usr/local/bin/CompileDaemon
 COPY --from=builder /out/codex-k8s-worker /usr/local/bin/codex-k8s-worker
+COPY --from=builder /root/.cache/go-build /tmp/.cache/go-build
 
 COPY go.mod go.sum ./
 COPY libs/go/ libs/go/
 COPY proto/ proto/
 COPY services/jobs/worker/ services/jobs/worker/
+RUN chown -R app:app /tmp/.cache
 
 ENV CODEXK8S_HOT_RELOAD="true"
 ENV GOCACHE="/tmp/.cache/go-build"

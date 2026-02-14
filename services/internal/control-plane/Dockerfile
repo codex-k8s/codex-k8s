@@ -22,12 +22,14 @@ COPY --from=builder /go/pkg/mod /go/pkg/mod
 COPY --from=builder /go/bin/goose /usr/local/bin/goose
 COPY --from=builder /go/bin/CompileDaemon /usr/local/bin/CompileDaemon
 COPY --from=builder /out/codex-k8s-control-plane /usr/local/bin/codex-k8s-control-plane
+COPY --from=builder /root/.cache/go-build /tmp/.cache/go-build
 COPY services.yaml /app/services.yaml
 
 COPY go.mod go.sum ./
 COPY libs/go/ libs/go/
 COPY proto/ proto/
 COPY services/internal/control-plane/ services/internal/control-plane/
+RUN chown -R app:app /tmp/.cache
 
 ENV CODEXK8S_HOT_RELOAD="true"
 ENV GOCACHE="/tmp/.cache/go-build"
