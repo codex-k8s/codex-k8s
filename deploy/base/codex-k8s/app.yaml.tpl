@@ -171,7 +171,6 @@ spec:
         - name: control-plane
           image: ${CODEXK8S_CONTROL_PLANE_IMAGE}
           imagePullPolicy: Always
-          command: ["/usr/local/bin/codex-k8s-control-plane"]
           ports:
             - containerPort: 9090
               name: grpc
@@ -179,6 +178,10 @@ spec:
               name: http
           env:
             - name: CODEXK8S_ENV
+              value: ai-staging
+            - name: CODEXK8S_SERVICES_CONFIG_PATH
+              value: /app/services.yaml
+            - name: CODEXK8S_SERVICES_CONFIG_ENV
               value: ai-staging
             - name: CODEXK8S_CONTROL_PLANE_GRPC_ADDR
               value: ":9090"
@@ -552,8 +555,9 @@ spec:
         - name: worker
           image: ${CODEXK8S_WORKER_IMAGE}
           imagePullPolicy: Always
-          command: ["/usr/local/bin/codex-k8s-worker"]
           env:
+            - name: CODEXK8S_ENV
+              value: ai-staging
             - name: CODEXK8S_DB_HOST
               value: postgres
             - name: CODEXK8S_DB_PORT

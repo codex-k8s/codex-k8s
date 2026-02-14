@@ -12,6 +12,28 @@ const (
 	KindServiceStack = "ServiceStack"
 )
 
+// RuntimeMode controls runtime execution profile for webhook-triggered runs.
+type RuntimeMode string
+
+const (
+	RuntimeModeFullEnv  RuntimeMode = "full-env"
+	RuntimeModeCodeOnly RuntimeMode = "code-only"
+)
+
+// NormalizeRuntimeMode validates and normalizes runtime mode values.
+func NormalizeRuntimeMode(value RuntimeMode) (RuntimeMode, error) {
+	v := RuntimeMode(strings.TrimSpace(strings.ToLower(string(value))))
+	if v == "" {
+		return "", nil
+	}
+	switch v {
+	case RuntimeModeFullEnv, RuntimeModeCodeOnly:
+		return v, nil
+	default:
+		return "", fmt.Errorf("unsupported runtime mode %q", value)
+	}
+}
+
 // CodeUpdateStrategy controls how code updates become effective in non-prod runtime.
 type CodeUpdateStrategy string
 
@@ -54,6 +76,7 @@ type Spec struct {
 	Imports        []ImportRef            `yaml:"imports,omitempty"`
 	Components     []Component            `yaml:"components,omitempty"`
 	Environments   map[string]Environment `yaml:"environments,omitempty"`
+	WebhookRuntime WebhookRuntime         `yaml:"webhookRuntime,omitempty"`
 	Images         map[string]Image       `yaml:"images,omitempty"`
 	Infrastructure []InfrastructureItem   `yaml:"infrastructure,omitempty"`
 	Services       []Service              `yaml:"services,omitempty"`
@@ -83,6 +106,12 @@ type Environment struct {
 	From              string `yaml:"from,omitempty"`
 	NamespaceTemplate string `yaml:"namespaceTemplate,omitempty"`
 	ImagePullPolicy   string `yaml:"imagePullPolicy,omitempty"`
+}
+
+// WebhookRuntime configures trigger->runtime mode mapping for webhook orchestration.
+type WebhookRuntime struct {
+	DefaultMode  RuntimeMode            `yaml:"defaultMode,omitempty"`
+	TriggerModes map[string]RuntimeMode `yaml:"triggerModes,omitempty"`
 }
 
 // Image describes a stack image entry.

@@ -42,9 +42,6 @@ spec:
             # Vite blocks unknown hosts by default; this keeps staging usable behind Ingress.
             - name: VITE_ALLOWED_HOSTS
               value: "${CODEXK8S_STAGING_DOMAIN}"
-            # Disable HMR in-cluster to avoid websocket/proxy issues that can cause periodic full-page reloads.
-            - name: VITE_DISABLE_HMR
-              value: "true"
           readinessProbe:
             httpGet:
               path: /

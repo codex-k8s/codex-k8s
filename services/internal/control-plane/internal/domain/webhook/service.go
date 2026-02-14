@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	"github.com/google/uuid"
 
@@ -56,6 +57,7 @@ type Service struct {
 
 	learningModeDefault bool
 	triggerLabels       TriggerLabels
+	runtimeModePolicy   RuntimeModePolicy
 }
 
 // Config wires webhook domain dependencies.
@@ -70,6 +72,7 @@ type Config struct {
 	RunStatus           runStatusService
 	LearningModeDefault bool
 	TriggerLabels       TriggerLabels
+	RuntimeModePolicy   RuntimeModePolicy
 }
 
 // NewService wires webhook domain dependencies.
@@ -87,6 +90,7 @@ func NewService(cfg Config) *Service {
 		runStatus:           cfg.RunStatus,
 		learningModeDefault: cfg.LearningModeDefault,
 		triggerLabels:       triggerLabels,
+		runtimeModePolicy:   cfg.RuntimeModePolicy.withDefaults(),
 	}
 }
 
@@ -188,6 +192,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 	if err != nil {
 		return IngestResult{}, fmt.Errorf("resolve run agent: %w", err)
 	}
+	runtimeMode, runtimeModeSource := s.resolveRunRuntimeMode(triggerPtr(trigger, hasIssueRunTrigger))
 
 	runPayload, err := buildRunPayload(runPayloadInput{
 		Command:          cmd,
@@ -199,6 +204,8 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		LearningMode:     learningMode,
 		Trigger:          triggerPtr(trigger, hasIssueRunTrigger),
 		Agent:            agent,
+		RuntimeMode:      runtimeMode,
+		RuntimeSource:    runtimeModeSource,
 	})
 	if err != nil {
 		return IngestResult{}, fmt.Errorf("build run payload: %w", err)
@@ -565,6 +572,10 @@ func (s *Service) resolveLearningMode(ctx context.Context, projectID string, sen
 		return projectDefault, nil
 	}
 	return *override, nil
+}
+
+func (s *Service) resolveRunRuntimeMode(trigger *issueRunTrigger) (agentdomain.RuntimeMode, string) {
+	return s.runtimeModePolicy.resolve(trigger)
 }
 
 func deriveProjectID(correlationID string, envelope githubWebhookEnvelope) string {

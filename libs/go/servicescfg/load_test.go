@@ -183,6 +183,42 @@ func TestResolveEnvironment_Inheritance(t *testing.T) {
 	}
 }
 
+func TestLoad_WebhookRuntimeModes(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "services.yaml")
+	writeFile(t, path, `
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    ai-staging:
+      namespaceTemplate: "{{ .Project }}-ai-staging"
+  webhookRuntime:
+    defaultMode: full-env
+    triggerModes:
+      self_improve: code-only
+      dev: full-env
+`)
+
+	result, err := Load(path, LoadOptions{Env: "ai-staging"})
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+
+	if got, want := ResolveTriggerRuntimeMode(result.Stack, "self_improve"), RuntimeModeCodeOnly; got != want {
+		t.Fatalf("unexpected runtime mode for self_improve: got %q want %q", got, want)
+	}
+	if got, want := ResolveTriggerRuntimeMode(result.Stack, "dev"), RuntimeModeFullEnv; got != want {
+		t.Fatalf("unexpected runtime mode for dev: got %q want %q", got, want)
+	}
+	if got, want := ResolveTriggerRuntimeMode(result.Stack, "unknown"), RuntimeModeFullEnv; got != want {
+		t.Fatalf("unexpected runtime mode for unknown trigger: got %q want %q", got, want)
+	}
+}
+
 func writeFile(t *testing.T, path string, content string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(strings.TrimSpace(content)+"\n"), 0o644); err != nil {

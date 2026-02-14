@@ -6,6 +6,7 @@ import webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 type RunRuntimePayload struct {
 	Trigger *RunRuntimeTrigger `json:"trigger"`
 	Issue   *RunRuntimeIssue   `json:"issue"`
+	Runtime *RunRuntimeProfile `json:"runtime"`
 }
 
 // RunRuntimeTrigger captures normalized trigger kind from webhook payload.
@@ -16,6 +17,11 @@ type RunRuntimeTrigger struct {
 // RunRuntimeIssue captures optional issue metadata used in namespace naming.
 type RunRuntimeIssue struct {
 	Number int64 `json:"number"`
+}
+
+// RunRuntimeProfile captures runtime mode resolved upstream by webhook/control-plane.
+type RunRuntimeProfile struct {
+	Mode string `json:"mode"`
 }
 
 // RepositoryPayload keeps repository fields required for project derivation.

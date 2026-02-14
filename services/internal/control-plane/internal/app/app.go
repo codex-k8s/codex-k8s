@@ -169,6 +169,7 @@ func Run() error {
 	if err != nil {
 		return err
 	}
+	webhookRuntimeModePolicy := loadWebhookRuntimeModePolicy(cfg, logger)
 
 	webhookService := webhook.NewService(webhook.Config{
 		AgentRuns:           agentRuns,
@@ -181,6 +182,7 @@ func Run() error {
 		RunStatus:           runStatusService,
 		LearningModeDefault: learningDefault,
 		TriggerLabels:       buildWebhookTriggerLabels(cfg),
+		RuntimeModePolicy:   webhookRuntimeModePolicy,
 	})
 
 	webhookURL := strings.TrimSpace(cfg.GitHubWebhookURL)

@@ -9,11 +9,11 @@ spec:
   components:
     - name: go-service-defaults
       serviceDefaults:
-        codeUpdateStrategy: rebuild
+        codeUpdateStrategy: '{{ ternary (eq .Env "production") "restart" "hot-reload" }}'
         deployGroup: internal
     - name: frontend-defaults
       serviceDefaults:
-        codeUpdateStrategy: hot-reload
+        codeUpdateStrategy: '{{ ternary (eq .Env "production") "restart" "hot-reload" }}'
         deployGroup: frontend
 
   environments:
@@ -37,6 +37,17 @@ spec:
     cleanupPolicy:
       fullEnvIdleTTL: "8h"
 
+  webhookRuntime:
+    defaultMode: full-env
+    triggerModes:
+      intake: code-only
+      intake_revise: code-only
+      vision: code-only
+      vision_revise: code-only
+      prd: code-only
+      prd_revise: code-only
+      self_improve: code-only
+
   infrastructure:
     - name: namespace
       manifests:
@@ -57,7 +68,6 @@ spec:
       use:
         - go-service-defaults
       deployGroup: edge
-      codeUpdateStrategy: restart
       dependsOn:
         - postgres
       manifests:
@@ -67,7 +77,6 @@ spec:
       use:
         - go-service-defaults
       deployGroup: migrations
-      codeUpdateStrategy: restart
       dependsOn:
         - postgres
       manifests:
@@ -75,7 +84,6 @@ spec:
     - name: web-console
       use:
         - frontend-defaults
-      codeUpdateStrategy: hot-reload
       dependsOn:
         - codex-k8s-app
       manifests:

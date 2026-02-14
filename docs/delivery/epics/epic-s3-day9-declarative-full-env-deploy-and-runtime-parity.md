@@ -75,6 +75,7 @@ approvals:
   - `orchestration` (deploy order, readiness strategy, cleanup/ttl policy).
 - Новые обязательные поля:
   - `services[].codeUpdateStrategy` enum: `hot-reload | rebuild | restart`;
+  - `webhookRuntime.defaultMode` и `webhookRuntime.triggerModes` для детерминированного выбора `full-env` vs `code-only` при webhook-triggered запуске;
   - `imports[]` и `components[]` для переиспользования;
   - `instanceScope`/эквивалентный runtime marker для anti-conflict policy в dogfooding.
 - Правило для `codex-k8s`:

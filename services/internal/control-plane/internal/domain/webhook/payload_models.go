@@ -23,6 +23,7 @@ type githubRunPayload struct {
 	Issue         *githubRunIssuePayload     `json:"issue,omitempty"`
 	PullRequest   *githubRunPRPayload        `json:"pull_request,omitempty"`
 	Trigger       *githubIssueTriggerPayload `json:"trigger,omitempty"`
+	Runtime       githubRunRuntimePayload    `json:"runtime"`
 }
 
 type githubRunRepositoryPayload struct {
@@ -88,6 +89,11 @@ type githubIssueTriggerPayload struct {
 	Source string                    `json:"source"`
 	Label  string                    `json:"label"`
 	Kind   webhookdomain.TriggerKind `json:"kind"`
+}
+
+type githubRunRuntimePayload struct {
+	Mode   string `json:"mode"`
+	Source string `json:"source,omitempty"`
 }
 
 type githubFlowEventPayload struct {

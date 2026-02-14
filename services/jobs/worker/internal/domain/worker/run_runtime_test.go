@@ -67,6 +67,24 @@ func TestResolveRunExecutionContext_CodeOnlyWithoutTrigger(t *testing.T) {
 	}
 }
 
+func TestResolveRunExecutionContext_RuntimeModeFromPayloadHasPriority(t *testing.T) {
+	t.Parallel()
+
+	ctx := resolveRunExecutionContext(
+		"run-dev-code-only",
+		"project-1",
+		json.RawMessage(`{"runtime":{"mode":"code-only"},"trigger":{"kind":"dev"},"issue":{"number":99}}`),
+		"codex-issue",
+	)
+
+	if ctx.RuntimeMode != agentdomain.RuntimeModeCodeOnly {
+		t.Fatalf("expected code-only runtime mode, got %q", ctx.RuntimeMode)
+	}
+	if ctx.Namespace != "" {
+		t.Fatalf("expected empty namespace for explicit code-only runtime, got %q", ctx.Namespace)
+	}
+}
+
 func TestBuildRunNamespace_LengthAndSanitize(t *testing.T) {
 	t.Parallel()
 

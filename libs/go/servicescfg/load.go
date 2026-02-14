@@ -182,6 +182,34 @@ func normalizeAndValidate(stack *Stack, env string) error {
 		return fmt.Errorf("environment %q not found in spec.environments", env)
 	}
 
+	defaultRuntimeMode, err := NormalizeRuntimeMode(stack.Spec.WebhookRuntime.DefaultMode)
+	if err != nil {
+		return fmt.Errorf("spec.webhookRuntime.defaultMode: %w", err)
+	}
+	if defaultRuntimeMode == "" {
+		defaultRuntimeMode = RuntimeModeFullEnv
+	}
+	stack.Spec.WebhookRuntime.DefaultMode = defaultRuntimeMode
+
+	if len(stack.Spec.WebhookRuntime.TriggerModes) > 0 {
+		normalizedTriggerModes := make(map[string]RuntimeMode, len(stack.Spec.WebhookRuntime.TriggerModes))
+		for rawTrigger, rawMode := range stack.Spec.WebhookRuntime.TriggerModes {
+			triggerKey := normalizeTriggerModeKey(rawTrigger)
+			if triggerKey == "" {
+				return fmt.Errorf("spec.webhookRuntime.triggerModes contains empty trigger key")
+			}
+			mode, modeErr := NormalizeRuntimeMode(rawMode)
+			if modeErr != nil {
+				return fmt.Errorf("spec.webhookRuntime.triggerModes[%q]: %w", rawTrigger, modeErr)
+			}
+			if mode == "" {
+				mode = defaultRuntimeMode
+			}
+			normalizedTriggerModes[triggerKey] = mode
+		}
+		stack.Spec.WebhookRuntime.TriggerModes = normalizedTriggerModes
+	}
+
 	seenServices := make(map[string]struct{})
 	for i := range stack.Spec.Services {
 		svc := &stack.Spec.Services[i]

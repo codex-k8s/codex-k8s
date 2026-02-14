@@ -49,6 +49,12 @@ func parseRunRuntimePayload(raw json.RawMessage) querytypes.RunRuntimePayload {
 
 // resolveRuntimeMode maps trigger kind to execution profile with code-only fallback.
 func resolveRuntimeMode(payload querytypes.RunRuntimePayload) agentdomain.RuntimeMode {
+	if payload.Runtime != nil {
+		explicitMode := strings.TrimSpace(payload.Runtime.Mode)
+		if explicitMode != "" {
+			return agentdomain.ParseRuntimeMode(explicitMode)
+		}
+	}
 	if payload.Trigger == nil {
 		return agentdomain.RuntimeModeCodeOnly
 	}
