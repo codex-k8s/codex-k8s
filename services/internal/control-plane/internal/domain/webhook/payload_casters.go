@@ -63,6 +63,7 @@ func buildRunPayload(input runPayloadInput) (json.RawMessage, error) {
 			FullName: input.Envelope.Repository.FullName,
 			Name:     input.Envelope.Repository.Name,
 			Private:  input.Envelope.Repository.Private,
+			Fork:     input.Envelope.Repository.Fork,
 		},
 		Installation: githubInstallationPayload{
 			ID: input.Envelope.Installation.ID,

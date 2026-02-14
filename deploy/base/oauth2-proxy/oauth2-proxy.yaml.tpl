@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: oauth2-proxy
 spec:
-  replicas: 1
+  replicas: ${CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS}
   selector:
     matchLabels:
       app.kubernetes.io/name: oauth2-proxy

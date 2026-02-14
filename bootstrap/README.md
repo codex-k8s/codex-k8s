@@ -16,9 +16,9 @@
 - применяет baseline `NetworkPolicy` (platform namespace + labels для `system/platform` зон);
 - включает host firewall hardening: с внешней сети доступны только `SSH`, `HTTP`, `HTTPS`;
 - запрашивает внешние креды (`GitHub fine-grained token`, `CODEXK8S_OPENAI_API_KEY`), внутренние секреты генерирует автоматически;
-- настраивает GitHub repository secrets/variables для staging deploy workflow в platform repo (`CODEXK8S_GITHUB_REPO`);
+- настраивает GitHub repository secrets/variables для bootstrap/runtime конфигурации platform repo (`CODEXK8S_GITHUB_REPO`);
 - создаёт или обновляет GitHub webhook и каталог labels в platform repo (`CODEXK8S_GITHUB_REPO`) и, если задан отдельный `CODEXK8S_FIRST_PROJECT_GITHUB_REPO`, дополнительно синхронизирует webhook/labels там;
-- устанавливает ARC controller и runner scale set для staging deploy workflow.
+- разворачивает platform stack через Kubernetes API без зависимости от GitHub deploy workflows.
 
 ## Быстрый запуск
 
@@ -61,10 +61,10 @@ go run ./cmd/codex-bootstrap bootstrap \
 
 - Скрипты — каркас первого этапа. Перед production обязательны hardening и отдельный runbook.
 - `bootstrap/host/bootstrap_remote_staging.sh` может читать env из кастомного файла через `CODEXK8S_BOOTSTRAP_CONFIG_FILE`; по умолчанию используется `bootstrap/host/config.env`.
-- `CODEXK8S_GITHUB_REPO` — platform repo (репозиторий с кодом `codex-k8s` и workflow деплоя платформы).
+- `CODEXK8S_GITHUB_REPO` — platform repo (репозиторий с кодом `codex-k8s` и bootstrap/runtime metadata).
 - `CODEXK8S_FIRST_PROJECT_GITHUB_REPO` (опционально) — отдельный репозиторий первого подключаемого проекта, где bootstrap дополнительно создаёт webhook и каталог labels; если пусто, используется только `CODEXK8S_GITHUB_REPO` (dogfooding).
 - Platform secrets/variables (`CODEXK8S_*`) записываются только в `CODEXK8S_GITHUB_REPO`; в `CODEXK8S_FIRST_PROJECT_GITHUB_REPO` bootstrap не записывает platform secrets.
-- Для деплоя через GitHub Actions нужен `CODEXK8S_GITHUB_PAT` (fine-grained) с правами на repository actions/secrets/variables и чтение содержимого репозитория.
+- Для bootstrap нужен `CODEXK8S_GITHUB_PAT` (fine-grained) с правами на `administration` (webhooks/labels), `secrets` и `variables`.
 - Для staff UI и staff API требуется GitHub OAuth App:
   - создать на `https://github.com/settings/applications/new`;
   - `Homepage URL`: `https://<CODEXK8S_STAGING_DOMAIN>`;
@@ -80,7 +80,7 @@ go run ./cmd/codex-bootstrap bootstrap \
 - `CODEXK8S_GITHUB_WEBHOOK_SECRET` используется для валидации `X-Hub-Signature-256`; если переменная пуста, bootstrap генерирует значение автоматически.
 - `CODEXK8S_GITHUB_WEBHOOK_URL` (опционально) позволяет переопределить URL webhook; по умолчанию используется `https://<CODEXK8S_STAGING_DOMAIN>/api/v1/webhooks/github`.
 - `CODEXK8S_GITHUB_WEBHOOK_EVENTS` задаёт список событий webhook (comma-separated).
-- Workflow staging должен запускаться на `runs-on: <CODEXK8S_RUNNER_SCALE_SET_NAME>`.
+- `CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS` управляет replicas для platform `Deployment`-объектов (кроме PostgreSQL); для `ai-staging` и `production` по умолчанию `2`.
 - Worker-параметры (`CODEXK8S_WORKER_*`) также синхронизируются в GitHub Variables и применяются при deploy.
 - `CODEXK8S_LEARNING_MODE_DEFAULT` задаёт default для новых проектов (`true` в шаблоне; пустое значение = выключено).
 - В `bootstrap/host/config.env` используйте только переменные с префиксом `CODEXK8S_` для платформенных параметров и секретов.

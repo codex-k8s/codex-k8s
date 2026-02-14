@@ -22,7 +22,7 @@ metadata:
   labels:
     app.kubernetes.io/name: codex-k8s
 spec:
-  replicas: 1
+  replicas: ${CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS}
   selector:
     matchLabels:
       app.kubernetes.io/name: codex-k8s
@@ -143,7 +143,7 @@ metadata:
   labels:
     app.kubernetes.io/name: codex-k8s
 spec:
-  replicas: 1
+  replicas: ${CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS}
   selector:
     matchLabels:
       app.kubernetes.io/name: codex-k8s

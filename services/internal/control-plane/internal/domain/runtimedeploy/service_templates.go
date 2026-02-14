@@ -70,6 +70,21 @@ func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[
 	if strings.TrimSpace(vars["CODEXK8S_WORKER_JOB_IMAGE"]) == "" {
 		vars["CODEXK8S_WORKER_JOB_IMAGE"] = strings.TrimSpace(vars["CODEXK8S_AGENT_RUNNER_IMAGE"])
 	}
+	if strings.TrimSpace(vars["CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS"]) == "" {
+		vars["CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS"] = defaultPlatformDeploymentReplicas(params.TargetEnv)
+	}
+	if strings.TrimSpace(vars["CODEXK8S_WORKER_REPLICAS"]) == "" {
+		vars["CODEXK8S_WORKER_REPLICAS"] = vars["CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS"]
+	}
 
 	return vars
+}
+
+func defaultPlatformDeploymentReplicas(targetEnv string) string {
+	switch strings.ToLower(strings.TrimSpace(targetEnv)) {
+	case "ai-staging", "production", "prod":
+		return "2"
+	default:
+		return "1"
+	}
 }

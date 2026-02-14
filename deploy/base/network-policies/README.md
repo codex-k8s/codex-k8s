@@ -28,7 +28,6 @@ Platform baseline (по умолчанию в bootstrap):
 
 ```bash
 export CODEXK8S_STAGING_NAMESPACE=codex-k8s-ai-staging
-export CODEXK8S_RUNNER_NAMESPACE=actions-runner-staging
 export CODEXK8S_K8S_API_CIDR="<node-ip>/32"
 export CODEXK8S_K8S_API_PORT=6443
 bash deploy/scripts/apply_network_policy_baseline.sh

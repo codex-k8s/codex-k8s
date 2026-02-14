@@ -223,6 +223,73 @@ func TestIngestGitHubWebhook_PushMain_CreatesDeployOnlyAIStagingRun(t *testing.T
 	}
 }
 
+func TestIngestGitHubWebhook_PushMainFork_CreatesDeployOnlyProductionRun(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		FlowEvents: events,
+		Repos:      repos,
+	})
+
+	buildRef := "89abcdef0123456789abcdef0123456789abcdef"
+	payload := json.RawMessage(fmt.Sprintf(`{
+		"ref":"refs/heads/main",
+		"before":"0000000000000000000000000000000000000000",
+		"after":"%s",
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s-fork","name":"codex-k8s-fork","fork":true},
+		"sender":{"id":10,"login":"member"}
+	}`, buildRef))
+	cmd := IngestCommand{
+		CorrelationID: "delivery-push-main-fork-1",
+		DeliveryID:    "delivery-push-main-fork-1",
+		EventType:     string(webhookdomain.GitHubEventPush),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.Status != webhookdomain.IngestStatusAccepted || got.Duplicate {
+		t.Fatalf("unexpected result: %+v", got)
+	}
+	if got.RunID == "" {
+		t.Fatal("expected run id for push main deploy-only trigger")
+	}
+
+	var runPayload githubRunPayload
+	if err := json.Unmarshal(runs.last.RunPayload, &runPayload); err != nil {
+		t.Fatalf("unmarshal run payload: %v", err)
+	}
+	if got, want := runPayload.Runtime.TargetEnv, "production"; got != want {
+		t.Fatalf("unexpected runtime target env: got %q want %q", got, want)
+	}
+	if got := runPayload.Runtime.Namespace; got != "" {
+		t.Fatalf("expected empty runtime namespace for production deploy, got %q", got)
+	}
+	if got, want := runPayload.Runtime.BuildRef, buildRef; got != want {
+		t.Fatalf("unexpected runtime build ref: got %q want %q", got, want)
+	}
+	if !runPayload.Runtime.DeployOnly {
+		t.Fatal("expected runtime deploy_only=true for push main fork trigger")
+	}
+	if !runPayload.Repository.Fork {
+		t.Fatal("expected run payload repository.fork=true for fork repository")
+	}
+}
+
 func TestIngestGitHubWebhook_ClosedEvents_TriggersNamespaceCleanup(t *testing.T) {
 	t.Parallel()
 

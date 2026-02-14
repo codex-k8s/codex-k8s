@@ -19,7 +19,7 @@ metadata:
   labels:
     app.kubernetes.io/name: codex-k8s-registry
 spec:
-  replicas: 1
+  replicas: ${CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS}
   strategy:
     type: Recreate
   selector:
