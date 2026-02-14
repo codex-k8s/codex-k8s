@@ -253,6 +253,34 @@ Planned extension (Day6+):
 | lease_owner | text | yes |  |  | pod/run id |
 | lease_until | timestamptz | yes |  |  | |
 
+### Entity: runtime_deploy_tasks
+- Назначение: persisted desired/actual state для декларативного deploy-контура (`services.yaml`) с идемпотентным reconciler execution.
+- Важные инварианты: один deploy task на один `run_id`; lease-механизм предотвращает двойную параллельную обработку.
+- Поля:
+
+| Field | Type | Nullable | Default | Constraints | Notes |
+|---|---|---:|---|---|---|
+| run_id | uuid | no |  | pk, fk -> agent_runs(id) | one task per run |
+| runtime_mode | text | no | '' |  | requested runtime mode |
+| namespace | text | no | '' |  | desired namespace override |
+| target_env | text | no | '' |  | requested target env |
+| slot_no | int | no | 0 |  | slot index from run payload |
+| repository_full_name | text | no | '' |  | owner/repo |
+| services_yaml_path | text | no | '' |  | path hint from payload |
+| build_ref | text | no | '' |  | commit/branch ref for build |
+| deploy_only | bool | no | false |  | deploy-only run flag |
+| status | text | no | 'pending' | check enum | pending/running/succeeded/failed |
+| lease_owner | text | yes |  |  | reconciler instance id |
+| lease_until | timestamptz | yes |  |  | lease expiration |
+| attempts | int | no | 0 |  | reconcile attempts |
+| last_error | text | yes |  |  | last terminal failure details |
+| result_namespace | text | yes |  |  | effective namespace after render |
+| result_target_env | text | yes |  |  | effective env after render |
+| created_at | timestamptz | no | now() |  | |
+| updated_at | timestamptz | no | now() |  | |
+| started_at | timestamptz | yes |  |  | first claim timestamp |
+| finished_at | timestamptz | yes |  |  | terminal timestamp |
+
 ### Entity: flow_events
 - Назначение: аудит системных/агентных/человеческих действий.
 - Важные инварианты: append-only.

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
+	valuetypes "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/types/value"
 )
 
 func TestResolveRunExecutionContext_FullEnvForDevTrigger(t *testing.T) {
@@ -59,11 +60,48 @@ func TestResolveRunExecutionContext_CodeOnlyWithoutTrigger(t *testing.T) {
 		"codex-issue",
 	)
 
+	assertCodeOnlyWithoutNamespace(t, ctx)
+}
+
+func TestResolveRunExecutionContext_RuntimeModeFromPayloadHasPriority(t *testing.T) {
+	t.Parallel()
+
+	ctx := resolveRunExecutionContext(
+		"run-dev-code-only",
+		"project-1",
+		json.RawMessage(`{"runtime":{"mode":"code-only"},"trigger":{"kind":"dev"},"issue":{"number":99}}`),
+		"codex-issue",
+	)
+
+	assertCodeOnlyWithoutNamespace(t, ctx)
+}
+
+func assertCodeOnlyWithoutNamespace(t *testing.T, ctx valuetypes.RunExecutionContext) {
+	t.Helper()
+
 	if ctx.RuntimeMode != agentdomain.RuntimeModeCodeOnly {
 		t.Fatalf("expected code-only runtime mode, got %q", ctx.RuntimeMode)
 	}
 	if ctx.Namespace != "" {
-		t.Fatalf("expected empty namespace for code-only run, got %q", ctx.Namespace)
+		t.Fatalf("expected empty namespace for code-only runtime, got %q", ctx.Namespace)
+	}
+}
+
+func TestResolveRunExecutionContext_UsesRuntimeNamespaceOverride(t *testing.T) {
+	t.Parallel()
+
+	ctx := resolveRunExecutionContext(
+		"run-deploy",
+		"project-1",
+		json.RawMessage(`{"runtime":{"mode":"full-env","namespace":"codex-k8s-ai-staging","deploy_only":true}}`),
+		"codex-issue",
+	)
+
+	if ctx.RuntimeMode != agentdomain.RuntimeModeFullEnv {
+		t.Fatalf("expected full-env runtime mode, got %q", ctx.RuntimeMode)
+	}
+	if got, want := ctx.Namespace, "codex-k8s-ai-staging"; got != want {
+		t.Fatalf("expected namespace override %q, got %q", want, got)
 	}
 }
 

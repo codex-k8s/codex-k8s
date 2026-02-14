@@ -30,7 +30,10 @@ func resolveRunExecutionContext(runID string, projectID string, runPayload json.
 	}
 
 	if mode == agentdomain.RuntimeModeFullEnv {
-		context.Namespace = buildRunNamespace(namespacePrefix, projectID, runID, context.IssueNumber)
+		context.Namespace = resolveRuntimeNamespace(meta)
+		if context.Namespace == "" {
+			context.Namespace = buildRunNamespace(namespacePrefix, projectID, runID, context.IssueNumber)
+		}
 	}
 	return context
 }
@@ -49,6 +52,12 @@ func parseRunRuntimePayload(raw json.RawMessage) querytypes.RunRuntimePayload {
 
 // resolveRuntimeMode maps trigger kind to execution profile with code-only fallback.
 func resolveRuntimeMode(payload querytypes.RunRuntimePayload) agentdomain.RuntimeMode {
+	if payload.Runtime != nil {
+		explicitMode := strings.TrimSpace(payload.Runtime.Mode)
+		if explicitMode != "" {
+			return agentdomain.ParseRuntimeMode(explicitMode)
+		}
+	}
 	if payload.Trigger == nil {
 		return agentdomain.RuntimeModeCodeOnly
 	}
@@ -67,6 +76,17 @@ func resolveIssueNumber(payload querytypes.RunRuntimePayload) int64 {
 		return 0
 	}
 	return payload.Issue.Number
+}
+
+func resolveRuntimeNamespace(payload querytypes.RunRuntimePayload) string {
+	if payload.Runtime == nil {
+		return ""
+	}
+	namespace := sanitizeDNSLabelValue(payload.Runtime.Namespace)
+	if namespace == "" {
+		return ""
+	}
+	return namespace
 }
 
 // buildRunNamespace composes deterministic DNS-safe namespace name for full-env runs.

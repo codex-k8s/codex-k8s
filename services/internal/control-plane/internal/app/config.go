@@ -54,6 +54,26 @@ type Config struct {
 	RunOpsLabel          string   `env:"CODEXK8S_RUN_OPS_LABEL" envDefault:"run:ops"`
 	RunSelfImproveLabel  string   `env:"CODEXK8S_RUN_SELF_IMPROVE_LABEL" envDefault:"run:self-improve"`
 	RunRethinkLabel      string   `env:"CODEXK8S_RUN_RETHINK_LABEL" envDefault:"run:rethink"`
+	// ServicesConfigPath points to services.yaml used for webhook runtime policy.
+	ServicesConfigPath string `env:"CODEXK8S_SERVICES_CONFIG_PATH" envDefault:"services.yaml"`
+	// ServicesConfigEnv selects environment context when rendering services.yaml.
+	ServicesConfigEnv string `env:"CODEXK8S_SERVICES_CONFIG_ENV" envDefault:"ai-staging"`
+	// RepositoryRoot points to repository root used for services.yaml manifests and build templates.
+	RepositoryRoot string `env:"CODEXK8S_REPOSITORY_ROOT" envDefault:"."`
+	// RuntimeDeployRolloutTimeout controls readiness wait timeout for applied workloads.
+	RuntimeDeployRolloutTimeout string `env:"CODEXK8S_RUNTIME_DEPLOY_ROLLOUT_TIMEOUT" envDefault:"20m"`
+	// RuntimeDeployKanikoTimeout controls timeout for kaniko build jobs.
+	RuntimeDeployKanikoTimeout string `env:"CODEXK8S_RUNTIME_DEPLOY_KANIKO_TIMEOUT" envDefault:"30m"`
+	// RuntimeDeployWaitPollInterval controls polling interval for waiting on deploy task completion.
+	RuntimeDeployWaitPollInterval string `env:"CODEXK8S_RUNTIME_DEPLOY_WAIT_POLL_INTERVAL" envDefault:"2s"`
+	// RuntimeDeployReconcileInterval controls background deploy reconciler tick interval.
+	RuntimeDeployReconcileInterval string `env:"CODEXK8S_RUNTIME_DEPLOY_RECONCILE_INTERVAL" envDefault:"3s"`
+	// RuntimeDeployLeaseTTL controls deploy task lease duration for reconciler lock.
+	RuntimeDeployLeaseTTL string `env:"CODEXK8S_RUNTIME_DEPLOY_LEASE_TTL" envDefault:"90m"`
+	// RuntimeDeployWorkerID identifies current deploy reconciler instance.
+	RuntimeDeployWorkerID string `env:"CODEXK8S_RUNTIME_DEPLOY_WORKER_ID"`
+	// RuntimeDeployFieldManager is a server-side apply field manager name.
+	RuntimeDeployFieldManager string `env:"CODEXK8S_RUNTIME_DEPLOY_FIELD_MANAGER" envDefault:"codex-k8s-control-plane"`
 	// GitHubPAT is platform-scoped GitHub token used for repository/project management paths.
 	GitHubPAT string `env:"CODEXK8S_GITHUB_PAT"`
 	// GitBotToken is runtime GitHub bot token used for comments/labels and run messaging paths.

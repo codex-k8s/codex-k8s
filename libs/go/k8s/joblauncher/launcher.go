@@ -149,22 +149,6 @@ type Config struct {
 	RunCredentialsSecretName string
 	// RunResourceQuotaPods defines max pod count in runtime namespace.
 	RunResourceQuotaPods int64
-	// RunResourceRequestsCPU defines requests.cpu hard quota in runtime namespace.
-	RunResourceRequestsCPU string
-	// RunResourceRequestsMemory defines requests.memory hard quota in runtime namespace.
-	RunResourceRequestsMemory string
-	// RunResourceLimitsCPU defines limits.cpu hard quota in runtime namespace.
-	RunResourceLimitsCPU string
-	// RunResourceLimitsMemory defines limits.memory hard quota in runtime namespace.
-	RunResourceLimitsMemory string
-	// RunDefaultRequestCPU defines default container CPU request in runtime namespace.
-	RunDefaultRequestCPU string
-	// RunDefaultRequestMemory defines default container memory request in runtime namespace.
-	RunDefaultRequestMemory string
-	// RunDefaultLimitCPU defines default container CPU limit in runtime namespace.
-	RunDefaultLimitCPU string
-	// RunDefaultLimitMemory defines default container memory limit in runtime namespace.
-	RunDefaultLimitMemory string
 }
 
 // Launcher creates and reconciles run Jobs in Kubernetes.
@@ -225,30 +209,6 @@ func NewForClient(cfg Config, client kubernetes.Interface) *Launcher {
 	}
 	if cfg.RunResourceQuotaPods <= 0 {
 		cfg.RunResourceQuotaPods = 20
-	}
-	if strings.TrimSpace(cfg.RunResourceRequestsCPU) == "" {
-		cfg.RunResourceRequestsCPU = "4"
-	}
-	if strings.TrimSpace(cfg.RunResourceRequestsMemory) == "" {
-		cfg.RunResourceRequestsMemory = "8Gi"
-	}
-	if strings.TrimSpace(cfg.RunResourceLimitsCPU) == "" {
-		cfg.RunResourceLimitsCPU = "8"
-	}
-	if strings.TrimSpace(cfg.RunResourceLimitsMemory) == "" {
-		cfg.RunResourceLimitsMemory = "16Gi"
-	}
-	if strings.TrimSpace(cfg.RunDefaultRequestCPU) == "" {
-		cfg.RunDefaultRequestCPU = "250m"
-	}
-	if strings.TrimSpace(cfg.RunDefaultRequestMemory) == "" {
-		cfg.RunDefaultRequestMemory = "256Mi"
-	}
-	if strings.TrimSpace(cfg.RunDefaultLimitCPU) == "" {
-		cfg.RunDefaultLimitCPU = "1"
-	}
-	if strings.TrimSpace(cfg.RunDefaultLimitMemory) == "" {
-		cfg.RunDefaultLimitMemory = "1Gi"
 	}
 
 	return &Launcher{cfg: cfg, client: client}

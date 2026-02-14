@@ -28,6 +28,7 @@ approvals:
 - Полная миграция staff-консоли на `Vuetify` (Vue 3):
   - полноценный app-shell на `VApp` + `VAppBar` + `VNavigationDrawer` + `VMain`;
   - header с логотипом `codex-k8s` (источник: `https://github.com/codex-k8s/codexctl/blob/5a0825435d9eaad9f9e52e745f9dcc5d683e59e6/docs/media/logo.png`) и базовыми глобальными действиями;
+  - favicon из того же источника (преобразовать в .ico при необходимости);
   - layout/navigation/table/form patterns для админ-сценариев;
   - унифицированные компоненты для run list, run details, wait queue, approvals.
 - Обязательное покрытие ключевых UI-элементов `Vuetify` в первом production-ready варианте консоли:

@@ -1,11 +1,154 @@
-project: codex-k8s
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: codex-k8s
 
-# TODO:
-# - описать deploy группами для environments: dev / ai-staging / production
-# - описать сервисы external/staff/internal/jobs/dev
-# - описать codex-k8s как монорепо-проект с единым services.yaml
+spec:
+  project: codex-k8s
 
-environments:
-  dev: {}
-  ai-staging: {}
-  production: {}
+  components:
+    - name: hot-reload-defaults
+      serviceDefaults:
+        codeUpdateStrategy: '{{ ternary (eq .Env "production") "restart" "hot-reload" }}'
+
+  environments:
+    dev:
+      namespaceTemplate: "{{ .Project }}-dev"
+    ai-staging:
+      namespaceTemplate: "{{ .Project }}-ai-staging"
+    ai:
+      from: ai-staging
+      namespaceTemplate: "{{ .Project }}-dev-{{ .Slot }}"
+    ai-repair:
+      from: ai-staging
+      namespaceTemplate: "{{ .Project }}-ai-staging"
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+
+  webhookRuntime:
+    defaultMode: full-env
+    triggerModes:
+      intake: code-only
+      intake_revise: code-only
+      vision: code-only
+      vision_revise: code-only
+      prd: code-only
+      prd_revise: code-only
+      self_improve: code-only
+
+  images:
+    api-gateway:
+      type: build
+      repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/api-gateway" }}'
+      tagTemplate: '{{ .Env }}-{{ default (envOr "CODEXK8S_BUILD_TAG" "") "latest" }}'
+      dockerfile: services/external/api-gateway/Dockerfile
+      context: .
+
+    control-plane:
+      type: build
+      repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/control-plane" }}'
+      tagTemplate: '{{ .Env }}-{{ default (envOr "CODEXK8S_BUILD_TAG" "") "latest" }}'
+      dockerfile: services/internal/control-plane/Dockerfile
+      context: .
+
+    worker:
+      type: build
+      repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/worker" }}'
+      tagTemplate: '{{ .Env }}-{{ default (envOr "CODEXK8S_BUILD_TAG" "") "latest" }}'
+      dockerfile: services/jobs/worker/Dockerfile
+      context: .
+
+    agent-runner:
+      type: build
+      repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_AGENT_RUNNER_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/agent-runner" }}'
+      tagTemplate: '{{ .Env }}-{{ default (envOr "CODEXK8S_BUILD_TAG" "") "latest" }}'
+      dockerfile: services/jobs/agent-runner/Dockerfile
+      context: .
+
+    web-console:
+      type: build
+      repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/web-console" }}'
+      tagTemplate: '{{ .Env }}-{{ default (envOr "CODEXK8S_BUILD_TAG" "") "latest" }}'
+      dockerfile: services/staff/web-console/Dockerfile
+      context: services/staff/web-console
+
+  orchestration:
+    deployOrder:
+      - stateful
+      - migrations
+      - internal
+      - edge
+      - frontend
+    cleanupPolicy:
+      fullEnvIdleTTL: 8h
+
+  infrastructure:
+    - name: namespace
+      manifests:
+        - path: deploy/base/namespace/namespace.yaml.tpl
+
+    - name: postgres
+      dependsOn:
+        - namespace
+      manifests:
+        - path: deploy/base/postgres/postgres.yaml.tpl
+
+    - name: registry
+      dependsOn:
+        - namespace
+      when: '{{ ternary (eq .Env "ai") "false" "true" }}'
+      manifests:
+        - path: deploy/base/registry/registry.yaml.tpl
+
+    - name: cert-manager-clusterissuer
+      when: '{{ ternary (eq .Env "ai") "false" "true" }}'
+      manifests:
+        - path: deploy/base/cert-manager/clusterissuer.yaml.tpl
+
+  services:
+    - name: codex-k8s-migrate
+      use:
+        - hot-reload-defaults
+      deployGroup: migrations
+      dependsOn:
+        - postgres
+      manifests:
+        - path: deploy/base/codex-k8s/migrate-job.yaml.tpl
+
+    - name: codex-k8s-app
+      use:
+        - hot-reload-defaults
+      deployGroup: internal
+      dependsOn:
+        - postgres
+      manifests:
+        - path: deploy/base/codex-k8s/app.yaml.tpl
+
+    - name: oauth2-proxy
+      use:
+        - hot-reload-defaults
+      deployGroup: edge
+      dependsOn:
+        - codex-k8s-app
+      when: '{{ ternary (eq .Env "ai") "false" "true" }}'
+      manifests:
+        - path: deploy/base/oauth2-proxy/oauth2-proxy.yaml.tpl
+
+    - name: web-console
+      use:
+        - hot-reload-defaults
+      deployGroup: frontend
+      dependsOn:
+        - codex-k8s-app
+      manifests:
+        - path: deploy/base/web-console/web-console.yaml.tpl
+
+    - name: ingress
+      use:
+        - hot-reload-defaults
+      deployGroup: edge
+      dependsOn:
+        - oauth2-proxy
+      when: '{{ ternary (eq .Env "ai") "false" "true" }}'
+      manifests:
+        - path: deploy/base/codex-k8s/ingress.yaml.tpl

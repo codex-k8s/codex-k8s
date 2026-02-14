@@ -45,6 +45,27 @@ func Run() error {
 	if slotLeaseTTL <= 0 {
 		return fmt.Errorf("CODEXK8S_WORKER_SLOT_LEASE_TTL must be > 0")
 	}
+	tickTimeout, err := time.ParseDuration(cfg.TickTimeout)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_WORKER_TICK_TIMEOUT: %w", err)
+	}
+	if tickTimeout <= 0 {
+		return fmt.Errorf("CODEXK8S_WORKER_TICK_TIMEOUT must be > 0")
+	}
+	runtimePrepareRetryTimeout, err := time.ParseDuration(cfg.RuntimePrepareRetryTimeout)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_TIMEOUT: %w", err)
+	}
+	if runtimePrepareRetryTimeout <= 0 {
+		return fmt.Errorf("CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_TIMEOUT must be > 0")
+	}
+	runtimePrepareRetryInterval, err := time.ParseDuration(cfg.RuntimePrepareRetryInterval)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_INTERVAL: %w", err)
+	}
+	if runtimePrepareRetryInterval <= 0 {
+		return fmt.Errorf("CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_INTERVAL must be > 0")
+	}
 
 	learningDefault := false
 	if strings.TrimSpace(cfg.LearningModeDefault) != "" {
@@ -82,28 +103,20 @@ func Run() error {
 	events := floweventrepo.NewRepository(db)
 	feedback := learningfeedbackrepo.NewRepository(db)
 	launcher, err := k8slauncher.NewAdapter(libslauncher.Config{
-		KubeconfigPath:            cfg.KubeconfigPath,
-		Namespace:                 cfg.K8sNamespace,
-		Image:                     cfg.JobImage,
-		Command:                   cfg.JobCommand,
-		TTLSeconds:                cfg.JobTTLSeconds,
-		BackoffLimit:              cfg.JobBackoffLimit,
-		ActiveDeadlineSeconds:     cfg.JobActiveDeadlineSeconds,
-		RunServiceAccountName:     cfg.RunServiceAccountName,
-		RunRoleName:               cfg.RunRoleName,
-		RunRoleBindingName:        cfg.RunRoleBindingName,
-		RunResourceQuotaName:      cfg.RunResourceQuotaName,
-		RunLimitRangeName:         cfg.RunLimitRangeName,
-		RunCredentialsSecretName:  cfg.RunCredentialsSecretName,
-		RunResourceQuotaPods:      cfg.RunResourceQuotaPods,
-		RunResourceRequestsCPU:    cfg.RunResourceRequestsCPU,
-		RunResourceRequestsMemory: cfg.RunResourceRequestsMemory,
-		RunResourceLimitsCPU:      cfg.RunResourceLimitsCPU,
-		RunResourceLimitsMemory:   cfg.RunResourceLimitsMemory,
-		RunDefaultRequestCPU:      cfg.RunDefaultRequestCPU,
-		RunDefaultRequestMemory:   cfg.RunDefaultRequestMemory,
-		RunDefaultLimitCPU:        cfg.RunDefaultLimitCPU,
-		RunDefaultLimitMemory:     cfg.RunDefaultLimitMemory,
+		KubeconfigPath:           cfg.KubeconfigPath,
+		Namespace:                cfg.K8sNamespace,
+		Image:                    cfg.JobImage,
+		Command:                  cfg.JobCommand,
+		TTLSeconds:               cfg.JobTTLSeconds,
+		BackoffLimit:             cfg.JobBackoffLimit,
+		ActiveDeadlineSeconds:    cfg.JobActiveDeadlineSeconds,
+		RunServiceAccountName:    cfg.RunServiceAccountName,
+		RunRoleName:              cfg.RunRoleName,
+		RunRoleBindingName:       cfg.RunRoleBindingName,
+		RunResourceQuotaName:     cfg.RunResourceQuotaName,
+		RunLimitRangeName:        cfg.RunLimitRangeName,
+		RunCredentialsSecretName: cfg.RunCredentialsSecretName,
+		RunResourceQuotaPods:     cfg.RunResourceQuotaPods,
 	})
 	if err != nil {
 		return fmt.Errorf("create kubernetes launcher: %w", err)
@@ -115,6 +128,8 @@ func Run() error {
 		RunningCheckLimit:           cfg.RunningCheckLimit,
 		SlotsPerProject:             cfg.SlotsPerProject,
 		SlotLeaseTTL:                slotLeaseTTL,
+		RuntimePrepareRetryTimeout:  runtimePrepareRetryTimeout,
+		RuntimePrepareRetryInterval: runtimePrepareRetryInterval,
 		ProjectLearningModeDefault:  learningDefault,
 		RunNamespacePrefix:          cfg.RunNamespacePrefix,
 		CleanupFullEnvNamespace:     cfg.RunNamespaceCleanup,
@@ -143,13 +158,14 @@ func Run() error {
 		AIReasoningHighLabel:        cfg.AIReasoningHighLabel,
 		AIReasoningExtraHighLabel:   cfg.AIReasoningExtraHighLabel,
 	}, worker.Dependencies{
-		Runs:           runs,
-		Events:         events,
-		Feedback:       feedback,
-		Launcher:       launcher,
-		MCPTokenIssuer: controlPlane,
-		RunStatus:      controlPlane,
-		Logger:         logger,
+		Runs:            runs,
+		Events:          events,
+		Feedback:        feedback,
+		Launcher:        launcher,
+		RuntimePreparer: controlPlane,
+		MCPTokenIssuer:  controlPlane,
+		RunStatus:       controlPlane,
+		Logger:          logger,
 	})
 
 	ctx, stop := signal.NotifyContext(appCtx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
@@ -170,7 +186,7 @@ func Run() error {
 			logger.Info("worker stopped")
 			return nil
 		case <-ticker.C:
-			tickCtx, cancel := context.WithTimeout(ctx, pollInterval)
+			tickCtx, cancel := context.WithTimeout(ctx, tickTimeout)
 			err := service.Tick(tickCtx)
 			cancel()
 			if err != nil {

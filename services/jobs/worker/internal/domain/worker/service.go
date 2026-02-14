@@ -31,6 +31,10 @@ type Config struct {
 	SlotsPerProject int
 	// SlotLeaseTTL defines maximum duration of slot ownership.
 	SlotLeaseTTL time.Duration
+	// RuntimePrepareRetryTimeout limits total retry time for runtime deploy preparation.
+	RuntimePrepareRetryTimeout time.Duration
+	// RuntimePrepareRetryInterval defines delay between retryable runtime deploy attempts.
+	RuntimePrepareRetryInterval time.Duration
 
 	// ProjectLearningModeDefault is applied when the worker auto-creates projects from webhook payloads.
 	ProjectLearningModeDefault bool
@@ -98,6 +102,8 @@ type Dependencies struct {
 	Feedback learningfeedbackrepo.Repository
 	// Launcher starts and reconciles Kubernetes jobs.
 	Launcher Launcher
+	// RuntimePreparer prepares runtime environment stack before run job launch.
+	RuntimePreparer RuntimeEnvironmentPreparer
 	// MCPTokenIssuer issues short-lived MCP token for run pods.
 	MCPTokenIssuer MCPTokenIssuer
 	// RunStatus updates one run-bound issue status comment.
@@ -113,6 +119,7 @@ type Service struct {
 	events    floweventrepo.Repository
 	feedback  learningfeedbackrepo.Repository
 	launcher  Launcher
+	deployer  RuntimeEnvironmentPreparer
 	mcpTokens MCPTokenIssuer
 	runStatus RunStatusNotifier
 	logger    *slog.Logger
@@ -133,6 +140,12 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	}
 	if cfg.SlotLeaseTTL <= 0 {
 		cfg.SlotLeaseTTL = 5 * time.Minute
+	}
+	if cfg.RuntimePrepareRetryTimeout <= 0 {
+		cfg.RuntimePrepareRetryTimeout = 30 * time.Minute
+	}
+	if cfg.RuntimePrepareRetryInterval <= 0 {
+		cfg.RuntimePrepareRetryInterval = 3 * time.Second
 	}
 	if cfg.WorkerID == "" {
 		cfg.WorkerID = defaultWorkerID
@@ -199,6 +212,9 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if deps.MCPTokenIssuer == nil {
 		deps.MCPTokenIssuer = noopMCPTokenIssuer{}
 	}
+	if deps.RuntimePreparer == nil {
+		deps.RuntimePreparer = noopRuntimeEnvironmentPreparer{}
+	}
 	if deps.RunStatus == nil {
 		deps.RunStatus = noopRunStatusNotifier{}
 	}
@@ -209,6 +225,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 		events:    deps.Events,
 		feedback:  deps.Feedback,
 		launcher:  deps.Launcher,
+		deployer:  deps.RuntimePreparer,
 		mcpTokens: deps.MCPTokenIssuer,
 		runStatus: deps.RunStatus,
 		logger:    deps.Logger,
@@ -309,7 +326,10 @@ func (s *Service) launchPending(ctx context.Context) error {
 
 		execution := resolveRunExecutionContext(claimed.RunID, claimed.ProjectID, claimed.RunPayload, s.cfg.RunNamespacePrefix)
 		runningRun := runningRunFromClaimed(claimed)
-		if execution.RuntimeMode != agentdomain.RuntimeModeFullEnv {
+		prepareParams := buildPrepareRunEnvironmentParams(claimed, execution)
+		deployOnlyRun := prepareParams.DeployOnly
+
+		if execution.RuntimeMode != agentdomain.RuntimeModeFullEnv && !deployOnlyRun {
 			if err := s.finishRun(ctx, finishRunParams{
 				Run:       runningRun,
 				Execution: execution,
@@ -318,6 +338,33 @@ func (s *Service) launchPending(ctx context.Context) error {
 				Ref:       s.launcher.JobRef(claimed.RunID, execution.Namespace),
 			}); err != nil {
 				return fmt.Errorf("finish code-only run: %w", err)
+			}
+			continue
+		}
+
+		prepared, err := s.prepareRuntimeEnvironmentWithRetry(ctx, prepareParams)
+		if err != nil {
+			s.logger.Error("prepare runtime environment failed", "run_id", claimed.RunID, "err", err)
+			if finishErr := s.finishLaunchFailedRun(ctx, runningRun, execution, err, runFailureReasonRuntimeDeployFailed); finishErr != nil {
+				return fmt.Errorf("mark run failed after runtime deploy error: %w", finishErr)
+			}
+			continue
+		}
+
+		launchExecution := execution
+		if resolvedNamespace := sanitizeDNSLabelValue(prepared.Namespace); resolvedNamespace != "" {
+			launchExecution.Namespace = resolvedNamespace
+		}
+
+		if deployOnlyRun {
+			if err := s.finishRun(ctx, finishRunParams{
+				Run:                  runningRun,
+				Execution:            launchExecution,
+				Status:               rundomain.StatusSucceeded,
+				EventType:            floweventdomain.EventTypeRunSucceeded,
+				SkipNamespaceCleanup: true,
+			}); err != nil {
+				return fmt.Errorf("finish deploy-only run: %w", err)
 			}
 			continue
 		}
@@ -339,10 +386,10 @@ func (s *Service) launchPending(ctx context.Context) error {
 			}
 			if finishErr := s.finishRun(ctx, finishRunParams{
 				Run:       runningRunFromClaimed(claimed),
-				Execution: execution,
+				Execution: launchExecution,
 				Status:    rundomain.StatusFailed,
 				EventType: eventType,
-				Ref:       s.launcher.JobRef(claimed.RunID, execution.Namespace),
+				Ref:       s.launcher.JobRef(claimed.RunID, launchExecution.Namespace),
 				Extra: runFinishedEventExtra{
 					Error:  err.Error(),
 					Reason: reason,
@@ -357,19 +404,19 @@ func (s *Service) launchPending(ctx context.Context) error {
 			RunID:         claimed.RunID,
 			ProjectID:     claimed.ProjectID,
 			CorrelationID: claimed.CorrelationID,
-			RuntimeMode:   execution.RuntimeMode,
-			Namespace:     execution.Namespace,
+			RuntimeMode:   launchExecution.RuntimeMode,
+			Namespace:     launchExecution.Namespace,
 		}
-		if execution.RuntimeMode == agentdomain.RuntimeModeFullEnv {
+		if launchExecution.RuntimeMode == agentdomain.RuntimeModeFullEnv {
 			if err := s.launcher.EnsureNamespace(ctx, namespaceSpec); err != nil {
 				s.logger.Error(
 					"prepare run namespace failed",
 					"run_id", claimed.RunID,
-					"namespace", execution.Namespace,
-					"runtime_mode", execution.RuntimeMode,
+					"namespace", launchExecution.Namespace,
+					"runtime_mode", launchExecution.RuntimeMode,
 					"err", err,
 				)
-				if finishErr := s.finishLaunchFailedRun(ctx, runningRun, execution, err, runFailureReasonNamespacePrepareFailed); finishErr != nil {
+				if finishErr := s.finishLaunchFailedRun(ctx, runningRun, launchExecution, err, runFailureReasonNamespacePrepareFailed); finishErr != nil {
 					return fmt.Errorf("mark run failed after namespace prepare error: %w", finishErr)
 				}
 				continue
@@ -380,7 +427,7 @@ func (s *Service) launchPending(ctx context.Context) error {
 				EventType:     floweventdomain.EventTypeRunNamespacePrepared,
 				RunID:         claimed.RunID,
 				ProjectID:     claimed.ProjectID,
-				Execution:     execution,
+				Execution:     launchExecution,
 			}); err != nil {
 				return fmt.Errorf("insert run.namespace.prepared event: %w", err)
 			}
@@ -388,12 +435,12 @@ func (s *Service) launchPending(ctx context.Context) error {
 
 		issuedMCPToken, err := s.mcpTokens.IssueRunMCPToken(ctx, IssueMCPTokenParams{
 			RunID:       claimed.RunID,
-			Namespace:   execution.Namespace,
-			RuntimeMode: execution.RuntimeMode,
+			Namespace:   launchExecution.Namespace,
+			RuntimeMode: launchExecution.RuntimeMode,
 		})
 		if err != nil {
 			s.logger.Error("issue run mcp token failed", "run_id", claimed.RunID, "err", err)
-			if finishErr := s.finishLaunchFailedRun(ctx, runningRun, execution, err, runFailureReasonMCPTokenIssueFailed); finishErr != nil {
+			if finishErr := s.finishLaunchFailedRun(ctx, runningRun, launchExecution, err, runFailureReasonMCPTokenIssueFailed); finishErr != nil {
 				return fmt.Errorf("mark run failed after mcp token issue error: %w", finishErr)
 			}
 			continue
@@ -404,8 +451,8 @@ func (s *Service) launchPending(ctx context.Context) error {
 			CorrelationID:          claimed.CorrelationID,
 			ProjectID:              claimed.ProjectID,
 			SlotNo:                 claimed.SlotNo,
-			RuntimeMode:            execution.RuntimeMode,
-			Namespace:              execution.Namespace,
+			RuntimeMode:            launchExecution.RuntimeMode,
+			Namespace:              launchExecution.Namespace,
 			ControlPlaneGRPCTarget: s.cfg.ControlPlaneGRPCTarget,
 			MCPBaseURL:             s.cfg.ControlPlaneMCPBaseURL,
 			MCPBearerToken:         issuedMCPToken.Token,
@@ -435,7 +482,7 @@ func (s *Service) launchPending(ctx context.Context) error {
 			s.logger.Error("launch run job failed", "run_id", claimed.RunID, "err", err)
 			if finishErr := s.finishRun(ctx, finishRunParams{
 				Run:       runningRun,
-				Execution: execution,
+				Execution: launchExecution,
 				Status:    rundomain.StatusFailed,
 				EventType: floweventdomain.EventTypeRunFailedLaunchError,
 				Ref:       ref,
@@ -459,7 +506,7 @@ func (s *Service) launchPending(ctx context.Context) error {
 				SlotNo:               claimed.SlotNo,
 				JobName:              ref.Name,
 				JobNamespace:         ref.Namespace,
-				RuntimeMode:          execution.RuntimeMode,
+				RuntimeMode:          launchExecution.RuntimeMode,
 				RepositoryFullName:   agentCtx.RepositoryFullName,
 				AgentKey:             agentCtx.AgentKey,
 				IssueNumber:          agentCtx.IssueNumber,
@@ -484,8 +531,8 @@ func (s *Service) launchPending(ctx context.Context) error {
 			Phase:           RunStatusPhaseStarted,
 			JobName:         ref.Name,
 			JobNamespace:    ref.Namespace,
-			RuntimeMode:     string(execution.RuntimeMode),
-			Namespace:       execution.Namespace,
+			RuntimeMode:     string(launchExecution.RuntimeMode),
+			Namespace:       launchExecution.Namespace,
 			TriggerKind:     agentCtx.TriggerKind,
 			PromptLocale:    agentCtx.PromptTemplateLocale,
 			Model:           agentCtx.Model,
@@ -577,7 +624,8 @@ func (s *Service) finishRun(ctx context.Context, params finishRunParams) error {
 	}
 
 	if params.Execution.RuntimeMode == agentdomain.RuntimeModeFullEnv &&
-		params.Execution.Namespace != "" {
+		params.Execution.Namespace != "" &&
+		!params.SkipNamespaceCleanup {
 		debugPolicy := s.resolveRunDebugPolicy(params.Run.RunPayload)
 		if debugPolicy.SkipCleanup {
 			if err := s.insertNamespaceLifecycleEvent(ctx, namespaceLifecycleEventParams{

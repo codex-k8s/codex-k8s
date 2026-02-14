@@ -1,0 +1,52 @@
+-- name: runtimedeploytask__insert_pending :one
+INSERT INTO runtime_deploy_tasks (
+    run_id,
+    runtime_mode,
+    namespace,
+    target_env,
+    slot_no,
+    repository_full_name,
+    services_yaml_path,
+    build_ref,
+    deploy_only,
+    status,
+    attempts,
+    created_at,
+    updated_at
+)
+VALUES (
+    $1::uuid,
+    $2,
+    $3,
+    $4,
+    $5,
+    $6,
+    $7,
+    $8,
+    $9,
+    'pending',
+    0,
+    NOW(),
+    NOW()
+)
+RETURNING
+    run_id::text AS run_id,
+    runtime_mode,
+    namespace,
+    target_env,
+    slot_no,
+    repository_full_name,
+    services_yaml_path,
+    build_ref,
+    deploy_only,
+    status,
+    COALESCE(lease_owner, '') AS lease_owner,
+    lease_until,
+    attempts,
+    COALESCE(last_error, '') AS last_error,
+    COALESCE(result_namespace, '') AS result_namespace,
+    COALESCE(result_target_env, '') AS result_target_env,
+    created_at,
+    updated_at,
+    started_at,
+    finished_at;

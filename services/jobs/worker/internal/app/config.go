@@ -21,6 +21,12 @@ type Config struct {
 	SlotsPerProject int `env:"CODEXK8S_WORKER_SLOTS_PER_PROJECT" envDefault:"2"`
 	// SlotLeaseTTL controls for how long slot is leased before expiration.
 	SlotLeaseTTL string `env:"CODEXK8S_WORKER_SLOT_LEASE_TTL" envDefault:"10m"`
+	// TickTimeout limits one worker Tick execution duration.
+	TickTimeout string `env:"CODEXK8S_WORKER_TICK_TIMEOUT" envDefault:"45m"`
+	// RuntimePrepareRetryTimeout limits total retry time for runtime deploy preparation RPC.
+	RuntimePrepareRetryTimeout string `env:"CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_TIMEOUT" envDefault:"30m"`
+	// RuntimePrepareRetryInterval defines delay between retryable runtime deploy preparation attempts.
+	RuntimePrepareRetryInterval string `env:"CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_INTERVAL" envDefault:"3s"`
 
 	// LearningModeDefault controls default project learning-mode when worker auto-creates projects.
 	// Keep empty value to disable by default; set to "true" to enable by default.
@@ -121,22 +127,6 @@ type Config struct {
 	RunCredentialsSecretName string `env:"CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME" envDefault:"codex-run-credentials"`
 	// RunResourceQuotaPods controls max pods per run namespace.
 	RunResourceQuotaPods int64 `env:"CODEXK8S_WORKER_RUN_QUOTA_PODS" envDefault:"20"`
-	// RunResourceRequestsCPU controls requests.cpu hard quota.
-	RunResourceRequestsCPU string `env:"CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_CPU" envDefault:"6"`
-	// RunResourceRequestsMemory controls requests.memory hard quota.
-	RunResourceRequestsMemory string `env:"CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_MEMORY" envDefault:"24Gi"`
-	// RunResourceLimitsCPU controls limits.cpu hard quota.
-	RunResourceLimitsCPU string `env:"CODEXK8S_WORKER_RUN_QUOTA_LIMITS_CPU" envDefault:"8"`
-	// RunResourceLimitsMemory controls limits.memory hard quota.
-	RunResourceLimitsMemory string `env:"CODEXK8S_WORKER_RUN_QUOTA_LIMITS_MEMORY" envDefault:"32Gi"`
-	// RunDefaultRequestCPU controls default CPU request via LimitRange.
-	RunDefaultRequestCPU string `env:"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_CPU" envDefault:"4"`
-	// RunDefaultRequestMemory controls default memory request via LimitRange.
-	RunDefaultRequestMemory string `env:"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_MEMORY" envDefault:"16Gi"`
-	// RunDefaultLimitCPU controls default CPU limit via LimitRange.
-	RunDefaultLimitCPU string `env:"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_CPU" envDefault:"6"`
-	// RunDefaultLimitMemory controls default memory limit via LimitRange.
-	RunDefaultLimitMemory string `env:"CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY" envDefault:"24Gi"`
 }
 
 // LoadConfig parses and validates worker configuration from environment.

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	"github.com/google/uuid"
 
@@ -56,20 +57,22 @@ type Service struct {
 
 	learningModeDefault bool
 	triggerLabels       TriggerLabels
+	runtimeModePolicy   RuntimeModePolicy
 }
 
 // Config wires webhook domain dependencies.
 type Config struct {
-	AgentRuns           agentrunrepo.Repository
-	Agents              agentrepo.Repository
-	FlowEvents          floweventrepo.Repository
-	Repos               repocfgrepo.Repository
-	Projects            projectrepo.Repository
-	Users               userrepo.Repository
-	Members             projectmemberrepo.Repository
-	RunStatus           runStatusService
 	LearningModeDefault bool
 	TriggerLabels       TriggerLabels
+	RuntimeModePolicy   RuntimeModePolicy
+	RunStatus           runStatusService
+	Members             projectmemberrepo.Repository
+	Users               userrepo.Repository
+	Projects            projectrepo.Repository
+	Repos               repocfgrepo.Repository
+	FlowEvents          floweventrepo.Repository
+	Agents              agentrepo.Repository
+	AgentRuns           agentrunrepo.Repository
 }
 
 // NewService wires webhook domain dependencies.
@@ -87,6 +90,7 @@ func NewService(cfg Config) *Service {
 		runStatus:           cfg.RunStatus,
 		learningModeDefault: cfg.LearningModeDefault,
 		triggerLabels:       triggerLabels,
+		runtimeModePolicy:   cfg.RuntimeModePolicy.withDefaults(),
 	}
 }
 
@@ -123,6 +127,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 	}
 
 	trigger, hasIssueRunTrigger, conflict := s.resolveIssueRunTrigger(cmd.EventType, envelope)
+	pushBuildRef, hasPushMainDeploy := s.resolvePushMainDeploy(cmd.EventType, envelope)
 	if strings.EqualFold(strings.TrimSpace(cmd.EventType), string(webhookdomain.GitHubEventIssues)) && !hasIssueRunTrigger {
 		return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
 			Reason:     "issue_event_not_trigger_label",
@@ -162,7 +167,16 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 			})
 		}
 	}
-	if !hasIssueRunTrigger {
+	if hasPushMainDeploy {
+		if !hasBinding || strings.TrimSpace(projectID) == "" {
+			return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
+				Reason:     "repository_not_bound_for_push_main",
+				RunKind:    "",
+				HasBinding: hasBinding,
+			})
+		}
+	}
+	if !hasIssueRunTrigger && !hasPushMainDeploy {
 		return s.recordReceivedWebhookWithoutRun(ctx, cmd, envelope)
 	}
 
@@ -180,25 +194,47 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		servicesYAMLPath = "services.yaml"
 	}
 
-	learningMode, err := s.resolveLearningMode(ctx, learningProjectID, envelope.Sender.Login)
-	if err != nil {
-		return IngestResult{}, fmt.Errorf("resolve learning mode: %w", err)
-	}
-	agent, err := s.resolveRunAgent(ctx, payloadProjectID, triggerPtr(trigger, hasIssueRunTrigger))
-	if err != nil {
-		return IngestResult{}, fmt.Errorf("resolve run agent: %w", err)
+	learningMode := false
+	agent := runAgentProfile{}
+	runtimeMode := agentdomain.RuntimeModeFullEnv
+	runtimeModeSource := runtimeModeSourcePushMain
+	runtimeTargetEnv := "ai-staging"
+	runtimeNamespace := buildAIStagingNamespace(envelope.Repository.FullName)
+	runtimeBuildRef := pushBuildRef
+	runtimeDeployOnly := true
+
+	if hasIssueRunTrigger {
+		learningMode, err = s.resolveLearningMode(ctx, learningProjectID, envelope.Sender.Login)
+		if err != nil {
+			return IngestResult{}, fmt.Errorf("resolve learning mode: %w", err)
+		}
+		agent, err = s.resolveRunAgent(ctx, payloadProjectID, triggerPtr(trigger, hasIssueRunTrigger))
+		if err != nil {
+			return IngestResult{}, fmt.Errorf("resolve run agent: %w", err)
+		}
+		runtimeMode, runtimeModeSource = s.resolveRunRuntimeMode(triggerPtr(trigger, hasIssueRunTrigger))
+		runtimeTargetEnv = ""
+		runtimeNamespace = ""
+		runtimeBuildRef = ""
+		runtimeDeployOnly = false
 	}
 
 	runPayload, err := buildRunPayload(runPayloadInput{
-		Command:          cmd,
-		Envelope:         envelope,
-		ProjectID:        payloadProjectID,
-		RepositoryID:     repositoryID,
-		ServicesYAMLPath: servicesYAMLPath,
-		HasBinding:       hasBinding,
-		LearningMode:     learningMode,
-		Trigger:          triggerPtr(trigger, hasIssueRunTrigger),
-		Agent:            agent,
+		Command:           cmd,
+		Envelope:          envelope,
+		ProjectID:         payloadProjectID,
+		RepositoryID:      repositoryID,
+		ServicesYAMLPath:  servicesYAMLPath,
+		HasBinding:        hasBinding,
+		LearningMode:      learningMode,
+		Trigger:           triggerPtr(trigger, hasIssueRunTrigger),
+		Agent:             agent,
+		RuntimeMode:       runtimeMode,
+		RuntimeSource:     runtimeModeSource,
+		RuntimeTargetEnv:  runtimeTargetEnv,
+		RuntimeNamespace:  runtimeNamespace,
+		RuntimeBuildRef:   runtimeBuildRef,
+		RuntimeDeployOnly: runtimeDeployOnly,
 	})
 	if err != nil {
 		return IngestResult{}, fmt.Errorf("build run payload: %w", err)
@@ -383,6 +419,85 @@ func (s *Service) resolveIssueRunTrigger(eventType string, envelope githubWebhoo
 	}
 }
 
+func (s *Service) resolvePushMainDeploy(eventType string, envelope githubWebhookEnvelope) (string, bool) {
+	if !strings.EqualFold(strings.TrimSpace(eventType), string(webhookdomain.GitHubEventPush)) {
+		return "", false
+	}
+	if !isMainBranchRef(envelope.Ref) {
+		return "", false
+	}
+	if envelope.Deleted || isDeletedGitCommitSHA(envelope.After) {
+		return "", false
+	}
+
+	buildRef := strings.TrimSpace(envelope.After)
+	if buildRef == "" {
+		return "", false
+	}
+	return buildRef, true
+}
+
+func isMainBranchRef(ref string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(ref))
+	return normalized == "refs/heads/main" || normalized == "refs/heads/master"
+}
+
+func isDeletedGitCommitSHA(sha string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(sha))
+	if normalized == "" {
+		return false
+	}
+	for _, ch := range normalized {
+		if ch != '0' {
+			return false
+		}
+	}
+	return true
+}
+
+func buildAIStagingNamespace(repositoryFullName string) string {
+	fullName := strings.TrimSpace(repositoryFullName)
+	if fullName == "" {
+		return ""
+	}
+
+	_, repositoryName, hasOwner := strings.Cut(fullName, "/")
+	if !hasOwner {
+		repositoryName = fullName
+	}
+	repositoryName = sanitizeKubernetesToken(repositoryName)
+	if repositoryName == "" {
+		return ""
+	}
+	return repositoryName + "-ai-staging"
+}
+
+func sanitizeKubernetesToken(value string) string {
+	normalized := strings.ToLower(strings.TrimSpace(value))
+	if normalized == "" {
+		return ""
+	}
+
+	var builder strings.Builder
+	builder.Grow(len(normalized))
+	lastHyphen := false
+	for _, ch := range normalized {
+		isAlphaNum := (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9')
+		if isAlphaNum {
+			builder.WriteRune(ch)
+			lastHyphen = false
+			continue
+		}
+		if !lastHyphen {
+			builder.WriteByte('-')
+			lastHyphen = true
+		}
+	}
+
+	result := strings.Trim(builder.String(), "-")
+	return result
+}
+
 func (s *Service) postTriggerConflictComment(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope, trigger issueRunTrigger, conflictingLabels []string) error {
 	if s.runStatus == nil || envelope.Issue.Number <= 0 {
 		return nil
@@ -565,6 +680,10 @@ func (s *Service) resolveLearningMode(ctx context.Context, projectID string, sen
 		return projectDefault, nil
 	}
 	return *override, nil
+}
+
+func (s *Service) resolveRunRuntimeMode(trigger *issueRunTrigger) (agentdomain.RuntimeMode, string) {
+	return s.runtimeModePolicy.resolve(trigger)
 }
 
 func deriveProjectID(correlationID string, envelope githubWebhookEnvelope) string {

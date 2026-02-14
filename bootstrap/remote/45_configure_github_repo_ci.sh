@@ -22,6 +22,13 @@ load_env_file "${BOOTSTRAP_ENV_FILE:?}"
 : "${CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET:?CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET is required}"
 : "${CODEXK8S_JWT_SIGNING_KEY:?CODEXK8S_JWT_SIGNING_KEY is required}"
 
+PLATFORM_REPO="${CODEXK8S_GITHUB_REPO}"
+CODEXK8S_FIRST_PROJECT_GITHUB_REPO="${CODEXK8S_FIRST_PROJECT_GITHUB_REPO:-}"
+if [ -z "${CODEXK8S_FIRST_PROJECT_GITHUB_REPO}" ]; then
+  CODEXK8S_FIRST_PROJECT_GITHUB_REPO="${PLATFORM_REPO}"
+fi
+PROJECT_REPO="${CODEXK8S_FIRST_PROJECT_GITHUB_REPO}"
+
 CODEXK8S_STAGING_NAMESPACE="${CODEXK8S_STAGING_NAMESPACE:-codex-k8s-ai-staging}"
 CODEXK8S_INTERNAL_REGISTRY_SERVICE="${CODEXK8S_INTERNAL_REGISTRY_SERVICE:-codex-k8s-registry}"
 CODEXK8S_INTERNAL_REGISTRY_PORT="${CODEXK8S_INTERNAL_REGISTRY_PORT:-5000}"
@@ -72,14 +79,6 @@ CODEXK8S_WORKER_RUN_RESOURCE_QUOTA_NAME="${CODEXK8S_WORKER_RUN_RESOURCE_QUOTA_NA
 CODEXK8S_WORKER_RUN_LIMIT_RANGE_NAME="${CODEXK8S_WORKER_RUN_LIMIT_RANGE_NAME:-}"
 CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME="${CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME:-}"
 CODEXK8S_WORKER_RUN_QUOTA_PODS="${CODEXK8S_WORKER_RUN_QUOTA_PODS:-}"
-CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_CPU="${CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_CPU:-}"
-CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_MEMORY="${CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_MEMORY:-}"
-CODEXK8S_WORKER_RUN_QUOTA_LIMITS_CPU="${CODEXK8S_WORKER_RUN_QUOTA_LIMITS_CPU:-}"
-CODEXK8S_WORKER_RUN_QUOTA_LIMITS_MEMORY="${CODEXK8S_WORKER_RUN_QUOTA_LIMITS_MEMORY:-}"
-CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_CPU="${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_CPU:-}"
-CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_MEMORY="${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_MEMORY:-}"
-CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_CPU="${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_CPU:-}"
-CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY="${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY:-}"
 if [ -z "${CODEXK8S_AGENT_DEFAULT_MODEL:-}" ]; then
   if [ -n "${CODEXK8S_OPENAI_AUTH_FILE}" ]; then
     CODEXK8S_AGENT_DEFAULT_MODEL="gpt-5.3-codex"
@@ -90,26 +89,6 @@ fi
 CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT="${CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT:-}"
 CODEXK8S_AGENT_DEFAULT_LOCALE="${CODEXK8S_AGENT_DEFAULT_LOCALE:-}"
 CODEXK8S_AGENT_BASE_BRANCH="${CODEXK8S_AGENT_BASE_BRANCH:-}"
-CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_CPU="${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_CPU:-100m}"
-CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_MEMORY="${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_MEMORY:-256Mi}"
-CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_CPU="${CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_CPU:-1000m}"
-CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_MEMORY="${CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_MEMORY:-1Gi}"
-CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_CPU="${CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_CPU:-100m}"
-CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_MEMORY="${CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_MEMORY:-256Mi}"
-CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_CPU="${CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_CPU:-1000m}"
-CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_MEMORY="${CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_MEMORY:-1Gi}"
-CODEXK8S_WORKER_RESOURCES_REQUEST_CPU="${CODEXK8S_WORKER_RESOURCES_REQUEST_CPU:-100m}"
-CODEXK8S_WORKER_RESOURCES_REQUEST_MEMORY="${CODEXK8S_WORKER_RESOURCES_REQUEST_MEMORY:-256Mi}"
-CODEXK8S_WORKER_RESOURCES_LIMIT_CPU="${CODEXK8S_WORKER_RESOURCES_LIMIT_CPU:-1000m}"
-CODEXK8S_WORKER_RESOURCES_LIMIT_MEMORY="${CODEXK8S_WORKER_RESOURCES_LIMIT_MEMORY:-1Gi}"
-CODEXK8S_WEB_CONSOLE_RESOURCES_REQUEST_CPU="${CODEXK8S_WEB_CONSOLE_RESOURCES_REQUEST_CPU:-100m}"
-CODEXK8S_WEB_CONSOLE_RESOURCES_REQUEST_MEMORY="${CODEXK8S_WEB_CONSOLE_RESOURCES_REQUEST_MEMORY:-128Mi}"
-CODEXK8S_WEB_CONSOLE_RESOURCES_LIMIT_CPU="${CODEXK8S_WEB_CONSOLE_RESOURCES_LIMIT_CPU:-500m}"
-CODEXK8S_WEB_CONSOLE_RESOURCES_LIMIT_MEMORY="${CODEXK8S_WEB_CONSOLE_RESOURCES_LIMIT_MEMORY:-512Mi}"
-CODEXK8S_KANIKO_RESOURCES_REQUEST_CPU="${CODEXK8S_KANIKO_RESOURCES_REQUEST_CPU:-8}"
-CODEXK8S_KANIKO_RESOURCES_REQUEST_MEMORY="${CODEXK8S_KANIKO_RESOURCES_REQUEST_MEMORY:-16Gi}"
-CODEXK8S_KANIKO_RESOURCES_LIMIT_CPU="${CODEXK8S_KANIKO_RESOURCES_LIMIT_CPU:-16}"
-CODEXK8S_KANIKO_RESOURCES_LIMIT_MEMORY="${CODEXK8S_KANIKO_RESOURCES_LIMIT_MEMORY:-32Gi}"
 CODEXK8S_JWT_TTL="${CODEXK8S_JWT_TTL:-}"
 CODEXK8S_MCP_TOKEN_TTL="${CODEXK8S_MCP_TOKEN_TTL:-}"
 CODEXK8S_MCP_TOKEN_SIGNING_KEY="${CODEXK8S_MCP_TOKEN_SIGNING_KEY:-}"
@@ -140,18 +119,28 @@ CODEXK8S_PROJECT_DB_ADMIN_DATABASE="${CODEXK8S_PROJECT_DB_ADMIN_DATABASE:-}"
 [ -n "${CODEXK8S_PROJECT_DB_ADMIN_USER}" ] || die "CODEXK8S_PROJECT_DB_ADMIN_USER is required"
 [ -n "${CODEXK8S_PROJECT_DB_ADMIN_PASSWORD}" ] || die "CODEXK8S_PROJECT_DB_ADMIN_PASSWORD is required"
 
-log "Configure GitHub repository variables/secrets for ${CODEXK8S_GITHUB_REPO}"
+log "Configure platform GitHub repository variables/secrets for ${PLATFORM_REPO}"
+if [ "${PROJECT_REPO}" = "${PLATFORM_REPO}" ]; then
+  log "Configure webhook/labels in platform repository ${PLATFORM_REPO} (dogfooding mode)"
+else
+  log "Configure webhook/labels in repositories: platform=${PLATFORM_REPO}, first-project=${PROJECT_REPO}"
+fi
 printf %s "${CODEXK8S_GITHUB_PAT}" | gh auth login --with-token
+
+WEBHOOK_LABEL_REPOS=("${PLATFORM_REPO}")
+if [ "${PROJECT_REPO}" != "${PLATFORM_REPO}" ]; then
+  WEBHOOK_LABEL_REPOS+=("${PROJECT_REPO}")
+fi
 
 set_repo_var() {
   local key="$1"
   local default_value="$2"
   local value="${!key:-$default_value}"
   if [ -n "${value}" ]; then
-    gh variable set "${key}" -R "${CODEXK8S_GITHUB_REPO}" --body "${value}"
+    gh variable set "${key}" -R "${PLATFORM_REPO}" --body "${value}"
     return 0
   fi
-  gh variable delete "${key}" -R "${CODEXK8S_GITHUB_REPO}" >/dev/null 2>&1 || true
+  gh variable delete "${key}" -R "${PLATFORM_REPO}" >/dev/null 2>&1 || true
 }
 
 get_repo_var() {
@@ -161,16 +150,55 @@ get_repo_var() {
 }
 
 ensure_repo_label() {
-  local name="$1"
-  local description="$2"
+  local repo="$1"
+  local name="$2"
+  local description="$3"
   [ -n "$name" ] || return 0
 
-  if gh label view "$name" -R "${CODEXK8S_GITHUB_REPO}" >/dev/null 2>&1; then
-    gh label edit "$name" -R "${CODEXK8S_GITHUB_REPO}" --description "$description" >/dev/null
+  if gh label view "$name" -R "${repo}" >/dev/null 2>&1; then
+    gh label edit "$name" -R "${repo}" --description "$description" >/dev/null
     return 0
   fi
 
-  gh label create "$name" -R "${CODEXK8S_GITHUB_REPO}" --description "$description" >/dev/null
+  gh label create "$name" -R "${repo}" --description "$description" >/dev/null
+}
+
+configure_repo_webhook() {
+  local repo="$1"
+  log "Configure GitHub repository webhook for ${repo}: ${CODEXK8S_GITHUB_WEBHOOK_URL}"
+
+  local hook_id=""
+  hook_id="$(
+    gh api "repos/${repo}/hooks" \
+      --jq ".[] | select(.config.url == \"${CODEXK8S_GITHUB_WEBHOOK_URL}\") | .id" \
+      | head -n1 || true
+  )"
+
+  local -a webhook_events=()
+  IFS=',' read -r -a webhook_events <<< "${CODEXK8S_GITHUB_WEBHOOK_EVENTS}"
+
+  local -a webhook_api_args=(
+    -f "config[url]=${CODEXK8S_GITHUB_WEBHOOK_URL}"
+    -f "config[content_type]=json"
+    -f "config[insecure_ssl]=0"
+    -f "config[secret]=${CODEXK8S_GITHUB_WEBHOOK_SECRET}"
+    -F "active=true"
+  )
+
+  local event trimmed
+  for event in "${webhook_events[@]}"; do
+    trimmed="$(printf '%s' "$event" | xargs)"
+    [ -n "$trimmed" ] || continue
+    webhook_api_args+=(-f "events[]=${trimmed}")
+  done
+
+  if [ -n "${hook_id}" ]; then
+    gh api "repos/${repo}/hooks/${hook_id}" -X PATCH "${webhook_api_args[@]}" >/dev/null
+    log "Updated webhook id=${hook_id} in ${repo}"
+  else
+    gh api "repos/${repo}/hooks" -X POST -f "name=web" "${webhook_api_args[@]}" >/dev/null
+    log "Created webhook for ${CODEXK8S_GITHUB_WEBHOOK_URL} in ${repo}"
+  fi
 }
 
 # Variables used by staging deploy workflow.
@@ -195,26 +223,6 @@ gh variable set CODEXK8S_CONTROL_PLANE_IMAGE -R "${CODEXK8S_GITHUB_REPO}" --body
 gh variable set CODEXK8S_WORKER_IMAGE -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WORKER_IMAGE}"
 gh variable set CODEXK8S_AGENT_RUNNER_IMAGE -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_AGENT_RUNNER_IMAGE}"
 gh variable set CODEXK8S_WEB_CONSOLE_IMAGE -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WEB_CONSOLE_IMAGE}"
-gh variable set CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_CPU -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_CPU}"
-gh variable set CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_MEMORY -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_MEMORY}"
-gh variable set CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_CPU -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_CPU}"
-gh variable set CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_MEMORY -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_MEMORY}"
-gh variable set CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_CPU -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_CPU}"
-gh variable set CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_MEMORY -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_MEMORY}"
-gh variable set CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_CPU -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_CPU}"
-gh variable set CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_MEMORY -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_MEMORY}"
-gh variable set CODEXK8S_WORKER_RESOURCES_REQUEST_CPU -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WORKER_RESOURCES_REQUEST_CPU}"
-gh variable set CODEXK8S_WORKER_RESOURCES_REQUEST_MEMORY -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WORKER_RESOURCES_REQUEST_MEMORY}"
-gh variable set CODEXK8S_WORKER_RESOURCES_LIMIT_CPU -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WORKER_RESOURCES_LIMIT_CPU}"
-gh variable set CODEXK8S_WORKER_RESOURCES_LIMIT_MEMORY -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WORKER_RESOURCES_LIMIT_MEMORY}"
-gh variable set CODEXK8S_WEB_CONSOLE_RESOURCES_REQUEST_CPU -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WEB_CONSOLE_RESOURCES_REQUEST_CPU}"
-gh variable set CODEXK8S_WEB_CONSOLE_RESOURCES_REQUEST_MEMORY -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WEB_CONSOLE_RESOURCES_REQUEST_MEMORY}"
-gh variable set CODEXK8S_WEB_CONSOLE_RESOURCES_LIMIT_CPU -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WEB_CONSOLE_RESOURCES_LIMIT_CPU}"
-gh variable set CODEXK8S_WEB_CONSOLE_RESOURCES_LIMIT_MEMORY -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WEB_CONSOLE_RESOURCES_LIMIT_MEMORY}"
-gh variable set CODEXK8S_KANIKO_RESOURCES_REQUEST_CPU -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_KANIKO_RESOURCES_REQUEST_CPU}"
-gh variable set CODEXK8S_KANIKO_RESOURCES_REQUEST_MEMORY -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_KANIKO_RESOURCES_REQUEST_MEMORY}"
-gh variable set CODEXK8S_KANIKO_RESOURCES_LIMIT_CPU -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_KANIKO_RESOURCES_LIMIT_CPU}"
-gh variable set CODEXK8S_KANIKO_RESOURCES_LIMIT_MEMORY -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_KANIKO_RESOURCES_LIMIT_MEMORY}"
 gh variable set CODEXK8S_K8S_API_CIDR -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_K8S_API_CIDR}"
 gh variable set CODEXK8S_K8S_API_PORT -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_K8S_API_PORT}"
 gh variable set CODEXK8S_WAIT_ROLLOUT -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WAIT_ROLLOUT}"
@@ -241,14 +249,6 @@ gh variable set CODEXK8S_WORKER_RUN_RESOURCE_QUOTA_NAME -R "${CODEXK8S_GITHUB_RE
 gh variable set CODEXK8S_WORKER_RUN_LIMIT_RANGE_NAME -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WORKER_RUN_LIMIT_RANGE_NAME}"
 gh variable set CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME}"
 gh variable set CODEXK8S_WORKER_RUN_QUOTA_PODS -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WORKER_RUN_QUOTA_PODS}"
-gh variable set CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_CPU -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_CPU}"
-gh variable set CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_MEMORY -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_MEMORY}"
-gh variable set CODEXK8S_WORKER_RUN_QUOTA_LIMITS_CPU -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WORKER_RUN_QUOTA_LIMITS_CPU}"
-gh variable set CODEXK8S_WORKER_RUN_QUOTA_LIMITS_MEMORY -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WORKER_RUN_QUOTA_LIMITS_MEMORY}"
-gh variable set CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_CPU -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_CPU}"
-gh variable set CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_MEMORY -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_MEMORY}"
-gh variable set CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_CPU -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_CPU}"
-gh variable set CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY}"
 gh variable set CODEXK8S_AGENT_DEFAULT_MODEL -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_AGENT_DEFAULT_MODEL}"
 gh variable set CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT}"
 gh variable set CODEXK8S_AGENT_DEFAULT_LOCALE -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_AGENT_DEFAULT_LOCALE}"
@@ -311,54 +311,57 @@ set_repo_var CODEXK8S_AI_REASONING_MEDIUM_LABEL ""
 set_repo_var CODEXK8S_AI_REASONING_HIGH_LABEL ""
 set_repo_var CODEXK8S_AI_REASONING_EXTRA_HIGH_LABEL ""
 
-# Ensure label catalog exists in repository (color is intentionally omitted;
+# Ensure label catalog exists in repositories (color is intentionally omitted;
 # GitHub assigns one automatically if not provided).
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_INTAKE_LABEL "")" "Start intake stage run"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_INTAKE_REVISE_LABEL "")" "Request intake stage revision"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_VISION_LABEL "")" "Start vision stage run"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_VISION_REVISE_LABEL "")" "Request vision stage revision"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_PRD_LABEL "")" "Start PRD stage run"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_PRD_REVISE_LABEL "")" "Request PRD stage revision"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_ARCH_LABEL "")" "Start architecture stage run"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_ARCH_REVISE_LABEL "")" "Request architecture stage revision"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_DESIGN_LABEL "")" "Start design stage run"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_DESIGN_REVISE_LABEL "")" "Request design stage revision"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_PLAN_LABEL "")" "Start planning stage run"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_PLAN_REVISE_LABEL "")" "Request planning stage revision"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_DEV_LABEL "")" "Start development run"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_DEV_REVISE_LABEL "")" "Request development revision"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_DEBUG_LABEL "")" "Retain run namespace for debugging (skip auto cleanup)"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_DOC_AUDIT_LABEL "")" "Start documentation audit run"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_QA_LABEL "")" "Start QA run"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_RELEASE_LABEL "")" "Start release run"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_POSTDEPLOY_LABEL "")" "Start post-deploy checks run"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_OPS_LABEL "")" "Start operations run"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_SELF_IMPROVE_LABEL "")" "Start self-improve run"
-ensure_repo_label "$(get_repo_var CODEXK8S_RUN_RETHINK_LABEL "")" "Reopen problem framing and scope"
-ensure_repo_label "$(get_repo_var CODEXK8S_MODE_DISCUSSION_LABEL "mode:discussion")" "Discussion mode: brainstorm without commit/push/PR"
-ensure_repo_label "$(get_repo_var CODEXK8S_STATE_BLOCKED_LABEL "state:blocked")" "Issue is blocked"
-ensure_repo_label "$(get_repo_var CODEXK8S_STATE_IN_REVIEW_LABEL "")" "Work is in review"
-ensure_repo_label "$(get_repo_var CODEXK8S_STATE_APPROVED_LABEL "state:approved")" "Work is approved"
-ensure_repo_label "$(get_repo_var CODEXK8S_STATE_SUPERSEDED_LABEL "state:superseded")" "Issue superseded by newer scope"
-ensure_repo_label "$(get_repo_var CODEXK8S_STATE_ABANDONED_LABEL "state:abandoned")" "Issue intentionally abandoned"
-ensure_repo_label "$(get_repo_var CODEXK8S_NEED_INPUT_LABEL "need:input")" "Need additional input"
-ensure_repo_label "$(get_repo_var CODEXK8S_NEED_PM_LABEL "need:pm")" "Need product management input"
-ensure_repo_label "$(get_repo_var CODEXK8S_NEED_SA_LABEL "need:sa")" "Need solution architecture input"
-ensure_repo_label "$(get_repo_var CODEXK8S_NEED_QA_LABEL "need:qa")" "Need QA input"
-ensure_repo_label "$(get_repo_var CODEXK8S_NEED_SRE_LABEL "need:sre")" "Need SRE input"
-ensure_repo_label "$(get_repo_var CODEXK8S_NEED_EM_LABEL "need:em")" "Need engineering manager review"
-ensure_repo_label "$(get_repo_var CODEXK8S_NEED_KM_LABEL "need:km")" "Need documentation and traceability review"
-ensure_repo_label "$(get_repo_var CODEXK8S_NEED_REVIEWER_LABEL "need:reviewer")" "Need pre-review from technical reviewer"
-ensure_repo_label "$(get_repo_var CODEXK8S_AI_MODEL_GPT_5_3_CODEX_LABEL "")" "Run config: model gpt-5.3-codex"
-ensure_repo_label "$(get_repo_var CODEXK8S_AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL "")" "Run config: model gpt-5.3-codex-spark"
-ensure_repo_label "$(get_repo_var CODEXK8S_AI_MODEL_GPT_5_2_CODEX_LABEL "")" "Run config: model gpt-5.2-codex"
-ensure_repo_label "$(get_repo_var CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MAX_LABEL "")" "Run config: model gpt-5.1-codex-max"
-ensure_repo_label "$(get_repo_var CODEXK8S_AI_MODEL_GPT_5_2_LABEL "")" "Run config: model gpt-5.2"
-ensure_repo_label "$(get_repo_var CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MINI_LABEL "")" "Run config: model gpt-5.1-codex-mini"
-ensure_repo_label "$(get_repo_var CODEXK8S_AI_REASONING_LOW_LABEL "")" "Run config: reasoning low"
-ensure_repo_label "$(get_repo_var CODEXK8S_AI_REASONING_MEDIUM_LABEL "")" "Run config: reasoning medium"
-ensure_repo_label "$(get_repo_var CODEXK8S_AI_REASONING_HIGH_LABEL "")" "Run config: reasoning high"
-ensure_repo_label "$(get_repo_var CODEXK8S_AI_REASONING_EXTRA_HIGH_LABEL "")" "Run config: reasoning extra high"
+for TARGET_REPO in "${WEBHOOK_LABEL_REPOS[@]}"; do
+  log "Ensure label catalog in ${TARGET_REPO}"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_INTAKE_LABEL "")" "Start intake stage run"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_INTAKE_REVISE_LABEL "")" "Request intake stage revision"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_VISION_LABEL "")" "Start vision stage run"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_VISION_REVISE_LABEL "")" "Request vision stage revision"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_PRD_LABEL "")" "Start PRD stage run"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_PRD_REVISE_LABEL "")" "Request PRD stage revision"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_ARCH_LABEL "")" "Start architecture stage run"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_ARCH_REVISE_LABEL "")" "Request architecture stage revision"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_DESIGN_LABEL "")" "Start design stage run"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_DESIGN_REVISE_LABEL "")" "Request design stage revision"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_PLAN_LABEL "")" "Start planning stage run"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_PLAN_REVISE_LABEL "")" "Request planning stage revision"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_DEV_LABEL "")" "Start development run"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_DEV_REVISE_LABEL "")" "Request development revision"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_DEBUG_LABEL "")" "Retain run namespace for debugging (skip auto cleanup)"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_DOC_AUDIT_LABEL "")" "Start documentation audit run"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_QA_LABEL "")" "Start QA run"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_RELEASE_LABEL "")" "Start release run"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_POSTDEPLOY_LABEL "")" "Start post-deploy checks run"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_OPS_LABEL "")" "Start operations run"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_SELF_IMPROVE_LABEL "")" "Start self-improve run"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_RUN_RETHINK_LABEL "")" "Reopen problem framing and scope"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_MODE_DISCUSSION_LABEL "mode:discussion")" "Discussion mode: brainstorm without commit/push/PR"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_STATE_BLOCKED_LABEL "state:blocked")" "Issue is blocked"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_STATE_IN_REVIEW_LABEL "")" "Work is in review"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_STATE_APPROVED_LABEL "state:approved")" "Work is approved"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_STATE_SUPERSEDED_LABEL "state:superseded")" "Issue superseded by newer scope"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_STATE_ABANDONED_LABEL "state:abandoned")" "Issue intentionally abandoned"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_NEED_INPUT_LABEL "need:input")" "Need additional input"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_NEED_PM_LABEL "need:pm")" "Need product management input"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_NEED_SA_LABEL "need:sa")" "Need solution architecture input"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_NEED_QA_LABEL "need:qa")" "Need QA input"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_NEED_SRE_LABEL "need:sre")" "Need SRE input"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_NEED_EM_LABEL "need:em")" "Need engineering manager review"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_NEED_KM_LABEL "need:km")" "Need documentation and traceability review"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_NEED_REVIEWER_LABEL "need:reviewer")" "Need pre-review from technical reviewer"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_AI_MODEL_GPT_5_3_CODEX_LABEL "")" "Run config: model gpt-5.3-codex"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL "")" "Run config: model gpt-5.3-codex-spark"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_AI_MODEL_GPT_5_2_CODEX_LABEL "")" "Run config: model gpt-5.2-codex"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MAX_LABEL "")" "Run config: model gpt-5.1-codex-max"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_AI_MODEL_GPT_5_2_LABEL "")" "Run config: model gpt-5.2"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MINI_LABEL "")" "Run config: model gpt-5.1-codex-mini"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_AI_REASONING_LOW_LABEL "")" "Run config: reasoning low"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_AI_REASONING_MEDIUM_LABEL "")" "Run config: reasoning medium"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_AI_REASONING_HIGH_LABEL "")" "Run config: reasoning high"
+  ensure_repo_label "${TARGET_REPO}" "$(get_repo_var CODEXK8S_AI_REASONING_EXTRA_HIGH_LABEL "")" "Run config: reasoning extra high"
+done
 gh variable set CODEXK8S_STAGING_DOMAIN -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_STAGING_DOMAIN}"
 gh variable set CODEXK8S_PUBLIC_BASE_URL -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_PUBLIC_BASE_URL}"
 gh variable set CODEXK8S_BOOTSTRAP_OWNER_EMAIL -R "${CODEXK8S_GITHUB_REPO}" --body "${CODEXK8S_BOOTSTRAP_OWNER_EMAIL}"
@@ -428,34 +431,9 @@ for legacy_var in STAGING_NAMESPACE STAGING_DOMAIN POSTGRES_DB POSTGRES_USER LEA
   gh variable delete "${legacy_var}" -R "${CODEXK8S_GITHUB_REPO}" >/dev/null 2>&1 || true
 done
 
-log "Configure GitHub repository webhook: ${CODEXK8S_GITHUB_WEBHOOK_URL}"
-HOOK_ID="$(
-  gh api "repos/${CODEXK8S_GITHUB_REPO}/hooks" \
-    --jq ".[] | select(.config.url == \"${CODEXK8S_GITHUB_WEBHOOK_URL}\") | .id" \
-    | head -n1 || true
-)"
-
-IFS=',' read -r -a WEBHOOK_EVENTS <<< "${CODEXK8S_GITHUB_WEBHOOK_EVENTS}"
-WEBHOOK_API_ARGS=(
-  -f "config[url]=${CODEXK8S_GITHUB_WEBHOOK_URL}"
-  -f "config[content_type]=json"
-  -f "config[insecure_ssl]=0"
-  -f "config[secret]=${CODEXK8S_GITHUB_WEBHOOK_SECRET}"
-  -F "active=true"
-)
-
-for event in "${WEBHOOK_EVENTS[@]}"; do
-  trimmed="$(printf '%s' "$event" | xargs)"
-  [ -n "$trimmed" ] || continue
-  WEBHOOK_API_ARGS+=(-f "events[]=${trimmed}")
+for TARGET_REPO in "${WEBHOOK_LABEL_REPOS[@]}"; do
+  configure_repo_webhook "${TARGET_REPO}"
 done
 
-if [ -n "${HOOK_ID}" ]; then
-  gh api "repos/${CODEXK8S_GITHUB_REPO}/hooks/${HOOK_ID}" -X PATCH "${WEBHOOK_API_ARGS[@]}" >/dev/null
-  log "Updated webhook id=${HOOK_ID}"
-else
-  gh api "repos/${CODEXK8S_GITHUB_REPO}/hooks" -X POST -f "name=web" "${WEBHOOK_API_ARGS[@]}" >/dev/null
-  log "Created webhook for ${CODEXK8S_GITHUB_WEBHOOK_URL}"
-fi
-
-log "GitHub repository bootstrap CI settings configured"
+REPO_LIST="$(IFS=,; printf '%s' "${WEBHOOK_LABEL_REPOS[*]}")"
+log "GitHub bootstrap repositories configured: platform=${PLATFORM_REPO}, first-project=${PROJECT_REPO}, webhook-label-repos=${REPO_LIST}"

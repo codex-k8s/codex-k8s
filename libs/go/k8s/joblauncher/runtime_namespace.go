@@ -323,30 +323,10 @@ func (l *Launcher) ensureRunRoleBinding(ctx context.Context, namespace string) e
 
 // ensureResourceQuota limits aggregate namespace resource consumption per run namespace.
 func (l *Launcher) ensureResourceQuota(ctx context.Context, namespace string) error {
-	requestsCPU, err := resource.ParseQuantity(l.cfg.RunResourceRequestsCPU)
-	if err != nil {
-		return fmt.Errorf("parse requests.cpu quantity %q: %w", l.cfg.RunResourceRequestsCPU, err)
-	}
-	requestsMemory, err := resource.ParseQuantity(l.cfg.RunResourceRequestsMemory)
-	if err != nil {
-		return fmt.Errorf("parse requests.memory quantity %q: %w", l.cfg.RunResourceRequestsMemory, err)
-	}
-	limitsCPU, err := resource.ParseQuantity(l.cfg.RunResourceLimitsCPU)
-	if err != nil {
-		return fmt.Errorf("parse limits.cpu quantity %q: %w", l.cfg.RunResourceLimitsCPU, err)
-	}
-	limitsMemory, err := resource.ParseQuantity(l.cfg.RunResourceLimitsMemory)
-	if err != nil {
-		return fmt.Errorf("parse limits.memory quantity %q: %w", l.cfg.RunResourceLimitsMemory, err)
+	hard := corev1.ResourceList{
+		corev1.ResourcePods: *resource.NewQuantity(l.cfg.RunResourceQuotaPods, resource.DecimalSI),
 	}
 
-	hard := corev1.ResourceList{
-		corev1.ResourcePods:           *resource.NewQuantity(l.cfg.RunResourceQuotaPods, resource.DecimalSI),
-		corev1.ResourceRequestsCPU:    requestsCPU,
-		corev1.ResourceRequestsMemory: requestsMemory,
-		corev1.ResourceLimitsCPU:      limitsCPU,
-		corev1.ResourceLimitsMemory:   limitsMemory,
-	}
 	name := l.cfg.RunResourceQuotaName
 
 	existing, err := l.client.CoreV1().ResourceQuotas(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -381,68 +361,18 @@ func (l *Launcher) ensureResourceQuota(ctx context.Context, namespace string) er
 	return nil
 }
 
-// ensureLimitRange defines default per-container requests/limits within run namespaces.
+// ensureLimitRange removes managed per-container defaults to avoid cpu/memory constraints.
 func (l *Launcher) ensureLimitRange(ctx context.Context, namespace string) error {
-	defaultReqCPU, err := resource.ParseQuantity(l.cfg.RunDefaultRequestCPU)
-	if err != nil {
-		return fmt.Errorf("parse default request cpu quantity %q: %w", l.cfg.RunDefaultRequestCPU, err)
-	}
-	defaultReqMemory, err := resource.ParseQuantity(l.cfg.RunDefaultRequestMemory)
-	if err != nil {
-		return fmt.Errorf("parse default request memory quantity %q: %w", l.cfg.RunDefaultRequestMemory, err)
-	}
-	defaultLimitCPU, err := resource.ParseQuantity(l.cfg.RunDefaultLimitCPU)
-	if err != nil {
-		return fmt.Errorf("parse default limit cpu quantity %q: %w", l.cfg.RunDefaultLimitCPU, err)
-	}
-	defaultLimitMemory, err := resource.ParseQuantity(l.cfg.RunDefaultLimitMemory)
-	if err != nil {
-		return fmt.Errorf("parse default limit memory quantity %q: %w", l.cfg.RunDefaultLimitMemory, err)
-	}
+	return l.deleteLimitRangeIfExists(ctx, namespace)
+}
 
-	limit := corev1.LimitRangeItem{
-		Type: corev1.LimitTypeContainer,
-		DefaultRequest: corev1.ResourceList{
-			corev1.ResourceCPU:    defaultReqCPU,
-			corev1.ResourceMemory: defaultReqMemory,
-		},
-		Default: corev1.ResourceList{
-			corev1.ResourceCPU:    defaultLimitCPU,
-			corev1.ResourceMemory: defaultLimitMemory,
-		},
-	}
+func (l *Launcher) deleteLimitRangeIfExists(ctx context.Context, namespace string) error {
 	name := l.cfg.RunLimitRangeName
-
-	existing, err := l.client.CoreV1().LimitRanges(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("get limitrange %s: %w", name, err)
-		}
-		_, createErr := l.client.CoreV1().LimitRanges(namespace).Create(ctx, &corev1.LimitRange{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: name,
-				Labels: map[string]string{
-					runNamespaceManagedByLabel: runNamespaceManagedByValue,
-				},
-			},
-			Spec: corev1.LimitRangeSpec{
-				Limits: []corev1.LimitRangeItem{limit},
-			},
-		}, metav1.CreateOptions{})
-		if createErr != nil && !apierrors.IsAlreadyExists(createErr) {
-			return fmt.Errorf("create limitrange %s: %w", name, createErr)
-		}
+	if strings.TrimSpace(name) == "" {
 		return nil
 	}
-
-	if existing.Labels == nil {
-		existing.Labels = map[string]string{}
-	}
-	existing.Labels[runNamespaceManagedByLabel] = runNamespaceManagedByValue
-	existing.Spec.Limits = []corev1.LimitRangeItem{limit}
-	_, err = l.client.CoreV1().LimitRanges(namespace).Update(ctx, existing, metav1.UpdateOptions{})
-	if err != nil {
-		return fmt.Errorf("update limitrange %s: %w", name, err)
+	if err := l.client.CoreV1().LimitRanges(namespace).Delete(ctx, name, metav1.DeleteOptions{}); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("delete limitrange %s: %w", name, err)
 	}
 	return nil
 }

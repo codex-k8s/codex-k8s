@@ -6,19 +6,26 @@ import (
 	"strings"
 	"time"
 
+	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 )
 
 type runPayloadInput struct {
-	Command          IngestCommand
-	Envelope         githubWebhookEnvelope
-	ProjectID        string
-	RepositoryID     string
-	ServicesYAMLPath string
-	HasBinding       bool
-	LearningMode     bool
-	Trigger          *issueRunTrigger
-	Agent            runAgentProfile
+	Command           IngestCommand
+	Envelope          githubWebhookEnvelope
+	ProjectID         string
+	RepositoryID      string
+	ServicesYAMLPath  string
+	HasBinding        bool
+	LearningMode      bool
+	Trigger           *issueRunTrigger
+	Agent             runAgentProfile
+	RuntimeMode       agentdomain.RuntimeMode
+	RuntimeSource     string
+	RuntimeTargetEnv  string
+	RuntimeNamespace  string
+	RuntimeBuildRef   string
+	RuntimeDeployOnly bool
 }
 
 type eventPayloadInput struct {
@@ -78,6 +85,14 @@ func buildRunPayload(input runPayloadInput) (json.RawMessage, error) {
 			ID:   input.Agent.ID,
 			Key:  input.Agent.Key,
 			Name: input.Agent.Name,
+		},
+		Runtime: githubRunRuntimePayload{
+			Mode:       strings.TrimSpace(string(input.RuntimeMode)),
+			Source:     strings.TrimSpace(input.RuntimeSource),
+			TargetEnv:  strings.TrimSpace(input.RuntimeTargetEnv),
+			Namespace:  strings.TrimSpace(input.RuntimeNamespace),
+			BuildRef:   strings.TrimSpace(input.RuntimeBuildRef),
+			DeployOnly: input.RuntimeDeployOnly,
 		},
 	}
 

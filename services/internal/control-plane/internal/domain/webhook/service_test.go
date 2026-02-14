@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 	agentrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agent"
@@ -140,6 +141,85 @@ func TestIngestGitHubWebhook_NonTriggerEventsDoNotCreateRun(t *testing.T) {
 	}
 	if events.items[0].EventType != floweventdomain.EventTypeWebhookReceived {
 		t.Fatalf("expected webhook.received event, got %s", events.items[0].EventType)
+	}
+}
+
+func TestIngestGitHubWebhook_PushMain_CreatesDeployOnlyAIStagingRun(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		FlowEvents: events,
+		Repos:      repos,
+	})
+
+	buildRef := "0123456789abcdef0123456789abcdef01234567"
+	payload := json.RawMessage(fmt.Sprintf(`{
+		"ref":"refs/heads/main",
+		"before":"0000000000000000000000000000000000000000",
+		"after":"%s",
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`, buildRef))
+	cmd := IngestCommand{
+		CorrelationID: "delivery-push-main-1",
+		DeliveryID:    "delivery-push-main-1",
+		EventType:     string(webhookdomain.GitHubEventPush),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.Status != webhookdomain.IngestStatusAccepted || got.Duplicate {
+		t.Fatalf("unexpected result: %+v", got)
+	}
+	if got.RunID == "" {
+		t.Fatal("expected run id for push main deploy-only trigger")
+	}
+
+	var runPayload githubRunPayload
+	if err := json.Unmarshal(runs.last.RunPayload, &runPayload); err != nil {
+		t.Fatalf("unmarshal run payload: %v", err)
+	}
+	if runPayload.Trigger != nil {
+		t.Fatalf("expected trigger to be nil for push deploy-only run, got %#v", runPayload.Trigger)
+	}
+	if got, want := runPayload.Runtime.Mode, "full-env"; got != want {
+		t.Fatalf("unexpected runtime mode: got %q want %q", got, want)
+	}
+	if got, want := runPayload.Runtime.Source, runtimeModeSourcePushMain; got != want {
+		t.Fatalf("unexpected runtime source: got %q want %q", got, want)
+	}
+	if got, want := runPayload.Runtime.TargetEnv, "ai-staging"; got != want {
+		t.Fatalf("unexpected runtime target env: got %q want %q", got, want)
+	}
+	if got, want := runPayload.Runtime.Namespace, "codex-k8s-ai-staging"; got != want {
+		t.Fatalf("unexpected runtime namespace: got %q want %q", got, want)
+	}
+	if got, want := runPayload.Runtime.BuildRef, buildRef; got != want {
+		t.Fatalf("unexpected runtime build ref: got %q want %q", got, want)
+	}
+	if !runPayload.Runtime.DeployOnly {
+		t.Fatal("expected runtime deploy_only=true for push main trigger")
+	}
+	if len(events.items) != 1 {
+		t.Fatalf("expected one flow event, got %d", len(events.items))
+	}
+	if events.items[0].EventType != floweventdomain.EventTypeWebhookReceived {
+		t.Fatalf("unexpected event type: %s", events.items[0].EventType)
 	}
 }
 
@@ -359,11 +439,92 @@ func TestIngestGitHubWebhook_IssueRunDev_CreatesRunForAllowedMember(t *testing.T
 	if runPayload.Trigger.Label != webhookdomain.DefaultRunDevLabel {
 		t.Fatalf("unexpected trigger label: %#v", runPayload.Trigger.Label)
 	}
+	if got, want := runPayload.Runtime.Mode, "full-env"; got != want {
+		t.Fatalf("unexpected runtime mode: got %q want %q", got, want)
+	}
+	if got, want := runPayload.Runtime.Source, runtimeModeSourceTriggerDefault; got != want {
+		t.Fatalf("unexpected runtime source: got %q want %q", got, want)
+	}
 	if runPayload.Agent.Key != "dev" {
 		t.Fatalf("unexpected agent key: %#v", runPayload.Agent.Key)
 	}
 	if runPayload.Agent.Name != "AI Developer" {
 		t.Fatalf("unexpected agent name: %#v", runPayload.Agent.Name)
+	}
+}
+
+func TestIngestGitHubWebhook_RuntimePolicyOverrideFromServicesYAML(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {
+				ID:          "user-1",
+				GitHubLogin: "member",
+			},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{
+			"project-1|user-1": "read_write",
+		},
+	}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
+		RuntimeModePolicy: RuntimeModePolicy{
+			Configured:  true,
+			Source:      "services.yaml",
+			DefaultMode: agentdomain.RuntimeModeFullEnv,
+			TriggerModes: map[webhookdomain.TriggerKind]agentdomain.RuntimeMode{
+				webhookdomain.TriggerKindDev: agentdomain.RuntimeModeCodeOnly,
+			},
+		},
+	})
+
+	payload := json.RawMessage(`{
+		"action":"labeled",
+		"label":{"name":"run:dev"},
+		"issue":{"id":1001,"number":177,"title":"Implement feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/177","state":"open","user":{"id":55,"login":"owner"}},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-177",
+		DeliveryID:    "delivery-177",
+		EventType:     string(webhookdomain.GitHubEventIssues),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	if _, err := svc.IngestGitHubWebhook(ctx, cmd); err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+
+	var runPayload githubRunPayload
+	if err := json.Unmarshal(runs.last.RunPayload, &runPayload); err != nil {
+		t.Fatalf("unmarshal run payload: %v", err)
+	}
+	if got, want := runPayload.Runtime.Mode, "code-only"; got != want {
+		t.Fatalf("unexpected runtime mode: got %q want %q", got, want)
+	}
+	if got, want := runPayload.Runtime.Source, runtimeModeSourceServicesYAML; got != want {
+		t.Fatalf("unexpected runtime source: got %q want %q", got, want)
 	}
 }
 

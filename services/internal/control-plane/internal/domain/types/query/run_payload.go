@@ -8,6 +8,7 @@ type RunPayload struct {
 	Issue       *RunPayloadIssue       `json:"issue,omitempty"`
 	PullRequest *RunPayloadPullRequest `json:"pull_request,omitempty"`
 	Trigger     *RunPayloadTrigger     `json:"trigger,omitempty"`
+	Runtime     *RunPayloadRuntime     `json:"runtime,omitempty"`
 }
 
 // RunPayloadProject is project section of run payload.
@@ -53,4 +54,10 @@ type RunPayloadTrigger struct {
 	Source string `json:"source,omitempty"`
 	Label  string `json:"label"`
 	Kind   string `json:"kind"`
+}
+
+// RunPayloadRuntime is execution profile section of run payload.
+type RunPayloadRuntime struct {
+	Mode   string `json:"mode"`
+	Source string `json:"source,omitempty"`
 }

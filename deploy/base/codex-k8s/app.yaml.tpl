@@ -103,19 +103,18 @@ spec:
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
           livenessProbe:
             httpGet:
               path: /healthz
               port: http
             initialDelaySeconds: 15
             periodSeconds: 20
-          resources:
-            requests:
-              cpu: ${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_CPU}
-              memory: ${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_MEMORY}
-            limits:
-              cpu: ${CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_CPU}
-              memory: ${CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_MEMORY}
 ---
 apiVersion: v1
 kind: Service
@@ -171,7 +170,6 @@ spec:
         - name: control-plane
           image: ${CODEXK8S_CONTROL_PLANE_IMAGE}
           imagePullPolicy: Always
-          command: ["/usr/local/bin/codex-k8s-control-plane"]
           ports:
             - containerPort: 9090
               name: grpc
@@ -179,6 +177,10 @@ spec:
               name: http
           env:
             - name: CODEXK8S_ENV
+              value: ai-staging
+            - name: CODEXK8S_SERVICES_CONFIG_PATH
+              value: /app/services.yaml
+            - name: CODEXK8S_SERVICES_CONFIG_ENV
               value: ai-staging
             - name: CODEXK8S_CONTROL_PLANE_GRPC_ADDR
               value: ":9090"
@@ -455,19 +457,18 @@ spec:
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /health/livez
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
           livenessProbe:
             httpGet:
               path: /health/livez
               port: http
             initialDelaySeconds: 15
             periodSeconds: 20
-          resources:
-            requests:
-              cpu: ${CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_CPU}
-              memory: ${CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_MEMORY}
-            limits:
-              cpu: ${CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_CPU}
-              memory: ${CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_MEMORY}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -481,7 +482,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: codex-k8s-worker-runtime
+  name: codex-k8s-worker-runtime-${CODEXK8S_STAGING_NAMESPACE}
   labels:
     app.kubernetes.io/name: codex-k8s
     app.kubernetes.io/component: worker
@@ -514,14 +515,14 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: codex-k8s-worker-runtime
+  name: codex-k8s-worker-runtime-${CODEXK8S_STAGING_NAMESPACE}
   labels:
     app.kubernetes.io/name: codex-k8s
     app.kubernetes.io/component: worker
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: codex-k8s-worker-runtime
+  name: codex-k8s-worker-runtime-${CODEXK8S_STAGING_NAMESPACE}
 subjects:
   - kind: ServiceAccount
     name: codex-k8s-worker
@@ -552,8 +553,9 @@ spec:
         - name: worker
           image: ${CODEXK8S_WORKER_IMAGE}
           imagePullPolicy: Always
-          command: ["/usr/local/bin/codex-k8s-worker"]
           env:
+            - name: CODEXK8S_ENV
+              value: ai-staging
             - name: CODEXK8S_DB_HOST
               value: postgres
             - name: CODEXK8S_DB_PORT
@@ -725,22 +727,6 @@ spec:
               value: "${CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME}"
             - name: CODEXK8S_WORKER_RUN_QUOTA_PODS
               value: "${CODEXK8S_WORKER_RUN_QUOTA_PODS}"
-            - name: CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_CPU
-              value: "${CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_CPU}"
-            - name: CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_MEMORY
-              value: "${CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_MEMORY}"
-            - name: CODEXK8S_WORKER_RUN_QUOTA_LIMITS_CPU
-              value: "${CODEXK8S_WORKER_RUN_QUOTA_LIMITS_CPU}"
-            - name: CODEXK8S_WORKER_RUN_QUOTA_LIMITS_MEMORY
-              value: "${CODEXK8S_WORKER_RUN_QUOTA_LIMITS_MEMORY}"
-            - name: CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_CPU
-              value: "${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_CPU}"
-            - name: CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_MEMORY
-              value: "${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_MEMORY}"
-            - name: CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_CPU
-              value: "${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_CPU}"
-            - name: CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY
-              value: "${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY}"
             - name: CODEXK8S_AGENT_DEFAULT_MODEL
               value: "${CODEXK8S_AGENT_DEFAULT_MODEL}"
             - name: CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT
@@ -749,10 +735,3 @@ spec:
               value: "${CODEXK8S_AGENT_DEFAULT_LOCALE}"
             - name: CODEXK8S_AGENT_BASE_BRANCH
               value: "${CODEXK8S_AGENT_BASE_BRANCH}"
-          resources:
-            requests:
-              cpu: ${CODEXK8S_WORKER_RESOURCES_REQUEST_CPU}
-              memory: ${CODEXK8S_WORKER_RESOURCES_REQUEST_MEMORY}
-            limits:
-              cpu: ${CODEXK8S_WORKER_RESOURCES_LIMIT_CPU}
-              memory: ${CODEXK8S_WORKER_RESOURCES_LIMIT_MEMORY}
