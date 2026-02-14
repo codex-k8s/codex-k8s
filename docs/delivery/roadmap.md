@@ -2,14 +2,16 @@
 doc_id: RDM-CK8S-0001
 type: roadmap
 title: "codex-k8s — Roadmap"
-status: draft
+status: active
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-13
+updated_at: 2026-02-14
 approvals:
   required: ["Owner"]
   status: approved
-  request_id: "owner-2026-02-06-mvp"
+  request_id: "owner-2026-02-12-project-docs-approval"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-12
 ---
 
 # Roadmap: codex-k8s

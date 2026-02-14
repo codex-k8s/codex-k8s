@@ -2,10 +2,16 @@
 doc_id: MAP-CK8S-0001
 type: issue-map
 title: "Issue ↔ Docs Map"
-status: draft
+status: active
 owner_role: KM
 created_at: 2026-02-06
-updated_at: 2026-02-13
+updated_at: 2026-02-14
+approvals:
+  required: ["Owner"]
+  status: approved
+  request_id: "owner-2026-02-12-project-docs-approval"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-12
 ---
 
 # Issue ↔ Docs Map
@@ -18,6 +24,7 @@ updated_at: 2026-02-13
 |---|---|---|---|---|---|---|---|---|
 | #1 | `docs/delivery/issue_map.md` + `docs/delivery/requirements_traceability.md` + `docs/delivery/sprint_s1_mvp_vertical_slice.md` + `docs/delivery/sprint_s2_dogfooding.md` | `docs/product/requirements_machine_driven.md` + `docs/product/brief.md` + `docs/product/constraints.md` + `docs/product/agents_operating_model.md` + `docs/product/labels_and_trigger_policy.md` + `docs/product/stage_process_model.md` | `docs/architecture/c4_context.md`, `docs/architecture/c4_container.md`, `docs/architecture/data_model.md`, `docs/architecture/api_contract.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/prompt_templates_policy.md` | `ADR-0001..0004` | S2 dogfooding test plan pending | TBD | TBD | in-progress |
 | #19 | `docs/delivery/issue_map.md` + `docs/delivery/requirements_traceability.md` + `docs/delivery/sprint_s2_dogfooding.md` + `docs/delivery/sprint_s3_mvp_completion.md` | `docs/product/requirements_machine_driven.md` + `docs/product/brief.md` + `docs/product/constraints.md` + `docs/product/agents_operating_model.md` + `docs/product/labels_and_trigger_policy.md` + `docs/product/stage_process_model.md` | `docs/architecture/api_contract.md`, `docs/architecture/data_model.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/prompt_templates_policy.md` | `ADR-0001..0004` | S2 Day7 regression gate completed (`docs/delivery/regression_s2_gate.md`); S3 Day11 package planned | TBD | TBD | in-progress |
+| #29 | `docs/delivery/issue_map.md` + project docset metadata alignment (`status/approvals`) | `docs/product/requirements_machine_driven.md` + `docs/product/brief.md` + `docs/product/constraints.md` + `docs/product/agents_operating_model.md` + `docs/product/labels_and_trigger_policy.md` + `docs/product/stage_process_model.md` | `docs/architecture/c4_context.md`, `docs/architecture/c4_container.md`, `docs/architecture/data_model.md`, `docs/architecture/api_contract.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/prompt_templates_policy.md` | `ADR-0001..0004` | n/a (документационные правки) | n/a | n/a | completed |
 
 ## Требования и трассировка
 - Source of truth требований: `docs/product/requirements_machine_driven.md`.
