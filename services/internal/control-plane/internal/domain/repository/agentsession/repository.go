@@ -19,6 +19,8 @@ type Repository interface {
 	Upsert(ctx context.Context, params UpsertParams) error
 	// SetWaitStateByRunID updates wait-state and timeout guard fields for the latest run session.
 	SetWaitStateByRunID(ctx context.Context, params SetWaitStateParams) (bool, error)
+	// GetByRunID returns latest session snapshot for one run id.
+	GetByRunID(ctx context.Context, runID string) (Session, bool, error)
 	// GetLatestByRepositoryBranchAndAgent returns latest snapshot by repository + branch + agent key.
 	GetLatestByRepositoryBranchAndAgent(ctx context.Context, repositoryFullName string, branchName string, agentKey string) (Session, bool, error)
 }

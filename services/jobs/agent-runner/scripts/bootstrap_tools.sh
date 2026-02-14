@@ -13,13 +13,37 @@ apt-get install -y --no-install-recommends \
 rm -rf /var/lib/apt/lists/*
 
 : "${PROTOC_VERSION:=32.1}"
-TMP_PROTOC_DIR="$(mktemp -d)"
-curl -sSL -o "${TMP_PROTOC_DIR}/protoc.zip" \
-  "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"
-unzip -qo "${TMP_PROTOC_DIR}/protoc.zip" -d "${TMP_PROTOC_DIR}"
-install -m 0755 "${TMP_PROTOC_DIR}/bin/protoc" /usr/local/bin/protoc
-cp -r "${TMP_PROTOC_DIR}/include/." /usr/local/include/
-rm -rf "${TMP_PROTOC_DIR}"
+install_protoc_from_apt() {
+  apt-get update -y
+  apt-get install -y --no-install-recommends protobuf-compiler
+  rm -rf /var/lib/apt/lists/*
+}
+
+install_protoc_from_release() {
+  local tmp_dir
+  tmp_dir="$(mktemp -d)"
+
+  if ! curl -fL --retry 5 --retry-all-errors --retry-delay 2 --retry-max-time 120 \
+    -o "${tmp_dir}/protoc.zip" \
+    "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip"; then
+    rm -rf "${tmp_dir}"
+    return 1
+  fi
+
+  if ! unzip -tq "${tmp_dir}/protoc.zip" >/dev/null; then
+    rm -rf "${tmp_dir}"
+    return 1
+  fi
+
+  unzip -qo "${tmp_dir}/protoc.zip" -d "${tmp_dir}"
+  install -m 0755 "${tmp_dir}/bin/protoc" /usr/local/bin/protoc
+  cp -r "${tmp_dir}/include/." /usr/local/include/
+  rm -rf "${tmp_dir}"
+}
+
+if ! install_protoc_from_release; then
+  install_protoc_from_apt
+fi
 
 if [[ -x /usr/local/go/bin/go && ! -e /usr/local/bin/go ]]; then
   ln -s /usr/local/go/bin/go /usr/local/bin/go

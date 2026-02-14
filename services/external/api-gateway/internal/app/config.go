@@ -42,6 +42,9 @@ type Config struct {
 
 	// GitHubWebhookSecret is used to validate X-Hub-Signature-256.
 	GitHubWebhookSecret string `env:"CODEXK8S_GITHUB_WEBHOOK_SECRET,required,notEmpty"`
+	// MCPCallbackToken is shared token for external approver/executor callback contracts.
+	// If empty, callback endpoints work without token auth (network perimeter restrictions are expected).
+	MCPCallbackToken string `env:"CODEXK8S_MCP_CALLBACK_TOKEN"`
 	// WebhookMaxBodyBytes limits accepted webhook payload size.
 	WebhookMaxBodyBytes int64 `env:"CODEXK8S_WEBHOOK_MAX_BODY_BYTES" envDefault:"1048576"`
 }

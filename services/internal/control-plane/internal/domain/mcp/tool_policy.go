@@ -13,6 +13,9 @@ func DefaultToolCatalog() []ToolCapability {
 		{Name: ToolMCPSecretSyncEnv, Description: "Sync one secret value between GitHub repository and Kubernetes namespace", Category: ToolCategoryWrite, Approval: ToolApprovalOwner},
 		{Name: ToolMCPDatabaseLifecycle, Description: "Create, drop or describe one environment database", Category: ToolCategoryWrite, Approval: ToolApprovalOwner},
 		{Name: ToolMCPOwnerFeedbackRequest, Description: "Request owner feedback with predefined options", Category: ToolCategoryWrite, Approval: ToolApprovalOwner},
+		{Name: ToolSelfImproveRunsList, Description: "List project runs for self-improve diagnostics with pagination", Category: ToolCategoryRead, Approval: ToolApprovalNone},
+		{Name: ToolSelfImproveRunLookup, Description: "Find project runs by issue/pr references for self-improve diagnostics", Category: ToolCategoryRead, Approval: ToolApprovalNone},
+		{Name: ToolSelfImproveSessionGet, Description: "Get codex-cli session JSON for one run and target /tmp path metadata", Category: ToolCategoryRead, Approval: ToolApprovalNone},
 	}
 
 	sort.Slice(items, func(i, j int) bool {

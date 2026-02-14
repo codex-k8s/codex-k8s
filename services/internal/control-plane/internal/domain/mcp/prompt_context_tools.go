@@ -18,6 +18,7 @@ func (s *Service) PromptContext(ctx context.Context, session SessionContext) (Pr
 		s.auditToolFailed(ctx, session, tool, err)
 		return PromptContextResult{}, err
 	}
+	allowedTools := s.allowedToolsForRunContext(runCtx)
 
 	s.auditToolCalled(ctx, runCtx.Session, tool)
 
@@ -48,7 +49,7 @@ func (s *Service) PromptContext(ctx context.Context, session SessionContext) (Pr
 			Services: buildPromptServices(s.cfg.PublicBaseURL, s.cfg.InternalMCPBaseURL),
 			MCP: PromptMCPContext{
 				ServerName: s.cfg.ServerName,
-				Tools:      s.ToolCatalog(),
+				Tools:      allowedTools,
 			},
 		},
 	}

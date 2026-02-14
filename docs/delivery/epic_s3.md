@@ -39,7 +39,11 @@ approvals:
 - Day 2 (`staff runtime debug console`) завершён и согласован Owner.
 - Day 3 (`mcp deterministic secret sync`) завершён.
 - Day 4 (`mcp database lifecycle`) завершён.
-- Day 5..Day12 остаются в статусе planned.
+- Day 5 (`owner feedback + HTTP approver/executor`) завершён.
+- Day 6 (`run:self-improve` ingestion/diagnostics) завершён.
+- Day 7 (`run:self-improve` updater/PR flow) завершён.
+- Day 8 (`agent toolchain auto-extension`) завершён.
+- Day 9..Day12 остаются в статусе planned.
 
 ## Критерий успеха Sprint S3 (выжимка)
 - Все MVP-сценарии из Issue #19 покрыты кодом, тестами и эксплуатационной документацией.

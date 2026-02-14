@@ -28,6 +28,10 @@ var (
 	queryListRunIDsByRepositoryIssue string
 	//go:embed sql/list_run_ids_by_repository_pull_request.sql
 	queryListRunIDsByRepositoryPullRequest string
+	//go:embed sql/list_recent_by_project.sql
+	queryListRecentByProject string
+	//go:embed sql/search_recent_by_project_issue_or_pull_request.sql
+	querySearchRecentByProjectIssueOrPullRequest string
 	//go:embed sql/upsert_run_agent_logs.sql
 	queryUpsertRunAgentLogs string
 	//go:embed sql/cleanup_run_agent_logs_finished_before.sql
@@ -100,6 +104,79 @@ func (r *Repository) GetByID(ctx context.Context, runID string) (domainrepo.Run,
 	}
 	row = items[0]
 	return runFromDBModel(row), true, nil
+}
+
+// ListRecentByProject returns project runs ordered by newest first.
+func (r *Repository) ListRecentByProject(ctx context.Context, projectID string, repositoryFullName string, limit int, offset int) ([]domainrepo.RunLookupItem, error) {
+	trimmedProjectID := strings.TrimSpace(projectID)
+	if trimmedProjectID == "" {
+		return nil, fmt.Errorf("project_id is required")
+	}
+	normalizedLimit := limit
+	if normalizedLimit <= 0 {
+		normalizedLimit = 50
+	}
+	if normalizedLimit > 200 {
+		normalizedLimit = 200
+	}
+	normalizedOffset := offset
+	if normalizedOffset < 0 {
+		normalizedOffset = 0
+	}
+
+	rows, err := r.db.Query(ctx, queryListRecentByProject, trimmedProjectID, strings.TrimSpace(repositoryFullName), normalizedLimit, normalizedOffset)
+	if err != nil {
+		return nil, fmt.Errorf("list recent runs by project: %w", err)
+	}
+	runRows, err := pgx.CollectRows(rows, pgx.RowToStructByName[dbmodel.RunLookupRow])
+	if err != nil {
+		return nil, fmt.Errorf("collect recent runs by project: %w", err)
+	}
+	items := make([]domainrepo.RunLookupItem, 0, len(runRows))
+	for _, row := range runRows {
+		items = append(items, runLookupItemFromDBModel(row))
+	}
+	return items, nil
+}
+
+// SearchRecentByProjectIssueOrPullRequest returns project runs by issue/pr references ordered by newest first.
+func (r *Repository) SearchRecentByProjectIssueOrPullRequest(ctx context.Context, projectID string, repositoryFullName string, issueNumber int64, pullRequestNumber int64, limit int) ([]domainrepo.RunLookupItem, error) {
+	trimmedProjectID := strings.TrimSpace(projectID)
+	if trimmedProjectID == "" {
+		return nil, fmt.Errorf("project_id is required")
+	}
+	if issueNumber <= 0 && pullRequestNumber <= 0 {
+		return nil, fmt.Errorf("issue_number or pull_request_number is required")
+	}
+	normalizedLimit := limit
+	if normalizedLimit <= 0 {
+		normalizedLimit = 50
+	}
+	if normalizedLimit > 200 {
+		normalizedLimit = 200
+	}
+
+	rows, err := r.db.Query(
+		ctx,
+		querySearchRecentByProjectIssueOrPullRequest,
+		trimmedProjectID,
+		strings.TrimSpace(repositoryFullName),
+		issueNumber,
+		pullRequestNumber,
+		normalizedLimit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("search recent runs by issue/pull request: %w", err)
+	}
+	runRows, err := pgx.CollectRows(rows, pgx.RowToStructByName[dbmodel.RunLookupRow])
+	if err != nil {
+		return nil, fmt.Errorf("collect recent runs by issue/pull request: %w", err)
+	}
+	items := make([]domainrepo.RunLookupItem, 0, len(runRows))
+	for _, row := range runRows {
+		items = append(items, runLookupItemFromDBModel(row))
+	}
+	return items, nil
 }
 
 // ListRunIDsByRepositoryIssue returns run ids for one repository/issue pair.

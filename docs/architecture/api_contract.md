@@ -38,7 +38,10 @@ approvals:
   - label-операции (`github_labels_*`);
   - `secret.sync.github_k8s` (deterministic secret sync GitHub + Kubernetes);
   - `database.lifecycle` (`create/delete/describe`);
-  - owner feedback request (options + custom answer).
+  - `owner.feedback.request` (options + custom answer).
+- Для внешних approver/executor адаптеров активированы callback endpoint'ы:
+  - `POST /api/v1/mcp/approver/callback`;
+  - `POST /api/v1/mcp/executor/callback`.
 - Базовые MCP label-инструменты:
   - `github_labels_list`;
   - `github_labels_add`;
@@ -86,6 +89,8 @@ approvals:
 | Operation | Method | Path | Auth | Notes |
 |---|---|---|---|---|
 | Ingest GitHub webhook | POST | `/api/v1/webhooks/github` | webhook signature | idempotency по `X-GitHub-Delivery`, response status: `accepted|duplicate|ignored` |
+| MCP approver callback | POST | `/api/v1/mcp/approver/callback` | callback token | external approver decision (`approved|denied|expired|failed|applied`) |
+| MCP executor callback | POST | `/api/v1/mcp/executor/callback` | callback token | external executor decision (`approved|denied|expired|failed|applied`) |
 | Start GitHub OAuth | GET | `/api/v1/auth/github/login` | public | redirect |
 | Complete GitHub OAuth callback | GET | `/api/v1/auth/github/callback` | public | set auth cookie |
 | Logout | POST | `/api/v1/auth/logout` | staff JWT | clears auth cookies |
@@ -156,6 +161,13 @@ approvals:
 - Telegram (`github.com/codex-k8s/telegram-approver`, `github.com/codex-k8s/telegram-executor`) рассматривается как первый адаптер контракта, но не как единственный канал.
 - Контракт должен поддерживать async callbacks и единый `correlation_id` для аудита.
 - Для control tools обязателен `approval_required` режим по policy matrix.
+- Для `run:self-improve` в MCP включены read-only diagnostic ручки:
+  - `self_improve_runs_list` (page/limit, newest-first),
+  - `self_improve_run_lookup` (поиск run по Issue/PR),
+  - `self_improve_session_get` (извлечение `codex-cli` session JSON + target path в `/tmp/codex-sessions/...`).
+- MCP tools экспонируются как run-scoped каталог:
+  - `tools/list` возвращает только ручки, разрешённые для текущего профиля запуска;
+  - `tools/call` отклоняет вызовы ручек вне разрешённого профиля.
 
 ## Session resume and timeout behavior
 - run/session поддерживает paused states `waiting_owner_review` и `waiting_mcp`.

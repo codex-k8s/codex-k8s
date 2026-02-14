@@ -90,7 +90,11 @@ approvals:
 - `Owner`:
   - выполняет финальный review/approve после прохождения pre-review.
 - `km`:
-  - ведёт цикл `run:self-improve`: анализирует повторяющиеся замечания/сбои, формирует и вносит улучшения в docs/prompt templates.
+  - ведёт цикл `run:self-improve`: анализирует повторяющиеся замечания/сбои, формирует и вносит улучшения в docs/prompt templates;
+  - обязан использовать MCP-диагностику запусков:
+    - `self_improve_runs_list` (пагинация истории запусков);
+    - `self_improve_run_lookup` (поиск запусков по Issue/PR);
+    - `self_improve_session_get` (извлечение `codex-cli` session JSON для анализа).
 - `dev` (в self-improve контуре):
   - дорабатывает toolchain/agent image, если self-improve выявил отсутствие инструментов или runtime-gap.
 
@@ -161,6 +165,10 @@ Seed-файлы:
 
 - По умолчанию одновременно активен максимум 1 `run:dev` на issue.
 - Для `run:self-improve` допускается не более 1 активного запуска на issue/PR связку, чтобы избежать конфликтующих улучшений.
+- `run:self-improve` выполняется как управляемый диагностический цикл:
+  - извлечение run/session evidence;
+  - анализ причин;
+  - PR с улучшениями prompt/docs/guidelines/toolchain.
 - Лимиты параллелизма на проект задаются в настройках проекта и применяются worker-очередью.
 - Для `full-env` запусков обязателен отдельный namespace на run/issue с контролем cleanup.
 - MCP policy для инструментов/ресурсов определяется по связке:

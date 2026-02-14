@@ -26,6 +26,9 @@ type ServerConfig struct {
 	HTTPAddr string
 	// GitHubWebhookSecret is used by webhook handler to verify signatures.
 	GitHubWebhookSecret string
+	// MCPCallbackToken is shared token for external approver/executor callback contracts.
+	// Empty value means callback auth is disabled on HTTP level.
+	MCPCallbackToken string
 	// MaxBodyBytes sets webhook body size limit.
 	MaxBodyBytes int64
 	// CookieSecure controls Secure attribute for auth cookies.
@@ -69,6 +72,7 @@ func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Clien
 	}
 
 	h := newWebhookHandler(cfg, cp)
+	mcpH := newMCPCallbackHandler(cfg, cp)
 	authH := newAuthHandler(auth, cfg.CookieSecure)
 	staffH := newStaffHandler(cp)
 
@@ -81,6 +85,8 @@ func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Clien
 	e.GET("/metrics", echo.WrapHandler(promhttp.Handler()))
 
 	e.POST("/api/v1/webhooks/github", h.IngestGitHubWebhook)
+	e.POST("/api/v1/mcp/approver/callback", mcpH.CallbackApprover)
+	e.POST("/api/v1/mcp/executor/callback", mcpH.CallbackExecutor)
 
 	e.GET("/api/v1/auth/github/login", authH.LoginGitHub)
 	e.GET("/api/v1/auth/github/callback", authH.CallbackGitHub)

@@ -615,7 +615,8 @@ func (s *Service) ResolveApproval(ctx context.Context, params ResolveApprovalPar
 	if !ok {
 		return ResolveApprovalResult{}, fmt.Errorf("approval request not found")
 	}
-	if item.ApprovalState != entitytypes.MCPApprovalStateRequested {
+	state := decisionToApprovalState(decision)
+	if !canTransitionApprovalState(item.ApprovalState, state) {
 		return ResolveApprovalResult{
 			ID:            item.ID,
 			CorrelationID: item.CorrelationID,
@@ -626,7 +627,6 @@ func (s *Service) ResolveApproval(ctx context.Context, params ResolveApprovalPar
 		}, nil
 	}
 
-	state := decisionToApprovalState(decision)
 	decisionPayload := marshalRawJSON(approvalDecisionPayload{
 		Decision:  string(decision),
 		ActorID:   actorID,
@@ -684,6 +684,11 @@ func (s *Service) ResolveApproval(ctx context.Context, params ResolveApprovalPar
 			}, nil
 		}
 		updated = applied
+		if clearErr := s.setRunWaitState(ctx, approvalSession, waitStateNone, false); clearErr != nil {
+			return ResolveApprovalResult{}, clearErr
+		}
+	case entitytypes.MCPApprovalStateApplied:
+		s.auditApprovalApplied(ctx, approvalSession, updated, actorID)
 		if clearErr := s.setRunWaitState(ctx, approvalSession, waitStateNone, false); clearErr != nil {
 			return ResolveApprovalResult{}, clearErr
 		}
@@ -1029,6 +1034,8 @@ func decisionToApprovalState(decision ApprovalDecision) entitytypes.MCPApprovalS
 	switch decision {
 	case ApprovalDecisionApproved:
 		return entitytypes.MCPApprovalStateApproved
+	case ApprovalDecisionApplied:
+		return entitytypes.MCPApprovalStateApplied
 	case ApprovalDecisionDenied:
 		return entitytypes.MCPApprovalStateDenied
 	case ApprovalDecisionExpired:
@@ -1043,10 +1050,35 @@ func decisionToApprovalState(decision ApprovalDecision) entitytypes.MCPApprovalS
 func normalizeApprovalDecision(value ApprovalDecision) (ApprovalDecision, error) {
 	decision := ApprovalDecision(strings.ToLower(strings.TrimSpace(string(value))))
 	switch decision {
-	case ApprovalDecisionApproved, ApprovalDecisionDenied, ApprovalDecisionExpired, ApprovalDecisionFailed:
+	case ApprovalDecisionApproved, ApprovalDecisionDenied, ApprovalDecisionExpired, ApprovalDecisionFailed, ApprovalDecisionApplied:
 		return decision, nil
 	default:
 		return "", fmt.Errorf("decision is invalid")
+	}
+}
+
+func canTransitionApprovalState(current entitytypes.MCPApprovalState, target entitytypes.MCPApprovalState) bool {
+	switch current {
+	case entitytypes.MCPApprovalStateRequested:
+		switch target {
+		case entitytypes.MCPApprovalStateApproved,
+			entitytypes.MCPApprovalStateApplied,
+			entitytypes.MCPApprovalStateDenied,
+			entitytypes.MCPApprovalStateExpired,
+			entitytypes.MCPApprovalStateFailed:
+			return true
+		default:
+			return false
+		}
+	case entitytypes.MCPApprovalStateApproved:
+		switch target {
+		case entitytypes.MCPApprovalStateApplied, entitytypes.MCPApprovalStateFailed:
+			return true
+		default:
+			return false
+		}
+	default:
+		return false
 	}
 }
 

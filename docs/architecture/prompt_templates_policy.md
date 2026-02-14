@@ -144,6 +144,14 @@ approvals:
   - классификация findings (`docs`, `prompts`, `instructions`, `tools`);
   - ссылки на источники (`flow_events`, `agent_sessions`, PR/Issue comments);
   - proposal diff с оценкой риска.
+- В `run:self-improve` prompt-body обязан закреплять диагностический MCP-процесс:
+  - `self_improve_runs_list` (50/page newest-first);
+  - `self_improve_run_lookup` (поиск run по Issue/PR);
+  - `self_improve_session_get` (получение `codex-cli` session JSON и путь под `/tmp/codex-sessions/...`).
+- Перед анализом session JSON prompt обязан требовать создание целевого каталога `/tmp/codex-sessions/<run-id>`.
+- Repo seed baseline для этого контура:
+  - `docs/product/prompt-seeds/self-improve-work.md`;
+  - `docs/product/prompt-seeds/self-improve-review.md`.
 - Изменения seed/override, внесённые через self-improve, проходят стандартный PR/review цикл.
 - Для предотвращения drift:
   - каждый self-improve diff должен содержать traceable rationale;

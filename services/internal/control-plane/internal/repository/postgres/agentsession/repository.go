@@ -17,6 +17,8 @@ import (
 var (
 	//go:embed sql/upsert.sql
 	queryUpsert string
+	//go:embed sql/get_by_run_id.sql
+	queryGetByRunID string
 	//go:embed sql/get_latest_by_repository_branch_and_agent.sql
 	queryGetLatestByRepositoryBranchAndAgent string
 	//go:embed sql/set_wait_state_by_run_id.sql
@@ -124,8 +126,29 @@ func (r *Repository) SetWaitStateByRunID(ctx context.Context, params domainrepo.
 	return res.RowsAffected() > 0, nil
 }
 
+// GetByRunID returns latest session snapshot for one run id.
+func (r *Repository) GetByRunID(ctx context.Context, runID string) (domainrepo.Session, bool, error) {
+	return r.queryOneSession(
+		ctx,
+		queryGetByRunID,
+		"run id",
+		strings.TrimSpace(runID),
+	)
+}
+
 // GetLatestByRepositoryBranchAndAgent returns latest snapshot by repository + branch + agent key.
 func (r *Repository) GetLatestByRepositoryBranchAndAgent(ctx context.Context, repositoryFullName string, branchName string, agentKey string) (domainrepo.Session, bool, error) {
+	return r.queryOneSession(
+		ctx,
+		queryGetLatestByRepositoryBranchAndAgent,
+		"repository+branch+agent",
+		strings.TrimSpace(repositoryFullName),
+		strings.TrimSpace(branchName),
+		strings.TrimSpace(agentKey),
+	)
+}
+
+func (r *Repository) queryOneSession(ctx context.Context, query string, operationLabel string, args ...any) (domainrepo.Session, bool, error) {
 	var (
 		item       domainrepo.Session
 		projectID  pgtype.Text
@@ -149,13 +172,7 @@ func (r *Repository) GetLatestByRepositoryBranchAndAgent(ctx context.Context, re
 		finishedAt pgtype.Timestamptz
 	)
 
-	err := r.db.QueryRow(
-		ctx,
-		queryGetLatestByRepositoryBranchAndAgent,
-		strings.TrimSpace(repositoryFullName),
-		strings.TrimSpace(branchName),
-		strings.TrimSpace(agentKey),
-	).Scan(
+	err := r.db.QueryRow(ctx, query, args...).Scan(
 		&item.ID,
 		&item.RunID,
 		&item.CorrelationID,
@@ -189,7 +206,7 @@ func (r *Repository) GetLatestByRepositoryBranchAndAgent(ctx context.Context, re
 		if errors.Is(err, pgx.ErrNoRows) {
 			return domainrepo.Session{}, false, nil
 		}
-		return domainrepo.Session{}, false, fmt.Errorf("get latest agent session by repository+branch+agent: %w", err)
+		return domainrepo.Session{}, false, fmt.Errorf("get latest agent session by %s: %w", operationLabel, err)
 	}
 
 	if projectID.Valid {

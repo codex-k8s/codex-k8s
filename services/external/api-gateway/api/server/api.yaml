@@ -55,6 +55,60 @@ paths:
         "500":
           $ref: "#/components/responses/Internal"
 
+  /api/v1/mcp/approver/callback:
+    post:
+      summary: Resolve one MCP approval request from external approver callback
+      operationId: mcpApproverCallback
+      tags: [mcp-callbacks]
+      parameters:
+        - $ref: "#/components/parameters/MCPCallbackToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MCPApprovalCallbackRequest"
+      responses:
+        "200":
+          description: Approval callback applied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResolveApprovalDecisionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/Internal"
+
+  /api/v1/mcp/executor/callback:
+    post:
+      summary: Resolve one MCP approval request from external executor callback
+      operationId: mcpExecutorCallback
+      tags: [mcp-callbacks]
+      parameters:
+        - $ref: "#/components/parameters/MCPCallbackToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MCPApprovalCallbackRequest"
+      responses:
+        "200":
+          description: Executor callback applied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResolveApprovalDecisionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/Internal"
+
   /api/v1/auth/github/login:
     get:
       summary: Start GitHub OAuth login
@@ -692,6 +746,12 @@ components:
         type: integer
         minimum: 1
         maximum: 2000
+    MCPCallbackToken:
+      in: header
+      name: X-Codex-MCP-Token
+      required: false
+      schema:
+        type: string
   responses:
     BadRequest:
       description: Invalid request
@@ -973,6 +1033,24 @@ components:
           type: string
           enum: [approved, denied, expired, failed]
         reason:
+          type: string
+          nullable: true
+
+    MCPApprovalCallbackRequest:
+      type: object
+      additionalProperties: false
+      required: [approval_request_id, decision]
+      properties:
+        approval_request_id:
+          type: integer
+          format: int64
+        decision:
+          type: string
+          enum: [approved, denied, expired, failed, applied]
+        reason:
+          type: string
+          nullable: true
+        actor_id:
           type: string
           nullable: true
 

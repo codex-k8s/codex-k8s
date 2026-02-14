@@ -16,6 +16,9 @@ func registerTools(server *sdkmcp.Server, service domainService) {
 	addTool(server, mcpdomain.ToolMCPSecretSyncEnv, "Sync one secret to GitHub repository and Kubernetes namespace", service.MCPSecretSyncEnv)
 	addTool(server, mcpdomain.ToolMCPDatabaseLifecycle, "Create, drop or describe one environment database", service.MCPDatabaseLifecycle)
 	addTool(server, mcpdomain.ToolMCPOwnerFeedbackRequest, "Request owner feedback with predefined options", service.MCPOwnerFeedbackRequest)
+	addTool(server, mcpdomain.ToolSelfImproveRunsList, "List project runs for self-improve diagnostics", service.SelfImproveRunsList)
+	addTool(server, mcpdomain.ToolSelfImproveRunLookup, "Find project runs by issue/pr references for self-improve diagnostics", service.SelfImproveRunLookup)
+	addTool(server, mcpdomain.ToolSelfImproveSessionGet, "Get codex-cli session JSON for one run with /tmp path metadata", service.SelfImproveSessionGet)
 }
 
 func addTool[In any, Out any](server *sdkmcp.Server, name mcpdomain.ToolName, description string, run func(context.Context, mcpdomain.SessionContext, In) (Out, error)) {

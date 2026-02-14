@@ -27,22 +27,34 @@ const (
 	modelGPT51CodexMini  = "gpt-5.1-codex-mini"
 )
 
-type runAgentContext struct {
-	RepositoryFullName   string
-	AgentKey             string
-	IssueNumber          int64
-	TargetBranch         string
-	ExistingPRNumber     int
-	TriggerKind          string
-	TriggerLabel         string
-	AgentDisplayName     string
+type runAgentTarget struct {
+	RepositoryFullName string
+	AgentKey           string
+	IssueNumber        int64
+	TargetBranch       string
+	ExistingPRNumber   int
+	TriggerKind        string
+	TriggerLabel       string
+	AgentDisplayName   string
+}
+
+type runAgentPromptContext struct {
 	PromptTemplateKind   string
 	PromptTemplateSource string
 	PromptTemplateLocale string
-	Model                string
-	ModelSource          string
-	ReasoningEffort      string
-	ReasoningSource      string
+}
+
+type runAgentModelContext struct {
+	Model           string
+	ModelSource     string
+	ReasoningEffort string
+	ReasoningSource string
+}
+
+type runAgentContext struct {
+	runAgentTarget
+	runAgentPromptContext
+	runAgentModelContext
 }
 
 type runAgentPayload struct {
@@ -75,29 +87,35 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 	payload := parseRunAgentPayload(runPayload)
 
 	ctx := runAgentContext{
-		RepositoryFullName: strings.TrimSpace(payload.repositoryFullName),
-		AgentKey:           strings.TrimSpace(payload.agentKey),
-		IssueNumber:        payload.issueNumber,
-		TargetBranch:       strings.TrimSpace(payload.targetBranch),
-		ExistingPRNumber:   payload.existingPRNumber,
-		TriggerKind:        normalizeTriggerKind(payload.triggerKind),
-		TriggerLabel:       strings.TrimSpace(payload.triggerLabel),
-		AgentDisplayName:   strings.TrimSpace(payload.agentDisplayName),
-		PromptTemplateKind: promptTemplateKindWork,
-		Model:              defaults.DefaultModel,
-		ModelSource:        modelSourceDefault,
-		ReasoningEffort:    defaults.DefaultReasoningEffort,
-		ReasoningSource:    modelSourceDefault,
-		PromptTemplateLocale: func() string {
-			locale := strings.TrimSpace(defaults.DefaultLocale)
-			if locale == "" {
-				return "ru"
-			}
-			return locale
-		}(),
-		PromptTemplateSource: promptTemplateSourceSeed,
+		runAgentTarget: runAgentTarget{
+			RepositoryFullName: strings.TrimSpace(payload.repositoryFullName),
+			AgentKey:           strings.TrimSpace(payload.agentKey),
+			IssueNumber:        payload.issueNumber,
+			TargetBranch:       strings.TrimSpace(payload.targetBranch),
+			ExistingPRNumber:   payload.existingPRNumber,
+			TriggerKind:        normalizeTriggerKind(payload.triggerKind),
+			TriggerLabel:       strings.TrimSpace(payload.triggerLabel),
+			AgentDisplayName:   strings.TrimSpace(payload.agentDisplayName),
+		},
+		runAgentPromptContext: runAgentPromptContext{
+			PromptTemplateKind:   promptTemplateKindWork,
+			PromptTemplateSource: promptTemplateSourceSeed,
+			PromptTemplateLocale: func() string {
+				locale := strings.TrimSpace(defaults.DefaultLocale)
+				if locale == "" {
+					return "ru"
+				}
+				return locale
+			}(),
+		},
+		runAgentModelContext: runAgentModelContext{
+			Model:           defaults.DefaultModel,
+			ModelSource:     modelSourceDefault,
+			ReasoningEffort: defaults.DefaultReasoningEffort,
+			ReasoningSource: modelSourceDefault,
+		},
 	}
-	if webhookdomain.IsReviseTriggerKind(webhookdomain.TriggerKind(ctx.TriggerKind)) {
+	if resolvePromptTemplateKindForTrigger(ctx.TriggerKind) == promptTemplateKindReview {
 		ctx.PromptTemplateKind = promptTemplateKindReview
 	}
 	if ctx.AgentKey == "" {
@@ -136,6 +154,14 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 	ctx.ReasoningSource = reasoningSource
 
 	return ctx, nil
+}
+
+func resolvePromptTemplateKindForTrigger(triggerKind string) string {
+	normalized := webhookdomain.NormalizeTriggerKind(triggerKind)
+	if webhookdomain.IsReviseTriggerKind(normalized) || normalized == webhookdomain.TriggerKindSelfImprove {
+		return promptTemplateKindReview
+	}
+	return promptTemplateKindWork
 }
 
 type runAgentDefaults struct {

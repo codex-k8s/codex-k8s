@@ -24,7 +24,18 @@ import (
 
 const githubWebhookActorID = floweventdomain.ActorIDGitHubWebhook
 
-const defaultRunAgentKey = "dev"
+const (
+	agentKeyPM = "pm" // Product manager: defines and refines product artifacts.
+	agentKeySA = "sa" // Solution architect: drives architecture decisions and constraints.
+
+	agentKeyEM = "em" // Engineering manager: coordinates delivery process and gates.
+
+	defaultRunAgentKey = "dev"      // Developer: implements code and documentation changes.
+	agentKeyReviewer   = "reviewer" // Reviewer: performs preliminary technical review.
+	agentKeyQA         = "qa"       // QA: validates quality, test scenarios, and regressions.
+	agentKeySRE        = "sre"      // SRE/OPS: handles operations, stability, and runtime diagnostics.
+	agentKeyKM         = "km"       // Knowledge manager: maintains traceability and self-improve loop.
+)
 
 type runStatusService interface {
 	CleanupNamespacesByIssue(ctx context.Context, params runstatusdomain.CleanupByIssueParams) (runstatusdomain.CleanupByIssueResult, error)
@@ -476,6 +487,31 @@ func resolveRunAgentKey(trigger *issueRunTrigger) string {
 	switch trigger.Kind {
 	case webhookdomain.TriggerKindDev, webhookdomain.TriggerKindDevRevise:
 		return defaultRunAgentKey
+	case webhookdomain.TriggerKindIntake,
+		webhookdomain.TriggerKindIntakeRevise,
+		webhookdomain.TriggerKindVision,
+		webhookdomain.TriggerKindVisionRevise,
+		webhookdomain.TriggerKindPRD,
+		webhookdomain.TriggerKindPRDRevise:
+		return agentKeyPM
+	case webhookdomain.TriggerKindArch,
+		webhookdomain.TriggerKindArchRevise,
+		webhookdomain.TriggerKindDesign,
+		webhookdomain.TriggerKindDesignRevise:
+		return agentKeySA
+	case webhookdomain.TriggerKindPlan,
+		webhookdomain.TriggerKindPlanRevise,
+		webhookdomain.TriggerKindRelease,
+		webhookdomain.TriggerKindRethink:
+		return agentKeyEM
+	case webhookdomain.TriggerKindDocAudit:
+		return agentKeyReviewer
+	case webhookdomain.TriggerKindQA:
+		return agentKeyQA
+	case webhookdomain.TriggerKindPostDeploy, webhookdomain.TriggerKindOps:
+		return agentKeySRE
+	case webhookdomain.TriggerKindSelfImprove:
+		return agentKeyKM
 	default:
 		return defaultRunAgentKey
 	}

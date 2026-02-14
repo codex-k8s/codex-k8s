@@ -111,6 +111,7 @@ type runResult struct {
 	report              codexReport
 	codexExecOutput     string
 	gitPushOutput       string
+	toolGaps            []string
 }
 
 type restoredSession struct {
@@ -128,13 +129,17 @@ type codexState struct {
 }
 
 type codexReport struct {
-	Summary         string `json:"summary"`
-	Branch          string `json:"branch"`
-	PRNumber        int    `json:"pr_number"`
-	PRURL           string `json:"pr_url"`
-	SessionID       string `json:"session_id"`
-	Model           string `json:"model"`
-	ReasoningEffort string `json:"reasoning_effort"`
+	Summary         string   `json:"summary"`
+	Branch          string   `json:"branch"`
+	PRNumber        int      `json:"pr_number"`
+	PRURL           string   `json:"pr_url"`
+	SessionID       string   `json:"session_id"`
+	Model           string   `json:"model"`
+	ReasoningEffort string   `json:"reasoning_effort"`
+	Diagnosis       string   `json:"diagnosis,omitempty"`
+	ActionItems     []string `json:"action_items,omitempty"`
+	EvidenceRefs    []string `json:"evidence_refs,omitempty"`
+	ToolGaps        []string `json:"tool_gaps,omitempty"`
 }
 
 type promptTaskTemplateData struct {
@@ -192,4 +197,17 @@ type sessionRuntimeLogFields struct {
 	CodexExecOutput  string `json:"codex_exec_output,omitempty"`
 	GitPushOutput    string `json:"git_push_output,omitempty"`
 	ExistingPRNumber int    `json:"existing_pr_number,omitempty"`
+}
+
+type selfImproveDiagnosisReadyPayload struct {
+	Diagnosis    string   `json:"diagnosis"`
+	ActionItems  []string `json:"action_items"`
+	EvidenceRefs []string `json:"evidence_refs"`
+	ToolGaps     []string `json:"tool_gaps,omitempty"`
+}
+
+type toolchainGapDetectedPayload struct {
+	ToolGaps             []string `json:"tool_gaps"`
+	Sources              []string `json:"sources"`
+	SuggestedUpdatePaths []string `json:"suggested_update_paths"`
 }

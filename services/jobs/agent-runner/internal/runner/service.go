@@ -37,6 +37,9 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	if mkErr := os.MkdirAll(state.workspaceDir, 0o755); mkErr != nil {
 		return fmt.Errorf("create workspace dir: %w", mkErr)
 	}
+	if mkErr := os.MkdirAll(selfImproveSessionsDir, 0o755); mkErr != nil {
+		return fmt.Errorf("create self-improve sessions dir: %w", mkErr)
+	}
 	cleanupGitAuthEnv, err := s.configureGitAuthEnvironment(state.workspaceDir)
 	if err != nil {
 		return fmt.Errorf("configure git auth environment: %w", err)
@@ -170,7 +173,30 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
+	report.ActionItems = normalizeStringList(report.ActionItems)
+	report.EvidenceRefs = normalizeStringList(report.EvidenceRefs)
+	report.ToolGaps = normalizeStringList(report.ToolGaps)
 	result.report = report
+	normalizedTriggerKind := webhookdomain.NormalizeTriggerKind(triggerKind)
+	if normalizedTriggerKind == webhookdomain.TriggerKindSelfImprove {
+		if strings.TrimSpace(result.report.Diagnosis) == "" {
+			return fmt.Errorf("invalid codex result: diagnosis is required for self_improve")
+		}
+		if len(result.report.ActionItems) == 0 {
+			return fmt.Errorf("invalid codex result: action_items are required for self_improve")
+		}
+		if len(result.report.EvidenceRefs) == 0 {
+			return fmt.Errorf("invalid codex result: evidence_refs are required for self_improve")
+		}
+		if err := s.emitEvent(ctx, floweventdomain.EventTypeRunSelfImproveDiagnosisReady, selfImproveDiagnosisReadyPayload{
+			Diagnosis:    result.report.Diagnosis,
+			ActionItems:  result.report.ActionItems,
+			EvidenceRefs: result.report.EvidenceRefs,
+			ToolGaps:     result.report.ToolGaps,
+		}); err != nil {
+			s.logger.Warn("emit run.self_improve.diagnosis_ready failed", "err", err)
+		}
+	}
 	if report.PRNumber <= 0 {
 		return fmt.Errorf("invalid codex result: pr_number is required")
 	}
@@ -194,6 +220,27 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	result.gitPushOutput = redactSensitiveOutput(gitPushOutput, sensitiveValues)
 	if pushErr != nil {
 		return fmt.Errorf("git push failed: %w", pushErr)
+	}
+	result.toolGaps = detectToolGaps(result.report, result.codexExecOutput, result.gitPushOutput)
+	result.report.ToolGaps = result.toolGaps
+	if len(result.toolGaps) > 0 {
+		// This event is stored in flow_events and consumed by the self-improve loop:
+		// km agent analyzes gaps, updates prompts/docs/toolchain (Dockerfile/bootstrap_tools),
+		// and submits those updates as a separate PR for Owner review.
+		if err := s.emitEvent(ctx, floweventdomain.EventTypeRunToolchainGapDetected, toolchainGapDetectedPayload{
+			ToolGaps: result.toolGaps,
+			Sources: []string{
+				"codex_exec_output",
+				"git_push_output",
+				"report.tool_gaps",
+			},
+			SuggestedUpdatePaths: []string{
+				"services/jobs/agent-runner/scripts/bootstrap_tools.sh",
+				"services/jobs/agent-runner/Dockerfile",
+			},
+		}); err != nil {
+			s.logger.Warn("emit run.toolchain.gap_detected failed", "err", err)
+		}
 	}
 
 	finishedAt := time.Now().UTC()
