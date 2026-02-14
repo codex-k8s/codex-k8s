@@ -67,13 +67,6 @@ spec:
               port: http
             initialDelaySeconds: 10
             periodSeconds: 20
-          resources:
-            requests:
-              cpu: 50m
-              memory: 64Mi
-            limits:
-              cpu: 500m
-              memory: 256Mi
 ---
 apiVersion: v1
 kind: Service

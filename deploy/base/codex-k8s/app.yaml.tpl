@@ -115,13 +115,6 @@ spec:
               port: http
             initialDelaySeconds: 15
             periodSeconds: 20
-          resources:
-            requests:
-              cpu: ${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_CPU}
-              memory: ${CODEXK8S_API_GATEWAY_RESOURCES_REQUEST_MEMORY}
-            limits:
-              cpu: ${CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_CPU}
-              memory: ${CODEXK8S_API_GATEWAY_RESOURCES_LIMIT_MEMORY}
 ---
 apiVersion: v1
 kind: Service
@@ -476,13 +469,6 @@ spec:
               port: http
             initialDelaySeconds: 15
             periodSeconds: 20
-          resources:
-            requests:
-              cpu: ${CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_CPU}
-              memory: ${CODEXK8S_CONTROL_PLANE_RESOURCES_REQUEST_MEMORY}
-            limits:
-              cpu: ${CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_CPU}
-              memory: ${CODEXK8S_CONTROL_PLANE_RESOURCES_LIMIT_MEMORY}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -741,22 +727,6 @@ spec:
               value: "${CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME}"
             - name: CODEXK8S_WORKER_RUN_QUOTA_PODS
               value: "${CODEXK8S_WORKER_RUN_QUOTA_PODS}"
-            - name: CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_CPU
-              value: "${CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_CPU}"
-            - name: CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_MEMORY
-              value: "${CODEXK8S_WORKER_RUN_QUOTA_REQUESTS_MEMORY}"
-            - name: CODEXK8S_WORKER_RUN_QUOTA_LIMITS_CPU
-              value: "${CODEXK8S_WORKER_RUN_QUOTA_LIMITS_CPU}"
-            - name: CODEXK8S_WORKER_RUN_QUOTA_LIMITS_MEMORY
-              value: "${CODEXK8S_WORKER_RUN_QUOTA_LIMITS_MEMORY}"
-            - name: CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_CPU
-              value: "${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_CPU}"
-            - name: CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_MEMORY
-              value: "${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_REQUEST_MEMORY}"
-            - name: CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_CPU
-              value: "${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_CPU}"
-            - name: CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY
-              value: "${CODEXK8S_WORKER_RUN_LIMIT_DEFAULT_MEMORY}"
             - name: CODEXK8S_AGENT_DEFAULT_MODEL
               value: "${CODEXK8S_AGENT_DEFAULT_MODEL}"
             - name: CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT
@@ -765,10 +735,3 @@ spec:
               value: "${CODEXK8S_AGENT_DEFAULT_LOCALE}"
             - name: CODEXK8S_AGENT_BASE_BRANCH
               value: "${CODEXK8S_AGENT_BASE_BRANCH}"
-          resources:
-            requests:
-              cpu: ${CODEXK8S_WORKER_RESOURCES_REQUEST_CPU}
-              memory: ${CODEXK8S_WORKER_RESOURCES_REQUEST_MEMORY}
-            limits:
-              cpu: ${CODEXK8S_WORKER_RESOURCES_LIMIT_CPU}
-              memory: ${CODEXK8S_WORKER_RESOURCES_LIMIT_MEMORY}

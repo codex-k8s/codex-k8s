@@ -54,10 +54,3 @@ spec:
               port: http
             initialDelaySeconds: 10
             periodSeconds: 20
-          resources:
-            requests:
-              cpu: ${CODEXK8S_WEB_CONSOLE_RESOURCES_REQUEST_CPU}
-              memory: ${CODEXK8S_WEB_CONSOLE_RESOURCES_REQUEST_MEMORY}
-            limits:
-              cpu: ${CODEXK8S_WEB_CONSOLE_RESOURCES_LIMIT_CPU}
-              memory: ${CODEXK8S_WEB_CONSOLE_RESOURCES_LIMIT_MEMORY}

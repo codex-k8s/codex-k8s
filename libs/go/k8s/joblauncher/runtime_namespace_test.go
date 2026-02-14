@@ -43,8 +43,8 @@ func TestLauncher_EnsureNamespace_PreparesBaselineResources(t *testing.T) {
 	if _, err := client.CoreV1().ResourceQuotas(spec.Namespace).Get(ctx, launcher.cfg.RunResourceQuotaName, metav1.GetOptions{}); err != nil {
 		t.Fatalf("resourcequota not created: %v", err)
 	}
-	if _, err := client.CoreV1().LimitRanges(spec.Namespace).Get(ctx, launcher.cfg.RunLimitRangeName, metav1.GetOptions{}); err != nil {
-		t.Fatalf("limitrange not created: %v", err)
+	if _, err := client.CoreV1().LimitRanges(spec.Namespace).Get(ctx, launcher.cfg.RunLimitRangeName, metav1.GetOptions{}); err == nil {
+		t.Fatalf("limitrange should not be present in managed runtime namespace")
 	}
 }
 
