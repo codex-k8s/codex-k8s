@@ -33,7 +33,7 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) int {
 		printUsage(stdout)
 		return 0
 	default:
-		fmt.Fprintf(stderr, "unknown command %q\n\n", args[0])
+		writef(stderr, "unknown command %q\n\n", args[0])
 		printUsage(stderr)
 		return 2
 	}
@@ -59,11 +59,11 @@ func runValidate(args []string, stdout io.Writer, stderr io.Writer) int {
 		Vars: vars.Map(),
 	})
 	if err != nil {
-		fmt.Fprintf(stderr, "validate failed: %v\n", err)
+		writef(stderr, "validate failed: %v\n", err)
 		return 1
 	}
 
-	fmt.Fprintf(stdout, "ok project=%s env=%s namespace=%s services=%d\n",
+	writef(stdout, "ok project=%s env=%s namespace=%s services=%d\n",
 		result.Context.Project,
 		result.Context.Env,
 		result.Context.Namespace,
@@ -93,26 +93,26 @@ func runRender(args []string, stdout io.Writer, stderr io.Writer) int {
 		Vars: vars.Map(),
 	})
 	if err != nil {
-		fmt.Fprintf(stderr, "render failed: %v\n", err)
+		writef(stderr, "render failed: %v\n", err)
 		return 1
 	}
 
 	if strings.TrimSpace(*outputPath) != "" {
 		absOutput, err := filepath.Abs(*outputPath)
 		if err != nil {
-			fmt.Fprintf(stderr, "resolve output path: %v\n", err)
+			writef(stderr, "resolve output path: %v\n", err)
 			return 1
 		}
 		if err := os.WriteFile(absOutput, rendered, 0o644); err != nil {
-			fmt.Fprintf(stderr, "write output %q: %v\n", absOutput, err)
+			writef(stderr, "write output %q: %v\n", absOutput, err)
 			return 1
 		}
-		fmt.Fprintf(stdout, "rendered project=%s env=%s namespace=%s -> %s\n", ctx.Project, ctx.Env, ctx.Namespace, absOutput)
+		writef(stdout, "rendered project=%s env=%s namespace=%s -> %s\n", ctx.Project, ctx.Env, ctx.Namespace, absOutput)
 		return 0
 	}
 
 	if _, err := stdout.Write(rendered); err != nil {
-		fmt.Fprintf(stderr, "write output: %v\n", err)
+		writef(stderr, "write output: %v\n", err)
 		return 1
 	}
 	return 0
@@ -137,12 +137,12 @@ func runBootstrap(args []string, stdout io.Writer, stderr io.Writer) int {
 
 	absEnv, err := filepath.Abs(*envPath)
 	if err != nil {
-		fmt.Fprintf(stderr, "resolve env-file path: %v\n", err)
+		writef(stderr, "resolve env-file path: %v\n", err)
 		return 1
 	}
 	loadedEnv, err := envfile.Load(absEnv)
 	if err != nil {
-		fmt.Fprintf(stderr, "load env-file: %v\n", err)
+		writef(stderr, "load env-file: %v\n", err)
 		return 1
 	}
 	for key, value := range vars.Map() {
@@ -155,24 +155,24 @@ func runBootstrap(args []string, stdout io.Writer, stderr io.Writer) int {
 		Vars: loadedEnv,
 	})
 	if err != nil {
-		fmt.Fprintf(stderr, "validate services config before bootstrap: %v\n", err)
+		writef(stderr, "validate services config before bootstrap: %v\n", err)
 		return 1
 	}
 
 	absScript, err := filepath.Abs(*scriptPath)
 	if err != nil {
-		fmt.Fprintf(stderr, "resolve script path: %v\n", err)
+		writef(stderr, "resolve script path: %v\n", err)
 		return 1
 	}
 	if _, err := os.Stat(absScript); err != nil {
-		fmt.Fprintf(stderr, "bootstrap script is not available: %v\n", err)
+		writef(stderr, "bootstrap script is not available: %v\n", err)
 		return 1
 	}
 
-	fmt.Fprintf(stdout, "project=%s env=%s namespace=%s\n", result.Context.Project, result.Context.Env, result.Context.Namespace)
-	fmt.Fprintf(stdout, "env-file=%s\n", absEnv)
-	fmt.Fprintf(stdout, "script=%s\n", absScript)
-	fmt.Fprintf(stdout, "env-vars-loaded=%d\n", len(loadedEnv))
+	writef(stdout, "project=%s env=%s namespace=%s\n", result.Context.Project, result.Context.Env, result.Context.Namespace)
+	writef(stdout, "env-file=%s\n", absEnv)
+	writef(stdout, "script=%s\n", absScript)
+	writef(stdout, "env-vars-loaded=%d\n", len(loadedEnv))
 	if *dryRun {
 		printEnvKeys(stdout, loadedEnv)
 		return 0
@@ -191,24 +191,24 @@ func runBootstrap(args []string, stdout io.Writer, stderr io.Writer) int {
 		if errors.As(err, &exitErr) {
 			return exitErr.ExitCode()
 		}
-		fmt.Fprintf(stderr, "run bootstrap script: %v\n", err)
+		writef(stderr, "run bootstrap script: %v\n", err)
 		return 1
 	}
 	return 0
 }
 
 func printUsage(out io.Writer) {
-	fmt.Fprintln(out, "codex-bootstrap - bootstrap helper for codex-k8s")
-	fmt.Fprintln(out, "")
-	fmt.Fprintln(out, "Usage:")
-	fmt.Fprintln(out, "  codex-bootstrap validate [flags]")
-	fmt.Fprintln(out, "  codex-bootstrap render [flags]")
-	fmt.Fprintln(out, "  codex-bootstrap bootstrap [flags]")
-	fmt.Fprintln(out, "")
-	fmt.Fprintln(out, "Examples:")
-	fmt.Fprintln(out, "  go run ./cmd/codex-bootstrap validate --config services.yaml --env ai-staging")
-	fmt.Fprintln(out, "  go run ./cmd/codex-bootstrap render --config services.yaml --env ai-staging --output /tmp/rendered.yaml")
-	fmt.Fprintln(out, "  go run ./cmd/codex-bootstrap bootstrap --env-file bootstrap/host/config-e2e-test.env --dry-run")
+	writeln(out, "codex-bootstrap - bootstrap helper for codex-k8s")
+	writeln(out, "")
+	writeln(out, "Usage:")
+	writeln(out, "  codex-bootstrap validate [flags]")
+	writeln(out, "  codex-bootstrap render [flags]")
+	writeln(out, "  codex-bootstrap bootstrap [flags]")
+	writeln(out, "")
+	writeln(out, "Examples:")
+	writeln(out, "  go run ./cmd/codex-bootstrap validate --config services.yaml --env ai-staging")
+	writeln(out, "  go run ./cmd/codex-bootstrap render --config services.yaml --env ai-staging --output /tmp/rendered.yaml")
+	writeln(out, "  go run ./cmd/codex-bootstrap bootstrap --env-file bootstrap/host/config-e2e-test.env --dry-run")
 }
 
 type kvList []string
@@ -264,7 +264,7 @@ func mergeEnv(base []string, extras map[string]string) []string {
 
 func printEnvKeys(out io.Writer, env map[string]string) {
 	if len(env) == 0 {
-		fmt.Fprintln(out, "env-keys: <none>")
+		writeln(out, "env-keys: <none>")
 		return
 	}
 	keys := make([]string, 0, len(env))
@@ -272,10 +272,18 @@ func printEnvKeys(out io.Writer, env map[string]string) {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
-	fmt.Fprintln(out, "env-keys:")
+	writeln(out, "env-keys:")
 	for _, key := range keys {
-		fmt.Fprintf(out, "  - %s\n", key)
+		writef(out, "  - %s\n", key)
 	}
+}
+
+func writef(out io.Writer, format string, args ...any) {
+	_, _ = fmt.Fprintf(out, format, args...)
+}
+
+func writeln(out io.Writer, args ...any) {
+	_, _ = fmt.Fprintln(out, args...)
 }
 
 func mustAbs(path string) string {

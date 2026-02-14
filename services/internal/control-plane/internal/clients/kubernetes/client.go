@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"reflect"
@@ -14,10 +15,19 @@ import (
 	"github.com/codex-k8s/codex-k8s/libs/go/k8s/clientcfg"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	corev1 "k8s.io/api/core/v1"
+	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1api "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
+	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 )
@@ -26,6 +36,8 @@ import (
 type Client struct {
 	clientset  kubernetes.Interface
 	restConfig *rest.Config
+	dynamic    dynamic.Interface
+	restMapper metav1api.RESTMapper
 }
 
 const (
@@ -71,14 +83,33 @@ func NewClient(kubeconfigPath string) (*Client, error) {
 		return nil, fmt.Errorf("build kubernetes clientset: %w", err)
 	}
 
-	return NewForClient(restConfig, clientset), nil
+	dynamicClient, err := dynamic.NewForConfig(restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("build kubernetes dynamic client: %w", err)
+	}
+
+	mapper, err := buildRESTMapper(restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("build kubernetes rest mapper: %w", err)
+	}
+
+	return NewForClients(restConfig, clientset, dynamicClient, mapper), nil
 }
 
 // NewForClient creates Kubernetes MCP adapter for provided clientset.
 func NewForClient(restConfig *rest.Config, clientset kubernetes.Interface) *Client {
+	dynamicClient, _ := dynamic.NewForConfig(restConfig)
+	mapper, _ := buildRESTMapper(restConfig)
+	return NewForClients(restConfig, clientset, dynamicClient, mapper)
+}
+
+// NewForClients creates Kubernetes adapter with explicit typed/dynamic clients.
+func NewForClients(restConfig *rest.Config, clientset kubernetes.Interface, dynamicClient dynamic.Interface, mapper metav1api.RESTMapper) *Client {
 	return &Client{
 		clientset:  clientset,
 		restConfig: rest.CopyConfig(restConfig),
+		dynamic:    dynamicClient,
+		restMapper: mapper,
 	}
 }
 
@@ -401,6 +432,371 @@ func (c *Client) JobExists(ctx context.Context, namespace string, jobName string
 		return false, nil
 	}
 	return false, fmt.Errorf("get job %s/%s: %w", targetNamespace, targetJobName, err)
+}
+
+// AppliedResourceRef identifies one applied resource object.
+type AppliedResourceRef struct {
+	APIVersion string
+	Kind       string
+	Namespace  string
+	Name       string
+}
+
+// UpsertConfigMap creates or updates one namespaced ConfigMap.
+func (c *Client) UpsertConfigMap(ctx context.Context, namespace string, name string, data map[string]string) error {
+	targetNamespace := strings.TrimSpace(namespace)
+	if targetNamespace == "" {
+		return fmt.Errorf("kubernetes namespace is required")
+	}
+	targetName := strings.TrimSpace(name)
+	if targetName == "" {
+		return fmt.Errorf("kubernetes configmap name is required")
+	}
+	if len(data) == 0 {
+		return fmt.Errorf("kubernetes configmap data is required")
+	}
+
+	existing, err := c.clientset.CoreV1().ConfigMaps(targetNamespace).Get(ctx, targetName, metav1.GetOptions{})
+	if err != nil {
+		if !k8serrors.IsNotFound(err) {
+			return fmt.Errorf("get kubernetes configmap %s/%s: %w", targetNamespace, targetName, err)
+		}
+		copiedData := make(map[string]string, len(data))
+		for key, value := range data {
+			copiedData[key] = value
+		}
+		_, createErr := c.clientset.CoreV1().ConfigMaps(targetNamespace).Create(ctx, &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{Name: targetName},
+			Data:       copiedData,
+		}, metav1.CreateOptions{})
+		if createErr != nil {
+			return fmt.Errorf("create kubernetes configmap %s/%s: %w", targetNamespace, targetName, createErr)
+		}
+		return nil
+	}
+
+	copiedData := make(map[string]string, len(data))
+	for key, value := range data {
+		copiedData[key] = value
+	}
+	existing.Data = copiedData
+	if _, err := c.clientset.CoreV1().ConfigMaps(targetNamespace).Update(ctx, existing, metav1.UpdateOptions{}); err != nil {
+		return fmt.Errorf("update kubernetes configmap %s/%s: %w", targetNamespace, targetName, err)
+	}
+	return nil
+}
+
+// GetSecretData returns one namespaced secret data map when secret exists.
+func (c *Client) GetSecretData(ctx context.Context, namespace string, name string) (map[string][]byte, bool, error) {
+	targetNamespace := strings.TrimSpace(namespace)
+	targetName := strings.TrimSpace(name)
+	if targetNamespace == "" || targetName == "" {
+		return nil, false, fmt.Errorf("secret namespace and name are required")
+	}
+
+	secret, err := c.clientset.CoreV1().Secrets(targetNamespace).Get(ctx, targetName, metav1.GetOptions{})
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return nil, false, nil
+		}
+		return nil, false, fmt.Errorf("get kubernetes secret %s/%s: %w", targetNamespace, targetName, err)
+	}
+
+	out := make(map[string][]byte, len(secret.Data))
+	for key, value := range secret.Data {
+		out[key] = append([]byte(nil), value...)
+	}
+	return out, true, nil
+}
+
+// DeleteJobIfExists deletes namespaced Job if present.
+func (c *Client) DeleteJobIfExists(ctx context.Context, namespace string, name string) error {
+	targetNamespace := strings.TrimSpace(namespace)
+	targetName := strings.TrimSpace(name)
+	if targetNamespace == "" || targetName == "" {
+		return fmt.Errorf("job namespace and name are required")
+	}
+	if err := c.clientset.BatchV1().Jobs(targetNamespace).Delete(ctx, targetName, metav1.DeleteOptions{}); err != nil {
+		if k8serrors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("delete job %s/%s: %w", targetNamespace, targetName, err)
+	}
+	return nil
+}
+
+// WaitForJobComplete waits until one Job reports Complete condition.
+func (c *Client) WaitForJobComplete(ctx context.Context, namespace string, name string, timeout time.Duration) error {
+	targetNamespace := strings.TrimSpace(namespace)
+	targetName := strings.TrimSpace(name)
+	if targetNamespace == "" || targetName == "" {
+		return fmt.Errorf("job namespace and name are required")
+	}
+	if timeout <= 0 {
+		timeout = 20 * time.Minute
+	}
+
+	waitCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-waitCtx.Done():
+			return fmt.Errorf("wait job %s/%s complete: %w", targetNamespace, targetName, waitCtx.Err())
+		case <-ticker.C:
+			job, err := c.clientset.BatchV1().Jobs(targetNamespace).Get(waitCtx, targetName, metav1.GetOptions{})
+			if err != nil {
+				if k8serrors.IsNotFound(err) {
+					continue
+				}
+				return fmt.Errorf("get job %s/%s: %w", targetNamespace, targetName, err)
+			}
+			for _, condition := range job.Status.Conditions {
+				if condition.Type == batchv1.JobComplete && condition.Status == corev1.ConditionTrue {
+					return nil
+				}
+				if condition.Type == batchv1.JobFailed && condition.Status == corev1.ConditionTrue {
+					return fmt.Errorf("job %s/%s failed", targetNamespace, targetName)
+				}
+			}
+		}
+	}
+}
+
+// WaitForDeploymentReady waits until deployment reports Available condition.
+func (c *Client) WaitForDeploymentReady(ctx context.Context, namespace string, name string, timeout time.Duration) error {
+	targetNamespace := strings.TrimSpace(namespace)
+	targetName := strings.TrimSpace(name)
+	if targetNamespace == "" || targetName == "" {
+		return fmt.Errorf("deployment namespace and name are required")
+	}
+	if timeout <= 0 {
+		timeout = 20 * time.Minute
+	}
+
+	waitCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-waitCtx.Done():
+			return fmt.Errorf("wait deployment %s/%s ready: %w", targetNamespace, targetName, waitCtx.Err())
+		case <-ticker.C:
+			deployment, err := c.clientset.AppsV1().Deployments(targetNamespace).Get(waitCtx, targetName, metav1.GetOptions{})
+			if err != nil {
+				if k8serrors.IsNotFound(err) {
+					continue
+				}
+				return fmt.Errorf("get deployment %s/%s: %w", targetNamespace, targetName, err)
+			}
+			if isDeploymentReady(deployment) {
+				return nil
+			}
+		}
+	}
+}
+
+// WaitForStatefulSetReady waits until statefulset has all replicas ready.
+func (c *Client) WaitForStatefulSetReady(ctx context.Context, namespace string, name string, timeout time.Duration) error {
+	targetNamespace := strings.TrimSpace(namespace)
+	targetName := strings.TrimSpace(name)
+	if targetNamespace == "" || targetName == "" {
+		return fmt.Errorf("statefulset namespace and name are required")
+	}
+	if timeout <= 0 {
+		timeout = 20 * time.Minute
+	}
+
+	waitCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-waitCtx.Done():
+			return fmt.Errorf("wait statefulset %s/%s ready: %w", targetNamespace, targetName, waitCtx.Err())
+		case <-ticker.C:
+			statefulSet, err := c.clientset.AppsV1().StatefulSets(targetNamespace).Get(waitCtx, targetName, metav1.GetOptions{})
+			if err != nil {
+				if k8serrors.IsNotFound(err) {
+					continue
+				}
+				return fmt.Errorf("get statefulset %s/%s: %w", targetNamespace, targetName, err)
+			}
+			specReplicas := int32(1)
+			if statefulSet.Spec.Replicas != nil {
+				specReplicas = *statefulSet.Spec.Replicas
+			}
+			if statefulSet.Status.ReadyReplicas >= specReplicas {
+				return nil
+			}
+		}
+	}
+}
+
+// WaitForDaemonSetReady waits until daemonset reports desired number scheduled as ready.
+func (c *Client) WaitForDaemonSetReady(ctx context.Context, namespace string, name string, timeout time.Duration) error {
+	targetNamespace := strings.TrimSpace(namespace)
+	targetName := strings.TrimSpace(name)
+	if targetNamespace == "" || targetName == "" {
+		return fmt.Errorf("daemonset namespace and name are required")
+	}
+	if timeout <= 0 {
+		timeout = 20 * time.Minute
+	}
+
+	waitCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-waitCtx.Done():
+			return fmt.Errorf("wait daemonset %s/%s ready: %w", targetNamespace, targetName, waitCtx.Err())
+		case <-ticker.C:
+			daemonSet, err := c.clientset.AppsV1().DaemonSets(targetNamespace).Get(waitCtx, targetName, metav1.GetOptions{})
+			if err != nil {
+				if k8serrors.IsNotFound(err) {
+					continue
+				}
+				return fmt.Errorf("get daemonset %s/%s: %w", targetNamespace, targetName, err)
+			}
+			if daemonSet.Status.DesiredNumberScheduled > 0 &&
+				daemonSet.Status.NumberReady >= daemonSet.Status.DesiredNumberScheduled {
+				return nil
+			}
+		}
+	}
+}
+
+// ApplyManifest applies YAML manifest documents via server-side apply.
+func (c *Client) ApplyManifest(ctx context.Context, manifest []byte, namespaceOverride string, fieldManager string) ([]AppliedResourceRef, error) {
+	if len(bytes.TrimSpace(manifest)) == 0 {
+		return nil, nil
+	}
+	if c.dynamic == nil {
+		return nil, fmt.Errorf("dynamic kubernetes client is not configured")
+	}
+	if c.restMapper == nil {
+		return nil, fmt.Errorf("kubernetes rest mapper is not configured")
+	}
+	manager := strings.TrimSpace(fieldManager)
+	if manager == "" {
+		manager = "codex-k8s-control-plane"
+	}
+	overrideNamespace := strings.TrimSpace(namespaceOverride)
+
+	decoder := yamlutil.NewYAMLOrJSONDecoder(bytes.NewReader(manifest), 4096)
+	applied := make([]AppliedResourceRef, 0, 8)
+
+	for {
+		var objectMap map[string]any
+		if err := decoder.Decode(&objectMap); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, fmt.Errorf("decode manifest yaml: %w", err)
+		}
+		if len(objectMap) == 0 {
+			continue
+		}
+
+		obj := &unstructured.Unstructured{Object: objectMap}
+		gvk := obj.GroupVersionKind()
+		if gvk.Empty() {
+			return nil, fmt.Errorf("manifest object has empty apiVersion/kind")
+		}
+		targetName := strings.TrimSpace(obj.GetName())
+		if targetName == "" {
+			return nil, fmt.Errorf("manifest object %s/%s has empty metadata.name", gvk.GroupVersion().String(), gvk.Kind)
+		}
+
+		mapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+		if err != nil {
+			return nil, fmt.Errorf("resolve rest mapping for %s: %w", gvk.String(), err)
+		}
+
+		resource := c.dynamic.Resource(mapping.Resource)
+		var resourceInterface dynamic.ResourceInterface
+		targetNamespace := strings.TrimSpace(obj.GetNamespace())
+		if mapping.Scope.Name() == metav1api.RESTScopeNameNamespace {
+			if overrideNamespace != "" {
+				targetNamespace = overrideNamespace
+			}
+			if targetNamespace == "" {
+				return nil, fmt.Errorf("manifest object %s/%s is namespaced but namespace is empty", gvk.String(), targetName)
+			}
+			obj.SetNamespace(targetNamespace)
+			resourceInterface = resource.Namespace(targetNamespace)
+		} else {
+			resourceInterface = resource
+		}
+
+		payload, err := json.Marshal(obj.Object)
+		if err != nil {
+			return nil, fmt.Errorf("marshal manifest object %s/%s: %w", gvk.String(), targetName, err)
+		}
+		force := true
+		if _, err := resourceInterface.Patch(ctx, targetName, types.ApplyPatchType, payload, metav1.PatchOptions{
+			FieldManager: manager,
+			Force:        &force,
+		}); err != nil {
+			return nil, fmt.Errorf("apply manifest object %s/%s: %w", gvk.String(), targetName, err)
+		}
+
+		applied = append(applied, AppliedResourceRef{
+			APIVersion: gvk.GroupVersion().String(),
+			Kind:       gvk.Kind,
+			Namespace:  targetNamespace,
+			Name:       targetName,
+		})
+	}
+
+	return applied, nil
+}
+
+func isDeploymentReady(deployment *appsv1.Deployment) bool {
+	if deployment == nil {
+		return false
+	}
+	if deployment.Status.ObservedGeneration < deployment.Generation {
+		return false
+	}
+	replicas := int32(1)
+	if deployment.Spec.Replicas != nil {
+		replicas = *deployment.Spec.Replicas
+	}
+	if deployment.Status.UpdatedReplicas < replicas {
+		return false
+	}
+	if deployment.Status.AvailableReplicas < replicas {
+		return false
+	}
+	for _, condition := range deployment.Status.Conditions {
+		if condition.Type == appsv1.DeploymentAvailable && condition.Status == corev1.ConditionTrue {
+			return true
+		}
+	}
+	return false
+}
+
+func buildRESTMapper(restConfig *rest.Config) (metav1api.RESTMapper, error) {
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(restConfig)
+	if err != nil {
+		return nil, err
+	}
+	groupResources, err := restmapper.GetAPIGroupResources(discoveryClient)
+	if err != nil {
+		return nil, err
+	}
+	return restmapper.NewDiscoveryRESTMapper(groupResources), nil
 }
 
 func listAsAny[T any](fn func(context.Context, metav1.ListOptions) (*T, error)) func(context.Context, metav1.ListOptions) (any, error) {

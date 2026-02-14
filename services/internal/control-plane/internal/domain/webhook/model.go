@@ -94,6 +94,10 @@ type runAgentProfile struct {
 // It is intentionally minimal and independent from provider SDK structs.
 type githubWebhookEnvelope struct {
 	Action       string                   `json:"action"`
+	Ref          string                   `json:"ref"`
+	Before       string                   `json:"before"`
+	After        string                   `json:"after"`
+	Deleted      bool                     `json:"deleted"`
 	Installation githubInstallationRecord `json:"installation"`
 	Repository   githubRepositoryRecord   `json:"repository"`
 	Issue        githubIssueRecord        `json:"issue"`

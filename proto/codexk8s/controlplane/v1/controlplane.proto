@@ -360,6 +360,25 @@ message IssueRunMCPTokenResponse {
   google.protobuf.Timestamp expires_at = 2;
 }
 
+message PrepareRunEnvironmentRequest {
+  string run_id = 1;
+  string runtime_mode = 2;
+  string namespace = 3;
+  string target_env = 4;
+  int32 slot_no = 5;
+  string repository_full_name = 6;
+  string services_yaml_path = 7;
+  string build_ref = 8;
+  bool deploy_only = 9;
+}
+
+message PrepareRunEnvironmentResponse {
+  bool ok = 1;
+  string run_id = 2;
+  string namespace = 3;
+  string target_env = 4;
+}
+
 message UpsertAgentSessionRequest {
   string run_id = 1;
   string correlation_id = 2;
@@ -513,6 +532,7 @@ service ControlPlaneService {
   rpc UpsertProjectRepository(UpsertProjectRepositoryRequest) returns (RepositoryBinding);
   rpc DeleteProjectRepository(DeleteProjectRepositoryRequest) returns (google.protobuf.Empty);
   rpc IssueRunMCPToken(IssueRunMCPTokenRequest) returns (IssueRunMCPTokenResponse);
+  rpc PrepareRunEnvironment(PrepareRunEnvironmentRequest) returns (PrepareRunEnvironmentResponse);
 
   // Used by agent-runner for run-bound session persistence and event callbacks.
   rpc UpsertAgentSession(UpsertAgentSessionRequest) returns (UpsertAgentSessionResponse);

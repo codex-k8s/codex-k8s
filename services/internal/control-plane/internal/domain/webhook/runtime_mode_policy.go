@@ -11,6 +11,7 @@ const (
 	runtimeModeSourceTriggerDefault     = "trigger_default"
 	runtimeModeSourceServicesYAML       = "services_yaml"
 	runtimeModeSourceServicesYAMLGlobal = "services_yaml_default"
+	runtimeModeSourcePushMain           = "push_main"
 )
 
 // RuntimeModePolicy defines trigger->runtime mapping loaded from services.yaml.

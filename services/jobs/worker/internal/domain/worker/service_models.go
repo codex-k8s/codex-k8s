@@ -15,6 +15,8 @@ type finishRunParams struct {
 	EventType floweventdomain.EventType
 	Ref       JobRef
 	Extra     runFinishedEventExtra
+	// SkipNamespaceCleanup disables namespace cleanup for deploy-only full-env runs.
+	SkipNamespaceCleanup bool
 }
 
 // namespaceLifecycleEventParams describes one namespace lifecycle flow event.

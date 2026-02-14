@@ -143,13 +143,14 @@ func Run() error {
 		AIReasoningHighLabel:        cfg.AIReasoningHighLabel,
 		AIReasoningExtraHighLabel:   cfg.AIReasoningExtraHighLabel,
 	}, worker.Dependencies{
-		Runs:           runs,
-		Events:         events,
-		Feedback:       feedback,
-		Launcher:       launcher,
-		MCPTokenIssuer: controlPlane,
-		RunStatus:      controlPlane,
-		Logger:         logger,
+		Runs:            runs,
+		Events:          events,
+		Feedback:        feedback,
+		Launcher:        launcher,
+		RuntimePreparer: controlPlane,
+		MCPTokenIssuer:  controlPlane,
+		RunStatus:       controlPlane,
+		Logger:          logger,
 	})
 
 	ctx, stop := signal.NotifyContext(appCtx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)

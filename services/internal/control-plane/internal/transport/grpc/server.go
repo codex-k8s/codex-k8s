@@ -17,6 +17,7 @@ import (
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/staffrun"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
+	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
 	agentcallback "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/agentcallback"
@@ -49,6 +50,10 @@ type runStatusService interface {
 	UpsertRunStatusComment(ctx context.Context, params runstatusdomain.UpsertCommentParams) (runstatusdomain.UpsertCommentResult, error)
 }
 
+type runtimeDeployService interface {
+	PrepareRunEnvironment(ctx context.Context, params runtimedeploydomain.PrepareParams) (runtimedeploydomain.PrepareResult, error)
+}
+
 // Dependencies wires domain services and repositories into the gRPC transport.
 type Dependencies struct {
 	Webhook        webhookIngress
@@ -56,6 +61,7 @@ type Dependencies struct {
 	Users          userrepo.Repository
 	AgentCallbacks agentCallbackService
 	RunStatus      runStatusService
+	RuntimeDeploy  runtimeDeployService
 	MCP            mcpRunTokenService
 	Logger         *slog.Logger
 }
@@ -69,6 +75,7 @@ type Server struct {
 	users          userrepo.Repository
 	agentCallbacks agentCallbackService
 	runStatus      runStatusService
+	runtimeDeploy  runtimeDeployService
 	mcp            mcpRunTokenService
 	logger         *slog.Logger
 }
@@ -80,6 +87,7 @@ func NewServer(deps Dependencies) *Server {
 		users:          deps.Users,
 		agentCallbacks: deps.AgentCallbacks,
 		runStatus:      deps.RunStatus,
+		runtimeDeploy:  deps.RuntimeDeploy,
 		mcp:            deps.MCP,
 		logger:         deps.Logger,
 	}
@@ -684,6 +692,42 @@ func (s *Server) IssueRunMCPToken(ctx context.Context, req *controlplanev1.Issue
 	return &controlplanev1.IssueRunMCPTokenResponse{
 		Token:     issuedToken.Token,
 		ExpiresAt: timestamppb.New(issuedToken.ExpiresAt.UTC()),
+	}, nil
+}
+
+func (s *Server) PrepareRunEnvironment(ctx context.Context, req *controlplanev1.PrepareRunEnvironmentRequest) (*controlplanev1.PrepareRunEnvironmentResponse, error) {
+	if s.runtimeDeploy == nil {
+		return nil, status.Error(codes.FailedPrecondition, "runtime deploy service is not configured")
+	}
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	runID := strings.TrimSpace(req.GetRunId())
+	if runID == "" {
+		return nil, status.Error(codes.InvalidArgument, "run_id is required")
+	}
+
+	prepared, err := s.runtimeDeploy.PrepareRunEnvironment(ctx, runtimedeploydomain.PrepareParams{
+		RunID:              runID,
+		RuntimeMode:        strings.TrimSpace(req.GetRuntimeMode()),
+		Namespace:          strings.TrimSpace(req.GetNamespace()),
+		TargetEnv:          strings.TrimSpace(req.GetTargetEnv()),
+		SlotNo:             int(req.GetSlotNo()),
+		RepositoryFullName: strings.TrimSpace(req.GetRepositoryFullName()),
+		ServicesYAMLPath:   strings.TrimSpace(req.GetServicesYamlPath()),
+		BuildRef:           strings.TrimSpace(req.GetBuildRef()),
+		DeployOnly:         req.GetDeployOnly(),
+	})
+	if err != nil {
+		return nil, toStatus(err)
+	}
+
+	return &controlplanev1.PrepareRunEnvironmentResponse{
+		Ok:        true,
+		RunId:     runID,
+		Namespace: strings.TrimSpace(prepared.Namespace),
+		TargetEnv: strings.TrimSpace(prepared.TargetEnv),
 	}, nil
 }
 

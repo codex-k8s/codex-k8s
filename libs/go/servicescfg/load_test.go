@@ -111,8 +111,7 @@ spec:
 func TestLoad_UnknownComponentReference(t *testing.T) {
 	t.Parallel()
 
-	path := filepath.Join(t.TempDir(), "services.yaml")
-	writeFile(t, path, `
+	assertLoadErrorContains(t, `
 apiVersion: codex-k8s.dev/v1alpha1
 kind: ServiceStack
 metadata:
@@ -124,22 +123,13 @@ spec:
   services:
     - name: api
       use: [unknown-component]
-`)
-
-	_, err := Load(path, LoadOptions{Env: "ai-staging"})
-	if err == nil {
-		t.Fatalf("expected unknown component error")
-	}
-	if !strings.Contains(err.Error(), "unknown component") {
-		t.Fatalf("unexpected error: %v", err)
-	}
+`, "unknown component")
 }
 
 func TestLoad_CodexK8sRequiresAISTagingTemplate(t *testing.T) {
 	t.Parallel()
 
-	path := filepath.Join(t.TempDir(), "services.yaml")
-	writeFile(t, path, `
+	assertLoadErrorContains(t, `
 apiVersion: codex-k8s.dev/v1alpha1
 kind: ServiceStack
 metadata:
@@ -148,15 +138,7 @@ spec:
   environments:
     ai-staging:
       namespaceTemplate: "hardcoded-namespace"
-`)
-
-	_, err := Load(path, LoadOptions{Env: "ai-staging"})
-	if err == nil {
-		t.Fatalf("expected codex-k8s ai-staging template error")
-	}
-	if !strings.Contains(err.Error(), "codex-k8s requires ai-staging namespace template") {
-		t.Fatalf("unexpected error: %v", err)
-	}
+`, "codex-k8s requires ai-staging namespace template")
 }
 
 func TestResolveEnvironment_Inheritance(t *testing.T) {
@@ -223,5 +205,20 @@ func writeFile(t *testing.T, path string, content string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(strings.TrimSpace(content)+"\n"), 0o644); err != nil {
 		t.Fatalf("write %s: %v", path, err)
+	}
+}
+
+func assertLoadErrorContains(t *testing.T, content string, wantSubstring string) {
+	t.Helper()
+
+	path := filepath.Join(t.TempDir(), "services.yaml")
+	writeFile(t, path, content)
+
+	_, err := Load(path, LoadOptions{Env: "ai-staging"})
+	if err == nil {
+		t.Fatalf("expected load error with substring %q", wantSubstring)
+	}
+	if !strings.Contains(err.Error(), wantSubstring) {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

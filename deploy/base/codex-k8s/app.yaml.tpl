@@ -484,7 +484,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: codex-k8s-worker-runtime
+  name: codex-k8s-worker-runtime-${CODEXK8S_STAGING_NAMESPACE}
   labels:
     app.kubernetes.io/name: codex-k8s
     app.kubernetes.io/component: worker
@@ -517,14 +517,14 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: codex-k8s-worker-runtime
+  name: codex-k8s-worker-runtime-${CODEXK8S_STAGING_NAMESPACE}
   labels:
     app.kubernetes.io/name: codex-k8s
     app.kubernetes.io/component: worker
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: codex-k8s-worker-runtime
+  name: codex-k8s-worker-runtime-${CODEXK8S_STAGING_NAMESPACE}
 subjects:
   - kind: ServiceAccount
     name: codex-k8s-worker

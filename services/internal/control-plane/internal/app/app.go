@@ -26,6 +26,7 @@ import (
 	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
+	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
 	agentrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agent"
@@ -164,6 +165,28 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("init runstatus domain service: %w", err)
 	}
+	runtimeDeployRolloutTimeout, err := time.ParseDuration(cfg.RuntimeDeployRolloutTimeout)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_RUNTIME_DEPLOY_ROLLOUT_TIMEOUT=%q: %w", cfg.RuntimeDeployRolloutTimeout, err)
+	}
+	runtimeDeployKanikoTimeout, err := time.ParseDuration(cfg.RuntimeDeployKanikoTimeout)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_RUNTIME_DEPLOY_KANIKO_TIMEOUT=%q: %w", cfg.RuntimeDeployKanikoTimeout, err)
+	}
+	runtimeDeployService, err := runtimedeploydomain.NewService(runtimedeploydomain.Config{
+		ServicesConfigPath: cfg.ServicesConfigPath,
+		RepositoryRoot:     cfg.RepositoryRoot,
+		RolloutTimeout:     runtimeDeployRolloutTimeout,
+		KanikoTimeout:      runtimeDeployKanikoTimeout,
+		KanikoFieldManager: cfg.RuntimeDeployFieldManager,
+		GitHubPAT:          strings.TrimSpace(cfg.GitHubPAT),
+	}, runtimedeploydomain.Dependencies{
+		Kubernetes: newRuntimeDeployKubernetesAdapter(k8sClient),
+		Logger:     logger,
+	})
+	if err != nil {
+		return fmt.Errorf("init runtime deploy domain service: %w", err)
+	}
 
 	learningDefault, err := cfg.LearningModeDefaultBool()
 	if err != nil {
@@ -235,6 +258,7 @@ func Run() error {
 		Users:          users,
 		AgentCallbacks: agentCallbackService,
 		RunStatus:      runStatusService,
+		RuntimeDeploy:  runtimeDeployService,
 		MCP:            mcpService,
 		Logger:         logger,
 	}))

@@ -125,6 +125,85 @@ func TestTickSkipsCodeOnlyRun(t *testing.T) {
 	}
 }
 
+func TestTickDeployOnlyRun_PreparesEnvironmentWithoutLaunchingJob(t *testing.T) {
+	t.Parallel()
+
+	payload := json.RawMessage(`{
+		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"runtime":{
+			"mode":"full-env",
+			"target_env":"ai-staging",
+			"namespace":"codex-k8s-ai-staging",
+			"build_ref":"0123456789abcdef0123456789abcdef01234567",
+			"deploy_only":true
+		}
+	}`)
+	runs := &fakeRunQueue{
+		claims: []runqueuerepo.ClaimedRun{
+			{
+				RunID:         "run-deploy-only",
+				CorrelationID: "corr-deploy-only",
+				ProjectID:     "proj-1",
+				RunPayload:    payload,
+				SlotNo:        1,
+			},
+		},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{states: map[string]JobState{}}
+	deployer := &fakeRuntimePreparer{
+		result: PrepareRunEnvironmentResult{
+			Namespace: "codex-k8s-ai-staging",
+			TargetEnv: "ai-staging",
+		},
+	}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:          "worker-1",
+		ClaimLimit:        1,
+		RunningCheckLimit: 10,
+		SlotsPerProject:   2,
+		SlotLeaseTTL:      time.Minute,
+	}, Dependencies{
+		Runs:            runs,
+		Events:          events,
+		Launcher:        launcher,
+		RuntimePreparer: deployer,
+		Logger:          logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 2, 14, 10, 0, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if len(deployer.prepared) != 1 {
+		t.Fatalf("expected 1 runtime deploy call, got %d", len(deployer.prepared))
+	}
+	if !deployer.prepared[0].DeployOnly {
+		t.Fatal("expected deploy-only runtime deploy params")
+	}
+	if got, want := deployer.prepared[0].Namespace, "codex-k8s-ai-staging"; got != want {
+		t.Fatalf("unexpected deploy namespace: got %q want %q", got, want)
+	}
+	if len(launcher.prepared) != 0 {
+		t.Fatalf("expected no runtime namespace preparation for deploy-only run, got %d", len(launcher.prepared))
+	}
+	if len(launcher.launched) != 0 {
+		t.Fatalf("expected no launched jobs for deploy-only run, got %d", len(launcher.launched))
+	}
+	if len(runs.finished) != 1 {
+		t.Fatalf("expected 1 finished run, got %d", len(runs.finished))
+	}
+	if runs.finished[0].Status != rundomain.StatusSucceeded {
+		t.Fatalf("expected deploy-only run to finish as succeeded, got %s", runs.finished[0].Status)
+	}
+	if len(events.inserted) != 1 || events.inserted[0].EventType != floweventdomain.EventTypeRunSucceeded {
+		t.Fatalf("expected one run.succeeded event, got %#v", events.inserted)
+	}
+}
+
 func TestTickFinalizesSucceededRun(t *testing.T) {
 	t.Parallel()
 
@@ -173,6 +252,12 @@ func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 	events := &fakeFlowEvents{}
 	launcher := &fakeLauncher{states: map[string]JobState{}}
 	mcpTokens := &fakeMCPTokenIssuer{token: "token-run-3"}
+	deployer := &fakeRuntimePreparer{
+		result: PrepareRunEnvironmentResult{
+			Namespace: "codex-k8s-dev-1",
+			TargetEnv: "ai",
+		},
+	}
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 
 	svc := NewService(Config{
@@ -185,11 +270,12 @@ func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 		CleanupFullEnvNamespace: true,
 		ControlPlaneMCPBaseURL:  "http://codex-k8s-control-plane.test.svc:8081/mcp",
 	}, Dependencies{
-		Runs:           runs,
-		Events:         events,
-		Launcher:       launcher,
-		MCPTokenIssuer: mcpTokens,
-		Logger:         logger,
+		Runs:            runs,
+		Events:          events,
+		Launcher:        launcher,
+		RuntimePreparer: deployer,
+		MCPTokenIssuer:  mcpTokens,
+		Logger:          logger,
 	})
 	svc.now = func() time.Time { return time.Date(2026, 2, 11, 10, 0, 0, 0, time.UTC) }
 
@@ -200,11 +286,23 @@ func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 	if len(launcher.prepared) != 1 {
 		t.Fatalf("expected 1 prepared namespace, got %d", len(launcher.prepared))
 	}
+	if len(deployer.prepared) != 1 {
+		t.Fatalf("expected 1 runtime deploy call, got %d", len(deployer.prepared))
+	}
+	if got, want := deployer.prepared[0].RunID, "run-3"; got != want {
+		t.Fatalf("unexpected deploy run id: got %q want %q", got, want)
+	}
+	if got := deployer.prepared[0].Namespace; got != "" {
+		t.Fatalf("expected empty namespace in deploy request for slot-mode full-env run, got %q", got)
+	}
+	if got := deployer.prepared[0].DeployOnly; got {
+		t.Fatal("expected deploy_only=false for full-env agent run")
+	}
 	if launcher.prepared[0].RuntimeMode != agentdomain.RuntimeModeFullEnv {
 		t.Fatalf("expected full-env runtime mode, got %q", launcher.prepared[0].RuntimeMode)
 	}
-	if launcher.prepared[0].Namespace == "" {
-		t.Fatal("expected non-empty namespace for full-env run")
+	if got, want := launcher.prepared[0].Namespace, "codex-k8s-dev-1"; got != want {
+		t.Fatalf("expected prepared namespace %q, got %q", want, got)
 	}
 	if len(launcher.launched) != 1 {
 		t.Fatalf("expected 1 launched job, got %d", len(launcher.launched))
@@ -212,8 +310,8 @@ func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 	if launcher.launched[0].RuntimeMode != agentdomain.RuntimeModeFullEnv {
 		t.Fatalf("expected launched runtime mode full-env, got %q", launcher.launched[0].RuntimeMode)
 	}
-	if launcher.launched[0].Namespace == "" {
-		t.Fatal("expected launched job namespace to be set")
+	if got, want := launcher.launched[0].Namespace, "codex-k8s-dev-1"; got != want {
+		t.Fatalf("expected launched namespace %q, got %q", want, got)
 	}
 	if launcher.launched[0].MCPBearerToken != "token-run-3" {
 		t.Fatalf("expected mcp token to be set, got %q", launcher.launched[0].MCPBearerToken)
@@ -381,6 +479,20 @@ type fakeLauncher struct {
 type fakeMCPTokenIssuer struct {
 	token string
 	err   error
+}
+
+type fakeRuntimePreparer struct {
+	prepared []PrepareRunEnvironmentParams
+	result   PrepareRunEnvironmentResult
+	err      error
+}
+
+func (f *fakeRuntimePreparer) PrepareRunEnvironment(_ context.Context, params PrepareRunEnvironmentParams) (PrepareRunEnvironmentResult, error) {
+	if f.err != nil {
+		return PrepareRunEnvironmentResult{}, f.err
+	}
+	f.prepared = append(f.prepared, params)
+	return f.result, nil
 }
 
 func (f *fakeMCPTokenIssuer) IssueRunMCPToken(_ context.Context, _ IssueMCPTokenParams) (IssuedMCPToken, error) {

@@ -58,6 +58,14 @@ type Config struct {
 	ServicesConfigPath string `env:"CODEXK8S_SERVICES_CONFIG_PATH" envDefault:"services.yaml"`
 	// ServicesConfigEnv selects environment context when rendering services.yaml.
 	ServicesConfigEnv string `env:"CODEXK8S_SERVICES_CONFIG_ENV" envDefault:"ai-staging"`
+	// RepositoryRoot points to repository root used for services.yaml manifests and build templates.
+	RepositoryRoot string `env:"CODEXK8S_REPOSITORY_ROOT" envDefault:"."`
+	// RuntimeDeployRolloutTimeout controls readiness wait timeout for applied workloads.
+	RuntimeDeployRolloutTimeout string `env:"CODEXK8S_RUNTIME_DEPLOY_ROLLOUT_TIMEOUT" envDefault:"20m"`
+	// RuntimeDeployKanikoTimeout controls timeout for kaniko build jobs.
+	RuntimeDeployKanikoTimeout string `env:"CODEXK8S_RUNTIME_DEPLOY_KANIKO_TIMEOUT" envDefault:"30m"`
+	// RuntimeDeployFieldManager is a server-side apply field manager name.
+	RuntimeDeployFieldManager string `env:"CODEXK8S_RUNTIME_DEPLOY_FIELD_MANAGER" envDefault:"codex-k8s-control-plane"`
 	// GitHubPAT is platform-scoped GitHub token used for repository/project management paths.
 	GitHubPAT string `env:"CODEXK8S_GITHUB_PAT"`
 	// GitBotToken is runtime GitHub bot token used for comments/labels and run messaging paths.

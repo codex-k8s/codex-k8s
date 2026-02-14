@@ -64,6 +64,28 @@ func (c *Client) IssueRunMCPToken(ctx context.Context, params workerdomain.Issue
 	}, nil
 }
 
+// PrepareRunEnvironment asks control-plane to build images and deploy stack for run runtime target.
+func (c *Client) PrepareRunEnvironment(ctx context.Context, params workerdomain.PrepareRunEnvironmentParams) (workerdomain.PrepareRunEnvironmentResult, error) {
+	resp, err := c.svc.PrepareRunEnvironment(ctx, &controlplanev1.PrepareRunEnvironmentRequest{
+		RunId:              strings.TrimSpace(params.RunID),
+		RuntimeMode:        strings.TrimSpace(params.RuntimeMode),
+		Namespace:          strings.TrimSpace(params.Namespace),
+		TargetEnv:          strings.TrimSpace(params.TargetEnv),
+		SlotNo:             int32(params.SlotNo),
+		RepositoryFullName: strings.TrimSpace(params.RepositoryFullName),
+		ServicesYamlPath:   strings.TrimSpace(params.ServicesYAMLPath),
+		BuildRef:           strings.TrimSpace(params.BuildRef),
+		DeployOnly:         params.DeployOnly,
+	})
+	if err != nil {
+		return workerdomain.PrepareRunEnvironmentResult{}, err
+	}
+	return workerdomain.PrepareRunEnvironmentResult{
+		Namespace: strings.TrimSpace(resp.GetNamespace()),
+		TargetEnv: strings.TrimSpace(resp.GetTargetEnv()),
+	}, nil
+}
+
 // UpsertRunStatusComment updates one run status comment in issue thread.
 func (c *Client) UpsertRunStatusComment(ctx context.Context, params workerdomain.RunStatusCommentParams) (workerdomain.RunStatusCommentResult, error) {
 	resp, err := c.svc.UpsertRunStatusComment(ctx, &controlplanev1.UpsertRunStatusCommentRequest{

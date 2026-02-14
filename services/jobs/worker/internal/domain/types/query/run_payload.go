@@ -4,9 +4,21 @@ import webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 
 // RunRuntimePayload keeps only fields that influence worker runtime decisions.
 type RunRuntimePayload struct {
-	Trigger *RunRuntimeTrigger `json:"trigger"`
-	Issue   *RunRuntimeIssue   `json:"issue"`
-	Runtime *RunRuntimeProfile `json:"runtime"`
+	Project    *RunRuntimeProject    `json:"project"`
+	Repository *RunRuntimeRepository `json:"repository"`
+	Trigger    *RunRuntimeTrigger    `json:"trigger"`
+	Issue      *RunRuntimeIssue      `json:"issue"`
+	Runtime    *RunRuntimeProfile    `json:"runtime"`
+}
+
+// RunRuntimeProject captures project metadata used by runtime deploy orchestration.
+type RunRuntimeProject struct {
+	ServicesYAML string `json:"services_yaml"`
+}
+
+// RunRuntimeRepository captures repository metadata used by runtime deploy orchestration.
+type RunRuntimeRepository struct {
+	FullName string `json:"full_name"`
 }
 
 // RunRuntimeTrigger captures normalized trigger kind from webhook payload.
@@ -21,7 +33,11 @@ type RunRuntimeIssue struct {
 
 // RunRuntimeProfile captures runtime mode resolved upstream by webhook/control-plane.
 type RunRuntimeProfile struct {
-	Mode string `json:"mode"`
+	Mode       string `json:"mode"`
+	TargetEnv  string `json:"target_env,omitempty"`
+	Namespace  string `json:"namespace,omitempty"`
+	BuildRef   string `json:"build_ref,omitempty"`
+	DeployOnly bool   `json:"deploy_only,omitempty"`
 }
 
 // RepositoryPayload keeps repository fields required for project derivation.
