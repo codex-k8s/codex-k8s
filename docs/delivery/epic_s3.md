@@ -5,7 +5,7 @@ title: "Epic Catalog: Sprint S3 (MVP completion)"
 status: in-progress
 owner_role: EM
 created_at: 2026-02-13
-updated_at: 2026-02-13
+updated_at: 2026-02-15
 related_issues: [19]
 related_prs: []
 approvals:
@@ -31,7 +31,7 @@ approvals:
 - Day 8: `docs/delivery/epics/epic-s3-day8-agent-toolchain-auto-extension.md`
 - Day 9: `docs/delivery/epics/epic-s3-day9-declarative-full-env-deploy-and-runtime-parity.md`
 - Day 10: `docs/delivery/epics/epic-s3-day10-staff-console-vuetify-redesign.md`
-- Day 11: `docs/delivery/epics/epic-s3-day11-mvp-regression-and-security-gate.md`
+- Day 11: `docs/delivery/epics/epic-s3-day11-full-env-slots-and-subdomains.md`
 - Day 12: `docs/delivery/epics/epic-s3-day12-mvp-closeout-and-handover.md`
 
 ## Прогресс

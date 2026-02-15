@@ -5,7 +5,7 @@ title: "Requirements Traceability Matrix"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-14
+updated_at: 2026-02-15
 related_issues: [1, 19]
 related_prs: []
 approvals:
@@ -89,7 +89,7 @@ approvals:
 | NFR-015 | Операционная latency для runtime debug UI | `docs/product/requirements_machine_driven.md`, `docs/architecture/api_contract.md`, `docs/delivery/epics/epic-s3-day2-staff-runtime-debug-console.md` | covered |
 | NFR-016 | Idempotent и secret-safe поведение MCP control tools | `docs/product/requirements_machine_driven.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/delivery/epics/epic-s2-day6-approval-and-audit-hardening.md`, `docs/delivery/epics/epic-s3-day3-mcp-deterministic-secret-sync.md`, `docs/delivery/epics/epic-s3-day4-mcp-database-lifecycle.md` | covered |
 | NFR-017 | Воспроизводимость self-improve цикла | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/delivery/epics/epic-s3-day6-self-improve-ingestion-and-diagnostics.md`, `docs/delivery/epics/epic-s3-day7-self-improve-updater-and-pr-flow.md`, `docs/delivery/epics/epic-s3-day8-agent-toolchain-auto-extension.md` | covered |
-| NFR-018 | Консистентность переходов full stage-flow | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/delivery/epics/epic-s3-day1-full-stage-and-label-activation.md`, `docs/delivery/epics/epic-s3-day11-mvp-regression-and-security-gate.md` | covered |
+| NFR-018 | Консистентность переходов full stage-flow | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/delivery/epics/epic-s3-day1-full-stage-and-label-activation.md`, `docs/delivery/epics/epic-s3-day12-mvp-closeout-and-handover.md` | covered |
 
 ## Правило актуализации
 - Любое новое требование сначала добавляется в `docs/product/requirements_machine_driven.md`, затем отражается в этой матрице.
