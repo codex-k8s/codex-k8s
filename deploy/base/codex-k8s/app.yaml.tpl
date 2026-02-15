@@ -156,6 +156,7 @@ spec:
         app.kubernetes.io/name: codex-k8s
         app.kubernetes.io/component: control-plane
     spec:
+      serviceAccountName: codex-k8s-control-plane
       initContainers:
         - name: wait-postgres
           image: busybox:1.36
@@ -494,6 +495,70 @@ spec:
               port: http
             initialDelaySeconds: 15
             periodSeconds: 20
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: codex-k8s-control-plane
+  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  labels:
+    app.kubernetes.io/name: codex-k8s
+    app.kubernetes.io/component: control-plane
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: codex-k8s-control-plane-runtime-${CODEXK8S_STAGING_NAMESPACE}
+  labels:
+    app.kubernetes.io/name: codex-k8s
+    app.kubernetes.io/component: control-plane
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["secrets", "configmaps", "services", "endpoints", "persistentvolumeclaims", "pods", "pods/log", "events", "serviceaccounts"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["daemonsets", "deployments", "replicasets", "statefulsets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses", "networkpolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles", "rolebindings"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles"]
+    verbs: ["escalate", "bind"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles", "clusterrolebindings"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles"]
+    verbs: ["escalate", "bind"]
+  - apiGroups: ["cert-manager.io"]
+    resources: ["clusterissuers"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: codex-k8s-control-plane-runtime-${CODEXK8S_STAGING_NAMESPACE}
+  labels:
+    app.kubernetes.io/name: codex-k8s
+    app.kubernetes.io/component: control-plane
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: codex-k8s-control-plane-runtime-${CODEXK8S_STAGING_NAMESPACE}
+subjects:
+  - kind: ServiceAccount
+    name: codex-k8s-control-plane
+    namespace: ${CODEXK8S_STAGING_NAMESPACE}
 ---
 apiVersion: v1
 kind: ServiceAccount
