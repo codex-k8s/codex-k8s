@@ -12,6 +12,15 @@ import (
 )
 
 func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, namespace string, vars map[string]string) error {
+	existingPostgres, _, err := s.k8s.GetSecretData(ctx, namespace, "codex-k8s-postgres")
+	if err != nil {
+		return fmt.Errorf("load codex-k8s-postgres secret: %w", err)
+	}
+	existingRuntime, _, err := s.k8s.GetSecretData(ctx, namespace, "codex-k8s-runtime")
+	if err != nil {
+		return fmt.Errorf("load codex-k8s-runtime secret: %w", err)
+	}
+
 	oauthClientID, err := requiredNonEmptyValue(vars, "CODEXK8S_GITHUB_OAUTH_CLIENT_ID")
 	if err != nil {
 		return err
@@ -20,34 +29,38 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, namespace str
 	if err != nil {
 		return err
 	}
-	postgresPassword, err := valueOrRandomHex(vars, "CODEXK8S_POSTGRES_PASSWORD", 24)
+
+	postgresDB := valueOrExisting(vars, existingPostgres, "CODEXK8S_POSTGRES_DB", "codex_k8s")
+	postgresUser := valueOrExisting(vars, existingPostgres, "CODEXK8S_POSTGRES_USER", "codex_k8s")
+	postgresPassword, err := valueOrExistingOrRandomHex(vars, existingPostgres, "CODEXK8S_POSTGRES_PASSWORD", 24)
 	if err != nil {
 		return fmt.Errorf("resolve CODEXK8S_POSTGRES_PASSWORD: %w", err)
 	}
-	appSecretKey, err := valueOrRandomHex(vars, "CODEXK8S_APP_SECRET_KEY", 32)
+
+	appSecretKey, err := valueOrExistingOrRandomHex(vars, existingRuntime, "CODEXK8S_APP_SECRET_KEY", 32)
 	if err != nil {
 		return fmt.Errorf("resolve CODEXK8S_APP_SECRET_KEY: %w", err)
 	}
-	tokenEncryptionKey, err := valueOrRandomHex(vars, "CODEXK8S_TOKEN_ENCRYPTION_KEY", 32)
+	tokenEncryptionKey, err := valueOrExistingOrRandomHex(vars, existingRuntime, "CODEXK8S_TOKEN_ENCRYPTION_KEY", 32)
 	if err != nil {
 		return fmt.Errorf("resolve CODEXK8S_TOKEN_ENCRYPTION_KEY: %w", err)
 	}
-	mcpTokenSigningKey := strings.TrimSpace(valueOr(vars, "CODEXK8S_MCP_TOKEN_SIGNING_KEY", ""))
+	mcpTokenSigningKey := strings.TrimSpace(valueOrExisting(vars, existingRuntime, "CODEXK8S_MCP_TOKEN_SIGNING_KEY", ""))
 	if mcpTokenSigningKey == "" {
 		mcpTokenSigningKey = tokenEncryptionKey
 	}
-	githubWebhookSecret, err := valueOrRandomHex(vars, "CODEXK8S_GITHUB_WEBHOOK_SECRET", 32)
+	githubWebhookSecret, err := valueOrExistingOrRandomHex(vars, existingRuntime, "CODEXK8S_GITHUB_WEBHOOK_SECRET", 32)
 	if err != nil {
 		return fmt.Errorf("resolve CODEXK8S_GITHUB_WEBHOOK_SECRET: %w", err)
 	}
-	jwtSigningKey, err := valueOrRandomHex(vars, "CODEXK8S_JWT_SIGNING_KEY", 32)
+	jwtSigningKey, err := valueOrExistingOrRandomHex(vars, existingRuntime, "CODEXK8S_JWT_SIGNING_KEY", 32)
 	if err != nil {
 		return fmt.Errorf("resolve CODEXK8S_JWT_SIGNING_KEY: %w", err)
 	}
 
 	postgresData := map[string][]byte{
-		"CODEXK8S_POSTGRES_DB":       []byte(valueOr(vars, "CODEXK8S_POSTGRES_DB", "codex_k8s")),
-		"CODEXK8S_POSTGRES_USER":     []byte(valueOr(vars, "CODEXK8S_POSTGRES_USER", "codex_k8s")),
+		"CODEXK8S_POSTGRES_DB":       []byte(postgresDB),
+		"CODEXK8S_POSTGRES_USER":     []byte(postgresUser),
 		"CODEXK8S_POSTGRES_PASSWORD": []byte(postgresPassword),
 	}
 	if err := s.k8s.UpsertSecret(ctx, namespace, "codex-k8s-postgres", postgresData); err != nil {
@@ -173,6 +186,42 @@ func requiredNonEmptyValue(values map[string]string, key string) (string, error)
 func valueOrRandomHex(values map[string]string, key string, numBytes int) (string, error) {
 	if value := strings.TrimSpace(valueOr(values, key, "")); value != "" {
 		return value, nil
+	}
+	return randomHex(numBytes)
+}
+
+func valueOrExisting(values map[string]string, existing map[string][]byte, key string, fallback string) string {
+	if value := strings.TrimSpace(valueOr(values, key, "")); value != "" {
+		return value
+	}
+	if existing != nil {
+		if raw, ok := existing[key]; ok {
+			if value := strings.TrimSpace(string(raw)); value != "" {
+				return value
+			}
+		}
+	}
+	return fallback
+}
+
+func valueOrExistingOrRandomHex(values map[string]string, existing map[string][]byte, key string, numBytes int) (string, error) {
+	if value := strings.TrimSpace(valueOr(values, key, "")); value != "" {
+		if existing != nil {
+			if raw, ok := existing[key]; ok {
+				existingValue := strings.TrimSpace(string(raw))
+				if existingValue != "" && value != existingValue {
+					return "", fmt.Errorf("%s differs from existing secret value; refusing to rotate automatically", key)
+				}
+			}
+		}
+		return value, nil
+	}
+	if existing != nil {
+		if raw, ok := existing[key]; ok {
+			if value := strings.TrimSpace(string(raw)); value != "" {
+				return value, nil
+			}
+		}
 	}
 	return randomHex(numBytes)
 }
