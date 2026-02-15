@@ -5,7 +5,7 @@ title: "codex-k8s — Agents Operating Model"
 status: active
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-02-14
+updated_at: 2026-02-15
 related_issues: [1, 19]
 related_prs: []
 approvals:
@@ -24,6 +24,7 @@ approvals:
 - Режим исполнения смешанный: часть ролей работает в `full-env`, часть в `code-only`.
 - Шаблоны промптов ведутся в role-specific матрице: для каждого `agent_key` отдельные body-шаблоны `work/review`, с override в БД и seed fallback.
 - Для каждого системного агента шаблоны поддерживаются минимум в `ru` и `en`; язык выбирается по locale с fallback до `en`.
+- Управление агентами и шаблонами промптов проектируется как staff UI/API контур: `Agents` (настройки) и `Prompt templates` (diff/preview/effective preview), с использованием Monaco Editor для markdown.
 - Для `run:self-improve` применяется совместный контур `km + dev + reviewer` с обязательной трассировкой источников улучшений.
 
 ## Source of truth
@@ -134,10 +135,11 @@ Seed-файлы:
   1. locale проекта;
   2. default locale системы;
   3. fallback `en`.
-- Добавление новой локали планируется как отдельная фича:
-  - оператор добавляет locale в систему;
-  - платформа генерирует перевод шаблонов через ИИ;
-  - перевод сохраняется как новая версия шаблона и может быть вручную скорректирован.
+- Добавление новой локали планируется как отдельная фича (TODO следующего спринта):
+  - оператор добавляет locale через staff UI (`System settings -> Locales`) или эквивалентный staff API;
+  - платформа готовит версионируемые шаблоны на новую локаль (копия/инициализация от базовой локали);
+  - опционально платформа генерирует первичный перевод шаблонов через ИИ;
+  - перевод сохраняется как новая версия шаблона и может быть вручную скорректирован в staff UI (Monaco Editor).
 
 ### Контекстный рендер шаблонов
 - Effective prompt рендерится с runtime-контекстом (окружение, namespace/slot, доступные MCP-сервера и инструменты, project/services context, issue/pr/run identifiers).

@@ -5,7 +5,7 @@ title: "codex-k8s — Stage Process Model"
 status: active
 owner_role: EM
 created_at: 2026-02-11
-updated_at: 2026-02-14
+updated_at: 2026-02-15
 related_issues: [1, 19]
 related_prs: []
 approvals:
@@ -23,6 +23,7 @@ approvals:
 - Для каждого этапа есть `run:*` и `run:*:revise` петля.
 - Переход между этапами требует формального подтверждения артефактов и фиксируется в audit.
 - Дополнительный служебный цикл `run:self-improve` работает поверх stage-контура и улучшает docs/prompts/tools по итогам запусков.
+- Операционная видимость стадий/апрувов/логов предоставляется через staff web-console (разделы `Operations` и `Approvals`).
 
 ## Source of truth
 - `docs/product/labels_and_trigger_policy.md`

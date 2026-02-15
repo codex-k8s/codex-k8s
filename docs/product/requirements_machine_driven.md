@@ -5,7 +5,7 @@ title: "codex-k8s — Machine-Driven Requirements Baseline"
 status: active
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-14
+updated_at: 2026-02-15
 related_issues: [1]
 related_prs: []
 approvals:
@@ -46,7 +46,7 @@ approvals:
 | FR-012 | Состояние запусков агентов, жизненный цикл pod/namespace и runtime-переходы хранятся в БД и отображаются в минимальном UI/API. |
 | FR-013 | Поддерживается многоподовость `codex-k8s`; синхронизация между pod выполняется через БД; архитектура сразу разделяется на сервисы и jobs по зонам (`services/external|staff|internal|jobs|dev`). |
 | FR-014 | Система слотов реализуется через БД. |
-| FR-015 | Шаблоны документов (по `codexctl/docs/templates/**.md`) хранятся в БД и редактируются через простой markdown editor в staff UI. |
+| FR-015 | Шаблоны документов (по `codexctl/docs/templates/**.md`) хранятся в БД и редактируются через markdown editor в staff UI (Monaco Editor). |
 | FR-016 | Bootstrap поддерживает 2 режима: (a) deploy в уже существующий Kubernetes по kubeconfig; (b) установка k3s при отсутствии кластера (включая создание отдельного пользователя и базовый hardening). |
 | FR-017 | Поддерживается любое количество проектов и базовая проектная RBAC-модель: `read`, `read_write`, `admin` (включая право удаления проекта). |
 | FR-018 | Self-signup запрещён: пользователь допускается по email, заранее разрешённому администратором, и матчится при первом GitHub OAuth входе. |
@@ -126,7 +126,26 @@ approvals:
 - Централизованный lifecycle документации (repo + DB + `pgvector`) с MCP-инструментами для поиска, impact-analysis и автообновления связей.
 - Полноценная web-консоль нового поколения:
   - единый операционный workspace (runs, approvals, docs, agents, labels, metrics);
-  - компонентная UI-библиотека для admin-паттернов (кандидат baseline: `Vuetify`, проверка capabilities выполнена через Context7).
+  - Vuetify app-shell + навигационный scaffold (Operations / Platform / Governance / Admin / Configuration).
+  - Operations UX:
+    - run timeline/stepper;
+    - logs viewer (tail/search/copy/download);
+    - approvals как “центр” (единый inbox + история решений).
+  - Admin / Cluster (планируемая функциональность, к которой в MVP закладывается scaffold):
+    - ресурсы: namespaces/configmaps/secrets/deployments/pods+logs/jobs+logs/pvc;
+    - YAML view/edit через Monaco Editor;
+    - safety guardrails:
+      - платформенные ресурсы помечаются `app.kubernetes.io/part-of=codex-k8s`;
+      - платформенные ресурсы нельзя удалять ни в одном окружении (UI и backend policy);
+      - `ai-staging`/`prod` — строго view-only для платформенных ресурсов;
+      - ai-slots — destructive действия только dry-run (кнопки есть для dogfooding/debug, реальное действие не выполняется).
+  - Agents + prompt templates:
+    - управление настройками агента;
+    - prompt templates `work/review` минимум в `ru/en` с diff/preview и preview effective template (редактор на Monaco).
+  - System settings:
+    - управление локалями (add locale + default locale);
+    - базовые UI prefs (density, debug hints).
+  - Обратная связь пользователю: алерты/снеки + notifications menu.
 - A2A swarm контур: несколько агентов разных ролей работают параллельно в общем контексте задачи с protocol-level coordination.
 - Периодические автономные run-циклы:
   - dependency freshness;

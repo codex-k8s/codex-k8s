@@ -5,7 +5,7 @@ title: "codex-k8s platform bootstrap"
 status: active
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-14
+updated_at: 2026-02-15
 related_issues: [1, 19]
 related_prs: []
 approvals:
@@ -113,7 +113,27 @@ approvals:
 - Единый контур документации (repo + DB + `pgvector`) с MCP-ручками поиска, анализа влияния и синхронизации.
 - Новая полноценная staff-консоль:
   - единый рабочий стол операций по run/approval/docs/agents;
-  - компонентный подход на UI-библиотеке для admin-сценариев (кандидат: `Vuetify`, capabilities сверены через Context7).
+  - Vuetify app-shell + навигационный scaffold (Operations / Platform / Governance / Admin / Configuration) с “coming soon” для будущих разделов.
+  - Operations UX:
+    - run timeline/stepper;
+    - logs viewer (tail/search/copy/download);
+    - approvals как “центр” (единый inbox + история решений).
+  - Admin / Cluster:
+    - ресурсы: namespaces/configmaps/secrets/deployments/pods+logs/jobs+logs/pvc;
+    - YAML-view/edit через Monaco Editor;
+    - safety guardrails:
+      - платформенные ресурсы помечаются `app.kubernetes.io/part-of=codex-k8s`;
+      - платформенные ресурсы нельзя удалять ни в одном окружении (UI и backend policy);
+      - `ai-staging`/`prod` — строго view-only для платформенных ресурсов;
+      - ai-slots — destructive действия только dry-run (кнопки есть для dogfooding/debug, реальное действие не выполняется).
+  - Agents:
+    - управление настройками агента;
+    - prompt templates `work/review` минимум в `ru/en` с diff/preview и preview effective template (редактор на Monaco).
+  - System settings:
+    - управление локалями системы (add locale + default locale);
+    - базовые UI prefs (density, debug hints).
+  - Обратная связь пользователю: алерты/снеки + notifications menu.
+  - Ближайший TODO (следующий спринт): подключить staff API/БД для `Admin / Cluster`, `Agents` и `System settings` (с аудитом и RBAC).
 - A2A swarm концепция: параллельные агенты разных ролей в одном процессе с протоколом координации.
 - Периодические автономные циклы: security/dependency/docs drift checks, плановые `run:self-improve`, поиск улучшений по телеметрии.
 

@@ -5,7 +5,7 @@ title: "codex-k8s — Constraints"
 status: active
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-14
+updated_at: 2026-02-15
 related_issues: [1, 19]
 related_prs: []
 approvals:
@@ -52,6 +52,12 @@ approvals:
 - Шаблоны промптов хранятся по локалям; выбор языка обязателен по цепочке `project locale -> system default locale -> en`.
 - Для системных агентов обязательно наличие seed-шаблонов минимум для `ru` и `en`.
 - Для external/staff HTTP API обязателен contract-first подход по OpenAPI (spec + runtime validation + codegen backend/frontend).
+- Платформенные Kubernetes ресурсы помечаются label `app.kubernetes.io/part-of=codex-k8s` (используется как канонический критерий для UI/guardrails и backend policy).
+- Для будущего admin/cluster контура staff-консоли обязательны guardrails:
+  - платформенные ресурсы (`app.kubernetes.io/part-of=codex-k8s`) нельзя удалять ни в одном окружении (UI и backend policy);
+  - `ai-staging` и `prod` — строго view-only для платформенных ресурсов;
+  - ai-slots — destructive действия только dry-run (кнопки есть для dogfooding/debug, реальное действие не выполняется);
+  - значения `Secret` по умолчанию не показывать (только метаданные); reveal/редактирование только как отдельное осознанное действие под RBAC и аудитом.
 - Интеграции approver/executor должны реализовываться через универсальные HTTP-контракты MCP, без вендорной привязки к конкретному мессенджеру.
 - Для MVP обязателен минимальный контур MCP control tools:
   - deterministic secret sync между GitHub и Kubernetes;
