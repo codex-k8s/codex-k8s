@@ -5,7 +5,7 @@ title: "Sprint S3: MVP completion (full stage flow, MCP control tools, self-impr
 status: in-progress
 owner_role: EM
 created_at: 2026-02-13
-updated_at: 2026-02-13
+updated_at: 2026-02-15
 related_issues: [19]
 related_prs: []
 approvals:
@@ -52,8 +52,8 @@ approvals:
 | Day 8 | Agent toolchain auto-extension and policy safeguards | P1 | `docs/delivery/epics/epic-s3-day8-agent-toolchain-auto-extension.md` | completed |
 | Day 9 | Declarative full-env deploy and runtime parity | P0 | `docs/delivery/epics/epic-s3-day9-declarative-full-env-deploy-and-runtime-parity.md` | planned |
 | Day 10 | Staff console full redesign on Vuetify | P0 | `docs/delivery/epics/epic-s3-day10-staff-console-vuetify-redesign.md` | planned |
-| Day 11 | MVP regression and security gate | P0 | `docs/delivery/epics/epic-s3-day11-mvp-regression-and-security-gate.md` | planned |
-| Day 12 | MVP closeout, evidence bundle and handover | P0 | `docs/delivery/epics/epic-s3-day12-mvp-closeout-and-handover.md` | planned |
+| Day 11 | Full-env slot namespace + subdomain templating (TLS) + agent run | P0 | `docs/delivery/epics/epic-s3-day11-full-env-slots-and-subdomains.md` | planned |
+| Day 12 | MVP regression/security gate + closeout and handover | P0 | `docs/delivery/epics/epic-s3-day12-mvp-closeout-and-handover.md` | planned |
 
 ## Daily gate (обязательно)
 - Green CI + успешный deploy на staging.
