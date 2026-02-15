@@ -164,17 +164,21 @@ func (r *Repository) ListRunning(ctx context.Context, limit int) ([]domainrepo.R
 			runID         string
 			correlationID string
 			projectID     string
+			slotID        string
+			slotNo        int
 			learningMode  bool
 			runPayload    []byte
 			startedAt     pgtype.Timestamptz
 		)
-		if err := rows.Scan(&runID, &correlationID, &projectID, &learningMode, &runPayload, &startedAt); err != nil {
+		if err := rows.Scan(&runID, &correlationID, &projectID, &slotID, &slotNo, &learningMode, &runPayload, &startedAt); err != nil {
 			return nil, fmt.Errorf("scan running run row: %w", err)
 		}
 		item := domainrepo.RunningRun{
 			RunID:         runID,
 			CorrelationID: correlationID,
 			ProjectID:     projectID,
+			SlotID:        slotID,
+			SlotNo:        slotNo,
 			LearningMode:  learningMode,
 			RunPayload:    json.RawMessage(runPayload),
 		}

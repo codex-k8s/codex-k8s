@@ -46,6 +46,10 @@ type RunQueueRunningRun struct {
 	CorrelationID string
 	// ProjectID is an effective project scope.
 	ProjectID string
+	// SlotID is leased slot identifier when available.
+	SlotID string
+	// SlotNo is leased slot number when available.
+	SlotNo int
 	// LearningMode is an effective run learning mode flag.
 	LearningMode bool
 	// RunPayload stores normalized webhook payload.

@@ -39,3 +39,34 @@ func buildPrepareRunEnvironmentParams(claimed runqueuerepo.ClaimedRun, execution
 
 	return params
 }
+
+func buildPrepareRunEnvironmentParamsFromRunning(run runqueuerepo.RunningRun, execution valuetypes.RunExecutionContext) PrepareRunEnvironmentParams {
+	payload := parseRunRuntimePayload(run.RunPayload)
+
+	params := PrepareRunEnvironmentParams{
+		RunID:       strings.TrimSpace(run.RunID),
+		RuntimeMode: strings.TrimSpace(string(execution.RuntimeMode)),
+		SlotNo:      run.SlotNo,
+	}
+
+	if payload.Project != nil {
+		params.ServicesYAMLPath = strings.TrimSpace(payload.Project.ServicesYAML)
+	}
+	if payload.Repository != nil {
+		params.RepositoryFullName = strings.TrimSpace(payload.Repository.FullName)
+	}
+	if payload.Runtime != nil {
+		params.TargetEnv = strings.TrimSpace(payload.Runtime.TargetEnv)
+		params.BuildRef = strings.TrimSpace(payload.Runtime.BuildRef)
+		params.DeployOnly = payload.Runtime.DeployOnly
+		runtimeNamespace := sanitizeDNSLabelValue(payload.Runtime.Namespace)
+		if runtimeNamespace != "" {
+			params.Namespace = runtimeNamespace
+		}
+	}
+	if params.TargetEnv == "" && execution.RuntimeMode == agentdomain.RuntimeModeFullEnv {
+		params.TargetEnv = "ai"
+	}
+
+	return params
+}

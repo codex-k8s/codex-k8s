@@ -254,6 +254,50 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 
 	for _, run := range running {
 		execution := resolveRunExecutionContext(run.RunID, run.ProjectID, run.RunPayload, s.cfg.RunNamespacePrefix)
+		runtimePayload := parseRunRuntimePayload(run.RunPayload)
+		deployOnlyRun := runtimePayload.Runtime != nil && runtimePayload.Runtime.DeployOnly
+
+		if execution.RuntimeMode != agentdomain.RuntimeModeFullEnv && !deployOnlyRun {
+			if err := s.finishRun(ctx, finishRunParams{
+				Run:       run,
+				Execution: execution,
+				Status:    rundomain.StatusSucceeded,
+				EventType: floweventdomain.EventTypeRunSucceeded,
+				Ref:       s.launcher.JobRef(run.RunID, execution.Namespace),
+			}); err != nil {
+				return err
+			}
+			continue
+		}
+
+		if deployOnlyRun {
+			prepareParams := buildPrepareRunEnvironmentParamsFromRunning(run, execution)
+			prepared, err := s.prepareRuntimeEnvironmentWithRetry(ctx, prepareParams)
+			if err != nil {
+				s.logger.Error("prepare runtime environment for running deploy-only run failed", "run_id", run.RunID, "err", err)
+				if finishErr := s.finishLaunchFailedRun(ctx, run, execution, err, runFailureReasonRuntimeDeployFailed); finishErr != nil {
+					return finishErr
+				}
+				continue
+			}
+
+			finishExecution := execution
+			if resolvedNamespace := sanitizeDNSLabelValue(prepared.Namespace); resolvedNamespace != "" {
+				finishExecution.Namespace = resolvedNamespace
+			}
+
+			if err := s.finishRun(ctx, finishRunParams{
+				Run:                  run,
+				Execution:            finishExecution,
+				Status:               rundomain.StatusSucceeded,
+				EventType:            floweventdomain.EventTypeRunSucceeded,
+				SkipNamespaceCleanup: true,
+			}); err != nil {
+				return err
+			}
+			continue
+		}
+
 		ref := s.launcher.JobRef(run.RunID, execution.Namespace)
 		state, err := s.launcher.Status(ctx, ref)
 		if err != nil {

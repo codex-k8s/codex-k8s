@@ -204,6 +204,123 @@ func TestTickDeployOnlyRun_PreparesEnvironmentWithoutLaunchingJob(t *testing.T) 
 	}
 }
 
+func TestTickDeployOnlyRunningRun_IsReconciledWithoutKubernetesJob(t *testing.T) {
+	t.Parallel()
+
+	payload := json.RawMessage(`{
+		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"runtime":{
+			"mode":"full-env",
+			"target_env":"ai-staging",
+			"build_ref":"0123456789abcdef0123456789abcdef01234567",
+			"deploy_only":true
+		}
+	}`)
+	runs := &fakeRunQueue{
+		running: []runqueuerepo.RunningRun{
+			{
+				RunID:         "run-deploy-only",
+				CorrelationID: "corr-deploy-only",
+				ProjectID:     "proj-1",
+				SlotNo:        1,
+				RunPayload:    payload,
+			},
+		},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{states: map[string]JobState{}, statusErr: context.Canceled}
+	deployer := &fakeRuntimePreparer{
+		result: PrepareRunEnvironmentResult{
+			Namespace: "codex-k8s-ai-staging",
+			TargetEnv: "ai-staging",
+		},
+	}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:          "worker-1",
+		ClaimLimit:        1,
+		RunningCheckLimit: 10,
+		SlotsPerProject:   2,
+		SlotLeaseTTL:      time.Minute,
+	}, Dependencies{
+		Runs:            runs,
+		Events:          events,
+		Launcher:        launcher,
+		RuntimePreparer: deployer,
+		Logger:          logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 2, 15, 10, 0, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if len(deployer.prepared) != 1 {
+		t.Fatalf("expected 1 runtime deploy call, got %d", len(deployer.prepared))
+	}
+	if len(runs.finished) != 1 {
+		t.Fatalf("expected 1 finished run, got %d", len(runs.finished))
+	}
+	if runs.finished[0].Status != rundomain.StatusSucceeded {
+		t.Fatalf("expected deploy-only running run to finish as succeeded, got %s", runs.finished[0].Status)
+	}
+	if len(launcher.cleaned) != 0 {
+		t.Fatalf("expected no namespace cleanup for deploy-only run, got %d", len(launcher.cleaned))
+	}
+	if len(events.inserted) != 1 || events.inserted[0].EventType != floweventdomain.EventTypeRunSucceeded {
+		t.Fatalf("expected one run.succeeded event, got %#v", events.inserted)
+	}
+}
+
+func TestTickCodeOnlyRunningRun_IsReconciledWithoutKubernetesJob(t *testing.T) {
+	t.Parallel()
+
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"}}`)
+	runs := &fakeRunQueue{
+		running: []runqueuerepo.RunningRun{
+			{
+				RunID:         "run-code-only",
+				CorrelationID: "corr-code-only",
+				ProjectID:     "proj-1",
+				SlotNo:        1,
+				RunPayload:    payload,
+			},
+		},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{states: map[string]JobState{}, statusErr: context.Canceled}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:          "worker-1",
+		ClaimLimit:        1,
+		RunningCheckLimit: 10,
+		SlotsPerProject:   2,
+		SlotLeaseTTL:      time.Minute,
+	}, Dependencies{
+		Runs:     runs,
+		Events:   events,
+		Launcher: launcher,
+		Logger:   logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 2, 15, 11, 0, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if len(runs.finished) != 1 {
+		t.Fatalf("expected 1 finished run, got %d", len(runs.finished))
+	}
+	if runs.finished[0].Status != rundomain.StatusSucceeded {
+		t.Fatalf("expected code-only running run to finish as succeeded, got %s", runs.finished[0].Status)
+	}
+	if len(events.inserted) != 1 || events.inserted[0].EventType != floweventdomain.EventTypeRunSucceeded {
+		t.Fatalf("expected one run.succeeded event, got %#v", events.inserted)
+	}
+}
+
 func TestTickFinalizesSucceededRun(t *testing.T) {
 	t.Parallel()
 
