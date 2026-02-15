@@ -122,9 +122,10 @@ approvals:
     - ресурсы: namespaces/configmaps/secrets/deployments/pods+logs/jobs+logs/pvc;
     - YAML-view/edit через Monaco Editor;
     - safety guardrails:
-      - платформенные ресурсы помечаются `app.kubernetes.io/part-of=codex-k8s`;
-      - платформенные ресурсы нельзя удалять ни в одном окружении (UI и backend policy);
-      - `ai-staging`/`prod` — строго view-only для платформенных ресурсов;
+      - в `ai-staging`/`prod` платформенные ресурсы помечаются `app.kubernetes.io/part-of=codex-k8s` (критерий для UI/guardrails и backend policy);
+      - в `ai` (ai-slots) при dogfooding платформа может разворачиваться без `app.kubernetes.io/part-of=codex-k8s`, чтобы UI позволял тестировать действия над ресурсами самой платформы (в т.ч. destructive через dry-run);
+      - ресурсы с `app.kubernetes.io/part-of=codex-k8s` нельзя удалять (UI и backend policy);
+      - `ai-staging`/`prod` — строго view-only для ресурсов с `app.kubernetes.io/part-of=codex-k8s`;
       - ai-slots — destructive действия только dry-run (кнопки есть для dogfooding/debug, реальное действие не выполняется).
   - Agents:
     - управление настройками агента;

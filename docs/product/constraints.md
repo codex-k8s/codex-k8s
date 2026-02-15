@@ -52,10 +52,11 @@ approvals:
 - Шаблоны промптов хранятся по локалям; выбор языка обязателен по цепочке `project locale -> system default locale -> en`.
 - Для системных агентов обязательно наличие seed-шаблонов минимум для `ru` и `en`.
 - Для external/staff HTTP API обязателен contract-first подход по OpenAPI (spec + runtime validation + codegen backend/frontend).
-- Платформенные Kubernetes ресурсы помечаются label `app.kubernetes.io/part-of=codex-k8s` (используется как канонический критерий для UI/guardrails и backend policy).
+- В окружениях `ai-staging` и `prod` платформенные Kubernetes ресурсы помечаются label `app.kubernetes.io/part-of=codex-k8s` (канонический критерий для UI/guardrails и backend policy).
+- В `ai` окружениях (ai-slots) при dogfooding платформа может разворачиваться без label `app.kubernetes.io/part-of=codex-k8s`, чтобы UI позволял тестировать действия над ресурсами самой платформы (в т.ч. destructive через dry-run) и не применял platform guardrails по label.
 - Для будущего admin/cluster контура staff-консоли обязательны guardrails:
-  - платформенные ресурсы (`app.kubernetes.io/part-of=codex-k8s`) нельзя удалять ни в одном окружении (UI и backend policy);
-  - `ai-staging` и `prod` — строго view-only для платформенных ресурсов;
+  - ресурсы, помеченные `app.kubernetes.io/part-of=codex-k8s`, нельзя удалять (UI и backend policy);
+  - `ai-staging` и `prod` — строго view-only для ресурсов с `app.kubernetes.io/part-of=codex-k8s`;
   - ai-slots — destructive действия только dry-run (кнопки есть для dogfooding/debug, реальное действие не выполняется);
   - значения `Secret` по умолчанию не показывать (только метаданные); reveal/редактирование только как отдельное осознанное действие под RBAC и аудитом.
 - Интеграции approver/executor должны реализовываться через универсальные HTTP-контракты MCP, без вендорной привязки к конкретному мессенджеру.

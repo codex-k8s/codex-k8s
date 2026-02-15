@@ -130,15 +130,16 @@ approvals:
 - Реальная backend-интеграция cluster CRUD (k8s API + RBAC + audit) для новых `Admin / Cluster` экранов (Day10 делает только UI scaffold + TODO).
 
 ## Ограничения безопасности для `Admin / Cluster` разделов (обязательны при дальнейшей реализации)
-- Элементы платформы помечаем label `app.kubernetes.io/part-of=codex-k8s` (канонический критерий для UI и backend).
-- Удаление элементов платформы запрещено.
+- В окружениях `ai-staging` и `prod` элементы платформы помечаем label `app.kubernetes.io/part-of=codex-k8s` (канонический критерий для UI и backend).
+- Исключение для dogfooding: в `ai` окружениях (ai-slots) платформа может разворачиваться без `app.kubernetes.io/part-of=codex-k8s`, чтобы UI позволял dogfood/debug действия над самой платформой (в т.ч. destructive через dry-run) и не применял platform guardrails по label.
+- Ресурсы, помеченные `app.kubernetes.io/part-of=codex-k8s`, нельзя удалять.
 - Элементы платформы в окружениях `ai-staging` и `prod` (namespaces вида `{{ .Project }}-ai-staging` и `{{ .Project }}-prod`) доступны только на просмотр (view-only):
   - скрывать/выключать действия create/update/delete;
   - показывать явный read-only banner на экранах.
 - Для `ai` окружений (ai-slots; namespaces вида `{{ .Project }}-dev-{{ .Slot }}`) destructive действия должны отрабатывать на backend как dry-run:
   - кнопки действий в UI существуют (для dogfooding/debug), но реальный delete/apply не выполняется;
   - по клику пользователь получает обратную связь: “dry-run OK, но в этом режиме действие запрещено”.
-- Для non-platform ресурсов (не помеченных `app.kubernetes.io/part-of=codex-k8s`) CRUD допускается, но:
+- Для non-platform ресурсов (не помеченных `app.kubernetes.io/part-of=codex-k8s`; включая платформу в ai-slots при dogfooding) CRUD допускается, но:
   - destructive actions только после явного подтверждения (dialog) и с аудитом;
   - значения `Secret` по умолчанию не показывать (только метаданные); вывод значения и редактирование должны быть отдельным осознанным действием.
 
@@ -233,8 +234,8 @@ approvals:
   - детали ресурса с табами (Overview/YAML/Events/Related/Logs);
   - action preview диалог;
   - правила безопасности и режимов в TODO:
-    - platform elements определяются по `app.kubernetes.io/part-of=codex-k8s`;
-    - `ai-staging`/`prod` = view-only;
+    - в `ai-staging`/`prod` platform elements определяются по `app.kubernetes.io/part-of=codex-k8s`; в ai-slots этот label может отсутствовать (dogfooding);
+    - `ai-staging`/`prod` = view-only (для ресурсов с `app.kubernetes.io/part-of=codex-k8s`);
     - `ai` env = dry-run для destructive actions (кнопки есть, действие не применяется, есть feedback).
 - Story-4.2: Добавить scaffold “Agents” и “System settings”:
   - agents list (чипы system/custom/mode/limits/status);
