@@ -21,6 +21,7 @@ approvals:
 - MVP-результат дня: production-ready `Vuetify` app-shell (navbar + drawer) + навигация по будущим разделам + единые UI-паттерны (таблицы/фильтры/пустые состояния/диалоги).
 - Важно: будущие разделы не интегрируем с API/Pinia (без новых store и backend-запросов), но делаем страницы и компоненты с заглушками данных и явными `TODO`.
 - Дополнительно: в навигации сразу закладываем `Admin / Cluster`, `Agents` и `System settings (locales)`.
+- Обратная связь пользователю: единый паттерн `VAlert` (с иконками) + `VSnackbar` после действий (например, “XXX удален”).
 
 ## Priority
 - `P0`.
@@ -47,7 +48,7 @@ approvals:
 - Навигация “в будущее”:
   - будущие разделы присутствуют в навигации и открываются как страницы (router + i18n);
   - будущие страницы наполнены Vuetify-компонентами и mock-данными;
-  - в коде каждой заглушки есть `TODO` с конкретикой “что подключить дальше” и ссылкой на issue (минимум `#19`, если нет отдельного).
+  - в коде каждой заглушки есть `TODO` с конкретикой “что подключить дальше”).
 - Административный блок `Admin / Cluster` (scaffold) для управления Kubernetes ресурсами (CRUD на уровне UI-заготовок + TODO на backend):
   - `Namespaces`;
   - `ConfigMaps`;
@@ -71,6 +72,7 @@ approvals:
   - таблицы/пагинация: `VDataTable` (или server-side variant) + `VPagination`;
   - диалоги подтверждения: `VDialog`;
   - загрузки/пустые состояния: `VSkeletonLoader` + общий empty-state (или `VEmptyState`, если доступен в выбранной версии);
+  - обратная связь: `VAlert` (info/success/warning/error, с иконками) + `VSnackbar` после действий;
   - действия/иконки: `VBtn`, `VIcon`.
 - UI/UX паритет для MVP-операционных сценариев (реальные данные остаются реальными):
   - runs list + run details;
@@ -92,12 +94,15 @@ approvals:
 - Реальная backend-интеграция cluster CRUD (k8s API + RBAC + audit) для новых `Admin / Cluster` экранов (Day10 делает только UI scaffold + TODO).
 
 ## Ограничения безопасности для `Admin / Cluster` разделов (обязательны при дальнейшей реализации)
+- Элементы платформы помечаем label `app.kubernetes.io/part-of=codex-k8s` (канонический критерий для UI и backend).
 - Удаление элементов платформы запрещено.
-- Элементы платформы в окружениях `ai-staging` и `prod` (соответствующие namespaces вида `{{ .Project }}-ai-staging` и `{{ .Project }}-prod`) доступны только на просмотр (view-only):
+- Элементы платформы в окружениях `ai-staging` и `prod` (namespaces вида `{{ .Project }}-ai-staging` и `{{ .Project }}-prod`) доступны только на просмотр (view-only):
   - скрывать/выключать действия create/update/delete;
   - показывать явный read-only banner на экранах.
-- Рекомендованный критерий “элемент платформы”: label `app.kubernetes.io/part-of=codex-k8s` и/или namespace `codex-k8s-*` (точный критерий зафиксировать при реализации backend).
-- Для non-platform namespace CRUD допускается, но:
+- Для `ai` окружений (ai-slots; namespaces вида `{{ .Project }}-dev-{{ .Slot }}`) destructive действия должны отрабатывать на backend как dry-run:
+  - кнопки действий в UI существуют (для dogfooding/debug), но реальный delete/apply не выполняется;
+  - по клику пользователь получает обратную связь: “dry-run OK, но в этом режиме действие запрещено”.
+- Для non-platform ресурсов (не помеченных `app.kubernetes.io/part-of=codex-k8s`) CRUD допускается, но:
   - destructive actions только после явного подтверждения (dialog) и с аудитом;
   - значения `Secret` по умолчанию не показывать (только метаданные); вывод значения и редактирование должны быть отдельным осознанным действием.
 
@@ -148,7 +153,11 @@ approvals:
 - Для экранов `Admin / Cluster` дополнительно:
   - selector namespace + баннер для view-only окружений `ai-staging`/`prod`;
   - действия create/edit/delete в view-only режиме скрыты/disabled;
+  - для `ai` env destructive действия должны дергать backend dry-run (кнопка есть, действие не выполняется; показываем что-то вроде “dry-run OK, но изменить/удалить нельзя”);
   - для `Secret` mock показывать только metadata, значение скрыто/замазано.
+- Обратная связь (обязательная база):
+  - ошибки/предупреждения показываются через `VAlert` (с иконками);
+  - после успешных действий показывается `VSnackbar` (например, “Deployment XXX удален”/“Сохранено”/“Обновлено”).
 - В коде каждой заглушки должен быть `TODO`:
   - что именно подключить (store/api, endpoint, модель данных),
   - где ожидается контракт (OpenAPI endpoint, feature store).
@@ -174,17 +183,21 @@ approvals:
 - Story-4.1: Добавить scaffold “Admin / Cluster” (без данных):
   - экран/маршруты под каждый ресурс (namespaces/configmaps/secrets/deployments/pods/jobs/pvc);
   - детали ресурса (metadata, labels/annotations, status) + вкладка YAML/JSON view;
-  - заготовки create/edit flows (формы или YAML view) с disabled apply и `TODO(#19): подключить staff API + audit`;
-  - read-only режим для `ai-staging`/`prod` (баннер + скрытые destructive actions).
+  - заготовки create/edit/delete flows (формы или YAML view) с disabled apply и `TODO: подключить staff API + audit`;
+  - правила безопасности в TODO:
+    - platform elements определяются по `app.kubernetes.io/part-of=codex-k8s`;
+    - `ai-staging`/`prod` = view-only;
+    - `ai` env = dry-run для destructive actions (кнопки есть, действие не применяется, есть feedback).
 - Story-4.2: Добавить scaffold “Agents” и “System settings”:
   - agents list + agent details (tabs: Settings / Prompt templates / Audit);
   - prompt templates для `work/review` минимум в `ru/en` с переключателем локали;
-  - system settings: locales table + add-locale dialog (mock) + `TODO(#19): backend settings`.
+  - system settings: locales table + add-locale dialog (mock) + `TODO: backend settings`.
 - Story-5: Базовые переиспользуемые UI-компоненты (shared/ui):
   - `AppShell`, `AppDrawer`, `AppBarActions`;
   - `PageHeader`, `KpiCards`, `FiltersBar`;
   - `EmptyState`, `LoadingState` (skeleton presets);
-  - `JsonViewer`/`CodeBlock` (для логов/JSON, с copy action).
+  - `JsonViewer`/`CodeBlock` (для логов/JSON, с copy action);
+  - `Notifications`: `VAlert` presets + `VSnackbar` helper для “action completed”.
 
 ## Критерии приемки
 - В `services/staff/web-console` используется Vuetify app-shell:
@@ -192,9 +205,10 @@ approvals:
   - drawer на `VNavigationDrawer` (desktop + mobile поведение);
   - основной контент в `VMain`.
 - В drawer присутствуют будущие разделы (scaffold) и они открываются как страницы (router работает).
-- Future-страницы содержат UI-скелет на компонентах Vuetify + mock-данные и `TODO(#19): ...` (или более точный issue) о том, как их довести до production.
+- Scaffold-страницы содержат UI-скелет на компонентах Vuetify + mock-данные и `TODO: ...` о том, как их довести до production.
 - В навигации присутствует `Admin / Cluster`, и для каждого ресурса есть страница scaffold.
 - Для `ai-staging`/`prod` страницы `Admin / Cluster` явно показывают режим “только просмотр” и не предлагают destructive actions.
+- Для `ai` окружений destructive действия в `Admin / Cluster` отрабатывают как dry-run и дают явную обратную связь “dry-run OK, но действие запрещено”.
 - В навигации присутствуют `Agents` и `System settings (locales)` с UI-заготовками под:
   - настройки агента;
   - шаблоны промптов `work/review` минимум в локалях `ru/en`;
@@ -202,7 +216,10 @@ approvals:
 - Текущие MVP-сценарии не регресснули:
   - runs list/details, jobs, waits, approvals, logs доступны и работают.
 - На ключевых экранах использованы базовые Vuetify-компоненты (не ad-hoc HTML):
-  - `VCard`, `VList`, `VChip`/`VBadge`, `VTextField`/`VSelect`, `VDataTable`, `VPagination`, `VMenu`, `VBtn`, `VIcon`, `VDialog`, `VSkeletonLoader`.
+  - `VCard`, `VList`, `VChip`/`VBadge`, `VTextField`/`VSelect`, `VDataTable`, `VPagination`, `VMenu`, `VBtn`, `VIcon`, `VDialog`, `VSkeletonLoader`, `VAlert`, `VSnackbar`.
+- Обратная связь пользователю реализована единообразно:
+  - ошибки/предупреждения = `VAlert` (с иконками);
+  - успешные действия = `VSnackbar` (например, “XXX удален”/“Сохранено”).
 - Локализация: ключи меню/заголовков/пустых состояний покрыты `ru/en`.
 - UI соответствует visual-гайдам:
   - светлая тема по умолчанию, спокойные поверхности, предсказуемая навигация,
