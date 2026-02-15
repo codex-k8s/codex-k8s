@@ -1,17 +1,20 @@
 <template>
   <div>
     <PageHeader :title="t('pages.projectDetails.title')">
+      <template #leading>
+        <VBtn variant="text" icon="mdi-arrow-left" :title="t('common.back')" :to="{ name: 'projects' }" />
+      </template>
       <template #actions>
         <CopyChip :label="t('pages.projectDetails.projectId')" :value="projectId" icon="mdi-identifier" />
-        <VBtn variant="tonal" prepend-icon="mdi-arrow-left" :to="{ name: 'projects' }">
-          {{ t("common.back") }}
-        </VBtn>
-        <VBtn variant="tonal" prepend-icon="mdi-refresh" :loading="details.loading" @click="load">
-          {{ t("common.refresh") }}
-        </VBtn>
-        <VBtn v-if="auth.isPlatformOwner" color="error" variant="tonal" prepend-icon="mdi-delete-outline" @click="confirmOpen = true">
-          {{ t("common.delete") }}
-        </VBtn>
+        <VBtn variant="tonal" icon="mdi-refresh" :title="t('common.refresh')" :loading="details.loading" @click="load" />
+        <VBtn
+          v-if="auth.isPlatformOwner"
+          color="error"
+          variant="tonal"
+          icon="mdi-delete-outline"
+          :title="t('common.delete')"
+          @click="confirmOpen = true"
+        />
       </template>
     </PageHeader>
 
@@ -43,12 +46,18 @@
 
     <VCard class="mt-4" variant="outlined">
       <VCardText class="d-flex ga-2 flex-wrap">
-        <VBtn variant="tonal" prepend-icon="mdi-source-repository" :to="{ name: 'project-repositories', params: { projectId } }">
-          {{ t("pages.projects.repos") }}
-        </VBtn>
-        <VBtn variant="tonal" prepend-icon="mdi-account-group-outline" :to="{ name: 'project-members', params: { projectId } }">
-          {{ t("pages.projects.members") }}
-        </VBtn>
+        <VBtn
+          variant="tonal"
+          icon="mdi-source-repository"
+          :title="t('pages.projects.repos')"
+          :to="{ name: 'project-repositories', params: { projectId } }"
+        />
+        <VBtn
+          variant="tonal"
+          icon="mdi-account-group-outline"
+          :title="t('pages.projects.members')"
+          :to="{ name: 'project-members', params: { projectId } }"
+        />
       </VCardText>
     </VCard>
   </div>
@@ -108,4 +117,3 @@ onMounted(() => void load());
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 </style>
-

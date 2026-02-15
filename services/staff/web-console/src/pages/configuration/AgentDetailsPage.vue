@@ -1,11 +1,11 @@
 <template>
   <div>
     <PageHeader :title="t('pages.agentDetails.title', { name: agentName })" :hint="t('pages.agentDetails.hint')">
+      <template #leading>
+        <VBtn variant="text" icon="mdi-arrow-left" :title="t('common.back')" :to="{ name: 'agents' }" />
+      </template>
       <template #actions>
         <CopyChip :label="t('pages.agentDetails.agent')" :value="agentName" icon="mdi-robot-outline" />
-        <VBtn variant="tonal" prepend-icon="mdi-arrow-left" :to="{ name: 'agents' }">
-          {{ t("common.back") }}
-        </VBtn>
       </template>
     </PageHeader>
 
@@ -160,4 +160,3 @@ function mockSave(): void {
   opacity: 0.95;
 }
 </style>
-

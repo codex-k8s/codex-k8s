@@ -2,9 +2,7 @@
   <div>
     <PageHeader :title="t('pages.projects.title')">
       <template #actions>
-        <VBtn variant="tonal" prepend-icon="mdi-refresh" :loading="projects.loading" @click="load">
-          {{ t("common.refresh") }}
-        </VBtn>
+        <VBtn variant="tonal" icon="mdi-refresh" :title="t('common.refresh')" :loading="projects.loading" @click="load" />
       </template>
     </PageHeader>
 
@@ -16,40 +14,63 @@
       <VCardText>
         <VDataTable :headers="headers" :items="projects.items" :loading="projects.loading" :items-per-page="10" hover>
           <template #item.name="{ item }">
-            <RouterLink class="text-primary font-weight-bold text-decoration-none" :to="{ name: 'project-details', params: { projectId: item.id } }">
-              {{ item.name }}
-            </RouterLink>
+            <div class="d-flex justify-center">
+              <RouterLink class="text-primary font-weight-bold text-decoration-none" :to="{ name: 'project-details', params: { projectId: item.id } }">
+                {{ item.name }}
+              </RouterLink>
+            </div>
           </template>
 
           <template #item.role="{ item }">
-            <VChip size="small" variant="tonal" class="font-weight-bold" :color="colorForProjectRole(item.role)">
-              {{ roleLabel(item.role) }}
-            </VChip>
+            <div class="d-flex justify-center">
+              <VChip size="small" variant="tonal" class="font-weight-bold" :color="colorForProjectRole(item.role)">
+                {{ roleLabel(item.role) }}
+              </VChip>
+            </div>
           </template>
 
           <template #item.manage="{ item }">
             <div class="d-flex ga-2 justify-center flex-wrap">
-              <VBtn size="small" variant="text" :to="{ name: 'project-repositories', params: { projectId: item.id } }">
-                {{ t("pages.projects.repos") }}
-              </VBtn>
-              <VBtn size="small" variant="text" :to="{ name: 'project-members', params: { projectId: item.id } }">
-                {{ t("pages.projects.members") }}
-              </VBtn>
+              <VTooltip :text="t('pages.projects.repos')">
+                <template #activator="{ props: tipProps }">
+                  <VBtn
+                    v-bind="tipProps"
+                    size="small"
+                    variant="text"
+                    icon="mdi-source-repository"
+                    :to="{ name: 'project-repositories', params: { projectId: item.id } }"
+                  />
+                </template>
+              </VTooltip>
+              <VTooltip :text="t('pages.projects.members')">
+                <template #activator="{ props: tipProps }">
+                  <VBtn
+                    v-bind="tipProps"
+                    size="small"
+                    variant="text"
+                    icon="mdi-account-group-outline"
+                    :to="{ name: 'project-members', params: { projectId: item.id } }"
+                  />
+                </template>
+              </VTooltip>
             </div>
           </template>
 
           <template #item.actions="{ item }">
             <div class="d-flex justify-end">
-              <VBtn
-                v-if="auth.isPlatformOwner"
-                size="small"
-                color="error"
-                variant="tonal"
-                :loading="projects.deleting"
-                @click="askDelete(item.id, item.name)"
-              >
-                {{ t("common.delete") }}
-              </VBtn>
+              <VTooltip v-if="auth.isPlatformOwner" :text="t('common.delete')">
+                <template #activator="{ props: tipProps }">
+                  <VBtn
+                    v-bind="tipProps"
+                    size="small"
+                    color="error"
+                    variant="tonal"
+                    icon="mdi-delete-outline"
+                    :loading="projects.deleting"
+                    @click="askDelete(item.id, item.name)"
+                  />
+                </template>
+              </VTooltip>
             </div>
           </template>
 
@@ -129,12 +150,11 @@ const confirmProjectId = ref<string>("");
 const confirmName = ref<string>("");
 
 const headers = [
-  { title: t("pages.projects.slug"), key: "slug", width: 220 },
-  { title: t("pages.projects.name"), key: "name" },
-  { title: t("pages.projects.role"), key: "role", width: 160, sortable: false },
-  { title: t("pages.projects.manage"), key: "manage", width: 220, sortable: false },
-  { title: t("pages.projects.id"), key: "id", width: 240 },
-  { title: "", key: "actions", sortable: false, width: 140 },
+  { title: t("pages.projects.slug"), key: "slug", width: 220, align: "start" },
+  { title: t("pages.projects.name"), key: "name", align: "center" },
+  { title: t("pages.projects.role"), key: "role", width: 160, sortable: false, align: "center" },
+  { title: t("pages.projects.manage"), key: "manage", width: 140, sortable: false, align: "center" },
+  { title: "", key: "actions", sortable: false, width: 72, align: "end" },
 ] as const;
 
 function roleLabel(role: string): string {

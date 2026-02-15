@@ -31,7 +31,14 @@
         <VCard variant="outlined">
           <VCardTitle class="text-subtitle-2">{{ t("pages.mcpTools.historyTitle") }}</VCardTitle>
           <VCardText>
-            <VDataTable :headers="historyHeaders" :items="historyRows" :items-per-page="10" density="comfortable" />
+            <VDataTable :headers="historyHeaders" :items="historyRows" :items-per-page="10" density="comfortable">
+              <template #item.created_at="{ item }">
+                <span class="text-medium-emphasis">{{ formatDateTime(String(item.created_at || ''), locale) }}</span>
+              </template>
+              <template #item.correlation_id="{ item }">
+                <span class="mono text-medium-emphasis">{{ item.correlation_id }}</span>
+              </template>
+            </VDataTable>
           </VCardText>
         </VCard>
       </VWindowItem>
@@ -45,16 +52,17 @@ import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import PageHeader from "../../shared/ui/PageHeader.vue";
+import { formatDateTime } from "../../shared/lib/datetime";
 
-const { t } = useI18n({ useScope: "global" });
+const { t, locale } = useI18n({ useScope: "global" });
 
 const tab = ref<"catalog" | "approvals" | "history">("catalog");
 
 const catalogHeaders = [
-  { title: "tool", key: "tool", width: 220 },
-  { title: "action", key: "action", width: 220 },
-  { title: "scope", key: "scope", width: 160 },
-  { title: "description", key: "description" },
+  { title: t("table.fields.tool"), key: "tool", width: 220, align: "start" },
+  { title: t("table.fields.action"), key: "action", width: 220, align: "center" },
+  { title: t("table.fields.scope"), key: "scope", width: 160, align: "center" },
+  { title: t("table.fields.description"), key: "description", align: "center" },
 ] as const;
 const catalogRows = [
   { tool: "github", action: "search.pull_requests", scope: "repo", description: "Search pull requests" },
@@ -63,10 +71,10 @@ const catalogRows = [
 ];
 
 const approvalHeaders = [
-  { title: "tool", key: "tool", width: 220 },
-  { title: "action", key: "action", width: 220 },
-  { title: "mode", key: "mode", width: 140 },
-  { title: "approver", key: "approver" },
+  { title: t("table.fields.tool"), key: "tool", width: 220, align: "start" },
+  { title: t("table.fields.action"), key: "action", width: 220, align: "center" },
+  { title: t("table.fields.mode"), key: "mode", width: 140, align: "center" },
+  { title: t("table.fields.approver"), key: "approver", align: "center" },
 ] as const;
 const approvalRows = [
   { tool: "github", action: "create.pull_request", mode: "owner", approver: "Owner" },
@@ -75,11 +83,11 @@ const approvalRows = [
 ];
 
 const historyHeaders = [
-  { title: "created_at", key: "created_at", width: 160 },
-  { title: "tool", key: "tool", width: 180 },
-  { title: "action", key: "action", width: 220 },
-  { title: "outcome", key: "outcome", width: 140 },
-  { title: "correlation_id", key: "correlation_id" },
+  { title: t("table.fields.created_at"), key: "created_at", width: 160, align: "start" },
+  { title: t("table.fields.tool"), key: "tool", width: 180, align: "center" },
+  { title: t("table.fields.action"), key: "action", width: 220, align: "center" },
+  { title: t("table.fields.outcome"), key: "outcome", width: 140, align: "center" },
+  { title: t("table.fields.correlation_id"), key: "correlation_id", align: "center" },
 ] as const;
 const historyRows = [
   { created_at: "2026-02-15T10:12:09Z", tool: "github", action: "search.pull_requests", outcome: "ok", correlation_id: "c0d3x-9a3d" },
@@ -88,3 +96,8 @@ const historyRows = [
 ];
 </script>
 
+<style scoped>
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+</style>

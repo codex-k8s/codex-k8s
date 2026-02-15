@@ -1,6 +1,9 @@
 <template>
   <div>
     <PageHeader :title="t('pages.runDetails.title')">
+      <template #leading>
+        <VBtn variant="text" icon="mdi-arrow-left" :title="t('common.back')" @click="goBack" />
+      </template>
       <template #actions>
         <CopyChip :label="t('pages.runDetails.runId')" :value="runId" icon="mdi-identifier" />
         <CopyChip
@@ -11,22 +14,16 @@
         />
         <CopyChip v-if="details.run?.namespace" :label="t('pages.runDetails.namespace')" :value="details.run.namespace" icon="mdi-kubernetes" />
 
-        <VBtn variant="tonal" prepend-icon="mdi-arrow-left" @click="goBack">
-          {{ t("common.back") }}
-        </VBtn>
-        <VBtn variant="tonal" prepend-icon="mdi-refresh" :loading="details.loading" @click="loadAll">
-          {{ t("common.refresh") }}
-        </VBtn>
+        <VBtn variant="tonal" icon="mdi-refresh" :title="t('common.refresh')" :loading="details.loading" @click="loadAll" />
         <VBtn
           v-if="canDeleteNamespace"
           color="error"
           variant="tonal"
-          prepend-icon="mdi-delete-outline"
+          icon="mdi-delete-outline"
+          :title="t('pages.runDetails.deleteNamespace')"
           :loading="details.deletingNamespace"
           @click="confirmDeleteNamespaceOpen = true"
-        >
-          {{ t("pages.runDetails.deleteNamespace") }}
-        </VBtn>
+        />
       </template>
     </PageHeader>
 

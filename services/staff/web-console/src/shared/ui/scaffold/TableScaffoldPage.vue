@@ -3,9 +3,7 @@
     <PageHeader :title="t(titleKey)" :hint="hintKey ? t(hintKey) : undefined">
       <template #actions>
         <slot name="header-actions">
-          <VBtn :disabled="loading" variant="tonal" prepend-icon="mdi-refresh" @click="refresh">
-            {{ t("common.refresh") }}
-          </VBtn>
+          <VBtn :disabled="loading" variant="tonal" icon="mdi-refresh" :title="t('common.refresh')" @click="refresh" />
         </slot>
       </template>
     </PageHeader>
@@ -55,9 +53,7 @@
           <VCol cols="12" md="4" class="d-flex justify-end ga-2 flex-wrap">
             <VMenu>
               <template #activator="{ props: menuProps }">
-                <VBtn v-bind="menuProps" variant="tonal" prepend-icon="mdi-tune">
-                  {{ t("scaffold.table.settings") }}
-                </VBtn>
+                <VBtn v-bind="menuProps" variant="tonal" icon="mdi-tune" :title="t('scaffold.table.settings')" />
               </template>
               <VCard min-width="280">
                 <VCardTitle class="text-subtitle-2">{{ t("scaffold.table.settings") }}</VCardTitle>
@@ -96,9 +92,7 @@
         <VAlert v-else-if="errorMode" type="error" variant="tonal" :title="t('scaffold.states.errorTitle')">
           <div class="text-body-2">{{ t("scaffold.states.errorText") }}</div>
           <div class="mt-3 d-flex ga-2 flex-wrap">
-            <VBtn variant="tonal" prepend-icon="mdi-refresh" @click="refresh">
-              {{ t("scaffold.actions.retry") }}
-            </VBtn>
+            <VBtn variant="tonal" icon="mdi-refresh" :title="t('scaffold.actions.retry')" @click="refresh" />
           </div>
         </VAlert>
 
@@ -114,12 +108,8 @@
           >
             <div class="text-body-2">{{ t("scaffold.states.emptyText") }}</div>
             <div class="mt-3 d-flex ga-2 flex-wrap">
-              <VBtn variant="tonal" prepend-icon="mdi-refresh" @click="refresh">
-                {{ t("scaffold.actions.retry") }}
-              </VBtn>
-              <VBtn variant="text" prepend-icon="mdi-close" @click="search = ''">
-                {{ t("scaffold.actions.clearFilters") }}
-              </VBtn>
+              <VBtn variant="tonal" icon="mdi-refresh" :title="t('scaffold.actions.retry')" @click="refresh" />
+              <VBtn variant="text" icon="mdi-close" :title="t('scaffold.actions.clearFilters')" @click="search = ''" />
             </div>
           </VAlert>
 
@@ -130,6 +120,10 @@
             :density="density"
             :hover="true"
           >
+            <template v-for="slotName in forwardedItemSlotNames" :key="slotName" v-slot:[slotName]="slotProps">
+              <slot :name="slotName" v-bind="slotProps" />
+            </template>
+
             <template #item.actions="{ item }">
               <slot name="row-actions" :item="item">
                 <VMenu>
@@ -160,15 +154,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, useSlots } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 
 import PageHeader from "../PageHeader.vue";
 
 type TableHeader = {
-  title: string;
   key: string;
+  title?: string;
+  titleKey?: string;
   align?: "start" | "center" | "end";
   sortable?: boolean;
   width?: string | number;
@@ -183,6 +178,11 @@ const props = defineProps<{
 
 const { t } = useI18n({ useScope: "global" });
 const route = useRoute();
+const slots = useSlots();
+
+const forwardedItemSlotNames = computed(() =>
+  Object.keys(slots).filter((name) => name.startsWith("item.") && name !== "item.actions"),
+);
 
 const search = ref("");
 const loading = ref(false);
@@ -190,12 +190,32 @@ const updatedAt = ref(new Date());
 
 const density = ref<"default" | "comfortable" | "compact">("comfortable");
 
-const toggleableHeaders = computed(() => props.headers.filter((h) => h.key !== "actions"));
+function resolveHeaderTitle(h: TableHeader): string {
+  if (h.titleKey) return t(h.titleKey);
+  if (h.title && h.title.trim() && h.title.trim() !== h.key) return h.title;
+
+  const msgKey = `table.fields.${h.key}`;
+  const translated = t(msgKey);
+  if (translated !== msgKey) return translated;
+  return h.title || h.key;
+}
+
+const resolvedHeaders = computed(() => props.headers.map((h) => ({ ...h, title: resolveHeaderTitle(h) })));
+
+const toggleableHeaders = computed(() => resolvedHeaders.value.filter((h) => h.key !== "actions"));
 const visibleHeaderKeys = ref<string[]>(toggleableHeaders.value.map((h) => h.key));
 
 const effectiveHeaders = computed(() => {
   const visible = new Set(visibleHeaderKeys.value);
-  return props.headers.filter((h) => h.key === "actions" || visible.has(h.key));
+  const base = resolvedHeaders.value.filter((h) => h.key === "actions" || visible.has(h.key));
+
+  return base.map((h, idx) => {
+    if (h.align) return h;
+    if (h.key === "actions") return { ...h, align: "end" as const };
+    if (idx === 0) return { ...h, align: "start" as const };
+    if (idx === base.length - 1) return { ...h, align: "end" as const };
+    return { ...h, align: "center" as const };
+  });
 });
 
 const filteredItems = computed(() => {

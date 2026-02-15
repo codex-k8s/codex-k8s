@@ -1,9 +1,25 @@
 <template>
   <TableScaffoldPage titleKey="pages.agents.title" hintKey="pages.agents.hint" :headers="headers" :items="rows">
+    <template #item.name="{ item }">
+      <RouterLink
+        class="text-primary font-weight-bold text-decoration-none"
+        :to="{ name: 'agent-details', params: { agentName: String(item.name) } }"
+      >
+        {{ item.name }}
+      </RouterLink>
+    </template>
     <template #row-actions="{ item }">
-      <VBtn size="small" variant="text" :to="{ name: 'agent-details', params: { agentName: String(item.name) } }">
-        {{ t("scaffold.rowActions.view") }}
-      </VBtn>
+      <VTooltip :text="t('scaffold.rowActions.view')">
+        <template #activator="{ props: tipProps }">
+          <VBtn
+            v-bind="tipProps"
+            size="small"
+            variant="text"
+            icon="mdi-open-in-new"
+            :to="{ name: 'agent-details', params: { agentName: String(item.name) } }"
+          />
+        </template>
+      </VTooltip>
     </template>
   </TableScaffoldPage>
 </template>
@@ -25,12 +41,12 @@ type AgentRow = {
 const { t } = useI18n({ useScope: "global" });
 
 const headers = [
-  { title: "name", key: "name" },
-  { title: "kind", key: "kind", width: 140 },
-  { title: "mode", key: "mode", width: 160 },
-  { title: "limits", key: "limits", width: 200 },
-  { title: "status", key: "status", width: 140 },
-  { title: "", key: "actions", sortable: false, width: 48 },
+  { key: "name" },
+  { key: "kind", width: 140 },
+  { key: "mode", width: 160 },
+  { key: "limits", width: 200 },
+  { key: "status", width: 140 },
+  { key: "actions", sortable: false, width: 48 },
 ] as const;
 
 const rows: AgentRow[] = [

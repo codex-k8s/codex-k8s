@@ -2,9 +2,7 @@
   <div>
     <PageHeader :title="t('pages.users.title')">
       <template #actions>
-        <VBtn variant="tonal" prepend-icon="mdi-refresh" :loading="users.loading" @click="load">
-          {{ t("common.refresh") }}
-        </VBtn>
+        <VBtn variant="tonal" icon="mdi-refresh" :title="t('common.refresh')" :loading="users.loading" @click="load" />
       </template>
     </PageHeader>
 
@@ -25,27 +23,28 @@
               </template>
 
               <template #item.is_platform_admin="{ item }">
-                <VChip size="small" variant="tonal" class="font-weight-bold" :color="item.is_platform_admin ? 'warning' : 'secondary'">
-                  {{ item.is_platform_admin ? t("pages.users.yes") : t("pages.users.no") }}
-                </VChip>
-              </template>
-
-              <template #item.id="{ item }">
-                <span class="mono text-medium-emphasis">{{ item.id }}</span>
+                <div class="d-flex justify-center">
+                  <VChip size="small" variant="tonal" class="font-weight-bold" :color="item.is_platform_admin ? 'warning' : 'secondary'">
+                    {{ item.is_platform_admin ? t("pages.users.yes") : t("pages.users.no") }}
+                  </VChip>
+                </div>
               </template>
 
               <template #item.actions="{ item }">
                 <div class="d-flex justify-end">
-                  <VBtn
-                    v-if="canDelete(item.id, item.is_platform_admin, item.is_platform_owner)"
-                    size="small"
-                    color="error"
-                    variant="tonal"
-                    :loading="users.deleting"
-                    @click="askRemove(item.id, item.email)"
-                  >
-                    {{ t("common.delete") }}
-                  </VBtn>
+                  <VTooltip v-if="canDelete(item.id, item.is_platform_admin, item.is_platform_owner)" :text="t('common.delete')">
+                    <template #activator="{ props: tipProps }">
+                      <VBtn
+                        v-bind="tipProps"
+                        size="small"
+                        color="error"
+                        variant="tonal"
+                        icon="mdi-delete-outline"
+                        :loading="users.deleting"
+                        @click="askRemove(item.id, item.email)"
+                      />
+                    </template>
+                  </VTooltip>
                 </div>
               </template>
 
@@ -117,11 +116,10 @@ const confirmUserId = ref("");
 const confirmName = ref("");
 
 const headers = [
-  { title: t("pages.users.email"), key: "email" },
-  { title: t("pages.users.github"), key: "github_login", width: 220 },
-  { title: t("pages.users.admin"), key: "is_platform_admin", width: 160 },
-  { title: t("common.id"), key: "id", width: 240 },
-  { title: "", key: "actions", sortable: false, width: 140 },
+  { title: t("pages.users.email"), key: "email", align: "start" },
+  { title: t("pages.users.github"), key: "github_login", width: 220, align: "center" },
+  { title: t("pages.users.admin"), key: "is_platform_admin", width: 160, align: "center" },
+  { title: "", key: "actions", sortable: false, width: 72, align: "end" },
 ] as const;
 
 async function load() {

@@ -4,12 +4,22 @@
     hintKey="pages.labelsStages.hint"
     :headers="headers"
     :items="rows"
-  />
+  >
+    <template #below-header>
+      <DismissibleWarningAlert
+        alert-id="labels_stages"
+        :title="t('warnings.labelsStages.title')"
+        :text="t('warnings.labelsStages.text')"
+      />
+    </template>
+  </TableScaffoldPage>
 </template>
 
 <script setup lang="ts">
 // TODO(#19): Подключить реальный stage/label policy (OpenAPI контракт + store) и режимы редактирования с аудитом.
 import TableScaffoldPage from "../../shared/ui/scaffold/TableScaffoldPage.vue";
+import DismissibleWarningAlert from "../../shared/ui/DismissibleWarningAlert.vue";
+import { useI18n } from "vue-i18n";
 
 type PolicyRow = {
   kind: "label" | "stage";
@@ -18,12 +28,14 @@ type PolicyRow = {
   status: "active" | "planned";
 };
 
+const { t } = useI18n({ useScope: "global" });
+
 const headers = [
-  { title: "kind", key: "kind", width: 120 },
-  { title: "key", key: "key", width: 220 },
-  { title: "description", key: "description" },
-  { title: "status", key: "status", width: 140 },
-  { title: "", key: "actions", sortable: false, width: 48 },
+  { key: "kind", width: 120 },
+  { key: "key", width: 220 },
+  { key: "description" },
+  { key: "status", width: 140 },
+  { key: "actions", sortable: false, width: 48 },
 ] as const;
 
 const rows: PolicyRow[] = [
@@ -38,4 +50,3 @@ const rows: PolicyRow[] = [
   { kind: "label", key: "state:blocked", description: "Execution blocked", status: "planned" },
 ];
 </script>
-

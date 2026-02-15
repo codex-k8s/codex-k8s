@@ -2,9 +2,12 @@
   <div>
     <PageHeader :title="t('pages.systemSettings.title')" :hint="t('pages.systemSettings.hint')">
       <template #actions>
-        <VBtn variant="tonal" prepend-icon="mdi-plus" @click="addLocaleDialogOpen = true">
-          {{ t("pages.systemSettings.addLocale") }}
-        </VBtn>
+        <VBtn
+          variant="tonal"
+          icon="mdi-plus"
+          :title="t('pages.systemSettings.addLocale')"
+          @click="addLocaleDialogOpen = true"
+        />
       </template>
     </PageHeader>
 
@@ -13,7 +16,15 @@
         <VCard variant="outlined">
           <VCardTitle class="text-subtitle-2">{{ t("pages.systemSettings.localesTitle") }}</VCardTitle>
           <VCardText>
-            <VDataTable :headers="localeHeaders" :items="locales" :items-per-page="10" density="comfortable" />
+            <VDataTable :headers="localeHeaders" :items="locales" :items-per-page="10" density="comfortable">
+              <template #item.is_default="{ item }">
+                <div class="d-flex justify-center">
+                  <VChip size="small" variant="tonal" class="font-weight-bold" :color="item.is_default ? 'success' : 'secondary'">
+                    {{ item.is_default ? t("bool.true") : t("bool.false") }}
+                  </VChip>
+                </div>
+              </template>
+            </VDataTable>
           </VCardText>
         </VCard>
       </VCol>
@@ -97,9 +108,9 @@ type LocaleRow = {
 const { t } = useI18n({ useScope: "global" });
 
 const localeHeaders = [
-  { title: "code", key: "code", width: 120 },
-  { title: "name", key: "name" },
-  { title: "default", key: "is_default", width: 120 },
+  { title: t("table.fields.code"), key: "code", width: 120, align: "start" },
+  { title: t("table.fields.name"), key: "name", align: "center" },
+  { title: t("table.fields.is_default"), key: "is_default", width: 160, align: "center" },
 ] as const;
 
 const locales = ref<LocaleRow[]>([
@@ -130,4 +141,3 @@ function mockAddLocale(): void {
   addLocaleDialogOpen.value = false;
 }
 </script>
-

@@ -19,12 +19,11 @@
 
       <VMenu v-if="showContextFilter" :close-on-content-click="false">
         <template #activator="{ props: menuProps }">
-          <VBtn v-bind="menuProps" variant="tonal" prepend-icon="mdi-filter-variant">
-            {{ filterButtonLabel }}
-          </VBtn>
+          <VBtn v-bind="menuProps" variant="tonal" icon="mdi-filter-variant" :title="filterButtonLabel" />
         </template>
         <VCard min-width="420">
           <VCardTitle class="text-subtitle-2">{{ t("context.title") }}</VCardTitle>
+          <VCardSubtitle class="text-caption text-medium-emphasis">{{ filterSummary }}</VCardSubtitle>
           <VCardText>
             <VRow density="compact">
               <VCol cols="12" md="6">
@@ -71,9 +70,13 @@
       <template v-if="auth.status === 'authed'">
         <VMenu>
           <template #activator="{ props: menuProps }">
-            <VBtn v-bind="menuProps" class="ml-2" variant="tonal" prepend-icon="mdi-account-circle-outline">
-              {{ auth.me?.email || t("common.loading") }}
-            </VBtn>
+            <VBtn
+              v-bind="menuProps"
+              class="ml-2"
+              variant="tonal"
+              icon="mdi-account-circle-outline"
+              :title="auth.me?.email || t('common.loading')"
+            />
           </template>
           <VList density="compact" min-width="280">
             <VListItem :title="auth.me?.email || '-'" :subtitle="auth.me?.githubLogin ? '@' + auth.me.githubLogin : ''" />
@@ -101,10 +104,11 @@
       width="320"
     >
       <VList nav density="compact">
-        <template v-for="g in navGroups" :key="g.id">
-          <VListSubheader class="mt-2">
+        <template v-for="(g, idx) in navGroups" :key="g.id">
+          <VListSubheader v-if="!(drawerRail && !isMobile)" class="mt-2">
             {{ t(g.titleKey) }}
           </VListSubheader>
+          <VDivider v-else-if="idx > 0" class="my-2" />
 
           <VListItem
             v-for="item in groupedItems[g.id]"

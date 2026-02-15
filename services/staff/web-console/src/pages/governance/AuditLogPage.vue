@@ -4,12 +4,21 @@
     hintKey="pages.auditLog.hint"
     :headers="headers"
     :items="rows"
-  />
+  >
+    <template #item.created_at="{ item }">
+      <span class="text-medium-emphasis">{{ formatDateTime(String(item.created_at || ''), locale) }}</span>
+    </template>
+    <template #item.correlation_id="{ item }">
+      <span class="mono text-medium-emphasis">{{ item.correlation_id }}</span>
+    </template>
+  </TableScaffoldPage>
 </template>
 
 <script setup lang="ts">
 // TODO(#19): Подключить реальный audit log (endpoint + модель данных), фильтры (actor/object/env/correlation_id) и пагинацию.
 import TableScaffoldPage from "../../shared/ui/scaffold/TableScaffoldPage.vue";
+import { useI18n } from "vue-i18n";
+import { formatDateTime } from "../../shared/lib/datetime";
 
 type AuditRow = {
   created_at: string;
@@ -20,14 +29,16 @@ type AuditRow = {
   correlation_id: string;
 };
 
+const { locale } = useI18n({ useScope: "global" });
+
 const headers = [
-  { title: "created_at", key: "created_at", width: 140 },
-  { title: "actor", key: "actor", width: 180 },
-  { title: "action", key: "action", width: 160 },
-  { title: "object", key: "object" },
-  { title: "env", key: "env", width: 140 },
-  { title: "correlation_id", key: "correlation_id" },
-  { title: "", key: "actions", sortable: false, width: 48 },
+  { key: "created_at", width: 160 },
+  { key: "actor", width: 180 },
+  { key: "action", width: 160 },
+  { key: "object" },
+  { key: "env", width: 140 },
+  { key: "correlation_id", width: 220 },
+  { key: "actions", sortable: false, width: 48 },
 ] as const;
 
 const rows: AuditRow[] = [
@@ -74,3 +85,8 @@ const rows: AuditRow[] = [
 ];
 </script>
 
+<style scoped>
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+</style>

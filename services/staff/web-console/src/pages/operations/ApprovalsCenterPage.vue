@@ -2,9 +2,13 @@
   <div>
     <PageHeader :title="t('pages.approvals.title')" :hint="t('pages.approvals.hint')">
       <template #actions>
-        <VBtn variant="tonal" prepend-icon="mdi-refresh" :disabled="runs.approvalsLoading" @click="runs.loadPendingApprovals()">
-          {{ t("common.refresh") }}
-        </VBtn>
+        <VBtn
+          variant="tonal"
+          icon="mdi-refresh"
+          :title="t('common.refresh')"
+          :disabled="runs.approvalsLoading"
+          @click="runs.loadPendingApprovals()"
+        />
       </template>
     </PageHeader>
 
@@ -84,24 +88,32 @@
 
           <template #item.actions="{ item }">
             <div class="d-flex ga-2 justify-end flex-wrap">
-              <VBtn
-                size="small"
-                variant="tonal"
-                color="success"
-                :disabled="runs.resolvingApprovalID === item.id"
-                @click="openDecision(item.id, 'approved')"
-              >
-                {{ t("pages.approvals.approve") }}
-              </VBtn>
-              <VBtn
-                size="small"
-                variant="tonal"
-                color="error"
-                :disabled="runs.resolvingApprovalID === item.id"
-                @click="openDecision(item.id, 'denied')"
-              >
-                {{ t("pages.approvals.deny") }}
-              </VBtn>
+              <VTooltip :text="t('pages.approvals.approve')">
+                <template #activator="{ props: tipProps }">
+                  <VBtn
+                    v-bind="tipProps"
+                    size="small"
+                    variant="tonal"
+                    color="success"
+                    icon="mdi-check"
+                    :disabled="runs.resolvingApprovalID === item.id"
+                    @click="openDecision(item.id, 'approved')"
+                  />
+                </template>
+              </VTooltip>
+              <VTooltip :text="t('pages.approvals.deny')">
+                <template #activator="{ props: tipProps }">
+                  <VBtn
+                    v-bind="tipProps"
+                    size="small"
+                    variant="tonal"
+                    color="error"
+                    icon="mdi-close"
+                    :disabled="runs.resolvingApprovalID === item.id"
+                    @click="openDecision(item.id, 'denied')"
+                  />
+                </template>
+              </VTooltip>
             </div>
           </template>
 
@@ -165,13 +177,13 @@ const filtered = computed(() => {
 });
 
 const headers = [
-  { title: "project", key: "project", sortable: false, width: 220 },
-  { title: "run", key: "run", sortable: false, width: 220 },
-  { title: "tool", key: "tool_name", width: 180 },
-  { title: "action", key: "action" },
-  { title: "requested_by", key: "requested_by", width: 180 },
-  { title: "created_at", key: "created_at", width: 180 },
-  { title: "", key: "actions", sortable: false, width: 240 },
+  { title: t("table.fields.project"), key: "project", sortable: false, width: 220, align: "start" },
+  { title: t("table.fields.run"), key: "run", sortable: false, width: 220, align: "center" },
+  { title: t("table.fields.tool_name"), key: "tool_name", width: 180, align: "center" },
+  { title: t("table.fields.action"), key: "action", align: "center" },
+  { title: t("table.fields.requested_by"), key: "requested_by", width: 180, align: "center" },
+  { title: t("table.fields.created_at"), key: "created_at", width: 180, align: "center" },
+  { title: "", key: "actions", sortable: false, width: 120, align: "end" },
 ] as const;
 
 const decisionDialogOpen = ref(false);

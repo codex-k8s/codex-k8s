@@ -2,9 +2,7 @@
   <div>
     <PageHeader :title="t('pages.waitQueue.title')" :hint="t('pages.waitQueue.hint')">
       <template #actions>
-        <VBtn variant="tonal" prepend-icon="mdi-refresh" :disabled="runs.waitsLoading" @click="runs.loadRunWaits()">
-          {{ t("common.refresh") }}
-        </VBtn>
+        <VBtn variant="tonal" icon="mdi-refresh" :title="t('common.refresh')" :disabled="runs.waitsLoading" @click="runs.loadRunWaits()" />
       </template>
     </PageHeader>
 
@@ -29,8 +27,14 @@
           </VCol>
         </VRow>
         <div class="d-flex ga-2 mt-3 flex-wrap justify-end">
-          <VBtn variant="tonal" @click="runs.loadRunWaits()" :disabled="runs.waitsLoading">{{ t("pages.runs.applyFilters") }}</VBtn>
-          <VBtn variant="text" @click="reset">{{ t("pages.runs.resetFilters") }}</VBtn>
+          <VBtn
+            variant="tonal"
+            icon="mdi-check"
+            :title="t('pages.runs.applyFilters')"
+            @click="runs.loadRunWaits()"
+            :disabled="runs.waitsLoading"
+          />
+          <VBtn variant="text" icon="mdi-backspace-outline" :title="t('pages.runs.resetFilters')" @click="reset" />
         </div>
       </VCardText>
     </VCard>
@@ -45,6 +49,14 @@
           density="comfortable"
           hover
         >
+          <template #item.status="{ item }">
+            <div class="d-flex justify-center">
+              <VChip size="small" variant="tonal" class="font-weight-bold" :color="colorForRunStatus(item.status)">
+                {{ item.status }}
+              </VChip>
+            </div>
+          </template>
+
           <template #item.project="{ item }">
             <RouterLink
               v-if="item.project_id"
@@ -61,9 +73,17 @@
           </template>
 
           <template #item.actions="{ item }">
-            <VBtn size="small" variant="text" :to="{ name: 'run-details', params: { runId: item.id } }">
-              {{ t("pages.runs.details") }}
-            </VBtn>
+            <VTooltip :text="t('pages.runs.details')">
+              <template #activator="{ props: tipProps }">
+                <VBtn
+                  v-bind="tipProps"
+                  size="small"
+                  variant="text"
+                  icon="mdi-open-in-new"
+                  :to="{ name: 'run-details', params: { runId: item.id } }"
+                />
+              </template>
+            </VTooltip>
           </template>
 
           <template #no-data>
@@ -85,19 +105,20 @@ import { useI18n } from "vue-i18n";
 
 import PageHeader from "../../shared/ui/PageHeader.vue";
 import { formatDateTime } from "../../shared/lib/datetime";
+import { colorForRunStatus } from "../../shared/lib/chips";
 import { useRunsStore } from "../../features/runs/store";
 
 const runs = useRunsStore();
 const { t, locale } = useI18n({ useScope: "global" });
 
 const headers = [
-  { title: "status", key: "status", width: 140 },
-  { title: "project", key: "project", sortable: false, width: 220 },
-  { title: "run_type", key: "trigger_kind", width: 160 },
-  { title: "agent", key: "agent_key", width: 160 },
-  { title: "wait_state", key: "wait_state", width: 160 },
-  { title: "wait_since", key: "wait_since", width: 180 },
-  { title: "", key: "actions", sortable: false, width: 120 },
+  { title: t("table.fields.status"), key: "status", width: 140, align: "center" },
+  { title: t("table.fields.project"), key: "project", sortable: false, width: 220, align: "center" },
+  { title: t("table.fields.trigger_kind"), key: "trigger_kind", width: 160, align: "center" },
+  { title: t("table.fields.agent_key"), key: "agent_key", width: 160, align: "center" },
+  { title: t("table.fields.wait_state"), key: "wait_state", width: 160, align: "center" },
+  { title: t("table.fields.wait_since"), key: "wait_since", width: 180, align: "center" },
+  { title: "", key: "actions", sortable: false, width: 72, align: "end" },
 ] as const;
 
 function reset(): void {
@@ -109,4 +130,3 @@ function reset(): void {
 
 onMounted(() => void runs.loadRunWaits());
 </script>
-

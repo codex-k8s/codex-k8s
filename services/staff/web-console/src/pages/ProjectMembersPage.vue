@@ -1,14 +1,12 @@
 <template>
   <div>
     <PageHeader :title="t('pages.projectMembers.title')">
+      <template #leading>
+        <VBtn variant="text" icon="mdi-arrow-left" :title="t('common.back')" :to="{ name: 'projects' }" />
+      </template>
       <template #actions>
         <CopyChip :label="t('pages.projectMembers.projectId')" :value="projectId" icon="mdi-identifier" />
-        <VBtn variant="tonal" prepend-icon="mdi-arrow-left" :to="{ name: 'projects' }">
-          {{ t("common.back") }}
-        </VBtn>
-        <VBtn variant="tonal" prepend-icon="mdi-refresh" :loading="members.loading" @click="load">
-          {{ t("common.refresh") }}
-        </VBtn>
+        <VBtn variant="tonal" icon="mdi-refresh" :title="t('common.refresh')" :loading="members.loading" @click="load" />
       </template>
     </PageHeader>
 
@@ -29,16 +27,22 @@
     <VCard class="mt-4" variant="outlined">
       <VCardText>
         <VDataTable :headers="headers" :items="members.items" :loading="members.loading" :items-per-page="10" hover>
-          <template #item.user_id="{ item }">
-            <span class="mono text-medium-emphasis">{{ item.user_id }}</span>
-          </template>
-
           <template #item.role="{ item }">
-            <VSelect v-model="item.role" :items="roleOptions" density="compact" hide-details />
+            <div class="d-flex justify-center">
+              <VSelect v-model="item.role" :items="roleOptions" density="compact" hide-details style="max-width: 220px" />
+            </div>
           </template>
 
           <template #item.learning_mode_override="{ item }">
-            <VSelect v-model="item.learning_mode_override" :items="learningOptions" density="compact" hide-details />
+            <div class="d-flex justify-center">
+              <VSelect
+                v-model="item.learning_mode_override"
+                :items="learningOptions"
+                density="compact"
+                hide-details
+                style="max-width: 240px"
+              />
+            </div>
           </template>
 
           <template #item.actions="{ item }">
@@ -158,11 +162,10 @@ const learningOptions = [
 ] as const;
 
 const headers = [
-  { title: t("pages.projectMembers.email"), key: "email" },
-  { title: t("pages.projectMembers.userId"), key: "user_id", width: 260 },
-  { title: t("pages.projectMembers.role"), key: "role", width: 220, sortable: false },
-  { title: t("pages.projectMembers.learningOverride"), key: "learning_mode_override", width: 240, sortable: false },
-  { title: "", key: "actions", sortable: false, width: 220 },
+  { title: t("pages.projectMembers.email"), key: "email", align: "start" },
+  { title: t("pages.projectMembers.role"), key: "role", width: 220, sortable: false, align: "center" },
+  { title: t("pages.projectMembers.learningOverride"), key: "learning_mode_override", width: 240, sortable: false, align: "center" },
+  { title: "", key: "actions", sortable: false, width: 220, align: "end" },
 ] as const;
 
 async function load() {

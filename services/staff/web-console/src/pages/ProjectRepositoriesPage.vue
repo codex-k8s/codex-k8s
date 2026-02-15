@@ -1,14 +1,12 @@
 <template>
   <div>
     <PageHeader :title="t('pages.projectRepositories.title')">
+      <template #leading>
+        <VBtn variant="text" icon="mdi-arrow-left" :title="t('common.back')" :to="{ name: 'projects' }" />
+      </template>
       <template #actions>
         <CopyChip :label="t('pages.projectRepositories.projectId')" :value="projectId" icon="mdi-identifier" />
-        <VBtn variant="tonal" prepend-icon="mdi-arrow-left" :to="{ name: 'projects' }">
-          {{ t("common.back") }}
-        </VBtn>
-        <VBtn variant="tonal" prepend-icon="mdi-refresh" :loading="repos.loading" @click="load">
-          {{ t("common.refresh") }}
-        </VBtn>
+        <VBtn variant="tonal" icon="mdi-refresh" :title="t('common.refresh')" :loading="repos.loading" @click="load" />
       </template>
     </PageHeader>
 
@@ -40,19 +38,21 @@
             <span class="mono text-medium-emphasis">{{ item.services_yaml_path }}</span>
           </template>
 
-          <template #item.external_id="{ item }">
-            <span class="mono text-medium-emphasis">{{ item.external_id }}</span>
-          </template>
-
-          <template #item.id="{ item }">
-            <span class="mono text-medium-emphasis">{{ item.id }}</span>
-          </template>
-
           <template #item.actions="{ item }">
             <div class="d-flex justify-end">
-              <VBtn size="small" color="error" variant="tonal" :loading="repos.removing" @click="askRemove(item.id, `${item.owner}/${item.name}`)">
-                {{ t("common.delete") }}
-              </VBtn>
+              <VTooltip :text="t('common.delete')">
+                <template #activator="{ props: tipProps }">
+                  <VBtn
+                    v-bind="tipProps"
+                    size="small"
+                    color="error"
+                    variant="tonal"
+                    icon="mdi-delete-outline"
+                    :loading="repos.removing"
+                    @click="askRemove(item.id, `${item.owner}/${item.name}`)"
+                  />
+                </template>
+              </VTooltip>
             </div>
           </template>
 
@@ -140,12 +140,10 @@ const confirmRepoId = ref("");
 const confirmName = ref("");
 
 const headers = [
-  { title: t("pages.projectRepositories.provider"), key: "provider", width: 160 },
-  { title: t("pages.projectRepositories.repo"), key: "repo", sortable: false, width: 260 },
-  { title: t("pages.projectRepositories.servicesYaml"), key: "services_yaml_path", width: 220 },
-  { title: t("pages.projectRepositories.externalId"), key: "external_id", width: 240 },
-  { title: t("pages.projectRepositories.id"), key: "id", width: 240 },
-  { title: "", key: "actions", sortable: false, width: 140 },
+  { title: t("pages.projectRepositories.provider"), key: "provider", width: 160, align: "start" },
+  { title: t("pages.projectRepositories.repo"), key: "repo", sortable: false, width: 260, align: "center" },
+  { title: t("pages.projectRepositories.servicesYaml"), key: "services_yaml_path", width: 220, align: "center" },
+  { title: "", key: "actions", sortable: false, width: 72, align: "end" },
 ] as const;
 
 async function load() {
@@ -186,4 +184,3 @@ onMounted(() => void load());
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 </style>
-

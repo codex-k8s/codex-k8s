@@ -15,15 +15,27 @@
           style="max-width: 120px"
         />
         <VSwitch v-model="followTail" :label="t('logs.follow')" hide-details density="compact" />
-        <VBtn variant="tonal" prepend-icon="mdi-refresh" :loading="loading" @click="emit('refresh', tailLines)">
-          {{ t("common.refresh") }}
-        </VBtn>
-        <VBtn variant="tonal" prepend-icon="mdi-content-copy" @click="copyAll" :disabled="filteredLines.length === 0">
-          {{ t("common.copy") }}
-        </VBtn>
-        <VBtn variant="tonal" prepend-icon="mdi-download" @click="download" :disabled="filteredLines.length === 0">
-          {{ t("logs.download") }}
-        </VBtn>
+        <VBtn
+          variant="tonal"
+          icon="mdi-refresh"
+          :title="t('common.refresh')"
+          :loading="loading"
+          @click="emit('refresh', tailLines)"
+        />
+        <VBtn
+          variant="tonal"
+          icon="mdi-content-copy"
+          :title="t('common.copy')"
+          @click="copyAll"
+          :disabled="filteredLines.length === 0"
+        />
+        <VBtn
+          variant="tonal"
+          icon="mdi-download"
+          :title="t('logs.download')"
+          @click="download"
+          :disabled="filteredLines.length === 0"
+        />
       </div>
     </VCardTitle>
 

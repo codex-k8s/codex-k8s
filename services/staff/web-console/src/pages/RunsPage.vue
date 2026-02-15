@@ -2,9 +2,7 @@
   <div>
     <PageHeader :title="t('pages.runs.title')">
       <template #actions>
-        <VBtn variant="tonal" prepend-icon="mdi-refresh" :loading="runs.loading" @click="loadAll">
-          {{ t("common.refresh") }}
-        </VBtn>
+        <VBtn variant="tonal" icon="mdi-refresh" :title="t('common.refresh')" :loading="runs.loading" @click="loadAll" />
       </template>
     </PageHeader>
 
@@ -31,7 +29,7 @@
               <div class="text-caption text-medium-emphasis">{{ t("pages.runs.runningJobs") }}</div>
               <div class="text-h6 font-weight-bold">{{ runs.runningJobs.length }}</div>
             </div>
-            <VBtn size="small" variant="text" :to="{ name: 'running-jobs' }">{{ t("pages.runs.details") }}</VBtn>
+            <VBtn size="small" variant="text" icon="mdi-open-in-new" :title="t('pages.runs.details')" :to="{ name: 'running-jobs' }" />
           </VCardText>
         </VCard>
       </VCol>
@@ -42,7 +40,7 @@
               <div class="text-caption text-medium-emphasis">{{ t("pages.runs.waitQueue") }}</div>
               <div class="text-h6 font-weight-bold">{{ runs.waitQueue.length }}</div>
             </div>
-            <VBtn size="small" variant="text" :to="{ name: 'wait-queue' }">{{ t("pages.runs.details") }}</VBtn>
+            <VBtn size="small" variant="text" icon="mdi-open-in-new" :title="t('pages.runs.details')" :to="{ name: 'wait-queue' }" />
           </VCardText>
         </VCard>
       </VCol>
@@ -53,7 +51,7 @@
               <div class="text-caption text-medium-emphasis">{{ t("pages.runs.pendingApprovals") }}</div>
               <div class="text-h6 font-weight-bold">{{ runs.pendingApprovals.length }}</div>
             </div>
-            <VBtn size="small" variant="text" :to="{ name: 'approvals' }">{{ t("pages.runs.details") }}</VBtn>
+            <VBtn size="small" variant="text" icon="mdi-open-in-new" :title="t('pages.runs.details')" :to="{ name: 'approvals' }" />
           </VCardText>
         </VCard>
       </VCol>
@@ -63,9 +61,11 @@
       <VCardText>
         <VDataTable :headers="headers" :items="runs.items" :loading="runs.loading" :items-per-page="20" hover>
           <template #item.status="{ item }">
-            <VChip size="small" variant="tonal" class="font-weight-bold" :color="colorForRunStatus(item.status)">
-              {{ item.status }}
-            </VChip>
+            <div class="d-flex justify-center">
+              <VChip size="small" variant="tonal" class="font-weight-bold" :color="colorForRunStatus(item.status)">
+                {{ item.status }}
+              </VChip>
+            </div>
           </template>
 
           <template #item.project="{ item }">
@@ -113,9 +113,17 @@
           </template>
 
           <template #item.actions="{ item }">
-            <VBtn size="small" variant="text" :to="{ name: 'run-details', params: { runId: item.id } }">
-              {{ t("pages.runs.details") }}
-            </VBtn>
+            <VTooltip :text="t('pages.runs.details')">
+              <template #activator="{ props: tipProps }">
+                <VBtn
+                  v-bind="tipProps"
+                  size="small"
+                  variant="text"
+                  icon="mdi-open-in-new"
+                  :to="{ name: 'run-details', params: { runId: item.id } }"
+                />
+              </template>
+            </VTooltip>
           </template>
 
           <template #no-data>
@@ -144,15 +152,15 @@ const { t, locale } = useI18n({ useScope: "global" });
 const runs = useRunsStore();
 
 const headers = [
-  { title: t("pages.runs.status"), key: "status", width: 140 },
-  { title: t("pages.runs.project"), key: "project", sortable: false, width: 220 },
-  { title: t("pages.runs.issue"), key: "issue", sortable: false, width: 120 },
-  { title: t("pages.runs.pr"), key: "pr", sortable: false, width: 120 },
-  { title: t("pages.runs.runType"), key: "trigger_kind", width: 160 },
-  { title: t("pages.runs.triggerLabel"), key: "trigger_label", width: 200 },
-  { title: t("pages.runs.started"), key: "started_at", width: 180 },
-  { title: t("pages.runs.finished"), key: "finished_at", width: 180 },
-  { title: "", key: "actions", sortable: false, width: 120 },
+  { title: t("pages.runs.status"), key: "status", width: 140, align: "center" },
+  { title: t("pages.runs.project"), key: "project", sortable: false, width: 220, align: "center" },
+  { title: t("pages.runs.issue"), key: "issue", sortable: false, width: 120, align: "center" },
+  { title: t("pages.runs.pr"), key: "pr", sortable: false, width: 120, align: "center" },
+  { title: t("pages.runs.runType"), key: "trigger_kind", width: 160, align: "center" },
+  { title: t("pages.runs.triggerLabel"), key: "trigger_label", width: 200, align: "center" },
+  { title: t("pages.runs.started"), key: "started_at", width: 180, align: "center" },
+  { title: t("pages.runs.finished"), key: "finished_at", width: 180, align: "center" },
+  { title: "", key: "actions", sortable: false, width: 72, align: "end" },
 ] as const;
 
 async function loadAll() {

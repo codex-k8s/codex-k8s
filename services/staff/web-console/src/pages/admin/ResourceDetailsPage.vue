@@ -1,27 +1,31 @@
 <template>
   <div>
     <PageHeader :title="title">
+      <template #leading>
+        <VBtn variant="text" icon="mdi-arrow-left" :title="t('common.back')" :to="backTo" />
+      </template>
       <template #actions>
         <CopyChip :label="t('cluster.namespace')" :value="uiContext.namespace || '-'" icon="mdi-kubernetes" />
         <CopyChip :label="t('common.id')" :value="name" icon="mdi-identifier" />
 
-        <VBtn variant="tonal" prepend-icon="mdi-arrow-left" :to="backTo">
-          {{ t("common.back") }}
-        </VBtn>
-        <VBtn variant="tonal" prepend-icon="mdi-refresh" @click="mockReload">
-          {{ t("common.refresh") }}
-        </VBtn>
+        <VBtn variant="tonal" icon="mdi-refresh" :title="t('common.refresh')" @click="mockReload" />
         <VBtn
           color="error"
           variant="tonal"
-          prepend-icon="mdi-delete-outline"
+          icon="mdi-delete-outline"
+          :title="t('common.delete')"
           :disabled="uiContext.clusterMode === 'view-only'"
           @click="previewOpen = true"
-        >
-          {{ t("common.delete") }}
-        </VBtn>
+        />
       </template>
     </PageHeader>
+
+    <DismissibleWarningAlert
+      alert-id="admin_cluster"
+      :title="t('warnings.adminCluster.title')"
+      :text="t('warnings.adminCluster.text')"
+      class="mt-4"
+    />
 
     <AdminClusterContextBar />
 
@@ -149,6 +153,7 @@ import { useI18n } from "vue-i18n";
 
 import AdminClusterContextBar from "../../shared/ui/AdminClusterContextBar.vue";
 import CopyChip from "../../shared/ui/CopyChip.vue";
+import DismissibleWarningAlert from "../../shared/ui/DismissibleWarningAlert.vue";
 import LogsViewer from "../../shared/ui/LogsViewer.vue";
 import PageHeader from "../../shared/ui/PageHeader.vue";
 import MonacoEditor from "../../shared/ui/monaco/MonacoEditor.vue";
@@ -231,4 +236,3 @@ function confirmDelete(): void {
   snackbar.error(t("cluster.details.deleteNotImplemented"));
 }
 </script>
-
