@@ -40,9 +40,10 @@ spec:
             - sh
             - -ec
             - |
-              git clone "https://x-access-token:${GIT_TOKEN}@github.com/${CODEXK8S_GITHUB_REPO}.git" /workspace
+              # NOTE: use $VAR (not ${VAR}) because ${...} is consumed by our manifest placeholder renderer.
+              git clone "https://x-access-token:$GIT_TOKEN@github.com/$CODEXK8S_GITHUB_REPO.git" /workspace
               cd /workspace
-              git checkout --detach "${CODEXK8S_BUILD_REF}"
+              git checkout --detach "$CODEXK8S_BUILD_REF"
           volumeMounts:
             - name: workspace
               mountPath: /workspace
