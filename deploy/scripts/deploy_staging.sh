@@ -38,7 +38,8 @@ CODEXK8S_STAGING_DOMAIN="${CODEXK8S_STAGING_DOMAIN:-}"
 CODEXK8S_WAIT_ROLLOUT="${CODEXK8S_WAIT_ROLLOUT:-true}"
 CODEXK8S_ROLLOUT_TIMEOUT="${CODEXK8S_ROLLOUT_TIMEOUT:-1800s}"
 CODEXK8S_APPLY_NAMESPACE="${CODEXK8S_APPLY_NAMESPACE:-false}"
-CODEXK8S_WORKER_REPLICAS="${CODEXK8S_WORKER_REPLICAS:-1}"
+CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS="${CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS:-2}"
+CODEXK8S_WORKER_REPLICAS="${CODEXK8S_WORKER_REPLICAS:-${CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS}}"
 CODEXK8S_WORKER_POLL_INTERVAL="${CODEXK8S_WORKER_POLL_INTERVAL:-}"
 CODEXK8S_WORKER_CLAIM_LIMIT="${CODEXK8S_WORKER_CLAIM_LIMIT:-}"
 CODEXK8S_WORKER_RUNNING_CHECK_LIMIT="${CODEXK8S_WORKER_RUNNING_CHECK_LIMIT:-}"
@@ -360,6 +361,7 @@ render_template() {
   local control_plane_image_escaped
   local worker_image_escaped
   local domain_escaped
+  local platform_deployment_replicas_escaped
   local worker_job_image_escaped
   local worker_job_command_escaped
   local web_console_image_escaped
@@ -374,6 +376,7 @@ render_template() {
   control_plane_image_escaped="$(escape_sed_replacement "$CODEXK8S_CONTROL_PLANE_IMAGE")"
   worker_image_escaped="$(escape_sed_replacement "$CODEXK8S_WORKER_IMAGE")"
   domain_escaped="$(escape_sed_replacement "$CODEXK8S_STAGING_DOMAIN")"
+  platform_deployment_replicas_escaped="$(escape_sed_replacement "$CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS")"
   worker_job_image_escaped="$(escape_sed_replacement "$CODEXK8S_WORKER_JOB_IMAGE")"
   worker_job_command_escaped="$(escape_sed_replacement "$CODEXK8S_WORKER_JOB_COMMAND")"
   web_console_image_escaped="$(escape_sed_replacement "$CODEXK8S_WEB_CONSOLE_IMAGE")"
@@ -391,6 +394,7 @@ render_template() {
     -e "s|\${CODEXK8S_WORKER_IMAGE}|${worker_image_escaped}|g" \
     -e "s|\${CODEXK8S_WEB_CONSOLE_IMAGE}|${web_console_image_escaped}|g" \
     -e "s|\${CODEXK8S_STAGING_DOMAIN}|${domain_escaped}|g" \
+    -e "s|\${CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS}|${platform_deployment_replicas_escaped}|g" \
     -e "s|\${CODEXK8S_WORKER_REPLICAS}|${CODEXK8S_WORKER_REPLICAS}|g" \
     -e "s|\${CODEXK8S_WORKER_POLL_INTERVAL}|${CODEXK8S_WORKER_POLL_INTERVAL}|g" \
     -e "s|\${CODEXK8S_WORKER_CLAIM_LIMIT}|${CODEXK8S_WORKER_CLAIM_LIMIT}|g" \

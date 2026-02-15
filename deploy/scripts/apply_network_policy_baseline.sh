@@ -41,7 +41,6 @@ require_cmd sed
 
 CODEXK8S_NETWORK_POLICY_BASELINE="${CODEXK8S_NETWORK_POLICY_BASELINE:-true}"
 CODEXK8S_STAGING_NAMESPACE="${CODEXK8S_STAGING_NAMESPACE:-codex-k8s-ai-staging}"
-CODEXK8S_RUNNER_NAMESPACE="${CODEXK8S_RUNNER_NAMESPACE:-actions-runner-staging}"
 CODEXK8S_APPLY_PROJECT_AGENT_POLICY="${CODEXK8S_APPLY_PROJECT_AGENT_POLICY:-false}"
 CODEXK8S_TARGET_NAMESPACE="${CODEXK8S_TARGET_NAMESPACE:-}"
 CODEXK8S_PLATFORM_MCP_PORT="${CODEXK8S_PLATFORM_MCP_PORT:-8081}"
@@ -58,8 +57,6 @@ label_namespace_if_exists "$CODEXK8S_STAGING_NAMESPACE" "codexk8s.io/network-zon
 label_namespace_if_exists "ingress-nginx" "codexk8s.io/network-zone" "system"
 label_namespace_if_exists "cert-manager" "codexk8s.io/network-zone" "system"
 label_namespace_if_exists "kube-system" "codexk8s.io/network-zone" "system"
-label_namespace_if_exists "actions-runner-system" "codexk8s.io/network-zone" "system"
-label_namespace_if_exists "$CODEXK8S_RUNNER_NAMESPACE" "codexk8s.io/network-zone" "system"
 
 echo "Apply platform network policy baseline in namespace ${CODEXK8S_STAGING_NAMESPACE}"
 render_platform_policy "${ROOT_DIR}/deploy/base/network-policies/platform-baseline.yaml.tpl" | kubectl apply -f -

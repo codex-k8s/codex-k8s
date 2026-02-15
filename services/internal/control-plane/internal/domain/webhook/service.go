@@ -38,6 +38,12 @@ const (
 	agentKeyKM         = "km"       // Knowledge manager: maintains traceability and self-improve loop.
 )
 
+type pushMainDeployTarget struct {
+	BuildRef  string
+	TargetEnv string
+	Namespace string
+}
+
 type runStatusService interface {
 	CleanupNamespacesByIssue(ctx context.Context, params runstatusdomain.CleanupByIssueParams) (runstatusdomain.CleanupByIssueResult, error)
 	CleanupNamespacesByPullRequest(ctx context.Context, params runstatusdomain.CleanupByPullRequestParams) (runstatusdomain.CleanupByIssueResult, error)
@@ -127,7 +133,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 	}
 
 	trigger, hasIssueRunTrigger, conflict := s.resolveIssueRunTrigger(cmd.EventType, envelope)
-	pushBuildRef, hasPushMainDeploy := s.resolvePushMainDeploy(cmd.EventType, envelope)
+	pushTarget, hasPushMainDeploy := s.resolvePushMainDeploy(cmd.EventType, envelope)
 	if strings.EqualFold(strings.TrimSpace(cmd.EventType), string(webhookdomain.GitHubEventIssues)) && !hasIssueRunTrigger {
 		return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
 			Reason:     "issue_event_not_trigger_label",
@@ -198,9 +204,9 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 	agent := runAgentProfile{}
 	runtimeMode := agentdomain.RuntimeModeFullEnv
 	runtimeModeSource := runtimeModeSourcePushMain
-	runtimeTargetEnv := "ai-staging"
-	runtimeNamespace := ""
-	runtimeBuildRef := pushBuildRef
+	runtimeTargetEnv := pushTarget.TargetEnv
+	runtimeNamespace := pushTarget.Namespace
+	runtimeBuildRef := pushTarget.BuildRef
 	runtimeDeployOnly := true
 
 	if hasIssueRunTrigger {
@@ -419,22 +425,28 @@ func (s *Service) resolveIssueRunTrigger(eventType string, envelope githubWebhoo
 	}
 }
 
-func (s *Service) resolvePushMainDeploy(eventType string, envelope githubWebhookEnvelope) (string, bool) {
+func (s *Service) resolvePushMainDeploy(eventType string, envelope githubWebhookEnvelope) (pushMainDeployTarget, bool) {
 	if !strings.EqualFold(strings.TrimSpace(eventType), string(webhookdomain.GitHubEventPush)) {
-		return "", false
+		return pushMainDeployTarget{}, false
 	}
 	if !isMainBranchRef(envelope.Ref) {
-		return "", false
+		return pushMainDeployTarget{}, false
 	}
 	if envelope.Deleted || isDeletedGitCommitSHA(envelope.After) {
-		return "", false
+		return pushMainDeployTarget{}, false
 	}
 
 	buildRef := strings.TrimSpace(envelope.After)
 	if buildRef == "" {
-		return "", false
+		return pushMainDeployTarget{}, false
 	}
-	return buildRef, true
+
+	target := pushMainDeployTarget{
+		BuildRef:  buildRef,
+		TargetEnv: "ai-staging",
+		Namespace: "",
+	}
+	return target, true
 }
 
 func isMainBranchRef(ref string) bool {

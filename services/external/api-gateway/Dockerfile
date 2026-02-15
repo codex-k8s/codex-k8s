@@ -34,10 +34,12 @@ COPY --from=builder /root/.cache/go-build /tmp/.cache/go-build
 COPY --from=web /web/dist /app/web
 COPY services/external/api-gateway/api/server/api.yaml /app/api/server/api.yaml
 
-COPY go.mod go.sum ./
-COPY libs/go/ libs/go/
-COPY proto/ proto/
-COPY services/external/api-gateway/ services/external/api-gateway/
+# Copy hot-reload sources from the builder stage to guarantee runtime parity
+# even when context-only COPY cache is stale.
+COPY --from=builder /workspace/go.mod /workspace/go.sum ./
+COPY --from=builder /workspace/libs/go/ libs/go/
+COPY --from=builder /workspace/proto/ proto/
+COPY --from=builder /workspace/services/external/api-gateway/ services/external/api-gateway/
 RUN chown -R app:app /tmp/.cache
 
 ENV CODEXK8S_HOT_RELOAD="true"

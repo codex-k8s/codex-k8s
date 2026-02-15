@@ -8,14 +8,11 @@ load_env_file "${BOOTSTRAP_ENV_FILE:?}"
 kube_env
 
 CODEXK8S_STAGING_NAMESPACE="${CODEXK8S_STAGING_NAMESPACE:-codex-k8s-ai-staging}"
-CODEXK8S_RUNNER_NAMESPACE="${CODEXK8S_RUNNER_NAMESPACE:-actions-runner-staging}"
 CODEXK8S_INGRESS_READY_TIMEOUT="${CODEXK8S_INGRESS_READY_TIMEOUT:-1200s}"
 CODEXK8S_CERT_MANAGER_READY_TIMEOUT="${CODEXK8S_CERT_MANAGER_READY_TIMEOUT:-1200s}"
 CODEXK8S_INGRESS_HOST_NETWORK="${CODEXK8S_INGRESS_HOST_NETWORK:-true}"
 
 log "Create base namespaces"
-kubectl get ns actions-runner-system >/dev/null 2>&1 || kubectl create ns actions-runner-system
-kubectl get ns "$CODEXK8S_RUNNER_NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$CODEXK8S_RUNNER_NAMESPACE"
 kubectl get ns "$CODEXK8S_STAGING_NAMESPACE" >/dev/null 2>&1 || kubectl create ns "$CODEXK8S_STAGING_NAMESPACE"
 kubectl get ns cert-manager >/dev/null 2>&1 || kubectl create ns cert-manager
 

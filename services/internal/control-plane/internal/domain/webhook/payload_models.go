@@ -31,6 +31,7 @@ type githubRunRepositoryPayload struct {
 	FullName string `json:"full_name"`
 	Name     string `json:"name"`
 	Private  bool   `json:"private"`
+	Fork     bool   `json:"fork"`
 }
 
 type githubInstallationPayload struct {
