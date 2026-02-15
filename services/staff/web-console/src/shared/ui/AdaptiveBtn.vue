@@ -1,15 +1,22 @@
 <template>
   <VBtn
+    v-if="showText"
     v-bind="attrs"
-    :prepend-icon="showText ? icon : undefined"
-    :icon="showText ? undefined : icon"
+    :prepend-icon="icon"
     :title="titleValue"
     :aria-label="titleValue"
   >
-    <slot v-if="showText">
+    <slot>
       {{ label }}
     </slot>
   </VBtn>
+  <VBtn
+    v-else
+    v-bind="attrs"
+    :icon="icon"
+    :title="titleValue"
+    :aria-label="titleValue"
+  />
 </template>
 
 <script setup lang="ts">
