@@ -3,7 +3,10 @@ package runtimedeploy
 func defaultTemplateVars() map[string]string {
 	return map[string]string{
 		"CODEXK8S_STAGING_NAMESPACE":                  "codex-k8s-ai-staging",
+		"CODEXK8S_INTERNAL_REGISTRY_SERVICE":          "codex-k8s-registry",
+		"CODEXK8S_INTERNAL_REGISTRY_PORT":             "5000",
 		"CODEXK8S_INTERNAL_REGISTRY_HOST":             "127.0.0.1:5000",
+		"CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE":     "20Gi",
 		"CODEXK8S_KANIKO_CACHE_ENABLED":               "true",
 		"CODEXK8S_KANIKO_CACHE_TTL":                   "168h",
 		"CODEXK8S_KANIKO_CACHE_COMPRESSED":            "false",

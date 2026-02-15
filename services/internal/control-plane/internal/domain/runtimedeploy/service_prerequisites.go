@@ -30,6 +30,11 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, namespace str
 		return err
 	}
 
+	internalRegistryService := valueOrExisting(vars, existingRuntime, "CODEXK8S_INTERNAL_REGISTRY_SERVICE", "codex-k8s-registry")
+	internalRegistryPort := valueOrExisting(vars, existingRuntime, "CODEXK8S_INTERNAL_REGISTRY_PORT", "5000")
+	internalRegistryHost := valueOrExisting(vars, existingRuntime, "CODEXK8S_INTERNAL_REGISTRY_HOST", "127.0.0.1:"+internalRegistryPort)
+	internalRegistryStorageSize := valueOrExisting(vars, existingRuntime, "CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE", "20Gi")
+
 	postgresDB := valueOrExisting(vars, existingPostgres, "CODEXK8S_POSTGRES_DB", "codex_k8s")
 	postgresUser := valueOrExisting(vars, existingPostgres, "CODEXK8S_POSTGRES_USER", "codex_k8s")
 	postgresPassword, err := valueOrExistingOrRandomHex(vars, existingPostgres, "CODEXK8S_POSTGRES_PASSWORD", 24)
@@ -68,6 +73,10 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, namespace str
 	}
 
 	runtimeSecret := map[string][]byte{
+		"CODEXK8S_INTERNAL_REGISTRY_SERVICE":         []byte(internalRegistryService),
+		"CODEXK8S_INTERNAL_REGISTRY_PORT":            []byte(internalRegistryPort),
+		"CODEXK8S_INTERNAL_REGISTRY_HOST":            []byte(internalRegistryHost),
+		"CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE":    []byte(internalRegistryStorageSize),
 		"CODEXK8S_GITHUB_PAT":                        []byte(valueOr(vars, "CODEXK8S_GITHUB_PAT", "")),
 		"CODEXK8S_GITHUB_REPO":                       []byte(valueOr(vars, "CODEXK8S_GITHUB_REPO", "")),
 		"CODEXK8S_FIRST_PROJECT_GITHUB_REPO":         []byte(valueOr(vars, "CODEXK8S_FIRST_PROJECT_GITHUB_REPO", "")),
