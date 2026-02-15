@@ -43,19 +43,32 @@
 
           <template #item.actions="{ item }">
             <div class="d-flex ga-2 justify-end flex-wrap">
-              <VBtn size="small" color="primary" variant="tonal" :loading="members.saving" @click="save(item)">
-                {{ t("common.save") }}
-              </VBtn>
-              <VBtn
-                v-if="auth.isPlatformOwner"
-                size="small"
-                color="error"
-                variant="tonal"
-                :loading="members.removing"
-                @click="askRemove(item.user_id, item.email)"
-              >
-                {{ t("common.delete") }}
-              </VBtn>
+              <VTooltip :text="t('common.save')">
+                <template #activator="{ props: tipProps }">
+                  <VBtn
+                    v-bind="tipProps"
+                    size="small"
+                    color="primary"
+                    variant="tonal"
+                    icon="mdi-content-save-outline"
+                    :loading="members.saving"
+                    @click="save(item)"
+                  />
+                </template>
+              </VTooltip>
+              <VTooltip v-if="auth.isPlatformOwner" :text="t('common.delete')">
+                <template #activator="{ props: tipProps }">
+                  <VBtn
+                    v-bind="tipProps"
+                    size="small"
+                    color="error"
+                    variant="tonal"
+                    icon="mdi-delete-outline"
+                    :loading="members.removing"
+                    @click="askRemove(item.user_id, item.email)"
+                  />
+                </template>
+              </VTooltip>
             </div>
           </template>
 
@@ -197,4 +210,3 @@ onMounted(() => void load());
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 </style>
-

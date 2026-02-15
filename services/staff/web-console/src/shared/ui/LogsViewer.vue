@@ -3,7 +3,7 @@
     <VCardTitle class="d-flex align-center justify-space-between ga-3 flex-wrap">
       <div class="d-flex align-center ga-2">
         <VIcon icon="mdi-text-long" />
-        <span class="text-subtitle-1">{{ title }}</span>
+        <span class="text-subtitle-1">{{ titleLabel }}</span>
       </div>
 
       <div class="d-flex align-center ga-2 flex-wrap justify-end">
@@ -82,7 +82,7 @@ const props = withDefaults(
     fileName?: string;
   }>(),
   {
-    title: "Logs",
+    title: "",
     status: "",
     updatedAtLabel: "",
     loading: false,
@@ -96,6 +96,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: "global" });
 const snackbar = useSnackbarStore();
+
+const titleLabel = computed(() => props.title || t("logs.title"));
 
 const boxRef = ref<HTMLElement | null>(null);
 const search = ref("");
@@ -189,4 +191,3 @@ function download(): void {
   background: rgba(255, 234, 168, 0.55);
 }
 </style>
-

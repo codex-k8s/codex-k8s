@@ -25,7 +25,7 @@
               </template>
 
               <template #item.is_platform_admin="{ item }">
-                <VChip size="small" variant="tonal" class="font-weight-bold">
+                <VChip size="small" variant="tonal" class="font-weight-bold" :color="item.is_platform_admin ? 'warning' : 'secondary'">
                   {{ item.is_platform_admin ? t("pages.users.yes") : t("pages.users.no") }}
                 </VChip>
               </template>
@@ -171,4 +171,3 @@ onMounted(() => void load());
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 </style>
-

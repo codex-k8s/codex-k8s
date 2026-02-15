@@ -22,7 +22,7 @@
           </template>
 
           <template #item.role="{ item }">
-            <VChip size="small" variant="tonal" class="font-weight-bold">
+            <VChip size="small" variant="tonal" class="font-weight-bold" :color="colorForProjectRole(item.role)">
               {{ roleLabel(item.role) }}
             </VChip>
           </template>
@@ -114,6 +114,7 @@ import ConfirmDialog from "../shared/ui/ConfirmDialog.vue";
 import { useSnackbarStore } from "../shared/ui/feedback/snackbar-store";
 import { useAuthStore } from "../features/auth/store";
 import { useProjectsStore } from "../features/projects/projects-store";
+import { colorForProjectRole } from "../shared/lib/chips";
 
 const { t } = useI18n({ useScope: "global" });
 const auth = useAuthStore();

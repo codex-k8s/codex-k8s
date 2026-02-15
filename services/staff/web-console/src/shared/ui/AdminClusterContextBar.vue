@@ -34,11 +34,26 @@ import { useUiContextStore } from "../../features/ui-context/store";
 const { t } = useI18n({ useScope: "global" });
 const uiContext = useUiContextStore();
 
-const namespaces = computed(() => {
+type SelectItem = { title: string; value: string };
+
+const namespaces = computed<SelectItem[]>(() => {
   const project = "codex-k8s";
-  if (uiContext.env === "ai") return [`${project}-dev-1`, `${project}-dev-2`, `${project}-dev-3`];
-  if (uiContext.env === "ai-staging") return [`${project}-ai-staging`];
-  return [`${project}-prod`];
+  const all = { title: t("context.allObjects"), value: "" };
+
+  const ai = [`${project}-dev-1`, `${project}-dev-2`, `${project}-dev-3`];
+  const staging = [`${project}-ai-staging`];
+  const prod = [`${project}-prod`];
+
+  const values =
+    uiContext.env === "ai"
+      ? ai
+      : uiContext.env === "ai-staging"
+        ? staging
+        : uiContext.env === "prod"
+          ? prod
+          : [...ai, ...staging, ...prod];
+
+  return [all, ...values.map((v) => ({ title: v, value: v }))];
 });
 
 const namespace = computed({

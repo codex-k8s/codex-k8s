@@ -17,10 +17,10 @@
 
       <VSpacer />
 
-      <VMenu v-if="auth.isAuthed" :close-on-content-click="false">
+      <VMenu v-if="showContextFilter" :close-on-content-click="false">
         <template #activator="{ props: menuProps }">
-          <VBtn v-bind="menuProps" variant="tonal" prepend-icon="mdi-database-outline">
-            {{ contextLabel }}
+          <VBtn v-bind="menuProps" variant="tonal" prepend-icon="mdi-filter-variant">
+            {{ filterButtonLabel }}
           </VBtn>
         </template>
         <VCard min-width="420">
@@ -94,6 +94,7 @@
     <VNavigationDrawer
       v-if="auth.isAuthed"
       v-model="drawerOpen"
+      class="app-drawer"
       :rail="drawerRail && !isMobile"
       :temporary="isMobile"
       :permanent="!isMobile"
@@ -161,7 +162,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { RouterLink, RouterView, useRoute } from "vue-router";
+import { RouterLink, RouterView, type RouteLocationRaw, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useDisplay } from "vuetify";
 
@@ -227,50 +228,69 @@ watch(
 );
 
 const projectOptions = computed(() =>
-  projects.items.map((p) => ({
-    title: p.name || p.slug || p.id,
-    value: p.id,
-  })),
+  [
+    { title: t("context.allObjects"), value: "" },
+    ...projects.items.map((p) => ({
+      title: p.name || p.slug || p.id,
+      value: p.id,
+    })),
+  ],
 );
 
-watch(
-  () => projects.items,
-  (items) => {
-    if (uiContext.projectId) return;
-    if (items.length) {
-      uiContext.setProjectId(items[0].id);
-    }
-  },
-  { immediate: true },
-);
+const envOptions = computed(() => [
+  { title: t("context.allObjects"), value: "all" },
+  { title: t("context.envAi"), value: "ai" },
+  { title: t("context.envAiStaging"), value: "ai-staging" },
+  { title: t("context.envProd"), value: "prod" },
+] as const);
 
-const envOptions = [
-  { title: "ai", value: "ai" },
-  { title: "ai-staging", value: "ai-staging" },
-  { title: "prod", value: "prod" },
-] as const;
+type SelectItem = { title: string; value: string };
 
-const namespaceOptions = computed(() => {
+const namespaceOptions = computed<SelectItem[]>(() => {
+  const all = { title: t("context.allObjects"), value: "" };
   const project = "codex-k8s";
-  if (uiContext.env === "ai") return [`${project}-dev-1`, `${project}-dev-2`, `${project}-dev-3`];
-  if (uiContext.env === "ai-staging") return [`${project}-ai-staging`];
-  return [`${project}-prod`];
+  const ai = [`${project}-dev-1`, `${project}-dev-2`, `${project}-dev-3`];
+  const staging = [`${project}-ai-staging`];
+  const prod = [`${project}-prod`];
+
+  const values =
+    uiContext.env === "ai"
+      ? ai
+      : uiContext.env === "ai-staging"
+        ? staging
+        : uiContext.env === "prod"
+          ? prod
+          : [...ai, ...staging, ...prod];
+
+  return [all, ...values.map((v) => ({ title: v, value: v }))];
 });
 
 watch(
   () => namespaceOptions.value,
   (items) => {
-    if (!items.length) return;
-    if (items.includes(uiContext.namespace)) return;
-    uiContext.setNamespace(items[0]);
+    if (uiContext.namespace === "") return; // "All objects" sentinel.
+    const allowed = new Set(items.map((i) => i.value));
+    if (allowed.has(uiContext.namespace)) return;
+    uiContext.setNamespace("");
   },
   { immediate: true },
 );
 
-const contextLabel = computed(() => {
-  const project = projectOptions.value.find((p) => p.value === uiContext.projectId)?.title || "-";
-  return `${project} / ${uiContext.env} / ${uiContext.namespace || "-"}`;
+const showContextFilter = computed(() => {
+  if (!auth.isAuthed) return false;
+  const section = String((route.meta as Record<string, unknown>).section || "");
+  return section === "runs" || section === "operations" || section === "admin";
 });
+
+const filterSummary = computed(() => {
+  const all = t("context.allObjects");
+  const projectTitle = projectOptions.value.find((p) => p.value === uiContext.projectId)?.title || all;
+  const envTitle = envOptions.value.find((e) => e.value === uiContext.env)?.title || all;
+  const namespaceTitle = uiContext.namespace || all;
+  return `${projectTitle} / ${envTitle} / ${namespaceTitle}`;
+});
+
+const filterButtonLabel = computed(() => t("context.button", { value: filterSummary.value }));
 
 const notifications = [
   { id: "n1", title: t("notifications.items.sample1.title"), subtitle: t("notifications.items.sample1.subtitle") },
@@ -314,19 +334,25 @@ const breadcrumbs = computed(() => {
   const rName = typeof route.name === "string" ? route.name : "";
   const meta = route.meta as Record<string, unknown>;
 
-  const items: { title: string }[] = [];
+  const items: { title: string; to?: RouteLocationRaw; disabled?: boolean }[] = [];
 
   // For detail pages, keep breadcrumb root pointing to list pages.
   const baseRouteName = rName === "run-details" ? "runs" : rName;
   const navItem = findNavItemByRouteName(baseRouteName);
   if (navItem) {
     const g = navGroups.find((x) => x.id === navItem.groupId);
-    if (g) items.push({ title: t(g.titleKey) });
-    items.push({ title: t(navItem.titleKey) });
+    if (g) items.push({ title: t(g.titleKey), disabled: true });
+
+    const isCurrent = rName === baseRouteName;
+    items.push({
+      title: t(navItem.titleKey),
+      disabled: isCurrent,
+      to: isCurrent ? undefined : navTo(navItem),
+    });
   }
 
   if (rName === "run-details" && typeof meta.crumbKey === "string" && meta.crumbKey) {
-    items.push({ title: t(meta.crumbKey) });
+    items.push({ title: t(meta.crumbKey), disabled: true });
   }
 
   return items;
@@ -356,6 +382,13 @@ const breadcrumbs = computed(() => {
 .brand-subtitle {
   font-size: 12px;
   opacity: 0.75;
+}
+.app-drawer :deep(.v-navigation-drawer__content) {
+  scrollbar-width: none; /* Firefox */
+}
+.app-drawer :deep(.v-navigation-drawer__content::-webkit-scrollbar) {
+  width: 0;
+  height: 0;
 }
 .breadcrumbs {
   max-width: 520px;

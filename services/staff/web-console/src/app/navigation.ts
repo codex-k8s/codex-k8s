@@ -38,7 +38,7 @@ export const navItems: NavItem[] = [
   { groupId: "platform", routeName: "users", titleKey: "nav.users", icon: "mdi-account-multiple-outline", adminOnly: true },
 
   // Governance (scaffold)
-  { groupId: "governance", routeName: "audit-log", titleKey: "nav.auditLog", icon: "mdi-shield-search-outline", comingSoon: true },
+  { groupId: "governance", routeName: "audit-log", titleKey: "nav.auditLog", icon: "mdi-history", comingSoon: true },
   { groupId: "governance", routeName: "labels-stages", titleKey: "nav.labelsStages", icon: "mdi-tag-multiple-outline", comingSoon: true },
 
   // Admin / Cluster (scaffold)
@@ -61,4 +61,3 @@ export function findNavItemByRouteName(name: string | undefined): NavItem | unde
   if (!name) return undefined;
   return navItems.find((i) => i.routeName === name);
 }
-

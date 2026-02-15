@@ -54,10 +54,15 @@ export const en = {
     id: "ID",
   },
   context: {
-    title: "Context",
+    title: "Global filter",
+    button: "Filter: {value}",
+    allObjects: "All objects",
     project: "Project",
     env: "Env",
-    namespace: "Namespace / slot",
+    namespace: "Slot",
+    envAi: "ai",
+    envAiStaging: "ai-staging",
+    envProd: "prod",
   },
   notifications: {
     title: "Notifications",
@@ -183,6 +188,7 @@ export const en = {
     },
   },
   logs: {
+    title: "Logs",
     follow: "Follow",
     download: "Download",
     status: "Status",

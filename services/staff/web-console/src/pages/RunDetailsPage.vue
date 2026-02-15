@@ -54,7 +54,7 @@
         <VCard variant="outlined">
           <VCardTitle class="text-subtitle-1 d-flex align-center justify-space-between ga-2 flex-wrap">
             <span>{{ t("pages.runDetails.title") }}</span>
-            <VChip size="small" variant="tonal" class="font-weight-bold">
+            <VChip size="small" variant="tonal" class="font-weight-bold" :color="colorForRunStatus(details.run?.status)">
               {{ details.run?.status || "-" }}
             </VChip>
           </VCardTitle>
@@ -198,6 +198,7 @@ import CopyChip from "../shared/ui/CopyChip.vue";
 import LogsViewer from "../shared/ui/LogsViewer.vue";
 import RunTimeline from "../shared/ui/RunTimeline.vue";
 import { formatDateTime } from "../shared/lib/datetime";
+import { colorForRunStatus } from "../shared/lib/chips";
 import { useRunDetailsStore } from "../features/runs/store";
 import { useSnackbarStore } from "../shared/ui/feedback/snackbar-store";
 
@@ -240,4 +241,3 @@ onMounted(() => void loadAll());
   opacity: 0.95;
 }
 </style>
-

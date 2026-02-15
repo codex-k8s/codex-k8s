@@ -63,7 +63,7 @@
       <VCardText>
         <VDataTable :headers="headers" :items="runs.items" :loading="runs.loading" :items-per-page="20" hover>
           <template #item.status="{ item }">
-            <VChip size="small" variant="tonal" class="font-weight-bold">
+            <VChip size="small" variant="tonal" class="font-weight-bold" :color="colorForRunStatus(item.status)">
               {{ item.status }}
             </VChip>
           </template>
@@ -137,6 +137,7 @@ import { useI18n } from "vue-i18n";
 
 import PageHeader from "../shared/ui/PageHeader.vue";
 import { formatDateTime } from "../shared/lib/datetime";
+import { colorForRunStatus } from "../shared/lib/chips";
 import { useRunsStore } from "../features/runs/store";
 
 const { t, locale } = useI18n({ useScope: "global" });
@@ -166,4 +167,3 @@ onMounted(() => void loadAll());
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 </style>
-
