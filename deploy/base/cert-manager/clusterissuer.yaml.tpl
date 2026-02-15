@@ -4,8 +4,8 @@ metadata:
   name: codex-k8s-letsencrypt
 spec:
   acme:
-    email: ${CODEXK8S_LETSENCRYPT_EMAIL}
-    server: ${CODEXK8S_LETSENCRYPT_SERVER}
+    email: "${CODEXK8S_LETSENCRYPT_EMAIL}"
+    server: "${CODEXK8S_LETSENCRYPT_SERVER}"
     privateKeySecretRef:
       name: codex-k8s-letsencrypt-account-key
     solvers:

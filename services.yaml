@@ -102,7 +102,9 @@ spec:
         - path: deploy/base/registry/registry.yaml.tpl
 
     - name: cert-manager-clusterissuer
-      when: '{{ ternary (eq .Env "ai") "false" "true" }}'
+      # Manage ClusterIssuer only when ACME settings are explicitly provided.
+      # Otherwise keep existing issuer (if any) untouched to avoid invalid patches.
+      when: '{{ and (ne .Env "ai") (ne (envOr "CODEXK8S_LETSENCRYPT_EMAIL" "") "") (ne (envOr "CODEXK8S_LETSENCRYPT_SERVER" "") "") }}'
       manifests:
         - path: deploy/base/cert-manager/clusterissuer.yaml.tpl
 
