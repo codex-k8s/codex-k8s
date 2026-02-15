@@ -68,6 +68,8 @@ go run ./cmd/codex-bootstrap bootstrap \
 - `CODEXK8S_FIRST_PROJECT_GITHUB_REPO` (опционально) — отдельный репозиторий первого подключаемого проекта, где bootstrap дополнительно создаёт webhook и каталог labels; если пусто, используется только `CODEXK8S_GITHUB_REPO` (dogfooding).
 - Platform secrets/variables (`CODEXK8S_*`) записываются только в `CODEXK8S_GITHUB_REPO`; в `CODEXK8S_FIRST_PROJECT_GITHUB_REPO` bootstrap не записывает platform secrets.
 - Для bootstrap нужен `CODEXK8S_GITHUB_PAT` (fine-grained) с правами на `administration` (webhooks/labels), `secrets` и `variables`.
+- Для включения ARC runner (emergency-путь) установите `CODEXK8S_ENABLE_GITHUB_RUNNER=true` и (при необходимости) настройте:
+  `CODEXK8S_RUNNER_SCALE_SET_NAME`, `CODEXK8S_RUNNER_NAMESPACE`, `CODEXK8S_RUNNER_MIN/MAX`.
 - Для staff UI и staff API требуется GitHub OAuth App:
   - создать на `https://github.com/settings/applications/new`;
   - `Homepage URL`: `https://<CODEXK8S_STAGING_DOMAIN>`;

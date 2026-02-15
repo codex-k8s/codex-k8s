@@ -20,6 +20,7 @@ steps=(
   "42_apply_network_policy_baseline.sh"
   "55_setup_internal_registry_and_build_image.sh"
   "45_configure_github_repo_ci.sh"
+  "50_install_runner_arc.sh"
   "60_deploy_codex_k8s.sh"
   "65_harden_network_firewall.sh"
   "70_finalize_and_report.sh"
