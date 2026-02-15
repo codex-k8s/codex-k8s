@@ -20,6 +20,7 @@ approvals:
 - Цель: не “перекрасить” текущий UI, а заложить основу новой staff-консоли, которая сразу готова к post-MVP расширению.
 - MVP-результат дня: production-ready `Vuetify` app-shell (navbar + drawer) + навигация по будущим разделам + единые UI-паттерны (таблицы/фильтры/пустые состояния/диалоги).
 - Важно: будущие разделы не интегрируем с API/Pinia (без новых store и backend-запросов), но делаем страницы и компоненты с заглушками данных и явными `TODO`.
+- Дополнительно: в навигации сразу закладываем `Admin / Cluster`, `Agents` и `System settings (locales)`.
 
 ## Priority
 - `P0`.
@@ -42,11 +43,26 @@ approvals:
   - favicon из того же источника (преобразовать в `.ico` при необходимости).
 - Новая информационная архитектура:
   - левый drawer как primary-навигация;
-  - группировка разделов по смыслу (Operations / Platform / Governance / Future).
+  - группировка разделов по смыслу (Operations / Platform / Governance / Admin / Configuration).
 - Навигация “в будущее”:
   - будущие разделы присутствуют в навигации и открываются как страницы (router + i18n);
   - будущие страницы наполнены Vuetify-компонентами и mock-данными;
   - в коде каждой заглушки есть `TODO` с конкретикой “что подключить дальше” и ссылкой на issue (минимум `#19`, если нет отдельного).
+- Административный блок `Admin / Cluster` (scaffold) для управления Kubernetes ресурсами (CRUD на уровне UI-заготовок + TODO на backend):
+  - `Namespaces`;
+  - `ConfigMaps`;
+  - `Secrets`;
+  - `Deployments`;
+  - `Pods` + логи контейнеров;
+  - `Jobs` + логи контейнеров;
+  - `PVC`.
+- Управление агентами (scaffold):
+  - список агентов (system + custom, с разделением по проекту при необходимости);
+  - настройки агента (execution mode, лимиты, policy-параметры);
+  - шаблоны промптов агента (`work/review`) минимум в двух локалях (`ru` и `en`) с UI для переключения локали.
+- System settings (scaffold):
+  - управление локалями системы (добавление locale + выбор default locale);
+  - TODO на интеграцию с backend-конфигом/БД.
 - Production-ready UX-паттерны на Vuetify (не “черновая верстка”):
   - карточки/метрики: `VCard`;
   - списки/меню: `VList`, `VListItem`, `VMenu`;
@@ -73,6 +89,17 @@ approvals:
   - agent constructor,
   - analytics studio,
   - governance UI для изменения stage/label policy.
+- Реальная backend-интеграция cluster CRUD (k8s API + RBAC + audit) для новых `Admin / Cluster` экранов (Day10 делает только UI scaffold + TODO).
+
+## Ограничения безопасности для `Admin / Cluster` разделов (обязательны при дальнейшей реализации)
+- Удаление элементов платформы запрещено.
+- Элементы платформы в окружениях `ai-staging` и `prod` (соответствующие namespaces вида `{{ .Project }}-ai-staging` и `{{ .Project }}-prod`) доступны только на просмотр (view-only):
+  - скрывать/выключать действия create/update/delete;
+  - показывать явный read-only banner на экранах.
+- Рекомендованный критерий “элемент платформы”: label `app.kubernetes.io/part-of=codex-k8s` и/или namespace `codex-k8s-*` (точный критерий зафиксировать при реализации backend).
+- Для non-platform namespace CRUD допускается, но:
+  - destructive actions только после явного подтверждения (dialog) и с аудитом;
+  - значения `Secret` по умолчанию не показывать (только метаданные); вывод значения и редактирование должны быть отдельным осознанным действием.
 
 ## Целевая навигация (секции и статус наполнения)
 Принцип: drawer показывает весь будущий “скелет” консоли, но многие разделы помечены как “coming soon” и работают на mock-данных.
@@ -94,12 +121,22 @@ approvals:
 - Governance (scaffold):
   - `Audit log` (mock + TODO)
   - `Labels & stages` (mock + TODO)
-- Future (scaffold):
-  - `Agents` (mock + TODO)
-  - `Prompt templates` (mock + TODO)
+- Admin / Cluster (scaffold):
+  - `Namespaces` (mock + TODO)
+  - `ConfigMaps` (mock + TODO)
+  - `Secrets` (mock + TODO)
+  - `Deployments` (mock + TODO)
+  - `Pods` (mock + TODO)
+  - `Pod logs` (mock + TODO)
+  - `Jobs` (mock + TODO)
+  - `Job logs` (mock + TODO)
+  - `PVC` (mock + TODO)
+- Configuration (scaffold):
+  - `Agents` (mock + TODO): list, details, settings, prompt templates (`ru/en`)
+  - `System settings` (mock + TODO): locales (add locale + default locale)
   - `Docs/knowledge` (mock + TODO)
-  - `Control tools: secrets` (mock + TODO)
-  - `Control tools: databases` (mock + TODO)
+  - `MCP tools: secret sync` (mock + TODO)
+  - `MCP tools: databases` (mock + TODO)
 
 ## Требования к заглушкам (обязательны)
 - Заглушка = не “пустая страница с текстом”, а минимальный UI-скелет:
@@ -108,9 +145,13 @@ approvals:
   - `FiltersBar` (по месту) с 1–3 контролами (`VTextField`, `VSelect`, `VChip`-filters);
   - `VDataTable`/`VList` с 5–15 строками mock-данных;
   - empty-state и loading-state (через общий компонент/слоты).
+- Для экранов `Admin / Cluster` дополнительно:
+  - selector namespace + баннер для view-only окружений `ai-staging`/`prod`;
+  - действия create/edit/delete в view-only режиме скрыты/disabled;
+  - для `Secret` mock показывать только metadata, значение скрыто/замазано.
 - В коде каждой заглушки должен быть `TODO`:
   - что именно подключить (store/api, endpoint, модель данных),
-  - где ожидается контракт (OpenAPI endpoint, feature store),
+  - где ожидается контракт (OpenAPI endpoint, feature store).
 
 ## Декомпозиция (Stories/Tasks)
 - Story-0: Governance по зависимостям:
@@ -130,6 +171,15 @@ approvals:
 - Story-4: Добавить scaffold будущих разделов (без данных):
   - router paths + i18n keys + drawer links;
   - page-skeleton с mock-данными и `TODO`-метками.
+- Story-4.1: Добавить scaffold “Admin / Cluster” (без данных):
+  - экран/маршруты под каждый ресурс (namespaces/configmaps/secrets/deployments/pods/jobs/pvc);
+  - детали ресурса (metadata, labels/annotations, status) + вкладка YAML/JSON view;
+  - заготовки create/edit flows (формы или YAML view) с disabled apply и `TODO(#19): подключить staff API + audit`;
+  - read-only режим для `ai-staging`/`prod` (баннер + скрытые destructive actions).
+- Story-4.2: Добавить scaffold “Agents” и “System settings”:
+  - agents list + agent details (tabs: Settings / Prompt templates / Audit);
+  - prompt templates для `work/review` минимум в `ru/en` с переключателем локали;
+  - system settings: locales table + add-locale dialog (mock) + `TODO(#19): backend settings`.
 - Story-5: Базовые переиспользуемые UI-компоненты (shared/ui):
   - `AppShell`, `AppDrawer`, `AppBarActions`;
   - `PageHeader`, `KpiCards`, `FiltersBar`;
@@ -143,6 +193,12 @@ approvals:
   - основной контент в `VMain`.
 - В drawer присутствуют будущие разделы (scaffold) и они открываются как страницы (router работает).
 - Future-страницы содержат UI-скелет на компонентах Vuetify + mock-данные и `TODO(#19): ...` (или более точный issue) о том, как их довести до production.
+- В навигации присутствует `Admin / Cluster`, и для каждого ресурса есть страница scaffold.
+- Для `ai-staging`/`prod` страницы `Admin / Cluster` явно показывают режим “только просмотр” и не предлагают destructive actions.
+- В навигации присутствуют `Agents` и `System settings (locales)` с UI-заготовками под:
+  - настройки агента;
+  - шаблоны промптов `work/review` минимум в локалях `ru/en`;
+  - добавление locale в системе (mock + TODO).
 - Текущие MVP-сценарии не регресснули:
   - runs list/details, jobs, waits, approvals, logs доступны и работают.
 - На ключевых экранах использованы базовые Vuetify-компоненты (не ad-hoc HTML):
