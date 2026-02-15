@@ -1,88 +1,112 @@
 <template>
-  <section class="card">
-    <div class="row">
-      <div>
-        <h2>{{ t("pages.projectRepositories.title") }}</h2>
-        <div v-if="details.item" class="muted">
-          <RouterLink class="lnk" :to="{ name: 'project-details', params: { projectId } }">{{ details.item.name }}</RouterLink>
-        </div>
-        <div v-else class="muted mono">{{ t("pages.projectRepositories.projectId") }}: {{ projectId }}</div>
-      </div>
-      <div class="actions">
-        <RouterLink class="btn equal" :to="{ name: 'projects' }">{{ t("common.back") }}</RouterLink>
-        <button class="btn equal" type="button" @click="load" :disabled="repos.loading">{{ t("common.refresh") }}</button>
-      </div>
+  <div>
+    <PageHeader :title="t('pages.projectRepositories.title')">
+      <template #actions>
+        <CopyChip :label="t('pages.projectRepositories.projectId')" :value="projectId" icon="mdi-identifier" />
+        <VBtn variant="tonal" prepend-icon="mdi-arrow-left" :to="{ name: 'projects' }">
+          {{ t("common.back") }}
+        </VBtn>
+        <VBtn variant="tonal" prepend-icon="mdi-refresh" :loading="repos.loading" @click="load">
+          {{ t("common.refresh") }}
+        </VBtn>
+      </template>
+    </PageHeader>
+
+    <div class="mt-2 text-body-2 text-medium-emphasis">
+      <RouterLink
+        v-if="details.item"
+        class="text-primary font-weight-bold text-decoration-none"
+        :to="{ name: 'project-details', params: { projectId } }"
+      >
+        {{ details.item.name }}
+      </RouterLink>
     </div>
 
-    <div v-if="repos.error" class="err">{{ t(repos.error.messageKey) }}</div>
+    <VAlert v-if="repos.error" type="error" variant="tonal" class="mt-4">
+      {{ t(repos.error.messageKey) }}
+    </VAlert>
+    <VAlert v-if="repos.attachError" type="error" variant="tonal" class="mt-4">
+      {{ t(repos.attachError.messageKey) }}
+    </VAlert>
 
-    <table v-if="repos.items.length" class="tbl">
-      <thead>
-        <tr>
-          <th class="center">{{ t("pages.projectRepositories.provider") }}</th>
-          <th class="center">{{ t("pages.projectRepositories.repo") }}</th>
-          <th class="center">{{ t("pages.projectRepositories.servicesYaml") }}</th>
-          <th class="center">{{ t("pages.projectRepositories.externalId") }}</th>
-          <th class="center">{{ t("pages.projectRepositories.id") }}</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="r in repos.items" :key="r.id">
-          <td class="center">{{ r.provider }}</td>
-          <td class="mono center">{{ r.owner }}/{{ r.name }}</td>
-          <td class="mono center">{{ r.services_yaml_path }}</td>
-          <td class="mono center">{{ r.external_id }}</td>
-          <td class="mono center">{{ r.id }}</td>
-          <td class="right">
-            <button class="btn danger" type="button" @click="askRemove(r.id, r.owner + '/' + r.name)" :disabled="repos.removing">
-              {{ t("common.delete") }}
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <div v-else class="muted">{{ t("states.noRepos") }}</div>
+    <VCard class="mt-4" variant="outlined">
+      <VCardText>
+        <VDataTable :headers="headers" :items="repos.items" :loading="repos.loading" :items-per-page="10" hover>
+          <template #item.repo="{ item }">
+            <span class="mono text-medium-emphasis">{{ item.owner }}/{{ item.name }}</span>
+          </template>
 
-    <div class="sep"></div>
+          <template #item.services_yaml_path="{ item }">
+            <span class="mono text-medium-emphasis">{{ item.services_yaml_path }}</span>
+          </template>
 
-    <div class="row">
-      <h3>{{ t("pages.projectRepositories.attachTitle") }}</h3>
-    </div>
+          <template #item.external_id="{ item }">
+            <span class="mono text-medium-emphasis">{{ item.external_id }}</span>
+          </template>
 
-    <div class="form">
-      <label>
-        <div class="lbl">{{ t("pages.projectRepositories.owner") }}</div>
-        <input class="inp mono" v-model="owner" :placeholder="t('placeholders.repoOwner')" />
-      </label>
-      <label>
-        <div class="lbl">{{ t("pages.projectRepositories.name") }}</div>
-        <input class="inp mono" v-model="name" :placeholder="t('placeholders.repoName')" />
-      </label>
-      <label>
-        <div class="lbl">{{ t("pages.projectRepositories.servicesYamlPath") }}</div>
-        <input class="inp mono" v-model="servicesYamlPath" :placeholder="t('placeholders.servicesYamlPath')" />
-      </label>
-      <label class="wide">
-        <div class="lbl">{{ t("pages.projectRepositories.repoToken") }}</div>
-        <input class="inp mono" type="password" v-model="token" :placeholder="t('placeholders.repoToken')" />
-      </label>
-      <button class="btn primary" type="button" @click="attach" :disabled="repos.attaching">
-        {{ t("common.attachEnsureWebhook") }}
-      </button>
-    </div>
+          <template #item.id="{ item }">
+            <span class="mono text-medium-emphasis">{{ item.id }}</span>
+          </template>
 
-    <div v-if="repos.attachError" class="err">{{ t(repos.attachError.messageKey) }}</div>
-  </section>
+          <template #item.actions="{ item }">
+            <div class="d-flex justify-end">
+              <VBtn size="small" color="error" variant="tonal" :loading="repos.removing" @click="askRemove(item.id, `${item.owner}/${item.name}`)">
+                {{ t("common.delete") }}
+              </VBtn>
+            </div>
+          </template>
 
-  <ConfirmModal
-    :open="confirmOpen"
+          <template #no-data>
+            <div class="py-8 text-medium-emphasis">
+              {{ t("states.noRepos") }}
+            </div>
+          </template>
+        </VDataTable>
+      </VCardText>
+    </VCard>
+
+    <VCard class="mt-6" variant="outlined">
+      <VCardTitle class="text-subtitle-1">{{ t("pages.projectRepositories.attachTitle") }}</VCardTitle>
+      <VCardText>
+        <VRow density="compact" class="align-end">
+          <VCol cols="12" md="4">
+            <VTextField v-model.trim="owner" :label="t('pages.projectRepositories.owner')" :placeholder="t('placeholders.repoOwner')" />
+          </VCol>
+          <VCol cols="12" md="4">
+            <VTextField v-model.trim="name" :label="t('pages.projectRepositories.name')" :placeholder="t('placeholders.repoName')" />
+          </VCol>
+          <VCol cols="12" md="4">
+            <VTextField
+              v-model.trim="servicesYamlPath"
+              :label="t('pages.projectRepositories.servicesYamlPath')"
+              :placeholder="t('placeholders.servicesYamlPath')"
+            />
+          </VCol>
+          <VCol cols="12">
+            <VTextField
+              v-model="token"
+              :label="t('pages.projectRepositories.repoToken')"
+              :placeholder="t('placeholders.repoToken')"
+              type="password"
+            />
+          </VCol>
+          <VCol cols="12">
+            <VBtn color="primary" variant="tonal" :loading="repos.attaching" @click="attach">
+              {{ t("common.attachEnsureWebhook") }}
+            </VBtn>
+          </VCol>
+        </VRow>
+      </VCardText>
+    </VCard>
+  </div>
+
+  <ConfirmDialog
+    v-model="confirmOpen"
     :title="t('common.delete')"
     :message="confirmName"
-    :confirmText="t('common.delete')"
-    :cancelText="t('common.cancel')"
+    :confirm-text="t('common.delete')"
+    :cancel-text="t('common.cancel')"
     danger
-    @cancel="confirmOpen = false"
     @confirm="doRemove"
   />
 </template>
@@ -92,7 +116,10 @@ import { onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
-import ConfirmModal from "../shared/ui/ConfirmModal.vue";
+import ConfirmDialog from "../shared/ui/ConfirmDialog.vue";
+import CopyChip from "../shared/ui/CopyChip.vue";
+import PageHeader from "../shared/ui/PageHeader.vue";
+import { useSnackbarStore } from "../shared/ui/feedback/snackbar-store";
 import { useProjectRepositoriesStore } from "../features/projects/repositories-store";
 import { useProjectDetailsStore } from "../features/projects/details-store";
 
@@ -101,6 +128,7 @@ const props = defineProps<{ projectId: string }>();
 const { t } = useI18n({ useScope: "global" });
 const repos = useProjectRepositoriesStore();
 const details = useProjectDetailsStore();
+const snackbar = useSnackbarStore();
 
 const owner = ref("");
 const name = ref("");
@@ -110,6 +138,15 @@ const token = ref("");
 const confirmOpen = ref(false);
 const confirmRepoId = ref("");
 const confirmName = ref("");
+
+const headers = [
+  { title: t("pages.projectRepositories.provider"), key: "provider", width: 160 },
+  { title: t("pages.projectRepositories.repo"), key: "repo", sortable: false, width: 260 },
+  { title: t("pages.projectRepositories.servicesYaml"), key: "services_yaml_path", width: 220 },
+  { title: t("pages.projectRepositories.externalId"), key: "external_id", width: 240 },
+  { title: t("pages.projectRepositories.id"), key: "id", width: 240 },
+  { title: "", key: "actions", sortable: false, width: 140 },
+] as const;
 
 async function load() {
   await details.load(props.projectId);
@@ -123,6 +160,7 @@ async function attach() {
     name.value = "";
     token.value = "";
     servicesYamlPath.value = "services.yaml";
+    snackbar.success(t("common.saved"));
   }
 }
 
@@ -134,39 +172,18 @@ function askRemove(repositoryId: string, label: string) {
 
 async function doRemove() {
   const id = confirmRepoId.value;
-  confirmOpen.value = false;
   confirmRepoId.value = "";
   if (!id) return;
   await repos.remove(id);
+  snackbar.success(t("common.deleted"));
 }
 
 onMounted(() => void load());
 </script>
 
 <style scoped>
-h2 {
-  margin: 0;
-  letter-spacing: -0.01em;
-}
-h3 {
-  margin: 0;
-  letter-spacing: -0.01em;
-  font-size: 14px;
-  opacity: 0.9;
-}
-.form {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 12px;
-  margin-top: 12px;
-  align-items: end;
-}
-.wide {
-  grid-column: 1 / -1;
-}
-@media (max-width: 960px) {
-  .form {
-    grid-template-columns: 1fr;
-  }
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 </style>
+

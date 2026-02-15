@@ -1,247 +1,374 @@
 <template>
-  <div class="page">
-    <header class="top">
-      <div class="brand">
-        <div class="title">{{ t("app.title") }}</div>
-        <div class="subtitle">{{ t("app.subtitle") }}</div>
-      </div>
+  <VApp>
+    <VAppBar border :elevation="0" density="comfortable">
+      <VAppBarNavIcon v-if="auth.isAuthed" @click="toggleDrawer" />
 
-      <div class="actions">
-        <div class="lang" role="group" aria-label="Language selector">
-          <button
-            class="btn lang-btn"
-            :class="{ active: locale === 'en' }"
-            @click="setLocale('en')"
-            type="button"
-            :title="'en'"
-          >
-            {{ t("i18n.enFlag") }}
-          </button>
-          <button
-            class="btn lang-btn"
-            :class="{ active: locale === 'ru' }"
-            @click="setLocale('ru')"
-            type="button"
-            :title="'ru'"
-          >
-            {{ t("i18n.ruFlag") }}
-          </button>
+      <RouterLink class="brand" :to="{ name: 'projects' }">
+        <img class="logo" src="/brand/logo.png" alt="codex-k8s logo" />
+        <div class="brand-text">
+          <div class="brand-title">{{ t("app.title") }}</div>
+          <div class="brand-subtitle">{{ t("app.subtitle") }}</div>
         </div>
+      </RouterLink>
 
-        <template v-if="auth.status === 'authed'">
-          <div class="who">
-            <div class="email">{{ auth.me?.email }}</div>
-            <div class="meta">
-              <span v-if="auth.me?.githubLogin" class="mono">@{{ auth.me.githubLogin }}</span>
-              <span v-if="auth.me?.isPlatformAdmin" class="pill">{{ t("roles.admin") }}</span>
-            </div>
-          </div>
-          <button class="btn" @click="logout" type="button">{{ t("common.logout") }}</button>
+      <VSpacer />
+
+      <VBreadcrumbs v-if="auth.isAuthed" class="breadcrumbs" :items="breadcrumbs" density="compact" />
+
+      <VSpacer />
+
+      <VMenu v-if="auth.isAuthed" :close-on-content-click="false">
+        <template #activator="{ props: menuProps }">
+          <VBtn v-bind="menuProps" variant="tonal" prepend-icon="mdi-database-outline">
+            {{ contextLabel }}
+          </VBtn>
         </template>
+        <VCard min-width="420">
+          <VCardTitle class="text-subtitle-2">{{ t("context.title") }}</VCardTitle>
+          <VCardText>
+            <VRow density="compact">
+              <VCol cols="12" md="6">
+                <VSelect
+                  v-model="projectIdModel"
+                  :items="projectOptions"
+                  :label="t('context.project')"
+                  hide-details
+                />
+              </VCol>
+              <VCol cols="12" md="6">
+                <VSelect v-model="envModel" :items="envOptions" :label="t('context.env')" hide-details />
+              </VCol>
+              <VCol cols="12">
+                <VSelect v-model="namespaceModel" :items="namespaceOptions" :label="t('context.namespace')" hide-details />
+              </VCol>
+            </VRow>
+          </VCardText>
+        </VCard>
+      </VMenu>
 
-        <template v-else-if="auth.status === 'anon'">
-          <a class="btn primary" href="/oauth2/start">{{ t("common.loginWithGitHub") }}</a>
+      <VMenu v-if="auth.isAuthed">
+        <template #activator="{ props: menuProps }">
+          <VBtn v-bind="menuProps" icon="mdi-bell-outline" variant="text" />
         </template>
-      </div>
-    </header>
+        <VList density="compact" min-width="320">
+          <VListItem :title="t('notifications.title')" disabled />
+          <VDivider />
+          <VListItem
+            v-for="n in notifications"
+            :key="n.id"
+            :title="n.title"
+            :subtitle="n.subtitle"
+            prepend-icon="mdi-information-outline"
+          />
+        </VList>
+      </VMenu>
 
-    <nav v-if="auth.status === 'authed'" class="nav">
-      <div class="tabs">
-        <RouterLink :to="{ name: 'projects' }">{{ t("nav.projects") }}</RouterLink>
-        <span v-if="crumbAfterProjectsKey" class="crumb"> &gt; {{ t(crumbAfterProjectsKey) }}</span>
+      <VBtnToggle v-model="locale" class="ml-2" divided density="compact" mandatory>
+        <VBtn value="en">{{ t("i18n.enFlag") }}</VBtn>
+        <VBtn value="ru">{{ t("i18n.ruFlag") }}</VBtn>
+      </VBtnToggle>
 
-        <RouterLink :to="{ name: 'runs' }">{{ t("nav.runs") }}</RouterLink>
-        <span v-if="crumbAfterRunsKey" class="crumb"> &gt; {{ t(crumbAfterRunsKey) }}</span>
+      <template v-if="auth.status === 'authed'">
+        <VMenu>
+          <template #activator="{ props: menuProps }">
+            <VBtn v-bind="menuProps" class="ml-2" variant="tonal" prepend-icon="mdi-account-circle-outline">
+              {{ auth.me?.email || t("common.loading") }}
+            </VBtn>
+          </template>
+          <VList density="compact" min-width="280">
+            <VListItem :title="auth.me?.email || '-'" :subtitle="auth.me?.githubLogin ? '@' + auth.me.githubLogin : ''" />
+            <VListItem v-if="auth.me?.isPlatformAdmin" :title="t('roles.admin')" prepend-icon="mdi-shield-account-outline" />
+            <VDivider />
+            <VListItem :title="t('common.logout')" prepend-icon="mdi-logout" @click="logout" />
+          </VList>
+        </VMenu>
+      </template>
 
-        <RouterLink v-if="auth.isPlatformAdmin" :to="{ name: 'users' }">{{ t("nav.users") }}</RouterLink>
-      </div>
-    </nav>
+      <template v-else-if="auth.status === 'anon'">
+        <VBtn class="ml-2" variant="tonal" href="/oauth2/start" prepend-icon="mdi-github">
+          {{ t("common.loginWithGitHub") }}
+        </VBtn>
+      </template>
+    </VAppBar>
 
-    <main class="main">
-      <div v-if="auth.status === 'loading'" class="card">{{ t("common.loading") }}</div>
-      <div v-else-if="auth.status === 'anon'" class="card">
-        <div class="h">{{ t("states.accessRequiredTitle") }}</div>
-        <div class="p">{{ t("states.accessRequiredText") }}</div>
-      </div>
-      <RouterView v-else />
-    </main>
-  </div>
+    <VNavigationDrawer
+      v-if="auth.isAuthed"
+      v-model="drawerOpen"
+      :rail="drawerRail && !isMobile"
+      :temporary="isMobile"
+      :permanent="!isMobile"
+      width="320"
+    >
+      <VList nav density="compact">
+        <template v-for="g in navGroups" :key="g.id">
+          <VListSubheader class="mt-2">
+            {{ t(g.titleKey) }}
+          </VListSubheader>
+
+          <VListItem
+            v-for="item in groupedItems[g.id]"
+            :key="item.routeName"
+            :prepend-icon="item.icon"
+            :to="navTo(item)"
+            :disabled="isNavDisabled(item)"
+            rounded="lg"
+          >
+            <VListItemTitle>{{ t(item.titleKey) }}</VListItemTitle>
+            <template #append>
+              <VChip v-if="item.comingSoon" size="x-small" variant="tonal" color="warning" class="font-weight-bold">
+                {{ t("common.comingSoon") }}
+              </VChip>
+            </template>
+          </VListItem>
+        </template>
+      </VList>
+
+      <template #append>
+        <div class="pa-2 d-flex justify-end">
+          <VBtn
+            v-if="!isMobile"
+            variant="text"
+            :icon="drawerRail ? 'mdi-arrow-expand-right' : 'mdi-arrow-collapse-left'"
+            @click="drawerRail = !drawerRail"
+          />
+        </div>
+      </template>
+    </VNavigationDrawer>
+
+    <VMain class="main-bg">
+      <VContainer class="content" fluid>
+        <VProgressLinear v-if="auth.status === 'loading'" indeterminate color="primary" />
+
+        <VCard v-else-if="auth.status === 'anon'" class="mx-auto mt-10" max-width="720" variant="outlined">
+          <VCardTitle class="text-h6">{{ t("states.accessRequiredTitle") }}</VCardTitle>
+          <VCardText class="text-body-2 text-medium-emphasis">
+            {{ t("states.accessRequiredText") }}
+          </VCardText>
+          <VCardActions>
+            <VBtn variant="tonal" href="/oauth2/start" prepend-icon="mdi-github">
+              {{ t("common.loginWithGitHub") }}
+            </VBtn>
+          </VCardActions>
+        </VCard>
+
+        <RouterView v-else />
+      </VContainer>
+    </VMain>
+
+    <SnackbarHost />
+  </VApp>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, RouterView, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
+import { useDisplay } from "vuetify";
 
 import { persistLocale, type Locale } from "../i18n/locale";
 import { useAuthStore } from "../features/auth/store";
+import { useProjectsStore } from "../features/projects/projects-store";
+import { useUiContextStore } from "../features/ui-context/store";
+import { navGroups, navItems, findNavItemByRouteName, type NavItem } from "./navigation";
+import SnackbarHost from "../shared/ui/feedback/SnackbarHost.vue";
 
 const auth = useAuthStore();
+const projects = useProjectsStore();
+const uiContext = useUiContextStore();
 const { t, locale } = useI18n({ useScope: "global" });
 const route = useRoute();
+const display = useDisplay();
 
-const crumbAfterProjectsKey = computed(() => {
-  const meta = route.meta as Record<string, any>;
-  if (meta?.section === "projects" && typeof meta?.crumbKey === "string" && meta.crumbKey) return meta.crumbKey as string;
-  return "";
+const drawerOpen = ref(true);
+const drawerRail = ref(false);
+const isMobile = computed(() => display.mobile.value);
+
+const envModel = computed({
+  get: () => uiContext.env,
+  set: (v) => uiContext.setEnv(v),
+});
+const namespaceModel = computed({
+  get: () => uiContext.namespace,
+  set: (v) => uiContext.setNamespace(v),
+});
+const projectIdModel = computed({
+  get: () => uiContext.projectId,
+  set: (v) => uiContext.setProjectId(v),
 });
 
-const crumbAfterRunsKey = computed(() => {
-  const meta = route.meta as Record<string, any>;
-  if (meta?.section === "runs" && typeof meta?.crumbKey === "string" && meta.crumbKey) return meta.crumbKey as string;
-  return "";
-});
-
-function setLocale(next: Locale) {
-  locale.value = next;
-  persistLocale(next);
-}
+watch(
+  locale,
+  (next) => {
+    persistLocale(next as Locale);
+  },
+  { immediate: true },
+);
 
 async function logout() {
   await auth.logout();
 }
 
 onMounted(() => {
-  void auth.ensureLoaded();
+  void auth.ensureLoaded().then(() => {
+    if (auth.status === "authed") {
+      void projects.load();
+    }
+  });
+});
+
+watch(
+  () => route.params.projectId,
+  (v) => {
+    if (typeof v === "string" && v) {
+      uiContext.setProjectId(v);
+    }
+  },
+  { immediate: true },
+);
+
+const projectOptions = computed(() =>
+  projects.items.map((p) => ({
+    title: p.name || p.slug || p.id,
+    value: p.id,
+  })),
+);
+
+watch(
+  () => projects.items,
+  (items) => {
+    if (uiContext.projectId) return;
+    if (items.length) {
+      uiContext.setProjectId(items[0].id);
+    }
+  },
+  { immediate: true },
+);
+
+const envOptions = [
+  { title: "ai", value: "ai" },
+  { title: "ai-staging", value: "ai-staging" },
+  { title: "prod", value: "prod" },
+] as const;
+
+const namespaceOptions = computed(() => {
+  const project = "codex-k8s";
+  if (uiContext.env === "ai") return [`${project}-dev-1`, `${project}-dev-2`, `${project}-dev-3`];
+  if (uiContext.env === "ai-staging") return [`${project}-ai-staging`];
+  return [`${project}-prod`];
+});
+
+watch(
+  () => namespaceOptions.value,
+  (items) => {
+    if (!items.length) return;
+    if (items.includes(uiContext.namespace)) return;
+    uiContext.setNamespace(items[0]);
+  },
+  { immediate: true },
+);
+
+const contextLabel = computed(() => {
+  const project = projectOptions.value.find((p) => p.value === uiContext.projectId)?.title || "-";
+  return `${project} / ${uiContext.env} / ${uiContext.namespace || "-"}`;
+});
+
+const notifications = [
+  { id: "n1", title: t("notifications.items.sample1.title"), subtitle: t("notifications.items.sample1.subtitle") },
+  { id: "n2", title: t("notifications.items.sample2.title"), subtitle: t("notifications.items.sample2.subtitle") },
+] as const;
+
+const groupedItems = computed(() => {
+  const byGroup: Record<string, NavItem[]> = Object.fromEntries(navGroups.map((g) => [g.id, []]));
+
+  for (const item of navItems) {
+    if (item.adminOnly && !auth.isPlatformAdmin) continue;
+    byGroup[item.groupId].push(item);
+  }
+  return byGroup as Record<(typeof navGroups)[number]["id"], NavItem[]>;
+});
+
+function navTo(item: NavItem) {
+  if (!item.requiresProject) return { name: item.routeName };
+  if (!uiContext.projectId) return { name: "projects" };
+
+  return {
+    name: item.routeName,
+    params: { projectId: uiContext.projectId },
+  };
+}
+
+function isNavDisabled(item: NavItem): boolean {
+  if (item.requiresProject && !uiContext.projectId) return true;
+  return false;
+}
+
+function toggleDrawer(): void {
+  if (isMobile.value) {
+    drawerOpen.value = !drawerOpen.value;
+    return;
+  }
+  drawerRail.value = !drawerRail.value;
+}
+
+const breadcrumbs = computed(() => {
+  const rName = typeof route.name === "string" ? route.name : "";
+  const meta = route.meta as Record<string, unknown>;
+
+  const items: { title: string }[] = [];
+
+  // For detail pages, keep breadcrumb root pointing to list pages.
+  const baseRouteName = rName === "run-details" ? "runs" : rName;
+  const navItem = findNavItemByRouteName(baseRouteName);
+  if (navItem) {
+    const g = navGroups.find((x) => x.id === navItem.groupId);
+    if (g) items.push({ title: t(g.titleKey) });
+    items.push({ title: t(navItem.titleKey) });
+  }
+
+  if (rName === "run-details" && typeof meta.crumbKey === "string" && meta.crumbKey) {
+    items.push({ title: t(meta.crumbKey) });
+  }
+
+  return items;
 });
 </script>
 
 <style scoped>
-.page {
-  min-height: 100vh;
-  background: radial-gradient(1200px 500px at 20% 0%, #fff6e5, transparent 55%),
-    radial-gradient(900px 450px at 90% 10%, #e8f6ff, transparent 55%),
-    linear-gradient(180deg, #fbfbfc, #f4f5f7);
-  color: #111827;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  --link-color: #0b5a83;
-  --link-color-hover: #084a6b;
-}
-.top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px 20px;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
-  backdrop-filter: blur(10px);
-}
-.brand .title {
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-.brand .subtitle {
-  font-size: 12px;
-  opacity: 0.7;
-}
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.lang {
+.brand {
   display: inline-flex;
-  gap: 6px;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
 }
-.lang-btn {
-  padding: 7px 10px;
-  border-radius: 999px;
-  font-weight: 900;
+.logo {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
 }
-.lang-btn.active {
-  background: rgba(17, 24, 39, 0.08);
-  border-color: rgba(17, 24, 39, 0.18);
-}
-.who {
-  text-align: right;
+.brand-text {
   line-height: 1.1;
 }
-.who .email {
-  font-size: 13px;
-  font-weight: 700;
+.brand-title {
+  font-weight: 900;
+  letter-spacing: -0.01em;
 }
-.who .meta {
+.brand-subtitle {
   font-size: 12px;
-  opacity: 0.7;
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  align-items: center;
+  opacity: 0.75;
 }
-.pill {
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1px solid rgba(17, 24, 39, 0.14);
-  background: rgba(255, 255, 255, 0.7);
+.breadcrumbs {
+  max-width: 520px;
+  overflow: hidden;
 }
-.btn {
-  border: 1px solid rgba(17, 24, 39, 0.14);
-  background: rgba(255, 255, 255, 0.75);
-  padding: 9px 12px;
-  border-radius: 10px;
-  font-weight: 700;
-  cursor: pointer;
-  text-decoration: none;
-  color: inherit;
-}
-.btn.primary {
-  border-color: rgba(17, 24, 39, 0.25);
-  background: #111827;
-  color: #fff;
-}
-.nav {
-  display: flex;
-  gap: 10px;
-  padding: 12px 20px;
-}
-.tabs {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.nav a {
-  padding: 8px 10px;
-  border-radius: 10px;
-  text-decoration: none;
-  color: var(--link-color);
-  font-weight: 700;
-  opacity: 0.8;
-}
-.crumb {
-  opacity: 0.55;
-  font-weight: 800;
-  padding: 0 2px;
-}
-.nav a.router-link-active {
-  opacity: 1;
-  background: rgba(17, 24, 39, 0.08);
-}
-.main {
-  padding: 20px;
-  max-width: 1100px;
+.content {
+  max-width: 1400px;
   margin: 0 auto;
-}
-.card {
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(17, 24, 39, 0.1);
-  border-radius: 14px;
   padding: 16px;
 }
-.h {
-  font-weight: 800;
-  margin-bottom: 6px;
-}
-.p {
-  opacity: 0.8;
-}
-.mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 12px;
+.main-bg {
+  background: radial-gradient(1200px 600px at 15% 0%, rgba(255, 246, 229, 0.8), transparent 55%),
+    radial-gradient(900px 450px at 95% 10%, rgba(232, 246, 255, 0.9), transparent 55%),
+    linear-gradient(180deg, #fbfbfc, #f4f5f7);
 }
 </style>

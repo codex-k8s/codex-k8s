@@ -1,109 +1,104 @@
 <template>
-  <section class="card">
-    <div class="row">
-      <div>
-        <h2>{{ t("pages.projectMembers.title") }}</h2>
-        <div v-if="details.item" class="muted">
-          <RouterLink class="lnk" :to="{ name: 'project-details', params: { projectId } }">{{ details.item.name }}</RouterLink>
-        </div>
-        <div v-else class="muted mono">{{ t("pages.projectMembers.projectId") }}: {{ projectId }}</div>
-      </div>
-      <div class="actions">
-        <RouterLink class="btn equal" :to="{ name: 'projects' }">{{ t("common.back") }}</RouterLink>
-        <button class="btn equal" type="button" @click="load" :disabled="members.loading">{{ t("common.refresh") }}</button>
-      </div>
+  <div>
+    <PageHeader :title="t('pages.projectMembers.title')">
+      <template #actions>
+        <CopyChip :label="t('pages.projectMembers.projectId')" :value="projectId" icon="mdi-identifier" />
+        <VBtn variant="tonal" prepend-icon="mdi-arrow-left" :to="{ name: 'projects' }">
+          {{ t("common.back") }}
+        </VBtn>
+        <VBtn variant="tonal" prepend-icon="mdi-refresh" :loading="members.loading" @click="load">
+          {{ t("common.refresh") }}
+        </VBtn>
+      </template>
+    </PageHeader>
+
+    <div class="mt-2 text-body-2 text-medium-emphasis">
+      <RouterLink
+        v-if="details.item"
+        class="text-primary font-weight-bold text-decoration-none"
+        :to="{ name: 'project-details', params: { projectId } }"
+      >
+        {{ details.item.name }}
+      </RouterLink>
     </div>
 
-    <div v-if="members.error" class="err">{{ t(members.error.messageKey) }}</div>
+    <VAlert v-if="members.error" type="error" variant="tonal" class="mt-4">
+      {{ t(members.error.messageKey) }}
+    </VAlert>
 
-    <table v-if="members.items.length" class="tbl">
-      <thead>
-        <tr>
-          <th>{{ t("pages.projectMembers.email") }}</th>
-          <th class="center">{{ t("pages.projectMembers.userId") }}</th>
-          <th class="center">{{ t("pages.projectMembers.role") }}</th>
-          <th class="center">{{ t("pages.projectMembers.learningOverride") }}</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="m in members.items" :key="m.user_id">
-          <td>{{ m.email }}</td>
-          <td class="mono center">{{ m.user_id }}</td>
-          <td class="center">
-            <select class="sel mono" v-model="m.role">
-              <option value="read">{{ t("roles.read") }}</option>
-              <option value="read_write">{{ t("roles.readWrite") }}</option>
-              <option value="admin">{{ t("roles.admin") }}</option>
-            </select>
-          </td>
-          <td class="center">
-            <select class="sel mono" v-model="m.learning_mode_override">
-              <option :value="null">{{ t("pages.projectMembers.inherit") }}</option>
-              <option :value="true">{{ t("bool.true") }}</option>
-              <option :value="false">{{ t("bool.false") }}</option>
-            </select>
-          </td>
-          <td class="right">
-            <div class="actions-row">
-              <button class="btn primary" type="button" @click="save(m)" :disabled="members.saving">
+    <VCard class="mt-4" variant="outlined">
+      <VCardText>
+        <VDataTable :headers="headers" :items="members.items" :loading="members.loading" :items-per-page="10" hover>
+          <template #item.user_id="{ item }">
+            <span class="mono text-medium-emphasis">{{ item.user_id }}</span>
+          </template>
+
+          <template #item.role="{ item }">
+            <VSelect v-model="item.role" :items="roleOptions" density="compact" hide-details />
+          </template>
+
+          <template #item.learning_mode_override="{ item }">
+            <VSelect v-model="item.learning_mode_override" :items="learningOptions" density="compact" hide-details />
+          </template>
+
+          <template #item.actions="{ item }">
+            <div class="d-flex ga-2 justify-end flex-wrap">
+              <VBtn size="small" color="primary" variant="tonal" :loading="members.saving" @click="save(item)">
                 {{ t("common.save") }}
-              </button>
-              <button
+              </VBtn>
+              <VBtn
                 v-if="auth.isPlatformOwner"
-                class="btn danger"
-                type="button"
-                @click="askRemove(m.user_id, m.email)"
-                :disabled="members.removing"
+                size="small"
+                color="error"
+                variant="tonal"
+                :loading="members.removing"
+                @click="askRemove(item.user_id, item.email)"
               >
                 {{ t("common.delete") }}
-              </button>
+              </VBtn>
             </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <div v-else class="muted">{{ t("states.noMembers") }}</div>
+          </template>
 
-    <template v-if="auth.isPlatformOwner">
-      <div class="sep"></div>
+          <template #no-data>
+            <div class="py-8 text-medium-emphasis">
+              {{ t("states.noMembers") }}
+            </div>
+          </template>
+        </VDataTable>
+      </VCardText>
+    </VCard>
 
-      <div class="row">
-        <h3>{{ t("pages.projectMembers.addTitle") }}</h3>
-      </div>
+    <VCard v-if="auth.isPlatformOwner" class="mt-6" variant="outlined">
+      <VCardTitle class="text-subtitle-1">{{ t("pages.projectMembers.addTitle") }}</VCardTitle>
+      <VCardText>
+        <VRow density="compact" class="align-end">
+          <VCol cols="12" md="6">
+            <VTextField v-model.trim="newEmail" :label="t('pages.projectMembers.email')" :placeholder="t('placeholders.userEmail')" />
+          </VCol>
+          <VCol cols="12" md="4">
+            <VSelect v-model="newRole" :items="roleOptions" :label="t('pages.projectMembers.role')" />
+          </VCol>
+          <VCol cols="12" md="2">
+            <VBtn class="w-100" color="primary" variant="tonal" :loading="members.adding" @click="add">
+              {{ t("common.createOrUpdate") }}
+            </VBtn>
+          </VCol>
+        </VRow>
 
-      <div class="form">
-        <label>
-          <div class="lbl">{{ t("pages.projectMembers.email") }}</div>
-          <input v-model="newEmail" class="inp" :placeholder="t('placeholders.userEmail')" />
-        </label>
+        <VAlert v-if="members.addError" type="error" variant="tonal" class="mt-4">
+          {{ t(members.addError.messageKey) }}
+        </VAlert>
+      </VCardText>
+    </VCard>
+  </div>
 
-        <label>
-          <div class="lbl">{{ t("pages.projectMembers.role") }}</div>
-          <select class="sel mono" v-model="newRole">
-            <option value="read">{{ t("roles.read") }}</option>
-            <option value="read_write">{{ t("roles.readWrite") }}</option>
-            <option value="admin">{{ t("roles.admin") }}</option>
-          </select>
-        </label>
-
-        <button class="btn primary" type="button" @click="add" :disabled="members.adding">
-          {{ t("common.createOrUpdate") }}
-        </button>
-      </div>
-
-      <div v-if="members.addError" class="err">{{ t(members.addError.messageKey) }}</div>
-    </template>
-  </section>
-
-  <ConfirmModal
-    :open="confirmOpen"
+  <ConfirmDialog
+    v-model="confirmOpen"
     :title="t('common.delete')"
     :message="confirmName"
-    :confirmText="t('common.delete')"
-    :cancelText="t('common.cancel')"
+    :confirm-text="t('common.delete')"
+    :cancel-text="t('common.cancel')"
     danger
-    @cancel="confirmOpen = false"
     @confirm="doRemove"
   />
 </template>
@@ -113,7 +108,10 @@ import { onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
-import ConfirmModal from "../shared/ui/ConfirmModal.vue";
+import ConfirmDialog from "../shared/ui/ConfirmDialog.vue";
+import CopyChip from "../shared/ui/CopyChip.vue";
+import PageHeader from "../shared/ui/PageHeader.vue";
+import { useSnackbarStore } from "../shared/ui/feedback/snackbar-store";
 import { useAuthStore } from "../features/auth/store";
 import { useProjectMembersStore } from "../features/projects/members-store";
 import { useProjectDetailsStore } from "../features/projects/details-store";
@@ -125,6 +123,7 @@ const { t } = useI18n({ useScope: "global" });
 const auth = useAuthStore();
 const members = useProjectMembersStore();
 const details = useProjectDetailsStore();
+const snackbar = useSnackbarStore();
 
 const newEmail = ref("");
 const newRole = ref<"read" | "read_write" | "admin">("read");
@@ -132,6 +131,26 @@ const newRole = ref<"read" | "read_write" | "admin">("read");
 const confirmOpen = ref(false);
 const confirmUserId = ref("");
 const confirmName = ref("");
+
+const roleOptions = [
+  { title: t("roles.read"), value: "read" },
+  { title: t("roles.readWrite"), value: "read_write" },
+  { title: t("roles.admin"), value: "admin" },
+] as const;
+
+const learningOptions = [
+  { title: t("pages.projectMembers.inherit"), value: null },
+  { title: t("bool.true"), value: true },
+  { title: t("bool.false"), value: false },
+] as const;
+
+const headers = [
+  { title: t("pages.projectMembers.email"), key: "email" },
+  { title: t("pages.projectMembers.userId"), key: "user_id", width: 260 },
+  { title: t("pages.projectMembers.role"), key: "role", width: 220, sortable: false },
+  { title: t("pages.projectMembers.learningOverride"), key: "learning_mode_override", width: 240, sortable: false },
+  { title: "", key: "actions", sortable: false, width: 220 },
+] as const;
 
 async function load() {
   await details.load(props.projectId);
@@ -144,6 +163,7 @@ async function save(m: ProjectMember) {
     role: m.role,
     learning_mode_override: m.learning_mode_override ?? null,
   });
+  snackbar.success(t("common.saved"));
 }
 
 async function add() {
@@ -151,6 +171,7 @@ async function add() {
   if (!members.addError) {
     newEmail.value = "";
     newRole.value = "read";
+    snackbar.success(t("common.saved"));
   }
 }
 
@@ -162,41 +183,18 @@ function askRemove(userId: string, email: string) {
 
 async function doRemove() {
   const id = confirmUserId.value;
-  confirmOpen.value = false;
   confirmUserId.value = "";
   if (!id) return;
   await members.remove(id);
+  snackbar.success(t("common.deleted"));
 }
 
 onMounted(() => void load());
 </script>
 
 <style scoped>
-h2 {
-  margin: 0;
-  letter-spacing: -0.01em;
-}
-h3 {
-  margin: 0;
-  letter-spacing: -0.01em;
-  font-size: 14px;
-  opacity: 0.9;
-}
-.actions-row {
-  display: inline-flex;
-  gap: 10px;
-  align-items: center;
-}
-.form {
-  display: grid;
-  grid-template-columns: 1fr 200px auto;
-  gap: 12px;
-  margin-top: 12px;
-  align-items: end;
-}
-@media (max-width: 960px) {
-  .form {
-    grid-template-columns: 1fr;
-  }
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 </style>
+

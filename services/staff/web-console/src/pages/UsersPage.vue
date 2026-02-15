@@ -1,76 +1,95 @@
 <template>
-  <section class="grid">
-    <div class="card">
-      <div class="row">
-        <h2>{{ t("pages.users.title") }}</h2>
-        <button class="btn" type="button" @click="load" :disabled="users.loading">
+  <div>
+    <PageHeader :title="t('pages.users.title')">
+      <template #actions>
+        <VBtn variant="tonal" prepend-icon="mdi-refresh" :loading="users.loading" @click="load">
           {{ t("common.refresh") }}
-        </button>
-      </div>
+        </VBtn>
+      </template>
+    </PageHeader>
 
-      <div v-if="users.error" class="err">{{ t(users.error.messageKey) }}</div>
+    <VRow class="mt-4" density="compact">
+      <VCol cols="12" md="8">
+        <VAlert v-if="users.error" type="error" variant="tonal" class="mb-4">
+          {{ t(users.error.messageKey) }}
+        </VAlert>
+        <VAlert v-if="users.deleteError" type="error" variant="tonal" class="mb-4">
+          {{ t(users.deleteError.messageKey) }}
+        </VAlert>
 
-      <table v-if="users.items.length" class="tbl">
-        <thead>
-          <tr>
-            <th>{{ t("pages.users.email") }}</th>
-            <th class="center">{{ t("pages.users.github") }}</th>
-            <th class="center">{{ t("pages.users.admin") }}</th>
-            <th class="center">{{ t("common.id") }}</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="u in users.items" :key="u.id">
-            <td>{{ u.email }}</td>
-            <td class="mono center">{{ u.github_login || "-" }}</td>
-            <td class="center">{{ u.is_platform_admin ? t("pages.users.yes") : t("pages.users.no") }}</td>
-            <td class="mono center">{{ u.id }}</td>
-            <td class="right">
-              <button v-if="canDelete(u.id, u.is_platform_admin, u.is_platform_owner)" class="btn danger" type="button" @click="askRemove(u.id, u.email)" :disabled="users.deleting">
-                {{ t("common.delete") }}
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <div v-else class="muted">{{ t("states.noUsers") }}</div>
+        <VCard variant="outlined">
+          <VCardText>
+            <VDataTable :headers="headers" :items="users.items" :loading="users.loading" :items-per-page="10" hover>
+              <template #item.github_login="{ item }">
+                <span class="mono text-medium-emphasis">{{ item.github_login || "-" }}</span>
+              </template>
 
-      <div v-if="users.deleteError" class="err">{{ t(users.deleteError.messageKey) }}</div>
-    </div>
+              <template #item.is_platform_admin="{ item }">
+                <VChip size="small" variant="tonal" class="font-weight-bold">
+                  {{ item.is_platform_admin ? t("pages.users.yes") : t("pages.users.no") }}
+                </VChip>
+              </template>
 
-    <div class="card">
-      <h2>{{ t("pages.users.addAllowedUser") }}</h2>
-      <div class="muted">{{ t("pages.users.addAllowedUserHint") }}</div>
+              <template #item.id="{ item }">
+                <span class="mono text-medium-emphasis">{{ item.id }}</span>
+              </template>
 
-      <div class="form">
-        <label class="email">
-          <div class="lbl">{{ t("pages.users.email") }}</div>
-          <input v-model="email" class="inp" :placeholder="t('placeholders.userEmail')" />
-        </label>
+              <template #item.actions="{ item }">
+                <div class="d-flex justify-end">
+                  <VBtn
+                    v-if="canDelete(item.id, item.is_platform_admin, item.is_platform_owner)"
+                    size="small"
+                    color="error"
+                    variant="tonal"
+                    :loading="users.deleting"
+                    @click="askRemove(item.id, item.email)"
+                  >
+                    {{ t("common.delete") }}
+                  </VBtn>
+                </div>
+              </template>
 
-        <button class="btn primary" type="button" @click="create" :disabled="users.creating">
-          {{ t("common.createOrUpdate") }}
-        </button>
+              <template #no-data>
+                <div class="py-8 text-medium-emphasis">
+                  {{ t("states.noUsers") }}
+                </div>
+              </template>
+            </VDataTable>
+          </VCardText>
+        </VCard>
+      </VCol>
 
-        <label class="chk">
-          <input type="checkbox" v-model="isAdmin" />
-          <span>{{ t("pages.users.platformAdmin") }}</span>
-        </label>
+      <VCol cols="12" md="4">
+        <VCard variant="outlined">
+          <VCardTitle class="text-subtitle-1">{{ t("pages.users.addAllowedUser") }}</VCardTitle>
+          <VCardText>
+            <div class="text-body-2 text-medium-emphasis mb-4">
+              {{ t("pages.users.addAllowedUserHint") }}
+            </div>
 
-        <div v-if="users.createError" class="err">{{ t(users.createError.messageKey) }}</div>
-      </div>
-    </div>
-  </section>
+            <VTextField v-model.trim="email" :label="t('pages.users.email')" :placeholder="t('placeholders.userEmail')" />
+            <VCheckbox v-model="isAdmin" :label="t('pages.users.platformAdmin')" />
 
-  <ConfirmModal
-    :open="confirmOpen"
+            <VBtn class="mt-2" color="primary" variant="tonal" :loading="users.creating" @click="create">
+              {{ t("common.createOrUpdate") }}
+            </VBtn>
+
+            <VAlert v-if="users.createError" type="error" variant="tonal" class="mt-4">
+              {{ t(users.createError.messageKey) }}
+            </VAlert>
+          </VCardText>
+        </VCard>
+      </VCol>
+    </VRow>
+  </div>
+
+  <ConfirmDialog
+    v-model="confirmOpen"
     :title="t('common.delete')"
     :message="confirmName"
-    :confirmText="t('common.delete')"
-    :cancelText="t('common.cancel')"
+    :confirm-text="t('common.delete')"
+    :cancel-text="t('common.cancel')"
     danger
-    @cancel="confirmOpen = false"
     @confirm="doRemove"
   />
 </template>
@@ -79,13 +98,16 @@
 import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
-import ConfirmModal from "../shared/ui/ConfirmModal.vue";
+import ConfirmDialog from "../shared/ui/ConfirmDialog.vue";
+import PageHeader from "../shared/ui/PageHeader.vue";
+import { useSnackbarStore } from "../shared/ui/feedback/snackbar-store";
 import { useAuthStore } from "../features/auth/store";
 import { useUsersStore } from "../features/users/store";
 
 const { t } = useI18n({ useScope: "global" });
 const auth = useAuthStore();
 const users = useUsersStore();
+const snackbar = useSnackbarStore();
 
 const email = ref("");
 const isAdmin = ref(false);
@@ -93,6 +115,14 @@ const isAdmin = ref(false);
 const confirmOpen = ref(false);
 const confirmUserId = ref("");
 const confirmName = ref("");
+
+const headers = [
+  { title: t("pages.users.email"), key: "email" },
+  { title: t("pages.users.github"), key: "github_login", width: 220 },
+  { title: t("pages.users.admin"), key: "is_platform_admin", width: 160 },
+  { title: t("common.id"), key: "id", width: 240 },
+  { title: "", key: "actions", sortable: false, width: 140 },
+] as const;
 
 async function load() {
   await users.load();
@@ -103,6 +133,7 @@ async function create() {
   if (!users.createError) {
     email.value = "";
     isAdmin.value = false;
+    snackbar.success(t("common.saved"));
   }
 }
 
@@ -124,54 +155,20 @@ function askRemove(userId: string, emailLabel: string) {
 
 async function doRemove() {
   const id = confirmUserId.value;
-  confirmOpen.value = false;
   confirmUserId.value = "";
   if (!id) return;
   await users.remove(id);
+  if (!users.deleteError) {
+    snackbar.success(t("common.deleted"));
+  }
 }
 
 onMounted(() => void load());
 </script>
 
 <style scoped>
-.grid {
-  display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 14px;
-}
-@media (max-width: 960px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
-}
-h2 {
-  margin: 0;
-  letter-spacing: -0.01em;
-}
-.form {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px;
-  margin-top: 12px;
-  align-items: end;
-}
-.email {
-  min-width: 0;
-}
-.chk {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 800;
-  opacity: 0.9;
-}
-.err {
-  grid-column: 1 / -1;
-}
-@media (max-width: 960px) {
-  .form {
-    grid-template-columns: 1fr;
-  }
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 </style>
+

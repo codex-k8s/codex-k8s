@@ -1,166 +1,213 @@
 <template>
-  <section class="card">
-    <div class="row">
-      <div>
-        <h2>{{ t("pages.runDetails.title") }}</h2>
-        <div class="muted mono">
-          <span class="field-label">{{ t("pages.runDetails.runId") }}:</span> {{ runId }}
-          <span v-if="details.run?.correlation_id">
-            · <span class="field-label">{{ t("pages.runDetails.correlation") }}:</span> {{ details.run.correlation_id }}
-          </span>
-        </div>
-        <div v-if="details.run?.project_id" class="muted">
-          <span class="field-label">{{ t("pages.runDetails.project") }}:</span>
-          <RouterLink class="lnk" :to="{ name: 'project-details', params: { projectId: details.run.project_id } }">
-            {{ details.run.project_name || details.run.project_slug || details.run.project_id }}
-          </RouterLink>
-        </div>
-        <div v-if="details.run?.issue_url && details.run?.issue_number" class="muted">
-          <span class="field-label">{{ t("pages.runDetails.issue") }}:</span>
-          <a class="lnk mono" :href="details.run.issue_url" target="_blank" rel="noopener noreferrer">#{{ details.run.issue_number }}</a>
-        </div>
-        <div v-if="details.run?.pr_url && details.run?.pr_number" class="muted">
-          <span class="field-label">{{ t("pages.runDetails.pr") }}:</span>
-          <a class="lnk mono" :href="details.run.pr_url" target="_blank" rel="noopener noreferrer">#{{ details.run.pr_number }}</a>
-        </div>
-        <div class="muted">
-          <span class="field-label">{{ t("pages.runDetails.triggerKind") }}:</span>
-          <span class="mono">{{ details.run?.trigger_kind || "-" }}</span>
-          ·
-          <span class="field-label">{{ t("pages.runDetails.triggerLabel") }}:</span>
-          <span class="mono">{{ details.run?.trigger_label || "-" }}</span>
-        </div>
-        <div class="muted">
-          <span class="field-label">{{ t("pages.runDetails.waitState") }}:</span>
-          <span class="mono">{{ details.run?.wait_state || "-" }}</span>
-          ·
-          <span class="field-label">{{ t("pages.runDetails.waitReason") }}:</span>
-          <span class="mono">{{ details.run?.wait_reason || "-" }}</span>
-        </div>
-        <div class="muted">
-          <span class="field-label">{{ t("pages.runDetails.agentKey") }}:</span>
-          <span class="mono">{{ details.run?.agent_key || "-" }}</span>
-          ·
-          <span class="field-label">{{ t("pages.runDetails.waitSince") }}:</span>
-          <span class="mono">{{ formatDateTime(details.run?.wait_since, locale) }}</span>
-          ·
-          <span class="field-label">{{ t("pages.runDetails.lastHeartbeatAt") }}:</span>
-          <span class="mono">{{ formatDateTime(details.run?.last_heartbeat_at, locale) }}</span>
-        </div>
-      </div>
-      <div class="actions">
-        <button class="btn equal" type="button" @click="goBack">{{ t("common.back") }}</button>
-        <button class="btn equal" type="button" @click="loadAll" :disabled="details.loading">{{ t("common.refresh") }}</button>
-        <button
+  <div>
+    <PageHeader :title="t('pages.runDetails.title')">
+      <template #actions>
+        <CopyChip :label="t('pages.runDetails.runId')" :value="runId" icon="mdi-identifier" />
+        <CopyChip
+          v-if="details.run?.correlation_id"
+          :label="t('pages.runDetails.correlation')"
+          :value="details.run.correlation_id"
+          icon="mdi-link-variant"
+        />
+        <CopyChip v-if="details.run?.namespace" :label="t('pages.runDetails.namespace')" :value="details.run.namespace" icon="mdi-kubernetes" />
+
+        <VBtn variant="tonal" prepend-icon="mdi-arrow-left" @click="goBack">
+          {{ t("common.back") }}
+        </VBtn>
+        <VBtn variant="tonal" prepend-icon="mdi-refresh" :loading="details.loading" @click="loadAll">
+          {{ t("common.refresh") }}
+        </VBtn>
+        <VBtn
           v-if="canDeleteNamespace"
-          class="btn equal danger"
-          type="button"
-          @click="askDeleteNamespace"
-          :disabled="details.deletingNamespace"
+          color="error"
+          variant="tonal"
+          prepend-icon="mdi-delete-outline"
+          :loading="details.deletingNamespace"
+          @click="confirmDeleteNamespaceOpen = true"
         >
           {{ t("pages.runDetails.deleteNamespace") }}
-        </button>
-      </div>
-    </div>
+        </VBtn>
+      </template>
+    </PageHeader>
 
-    <div v-if="details.error" class="err">{{ t(details.error.messageKey) }}</div>
-    <div v-if="details.deleteNamespaceError" class="err">{{ t(details.deleteNamespaceError.messageKey) }}</div>
-    <div v-if="details.namespaceDeleteResult" class="muted mono">
-      {{ t("pages.runDetails.namespace") }}: {{ details.namespaceDeleteResult.namespace }} ·
-      {{
-        details.namespaceDeleteResult.already_deleted
-          ? t("pages.runDetails.namespaceAlreadyDeleted")
-          : t("pages.runDetails.namespaceDeleted")
-      }}
-    </div>
-
-    <div class="pane runtime">
-      <div class="pane-h">{{ t("pages.runDetails.job") }}</div>
-      <div class="muted mono">
-        <span class="field-label">{{ t("pages.runDetails.jobNamespace") }}:</span>
-        {{ details.run?.job_namespace || details.run?.namespace || "-" }}
-      </div>
-      <div class="muted mono">
-        <span class="field-label">{{ t("pages.runDetails.job") }}:</span>
-        {{ details.run?.job_name || "-" }}
-      </div>
-      <div class="muted mono">
-        <span class="field-label">{{ t("pages.runDetails.namespace") }}:</span>
-        {{ details.run?.namespace || "-" }}
-      </div>
-      <div class="muted">
-        <span v-if="details.run?.job_exists" class="pill">active</span>
-        <span v-else>{{ t("pages.runDetails.noJob") }}</span>
-      </div>
-    </div>
-
-    <div class="pane events-pane">
-      <div class="row">
-        <div class="pane-h">{{ t("pages.runDetails.runLogs") }}</div>
-        <button class="btn" type="button" @click="details.refreshLogs(runId, 200)" :disabled="details.loading">
-          {{ t("common.refresh") }}
-        </button>
-      </div>
-      <div class="muted mono">
-        <span class="field-label">{{ t("pages.runs.status") }}:</span> {{ details.logs?.status || "-" }}
+    <VAlert v-if="details.error" type="error" variant="tonal" class="mt-4">
+      {{ t(details.error.messageKey) }}
+    </VAlert>
+    <VAlert v-if="details.deleteNamespaceError" type="error" variant="tonal" class="mt-4">
+      {{ t(details.deleteNamespaceError.messageKey) }}
+    </VAlert>
+    <VAlert v-if="details.namespaceDeleteResult" type="success" variant="tonal" class="mt-4">
+      <div class="text-body-2">
+        {{ t("pages.runDetails.namespace") }}:
+        <span class="mono">{{ details.namespaceDeleteResult.namespace }}</span>
         ·
-        <span class="field-label">{{ t("pages.runDetails.logsUpdatedAt") }}:</span>
-        {{ formatDateTime(details.logs?.updated_at, locale) }}
+        {{
+          details.namespaceDeleteResult.already_deleted
+            ? t("pages.runDetails.namespaceAlreadyDeleted")
+            : t("pages.runDetails.namespaceDeleted")
+        }}
       </div>
-      <div v-if="details.logs?.tail_lines?.length" class="log-lines">
-        <div v-for="(line, idx) in details.logs.tail_lines" :key="`line-${idx}`" class="log-line mono">
-          {{ line }}
-        </div>
-      </div>
-      <div v-else class="muted">{{ t("states.noRunLogs") }}</div>
-      <details class="logs-raw">
-        <summary class="mono">{{ t("pages.runDetails.rawLogsSnapshot") }}</summary>
-        <pre class="pre">{{ details.logs?.snapshot_json || "{}" }}</pre>
-      </details>
-    </div>
+    </VAlert>
 
-    <div class="pane events-pane">
-      <div class="pane-h">{{ t("pages.runDetails.flowEvents") }}</div>
-      <div v-if="details.events.length" class="list">
-        <div v-for="e in details.events" :key="e.created_at + ':' + e.event_type" class="item">
-          <div class="topline">
-            <span class="pill">{{ e.event_type }}</span>
-            <span class="mono muted">{{ formatDateTime(e.created_at, locale) }}</span>
-          </div>
-          <pre class="pre">{{ e.payload_json }}</pre>
-        </div>
-      </div>
-      <div v-else class="muted">{{ t("states.noEvents") }}</div>
-    </div>
-  </section>
+    <VRow class="mt-4" density="compact">
+      <VCol cols="12" md="5">
+        <VCard variant="outlined">
+          <VCardTitle class="text-subtitle-1 d-flex align-center justify-space-between ga-2 flex-wrap">
+            <span>{{ t("pages.runDetails.title") }}</span>
+            <VChip size="small" variant="tonal" class="font-weight-bold">
+              {{ details.run?.status || "-" }}
+            </VChip>
+          </VCardTitle>
+          <VCardText>
+            <div class="d-flex flex-column ga-2">
+              <div class="text-body-2">
+                <strong>{{ t("pages.runDetails.project") }}:</strong>
+                <RouterLink
+                  v-if="details.run?.project_id"
+                  class="text-primary font-weight-bold text-decoration-none"
+                  :to="{ name: 'project-details', params: { projectId: details.run.project_id } }"
+                >
+                  {{ details.run.project_name || details.run.project_slug || details.run.project_id }}
+                </RouterLink>
+                <span v-else class="text-medium-emphasis">-</span>
+              </div>
 
-  <ConfirmModal
-    :open="confirmDeleteNamespaceOpen"
+              <div class="text-body-2">
+                <strong>{{ t("pages.runDetails.issue") }}:</strong>
+                <a
+                  v-if="details.run?.issue_url && details.run?.issue_number"
+                  class="text-primary font-weight-bold text-decoration-none mono"
+                  :href="details.run.issue_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  #{{ details.run.issue_number }}
+                </a>
+                <span v-else class="text-medium-emphasis">-</span>
+              </div>
+
+              <div class="text-body-2">
+                <strong>{{ t("pages.runDetails.pr") }}:</strong>
+                <a
+                  v-if="details.run?.pr_url && details.run?.pr_number"
+                  class="text-primary font-weight-bold text-decoration-none mono"
+                  :href="details.run.pr_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  #{{ details.run.pr_number }}
+                </a>
+                <span v-else class="text-medium-emphasis">-</span>
+              </div>
+
+              <div class="text-body-2">
+                <strong>{{ t("pages.runDetails.triggerKind") }}:</strong>
+                <span class="mono">{{ details.run?.trigger_kind || "-" }}</span>
+                ·
+                <strong>{{ t("pages.runDetails.triggerLabel") }}:</strong>
+                <span class="mono">{{ details.run?.trigger_label || "-" }}</span>
+              </div>
+
+              <div class="text-body-2">
+                <strong>{{ t("pages.runDetails.waitState") }}:</strong>
+                <span class="mono">{{ details.run?.wait_state || "-" }}</span>
+                ·
+                <strong>{{ t("pages.runDetails.waitReason") }}:</strong>
+                <span class="mono">{{ details.run?.wait_reason || "-" }}</span>
+              </div>
+
+              <div class="text-body-2">
+                <strong>{{ t("pages.runDetails.agentKey") }}:</strong>
+                <span class="mono">{{ details.run?.agent_key || "-" }}</span>
+              </div>
+            </div>
+          </VCardText>
+        </VCard>
+
+        <RunTimeline class="mt-4" :run="details.run" :locale="locale" />
+      </VCol>
+
+      <VCol cols="12" md="7">
+        <LogsViewer
+          :lines="details.logs?.tail_lines || []"
+          :status="details.logs?.status || ''"
+          :updated-at-label="formatDateTime(details.logs?.updated_at, locale)"
+          :loading="details.loading"
+          :file-name="`run-${runId}.log`"
+          @refresh="(n) => details.refreshLogs(runId, n)"
+        />
+
+        <VExpansionPanels class="mt-4" variant="accordion">
+          <VExpansionPanel>
+            <VExpansionPanelTitle>
+              {{ t("pages.runDetails.flowEvents") }} ({{ details.events.length }})
+            </VExpansionPanelTitle>
+            <VExpansionPanelText>
+              <VAlert v-if="!details.events.length" type="info" variant="tonal">
+                {{ t("states.noEvents") }}
+              </VAlert>
+              <VList v-else density="compact">
+                <VListItem v-for="e in details.events" :key="e.created_at + ':' + e.event_type">
+                  <template #title>
+                    <div class="d-flex align-center justify-space-between ga-2 flex-wrap">
+                      <VChip size="x-small" variant="tonal" class="font-weight-bold">{{ e.event_type }}</VChip>
+                      <span class="mono text-medium-emphasis">{{ formatDateTime(e.created_at, locale) }}</span>
+                    </div>
+                  </template>
+                  <template #subtitle>
+                    <pre class="pre mt-2">{{ e.payload_json }}</pre>
+                  </template>
+                </VListItem>
+              </VList>
+            </VExpansionPanelText>
+          </VExpansionPanel>
+
+          <VExpansionPanel>
+            <VExpansionPanelTitle>
+              {{ t("pages.runDetails.rawLogsSnapshot") }}
+            </VExpansionPanelTitle>
+            <VExpansionPanelText>
+              <pre class="pre">{{ details.logs?.snapshot_json || "{}" }}</pre>
+            </VExpansionPanelText>
+          </VExpansionPanel>
+        </VExpansionPanels>
+      </VCol>
+    </VRow>
+  </div>
+
+  <ConfirmDialog
+    v-model="confirmDeleteNamespaceOpen"
     :title="t('pages.runDetails.deleteNamespace')"
     :message="t('pages.runDetails.deleteNamespaceConfirm')"
-    :confirmText="t('pages.runDetails.deleteNamespace')"
-    :cancelText="t('common.cancel')"
+    :confirm-text="t('pages.runDetails.deleteNamespace')"
+    :cancel-text="t('common.cancel')"
     danger
-    @cancel="confirmDeleteNamespaceOpen = false"
     @confirm="doDeleteNamespace"
   />
 </template>
 
 <script setup lang="ts">
+// TODO(#19): Доработать Run details: master-detail layout, улучшенный stepper по стадиям/событиям и feedback слой через VSnackbar.
 import { computed, onMounted, ref } from "vue";
-import { RouterLink } from "vue-router";
-import { useRouter } from "vue-router";
+import { RouterLink, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 
-import ConfirmModal from "../shared/ui/ConfirmModal.vue";
+import PageHeader from "../shared/ui/PageHeader.vue";
+import ConfirmDialog from "../shared/ui/ConfirmDialog.vue";
+import CopyChip from "../shared/ui/CopyChip.vue";
+import LogsViewer from "../shared/ui/LogsViewer.vue";
+import RunTimeline from "../shared/ui/RunTimeline.vue";
 import { formatDateTime } from "../shared/lib/datetime";
 import { useRunDetailsStore } from "../features/runs/store";
+import { useSnackbarStore } from "../shared/ui/feedback/snackbar-store";
 
 const props = defineProps<{ runId: string }>();
 
 const { t, locale } = useI18n({ useScope: "global" });
 const details = useRunDetailsStore();
 const router = useRouter();
+const snackbar = useSnackbarStore();
+
 const confirmDeleteNamespaceOpen = ref(false);
 const canDeleteNamespace = computed(() => Boolean(details.run?.job_exists && details.run?.namespace));
 
@@ -168,87 +215,29 @@ async function loadAll() {
   await details.load(props.runId);
 }
 
-function askDeleteNamespace() {
-  confirmDeleteNamespaceOpen.value = true;
-}
-
 function goBack() {
   void router.push({ name: "runs" });
 }
 
 async function doDeleteNamespace() {
-  confirmDeleteNamespaceOpen.value = false;
   await details.deleteNamespace(props.runId);
+  if (!details.deleteNamespaceError) {
+    snackbar.success(t("common.saved"));
+  }
 }
 
 onMounted(() => void loadAll());
 </script>
 
 <style scoped>
-h2 {
-  margin: 0;
-  letter-spacing: -0.01em;
-}
-.pane {
-  border: 1px solid rgba(17, 24, 39, 0.1);
-  border-radius: 14px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.6);
-}
-.runtime {
-  margin-top: 12px;
-}
-.events-pane {
-  margin-top: 12px;
-}
-.pane-h {
-  font-weight: 900;
-  letter-spacing: -0.01em;
-  margin-bottom: 10px;
-}
-.field-label {
-  font-weight: 800;
-}
-.list {
-  display: grid;
-  gap: 10px;
-}
-.item {
-  border: 1px solid rgba(17, 24, 39, 0.1);
-  border-radius: 12px;
-  padding: 10px;
-  background: rgba(255, 255, 255, 0.7);
-}
-.topline {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 8px;
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 .pre {
   margin: 0;
   white-space: pre-wrap;
   font-size: 12px;
-  opacity: 0.9;
-}
-.log-lines {
-  margin-top: 8px;
-  border: 1px solid rgba(17, 24, 39, 0.12);
-  border-radius: 12px;
-  background: rgba(17, 24, 39, 0.03);
-  max-height: 280px;
-  overflow: auto;
-}
-.log-line {
-  padding: 6px 10px;
-  border-bottom: 1px dashed rgba(17, 24, 39, 0.1);
-  font-size: 12px;
-}
-.log-line:last-child {
-  border-bottom: none;
-}
-.logs-raw {
-  margin-top: 8px;
+  opacity: 0.95;
 }
 </style>
+

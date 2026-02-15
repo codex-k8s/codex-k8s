@@ -47,6 +47,11 @@
 | `vue-i18n` | in use (package.json) | i18n | все пользовательские тексты через i18n ключи |
 | `vue3-cookies` | in use (package.json) | Cookies | хранение UI-настроек (например, язык) и единый cookie-адаптер |
 | `date-fns` | in use (package.json) | Datetime formatting | безопасное форматирование дат/времени без самописных helpers |
+| `vuetify` | in use (package.json, `^3.11.8`) | UI components | единая UI-библиотека и app-shell для staff web-console |
+| `vite-plugin-vuetify` | in use (devDependency, `^2.1.3`) | Build tooling | Vite-интеграция Vuetify (auto-import/стили) |
+| `sass` | in use (devDependency, `^1.97.3`) | Build tooling | сборка Vuetify styles (Sass) в Vite |
+| `@mdi/font` | in use (package.json, `^7.4.47`) | Icons | базовый icon font для Vuetify (Material Design Icons) |
+| `monaco-editor` | in use (package.json, `^0.55.1`) | Editor | markdown и YAML редакторы (и только для них) в staff web-console |
 | `@hey-api/openapi-ts` | in use (devDependency, `v0.92.3`) | OpenAPI codegen (TS) | генерация typed API-клиента для frontend из `api.yaml` |
 | `@hey-api/client-axios` | deprecated (bundled in `@hey-api/openapi-ts` since `v0.73.0`) | OpenAPI axios client plugin | отдельная установка не требуется, использовать встроенный плагин через конфиг `openapi-ts` |
 

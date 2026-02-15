@@ -1,67 +1,78 @@
 <template>
-  <section class="card">
-    <div class="row">
-      <div>
-        <h2>{{ t("pages.projectDetails.title") }}</h2>
-        <div class="muted mono">{{ t("pages.projectDetails.projectId") }}: {{ projectId }}</div>
-      </div>
-      <div class="actions">
-        <RouterLink class="btn equal" :to="{ name: 'projects' }">{{ t("common.back") }}</RouterLink>
-        <button class="btn equal" type="button" @click="load" :disabled="details.loading">{{ t("common.refresh") }}</button>
-      </div>
-    </div>
+  <div>
+    <PageHeader :title="t('pages.projectDetails.title')">
+      <template #actions>
+        <CopyChip :label="t('pages.projectDetails.projectId')" :value="projectId" icon="mdi-identifier" />
+        <VBtn variant="tonal" prepend-icon="mdi-arrow-left" :to="{ name: 'projects' }">
+          {{ t("common.back") }}
+        </VBtn>
+        <VBtn variant="tonal" prepend-icon="mdi-refresh" :loading="details.loading" @click="load">
+          {{ t("common.refresh") }}
+        </VBtn>
+        <VBtn v-if="auth.isPlatformOwner" color="error" variant="tonal" prepend-icon="mdi-delete-outline" @click="confirmOpen = true">
+          {{ t("common.delete") }}
+        </VBtn>
+      </template>
+    </PageHeader>
 
-    <div v-if="details.error" class="err">{{ t(details.error.messageKey) }}</div>
+    <VAlert v-if="details.error" type="error" variant="tonal" class="mt-4">
+      {{ t(details.error.messageKey) }}
+    </VAlert>
+    <VAlert v-if="projects.deleteError" type="error" variant="tonal" class="mt-4">
+      {{ t(projects.deleteError.messageKey) }}
+    </VAlert>
 
-    <div v-if="details.item" class="grid">
-      <div class="kv">
-        <div class="k">{{ t("pages.projectDetails.slug") }}</div>
-        <div class="v mono">{{ details.item.slug }}</div>
-      </div>
-      <div class="kv">
-        <div class="k">{{ t("pages.projectDetails.name") }}</div>
-        <div class="v">{{ details.item.name }}</div>
-      </div>
-    </div>
+    <VRow class="mt-4" density="compact">
+      <VCol cols="12" md="6">
+        <VCard variant="outlined">
+          <VCardTitle class="text-subtitle-1">{{ t("pages.projectDetails.slug") }}</VCardTitle>
+          <VCardText>
+            <span class="mono">{{ details.item?.slug || "-" }}</span>
+          </VCardText>
+        </VCard>
+      </VCol>
+      <VCol cols="12" md="6">
+        <VCard variant="outlined">
+          <VCardTitle class="text-subtitle-1">{{ t("pages.projectDetails.name") }}</VCardTitle>
+          <VCardText>
+            <span>{{ details.item?.name || "-" }}</span>
+          </VCardText>
+        </VCard>
+      </VCol>
+    </VRow>
 
-    <div class="sep"></div>
-
-    <div class="row">
-      <div class="actions">
-        <RouterLink class="btn" :to="{ name: 'project-repositories', params: { projectId } }">
+    <VCard class="mt-4" variant="outlined">
+      <VCardText class="d-flex ga-2 flex-wrap">
+        <VBtn variant="tonal" prepend-icon="mdi-source-repository" :to="{ name: 'project-repositories', params: { projectId } }">
           {{ t("pages.projects.repos") }}
-        </RouterLink>
-        <RouterLink class="btn" :to="{ name: 'project-members', params: { projectId } }">
+        </VBtn>
+        <VBtn variant="tonal" prepend-icon="mdi-account-group-outline" :to="{ name: 'project-members', params: { projectId } }">
           {{ t("pages.projects.members") }}
-        </RouterLink>
-      </div>
+        </VBtn>
+      </VCardText>
+    </VCard>
+  </div>
 
-      <button v-if="auth.isPlatformOwner" class="btn danger" type="button" @click="askDelete">
-        {{ t("common.delete") }}
-      </button>
-    </div>
-
-    <div v-if="projects.deleteError" class="err">{{ t(projects.deleteError.messageKey) }}</div>
-
-    <ConfirmModal
-      :open="confirmOpen"
-      :title="t('common.delete')"
-      :message="details.item ? details.item.name : projectId"
-      :confirmText="t('common.delete')"
-      :cancelText="t('common.cancel')"
-      danger
-      @cancel="confirmOpen = false"
-      @confirm="doDelete"
-    />
-  </section>
+  <ConfirmDialog
+    v-model="confirmOpen"
+    :title="t('common.delete')"
+    :message="details.item ? details.item.name : projectId"
+    :confirm-text="t('common.delete')"
+    :cancel-text="t('common.cancel')"
+    danger
+    @confirm="doDelete"
+  />
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { RouterLink, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 
-import ConfirmModal from "../shared/ui/ConfirmModal.vue";
+import ConfirmDialog from "../shared/ui/ConfirmDialog.vue";
+import CopyChip from "../shared/ui/CopyChip.vue";
+import PageHeader from "../shared/ui/PageHeader.vue";
+import { useSnackbarStore } from "../shared/ui/feedback/snackbar-store";
 import { useAuthStore } from "../features/auth/store";
 import { useProjectsStore } from "../features/projects/projects-store";
 import { useProjectDetailsStore } from "../features/projects/details-store";
@@ -73,6 +84,7 @@ const auth = useAuthStore();
 const projects = useProjectsStore();
 const details = useProjectDetailsStore();
 const router = useRouter();
+const snackbar = useSnackbarStore();
 
 const confirmOpen = ref(false);
 
@@ -80,14 +92,10 @@ async function load() {
   await details.load(props.projectId);
 }
 
-function askDelete() {
-  confirmOpen.value = true;
-}
-
 async function doDelete() {
-  confirmOpen.value = false;
   await projects.remove(props.projectId);
   if (!projects.deleteError) {
+    snackbar.success(t("common.deleted"));
     await router.push({ name: "projects" });
   }
 }
@@ -96,34 +104,8 @@ onMounted(() => void load());
 </script>
 
 <style scoped>
-h2 {
-  margin: 0;
-  letter-spacing: -0.01em;
-}
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 12px;
-}
-.kv {
-  border: 1px solid rgba(17, 24, 39, 0.1);
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 12px;
-  padding: 10px;
-}
-.k {
-  font-weight: 900;
-  font-size: 12px;
-  opacity: 0.75;
-}
-.v {
-  margin-top: 6px;
-  font-weight: 800;
-}
-@media (max-width: 960px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 </style>
+
