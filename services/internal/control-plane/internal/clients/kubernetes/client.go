@@ -14,9 +14,9 @@ import (
 
 	"github.com/codex-k8s/codex-k8s/libs/go/k8s/clientcfg"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
-	corev1 "k8s.io/api/core/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1api "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,8 +27,8 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/remotecommand"
 )
 
@@ -516,13 +516,38 @@ func (c *Client) DeleteJobIfExists(ctx context.Context, namespace string, name s
 	if targetNamespace == "" || targetName == "" {
 		return fmt.Errorf("job namespace and name are required")
 	}
-	if err := c.clientset.BatchV1().Jobs(targetNamespace).Delete(ctx, targetName, metav1.DeleteOptions{}); err != nil {
+
+	// We routinely recreate Jobs (migrations, kaniko) with the same name.
+	// K8s deletion is asynchronous and server-side apply will patch an existing Job if it
+	// is still present, failing on immutable fields like spec.template. Wait for NotFound.
+	propagation := metav1.DeletePropagationBackground
+	if err := c.clientset.BatchV1().Jobs(targetNamespace).Delete(ctx, targetName, metav1.DeleteOptions{
+		PropagationPolicy: &propagation,
+	}); err != nil {
 		if k8serrors.IsNotFound(err) {
 			return nil
 		}
 		return fmt.Errorf("delete job %s/%s: %w", targetNamespace, targetName, err)
 	}
-	return nil
+
+	waitCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	ticker := time.NewTicker(200 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		_, err := c.clientset.BatchV1().Jobs(targetNamespace).Get(waitCtx, targetName, metav1.GetOptions{})
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				return nil
+			}
+			return fmt.Errorf("get job %s/%s during delete: %w", targetNamespace, targetName, err)
+		}
+		select {
+		case <-waitCtx.Done():
+			return fmt.Errorf("wait job %s/%s delete: %w", targetNamespace, targetName, waitCtx.Err())
+		case <-ticker.C:
+		}
+	}
 }
 
 // WaitForJobComplete waits until one Job reports Complete condition.

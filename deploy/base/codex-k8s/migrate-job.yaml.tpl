@@ -40,7 +40,8 @@ spec:
             - -ec
             - |
               export GOOSE_DRIVER=postgres
-              export GOOSE_DBSTRING="postgres://${CODEXK8S_POSTGRES_USER}:${CODEXK8S_POSTGRES_PASSWORD}@postgres:5432/${CODEXK8S_POSTGRES_DB}?sslmode=disable"
+              # NOTE: use $VAR (not ${VAR}) because ${...} is consumed by our manifest placeholder renderer.
+              export GOOSE_DBSTRING="postgres://$CODEXK8S_POSTGRES_USER:$CODEXK8S_POSTGRES_PASSWORD@postgres:5432/$CODEXK8S_POSTGRES_DB?sslmode=disable"
               # Postgres Service can be routable slightly before the actual server
               # accepts connections. Keep this step resilient to short transient failures,
               # but fail fast after 60s total timeout.
@@ -54,10 +55,10 @@ spec:
                 now="$(date +%s)"
                 elapsed="$((now - started_at))"
                 if [ "$elapsed" -ge "$timeout_seconds" ]; then
-                  echo "goose up failed after ${elapsed}s (timeout ${timeout_seconds}s)" >&2
+                  echo "goose up failed after $elapsed s (timeout $timeout_seconds s)" >&2
                   exit 1
                 fi
-                echo "goose up failed (attempt ${i}, elapsed ${elapsed}s); retry in 2s..." >&2
+                echo "goose up failed (attempt $i, elapsed $elapsed s); retry in 2s..." >&2
                 i=$((i + 1))
                 sleep 2
               done
