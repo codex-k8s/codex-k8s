@@ -2,11 +2,11 @@
   <div>
     <PageHeader :title="t('pages.projectRepositories.title')">
       <template #leading>
-        <VBtn variant="text" icon="mdi-arrow-left" :title="t('common.back')" :to="{ name: 'projects' }" />
+        <AdaptiveBtn variant="text" icon="mdi-arrow-left" :label="t('common.back')" :to="{ name: 'projects' }" />
       </template>
       <template #actions>
         <CopyChip :label="t('pages.projectRepositories.projectId')" :value="projectId" icon="mdi-identifier" />
-        <VBtn variant="tonal" icon="mdi-refresh" :title="t('common.refresh')" :loading="repos.loading" @click="load" />
+        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="repos.loading" @click="load" />
       </template>
     </PageHeader>
 
@@ -119,6 +119,7 @@ import { useI18n } from "vue-i18n";
 import ConfirmDialog from "../shared/ui/ConfirmDialog.vue";
 import CopyChip from "../shared/ui/CopyChip.vue";
 import PageHeader from "../shared/ui/PageHeader.vue";
+import AdaptiveBtn from "../shared/ui/AdaptiveBtn.vue";
 import { useSnackbarStore } from "../shared/ui/feedback/snackbar-store";
 import { useProjectRepositoriesStore } from "../features/projects/repositories-store";
 import { useProjectDetailsStore } from "../features/projects/details-store";

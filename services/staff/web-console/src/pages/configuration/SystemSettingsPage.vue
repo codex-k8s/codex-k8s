@@ -2,10 +2,10 @@
   <div>
     <PageHeader :title="t('pages.systemSettings.title')" :hint="t('pages.systemSettings.hint')">
       <template #actions>
-        <VBtn
+        <AdaptiveBtn
           variant="tonal"
           icon="mdi-plus"
-          :title="t('pages.systemSettings.addLocale')"
+          :label="t('pages.systemSettings.addLocale')"
           @click="addLocaleDialogOpen = true"
         />
       </template>
@@ -98,6 +98,7 @@ import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import PageHeader from "../../shared/ui/PageHeader.vue";
+import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
 
 type LocaleRow = {
   code: string;

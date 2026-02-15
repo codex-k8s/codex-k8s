@@ -2,7 +2,7 @@
   <div>
     <PageHeader :title="t('pages.runningJobs.title')" :hint="t('pages.runningJobs.hint')">
       <template #actions>
-        <VBtn variant="tonal" icon="mdi-refresh" :title="t('common.refresh')" :disabled="runs.jobsLoading" @click="runs.loadRunJobs()" />
+        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :disabled="runs.jobsLoading" @click="runs.loadRunJobs()" />
       </template>
     </PageHeader>
 
@@ -24,14 +24,14 @@
           </VCol>
         </VRow>
         <div class="d-flex ga-2 mt-3 flex-wrap justify-end">
-          <VBtn
+          <AdaptiveBtn
             variant="tonal"
             icon="mdi-check"
-            :title="t('pages.runs.applyFilters')"
+            :label="t('pages.runs.applyFilters')"
             @click="runs.loadRunJobs()"
             :disabled="runs.jobsLoading"
           />
-          <VBtn variant="text" icon="mdi-backspace-outline" :title="t('pages.runs.resetFilters')" @click="reset" />
+          <AdaptiveBtn variant="text" icon="mdi-backspace-outline" :label="t('pages.runs.resetFilters')" @click="reset" />
         </div>
       </VCardText>
     </VCard>
@@ -101,6 +101,7 @@ import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
 import PageHeader from "../../shared/ui/PageHeader.vue";
+import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
 import { formatDateTime } from "../../shared/lib/datetime";
 import { colorForRunStatus } from "../../shared/lib/chips";
 import { useRunsStore } from "../../features/runs/store";

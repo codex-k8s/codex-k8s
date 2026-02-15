@@ -2,7 +2,7 @@
   <div>
     <PageHeader :title="t('pages.runs.title')">
       <template #actions>
-        <VBtn variant="tonal" icon="mdi-refresh" :title="t('common.refresh')" :loading="runs.loading" @click="loadAll" />
+        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="runs.loading" @click="loadAll" />
       </template>
     </PageHeader>
 
@@ -144,6 +144,7 @@ import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
 import PageHeader from "../shared/ui/PageHeader.vue";
+import AdaptiveBtn from "../shared/ui/AdaptiveBtn.vue";
 import { formatDateTime } from "../shared/lib/datetime";
 import { colorForRunStatus } from "../shared/lib/chips";
 import { useRunsStore } from "../features/runs/store";

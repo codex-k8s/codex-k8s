@@ -2,17 +2,23 @@
   <div>
     <PageHeader :title="t('pages.projectDetails.title')">
       <template #leading>
-        <VBtn variant="text" icon="mdi-arrow-left" :title="t('common.back')" :to="{ name: 'projects' }" />
+        <AdaptiveBtn variant="text" icon="mdi-arrow-left" :label="t('common.back')" :to="{ name: 'projects' }" />
       </template>
       <template #actions>
         <CopyChip :label="t('pages.projectDetails.projectId')" :value="projectId" icon="mdi-identifier" />
-        <VBtn variant="tonal" icon="mdi-refresh" :title="t('common.refresh')" :loading="details.loading" @click="load" />
-        <VBtn
+        <AdaptiveBtn
+          variant="tonal"
+          icon="mdi-refresh"
+          :label="t('common.refresh')"
+          :loading="details.loading"
+          @click="load"
+        />
+        <AdaptiveBtn
           v-if="auth.isPlatformOwner"
           color="error"
           variant="tonal"
           icon="mdi-delete-outline"
-          :title="t('common.delete')"
+          :label="t('common.delete')"
           @click="confirmOpen = true"
         />
       </template>
@@ -46,16 +52,16 @@
 
     <VCard class="mt-4" variant="outlined">
       <VCardText class="d-flex ga-2 flex-wrap">
-        <VBtn
+        <AdaptiveBtn
           variant="tonal"
           icon="mdi-source-repository"
-          :title="t('pages.projects.repos')"
+          :label="t('pages.projects.repos')"
           :to="{ name: 'project-repositories', params: { projectId } }"
         />
-        <VBtn
+        <AdaptiveBtn
           variant="tonal"
           icon="mdi-account-group-outline"
-          :title="t('pages.projects.members')"
+          :label="t('pages.projects.members')"
           :to="{ name: 'project-members', params: { projectId } }"
         />
       </VCardText>
@@ -81,6 +87,7 @@ import { useI18n } from "vue-i18n";
 import ConfirmDialog from "../shared/ui/ConfirmDialog.vue";
 import CopyChip from "../shared/ui/CopyChip.vue";
 import PageHeader from "../shared/ui/PageHeader.vue";
+import AdaptiveBtn from "../shared/ui/AdaptiveBtn.vue";
 import { useSnackbarStore } from "../shared/ui/feedback/snackbar-store";
 import { useAuthStore } from "../features/auth/store";
 import { useProjectsStore } from "../features/projects/projects-store";

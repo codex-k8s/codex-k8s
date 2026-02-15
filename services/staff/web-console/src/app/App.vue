@@ -19,7 +19,7 @@
 
       <VMenu v-if="showContextFilter" :close-on-content-click="false">
         <template #activator="{ props: menuProps }">
-          <VBtn v-bind="menuProps" variant="tonal" icon="mdi-filter-variant" :title="filterButtonLabel" />
+          <AdaptiveBtn v-bind="menuProps" variant="tonal" icon="mdi-filter-variant" :label="filterButtonLabel" class="context-filter-btn" />
         </template>
         <VCard min-width="420">
           <VCardTitle class="text-subtitle-2">{{ t("context.title") }}</VCardTitle>
@@ -70,11 +70,12 @@
       <template v-if="auth.status === 'authed'">
         <VMenu>
           <template #activator="{ props: menuProps }">
-            <VBtn
+            <AdaptiveBtn
               v-bind="menuProps"
               class="ml-2"
               variant="tonal"
               icon="mdi-account-circle-outline"
+              :label="profileButtonLabel"
               :title="auth.me?.email || t('common.loading')"
             />
           </template>
@@ -175,6 +176,7 @@ import { useAuthStore } from "../features/auth/store";
 import { useProjectsStore } from "../features/projects/projects-store";
 import { useUiContextStore } from "../features/ui-context/store";
 import { navGroups, navItems, findNavItemByRouteName, type NavItem } from "./navigation";
+import AdaptiveBtn from "../shared/ui/AdaptiveBtn.vue";
 import SnackbarHost from "../shared/ui/feedback/SnackbarHost.vue";
 
 const auth = useAuthStore();
@@ -296,6 +298,10 @@ const filterSummary = computed(() => {
 
 const filterButtonLabel = computed(() => t("context.button", { value: filterSummary.value }));
 
+const profileButtonLabel = computed(() =>
+  auth.me?.githubLogin ? `@${auth.me.githubLogin}` : auth.me?.email || t("common.loading"),
+);
+
 const notifications = [
   { id: "n1", title: t("notifications.items.sample1.title"), subtitle: t("notifications.items.sample1.subtitle") },
   { id: "n2", title: t("notifications.items.sample2.title"), subtitle: t("notifications.items.sample2.subtitle") },
@@ -397,6 +403,12 @@ const breadcrumbs = computed(() => {
 .breadcrumbs {
   max-width: 520px;
   overflow: hidden;
+}
+.context-filter-btn :deep(.v-btn__content) {
+  max-width: 520px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .content {
   max-width: 1400px;

@@ -2,18 +2,18 @@
   <div>
     <PageHeader :title="title">
       <template #leading>
-        <VBtn variant="text" icon="mdi-arrow-left" :title="t('common.back')" :to="backTo" />
+        <AdaptiveBtn variant="text" icon="mdi-arrow-left" :label="t('common.back')" :to="backTo" />
       </template>
       <template #actions>
         <CopyChip :label="t('cluster.namespace')" :value="uiContext.namespace || '-'" icon="mdi-kubernetes" />
         <CopyChip :label="t('common.id')" :value="name" icon="mdi-identifier" />
 
-        <VBtn variant="tonal" icon="mdi-refresh" :title="t('common.refresh')" @click="mockReload" />
-        <VBtn
+        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" @click="mockReload" />
+        <AdaptiveBtn
           color="error"
           variant="tonal"
           icon="mdi-delete-outline"
-          :title="t('common.delete')"
+          :label="t('common.delete')"
           :disabled="uiContext.clusterMode === 'view-only'"
           @click="previewOpen = true"
         />
@@ -152,6 +152,7 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AdminClusterContextBar from "../../shared/ui/AdminClusterContextBar.vue";
+import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
 import CopyChip from "../../shared/ui/CopyChip.vue";
 import DismissibleWarningAlert from "../../shared/ui/DismissibleWarningAlert.vue";
 import LogsViewer from "../../shared/ui/LogsViewer.vue";

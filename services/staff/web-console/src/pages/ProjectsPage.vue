@@ -2,7 +2,7 @@
   <div>
     <PageHeader :title="t('pages.projects.title')">
       <template #actions>
-        <VBtn variant="tonal" icon="mdi-refresh" :title="t('common.refresh')" :loading="projects.loading" @click="load" />
+        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="projects.loading" @click="load" />
       </template>
     </PageHeader>
 
@@ -131,6 +131,7 @@ import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
 import PageHeader from "../shared/ui/PageHeader.vue";
+import AdaptiveBtn from "../shared/ui/AdaptiveBtn.vue";
 import ConfirmDialog from "../shared/ui/ConfirmDialog.vue";
 import { useSnackbarStore } from "../shared/ui/feedback/snackbar-store";
 import { useAuthStore } from "../features/auth/store";

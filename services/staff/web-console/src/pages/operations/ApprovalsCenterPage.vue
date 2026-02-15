@@ -2,10 +2,10 @@
   <div>
     <PageHeader :title="t('pages.approvals.title')" :hint="t('pages.approvals.hint')">
       <template #actions>
-        <VBtn
+        <AdaptiveBtn
           variant="tonal"
           icon="mdi-refresh"
-          :title="t('common.refresh')"
+          :label="t('common.refresh')"
           :disabled="runs.approvalsLoading"
           @click="runs.loadPendingApprovals()"
         />
@@ -151,6 +151,7 @@ import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
 import PageHeader from "../../shared/ui/PageHeader.vue";
+import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
 import { formatDateTime } from "../../shared/lib/datetime";
 import { useSnackbarStore } from "../../shared/ui/feedback/snackbar-store";
 import { useRunsStore } from "../../features/runs/store";

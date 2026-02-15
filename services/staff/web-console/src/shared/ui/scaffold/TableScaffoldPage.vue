@@ -3,7 +3,7 @@
     <PageHeader :title="t(titleKey)" :hint="hintKey ? t(hintKey) : undefined">
       <template #actions>
         <slot name="header-actions">
-          <VBtn :disabled="loading" variant="tonal" icon="mdi-refresh" :title="t('common.refresh')" @click="refresh" />
+          <AdaptiveBtn :disabled="loading" variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" @click="refresh" />
         </slot>
       </template>
     </PageHeader>
@@ -53,7 +53,7 @@
           <VCol cols="12" md="4" class="d-flex justify-end ga-2 flex-wrap">
             <VMenu>
               <template #activator="{ props: menuProps }">
-                <VBtn v-bind="menuProps" variant="tonal" icon="mdi-tune" :title="t('scaffold.table.settings')" />
+                <AdaptiveBtn v-bind="menuProps" variant="tonal" icon="mdi-tune" :label="t('scaffold.table.settings')" />
               </template>
               <VCard min-width="280">
                 <VCardTitle class="text-subtitle-2">{{ t("scaffold.table.settings") }}</VCardTitle>
@@ -92,7 +92,7 @@
         <VAlert v-else-if="errorMode" type="error" variant="tonal" :title="t('scaffold.states.errorTitle')">
           <div class="text-body-2">{{ t("scaffold.states.errorText") }}</div>
           <div class="mt-3 d-flex ga-2 flex-wrap">
-            <VBtn variant="tonal" icon="mdi-refresh" :title="t('scaffold.actions.retry')" @click="refresh" />
+            <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('scaffold.actions.retry')" @click="refresh" />
           </div>
         </VAlert>
 
@@ -108,8 +108,8 @@
           >
             <div class="text-body-2">{{ t("scaffold.states.emptyText") }}</div>
             <div class="mt-3 d-flex ga-2 flex-wrap">
-              <VBtn variant="tonal" icon="mdi-refresh" :title="t('scaffold.actions.retry')" @click="refresh" />
-              <VBtn variant="text" icon="mdi-close" :title="t('scaffold.actions.clearFilters')" @click="search = ''" />
+              <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('scaffold.actions.retry')" @click="refresh" />
+              <AdaptiveBtn variant="text" icon="mdi-close" :label="t('scaffold.actions.clearFilters')" @click="search = ''" />
             </div>
           </VAlert>
 
@@ -159,6 +159,7 @@ import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 
 import PageHeader from "../PageHeader.vue";
+import AdaptiveBtn from "../AdaptiveBtn.vue";
 
 type TableHeader = {
   key: string;

@@ -2,7 +2,7 @@
   <div>
     <PageHeader :title="t('pages.runDetails.title')">
       <template #leading>
-        <VBtn variant="text" icon="mdi-arrow-left" :title="t('common.back')" @click="goBack" />
+        <AdaptiveBtn variant="text" icon="mdi-arrow-left" :label="t('common.back')" @click="goBack" />
       </template>
       <template #actions>
         <CopyChip :label="t('pages.runDetails.runId')" :value="runId" icon="mdi-identifier" />
@@ -14,13 +14,13 @@
         />
         <CopyChip v-if="details.run?.namespace" :label="t('pages.runDetails.namespace')" :value="details.run.namespace" icon="mdi-kubernetes" />
 
-        <VBtn variant="tonal" icon="mdi-refresh" :title="t('common.refresh')" :loading="details.loading" @click="loadAll" />
-        <VBtn
+        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="details.loading" @click="loadAll" />
+        <AdaptiveBtn
           v-if="canDeleteNamespace"
           color="error"
           variant="tonal"
           icon="mdi-delete-outline"
-          :title="t('pages.runDetails.deleteNamespace')"
+          :label="t('pages.runDetails.deleteNamespace')"
           :loading="details.deletingNamespace"
           @click="confirmDeleteNamespaceOpen = true"
         />
@@ -192,6 +192,7 @@ import { useI18n } from "vue-i18n";
 import PageHeader from "../shared/ui/PageHeader.vue";
 import ConfirmDialog from "../shared/ui/ConfirmDialog.vue";
 import CopyChip from "../shared/ui/CopyChip.vue";
+import AdaptiveBtn from "../shared/ui/AdaptiveBtn.vue";
 import LogsViewer from "../shared/ui/LogsViewer.vue";
 import RunTimeline from "../shared/ui/RunTimeline.vue";
 import { formatDateTime } from "../shared/lib/datetime";

@@ -15,24 +15,24 @@
           style="max-width: 120px"
         />
         <VSwitch v-model="followTail" :label="t('logs.follow')" hide-details density="compact" />
-        <VBtn
+        <AdaptiveBtn
           variant="tonal"
           icon="mdi-refresh"
-          :title="t('common.refresh')"
+          :label="t('common.refresh')"
           :loading="loading"
           @click="emit('refresh', tailLines)"
         />
-        <VBtn
+        <AdaptiveBtn
           variant="tonal"
           icon="mdi-content-copy"
-          :title="t('common.copy')"
+          :label="t('common.copy')"
           @click="copyAll"
           :disabled="filteredLines.length === 0"
         />
-        <VBtn
+        <AdaptiveBtn
           variant="tonal"
           icon="mdi-download"
-          :title="t('logs.download')"
+          :label="t('logs.download')"
           @click="download"
           :disabled="filteredLines.length === 0"
         />
@@ -82,6 +82,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
+import AdaptiveBtn from "./AdaptiveBtn.vue";
 import { useSnackbarStore } from "./feedback/snackbar-store";
 
 const props = withDefaults(
