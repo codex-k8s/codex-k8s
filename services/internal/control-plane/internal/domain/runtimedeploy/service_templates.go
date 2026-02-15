@@ -37,10 +37,16 @@ func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[
 		vars[key] = value
 	}
 
-	targetNamespace := strings.TrimSpace(namespace)
-	if targetNamespace == "" && strings.EqualFold(strings.TrimSpace(params.TargetEnv), "ai-staging") {
-		targetNamespace = buildAIStagingNamespace(params.RepositoryFullName)
+	targetEnv := strings.TrimSpace(params.TargetEnv)
+	if targetEnv == "" {
+		targetEnv = "ai"
 	}
+	// Manifests and runtime prerequisites rely on CODEXK8S_ENV / CODEXK8S_SERVICES_CONFIG_ENV.
+	vars["CODEXK8S_ENV"] = targetEnv
+	vars["CODEXK8S_SERVICES_CONFIG_ENV"] = targetEnv
+	vars["CODEXK8S_HOT_RELOAD"] = defaultHotReloadFlag(targetEnv)
+
+	targetNamespace := strings.TrimSpace(namespace)
 	if targetNamespace != "" {
 		vars["CODEXK8S_STAGING_NAMESPACE"] = targetNamespace
 		vars["CODEXK8S_WORKER_K8S_NAMESPACE"] = targetNamespace
@@ -78,6 +84,13 @@ func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[
 	}
 
 	return vars
+}
+
+func defaultHotReloadFlag(targetEnv string) string {
+	if strings.EqualFold(strings.TrimSpace(targetEnv), "ai") {
+		return "true"
+	}
+	return "false"
 }
 
 func defaultPlatformDeploymentReplicas(targetEnv string) string {

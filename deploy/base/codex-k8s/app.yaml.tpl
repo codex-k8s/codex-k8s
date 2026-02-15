@@ -54,7 +54,9 @@ spec:
               name: http
           env:
             - name: CODEXK8S_ENV
-              value: ai-staging
+              value: "${CODEXK8S_ENV}"
+            - name: CODEXK8S_HOT_RELOAD
+              value: "${CODEXK8S_HOT_RELOAD}"
             - name: CODEXK8S_HTTP_ADDR
               value: ":8080"
             - name: CODEXK8S_CONTROL_PLANE_GRPC_TARGET
@@ -177,11 +179,13 @@ spec:
               name: http
           env:
             - name: CODEXK8S_ENV
-              value: ai-staging
+              value: "${CODEXK8S_ENV}"
+            - name: CODEXK8S_HOT_RELOAD
+              value: "${CODEXK8S_HOT_RELOAD}"
             - name: CODEXK8S_SERVICES_CONFIG_PATH
               value: /app/services.yaml
             - name: CODEXK8S_SERVICES_CONFIG_ENV
-              value: ai-staging
+              value: "${CODEXK8S_SERVICES_CONFIG_ENV}"
             - name: CODEXK8S_CONTROL_PLANE_GRPC_ADDR
               value: ":9090"
             - name: CODEXK8S_CONTROL_PLANE_HTTP_ADDR
@@ -253,6 +257,17 @@ spec:
                 secretKeyRef:
                   name: codex-k8s-runtime
                   key: CODEXK8S_GITHUB_PAT
+                  optional: true
+            - name: CODEXK8S_GITHUB_REPO
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GITHUB_REPO
+            - name: CODEXK8S_FIRST_PROJECT_GITHUB_REPO
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_FIRST_PROJECT_GITHUB_REPO
                   optional: true
             - name: CODEXK8S_GIT_BOT_TOKEN
               valueFrom:
@@ -434,6 +449,16 @@ spec:
                 secretKeyRef:
                   name: codex-k8s-runtime
                   key: CODEXK8S_PUBLIC_BASE_URL
+            - name: CODEXK8S_GITHUB_OAUTH_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GITHUB_OAUTH_CLIENT_ID
+            - name: CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET
             - name: CODEXK8S_BOOTSTRAP_OWNER_EMAIL
               valueFrom:
                 secretKeyRef:
@@ -555,7 +580,9 @@ spec:
           imagePullPolicy: Always
           env:
             - name: CODEXK8S_ENV
-              value: ai-staging
+              value: "${CODEXK8S_ENV}"
+            - name: CODEXK8S_HOT_RELOAD
+              value: "${CODEXK8S_HOT_RELOAD}"
             - name: CODEXK8S_DB_HOST
               value: postgres
             - name: CODEXK8S_DB_PORT

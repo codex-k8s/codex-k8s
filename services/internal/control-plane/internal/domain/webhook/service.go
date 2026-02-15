@@ -444,11 +444,7 @@ func (s *Service) resolvePushMainDeploy(eventType string, envelope githubWebhook
 	target := pushMainDeployTarget{
 		BuildRef:  buildRef,
 		TargetEnv: "ai-staging",
-		Namespace: buildAIStagingNamespace(envelope.Repository.FullName),
-	}
-	if envelope.Repository.Fork {
-		target.TargetEnv = "production"
-		target.Namespace = ""
+		Namespace: "",
 	}
 	return target, true
 }
@@ -469,49 +465,6 @@ func isDeletedGitCommitSHA(sha string) bool {
 		}
 	}
 	return true
-}
-
-func buildAIStagingNamespace(repositoryFullName string) string {
-	fullName := strings.TrimSpace(repositoryFullName)
-	if fullName == "" {
-		return ""
-	}
-
-	_, repositoryName, hasOwner := strings.Cut(fullName, "/")
-	if !hasOwner {
-		repositoryName = fullName
-	}
-	repositoryName = sanitizeKubernetesToken(repositoryName)
-	if repositoryName == "" {
-		return ""
-	}
-	return repositoryName + "-ai-staging"
-}
-
-func sanitizeKubernetesToken(value string) string {
-	normalized := strings.ToLower(strings.TrimSpace(value))
-	if normalized == "" {
-		return ""
-	}
-
-	var builder strings.Builder
-	builder.Grow(len(normalized))
-	lastHyphen := false
-	for _, ch := range normalized {
-		isAlphaNum := (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9')
-		if isAlphaNum {
-			builder.WriteRune(ch)
-			lastHyphen = false
-			continue
-		}
-		if !lastHyphen {
-			builder.WriteByte('-')
-			lastHyphen = true
-		}
-	}
-
-	result := strings.Trim(builder.String(), "-")
-	return result
 }
 
 func (s *Service) postTriggerConflictComment(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope, trigger issueRunTrigger, conflictingLabels []string) error {

@@ -76,6 +76,10 @@ type Config struct {
 	RuntimeDeployFieldManager string `env:"CODEXK8S_RUNTIME_DEPLOY_FIELD_MANAGER" envDefault:"codex-k8s-control-plane"`
 	// GitHubPAT is platform-scoped GitHub token used for repository/project management paths.
 	GitHubPAT string `env:"CODEXK8S_GITHUB_PAT"`
+	// GitHubRepo is the platform repository (owner/name) used for bootstrap seeding and webhook-driven dogfooding.
+	GitHubRepo string `env:"CODEXK8S_GITHUB_REPO,required,notEmpty"`
+	// FirstProjectGitHubRepo is an optional initial project repository (owner/name) to seed into DB.
+	FirstProjectGitHubRepo string `env:"CODEXK8S_FIRST_PROJECT_GITHUB_REPO"`
 	// GitBotToken is runtime GitHub bot token used for comments/labels and run messaging paths.
 	GitBotToken string `env:"CODEXK8S_GIT_BOT_TOKEN"`
 

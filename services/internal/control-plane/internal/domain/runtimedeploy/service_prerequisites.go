@@ -56,6 +56,8 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, namespace str
 
 	runtimeSecret := map[string][]byte{
 		"CODEXK8S_GITHUB_PAT":                        []byte(valueOr(vars, "CODEXK8S_GITHUB_PAT", "")),
+		"CODEXK8S_GITHUB_REPO":                       []byte(valueOr(vars, "CODEXK8S_GITHUB_REPO", "")),
+		"CODEXK8S_FIRST_PROJECT_GITHUB_REPO":         []byte(valueOr(vars, "CODEXK8S_FIRST_PROJECT_GITHUB_REPO", "")),
 		"CODEXK8S_OPENAI_API_KEY":                    []byte(valueOr(vars, "CODEXK8S_OPENAI_API_KEY", "")),
 		"CODEXK8S_OPENAI_AUTH_FILE":                  []byte(valueOr(vars, "CODEXK8S_OPENAI_AUTH_FILE", "")),
 		"CODEXK8S_PROJECT_DB_ADMIN_HOST":             []byte(valueOr(vars, "CODEXK8S_PROJECT_DB_ADMIN_HOST", "postgres")),
@@ -86,7 +88,9 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, namespace str
 		"CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET":        []byte(oauthClientSecret),
 		"CODEXK8S_JWT_SIGNING_KEY":                   []byte(jwtSigningKey),
 		"CODEXK8S_JWT_TTL":                           []byte(valueOr(vars, "CODEXK8S_JWT_TTL", "15m")),
-		"CODEXK8S_VITE_DEV_UPSTREAM":                 []byte(valueOr(vars, "CODEXK8S_VITE_DEV_UPSTREAM", "http://codex-k8s-web-console:5173")),
+		// UI hot-reload is only supported in ai slots. For ai-staging/production we
+		// intentionally keep the value empty so api-gateway serves embedded static UI.
+		"CODEXK8S_VITE_DEV_UPSTREAM": []byte(resolveViteDevUpstream(vars)),
 	}
 	if err := s.k8s.UpsertSecret(ctx, namespace, "codex-k8s-runtime", runtimeSecret); err != nil {
 		return fmt.Errorf("upsert codex-k8s-runtime secret: %w", err)
@@ -141,6 +145,21 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, namespace str
 	}
 
 	return nil
+}
+
+func resolveViteDevUpstream(vars map[string]string) string {
+	// Prefer explicit config env when present (control-plane sets it).
+	targetEnv := strings.ToLower(strings.TrimSpace(valueOr(vars, "CODEXK8S_SERVICES_CONFIG_ENV", "")))
+	if targetEnv == "" {
+		targetEnv = strings.ToLower(strings.TrimSpace(valueOr(vars, "CODEXK8S_ENV", "")))
+	}
+
+	// Keep ai-staging/prod prod-like by default. Hot-reload is only for ai slots.
+	if targetEnv != "ai" {
+		return ""
+	}
+
+	return strings.TrimSpace(valueOr(vars, "CODEXK8S_VITE_DEV_UPSTREAM", "http://codex-k8s-web-console:5173"))
 }
 
 func requiredNonEmptyValue(values map[string]string, key string) (string, error) {

@@ -23,3 +23,17 @@ services/staff/web-console/                          staff UI-приложени
     └── shared/                                      переиспользуемый слой UI/lib/api
         └── api/                                     typed API-клиенты и контракты транспорта
 ```
+
+## ai: Vite HMR (только ai-слоты)
+
+Hot-reload для staff UI поддерживается только в `ai` окружениях (ai-слоты), где запускается `vite dev server`.
+В `ai-staging` и `production` UI работает как prod-like: api-gateway отдаёт встроенный статический бандл (без Vite).
+
+Чтобы Vite HMR не пытался подключаться к `localhost:5173` в браузере и websocket стабильно работал
+за HTTPS Ingress/reverse-proxy (когда он используется), в деплоймент пробрасываются переменные:
+
+- `VITE_ALLOWED_HOSTS` (публичный домен)
+- `VITE_HMR_HOST` (публичный домен)
+- `VITE_HMR_PROTOCOL=wss`
+- `VITE_HMR_CLIENT_PORT=443`
+- `VITE_HMR_PATH=/__vite_ws`

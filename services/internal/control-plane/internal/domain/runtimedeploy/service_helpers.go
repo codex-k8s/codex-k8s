@@ -5,23 +5,6 @@ import (
 	"strings"
 )
 
-func buildAIStagingNamespace(repositoryFullName string) string {
-	repoName := repositoryName(repositoryFullName)
-	if repoName == "" {
-		return ""
-	}
-	return repoName + "-ai-staging"
-}
-
-func repositoryName(repositoryFullName string) string {
-	owner, repo, ok := strings.Cut(strings.TrimSpace(repositoryFullName), "/")
-	if !ok {
-		return sanitizeNameToken(owner, 40)
-	}
-	_ = owner
-	return sanitizeNameToken(repo, 40)
-}
-
 func sanitizeNameToken(value string, max int) string {
 	normalized := strings.ToLower(strings.TrimSpace(value))
 	if normalized == "" {

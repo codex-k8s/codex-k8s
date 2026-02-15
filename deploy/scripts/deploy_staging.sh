@@ -146,13 +146,19 @@ CODEXK8S_AI_REASONING_MEDIUM_LABEL="${CODEXK8S_AI_REASONING_MEDIUM_LABEL:-}"
 CODEXK8S_AI_REASONING_HIGH_LABEL="${CODEXK8S_AI_REASONING_HIGH_LABEL:-}"
 CODEXK8S_AI_REASONING_EXTRA_HIGH_LABEL="${CODEXK8S_AI_REASONING_EXTRA_HIGH_LABEL:-}"
 CODEXK8S_GITHUB_PAT="${CODEXK8S_GITHUB_PAT:-}"
+CODEXK8S_GITHUB_REPO="${CODEXK8S_GITHUB_REPO:-}"
+CODEXK8S_FIRST_PROJECT_GITHUB_REPO="${CODEXK8S_FIRST_PROJECT_GITHUB_REPO:-}"
 CODEXK8S_OPENAI_API_KEY="${CODEXK8S_OPENAI_API_KEY:-}"
 CODEXK8S_OPENAI_AUTH_FILE="${CODEXK8S_OPENAI_AUTH_FILE:-}"
 CODEXK8S_GIT_BOT_TOKEN="${CODEXK8S_GIT_BOT_TOKEN:-}"
 CODEXK8S_GIT_BOT_USERNAME="${CODEXK8S_GIT_BOT_USERNAME:-}"
 CODEXK8S_GIT_BOT_MAIL="${CODEXK8S_GIT_BOT_MAIL:-}"
 CODEXK8S_CONTEXT7_API_KEY="${CODEXK8S_CONTEXT7_API_KEY:-}"
-CODEXK8S_VITE_DEV_UPSTREAM="${CODEXK8S_VITE_DEV_UPSTREAM:-http://codex-k8s-web-console:5173}"
+CODEXK8S_ENV="ai-staging"
+CODEXK8S_SERVICES_CONFIG_ENV="ai-staging"
+# ai-staging is prod-like: no CompileDaemon/Vite hot-reload.
+CODEXK8S_HOT_RELOAD="false"
+CODEXK8S_VITE_DEV_UPSTREAM=""
 
 [ -n "$CODEXK8S_STAGING_DOMAIN" ] || {
   echo "Missing required CODEXK8S_STAGING_DOMAIN" >&2
@@ -217,6 +223,22 @@ if [ -z "$CODEXK8S_GITHUB_PAT" ] && kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get
       -o jsonpath='{.data.CODEXK8S_GITHUB_PAT}' 2>/dev/null | base64 -d || true
   )"
 fi
+if [ -z "$CODEXK8S_GITHUB_REPO" ] && kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime >/dev/null 2>&1; then
+  CODEXK8S_GITHUB_REPO="$(
+    kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime \
+      -o jsonpath='{.data.CODEXK8S_GITHUB_REPO}' 2>/dev/null | base64 -d || true
+  )"
+fi
+if [ -z "$CODEXK8S_FIRST_PROJECT_GITHUB_REPO" ] && kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime >/dev/null 2>&1; then
+  CODEXK8S_FIRST_PROJECT_GITHUB_REPO="$(
+    kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime \
+      -o jsonpath='{.data.CODEXK8S_FIRST_PROJECT_GITHUB_REPO}' 2>/dev/null | base64 -d || true
+  )"
+fi
+[ -n "$CODEXK8S_GITHUB_REPO" ] || {
+  echo "Missing required CODEXK8S_GITHUB_REPO" >&2
+  exit 1
+}
 if [ -z "$CODEXK8S_GIT_BOT_TOKEN" ] && kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime >/dev/null 2>&1; then
   CODEXK8S_GIT_BOT_TOKEN="$(
     kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime \
@@ -348,6 +370,9 @@ render_template() {
   local worker_job_command_escaped
   local web_console_image_escaped
   local vite_dev_upstream_escaped
+  local env_escaped
+  local services_config_env_escaped
+  local hot_reload_escaped
   local control_plane_grpc_target_escaped
   local control_plane_mcp_base_url_escaped
   local agent_default_model_escaped
@@ -363,6 +388,9 @@ render_template() {
   worker_job_command_escaped="$(escape_sed_replacement "$CODEXK8S_WORKER_JOB_COMMAND")"
   web_console_image_escaped="$(escape_sed_replacement "$CODEXK8S_WEB_CONSOLE_IMAGE")"
   vite_dev_upstream_escaped="$(escape_sed_replacement "$CODEXK8S_VITE_DEV_UPSTREAM")"
+  env_escaped="$(escape_sed_replacement "$CODEXK8S_ENV")"
+  services_config_env_escaped="$(escape_sed_replacement "$CODEXK8S_SERVICES_CONFIG_ENV")"
+  hot_reload_escaped="$(escape_sed_replacement "$CODEXK8S_HOT_RELOAD")"
   control_plane_grpc_target_escaped="$(escape_sed_replacement "$CODEXK8S_CONTROL_PLANE_GRPC_TARGET")"
   control_plane_mcp_base_url_escaped="$(escape_sed_replacement "$CODEXK8S_CONTROL_PLANE_MCP_BASE_URL")"
   agent_default_model_escaped="$(escape_sed_replacement "$CODEXK8S_AGENT_DEFAULT_MODEL")"
@@ -404,6 +432,9 @@ render_template() {
     -e "s|\${CODEXK8S_AGENT_BASE_BRANCH}|${agent_base_branch_escaped}|g" \
     -e "s|\${CODEXK8S_CONTROL_PLANE_GRPC_TARGET}|${control_plane_grpc_target_escaped}|g" \
     -e "s|\${CODEXK8S_CONTROL_PLANE_MCP_BASE_URL}|${control_plane_mcp_base_url_escaped}|g" \
+    -e "s|\${CODEXK8S_ENV}|${env_escaped}|g" \
+    -e "s|\${CODEXK8S_SERVICES_CONFIG_ENV}|${services_config_env_escaped}|g" \
+    -e "s|\${CODEXK8S_HOT_RELOAD}|${hot_reload_escaped}|g" \
     -e "s|\${CODEXK8S_VITE_DEV_UPSTREAM}|${vite_dev_upstream_escaped}|g" \
     "$tpl"
 }
@@ -421,6 +452,8 @@ fi
 
 kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create secret generic codex-k8s-runtime \
   --from-literal=CODEXK8S_GITHUB_PAT="$CODEXK8S_GITHUB_PAT" \
+  --from-literal=CODEXK8S_GITHUB_REPO="$CODEXK8S_GITHUB_REPO" \
+  --from-literal=CODEXK8S_FIRST_PROJECT_GITHUB_REPO="$CODEXK8S_FIRST_PROJECT_GITHUB_REPO" \
   --from-literal=CODEXK8S_OPENAI_API_KEY="$CODEXK8S_OPENAI_API_KEY" \
   --from-literal=CODEXK8S_OPENAI_AUTH_FILE="$CODEXK8S_OPENAI_AUTH_FILE" \
   --from-literal=CODEXK8S_PROJECT_DB_ADMIN_HOST="$CODEXK8S_PROJECT_DB_ADMIN_HOST" \
@@ -613,11 +646,8 @@ if [ "$CODEXK8S_WAIT_ROLLOUT" = "true" ]; then
   kubectl -n "$CODEXK8S_STAGING_NAMESPACE" rollout status deployment/oauth2-proxy --timeout="${CODEXK8S_ROLLOUT_TIMEOUT}" || true
 fi
 
-render_template "${ROOT_DIR}/deploy/base/web-console/web-console.yaml.tpl" | kubectl apply -f -
-kubectl -n "$CODEXK8S_STAGING_NAMESPACE" rollout restart deployment/codex-k8s-web-console >/dev/null 2>&1 || true
-if [ "$CODEXK8S_WAIT_ROLLOUT" = "true" ]; then
-  kubectl -n "$CODEXK8S_STAGING_NAMESPACE" rollout status deployment/codex-k8s-web-console --timeout="${CODEXK8S_ROLLOUT_TIMEOUT}" || true
-fi
+# ai-staging is prod-like: UI is served by api-gateway static bundle (no Vite dev server).
+kubectl -n "$CODEXK8S_STAGING_NAMESPACE" delete deployment/codex-k8s-web-console service/codex-k8s-web-console --ignore-not-found=true >/dev/null 2>&1 || true
 
 render_template "${ROOT_DIR}/deploy/base/codex-k8s/ingress.yaml.tpl" | kubectl apply -f -
 

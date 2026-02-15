@@ -24,6 +24,8 @@ var (
 	queryDelete string
 	//go:embed sql/find_by_provider_external_id.sql
 	queryFindByProviderExternalID string
+	//go:embed sql/find_by_provider_owner_name.sql
+	queryFindByProviderOwnerName string
 	//go:embed sql/get_token_encrypted.sql
 	queryGetTokenEncrypted string
 	//go:embed sql/set_token_encrypted_for_all.sql
@@ -125,6 +127,19 @@ func (r *Repository) FindByProviderExternalID(ctx context.Context, provider stri
 		return domainrepo.FindResult{}, false, nil
 	}
 	return domainrepo.FindResult{}, false, fmt.Errorf("find repository binding: %w", err)
+}
+
+// FindByProviderOwnerName resolves binding by provider repo slug (owner/name).
+func (r *Repository) FindByProviderOwnerName(ctx context.Context, provider string, owner string, name string) (domainrepo.FindResult, bool, error) {
+	var res domainrepo.FindResult
+	err := r.db.QueryRow(ctx, queryFindByProviderOwnerName, provider, owner, name).Scan(&res.ProjectID, &res.RepositoryID, &res.ServicesYAMLPath)
+	if err == nil {
+		return res, true, nil
+	}
+	if errors.Is(err, pgx.ErrNoRows) {
+		return domainrepo.FindResult{}, false, nil
+	}
+	return domainrepo.FindResult{}, false, fmt.Errorf("find repository binding by owner/name: %w", err)
 }
 
 // GetTokenEncrypted returns encrypted token bytes for a repository binding.

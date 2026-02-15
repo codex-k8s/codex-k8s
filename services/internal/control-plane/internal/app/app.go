@@ -245,6 +245,22 @@ func Run() error {
 		}
 		events = append(events, event)
 	}
+
+	bootstrapSeed, err := seedBootstrapProjectsAndRepositories(runCtx, seedBootstrapProjectsAndRepositoriesParams{
+		GitHubRepo:             strings.TrimSpace(cfg.GitHubRepo),
+		FirstProjectGitHubRepo: strings.TrimSpace(cfg.FirstProjectGitHubRepo),
+		LearningModeDefault:    learningDefault,
+		GitHubPAT:              strings.TrimSpace(cfg.GitHubPAT),
+		TokenCrypt:             tokenCrypto,
+		PlatformTokens:         platformTokens,
+		Projects:               projects,
+		Repos:                  repos,
+		GitHub:                 githubRepoProvider,
+		Logger:                 logger,
+	})
+	if err != nil {
+		return fmt.Errorf("seed bootstrap projects and repositories: %w", err)
+	}
 	staffService := staff.NewService(staff.Config{
 		LearningModeDefault: learningDefault,
 		WebhookSpec: repoprovider.WebhookSpec{
@@ -252,6 +268,8 @@ func Run() error {
 			Secret: cfg.GitHubWebhookSecret,
 			Events: events,
 		},
+		ProtectedProjectIDs:    bootstrapSeed.ProtectedProjectIDs,
+		ProtectedRepositoryIDs: bootstrapSeed.ProtectedRepositoryIDs,
 	}, users, projects, members, repos, feedback, runs, tokenCrypto, githubRepoProvider, runStatusService)
 
 	// Ensure bootstrap users exist so that the first login can be matched by email.

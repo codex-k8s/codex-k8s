@@ -18,6 +18,9 @@
 - запрашивает внешние креды (`GitHub fine-grained token`, `CODEXK8S_OPENAI_API_KEY`), внутренние секреты генерирует автоматически;
 - настраивает GitHub repository secrets/variables для bootstrap/runtime конфигурации platform repo (`CODEXK8S_GITHUB_REPO`);
 - создаёт или обновляет GitHub webhook и каталог labels в platform repo (`CODEXK8S_GITHUB_REPO`) и, если задан отдельный `CODEXK8S_FIRST_PROJECT_GITHUB_REPO`, дополнительно синхронизирует webhook/labels там;
+- при старте `control-plane` автоматически создаёт/обновляет записи Project/Repositories в БД для `CODEXK8S_GITHUB_REPO`
+  (и опционально для `CODEXK8S_FIRST_PROJECT_GITHUB_REPO`); platform project защищён от удаления через staff UI/API;
+- (опционально) устанавливает ARC controller и runner scale set для аварийных GitHub Actions задач (сборка внутренних образов, ручной deploy);
 - разворачивает platform stack через Kubernetes API без зависимости от GitHub deploy workflows.
 
 ## Быстрый запуск
@@ -65,6 +68,8 @@ go run ./cmd/codex-bootstrap bootstrap \
 - `CODEXK8S_FIRST_PROJECT_GITHUB_REPO` (опционально) — отдельный репозиторий первого подключаемого проекта, где bootstrap дополнительно создаёт webhook и каталог labels; если пусто, используется только `CODEXK8S_GITHUB_REPO` (dogfooding).
 - Platform secrets/variables (`CODEXK8S_*`) записываются только в `CODEXK8S_GITHUB_REPO`; в `CODEXK8S_FIRST_PROJECT_GITHUB_REPO` bootstrap не записывает platform secrets.
 - Для bootstrap нужен `CODEXK8S_GITHUB_PAT` (fine-grained) с правами на `administration` (webhooks/labels), `secrets` и `variables`.
+- Для включения ARC runner (emergency-путь) установите `CODEXK8S_ENABLE_GITHUB_RUNNER=true` и (при необходимости) настройте:
+  `CODEXK8S_RUNNER_SCALE_SET_NAME`, `CODEXK8S_RUNNER_NAMESPACE`, `CODEXK8S_RUNNER_MIN/MAX`.
 - Для staff UI и staff API требуется GitHub OAuth App:
   - создать на `https://github.com/settings/applications/new`;
   - `Homepage URL`: `https://<CODEXK8S_STAGING_DOMAIN>`;

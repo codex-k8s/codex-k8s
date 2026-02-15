@@ -30,6 +30,11 @@ type Config struct {
 
 	// WebhookSpec is used when attaching repositories to projects.
 	WebhookSpec provider.WebhookSpec
+
+	// ProtectedProjectIDs is a set of project ids that must never be deleted via staff API.
+	ProtectedProjectIDs map[string]struct{}
+	// ProtectedRepositoryIDs is a set of repository binding ids that must never be deleted via staff API.
+	ProtectedRepositoryIDs map[string]struct{}
 }
 
 // Service exposes staff-only read/write operations protected by JWT + RBAC.
@@ -403,6 +408,9 @@ func (s *Service) DeleteProject(ctx context.Context, principal Principal, projec
 	if projectID == "" {
 		return errs.Validation{Field: "project_id", Msg: "is required"}
 	}
+	if _, ok := s.cfg.ProtectedProjectIDs[projectID]; ok {
+		return errs.Forbidden{Msg: "cannot delete platform project"}
+	}
 
 	// Best-effort webhook cleanup before removing bindings.
 	bindings, err := s.repos.ListForProject(ctx, projectID, 500)
@@ -538,6 +546,9 @@ func (s *Service) DeleteProjectRepository(ctx context.Context, principal Princip
 	}
 	if repositoryID == "" {
 		return errs.Validation{Field: "repository_id", Msg: "is required"}
+	}
+	if _, ok := s.cfg.ProtectedRepositoryIDs[repositoryID]; ok {
+		return errs.Forbidden{Msg: "cannot delete platform repository binding"}
 	}
 
 	role := "admin"

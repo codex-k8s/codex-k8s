@@ -21,6 +21,9 @@ else
   log "Update repository $CODEXK8S_GITHUB_REPO"
   git -C "$REPO_DIR" remote set-url origin "${GIT_REMOTE_URL}"
   git -C "$REPO_DIR" -c "http.https://github.com/.extraheader=${GIT_AUTH_HEADER}" fetch --all --prune
-  git -C "$REPO_DIR" checkout main
-  git -C "$REPO_DIR" -c "http.https://github.com/.extraheader=${GIT_AUTH_HEADER}" pull --ff-only origin main
+  # Bootstrap treats /opt/codex-k8s as an immutable deployment source.
+  # Force-reset the working tree to avoid rerun failures caused by manual hotfixes or leftover files.
+  git -C "$REPO_DIR" checkout -f main
+  git -C "$REPO_DIR" reset --hard origin/main
+  git -C "$REPO_DIR" clean -fd
 fi
