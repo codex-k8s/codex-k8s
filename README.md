@@ -69,10 +69,6 @@ codex-k8s/                                                монорепозит
     │   │   ├── frontend_code_rules.md                    правила размещения и стиля кода Vue/TS
     │   │   ├── frontend_data_and_state.md                правила работы с API-данными и состоянием
     │   │   └── check_list.md                             Vue-чек-лист перед PR
-    │   └── visual/                                       визуальные и UX-стандарты frontend
-    │       ├── AGENTS.md                                 индекс визуальных правил
-    │       ├── visual_character.md                       стиль и визуальный язык интерфейса
-    │       └── check_list.md                             visual-чек-лист перед PR
     ├── product/                                          продуктовые требования и операционная модель; ОБЯЗАТЕЛЬНО смотреть при изменениях процесса/лейблов/ролей
     │   ├── requirements_machine_driven.md                канонический baseline требований платформы
     │   ├── agents_operating_model.md                     модель ролей агентов, режимов исполнения и ответственности

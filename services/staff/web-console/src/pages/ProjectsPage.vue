@@ -1,92 +1,126 @@
 <template>
-  <section class="card">
-    <div class="row">
-      <h2>{{ t("pages.projects.title") }}</h2>
-      <button class="btn" type="button" @click="load" :disabled="projects.loading">
-        {{ t("common.refresh") }}
-      </button>
-    </div>
+  <div>
+    <PageHeader :title="t('pages.projects.title')">
+      <template #actions>
+        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="projects.loading" @click="load" />
+      </template>
+    </PageHeader>
 
-    <div v-if="projects.error" class="err">{{ t(projects.error.messageKey) }}</div>
+    <VAlert v-if="projects.error" type="error" variant="tonal" class="mt-4">
+      {{ t(projects.error.messageKey) }}
+    </VAlert>
 
-    <table v-if="projects.items.length" class="tbl">
-      <thead>
-        <tr>
-          <th>{{ t("pages.projects.slug") }}</th>
-          <th>{{ t("pages.projects.name") }}</th>
-          <th class="center">{{ t("pages.projects.role") }}</th>
-          <th v-if="auth.isPlatformAdmin" class="center">{{ t("pages.projects.manage") }}</th>
-          <th class="center">{{ t("pages.projects.id") }}</th>
-          <th v-if="auth.isPlatformOwner"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="p in projects.items" :key="p.id">
-          <td>{{ p.slug }}</td>
-          <td>
-            <RouterLink class="lnk" :to="{ name: 'project-details', params: { projectId: p.id } }">
-              {{ p.name }}
-            </RouterLink>
-          </td>
-          <td class="center">{{ roleLabel(p.role) }}</td>
-          <td v-if="auth.isPlatformAdmin" class="manage">
-            <RouterLink class="lnk" :to="{ name: 'project-repositories', params: { projectId: p.id } }">
-              {{ t("pages.projects.repos") }}
-            </RouterLink>
-            <RouterLink class="lnk" :to="{ name: 'project-members', params: { projectId: p.id } }">
-              {{ t("pages.projects.members") }}
-            </RouterLink>
-          </td>
-          <td class="mono center">{{ p.id }}</td>
-          <td v-if="auth.isPlatformOwner" class="right">
-            <button class="btn danger" type="button" @click="askDelete(p.id, p.name)" :disabled="projects.deleting">
-              {{ t("common.delete") }}
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <div v-else class="muted">{{ t("states.noProjects") }}</div>
+    <VCard class="mt-4" variant="outlined">
+      <VCardText>
+        <VDataTable :headers="headers" :items="projects.items" :loading="projects.loading" :items-per-page="10" hover>
+          <template #item.name="{ item }">
+            <div class="d-flex justify-center">
+              <RouterLink class="text-primary font-weight-bold text-decoration-none" :to="{ name: 'project-details', params: { projectId: item.id } }">
+                {{ item.name }}
+              </RouterLink>
+            </div>
+          </template>
 
-    <template v-if="auth.isPlatformAdmin">
-      <div class="sep"></div>
+          <template #item.role="{ item }">
+            <div class="d-flex justify-center">
+              <VChip size="small" variant="tonal" class="font-weight-bold" :color="colorForProjectRole(item.role)">
+                {{ roleLabel(item.role) }}
+              </VChip>
+            </div>
+          </template>
 
-      <div class="row">
-        <h3>{{ t("pages.projects.createTitle") }}</h3>
-      </div>
+          <template #item.manage="{ item }">
+            <div class="d-flex ga-2 justify-center flex-wrap">
+              <VTooltip :text="t('pages.projects.repos')">
+                <template #activator="{ props: tipProps }">
+                  <VBtn
+                    v-bind="tipProps"
+                    size="small"
+                    variant="text"
+                    icon="mdi-source-repository"
+                    :to="{ name: 'project-repositories', params: { projectId: item.id } }"
+                  />
+                </template>
+              </VTooltip>
+              <VTooltip :text="t('pages.projects.members')">
+                <template #activator="{ props: tipProps }">
+                  <VBtn
+                    v-bind="tipProps"
+                    size="small"
+                    variant="text"
+                    icon="mdi-account-group-outline"
+                    :to="{ name: 'project-members', params: { projectId: item.id } }"
+                  />
+                </template>
+              </VTooltip>
+            </div>
+          </template>
 
-      <div class="form">
-        <label>
-          <div class="lbl">{{ t("pages.projects.slug") }}</div>
-          <input class="inp mono" v-model="slug" :placeholder="t('placeholders.projectSlug')" />
-        </label>
-        <label>
-          <div class="lbl">{{ t("pages.projects.name") }}</div>
-          <input class="inp" v-model="name" :placeholder="t('placeholders.projectName')" />
-        </label>
-        <button class="btn primary" type="button" @click="createOrUpdate" :disabled="projects.saving">
-          {{ t("common.createOrUpdate") }}
-        </button>
-      </div>
+          <template #item.actions="{ item }">
+            <div class="d-flex justify-end">
+              <VTooltip v-if="auth.isPlatformOwner" :text="t('common.delete')">
+                <template #activator="{ props: tipProps }">
+                  <VBtn
+                    v-bind="tipProps"
+                    size="small"
+                    color="error"
+                    variant="tonal"
+                    icon="mdi-delete-outline"
+                    :loading="projects.deleting"
+                    @click="askDelete(item.id, item.name)"
+                  />
+                </template>
+              </VTooltip>
+            </div>
+          </template>
 
-      <div v-if="projects.saveError" class="err">{{ t(projects.saveError.messageKey) }}</div>
-      <div v-if="projects.deleteError" class="err">{{ t(projects.deleteError.messageKey) }}</div>
-    </template>
+          <template #no-data>
+            <div class="py-8 text-medium-emphasis">
+              {{ t("states.noProjects") }}
+            </div>
+          </template>
+        </VDataTable>
+      </VCardText>
+    </VCard>
 
-    <template v-else>
-      <div class="sep"></div>
-      <div class="muted">{{ t("pages.projects.adminOnlyHint") }}</div>
-    </template>
-  </section>
+    <VCard v-if="auth.isPlatformAdmin" class="mt-6" variant="outlined">
+      <VCardTitle class="text-subtitle-1">{{ t("pages.projects.createTitle") }}</VCardTitle>
+      <VCardText>
+        <VRow density="compact" class="align-end">
+          <VCol cols="12" md="4">
+            <VTextField v-model.trim="slug" :label="t('pages.projects.slug')" :placeholder="t('placeholders.projectSlug')" />
+          </VCol>
+          <VCol cols="12" md="6">
+            <VTextField v-model.trim="name" :label="t('pages.projects.name')" :placeholder="t('placeholders.projectName')" />
+          </VCol>
+          <VCol cols="12" md="2">
+            <VBtn class="w-100" color="primary" variant="tonal" :loading="projects.saving" @click="createOrUpdate">
+              {{ t("common.createOrUpdate") }}
+            </VBtn>
+          </VCol>
+        </VRow>
 
-  <ConfirmModal
-    :open="confirmOpen"
+        <VAlert v-if="projects.saveError" type="error" variant="tonal" class="mt-4">
+          {{ t(projects.saveError.messageKey) }}
+        </VAlert>
+        <VAlert v-if="projects.deleteError" type="error" variant="tonal" class="mt-4">
+          {{ t(projects.deleteError.messageKey) }}
+        </VAlert>
+      </VCardText>
+    </VCard>
+
+    <VAlert v-else class="mt-6" type="info" variant="tonal">
+      {{ t("pages.projects.adminOnlyHint") }}
+    </VAlert>
+  </div>
+
+  <ConfirmDialog
+    v-model="confirmOpen"
     :title="t('common.delete')"
     :message="confirmName"
-    :confirmText="t('common.delete')"
-    :cancelText="t('common.cancel')"
+    :confirm-text="t('common.delete')"
+    :cancel-text="t('common.cancel')"
     danger
-    @cancel="confirmOpen = false"
     @confirm="doDelete"
   />
 </template>
@@ -96,13 +130,18 @@ import { onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
-import ConfirmModal from "../shared/ui/ConfirmModal.vue";
+import PageHeader from "../shared/ui/PageHeader.vue";
+import AdaptiveBtn from "../shared/ui/AdaptiveBtn.vue";
+import ConfirmDialog from "../shared/ui/ConfirmDialog.vue";
+import { useSnackbarStore } from "../shared/ui/feedback/snackbar-store";
 import { useAuthStore } from "../features/auth/store";
 import { useProjectsStore } from "../features/projects/projects-store";
+import { colorForProjectRole } from "../shared/lib/chips";
 
 const { t } = useI18n({ useScope: "global" });
 const auth = useAuthStore();
 const projects = useProjectsStore();
+const snackbar = useSnackbarStore();
 
 const slug = ref("");
 const name = ref("");
@@ -110,6 +149,14 @@ const name = ref("");
 const confirmOpen = ref(false);
 const confirmProjectId = ref<string>("");
 const confirmName = ref<string>("");
+
+const headers = [
+  { title: t("pages.projects.slug"), key: "slug", width: 220, align: "start" },
+  { title: t("pages.projects.name"), key: "name", align: "center" },
+  { title: t("pages.projects.role"), key: "role", width: 160, sortable: false, align: "center" },
+  { title: t("pages.projects.manage"), key: "manage", width: 140, sortable: false, align: "center" },
+  { title: "", key: "actions", sortable: false, width: 72, align: "end" },
+] as const;
 
 function roleLabel(role: string): string {
   const normalized = role.trim();
@@ -128,6 +175,7 @@ async function createOrUpdate() {
   if (!projects.saveError) {
     slug.value = "";
     name.value = "";
+    snackbar.success(t("common.saved"));
   }
 }
 
@@ -143,39 +191,10 @@ async function doDelete() {
   confirmProjectId.value = "";
   if (!id) return;
   await projects.remove(id);
+  if (!projects.deleteError) {
+    snackbar.success(t("common.deleted"));
+  }
 }
 
 onMounted(() => void load());
 </script>
-
-<style scoped>
-h2 {
-  margin: 0;
-  letter-spacing: -0.01em;
-}
-h3 {
-  margin: 0;
-  letter-spacing: -0.01em;
-  font-size: 14px;
-  opacity: 0.9;
-}
-.manage {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-.form {
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto;
-  gap: 14px;
-  margin-top: 12px;
-  align-items: end;
-}
-@media (max-width: 840px) {
-  .form {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

@@ -63,6 +63,9 @@ rules:
   - apiGroups: ["rbac.authorization.k8s.io"]
     resources: ["roles"]
     verbs: ["escalate", "bind"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles"]
+    verbs: ["escalate", "bind"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

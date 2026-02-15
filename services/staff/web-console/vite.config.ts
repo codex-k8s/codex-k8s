@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
+import vuetify from "vite-plugin-vuetify";
 
 const disableHmr = ["1", "true", "yes"].includes(String(process.env.VITE_DISABLE_HMR || "").toLowerCase());
 
@@ -12,7 +13,7 @@ function parseOptionalInt(value: string | undefined): number | undefined {
 }
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(), vuetify({ autoImport: true })],
   build: {
     outDir: "dist",
     emptyOutDir: true,
