@@ -16,14 +16,14 @@
   - `services/staff/web-console/README.md`.
 - Временные правила текущего ручного dev/staging цикла (до полного dogfooding через `run:dev`) см. `.local/agents-temp-dev-rules.md`. Править `.local/agents-temp-dev-rules.md` строго запрещено, если не стоит явная задача на изменение временных правил.
 - Для Go-изменений обязательно исполнять требования из `docs/design-guidelines/go/**.md`, как до правок, так и перед подготовкой PR.
-- Для frontend-изменений обязательно исполнять требования из `docs/design-guidelines/vue/**.md` и `docs/design-guidelines/visual/**.md`.
+- Для frontend-изменений обязательно исполнять требования из `docs/design-guidelines/vue/**.md`.
 - Для любых изменений читать `docs/design-guidelines/common/**.md`, который содержит общие требования проектирования для всех частей системы и языков программирования.
 - Для выбора/обновления внешних библиотек читать `docs/design-guidelines/common/external_dependencies_catalog.md`. Каждую новую библиотеку подбирать с использованием Context7 и уточнять последнюю стабильную версию, а также добавлять в `docs/design-guidelines/common/external_dependencies_catalog.md`.
 - Для планирования и ведения спринта/документации выполнять требования `docs/delivery/development_process_requirements.md`.
 - Если запрос пользователя противоречит гайдам, приостановить правки и предложить варианты решения.
 - Если контекст сессии был сжат/потерян (например, `context compacted`) или есть сомнение, что требования/архитектура актуальны:
   - перечитать `AGENTS.md` и `docs/design-guidelines/AGENTS.md`;
-  - перечитать релевантные гайды по области изменения (`docs/design-guidelines/{go,vue,visual,common}/`);
+  - перечитать релевантные гайды по области изменения (`docs/design-guidelines/{go,vue,common}/`);
   - сверить задачу с `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`, спринтом и эпиком.
   - только после этого планировать и править код.
 - Не редактировать сами гайды без явной задачи на изменение стандартов.

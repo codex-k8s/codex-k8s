@@ -8,7 +8,6 @@
 - `docs/design-guidelines/vue/frontend_error_handling.md` — модель и обработка ошибок на фронте.
 - `docs/design-guidelines/vue/frontend_code_rules.md` — правила кодирования (TS/Vue/импорты/комментарии).
 - `docs/design-guidelines/vue/libraries.md` — что выносить в `libs/{vue,ts,js}` и как.
-- `docs/design-guidelines/visual/AGENTS.md` — визуальный дизайн и UI‑паттерны.
 - `docs/design-guidelines/common/external_dependencies_catalog.md` — согласованный список внешних библиотек и инструментов.
 
 Специфика `codex-k8s`:

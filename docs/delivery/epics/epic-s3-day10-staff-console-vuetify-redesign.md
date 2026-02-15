@@ -31,7 +31,6 @@ approvals:
 - По требованиям MVP staff-консоль должна масштабироваться до “операционного workspace” (runs, approvals, docs/templates, agents, labels/stages, audit, cluster debug). См.:
   - `docs/product/requirements_machine_driven.md` (FR-040..FR-046 + post-MVP направления),
   - `docs/product/brief.md` (post-MVP UI направления),
-  - `docs/design-guidelines/visual/*` (навигация/таблицы/состояния),
   - `docs/design-guidelines/vue/*` (структура/границы/ошибки/state).
 
 ## Scope
