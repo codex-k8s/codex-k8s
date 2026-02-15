@@ -20,7 +20,7 @@ log "Install ingress-nginx controller (idempotent apply)"
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
 if [ "$CODEXK8S_INGRESS_HOST_NETWORK" = "true" ]; then
   kubectl -n ingress-nginx patch deployment ingress-nginx-controller --type=merge \
-    -p '{"spec":{"template":{"spec":{"hostNetwork":true,"dnsPolicy":"ClusterFirstWithHostNet"}}}}'
+    -p '{"spec":{"strategy":{"type":"RollingUpdate","rollingUpdate":{"maxSurge":0,"maxUnavailable":1}},"template":{"spec":{"terminationGracePeriodSeconds":10,"hostNetwork":true,"dnsPolicy":"ClusterFirstWithHostNet"}}}}'
   # In hostNetwork mode ingress is reachable via host :80/:443 directly, NodePorts must stay closed.
   kubectl -n ingress-nginx patch service ingress-nginx-controller --type=merge \
     -p '{"spec":{"type":"ClusterIP","externalTrafficPolicy":null,"healthCheckNodePort":null}}'
