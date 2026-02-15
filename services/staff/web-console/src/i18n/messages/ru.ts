@@ -1,6 +1,6 @@
 export const ru = {
   app: {
-    title: "codex-k8s",
+    title: "codex-k8s1",
     subtitle: "staff console",
   },
   nav: {
