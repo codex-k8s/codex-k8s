@@ -95,10 +95,6 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 		targetEnv = "ai"
 	}
 	targetNamespace := strings.TrimSpace(params.Namespace)
-	if targetNamespace == "" && strings.EqualFold(targetEnv, "ai-staging") {
-		targetNamespace = buildAIStagingNamespace(params.RepositoryFullName)
-	}
-
 	templateVars := s.buildTemplateVars(params, targetNamespace)
 	servicesConfigPath := s.resolveServicesConfigPath(params.ServicesYAMLPath)
 	loaded, err := servicescfg.Load(servicesConfigPath, servicescfg.LoadOptions{
@@ -111,7 +107,7 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 		return zero, fmt.Errorf("load services config: %w", err)
 	}
 
-	if targetNamespace == "" {
+	if strings.TrimSpace(targetNamespace) == "" {
 		targetNamespace = strings.TrimSpace(loaded.Context.Namespace)
 	}
 	if targetNamespace == "" {
@@ -120,6 +116,11 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 	if effectiveEnv := strings.TrimSpace(loaded.Context.Env); effectiveEnv != "" {
 		targetEnv = effectiveEnv
 	}
+
+	// Template vars are used to render Kubernetes manifests. Some variables depend on
+	// the final namespace and must be (re)computed after services.yaml resolved it.
+	templateVars = s.buildTemplateVars(params, targetNamespace)
+
 	templateVars["CODEXK8S_STAGING_NAMESPACE"] = targetNamespace
 	templateVars["CODEXK8S_WORKER_K8S_NAMESPACE"] = targetNamespace
 	templateVars["CODEXK8S_GITHUB_REPO"] = strings.TrimSpace(params.RepositoryFullName)

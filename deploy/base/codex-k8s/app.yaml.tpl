@@ -254,6 +254,17 @@ spec:
                   name: codex-k8s-runtime
                   key: CODEXK8S_GITHUB_PAT
                   optional: true
+            - name: CODEXK8S_GITHUB_REPO
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GITHUB_REPO
+            - name: CODEXK8S_FIRST_PROJECT_GITHUB_REPO
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_FIRST_PROJECT_GITHUB_REPO
+                  optional: true
             - name: CODEXK8S_GIT_BOT_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -434,6 +445,16 @@ spec:
                 secretKeyRef:
                   name: codex-k8s-runtime
                   key: CODEXK8S_PUBLIC_BASE_URL
+            - name: CODEXK8S_GITHUB_OAUTH_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GITHUB_OAUTH_CLIENT_ID
+            - name: CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET
             - name: CODEXK8S_BOOTSTRAP_OWNER_EMAIL
               valueFrom:
                 secretKeyRef:

@@ -145,6 +145,8 @@ CODEXK8S_AI_REASONING_MEDIUM_LABEL="${CODEXK8S_AI_REASONING_MEDIUM_LABEL:-}"
 CODEXK8S_AI_REASONING_HIGH_LABEL="${CODEXK8S_AI_REASONING_HIGH_LABEL:-}"
 CODEXK8S_AI_REASONING_EXTRA_HIGH_LABEL="${CODEXK8S_AI_REASONING_EXTRA_HIGH_LABEL:-}"
 CODEXK8S_GITHUB_PAT="${CODEXK8S_GITHUB_PAT:-}"
+CODEXK8S_GITHUB_REPO="${CODEXK8S_GITHUB_REPO:-}"
+CODEXK8S_FIRST_PROJECT_GITHUB_REPO="${CODEXK8S_FIRST_PROJECT_GITHUB_REPO:-}"
 CODEXK8S_OPENAI_API_KEY="${CODEXK8S_OPENAI_API_KEY:-}"
 CODEXK8S_OPENAI_AUTH_FILE="${CODEXK8S_OPENAI_AUTH_FILE:-}"
 CODEXK8S_GIT_BOT_TOKEN="${CODEXK8S_GIT_BOT_TOKEN:-}"
@@ -216,6 +218,22 @@ if [ -z "$CODEXK8S_GITHUB_PAT" ] && kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get
       -o jsonpath='{.data.CODEXK8S_GITHUB_PAT}' 2>/dev/null | base64 -d || true
   )"
 fi
+if [ -z "$CODEXK8S_GITHUB_REPO" ] && kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime >/dev/null 2>&1; then
+  CODEXK8S_GITHUB_REPO="$(
+    kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime \
+      -o jsonpath='{.data.CODEXK8S_GITHUB_REPO}' 2>/dev/null | base64 -d || true
+  )"
+fi
+if [ -z "$CODEXK8S_FIRST_PROJECT_GITHUB_REPO" ] && kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime >/dev/null 2>&1; then
+  CODEXK8S_FIRST_PROJECT_GITHUB_REPO="$(
+    kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime \
+      -o jsonpath='{.data.CODEXK8S_FIRST_PROJECT_GITHUB_REPO}' 2>/dev/null | base64 -d || true
+  )"
+fi
+[ -n "$CODEXK8S_GITHUB_REPO" ] || {
+  echo "Missing required CODEXK8S_GITHUB_REPO" >&2
+  exit 1
+}
 if [ -z "$CODEXK8S_GIT_BOT_TOKEN" ] && kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime >/dev/null 2>&1; then
   CODEXK8S_GIT_BOT_TOKEN="$(
     kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get secret codex-k8s-runtime \
@@ -417,6 +435,8 @@ fi
 
 kubectl -n "$CODEXK8S_STAGING_NAMESPACE" create secret generic codex-k8s-runtime \
   --from-literal=CODEXK8S_GITHUB_PAT="$CODEXK8S_GITHUB_PAT" \
+  --from-literal=CODEXK8S_GITHUB_REPO="$CODEXK8S_GITHUB_REPO" \
+  --from-literal=CODEXK8S_FIRST_PROJECT_GITHUB_REPO="$CODEXK8S_FIRST_PROJECT_GITHUB_REPO" \
   --from-literal=CODEXK8S_OPENAI_API_KEY="$CODEXK8S_OPENAI_API_KEY" \
   --from-literal=CODEXK8S_OPENAI_AUTH_FILE="$CODEXK8S_OPENAI_AUTH_FILE" \
   --from-literal=CODEXK8S_PROJECT_DB_ADMIN_HOST="$CODEXK8S_PROJECT_DB_ADMIN_HOST" \

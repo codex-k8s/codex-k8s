@@ -206,8 +206,8 @@ func TestIngestGitHubWebhook_PushMain_CreatesDeployOnlyAIStagingRun(t *testing.T
 	if got, want := runPayload.Runtime.TargetEnv, "ai-staging"; got != want {
 		t.Fatalf("unexpected runtime target env: got %q want %q", got, want)
 	}
-	if got, want := runPayload.Runtime.Namespace, "codex-k8s-ai-staging"; got != want {
-		t.Fatalf("unexpected runtime namespace: got %q want %q", got, want)
+	if runPayload.Runtime.Namespace != "" {
+		t.Fatalf("unexpected runtime namespace: got %q want empty (resolved via services.yaml)", runPayload.Runtime.Namespace)
 	}
 	if got, want := runPayload.Runtime.BuildRef, buildRef; got != want {
 		t.Fatalf("unexpected runtime build ref: got %q want %q", got, want)
@@ -1047,6 +1047,10 @@ func (r *inMemoryRepoCfgRepo) FindByProviderExternalID(_ context.Context, _ stri
 		return repocfgrepo.FindResult{}, false, nil
 	}
 	return res, true, nil
+}
+
+func (r *inMemoryRepoCfgRepo) FindByProviderOwnerName(_ context.Context, _ string, _ string, _ string) (repocfgrepo.FindResult, bool, error) {
+	return repocfgrepo.FindResult{}, false, nil
 }
 
 func (r *inMemoryRepoCfgRepo) GetTokenEncrypted(_ context.Context, _ string) ([]byte, bool, error) {

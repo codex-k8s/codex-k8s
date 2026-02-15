@@ -18,6 +18,8 @@
 - запрашивает внешние креды (`GitHub fine-grained token`, `CODEXK8S_OPENAI_API_KEY`), внутренние секреты генерирует автоматически;
 - настраивает GitHub repository secrets/variables для staging deploy workflow в platform repo (`CODEXK8S_GITHUB_REPO`);
 - создаёт или обновляет GitHub webhook и каталог labels в platform repo (`CODEXK8S_GITHUB_REPO`) и, если задан отдельный `CODEXK8S_FIRST_PROJECT_GITHUB_REPO`, дополнительно синхронизирует webhook/labels там;
+- при старте `control-plane` автоматически создаёт/обновляет записи Project/Repositories в БД для `CODEXK8S_GITHUB_REPO`
+  (и опционально для `CODEXK8S_FIRST_PROJECT_GITHUB_REPO`); platform project защищён от удаления через staff UI/API;
 - устанавливает ARC controller и runner scale set для staging deploy workflow.
 
 ## Быстрый запуск

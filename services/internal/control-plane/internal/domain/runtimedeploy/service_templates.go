@@ -38,9 +38,6 @@ func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[
 	}
 
 	targetNamespace := strings.TrimSpace(namespace)
-	if targetNamespace == "" && strings.EqualFold(strings.TrimSpace(params.TargetEnv), "ai-staging") {
-		targetNamespace = buildAIStagingNamespace(params.RepositoryFullName)
-	}
 	if targetNamespace != "" {
 		vars["CODEXK8S_STAGING_NAMESPACE"] = targetNamespace
 		vars["CODEXK8S_WORKER_K8S_NAMESPACE"] = targetNamespace

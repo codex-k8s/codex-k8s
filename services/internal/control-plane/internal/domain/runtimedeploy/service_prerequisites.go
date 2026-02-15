@@ -56,6 +56,8 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, namespace str
 
 	runtimeSecret := map[string][]byte{
 		"CODEXK8S_GITHUB_PAT":                        []byte(valueOr(vars, "CODEXK8S_GITHUB_PAT", "")),
+		"CODEXK8S_GITHUB_REPO":                       []byte(valueOr(vars, "CODEXK8S_GITHUB_REPO", "")),
+		"CODEXK8S_FIRST_PROJECT_GITHUB_REPO":         []byte(valueOr(vars, "CODEXK8S_FIRST_PROJECT_GITHUB_REPO", "")),
 		"CODEXK8S_OPENAI_API_KEY":                    []byte(valueOr(vars, "CODEXK8S_OPENAI_API_KEY", "")),
 		"CODEXK8S_OPENAI_AUTH_FILE":                  []byte(valueOr(vars, "CODEXK8S_OPENAI_AUTH_FILE", "")),
 		"CODEXK8S_PROJECT_DB_ADMIN_HOST":             []byte(valueOr(vars, "CODEXK8S_PROJECT_DB_ADMIN_HOST", "postgres")),
