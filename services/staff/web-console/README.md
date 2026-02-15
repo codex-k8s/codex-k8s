@@ -23,3 +23,15 @@ services/staff/web-console/                          staff UI-приложени
     └── shared/                                      переиспользуемый слой UI/lib/api
         └── api/                                     typed API-клиенты и контракты транспорта
 ```
+
+## ai-staging: Vite HMR за Ingress
+
+В `ai-staging` UI работает в режиме `vite dev server` за HTTPS Ingress и reverse-proxy.
+Чтобы Vite HMR не пытался подключаться к `localhost:5173` в браузере и websocket стабильно работал,
+в деплоймент пробрасываются переменные:
+
+- `VITE_ALLOWED_HOSTS` (публичный домен)
+- `VITE_HMR_HOST` (публичный домен)
+- `VITE_HMR_PROTOCOL=wss`
+- `VITE_HMR_CLIENT_PORT=443`
+- `VITE_HMR_PATH=/__vite_ws`

@@ -42,6 +42,16 @@ spec:
             # Vite blocks unknown hosts by default; this keeps staging usable behind Ingress.
             - name: VITE_ALLOWED_HOSTS
               value: "${CODEXK8S_STAGING_DOMAIN}"
+            # HMR in ai-staging runs behind public Ingress (HTTPS) and must not try to connect to localhost:5173.
+            - name: VITE_HMR_HOST
+              value: "${CODEXK8S_STAGING_DOMAIN}"
+            - name: VITE_HMR_PROTOCOL
+              value: "wss"
+            - name: VITE_HMR_CLIENT_PORT
+              value: "443"
+            # Dedicated path so we can route websocket directly to Vite service (bypassing auth proxy).
+            - name: VITE_HMR_PATH
+              value: "/__vite_ws"
           readinessProbe:
             httpGet:
               path: /

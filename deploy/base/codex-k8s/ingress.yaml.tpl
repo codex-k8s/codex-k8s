@@ -15,6 +15,15 @@ spec:
     - host: ${CODEXK8S_STAGING_DOMAIN}
       http:
         paths:
+          # Vite HMR websocket endpoint (ai-staging). We route it directly to the Vite dev server
+          # to avoid auth-proxy websocket issues and to keep HMR stable behind HTTPS Ingress.
+          - path: /__vite_ws
+            pathType: Prefix
+            backend:
+              service:
+                name: codex-k8s-web-console
+                port:
+                  number: 5173
           - path: /
             pathType: Prefix
             backend:
