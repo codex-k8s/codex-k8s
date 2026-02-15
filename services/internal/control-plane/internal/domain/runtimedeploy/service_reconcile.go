@@ -21,9 +21,10 @@ func (s *Service) ReconcileNext(ctx context.Context, leaseOwner string, leaseTTL
 		leaseTTL = time.Second
 	}
 
+	leaseTTLString := fmt.Sprintf("%d seconds", int64(leaseTTL.Seconds()))
 	task, ok, err := s.tasks.ClaimNext(ctx, runtimedeploytaskrepo.ClaimParams{
 		LeaseOwner: leaseOwner,
-		LeaseTTL:   fmt.Sprintf("%d seconds", int64(leaseTTL.Seconds())),
+		LeaseTTL:   leaseTTLString,
 	})
 	if err != nil {
 		return false, fmt.Errorf("claim runtime deploy task: %w", err)
@@ -32,7 +33,47 @@ func (s *Service) ReconcileNext(ctx context.Context, leaseOwner string, leaseTTL
 		return false, nil
 	}
 
-	result, runErr := s.applyDesiredState(ctx, PrepareParams{
+	renewCtx, cancelRenew := context.WithCancel(ctx)
+	renewDone := make(chan struct{})
+	go func() {
+		defer close(renewDone)
+
+		// Keep the lease short for fast recovery when the reconciler dies during self-deploy,
+		// but renew it while we are actively processing the task.
+		interval := leaseTTL / 2
+		if interval > 30*time.Second {
+			interval = 30 * time.Second
+		}
+		if interval < time.Second {
+			interval = time.Second
+		}
+
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-renewCtx.Done():
+				return
+			case <-ticker.C:
+				updated, err := s.tasks.RenewLease(renewCtx, runtimedeploytaskrepo.RenewLeaseParams{
+					RunID:      task.RunID,
+					LeaseOwner: leaseOwner,
+					LeaseTTL:   leaseTTLString,
+				})
+				if err != nil {
+					s.logger.Error("renew runtime deploy task lease failed", "run_id", task.RunID, "lease_owner", leaseOwner, "err", err)
+					continue
+				}
+				if !updated {
+					s.logger.Warn("runtime deploy task lease lost while renewing", "run_id", task.RunID, "lease_owner", leaseOwner)
+					return
+				}
+			}
+		}
+	}()
+
+	result, runErr := s.applyDesiredState(renewCtx, PrepareParams{
 		RunID:              task.RunID,
 		RuntimeMode:        task.RuntimeMode,
 		Namespace:          task.Namespace,
@@ -43,6 +84,8 @@ func (s *Service) ReconcileNext(ctx context.Context, leaseOwner string, leaseTTL
 		BuildRef:           task.BuildRef,
 		DeployOnly:         task.DeployOnly,
 	})
+	cancelRenew()
+	<-renewDone
 	if runErr != nil {
 		if errors.Is(runErr, context.Canceled) || errors.Is(runErr, context.DeadlineExceeded) {
 			if ctx.Err() != nil {

@@ -2,6 +2,7 @@ package runtimedeploy
 
 import (
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strings"
 	"time"
@@ -23,9 +24,10 @@ var imageTagSanitizer = regexp.MustCompile(`[^a-zA-Z0-9._-]`)
 
 // Service prepares runtime environments from services.yaml contract.
 type Service struct {
-	cfg   Config
-	k8s   KubernetesClient
-	tasks runtimedeploytaskrepo.Repository
+	cfg    Config
+	k8s    KubernetesClient
+	tasks  runtimedeploytaskrepo.Repository
+	logger *slog.Logger
 }
 
 // NewService creates runtime deployment service.
@@ -57,9 +59,14 @@ func NewService(cfg Config, deps Dependencies) (*Service, error) {
 	if cfg.WaitPollInterval <= 0 {
 		cfg.WaitPollInterval = defaultWaitPollInterval
 	}
+	logger := deps.Logger
+	if logger == nil {
+		logger = slog.Default()
+	}
 	return &Service{
-		cfg:   cfg,
-		k8s:   deps.Kubernetes,
-		tasks: deps.Tasks,
+		cfg:    cfg,
+		k8s:    deps.Kubernetes,
+		tasks:  deps.Tasks,
+		logger: logger,
 	}, nil
 }
