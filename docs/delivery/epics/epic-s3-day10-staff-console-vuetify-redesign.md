@@ -20,15 +20,15 @@ approvals:
 - Цель: не “перекрасить” текущий UI, а заложить основу новой staff-консоли, которая сразу готова к post-MVP расширению.
 - MVP-результат дня: production-ready `Vuetify` app-shell (navbar + drawer) + навигация по будущим разделам + единые UI-паттерны (таблицы/фильтры/пустые состояния/диалоги).
 - Важно: будущие разделы не интегрируем с API/Pinia (без новых store и backend-запросов), но делаем страницы и компоненты с заглушками данных и явными `TODO`.
-- Дополнительно: в навигации сразу закладываем `Admin / Cluster`, `Agents` и `System settings (locales)`.
-- Обратная связь пользователю: единый паттерн `VAlert` (с иконками) + `VSnackbar` после действий (например, “XXX удален”).
+- Сквозные элементы верстки (обязательная база): context selector, notifications menu, `VAlert`/`VSnackbar`, breadcrumbs + copy IDs, “coming soon” badges, table settings, row actions menu.
+- Для редакторов markdown и YAML используем Monaco Editor (и только для них).
 
 ## Priority
 - `P0`.
 
 ## Контекст
 - Сейчас `services/staff/web-console` уже закрывает часть MVP-сценариев (projects/runs/runtime debug/approvals), но UI собран на ad-hoc CSS и разрозненных паттернах.
-- По требованиям MVP staff-консоль должна масштабироваться до “операционного workspace” (runs, approvals, docs/templates, agents, labels/stages, audit). См.:
+- По требованиям MVP staff-консоль должна масштабироваться до “операционного workspace” (runs, approvals, docs/templates, agents, labels/stages, audit, cluster debug). См.:
   - `docs/product/requirements_machine_driven.md` (FR-040..FR-046 + post-MVP направления),
   - `docs/product/brief.md` (post-MVP UI направления),
   - `docs/design-guidelines/visual/*` (навигация/таблицы/состояния),
@@ -44,12 +44,32 @@ approvals:
   - favicon из того же источника (преобразовать в `.ico` при необходимости).
 - Новая информационная архитектура:
   - левый drawer как primary-навигация;
-  - группировка разделов по смыслу (Operations / Platform / Governance / Admin / Configuration).
-- Навигация “в будущее”:
-  - будущие разделы присутствуют в навигации и открываются как страницы (router + i18n);
-  - будущие страницы наполнены Vuetify-компонентами и mock-данными;
-  - в коде каждой заглушки есть `TODO` с конкретикой “что подключить дальше”).
-- Административный блок `Admin / Cluster` (scaffold) для управления Kubernetes ресурсами (CRUD на уровне UI-заготовок + TODO на backend):
+  - группировка разделов по смыслу (Operations / Platform / Governance / Admin / Configuration);
+  - “coming soon” бейджи у scaffold-разделов.
+
+- Сквозные UX/паттерны (обязательны в базовой верстке):
+  - глобальный selector контекста в `VAppBar`: project, env, namespace/slot (даже если пока не влияет на данные);
+  - notifications menu (иконка + `VMenu`) с лентой событий (mock + TODO);
+  - единый слой обратной связи:
+    - ошибки/предупреждения через `VAlert` разных типов с иконками;
+    - после действий `VSnackbar` (например, “XXX удален”/“Сохранено”/“Обновлено”);
+  - breadcrumbs + copy IDs в шапке страниц (run_id, correlation_id, namespace) с `VTooltip`;
+  - таблицы: settings (density, column visibility, sticky header);
+  - действия строки: через `VMenu` “⋯” (единый паттерн row actions);
+  - унифицированные состояния: skeleton/empty/error с CTA “Повторить” и (при наличии) request-id.
+
+- Operations (реальные данные остаются реальными, без регрессий):
+  - master-detail layout для части сценариев (например, runs/approvals) вместо только отдельных страниц;
+  - runs: stage timeline/stepper (показывает stage/status, ссылки на issue/PR/namespace, быстрые copy);
+  - logs viewer компонент:
+    - follow tail,
+    - поиск по строкам,
+    - подсветка уровней,
+    - copy block,
+    - download;
+  - approvals center как отдельный экран (фильтры по tool/action/state, история решений) или переработка текущего `Approvals` блока до “центра”.
+
+- Admin / Cluster (scaffold) для управления Kubernetes ресурсами (CRUD на уровне UI-заготовок + TODO на backend):
   - `Namespaces`;
   - `ConfigMaps`;
   - `Secrets`;
@@ -57,29 +77,45 @@ approvals:
   - `Pods` + логи контейнеров;
   - `Jobs` + логи контейнеров;
   - `PVC`.
+  - cluster-global selector namespace + mode banner (view-only/dry-run/normal);
+  - страница ресурса с табами: Overview, YAML, Events, Related (и Logs для pod/job);
+  - action preview перед destructive действиями;
+  - `Secrets`: по умолчанию только metadata + список ключей, reveal значения как отдельное (будущее) действие.
+
 - Управление агентами (scaffold):
-  - список агентов (system + custom, с разделением по проекту при необходимости);
-  - настройки агента (execution mode, лимиты, policy-параметры);
-  - шаблоны промптов агента (`work/review`) минимум в двух локалях (`ru` и `en`) с UI для переключения локали.
+  - список агентов с чипами: system/custom, mode (full-env/code-only), лимиты, статус;
+  - карточка агента с табами: Settings / Prompt templates / History-Audit;
+  - prompt templates:
+    - переключатель locale `ru/en`,
+    - diff/preview,
+    - preview “effective template”;
+    - редактор templates на Monaco Editor (markdown).
+
 - System settings (scaffold):
-  - управление локалями системы (добавление locale + выбор default locale);
-  - TODO на интеграцию с backend-конфигом/БД.
-- Production-ready UX-паттерны на Vuetify (не “черновая верстка”):
+  - таблица локалей: default locale, add locale dialog (mock + TODO);
+  - глобальные UI-параметры (scaffold): density, формат дат/времени, debug hints.
+
+- Governance (scaffold):
+  - audit log экран с filter-bar (actor, object, env, correlation_id) + mock rows.
+
+- Docs/knowledge (scaffold):
+  - layout “левый сайдбар (дерево) + контент + правый TOC”;
+  - code-blocks с copy;
+  - markdown editor на Monaco Editor.
+
+- MCP tools (scaffold):
+  - каталог инструментов;
+  - матрица апрувов;
+  - история вызовов/outcome (mock).
+
+- Production-ready UI-набор на Vuetify (не “черновая верстка”):
   - карточки/метрики: `VCard`;
   - списки/меню: `VList`, `VListItem`, `VMenu`;
   - статусы/бейджи: `VChip`, `VBadge`;
-  - фильтры/поиск: `VTextField`, `VSelect` (плюс chips по месту);
+  - фильтры/поиск: `VTextField`, `VSelect`;
   - таблицы/пагинация: `VDataTable` (или server-side variant) + `VPagination`;
-  - диалоги подтверждения: `VDialog`;
-  - загрузки/пустые состояния: `VSkeletonLoader` + общий empty-state (или `VEmptyState`, если доступен в выбранной версии);
-  - обратная связь: `VAlert` (info/success/warning/error, с иконками) + `VSnackbar` после действий;
-  - действия/иконки: `VBtn`, `VIcon`.
-- UI/UX паритет для MVP-операционных сценариев (реальные данные остаются реальными):
-  - runs list + run details;
-  - running jobs / wait queue / approvals / run logs.
-- UI governance:
-  - i18n для меню/заголовков/пустых состояний (RU/EN);
-  - соответствие визуальным гайдам (светлая тема по умолчанию, спокойные поверхности, предсказуемая навигация).
+  - диалоги: `VDialog`;
+  - состояния: `VSkeletonLoader` + общий empty-state.
 
 ### Out of scope
 - Реализация бизнес-логики будущих разделов:
@@ -115,7 +151,7 @@ approvals:
   - `Run details` (реально работает, переход из Runs)
   - `Running jobs` (реально работает; допускается вынести как отдельный экран)
   - `Wait queue` (реально работает; допускается вынести как отдельный экран)
-  - `Approvals` (реально работает; допускается вынести как отдельный экран)
+  - `Approvals` (реально работает; переработка до approvals center)
   - `Logs` (реально работает из run details; отдельный экран допускается как scaffold)
 - Platform:
   - `Projects` (реально работает)
@@ -138,10 +174,9 @@ approvals:
   - `PVC` (mock + TODO)
 - Configuration (scaffold):
   - `Agents` (mock + TODO): list, details, settings, prompt templates (`ru/en`)
-  - `System settings` (mock + TODO): locales (add locale + default locale)
+  - `System settings` (mock + TODO): locales + UI prefs
   - `Docs/knowledge` (mock + TODO)
-  - `MCP tools: secret sync` (mock + TODO)
-  - `MCP tools: databases` (mock + TODO)
+  - `MCP tools` (mock + TODO)
 
 ## Требования к заглушкам (обязательны)
 - Заглушка = не “пустая страница с текстом”, а минимальный UI-скелет:
@@ -149,78 +184,98 @@ approvals:
   - `VCard`-метрики (2–4) или summary-карточка;
   - `FiltersBar` (по месту) с 1–3 контролами (`VTextField`, `VSelect`, `VChip`-filters);
   - `VDataTable`/`VList` с 5–15 строками mock-данных;
-  - empty-state и loading-state (через общий компонент/слоты).
+  - empty-state + loading-state + error-state.
+- Табличные scaffold-экраны обязаны использовать общий toolbar:
+  - table settings (density/columns) и row actions через `VMenu` “⋯”.
 - Для экранов `Admin / Cluster` дополнительно:
-  - selector namespace + баннер для view-only окружений `ai-staging`/`prod`;
+  - selector namespace + баннер режима (view-only/dry-run);
   - действия create/edit/delete в view-only режиме скрыты/disabled;
-  - для `ai` env destructive действия должны дергать backend dry-run (кнопка есть, действие не выполняется; показываем что-то вроде “dry-run OK, но изменить/удалить нельзя”);
-  - для `Secret` mock показывать только metadata, значение скрыто/замазано.
+  - для `ai` env destructive действия дергают backend dry-run (кнопка есть, действие не выполняется; показываем “dry-run OK, но тут удалять нельзя”);
+  - `Secret` по умолчанию: metadata only.
 - Обратная связь (обязательная база):
   - ошибки/предупреждения показываются через `VAlert` (с иконками);
-  - после успешных действий показывается `VSnackbar` (например, “Deployment XXX удален”/“Сохранено”/“Обновлено”).
+  - после успешных действий показывается `VSnackbar`.
+- Monaco Editor:
+  - markdown editor (docs/prompt templates) = Monaco;
+  - YAML editor/view (cluster resources) = Monaco;
+  - для остальных code blocks использовать простой `CodeBlock`.
 - В коде каждой заглушки должен быть `TODO`:
   - что именно подключить (store/api, endpoint, модель данных),
-  - где ожидается контракт (OpenAPI endpoint, feature store).
+  - где ожидается контракт (OpenAPI endpoint, feature store),
+  - ссылка на issue (`TODO(#19): ...` как минимум).
 
 ## Декомпозиция (Stories/Tasks)
 - Story-0: Governance по зависимостям:
   - уточнить актуальные версии через Context7;
-  - добавить `Vuetify` и иконки в `docs/design-guidelines/common/external_dependencies_catalog.md`.
+  - добавить `Vuetify`, иконки и Monaco Editor в `docs/design-guidelines/common/external_dependencies_catalog.md`.
 - Story-1: Подключить Vuetify (Vite + Vue3):
   - добавить зависимости `vuetify`, `vite-plugin-vuetify`, `@mdi/font`;
-  - настроить `createVuetify()` (icons + theme);
-  - перевести composition root на `VApp` и убрать legacy layout-CSS, где он конфликтует.
+  - настроить `createVuetify()` (icons + theme).
 - Story-2: Реализовать app-shell:
-  - `VAppBar` (navbar): бренд/заголовок/crumbs + справа language switch + user menu/logout;
-  - `VNavigationDrawer`: группы разделов, active state, responsive поведение (mobile temporary, desktop permanent/rail);
+  - `VAppBar`: бренд + breadcrumbs + context selector + notifications menu + user menu/logout;
+  - `VNavigationDrawer`: группы разделов, active state, “coming soon” badges;
   - `VMain`: единый контейнер контента, предсказуемые отступы/ширины.
-- Story-3: Привести существующие страницы к Vuetify-паттернам (с сохранением поведения):
+- Story-3: Shared UI foundation (shared/ui):
+  - feedback layer: `VAlert` presets + очередь `VSnackbar`;
+  - `BreadcrumbsBar` + copy IDs;
+  - `DataTable` wrapper с table settings (density/columns) + row actions menu;
+  - состояния `LoadingState`/`EmptyState`/`ErrorState`;
+  - `MasterDetailLayout`.
+- Story-3.1: Operations UX:
+  - run timeline/stepper;
+  - logs viewer компонент (tail/search/highlight/copy/download);
+  - approvals center экран (или эквивалентная переработка существующего блока).
+- Story-4: Привести существующие страницы к Vuetify-паттернам (с сохранением поведения):
   - Projects/ProjectDetails/Repos/Members/Users;
-  - Runs/RunDetails/Approvals/Jobs/Waits/Logs (разнести или оставить, но UI должен стать компонентным и единообразным).
-- Story-4: Добавить scaffold будущих разделов (без данных):
-  - router paths + i18n keys + drawer links;
-  - page-skeleton с mock-данными и `TODO`-метками.
+  - Runs/RunDetails/Approvals/Jobs/Waits/Logs.
 - Story-4.1: Добавить scaffold “Admin / Cluster” (без данных):
   - экран/маршруты под каждый ресурс (namespaces/configmaps/secrets/deployments/pods/jobs/pvc);
-  - детали ресурса (metadata, labels/annotations, status) + вкладка YAML/JSON view;
-  - заготовки create/edit/delete flows (формы или YAML view) с disabled apply и `TODO: подключить staff API + audit`;
-  - правила безопасности в TODO:
+  - детали ресурса с табами (Overview/YAML/Events/Related/Logs);
+  - action preview диалог;
+  - правила безопасности и режимов в TODO:
     - platform elements определяются по `app.kubernetes.io/part-of=codex-k8s`;
     - `ai-staging`/`prod` = view-only;
     - `ai` env = dry-run для destructive actions (кнопки есть, действие не применяется, есть feedback).
 - Story-4.2: Добавить scaffold “Agents” и “System settings”:
-  - agents list + agent details (tabs: Settings / Prompt templates / Audit);
-  - prompt templates для `work/review` минимум в `ru/en` с переключателем локали;
-  - system settings: locales table + add-locale dialog (mock) + `TODO: backend settings`.
-- Story-5: Базовые переиспользуемые UI-компоненты (shared/ui):
-  - `AppShell`, `AppDrawer`, `AppBarActions`;
-  - `PageHeader`, `KpiCards`, `FiltersBar`;
-  - `EmptyState`, `LoadingState` (skeleton presets);
-  - `JsonViewer`/`CodeBlock` (для логов/JSON, с copy action);
-  - `Notifications`: `VAlert` presets + `VSnackbar` helper для “action completed”.
+  - agents list (чипы system/custom/mode/limits/status);
+  - agent details tabs (Settings/Prompt templates/History-Audit);
+  - prompt templates editor: locale `ru/en` + diff/preview + effective template preview (Monaco markdown);
+  - system settings: locales table + add-locale dialog + UI prefs scaffold.
+- Story-4.3: Добавить scaffold “Audit log / Docs / MCP tools”:
+  - audit log: filter-bar + mock rows;
+  - docs layout + markdown editor (Monaco);
+  - MCP tools catalog + approval matrix + history (mock).
+- Story-5: Monaco Editor integration:
+  - добавить `monaco-editor`;
+  - настроить Vite/worker интеграцию;
+  - общий wrapper компонент под Monaco;
+  - использовать Monaco только для markdown и YAML.
 
 ## Критерии приемки
 - В `services/staff/web-console` используется Vuetify app-shell:
   - navbar на `VAppBar`;
   - drawer на `VNavigationDrawer` (desktop + mobile поведение);
   - основной контент в `VMain`.
-- В drawer присутствуют будущие разделы (scaffold) и они открываются как страницы (router работает).
-- Scaffold-страницы содержат UI-скелет на компонентах Vuetify + mock-данные и `TODO: ...` о том, как их довести до production.
-- В навигации присутствует `Admin / Cluster`, и для каждого ресурса есть страница scaffold.
-- Для `ai-staging`/`prod` страницы `Admin / Cluster` явно показывают режим “только просмотр” и не предлагают destructive actions.
-- Для `ai` окружений destructive действия в `Admin / Cluster` отрабатывают как dry-run и дают явную обратную связь “dry-run OK, но действие запрещено”.
-- В навигации присутствуют `Agents` и `System settings (locales)` с UI-заготовками под:
-  - настройки агента;
-  - шаблоны промптов `work/review` минимум в локалях `ru/en`;
-  - добавление locale в системе (mock + TODO).
-- Текущие MVP-сценарии не регресснули:
-  - runs list/details, jobs, waits, approvals, logs доступны и работают.
-- На ключевых экранах использованы базовые Vuetify-компоненты (не ad-hoc HTML):
-  - `VCard`, `VList`, `VChip`/`VBadge`, `VTextField`/`VSelect`, `VDataTable`, `VPagination`, `VMenu`, `VBtn`, `VIcon`, `VDialog`, `VSkeletonLoader`, `VAlert`, `VSnackbar`.
+- В app bar присутствуют: context selector, notifications menu, breadcrumbs.
+- В drawer присутствуют будущие разделы (scaffold) и они открываются как страницы (router работает), включая “coming soon” badges.
+- Scaffold-страницы содержат UI-скелет на компонентах Vuetify + mock-данные и `TODO(#19): ...`.
+- Табличные экраны используют единый паттерн table settings + row actions menu.
 - Обратная связь пользователю реализована единообразно:
   - ошибки/предупреждения = `VAlert` (с иконками);
-  - успешные действия = `VSnackbar` (например, “XXX удален”/“Сохранено”).
+  - успешные действия = `VSnackbar`.
+- Operations UI расширен:
+  - есть run timeline/stepper;
+  - есть logs viewer с tail/search/highlight/copy/download;
+  - approvals представлены как “центр” (отдельный экран или эквивалентная переработка).
+- В навигации присутствует `Admin / Cluster`, и для каждого ресурса есть страница scaffold.
+- Для `ai-staging`/`prod` страницы `Admin / Cluster` показывают режим “только просмотр”.
+- Для `ai` окружений destructive действия в `Admin / Cluster` отрабатывают как dry-run и дают явную обратную связь “dry-run OK, но действие запрещено”.
+- Есть `Agents` и `System settings (locales)` scaffolds:
+  - prompt templates `work/review` минимум в `ru/en` с diff/preview + effective template preview;
+  - locales table + add locale dialog;
+  - UI prefs scaffold.
+- Есть scaffolds `Audit log`, `Docs/knowledge`, `MCP tools`.
+- Monaco Editor используется только для markdown и YAML редакторов.
+- Текущие MVP-сценарии не регресснули:
+  - runs list/details, jobs, waits, approvals, logs доступны и работают.
 - Локализация: ключи меню/заголовков/пустых состояний покрыты `ru/en`.
-- UI соответствует visual-гайдам:
-  - светлая тема по умолчанию, спокойные поверхности, предсказуемая навигация,
-  - корректные empty/loading/error состояния.
