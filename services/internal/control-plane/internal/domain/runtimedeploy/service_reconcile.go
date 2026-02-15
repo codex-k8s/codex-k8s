@@ -115,6 +115,7 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 	}
 	if effectiveEnv := strings.TrimSpace(loaded.Context.Env); effectiveEnv != "" {
 		targetEnv = effectiveEnv
+		params.TargetEnv = targetEnv
 	}
 
 	// Template vars are used to render Kubernetes manifests. Some variables depend on

@@ -54,7 +54,9 @@ spec:
               name: http
           env:
             - name: CODEXK8S_ENV
-              value: ai-staging
+              value: "${CODEXK8S_ENV}"
+            - name: CODEXK8S_HOT_RELOAD
+              value: "${CODEXK8S_HOT_RELOAD}"
             - name: CODEXK8S_HTTP_ADDR
               value: ":8080"
             - name: CODEXK8S_CONTROL_PLANE_GRPC_TARGET
@@ -177,11 +179,13 @@ spec:
               name: http
           env:
             - name: CODEXK8S_ENV
-              value: ai-staging
+              value: "${CODEXK8S_ENV}"
+            - name: CODEXK8S_HOT_RELOAD
+              value: "${CODEXK8S_HOT_RELOAD}"
             - name: CODEXK8S_SERVICES_CONFIG_PATH
               value: /app/services.yaml
             - name: CODEXK8S_SERVICES_CONFIG_ENV
-              value: ai-staging
+              value: "${CODEXK8S_SERVICES_CONFIG_ENV}"
             - name: CODEXK8S_CONTROL_PLANE_GRPC_ADDR
               value: ":9090"
             - name: CODEXK8S_CONTROL_PLANE_HTTP_ADDR
@@ -576,7 +580,9 @@ spec:
           imagePullPolicy: Always
           env:
             - name: CODEXK8S_ENV
-              value: ai-staging
+              value: "${CODEXK8S_ENV}"
+            - name: CODEXK8S_HOT_RELOAD
+              value: "${CODEXK8S_HOT_RELOAD}"
             - name: CODEXK8S_DB_HOST
               value: postgres
             - name: CODEXK8S_DB_PORT

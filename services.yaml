@@ -9,7 +9,8 @@ spec:
   components:
     - name: hot-reload-defaults
       serviceDefaults:
-        codeUpdateStrategy: '{{ ternary (eq .Env "production") "restart" "hot-reload" }}'
+        # ai-staging and production are prod-like. Hot-reload is only supported in ai slots.
+        codeUpdateStrategy: '{{ ternary (eq .Env "ai") "hot-reload" "restart" }}'
 
   environments:
     dev:
@@ -66,7 +67,7 @@ spec:
       context: .
 
     web-console:
-      type: build
+      type: '{{ ternary (eq .Env "ai") "build" "skip" }}'
       repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/web-console" }}'
       tagTemplate: '{{ .Env }}-{{ default (envOr "CODEXK8S_BUILD_TAG" "") "latest" }}'
       dockerfile: services/staff/web-console/Dockerfile
@@ -140,6 +141,7 @@ spec:
       deployGroup: frontend
       dependsOn:
         - codex-k8s-app
+      when: '{{ ternary (eq .Env "ai") "true" "false" }}'
       manifests:
         - path: deploy/base/web-console/web-console.yaml.tpl
 
