@@ -68,16 +68,17 @@ type UpsertProjectGitHubTokensRequest struct {
 }
 
 type UpsertConfigEntryRequest struct {
-	Scope        string   `json:"scope"`
-	Kind         string   `json:"kind"`
-	ProjectID    *string  `json:"project_id"`
-	RepositoryID *string  `json:"repository_id"`
-	Key          string   `json:"key"`
-	ValuePlain   *string  `json:"value_plain"`
-	ValueSecret  *string  `json:"value_secret"`
-	SyncTargets  []string `json:"sync_targets"`
-	Mutability   string   `json:"mutability"`
-	IsDangerous  bool     `json:"is_dangerous"`
+	Scope              string   `json:"scope"`
+	Kind               string   `json:"kind"`
+	ProjectID          *string  `json:"project_id"`
+	RepositoryID       *string  `json:"repository_id"`
+	Key                string   `json:"key"`
+	ValuePlain         *string  `json:"value_plain"`
+	ValueSecret        *string  `json:"value_secret"`
+	SyncTargets        []string `json:"sync_targets"`
+	Mutability         string   `json:"mutability"`
+	IsDangerous        bool     `json:"is_dangerous"`
+	DangerousConfirmed bool     `json:"dangerous_confirmed"`
 }
 
 type ImportDocsetRequest struct {

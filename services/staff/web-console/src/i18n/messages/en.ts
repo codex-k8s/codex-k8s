@@ -564,6 +564,8 @@ export const en = {
       syncTargetsHint: "Examples: github_env_secret:production, github_env_var:ai, k8s_secret:codex-k8s-production/codex-k8s-runtime",
       updatedAt: "updated_at",
       dangerousWarning: "Dangerous keys can break the platform when changed. Review consequences before updating.",
+      dangerousConfirm: "I understand the risks and confirm updating a dangerous key.",
+      dangerousConfirmRequired: "You must confirm updating a dangerous key.",
     },
     docs: {
       title: "Docs / Knowledge",

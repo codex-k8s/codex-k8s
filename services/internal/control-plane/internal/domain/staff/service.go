@@ -843,7 +843,7 @@ func (s *Service) ListConfigEntries(ctx context.Context, principal Principal, sc
 	})
 }
 
-func (s *Service) UpsertConfigEntry(ctx context.Context, principal Principal, params configentryrepo.UpsertParams) (configentryrepo.ConfigEntry, error) {
+func (s *Service) UpsertConfigEntry(ctx context.Context, principal Principal, params configentryrepo.UpsertParams, dangerousConfirmed bool) (configentryrepo.ConfigEntry, error) {
 	params.Scope = strings.TrimSpace(params.Scope)
 	params.Kind = strings.TrimSpace(params.Kind)
 	params.Key = strings.TrimSpace(params.Key)
@@ -855,6 +855,16 @@ func (s *Service) UpsertConfigEntry(ctx context.Context, principal Principal, pa
 	}
 	if params.Key == "" {
 		return configentryrepo.ConfigEntry{}, errs.Validation{Field: "key", Msg: "is required"}
+	}
+
+	if params.IsDangerous && !dangerousConfirmed {
+		exists, err := s.configEntries.Exists(ctx, params.Scope, params.ProjectID, params.RepositoryID, params.Key)
+		if err != nil {
+			return configentryrepo.ConfigEntry{}, err
+		}
+		if exists {
+			return configentryrepo.ConfigEntry{}, errs.Validation{Field: "dangerous_confirmed", Msg: "is required for updates to dangerous keys"}
+		}
 	}
 
 	switch params.Scope {

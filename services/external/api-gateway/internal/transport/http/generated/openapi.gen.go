@@ -589,16 +589,17 @@ type SyncDocsetResponse struct {
 
 // UpsertConfigEntryRequest defines model for UpsertConfigEntryRequest.
 type UpsertConfigEntryRequest struct {
-	IsDangerous  *bool                         `json:"is_dangerous,omitempty"`
-	Key          string                        `json:"key"`
-	Kind         UpsertConfigEntryRequestKind  `json:"kind"`
-	Mutability   *string                       `json:"mutability,omitempty"`
-	ProjectId    *string                       `json:"project_id"`
-	RepositoryId *string                       `json:"repository_id"`
-	Scope        UpsertConfigEntryRequestScope `json:"scope"`
-	SyncTargets  *[]string                     `json:"sync_targets,omitempty"`
-	ValuePlain   *string                       `json:"value_plain"`
-	ValueSecret  *string                       `json:"value_secret"`
+	DangerousConfirmed *bool                         `json:"dangerous_confirmed,omitempty"`
+	IsDangerous        *bool                         `json:"is_dangerous,omitempty"`
+	Key                string                        `json:"key"`
+	Kind               UpsertConfigEntryRequestKind  `json:"kind"`
+	Mutability         *string                       `json:"mutability,omitempty"`
+	ProjectId          *string                       `json:"project_id"`
+	RepositoryId       *string                       `json:"repository_id"`
+	Scope              UpsertConfigEntryRequestScope `json:"scope"`
+	SyncTargets        *[]string                     `json:"sync_targets,omitempty"`
+	ValuePlain         *string                       `json:"value_plain"`
+	ValueSecret        *string                       `json:"value_secret"`
 }
 
 // UpsertConfigEntryRequestKind defines model for UpsertConfigEntryRequest.Kind.

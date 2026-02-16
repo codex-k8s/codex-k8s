@@ -129,6 +129,14 @@
             <VAlert v-if="isDangerous" type="warning" variant="tonal">
               <div class="text-body-2">{{ t("pages.configEntries.dangerousWarning") }}</div>
             </VAlert>
+            <VCheckbox
+              v-if="isDangerous"
+              v-model="dangerousConfirmed"
+              class="mt-2"
+              density="compact"
+              :label="t('pages.configEntries.dangerousConfirm')"
+              hide-details
+            />
           </VCol>
           <VCol cols="12">
             <VBtn color="primary" variant="tonal" :loading="store.saving" @click="save">
@@ -203,6 +211,7 @@ const formScope = ref<(typeof scopeItems)[number]>("platform");
 const kind = ref<(typeof kindItems)[number]>("variable");
 const mutability = ref<(typeof mutabilityItems)[number]>("startup_required");
 const isDangerous = ref(false);
+const dangerousConfirmed = ref(false);
 const formProjectId = ref("");
 const formRepositoryId = ref("");
 const key = ref("");
@@ -216,6 +225,10 @@ function parseTargets(raw: string): string[] {
 }
 
 async function save() {
+  if (isDangerous.value && !dangerousConfirmed.value) {
+    snackbar.error(t("pages.configEntries.dangerousConfirmRequired"));
+    return;
+  }
   const item = await store.upsert({
     scope: formScope.value,
     kind: kind.value,
@@ -227,12 +240,14 @@ async function save() {
     syncTargets: parseTargets(syncTargetsRaw.value),
     mutability: mutability.value,
     isDangerous: isDangerous.value,
+    dangerousConfirmed: dangerousConfirmed.value,
   });
   if (item) {
     snackbar.success(t("common.saved"));
     await load();
     valuePlain.value = "";
     valueSecret.value = "";
+    dangerousConfirmed.value = false;
   }
 }
 
@@ -265,4 +280,3 @@ onMounted(() => void load());
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 </style>
-

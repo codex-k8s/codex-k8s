@@ -18,6 +18,8 @@ var (
 	queryUpsert string
 	//go:embed sql/delete.sql
 	queryDelete string
+	//go:embed sql/exists.sql
+	queryExists string
 )
 
 // Repository stores config entries in PostgreSQL.
@@ -67,6 +69,14 @@ func (r *Repository) List(ctx context.Context, filter domainrepo.ListFilter) ([]
 	return out, nil
 }
 
+func (r *Repository) Exists(ctx context.Context, scope string, projectID string, repositoryID string, key string) (bool, error) {
+	var exists bool
+	if err := r.db.QueryRow(ctx, queryExists, scope, projectID, repositoryID, key).Scan(&exists); err != nil {
+		return false, fmt.Errorf("check config entry exists: %w", err)
+	}
+	return exists, nil
+}
+
 func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams) (domainrepo.ConfigEntry, error) {
 	var item domainrepo.ConfigEntry
 	err := r.db.QueryRow(
@@ -113,4 +123,3 @@ func nullUUID(value string) any {
 	}
 	return value
 }
-

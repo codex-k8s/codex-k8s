@@ -1946,6 +1946,8 @@ components:
           type: string
         is_dangerous:
           type: boolean
+        dangerous_confirmed:
+          type: boolean
 
     DocsetGroup:
       type: object

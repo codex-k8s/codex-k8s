@@ -565,6 +565,8 @@ export const ru = {
         "Примеры: github_env_secret:production, github_env_var:ai, k8s_secret:codex-k8s-production/codex-k8s-runtime",
       updatedAt: "updated_at",
       dangerousWarning: "Опасные ключи могут ломать платформу при смене. Проверяйте последствия перед обновлением.",
+      dangerousConfirm: "Я понимаю риски и подтверждаю обновление опасного ключа.",
+      dangerousConfirmRequired: "Нужно подтвердить обновление опасного ключа.",
     },
     docs: {
       title: "Документы / Знания",

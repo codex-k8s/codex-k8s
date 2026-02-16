@@ -626,13 +626,13 @@ func (s *Server) ListProjectRepositories(ctx context.Context, req *controlplanev
 		botEmail := strings.TrimSpace(r.BotEmail)
 		preflightUpdatedAt := strings.TrimSpace(r.PreflightUpdatedAt)
 		out = append(out, &controlplanev1.RepositoryBinding{
-			Id:               r.ID,
-			ProjectId:        r.ProjectID,
-			Provider:         r.Provider,
-			ExternalId:       r.ExternalID,
-			Owner:            r.Owner,
-			Name:             r.Name,
-			ServicesYamlPath: r.ServicesYAMLPath,
+			Id:                 r.ID,
+			ProjectId:          r.ProjectID,
+			Provider:           r.Provider,
+			ExternalId:         r.ExternalID,
+			Owner:              r.Owner,
+			Name:               r.Name,
+			ServicesYamlPath:   r.ServicesYAMLPath,
 			BotUsername:        stringPtrOrNil(botUsername),
 			BotEmail:           stringPtrOrNil(botEmail),
 			PreflightUpdatedAt: stringPtrOrNil(preflightUpdatedAt),
@@ -663,13 +663,13 @@ func (s *Server) UpsertProjectRepository(ctx context.Context, req *controlplanev
 	botEmail := strings.TrimSpace(item.BotEmail)
 	preflightUpdatedAt := strings.TrimSpace(item.PreflightUpdatedAt)
 	return &controlplanev1.RepositoryBinding{
-		Id:               item.ID,
-		ProjectId:        item.ProjectID,
-		Provider:         item.Provider,
-		ExternalId:       item.ExternalID,
-		Owner:            item.Owner,
-		Name:             item.Name,
-		ServicesYamlPath: item.ServicesYAMLPath,
+		Id:                 item.ID,
+		ProjectId:          item.ProjectID,
+		Provider:           item.Provider,
+		ExternalId:         item.ExternalID,
+		Owner:              item.Owner,
+		Name:               item.Name,
+		ServicesYamlPath:   item.ServicesYAMLPath,
 		BotUsername:        stringPtrOrNil(botUsername),
 		BotEmail:           stringPtrOrNil(botEmail),
 		PreflightUpdatedAt: stringPtrOrNil(preflightUpdatedAt),
@@ -832,18 +832,18 @@ func (s *Server) UpsertConfigEntry(ctx context.Context, req *controlplanev1.Upse
 		}
 	}
 	item, err := s.staff.UpsertConfigEntry(ctx, p, configentryrepo.UpsertParams{
-		Scope:        strings.TrimSpace(req.Scope),
-		Kind:         strings.TrimSpace(req.Kind),
-		ProjectID:    strings.TrimSpace(req.GetProjectId()),
-		RepositoryID: strings.TrimSpace(req.GetRepositoryId()),
-		Key:          strings.TrimSpace(req.Key),
-		ValuePlain:   strings.TrimSpace(req.GetValuePlain()),
-		ValueEncrypted: encrypted,
-		SyncTargets:  req.SyncTargets,
-		Mutability:   strings.TrimSpace(req.Mutability),
-		IsDangerous:  req.IsDangerous,
+		Scope:           strings.TrimSpace(req.Scope),
+		Kind:            strings.TrimSpace(req.Kind),
+		ProjectID:       strings.TrimSpace(req.GetProjectId()),
+		RepositoryID:    strings.TrimSpace(req.GetRepositoryId()),
+		Key:             strings.TrimSpace(req.Key),
+		ValuePlain:      strings.TrimSpace(req.GetValuePlain()),
+		ValueEncrypted:  encrypted,
+		SyncTargets:     req.SyncTargets,
+		Mutability:      strings.TrimSpace(req.Mutability),
+		IsDangerous:     req.IsDangerous,
 		CreatedByUserID: p.UserID,
-	})
+	}, req.DangerousConfirmed)
 	if err != nil {
 		return nil, toStatus(err)
 	}

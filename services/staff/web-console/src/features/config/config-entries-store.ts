@@ -38,6 +38,7 @@ export const useConfigEntriesStore = defineStore("configEntries", {
       syncTargets: string[];
       mutability: "startup_required" | "runtime_mutable";
       isDangerous: boolean;
+      dangerousConfirmed: boolean;
     }): Promise<ConfigEntry | null> {
       this.saving = true;
       this.saveError = null;
@@ -65,4 +66,3 @@ export const useConfigEntriesStore = defineStore("configEntries", {
     },
   },
 });
-

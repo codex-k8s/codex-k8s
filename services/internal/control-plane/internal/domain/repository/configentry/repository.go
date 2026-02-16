@@ -8,15 +8,15 @@ import (
 )
 
 type (
-	ConfigEntry    = entitytypes.ConfigEntry
-	UpsertParams   = querytypes.ConfigEntryUpsertParams
-	ListFilter     = querytypes.ConfigEntryListFilter
+	ConfigEntry  = entitytypes.ConfigEntry
+	UpsertParams = querytypes.ConfigEntryUpsertParams
+	ListFilter   = querytypes.ConfigEntryListFilter
 )
 
 // Repository persists config entries.
 type Repository interface {
 	List(ctx context.Context, filter ListFilter) ([]ConfigEntry, error)
+	Exists(ctx context.Context, scope string, projectID string, repositoryID string, key string) (bool, error)
 	Upsert(ctx context.Context, params UpsertParams) (ConfigEntry, error)
 	Delete(ctx context.Context, id string) error
 }
-

@@ -4105,20 +4105,21 @@ func (x *ListConfigEntriesResponse) GetItems() []*ConfigEntry {
 }
 
 type UpsertConfigEntryRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Principal     *Principal             `protobuf:"bytes,1,opt,name=principal,proto3" json:"principal,omitempty"`
-	Scope         string                 `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`
-	Kind          string                 `protobuf:"bytes,3,opt,name=kind,proto3" json:"kind,omitempty"`
-	ProjectId     *string                `protobuf:"bytes,4,opt,name=project_id,json=projectId,proto3,oneof" json:"project_id,omitempty"`
-	RepositoryId  *string                `protobuf:"bytes,5,opt,name=repository_id,json=repositoryId,proto3,oneof" json:"repository_id,omitempty"`
-	Key           string                 `protobuf:"bytes,6,opt,name=key,proto3" json:"key,omitempty"`
-	ValuePlain    *string                `protobuf:"bytes,7,opt,name=value_plain,json=valuePlain,proto3,oneof" json:"value_plain,omitempty"`
-	ValueSecret   *string                `protobuf:"bytes,8,opt,name=value_secret,json=valueSecret,proto3,oneof" json:"value_secret,omitempty"`
-	SyncTargets   []string               `protobuf:"bytes,9,rep,name=sync_targets,json=syncTargets,proto3" json:"sync_targets,omitempty"`
-	Mutability    string                 `protobuf:"bytes,10,opt,name=mutability,proto3" json:"mutability,omitempty"`
-	IsDangerous   bool                   `protobuf:"varint,11,opt,name=is_dangerous,json=isDangerous,proto3" json:"is_dangerous,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Principal          *Principal             `protobuf:"bytes,1,opt,name=principal,proto3" json:"principal,omitempty"`
+	Scope              string                 `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`
+	Kind               string                 `protobuf:"bytes,3,opt,name=kind,proto3" json:"kind,omitempty"`
+	ProjectId          *string                `protobuf:"bytes,4,opt,name=project_id,json=projectId,proto3,oneof" json:"project_id,omitempty"`
+	RepositoryId       *string                `protobuf:"bytes,5,opt,name=repository_id,json=repositoryId,proto3,oneof" json:"repository_id,omitempty"`
+	Key                string                 `protobuf:"bytes,6,opt,name=key,proto3" json:"key,omitempty"`
+	ValuePlain         *string                `protobuf:"bytes,7,opt,name=value_plain,json=valuePlain,proto3,oneof" json:"value_plain,omitempty"`
+	ValueSecret        *string                `protobuf:"bytes,8,opt,name=value_secret,json=valueSecret,proto3,oneof" json:"value_secret,omitempty"`
+	SyncTargets        []string               `protobuf:"bytes,9,rep,name=sync_targets,json=syncTargets,proto3" json:"sync_targets,omitempty"`
+	Mutability         string                 `protobuf:"bytes,10,opt,name=mutability,proto3" json:"mutability,omitempty"`
+	IsDangerous        bool                   `protobuf:"varint,11,opt,name=is_dangerous,json=isDangerous,proto3" json:"is_dangerous,omitempty"`
+	DangerousConfirmed bool                   `protobuf:"varint,12,opt,name=dangerous_confirmed,json=dangerousConfirmed,proto3" json:"dangerous_confirmed,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *UpsertConfigEntryRequest) Reset() {
@@ -4224,6 +4225,13 @@ func (x *UpsertConfigEntryRequest) GetMutability() string {
 func (x *UpsertConfigEntryRequest) GetIsDangerous() bool {
 	if x != nil {
 		return x.IsDangerous
+	}
+	return false
+}
+
+func (x *UpsertConfigEntryRequest) GetDangerousConfirmed() bool {
+	if x != nil {
+		return x.DangerousConfirmed
 	}
 	return false
 }
@@ -7502,7 +7510,7 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\v_project_idB\x10\n" +
 	"\x0e_repository_id\"X\n" +
 	"\x19ListConfigEntriesResponse\x12;\n" +
-	"\x05items\x18\x01 \x03(\v2%.codexk8s.controlplane.v1.ConfigEntryR\x05items\"\xdd\x03\n" +
+	"\x05items\x18\x01 \x03(\v2%.codexk8s.controlplane.v1.ConfigEntryR\x05items\"\x8e\x04\n" +
 	"\x18UpsertConfigEntryRequest\x12A\n" +
 	"\tprincipal\x18\x01 \x01(\v2#.codexk8s.controlplane.v1.PrincipalR\tprincipal\x12\x14\n" +
 	"\x05scope\x18\x02 \x01(\tR\x05scope\x12\x12\n" +
@@ -7519,7 +7527,8 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"mutability\x18\n" +
 	" \x01(\tR\n" +
 	"mutability\x12!\n" +
-	"\fis_dangerous\x18\v \x01(\bR\visDangerousB\r\n" +
+	"\fis_dangerous\x18\v \x01(\bR\visDangerous\x12/\n" +
+	"\x13dangerous_confirmed\x18\f \x01(\bR\x12dangerousConfirmedB\r\n" +
 	"\v_project_idB\x10\n" +
 	"\x0e_repository_idB\x0e\n" +
 	"\f_value_plainB\x0f\n" +

@@ -697,17 +697,18 @@ func (h *staffHandler) UpsertConfigEntry(c *echo.Context) error {
 		}
 
 		item, err := h.cp.Service().UpsertConfigEntry(c.Request().Context(), &controlplanev1.UpsertConfigEntryRequest{
-			Principal:    principal,
-			Scope:        req.Scope,
-			Kind:         req.Kind,
-			ProjectId:    req.ProjectID,
-			RepositoryId: req.RepositoryID,
-			Key:          req.Key,
-			ValuePlain:   valuePlain,
-			ValueSecret:  valueSecret,
-			SyncTargets:  req.SyncTargets,
-			Mutability:   req.Mutability,
-			IsDangerous:  req.IsDangerous,
+			Principal:          principal,
+			Scope:              req.Scope,
+			Kind:               req.Kind,
+			ProjectId:          req.ProjectID,
+			RepositoryId:       req.RepositoryID,
+			Key:                req.Key,
+			ValuePlain:         valuePlain,
+			ValueSecret:        valueSecret,
+			SyncTargets:        req.SyncTargets,
+			Mutability:         req.Mutability,
+			IsDangerous:        req.IsDangerous,
+			DangerousConfirmed: req.DangerousConfirmed,
 		})
 		if err != nil {
 			return err

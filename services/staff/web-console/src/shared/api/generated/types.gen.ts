@@ -302,6 +302,7 @@ export type UpsertConfigEntryRequest = {
     sync_targets?: Array<string>;
     mutability?: string;
     is_dangerous?: boolean;
+    dangerous_confirmed?: boolean;
 };
 
 export type DocsetGroup = {

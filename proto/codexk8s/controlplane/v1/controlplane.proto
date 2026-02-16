@@ -440,6 +440,7 @@ message UpsertConfigEntryRequest {
   repeated string sync_targets = 9;
   string mutability = 10;
   bool is_dangerous = 11;
+  bool dangerous_confirmed = 12;
 }
 
 message DeleteConfigEntryRequest {

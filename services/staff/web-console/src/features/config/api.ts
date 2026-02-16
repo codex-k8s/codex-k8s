@@ -30,6 +30,7 @@ export async function upsertConfigEntry(params: {
   syncTargets: string[];
   mutability: "startup_required" | "runtime_mutable";
   isDangerous: boolean;
+  dangerousConfirmed: boolean;
 }): Promise<ConfigEntry> {
   const resp = await upsertConfigEntryRequest({
     body: {
@@ -43,6 +44,7 @@ export async function upsertConfigEntry(params: {
       sync_targets: params.syncTargets,
       mutability: params.mutability,
       is_dangerous: params.isDangerous,
+      dangerous_confirmed: params.dangerousConfirmed,
     },
     throwOnError: true,
   });
@@ -52,4 +54,3 @@ export async function upsertConfigEntry(params: {
 export async function deleteConfigEntry(id: string): Promise<void> {
   await deleteConfigEntryRequest({ path: { config_entry_id: id }, throwOnError: true });
 }
-
