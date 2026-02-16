@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	defaultGitHubSyncTimeout      = 5 * time.Minute
-	defaultGitHubSyncWorkers      = 4
+	defaultGitHubSyncTimeout      = 15 * time.Minute
+	defaultGitHubSyncWorkers      = 2
 	defaultGitHubWebhookEvents    = "push,pull_request,issues,issue_comment,pull_request_review,pull_request_review_comment"
 	defaultGitHubLabelDescription = "codex-k8s managed label"
 	defaultGitHubLabelColor       = "1f6feb"
@@ -389,27 +389,48 @@ func ensureGitHubEnvironment(ctx context.Context, client *gh.Client, repo github
 }
 
 func syncGitHubEnvVariables(ctx context.Context, client *gh.Client, repo githubRepositoryRef, env string, values map[string]string, keys []string, workers int) error {
+	existingNames, err := listGitHubEnvVariableNames(ctx, client, repo, env)
+	if err != nil {
+		return err
+	}
+	existing := make(map[string]struct{}, len(existingNames))
+	for _, name := range existingNames {
+		trimmed := strings.TrimSpace(name)
+		if trimmed == "" {
+			continue
+		}
+		existing[trimmed] = struct{}{}
+	}
+
 	ops := make([]githubOperation, 0, len(keys))
 	for _, key := range keys {
-		key := key
-		value := strings.TrimSpace(values[key])
+		trimmedKey := strings.TrimSpace(key)
+		value := strings.TrimSpace(values[trimmedKey])
+		_, exists := existing[trimmedKey]
+
+		keyCopy := trimmedKey
+		valueCopy := value
+		existsCopy := exists
 		ops = append(ops, githubOperation{
-			Name: "variable " + key,
+			Name: "variable " + keyCopy,
 			Run: func(ctx context.Context) error {
-				return upsertGitHubEnvVariable(ctx, client, repo, env, key, value)
+				return upsertGitHubEnvVariable(ctx, client, repo, env, keyCopy, valueCopy, existsCopy)
 			},
 		})
 	}
 	return runGitHubOperations(ctx, workers, ops)
 }
 
-func upsertGitHubEnvVariable(ctx context.Context, client *gh.Client, repo githubRepositoryRef, env string, key string, value string) error {
+func upsertGitHubEnvVariable(ctx context.Context, client *gh.Client, repo githubRepositoryRef, env string, key string, value string, exists bool) error {
 	trimmedKey := strings.TrimSpace(key)
 	trimmedEnv := strings.TrimSpace(env)
 	if trimmedKey == "" || trimmedEnv == "" {
 		return nil
 	}
 	if strings.TrimSpace(value) == "" {
+		if !exists {
+			return nil
+		}
 		if _, err := client.Actions.DeleteEnvVariable(ctx, repo.Owner, repo.Name, trimmedEnv, trimmedKey); err != nil && !isGitHubNotFound(err) {
 			return fmt.Errorf("delete variable %s: %w", trimmedKey, err)
 		}
@@ -417,11 +438,13 @@ func upsertGitHubEnvVariable(ctx context.Context, client *gh.Client, repo github
 	}
 
 	payload := &gh.ActionsVariable{Name: trimmedKey, Value: value}
-	if _, err := client.Actions.UpdateEnvVariable(ctx, repo.Owner, repo.Name, trimmedEnv, payload); err == nil {
-		return nil
-	} else if !isGitHubNotFound(err) {
-		if !isGitHubConflict(err) && !isGitHubUnprocessable(err) {
-			return fmt.Errorf("update variable %s: %w", trimmedKey, err)
+	if exists {
+		if _, err := client.Actions.UpdateEnvVariable(ctx, repo.Owner, repo.Name, trimmedEnv, payload); err == nil {
+			return nil
+		} else if !isGitHubNotFound(err) {
+			if !isGitHubConflict(err) && !isGitHubUnprocessable(err) {
+				return fmt.Errorf("update variable %s: %w", trimmedKey, err)
+			}
 		}
 	}
 

@@ -300,11 +300,11 @@ func runRemoteBootstrapDeployPipeline(values map[string]string, stdout io.Writer
 	}
 	githubSyncWorkers := strings.TrimSpace(values["CODEXK8S_GITHUB_SYNC_WORKERS"])
 	if githubSyncWorkers == "" {
-		githubSyncWorkers = "4"
+		githubSyncWorkers = "2"
 	}
 	githubSyncTimeout := strings.TrimSpace(values["CODEXK8S_GITHUB_SYNC_TIMEOUT"])
 	if githubSyncTimeout == "" {
-		githubSyncTimeout = "5m"
+		githubSyncTimeout = "15m"
 	}
 	remoteTimeoutRaw := strings.TrimSpace(values["CODEXK8S_REMOTE_DEPLOY_TIMEOUT"])
 	if remoteTimeoutRaw == "" {
