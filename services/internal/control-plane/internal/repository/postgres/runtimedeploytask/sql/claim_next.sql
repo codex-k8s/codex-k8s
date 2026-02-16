@@ -8,6 +8,11 @@ WITH candidate AS (
            AND lease_until IS NOT NULL
            AND lease_until < NOW()
        )
+       OR (
+           status = 'running'
+           AND lease_until IS NOT NULL
+           AND updated_at < NOW() - INTERVAL '2 minutes'
+       )
     ORDER BY updated_at ASC
     FOR UPDATE SKIP LOCKED
     LIMIT 1

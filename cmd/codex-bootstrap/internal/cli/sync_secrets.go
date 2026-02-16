@@ -317,6 +317,8 @@ func buildRuntimeSecretValues(values map[string]string) map[string]string {
 		"CODEXK8S_INTERNAL_REGISTRY_PORT":            strings.TrimSpace(values["CODEXK8S_INTERNAL_REGISTRY_PORT"]),
 		"CODEXK8S_INTERNAL_REGISTRY_HOST":            strings.TrimSpace(values["CODEXK8S_INTERNAL_REGISTRY_HOST"]),
 		"CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE":    strings.TrimSpace(values["CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE"]),
+		"CODEXK8S_K8S_API_CIDR":                      strings.TrimSpace(values["CODEXK8S_K8S_API_CIDR"]),
+		"CODEXK8S_K8S_API_PORT":                      strings.TrimSpace(values["CODEXK8S_K8S_API_PORT"]),
 		"CODEXK8S_GITHUB_PAT":                        strings.TrimSpace(values["CODEXK8S_GITHUB_PAT"]),
 		"CODEXK8S_GITHUB_REPO":                       strings.TrimSpace(values["CODEXK8S_GITHUB_REPO"]),
 		"CODEXK8S_FIRST_PROJECT_GITHUB_REPO":         strings.TrimSpace(values["CODEXK8S_FIRST_PROJECT_GITHUB_REPO"]),

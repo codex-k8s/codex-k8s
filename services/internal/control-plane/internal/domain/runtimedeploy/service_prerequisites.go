@@ -98,6 +98,20 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoo
 	internalRegistryHost := valueOrExisting(vars, existingRuntime, "CODEXK8S_INTERNAL_REGISTRY_HOST", "127.0.0.1:"+internalRegistryPort)
 	internalRegistryStorageSize := valueOrExisting(vars, existingRuntime, "CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE", "20Gi")
 
+	k8sAPICIDR := strings.TrimSpace(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_K8S_API_CIDR", ""))
+	k8sAPIPort := strings.TrimSpace(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_K8S_API_PORT", "6443"))
+	if k8sAPIPort == "" {
+		k8sAPIPort = "6443"
+	}
+	// Network policies are applied from templates using vars; carry resolved values from secrets back into vars.
+	vars["CODEXK8S_K8S_API_CIDR"] = k8sAPICIDR
+	vars["CODEXK8S_K8S_API_PORT"] = k8sAPIPort
+
+	networkPolicyBaseline := strings.TrimSpace(valueOr(vars, "CODEXK8S_NETWORK_POLICY_BASELINE", "true"))
+	if targetEnv != "ai" && strings.EqualFold(networkPolicyBaseline, "true") && k8sAPICIDR == "" {
+		return fmt.Errorf("CODEXK8S_K8S_API_CIDR is required when network policy baseline is enabled; set it to node IP /32 or disable CODEXK8S_NETWORK_POLICY_BASELINE")
+	}
+
 	postgresDB := valueOrExisting(vars, existingPostgres, "CODEXK8S_POSTGRES_DB", "codex_k8s")
 	postgresUser := valueOrExisting(vars, existingPostgres, "CODEXK8S_POSTGRES_USER", "codex_k8s")
 	postgresPassword, err := valueOrExistingOrRandomHex(vars, existingPostgres, "CODEXK8S_POSTGRES_PASSWORD", 24)
@@ -140,8 +154,8 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoo
 		"CODEXK8S_INTERNAL_REGISTRY_PORT":            []byte(internalRegistryPort),
 		"CODEXK8S_INTERNAL_REGISTRY_HOST":            []byte(internalRegistryHost),
 		"CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE":    []byte(internalRegistryStorageSize),
-		"CODEXK8S_K8S_API_CIDR":                      []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_K8S_API_CIDR", "")),
-		"CODEXK8S_K8S_API_PORT":                      []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_K8S_API_PORT", "6443")),
+		"CODEXK8S_K8S_API_CIDR":                      []byte(k8sAPICIDR),
+		"CODEXK8S_K8S_API_PORT":                      []byte(k8sAPIPort),
 		"CODEXK8S_GITHUB_PAT":                        []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_PAT", "")),
 		"CODEXK8S_GITHUB_REPO":                       []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_REPO", "")),
 		"CODEXK8S_FIRST_PROJECT_GITHUB_REPO":         []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_FIRST_PROJECT_GITHUB_REPO", "")),

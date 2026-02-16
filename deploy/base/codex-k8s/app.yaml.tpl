@@ -205,6 +205,18 @@ spec:
                   name: codex-k8s-runtime
                   key: CODEXK8S_AI_DOMAIN
                   optional: true
+            - name: CODEXK8S_K8S_API_CIDR
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_K8S_API_CIDR
+                  optional: true
+            - name: CODEXK8S_K8S_API_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_K8S_API_PORT
+                  optional: true
             - name: CODEXK8S_CONTROL_PLANE_GRPC_ADDR
               value: ":9090"
             - name: CODEXK8S_CONTROL_PLANE_HTTP_ADDR
