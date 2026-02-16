@@ -306,18 +306,6 @@ func collectGitHubVariableKeys(values map[string]string) []string {
 		}
 		keysSet[trimmed] = struct{}{}
 	}
-	for key, value := range values {
-		if !strings.HasSuffix(key, "_LABEL") {
-			continue
-		}
-		if _, isSecret := secretSet[key]; isSecret {
-			continue
-		}
-		if strings.TrimSpace(value) == "" {
-			continue
-		}
-		keysSet[key] = struct{}{}
-	}
 
 	keys := make([]string, 0, len(keysSet))
 	for key := range keysSet {
