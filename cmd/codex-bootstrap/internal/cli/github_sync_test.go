@@ -47,3 +47,33 @@ func TestNormalizeGitHubEvents(t *testing.T) {
 		t.Fatalf("unexpected events order/content: %v", events)
 	}
 }
+
+func TestApplyGitHubEnvironmentOverrides(t *testing.T) {
+	values := map[string]string{
+		"CODEXK8S_OPENAI_API_KEY":            "prod-key",
+		"CODEXK8S_AI_OPENAI_API_KEY":         "ai-key",
+		"CODEXK8S_PRODUCTION_OPENAI_API_KEY": "prod-override-key",
+		"CODEXK8S_AI_DOMAIN":                 "ai.platform.example.dev",
+		"CODEXK8S_AI_AI_DOMAIN":              "should-not-be-used",
+	}
+
+	keys := append(append([]string(nil), githubRepoSecretKeys...), githubEnvVariableKeys...)
+
+	production := cloneStringMap(values)
+	applyEnvironmentOverrides(production, "production", keys)
+	if got, want := production["CODEXK8S_OPENAI_API_KEY"], "prod-override-key"; got != want {
+		t.Fatalf("production override mismatch: got %q want %q", got, want)
+	}
+	if got, want := production["CODEXK8S_AI_DOMAIN"], "ai.platform.example.dev"; got != want {
+		t.Fatalf("expected CODEXK8S_AI_DOMAIN to remain unchanged: got %q want %q", got, want)
+	}
+
+	ai := cloneStringMap(values)
+	applyEnvironmentOverrides(ai, "ai", keys)
+	if got, want := ai["CODEXK8S_OPENAI_API_KEY"], "ai-key"; got != want {
+		t.Fatalf("ai override mismatch: got %q want %q", got, want)
+	}
+	if got, want := ai["CODEXK8S_AI_DOMAIN"], "ai.platform.example.dev"; got != want {
+		t.Fatalf("expected CODEXK8S_AI_DOMAIN to remain unchanged: got %q want %q", got, want)
+	}
+}

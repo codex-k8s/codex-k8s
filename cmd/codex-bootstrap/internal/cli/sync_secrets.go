@@ -112,6 +112,16 @@ func runSyncSecrets(args []string, stdout io.Writer, stderr io.Writer) int {
 		writef(stderr, "sync-secrets failed: load codex-k8s-oauth2-proxy: %v\n", err)
 		return 1
 	}
+	existingRuntimeAI, err := getSecretData(ctx, clientset, targetNamespace, "codex-k8s-runtime-ai")
+	if err != nil {
+		writef(stderr, "sync-secrets failed: load codex-k8s-runtime-ai: %v\n", err)
+		return 1
+	}
+	existingOAuthAI, err := getSecretData(ctx, clientset, targetNamespace, "codex-k8s-oauth2-proxy-ai")
+	if err != nil {
+		writef(stderr, "sync-secrets failed: load codex-k8s-oauth2-proxy-ai: %v\n", err)
+		return 1
+	}
 
 	if err := hydrateValuesFromExistingSecrets(values, existingPostgres, existingRuntime, existingOAuth); err != nil {
 		writef(stderr, "sync-secrets failed: hydrate values from existing secrets: %v\n", err)
@@ -122,10 +132,19 @@ func runSyncSecrets(args []string, stdout io.Writer, stderr io.Writer) int {
 	runtimeSecret := buildRuntimeSecretValues(values)
 	oauthSecret := buildOAuthSecretValues(values)
 
+	aiRuntimeSecret := buildEnvScopedSecretValues(values, existingRuntimeAI, runtimeSecret, githubEnvironmentAI)
+	aiOAuthSecret := buildEnvScopedSecretValues(values, existingOAuthAI, oauthSecret, githubEnvironmentAI)
+	hydrateEnvOverrideValuesFromSecret(values, existingRuntimeAI, runtimeSecret, githubEnvironmentAI)
+
 	if *dryRun {
 		writef(stdout, "sync-secrets env-file=%s namespace=%s dry-run=true\n", absEnv, targetNamespace)
 		writef(stdout, "resolved postgres keys=%d runtime keys=%d oauth keys=%d\n", len(postgresSecret), len(runtimeSecret), len(oauthSecret))
+		writef(stdout, "resolved runtime-ai keys=%d oauth-ai keys=%d\n", len(aiRuntimeSecret), len(aiOAuthSecret))
 		printResolvedSecretKeys(stdout, postgresSecret, runtimeSecret, oauthSecret)
+		writeln(stdout, "runtime-ai secret keys:")
+		printSortedKeys(stdout, aiRuntimeSecret)
+		writeln(stdout, "oauth2-proxy-ai secret keys:")
+		printSortedKeys(stdout, aiOAuthSecret)
 		return 0
 	}
 
@@ -140,6 +159,18 @@ func runSyncSecrets(args []string, stdout io.Writer, stderr io.Writer) int {
 	if len(oauthSecret) > 0 {
 		if err := upsertSecretData(ctx, clientset, targetNamespace, "codex-k8s-oauth2-proxy", oauthSecret); err != nil {
 			writef(stderr, "sync-secrets failed: upsert codex-k8s-oauth2-proxy: %v\n", err)
+			return 1
+		}
+	}
+	if len(aiRuntimeSecret) > 0 {
+		if err := upsertSecretData(ctx, clientset, targetNamespace, "codex-k8s-runtime-ai", aiRuntimeSecret); err != nil {
+			writef(stderr, "sync-secrets failed: upsert codex-k8s-runtime-ai: %v\n", err)
+			return 1
+		}
+	}
+	if len(aiOAuthSecret) > 0 {
+		if err := upsertSecretData(ctx, clientset, targetNamespace, "codex-k8s-oauth2-proxy-ai", aiOAuthSecret); err != nil {
+			writef(stderr, "sync-secrets failed: upsert codex-k8s-oauth2-proxy-ai: %v\n", err)
 			return 1
 		}
 	}
@@ -482,4 +513,76 @@ func randomHexString(numBytes int) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(raw), nil
+}
+
+func buildEnvScopedSecretValues(values map[string]string, existing map[string][]byte, production map[string]string, envName string) map[string]string {
+	out := make(map[string]string, len(production))
+	for key, raw := range existing {
+		trimmedKey := strings.TrimSpace(key)
+		trimmedValue := strings.TrimSpace(string(raw))
+		if trimmedKey == "" || trimmedValue == "" {
+			continue
+		}
+		out[trimmedKey] = trimmedValue
+	}
+
+	for key, value := range production {
+		trimmedKey := strings.TrimSpace(key)
+		trimmedValue := strings.TrimSpace(value)
+		if trimmedKey == "" || trimmedValue == "" {
+			continue
+		}
+		if strings.TrimSpace(out[trimmedKey]) != "" {
+			continue
+		}
+		out[trimmedKey] = trimmedValue
+	}
+
+	for key := range production {
+		trimmedKey := strings.TrimSpace(key)
+		if trimmedKey == "" {
+			continue
+		}
+		overrideKey := environmentOverrideKey(envName, trimmedKey)
+		if overrideKey == "" {
+			continue
+		}
+		if overrideValue := strings.TrimSpace(values[overrideKey]); overrideValue != "" {
+			out[trimmedKey] = overrideValue
+		}
+	}
+
+	return compactStringMap(out)
+}
+
+func hydrateEnvOverrideValuesFromSecret(values map[string]string, existing map[string][]byte, production map[string]string, envName string) {
+	if len(existing) == 0 || len(production) == 0 || len(values) == 0 {
+		return
+	}
+
+	for key, prodValue := range production {
+		trimmedKey := strings.TrimSpace(key)
+		if trimmedKey == "" {
+			continue
+		}
+		overrideKey := environmentOverrideKey(envName, trimmedKey)
+		if overrideKey == "" {
+			continue
+		}
+		if strings.TrimSpace(values[overrideKey]) != "" {
+			continue
+		}
+		raw, ok := existing[trimmedKey]
+		if !ok {
+			continue
+		}
+		secretValue := strings.TrimSpace(string(raw))
+		if secretValue == "" {
+			continue
+		}
+		if strings.TrimSpace(prodValue) == secretValue {
+			continue
+		}
+		values[overrideKey] = secretValue
+	}
 }

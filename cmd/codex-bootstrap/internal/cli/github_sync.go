@@ -38,10 +38,6 @@ var (
 		"CODEXK8S_PRODUCTION_DOMAIN",
 		"CODEXK8S_AI_DOMAIN",
 		"CODEXK8S_PUBLIC_BASE_URL",
-		"CODEXK8S_GITHUB_WEBHOOK_URL",
-		"CODEXK8S_GITHUB_WEBHOOK_EVENTS",
-		"CODEXK8S_GITHUB_REPO",
-		"CODEXK8S_FIRST_PROJECT_GITHUB_REPO",
 	}
 	githubRepoSecretKeys = []string{
 		"CODEXK8S_OPENAI_API_KEY",
@@ -171,8 +167,6 @@ func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
 		reposForWebhookAndLabels = append(reposForWebhookAndLabels, firstProjectRepo)
 	}
 
-	variableKeys := collectGitHubVariableKeys(values)
-	secretValues := collectGitHubSecretValues(values)
 	labels := collectGitHubLabels(values)
 	webhookURL := resolveWebhookURL(values)
 	webhookEvents := normalizeGitHubEvents(values["CODEXK8S_GITHUB_WEBHOOK_EVENTS"])
@@ -185,7 +179,7 @@ func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
 	writef(stdout, "github-sync env-file=%s\n", absEnv)
 	writef(stdout, "platform-repo=%s\n", platformRepo.FullName)
 	writef(stdout, "webhook-label-repos=%s\n", joinRepositoryNames(reposForWebhookAndLabels))
-	writef(stdout, "variables=%d secrets=%d labels=%d\n", len(variableKeys), len(secretValues), len(labels))
+	writef(stdout, "labels=%d\n", len(labels))
 
 	if *dryRun {
 		writeln(stdout, "dry-run: no GitHub mutations were applied")
@@ -212,7 +206,11 @@ func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
 
 	if !*skipVariables {
 		for _, envName := range environments {
-			if err := syncGitHubEnvVariables(ctx, client, platformRepo, envName, values, variableKeys, *workers); err != nil {
+			envValues := cloneStringMap(values)
+			applyEnvironmentOverrides(envValues, envName, githubEnvVariableKeys)
+			variableKeys := collectGitHubVariableKeys(envValues)
+			writef(stdout, "sync %s environment variables=%d\n", envName, len(variableKeys))
+			if err := syncGitHubEnvVariables(ctx, client, platformRepo, envName, envValues, variableKeys, *workers); err != nil {
 				writef(stderr, "github-sync failed: sync %s environment variables: %v\n", envName, err)
 				return 1
 			}
@@ -220,7 +218,11 @@ func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
 	}
 	if !*skipSecrets {
 		for _, envName := range environments {
-			if err := syncGitHubEnvSecrets(ctx, client, platformRepo, repoID, envName, values, githubRepoSecretKeys, *workers); err != nil {
+			envValues := cloneStringMap(values)
+			applyEnvironmentOverrides(envValues, envName, githubRepoSecretKeys)
+			secretValues := collectGitHubSecretValues(envValues)
+			writef(stdout, "sync %s environment secrets=%d\n", envName, len(secretValues))
+			if err := syncGitHubEnvSecrets(ctx, client, platformRepo, repoID, envName, envValues, githubRepoSecretKeys, *workers); err != nil {
 				writef(stderr, "github-sync failed: sync %s environment secrets: %v\n", envName, err)
 				return 1
 			}
@@ -408,24 +410,22 @@ func ensureGitHubEnvironment(ctx context.Context, client *gh.Client, repo github
 }
 
 func syncGitHubEnvVariables(ctx context.Context, client *gh.Client, repo githubRepositoryRef, env string, values map[string]string, keys []string, workers int) error {
-	existingNames, err := listGitHubEnvVariableNames(ctx, client, repo, env)
+	existingVars, err := listGitHubEnvVariableValues(ctx, client, repo, env)
 	if err != nil {
 		return err
-	}
-	existing := make(map[string]struct{}, len(existingNames))
-	for _, name := range existingNames {
-		trimmed := strings.TrimSpace(name)
-		if trimmed == "" {
-			continue
-		}
-		existing[trimmed] = struct{}{}
 	}
 
 	ops := make([]githubOperation, 0, len(keys))
 	for _, key := range keys {
 		trimmedKey := strings.TrimSpace(key)
 		value := strings.TrimSpace(values[trimmedKey])
-		_, exists := existing[trimmedKey]
+		if value == "" {
+			continue
+		}
+		existingValue, exists := existingVars[trimmedKey]
+		if exists && strings.TrimSpace(existingValue) == value {
+			continue
+		}
 
 		keyCopy := trimmedKey
 		valueCopy := value
@@ -437,7 +437,9 @@ func syncGitHubEnvVariables(ctx context.Context, client *gh.Client, repo githubR
 			},
 		})
 	}
-	return runGitHubOperations(ctx, workers, ops)
+	// Environment variables endpoint is aggressively rate-limited; keep it sequential to
+	// avoid secondary rate-limit storms.
+	return runGitHubOperations(ctx, 1, ops)
 }
 
 func upsertGitHubEnvVariable(ctx context.Context, client *gh.Client, repo githubRepositoryRef, env string, key string, value string, exists bool) error {
@@ -472,6 +474,34 @@ func upsertGitHubEnvVariable(ctx context.Context, client *gh.Client, repo github
 		return fmt.Errorf("create variable %s: %w", trimmedKey, err)
 	}
 	return nil
+}
+
+func listGitHubEnvVariableValues(ctx context.Context, client *gh.Client, repo githubRepositoryRef, envName string) (map[string]string, error) {
+	page := 1
+	out := make(map[string]string)
+	for {
+		vars, resp, err := client.Actions.ListEnvVariables(ctx, repo.Owner, repo.Name, envName, &gh.ListOptions{PerPage: 100, Page: page})
+		if err != nil {
+			return nil, err
+		}
+		if vars != nil {
+			for _, item := range vars.Variables {
+				if item == nil {
+					continue
+				}
+				name := strings.TrimSpace(item.Name)
+				if name == "" {
+					continue
+				}
+				out[name] = strings.TrimSpace(item.Value)
+			}
+		}
+		if resp == nil || resp.NextPage == 0 {
+			break
+		}
+		page = resp.NextPage
+	}
+	return out, nil
 }
 
 func syncGitHubEnvSecrets(ctx context.Context, client *gh.Client, repo githubRepositoryRef, repoID int, env string, values map[string]string, keys []string, workers int) error {
@@ -728,7 +758,7 @@ func runGitHubOperations(ctx context.Context, workers int, operations []githubOp
 
 func runGitHubOperationWithRetry(ctx context.Context, operation githubOperation) error {
 	var lastErr error
-	const maxAttempts = 10
+	const maxAttempts = 20
 
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		if ctx.Err() != nil {
@@ -773,11 +803,8 @@ func isGitHubRetryable(err error) bool {
 
 func gitHubRetryDelay(err error, attempt int) time.Duration {
 	if delay, ok := gitHubRetryAfter(err); ok {
-		if delay < time.Second {
-			return time.Second
-		}
-		if delay > 30*time.Second {
-			return 30 * time.Second
+		if delay < 2*time.Second {
+			return 2 * time.Second
 		}
 		return delay
 	}
@@ -786,15 +813,12 @@ func gitHubRetryDelay(err error, attempt int) time.Duration {
 	if attempt < 1 {
 		attempt = 1
 	}
-	delay := 500 * time.Millisecond
+	delay := 1 * time.Second
 	for i := 1; i < attempt; i++ {
 		delay *= 2
-		if delay >= 8*time.Second {
-			return 8 * time.Second
+		if delay >= time.Minute {
+			return time.Minute
 		}
-	}
-	if delay < time.Second {
-		delay = time.Second
 	}
 	return delay
 }

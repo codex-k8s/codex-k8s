@@ -81,6 +81,12 @@ go run ./cmd/codex-bootstrap bootstrap \
 - `CODEXK8S_FIRST_PROJECT_GITHUB_REPO` (опционально) — отдельный репозиторий первого подключаемого проекта, где bootstrap дополнительно создаёт webhook и каталог labels; если пусто, используется только `CODEXK8S_GITHUB_REPO` (dogfooding).
 - Platform secrets/variables (`CODEXK8S_*`) записываются в `CODEXK8S_GITHUB_REPO` на уровне GitHub Environments (`production`, `ai`).
   В `CODEXK8S_FIRST_PROJECT_GITHUB_REPO` bootstrap не записывает platform secrets (там только webhook/labels).
+- Для AI слотов (env `ai`) runtime deploy берёт общие секреты из `codex-k8s-runtime-ai` и `codex-k8s-oauth2-proxy-ai`
+  в production namespace. Это позволяет задавать отдельные credentials/политику для AI слотов, не затрагивая production.
+- Для раздельных значений между окружениями можно использовать ключи-оверрайды в `bootstrap/host/config.env`:
+  - `CODEXK8S_AI_<NAME>` для GitHub environment `ai` и k8s secret `codex-k8s-runtime-ai`;
+  - `CODEXK8S_PRODUCTION_<NAME>` для GitHub environment `production`.
+  Пустая строка означает "не перезаписывать существующее значение".
 - Для bootstrap нужен `CODEXK8S_GITHUB_PAT` (fine-grained) с правами на `administration` (webhooks/labels), `secrets` и `variables`.
 - Для staff UI и staff API требуется GitHub OAuth App:
   - создать на `https://github.com/settings/applications/new`;
