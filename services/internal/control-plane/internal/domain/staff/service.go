@@ -130,8 +130,12 @@ type registryImageService interface {
 }
 
 type kubernetesConfigSync interface {
+	ListSecretNames(ctx context.Context, namespace string) ([]string, error)
+	ListConfigMapNames(ctx context.Context, namespace string) ([]string, error)
 	GetSecretData(ctx context.Context, namespace string, name string) (map[string][]byte, bool, error)
 	UpsertSecret(ctx context.Context, namespace string, secretName string, data map[string][]byte) error
+	GetConfigMapData(ctx context.Context, namespace string, name string) (map[string]string, bool, error)
+	UpsertConfigMap(ctx context.Context, namespace string, name string, data map[string]string) error
 }
 
 // NewService constructs staff service.
@@ -867,12 +871,158 @@ func (s *Service) ListConfigEntries(ctx context.Context, principal Principal, sc
 		return nil, errs.Validation{Field: "scope", Msg: fmt.Sprintf("unsupported scope %q", scope)}
 	}
 
-	return s.configEntries.List(ctx, configentryrepo.ListFilter{
+	items, err := s.configEntries.List(ctx, configentryrepo.ListFilter{
 		Scope:        scope,
 		ProjectID:    projectID,
 		RepositoryID: repositoryID,
 		Limit:        limit,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	if scope == "platform" && principal.IsPlatformAdmin && len(items) == 0 {
+		if err := s.importPlatformConfigEntriesFromKubernetes(ctx, principal.UserID); err != nil {
+			return nil, err
+		}
+		return s.configEntries.List(ctx, configentryrepo.ListFilter{
+			Scope:        scope,
+			ProjectID:    projectID,
+			RepositoryID: repositoryID,
+			Limit:        limit,
+		})
+	}
+
+	return items, nil
+}
+
+func (s *Service) importPlatformConfigEntriesFromKubernetes(ctx context.Context, userID string) error {
+	if s.k8s == nil {
+		return fmt.Errorf("failed_precondition: kubernetes client is not configured")
+	}
+	if s.tokencrypt == nil {
+		return fmt.Errorf("failed_precondition: token crypt service is not configured")
+	}
+	userID = strings.TrimSpace(userID)
+	if userID == "" {
+		return fmt.Errorf("user_id is required")
+	}
+
+	namespace := getOptionalEnv("CODEXK8S_PLATFORM_NAMESPACE")
+	if namespace == "" {
+		namespace = getOptionalEnv("CODEXK8S_PRODUCTION_NAMESPACE")
+	}
+	if namespace == "" {
+		return fmt.Errorf("platform namespace is not configured")
+	}
+
+	// Build a fast lookup for existing platform keys to ensure import is create-if-missing.
+	existing, err := s.configEntries.List(ctx, configentryrepo.ListFilter{
+		Scope: "platform",
+		Limit: 5000,
+	})
+	if err != nil {
+		return err
+	}
+	existingKeys := make(map[string]struct{}, len(existing))
+	for _, item := range existing {
+		key := strings.TrimSpace(item.Key)
+		if key == "" {
+			continue
+		}
+		existingKeys[key] = struct{}{}
+	}
+
+	// Import all codex-k8s-* secrets/configmaps from the platform namespace.
+	const managedPrefix = "codex-k8s-"
+
+	secretNames, err := s.k8s.ListSecretNames(ctx, namespace)
+	if err != nil {
+		return err
+	}
+	for _, secretName := range secretNames {
+		secretName = strings.TrimSpace(secretName)
+		if !strings.HasPrefix(secretName, managedPrefix) {
+			continue
+		}
+		data, ok, err := s.k8s.GetSecretData(ctx, namespace, secretName)
+		if err != nil {
+			return err
+		}
+		if !ok || len(data) == 0 {
+			continue
+		}
+		for key, raw := range data {
+			key = strings.TrimSpace(key)
+			if key == "" {
+				continue
+			}
+			if _, exists := existingKeys[key]; exists {
+				continue
+			}
+			enc, err := s.tokencrypt.EncryptString(string(raw))
+			if err != nil {
+				return fmt.Errorf("encrypt imported secret %s: %w", key, err)
+			}
+			if _, err := s.configEntries.Upsert(ctx, configentryrepo.UpsertParams{
+				Scope:           "platform",
+				Kind:            "secret",
+				Key:             key,
+				ValueEncrypted:  enc,
+				SyncTargets:     []string{syncTargetK8sSecretPrefix + namespace + "/" + secretName},
+				Mutability:      "startup_required",
+				IsDangerous:     false,
+				CreatedByUserID: userID,
+				UpdatedByUserID: userID,
+			}); err != nil {
+				return err
+			}
+			existingKeys[key] = struct{}{}
+		}
+	}
+
+	configMapNames, err := s.k8s.ListConfigMapNames(ctx, namespace)
+	if err != nil {
+		return err
+	}
+	for _, configMapName := range configMapNames {
+		configMapName = strings.TrimSpace(configMapName)
+		if !strings.HasPrefix(configMapName, managedPrefix) {
+			continue
+		}
+		data, ok, err := s.k8s.GetConfigMapData(ctx, namespace, configMapName)
+		if err != nil {
+			return err
+		}
+		if !ok || len(data) == 0 {
+			continue
+		}
+		for key, value := range data {
+			key = strings.TrimSpace(key)
+			if key == "" {
+				continue
+			}
+			if _, exists := existingKeys[key]; exists {
+				continue
+			}
+			if _, err := s.configEntries.Upsert(ctx, configentryrepo.UpsertParams{
+				Scope:           "platform",
+				Kind:            "variable",
+				Key:             key,
+				ValuePlain:      strings.TrimSpace(value),
+				SyncTargets:     []string{syncTargetK8sConfigMapPrefix + namespace + "/" + configMapName},
+				Mutability:      "startup_required",
+				IsDangerous:     false,
+				CreatedByUserID: userID,
+				UpdatedByUserID: userID,
+			}); err != nil {
+				return err
+			}
+			existingKeys[key] = struct{}{}
+		}
+	}
+
+	return nil
 }
 
 func (s *Service) UpsertConfigEntry(ctx context.Context, principal Principal, params configentryrepo.UpsertParams, dangerousConfirmed bool) (configentryrepo.ConfigEntry, error) {
@@ -1057,6 +1207,7 @@ const (
 	syncTargetGitHubEnvSecretPrefix = "github_env_secret:"
 	syncTargetGitHubEnvVarPrefix    = "github_env_var:"
 	syncTargetK8sSecretPrefix       = "k8s_secret:"
+	syncTargetK8sConfigMapPrefix    = "k8s_configmap:"
 )
 
 func (s *Service) syncConfigEntryTargets(ctx context.Context, params configentryrepo.UpsertParams) error {
@@ -1119,6 +1270,18 @@ func (s *Service) syncConfigEntryTargets(ctx context.Context, params configentry
 				return errs.Validation{Field: "sync_targets", Msg: err.Error()}
 			}
 			if err := s.syncKubernetesSecret(ctx, ns, name, key, value, mutability); err != nil {
+				return err
+			}
+		case strings.HasPrefix(target, syncTargetK8sConfigMapPrefix):
+			if kind != "variable" {
+				return errs.Validation{Field: "sync_targets", Msg: "k8s configmap sync target requires kind=variable"}
+			}
+			spec := strings.TrimSpace(strings.TrimPrefix(target, syncTargetK8sConfigMapPrefix))
+			ns, name, err := parseNamespaceNameSpec(spec)
+			if err != nil {
+				return errs.Validation{Field: "sync_targets", Msg: err.Error()}
+			}
+			if err := s.syncKubernetesConfigMap(ctx, ns, name, key, value, mutability); err != nil {
 				return err
 			}
 		default:
@@ -1262,10 +1425,40 @@ func (s *Service) syncKubernetesSecret(ctx context.Context, namespace string, se
 	return s.k8s.UpsertSecret(ctx, namespace, secretName, merged)
 }
 
+func (s *Service) syncKubernetesConfigMap(ctx context.Context, namespace string, configMapName string, key string, value string, mutability string) error {
+	if s.k8s == nil {
+		return fmt.Errorf("failed_precondition: kubernetes client is not configured")
+	}
+	namespace = strings.TrimSpace(namespace)
+	configMapName = strings.TrimSpace(configMapName)
+	key = strings.TrimSpace(key)
+	if namespace == "" || configMapName == "" || key == "" {
+		return errs.Validation{Field: "sync_targets", Msg: "k8s configmap namespace/name/key are required"}
+	}
+
+	existing, ok, err := s.k8s.GetConfigMapData(ctx, namespace, configMapName)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		existing = map[string]string{}
+	}
+	if _, exists := existing[key]; exists && mutability == "startup_required" {
+		return nil
+	}
+
+	merged := make(map[string]string, len(existing)+1)
+	for k, v := range existing {
+		merged[k] = v
+	}
+	merged[key] = value
+	return s.k8s.UpsertConfigMap(ctx, namespace, configMapName, merged)
+}
+
 func parseNamespaceNameSpec(spec string) (namespace string, name string, err error) {
 	spec = strings.TrimSpace(spec)
 	if spec == "" {
-		return "", "", fmt.Errorf("k8s secret target is empty")
+		return "", "", fmt.Errorf("k8s target is empty")
 	}
 
 	// Accept both "<namespace>/<name>" and "<namespace>:<name>" forms.
@@ -1278,10 +1471,10 @@ func parseNamespaceNameSpec(spec string) (namespace string, name string, err err
 		namespace = strings.TrimSpace(parts[0])
 		name = strings.TrimSpace(parts[1])
 	} else {
-		return "", "", fmt.Errorf("k8s secret target must be <namespace>/<name>")
+		return "", "", fmt.Errorf("k8s target must be <namespace>/<name>")
 	}
 	if namespace == "" || name == "" {
-		return "", "", fmt.Errorf("k8s secret target must be <namespace>/<name>")
+		return "", "", fmt.Errorf("k8s target must be <namespace>/<name>")
 	}
 	return namespace, name, nil
 }
