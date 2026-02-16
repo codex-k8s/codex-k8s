@@ -48,3 +48,35 @@ func TestLoad_InvalidLine(t *testing.T) {
 		t.Fatalf("expected parse error")
 	}
 }
+
+func TestUpsert_UpdatesAndAppends(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "config.env")
+	content := "# head\nEXISTING='old'\nEMPTY=''\n"
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("write env file: %v", err)
+	}
+
+	if err := Upsert(path, map[string]string{
+		"EXISTING": "new",
+		"APPENDED": "value",
+		"EMPTY":    "",
+	}); err != nil {
+		t.Fatalf("upsert env file: %v", err)
+	}
+
+	values, err := Load(path)
+	if err != nil {
+		t.Fatalf("load env file: %v", err)
+	}
+	if got, want := values["EXISTING"], "new"; got != want {
+		t.Fatalf("unexpected EXISTING value: got %q want %q", got, want)
+	}
+	if got, want := values["APPENDED"], "value"; got != want {
+		t.Fatalf("unexpected APPENDED value: got %q want %q", got, want)
+	}
+	if got, want := values["EMPTY"], ""; got != want {
+		t.Fatalf("unexpected EMPTY value: got %q want %q", got, want)
+	}
+}

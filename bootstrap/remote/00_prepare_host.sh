@@ -20,14 +20,5 @@ sysctl --system >/dev/null
 
 log "Install base packages"
 apt-get update -y
-apt-get install -y curl ca-certificates jq git gh tar unzip gettext-base open-iscsi nfs-common
+apt-get install -y curl ca-certificates jq git tar unzip gettext-base open-iscsi nfs-common golang-go
 systemctl enable --now iscsid || true
-
-if ! command -v helm >/dev/null 2>&1; then
-  log "Install helm"
-  tmp="$(mktemp -d)"
-  curl -fsSL -o "${tmp}/get-helm-3" https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-  chmod 700 "${tmp}/get-helm-3"
-  "${tmp}/get-helm-3"
-  rm -rf "$tmp"
-fi
