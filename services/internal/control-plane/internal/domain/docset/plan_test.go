@@ -60,3 +60,39 @@ func TestBuildImportPlan_DefaultSelected(t *testing.T) {
 	}
 }
 
+func TestBuildImportPlan_DefaultSelected_ExcludesExamples(t *testing.T) {
+	m := Manifest{
+		ManifestVersion: 1,
+		Groups: []ManifestGroup{
+			{
+				ID:              "examples",
+				DefaultSelected: true,
+				Items: []ManifestGroupItem{{
+					ImportPath:  "docs/examples.md",
+					SourcePaths: LocalizedText{EN: "docs/examples_en.md"},
+					SHA256:      LocalizedText{EN: "sha_examples"},
+				}},
+			},
+			{
+				ID:              "core",
+				DefaultSelected: true,
+				Items: []ManifestGroupItem{{
+					ImportPath:  "docs/a.md",
+					SourcePaths: LocalizedText{EN: "docs/a_en.md"},
+					SHA256:      LocalizedText{EN: "sha_a"},
+				}},
+			},
+		},
+	}
+
+	plan, groups, err := BuildImportPlan(m, "en", nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(groups) != 1 || groups[0] != "core" {
+		t.Fatalf("unexpected groups: %#v", groups)
+	}
+	if len(plan.Files) != 1 || plan.Files[0].DstPath != "docs/a.md" {
+		t.Fatalf("unexpected plan: %#v", plan)
+	}
+}

@@ -9,8 +9,8 @@ import (
 )
 
 type ImportPlanFile struct {
-	SrcPath      string
-	DstPath      string
+	SrcPath        string
+	DstPath        string
 	ExpectedSHA256 string
 }
 
@@ -24,6 +24,10 @@ func BuildImportPlan(m Manifest, locale string, groupIDs []string) (ImportPlan, 
 		// Default behavior: pick default_selected groups.
 		for _, g := range m.Groups {
 			if g.DefaultSelected {
+				// Epic requirement: examples group must not be imported by default.
+				if strings.EqualFold(strings.TrimSpace(g.ID), "examples") {
+					continue
+				}
 				selected = append(selected, g.ID)
 			}
 		}
@@ -114,4 +118,3 @@ func SHA256Hex(blob []byte) string {
 	sum := sha256.Sum256(blob)
 	return hex.EncodeToString(sum[:])
 }
-

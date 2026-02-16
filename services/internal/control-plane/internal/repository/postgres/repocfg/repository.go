@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
 	"github.com/jackc/pgx/v5"
@@ -36,6 +37,10 @@ var (
 	queryUpsertBotParams string
 	//go:embed sql/upsert_preflight_report.sql
 	queryUpsertPreflightReport string
+	//go:embed sql/acquire_preflight_lock.sql
+	queryAcquirePreflightLock string
+	//go:embed sql/release_preflight_lock.sql
+	queryReleasePreflightLock string
 )
 
 // Repository stores project repository bindings in PostgreSQL.
@@ -213,6 +218,42 @@ func (r *Repository) UpsertPreflightReport(ctx context.Context, params domainrep
 	_, err := r.db.Exec(ctx, queryUpsertPreflightReport, params.RepositoryID, params.ReportJSON)
 	if err != nil {
 		return fmt.Errorf("upsert repository preflight report: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) AcquirePreflightLock(ctx context.Context, params domainrepo.RepositoryPreflightLockAcquireParams) (string, bool, error) {
+	repositoryID := strings.TrimSpace(params.RepositoryID)
+	lockToken := strings.TrimSpace(params.LockToken)
+	if repositoryID == "" || lockToken == "" {
+		return "", false, fmt.Errorf("repository id and lock token are required")
+	}
+
+	var acquiredToken string
+	if err := r.db.QueryRow(
+		ctx,
+		queryAcquirePreflightLock,
+		repositoryID,
+		lockToken,
+		strings.TrimSpace(params.LockedByUserID),
+		params.LockedUntilUTC,
+	).Scan(&acquiredToken); err == nil {
+		return strings.TrimSpace(acquiredToken), true, nil
+	} else if errors.Is(err, pgx.ErrNoRows) {
+		return "", false, nil
+	} else {
+		return "", false, fmt.Errorf("acquire repository preflight lock: %w", err)
+	}
+}
+
+func (r *Repository) ReleasePreflightLock(ctx context.Context, repositoryID string, lockToken string) error {
+	repositoryID = strings.TrimSpace(repositoryID)
+	lockToken = strings.TrimSpace(lockToken)
+	if repositoryID == "" || lockToken == "" {
+		return nil
+	}
+	if _, err := r.db.Exec(ctx, queryReleasePreflightLock, repositoryID, lockToken); err != nil {
+		return fmt.Errorf("release repository preflight lock: %w", err)
 	}
 	return nil
 }

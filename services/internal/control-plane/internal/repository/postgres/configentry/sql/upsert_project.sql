@@ -1,4 +1,4 @@
--- name: configentry__upsert :one
+-- name: configentry__upsert_project :one
 INSERT INTO config_entries (
     scope,
     kind,
@@ -11,27 +11,23 @@ INSERT INTO config_entries (
     mutability,
     is_dangerous,
     created_by_user_id,
-    updated_by_user_id,
-    created_at,
-    updated_at
+    updated_by_user_id
 )
 VALUES (
-    $1,
-    $2,
-    $3,
-    $4,
-    $5,
-    $6,
-    $7,
-    $8,
-    $9,
-    $10,
-    $11,
-    $12,
-    NOW(),
-    NOW()
+    'project',
+    $1::text,
+    $2::uuid,
+    NULL,
+    $3::text,
+    $4::text,
+    $5::bytea,
+    $6::text[],
+    $7::text,
+    $8::boolean,
+    NULLIF($9::text, '')::uuid,
+    NULLIF($10::text, '')::uuid
 )
-ON CONFLICT (scope, project_id, repository_id, key) DO UPDATE
+ON CONFLICT (scope, project_id, key) WHERE scope = 'project' DO UPDATE
 SET kind = EXCLUDED.kind,
     value_plain = EXCLUDED.value_plain,
     value_encrypted = EXCLUDED.value_encrypted,

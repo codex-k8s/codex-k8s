@@ -2,6 +2,7 @@ package repocfg
 
 import (
 	"context"
+	"time"
 
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
@@ -14,15 +15,22 @@ type (
 )
 
 type RepositoryBotParamsUpsertParams struct {
-	RepositoryID     string
+	RepositoryID      string
 	BotTokenEncrypted []byte
-	BotUsername      string
-	BotEmail         string
+	BotUsername       string
+	BotEmail          string
 }
 
 type RepositoryPreflightReportUpsertParams struct {
 	RepositoryID string
 	ReportJSON   []byte
+}
+
+type RepositoryPreflightLockAcquireParams struct {
+	RepositoryID   string
+	LockToken      string
+	LockedByUserID string
+	LockedUntilUTC time.Time
 }
 
 // Repository persists project repository bindings.
@@ -47,6 +55,10 @@ type Repository interface {
 	UpsertBotParams(ctx context.Context, params RepositoryBotParamsUpsertParams) error
 	// UpsertPreflightReport updates stored preflight report for a repository binding.
 	UpsertPreflightReport(ctx context.Context, params RepositoryPreflightReportUpsertParams) error
+	// AcquirePreflightLock acquires a short-lived lock to prevent concurrent preflight runs for one repo.
+	AcquirePreflightLock(ctx context.Context, params RepositoryPreflightLockAcquireParams) (string, bool, error)
+	// ReleasePreflightLock releases lock when token matches the owner token (best-effort).
+	ReleasePreflightLock(ctx context.Context, repositoryID string, lockToken string) error
 	// SetTokenEncryptedForAll updates token for all repository bindings.
 	SetTokenEncryptedForAll(ctx context.Context, tokenEncrypted []byte) (int64, error)
 }

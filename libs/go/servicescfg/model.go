@@ -105,6 +105,7 @@ type ServiceDefaults struct {
 type Environment struct {
 	From              string `yaml:"from,omitempty"`
 	NamespaceTemplate string `yaml:"namespaceTemplate,omitempty"`
+	DomainTemplate    string `yaml:"domainTemplate,omitempty"`
 	ImagePullPolicy   string `yaml:"imagePullPolicy,omitempty"`
 }
 

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
+	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
 	docsetdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/docset"
 	configentryrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/configentry"
 	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/learningfeedback"
@@ -31,6 +32,7 @@ import (
 	"github.com/codex-k8s/codex-k8s/libs/go/crypto/tokencrypt"
 	"github.com/codex-k8s/codex-k8s/libs/go/repo/provider"
 	"github.com/jackc/pgx/v5"
+	"gopkg.in/yaml.v3"
 )
 
 // Config defines staff service behavior.
@@ -810,10 +812,13 @@ func (s *Service) ListConfigEntries(ctx context.Context, principal Principal, sc
 		if !principal.IsPlatformAdmin {
 			return nil, errs.Forbidden{Msg: "platform admin required"}
 		}
+		projectID = ""
+		repositoryID = ""
 	case "project":
 		if projectID == "" {
 			return nil, errs.Validation{Field: "project_id", Msg: "is required"}
 		}
+		repositoryID = ""
 		if !principal.IsPlatformAdmin {
 			_, ok, err := s.members.GetRole(ctx, projectID, principal.UserID)
 			if err != nil {
@@ -827,9 +832,22 @@ func (s *Service) ListConfigEntries(ctx context.Context, principal Principal, sc
 		if repositoryID == "" {
 			return nil, errs.Validation{Field: "repository_id", Msg: "is required"}
 		}
-		// For now enforce platform admin; repository settings are security-sensitive.
+		projectID = ""
 		if !principal.IsPlatformAdmin {
-			return nil, errs.Forbidden{Msg: "platform admin required"}
+			repo, ok, err := s.repos.GetByID(ctx, repositoryID)
+			if err != nil {
+				return nil, err
+			}
+			if !ok {
+				return nil, errs.Validation{Field: "repository_id", Msg: "not found"}
+			}
+			_, okRole, err := s.members.GetRole(ctx, repo.ProjectID, principal.UserID)
+			if err != nil {
+				return nil, err
+			}
+			if !okRole {
+				return nil, errs.Forbidden{Msg: "project access required"}
+			}
 		}
 	default:
 		return nil, errs.Validation{Field: "scope", Msg: fmt.Sprintf("unsupported scope %q", scope)}
@@ -857,6 +875,17 @@ func (s *Service) UpsertConfigEntry(ctx context.Context, principal Principal, pa
 		return configentryrepo.ConfigEntry{}, errs.Validation{Field: "key", Msg: "is required"}
 	}
 
+	// Normalize irrelevant scope refs early (affects dangerous-key exists check).
+	switch params.Scope {
+	case "platform":
+		params.ProjectID = ""
+		params.RepositoryID = ""
+	case "project":
+		params.RepositoryID = ""
+	case "repository":
+		params.ProjectID = ""
+	}
+
 	if params.IsDangerous && !dangerousConfirmed {
 		exists, err := s.configEntries.Exists(ctx, params.Scope, params.ProjectID, params.RepositoryID, params.Key)
 		if err != nil {
@@ -877,12 +906,15 @@ func (s *Service) UpsertConfigEntry(ctx context.Context, principal Principal, pa
 			return configentryrepo.ConfigEntry{}, errs.Validation{Field: "project_id", Msg: "is required"}
 		}
 		if !principal.IsPlatformAdmin {
-			_, ok, err := s.members.GetRole(ctx, params.ProjectID, principal.UserID)
+			role, ok, err := s.members.GetRole(ctx, params.ProjectID, principal.UserID)
 			if err != nil {
 				return configentryrepo.ConfigEntry{}, err
 			}
 			if !ok {
 				return configentryrepo.ConfigEntry{}, errs.Forbidden{Msg: "project access required"}
+			}
+			if role != "admin" && role != "read_write" {
+				return configentryrepo.ConfigEntry{}, errs.Forbidden{Msg: "project write access required"}
 			}
 		}
 	case "repository":
@@ -890,7 +922,23 @@ func (s *Service) UpsertConfigEntry(ctx context.Context, principal Principal, pa
 			return configentryrepo.ConfigEntry{}, errs.Validation{Field: "repository_id", Msg: "is required"}
 		}
 		if !principal.IsPlatformAdmin {
-			return configentryrepo.ConfigEntry{}, errs.Forbidden{Msg: "platform admin required"}
+			repo, ok, err := s.repos.GetByID(ctx, params.RepositoryID)
+			if err != nil {
+				return configentryrepo.ConfigEntry{}, err
+			}
+			if !ok {
+				return configentryrepo.ConfigEntry{}, errs.Validation{Field: "repository_id", Msg: "not found"}
+			}
+			role, okRole, err := s.members.GetRole(ctx, repo.ProjectID, principal.UserID)
+			if err != nil {
+				return configentryrepo.ConfigEntry{}, err
+			}
+			if !okRole {
+				return configentryrepo.ConfigEntry{}, errs.Forbidden{Msg: "project access required"}
+			}
+			if role != "admin" && role != "read_write" {
+				return configentryrepo.ConfigEntry{}, errs.Forbidden{Msg: "project write access required"}
+			}
 		}
 	default:
 		return configentryrepo.ConfigEntry{}, errs.Validation{Field: "scope", Msg: fmt.Sprintf("unsupported scope %q", params.Scope)}
@@ -929,9 +977,65 @@ func (s *Service) DeleteConfigEntry(ctx context.Context, principal Principal, co
 	if configEntryID == "" {
 		return errs.Validation{Field: "config_entry_id", Msg: "is required"}
 	}
-	if !principal.IsPlatformAdmin {
-		return errs.Forbidden{Msg: "platform admin required"}
+
+	item, ok, err := s.configEntries.GetByID(ctx, configEntryID)
+	if err != nil {
+		return err
 	}
+	if !ok {
+		return errs.Validation{Field: "config_entry_id", Msg: "not found"}
+	}
+
+	switch strings.TrimSpace(item.Scope) {
+	case "platform":
+		if !principal.IsPlatformAdmin {
+			return errs.Forbidden{Msg: "platform admin required"}
+		}
+	case "project":
+		projectID := strings.TrimSpace(item.ProjectID)
+		if projectID == "" {
+			return errs.Validation{Field: "config_entry_id", Msg: "project_id is empty"}
+		}
+		if !principal.IsPlatformAdmin {
+			role, okRole, err := s.members.GetRole(ctx, projectID, principal.UserID)
+			if err != nil {
+				return err
+			}
+			if !okRole {
+				return errs.Forbidden{Msg: "project access required"}
+			}
+			if role != "admin" && role != "read_write" {
+				return errs.Forbidden{Msg: "project write access required"}
+			}
+		}
+	case "repository":
+		repositoryID := strings.TrimSpace(item.RepositoryID)
+		if repositoryID == "" {
+			return errs.Validation{Field: "config_entry_id", Msg: "repository_id is empty"}
+		}
+		if !principal.IsPlatformAdmin {
+			repo, ok, err := s.repos.GetByID(ctx, repositoryID)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				return errs.Validation{Field: "config_entry_id", Msg: "repository binding not found"}
+			}
+			role, okRole, err := s.members.GetRole(ctx, repo.ProjectID, principal.UserID)
+			if err != nil {
+				return err
+			}
+			if !okRole {
+				return errs.Forbidden{Msg: "project access required"}
+			}
+			if role != "admin" && role != "read_write" {
+				return errs.Forbidden{Msg: "project write access required"}
+			}
+		}
+	default:
+		return errs.Validation{Field: "config_entry_id", Msg: fmt.Sprintf("unsupported scope %q", item.Scope)}
+	}
+
 	return s.configEntries.Delete(ctx, configEntryID)
 }
 
@@ -1033,7 +1137,7 @@ func (s *Service) syncGitHubEnvironmentValue(
 		return err
 	}
 	for _, repo := range repos {
-		platformToken, _, tokenErr := s.resolveEffectiveGitHubTokens(ctx, params.ProjectID, repo.ID)
+		platformToken, _, _, _, tokenErr := s.resolveEffectiveGitHubTokens(ctx, params.ProjectID, repo.ID)
 		if params.Scope == "platform" {
 			platformToken, tokenErr = s.resolvePlatformManagementToken(ctx)
 		}
@@ -1262,72 +1366,172 @@ func (s *Service) RunRepositoryPreflight(ctx context.Context, principal Principa
 		return valuetypes.GitHubPreflightReport{}, errs.Validation{Field: "repository_id", Msg: "not found"}
 	}
 
-	platformToken, botToken, err := s.resolveEffectiveGitHubTokens(ctx, projectID, repositoryID)
+	lockToken := uuid.NewString()
+	acquiredToken, acquired, err := s.repos.AcquirePreflightLock(ctx, repocfgrepo.RepositoryPreflightLockAcquireParams{
+		RepositoryID:   repositoryID,
+		LockToken:      lockToken,
+		LockedByUserID: principal.UserID,
+		LockedUntilUTC: time.Now().UTC().Add(10 * time.Minute),
+	})
+	if err != nil {
+		return valuetypes.GitHubPreflightReport{}, err
+	}
+	if !acquired {
+		return valuetypes.GitHubPreflightReport{}, errs.Conflict{Msg: "repository preflight is already running"}
+	}
+	lockToken = acquiredToken
+	defer func() {
+		_ = s.repos.ReleasePreflightLock(ctx, repositoryID, lockToken)
+	}()
+
+	platformToken, botToken, platformScope, botScope, err := s.resolveEffectiveGitHubTokens(ctx, projectID, repositoryID)
 	if err != nil {
 		return valuetypes.GitHubPreflightReport{}, err
 	}
 
 	expectedHost, expectedIPs := resolveExpectedIngressIPs(s.cfg.WebhookSpec.URL)
-	domains := make([]string, 0, 3)
-	if prod := strings.TrimSpace(getOptionalEnv("CODEXK8S_PRODUCTION_DOMAIN")); prod != "" {
-		domains = append(domains, prod)
-	}
-	if ai := strings.TrimSpace(getOptionalEnv("CODEXK8S_AI_DOMAIN")); ai != "" {
-		domains = append(domains, ai)
-	}
-	if expectedHost != "" {
-		domains = append(domains, expectedHost)
-	}
 
 	report := valuetypes.GitHubPreflightReport{
-		Status:     "running",
-		Checks:     make([]valuetypes.GitHubPreflightCheck, 0),
+		Status: "running",
+		TokenScopes: valuetypes.GitHubPreflightTokenScopes{
+			Platform: platformScope,
+			Bot:      botScope,
+		},
+		Checks:     make([]valuetypes.GitHubPreflightCheck, 0, 32),
+		Artifacts:  make([]valuetypes.GitHubPreflightArtifact, 0),
 		FinishedAt: time.Time{},
 	}
+	report.Checks = append(report.Checks,
+		valuetypes.GitHubPreflightCheck{Name: "github:tokens:platform_scope", Status: "ok", Details: platformScope},
+		valuetypes.GitHubPreflightCheck{Name: "github:tokens:bot_scope", Status: "ok", Details: botScope},
+	)
 
-	// DNS checks: require that configured domains resolve and (when possible) match ingress IPs.
-	for _, domain := range uniqueStrings(domains) {
-		check := valuetypes.GitHubPreflightCheck{Name: "dns:" + domain, Status: "ok"}
-		ips, lookupErr := net.LookupIP(domain)
-		if lookupErr != nil || len(ips) == 0 {
-			check.Status = "failed"
-			check.Details = "dns lookup failed"
-			report.Checks = append(report.Checks, check)
-			continue
-		}
-		if len(expectedIPs) > 0 && !ipIntersects(ips, expectedIPs) {
-			check.Status = "failed"
-			check.Details = "domain does not resolve to ingress IPs"
-		}
-		report.Checks = append(report.Checks, check)
+	hasFailures := false
+
+	type dnsCandidate struct {
+		CheckName string
+		Domain    string
+	}
+	dnsCandidates := make([]dnsCandidate, 0, 8)
+
+	// Always validate that the platform webhook host resolves (best-effort expected ingress).
+	if expectedHost != "" {
+		dnsCandidates = append(dnsCandidates, dnsCandidate{CheckName: "dns:platform:webhook_host", Domain: expectedHost})
+	}
+	// Validate platform base domains (they are defaults for runtime deploy and may be used in templates).
+	if prod := strings.TrimSpace(getOptionalEnv("CODEXK8S_PRODUCTION_DOMAIN")); prod != "" {
+		dnsCandidates = append(dnsCandidates, dnsCandidate{CheckName: "dns:platform:production_base", Domain: prod})
+	}
+	if ai := strings.TrimSpace(getOptionalEnv("CODEXK8S_AI_DOMAIN")); ai != "" {
+		dnsCandidates = append(dnsCandidates, dnsCandidate{CheckName: "dns:platform:ai_base", Domain: ai})
 	}
 
 	if s.githubMgmt == nil {
 		report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{Name: "github:preflight", Status: "failed", Details: "github management client is not configured"})
-		report.Status = "failed"
-		report.FinishedAt = time.Now().UTC()
-		return report, nil
+		hasFailures = true
+	} else {
+		baseBranch, branchErr := s.githubMgmt.GetDefaultBranch(ctx, platformToken, repo.Owner, repo.Name)
+		if branchErr != nil {
+			report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{Name: "services_yaml:default_branch", Status: "failed", Details: branchErr.Error()})
+			hasFailures = true
+		} else {
+			servicesPath := strings.TrimSpace(repo.ServicesYAMLPath)
+			if servicesPath == "" {
+				servicesPath = "services.yaml"
+			}
+
+			servicesYAML, found, getErr := s.githubMgmt.GetFile(ctx, platformToken, repo.Owner, repo.Name, servicesPath, baseBranch)
+			if getErr != nil {
+				report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{Name: "services_yaml:get", Status: "failed", Details: getErr.Error()})
+				hasFailures = true
+			} else if !found {
+				report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{Name: "services_yaml:get", Status: "failed", Details: fmt.Sprintf("%s not found on %s", servicesPath, baseBranch)})
+				hasFailures = true
+			} else {
+				report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{Name: "services_yaml:get", Status: "ok"})
+
+				envNames, parseErr := listServicesYAMLEnvironments(servicesYAML)
+				if parseErr != nil {
+					report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{Name: "services_yaml:parse", Status: "failed", Details: parseErr.Error()})
+					hasFailures = true
+				} else {
+					report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{Name: "services_yaml:parse", Status: "ok"})
+
+					vars := envVarsMap()
+
+					for _, item := range []struct {
+						Env  string
+						Slot int
+					}{
+						{Env: "production", Slot: 0},
+						{Env: "ai", Slot: 1},
+					} {
+						if _, ok := envNames[item.Env]; !ok {
+							report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{Name: "services_yaml:env:" + item.Env, Status: "skipped", Details: "environment not defined"})
+							continue
+						}
+
+						domain, source, ns, err := resolveServicesYAMLDomain(servicesYAML, item.Env, item.Slot, vars)
+						if err != nil {
+							report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{Name: "services_yaml:domain:" + item.Env, Status: "failed", Details: err.Error()})
+							hasFailures = true
+							continue
+						}
+						if strings.TrimSpace(domain) == "" {
+							report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{Name: "services_yaml:domain:" + item.Env, Status: "failed", Details: "resolved domain is empty"})
+							hasFailures = true
+							continue
+						}
+
+						report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{
+							Name:    "services_yaml:domain:" + item.Env,
+							Status:  "ok",
+							Details: fmt.Sprintf("source=%s namespace=%s domain=%s", source, ns, domain),
+						})
+						dnsCandidates = append(dnsCandidates, dnsCandidate{
+							CheckName: "dns:services_yaml:" + item.Env + ":" + domain,
+							Domain:    domain,
+						})
+					}
+				}
+			}
+		}
 	}
 
-	ghReport, ghErr := s.githubMgmt.Preflight(ctx, valuetypes.GitHubPreflightParams{
-		PlatformToken:   platformToken,
-		BotToken:        botToken,
-		Owner:           repo.Owner,
-		Repository:      repo.Name,
-		WebhookURL:      s.cfg.WebhookSpec.URL,
-		WebhookSecret:   s.cfg.WebhookSpec.Secret,
-		ExpectedDomains: domains,
-		DNSExpectedIPs:  expectedIPs,
-	})
-	if ghErr != nil {
-		// Keep any DNS checks and append GitHub error as a failed check.
-		report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{Name: "github:preflight", Status: "failed", Details: ghErr.Error()})
+	for _, candidate := range dnsCandidates {
+		check := runDNSCheck(candidate.CheckName, candidate.Domain, expectedIPs)
+		if check.Status != "ok" {
+			hasFailures = true
+		}
+		report.Checks = append(report.Checks, check)
+	}
+
+	if s.githubMgmt != nil {
+		ghReport, ghErr := s.githubMgmt.Preflight(ctx, valuetypes.GitHubPreflightParams{
+			PlatformToken: platformToken,
+			BotToken:      botToken,
+			Owner:         repo.Owner,
+			Repository:    repo.Name,
+			WebhookURL:    s.cfg.WebhookSpec.URL,
+			WebhookSecret: s.cfg.WebhookSpec.Secret,
+		})
+		if ghErr != nil {
+			report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{Name: "github:preflight", Status: "failed", Details: ghErr.Error()})
+			hasFailures = true
+		} else {
+			report.Checks = append(report.Checks, ghReport.Checks...)
+			report.Artifacts = append(report.Artifacts, ghReport.Artifacts...)
+			if strings.TrimSpace(ghReport.Status) != "ok" {
+				hasFailures = true
+			}
+		}
+	}
+
+	report.FinishedAt = time.Now().UTC()
+	if hasFailures {
 		report.Status = "failed"
-		report.FinishedAt = time.Now().UTC()
 	} else {
-		report.Checks = append(report.Checks, ghReport.Checks...)
-		report.Status = ghReport.Status
-		report.FinishedAt = ghReport.FinishedAt
+		report.Status = "ok"
 	}
 
 	encoded, _ := json.Marshal(report)
@@ -1416,7 +1620,7 @@ func (s *Service) ImportDocset(ctx context.Context, principal Principal, project
 		return DocsetImportResult{}, errs.Validation{Field: "repository_id", Msg: "not found"}
 	}
 
-	token, _, err := s.resolveEffectiveGitHubTokens(ctx, projectID, repositoryID)
+	token, _, _, _, err := s.resolveEffectiveGitHubTokens(ctx, projectID, repositoryID)
 	if err != nil {
 		return DocsetImportResult{}, err
 	}
@@ -1517,7 +1721,7 @@ func (s *Service) SyncDocset(ctx context.Context, principal Principal, projectID
 		return DocsetSyncResult{}, errs.Validation{Field: "repository_id", Msg: "not found"}
 	}
 
-	token, _, err := s.resolveEffectiveGitHubTokens(ctx, projectID, repositoryID)
+	token, _, _, _, err := s.resolveEffectiveGitHubTokens(ctx, projectID, repositoryID)
 	if err != nil {
 		return DocsetSyncResult{}, err
 	}
@@ -1645,45 +1849,49 @@ func (s *Service) resolvePlatformManagementToken(ctx context.Context) (string, e
 	return raw, nil
 }
 
-func (s *Service) resolveEffectiveGitHubTokens(ctx context.Context, projectID string, repositoryID string) (platformToken string, botToken string, err error) {
+func (s *Service) resolveEffectiveGitHubTokens(ctx context.Context, projectID string, repositoryID string) (platformToken string, botToken string, platformScope string, botScope string, err error) {
 	repoPlatformEnc, _, encErr := s.repos.GetTokenEncrypted(ctx, repositoryID)
 	if encErr != nil {
-		return "", "", encErr
+		return "", "", "", "", encErr
 	}
 	if len(repoPlatformEnc) > 0 {
 		raw, decErr := s.tokencrypt.DecryptString(repoPlatformEnc)
 		if decErr == nil && strings.TrimSpace(raw) != "" {
 			platformToken = strings.TrimSpace(raw)
+			platformScope = "repository"
 		}
 	}
 
 	repoBotEnc, _, botErr := s.repos.GetBotTokenEncrypted(ctx, repositoryID)
 	if botErr != nil {
-		return "", "", botErr
+		return "", "", "", "", botErr
 	}
 	if len(repoBotEnc) > 0 {
 		raw, decErr := s.tokencrypt.DecryptString(repoBotEnc)
 		if decErr == nil && strings.TrimSpace(raw) != "" {
 			botToken = strings.TrimSpace(raw)
+			botScope = "repository"
 		}
 	}
 
 	if (platformToken == "" || botToken == "") && s.projectTokens != nil && projectID != "" {
 		projPlatformEnc, projBotEnc, _, _, ok, projErr := s.projectTokens.GetEncryptedByProjectID(ctx, projectID)
 		if projErr != nil {
-			return "", "", projErr
+			return "", "", "", "", projErr
 		}
 		if ok {
 			if platformToken == "" && len(projPlatformEnc) > 0 {
 				raw, decErr := s.tokencrypt.DecryptString(projPlatformEnc)
 				if decErr == nil && strings.TrimSpace(raw) != "" {
 					platformToken = strings.TrimSpace(raw)
+					platformScope = "project"
 				}
 			}
 			if botToken == "" && len(projBotEnc) > 0 {
 				raw, decErr := s.tokencrypt.DecryptString(projBotEnc)
 				if decErr == nil && strings.TrimSpace(raw) != "" {
 					botToken = strings.TrimSpace(raw)
+					botScope = "project"
 				}
 			}
 		}
@@ -1692,31 +1900,33 @@ func (s *Service) resolveEffectiveGitHubTokens(ctx context.Context, projectID st
 	if (platformToken == "" || botToken == "") && s.platformTokens != nil {
 		item, ok, tokErr := s.platformTokens.Get(ctx)
 		if tokErr != nil {
-			return "", "", tokErr
+			return "", "", "", "", tokErr
 		}
 		if ok {
 			if platformToken == "" && len(item.PlatformTokenEncrypted) > 0 {
 				raw, decErr := s.tokencrypt.DecryptString(item.PlatformTokenEncrypted)
 				if decErr == nil && strings.TrimSpace(raw) != "" {
 					platformToken = strings.TrimSpace(raw)
+					platformScope = "platform"
 				}
 			}
 			if botToken == "" && len(item.BotTokenEncrypted) > 0 {
 				raw, decErr := s.tokencrypt.DecryptString(item.BotTokenEncrypted)
 				if decErr == nil && strings.TrimSpace(raw) != "" {
 					botToken = strings.TrimSpace(raw)
+					botScope = "platform"
 				}
 			}
 		}
 	}
 
 	if platformToken == "" {
-		return "", "", fmt.Errorf("failed_precondition: effective platform token is not configured (repo/project/platform fallback empty)")
+		return "", "", "", "", fmt.Errorf("failed_precondition: effective platform token is not configured (repo/project/platform fallback empty)")
 	}
 	if botToken == "" {
-		return "", "", fmt.Errorf("failed_precondition: effective bot token is not configured (repo/project/platform fallback empty)")
+		return "", "", "", "", fmt.Errorf("failed_precondition: effective bot token is not configured (repo/project/platform fallback empty)")
 	}
-	return platformToken, botToken, nil
+	return platformToken, botToken, strings.TrimSpace(platformScope), strings.TrimSpace(botScope), nil
 }
 
 func resolveExpectedIngressIPs(webhookURL string) (host string, ips []net.IP) {
@@ -1790,4 +2000,149 @@ func ipIntersects(a []net.IP, b []net.IP) bool {
 		}
 	}
 	return false
+}
+
+func envVarsMap() map[string]string {
+	out := make(map[string]string, 64)
+	for _, item := range os.Environ() {
+		key, value, ok := strings.Cut(item, "=")
+		if !ok || strings.TrimSpace(key) == "" {
+			continue
+		}
+		out[key] = value
+	}
+	return out
+}
+
+func listServicesYAMLEnvironments(raw []byte) (map[string]struct{}, error) {
+	var stack servicescfg.Stack
+	if err := yaml.Unmarshal(raw, &stack); err != nil {
+		return nil, fmt.Errorf("parse services.yaml: %w", err)
+	}
+	out := make(map[string]struct{}, len(stack.Spec.Environments))
+	for k := range stack.Spec.Environments {
+		key := strings.TrimSpace(k)
+		if key == "" {
+			continue
+		}
+		out[key] = struct{}{}
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("spec.environments is empty")
+	}
+	return out, nil
+}
+
+func resolveServicesYAMLDomain(raw []byte, envName string, slot int, vars map[string]string) (domain string, source string, namespace string, err error) {
+	envName = strings.TrimSpace(envName)
+	if envName == "" {
+		return "", "", "", fmt.Errorf("env is required")
+	}
+	if vars == nil {
+		vars = envVarsMap()
+	}
+
+	result, err := servicescfg.LoadFromYAML(raw, servicescfg.LoadOptions{
+		Env:  envName,
+		Slot: slot,
+		Vars: vars,
+	})
+	if err != nil {
+		return "", "", "", err
+	}
+	namespace = strings.TrimSpace(result.Context.Namespace)
+
+	envCfg, err := servicescfg.ResolveEnvironment(result.Stack, envName)
+	if err != nil {
+		return "", "", namespace, err
+	}
+	host := strings.TrimSpace(envCfg.DomainTemplate)
+	if host != "" {
+		source = "domainTemplate"
+	} else if strings.EqualFold(envName, "ai") {
+		base := strings.TrimSpace(vars["CODEXK8S_AI_DOMAIN"])
+		if base == "" {
+			base = getOptionalEnv("CODEXK8S_AI_DOMAIN")
+		}
+		if base != "" && namespace != "" {
+			host = namespace + "." + base
+			source = "default:namespace.CODEXK8S_AI_DOMAIN"
+		}
+	} else {
+		base := strings.TrimSpace(vars["CODEXK8S_PRODUCTION_DOMAIN"])
+		if base == "" {
+			base = getOptionalEnv("CODEXK8S_PRODUCTION_DOMAIN")
+		}
+		host = base
+		source = "default:CODEXK8S_PRODUCTION_DOMAIN"
+	}
+
+	host = strings.TrimSpace(host)
+	if host == "" {
+		return "", source, namespace, nil
+	}
+	// Domain template must yield a hostname (no scheme/path/port).
+	switch {
+	case strings.Contains(host, "://"):
+		return "", source, namespace, fmt.Errorf("domain must be a hostname, got url %q", host)
+	case strings.Contains(host, "/"):
+		return "", source, namespace, fmt.Errorf("domain must be a hostname, got path %q", host)
+	case strings.Contains(host, ":"):
+		return "", source, namespace, fmt.Errorf("domain must be a hostname without port, got %q", host)
+	}
+	return host, source, namespace, nil
+}
+
+func runDNSCheck(name string, domain string, expectedIPs []net.IP) valuetypes.GitHubPreflightCheck {
+	domain = strings.TrimSpace(domain)
+	check := valuetypes.GitHubPreflightCheck{Name: strings.TrimSpace(name), Status: "ok"}
+	if domain == "" {
+		check.Status = "failed"
+		check.Details = "domain is empty"
+		return check
+	}
+
+	ips, lookupErr := net.LookupIP(domain)
+	if lookupErr != nil || len(ips) == 0 {
+		check.Status = "failed"
+		if lookupErr != nil {
+			check.Details = "dns lookup failed: " + lookupErr.Error()
+		} else {
+			check.Details = "dns lookup returned empty result"
+		}
+		return check
+	}
+
+	resolved := formatIPs(ips)
+	if len(expectedIPs) > 0 && !ipIntersects(ips, expectedIPs) {
+		check.Status = "failed"
+		check.Details = fmt.Sprintf("domain does not resolve to ingress IPs (resolved_ips=%s expected_ingress_ips=%s)", resolved, formatIPs(expectedIPs))
+		return check
+	}
+
+	check.Details = fmt.Sprintf("resolved_ips=%s", resolved)
+	return check
+}
+
+func formatIPs(ips []net.IP) string {
+	if len(ips) == 0 {
+		return ""
+	}
+	seen := make(map[string]struct{}, len(ips))
+	out := make([]string, 0, len(ips))
+	for _, ip := range ips {
+		if ip == nil {
+			continue
+		}
+		s := strings.TrimSpace(ip.String())
+		if s == "" {
+			continue
+		}
+		if _, ok := seen[s]; ok {
+			continue
+		}
+		seen[s] = struct{}{}
+		out = append(out, s)
+	}
+	return strings.Join(out, ",")
 }

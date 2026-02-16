@@ -187,6 +187,18 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 		}
 	}
 
+	// Allow services.yaml to override public host resolution (full-env domainTemplate).
+	if loaded.Stack != nil {
+		if envCfg, err := servicescfg.ResolveEnvironment(loaded.Stack, targetEnv); err == nil {
+			if host := strings.TrimSpace(envCfg.DomainTemplate); host != "" {
+				templateVars["CODEXK8S_PUBLIC_DOMAIN"] = host
+				if strings.EqualFold(targetEnv, "ai") || strings.TrimSpace(templateVars["CODEXK8S_PUBLIC_BASE_URL"]) == "" {
+					templateVars["CODEXK8S_PUBLIC_BASE_URL"] = "https://" + host
+				}
+			}
+		}
+	}
+
 	if strings.EqualFold(strings.TrimSpace(loaded.Stack.Spec.Project), "codex-k8s") {
 		s.appendTaskLogBestEffort(ctx, runID, "prerequisites", "info", "Ensuring codex-k8s prerequisites")
 		if err := s.ensureCodexK8sPrerequisites(ctx, repositoryRoot, targetNamespace, templateVars); err != nil {

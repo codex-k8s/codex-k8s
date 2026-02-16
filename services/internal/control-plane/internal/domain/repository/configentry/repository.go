@@ -16,6 +16,7 @@ type (
 // Repository persists config entries.
 type Repository interface {
 	List(ctx context.Context, filter ListFilter) ([]ConfigEntry, error)
+	GetByID(ctx context.Context, id string) (ConfigEntry, bool, error)
 	Exists(ctx context.Context, scope string, projectID string, repositoryID string, key string) (bool, error)
 	Upsert(ctx context.Context, params UpsertParams) (ConfigEntry, error)
 	Delete(ctx context.Context, id string) error

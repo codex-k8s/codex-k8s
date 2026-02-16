@@ -1136,6 +1136,14 @@ func (r *inMemoryRepoCfgRepo) UpsertPreflightReport(_ context.Context, _ repocfg
 	return nil
 }
 
+func (r *inMemoryRepoCfgRepo) AcquirePreflightLock(_ context.Context, params repocfgrepo.RepositoryPreflightLockAcquireParams) (string, bool, error) {
+	return params.LockToken, true, nil
+}
+
+func (r *inMemoryRepoCfgRepo) ReleasePreflightLock(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
 func (r *inMemoryRepoCfgRepo) SetTokenEncryptedForAll(_ context.Context, _ []byte) (int64, error) {
 	return 0, nil
 }
