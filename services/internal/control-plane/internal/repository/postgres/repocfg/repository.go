@@ -28,8 +28,14 @@ var (
 	queryFindByProviderOwnerName string
 	//go:embed sql/get_token_encrypted.sql
 	queryGetTokenEncrypted string
+	//go:embed sql/get_bot_token_encrypted.sql
+	queryGetBotTokenEncrypted string
 	//go:embed sql/set_token_encrypted_for_all.sql
 	querySetTokenEncryptedForAll string
+	//go:embed sql/upsert_bot_params.sql
+	queryUpsertBotParams string
+	//go:embed sql/upsert_preflight_report.sql
+	queryUpsertPreflightReport string
 )
 
 // Repository stores project repository bindings in PostgreSQL.
@@ -56,7 +62,18 @@ func (r *Repository) ListForProject(ctx context.Context, projectID string, limit
 	out := make([]domainrepo.RepositoryBinding, 0, limit)
 	for rows.Next() {
 		var item domainrepo.RepositoryBinding
-		if err := rows.Scan(&item.ID, &item.ProjectID, &item.Provider, &item.ExternalID, &item.Owner, &item.Name, &item.ServicesYAMLPath); err != nil {
+		if err := rows.Scan(
+			&item.ID,
+			&item.ProjectID,
+			&item.Provider,
+			&item.ExternalID,
+			&item.Owner,
+			&item.Name,
+			&item.ServicesYAMLPath,
+			&item.BotUsername,
+			&item.BotEmail,
+			&item.PreflightUpdatedAt,
+		); err != nil {
 			return nil, fmt.Errorf("scan repository row: %w", err)
 		}
 		out = append(out, item)
@@ -78,6 +95,9 @@ func (r *Repository) GetByID(ctx context.Context, repositoryID string) (domainre
 		&item.Owner,
 		&item.Name,
 		&item.ServicesYAMLPath,
+		&item.BotUsername,
+		&item.BotEmail,
+		&item.PreflightUpdatedAt,
 	)
 	if err == nil {
 		return item, true, nil
@@ -101,7 +121,18 @@ func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams)
 		params.Name,
 		params.TokenEncrypted,
 		params.ServicesYAMLPath,
-	).Scan(&item.ID, &item.ProjectID, &item.Provider, &item.ExternalID, &item.Owner, &item.Name, &item.ServicesYAMLPath)
+	).Scan(
+		&item.ID,
+		&item.ProjectID,
+		&item.Provider,
+		&item.ExternalID,
+		&item.Owner,
+		&item.Name,
+		&item.ServicesYAMLPath,
+		&item.BotUsername,
+		&item.BotEmail,
+		&item.PreflightUpdatedAt,
+	)
 	if err == nil {
 		return item, nil
 	}
@@ -153,6 +184,37 @@ func (r *Repository) GetTokenEncrypted(ctx context.Context, repositoryID string)
 		return nil, false, nil
 	}
 	return nil, false, fmt.Errorf("get repository token: %w", err)
+}
+
+// GetBotTokenEncrypted returns encrypted bot token bytes for a repository binding.
+func (r *Repository) GetBotTokenEncrypted(ctx context.Context, repositoryID string) ([]byte, bool, error) {
+	var token []byte
+	err := r.db.QueryRow(ctx, queryGetBotTokenEncrypted, repositoryID).Scan(&token)
+	if err == nil {
+		return token, true, nil
+	}
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, false, nil
+	}
+	return nil, false, fmt.Errorf("get repository bot token: %w", err)
+}
+
+// UpsertBotParams updates bot token + params for a repository binding.
+func (r *Repository) UpsertBotParams(ctx context.Context, params domainrepo.RepositoryBotParamsUpsertParams) error {
+	_, err := r.db.Exec(ctx, queryUpsertBotParams, params.RepositoryID, params.BotTokenEncrypted, params.BotUsername, params.BotEmail)
+	if err != nil {
+		return fmt.Errorf("upsert repository bot params: %w", err)
+	}
+	return nil
+}
+
+// UpsertPreflightReport updates stored preflight report for a repository binding.
+func (r *Repository) UpsertPreflightReport(ctx context.Context, params domainrepo.RepositoryPreflightReportUpsertParams) error {
+	_, err := r.db.Exec(ctx, queryUpsertPreflightReport, params.RepositoryID, params.ReportJSON)
+	if err != nil {
+		return fmt.Errorf("upsert repository preflight report: %w", err)
+	}
+	return nil
 }
 
 // SetTokenEncryptedForAll updates encrypted token for all repository bindings.

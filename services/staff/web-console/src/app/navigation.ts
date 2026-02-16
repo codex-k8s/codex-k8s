@@ -55,6 +55,7 @@ export const navItems: NavItem[] = [
   // Configuration (scaffold)
   { groupId: "configuration", routeName: "agents", titleKey: "nav.agents", icon: "mdi-robot-outline", comingSoon: true },
   { groupId: "configuration", routeName: "system-settings", titleKey: "nav.systemSettings", icon: "mdi-cog-outline", comingSoon: true },
+  { groupId: "configuration", routeName: "config-entries", titleKey: "nav.configEntries", icon: "mdi-tune-variant", adminOnly: true },
   { groupId: "configuration", routeName: "docs-knowledge", titleKey: "nav.docs", icon: "mdi-book-open-page-variant-outline", comingSoon: true },
   { groupId: "configuration", routeName: "mcp-tools", titleKey: "nav.mcpTools", icon: "mdi-wrench-cog-outline", comingSoon: true },
 ];

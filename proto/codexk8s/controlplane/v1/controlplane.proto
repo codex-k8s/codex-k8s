@@ -320,6 +320,9 @@ message RepositoryBinding {
   string owner = 5;
   string name = 6;
   string services_yaml_path = 7;
+  optional string bot_username = 8;
+  optional string bot_email = 9;
+  optional string preflight_updated_at = 10;
 }
 
 message ListProjectRepositoriesRequest {
@@ -346,6 +349,152 @@ message DeleteProjectRepositoryRequest {
   Principal principal = 1;
   string project_id = 2;
   string repository_id = 3;
+}
+
+message UpsertRepositoryBotParamsRequest {
+  Principal principal = 1;
+  string project_id = 2;
+  string repository_id = 3;
+  optional string bot_token = 4;
+  optional string bot_username = 5;
+  optional string bot_email = 6;
+}
+
+message RunRepositoryPreflightRequest {
+  Principal principal = 1;
+  string project_id = 2;
+  string repository_id = 3;
+}
+
+message PreflightCheckResult {
+  string name = 1;
+  string status = 2;
+  optional string details = 3;
+}
+
+message RunRepositoryPreflightResponse {
+  string repository_id = 1;
+  string status = 2;
+  repeated PreflightCheckResult checks = 3;
+  string report_json = 4;
+  google.protobuf.Timestamp finished_at = 5;
+}
+
+message ProjectGitHubTokens {
+  string project_id = 1;
+  bool has_platform_token = 2;
+  bool has_bot_token = 3;
+  optional string bot_username = 4;
+  optional string bot_email = 5;
+}
+
+message GetProjectGitHubTokensRequest {
+  Principal principal = 1;
+  string project_id = 2;
+}
+
+message UpsertProjectGitHubTokensRequest {
+  Principal principal = 1;
+  string project_id = 2;
+  optional string platform_token = 3;
+  optional string bot_token = 4;
+  optional string bot_username = 5;
+  optional string bot_email = 6;
+}
+
+message ConfigEntry {
+  string id = 1;
+  string scope = 2;
+  string kind = 3;
+  optional string project_id = 4;
+  optional string repository_id = 5;
+  string key = 6;
+  optional string value = 7;
+  repeated string sync_targets = 8;
+  string mutability = 9;
+  bool is_dangerous = 10;
+  optional string updated_at = 11;
+}
+
+message ListConfigEntriesRequest {
+  Principal principal = 1;
+  string scope = 2;
+  optional string project_id = 3;
+  optional string repository_id = 4;
+  int32 limit = 5;
+}
+
+message ListConfigEntriesResponse {
+  repeated ConfigEntry items = 1;
+}
+
+message UpsertConfigEntryRequest {
+  Principal principal = 1;
+  string scope = 2;
+  string kind = 3;
+  optional string project_id = 4;
+  optional string repository_id = 5;
+  string key = 6;
+  optional string value_plain = 7;
+  optional string value_secret = 8;
+  repeated string sync_targets = 9;
+  string mutability = 10;
+  bool is_dangerous = 11;
+}
+
+message DeleteConfigEntryRequest {
+  Principal principal = 1;
+  string config_entry_id = 2;
+}
+
+message DocsetGroup {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  bool default_selected = 4;
+}
+
+message ListDocsetGroupsRequest {
+  Principal principal = 1;
+  string docset_ref = 2;
+  string locale = 3;
+}
+
+message ListDocsetGroupsResponse {
+  repeated DocsetGroup groups = 1;
+}
+
+message ImportDocsetRequest {
+  Principal principal = 1;
+  string project_id = 2;
+  string repository_id = 3;
+  string docset_ref = 4;
+  string locale = 5;
+  repeated string group_ids = 6;
+}
+
+message ImportDocsetResponse {
+  string repository_full_name = 1;
+  int32 pr_number = 2;
+  string pr_url = 3;
+  string branch = 4;
+  int32 files_total = 5;
+}
+
+message SyncDocsetRequest {
+  Principal principal = 1;
+  string project_id = 2;
+  string repository_id = 3;
+  string docset_ref = 4;
+}
+
+message SyncDocsetResponse {
+  string repository_full_name = 1;
+  int32 pr_number = 2;
+  string pr_url = 3;
+  string branch = 4;
+  int32 files_updated = 5;
+  int32 files_drift = 6;
 }
 
 message IssueRunMCPTokenRequest {
@@ -631,6 +780,19 @@ service ControlPlaneService {
   rpc ListProjectRepositories(ListProjectRepositoriesRequest) returns (ListProjectRepositoriesResponse);
   rpc UpsertProjectRepository(UpsertProjectRepositoryRequest) returns (RepositoryBinding);
   rpc DeleteProjectRepository(DeleteProjectRepositoryRequest) returns (google.protobuf.Empty);
+  rpc UpsertRepositoryBotParams(UpsertRepositoryBotParamsRequest) returns (google.protobuf.Empty);
+  rpc RunRepositoryPreflight(RunRepositoryPreflightRequest) returns (RunRepositoryPreflightResponse);
+
+  rpc GetProjectGitHubTokens(GetProjectGitHubTokensRequest) returns (ProjectGitHubTokens);
+  rpc UpsertProjectGitHubTokens(UpsertProjectGitHubTokensRequest) returns (google.protobuf.Empty);
+
+  rpc ListConfigEntries(ListConfigEntriesRequest) returns (ListConfigEntriesResponse);
+  rpc UpsertConfigEntry(UpsertConfigEntryRequest) returns (ConfigEntry);
+  rpc DeleteConfigEntry(DeleteConfigEntryRequest) returns (google.protobuf.Empty);
+
+  rpc ListDocsetGroups(ListDocsetGroupsRequest) returns (ListDocsetGroupsResponse);
+  rpc ImportDocset(ImportDocsetRequest) returns (ImportDocsetResponse);
+  rpc SyncDocset(SyncDocsetRequest) returns (SyncDocsetResponse);
   rpc IssueRunMCPToken(IssueRunMCPTokenRequest) returns (IssueRunMCPTokenResponse);
   rpc PrepareRunEnvironment(PrepareRunEnvironmentRequest) returns (PrepareRunEnvironmentResponse);
   rpc ListRuntimeDeployTasks(ListRuntimeDeployTasksRequest) returns (ListRuntimeDeployTasksResponse);

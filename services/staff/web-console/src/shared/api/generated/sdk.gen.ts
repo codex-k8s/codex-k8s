@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CallbackGithubData, CallbackGithubErrors, CleanupRegistryImagesData, CleanupRegistryImagesErrors, CleanupRegistryImagesResponses, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteProjectData, DeleteProjectErrors, DeleteProjectMemberData, DeleteProjectMemberErrors, DeleteProjectMemberResponses, DeleteProjectRepositoryData, DeleteProjectRepositoryErrors, DeleteProjectRepositoryResponses, DeleteProjectResponses, DeleteRegistryImageTagData, DeleteRegistryImageTagErrors, DeleteRegistryImageTagResponses, DeleteRunNamespaceData, DeleteRunNamespaceErrors, DeleteRunNamespaceResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, GetMeData, GetMeErrors, GetMeResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetRunData, GetRunErrors, GetRunLogsData, GetRunLogsErrors, GetRunLogsResponses, GetRunResponses, GetRuntimeDeployTaskData, GetRuntimeDeployTaskErrors, GetRuntimeDeployTaskResponses, IngestGithubWebhookData, IngestGithubWebhookErrors, IngestGithubWebhookResponses, ListPendingApprovalsData, ListPendingApprovalsErrors, ListPendingApprovalsResponses, ListProjectMembersData, ListProjectMembersErrors, ListProjectMembersResponses, ListProjectRepositoriesData, ListProjectRepositoriesErrors, ListProjectRepositoriesResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRegistryImagesData, ListRegistryImagesErrors, ListRegistryImagesResponses, ListRunEventsData, ListRunEventsErrors, ListRunEventsResponses, ListRunJobsData, ListRunJobsErrors, ListRunJobsResponses, ListRunLearningFeedbackData, ListRunLearningFeedbackErrors, ListRunLearningFeedbackResponses, ListRunsData, ListRunsErrors, ListRunsResponses, ListRuntimeDeployTasksData, ListRuntimeDeployTasksErrors, ListRuntimeDeployTasksResponses, ListRunWaitsData, ListRunWaitsErrors, ListRunWaitsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginGithubData, LoginGithubErrors, LogoutData, LogoutErrors, LogoutResponses, McpApproverCallbackData, McpApproverCallbackErrors, McpApproverCallbackResponses, McpExecutorCallbackData, McpExecutorCallbackErrors, McpExecutorCallbackResponses, ResolveApprovalDecisionData, ResolveApprovalDecisionErrors, ResolveApprovalDecisionResponses, SetProjectMemberLearningModeOverrideData, SetProjectMemberLearningModeOverrideErrors, SetProjectMemberLearningModeOverrideResponses, UpsertProjectData, UpsertProjectErrors, UpsertProjectMemberData, UpsertProjectMemberErrors, UpsertProjectMemberResponses, UpsertProjectRepositoryData, UpsertProjectRepositoryErrors, UpsertProjectRepositoryResponses, UpsertProjectResponses } from './types.gen';
+import type { CallbackGithubData, CallbackGithubErrors, CleanupRegistryImagesData, CleanupRegistryImagesErrors, CleanupRegistryImagesResponses, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteConfigEntryData, DeleteConfigEntryErrors, DeleteConfigEntryResponses, DeleteProjectData, DeleteProjectErrors, DeleteProjectMemberData, DeleteProjectMemberErrors, DeleteProjectMemberResponses, DeleteProjectRepositoryData, DeleteProjectRepositoryErrors, DeleteProjectRepositoryResponses, DeleteProjectResponses, DeleteRegistryImageTagData, DeleteRegistryImageTagErrors, DeleteRegistryImageTagResponses, DeleteRunNamespaceData, DeleteRunNamespaceErrors, DeleteRunNamespaceResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, GetMeData, GetMeErrors, GetMeResponses, GetProjectData, GetProjectErrors, GetProjectGitHubTokensData, GetProjectGitHubTokensErrors, GetProjectGitHubTokensResponses, GetProjectResponses, GetRunData, GetRunErrors, GetRunLogsData, GetRunLogsErrors, GetRunLogsResponses, GetRunResponses, GetRuntimeDeployTaskData, GetRuntimeDeployTaskErrors, GetRuntimeDeployTaskResponses, ImportDocsetData, ImportDocsetErrors, ImportDocsetResponses, IngestGithubWebhookData, IngestGithubWebhookErrors, IngestGithubWebhookResponses, ListConfigEntriesData, ListConfigEntriesErrors, ListConfigEntriesResponses, ListDocsetGroupsData, ListDocsetGroupsErrors, ListDocsetGroupsResponses, ListPendingApprovalsData, ListPendingApprovalsErrors, ListPendingApprovalsResponses, ListProjectMembersData, ListProjectMembersErrors, ListProjectMembersResponses, ListProjectRepositoriesData, ListProjectRepositoriesErrors, ListProjectRepositoriesResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRegistryImagesData, ListRegistryImagesErrors, ListRegistryImagesResponses, ListRunEventsData, ListRunEventsErrors, ListRunEventsResponses, ListRunJobsData, ListRunJobsErrors, ListRunJobsResponses, ListRunLearningFeedbackData, ListRunLearningFeedbackErrors, ListRunLearningFeedbackResponses, ListRunsData, ListRunsErrors, ListRunsResponses, ListRuntimeDeployTasksData, ListRuntimeDeployTasksErrors, ListRuntimeDeployTasksResponses, ListRunWaitsData, ListRunWaitsErrors, ListRunWaitsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginGithubData, LoginGithubErrors, LogoutData, LogoutErrors, LogoutResponses, McpApproverCallbackData, McpApproverCallbackErrors, McpApproverCallbackResponses, McpExecutorCallbackData, McpExecutorCallbackErrors, McpExecutorCallbackResponses, ResolveApprovalDecisionData, ResolveApprovalDecisionErrors, ResolveApprovalDecisionResponses, RunRepositoryPreflightData, RunRepositoryPreflightErrors, RunRepositoryPreflightResponses, SetProjectMemberLearningModeOverrideData, SetProjectMemberLearningModeOverrideErrors, SetProjectMemberLearningModeOverrideResponses, SyncDocsetData, SyncDocsetErrors, SyncDocsetResponses, UpsertConfigEntryData, UpsertConfigEntryErrors, UpsertConfigEntryResponses, UpsertProjectData, UpsertProjectErrors, UpsertProjectGitHubTokensData, UpsertProjectGitHubTokensErrors, UpsertProjectGitHubTokensResponses, UpsertProjectMemberData, UpsertProjectMemberErrors, UpsertProjectMemberResponses, UpsertProjectRepositoryData, UpsertProjectRepositoryErrors, UpsertProjectRepositoryResponses, UpsertProjectResponses, UpsertRepositoryBotParamsData, UpsertRepositoryBotParamsErrors, UpsertRepositoryBotParamsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -355,3 +355,107 @@ export const upsertProjectRepository = <ThrowOnError extends boolean = false>(op
  * Delete project repository binding
  */
 export const deleteProjectRepository = <ThrowOnError extends boolean = false>(options: Options<DeleteProjectRepositoryData, ThrowOnError>) => (options.client ?? client).delete<DeleteProjectRepositoryResponses, DeleteProjectRepositoryErrors, ThrowOnError>({ url: '/api/v1/staff/projects/{project_id}/repositories/{repository_id}', ...options });
+
+/**
+ * Update repository bot parameters (token/login/email)
+ */
+export const upsertRepositoryBotParams = <ThrowOnError extends boolean = false>(options: Options<UpsertRepositoryBotParamsData, ThrowOnError>) => (options.client ?? client).put<UpsertRepositoryBotParamsResponses, UpsertRepositoryBotParamsErrors, ThrowOnError>({
+    url: '/api/v1/staff/projects/{project_id}/repositories/{repository_id}/bot-params',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Run repository onboarding preflight
+ */
+export const runRepositoryPreflight = <ThrowOnError extends boolean = false>(options: Options<RunRepositoryPreflightData, ThrowOnError>) => (options.client ?? client).post<RunRepositoryPreflightResponses, RunRepositoryPreflightErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/projects/{project_id}/repositories/{repository_id}/preflight',
+    ...options
+});
+
+/**
+ * Get project-scoped GitHub tokens status
+ */
+export const getProjectGitHubTokens = <ThrowOnError extends boolean = false>(options: Options<GetProjectGitHubTokensData, ThrowOnError>) => (options.client ?? client).get<GetProjectGitHubTokensResponses, GetProjectGitHubTokensErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/projects/{project_id}/github-tokens',
+    ...options
+});
+
+/**
+ * Upsert project-scoped GitHub tokens
+ */
+export const upsertProjectGitHubTokens = <ThrowOnError extends boolean = false>(options: Options<UpsertProjectGitHubTokensData, ThrowOnError>) => (options.client ?? client).put<UpsertProjectGitHubTokensResponses, UpsertProjectGitHubTokensErrors, ThrowOnError>({
+    url: '/api/v1/staff/projects/{project_id}/github-tokens',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List configuration entries
+ */
+export const listConfigEntries = <ThrowOnError extends boolean = false>(options: Options<ListConfigEntriesData, ThrowOnError>) => (options.client ?? client).get<ListConfigEntriesResponses, ListConfigEntriesErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/config-entries',
+    ...options
+});
+
+/**
+ * Upsert configuration entry
+ */
+export const upsertConfigEntry = <ThrowOnError extends boolean = false>(options: Options<UpsertConfigEntryData, ThrowOnError>) => (options.client ?? client).post<UpsertConfigEntryResponses, UpsertConfigEntryErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/config-entries',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete configuration entry
+ */
+export const deleteConfigEntry = <ThrowOnError extends boolean = false>(options: Options<DeleteConfigEntryData, ThrowOnError>) => (options.client ?? client).delete<DeleteConfigEntryResponses, DeleteConfigEntryErrors, ThrowOnError>({ url: '/api/v1/staff/config-entries/{config_entry_id}', ...options });
+
+/**
+ * List docset groups (manifest v1)
+ */
+export const listDocsetGroups = <ThrowOnError extends boolean = false>(options?: Options<ListDocsetGroupsData, ThrowOnError>) => (options?.client ?? client).get<ListDocsetGroupsResponses, ListDocsetGroupsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/docset/groups',
+    ...options
+});
+
+/**
+ * Import docset into project repository (PR-based)
+ */
+export const importDocset = <ThrowOnError extends boolean = false>(options: Options<ImportDocsetData, ThrowOnError>) => (options.client ?? client).post<ImportDocsetResponses, ImportDocsetErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/projects/{project_id}/docset/import',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Safe sync docset into project repository (PR-based)
+ */
+export const syncDocset = <ThrowOnError extends boolean = false>(options: Options<SyncDocsetData, ThrowOnError>) => (options.client ?? client).post<SyncDocsetResponses, SyncDocsetErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/projects/{project_id}/docset/sync',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});

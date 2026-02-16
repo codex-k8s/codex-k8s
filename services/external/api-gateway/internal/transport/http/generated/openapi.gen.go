@@ -24,6 +24,19 @@ const (
 	Owner     ApprovalRequestApprovalMode = "owner"
 )
 
+// Defines values for ConfigEntryKind.
+const (
+	ConfigEntryKindSecret   ConfigEntryKind = "secret"
+	ConfigEntryKindVariable ConfigEntryKind = "variable"
+)
+
+// Defines values for ConfigEntryScope.
+const (
+	ConfigEntryScopePlatform   ConfigEntryScope = "platform"
+	ConfigEntryScopeProject    ConfigEntryScope = "project"
+	ConfigEntryScopeRepository ConfigEntryScope = "repository"
+)
+
 // Defines values for ErrorResponseCode.
 const (
 	ErrorResponseCodeCanceled           ErrorResponseCode = "canceled"
@@ -37,6 +50,12 @@ const (
 	ErrorResponseCodeResourceExhausted  ErrorResponseCode = "resource_exhausted"
 	ErrorResponseCodeUnauthorized       ErrorResponseCode = "unauthorized"
 	ErrorResponseCodeUnavailable        ErrorResponseCode = "unavailable"
+)
+
+// Defines values for ImportDocsetRequestLocale.
+const (
+	ImportDocsetRequestLocaleEn ImportDocsetRequestLocale = "en"
+	ImportDocsetRequestLocaleRu ImportDocsetRequestLocale = "ru"
 )
 
 // Defines values for IngestGitHubWebhookResponseStatus.
@@ -95,11 +114,37 @@ const (
 	Warn  RuntimeDeployTaskLogLevel = "warn"
 )
 
+// Defines values for UpsertConfigEntryRequestKind.
+const (
+	UpsertConfigEntryRequestKindSecret   UpsertConfigEntryRequestKind = "secret"
+	UpsertConfigEntryRequestKindVariable UpsertConfigEntryRequestKind = "variable"
+)
+
+// Defines values for UpsertConfigEntryRequestScope.
+const (
+	UpsertConfigEntryRequestScopePlatform   UpsertConfigEntryRequestScope = "platform"
+	UpsertConfigEntryRequestScopeProject    UpsertConfigEntryRequestScope = "project"
+	UpsertConfigEntryRequestScopeRepository UpsertConfigEntryRequestScope = "repository"
+)
+
 // Defines values for UpsertProjectMemberRequestRole.
 const (
 	UpsertProjectMemberRequestRoleAdmin     UpsertProjectMemberRequestRole = "admin"
 	UpsertProjectMemberRequestRoleRead      UpsertProjectMemberRequestRole = "read"
 	UpsertProjectMemberRequestRoleReadWrite UpsertProjectMemberRequestRole = "read_write"
+)
+
+// Defines values for ListConfigEntriesParamsScope.
+const (
+	ListConfigEntriesParamsScopePlatform   ListConfigEntriesParamsScope = "platform"
+	ListConfigEntriesParamsScopeProject    ListConfigEntriesParamsScope = "project"
+	ListConfigEntriesParamsScopeRepository ListConfigEntriesParamsScope = "repository"
+)
+
+// Defines values for ListDocsetGroupsParamsLocale.
+const (
+	ListDocsetGroupsParamsLocaleEn ListDocsetGroupsParamsLocale = "en"
+	ListDocsetGroupsParamsLocaleRu ListDocsetGroupsParamsLocale = "ru"
 )
 
 // Defines values for ListRuntimeDeployTasksParamsStatus.
@@ -153,6 +198,32 @@ type CleanupRegistryImagesResponse struct {
 	TagsSkipped         int32                       `json:"tags_skipped"`
 }
 
+// ConfigEntry defines model for ConfigEntry.
+type ConfigEntry struct {
+	Id           string           `json:"id"`
+	IsDangerous  bool             `json:"is_dangerous"`
+	Key          string           `json:"key"`
+	Kind         ConfigEntryKind  `json:"kind"`
+	Mutability   string           `json:"mutability"`
+	ProjectId    *string          `json:"project_id"`
+	RepositoryId *string          `json:"repository_id"`
+	Scope        ConfigEntryScope `json:"scope"`
+	SyncTargets  []string         `json:"sync_targets"`
+	UpdatedAt    *string          `json:"updated_at"`
+	Value        *string          `json:"value"`
+}
+
+// ConfigEntryKind defines model for ConfigEntry.Kind.
+type ConfigEntryKind string
+
+// ConfigEntryScope defines model for ConfigEntry.Scope.
+type ConfigEntryScope string
+
+// ConfigEntryItemsResponse defines model for ConfigEntryItemsResponse.
+type ConfigEntryItemsResponse struct {
+	Items []ConfigEntry `json:"items"`
+}
+
 // CreateUserRequest defines model for CreateUserRequest.
 type CreateUserRequest struct {
 	Email           openapi_types.Email `json:"email"`
@@ -163,6 +234,19 @@ type CreateUserRequest struct {
 type DeleteRegistryImageTagRequest struct {
 	Repository string `json:"repository"`
 	Tag        string `json:"tag"`
+}
+
+// DocsetGroup defines model for DocsetGroup.
+type DocsetGroup struct {
+	DefaultSelected bool   `json:"default_selected"`
+	Description     string `json:"description"`
+	Id              string `json:"id"`
+	Title           string `json:"title"`
+}
+
+// DocsetGroupItemsResponse defines model for DocsetGroupItemsResponse.
+type DocsetGroupItemsResponse struct {
+	Groups []DocsetGroup `json:"groups"`
 }
 
 // ErrorResponse defines model for ErrorResponse.
@@ -186,6 +270,26 @@ type FlowEvent struct {
 // FlowEventItemsResponse defines model for FlowEventItemsResponse.
 type FlowEventItemsResponse struct {
 	Items []FlowEvent `json:"items"`
+}
+
+// ImportDocsetRequest defines model for ImportDocsetRequest.
+type ImportDocsetRequest struct {
+	DocsetRef    string                    `json:"docset_ref"`
+	GroupIds     []string                  `json:"group_ids"`
+	Locale       ImportDocsetRequestLocale `json:"locale"`
+	RepositoryId string                    `json:"repository_id"`
+}
+
+// ImportDocsetRequestLocale defines model for ImportDocsetRequest.Locale.
+type ImportDocsetRequestLocale string
+
+// ImportDocsetResponse defines model for ImportDocsetResponse.
+type ImportDocsetResponse struct {
+	Branch             string `json:"branch"`
+	FilesTotal         int    `json:"files_total"`
+	PrNumber           int    `json:"pr_number"`
+	PrUrl              string `json:"pr_url"`
+	RepositoryFullName string `json:"repository_full_name"`
 }
 
 // IngestGitHubWebhookResponse defines model for IngestGitHubWebhookResponse.
@@ -242,12 +346,28 @@ type MeUser struct {
 	IsPlatformOwner bool   `json:"is_platform_owner"`
 }
 
+// PreflightCheckResult defines model for PreflightCheckResult.
+type PreflightCheckResult struct {
+	Details *string `json:"details"`
+	Name    string  `json:"name"`
+	Status  string  `json:"status"`
+}
+
 // Project defines model for Project.
 type Project struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
 	Role string `json:"role"`
 	Slug string `json:"slug"`
+}
+
+// ProjectGitHubTokens defines model for ProjectGitHubTokens.
+type ProjectGitHubTokens struct {
+	BotEmail         *string `json:"bot_email"`
+	BotUsername      *string `json:"bot_username"`
+	HasBotToken      bool    `json:"has_bot_token"`
+	HasPlatformToken bool    `json:"has_platform_token"`
+	ProjectId        string  `json:"project_id"`
 }
 
 // ProjectItemsResponse defines model for ProjectItemsResponse.
@@ -302,13 +422,16 @@ type RegistryImageTag struct {
 
 // RepositoryBinding defines model for RepositoryBinding.
 type RepositoryBinding struct {
-	ExternalId       int64  `json:"external_id"`
-	Id               string `json:"id"`
-	Name             string `json:"name"`
-	Owner            string `json:"owner"`
-	ProjectId        string `json:"project_id"`
-	Provider         string `json:"provider"`
-	ServicesYamlPath string `json:"services_yaml_path"`
+	BotEmail           *string `json:"bot_email"`
+	BotUsername        *string `json:"bot_username"`
+	ExternalId         int64   `json:"external_id"`
+	Id                 string  `json:"id"`
+	Name               string  `json:"name"`
+	Owner              string  `json:"owner"`
+	PreflightUpdatedAt *string `json:"preflight_updated_at"`
+	ProjectId          string  `json:"project_id"`
+	Provider           string  `json:"provider"`
+	ServicesYamlPath   string  `json:"services_yaml_path"`
 }
 
 // RepositoryBindingItemsResponse defines model for RepositoryBindingItemsResponse.
@@ -390,6 +513,15 @@ type RunNamespaceCleanupResponse struct {
 	RunId          string  `json:"run_id"`
 }
 
+// RunRepositoryPreflightResponse defines model for RunRepositoryPreflightResponse.
+type RunRepositoryPreflightResponse struct {
+	Checks       []PreflightCheckResult `json:"checks"`
+	FinishedAt   string                 `json:"finished_at"`
+	ReportJson   string                 `json:"report_json"`
+	RepositoryId string                 `json:"repository_id"`
+	Status       string                 `json:"status"`
+}
+
 // RuntimeDeployTask defines model for RuntimeDeployTask.
 type RuntimeDeployTask struct {
 	Attempts           int32                   `json:"attempts"`
@@ -439,6 +571,50 @@ type SetProjectMemberLearningModeRequest struct {
 	Enabled *bool `json:"enabled"`
 }
 
+// SyncDocsetRequest defines model for SyncDocsetRequest.
+type SyncDocsetRequest struct {
+	DocsetRef    string `json:"docset_ref"`
+	RepositoryId string `json:"repository_id"`
+}
+
+// SyncDocsetResponse defines model for SyncDocsetResponse.
+type SyncDocsetResponse struct {
+	Branch             string `json:"branch"`
+	FilesDrift         int    `json:"files_drift"`
+	FilesUpdated       int    `json:"files_updated"`
+	PrNumber           int    `json:"pr_number"`
+	PrUrl              string `json:"pr_url"`
+	RepositoryFullName string `json:"repository_full_name"`
+}
+
+// UpsertConfigEntryRequest defines model for UpsertConfigEntryRequest.
+type UpsertConfigEntryRequest struct {
+	IsDangerous  *bool                         `json:"is_dangerous,omitempty"`
+	Key          string                        `json:"key"`
+	Kind         UpsertConfigEntryRequestKind  `json:"kind"`
+	Mutability   *string                       `json:"mutability,omitempty"`
+	ProjectId    *string                       `json:"project_id"`
+	RepositoryId *string                       `json:"repository_id"`
+	Scope        UpsertConfigEntryRequestScope `json:"scope"`
+	SyncTargets  *[]string                     `json:"sync_targets,omitempty"`
+	ValuePlain   *string                       `json:"value_plain"`
+	ValueSecret  *string                       `json:"value_secret"`
+}
+
+// UpsertConfigEntryRequestKind defines model for UpsertConfigEntryRequest.Kind.
+type UpsertConfigEntryRequestKind string
+
+// UpsertConfigEntryRequestScope defines model for UpsertConfigEntryRequest.Scope.
+type UpsertConfigEntryRequestScope string
+
+// UpsertProjectGitHubTokensRequest defines model for UpsertProjectGitHubTokensRequest.
+type UpsertProjectGitHubTokensRequest struct {
+	BotEmail      *string `json:"bot_email"`
+	BotToken      *string `json:"bot_token"`
+	BotUsername   *string `json:"bot_username"`
+	PlatformToken *string `json:"platform_token"`
+}
+
 // UpsertProjectMemberRequest defines model for UpsertProjectMemberRequest.
 type UpsertProjectMemberRequest struct {
 	Email  *openapi_types.Email            `json:"email,omitempty"`
@@ -469,6 +645,13 @@ type UpsertProjectRepositoryRequest struct {
 type UpsertProjectRequest struct {
 	Name string `json:"name"`
 	Slug string `json:"slug"`
+}
+
+// UpsertRepositoryBotParamsRequest defines model for UpsertRepositoryBotParamsRequest.
+type UpsertRepositoryBotParamsRequest struct {
+	BotEmail    *string `json:"bot_email"`
+	BotToken    *string `json:"bot_token"`
+	BotUsername *string `json:"bot_username"`
 }
 
 // User defines model for User.
@@ -557,6 +740,26 @@ type McpExecutorCallbackParams struct {
 type ListPendingApprovalsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
+
+// ListConfigEntriesParams defines parameters for ListConfigEntries.
+type ListConfigEntriesParams struct {
+	Scope        ListConfigEntriesParamsScope `form:"scope" json:"scope"`
+	ProjectId    *string                      `form:"project_id,omitempty" json:"project_id,omitempty"`
+	RepositoryId *string                      `form:"repository_id,omitempty" json:"repository_id,omitempty"`
+	Limit        *Limit                       `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListConfigEntriesParamsScope defines parameters for ListConfigEntries.
+type ListConfigEntriesParamsScope string
+
+// ListDocsetGroupsParams defines parameters for ListDocsetGroups.
+type ListDocsetGroupsParams struct {
+	DocsetRef *string                       `form:"docset_ref,omitempty" json:"docset_ref,omitempty"`
+	Locale    *ListDocsetGroupsParamsLocale `form:"locale,omitempty" json:"locale,omitempty"`
+}
+
+// ListDocsetGroupsParamsLocale defines parameters for ListDocsetGroups.
+type ListDocsetGroupsParamsLocale string
 
 // ListProjectsParams defines parameters for ListProjects.
 type ListProjectsParams struct {
@@ -651,8 +854,20 @@ type McpExecutorCallbackJSONRequestBody = MCPApprovalCallbackRequest
 // ResolveApprovalDecisionJSONRequestBody defines body for ResolveApprovalDecision for application/json ContentType.
 type ResolveApprovalDecisionJSONRequestBody = ResolveApprovalDecisionRequest
 
+// UpsertConfigEntryJSONRequestBody defines body for UpsertConfigEntry for application/json ContentType.
+type UpsertConfigEntryJSONRequestBody = UpsertConfigEntryRequest
+
 // UpsertProjectJSONRequestBody defines body for UpsertProject for application/json ContentType.
 type UpsertProjectJSONRequestBody = UpsertProjectRequest
+
+// ImportDocsetJSONRequestBody defines body for ImportDocset for application/json ContentType.
+type ImportDocsetJSONRequestBody = ImportDocsetRequest
+
+// SyncDocsetJSONRequestBody defines body for SyncDocset for application/json ContentType.
+type SyncDocsetJSONRequestBody = SyncDocsetRequest
+
+// UpsertProjectGitHubTokensJSONRequestBody defines body for UpsertProjectGitHubTokens for application/json ContentType.
+type UpsertProjectGitHubTokensJSONRequestBody = UpsertProjectGitHubTokensRequest
 
 // UpsertProjectMemberJSONRequestBody defines body for UpsertProjectMember for application/json ContentType.
 type UpsertProjectMemberJSONRequestBody = UpsertProjectMemberRequest
@@ -662,6 +877,9 @@ type SetProjectMemberLearningModeOverrideJSONRequestBody = SetProjectMemberLearn
 
 // UpsertProjectRepositoryJSONRequestBody defines body for UpsertProjectRepository for application/json ContentType.
 type UpsertProjectRepositoryJSONRequestBody = UpsertProjectRepositoryRequest
+
+// UpsertRepositoryBotParamsJSONRequestBody defines body for UpsertRepositoryBotParams for application/json ContentType.
+type UpsertRepositoryBotParamsJSONRequestBody = UpsertRepositoryBotParamsRequest
 
 // DeleteRegistryImageTagJSONRequestBody defines body for DeleteRegistryImageTag for application/json ContentType.
 type DeleteRegistryImageTagJSONRequestBody = DeleteRegistryImageTagRequest
@@ -825,6 +1043,18 @@ type ServerInterface interface {
 	// Resolve one approval request (approve/deny/expire/fail)
 	// (POST /api/v1/staff/approvals/{approval_request_id}/decision)
 	ResolveApprovalDecision(w http.ResponseWriter, r *http.Request, approvalRequestId ApprovalRequestID)
+	// List configuration entries
+	// (GET /api/v1/staff/config-entries)
+	ListConfigEntries(w http.ResponseWriter, r *http.Request, params ListConfigEntriesParams)
+	// Upsert configuration entry
+	// (POST /api/v1/staff/config-entries)
+	UpsertConfigEntry(w http.ResponseWriter, r *http.Request)
+	// Delete configuration entry
+	// (DELETE /api/v1/staff/config-entries/{config_entry_id})
+	DeleteConfigEntry(w http.ResponseWriter, r *http.Request, configEntryId string)
+	// List docset groups (manifest v1)
+	// (GET /api/v1/staff/docset/groups)
+	ListDocsetGroups(w http.ResponseWriter, r *http.Request, params ListDocsetGroupsParams)
 	// List projects
 	// (GET /api/v1/staff/projects)
 	ListProjects(w http.ResponseWriter, r *http.Request, params ListProjectsParams)
@@ -837,6 +1067,18 @@ type ServerInterface interface {
 	// Get project by id
 	// (GET /api/v1/staff/projects/{project_id})
 	GetProject(w http.ResponseWriter, r *http.Request, projectId ProjectID)
+	// Import docset into project repository (PR-based)
+	// (POST /api/v1/staff/projects/{project_id}/docset/import)
+	ImportDocset(w http.ResponseWriter, r *http.Request, projectId ProjectID)
+	// Safe sync docset into project repository (PR-based)
+	// (POST /api/v1/staff/projects/{project_id}/docset/sync)
+	SyncDocset(w http.ResponseWriter, r *http.Request, projectId ProjectID)
+	// Get project-scoped GitHub tokens status
+	// (GET /api/v1/staff/projects/{project_id}/github-tokens)
+	GetProjectGitHubTokens(w http.ResponseWriter, r *http.Request, projectId ProjectID)
+	// Upsert project-scoped GitHub tokens
+	// (PUT /api/v1/staff/projects/{project_id}/github-tokens)
+	UpsertProjectGitHubTokens(w http.ResponseWriter, r *http.Request, projectId ProjectID)
 	// List project members
 	// (GET /api/v1/staff/projects/{project_id}/members)
 	ListProjectMembers(w http.ResponseWriter, r *http.Request, projectId ProjectID, params ListProjectMembersParams)
@@ -858,6 +1100,12 @@ type ServerInterface interface {
 	// Delete project repository binding
 	// (DELETE /api/v1/staff/projects/{project_id}/repositories/{repository_id})
 	DeleteProjectRepository(w http.ResponseWriter, r *http.Request, projectId ProjectID, repositoryId string)
+	// Update repository bot parameters (token/login/email)
+	// (PUT /api/v1/staff/projects/{project_id}/repositories/{repository_id}/bot-params)
+	UpsertRepositoryBotParams(w http.ResponseWriter, r *http.Request, projectId ProjectID, repositoryId string)
+	// Run repository onboarding preflight
+	// (POST /api/v1/staff/projects/{project_id}/repositories/{repository_id}/preflight)
+	RunRepositoryPreflight(w http.ResponseWriter, r *http.Request, projectId ProjectID, repositoryId string)
 	// List runs
 	// (GET /api/v1/staff/runs)
 	ListRuns(w http.ResponseWriter, r *http.Request, params ListRunsParams)
@@ -1143,6 +1391,138 @@ func (siw *ServerInterfaceWrapper) ResolveApprovalDecision(w http.ResponseWriter
 	handler.ServeHTTP(w, r)
 }
 
+// ListConfigEntries operation middleware
+func (siw *ServerInterfaceWrapper) ListConfigEntries(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListConfigEntriesParams
+
+	// ------------- Required query parameter "scope" -------------
+
+	if paramValue := r.URL.Query().Get("scope"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "scope"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "scope", r.URL.Query(), &params.Scope)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "scope", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "project_id" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "project_id", r.URL.Query(), &params.ProjectId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "project_id", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "repository_id" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "repository_id", r.URL.Query(), &params.RepositoryId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository_id", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListConfigEntries(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpsertConfigEntry operation middleware
+func (siw *ServerInterfaceWrapper) UpsertConfigEntry(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpsertConfigEntry(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteConfigEntry operation middleware
+func (siw *ServerInterfaceWrapper) DeleteConfigEntry(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "config_entry_id" -------------
+	var configEntryId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "config_entry_id", r.PathValue("config_entry_id"), &configEntryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "config_entry_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteConfigEntry(w, r, configEntryId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListDocsetGroups operation middleware
+func (siw *ServerInterfaceWrapper) ListDocsetGroups(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListDocsetGroupsParams
+
+	// ------------- Optional query parameter "docset_ref" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "docset_ref", r.URL.Query(), &params.DocsetRef)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "docset_ref", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "locale" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "locale", r.URL.Query(), &params.Locale)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "locale", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListDocsetGroups(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListProjects operation middleware
 func (siw *ServerInterfaceWrapper) ListProjects(w http.ResponseWriter, r *http.Request) {
 
@@ -1225,6 +1605,106 @@ func (siw *ServerInterfaceWrapper) GetProject(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetProject(w, r, projectId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ImportDocset operation middleware
+func (siw *ServerInterfaceWrapper) ImportDocset(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "project_id" -------------
+	var projectId ProjectID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "project_id", r.PathValue("project_id"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "project_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ImportDocset(w, r, projectId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SyncDocset operation middleware
+func (siw *ServerInterfaceWrapper) SyncDocset(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "project_id" -------------
+	var projectId ProjectID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "project_id", r.PathValue("project_id"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "project_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SyncDocset(w, r, projectId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetProjectGitHubTokens operation middleware
+func (siw *ServerInterfaceWrapper) GetProjectGitHubTokens(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "project_id" -------------
+	var projectId ProjectID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "project_id", r.PathValue("project_id"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "project_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetProjectGitHubTokens(w, r, projectId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpsertProjectGitHubTokens operation middleware
+func (siw *ServerInterfaceWrapper) UpsertProjectGitHubTokens(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "project_id" -------------
+	var projectId ProjectID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "project_id", r.PathValue("project_id"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "project_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpsertProjectGitHubTokens(w, r, projectId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1449,6 +1929,74 @@ func (siw *ServerInterfaceWrapper) DeleteProjectRepository(w http.ResponseWriter
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeleteProjectRepository(w, r, projectId, repositoryId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpsertRepositoryBotParams operation middleware
+func (siw *ServerInterfaceWrapper) UpsertRepositoryBotParams(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "project_id" -------------
+	var projectId ProjectID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "project_id", r.PathValue("project_id"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "project_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository_id" -------------
+	var repositoryId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository_id", r.PathValue("repository_id"), &repositoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpsertRepositoryBotParams(w, r, projectId, repositoryId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RunRepositoryPreflight operation middleware
+func (siw *ServerInterfaceWrapper) RunRepositoryPreflight(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "project_id" -------------
+	var projectId ProjectID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "project_id", r.PathValue("project_id"), &projectId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "project_id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository_id" -------------
+	var repositoryId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository_id", r.PathValue("repository_id"), &repositoryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RunRepositoryPreflight(w, r, projectId, repositoryId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2176,10 +2724,18 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/mcp/executor/callback", wrapper.McpExecutorCallback)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/approvals", wrapper.ListPendingApprovals)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/approvals/{approval_request_id}/decision", wrapper.ResolveApprovalDecision)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/config-entries", wrapper.ListConfigEntries)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/config-entries", wrapper.UpsertConfigEntry)
+	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/staff/config-entries/{config_entry_id}", wrapper.DeleteConfigEntry)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/docset/groups", wrapper.ListDocsetGroups)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/projects", wrapper.ListProjects)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/projects", wrapper.UpsertProject)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/staff/projects/{project_id}", wrapper.DeleteProject)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/projects/{project_id}", wrapper.GetProject)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/projects/{project_id}/docset/import", wrapper.ImportDocset)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/projects/{project_id}/docset/sync", wrapper.SyncDocset)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/projects/{project_id}/github-tokens", wrapper.GetProjectGitHubTokens)
+	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/staff/projects/{project_id}/github-tokens", wrapper.UpsertProjectGitHubTokens)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/projects/{project_id}/members", wrapper.ListProjectMembers)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/projects/{project_id}/members", wrapper.UpsertProjectMember)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/staff/projects/{project_id}/members/{user_id}", wrapper.DeleteProjectMember)
@@ -2187,6 +2743,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/projects/{project_id}/repositories", wrapper.ListProjectRepositories)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/projects/{project_id}/repositories", wrapper.UpsertProjectRepository)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/staff/projects/{project_id}/repositories/{repository_id}", wrapper.DeleteProjectRepository)
+	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/staff/projects/{project_id}/repositories/{repository_id}/bot-params", wrapper.UpsertRepositoryBotParams)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/projects/{project_id}/repositories/{repository_id}/preflight", wrapper.RunRepositoryPreflight)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs", wrapper.ListRuns)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/jobs", wrapper.ListRunJobs)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/waits", wrapper.ListRunWaits)
@@ -2524,6 +3082,181 @@ func (response ResolveApprovalDecision404JSONResponse) VisitResolveApprovalDecis
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ListConfigEntriesRequestObject struct {
+	Params ListConfigEntriesParams
+}
+
+type ListConfigEntriesResponseObject interface {
+	VisitListConfigEntriesResponse(w http.ResponseWriter) error
+}
+
+type ListConfigEntries200JSONResponse ConfigEntryItemsResponse
+
+func (response ListConfigEntries200JSONResponse) VisitListConfigEntriesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListConfigEntries400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListConfigEntries400JSONResponse) VisitListConfigEntriesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListConfigEntries401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListConfigEntries401JSONResponse) VisitListConfigEntriesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListConfigEntries403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListConfigEntries403JSONResponse) VisitListConfigEntriesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpsertConfigEntryRequestObject struct {
+	Body *UpsertConfigEntryJSONRequestBody
+}
+
+type UpsertConfigEntryResponseObject interface {
+	VisitUpsertConfigEntryResponse(w http.ResponseWriter) error
+}
+
+type UpsertConfigEntry201JSONResponse ConfigEntry
+
+func (response UpsertConfigEntry201JSONResponse) VisitUpsertConfigEntryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpsertConfigEntry400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpsertConfigEntry400JSONResponse) VisitUpsertConfigEntryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpsertConfigEntry401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpsertConfigEntry401JSONResponse) VisitUpsertConfigEntryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpsertConfigEntry403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpsertConfigEntry403JSONResponse) VisitUpsertConfigEntryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteConfigEntryRequestObject struct {
+	ConfigEntryId string `json:"config_entry_id"`
+}
+
+type DeleteConfigEntryResponseObject interface {
+	VisitDeleteConfigEntryResponse(w http.ResponseWriter) error
+}
+
+type DeleteConfigEntry204Response struct {
+}
+
+func (response DeleteConfigEntry204Response) VisitDeleteConfigEntryResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteConfigEntry400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response DeleteConfigEntry400JSONResponse) VisitDeleteConfigEntryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteConfigEntry401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteConfigEntry401JSONResponse) VisitDeleteConfigEntryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteConfigEntry403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteConfigEntry403JSONResponse) VisitDeleteConfigEntryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListDocsetGroupsRequestObject struct {
+	Params ListDocsetGroupsParams
+}
+
+type ListDocsetGroupsResponseObject interface {
+	VisitListDocsetGroupsResponse(w http.ResponseWriter) error
+}
+
+type ListDocsetGroups200JSONResponse DocsetGroupItemsResponse
+
+func (response ListDocsetGroups200JSONResponse) VisitListDocsetGroupsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListDocsetGroups400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListDocsetGroups400JSONResponse) VisitListDocsetGroupsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListDocsetGroups401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListDocsetGroups401JSONResponse) VisitListDocsetGroupsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListDocsetGroups403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListDocsetGroups403JSONResponse) VisitListDocsetGroupsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListProjectsRequestObject struct {
 	Params ListProjectsParams
 }
@@ -2695,6 +3428,184 @@ type GetProject404JSONResponse struct{ NotFoundJSONResponse }
 func (response GetProject404JSONResponse) VisitGetProjectResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ImportDocsetRequestObject struct {
+	ProjectId ProjectID `json:"project_id"`
+	Body      *ImportDocsetJSONRequestBody
+}
+
+type ImportDocsetResponseObject interface {
+	VisitImportDocsetResponse(w http.ResponseWriter) error
+}
+
+type ImportDocset200JSONResponse ImportDocsetResponse
+
+func (response ImportDocset200JSONResponse) VisitImportDocsetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ImportDocset400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ImportDocset400JSONResponse) VisitImportDocsetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ImportDocset401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ImportDocset401JSONResponse) VisitImportDocsetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ImportDocset403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ImportDocset403JSONResponse) VisitImportDocsetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SyncDocsetRequestObject struct {
+	ProjectId ProjectID `json:"project_id"`
+	Body      *SyncDocsetJSONRequestBody
+}
+
+type SyncDocsetResponseObject interface {
+	VisitSyncDocsetResponse(w http.ResponseWriter) error
+}
+
+type SyncDocset200JSONResponse SyncDocsetResponse
+
+func (response SyncDocset200JSONResponse) VisitSyncDocsetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SyncDocset400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response SyncDocset400JSONResponse) VisitSyncDocsetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SyncDocset401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response SyncDocset401JSONResponse) VisitSyncDocsetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SyncDocset403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response SyncDocset403JSONResponse) VisitSyncDocsetResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetProjectGitHubTokensRequestObject struct {
+	ProjectId ProjectID `json:"project_id"`
+}
+
+type GetProjectGitHubTokensResponseObject interface {
+	VisitGetProjectGitHubTokensResponse(w http.ResponseWriter) error
+}
+
+type GetProjectGitHubTokens200JSONResponse ProjectGitHubTokens
+
+func (response GetProjectGitHubTokens200JSONResponse) VisitGetProjectGitHubTokensResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetProjectGitHubTokens400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetProjectGitHubTokens400JSONResponse) VisitGetProjectGitHubTokensResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetProjectGitHubTokens401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetProjectGitHubTokens401JSONResponse) VisitGetProjectGitHubTokensResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetProjectGitHubTokens403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetProjectGitHubTokens403JSONResponse) VisitGetProjectGitHubTokensResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpsertProjectGitHubTokensRequestObject struct {
+	ProjectId ProjectID `json:"project_id"`
+	Body      *UpsertProjectGitHubTokensJSONRequestBody
+}
+
+type UpsertProjectGitHubTokensResponseObject interface {
+	VisitUpsertProjectGitHubTokensResponse(w http.ResponseWriter) error
+}
+
+type UpsertProjectGitHubTokens204Response struct {
+}
+
+func (response UpsertProjectGitHubTokens204Response) VisitUpsertProjectGitHubTokensResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type UpsertProjectGitHubTokens400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpsertProjectGitHubTokens400JSONResponse) VisitUpsertProjectGitHubTokensResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpsertProjectGitHubTokens401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpsertProjectGitHubTokens401JSONResponse) VisitUpsertProjectGitHubTokensResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpsertProjectGitHubTokens403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpsertProjectGitHubTokens403JSONResponse) VisitUpsertProjectGitHubTokensResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -2987,6 +3898,96 @@ func (response DeleteProjectRepository401JSONResponse) VisitDeleteProjectReposit
 type DeleteProjectRepository403JSONResponse struct{ ForbiddenJSONResponse }
 
 func (response DeleteProjectRepository403JSONResponse) VisitDeleteProjectRepositoryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpsertRepositoryBotParamsRequestObject struct {
+	ProjectId    ProjectID `json:"project_id"`
+	RepositoryId string    `json:"repository_id"`
+	Body         *UpsertRepositoryBotParamsJSONRequestBody
+}
+
+type UpsertRepositoryBotParamsResponseObject interface {
+	VisitUpsertRepositoryBotParamsResponse(w http.ResponseWriter) error
+}
+
+type UpsertRepositoryBotParams204Response struct {
+}
+
+func (response UpsertRepositoryBotParams204Response) VisitUpsertRepositoryBotParamsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type UpsertRepositoryBotParams400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpsertRepositoryBotParams400JSONResponse) VisitUpsertRepositoryBotParamsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpsertRepositoryBotParams401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpsertRepositoryBotParams401JSONResponse) VisitUpsertRepositoryBotParamsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpsertRepositoryBotParams403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpsertRepositoryBotParams403JSONResponse) VisitUpsertRepositoryBotParamsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RunRepositoryPreflightRequestObject struct {
+	ProjectId    ProjectID `json:"project_id"`
+	RepositoryId string    `json:"repository_id"`
+}
+
+type RunRepositoryPreflightResponseObject interface {
+	VisitRunRepositoryPreflightResponse(w http.ResponseWriter) error
+}
+
+type RunRepositoryPreflight200JSONResponse RunRepositoryPreflightResponse
+
+func (response RunRepositoryPreflight200JSONResponse) VisitRunRepositoryPreflightResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RunRepositoryPreflight400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response RunRepositoryPreflight400JSONResponse) VisitRunRepositoryPreflightResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RunRepositoryPreflight401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response RunRepositoryPreflight401JSONResponse) VisitRunRepositoryPreflightResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RunRepositoryPreflight403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response RunRepositoryPreflight403JSONResponse) VisitRunRepositoryPreflightResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(403)
 
@@ -3734,6 +4735,18 @@ type StrictServerInterface interface {
 	// Resolve one approval request (approve/deny/expire/fail)
 	// (POST /api/v1/staff/approvals/{approval_request_id}/decision)
 	ResolveApprovalDecision(ctx context.Context, request ResolveApprovalDecisionRequestObject) (ResolveApprovalDecisionResponseObject, error)
+	// List configuration entries
+	// (GET /api/v1/staff/config-entries)
+	ListConfigEntries(ctx context.Context, request ListConfigEntriesRequestObject) (ListConfigEntriesResponseObject, error)
+	// Upsert configuration entry
+	// (POST /api/v1/staff/config-entries)
+	UpsertConfigEntry(ctx context.Context, request UpsertConfigEntryRequestObject) (UpsertConfigEntryResponseObject, error)
+	// Delete configuration entry
+	// (DELETE /api/v1/staff/config-entries/{config_entry_id})
+	DeleteConfigEntry(ctx context.Context, request DeleteConfigEntryRequestObject) (DeleteConfigEntryResponseObject, error)
+	// List docset groups (manifest v1)
+	// (GET /api/v1/staff/docset/groups)
+	ListDocsetGroups(ctx context.Context, request ListDocsetGroupsRequestObject) (ListDocsetGroupsResponseObject, error)
 	// List projects
 	// (GET /api/v1/staff/projects)
 	ListProjects(ctx context.Context, request ListProjectsRequestObject) (ListProjectsResponseObject, error)
@@ -3746,6 +4759,18 @@ type StrictServerInterface interface {
 	// Get project by id
 	// (GET /api/v1/staff/projects/{project_id})
 	GetProject(ctx context.Context, request GetProjectRequestObject) (GetProjectResponseObject, error)
+	// Import docset into project repository (PR-based)
+	// (POST /api/v1/staff/projects/{project_id}/docset/import)
+	ImportDocset(ctx context.Context, request ImportDocsetRequestObject) (ImportDocsetResponseObject, error)
+	// Safe sync docset into project repository (PR-based)
+	// (POST /api/v1/staff/projects/{project_id}/docset/sync)
+	SyncDocset(ctx context.Context, request SyncDocsetRequestObject) (SyncDocsetResponseObject, error)
+	// Get project-scoped GitHub tokens status
+	// (GET /api/v1/staff/projects/{project_id}/github-tokens)
+	GetProjectGitHubTokens(ctx context.Context, request GetProjectGitHubTokensRequestObject) (GetProjectGitHubTokensResponseObject, error)
+	// Upsert project-scoped GitHub tokens
+	// (PUT /api/v1/staff/projects/{project_id}/github-tokens)
+	UpsertProjectGitHubTokens(ctx context.Context, request UpsertProjectGitHubTokensRequestObject) (UpsertProjectGitHubTokensResponseObject, error)
 	// List project members
 	// (GET /api/v1/staff/projects/{project_id}/members)
 	ListProjectMembers(ctx context.Context, request ListProjectMembersRequestObject) (ListProjectMembersResponseObject, error)
@@ -3767,6 +4792,12 @@ type StrictServerInterface interface {
 	// Delete project repository binding
 	// (DELETE /api/v1/staff/projects/{project_id}/repositories/{repository_id})
 	DeleteProjectRepository(ctx context.Context, request DeleteProjectRepositoryRequestObject) (DeleteProjectRepositoryResponseObject, error)
+	// Update repository bot parameters (token/login/email)
+	// (PUT /api/v1/staff/projects/{project_id}/repositories/{repository_id}/bot-params)
+	UpsertRepositoryBotParams(ctx context.Context, request UpsertRepositoryBotParamsRequestObject) (UpsertRepositoryBotParamsResponseObject, error)
+	// Run repository onboarding preflight
+	// (POST /api/v1/staff/projects/{project_id}/repositories/{repository_id}/preflight)
+	RunRepositoryPreflight(ctx context.Context, request RunRepositoryPreflightRequestObject) (RunRepositoryPreflightResponseObject, error)
 	// List runs
 	// (GET /api/v1/staff/runs)
 	ListRuns(ctx context.Context, request ListRunsRequestObject) (ListRunsResponseObject, error)
@@ -4072,6 +5103,115 @@ func (sh *strictHandler) ResolveApprovalDecision(w http.ResponseWriter, r *http.
 	}
 }
 
+// ListConfigEntries operation middleware
+func (sh *strictHandler) ListConfigEntries(w http.ResponseWriter, r *http.Request, params ListConfigEntriesParams) {
+	var request ListConfigEntriesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListConfigEntries(ctx, request.(ListConfigEntriesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListConfigEntries")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListConfigEntriesResponseObject); ok {
+		if err := validResponse.VisitListConfigEntriesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpsertConfigEntry operation middleware
+func (sh *strictHandler) UpsertConfigEntry(w http.ResponseWriter, r *http.Request) {
+	var request UpsertConfigEntryRequestObject
+
+	var body UpsertConfigEntryJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpsertConfigEntry(ctx, request.(UpsertConfigEntryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpsertConfigEntry")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpsertConfigEntryResponseObject); ok {
+		if err := validResponse.VisitUpsertConfigEntryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteConfigEntry operation middleware
+func (sh *strictHandler) DeleteConfigEntry(w http.ResponseWriter, r *http.Request, configEntryId string) {
+	var request DeleteConfigEntryRequestObject
+
+	request.ConfigEntryId = configEntryId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteConfigEntry(ctx, request.(DeleteConfigEntryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteConfigEntry")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteConfigEntryResponseObject); ok {
+		if err := validResponse.VisitDeleteConfigEntryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListDocsetGroups operation middleware
+func (sh *strictHandler) ListDocsetGroups(w http.ResponseWriter, r *http.Request, params ListDocsetGroupsParams) {
+	var request ListDocsetGroupsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListDocsetGroups(ctx, request.(ListDocsetGroupsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListDocsetGroups")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListDocsetGroupsResponseObject); ok {
+		if err := validResponse.VisitListDocsetGroupsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListProjects operation middleware
 func (sh *strictHandler) ListProjects(w http.ResponseWriter, r *http.Request, params ListProjectsParams) {
 	var request ListProjectsRequestObject
@@ -4174,6 +5314,131 @@ func (sh *strictHandler) GetProject(w http.ResponseWriter, r *http.Request, proj
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetProjectResponseObject); ok {
 		if err := validResponse.VisitGetProjectResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ImportDocset operation middleware
+func (sh *strictHandler) ImportDocset(w http.ResponseWriter, r *http.Request, projectId ProjectID) {
+	var request ImportDocsetRequestObject
+
+	request.ProjectId = projectId
+
+	var body ImportDocsetJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ImportDocset(ctx, request.(ImportDocsetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ImportDocset")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ImportDocsetResponseObject); ok {
+		if err := validResponse.VisitImportDocsetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SyncDocset operation middleware
+func (sh *strictHandler) SyncDocset(w http.ResponseWriter, r *http.Request, projectId ProjectID) {
+	var request SyncDocsetRequestObject
+
+	request.ProjectId = projectId
+
+	var body SyncDocsetJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SyncDocset(ctx, request.(SyncDocsetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SyncDocset")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SyncDocsetResponseObject); ok {
+		if err := validResponse.VisitSyncDocsetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetProjectGitHubTokens operation middleware
+func (sh *strictHandler) GetProjectGitHubTokens(w http.ResponseWriter, r *http.Request, projectId ProjectID) {
+	var request GetProjectGitHubTokensRequestObject
+
+	request.ProjectId = projectId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetProjectGitHubTokens(ctx, request.(GetProjectGitHubTokensRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetProjectGitHubTokens")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetProjectGitHubTokensResponseObject); ok {
+		if err := validResponse.VisitGetProjectGitHubTokensResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpsertProjectGitHubTokens operation middleware
+func (sh *strictHandler) UpsertProjectGitHubTokens(w http.ResponseWriter, r *http.Request, projectId ProjectID) {
+	var request UpsertProjectGitHubTokensRequestObject
+
+	request.ProjectId = projectId
+
+	var body UpsertProjectGitHubTokensJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpsertProjectGitHubTokens(ctx, request.(UpsertProjectGitHubTokensRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpsertProjectGitHubTokens")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpsertProjectGitHubTokensResponseObject); ok {
+		if err := validResponse.VisitUpsertProjectGitHubTokensResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -4382,6 +5647,67 @@ func (sh *strictHandler) DeleteProjectRepository(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DeleteProjectRepositoryResponseObject); ok {
 		if err := validResponse.VisitDeleteProjectRepositoryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpsertRepositoryBotParams operation middleware
+func (sh *strictHandler) UpsertRepositoryBotParams(w http.ResponseWriter, r *http.Request, projectId ProjectID, repositoryId string) {
+	var request UpsertRepositoryBotParamsRequestObject
+
+	request.ProjectId = projectId
+	request.RepositoryId = repositoryId
+
+	var body UpsertRepositoryBotParamsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpsertRepositoryBotParams(ctx, request.(UpsertRepositoryBotParamsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpsertRepositoryBotParams")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpsertRepositoryBotParamsResponseObject); ok {
+		if err := validResponse.VisitUpsertRepositoryBotParamsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RunRepositoryPreflight operation middleware
+func (sh *strictHandler) RunRepositoryPreflight(w http.ResponseWriter, r *http.Request, projectId ProjectID, repositoryId string) {
+	var request RunRepositoryPreflightRequestObject
+
+	request.ProjectId = projectId
+	request.RepositoryId = repositoryId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RunRepositoryPreflight(ctx, request.(RunRepositoryPreflightRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RunRepositoryPreflight")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RunRepositoryPreflightResponseObject); ok {
+		if err := validResponse.VisitRunRepositoryPreflightResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

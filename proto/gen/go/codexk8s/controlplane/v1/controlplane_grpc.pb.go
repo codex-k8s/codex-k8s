@@ -46,6 +46,16 @@ const (
 	ControlPlaneService_ListProjectRepositories_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/ListProjectRepositories"
 	ControlPlaneService_UpsertProjectRepository_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertProjectRepository"
 	ControlPlaneService_DeleteProjectRepository_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/DeleteProjectRepository"
+	ControlPlaneService_UpsertRepositoryBotParams_FullMethodName            = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertRepositoryBotParams"
+	ControlPlaneService_RunRepositoryPreflight_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/RunRepositoryPreflight"
+	ControlPlaneService_GetProjectGitHubTokens_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/GetProjectGitHubTokens"
+	ControlPlaneService_UpsertProjectGitHubTokens_FullMethodName            = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertProjectGitHubTokens"
+	ControlPlaneService_ListConfigEntries_FullMethodName                    = "/codexk8s.controlplane.v1.ControlPlaneService/ListConfigEntries"
+	ControlPlaneService_UpsertConfigEntry_FullMethodName                    = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertConfigEntry"
+	ControlPlaneService_DeleteConfigEntry_FullMethodName                    = "/codexk8s.controlplane.v1.ControlPlaneService/DeleteConfigEntry"
+	ControlPlaneService_ListDocsetGroups_FullMethodName                     = "/codexk8s.controlplane.v1.ControlPlaneService/ListDocsetGroups"
+	ControlPlaneService_ImportDocset_FullMethodName                         = "/codexk8s.controlplane.v1.ControlPlaneService/ImportDocset"
+	ControlPlaneService_SyncDocset_FullMethodName                           = "/codexk8s.controlplane.v1.ControlPlaneService/SyncDocset"
 	ControlPlaneService_IssueRunMCPToken_FullMethodName                     = "/codexk8s.controlplane.v1.ControlPlaneService/IssueRunMCPToken"
 	ControlPlaneService_PrepareRunEnvironment_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/PrepareRunEnvironment"
 	ControlPlaneService_ListRuntimeDeployTasks_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/ListRuntimeDeployTasks"
@@ -92,6 +102,16 @@ type ControlPlaneServiceClient interface {
 	ListProjectRepositories(ctx context.Context, in *ListProjectRepositoriesRequest, opts ...grpc.CallOption) (*ListProjectRepositoriesResponse, error)
 	UpsertProjectRepository(ctx context.Context, in *UpsertProjectRepositoryRequest, opts ...grpc.CallOption) (*RepositoryBinding, error)
 	DeleteProjectRepository(ctx context.Context, in *DeleteProjectRepositoryRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UpsertRepositoryBotParams(ctx context.Context, in *UpsertRepositoryBotParamsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RunRepositoryPreflight(ctx context.Context, in *RunRepositoryPreflightRequest, opts ...grpc.CallOption) (*RunRepositoryPreflightResponse, error)
+	GetProjectGitHubTokens(ctx context.Context, in *GetProjectGitHubTokensRequest, opts ...grpc.CallOption) (*ProjectGitHubTokens, error)
+	UpsertProjectGitHubTokens(ctx context.Context, in *UpsertProjectGitHubTokensRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListConfigEntries(ctx context.Context, in *ListConfigEntriesRequest, opts ...grpc.CallOption) (*ListConfigEntriesResponse, error)
+	UpsertConfigEntry(ctx context.Context, in *UpsertConfigEntryRequest, opts ...grpc.CallOption) (*ConfigEntry, error)
+	DeleteConfigEntry(ctx context.Context, in *DeleteConfigEntryRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListDocsetGroups(ctx context.Context, in *ListDocsetGroupsRequest, opts ...grpc.CallOption) (*ListDocsetGroupsResponse, error)
+	ImportDocset(ctx context.Context, in *ImportDocsetRequest, opts ...grpc.CallOption) (*ImportDocsetResponse, error)
+	SyncDocset(ctx context.Context, in *SyncDocsetRequest, opts ...grpc.CallOption) (*SyncDocsetResponse, error)
 	IssueRunMCPToken(ctx context.Context, in *IssueRunMCPTokenRequest, opts ...grpc.CallOption) (*IssueRunMCPTokenResponse, error)
 	PrepareRunEnvironment(ctx context.Context, in *PrepareRunEnvironmentRequest, opts ...grpc.CallOption) (*PrepareRunEnvironmentResponse, error)
 	ListRuntimeDeployTasks(ctx context.Context, in *ListRuntimeDeployTasksRequest, opts ...grpc.CallOption) (*ListRuntimeDeployTasksResponse, error)
@@ -375,6 +395,106 @@ func (c *controlPlaneServiceClient) DeleteProjectRepository(ctx context.Context,
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) UpsertRepositoryBotParams(ctx context.Context, in *UpsertRepositoryBotParamsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, ControlPlaneService_UpsertRepositoryBotParams_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) RunRepositoryPreflight(ctx context.Context, in *RunRepositoryPreflightRequest, opts ...grpc.CallOption) (*RunRepositoryPreflightResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RunRepositoryPreflightResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_RunRepositoryPreflight_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) GetProjectGitHubTokens(ctx context.Context, in *GetProjectGitHubTokensRequest, opts ...grpc.CallOption) (*ProjectGitHubTokens, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectGitHubTokens)
+	err := c.cc.Invoke(ctx, ControlPlaneService_GetProjectGitHubTokens_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) UpsertProjectGitHubTokens(ctx context.Context, in *UpsertProjectGitHubTokensRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, ControlPlaneService_UpsertProjectGitHubTokens_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) ListConfigEntries(ctx context.Context, in *ListConfigEntriesRequest, opts ...grpc.CallOption) (*ListConfigEntriesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListConfigEntriesResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ListConfigEntries_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) UpsertConfigEntry(ctx context.Context, in *UpsertConfigEntryRequest, opts ...grpc.CallOption) (*ConfigEntry, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ConfigEntry)
+	err := c.cc.Invoke(ctx, ControlPlaneService_UpsertConfigEntry_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) DeleteConfigEntry(ctx context.Context, in *DeleteConfigEntryRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, ControlPlaneService_DeleteConfigEntry_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) ListDocsetGroups(ctx context.Context, in *ListDocsetGroupsRequest, opts ...grpc.CallOption) (*ListDocsetGroupsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListDocsetGroupsResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ListDocsetGroups_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) ImportDocset(ctx context.Context, in *ImportDocsetRequest, opts ...grpc.CallOption) (*ImportDocsetResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ImportDocsetResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ImportDocset_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) SyncDocset(ctx context.Context, in *SyncDocsetRequest, opts ...grpc.CallOption) (*SyncDocsetResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SyncDocsetResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_SyncDocset_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) IssueRunMCPToken(ctx context.Context, in *IssueRunMCPTokenRequest, opts ...grpc.CallOption) (*IssueRunMCPTokenResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IssueRunMCPTokenResponse)
@@ -527,6 +647,16 @@ type ControlPlaneServiceServer interface {
 	ListProjectRepositories(context.Context, *ListProjectRepositoriesRequest) (*ListProjectRepositoriesResponse, error)
 	UpsertProjectRepository(context.Context, *UpsertProjectRepositoryRequest) (*RepositoryBinding, error)
 	DeleteProjectRepository(context.Context, *DeleteProjectRepositoryRequest) (*emptypb.Empty, error)
+	UpsertRepositoryBotParams(context.Context, *UpsertRepositoryBotParamsRequest) (*emptypb.Empty, error)
+	RunRepositoryPreflight(context.Context, *RunRepositoryPreflightRequest) (*RunRepositoryPreflightResponse, error)
+	GetProjectGitHubTokens(context.Context, *GetProjectGitHubTokensRequest) (*ProjectGitHubTokens, error)
+	UpsertProjectGitHubTokens(context.Context, *UpsertProjectGitHubTokensRequest) (*emptypb.Empty, error)
+	ListConfigEntries(context.Context, *ListConfigEntriesRequest) (*ListConfigEntriesResponse, error)
+	UpsertConfigEntry(context.Context, *UpsertConfigEntryRequest) (*ConfigEntry, error)
+	DeleteConfigEntry(context.Context, *DeleteConfigEntryRequest) (*emptypb.Empty, error)
+	ListDocsetGroups(context.Context, *ListDocsetGroupsRequest) (*ListDocsetGroupsResponse, error)
+	ImportDocset(context.Context, *ImportDocsetRequest) (*ImportDocsetResponse, error)
+	SyncDocset(context.Context, *SyncDocsetRequest) (*SyncDocsetResponse, error)
 	IssueRunMCPToken(context.Context, *IssueRunMCPTokenRequest) (*IssueRunMCPTokenResponse, error)
 	PrepareRunEnvironment(context.Context, *PrepareRunEnvironmentRequest) (*PrepareRunEnvironmentResponse, error)
 	ListRuntimeDeployTasks(context.Context, *ListRuntimeDeployTasksRequest) (*ListRuntimeDeployTasksResponse, error)
@@ -627,6 +757,36 @@ func (UnimplementedControlPlaneServiceServer) UpsertProjectRepository(context.Co
 }
 func (UnimplementedControlPlaneServiceServer) DeleteProjectRepository(context.Context, *DeleteProjectRepositoryRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteProjectRepository not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) UpsertRepositoryBotParams(context.Context, *UpsertRepositoryBotParamsRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpsertRepositoryBotParams not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) RunRepositoryPreflight(context.Context, *RunRepositoryPreflightRequest) (*RunRepositoryPreflightResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RunRepositoryPreflight not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) GetProjectGitHubTokens(context.Context, *GetProjectGitHubTokensRequest) (*ProjectGitHubTokens, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProjectGitHubTokens not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) UpsertProjectGitHubTokens(context.Context, *UpsertProjectGitHubTokensRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpsertProjectGitHubTokens not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ListConfigEntries(context.Context, *ListConfigEntriesRequest) (*ListConfigEntriesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListConfigEntries not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) UpsertConfigEntry(context.Context, *UpsertConfigEntryRequest) (*ConfigEntry, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpsertConfigEntry not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) DeleteConfigEntry(context.Context, *DeleteConfigEntryRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteConfigEntry not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ListDocsetGroups(context.Context, *ListDocsetGroupsRequest) (*ListDocsetGroupsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListDocsetGroups not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ImportDocset(context.Context, *ImportDocsetRequest) (*ImportDocsetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ImportDocset not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) SyncDocset(context.Context, *SyncDocsetRequest) (*SyncDocsetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SyncDocset not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) IssueRunMCPToken(context.Context, *IssueRunMCPTokenRequest) (*IssueRunMCPTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IssueRunMCPToken not implemented")
@@ -1153,6 +1313,186 @@ func _ControlPlaneService_DeleteProjectRepository_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_UpsertRepositoryBotParams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertRepositoryBotParamsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).UpsertRepositoryBotParams(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_UpsertRepositoryBotParams_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).UpsertRepositoryBotParams(ctx, req.(*UpsertRepositoryBotParamsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_RunRepositoryPreflight_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RunRepositoryPreflightRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).RunRepositoryPreflight(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_RunRepositoryPreflight_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).RunRepositoryPreflight(ctx, req.(*RunRepositoryPreflightRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_GetProjectGitHubTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectGitHubTokensRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).GetProjectGitHubTokens(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_GetProjectGitHubTokens_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).GetProjectGitHubTokens(ctx, req.(*GetProjectGitHubTokensRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_UpsertProjectGitHubTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertProjectGitHubTokensRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).UpsertProjectGitHubTokens(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_UpsertProjectGitHubTokens_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).UpsertProjectGitHubTokens(ctx, req.(*UpsertProjectGitHubTokensRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_ListConfigEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListConfigEntriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ListConfigEntries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ListConfigEntries_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ListConfigEntries(ctx, req.(*ListConfigEntriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_UpsertConfigEntry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertConfigEntryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).UpsertConfigEntry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_UpsertConfigEntry_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).UpsertConfigEntry(ctx, req.(*UpsertConfigEntryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_DeleteConfigEntry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteConfigEntryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).DeleteConfigEntry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_DeleteConfigEntry_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).DeleteConfigEntry(ctx, req.(*DeleteConfigEntryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_ListDocsetGroups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListDocsetGroupsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ListDocsetGroups(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ListDocsetGroups_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ListDocsetGroups(ctx, req.(*ListDocsetGroupsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_ImportDocset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportDocsetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ImportDocset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ImportDocset_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ImportDocset(ctx, req.(*ImportDocsetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_SyncDocset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SyncDocsetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).SyncDocset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_SyncDocset_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).SyncDocset(ctx, req.(*SyncDocsetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_IssueRunMCPToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(IssueRunMCPTokenRequest)
 	if err := dec(in); err != nil {
@@ -1479,6 +1819,46 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteProjectRepository",
 			Handler:    _ControlPlaneService_DeleteProjectRepository_Handler,
+		},
+		{
+			MethodName: "UpsertRepositoryBotParams",
+			Handler:    _ControlPlaneService_UpsertRepositoryBotParams_Handler,
+		},
+		{
+			MethodName: "RunRepositoryPreflight",
+			Handler:    _ControlPlaneService_RunRepositoryPreflight_Handler,
+		},
+		{
+			MethodName: "GetProjectGitHubTokens",
+			Handler:    _ControlPlaneService_GetProjectGitHubTokens_Handler,
+		},
+		{
+			MethodName: "UpsertProjectGitHubTokens",
+			Handler:    _ControlPlaneService_UpsertProjectGitHubTokens_Handler,
+		},
+		{
+			MethodName: "ListConfigEntries",
+			Handler:    _ControlPlaneService_ListConfigEntries_Handler,
+		},
+		{
+			MethodName: "UpsertConfigEntry",
+			Handler:    _ControlPlaneService_UpsertConfigEntry_Handler,
+		},
+		{
+			MethodName: "DeleteConfigEntry",
+			Handler:    _ControlPlaneService_DeleteConfigEntry_Handler,
+		},
+		{
+			MethodName: "ListDocsetGroups",
+			Handler:    _ControlPlaneService_ListDocsetGroups_Handler,
+		},
+		{
+			MethodName: "ImportDocset",
+			Handler:    _ControlPlaneService_ImportDocset_Handler,
+		},
+		{
+			MethodName: "SyncDocset",
+			Handler:    _ControlPlaneService_SyncDocset_Handler,
 		},
 		{
 			MethodName: "IssueRunMCPToken",

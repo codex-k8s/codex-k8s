@@ -233,6 +233,115 @@ export type RepositoryBinding = {
     owner: string;
     name: string;
     services_yaml_path: string;
+    bot_username?: string | null;
+    bot_email?: string | null;
+    preflight_updated_at?: string | null;
+};
+
+export type ProjectGitHubTokens = {
+    project_id: string;
+    has_platform_token: boolean;
+    has_bot_token: boolean;
+    bot_username?: string | null;
+    bot_email?: string | null;
+};
+
+export type UpsertProjectGitHubTokensRequest = {
+    platform_token?: string | null;
+    bot_token?: string | null;
+    bot_username?: string | null;
+    bot_email?: string | null;
+};
+
+export type UpsertRepositoryBotParamsRequest = {
+    bot_token?: string | null;
+    bot_username?: string | null;
+    bot_email?: string | null;
+};
+
+export type PreflightCheckResult = {
+    name: string;
+    status: string;
+    details?: string | null;
+};
+
+export type RunRepositoryPreflightResponse = {
+    repository_id: string;
+    status: string;
+    checks: Array<PreflightCheckResult>;
+    report_json: string;
+    finished_at: string;
+};
+
+export type ConfigEntry = {
+    id: string;
+    scope: 'platform' | 'project' | 'repository';
+    kind: 'variable' | 'secret';
+    project_id?: string | null;
+    repository_id?: string | null;
+    key: string;
+    value?: string | null;
+    sync_targets: Array<string>;
+    mutability: string;
+    is_dangerous: boolean;
+    updated_at?: string | null;
+};
+
+export type ConfigEntryItemsResponse = {
+    items: Array<ConfigEntry>;
+};
+
+export type UpsertConfigEntryRequest = {
+    scope: 'platform' | 'project' | 'repository';
+    kind: 'variable' | 'secret';
+    project_id?: string | null;
+    repository_id?: string | null;
+    key: string;
+    value_plain?: string | null;
+    value_secret?: string | null;
+    sync_targets?: Array<string>;
+    mutability?: string;
+    is_dangerous?: boolean;
+};
+
+export type DocsetGroup = {
+    id: string;
+    title: string;
+    description: string;
+    default_selected: boolean;
+};
+
+export type DocsetGroupItemsResponse = {
+    groups: Array<DocsetGroup>;
+};
+
+export type ImportDocsetRequest = {
+    repository_id: string;
+    docset_ref: string;
+    locale: 'ru' | 'en';
+    group_ids: Array<string>;
+};
+
+export type ImportDocsetResponse = {
+    repository_full_name: string;
+    pr_number: number;
+    pr_url: string;
+    branch: string;
+    files_total: number;
+};
+
+export type SyncDocsetRequest = {
+    repository_id: string;
+    docset_ref: string;
+};
+
+export type SyncDocsetResponse = {
+    repository_full_name: string;
+    pr_number: number;
+    pr_url: string;
+    branch: string;
+    files_updated: number;
+    files_drift: number;
 };
 
 export type ProjectItemsResponse = {
@@ -1540,3 +1649,357 @@ export type DeleteProjectRepositoryResponses = {
 };
 
 export type DeleteProjectRepositoryResponse = DeleteProjectRepositoryResponses[keyof DeleteProjectRepositoryResponses];
+
+export type UpsertRepositoryBotParamsData = {
+    body: UpsertRepositoryBotParamsRequest;
+    path: {
+        project_id: string;
+        repository_id: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/projects/{project_id}/repositories/{repository_id}/bot-params';
+};
+
+export type UpsertRepositoryBotParamsErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type UpsertRepositoryBotParamsError = UpsertRepositoryBotParamsErrors[keyof UpsertRepositoryBotParamsErrors];
+
+export type UpsertRepositoryBotParamsResponses = {
+    /**
+     * Repository bot params updated
+     */
+    204: void;
+};
+
+export type UpsertRepositoryBotParamsResponse = UpsertRepositoryBotParamsResponses[keyof UpsertRepositoryBotParamsResponses];
+
+export type RunRepositoryPreflightData = {
+    body?: never;
+    path: {
+        project_id: string;
+        repository_id: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/projects/{project_id}/repositories/{repository_id}/preflight';
+};
+
+export type RunRepositoryPreflightErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type RunRepositoryPreflightError = RunRepositoryPreflightErrors[keyof RunRepositoryPreflightErrors];
+
+export type RunRepositoryPreflightResponses = {
+    /**
+     * Preflight report
+     */
+    200: RunRepositoryPreflightResponse;
+};
+
+export type RunRepositoryPreflightResponse2 = RunRepositoryPreflightResponses[keyof RunRepositoryPreflightResponses];
+
+export type GetProjectGitHubTokensData = {
+    body?: never;
+    path: {
+        project_id: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/projects/{project_id}/github-tokens';
+};
+
+export type GetProjectGitHubTokensErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type GetProjectGitHubTokensError = GetProjectGitHubTokensErrors[keyof GetProjectGitHubTokensErrors];
+
+export type GetProjectGitHubTokensResponses = {
+    /**
+     * Project GitHub tokens
+     */
+    200: ProjectGitHubTokens;
+};
+
+export type GetProjectGitHubTokensResponse = GetProjectGitHubTokensResponses[keyof GetProjectGitHubTokensResponses];
+
+export type UpsertProjectGitHubTokensData = {
+    body: UpsertProjectGitHubTokensRequest;
+    path: {
+        project_id: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/projects/{project_id}/github-tokens';
+};
+
+export type UpsertProjectGitHubTokensErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type UpsertProjectGitHubTokensError = UpsertProjectGitHubTokensErrors[keyof UpsertProjectGitHubTokensErrors];
+
+export type UpsertProjectGitHubTokensResponses = {
+    /**
+     * Project GitHub tokens updated
+     */
+    204: void;
+};
+
+export type UpsertProjectGitHubTokensResponse = UpsertProjectGitHubTokensResponses[keyof UpsertProjectGitHubTokensResponses];
+
+export type ListConfigEntriesData = {
+    body?: never;
+    path?: never;
+    query: {
+        scope: 'platform' | 'project' | 'repository';
+        project_id?: string;
+        repository_id?: string;
+        limit?: number;
+    };
+    url: '/api/v1/staff/config-entries';
+};
+
+export type ListConfigEntriesErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type ListConfigEntriesError = ListConfigEntriesErrors[keyof ListConfigEntriesErrors];
+
+export type ListConfigEntriesResponses = {
+    /**
+     * Config entries list
+     */
+    200: ConfigEntryItemsResponse;
+};
+
+export type ListConfigEntriesResponse = ListConfigEntriesResponses[keyof ListConfigEntriesResponses];
+
+export type UpsertConfigEntryData = {
+    body: UpsertConfigEntryRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/staff/config-entries';
+};
+
+export type UpsertConfigEntryErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type UpsertConfigEntryError = UpsertConfigEntryErrors[keyof UpsertConfigEntryErrors];
+
+export type UpsertConfigEntryResponses = {
+    /**
+     * Config entry upserted
+     */
+    201: ConfigEntry;
+};
+
+export type UpsertConfigEntryResponse = UpsertConfigEntryResponses[keyof UpsertConfigEntryResponses];
+
+export type DeleteConfigEntryData = {
+    body?: never;
+    path: {
+        config_entry_id: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/config-entries/{config_entry_id}';
+};
+
+export type DeleteConfigEntryErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type DeleteConfigEntryError = DeleteConfigEntryErrors[keyof DeleteConfigEntryErrors];
+
+export type DeleteConfigEntryResponses = {
+    /**
+     * Config entry deleted
+     */
+    204: void;
+};
+
+export type DeleteConfigEntryResponse = DeleteConfigEntryResponses[keyof DeleteConfigEntryResponses];
+
+export type ListDocsetGroupsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        docset_ref?: string;
+        locale?: 'ru' | 'en';
+    };
+    url: '/api/v1/staff/docset/groups';
+};
+
+export type ListDocsetGroupsErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type ListDocsetGroupsError = ListDocsetGroupsErrors[keyof ListDocsetGroupsErrors];
+
+export type ListDocsetGroupsResponses = {
+    /**
+     * Docset groups
+     */
+    200: DocsetGroupItemsResponse;
+};
+
+export type ListDocsetGroupsResponse = ListDocsetGroupsResponses[keyof ListDocsetGroupsResponses];
+
+export type ImportDocsetData = {
+    body: ImportDocsetRequest;
+    path: {
+        project_id: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/projects/{project_id}/docset/import';
+};
+
+export type ImportDocsetErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type ImportDocsetError = ImportDocsetErrors[keyof ImportDocsetErrors];
+
+export type ImportDocsetResponses = {
+    /**
+     * Import created PR
+     */
+    200: ImportDocsetResponse;
+};
+
+export type ImportDocsetResponse2 = ImportDocsetResponses[keyof ImportDocsetResponses];
+
+export type SyncDocsetData = {
+    body: SyncDocsetRequest;
+    path: {
+        project_id: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/projects/{project_id}/docset/sync';
+};
+
+export type SyncDocsetErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type SyncDocsetError = SyncDocsetErrors[keyof SyncDocsetErrors];
+
+export type SyncDocsetResponses = {
+    /**
+     * Sync created PR
+     */
+    200: SyncDocsetResponse;
+};
+
+export type SyncDocsetResponse2 = SyncDocsetResponses[keyof SyncDocsetResponses];

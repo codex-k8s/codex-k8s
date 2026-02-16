@@ -23,4 +23,13 @@ type RepositoryBinding struct {
 
 	// ServicesYAMLPath is a path to services.yaml within the repository.
 	ServicesYAMLPath string
+
+	// BotUsername is an optional GitHub bot login associated with this repository.
+	BotUsername string
+	// BotEmail is an optional GitHub bot email associated with this repository.
+	BotEmail string
+
+	// PreflightUpdatedAt is a timestamp of the last onboarding preflight run for this repository.
+	// Empty string means "never ran" (transport-friendly for now).
+	PreflightUpdatedAt string
 }
