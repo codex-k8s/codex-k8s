@@ -1,11 +1,11 @@
 ---
-doc_id: EPC-CK8S-S3-D12
+doc_id: EPC-CK8S-S3-D15
 type: epic
-title: "Epic S3 Day 12: MVP regression/security gate + closeout and handover"
+title: "Epic S3 Day 15: MVP regression/security gate + closeout and handover"
 status: planned
 owner_role: EM
 created_at: 2026-02-13
-updated_at: 2026-02-15
+updated_at: 2026-02-16
 related_issues: [19]
 related_prs: []
 approvals:
@@ -14,7 +14,7 @@ approvals:
   request_id: ""
 ---
 
-# Epic S3 Day 12: MVP regression/security gate + closeout and handover
+# Epic S3 Day 15: MVP regression/security gate + closeout and handover
 
 ## TL;DR
 - Цель: провести финальный regression/security прогон по всем MVP-функциям и формально закрыть MVP.
@@ -26,6 +26,7 @@ approvals:
 ## Scope
 ### In scope
 - E2E regression по full stage labels + self-improve + MCP control tools.
+- E2E regression по docset import/sync, onboarding preflight и централизованной конфигурации/секретам.
 - Security проверки: отсутствие secret leakage, корректность approvals, RBAC-границы.
 - Reliability проверки: cleanup, retries, idempotency, resume поведения.
 - Проверка staff UI debug и feedback/approval сценариев на Vuetify-контуре.

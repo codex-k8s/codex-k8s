@@ -5,7 +5,7 @@ title: "codex-k8s — Delivery Plan"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-15
+updated_at: 2026-02-16
 related_issues: [1, 19]
 related_prs: []
 approvals:
@@ -63,7 +63,7 @@ approvals:
 - Day 6 (completed): approval matrix + MCP control tools + audit hardening.
 - Day 7 (completed): MVP readiness regression gate + Sprint S3 kickoff package (`docs/delivery/regression_s2_gate.md`).
 
-### Sprint S3: MVP completion (Day 1..12)
+### Sprint S3: MVP completion (Day 1..15)
 - Day 1: full stage/label activation.
 - Day 2: staff runtime debug console.
 - Day 3: deterministic secret sync (GitHub + Kubernetes).
@@ -74,7 +74,10 @@ approvals:
 - Day 9: declarative full-env deploy, `services.yaml` orchestration, runtime parity/hot-reload.
 - Day 10: полный redesign staff-консоли на Vuetify.
 - Day 11: full-env slots + agent-run + subdomain templating (TLS) для manual QA.
-- Day 12: MVP regression/security gate + closeout/handover и переход к post-MVP roadmap.
+- Day 12: docset import + safe sync (`agent-knowledge-base` -> projects).
+- Day 13: unified config/secrets governance (platform/project/repo) + GitHub creds fallback.
+- Day 14: repository onboarding preflight (token scopes + GitHub ops + domain resolution) + bot params per repo.
+- Day 15: MVP regression/security gate + closeout/handover и переход к post-MVP roadmap.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

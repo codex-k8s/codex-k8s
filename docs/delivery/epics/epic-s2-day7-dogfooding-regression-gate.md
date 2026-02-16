@@ -5,7 +5,7 @@ title: "Epic S2 Day 7: Dogfooding regression gate for MVP readiness"
 status: completed
 owner_role: EM
 created_at: 2026-02-10
-updated_at: 2026-02-13
+updated_at: 2026-02-16
 related_issues: [19]
 related_prs: [20, 22, 23]
 approvals:
@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - Цель эпика: подтвердить, что S2 baseline + Day6 hardening готовы к расширению MVP в Sprint S3.
 - Ключевая ценность: снимаем риски регрессий перед включением полного набора stage-flow и `run:self-improve`.
-- MVP-результат: воспроизводимый regression bundle, формальный go/no-go и зафиксированный backlog Sprint S3 Day1..Day12.
+- MVP-результат: воспроизводимый regression bundle, формальный go/no-go и зафиксированный backlog Sprint S3 Day1..Day15.
 
 ## Priority
 - `P0`.
@@ -47,7 +47,7 @@ approvals:
   - поведение `run:debug` (cleanup skip + audit evidence).
 - Документационный gate:
   - синхронизация product/architecture/delivery docs с расширенным MVP scope;
-  - готовый Sprint S3 plan с 7-12 эпиками (в этом пакете: Day1..Day12).
+  - готовый Sprint S3 plan с 7-15 эпиками (в этом пакете: Day1..Day15).
 
 ### Out of scope
 - Полный e2e regression по всем `run:*` стадиям до их реализации в Sprint S3.

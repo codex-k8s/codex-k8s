@@ -5,7 +5,7 @@ title: "Requirements Traceability Matrix"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-15
+updated_at: 2026-02-16
 related_issues: [1, 19]
 related_prs: []
 approvals:
@@ -72,6 +72,9 @@ approvals:
 | FR-044 | `run:self-improve` updater + PR flow | `docs/product/requirements_machine_driven.md`, `docs/architecture/prompt_templates_policy.md`, `docs/delivery/epics/epic-s3-day7-self-improve-updater-and-pr-flow.md`, `docs/delivery/epics/epic-s3-day8-agent-toolchain-auto-extension.md` | covered |
 | FR-045 | Full stage-flow activation `run:intake..run:ops` + revise/rethink | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/delivery/epics/epic-s3-day1-full-stage-and-label-activation.md` | covered |
 | FR-046 | Post-MVP roadmap направлений | `docs/product/requirements_machine_driven.md`, `docs/product/brief.md`, `docs/delivery/roadmap.md` | covered |
+| FR-047 | Docset import + safe sync в проекты | `docs/product/requirements_machine_driven.md`, `docs/delivery/epics/epic-s3-day12-docset-import-and-safe-sync.md` | covered |
+| FR-048 | Unified config/secrets governance + sync в GitHub/K8s | `docs/product/requirements_machine_driven.md`, `docs/delivery/epics/epic-s3-day13-config-and-credentials-governance.md` | covered |
+| FR-049 | Repo onboarding preflight (GitHub ops + domain resolution) | `docs/product/requirements_machine_driven.md`, `docs/delivery/epics/epic-s3-day14-repository-onboarding-preflight.md` | covered |
 | NFR-001 | Security baseline | `docs/product/requirements_machine_driven.md`, `docs/product/constraints.md`, `AGENTS.md` | covered |
 | NFR-002 | Multi-pod consistency | `docs/product/requirements_machine_driven.md`, `docs/architecture/c4_container.md`, `docs/architecture/data_model.md` | covered |
 | NFR-003 | No event outbox on MVP | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/constraints.md` | covered |
@@ -89,7 +92,7 @@ approvals:
 | NFR-015 | Операционная latency для runtime debug UI | `docs/product/requirements_machine_driven.md`, `docs/architecture/api_contract.md`, `docs/delivery/epics/epic-s3-day2-staff-runtime-debug-console.md` | covered |
 | NFR-016 | Idempotent и secret-safe поведение MCP control tools | `docs/product/requirements_machine_driven.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/delivery/epics/epic-s2-day6-approval-and-audit-hardening.md`, `docs/delivery/epics/epic-s3-day3-mcp-deterministic-secret-sync.md`, `docs/delivery/epics/epic-s3-day4-mcp-database-lifecycle.md` | covered |
 | NFR-017 | Воспроизводимость self-improve цикла | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/delivery/epics/epic-s3-day6-self-improve-ingestion-and-diagnostics.md`, `docs/delivery/epics/epic-s3-day7-self-improve-updater-and-pr-flow.md`, `docs/delivery/epics/epic-s3-day8-agent-toolchain-auto-extension.md` | covered |
-| NFR-018 | Консистентность переходов full stage-flow | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/delivery/epics/epic-s3-day1-full-stage-and-label-activation.md`, `docs/delivery/epics/epic-s3-day12-mvp-closeout-and-handover.md` | covered |
+| NFR-018 | Консистентность переходов full stage-flow | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/delivery/epics/epic-s3-day1-full-stage-and-label-activation.md`, `docs/delivery/epics/epic-s3-day15-mvp-closeout-and-handover.md` | covered |
 
 ## Правило актуализации
 - Любое новое требование сначала добавляется в `docs/product/requirements_machine_driven.md`, затем отражается в этой матрице.

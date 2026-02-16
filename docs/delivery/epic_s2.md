@@ -5,7 +5,7 @@ title: "Epic Catalog: Sprint S2 (Dogfooding via Issues)"
 status: completed
 owner_role: EM
 created_at: 2026-02-10
-updated_at: 2026-02-13
+updated_at: 2026-02-16
 related_issues: [19]
 related_prs: [20, 22, 23]
 approvals:
@@ -55,4 +55,4 @@ approvals:
 - Один Issue с лейблом `run:dev` приводит к запуску агентного Job в отдельном namespace и к созданию PR.
 - Один Issue с лейблом `run:dev:revise` запускает цикл ревизии и обновляет PR.
 - `external/api-gateway` остаётся thin-edge и не содержит доменной логики/репозиториев.
-- Sprint S3 стартует без P0-блокеров и с зафиксированным планом `Day1..Day12`.
+- Sprint S3 стартует без P0-блокеров и с зафиксированным планом `Day1..Day15`.

@@ -5,7 +5,7 @@ title: "Epic Catalog: Sprint S3 (MVP completion)"
 status: in-progress
 owner_role: EM
 created_at: 2026-02-13
-updated_at: 2026-02-15
+updated_at: 2026-02-16
 related_issues: [19]
 related_prs: []
 approvals:
@@ -18,7 +18,7 @@ approvals:
 
 ## TL;DR
 - Sprint S3 завершает MVP и переносит платформу от узкого `run:dev` контура к полному stage-driven циклу.
-- Центральные deliverables: full stage labels, staff debug observability, MCP control tools, `run:self-improve` loop, declarative full-env deploy и новый staff UI контур на Vuetify.
+- Центральные deliverables: full stage labels, staff debug observability, MCP control tools, `run:self-improve` loop, declarative full-env deploy, docset import/sync, unified config/secrets governance, onboarding preflight и новый staff UI контур на Vuetify.
 
 ## Эпики Sprint S3
 - Day 1: `docs/delivery/epics/epic-s3-day1-full-stage-and-label-activation.md`
@@ -32,7 +32,10 @@ approvals:
 - Day 9: `docs/delivery/epics/epic-s3-day9-declarative-full-env-deploy-and-runtime-parity.md`
 - Day 10: `docs/delivery/epics/epic-s3-day10-staff-console-vuetify-redesign.md`
 - Day 11: `docs/delivery/epics/epic-s3-day11-full-env-slots-and-subdomains.md`
-- Day 12: `docs/delivery/epics/epic-s3-day12-mvp-closeout-and-handover.md`
+- Day 12: `docs/delivery/epics/epic-s3-day12-docset-import-and-safe-sync.md`
+- Day 13: `docs/delivery/epics/epic-s3-day13-config-and-credentials-governance.md`
+- Day 14: `docs/delivery/epics/epic-s3-day14-repository-onboarding-preflight.md`
+- Day 15: `docs/delivery/epics/epic-s3-day15-mvp-closeout-and-handover.md`
 
 ## Прогресс
 - Day 1 (`full stage and label activation`) завершён и согласован Owner.
@@ -43,7 +46,7 @@ approvals:
 - Day 6 (`run:self-improve` ingestion/diagnostics) завершён.
 - Day 7 (`run:self-improve` updater/PR flow) завершён.
 - Day 8 (`agent toolchain auto-extension`) завершён.
-- Day 9..Day12 остаются в статусе planned.
+- Day 9..Day15 остаются в статусе planned.
 
 ## Критерий успеха Sprint S3 (выжимка)
 - Все MVP-сценарии из Issue #19 покрыты кодом, тестами и эксплуатационной документацией.

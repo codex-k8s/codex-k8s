@@ -5,7 +5,7 @@ title: "Sprint S3: MVP completion (full stage flow, MCP control tools, self-impr
 status: in-progress
 owner_role: EM
 created_at: 2026-02-13
-updated_at: 2026-02-15
+updated_at: 2026-02-16
 related_issues: [19]
 related_prs: []
 approvals:
@@ -33,6 +33,15 @@ approvals:
   - database create/delete по окружениям;
   - owner feedback handle (варианты + custom answer);
   - HTTP approver/executor contracts + Telegram adapter.
+- Docset import/sync (safe-by-default):
+  - import доксета документации из `agent-knowledge-base` в проект через PR;
+  - sync обновлений доксета с drift detection и lock-файлом.
+- Unified config/secrets governance:
+  - platform/project/repo конфиги и креды в admin UI;
+  - sync в GitHub/Kubernetes с безопасной политикой overwrite.
+- Repository onboarding preflight:
+  - проверки token scopes (platform+bot) и реальных GitHub операций;
+  - проверка резолва доменов проекта на кластер (ai/staging и ai slots).
 - Self-improve loop:
   - trigger `run:self-improve`;
   - анализ логов/комментариев/артефактов;
@@ -53,7 +62,10 @@ approvals:
 | Day 9 | Declarative full-env deploy and runtime parity | P0 | `docs/delivery/epics/epic-s3-day9-declarative-full-env-deploy-and-runtime-parity.md` | planned |
 | Day 10 | Staff console full redesign on Vuetify | P0 | `docs/delivery/epics/epic-s3-day10-staff-console-vuetify-redesign.md` | planned |
 | Day 11 | Full-env slot namespace + subdomain templating (TLS) + agent run | P0 | `docs/delivery/epics/epic-s3-day11-full-env-slots-and-subdomains.md` | planned |
-| Day 12 | MVP regression/security gate + closeout and handover | P0 | `docs/delivery/epics/epic-s3-day12-mvp-closeout-and-handover.md` | planned |
+| Day 12 | Docset import + safe sync (agent-knowledge-base -> projects) | P0 | `docs/delivery/epics/epic-s3-day12-docset-import-and-safe-sync.md` | planned |
+| Day 13 | Unified config/secrets governance + GitHub credentials fallback | P0 | `docs/delivery/epics/epic-s3-day13-config-and-credentials-governance.md` | planned |
+| Day 14 | Repository onboarding preflight + bot params per repo | P0 | `docs/delivery/epics/epic-s3-day14-repository-onboarding-preflight.md` | planned |
+| Day 15 | MVP regression/security gate + closeout and handover | P0 | `docs/delivery/epics/epic-s3-day15-mvp-closeout-and-handover.md` | planned |
 
 ## Daily gate (обязательно)
 - Green CI + успешный deploy на production.
@@ -65,4 +77,7 @@ approvals:
 - MVP-функции из Issue #19 реализованы и проверены на production.
 - Полный label/stage контур формально документирован и подтверждён regression evidence.
 - Для `run:self-improve` есть минимум один воспроизводимый цикл с улучшениями в docs/prompt/tools.
+- Docset import/sync работает в режиме safe-by-default: создаёт PR и не перезаписывает локальные правки без явного действия пользователя.
+- Конфиги/секреты платформы и проектов управляются через UI и синхронизируются в GitHub/Kubernetes с безопасной overwrite-политикой.
+- Onboarding preflight для репозитория показывает pass/fail по токенам, GitHub операциям и резолву доменов проекта.
 - Owner принимает итоговый go/no-go протокол для перехода к post-MVP roadmap.

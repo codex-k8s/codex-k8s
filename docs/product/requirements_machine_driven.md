@@ -5,7 +5,7 @@ title: "codex-k8s — Machine-Driven Requirements Baseline"
 status: active
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-15
+updated_at: 2026-02-16
 related_issues: [1]
 related_prs: []
 approvals:
@@ -78,6 +78,9 @@ approvals:
 | FR-044 | `run:self-improve` поддерживает управляемое применение результатов: change-set публикуется через PR с явной трассировкой `run/session source -> diagnosis -> change`, включая улучшения prompts/docs/guidelines/toolchain. |
 | FR-045 | Для full MVP этапов поддерживается исполняемый контур полного stage-flow (`run:intake..run:ops`, `run:*:revise`, `run:rethink`) с traceability и audit-событиями. |
 | FR-046 | Post-MVP roadmap фиксирует расширяемость платформы: управление prompt templates/агентами/лейблами через UI, knowledge lifecycle в `pgvector`, A2A swarm, периодические автономные run-циклы. |
+| FR-047 | Поддерживается импорт и безопасная синхронизация доксета документации из внешнего репозитория (например `agent-knowledge-base`) в проекты: manifest v1, выбор групп/локали, PR-based import и safe-by-default sync с `docs/.docset-lock.json`. |
+| FR-048 | Конфигурация и секреты платформы/проектов/репозиториев управляются централизованно через staff UI/API: хранение в БД (шифрование), синхронизация в GitHub/Kubernetes, предупреждения о рисках обновления и управляемая политика overwrite. |
+| FR-049 | Добавление репозитория поддерживает onboarding preflight: проверка токенов (platform+bot) и реальных GitHub операций (webhook/labels/issues/PR/code), а также проверка резолва доменов проекта на кластер для full-env/ai slots. |
 
 ## Non-Functional Requirements (NFR)
 
@@ -117,7 +120,7 @@ approvals:
 | Runner scale | Локально: 1 persistent runner; production/prod при наличии домена: autoscaled set. |
 | Storage during bootstrap | `local-path` на MVP, Longhorn позже. |
 | Learning mode default | Управляется через `bootstrap/host/config.env`; в шаблоне включён по умолчанию, пустое значение трактуется как выключено. |
-| MVP completion scope | В MVP входят S2 Day6/Day7 + Sprint S3 Day1..Day12 (full stage labels, MCP control tools, `run:self-improve`, staff debug observability, declarative full-env deploy и Vuetify staff-console redesign). |
+| MVP completion scope | В MVP входят S2 Day6/Day7 + Sprint S3 Day1..Day15 (full stage labels, MCP control tools, `run:self-improve`, staff debug observability, declarative full-env deploy, docset import/sync, unified config/secrets governance, onboarding preflight и финальный regression gate). |
 
 ## Post-MVP направления (декомпозиция идей)
 - Управление prompt templates и параметрами агентов через UI: версионирование, diff, rollout policy, rollback.
