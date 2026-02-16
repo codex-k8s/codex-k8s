@@ -140,6 +140,8 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoo
 		"CODEXK8S_INTERNAL_REGISTRY_PORT":            []byte(internalRegistryPort),
 		"CODEXK8S_INTERNAL_REGISTRY_HOST":            []byte(internalRegistryHost),
 		"CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE":    []byte(internalRegistryStorageSize),
+		"CODEXK8S_K8S_API_CIDR":                      []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_K8S_API_CIDR", "")),
+		"CODEXK8S_K8S_API_PORT":                      []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_K8S_API_PORT", "6443")),
 		"CODEXK8S_GITHUB_PAT":                        []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_PAT", "")),
 		"CODEXK8S_GITHUB_REPO":                       []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_REPO", "")),
 		"CODEXK8S_FIRST_PROJECT_GITHUB_REPO":         []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_FIRST_PROJECT_GITHUB_REPO", "")),

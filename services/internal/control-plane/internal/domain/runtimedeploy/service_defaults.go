@@ -65,6 +65,7 @@ func defaultTemplateVars() map[string]string {
 		"CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT":     "high",
 		"CODEXK8S_AGENT_DEFAULT_LOCALE":               "ru",
 		"CODEXK8S_AGENT_BASE_BRANCH":                  "main",
+		"CODEXK8S_K8S_API_PORT":                       "6443",
 		"CODEXK8S_PRODUCTION_DOMAIN":                  "platform.codex-k8s.dev",
 		"CODEXK8S_AI_DOMAIN":                          "ai.platform.codex-k8s.dev",
 		"CODEXK8S_TLS_SYSTEM_NAMESPACE":               "codex-k8s-system",
