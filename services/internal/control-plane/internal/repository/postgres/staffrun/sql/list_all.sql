@@ -103,5 +103,6 @@ LEFT JOIN LATERAL (
     ORDER BY ags.updated_at DESC
     LIMIT 1
 ) ws ON true
+WHERE COALESCE(ar.run_payload->'trigger'->>'kind', '') <> ''
 ORDER BY created_at DESC
 LIMIT $1;

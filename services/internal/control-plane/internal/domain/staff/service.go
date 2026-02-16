@@ -646,6 +646,20 @@ func (s *Service) DeleteProjectRepository(ctx context.Context, principal Princip
 	if _, ok := s.cfg.ProtectedRepositoryIDs[repositoryID]; ok {
 		return errs.Forbidden{Msg: "cannot delete platform repository binding"}
 	}
+	if platformRepo := getOptionalEnv("CODEXK8S_GITHUB_REPO"); platformRepo != "" {
+		platformOwner, platformName, ok := strings.Cut(platformRepo, "/")
+		platformOwner = strings.TrimSpace(platformOwner)
+		platformName = strings.TrimSpace(platformName)
+		if ok && platformOwner != "" && platformName != "" {
+			binding, found, err := s.repos.GetByID(ctx, repositoryID)
+			if err != nil {
+				return err
+			}
+			if found && strings.EqualFold(binding.Owner, platformOwner) && strings.EqualFold(binding.Name, platformName) {
+				return errs.Forbidden{Msg: "cannot delete platform repository binding"}
+			}
+		}
+	}
 
 	role := "admin"
 	if !principal.IsPlatformAdmin {
