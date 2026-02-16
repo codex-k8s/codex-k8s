@@ -2,7 +2,6 @@ package githubmgmt
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -43,15 +42,12 @@ func (c *Client) GetFile(ctx context.Context, token string, owner string, repo s
 	if err != nil {
 		return nil, false, fmt.Errorf("read github content %s: %w", filePath, err)
 	}
-	encoded := strings.TrimSpace(rawContent)
-	if encoded == "" {
+	trimmed := strings.TrimSpace(rawContent)
+	if trimmed == "" {
 		return []byte{}, true, nil
 	}
-	decoded, err := base64.StdEncoding.DecodeString(strings.ReplaceAll(encoded, "\n", ""))
-	if err != nil {
-		return nil, false, fmt.Errorf("decode github content %s: %w", filePath, err)
-	}
-	return decoded, true, nil
+	// go-github's RepositoryContent.GetContent() already returns decoded file content.
+	return []byte(rawContent), true, nil
 }
 
 func (c *Client) CreatePullRequestWithFiles(ctx context.Context, token string, owner string, repo string, baseBranch string, headBranch string, title string, body string, files map[string][]byte) (prNumber int, prURL string, err error) {

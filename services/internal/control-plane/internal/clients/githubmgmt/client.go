@@ -2,6 +2,7 @@ package githubmgmt
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -95,8 +96,13 @@ func (c *Client) Preflight(ctx context.Context, params valuetypes.GitHubPrefligh
 		return err
 	})
 	if err != nil {
-		failed = true
-		report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{Name: "github:platform:webhook_create", Status: "failed", Details: err.Error()})
+		if isGitHubHookAlreadyExistsError(err) {
+			// The repository already has this webhook. Treat as OK and skip cleanup.
+			report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{Name: "github:platform:webhook_create", Status: "skipped", Details: "webhook already exists"})
+		} else {
+			failed = true
+			report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{Name: "github:platform:webhook_create", Status: "failed", Details: err.Error()})
+		}
 	} else {
 		webhookID = hook.GetID()
 		report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{Name: "github:platform:webhook_create", Status: "ok"})
@@ -405,6 +411,24 @@ func (c *Client) Preflight(ctx context.Context, params valuetypes.GitHubPrefligh
 		report.Status = "ok"
 	}
 	return report, nil
+}
+
+func isGitHubHookAlreadyExistsError(err error) bool {
+	if err == nil {
+		return false
+	}
+	var respErr *gh.ErrorResponse
+	if errors.As(err, &respErr) {
+		if respErr.Response != nil && respErr.Response.StatusCode != 422 {
+			return false
+		}
+		for _, e := range respErr.Errors {
+			if strings.Contains(strings.ToLower(e.Message), "hook already exists") {
+				return true
+			}
+		}
+	}
+	return strings.Contains(err.Error(), "Hook already exists on this repository")
 }
 
 func (c *Client) clientWithToken(token string) *gh.Client {
