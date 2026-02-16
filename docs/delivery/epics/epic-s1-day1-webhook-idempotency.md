@@ -28,7 +28,7 @@ approvals:
 - Реализация webhook ingress и signature verification в `services/external/api-gateway/**`.
 - Реализация dedup/idempotency policy и run bootstrap state в доменном слое `services/external/api-gateway/internal/domain/**`.
 - Миграция/DDL обновления для уникальности `correlation_id` и индексов `flow_events`.
-- Smoke evidence webhook replay на staging и обновление документации контракта API.
+- Smoke evidence webhook replay на production и обновление документации контракта API.
 
 ## Контекст
 - Почему эпик нужен: это единственный публичный API для MVP.
@@ -49,7 +49,7 @@ approvals:
 - Story-1: HTTP handler и валидация payload.
 - Story-2: signature verification и ошибки.
 - Story-3: dedup policy и state transition `pending`.
-- Story-4: smoke tests на staging webhook flow.
+- Story-4: smoke tests на production webhook flow.
 
 ## Data model impact (по шаблону data_model.md)
 - Сущности:
@@ -68,7 +68,7 @@ approvals:
 ## Критерии приемки эпика
 - Повторная доставка одного webhook не создаёт второй run.
 - Ошибочная подпись отклоняется.
-- После merge изменения задеплоены на staging и проверены вручную.
+- После merge изменения задеплоены на production и проверены вручную.
 
 ## Evidence
 - `POST /api/v1/webhooks/github` реализован в `services/external/api-gateway/internal/transport/http/webhook_handler.go`.
@@ -88,14 +88,14 @@ approvals:
   - `services/external/api-gateway/internal/transport/http/webhook_handler_test.go`
 - Verification commands:
   - `go test ./...`
-  - `bash -n deploy/scripts/deploy_staging.sh bootstrap/host/bootstrap_remote_staging.sh bootstrap/remote/45_configure_github_repo_ci.sh bootstrap/remote/60_deploy_codex_k8s.sh`
+  - `go test ./cmd/codex-bootstrap/internal/cli ./services/internal/control-plane/cmd/runtime-deploy`
 
 ## Риски/зависимости
 - Зависимости: корректно настроенный GitHub webhook secret.
 - Риск: неконсистентность dedup при конкурентной обработке.
 
 ## План релиза (верхний уровень)
-- Deploy в staging в день реализации, с ручным replay webhook smoke.
+- Deploy в production в день реализации, с ручным replay webhook smoke.
 
 ## Апрув
 - request_id: owner-2026-02-06-day1

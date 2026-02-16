@@ -19,6 +19,8 @@ import (
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
 	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
+	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
 	agentcallback "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/agentcallback"
 	"google.golang.org/grpc/codes"
@@ -731,6 +733,115 @@ func (s *Server) PrepareRunEnvironment(ctx context.Context, req *controlplanev1.
 	}, nil
 }
 
+func (s *Server) ListRuntimeDeployTasks(ctx context.Context, req *controlplanev1.ListRuntimeDeployTasksRequest) (*controlplanev1.ListRuntimeDeployTasksResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	items, err := s.staff.ListRuntimeDeployTasks(ctx, p, clampLimit(req.GetLimit(), 200), optionalProtoString(req.Status), optionalProtoString(req.TargetEnv))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	out := make([]*controlplanev1.RuntimeDeployTask, 0, len(items))
+	for _, item := range items {
+		out = append(out, runtimeDeployTaskToProto(item))
+	}
+	return &controlplanev1.ListRuntimeDeployTasksResponse{Items: out}, nil
+}
+
+func (s *Server) GetRuntimeDeployTask(ctx context.Context, req *controlplanev1.GetRuntimeDeployTaskRequest) (*controlplanev1.RuntimeDeployTask, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	item, err := s.staff.GetRuntimeDeployTask(ctx, p, strings.TrimSpace(req.GetRunId()))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return runtimeDeployTaskToProto(item), nil
+}
+
+func (s *Server) ListRegistryImages(ctx context.Context, req *controlplanev1.ListRegistryImagesRequest) (*controlplanev1.ListRegistryImagesResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	items, err := s.staff.ListRegistryImages(ctx, p, querytypes.RegistryImageListFilter{
+		Repository:        optionalProtoString(req.Repository),
+		LimitRepositories: clampLimit(req.GetLimitRepositories(), 100),
+		LimitTags:         clampLimit(req.GetLimitTags(), 50),
+	})
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	out := make([]*controlplanev1.RegistryImageRepository, 0, len(items))
+	for _, item := range items {
+		out = append(out, registryImageRepositoryToProto(item))
+	}
+	return &controlplanev1.ListRegistryImagesResponse{Items: out}, nil
+}
+
+func (s *Server) DeleteRegistryImageTag(ctx context.Context, req *controlplanev1.DeleteRegistryImageTagRequest) (*controlplanev1.RegistryImageDeleteResult, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	item, err := s.staff.DeleteRegistryImageTag(ctx, p, querytypes.RegistryImageDeleteParams{
+		Repository: strings.TrimSpace(req.GetRepository()),
+		Tag:        strings.TrimSpace(req.GetTag()),
+	})
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return registryImageDeleteToProto(item), nil
+}
+
+func (s *Server) CleanupRegistryImages(ctx context.Context, req *controlplanev1.CleanupRegistryImagesRequest) (*controlplanev1.CleanupRegistryImagesResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	item, err := s.staff.CleanupRegistryImages(ctx, p, querytypes.RegistryImageCleanupFilter{
+		RepositoryPrefix:  optionalProtoString(req.RepositoryPrefix),
+		LimitRepositories: clampLimit(req.GetLimitRepositories(), 100),
+		KeepTags:          int(req.GetKeepTags()),
+		DryRun:            req.GetDryRun(),
+	})
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	deleted := make([]*controlplanev1.RegistryImageDeleteResult, 0, len(item.Deleted))
+	for _, deleteItem := range item.Deleted {
+		deleted = append(deleted, registryImageDeleteToProto(deleteItem))
+	}
+	skipped := make([]*controlplanev1.RegistryImageDeleteResult, 0, len(item.Skipped))
+	for _, skipItem := range item.Skipped {
+		skipped = append(skipped, registryImageDeleteToProto(skipItem))
+	}
+	return &controlplanev1.CleanupRegistryImagesResponse{
+		RepositoriesScanned: int32(item.RepositoriesScanned),
+		TagsDeleted:         int32(item.TagsDeleted),
+		TagsSkipped:         int32(item.TagsSkipped),
+		Deleted:             deleted,
+		Skipped:             skipped,
+	}, nil
+}
+
 func (s *Server) UpsertAgentSession(ctx context.Context, req *controlplanev1.UpsertAgentSessionRequest) (*controlplanev1.UpsertAgentSessionResponse, error) {
 	if s.agentCallbacks == nil {
 		return nil, status.Error(codes.FailedPrecondition, "agent callback service is not configured")
@@ -1160,6 +1271,91 @@ func runToProto(r staffrunrepo.Run) *controlplanev1.Run {
 		out.LastHeartbeatAt = timestamppb.New(r.LastHeartbeatAt.UTC())
 	}
 	return out
+}
+
+func runtimeDeployTaskToProto(item entitytypes.RuntimeDeployTask) *controlplanev1.RuntimeDeployTask {
+	out := &controlplanev1.RuntimeDeployTask{
+		RunId:              item.RunID,
+		RuntimeMode:        item.RuntimeMode,
+		Namespace:          item.Namespace,
+		TargetEnv:          item.TargetEnv,
+		SlotNo:             int32(item.SlotNo),
+		RepositoryFullName: item.RepositoryFullName,
+		ServicesYamlPath:   item.ServicesYAMLPath,
+		BuildRef:           item.BuildRef,
+		DeployOnly:         item.DeployOnly,
+		Status:             string(item.Status),
+		LeaseOwner:         stringPtrOrNil(item.LeaseOwner),
+		Attempts:           int32(item.Attempts),
+		LastError:          stringPtrOrNil(item.LastError),
+		ResultNamespace:    stringPtrOrNil(item.ResultNamespace),
+		ResultTargetEnv:    stringPtrOrNil(item.ResultTargetEnv),
+		CreatedAt:          timestamppb.New(item.CreatedAt.UTC()),
+		UpdatedAt:          timestamppb.New(item.UpdatedAt.UTC()),
+		Logs:               runtimeDeployLogsToProto(item.Logs),
+	}
+	if !item.LeaseUntil.IsZero() {
+		out.LeaseUntil = timestamppb.New(item.LeaseUntil.UTC())
+	}
+	if !item.StartedAt.IsZero() {
+		out.StartedAt = timestamppb.New(item.StartedAt.UTC())
+	}
+	if !item.FinishedAt.IsZero() {
+		out.FinishedAt = timestamppb.New(item.FinishedAt.UTC())
+	}
+	return out
+}
+
+func runtimeDeployLogsToProto(items []entitytypes.RuntimeDeployTaskLogEntry) []*controlplanev1.RuntimeDeployTaskLog {
+	if len(items) == 0 {
+		return []*controlplanev1.RuntimeDeployTaskLog{}
+	}
+	out := make([]*controlplanev1.RuntimeDeployTaskLog, 0, len(items))
+	for _, item := range items {
+		logItem := &controlplanev1.RuntimeDeployTaskLog{
+			Stage:   strings.TrimSpace(item.Stage),
+			Level:   strings.TrimSpace(item.Level),
+			Message: strings.TrimSpace(item.Message),
+		}
+		if !item.CreatedAt.IsZero() {
+			logItem.CreatedAt = timestamppb.New(item.CreatedAt.UTC())
+		}
+		out = append(out, logItem)
+	}
+	return out
+}
+
+func registryImageRepositoryToProto(item entitytypes.RegistryImageRepository) *controlplanev1.RegistryImageRepository {
+	out := &controlplanev1.RegistryImageRepository{
+		Repository: item.Repository,
+		TagCount:   int32(item.TagCount),
+		Tags:       make([]*controlplanev1.RegistryImageTag, 0, len(item.Tags)),
+	}
+	for _, tag := range item.Tags {
+		out.Tags = append(out.Tags, registryImageTagToProto(tag))
+	}
+	return out
+}
+
+func registryImageTagToProto(item entitytypes.RegistryImageTag) *controlplanev1.RegistryImageTag {
+	out := &controlplanev1.RegistryImageTag{
+		Tag:             item.Tag,
+		Digest:          item.Digest,
+		ConfigSizeBytes: item.ConfigSizeBytes,
+	}
+	if item.CreatedAt != nil {
+		out.CreatedAt = timestamppb.New(item.CreatedAt.UTC())
+	}
+	return out
+}
+
+func registryImageDeleteToProto(item entitytypes.RegistryImageDeleteResult) *controlplanev1.RegistryImageDeleteResult {
+	return &controlplanev1.RegistryImageDeleteResult{
+		Repository: item.Repository,
+		Tag:        item.Tag,
+		Digest:     item.Digest,
+		Deleted:    item.Deleted,
+	}
 }
 
 func approvalToProto(item mcpdomain.ApprovalListItem) *controlplanev1.ApprovalRequest {

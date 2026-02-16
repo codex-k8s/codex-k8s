@@ -108,6 +108,11 @@ func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Clien
 	staffGroup.GET("/runs/:run_id/events", staffH.ListRunEvents)
 	staffGroup.GET("/runs/:run_id/logs", staffH.GetRunLogs)
 	staffGroup.GET("/runs/:run_id/learning-feedback", staffH.ListRunLearningFeedback)
+	staffGroup.GET("/runtime-deploy/tasks", staffH.ListRuntimeDeployTasks)
+	staffGroup.GET("/runtime-deploy/tasks/:run_id", staffH.GetRuntimeDeployTask)
+	staffGroup.GET("/runtime-deploy/images", staffH.ListRegistryImages)
+	staffGroup.DELETE("/runtime-deploy/images", staffH.DeleteRegistryImageTag)
+	staffGroup.POST("/runtime-deploy/images/cleanup", staffH.CleanupRegistryImages)
 	staffGroup.GET("/users", staffH.ListUsers)
 	staffGroup.POST("/users", staffH.CreateUser)
 	staffGroup.DELETE("/users/:user_id", staffH.DeleteUser)
@@ -226,7 +231,7 @@ func registerViteDevUI(e *echo.Echo, upstream string) {
 	origDirector := rp.Director
 	rp.Director = func(r *http.Request) {
 		// Preserve original Host for Vite's host allowlist check.
-		// In staging/dev we allow the public domain (e.g. staging.codex-k8s.dev),
+		// In production/dev we allow the public domain (e.g. platform.codex-k8s.dev),
 		// and the UI is accessed through the gateway reverse proxy.
 		origHost := r.Header.Get("X-Forwarded-Host")
 		if origHost == "" {

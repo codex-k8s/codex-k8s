@@ -1,7 +1,7 @@
 ---
 doc_id: ADR-0002
 type: adr
-title: "Webhook-driven execution with dedicated deploy workflows"
+title: "Webhook-driven execution with Kubernetes deploy jobs"
 status: accepted
 owner_role: SA
 created_at: 2026-02-06
@@ -16,20 +16,20 @@ approvals:
   request_id: ""
 ---
 
-# ADR-0002: Webhook-driven execution with dedicated deploy workflows
+# ADR-0002: Webhook-driven execution with Kubernetes deploy jobs
 
 ## TL;DR
 - Контекст: продуктовые процессы должны запускаться по webhooks, без workflow-first модели.
-- Решение: orchestration доменных/агентных процессов только webhook-driven; для deploy самой платформы допускаем отдельные GitHub Actions workflows (staging first).
-- Последствия: сохраняем требование по продукту и получаем практичный CI/CD путь для платформы.
+- Решение: orchestration доменных/агентных процессов только webhook-driven; deploy самой платформы выполняется через Kubernetes jobs под управлением control-plane.
+- Последствия: сохраняем требование по продукту и исключаем зависимость от GitHub Actions workflows.
 
 ## Контекст
-- Проблема/драйвер: нужен быстрый и управляемый deploy `codex-k8s` в staging/prod.
+- Проблема/драйвер: нужен быстрый и управляемый deploy `codex-k8s` в production/prod.
 - Ограничения: одновременно есть требование “никаких воркфлоу” для продуктовых процессов.
 - Что “ломается” без решения: либо медленный ручной deploy, либо нарушение архитектурного принципа webhook-first.
 
 ## Decision Drivers (что важно)
-- Скорость вывода в staging.
+- Скорость вывода в production.
 - Чёткое разделение платформенного CI/CD и продуктовой оркестрации.
 - Аудит и воспроизводимость.
 
@@ -39,42 +39,39 @@ approvals:
 - Минусы: дорогой запуск MVP, больше ручных операций.
 
 ### Вариант B: webhook-driven продукт + отдельные deploy workflows платформы
-- Плюсы: быстрый staging deploy, прозрачный путь push->deploy.
-- Минусы: сохраняется часть workflow инфраструктуры.
+- Плюсы: быстрый production deploy, прозрачный путь push->deploy.
+- Минусы: сохраняется часть workflow инфраструктуры и ARC.
 
 ### Вариант C: workflow-first для всего
 - Плюсы: простая унификация.
 - Минусы: противоречит базовому продукт-требованию.
 
 ## Решение
-Мы выбираем: **Вариант B**.
+Мы выбираем: **Вариант A (workflow-free deploy через control-plane + Kubernetes jobs)**.
 
 ## Обоснование (Rationale)
-Платформенный CI/CD и продуктовая оркестрация решают разные задачи; их можно разделить без противоречия архитектуре.
+Платформенный CI/CD и продуктовая оркестрация должны использовать единый Kubernetes-native контур.
+Это убирает ARC/GitHub Actions из критического пути и делает self-deploy воспроизводимым внутри платформы.
 
 ## Последствия (Consequences)
 ### Позитивные
-- staging можно поднимать и обновлять автоматически после push в `main`.
+- production можно поднимать и обновлять автоматически после push в `main` через внутренние job.
 - продуктовые run-процессы остаются webhook-driven внутри `codex-k8s`.
 
 ### Негативные / компромиссы
-- Нужно поддерживать self-hosted runner в Kubernetes.
+- Нужно поддерживать внутренние build/deploy job и их наблюдаемость (логи/статусы).
 
 ### Технический долг
-- В будущем можно заменить deploy workflows на встроенный deploy controller, если это даст выгоду.
+- В будущем можно выделить отдельный internal deploy-controller, если нагрузка на control-plane вырастет.
 
 ## План внедрения (минимально)
-- Добавить `ai_staging_deploy` workflow для `codex-k8s`.
-- Production deploy workflow оставить как следующий этап после стабилизации staging.
-- Bootstrap-скрипт должен:
-  - запросить GitHub fine-grained token;
-  - создать/настроить runner secret;
-  - развернуть ARC/runner scale set в k8s;
-  - подготовить переменные/секреты репозитория.
+- Добавить манифесты Kubernetes job для build/deploy/codegen check.
+- Вынести управление GitHub secrets/vars/webhooks и Kubernetes ресурсами в Go-код (`codex-bootstrap` + control-plane), без shell-first orchestration.
+- Bootstrap-скрипт оставить только для первичной подготовки хоста.
 
 ## План отката/замены
-- Условия отката: нестабильность runner/Actions или переход на встроенный deploy controller.
-- Как откатываем: manual deploy script + отключение workflows.
+- Условия отката: нестабильность внутренних build/deploy job.
+- Как откатываем: аварийная команда `codex-bootstrap` с принудительным redeploy и (опционально) полной очисткой.
 
 ## Ссылки
 - Brief: `docs/product/brief.md`

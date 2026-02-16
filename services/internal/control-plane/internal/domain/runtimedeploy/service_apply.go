@@ -11,12 +11,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/codex-k8s/codex-k8s/libs/go/manifesttpl"
 	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 )
 
-func (s *Service) applyInfrastructure(ctx context.Context, stack *servicescfg.Stack, namespace string, vars map[string]string) (map[string]struct{}, error) {
+func (s *Service) applyInfrastructure(ctx context.Context, stack *servicescfg.Stack, namespace string, vars map[string]string, runID string) (map[string]struct{}, error) {
 	enabled := make(map[string]servicescfg.InfrastructureItem, len(stack.Spec.Infrastructure))
 	for _, item := range stack.Spec.Infrastructure {
 		name := strings.TrimSpace(item.Name)
@@ -40,7 +41,7 @@ func (s *Service) applyInfrastructure(ctx context.Context, stack *servicescfg.St
 	applied := make(map[string]struct{}, len(enabled))
 	for _, name := range order {
 		item := enabled[name]
-		if err := s.applyUnit(ctx, name, item.Manifests, namespace, vars); err != nil {
+		if err := s.applyUnit(ctx, name, item.Manifests, namespace, vars, runID); err != nil {
 			return nil, err
 		}
 		applied[name] = struct{}{}
@@ -48,7 +49,7 @@ func (s *Service) applyInfrastructure(ctx context.Context, stack *servicescfg.St
 	return applied, nil
 }
 
-func (s *Service) applyServices(ctx context.Context, stack *servicescfg.Stack, namespace string, vars map[string]string, applied map[string]struct{}) error {
+func (s *Service) applyServices(ctx context.Context, stack *servicescfg.Stack, namespace string, vars map[string]string, applied map[string]struct{}, runID string) error {
 	enabledByName := make(map[string]servicescfg.Service, len(stack.Spec.Services))
 	groupToNames := make(map[string][]string)
 	for _, service := range stack.Spec.Services {
@@ -84,7 +85,7 @@ func (s *Service) applyServices(ctx context.Context, stack *servicescfg.Stack, n
 				if !dependenciesSatisfied(service.DependsOn, applied) {
 					continue
 				}
-				if err := s.applyUnit(ctx, name, service.Manifests, namespace, vars); err != nil {
+				if err := s.applyUnit(ctx, name, service.Manifests, namespace, vars, runID); err != nil {
 					return err
 				}
 				applied[name] = struct{}{}
@@ -101,7 +102,8 @@ func (s *Service) applyServices(ctx context.Context, stack *servicescfg.Stack, n
 	return nil
 }
 
-func (s *Service) applyUnit(ctx context.Context, unitName string, manifests []servicescfg.ManifestRef, namespace string, vars map[string]string) error {
+func (s *Service) applyUnit(ctx context.Context, unitName string, manifests []servicescfg.ManifestRef, namespace string, vars map[string]string, runID string) error {
+	s.appendTaskLogBestEffort(ctx, runID, "apply", "info", "Apply unit "+unitName+" started")
 	for _, manifest := range manifests {
 		path := strings.TrimSpace(manifest.Path)
 		if path == "" {
@@ -113,12 +115,19 @@ func (s *Service) applyUnit(ctx context.Context, unitName string, manifests []se
 		}
 		raw, err := os.ReadFile(fullPath)
 		if err != nil {
+			s.appendTaskLogBestEffort(ctx, runID, "apply", "error", "Read manifest failed for "+unitName+": "+fullPath)
 			return fmt.Errorf("read manifest %s for %s: %w", fullPath, unitName, err)
 		}
-		rendered := renderPlaceholders(string(raw), vars)
+		renderedRaw, err := manifesttpl.Render(fullPath, raw, vars)
+		if err != nil {
+			s.appendTaskLogBestEffort(ctx, runID, "apply", "error", "Render manifest failed for "+unitName+": "+fullPath)
+			return fmt.Errorf("render manifest template %s for %s: %w", fullPath, unitName, err)
+		}
+		rendered := string(renderedRaw)
 
 		refs, err := parseManifestRefs([]byte(rendered), namespace)
 		if err != nil {
+			s.appendTaskLogBestEffort(ctx, runID, "apply", "error", "Parse manifest refs failed for "+unitName+": "+fullPath)
 			return fmt.Errorf("parse manifest refs %s for %s: %w", fullPath, unitName, err)
 		}
 		for _, ref := range refs {
@@ -129,6 +138,7 @@ func (s *Service) applyUnit(ctx context.Context, unitName string, manifests []se
 				}
 				if jobNamespace != "" {
 					if err := s.k8s.DeleteJobIfExists(ctx, jobNamespace, ref.Name); err != nil {
+						s.appendTaskLogBestEffort(ctx, runID, "apply", "error", "Delete existing job failed for "+unitName+": "+ref.Name)
 						return fmt.Errorf("delete previous job %s/%s before apply: %w", jobNamespace, ref.Name, err)
 					}
 				}
@@ -137,14 +147,17 @@ func (s *Service) applyUnit(ctx context.Context, unitName string, manifests []se
 
 		appliedRefs, err := s.k8s.ApplyManifest(ctx, []byte(rendered), namespace, s.cfg.KanikoFieldManager)
 		if err != nil {
+			s.appendTaskLogBestEffort(ctx, runID, "apply", "error", "Apply manifest failed for "+unitName+": "+fullPath)
 			return fmt.Errorf("apply manifest %s for %s: %w", fullPath, unitName, err)
 		}
 		for _, ref := range appliedRefs {
 			if err := s.waitAppliedResource(ctx, ref, namespace); err != nil {
+				s.appendTaskLogBestEffort(ctx, runID, "apply", "error", "Wait resource failed for "+unitName+": "+ref.Kind+"/"+ref.Name)
 				return fmt.Errorf("wait applied resource %s/%s for %s: %w", ref.Kind, ref.Name, unitName, err)
 			}
 		}
 	}
+	s.appendTaskLogBestEffort(ctx, runID, "apply", "info", "Apply unit "+unitName+" finished")
 	return nil
 }
 
@@ -212,23 +225,6 @@ func parseManifestRefs(manifest []byte, namespaceOverride string) ([]AppliedReso
 		})
 	}
 	return out, nil
-}
-
-func renderPlaceholders(input string, vars map[string]string) string {
-	return placeholderPattern.ReplaceAllStringFunc(input, func(token string) string {
-		matches := placeholderPattern.FindStringSubmatch(token)
-		if len(matches) != 2 {
-			return token
-		}
-		key := matches[1]
-		if value, ok := vars[key]; ok {
-			return value
-		}
-		if value, ok := os.LookupEnv(key); ok {
-			return value
-		}
-		return ""
-	})
 }
 
 func evaluateWhen(value string) (bool, error) {

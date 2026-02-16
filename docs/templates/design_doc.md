@@ -88,7 +88,7 @@ sequenceDiagram
 
 ## План выката (Rollout)
 
-* Staging:
+* Production:
 * Canary/gradual rollout:
 * Feature flags:
 * План коммуникаций:

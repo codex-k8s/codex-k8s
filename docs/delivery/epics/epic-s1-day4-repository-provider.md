@@ -28,7 +28,7 @@ approvals:
 - Provider контракты и GitHub adapter в `services/internal/control-plane/**` и/или `libs/go/**`.
 - Staff/private API и UI для CRUD project repositories.
 - Поддержка per-repo `services.yaml` path и шифрование токенов.
-- Smoke evidence: подключение 2+ репозиториев к одному проекту на staging.
+- Smoke evidence: подключение 2+ репозиториев к одному проекту на production.
 
 ## Контекст
 - Почему эпик нужен: core-domain не завершён без реальных repo интеграций.
@@ -67,14 +67,14 @@ approvals:
 ## Критерии приемки эпика
 - В проект можно добавить несколько GitHub репозиториев.
 - Для каждого репо сохраняется индивидуальный `services.yaml` path.
-- Изменения задеплоены и проверены на staging в день реализации.
+- Изменения задеплоены и проверены на production в день реализации.
 
 ## Риски/зависимости
 - Зависимости: корректные scope у `CODEXK8S_GITHUB_PAT`.
 - Риск: ошибки ротации ключей шифрования токенов.
 
 ## План релиза (верхний уровень)
-- Deploy на staging + ручной тест CRUD репозиториев и webhook wiring.
+- Deploy на production + ручной тест CRUD репозиториев и webhook wiring.
 
 ## Апрув
 - request_id: owner-2026-02-06-day4

@@ -1,7 +1,7 @@
 ---
 doc_id: EPC-CK8S-S1-D6
 type: epic
-title: "Epic Day 6: Staging hardening, network controls, observability"
+title: "Epic Day 6: Production hardening, network controls, observability"
 status: completed
 owner_role: EM
 created_at: 2026-02-06
@@ -14,15 +14,15 @@ approvals:
   request_id: "owner-2026-02-06-day6"
 ---
 
-# Epic Day 6: Staging hardening, network controls, observability
+# Epic Day 6: Production hardening, network controls, observability
 
 ## TL;DR
-- Цель эпика: минимально безопасный и наблюдаемый staging для ежедневных релизов.
+- Цель эпика: минимально безопасный и наблюдаемый production для ежедневных релизов.
 - Ключевая ценность: снижение риска регрессий и открытых наружу сервисов.
 - MVP-результат: внешне только `22/80/443`, базовые метрики/логи/алерты, DNS/TLS precheck.
 
 ## Priority
-- `P1` (операционная надёжность staging).
+- `P1` (операционная надёжность production).
 
 ## Ожидаемые артефакты дня
 - DNS preflight и TLS issuance сценарии в `bootstrap/remote/*` и/или deploy scripts.
@@ -37,7 +37,7 @@ approvals:
 ## Scope
 ### In scope
 - Проверка DNS резолва домена до deploy.
-- TLS issuance через cert-manager ClusterIssuer (http-01) для staging domain.
+- TLS issuance через cert-manager ClusterIssuer (http-01) для production domain.
 - Сетевой baseline и firewall профиль.
 - Базовая observability: health endpoints, structured logs, key metrics.
 
@@ -65,12 +65,12 @@ approvals:
 
 ## Критерии приемки эпика
 - До начала раскатки скрипт валидирует DNS и падает при ошибке.
-- TLS сертификат staging домена успешно выпущен и применён в ingress.
+- TLS сертификат production домена успешно выпущен и применён в ingress.
 - Наружу доступны только `22/80/443`.
-- Изменения задеплоены и проверены на staging в день реализации.
+- Изменения задеплоены и проверены на production в день реализации.
 
 ## Риски/зависимости
-- Зависимости: корректная DNS запись на staging IP.
+- Зависимости: корректная DNS запись на production IP.
 - Риск: задержки обновления DNS/propagation.
 
 ## План релиза (верхний уровень)

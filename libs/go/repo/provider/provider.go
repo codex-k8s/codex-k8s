@@ -14,7 +14,7 @@ const (
 
 // WebhookSpec describes how a provider webhook should be configured.
 type WebhookSpec struct {
-	// URL is a public callback URL, e.g. https://staging.codex-k8s.dev/api/v1/webhooks/github.
+	// URL is a public callback URL, e.g. https://platform.codex-k8s.dev/api/v1/webhooks/github.
 	URL string
 	// Secret is the shared secret used to sign payloads.
 	Secret string

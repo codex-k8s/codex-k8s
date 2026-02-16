@@ -43,7 +43,7 @@ approvals:
 
 ## План сред/окружений
 - Dev slots:
-- Staging:
+- Production:
 - Prod:
 
 ## Чек-листы готовности

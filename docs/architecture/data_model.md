@@ -100,7 +100,7 @@ approvals:
 | Field | Type | Nullable | Default | Constraints | Notes |
 |---|---|---:|---|---|---|
 | project_id | uuid | no |  | fk -> projects | ownership project |
-| environment | text | no |  | check not empty | env scope (`dev/staging/prod/...`) |
+| environment | text | no |  | check not empty | env scope (`dev/production/prod/...`) |
 | database_name | text | no |  | pk | global DB identifier |
 | created_at | timestamptz | no | now() |  | |
 | updated_at | timestamptz | no | now() |  | |
@@ -441,7 +441,7 @@ Planned extension (Day6+):
 ## Политика хранения данных
 - Retention: flow_events, agent_sessions.session_json, agent_sessions.codex_cli_session_json и token_usage с ротацией/архивом по сроку.
 - `agent_runs.agent_logs_json` очищается периодическим cleanup loop в `control-plane` для завершённых run старше `CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS` (default: `14`).
-- Архивирование: ежедневный backup БД в staging.
+- Архивирование: ежедневный backup БД в production.
 - PII/комплаенс: email хранится, токены только в шифрованном виде.
 
 Roadmap (Day5+):

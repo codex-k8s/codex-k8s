@@ -199,7 +199,7 @@ approvals:
   - `CODEXK8S_AI_MODEL_GPT_5_3_CODEX_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_2_CODEX_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MAX_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_2_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MINI_LABEL`,
   - `CODEXK8S_AI_REASONING_LOW_LABEL`, `CODEXK8S_AI_REASONING_MEDIUM_LABEL`, `CODEXK8S_AI_REASONING_HIGH_LABEL`, `CODEXK8S_AI_REASONING_EXTRA_HIGH_LABEL`.
 - Для новых `run:*` лейблов vars заводятся заранее до активации соответствующего этапа.
-- Bootstrap синхронизация каталога выполняется скриптом `bootstrap/remote/45_configure_github_repo_ci.sh`.
+- Bootstrap синхронизация каталога выполняется командой `go run ./cmd/codex-bootstrap github-sync`.
 
 ## Аудит и наблюдаемость
 

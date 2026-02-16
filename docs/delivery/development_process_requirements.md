@@ -17,7 +17,7 @@ approvals:
 # Development and Documentation Process Requirements
 
 ## TL;DR
-- Этот документ задаёт обязательный weekly-процесс: планирование спринта, ежедневное выполнение, ежедневный deploy на staging, закрытие спринта.
+- Этот документ задаёт обязательный weekly-процесс: планирование спринта, ежедневное выполнение, ежедневный deploy на production, закрытие спринта.
 - Требования обязательны для разработки и для ведения документации.
 - Любое отклонение от процесса фиксируется явно и согласуется с Owner.
 
@@ -39,7 +39,7 @@ approvals:
 ## Базовые принципы процесса
 - Weekly sprint cadence: каждая неделя начинается формальным kickoff и завершается formal close.
 - Trunk-based delivery: маленькие инкременты, ежедневные merge в `main`.
-- CI/CD discipline: merge только после green pipeline и обязательного deploy в staging.
+- CI/CD discipline: merge только после green pipeline и обязательного deploy в production.
 - Docs-as-code: изменения кода и документации синхронны в одном рабочем цикле.
 - Traceability by default: каждое решение привязано к требованиям и артефактам.
 - Security by default: секреты не хранятся в репозитории, префикс переменных платформы `CODEXK8S_`.
@@ -54,7 +54,7 @@ approvals:
 | SA | Архитектурная и data-model консистентность | `docs/architecture/*.md`, миграционная стратегия |
 | Dev | Реализация задач и технические проверки | код, тесты, миграции, изменения API/контрактов |
 | Reviewer | Предварительное ревью PR до Owner | inline findings в PR + summary для Owner |
-| QA | Ручной smoke/regression на staging, acceptance evidence | test evidence, regression checklist |
+| QA | Ручной smoke/regression на production, acceptance evidence | test evidence, regression checklist |
 | SRE | Bootstrap/deploy/runbook/операционная устойчивость | bootstrap scripts, deploy manifests, runbook |
 | KM | Трассируемость документации и актуальность карты связей | `docs/delivery/issue_map.md`, `docs/delivery/requirements_traceability.md` |
 
@@ -89,13 +89,13 @@ approvals:
 ### 2. Daily Execution (каждый рабочий день спринта)
 - Реализовать задачи текущего дневного эпика.
 - Выполнить merge в `main`.
-- Подтвердить автоматический deploy на staging.
+- Подтвердить автоматический deploy на production.
 - Выполнить ручной smoke-check и зафиксировать результат.
 - Обновить документацию при изменении API/data model/webhook/RBAC/процессов.
 
 Daily gate (must pass):
 - PR/merge только при green CI.
-- Staging deployment успешен.
+- Production deployment успешен.
 - Smoke-check успешен или заведен блокер с решением.
 - Документация синхронизирована.
 
@@ -126,7 +126,7 @@ Daily gate (must pass):
 ## Обязательные quality gates
 - Planning gate: DoR пройден, приоритеты и артефакты на день назначены.
 - Merge gate: green CI + pre-review (`reviewer`) + финальное ревью Owner + синхронная документация.
-- Deploy gate: staging deployment success + ручной smoke.
+- Deploy gate: production deployment success + ручной smoke.
 - Close gate: regression pass + согласованный backlog следующего спринта.
 
 ## Правило разрешения противоречий

@@ -36,6 +36,10 @@ func (a runtimeDeployKubernetesAdapter) WaitForJobComplete(ctx context.Context, 
 	return a.client.WaitForJobComplete(ctx, namespace, name, timeout)
 }
 
+func (a runtimeDeployKubernetesAdapter) GetJobLogs(ctx context.Context, namespace string, name string, tailLines int64) (string, error) {
+	return a.client.GetJobLogs(ctx, namespace, name, tailLines)
+}
+
 func (a runtimeDeployKubernetesAdapter) WaitForDeploymentReady(ctx context.Context, namespace string, name string, timeout time.Duration) error {
 	return a.client.WaitForDeploymentReady(ctx, namespace, name, timeout)
 }

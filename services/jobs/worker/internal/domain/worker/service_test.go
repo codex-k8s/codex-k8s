@@ -132,8 +132,8 @@ func TestTickDeployOnlyRun_PreparesEnvironmentWithoutLaunchingJob(t *testing.T) 
 		"repository":{"full_name":"codex-k8s/codex-k8s"},
 		"runtime":{
 			"mode":"full-env",
-			"target_env":"ai-staging",
-			"namespace":"codex-k8s-ai-staging",
+			"target_env":"production",
+			"namespace":"codex-k8s-prod",
 			"build_ref":"0123456789abcdef0123456789abcdef01234567",
 			"deploy_only":true
 		}
@@ -153,8 +153,8 @@ func TestTickDeployOnlyRun_PreparesEnvironmentWithoutLaunchingJob(t *testing.T) 
 	launcher := &fakeLauncher{states: map[string]JobState{}}
 	deployer := &fakeRuntimePreparer{
 		result: PrepareRunEnvironmentResult{
-			Namespace: "codex-k8s-ai-staging",
-			TargetEnv: "ai-staging",
+			Namespace: "codex-k8s-prod",
+			TargetEnv: "production",
 		},
 	}
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
@@ -184,7 +184,7 @@ func TestTickDeployOnlyRun_PreparesEnvironmentWithoutLaunchingJob(t *testing.T) 
 	if !deployer.prepared[0].DeployOnly {
 		t.Fatal("expected deploy-only runtime deploy params")
 	}
-	if got, want := deployer.prepared[0].Namespace, "codex-k8s-ai-staging"; got != want {
+	if got, want := deployer.prepared[0].Namespace, "codex-k8s-prod"; got != want {
 		t.Fatalf("unexpected deploy namespace: got %q want %q", got, want)
 	}
 	if len(launcher.prepared) != 0 {
@@ -211,7 +211,7 @@ func TestTickDeployOnlyRunningRun_IsReconciledWithoutKubernetesJob(t *testing.T)
 		"repository":{"full_name":"codex-k8s/codex-k8s"},
 		"runtime":{
 			"mode":"full-env",
-			"target_env":"ai-staging",
+			"target_env":"production",
 			"build_ref":"0123456789abcdef0123456789abcdef01234567",
 			"deploy_only":true
 		}
@@ -231,8 +231,8 @@ func TestTickDeployOnlyRunningRun_IsReconciledWithoutKubernetesJob(t *testing.T)
 	launcher := &fakeLauncher{states: map[string]JobState{}, statusErr: context.Canceled}
 	deployer := &fakeRuntimePreparer{
 		result: PrepareRunEnvironmentResult{
-			Namespace: "codex-k8s-ai-staging",
-			TargetEnv: "ai-staging",
+			Namespace: "codex-k8s-prod",
+			TargetEnv: "production",
 		},
 	}
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))

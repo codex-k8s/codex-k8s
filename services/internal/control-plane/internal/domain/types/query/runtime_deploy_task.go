@@ -40,3 +40,19 @@ type RuntimeDeployTaskRenewLeaseParams struct {
 	LeaseOwner string
 	LeaseTTL   string
 }
+
+// RuntimeDeployTaskListFilter describes optional task list filters.
+type RuntimeDeployTaskListFilter struct {
+	Limit     int
+	Status    string
+	TargetEnv string
+}
+
+// RuntimeDeployTaskAppendLogParams appends one log line for a task.
+type RuntimeDeployTaskAppendLogParams struct {
+	RunID    string
+	Stage    string
+	Level    string
+	Message  string
+	MaxLines int
+}

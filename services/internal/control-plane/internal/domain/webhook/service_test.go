@@ -144,7 +144,7 @@ func TestIngestGitHubWebhook_NonTriggerEventsDoNotCreateRun(t *testing.T) {
 	}
 }
 
-func TestIngestGitHubWebhook_PushMain_CreatesDeployOnlyAIStagingRun(t *testing.T) {
+func TestIngestGitHubWebhook_PushMain_CreatesDeployOnlyProductionRun(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
 	events := &inMemoryEventRepo{}
@@ -203,7 +203,7 @@ func TestIngestGitHubWebhook_PushMain_CreatesDeployOnlyAIStagingRun(t *testing.T
 	if got, want := runPayload.Runtime.Source, runtimeModeSourcePushMain; got != want {
 		t.Fatalf("unexpected runtime source: got %q want %q", got, want)
 	}
-	if got, want := runPayload.Runtime.TargetEnv, "ai-staging"; got != want {
+	if got, want := runPayload.Runtime.TargetEnv, "production"; got != want {
 		t.Fatalf("unexpected runtime target env: got %q want %q", got, want)
 	}
 	if runPayload.Runtime.Namespace != "" {
@@ -223,7 +223,7 @@ func TestIngestGitHubWebhook_PushMain_CreatesDeployOnlyAIStagingRun(t *testing.T
 	}
 }
 
-func TestIngestGitHubWebhook_PushMainFork_CreatesDeployOnlyAIStagingRun(t *testing.T) {
+func TestIngestGitHubWebhook_PushMainFork_CreatesDeployOnlyProductionRun(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
 	events := &inMemoryEventRepo{}
@@ -273,7 +273,7 @@ func TestIngestGitHubWebhook_PushMainFork_CreatesDeployOnlyAIStagingRun(t *testi
 	if err := json.Unmarshal(runs.last.RunPayload, &runPayload); err != nil {
 		t.Fatalf("unmarshal run payload: %v", err)
 	}
-	if got, want := runPayload.Runtime.TargetEnv, "ai-staging"; got != want {
+	if got, want := runPayload.Runtime.TargetEnv, "production"; got != want {
 		t.Fatalf("unexpected runtime target env: got %q want %q", got, want)
 	}
 	if runPayload.Runtime.Namespace != "" {

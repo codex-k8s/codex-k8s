@@ -19,8 +19,8 @@ approvals:
 # Delivery Plan: codex-k8s
 
 ## TL;DR
-- Что поставляем: MVP control-plane + staff UI + webhook orchestration + MCP governance + self-improve loop + staging bootstrap/deploy loop.
-- Когда: поэтапно, с ранним staging для ручных тестов.
+- Что поставляем: MVP control-plane + staff UI + webhook orchestration + MCP governance + self-improve loop + production bootstrap/deploy loop.
+- Когда: поэтапно, с ранним production для ручных тестов.
 - Главные риски: bootstrap automation, security/governance hardening, runner stability.
 - Что нужно от Owner: подтверждение deploy-модели и доступов (GitHub fine-grained token/OpenAI key).
 
@@ -78,7 +78,7 @@ approvals:
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
-- Каждый день изменения автоматически задеплоены на staging.
+- Каждый день изменения автоматически задеплоены на production.
 - Каждый день выполнен ручной smoke-check.
 - Каждый день актуализированы документы при изменениях API/data model/webhook/RBAC.
 - Для каждого эпика заполнен `Data model impact` по структуре `docs/templates/data_model.md`.
@@ -86,16 +86,16 @@ approvals:
 
 ## Зависимости
 - Внутренние: Core backend до полноценного UI управления.
-- Внешние: GitHub fine-grained token с нужными правами, рабочий staging сервер Ubuntu 24.04.
+- Внешние: GitHub fine-grained token с нужными правами, рабочий production сервер Ubuntu 24.04.
 
 ## План сред/окружений
 - Dev slots: локальный/кластерный dev для компонентов.
-- Staging: обязателен до расширения функционала.
-- Prod: после стабилизации staging и security review.
+- Production: обязателен до расширения функционала.
+- Prod: после стабилизации production и security review.
 
-## Специальный этап bootstrap staging (обязательный)
+## Специальный этап bootstrap production (обязательный)
 
-Цель этапа: когда уже есть что тестировать вручную, запускать один скрипт с машины разработчика и автоматически поднимать staging окружение.
+Цель этапа: когда уже есть что тестировать вручную, запускать один скрипт с машины разработчика и автоматически поднимать production окружение.
 
 Ожидаемое поведение скрипта:
 - запускается на машине разработчика (текущей) и подключается по SSH к серверу как `root`;
@@ -106,13 +106,13 @@ approvals:
 - разворачивает PostgreSQL и `codex-k8s`;
 - спрашивает внешние креды (`GitHub fine-grained token`, `CODEXK8S_OPENAI_API_KEY`), внутренние секреты генерирует сам;
 - передаёт default `learning_mode` из `bootstrap/host/config.env` (по умолчанию включён, пустое значение = выключен);
-- настраивает GitHub Actions runner в Kubernetes для staging (ARC или эквивалент);
-- подготавливает deploy workflow и необходимые repo secrets/variables.
+- настраивает GitHub webhooks/labels/secrets/variables через API без GitHub Actions runner;
+- запускает self-deploy через control-plane runtime deploy job (build/mirror/apply/cleanup).
 
 ## Чек-листы готовности
 ### Definition of Ready (DoR)
 - [ ] Brief/Constraints/Architecture/ADR согласованы.
-- [ ] Server access для staging подтверждён.
+- [ ] Server access для production подтверждён.
 - [ ] GitHub fine-grained token и OpenAI ключ доступны.
 
 ### Definition of Done (DoD)
@@ -120,7 +120,7 @@ approvals:
 - [ ] Для активного спринта: каждый эпик закрыт по своим acceptance criteria.
 - [ ] Для активного спринта: ежедневный merge -> auto deploy -> smoke check выполнен.
 - [ ] Webhook -> run -> worker -> k8s -> UI цепочка проходит regression.
-- [ ] Learning mode и self-improve mode проверены на staging.
+- [ ] Learning mode и self-improve mode проверены на production.
 - [ ] MCP governance tools (secret/db/feedback) прошли approve/deny regression.
 
 ## Риски и буферы
@@ -129,7 +129,7 @@ approvals:
 
 ## План релиза (верхний уровень)
 - Релизные окна:
-  - staging continuous (auto deploy on push to `main`);
+  - production continuous (auto deploy on push to `main`);
   - production gated (manual dispatch + environment approval).
 - Rollback: возвращение на предыдущий контейнерный тег + DB migration rollback policy.
 
@@ -143,4 +143,4 @@ approvals:
 ## Апрув
 - request_id: owner-2026-02-06-mvp
 - Решение: approved
-- Комментарий: План поставки и условия bootstrap/staging утверждены.
+- Комментарий: План поставки и условия bootstrap/production утверждены.

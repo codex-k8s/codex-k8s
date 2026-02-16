@@ -4,7 +4,7 @@ import "testing"
 
 func TestLoadConfig_Defaults(t *testing.T) {
 	t.Setenv("CODEXK8S_CONTROL_PLANE_GRPC_TARGET", "codex-k8s-control-plane:9090")
-	t.Setenv("CODEXK8S_PUBLIC_BASE_URL", "https://staging.example.com")
+	t.Setenv("CODEXK8S_PUBLIC_BASE_URL", "https://platform.codex-k8s.dev")
 	t.Setenv("CODEXK8S_GITHUB_OAUTH_CLIENT_ID", "client-id")
 	t.Setenv("CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET", "client-secret")
 	t.Setenv("CODEXK8S_JWT_SIGNING_KEY", "jwt-key")
@@ -34,7 +34,7 @@ func TestLoadConfig_Defaults(t *testing.T) {
 
 func TestLoadConfig_MissingRequired(t *testing.T) {
 	t.Setenv("CODEXK8S_CONTROL_PLANE_GRPC_TARGET", "codex-k8s-control-plane:9090")
-	t.Setenv("CODEXK8S_PUBLIC_BASE_URL", "https://staging.example.com")
+	t.Setenv("CODEXK8S_PUBLIC_BASE_URL", "https://platform.codex-k8s.dev")
 	t.Setenv("CODEXK8S_GITHUB_OAUTH_CLIENT_ID", "client-id")
 	t.Setenv("CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET", "client-secret")
 	t.Setenv("CODEXK8S_JWT_SIGNING_KEY", "jwt-key")

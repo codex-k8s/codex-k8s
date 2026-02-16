@@ -25,18 +25,19 @@
 - Имена platform env/secrets/CI variables унифицированы с префиксом `CODEXK8S_`;
   имена без префикса `CODEXK8S_` не добавляются.
 - Kubernetes манифесты не “вшиты” heredoc’ами в bash: шаблоны лежат в `deploy/base/**`,
-  а `deploy/scripts/**` только рендерит и применяет их.
+  а рендер/применение выполняются Go-рантаймом (`cmd/codex-bootstrap`, `runtime-deploy`).
 - Для runtime-токенов дефолтные TTL не меньше времени жизни соответствующих контейнеров;
   для MCP baseline TTL не ниже `24h`.
 - Для multi-service deploy у каждого deployable-сервиса есть собственные image vars/repositories
   (шаблон нейминга: `CODEXK8S_<SERVICE>_IMAGE` и `CODEXK8S_<SERVICE>_INTERNAL_IMAGE_REPOSITORY`).
 - При изменении состава deployable-сервисов синхронно обновлены:
-  `.github/workflows/build_internal_image.yml`, `deploy/scripts/build_internal_image.sh`,
-  `.github/workflows/ai_staging_deploy.yml`, `deploy/scripts/deploy_staging.sh`,
-  bootstrap-синхронизация vars (`bootstrap/host/config.env.example`,
-  `bootstrap/host/bootstrap_remote_staging.sh`, `bootstrap/remote/45_configure_github_repo_ci.sh`,
-  `bootstrap/remote/55_setup_internal_registry_and_build_image.sh`, `bootstrap/remote/60_deploy_codex_k8s.sh`).
-- Порядок выкладки staging задан явно и соблюдён:
+  runtime deploy и build orchestration (`services/internal/control-plane/internal/domain/runtimedeploy/service_build.go`,
+  `services/internal/control-plane/internal/domain/runtimedeploy/service_reconcile.go`,
+  `deploy/base/kaniko/kaniko-build-job.yaml.tpl`, `deploy/base/kaniko/mirror-image-job.yaml.tpl`,
+  `services/internal/control-plane/cmd/runtime-deploy/main.go`),
+  bootstrap sync (`bootstrap/host/config.env.example`, `bootstrap/host/bootstrap_remote_production.sh`,
+  `cmd/codex-bootstrap/internal/cli/github_sync.go`, `cmd/codex-bootstrap/internal/cli/sync_secrets.go`).
+- Порядок выкладки production задан явно и соблюдён:
   stateful dependencies -> migrations -> internal domain services -> edge services -> frontend;
   ожидание зависимостей выполнено через `initContainers` в Kubernetes-манифестах.
 - Вынос общего кода в `libs/*` оправдан (>= 2 потребителя); нет “god-lib”.

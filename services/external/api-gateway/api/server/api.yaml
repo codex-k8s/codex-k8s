@@ -5,7 +5,7 @@ info:
   description: |
     External webhook + staff API contract for codex-k8s.
 servers:
-  - url: https://staging.codex-k8s.dev
+  - url: https://platform.codex-k8s.dev
 paths:
   /api/v1/webhooks/github:
     post:
@@ -469,6 +469,141 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/staff/runtime-deploy/tasks:
+    get:
+      summary: List runtime deploy tasks
+      operationId: listRuntimeDeployTasks
+      tags: [staff-runtime-deploy]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, running, succeeded, failed]
+        - in: query
+          name: target_env
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Runtime deploy tasks list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimeDeployTaskItemsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/staff/runtime-deploy/tasks/{run_id}:
+    get:
+      summary: Get runtime deploy task details
+      operationId: getRuntimeDeployTask
+      tags: [staff-runtime-deploy]
+      parameters:
+        - $ref: "#/components/parameters/RunID"
+      responses:
+        "200":
+          description: Runtime deploy task details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimeDeployTask"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/staff/runtime-deploy/images:
+    get:
+      summary: List internal registry images
+      operationId: listRegistryImages
+      tags: [staff-runtime-deploy]
+      parameters:
+        - in: query
+          name: repository
+          schema:
+            type: string
+        - in: query
+          name: limit_repositories
+          schema:
+            type: integer
+            format: int32
+        - in: query
+          name: limit_tags
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Registry image repositories list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistryImageRepositoryItemsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    delete:
+      summary: Delete one internal registry image tag
+      operationId: deleteRegistryImageTag
+      tags: [staff-runtime-deploy]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteRegistryImageTagRequest"
+      responses:
+        "200":
+          description: Registry image tag delete result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistryImageDeleteResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/staff/runtime-deploy/images/cleanup:
+    post:
+      summary: Cleanup stale internal registry image tags
+      operationId: cleanupRegistryImages
+      tags: [staff-runtime-deploy]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CleanupRegistryImagesRequest"
+      responses:
+        "200":
+          description: Registry cleanup execution result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CleanupRegistryImagesResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /api/v1/staff/users:
     get:
@@ -1110,6 +1245,185 @@ components:
           items:
             type: string
 
+    RuntimeDeployTaskLog:
+      type: object
+      additionalProperties: false
+      required: [stage, level, message]
+      properties:
+        stage:
+          type: string
+        level:
+          type: string
+          enum: [info, warn, error]
+        message:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    RuntimeDeployTask:
+      type: object
+      additionalProperties: false
+      required: [run_id, runtime_mode, namespace, target_env, slot_no, repository_full_name, services_yaml_path, build_ref, deploy_only, status, attempts, logs]
+      properties:
+        run_id:
+          type: string
+        runtime_mode:
+          type: string
+        namespace:
+          type: string
+        target_env:
+          type: string
+        slot_no:
+          type: integer
+          format: int32
+        repository_full_name:
+          type: string
+        services_yaml_path:
+          type: string
+        build_ref:
+          type: string
+        deploy_only:
+          type: boolean
+        status:
+          type: string
+          enum: [pending, running, succeeded, failed]
+        lease_owner:
+          type: string
+          nullable: true
+        lease_until:
+          type: string
+          format: date-time
+          nullable: true
+        attempts:
+          type: integer
+          format: int32
+        last_error:
+          type: string
+          nullable: true
+        result_namespace:
+          type: string
+          nullable: true
+        result_target_env:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        finished_at:
+          type: string
+          format: date-time
+          nullable: true
+        logs:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuntimeDeployTaskLog"
+
+    RegistryImageTag:
+      type: object
+      additionalProperties: false
+      required: [tag, digest, config_size_bytes]
+      properties:
+        tag:
+          type: string
+        digest:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        config_size_bytes:
+          type: integer
+          format: int64
+
+    RegistryImageRepository:
+      type: object
+      additionalProperties: false
+      required: [repository, tag_count, tags]
+      properties:
+        repository:
+          type: string
+        tag_count:
+          type: integer
+          format: int32
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegistryImageTag"
+
+    DeleteRegistryImageTagRequest:
+      type: object
+      additionalProperties: false
+      required: [repository, tag]
+      properties:
+        repository:
+          type: string
+        tag:
+          type: string
+
+    RegistryImageDeleteResult:
+      type: object
+      additionalProperties: false
+      required: [repository, tag, digest, deleted]
+      properties:
+        repository:
+          type: string
+        tag:
+          type: string
+        digest:
+          type: string
+        deleted:
+          type: boolean
+
+    CleanupRegistryImagesRequest:
+      type: object
+      additionalProperties: false
+      required: [dry_run]
+      properties:
+        repository_prefix:
+          type: string
+        limit_repositories:
+          type: integer
+          format: int32
+        keep_tags:
+          type: integer
+          format: int32
+        dry_run:
+          type: boolean
+
+    CleanupRegistryImagesResponse:
+      type: object
+      additionalProperties: false
+      required: [repositories_scanned, tags_deleted, tags_skipped, deleted, skipped]
+      properties:
+        repositories_scanned:
+          type: integer
+          format: int32
+        tags_deleted:
+          type: integer
+          format: int32
+        tags_skipped:
+          type: integer
+          format: int32
+        deleted:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegistryImageDeleteResult"
+        skipped:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegistryImageDeleteResult"
+
     LearningFeedback:
       type: object
       additionalProperties: false
@@ -1221,6 +1535,26 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Run"
+
+    RuntimeDeployTaskItemsResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuntimeDeployTask"
+
+    RegistryImageRepositoryItemsResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegistryImageRepository"
 
     ApprovalRequestItemsResponse:
       type: object

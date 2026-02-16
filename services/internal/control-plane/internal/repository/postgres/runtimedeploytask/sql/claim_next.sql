@@ -44,4 +44,5 @@ RETURNING
     t.created_at,
     t.updated_at,
     t.started_at,
-    t.finished_at;
+    t.finished_at,
+    COALESCE(t.logs_json, '[]'::jsonb) AS logs_json;

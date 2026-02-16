@@ -17,7 +17,7 @@ approvals:
 # Roadmap: codex-k8s
 
 ## TL;DR
-- Q1: foundation + core backend + bootstrap staging.
+- Q1: foundation + core backend + bootstrap production.
 - Q2: dogfooding, approval/audit hardening и MVP completion (`run:self-improve`, MCP control tools, runtime debug UI).
 - Q3: production readiness + масштабирование governance и knowledge-платформы.
 - Q4: расширяемость custom-агентов, A2A swarm и периодические автономные циклы улучшения.
@@ -30,7 +30,7 @@ approvals:
 ## Roadmap (high-level)
 | Период | Инициатива | Цель | Метрики | Статус |
 |---|---|---|---|---|
-| Q1 | MVP core + staging bootstrap | запустить рабочий staging и ручные тесты | one-command bootstrap, green deploy from main | planned |
+| Q1 | MVP core + production bootstrap | запустить рабочий production и ручные тесты | one-command bootstrap, green deploy from main | planned |
 | Q2 | Dogfooding + MVP completion | довести `run:*` контур до полного stage-цикла, добавить MCP control tools и `run:self-improve` | >=95% run:dev и >=85% self-improve проходят без ручного обхода policy | in-progress |
 | Q3 | Stage coverage + production readiness | усилить release/postdeploy gate, стабилизировать governance, подготовить prod hardening | prod runbook + approval latency SLO + full stage traceability | planned |
 | Q4 | Extensibility and autonomy | custom-агенты, A2A swarm, периодические автозапуски улучшений/проверок | configurable agent factory + scheduled autonomous runs | planned |

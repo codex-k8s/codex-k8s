@@ -88,16 +88,16 @@ approvals:
 | NFR-003 | Надёжность данных: `agent_runs` + `flow_events` являются базовым event/state контуром на MVP (без отдельного event_outbox). |
 | NFR-004 | Производительность поиска знаний: базовый размер эмбеддинга `vector(3072)` в `pgvector`. |
 | NFR-005 | Готовность к росту чтения: минимум одна asynchronous streaming read replica на MVP, с архитектурным заделом на 2+ replica и sync/quorum без изменений приложения. |
-| NFR-006 | Развёртывание staging: выполняется bootstrap-скриптом с хоста разработчика по SSH на Ubuntu 24.04, включая настройку зависимостей и окружения. |
-| NFR-007 | CI/CD для платформы: staging deploy автоматический на push в `main`; production deploy отдельным вручную запускаемым workflow с approval gate. |
+| NFR-006 | Развёртывание production: выполняется bootstrap-скриптом с хоста разработчика по SSH на Ubuntu 24.04, включая настройку зависимостей и окружения. |
+| NFR-007 | CI/CD для платформы: production deploy выполняется webhook-driven через control-plane runtime deploy при push в `main`, без GitHub Actions build/deploy workflows. |
 | NFR-008 | Storage профиль MVP: `local-path`; переход на Longhorn отложен на следующий этап. |
 | NFR-009 | Для agent-runs применяются управляемые лимиты параллелизма по ролям/проектам, чтобы избежать деградации кластера и гонок ресурсов. |
 | NFR-010 | Любое stage/label действие трассируется с actor/correlation/approval state и доступно для аудита через БД и staff UI/API. |
-| NFR-011 | Workflow-условия по лейблам используют repository variables (`vars.*`) вместо строковых литералов для предсказуемой переконфигурации. |
+| NFR-011 | Каталог label/trigger параметров хранится в repository variables (`CODEXK8S_*`) и синхронизируется в runtime orchestration без строковых литералов в коде. |
 | NFR-012 | Пока агент ожидает ответ от MCP-сервера, timeout-kill pod/run не применяется; таймер выполнения должен быть paused для этого wait-state. |
 | NFR-013 | Снимок `codex-cli` сессии для resumable run должен храниться надёжно и быть доступен для восстановления после перезапуска worker/pod. |
 | NFR-014 | OpenAPI codegen должен быть воспроизводимым в CI: изменения спецификаций сопровождаются регенерацией backend/frontend артефактов и проверкой их актуальности. |
-| NFR-015 | Для live/historical логов и wait-очереди в staff UI latency обновления должна быть достаточно низкой для операционной диагностики (целевой p95 UI refresh <= 5s на staging). |
+| NFR-015 | Для live/historical логов и wait-очереди в staff UI latency обновления должна быть достаточно низкой для операционной диагностики (целевой p95 UI refresh <= 5s на production). |
 | NFR-016 | MCP control tools должны быть идемпотентны и безопасны при retries/duplicate callbacks; secret material не должен попадать в model-visible output. |
 | NFR-017 | Контур self-improve должен быть воспроизводим: одинаковый входной набор (логи/комментарии/артефакты) приводит к детерминированному diff-предложению в пределах версии шаблонов и policy. |
 | NFR-018 | Полный stage-flow должен сохранять консистентность переходов и запрет недопустимых шагов даже при конкурирующих label-событиях. |
@@ -114,7 +114,7 @@ approvals:
 | OpenAI account mode | Production account подключается сразу. |
 | Embedding size | `3072`. |
 | Event outbox | Не вводится на MVP. |
-| Runner scale | Локально: 1 persistent runner; staging/prod при наличии домена: autoscaled set. |
+| Runner scale | Локально: 1 persistent runner; production/prod при наличии домена: autoscaled set. |
 | Storage during bootstrap | `local-path` на MVP, Longhorn позже. |
 | Learning mode default | Управляется через `bootstrap/host/config.env`; в шаблоне включён по умолчанию, пустое значение трактуется как выключено. |
 | MVP completion scope | В MVP входят S2 Day6/Day7 + Sprint S3 Day1..Day12 (full stage labels, MCP control tools, `run:self-improve`, staff debug observability, declarative full-env deploy и Vuetify staff-console redesign). |
@@ -135,10 +135,10 @@ approvals:
     - ресурсы: namespaces/configmaps/secrets/deployments/pods+logs/jobs+logs/pvc;
     - YAML view/edit через Monaco Editor;
     - safety guardrails:
-      - в `ai-staging`/`prod` платформенные ресурсы помечаются `app.kubernetes.io/part-of=codex-k8s` (критерий для UI/guardrails и backend policy);
+      - в `production`/`prod` платформенные ресурсы помечаются `app.kubernetes.io/part-of=codex-k8s` (критерий для UI/guardrails и backend policy);
       - в `ai` (ai-slots) при dogfooding платформа может разворачиваться без `app.kubernetes.io/part-of=codex-k8s`, чтобы UI позволял тестировать действия над ресурсами самой платформы (в т.ч. destructive через dry-run);
       - ресурсы с `app.kubernetes.io/part-of=codex-k8s` нельзя удалять (UI и backend policy);
-      - `ai-staging`/`prod` — строго view-only для ресурсов с `app.kubernetes.io/part-of=codex-k8s`;
+      - `production`/`prod` — строго view-only для ресурсов с `app.kubernetes.io/part-of=codex-k8s`;
       - ai-slots — destructive действия только dry-run (кнопки есть для dogfooding/debug, реальное действие не выполняется).
   - Agents + prompt templates:
     - управление настройками агента;

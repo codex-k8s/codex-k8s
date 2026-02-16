@@ -17,8 +17,8 @@ func TestLoadConfigDefaults(t *testing.T) {
 	if cfg.PollInterval != "5s" {
 		t.Fatalf("expected default poll interval 5s, got %s", cfg.PollInterval)
 	}
-	if cfg.K8sNamespace != "codex-k8s-ai-staging" {
-		t.Fatalf("expected default namespace codex-k8s-ai-staging, got %s", cfg.K8sNamespace)
+	if cfg.K8sNamespace != "codex-k8s-prod" {
+		t.Fatalf("expected default namespace codex-k8s-prod, got %s", cfg.K8sNamespace)
 	}
 	if cfg.JobImage != "busybox:1.36" {
 		t.Fatalf("expected default job image busybox:1.36, got %s", cfg.JobImage)

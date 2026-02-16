@@ -48,7 +48,7 @@ func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[
 
 	targetNamespace := strings.TrimSpace(namespace)
 	if targetNamespace != "" {
-		vars["CODEXK8S_STAGING_NAMESPACE"] = targetNamespace
+		vars["CODEXK8S_PRODUCTION_NAMESPACE"] = targetNamespace
 		vars["CODEXK8S_WORKER_K8S_NAMESPACE"] = targetNamespace
 		if strings.TrimSpace(vars["CODEXK8S_CONTROL_PLANE_GRPC_TARGET"]) == "" {
 			vars["CODEXK8S_CONTROL_PLANE_GRPC_TARGET"] = fmt.Sprintf("codex-k8s-control-plane.%s.svc.cluster.local:9090", targetNamespace)
@@ -95,7 +95,7 @@ func defaultHotReloadFlag(targetEnv string) string {
 
 func defaultPlatformDeploymentReplicas(targetEnv string) string {
 	switch strings.ToLower(strings.TrimSpace(targetEnv)) {
-	case "ai-staging", "production", "prod":
+	case "production", "prod":
 		return "2"
 	default:
 		return "1"

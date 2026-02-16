@@ -14,6 +14,8 @@ type (
 	MarkSucceededParams = querytypes.RuntimeDeployTaskMarkSucceededParams
 	MarkFailedParams    = querytypes.RuntimeDeployTaskMarkFailedParams
 	RenewLeaseParams    = querytypes.RuntimeDeployTaskRenewLeaseParams
+	ListFilter          = querytypes.RuntimeDeployTaskListFilter
+	AppendLogParams     = querytypes.RuntimeDeployTaskAppendLogParams
 )
 
 // Repository persists runtime deployment desired and actual state.
@@ -30,4 +32,8 @@ type Repository interface {
 	MarkFailed(ctx context.Context, params MarkFailedParams) (bool, error)
 	// RenewLease extends active lease for one running task.
 	RenewLease(ctx context.Context, params RenewLeaseParams) (bool, error)
+	// ListRecent returns recent runtime deploy tasks ordered by update time.
+	ListRecent(ctx context.Context, filter ListFilter) ([]Task, error)
+	// AppendLog appends one task log line and keeps latest MaxLines entries.
+	AppendLog(ctx context.Context, params AppendLogParams) error
 }

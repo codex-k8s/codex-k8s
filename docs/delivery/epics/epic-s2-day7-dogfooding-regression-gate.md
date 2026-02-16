@@ -51,10 +51,10 @@ approvals:
 
 ### Out of scope
 - Полный e2e regression по всем `run:*` стадиям до их реализации в Sprint S3.
-- Production rollout; проверка ограничивается staging/dev dogfooding средой.
+- Production rollout; проверка ограничивается production/dev dogfooding средой.
 
 ## Критерии приемки эпика
-- Regression matrix и evidence опубликованы и воспроизводимы на staging.
+- Regression matrix и evidence опубликованы и воспроизводимы на production.
 - Нет открытых `P0` блокеров для старта Sprint S3.
 - Зафиксирован go/no-go протокол и список рисков/долгов с owner decision.
 
@@ -65,7 +65,7 @@ approvals:
   - по данным `agent_runs`: `run:dev` (`succeeded=9`, `failed=17`) и `run:dev:revise` (`succeeded=3`);
   - по данным `flow_events`: `run.pr.created=5`, `run.pr.updated=3`.
 - Подтверждена observability и runtime hygiene:
-  - staging deploy на `main` успешен (workflow run `21985095587`);
+  - production deploy на `main` успешен (workflow run `21985095587`);
   - на момент gate отсутствуют активные run namespaces (`codex-k8s.dev/namespace-purpose=run`);
   - `run:debug` режим фиксируется аудитом (`run.namespace.cleanup_skipped=5`).
 - Подтверждена регрессия label-конфликтов и приоритета config labels тестами worker-домена.

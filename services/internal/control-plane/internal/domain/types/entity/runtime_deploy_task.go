@@ -34,6 +34,15 @@ type RuntimeDeployTask struct {
 	UpdatedAt          time.Time
 	StartedAt          time.Time
 	FinishedAt         time.Time
+	Logs               []RuntimeDeployTaskLogEntry
+}
+
+// RuntimeDeployTaskLogEntry stores one build/deploy task log line.
+type RuntimeDeployTaskLogEntry struct {
+	Stage     string
+	Level     string
+	Message   string
+	CreatedAt time.Time
 }
 
 // IsTerminal returns true when task reached a terminal state.

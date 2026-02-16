@@ -57,7 +57,7 @@ type Config struct {
 	// ServicesConfigPath points to services.yaml used for webhook runtime policy.
 	ServicesConfigPath string `env:"CODEXK8S_SERVICES_CONFIG_PATH" envDefault:"services.yaml"`
 	// ServicesConfigEnv selects environment context when rendering services.yaml.
-	ServicesConfigEnv string `env:"CODEXK8S_SERVICES_CONFIG_ENV" envDefault:"ai-staging"`
+	ServicesConfigEnv string `env:"CODEXK8S_SERVICES_CONFIG_ENV" envDefault:"production"`
 	// RepositoryRoot points to repository root used for services.yaml manifests and build templates.
 	RepositoryRoot string `env:"CODEXK8S_REPOSITORY_ROOT" envDefault:"."`
 	// RuntimeDeployRolloutTimeout controls readiness wait timeout for applied workloads.
@@ -74,6 +74,14 @@ type Config struct {
 	RuntimeDeployWorkerID string `env:"CODEXK8S_RUNTIME_DEPLOY_WORKER_ID"`
 	// RuntimeDeployFieldManager is a server-side apply field manager name.
 	RuntimeDeployFieldManager string `env:"CODEXK8S_RUNTIME_DEPLOY_FIELD_MANAGER" envDefault:"codex-k8s-control-plane"`
+	// InternalRegistryHost points to internal registry host:port for image management APIs.
+	InternalRegistryHost string `env:"CODEXK8S_INTERNAL_REGISTRY_HOST" envDefault:"codex-k8s-registry:5000"`
+	// InternalRegistryScheme sets registry URL scheme.
+	InternalRegistryScheme string `env:"CODEXK8S_INTERNAL_REGISTRY_SCHEME" envDefault:"http"`
+	// RegistryHTTPTimeout controls timeout for internal registry API calls.
+	RegistryHTTPTimeout string `env:"CODEXK8S_REGISTRY_HTTP_TIMEOUT" envDefault:"15s"`
+	// RegistryCleanupKeepTags controls default keep policy for registry cleanup.
+	RegistryCleanupKeepTags int `env:"CODEXK8S_REGISTRY_CLEANUP_KEEP_TAGS" envDefault:"5"`
 	// GitHubPAT is platform-scoped GitHub token used for repository/project management paths.
 	GitHubPAT string `env:"CODEXK8S_GITHUB_PAT"`
 	// GitHubRepo is the platform repository (owner/name) used for bootstrap seeding and webhook-driven dogfooding.
@@ -121,7 +129,7 @@ type Config struct {
 	// ProjectDBAdminDatabase is admin database name for lifecycle connection.
 	ProjectDBAdminDatabase string `env:"CODEXK8S_PROJECT_DB_ADMIN_DATABASE" envDefault:"postgres"`
 	// ProjectDBLifecycleAllowedEnvs contains allowed environment names for MCP database lifecycle tool.
-	ProjectDBLifecycleAllowedEnvs []string `env:"CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS" envDefault:"dev,staging,ai-staging,prod"`
+	ProjectDBLifecycleAllowedEnvs []string `env:"CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS" envDefault:"dev,production,prod"`
 }
 
 func (c Config) LearningModeDefaultBool() (bool, error) {

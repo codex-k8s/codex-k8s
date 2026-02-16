@@ -14,7 +14,7 @@
   - `services/jobs/agent-runner/README.md`;
   - `services/jobs/worker/README.md`;
   - `services/staff/web-console/README.md`.
-- Временные правила текущего ручного dev/staging цикла (до полного dogfooding через `run:dev`) см. `.local/agents-temp-dev-rules.md`. Править `.local/agents-temp-dev-rules.md` строго запрещено, если не стоит явная задача на изменение временных правил.
+- Временные правила текущего ручного dev/production цикла (до полного dogfooding через `run:dev`) см. `.local/agents-temp-dev-rules.md`. Править `.local/agents-temp-dev-rules.md` строго запрещено, если не стоит явная задача на изменение временных правил.
 - Для Go-изменений обязательно исполнять требования из `docs/design-guidelines/go/**.md`, как до правок, так и перед подготовкой PR.
 - Для frontend-изменений обязательно исполнять требования из `docs/design-guidelines/vue/**.md`.
 - Для любых изменений читать `docs/design-guidelines/common/**.md`, который содержит общие требования проектирования для всех частей системы и языков программирования.
@@ -58,7 +58,7 @@
 | Архитектура и модель данных | `docs/architecture/c4_context.md`, `docs/architecture/c4_container.md`, `docs/architecture/api_contract.md`, `docs/architecture/data_model.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/prompt_templates_policy.md` |
 | Delivery/sprint/epics | `docs/delivery/development_process_requirements.md`, `docs/delivery/delivery_plan.md`, `docs/delivery/sprint_s*.md`, `docs/delivery/epic_s*.md`, `docs/delivery/epics/*.md` |
 | Трассируемость | `docs/delivery/requirements_traceability.md`, `docs/delivery/issue_map.md`, `docs/delivery/sprint_s*.md`, `docs/delivery/epic_s*.md` |
-| Ops и staging проверки | `.local/agents-temp-dev-rules.md`, `docs/ops/staging_runbook.md` |
+| Ops и production проверки | `.local/agents-temp-dev-rules.md`, `docs/ops/production_runbook.md` |
 
 - Уточнение для agent-run pod: файл `.local/agents-temp-dev-rules.md` может отсутствовать/быть недоступен в runtime-контейнере. В этом случае не блокируй выполнение задачи, а используй `AGENTS.md`, `docs/design-guidelines/**` и релевантные `docs/product/**`, `docs/architecture/**`, `docs/delivery/**` как источник правил.
 
@@ -86,7 +86,7 @@
   - при любом изменении codegen-охвата (новый сервис/app или изменение путей/целей генерации) обязательно синхронно обновлять:
     - `Makefile` (`gen-openapi-*`);
     - `tools/codegen/**`;
-    - `.github/workflows/contracts_codegen_check.yml`;
+    - `deploy/base/codex-k8s/codegen-check-job.yaml.tpl`;
     - `docs/design-guidelines/go/code_generation.md`.
 - Для HTTP DTO размещать модели и кастеры в `internal/transport/http/{models,casters}` (или эквивалентно по протоколу в рамках сервиса).
 - Доменные типы размещать в `internal/domain/types/{entity,value,enum,query,mixin}`; не объявлять доменные модели ad-hoc в больших service/handler файлах.
@@ -114,15 +114,15 @@
 
 - В монорепо у каждого Go-сервиса собственный Dockerfile в `services/<zone>/<service>/Dockerfile`.
 - У каждого frontend-сервиса обязателен `services/<zone>/<service>/Dockerfile` с минимум двумя target:
-  - `dev` (staging/dev runtime);
+  - `dev` (локальный/slot runtime);
   - `prod` (runtime на веб-сервере, например `nginx`, со статическим бандлом).
 - Для каждого frontend-сервиса обязателен отдельный манифест в `deploy/base/<service>/*.yaml.tpl`.
 - Раздутый “общий” Dockerfile для нескольких сервисов не используется как основной путь сборки/deploy.
-- Для staging/CI обязательны раздельные image vars и image repositories на каждый deployable-сервис:
+- Для production/CI обязательны раздельные image vars и image repositories на каждый deployable-сервис:
   - шаблон: `CODEXK8S_<SERVICE>_IMAGE`;
   - шаблон: `CODEXK8S_<SERVICE>_INTERNAL_IMAGE_REPOSITORY`.
 
-## Порядок выкладки staging (обязателен)
+## Порядок выкладки production (обязателен)
 
 - Применяется последовательность:
   `stateful dependencies -> migrations -> internal domain services -> edge services -> frontend`.
@@ -178,38 +178,27 @@
 - Обновить документацию, если меняется поведение API, webhook-процессы,
   модель данных, RBAC, формат `services.yaml` или MCP-контракты.
 
-### CI/CD staging для `codex/dev` (важно)
+### Delivery в production (важно)
 
-- Для ветки `codex/dev` билд и деплой идут **в одном workflow**:
-  - `.github/workflows/build_internal_image.yml`
-  - после matrix build автоматически запускается job:
-    `Deploy codex-k8s to ai-staging (after build on codex/dev)`.
-- Отдельный workflow `.github/workflows/ai_staging_deploy.yml` автотриггерится от `workflow_run` только для `main` и для `codex/dev` обычно не нужен (только ручной `workflow_dispatch` при необходимости).
+- GitHub Actions workflows для build/deploy удалены.
+- Сборка/деплой выполняются внутри Kubernetes через control-plane и служебные job.
+- Проверка статуса выполняется через Kubernetes объекты, а не через `gh run`.
 
 ### Как правильно проверять статус
 
 ```bash
 source bootstrap/host/config.env
-export GH_TOKEN="$CODEXK8S_GITHUB_PAT"
 
-1. Статус workflow run:
+1. Статус pod/deploy/job в production namespace:
 
-gh run view -R "$CODEXK8S_GITHUB_REPO" <run_id> \
-  --json workflowName,status,conclusion,headBranch,headSha,url
+kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" get pods,deploy,job -o wide
 
-2. Статус всех job в run:
+2. Логи основного control-plane и worker:
 
-gh run view -R "$CODEXK8S_GITHUB_REPO" <run_id> --json jobs \
-  | jq -r '.jobs[] | [.databaseId,.name,.status,.conclusion] | @tsv'
+kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s-control-plane --tail=200
+kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s-worker --tail=200
 
-3. Статус конкретной job (самый надежный способ):
+3. Логи конкретной build/deploy job:
 
-gh api repos/codex-k8s/codex-k8s/actions/jobs/<job_id> \
-  | jq -r '.name,.status,.conclusion'
-
-4. Логи конкретной job (только после завершения job):
-
-gh run view -R "$CODEXK8S_GITHUB_REPO" <run_id> --job <job_id> --log
-
-- Если job in_progress, команда логов вернет ошибку — это нормальное поведение.
+kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs job/<job_name> --all-containers=true --tail=200
 ```

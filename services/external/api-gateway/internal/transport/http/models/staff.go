@@ -43,6 +43,65 @@ type RunLogs struct {
 	TailLines    []string `json:"tail_lines"`
 }
 
+type RuntimeDeployTaskLog struct {
+	Stage     string  `json:"stage"`
+	Level     string  `json:"level"`
+	Message   string  `json:"message"`
+	CreatedAt *string `json:"created_at"`
+}
+
+type RuntimeDeployTask struct {
+	RunID              string                 `json:"run_id"`
+	RuntimeMode        string                 `json:"runtime_mode"`
+	Namespace          string                 `json:"namespace"`
+	TargetEnv          string                 `json:"target_env"`
+	SlotNo             int32                  `json:"slot_no"`
+	RepositoryFullName string                 `json:"repository_full_name"`
+	ServicesYAMLPath   string                 `json:"services_yaml_path"`
+	BuildRef           string                 `json:"build_ref"`
+	DeployOnly         bool                   `json:"deploy_only"`
+	Status             string                 `json:"status"`
+	LeaseOwner         *string                `json:"lease_owner"`
+	LeaseUntil         *string                `json:"lease_until"`
+	Attempts           int32                  `json:"attempts"`
+	LastError          *string                `json:"last_error"`
+	ResultNamespace    *string                `json:"result_namespace"`
+	ResultTargetEnv    *string                `json:"result_target_env"`
+	CreatedAt          *string                `json:"created_at"`
+	UpdatedAt          *string                `json:"updated_at"`
+	StartedAt          *string                `json:"started_at"`
+	FinishedAt         *string                `json:"finished_at"`
+	Logs               []RuntimeDeployTaskLog `json:"logs"`
+}
+
+type RegistryImageTag struct {
+	Tag             string  `json:"tag"`
+	Digest          string  `json:"digest"`
+	CreatedAt       *string `json:"created_at"`
+	ConfigSizeBytes int64   `json:"config_size_bytes"`
+}
+
+type RegistryImageRepository struct {
+	Repository string             `json:"repository"`
+	TagCount   int32              `json:"tag_count"`
+	Tags       []RegistryImageTag `json:"tags"`
+}
+
+type RegistryImageDeleteResult struct {
+	Repository string `json:"repository"`
+	Tag        string `json:"tag"`
+	Digest     string `json:"digest"`
+	Deleted    bool   `json:"deleted"`
+}
+
+type CleanupRegistryImagesResponse struct {
+	RepositoriesScanned int32                       `json:"repositories_scanned"`
+	TagsDeleted         int32                       `json:"tags_deleted"`
+	TagsSkipped         int32                       `json:"tags_skipped"`
+	Deleted             []RegistryImageDeleteResult `json:"deleted"`
+	Skipped             []RegistryImageDeleteResult `json:"skipped"`
+}
+
 type ApprovalRequest struct {
 	ID            int64   `json:"id"`
 	CorrelationID string  `json:"correlation_id"`

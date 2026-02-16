@@ -26,3 +26,17 @@ type runLogsArg struct {
 	runID     string
 	tailLines int32
 }
+
+// runtimeDeployListArg keeps filters for runtime deploy tasks list endpoint.
+type runtimeDeployListArg struct {
+	limit     int32
+	status    string
+	targetEnv string
+}
+
+// registryImagesListArg keeps list filters for registry images endpoint.
+type registryImagesListArg struct {
+	repository        string
+	limitRepositories int32
+	limitTags         int32
+}

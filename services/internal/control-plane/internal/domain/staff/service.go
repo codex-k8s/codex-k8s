@@ -12,8 +12,10 @@ import (
 	projectrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/project"
 	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projectmember"
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
+	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/staffrun"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
+	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 
 	"github.com/google/uuid"
@@ -46,10 +48,18 @@ type Service struct {
 	repos    repocfgrepo.Repository
 	feedback learningfeedbackrepo.Repository
 	runs     staffrunrepo.Repository
+	tasks    runtimedeploytaskrepo.Repository
+	images   registryImageService
 
 	tokencrypt *tokencrypt.Service
 	github     provider.RepositoryProvider
 	runStatus  runNamespaceService
+}
+
+type registryImageService interface {
+	List(ctx context.Context, filter querytypes.RegistryImageListFilter) ([]entitytypes.RegistryImageRepository, error)
+	DeleteTag(ctx context.Context, params querytypes.RegistryImageDeleteParams) (entitytypes.RegistryImageDeleteResult, error)
+	Cleanup(ctx context.Context, filter querytypes.RegistryImageCleanupFilter) (entitytypes.RegistryImageCleanupResult, error)
 }
 
 // NewService constructs staff service.
@@ -61,6 +71,8 @@ func NewService(
 	repos repocfgrepo.Repository,
 	feedback learningfeedbackrepo.Repository,
 	runs staffrunrepo.Repository,
+	tasks runtimedeploytaskrepo.Repository,
+	images registryImageService,
 	tokencrypt *tokencrypt.Service,
 	github provider.RepositoryProvider,
 	runStatus runNamespaceService,
@@ -73,6 +85,8 @@ func NewService(
 		repos:      repos,
 		feedback:   feedback,
 		runs:       runs,
+		tasks:      tasks,
+		images:     images,
 		tokencrypt: tokencrypt,
 		github:     github,
 		runStatus:  runStatus,

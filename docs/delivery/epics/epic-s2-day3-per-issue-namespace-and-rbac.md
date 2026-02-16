@@ -81,10 +81,10 @@ approvals:
   - `services/jobs/worker/internal/clients/kubernetes/launcher/adapter.go`
 - Runtime policy env wiring:
   - `services/jobs/worker/internal/app/config.go`
-  - `.github/workflows/ai_staging_deploy.yml`
-  - `deploy/scripts/deploy_staging.sh`
-- Staging runbook checks:
-  - `docs/ops/staging_runbook.md`
+  - `deploy/base/codex-k8s/codegen-check-job.yaml.tpl`
+  - `services/internal/control-plane/internal/domain/runtimedeploy/service_defaults.go`
+- Production runbook checks:
+  - `docs/ops/production_runbook.md`
 
 ## Verification
 - Unit tests:
@@ -92,8 +92,8 @@ approvals:
 - Static checks:
   - `make lint-go`
   - `make dupl-go`
-- Staging:
-  - `AI Staging deploy 🚀` success для `codex/dev` (manual dispatch на целевой SHA).
+- Production:
+  - `AI Production deploy 🚀` success для `codex/dev` (manual dispatch на целевой SHA).
   - ручной smoke/regression по runbook -> `OK`.
 
 ## Апрув

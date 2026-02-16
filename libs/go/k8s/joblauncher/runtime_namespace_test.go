@@ -15,7 +15,7 @@ func TestLauncher_EnsureNamespace_PreparesBaselineResources(t *testing.T) {
 
 	ctx := context.Background()
 	client := fake.NewClientset()
-	launcher := NewForClient(Config{Namespace: "codex-k8s-ai-staging"}, client)
+	launcher := NewForClient(Config{Namespace: "codex-k8s-prod"}, client)
 
 	spec := NamespaceSpec{
 		RunID:         "run-1",
@@ -63,7 +63,7 @@ func TestLauncher_CleanupNamespace_DeletesManagedNamespace(t *testing.T) {
 			},
 		},
 	})
-	launcher := NewForClient(Config{Namespace: "codex-k8s-ai-staging"}, client)
+	launcher := NewForClient(Config{Namespace: "codex-k8s-prod"}, client)
 
 	err := launcher.CleanupNamespace(ctx, NamespaceSpec{
 		RunID:       "run-1",
@@ -84,7 +84,7 @@ func TestLauncher_EnsureNamespace_RunRoleDoesNotGrantSecretsAccess(t *testing.T)
 
 	ctx := context.Background()
 	client := fake.NewClientset()
-	launcher := NewForClient(Config{Namespace: "codex-k8s-ai-staging"}, client)
+	launcher := NewForClient(Config{Namespace: "codex-k8s-prod"}, client)
 
 	spec := NamespaceSpec{
 		RunID:         "run-2",

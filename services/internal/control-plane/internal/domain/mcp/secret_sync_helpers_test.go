@@ -25,9 +25,9 @@ func TestDeriveDeterministicSecretValueStable(t *testing.T) {
 	params := secretSyncDeterministicParams{
 		ProjectID:            "project-1",
 		Repository:           "codex-k8s/codex-k8s",
-		Environment:          "staging",
+		Environment:          "production",
 		GitHubSecretName:     "APP_TOKEN",
-		KubernetesNamespace:  "codex-k8s-ai-staging",
+		KubernetesNamespace:  "codex-k8s-prod",
 		KubernetesSecretName: "app-secrets",
 		KubernetesSecretKey:  "token",
 	}
@@ -60,9 +60,9 @@ func TestDeriveSecretSyncIdempotencyKey(t *testing.T) {
 	params := secretSyncIdempotencyParams{
 		ProjectID:            "project-1",
 		Repository:           "codex-k8s/codex-k8s",
-		Environment:          "staging",
+		Environment:          "production",
 		GitHubSecretName:     "APP_TOKEN",
-		KubernetesNamespace:  "codex-k8s-ai-staging",
+		KubernetesNamespace:  "codex-k8s-prod",
 		KubernetesSecretName: "app-secrets",
 		KubernetesSecretKey:  "token",
 		Policy:               SecretSyncPolicyDeterministic,

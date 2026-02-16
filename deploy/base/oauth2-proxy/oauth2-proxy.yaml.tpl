@@ -2,11 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: oauth2-proxy
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: oauth2-proxy
 spec:
-  replicas: ${CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS}
+  replicas: {{ envOr "CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS" "" }}
   selector:
     matchLabels:
       app.kubernetes.io/name: oauth2-proxy
@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: oauth2-proxy
-          image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
+          image: {{ envOr "CODEXK8S_OAUTH2_PROXY_IMAGE" "quay.io/oauth2-proxy/oauth2-proxy:v7.6.0" }}
           imagePullPolicy: IfNotPresent
           args:
             - --provider=github
@@ -27,7 +27,7 @@ spec:
             # Ensure upstream sees the original public Host (Ingress host).
             # api-gateway uses it when reverse-proxying the Vite dev server.
             - --pass-host-header=true
-            - --redirect-url=https://${CODEXK8S_STAGING_DOMAIN}/oauth2/callback
+            - --redirect-url=https://{{ envOr "CODEXK8S_PRODUCTION_DOMAIN" "" }}/oauth2/callback
             - --email-domain=*
             - --cookie-secure=true
             - --cookie-samesite=lax
@@ -72,7 +72,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: oauth2-proxy
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: oauth2-proxy
 spec:

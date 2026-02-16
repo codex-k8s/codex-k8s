@@ -1,21 +1,21 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ${CODEXK8S_INTERNAL_REGISTRY_SERVICE}-data
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  name: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_SERVICE" "" }}-data
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: codex-k8s-registry
 spec:
   accessModes: ["ReadWriteOnce"]
   resources:
     requests:
-      storage: ${CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE}
+      storage: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE" "" }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ${CODEXK8S_INTERNAL_REGISTRY_SERVICE}
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  name: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_SERVICE" "" }}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: codex-k8s-registry
 spec:
@@ -34,15 +34,15 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: registry
-          image: registry:2
+          image: {{ envOr "CODEXK8S_REGISTRY_IMAGE" "registry:2" }}
           imagePullPolicy: IfNotPresent
           ports:
             - name: registry
-              containerPort: ${CODEXK8S_INTERNAL_REGISTRY_PORT}
+              containerPort: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_PORT" "" }}
           env:
-            # No auth by design for MVP: staging registry is bound to node loopback only.
+            # No auth by design for MVP: production registry is bound to node loopback only.
             - name: REGISTRY_HTTP_ADDR
-              value: "127.0.0.1:${CODEXK8S_INTERNAL_REGISTRY_PORT}"
+              value: '127.0.0.1:{{ envOr "CODEXK8S_INTERNAL_REGISTRY_PORT" "" }}'
             - name: REGISTRY_STORAGE_DELETE_ENABLED
               value: "true"
           readinessProbe:
@@ -65,4 +65,4 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: ${CODEXK8S_INTERNAL_REGISTRY_SERVICE}-data
+            claimName: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_SERVICE" "" }}-data

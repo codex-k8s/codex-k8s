@@ -9,7 +9,7 @@ updated_at: YYYY-MM-DD
 release:
   version: "<vX.Y.Z>"
   date: YYYY-MM-DD
-  environment: "staging|prod"
+  environment: "production|prod"
 related_prs: []
 related_issues: []
 approvals:

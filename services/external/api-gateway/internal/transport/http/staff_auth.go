@@ -21,7 +21,7 @@ type jwtVerifier interface {
 }
 
 // requireStaffAuth authenticates staff requests either via:
-// - oauth2-proxy injected headers (staging/dev): resolve allowlist and identity in control-plane; or
+// - oauth2-proxy injected headers (production/dev): resolve allowlist and identity in control-plane; or
 // - JWT: verify locally and attach claims as principal.
 func requireStaffAuth(verifier jwtVerifier, resolver func(ctx context.Context, email string, githubLogin string) (*controlplanev1.Principal, error)) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -48,7 +48,7 @@ func getPrincipal(c *echo.Context) (*controlplanev1.Principal, bool) {
 func authenticatePrincipal(c *echo.Context, verifier jwtVerifier, resolver func(ctx context.Context, email string, githubLogin string) (*controlplanev1.Principal, error)) (*controlplanev1.Principal, error) {
 	req := c.Request()
 
-	// When running behind oauth2-proxy (dev/staging), accept identity from headers
+	// When running behind oauth2-proxy (dev/production), accept identity from headers
 	// and resolve platform access via the allowlist stored in the DB.
 	// This keeps "registration disabled" semantics even if oauth2-proxy allows any GitHub user to authenticate.
 	email := firstNonEmpty(

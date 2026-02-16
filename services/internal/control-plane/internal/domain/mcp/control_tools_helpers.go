@@ -73,7 +73,7 @@ type runWaitPayload struct {
 	TimeoutGuardDisabled bool   `json:"timeout_guard_disabled"`
 }
 
-var defaultDatabaseLifecycleAllowedEnvs = []string{"dev", "staging", "prod"}
+var defaultDatabaseLifecycleAllowedEnvs = []string{"dev", "production", "prod"}
 
 func resolveControlApprovalMode(tool ToolName, runCtx resolvedRunContext) entitytypes.MCPApprovalMode {
 	triggerLabel := ""

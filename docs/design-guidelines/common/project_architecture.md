@@ -22,9 +22,9 @@
 - `proto/` — gRPC контракты (single source of truth для внутреннего sync API).
 - `deploy/` — Kubernetes манифесты и overlays.
   - Манифесты и шаблоны YAML (`*.yaml.tpl`) живут в `deploy/base/**`.
-  - Bash-скрипты в `deploy/scripts/**` не должны содержать “встроенные” multi-line YAML/JSON манифесты через heredoc.
-    Скрипты только рендерят и применяют файлы из `deploy/base/**`.
-  - Для staging порядок выкладки задаётся по слоям:
+  - Рендер и применение выполняются Go-компонентами (`cmd/codex-bootstrap`, `runtime-deploy`); shell-скрипты
+    не являются основным механизмом deploy/sync.
+  - Для production порядок выкладки задаётся по слоям:
     `stateful dependencies -> migrations -> internal domain services -> edge services -> frontend`.
     Ожидание зависимостей оформляется через `initContainers` в манифестах сервисов.
   - Для monorepo multi-service deploy используются раздельные образы/репозитории для каждого
@@ -37,18 +37,21 @@
 ### Изменение состава deployable-сервисов (обязательно синхронно)
 
 Если в монорепо добавляется/удаляется deployable-сервис, либо меняются его docker context / Dockerfile / image repository:
-- обновлять build matrix и env:
-  `.github/workflows/build_internal_image.yml`;
-- обновлять карту компонентов Kaniko build:
-  `deploy/scripts/build_internal_image.sh`;
-- обновлять staging deploy env/vars:
-  `.github/workflows/ai_staging_deploy.yml` и `deploy/scripts/deploy_staging.sh`;
-- обновлять bootstrap-синхронизацию GitHub vars/secrets:
+- обновлять сборку/зеркалирование образов в runtime deploy:
+  `services/internal/control-plane/internal/domain/runtimedeploy/service_build.go`,
+  `services/internal/control-plane/internal/domain/runtimedeploy/service_reconcile.go`,
+  `deploy/base/kaniko/kaniko-build-job.yaml.tpl`,
+  `deploy/base/kaniko/mirror-image-job.yaml.tpl`;
+- обновлять production deploy env/vars и манифесты:
+  `services/internal/control-plane/cmd/runtime-deploy/main.go`,
+  `deploy/base/codex-k8s/codegen-check-job.yaml.tpl`,
+  `services.yaml`;
+- обновлять bootstrap-синхронизацию GitHub vars/secrets и секретов Kubernetes:
   `bootstrap/host/config.env.example`,
-  `bootstrap/host/bootstrap_remote_staging.sh`,
-  `bootstrap/remote/45_configure_github_repo_ci.sh`,
-  `bootstrap/remote/55_setup_internal_registry_and_build_image.sh`,
-  `bootstrap/remote/60_deploy_codex_k8s.sh`;
+  `bootstrap/host/bootstrap_remote_production.sh`,
+  `cmd/codex-bootstrap/internal/cli/github_sync.go`,
+  `cmd/codex-bootstrap/internal/cli/sync_secrets.go`,
+  `cmd/codex-bootstrap/internal/cli/cleanup.go`;
 - обновлять deploy manifests сервиса в `deploy/base/<service>/*.yaml.tpl`
   и Dockerfile сервиса в `services/<zone>/<service>/Dockerfile`.
 - если меняется набор инструментов для agent-runner (dogfooding), обновлять

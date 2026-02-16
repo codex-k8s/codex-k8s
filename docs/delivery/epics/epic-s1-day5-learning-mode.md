@@ -28,7 +28,7 @@ approvals:
 - Реализация effective learning mode resolution и prompt augmentation в pipeline.
 - Схема и persistence для `learning_feedback` + индексы.
 - Минимальный staff UI/API просмотр образовательных объяснений.
-- Проверка on/off сценариев learning mode на staging.
+- Проверка on/off сценариев learning mode на production.
 
 ## Контекст
 - Почему эпик нужен: learning mode является частью продуктовой идеи платформы.
@@ -69,14 +69,14 @@ approvals:
 ## Критерии приемки эпика
 - Для включенного режима в результатах задач есть объяснение why/tradeoffs.
 - Для выключенного режима augmentation отсутствует.
-- Изменения задеплоены и проверены на staging в день реализации.
+- Изменения задеплоены и проверены на production в день реализации.
 
 ## Риски/зависимости
 - Зависимости: устойчивый контур запуска и storage.
 - Риск: избыточный шум в ответах без quality filter.
 
 ## План релиза (верхний уровень)
-- Deploy в staging + ручной сценарий с включением/выключением learning mode.
+- Deploy в production + ручной сценарий с включением/выключением learning mode.
 
 ## Апрув
 - request_id: owner-2026-02-06-day5

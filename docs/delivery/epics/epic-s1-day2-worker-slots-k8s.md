@@ -28,7 +28,7 @@ approvals:
 - Реализация worker run-loop и reconciliation в `services/jobs/worker/**`.
 - Kubernetes launcher/adapter через `client-go` в `libs/go/**` и/или `services/internal/control-plane/**`.
 - Обновлённые state transitions для `agent_runs` и slot lifecycle в БД.
-- E2E smoke сценарий webhook -> run -> worker -> job completion на staging.
+- E2E smoke сценарий webhook -> run -> worker -> job completion на production.
 
 ## Контекст
 - Почему эпик нужен: без этого webhook ingress не приводит к фактическому выполнению задач.
@@ -70,7 +70,7 @@ approvals:
 ## Критерии приемки эпика
 - Worker обрабатывает `pending` run и переводит его в финальный статус.
 - Слот корректно освобождается при успехе и ошибке.
-- После merge изменения задеплоены на staging и пройден e2e smoke.
+- После merge изменения задеплоены на production и пройден e2e smoke.
 
 ## Evidence
 - Day2 migration добавлена:
@@ -87,26 +87,26 @@ approvals:
   - `services/jobs/worker/internal/app/config.go`
   - `services/jobs/worker/internal/app/app.go`
   - `services/jobs/worker/cmd/worker/main.go`
-- Staging deploy и bootstrap синхронизированы под worker:
+- Production deploy и bootstrap синхронизированы под worker:
   - `deploy/base/codex-k8s/app.yaml.tpl`
-  - `deploy/scripts/deploy_staging.sh`
-  - `.github/workflows/ai_staging_deploy.yml`
-  - `bootstrap/remote/45_configure_github_repo_ci.sh`
-  - `bootstrap/host/bootstrap_remote_staging.sh`
+  - `services/internal/control-plane/internal/domain/runtimedeploy/service_defaults.go`
+  - `deploy/base/codex-k8s/codegen-check-job.yaml.tpl`
+  - `cmd/codex-bootstrap/internal/cli/github_sync.go`
+  - `bootstrap/host/bootstrap_remote_production.sh`
   - `bootstrap/host/config.env.example`
 - Unit tests:
   - `services/jobs/worker/internal/domain/worker/service_test.go`
   - `services/jobs/worker/internal/app/config_test.go`
 - Verification commands:
   - `go test ./...`
-  - `bash -n deploy/scripts/deploy_staging.sh bootstrap/host/bootstrap_remote_staging.sh bootstrap/remote/45_configure_github_repo_ci.sh`
+  - `go test ./cmd/codex-bootstrap/internal/cli ./services/internal/control-plane/cmd/runtime-deploy`
 
 ## Риски/зависимости
 - Зависимости: стабильный доступ worker к Kubernetes API.
 - Риск: race conditions при параллельных worker pod.
 
 ## План релиза (верхний уровень)
-- По завершению дня провести ручной прогон минимум 3 запусков подряд на staging.
+- По завершению дня провести ручной прогон минимум 3 запусков подряд на production.
 
 ## Апрув
 - request_id: owner-2026-02-06-day2

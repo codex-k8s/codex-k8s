@@ -19,8 +19,8 @@ func TestResolveControlPlaneMCPBaseURL(t *testing.T) {
 		},
 		{
 			name:       "derives from grpc host and port",
-			grpcTarget: "codex-k8s-control-plane.codex-k8s-ai-staging.svc.cluster.local:9090",
-			want:       "http://codex-k8s-control-plane.codex-k8s-ai-staging.svc.cluster.local:8081/mcp",
+			grpcTarget: "codex-k8s-control-plane.codex-k8s-prod.svc.cluster.local:9090",
+			want:       "http://codex-k8s-control-plane.codex-k8s-prod.svc.cluster.local:8081/mcp",
 		},
 		{
 			name:       "falls back to default when grpc target is empty",

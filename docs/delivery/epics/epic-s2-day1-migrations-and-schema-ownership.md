@@ -20,7 +20,7 @@ approvals:
 - Цель эпика: привести выполнение миграций и ownership схемы к устойчивой, воспроизводимой модели для многоподовой платформы.
 - Ключевая ценность: отсутствуют гонки миграций, worker не стартует на неподготовленной схеме, ownership схемы закреплён за `internal/control-plane`.
 - До начала транспортных расширений API/UI: внедрить contract-first OpenAPI baseline (validation + codegen).
-- MVP-результат: выбран и задокументирован единый способ миграций для staging (и задел на prod), а также зафиксирован OpenAPI pipeline для backend/frontend.
+- MVP-результат: выбран и задокументирован единый способ миграций для production (и задел на prod), а также зафиксирован OpenAPI pipeline для backend/frontend.
 
 ## Priority
 - `P0`.
@@ -66,7 +66,7 @@ approvals:
 ## Критерии приемки эпика
 - Миграции выполняются предсказуемо и без гонок.
 - Есть явный владелец схемы (control-plane), отражено в доках и в deploy.
-- Есть smoke evidence на staging.
+- Есть smoke evidence на production.
 - OpenAPI покрывает все активные external/staff endpoint'ы S2 scope.
 - Backend и frontend используют сгенерированные артефакты контракта, ручные несогласованные DTO не остаются в транспортном слое.
 - В CI есть проверка актуальности codegen-артефактов.
@@ -83,7 +83,7 @@ approvals:
   - Общая цель: `make gen-openapi`
 - Frontend API переведён на generated client (`services/staff/web-console/src/shared/api/generated/**`), ручные endpoint-строки в feature API-слое удалены.
 - CI-проверка актуальности codegen добавлена:
-  - `.github/workflows/contracts_codegen_check.yml`.
+  - `deploy/base/codex-k8s/codegen-check-job.yaml.tpl`.
 
 ## Апрув
 - request_id: owner-2026-02-11-s2-day1

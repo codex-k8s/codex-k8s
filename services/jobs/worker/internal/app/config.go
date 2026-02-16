@@ -94,7 +94,7 @@ type Config struct {
 	// KubeconfigPath is optional kubeconfig path for local development.
 	KubeconfigPath string `env:"CODEXK8S_KUBECONFIG"`
 	// K8sNamespace is a namespace for worker-created Jobs.
-	K8sNamespace string `env:"CODEXK8S_WORKER_K8S_NAMESPACE" envDefault:"codex-k8s-ai-staging"`
+	K8sNamespace string `env:"CODEXK8S_WORKER_K8S_NAMESPACE" envDefault:"codex-k8s-prod"`
 	// JobImage is a container image used for spawned run Jobs.
 	JobImage string `env:"CODEXK8S_WORKER_JOB_IMAGE" envDefault:"busybox:1.36"`
 	// JobCommand is a shell command executed by run Jobs.

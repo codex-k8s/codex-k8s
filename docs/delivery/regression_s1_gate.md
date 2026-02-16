@@ -1,7 +1,7 @@
 ---
 doc_id: REG-CK8S-S1-0001
 type: regression
-title: "Sprint S1 Regression Gate (staging)"
+title: "Sprint S1 Regression Gate (production)"
 status: active
 owner_role: QA
 created_at: 2026-02-09
@@ -16,12 +16,12 @@ approvals:
   approved_at: 2026-02-12
 ---
 
-# Sprint S1 Regression Gate (staging)
+# Sprint S1 Regression Gate (production)
 
 Цель: единый список критических сценариев для go/no-go на следующий спринт.
 
 ## Preconditions
-- Staging домен резолвится на staging IP.
+- Production домен резолвится на production IP.
 - TLS выдан (cert-manager ClusterIssuer `codex-k8s-letsencrypt`).
 - Последний deploy зелёный, migrate job completed.
 
@@ -32,7 +32,7 @@ approvals:
    - Invalid signature => `401`.
    - First valid request => `202 accepted`.
    - Replay delivery id => `200 duplicate` (idempotency).
-   - Проверка выполняется вручную по `docs/ops/staging_runbook.md` (invalid signature + idempotency).
+   - Проверка выполняется вручную по `docs/ops/production_runbook.md` (invalid signature + idempotency).
 
 2. Worker run loop
    - pending -> running -> succeeded/failed статусы фиксируются в БД.

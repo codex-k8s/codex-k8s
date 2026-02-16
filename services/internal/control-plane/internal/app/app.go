@@ -17,6 +17,7 @@ import (
 
 	"github.com/codex-k8s/codex-k8s/libs/go/crypto/tokencrypt"
 	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
+	"github.com/codex-k8s/codex-k8s/libs/go/registry"
 	repoprovider "github.com/codex-k8s/codex-k8s/libs/go/repo/provider"
 	githubprovider "github.com/codex-k8s/codex-k8s/libs/go/repo/provider/github"
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
@@ -25,6 +26,7 @@ import (
 	postgresadminclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/postgresadmin"
 	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
+	registryimagesdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/registryimages"
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
 	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
@@ -179,6 +181,10 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("parse CODEXK8S_RUNTIME_DEPLOY_WAIT_POLL_INTERVAL=%q: %w", cfg.RuntimeDeployWaitPollInterval, err)
 	}
+	registryHTTPTimeout, err := time.ParseDuration(cfg.RegistryHTTPTimeout)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_REGISTRY_HTTP_TIMEOUT=%q: %w", cfg.RegistryHTTPTimeout, err)
+	}
 	runtimeDeployReconcileInterval, err := time.ParseDuration(cfg.RuntimeDeployReconcileInterval)
 	if err != nil {
 		return fmt.Errorf("parse CODEXK8S_RUNTIME_DEPLOY_RECONCILE_INTERVAL=%q: %w", cfg.RuntimeDeployReconcileInterval, err)
@@ -196,17 +202,35 @@ func Run() error {
 			runtimeDeployWorkerID = "runtime-deploy-" + strings.TrimSpace(hostname)
 		}
 	}
+	registryScheme := strings.TrimSpace(cfg.InternalRegistryScheme)
+	if registryScheme == "" {
+		registryScheme = "http"
+	}
+	registryBaseURL := registryScheme + "://" + strings.TrimSpace(cfg.InternalRegistryHost)
+	registryClient, err := registry.NewClient(registryBaseURL, registryHTTPTimeout)
+	if err != nil {
+		return fmt.Errorf("init registry client: %w", err)
+	}
+	registryImagesService, err := registryimagesdomain.NewService(registryimagesdomain.Config{
+		DefaultCleanupKeepTags: cfg.RegistryCleanupKeepTags,
+	}, registryClient)
+	if err != nil {
+		return fmt.Errorf("init registry images service: %w", err)
+	}
 	runtimeDeployService, err := runtimedeploydomain.NewService(runtimedeploydomain.Config{
-		ServicesConfigPath: cfg.ServicesConfigPath,
-		RepositoryRoot:     cfg.RepositoryRoot,
-		RolloutTimeout:     runtimeDeployRolloutTimeout,
-		KanikoTimeout:      runtimeDeployKanikoTimeout,
-		WaitPollInterval:   runtimeDeployWaitPollInterval,
-		KanikoFieldManager: cfg.RuntimeDeployFieldManager,
-		GitHubPAT:          strings.TrimSpace(cfg.GitHubPAT),
+		ServicesConfigPath:      cfg.ServicesConfigPath,
+		RepositoryRoot:          cfg.RepositoryRoot,
+		RolloutTimeout:          runtimeDeployRolloutTimeout,
+		KanikoTimeout:           runtimeDeployKanikoTimeout,
+		WaitPollInterval:        runtimeDeployWaitPollInterval,
+		KanikoFieldManager:      cfg.RuntimeDeployFieldManager,
+		GitHubPAT:               strings.TrimSpace(cfg.GitHubPAT),
+		RegistryCleanupKeepTags: cfg.RegistryCleanupKeepTags,
+		KanikoJobLogTailLines:   200,
 	}, runtimedeploydomain.Dependencies{
 		Kubernetes: newRuntimeDeployKubernetesAdapter(k8sClient),
 		Tasks:      runtimeDeployTasks,
+		Registry:   registryClient,
 		Logger:     logger,
 	})
 	if err != nil {
@@ -270,7 +294,7 @@ func Run() error {
 		},
 		ProtectedProjectIDs:    bootstrapSeed.ProtectedProjectIDs,
 		ProtectedRepositoryIDs: bootstrapSeed.ProtectedRepositoryIDs,
-	}, users, projects, members, repos, feedback, runs, tokenCrypto, githubRepoProvider, runStatusService)
+	}, users, projects, members, repos, feedback, runs, runtimeDeployTasks, registryImagesService, tokenCrypto, githubRepoProvider, runStatusService)
 
 	// Ensure bootstrap users exist so that the first login can be matched by email.
 	if _, err := users.EnsureOwner(runCtx, cfg.BootstrapOwnerEmail); err != nil {

@@ -11,23 +11,25 @@ import (
 )
 
 const (
-	defaultServicesConfigPath = "services.yaml"
-	defaultRepositoryRoot     = "."
-	defaultRolloutTimeout     = 20 * time.Minute
-	defaultKanikoTimeout      = 30 * time.Minute
-	defaultWaitPollInterval   = 2 * time.Second
-	defaultFieldManager       = "codex-k8s-control-plane"
+	defaultServicesConfigPath      = "services.yaml"
+	defaultRepositoryRoot          = "."
+	defaultRolloutTimeout          = 20 * time.Minute
+	defaultKanikoTimeout           = 30 * time.Minute
+	defaultWaitPollInterval        = 2 * time.Second
+	defaultFieldManager            = "codex-k8s-control-plane"
+	defaultRegistryCleanupKeepTags = 5
+	defaultKanikoJobLogTailLines   = int64(200)
 )
 
-var placeholderPattern = regexp.MustCompile(`\$\{([A-Za-z_][A-Za-z0-9_]*)\}`)
 var imageTagSanitizer = regexp.MustCompile(`[^a-zA-Z0-9._-]`)
 
 // Service prepares runtime environments from services.yaml contract.
 type Service struct {
-	cfg    Config
-	k8s    KubernetesClient
-	tasks  runtimedeploytaskrepo.Repository
-	logger *slog.Logger
+	cfg      Config
+	k8s      KubernetesClient
+	tasks    runtimedeploytaskrepo.Repository
+	registry RegistryClient
+	logger   *slog.Logger
 }
 
 // NewService creates runtime deployment service.
@@ -59,14 +61,21 @@ func NewService(cfg Config, deps Dependencies) (*Service, error) {
 	if cfg.WaitPollInterval <= 0 {
 		cfg.WaitPollInterval = defaultWaitPollInterval
 	}
+	if cfg.RegistryCleanupKeepTags <= 0 {
+		cfg.RegistryCleanupKeepTags = defaultRegistryCleanupKeepTags
+	}
+	if cfg.KanikoJobLogTailLines <= 0 {
+		cfg.KanikoJobLogTailLines = defaultKanikoJobLogTailLines
+	}
 	logger := deps.Logger
 	if logger == nil {
 		logger = slog.Default()
 	}
 	return &Service{
-		cfg:    cfg,
-		k8s:    deps.Kubernetes,
-		tasks:  deps.Tasks,
-		logger: logger,
+		cfg:      cfg,
+		k8s:      deps.Kubernetes,
+		tasks:    deps.Tasks,
+		registry: deps.Registry,
+		logger:   logger,
 	}, nil
 }

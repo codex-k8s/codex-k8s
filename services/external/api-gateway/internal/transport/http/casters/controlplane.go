@@ -268,6 +268,123 @@ func RunLogs(item *controlplanev1.RunLogs) models.RunLogs {
 	return out
 }
 
+func RuntimeDeployTaskLog(item *controlplanev1.RuntimeDeployTaskLog) models.RuntimeDeployTaskLog {
+	out := models.RuntimeDeployTaskLog{}
+	if item == nil {
+		return out
+	}
+	out.Stage = item.GetStage()
+	out.Level = item.GetLevel()
+	out.Message = item.GetMessage()
+	out.CreatedAt = cast.OptionalTimestampRFC3339Nano(item.GetCreatedAt())
+	return out
+}
+
+func RuntimeDeployTask(item *controlplanev1.RuntimeDeployTask) models.RuntimeDeployTask {
+	out := models.RuntimeDeployTask{}
+	if item == nil {
+		return out
+	}
+	out.RunID = item.GetRunId()
+	out.RuntimeMode = item.GetRuntimeMode()
+	out.Namespace = item.GetNamespace()
+	out.TargetEnv = item.GetTargetEnv()
+	out.SlotNo = item.GetSlotNo()
+	out.RepositoryFullName = item.GetRepositoryFullName()
+	out.ServicesYAMLPath = item.GetServicesYamlPath()
+	out.BuildRef = item.GetBuildRef()
+	out.DeployOnly = item.GetDeployOnly()
+	out.Status = item.GetStatus()
+	out.LeaseOwner = cast.OptionalTrimmedString(item.LeaseOwner)
+	out.LeaseUntil = cast.OptionalTimestampRFC3339Nano(item.GetLeaseUntil())
+	out.Attempts = item.GetAttempts()
+	out.LastError = cast.OptionalTrimmedString(item.LastError)
+	out.ResultNamespace = cast.OptionalTrimmedString(item.ResultNamespace)
+	out.ResultTargetEnv = cast.OptionalTrimmedString(item.ResultTargetEnv)
+	out.CreatedAt = cast.OptionalTimestampRFC3339Nano(item.GetCreatedAt())
+	out.UpdatedAt = cast.OptionalTimestampRFC3339Nano(item.GetUpdatedAt())
+	out.StartedAt = cast.OptionalTimestampRFC3339Nano(item.GetStartedAt())
+	out.FinishedAt = cast.OptionalTimestampRFC3339Nano(item.GetFinishedAt())
+	out.Logs = make([]models.RuntimeDeployTaskLog, 0, len(item.GetLogs()))
+	for _, logItem := range item.GetLogs() {
+		out.Logs = append(out.Logs, RuntimeDeployTaskLog(logItem))
+	}
+	return out
+}
+
+func RuntimeDeployTasks(items []*controlplanev1.RuntimeDeployTask) []models.RuntimeDeployTask {
+	out := make([]models.RuntimeDeployTask, 0, len(items))
+	for _, item := range items {
+		out = append(out, RuntimeDeployTask(item))
+	}
+	return out
+}
+
+func RegistryImageTag(item *controlplanev1.RegistryImageTag) models.RegistryImageTag {
+	out := models.RegistryImageTag{}
+	if item == nil {
+		return out
+	}
+	out.Tag = item.GetTag()
+	out.Digest = item.GetDigest()
+	out.CreatedAt = cast.OptionalTimestampRFC3339Nano(item.GetCreatedAt())
+	out.ConfigSizeBytes = item.GetConfigSizeBytes()
+	return out
+}
+
+func RegistryImageRepository(item *controlplanev1.RegistryImageRepository) models.RegistryImageRepository {
+	out := models.RegistryImageRepository{}
+	if item == nil {
+		return out
+	}
+	out.Repository = item.GetRepository()
+	out.TagCount = item.GetTagCount()
+	out.Tags = make([]models.RegistryImageTag, 0, len(item.GetTags()))
+	for _, tagItem := range item.GetTags() {
+		out.Tags = append(out.Tags, RegistryImageTag(tagItem))
+	}
+	return out
+}
+
+func RegistryImageRepositories(items []*controlplanev1.RegistryImageRepository) []models.RegistryImageRepository {
+	out := make([]models.RegistryImageRepository, 0, len(items))
+	for _, item := range items {
+		out = append(out, RegistryImageRepository(item))
+	}
+	return out
+}
+
+func RegistryImageDeleteResult(item *controlplanev1.RegistryImageDeleteResult) models.RegistryImageDeleteResult {
+	out := models.RegistryImageDeleteResult{}
+	if item == nil {
+		return out
+	}
+	out.Repository = item.GetRepository()
+	out.Tag = item.GetTag()
+	out.Digest = item.GetDigest()
+	out.Deleted = item.GetDeleted()
+	return out
+}
+
+func RegistryImageCleanupResult(item *controlplanev1.CleanupRegistryImagesResponse) models.CleanupRegistryImagesResponse {
+	out := models.CleanupRegistryImagesResponse{}
+	if item == nil {
+		return out
+	}
+	out.RepositoriesScanned = item.GetRepositoriesScanned()
+	out.TagsDeleted = item.GetTagsDeleted()
+	out.TagsSkipped = item.GetTagsSkipped()
+	out.Deleted = make([]models.RegistryImageDeleteResult, 0, len(item.GetDeleted()))
+	for _, deleteItem := range item.GetDeleted() {
+		out.Deleted = append(out.Deleted, RegistryImageDeleteResult(deleteItem))
+	}
+	out.Skipped = make([]models.RegistryImageDeleteResult, 0, len(item.GetSkipped()))
+	for _, skipItem := range item.GetSkipped() {
+		out.Skipped = append(out.Skipped, RegistryImageDeleteResult(skipItem))
+	}
+	return out
+}
+
 func RunNamespaceDelete(item *controlplanev1.DeleteRunNamespaceResponse) models.RunNamespaceCleanupResponse {
 	out := models.RunNamespaceCleanupResponse{}
 	if item == nil {

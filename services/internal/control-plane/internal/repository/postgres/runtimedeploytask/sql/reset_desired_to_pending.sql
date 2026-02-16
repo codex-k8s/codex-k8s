@@ -16,6 +16,7 @@ SET
     last_error = NULL,
     result_namespace = NULL,
     result_target_env = NULL,
+    logs_json = '[]'::jsonb,
     started_at = NULL,
     finished_at = NULL,
     updated_at = NOW()
@@ -40,4 +41,5 @@ RETURNING
     created_at,
     updated_at,
     started_at,
-    finished_at;
+    finished_at,
+    COALESCE(logs_json, '[]'::jsonb) AS logs_json;
