@@ -1,3 +1,4 @@
+{{- $host := envOr "CODEXK8S_PUBLIC_DOMAIN" (envOr "CODEXK8S_PRODUCTION_DOMAIN" "") -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -27,7 +28,7 @@ spec:
             # Ensure upstream sees the original public Host (Ingress host).
             # api-gateway uses it when reverse-proxying the Vite dev server.
             - --pass-host-header=true
-            - --redirect-url=https://{{ envOr "CODEXK8S_PRODUCTION_DOMAIN" "" }}/oauth2/callback
+            - --redirect-url=https://{{ $host }}/oauth2/callback
             - --email-domain=*
             - --cookie-secure=true
             - --cookie-samesite=lax

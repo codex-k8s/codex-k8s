@@ -40,10 +40,11 @@ kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s-worker --tail=
 ```
 
 Ожидаемо:
-- rollout `codex-k8s-control-plane`, `codex-k8s`, `codex-k8s-worker`, `oauth2-proxy`, `codex-k8s-web-console` успешен;
+- rollout `codex-k8s-control-plane`, `codex-k8s` (api-gateway + staff UI), `codex-k8s-worker`, `oauth2-proxy` успешен;
 - последний `codex-k8s-migrate-*` job completed;
 - `/healthz`, `/readyz`, `/metrics` доступны через `kubectl port-forward`;
 - `codex-k8s-production-tls` secret существует;
+- при включённом TLS reuse в служебном namespace (`codex-k8s-system`) существует `codex-k8s-tls-<hash>` secret;
 - webhook endpoint отвечает **401** на invalid signature (и не редиректит в OAuth).
 
 Порядок выкладки production:
@@ -76,6 +77,9 @@ kubectl -n "$ns" logs deploy/codex-k8s-worker --tail=200
 kubectl -n "$ns" get ingress
 kubectl -n "$ns" describe ingress codex-k8s
 kubectl -n "$ns" get certificate,order,challenge -A
+
+# TLS reuse store (best-effort, может быть пусто в самый первый деплой)
+kubectl -n codex-k8s-system get secrets | grep '^codex-k8s-tls-' || true
 
 # Full-env run namespaces (S2 Day3 baseline)
 kubectl get ns -l codex-k8s.dev/managed-by=codex-k8s-worker,codex-k8s.dev/namespace-purpose=run
@@ -111,3 +115,9 @@ kubectl get ns -o json | grep -E 'codexk8s.io/(managed-by|namespace-purpose|runt
 - Убедиться, что path пропущен без auth:
   - `oauth2-proxy --skip-auth-regex=^/api/v1/webhooks/.*`
 - Проверить `CODEXK8S_GITHUB_WEBHOOK_SECRET` совпадает с секретом вебхука в GitHub.
+
+### TLS не выпускается (HTTP-01) / cert-manager молчит
+- Убедиться, что `CODEXK8S_PRODUCTION_DOMAIN` резолвится в production host IP.
+- Если это первый выпуск TLS, runtime-deploy использует echo-probe (HTTP) до включения issuer:
+  - проверить `kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" get deploy,svc,ingress | grep echo-probe`;
+  - проверить логи `kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s-control-plane --tail=200`.

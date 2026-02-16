@@ -30,6 +30,7 @@ var syncSecretsRequiredKeys = []string{
 	"CODEXK8S_GITHUB_OAUTH_CLIENT_ID",
 	"CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET",
 	"CODEXK8S_PRODUCTION_DOMAIN",
+	"CODEXK8S_AI_DOMAIN",
 }
 
 func runSyncSecrets(args []string, stdout io.Writer, stderr io.Writer) int {
@@ -204,6 +205,8 @@ func hydrateValuesFromExistingSecrets(values map[string]string, existingPostgres
 		"CODEXK8S_GITHUB_WEBHOOK_SECRET",
 		"CODEXK8S_GITHUB_WEBHOOK_URL",
 		"CODEXK8S_GITHUB_WEBHOOK_EVENTS",
+		"CODEXK8S_PRODUCTION_DOMAIN",
+		"CODEXK8S_AI_DOMAIN",
 		"CODEXK8S_PUBLIC_BASE_URL",
 		"CODEXK8S_BOOTSTRAP_OWNER_EMAIL",
 		"CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS",
@@ -308,6 +311,8 @@ func buildRuntimeSecretValues(values map[string]string) map[string]string {
 		"CODEXK8S_GITHUB_WEBHOOK_SECRET":             strings.TrimSpace(values["CODEXK8S_GITHUB_WEBHOOK_SECRET"]),
 		"CODEXK8S_GITHUB_WEBHOOK_URL":                strings.TrimSpace(values["CODEXK8S_GITHUB_WEBHOOK_URL"]),
 		"CODEXK8S_GITHUB_WEBHOOK_EVENTS":             strings.TrimSpace(values["CODEXK8S_GITHUB_WEBHOOK_EVENTS"]),
+		"CODEXK8S_PRODUCTION_DOMAIN":                 strings.TrimSpace(values["CODEXK8S_PRODUCTION_DOMAIN"]),
+		"CODEXK8S_AI_DOMAIN":                         strings.TrimSpace(values["CODEXK8S_AI_DOMAIN"]),
 		"CODEXK8S_PUBLIC_BASE_URL":                   strings.TrimSpace(values["CODEXK8S_PUBLIC_BASE_URL"]),
 		"CODEXK8S_BOOTSTRAP_OWNER_EMAIL":             strings.TrimSpace(values["CODEXK8S_BOOTSTRAP_OWNER_EMAIL"]),
 		"CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS":          strings.TrimSpace(values["CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS"]),

@@ -107,9 +107,9 @@ spec:
         - path: deploy/base/registry/registry.yaml.tpl
 
     - name: cert-manager-clusterissuer
-      # Manage ClusterIssuer only when ACME settings are explicitly provided.
+      # Manage ClusterIssuer only when runtime TLS flow explicitly requests it.
       # Otherwise keep existing issuer (if any) untouched to avoid invalid patches.
-      when: '{{ and (ne .Env "ai") (ne (envOr "CODEXK8S_LETSENCRYPT_EMAIL" "") "") (ne (envOr "CODEXK8S_LETSENCRYPT_SERVER" "") "") }}'
+      when: '{{ and (eq (envOr "CODEXK8S_CERT_ISSUER_ENABLED" "false") "true") (ne (envOr "CODEXK8S_LETSENCRYPT_EMAIL" "") "") (ne (envOr "CODEXK8S_LETSENCRYPT_SERVER" "") "") }}'
       manifests:
         - path: deploy/base/cert-manager/clusterissuer.yaml.tpl
 
@@ -138,7 +138,7 @@ spec:
       deployGroup: edge
       dependsOn:
         - codex-k8s-app
-      when: '{{ ternary (eq .Env "ai") "false" "true" }}'
+      when: '{{ eq (envOr "CODEXK8S_OAUTH2_PROXY_ENABLED" "true") "true" }}'
       manifests:
         - path: deploy/base/oauth2-proxy/oauth2-proxy.yaml.tpl
 
@@ -158,6 +158,6 @@ spec:
       deployGroup: edge
       dependsOn:
         - oauth2-proxy
-      when: '{{ ternary (eq .Env "ai") "false" "true" }}'
+      when: '{{ eq (envOr "CODEXK8S_INGRESS_ENABLED" "true") "true" }}'
       manifests:
         - path: deploy/base/codex-k8s/ingress.yaml.tpl

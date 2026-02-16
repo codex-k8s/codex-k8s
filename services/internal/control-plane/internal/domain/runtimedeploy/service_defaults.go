@@ -3,6 +3,7 @@ package runtimedeploy
 func defaultTemplateVars() map[string]string {
 	return map[string]string{
 		"CODEXK8S_PRODUCTION_NAMESPACE":               "codex-k8s-prod",
+		"CODEXK8S_PLATFORM_NAMESPACE":                 "codex-k8s-prod",
 		"CODEXK8S_INTERNAL_REGISTRY_SERVICE":          "codex-k8s-registry",
 		"CODEXK8S_INTERNAL_REGISTRY_PORT":             "5000",
 		"CODEXK8S_INTERNAL_REGISTRY_HOST":             "127.0.0.1:5000",
@@ -65,6 +66,10 @@ func defaultTemplateVars() map[string]string {
 		"CODEXK8S_AGENT_DEFAULT_LOCALE":               "ru",
 		"CODEXK8S_AGENT_BASE_BRANCH":                  "main",
 		"CODEXK8S_PRODUCTION_DOMAIN":                  "platform.codex-k8s.dev",
+		"CODEXK8S_AI_DOMAIN":                          "ai.platform.codex-k8s.dev",
+		"CODEXK8S_TLS_SYSTEM_NAMESPACE":               "codex-k8s-system",
+		"CODEXK8S_CERT_MANAGER_ANNOTATE":              "false",
+		"CODEXK8S_CERT_ISSUER_ENABLED":                "false",
 	}
 }
 

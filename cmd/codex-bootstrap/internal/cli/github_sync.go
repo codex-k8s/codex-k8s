@@ -26,6 +26,9 @@ const (
 	defaultGitHubWebhookEvents    = "push,pull_request,issues,issue_comment,pull_request_review,pull_request_review_comment"
 	defaultGitHubLabelDescription = "codex-k8s managed label"
 	defaultGitHubLabelColor       = "1f6feb"
+
+	githubEnvironmentProduction = "production"
+	githubEnvironmentAI         = "ai"
 )
 
 var (
@@ -74,6 +77,7 @@ var (
 		"CODEXK8S_GITHUB_PAT",
 		"CODEXK8S_GITHUB_WEBHOOK_SECRET",
 		"CODEXK8S_PRODUCTION_DOMAIN",
+		"CODEXK8S_AI_DOMAIN",
 	}
 )
 
@@ -97,8 +101,8 @@ func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
 	timeout := fs.Duration("timeout", defaultGitHubSyncTimeout, "GitHub API timeout")
 	workers := fs.Int("workers", defaultGitHubSyncWorkers, "Parallel workers for variable/secret sync")
 	dryRun := fs.Bool("dry-run", false, "Print planned changes without applying them")
-	skipVariables := fs.Bool("skip-variables", false, "Skip repository variables sync")
-	skipSecrets := fs.Bool("skip-secrets", false, "Skip repository secrets sync")
+	skipVariables := fs.Bool("skip-variables", false, "Skip environment variables sync")
+	skipSecrets := fs.Bool("skip-secrets", false, "Skip environment secrets sync")
 	skipWebhook := fs.Bool("skip-webhook", false, "Skip repository webhook sync")
 	skipLabels := fs.Bool("skip-labels", false, "Skip repository label sync")
 	fs.Var(&vars, "var", "Template variable in KEY=VALUE format (repeatable)")
@@ -181,16 +185,34 @@ func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 
-	if !*skipVariables {
-		if err := syncGitHubRepoVariables(ctx, client, platformRepo, values, variableKeys, *workers); err != nil {
-			writef(stderr, "github-sync failed: sync repository variables: %v\n", err)
+	repoID, err := getGitHubRepositoryID(ctx, client, platformRepo)
+	if err != nil {
+		writef(stderr, "github-sync failed: resolve repository id: %v\n", err)
+		return 1
+	}
+
+	environments := []string{githubEnvironmentProduction, githubEnvironmentAI}
+	for _, envName := range environments {
+		if err := ensureGitHubEnvironment(ctx, client, platformRepo, envName); err != nil {
+			writef(stderr, "github-sync failed: ensure environment %s: %v\n", envName, err)
 			return 1
 		}
 	}
+
+	if !*skipVariables {
+		for _, envName := range environments {
+			if err := syncGitHubEnvVariables(ctx, client, platformRepo, envName, values, variableKeys, *workers); err != nil {
+				writef(stderr, "github-sync failed: sync %s environment variables: %v\n", envName, err)
+				return 1
+			}
+		}
+	}
 	if !*skipSecrets {
-		if err := syncGitHubRepoSecrets(ctx, client, platformRepo, secretValues, *workers); err != nil {
-			writef(stderr, "github-sync failed: sync repository secrets: %v\n", err)
-			return 1
+		for _, envName := range environments {
+			if err := syncGitHubEnvSecrets(ctx, client, platformRepo, repoID, envName, values, githubRepoSecretKeys, *workers); err != nil {
+				writef(stderr, "github-sync failed: sync %s environment secrets: %v\n", envName, err)
+				return 1
+			}
 		}
 	}
 	if !*skipWebhook {
@@ -221,6 +243,11 @@ func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
 func applyGitHubSyncDefaults(values map[string]string) {
 	setEnvDefault(values, "CODEXK8S_PRODUCTION_NAMESPACE", "codex-k8s-prod")
 	setEnvDefault(values, "CODEXK8S_PRODUCTION_DOMAIN", "platform.codex-k8s.dev")
+	if strings.TrimSpace(values["CODEXK8S_AI_DOMAIN"]) == "" {
+		if productionDomain := strings.TrimSpace(values["CODEXK8S_PRODUCTION_DOMAIN"]); productionDomain != "" {
+			values["CODEXK8S_AI_DOMAIN"] = "ai." + productionDomain
+		}
+	}
 	setEnvDefault(values, "CODEXK8S_INTERNAL_REGISTRY_SERVICE", "codex-k8s-registry")
 	setEnvDefault(values, "CODEXK8S_INTERNAL_REGISTRY_PORT", "5000")
 	setEnvDefault(values, "CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE", "20Gi")
@@ -337,7 +364,30 @@ func joinRepositoryNames(repos []githubRepositoryRef) string {
 	return strings.Join(items, ",")
 }
 
-func syncGitHubRepoVariables(ctx context.Context, client *gh.Client, repo githubRepositoryRef, values map[string]string, keys []string, workers int) error {
+func getGitHubRepositoryID(ctx context.Context, client *gh.Client, repo githubRepositoryRef) (int, error) {
+	repository, _, err := client.Repositories.Get(ctx, repo.Owner, repo.Name)
+	if err != nil {
+		return 0, fmt.Errorf("get repository %s: %w", repo.FullName, err)
+	}
+	id := repository.GetID()
+	if id <= 0 {
+		return 0, fmt.Errorf("repository %s has invalid id", repo.FullName)
+	}
+	return int(id), nil
+}
+
+func ensureGitHubEnvironment(ctx context.Context, client *gh.Client, repo githubRepositoryRef, name string) error {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		return nil
+	}
+	if _, _, err := client.Repositories.CreateUpdateEnvironment(ctx, repo.Owner, repo.Name, trimmed, &gh.CreateUpdateEnvironment{}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func syncGitHubEnvVariables(ctx context.Context, client *gh.Client, repo githubRepositoryRef, env string, values map[string]string, keys []string, workers int) error {
 	ops := make([]githubOperation, 0, len(keys))
 	for _, key := range keys {
 		key := key
@@ -345,40 +395,119 @@ func syncGitHubRepoVariables(ctx context.Context, client *gh.Client, repo github
 		ops = append(ops, githubOperation{
 			Name: "variable " + key,
 			Run: func(ctx context.Context) error {
-				return upsertGitHubRepoVariable(ctx, client, repo, key, value)
+				return upsertGitHubEnvVariable(ctx, client, repo, env, key, value)
 			},
 		})
 	}
 	return runGitHubOperations(ctx, workers, ops)
 }
 
-func syncGitHubRepoSecrets(ctx context.Context, client *gh.Client, repo githubRepositoryRef, secretValues map[string]string, workers int) error {
-	if len(secretValues) == 0 {
+func upsertGitHubEnvVariable(ctx context.Context, client *gh.Client, repo githubRepositoryRef, env string, key string, value string) error {
+	trimmedKey := strings.TrimSpace(key)
+	trimmedEnv := strings.TrimSpace(env)
+	if trimmedKey == "" || trimmedEnv == "" {
 		return nil
 	}
-	publicKey, err := getGitHubRepoPublicKey(ctx, client, repo)
+	if strings.TrimSpace(value) == "" {
+		if _, err := client.Actions.DeleteEnvVariable(ctx, repo.Owner, repo.Name, trimmedEnv, trimmedKey); err != nil && !isGitHubNotFound(err) {
+			return fmt.Errorf("delete variable %s: %w", trimmedKey, err)
+		}
+		return nil
+	}
+
+	payload := &gh.ActionsVariable{Name: trimmedKey, Value: value}
+	if _, err := client.Actions.UpdateEnvVariable(ctx, repo.Owner, repo.Name, trimmedEnv, payload); err == nil {
+		return nil
+	} else if !isGitHubNotFound(err) {
+		if !isGitHubConflict(err) && !isGitHubUnprocessable(err) {
+			return fmt.Errorf("update variable %s: %w", trimmedKey, err)
+		}
+	}
+
+	if _, err := client.Actions.CreateEnvVariable(ctx, repo.Owner, repo.Name, trimmedEnv, payload); err != nil {
+		if isGitHubConflict(err) || isGitHubUnprocessable(err) {
+			if _, updateErr := client.Actions.UpdateEnvVariable(ctx, repo.Owner, repo.Name, trimmedEnv, payload); updateErr != nil {
+				return fmt.Errorf("update variable %s after conflict: %w", trimmedKey, updateErr)
+			}
+			return nil
+		}
+		return fmt.Errorf("create variable %s: %w", trimmedKey, err)
+	}
+	return nil
+}
+
+func syncGitHubEnvSecrets(ctx context.Context, client *gh.Client, repo githubRepositoryRef, repoID int, env string, values map[string]string, keys []string, workers int) error {
+	publicKey, err := getGitHubEnvPublicKey(ctx, client, repo, repoID, env)
 	if err != nil {
 		return err
 	}
 
-	keys := make([]string, 0, len(secretValues))
-	for key := range secretValues {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-
 	ops := make([]githubOperation, 0, len(keys))
 	for _, key := range keys {
-		key := key
-		value := secretValues[key]
+		key := strings.TrimSpace(key)
+		if key == "" {
+			continue
+		}
+		value := strings.TrimSpace(values[key])
 		ops = append(ops, githubOperation{
 			Name: "secret " + key,
 			Run: func(ctx context.Context) error {
-				return upsertGitHubRepoSecret(ctx, client, repo, publicKey, key, value)
+				return upsertGitHubEnvSecret(ctx, client, repoID, env, publicKey, key, value)
 			},
 		})
 	}
 	return runGitHubOperations(ctx, workers, ops)
+}
+
+func getGitHubEnvPublicKey(ctx context.Context, client *gh.Client, repo githubRepositoryRef, repoID int, env string) (githubRepoPublicKey, error) {
+	publicKey, _, err := client.Actions.GetEnvPublicKey(ctx, repoID, strings.TrimSpace(env))
+	if err != nil {
+		return githubRepoPublicKey{}, fmt.Errorf("get environment public key for %s env %s: %w", repo.FullName, env, err)
+	}
+
+	keyID := strings.TrimSpace(publicKey.GetKeyID())
+	keyEncoded := strings.TrimSpace(publicKey.GetKey())
+	if keyID == "" || keyEncoded == "" {
+		return githubRepoPublicKey{}, fmt.Errorf("environment public key for %s env %s is invalid", repo.FullName, env)
+	}
+	decoded, err := base64.StdEncoding.DecodeString(keyEncoded)
+	if err != nil {
+		return githubRepoPublicKey{}, fmt.Errorf("decode environment public key for %s env %s: %w", repo.FullName, env, err)
+	}
+	if len(decoded) != 32 {
+		return githubRepoPublicKey{}, fmt.Errorf("environment public key for %s env %s has invalid length", repo.FullName, env)
+	}
+	var key [32]byte
+	copy(key[:], decoded)
+	return githubRepoPublicKey{KeyID: keyID, Key: key}, nil
+}
+
+func upsertGitHubEnvSecret(ctx context.Context, client *gh.Client, repoID int, env string, publicKey githubRepoPublicKey, key string, value string) error {
+	name := strings.TrimSpace(key)
+	targetEnv := strings.TrimSpace(env)
+	if name == "" || targetEnv == "" {
+		return nil
+	}
+	trimmedValue := strings.TrimSpace(value)
+	if trimmedValue == "" {
+		if _, err := client.Actions.DeleteEnvSecret(ctx, repoID, targetEnv, name); err != nil && !isGitHubNotFound(err) {
+			return fmt.Errorf("delete secret %s: %w", name, err)
+		}
+		return nil
+	}
+
+	encrypted, err := encryptGitHubSecretValue(trimmedValue, publicKey.Key)
+	if err != nil {
+		return fmt.Errorf("encrypt secret %s: %w", name, err)
+	}
+	if _, err := client.Actions.CreateOrUpdateEnvSecret(ctx, repoID, targetEnv, &gh.EncryptedSecret{
+		Name:           name,
+		KeyID:          publicKey.KeyID,
+		EncryptedValue: encrypted,
+	}); err != nil {
+		return fmt.Errorf("upsert secret %s: %w", name, err)
+	}
+	return nil
 }
 
 func ensureGitHubWebhook(ctx context.Context, client *gh.Client, repo githubRepositoryRef, webhookURL string, webhookSecret string, events []string) error {
@@ -448,109 +577,6 @@ func ensureGitHubLabels(ctx context.Context, client *gh.Client, repo githubRepos
 	return runGitHubOperations(ctx, workers, ops)
 }
 
-func cleanupLegacyGitHubMetadata(ctx context.Context, client *gh.Client, repo githubRepositoryRef) error {
-	var cleanupErrors []error
-
-	for _, key := range githubLegacySecretKeys {
-		if _, err := client.Actions.DeleteRepoSecret(ctx, repo.Owner, repo.Name, key); err != nil && !isGitHubNotFound(err) {
-			cleanupErrors = append(cleanupErrors, fmt.Errorf("delete legacy secret %s: %w", key, err))
-		}
-	}
-	for _, key := range githubLegacyVariableKeys {
-		if _, err := client.Actions.DeleteRepoVariable(ctx, repo.Owner, repo.Name, key); err != nil && !isGitHubNotFound(err) {
-			cleanupErrors = append(cleanupErrors, fmt.Errorf("delete legacy variable %s: %w", key, err))
-		}
-	}
-	return errors.Join(cleanupErrors...)
-}
-
-func upsertGitHubRepoVariable(ctx context.Context, client *gh.Client, repo githubRepositoryRef, key string, value string) error {
-	trimmedKey := strings.TrimSpace(key)
-	if trimmedKey == "" {
-		return nil
-	}
-	if strings.TrimSpace(value) == "" {
-		if _, err := client.Actions.DeleteRepoVariable(ctx, repo.Owner, repo.Name, trimmedKey); err != nil && !isGitHubNotFound(err) {
-			return fmt.Errorf("delete variable %s: %w", trimmedKey, err)
-		}
-		return nil
-	}
-
-	payload := &gh.ActionsVariable{Name: trimmedKey, Value: value}
-	if _, err := client.Actions.UpdateRepoVariable(ctx, repo.Owner, repo.Name, payload); err == nil {
-		return nil
-	} else if !isGitHubNotFound(err) {
-		if !isGitHubConflict(err) && !isGitHubUnprocessable(err) {
-			return fmt.Errorf("update variable %s: %w", trimmedKey, err)
-		}
-	}
-
-	if _, err := client.Actions.CreateRepoVariable(ctx, repo.Owner, repo.Name, payload); err != nil {
-		if isGitHubConflict(err) || isGitHubUnprocessable(err) {
-			if _, updateErr := client.Actions.UpdateRepoVariable(ctx, repo.Owner, repo.Name, payload); updateErr != nil {
-				return fmt.Errorf("update variable %s after conflict: %w", trimmedKey, updateErr)
-			}
-			return nil
-		}
-		return fmt.Errorf("create variable %s: %w", trimmedKey, err)
-	}
-	return nil
-}
-
-func getGitHubRepoPublicKey(ctx context.Context, client *gh.Client, repo githubRepositoryRef) (githubRepoPublicKey, error) {
-	publicKey, _, err := client.Actions.GetRepoPublicKey(ctx, repo.Owner, repo.Name)
-	if err != nil {
-		return githubRepoPublicKey{}, fmt.Errorf("get repository public key for %s: %w", repo.FullName, err)
-	}
-
-	keyID := strings.TrimSpace(publicKey.GetKeyID())
-	keyEncoded := strings.TrimSpace(publicKey.GetKey())
-	if keyID == "" || keyEncoded == "" {
-		return githubRepoPublicKey{}, fmt.Errorf("repository public key for %s is invalid", repo.FullName)
-	}
-	decoded, err := base64.StdEncoding.DecodeString(keyEncoded)
-	if err != nil {
-		return githubRepoPublicKey{}, fmt.Errorf("decode repository public key for %s: %w", repo.FullName, err)
-	}
-	if len(decoded) != 32 {
-		return githubRepoPublicKey{}, fmt.Errorf("repository public key for %s has invalid length", repo.FullName)
-	}
-	var key [32]byte
-	copy(key[:], decoded)
-	return githubRepoPublicKey{KeyID: keyID, Key: key}, nil
-}
-
-func upsertGitHubRepoSecret(ctx context.Context, client *gh.Client, repo githubRepositoryRef, publicKey githubRepoPublicKey, key string, value string) error {
-	name := strings.TrimSpace(key)
-	if name == "" {
-		return nil
-	}
-	if strings.TrimSpace(value) == "" {
-		return nil
-	}
-
-	encrypted, err := encryptGitHubSecretValue(value, publicKey.Key)
-	if err != nil {
-		return fmt.Errorf("encrypt secret %s: %w", name, err)
-	}
-	if _, err := client.Actions.CreateOrUpdateRepoSecret(ctx, repo.Owner, repo.Name, &gh.EncryptedSecret{
-		Name:           name,
-		KeyID:          publicKey.KeyID,
-		EncryptedValue: encrypted,
-	}); err != nil {
-		return fmt.Errorf("upsert secret %s: %w", name, err)
-	}
-	return nil
-}
-
-func encryptGitHubSecretValue(value string, publicKey [32]byte) (string, error) {
-	encryptedRaw, err := box.SealAnonymous(nil, []byte(value), &publicKey, rand.Reader)
-	if err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(encryptedRaw), nil
-}
-
 func ensureGitHubLabel(ctx context.Context, client *gh.Client, repo githubRepositoryRef, labelName string, description string) error {
 	name := strings.TrimSpace(labelName)
 	if name == "" {
@@ -594,6 +620,30 @@ func ensureGitHubLabel(ctx context.Context, client *gh.Client, repo githubReposi
 		return fmt.Errorf("create label %s: %w", name, err)
 	}
 	return nil
+}
+
+func cleanupLegacyGitHubMetadata(ctx context.Context, client *gh.Client, repo githubRepositoryRef) error {
+	var cleanupErrors []error
+
+	for _, key := range githubLegacySecretKeys {
+		if _, err := client.Actions.DeleteRepoSecret(ctx, repo.Owner, repo.Name, key); err != nil && !isGitHubNotFound(err) {
+			cleanupErrors = append(cleanupErrors, fmt.Errorf("delete legacy secret %s: %w", key, err))
+		}
+	}
+	for _, key := range githubLegacyVariableKeys {
+		if _, err := client.Actions.DeleteRepoVariable(ctx, repo.Owner, repo.Name, key); err != nil && !isGitHubNotFound(err) {
+			cleanupErrors = append(cleanupErrors, fmt.Errorf("delete legacy variable %s: %w", key, err))
+		}
+	}
+	return errors.Join(cleanupErrors...)
+}
+
+func encryptGitHubSecretValue(value string, publicKey [32]byte) (string, error) {
+	encryptedRaw, err := box.SealAnonymous(nil, []byte(value), &publicKey, rand.Reader)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(encryptedRaw), nil
 }
 
 type githubOperation struct {

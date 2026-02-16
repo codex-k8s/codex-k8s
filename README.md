@@ -88,3 +88,40 @@ codex-k8s/                                                монорепозит
         ├── ...                                           остальные шаблоны документов
         └── user_story.md                                 шаблон пользовательской истории
 ```
+
+## Развёртывание на чистый VPS (Ubuntu 24.04)
+
+См. `bootstrap/README.md` (это основной документ). Короткая версия:
+
+Предпосылки:
+- Ubuntu 24.04, доступ по SSH под `root`.
+- DNS:
+  - `CODEXK8S_PRODUCTION_DOMAIN` должен резолвиться в IP VPS до старта bootstrap;
+  - для AI слотов нужен wildcard на `*.${CODEXK8S_AI_DOMAIN}` (слоты будут вида `<namespace>.<CODEXK8S_AI_DOMAIN>`).
+- GitHub OAuth App для staff UI/API:
+  - `Homepage URL`: `https://<CODEXK8S_PRODUCTION_DOMAIN>`;
+  - `Authorization callback URL`: `https://<CODEXK8S_PRODUCTION_DOMAIN>/oauth2/callback`.
+
+Шаги:
+1. `cp bootstrap/host/config.env.example bootstrap/host/config.env`
+2. Заполнить `bootstrap/host/config.env` (переменные и подсказки внутри файла).
+3. Запустить preflight:
+
+```bash
+go run ./cmd/codex-bootstrap preflight --env-file bootstrap/host/config.env
+```
+
+4. Запустить bootstrap + deploy:
+
+```bash
+go run ./cmd/codex-bootstrap bootstrap --config services.yaml --env-file bootstrap/host/config.env
+```
+
+Проверки после деплоя: `docs/ops/production_runbook.md`.
+
+## Self-Deploy платформы
+
+После первичного bootstrap платформа деплоит сама себя:
+- merge/push в `main` платформенного репозитория вызывает deploy-only run через GitHub webhook;
+- прогресс и логи сборки/деплоя смотрим в staff UI: `Operations -> Build & Deploy`,
+  и через `kubectl` (см. `docs/ops/production_runbook.md`).

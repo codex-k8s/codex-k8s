@@ -135,6 +135,9 @@ func cleanupGitHub(values map[string]string, timeout time.Duration, workers int)
 	sortStrings(labelNames)
 
 	for _, repo := range repos {
+		if err := deleteGitHubEnvironments(ctx, client, repo, workers); err != nil {
+			return fmt.Errorf("delete environments in %s: %w", repo.FullName, err)
+		}
 		if err := deleteGitHubWebhook(ctx, client, repo, webhookURL); err != nil {
 			return fmt.Errorf("delete webhook in %s: %w", repo.FullName, err)
 		}
@@ -149,6 +152,174 @@ func cleanupGitHub(values map[string]string, timeout time.Duration, workers int)
 		return fmt.Errorf("delete repository secrets: %w", err)
 	}
 	return nil
+}
+
+func deleteGitHubEnvironments(ctx context.Context, client *gh.Client, repo githubRepositoryRef, workers int) error {
+	repository, _, err := client.Repositories.Get(ctx, repo.Owner, repo.Name)
+	if err != nil {
+		return err
+	}
+	repoID := int(repository.GetID())
+	if repoID <= 0 {
+		return fmt.Errorf("repository %s has invalid id", repo.FullName)
+	}
+
+	envNames, err := listGitHubEnvironmentNames(ctx, client, repo)
+	if err != nil {
+		return err
+	}
+	if len(envNames) == 0 {
+		return nil
+	}
+
+	for _, envName := range envNames {
+		if err := deleteGitHubEnvVariables(ctx, client, repo, envName, workers); err != nil {
+			return fmt.Errorf("delete env variables %s: %w", envName, err)
+		}
+		if err := deleteGitHubEnvSecrets(ctx, client, repoID, envName, workers); err != nil {
+			return fmt.Errorf("delete env secrets %s: %w", envName, err)
+		}
+		if _, err := client.Repositories.DeleteEnvironment(ctx, repo.Owner, repo.Name, envName); err != nil && !isGitHubNotFound(err) {
+			return fmt.Errorf("delete environment %s: %w", envName, err)
+		}
+	}
+
+	return nil
+}
+
+func listGitHubEnvironmentNames(ctx context.Context, client *gh.Client, repo githubRepositoryRef) ([]string, error) {
+	page := 1
+	out := make([]string, 0)
+	for {
+		envs, resp, err := client.Repositories.ListEnvironments(ctx, repo.Owner, repo.Name, &gh.EnvironmentListOptions{
+			ListOptions: gh.ListOptions{PerPage: 100, Page: page},
+		})
+		if err != nil {
+			return nil, err
+		}
+		if envs != nil {
+			for _, item := range envs.Environments {
+				if item == nil {
+					continue
+				}
+				name := strings.TrimSpace(item.GetName())
+				if name != "" {
+					out = append(out, name)
+				}
+			}
+		}
+		if resp == nil || resp.NextPage == 0 {
+			break
+		}
+		page = resp.NextPage
+	}
+	sortStrings(out)
+	return out, nil
+}
+
+func deleteGitHubEnvVariables(ctx context.Context, client *gh.Client, repo githubRepositoryRef, envName string, workers int) error {
+	names, err := listGitHubEnvVariableNames(ctx, client, repo, envName)
+	if err != nil {
+		return err
+	}
+
+	operations := make([]githubOperation, 0, len(names))
+	for _, name := range names {
+		name := strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		operations = append(operations, githubOperation{
+			Name: "delete env variable " + name,
+			Run: func(ctx context.Context) error {
+				if _, err := client.Actions.DeleteEnvVariable(ctx, repo.Owner, repo.Name, envName, name); err != nil && !isGitHubNotFound(err) {
+					return err
+				}
+				return nil
+			},
+		})
+	}
+	return runGitHubOperations(ctx, workers, operations)
+}
+
+func listGitHubEnvVariableNames(ctx context.Context, client *gh.Client, repo githubRepositoryRef, envName string) ([]string, error) {
+	page := 1
+	out := make([]string, 0)
+	for {
+		vars, resp, err := client.Actions.ListEnvVariables(ctx, repo.Owner, repo.Name, envName, &gh.ListOptions{PerPage: 100, Page: page})
+		if err != nil {
+			return nil, err
+		}
+		if vars != nil {
+			for _, item := range vars.Variables {
+				if item == nil {
+					continue
+				}
+				name := strings.TrimSpace(item.Name)
+				if name != "" {
+					out = append(out, name)
+				}
+			}
+		}
+		if resp == nil || resp.NextPage == 0 {
+			break
+		}
+		page = resp.NextPage
+	}
+	sortStrings(out)
+	return out, nil
+}
+
+func deleteGitHubEnvSecrets(ctx context.Context, client *gh.Client, repoID int, envName string, workers int) error {
+	names, err := listGitHubEnvSecretNames(ctx, client, repoID, envName)
+	if err != nil {
+		return err
+	}
+	operations := make([]githubOperation, 0, len(names))
+	for _, name := range names {
+		name := strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		operations = append(operations, githubOperation{
+			Name: "delete env secret " + name,
+			Run: func(ctx context.Context) error {
+				if _, err := client.Actions.DeleteEnvSecret(ctx, repoID, envName, name); err != nil && !isGitHubNotFound(err) {
+					return err
+				}
+				return nil
+			},
+		})
+	}
+	return runGitHubOperations(ctx, workers, operations)
+}
+
+func listGitHubEnvSecretNames(ctx context.Context, client *gh.Client, repoID int, envName string) ([]string, error) {
+	page := 1
+	out := make([]string, 0)
+	for {
+		secrets, resp, err := client.Actions.ListEnvSecrets(ctx, repoID, envName, &gh.ListOptions{PerPage: 100, Page: page})
+		if err != nil {
+			return nil, err
+		}
+		if secrets != nil {
+			for _, item := range secrets.Secrets {
+				if item == nil {
+					continue
+				}
+				name := strings.TrimSpace(item.Name)
+				if name != "" {
+					out = append(out, name)
+				}
+			}
+		}
+		if resp == nil || resp.NextPage == 0 {
+			break
+		}
+		page = resp.NextPage
+	}
+	sortStrings(out)
+	return out, nil
 }
 
 func deleteGitHubWebhook(ctx context.Context, client *gh.Client, repo githubRepositoryRef, webhookURL string) error {

@@ -13,11 +13,13 @@
 - поднимает внутренний registry без auth в loopback-режиме (`127.0.0.1` на node) и собирает образ через Kaniko;
 - автоматически настраивает `/etc/rancher/k3s/registries.yaml` для mirror на локальный registry (`http://127.0.0.1:<port>`);
 - разворачивает PostgreSQL и `codex-k8s` в production namespace;
-- создаёт `ClusterIssuer` (`codex-k8s-letsencrypt`) и выпускает TLS-сертификат через HTTP-01;
+- TLS для `CODEXK8S_PRODUCTION_DOMAIN` управляется в runtime-deploy:
+  - перед выпуском сертификата выполняется HTTP echo-probe (проверка доступности домена на этот кластер);
+  - после выпуска TLS secret сохраняется в служебный namespace (`CODEXK8S_TLS_SYSTEM_NAMESPACE`) и переиспользуется в следующих деплоях;
 - применяет baseline `NetworkPolicy` (platform namespace + labels для `system/platform` зон);
 - включает host firewall hardening: с внешней сети доступны только `SSH`, `HTTP`, `HTTPS`;
 - запрашивает внешние креды (`GitHub fine-grained token`, `CODEXK8S_OPENAI_API_KEY`), внутренние секреты генерирует автоматически;
-- настраивает GitHub repository secrets/variables для bootstrap/runtime конфигурации platform repo (`CODEXK8S_GITHUB_REPO`);
+- настраивает GitHub Environments (`production`, `ai`) и синхронизирует env-level secrets/variables для platform repo (`CODEXK8S_GITHUB_REPO`);
 - создаёт или обновляет GitHub webhook и каталог labels в platform repo (`CODEXK8S_GITHUB_REPO`) и, если задан отдельный `CODEXK8S_FIRST_PROJECT_GITHUB_REPO`, дополнительно синхронизирует webhook/labels там;
 - при старте `control-plane` автоматически создаёт/обновляет записи Project/Repositories в БД для `CODEXK8S_GITHUB_REPO`
   (и опционально для `CODEXK8S_FIRST_PROJECT_GITHUB_REPO`); platform project защищён от удаления через staff UI/API;
@@ -77,7 +79,8 @@ go run ./cmd/codex-bootstrap bootstrap \
 - `bootstrap/host/bootstrap_remote_production.sh` может читать env из кастомного файла через `CODEXK8S_BOOTSTRAP_CONFIG_FILE`; по умолчанию используется `bootstrap/host/config.env`.
 - `CODEXK8S_GITHUB_REPO` — platform repo (репозиторий с кодом `codex-k8s` и bootstrap/runtime metadata).
 - `CODEXK8S_FIRST_PROJECT_GITHUB_REPO` (опционально) — отдельный репозиторий первого подключаемого проекта, где bootstrap дополнительно создаёт webhook и каталог labels; если пусто, используется только `CODEXK8S_GITHUB_REPO` (dogfooding).
-- Platform secrets/variables (`CODEXK8S_*`) записываются только в `CODEXK8S_GITHUB_REPO`; в `CODEXK8S_FIRST_PROJECT_GITHUB_REPO` bootstrap не записывает platform secrets.
+- Platform secrets/variables (`CODEXK8S_*`) записываются в `CODEXK8S_GITHUB_REPO` на уровне GitHub Environments (`production`, `ai`).
+  В `CODEXK8S_FIRST_PROJECT_GITHUB_REPO` bootstrap не записывает platform secrets (там только webhook/labels).
 - Для bootstrap нужен `CODEXK8S_GITHUB_PAT` (fine-grained) с правами на `administration` (webhooks/labels), `secrets` и `variables`.
 - Для staff UI и staff API требуется GitHub OAuth App:
   - создать на `https://github.com/settings/applications/new`;
@@ -98,7 +101,7 @@ go run ./cmd/codex-bootstrap bootstrap \
 - Worker-параметры (`CODEXK8S_WORKER_*`) также синхронизируются в GitHub Variables и применяются при deploy.
 - `CODEXK8S_LEARNING_MODE_DEFAULT` задаёт default для новых проектов (`true` в шаблоне; пустое значение = выключено).
 - В `bootstrap/host/config.env` используйте только переменные с префиксом `CODEXK8S_` для платформенных параметров и секретов.
-- `CODEXK8S_PRODUCTION_DOMAIN` и `CODEXK8S_LETSENCRYPT_EMAIL` обязательны.
+- `CODEXK8S_PRODUCTION_DOMAIN`, `CODEXK8S_AI_DOMAIN` и `CODEXK8S_LETSENCRYPT_EMAIL` обязательны.
 - Для single-node/bare-metal production по умолчанию включён `CODEXK8S_INGRESS_HOST_NETWORK=true` (ingress слушает хостовые `:80/:443`).
 - При `CODEXK8S_INGRESS_HOST_NETWORK=true` сервис ingress автоматически приводится к `ClusterIP`, чтобы не оставлять внешние `NodePort`.
 - Внутренний registry работает без auth по design MVP и слушает только `127.0.0.1:<CODEXK8S_INTERNAL_REGISTRY_PORT>` на node.
