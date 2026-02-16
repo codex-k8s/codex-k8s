@@ -64,6 +64,10 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 	if err != nil {
 		return UpsertCommentResult{}, err
 	}
+	if !runCtx.hasCommentTarget() {
+		// Push-main deploy runs do not have issue/PR threads to post status comments into.
+		return UpsertCommentResult{}, nil
+	}
 
 	currentState := commentState{
 		RunID:           runID,
@@ -308,12 +312,15 @@ func (s *Service) GetRunRuntimeState(ctx context.Context, runID string) (Runtime
 		return RuntimeState{}, err
 	}
 
-	comments, err := s.listRunIssueComments(ctx, runCtx)
-	if err != nil {
-		return RuntimeState{}, err
+	state := commentState{}
+	found := false
+	if runCtx.hasCommentTarget() {
+		comments, err := s.listRunIssueComments(ctx, runCtx)
+		if err != nil {
+			return RuntimeState{}, err
+		}
+		_, state, found = findRunStatusComment(comments, trimmedRunID)
 	}
-
-	_, state, found := findRunStatusComment(comments, trimmedRunID)
 	result := RuntimeState{
 		HasStatusComment: found,
 		JobName:          strings.TrimSpace(state.JobName),
@@ -384,7 +391,13 @@ func (s *Service) loadRunContext(ctx context.Context, runID string) (runContext,
 	}
 	targetKind, targetNumber, err := resolveCommentTarget(payload)
 	if err != nil {
-		return runContext{}, err
+		if errors.Is(err, errRunCommentTargetMissing) {
+			// Push-main deploy runs don't have issue/PR thread context.
+			targetKind = ""
+			targetNumber = 0
+		} else {
+			return runContext{}, err
+		}
 	}
 
 	repoOwner := ""
@@ -395,12 +408,16 @@ func (s *Service) loadRunContext(ctx context.Context, runID string) (runContext,
 		repoOwner = strings.TrimSpace(owner)
 		repoName = strings.TrimSpace(name)
 	}
-	if repoOwner == "" || repoName == "" {
+	if (repoOwner == "" || repoName == "") && targetNumber > 0 {
 		return runContext{}, errRunRepoNameMissing
 	}
-	token, err := s.loadBotToken(ctx)
-	if err != nil {
-		return runContext{}, err
+
+	token := ""
+	if targetNumber > 0 {
+		token, err = s.loadBotToken(ctx)
+		if err != nil {
+			return runContext{}, err
+		}
 	}
 
 	triggerKind := triggerKindDev

@@ -2,6 +2,7 @@ package runstatus
 
 import (
 	"context"
+	"strings"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/crypto/tokencrypt"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
@@ -168,6 +169,10 @@ type runContext struct {
 	repoName            string
 	githubToken         string
 	triggerKind         string
+}
+
+func (c runContext) hasCommentTarget() bool {
+	return c.commentTargetNumber > 0 && strings.TrimSpace(string(c.commentTargetKind)) != ""
 }
 
 type commentState struct {

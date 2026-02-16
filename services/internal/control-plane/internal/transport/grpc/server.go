@@ -1213,7 +1213,17 @@ func toStatus(err error) error {
 	case errors.As(err, &c):
 		return status.Error(codes.AlreadyExists, c.Error())
 	default:
-		return status.Error(codes.Internal, "internal error")
+		// Prefer explicit error text for debugging. Keep it bounded to avoid huge status messages
+		// when upstream includes logs in errors.
+		msg := strings.TrimSpace(err.Error())
+		if msg == "" {
+			msg = "internal error"
+		}
+		const maxLen = 1024
+		if len(msg) > maxLen {
+			msg = msg[:maxLen] + "..."
+		}
+		return status.Error(codes.Internal, msg)
 	}
 }
 
