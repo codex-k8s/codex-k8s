@@ -179,6 +179,10 @@ spec:
             - containerPort: 8081
               name: http
           env:
+            - name: CODEXK8S_PLATFORM_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
             - name: CODEXK8S_ENV
               value: '{{ envOr "CODEXK8S_ENV" "" }}'
             - name: CODEXK8S_HOT_RELOAD
@@ -187,6 +191,18 @@ spec:
               value: /app/services.yaml
             - name: CODEXK8S_SERVICES_CONFIG_ENV
               value: '{{ envOr "CODEXK8S_SERVICES_CONFIG_ENV" "" }}'
+            - name: CODEXK8S_PRODUCTION_DOMAIN
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_PRODUCTION_DOMAIN
+                  optional: true
+            - name: CODEXK8S_AI_DOMAIN
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_AI_DOMAIN
+                  optional: true
             - name: CODEXK8S_CONTROL_PLANE_GRPC_ADDR
               value: ":9090"
             - name: CODEXK8S_CONTROL_PLANE_HTTP_ADDR

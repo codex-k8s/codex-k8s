@@ -36,6 +36,10 @@ func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[
 		}
 		vars[key] = value
 	}
+	// Preserve platform namespace for cross-namespace secret reads (ai env uses shared secrets from platform ns).
+	if strings.TrimSpace(vars["CODEXK8S_PLATFORM_NAMESPACE"]) == "" {
+		vars["CODEXK8S_PLATFORM_NAMESPACE"] = strings.TrimSpace(vars["CODEXK8S_PRODUCTION_NAMESPACE"])
+	}
 
 	targetEnv := strings.TrimSpace(params.TargetEnv)
 	if targetEnv == "" {
@@ -56,6 +60,17 @@ func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[
 		if strings.TrimSpace(vars["CODEXK8S_CONTROL_PLANE_MCP_BASE_URL"]) == "" {
 			vars["CODEXK8S_CONTROL_PLANE_MCP_BASE_URL"] = fmt.Sprintf("http://codex-k8s-control-plane.%s.svc.cluster.local:8081/mcp", targetNamespace)
 		}
+	}
+
+	publicDomain := resolvePublicDomain(targetEnv, targetNamespace, vars)
+	if publicDomain != "" {
+		vars["CODEXK8S_PUBLIC_DOMAIN"] = publicDomain
+		if strings.EqualFold(targetEnv, "ai") || strings.TrimSpace(vars["CODEXK8S_PUBLIC_BASE_URL"]) == "" {
+			vars["CODEXK8S_PUBLIC_BASE_URL"] = "https://" + publicDomain
+		}
+	}
+	if strings.TrimSpace(vars["CODEXK8S_TLS_SECRET_NAME"]) == "" {
+		vars["CODEXK8S_TLS_SECRET_NAME"] = defaultTLSSecretName(targetEnv)
 	}
 
 	buildRef := strings.TrimSpace(params.BuildRef)
@@ -100,4 +115,22 @@ func defaultPlatformDeploymentReplicas(targetEnv string) string {
 	default:
 		return "1"
 	}
+}
+
+func resolvePublicDomain(targetEnv string, namespace string, vars map[string]string) string {
+	if strings.EqualFold(strings.TrimSpace(targetEnv), "ai") {
+		base := strings.TrimSpace(valueOr(vars, "CODEXK8S_AI_DOMAIN", ""))
+		ns := strings.TrimSpace(namespace)
+		if base != "" && ns != "" {
+			return ns + "." + base
+		}
+	}
+	return strings.TrimSpace(valueOr(vars, "CODEXK8S_PRODUCTION_DOMAIN", ""))
+}
+
+func defaultTLSSecretName(targetEnv string) string {
+	if strings.EqualFold(strings.TrimSpace(targetEnv), "ai") {
+		return "codex-k8s-ai-tls"
+	}
+	return "codex-k8s-production-tls"
 }

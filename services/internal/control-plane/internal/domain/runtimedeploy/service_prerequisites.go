@@ -12,20 +12,83 @@ import (
 )
 
 func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, namespace string, vars map[string]string) error {
-	existingPostgres, _, err := s.k8s.GetSecretData(ctx, namespace, "codex-k8s-postgres")
+	targetNamespace := strings.TrimSpace(namespace)
+	if targetNamespace == "" {
+		return fmt.Errorf("namespace is required")
+	}
+
+	if err := s.k8s.EnsureNamespace(ctx, targetNamespace); err != nil {
+		return fmt.Errorf("ensure namespace %s: %w", targetNamespace, err)
+	}
+
+	targetEnv := strings.ToLower(strings.TrimSpace(valueOr(vars, "CODEXK8S_ENV", "")))
+	if targetEnv == "" {
+		targetEnv = "production"
+	}
+
+	platformNamespace := strings.TrimSpace(valueOr(vars, "CODEXK8S_PLATFORM_NAMESPACE", ""))
+	if platformNamespace == "" {
+		platformNamespace = strings.TrimSpace(valueOr(vars, "CODEXK8S_PRODUCTION_NAMESPACE", ""))
+	}
+	if platformNamespace == "" {
+		platformNamespace = targetNamespace
+	}
+
+	existingPostgres, _, err := s.k8s.GetSecretData(ctx, targetNamespace, "codex-k8s-postgres")
 	if err != nil {
 		return fmt.Errorf("load codex-k8s-postgres secret: %w", err)
 	}
-	existingRuntime, _, err := s.k8s.GetSecretData(ctx, namespace, "codex-k8s-runtime")
+	existingRuntime, _, err := s.k8s.GetSecretData(ctx, targetNamespace, "codex-k8s-runtime")
 	if err != nil {
 		return fmt.Errorf("load codex-k8s-runtime secret: %w", err)
 	}
+	existingOAuth, _, err := s.k8s.GetSecretData(ctx, targetNamespace, "codex-k8s-oauth2-proxy")
+	if err != nil {
+		return fmt.Errorf("load oauth2-proxy secret: %w", err)
+	}
 
-	oauthClientID, err := requiredNonEmptyValue(vars, "CODEXK8S_GITHUB_OAUTH_CLIENT_ID")
+	platformRuntime, _, err := s.k8s.GetSecretData(ctx, platformNamespace, "codex-k8s-runtime")
+	if err != nil {
+		return fmt.Errorf("load platform codex-k8s-runtime secret: %w", err)
+	}
+	platformOAuth, _, err := s.k8s.GetSecretData(ctx, platformNamespace, "codex-k8s-oauth2-proxy")
+	if err != nil {
+		return fmt.Errorf("load platform codex-k8s-oauth2-proxy secret: %w", err)
+	}
+
+	sharedRuntime := platformRuntime
+	sharedOAuth := platformOAuth
+	if targetEnv == "ai" {
+		aiRuntime, found, err := s.k8s.GetSecretData(ctx, platformNamespace, "codex-k8s-runtime-ai")
+		if err != nil {
+			return fmt.Errorf("load platform codex-k8s-runtime-ai secret: %w", err)
+		}
+		if found {
+			sharedRuntime = aiRuntime
+		} else if len(platformRuntime) > 0 {
+			if err := s.k8s.UpsertSecret(ctx, platformNamespace, "codex-k8s-runtime-ai", cloneSecretData(platformRuntime)); err != nil {
+				return fmt.Errorf("seed platform codex-k8s-runtime-ai secret: %w", err)
+			}
+		}
+
+		aiOAuth, found, err := s.k8s.GetSecretData(ctx, platformNamespace, "codex-k8s-oauth2-proxy-ai")
+		if err != nil {
+			return fmt.Errorf("load platform codex-k8s-oauth2-proxy-ai secret: %w", err)
+		}
+		if found {
+			sharedOAuth = aiOAuth
+		} else if len(platformOAuth) > 0 {
+			if err := s.k8s.UpsertSecret(ctx, platformNamespace, "codex-k8s-oauth2-proxy-ai", cloneSecretData(platformOAuth)); err != nil {
+				return fmt.Errorf("seed platform codex-k8s-oauth2-proxy-ai secret: %w", err)
+			}
+		}
+	}
+
+	oauthClientID, err := requiredValueFromSecrets(vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_OAUTH_CLIENT_ID")
 	if err != nil {
 		return err
 	}
-	oauthClientSecret, err := requiredNonEmptyValue(vars, "CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET")
+	oauthClientSecret, err := requiredValueFromSecrets(vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET")
 	if err != nil {
 		return err
 	}
@@ -42,23 +105,23 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, namespace str
 		return fmt.Errorf("resolve CODEXK8S_POSTGRES_PASSWORD: %w", err)
 	}
 
-	appSecretKey, err := valueOrExistingOrRandomHex(vars, existingRuntime, "CODEXK8S_APP_SECRET_KEY", 32)
+	appSecretKey, err := valueOrExistingOrSharedOrRandomHex(vars, existingRuntime, sharedRuntime, "CODEXK8S_APP_SECRET_KEY", 32)
 	if err != nil {
 		return fmt.Errorf("resolve CODEXK8S_APP_SECRET_KEY: %w", err)
 	}
-	tokenEncryptionKey, err := valueOrExistingOrRandomHex(vars, existingRuntime, "CODEXK8S_TOKEN_ENCRYPTION_KEY", 32)
+	tokenEncryptionKey, err := valueOrExistingOrSharedOrRandomHex(vars, existingRuntime, sharedRuntime, "CODEXK8S_TOKEN_ENCRYPTION_KEY", 32)
 	if err != nil {
 		return fmt.Errorf("resolve CODEXK8S_TOKEN_ENCRYPTION_KEY: %w", err)
 	}
-	mcpTokenSigningKey := strings.TrimSpace(valueOrExisting(vars, existingRuntime, "CODEXK8S_MCP_TOKEN_SIGNING_KEY", ""))
+	mcpTokenSigningKey := strings.TrimSpace(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_MCP_TOKEN_SIGNING_KEY", ""))
 	if mcpTokenSigningKey == "" {
 		mcpTokenSigningKey = tokenEncryptionKey
 	}
-	githubWebhookSecret, err := valueOrExistingOrRandomHex(vars, existingRuntime, "CODEXK8S_GITHUB_WEBHOOK_SECRET", 32)
+	githubWebhookSecret, err := valueOrExistingOrSharedOrRandomHex(vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_WEBHOOK_SECRET", 32)
 	if err != nil {
 		return fmt.Errorf("resolve CODEXK8S_GITHUB_WEBHOOK_SECRET: %w", err)
 	}
-	jwtSigningKey, err := valueOrExistingOrRandomHex(vars, existingRuntime, "CODEXK8S_JWT_SIGNING_KEY", 32)
+	jwtSigningKey, err := valueOrExistingOrSharedOrRandomHex(vars, existingRuntime, sharedRuntime, "CODEXK8S_JWT_SIGNING_KEY", 32)
 	if err != nil {
 		return fmt.Errorf("resolve CODEXK8S_JWT_SIGNING_KEY: %w", err)
 	}
@@ -68,7 +131,7 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, namespace str
 		"CODEXK8S_POSTGRES_USER":     []byte(postgresUser),
 		"CODEXK8S_POSTGRES_PASSWORD": []byte(postgresPassword),
 	}
-	if err := s.k8s.UpsertSecret(ctx, namespace, "codex-k8s-postgres", postgresData); err != nil {
+	if err := s.k8s.UpsertSecret(ctx, targetNamespace, "codex-k8s-postgres", postgresData); err != nil {
 		return fmt.Errorf("upsert codex-k8s-postgres secret: %w", err)
 	}
 
@@ -77,58 +140,62 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, namespace str
 		"CODEXK8S_INTERNAL_REGISTRY_PORT":            []byte(internalRegistryPort),
 		"CODEXK8S_INTERNAL_REGISTRY_HOST":            []byte(internalRegistryHost),
 		"CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE":    []byte(internalRegistryStorageSize),
-		"CODEXK8S_GITHUB_PAT":                        []byte(valueOr(vars, "CODEXK8S_GITHUB_PAT", "")),
-		"CODEXK8S_GITHUB_REPO":                       []byte(valueOr(vars, "CODEXK8S_GITHUB_REPO", "")),
-		"CODEXK8S_FIRST_PROJECT_GITHUB_REPO":         []byte(valueOr(vars, "CODEXK8S_FIRST_PROJECT_GITHUB_REPO", "")),
-		"CODEXK8S_OPENAI_API_KEY":                    []byte(valueOr(vars, "CODEXK8S_OPENAI_API_KEY", "")),
-		"CODEXK8S_OPENAI_AUTH_FILE":                  []byte(valueOr(vars, "CODEXK8S_OPENAI_AUTH_FILE", "")),
-		"CODEXK8S_PROJECT_DB_ADMIN_HOST":             []byte(valueOr(vars, "CODEXK8S_PROJECT_DB_ADMIN_HOST", "postgres")),
-		"CODEXK8S_PROJECT_DB_ADMIN_PORT":             []byte(valueOr(vars, "CODEXK8S_PROJECT_DB_ADMIN_PORT", "5432")),
-		"CODEXK8S_PROJECT_DB_ADMIN_USER":             []byte(valueOr(vars, "CODEXK8S_PROJECT_DB_ADMIN_USER", valueOr(vars, "CODEXK8S_POSTGRES_USER", "codex_k8s"))),
-		"CODEXK8S_PROJECT_DB_ADMIN_PASSWORD":         []byte(valueOr(vars, "CODEXK8S_PROJECT_DB_ADMIN_PASSWORD", string(postgresData["CODEXK8S_POSTGRES_PASSWORD"]))),
-		"CODEXK8S_PROJECT_DB_ADMIN_SSLMODE":          []byte(valueOr(vars, "CODEXK8S_PROJECT_DB_ADMIN_SSLMODE", "disable")),
-		"CODEXK8S_PROJECT_DB_ADMIN_DATABASE":         []byte(valueOr(vars, "CODEXK8S_PROJECT_DB_ADMIN_DATABASE", "postgres")),
-		"CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS": []byte(valueOr(vars, "CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS", "dev,production,prod")),
-		"CODEXK8S_GIT_BOT_TOKEN":                     []byte(valueOr(vars, "CODEXK8S_GIT_BOT_TOKEN", "")),
-		"CODEXK8S_GIT_BOT_USERNAME":                  []byte(valueOr(vars, "CODEXK8S_GIT_BOT_USERNAME", "codex-bot")),
-		"CODEXK8S_GIT_BOT_MAIL":                      []byte(valueOr(vars, "CODEXK8S_GIT_BOT_MAIL", "codex-bot@codex-k8s.local")),
-		"CODEXK8S_CONTEXT7_API_KEY":                  []byte(valueOr(vars, "CODEXK8S_CONTEXT7_API_KEY", "")),
+		"CODEXK8S_GITHUB_PAT":                        []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_PAT", "")),
+		"CODEXK8S_GITHUB_REPO":                       []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_REPO", "")),
+		"CODEXK8S_FIRST_PROJECT_GITHUB_REPO":         []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_FIRST_PROJECT_GITHUB_REPO", "")),
+		"CODEXK8S_OPENAI_API_KEY":                    []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_OPENAI_API_KEY", "")),
+		"CODEXK8S_OPENAI_AUTH_FILE":                  []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_OPENAI_AUTH_FILE", "")),
+		"CODEXK8S_PROJECT_DB_ADMIN_HOST":             []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_PROJECT_DB_ADMIN_HOST", "postgres")),
+		"CODEXK8S_PROJECT_DB_ADMIN_PORT":             []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_PROJECT_DB_ADMIN_PORT", "5432")),
+		"CODEXK8S_PROJECT_DB_ADMIN_USER":             []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_PROJECT_DB_ADMIN_USER", valueOr(vars, "CODEXK8S_POSTGRES_USER", "codex_k8s"))),
+		"CODEXK8S_PROJECT_DB_ADMIN_PASSWORD":         []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_PROJECT_DB_ADMIN_PASSWORD", string(postgresData["CODEXK8S_POSTGRES_PASSWORD"]))),
+		"CODEXK8S_PROJECT_DB_ADMIN_SSLMODE":          []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_PROJECT_DB_ADMIN_SSLMODE", "disable")),
+		"CODEXK8S_PROJECT_DB_ADMIN_DATABASE":         []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_PROJECT_DB_ADMIN_DATABASE", "postgres")),
+		"CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS": []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS", "dev,production,prod")),
+		"CODEXK8S_GIT_BOT_TOKEN":                     []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_GIT_BOT_TOKEN", "")),
+		"CODEXK8S_GIT_BOT_USERNAME":                  []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_GIT_BOT_USERNAME", "codex-bot")),
+		"CODEXK8S_GIT_BOT_MAIL":                      []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_GIT_BOT_MAIL", "codex-bot@codex-k8s.local")),
+		"CODEXK8S_CONTEXT7_API_KEY":                  []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_CONTEXT7_API_KEY", "")),
 		"CODEXK8S_APP_SECRET_KEY":                    []byte(appSecretKey),
 		"CODEXK8S_TOKEN_ENCRYPTION_KEY":              []byte(tokenEncryptionKey),
 		"CODEXK8S_MCP_TOKEN_SIGNING_KEY":             []byte(mcpTokenSigningKey),
-		"CODEXK8S_MCP_TOKEN_TTL":                     []byte(valueOr(vars, "CODEXK8S_MCP_TOKEN_TTL", "24h")),
-		"CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS":     []byte(valueOr(vars, "CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS", "14")),
-		"CODEXK8S_LEARNING_MODE_DEFAULT":             []byte(valueOr(vars, "CODEXK8S_LEARNING_MODE_DEFAULT", "true")),
+		"CODEXK8S_MCP_TOKEN_TTL":                     []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_MCP_TOKEN_TTL", "24h")),
+		"CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS":     []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS", "14")),
+		"CODEXK8S_LEARNING_MODE_DEFAULT":             []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_LEARNING_MODE_DEFAULT", "true")),
 		"CODEXK8S_GITHUB_WEBHOOK_SECRET":             []byte(githubWebhookSecret),
-		"CODEXK8S_GITHUB_WEBHOOK_URL":                []byte(valueOr(vars, "CODEXK8S_GITHUB_WEBHOOK_URL", "")),
-		"CODEXK8S_GITHUB_WEBHOOK_EVENTS":             []byte(valueOr(vars, "CODEXK8S_GITHUB_WEBHOOK_EVENTS", "push,pull_request,issues,issue_comment,pull_request_review,pull_request_review_comment")),
+		"CODEXK8S_GITHUB_WEBHOOK_URL":                []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_WEBHOOK_URL", "")),
+		"CODEXK8S_GITHUB_WEBHOOK_EVENTS":             []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_WEBHOOK_EVENTS", "push,pull_request,issues,issue_comment,pull_request_review,pull_request_review_comment")),
+		"CODEXK8S_PRODUCTION_DOMAIN":                 []byte(valueOr(vars, "CODEXK8S_PRODUCTION_DOMAIN", "")),
+		"CODEXK8S_AI_DOMAIN":                         []byte(valueOr(vars, "CODEXK8S_AI_DOMAIN", "")),
 		"CODEXK8S_PUBLIC_BASE_URL":                   []byte(valueOr(vars, "CODEXK8S_PUBLIC_BASE_URL", "https://example.invalid")),
-		"CODEXK8S_BOOTSTRAP_OWNER_EMAIL":             []byte(valueOr(vars, "CODEXK8S_BOOTSTRAP_OWNER_EMAIL", "owner@example.invalid")),
-		"CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS":          []byte(valueOr(vars, "CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS", "")),
-		"CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS":   []byte(valueOr(vars, "CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS", "")),
+		"CODEXK8S_BOOTSTRAP_OWNER_EMAIL":             []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_BOOTSTRAP_OWNER_EMAIL", "owner@example.invalid")),
+		"CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS":          []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS", "")),
+		"CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS":   []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS", "")),
 		"CODEXK8S_GITHUB_OAUTH_CLIENT_ID":            []byte(oauthClientID),
 		"CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET":        []byte(oauthClientSecret),
 		"CODEXK8S_JWT_SIGNING_KEY":                   []byte(jwtSigningKey),
-		"CODEXK8S_JWT_TTL":                           []byte(valueOr(vars, "CODEXK8S_JWT_TTL", "15m")),
+		"CODEXK8S_JWT_TTL":                           []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_JWT_TTL", "15m")),
 		// UI hot-reload is only supported in ai slots. For production/production we
 		// intentionally keep the value empty so api-gateway serves embedded static UI.
 		"CODEXK8S_VITE_DEV_UPSTREAM": []byte(resolveViteDevUpstream(vars)),
 	}
-	if err := s.k8s.UpsertSecret(ctx, namespace, "codex-k8s-runtime", runtimeSecret); err != nil {
+	if err := s.k8s.UpsertSecret(ctx, targetNamespace, "codex-k8s-runtime", runtimeSecret); err != nil {
 		return fmt.Errorf("upsert codex-k8s-runtime secret: %w", err)
 	}
 
-	oauthCookie := valueOr(vars, "OAUTH2_PROXY_COOKIE_SECRET", "")
+	oauthCookie := strings.TrimSpace(valueOr(vars, "OAUTH2_PROXY_COOKIE_SECRET", ""))
 	if oauthCookie == "" {
-		existing, found, err := s.k8s.GetSecretData(ctx, namespace, "codex-k8s-oauth2-proxy")
-		if err != nil {
-			return fmt.Errorf("load oauth2-proxy secret: %w", err)
+		if value, ok := existingOAuth["OAUTH2_PROXY_COOKIE_SECRET"]; ok {
+			existingCookie := string(value)
+			if isValidOAuthCookieSecret(existingCookie) {
+				oauthCookie = existingCookie
+			}
 		}
-		if found {
-			if value, ok := existing["OAUTH2_PROXY_COOKIE_SECRET"]; ok {
-				existingCookie := string(value)
-				if isValidOAuthCookieSecret(existingCookie) {
-					oauthCookie = existingCookie
+		if oauthCookie == "" && sharedOAuth != nil {
+			if value, ok := sharedOAuth["OAUTH2_PROXY_COOKIE_SECRET"]; ok {
+				sharedCookie := string(value)
+				if isValidOAuthCookieSecret(sharedCookie) {
+					oauthCookie = sharedCookie
 				}
 			}
 		}
@@ -144,15 +211,22 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, namespace str
 		"OAUTH2_PROXY_CLIENT_SECRET": []byte(oauthClientSecret),
 		"OAUTH2_PROXY_COOKIE_SECRET": []byte(oauthCookie),
 	}
-	if err := s.k8s.UpsertSecret(ctx, namespace, "codex-k8s-oauth2-proxy", oauthSecret); err != nil {
+	if err := s.k8s.UpsertSecret(ctx, targetNamespace, "codex-k8s-oauth2-proxy", oauthSecret); err != nil {
 		return fmt.Errorf("upsert codex-k8s-oauth2-proxy secret: %w", err)
+	}
+
+	// Seed separate environment-scoped platform secrets (ai) once so operators can diverge them later.
+	if targetNamespace == platformNamespace && targetEnv != "ai" {
+		if err := s.seedPlatformEnvSecrets(ctx, platformNamespace, vars, runtimeSecret, oauthSecret); err != nil {
+			return err
+		}
 	}
 
 	labels := make(map[string]string, len(labelCatalogDefaults))
 	for key, fallback := range labelCatalogDefaults {
 		labels[key] = valueOr(vars, key, fallback)
 	}
-	if err := s.k8s.UpsertConfigMap(ctx, namespace, "codex-k8s-label-catalog", labels); err != nil {
+	if err := s.k8s.UpsertConfigMap(ctx, targetNamespace, "codex-k8s-label-catalog", labels); err != nil {
 		return fmt.Errorf("upsert codex-k8s-label-catalog configmap: %w", err)
 	}
 
@@ -161,7 +235,7 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, namespace str
 		return fmt.Errorf("read migrations: %w", err)
 	}
 	if len(migrationsData) > 0 {
-		if err := s.k8s.UpsertConfigMap(ctx, namespace, "codex-k8s-migrations", migrationsData); err != nil {
+		if err := s.k8s.UpsertConfigMap(ctx, targetNamespace, "codex-k8s-migrations", migrationsData); err != nil {
 			return fmt.Errorf("upsert codex-k8s-migrations configmap: %w", err)
 		}
 	}
@@ -184,19 +258,12 @@ func resolveViteDevUpstream(vars map[string]string) string {
 	return strings.TrimSpace(valueOr(vars, "CODEXK8S_VITE_DEV_UPSTREAM", "http://codex-k8s-web-console:5173"))
 }
 
-func requiredNonEmptyValue(values map[string]string, key string) (string, error) {
-	value := strings.TrimSpace(valueOr(values, key, ""))
+func requiredValueFromSecrets(values map[string]string, existing map[string][]byte, shared map[string][]byte, key string) (string, error) {
+	value := strings.TrimSpace(valueOrExistingOrShared(values, existing, shared, key, ""))
 	if value == "" {
 		return "", fmt.Errorf("%s is required", key)
 	}
 	return value, nil
-}
-
-func valueOrRandomHex(values map[string]string, key string, numBytes int) (string, error) {
-	if value := strings.TrimSpace(valueOr(values, key, "")); value != "" {
-		return value, nil
-	}
-	return randomHex(numBytes)
 }
 
 func valueOrExisting(values map[string]string, existing map[string][]byte, key string, fallback string) string {
@@ -209,6 +276,27 @@ func valueOrExisting(values map[string]string, existing map[string][]byte, key s
 				return value
 			}
 		}
+	}
+	return fallback
+}
+
+func valueOrExistingOrShared(values map[string]string, existing map[string][]byte, shared map[string][]byte, key string, fallback string) string {
+	if existing != nil {
+		if raw, ok := existing[key]; ok {
+			if value := strings.TrimSpace(string(raw)); value != "" {
+				return value
+			}
+		}
+	}
+	if shared != nil {
+		if raw, ok := shared[key]; ok {
+			if value := strings.TrimSpace(string(raw)); value != "" {
+				return value
+			}
+		}
+	}
+	if value := strings.TrimSpace(valueOr(values, key, "")); value != "" {
+		return value
 	}
 	return fallback
 }
@@ -235,6 +323,83 @@ func valueOrExistingOrRandomHex(values map[string]string, existing map[string][]
 	return randomHex(numBytes)
 }
 
+func valueOrExistingOrSharedOrRandomHex(values map[string]string, existing map[string][]byte, shared map[string][]byte, key string, numBytes int) (string, error) {
+	if value := strings.TrimSpace(valueOr(values, key, "")); value != "" {
+		if existing != nil {
+			if raw, ok := existing[key]; ok {
+				existingValue := strings.TrimSpace(string(raw))
+				if existingValue != "" && value != existingValue {
+					return "", fmt.Errorf("%s differs from existing secret value; refusing to rotate automatically", key)
+				}
+			}
+		}
+		if shared != nil {
+			if raw, ok := shared[key]; ok {
+				sharedValue := strings.TrimSpace(string(raw))
+				if sharedValue != "" && value != sharedValue {
+					return "", fmt.Errorf("%s differs from shared secret value; refusing to rotate automatically", key)
+				}
+			}
+		}
+		return value, nil
+	}
+	if existing != nil {
+		if raw, ok := existing[key]; ok {
+			if value := strings.TrimSpace(string(raw)); value != "" {
+				return value, nil
+			}
+		}
+	}
+	if shared != nil {
+		if raw, ok := shared[key]; ok {
+			if value := strings.TrimSpace(string(raw)); value != "" {
+				return value, nil
+			}
+		}
+	}
+	return randomHex(numBytes)
+}
+
+func cloneSecretData(input map[string][]byte) map[string][]byte {
+	if len(input) == 0 {
+		return map[string][]byte{}
+	}
+	out := make(map[string][]byte, len(input))
+	for key, value := range input {
+		out[key] = append([]byte(nil), value...)
+	}
+	return out
+}
+
+func (s *Service) seedPlatformEnvSecrets(ctx context.Context, platformNamespace string, vars map[string]string, runtimeSecret map[string][]byte, oauthSecret map[string][]byte) error {
+	platformNamespace = strings.TrimSpace(platformNamespace)
+	if platformNamespace == "" {
+		return nil
+	}
+
+	if _, found, err := s.k8s.GetSecretData(ctx, platformNamespace, "codex-k8s-runtime-ai"); err != nil {
+		return fmt.Errorf("check codex-k8s-runtime-ai exists: %w", err)
+	} else if !found {
+		aiRuntime := cloneSecretData(runtimeSecret)
+		aiVars := cloneStringMap(vars)
+		aiVars["CODEXK8S_SERVICES_CONFIG_ENV"] = "ai"
+		aiVars["CODEXK8S_ENV"] = "ai"
+		aiRuntime["CODEXK8S_VITE_DEV_UPSTREAM"] = []byte(resolveViteDevUpstream(aiVars))
+		if err := s.k8s.UpsertSecret(ctx, platformNamespace, "codex-k8s-runtime-ai", aiRuntime); err != nil {
+			return fmt.Errorf("seed codex-k8s-runtime-ai secret: %w", err)
+		}
+	}
+
+	if _, found, err := s.k8s.GetSecretData(ctx, platformNamespace, "codex-k8s-oauth2-proxy-ai"); err != nil {
+		return fmt.Errorf("check codex-k8s-oauth2-proxy-ai exists: %w", err)
+	} else if !found {
+		if err := s.k8s.UpsertSecret(ctx, platformNamespace, "codex-k8s-oauth2-proxy-ai", cloneSecretData(oauthSecret)); err != nil {
+			return fmt.Errorf("seed codex-k8s-oauth2-proxy-ai secret: %w", err)
+		}
+	}
+
+	return nil
+}
 func randomHex(numBytes int) (string, error) {
 	if numBytes <= 0 {
 		numBytes = 16

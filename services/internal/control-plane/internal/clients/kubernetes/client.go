@@ -278,8 +278,40 @@ func (c *Client) ExecPod(ctx context.Context, namespace string, pod string, cont
 	}, nil
 }
 
+// EnsureNamespace creates namespace when absent.
+func (c *Client) EnsureNamespace(ctx context.Context, namespace string) error {
+	targetNamespace := strings.TrimSpace(namespace)
+	if targetNamespace == "" {
+		return fmt.Errorf("namespace is required")
+	}
+
+	_, err := c.clientset.CoreV1().Namespaces().Get(ctx, targetNamespace, metav1.GetOptions{})
+	if err == nil {
+		return nil
+	}
+	if !k8serrors.IsNotFound(err) {
+		return fmt.Errorf("get namespace %s: %w", targetNamespace, err)
+	}
+
+	if _, err := c.clientset.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: targetNamespace},
+	}, metav1.CreateOptions{}); err != nil && !k8serrors.IsAlreadyExists(err) {
+		return fmt.Errorf("create namespace %s: %w", targetNamespace, err)
+	}
+	return nil
+}
+
 // UpsertSecret creates or updates one namespaced Kubernetes Secret with deterministic data keys.
 func (c *Client) UpsertSecret(ctx context.Context, namespace string, secretName string, data map[string][]byte) error {
+	return c.upsertSecret(ctx, namespace, secretName, corev1.SecretTypeOpaque, data)
+}
+
+// UpsertTLSSecret creates or updates one TLS Kubernetes Secret (`kubernetes.io/tls`).
+func (c *Client) UpsertTLSSecret(ctx context.Context, namespace string, secretName string, data map[string][]byte) error {
+	return c.upsertSecret(ctx, namespace, secretName, corev1.SecretTypeTLS, data)
+}
+
+func (c *Client) upsertSecret(ctx context.Context, namespace string, secretName string, secretType corev1.SecretType, data map[string][]byte) error {
 	targetNamespace := strings.TrimSpace(namespace)
 	if targetNamespace == "" {
 		return fmt.Errorf("kubernetes namespace is required")
@@ -306,7 +338,7 @@ func (c *Client) UpsertSecret(ctx context.Context, namespace string, secretName 
 			ObjectMeta: metav1.ObjectMeta{
 				Name: targetSecretName,
 			},
-			Type: corev1.SecretTypeOpaque,
+			Type: secretType,
 			Data: secretData,
 		}, metav1.CreateOptions{})
 		if createErr != nil {
@@ -320,8 +352,8 @@ func (c *Client) UpsertSecret(ctx context.Context, namespace string, secretName 
 		secretData[key] = append([]byte(nil), value...)
 	}
 	existing.Data = secretData
-	if existing.Type == "" {
-		existing.Type = corev1.SecretTypeOpaque
+	if secretType != "" {
+		existing.Type = secretType
 	}
 	if _, err := c.clientset.CoreV1().Secrets(targetNamespace).Update(ctx, existing, metav1.UpdateOptions{}); err != nil {
 		return fmt.Errorf("update kubernetes secret %s/%s: %w", targetNamespace, targetSecretName, err)

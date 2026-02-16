@@ -33,6 +33,7 @@ var preflightRequiredEnvKeys = []string{
 	"CODEXK8S_GITHUB_REPO",
 	"CODEXK8S_GITHUB_PAT",
 	"CODEXK8S_PRODUCTION_DOMAIN",
+	"CODEXK8S_AI_DOMAIN",
 	"CODEXK8S_LETSENCRYPT_EMAIL",
 	"CODEXK8S_PUBLIC_BASE_URL",
 	"CODEXK8S_BOOTSTRAP_OWNER_EMAIL",
@@ -74,6 +75,7 @@ func runPreflight(args []string, stdout io.Writer, stderr io.Writer) int {
 	for key, value := range vars.Map() {
 		loadedEnv[key] = value
 	}
+	applyGitHubSyncDefaults(loadedEnv)
 
 	failures := make([]string, 0)
 	warnings := make([]string, 0)

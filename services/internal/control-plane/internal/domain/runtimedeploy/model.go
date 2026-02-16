@@ -43,7 +43,9 @@ type Config struct {
 
 // KubernetesClient describes Kubernetes operations used by runtime deploy orchestration.
 type KubernetesClient interface {
+	EnsureNamespace(ctx context.Context, namespace string) error
 	UpsertSecret(ctx context.Context, namespace string, secretName string, data map[string][]byte) error
+	UpsertTLSSecret(ctx context.Context, namespace string, secretName string, data map[string][]byte) error
 	UpsertConfigMap(ctx context.Context, namespace string, name string, data map[string]string) error
 	GetSecretData(ctx context.Context, namespace string, name string) (map[string][]byte, bool, error)
 	DeleteJobIfExists(ctx context.Context, namespace string, name string) error

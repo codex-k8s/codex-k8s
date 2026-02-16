@@ -12,8 +12,16 @@ type runtimeDeployKubernetesAdapter struct {
 	client *kubernetesclient.Client
 }
 
+func (a runtimeDeployKubernetesAdapter) EnsureNamespace(ctx context.Context, namespace string) error {
+	return a.client.EnsureNamespace(ctx, namespace)
+}
+
 func (a runtimeDeployKubernetesAdapter) UpsertSecret(ctx context.Context, namespace string, secretName string, data map[string][]byte) error {
 	return a.client.UpsertSecret(ctx, namespace, secretName, data)
+}
+
+func (a runtimeDeployKubernetesAdapter) UpsertTLSSecret(ctx context.Context, namespace string, secretName string, data map[string][]byte) error {
+	return a.client.UpsertTLSSecret(ctx, namespace, secretName, data)
 }
 
 func (a runtimeDeployKubernetesAdapter) UpsertConfigMap(ctx context.Context, namespace string, name string, data map[string]string) error {

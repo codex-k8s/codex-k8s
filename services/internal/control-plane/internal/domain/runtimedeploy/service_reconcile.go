@@ -187,6 +187,25 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 		}
 	}
 
+	issuerBefore := strings.TrimSpace(templateVars["CODEXK8S_CERT_ISSUER_ENABLED"])
+	if err := s.prepareTLS(ctx, targetEnv, targetNamespace, templateVars, runID); err != nil {
+		s.appendTaskLogBestEffort(ctx, runID, "tls", "error", "Prepare TLS failed: "+err.Error())
+		return zero, fmt.Errorf("prepare tls: %w", err)
+	}
+	if strings.TrimSpace(templateVars["CODEXK8S_CERT_ISSUER_ENABLED"]) != issuerBefore {
+		reloaded, err := servicescfg.Load(servicesConfigPath, servicescfg.LoadOptions{
+			Env:       targetEnv,
+			Namespace: targetNamespace,
+			Slot:      params.SlotNo,
+			Vars:      templateVars,
+		})
+		if err != nil {
+			s.appendTaskLogBestEffort(ctx, runID, "prepare", "error", "Reload services config after TLS update failed: "+err.Error())
+			return zero, fmt.Errorf("reload services config after tls update: %w", err)
+		}
+		loaded = reloaded
+	}
+
 	appliedInfra, err := s.applyInfrastructure(ctx, loaded.Stack, targetNamespace, templateVars, runID)
 	if err != nil {
 		s.appendTaskLogBestEffort(ctx, runID, "infrastructure", "error", "Apply infrastructure failed: "+err.Error())
@@ -204,6 +223,11 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 	if err := s.applyServices(ctx, loaded.Stack, targetNamespace, templateVars, appliedInfra, runID); err != nil {
 		s.appendTaskLogBestEffort(ctx, runID, "services", "error", "Apply services failed: "+err.Error())
 		return zero, fmt.Errorf("apply services: %w", err)
+	}
+
+	if err := s.finalizeTLS(ctx, targetEnv, targetNamespace, templateVars, runID); err != nil {
+		s.appendTaskLogBestEffort(ctx, runID, "tls", "error", "Finalize TLS failed: "+err.Error())
+		return zero, fmt.Errorf("finalize tls: %w", err)
 	}
 	s.appendTaskLogBestEffort(ctx, runID, "prepare", "info", "Runtime deploy finished successfully")
 	return PrepareResult{

@@ -1,3 +1,4 @@
+{{- $host := envOr "CODEXK8S_PUBLIC_DOMAIN" (envOr "CODEXK8S_PRODUCTION_DOMAIN" "") -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -41,10 +42,10 @@ spec:
           env:
             # Vite blocks unknown hosts by default; this keeps production usable behind Ingress.
             - name: VITE_ALLOWED_HOSTS
-              value: '{{ envOr "CODEXK8S_PRODUCTION_DOMAIN" "" }}'
+              value: '{{ $host }}'
             # HMR in production runs behind public Ingress (HTTPS) and must not try to connect to localhost:5173.
             - name: VITE_HMR_HOST
-              value: '{{ envOr "CODEXK8S_PRODUCTION_DOMAIN" "" }}'
+              value: '{{ $host }}'
             - name: VITE_HMR_PROTOCOL
               value: "wss"
             - name: VITE_HMR_CLIENT_PORT
