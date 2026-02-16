@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S3-D14
 type: epic
 title: "Epic S3 Day 14: Repository onboarding preflight (token scopes, GitHub ops, domain resolution) + bot params per repo"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-16
 updated_at: 2026-02-16
@@ -10,8 +10,8 @@ related_issues: [19]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
-  request_id: ""
+  status: approved
+  request_id: "owner-2026-02-16-s3-day14"
 ---
 
 # Epic S3 Day 14: Repository onboarding preflight (token scopes, GitHub ops, domain resolution) + bot params per repo
@@ -92,3 +92,28 @@ approvals:
 ## Риски/зависимости
 - GitHub rate limits и права на удаление некоторых артефактов (например label) могут отличаться; нужен fallback cleanup (закрыть Issue/PR, оставить метку "test").
 - Domain check зависит от того, откуда выполняется DNS lookup (pod/host) и какие resolver настроены; нужен предсказуемый execution context.
+
+## Фактический результат (выполнено)
+- Реализован onboarding preflight для репозитория (staff):
+  - вычисление effective platform/bot tokens с fallback (repo -> project -> platform);
+  - сбор отчёта (checks + artifacts + token scopes), сохранение отчёта в БД и показ в UI.
+- Реализованы реальные GitHub операции с auto-cleanup тестовых артефактов:
+  - create/delete webhook;
+  - create/delete label;
+  - create/comment/close issue (bot);
+  - create branch + commit + PR + comment + close PR + delete branch (bot).
+- Реализован domain/DNS preflight:
+  - проверка `CODEXK8S_PRODUCTION_DOMAIN`, `CODEXK8S_AI_DOMAIN` и host’а webhook URL платформы;
+  - проверка доменов, которые реально получаются из `services.yaml` через `spec.environments.<env>.domainTemplate` (если задан);
+  - DNS lookup + best-effort сравнение resolved IP с ingress IP (по webhook host).
+- Реализован запрет параллельных preflight на один репозиторий (DB lock).
+- UI:
+  - форма bot params на уровне репозитория (token + username/email);
+  - диалог запуска preflight и просмотр checks + raw JSON отчёта.
+
+## Data model impact
+- Добавлены поля `bot_username`, `bot_email`, `preflight_report_json` в репозитории проекта.
+- Добавлена таблица lock’ов для предотвращения конкурентных preflight запусков на один repo.
+
+## Проверки
+- `go test ./...` — passed.

@@ -46,7 +46,10 @@ approvals:
 - Day 6 (`run:self-improve` ingestion/diagnostics) завершён.
 - Day 7 (`run:self-improve` updater/PR flow) завершён.
 - Day 8 (`agent toolchain auto-extension`) завершён.
-- Day 9..Day15 остаются в статусе planned.
+- Day 12 (`docset import + safe sync`) завершён.
+- Day 13 (`unified config/secrets governance + GitHub creds fallback`) завершён.
+- Day 14 (`repository onboarding preflight`) завершён.
+- Day 9..Day11 и Day15 остаются в статусе planned.
 
 ## Критерий успеха Sprint S3 (выжимка)
 - Все MVP-сценарии из Issue #19 покрыты кодом, тестами и эксплуатационной документацией.

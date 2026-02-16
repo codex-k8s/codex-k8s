@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S3-D12
 type: epic
 title: "Epic S3 Day 12: Docset import + safe sync (agent-knowledge-base -> projects)"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-16
 updated_at: 2026-02-16
@@ -10,8 +10,8 @@ related_issues: [19]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
-  request_id: ""
+  status: approved
+  request_id: "owner-2026-02-16-s3-day12"
 ---
 
 # Epic S3 Day 12: Docset import + safe sync (agent-knowledge-base -> projects)
@@ -131,3 +131,27 @@ approvals:
 - Требуется чёткое разделение “management path” (staff UI/API) и runtime path, чтобы не смешивать токены/права.
 - Важно не допустить path traversal через `import_path` и `source_paths`.
 - Нужен предсказуемый порядок файлов в PR и lock (чтобы не было шумных diff при одинаковом выборе групп).
+
+## Фактический результат (выполнено)
+- Реализован parser `manifest_version=1` и модели manifest/lock:
+  - manifest: группы, items, локализованные поля;
+  - lock: `docs/.docset-lock.json` (`lock_version=1`).
+- Реализован import plan builder:
+  - выбор групп по умолчанию через `default_selected=true`;
+  - группа `examples` по умолчанию исключена;
+  - dedupe по `import_path`;
+  - валидация путей (нормализация + запрет path traversal).
+- Реализован safe sync engine:
+  - обновление только файлов без локальных изменений (по sha256);
+  - drift detection с причинами.
+- Staff API/UI:
+  - staff UI получает список `groups` по ref+locale;
+  - import/sync выполняются через создание PR в репозитории проекта;
+  - результат содержит summary и сырой JSON-отчёт.
+
+## Data model impact
+- Изменений схемы БД не требовалось.
+- Состояние синхронизации фиксируется через `docs/.docset-lock.json` в целевом репозитории.
+
+## Проверки
+- `go test ./...` — passed.
