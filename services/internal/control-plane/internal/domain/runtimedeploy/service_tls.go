@@ -32,7 +32,7 @@ type tlsValidationResult struct {
 	Reason string
 }
 
-func (s *Service) prepareTLS(ctx context.Context, targetEnv string, namespace string, vars map[string]string, runID string) error {
+func (s *Service) prepareTLS(ctx context.Context, repositoryRoot string, targetEnv string, namespace string, vars map[string]string, runID string) error {
 	host := strings.TrimSpace(valueOr(vars, "CODEXK8S_PUBLIC_DOMAIN", ""))
 	if host == "" {
 		host = strings.TrimSpace(valueOr(vars, "CODEXK8S_PRODUCTION_DOMAIN", ""))
@@ -109,7 +109,7 @@ func (s *Service) prepareTLS(ctx context.Context, targetEnv string, namespace st
 		return nil
 	}
 
-	if err := s.runEchoProbe(ctx, namespace, host, vars, runID); err != nil {
+	if err := s.runEchoProbe(ctx, repositoryRoot, namespace, host, vars, runID); err != nil {
 		return err
 	}
 
@@ -234,13 +234,18 @@ func (s *Service) waitForValidTLSSecret(ctx context.Context, namespace string, s
 	}
 }
 
-func (s *Service) runEchoProbe(ctx context.Context, namespace string, host string, vars map[string]string, runID string) error {
+func (s *Service) runEchoProbe(ctx context.Context, repositoryRoot string, namespace string, host string, vars map[string]string, runID string) error {
 	token, err := randomHex(12)
 	if err != nil {
 		return fmt.Errorf("generate echo probe token: %w", err)
 	}
 
-	templatePath := filepath.Join(s.cfg.RepositoryRoot, "deploy/base/echo-probe/echo-probe.yaml.tpl")
+	repoRoot := strings.TrimSpace(repositoryRoot)
+	if repoRoot == "" {
+		repoRoot = s.cfg.RepositoryRoot
+	}
+
+	templatePath := filepath.Join(repoRoot, "deploy/base/echo-probe/echo-probe.yaml.tpl")
 	raw, err := os.ReadFile(templatePath)
 	if err != nil {
 		return fmt.Errorf("read echo probe manifest template %s: %w", templatePath, err)

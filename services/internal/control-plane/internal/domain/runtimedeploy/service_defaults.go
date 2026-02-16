@@ -23,7 +23,7 @@ func defaultTemplateVars() map[string]string {
 		"CODEXK8S_KANIKO_SINGLE_SNAPSHOT":             "true",
 		"CODEXK8S_KANIKO_USE_NEW_RUN":                 "true",
 		"CODEXK8S_KANIKO_VERBOSITY":                   "info",
-		"CODEXK8S_KANIKO_CLEANUP":                     "true",
+		"CODEXK8S_KANIKO_CLEANUP":                     "",
 		"CODEXK8S_KANIKO_CPU_REQUEST":                 "4",
 		"CODEXK8S_KANIKO_MEMORY_REQUEST":              "8Gi",
 		"CODEXK8S_KANIKO_CPU_LIMIT":                   "16",

@@ -17,7 +17,7 @@ import (
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 )
 
-func (s *Service) applyInfrastructure(ctx context.Context, stack *servicescfg.Stack, namespace string, vars map[string]string, runID string) (map[string]struct{}, error) {
+func (s *Service) applyInfrastructure(ctx context.Context, repositoryRoot string, stack *servicescfg.Stack, namespace string, vars map[string]string, runID string) (map[string]struct{}, error) {
 	enabled := make(map[string]servicescfg.InfrastructureItem, len(stack.Spec.Infrastructure))
 	for _, item := range stack.Spec.Infrastructure {
 		name := strings.TrimSpace(item.Name)
@@ -41,7 +41,7 @@ func (s *Service) applyInfrastructure(ctx context.Context, stack *servicescfg.St
 	applied := make(map[string]struct{}, len(enabled))
 	for _, name := range order {
 		item := enabled[name]
-		if err := s.applyUnit(ctx, name, item.Manifests, namespace, vars, runID); err != nil {
+		if err := s.applyUnit(ctx, repositoryRoot, name, item.Manifests, namespace, vars, runID); err != nil {
 			return nil, err
 		}
 		applied[name] = struct{}{}
@@ -49,7 +49,7 @@ func (s *Service) applyInfrastructure(ctx context.Context, stack *servicescfg.St
 	return applied, nil
 }
 
-func (s *Service) applyServices(ctx context.Context, stack *servicescfg.Stack, namespace string, vars map[string]string, applied map[string]struct{}, runID string) error {
+func (s *Service) applyServices(ctx context.Context, repositoryRoot string, stack *servicescfg.Stack, namespace string, vars map[string]string, applied map[string]struct{}, runID string) error {
 	enabledByName := make(map[string]servicescfg.Service, len(stack.Spec.Services))
 	groupToNames := make(map[string][]string)
 	for _, service := range stack.Spec.Services {
@@ -85,7 +85,7 @@ func (s *Service) applyServices(ctx context.Context, stack *servicescfg.Stack, n
 				if !dependenciesSatisfied(service.DependsOn, applied) {
 					continue
 				}
-				if err := s.applyUnit(ctx, name, service.Manifests, namespace, vars, runID); err != nil {
+				if err := s.applyUnit(ctx, repositoryRoot, name, service.Manifests, namespace, vars, runID); err != nil {
 					return err
 				}
 				applied[name] = struct{}{}
@@ -102,8 +102,12 @@ func (s *Service) applyServices(ctx context.Context, stack *servicescfg.Stack, n
 	return nil
 }
 
-func (s *Service) applyUnit(ctx context.Context, unitName string, manifests []servicescfg.ManifestRef, namespace string, vars map[string]string, runID string) error {
+func (s *Service) applyUnit(ctx context.Context, repositoryRoot string, unitName string, manifests []servicescfg.ManifestRef, namespace string, vars map[string]string, runID string) error {
 	s.appendTaskLogBestEffort(ctx, runID, "apply", "info", "Apply unit "+unitName+" started")
+	repoRoot := strings.TrimSpace(repositoryRoot)
+	if repoRoot == "" {
+		repoRoot = s.cfg.RepositoryRoot
+	}
 	for _, manifest := range manifests {
 		path := strings.TrimSpace(manifest.Path)
 		if path == "" {
@@ -111,7 +115,7 @@ func (s *Service) applyUnit(ctx context.Context, unitName string, manifests []se
 		}
 		fullPath := path
 		if !filepath.IsAbs(fullPath) {
-			fullPath = filepath.Join(s.cfg.RepositoryRoot, path)
+			fullPath = filepath.Join(repoRoot, path)
 		}
 		raw, err := os.ReadFile(fullPath)
 		if err != nil {

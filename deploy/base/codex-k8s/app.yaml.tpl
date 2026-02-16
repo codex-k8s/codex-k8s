@@ -191,6 +191,8 @@ spec:
               value: /app/services.yaml
             - name: CODEXK8S_SERVICES_CONFIG_ENV
               value: '{{ envOr "CODEXK8S_SERVICES_CONFIG_ENV" "" }}'
+            - name: CODEXK8S_REPOSITORY_ROOT
+              value: /repo-cache
             - name: CODEXK8S_PRODUCTION_DOMAIN
               valueFrom:
                 secretKeyRef:
@@ -493,6 +495,10 @@ spec:
                   name: codex-k8s-runtime
                   key: CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS
                   optional: true
+          volumeMounts:
+            - name: repo-cache
+              mountPath: /repo-cache
+              readOnly: true
           readinessProbe:
             httpGet:
               path: /health/readyz
@@ -511,6 +517,10 @@ spec:
               port: http
             initialDelaySeconds: 15
             periodSeconds: 20
+      volumes:
+        - name: repo-cache
+          persistentVolumeClaim:
+            claimName: codex-k8s-repo-cache
 ---
 apiVersion: v1
 kind: ServiceAccount

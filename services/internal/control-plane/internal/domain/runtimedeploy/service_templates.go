@@ -7,7 +7,11 @@ import (
 	"strings"
 )
 
-func (s *Service) resolveServicesConfigPath(pathFromRun string) string {
+func (s *Service) resolveServicesConfigPath(repositoryRoot string, pathFromRun string) string {
+	repoRoot := strings.TrimSpace(repositoryRoot)
+	if repoRoot == "" {
+		repoRoot = s.cfg.RepositoryRoot
+	}
 	trimmed := strings.TrimSpace(pathFromRun)
 	if trimmed != "" {
 		if filepath.IsAbs(trimmed) {
@@ -15,7 +19,7 @@ func (s *Service) resolveServicesConfigPath(pathFromRun string) string {
 				return trimmed
 			}
 		} else {
-			candidate := filepath.Join(s.cfg.RepositoryRoot, trimmed)
+			candidate := filepath.Join(repoRoot, trimmed)
 			if _, err := os.Stat(candidate); err == nil {
 				return candidate
 			}
@@ -24,7 +28,7 @@ func (s *Service) resolveServicesConfigPath(pathFromRun string) string {
 	if filepath.IsAbs(s.cfg.ServicesConfigPath) {
 		return s.cfg.ServicesConfigPath
 	}
-	return filepath.Join(s.cfg.RepositoryRoot, s.cfg.ServicesConfigPath)
+	return filepath.Join(repoRoot, s.cfg.ServicesConfigPath)
 }
 
 func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[string]string {
@@ -49,6 +53,12 @@ func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[
 	vars["CODEXK8S_ENV"] = targetEnv
 	vars["CODEXK8S_SERVICES_CONFIG_ENV"] = targetEnv
 	vars["CODEXK8S_HOT_RELOAD"] = defaultHotReloadFlag(targetEnv)
+	// AI hot-reload requires Go sources to stay in the image; disable kaniko cleanup by default.
+	if strings.EqualFold(strings.TrimSpace(targetEnv), "ai") {
+		if strings.TrimSpace(vars["CODEXK8S_KANIKO_CLEANUP"]) == "" {
+			vars["CODEXK8S_KANIKO_CLEANUP"] = "false"
+		}
+	}
 
 	targetNamespace := strings.TrimSpace(namespace)
 	if targetNamespace != "" {

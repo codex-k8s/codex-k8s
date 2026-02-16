@@ -27,7 +27,7 @@ type buildImageResult struct {
 	Repository string
 }
 
-func (s *Service) buildImages(ctx context.Context, params PrepareParams, stack *servicescfg.Stack, namespace string, vars map[string]string) error {
+func (s *Service) buildImages(ctx context.Context, repositoryRoot string, params PrepareParams, stack *servicescfg.Stack, namespace string, vars map[string]string) error {
 	runID := strings.TrimSpace(params.RunID)
 	if stack == nil {
 		return fmt.Errorf("stack is nil")
@@ -89,12 +89,17 @@ func (s *Service) buildImages(ctx context.Context, params PrepareParams, stack *
 		return fmt.Errorf("upsert codex-k8s-git-token secret: %w", err)
 	}
 
-	kanikoTemplatePath := filepath.Join(s.cfg.RepositoryRoot, "deploy/base/kaniko/kaniko-build-job.yaml.tpl")
+	repoRoot := strings.TrimSpace(repositoryRoot)
+	if repoRoot == "" {
+		repoRoot = s.cfg.RepositoryRoot
+	}
+
+	kanikoTemplatePath := filepath.Join(repoRoot, "deploy/base/kaniko/kaniko-build-job.yaml.tpl")
 	kanikoTemplateRaw, err := os.ReadFile(kanikoTemplatePath)
 	if err != nil {
 		return fmt.Errorf("read kaniko template %s: %w", kanikoTemplatePath, err)
 	}
-	mirrorTemplatePath := filepath.Join(s.cfg.RepositoryRoot, "deploy/base/kaniko/mirror-image-job.yaml.tpl")
+	mirrorTemplatePath := filepath.Join(repoRoot, "deploy/base/kaniko/mirror-image-job.yaml.tpl")
 	mirrorTemplateRaw, mirrorTemplateErr := os.ReadFile(mirrorTemplatePath)
 	if mirrorTemplateErr == nil {
 		if err := s.mirrorExternalDependencies(ctx, namespace, vars, runID, mirrorTemplatePath, mirrorTemplateRaw); err != nil {
@@ -103,7 +108,7 @@ func (s *Service) buildImages(ctx context.Context, params PrepareParams, stack *
 	}
 
 	if shouldRunCodegenCheck(stack, vars) {
-		codegenTemplatePath := filepath.Join(s.cfg.RepositoryRoot, "deploy/base/codex-k8s/codegen-check-job.yaml.tpl")
+		codegenTemplatePath := filepath.Join(repoRoot, "deploy/base/codex-k8s/codegen-check-job.yaml.tpl")
 		codegenTemplateRaw, codegenErr := os.ReadFile(codegenTemplatePath)
 		if codegenErr != nil {
 			return fmt.Errorf("read codegen check template %s: %w", codegenTemplatePath, codegenErr)

@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, namespace string, vars map[string]string) error {
+func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoot string, namespace string, vars map[string]string) error {
 	targetNamespace := strings.TrimSpace(namespace)
 	if targetNamespace == "" {
 		return fmt.Errorf("namespace is required")
@@ -230,7 +230,11 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, namespace str
 		return fmt.Errorf("upsert codex-k8s-label-catalog configmap: %w", err)
 	}
 
-	migrationsData, err := readMigrationFiles(filepath.Join(s.cfg.RepositoryRoot, "services/internal/control-plane/cmd/cli/migrations"))
+	repoRoot := strings.TrimSpace(repositoryRoot)
+	if repoRoot == "" {
+		repoRoot = s.cfg.RepositoryRoot
+	}
+	migrationsData, err := readMigrationFiles(filepath.Join(repoRoot, "services/internal/control-plane/cmd/cli/migrations"))
 	if err != nil {
 		return fmt.Errorf("read migrations: %w", err)
 	}

@@ -143,7 +143,12 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 	}
 	targetNamespace := strings.TrimSpace(params.Namespace)
 	templateVars := s.buildTemplateVars(params, targetNamespace)
-	servicesConfigPath := s.resolveServicesConfigPath(params.ServicesYAMLPath)
+	repositoryRoot, err := s.resolveRunRepositoryRoot(ctx, params, templateVars, runID)
+	if err != nil {
+		s.appendTaskLogBestEffort(ctx, runID, "repo-sync", "error", "Resolve repository snapshot failed: "+err.Error())
+		return zero, fmt.Errorf("resolve repository snapshot: %w", err)
+	}
+	servicesConfigPath := s.resolveServicesConfigPath(repositoryRoot, params.ServicesYAMLPath)
 	loaded, err := servicescfg.Load(servicesConfigPath, servicescfg.LoadOptions{
 		Env:       targetEnv,
 		Namespace: targetNamespace,
@@ -172,7 +177,10 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 
 	templateVars["CODEXK8S_PRODUCTION_NAMESPACE"] = targetNamespace
 	templateVars["CODEXK8S_WORKER_K8S_NAMESPACE"] = targetNamespace
-	templateVars["CODEXK8S_GITHUB_REPO"] = strings.TrimSpace(params.RepositoryFullName)
+	templateVars["CODEXK8S_REPOSITORY_ROOT"] = repositoryRoot
+	if repoName := strings.TrimSpace(params.RepositoryFullName); repoName != "" {
+		templateVars["CODEXK8S_GITHUB_REPO"] = repoName
+	}
 	if strings.TrimSpace(templateVars["CODEXK8S_WORKER_JOB_IMAGE"]) == "" {
 		if value := strings.TrimSpace(templateVars["CODEXK8S_AGENT_RUNNER_IMAGE"]); value != "" {
 			templateVars["CODEXK8S_WORKER_JOB_IMAGE"] = value
@@ -181,14 +189,14 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 
 	if strings.EqualFold(strings.TrimSpace(loaded.Stack.Spec.Project), "codex-k8s") {
 		s.appendTaskLogBestEffort(ctx, runID, "prerequisites", "info", "Ensuring codex-k8s prerequisites")
-		if err := s.ensureCodexK8sPrerequisites(ctx, targetNamespace, templateVars); err != nil {
+		if err := s.ensureCodexK8sPrerequisites(ctx, repositoryRoot, targetNamespace, templateVars); err != nil {
 			s.appendTaskLogBestEffort(ctx, runID, "prerequisites", "error", "Ensure prerequisites failed: "+err.Error())
 			return zero, fmt.Errorf("ensure codex-k8s prerequisites: %w", err)
 		}
 	}
 
 	issuerBefore := strings.TrimSpace(templateVars["CODEXK8S_CERT_ISSUER_ENABLED"])
-	if err := s.prepareTLS(ctx, targetEnv, targetNamespace, templateVars, runID); err != nil {
+	if err := s.prepareTLS(ctx, repositoryRoot, targetEnv, targetNamespace, templateVars, runID); err != nil {
 		s.appendTaskLogBestEffort(ctx, runID, "tls", "error", "Prepare TLS failed: "+err.Error())
 		return zero, fmt.Errorf("prepare tls: %w", err)
 	}
@@ -206,21 +214,21 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 		loaded = reloaded
 	}
 
-	appliedInfra, err := s.applyInfrastructure(ctx, loaded.Stack, targetNamespace, templateVars, runID)
+	appliedInfra, err := s.applyInfrastructure(ctx, repositoryRoot, loaded.Stack, targetNamespace, templateVars, runID)
 	if err != nil {
 		s.appendTaskLogBestEffort(ctx, runID, "infrastructure", "error", "Apply infrastructure failed: "+err.Error())
 		return zero, fmt.Errorf("apply infrastructure: %w", err)
 	}
-	if err := s.buildImages(ctx, params, loaded.Stack, targetNamespace, templateVars); err != nil {
+	if err := s.buildImages(ctx, repositoryRoot, params, loaded.Stack, targetNamespace, templateVars); err != nil {
 		s.appendTaskLogBestEffort(ctx, runID, "build", "error", "Build images failed: "+err.Error())
 		return zero, fmt.Errorf("build images: %w", err)
 	}
-	appliedInfra, err = s.applyInfrastructure(ctx, loaded.Stack, targetNamespace, templateVars, runID)
+	appliedInfra, err = s.applyInfrastructure(ctx, repositoryRoot, loaded.Stack, targetNamespace, templateVars, runID)
 	if err != nil {
 		s.appendTaskLogBestEffort(ctx, runID, "infrastructure", "error", "Re-apply infrastructure failed: "+err.Error())
 		return zero, fmt.Errorf("re-apply infrastructure: %w", err)
 	}
-	if err := s.applyServices(ctx, loaded.Stack, targetNamespace, templateVars, appliedInfra, runID); err != nil {
+	if err := s.applyServices(ctx, repositoryRoot, loaded.Stack, targetNamespace, templateVars, appliedInfra, runID); err != nil {
 		s.appendTaskLogBestEffort(ctx, runID, "services", "error", "Apply services failed: "+err.Error())
 		return zero, fmt.Errorf("apply services: %w", err)
 	}
