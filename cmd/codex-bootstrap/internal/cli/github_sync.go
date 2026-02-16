@@ -33,6 +33,16 @@ const (
 )
 
 var (
+	githubEnvVariableKeys = []string{
+		"CODEXK8S_PRODUCTION_NAMESPACE",
+		"CODEXK8S_PRODUCTION_DOMAIN",
+		"CODEXK8S_AI_DOMAIN",
+		"CODEXK8S_PUBLIC_BASE_URL",
+		"CODEXK8S_GITHUB_WEBHOOK_URL",
+		"CODEXK8S_GITHUB_WEBHOOK_EVENTS",
+		"CODEXK8S_GITHUB_REPO",
+		"CODEXK8S_FIRST_PROJECT_GITHUB_REPO",
+	}
 	githubRepoSecretKeys = []string{
 		"CODEXK8S_OPENAI_API_KEY",
 		"CODEXK8S_OPENAI_AUTH_FILE",
@@ -282,14 +292,35 @@ func collectGitHubVariableKeys(values map[string]string) []string {
 		secretSet[key] = struct{}{}
 	}
 
-	keys := make([]string, 0, len(values))
-	for key := range values {
-		if !strings.HasPrefix(key, "CODEXK8S_") {
+	keysSet := make(map[string]struct{})
+	for _, key := range githubEnvVariableKeys {
+		trimmed := strings.TrimSpace(key)
+		if trimmed == "" {
+			continue
+		}
+		if _, isSecret := secretSet[trimmed]; isSecret {
+			continue
+		}
+		if strings.TrimSpace(values[trimmed]) == "" {
+			continue
+		}
+		keysSet[trimmed] = struct{}{}
+	}
+	for key, value := range values {
+		if !strings.HasSuffix(key, "_LABEL") {
 			continue
 		}
 		if _, isSecret := secretSet[key]; isSecret {
 			continue
 		}
+		if strings.TrimSpace(value) == "" {
+			continue
+		}
+		keysSet[key] = struct{}{}
+	}
+
+	keys := make([]string, 0, len(keysSet))
+	for key := range keysSet {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
@@ -428,12 +459,7 @@ func upsertGitHubEnvVariable(ctx context.Context, client *gh.Client, repo github
 		return nil
 	}
 	if strings.TrimSpace(value) == "" {
-		if !exists {
-			return nil
-		}
-		if _, err := client.Actions.DeleteEnvVariable(ctx, repo.Owner, repo.Name, trimmedEnv, trimmedKey); err != nil && !isGitHubNotFound(err) {
-			return fmt.Errorf("delete variable %s: %w", trimmedKey, err)
-		}
+		// Empty values mean "do not overwrite GitHub".
 		return nil
 	}
 
@@ -514,9 +540,7 @@ func upsertGitHubEnvSecret(ctx context.Context, client *gh.Client, repoID int, e
 	}
 	trimmedValue := strings.TrimSpace(value)
 	if trimmedValue == "" {
-		if _, err := client.Actions.DeleteEnvSecret(ctx, repoID, targetEnv, name); err != nil && !isGitHubNotFound(err) {
-			return fmt.Errorf("delete secret %s: %w", name, err)
-		}
+		// Empty values mean "do not overwrite GitHub".
 		return nil
 	}
 
