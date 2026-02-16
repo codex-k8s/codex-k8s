@@ -246,7 +246,7 @@ const projectOptions = computed(() =>
 const envOptions = computed(() => [
   { title: t("context.allObjects"), value: "all" },
   { title: t("context.envAi"), value: "ai" },
-  { title: t("context.envAiStaging"), value: "ai-staging" },
+  { title: t("context.envProduction"), value: "production" },
   { title: t("context.envProd"), value: "prod" },
 ] as const);
 
@@ -256,17 +256,17 @@ const namespaceOptions = computed<SelectItem[]>(() => {
   const all = { title: t("context.allObjects"), value: "" };
   const project = "codex-k8s";
   const ai = [`${project}-dev-1`, `${project}-dev-2`, `${project}-dev-3`];
-  const staging = [`${project}-ai-staging`];
+  const production = [`${project}-production`];
   const prod = [`${project}-prod`];
 
   const values =
     uiContext.env === "ai"
       ? ai
-      : uiContext.env === "ai-staging"
-        ? staging
+      : uiContext.env === "production"
+        ? production
         : uiContext.env === "prod"
           ? prod
-          : [...ai, ...staging, ...prod];
+          : [...ai, ...production, ...prod];
 
   return [all, ...values.map((v) => ({ title: v, value: v }))];
 });
@@ -347,7 +347,11 @@ const breadcrumbs = computed(() => {
   const items: { title: string; to?: RouteLocationRaw; disabled?: boolean }[] = [];
 
   // For detail pages, keep breadcrumb root pointing to list pages.
-  const baseRouteName = rName === "run-details" ? "runs" : rName;
+  const detailToListRoute: Record<string, string> = {
+    "run-details": "runs",
+    "runtime-deploy-task-details": "runtime-deploy-tasks",
+  };
+  const baseRouteName = detailToListRoute[rName] || rName;
   const navItem = findNavItemByRouteName(baseRouteName);
   if (navItem) {
     const g = navGroups.find((x) => x.id === navItem.groupId);
@@ -361,7 +365,7 @@ const breadcrumbs = computed(() => {
     });
   }
 
-  if (rName === "run-details" && typeof meta.crumbKey === "string" && meta.crumbKey) {
+  if (rName !== baseRouteName && typeof meta.crumbKey === "string" && meta.crumbKey) {
     items.push({ title: t(meta.crumbKey), disabled: true });
   }
 

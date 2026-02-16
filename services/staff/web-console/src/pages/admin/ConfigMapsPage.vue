@@ -93,8 +93,8 @@ const headers = [
 ] as const;
 
 const rows: ConfigMapRow[] = [
-  { name: "codex-k8s-web-console-config", namespace: "codex-k8s-ai-staging", keys: 3, age: "10d" },
-  { name: "codex-k8s-api-gateway-config", namespace: "codex-k8s-ai-staging", keys: 5, age: "10d" },
+  { name: "codex-k8s-web-console-config", namespace: "codex-k8s-prod", keys: 3, age: "10d" },
+  { name: "codex-k8s-api-gateway-config", namespace: "codex-k8s-prod", keys: 5, age: "10d" },
   { name: "runner-env", namespace: "codex-k8s-dev-1", keys: 12, age: "2h" },
   { name: "feature-flags", namespace: "codex-k8s-dev-2", keys: 4, age: "1d" },
 ];

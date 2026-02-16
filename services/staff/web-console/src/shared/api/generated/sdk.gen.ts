@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CallbackGithubData, CallbackGithubErrors, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteProjectData, DeleteProjectErrors, DeleteProjectMemberData, DeleteProjectMemberErrors, DeleteProjectMemberResponses, DeleteProjectRepositoryData, DeleteProjectRepositoryErrors, DeleteProjectRepositoryResponses, DeleteProjectResponses, DeleteRunNamespaceData, DeleteRunNamespaceErrors, DeleteRunNamespaceResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, GetMeData, GetMeErrors, GetMeResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetRunData, GetRunErrors, GetRunLogsData, GetRunLogsErrors, GetRunLogsResponses, GetRunResponses, IngestGithubWebhookData, IngestGithubWebhookErrors, IngestGithubWebhookResponses, ListPendingApprovalsData, ListPendingApprovalsErrors, ListPendingApprovalsResponses, ListProjectMembersData, ListProjectMembersErrors, ListProjectMembersResponses, ListProjectRepositoriesData, ListProjectRepositoriesErrors, ListProjectRepositoriesResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRunEventsData, ListRunEventsErrors, ListRunEventsResponses, ListRunJobsData, ListRunJobsErrors, ListRunJobsResponses, ListRunLearningFeedbackData, ListRunLearningFeedbackErrors, ListRunLearningFeedbackResponses, ListRunsData, ListRunsErrors, ListRunsResponses, ListRunWaitsData, ListRunWaitsErrors, ListRunWaitsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginGithubData, LoginGithubErrors, LogoutData, LogoutErrors, LogoutResponses, McpApproverCallbackData, McpApproverCallbackErrors, McpApproverCallbackResponses, McpExecutorCallbackData, McpExecutorCallbackErrors, McpExecutorCallbackResponses, ResolveApprovalDecisionData, ResolveApprovalDecisionErrors, ResolveApprovalDecisionResponses, SetProjectMemberLearningModeOverrideData, SetProjectMemberLearningModeOverrideErrors, SetProjectMemberLearningModeOverrideResponses, UpsertProjectData, UpsertProjectErrors, UpsertProjectMemberData, UpsertProjectMemberErrors, UpsertProjectMemberResponses, UpsertProjectRepositoryData, UpsertProjectRepositoryErrors, UpsertProjectRepositoryResponses, UpsertProjectResponses } from './types.gen';
+import type { CallbackGithubData, CallbackGithubErrors, CleanupRegistryImagesData, CleanupRegistryImagesErrors, CleanupRegistryImagesResponses, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteProjectData, DeleteProjectErrors, DeleteProjectMemberData, DeleteProjectMemberErrors, DeleteProjectMemberResponses, DeleteProjectRepositoryData, DeleteProjectRepositoryErrors, DeleteProjectRepositoryResponses, DeleteProjectResponses, DeleteRegistryImageTagData, DeleteRegistryImageTagErrors, DeleteRegistryImageTagResponses, DeleteRunNamespaceData, DeleteRunNamespaceErrors, DeleteRunNamespaceResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, GetMeData, GetMeErrors, GetMeResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetRunData, GetRunErrors, GetRunLogsData, GetRunLogsErrors, GetRunLogsResponses, GetRunResponses, GetRuntimeDeployTaskData, GetRuntimeDeployTaskErrors, GetRuntimeDeployTaskResponses, IngestGithubWebhookData, IngestGithubWebhookErrors, IngestGithubWebhookResponses, ListPendingApprovalsData, ListPendingApprovalsErrors, ListPendingApprovalsResponses, ListProjectMembersData, ListProjectMembersErrors, ListProjectMembersResponses, ListProjectRepositoriesData, ListProjectRepositoriesErrors, ListProjectRepositoriesResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRegistryImagesData, ListRegistryImagesErrors, ListRegistryImagesResponses, ListRunEventsData, ListRunEventsErrors, ListRunEventsResponses, ListRunJobsData, ListRunJobsErrors, ListRunJobsResponses, ListRunLearningFeedbackData, ListRunLearningFeedbackErrors, ListRunLearningFeedbackResponses, ListRunsData, ListRunsErrors, ListRunsResponses, ListRuntimeDeployTasksData, ListRuntimeDeployTasksErrors, ListRuntimeDeployTasksResponses, ListRunWaitsData, ListRunWaitsErrors, ListRunWaitsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginGithubData, LoginGithubErrors, LogoutData, LogoutErrors, LogoutResponses, McpApproverCallbackData, McpApproverCallbackErrors, McpApproverCallbackResponses, McpExecutorCallbackData, McpExecutorCallbackErrors, McpExecutorCallbackResponses, ResolveApprovalDecisionData, ResolveApprovalDecisionErrors, ResolveApprovalDecisionResponses, SetProjectMemberLearningModeOverrideData, SetProjectMemberLearningModeOverrideErrors, SetProjectMemberLearningModeOverrideResponses, UpsertProjectData, UpsertProjectErrors, UpsertProjectMemberData, UpsertProjectMemberErrors, UpsertProjectMemberResponses, UpsertProjectRepositoryData, UpsertProjectRepositoryErrors, UpsertProjectRepositoryResponses, UpsertProjectResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -209,6 +209,59 @@ export const listRunLearningFeedback = <ThrowOnError extends boolean = false>(op
     responseType: 'json',
     url: '/api/v1/staff/runs/{run_id}/learning-feedback',
     ...options
+});
+
+/**
+ * List runtime deploy tasks
+ */
+export const listRuntimeDeployTasks = <ThrowOnError extends boolean = false>(options?: Options<ListRuntimeDeployTasksData, ThrowOnError>) => (options?.client ?? client).get<ListRuntimeDeployTasksResponses, ListRuntimeDeployTasksErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/runtime-deploy/tasks',
+    ...options
+});
+
+/**
+ * Get runtime deploy task details
+ */
+export const getRuntimeDeployTask = <ThrowOnError extends boolean = false>(options: Options<GetRuntimeDeployTaskData, ThrowOnError>) => (options.client ?? client).get<GetRuntimeDeployTaskResponses, GetRuntimeDeployTaskErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/runtime-deploy/tasks/{run_id}',
+    ...options
+});
+
+/**
+ * Delete one internal registry image tag
+ */
+export const deleteRegistryImageTag = <ThrowOnError extends boolean = false>(options: Options<DeleteRegistryImageTagData, ThrowOnError>) => (options.client ?? client).delete<DeleteRegistryImageTagResponses, DeleteRegistryImageTagErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/runtime-deploy/images',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List internal registry images
+ */
+export const listRegistryImages = <ThrowOnError extends boolean = false>(options?: Options<ListRegistryImagesData, ThrowOnError>) => (options?.client ?? client).get<ListRegistryImagesResponses, ListRegistryImagesErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/runtime-deploy/images',
+    ...options
+});
+
+/**
+ * Cleanup stale internal registry image tags
+ */
+export const cleanupRegistryImages = <ThrowOnError extends boolean = false>(options: Options<CleanupRegistryImagesData, ThrowOnError>) => (options.client ?? client).post<CleanupRegistryImagesResponses, CleanupRegistryImagesErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/runtime-deploy/images/cleanup',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

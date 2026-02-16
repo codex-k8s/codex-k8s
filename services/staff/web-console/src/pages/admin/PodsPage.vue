@@ -110,10 +110,10 @@ const headers = [
 ] as const;
 
 const rows: PodRow[] = [
-  { name: "codex-k8s-6b7c79d7b9-2rj6q", namespace: "codex-k8s-ai-staging", ready: "1/1", status: "Running", restarts: 0, age: "2h" },
-  { name: "api-gateway-7f7cc8dbb7-7d2s9", namespace: "codex-k8s-ai-staging", ready: "1/1", status: "Running", restarts: 1, age: "2h" },
-  { name: "web-console-6d6fd8c8d6-h9v2p", namespace: "codex-k8s-ai-staging", ready: "1/1", status: "Running", restarts: 0, age: "2h" },
-  { name: "codex-k8s-worker-6bfbd7b8f9-6k1z2", namespace: "codex-k8s-ai-staging", ready: "1/1", status: "Running", restarts: 0, age: "2h" },
+  { name: "codex-k8s-6b7c79d7b9-2rj6q", namespace: "codex-k8s-prod", ready: "1/1", status: "Running", restarts: 0, age: "2h" },
+  { name: "api-gateway-7f7cc8dbb7-7d2s9", namespace: "codex-k8s-prod", ready: "1/1", status: "Running", restarts: 1, age: "2h" },
+  { name: "web-console-6d6fd8c8d6-h9v2p", namespace: "codex-k8s-prod", ready: "1/1", status: "Running", restarts: 0, age: "2h" },
+  { name: "codex-k8s-worker-6bfbd7b8f9-6k1z2", namespace: "codex-k8s-prod", ready: "1/1", status: "Running", restarts: 0, age: "2h" },
   { name: "agent-runner-27184120-zzr8m", namespace: "codex-k8s-dev-1", ready: "1/1", status: "Running", restarts: 0, age: "15m" },
 ];
 

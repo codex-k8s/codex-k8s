@@ -120,8 +120,8 @@ const headers = [
 
 const rows: JobRow[] = [
   { name: "agent-runner-27184120", namespace: "codex-k8s-dev-1", completions: "0/1", duration: "15m", age: "15m" },
-  { name: "db-migrate-27184001", namespace: "codex-k8s-ai-staging", completions: "1/1", duration: "32s", age: "10d" },
-  { name: "smoke-check-27183012", namespace: "codex-k8s-ai-staging", completions: "1/1", duration: "58s", age: "10d" },
+  { name: "db-migrate-27184001", namespace: "codex-k8s-prod", completions: "1/1", duration: "32s", age: "10d" },
+  { name: "smoke-check-27183012", namespace: "codex-k8s-prod", completions: "1/1", duration: "58s", age: "10d" },
 ];
 
 const destructiveDisabled = computed(() => uiContext.clusterMode === "view-only");

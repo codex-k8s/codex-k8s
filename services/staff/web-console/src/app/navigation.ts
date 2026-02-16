@@ -26,6 +26,8 @@ export const navGroups: NavGroup[] = [
 export const navItems: NavItem[] = [
   // Operations
   { groupId: "operations", routeName: "runs", titleKey: "nav.runs", icon: "mdi-play-circle-outline" },
+  { groupId: "operations", routeName: "runtime-deploy-tasks", titleKey: "nav.runtimeDeployTasks", icon: "mdi-rocket-launch-outline" },
+  { groupId: "operations", routeName: "runtime-deploy-images", titleKey: "nav.registryImages", icon: "mdi-package-variant-closed" },
   { groupId: "operations", routeName: "running-jobs", titleKey: "nav.runningJobs", icon: "mdi-server-outline" },
   { groupId: "operations", routeName: "wait-queue", titleKey: "nav.waitQueue", icon: "mdi-timer-sand" },
   { groupId: "operations", routeName: "approvals", titleKey: "nav.approvals", icon: "mdi-check-decagram-outline" },
