@@ -1625,13 +1625,6 @@ func (s *Service) RunRepositoryPreflight(ctx context.Context, principal Principa
 	if expectedHost != "" {
 		dnsCandidates = append(dnsCandidates, dnsCandidate{CheckName: "dns:platform:webhook_host", Domain: expectedHost})
 	}
-	// Validate platform base domains (they are defaults for runtime deploy and may be used in templates).
-	if prod := strings.TrimSpace(getOptionalEnv("CODEXK8S_PRODUCTION_DOMAIN")); prod != "" {
-		dnsCandidates = append(dnsCandidates, dnsCandidate{CheckName: "dns:platform:production_base", Domain: prod})
-	}
-	if ai := strings.TrimSpace(getOptionalEnv("CODEXK8S_AI_DOMAIN")); ai != "" {
-		dnsCandidates = append(dnsCandidates, dnsCandidate{CheckName: "dns:platform:ai_base", Domain: ai})
-	}
 
 	if s.githubMgmt == nil {
 		report.Checks = append(report.Checks, valuetypes.GitHubPreflightCheck{Name: "github:preflight", Status: "failed", Details: "github management client is not configured"})

@@ -7,7 +7,7 @@ export const en = {
     operations: "Operations",
     platform: "Platform",
     governance: "Governance",
-    adminCluster: "Admin / Cluster",
+    adminCluster: "Cluster",
     configuration: "Configuration",
     projects: "Projects",
     projectDetails: "Project details",

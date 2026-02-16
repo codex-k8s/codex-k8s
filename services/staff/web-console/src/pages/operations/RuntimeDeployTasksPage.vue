@@ -45,9 +45,12 @@
               </VChip>
             </div>
           </template>
-          <template #item.run_id="{ item }">
-            <RouterLink class="text-primary font-weight-bold text-decoration-none mono" :to="{ name: 'runtime-deploy-task-details', params: { runId: item.run_id } }">
-              {{ item.run_id }}
+          <template #item.repository_full_name="{ item }">
+            <RouterLink
+              class="text-primary font-weight-bold text-decoration-none mono"
+              :to="{ name: 'runtime-deploy-task-details', params: { runId: item.run_id } }"
+            >
+              {{ item.repository_full_name || "-" }}
             </RouterLink>
           </template>
           <template #item.updated_at="{ item }">
@@ -115,7 +118,7 @@ const targetEnvOptions = computed(() => [
 
 const headers = computed(() => ([
   { title: t("table.fields.status"), key: "status", align: "center", width: 140 },
-  { title: t("table.fields.run"), key: "run_id", align: "center", width: 300 },
+  { title: t("table.fields.repository_full_name"), key: "repository_full_name", align: "center", width: 360 },
   { title: t("table.fields.target_env"), key: "target_env", align: "center", width: 140 },
   { title: t("table.fields.namespace"), key: "namespace", align: "center", width: 220 },
   { title: t("table.fields.runtime_mode"), key: "runtime_mode", align: "center", width: 140 },

@@ -52,8 +52,8 @@ export async function upsertProjectRepository(params: {
   name: string;
   token: string;
   servicesYamlPath: string;
-}): Promise<void> {
-  await upsertProjectRepositoryRequest({
+}): Promise<RepositoryBinding> {
+  const resp = await upsertProjectRepositoryRequest({
     path: { project_id: params.projectId },
     body: {
       provider: params.provider,
@@ -64,6 +64,7 @@ export async function upsertProjectRepository(params: {
     },
     throwOnError: true,
   });
+  return resp.data;
 }
 
 export async function deleteProjectRepository(projectId: string, repositoryId: string): Promise<void> {

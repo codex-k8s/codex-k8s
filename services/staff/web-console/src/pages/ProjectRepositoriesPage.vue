@@ -2,7 +2,7 @@
   <div>
     <PageHeader :title="t('pages.projectRepositories.title')">
       <template #leading>
-        <AdaptiveBtn variant="text" icon="mdi-arrow-left" :label="t('common.back')" :to="{ name: 'projects' }" />
+        <BackBtn :label="t('common.back')" :to="{ name: 'projects' }" />
       </template>
       <template #actions>
         <CopyChip :label="t('pages.projectRepositories.projectId')" :value="projectId" icon="mdi-identifier" />
@@ -117,7 +117,7 @@
                   />
                 </template>
               </VTooltip>
-              <VTooltip :text="t('common.delete')">
+              <VTooltip v-if="!isPlatformRepository(item)" :text="t('common.delete')">
                 <template #activator="{ props: tipProps }">
                   <VBtn
                     v-bind="tipProps"
@@ -168,10 +168,34 @@
               type="password"
             />
           </VCol>
+          <VCol cols="12" md="6">
+            <VTextField v-model="newBotUsername" :label="t('pages.projectRepositories.botUsername')" hide-details />
+          </VCol>
+          <VCol cols="12" md="6">
+            <VTextField v-model="newBotEmail" :label="t('pages.projectRepositories.botEmail')" hide-details />
+          </VCol>
           <VCol cols="12">
-            <VBtn color="primary" variant="tonal" :loading="repos.attaching" @click="attach">
-              {{ t("common.attachEnsureWebhook") }}
-            </VBtn>
+            <VTextField v-model="newBotToken" :label="t('pages.projectRepositories.botToken')" type="password" hide-details />
+            <div class="text-caption text-medium-emphasis mt-1">{{ t("pages.projectRepositories.botTokenHint") }}</div>
+          </VCol>
+          <VCol cols="12">
+            <div class="d-flex ga-2 flex-wrap">
+              <AdaptiveBtn
+                color="primary"
+                variant="tonal"
+                icon="mdi-source-repository"
+                :label="t('common.attachEnsureWebhook')"
+                :loading="repos.attaching"
+                @click="attach"
+              />
+              <AdaptiveBtn
+                variant="tonal"
+                icon="mdi-check-decagram-outline"
+                :label="t('pages.projectRepositories.runPreflight')"
+                :loading="repos.attaching || repos.preflighting"
+                @click="attachAndPreflight"
+              />
+            </div>
           </VCol>
         </VRow>
       </VCardText>
@@ -328,6 +352,7 @@ import ConfirmDialog from "../shared/ui/ConfirmDialog.vue";
 import CopyChip from "../shared/ui/CopyChip.vue";
 import PageHeader from "../shared/ui/PageHeader.vue";
 import AdaptiveBtn from "../shared/ui/AdaptiveBtn.vue";
+import BackBtn from "../shared/ui/BackBtn.vue";
 import { useSnackbarStore } from "../shared/ui/feedback/snackbar-store";
 import { useProjectRepositoriesStore } from "../features/projects/repositories-store";
 import { useProjectDetailsStore } from "../features/projects/details-store";
@@ -345,6 +370,9 @@ const owner = ref("");
 const name = ref("");
 const servicesYamlPath = ref("services.yaml");
 const token = ref("");
+const newBotToken = ref("");
+const newBotUsername = ref("");
+const newBotEmail = ref("");
 
 const confirmOpen = ref(false);
 const confirmRepoId = ref("");
@@ -365,14 +393,44 @@ async function load() {
 }
 
 async function attach() {
-  await repos.attach({ owner: owner.value, name: name.value, token: token.value, servicesYamlPath: servicesYamlPath.value });
-  if (!repos.attachError) {
+  const binding = await repos.attach({
+    owner: owner.value,
+    name: name.value,
+    token: token.value,
+    servicesYamlPath: servicesYamlPath.value,
+    botToken: newBotToken.value.trim() === "" ? null : newBotToken.value,
+    botUsername: newBotUsername.value.trim() ? newBotUsername.value.trim() : null,
+    botEmail: newBotEmail.value.trim() ? newBotEmail.value.trim() : null,
+  });
+  if (binding && !repos.attachError) {
     owner.value = "";
     name.value = "";
     token.value = "";
     servicesYamlPath.value = "services.yaml";
+    newBotToken.value = "";
+    newBotUsername.value = "";
+    newBotEmail.value = "";
     snackbar.success(t("common.saved"));
   }
+}
+
+async function attachAndPreflight() {
+  const binding = await repos.attach({
+    owner: owner.value,
+    name: name.value,
+    token: token.value,
+    servicesYamlPath: servicesYamlPath.value,
+    botToken: newBotToken.value.trim() === "" ? null : newBotToken.value,
+    botUsername: newBotUsername.value.trim() ? newBotUsername.value.trim() : null,
+    botEmail: newBotEmail.value.trim() ? newBotEmail.value.trim() : null,
+  });
+  if (!binding || repos.attachError) return;
+  openPreflightDialog(binding);
+  await runPreflightNow();
+}
+
+function isPlatformRepository(item: RepositoryBinding): boolean {
+  return `${item.owner}/${item.name}`.toLowerCase() === "codex-k8s/codex-k8s";
 }
 
 function askRemove(repositoryId: string, label: string) {

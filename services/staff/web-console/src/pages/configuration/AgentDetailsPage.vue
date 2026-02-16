@@ -2,7 +2,7 @@
   <div>
     <PageHeader :title="t('pages.agentDetails.title', { name: agentName })" :hint="t('pages.agentDetails.hint')">
       <template #leading>
-        <AdaptiveBtn variant="text" icon="mdi-arrow-left" :label="t('common.back')" :to="{ name: 'agents' }" />
+        <BackBtn :label="t('common.back')" :to="{ name: 'agents' }" />
       </template>
       <template #actions>
         <CopyChip :label="t('pages.agentDetails.agent')" :value="agentName" icon="mdi-robot-outline" />
@@ -106,6 +106,7 @@ import { useI18n } from "vue-i18n";
 
 import CopyChip from "../../shared/ui/CopyChip.vue";
 import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
+import BackBtn from "../../shared/ui/BackBtn.vue";
 import MonacoEditor from "../../shared/ui/monaco/MonacoEditor.vue";
 import PageHeader from "../../shared/ui/PageHeader.vue";
 import { useSnackbarStore } from "../../shared/ui/feedback/snackbar-store";

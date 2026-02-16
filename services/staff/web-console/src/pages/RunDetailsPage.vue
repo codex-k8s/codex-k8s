@@ -2,7 +2,7 @@
   <div>
     <PageHeader :title="t('pages.runDetails.title')">
       <template #leading>
-        <AdaptiveBtn variant="text" icon="mdi-arrow-left" :label="t('common.back')" @click="goBack" />
+        <BackBtn :label="t('common.back')" @click="goBack" />
       </template>
       <template #actions>
         <CopyChip :label="t('pages.runDetails.runId')" :value="runId" icon="mdi-identifier" />
@@ -143,19 +143,19 @@
               <VAlert v-if="!details.events.length" type="info" variant="tonal">
                 {{ t("states.noEvents") }}
               </VAlert>
-              <VList v-else density="compact">
-                <VListItem v-for="e in details.events" :key="e.created_at + ':' + e.event_type">
-                  <template #title>
-                    <div class="d-flex align-center justify-space-between ga-2 flex-wrap">
+              <VExpansionPanels v-else density="compact" variant="accordion">
+                <VExpansionPanel v-for="e in details.events" :key="e.created_at + ':' + e.event_type">
+                  <VExpansionPanelTitle>
+                    <div class="d-flex align-center justify-space-between ga-2 flex-wrap w-100">
                       <VChip size="x-small" variant="tonal" class="font-weight-bold">{{ e.event_type }}</VChip>
                       <span class="mono text-medium-emphasis">{{ formatDateTime(e.created_at, locale) }}</span>
                     </div>
-                  </template>
-                  <template #subtitle>
-                    <pre class="pre mt-2">{{ e.payload_json }}</pre>
-                  </template>
-                </VListItem>
-              </VList>
+                  </VExpansionPanelTitle>
+                  <VExpansionPanelText>
+                    <pre class="pre">{{ prettyJSON(e.payload_json) }}</pre>
+                  </VExpansionPanelText>
+                </VExpansionPanel>
+              </VExpansionPanels>
             </VExpansionPanelText>
           </VExpansionPanel>
 
@@ -193,6 +193,7 @@ import PageHeader from "../shared/ui/PageHeader.vue";
 import ConfirmDialog from "../shared/ui/ConfirmDialog.vue";
 import CopyChip from "../shared/ui/CopyChip.vue";
 import AdaptiveBtn from "../shared/ui/AdaptiveBtn.vue";
+import BackBtn from "../shared/ui/BackBtn.vue";
 import LogsViewer from "../shared/ui/LogsViewer.vue";
 import RunTimeline from "../shared/ui/RunTimeline.vue";
 import { formatDateTime } from "../shared/lib/datetime";
@@ -218,6 +219,16 @@ function goBack() {
   void router.push({ name: "runs" });
 }
 
+function prettyJSON(raw: string): string {
+  const value = String(raw || "").trim();
+  if (!value) return "";
+  try {
+    return JSON.stringify(JSON.parse(value), null, 2);
+  } catch {
+    return value;
+  }
+}
+
 async function doDeleteNamespace() {
   await details.deleteNamespace(props.runId);
   if (!details.deleteNamespaceError) {
@@ -234,7 +245,9 @@ onMounted(() => void loadAll());
 }
 .pre {
   margin: 0;
-  white-space: pre-wrap;
+  white-space: pre;
+  overflow: auto;
+  max-height: 520px;
   font-size: 12px;
   opacity: 0.95;
 }

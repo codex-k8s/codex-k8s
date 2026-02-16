@@ -105,6 +105,6 @@ LEFT JOIN LATERAL (
 ) ws ON true
 WHERE pm.user_id = $1::uuid
   AND ar.project_id IS NOT NULL
-  AND COALESCE(ar.run_payload->'trigger'->>'kind', '') <> ''
+  AND COALESCE(ar.run_payload->'trigger'->>'label', '') ILIKE 'run:%'
 ORDER BY ar.created_at DESC
 LIMIT $2;

@@ -7,7 +7,7 @@ export const ru = {
     operations: "Операции",
     platform: "Платформа",
     governance: "Управление",
-    adminCluster: "Админ / Кластер",
+    adminCluster: "Кластер",
     configuration: "Конфигурация",
     projects: "Проекты",
     runs: "Запуски",

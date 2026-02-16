@@ -38,12 +38,21 @@ export const useProjectRepositoriesStore = defineStore("projectRepositories", {
       }
     },
 
-    async attach(params: { owner: string; name: string; token: string; servicesYamlPath: string }): Promise<void> {
-      if (!this.projectId) return;
+    async attach(params: {
+      owner: string;
+      name: string;
+      token: string;
+      servicesYamlPath: string;
+      botToken?: string | null;
+      botUsername?: string | null;
+      botEmail?: string | null;
+    }): Promise<RepositoryBinding | null> {
+      if (!this.projectId) return null;
       this.attaching = true;
       this.attachError = null;
+      this.botUpdateError = null;
       try {
-        await upsertProjectRepository({
+        const binding = await upsertProjectRepository({
           projectId: this.projectId,
           provider: "github",
           owner: params.owner,
@@ -51,9 +60,26 @@ export const useProjectRepositoriesStore = defineStore("projectRepositories", {
           token: params.token,
           servicesYamlPath: params.servicesYamlPath,
         });
+
+        const hasBotUpdate = Boolean(params.botToken || params.botUsername || params.botEmail);
+        if (hasBotUpdate) {
+          try {
+            await upsertRepositoryBotParams({
+              projectId: this.projectId,
+              repositoryId: binding.id,
+              botToken: params.botToken ?? null,
+              botUsername: params.botUsername ?? null,
+              botEmail: params.botEmail ?? null,
+            });
+          } catch (e) {
+            this.botUpdateError = normalizeApiError(e);
+          }
+        }
         await this.load(this.projectId);
+        return binding;
       } catch (e) {
         this.attachError = normalizeApiError(e);
+        return null;
       } finally {
         this.attaching = false;
       }
