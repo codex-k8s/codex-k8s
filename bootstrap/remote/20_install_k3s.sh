@@ -42,10 +42,7 @@ if [ ! -f "${K3S_REGISTRIES_FILE}" ] || ! cmp -s "${tmp_registries}" "${K3S_REGI
 fi
 rm -f "${tmp_registries}"
 
-kube_env
-
 CODEXK8S_NODE_DISCOVERY_TIMEOUT="${CODEXK8S_NODE_DISCOVERY_TIMEOUT:-300}"
-CODEXK8S_NODE_READY_TIMEOUT="${CODEXK8S_NODE_READY_TIMEOUT:-1200s}"
 
 case "$CODEXK8S_NODE_DISCOVERY_TIMEOUT" in
   ''|*[!0-9]*) die "CODEXK8S_NODE_DISCOVERY_TIMEOUT must be integer seconds";;
@@ -53,16 +50,19 @@ esac
 
 deadline=$((SECONDS + CODEXK8S_NODE_DISCOVERY_TIMEOUT))
 while [ "$SECONDS" -lt "$deadline" ]; do
-  if kubectl get nodes >/dev/null 2>&1; then
+  if systemctl is-active --quiet k3s && [ -s /etc/rancher/k3s/k3s.yaml ]; then
     break
   fi
   sleep 5
 done
 
-kubectl get nodes >/dev/null 2>&1 || die "k3s node discovery timed out after ${CODEXK8S_NODE_DISCOVERY_TIMEOUT}s"
-kubectl wait --for=condition=Ready node --all --timeout="${CODEXK8S_NODE_READY_TIMEOUT}"
+if ! systemctl is-active --quiet k3s; then
+  die "k3s service is not active after ${CODEXK8S_NODE_DISCOVERY_TIMEOUT}s"
+fi
+if [ ! -s /etc/rancher/k3s/k3s.yaml ]; then
+  die "k3s kubeconfig is missing: /etc/rancher/k3s/k3s.yaml"
+fi
 
-# Allow the operator user to run kubectl without sudo.
 # Keep the root kubeconfig permissions strict (600) and provision a private copy for the operator.
 if [ -n "${OPERATOR_USER:-}" ] && id -u "${OPERATOR_USER}" >/dev/null 2>&1; then
   log "Provision kubeconfig for operator user: ${OPERATOR_USER}"
