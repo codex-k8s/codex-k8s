@@ -33,9 +33,19 @@ var (
 )
 
 func (s *Service) resolveRunRepositoryRoot(ctx context.Context, params PrepareParams, vars map[string]string, runID string) (string, error) {
-	// Keep local/dev mode shell-free: if repository root is relative, treat it as a checked-out repo.
-	if strings.TrimSpace(s.cfg.RepositoryRoot) == "" || !filepath.IsAbs(s.cfg.RepositoryRoot) {
+	configuredRoot := strings.TrimSpace(s.cfg.RepositoryRoot)
+	if configuredRoot == "" {
 		return s.cfg.RepositoryRoot, nil
+	}
+	// Prefer "direct filesystem" mode when the configured root already contains deploy/templates.
+	// This keeps runtime-deploy CLI (repository-root=/opt/codex-k8s) working and avoids an
+	// unnecessary repo-sync roundtrip when the image already ships sources.
+	if looksLikeRepositoryRoot(configuredRoot) {
+		return configuredRoot, nil
+	}
+	// Keep local/dev mode shell-free: do not attempt repo-sync when the root is relative.
+	if !filepath.IsAbs(configuredRoot) {
+		return configuredRoot, nil
 	}
 
 	repositoryFullName := strings.TrimSpace(params.RepositoryFullName)
@@ -92,6 +102,20 @@ func (s *Service) resolveRunRepositoryRoot(ctx context.Context, params PreparePa
 	}
 
 	return repoRoot, nil
+}
+
+func looksLikeRepositoryRoot(root string) bool {
+	root = strings.TrimSpace(root)
+	if root == "" {
+		return false
+	}
+	if stat, err := os.Stat(filepath.Join(root, "deploy", "base")); err == nil && stat.IsDir() {
+		return true
+	}
+	if _, err := os.Stat(filepath.Join(root, "services.yaml")); err == nil {
+		return true
+	}
+	return false
 }
 
 func (s *Service) repoSnapshotPath(owner string, name string, buildRef string) string {
