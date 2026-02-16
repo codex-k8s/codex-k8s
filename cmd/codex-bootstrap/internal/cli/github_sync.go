@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -21,8 +22,8 @@ import (
 )
 
 const (
-	defaultGitHubSyncTimeout      = 30 * time.Second
-	defaultGitHubSyncWorkers      = 8
+	defaultGitHubSyncTimeout      = 5 * time.Minute
+	defaultGitHubSyncWorkers      = 4
 	defaultGitHubWebhookEvents    = "push,pull_request,issues,issue_comment,pull_request_review,pull_request_review_comment"
 	defaultGitHubLabelDescription = "codex-k8s managed label"
 	defaultGitHubLabelColor       = "1f6feb"
@@ -679,7 +680,7 @@ func runGitHubOperations(ctx context.Context, workers int, operations []githubOp
 			}
 			defer func() { <-semaphore }()
 
-			if err := operation.Run(ctx); err != nil {
+			if err := runGitHubOperationWithRetry(ctx, operation); err != nil {
 				errsMu.Lock()
 				errs = append(errs, fmt.Errorf("%s: %w", operation.Name, err))
 				errsMu.Unlock()
@@ -688,6 +689,105 @@ func runGitHubOperations(ctx context.Context, workers int, operations []githubOp
 	}
 	waitGroup.Wait()
 	return errors.Join(errs...)
+}
+
+func runGitHubOperationWithRetry(ctx context.Context, operation githubOperation) error {
+	var lastErr error
+	const maxAttempts = 10
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		err := operation.Run(ctx)
+		if err == nil {
+			return nil
+		}
+		lastErr = err
+		if attempt >= maxAttempts || !isGitHubRetryable(err) {
+			return err
+		}
+
+		delay := gitHubRetryDelay(err, attempt)
+		timer := time.NewTimer(delay)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return ctx.Err()
+		case <-timer.C:
+		}
+	}
+	return lastErr
+}
+
+func isGitHubRetryable(err error) bool {
+	code := githubStatusCode(err)
+	if code == http.StatusTooManyRequests {
+		return true
+	}
+	if code >= 500 && code < 600 {
+		return true
+	}
+	// GitHub sometimes responds with 403 for secondary rate limits.
+	if code == http.StatusForbidden {
+		_, ok := gitHubRetryAfter(err)
+		return ok
+	}
+	return false
+}
+
+func gitHubRetryDelay(err error, attempt int) time.Duration {
+	if delay, ok := gitHubRetryAfter(err); ok {
+		if delay < time.Second {
+			return time.Second
+		}
+		if delay > 30*time.Second {
+			return 30 * time.Second
+		}
+		return delay
+	}
+
+	// Exponential backoff with a tight cap to prevent secondary rate-limit storms.
+	if attempt < 1 {
+		attempt = 1
+	}
+	delay := 500 * time.Millisecond
+	for i := 1; i < attempt; i++ {
+		delay *= 2
+		if delay >= 8*time.Second {
+			return 8 * time.Second
+		}
+	}
+	if delay < time.Second {
+		delay = time.Second
+	}
+	return delay
+}
+
+func gitHubRetryAfter(err error) (time.Duration, bool) {
+	var apiErr *gh.ErrorResponse
+	if !errors.As(err, &apiErr) || apiErr.Response == nil {
+		return 0, false
+	}
+
+	if raw := strings.TrimSpace(apiErr.Response.Header.Get("Retry-After")); raw != "" {
+		seconds, parseErr := strconv.Atoi(raw)
+		if parseErr == nil && seconds > 0 {
+			return time.Duration(seconds) * time.Second, true
+		}
+	}
+
+	if raw := strings.TrimSpace(apiErr.Response.Header.Get("X-RateLimit-Reset")); raw != "" {
+		epoch, parseErr := strconv.ParseInt(raw, 10, 64)
+		if parseErr == nil && epoch > 0 {
+			until := time.Until(time.Unix(epoch, 0))
+			if until > 0 {
+				return until, true
+			}
+		}
+	}
+
+	return 0, false
 }
 
 func isGitHubNotFound(err error) bool {
