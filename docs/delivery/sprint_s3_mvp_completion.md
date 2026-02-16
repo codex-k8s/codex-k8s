@@ -56,13 +56,13 @@ approvals:
 | Day 12 | MVP regression/security gate + closeout and handover | P0 | `docs/delivery/epics/epic-s3-day12-mvp-closeout-and-handover.md` | planned |
 
 ## Daily gate (обязательно)
-- Green CI + успешный deploy на staging.
+- Green CI + успешный deploy на production.
 - Smoke + targeted regression для эпика дня.
 - Синхронное обновление docs (`product`, `architecture`, `delivery`, `traceability`).
 - Публикация evidence: flow events, links, UI screenshots/log excerpts, PR/Issue refs.
 
 ## Completion критерии спринта
-- MVP-функции из Issue #19 реализованы и проверены на staging.
+- MVP-функции из Issue #19 реализованы и проверены на production.
 - Полный label/stage контур формально документирован и подтверждён regression evidence.
 - Для `run:self-improve` есть минимум один воспроизводимый цикл с улучшениями в docs/prompt/tools.
 - Owner принимает итоговый go/no-go протокол для перехода к post-MVP roadmap.

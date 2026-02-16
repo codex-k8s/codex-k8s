@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: codex-k8s
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: codex-k8s
 spec:
@@ -18,11 +18,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: codex-k8s
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: codex-k8s
 spec:
-  replicas: ${CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS}
+  replicas: {{ envOr "CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS" "" }}
   selector:
     matchLabels:
       app.kubernetes.io/name: codex-k8s
@@ -35,7 +35,7 @@ spec:
     spec:
       initContainers:
         - name: wait-control-plane
-          image: busybox:1.36
+          image: {{ envOr "CODEXK8S_BUSYBOX_IMAGE" "busybox:1.36" }}
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -47,20 +47,20 @@ spec:
               done
       containers:
         - name: codex-k8s
-          image: ${CODEXK8S_API_GATEWAY_IMAGE}
+          image: {{ envOr "CODEXK8S_API_GATEWAY_IMAGE" "" }}
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: http
           env:
             - name: CODEXK8S_ENV
-              value: "${CODEXK8S_ENV}"
+              value: '{{ envOr "CODEXK8S_ENV" "" }}'
             - name: CODEXK8S_HOT_RELOAD
-              value: "${CODEXK8S_HOT_RELOAD}"
+              value: '{{ envOr "CODEXK8S_HOT_RELOAD" "" }}'
             - name: CODEXK8S_HTTP_ADDR
               value: ":8080"
             - name: CODEXK8S_CONTROL_PLANE_GRPC_TARGET
-              value: "${CODEXK8S_CONTROL_PLANE_GRPC_TARGET}"
+              value: '{{ envOr "CODEXK8S_CONTROL_PLANE_GRPC_TARGET" "" }}'
             - name: CODEXK8S_VITE_DEV_UPSTREAM
               valueFrom:
                 secretKeyRef:
@@ -122,7 +122,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: codex-k8s-control-plane
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: codex-k8s
 spec:
@@ -141,11 +141,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: codex-k8s-control-plane
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: codex-k8s
 spec:
-  replicas: ${CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS}
+  replicas: {{ envOr "CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS" "" }}
   selector:
     matchLabels:
       app.kubernetes.io/name: codex-k8s
@@ -159,7 +159,7 @@ spec:
       serviceAccountName: codex-k8s-control-plane
       initContainers:
         - name: wait-postgres
-          image: busybox:1.36
+          image: {{ envOr "CODEXK8S_BUSYBOX_IMAGE" "busybox:1.36" }}
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -171,7 +171,7 @@ spec:
               done
       containers:
         - name: control-plane
-          image: ${CODEXK8S_CONTROL_PLANE_IMAGE}
+          image: {{ envOr "CODEXK8S_CONTROL_PLANE_IMAGE" "" }}
           imagePullPolicy: Always
           ports:
             - containerPort: 9090
@@ -180,13 +180,13 @@ spec:
               name: http
           env:
             - name: CODEXK8S_ENV
-              value: "${CODEXK8S_ENV}"
+              value: '{{ envOr "CODEXK8S_ENV" "" }}'
             - name: CODEXK8S_HOT_RELOAD
-              value: "${CODEXK8S_HOT_RELOAD}"
+              value: '{{ envOr "CODEXK8S_HOT_RELOAD" "" }}'
             - name: CODEXK8S_SERVICES_CONFIG_PATH
               value: /app/services.yaml
             - name: CODEXK8S_SERVICES_CONFIG_ENV
-              value: "${CODEXK8S_SERVICES_CONFIG_ENV}"
+              value: '{{ envOr "CODEXK8S_SERVICES_CONFIG_ENV" "" }}'
             - name: CODEXK8S_CONTROL_PLANE_GRPC_ADDR
               value: ":9090"
             - name: CODEXK8S_CONTROL_PLANE_HTTP_ADDR
@@ -295,7 +295,7 @@ spec:
                   key: CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS
                   optional: true
             - name: CODEXK8S_CONTROL_PLANE_MCP_BASE_URL
-              value: "${CODEXK8S_CONTROL_PLANE_MCP_BASE_URL}"
+              value: '{{ envOr "CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" "" }}'
             - name: CODEXK8S_LEARNING_MODE_DEFAULT
               valueFrom:
                 secretKeyRef:
@@ -500,7 +500,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: codex-k8s-control-plane
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: codex-k8s
     app.kubernetes.io/component: control-plane
@@ -508,7 +508,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: codex-k8s-control-plane-runtime-${CODEXK8S_STAGING_NAMESPACE}
+  name: codex-k8s-control-plane-runtime-{{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: codex-k8s
     app.kubernetes.io/component: control-plane
@@ -547,24 +547,24 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: codex-k8s-control-plane-runtime-${CODEXK8S_STAGING_NAMESPACE}
+  name: codex-k8s-control-plane-runtime-{{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: codex-k8s
     app.kubernetes.io/component: control-plane
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: codex-k8s-control-plane-runtime-${CODEXK8S_STAGING_NAMESPACE}
+  name: codex-k8s-control-plane-runtime-{{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
 subjects:
   - kind: ServiceAccount
     name: codex-k8s-control-plane
-    namespace: ${CODEXK8S_STAGING_NAMESPACE}
+    namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: codex-k8s-worker
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: codex-k8s
     app.kubernetes.io/component: worker
@@ -572,7 +572,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: codex-k8s-worker-runtime-${CODEXK8S_STAGING_NAMESPACE}
+  name: codex-k8s-worker-runtime-{{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: codex-k8s
     app.kubernetes.io/component: worker
@@ -605,29 +605,29 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: codex-k8s-worker-runtime-${CODEXK8S_STAGING_NAMESPACE}
+  name: codex-k8s-worker-runtime-{{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: codex-k8s
     app.kubernetes.io/component: worker
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: codex-k8s-worker-runtime-${CODEXK8S_STAGING_NAMESPACE}
+  name: codex-k8s-worker-runtime-{{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
 subjects:
   - kind: ServiceAccount
     name: codex-k8s-worker
-    namespace: ${CODEXK8S_STAGING_NAMESPACE}
+    namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: codex-k8s-worker
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: codex-k8s
     app.kubernetes.io/component: worker
 spec:
-  replicas: ${CODEXK8S_WORKER_REPLICAS}
+  replicas: {{ envOr "CODEXK8S_WORKER_REPLICAS" "" }}
   selector:
     matchLabels:
       app.kubernetes.io/name: codex-k8s
@@ -641,13 +641,13 @@ spec:
       serviceAccountName: codex-k8s-worker
       containers:
         - name: worker
-          image: ${CODEXK8S_WORKER_IMAGE}
+          image: {{ envOr "CODEXK8S_WORKER_IMAGE" "" }}
           imagePullPolicy: Always
           env:
             - name: CODEXK8S_ENV
-              value: "${CODEXK8S_ENV}"
+              value: '{{ envOr "CODEXK8S_ENV" "" }}'
             - name: CODEXK8S_HOT_RELOAD
-              value: "${CODEXK8S_HOT_RELOAD}"
+              value: '{{ envOr "CODEXK8S_HOT_RELOAD" "" }}'
             - name: CODEXK8S_DB_HOST
               value: postgres
             - name: CODEXK8S_DB_PORT
@@ -668,9 +668,9 @@ spec:
                   name: codex-k8s-postgres
                   key: CODEXK8S_POSTGRES_PASSWORD
             - name: CODEXK8S_CONTROL_PLANE_GRPC_TARGET
-              value: "${CODEXK8S_CONTROL_PLANE_GRPC_TARGET}"
+              value: '{{ envOr "CODEXK8S_CONTROL_PLANE_GRPC_TARGET" "" }}'
             - name: CODEXK8S_CONTROL_PLANE_MCP_BASE_URL
-              value: "${CODEXK8S_CONTROL_PLANE_MCP_BASE_URL}"
+              value: '{{ envOr "CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" "" }}'
             - name: CODEXK8S_OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -708,31 +708,31 @@ spec:
                   key: CODEXK8S_GIT_BOT_MAIL
                   optional: true
             - name: CODEXK8S_WORKER_POLL_INTERVAL
-              value: "${CODEXK8S_WORKER_POLL_INTERVAL}"
+              value: '{{ envOr "CODEXK8S_WORKER_POLL_INTERVAL" "" }}'
             - name: CODEXK8S_WORKER_CLAIM_LIMIT
-              value: "${CODEXK8S_WORKER_CLAIM_LIMIT}"
+              value: '{{ envOr "CODEXK8S_WORKER_CLAIM_LIMIT" "" }}'
             - name: CODEXK8S_WORKER_RUNNING_CHECK_LIMIT
-              value: "${CODEXK8S_WORKER_RUNNING_CHECK_LIMIT}"
+              value: '{{ envOr "CODEXK8S_WORKER_RUNNING_CHECK_LIMIT" "" }}'
             - name: CODEXK8S_WORKER_SLOTS_PER_PROJECT
-              value: "${CODEXK8S_WORKER_SLOTS_PER_PROJECT}"
+              value: '{{ envOr "CODEXK8S_WORKER_SLOTS_PER_PROJECT" "" }}'
             - name: CODEXK8S_WORKER_SLOT_LEASE_TTL
-              value: "${CODEXK8S_WORKER_SLOT_LEASE_TTL}"
+              value: '{{ envOr "CODEXK8S_WORKER_SLOT_LEASE_TTL" "" }}'
             - name: CODEXK8S_WORKER_K8S_NAMESPACE
-              value: "${CODEXK8S_WORKER_K8S_NAMESPACE}"
+              value: '{{ envOr "CODEXK8S_WORKER_K8S_NAMESPACE" "" }}'
             - name: CODEXK8S_WORKER_JOB_IMAGE
-              value: "${CODEXK8S_WORKER_JOB_IMAGE}"
+              value: '{{ envOr "CODEXK8S_WORKER_JOB_IMAGE" "" }}'
             - name: CODEXK8S_WORKER_JOB_COMMAND
-              value: "${CODEXK8S_WORKER_JOB_COMMAND}"
+              value: '{{ envOr "CODEXK8S_WORKER_JOB_COMMAND" "" }}'
             - name: CODEXK8S_WORKER_JOB_TTL_SECONDS
-              value: "${CODEXK8S_WORKER_JOB_TTL_SECONDS}"
+              value: '{{ envOr "CODEXK8S_WORKER_JOB_TTL_SECONDS" "" }}'
             - name: CODEXK8S_WORKER_JOB_BACKOFF_LIMIT
-              value: "${CODEXK8S_WORKER_JOB_BACKOFF_LIMIT}"
+              value: '{{ envOr "CODEXK8S_WORKER_JOB_BACKOFF_LIMIT" "" }}'
             - name: CODEXK8S_WORKER_JOB_ACTIVE_DEADLINE_SECONDS
-              value: "${CODEXK8S_WORKER_JOB_ACTIVE_DEADLINE_SECONDS}"
+              value: '{{ envOr "CODEXK8S_WORKER_JOB_ACTIVE_DEADLINE_SECONDS" "" }}'
             - name: CODEXK8S_WORKER_RUN_NAMESPACE_PREFIX
-              value: "${CODEXK8S_WORKER_RUN_NAMESPACE_PREFIX}"
+              value: '{{ envOr "CODEXK8S_WORKER_RUN_NAMESPACE_PREFIX" "" }}'
             - name: CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP
-              value: "${CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP}"
+              value: '{{ envOr "CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP" "" }}'
             - name: CODEXK8S_RUN_DEBUG_LABEL
               valueFrom:
                 configMapKeyRef:
@@ -806,24 +806,24 @@ spec:
                   key: CODEXK8S_AI_REASONING_EXTRA_HIGH_LABEL
                   optional: true
             - name: CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT
-              value: "${CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT}"
+              value: '{{ envOr "CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT" "" }}'
             - name: CODEXK8S_WORKER_RUN_ROLE_NAME
-              value: "${CODEXK8S_WORKER_RUN_ROLE_NAME}"
+              value: '{{ envOr "CODEXK8S_WORKER_RUN_ROLE_NAME" "" }}'
             - name: CODEXK8S_WORKER_RUN_ROLE_BINDING_NAME
-              value: "${CODEXK8S_WORKER_RUN_ROLE_BINDING_NAME}"
+              value: '{{ envOr "CODEXK8S_WORKER_RUN_ROLE_BINDING_NAME" "" }}'
             - name: CODEXK8S_WORKER_RUN_RESOURCE_QUOTA_NAME
-              value: "${CODEXK8S_WORKER_RUN_RESOURCE_QUOTA_NAME}"
+              value: '{{ envOr "CODEXK8S_WORKER_RUN_RESOURCE_QUOTA_NAME" "" }}'
             - name: CODEXK8S_WORKER_RUN_LIMIT_RANGE_NAME
-              value: "${CODEXK8S_WORKER_RUN_LIMIT_RANGE_NAME}"
+              value: '{{ envOr "CODEXK8S_WORKER_RUN_LIMIT_RANGE_NAME" "" }}'
             - name: CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME
-              value: "${CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME}"
+              value: '{{ envOr "CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME" "" }}'
             - name: CODEXK8S_WORKER_RUN_QUOTA_PODS
-              value: "${CODEXK8S_WORKER_RUN_QUOTA_PODS}"
+              value: '{{ envOr "CODEXK8S_WORKER_RUN_QUOTA_PODS" "" }}'
             - name: CODEXK8S_AGENT_DEFAULT_MODEL
-              value: "${CODEXK8S_AGENT_DEFAULT_MODEL}"
+              value: '{{ envOr "CODEXK8S_AGENT_DEFAULT_MODEL" "" }}'
             - name: CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT
-              value: "${CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT}"
+              value: '{{ envOr "CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT" "" }}'
             - name: CODEXK8S_AGENT_DEFAULT_LOCALE
-              value: "${CODEXK8S_AGENT_DEFAULT_LOCALE}"
+              value: '{{ envOr "CODEXK8S_AGENT_DEFAULT_LOCALE" "" }}'
             - name: CODEXK8S_AGENT_BASE_BRANCH
-              value: "${CODEXK8S_AGENT_BASE_BRANCH}"
+              value: '{{ envOr "CODEXK8S_AGENT_BASE_BRANCH" "" }}'

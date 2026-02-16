@@ -13,7 +13,7 @@ func TestRenderCommentBody_RendersTemplateByLocale(t *testing.T) {
 		Phase:        PhaseStarted,
 		TriggerKind:  triggerKindDev,
 		PromptLocale: localeRU,
-	}, "https://staging.codex-k8s.dev/runs/run-1")
+	}, "https://platform.codex-k8s.dev/runs/run-1")
 	if err != nil {
 		t.Fatalf("renderCommentBody returned error: %v", err)
 	}

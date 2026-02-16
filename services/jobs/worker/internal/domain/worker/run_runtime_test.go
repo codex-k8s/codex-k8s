@@ -93,14 +93,14 @@ func TestResolveRunExecutionContext_UsesRuntimeNamespaceOverride(t *testing.T) {
 	ctx := resolveRunExecutionContext(
 		"run-deploy",
 		"project-1",
-		json.RawMessage(`{"runtime":{"mode":"full-env","namespace":"codex-k8s-ai-staging","deploy_only":true}}`),
+		json.RawMessage(`{"runtime":{"mode":"full-env","namespace":"codex-k8s-prod","deploy_only":true}}`),
 		"codex-issue",
 	)
 
 	if ctx.RuntimeMode != agentdomain.RuntimeModeFullEnv {
 		t.Fatalf("expected full-env runtime mode, got %q", ctx.RuntimeMode)
 	}
-	if got, want := ctx.Namespace, "codex-k8s-ai-staging"; got != want {
+	if got, want := ctx.Namespace, "codex-k8s-prod"; got != want {
 		t.Fatalf("expected namespace override %q, got %q", want, got)
 	}
 }

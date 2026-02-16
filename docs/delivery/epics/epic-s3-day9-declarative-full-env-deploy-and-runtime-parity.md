@@ -35,7 +35,7 @@ approvals:
 - `R1` (выбрано `1-1`): в `services.yaml` используется enum-поле `codeUpdateStrategy` со значениями `hot-reload | rebuild | restart` (вместо bool-флага).
 - `R2` (выбрано `2-1`): изоляция dogfooding выполняется namespace-уровнем + policy/валидацией cluster-scope ресурсов (без `vcluster`/nested cluster в MVP).
 - `R3` (выбрано `3-1`): переиспользование блоков реализуется через собственные `imports + components + deep-merge` в typed render engine (без перехода на Helm как базовый движок).
-- `R4`: для проекта `codex-k8s` окружение `ai-staging` в `services.yaml` задаётся шаблоном `{{ .Project }}-ai-staging`; для `project=codex-k8s` это даёт namespace `codex-k8s-ai-staging`.
+- `R4`: для проекта `codex-k8s` окружение `production` в `services.yaml` задаётся шаблоном `{{ .Project }}-production`; для `project=codex-k8s` это даёт namespace `codex-k8s-prod`.
 
 ## Scope
 ### In scope
@@ -48,12 +48,12 @@ approvals:
   - единый API для `control-plane` и bootstrap binary.
 - Детерминированный порядок развёртывания:
   - `stateful dependencies -> migrations -> internal domain services -> edge services -> frontend`.
-- Runtime parity для non-prod (`dev`, `ai-staging`, `ai-slot`):
+- Runtime parity для non-prod (`dev`, `production`, `ai-slot`):
   - `codeUpdateStrategy=hot-reload` поддерживается на уровне Dockerfile/manifests/entrypoints;
   - стратегии `rebuild` и `restart` поддерживаются в execution-plan и prompt context.
 - Dogfooding без конфликтов:
   - `codex-k8s` в ai-slot разворачивает изолированную копию себя в отдельном namespace;
-  - для `codex-k8s` `ai-staging` задаётся шаблоном `{{ .Project }}-ai-staging`.
+  - для `codex-k8s` `production` задаётся шаблоном `{{ .Project }}-production`.
 - Bootstrap binary (одноразовый):
   - настройка чистого Ubuntu 24.04: зависимости, Kubernetes, базовые скрипты/секреты/env;
   - раздельная подготовка GitHub-репозиториев: platform repo для CI/runtime secrets + webhook/labels, first-project repo (если отдельный) для дополнительной настройки webhook/labels;
@@ -79,7 +79,7 @@ approvals:
   - `imports[]` и `components[]` для переиспользования;
   - `instanceScope`/эквивалентный runtime marker для anti-conflict policy в dogfooding.
 - Правило для `codex-k8s`:
-  - `environments.ai-staging.namespaceTemplate` задаётся как `{{ .Project }}-ai-staging`.
+  - `environments.production.namespaceTemplate` задаётся как `{{ .Project }}-production`.
 
 ## Детерминированный render pipeline
 1. Load root config.
@@ -102,7 +102,7 @@ approvals:
 - Story-6: Bootstrap binary для первичной установки Ubuntu 24.04 + Kubernetes + deploy `codex-k8s` + handoff.
 - Story-7: Dogfooding safeguards:
   - namespace isolation для ai-slot;
-  - шаблон для `codex-k8s ai-staging`: `{{ .Project }}-ai-staging`;
+  - шаблон для `codex-k8s production`: `{{ .Project }}-production`;
   - блокировка конфликтующих cluster-scope ресурсов в slot-профиле.
 - Story-8: Full E2E на новом чистом VPS:
   - входной конфиг: `bootstrap/host/config-e2e-test.env`;
@@ -128,25 +128,25 @@ approvals:
   - `codex-bootstrap` уже валидирует/рендерит `services.yaml` и запускает bootstrap сценарий;
   - финальная проверка repo-isolation политики переносится в Story-8 e2e.
 - Story-7 (`done`):
-  - правило `codex-k8s ai-staging => {{ .Project }}-ai-staging` валидируется в loader;
+  - правило `codex-k8s production => {{ .Project }}-production` валидируется в loader;
   - namespace-level изоляция runtime и anti-conflict guardrails включены в текущий full-env путь.
 - Story-8 (`planned`):
   - ожидает выполнения на отдельном чистом VPS с `bootstrap/host/config-e2e-test.env` и новым repo `codex-k8s/test`.
 
 ## Текущий статус критериев приемки (2026-02-14)
-- `in_progress`: full-env сценарий для `codex-k8s` подтверждён на staging; cross-project e2e (`project-example` + новый чистый VPS) остаётся открытым.
+- `in_progress`: full-env сценарий для `codex-k8s` подтверждён на production; cross-project e2e (`project-example` + новый чистый VPS) остаётся открытым.
 - `in_progress`: `imports/components/deep-merge` и validation покрыты тестами `libs/go/servicescfg`; отдельная JSON Schema остаётся открытой.
 - `in_progress`: `codeUpdateStrategy` присутствует и учитывается в runtime-рендере; экспорт в prompt context остаётся открытым.
-- `done`: правило `ai-staging={{ .Project }}-ai-staging` для `codex-k8s` соблюдается и валидируется.
-- `in_progress`: dogfooding isolation на staging подтверждён; финальная проверка через e2e runbook остаётся открытой.
+- `done`: правило `production={{ .Project }}-production` для `codex-k8s` соблюдается и валидируется.
+- `in_progress`: dogfooding isolation на production подтверждён; финальная проверка через e2e runbook остаётся открытой.
 - `planned`: bootstrap e2e + evidence bundle будут закрыты после выполнения Story-8.
 
 ## Критерии приемки
 - Для минимум двух проектов (`project-example` и `codex-k8s`) full-env поднимается из `services.yaml` через typed execution-plan.
 - `services.yaml v2` поддерживает `imports/components/deep-merge`, имеет schema-validation и покрыт unit/integration тестами.
 - `codeUpdateStrategy` (enum) присутствует в контракте, учитывается в runtime orchestration и попадает в prompt context.
-- Для `codex-k8s` подтверждено правило шаблона: `ai-staging` задаётся как `{{ .Project }}-ai-staging` и для `project=codex-k8s` резолвится в `codex-k8s-ai-staging`.
-- Для ai-slot dogfooding подтверждено отсутствие конфликтов со staging/prod платформой (namespace и runtime resources).
+- Для `codex-k8s` подтверждено правило шаблона: `production` задаётся как `{{ .Project }}-production` и для `project=codex-k8s` резолвится в `codex-k8s-prod`.
+- Для ai-slot dogfooding подтверждено отсутствие конфликтов со production/prod платформой (namespace и runtime resources).
 - Bootstrap binary успешно отрабатывает e2e на чистом Ubuntu 24.04 с входом `bootstrap/host/config-e2e-test.env`.
 - Подтверждена repo-isolation политика bootstrap: platform secrets/variables не записываются в first-project repo; webhook/labels настраиваются в platform repo и в first-project repo только при его отдельном указании.
 - По e2e опубликован evidence bundle:
@@ -159,7 +159,7 @@ approvals:
 - Зависимость от готовности отдельного чистого VPS и заполненного `bootstrap/host/config-e2e-test.env`.
 - Зависимость от тестового пустого GitHub repository для project-example e2e контура.
 - Риск регрессий при миграции со shell-first на execution-plan путь; нужен dual-run/feature-flag rollout.
-- Риск несогласованности namespace policy и текущих staging манифестов; нужен отдельный preflight check.
+- Риск несогласованности namespace policy и текущих production манифестов; нужен отдельный preflight check.
 
 ## План релиза (верхний уровень)
 - Wave-1: спецификация и библиотека `services.yaml v2`.
@@ -170,4 +170,4 @@ approvals:
 ## Апрув
 - request_id: approved-day9-rework
 - Решение: approved
-- Комментарий: включает выбранные решения `1-1`, `2-1`, `3-1`, обязательный Story-8 e2e и namespace правило для `codex-k8s ai-staging`.
+- Комментарий: включает выбранные решения `1-1`, `2-1`, `3-1`, обязательный Story-8 e2e и namespace правило для `codex-k8s production`.

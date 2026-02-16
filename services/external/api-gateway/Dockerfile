@@ -49,4 +49,4 @@ USER app
 
 EXPOSE 8080
 
-ENTRYPOINT ["sh", "-ec", "if [ \"${CODEXK8S_ENV:-ai-staging}\" = \"production\" ] || [ \"${CODEXK8S_HOT_RELOAD:-true}\" = \"false\" ]; then exec /usr/local/bin/codex-k8s; fi; exec CompileDaemon --build='go build -mod=readonly -o /tmp/codex-k8s ./services/external/api-gateway/cmd/api-gateway' --command='/tmp/codex-k8s' --polling --graceful-kill"]
+ENTRYPOINT ["sh", "-ec", "if [ \"${CODEXK8S_ENV:-production}\" = \"production\" ] || [ \"${CODEXK8S_HOT_RELOAD:-true}\" = \"false\" ]; then exec /usr/local/bin/codex-k8s; fi; exec CompileDaemon --build='go build -mod=readonly -o /tmp/codex-k8s ./services/external/api-gateway/cmd/api-gateway' --command='/tmp/codex-k8s' --polling --graceful-kill"]

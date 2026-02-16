@@ -115,7 +115,7 @@ func (h *authHandler) Logout(c *echo.Context) error {
 		MaxAge:   -1,
 	})
 
-	// When running behind oauth2-proxy (staging/dev), the browser session is primarily backed
+	// When running behind oauth2-proxy (production/dev), the browser session is primarily backed
 	// by oauth2-proxy cookies. If we don't clear them, users may appear "still logged in".
 	//
 	// oauth2-proxy defaults:

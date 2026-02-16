@@ -45,7 +45,7 @@ approvals:
   - для `delete` обязателен `confirm_delete=true`;
   - в ответ добавлены `exists`, `owned_by_project`, `owner_project_id` для диагностируемого `describe`.
 - Внедрены policy checks до постановки approval:
-  - allowlist окружений (`CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS`, fallback: `dev,staging,ai-staging,prod`);
+  - allowlist окружений (`CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS`, fallback: `dev,production,production,prod`);
   - валидация `database_name` по regex и длине;
   - ownership checks по проекту/окружению.
 - Добавлен ownership-контур в БД и repository-слой:

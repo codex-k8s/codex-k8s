@@ -32,6 +32,7 @@ func (s *Service) ReconcileNext(ctx context.Context, leaseOwner string, leaseTTL
 	if !ok {
 		return false, nil
 	}
+	s.appendTaskLogBestEffort(ctx, task.RunID, "reconcile", "info", "Task claimed by reconciler "+leaseOwner)
 
 	renewCtx, cancelRenew := context.WithCancel(ctx)
 	renewDone := make(chan struct{})
@@ -87,6 +88,7 @@ func (s *Service) ReconcileNext(ctx context.Context, leaseOwner string, leaseTTL
 	cancelRenew()
 	<-renewDone
 	if runErr != nil {
+		s.appendTaskLogBestEffort(ctx, task.RunID, "reconcile", "error", "Task failed: "+runErr.Error())
 		if errors.Is(runErr, context.Canceled) || errors.Is(runErr, context.DeadlineExceeded) {
 			if ctx.Err() != nil {
 				return true, runErr
@@ -122,6 +124,7 @@ func (s *Service) ReconcileNext(ctx context.Context, leaseOwner string, leaseTTL
 	if !updated {
 		return true, fmt.Errorf("mark runtime deploy task %s as succeeded: lease lost", task.RunID)
 	}
+	s.appendTaskLogBestEffort(ctx, task.RunID, "reconcile", "info", "Task succeeded for namespace "+result.Namespace+" env "+result.TargetEnv)
 	return true, nil
 }
 
@@ -132,6 +135,7 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 	if runID == "" {
 		return zero, fmt.Errorf("run_id is required")
 	}
+	s.appendTaskLogBestEffort(ctx, runID, "prepare", "info", "Start runtime deploy applyDesiredState")
 
 	targetEnv := strings.TrimSpace(params.TargetEnv)
 	if targetEnv == "" {
@@ -147,6 +151,7 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 		Vars:      templateVars,
 	})
 	if err != nil {
+		s.appendTaskLogBestEffort(ctx, runID, "prepare", "error", "Load services config failed: "+err.Error())
 		return zero, fmt.Errorf("load services config: %w", err)
 	}
 
@@ -165,7 +170,7 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 	// the final namespace and must be (re)computed after services.yaml resolved it.
 	templateVars = s.buildTemplateVars(params, targetNamespace)
 
-	templateVars["CODEXK8S_STAGING_NAMESPACE"] = targetNamespace
+	templateVars["CODEXK8S_PRODUCTION_NAMESPACE"] = targetNamespace
 	templateVars["CODEXK8S_WORKER_K8S_NAMESPACE"] = targetNamespace
 	templateVars["CODEXK8S_GITHUB_REPO"] = strings.TrimSpace(params.RepositoryFullName)
 	if strings.TrimSpace(templateVars["CODEXK8S_WORKER_JOB_IMAGE"]) == "" {
@@ -175,22 +180,32 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 	}
 
 	if strings.EqualFold(strings.TrimSpace(loaded.Stack.Spec.Project), "codex-k8s") {
+		s.appendTaskLogBestEffort(ctx, runID, "prerequisites", "info", "Ensuring codex-k8s prerequisites")
 		if err := s.ensureCodexK8sPrerequisites(ctx, targetNamespace, templateVars); err != nil {
+			s.appendTaskLogBestEffort(ctx, runID, "prerequisites", "error", "Ensure prerequisites failed: "+err.Error())
 			return zero, fmt.Errorf("ensure codex-k8s prerequisites: %w", err)
 		}
 	}
 
-	if err := s.buildImages(ctx, params, loaded.Stack, targetNamespace, templateVars); err != nil {
-		return zero, fmt.Errorf("build images: %w", err)
-	}
-
-	appliedInfra, err := s.applyInfrastructure(ctx, loaded.Stack, targetNamespace, templateVars)
+	appliedInfra, err := s.applyInfrastructure(ctx, loaded.Stack, targetNamespace, templateVars, runID)
 	if err != nil {
+		s.appendTaskLogBestEffort(ctx, runID, "infrastructure", "error", "Apply infrastructure failed: "+err.Error())
 		return zero, fmt.Errorf("apply infrastructure: %w", err)
 	}
-	if err := s.applyServices(ctx, loaded.Stack, targetNamespace, templateVars, appliedInfra); err != nil {
+	if err := s.buildImages(ctx, params, loaded.Stack, targetNamespace, templateVars); err != nil {
+		s.appendTaskLogBestEffort(ctx, runID, "build", "error", "Build images failed: "+err.Error())
+		return zero, fmt.Errorf("build images: %w", err)
+	}
+	appliedInfra, err = s.applyInfrastructure(ctx, loaded.Stack, targetNamespace, templateVars, runID)
+	if err != nil {
+		s.appendTaskLogBestEffort(ctx, runID, "infrastructure", "error", "Re-apply infrastructure failed: "+err.Error())
+		return zero, fmt.Errorf("re-apply infrastructure: %w", err)
+	}
+	if err := s.applyServices(ctx, loaded.Stack, targetNamespace, templateVars, appliedInfra, runID); err != nil {
+		s.appendTaskLogBestEffort(ctx, runID, "services", "error", "Apply services failed: "+err.Error())
 		return zero, fmt.Errorf("apply services: %w", err)
 	}
+	s.appendTaskLogBestEffort(ctx, runID, "prepare", "info", "Runtime deploy finished successfully")
 	return PrepareResult{
 		Namespace: targetNamespace,
 		TargetEnv: targetEnv,

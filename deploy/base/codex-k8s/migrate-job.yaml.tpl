@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: codex-k8s-migrate
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: codex-k8s
     app.kubernetes.io/component: migrate
@@ -17,7 +17,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: migrate
-          image: ${CODEXK8S_CONTROL_PLANE_IMAGE}
+          image: {{ envOr "CODEXK8S_CONTROL_PLANE_IMAGE" "" }}
           imagePullPolicy: Always
           env:
             - name: CODEXK8S_POSTGRES_DB
@@ -40,7 +40,7 @@ spec:
             - -ec
             - |
               export GOOSE_DRIVER=postgres
-              # NOTE: use $VAR (not ${VAR}) because ${...} is consumed by our manifest placeholder renderer.
+              # Use shell runtime variables from container env (set above via secret refs).
               export GOOSE_DBSTRING="postgres://$CODEXK8S_POSTGRES_USER:$CODEXK8S_POSTGRES_PASSWORD@postgres:5432/$CODEXK8S_POSTGRES_DB?sslmode=disable"
               # Postgres Service can be routable slightly before the actual server
               # accepts connections. Keep this step resilient to short transient failures,

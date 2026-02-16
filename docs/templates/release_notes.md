@@ -10,7 +10,7 @@ release:
   version: "<vX.Y.Z>"
   date: YYYY-MM-DD
   commit: "<sha>"
-  environment: "staging|prod"
+  environment: "production|prod"
 related_prs: []
 related_issues: []
 approvals:

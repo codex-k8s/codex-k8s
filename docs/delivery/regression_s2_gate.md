@@ -1,7 +1,7 @@
 ---
 doc_id: REG-CK8S-S2-0001
 type: regression
-title: "Sprint S2 Regression Gate (staging)"
+title: "Sprint S2 Regression Gate (production)"
 status: completed
 owner_role: QA
 created_at: 2026-02-13
@@ -14,16 +14,16 @@ approvals:
   request_id: "owner-2026-02-13-s2-day7"
 ---
 
-# Sprint S2 Regression Gate (staging)
+# Sprint S2 Regression Gate (production)
 
 Цель: зафиксировать воспроизводимый regression bundle по dogfooding baseline S2 перед стартом Sprint S3.
 
 ## Preconditions
 - Актуальный deploy на `main` завершился успешно:
   - workflow run: `21985095587`
-  - job: `Deploy codex-k8s to ai-staging`
+  - job: `Deploy codex-k8s to production`
   - conclusion: `success`.
-- В namespace staging все ключевые deploy в состоянии `READY 1/1`:
+- В namespace production все ключевые deploy в состоянии `READY 1/1`:
   - `codex-k8s`, `codex-k8s-control-plane`, `codex-k8s-worker`, `codex-k8s-web-console`, `oauth2-proxy`.
 
 ## Regression matrix (S2 Day7)
@@ -44,16 +44,16 @@ approvals:
 # GitHub workflow status
 gh run view -R "$CODEXK8S_GITHUB_REPO" 21985095587 --json workflowName,status,conclusion,jobs,url
 
-# Staging health
-kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get deploy,pods,jobs
-kubectl -n "$CODEXK8S_STAGING_NAMESPACE" logs deploy/codex-k8s-worker --tail=80
-kubectl -n "$CODEXK8S_STAGING_NAMESPACE" logs deploy/codex-k8s-control-plane --tail=80
+# Production health
+kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" get deploy,pods,jobs
+kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s-worker --tail=80
+kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s-control-plane --tail=80
 
 # Run namespace leaks
 kubectl get ns -l codex-k8s.dev/managed-by=codex-k8s-worker,codex-k8s.dev/namespace-purpose=run
 
 # DB evidence snapshot
-kubectl -n "$CODEXK8S_STAGING_NAMESPACE" exec -i postgres-0 -- \
+kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" exec -i postgres-0 -- \
   psql -U codex_k8s -d codex_k8s
 
 # Label conflict regression tests
@@ -63,7 +63,7 @@ go test ./services/jobs/worker/internal/domain/worker \
 
 ## Go/No-Go
 - Решение: **Go** для старта Sprint S3.
-- Основание: нет открытых P0 блокеров в S2 runtime контуре, deploy/staging стабильны, dogfooding цикл `run:dev`/`run:dev:revise` воспроизводим.
+- Основание: нет открытых P0 блокеров в S2 runtime контуре, deploy/production стабильны, dogfooding цикл `run:dev`/`run:dev:revise` воспроизводим.
 
 ## Residual risks / follow-ups
 - Полный runtime e2e для Day6 control tools (`secret.sync.github_k8s`, `database.lifecycle`, `owner.feedback.request`) в production-режиме approval/deny закреплён в Sprint S3 Day3..Day5.

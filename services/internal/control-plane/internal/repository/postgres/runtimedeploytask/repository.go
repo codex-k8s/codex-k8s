@@ -2,6 +2,7 @@ package runtimedeploytask
 
 import (
 	"context"
+	"encoding/json"
 	_ "embed"
 	"errors"
 	"fmt"
@@ -32,6 +33,10 @@ var (
 	queryMarkFailed string
 	//go:embed sql/renew_lease.sql
 	queryRenewLease string
+	//go:embed sql/list_recent.sql
+	queryListRecent string
+	//go:embed sql/append_log.sql
+	queryAppendLog string
 )
 
 // Repository persists runtime_deploy_tasks state in PostgreSQL.
@@ -200,6 +205,77 @@ func (r *Repository) RenewLease(ctx context.Context, params domainrepo.RenewLeas
 	return strings.TrimSpace(returnedRunID) != "", nil
 }
 
+// ListRecent returns runtime deploy tasks ordered by updated_at desc.
+func (r *Repository) ListRecent(ctx context.Context, filter domainrepo.ListFilter) ([]domainrepo.Task, error) {
+	limit := filter.Limit
+	if limit <= 0 {
+		limit = 200
+	}
+	if limit > 1000 {
+		limit = 1000
+	}
+	rows, err := r.db.Query(
+		ctx,
+		queryListRecent,
+		strings.TrimSpace(filter.Status),
+		strings.TrimSpace(filter.TargetEnv),
+		limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list runtime deploy tasks: %w", err)
+	}
+	defer rows.Close()
+
+	items := make([]domainrepo.Task, 0, limit)
+	for rows.Next() {
+		item, scanErr := scanTask(rows)
+		if scanErr != nil {
+			return nil, fmt.Errorf("scan runtime deploy task list item: %w", scanErr)
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate runtime deploy task list rows: %w", err)
+	}
+	return items, nil
+}
+
+// AppendLog appends one task log line.
+func (r *Repository) AppendLog(ctx context.Context, params domainrepo.AppendLogParams) error {
+	runID := strings.TrimSpace(params.RunID)
+	if runID == "" {
+		return fmt.Errorf("append runtime deploy task log: run_id is required")
+	}
+	stage := strings.TrimSpace(params.Stage)
+	if stage == "" {
+		stage = "deploy"
+	}
+	level := strings.TrimSpace(params.Level)
+	if level == "" {
+		level = "info"
+	}
+	message := strings.TrimSpace(params.Message)
+	if message == "" {
+		return nil
+	}
+	maxLines := params.MaxLines
+	if maxLines <= 0 {
+		maxLines = 200
+	}
+	if maxLines > 5000 {
+		maxLines = 5000
+	}
+
+	tag, err := r.db.Exec(ctx, queryAppendLog, runID, stage, level, message, maxLines)
+	if err != nil {
+		return fmt.Errorf("append runtime deploy task log for run %s: %w", runID, err)
+	}
+	if tag.RowsAffected() == 0 {
+		return nil
+	}
+	return nil
+}
+
 type taskRowScanner interface {
 	Scan(dest ...any) error
 }
@@ -254,6 +330,7 @@ func scanTask(row taskRowScanner) (domainrepo.Task, error) {
 		updatedAt       time.Time
 		startedAt       pgtype.Timestamptz
 		finishedAt      pgtype.Timestamptz
+		logsRaw         []byte
 		leaseOwner      string
 		lastError       string
 		resultNamespace string
@@ -281,6 +358,7 @@ func scanTask(row taskRowScanner) (domainrepo.Task, error) {
 		&updatedAt,
 		&startedAt,
 		&finishedAt,
+		&logsRaw,
 	)
 	if err != nil {
 		return domainrepo.Task{}, err
@@ -306,8 +384,36 @@ func scanTask(row taskRowScanner) (domainrepo.Task, error) {
 	if finishedAt.Valid {
 		task.FinishedAt = finishedAt.Time.UTC()
 	}
+	task.Logs = parseTaskLogs(logsRaw)
 
 	return task, nil
+}
+
+func parseTaskLogs(raw []byte) []entitytypes.RuntimeDeployTaskLogEntry {
+	trimmed := strings.TrimSpace(string(raw))
+	if trimmed == "" || trimmed == "null" {
+		return []entitytypes.RuntimeDeployTaskLogEntry{}
+	}
+	type dbLogEntry struct {
+		Stage     string    `json:"stage"`
+		Level     string    `json:"level"`
+		Message   string    `json:"message"`
+		CreatedAt time.Time `json:"created_at"`
+	}
+	parsed := make([]dbLogEntry, 0)
+	if err := json.Unmarshal(raw, &parsed); err != nil {
+		return []entitytypes.RuntimeDeployTaskLogEntry{}
+	}
+	out := make([]entitytypes.RuntimeDeployTaskLogEntry, 0, len(parsed))
+	for _, entry := range parsed {
+		out = append(out, entitytypes.RuntimeDeployTaskLogEntry{
+			Stage:     strings.TrimSpace(entry.Stage),
+			Level:     strings.TrimSpace(entry.Level),
+			Message:   strings.TrimSpace(entry.Message),
+			CreatedAt: entry.CreatedAt.UTC(),
+		})
+	}
+	return out
 }
 
 func parseRuntimeDeployStatus(raw string) (entitytypes.RuntimeDeployTaskStatus, error) {

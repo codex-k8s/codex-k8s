@@ -22,6 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
@@ -30,6 +31,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/remotecommand"
+	"k8s.io/client-go/util/retry"
 )
 
 // Client provides Kubernetes operations for control-plane MCP domain.
@@ -434,6 +436,69 @@ func (c *Client) JobExists(ctx context.Context, namespace string, jobName string
 	return false, fmt.Errorf("get job %s/%s: %w", targetNamespace, targetJobName, err)
 }
 
+// GetJobLogs returns aggregated logs for all pods/containers of one Job.
+func (c *Client) GetJobLogs(ctx context.Context, namespace string, jobName string, tailLines int64) (string, error) {
+	targetNamespace := strings.TrimSpace(namespace)
+	targetJobName := strings.TrimSpace(jobName)
+	if targetNamespace == "" {
+		return "", fmt.Errorf("job namespace is required")
+	}
+	if targetJobName == "" {
+		return "", fmt.Errorf("job name is required")
+	}
+
+	pods, err := c.clientset.CoreV1().Pods(targetNamespace).List(ctx, metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("job-name=%s", targetJobName),
+	})
+	if err != nil {
+		return "", fmt.Errorf("list pods for job %s/%s: %w", targetNamespace, targetJobName, err)
+	}
+	if len(pods.Items) == 0 {
+		return "", nil
+	}
+
+	sort.Slice(pods.Items, func(i, j int) bool { return pods.Items[i].Name < pods.Items[j].Name })
+	var out strings.Builder
+	for _, pod := range pods.Items {
+		containerNames := make([]string, 0, len(pod.Spec.InitContainers)+len(pod.Spec.Containers))
+		for _, container := range pod.Spec.InitContainers {
+			containerNames = append(containerNames, container.Name)
+		}
+		for _, container := range pod.Spec.Containers {
+			containerNames = append(containerNames, container.Name)
+		}
+		if len(containerNames) == 0 {
+			containerNames = append(containerNames, "")
+		}
+
+		for _, containerName := range containerNames {
+			logs, logsErr := c.GetPodLogs(ctx, targetNamespace, pod.Name, containerName, tailLines)
+			if logsErr != nil {
+				if k8serrors.IsNotFound(logsErr) {
+					continue
+				}
+				return "", fmt.Errorf("get logs for pod %s container %s: %w", pod.Name, containerName, logsErr)
+			}
+			if strings.TrimSpace(logs) == "" {
+				continue
+			}
+			if out.Len() > 0 {
+				out.WriteString("\n")
+			}
+			if strings.TrimSpace(containerName) == "" {
+				out.WriteString("pod=" + pod.Name + "\n")
+			} else {
+				out.WriteString("pod=" + pod.Name + " container=" + containerName + "\n")
+			}
+			out.WriteString(logs)
+			if !strings.HasSuffix(logs, "\n") {
+				out.WriteString("\n")
+			}
+		}
+	}
+	return strings.TrimSpace(out.String()), nil
+}
+
 // AppliedResourceRef identifies one applied resource object.
 type AppliedResourceRef struct {
 	APIVersion string
@@ -624,6 +689,39 @@ func (c *Client) WaitForDeploymentReady(ctx context.Context, namespace string, n
 			}
 		}
 	}
+}
+
+// EnableIngressControllerHostNetwork forces ingress-nginx controller deployment into hostNetwork mode.
+func (c *Client) EnableIngressControllerHostNetwork(ctx context.Context, namespace string, deploymentName string) error {
+	targetNamespace := strings.TrimSpace(namespace)
+	targetName := strings.TrimSpace(deploymentName)
+	if targetNamespace == "" || targetName == "" {
+		return fmt.Errorf("deployment namespace and name are required")
+	}
+
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		deployment, err := c.clientset.AppsV1().Deployments(targetNamespace).Get(ctx, targetName, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("get deployment %s/%s: %w", targetNamespace, targetName, err)
+		}
+
+		deployment.Spec.Template.Spec.HostNetwork = true
+		deployment.Spec.Template.Spec.DNSPolicy = corev1.DNSClusterFirstWithHostNet
+
+		deployment.Spec.Strategy.Type = appsv1.RollingUpdateDeploymentStrategyType
+		if deployment.Spec.Strategy.RollingUpdate == nil {
+			deployment.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{}
+		}
+		maxSurge := intstr.FromInt(0)
+		maxUnavailable := intstr.FromInt(1)
+		deployment.Spec.Strategy.RollingUpdate.MaxSurge = &maxSurge
+		deployment.Spec.Strategy.RollingUpdate.MaxUnavailable = &maxUnavailable
+
+		if _, err := c.clientset.AppsV1().Deployments(targetNamespace).Update(ctx, deployment, metav1.UpdateOptions{}); err != nil {
+			return fmt.Errorf("update deployment %s/%s: %w", targetNamespace, targetName, err)
+		}
+		return nil
+	})
 }
 
 // WaitForStatefulSetReady waits until statefulset has all replicas ready.

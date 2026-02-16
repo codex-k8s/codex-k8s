@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: codexk8s-default-deny-all
-  namespace: ${CODEXK8S_TARGET_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_TARGET_NAMESPACE" "" }}
 spec:
   podSelector: {}
   policyTypes:
@@ -13,7 +13,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: codexk8s-allow-ingress-from-platform-and-system
-  namespace: ${CODEXK8S_TARGET_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_TARGET_NAMESPACE" "" }}
 spec:
   podSelector: {}
   policyTypes:
@@ -32,7 +32,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: codexk8s-allow-egress-dns
-  namespace: ${CODEXK8S_TARGET_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_TARGET_NAMESPACE" "" }}
 spec:
   podSelector: {}
   policyTypes:
@@ -55,7 +55,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: codexk8s-allow-egress-to-platform-mcp
-  namespace: ${CODEXK8S_TARGET_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_TARGET_NAMESPACE" "" }}
 spec:
   podSelector: {}
   policyTypes:
@@ -70,13 +70,13 @@ spec:
               app.kubernetes.io/name: codex-k8s
       ports:
         - protocol: TCP
-          port: ${CODEXK8S_PLATFORM_MCP_PORT}
+          port: {{ envOr "CODEXK8S_PLATFORM_MCP_PORT" "" }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: codexk8s-allow-egress-web
-  namespace: ${CODEXK8S_TARGET_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_TARGET_NAMESPACE" "" }}
 spec:
   podSelector: {}
   policyTypes:

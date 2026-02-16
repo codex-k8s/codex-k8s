@@ -42,7 +42,7 @@ approvals:
 
 ## Окружения
 - Dev slot:
-- Staging:
+- Production:
 - Prod (только smoke/наблюдение):
 
 ## Тестовые данные

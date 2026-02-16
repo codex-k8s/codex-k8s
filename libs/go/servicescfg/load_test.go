@@ -21,8 +21,8 @@ metadata:
   name: demo
 spec:
   environments:
-    ai-staging:
-      namespaceTemplate: "{{ .Project }}-ai-staging"
+    production:
+      namespaceTemplate: "{{ .Project }}-production"
   components:
     - name: go-default
       serviceDefaults:
@@ -47,12 +47,12 @@ spec:
 	writeFile(t, baseFile, base)
 	writeFile(t, rootFile, root)
 
-	result, err := Load(rootFile, LoadOptions{Env: "ai-staging"})
+	result, err := Load(rootFile, LoadOptions{Env: "production"})
 	if err != nil {
 		t.Fatalf("load config: %v", err)
 	}
 
-	if got, want := result.Context.Namespace, "demo-ai-staging"; got != want {
+	if got, want := result.Context.Namespace, "demo-production"; got != want {
 		t.Fatalf("unexpected namespace: got %q want %q", got, want)
 	}
 
@@ -90,8 +90,8 @@ spec:
   imports:
     - path: second.yaml
   environments:
-    ai-staging:
-      namespaceTemplate: "{{ .Project }}-ai-staging"
+    production:
+      namespaceTemplate: "{{ .Project }}-production"
 `)
 	writeFile(t, second, `
 spec:
@@ -99,7 +99,7 @@ spec:
     - path: first.yaml
 `)
 
-	_, err := Load(first, LoadOptions{Env: "ai-staging"})
+	_, err := Load(first, LoadOptions{Env: "production"})
 	if err == nil {
 		t.Fatalf("expected cycle error")
 	}
@@ -118,27 +118,36 @@ metadata:
   name: demo
 spec:
   environments:
-    ai-staging:
-      namespaceTemplate: "{{ .Project }}-ai-staging"
+    production:
+      namespaceTemplate: "{{ .Project }}-production"
   services:
     - name: api
       use: [unknown-component]
 `, "unknown component")
 }
 
-func TestLoad_CodexK8sRequiresAISTagingTemplate(t *testing.T) {
+func TestLoad_CodexK8sRequiresProductionTemplate(t *testing.T) {
 	t.Parallel()
 
-	assertLoadErrorContains(t, `
+	path := filepath.Join(t.TempDir(), "services.yaml")
+	writeFile(t, path, `
 apiVersion: codex-k8s.dev/v1alpha1
 kind: ServiceStack
 metadata:
   name: codex-k8s
 spec:
   environments:
-    ai-staging:
+    production:
       namespaceTemplate: "hardcoded-namespace"
-`, "codex-k8s requires ai-staging namespace template")
+`)
+
+	_, err := Load(path, LoadOptions{Env: "production"})
+	if err == nil {
+		t.Fatalf("expected codex-k8s production template validation error")
+	}
+	if !strings.Contains(err.Error(), "codex-k8s requires production namespace template") {
+		t.Fatalf("unexpected error: %v", err)
+	}
 }
 
 func TestResolveEnvironment_Inheritance(t *testing.T) {
@@ -147,8 +156,8 @@ func TestResolveEnvironment_Inheritance(t *testing.T) {
 	stack := &Stack{
 		Spec: Spec{
 			Environments: map[string]Environment{
-				"ai-staging": {NamespaceTemplate: "{{ .Project }}-ai-staging", ImagePullPolicy: "Always"},
-				"ai":         {From: "ai-staging"},
+				"production": {NamespaceTemplate: "{{ .Project }}-production", ImagePullPolicy: "Always"},
+				"ai":         {From: "production"},
 			},
 		},
 	}
@@ -157,7 +166,7 @@ func TestResolveEnvironment_Inheritance(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolve environment: %v", err)
 	}
-	if got, want := resolved.NamespaceTemplate, "{{ .Project }}-ai-staging"; got != want {
+	if got, want := resolved.NamespaceTemplate, "{{ .Project }}-production"; got != want {
 		t.Fatalf("unexpected namespaceTemplate: got %q want %q", got, want)
 	}
 	if got, want := resolved.ImagePullPolicy, "Always"; got != want {
@@ -176,8 +185,8 @@ metadata:
   name: demo
 spec:
   environments:
-    ai-staging:
-      namespaceTemplate: "{{ .Project }}-ai-staging"
+    production:
+      namespaceTemplate: "{{ .Project }}-production"
   webhookRuntime:
     defaultMode: full-env
     triggerModes:
@@ -185,7 +194,7 @@ spec:
       dev: full-env
 `)
 
-	result, err := Load(path, LoadOptions{Env: "ai-staging"})
+	result, err := Load(path, LoadOptions{Env: "production"})
 	if err != nil {
 		t.Fatalf("load config: %v", err)
 	}
@@ -214,7 +223,7 @@ func assertLoadErrorContains(t *testing.T, content string, wantSubstring string)
 	path := filepath.Join(t.TempDir(), "services.yaml")
 	writeFile(t, path, content)
 
-	_, err := Load(path, LoadOptions{Env: "ai-staging"})
+	_, err := Load(path, LoadOptions{Env: "production"})
 	if err == nil {
 		t.Fatalf("expected load error with substring %q", wantSubstring)
 	}

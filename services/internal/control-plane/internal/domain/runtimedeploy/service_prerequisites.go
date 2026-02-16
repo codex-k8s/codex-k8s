@@ -88,7 +88,7 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, namespace str
 		"CODEXK8S_PROJECT_DB_ADMIN_PASSWORD":         []byte(valueOr(vars, "CODEXK8S_PROJECT_DB_ADMIN_PASSWORD", string(postgresData["CODEXK8S_POSTGRES_PASSWORD"]))),
 		"CODEXK8S_PROJECT_DB_ADMIN_SSLMODE":          []byte(valueOr(vars, "CODEXK8S_PROJECT_DB_ADMIN_SSLMODE", "disable")),
 		"CODEXK8S_PROJECT_DB_ADMIN_DATABASE":         []byte(valueOr(vars, "CODEXK8S_PROJECT_DB_ADMIN_DATABASE", "postgres")),
-		"CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS": []byte(valueOr(vars, "CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS", "dev,staging,ai-staging,prod")),
+		"CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS": []byte(valueOr(vars, "CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS", "dev,production,prod")),
 		"CODEXK8S_GIT_BOT_TOKEN":                     []byte(valueOr(vars, "CODEXK8S_GIT_BOT_TOKEN", "")),
 		"CODEXK8S_GIT_BOT_USERNAME":                  []byte(valueOr(vars, "CODEXK8S_GIT_BOT_USERNAME", "codex-bot")),
 		"CODEXK8S_GIT_BOT_MAIL":                      []byte(valueOr(vars, "CODEXK8S_GIT_BOT_MAIL", "codex-bot@codex-k8s.local")),
@@ -110,7 +110,7 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, namespace str
 		"CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET":        []byte(oauthClientSecret),
 		"CODEXK8S_JWT_SIGNING_KEY":                   []byte(jwtSigningKey),
 		"CODEXK8S_JWT_TTL":                           []byte(valueOr(vars, "CODEXK8S_JWT_TTL", "15m")),
-		// UI hot-reload is only supported in ai slots. For ai-staging/production we
+		// UI hot-reload is only supported in ai slots. For production/production we
 		// intentionally keep the value empty so api-gateway serves embedded static UI.
 		"CODEXK8S_VITE_DEV_UPSTREAM": []byte(resolveViteDevUpstream(vars)),
 	}
@@ -176,7 +176,7 @@ func resolveViteDevUpstream(vars map[string]string) string {
 		targetEnv = strings.ToLower(strings.TrimSpace(valueOr(vars, "CODEXK8S_ENV", "")))
 	}
 
-	// Keep ai-staging/prod prod-like by default. Hot-reload is only for ai slots.
+	// Keep production/prod prod-like by default. Hot-reload is only for ai slots.
 	if targetEnv != "ai" {
 		return ""
 	}

@@ -48,6 +48,11 @@ const (
 	ControlPlaneService_DeleteProjectRepository_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/DeleteProjectRepository"
 	ControlPlaneService_IssueRunMCPToken_FullMethodName                     = "/codexk8s.controlplane.v1.ControlPlaneService/IssueRunMCPToken"
 	ControlPlaneService_PrepareRunEnvironment_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/PrepareRunEnvironment"
+	ControlPlaneService_ListRuntimeDeployTasks_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/ListRuntimeDeployTasks"
+	ControlPlaneService_GetRuntimeDeployTask_FullMethodName                 = "/codexk8s.controlplane.v1.ControlPlaneService/GetRuntimeDeployTask"
+	ControlPlaneService_ListRegistryImages_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/ListRegistryImages"
+	ControlPlaneService_DeleteRegistryImageTag_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/DeleteRegistryImageTag"
+	ControlPlaneService_CleanupRegistryImages_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/CleanupRegistryImages"
 	ControlPlaneService_UpsertAgentSession_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertAgentSession"
 	ControlPlaneService_GetLatestAgentSession_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/GetLatestAgentSession"
 	ControlPlaneService_InsertRunFlowEvent_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/InsertRunFlowEvent"
@@ -89,6 +94,11 @@ type ControlPlaneServiceClient interface {
 	DeleteProjectRepository(ctx context.Context, in *DeleteProjectRepositoryRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	IssueRunMCPToken(ctx context.Context, in *IssueRunMCPTokenRequest, opts ...grpc.CallOption) (*IssueRunMCPTokenResponse, error)
 	PrepareRunEnvironment(ctx context.Context, in *PrepareRunEnvironmentRequest, opts ...grpc.CallOption) (*PrepareRunEnvironmentResponse, error)
+	ListRuntimeDeployTasks(ctx context.Context, in *ListRuntimeDeployTasksRequest, opts ...grpc.CallOption) (*ListRuntimeDeployTasksResponse, error)
+	GetRuntimeDeployTask(ctx context.Context, in *GetRuntimeDeployTaskRequest, opts ...grpc.CallOption) (*RuntimeDeployTask, error)
+	ListRegistryImages(ctx context.Context, in *ListRegistryImagesRequest, opts ...grpc.CallOption) (*ListRegistryImagesResponse, error)
+	DeleteRegistryImageTag(ctx context.Context, in *DeleteRegistryImageTagRequest, opts ...grpc.CallOption) (*RegistryImageDeleteResult, error)
+	CleanupRegistryImages(ctx context.Context, in *CleanupRegistryImagesRequest, opts ...grpc.CallOption) (*CleanupRegistryImagesResponse, error)
 	// Used by agent-runner for run-bound session persistence and event callbacks.
 	UpsertAgentSession(ctx context.Context, in *UpsertAgentSessionRequest, opts ...grpc.CallOption) (*UpsertAgentSessionResponse, error)
 	GetLatestAgentSession(ctx context.Context, in *GetLatestAgentSessionRequest, opts ...grpc.CallOption) (*GetLatestAgentSessionResponse, error)
@@ -385,6 +395,56 @@ func (c *controlPlaneServiceClient) PrepareRunEnvironment(ctx context.Context, i
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) ListRuntimeDeployTasks(ctx context.Context, in *ListRuntimeDeployTasksRequest, opts ...grpc.CallOption) (*ListRuntimeDeployTasksResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListRuntimeDeployTasksResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ListRuntimeDeployTasks_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) GetRuntimeDeployTask(ctx context.Context, in *GetRuntimeDeployTaskRequest, opts ...grpc.CallOption) (*RuntimeDeployTask, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RuntimeDeployTask)
+	err := c.cc.Invoke(ctx, ControlPlaneService_GetRuntimeDeployTask_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) ListRegistryImages(ctx context.Context, in *ListRegistryImagesRequest, opts ...grpc.CallOption) (*ListRegistryImagesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListRegistryImagesResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ListRegistryImages_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) DeleteRegistryImageTag(ctx context.Context, in *DeleteRegistryImageTagRequest, opts ...grpc.CallOption) (*RegistryImageDeleteResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RegistryImageDeleteResult)
+	err := c.cc.Invoke(ctx, ControlPlaneService_DeleteRegistryImageTag_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) CleanupRegistryImages(ctx context.Context, in *CleanupRegistryImagesRequest, opts ...grpc.CallOption) (*CleanupRegistryImagesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CleanupRegistryImagesResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_CleanupRegistryImages_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) UpsertAgentSession(ctx context.Context, in *UpsertAgentSessionRequest, opts ...grpc.CallOption) (*UpsertAgentSessionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpsertAgentSessionResponse)
@@ -469,6 +529,11 @@ type ControlPlaneServiceServer interface {
 	DeleteProjectRepository(context.Context, *DeleteProjectRepositoryRequest) (*emptypb.Empty, error)
 	IssueRunMCPToken(context.Context, *IssueRunMCPTokenRequest) (*IssueRunMCPTokenResponse, error)
 	PrepareRunEnvironment(context.Context, *PrepareRunEnvironmentRequest) (*PrepareRunEnvironmentResponse, error)
+	ListRuntimeDeployTasks(context.Context, *ListRuntimeDeployTasksRequest) (*ListRuntimeDeployTasksResponse, error)
+	GetRuntimeDeployTask(context.Context, *GetRuntimeDeployTaskRequest) (*RuntimeDeployTask, error)
+	ListRegistryImages(context.Context, *ListRegistryImagesRequest) (*ListRegistryImagesResponse, error)
+	DeleteRegistryImageTag(context.Context, *DeleteRegistryImageTagRequest) (*RegistryImageDeleteResult, error)
+	CleanupRegistryImages(context.Context, *CleanupRegistryImagesRequest) (*CleanupRegistryImagesResponse, error)
 	// Used by agent-runner for run-bound session persistence and event callbacks.
 	UpsertAgentSession(context.Context, *UpsertAgentSessionRequest) (*UpsertAgentSessionResponse, error)
 	GetLatestAgentSession(context.Context, *GetLatestAgentSessionRequest) (*GetLatestAgentSessionResponse, error)
@@ -568,6 +633,21 @@ func (UnimplementedControlPlaneServiceServer) IssueRunMCPToken(context.Context, 
 }
 func (UnimplementedControlPlaneServiceServer) PrepareRunEnvironment(context.Context, *PrepareRunEnvironmentRequest) (*PrepareRunEnvironmentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PrepareRunEnvironment not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ListRuntimeDeployTasks(context.Context, *ListRuntimeDeployTasksRequest) (*ListRuntimeDeployTasksResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRuntimeDeployTasks not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) GetRuntimeDeployTask(context.Context, *GetRuntimeDeployTaskRequest) (*RuntimeDeployTask, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRuntimeDeployTask not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ListRegistryImages(context.Context, *ListRegistryImagesRequest) (*ListRegistryImagesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRegistryImages not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) DeleteRegistryImageTag(context.Context, *DeleteRegistryImageTagRequest) (*RegistryImageDeleteResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteRegistryImageTag not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) CleanupRegistryImages(context.Context, *CleanupRegistryImagesRequest) (*CleanupRegistryImagesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CleanupRegistryImages not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) UpsertAgentSession(context.Context, *UpsertAgentSessionRequest) (*UpsertAgentSessionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpsertAgentSession not implemented")
@@ -1109,6 +1189,96 @@ func _ControlPlaneService_PrepareRunEnvironment_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_ListRuntimeDeployTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRuntimeDeployTasksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ListRuntimeDeployTasks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ListRuntimeDeployTasks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ListRuntimeDeployTasks(ctx, req.(*ListRuntimeDeployTasksRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_GetRuntimeDeployTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRuntimeDeployTaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).GetRuntimeDeployTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_GetRuntimeDeployTask_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).GetRuntimeDeployTask(ctx, req.(*GetRuntimeDeployTaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_ListRegistryImages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRegistryImagesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ListRegistryImages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ListRegistryImages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ListRegistryImages(ctx, req.(*ListRegistryImagesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_DeleteRegistryImageTag_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRegistryImageTagRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).DeleteRegistryImageTag(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_DeleteRegistryImageTag_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).DeleteRegistryImageTag(ctx, req.(*DeleteRegistryImageTagRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_CleanupRegistryImages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CleanupRegistryImagesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).CleanupRegistryImages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_CleanupRegistryImages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).CleanupRegistryImages(ctx, req.(*CleanupRegistryImagesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_UpsertAgentSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpsertAgentSessionRequest)
 	if err := dec(in); err != nil {
@@ -1317,6 +1487,26 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PrepareRunEnvironment",
 			Handler:    _ControlPlaneService_PrepareRunEnvironment_Handler,
+		},
+		{
+			MethodName: "ListRuntimeDeployTasks",
+			Handler:    _ControlPlaneService_ListRuntimeDeployTasks_Handler,
+		},
+		{
+			MethodName: "GetRuntimeDeployTask",
+			Handler:    _ControlPlaneService_GetRuntimeDeployTask_Handler,
+		},
+		{
+			MethodName: "ListRegistryImages",
+			Handler:    _ControlPlaneService_ListRegistryImages_Handler,
+		},
+		{
+			MethodName: "DeleteRegistryImageTag",
+			Handler:    _ControlPlaneService_DeleteRegistryImageTag_Handler,
+		},
+		{
+			MethodName: "CleanupRegistryImages",
+			Handler:    _ControlPlaneService_CleanupRegistryImages_Handler,
 		},
 		{
 			MethodName: "UpsertAgentSession",

@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: codex-k8s-postgres-ingress-from-platform
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
 spec:
   podSelector:
     matchLabels:
@@ -22,7 +22,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: codex-k8s-egress-baseline
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
 spec:
   podSelector:
     matchLabels:
@@ -33,13 +33,13 @@ spec:
     # NOTE: codex-k8s uses Kubernetes API via in-cluster client-go (kubernetes.default.svc).
     # On some setups (e.g. k3s + certain CNI implementations), egress filtering may be evaluated
     # against the API server endpoint (nodeIP:6443) rather than the Service port (443).
-    # Keep this rule restrictive by setting CODEXK8S_K8S_API_CIDR to the node IP /32 in staging.
+    # Keep this rule restrictive by setting CODEXK8S_K8S_API_CIDR to the node IP /32 in production.
     - to:
         - ipBlock:
-            cidr: ${CODEXK8S_K8S_API_CIDR}
+            cidr: {{ envOr "CODEXK8S_K8S_API_CIDR" "" }}
       ports:
         - protocol: TCP
-          port: ${CODEXK8S_K8S_API_PORT}
+          port: {{ envOr "CODEXK8S_K8S_API_PORT" "" }}
     - to:
         - podSelector:
             matchLabels:
@@ -86,7 +86,7 @@ spec:
           port: 80
         - protocol: TCP
           port: 443
-    # Staff UI in staging/dev runs as a Vite dev server, and api-gateway reverse-proxies it.
+    # Staff UI in production/dev runs as a Vite dev server, and api-gateway reverse-proxies it.
     # Allow egress to the in-cluster web-console service port.
     - to:
         - podSelector:

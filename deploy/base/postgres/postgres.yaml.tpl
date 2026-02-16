@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: codex-k8s-postgres-init
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
 data:
   01-pgvector.sql: |
     CREATE EXTENSION IF NOT EXISTS vector;
@@ -11,7 +11,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgres
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: postgres
 spec:
@@ -26,7 +26,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgres
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
 spec:
   serviceName: postgres
   replicas: 1
@@ -40,7 +40,7 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: pgvector/pgvector:pg16
+          image: {{ envOr "CODEXK8S_POSTGRES_IMAGE" "pgvector/pgvector:pg16" }}
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5432

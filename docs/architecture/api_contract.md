@@ -85,7 +85,7 @@ approvals:
   - `make gen-openapi-ts`
   - output: `services/staff/web-console/src/shared/api/generated/**`
 - В CI добавлена проверка консистентности codegen:
-  - `.github/workflows/contracts_codegen_check.yml` (`make gen-openapi` + `git diff --exit-code`).
+  - `deploy/base/codex-k8s/codegen-check-job.yaml.tpl` (`make gen-openapi` + `git diff --exit-code`).
 
 ## Endpoints / Methods (текущий и MVP target срез)
 | Operation | Method | Path | Auth | Notes |
@@ -185,7 +185,7 @@ approvals:
 
 ## Backward compatibility
 - Что гарантируем: стабильность `/api/v1` и мягкие additive changes.
-- Как деплоим изменения: staging deploy -> ручные тесты -> production gate.
+- Как деплоим изменения: production deploy -> ручные тесты -> production gate.
 
 ## Наблюдаемость
 - Логи: structured + correlation_id.

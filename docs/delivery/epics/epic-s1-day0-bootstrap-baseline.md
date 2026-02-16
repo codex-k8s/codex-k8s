@@ -17,7 +17,7 @@ approvals:
 # Epic Day 0: Bootstrap baseline on clean Ubuntu 24.04
 
 ## TL;DR
-- Цель эпика: поднять staging с нуля одним bootstrap-сценарием.
+- Цель эпика: поднять production с нуля одним bootstrap-сценарием.
 - Ключевая ценность: доказанная воспроизводимость развёртывания платформы.
 - MVP-результат: сервер подготовлен, k3s/база/платформа/runner/ingress работают.
 
@@ -26,8 +26,8 @@ approvals:
 
 ## Ожидаемые артефакты дня
 - Рабочие host/remote bootstrap scripts в `bootstrap/host/*` и `bootstrap/remote/*`.
-- Базовые deploy manifests и staging routing в `deploy/**`.
-- Подтвержденный отчёт о bootstrap с чистого Ubuntu 24.04 (staging ready).
+- Базовые deploy manifests и production routing в `deploy/**`.
+- Подтвержденный отчёт о bootstrap с чистого Ubuntu 24.04 (production ready).
 - Актуализированные delivery-документы с фиксацией статуса `Day 0 completed`.
 
 ## Контекст
@@ -38,9 +38,9 @@ approvals:
 ### In scope
 - SSH bootstrap с хоста разработчика под `root`.
 - Создание отдельного системного пользователя и базовый hardening.
-- Установка k3s, ingress, cert-manager, staging namespace.
+- Установка k3s, ingress, cert-manager, production namespace.
 - Разворачивание PostgreSQL и `codex-k8s`.
-- Настройка staging deploy pipeline.
+- Настройка production deploy pipeline.
 
 ### Out of scope
 - Production hardening полного уровня.
@@ -50,7 +50,7 @@ approvals:
 - Story-1: `bootstrap/host/*` launcher и env loading.
 - Story-2: `bootstrap/remote/*` provisioning на Ubuntu 24.04.
 - Story-3: DNS/TLS baseline и ingress routing.
-- Story-4: staging workflow + runner wiring.
+- Story-4: production workflow + runner wiring.
 
 ## Data model impact (по шаблону data_model.md)
 - Сущности: без изменения доменной модели.
@@ -60,9 +60,9 @@ approvals:
 - Retention/PII: без изменений.
 
 ## Критерии приемки эпика
-- С чистого Ubuntu 24.04 staging поднимается bootstrap-скриптом.
+- С чистого Ubuntu 24.04 production поднимается bootstrap-скриптом.
 - Внешне доступны только `22/80/443`.
-- `main`-push запускает деплой на staging.
+- `main`-push запускает деплой на production.
 
 ## Риски/зависимости
 - Зависимости: DNS, GitHub token, OpenAI key.

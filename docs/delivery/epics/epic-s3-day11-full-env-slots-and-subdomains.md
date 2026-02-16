@@ -28,7 +28,7 @@ approvals:
 - Чтобы полноценно использовать full-env режим для dogfooding и внешних проектов, нужен:
   - запуск agent-run внутри slot namespace (как часть full-env исполнения),
   - детерминированный рендер и выдача public URL для слота (поддомен + TLS),
-  - отсутствие cluster-scope конфликтов между prod/ai-staging и ai-слотами.
+  - отсутствие cluster-scope конфликтов между prod/production и ai-слотами.
 
 ## Scope
 ### In scope
@@ -40,7 +40,7 @@ approvals:
 - Шаблонизация поддоменов для full-env slot namespaces:
   - контракт `services.yaml` расширяется полем уровня окружения (MVP): `environments.<env>.domainTemplate`.
   - шаблон использует контекст рендера: `.Project`, `.Env`, `.Slot`, `.Namespace`.
-  - runtime deploy резолвит host в `CODEXK8S_STAGING_DOMAIN` и `CODEXK8S_PUBLIC_BASE_URL` перед рендером манифестов.
+  - runtime deploy резолвит host в `CODEXK8S_PRODUCTION_DOMAIN` и `CODEXK8S_PUBLIC_BASE_URL` перед рендером манифестов.
   - ingress манифесты используют резолвленный host, а oauth2-proxy redirect URL всегда соответствует этому host.
 - TLS и cert-manager:
   - `ClusterIssuer` (Let’s Encrypt) считается bootstrap-only и не применяется в runtime deploy.
@@ -65,4 +65,4 @@ approvals:
   - резолвится в ingress (предусловие: wildcard DNS настроен);
   - cert-manager выпускает сертификат и `kubectl get certificate` показывает `Ready=True`;
   - слот открывается в браузере и доступен для manual QA.
-- Slot mode не пытается создавать/менять cluster-scoped ресурсы (в т.ч. `ClusterIssuer`), чтобы исключить конфликты с ai-staging/prod.
+- Slot mode не пытается создавать/менять cluster-scoped ресурсы (в т.ч. `ClusterIssuer`), чтобы исключить конфликты с production/prod.

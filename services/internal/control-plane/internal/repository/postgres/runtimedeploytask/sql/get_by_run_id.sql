@@ -19,7 +19,8 @@ SELECT
     created_at,
     updated_at,
     started_at,
-    finished_at
+    finished_at,
+    COALESCE(logs_json, '[]'::jsonb) AS logs_json
 FROM runtime_deploy_tasks
 WHERE run_id = $1::uuid
 LIMIT 1;

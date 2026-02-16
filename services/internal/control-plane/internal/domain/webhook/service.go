@@ -443,7 +443,7 @@ func (s *Service) resolvePushMainDeploy(eventType string, envelope githubWebhook
 
 	target := pushMainDeployTarget{
 		BuildRef:  buildRef,
-		TargetEnv: "ai-staging",
+		TargetEnv: "production",
 		Namespace: "",
 	}
 	return target, true

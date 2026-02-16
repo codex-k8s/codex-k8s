@@ -17,7 +17,7 @@ approvals:
 # Epic Day 7: Stabilization, regression and release gate
 
 ## TL;DR
-- Цель эпика: закрыть спринт с проверяемым состоянием staging и подтверждённым quality gate.
+- Цель эпика: закрыть спринт с проверяемым состоянием production и подтверждённым quality gate.
 - Ключевая ценность: предсказуемый переход к следующему спринту без накопленных регрессий.
 - MVP-результат: regression checklist, runbook обновлён, backlog следующего спринта сформирован.
 
@@ -25,7 +25,7 @@ approvals:
 - `P0` (релизный gate перед следующим спринтом).
 
 ## Ожидаемые артефакты дня
-- Regression report и итоговый статус ключевых сценариев на staging.
+- Regression report и итоговый статус ключевых сценариев на production.
 - Список дефектов и решение `go/no-go` для Sprint S2.
 - Обновлённый backlog/план следующего спринта в delivery документах.
 - Актуализированные runbook/rollback notes при найденных проблемах.
@@ -36,7 +36,7 @@ approvals:
 
 ## Scope
 ### In scope
-- Прогон e2e regression сценариев на staging.
+- Прогон e2e regression сценариев на production.
 - Проверка webhook -> run -> worker -> k8s -> UI цепочки.
 - Фиксация известных дефектов и решений (go/no-go для Sprint S2).
 - Обновление runbook и delivery артефактов.
@@ -48,7 +48,7 @@ approvals:
 ## Декомпозиция (Stories/Tasks)
 - Story-1: regression matrix и ручной прогон.
 - Story-2: bug triage, приоритизация и фиксы критических дефектов.
-- Story-3: финальный staging deployment report.
+- Story-3: финальный production deployment report.
 - Story-4: подготовка плана Sprint S2.
 
 ## Data model impact (по шаблону data_model.md)
@@ -67,14 +67,14 @@ approvals:
 - Все критические сценарии regression пройдены.
 - Нет блокирующих дефектов P0/P1 для продолжения daily deploy.
 - Подготовлен и согласован backlog Sprint S2.
-- Финальные изменения дня задеплоены на staging и проверены.
+- Финальные изменения дня задеплоены на production и проверены.
 
 ## Риски/зависимости
 - Зависимости: завершённость Day 1..6.
 - Риск: выявление критичных дефектов в конце спринта.
 
 ## План релиза (верхний уровень)
-- Sprint S1 закрывается отчётом о стабильности staging и списком next actions.
+- Sprint S1 закрывается отчётом о стабильности production и списком next actions.
 
 ## Апрув
 - request_id: owner-2026-02-06-day7

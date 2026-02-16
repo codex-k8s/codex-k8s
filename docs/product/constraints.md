@@ -19,7 +19,7 @@ approvals:
 # Constraints: codex-k8s
 
 ## TL;DR
-Критические ограничения: Kubernetes-only, webhook-driven продуктовые процессы, PostgreSQL (`JSONB` + `pgvector`), GitHub OAuth без self-signup, staging bootstrap по SSH root на Ubuntu 24.04.
+Критические ограничения: Kubernetes-only, webhook-driven продуктовые процессы, PostgreSQL (`JSONB` + `pgvector`), GitHub OAuth без self-signup, production bootstrap по SSH root на Ubuntu 24.04.
 
 ## Source of truth
 - Канонический список требований и решений Owner: `docs/product/requirements_machine_driven.md`.
@@ -27,8 +27,8 @@ approvals:
 - Процесс delivery и doc-governance: `docs/delivery/development_process_requirements.md`.
 
 ## Бизнес-ограничения
-- Сроки: нужен ранний staging для ручных тестов до полной функциональной готовности.
-- Бюджет: инфраструктура MVP на одном сервере/staging-кластере.
+- Сроки: нужен ранний production для ручных тестов до полной функциональной готовности.
+- Бюджет: инфраструктура MVP на одном сервере/production-кластере.
 - Юр./комплаенс: доступы по email-match и матрице прав, без публичной регистрации.
 
 ## Технические ограничения
@@ -52,11 +52,11 @@ approvals:
 - Шаблоны промптов хранятся по локалям; выбор языка обязателен по цепочке `project locale -> system default locale -> en`.
 - Для системных агентов обязательно наличие seed-шаблонов минимум для `ru` и `en`.
 - Для external/staff HTTP API обязателен contract-first подход по OpenAPI (spec + runtime validation + codegen backend/frontend).
-- В окружениях `ai-staging` и `prod` платформенные Kubernetes ресурсы помечаются label `app.kubernetes.io/part-of=codex-k8s` (канонический критерий для UI/guardrails и backend policy).
+- В окружениях `production` и `prod` платформенные Kubernetes ресурсы помечаются label `app.kubernetes.io/part-of=codex-k8s` (канонический критерий для UI/guardrails и backend policy).
 - В `ai` окружениях (ai-slots) при dogfooding платформа может разворачиваться без label `app.kubernetes.io/part-of=codex-k8s`, чтобы UI позволял тестировать действия над ресурсами самой платформы (в т.ч. destructive через dry-run) и не применял platform guardrails по label.
 - Для будущего admin/cluster контура staff-консоли обязательны guardrails:
   - ресурсы, помеченные `app.kubernetes.io/part-of=codex-k8s`, нельзя удалять (UI и backend policy);
-  - `ai-staging` и `prod` — строго view-only для ресурсов с `app.kubernetes.io/part-of=codex-k8s`;
+  - `production` и `prod` — строго view-only для ресурсов с `app.kubernetes.io/part-of=codex-k8s`;
   - ai-slots — destructive действия только dry-run (кнопки есть для dogfooding/debug, реальное действие не выполняется);
   - значения `Secret` по умолчанию не показывать (только метаданные); reveal/редактирование только как отдельное осознанное действие под RBAC и аудитом.
 - Интеграции approver/executor должны реализовываться через универсальные HTTP-контракты MCP, без вендорной привязки к конкретному мессенджеру.
@@ -66,13 +66,13 @@ approvals:
   - owner feedback handle с вариантами ответа + custom input.
 
 ## Операционные ограничения
-- SLO/SLA: staging ориентирован на функциональные ручные тесты, не на production SLA.
+- SLO/SLA: production ориентирован на функциональные ручные тесты, не на production SLA.
 - Поддержка 24/7: не требуется на этапе MVP.
 - Storage профиль MVP: `k3s local-path`, Longhorn откладывается на следующий этап.
 - Read replica для MVP: минимум одна асинхронная streaming replica с заделом на переход к 2+ replica и sync/quorum без изменений приложения.
 - Режим runner:
   - локальные запуски: 1 persistent runner (long polling);
-  - staging/ai-staging/prod при наличии домена: autoscaled runner set.
+  - production/production/prod при наличии домена: autoscaled runner set.
 - Режимы агентного исполнения:
   - `full-env` и `code-only` используются совместно по роли;
   - для `full-env` запусков обязательна изоляция по namespace и cleanup policy.
@@ -85,9 +85,9 @@ approvals:
   - изменения применяются только через PR и owner review;
   - вывод self-improve обязан содержать трассировку: какие логи/комментарии/артефакты привели к конкретному улучшению.
 - Ограничения по деплою:
-  - staging deploy: автоматический workflow на push в `main`;
-  - production deploy: отдельный workflow с ручным запуском и approval gate;
-  - bootstrap первой итерации настраивает только staging runner/pipeline.
+  - production deploy: webhook-driven self-deploy на push в `main` через control-plane/runtime deploy;
+  - build/deploy workflows в GitHub Actions не используются;
+  - bootstrap первой итерации настраивает Kubernetes/GitHub интеграцию через `codex-bootstrap` и control-plane.
 
 ## Security/Privacy ограничения
 - Доступы: GitHub OAuth + внутренняя RBAC матрица по проектам.
@@ -98,7 +98,7 @@ approvals:
 
 ## Неизменяемые решения (если уже есть)
 - ADR-0001: Kubernetes-only orchestration.
-- ADR-0002: webhook-driven execution + отдельные deploy workflows платформы.
+- ADR-0002: webhook-driven execution + workflow-free self-deploy платформы.
 - ADR-0003: PostgreSQL (`JSONB` + `pgvector`) как state and sync backend.
 - ADR-0004: repository provider interface.
 

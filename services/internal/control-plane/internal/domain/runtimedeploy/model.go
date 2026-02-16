@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/codex-k8s/codex-k8s/libs/go/registry"
 	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
 )
 
@@ -29,13 +30,15 @@ type PrepareResult struct {
 
 // Config defines runtime deployment service options.
 type Config struct {
-	ServicesConfigPath string
-	RepositoryRoot     string
-	RolloutTimeout     time.Duration
-	KanikoTimeout      time.Duration
-	WaitPollInterval   time.Duration
-	KanikoFieldManager string
-	GitHubPAT          string
+	ServicesConfigPath      string
+	RepositoryRoot          string
+	RolloutTimeout          time.Duration
+	KanikoTimeout           time.Duration
+	WaitPollInterval        time.Duration
+	KanikoFieldManager      string
+	GitHubPAT               string
+	RegistryCleanupKeepTags int
+	KanikoJobLogTailLines   int64
 }
 
 // KubernetesClient describes Kubernetes operations used by runtime deploy orchestration.
@@ -45,10 +48,17 @@ type KubernetesClient interface {
 	GetSecretData(ctx context.Context, namespace string, name string) (map[string][]byte, bool, error)
 	DeleteJobIfExists(ctx context.Context, namespace string, name string) error
 	WaitForJobComplete(ctx context.Context, namespace string, name string, timeout time.Duration) error
+	GetJobLogs(ctx context.Context, namespace string, name string, tailLines int64) (string, error)
 	WaitForDeploymentReady(ctx context.Context, namespace string, name string, timeout time.Duration) error
 	WaitForStatefulSetReady(ctx context.Context, namespace string, name string, timeout time.Duration) error
 	WaitForDaemonSetReady(ctx context.Context, namespace string, name string, timeout time.Duration) error
 	ApplyManifest(ctx context.Context, manifest []byte, namespaceOverride string, fieldManager string) ([]AppliedResourceRef, error)
+}
+
+// RegistryClient describes internal registry operations required by runtime deploy.
+type RegistryClient interface {
+	ListTagInfos(ctx context.Context, repository string) ([]registry.TagInfo, error)
+	DeleteTag(ctx context.Context, repository string, tag string) (registry.DeleteResult, error)
 }
 
 // AppliedResourceRef identifies one Kubernetes object applied from rendered manifest.
@@ -63,5 +73,6 @@ type AppliedResourceRef struct {
 type Dependencies struct {
 	Kubernetes KubernetesClient
 	Tasks      runtimedeploytaskrepo.Repository
+	Registry   RegistryClient
 	Logger     *slog.Logger
 }

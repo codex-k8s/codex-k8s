@@ -20,24 +20,27 @@
 - `codexk8s.io/network-zone=system`
 - `codexk8s.io/network-zone=project`
 
-Лейблы проставляет `deploy/scripts/apply_network_policy_baseline.sh`.
+Лейблы проставляет runtime deploy сервис control-plane во время reconcile namespace.
 
 ## Применение
 
-Platform baseline (по умолчанию в bootstrap):
+Platform baseline (по умолчанию в bootstrap/runtime deploy):
 
 ```bash
-export CODEXK8S_STAGING_NAMESPACE=codex-k8s-ai-staging
-export CODEXK8S_K8S_API_CIDR="<node-ip>/32"
-export CODEXK8S_K8S_API_PORT=6443
-bash deploy/scripts/apply_network_policy_baseline.sh
+go run ./cmd/codex-bootstrap render-manifest \
+  --template deploy/base/network-policies/platform-baseline.yaml.tpl \
+  --var CODEXK8S_PRODUCTION_NAMESPACE=codex-k8s-prod \
+  --var CODEXK8S_K8S_API_CIDR=<node-ip>/32 \
+  --var CODEXK8S_K8S_API_PORT=6443 \
+  | kubectl apply -f -
 ```
 
 Project/agent baseline для конкретного namespace:
 
 ```bash
-export CODEXK8S_APPLY_PROJECT_AGENT_POLICY=true
-export CODEXK8S_TARGET_NAMESPACE=project-demo
-export CODEXK8S_PLATFORM_MCP_PORT=80
-bash deploy/scripts/apply_network_policy_baseline.sh
+go run ./cmd/codex-bootstrap render-manifest \
+  --template deploy/base/network-policies/project-agent-baseline.yaml.tpl \
+  --var CODEXK8S_TARGET_NAMESPACE=project-demo \
+  --var CODEXK8S_PLATFORM_MCP_PORT=80 \
+  | kubectl apply -f -
 ```

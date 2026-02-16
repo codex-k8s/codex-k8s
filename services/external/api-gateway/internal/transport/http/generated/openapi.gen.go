@@ -72,12 +72,27 @@ const (
 
 // Defines values for ResolveApprovalDecisionResponseApprovalState.
 const (
-	Applied   ResolveApprovalDecisionResponseApprovalState = "applied"
-	Approved  ResolveApprovalDecisionResponseApprovalState = "approved"
-	Denied    ResolveApprovalDecisionResponseApprovalState = "denied"
-	Expired   ResolveApprovalDecisionResponseApprovalState = "expired"
-	Failed    ResolveApprovalDecisionResponseApprovalState = "failed"
-	Requested ResolveApprovalDecisionResponseApprovalState = "requested"
+	ResolveApprovalDecisionResponseApprovalStateApplied   ResolveApprovalDecisionResponseApprovalState = "applied"
+	ResolveApprovalDecisionResponseApprovalStateApproved  ResolveApprovalDecisionResponseApprovalState = "approved"
+	ResolveApprovalDecisionResponseApprovalStateDenied    ResolveApprovalDecisionResponseApprovalState = "denied"
+	ResolveApprovalDecisionResponseApprovalStateExpired   ResolveApprovalDecisionResponseApprovalState = "expired"
+	ResolveApprovalDecisionResponseApprovalStateFailed    ResolveApprovalDecisionResponseApprovalState = "failed"
+	ResolveApprovalDecisionResponseApprovalStateRequested ResolveApprovalDecisionResponseApprovalState = "requested"
+)
+
+// Defines values for RuntimeDeployTaskStatus.
+const (
+	RuntimeDeployTaskStatusFailed    RuntimeDeployTaskStatus = "failed"
+	RuntimeDeployTaskStatusPending   RuntimeDeployTaskStatus = "pending"
+	RuntimeDeployTaskStatusRunning   RuntimeDeployTaskStatus = "running"
+	RuntimeDeployTaskStatusSucceeded RuntimeDeployTaskStatus = "succeeded"
+)
+
+// Defines values for RuntimeDeployTaskLogLevel.
+const (
+	Error RuntimeDeployTaskLogLevel = "error"
+	Info  RuntimeDeployTaskLogLevel = "info"
+	Warn  RuntimeDeployTaskLogLevel = "warn"
 )
 
 // Defines values for UpsertProjectMemberRequestRole.
@@ -85,6 +100,14 @@ const (
 	UpsertProjectMemberRequestRoleAdmin     UpsertProjectMemberRequestRole = "admin"
 	UpsertProjectMemberRequestRoleRead      UpsertProjectMemberRequestRole = "read"
 	UpsertProjectMemberRequestRoleReadWrite UpsertProjectMemberRequestRole = "read_write"
+)
+
+// Defines values for ListRuntimeDeployTasksParamsStatus.
+const (
+	Failed    ListRuntimeDeployTasksParamsStatus = "failed"
+	Pending   ListRuntimeDeployTasksParamsStatus = "pending"
+	Running   ListRuntimeDeployTasksParamsStatus = "running"
+	Succeeded ListRuntimeDeployTasksParamsStatus = "succeeded"
 )
 
 // ApprovalRequest defines model for ApprovalRequest.
@@ -113,10 +136,33 @@ type ApprovalRequestItemsResponse struct {
 	Items []ApprovalRequest `json:"items"`
 }
 
+// CleanupRegistryImagesRequest defines model for CleanupRegistryImagesRequest.
+type CleanupRegistryImagesRequest struct {
+	DryRun            bool    `json:"dry_run"`
+	KeepTags          *int32  `json:"keep_tags,omitempty"`
+	LimitRepositories *int32  `json:"limit_repositories,omitempty"`
+	RepositoryPrefix  *string `json:"repository_prefix,omitempty"`
+}
+
+// CleanupRegistryImagesResponse defines model for CleanupRegistryImagesResponse.
+type CleanupRegistryImagesResponse struct {
+	Deleted             []RegistryImageDeleteResult `json:"deleted"`
+	RepositoriesScanned int32                       `json:"repositories_scanned"`
+	Skipped             []RegistryImageDeleteResult `json:"skipped"`
+	TagsDeleted         int32                       `json:"tags_deleted"`
+	TagsSkipped         int32                       `json:"tags_skipped"`
+}
+
 // CreateUserRequest defines model for CreateUserRequest.
 type CreateUserRequest struct {
 	Email           openapi_types.Email `json:"email"`
 	IsPlatformAdmin bool                `json:"is_platform_admin"`
+}
+
+// DeleteRegistryImageTagRequest defines model for DeleteRegistryImageTagRequest.
+type DeleteRegistryImageTagRequest struct {
+	Repository string `json:"repository"`
+	Tag        string `json:"tag"`
 }
 
 // ErrorResponse defines model for ErrorResponse.
@@ -226,6 +272,34 @@ type ProjectMemberItemsResponse struct {
 	Items []ProjectMember `json:"items"`
 }
 
+// RegistryImageDeleteResult defines model for RegistryImageDeleteResult.
+type RegistryImageDeleteResult struct {
+	Deleted    bool   `json:"deleted"`
+	Digest     string `json:"digest"`
+	Repository string `json:"repository"`
+	Tag        string `json:"tag"`
+}
+
+// RegistryImageRepository defines model for RegistryImageRepository.
+type RegistryImageRepository struct {
+	Repository string             `json:"repository"`
+	TagCount   int32              `json:"tag_count"`
+	Tags       []RegistryImageTag `json:"tags"`
+}
+
+// RegistryImageRepositoryItemsResponse defines model for RegistryImageRepositoryItemsResponse.
+type RegistryImageRepositoryItemsResponse struct {
+	Items []RegistryImageRepository `json:"items"`
+}
+
+// RegistryImageTag defines model for RegistryImageTag.
+type RegistryImageTag struct {
+	ConfigSizeBytes int64      `json:"config_size_bytes"`
+	CreatedAt       *time.Time `json:"created_at"`
+	Digest          string     `json:"digest"`
+	Tag             string     `json:"tag"`
+}
+
 // RepositoryBinding defines model for RepositoryBinding.
 type RepositoryBinding struct {
 	ExternalId       int64  `json:"external_id"`
@@ -315,6 +389,50 @@ type RunNamespaceCleanupResponse struct {
 	Namespace      string  `json:"namespace"`
 	RunId          string  `json:"run_id"`
 }
+
+// RuntimeDeployTask defines model for RuntimeDeployTask.
+type RuntimeDeployTask struct {
+	Attempts           int32                   `json:"attempts"`
+	BuildRef           string                  `json:"build_ref"`
+	CreatedAt          *time.Time              `json:"created_at"`
+	DeployOnly         bool                    `json:"deploy_only"`
+	FinishedAt         *time.Time              `json:"finished_at"`
+	LastError          *string                 `json:"last_error"`
+	LeaseOwner         *string                 `json:"lease_owner"`
+	LeaseUntil         *time.Time              `json:"lease_until"`
+	Logs               []RuntimeDeployTaskLog  `json:"logs"`
+	Namespace          string                  `json:"namespace"`
+	RepositoryFullName string                  `json:"repository_full_name"`
+	ResultNamespace    *string                 `json:"result_namespace"`
+	ResultTargetEnv    *string                 `json:"result_target_env"`
+	RunId              string                  `json:"run_id"`
+	RuntimeMode        string                  `json:"runtime_mode"`
+	ServicesYamlPath   string                  `json:"services_yaml_path"`
+	SlotNo             int32                   `json:"slot_no"`
+	StartedAt          *time.Time              `json:"started_at"`
+	Status             RuntimeDeployTaskStatus `json:"status"`
+	TargetEnv          string                  `json:"target_env"`
+	UpdatedAt          *time.Time              `json:"updated_at"`
+}
+
+// RuntimeDeployTaskStatus defines model for RuntimeDeployTask.Status.
+type RuntimeDeployTaskStatus string
+
+// RuntimeDeployTaskItemsResponse defines model for RuntimeDeployTaskItemsResponse.
+type RuntimeDeployTaskItemsResponse struct {
+	Items []RuntimeDeployTask `json:"items"`
+}
+
+// RuntimeDeployTaskLog defines model for RuntimeDeployTaskLog.
+type RuntimeDeployTaskLog struct {
+	CreatedAt *time.Time                `json:"created_at"`
+	Level     RuntimeDeployTaskLogLevel `json:"level"`
+	Message   string                    `json:"message"`
+	Stage     string                    `json:"stage"`
+}
+
+// RuntimeDeployTaskLogLevel defines model for RuntimeDeployTaskLog.Level.
+type RuntimeDeployTaskLogLevel string
 
 // SetProjectMemberLearningModeRequest defines model for SetProjectMemberLearningModeRequest.
 type SetProjectMemberLearningModeRequest struct {
@@ -492,6 +610,23 @@ type GetRunLogsParams struct {
 	TailLines *TailLines `form:"tail_lines,omitempty" json:"tail_lines,omitempty"`
 }
 
+// ListRegistryImagesParams defines parameters for ListRegistryImages.
+type ListRegistryImagesParams struct {
+	Repository        *string `form:"repository,omitempty" json:"repository,omitempty"`
+	LimitRepositories *int32  `form:"limit_repositories,omitempty" json:"limit_repositories,omitempty"`
+	LimitTags         *int32  `form:"limit_tags,omitempty" json:"limit_tags,omitempty"`
+}
+
+// ListRuntimeDeployTasksParams defines parameters for ListRuntimeDeployTasks.
+type ListRuntimeDeployTasksParams struct {
+	Limit     *Limit                              `form:"limit,omitempty" json:"limit,omitempty"`
+	Status    *ListRuntimeDeployTasksParamsStatus `form:"status,omitempty" json:"status,omitempty"`
+	TargetEnv *string                             `form:"target_env,omitempty" json:"target_env,omitempty"`
+}
+
+// ListRuntimeDeployTasksParamsStatus defines parameters for ListRuntimeDeployTasks.
+type ListRuntimeDeployTasksParamsStatus string
+
 // ListUsersParams defines parameters for ListUsers.
 type ListUsersParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
@@ -527,6 +662,12 @@ type SetProjectMemberLearningModeOverrideJSONRequestBody = SetProjectMemberLearn
 
 // UpsertProjectRepositoryJSONRequestBody defines body for UpsertProjectRepository for application/json ContentType.
 type UpsertProjectRepositoryJSONRequestBody = UpsertProjectRepositoryRequest
+
+// DeleteRegistryImageTagJSONRequestBody defines body for DeleteRegistryImageTag for application/json ContentType.
+type DeleteRegistryImageTagJSONRequestBody = DeleteRegistryImageTagRequest
+
+// CleanupRegistryImagesJSONRequestBody defines body for CleanupRegistryImages for application/json ContentType.
+type CleanupRegistryImagesJSONRequestBody = CleanupRegistryImagesRequest
 
 // CreateUserJSONRequestBody defines body for CreateUser for application/json ContentType.
 type CreateUserJSONRequestBody = CreateUserRequest
@@ -741,6 +882,21 @@ type ServerInterface interface {
 	// Force delete run namespace
 	// (DELETE /api/v1/staff/runs/{run_id}/namespace)
 	DeleteRunNamespace(w http.ResponseWriter, r *http.Request, runId RunID)
+	// Delete one internal registry image tag
+	// (DELETE /api/v1/staff/runtime-deploy/images)
+	DeleteRegistryImageTag(w http.ResponseWriter, r *http.Request)
+	// List internal registry images
+	// (GET /api/v1/staff/runtime-deploy/images)
+	ListRegistryImages(w http.ResponseWriter, r *http.Request, params ListRegistryImagesParams)
+	// Cleanup stale internal registry image tags
+	// (POST /api/v1/staff/runtime-deploy/images/cleanup)
+	CleanupRegistryImages(w http.ResponseWriter, r *http.Request)
+	// List runtime deploy tasks
+	// (GET /api/v1/staff/runtime-deploy/tasks)
+	ListRuntimeDeployTasks(w http.ResponseWriter, r *http.Request, params ListRuntimeDeployTasksParams)
+	// Get runtime deploy task details
+	// (GET /api/v1/staff/runtime-deploy/tasks/{run_id})
+	GetRuntimeDeployTask(w http.ResponseWriter, r *http.Request, runId RunID)
 	// List users
 	// (GET /api/v1/staff/users)
 	ListUsers(w http.ResponseWriter, r *http.Request, params ListUsersParams)
@@ -1597,6 +1753,145 @@ func (siw *ServerInterfaceWrapper) DeleteRunNamespace(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// DeleteRegistryImageTag operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRegistryImageTag(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteRegistryImageTag(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListRegistryImages operation middleware
+func (siw *ServerInterfaceWrapper) ListRegistryImages(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRegistryImagesParams
+
+	// ------------- Optional query parameter "repository" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "repository", r.URL.Query(), &params.Repository)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "limit_repositories" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit_repositories", r.URL.Query(), &params.LimitRepositories)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit_repositories", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "limit_tags" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit_tags", r.URL.Query(), &params.LimitTags)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit_tags", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRegistryImages(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CleanupRegistryImages operation middleware
+func (siw *ServerInterfaceWrapper) CleanupRegistryImages(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CleanupRegistryImages(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListRuntimeDeployTasks operation middleware
+func (siw *ServerInterfaceWrapper) ListRuntimeDeployTasks(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRuntimeDeployTasksParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "status", r.URL.Query(), &params.Status)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "target_env" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "target_env", r.URL.Query(), &params.TargetEnv)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "target_env", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRuntimeDeployTasks(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetRuntimeDeployTask operation middleware
+func (siw *ServerInterfaceWrapper) GetRuntimeDeployTask(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "run_id" -------------
+	var runId RunID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "run_id", r.PathValue("run_id"), &runId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "run_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRuntimeDeployTask(w, r, runId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListUsers operation middleware
 func (siw *ServerInterfaceWrapper) ListUsers(w http.ResponseWriter, r *http.Request) {
 
@@ -1900,6 +2195,11 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}/learning-feedback", wrapper.ListRunLearningFeedback)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}/logs", wrapper.GetRunLogs)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/staff/runs/{run_id}/namespace", wrapper.DeleteRunNamespace)
+	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/staff/runtime-deploy/images", wrapper.DeleteRegistryImageTag)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runtime-deploy/images", wrapper.ListRegistryImages)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/runtime-deploy/images/cleanup", wrapper.CleanupRegistryImages)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runtime-deploy/tasks", wrapper.ListRuntimeDeployTasks)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runtime-deploy/tasks/{run_id}", wrapper.GetRuntimeDeployTask)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/users", wrapper.ListUsers)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/users", wrapper.CreateUser)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/staff/users/{user_id}", wrapper.DeleteUser)
@@ -3003,6 +3303,235 @@ func (response DeleteRunNamespace403JSONResponse) VisitDeleteRunNamespaceRespons
 	return json.NewEncoder(w).Encode(response)
 }
 
+type DeleteRegistryImageTagRequestObject struct {
+	Body *DeleteRegistryImageTagJSONRequestBody
+}
+
+type DeleteRegistryImageTagResponseObject interface {
+	VisitDeleteRegistryImageTagResponse(w http.ResponseWriter) error
+}
+
+type DeleteRegistryImageTag200JSONResponse RegistryImageDeleteResult
+
+func (response DeleteRegistryImageTag200JSONResponse) VisitDeleteRegistryImageTagResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteRegistryImageTag400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response DeleteRegistryImageTag400JSONResponse) VisitDeleteRegistryImageTagResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteRegistryImageTag401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteRegistryImageTag401JSONResponse) VisitDeleteRegistryImageTagResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteRegistryImageTag403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response DeleteRegistryImageTag403JSONResponse) VisitDeleteRegistryImageTagResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRegistryImagesRequestObject struct {
+	Params ListRegistryImagesParams
+}
+
+type ListRegistryImagesResponseObject interface {
+	VisitListRegistryImagesResponse(w http.ResponseWriter) error
+}
+
+type ListRegistryImages200JSONResponse RegistryImageRepositoryItemsResponse
+
+func (response ListRegistryImages200JSONResponse) VisitListRegistryImagesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRegistryImages400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListRegistryImages400JSONResponse) VisitListRegistryImagesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRegistryImages401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListRegistryImages401JSONResponse) VisitListRegistryImagesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRegistryImages403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListRegistryImages403JSONResponse) VisitListRegistryImagesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CleanupRegistryImagesRequestObject struct {
+	Body *CleanupRegistryImagesJSONRequestBody
+}
+
+type CleanupRegistryImagesResponseObject interface {
+	VisitCleanupRegistryImagesResponse(w http.ResponseWriter) error
+}
+
+type CleanupRegistryImages200JSONResponse CleanupRegistryImagesResponse
+
+func (response CleanupRegistryImages200JSONResponse) VisitCleanupRegistryImagesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CleanupRegistryImages400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CleanupRegistryImages400JSONResponse) VisitCleanupRegistryImagesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CleanupRegistryImages401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CleanupRegistryImages401JSONResponse) VisitCleanupRegistryImagesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CleanupRegistryImages403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CleanupRegistryImages403JSONResponse) VisitCleanupRegistryImagesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRuntimeDeployTasksRequestObject struct {
+	Params ListRuntimeDeployTasksParams
+}
+
+type ListRuntimeDeployTasksResponseObject interface {
+	VisitListRuntimeDeployTasksResponse(w http.ResponseWriter) error
+}
+
+type ListRuntimeDeployTasks200JSONResponse RuntimeDeployTaskItemsResponse
+
+func (response ListRuntimeDeployTasks200JSONResponse) VisitListRuntimeDeployTasksResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRuntimeDeployTasks400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListRuntimeDeployTasks400JSONResponse) VisitListRuntimeDeployTasksResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRuntimeDeployTasks401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListRuntimeDeployTasks401JSONResponse) VisitListRuntimeDeployTasksResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRuntimeDeployTasks403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListRuntimeDeployTasks403JSONResponse) VisitListRuntimeDeployTasksResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRuntimeDeployTaskRequestObject struct {
+	RunId RunID `json:"run_id"`
+}
+
+type GetRuntimeDeployTaskResponseObject interface {
+	VisitGetRuntimeDeployTaskResponse(w http.ResponseWriter) error
+}
+
+type GetRuntimeDeployTask200JSONResponse RuntimeDeployTask
+
+func (response GetRuntimeDeployTask200JSONResponse) VisitGetRuntimeDeployTaskResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRuntimeDeployTask400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetRuntimeDeployTask400JSONResponse) VisitGetRuntimeDeployTaskResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRuntimeDeployTask401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetRuntimeDeployTask401JSONResponse) VisitGetRuntimeDeployTaskResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRuntimeDeployTask403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetRuntimeDeployTask403JSONResponse) VisitGetRuntimeDeployTaskResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRuntimeDeployTask404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetRuntimeDeployTask404JSONResponse) VisitGetRuntimeDeployTaskResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListUsersRequestObject struct {
 	Params ListUsersParams
 }
@@ -3262,6 +3791,21 @@ type StrictServerInterface interface {
 	// Force delete run namespace
 	// (DELETE /api/v1/staff/runs/{run_id}/namespace)
 	DeleteRunNamespace(ctx context.Context, request DeleteRunNamespaceRequestObject) (DeleteRunNamespaceResponseObject, error)
+	// Delete one internal registry image tag
+	// (DELETE /api/v1/staff/runtime-deploy/images)
+	DeleteRegistryImageTag(ctx context.Context, request DeleteRegistryImageTagRequestObject) (DeleteRegistryImageTagResponseObject, error)
+	// List internal registry images
+	// (GET /api/v1/staff/runtime-deploy/images)
+	ListRegistryImages(ctx context.Context, request ListRegistryImagesRequestObject) (ListRegistryImagesResponseObject, error)
+	// Cleanup stale internal registry image tags
+	// (POST /api/v1/staff/runtime-deploy/images/cleanup)
+	CleanupRegistryImages(ctx context.Context, request CleanupRegistryImagesRequestObject) (CleanupRegistryImagesResponseObject, error)
+	// List runtime deploy tasks
+	// (GET /api/v1/staff/runtime-deploy/tasks)
+	ListRuntimeDeployTasks(ctx context.Context, request ListRuntimeDeployTasksRequestObject) (ListRuntimeDeployTasksResponseObject, error)
+	// Get runtime deploy task details
+	// (GET /api/v1/staff/runtime-deploy/tasks/{run_id})
+	GetRuntimeDeployTask(ctx context.Context, request GetRuntimeDeployTaskRequestObject) (GetRuntimeDeployTaskResponseObject, error)
 	// List users
 	// (GET /api/v1/staff/users)
 	ListUsers(ctx context.Context, request ListUsersRequestObject) (ListUsersResponseObject, error)
@@ -4049,6 +4593,146 @@ func (sh *strictHandler) DeleteRunNamespace(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DeleteRunNamespaceResponseObject); ok {
 		if err := validResponse.VisitDeleteRunNamespaceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteRegistryImageTag operation middleware
+func (sh *strictHandler) DeleteRegistryImageTag(w http.ResponseWriter, r *http.Request) {
+	var request DeleteRegistryImageTagRequestObject
+
+	var body DeleteRegistryImageTagJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteRegistryImageTag(ctx, request.(DeleteRegistryImageTagRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteRegistryImageTag")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteRegistryImageTagResponseObject); ok {
+		if err := validResponse.VisitDeleteRegistryImageTagResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListRegistryImages operation middleware
+func (sh *strictHandler) ListRegistryImages(w http.ResponseWriter, r *http.Request, params ListRegistryImagesParams) {
+	var request ListRegistryImagesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListRegistryImages(ctx, request.(ListRegistryImagesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListRegistryImages")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListRegistryImagesResponseObject); ok {
+		if err := validResponse.VisitListRegistryImagesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CleanupRegistryImages operation middleware
+func (sh *strictHandler) CleanupRegistryImages(w http.ResponseWriter, r *http.Request) {
+	var request CleanupRegistryImagesRequestObject
+
+	var body CleanupRegistryImagesJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CleanupRegistryImages(ctx, request.(CleanupRegistryImagesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CleanupRegistryImages")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CleanupRegistryImagesResponseObject); ok {
+		if err := validResponse.VisitCleanupRegistryImagesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListRuntimeDeployTasks operation middleware
+func (sh *strictHandler) ListRuntimeDeployTasks(w http.ResponseWriter, r *http.Request, params ListRuntimeDeployTasksParams) {
+	var request ListRuntimeDeployTasksRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListRuntimeDeployTasks(ctx, request.(ListRuntimeDeployTasksRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListRuntimeDeployTasks")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListRuntimeDeployTasksResponseObject); ok {
+		if err := validResponse.VisitListRuntimeDeployTasksResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetRuntimeDeployTask operation middleware
+func (sh *strictHandler) GetRuntimeDeployTask(w http.ResponseWriter, r *http.Request, runId RunID) {
+	var request GetRuntimeDeployTaskRequestObject
+
+	request.RunId = runId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetRuntimeDeployTask(ctx, request.(GetRuntimeDeployTaskRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetRuntimeDeployTask")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetRuntimeDeployTaskResponseObject); ok {
+		if err := validResponse.VisitGetRuntimeDeployTaskResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

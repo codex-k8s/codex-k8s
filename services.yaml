@@ -9,21 +9,19 @@ spec:
   components:
     - name: hot-reload-defaults
       serviceDefaults:
-        # ai-staging and production are prod-like. Hot-reload is only supported in ai slots.
+        # production is prod-like. Hot-reload is only supported in ai slots.
         codeUpdateStrategy: '{{ ternary (eq .Env "ai") "hot-reload" "restart" }}'
 
   environments:
     dev:
       namespaceTemplate: "{{ .Project }}-dev"
-    ai-staging:
-      namespaceTemplate: "{{ .Project }}-ai-staging"
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
     ai:
-      from: ai-staging
+      from: production
       namespaceTemplate: "{{ .Project }}-dev-{{ .Slot }}"
     ai-repair:
-      from: ai-staging
-      namespaceTemplate: "{{ .Project }}-ai-staging"
-    production:
+      from: production
       namespaceTemplate: "{{ .Project }}-prod"
 
   webhookRuntime:
@@ -87,6 +85,13 @@ spec:
     - name: namespace
       manifests:
         - path: deploy/base/namespace/namespace.yaml.tpl
+
+    - name: network-policy-baseline
+      dependsOn:
+        - namespace
+      when: '{{ and (ne .Env "ai") (eq (envOr "CODEXK8S_NETWORK_POLICY_BASELINE" "true") "true") }}'
+      manifests:
+        - path: deploy/base/network-policies/platform-baseline.yaml.tpl
 
     - name: postgres
       dependsOn:

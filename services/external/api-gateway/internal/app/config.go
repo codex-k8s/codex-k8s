@@ -14,7 +14,7 @@ type Config struct {
 	// ControlPlaneGRPCTarget is the control-plane gRPC target host:port, e.g. codex-k8s-control-plane:9090.
 	ControlPlaneGRPCTarget string `env:"CODEXK8S_CONTROL_PLANE_GRPC_TARGET,required,notEmpty"`
 
-	// ViteDevUpstream enables staff UI in "vite dev server" mode (dev/staging).
+	// ViteDevUpstream enables staff UI in "vite dev server" mode (dev/production).
 	// When set, api-gateway will reverse-proxy non-API paths to this upstream, e.g. http://codex-k8s-web-console:5173.
 	ViteDevUpstream string `env:"CODEXK8S_VITE_DEV_UPSTREAM"`
 
@@ -24,7 +24,7 @@ type Config struct {
 	// OpenAPIValidationEnabled toggles OpenAPI request validation middleware.
 	OpenAPIValidationEnabled bool `env:"CODEXK8S_OPENAPI_VALIDATION_ENABLED" envDefault:"true"`
 
-	// PublicBaseURL is a public service base URL, e.g. https://staging.codex-k8s.dev.
+	// PublicBaseURL is a public service base URL, e.g. https://platform.codex-k8s.dev.
 	// Used for OAuth redirect/callback URL generation.
 	PublicBaseURL string `env:"CODEXK8S_PUBLIC_BASE_URL,required,notEmpty"`
 

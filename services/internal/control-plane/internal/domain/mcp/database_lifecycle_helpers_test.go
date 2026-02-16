@@ -7,7 +7,7 @@ import (
 
 func TestNormalizeDatabaseLifecycleAllowedEnvsDefaults(t *testing.T) {
 	allowed := normalizeDatabaseLifecycleAllowedEnvs(nil)
-	for _, env := range []string{"dev", "staging", "prod"} {
+	for _, env := range []string{"dev", "production", "prod"} {
 		if _, ok := allowed[env]; !ok {
 			t.Fatalf("expected default env %q in allowlist", env)
 		}
@@ -15,15 +15,15 @@ func TestNormalizeDatabaseLifecycleAllowedEnvsDefaults(t *testing.T) {
 }
 
 func TestNormalizeDatabaseLifecycleAllowedEnvsCustom(t *testing.T) {
-	allowed := normalizeDatabaseLifecycleAllowedEnvs([]string{"  qa  ", "staging", "QA", ""})
+	allowed := normalizeDatabaseLifecycleAllowedEnvs([]string{"  qa  ", "production", "QA", ""})
 	if len(allowed) != 2 {
 		t.Fatalf("expected 2 unique envs, got %d", len(allowed))
 	}
 	if _, ok := allowed["qa"]; !ok {
 		t.Fatalf("expected normalized env qa")
 	}
-	if _, ok := allowed["staging"]; !ok {
-		t.Fatalf("expected env staging")
+	if _, ok := allowed["production"]; !ok {
+		t.Fatalf("expected env production")
 	}
 }
 
@@ -45,7 +45,7 @@ func TestNormalizeDatabaseLifecycleName(t *testing.T) {
 func TestDecodeDatabaseLifecyclePayload(t *testing.T) {
 	raw := mustMarshalJSON(t, databaseLifecyclePayload{
 		ProjectID:    "0eb03a0f-89cc-4fbe-b944-19949bf32e0e",
-		Environment:  "STAGING",
+		Environment:  "PRODUCTION",
 		Action:       DatabaseLifecycleActionDescribe,
 		DatabaseName: "codex_stage",
 	})
@@ -53,7 +53,7 @@ func TestDecodeDatabaseLifecyclePayload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("decode payload: %v", err)
 	}
-	if payload.Environment != "staging" {
+	if payload.Environment != "production" {
 		t.Fatalf("expected normalized environment, got %q", payload.Environment)
 	}
 	if payload.Action != DatabaseLifecycleActionDescribe {
@@ -63,10 +63,10 @@ func TestDecodeDatabaseLifecyclePayload(t *testing.T) {
 
 func TestDecodeDatabaseLifecyclePayloadDeleteRequiresConfirm(t *testing.T) {
 	raw := mustMarshalJSON(t, databaseLifecyclePayload{
-		ProjectID:    "0eb03a0f-89cc-4fbe-b944-19949bf32e0e",
-		Environment:  "dev",
-		Action:       DatabaseLifecycleActionDelete,
-		DatabaseName: "codex_dev",
+		ProjectID:     "0eb03a0f-89cc-4fbe-b944-19949bf32e0e",
+		Environment:   "dev",
+		Action:        DatabaseLifecycleActionDelete,
+		DatabaseName:  "codex_dev",
 		ConfirmDelete: false,
 	})
 	if _, err := decodeDatabaseLifecyclePayload(raw); err == nil {

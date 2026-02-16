@@ -109,6 +109,61 @@ func resolveRunListFilters(defLimit int, includeWaitState bool) func(c *echo.Con
 	}
 }
 
+func resolveRuntimeDeployListFilters(defLimit int) func(c *echo.Context) (runtimeDeployListArg, error) {
+	return func(c *echo.Context) (runtimeDeployListArg, error) {
+		limit, err := parseLimit(c, defLimit)
+		if err != nil {
+			return runtimeDeployListArg{}, err
+		}
+		return runtimeDeployListArg{
+			limit:     int32(limit),
+			status:    strings.TrimSpace(c.QueryParam("status")),
+			targetEnv: strings.TrimSpace(c.QueryParam("target_env")),
+		}, nil
+	}
+}
+
+func parseOptionalPositiveInt(raw string, field string) (int, error) {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return 0, nil
+	}
+	value, err := strconv.Atoi(trimmed)
+	if err != nil || value <= 0 {
+		return 0, errs.Validation{Field: field, Msg: "must be a positive integer"}
+	}
+	if value > 1000 {
+		value = 1000
+	}
+	return value, nil
+}
+
+func resolveRegistryImagesListFilters(defLimitRepositories int, defLimitTags int) func(c *echo.Context) (registryImagesListArg, error) {
+	return func(c *echo.Context) (registryImagesListArg, error) {
+		limitRepositories, err := parseOptionalPositiveInt(c.QueryParam("limit_repositories"), "limit_repositories")
+		if err != nil {
+			return registryImagesListArg{}, err
+		}
+		if limitRepositories == 0 {
+			limitRepositories = defLimitRepositories
+		}
+
+		limitTags, err := parseOptionalPositiveInt(c.QueryParam("limit_tags"), "limit_tags")
+		if err != nil {
+			return registryImagesListArg{}, err
+		}
+		if limitTags == 0 {
+			limitTags = defLimitTags
+		}
+
+		return registryImagesListArg{
+			repository:        strings.TrimSpace(c.QueryParam("repository")),
+			limitRepositories: int32(limitRepositories),
+			limitTags:         int32(limitTags),
+		}, nil
+	}
+}
+
 func resolveRunLogsArg(defTailLines int) func(c *echo.Context) (runLogsArg, error) {
 	return func(c *echo.Context) (runLogsArg, error) {
 		runID, err := requirePathParam(c, "run_id")
@@ -375,6 +430,58 @@ func (h *staffHandler) ListRunLearningFeedback(c *echo.Context) error {
 	return listByPathLimitResp(c, "run_id", 200, h.listRunLearningFeedbackCall, casters.LearningFeedbackList)
 }
 
+func (h *staffHandler) ListRuntimeDeployTasks(c *echo.Context) error {
+	return withPrincipalAndResolved(c, resolveRuntimeDeployListFilters(200), func(principal *controlplanev1.Principal, arg runtimeDeployListArg) error {
+		resp, err := h.listRuntimeDeployTasksCall(c.Request().Context(), principal, arg)
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, models.ItemsResponse[models.RuntimeDeployTask]{Items: casters.RuntimeDeployTasks(resp.GetItems())})
+	})
+}
+
+func (h *staffHandler) GetRuntimeDeployTask(c *echo.Context) error {
+	return getByPathResp(c, "run_id", h.getRuntimeDeployTaskCall, casters.RuntimeDeployTask)
+}
+
+func (h *staffHandler) ListRegistryImages(c *echo.Context) error {
+	return withPrincipalAndResolved(c, resolveRegistryImagesListFilters(100, 50), func(principal *controlplanev1.Principal, arg registryImagesListArg) error {
+		resp, err := h.listRegistryImagesCall(c.Request().Context(), principal, arg)
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, models.ItemsResponse[models.RegistryImageRepository]{Items: casters.RegistryImageRepositories(resp.GetItems())})
+	})
+}
+
+func (h *staffHandler) DeleteRegistryImageTag(c *echo.Context) error {
+	return withPrincipal(c, func(principal *controlplanev1.Principal) error {
+		var req models.DeleteRegistryImageTagRequest
+		if err := bindBody(c, &req); err != nil {
+			return err
+		}
+		item, err := h.deleteRegistryImageTagCall(c.Request().Context(), principal, req)
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, casters.RegistryImageDeleteResult(item))
+	})
+}
+
+func (h *staffHandler) CleanupRegistryImages(c *echo.Context) error {
+	return withPrincipal(c, func(principal *controlplanev1.Principal) error {
+		var req models.CleanupRegistryImagesRequest
+		if err := bindBody(c, &req); err != nil {
+			return err
+		}
+		item, err := h.cleanupRegistryImagesCall(c.Request().Context(), principal, req)
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, casters.RegistryImageCleanupResult(item))
+	})
+}
+
 func (h *staffHandler) ListUsers(c *echo.Context) error {
 	return listByLimitResp(c, 200, h.listUsersCall, casters.Users)
 }
@@ -565,6 +672,49 @@ func buildListRunLearningFeedbackRequest(principal *controlplanev1.Principal, ar
 	return &controlplanev1.ListRunLearningFeedbackRequest{Principal: principal, RunId: arg.id, Limit: arg.limit}
 }
 
+func buildListRuntimeDeployTasksRequest(principal *controlplanev1.Principal, arg runtimeDeployListArg) *controlplanev1.ListRuntimeDeployTasksRequest {
+	return &controlplanev1.ListRuntimeDeployTasksRequest{
+		Principal: principal,
+		Limit:     arg.limit,
+		Status:    optionalStringPtr(arg.status),
+		TargetEnv: optionalStringPtr(arg.targetEnv),
+	}
+}
+
+func buildGetRuntimeDeployTaskRequest(principal *controlplanev1.Principal, runID string) *controlplanev1.GetRuntimeDeployTaskRequest {
+	return &controlplanev1.GetRuntimeDeployTaskRequest{
+		Principal: principal,
+		RunId:     strings.TrimSpace(runID),
+	}
+}
+
+func buildListRegistryImagesRequest(principal *controlplanev1.Principal, arg registryImagesListArg) *controlplanev1.ListRegistryImagesRequest {
+	return &controlplanev1.ListRegistryImagesRequest{
+		Principal:         principal,
+		Repository:        optionalStringPtr(arg.repository),
+		LimitRepositories: arg.limitRepositories,
+		LimitTags:         arg.limitTags,
+	}
+}
+
+func buildDeleteRegistryImageTagRequest(principal *controlplanev1.Principal, req models.DeleteRegistryImageTagRequest) *controlplanev1.DeleteRegistryImageTagRequest {
+	return &controlplanev1.DeleteRegistryImageTagRequest{
+		Principal:  principal,
+		Repository: strings.TrimSpace(req.Repository),
+		Tag:        strings.TrimSpace(req.Tag),
+	}
+}
+
+func buildCleanupRegistryImagesRequest(principal *controlplanev1.Principal, req models.CleanupRegistryImagesRequest) *controlplanev1.CleanupRegistryImagesRequest {
+	return &controlplanev1.CleanupRegistryImagesRequest{
+		Principal:         principal,
+		RepositoryPrefix:  optionalStringPtr(req.RepositoryPrefix),
+		LimitRepositories: req.LimitRepositories,
+		KeepTags:          req.KeepTags,
+		DryRun:            req.DryRun,
+	}
+}
+
 func buildListUsersRequest(principal *controlplanev1.Principal, limit int32) *controlplanev1.ListUsersRequest {
 	return &controlplanev1.ListUsersRequest{Principal: principal, Limit: limit}
 }
@@ -645,6 +795,26 @@ func (h *staffHandler) listRunEventsCall(ctx context.Context, principal *control
 func (h *staffHandler) listRunLearningFeedbackCall(ctx context.Context, principal *controlplanev1.Principal, id string, limit int32) (*controlplanev1.ListRunLearningFeedbackResponse, error) {
 	req := buildListRunLearningFeedbackRequest(principal, idLimitArg{id: id, limit: limit})
 	return h.cp.Service().ListRunLearningFeedback(ctx, req)
+}
+
+func (h *staffHandler) listRuntimeDeployTasksCall(ctx context.Context, principal *controlplanev1.Principal, arg runtimeDeployListArg) (*controlplanev1.ListRuntimeDeployTasksResponse, error) {
+	return callUnaryWithArg(ctx, principal, arg, buildListRuntimeDeployTasksRequest, h.cp.Service().ListRuntimeDeployTasks)
+}
+
+func (h *staffHandler) getRuntimeDeployTaskCall(ctx context.Context, principal *controlplanev1.Principal, runID string) (*controlplanev1.RuntimeDeployTask, error) {
+	return callUnaryWithArg(ctx, principal, runID, buildGetRuntimeDeployTaskRequest, h.cp.Service().GetRuntimeDeployTask)
+}
+
+func (h *staffHandler) listRegistryImagesCall(ctx context.Context, principal *controlplanev1.Principal, arg registryImagesListArg) (*controlplanev1.ListRegistryImagesResponse, error) {
+	return callUnaryWithArg(ctx, principal, arg, buildListRegistryImagesRequest, h.cp.Service().ListRegistryImages)
+}
+
+func (h *staffHandler) deleteRegistryImageTagCall(ctx context.Context, principal *controlplanev1.Principal, req models.DeleteRegistryImageTagRequest) (*controlplanev1.RegistryImageDeleteResult, error) {
+	return callUnaryWithArg(ctx, principal, req, buildDeleteRegistryImageTagRequest, h.cp.Service().DeleteRegistryImageTag)
+}
+
+func (h *staffHandler) cleanupRegistryImagesCall(ctx context.Context, principal *controlplanev1.Principal, req models.CleanupRegistryImagesRequest) (*controlplanev1.CleanupRegistryImagesResponse, error) {
+	return callUnaryWithArg(ctx, principal, req, buildCleanupRegistryImagesRequest, h.cp.Service().CleanupRegistryImages)
 }
 
 func (h *staffHandler) listUsersCall(ctx context.Context, principal *controlplanev1.Principal, limit int32) (*controlplanev1.ListUsersResponse, error) {

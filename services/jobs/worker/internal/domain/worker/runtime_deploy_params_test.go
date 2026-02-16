@@ -15,7 +15,7 @@ func TestBuildPrepareRunEnvironmentParams_FromRuntimePayload(t *testing.T) {
 	claimed := runqueuerepo.ClaimedRun{
 		RunID:      "run-123",
 		SlotNo:     7,
-		RunPayload: json.RawMessage(`{"project":{"services_yaml":"deploy/services.yaml"},"repository":{"full_name":"codex-k8s/test"},"runtime":{"mode":"full-env","target_env":"ai-staging","namespace":"codex-k8s-ai-staging","build_ref":"abc123","deploy_only":true}}`),
+		RunPayload: json.RawMessage(`{"project":{"services_yaml":"deploy/services.yaml"},"repository":{"full_name":"codex-k8s/test"},"runtime":{"mode":"full-env","target_env":"production","namespace":"codex-k8s-prod","build_ref":"abc123","deploy_only":true}}`),
 	}
 	execution := valuetypes.RunExecutionContext{
 		RuntimeMode: agentdomain.RuntimeModeFullEnv,
@@ -30,10 +30,10 @@ func TestBuildPrepareRunEnvironmentParams_FromRuntimePayload(t *testing.T) {
 	if got, want := params.RuntimeMode, "full-env"; got != want {
 		t.Fatalf("RuntimeMode mismatch: got %q want %q", got, want)
 	}
-	if got, want := params.Namespace, "codex-k8s-ai-staging"; got != want {
+	if got, want := params.Namespace, "codex-k8s-prod"; got != want {
 		t.Fatalf("Namespace mismatch: got %q want %q", got, want)
 	}
-	if got, want := params.TargetEnv, "ai-staging"; got != want {
+	if got, want := params.TargetEnv, "production"; got != want {
 		t.Fatalf("TargetEnv mismatch: got %q want %q", got, want)
 	}
 	if got, want := params.RepositoryFullName, "codex-k8s/test"; got != want {

@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: codex-k8s-web-console
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: codex-k8s-web-console
 spec:
@@ -17,11 +17,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: codex-k8s-web-console
-  namespace: ${CODEXK8S_STAGING_NAMESPACE}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: codex-k8s-web-console
 spec:
-  replicas: ${CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS}
+  replicas: {{ envOr "CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS" "" }}
   selector:
     matchLabels:
       app.kubernetes.io/name: codex-k8s-web-console
@@ -33,18 +33,18 @@ spec:
     spec:
       containers:
         - name: web-console
-          image: ${CODEXK8S_WEB_CONSOLE_IMAGE}
+          image: {{ envOr "CODEXK8S_WEB_CONSOLE_IMAGE" "" }}
           imagePullPolicy: Always
           ports:
             - containerPort: 5173
               name: http
           env:
-            # Vite blocks unknown hosts by default; this keeps staging usable behind Ingress.
+            # Vite blocks unknown hosts by default; this keeps production usable behind Ingress.
             - name: VITE_ALLOWED_HOSTS
-              value: "${CODEXK8S_STAGING_DOMAIN}"
-            # HMR in ai-staging runs behind public Ingress (HTTPS) and must not try to connect to localhost:5173.
+              value: '{{ envOr "CODEXK8S_PRODUCTION_DOMAIN" "" }}'
+            # HMR in production runs behind public Ingress (HTTPS) and must not try to connect to localhost:5173.
             - name: VITE_HMR_HOST
-              value: "${CODEXK8S_STAGING_DOMAIN}"
+              value: '{{ envOr "CODEXK8S_PRODUCTION_DOMAIN" "" }}'
             - name: VITE_HMR_PROTOCOL
               value: "wss"
             - name: VITE_HMR_CLIENT_PORT

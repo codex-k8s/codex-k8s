@@ -9,7 +9,7 @@
 - Изменение перечня сервисов/приложений, участвующих в codegen, должно синхронно обновлять:
   - цели `gen-openapi-*` в `Makefile`;
   - конфиги codegen в `tools/codegen/**`;
-  - CI-проверку `.github/workflows/contracts_codegen_check.yml`.
+  - CI-проверку `deploy/base/codex-k8s/codegen-check-job.yaml.tpl`.
 - Источник правды транспорта:
   - REST: `api/server/api.yaml` (OpenAPI YAML)
   - gRPC: `proto/**/*.proto`
@@ -76,9 +76,9 @@ make gen-openapi-ts APP=services/<zone>/<app> SPEC=services/<zone>/<service>/api
 
 ## Проверка консистентности generated-кода в CI
 
-- Обязательная проверка: `.github/workflows/contracts_codegen_check.yml`.
-- Workflow должен выполнять:
+- Обязательная проверка: `deploy/base/codex-k8s/codegen-check-job.yaml.tpl`.
+- Codegen-check job должен выполнять:
   - установку зависимостей frontend;
   - `make gen-openapi`;
   - `git diff --exit-code` по OpenAPI-generated артефактам.
-- Любое расширение/изменение codegen-охвата (новый backend service или frontend app) сопровождается правкой этого workflow.
+- Любое расширение/изменение codegen-охвата (новый backend service или frontend app) сопровождается правкой этого job-манифеста.

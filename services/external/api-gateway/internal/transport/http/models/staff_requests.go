@@ -39,3 +39,17 @@ type ResolveApprovalDecisionRequest struct {
 	Decision string `json:"decision"`
 	Reason   string `json:"reason"`
 }
+
+// DeleteRegistryImageTagRequest identifies one registry tag for deletion.
+type DeleteRegistryImageTagRequest struct {
+	Repository string `json:"repository"`
+	Tag        string `json:"tag"`
+}
+
+// CleanupRegistryImagesRequest configures bulk registry image cleanup.
+type CleanupRegistryImagesRequest struct {
+	RepositoryPrefix  string `json:"repository_prefix"`
+	LimitRepositories int32  `json:"limit_repositories"`
+	KeepTags          int32  `json:"keep_tags"`
+	DryRun            bool   `json:"dry_run"`
+}

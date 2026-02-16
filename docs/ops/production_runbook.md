@@ -1,7 +1,7 @@
 ---
-doc_id: OPS-CK8S-STAGING-0001
+doc_id: OPS-CK8S-PRODUCTION-0001
 type: runbook
-title: "Staging Runbook (MVP)"
+title: "Production Runbook (MVP)"
 status: active
 owner_role: SRE
 created_at: 2026-02-09
@@ -16,49 +16,49 @@ approvals:
   approved_at: 2026-02-12
 ---
 
-# Staging Runbook (MVP)
+# Production Runbook (MVP)
 
-Цель: минимальный набор проверок и действий для ежедневного деплоя и ручного smoke/regression на staging.
+Цель: минимальный набор проверок и действий для ежедневного деплоя и ручного smoke/regression на production.
 
 ## Быстрый ручной smoke (на сервере)
 
 Предпосылки:
-- есть доступ по SSH на staging host (Ubuntu 24.04);
+- есть доступ по SSH на production host (Ubuntu 24.04);
 - на host установлен `kubectl` (k3s) и кластер поднят;
-- namespace по умолчанию: `codex-k8s-ai-staging`.
+- namespace по умолчанию: `codex-k8s-prod`.
 
 Базовые команды:
 
 ```bash
-export CODEXK8S_STAGING_NAMESPACE="codex-k8s-ai-staging"
-export CODEXK8S_STAGING_DOMAIN="staging.codex-k8s.dev"
+export CODEXK8S_PRODUCTION_NAMESPACE="codex-k8s-prod"
+export CODEXK8S_PRODUCTION_DOMAIN="platform.codex-k8s.dev"
 
-kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get pods -o wide
-kubectl -n "$CODEXK8S_STAGING_NAMESPACE" get deploy,job,ingress
-kubectl -n "$CODEXK8S_STAGING_NAMESPACE" logs deploy/codex-k8s --tail=200
-kubectl -n "$CODEXK8S_STAGING_NAMESPACE" logs deploy/codex-k8s-worker --tail=200
+kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" get pods -o wide
+kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" get deploy,job,ingress
+kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s --tail=200
+kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s-worker --tail=200
 ```
 
 Ожидаемо:
 - rollout `codex-k8s-control-plane`, `codex-k8s`, `codex-k8s-worker`, `oauth2-proxy`, `codex-k8s-web-console` успешен;
 - последний `codex-k8s-migrate-*` job completed;
 - `/healthz`, `/readyz`, `/metrics` доступны через `kubectl port-forward`;
-- `codex-k8s-staging-tls` secret существует;
+- `codex-k8s-production-tls` secret существует;
 - webhook endpoint отвечает **401** на invalid signature (и не редиректит в OAuth).
 
-Порядок выкладки staging:
+Порядок выкладки production:
 - `PostgreSQL -> migrations -> control-plane -> api-gateway -> frontend`.
 - Зависимости между сервисами ожидаются через `initContainers` в манифестах.
 
 ## Проверка внешних портов (снаружи)
 
-Требование staging (MVP):
+Требование production (MVP):
 - извне доступны только `22`, `80`, `443`.
 
 Проверка с хоста разработчика:
 
 ```bash
-host="staging.codex-k8s.dev"
+host="platform.codex-k8s.dev"
 for p in 22 80 443 6443 5000 10250 10254 8443; do
   echo -n "$p "
   if timeout 3 bash -lc "</dev/tcp/$host/$p" >/dev/null 2>&1; then echo open; else echo closed; fi
@@ -68,7 +68,7 @@ done
 ## Полезные команды kubectl
 
 ```bash
-ns="codex-k8s-ai-staging"
+ns="codex-k8s-prod"
 kubectl -n "$ns" get pods -o wide
 kubectl -n "$ns" logs deploy/codex-k8s --tail=200
 kubectl -n "$ns" logs deploy/codex-k8s-control-plane --tail=200
@@ -105,7 +105,7 @@ kubectl get ns -o json | grep -E 'codexk8s.io/(managed-by|namespace-purpose|runt
 
 ### OAuth2 callback не проходит
 - В GitHub OAuth App callback должен быть:
-  - `https://<CODEXK8S_STAGING_DOMAIN>/oauth2/callback`
+  - `https://<CODEXK8S_PRODUCTION_DOMAIN>/oauth2/callback`
 
 ### Webhook не доходит
 - Убедиться, что path пропущен без auth:

@@ -234,15 +234,15 @@ func normalizeAndValidate(stack *Stack, env string) error {
 		projectName = strings.TrimSpace(stack.Metadata.Name)
 	}
 	if projectName == "codex-k8s" {
-		aiStaging, ok := stack.Spec.Environments["ai-staging"]
+		production, ok := stack.Spec.Environments["production"]
 		if !ok {
-			return fmt.Errorf("codex-k8s requires ai-staging environment")
+			return fmt.Errorf("codex-k8s requires production environment")
 		}
-		namespaceTemplate := strings.TrimSpace(aiStaging.NamespaceTemplate)
-		expectedTemplate := "{{ .Project }}-ai-staging"
-		expectedResolved := fmt.Sprintf("%s-ai-staging", projectName)
+		namespaceTemplate := strings.TrimSpace(production.NamespaceTemplate)
+		expectedTemplate := "{{ .Project }}-prod"
+		expectedResolved := fmt.Sprintf("%s-prod", projectName)
 		if namespaceTemplate != expectedTemplate && namespaceTemplate != expectedResolved {
-			return fmt.Errorf("codex-k8s requires ai-staging namespace template {{ .Project }}-ai-staging")
+			return fmt.Errorf("codex-k8s requires production namespace template {{ .Project }}-prod")
 		}
 	}
 
@@ -317,7 +317,7 @@ func buildContext(raw []byte, opts LoadOptions) (ResolvedContext, error) {
 		Vars:      cloneStringMap(opts.Vars),
 	}
 	if ctx.Env == "" {
-		ctx.Env = "ai-staging"
+		ctx.Env = "production"
 	}
 	if ctx.Vars == nil {
 		ctx.Vars = make(map[string]string)
@@ -347,7 +347,7 @@ func buildContext(raw []byte, opts LoadOptions) (ResolvedContext, error) {
 				ctx.Namespace = fmt.Sprintf("%s-dev-%d", ctx.Project, ctx.Slot)
 			}
 		case "ai-repair":
-			ctx.Namespace = fmt.Sprintf("%s-ai-staging", ctx.Project)
+			ctx.Namespace = fmt.Sprintf("%s-production", ctx.Project)
 		default:
 			ctx.Namespace = fmt.Sprintf("%s-%s", ctx.Project, ctx.Env)
 		}

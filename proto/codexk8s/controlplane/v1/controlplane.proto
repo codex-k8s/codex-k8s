@@ -379,6 +379,106 @@ message PrepareRunEnvironmentResponse {
   string target_env = 4;
 }
 
+message RuntimeDeployTaskLog {
+  string stage = 1;
+  string level = 2;
+  string message = 3;
+  google.protobuf.Timestamp created_at = 4;
+}
+
+message RuntimeDeployTask {
+  string run_id = 1;
+  string runtime_mode = 2;
+  string namespace = 3;
+  string target_env = 4;
+  int32 slot_no = 5;
+  string repository_full_name = 6;
+  string services_yaml_path = 7;
+  string build_ref = 8;
+  bool deploy_only = 9;
+  string status = 10;
+  optional string lease_owner = 11;
+  google.protobuf.Timestamp lease_until = 12;
+  int32 attempts = 13;
+  optional string last_error = 14;
+  optional string result_namespace = 15;
+  optional string result_target_env = 16;
+  google.protobuf.Timestamp created_at = 17;
+  google.protobuf.Timestamp updated_at = 18;
+  google.protobuf.Timestamp started_at = 19;
+  google.protobuf.Timestamp finished_at = 20;
+  repeated RuntimeDeployTaskLog logs = 21;
+}
+
+message ListRuntimeDeployTasksRequest {
+  Principal principal = 1;
+  int32 limit = 2;
+  optional string status = 3;
+  optional string target_env = 4;
+}
+
+message ListRuntimeDeployTasksResponse {
+  repeated RuntimeDeployTask items = 1;
+}
+
+message GetRuntimeDeployTaskRequest {
+  Principal principal = 1;
+  string run_id = 2;
+}
+
+message RegistryImageTag {
+  string tag = 1;
+  string digest = 2;
+  google.protobuf.Timestamp created_at = 3;
+  int64 config_size_bytes = 4;
+}
+
+message RegistryImageRepository {
+  string repository = 1;
+  int32 tag_count = 2;
+  repeated RegistryImageTag tags = 3;
+}
+
+message ListRegistryImagesRequest {
+  Principal principal = 1;
+  int32 limit_repositories = 2;
+  int32 limit_tags = 3;
+  optional string repository = 4;
+}
+
+message ListRegistryImagesResponse {
+  repeated RegistryImageRepository items = 1;
+}
+
+message DeleteRegistryImageTagRequest {
+  Principal principal = 1;
+  string repository = 2;
+  string tag = 3;
+}
+
+message RegistryImageDeleteResult {
+  string repository = 1;
+  string tag = 2;
+  string digest = 3;
+  bool deleted = 4;
+}
+
+message CleanupRegistryImagesRequest {
+  Principal principal = 1;
+  optional string repository_prefix = 2;
+  int32 limit_repositories = 3;
+  int32 keep_tags = 4;
+  bool dry_run = 5;
+}
+
+message CleanupRegistryImagesResponse {
+  int32 repositories_scanned = 1;
+  int32 tags_deleted = 2;
+  int32 tags_skipped = 3;
+  repeated RegistryImageDeleteResult deleted = 4;
+  repeated RegistryImageDeleteResult skipped = 5;
+}
+
 message UpsertAgentSessionRequest {
   string run_id = 1;
   string correlation_id = 2;
@@ -533,6 +633,11 @@ service ControlPlaneService {
   rpc DeleteProjectRepository(DeleteProjectRepositoryRequest) returns (google.protobuf.Empty);
   rpc IssueRunMCPToken(IssueRunMCPTokenRequest) returns (IssueRunMCPTokenResponse);
   rpc PrepareRunEnvironment(PrepareRunEnvironmentRequest) returns (PrepareRunEnvironmentResponse);
+  rpc ListRuntimeDeployTasks(ListRuntimeDeployTasksRequest) returns (ListRuntimeDeployTasksResponse);
+  rpc GetRuntimeDeployTask(GetRuntimeDeployTaskRequest) returns (RuntimeDeployTask);
+  rpc ListRegistryImages(ListRegistryImagesRequest) returns (ListRegistryImagesResponse);
+  rpc DeleteRegistryImageTag(DeleteRegistryImageTagRequest) returns (RegistryImageDeleteResult);
+  rpc CleanupRegistryImages(CleanupRegistryImagesRequest) returns (CleanupRegistryImagesResponse);
 
   // Used by agent-runner for run-bound session persistence and event callbacks.
   rpc UpsertAgentSession(UpsertAgentSessionRequest) returns (UpsertAgentSessionResponse);

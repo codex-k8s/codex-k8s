@@ -28,7 +28,7 @@ approvals:
 - Фактическое отклонение: доменная логика и репозитории сейчас находятся в `services/external/api-gateway/internal/**`, а `services/internal/control-plane` является placeholder.
 - Требование: thin-edge для `external|staff` (валидация/auth/маршрутизация, без orchestration в transport слое).
 - Сопутствующее выравнивание: миграции схемы (goose) перенесены в держателя схемы
-  `services/internal/control-plane/cmd/cli/migrations/*.sql` (вместо корня репозитория), а staging deploy берёт миграции из этого пути.
+  `services/internal/control-plane/cmd/cli/migrations/*.sql` (вместо корня репозитория), а production deploy берёт миграции из этого пути.
 
 ## Scope
 ### In scope
@@ -50,7 +50,7 @@ approvals:
 - Story-1: proto контракт для control-plane (webhook ingest, staff APIs, auth bridge).
 - Story-2: перенос доменных сервисов и репозиториев из `api-gateway` в `control-plane`.
 - Story-3: gRPC server в `control-plane` и gRPC client в `api-gateway`.
-- Story-4: deploy wiring: сборка бинарника control-plane и деплой 2х сервисов в staging.
+- Story-4: deploy wiring: сборка бинарника control-plane и деплой 2х сервисов в production.
 - Story-5: документация: evidence/verification + каталог внешних зависимостей.
 
 ## Data model impact (по шаблону data_model.md)
@@ -94,7 +94,8 @@ approvals:
   - `services/external/api-gateway/internal/transport/http/staff_handler.go`
 - Миграции держателя схемы:
   - `services/internal/control-plane/cmd/cli/migrations/*.sql`
-  - `deploy/scripts/deploy_staging.sh` создаёт `configmap/codex-k8s-migrations` из этого пути
+  - `services/internal/control-plane/internal/domain/runtimedeploy/service_prerequisites.go`
+    создаёт `configmap/codex-k8s-migrations` из этого пути
   - `deploy/base/codex-k8s/migrate-job.yaml.tpl` применяет миграции через `goose -dir /migrations up`
 - Сборка/деплой:
   - отдельные Dockerfile по сервисам:
@@ -110,12 +111,12 @@ approvals:
 
 ## Verification
 - Unit tests: `go test ./...`
-- Bash syntax: `bash -n deploy/scripts/deploy_staging.sh`
-- Staging smoke: ручной smoke/regression по runbook (OK после деплоя)
+- Runtime deploy dry-run/tests: `go test ./services/internal/control-plane/internal/domain/runtimedeploy ./services/internal/control-plane/cmd/runtime-deploy`
+- Production smoke: ручной smoke/regression по runbook (OK после деплоя)
 
 ## План релиза (верхний уровень)
-- Контур dev/staging до dogfooding: см. `.local/agents-temp-dev-rules.md`.
-- После merge: push в `codex/dev` должен приводить к автоматическому deploy на staging.
+- Контур dev/production до dogfooding: см. `.local/agents-temp-dev-rules.md`.
+- После merge: push в `codex/dev` должен приводить к автоматическому deploy на production.
 - Smoke: webhook ingest + staff UI базовые сценарии (проверка логов `codex-k8s` и `codex-k8s-control-plane`).
 
 ## Апрув

@@ -88,7 +88,7 @@ Rel(cp, approverexec, "Requests approvals and gets callbacks", "HTTPS")
 * Топология MVP: один PostgreSQL cluster с отдельным логическим контуром для `flow_events`, `agent_sessions`, `token_usage`, `links` и `doc_chunks`.
 * Read replica MVP: минимум одна asynchronous streaming replica.
 * Эволюция без миграций приложения: переход к 2+ replica и sync/quorum режимам при необходимости.
-* Резервирование/бэкап: staging backup baseline обязателен.
+* Резервирование/бэкап: production backup baseline обязателен.
 
 ## Решения Owner
 

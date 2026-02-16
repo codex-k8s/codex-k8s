@@ -23,7 +23,7 @@ approvals:
 - **Для кого:** Owner и команда, управляющие несколькими проектами и агентами в Kubernetes.
 - **Предлагаемое решение:** единый сервис `codex-k8s` (Go + Vue3), webhook-driven, с хранением состояния и знаний в PostgreSQL (`JSONB` + `pgvector`).
 - **Почему сейчас:** принято решение консолидировать архитектуру и убрать workflow-first оркестрацию продуктовых процессов.
-- **Что считаем успехом:** staging разворачивается одним bootstrap-скриптом, push в `main` обновляет staging, ручные тесты проходят через UI и webhook сценарии.
+- **Что считаем успехом:** production разворачивается одним bootstrap-скриптом, push в `main` обновляет production, ручные тесты проходят через UI и webhook сценарии.
 - **Что считаем успехом (расширено):** кроме базового dogfooding, в MVP работают full stage labels, MCP control tools (secret/db/feedback), staff debug observability и `run:self-improve`.
 - **Дополнительная ценность:** при включённом learning mode платформа объясняет важные инженерные решения и компромиссы, чтобы пользователи учились паттернам, а не только получали код.
 - **Что НЕ делаем:** поддержку не-Kubernetes оркестраторов и self-signup пользователей.
@@ -49,8 +49,8 @@ approvals:
 - Хранить конфигурации пользователей/агентов/проектов/слотов/документов в PostgreSQL.
 - Реализовать встроенные MCP service-tools в Go внутри платформы.
 - Защитить UI через GitHub OAuth с матчингом email.
-- Добавить bootstrap-скрипт развёртывания staging по SSH на Ubuntu 24.04.
-- Включить CI/CD deploy для самой платформы через self-hosted runner в Kubernetes (staging first).
+- Добавить bootstrap-скрипт развёртывания production по SSH на Ubuntu 24.04.
+- Включить CI/CD deploy для самой платформы через self-hosted runner в Kubernetes (production first).
 - Зафиксировать stage-driven delivery модель и label taxonomy (`run:*`, `state:*`, `need:*`) как единый процессный контракт.
 - Зафиксировать operating model агентов: базовый штат из 8 ролей (включая `dev` и `reviewer`) + custom-агенты проекта, mixed runtime (`full-env`/`code-only`).
 - Зафиксировать review контур: для всех `run:*` выполняется pre-review (`reviewer` и/или профильная роль), затем финальный Owner review.
@@ -70,7 +70,7 @@ approvals:
 - Kubernetes-only control-plane.
 - GitHub provider (первый), provider interface под GitLab.
 - PostgreSQL + `JSONB` + `pgvector`.
-- Bootstrap staging + runner setup + deploy pipeline.
+- Bootstrap production + runner setup + deploy pipeline.
 
 ### Out of scope (не входит)
 - Multi-orchestrator support.
@@ -78,13 +78,13 @@ approvals:
 - Полный отказ от GitHub Actions для deploy самой платформы на этапе MVP.
 
 ## Метрики успеха (первичная версия)
-- KPI/OKR: время от чистого Ubuntu 24.04 сервера до готового staging <= 45 минут.
+- KPI/OKR: время от чистого Ubuntu 24.04 сервера до готового production <= 45 минут.
 - Продуктовые метрики: не менее 1 проекта и 2 репозиториев подключаются через UI без ручного SQL.
 - Технические метрики: 99% webhook событий обрабатываются идемпотентно без дублей; p95 API < 500ms для CRUD настроек.
 
 ## Ограничения
-- Сроки: MVP с staging bootstrap и базовым deploy-пайплайном в первой итерации.
-- Ресурсы: один staging сервер Ubuntu 24.04.
+- Сроки: MVP с production bootstrap и базовым deploy-пайплайном в первой итерации.
+- Ресурсы: один production сервер Ubuntu 24.04.
 - Платформы/технологии: Go, Vue3, Kubernetes, PostgreSQL.
 - Регуляторика/безопасность: запрет self-signup; секреты не логируются; repo токены шифруются.
 
@@ -93,10 +93,10 @@ approvals:
 - Допущение: доступен GitHub fine-grained token с правами на repo/actions/secrets/variables для runner и webhook-настроек.
 - Риск: learning mode может зашумлять PR комментарии при слабой фильтрации "важных мест".
 
-## Решение по deploy workflow (принято)
-- Для `staging`: deploy workflow запускается автоматически на push в `main`.
-- Для `production`: отдельный deploy workflow запускается вручную (`workflow_dispatch`) и проходит environment approval.
-- Bootstrap-скрипт на первом этапе настраивает runner и переменные для `staging`.
+## Решение по self-deploy (принято)
+- Для `production`: deploy запускается webhook-driven на push в `main` через control-plane/runtime deploy.
+- GitHub Actions workflows для build/deploy платформы не используются.
+- Bootstrap на первом этапе настраивает Kubernetes/GitHub интеграцию и секреты для self-deploy.
 
 ## Решения Owner (зафиксировано)
 - Storage профиль MVP: упрощённый `local-path`, миграция на Longhorn позже.
@@ -122,10 +122,10 @@ approvals:
     - ресурсы: namespaces/configmaps/secrets/deployments/pods+logs/jobs+logs/pvc;
     - YAML-view/edit через Monaco Editor;
     - safety guardrails:
-      - в `ai-staging`/`prod` платформенные ресурсы помечаются `app.kubernetes.io/part-of=codex-k8s` (критерий для UI/guardrails и backend policy);
+      - в `production`/`prod` платформенные ресурсы помечаются `app.kubernetes.io/part-of=codex-k8s` (критерий для UI/guardrails и backend policy);
       - в `ai` (ai-slots) при dogfooding платформа может разворачиваться без `app.kubernetes.io/part-of=codex-k8s`, чтобы UI позволял тестировать действия над ресурсами самой платформы (в т.ч. destructive через dry-run);
       - ресурсы с `app.kubernetes.io/part-of=codex-k8s` нельзя удалять (UI и backend policy);
-      - `ai-staging`/`prod` — строго view-only для ресурсов с `app.kubernetes.io/part-of=codex-k8s`;
+      - `production`/`prod` — строго view-only для ресурсов с `app.kubernetes.io/part-of=codex-k8s`;
       - ai-slots — destructive действия только dry-run (кнопки есть для dogfooding/debug, реальное действие не выполняется).
   - Agents:
     - управление настройками агента;
