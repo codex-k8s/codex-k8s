@@ -63,7 +63,7 @@ const rows: AuditRow[] = [
     actor: "admin@codex-k8s.local",
     action: "project.upsert",
     object: "project#codex-k8s",
-    env: "ai-staging",
+    env: "production",
     correlation_id: "c0d3x-7b11",
   },
   {

@@ -41,17 +41,17 @@ const namespaces = computed<SelectItem[]>(() => {
   const all = { title: t("context.allObjects"), value: "" };
 
   const ai = [`${project}-dev-1`, `${project}-dev-2`, `${project}-dev-3`];
-  const staging = [`${project}-ai-staging`];
+  const production = [`${project}-production`];
   const prod = [`${project}-prod`];
 
   const values =
     uiContext.env === "ai"
       ? ai
-      : uiContext.env === "ai-staging"
-        ? staging
+      : uiContext.env === "production"
+        ? production
         : uiContext.env === "prod"
           ? prod
-          : [...ai, ...staging, ...prod];
+          : [...ai, ...production, ...prod];
 
   return [all, ...values.map((v) => ({ title: v, value: v }))];
 });

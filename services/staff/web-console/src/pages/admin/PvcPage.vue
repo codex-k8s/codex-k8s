@@ -103,7 +103,7 @@ const headers = [
 const rows: PvcRow[] = [
   {
     name: "postgres-data",
-    namespace: "codex-k8s-ai-staging",
+    namespace: "codex-k8s-prod",
     status: "Bound",
     volume: "pvc-7b2f...",
     capacity: "20Gi",
@@ -113,7 +113,7 @@ const rows: PvcRow[] = [
   },
   {
     name: "pgvector-data",
-    namespace: "codex-k8s-ai-staging",
+    namespace: "codex-k8s-prod",
     status: "Bound",
     volume: "pvc-3c19...",
     capacity: "50Gi",

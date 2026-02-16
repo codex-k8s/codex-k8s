@@ -76,7 +76,7 @@
 
 <script setup lang="ts">
 // TODO(#19): Подключить реальные Deployments (list/get), табы Overview/YAML/Events/Related, и guardrails:
-// - platform deployments (app.kubernetes.io/part-of=codex-k8s) в ai-staging/prod = view-only
+// - platform deployments (app.kubernetes.io/part-of=codex-k8s) в production/prod = view-only
 import { computed, ref } from "vue";
 import AdminClusterContextBar from "../../shared/ui/AdminClusterContextBar.vue";
 import ConfirmDialog from "../../shared/ui/ConfirmDialog.vue";
@@ -108,10 +108,10 @@ const headers = [
 ] as const;
 
 const rows: DeploymentRow[] = [
-  { name: "codex-k8s", namespace: "codex-k8s-ai-staging", ready: "1/1", updated: "2026-02-15", age: "10d" },
-  { name: "codex-k8s-worker", namespace: "codex-k8s-ai-staging", ready: "1/1", updated: "2026-02-15", age: "10d" },
-  { name: "api-gateway", namespace: "codex-k8s-ai-staging", ready: "1/1", updated: "2026-02-15", age: "10d" },
-  { name: "web-console", namespace: "codex-k8s-ai-staging", ready: "1/1", updated: "2026-02-15", age: "10d" },
+  { name: "codex-k8s", namespace: "codex-k8s-prod", ready: "1/1", updated: "2026-02-15", age: "10d" },
+  { name: "codex-k8s-worker", namespace: "codex-k8s-prod", ready: "1/1", updated: "2026-02-15", age: "10d" },
+  { name: "api-gateway", namespace: "codex-k8s-prod", ready: "1/1", updated: "2026-02-15", age: "10d" },
+  { name: "web-console", namespace: "codex-k8s-prod", ready: "1/1", updated: "2026-02-15", age: "10d" },
 ];
 
 const destructiveDisabled = computed(() => uiContext.clusterMode === "view-only");

@@ -95,8 +95,8 @@ const headers = [
 ] as const;
 
 const rows: SecretRow[] = [
-  { name: "postgres-credentials", namespace: "codex-k8s-ai-staging", type: "Opaque", keys: 2, age: "10d" },
-  { name: "github-oauth", namespace: "codex-k8s-ai-staging", type: "Opaque", keys: 2, age: "10d" },
+  { name: "postgres-credentials", namespace: "codex-k8s-prod", type: "Opaque", keys: 2, age: "10d" },
+  { name: "github-oauth", namespace: "codex-k8s-prod", type: "Opaque", keys: 2, age: "10d" },
   { name: "runner-token", namespace: "codex-k8s-dev-1", type: "Opaque", keys: 1, age: "2h" },
   { name: "tls-cert", namespace: "codex-k8s-prod", type: "kubernetes.io/tls", keys: 2, age: "45d" },
 ];

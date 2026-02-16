@@ -2,10 +2,10 @@
 doc_id: EPC-CK8S-S3-D10
 type: epic
 title: "Epic S3 Day 10: Staff console on Vuetify (new app-shell + navigation scaffold)"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-13
-updated_at: 2026-02-15
+updated_at: 2026-02-16
 related_issues: [19]
 related_prs: []
 approvals:
@@ -129,10 +129,10 @@ approvals:
 - Реальная backend-интеграция cluster CRUD (k8s API + RBAC + audit) для новых `Admin / Cluster` экранов (Day10 делает только UI scaffold + TODO).
 
 ## Ограничения безопасности для `Admin / Cluster` разделов (обязательны при дальнейшей реализации)
-- В окружениях `ai-staging` и `prod` элементы платформы помечаем label `app.kubernetes.io/part-of=codex-k8s` (канонический критерий для UI и backend).
+- В окружениях `production` и `prod` элементы платформы помечаем label `app.kubernetes.io/part-of=codex-k8s` (канонический критерий для UI и backend).
 - Исключение для dogfooding: в `ai` окружениях (ai-slots) платформа может разворачиваться без `app.kubernetes.io/part-of=codex-k8s`, чтобы UI позволял dogfood/debug действия над самой платформой (в т.ч. destructive через dry-run) и не применял platform guardrails по label.
 - Ресурсы, помеченные `app.kubernetes.io/part-of=codex-k8s`, нельзя удалять.
-- Элементы платформы в окружениях `ai-staging` и `prod` (namespaces вида `{{ .Project }}-ai-staging` и `{{ .Project }}-prod`) доступны только на просмотр (view-only):
+- Элементы платформы в окружениях `production` и `prod` (namespaces вида `{{ .Project }}-production` и `{{ .Project }}-prod`) доступны только на просмотр (view-only):
   - скрывать/выключать действия create/update/delete;
   - показывать явный read-only banner на экранах.
 - Для `ai` окружений (ai-slots; namespaces вида `{{ .Project }}-dev-{{ .Slot }}`) destructive действия должны отрабатывать на backend как dry-run:
@@ -233,8 +233,8 @@ approvals:
   - детали ресурса с табами (Overview/YAML/Events/Related/Logs);
   - action preview диалог;
   - правила безопасности и режимов в TODO:
-    - в `ai-staging`/`prod` platform elements определяются по `app.kubernetes.io/part-of=codex-k8s`; в ai-slots этот label может отсутствовать (dogfooding);
-    - `ai-staging`/`prod` = view-only (для ресурсов с `app.kubernetes.io/part-of=codex-k8s`);
+    - в `production`/`prod` platform elements определяются по `app.kubernetes.io/part-of=codex-k8s`; в ai-slots этот label может отсутствовать (dogfooding);
+    - `production`/`prod` = view-only (для ресурсов с `app.kubernetes.io/part-of=codex-k8s`);
     - `ai` env = dry-run для destructive actions (кнопки есть, действие не применяется, есть feedback).
 - Story-4.2: Добавить scaffold “Agents” и “System settings”:
   - agents list (чипы system/custom/mode/limits/status);
@@ -268,7 +268,7 @@ approvals:
   - есть logs viewer с tail/search/highlight/copy/download;
   - approvals представлены как “центр” (отдельный экран или эквивалентная переработка).
 - В навигации присутствует `Admin / Cluster`, и для каждого ресурса есть страница scaffold.
-- Для `ai-staging`/`prod` страницы `Admin / Cluster` показывают режим “только просмотр”.
+- Для `production`/`prod` страницы `Admin / Cluster` показывают режим “только просмотр”.
 - Для `ai` окружений destructive действия в `Admin / Cluster` отрабатывают как dry-run и дают явную обратную связь “dry-run OK, но действие запрещено”.
 - Есть `Agents` и `System settings (locales)` scaffolds:
   - prompt templates `work/review` минимум в `ru/en` с diff/preview + effective template preview;

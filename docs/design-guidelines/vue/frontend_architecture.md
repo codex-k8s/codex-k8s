@@ -10,7 +10,7 @@
 
 - Каждый frontend-сервис обязан иметь `Dockerfile` в корне сервиса.
 - В Dockerfile обязательно поддерживаются target:
-  - `dev` — для staging/dev (например, Vite dev server);
+  - `dev` — для production/dev (например, Vite dev server);
   - `prod` — для production runtime со статическим бандлом (например, `nginx`).
 - Для каждого frontend-сервиса обязателен отдельный Kubernetes manifest-шаблон
   в `deploy/base/<service>/*.yaml.tpl`.

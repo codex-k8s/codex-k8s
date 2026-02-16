@@ -64,7 +64,7 @@
 
 <script setup lang="ts">
 // TODO(#19): Подключить реальные namespaces из backend (k8s API + RBAC + audit) и правила режимов:
-// - ai-staging/prod для platform resources (app.kubernetes.io/part-of=codex-k8s) = view-only
+// - production/prod для platform resources (app.kubernetes.io/part-of=codex-k8s) = view-only
 // - ai env = destructive actions через backend dry-run, с явным feedback
 import { computed, ref } from "vue";
 import AdminClusterContextBar from "../../shared/ui/AdminClusterContextBar.vue";
@@ -97,7 +97,7 @@ const headers = [
 const rows: NamespaceRow[] = [
   { name: "codex-k8s-dev-1", status: "Active", age: "3h", part_of: "-" },
   { name: "codex-k8s-dev-2", status: "Active", age: "1d", part_of: "-" },
-  { name: "codex-k8s-ai-staging", status: "Active", age: "12d", part_of: "codex-k8s" },
+  { name: "codex-k8s-prod", status: "Active", age: "12d", part_of: "codex-k8s" },
   { name: "codex-k8s-prod", status: "Active", age: "45d", part_of: "codex-k8s" },
 ];
 

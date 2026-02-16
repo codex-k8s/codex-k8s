@@ -1,7 +1,10 @@
 import type { RouteRecordRaw } from "vue-router";
 
 import ApprovalsCenterPage from "../pages/operations/ApprovalsCenterPage.vue";
+import RegistryImagesPage from "../pages/operations/RegistryImagesPage.vue";
 import RunningJobsPage from "../pages/operations/RunningJobsPage.vue";
+import RuntimeDeployTaskDetailsPage from "../pages/operations/RuntimeDeployTaskDetailsPage.vue";
+import RuntimeDeployTasksPage from "../pages/operations/RuntimeDeployTasksPage.vue";
 import WaitQueuePage from "../pages/operations/WaitQueuePage.vue";
 
 import ConfigMapsPage from "../pages/admin/ConfigMapsPage.vue";
@@ -50,6 +53,9 @@ export const routes: RouteRecordRaw[] = [
   { path: "/runs/:runId", name: "run-details", component: RunDetailsPage, props: true, meta: { section: "runs", crumbKey: "crumb.runDetails" } },
 
   // Operations
+  { path: "/runtime-deploy/tasks", name: "runtime-deploy-tasks", component: RuntimeDeployTasksPage, meta: { section: "operations", crumbKey: "crumb.runtimeDeployTasks" } },
+  { path: "/runtime-deploy/tasks/:runId", name: "runtime-deploy-task-details", component: RuntimeDeployTaskDetailsPage, props: true, meta: { section: "operations", crumbKey: "crumb.runtimeDeployTaskDetails" } },
+  { path: "/runtime-deploy/images", name: "runtime-deploy-images", component: RegistryImagesPage, meta: { section: "operations", crumbKey: "crumb.registryImages" } },
   { path: "/running-jobs", name: "running-jobs", component: RunningJobsPage, meta: { section: "operations", crumbKey: "crumb.runningJobs" } },
   { path: "/wait-queue", name: "wait-queue", component: WaitQueuePage, meta: { section: "operations", crumbKey: "crumb.waitQueue" } },
   { path: "/approvals", name: "approvals", component: ApprovalsCenterPage, meta: { section: "operations", crumbKey: "crumb.approvals" } },

@@ -59,9 +59,8 @@
 
 | Tool | Scope | Why |
 |---|---|---|
-| `gh` CLI | bootstrap scripts | настройка GitHub secrets/vars/webhooks |
-| `kubectl` | bootstrap/deploy scripts | применение Kubernetes manifests |
-| `helm` | bootstrap scripts | установка ARC и инфраструктурных компонентов |
+| `gh` CLI | operator diagnostics | ручная проверка GitHub run/status/logs в troubleshooting сценариях |
+| `kubectl` | operator diagnostics | ручная диагностика k8s ресурсов и логов вне runtime API |
 | `openssl` | bootstrap scripts | генерация секретов |
 | `kaniko` | CI build pipeline | сборка образа внутри кластера |
 | `@openai/codex` (CLI) | `services/jobs/agent-runner` runtime | выполнение `codex exec`/`resume` в агентном Job-контуре Day4 |
