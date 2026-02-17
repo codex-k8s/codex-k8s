@@ -53,3 +53,42 @@ type CleanupRegistryImagesRequest struct {
 	KeepTags          int32  `json:"keep_tags"`
 	DryRun            bool   `json:"dry_run"`
 }
+
+type UpsertRepositoryBotParamsRequest struct {
+	BotToken    *string `json:"bot_token"`
+	BotUsername *string `json:"bot_username"`
+	BotEmail    *string `json:"bot_email"`
+}
+
+type UpsertProjectGitHubTokensRequest struct {
+	PlatformToken *string `json:"platform_token"`
+	BotToken      *string `json:"bot_token"`
+	BotUsername   *string `json:"bot_username"`
+	BotEmail      *string `json:"bot_email"`
+}
+
+type UpsertConfigEntryRequest struct {
+	Scope              string   `json:"scope"`
+	Kind               string   `json:"kind"`
+	ProjectID          *string  `json:"project_id"`
+	RepositoryID       *string  `json:"repository_id"`
+	Key                string   `json:"key"`
+	ValuePlain         *string  `json:"value_plain"`
+	ValueSecret        *string  `json:"value_secret"`
+	SyncTargets        []string `json:"sync_targets"`
+	Mutability         string   `json:"mutability"`
+	IsDangerous        bool     `json:"is_dangerous"`
+	DangerousConfirmed bool     `json:"dangerous_confirmed"`
+}
+
+type ImportDocsetRequest struct {
+	RepositoryID string   `json:"repository_id"`
+	DocsetRef    string   `json:"docset_ref"`
+	Locale       string   `json:"locale"`
+	GroupIDs     []string `json:"group_ids"`
+}
+
+type SyncDocsetRequest struct {
+	RepositoryID string `json:"repository_id"`
+	DocsetRef    string `json:"docset_ref"`
+}

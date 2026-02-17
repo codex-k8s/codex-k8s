@@ -121,6 +121,9 @@
 - Для production/CI обязательны раздельные image vars и image repositories на каждый deployable-сервис:
   - шаблон: `CODEXK8S_<SERVICE>_IMAGE`;
   - шаблон: `CODEXK8S_<SERVICE>_INTERNAL_IMAGE_REPOSITORY`.
+- Версии образов задаются в `services.yaml` (`spec.versions`).
+  При изменениях кода сервисов или общих библиотек необходимо обновлять соответствующую версию,
+  иначе build/deploy пропустит пересборку и будет использовать уже существующий тег.
 
 ## Порядок выкладки production (обязателен)
 

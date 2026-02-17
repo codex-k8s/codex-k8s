@@ -18,6 +18,7 @@ type rawHeader struct {
 	Metadata Metadata `yaml:"metadata"`
 	Spec     struct {
 		Project      string                 `yaml:"project"`
+		Versions     map[string]string      `yaml:"versions"`
 		Environments map[string]Environment `yaml:"environments"`
 	} `yaml:"spec"`
 }
@@ -47,6 +48,60 @@ func Load(path string, opts LoadOptions) (LoadResult, error) {
 		return zero, err
 	}
 	rendered, err := renderTemplate(absPath, rawMerged, ctx)
+	if err != nil {
+		return zero, err
+	}
+
+	var stack Stack
+	if err := yaml.Unmarshal(rendered, &stack); err != nil {
+		return zero, fmt.Errorf("parse rendered services.yaml: %w", err)
+	}
+	normalizeRootDefaults(&stack, ctx)
+	if err := applyServiceComponents(&stack); err != nil {
+		return zero, err
+	}
+	if err := normalizeAndValidate(&stack, ctx.Env); err != nil {
+		return zero, err
+	}
+
+	if strings.TrimSpace(opts.Namespace) == "" {
+		envCfg, err := ResolveEnvironment(&stack, ctx.Env)
+		if err != nil {
+			return zero, err
+		}
+		if strings.TrimSpace(envCfg.NamespaceTemplate) != "" {
+			nsRaw, err := renderTemplate("namespace", []byte(envCfg.NamespaceTemplate), ctx)
+			if err != nil {
+				return zero, fmt.Errorf("render namespace template: %w", err)
+			}
+			if ns := strings.TrimSpace(string(nsRaw)); ns != "" {
+				ctx.Namespace = ns
+			}
+		}
+	}
+
+	return LoadResult{
+		Stack:   &stack,
+		Context: ctx,
+		RawYAML: rendered,
+	}, nil
+}
+
+// LoadFromYAML parses, renders and validates services.yaml contract from in-memory YAML bytes.
+//
+// This loader does not resolve `spec.imports` because it has no filesystem context.
+// It is intended for preflight checks and other read-only operations.
+func LoadFromYAML(raw []byte, opts LoadOptions) (LoadResult, error) {
+	var zero LoadResult
+	if len(raw) == 0 {
+		return zero, fmt.Errorf("yaml bytes are empty")
+	}
+
+	ctx, err := buildContext(raw, opts)
+	if err != nil {
+		return zero, err
+	}
+	rendered, err := renderTemplate("services.yaml", raw, ctx)
 	if err != nil {
 		return zero, err
 	}
@@ -136,6 +191,9 @@ func ResolveEnvironment(stack *Stack, envName string) (Environment, error) {
 		merged := base
 		if strings.TrimSpace(current.NamespaceTemplate) != "" {
 			merged.NamespaceTemplate = current.NamespaceTemplate
+		}
+		if strings.TrimSpace(current.DomainTemplate) != "" {
+			merged.DomainTemplate = current.DomainTemplate
 		}
 		if strings.TrimSpace(current.ImagePullPolicy) != "" {
 			merged.ImagePullPolicy = current.ImagePullPolicy
@@ -315,12 +373,16 @@ func buildContext(raw []byte, opts LoadOptions) (ResolvedContext, error) {
 		Project:   project,
 		Slot:      opts.Slot,
 		Vars:      cloneStringMap(opts.Vars),
+		Versions:  cloneStringMap(header.Spec.Versions),
 	}
 	if ctx.Env == "" {
 		ctx.Env = "production"
 	}
 	if ctx.Vars == nil {
 		ctx.Vars = make(map[string]string)
+	}
+	if ctx.Versions == nil {
+		ctx.Versions = make(map[string]string)
 	}
 
 	if ctx.Namespace != "" {
@@ -388,6 +450,9 @@ func resolveEnvironmentFromMap(environments map[string]Environment, envName stri
 		merged := base
 		if strings.TrimSpace(current.NamespaceTemplate) != "" {
 			merged.NamespaceTemplate = current.NamespaceTemplate
+		}
+		if strings.TrimSpace(current.DomainTemplate) != "" {
+			merged.DomainTemplate = current.DomainTemplate
 		}
 		if strings.TrimSpace(current.ImagePullPolicy) != "" {
 			merged.ImagePullPolicy = current.ImagePullPolicy

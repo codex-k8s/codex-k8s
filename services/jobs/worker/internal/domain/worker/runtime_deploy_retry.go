@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -19,7 +20,24 @@ func (s *Service) prepareRuntimeEnvironmentWithRetry(ctx context.Context, params
 	attempt := 0
 	for {
 		attempt++
-		prepared, err := s.deployer.PrepareRunEnvironment(ctx, params)
+
+		// PrepareRunEnvironment is implemented as a blocking unary RPC on control-plane side
+		// (it waits until runtime deploy task becomes terminal). Keep per-attempt context short
+		// to avoid long-lived idle gRPC calls being terminated by infrastructure timeouts.
+		attemptTimeout := s.cfg.RuntimePrepareRetryInterval * 4
+		if attemptTimeout <= 0 {
+			attemptTimeout = 15 * time.Second
+		}
+		if attemptTimeout < 5*time.Second {
+			attemptTimeout = 5 * time.Second
+		}
+		if attemptTimeout > 30*time.Second {
+			attemptTimeout = 30 * time.Second
+		}
+
+		attemptCtx, cancel := context.WithTimeout(ctx, attemptTimeout)
+		prepared, err := s.deployer.PrepareRunEnvironment(attemptCtx, params)
+		cancel()
 		if err == nil {
 			return prepared, nil
 		}
@@ -58,6 +76,26 @@ func isRetryableRuntimeDeployError(err error) bool {
 	switch st.Code() {
 	case codes.Unavailable, codes.DeadlineExceeded, codes.Canceled, codes.Aborted, codes.ResourceExhausted:
 		return true
+	case codes.Internal:
+		// Control-plane may wrap transient infra errors into Internal. Treat the most common
+		// cases as retryable to avoid stuck runs when DB/control-plane temporarily restarts.
+		msg := strings.ToLower(strings.TrimSpace(st.Message()))
+		if msg == "" {
+			return false
+		}
+		if strings.Contains(msg, "context deadline exceeded") {
+			return true
+		}
+		if strings.Contains(msg, "context canceled") {
+			return true
+		}
+		if strings.Contains(msg, "connection refused") || strings.Contains(msg, "dial tcp") {
+			return true
+		}
+		if strings.Contains(msg, "connection reset") || strings.Contains(msg, "broken pipe") {
+			return true
+		}
+		return false
 	default:
 		return false
 	}

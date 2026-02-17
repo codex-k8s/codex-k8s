@@ -58,6 +58,14 @@ spec:
           port: 9090
         - protocol: TCP
           port: 8081
+    # Allow platform pods to query the internal registry (staff: Registry Images).
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: codex-k8s-registry
+      ports:
+        - protocol: TCP
+          port: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_PORT" "" }}
     - to:
         - namespaceSelector:
             matchLabels:

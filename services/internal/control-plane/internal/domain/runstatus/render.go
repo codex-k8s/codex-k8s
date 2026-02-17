@@ -46,6 +46,8 @@ type commentTemplateContext struct {
 	IsRunFailed    bool
 	Deleted        bool
 	AlreadyDeleted bool
+
+	NeedsCodexAuth bool
 }
 
 func renderCommentBody(state commentState, managementURL string) (string, error) {
@@ -100,6 +102,8 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 		IsRunFailed:    normalizedRunStatus == runStatusFailed,
 		Deleted:        state.Deleted,
 		AlreadyDeleted: state.AlreadyDeleted,
+
+		NeedsCodexAuth: state.Phase == PhaseAuthRequired,
 	}
 }
 

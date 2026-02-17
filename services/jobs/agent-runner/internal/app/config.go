@@ -31,7 +31,7 @@ type Config struct {
 	PromptTemplateLocale string `env:"CODEXK8S_PROMPT_TEMPLATE_LOCALE" envDefault:"ru"`
 	StateInReviewLabel   string `env:"CODEXK8S_STATE_IN_REVIEW_LABEL" envDefault:"state:in-review"`
 	AgentModel           string `env:"CODEXK8S_AGENT_MODEL"`
-	AgentReasoningEffort string `env:"CODEXK8S_AGENT_REASONING_EFFORT" envDefault:"high"`
+	AgentReasoningEffort string `env:"CODEXK8S_AGENT_REASONING_EFFORT" envDefault:"xhigh"`
 	AgentBaseBranch      string `env:"CODEXK8S_AGENT_BASE_BRANCH" envDefault:"main"`
 	AgentDisplayName     string `env:"CODEXK8S_AGENT_DISPLAY_NAME,required,notEmpty"`
 
@@ -39,7 +39,6 @@ type Config struct {
 	GitBotUsername string `env:"CODEXK8S_GIT_BOT_USERNAME,required,notEmpty"`
 	GitBotMail     string `env:"CODEXK8S_GIT_BOT_MAIL,required,notEmpty"`
 	OpenAIAPIKey   string `env:"CODEXK8S_OPENAI_API_KEY"`
-	OpenAIAuthFile string `env:"CODEXK8S_OPENAI_AUTH_FILE"`
 }
 
 // LoadConfig parses and validates configuration from environment.
@@ -74,22 +73,19 @@ func LoadConfig() (Config, error) {
 	if cfg.StateInReviewLabel == "" {
 		cfg.StateInReviewLabel = stateInReviewLabelDefault
 	}
-	cfg.OpenAIAuthFile = strings.TrimSpace(cfg.OpenAIAuthFile)
-	hasOpenAIAuthFile := cfg.OpenAIAuthFile != ""
 
 	cfg.AgentModel = strings.TrimSpace(cfg.AgentModel)
 	if cfg.AgentModel == "" {
-		if hasOpenAIAuthFile {
-			cfg.AgentModel = modelGPT53Codex
-		} else {
-			cfg.AgentModel = modelGPT52Codex
-		}
-	} else if (strings.EqualFold(cfg.AgentModel, modelGPT53Codex) || strings.EqualFold(cfg.AgentModel, modelGPT53CodexSpark)) && !hasOpenAIAuthFile {
 		cfg.AgentModel = modelGPT52Codex
 	}
 	cfg.AgentReasoningEffort = strings.TrimSpace(strings.ToLower(cfg.AgentReasoningEffort))
+	// Codex CLI expects "xhigh" for the highest reasoning effort.
+	switch cfg.AgentReasoningEffort {
+	case "extra-high", "extra_high", "extra high", "x-high":
+		cfg.AgentReasoningEffort = "xhigh"
+	}
 	if cfg.AgentReasoningEffort == "" {
-		cfg.AgentReasoningEffort = "high"
+		cfg.AgentReasoningEffort = "xhigh"
 	}
 	cfg.AgentBaseBranch = strings.TrimSpace(cfg.AgentBaseBranch)
 	if cfg.AgentBaseBranch == "" {
@@ -114,9 +110,6 @@ func LoadConfig() (Config, error) {
 	cfg.GitBotUsername = strings.TrimSpace(cfg.GitBotUsername)
 	cfg.GitBotMail = strings.TrimSpace(cfg.GitBotMail)
 	cfg.OpenAIAPIKey = strings.TrimSpace(cfg.OpenAIAPIKey)
-	if !hasOpenAIAuthFile && cfg.OpenAIAPIKey == "" {
-		return Config{}, fmt.Errorf("CODEXK8S_OPENAI_API_KEY is required when CODEXK8S_OPENAI_AUTH_FILE is empty")
-	}
 
 	return cfg, nil
 }

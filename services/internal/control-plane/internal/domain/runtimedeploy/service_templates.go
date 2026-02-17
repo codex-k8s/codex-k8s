@@ -52,7 +52,9 @@ func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[
 	// Manifests and runtime prerequisites rely on CODEXK8S_ENV / CODEXK8S_SERVICES_CONFIG_ENV.
 	vars["CODEXK8S_ENV"] = targetEnv
 	vars["CODEXK8S_SERVICES_CONFIG_ENV"] = targetEnv
-	vars["CODEXK8S_HOT_RELOAD"] = defaultHotReloadFlag(targetEnv)
+	if strings.TrimSpace(vars["CODEXK8S_HOT_RELOAD"]) == "" {
+		vars["CODEXK8S_HOT_RELOAD"] = defaultHotReloadFlag(targetEnv)
+	}
 	// AI hot-reload requires Go sources to stay in the image; disable kaniko cleanup by default.
 	if strings.EqualFold(strings.TrimSpace(targetEnv), "ai") {
 		if strings.TrimSpace(vars["CODEXK8S_KANIKO_CLEANUP"]) == "" {
@@ -97,9 +99,6 @@ func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[
 	vars["CODEXK8S_BUILD_TAG"] = sanitizeImageTag(buildRef)
 	if repo := strings.TrimSpace(params.RepositoryFullName); repo != "" {
 		vars["CODEXK8S_GITHUB_REPO"] = repo
-	}
-	if strings.TrimSpace(vars["CODEXK8S_WORKER_JOB_IMAGE"]) == "" {
-		vars["CODEXK8S_WORKER_JOB_IMAGE"] = strings.TrimSpace(vars["CODEXK8S_AGENT_RUNNER_IMAGE"])
 	}
 	if strings.TrimSpace(vars["CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS"]) == "" {
 		vars["CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS"] = defaultPlatformDeploymentReplicas(params.TargetEnv)

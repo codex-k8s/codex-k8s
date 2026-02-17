@@ -31,9 +31,13 @@ func ParseEventType(value string) (floweventdomain.EventType, error) {
 		floweventdomain.EventTypeRunAgentSessionRestored,
 		floweventdomain.EventTypeRunAgentSessionSaved,
 		floweventdomain.EventTypeRunAgentResumeUsed,
+		floweventdomain.EventTypeRunCodexAuthRequired,
+		floweventdomain.EventTypeRunCodexAuthSynchronized,
 		floweventdomain.EventTypeRunPRCreated,
 		floweventdomain.EventTypeRunPRUpdated,
 		floweventdomain.EventTypeRunRevisePRNotFound,
+		floweventdomain.EventTypeRunSelfImproveDiagnosisReady,
+		floweventdomain.EventTypeRunToolchainGapDetected,
 		floweventdomain.EventTypeRunFailedPrecondition:
 		return eventType, nil
 	default:

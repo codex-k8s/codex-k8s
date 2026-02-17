@@ -1,4 +1,6 @@
-FROM mirror.gcr.io/library/golang:1.25.6-alpine AS builder
+ARG GOLANG_IMAGE=127.0.0.1:5000/codex-k8s/mirror/golang:1.25.6-alpine
+
+FROM ${GOLANG_IMAGE} AS builder
 
 WORKDIR /workspace
 
@@ -12,7 +14,7 @@ RUN go install github.com/pressly/goose/v3/cmd/goose@v3.26.0
 RUN go install github.com/githubnemo/CompileDaemon@v1.4.0
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/codex-k8s-control-plane ./services/internal/control-plane/cmd/control-plane
 
-FROM mirror.gcr.io/library/golang:1.25.6-alpine
+FROM ${GOLANG_IMAGE}
 
 RUN addgroup -S app && adduser -S app -G app
 

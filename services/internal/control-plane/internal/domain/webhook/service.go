@@ -64,6 +64,7 @@ type Service struct {
 	learningModeDefault bool
 	triggerLabels       TriggerLabels
 	runtimeModePolicy   RuntimeModePolicy
+	platformNamespace   string
 }
 
 // Config wires webhook domain dependencies.
@@ -71,6 +72,7 @@ type Config struct {
 	LearningModeDefault bool
 	TriggerLabels       TriggerLabels
 	RuntimeModePolicy   RuntimeModePolicy
+	PlatformNamespace   string
 	RunStatus           runStatusService
 	Members             projectmemberrepo.Repository
 	Users               userrepo.Repository
@@ -97,6 +99,7 @@ func NewService(cfg Config) *Service {
 		learningModeDefault: cfg.LearningModeDefault,
 		triggerLabels:       triggerLabels,
 		runtimeModePolicy:   cfg.RuntimeModePolicy.withDefaults(),
+		platformNamespace:   strings.TrimSpace(cfg.PlatformNamespace),
 	}
 }
 
@@ -444,7 +447,7 @@ func (s *Service) resolvePushMainDeploy(eventType string, envelope githubWebhook
 	target := pushMainDeployTarget{
 		BuildRef:  buildRef,
 		TargetEnv: "production",
-		Namespace: "",
+		Namespace: s.platformNamespace,
 	}
 	return target, true
 }

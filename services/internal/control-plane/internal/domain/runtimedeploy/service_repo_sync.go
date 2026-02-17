@@ -86,7 +86,9 @@ func (s *Service) resolveRunRepositoryRoot(ctx context.Context, params PreparePa
 		return "", fmt.Errorf("resolve repository snapshot path: empty")
 	}
 
-	if _, err := os.Stat(filepath.Join(repoRoot, ".git")); err == nil {
+	// Immutable refs (commit hashes) can reuse the snapshot without refresh.
+	// Mutable refs (branches/tags) must be refreshed to avoid stale templates/migrations.
+	if _, err := os.Stat(filepath.Join(repoRoot, ".git")); err == nil && isImmutableGitRef(buildRef) {
 		return repoRoot, nil
 	}
 
@@ -116,6 +118,24 @@ func looksLikeRepositoryRoot(root string) bool {
 		return true
 	}
 	return false
+}
+
+func isImmutableGitRef(ref string) bool {
+	ref = strings.TrimSpace(ref)
+	if ref == "" {
+		return false
+	}
+	ref = strings.ToLower(ref)
+	if len(ref) != 40 && len(ref) != 64 {
+		return false
+	}
+	for _, c := range ref {
+		if (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') {
+			continue
+		}
+		return false
+	}
+	return true
 }
 
 func (s *Service) repoSnapshotPath(owner string, name string, buildRef string) string {
@@ -169,11 +189,6 @@ func (s *Service) ensureRepoSnapshot(ctx context.Context, platformNamespace stri
 	repoRoot = strings.TrimSpace(repoRoot)
 	if repoRoot == "" {
 		return fmt.Errorf("repo_root is required")
-	}
-
-	// If snapshot is already present, skip the job.
-	if _, err := os.Stat(filepath.Join(repoRoot, ".git")); err == nil {
-		return nil
 	}
 
 	token := strings.TrimSpace(s.cfg.GitHubPAT)

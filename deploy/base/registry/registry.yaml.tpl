@@ -11,6 +11,21 @@ spec:
     requests:
       storage: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE" "" }}
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_SERVICE" "" }}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+  labels:
+    app.kubernetes.io/name: codex-k8s-registry
+spec:
+  selector:
+    app.kubernetes.io/name: codex-k8s-registry
+  ports:
+    - name: registry
+      port: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_PORT" "" }}
+      targetPort: registry
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -30,8 +45,6 @@ spec:
       labels:
         app.kubernetes.io/name: codex-k8s-registry
     spec:
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: registry
           image: {{ envOr "CODEXK8S_REGISTRY_IMAGE" "registry:2" }}
@@ -39,22 +52,21 @@ spec:
           ports:
             - name: registry
               containerPort: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_PORT" "" }}
+              hostPort: {{ envOr "CODEXK8S_INTERNAL_REGISTRY_PORT" "" }}
+              hostIP: 127.0.0.1
           env:
-            # No auth by design for MVP: production registry is bound to node loopback only.
             - name: REGISTRY_HTTP_ADDR
-              value: '127.0.0.1:{{ envOr "CODEXK8S_INTERNAL_REGISTRY_PORT" "" }}'
+              value: ':{{ envOr "CODEXK8S_INTERNAL_REGISTRY_PORT" "" }}'
             - name: REGISTRY_STORAGE_DELETE_ENABLED
               value: "true"
           readinessProbe:
             httpGet:
-              host: 127.0.0.1
               path: /v2/
               port: registry
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              host: 127.0.0.1
               path: /v2/
               port: registry
             initialDelaySeconds: 15

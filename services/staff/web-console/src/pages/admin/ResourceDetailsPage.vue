@@ -2,7 +2,7 @@
   <div>
     <PageHeader :title="title">
       <template #leading>
-        <AdaptiveBtn variant="text" icon="mdi-arrow-left" :label="t('common.back')" :to="backTo" />
+        <BackBtn :label="t('common.back')" :to="backTo" />
       </template>
       <template #actions>
         <CopyChip :label="t('cluster.namespace')" :value="uiContext.namespace || '-'" icon="mdi-kubernetes" />
@@ -153,6 +153,7 @@ import { useI18n } from "vue-i18n";
 
 import AdminClusterContextBar from "../../shared/ui/AdminClusterContextBar.vue";
 import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
+import BackBtn from "../../shared/ui/BackBtn.vue";
 import CopyChip from "../../shared/ui/CopyChip.vue";
 import DismissibleWarningAlert from "../../shared/ui/DismissibleWarningAlert.vue";
 import LogsViewer from "../../shared/ui/LogsViewer.vue";

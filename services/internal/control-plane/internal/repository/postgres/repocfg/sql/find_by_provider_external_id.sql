@@ -4,4 +4,3 @@ FROM repositories
 WHERE provider = $1
   AND external_id = $2
 LIMIT 1;
-

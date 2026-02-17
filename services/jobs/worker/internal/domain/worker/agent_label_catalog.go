@@ -4,10 +4,11 @@ const (
 	labelKindAIModel     = "ai-model"
 	labelKindAIReasoning = "ai-reasoning"
 
-	reasoningEffortLow       = "low"
-	reasoningEffortMedium    = "medium"
-	reasoningEffortHigh      = "high"
-	reasoningEffortExtraHigh = "extra-high"
+	reasoningEffortLow    = "low"
+	reasoningEffortMedium = "medium"
+	reasoningEffortHigh   = "high"
+	// Codex CLI uses "xhigh" for the highest reasoning effort.
+	reasoningEffortExtraHigh = "xhigh"
 
 	defaultAIModelGPT53CodexLabel      = "ai-model-gpt-5.3-codex"
 	defaultAIModelGPT53CodexSparkLabel = "ai-model-gpt-5.3-codex-spark"

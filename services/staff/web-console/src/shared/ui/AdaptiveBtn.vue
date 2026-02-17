@@ -13,10 +13,12 @@
   <VBtn
     v-else
     v-bind="attrs"
-    :icon="icon"
+    icon
     :title="titleValue"
     :aria-label="titleValue"
-  />
+  >
+    <VIcon :icon="icon" />
+  </VBtn>
 </template>
 
 <script setup lang="ts">

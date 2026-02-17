@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1.4
 ARG NODE_IMAGE_VERSION=22-bookworm
 ARG NGINX_IMAGE_VERSION=1.27-alpine
-ARG NODE_IMAGE_REPOSITORY=mirror.gcr.io/library/node
-ARG NGINX_IMAGE_REPOSITORY=mirror.gcr.io/library/nginx
+ARG NODE_IMAGE_REPOSITORY=127.0.0.1:5000/codex-k8s/mirror/node
+ARG NGINX_IMAGE_REPOSITORY=127.0.0.1:5000/codex-k8s/mirror/nginx
 
 FROM ${NODE_IMAGE_REPOSITORY}:${NODE_IMAGE_VERSION} AS deps
 

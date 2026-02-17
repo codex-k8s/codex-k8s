@@ -24,7 +24,7 @@ spec:
           emptyDir: {}
       initContainers:
         - name: clone
-          image: {{ envOr "CODEXK8S_KANIKO_CLONE_IMAGE" "alpine/git:2.47.2" }}
+          image: {{ envOr "CODEXK8S_KANIKO_CLONE_IMAGE" "127.0.0.1:5000/codex-k8s/mirror/alpine-git:2.47.2" }}
           imagePullPolicy: IfNotPresent
           env:
             - name: GIT_TOKEN
@@ -49,7 +49,7 @@ spec:
               mountPath: /workspace
       containers:
         - name: kaniko
-          image: {{ envOr "CODEXK8S_KANIKO_EXECUTOR_IMAGE" "gcr.io/kaniko-project/executor:v1.23.2-debug" }}
+          image: {{ envOr "CODEXK8S_KANIKO_EXECUTOR_IMAGE" "127.0.0.1:5000/codex-k8s/mirror/kaniko-executor:v1.23.2-debug" }}
           imagePullPolicy: IfNotPresent
           args:
             - --context={{ envOr "CODEXK8S_KANIKO_CONTEXT" "" }}

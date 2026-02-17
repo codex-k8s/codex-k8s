@@ -1,4 +1,7 @@
-FROM mirror.gcr.io/library/node:22-alpine AS web
+ARG NODE_IMAGE=127.0.0.1:5000/codex-k8s/mirror/node:22-alpine
+ARG GOLANG_IMAGE=127.0.0.1:5000/codex-k8s/mirror/golang:1.25.6-alpine
+
+FROM ${NODE_IMAGE} AS web
 
 WORKDIR /web
 
@@ -8,7 +11,7 @@ RUN npm ci
 COPY services/staff/web-console/ ./
 RUN npm run build
 
-FROM mirror.gcr.io/library/golang:1.25.6-alpine AS builder
+FROM ${GOLANG_IMAGE} AS builder
 
 WORKDIR /workspace
 
@@ -21,7 +24,7 @@ RUN go mod download
 RUN go install github.com/githubnemo/CompileDaemon@v1.4.0
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/codex-k8s ./services/external/api-gateway/cmd/api-gateway
 
-FROM mirror.gcr.io/library/golang:1.25.6-alpine
+FROM ${GOLANG_IMAGE}
 
 RUN addgroup -S app && adduser -S app -G app
 

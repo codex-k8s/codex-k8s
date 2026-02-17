@@ -24,6 +24,10 @@ type JobSpec = libslauncher.JobSpec
 type Launcher interface {
 	// JobRef builds deterministic Job reference for run id.
 	JobRef(runID string, namespace string) JobRef
+	// FindRunJobRefByRunID resolves Kubernetes Job reference by run-id label across namespaces.
+	// Used when run job is created outside of the default full-env namespace strategy
+	// (for example, inside a persistent slot namespace).
+	FindRunJobRefByRunID(ctx context.Context, runID string) (JobRef, bool, error)
 	// EnsureNamespace prepares namespace baseline for full-env execution.
 	EnsureNamespace(ctx context.Context, spec NamespaceSpec) error
 	// CleanupNamespace removes runtime namespace after run completion.

@@ -14,6 +14,7 @@ import (
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
+	configentryrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/configentry"
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/staffrun"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
@@ -56,6 +57,11 @@ type runtimeDeployService interface {
 	PrepareRunEnvironment(ctx context.Context, params runtimedeploydomain.PrepareParams) (runtimedeploydomain.PrepareResult, error)
 }
 
+type codexAuthService interface {
+	Get(ctx context.Context) ([]byte, bool, error)
+	Upsert(ctx context.Context, authJSON []byte) error
+}
+
 // Dependencies wires domain services and repositories into the gRPC transport.
 type Dependencies struct {
 	Webhook        webhookIngress
@@ -65,6 +71,7 @@ type Dependencies struct {
 	RunStatus      runStatusService
 	RuntimeDeploy  runtimeDeployService
 	MCP            mcpRunTokenService
+	CodexAuth      codexAuthService
 	Logger         *slog.Logger
 }
 
@@ -79,6 +86,7 @@ type Server struct {
 	runStatus      runStatusService
 	runtimeDeploy  runtimeDeployService
 	mcp            mcpRunTokenService
+	codexAuth      codexAuthService
 	logger         *slog.Logger
 }
 
@@ -91,6 +99,7 @@ func NewServer(deps Dependencies) *Server {
 		runStatus:      deps.RunStatus,
 		runtimeDeploy:  deps.RuntimeDeploy,
 		mcp:            deps.MCP,
+		codexAuth:      deps.CodexAuth,
 		logger:         deps.Logger,
 	}
 }
@@ -621,14 +630,20 @@ func (s *Server) ListProjectRepositories(ctx context.Context, req *controlplanev
 	}
 	out := make([]*controlplanev1.RepositoryBinding, 0, len(items))
 	for _, r := range items {
+		botUsername := strings.TrimSpace(r.BotUsername)
+		botEmail := strings.TrimSpace(r.BotEmail)
+		preflightUpdatedAt := strings.TrimSpace(r.PreflightUpdatedAt)
 		out = append(out, &controlplanev1.RepositoryBinding{
-			Id:               r.ID,
-			ProjectId:        r.ProjectID,
-			Provider:         r.Provider,
-			ExternalId:       r.ExternalID,
-			Owner:            r.Owner,
-			Name:             r.Name,
-			ServicesYamlPath: r.ServicesYAMLPath,
+			Id:                 r.ID,
+			ProjectId:          r.ProjectID,
+			Provider:           r.Provider,
+			ExternalId:         r.ExternalID,
+			Owner:              r.Owner,
+			Name:               r.Name,
+			ServicesYamlPath:   r.ServicesYAMLPath,
+			BotUsername:        stringPtrOrNil(botUsername),
+			BotEmail:           stringPtrOrNil(botEmail),
+			PreflightUpdatedAt: stringPtrOrNil(preflightUpdatedAt),
 		})
 	}
 	return &controlplanev1.ListProjectRepositoriesResponse{Items: out}, nil
@@ -652,19 +667,276 @@ func (s *Server) UpsertProjectRepository(ctx context.Context, req *controlplanev
 	if err != nil {
 		return nil, toStatus(err)
 	}
+	botUsername := strings.TrimSpace(item.BotUsername)
+	botEmail := strings.TrimSpace(item.BotEmail)
+	preflightUpdatedAt := strings.TrimSpace(item.PreflightUpdatedAt)
 	return &controlplanev1.RepositoryBinding{
-		Id:               item.ID,
-		ProjectId:        item.ProjectID,
-		Provider:         item.Provider,
-		ExternalId:       item.ExternalID,
-		Owner:            item.Owner,
-		Name:             item.Name,
-		ServicesYamlPath: item.ServicesYAMLPath,
+		Id:                 item.ID,
+		ProjectId:          item.ProjectID,
+		Provider:           item.Provider,
+		ExternalId:         item.ExternalID,
+		Owner:              item.Owner,
+		Name:               item.Name,
+		ServicesYamlPath:   item.ServicesYAMLPath,
+		BotUsername:        stringPtrOrNil(botUsername),
+		BotEmail:           stringPtrOrNil(botEmail),
+		PreflightUpdatedAt: stringPtrOrNil(preflightUpdatedAt),
 	}, nil
 }
 
 func (s *Server) DeleteProjectRepository(ctx context.Context, req *controlplanev1.DeleteProjectRepositoryRequest) (*emptypb.Empty, error) {
 	return s.delete2(ctx, req.GetPrincipal(), req.ProjectId, req.RepositoryId, s.staff.DeleteProjectRepository)
+}
+
+func (s *Server) UpsertRepositoryBotParams(ctx context.Context, req *controlplanev1.UpsertRepositoryBotParamsRequest) (*emptypb.Empty, error) {
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	var botToken *string
+	if req.BotToken != nil {
+		v := strings.TrimSpace(*req.BotToken)
+		botToken = &v
+	}
+	var botUsername *string
+	if req.BotUsername != nil {
+		v := strings.TrimSpace(*req.BotUsername)
+		botUsername = &v
+	}
+	var botEmail *string
+	if req.BotEmail != nil {
+		v := strings.TrimSpace(*req.BotEmail)
+		botEmail = &v
+	}
+	if err := s.staff.UpsertRepositoryBotParams(ctx, p, strings.TrimSpace(req.ProjectId), strings.TrimSpace(req.RepositoryId), botToken, botUsername, botEmail); err != nil {
+		return nil, toStatus(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (s *Server) RunRepositoryPreflight(ctx context.Context, req *controlplanev1.RunRepositoryPreflightRequest) (*controlplanev1.RunRepositoryPreflightResponse, error) {
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	report, err := s.staff.RunRepositoryPreflight(ctx, p, strings.TrimSpace(req.ProjectId), strings.TrimSpace(req.RepositoryId))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	checks := make([]*controlplanev1.PreflightCheckResult, 0, len(report.Checks))
+	for _, c := range report.Checks {
+		checks = append(checks, &controlplanev1.PreflightCheckResult{
+			Name:    c.Name,
+			Status:  c.Status,
+			Details: stringPtrOrNil(strings.TrimSpace(c.Details)),
+		})
+	}
+	encoded, _ := json.Marshal(report)
+	finished := timestamppb.New(report.FinishedAt.UTC())
+	return &controlplanev1.RunRepositoryPreflightResponse{
+		RepositoryId: strings.TrimSpace(req.RepositoryId),
+		Status:       report.Status,
+		Checks:       checks,
+		ReportJson:   string(encoded),
+		FinishedAt:   finished,
+	}, nil
+}
+
+func (s *Server) GetProjectGitHubTokens(ctx context.Context, req *controlplanev1.GetProjectGitHubTokensRequest) (*controlplanev1.ProjectGitHubTokens, error) {
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	item, ok, err := s.staff.GetProjectGitHubTokens(ctx, p, strings.TrimSpace(req.ProjectId))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	if !ok {
+		return &controlplanev1.ProjectGitHubTokens{ProjectId: strings.TrimSpace(req.ProjectId)}, nil
+	}
+	return &controlplanev1.ProjectGitHubTokens{
+		ProjectId:        item.ProjectID,
+		HasPlatformToken: item.HasPlatformToken,
+		HasBotToken:      item.HasBotToken,
+		BotUsername:      stringPtrOrNil(strings.TrimSpace(item.BotUsername)),
+		BotEmail:         stringPtrOrNil(strings.TrimSpace(item.BotEmail)),
+	}, nil
+}
+
+func (s *Server) UpsertProjectGitHubTokens(ctx context.Context, req *controlplanev1.UpsertProjectGitHubTokensRequest) (*emptypb.Empty, error) {
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	var platformToken *string
+	if req.PlatformToken != nil {
+		v := strings.TrimSpace(*req.PlatformToken)
+		platformToken = &v
+	}
+	var botToken *string
+	if req.BotToken != nil {
+		v := strings.TrimSpace(*req.BotToken)
+		botToken = &v
+	}
+	var botUsername *string
+	if req.BotUsername != nil {
+		v := strings.TrimSpace(*req.BotUsername)
+		botUsername = &v
+	}
+	var botEmail *string
+	if req.BotEmail != nil {
+		v := strings.TrimSpace(*req.BotEmail)
+		botEmail = &v
+	}
+	if err := s.staff.UpsertProjectGitHubTokens(ctx, p, strings.TrimSpace(req.ProjectId), platformToken, botToken, botUsername, botEmail); err != nil {
+		return nil, toStatus(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (s *Server) ListConfigEntries(ctx context.Context, req *controlplanev1.ListConfigEntriesRequest) (*controlplanev1.ListConfigEntriesResponse, error) {
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	scope := strings.TrimSpace(req.Scope)
+	projectID := strings.TrimSpace(req.GetProjectId())
+	repositoryID := strings.TrimSpace(req.GetRepositoryId())
+	limit := clampLimit(req.Limit, 200)
+	items, err := s.staff.ListConfigEntries(ctx, p, scope, projectID, repositoryID, limit)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	out := make([]*controlplanev1.ConfigEntry, 0, len(items))
+	for _, item := range items {
+		out = append(out, &controlplanev1.ConfigEntry{
+			Id:           item.ID,
+			Scope:        item.Scope,
+			Kind:         item.Kind,
+			ProjectId:    stringPtrOrNil(strings.TrimSpace(item.ProjectID)),
+			RepositoryId: stringPtrOrNil(strings.TrimSpace(item.RepositoryID)),
+			Key:          item.Key,
+			Value:        stringPtrOrNil(strings.TrimSpace(item.Value)),
+			SyncTargets:  item.SyncTargets,
+			Mutability:   item.Mutability,
+			IsDangerous:  item.IsDangerous,
+			UpdatedAt:    stringPtrOrNil(strings.TrimSpace(item.UpdatedAt)),
+		})
+	}
+	return &controlplanev1.ListConfigEntriesResponse{Items: out}, nil
+}
+
+func (s *Server) UpsertConfigEntry(ctx context.Context, req *controlplanev1.UpsertConfigEntryRequest) (*controlplanev1.ConfigEntry, error) {
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	valueSecret := strings.TrimSpace(req.GetValueSecret())
+	var encrypted []byte
+	if valueSecret != "" {
+		encrypted, err = s.staff.EncryptSecretValue(valueSecret)
+		if err != nil {
+			return nil, toStatus(err)
+		}
+	}
+	item, err := s.staff.UpsertConfigEntry(ctx, p, configentryrepo.UpsertParams{
+		Scope:           strings.TrimSpace(req.Scope),
+		Kind:            strings.TrimSpace(req.Kind),
+		ProjectID:       strings.TrimSpace(req.GetProjectId()),
+		RepositoryID:    strings.TrimSpace(req.GetRepositoryId()),
+		Key:             strings.TrimSpace(req.Key),
+		ValuePlain:      strings.TrimSpace(req.GetValuePlain()),
+		ValueEncrypted:  encrypted,
+		SyncTargets:     req.SyncTargets,
+		Mutability:      strings.TrimSpace(req.Mutability),
+		IsDangerous:     req.IsDangerous,
+		CreatedByUserID: p.UserID,
+	}, req.DangerousConfirmed)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return &controlplanev1.ConfigEntry{
+		Id:           item.ID,
+		Scope:        item.Scope,
+		Kind:         item.Kind,
+		ProjectId:    stringPtrOrNil(strings.TrimSpace(item.ProjectID)),
+		RepositoryId: stringPtrOrNil(strings.TrimSpace(item.RepositoryID)),
+		Key:          item.Key,
+		Value:        stringPtrOrNil(strings.TrimSpace(item.Value)),
+		SyncTargets:  item.SyncTargets,
+		Mutability:   item.Mutability,
+		IsDangerous:  item.IsDangerous,
+		UpdatedAt:    stringPtrOrNil(strings.TrimSpace(item.UpdatedAt)),
+	}, nil
+}
+
+func (s *Server) DeleteConfigEntry(ctx context.Context, req *controlplanev1.DeleteConfigEntryRequest) (*emptypb.Empty, error) {
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	if err := s.staff.DeleteConfigEntry(ctx, p, strings.TrimSpace(req.ConfigEntryId)); err != nil {
+		return nil, toStatus(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (s *Server) ListDocsetGroups(ctx context.Context, req *controlplanev1.ListDocsetGroupsRequest) (*controlplanev1.ListDocsetGroupsResponse, error) {
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	groups, err := s.staff.ListDocsetGroups(ctx, p, strings.TrimSpace(req.DocsetRef), strings.TrimSpace(req.Locale))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	out := make([]*controlplanev1.DocsetGroup, 0, len(groups))
+	for _, g := range groups {
+		out = append(out, &controlplanev1.DocsetGroup{
+			Id:              g.ID,
+			Title:           g.Title,
+			Description:     g.Description,
+			DefaultSelected: g.DefaultSelected,
+		})
+	}
+	return &controlplanev1.ListDocsetGroupsResponse{Groups: out}, nil
+}
+
+func (s *Server) ImportDocset(ctx context.Context, req *controlplanev1.ImportDocsetRequest) (*controlplanev1.ImportDocsetResponse, error) {
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	res, err := s.staff.ImportDocset(ctx, p, strings.TrimSpace(req.ProjectId), strings.TrimSpace(req.RepositoryId), strings.TrimSpace(req.DocsetRef), strings.TrimSpace(req.Locale), req.GroupIds)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return &controlplanev1.ImportDocsetResponse{
+		RepositoryFullName: res.RepositoryFullName,
+		PrNumber:           int32(res.PRNumber),
+		PrUrl:              res.PRURL,
+		Branch:             res.Branch,
+		FilesTotal:         int32(res.FilesTotal),
+	}, nil
+}
+
+func (s *Server) SyncDocset(ctx context.Context, req *controlplanev1.SyncDocsetRequest) (*controlplanev1.SyncDocsetResponse, error) {
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	res, err := s.staff.SyncDocset(ctx, p, strings.TrimSpace(req.ProjectId), strings.TrimSpace(req.RepositoryId), strings.TrimSpace(req.DocsetRef))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return &controlplanev1.SyncDocsetResponse{
+		RepositoryFullName: res.RepositoryFullName,
+		PrNumber:           int32(res.PRNumber),
+		PrUrl:              res.PRURL,
+		Branch:             res.Branch,
+		FilesUpdated:       int32(res.FilesUpdated),
+		FilesDrift:         int32(res.FilesDrift),
+	}, nil
 }
 
 func (s *Server) IssueRunMCPToken(ctx context.Context, req *controlplanev1.IssueRunMCPTokenRequest) (*controlplanev1.IssueRunMCPTokenResponse, error) {
@@ -1085,6 +1357,46 @@ func (s *Server) UpsertRunStatusComment(ctx context.Context, req *controlplanev1
 	}, nil
 }
 
+func (s *Server) GetCodexAuth(ctx context.Context, req *controlplanev1.GetCodexAuthRequest) (*controlplanev1.GetCodexAuthResponse, error) {
+	if s.codexAuth == nil {
+		return nil, status.Error(codes.FailedPrecondition, "codex auth service is not configured")
+	}
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	if _, err := s.authenticateRunToken(ctx); err != nil {
+		return nil, err
+	}
+
+	authJSON, found, err := s.codexAuth.Get(ctx)
+	if err != nil {
+		s.logger.Error("get codex auth via grpc failed", "err", err)
+		return nil, status.Error(codes.Internal, "failed to load codex auth")
+	}
+	return &controlplanev1.GetCodexAuthResponse{
+		Found:    found,
+		AuthJson: authJSON,
+	}, nil
+}
+
+func (s *Server) UpsertCodexAuth(ctx context.Context, req *controlplanev1.UpsertCodexAuthRequest) (*controlplanev1.UpsertCodexAuthResponse, error) {
+	if s.codexAuth == nil {
+		return nil, status.Error(codes.FailedPrecondition, "codex auth service is not configured")
+	}
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	if _, err := s.authenticateRunToken(ctx); err != nil {
+		return nil, err
+	}
+
+	if err := s.codexAuth.Upsert(ctx, req.GetAuthJson()); err != nil {
+		s.logger.Error("upsert codex auth via grpc failed", "err", err)
+		return nil, status.Error(codes.Internal, "failed to persist codex auth")
+	}
+	return &controlplanev1.UpsertCodexAuthResponse{Ok: true}, nil
+}
+
 const sessionStatusRunning = "running"
 
 func (s *Server) authenticateRunToken(ctx context.Context) (mcpdomain.SessionContext, error) {
@@ -1192,6 +1504,18 @@ func userToPrincipal(u userrepo.User) *controlplanev1.Principal {
 func toStatus(err error) error {
 	if err == nil {
 		return nil
+	}
+
+	// Preserve cancellation semantics for callers that implement retry logic based on gRPC codes.
+	if errors.Is(err, context.Canceled) {
+		return status.Error(codes.Canceled, context.Canceled.Error())
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return status.Error(codes.DeadlineExceeded, context.DeadlineExceeded.Error())
+	}
+	// Pass through existing gRPC statuses unchanged.
+	if _, ok := status.FromError(err); ok {
+		return err
 	}
 
 	var v errs.Validation
@@ -1444,6 +1768,8 @@ func parseRunStatusPhase(value string) (runstatusdomain.Phase, error) {
 	switch strings.TrimSpace(value) {
 	case string(runstatusdomain.PhaseStarted):
 		return runstatusdomain.PhaseStarted, nil
+	case string(runstatusdomain.PhaseAuthRequired):
+		return runstatusdomain.PhaseAuthRequired, nil
 	case string(runstatusdomain.PhaseFinished):
 		return runstatusdomain.PhaseFinished, nil
 	case string(runstatusdomain.PhaseNamespaceDeleted):

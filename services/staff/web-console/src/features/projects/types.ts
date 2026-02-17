@@ -1,1 +1,9 @@
-export type { Project, ProjectMember, RepositoryBinding } from "../../shared/api/generated";
+export type {
+  DocsetGroup,
+  ImportDocsetResponse,
+  Project,
+  ProjectMember,
+  RepositoryBinding,
+  RunRepositoryPreflightResponse,
+  SyncDocsetResponse,
+} from "../../shared/api/generated";

@@ -91,11 +91,11 @@ func (s *Service) renderTaskTemplate(templateKind string, repoDir string) (strin
 	return renderTemplate(templateName, templateData)
 }
 
-func (s *Service) writeCodexConfig(codexDir string) error {
+func (s *Service) writeCodexConfig(codexDir string, model string, reasoningEffort string) error {
 	hasContext7 := strings.TrimSpace(os.Getenv(envContext7APIKey)) != ""
 	content, err := renderTemplate(templateNameCodexConfig, codexConfigTemplateData{
-		Model:           s.cfg.AgentModel,
-		ReasoningEffort: s.cfg.AgentReasoningEffort,
+		Model:           strings.TrimSpace(model),
+		ReasoningEffort: strings.TrimSpace(reasoningEffort),
 		MCPBaseURL:      s.cfg.MCPBaseURL,
 		HasContext7:     hasContext7,
 	})
@@ -108,22 +108,6 @@ func (s *Service) writeCodexConfig(codexDir string) error {
 		return fmt.Errorf("write codex config: %w", err)
 	}
 	return nil
-}
-
-func (s *Service) writeCodexAuthFile(codexDir string) (bool, error) {
-	authContent := strings.TrimSpace(s.cfg.OpenAIAuthFile)
-	if authContent == "" {
-		return false, nil
-	}
-	if !json.Valid([]byte(authContent)) {
-		return false, fmt.Errorf("CODEXK8S_OPENAI_AUTH_FILE must be valid JSON")
-	}
-
-	authPath := filepath.Join(codexDir, "auth.json")
-	if err := os.WriteFile(authPath, []byte(authContent), 0o600); err != nil {
-		return false, fmt.Errorf("write codex auth file: %w", err)
-	}
-	return true, nil
 }
 
 func (s *Service) buildPrompt(taskBody string, result runResult) (string, error) {

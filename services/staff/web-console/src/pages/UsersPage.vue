@@ -32,6 +32,18 @@
 
               <template #item.actions="{ item }">
                 <div class="d-flex justify-end">
+                  <VTooltip v-if="canEdit(item.id, item.is_platform_owner)" :text="t('scaffold.rowActions.edit')">
+                    <template #activator="{ props: tipProps }">
+                      <VBtn
+                        v-bind="tipProps"
+                        size="small"
+                        variant="text"
+                        icon="mdi-pencil-outline"
+                        :disabled="users.deleting || users.creating"
+                        @click="openEditDialog(item.email, item.is_platform_admin)"
+                      />
+                    </template>
+                  </VTooltip>
                   <VTooltip v-if="canDelete(item.id, item.is_platform_admin, item.is_platform_owner)" :text="t('common.delete')">
                     <template #activator="{ props: tipProps }">
                       <VBtn
@@ -91,6 +103,25 @@
     danger
     @confirm="doRemove"
   />
+
+  <VDialog v-model="editDialogOpen" max-width="520">
+    <VCard>
+      <VCardTitle class="text-subtitle-1">{{ t("pages.users.editTitle") }}</VCardTitle>
+      <VCardText>
+        <VTextField v-model="editEmail" :label="t('pages.users.email')" disabled />
+        <VCheckbox v-model="editIsAdmin" :label="t('pages.users.platformAdmin')" />
+
+        <VAlert v-if="users.createError" type="error" variant="tonal" class="mt-4">
+          {{ t(users.createError.messageKey) }}
+        </VAlert>
+      </VCardText>
+      <VCardActions>
+        <VSpacer />
+        <VBtn variant="text" :disabled="users.creating" @click="editDialogOpen = false">{{ t("common.cancel") }}</VBtn>
+        <VBtn color="primary" variant="tonal" :loading="users.creating" @click="saveEdit">{{ t("common.save") }}</VBtn>
+      </VCardActions>
+    </VCard>
+  </VDialog>
 </template>
 
 <script setup lang="ts">
@@ -116,11 +147,15 @@ const confirmOpen = ref(false);
 const confirmUserId = ref("");
 const confirmName = ref("");
 
+const editDialogOpen = ref(false);
+const editEmail = ref("");
+const editIsAdmin = ref(false);
+
 const headers = [
   { title: t("pages.users.email"), key: "email", align: "start" },
   { title: t("pages.users.github"), key: "github_login", width: 220, align: "center" },
   { title: t("pages.users.admin"), key: "is_platform_admin", width: 160, align: "center" },
-  { title: "", key: "actions", sortable: false, width: 72, align: "end" },
+  { title: "", key: "actions", sortable: false, width: 112, align: "end" },
 ] as const;
 
 async function load() {
@@ -146,6 +181,14 @@ function canDelete(userId: string, isPlatformAdmin: boolean, isPlatformOwner: bo
   return true;
 }
 
+function canEdit(userId: string, isPlatformOwner: boolean): boolean {
+  if (!auth.me) return false;
+  if (!auth.isPlatformAdmin) return false;
+  if (isPlatformOwner) return false;
+  if (userId === auth.me.id) return false;
+  return true;
+}
+
 function askRemove(userId: string, emailLabel: string) {
   confirmUserId.value = userId;
   confirmName.value = emailLabel;
@@ -159,6 +202,21 @@ async function doRemove() {
   await users.remove(id);
   if (!users.deleteError) {
     snackbar.success(t("common.deleted"));
+  }
+}
+
+function openEditDialog(userEmail: string, isPlatformAdmin: boolean): void {
+  users.createError = null;
+  editEmail.value = userEmail;
+  editIsAdmin.value = isPlatformAdmin;
+  editDialogOpen.value = true;
+}
+
+async function saveEdit(): Promise<void> {
+  await users.create(editEmail.value, editIsAdmin.value);
+  if (!users.createError) {
+    editDialogOpen.value = false;
+    snackbar.success(t("common.saved"));
   }
 }
 

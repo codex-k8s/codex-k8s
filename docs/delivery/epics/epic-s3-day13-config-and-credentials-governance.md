@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S3-D13
 type: epic
 title: "Epic S3 Day 13: Unified config/secrets governance (platform/project/repo) + GitHub credentials fallback"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-16
 updated_at: 2026-02-16
@@ -10,8 +10,8 @@ related_issues: [19]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
-  request_id: ""
+  status: approved
+  request_id: "owner-2026-02-16-s3-day13"
 ---
 
 # Epic S3 Day 13: Unified config/secrets governance (platform/project/repo) + GitHub credentials fallback
@@ -107,3 +107,24 @@ approvals:
 - Требуется строгий запрет на утечки секретов в логи, ответы API и UI.
 - Epic зависит от корректного разделения “platform repo” и “project repos” в текущем bootstrap/runtime-deploy контуре.
 
+## Фактический результат (выполнено)
+- Реализована единая модель `ConfigEntry` со scope `platform|project|repository`, kind `variable|secret`, mutability `startup_required|runtime_mutable`.
+- Реализованы staff API + UI для:
+  - list/upsert/delete конфигов;
+  - warning/confirmation для “опасных” ключей (запрещено обновление без явного подтверждения).
+- Реализована синхронизация (idempotent apply) по sync targets:
+  - GitHub environment secrets: `github_env_secret:<env>`;
+  - GitHub environment variables: `github_env_var:<env>`;
+  - Kubernetes secrets: `k8s_secret:<namespace>/<name>`.
+- Реализован effective resolver GitHub credentials с fallback:
+  - repository -> project -> platform (для platform token и bot token).
+- Усилен governance слой:
+  - RBAC для project/repository scope (нужно право записи в проект, а не только platform admin);
+  - исправлена уникальность config entries в PostgreSQL (partial unique индексы, чтобы исключить дубли при `NULL`).
+
+## Data model impact
+- Исправлены уникальные ограничения для config entries (частичные unique индексы по scope).
+- Добавлен `GetByID` для config entries (для корректного RBAC/delete и проверки dangerous-confirmation).
+
+## Проверки
+- `go test ./...` — passed.

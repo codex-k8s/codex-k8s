@@ -165,11 +165,78 @@ type ProjectMember struct {
 }
 
 type RepositoryBinding struct {
-	ID               string `json:"id"`
-	ProjectID        string `json:"project_id"`
-	Provider         string `json:"provider"`
-	ExternalID       int64  `json:"external_id"`
-	Owner            string `json:"owner"`
-	Name             string `json:"name"`
-	ServicesYAMLPath string `json:"services_yaml_path"`
+	ID                 string  `json:"id"`
+	ProjectID          string  `json:"project_id"`
+	Provider           string  `json:"provider"`
+	ExternalID         int64   `json:"external_id"`
+	Owner              string  `json:"owner"`
+	Name               string  `json:"name"`
+	ServicesYAMLPath   string  `json:"services_yaml_path"`
+	BotUsername        *string `json:"bot_username"`
+	BotEmail           *string `json:"bot_email"`
+	PreflightUpdatedAt *string `json:"preflight_updated_at"`
+}
+
+type ProjectGitHubTokens struct {
+	ProjectID        string  `json:"project_id"`
+	HasPlatformToken bool    `json:"has_platform_token"`
+	HasBotToken      bool    `json:"has_bot_token"`
+	BotUsername      *string `json:"bot_username"`
+	BotEmail         *string `json:"bot_email"`
+}
+
+type PreflightCheckResult struct {
+	Name    string  `json:"name"`
+	Status  string  `json:"status"`
+	Details *string `json:"details"`
+}
+
+type RunRepositoryPreflightResponse struct {
+	RepositoryID string                 `json:"repository_id"`
+	Status       string                 `json:"status"`
+	Checks       []PreflightCheckResult `json:"checks"`
+	ReportJSON   string                 `json:"report_json"`
+	FinishedAt   string                 `json:"finished_at"`
+}
+
+type ConfigEntry struct {
+	ID           string   `json:"id"`
+	Scope        string   `json:"scope"`
+	Kind         string   `json:"kind"`
+	ProjectID    *string  `json:"project_id"`
+	RepositoryID *string  `json:"repository_id"`
+	Key          string   `json:"key"`
+	Value        *string  `json:"value"`
+	SyncTargets  []string `json:"sync_targets"`
+	Mutability   string   `json:"mutability"`
+	IsDangerous  bool     `json:"is_dangerous"`
+	UpdatedAt    *string  `json:"updated_at"`
+}
+
+type DocsetGroup struct {
+	ID              string `json:"id"`
+	Title           string `json:"title"`
+	Description     string `json:"description"`
+	DefaultSelected bool   `json:"default_selected"`
+}
+
+type DocsetGroupItemsResponse struct {
+	Groups []DocsetGroup `json:"groups"`
+}
+
+type ImportDocsetResponse struct {
+	RepositoryFullName string `json:"repository_full_name"`
+	PRNumber           int32  `json:"pr_number"`
+	PRURL              string `json:"pr_url"`
+	Branch             string `json:"branch"`
+	FilesTotal         int32  `json:"files_total"`
+}
+
+type SyncDocsetResponse struct {
+	RepositoryFullName string `json:"repository_full_name"`
+	PRNumber           int32  `json:"pr_number"`
+	PRURL              string `json:"pr_url"`
+	Branch             string `json:"branch"`
+	FilesUpdated       int32  `json:"files_updated"`
+	FilesDrift         int32  `json:"files_drift"`
 }

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,11 +21,15 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	if homeDir == "" {
 		homeDir = "/root"
 	}
+	codexHomeDir := strings.TrimSpace(os.Getenv("CODEX_HOME"))
+	if codexHomeDir == "" {
+		codexHomeDir = filepath.Join(homeDir, ".codex")
+	}
 
 	state := codexState{
 		homeDir:      homeDir,
-		codexDir:     filepath.Join(homeDir, ".codex"),
-		sessionsDir:  filepath.Join(homeDir, ".codex", "sessions"),
+		codexDir:     codexHomeDir,
+		sessionsDir:  filepath.Join(codexHomeDir, "sessions"),
 		workspaceDir: "/workspace",
 		repoDir:      filepath.Join("/workspace", "repo"),
 	}
@@ -108,22 +111,22 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		return err
 	}
 
-	authFromFileConfigured, err := s.writeCodexAuthFile(state.codexDir)
-	if err != nil {
+	if err := s.ensureCodexReady(ctx, state); err != nil {
 		return err
 	}
-	if !authFromFileConfigured {
-		if strings.TrimSpace(s.cfg.OpenAIAPIKey) == "" {
-			return fmt.Errorf("CODEXK8S_OPENAI_API_KEY is required when CODEXK8S_OPENAI_AUTH_FILE is empty")
+	defer func() {
+		if s.desiredCodexAuthMode() != codexAuthModeChatGPT {
+			return
 		}
-		if err := runCommandWithInput(ctx, []byte(s.cfg.OpenAIAPIKey), io.Discard, io.Discard, "codex", "login", "--with-api-key"); err != nil {
-			return fmt.Errorf("codex login failed: %w", err)
-		}
-	}
 
-	if err := s.writeCodexConfig(state.codexDir); err != nil {
-		return err
-	}
+		syncCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 20*time.Second)
+		defer cancel()
+
+		// Best-effort: Codex может обновить auth.json во время выполнения (ротация/refresh).
+		if err := s.syncCodexAuthToControlPlane(syncCtx, state, "final"); err != nil {
+			s.logger.Warn("final sync codex auth failed", "err", err)
+		}
+	}()
 
 	taskBody, err := s.renderTaskTemplate(result.templateKind, state.repoDir)
 	if err != nil {

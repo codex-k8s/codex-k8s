@@ -114,8 +114,8 @@ func runPreflight(args []string, stdout io.Writer, stderr io.Writer) int {
 		}
 	}
 
-	if strings.TrimSpace(loadedEnv["CODEXK8S_OPENAI_API_KEY"]) == "" && strings.TrimSpace(loadedEnv["CODEXK8S_OPENAI_AUTH_FILE"]) == "" {
-		warnings = append(warnings, "both CODEXK8S_OPENAI_API_KEY and CODEXK8S_OPENAI_AUTH_FILE are empty (agent runs will not have LLM credentials)")
+	if strings.TrimSpace(loadedEnv["CODEXK8S_OPENAI_API_KEY"]) == "" {
+		warnings = append(warnings, "CODEXK8S_OPENAI_API_KEY is empty. If you use Codex via ChatGPT subscription, you'll be prompted to authorize via device code on first agent run.")
 	}
 
 	writef(stdout, "preflight env-file=%s\n", absEnv)

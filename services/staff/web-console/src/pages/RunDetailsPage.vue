@@ -2,7 +2,7 @@
   <div>
     <PageHeader :title="t('pages.runDetails.title')">
       <template #leading>
-        <AdaptiveBtn variant="text" icon="mdi-arrow-left" :label="t('common.back')" @click="goBack" />
+        <BackBtn :label="t('common.back')" @click="goBack" />
       </template>
       <template #actions>
         <CopyChip :label="t('pages.runDetails.runId')" :value="runId" icon="mdi-identifier" />
@@ -143,19 +143,19 @@
               <VAlert v-if="!details.events.length" type="info" variant="tonal">
                 {{ t("states.noEvents") }}
               </VAlert>
-              <VList v-else density="compact">
-                <VListItem v-for="e in details.events" :key="e.created_at + ':' + e.event_type">
-                  <template #title>
-                    <div class="d-flex align-center justify-space-between ga-2 flex-wrap">
+              <VExpansionPanels v-else density="compact" variant="accordion">
+                <VExpansionPanel v-for="e in details.events" :key="e.created_at + ':' + e.event_type">
+                  <VExpansionPanelTitle>
+                    <div class="d-flex align-center justify-space-between ga-2 flex-wrap w-100">
                       <VChip size="x-small" variant="tonal" class="font-weight-bold">{{ e.event_type }}</VChip>
                       <span class="mono text-medium-emphasis">{{ formatDateTime(e.created_at, locale) }}</span>
                     </div>
-                  </template>
-                  <template #subtitle>
-                    <pre class="pre mt-2">{{ e.payload_json }}</pre>
-                  </template>
-                </VListItem>
-              </VList>
+                  </VExpansionPanelTitle>
+                  <VExpansionPanelText>
+                    <pre class="pre">{{ prettyJSON(e.payload_json) }}</pre>
+                  </VExpansionPanelText>
+                </VExpansionPanel>
+              </VExpansionPanels>
             </VExpansionPanelText>
           </VExpansionPanel>
 
@@ -181,11 +181,55 @@
     danger
     @confirm="doDeleteNamespace"
   />
+
+  <VDialog v-model="codexAuthDialogOpen" max-width="720">
+    <VCard>
+      <VCardTitle class="text-subtitle-1 d-flex align-center justify-space-between ga-2 flex-wrap">
+        <span>{{ t("pages.runDetails.codexAuthRequiredTitle") }}</span>
+        <VChip size="small" variant="tonal" color="warning" class="font-weight-bold">
+          {{ t("pages.runDetails.codexAuthRequiredBadge") }}
+        </VChip>
+      </VCardTitle>
+      <VCardText>
+        <div class="text-body-2">
+          {{ t("pages.runDetails.codexAuthRequiredText") }}
+        </div>
+
+        <VAlert v-if="codexAuthPayload" type="warning" variant="tonal" class="mt-4">
+          <div class="d-flex flex-column ga-2">
+            <CopyChip
+              :label="t('pages.runDetails.codexAuthUserCode')"
+              :value="codexAuthPayload.user_code"
+              icon="mdi-key-variant"
+            />
+            <CopyChip
+              :label="t('pages.runDetails.codexAuthVerificationUrl')"
+              :value="codexAuthPayload.verification_url"
+              icon="mdi-open-in-new"
+            />
+            <AdaptiveBtn
+              variant="tonal"
+              icon="mdi-open-in-new"
+              :label="t('pages.runDetails.codexAuthOpenPage')"
+              @click="openCodexAuthPage"
+            />
+          </div>
+        </VAlert>
+
+        <VAlert type="info" variant="tonal" class="mt-4">
+          {{ t("pages.runDetails.codexAuthSecurityHint") }}
+        </VAlert>
+      </VCardText>
+      <VCardActions class="justify-end">
+        <AdaptiveBtn variant="text" icon="mdi-close" :label="t('common.close')" @click="codexAuthDialogOpen = false" />
+      </VCardActions>
+    </VCard>
+  </VDialog>
 </template>
 
 <script setup lang="ts">
 // TODO(#19): Доработать Run details: master-detail layout, улучшенный stepper по стадиям/событиям и feedback слой через VSnackbar.
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 
@@ -193,6 +237,7 @@ import PageHeader from "../shared/ui/PageHeader.vue";
 import ConfirmDialog from "../shared/ui/ConfirmDialog.vue";
 import CopyChip from "../shared/ui/CopyChip.vue";
 import AdaptiveBtn from "../shared/ui/AdaptiveBtn.vue";
+import BackBtn from "../shared/ui/BackBtn.vue";
 import LogsViewer from "../shared/ui/LogsViewer.vue";
 import RunTimeline from "../shared/ui/RunTimeline.vue";
 import { formatDateTime } from "../shared/lib/datetime";
@@ -210,12 +255,74 @@ const snackbar = useSnackbarStore();
 const confirmDeleteNamespaceOpen = ref(false);
 const canDeleteNamespace = computed(() => Boolean(details.run?.job_exists && details.run?.namespace));
 
+type CodexAuthRequiredPayload = { verification_url: string; user_code: string };
+
+const codexAuthDialogOpen = ref(false);
+const codexAuthShownKey = ref("");
+
+const codexAuthRequiredEvent = computed(() => details.events.find((e) => e.event_type === "run.codex.auth.required") || null);
+const codexAuthPayload = computed(() => {
+  const raw = codexAuthRequiredEvent.value?.payload_json || "";
+  const parsed = parseJSONMaybe(raw);
+  if (!parsed || typeof parsed !== "object") return null;
+  const candidate = parsed as Partial<CodexAuthRequiredPayload>;
+  if (!candidate.verification_url || !candidate.user_code) return null;
+  return { verification_url: String(candidate.verification_url), user_code: String(candidate.user_code) };
+});
+
 async function loadAll() {
   await details.load(props.runId);
 }
 
 function goBack() {
   void router.push({ name: "runs" });
+}
+
+function prettyJSON(raw: string): string {
+  const value = String(raw || "").trim();
+  if (!value) return "";
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    // Some event payloads may be double-encoded as a JSON string.
+    if (typeof parsed === "string") {
+      const inner = parsed.trim();
+      if (!inner) return "";
+      try {
+        return JSON.stringify(JSON.parse(inner), null, 2);
+      } catch {
+        return parsed;
+      }
+    }
+    return JSON.stringify(parsed, null, 2);
+  } catch {
+    return value;
+  }
+}
+
+function parseJSONMaybe(raw: string): unknown {
+  const value = String(raw || "").trim();
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (typeof parsed === "string") {
+      const inner = parsed.trim();
+      if (!inner) return null;
+      try {
+        return JSON.parse(inner) as unknown;
+      } catch {
+        return parsed;
+      }
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function openCodexAuthPage(): void {
+  const url = codexAuthPayload.value?.verification_url;
+  if (!url) return;
+  window.open(url, "_blank", "noopener,noreferrer");
 }
 
 async function doDeleteNamespace() {
@@ -226,6 +333,22 @@ async function doDeleteNamespace() {
 }
 
 onMounted(() => void loadAll());
+
+watch(
+  () => [codexAuthRequiredEvent.value?.created_at, codexAuthRequiredEvent.value?.event_type],
+  (keyParts) => {
+    const createdAt = String(keyParts?.[0] || "").trim();
+    const eventType = String(keyParts?.[1] || "").trim();
+    if (!createdAt || !eventType || !codexAuthPayload.value) return;
+
+    const key = `${eventType}:${createdAt}`;
+    if (codexAuthShownKey.value === key) return;
+
+    codexAuthShownKey.value = key;
+    codexAuthDialogOpen.value = true;
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped>
@@ -235,6 +358,9 @@ onMounted(() => void loadAll());
 .pre {
   margin: 0;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow: auto;
+  max-height: 520px;
   font-size: 12px;
   opacity: 0.95;
 }

@@ -50,8 +50,7 @@ type GitBotConfig struct {
 
 // OpenAIConfig defines codex-cli authentication inputs.
 type OpenAIConfig struct {
-	OpenAIAPIKey   string
-	OpenAIAuthFile string
+	OpenAIAPIKey string
 }
 
 // Config defines runtime parameters for one agent-runner job.
@@ -81,6 +80,9 @@ type ControlPlaneCallbacks interface {
 	UpsertAgentSession(ctx context.Context, params cpclient.AgentSessionUpsertParams) error
 	GetLatestAgentSession(ctx context.Context, query cpclient.LatestAgentSessionQuery) (cpclient.AgentSessionSnapshot, bool, error)
 	InsertRunFlowEvent(ctx context.Context, runID string, eventType floweventdomain.EventType, payload json.RawMessage) error
+	GetCodexAuth(ctx context.Context) ([]byte, bool, error)
+	UpsertCodexAuth(ctx context.Context, authJSON []byte) error
+	UpsertRunStatusComment(ctx context.Context, params cpclient.UpsertRunStatusCommentParams) error
 }
 
 // Service runs one codex-driven development/revise cycle.

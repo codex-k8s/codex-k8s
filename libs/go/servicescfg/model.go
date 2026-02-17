@@ -73,6 +73,7 @@ type Metadata struct {
 // Spec contains deployable stack definition.
 type Spec struct {
 	Project        string                 `yaml:"project,omitempty"`
+	Versions       map[string]string      `yaml:"versions,omitempty"`
 	Imports        []ImportRef            `yaml:"imports,omitempty"`
 	Components     []Component            `yaml:"components,omitempty"`
 	Environments   map[string]Environment `yaml:"environments,omitempty"`
@@ -105,6 +106,7 @@ type ServiceDefaults struct {
 type Environment struct {
 	From              string `yaml:"from,omitempty"`
 	NamespaceTemplate string `yaml:"namespaceTemplate,omitempty"`
+	DomainTemplate    string `yaml:"domainTemplate,omitempty"`
 	ImagePullPolicy   string `yaml:"imagePullPolicy,omitempty"`
 }
 
@@ -175,6 +177,7 @@ type ResolvedContext struct {
 	Project   string
 	Slot      int
 	Vars      map[string]string
+	Versions  map[string]string
 }
 
 // LoadOptions controls services.yaml rendering behavior.

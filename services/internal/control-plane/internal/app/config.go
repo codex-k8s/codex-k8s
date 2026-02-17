@@ -16,6 +16,9 @@ type Config struct {
 	HTTPAddr string `env:"CODEXK8S_CONTROL_PLANE_HTTP_ADDR" envDefault:":8081"`
 	// KubeconfigPath is optional kubeconfig path for local development.
 	KubeconfigPath string `env:"CODEXK8S_KUBECONFIG"`
+	// PlatformNamespace is the namespace where codex-k8s runs (in-cluster injection).
+	// Used as a sensible default deploy namespace for webhook-driven self-deploy.
+	PlatformNamespace string `env:"CODEXK8S_PLATFORM_NAMESPACE"`
 
 	// PublicBaseURL is used to build default webhook URL when CODEXK8S_GITHUB_WEBHOOK_URL is empty.
 	PublicBaseURL string `env:"CODEXK8S_PUBLIC_BASE_URL,required,notEmpty"`
