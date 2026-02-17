@@ -5,8 +5,8 @@ title: "Epic Catalog: Sprint S3 (MVP completion)"
 status: in-progress
 owner_role: EM
 created_at: 2026-02-13
-updated_at: 2026-02-16
-related_issues: [19]
+updated_at: 2026-02-17
+related_issues: [19, 45]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -36,6 +36,7 @@ approvals:
 - Day 13: `docs/delivery/epics/epic-s3-day13-config-and-credentials-governance.md`
 - Day 14: `docs/delivery/epics/epic-s3-day14-repository-onboarding-preflight.md`
 - Day 15: `docs/delivery/epics/epic-s3-day15-mvp-closeout-and-handover.md`
+- Day 16: `docs/delivery/epics/epic-s3-day16-grpc-transport-boundary-hardening.md`
 
 ## Прогресс
 - Day 1 (`full stage and label activation`) завершён и согласован Owner.
@@ -49,7 +50,8 @@ approvals:
 - Day 12 (`docset import + safe sync`) завершён.
 - Day 13 (`unified config/secrets governance + GitHub creds fallback`) завершён.
 - Day 14 (`repository onboarding preflight`) завершён.
-- Day 9..Day11 и Day15 остаются в статусе planned.
+- Day 16 (`gRPC transport boundary hardening`) запланирован как обязательный refactoring-hygiene эпик по Issue #45.
+- Day 9..Day11, Day15 и Day16 остаются в статусе planned.
 
 ## Критерий успеха Sprint S3 (выжимка)
 - Все MVP-сценарии из Issue #19 покрыты кодом, тестами и эксплуатационной документацией.

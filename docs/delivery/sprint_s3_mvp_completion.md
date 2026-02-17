@@ -5,8 +5,8 @@ title: "Sprint S3: MVP completion (full stage flow, MCP control tools, self-impr
 status: in-progress
 owner_role: EM
 created_at: 2026-02-13
-updated_at: 2026-02-16
-related_issues: [19]
+updated_at: 2026-02-17
+related_issues: [19, 45]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -66,6 +66,7 @@ approvals:
 | Day 13 | Unified config/secrets governance + GitHub credentials fallback | P0 | `docs/delivery/epics/epic-s3-day13-config-and-credentials-governance.md` | completed |
 | Day 14 | Repository onboarding preflight + bot params per repo | P0 | `docs/delivery/epics/epic-s3-day14-repository-onboarding-preflight.md` | completed |
 | Day 15 | MVP regression/security gate + closeout and handover | P0 | `docs/delivery/epics/epic-s3-day15-mvp-closeout-and-handover.md` | planned |
+| Day 16 | gRPC transport boundary hardening (исключить прямые вызовы repository из handlers) | P0 | `docs/delivery/epics/epic-s3-day16-grpc-transport-boundary-hardening.md` | planned |
 
 ## Daily gate (обязательно)
 - Green CI + успешный deploy на production.
