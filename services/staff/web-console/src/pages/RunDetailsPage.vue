@@ -223,7 +223,18 @@ function prettyJSON(raw: string): string {
   const value = String(raw || "").trim();
   if (!value) return "";
   try {
-    return JSON.stringify(JSON.parse(value), null, 2);
+    const parsed = JSON.parse(value) as unknown;
+    // Some event payloads may be double-encoded as a JSON string.
+    if (typeof parsed === "string") {
+      const inner = parsed.trim();
+      if (!inner) return "";
+      try {
+        return JSON.stringify(JSON.parse(inner), null, 2);
+      } catch {
+        return parsed;
+      }
+    }
+    return JSON.stringify(parsed, null, 2);
   } catch {
     return value;
   }
@@ -245,7 +256,8 @@ onMounted(() => void loadAll());
 }
 .pre {
   margin: 0;
-  white-space: pre;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   overflow: auto;
   max-height: 520px;
   font-size: 12px;
