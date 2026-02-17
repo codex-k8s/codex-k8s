@@ -368,6 +368,14 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 				return err
 			}
 		case JobStateNotFound:
+			recovered, err := s.tryRecoverMissingRunJob(ctx, run, execution)
+			if err != nil {
+				return err
+			}
+			if recovered {
+				continue
+			}
+
 			// We mark runs as "running" when they are claimed, but full-env runs may spend
 			// significant time in runtime preparation before the actual job exists.
 			// With multiple worker replicas this prevents another worker from failing the run
@@ -493,7 +501,7 @@ func (s *Service) launchPending(ctx context.Context) error {
 				reason = runFailureReasonPreconditionFailed
 			}
 			if finishErr := s.finishRun(ctx, finishRunParams{
-				Run:       runningRunFromClaimed(claimed),
+				Run:       runningRun,
 				Execution: launchExecution,
 				Status:    rundomain.StatusFailed,
 				EventType: eventType,
@@ -508,146 +516,8 @@ func (s *Service) launchPending(ctx context.Context) error {
 			continue
 		}
 
-		namespaceSpec := NamespaceSpec{
-			RunID:         claimed.RunID,
-			ProjectID:     claimed.ProjectID,
-			CorrelationID: claimed.CorrelationID,
-			RuntimeMode:   launchExecution.RuntimeMode,
-			Namespace:     launchExecution.Namespace,
-		}
-		if launchExecution.RuntimeMode == agentdomain.RuntimeModeFullEnv {
-			if err := s.launcher.EnsureNamespace(ctx, namespaceSpec); err != nil {
-				s.logger.Error(
-					"prepare run namespace failed",
-					"run_id", claimed.RunID,
-					"namespace", launchExecution.Namespace,
-					"runtime_mode", launchExecution.RuntimeMode,
-					"err", err,
-				)
-				if finishErr := s.finishLaunchFailedRun(ctx, runningRun, launchExecution, err, runFailureReasonNamespacePrepareFailed); finishErr != nil {
-					return fmt.Errorf("mark run failed after namespace prepare error: %w", finishErr)
-				}
-				continue
-			}
-
-			if err := s.insertNamespaceLifecycleEvent(ctx, namespaceLifecycleEventParams{
-				CorrelationID: claimed.CorrelationID,
-				EventType:     floweventdomain.EventTypeRunNamespacePrepared,
-				RunID:         claimed.RunID,
-				ProjectID:     claimed.ProjectID,
-				Execution:     launchExecution,
-			}); err != nil {
-				return fmt.Errorf("insert run.namespace.prepared event: %w", err)
-			}
-		}
-
-		issuedMCPToken, err := s.mcpTokens.IssueRunMCPToken(ctx, IssueMCPTokenParams{
-			RunID:       claimed.RunID,
-			Namespace:   launchExecution.Namespace,
-			RuntimeMode: launchExecution.RuntimeMode,
-		})
-		if err != nil {
-			s.logger.Error("issue run mcp token failed", "run_id", claimed.RunID, "err", err)
-			if finishErr := s.finishLaunchFailedRun(ctx, runningRun, launchExecution, err, runFailureReasonMCPTokenIssueFailed); finishErr != nil {
-				return fmt.Errorf("mark run failed after mcp token issue error: %w", finishErr)
-			}
-			continue
-		}
-
-		ref, err := s.launcher.Launch(ctx, JobSpec{
-			RunID:                  claimed.RunID,
-			CorrelationID:          claimed.CorrelationID,
-			ProjectID:              claimed.ProjectID,
-			SlotNo:                 claimed.SlotNo,
-			RuntimeMode:            launchExecution.RuntimeMode,
-			Namespace:              launchExecution.Namespace,
-			ControlPlaneGRPCTarget: s.cfg.ControlPlaneGRPCTarget,
-			MCPBaseURL:             s.cfg.ControlPlaneMCPBaseURL,
-			MCPBearerToken:         issuedMCPToken.Token,
-			RepositoryFullName:     agentCtx.RepositoryFullName,
-			IssueNumber:            agentCtx.IssueNumber,
-			TriggerKind:            agentCtx.TriggerKind,
-			TriggerLabel:           agentCtx.TriggerLabel,
-			TargetBranch:           agentCtx.TargetBranch,
-			ExistingPRNumber:       agentCtx.ExistingPRNumber,
-			AgentKey:               agentCtx.AgentKey,
-			AgentModel:             agentCtx.Model,
-			AgentReasoningEffort:   agentCtx.ReasoningEffort,
-			PromptTemplateKind:     agentCtx.PromptTemplateKind,
-			PromptTemplateSource:   agentCtx.PromptTemplateSource,
-			PromptTemplateLocale:   agentCtx.PromptTemplateLocale,
-			StateInReviewLabel:     s.cfg.StateInReviewLabel,
-			BaseBranch:             s.cfg.AgentBaseBranch,
-			OpenAIAPIKey:           s.cfg.OpenAIAPIKey,
-			OpenAIAuthFile:         s.cfg.OpenAIAuthFile,
-			Context7APIKey:         s.cfg.Context7APIKey,
-			GitBotToken:            s.cfg.GitBotToken,
-			AgentDisplayName:       agentCtx.AgentDisplayName,
-			GitBotUsername:         s.cfg.GitBotUsername,
-			GitBotMail:             s.cfg.GitBotMail,
-		})
-		if err != nil {
-			s.logger.Error("launch run job failed", "run_id", claimed.RunID, "err", err)
-			if finishErr := s.finishRun(ctx, finishRunParams{
-				Run:       runningRun,
-				Execution: launchExecution,
-				Status:    rundomain.StatusFailed,
-				EventType: floweventdomain.EventTypeRunFailedLaunchError,
-				Ref:       ref,
-				Extra: runFinishedEventExtra{
-					Error: err.Error(),
-				},
-			}); finishErr != nil {
-				return fmt.Errorf("mark run failed after launch error: %w", finishErr)
-			}
-			continue
-		}
-
-		if err := s.insertEvent(ctx, floweventrepo.InsertParams{
-			CorrelationID: claimed.CorrelationID,
-			ActorType:     floweventdomain.ActorTypeSystem,
-			ActorID:       floweventdomain.ActorID(s.cfg.WorkerID),
-			EventType:     floweventdomain.EventTypeRunStarted,
-			Payload: encodeRunStartedEventPayload(runStartedEventPayload{
-				RunID:                claimed.RunID,
-				ProjectID:            claimed.ProjectID,
-				SlotNo:               claimed.SlotNo,
-				JobName:              ref.Name,
-				JobNamespace:         ref.Namespace,
-				RuntimeMode:          launchExecution.RuntimeMode,
-				RepositoryFullName:   agentCtx.RepositoryFullName,
-				AgentKey:             agentCtx.AgentKey,
-				IssueNumber:          agentCtx.IssueNumber,
-				TriggerKind:          agentCtx.TriggerKind,
-				TriggerLabel:         agentCtx.TriggerLabel,
-				Model:                agentCtx.Model,
-				ModelSource:          agentCtx.ModelSource,
-				ReasoningEffort:      agentCtx.ReasoningEffort,
-				ReasoningSource:      agentCtx.ReasoningSource,
-				PromptTemplateKind:   agentCtx.PromptTemplateKind,
-				PromptTemplateSource: agentCtx.PromptTemplateSource,
-				PromptTemplateLocale: agentCtx.PromptTemplateLocale,
-				BaseBranch:           s.cfg.AgentBaseBranch,
-			}),
-			CreatedAt: s.now().UTC(),
-		}); err != nil {
-			return fmt.Errorf("insert run.started event: %w", err)
-		}
-
-		if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
-			RunID:           claimed.RunID,
-			Phase:           RunStatusPhaseStarted,
-			JobName:         ref.Name,
-			JobNamespace:    ref.Namespace,
-			RuntimeMode:     string(launchExecution.RuntimeMode),
-			Namespace:       launchExecution.Namespace,
-			TriggerKind:     agentCtx.TriggerKind,
-			PromptLocale:    agentCtx.PromptTemplateLocale,
-			Model:           agentCtx.Model,
-			ReasoningEffort: agentCtx.ReasoningEffort,
-			RunStatus:       string(rundomain.StatusRunning),
-		}); err != nil {
-			s.logger.Warn("upsert run status comment (started) failed", "run_id", claimed.RunID, "err", err)
+		if err := s.launchPreparedFullEnvRunJob(ctx, runningRun, launchExecution, agentCtx); err != nil {
+			return err
 		}
 	}
 
@@ -854,6 +724,8 @@ func runningRunFromClaimed(claimed runqueuerepo.ClaimedRun) runqueuerepo.Running
 		RunID:         claimed.RunID,
 		CorrelationID: claimed.CorrelationID,
 		ProjectID:     claimed.ProjectID,
+		SlotID:        claimed.SlotID,
+		SlotNo:        claimed.SlotNo,
 		LearningMode:  claimed.LearningMode,
 		RunPayload:    claimed.RunPayload,
 	}

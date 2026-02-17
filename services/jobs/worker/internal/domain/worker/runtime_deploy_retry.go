@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -58,6 +59,23 @@ func isRetryableRuntimeDeployError(err error) bool {
 	switch st.Code() {
 	case codes.Unavailable, codes.DeadlineExceeded, codes.Canceled, codes.Aborted, codes.ResourceExhausted:
 		return true
+	case codes.Internal:
+		// Control-plane may wrap transient infra errors into Internal. Treat the most common
+		// cases as retryable to avoid stuck runs when DB/control-plane temporarily restarts.
+		msg := strings.ToLower(strings.TrimSpace(st.Message()))
+		if msg == "" {
+			return false
+		}
+		if strings.Contains(msg, "context canceled") {
+			return true
+		}
+		if strings.Contains(msg, "connection refused") || strings.Contains(msg, "dial tcp") {
+			return true
+		}
+		if strings.Contains(msg, "connection reset") || strings.Contains(msg, "broken pipe") {
+			return true
+		}
+		return false
 	default:
 		return false
 	}
