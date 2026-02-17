@@ -20,6 +20,7 @@ const (
 // RegistryClient describes operations required from registry API adapter.
 type RegistryClient interface {
 	ListRepositories(ctx context.Context) ([]string, error)
+	ListTags(ctx context.Context, repository string) ([]string, error)
 	ListTagInfos(ctx context.Context, repository string) ([]registry.TagInfo, error)
 	DeleteTag(ctx context.Context, repository string, tag string) (registry.DeleteResult, error)
 }
@@ -71,14 +72,16 @@ func (s *Service) List(ctx context.Context, filter querytypes.RegistryImageListF
 		if needle != "" && !strings.Contains(strings.ToLower(repository), needle) {
 			continue
 		}
-		tagInfos, err := s.client.ListTagInfos(ctx, repository)
+		// Listing tag infos (digest+metadata) is expensive (requires multiple HTTP calls per tag).
+		// For the main list endpoint, we only need repository and tags; digests are resolved on delete/cleanup.
+		tags, err := s.client.ListTags(ctx, repository)
 		if err != nil {
 			return nil, err
 		}
 		repositoryItem := entitytypes.RegistryImageRepository{
 			Repository: repository,
-			TagCount:   len(tagInfos),
-			Tags:       mapTagInfos(tagInfos, limitTags),
+			TagCount:   len(tags),
+			Tags:       mapTags(tags, limitTags),
 		}
 		items = append(items, repositoryItem)
 		if len(items) >= limitRepositories {
@@ -201,6 +204,27 @@ func mapTagInfos(items []registry.TagInfo, limit int) []entitytypes.RegistryImag
 			CreatedAt:       createdAt,
 			ConfigSizeBytes: item.ConfigSizeBytes,
 		})
+	}
+	return out
+}
+
+func mapTags(tags []string, limit int) []entitytypes.RegistryImageTag {
+	if len(tags) == 0 {
+		return []entitytypes.RegistryImageTag{}
+	}
+	if limit <= 0 {
+		limit = defaultListTagsLimit
+	}
+	out := make([]entitytypes.RegistryImageTag, 0, minInt(len(tags), limit))
+	for _, tag := range tags {
+		if len(out) >= limit {
+			break
+		}
+		tag = strings.TrimSpace(tag)
+		if tag == "" {
+			continue
+		}
+		out = append(out, entitytypes.RegistryImageTag{Tag: tag})
 	}
 	return out
 }

@@ -2,7 +2,10 @@ package githubmgmt
 
 import (
 	"context"
+	"encoding/base64"
+	"errors"
 	"fmt"
+	"io"
 	"strings"
 
 	gh "github.com/google/go-github/v82/github"
@@ -38,16 +41,71 @@ func (c *Client) GetFile(ctx context.Context, token string, owner string, repo s
 	if content == nil {
 		return nil, false, fmt.Errorf("github path %s is not a file", filePath)
 	}
-	rawContent, err := content.GetContent()
+	rawContent, err := decodeRepositoryContent(content)
 	if err != nil {
+		// Large files may come with encoding=none; fall back to download API.
+		if errors.Is(err, errGitHubContentNeedsDownload) {
+			rc, resp, dlErr := client.Repositories.DownloadContents(ctx, strings.TrimSpace(owner), strings.TrimSpace(repo), filePath, opt)
+			if dlErr != nil {
+				if resp != nil && resp.StatusCode == 404 {
+					return nil, false, nil
+				}
+				return nil, false, fmt.Errorf("github download contents %s/%s %s: %w", owner, repo, filePath, dlErr)
+			}
+			if rc == nil {
+				return nil, false, fmt.Errorf("github download contents %s: empty body", filePath)
+			}
+			body, readErr := io.ReadAll(rc)
+			closeErr := rc.Close()
+			if readErr != nil {
+				return nil, false, fmt.Errorf("read github download %s: %w", filePath, readErr)
+			}
+			if closeErr != nil {
+				return nil, false, fmt.Errorf("close github download %s: %w", filePath, closeErr)
+			}
+			if strings.TrimSpace(string(body)) == "" {
+				return []byte{}, true, nil
+			}
+			return body, true, nil
+		}
 		return nil, false, fmt.Errorf("read github content %s: %w", filePath, err)
 	}
-	trimmed := strings.TrimSpace(rawContent)
-	if trimmed == "" {
+	if strings.TrimSpace(rawContent) == "" {
 		return []byte{}, true, nil
 	}
-	// go-github's RepositoryContent.GetContent() already returns decoded file content.
 	return []byte(rawContent), true, nil
+}
+
+var errGitHubContentNeedsDownload = errors.New("github content needs download")
+
+func decodeRepositoryContent(content *gh.RepositoryContent) (string, error) {
+	if content == nil {
+		return "", fmt.Errorf("content is required")
+	}
+
+	encoding := strings.TrimSpace(content.GetEncoding())
+	switch encoding {
+	case "base64":
+		if content.Content == nil {
+			return "", fmt.Errorf("malformed response: base64 encoding of null content")
+		}
+		// GitHub returns base64 with embedded newlines; go-github uses DecodeString which fails on them.
+		cleaned := strings.NewReplacer("\n", "", "\r", "").Replace(*content.Content)
+		decoded, err := base64.StdEncoding.DecodeString(cleaned)
+		if err != nil {
+			return "", err
+		}
+		return string(decoded), nil
+	case "":
+		if content.Content == nil {
+			return "", nil
+		}
+		return *content.Content, nil
+	case "none":
+		return "", errGitHubContentNeedsDownload
+	default:
+		return "", fmt.Errorf("unsupported content encoding: %s", encoding)
+	}
 }
 
 func (c *Client) CreatePullRequestWithFiles(ctx context.Context, token string, owner string, repo string, baseBranch string, headBranch string, title string, body string, files map[string][]byte) (prNumber int, prURL string, err error) {

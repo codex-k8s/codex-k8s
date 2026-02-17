@@ -215,6 +215,60 @@ func (c *Client) ListTagInfos(ctx context.Context, repository string) ([]TagInfo
 	return items, nil
 }
 
+// ListTags returns tags list for one repository without digest/metadata resolution.
+func (c *Client) ListTags(ctx context.Context, repository string) ([]string, error) {
+	repoPath, err := encodeRepository(repository)
+	if err != nil {
+		return nil, err
+	}
+
+	endpoint := c.buildURL("/v2/"+repoPath+"/tags/list", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("build tags request: %w", err)
+	}
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request tags list: %w", err)
+	}
+	body, readErr := io.ReadAll(resp.Body)
+	closeErr := resp.Body.Close()
+	if readErr != nil {
+		return nil, fmt.Errorf("read tags response: %w", readErr)
+	}
+	if closeErr != nil {
+		return nil, fmt.Errorf("close tags response: %w", closeErr)
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		return []string{}, nil
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("tags request failed: status=%d body=%s", resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+
+	var payload struct {
+		Name string   `json:"name"`
+		Tags []string `json:"tags"`
+	}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, fmt.Errorf("decode tags response: %w", err)
+	}
+	if len(payload.Tags) == 0 {
+		return []string{}, nil
+	}
+
+	tags := make([]string, 0, len(payload.Tags))
+	for _, tag := range payload.Tags {
+		tag = strings.TrimSpace(tag)
+		if tag == "" {
+			continue
+		}
+		tags = append(tags, tag)
+	}
+	sort.Strings(tags)
+	return tags, nil
+}
+
 // DeleteTag deletes repository tag by deleting its manifest digest.
 func (c *Client) DeleteTag(ctx context.Context, repository string, tag string) (DeleteResult, error) {
 	repository = strings.TrimSpace(repository)
