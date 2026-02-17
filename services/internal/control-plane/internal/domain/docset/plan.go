@@ -44,11 +44,28 @@ func BuildImportPlan(m Manifest, locale string, groupIDs []string) (ImportPlan, 
 		}
 	}
 
+	itemsByID := make(map[string]ManifestItem, len(m.Items))
+	for _, item := range m.Items {
+		if item.ID == "" {
+			continue
+		}
+		itemsByID[item.ID] = item
+	}
+
 	seen := make(map[string]struct{})
 	files := make([]ImportPlanFile, 0)
 	for _, groupID := range selected {
 		g := groupsByID[groupID]
-		for _, item := range g.Items {
+		for _, itemID := range g.ItemIDs {
+			itemID = strings.TrimSpace(itemID)
+			if itemID == "" {
+				continue
+			}
+			item, ok := itemsByID[itemID]
+			if !ok {
+				return ImportPlan{}, nil, fmt.Errorf("unknown item id %q in group %q", itemID, groupID)
+			}
+
 			dst := strings.TrimSpace(item.ImportPath)
 			if err := validateImportPath(dst); err != nil {
 				return ImportPlan{}, nil, fmt.Errorf("invalid import_path %q: %w", dst, err)

@@ -5,14 +5,17 @@ import "testing"
 func TestBuildImportPlan_RejectsTraversal(t *testing.T) {
 	m := Manifest{
 		ManifestVersion: 1,
+		Docset:          ManifestDocset{ID: "docset-1"},
 		Groups: []ManifestGroup{{
 			ID:              "core",
 			DefaultSelected: true,
-			Items: []ManifestGroupItem{{
-				ImportPath:  "../escape.md",
-				SourcePaths: LocalizedText{EN: "docs/a_en.md"},
-				SHA256:      LocalizedText{EN: "x"},
-			}},
+			ItemIDs:         []string{"file:a"},
+		}},
+		Items: []ManifestItem{{
+			ID:          "file:a",
+			ImportPath:  "../escape.md",
+			SourcePaths: LocalizedText{EN: "docs/a_en.md"},
+			SHA256:      LocalizedText{EN: "x"},
 		}},
 	}
 	if _, _, err := BuildImportPlan(m, "en", nil); err == nil {
@@ -23,24 +26,31 @@ func TestBuildImportPlan_RejectsTraversal(t *testing.T) {
 func TestBuildImportPlan_DefaultSelected(t *testing.T) {
 	m := Manifest{
 		ManifestVersion: 1,
+		Docset:          ManifestDocset{ID: "docset-1"},
 		Groups: []ManifestGroup{
 			{
 				ID:              "core",
 				DefaultSelected: true,
-				Items: []ManifestGroupItem{{
-					ImportPath:  "docs/a.md",
-					SourcePaths: LocalizedText{RU: "docs/a_ru.md", EN: "docs/a_en.md"},
-					SHA256:      LocalizedText{RU: "sha_ru", EN: "sha_en"},
-				}},
+				ItemIDs:         []string{"file:a"},
 			},
 			{
 				ID:              "examples",
 				DefaultSelected: false,
-				Items: []ManifestGroupItem{{
-					ImportPath:  "docs/b.md",
-					SourcePaths: LocalizedText{EN: "docs/b_en.md"},
-					SHA256:      LocalizedText{EN: "sha_b"},
-				}},
+				ItemIDs:         []string{"file:b"},
+			},
+		},
+		Items: []ManifestItem{
+			{
+				ID:          "file:a",
+				ImportPath:  "docs/a.md",
+				SourcePaths: LocalizedText{RU: "docs/a_ru.md", EN: "docs/a_en.md"},
+				SHA256:      LocalizedText{RU: "sha_ru", EN: "sha_en"},
+			},
+			{
+				ID:          "file:b",
+				ImportPath:  "docs/b.md",
+				SourcePaths: LocalizedText{EN: "docs/b_en.md"},
+				SHA256:      LocalizedText{EN: "sha_b"},
 			},
 		},
 	}
@@ -63,24 +73,31 @@ func TestBuildImportPlan_DefaultSelected(t *testing.T) {
 func TestBuildImportPlan_DefaultSelected_ExcludesExamples(t *testing.T) {
 	m := Manifest{
 		ManifestVersion: 1,
+		Docset:          ManifestDocset{ID: "docset-1"},
 		Groups: []ManifestGroup{
 			{
 				ID:              "examples",
 				DefaultSelected: true,
-				Items: []ManifestGroupItem{{
-					ImportPath:  "docs/examples.md",
-					SourcePaths: LocalizedText{EN: "docs/examples_en.md"},
-					SHA256:      LocalizedText{EN: "sha_examples"},
-				}},
+				ItemIDs:         []string{"file:examples"},
 			},
 			{
 				ID:              "core",
 				DefaultSelected: true,
-				Items: []ManifestGroupItem{{
-					ImportPath:  "docs/a.md",
-					SourcePaths: LocalizedText{EN: "docs/a_en.md"},
-					SHA256:      LocalizedText{EN: "sha_a"},
-				}},
+				ItemIDs:         []string{"file:a"},
+			},
+		},
+		Items: []ManifestItem{
+			{
+				ID:          "file:examples",
+				ImportPath:  "docs/examples.md",
+				SourcePaths: LocalizedText{EN: "docs/examples_en.md"},
+				SHA256:      LocalizedText{EN: "sha_examples"},
+			},
+			{
+				ID:          "file:a",
+				ImportPath:  "docs/a.md",
+				SourcePaths: LocalizedText{EN: "docs/a_en.md"},
+				SHA256:      LocalizedText{EN: "sha_a"},
 			},
 		},
 	}

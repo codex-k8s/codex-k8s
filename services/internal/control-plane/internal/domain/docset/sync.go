@@ -15,14 +15,12 @@ type SyncPlan struct {
 
 // BuildSafeSyncPlan compares current sha256 to locked sha and only updates when file has no local changes.
 func BuildSafeSyncPlan(lock Lock, newManifest Manifest, locale string, currentSHAByPath map[string]string) (SyncPlan, error) {
-	byPath := make(map[string]ManifestGroupItem)
-	for _, g := range newManifest.Groups {
-		for _, item := range g.Items {
-			if item.ImportPath == "" {
-				continue
-			}
-			byPath[item.ImportPath] = item
+	byPath := make(map[string]ManifestItem, len(newManifest.Items))
+	for _, item := range newManifest.Items {
+		if item.ImportPath == "" {
+			continue
 		}
+		byPath[item.ImportPath] = item
 	}
 
 	out := SyncPlan{Updates: make([]ImportPlanFile, 0), Drift: make([]SyncDecision, 0)}
@@ -77,4 +75,3 @@ func UpdateLockForSync(lock Lock, newRef string, updatedFiles []LockFile) (Lock,
 	}
 	return next, nil
 }
-

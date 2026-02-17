@@ -1865,7 +1865,7 @@ func (s *Service) ImportDocset(ctx context.Context, principal Principal, project
 		})
 	}
 
-	lock := docsetdomain.NewLock(manifest.ID, docsetRef, locale, selectedGroups, lockFiles)
+	lock := docsetdomain.NewLock(manifest.Docset.ID, docsetRef, locale, selectedGroups, lockFiles)
 	lockBlob, err := docsetdomain.MarshalLock(lock)
 	if err != nil {
 		return DocsetImportResult{}, err
@@ -1877,8 +1877,8 @@ func (s *Service) ImportDocset(ctx context.Context, principal Principal, project
 		return DocsetImportResult{}, err
 	}
 	branch := fmt.Sprintf("codex-k8s-docset-import/%s", time.Now().UTC().Format("20060102-150405"))
-	title := fmt.Sprintf("chore(docs): import docset %s (%s)", manifest.ID, docsetRef)
-	body := fmt.Sprintf("Docset import\n\n- docset: %s\n- ref: %s\n- locale: %s\n- groups: %s\n- files: %d\n", manifest.ID, docsetRef, locale, strings.Join(selectedGroups, ", "), len(plan.Files))
+	title := fmt.Sprintf("chore(docs): import docset %s (%s)", manifest.Docset.ID, docsetRef)
+	body := fmt.Sprintf("Docset import\n\n- docset: %s\n- ref: %s\n- locale: %s\n- groups: %s\n- files: %d\n", manifest.Docset.ID, docsetRef, locale, strings.Join(selectedGroups, ", "), len(plan.Files))
 	prNumber, prURL, err := s.githubMgmt.CreatePullRequestWithFiles(ctx, token, targetRepo.Owner, targetRepo.Name, baseBranch, branch, title, body, files)
 	if err != nil {
 		return DocsetImportResult{}, err
@@ -2010,8 +2010,8 @@ func (s *Service) SyncDocset(ctx context.Context, principal Principal, projectID
 	files["docs/.docset-lock.json"] = lockOut
 
 	branch := fmt.Sprintf("codex-k8s-docset-sync/%s", time.Now().UTC().Format("20060102-150405"))
-	title := fmt.Sprintf("chore(docs): sync docset %s (%s)", manifest.ID, docsetRef)
-	body := fmt.Sprintf("Docset sync\n\n- docset: %s\n- ref: %s\n- locale: %s\n- updated: %d\n- drift: %d\n", manifest.ID, docsetRef, locale, len(plan.Updates), len(plan.Drift))
+	title := fmt.Sprintf("chore(docs): sync docset %s (%s)", manifest.Docset.ID, docsetRef)
+	body := fmt.Sprintf("Docset sync\n\n- docset: %s\n- ref: %s\n- locale: %s\n- updated: %d\n- drift: %d\n", manifest.Docset.ID, docsetRef, locale, len(plan.Updates), len(plan.Drift))
 	prNumber, prURL, err := s.githubMgmt.CreatePullRequestWithFiles(ctx, token, targetRepo.Owner, targetRepo.Name, baseBranch, branch, title, body, files)
 	if err != nil {
 		return DocsetSyncResult{}, err

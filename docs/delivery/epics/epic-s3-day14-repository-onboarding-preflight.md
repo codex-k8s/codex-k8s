@@ -41,7 +41,8 @@ approvals:
   - открыть PR и оставить comment, затем закрыть PR и удалить ветку.
 - Domain preflight при создании проекта и при настройке full-env:
   - проверить, что домены, используемые для `ai-staging` и ai slots, резолвятся на ingress кластера;
-  - проверять как минимум `CODEXK8S_PRODUCTION_DOMAIN`, `CODEXK8S_AI_DOMAIN` и шаблоны, которые используются в `services.yaml` (`domainTemplate`).
+  - проверять домены, которые реально получаются из `services.yaml` (с учётом `domainTemplate` и дефолтов, где используются `CODEXK8S_PRODUCTION_DOMAIN`/`CODEXK8S_AI_DOMAIN`);
+  - дополнительно проверять webhook host платформы, чтобы получить ожидаемый ingress IP для сравнения (best-effort).
 - UI/DB:
   - для каждого репозитория хранить не только platform token, но и параметры бота (token + username/email);
   - показывать preflight status и список прошедших/проваленных проверок с подсказками по исправлению.
@@ -103,8 +104,8 @@ approvals:
   - create/comment/close issue (bot);
   - create branch + commit + PR + comment + close PR + delete branch (bot).
 - Реализован domain/DNS preflight:
-  - проверка `CODEXK8S_PRODUCTION_DOMAIN`, `CODEXK8S_AI_DOMAIN` и host’а webhook URL платформы;
-  - проверка доменов, которые реально получаются из `services.yaml` через `spec.environments.<env>.domainTemplate` (если задан);
+  - проверка host’а webhook URL платформы (как источник ожидаемого ingress IP для best-effort сравнения);
+  - проверка доменов, которые реально получаются из `services.yaml` (через `spec.environments.<env>.domainTemplate` или дефолты на базе `CODEXK8S_PRODUCTION_DOMAIN`/`CODEXK8S_AI_DOMAIN`);
   - DNS lookup + best-effort сравнение resolved IP с ingress IP (по webhook host).
 - Реализован запрет параллельных preflight на один репозиторий (DB lock).
 - UI:

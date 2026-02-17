@@ -18,27 +18,27 @@ func TestBuildSafeSyncPlan_UpdatesAndDrift(t *testing.T) {
 
 	manifest := Manifest{
 		ManifestVersion: 1,
-		ID:              "docset-1",
-		Groups: []ManifestGroup{{
-			ID: "base",
-			Items: []ManifestGroupItem{
-				{
-					ImportPath:  "docs/a.md",
-					SourcePaths: LocalizedText{EN: "src/a2_en.md"},
-					SHA256:      LocalizedText{EN: "sha_new_a"},
-				},
-				{
-					ImportPath:  "docs/b.md",
-					SourcePaths: LocalizedText{EN: "src/b2_en.md"},
-					SHA256:      LocalizedText{EN: "sha_old_b"},
-				},
-				{
-					ImportPath:  "docs/d.md",
-					SourcePaths: LocalizedText{EN: "src/d2_en.md"},
-					SHA256:      LocalizedText{EN: ""},
-				},
+		Docset:          ManifestDocset{ID: "docset-1"},
+		Items: []ManifestItem{
+			{
+				ID:          "file:a",
+				ImportPath:  "docs/a.md",
+				SourcePaths: LocalizedText{EN: "src/a2_en.md"},
+				SHA256:      LocalizedText{EN: "sha_new_a"},
 			},
-		}},
+			{
+				ID:          "file:b",
+				ImportPath:  "docs/b.md",
+				SourcePaths: LocalizedText{EN: "src/b2_en.md"},
+				SHA256:      LocalizedText{EN: "sha_old_b"},
+			},
+			{
+				ID:          "file:d",
+				ImportPath:  "docs/d.md",
+				SourcePaths: LocalizedText{EN: "src/d2_en.md"},
+				SHA256:      LocalizedText{EN: ""},
+			},
+		},
 	}
 
 	current := map[string]string{
