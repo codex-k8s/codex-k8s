@@ -881,16 +881,21 @@ func (s *Service) ListConfigEntries(ctx context.Context, principal Principal, sc
 		return nil, err
 	}
 
-	if scope == "platform" && principal.IsPlatformAdmin && len(items) == 0 {
+	if scope == "platform" && principal.IsPlatformAdmin {
+		// Keep platform config view in sync with what is actually mounted in Kubernetes.
+		// Import is create-if-missing (safe) and does not overwrite existing keys.
 		if err := s.importPlatformConfigEntriesFromKubernetes(ctx, principal.UserID); err != nil {
 			return nil, err
 		}
-		return s.configEntries.List(ctx, configentryrepo.ListFilter{
+		items, err = s.configEntries.List(ctx, configentryrepo.ListFilter{
 			Scope:        scope,
 			ProjectID:    projectID,
 			RepositoryID: repositoryID,
 			Limit:        limit,
 		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return items, nil
