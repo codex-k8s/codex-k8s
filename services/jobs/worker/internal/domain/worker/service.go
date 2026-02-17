@@ -272,8 +272,24 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 
 		if deployOnlyRun {
 			prepareParams := buildPrepareRunEnvironmentParamsFromRunning(run, execution)
-			prepared, err := s.prepareRuntimeEnvironmentWithRetry(ctx, prepareParams)
+			// PrepareRunEnvironment is a blocking RPC (it waits for reconciler completion).
+			// Use a short timeout per tick to avoid starving pending run launches when
+			// runtime deploy takes minutes (for example, during self-deploy).
+			pollTimeout := s.cfg.RuntimePrepareRetryInterval
+			if pollTimeout <= 0 {
+				pollTimeout = 3 * time.Second
+			}
+			if pollTimeout < 2*time.Second {
+				pollTimeout = 2 * time.Second
+			}
+			pollCtx, cancel := context.WithTimeout(ctx, pollTimeout)
+			prepared, err := s.deployer.PrepareRunEnvironment(pollCtx, prepareParams)
+			cancel()
 			if err != nil {
+				if isRetryableRuntimeDeployError(err) {
+					continue
+				}
+
 				s.logger.Error("prepare runtime environment for running deploy-only run failed", "run_id", run.RunID, "err", err)
 				if finishErr := s.finishLaunchFailedRun(ctx, run, execution, err, runFailureReasonRuntimeDeployFailed); finishErr != nil {
 					return finishErr
