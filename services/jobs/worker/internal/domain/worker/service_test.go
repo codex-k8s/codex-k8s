@@ -626,6 +626,10 @@ func (f *fakeLauncher) JobRef(runID string, namespace string) JobRef {
 	return JobRef{Namespace: namespace, Name: "job-" + runID}
 }
 
+func (f *fakeLauncher) FindRunJobRefByRunID(_ context.Context, _ string) (JobRef, bool, error) {
+	return JobRef{}, false, nil
+}
+
 func (f *fakeLauncher) EnsureNamespace(_ context.Context, spec NamespaceSpec) error {
 	f.prepared = append(f.prepared, spec)
 	return nil

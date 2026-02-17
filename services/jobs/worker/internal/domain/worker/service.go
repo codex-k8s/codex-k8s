@@ -321,6 +321,28 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 			continue
 		}
 
+		if state == JobStateNotFound {
+			// Full-env runs may be launched into persistent slot namespaces, while run payload keeps
+			// the default namespace strategy (`codex-issue-*`). Resolve the actual namespace by label
+			// to avoid failing runs with "job not found" after preparation succeeded.
+			resolved, ok, err := s.launcher.FindRunJobRefByRunID(ctx, run.RunID)
+			if err != nil {
+				s.logger.Warn("resolve run job ref by run id failed", "run_id", run.RunID, "err", err)
+			} else if ok {
+				ref = resolved
+				if resolvedNamespace := sanitizeDNSLabelValue(resolved.Namespace); resolvedNamespace != "" {
+					execution.Namespace = resolvedNamespace
+					ref.Namespace = resolvedNamespace
+				}
+
+				state, err = s.launcher.Status(ctx, ref)
+				if err != nil {
+					s.logger.Error("check run job status failed", "run_id", run.RunID, "job_name", ref.Name, "err", err)
+					continue
+				}
+			}
+		}
+
 		switch state {
 		case JobStateSucceeded:
 			if err := s.finishRun(ctx, finishRunParams{

@@ -27,6 +27,14 @@ func (a *Adapter) JobRef(runID string, namespace string) worker.JobRef {
 	return a.impl.JobRef(runID, namespace)
 }
 
+func (a *Adapter) FindRunJobRefByRunID(ctx context.Context, runID string) (worker.JobRef, bool, error) {
+	ref, ok, err := a.impl.FindRunJobRefByRunID(ctx, runID)
+	if err != nil {
+		return worker.JobRef{}, false, err
+	}
+	return ref, ok, nil
+}
+
 // EnsureNamespace prepares namespace baseline for full-env run.
 func (a *Adapter) EnsureNamespace(ctx context.Context, spec worker.NamespaceSpec) error {
 	return a.impl.EnsureNamespace(ctx, spec)

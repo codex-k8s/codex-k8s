@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
@@ -361,6 +362,49 @@ func (l *Launcher) Status(ctx context.Context, ref JobRef) (JobState, error) {
 	}
 
 	return JobStatePending, nil
+}
+
+// FindRunJobRefByRunID resolves run Kubernetes Job reference by run id label across namespaces.
+func (l *Launcher) FindRunJobRefByRunID(ctx context.Context, runID string) (JobRef, bool, error) {
+	targetRunID := strings.TrimSpace(runID)
+	if targetRunID == "" {
+		return JobRef{}, false, fmt.Errorf("run id is required")
+	}
+
+	selector := fmt.Sprintf("%s=%s,app.kubernetes.io/name=codex-k8s-run", metadataLabelRunID, targetRunID)
+	jobs, err := l.client.BatchV1().Jobs(metav1.NamespaceAll).List(ctx, metav1.ListOptions{
+		LabelSelector: selector,
+	})
+	if err != nil {
+		return JobRef{}, false, fmt.Errorf("list kubernetes jobs by run id %s: %w", targetRunID, err)
+	}
+	if len(jobs.Items) == 0 {
+		return JobRef{}, false, nil
+	}
+
+	expectedName := BuildRunJobName(targetRunID)
+	candidates := make([]batchv1.Job, 0, len(jobs.Items))
+	for _, item := range jobs.Items {
+		if strings.TrimSpace(item.Name) == expectedName {
+			candidates = append(candidates, item)
+		}
+	}
+	if len(candidates) == 0 {
+		candidates = jobs.Items
+	}
+
+	sort.Slice(candidates, func(i, j int) bool {
+		if candidates[i].Namespace == candidates[j].Namespace {
+			return candidates[i].Name < candidates[j].Name
+		}
+		return candidates[i].Namespace < candidates[j].Namespace
+	})
+
+	item := candidates[0]
+	return JobRef{
+		Namespace: strings.TrimSpace(item.Namespace),
+		Name:      strings.TrimSpace(item.Name),
+	}, true, nil
 }
 
 // BuildRunJobName returns deterministic DNS-compatible Job name.
