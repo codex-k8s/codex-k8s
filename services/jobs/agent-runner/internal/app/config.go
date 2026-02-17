@@ -88,6 +88,11 @@ func LoadConfig() (Config, error) {
 		cfg.AgentModel = modelGPT52Codex
 	}
 	cfg.AgentReasoningEffort = strings.TrimSpace(strings.ToLower(cfg.AgentReasoningEffort))
+	// Codex CLI expects "xhigh" for the highest reasoning effort.
+	switch cfg.AgentReasoningEffort {
+	case "extra-high", "extra_high", "extra high", "x-high":
+		cfg.AgentReasoningEffort = "xhigh"
+	}
 	if cfg.AgentReasoningEffort == "" {
 		cfg.AgentReasoningEffort = "high"
 	}

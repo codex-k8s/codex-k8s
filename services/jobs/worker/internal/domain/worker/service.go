@@ -193,7 +193,11 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if !hasOpenAIAuthFile && isGPT53Model(cfg.AgentDefaultModel) {
 		cfg.AgentDefaultModel = modelGPT52Codex
 	}
-	cfg.AgentDefaultReasoningEffort = strings.TrimSpace(cfg.AgentDefaultReasoningEffort)
+	cfg.AgentDefaultReasoningEffort = strings.TrimSpace(strings.ToLower(cfg.AgentDefaultReasoningEffort))
+	switch cfg.AgentDefaultReasoningEffort {
+	case "extra-high", "extra_high", "extra high", "x-high":
+		cfg.AgentDefaultReasoningEffort = "xhigh"
+	}
 	if cfg.AgentDefaultReasoningEffort == "" {
 		cfg.AgentDefaultReasoningEffort = "high"
 	}
