@@ -2,28 +2,25 @@
   <div>
     <PageHeader :title="t('pages.runtimeDeployTasks.title')" :hint="t('pages.runtimeDeployTasks.hint')">
       <template #actions>
-        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :disabled="loading" @click="loadTasks" />
+        <div class="d-flex align-center ga-2">
+          <VSelect
+            v-model="statusFilter"
+            class="status-select"
+            density="compact"
+            variant="outlined"
+            :items="statusOptions"
+            :label="t('table.fields.status')"
+            hide-details
+            clearable
+          />
+          <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :disabled="loading" @click="loadTasks" />
+        </div>
       </template>
     </PageHeader>
 
     <VAlert v-if="error" type="error" variant="tonal" class="mt-4">
       {{ t(error.messageKey) }}
     </VAlert>
-
-    <VCard class="mt-4" variant="outlined">
-      <VCardText>
-        <VRow density="compact">
-          <VCol cols="12" md="4">
-            <VSelect v-model="statusFilter" :items="statusOptions" :label="t('table.fields.status')" hide-details clearable />
-          </VCol>
-        </VRow>
-      </VCardText>
-      <VCardActions>
-        <VSpacer />
-        <AdaptiveBtn variant="tonal" icon="mdi-check" :label="t('pages.runs.applyFilters')" :disabled="loading" @click="loadTasks" />
-        <AdaptiveBtn variant="text" icon="mdi-backspace-outline" :label="t('pages.runs.resetFilters')" @click="resetFilters" />
-      </VCardActions>
-    </VCard>
 
     <VCard class="mt-4" variant="outlined">
       <VCardText>
@@ -102,7 +99,7 @@ const uiContext = useUiContextStore();
 
 const loading = ref(false);
 const error = ref<ApiError | null>(null);
-const statusFilter = ref<"" | "pending" | "running" | "succeeded" | "failed">("");
+const statusFilter = ref<"" | "pending" | "running" | "succeeded" | "failed" | null>("");
 const items = ref<RuntimeDeployTask[]>([]);
 
 const statusOptions = computed(() => [
@@ -162,14 +159,15 @@ async function loadTasks(): Promise<void> {
   }
 }
 
-function resetFilters(): void {
-  statusFilter.value = "";
-}
-
 onMounted(() => void loadTasks());
 
 watch(
   () => uiContext.env,
+  () => void loadTasks(),
+);
+
+watch(
+  () => statusFilter.value,
   () => void loadTasks(),
 );
 </script>
@@ -177,5 +175,8 @@ watch(
 <style scoped>
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+.status-select {
+  min-width: 220px;
 }
 </style>

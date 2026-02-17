@@ -11,6 +11,6 @@ body {
 }
 
 /* Vuetify data-table: keep header text visually centered when a sort icon is present on the right. */
-.v-data-table__th--sortable.v-data-table__th--align-center .v-data-table-header__content {
+.v-data-table-header__content {
   padding-left: 21px; /* equals sort icon hitbox width */
 }

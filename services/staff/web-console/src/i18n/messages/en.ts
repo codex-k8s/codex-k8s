@@ -60,10 +60,14 @@ export const en = {
     logout: "Logout",
     loginWithGitHub: "Login with GitHub",
     id: "ID",
+    reset: "Reset",
+    expand: "Expand",
+    collapse: "Collapse",
   },
   context: {
     title: "Global filter",
     button: "Filter: {value}",
+    buttonNotSelected: "FILTER: NOT SELECTED",
     allObjects: "All objects",
     projectNotSelected: "Project not selected",
     project: "Project",
@@ -71,6 +75,8 @@ export const en = {
     namespace: "Slot",
     envAi: "ai",
     envProduction: "production",
+    reset: "reset",
+    notSelected: "Not selected",
   },
   notifications: {
     title: "Notifications",
@@ -301,6 +307,7 @@ export const en = {
     },
     users: {
       title: "Users",
+      editTitle: "Edit user",
       addAllowedUser: "Add Allowed User",
       addAllowedUserHint:
         "Registration is disabled. Adding an email here allows first GitHub OAuth login for that email.",
@@ -596,7 +603,13 @@ export const en = {
       updatedAt: "Updated",
       projectRequired: "Select a project for this scope.",
       repositoryRequired: "Select a repository for this scope.",
+      dangerousWarningCreate:
+        "The “Dangerous” flag means the key affects critical configuration and can break the platform. Use it only if you understand the consequences.",
+      dangerousWarningEdit:
+        "You are updating a dangerous key. Such changes can break the platform or disrupt flows. Review consequences before saving.",
       dangerousWarning: "Dangerous keys can break the platform when changed. Review consequences before updating.",
+      dangerousConfirmCreate: "I understand the risks and confirm creating/updating a dangerous key.",
+      dangerousConfirmEdit: "I understand the risks and confirm updating a dangerous key.",
       dangerousConfirm: "I understand the risks and confirm updating a dangerous key.",
       dangerousConfirmRequired: "You must confirm updating a dangerous key.",
     },

@@ -64,6 +64,17 @@
                 />
               </VCol>
               <VCol cols="12" md="6">
+                <div class="d-flex justify-end">
+                  <VBtn
+                    size="x-small"
+                    variant="text"
+                    class="mb-1"
+                    :disabled="auth.status !== 'authed'"
+                    @click="resetContextFilter"
+                  >
+                    {{ t("context.reset") }}
+                  </VBtn>
+                </div>
                 <VSelect v-model="envModel" :items="envOptions" :label="t('context.env')" hide-details />
               </VCol>
               <VCol cols="12">
@@ -321,15 +332,32 @@ const showContextFilter = computed(() => {
   return section === "runs" || section === "operations" || section === "admin";
 });
 
-const filterSummary = computed(() => {
-  const all = t("context.allObjects");
-  const projectTitle = projectSelectOptions.value.find((p) => p.value === uiContext.projectId)?.title || all;
-  const envTitle = envOptions.value.find((e) => e.value === uiContext.env)?.title || all;
-  const namespaceTitle = uiContext.namespace || all;
-  return `${projectTitle} / ${envTitle} / ${namespaceTitle}`;
+const filterSummaryParts = computed(() => {
+  const parts: string[] = [];
+
+  const projectTitle = projectSelectOptions.value.find((p) => p.value === uiContext.projectId)?.title;
+  if (uiContext.projectId && projectTitle) parts.push(projectTitle);
+
+  const envTitle = envOptions.value.find((e) => e.value === uiContext.env)?.title;
+  if (uiContext.env !== "all" && envTitle) parts.push(envTitle);
+
+  const namespaceTitle = String(uiContext.namespace || "").trim();
+  if (namespaceTitle) parts.push(namespaceTitle);
+
+  return parts;
 });
 
-const filterButtonLabel = computed(() => t("context.button", { value: filterSummary.value }));
+const filterSummary = computed(() => {
+  const parts = filterSummaryParts.value;
+  if (parts.length === 0) return t("context.notSelected");
+  return parts.join(" / ");
+});
+
+const filterButtonLabel = computed(() => {
+  const parts = filterSummaryParts.value;
+  if (parts.length === 0) return t("context.buttonNotSelected");
+  return t("context.button", { value: parts.join(" / ") });
+});
 
 const profileButtonLabel = computed(() =>
   auth.me?.githubLogin ? `@${auth.me.githubLogin}` : auth.me?.email || t("common.loading"),
@@ -371,6 +399,12 @@ function toggleDrawer(): void {
     return;
   }
   drawerRail.value = !drawerRail.value;
+}
+
+function resetContextFilter(): void {
+  uiContext.setProjectId("");
+  uiContext.setEnv("all");
+  uiContext.setNamespace("");
 }
 
 const breadcrumbs = computed(() => {
@@ -461,7 +495,7 @@ const breadcrumbs = computed(() => {
   white-space: nowrap;
 }
 .content {
-  max-width: 1400px;
+  max-width: 1800px;
   margin: 0 auto;
   padding: 16px;
 }

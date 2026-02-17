@@ -47,7 +47,7 @@
               :disabled="!projectFilterEnabled"
             />
           </VCol>
-          <VCol cols="12" md="5">
+          <VCol cols="12" md="4">
             <VSelect
               v-model="repositoryId"
               :items="repositoryOptions"
@@ -58,13 +58,21 @@
               :disabled="!repositoryFilterEnabled"
             />
           </VCol>
+          <VCol cols="12" md="1" class="d-flex justify-end">
+            <VTooltip :text="t('common.reset')">
+              <template #activator="{ props: tipProps }">
+                <VBtn
+                  v-bind="tipProps"
+                  icon="mdi-backspace-outline"
+                  variant="text"
+                  :disabled="store.loading"
+                  @click="resetFilters"
+                />
+              </template>
+            </VTooltip>
+          </VCol>
         </VRow>
       </VCardText>
-      <VCardActions>
-        <VSpacer />
-        <AdaptiveBtn variant="tonal" icon="mdi-check" :label="t('pages.runs.applyFilters')" :loading="store.loading" @click="load" />
-        <AdaptiveBtn variant="text" icon="mdi-backspace-outline" :label="t('pages.runs.resetFilters')" :disabled="store.loading" @click="resetFilters" />
-      </VCardActions>
     </VCard>
 
     <VCard class="mt-4" variant="outlined">
@@ -79,7 +87,30 @@
             </div>
           </template>
           <template #item.value="{ item }">
-            <span class="mono text-medium-emphasis">{{ item.kind === "secret" ? "********" : item.value ?? "-" }}</span>
+            <template v-if="item.kind === 'secret'">
+              <span class="mono text-medium-emphasis">********</span>
+            </template>
+            <template v-else>
+              <div class="d-flex justify-center">
+                <div class="value-cell">
+                  <div
+                    class="mono text-medium-emphasis value-preview"
+                    :class="{ 'value-preview--collapsed': !isValueExpanded(item.id) }"
+                  >
+                    {{ item.value ?? "-" }}
+                  </div>
+                  <VBtn
+                    v-if="isMultilineValue(item.value)"
+                    size="x-small"
+                    variant="text"
+                    class="value-toggle"
+                    @click="toggleValueExpanded(item.id)"
+                  >
+                    {{ isValueExpanded(item.id) ? t("common.collapse") : t("common.expand") }}
+                  </VBtn>
+                </div>
+              </div>
+            </template>
           </template>
           <template #item.mutability="{ item }">
             <span class="text-medium-emphasis">{{ mutabilityLabel(item.mutability) }}</span>
@@ -187,18 +218,24 @@
             <VTextField v-model.trim="key" :label="t('pages.configEntries.key')" hide-details />
           </VCol>
           <VCol cols="12">
-            <VTextField
+            <VTextarea
               v-if="kind === 'variable'"
               v-model="valuePlain"
               :label="t('pages.configEntries.valuePlain')"
+              rows="5"
+              auto-grow
               hide-details
             />
-            <VTextField
+            <VTextarea
               v-else
               v-model="valueSecret"
               :label="t('pages.configEntries.valueSecret')"
-              type="password"
+              rows="5"
+              auto-grow
               hide-details
+              :class="{ 'secret-masked': !showSecretValue }"
+              :append-inner-icon="showSecretValue ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
+              @click:append-inner="showSecretValue = !showSecretValue"
             />
           </VCol>
           <VCol cols="12">
@@ -208,15 +245,15 @@
             </div>
           </VCol>
           <VCol cols="12">
-            <VAlert v-if="isDangerous" type="warning" variant="tonal">
-              <div class="text-body-2">{{ t("pages.configEntries.dangerousWarning") }}</div>
+            <VAlert v-if="isDangerous" :type="dangerousAlertType" variant="tonal">
+              <div class="text-body-2">{{ dangerousAlertText }}</div>
             </VAlert>
             <VCheckbox
               v-if="isDangerous"
               v-model="dangerousConfirmed"
               class="mt-2"
               density="compact"
-              :label="t('pages.configEntries.dangerousConfirm')"
+              :label="dangerousConfirmText"
               hide-details
             />
           </VCol>
@@ -370,11 +407,13 @@ function mutabilityLabel(value: string): string {
 
 async function load(): Promise<void> {
   if (scope.value === "project" && !projectId.value) {
-    snackbar.error(t("pages.configEntries.projectRequired"));
+    store.items = [];
+    store.error = null;
     return;
   }
   if (scope.value === "repository" && !repositoryId.value) {
-    snackbar.error(t("pages.configEntries.repositoryRequired"));
+    store.items = [];
+    store.error = null;
     return;
   }
   const limit = 200;
@@ -409,6 +448,20 @@ const confirmDeleteOpen = ref(false);
 const confirmDeleteId = ref("");
 const confirmDeleteLabel = ref("");
 
+const expandedValueByID = ref<Record<string, boolean>>({});
+
+function isMultilineValue(value: string | null | undefined): boolean {
+  return String(value || "").includes("\n");
+}
+
+function isValueExpanded(id: string): boolean {
+  return Boolean(expandedValueByID.value[id]);
+}
+
+function toggleValueExpanded(id: string): void {
+  expandedValueByID.value[id] = !expandedValueByID.value[id];
+}
+
 function askDelete(id: string, label: string): void {
   confirmDeleteId.value = id;
   confirmDeleteLabel.value = label;
@@ -439,7 +492,20 @@ const formRepositoryId = ref("");
 const key = ref("");
 const valuePlain = ref("");
 const valueSecret = ref("");
+const showSecretValue = ref(false);
 const syncTargetsRaw = ref("");
+
+const dangerousAlertType = computed(() => (upsertMode.value === "create" ? "info" : "warning"));
+const dangerousAlertText = computed(() =>
+  upsertMode.value === "create"
+    ? t("pages.configEntries.dangerousWarningCreate")
+    : t("pages.configEntries.dangerousWarningEdit"),
+);
+const dangerousConfirmText = computed(() =>
+  upsertMode.value === "create"
+    ? t("pages.configEntries.dangerousConfirmCreate")
+    : t("pages.configEntries.dangerousConfirmEdit"),
+);
 
 const formScopeItems = computed(() => ([
   { title: t("pages.configEntries.scopePlatform"), value: "platform" },
@@ -502,6 +568,7 @@ function openCreateDialog(): void {
   key.value = "";
   valuePlain.value = "";
   valueSecret.value = "";
+  showSecretValue.value = false;
   syncTargetsRaw.value = "";
   upsertDialogOpen.value = true;
 }
@@ -517,8 +584,9 @@ function openEditDialog(item: ConfigEntry): void {
   formProjectId.value = String(item.project_id || "");
   formRepositoryId.value = String(item.repository_id || "");
   key.value = String(item.key || "");
-  valuePlain.value = "";
+  valuePlain.value = kind.value === "variable" ? String(item.value || "") : "";
   valueSecret.value = "";
+  showSecretValue.value = false;
   syncTargetsRaw.value = (item.sync_targets || []).join(", ");
   upsertDialogOpen.value = true;
 }
@@ -548,14 +616,46 @@ async function save(): Promise<void> {
   await load();
 }
 
+watch(
+  () => [scope.value, projectId.value, repositoryId.value] as const,
+  () => void load(),
+  { immediate: true },
+);
+
 onMounted(() => {
   if (projects.items.length === 0) void projects.load();
-  void load();
 });
 </script>
 
 <style scoped>
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.value-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 720px;
+}
+
+.value-preview {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.value-preview--collapsed {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.value-toggle {
+  margin-top: 2px;
+}
+
+.secret-masked :deep(textarea) {
+  -webkit-text-security: disc;
 }
 </style>

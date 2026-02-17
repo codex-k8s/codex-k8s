@@ -60,10 +60,14 @@ export const ru = {
     logout: "Выйти",
     loginWithGitHub: "Войти через GitHub",
     id: "ID",
+    reset: "Сбросить",
+    expand: "раскрыть",
+    collapse: "свернуть",
   },
   context: {
     title: "Глобальный фильтр",
     button: "Фильтр: {value}",
+    buttonNotSelected: "ФИЛЬТР: НЕ ВЫБРАН",
     allObjects: "Все объекты",
     projectNotSelected: "Проект не выбран",
     project: "Проект",
@@ -71,6 +75,8 @@ export const ru = {
     namespace: "Слот",
     envAi: "ai",
     envProduction: "production",
+    reset: "сбросить",
+    notSelected: "Не выбрано",
   },
   notifications: {
     title: "Уведомления",
@@ -301,6 +307,7 @@ export const ru = {
     },
     users: {
       title: "Пользователи",
+      editTitle: "Редактировать пользователя",
       addAllowedUser: "Добавить разрешенного пользователя",
       addAllowedUserHint:
         "Регистрация выключена. Добавление email позволяет первичный вход через GitHub OAuth для этого email.",
@@ -597,7 +604,13 @@ export const ru = {
       updatedAt: "Обновлено",
       projectRequired: "Для этого Scope нужно выбрать проект.",
       repositoryRequired: "Для этого Scope нужно выбрать репозиторий.",
+      dangerousWarningCreate:
+        "Флаг «Опасный» означает, что ключ влияет на критичную конфигурацию и может нарушить работу платформы. Используйте его только если понимаете последствия.",
+      dangerousWarningEdit:
+        "Вы изменяете «опасный» ключ. Такие изменения могут ломать платформу или нарушить флоу. Проверьте последствия перед сохранением.",
       dangerousWarning: "Опасные ключи могут ломать платформу при смене. Проверяйте последствия перед обновлением.",
+      dangerousConfirmCreate: "Я понимаю риски и подтверждаю создание/обновление опасного ключа.",
+      dangerousConfirmEdit: "Я понимаю риски и подтверждаю обновление опасного ключа.",
       dangerousConfirm: "Я понимаю риски и подтверждаю обновление опасного ключа.",
       dangerousConfirmRequired: "Нужно подтвердить обновление опасного ключа.",
     },
