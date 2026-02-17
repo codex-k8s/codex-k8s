@@ -330,6 +330,13 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 				return err
 			}
 		case JobStateNotFound:
+			// We mark runs as "running" when they are claimed, but full-env runs may spend
+			// significant time in runtime preparation before the actual job exists.
+			// With multiple worker replicas this prevents another worker from failing the run
+			// while the claiming worker is still preparing the environment.
+			if s.shouldIgnoreJobNotFound(run) {
+				continue
+			}
 			if err := s.finishRun(ctx, finishRunParams{
 				Run:       run,
 				Execution: execution,
@@ -350,6 +357,25 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (s *Service) shouldIgnoreJobNotFound(run runqueuerepo.RunningRun) bool {
+	startedAt := run.StartedAt
+	if startedAt.IsZero() {
+		return true
+	}
+
+	grace := s.cfg.RuntimePrepareRetryTimeout
+	if grace <= 0 {
+		grace = 30 * time.Second
+	}
+	grace += 5 * time.Second
+
+	now := s.now().UTC()
+	if now.Before(startedAt) {
+		return true
+	}
+	return now.Sub(startedAt) < grace
 }
 
 // launchPending claims pending runs, prepares runtime namespace (for full-env), and launches Kubernetes jobs.
