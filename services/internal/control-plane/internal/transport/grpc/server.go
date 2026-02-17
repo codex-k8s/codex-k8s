@@ -1458,6 +1458,18 @@ func toStatus(err error) error {
 		return nil
 	}
 
+	// Preserve cancellation semantics for callers that implement retry logic based on gRPC codes.
+	if errors.Is(err, context.Canceled) {
+		return status.Error(codes.Canceled, context.Canceled.Error())
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return status.Error(codes.DeadlineExceeded, context.DeadlineExceeded.Error())
+	}
+	// Pass through existing gRPC statuses unchanged.
+	if _, ok := status.FromError(err); ok {
+		return err
+	}
+
 	var v errs.Validation
 	var u errs.Unauthorized
 	var f errs.Forbidden
