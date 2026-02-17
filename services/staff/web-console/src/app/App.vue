@@ -11,9 +11,38 @@
         </div>
       </RouterLink>
 
+      <VSelect
+        v-if="auth.isAuthed"
+        v-model="projectIdModel"
+        class="project-select ml-4"
+        density="compact"
+        variant="outlined"
+        :items="projectSelectOptions"
+        :label="t('context.project')"
+        hide-details
+      />
+
       <VSpacer />
 
-      <VBreadcrumbs v-if="auth.isAuthed" class="breadcrumbs" :items="breadcrumbs" density="compact" />
+      <VBreadcrumbs v-if="auth.isAuthed" class="breadcrumbs" :items="breadcrumbs" density="compact">
+        <template #item="{ item }">
+          <VBtn
+            v-if="item.to && !item.disabled"
+            variant="text"
+            size="small"
+            class="breadcrumb-btn"
+            :to="item.to"
+          >
+            {{ item.title }}
+          </VBtn>
+          <span v-else class="breadcrumb-text text-medium-emphasis">
+            {{ item.title }}
+          </span>
+        </template>
+        <template #divider>
+          <VIcon icon="mdi-chevron-right" size="18" class="text-medium-emphasis" />
+        </template>
+      </VBreadcrumbs>
 
       <VSpacer />
 
@@ -29,7 +58,7 @@
               <VCol cols="12" md="6">
                 <VSelect
                   v-model="projectIdModel"
-                  :items="projectOptions"
+                  :items="projectSelectOptions"
                   :label="t('context.project')"
                   hide-details
                 />
@@ -218,10 +247,18 @@ async function logout() {
 onMounted(() => {
   void auth.ensureLoaded().then(() => {
     if (auth.status === "authed") {
-      void projects.load();
+      void projects.load().then(() => ensureSelectedProjectExists());
     }
   });
 });
+
+function ensureSelectedProjectExists(): void {
+  const selected = String(uiContext.projectId || "").trim();
+  if (!selected) return;
+  const exists = projects.items.some((p) => p.id === selected);
+  if (exists) return;
+  uiContext.setProjectId("");
+}
 
 watch(
   () => route.params.projectId,
@@ -233,9 +270,9 @@ watch(
   { immediate: true },
 );
 
-const projectOptions = computed(() =>
+const projectSelectOptions = computed(() =>
   [
-    { title: t("context.allObjects"), value: "" },
+    { title: t("context.projectNotSelected"), value: "" },
     ...projects.items.map((p) => ({
       title: p.name || p.slug || p.id,
       value: p.id,
@@ -247,7 +284,6 @@ const envOptions = computed(() => [
   { title: t("context.allObjects"), value: "all" },
   { title: t("context.envAi"), value: "ai" },
   { title: t("context.envProduction"), value: "production" },
-  { title: t("context.envProd"), value: "prod" },
 ] as const);
 
 type SelectItem = { title: string; value: string };
@@ -256,17 +292,14 @@ const namespaceOptions = computed<SelectItem[]>(() => {
   const all = { title: t("context.allObjects"), value: "" };
   const project = "codex-k8s";
   const ai = [`${project}-dev-1`, `${project}-dev-2`, `${project}-dev-3`];
-  const production = [`${project}-production`];
-  const prod = [`${project}-prod`];
+  const production = [`${project}-prod`];
 
   const values =
     uiContext.env === "ai"
       ? ai
       : uiContext.env === "production"
         ? production
-        : uiContext.env === "prod"
-          ? prod
-          : [...ai, ...production, ...prod];
+        : [...ai, ...production];
 
   return [all, ...values.map((v) => ({ title: v, value: v }))];
 });
@@ -290,7 +323,7 @@ const showContextFilter = computed(() => {
 
 const filterSummary = computed(() => {
   const all = t("context.allObjects");
-  const projectTitle = projectOptions.value.find((p) => p.value === uiContext.projectId)?.title || all;
+  const projectTitle = projectSelectOptions.value.find((p) => p.value === uiContext.projectId)?.title || all;
   const envTitle = envOptions.value.find((e) => e.value === uiContext.env)?.title || all;
   const namespaceTitle = uiContext.namespace || all;
   return `${projectTitle} / ${envTitle} / ${namespaceTitle}`;
@@ -350,6 +383,7 @@ const breadcrumbs = computed(() => {
   const detailToListRoute: Record<string, string> = {
     "run-details": "runs",
     "runtime-deploy-task-details": "runtime-deploy-tasks",
+    "project-details": "projects",
   };
   const baseRouteName = detailToListRoute[rName] || rName;
   const navItem = findNavItemByRouteName(baseRouteName);
@@ -407,6 +441,18 @@ const breadcrumbs = computed(() => {
 .breadcrumbs {
   max-width: 520px;
   overflow: hidden;
+}
+.project-select {
+  max-width: 280px;
+}
+.breadcrumb-btn {
+  text-transform: none;
+  letter-spacing: normal;
+}
+.breadcrumb-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .context-filter-btn :deep(.v-btn__content) {
   max-width: 520px;

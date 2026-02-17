@@ -1,4 +1,4 @@
-export type NavGroupId = "operations" | "platform" | "governance" | "admin";
+export type NavGroupId = "operations" | "projects" | "platform" | "governance" | "admin";
 
 export type NavGroup = {
   id: NavGroupId;
@@ -17,6 +17,7 @@ export type NavItem = {
 
 export const navGroups: NavGroup[] = [
   { id: "operations", titleKey: "nav.operations" },
+  { id: "projects", titleKey: "nav.projectManagement" },
   { id: "platform", titleKey: "nav.platform" },
   { id: "governance", titleKey: "nav.governance" },
   { id: "admin", titleKey: "nav.adminCluster" },
@@ -31,11 +32,12 @@ export const navItems: NavItem[] = [
   { groupId: "operations", routeName: "wait-queue", titleKey: "nav.waitQueue", icon: "mdi-timer-sand" },
   { groupId: "operations", routeName: "approvals", titleKey: "nav.approvals", icon: "mdi-check-decagram-outline" },
 
+  // Project management
+  { groupId: "projects", routeName: "projects", titleKey: "nav.projects", icon: "mdi-folder-outline" },
+  { groupId: "projects", routeName: "project-repositories", titleKey: "nav.repositories", icon: "mdi-source-repository", requiresProject: true, adminOnly: true },
+  { groupId: "projects", routeName: "project-members", titleKey: "nav.members", icon: "mdi-account-group-outline", requiresProject: true, adminOnly: true },
+
   // Platform
-  { groupId: "platform", routeName: "projects", titleKey: "nav.projects", icon: "mdi-folder-outline" },
-  { groupId: "platform", routeName: "project-details", titleKey: "nav.projectDetails", icon: "mdi-folder-information-outline", requiresProject: true },
-  { groupId: "platform", routeName: "project-repositories", titleKey: "nav.repositories", icon: "mdi-source-repository", requiresProject: true, adminOnly: true },
-  { groupId: "platform", routeName: "project-members", titleKey: "nav.members", icon: "mdi-account-group-outline", requiresProject: true, adminOnly: true },
   { groupId: "platform", routeName: "users", titleKey: "nav.users", icon: "mdi-account-multiple-outline", adminOnly: true },
 
   // Governance (scaffold)
@@ -53,7 +55,7 @@ export const navItems: NavItem[] = [
 
   // Platform configuration (scaffold)
   { groupId: "platform", routeName: "agents", titleKey: "nav.agents", icon: "mdi-robot-outline", comingSoon: true },
-  { groupId: "platform", routeName: "system-settings", titleKey: "nav.systemSettings", icon: "mdi-cog-outline", comingSoon: true },
+  { groupId: "platform", routeName: "system-settings", titleKey: "nav.systemSettings", icon: "mdi-cog-outline", adminOnly: true },
   { groupId: "platform", routeName: "config-entries", titleKey: "nav.configEntries", icon: "mdi-tune-variant", adminOnly: true },
   { groupId: "platform", routeName: "docs-knowledge", titleKey: "nav.docs", icon: "mdi-book-open-page-variant-outline", comingSoon: true },
   { groupId: "platform", routeName: "mcp-tools", titleKey: "nav.mcpTools", icon: "mdi-wrench-cog-outline", comingSoon: true },

@@ -132,7 +132,7 @@ export const routes: RouteRecordRaw[] = [
     props: (r) => ({ agentName: typeof r.params.agentName === "string" ? r.params.agentName : "" }),
     meta: { section: "configuration", crumbKey: "crumb.agents" },
   },
-  { path: "/configuration/system-settings", name: "system-settings", component: SystemSettingsPage, meta: { section: "configuration", crumbKey: "crumb.systemSettings" } },
+  { path: "/configuration/system-settings", name: "system-settings", component: SystemSettingsPage, meta: { adminOnly: true, section: "configuration", crumbKey: "crumb.systemSettings" } },
   { path: "/configuration/config-entries", name: "config-entries", component: ConfigEntriesPage, meta: { adminOnly: true, section: "configuration", crumbKey: "crumb.configEntries" } },
   { path: "/configuration/docs", name: "docs-knowledge", component: DocsKnowledgePage, meta: { section: "configuration", crumbKey: "crumb.docs" } },
   { path: "/configuration/mcp-tools", name: "mcp-tools", component: McpToolsPage, meta: { section: "configuration", crumbKey: "crumb.mcpTools" } },

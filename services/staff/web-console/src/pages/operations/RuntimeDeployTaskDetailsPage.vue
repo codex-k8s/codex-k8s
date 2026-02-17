@@ -64,6 +64,9 @@
                 <template #item.created_at="{ item }">
                   <span class="text-medium-emphasis">{{ formatDateTime(item.created_at, locale) }}</span>
                 </template>
+                <template #item.message="{ item }">
+                  <div class="log-message mono">{{ stripAnsi(item.message) }}</div>
+                </template>
                 <template #no-data>
                   <div class="py-6 text-medium-emphasis">{{ t("states.noRunLogs") }}</div>
                 </template>
@@ -123,6 +126,10 @@ function colorForLevel(value: string): string {
   }
 }
 
+function stripAnsi(value: string): string {
+  return String(value || "").replace(/\u001b\[[0-9;]*m/g, "");
+}
+
 async function loadTask(): Promise<void> {
   loading.value = true;
   error.value = null;
@@ -163,5 +170,11 @@ onMounted(() => void loadTask());
 
 .summary-wide {
   grid-column: 1 / -1;
+}
+
+.log-message {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 </style>

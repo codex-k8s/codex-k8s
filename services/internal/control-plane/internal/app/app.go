@@ -261,6 +261,7 @@ func Run() error {
 		LearningModeDefault: learningDefault,
 		TriggerLabels:       buildWebhookTriggerLabels(cfg),
 		RuntimeModePolicy:   webhookRuntimeModePolicy,
+		PlatformNamespace:   strings.TrimSpace(cfg.PlatformNamespace),
 	})
 
 	webhookURL := strings.TrimSpace(cfg.GitHubWebhookURL)

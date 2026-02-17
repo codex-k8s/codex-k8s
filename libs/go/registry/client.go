@@ -269,6 +269,73 @@ func (c *Client) ListTags(ctx context.Context, repository string) ([]string, err
 	return tags, nil
 }
 
+// GetTagInfo returns digest and metadata for a single repository tag.
+func (c *Client) GetTagInfo(ctx context.Context, repository string, tag string) (TagInfo, bool, error) {
+	repository = strings.TrimSpace(repository)
+	tag = strings.TrimSpace(tag)
+	if repository == "" {
+		return TagInfo{}, false, fmt.Errorf("repository is required")
+	}
+	if tag == "" {
+		return TagInfo{}, false, fmt.Errorf("tag is required")
+	}
+
+	repoPath, err := encodeRepository(repository)
+	if err != nil {
+		return TagInfo{}, false, err
+	}
+
+	endpoint := c.buildURL("/v2/"+repoPath+"/manifests/"+url.PathEscape(tag), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return TagInfo{}, false, fmt.Errorf("build manifest request: %w", err)
+	}
+	req.Header.Set("Accept", manifestAcceptHeader)
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return TagInfo{}, false, fmt.Errorf("request manifest: %w", err)
+	}
+
+	body, readErr := io.ReadAll(resp.Body)
+	closeErr := resp.Body.Close()
+	if readErr != nil {
+		return TagInfo{}, false, fmt.Errorf("read manifest response: %w", readErr)
+	}
+	if closeErr != nil {
+		return TagInfo{}, false, fmt.Errorf("close manifest response: %w", closeErr)
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		return TagInfo{}, false, nil
+	}
+	if resp.StatusCode != http.StatusOK {
+		return TagInfo{}, false, fmt.Errorf("manifest request failed: status=%d body=%s", resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+
+	var manifest struct {
+		Config struct {
+			Digest string `json:"digest"`
+			Size   int64  `json:"size"`
+		} `json:"config"`
+	}
+	if err := json.Unmarshal(body, &manifest); err != nil {
+		return TagInfo{}, false, fmt.Errorf("decode manifest response: %w", err)
+	}
+
+	digest := strings.TrimSpace(resp.Header.Get(registryDigestHeaderName))
+	configDigest := strings.TrimSpace(manifest.Config.Digest)
+	createdAt, err := c.loadConfigBlobCreatedAt(ctx, repoPath, configDigest)
+	if err != nil {
+		return TagInfo{}, false, err
+	}
+
+	return TagInfo{
+		Tag:             tag,
+		Digest:          digest,
+		CreatedAt:       createdAt,
+		ConfigSizeBytes: manifest.Config.Size,
+	}, true, nil
+}
+
 // DeleteTag deletes repository tag by deleting its manifest digest.
 func (c *Client) DeleteTag(ctx context.Context, repository string, tag string) (DeleteResult, error) {
 	repository = strings.TrimSpace(repository)
@@ -360,6 +427,53 @@ func (c *Client) resolveTagDigest(ctx context.Context, repoPath string, tag stri
 	return digest, nil
 }
 
+func (c *Client) loadConfigBlobCreatedAt(ctx context.Context, repoPath string, digest string) (*time.Time, error) {
+	digest = strings.TrimSpace(digest)
+	if digest == "" {
+		return nil, nil
+	}
+
+	blobURL := c.buildURL("/v2/"+repoPath+"/blobs/"+url.PathEscape(digest), nil)
+	blobReq, err := http.NewRequestWithContext(ctx, http.MethodGet, blobURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("build blob request: %w", err)
+	}
+	blobResp, err := c.http.Do(blobReq)
+	if err != nil {
+		return nil, fmt.Errorf("request blob: %w", err)
+	}
+	blobBody, blobReadErr := io.ReadAll(blobResp.Body)
+	blobCloseErr := blobResp.Body.Close()
+	if blobReadErr != nil {
+		return nil, fmt.Errorf("read blob response: %w", blobReadErr)
+	}
+	if blobCloseErr != nil {
+		return nil, fmt.Errorf("close blob response: %w", blobCloseErr)
+	}
+	if blobResp.StatusCode != http.StatusOK {
+		if blobResp.StatusCode == http.StatusNotFound {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("blob request failed: status=%d body=%s", blobResp.StatusCode, strings.TrimSpace(string(blobBody)))
+	}
+
+	var configBlob struct {
+		Created string `json:"created"`
+	}
+	if err := json.Unmarshal(blobBody, &configBlob); err != nil {
+		return nil, nil
+	}
+	createdRaw := strings.TrimSpace(configBlob.Created)
+	if createdRaw == "" {
+		return nil, nil
+	}
+	createdAt, err := time.Parse(time.RFC3339Nano, createdRaw)
+	if err != nil {
+		return nil, nil
+	}
+	return &createdAt, nil
+}
+
 func (c *Client) loadTagMetadata(ctx context.Context, repoPath string, digest string) (*time.Time, int64, error) {
 	endpoint := c.buildURL("/v2/"+repoPath+"/manifests/"+url.PathEscape(digest), nil)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
@@ -400,45 +514,11 @@ func (c *Client) loadTagMetadata(ctx context.Context, repoPath string, digest st
 		return nil, manifest.Config.Size, nil
 	}
 
-	blobURL := c.buildURL("/v2/"+repoPath+"/blobs/"+url.PathEscape(configDigest), nil)
-	blobReq, err := http.NewRequestWithContext(ctx, http.MethodGet, blobURL, nil)
+	createdAt, err := c.loadConfigBlobCreatedAt(ctx, repoPath, configDigest)
 	if err != nil {
-		return nil, manifest.Config.Size, fmt.Errorf("build blob request: %w", err)
+		return nil, manifest.Config.Size, err
 	}
-	blobResp, err := c.http.Do(blobReq)
-	if err != nil {
-		return nil, manifest.Config.Size, fmt.Errorf("request blob: %w", err)
-	}
-	blobBody, blobReadErr := io.ReadAll(blobResp.Body)
-	blobCloseErr := blobResp.Body.Close()
-	if blobReadErr != nil {
-		return nil, manifest.Config.Size, fmt.Errorf("read blob response: %w", blobReadErr)
-	}
-	if blobCloseErr != nil {
-		return nil, manifest.Config.Size, fmt.Errorf("close blob response: %w", blobCloseErr)
-	}
-	if blobResp.StatusCode != http.StatusOK {
-		if blobResp.StatusCode == http.StatusNotFound {
-			return nil, manifest.Config.Size, nil
-		}
-		return nil, manifest.Config.Size, fmt.Errorf("blob request failed: status=%d body=%s", blobResp.StatusCode, strings.TrimSpace(string(blobBody)))
-	}
-
-	var configBlob struct {
-		Created string `json:"created"`
-	}
-	if err := json.Unmarshal(blobBody, &configBlob); err != nil {
-		return nil, manifest.Config.Size, nil
-	}
-	createdRaw := strings.TrimSpace(configBlob.Created)
-	if createdRaw == "" {
-		return nil, manifest.Config.Size, nil
-	}
-	createdAt, err := time.Parse(time.RFC3339Nano, createdRaw)
-	if err != nil {
-		return nil, manifest.Config.Size, nil
-	}
-	return &createdAt, manifest.Config.Size, nil
+	return createdAt, manifest.Config.Size, nil
 }
 
 func (c *Client) buildURL(path string, query url.Values) string {

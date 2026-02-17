@@ -2,13 +2,12 @@
   <VBtn
     v-bind="attrs"
     icon
-    size="large"
     variant="tonal"
     class="back-btn"
     :title="label"
     :aria-label="label"
   >
-    <VIcon icon="mdi-arrow-left" size="26" />
+    <VIcon icon="mdi-arrow-left" size="22" />
   </VBtn>
 </template>
 
@@ -29,7 +28,11 @@ const attrs = useAttrs();
 
 <style scoped>
 .back-btn {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 8px;
+  padding: 0;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
 }
 </style>
-

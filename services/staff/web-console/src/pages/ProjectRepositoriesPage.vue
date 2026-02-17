@@ -344,7 +344,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
@@ -435,7 +435,7 @@ function isPlatformRepository(item: RepositoryBinding): boolean {
 
 function askRemove(repositoryId: string, label: string) {
   confirmRepoId.value = repositoryId;
-  confirmName.value = label;
+  confirmName.value = t("pages.projectRepositories.deleteConfirmMessage", { repo: label });
   confirmOpen.value = true;
 }
 
@@ -561,6 +561,26 @@ async function syncDocsetNow() {
 }
 
 onMounted(() => void load());
+
+let attachErrorTimer: ReturnType<typeof setTimeout> | null = null;
+watch(
+  () => repos.attachError?.messageKey || "",
+  (key) => {
+    if (attachErrorTimer) {
+      clearTimeout(attachErrorTimer);
+      attachErrorTimer = null;
+    }
+    if (key !== "errors.invalidArgument") return;
+    attachErrorTimer = setTimeout(() => {
+      repos.attachError = null;
+    }, 5000);
+  },
+);
+onBeforeUnmount(() => {
+  if (!attachErrorTimer) return;
+  clearTimeout(attachErrorTimer);
+  attachErrorTimer = null;
+});
 </script>
 
 <style scoped>

@@ -962,6 +962,12 @@ func (s *Service) importPlatformConfigEntriesFromKubernetes(ctx context.Context,
 			if key == "" {
 				continue
 			}
+			// Kubernetes secrets can contain optional/empty keys (for example placeholder values).
+			// We do not import empty secret values into DB to avoid failing encryption and to keep config
+			// governance aligned with config.env rules (skip empty values).
+			if strings.TrimSpace(string(raw)) == "" {
+				continue
+			}
 			if _, exists := existingKeys[key]; exists {
 				continue
 			}
@@ -1005,6 +1011,9 @@ func (s *Service) importPlatformConfigEntriesFromKubernetes(ctx context.Context,
 		for key, value := range data {
 			key = strings.TrimSpace(key)
 			if key == "" {
+				continue
+			}
+			if strings.TrimSpace(value) == "" {
 				continue
 			}
 			if _, exists := existingKeys[key]; exists {

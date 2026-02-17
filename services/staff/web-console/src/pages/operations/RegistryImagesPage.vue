@@ -111,10 +111,21 @@
             <span class="mono">{{ item.repository }}</span>
           </template>
           <template #item.tag="{ item }">
-            <span class="mono">{{ item.tag }}</span>
-          </template>
-          <template #item.digest="{ item }">
-            <span class="mono">{{ shortDigest(item.digest) }}</span>
+            <div class="d-flex align-center justify-center ga-2">
+              <span class="mono">{{ shortTag(item.tag) }}</span>
+              <VTooltip :text="t('common.copy')">
+                <template #activator="{ props: tipProps }">
+                  <VBtn
+                    v-bind="tipProps"
+                    size="x-small"
+                    variant="text"
+                    icon="mdi-content-save-outline"
+                    :disabled="loading"
+                    @click="copyToClipboard(item.tag)"
+                  />
+                </template>
+              </VTooltip>
+            </div>
           </template>
           <template #item.created_at="{ item }">
             <span class="text-medium-emphasis">{{ formatDateTime(item.created_at, locale) }}</span>
@@ -181,7 +192,6 @@ import type {
 type RegistryImageRow = {
   repository: string;
   tag: string;
-  digest: string;
   created_at?: string | null;
   config_size_bytes: number;
 };
@@ -212,9 +222,8 @@ const deleteTagName = ref("");
 const deleteConfirmMessage = computed(() => `${deleteRepository.value}:${deleteTagName.value}`);
 
 const headers = computed(() => ([
-  { title: t("table.fields.repository"), key: "repository", align: "center", width: 320 },
-  { title: t("table.fields.tag"), key: "tag", align: "center", width: 200 },
-  { title: t("table.fields.digest"), key: "digest", align: "center", width: 200 },
+  { title: t("table.fields.repository"), key: "repository", align: "center", width: 420 },
+  { title: t("table.fields.tag"), key: "tag", align: "center", width: 140 },
   { title: t("table.fields.created_at"), key: "created_at", align: "center", width: 180 },
   { title: t("table.fields.config_size_bytes"), key: "config_size_bytes", align: "center", width: 160 },
   { title: "", key: "actions", sortable: false, align: "end", width: 72 },
@@ -227,7 +236,6 @@ const rows = computed<RegistryImageRow[]>(() => {
       out.push({
         repository: repositoryItem.repository,
         tag: tagItem.tag,
-        digest: tagItem.digest,
         created_at: tagItem.created_at,
         config_size_bytes: Number(tagItem.config_size_bytes || 0),
       });
@@ -236,10 +244,24 @@ const rows = computed<RegistryImageRow[]>(() => {
   return out;
 });
 
-function shortDigest(value: string): string {
-  const digest = String(value || "").trim();
-  if (digest.length <= 20) return digest;
-  return `${digest.slice(0, 12)}...${digest.slice(-8)}`;
+function shortTag(value: string): string {
+  const tag = String(value || "").trim();
+  if (tag.length <= 8) return tag;
+
+  const lastDash = tag.lastIndexOf("-");
+  if (lastDash >= 0 && lastDash < tag.length - 1) {
+    const prefix = tag.slice(0, lastDash + 1);
+    const suffix = tag.slice(lastDash + 1);
+    if (/^[0-9a-f]+$/i.test(suffix) && suffix.length >= 8) {
+      return `${prefix}${suffix.slice(0, 8)}`;
+    }
+  }
+
+  if (/^[0-9a-f]+$/i.test(tag)) {
+    return tag.slice(0, 8);
+  }
+
+  return `${tag.slice(0, 8)}...`;
 }
 
 function formatBytes(value: number): string {
@@ -252,6 +274,16 @@ function formatBytes(value: number): string {
     unit++;
   }
   return `${size.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
+}
+
+async function copyToClipboard(value: string): Promise<void> {
+  const text = String(value || "");
+  try {
+    await navigator.clipboard.writeText(text);
+    snackbar.success(t("common.copied"));
+  } catch {
+    snackbar.error(t("errors.copyFailed"));
+  }
 }
 
 async function loadImages(): Promise<void> {

@@ -2,6 +2,16 @@
   <div>
     <PageHeader :title="t('pages.projects.title')">
       <template #actions>
+        <AdaptiveBtn
+          v-if="auth.isPlatformAdmin"
+          class="mr-2"
+          color="primary"
+          variant="tonal"
+          icon="mdi-plus"
+          :label="t('pages.projects.createProject')"
+          :disabled="projects.loading"
+          @click="openCreateDialog"
+        />
         <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="projects.loading" @click="load" />
       </template>
     </PageHeader>
@@ -21,6 +31,24 @@
             </div>
           </template>
 
+          <template #item.select="{ item }">
+            <div class="d-flex justify-center">
+              <VTooltip :text="t('pages.projects.makeCurrent')">
+                <template #activator="{ props: tipProps }">
+                  <VBtn
+                    v-bind="tipProps"
+                    size="small"
+                    variant="tonal"
+                    :color="uiContext.projectId === item.id ? 'success' : 'primary'"
+                    :icon="uiContext.projectId === item.id ? 'mdi-check-circle-outline' : 'mdi-check'"
+                    :disabled="uiContext.projectId === item.id"
+                    @click="selectProject(item.id)"
+                  />
+                </template>
+              </VTooltip>
+            </div>
+          </template>
+
           <template #item.role="{ item }">
             <div class="d-flex justify-center">
               <VChip size="small" variant="tonal" class="font-weight-bold" :color="colorForProjectRole(item.role)">
@@ -31,6 +59,18 @@
 
           <template #item.manage="{ item }">
             <div class="d-flex ga-2 justify-center flex-wrap">
+              <VTooltip v-if="auth.isPlatformAdmin" :text="t('scaffold.rowActions.edit')">
+                <template #activator="{ props: tipProps }">
+                  <VBtn
+                    v-bind="tipProps"
+                    size="small"
+                    variant="text"
+                    icon="mdi-pencil-outline"
+                    :disabled="projects.saving"
+                    @click="openEditDialog(item.slug, item.name)"
+                  />
+                </template>
+              </VTooltip>
               <VTooltip :text="t('pages.projects.repos')">
                 <template #activator="{ props: tipProps }">
                   <VBtn
@@ -82,21 +122,26 @@
         </VDataTable>
       </VCardText>
     </VCard>
+  </div>
 
-    <VCard v-if="auth.isPlatformAdmin" class="mt-6" variant="outlined">
-      <VCardTitle class="text-subtitle-1">{{ t("pages.projects.createTitle") }}</VCardTitle>
+  <VDialog v-model="upsertDialogOpen" max-width="720">
+    <VCard>
+      <VCardTitle class="text-subtitle-1">
+        {{ upsertMode === "create" ? t("pages.projects.createProject") : t("pages.projects.editProject") }}
+      </VCardTitle>
       <VCardText>
-        <VRow density="compact" class="align-end">
+        <VRow density="compact">
           <VCol cols="12" md="4">
-            <VTextField v-model.trim="slug" :label="t('pages.projects.slug')" :placeholder="t('placeholders.projectSlug')" />
+            <VTextField
+              v-model.trim="formSlug"
+              :label="t('pages.projects.slug')"
+              :placeholder="t('placeholders.projectSlug')"
+              :disabled="upsertMode === 'edit'"
+              hide-details
+            />
           </VCol>
-          <VCol cols="12" md="6">
-            <VTextField v-model.trim="name" :label="t('pages.projects.name')" :placeholder="t('placeholders.projectName')" />
-          </VCol>
-          <VCol cols="12" md="2">
-            <VBtn class="w-100" color="primary" variant="tonal" :loading="projects.saving" @click="createOrUpdate">
-              {{ t("common.createOrUpdate") }}
-            </VBtn>
+          <VCol cols="12" md="8">
+            <VTextField v-model.trim="formName" :label="t('pages.projects.name')" :placeholder="t('placeholders.projectName')" hide-details />
           </VCol>
         </VRow>
 
@@ -107,12 +152,15 @@
           {{ t(projects.deleteError.messageKey) }}
         </VAlert>
       </VCardText>
+      <VCardActions>
+        <VSpacer />
+        <VBtn variant="text" :disabled="projects.saving" @click="upsertDialogOpen = false">{{ t("common.cancel") }}</VBtn>
+        <VBtn color="primary" variant="tonal" :disabled="!canSave" :loading="projects.saving" @click="saveProject">
+          {{ t("common.save") }}
+        </VBtn>
+      </VCardActions>
     </VCard>
-
-    <VAlert v-else class="mt-6" type="info" variant="tonal">
-      {{ t("pages.projects.adminOnlyHint") }}
-    </VAlert>
-  </div>
+  </VDialog>
 
   <ConfirmDialog
     v-model="confirmOpen"
@@ -126,7 +174,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
@@ -136,27 +184,27 @@ import ConfirmDialog from "../shared/ui/ConfirmDialog.vue";
 import { useSnackbarStore } from "../shared/ui/feedback/snackbar-store";
 import { useAuthStore } from "../features/auth/store";
 import { useProjectsStore } from "../features/projects/projects-store";
+import { useUiContextStore } from "../features/ui-context/store";
 import { colorForProjectRole } from "../shared/lib/chips";
 
 const { t } = useI18n({ useScope: "global" });
 const auth = useAuthStore();
 const projects = useProjectsStore();
 const snackbar = useSnackbarStore();
-
-const slug = ref("");
-const name = ref("");
+const uiContext = useUiContextStore();
 
 const confirmOpen = ref(false);
 const confirmProjectId = ref<string>("");
 const confirmName = ref<string>("");
 
-const headers = [
+const headers = computed(() => ([
   { title: t("pages.projects.slug"), key: "slug", width: 220, align: "start" },
   { title: t("pages.projects.name"), key: "name", align: "center" },
+  { title: "", key: "select", width: 72, sortable: false, align: "center" },
   { title: t("pages.projects.role"), key: "role", width: 160, sortable: false, align: "center" },
-  { title: t("pages.projects.manage"), key: "manage", width: 140, sortable: false, align: "center" },
+  { title: t("pages.projects.manage"), key: "manage", width: 180, sortable: false, align: "center" },
   { title: "", key: "actions", sortable: false, width: 72, align: "end" },
-] as const;
+]) as const);
 
 function roleLabel(role: string): string {
   const normalized = role.trim();
@@ -170,13 +218,8 @@ async function load() {
   await projects.load();
 }
 
-async function createOrUpdate() {
-  await projects.createOrUpdate(slug.value, name.value);
-  if (!projects.saveError) {
-    slug.value = "";
-    name.value = "";
-    snackbar.success(t("common.saved"));
-  }
+function selectProject(projectId: string): void {
+  uiContext.setProjectId(projectId);
 }
 
 function askDelete(projectId: string, projectName: string) {
@@ -197,4 +240,47 @@ async function doDelete() {
 }
 
 onMounted(() => void load());
+
+const upsertDialogOpen = ref(false);
+const upsertMode = ref<"create" | "edit">("create");
+const formSlug = ref("");
+const formName = ref("");
+const initialSlug = ref("");
+const initialName = ref("");
+
+function openCreateDialog(): void {
+  upsertMode.value = "create";
+  formSlug.value = "";
+  formName.value = "";
+  initialSlug.value = "";
+  initialName.value = "";
+  projects.saveError = null;
+  upsertDialogOpen.value = true;
+}
+
+function openEditDialog(slug: string, name: string): void {
+  upsertMode.value = "edit";
+  formSlug.value = slug;
+  formName.value = name;
+  initialSlug.value = slug;
+  initialName.value = name;
+  projects.saveError = null;
+  upsertDialogOpen.value = true;
+}
+
+const canSave = computed(() => {
+  const slug = formSlug.value.trim();
+  const name = formName.value.trim();
+  if (!slug || !name) return false;
+  if (upsertMode.value === "create") return true;
+  return slug === initialSlug.value && name !== initialName.value;
+});
+
+async function saveProject(): Promise<void> {
+  await projects.createOrUpdate(formSlug.value, formName.value);
+  if (!projects.saveError) {
+    upsertDialogOpen.value = false;
+    snackbar.success(t("common.saved"));
+  }
+}
 </script>

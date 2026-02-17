@@ -2,6 +2,15 @@
   <div>
     <PageHeader :title="t('pages.configEntries.title')" :hint="t('pages.configEntries.hint')">
       <template #actions>
+        <AdaptiveBtn
+          color="primary"
+          variant="tonal"
+          icon="mdi-plus"
+          :label="t('pages.configEntries.add')"
+          :disabled="store.loading"
+          class="mr-2"
+          @click="openCreateDialog"
+        />
         <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="store.loading" @click="load" />
       </template>
     </PageHeader>
@@ -21,30 +30,59 @@
       <VCardText>
         <VRow density="compact" class="align-end">
           <VCol cols="12" md="3">
-            <VSelect v-model="scope" :items="scopeItems" :label="t('pages.configEntries.scope')" hide-details @update:model-value="load" />
+            <VSelect
+              v-model="scope"
+              :items="scopeItems"
+              :label="t('pages.configEntries.scope')"
+              hide-details
+            />
           </VCol>
-          <VCol cols="12" md="3">
-            <VTextField v-model.trim="projectId" :label="t('pages.configEntries.projectId')" hide-details />
+          <VCol cols="12" md="4">
+            <VSelect
+              v-model="projectId"
+              :items="projectOptions"
+              :label="t('context.project')"
+              hide-details
+              clearable
+              :disabled="!projectFilterEnabled"
+            />
           </VCol>
-          <VCol cols="12" md="3">
-            <VTextField v-model.trim="repositoryId" :label="t('pages.configEntries.repositoryId')" hide-details />
-          </VCol>
-          <VCol cols="12" md="3">
-            <AdaptiveBtn variant="tonal" icon="mdi-magnify" :label="t('common.refresh')" :loading="store.loading" @click="load" />
+          <VCol cols="12" md="5">
+            <VSelect
+              v-model="repositoryId"
+              :items="repositoryOptions"
+              :label="t('pages.configEntries.repository')"
+              hide-details
+              clearable
+              :loading="repositoriesLoading"
+              :disabled="!repositoryFilterEnabled"
+            />
           </VCol>
         </VRow>
-        <div class="text-caption text-medium-emphasis mt-2">
-          {{ t("pages.configEntries.syncTargetsHint") }}
-        </div>
       </VCardText>
+      <VCardActions>
+        <VSpacer />
+        <AdaptiveBtn variant="tonal" icon="mdi-check" :label="t('pages.runs.applyFilters')" :loading="store.loading" @click="load" />
+        <AdaptiveBtn variant="text" icon="mdi-backspace-outline" :label="t('pages.runs.resetFilters')" :disabled="store.loading" @click="resetFilters" />
+      </VCardActions>
     </VCard>
 
     <VCard class="mt-4" variant="outlined">
       <VCardTitle class="text-subtitle-1">{{ t("pages.configEntries.listTitle") }}</VCardTitle>
       <VCardText>
         <VDataTable :headers="headers" :items="store.items" :loading="store.loading" :items-per-page="10" hover>
+          <template #item.scope="{ item }">
+            <div class="d-flex justify-center">
+              <VChip size="x-small" variant="tonal" class="font-weight-bold" color="secondary">
+                {{ scopeLabel(item.scope) }}
+              </VChip>
+            </div>
+          </template>
           <template #item.value="{ item }">
             <span class="mono text-medium-emphasis">{{ item.kind === "secret" ? "********" : item.value ?? "-" }}</span>
+          </template>
+          <template #item.mutability="{ item }">
+            <span class="text-medium-emphasis">{{ mutabilityLabel(item.mutability) }}</span>
           </template>
           <template #item.sync_targets="{ item }">
             <div class="d-flex justify-center flex-wrap ga-1">
@@ -58,6 +96,18 @@
           </template>
           <template #item.actions="{ item }">
             <div class="d-flex justify-end">
+              <VTooltip :text="t('scaffold.rowActions.edit')">
+                <template #activator="{ props: tipProps }">
+                  <VBtn
+                    v-bind="tipProps"
+                    size="small"
+                    variant="text"
+                    icon="mdi-pencil-outline"
+                    :disabled="store.saving || store.deleting"
+                    @click="openEditDialog(item)"
+                  />
+                </template>
+              </VTooltip>
               <VTooltip :text="t('common.delete')">
                 <template #activator="{ props: tipProps }">
                   <VBtn
@@ -81,28 +131,57 @@
         </VDataTable>
       </VCardText>
     </VCard>
+  </div>
 
-    <VCard class="mt-6" variant="outlined">
-      <VCardTitle class="text-subtitle-1">{{ t("pages.configEntries.upsertTitle") }}</VCardTitle>
+  <ConfirmDialog
+    v-model="confirmDeleteOpen"
+    :title="t('common.delete')"
+    :message="confirmDeleteLabel"
+    :confirm-text="t('common.delete')"
+    :cancel-text="t('common.cancel')"
+    danger
+    @confirm="doDelete"
+  />
+
+  <VDialog v-model="upsertDialogOpen" max-width="760">
+    <VCard>
+      <VCardTitle class="text-subtitle-1">
+        {{ upsertMode === "create" ? t("pages.configEntries.createTitle") : t("pages.configEntries.editTitle") }}
+      </VCardTitle>
       <VCardText>
         <VRow density="compact" class="align-end">
-          <VCol cols="12" md="3">
-            <VSelect v-model="formScope" :items="scopeItems" :label="t('pages.configEntries.scope')" hide-details />
+          <VCol cols="12" md="4">
+            <VSelect v-model="formScope" :items="formScopeItems" :label="t('pages.configEntries.scope')" hide-details />
           </VCol>
-          <VCol cols="12" md="3">
+          <VCol cols="12" md="4">
             <VSelect v-model="kind" :items="kindItems" :label="t('pages.configEntries.kind')" hide-details />
           </VCol>
-          <VCol cols="12" md="3">
+          <VCol cols="12" md="4">
             <VSelect v-model="mutability" :items="mutabilityItems" :label="t('pages.configEntries.mutability')" hide-details />
           </VCol>
-          <VCol cols="12" md="3">
+          <VCol cols="12" md="4">
             <VSwitch v-model="isDangerous" :label="t('pages.configEntries.isDangerous')" hide-details />
           </VCol>
-          <VCol cols="12" md="6">
-            <VTextField v-model.trim="formProjectId" :label="t('pages.configEntries.projectId')" hide-details />
+          <VCol cols="12" md="4">
+            <VSelect
+              v-model="formProjectId"
+              :items="projectOptions"
+              :label="t('context.project')"
+              hide-details
+              clearable
+              :disabled="formScope === 'platform'"
+            />
           </VCol>
-          <VCol cols="12" md="6">
-            <VTextField v-model.trim="formRepositoryId" :label="t('pages.configEntries.repositoryId')" hide-details />
+          <VCol cols="12" md="4">
+            <VSelect
+              v-model="formRepositoryId"
+              :items="repositoryOptions"
+              :label="t('pages.configEntries.repository')"
+              hide-details
+              clearable
+              :loading="repositoriesLoading"
+              :disabled="formScope !== 'repository'"
+            />
           </VCol>
           <VCol cols="12">
             <VTextField v-model.trim="key" :label="t('pages.configEntries.key')" hide-details />
@@ -124,6 +203,9 @@
           </VCol>
           <VCol cols="12">
             <VTextField v-model="syncTargetsRaw" :label="t('pages.configEntries.syncTargets')" hide-details />
+            <div class="text-caption text-medium-emphasis mt-2">
+              {{ t("pages.configEntries.syncTargetsHint") }}
+            </div>
           </VCol>
           <VCol cols="12">
             <VAlert v-if="isDangerous" type="warning" variant="tonal">
@@ -139,28 +221,25 @@
             />
           </VCol>
           <VCol cols="12">
-            <VBtn color="primary" variant="tonal" :loading="store.saving" @click="save">
-              {{ t("common.save") }}
-            </VBtn>
+            <VAlert v-if="store.saveError" type="error" variant="tonal">
+              {{ t(store.saveError.messageKey) }}
+            </VAlert>
           </VCol>
         </VRow>
       </VCardText>
+      <VCardActions>
+        <VSpacer />
+        <VBtn variant="text" :disabled="store.saving" @click="upsertDialogOpen = false">{{ t("common.cancel") }}</VBtn>
+        <VBtn color="primary" variant="tonal" :disabled="!canSave" :loading="store.saving" @click="save">
+          {{ t("common.save") }}
+        </VBtn>
+      </VCardActions>
     </VCard>
-  </div>
-
-  <ConfirmDialog
-    v-model="confirmDeleteOpen"
-    :title="t('common.delete')"
-    :message="confirmDeleteLabel"
-    :confirm-text="t('common.delete')"
-    :cancel-text="t('common.cancel')"
-    danger
-    @confirm="doDelete"
-  />
+  </VDialog>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
@@ -169,20 +248,87 @@ import PageHeader from "../../shared/ui/PageHeader.vue";
 import { formatDateTime } from "../../shared/lib/datetime";
 import { useSnackbarStore } from "../../shared/ui/feedback/snackbar-store";
 import { useConfigEntriesStore } from "../../features/config/config-entries-store";
+import { useProjectsStore } from "../../features/projects/projects-store";
+import { useUiContextStore } from "../../features/ui-context/store";
+import { listProjectRepositories } from "../../features/projects/api";
+import type { RepositoryBinding } from "../../features/projects/types";
+import type { ConfigEntry } from "../../features/config/types";
+
+type ScopeFilter = "all" | "platform" | "project" | "repository";
+type Scope = Exclude<ScopeFilter, "all">;
+type Kind = "variable" | "secret";
+type Mutability = "startup_required" | "runtime_mutable";
 
 const { t, locale } = useI18n({ useScope: "global" });
-const store = useConfigEntriesStore();
 const snackbar = useSnackbarStore();
+const store = useConfigEntriesStore();
+const projects = useProjectsStore();
+const uiContext = useUiContextStore();
 
-const scopeItems = ["platform", "project", "repository"] as const;
-const kindItems = ["variable", "secret"] as const;
-const mutabilityItems = ["startup_required", "runtime_mutable"] as const;
-
-const scope = ref<(typeof scopeItems)[number]>("platform");
-const projectId = ref("");
+const scope = ref<ScopeFilter>("platform");
+const projectId = ref(uiContext.projectId || "");
 const repositoryId = ref("");
 
-const headers = [
+const repositories = ref<RepositoryBinding[]>([]);
+const repositoriesLoading = ref(false);
+
+const scopeItems = computed(() => ([
+  { title: t("pages.configEntries.scopeAll"), value: "all" },
+  { title: t("pages.configEntries.scopePlatform"), value: "platform" },
+  { title: t("pages.configEntries.scopeProject"), value: "project" },
+  { title: t("pages.configEntries.scopeRepository"), value: "repository" },
+] as const));
+
+const projectOptions = computed(() => ([
+  { title: t("context.allObjects"), value: "" },
+  ...projects.items.map((p) => ({ title: p.name || p.slug || p.id, value: p.id })),
+]));
+
+const repositoryOptions = computed(() => ([
+  { title: t("context.allObjects"), value: "" },
+  ...repositories.value.map((r) => ({ title: `${r.owner}/${r.name}`, value: r.id })),
+]));
+
+const projectFilterEnabled = computed(() => scope.value !== "platform");
+const repositoryFilterEnabled = computed(() =>
+  (scope.value === "repository" || scope.value === "all") && Boolean(projectId.value),
+);
+
+watch(
+  () => projectId.value,
+  async (next) => {
+    repositories.value = [];
+    repositoryId.value = "";
+    const trimmed = String(next || "").trim();
+    if (!trimmed) return;
+
+    repositoriesLoading.value = true;
+    try {
+      repositories.value = await listProjectRepositories(trimmed);
+    } catch (e) {
+      snackbar.error(t("errors.unknown"));
+    } finally {
+      repositoriesLoading.value = false;
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  () => scope.value,
+  (next) => {
+    if (next === "platform") {
+      projectId.value = "";
+      repositoryId.value = "";
+      return;
+    }
+    if (next === "project") {
+      repositoryId.value = "";
+    }
+  },
+);
+
+const headers = computed(() => ([
   { title: t("pages.configEntries.scope"), key: "scope", width: 140, align: "center" },
   { title: t("pages.configEntries.kind"), key: "kind", width: 140, align: "center" },
   { title: t("pages.configEntries.key"), key: "key", align: "start" },
@@ -191,25 +337,101 @@ const headers = [
   { title: t("pages.configEntries.isDangerous"), key: "is_dangerous", width: 140, align: "center" },
   { title: t("pages.configEntries.syncTargets"), key: "sync_targets", align: "center" },
   { title: t("pages.configEntries.updatedAt"), key: "updated_at", width: 220, align: "center" },
-  { title: "", key: "actions", sortable: false, width: 72, align: "end" },
-] as const;
+  { title: "", key: "actions", sortable: false, width: 88, align: "end" },
+] as const));
 
 function fmtDateTime(value: string | null | undefined): string {
   return formatDateTime(value, locale.value);
 }
 
-async function load() {
-  await store.load({
-    scope: scope.value,
-    projectId: projectId.value.trim() || undefined,
-    repositoryId: repositoryId.value.trim() || undefined,
-    limit: 200,
-  });
+function scopeLabel(value: string): string {
+  switch (String(value || "")) {
+    case "platform":
+      return t("pages.configEntries.scopePlatform");
+    case "project":
+      return t("pages.configEntries.scopeProject");
+    case "repository":
+      return t("pages.configEntries.scopeRepository");
+    default:
+      return String(value || "-");
+  }
 }
 
-const formScope = ref<(typeof scopeItems)[number]>("platform");
-const kind = ref<(typeof kindItems)[number]>("variable");
-const mutability = ref<(typeof mutabilityItems)[number]>("startup_required");
+function mutabilityLabel(value: string): string {
+  switch (String(value || "")) {
+    case "startup_required":
+      return t("pages.configEntries.mutabilityStartupRequired");
+    case "runtime_mutable":
+      return t("pages.configEntries.mutabilityRuntimeMutable");
+    default:
+      return String(value || "-");
+  }
+}
+
+async function load(): Promise<void> {
+  if (scope.value === "project" && !projectId.value) {
+    snackbar.error(t("pages.configEntries.projectRequired"));
+    return;
+  }
+  if (scope.value === "repository" && !repositoryId.value) {
+    snackbar.error(t("pages.configEntries.repositoryRequired"));
+    return;
+  }
+  const limit = 200;
+  switch (scope.value) {
+    case "platform":
+      await store.load({ scope: "platform", limit });
+      return;
+    case "project":
+      await store.load({ scope: "project", projectId: projectId.value, limit });
+      return;
+    case "repository":
+      await store.load({ scope: "repository", repositoryId: repositoryId.value, limit });
+      return;
+    default:
+      await store.load({
+        scope: "all",
+        projectId: projectId.value || undefined,
+        repositoryId: repositoryId.value || undefined,
+        limit,
+      });
+      return;
+  }
+}
+
+function resetFilters(): void {
+  scope.value = "platform";
+  projectId.value = "";
+  repositoryId.value = "";
+}
+
+const confirmDeleteOpen = ref(false);
+const confirmDeleteId = ref("");
+const confirmDeleteLabel = ref("");
+
+function askDelete(id: string, label: string): void {
+  confirmDeleteId.value = id;
+  confirmDeleteLabel.value = label;
+  confirmDeleteOpen.value = true;
+}
+
+async function doDelete(): Promise<void> {
+  const id = confirmDeleteId.value;
+  confirmDeleteId.value = "";
+  if (!id) return;
+  await store.remove(id);
+  if (!store.deleteError) {
+    snackbar.success(t("common.deleted"));
+    await load();
+  }
+}
+
+const upsertDialogOpen = ref(false);
+const upsertMode = ref<"create" | "edit">("create");
+
+const formScope = ref<Scope>("platform");
+const kind = ref<Kind>("variable");
+const mutability = ref<Mutability>("startup_required");
 const isDangerous = ref(false);
 const dangerousConfirmed = ref(false);
 const formProjectId = ref("");
@@ -219,12 +441,89 @@ const valuePlain = ref("");
 const valueSecret = ref("");
 const syncTargetsRaw = ref("");
 
+const formScopeItems = computed(() => ([
+  { title: t("pages.configEntries.scopePlatform"), value: "platform" },
+  { title: t("pages.configEntries.scopeProject"), value: "project" },
+  { title: t("pages.configEntries.scopeRepository"), value: "repository" },
+] as const));
+
+const kindItems = computed(() => ([
+  { title: t("pages.configEntries.kindVariable"), value: "variable" },
+  { title: t("pages.configEntries.kindSecret"), value: "secret" },
+] as const));
+
+const mutabilityItems = computed(() => ([
+  { title: t("pages.configEntries.mutabilityStartupRequired"), value: "startup_required" },
+  { title: t("pages.configEntries.mutabilityRuntimeMutable"), value: "runtime_mutable" },
+] as const));
+
+watch(
+  () => formScope.value,
+  (next) => {
+    if (next === "platform") {
+      formProjectId.value = "";
+      formRepositoryId.value = "";
+      return;
+    }
+    if (next === "project") {
+      formRepositoryId.value = "";
+    }
+  },
+);
+
 function parseTargets(raw: string): string[] {
-  const parts = raw.split(",").map((p) => p.trim()).filter((p) => p.length > 0);
+  const parts = raw
+    .split(",")
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
   return Array.from(new Set(parts));
 }
 
-async function save() {
+const canSave = computed(() => {
+  const k = key.value.trim();
+  if (!k) return false;
+  if (formScope.value === "project" && !formProjectId.value) return false;
+  if (formScope.value === "repository" && !formRepositoryId.value) return false;
+  if (kind.value === "secret" && valueSecret.value.trim() === "") return false;
+  if (isDangerous.value && !dangerousConfirmed.value) return false;
+  return true;
+});
+
+function openCreateDialog(): void {
+  upsertMode.value = "create";
+  store.saveError = null;
+  formScope.value = scope.value === "repository" ? "repository" : scope.value === "project" ? "project" : "platform";
+  kind.value = "variable";
+  mutability.value = "startup_required";
+  isDangerous.value = false;
+  dangerousConfirmed.value = false;
+  formProjectId.value = projectId.value;
+  formRepositoryId.value = repositoryId.value;
+  key.value = "";
+  valuePlain.value = "";
+  valueSecret.value = "";
+  syncTargetsRaw.value = "";
+  upsertDialogOpen.value = true;
+}
+
+function openEditDialog(item: ConfigEntry): void {
+  upsertMode.value = "edit";
+  store.saveError = null;
+  formScope.value = String(item.scope || "platform") as Scope;
+  kind.value = String(item.kind || "variable") as Kind;
+  mutability.value = String(item.mutability || "startup_required") as Mutability;
+  isDangerous.value = Boolean(item.is_dangerous);
+  dangerousConfirmed.value = false;
+  formProjectId.value = String(item.project_id || "");
+  formRepositoryId.value = String(item.repository_id || "");
+  key.value = String(item.key || "");
+  valuePlain.value = "";
+  valueSecret.value = "";
+  syncTargetsRaw.value = (item.sync_targets || []).join(", ");
+  upsertDialogOpen.value = true;
+}
+
+async function save(): Promise<void> {
   if (isDangerous.value && !dangerousConfirmed.value) {
     snackbar.error(t("pages.configEntries.dangerousConfirmRequired"));
     return;
@@ -242,37 +541,17 @@ async function save() {
     isDangerous: isDangerous.value,
     dangerousConfirmed: dangerousConfirmed.value,
   });
-  if (item) {
-    snackbar.success(t("common.saved"));
-    await load();
-    valuePlain.value = "";
-    valueSecret.value = "";
-    dangerousConfirmed.value = false;
-  }
+  if (!item) return;
+
+  snackbar.success(t("common.saved"));
+  upsertDialogOpen.value = false;
+  await load();
 }
 
-const confirmDeleteOpen = ref(false);
-const confirmDeleteId = ref("");
-const confirmDeleteLabel = ref("");
-
-function askDelete(id: string, label: string) {
-  confirmDeleteId.value = id;
-  confirmDeleteLabel.value = label;
-  confirmDeleteOpen.value = true;
-}
-
-async function doDelete() {
-  const id = confirmDeleteId.value;
-  confirmDeleteId.value = "";
-  if (!id) return;
-  await store.remove(id);
-  if (!store.deleteError) {
-    snackbar.success(t("common.deleted"));
-    await load();
-  }
-}
-
-onMounted(() => void load());
+onMounted(() => {
+  if (projects.items.length === 0) void projects.load();
+  void load();
+});
 </script>
 
 <style scoped>
