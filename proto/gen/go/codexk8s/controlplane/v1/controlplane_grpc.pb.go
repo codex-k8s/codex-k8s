@@ -67,6 +67,8 @@ const (
 	ControlPlaneService_GetLatestAgentSession_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/GetLatestAgentSession"
 	ControlPlaneService_InsertRunFlowEvent_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/InsertRunFlowEvent"
 	ControlPlaneService_UpsertRunStatusComment_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertRunStatusComment"
+	ControlPlaneService_GetCodexAuth_FullMethodName                         = "/codexk8s.controlplane.v1.ControlPlaneService/GetCodexAuth"
+	ControlPlaneService_UpsertCodexAuth_FullMethodName                      = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertCodexAuth"
 	ControlPlaneService_DeleteRunNamespace_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/DeleteRunNamespace"
 )
 
@@ -124,6 +126,8 @@ type ControlPlaneServiceClient interface {
 	GetLatestAgentSession(ctx context.Context, in *GetLatestAgentSessionRequest, opts ...grpc.CallOption) (*GetLatestAgentSessionResponse, error)
 	InsertRunFlowEvent(ctx context.Context, in *InsertRunFlowEventRequest, opts ...grpc.CallOption) (*InsertRunFlowEventResponse, error)
 	UpsertRunStatusComment(ctx context.Context, in *UpsertRunStatusCommentRequest, opts ...grpc.CallOption) (*UpsertRunStatusCommentResponse, error)
+	GetCodexAuth(ctx context.Context, in *GetCodexAuthRequest, opts ...grpc.CallOption) (*GetCodexAuthResponse, error)
+	UpsertCodexAuth(ctx context.Context, in *UpsertCodexAuthRequest, opts ...grpc.CallOption) (*UpsertCodexAuthResponse, error)
 	DeleteRunNamespace(ctx context.Context, in *DeleteRunNamespaceRequest, opts ...grpc.CallOption) (*DeleteRunNamespaceResponse, error)
 }
 
@@ -605,6 +609,26 @@ func (c *controlPlaneServiceClient) UpsertRunStatusComment(ctx context.Context, 
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) GetCodexAuth(ctx context.Context, in *GetCodexAuthRequest, opts ...grpc.CallOption) (*GetCodexAuthResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCodexAuthResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_GetCodexAuth_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) UpsertCodexAuth(ctx context.Context, in *UpsertCodexAuthRequest, opts ...grpc.CallOption) (*UpsertCodexAuthResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpsertCodexAuthResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_UpsertCodexAuth_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) DeleteRunNamespace(ctx context.Context, in *DeleteRunNamespaceRequest, opts ...grpc.CallOption) (*DeleteRunNamespaceResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteRunNamespaceResponse)
@@ -669,6 +693,8 @@ type ControlPlaneServiceServer interface {
 	GetLatestAgentSession(context.Context, *GetLatestAgentSessionRequest) (*GetLatestAgentSessionResponse, error)
 	InsertRunFlowEvent(context.Context, *InsertRunFlowEventRequest) (*InsertRunFlowEventResponse, error)
 	UpsertRunStatusComment(context.Context, *UpsertRunStatusCommentRequest) (*UpsertRunStatusCommentResponse, error)
+	GetCodexAuth(context.Context, *GetCodexAuthRequest) (*GetCodexAuthResponse, error)
+	UpsertCodexAuth(context.Context, *UpsertCodexAuthRequest) (*UpsertCodexAuthResponse, error)
 	DeleteRunNamespace(context.Context, *DeleteRunNamespaceRequest) (*DeleteRunNamespaceResponse, error)
 	mustEmbedUnimplementedControlPlaneServiceServer()
 }
@@ -820,6 +846,12 @@ func (UnimplementedControlPlaneServiceServer) InsertRunFlowEvent(context.Context
 }
 func (UnimplementedControlPlaneServiceServer) UpsertRunStatusComment(context.Context, *UpsertRunStatusCommentRequest) (*UpsertRunStatusCommentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpsertRunStatusComment not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) GetCodexAuth(context.Context, *GetCodexAuthRequest) (*GetCodexAuthResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCodexAuth not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) UpsertCodexAuth(context.Context, *UpsertCodexAuthRequest) (*UpsertCodexAuthResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpsertCodexAuth not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) DeleteRunNamespace(context.Context, *DeleteRunNamespaceRequest) (*DeleteRunNamespaceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteRunNamespace not implemented")
@@ -1691,6 +1723,42 @@ func _ControlPlaneService_UpsertRunStatusComment_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_GetCodexAuth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCodexAuthRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).GetCodexAuth(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_GetCodexAuth_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).GetCodexAuth(ctx, req.(*GetCodexAuthRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_UpsertCodexAuth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertCodexAuthRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).UpsertCodexAuth(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_UpsertCodexAuth_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).UpsertCodexAuth(ctx, req.(*UpsertCodexAuthRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_DeleteRunNamespace_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteRunNamespaceRequest)
 	if err := dec(in); err != nil {
@@ -1903,6 +1971,14 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpsertRunStatusComment",
 			Handler:    _ControlPlaneService_UpsertRunStatusComment_Handler,
+		},
+		{
+			MethodName: "GetCodexAuth",
+			Handler:    _ControlPlaneService_GetCodexAuth_Handler,
+		},
+		{
+			MethodName: "UpsertCodexAuth",
+			Handler:    _ControlPlaneService_UpsertCodexAuth_Handler,
 		},
 		{
 			MethodName: "DeleteRunNamespace",

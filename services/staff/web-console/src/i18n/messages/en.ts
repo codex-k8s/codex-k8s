@@ -393,6 +393,14 @@ export const en = {
       runLogs: "Run logs",
       logsUpdatedAt: "updated at",
       rawLogsSnapshot: "Raw JSON snapshot",
+      codexAuthRequiredTitle: "Codex authorization required",
+      codexAuthRequiredBadge: "AUTH",
+      codexAuthRequiredText:
+        "This run is waiting for Codex device-code authorization. Open the link, enter the code, then wait for the run to continue.",
+      codexAuthUserCode: "Code",
+      codexAuthVerificationUrl: "Link",
+      codexAuthOpenPage: "Open authorization page",
+      codexAuthSecurityHint: "Do not share the code. Authorize only if you initiated this run.",
     },
     projectDetails: {
       title: "Project Details",

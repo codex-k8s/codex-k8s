@@ -17,6 +17,7 @@ type Phase string
 
 const (
 	PhaseStarted          Phase = "started"
+	PhaseAuthRequired     Phase = "auth_required"
 	PhaseFinished         Phase = "finished"
 	PhaseNamespaceDeleted Phase = "namespace_deleted"
 )

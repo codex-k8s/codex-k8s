@@ -181,11 +181,55 @@
     danger
     @confirm="doDeleteNamespace"
   />
+
+  <VDialog v-model="codexAuthDialogOpen" max-width="720">
+    <VCard>
+      <VCardTitle class="text-subtitle-1 d-flex align-center justify-space-between ga-2 flex-wrap">
+        <span>{{ t("pages.runDetails.codexAuthRequiredTitle") }}</span>
+        <VChip size="small" variant="tonal" color="warning" class="font-weight-bold">
+          {{ t("pages.runDetails.codexAuthRequiredBadge") }}
+        </VChip>
+      </VCardTitle>
+      <VCardText>
+        <div class="text-body-2">
+          {{ t("pages.runDetails.codexAuthRequiredText") }}
+        </div>
+
+        <VAlert v-if="codexAuthPayload" type="warning" variant="tonal" class="mt-4">
+          <div class="d-flex flex-column ga-2">
+            <CopyChip
+              :label="t('pages.runDetails.codexAuthUserCode')"
+              :value="codexAuthPayload.user_code"
+              icon="mdi-key-variant"
+            />
+            <CopyChip
+              :label="t('pages.runDetails.codexAuthVerificationUrl')"
+              :value="codexAuthPayload.verification_url"
+              icon="mdi-open-in-new"
+            />
+            <AdaptiveBtn
+              variant="tonal"
+              icon="mdi-open-in-new"
+              :label="t('pages.runDetails.codexAuthOpenPage')"
+              @click="openCodexAuthPage"
+            />
+          </div>
+        </VAlert>
+
+        <VAlert type="info" variant="tonal" class="mt-4">
+          {{ t("pages.runDetails.codexAuthSecurityHint") }}
+        </VAlert>
+      </VCardText>
+      <VCardActions class="justify-end">
+        <AdaptiveBtn variant="text" icon="mdi-close" :label="t('common.close')" @click="codexAuthDialogOpen = false" />
+      </VCardActions>
+    </VCard>
+  </VDialog>
 </template>
 
 <script setup lang="ts">
 // TODO(#19): Доработать Run details: master-detail layout, улучшенный stepper по стадиям/событиям и feedback слой через VSnackbar.
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 
@@ -210,6 +254,21 @@ const snackbar = useSnackbarStore();
 
 const confirmDeleteNamespaceOpen = ref(false);
 const canDeleteNamespace = computed(() => Boolean(details.run?.job_exists && details.run?.namespace));
+
+type CodexAuthRequiredPayload = { verification_url: string; user_code: string };
+
+const codexAuthDialogOpen = ref(false);
+const codexAuthShownKey = ref("");
+
+const codexAuthRequiredEvent = computed(() => details.events.find((e) => e.event_type === "run.codex.auth.required") || null);
+const codexAuthPayload = computed(() => {
+  const raw = codexAuthRequiredEvent.value?.payload_json || "";
+  const parsed = parseJSONMaybe(raw);
+  if (!parsed || typeof parsed !== "object") return null;
+  const candidate = parsed as Partial<CodexAuthRequiredPayload>;
+  if (!candidate.verification_url || !candidate.user_code) return null;
+  return { verification_url: String(candidate.verification_url), user_code: String(candidate.user_code) };
+});
 
 async function loadAll() {
   await details.load(props.runId);
@@ -240,6 +299,32 @@ function prettyJSON(raw: string): string {
   }
 }
 
+function parseJSONMaybe(raw: string): unknown {
+  const value = String(raw || "").trim();
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (typeof parsed === "string") {
+      const inner = parsed.trim();
+      if (!inner) return null;
+      try {
+        return JSON.parse(inner) as unknown;
+      } catch {
+        return parsed;
+      }
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function openCodexAuthPage(): void {
+  const url = codexAuthPayload.value?.verification_url;
+  if (!url) return;
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
 async function doDeleteNamespace() {
   await details.deleteNamespace(props.runId);
   if (!details.deleteNamespaceError) {
@@ -248,6 +333,22 @@ async function doDeleteNamespace() {
 }
 
 onMounted(() => void loadAll());
+
+watch(
+  () => [codexAuthRequiredEvent.value?.created_at, codexAuthRequiredEvent.value?.event_type],
+  (keyParts) => {
+    const createdAt = String(keyParts?.[0] || "").trim();
+    const eventType = String(keyParts?.[1] || "").trim();
+    if (!createdAt || !eventType || !codexAuthPayload.value) return;
+
+    const key = `${eventType}:${createdAt}`;
+    if (codexAuthShownKey.value === key) return;
+
+    codexAuthShownKey.value = key;
+    codexAuthDialogOpen.value = true;
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped>

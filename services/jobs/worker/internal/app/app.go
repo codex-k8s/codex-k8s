@@ -138,7 +138,6 @@ func Run() error {
 		ControlPlaneGRPCTarget:      cfg.ControlPlaneGRPCTarget,
 		ControlPlaneMCPBaseURL:      cfg.ControlPlaneMCPBaseURL,
 		OpenAIAPIKey:                cfg.OpenAIAPIKey,
-		OpenAIAuthFile:              cfg.OpenAIAuthFile,
 		Context7APIKey:              cfg.Context7APIKey,
 		GitBotToken:                 cfg.GitBotToken,
 		GitBotUsername:              cfg.GitBotUsername,

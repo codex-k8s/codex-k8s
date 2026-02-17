@@ -39,8 +39,6 @@ type Config struct {
 	ControlPlaneMCPBaseURL string `env:"CODEXK8S_CONTROL_PLANE_MCP_BASE_URL"`
 	// OpenAIAPIKey is injected into run pods for codex login.
 	OpenAIAPIKey string `env:"CODEXK8S_OPENAI_API_KEY"`
-	// OpenAIAuthFile stores optional Codex auth.json content for run pods.
-	OpenAIAuthFile string `env:"CODEXK8S_OPENAI_AUTH_FILE"`
 	// Context7APIKey enables Context7 documentation calls from run pods when set.
 	Context7APIKey string `env:"CODEXK8S_CONTEXT7_API_KEY"`
 	// GitBotToken is injected into run pods for git transport (fetch/push only).

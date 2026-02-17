@@ -57,6 +57,11 @@ type runtimeDeployService interface {
 	PrepareRunEnvironment(ctx context.Context, params runtimedeploydomain.PrepareParams) (runtimedeploydomain.PrepareResult, error)
 }
 
+type codexAuthService interface {
+	Get(ctx context.Context) ([]byte, bool, error)
+	Upsert(ctx context.Context, authJSON []byte) error
+}
+
 // Dependencies wires domain services and repositories into the gRPC transport.
 type Dependencies struct {
 	Webhook        webhookIngress
@@ -66,6 +71,7 @@ type Dependencies struct {
 	RunStatus      runStatusService
 	RuntimeDeploy  runtimeDeployService
 	MCP            mcpRunTokenService
+	CodexAuth      codexAuthService
 	Logger         *slog.Logger
 }
 
@@ -80,6 +86,7 @@ type Server struct {
 	runStatus      runStatusService
 	runtimeDeploy  runtimeDeployService
 	mcp            mcpRunTokenService
+	codexAuth      codexAuthService
 	logger         *slog.Logger
 }
 
@@ -92,6 +99,7 @@ func NewServer(deps Dependencies) *Server {
 		runStatus:      deps.RunStatus,
 		runtimeDeploy:  deps.RuntimeDeploy,
 		mcp:            deps.MCP,
+		codexAuth:      deps.CodexAuth,
 		logger:         deps.Logger,
 	}
 }
@@ -1349,6 +1357,46 @@ func (s *Server) UpsertRunStatusComment(ctx context.Context, req *controlplanev1
 	}, nil
 }
 
+func (s *Server) GetCodexAuth(ctx context.Context, req *controlplanev1.GetCodexAuthRequest) (*controlplanev1.GetCodexAuthResponse, error) {
+	if s.codexAuth == nil {
+		return nil, status.Error(codes.FailedPrecondition, "codex auth service is not configured")
+	}
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	if _, err := s.authenticateRunToken(ctx); err != nil {
+		return nil, err
+	}
+
+	authJSON, found, err := s.codexAuth.Get(ctx)
+	if err != nil {
+		s.logger.Error("get codex auth via grpc failed", "err", err)
+		return nil, status.Error(codes.Internal, "failed to load codex auth")
+	}
+	return &controlplanev1.GetCodexAuthResponse{
+		Found:    found,
+		AuthJson: authJSON,
+	}, nil
+}
+
+func (s *Server) UpsertCodexAuth(ctx context.Context, req *controlplanev1.UpsertCodexAuthRequest) (*controlplanev1.UpsertCodexAuthResponse, error) {
+	if s.codexAuth == nil {
+		return nil, status.Error(codes.FailedPrecondition, "codex auth service is not configured")
+	}
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	if _, err := s.authenticateRunToken(ctx); err != nil {
+		return nil, err
+	}
+
+	if err := s.codexAuth.Upsert(ctx, req.GetAuthJson()); err != nil {
+		s.logger.Error("upsert codex auth via grpc failed", "err", err)
+		return nil, status.Error(codes.Internal, "failed to persist codex auth")
+	}
+	return &controlplanev1.UpsertCodexAuthResponse{Ok: true}, nil
+}
+
 const sessionStatusRunning = "running"
 
 func (s *Server) authenticateRunToken(ctx context.Context) (mcpdomain.SessionContext, error) {
@@ -1720,6 +1768,8 @@ func parseRunStatusPhase(value string) (runstatusdomain.Phase, error) {
 	switch strings.TrimSpace(value) {
 	case string(runstatusdomain.PhaseStarted):
 		return runstatusdomain.PhaseStarted, nil
+	case string(runstatusdomain.PhaseAuthRequired):
+		return runstatusdomain.PhaseAuthRequired, nil
 	case string(runstatusdomain.PhaseFinished):
 		return runstatusdomain.PhaseFinished, nil
 	case string(runstatusdomain.PhaseNamespaceDeleted):

@@ -26,6 +26,7 @@ import (
 	kubernetesclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/kubernetes"
 	postgresadminclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/postgresadmin"
 	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
+	codexauthdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/codexauth"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	registryimagesdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/registryimages"
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
@@ -130,6 +131,15 @@ func Run() error {
 	githubMCPClient := githubclient.NewClient(nil)
 	githubMgmtClient := githubmgmtclient.NewClient(nil)
 	githubRepoProvider := githubprovider.NewProvider(nil)
+
+	codexAuthService, err := codexauthdomain.NewService(codexauthdomain.Config{
+		PlatformNamespace: strings.TrimSpace(cfg.PlatformNamespace),
+		GitHubRepo:        strings.TrimSpace(cfg.GitHubRepo),
+		GitHubPAT:         strings.TrimSpace(cfg.GitHubPAT),
+	}, k8sClient, githubMgmtClient)
+	if err != nil {
+		return fmt.Errorf("init codex auth domain service: %w", err)
+	}
 
 	mcpTokenTTL, err := time.ParseDuration(cfg.MCPTokenTTL)
 	if err != nil {
@@ -337,6 +347,7 @@ func Run() error {
 		RunStatus:      runStatusService,
 		RuntimeDeploy:  runtimeDeployService,
 		MCP:            mcpService,
+		CodexAuth:      codexAuthService,
 		Logger:         logger,
 	}))
 

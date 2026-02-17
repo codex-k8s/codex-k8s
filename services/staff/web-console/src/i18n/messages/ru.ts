@@ -393,6 +393,14 @@ export const ru = {
       runLogs: "Логи запуска",
       logsUpdatedAt: "обновлено",
       rawLogsSnapshot: "Сырой JSON snapshot",
+      codexAuthRequiredTitle: "Требуется авторизация Codex",
+      codexAuthRequiredBadge: "AUTH",
+      codexAuthRequiredText:
+        "Этот запуск ожидает авторизацию Codex через device code. Откройте ссылку, введите код, затем дождитесь продолжения выполнения.",
+      codexAuthUserCode: "Код",
+      codexAuthVerificationUrl: "Ссылка",
+      codexAuthOpenPage: "Открыть страницу авторизации",
+      codexAuthSecurityHint: "Не передавайте код другим. Авторизуйте только если вы запускали этот run.",
     },
     projectDetails: {
       title: "Детали проекта",

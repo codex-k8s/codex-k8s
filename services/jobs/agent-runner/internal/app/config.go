@@ -39,7 +39,6 @@ type Config struct {
 	GitBotUsername string `env:"CODEXK8S_GIT_BOT_USERNAME,required,notEmpty"`
 	GitBotMail     string `env:"CODEXK8S_GIT_BOT_MAIL,required,notEmpty"`
 	OpenAIAPIKey   string `env:"CODEXK8S_OPENAI_API_KEY"`
-	OpenAIAuthFile string `env:"CODEXK8S_OPENAI_AUTH_FILE"`
 }
 
 // LoadConfig parses and validates configuration from environment.
@@ -74,18 +73,10 @@ func LoadConfig() (Config, error) {
 	if cfg.StateInReviewLabel == "" {
 		cfg.StateInReviewLabel = stateInReviewLabelDefault
 	}
-	cfg.OpenAIAuthFile = strings.TrimSpace(cfg.OpenAIAuthFile)
-	hasOpenAIAuthFile := cfg.OpenAIAuthFile != ""
 
 	cfg.AgentModel = strings.TrimSpace(cfg.AgentModel)
 	if cfg.AgentModel == "" {
-		if hasOpenAIAuthFile {
-			cfg.AgentModel = modelGPT53Codex
-		} else {
-			cfg.AgentModel = modelGPT52Codex
-		}
-	} else if (strings.EqualFold(cfg.AgentModel, modelGPT53Codex) || strings.EqualFold(cfg.AgentModel, modelGPT53CodexSpark)) && !hasOpenAIAuthFile {
-		cfg.AgentModel = modelGPT52Codex
+		cfg.AgentModel = modelGPT53Codex
 	}
 	cfg.AgentReasoningEffort = strings.TrimSpace(strings.ToLower(cfg.AgentReasoningEffort))
 	// Codex CLI expects "xhigh" for the highest reasoning effort.
@@ -119,9 +110,6 @@ func LoadConfig() (Config, error) {
 	cfg.GitBotUsername = strings.TrimSpace(cfg.GitBotUsername)
 	cfg.GitBotMail = strings.TrimSpace(cfg.GitBotMail)
 	cfg.OpenAIAPIKey = strings.TrimSpace(cfg.OpenAIAPIKey)
-	if !hasOpenAIAuthFile && cfg.OpenAIAPIKey == "" {
-		return Config{}, fmt.Errorf("CODEXK8S_OPENAI_API_KEY is required when CODEXK8S_OPENAI_AUTH_FILE is empty")
-	}
 
 	return cfg, nil
 }

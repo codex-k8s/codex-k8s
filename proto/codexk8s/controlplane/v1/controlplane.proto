@@ -731,6 +731,21 @@ message UpsertRunStatusCommentResponse {
   optional string comment_url = 4;
 }
 
+message GetCodexAuthRequest {}
+
+message GetCodexAuthResponse {
+  bool found = 1;
+  bytes auth_json = 2;
+}
+
+message UpsertCodexAuthRequest {
+  bytes auth_json = 1;
+}
+
+message UpsertCodexAuthResponse {
+  bool ok = 1;
+}
+
 message DeleteRunNamespaceRequest {
   Principal principal = 1;
   string run_id = 2;
@@ -807,5 +822,7 @@ service ControlPlaneService {
   rpc GetLatestAgentSession(GetLatestAgentSessionRequest) returns (GetLatestAgentSessionResponse);
   rpc InsertRunFlowEvent(InsertRunFlowEventRequest) returns (InsertRunFlowEventResponse);
   rpc UpsertRunStatusComment(UpsertRunStatusCommentRequest) returns (UpsertRunStatusCommentResponse);
+  rpc GetCodexAuth(GetCodexAuthRequest) returns (GetCodexAuthResponse);
+  rpc UpsertCodexAuth(UpsertCodexAuthRequest) returns (UpsertCodexAuthResponse);
   rpc DeleteRunNamespace(DeleteRunNamespaceRequest) returns (DeleteRunNamespaceResponse);
 }

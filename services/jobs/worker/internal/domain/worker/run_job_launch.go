@@ -85,7 +85,6 @@ func (s *Service) launchPreparedFullEnvRunJob(ctx context.Context, run runqueuer
 		StateInReviewLabel:     s.cfg.StateInReviewLabel,
 		BaseBranch:             s.cfg.AgentBaseBranch,
 		OpenAIAPIKey:           s.cfg.OpenAIAPIKey,
-		OpenAIAuthFile:         s.cfg.OpenAIAuthFile,
 		Context7APIKey:         s.cfg.Context7APIKey,
 		GitBotToken:            s.cfg.GitBotToken,
 		AgentDisplayName:       agentCtx.AgentDisplayName,

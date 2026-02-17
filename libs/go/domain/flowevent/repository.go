@@ -54,6 +54,8 @@ const (
 	EventTypeRunAgentSessionRestored      EventType = "run.agent.session.restored"
 	EventTypeRunAgentSessionSaved         EventType = "run.agent.session.saved"
 	EventTypeRunAgentResumeUsed           EventType = "run.agent.resume.used"
+	EventTypeRunCodexAuthRequired         EventType = "run.codex.auth.required"
+	EventTypeRunCodexAuthSynchronized     EventType = "run.codex.auth.synchronized"
 	EventTypeRunPRCreated                 EventType = "run.pr.created"
 	EventTypeRunPRUpdated                 EventType = "run.pr.updated"
 	EventTypeRunRevisePRNotFound          EventType = "run.revise.pr_not_found"

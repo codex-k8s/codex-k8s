@@ -3,7 +3,6 @@ package worker
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
@@ -63,7 +62,7 @@ func (s *Service) tryRecoverMissingRunJob(ctx context.Context, run runqueuerepo.
 		DefaultModel:           s.cfg.AgentDefaultModel,
 		DefaultReasoningEffort: s.cfg.AgentDefaultReasoningEffort,
 		DefaultLocale:          s.cfg.AgentDefaultLocale,
-		AllowGPT53:             strings.TrimSpace(s.cfg.OpenAIAuthFile) != "",
+		AllowGPT53:             true,
 		LabelCatalog:           s.labels,
 	})
 	if err != nil {
