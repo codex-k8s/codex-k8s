@@ -171,7 +171,7 @@ func (s *Service) codexAuthPing(ctx context.Context, state codexState) error {
 	checkCtx, cancel := context.WithTimeout(ctx, 75*time.Second)
 	defer cancel()
 
-	out, err := runCommandCaptureCombinedOutput(checkCtx, "", "codex", "exec", "--cd", pingDir, codexAuthCheckPrompt)
+	out, err := runCommandCaptureCombinedOutput(checkCtx, "", "codex", "exec", "--skip-git-repo-check", "--cd", pingDir, codexAuthCheckPrompt)
 	if err != nil {
 		return fmt.Errorf("codex auth ping failed: %w: %s", err, out)
 	}
