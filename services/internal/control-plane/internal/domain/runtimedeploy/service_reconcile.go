@@ -174,6 +174,7 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 	// Template vars are used to render Kubernetes manifests. Some variables depend on
 	// the final namespace and must be (re)computed after services.yaml resolved it.
 	templateVars = s.buildTemplateVars(params, targetNamespace)
+	applyStackImageVars(templateVars, loaded.Stack)
 
 	templateVars["CODEXK8S_PRODUCTION_NAMESPACE"] = targetNamespace
 	templateVars["CODEXK8S_WORKER_K8S_NAMESPACE"] = targetNamespace
@@ -184,6 +185,18 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 	if strings.TrimSpace(templateVars["CODEXK8S_WORKER_JOB_IMAGE"]) == "" {
 		if value := strings.TrimSpace(templateVars["CODEXK8S_AGENT_RUNNER_IMAGE"]); value != "" {
 			templateVars["CODEXK8S_WORKER_JOB_IMAGE"] = value
+		}
+	}
+
+	// Allow services.yaml to override public host resolution (full-env domainTemplate).
+	if loaded.Stack != nil {
+		if envCfg, err := servicescfg.ResolveEnvironment(loaded.Stack, targetEnv); err == nil {
+			if host := strings.TrimSpace(envCfg.DomainTemplate); host != "" {
+				templateVars["CODEXK8S_PUBLIC_DOMAIN"] = host
+				if strings.EqualFold(targetEnv, "ai") || strings.TrimSpace(templateVars["CODEXK8S_PUBLIC_BASE_URL"]) == "" {
+					templateVars["CODEXK8S_PUBLIC_BASE_URL"] = "https://" + host
+				}
+			}
 		}
 	}
 

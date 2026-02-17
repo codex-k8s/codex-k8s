@@ -22,9 +22,11 @@ import (
 	githubprovider "github.com/codex-k8s/codex-k8s/libs/go/repo/provider/github"
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	githubclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/github"
+	githubmgmtclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/githubmgmt"
 	kubernetesclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/kubernetes"
 	postgresadminclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/postgresadmin"
 	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
+	codexauthdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/codexauth"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	registryimagesdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/registryimages"
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
@@ -34,6 +36,7 @@ import (
 	agentrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agent"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentrun"
 	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentsession"
+	configentryrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/configentry"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/flowevent"
 	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/learningfeedback"
 	mcpactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/mcpactionrequest"
@@ -41,6 +44,7 @@ import (
 	projectrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/project"
 	projectdatabaserepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projectdatabase"
 	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projectmember"
+	projecttokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projecttoken"
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/repocfg"
 	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/runtimedeploytask"
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/staffrun"
@@ -87,6 +91,8 @@ func Run() error {
 	feedback := learningfeedbackrepo.NewRepository(pgxPool)
 	agentSessions := agentsessionrepo.NewRepository(pgxPool)
 	platformTokens := platformtokenrepo.NewRepository(pgxPool)
+	projectTokens := projecttokenrepo.NewRepository(pgxPool)
+	configEntries := configentryrepo.NewRepository(pgxPool)
 	mcpActionRequests := mcpactionrequestrepo.NewRepository(pgxPool)
 	projectDatabases := projectdatabaserepo.NewRepository(pgxPool)
 	runtimeDeployTasks := runtimedeploytaskrepo.NewRepository(pgxPool)
@@ -123,7 +129,17 @@ func Run() error {
 	}
 	defer postgresAdminClient.Close()
 	githubMCPClient := githubclient.NewClient(nil)
+	githubMgmtClient := githubmgmtclient.NewClient(nil)
 	githubRepoProvider := githubprovider.NewProvider(nil)
+
+	codexAuthService, err := codexauthdomain.NewService(codexauthdomain.Config{
+		PlatformNamespace: strings.TrimSpace(cfg.PlatformNamespace),
+		GitHubRepo:        strings.TrimSpace(cfg.GitHubRepo),
+		GitHubPAT:         strings.TrimSpace(cfg.GitHubPAT),
+	}, k8sClient, githubMgmtClient)
+	if err != nil {
+		return fmt.Errorf("init codex auth domain service: %w", err)
+	}
 
 	mcpTokenTTL, err := time.ParseDuration(cfg.MCPTokenTTL)
 	if err != nil {
@@ -255,6 +271,7 @@ func Run() error {
 		LearningModeDefault: learningDefault,
 		TriggerLabels:       buildWebhookTriggerLabels(cfg),
 		RuntimeModePolicy:   webhookRuntimeModePolicy,
+		PlatformNamespace:   strings.TrimSpace(cfg.PlatformNamespace),
 	})
 
 	webhookURL := strings.TrimSpace(cfg.GitHubWebhookURL)
@@ -294,7 +311,7 @@ func Run() error {
 		},
 		ProtectedProjectIDs:    bootstrapSeed.ProtectedProjectIDs,
 		ProtectedRepositoryIDs: bootstrapSeed.ProtectedRepositoryIDs,
-	}, users, projects, members, repos, feedback, runs, runtimeDeployTasks, registryImagesService, tokenCrypto, githubRepoProvider, runStatusService)
+	}, users, projects, members, repos, projectTokens, configEntries, feedback, runs, runtimeDeployTasks, registryImagesService, k8sClient, tokenCrypto, platformTokens, githubRepoProvider, githubMgmtClient, runStatusService)
 
 	// Ensure bootstrap users exist so that the first login can be matched by email.
 	if _, err := users.EnsureOwner(runCtx, cfg.BootstrapOwnerEmail); err != nil {
@@ -330,6 +347,7 @@ func Run() error {
 		RunStatus:      runStatusService,
 		RuntimeDeploy:  runtimeDeployService,
 		MCP:            mcpService,
+		CodexAuth:      codexAuthService,
 		Logger:         logger,
 	}))
 

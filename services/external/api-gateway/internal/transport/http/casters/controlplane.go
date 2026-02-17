@@ -213,13 +213,16 @@ func RepositoryBinding(item *controlplanev1.RepositoryBinding) models.Repository
 		return models.RepositoryBinding{}
 	}
 	return models.RepositoryBinding{
-		ID:               item.GetId(),
-		ProjectID:        item.GetProjectId(),
-		Provider:         item.GetProvider(),
-		ExternalID:       item.GetExternalId(),
-		Owner:            item.GetOwner(),
-		Name:             item.GetName(),
-		ServicesYAMLPath: item.GetServicesYamlPath(),
+		ID:                 item.GetId(),
+		ProjectID:          item.GetProjectId(),
+		Provider:           item.GetProvider(),
+		ExternalID:         item.GetExternalId(),
+		Owner:              item.GetOwner(),
+		Name:               item.GetName(),
+		ServicesYAMLPath:   item.GetServicesYamlPath(),
+		BotUsername:        cast.OptionalTrimmedString(item.BotUsername),
+		BotEmail:           cast.OptionalTrimmedString(item.BotEmail),
+		PreflightUpdatedAt: cast.OptionalTrimmedString(item.PreflightUpdatedAt),
 	}
 }
 
@@ -229,6 +232,125 @@ func RepositoryBindings(items []*controlplanev1.RepositoryBinding) []models.Repo
 		out = append(out, RepositoryBinding(item))
 	}
 	return out
+}
+
+func ProjectGitHubTokens(item *controlplanev1.ProjectGitHubTokens) models.ProjectGitHubTokens {
+	if item == nil {
+		return models.ProjectGitHubTokens{}
+	}
+	return models.ProjectGitHubTokens{
+		ProjectID:        item.GetProjectId(),
+		HasPlatformToken: item.GetHasPlatformToken(),
+		HasBotToken:      item.GetHasBotToken(),
+		BotUsername:      cast.OptionalTrimmedString(item.BotUsername),
+		BotEmail:         cast.OptionalTrimmedString(item.BotEmail),
+	}
+}
+
+func PreflightCheckResult(item *controlplanev1.PreflightCheckResult) models.PreflightCheckResult {
+	if item == nil {
+		return models.PreflightCheckResult{}
+	}
+	return models.PreflightCheckResult{
+		Name:    item.GetName(),
+		Status:  item.GetStatus(),
+		Details: cast.OptionalTrimmedString(item.Details),
+	}
+}
+
+func RunRepositoryPreflightResponse(item *controlplanev1.RunRepositoryPreflightResponse) models.RunRepositoryPreflightResponse {
+	if item == nil {
+		return models.RunRepositoryPreflightResponse{Checks: []models.PreflightCheckResult{}}
+	}
+	out := models.RunRepositoryPreflightResponse{
+		RepositoryID: item.GetRepositoryId(),
+		Status:       item.GetStatus(),
+		Checks:       make([]models.PreflightCheckResult, 0, len(item.GetChecks())),
+		ReportJSON:   item.GetReportJson(),
+		FinishedAt:   cast.TimestampRFC3339Nano(item.GetFinishedAt()),
+	}
+	for _, check := range item.GetChecks() {
+		out.Checks = append(out.Checks, PreflightCheckResult(check))
+	}
+	return out
+}
+
+func ConfigEntry(item *controlplanev1.ConfigEntry) models.ConfigEntry {
+	if item == nil {
+		return models.ConfigEntry{SyncTargets: []string{}}
+	}
+	out := models.ConfigEntry{
+		ID:           item.GetId(),
+		Scope:        item.GetScope(),
+		Kind:         item.GetKind(),
+		ProjectID:    cast.OptionalTrimmedString(item.ProjectId),
+		RepositoryID: cast.OptionalTrimmedString(item.RepositoryId),
+		Key:          item.GetKey(),
+		Value:        cast.OptionalTrimmedString(item.Value),
+		SyncTargets:  make([]string, 0, len(item.GetSyncTargets())),
+		Mutability:   item.GetMutability(),
+		IsDangerous:  item.GetIsDangerous(),
+		UpdatedAt:    cast.OptionalTrimmedString(item.UpdatedAt),
+	}
+	for _, target := range item.GetSyncTargets() {
+		out.SyncTargets = append(out.SyncTargets, target)
+	}
+	return out
+}
+
+func ConfigEntries(items []*controlplanev1.ConfigEntry) []models.ConfigEntry {
+	out := make([]models.ConfigEntry, 0, len(items))
+	for _, item := range items {
+		out = append(out, ConfigEntry(item))
+	}
+	return out
+}
+
+func DocsetGroup(item *controlplanev1.DocsetGroup) models.DocsetGroup {
+	if item == nil {
+		return models.DocsetGroup{}
+	}
+	return models.DocsetGroup{
+		ID:              item.GetId(),
+		Title:           item.GetTitle(),
+		Description:     item.GetDescription(),
+		DefaultSelected: item.GetDefaultSelected(),
+	}
+}
+
+func DocsetGroups(items []*controlplanev1.DocsetGroup) []models.DocsetGroup {
+	out := make([]models.DocsetGroup, 0, len(items))
+	for _, item := range items {
+		out = append(out, DocsetGroup(item))
+	}
+	return out
+}
+
+func ImportDocsetResponse(item *controlplanev1.ImportDocsetResponse) models.ImportDocsetResponse {
+	if item == nil {
+		return models.ImportDocsetResponse{}
+	}
+	return models.ImportDocsetResponse{
+		RepositoryFullName: item.GetRepositoryFullName(),
+		PRNumber:           item.GetPrNumber(),
+		PRURL:              item.GetPrUrl(),
+		Branch:             item.GetBranch(),
+		FilesTotal:         item.GetFilesTotal(),
+	}
+}
+
+func SyncDocsetResponse(item *controlplanev1.SyncDocsetResponse) models.SyncDocsetResponse {
+	if item == nil {
+		return models.SyncDocsetResponse{}
+	}
+	return models.SyncDocsetResponse{
+		RepositoryFullName: item.GetRepositoryFullName(),
+		PRNumber:           item.GetPrNumber(),
+		PRURL:              item.GetPrUrl(),
+		Branch:             item.GetBranch(),
+		FilesUpdated:       item.GetFilesUpdated(),
+		FilesDrift:         item.GetFilesDrift(),
+	}
 }
 
 func Me(principal *controlplanev1.Principal) models.MeResponse {

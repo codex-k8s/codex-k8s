@@ -583,6 +583,75 @@ func (c *Client) UpsertConfigMap(ctx context.Context, namespace string, name str
 	return nil
 }
 
+// ListSecretNames returns secret names in namespace with deterministic ordering.
+func (c *Client) ListSecretNames(ctx context.Context, namespace string) ([]string, error) {
+	targetNamespace := strings.TrimSpace(namespace)
+	if targetNamespace == "" {
+		return nil, fmt.Errorf("kubernetes namespace is required")
+	}
+
+	items, err := c.clientset.CoreV1().Secrets(targetNamespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("list kubernetes secrets %s: %w", targetNamespace, err)
+	}
+	out := make([]string, 0, len(items.Items))
+	for _, item := range items.Items {
+		name := strings.TrimSpace(item.Name)
+		if name == "" {
+			continue
+		}
+		out = append(out, name)
+	}
+	sort.Strings(out)
+	return out, nil
+}
+
+// ListConfigMapNames returns configmap names in namespace with deterministic ordering.
+func (c *Client) ListConfigMapNames(ctx context.Context, namespace string) ([]string, error) {
+	targetNamespace := strings.TrimSpace(namespace)
+	if targetNamespace == "" {
+		return nil, fmt.Errorf("kubernetes namespace is required")
+	}
+
+	items, err := c.clientset.CoreV1().ConfigMaps(targetNamespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("list kubernetes configmaps %s: %w", targetNamespace, err)
+	}
+	out := make([]string, 0, len(items.Items))
+	for _, item := range items.Items {
+		name := strings.TrimSpace(item.Name)
+		if name == "" {
+			continue
+		}
+		out = append(out, name)
+	}
+	sort.Strings(out)
+	return out, nil
+}
+
+// GetConfigMapData returns one namespaced configmap data map when configmap exists.
+func (c *Client) GetConfigMapData(ctx context.Context, namespace string, name string) (map[string]string, bool, error) {
+	targetNamespace := strings.TrimSpace(namespace)
+	targetName := strings.TrimSpace(name)
+	if targetNamespace == "" || targetName == "" {
+		return nil, false, fmt.Errorf("configmap namespace and name are required")
+	}
+
+	cm, err := c.clientset.CoreV1().ConfigMaps(targetNamespace).Get(ctx, targetName, metav1.GetOptions{})
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return nil, false, nil
+		}
+		return nil, false, fmt.Errorf("get kubernetes configmap %s/%s: %w", targetNamespace, targetName, err)
+	}
+
+	out := make(map[string]string, len(cm.Data))
+	for key, value := range cm.Data {
+		out[key] = value
+	}
+	return out, true, nil
+}
+
 // GetSecretData returns one namespaced secret data map when secret exists.
 func (c *Client) GetSecretData(ctx context.Context, namespace string, name string) (map[string][]byte, bool, error) {
 	targetNamespace := strings.TrimSpace(namespace)

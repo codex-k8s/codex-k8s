@@ -156,7 +156,7 @@ func TestResolveEnvironment_Inheritance(t *testing.T) {
 	stack := &Stack{
 		Spec: Spec{
 			Environments: map[string]Environment{
-				"production": {NamespaceTemplate: "{{ .Project }}-production", ImagePullPolicy: "Always"},
+				"production": {NamespaceTemplate: "{{ .Project }}-production", DomainTemplate: "demo.example.com", ImagePullPolicy: "Always"},
 				"ai":         {From: "production"},
 			},
 		},
@@ -171,6 +171,41 @@ func TestResolveEnvironment_Inheritance(t *testing.T) {
 	}
 	if got, want := resolved.ImagePullPolicy, "Always"; got != want {
 		t.Fatalf("unexpected imagePullPolicy: got %q want %q", got, want)
+	}
+	if got, want := resolved.DomainTemplate, "demo.example.com"; got != want {
+		t.Fatalf("unexpected domainTemplate: got %q want %q", got, want)
+	}
+}
+
+func TestLoadFromYAML_RendersDomainTemplate(t *testing.T) {
+	t.Parallel()
+
+	raw := []byte(strings.TrimSpace(`
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+      domainTemplate: "{{ .Namespace }}.example.com"
+`))
+
+	result, err := LoadFromYAML(raw, LoadOptions{Env: "production"})
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if got, want := result.Context.Namespace, "demo-prod"; got != want {
+		t.Fatalf("unexpected namespace: got %q want %q", got, want)
+	}
+
+	envCfg, err := ResolveEnvironment(result.Stack, "production")
+	if err != nil {
+		t.Fatalf("resolve environment: %v", err)
+	}
+	if got, want := strings.TrimSpace(envCfg.DomainTemplate), "demo-prod.example.com"; got != want {
+		t.Fatalf("unexpected domainTemplate: got %q want %q", got, want)
 	}
 }
 

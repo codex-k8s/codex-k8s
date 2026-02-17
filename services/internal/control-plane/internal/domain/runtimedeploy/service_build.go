@@ -102,7 +102,7 @@ func (s *Service) buildImages(ctx context.Context, repositoryRoot string, params
 	mirrorTemplatePath := filepath.Join(repoRoot, "deploy/base/kaniko/mirror-image-job.yaml.tpl")
 	mirrorTemplateRaw, mirrorTemplateErr := os.ReadFile(mirrorTemplatePath)
 	if mirrorTemplateErr == nil {
-		if err := s.mirrorExternalDependencies(ctx, namespace, vars, runID, mirrorTemplatePath, mirrorTemplateRaw); err != nil {
+		if err := s.mirrorExternalDependencies(ctx, namespace, vars, runID, stack, mirrorTemplatePath, mirrorTemplateRaw); err != nil {
 			return fmt.Errorf("mirror external dependencies: %w", err)
 		}
 	}
@@ -260,6 +260,17 @@ func (s *Service) runKanikoBuild(ctx context.Context, namespace string, reposito
 	if dockerfileErr != nil {
 		return buildImageResult{}, fmt.Errorf("image %q: %w", entry.Name, dockerfileErr)
 	}
+	shouldSkip, skipErr := s.shouldSkipKanikoBuild(ctx, repository, tag, vars, runID, entry.Name)
+	if skipErr != nil {
+		return buildImageResult{}, skipErr
+	}
+	if shouldSkip {
+		return buildImageResult{
+			Name:       entry.Name,
+			ImageRef:   destinationTagged,
+			Repository: repository,
+		}, nil
+	}
 	jobName := fmt.Sprintf("codex-k8s-kaniko-%s-%s", sanitizeNameToken(entry.Name, 24), runToken)
 	if len(jobName) > 63 {
 		jobName = strings.TrimRight(jobName[:63], "-")
@@ -307,7 +318,7 @@ func (s *Service) runKanikoBuild(ctx context.Context, namespace string, reposito
 	}, nil
 }
 
-func (s *Service) mirrorExternalDependencies(ctx context.Context, namespace string, vars map[string]string, runID string, templatePath string, templateRaw []byte) error {
+func (s *Service) mirrorExternalDependencies(ctx context.Context, namespace string, vars map[string]string, runID string, stack *servicescfg.Stack, templatePath string, templateRaw []byte) error {
 	enabled := strings.TrimSpace(vars["CODEXK8S_IMAGE_MIRROR_ENABLED"])
 	if enabled == "" {
 		enabled = "true"
@@ -320,47 +331,78 @@ func (s *Service) mirrorExternalDependencies(ctx context.Context, namespace stri
 		s.appendTaskLogBestEffort(ctx, runID, "mirror", "warning", "Registry client is not configured, skipping external image mirror")
 		return nil
 	}
+	if stack == nil || len(stack.Spec.Images) == 0 {
+		return nil
+	}
 	internalHost := strings.TrimSpace(vars["CODEXK8S_INTERNAL_REGISTRY_HOST"])
 	if internalHost == "" {
 		return nil
 	}
 
-	type mirrorItem struct {
-		VarKey         string
-		SourceDefault  string
-		TargetRepoPath string
-		TargetTag      string
+	type mirrorEntry struct {
+		Name  string
+		Image servicescfg.Image
 	}
-	items := []mirrorItem{
-		{VarKey: "CODEXK8S_KANIKO_CLONE_IMAGE", SourceDefault: "alpine/git:2.47.2", TargetRepoPath: "codex-k8s/mirror/alpine-git", TargetTag: "2.47.2"},
-		{VarKey: "CODEXK8S_KANIKO_EXECUTOR_IMAGE", SourceDefault: "gcr.io/kaniko-project/executor:v1.23.2-debug", TargetRepoPath: "codex-k8s/mirror/kaniko-executor", TargetTag: "v1.23.2-debug"},
-		{VarKey: "CODEXK8S_BUSYBOX_IMAGE", SourceDefault: "busybox:1.36", TargetRepoPath: "codex-k8s/mirror/busybox", TargetTag: "1.36"},
-		{VarKey: "CODEXK8S_POSTGRES_IMAGE", SourceDefault: "pgvector/pgvector:pg16", TargetRepoPath: "codex-k8s/mirror/pgvector", TargetTag: "pg16"},
-		{VarKey: "CODEXK8S_OAUTH2_PROXY_IMAGE", SourceDefault: "quay.io/oauth2-proxy/oauth2-proxy:v7.6.0", TargetRepoPath: "codex-k8s/mirror/oauth2-proxy", TargetTag: "v7.6.0"},
-		{VarKey: "CODEXK8S_CODEGEN_CHECK_IMAGE", SourceDefault: "golang:1.24-bookworm", TargetRepoPath: "codex-k8s/mirror/golang", TargetTag: "1.24-bookworm"},
+	entries := make([]mirrorEntry, 0, len(stack.Spec.Images))
+	for name, image := range stack.Spec.Images {
+		if strings.EqualFold(strings.TrimSpace(image.Type), "external") {
+			entries = append(entries, mirrorEntry{
+				Name:  strings.TrimSpace(name),
+				Image: image,
+			})
+		}
 	}
+	if len(entries) == 0 {
+		return nil
+	}
+	sort.Slice(entries, func(i, j int) bool { return entries[i].Name < entries[j].Name })
+
 	mirrorToolImage := strings.TrimSpace(valueOr(vars, "CODEXK8S_IMAGE_MIRROR_TOOL_IMAGE", "gcr.io/go-containerregistry/crane:debug"))
 	jobToken, err := randomHex(4)
 	if err != nil {
 		return fmt.Errorf("generate image mirror token: %w", err)
 	}
 
-	for _, item := range items {
-		current := strings.TrimSpace(vars[item.VarKey])
-		targetImage := fmt.Sprintf("%s/%s:%s", internalHost, item.TargetRepoPath, item.TargetTag)
-		vars[item.VarKey] = targetImage
+	for _, entry := range entries {
+		if entry.Name == "" {
+			continue
+		}
+		envKey := imageEnvVar(entry.Name)
+		sourceImage := strings.TrimSpace(entry.Image.From)
+		targetImage := strings.TrimSpace(entry.Image.Local)
+		if targetImage == "" {
+			targetImage = resolveStackImageRef(entry.Image)
+		}
+		if sourceImage == "" || targetImage == "" {
+			s.appendTaskLogBestEffort(ctx, runID, "mirror", "warning", "Skip mirror for "+entry.Name+": missing source/target image")
+			continue
+		}
+		if envKey != "" {
+			vars[envKey] = targetImage
+		}
 
-		tags, listErr := s.registry.ListTagInfos(ctx, item.TargetRepoPath)
-		if listErr == nil && hasRegistryTag(tags, item.TargetTag) {
-			s.appendTaskLogBestEffort(ctx, runID, "mirror", "info", "Mirror already exists: "+targetImage)
+		targetRepo, targetTag := splitImageRef(targetImage)
+		if targetRepo == "" || targetTag == "" {
+			s.appendTaskLogBestEffort(ctx, runID, "mirror", "warning", "Skip mirror for "+entry.Name+": invalid target "+targetImage)
+			continue
+		}
+		repoPath := extractRegistryRepositoryPath(targetRepo, internalHost)
+		if repoPath == "" {
+			s.appendTaskLogBestEffort(ctx, runID, "mirror", "warning", "Skip mirror for "+entry.Name+": invalid registry path for "+targetImage)
 			continue
 		}
 
-		sourceImage := strings.TrimSpace(item.SourceDefault)
-		if current != "" && !strings.HasPrefix(current, internalHost+"/") {
-			sourceImage = current
+		exists, checkErr := s.checkRegistryTagExists(ctx, repoPath, targetTag, runID, "mirror", entry.Name)
+		if checkErr != nil {
+			return fmt.Errorf("check mirror target %s:%s: %w", repoPath, targetTag, checkErr)
 		}
-		jobName := fmt.Sprintf("codex-k8s-mirror-%s-%s", sanitizeNameToken(strings.ToLower(item.VarKey), 20), jobToken)
+		if exists {
+			s.appendTaskLogBestEffort(ctx, runID, "mirror", "info", "Mirror already exists: "+targetImage)
+			continue
+		}
+		s.appendTaskLogBestEffort(ctx, runID, "mirror", "info", "Mirror is missing, syncing "+sourceImage+" -> "+targetImage)
+
+		jobName := fmt.Sprintf("codex-k8s-mirror-%s-%s", sanitizeNameToken(entry.Name, 20), jobToken)
 		if len(jobName) > 63 {
 			jobName = strings.TrimRight(jobName[:63], "-")
 		}
@@ -373,7 +415,7 @@ func (s *Service) mirrorExternalDependencies(ctx context.Context, namespace stri
 
 		renderedRaw, renderErr := manifesttpl.Render(templatePath, templateRaw, jobVars)
 		if renderErr != nil {
-			return fmt.Errorf("render mirror job for %s: %w", item.VarKey, renderErr)
+			return fmt.Errorf("render mirror job for %s: %w", entry.Name, renderErr)
 		}
 		if err := s.k8s.DeleteJobIfExists(ctx, namespace, jobName); err != nil {
 			return fmt.Errorf("delete previous mirror job %s: %w", jobName, err)
@@ -479,6 +521,52 @@ func applyBuiltImageResult(vars map[string]string, imageName string, imageRef st
 	}
 }
 
+func (s *Service) shouldSkipKanikoBuild(ctx context.Context, repository string, tag string, vars map[string]string, runID string, imageName string) (bool, error) {
+	if s.registry == nil {
+		return false, nil
+	}
+	repository = strings.TrimSpace(repository)
+	tag = strings.TrimSpace(tag)
+	if repository == "" || tag == "" {
+		return false, nil
+	}
+	internalHost := strings.TrimSpace(vars["CODEXK8S_INTERNAL_REGISTRY_HOST"])
+	repoPath := extractRegistryRepositoryPath(repository, internalHost)
+	if repoPath == "" {
+		return false, nil
+	}
+	exists, err := s.checkRegistryTagExists(ctx, repoPath, tag, runID, "build", imageName)
+	if err != nil {
+		return false, fmt.Errorf("check build target %s:%s: %w", repoPath, tag, err)
+	}
+	if !exists {
+		s.appendTaskLogBestEffort(ctx, runID, "build", "info", "Build image "+imageName+" required: missing tag "+repository+":"+tag)
+		return false, nil
+	}
+	s.appendTaskLogBestEffort(ctx, runID, "build", "info", "Build image "+imageName+" skipped: tag exists "+repository+":"+tag)
+	return true, nil
+}
+
+func (s *Service) checkRegistryTagExists(ctx context.Context, repositoryPath string, tag string, runID string, stage string, imageName string) (bool, error) {
+	repositoryPath = strings.TrimSpace(repositoryPath)
+	tag = strings.TrimSpace(tag)
+	if repositoryPath == "" || tag == "" {
+		return false, fmt.Errorf("registry repository path and tag are required")
+	}
+	s.appendTaskLogBestEffort(ctx, runID, stage, "info", "Registry check for "+imageName+": "+repositoryPath+":"+tag)
+	tags, err := s.registry.ListTags(ctx, repositoryPath)
+	if err != nil {
+		s.appendTaskLogBestEffort(ctx, runID, stage, "error", "Registry check failed for "+repositoryPath+":"+tag+": "+err.Error())
+		return false, err
+	}
+	if hasRegistryStringTag(tags, tag) {
+		s.appendTaskLogBestEffort(ctx, runID, stage, "info", "Registry check result for "+imageName+": found "+repositoryPath+":"+tag)
+		return true, nil
+	}
+	s.appendTaskLogBestEffort(ctx, runID, stage, "info", "Registry check result for "+imageName+": missing "+repositoryPath+":"+tag)
+	return false, nil
+}
+
 func parsePositiveInt(raw string, fallback int) int {
 	value := strings.TrimSpace(raw)
 	if value == "" {
@@ -509,6 +597,22 @@ func extractRegistryRepositoryPath(imageRepository string, internalHost string) 
 	return ""
 }
 
+func splitImageRef(ref string) (string, string) {
+	trimmed := strings.TrimSpace(ref)
+	if trimmed == "" {
+		return "", ""
+	}
+	if at := strings.Index(trimmed, "@"); at >= 0 {
+		trimmed = trimmed[:at]
+	}
+	lastSlash := strings.LastIndex(trimmed, "/")
+	lastColon := strings.LastIndex(trimmed, ":")
+	if lastColon == -1 || lastColon < lastSlash {
+		return trimmed, ""
+	}
+	return trimmed[:lastColon], trimmed[lastColon+1:]
+}
+
 func hasRegistryTag(tags []registry.TagInfo, tag string) bool {
 	target := strings.TrimSpace(tag)
 	if target == "" {
@@ -516,6 +620,19 @@ func hasRegistryTag(tags []registry.TagInfo, tag string) bool {
 	}
 	for _, item := range tags {
 		if strings.TrimSpace(item.Tag) == target {
+			return true
+		}
+	}
+	return false
+}
+
+func hasRegistryStringTag(tags []string, tag string) bool {
+	target := strings.TrimSpace(tag)
+	if target == "" {
+		return false
+	}
+	for _, item := range tags {
+		if strings.TrimSpace(item) == target {
 			return true
 		}
 	}

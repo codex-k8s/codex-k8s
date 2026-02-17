@@ -2,7 +2,7 @@
   <div>
     <PageHeader :title="t('pages.projectMembers.title')">
       <template #leading>
-        <AdaptiveBtn variant="text" icon="mdi-arrow-left" :label="t('common.back')" :to="{ name: 'projects' }" />
+        <BackBtn :label="t('common.back')" :to="{ name: 'projects' }" />
       </template>
       <template #actions>
         <CopyChip :label="t('pages.projectMembers.projectId')" :value="projectId" icon="mdi-identifier" />
@@ -129,6 +129,7 @@ import ConfirmDialog from "../shared/ui/ConfirmDialog.vue";
 import CopyChip from "../shared/ui/CopyChip.vue";
 import PageHeader from "../shared/ui/PageHeader.vue";
 import AdaptiveBtn from "../shared/ui/AdaptiveBtn.vue";
+import BackBtn from "../shared/ui/BackBtn.vue";
 import { useSnackbarStore } from "../shared/ui/feedback/snackbar-store";
 import { useAuthStore } from "../features/auth/store";
 import { useProjectMembersStore } from "../features/projects/members-store";

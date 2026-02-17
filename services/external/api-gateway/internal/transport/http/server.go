@@ -123,6 +123,16 @@ func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Clien
 	staffGroup.GET("/projects/:project_id/repositories", staffH.ListProjectRepositories)
 	staffGroup.POST("/projects/:project_id/repositories", staffH.UpsertProjectRepository)
 	staffGroup.DELETE("/projects/:project_id/repositories/:repository_id", staffH.DeleteProjectRepository)
+	staffGroup.PUT("/projects/:project_id/repositories/:repository_id/bot-params", staffH.UpsertRepositoryBotParams)
+	staffGroup.POST("/projects/:project_id/repositories/:repository_id/preflight", staffH.RunRepositoryPreflight)
+	staffGroup.GET("/projects/:project_id/github-tokens", staffH.GetProjectGitHubTokens)
+	staffGroup.PUT("/projects/:project_id/github-tokens", staffH.UpsertProjectGitHubTokens)
+	staffGroup.GET("/config-entries", staffH.ListConfigEntries)
+	staffGroup.POST("/config-entries", staffH.UpsertConfigEntry)
+	staffGroup.DELETE("/config-entries/:config_entry_id", staffH.DeleteConfigEntry)
+	staffGroup.GET("/docset/groups", staffH.ListDocsetGroups)
+	staffGroup.POST("/projects/:project_id/docset/import", staffH.ImportDocset)
+	staffGroup.POST("/projects/:project_id/docset/sync", staffH.SyncDocset)
 
 	registerStaffUI(e, cfg.StaticDir, cfg.ViteDevUpstream)
 

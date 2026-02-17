@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
@@ -89,8 +90,6 @@ type JobSpec struct {
 	BaseBranch string
 	// OpenAIAPIKey is passed to run pod for codex login.
 	OpenAIAPIKey string
-	// OpenAIAuthFile is optional auth.json content used by codex-cli without login.
-	OpenAIAuthFile string
 	// Context7APIKey enables Context7 docs lookups inside run pod when provided.
 	Context7APIKey string
 	// AgentDisplayName is human-readable agent name used for commit author.
@@ -229,47 +228,47 @@ func (l *Launcher) JobRef(runID string, namespace string) JobRef {
 // Launch creates Kubernetes Job or returns existing one when already present.
 func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 	ref := l.JobRef(spec.RunID, spec.Namespace)
-	podSpec := corev1.PodSpec{
-		RestartPolicy: corev1.RestartPolicyNever,
-		Containers: []corev1.Container{
-			{
-				Name:    "run",
-				Image:   l.cfg.Image,
-				Command: []string{"/bin/sh", "-c", l.cfg.Command},
-				Env: []corev1.EnvVar{
-					{Name: "CODEXK8S_RUN_ID", Value: spec.RunID},
-					{Name: "CODEXK8S_CORRELATION_ID", Value: spec.CorrelationID},
-					{Name: "CODEXK8S_PROJECT_ID", Value: spec.ProjectID},
-					{Name: "CODEXK8S_SLOT_NO", Value: fmt.Sprintf("%d", spec.SlotNo)},
-					{Name: "CODEXK8S_RUNTIME_MODE", Value: string(spec.RuntimeMode)},
-					{Name: "CODEXK8S_CONTROL_PLANE_GRPC_TARGET", Value: strings.TrimSpace(spec.ControlPlaneGRPCTarget)},
-					{Name: "CODEXK8S_MCP_BASE_URL", Value: strings.TrimSpace(spec.MCPBaseURL)},
-					{Name: "CODEXK8S_MCP_BEARER_TOKEN", Value: strings.TrimSpace(spec.MCPBearerToken)},
-					{Name: "CODEXK8S_REPOSITORY_FULL_NAME", Value: strings.TrimSpace(spec.RepositoryFullName)},
-					{Name: "CODEXK8S_ISSUE_NUMBER", Value: fmt.Sprintf("%d", spec.IssueNumber)},
-					{Name: "CODEXK8S_RUN_TRIGGER_KIND", Value: strings.TrimSpace(spec.TriggerKind)},
-					{Name: "CODEXK8S_RUN_TRIGGER_LABEL", Value: strings.TrimSpace(spec.TriggerLabel)},
-					{Name: "CODEXK8S_RUN_TARGET_BRANCH", Value: strings.TrimSpace(spec.TargetBranch)},
-					{Name: "CODEXK8S_EXISTING_PR_NUMBER", Value: fmt.Sprintf("%d", spec.ExistingPRNumber)},
-					{Name: "CODEXK8S_AGENT_KEY", Value: strings.TrimSpace(spec.AgentKey)},
-					{Name: "CODEXK8S_AGENT_MODEL", Value: strings.TrimSpace(spec.AgentModel)},
-					{Name: "CODEXK8S_AGENT_REASONING_EFFORT", Value: strings.TrimSpace(spec.AgentReasoningEffort)},
-					{Name: "CODEXK8S_PROMPT_TEMPLATE_KIND", Value: strings.TrimSpace(spec.PromptTemplateKind)},
-					{Name: "CODEXK8S_PROMPT_TEMPLATE_SOURCE", Value: strings.TrimSpace(spec.PromptTemplateSource)},
-					{Name: "CODEXK8S_PROMPT_TEMPLATE_LOCALE", Value: strings.TrimSpace(spec.PromptTemplateLocale)},
-					{Name: "CODEXK8S_STATE_IN_REVIEW_LABEL", Value: strings.TrimSpace(spec.StateInReviewLabel)},
-					{Name: "CODEXK8S_AGENT_BASE_BRANCH", Value: strings.TrimSpace(spec.BaseBranch)},
-					{Name: "CODEXK8S_OPENAI_API_KEY", Value: strings.TrimSpace(spec.OpenAIAPIKey)},
-					{Name: "CODEXK8S_OPENAI_AUTH_FILE", Value: strings.TrimSpace(spec.OpenAIAuthFile)},
-					{Name: "CODEXK8S_CONTEXT7_API_KEY", Value: strings.TrimSpace(spec.Context7APIKey)},
-					{Name: "CODEXK8S_AGENT_DISPLAY_NAME", Value: strings.TrimSpace(spec.AgentDisplayName)},
-					{Name: "CODEXK8S_GIT_BOT_TOKEN", Value: strings.TrimSpace(spec.GitBotToken)},
-					{Name: "CODEXK8S_GIT_BOT_USERNAME", Value: strings.TrimSpace(spec.GitBotUsername)},
-					{Name: "CODEXK8S_GIT_BOT_MAIL", Value: strings.TrimSpace(spec.GitBotMail)},
-				},
-			},
+	container := corev1.Container{
+		Name:    "run",
+		Image:   l.cfg.Image,
+		Command: []string{"/bin/sh", "-c", l.cfg.Command},
+		Env: []corev1.EnvVar{
+			{Name: "CODEXK8S_RUN_ID", Value: spec.RunID},
+			{Name: "CODEXK8S_CORRELATION_ID", Value: spec.CorrelationID},
+			{Name: "CODEXK8S_PROJECT_ID", Value: spec.ProjectID},
+			{Name: "CODEXK8S_SLOT_NO", Value: fmt.Sprintf("%d", spec.SlotNo)},
+			{Name: "CODEXK8S_RUNTIME_MODE", Value: string(spec.RuntimeMode)},
+			{Name: "CODEXK8S_CONTROL_PLANE_GRPC_TARGET", Value: strings.TrimSpace(spec.ControlPlaneGRPCTarget)},
+			{Name: "CODEXK8S_MCP_BASE_URL", Value: strings.TrimSpace(spec.MCPBaseURL)},
+			{Name: "CODEXK8S_MCP_BEARER_TOKEN", Value: strings.TrimSpace(spec.MCPBearerToken)},
+			{Name: "CODEXK8S_REPOSITORY_FULL_NAME", Value: strings.TrimSpace(spec.RepositoryFullName)},
+			{Name: "CODEXK8S_ISSUE_NUMBER", Value: fmt.Sprintf("%d", spec.IssueNumber)},
+			{Name: "CODEXK8S_RUN_TRIGGER_KIND", Value: strings.TrimSpace(spec.TriggerKind)},
+			{Name: "CODEXK8S_RUN_TRIGGER_LABEL", Value: strings.TrimSpace(spec.TriggerLabel)},
+			{Name: "CODEXK8S_RUN_TARGET_BRANCH", Value: strings.TrimSpace(spec.TargetBranch)},
+			{Name: "CODEXK8S_EXISTING_PR_NUMBER", Value: fmt.Sprintf("%d", spec.ExistingPRNumber)},
+			{Name: "CODEXK8S_AGENT_KEY", Value: strings.TrimSpace(spec.AgentKey)},
+			{Name: "CODEXK8S_AGENT_MODEL", Value: strings.TrimSpace(spec.AgentModel)},
+			{Name: "CODEXK8S_AGENT_REASONING_EFFORT", Value: strings.TrimSpace(spec.AgentReasoningEffort)},
+			{Name: "CODEXK8S_PROMPT_TEMPLATE_KIND", Value: strings.TrimSpace(spec.PromptTemplateKind)},
+			{Name: "CODEXK8S_PROMPT_TEMPLATE_SOURCE", Value: strings.TrimSpace(spec.PromptTemplateSource)},
+			{Name: "CODEXK8S_PROMPT_TEMPLATE_LOCALE", Value: strings.TrimSpace(spec.PromptTemplateLocale)},
+			{Name: "CODEXK8S_STATE_IN_REVIEW_LABEL", Value: strings.TrimSpace(spec.StateInReviewLabel)},
+			{Name: "CODEXK8S_AGENT_BASE_BRANCH", Value: strings.TrimSpace(spec.BaseBranch)},
+			{Name: "CODEXK8S_OPENAI_API_KEY", Value: strings.TrimSpace(spec.OpenAIAPIKey)},
+			{Name: "CODEXK8S_CONTEXT7_API_KEY", Value: strings.TrimSpace(spec.Context7APIKey)},
+			{Name: "CODEXK8S_AGENT_DISPLAY_NAME", Value: strings.TrimSpace(spec.AgentDisplayName)},
+			{Name: "CODEXK8S_GIT_BOT_TOKEN", Value: strings.TrimSpace(spec.GitBotToken)},
+			{Name: "CODEXK8S_GIT_BOT_USERNAME", Value: strings.TrimSpace(spec.GitBotUsername)},
+			{Name: "CODEXK8S_GIT_BOT_MAIL", Value: strings.TrimSpace(spec.GitBotMail)},
 		},
 	}
+
+	podSpec := corev1.PodSpec{
+		RestartPolicy: corev1.RestartPolicyNever,
+		Containers:    []corev1.Container{container},
+	}
+
 	if spec.RuntimeMode == agentdomain.RuntimeModeFullEnv {
 		podSpec.ServiceAccountName = l.cfg.RunServiceAccountName
 	}
@@ -361,6 +360,49 @@ func (l *Launcher) Status(ctx context.Context, ref JobRef) (JobState, error) {
 	}
 
 	return JobStatePending, nil
+}
+
+// FindRunJobRefByRunID resolves run Kubernetes Job reference by run id label across namespaces.
+func (l *Launcher) FindRunJobRefByRunID(ctx context.Context, runID string) (JobRef, bool, error) {
+	targetRunID := strings.TrimSpace(runID)
+	if targetRunID == "" {
+		return JobRef{}, false, fmt.Errorf("run id is required")
+	}
+
+	selector := fmt.Sprintf("%s=%s,app.kubernetes.io/name=codex-k8s-run", metadataLabelRunID, targetRunID)
+	jobs, err := l.client.BatchV1().Jobs(metav1.NamespaceAll).List(ctx, metav1.ListOptions{
+		LabelSelector: selector,
+	})
+	if err != nil {
+		return JobRef{}, false, fmt.Errorf("list kubernetes jobs by run id %s: %w", targetRunID, err)
+	}
+	if len(jobs.Items) == 0 {
+		return JobRef{}, false, nil
+	}
+
+	expectedName := BuildRunJobName(targetRunID)
+	candidates := make([]batchv1.Job, 0, len(jobs.Items))
+	for _, item := range jobs.Items {
+		if strings.TrimSpace(item.Name) == expectedName {
+			candidates = append(candidates, item)
+		}
+	}
+	if len(candidates) == 0 {
+		candidates = jobs.Items
+	}
+
+	sort.Slice(candidates, func(i, j int) bool {
+		if candidates[i].Namespace == candidates[j].Namespace {
+			return candidates[i].Name < candidates[j].Name
+		}
+		return candidates[i].Namespace < candidates[j].Namespace
+	})
+
+	item := candidates[0]
+	return JobRef{
+		Namespace: strings.TrimSpace(item.Namespace),
+		Name:      strings.TrimSpace(item.Name),
+	}, true, nil
 }
 
 // BuildRunJobName returns deterministic DNS-compatible Job name.

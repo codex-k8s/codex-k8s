@@ -14,7 +14,13 @@
       <VCardText>
         <VRow density="compact">
           <VCol cols="12" md="6">
-            <VTextField v-model.trim="repositoryFilter" :label="t('pages.registryImages.repositoryFilter')" hide-details clearable />
+            <VSelect
+              v-model="repositoryFilter"
+              :items="repositoryOptions"
+              :label="t('pages.registryImages.repositoryFilter')"
+              hide-details
+              clearable
+            />
           </VCol>
           <VCol cols="12" md="3">
             <VTextField
@@ -38,10 +44,6 @@
           </VCol>
         </VRow>
       </VCardText>
-      <VCardActions>
-        <VSpacer />
-        <AdaptiveBtn variant="tonal" icon="mdi-check" :label="t('pages.runs.applyFilters')" :disabled="loading" @click="loadImages" />
-      </VCardActions>
     </VCard>
 
     <VCard class="mt-4" variant="outlined">
@@ -111,10 +113,11 @@
             <span class="mono">{{ item.repository }}</span>
           </template>
           <template #item.tag="{ item }">
-            <span class="mono">{{ item.tag }}</span>
-          </template>
-          <template #item.digest="{ item }">
-            <span class="mono">{{ shortDigest(item.digest) }}</span>
+            <VTooltip :text="item.tag">
+              <template #activator="{ props: tipProps }">
+                <span v-bind="tipProps" class="mono">{{ shortTag(item.tag) }}</span>
+              </template>
+            </VTooltip>
           </template>
           <template #item.created_at="{ item }">
             <span class="text-medium-emphasis">{{ formatDateTime(item.created_at, locale) }}</span>
@@ -159,7 +162,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
@@ -168,6 +171,8 @@ import PageHeader from "../../shared/ui/PageHeader.vue";
 import { normalizeApiError, type ApiError } from "../../shared/api/errors";
 import { formatDateTime } from "../../shared/lib/datetime";
 import { useSnackbarStore } from "../../shared/ui/feedback/snackbar-store";
+import { useProjectsStore } from "../../features/projects/projects-store";
+import { useUiContextStore } from "../../features/ui-context/store";
 import {
   cleanupRegistryImages,
   deleteRegistryImageTag,
@@ -181,21 +186,23 @@ import type {
 type RegistryImageRow = {
   repository: string;
   tag: string;
-  digest: string;
   created_at?: string | null;
   config_size_bytes: number;
 };
 
 const { t, locale } = useI18n({ useScope: "global" });
 const snackbar = useSnackbarStore();
+const uiContext = useUiContextStore();
+const projects = useProjectsStore();
 
 const loading = ref(false);
 const cleanupLoading = ref(false);
 const deleteLoading = ref(false);
 const error = ref<ApiError | null>(null);
 const repositories = ref<RegistryImageRepository[]>([]);
+const availableRepositories = ref<string[]>([]);
 
-const repositoryFilter = ref("");
+const repositoryFilter = ref<string | null>("");
 const limitRepositories = ref(100);
 const limitTags = ref(50);
 
@@ -211,10 +218,25 @@ const deleteTagName = ref("");
 
 const deleteConfirmMessage = computed(() => `${deleteRepository.value}:${deleteTagName.value}`);
 
+const projectSlug = computed(() => {
+  const id = String(uiContext.projectId || "").trim();
+  if (!id) return "";
+  const p = projects.items.find((x) => x.id === id);
+  const slug = String(p?.slug || "").trim();
+  return slug;
+});
+
+const repositoryOptions = computed(() => ([
+  { title: t("context.allObjects"), value: "" },
+  ...(availableRepositories.value.length > 0 ? availableRepositories.value : repositories.value.map((x) => x.repository)).map((r) => ({
+    title: r,
+    value: r,
+  })),
+]));
+
 const headers = computed(() => ([
-  { title: t("table.fields.repository"), key: "repository", align: "center", width: 320 },
-  { title: t("table.fields.tag"), key: "tag", align: "center", width: 200 },
-  { title: t("table.fields.digest"), key: "digest", align: "center", width: 200 },
+  { title: t("table.fields.repository"), key: "repository", align: "center", width: 280 },
+  { title: t("table.fields.tag"), key: "tag", align: "center", width: 220 },
   { title: t("table.fields.created_at"), key: "created_at", align: "center", width: 180 },
   { title: t("table.fields.config_size_bytes"), key: "config_size_bytes", align: "center", width: 160 },
   { title: "", key: "actions", sortable: false, align: "end", width: 72 },
@@ -227,7 +249,6 @@ const rows = computed<RegistryImageRow[]>(() => {
       out.push({
         repository: repositoryItem.repository,
         tag: tagItem.tag,
-        digest: tagItem.digest,
         created_at: tagItem.created_at,
         config_size_bytes: Number(tagItem.config_size_bytes || 0),
       });
@@ -236,10 +257,24 @@ const rows = computed<RegistryImageRow[]>(() => {
   return out;
 });
 
-function shortDigest(value: string): string {
-  const digest = String(value || "").trim();
-  if (digest.length <= 20) return digest;
-  return `${digest.slice(0, 12)}...${digest.slice(-8)}`;
+function shortTag(value: string): string {
+  const tag = String(value || "").trim();
+  if (tag.length <= 8) return tag;
+
+  const lastDash = tag.lastIndexOf("-");
+  if (lastDash >= 0 && lastDash < tag.length - 1) {
+    const prefix = tag.slice(0, lastDash + 1);
+    const suffix = tag.slice(lastDash + 1);
+    if (/^[0-9a-f]+$/i.test(suffix) && suffix.length >= 8) {
+      return `${prefix}${suffix.slice(0, 8)}`;
+    }
+  }
+
+  if (/^[0-9a-f]+$/i.test(tag)) {
+    return tag.slice(0, 8);
+  }
+
+  return `${tag.slice(0, 8)}...`;
 }
 
 function formatBytes(value: number): string {
@@ -254,15 +289,27 @@ function formatBytes(value: number): string {
   return `${size.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
 }
 
+let loadTimer: number | null = null;
+function scheduleLoadImages(): void {
+  if (loadTimer) window.clearTimeout(loadTimer);
+  loadTimer = window.setTimeout(() => {
+    void loadImages();
+  }, 250);
+}
+
 async function loadImages(): Promise<void> {
   loading.value = true;
   error.value = null;
   try {
+    const queryRepository = String(repositoryFilter.value || "").trim() || projectSlug.value;
     repositories.value = await listRegistryImages({
-      repository: repositoryFilter.value,
+      repository: queryRepository,
       limitRepositories: limitRepositories.value,
       limitTags: limitTags.value,
     });
+    if (!String(repositoryFilter.value || "").trim()) {
+      availableRepositories.value = repositories.value.map((x) => x.repository);
+    }
   } catch (err) {
     error.value = normalizeApiError(err);
   } finally {
@@ -316,7 +363,41 @@ async function runCleanup(): Promise<void> {
   }
 }
 
-onMounted(() => void loadImages());
+watch(
+  () => uiContext.projectId,
+  () => {
+    repositoryFilter.value = "";
+    scheduleLoadImages();
+  },
+);
+
+watch(
+  () => projectSlug.value,
+  () => {
+    if (String(repositoryFilter.value || "").trim()) return;
+    scheduleLoadImages();
+  },
+);
+
+watch(
+  () => repositoryFilter.value,
+  () => scheduleLoadImages(),
+);
+
+watch(
+  () => limitRepositories.value,
+  () => scheduleLoadImages(),
+);
+
+watch(
+  () => limitTags.value,
+  () => scheduleLoadImages(),
+);
+
+onMounted(() => {
+  if (projects.items.length === 0) void projects.load();
+  void loadImages();
+});
 </script>
 
 <style scoped>

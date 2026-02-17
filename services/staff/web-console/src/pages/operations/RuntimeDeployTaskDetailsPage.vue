@@ -2,7 +2,7 @@
   <div>
     <PageHeader :title="t('pages.runtimeDeployTaskDetails.title')">
       <template #leading>
-        <AdaptiveBtn variant="text" icon="mdi-arrow-left" :label="t('common.back')" @click="goBack" />
+        <BackBtn :label="t('common.back')" @click="goBack" />
       </template>
       <template #actions>
         <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :disabled="loading" @click="loadTask" />
@@ -15,7 +15,7 @@
 
     <template v-if="task">
       <VRow class="mt-4" density="compact">
-        <VCol cols="12" md="6">
+        <VCol cols="12">
           <VCard variant="outlined">
             <VCardTitle class="d-flex align-center justify-space-between ga-2 flex-wrap">
               <span>{{ t("pages.runtimeDeployTaskDetails.summary") }}</span>
@@ -24,32 +24,34 @@
               </VChip>
             </VCardTitle>
             <VCardText>
-              <div class="d-flex flex-column ga-2 text-body-2">
+              <div class="summary-grid text-body-2">
                 <div><strong>{{ t("table.fields.run") }}:</strong> <span class="mono">{{ task.run_id }}</span></div>
+                <div><strong>{{ t("table.fields.repository_full_name") }}:</strong> <span class="mono">{{ task.repository_full_name }}</span></div>
                 <div><strong>{{ t("table.fields.runtime_mode") }}:</strong> <span class="mono">{{ task.runtime_mode }}</span></div>
                 <div><strong>{{ t("table.fields.target_env") }}:</strong> <span class="mono">{{ task.target_env }}</span></div>
                 <div><strong>{{ t("table.fields.namespace") }}:</strong> <span class="mono">{{ task.namespace }}</span></div>
                 <div><strong>{{ t("table.fields.slot_no") }}:</strong> <span class="mono">{{ task.slot_no }}</span></div>
-                <div><strong>{{ t("table.fields.repository_full_name") }}:</strong> <span class="mono">{{ task.repository_full_name }}</span></div>
                 <div><strong>{{ t("table.fields.services_yaml_path") }}:</strong> <span class="mono">{{ task.services_yaml_path }}</span></div>
                 <div><strong>{{ t("table.fields.build_ref") }}:</strong> <span class="mono">{{ task.build_ref }}</span></div>
                 <div><strong>{{ t("table.fields.attempts") }}:</strong> <span class="mono">{{ task.attempts }}</span></div>
                 <div><strong>{{ t("table.fields.created_at") }}:</strong> {{ formatDateTime(task.created_at, locale) }}</div>
                 <div><strong>{{ t("table.fields.started_at") }}:</strong> {{ formatDateTime(task.started_at, locale) }}</div>
                 <div><strong>{{ t("table.fields.finished_at") }}:</strong> {{ formatDateTime(task.finished_at, locale) }}</div>
-                <div v-if="task.last_error"><strong>{{ t("table.fields.last_error") }}:</strong> {{ task.last_error }}</div>
+                <div v-if="task.last_error" class="summary-wide">
+                  <strong>{{ t("table.fields.last_error") }}:</strong> {{ task.last_error }}
+                </div>
               </div>
             </VCardText>
           </VCard>
         </VCol>
-        <VCol cols="12" md="6">
+        <VCol cols="12">
           <VCard variant="outlined">
             <VCardTitle>{{ t("pages.runtimeDeployTaskDetails.logs") }}</VCardTitle>
             <VCardText>
               <VDataTable
                 :headers="logHeaders"
-                :items="task.logs"
-                :items-per-page="10"
+                :items="sortedLogs"
+                :items-per-page="25"
                 density="compact"
               >
                 <template #item.level="{ item }">
@@ -61,6 +63,9 @@
                 </template>
                 <template #item.created_at="{ item }">
                   <span class="text-medium-emphasis">{{ formatDateTime(item.created_at, locale) }}</span>
+                </template>
+                <template #item.message="{ item }">
+                  <div class="log-message mono">{{ stripAnsi(item.message) }}</div>
                 </template>
                 <template #no-data>
                   <div class="py-6 text-medium-emphasis">{{ t("states.noRunLogs") }}</div>
@@ -80,6 +85,7 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 
 import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
+import BackBtn from "../../shared/ui/BackBtn.vue";
 import PageHeader from "../../shared/ui/PageHeader.vue";
 import { normalizeApiError, type ApiError } from "../../shared/api/errors";
 import { formatDateTime } from "../../shared/lib/datetime";
@@ -95,6 +101,12 @@ const router = useRouter();
 const task = ref<RuntimeDeployTask | null>(null);
 const loading = ref(false);
 const error = ref<ApiError | null>(null);
+
+const sortedLogs = computed(() => {
+  const logs = task.value?.logs ? [...task.value.logs] : [];
+  logs.sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
+  return logs;
+});
 
 const logHeaders = computed(() => ([
   { title: t("table.fields.created_at"), key: "created_at", align: "center", width: 180 },
@@ -112,6 +124,10 @@ function colorForLevel(value: string): string {
     default:
       return "info";
   }
+}
+
+function stripAnsi(value: string): string {
+  return String(value || "").replace(/\u001b\[[0-9;]*m/g, "");
 }
 
 async function loadTask(): Promise<void> {
@@ -137,5 +153,28 @@ onMounted(() => void loadTask());
 <style scoped>
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px 16px;
+  align-items: start;
+}
+
+@media (min-width: 960px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.summary-wide {
+  grid-column: 1 / -1;
+}
+
+.log-message {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 </style>

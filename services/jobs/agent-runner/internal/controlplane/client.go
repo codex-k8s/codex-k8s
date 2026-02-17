@@ -99,6 +99,20 @@ type LatestAgentSessionQuery struct {
 	AgentKey           string
 }
 
+type UpsertRunStatusCommentParams struct {
+	RunID           string
+	Phase           string
+	JobName         string
+	JobNamespace    string
+	RuntimeMode     string
+	Namespace       string
+	TriggerKind     string
+	PromptLocale    string
+	Model           string
+	ReasoningEffort string
+	RunStatus       string
+}
+
 // Dial creates control-plane gRPC client with run-bound bearer auth.
 func Dial(ctx context.Context, target string, bearerToken string) (*Client, error) {
 	conn, err := grpcutil.DialInsecureReady(ctx, strings.TrimSpace(target))
@@ -215,6 +229,51 @@ func (c *Client) InsertRunFlowEvent(ctx context.Context, runID string, eventType
 	})
 	if err != nil {
 		return fmt.Errorf("insert run flow event: %w", err)
+	}
+	return nil
+}
+
+func (c *Client) GetCodexAuth(ctx context.Context) ([]byte, bool, error) {
+	resp, err := c.svc.GetCodexAuth(c.withAuth(ctx), &controlplanev1.GetCodexAuthRequest{})
+	if err != nil {
+		return nil, false, fmt.Errorf("get codex auth: %w", err)
+	}
+	if !resp.GetFound() {
+		return nil, false, nil
+	}
+	raw := resp.GetAuthJson()
+	if len(raw) == 0 {
+		return nil, false, nil
+	}
+	return append([]byte(nil), raw...), true, nil
+}
+
+func (c *Client) UpsertCodexAuth(ctx context.Context, authJSON []byte) error {
+	_, err := c.svc.UpsertCodexAuth(c.withAuth(ctx), &controlplanev1.UpsertCodexAuthRequest{
+		AuthJson: authJSON,
+	})
+	if err != nil {
+		return fmt.Errorf("upsert codex auth: %w", err)
+	}
+	return nil
+}
+
+func (c *Client) UpsertRunStatusComment(ctx context.Context, params UpsertRunStatusCommentParams) error {
+	_, err := c.svc.UpsertRunStatusComment(c.withAuth(ctx), &controlplanev1.UpsertRunStatusCommentRequest{
+		RunId:           strings.TrimSpace(params.RunID),
+		Phase:           strings.TrimSpace(params.Phase),
+		JobName:         optionalString(strings.TrimSpace(params.JobName)),
+		JobNamespace:    optionalString(strings.TrimSpace(params.JobNamespace)),
+		RuntimeMode:     optionalString(strings.TrimSpace(params.RuntimeMode)),
+		Namespace:       optionalString(strings.TrimSpace(params.Namespace)),
+		TriggerKind:     optionalString(strings.TrimSpace(params.TriggerKind)),
+		PromptLocale:    optionalString(strings.TrimSpace(params.PromptLocale)),
+		Model:           optionalString(strings.TrimSpace(params.Model)),
+		ReasoningEffort: optionalString(strings.TrimSpace(params.ReasoningEffort)),
+		RunStatus:       optionalString(strings.TrimSpace(params.RunStatus)),
+	})
+	if err != nil {
+		return fmt.Errorf("upsert run status comment: %w", err)
 	}
 	return nil
 }

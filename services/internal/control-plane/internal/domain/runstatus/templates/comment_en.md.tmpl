@@ -1,5 +1,9 @@
 ### 🧠 AI Agent Run
+{{- if .NeedsCodexAuth }}
+🔐 Codex authentication required{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Run link]({{ .ManagementURL }}){{- end }}
+{{- else }}
 ✅ Agent started{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Run link]({{ .ManagementURL }}){{- end }}
+{{- end }}
 
 - Run ID: `{{ .RunID }}`
 {{- if .ShowTriggerKind }}
@@ -26,6 +30,9 @@
 
 ### 🕒 Timeline
 - ✅ Run was created and is running
+{{- if .NeedsCodexAuth }}
+- 🔐 Waiting for Codex authentication (see run console)
+{{- end }}
 {{- if .ShowFinished }}
 {{- if .IsRunSucceeded }}
 - 👌 Run finished successfully

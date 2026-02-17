@@ -11,9 +11,38 @@
         </div>
       </RouterLink>
 
+      <VSelect
+        v-if="auth.isAuthed"
+        v-model="projectIdModel"
+        class="project-select ml-4"
+        density="compact"
+        variant="outlined"
+        :items="projectSelectOptions"
+        :label="t('context.project')"
+        hide-details
+      />
+
       <VSpacer />
 
-      <VBreadcrumbs v-if="auth.isAuthed" class="breadcrumbs" :items="breadcrumbs" density="compact" />
+      <VBreadcrumbs v-if="auth.isAuthed" class="breadcrumbs" :items="breadcrumbs" density="compact">
+        <template #item="{ item }">
+          <VBtn
+            v-if="item.to && !item.disabled"
+            variant="text"
+            size="small"
+            class="breadcrumb-btn"
+            :to="item.to"
+          >
+            {{ item.title }}
+          </VBtn>
+          <span v-else class="breadcrumb-text text-medium-emphasis">
+            {{ item.title }}
+          </span>
+        </template>
+        <template #divider>
+          <VIcon icon="mdi-chevron-right" size="18" class="text-medium-emphasis" />
+        </template>
+      </VBreadcrumbs>
 
       <VSpacer />
 
@@ -29,12 +58,23 @@
               <VCol cols="12" md="6">
                 <VSelect
                   v-model="projectIdModel"
-                  :items="projectOptions"
+                  :items="projectSelectOptions"
                   :label="t('context.project')"
                   hide-details
                 />
               </VCol>
               <VCol cols="12" md="6">
+                <div class="d-flex justify-end">
+                  <VBtn
+                    size="x-small"
+                    variant="text"
+                    class="mb-1"
+                    :disabled="auth.status !== 'authed'"
+                    @click="resetContextFilter"
+                  >
+                    {{ t("context.reset") }}
+                  </VBtn>
+                </div>
                 <VSelect v-model="envModel" :items="envOptions" :label="t('context.env')" hide-details />
               </VCol>
               <VCol cols="12">
@@ -218,10 +258,18 @@ async function logout() {
 onMounted(() => {
   void auth.ensureLoaded().then(() => {
     if (auth.status === "authed") {
-      void projects.load();
+      void projects.load().then(() => ensureSelectedProjectExists());
     }
   });
 });
+
+function ensureSelectedProjectExists(): void {
+  const selected = String(uiContext.projectId || "").trim();
+  if (!selected) return;
+  const exists = projects.items.some((p) => p.id === selected);
+  if (exists) return;
+  uiContext.setProjectId("");
+}
 
 watch(
   () => route.params.projectId,
@@ -233,9 +281,9 @@ watch(
   { immediate: true },
 );
 
-const projectOptions = computed(() =>
+const projectSelectOptions = computed(() =>
   [
-    { title: t("context.allObjects"), value: "" },
+    { title: t("context.projectNotSelected"), value: "" },
     ...projects.items.map((p) => ({
       title: p.name || p.slug || p.id,
       value: p.id,
@@ -247,7 +295,6 @@ const envOptions = computed(() => [
   { title: t("context.allObjects"), value: "all" },
   { title: t("context.envAi"), value: "ai" },
   { title: t("context.envProduction"), value: "production" },
-  { title: t("context.envProd"), value: "prod" },
 ] as const);
 
 type SelectItem = { title: string; value: string };
@@ -256,17 +303,14 @@ const namespaceOptions = computed<SelectItem[]>(() => {
   const all = { title: t("context.allObjects"), value: "" };
   const project = "codex-k8s";
   const ai = [`${project}-dev-1`, `${project}-dev-2`, `${project}-dev-3`];
-  const production = [`${project}-production`];
-  const prod = [`${project}-prod`];
+  const production = [`${project}-prod`];
 
   const values =
     uiContext.env === "ai"
       ? ai
       : uiContext.env === "production"
         ? production
-        : uiContext.env === "prod"
-          ? prod
-          : [...ai, ...production, ...prod];
+        : [...ai, ...production];
 
   return [all, ...values.map((v) => ({ title: v, value: v }))];
 });
@@ -288,15 +332,32 @@ const showContextFilter = computed(() => {
   return section === "runs" || section === "operations" || section === "admin";
 });
 
-const filterSummary = computed(() => {
-  const all = t("context.allObjects");
-  const projectTitle = projectOptions.value.find((p) => p.value === uiContext.projectId)?.title || all;
-  const envTitle = envOptions.value.find((e) => e.value === uiContext.env)?.title || all;
-  const namespaceTitle = uiContext.namespace || all;
-  return `${projectTitle} / ${envTitle} / ${namespaceTitle}`;
+const filterSummaryParts = computed(() => {
+  const parts: string[] = [];
+
+  const projectTitle = projectSelectOptions.value.find((p) => p.value === uiContext.projectId)?.title;
+  if (uiContext.projectId && projectTitle) parts.push(projectTitle);
+
+  const envTitle = envOptions.value.find((e) => e.value === uiContext.env)?.title;
+  if (uiContext.env !== "all" && envTitle) parts.push(envTitle);
+
+  const namespaceTitle = String(uiContext.namespace || "").trim();
+  if (namespaceTitle) parts.push(namespaceTitle);
+
+  return parts;
 });
 
-const filterButtonLabel = computed(() => t("context.button", { value: filterSummary.value }));
+const filterSummary = computed(() => {
+  const parts = filterSummaryParts.value;
+  if (parts.length === 0) return t("context.notSelected");
+  return parts.join(" / ");
+});
+
+const filterButtonLabel = computed(() => {
+  const parts = filterSummaryParts.value;
+  if (parts.length === 0) return t("context.buttonNotSelected");
+  return t("context.button", { value: parts.join(" / ") });
+});
 
 const profileButtonLabel = computed(() =>
   auth.me?.githubLogin ? `@${auth.me.githubLogin}` : auth.me?.email || t("common.loading"),
@@ -340,6 +401,12 @@ function toggleDrawer(): void {
   drawerRail.value = !drawerRail.value;
 }
 
+function resetContextFilter(): void {
+  uiContext.setProjectId("");
+  uiContext.setEnv("all");
+  uiContext.setNamespace("");
+}
+
 const breadcrumbs = computed(() => {
   const rName = typeof route.name === "string" ? route.name : "";
   const meta = route.meta as Record<string, unknown>;
@@ -350,6 +417,7 @@ const breadcrumbs = computed(() => {
   const detailToListRoute: Record<string, string> = {
     "run-details": "runs",
     "runtime-deploy-task-details": "runtime-deploy-tasks",
+    "project-details": "projects",
   };
   const baseRouteName = detailToListRoute[rName] || rName;
   const navItem = findNavItemByRouteName(baseRouteName);
@@ -408,6 +476,18 @@ const breadcrumbs = computed(() => {
   max-width: 520px;
   overflow: hidden;
 }
+.project-select {
+  max-width: 280px;
+}
+.breadcrumb-btn {
+  text-transform: none;
+  letter-spacing: normal;
+}
+.breadcrumb-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .context-filter-btn :deep(.v-btn__content) {
   max-width: 520px;
   overflow: hidden;
@@ -415,7 +495,7 @@ const breadcrumbs = computed(() => {
   white-space: nowrap;
 }
 .content {
-  max-width: 1400px;
+  max-width: 1800px;
   margin: 0 auto;
   padding: 16px;
 }

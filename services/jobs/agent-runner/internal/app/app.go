@@ -73,8 +73,7 @@ func Run() error {
 			GitBotMail:     cfg.GitBotMail,
 		},
 		OpenAIConfig: runner.OpenAIConfig{
-			OpenAIAPIKey:   cfg.OpenAIAPIKey,
-			OpenAIAuthFile: cfg.OpenAIAuthFile,
+			OpenAIAPIKey: cfg.OpenAIAPIKey,
 		},
 	}, cp, logger)
 

@@ -3,7 +3,9 @@ package registryimages
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/registry"
@@ -20,6 +22,8 @@ const (
 // RegistryClient describes operations required from registry API adapter.
 type RegistryClient interface {
 	ListRepositories(ctx context.Context) ([]string, error)
+	ListTags(ctx context.Context, repository string) ([]string, error)
+	GetTagInfo(ctx context.Context, repository string, tag string) (registry.TagInfo, bool, error)
 	ListTagInfos(ctx context.Context, repository string) ([]registry.TagInfo, error)
 	DeleteTag(ctx context.Context, repository string, tag string) (registry.DeleteResult, error)
 }
@@ -71,14 +75,17 @@ func (s *Service) List(ctx context.Context, filter querytypes.RegistryImageListF
 		if needle != "" && !strings.Contains(strings.ToLower(repository), needle) {
 			continue
 		}
-		tagInfos, err := s.client.ListTagInfos(ctx, repository)
+		tags, err := s.client.ListTags(ctx, repository)
 		if err != nil {
 			return nil, err
 		}
+		limitedTags := mapTags(tags, limitTags)
+		s.enrichTagMetadata(ctx, repository, limitedTags)
+		sortRegistryImageTags(limitedTags)
 		repositoryItem := entitytypes.RegistryImageRepository{
 			Repository: repository,
-			TagCount:   len(tagInfos),
-			Tags:       mapTagInfos(tagInfos, limitTags),
+			TagCount:   len(tags),
+			Tags:       limitedTags,
 		}
 		items = append(items, repositoryItem)
 		if len(items) >= limitRepositories {
@@ -86,6 +93,67 @@ func (s *Service) List(ctx context.Context, filter querytypes.RegistryImageListF
 		}
 	}
 	return items, nil
+}
+
+func (s *Service) enrichTagMetadata(ctx context.Context, repository string, tags []entitytypes.RegistryImageTag) {
+	if len(tags) == 0 {
+		return
+	}
+
+	// Best-effort metadata fetch: the list endpoint should remain responsive even if
+	// some tags are missing manifests or the registry is temporarily slow.
+	const maxConcurrent = 8
+	sem := make(chan struct{}, maxConcurrent)
+	var wg sync.WaitGroup
+
+	for idx := range tags {
+		tag := strings.TrimSpace(tags[idx].Tag)
+		if tag == "" {
+			continue
+		}
+
+		wg.Add(1)
+		go func(idx int, tag string) {
+			defer wg.Done()
+
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			info, ok, err := s.client.GetTagInfo(ctx, repository, tag)
+			if err != nil || !ok {
+				return
+			}
+
+			tags[idx].Digest = strings.TrimSpace(info.Digest)
+			tags[idx].ConfigSizeBytes = info.ConfigSizeBytes
+			if info.CreatedAt != nil {
+				v := info.CreatedAt.UTC()
+				tags[idx].CreatedAt = &v
+			}
+		}(idx, tag)
+	}
+
+	wg.Wait()
+}
+
+func sortRegistryImageTags(tags []entitytypes.RegistryImageTag) {
+	sort.Slice(tags, func(i, j int) bool {
+		left := tags[i]
+		right := tags[j]
+		if left.CreatedAt != nil && right.CreatedAt != nil {
+			if left.CreatedAt.Equal(*right.CreatedAt) {
+				return left.Tag > right.Tag
+			}
+			return left.CreatedAt.After(*right.CreatedAt)
+		}
+		if left.CreatedAt != nil {
+			return true
+		}
+		if right.CreatedAt != nil {
+			return false
+		}
+		return left.Tag > right.Tag
+	})
 }
 
 // DeleteTag deletes one tag from internal registry.
@@ -201,6 +269,27 @@ func mapTagInfos(items []registry.TagInfo, limit int) []entitytypes.RegistryImag
 			CreatedAt:       createdAt,
 			ConfigSizeBytes: item.ConfigSizeBytes,
 		})
+	}
+	return out
+}
+
+func mapTags(tags []string, limit int) []entitytypes.RegistryImageTag {
+	if len(tags) == 0 {
+		return []entitytypes.RegistryImageTag{}
+	}
+	if limit <= 0 {
+		limit = defaultListTagsLimit
+	}
+	out := make([]entitytypes.RegistryImageTag, 0, minInt(len(tags), limit))
+	for _, tag := range tags {
+		if len(out) >= limit {
+			break
+		}
+		tag = strings.TrimSpace(tag)
+		if tag == "" {
+			continue
+		}
+		out = append(out, entitytypes.RegistryImageTag{Tag: tag})
 	}
 	return out
 }

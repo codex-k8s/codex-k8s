@@ -814,6 +814,268 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /api/v1/staff/projects/{project_id}/repositories/{repository_id}/bot-params:
+    put:
+      summary: Update repository bot parameters (token/login/email)
+      operationId: upsertRepositoryBotParams
+      tags: [staff-project-repositories]
+      parameters:
+        - $ref: "#/components/parameters/ProjectID"
+        - in: path
+          name: repository_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertRepositoryBotParamsRequest"
+      responses:
+        "204":
+          description: Repository bot params updated
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/staff/projects/{project_id}/repositories/{repository_id}/preflight:
+    post:
+      summary: Run repository onboarding preflight
+      operationId: runRepositoryPreflight
+      tags: [staff-project-repositories]
+      parameters:
+        - $ref: "#/components/parameters/ProjectID"
+        - in: path
+          name: repository_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Preflight report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunRepositoryPreflightResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/staff/projects/{project_id}/github-tokens:
+    get:
+      summary: Get project-scoped GitHub tokens status
+      operationId: getProjectGitHubTokens
+      tags: [staff-projects]
+      parameters:
+        - $ref: "#/components/parameters/ProjectID"
+      responses:
+        "200":
+          description: Project GitHub tokens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectGitHubTokens"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    put:
+      summary: Upsert project-scoped GitHub tokens
+      operationId: upsertProjectGitHubTokens
+      tags: [staff-projects]
+      parameters:
+        - $ref: "#/components/parameters/ProjectID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertProjectGitHubTokensRequest"
+      responses:
+        "204":
+          description: Project GitHub tokens updated
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/staff/config-entries:
+    get:
+      summary: List configuration entries
+      operationId: listConfigEntries
+      tags: [staff-config]
+      parameters:
+        - in: query
+          name: scope
+          required: true
+          schema:
+            type: string
+            enum: [platform, project, repository]
+        - in: query
+          name: project_id
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: repository_id
+          required: false
+          schema:
+            type: string
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Config entries list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfigEntryItemsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      summary: Upsert configuration entry
+      operationId: upsertConfigEntry
+      tags: [staff-config]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertConfigEntryRequest"
+      responses:
+        "201":
+          description: Config entry upserted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfigEntry"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/staff/config-entries/{config_entry_id}:
+    delete:
+      summary: Delete configuration entry
+      operationId: deleteConfigEntry
+      tags: [staff-config]
+      parameters:
+        - in: path
+          name: config_entry_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Config entry deleted
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/staff/docset/groups:
+    get:
+      summary: List docset groups (manifest v1)
+      operationId: listDocsetGroups
+      tags: [staff-docset]
+      parameters:
+        - in: query
+          name: docset_ref
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: locale
+          required: false
+          schema:
+            type: string
+            enum: [ru, en]
+      responses:
+        "200":
+          description: Docset groups
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocsetGroupItemsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/staff/projects/{project_id}/docset/import:
+    post:
+      summary: Import docset into project repository (PR-based)
+      operationId: importDocset
+      tags: [staff-docset]
+      parameters:
+        - $ref: "#/components/parameters/ProjectID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportDocsetRequest"
+      responses:
+        "200":
+          description: Import created PR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportDocsetResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/staff/projects/{project_id}/docset/sync:
+    post:
+      summary: Safe sync docset into project repository (PR-based)
+      operationId: syncDocset
+      tags: [staff-docset]
+      parameters:
+        - $ref: "#/components/parameters/ProjectID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncDocsetRequest"
+      responses:
+        "200":
+          description: Sync created PR
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncDocsetResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
 components:
   parameters:
     ProjectID:
@@ -1515,6 +1777,262 @@ components:
           type: string
         services_yaml_path:
           type: string
+        bot_username:
+          type: string
+          nullable: true
+        bot_email:
+          type: string
+          nullable: true
+        preflight_updated_at:
+          type: string
+          nullable: true
+
+    ProjectGitHubTokens:
+      type: object
+      additionalProperties: false
+      required: [project_id, has_platform_token, has_bot_token]
+      properties:
+        project_id:
+          type: string
+        has_platform_token:
+          type: boolean
+        has_bot_token:
+          type: boolean
+        bot_username:
+          type: string
+          nullable: true
+        bot_email:
+          type: string
+          nullable: true
+
+    UpsertProjectGitHubTokensRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        platform_token:
+          type: string
+          nullable: true
+        bot_token:
+          type: string
+          nullable: true
+        bot_username:
+          type: string
+          nullable: true
+        bot_email:
+          type: string
+          nullable: true
+
+    UpsertRepositoryBotParamsRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        bot_token:
+          type: string
+          nullable: true
+        bot_username:
+          type: string
+          nullable: true
+        bot_email:
+          type: string
+          nullable: true
+
+    PreflightCheckResult:
+      type: object
+      additionalProperties: false
+      required: [name, status]
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+        details:
+          type: string
+          nullable: true
+
+    RunRepositoryPreflightResponse:
+      type: object
+      additionalProperties: false
+      required: [repository_id, status, checks, report_json, finished_at]
+      properties:
+        repository_id:
+          type: string
+        status:
+          type: string
+        checks:
+          type: array
+          items:
+            $ref: "#/components/schemas/PreflightCheckResult"
+        report_json:
+          type: string
+        finished_at:
+          type: string
+
+    ConfigEntry:
+      type: object
+      additionalProperties: false
+      required: [id, scope, kind, key, sync_targets, mutability, is_dangerous]
+      properties:
+        id:
+          type: string
+        scope:
+          type: string
+          enum: [platform, project, repository]
+        kind:
+          type: string
+          enum: [variable, secret]
+        project_id:
+          type: string
+          nullable: true
+        repository_id:
+          type: string
+          nullable: true
+        key:
+          type: string
+        value:
+          type: string
+          nullable: true
+        sync_targets:
+          type: array
+          items:
+            type: string
+        mutability:
+          type: string
+        is_dangerous:
+          type: boolean
+        updated_at:
+          type: string
+          nullable: true
+
+    ConfigEntryItemsResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConfigEntry"
+
+    UpsertConfigEntryRequest:
+      type: object
+      additionalProperties: false
+      required: [scope, kind, key]
+      properties:
+        scope:
+          type: string
+          enum: [platform, project, repository]
+        kind:
+          type: string
+          enum: [variable, secret]
+        project_id:
+          type: string
+          nullable: true
+        repository_id:
+          type: string
+          nullable: true
+        key:
+          type: string
+        value_plain:
+          type: string
+          nullable: true
+        value_secret:
+          type: string
+          nullable: true
+        sync_targets:
+          type: array
+          items:
+            type: string
+        mutability:
+          type: string
+        is_dangerous:
+          type: boolean
+        dangerous_confirmed:
+          type: boolean
+
+    DocsetGroup:
+      type: object
+      additionalProperties: false
+      required: [id, title, description, default_selected]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        default_selected:
+          type: boolean
+
+    DocsetGroupItemsResponse:
+      type: object
+      additionalProperties: false
+      required: [groups]
+      properties:
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/DocsetGroup"
+
+    ImportDocsetRequest:
+      type: object
+      additionalProperties: false
+      required: [repository_id, docset_ref, locale, group_ids]
+      properties:
+        repository_id:
+          type: string
+        docset_ref:
+          type: string
+        locale:
+          type: string
+          enum: [ru, en]
+        group_ids:
+          type: array
+          items:
+            type: string
+
+    ImportDocsetResponse:
+      type: object
+      additionalProperties: false
+      required: [repository_full_name, pr_number, pr_url, branch, files_total]
+      properties:
+        repository_full_name:
+          type: string
+        pr_number:
+          type: integer
+        pr_url:
+          type: string
+        branch:
+          type: string
+        files_total:
+          type: integer
+
+    SyncDocsetRequest:
+      type: object
+      additionalProperties: false
+      required: [repository_id, docset_ref]
+      properties:
+        repository_id:
+          type: string
+        docset_ref:
+          type: string
+
+    SyncDocsetResponse:
+      type: object
+      additionalProperties: false
+      required: [repository_full_name, pr_number, pr_url, branch, files_updated, files_drift]
+      properties:
+        repository_full_name:
+          type: string
+        pr_number:
+          type: integer
+        pr_url:
+          type: string
+        branch:
+          type: string
+        files_updated:
+          type: integer
+        files_drift:
+          type: integer
 
     ProjectItemsResponse:
       type: object

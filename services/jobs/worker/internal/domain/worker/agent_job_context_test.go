@@ -98,7 +98,7 @@ func TestResolveRunAgentContext_FallbackFromGPT53SparkWithoutAuth(t *testing.T) 
 
 	got, err := resolveRunAgentContext(runPayload, runAgentDefaults{
 		DefaultModel:           modelGPT52Codex,
-		DefaultReasoningEffort: "high",
+		DefaultReasoningEffort: reasoningEffortExtraHigh,
 		DefaultLocale:          "ru",
 		AllowGPT53:             false,
 	})
@@ -143,7 +143,7 @@ func TestResolveRunAgentContext_UsesPullRequestHintsForRevise(t *testing.T) {
 
 	got, err := resolveRunAgentContext(runPayload, runAgentDefaults{
 		DefaultModel:           modelGPT52Codex,
-		DefaultReasoningEffort: "high",
+		DefaultReasoningEffort: reasoningEffortExtraHigh,
 		DefaultLocale:          "ru",
 		AllowGPT53:             true,
 	})
@@ -203,7 +203,7 @@ func TestResolveRunAgentContext_ReviewTemplateKinds(t *testing.T) {
 
 			got, err := resolveRunAgentContext(testCase.runPayload, runAgentDefaults{
 				DefaultModel:           modelGPT52Codex,
-				DefaultReasoningEffort: "high",
+				DefaultReasoningEffort: reasoningEffortExtraHigh,
 				DefaultLocale:          "ru",
 				AllowGPT53:             true,
 			})
@@ -248,7 +248,7 @@ func TestResolveRunAgentContext_ConfigLabelsPullRequestOverrideIssue(t *testing.
 
 	got, err := resolveRunAgentContext(runPayload, runAgentDefaults{
 		DefaultModel:           modelGPT52Codex,
-		DefaultReasoningEffort: "high",
+		DefaultReasoningEffort: reasoningEffortExtraHigh,
 		DefaultLocale:          "ru",
 		AllowGPT53:             true,
 	})
@@ -296,7 +296,7 @@ func TestResolveRunAgentContext_ConflictingPullRequestLabelsFail(t *testing.T) {
 
 	_, err := resolveRunAgentContext(runPayload, runAgentDefaults{
 		DefaultModel:           modelGPT52Codex,
-		DefaultReasoningEffort: "high",
+		DefaultReasoningEffort: reasoningEffortExtraHigh,
 		DefaultLocale:          "ru",
 		AllowGPT53:             true,
 	})

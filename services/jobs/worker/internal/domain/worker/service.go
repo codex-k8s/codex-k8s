@@ -52,8 +52,6 @@ type Config struct {
 	ControlPlaneMCPBaseURL string
 	// OpenAIAPIKey is injected into run pods for codex login.
 	OpenAIAPIKey string
-	// OpenAIAuthFile is optional Codex auth.json payload injected into run pods.
-	OpenAIAuthFile string
 	// Context7APIKey enables Context7 documentation calls from run pods when set.
 	Context7APIKey string
 	// GitBotToken is injected into run pods for git transport only.
@@ -167,7 +165,6 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	}
 	cfg.ControlPlaneMCPBaseURL = resolveControlPlaneMCPBaseURL(cfg.ControlPlaneMCPBaseURL, cfg.ControlPlaneGRPCTarget)
 	cfg.OpenAIAPIKey = strings.TrimSpace(cfg.OpenAIAPIKey)
-	cfg.OpenAIAuthFile = strings.TrimSpace(cfg.OpenAIAuthFile)
 	cfg.Context7APIKey = strings.TrimSpace(cfg.Context7APIKey)
 	cfg.GitBotToken = strings.TrimSpace(cfg.GitBotToken)
 	cfg.GitBotUsername = strings.TrimSpace(cfg.GitBotUsername)
@@ -178,22 +175,15 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if cfg.GitBotMail == "" {
 		cfg.GitBotMail = "codex-bot@codex-k8s.local"
 	}
-	hasOpenAIAuthFile := cfg.OpenAIAuthFile != ""
 	cfg.AgentDefaultModel = strings.TrimSpace(cfg.AgentDefaultModel)
 	if cfg.AgentDefaultModel == "" {
-		if hasOpenAIAuthFile {
-			cfg.AgentDefaultModel = modelGPT53Codex
-		} else {
-			cfg.AgentDefaultModel = modelGPT52Codex
-		}
-	}
-	if hasOpenAIAuthFile && strings.EqualFold(cfg.AgentDefaultModel, modelGPT52Codex) {
 		cfg.AgentDefaultModel = modelGPT53Codex
 	}
-	if !hasOpenAIAuthFile && isGPT53Model(cfg.AgentDefaultModel) {
-		cfg.AgentDefaultModel = modelGPT52Codex
+	cfg.AgentDefaultReasoningEffort = strings.TrimSpace(strings.ToLower(cfg.AgentDefaultReasoningEffort))
+	switch cfg.AgentDefaultReasoningEffort {
+	case "extra-high", "extra_high", "extra high", "x-high":
+		cfg.AgentDefaultReasoningEffort = "xhigh"
 	}
-	cfg.AgentDefaultReasoningEffort = strings.TrimSpace(cfg.AgentDefaultReasoningEffort)
 	if cfg.AgentDefaultReasoningEffort == "" {
 		cfg.AgentDefaultReasoningEffort = "high"
 	}
@@ -272,8 +262,24 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 
 		if deployOnlyRun {
 			prepareParams := buildPrepareRunEnvironmentParamsFromRunning(run, execution)
-			prepared, err := s.prepareRuntimeEnvironmentWithRetry(ctx, prepareParams)
+			// PrepareRunEnvironment is a blocking RPC (it waits for reconciler completion).
+			// Use a short timeout per tick to avoid starving pending run launches when
+			// runtime deploy takes minutes (for example, during self-deploy).
+			pollTimeout := s.cfg.RuntimePrepareRetryInterval
+			if pollTimeout <= 0 {
+				pollTimeout = 3 * time.Second
+			}
+			if pollTimeout < 2*time.Second {
+				pollTimeout = 2 * time.Second
+			}
+			pollCtx, cancel := context.WithTimeout(ctx, pollTimeout)
+			prepared, err := s.deployer.PrepareRunEnvironment(pollCtx, prepareParams)
+			cancel()
 			if err != nil {
+				if isRetryableRuntimeDeployError(err) {
+					continue
+				}
+
 				s.logger.Error("prepare runtime environment for running deploy-only run failed", "run_id", run.RunID, "err", err)
 				if finishErr := s.finishLaunchFailedRun(ctx, run, execution, err, runFailureReasonRuntimeDeployFailed); finishErr != nil {
 					return finishErr
@@ -305,6 +311,28 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 			continue
 		}
 
+		if state == JobStateNotFound {
+			// Full-env runs may be launched into persistent slot namespaces, while run payload keeps
+			// the default namespace strategy (`codex-issue-*`). Resolve the actual namespace by label
+			// to avoid failing runs with "job not found" after preparation succeeded.
+			resolved, ok, err := s.launcher.FindRunJobRefByRunID(ctx, run.RunID)
+			if err != nil {
+				s.logger.Warn("resolve run job ref by run id failed", "run_id", run.RunID, "err", err)
+			} else if ok {
+				ref = resolved
+				if resolvedNamespace := sanitizeDNSLabelValue(resolved.Namespace); resolvedNamespace != "" {
+					execution.Namespace = resolvedNamespace
+					ref.Namespace = resolvedNamespace
+				}
+
+				state, err = s.launcher.Status(ctx, ref)
+				if err != nil {
+					s.logger.Error("check run job status failed", "run_id", run.RunID, "job_name", ref.Name, "err", err)
+					continue
+				}
+			}
+		}
+
 		switch state {
 		case JobStateSucceeded:
 			if err := s.finishRun(ctx, finishRunParams{
@@ -330,6 +358,21 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 				return err
 			}
 		case JobStateNotFound:
+			recovered, err := s.tryRecoverMissingRunJob(ctx, run, execution)
+			if err != nil {
+				return err
+			}
+			if recovered {
+				continue
+			}
+
+			// We mark runs as "running" when they are claimed, but full-env runs may spend
+			// significant time in runtime preparation before the actual job exists.
+			// With multiple worker replicas this prevents another worker from failing the run
+			// while the claiming worker is still preparing the environment.
+			if s.shouldIgnoreJobNotFound(run) {
+				continue
+			}
 			if err := s.finishRun(ctx, finishRunParams{
 				Run:       run,
 				Execution: execution,
@@ -350,6 +393,25 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (s *Service) shouldIgnoreJobNotFound(run runqueuerepo.RunningRun) bool {
+	startedAt := run.StartedAt
+	if startedAt.IsZero() {
+		return true
+	}
+
+	grace := s.cfg.RuntimePrepareRetryTimeout
+	if grace <= 0 {
+		grace = 30 * time.Second
+	}
+	grace += 5 * time.Second
+
+	now := s.now().UTC()
+	if now.Before(startedAt) {
+		return true
+	}
+	return now.Sub(startedAt) < grace
 }
 
 // launchPending claims pending runs, prepares runtime namespace (for full-env), and launches Kubernetes jobs.
@@ -417,7 +479,7 @@ func (s *Service) launchPending(ctx context.Context) error {
 			DefaultModel:           s.cfg.AgentDefaultModel,
 			DefaultReasoningEffort: s.cfg.AgentDefaultReasoningEffort,
 			DefaultLocale:          s.cfg.AgentDefaultLocale,
-			AllowGPT53:             strings.TrimSpace(s.cfg.OpenAIAuthFile) != "",
+			AllowGPT53:             true,
 			LabelCatalog:           s.labels,
 		})
 		if err != nil {
@@ -429,7 +491,7 @@ func (s *Service) launchPending(ctx context.Context) error {
 				reason = runFailureReasonPreconditionFailed
 			}
 			if finishErr := s.finishRun(ctx, finishRunParams{
-				Run:       runningRunFromClaimed(claimed),
+				Run:       runningRun,
 				Execution: launchExecution,
 				Status:    rundomain.StatusFailed,
 				EventType: eventType,
@@ -444,146 +506,8 @@ func (s *Service) launchPending(ctx context.Context) error {
 			continue
 		}
 
-		namespaceSpec := NamespaceSpec{
-			RunID:         claimed.RunID,
-			ProjectID:     claimed.ProjectID,
-			CorrelationID: claimed.CorrelationID,
-			RuntimeMode:   launchExecution.RuntimeMode,
-			Namespace:     launchExecution.Namespace,
-		}
-		if launchExecution.RuntimeMode == agentdomain.RuntimeModeFullEnv {
-			if err := s.launcher.EnsureNamespace(ctx, namespaceSpec); err != nil {
-				s.logger.Error(
-					"prepare run namespace failed",
-					"run_id", claimed.RunID,
-					"namespace", launchExecution.Namespace,
-					"runtime_mode", launchExecution.RuntimeMode,
-					"err", err,
-				)
-				if finishErr := s.finishLaunchFailedRun(ctx, runningRun, launchExecution, err, runFailureReasonNamespacePrepareFailed); finishErr != nil {
-					return fmt.Errorf("mark run failed after namespace prepare error: %w", finishErr)
-				}
-				continue
-			}
-
-			if err := s.insertNamespaceLifecycleEvent(ctx, namespaceLifecycleEventParams{
-				CorrelationID: claimed.CorrelationID,
-				EventType:     floweventdomain.EventTypeRunNamespacePrepared,
-				RunID:         claimed.RunID,
-				ProjectID:     claimed.ProjectID,
-				Execution:     launchExecution,
-			}); err != nil {
-				return fmt.Errorf("insert run.namespace.prepared event: %w", err)
-			}
-		}
-
-		issuedMCPToken, err := s.mcpTokens.IssueRunMCPToken(ctx, IssueMCPTokenParams{
-			RunID:       claimed.RunID,
-			Namespace:   launchExecution.Namespace,
-			RuntimeMode: launchExecution.RuntimeMode,
-		})
-		if err != nil {
-			s.logger.Error("issue run mcp token failed", "run_id", claimed.RunID, "err", err)
-			if finishErr := s.finishLaunchFailedRun(ctx, runningRun, launchExecution, err, runFailureReasonMCPTokenIssueFailed); finishErr != nil {
-				return fmt.Errorf("mark run failed after mcp token issue error: %w", finishErr)
-			}
-			continue
-		}
-
-		ref, err := s.launcher.Launch(ctx, JobSpec{
-			RunID:                  claimed.RunID,
-			CorrelationID:          claimed.CorrelationID,
-			ProjectID:              claimed.ProjectID,
-			SlotNo:                 claimed.SlotNo,
-			RuntimeMode:            launchExecution.RuntimeMode,
-			Namespace:              launchExecution.Namespace,
-			ControlPlaneGRPCTarget: s.cfg.ControlPlaneGRPCTarget,
-			MCPBaseURL:             s.cfg.ControlPlaneMCPBaseURL,
-			MCPBearerToken:         issuedMCPToken.Token,
-			RepositoryFullName:     agentCtx.RepositoryFullName,
-			IssueNumber:            agentCtx.IssueNumber,
-			TriggerKind:            agentCtx.TriggerKind,
-			TriggerLabel:           agentCtx.TriggerLabel,
-			TargetBranch:           agentCtx.TargetBranch,
-			ExistingPRNumber:       agentCtx.ExistingPRNumber,
-			AgentKey:               agentCtx.AgentKey,
-			AgentModel:             agentCtx.Model,
-			AgentReasoningEffort:   agentCtx.ReasoningEffort,
-			PromptTemplateKind:     agentCtx.PromptTemplateKind,
-			PromptTemplateSource:   agentCtx.PromptTemplateSource,
-			PromptTemplateLocale:   agentCtx.PromptTemplateLocale,
-			StateInReviewLabel:     s.cfg.StateInReviewLabel,
-			BaseBranch:             s.cfg.AgentBaseBranch,
-			OpenAIAPIKey:           s.cfg.OpenAIAPIKey,
-			OpenAIAuthFile:         s.cfg.OpenAIAuthFile,
-			Context7APIKey:         s.cfg.Context7APIKey,
-			GitBotToken:            s.cfg.GitBotToken,
-			AgentDisplayName:       agentCtx.AgentDisplayName,
-			GitBotUsername:         s.cfg.GitBotUsername,
-			GitBotMail:             s.cfg.GitBotMail,
-		})
-		if err != nil {
-			s.logger.Error("launch run job failed", "run_id", claimed.RunID, "err", err)
-			if finishErr := s.finishRun(ctx, finishRunParams{
-				Run:       runningRun,
-				Execution: launchExecution,
-				Status:    rundomain.StatusFailed,
-				EventType: floweventdomain.EventTypeRunFailedLaunchError,
-				Ref:       ref,
-				Extra: runFinishedEventExtra{
-					Error: err.Error(),
-				},
-			}); finishErr != nil {
-				return fmt.Errorf("mark run failed after launch error: %w", finishErr)
-			}
-			continue
-		}
-
-		if err := s.insertEvent(ctx, floweventrepo.InsertParams{
-			CorrelationID: claimed.CorrelationID,
-			ActorType:     floweventdomain.ActorTypeSystem,
-			ActorID:       floweventdomain.ActorID(s.cfg.WorkerID),
-			EventType:     floweventdomain.EventTypeRunStarted,
-			Payload: encodeRunStartedEventPayload(runStartedEventPayload{
-				RunID:                claimed.RunID,
-				ProjectID:            claimed.ProjectID,
-				SlotNo:               claimed.SlotNo,
-				JobName:              ref.Name,
-				JobNamespace:         ref.Namespace,
-				RuntimeMode:          launchExecution.RuntimeMode,
-				RepositoryFullName:   agentCtx.RepositoryFullName,
-				AgentKey:             agentCtx.AgentKey,
-				IssueNumber:          agentCtx.IssueNumber,
-				TriggerKind:          agentCtx.TriggerKind,
-				TriggerLabel:         agentCtx.TriggerLabel,
-				Model:                agentCtx.Model,
-				ModelSource:          agentCtx.ModelSource,
-				ReasoningEffort:      agentCtx.ReasoningEffort,
-				ReasoningSource:      agentCtx.ReasoningSource,
-				PromptTemplateKind:   agentCtx.PromptTemplateKind,
-				PromptTemplateSource: agentCtx.PromptTemplateSource,
-				PromptTemplateLocale: agentCtx.PromptTemplateLocale,
-				BaseBranch:           s.cfg.AgentBaseBranch,
-			}),
-			CreatedAt: s.now().UTC(),
-		}); err != nil {
-			return fmt.Errorf("insert run.started event: %w", err)
-		}
-
-		if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
-			RunID:           claimed.RunID,
-			Phase:           RunStatusPhaseStarted,
-			JobName:         ref.Name,
-			JobNamespace:    ref.Namespace,
-			RuntimeMode:     string(launchExecution.RuntimeMode),
-			Namespace:       launchExecution.Namespace,
-			TriggerKind:     agentCtx.TriggerKind,
-			PromptLocale:    agentCtx.PromptTemplateLocale,
-			Model:           agentCtx.Model,
-			ReasoningEffort: agentCtx.ReasoningEffort,
-			RunStatus:       string(rundomain.StatusRunning),
-		}); err != nil {
-			s.logger.Warn("upsert run status comment (started) failed", "run_id", claimed.RunID, "err", err)
+		if err := s.launchPreparedFullEnvRunJob(ctx, runningRun, launchExecution, agentCtx); err != nil {
+			return err
 		}
 	}
 
@@ -790,6 +714,8 @@ func runningRunFromClaimed(claimed runqueuerepo.ClaimedRun) runqueuerepo.Running
 		RunID:         claimed.RunID,
 		CorrelationID: claimed.CorrelationID,
 		ProjectID:     claimed.ProjectID,
+		SlotID:        claimed.SlotID,
+		SlotNo:        claimed.SlotNo,
 		LearningMode:  claimed.LearningMode,
 		RunPayload:    claimed.RunPayload,
 	}

@@ -21,6 +21,7 @@ import LabelsStagesPage from "../pages/governance/LabelsStagesPage.vue";
 
 import AgentsPage from "../pages/configuration/AgentsPage.vue";
 import AgentDetailsPage from "../pages/configuration/AgentDetailsPage.vue";
+import ConfigEntriesPage from "../pages/configuration/ConfigEntriesPage.vue";
 import DocsKnowledgePage from "../pages/configuration/DocsKnowledgePage.vue";
 import McpToolsPage from "../pages/configuration/McpToolsPage.vue";
 import ProjectMembersPage from "../pages/ProjectMembersPage.vue";
@@ -131,7 +132,8 @@ export const routes: RouteRecordRaw[] = [
     props: (r) => ({ agentName: typeof r.params.agentName === "string" ? r.params.agentName : "" }),
     meta: { section: "configuration", crumbKey: "crumb.agents" },
   },
-  { path: "/configuration/system-settings", name: "system-settings", component: SystemSettingsPage, meta: { section: "configuration", crumbKey: "crumb.systemSettings" } },
+  { path: "/configuration/system-settings", name: "system-settings", component: SystemSettingsPage, meta: { adminOnly: true, section: "configuration", crumbKey: "crumb.systemSettings" } },
+  { path: "/configuration/config-entries", name: "config-entries", component: ConfigEntriesPage, meta: { adminOnly: true, section: "configuration", crumbKey: "crumb.configEntries" } },
   { path: "/configuration/docs", name: "docs-knowledge", component: DocsKnowledgePage, meta: { section: "configuration", crumbKey: "crumb.docs" } },
   { path: "/configuration/mcp-tools", name: "mcp-tools", component: McpToolsPage, meta: { section: "configuration", crumbKey: "crumb.mcpTools" } },
 
