@@ -91,6 +91,11 @@ func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[
 			vars["CODEXK8S_SHARED_OAUTH2_PROXY_SIGNIN_URL"] = "https://" + productionDomain + "/oauth2/start?rd=$scheme://$host$request_uri"
 		}
 	}
+	if strings.TrimSpace(vars["CODEXK8S_OAUTH2_PROXY_COOKIE_DOMAIN"]) == "" {
+		if productionDomain := strings.TrimSpace(valueOr(vars, "CODEXK8S_PRODUCTION_DOMAIN", "")); productionDomain != "" {
+			vars["CODEXK8S_OAUTH2_PROXY_COOKIE_DOMAIN"] = "." + strings.TrimPrefix(productionDomain, ".")
+		}
+	}
 	if strings.TrimSpace(vars["CODEXK8S_TLS_SECRET_NAME"]) == "" {
 		vars["CODEXK8S_TLS_SECRET_NAME"] = defaultTLSSecretName(targetEnv)
 	}

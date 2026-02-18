@@ -1,4 +1,5 @@
 {{- $host := envOr "CODEXK8S_PUBLIC_DOMAIN" (envOr "CODEXK8S_PRODUCTION_DOMAIN" "") -}}
+{{- $cookieDomain := envOr "CODEXK8S_OAUTH2_PROXY_COOKIE_DOMAIN" "" -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -32,6 +33,9 @@ spec:
             - --email-domain=*
             - --cookie-secure=true
             - --cookie-samesite=lax
+{{- if ne $cookieDomain "" }}
+            - --cookie-domain={{ $cookieDomain }}
+{{- end }}
             # Let GitHub webhooks through (webhook ingress is the primary entrypoint into the platform).
             - --skip-auth-regex=^/api/v1/webhooks/.*
             # Pass identity to upstream via headers (api-gateway will enforce allowlist/RBAC by email).
