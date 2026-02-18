@@ -44,6 +44,7 @@ approvals:
 - Новый каталог GitHub service message templates:
   - run created/started/auth_required/auth_resolved/succeeded/failed;
   - trigger conflict, preflight diagnostics summary, deploy/build status summaries;
+  - для slot/full-env запусков в сообщениях обязательно указывать `slot_url` (HTTPS link на домен слота) при наличии публичного host;
   - локализация RU/EN и единая модель данных для рендера.
 - Обновление политики prompt templates:
   - актуализация `docs/architecture/prompt_templates_policy.md` и связанных docs с матрицей ролей.
@@ -57,6 +58,7 @@ approvals:
 - Story-2: prompt context расширение (docs tree + role-aware capabilities).
 - Story-3: полноразмерные prompt templates по ролям и типам задач (work/review) + fallback matrix.
 - Story-4: GitHub service messages templates v2 и подключение в `runstatus`/связанные use-cases.
+  - Task: добавить в шаблоны run-сообщений обязательный блок `Slot URL`/`Ссылка на слот` для `full-env`/slot run, чтобы из issue/PR можно было открыть слот в один клик.
 - Story-5: документация и трассируемость (policy + delivery docs + traceability updates).
 
 ## Критерии приемки
@@ -64,6 +66,7 @@ approvals:
 - В prompt context присутствуют docs refs и role-aware блоки, которые реально используются в итоговом prompt.
 - Для каждой поддержанной роли есть полноценный шаблон (RU/EN) минимум для `work` и `review`.
 - GitHub служебные сообщения рендерятся из нового шаблонного каталога и покрывают run lifecycle.
+- Для `full-env`/slot run GitHub-сообщения содержат кликабельную ссылку на домен слота (если host успешно резолвлен runtime deploy).
 - Обновлены policy/docs с описанием новой матрицы prompt/service messages.
 
 ## Риски/зависимости
