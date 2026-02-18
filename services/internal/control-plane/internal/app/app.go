@@ -342,7 +342,6 @@ func Run() error {
 	controlplanev1.RegisterControlPlaneServiceServer(grpcServer, grpctransport.NewServer(grpctransport.Dependencies{
 		Webhook:        webhookService,
 		Staff:          staffService,
-		Users:          users,
 		AgentCallbacks: agentCallbackService,
 		RunStatus:      runStatusService,
 		RuntimeDeploy:  runtimeDeployService,

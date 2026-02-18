@@ -2,10 +2,10 @@
 doc_id: EPC-CK8S-S3-D16
 type: epic
 title: "Epic S3 Day 16: gRPC transport boundary hardening (transport -> service -> repository)"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-17
-updated_at: 2026-02-17
+updated_at: 2026-02-18
 related_issues: [45]
 related_prs: []
 approvals:
@@ -95,3 +95,21 @@ approvals:
   - `rg -n "domain/repository|repository/" services --glob '**/internal/transport/**'`
 - Поиск прямых вызовов repository в gRPC server:
   - `rg -n "s\.users\.|userrepo\." services/internal/control-plane/internal/transport/grpc/server.go`
+
+## Реализация (2026-02-18)
+- В `services/internal/control-plane/internal/transport/grpc/server.go`:
+  - `ResolveStaffByEmail` и `AuthorizeOAuthUser` больше не обращаются к repository напрямую;
+  - handlers вызывают domain use-cases `staff.ResolveStaffByEmail(...)` и `staff.AuthorizeOAuthUser(...)`.
+- В `services/internal/control-plane/internal/domain/staff/`:
+  - добавлен файл `service_staff_auth.go` с use-case логикой OAuth/email resolution;
+  - добавлены query-типизированные входы в `services/internal/control-plane/internal/domain/types/query/staff_auth.go`.
+- В `grpc.Dependencies` удалена зависимость `Users userrepo.Repository`; транспорт больше не держит `user` repository.
+- Дополнительно устранена repository-type leakage по runtime list фильтрам:
+  - gRPC transport использует `querytypes.StaffRunListFilter` вместо `staffrunrepo.ListFilter`;
+  - сигнатуры и маппинг run-моделей переведены на domain types (`entitytypes.StaffRun`/`entitytypes.User`).
+
+## Acceptance checklist
+- [x] В `services/internal/control-plane/internal/transport/grpc/server.go` нет прямых вызовов repository методов в gRPC handlers.
+- [x] `Dependencies` gRPC server не содержит repository интерфейсов для OAuth/email resolve use-cases.
+- [x] Ошибки продолжают маппиться на transport boundary через `toStatus`.
+- [x] Поведение `ResolveStaffByEmail` и `AuthorizeOAuthUser` сохранено (валидация/forbidden/update identity).

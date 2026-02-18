@@ -14,8 +14,6 @@ import (
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
-	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/staffrun"
-	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
 	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
@@ -66,7 +64,6 @@ type codexAuthService interface {
 type Dependencies struct {
 	Webhook        webhookIngress
 	Staff          *staff.Service
-	Users          userrepo.Repository
 	AgentCallbacks agentCallbackService
 	RunStatus      runStatusService
 	RuntimeDeploy  runtimeDeployService
@@ -81,7 +78,6 @@ type Server struct {
 
 	webhook        webhookIngress
 	staff          *staff.Service
-	users          userrepo.Repository
 	agentCallbacks agentCallbackService
 	runStatus      runStatusService
 	runtimeDeploy  runtimeDeployService
@@ -94,7 +90,6 @@ func NewServer(deps Dependencies) *Server {
 	return &Server{
 		webhook:        deps.Webhook,
 		staff:          deps.Staff,
-		users:          deps.Users,
 		agentCallbacks: deps.AgentCallbacks,
 		runStatus:      deps.RunStatus,
 		runtimeDeploy:  deps.RuntimeDeploy,
@@ -130,25 +125,12 @@ func (s *Server) ResolveStaffByEmail(ctx context.Context, req *controlplanev1.Re
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "request is required")
 	}
-	email := strings.TrimSpace(req.Email)
-	if email == "" {
-		return nil, status.Error(codes.InvalidArgument, "email is required")
-	}
-
-	u, ok, err := s.users.GetByEmail(ctx, email)
+	u, err := s.staff.ResolveStaffByEmail(ctx, querytypes.StaffResolveByEmailParams{
+		Email:       strings.TrimSpace(req.Email),
+		GitHubLogin: strings.TrimSpace(req.GetGithubLogin()),
+	})
 	if err != nil {
 		return nil, toStatus(err)
-	}
-	if !ok {
-		return nil, toStatus(errs.Forbidden{Msg: "email is not allowed"})
-	}
-
-	login := strings.TrimSpace(req.GetGithubLogin())
-	if login != "" && !strings.EqualFold(u.GitHubLogin, login) {
-		if err := s.users.UpdateGitHubIdentity(ctx, u.ID, u.GitHubUserID, login); err != nil {
-			return nil, toStatus(err)
-		}
-		u.GitHubLogin = login
 	}
 
 	return &controlplanev1.ResolveStaffByEmailResponse{Principal: userToPrincipal(u)}, nil
@@ -158,30 +140,14 @@ func (s *Server) AuthorizeOAuthUser(ctx context.Context, req *controlplanev1.Aut
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "request is required")
 	}
-	email := strings.TrimSpace(req.Email)
-	if email == "" {
-		return nil, status.Error(codes.InvalidArgument, "email is required")
-	}
-	login := strings.TrimSpace(req.GithubLogin)
-	if login == "" {
-		return nil, status.Error(codes.InvalidArgument, "github_login is required")
-	}
-	if req.GithubUserId <= 0 {
-		return nil, status.Error(codes.InvalidArgument, "github_user_id is required")
-	}
-
-	u, ok, err := s.users.GetByEmail(ctx, email)
+	u, err := s.staff.AuthorizeOAuthUser(ctx, querytypes.StaffAuthorizeOAuthUserParams{
+		Email:        strings.TrimSpace(req.Email),
+		GitHubUserID: req.GetGithubUserId(),
+		GitHubLogin:  strings.TrimSpace(req.GetGithubLogin()),
+	})
 	if err != nil {
 		return nil, toStatus(err)
 	}
-	if !ok {
-		return nil, toStatus(errs.Forbidden{Msg: "email is not allowed"})
-	}
-	if err := s.users.UpdateGitHubIdentity(ctx, u.ID, req.GithubUserId, login); err != nil {
-		return nil, toStatus(err)
-	}
-	u.GitHubUserID = req.GithubUserId
-	u.GitHubLogin = login
 
 	return &controlplanev1.AuthorizeOAuthUserResponse{Principal: userToPrincipal(u)}, nil
 }
@@ -269,7 +235,7 @@ func (s *Server) ListRunJobs(ctx context.Context, req *controlplanev1.ListRunJob
 	if err != nil {
 		return nil, err
 	}
-	items, err := s.staff.ListRunJobs(ctx, p, staffrunrepo.ListFilter{
+	items, err := s.staff.ListRunJobs(ctx, p, querytypes.StaffRunListFilter{
 		Limit:       clampLimit(req.GetLimit(), 200),
 		TriggerKind: optionalProtoString(req.TriggerKind),
 		Status:      optionalProtoString(req.Status),
@@ -293,7 +259,7 @@ func (s *Server) ListRunWaits(ctx context.Context, req *controlplanev1.ListRunWa
 	if err != nil {
 		return nil, err
 	}
-	items, err := s.staff.ListRunWaits(ctx, p, staffrunrepo.ListFilter{
+	items, err := s.staff.ListRunWaits(ctx, p, querytypes.StaffRunListFilter{
 		Limit:       clampLimit(req.GetLimit(), 200),
 		TriggerKind: optionalProtoString(req.TriggerKind),
 		Status:      optionalProtoString(req.Status),
@@ -1491,7 +1457,7 @@ func requirePrincipal(p *controlplanev1.Principal) (staff.Principal, error) {
 	}, nil
 }
 
-func userToPrincipal(u userrepo.User) *controlplanev1.Principal {
+func userToPrincipal(u entitytypes.User) *controlplanev1.Principal {
 	return &controlplanev1.Principal{
 		UserId:          u.ID,
 		Email:           u.Email,
@@ -1568,7 +1534,7 @@ func tsToTime(ts *timestamppb.Timestamp) time.Time {
 	return ts.AsTime().UTC()
 }
 
-func runToProto(r staffrunrepo.Run) *controlplanev1.Run {
+func runToProto(r entitytypes.StaffRun) *controlplanev1.Run {
 	out := &controlplanev1.Run{
 		Id:              r.ID,
 		CorrelationId:   r.CorrelationID,
