@@ -60,6 +60,9 @@
         "webhookRuntime": {
           "$ref": "#/$defs/webhookRuntime"
         },
+        "secretResolution": {
+          "$ref": "#/$defs/secretResolution"
+        },
         "images": {
           "type": "object",
           "additionalProperties": {
@@ -167,6 +170,88 @@
           "additionalProperties": {
             "$ref": "#/$defs/runtimeMode"
           }
+        }
+      },
+      "additionalProperties": false
+    },
+    "secretResolution": {
+      "type": "object",
+      "properties": {
+        "environmentAliases": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "keyOverrides": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/secretKeyOverride"
+          }
+        },
+        "patterns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/secretPattern"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "secretKeyOverride": {
+      "type": "object",
+      "required": ["sourceKey", "overrideKeys"],
+      "properties": {
+        "sourceKey": {
+          "type": "string",
+          "minLength": 1
+        },
+        "overrideKeys": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "secretPattern": {
+      "type": "object",
+      "required": ["overrideTemplate"],
+      "properties": {
+        "sourcePrefix": {
+          "type": "string"
+        },
+        "excludePrefixes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "excludeSuffixes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "environments": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "overrideTemplate": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "additionalProperties": false

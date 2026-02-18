@@ -9,9 +9,11 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
 )
 
-func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoot string, namespace string, vars map[string]string) error {
+func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoot string, namespace string, vars map[string]string, stack *servicescfg.Stack, runID string) error {
 	targetNamespace := strings.TrimSpace(namespace)
 	if targetNamespace == "" {
 		return fmt.Errorf("namespace is required")
@@ -21,7 +23,8 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoo
 		return fmt.Errorf("ensure namespace %s: %w", targetNamespace, err)
 	}
 
-	targetEnv := strings.ToLower(strings.TrimSpace(valueOr(vars, "CODEXK8S_ENV", "")))
+	secretResolver := servicescfg.NewSecretResolver(stack)
+	targetEnv := secretResolver.CanonicalEnvironment(valueOr(vars, "CODEXK8S_ENV", ""))
 	if targetEnv == "" {
 		targetEnv = "production"
 	}
@@ -84,13 +87,17 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoo
 		}
 	}
 
-	oauthClientID, err := requiredValueFromSecrets(vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_OAUTH_CLIENT_ID")
+	oauthClientID, oauthClientIDSource, err := requiredValueFromSecrets(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_OAUTH_CLIENT_ID")
 	if err != nil {
 		return err
 	}
-	oauthClientSecret, err := requiredValueFromSecrets(vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET")
+	oauthClientSecret, oauthClientSecretSource, err := requiredValueFromSecrets(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET")
 	if err != nil {
 		return err
+	}
+	if strings.TrimSpace(runID) != "" {
+		s.appendTaskLogBestEffort(ctx, runID, "prerequisites", "info", "Resolved CODEXK8S_GITHUB_OAUTH_CLIENT_ID via "+oauthClientIDSource)
+		s.appendTaskLogBestEffort(ctx, runID, "prerequisites", "info", "Resolved CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET via "+oauthClientSecretSource)
 	}
 
 	internalRegistryService := valueOrExisting(vars, existingRuntime, "CODEXK8S_INTERNAL_REGISTRY_SERVICE", "codex-k8s-registry")
@@ -98,8 +105,8 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoo
 	internalRegistryHost := valueOrExisting(vars, existingRuntime, "CODEXK8S_INTERNAL_REGISTRY_HOST", "127.0.0.1:"+internalRegistryPort)
 	internalRegistryStorageSize := valueOrExisting(vars, existingRuntime, "CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE", "20Gi")
 
-	k8sAPICIDR := strings.TrimSpace(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_K8S_API_CIDR", ""))
-	k8sAPIPort := strings.TrimSpace(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_K8S_API_PORT", "6443"))
+	k8sAPICIDR := strings.TrimSpace(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_K8S_API_CIDR", ""))
+	k8sAPIPort := strings.TrimSpace(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_K8S_API_PORT", "6443"))
 	if k8sAPIPort == "" {
 		k8sAPIPort = "6443"
 	}
@@ -119,23 +126,23 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoo
 		return fmt.Errorf("resolve CODEXK8S_POSTGRES_PASSWORD: %w", err)
 	}
 
-	appSecretKey, err := valueOrExistingOrSharedOrRandomHex(vars, existingRuntime, sharedRuntime, "CODEXK8S_APP_SECRET_KEY", 32)
+	appSecretKey, err := valueOrExistingOrSharedOrRandomHex(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_APP_SECRET_KEY", 32)
 	if err != nil {
 		return fmt.Errorf("resolve CODEXK8S_APP_SECRET_KEY: %w", err)
 	}
-	tokenEncryptionKey, err := valueOrExistingOrSharedOrRandomHex(vars, existingRuntime, sharedRuntime, "CODEXK8S_TOKEN_ENCRYPTION_KEY", 32)
+	tokenEncryptionKey, err := valueOrExistingOrSharedOrRandomHex(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_TOKEN_ENCRYPTION_KEY", 32)
 	if err != nil {
 		return fmt.Errorf("resolve CODEXK8S_TOKEN_ENCRYPTION_KEY: %w", err)
 	}
-	mcpTokenSigningKey := strings.TrimSpace(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_MCP_TOKEN_SIGNING_KEY", ""))
+	mcpTokenSigningKey := strings.TrimSpace(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_MCP_TOKEN_SIGNING_KEY", ""))
 	if mcpTokenSigningKey == "" {
 		mcpTokenSigningKey = tokenEncryptionKey
 	}
-	githubWebhookSecret, err := valueOrExistingOrSharedOrRandomHex(vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_WEBHOOK_SECRET", 32)
+	githubWebhookSecret, err := valueOrExistingOrSharedOrRandomHex(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_WEBHOOK_SECRET", 32)
 	if err != nil {
 		return fmt.Errorf("resolve CODEXK8S_GITHUB_WEBHOOK_SECRET: %w", err)
 	}
-	jwtSigningKey, err := valueOrExistingOrSharedOrRandomHex(vars, existingRuntime, sharedRuntime, "CODEXK8S_JWT_SIGNING_KEY", 32)
+	jwtSigningKey, err := valueOrExistingOrSharedOrRandomHex(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_JWT_SIGNING_KEY", 32)
 	if err != nil {
 		return fmt.Errorf("resolve CODEXK8S_JWT_SIGNING_KEY: %w", err)
 	}
@@ -156,10 +163,10 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoo
 		"CODEXK8S_INTERNAL_REGISTRY_STORAGE_SIZE": []byte(internalRegistryStorageSize),
 		"CODEXK8S_K8S_API_CIDR":                   []byte(k8sAPICIDR),
 		"CODEXK8S_K8S_API_PORT":                   []byte(k8sAPIPort),
-		"CODEXK8S_GITHUB_PAT":                     []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_PAT", "")),
-		"CODEXK8S_GITHUB_REPO":                    []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_REPO", "")),
-		"CODEXK8S_FIRST_PROJECT_GITHUB_REPO":      []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_FIRST_PROJECT_GITHUB_REPO", "")),
-		"CODEXK8S_OPENAI_API_KEY":                 []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_OPENAI_API_KEY", "")),
+		"CODEXK8S_GITHUB_PAT":                     []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_PAT", "")),
+		"CODEXK8S_GITHUB_REPO":                    []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_REPO", "")),
+		"CODEXK8S_FIRST_PROJECT_GITHUB_REPO":      []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_FIRST_PROJECT_GITHUB_REPO", "")),
+		"CODEXK8S_OPENAI_API_KEY":                 []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_OPENAI_API_KEY", "")),
 		// Project DB admin settings are tied to the Postgres instance deployed into the target namespace.
 		// Do not inherit them from platform (production) env/secrets, otherwise ai slots break with auth mismatch.
 		"CODEXK8S_PROJECT_DB_ADMIN_HOST":             []byte("postgres"),
@@ -168,30 +175,30 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoo
 		"CODEXK8S_PROJECT_DB_ADMIN_PASSWORD":         []byte(postgresPassword),
 		"CODEXK8S_PROJECT_DB_ADMIN_SSLMODE":          []byte("disable"),
 		"CODEXK8S_PROJECT_DB_ADMIN_DATABASE":         []byte("postgres"),
-		"CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS": []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS", "dev,production,prod")),
-		"CODEXK8S_GIT_BOT_TOKEN":                     []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_GIT_BOT_TOKEN", "")),
-		"CODEXK8S_GIT_BOT_USERNAME":                  []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_GIT_BOT_USERNAME", "codex-bot")),
-		"CODEXK8S_GIT_BOT_MAIL":                      []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_GIT_BOT_MAIL", "codex-bot@codex-k8s.local")),
-		"CODEXK8S_CONTEXT7_API_KEY":                  []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_CONTEXT7_API_KEY", "")),
+		"CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS": []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS", "dev,production,prod")),
+		"CODEXK8S_GIT_BOT_TOKEN":                     []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_GIT_BOT_TOKEN", "")),
+		"CODEXK8S_GIT_BOT_USERNAME":                  []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_GIT_BOT_USERNAME", "codex-bot")),
+		"CODEXK8S_GIT_BOT_MAIL":                      []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_GIT_BOT_MAIL", "codex-bot@codex-k8s.local")),
+		"CODEXK8S_CONTEXT7_API_KEY":                  []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_CONTEXT7_API_KEY", "")),
 		"CODEXK8S_APP_SECRET_KEY":                    []byte(appSecretKey),
 		"CODEXK8S_TOKEN_ENCRYPTION_KEY":              []byte(tokenEncryptionKey),
 		"CODEXK8S_MCP_TOKEN_SIGNING_KEY":             []byte(mcpTokenSigningKey),
-		"CODEXK8S_MCP_TOKEN_TTL":                     []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_MCP_TOKEN_TTL", "24h")),
-		"CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS":     []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS", "14")),
-		"CODEXK8S_LEARNING_MODE_DEFAULT":             []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_LEARNING_MODE_DEFAULT", "true")),
+		"CODEXK8S_MCP_TOKEN_TTL":                     []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_MCP_TOKEN_TTL", "24h")),
+		"CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS":     []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS", "14")),
+		"CODEXK8S_LEARNING_MODE_DEFAULT":             []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_LEARNING_MODE_DEFAULT", "true")),
 		"CODEXK8S_GITHUB_WEBHOOK_SECRET":             []byte(githubWebhookSecret),
-		"CODEXK8S_GITHUB_WEBHOOK_URL":                []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_WEBHOOK_URL", "")),
-		"CODEXK8S_GITHUB_WEBHOOK_EVENTS":             []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_WEBHOOK_EVENTS", "push,pull_request,issues,issue_comment,pull_request_review,pull_request_review_comment")),
+		"CODEXK8S_GITHUB_WEBHOOK_URL":                []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_WEBHOOK_URL", "")),
+		"CODEXK8S_GITHUB_WEBHOOK_EVENTS":             []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_WEBHOOK_EVENTS", "push,pull_request,issues,issue_comment,pull_request_review,pull_request_review_comment")),
 		"CODEXK8S_PRODUCTION_DOMAIN":                 []byte(valueOr(vars, "CODEXK8S_PRODUCTION_DOMAIN", "")),
 		"CODEXK8S_AI_DOMAIN":                         []byte(valueOr(vars, "CODEXK8S_AI_DOMAIN", "")),
 		"CODEXK8S_PUBLIC_BASE_URL":                   []byte(valueOr(vars, "CODEXK8S_PUBLIC_BASE_URL", "https://example.invalid")),
-		"CODEXK8S_BOOTSTRAP_OWNER_EMAIL":             []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_BOOTSTRAP_OWNER_EMAIL", "owner@example.invalid")),
-		"CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS":          []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS", "")),
-		"CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS":   []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS", "")),
+		"CODEXK8S_BOOTSTRAP_OWNER_EMAIL":             []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_BOOTSTRAP_OWNER_EMAIL", "owner@example.invalid")),
+		"CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS":          []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS", "")),
+		"CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS":   []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS", "")),
 		"CODEXK8S_GITHUB_OAUTH_CLIENT_ID":            []byte(oauthClientID),
 		"CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET":        []byte(oauthClientSecret),
 		"CODEXK8S_JWT_SIGNING_KEY":                   []byte(jwtSigningKey),
-		"CODEXK8S_JWT_TTL":                           []byte(valueOrExistingOrShared(vars, existingRuntime, sharedRuntime, "CODEXK8S_JWT_TTL", "15m")),
+		"CODEXK8S_JWT_TTL":                           []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_JWT_TTL", "15m")),
 		// UI hot-reload is only supported in ai slots. For production/production we
 		// intentionally keep the value empty so api-gateway serves embedded static UI.
 		"CODEXK8S_VITE_DEV_UPSTREAM": []byte(resolveViteDevUpstream(vars)),
@@ -200,7 +207,8 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoo
 		return fmt.Errorf("upsert codex-k8s-runtime secret: %w", err)
 	}
 
-	oauthCookie := strings.TrimSpace(valueOr(vars, "OAUTH2_PROXY_COOKIE_SECRET", ""))
+	oauthCookie, _, _ := valueForEnvironment(secretResolver, targetEnv, vars, "OAUTH2_PROXY_COOKIE_SECRET")
+	oauthCookie = strings.TrimSpace(oauthCookie)
 	if oauthCookie == "" {
 		if value, ok := existingOAuth["OAUTH2_PROXY_COOKIE_SECRET"]; ok {
 			existingCookie := string(value)
@@ -208,19 +216,22 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoo
 				oauthCookie = existingCookie
 			}
 		}
-		if oauthCookie == "" && sharedOAuth != nil {
-			if value, ok := sharedOAuth["OAUTH2_PROXY_COOKIE_SECRET"]; ok {
-				sharedCookie := string(value)
-				if isValidOAuthCookieSecret(sharedCookie) {
-					oauthCookie = sharedCookie
-				}
+	}
+	if oauthCookie == "" && sharedOAuth != nil {
+		if value, ok := sharedOAuth["OAUTH2_PROXY_COOKIE_SECRET"]; ok {
+			sharedCookie := string(value)
+			if isValidOAuthCookieSecret(sharedCookie) {
+				oauthCookie = sharedCookie
 			}
 		}
-		if oauthCookie == "" {
-			oauthCookie, err = randomHex(16)
-			if err != nil {
-				return fmt.Errorf("generate oauth2-proxy cookie secret: %w", err)
-			}
+	}
+	if oauthCookie == "" {
+		oauthCookie = strings.TrimSpace(valueOr(vars, "OAUTH2_PROXY_COOKIE_SECRET", ""))
+	}
+	if oauthCookie == "" {
+		oauthCookie, err = randomHex(16)
+		if err != nil {
+			return fmt.Errorf("generate oauth2-proxy cookie secret: %w", err)
 		}
 	}
 	oauthSecret := map[string][]byte{
@@ -279,12 +290,12 @@ func resolveViteDevUpstream(vars map[string]string) string {
 	return strings.TrimSpace(valueOr(vars, "CODEXK8S_VITE_DEV_UPSTREAM", "http://codex-k8s-web-console:5173"))
 }
 
-func requiredValueFromSecrets(values map[string]string, existing map[string][]byte, shared map[string][]byte, key string) (string, error) {
-	value := strings.TrimSpace(valueOrExistingOrShared(values, existing, shared, key, ""))
-	if value == "" {
-		return "", fmt.Errorf("%s is required", key)
+func requiredValueFromSecrets(resolver servicescfg.SecretResolver, envName string, values map[string]string, existing map[string][]byte, shared map[string][]byte, key string) (string, string, error) {
+	value, source := valueOrExistingOrSharedWithSource(resolver, envName, values, existing, shared, key, "")
+	if strings.TrimSpace(value) == "" {
+		return "", "", fmt.Errorf("%s is required", key)
 	}
-	return value, nil
+	return value, source, nil
 }
 
 func valueOrExisting(values map[string]string, existing map[string][]byte, key string, fallback string) string {
@@ -301,25 +312,36 @@ func valueOrExisting(values map[string]string, existing map[string][]byte, key s
 	return fallback
 }
 
-func valueOrExistingOrShared(values map[string]string, existing map[string][]byte, shared map[string][]byte, key string, fallback string) string {
+func valueOrExistingOrShared(resolver servicescfg.SecretResolver, envName string, values map[string]string, existing map[string][]byte, shared map[string][]byte, key string, fallback string) string {
+	value, _ := valueOrExistingOrSharedWithSource(resolver, envName, values, existing, shared, key, fallback)
+	return value
+}
+
+func valueOrExistingOrSharedWithSource(resolver servicescfg.SecretResolver, envName string, values map[string]string, existing map[string][]byte, shared map[string][]byte, key string, fallback string) (string, string) {
+	if overrideValue, source, ok := valueForEnvironment(resolver, envName, values, key); ok {
+		return overrideValue, "env_override:" + source
+	}
 	if existing != nil {
 		if raw, ok := existing[key]; ok {
 			if value := strings.TrimSpace(string(raw)); value != "" {
-				return value
+				return value, "secret:" + key
 			}
 		}
 	}
 	if shared != nil {
 		if raw, ok := shared[key]; ok {
 			if value := strings.TrimSpace(string(raw)); value != "" {
-				return value
+				return value, "shared_secret:" + key
 			}
 		}
 	}
 	if value := strings.TrimSpace(valueOr(values, key, "")); value != "" {
-		return value
+		return value, "env:" + key
 	}
-	return fallback
+	if strings.TrimSpace(fallback) == "" {
+		return "", ""
+	}
+	return fallback, "fallback"
 }
 
 func valueOrExistingOrRandomHex(values map[string]string, existing map[string][]byte, key string, numBytes int) (string, error) {
@@ -344,25 +366,15 @@ func valueOrExistingOrRandomHex(values map[string]string, existing map[string][]
 	return randomHex(numBytes)
 }
 
-func valueOrExistingOrSharedOrRandomHex(values map[string]string, existing map[string][]byte, shared map[string][]byte, key string, numBytes int) (string, error) {
-	if value := strings.TrimSpace(valueOr(values, key, "")); value != "" {
-		if existing != nil {
-			if raw, ok := existing[key]; ok {
-				existingValue := strings.TrimSpace(string(raw))
-				if existingValue != "" && value != existingValue {
-					return "", fmt.Errorf("%s differs from existing secret value; refusing to rotate automatically", key)
-				}
-			}
+func valueOrExistingOrSharedOrRandomHex(resolver servicescfg.SecretResolver, envName string, values map[string]string, existing map[string][]byte, shared map[string][]byte, key string, numBytes int) (string, error) {
+	if overrideValue, _, ok := valueForEnvironment(resolver, envName, values, key); ok {
+		if err := ensureNoSecretConflict(existing, key, overrideValue, "existing"); err != nil {
+			return "", err
 		}
-		if shared != nil {
-			if raw, ok := shared[key]; ok {
-				sharedValue := strings.TrimSpace(string(raw))
-				if sharedValue != "" && value != sharedValue {
-					return "", fmt.Errorf("%s differs from shared secret value; refusing to rotate automatically", key)
-				}
-			}
+		if err := ensureNoSecretConflict(shared, key, overrideValue, "shared"); err != nil {
+			return "", err
 		}
-		return value, nil
+		return overrideValue, nil
 	}
 	if existing != nil {
 		if raw, ok := existing[key]; ok {
@@ -378,7 +390,37 @@ func valueOrExistingOrSharedOrRandomHex(values map[string]string, existing map[s
 			}
 		}
 	}
+	if value := strings.TrimSpace(valueOr(values, key, "")); value != "" {
+		return value, nil
+	}
 	return randomHex(numBytes)
+}
+
+func valueForEnvironment(resolver servicescfg.SecretResolver, envName string, values map[string]string, key string) (string, string, bool) {
+	overrideKey, ok := resolver.ResolveOverrideKey(envName, key)
+	if !ok {
+		return "", "", false
+	}
+	overrideValue := strings.TrimSpace(values[overrideKey])
+	if overrideValue == "" {
+		return "", "", false
+	}
+	return overrideValue, overrideKey, true
+}
+
+func ensureNoSecretConflict(secret map[string][]byte, key string, value string, source string) error {
+	if secret == nil {
+		return nil
+	}
+	raw, ok := secret[key]
+	if !ok {
+		return nil
+	}
+	existing := strings.TrimSpace(string(raw))
+	if existing == "" || existing == value {
+		return nil
+	}
+	return fmt.Errorf("%s differs from %s secret value; refusing to rotate automatically", key, source)
 }
 
 func cloneSecretData(input map[string][]byte) map[string][]byte {

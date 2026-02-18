@@ -54,6 +54,7 @@ var (
 		"CODEXK8S_PROJECT_DB_ADMIN_SSLMODE",
 		"CODEXK8S_PROJECT_DB_ADMIN_DATABASE",
 		"CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS",
+		"CODEXK8S_GITHUB_OAUTH_CLIENT_ID",
 		"CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET",
 		"CODEXK8S_JWT_SIGNING_KEY",
 		"CODEXK8S_MCP_TOKEN_SIGNING_KEY",
@@ -104,6 +105,7 @@ func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 
 	envPath := fs.String("env-file", "bootstrap/host/config.env", "Path to bootstrap env file")
+	configPath := fs.String("config", "services.yaml", "Path to services.yaml (optional, for secret override policy)")
 	timeout := fs.Duration("timeout", defaultGitHubSyncTimeout, "GitHub API timeout")
 	workers := fs.Int("workers", defaultGitHubSyncWorkers, "Parallel workers for variable/secret sync")
 	dryRun := fs.Bool("dry-run", false, "Print planned changes without applying them")
@@ -139,6 +141,11 @@ func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
 		values[key] = value
 	}
 	applyGitHubSyncDefaults(values)
+	secretResolver, err := loadSecretResolver(*configPath, values)
+	if err != nil {
+		writef(stderr, "github-sync failed: load services config: %v\n", err)
+		return 1
+	}
 
 	missing := missingRequiredKeys(values, githubRequiredSyncKeys)
 	if len(missing) > 0 {
@@ -206,7 +213,7 @@ func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
 	if !*skipVariables {
 		for _, envName := range environments {
 			envValues := cloneStringMap(values)
-			applyEnvironmentOverrides(envValues, envName, githubEnvVariableKeys)
+			applyEnvironmentOverrides(envValues, envName, githubEnvVariableKeys, secretResolver)
 			variableKeys := collectGitHubVariableKeys(envValues)
 			writef(stdout, "sync %s environment variables=%d\n", envName, len(variableKeys))
 			if err := syncGitHubEnvVariables(ctx, client, platformRepo, envName, envValues, variableKeys, *workers); err != nil {
@@ -218,7 +225,7 @@ func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
 	if !*skipSecrets {
 		for _, envName := range environments {
 			envValues := cloneStringMap(values)
-			applyEnvironmentOverrides(envValues, envName, githubRepoSecretKeys)
+			applyEnvironmentOverrides(envValues, envName, githubRepoSecretKeys, secretResolver)
 			secretValues := collectGitHubSecretValues(envValues)
 			writef(stdout, "sync %s environment secrets=%d\n", envName, len(secretValues))
 			if err := syncGitHubEnvSecrets(ctx, client, platformRepo, repoID, envName, envValues, githubRepoSecretKeys, *workers); err != nil {

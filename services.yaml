@@ -52,6 +52,26 @@ spec:
       prd_revise: code-only
       self_improve: code-only
 
+  secretResolution:
+    environmentAliases:
+      production: [prod]
+    keyOverrides:
+      - sourceKey: CODEXK8S_GITHUB_OAUTH_CLIENT_ID
+        overrideKeys:
+          ai: CODEXK8S_GITHUB_OAUTH_CLIENT_ID_AI
+          production: CODEXK8S_PRODUCTION_GITHUB_OAUTH_CLIENT_ID
+      - sourceKey: CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET
+        overrideKeys:
+          ai: CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET_AI
+          production: CODEXK8S_PRODUCTION_GITHUB_OAUTH_CLIENT_SECRET
+    patterns:
+      - sourcePrefix: CODEXK8S_
+        excludeSuffixes:
+          - _AI
+        environments:
+          - ai
+        overrideTemplate: "{key}_{env_upper}"
+
   images:
     kaniko-clone:
       type: external

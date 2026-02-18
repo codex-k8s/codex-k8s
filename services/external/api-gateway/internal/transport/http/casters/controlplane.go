@@ -292,9 +292,7 @@ func ConfigEntry(item *controlplanev1.ConfigEntry) models.ConfigEntry {
 		IsDangerous:  item.GetIsDangerous(),
 		UpdatedAt:    cast.OptionalTrimmedString(item.UpdatedAt),
 	}
-	for _, target := range item.GetSyncTargets() {
-		out.SyncTargets = append(out.SyncTargets, target)
-	}
+	out.SyncTargets = append(out.SyncTargets, item.GetSyncTargets()...)
 	return out
 }
 

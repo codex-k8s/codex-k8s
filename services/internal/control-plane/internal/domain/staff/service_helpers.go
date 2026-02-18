@@ -89,23 +89,6 @@ func getOptionalEnv(key string) string {
 	return strings.TrimSpace(os.Getenv(key))
 }
 
-func uniqueStrings(values []string) []string {
-	seen := make(map[string]struct{}, len(values))
-	out := make([]string, 0, len(values))
-	for _, v := range values {
-		v = strings.TrimSpace(v)
-		if v == "" {
-			continue
-		}
-		if _, ok := seen[v]; ok {
-			continue
-		}
-		seen[v] = struct{}{}
-		out = append(out, v)
-	}
-	return out
-}
-
 func ipIntersects(a []net.IP, b []net.IP) bool {
 	if len(a) == 0 || len(b) == 0 {
 		return false

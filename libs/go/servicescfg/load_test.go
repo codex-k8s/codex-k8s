@@ -245,6 +245,48 @@ spec:
 	}
 }
 
+func TestLoad_SecretResolutionContract(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "services.yaml")
+	writeFile(t, path, `
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+  secretResolution:
+    environmentAliases:
+      production: [prod]
+    keyOverrides:
+      - sourceKey: CODEXK8S_GITHUB_OAUTH_CLIENT_ID
+        overrideKeys:
+          ai: CODEXK8S_GITHUB_OAUTH_CLIENT_ID_AI
+    patterns:
+      - sourcePrefix: CODEXK8S_
+        excludeSuffixes: [_AI]
+        environments: [ai]
+        overrideTemplate: "{key}_{env_upper}"
+`)
+
+	result, err := Load(path, LoadOptions{Env: "production"})
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+
+	resolver := NewSecretResolver(result.Stack)
+	overrideKey, ok := resolver.ResolveOverrideKey("ai", "CODEXK8S_GITHUB_OAUTH_CLIENT_ID")
+	if !ok {
+		t.Fatalf("expected explicit key override")
+	}
+	if got, want := overrideKey, "CODEXK8S_GITHUB_OAUTH_CLIENT_ID_AI"; got != want {
+		t.Fatalf("unexpected override key: got %q want %q", got, want)
+	}
+}
+
 func TestLoadFromYAML_SchemaValidationFailFast(t *testing.T) {
 	t.Parallel()
 

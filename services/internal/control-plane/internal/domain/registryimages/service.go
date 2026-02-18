@@ -6,7 +6,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/registry"
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
@@ -246,31 +245,6 @@ func (s *Service) Cleanup(ctx context.Context, filter querytypes.RegistryImageCl
 	}
 
 	return result, nil
-}
-
-func mapTagInfos(items []registry.TagInfo, limit int) []entitytypes.RegistryImageTag {
-	if len(items) == 0 {
-		return []entitytypes.RegistryImageTag{}
-	}
-	out := make([]entitytypes.RegistryImageTag, 0, minInt(len(items), limit))
-	for idx := range items {
-		if len(out) >= limit {
-			break
-		}
-		item := items[idx]
-		var createdAt *time.Time
-		if item.CreatedAt != nil {
-			value := item.CreatedAt.UTC()
-			createdAt = &value
-		}
-		out = append(out, entitytypes.RegistryImageTag{
-			Tag:             item.Tag,
-			Digest:          item.Digest,
-			CreatedAt:       createdAt,
-			ConfigSizeBytes: item.ConfigSizeBytes,
-		})
-	}
-	return out
 }
 
 func mapTags(tags []string, limit int) []entitytypes.RegistryImageTag {

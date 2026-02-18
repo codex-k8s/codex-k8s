@@ -71,7 +71,7 @@ approvals:
 | Day 14 | Repository onboarding preflight + bot params per repo | P0 | `docs/delivery/epics/epic-s3-day14-repository-onboarding-preflight.md` | completed |
 | Day 15 | Prompt context overhaul (docs tree, role matrix, GitHub service messages) | P0 | `docs/delivery/epics/epic-s3-day15-mvp-closeout-and-handover.md` | planned |
 | Day 16 | gRPC transport boundary hardening (исключить прямые вызовы repository из handlers) | P0 | `docs/delivery/epics/epic-s3-day16-grpc-transport-boundary-hardening.md` | completed |
-| Day 17 | Environment-scoped secret overrides and OAuth callback strategy | P0 | `docs/delivery/epics/epic-s3-day17-environment-scoped-secret-overrides-and-oauth-callbacks.md` | planned |
+| Day 17 | Environment-scoped secret overrides and OAuth callback strategy | P0 | `docs/delivery/epics/epic-s3-day17-environment-scoped-secret-overrides-and-oauth-callbacks.md` | completed |
 | Day 18 | Runtime error journal and staff alert center | P0 | `docs/delivery/epics/epic-s3-day18-runtime-error-journal-and-staff-alert-center.md` | planned |
 | Day 19 | Run access key and OAuth bypass flow | P0 | `docs/delivery/epics/epic-s3-day19-run-access-key-and-oauth-bypass.md` | planned |
 | Day 20 | Frontend manual QA hardening loop | P0 | `docs/delivery/epics/epic-s3-day20-frontend-manual-qa-hardening-loop.md` | planned |
