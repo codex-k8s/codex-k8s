@@ -273,6 +273,8 @@ export type RunRepositoryPreflightResponse = {
     finished_at: string;
 };
 
+export type ConfigEntryMutability = 'startup_required' | 'runtime_mutable';
+
 export type ConfigEntry = {
     id: string;
     scope: 'platform' | 'project' | 'repository';
@@ -282,7 +284,7 @@ export type ConfigEntry = {
     key: string;
     value?: string | null;
     sync_targets: Array<string>;
-    mutability: string;
+    mutability: ConfigEntryMutability;
     is_dangerous: boolean;
     updated_at?: string | null;
 };
@@ -300,7 +302,7 @@ export type UpsertConfigEntryRequest = {
     value_plain?: string | null;
     value_secret?: string | null;
     sync_targets?: Array<string>;
-    mutability?: string;
+    mutability?: ConfigEntryMutability;
     is_dangerous?: boolean;
     dangerous_confirmed?: boolean;
 };

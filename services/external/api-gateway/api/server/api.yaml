@@ -1867,6 +1867,10 @@ components:
         finished_at:
           type: string
 
+    ConfigEntryMutability:
+      type: string
+      enum: [startup_required, runtime_mutable]
+
     ConfigEntry:
       type: object
       additionalProperties: false
@@ -1896,7 +1900,7 @@ components:
           items:
             type: string
         mutability:
-          type: string
+          $ref: "#/components/schemas/ConfigEntryMutability"
         is_dangerous:
           type: boolean
         updated_at:
@@ -1943,7 +1947,7 @@ components:
           items:
             type: string
         mutability:
-          type: string
+          $ref: "#/components/schemas/ConfigEntryMutability"
         is_dangerous:
           type: boolean
         dangerous_confirmed:

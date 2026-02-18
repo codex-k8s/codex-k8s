@@ -2,6 +2,10 @@ import { deleteConfigEntry as deleteConfigEntryRequest, listConfigEntries as lis
 import type { ConfigEntry as ApiConfigEntry } from "../../shared/api/generated/types.gen";
 import type { ConfigEntry, ConfigKind, ConfigMutability, ConfigScope } from "./types";
 
+function mapConfigMutability(value: unknown): ConfigMutability {
+  return value === "runtime_mutable" ? "runtime_mutable" : "startup_required";
+}
+
 function mapApiConfigEntry(item: ApiConfigEntry): ConfigEntry {
   return {
     id: String(item.id ?? ""),
@@ -12,7 +16,7 @@ function mapApiConfigEntry(item: ApiConfigEntry): ConfigEntry {
     key: String(item.key ?? ""),
     value: item.value ?? null,
     sync_targets: Array.isArray(item.sync_targets) ? item.sync_targets.filter((entry): entry is string => typeof entry === "string") : [],
-    mutability: String(item.mutability ?? "startup_required"),
+    mutability: mapConfigMutability(item.mutability),
     is_dangerous: Boolean(item.is_dangerous),
     updated_at: item.updated_at ?? null,
   };
