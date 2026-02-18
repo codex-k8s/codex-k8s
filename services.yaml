@@ -238,6 +238,7 @@ spec:
     - name: oauth2-proxy
       use:
         - hot-reload-defaults
+      scope: infrastructure-singleton
       deployGroup: edge
       dependsOn:
         - codex-k8s-app

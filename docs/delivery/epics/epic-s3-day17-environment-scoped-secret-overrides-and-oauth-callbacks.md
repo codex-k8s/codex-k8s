@@ -62,6 +62,10 @@ approvals:
   - `spec.secretResolution.environmentAliases`;
   - `spec.secretResolution.keyOverrides` (`sourceKey -> overrideKeys{env:key}`);
   - `spec.secretResolution.patterns` (`sourcePrefix/exclude*/environments/overrideTemplate`).
+- Добавлен reusable service-scope в `services.yaml`:
+  - `spec.services[].scope: environment | infrastructure-singleton`;
+  - `oauth2-proxy` переведён в `infrastructure-singleton`, чтобы не деплоиться в каждом AI-слоте.
+- AI ingress переведён на shared OAuth (nginx `auth-url`/`auth-signin`) через centralized oauth2-proxy endpoint.
 - Добавлена schema-валидация и runtime-валидация для `spec.secretResolution` в `libs/go/servicescfg`.
 - Реализован единый `SecretResolver` в `libs/go/servicescfg` и подключен в оба контура:
   - `cmd/codex-bootstrap` (`github-sync`, `sync-secrets`);

@@ -294,6 +294,11 @@ func normalizeAndValidate(stack *Stack, env string) error {
 			return fmt.Errorf("service %q: %w", name, err)
 		}
 		svc.CodeUpdateStrategy = strategy
+		scope, err := NormalizeServiceScope(svc.Scope)
+		if err != nil {
+			return fmt.Errorf("service %q: %w", name, err)
+		}
+		svc.Scope = scope
 	}
 
 	projectName := strings.TrimSpace(stack.Spec.Project)

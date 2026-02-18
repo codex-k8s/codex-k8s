@@ -337,6 +337,9 @@
         "codeUpdateStrategy": {
           "$ref": "#/$defs/codeUpdateStrategy"
         },
+        "scope": {
+          "$ref": "#/$defs/serviceScope"
+        },
         "deployGroup": {
           "type": "string"
         },
@@ -364,6 +367,10 @@
     "codeUpdateStrategy": {
       "type": "string",
       "enum": ["hot-reload", "rebuild", "restart"]
+    },
+    "serviceScope": {
+      "type": "string",
+      "enum": ["environment", "infrastructure-singleton"]
     },
     "manifestRef": {
       "type": "object",
