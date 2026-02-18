@@ -41,6 +41,28 @@ type Client struct {
 	http    *http.Client
 }
 
+type catalogResponse struct {
+	Repositories []string `json:"repositories"`
+}
+
+type tagsListResponse struct {
+	Name string   `json:"name"`
+	Tags []string `json:"tags"`
+}
+
+type manifestConfig struct {
+	Digest string `json:"digest"`
+	Size   int64  `json:"size"`
+}
+
+type imageManifestResponse struct {
+	Config manifestConfig `json:"config"`
+}
+
+type imageConfigBlobResponse struct {
+	Created string `json:"created"`
+}
+
 // NewClient creates registry API client.
 func NewClient(baseURL string, timeout time.Duration) (*Client, error) {
 	trimmed := strings.TrimSpace(baseURL)
@@ -98,9 +120,7 @@ func (c *Client) ListRepositories(ctx context.Context) ([]string, error) {
 			return nil, fmt.Errorf("catalog request failed: status=%d body=%s", resp.StatusCode, strings.TrimSpace(string(body)))
 		}
 
-		var payload struct {
-			Repositories []string `json:"repositories"`
-		}
+		var payload catalogResponse
 		if err := json.Unmarshal(body, &payload); err != nil {
 			return nil, fmt.Errorf("decode catalog response: %w", err)
 		}
@@ -158,10 +178,7 @@ func (c *Client) ListTagInfos(ctx context.Context, repository string) ([]TagInfo
 		return nil, fmt.Errorf("tags request failed: status=%d body=%s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
 
-	var payload struct {
-		Name string   `json:"name"`
-		Tags []string `json:"tags"`
-	}
+	var payload tagsListResponse
 	if err := json.Unmarshal(body, &payload); err != nil {
 		return nil, fmt.Errorf("decode tags response: %w", err)
 	}
@@ -246,10 +263,7 @@ func (c *Client) ListTags(ctx context.Context, repository string) ([]string, err
 		return nil, fmt.Errorf("tags request failed: status=%d body=%s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
 
-	var payload struct {
-		Name string   `json:"name"`
-		Tags []string `json:"tags"`
-	}
+	var payload tagsListResponse
 	if err := json.Unmarshal(body, &payload); err != nil {
 		return nil, fmt.Errorf("decode tags response: %w", err)
 	}
@@ -311,12 +325,7 @@ func (c *Client) GetTagInfo(ctx context.Context, repository string, tag string) 
 		return TagInfo{}, false, fmt.Errorf("manifest request failed: status=%d body=%s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
 
-	var manifest struct {
-		Config struct {
-			Digest string `json:"digest"`
-			Size   int64  `json:"size"`
-		} `json:"config"`
-	}
+	var manifest imageManifestResponse
 	if err := json.Unmarshal(body, &manifest); err != nil {
 		return TagInfo{}, false, fmt.Errorf("decode manifest response: %w", err)
 	}
@@ -457,9 +466,7 @@ func (c *Client) loadConfigBlobCreatedAt(ctx context.Context, repoPath string, d
 		return nil, fmt.Errorf("blob request failed: status=%d body=%s", blobResp.StatusCode, strings.TrimSpace(string(blobBody)))
 	}
 
-	var configBlob struct {
-		Created string `json:"created"`
-	}
+	var configBlob imageConfigBlobResponse
 	if err := json.Unmarshal(blobBody, &configBlob); err != nil {
 		return nil, nil
 	}
@@ -500,12 +507,7 @@ func (c *Client) loadTagMetadata(ctx context.Context, repoPath string, digest st
 		return nil, 0, fmt.Errorf("manifest request failed: status=%d body=%s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
 
-	var manifest struct {
-		Config struct {
-			Digest string `json:"digest"`
-			Size   int64  `json:"size"`
-		} `json:"config"`
-	}
+	var manifest imageManifestResponse
 	if err := json.Unmarshal(body, &manifest); err != nil {
 		return nil, 0, fmt.Errorf("decode manifest response: %w", err)
 	}
