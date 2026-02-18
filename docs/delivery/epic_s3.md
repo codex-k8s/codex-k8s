@@ -42,6 +42,8 @@ approvals:
 - Day 18: `docs/delivery/epics/epic-s3-day18-runtime-error-journal-and-staff-alert-center.md`
 - Day 19: `docs/delivery/epics/epic-s3-day19-run-access-key-and-oauth-bypass.md`
 - Day 20: `docs/delivery/epics/epic-s3-day20-frontend-manual-qa-hardening-loop.md`
+- Day 20.5: `docs/delivery/epics/epic-s3-day20.5-realtime-event-bus-and-websocket-backplane.md`
+- Day 20.6: `docs/delivery/epics/epic-s3-day20.6-staff-realtime-subscriptions-and-ui.md`
 - Day 21: `docs/delivery/epics/epic-s3-day21-e2e-regression-and-mvp-closeout.md`
 
 ## Прогресс
@@ -60,7 +62,7 @@ approvals:
 - Day 13 (`unified config/secrets governance + GitHub creds fallback`) завершён.
 - Day 14 (`repository onboarding preflight`) завершён.
 - Day 16 (`gRPC transport boundary hardening`) завершён как refactoring-hygiene эпик по Issue #45.
-- В работе остаются Day15/Day17/Day18/Day19/Day20 (core-flow + frontend hardening), после них финальный Day21 full e2e gate.
+- В работе остаются Day15/Day17/Day18/Day19/Day20/Day20.5/Day20.6 (core-flow + frontend hardening + realtime), после них финальный Day21 full e2e gate.
 
 ## Порядок закрытия остатка S3
 1. Day15: docs tree + role prompt matrix + GitHub service templates.
@@ -68,7 +70,9 @@ approvals:
 3. Day18: runtime error journal + staff alert center.
 4. Day19: run access key + OAuth bypass.
 5. Day20: manual frontend QA hardening loop.
-6. Day21: full e2e regression gate + MVP closeout.
+6. Day20.5: PostgreSQL LISTEN/NOTIFY realtime bus + WS backplane (multi-server).
+7. Day20.6: staff realtime subscriptions and UI integration.
+8. Day21: full e2e regression gate + MVP closeout.
 
 ## Критерий успеха Sprint S3 (выжимка)
 - Все MVP-сценарии из Issue #19 покрыты кодом, тестами и эксплуатационной документацией.
