@@ -18,7 +18,7 @@ approvals:
 
 ## TL;DR
 - Цель: подключить staff frontend к новой WS-шине и перевести ключевые экраны на near-realtime обновления.
-- Результат: пользователь видит изменения run/deploy/errors/alers без ручного refresh, с graceful fallback на polling.
+- Результат: пользователь видит изменения run/deploy/errors/logs/events без ручного refresh, с graceful fallback на polling.
 
 ## Priority
 - `P0`.
@@ -28,33 +28,36 @@ approvals:
 - Frontend realtime client layer:
   - единый WS transport + reconnect/backoff;
   - resume с `last_event_id`;
-  - topic/scope subscriptions (project/run/deploy/system errors).
+  - topic/scope subscriptions (project/run/deploy/system errors/run logs/run events/deploy logs/deploy events).
 - Интеграция в критичные экраны:
-  - Runs list + Run details (status/events/log markers);
-  - Build & Deploy list/details;
+  - Runs list + Run details (status/events/logs live stream);
+  - Build & Deploy list/details (status/events/logs live stream);
   - Alert stack ошибок (из Day18).
 - UX правила:
   - индикатор realtime connection state;
   - dedupe по `event_id`;
-  - fallback polling при недоступном WS.
+  - fallback polling при недоступном WS;
+  - удаление кнопок `Обновить` в экранах с realtime-подпиской (обновление только автоматически).
 - Тестовый контур:
   - manual сценарии multi-tab/multi-reconnect;
   - smoke check на production перед Day21.
 
 ### Out of scope
-- Полная замена всех текущих polling вызовов.
+- Полная замена всех текущих polling вызовов в экранах без WS-подписки.
 - Realtime для второстепенных/редко используемых экранов.
 
 ## Декомпозиция
 - Story-1: shared realtime client module + state management.
-- Story-2: интеграция в runs/deploy/errors views.
-- Story-3: UX polish (indicators, degraded mode, dedupe).
-- Story-4: regression checklist и readiness report к Day21.
+- Story-2: интеграция в runs/deploy/errors/logs/events views.
+- Story-3: удаление ручных кнопок `Обновить` в realtime-экранах + автообновление по событиям.
+- Story-4: UX polish (indicators, degraded mode, dedupe).
+- Story-5: regression checklist и readiness report к Day21.
 
 ## Критерии приемки
-- Изменения статусов run/deploy отображаются в UI без ручного refresh.
+- Изменения статусов run/deploy, логи и события отображаются в UI без ручного refresh.
 - При обрыве соединения фронт восстанавливается и догружает пропущенные события.
 - При отключенном WS интерфейс продолжает работать через polling (без функциональной деградации).
+- Кнопки `Обновить` удалены из всех экранов, покрытых realtime подпиской.
 - Realtime-интеграция проходит ручной regression перед Day21 e2e.
 
 ## Риски/зависимости

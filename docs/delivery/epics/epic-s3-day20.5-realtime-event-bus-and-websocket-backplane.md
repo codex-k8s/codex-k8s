@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - Выбран вариант реализации `#1`: PostgreSQL event log + `LISTEN/NOTIFY` как межсерверная шина для realtime.
 - Цель: обеспечить push-апдейты с сервера на клиент при нескольких pod'ах без введения новой инфраструктуры.
-- Результат: любой pod может публиковать событие, любой pod `api-gateway` получает его через общую шину и рассылает своим WebSocket-клиентам.
+- Результат: любой pod может публиковать событие, любой pod `api-gateway` получает его через общую шину и рассылает своим WebSocket-клиентам, включая live-логи и flow events.
 
 ## Priority
 - `P0`.
@@ -47,10 +47,12 @@ approvals:
 - WebSocket backplane в `api-gateway`:
   - WS endpoint, ping/pong, authz;
   - subscribe filters (project/run/deploy scope);
+  - отдельные топики для статусов, логов и событий (`run.logs`, `run.events`, `deploy.logs`, `deploy.events`, `system.errors`);
   - delivery ack + resume by `last_event_id`.
 - Multi-server guarantees:
   - at-least-once delivery на уровне шины;
   - idempotency ключ события (`event_id`) на клиенте.
+  - последовательность событий внутри одного stream key (`run_id`/`task_id`) сохраняется по возрастанию `event_id`.
 
 ### Out of scope
 - Отдельный message broker (Redis/NATS) в этой итерации.
@@ -60,12 +62,14 @@ approvals:
 - Story-1: migration + repository/service для `realtime_events`.
 - Story-2: publisher hooks из control-plane/worker/runstatus/runtime deploy.
 - Story-3: `api-gateway` WS endpoint + listener loop (`LISTEN/NOTIFY` + catch-up).
-- Story-4: cleanup policy и observability (метрики lag/drop/reconnect).
+- Story-4: log/event stream transport (incremental chunks, sequence markers, end-of-stream events).
+- Story-5: cleanup policy и observability (метрики lag/drop/reconnect).
 
 ## Критерии приемки
 - Событие, опубликованное на одном pod, видят WS-клиенты, подключенные к другому pod.
 - При reconnect клиент получает пропущенные события через `last_event_id`.
 - При кратковременном обрыве `LISTEN`/соединения событие не теряется (recover через БД log).
+- Логи run/deploy и flow-events доставляются в WS поток через ту же шину без отдельного polling API.
 - Payload не содержит секретов и проходит redaction policy.
 
 ## Риски/зависимости
