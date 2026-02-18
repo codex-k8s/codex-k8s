@@ -287,6 +287,55 @@ spec:
 	}
 }
 
+func TestLoad_ServiceScopeNormalization(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "services.yaml")
+	writeFile(t, path, `
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+  services:
+    - name: singleton
+      scope: infrastructure-singleton
+    - name: defaulted
+`)
+
+	result, err := Load(path, LoadOptions{Env: "production"})
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if got, want := result.Stack.Spec.Services[0].Scope, ServiceScopeInfrastructureSingleton; got != want {
+		t.Fatalf("unexpected singleton scope: got %q want %q", got, want)
+	}
+	if got, want := result.Stack.Spec.Services[1].Scope, ServiceScopeEnvironment; got != want {
+		t.Fatalf("unexpected default scope: got %q want %q", got, want)
+	}
+}
+
+func TestLoad_ServiceScopeValidation(t *testing.T) {
+	t.Parallel()
+
+	assertLoadErrorContains(t, `
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+  services:
+    - name: invalid
+      scope: cluster
+`, "serviceScope")
+}
+
 func TestLoadFromYAML_SchemaValidationFailFast(t *testing.T) {
 	t.Parallel()
 

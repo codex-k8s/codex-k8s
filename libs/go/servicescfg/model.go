@@ -57,6 +57,30 @@ func NormalizeCodeUpdateStrategy(value CodeUpdateStrategy) (CodeUpdateStrategy, 
 	}
 }
 
+// ServiceScope controls whether service is deployed per environment or once per infrastructure.
+type ServiceScope string
+
+const (
+	// ServiceScopeEnvironment deploys service in each target namespace.
+	ServiceScopeEnvironment ServiceScope = "environment"
+	// ServiceScopeInfrastructureSingleton deploys service only in platform namespace.
+	ServiceScopeInfrastructureSingleton ServiceScope = "infrastructure-singleton"
+)
+
+// NormalizeServiceScope validates and normalizes service scope values.
+func NormalizeServiceScope(value ServiceScope) (ServiceScope, error) {
+	v := ServiceScope(strings.TrimSpace(strings.ToLower(string(value))))
+	if v == "" {
+		return ServiceScopeEnvironment, nil
+	}
+	switch v {
+	case ServiceScopeEnvironment, ServiceScopeInfrastructureSingleton:
+		return v, nil
+	default:
+		return "", fmt.Errorf("unsupported service scope %q", value)
+	}
+}
+
 // Stack is a typed root contract for services.yaml.
 type Stack struct {
 	APIVersion string   `yaml:"apiVersion"`
@@ -175,6 +199,7 @@ type Service struct {
 	Name               string             `yaml:"name"`
 	Use                []string           `yaml:"use,omitempty"`
 	CodeUpdateStrategy CodeUpdateStrategy `yaml:"codeUpdateStrategy,omitempty"`
+	Scope              ServiceScope       `yaml:"scope,omitempty"`
 	DeployGroup        string             `yaml:"deployGroup,omitempty"`
 	DependsOn          []string           `yaml:"dependsOn,omitempty"`
 	Manifests          []ManifestRef      `yaml:"manifests,omitempty"`

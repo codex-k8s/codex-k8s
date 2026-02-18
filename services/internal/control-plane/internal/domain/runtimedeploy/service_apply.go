@@ -57,6 +57,13 @@ func (s *Service) applyServices(ctx context.Context, repositoryRoot string, stac
 		if name == "" {
 			return fmt.Errorf("service name is required")
 		}
+		includeScope, skipReason := shouldApplyServiceScope(service.Scope, namespace, vars)
+		if !includeScope {
+			if strings.TrimSpace(skipReason) != "" {
+				s.appendTaskLogBestEffort(ctx, runID, "apply", "info", "Skip unit "+name+": "+skipReason)
+			}
+			continue
+		}
 		include, err := evaluateWhen(service.When)
 		if err != nil {
 			return fmt.Errorf("service %q when expression: %w", name, err)
@@ -82,7 +89,7 @@ func (s *Service) applyServices(ctx context.Context, repositoryRoot string, stac
 			for idx := 0; idx < len(names); idx++ {
 				name := names[idx]
 				service := enabledByName[name]
-				if !dependenciesSatisfied(service.DependsOn, applied) {
+				if !dependenciesSatisfied(service.DependsOn, applied, enabledByName) {
 					continue
 				}
 				if err := s.applyUnit(ctx, repositoryRoot, name, service.Manifests, namespace, vars, runID); err != nil {
@@ -243,13 +250,44 @@ func evaluateWhen(value string) (bool, error) {
 	return parsed, nil
 }
 
-func dependenciesSatisfied(dependsOn []string, applied map[string]struct{}) bool {
+func shouldApplyServiceScope(scope servicescfg.ServiceScope, targetNamespace string, vars map[string]string) (bool, string) {
+	if scope == "" || scope == servicescfg.ServiceScopeEnvironment {
+		return true, ""
+	}
+	if scope != servicescfg.ServiceScopeInfrastructureSingleton {
+		return true, ""
+	}
+
+	envName := strings.ToLower(strings.TrimSpace(vars["CODEXK8S_ENV"]))
+	if envName == "" {
+		envName = strings.ToLower(strings.TrimSpace(vars["CODEXK8S_SERVICES_CONFIG_ENV"]))
+	}
+	if envName != "" && envName != "production" && envName != "prod" {
+		return false, "service scope=infrastructure-singleton applies only in production environment"
+	}
+
+	platformNamespace := strings.TrimSpace(vars["CODEXK8S_PLATFORM_NAMESPACE"])
+	if platformNamespace == "" {
+		platformNamespace = strings.TrimSpace(vars["CODEXK8S_PRODUCTION_NAMESPACE"])
+	}
+	namespace := strings.TrimSpace(targetNamespace)
+	if platformNamespace != "" && namespace != "" && namespace != platformNamespace {
+		return false, "service scope=infrastructure-singleton applies only in platform namespace " + platformNamespace
+	}
+
+	return true, ""
+}
+
+func dependenciesSatisfied(dependsOn []string, applied map[string]struct{}, enabledServices map[string]servicescfg.Service) bool {
 	for _, dependency := range dependsOn {
 		name := strings.TrimSpace(dependency)
 		if name == "" {
 			continue
 		}
 		if _, ok := applied[name]; !ok {
+			if _, enabled := enabledServices[name]; !enabled {
+				continue
+			}
 			return false
 		}
 	}
