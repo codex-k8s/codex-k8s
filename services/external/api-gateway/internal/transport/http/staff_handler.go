@@ -123,6 +123,23 @@ func resolveRuntimeDeployListFilters(defLimit int) func(c *echo.Context) (runtim
 	}
 }
 
+func resolveRuntimeErrorsListFilters(defLimit int) func(c *echo.Context) (runtimeErrorsListArg, error) {
+	return func(c *echo.Context) (runtimeErrorsListArg, error) {
+		limit, err := parseLimit(c, defLimit)
+		if err != nil {
+			return runtimeErrorsListArg{}, err
+		}
+		return runtimeErrorsListArg{
+			limit:         int32(limit),
+			state:         strings.TrimSpace(c.QueryParam("state")),
+			level:         strings.TrimSpace(c.QueryParam("level")),
+			source:        strings.TrimSpace(c.QueryParam("source")),
+			runID:         strings.TrimSpace(c.QueryParam("run_id")),
+			correlationID: strings.TrimSpace(c.QueryParam("correlation_id")),
+		}, nil
+	}
+}
+
 func parseOptionalPositiveInt(raw string, field string) (int, error) {
 	trimmed := strings.TrimSpace(raw)
 	if trimmed == "" {
@@ -442,6 +459,20 @@ func (h *staffHandler) ListRuntimeDeployTasks(c *echo.Context) error {
 
 func (h *staffHandler) GetRuntimeDeployTask(c *echo.Context) error {
 	return getByPathResp(c, "run_id", h.getRuntimeDeployTaskCall, casters.RuntimeDeployTask)
+}
+
+func (h *staffHandler) ListRuntimeErrors(c *echo.Context) error {
+	return withPrincipalAndResolved(c, resolveRuntimeErrorsListFilters(5), func(principal *controlplanev1.Principal, arg runtimeErrorsListArg) error {
+		resp, err := h.listRuntimeErrorsCall(c.Request().Context(), principal, arg)
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, models.ItemsResponse[models.RuntimeError]{Items: casters.RuntimeErrors(resp.GetItems())})
+	})
+}
+
+func (h *staffHandler) MarkRuntimeErrorViewed(c *echo.Context) error {
+	return getByPathResp(c, "runtime_error_id", h.markRuntimeErrorViewedCall, casters.RuntimeError)
 }
 
 func (h *staffHandler) ListRegistryImages(c *echo.Context) error {
@@ -891,6 +922,25 @@ func buildGetRuntimeDeployTaskRequest(principal *controlplanev1.Principal, runID
 	}
 }
 
+func buildListRuntimeErrorsRequest(principal *controlplanev1.Principal, arg runtimeErrorsListArg) *controlplanev1.ListRuntimeErrorsRequest {
+	return &controlplanev1.ListRuntimeErrorsRequest{
+		Principal:     principal,
+		Limit:         arg.limit,
+		State:         optionalStringPtr(arg.state),
+		Level:         optionalStringPtr(arg.level),
+		Source:        optionalStringPtr(arg.source),
+		RunId:         optionalStringPtr(arg.runID),
+		CorrelationId: optionalStringPtr(arg.correlationID),
+	}
+}
+
+func buildMarkRuntimeErrorViewedRequest(principal *controlplanev1.Principal, runtimeErrorID string) *controlplanev1.MarkRuntimeErrorViewedRequest {
+	return &controlplanev1.MarkRuntimeErrorViewedRequest{
+		Principal:      principal,
+		RuntimeErrorId: strings.TrimSpace(runtimeErrorID),
+	}
+}
+
 func buildListRegistryImagesRequest(principal *controlplanev1.Principal, arg registryImagesListArg) *controlplanev1.ListRegistryImagesRequest {
 	return &controlplanev1.ListRegistryImagesRequest{
 		Principal:         principal,
@@ -1006,6 +1056,14 @@ func (h *staffHandler) listRuntimeDeployTasksCall(ctx context.Context, principal
 
 func (h *staffHandler) getRuntimeDeployTaskCall(ctx context.Context, principal *controlplanev1.Principal, runID string) (*controlplanev1.RuntimeDeployTask, error) {
 	return callUnaryWithArg(ctx, principal, runID, buildGetRuntimeDeployTaskRequest, h.cp.Service().GetRuntimeDeployTask)
+}
+
+func (h *staffHandler) listRuntimeErrorsCall(ctx context.Context, principal *controlplanev1.Principal, arg runtimeErrorsListArg) (*controlplanev1.ListRuntimeErrorsResponse, error) {
+	return callUnaryWithArg(ctx, principal, arg, buildListRuntimeErrorsRequest, h.cp.Service().ListRuntimeErrors)
+}
+
+func (h *staffHandler) markRuntimeErrorViewedCall(ctx context.Context, principal *controlplanev1.Principal, runtimeErrorID string) (*controlplanev1.RuntimeError, error) {
+	return callUnaryWithArg(ctx, principal, runtimeErrorID, buildMarkRuntimeErrorViewedRequest, h.cp.Service().MarkRuntimeErrorViewed)
 }
 
 func (h *staffHandler) listRegistryImagesCall(ctx context.Context, principal *controlplanev1.Principal, arg registryImagesListArg) (*controlplanev1.ListRegistryImagesResponse, error) {

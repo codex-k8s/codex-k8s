@@ -156,6 +156,23 @@ export type RuntimeDeployTask = {
     logs: Array<RuntimeDeployTaskLog>;
 };
 
+export type RuntimeError = {
+    id: string;
+    source: string;
+    level: 'error' | 'warning' | 'critical';
+    message: string;
+    details_json: string;
+    stack_trace?: string | null;
+    correlation_id?: string | null;
+    run_id?: string | null;
+    project_id?: string | null;
+    namespace?: string | null;
+    job_name?: string | null;
+    viewed_at?: string | null;
+    viewed_by?: string | null;
+    created_at: string;
+};
+
 export type RegistryImageTag = {
     tag: string;
     digest: string;
@@ -359,6 +376,10 @@ export type RuntimeDeployTaskItemsResponse = {
     items: Array<RuntimeDeployTask>;
 };
 
+export type RuntimeErrorItemsResponse = {
+    items: Array<RuntimeError>;
+};
+
 export type RegistryImageRepositoryItemsResponse = {
     items: Array<RegistryImageRepository>;
 };
@@ -418,6 +439,8 @@ export type UpsertProjectRepositoryRequest = {
 export type ProjectId = string;
 
 export type RunId = string;
+
+export type RuntimeErrorId = string;
 
 export type ApprovalRequestId = number;
 
@@ -1206,6 +1229,85 @@ export type GetRuntimeDeployTaskResponses = {
 };
 
 export type GetRuntimeDeployTaskResponse = GetRuntimeDeployTaskResponses[keyof GetRuntimeDeployTaskResponses];
+
+export type ListRuntimeErrorsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+        state?: 'active' | 'viewed' | 'all';
+        level?: 'error' | 'warning' | 'critical';
+        source?: string;
+        run_id?: string;
+        correlation_id?: string;
+    };
+    url: '/api/v1/staff/runtime-errors';
+};
+
+export type ListRuntimeErrorsErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type ListRuntimeErrorsError = ListRuntimeErrorsErrors[keyof ListRuntimeErrorsErrors];
+
+export type ListRuntimeErrorsResponses = {
+    /**
+     * Runtime error journal entries
+     */
+    200: RuntimeErrorItemsResponse;
+};
+
+export type ListRuntimeErrorsResponse = ListRuntimeErrorsResponses[keyof ListRuntimeErrorsResponses];
+
+export type MarkRuntimeErrorViewedData = {
+    body?: never;
+    path: {
+        runtime_error_id: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/runtime-errors/{runtime_error_id}/viewed';
+};
+
+export type MarkRuntimeErrorViewedErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+};
+
+export type MarkRuntimeErrorViewedError = MarkRuntimeErrorViewedErrors[keyof MarkRuntimeErrorViewedErrors];
+
+export type MarkRuntimeErrorViewedResponses = {
+    /**
+     * Runtime error marked as viewed
+     */
+    200: RuntimeError;
+};
+
+export type MarkRuntimeErrorViewedResponse = MarkRuntimeErrorViewedResponses[keyof MarkRuntimeErrorViewedResponses];
 
 export type DeleteRegistryImageTagData = {
     body: DeleteRegistryImageTagRequest;

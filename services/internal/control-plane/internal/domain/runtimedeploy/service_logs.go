@@ -2,9 +2,11 @@ package runtimedeploy
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 
 	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
+	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
 const maxRuntimeDeployTaskLogMessageLength = 4000
@@ -32,5 +34,22 @@ func (s *Service) appendTaskLogBestEffort(ctx context.Context, runID string, sta
 		MaxLines: 300,
 	}); err != nil {
 		s.logger.Warn("append runtime deploy task log failed", "run_id", runID, "stage", stage, "level", level, "err", err)
+	}
+	if strings.EqualFold(strings.TrimSpace(level), "error") && s.runtimeErr != nil {
+		source := "control-plane.runtime-deploy"
+		if stageToken := strings.TrimSpace(stage); stageToken != "" {
+			source += "." + stageToken
+		}
+		details, _ := json.Marshal(map[string]string{
+			"channel": "runtime_deploy_task_log",
+			"stage":   strings.TrimSpace(stage),
+		})
+		s.runtimeErr.RecordBestEffort(ctx, querytypes.RuntimeErrorRecordParams{
+			Source:      source,
+			Level:       "error",
+			Message:     message,
+			DetailsJSON: details,
+			RunID:       runID,
+		})
 	}
 }

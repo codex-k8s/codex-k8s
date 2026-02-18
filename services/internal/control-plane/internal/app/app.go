@@ -31,6 +31,7 @@ import (
 	registryimagesdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/registryimages"
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
 	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
+	runtimeerrordomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimeerror"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
 	agentrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agent"
@@ -47,6 +48,7 @@ import (
 	projecttokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projecttoken"
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/repocfg"
 	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/runtimedeploytask"
+	runtimeerrorrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/runtimeerror"
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/staffrun"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/user"
 	grpctransport "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/grpc"
@@ -96,6 +98,7 @@ func Run() error {
 	mcpActionRequests := mcpactionrequestrepo.NewRepository(pgxPool)
 	projectDatabases := projectdatabaserepo.NewRepository(pgxPool)
 	runtimeDeployTasks := runtimedeploytaskrepo.NewRepository(pgxPool)
+	runtimeErrors := runtimeerrorrepo.NewRepository(pgxPool)
 
 	tokenCrypto, err := tokencrypt.NewService(cfg.TokenEncryptionKey)
 	if err != nil {
@@ -235,6 +238,10 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("init registry images service: %w", err)
 	}
+	runtimeErrorService, err := runtimeerrordomain.NewService(runtimeErrors, logger)
+	if err != nil {
+		return fmt.Errorf("init runtime error service: %w", err)
+	}
 	runtimeDeployService, err := runtimedeploydomain.NewService(runtimedeploydomain.Config{
 		ServicesConfigPath:      cfg.ServicesConfigPath,
 		RepositoryRoot:          cfg.RepositoryRoot,
@@ -249,6 +256,7 @@ func Run() error {
 		Kubernetes: newRuntimeDeployKubernetesAdapter(k8sClient),
 		Tasks:      runtimeDeployTasks,
 		Registry:   registryClient,
+		RuntimeErr: runtimeErrorService,
 		Logger:     logger,
 	})
 	if err != nil {
@@ -313,7 +321,7 @@ func Run() error {
 		},
 		ProtectedProjectIDs:    bootstrapSeed.ProtectedProjectIDs,
 		ProtectedRepositoryIDs: bootstrapSeed.ProtectedRepositoryIDs,
-	}, users, projects, members, repos, projectTokens, configEntries, feedback, runs, runtimeDeployTasks, registryImagesService, k8sClient, tokenCrypto, platformTokens, githubRepoProvider, githubMgmtClient, runStatusService)
+	}, users, projects, members, repos, projectTokens, configEntries, feedback, runs, runtimeDeployTasks, runtimeErrors, registryImagesService, k8sClient, tokenCrypto, platformTokens, githubRepoProvider, githubMgmtClient, runStatusService)
 
 	// Ensure bootstrap users exist so that the first login can be matched by email.
 	if _, err := users.EnsureOwner(runCtx, cfg.BootstrapOwnerEmail); err != nil {
@@ -347,6 +355,7 @@ func Run() error {
 		AgentCallbacks: agentCallbackService,
 		RunStatus:      runStatusService,
 		RuntimeDeploy:  runtimeDeployService,
+		RuntimeErrors:  runtimeErrorService,
 		MCP:            mcpService,
 		CodexAuth:      codexAuthService,
 		Logger:         logger,

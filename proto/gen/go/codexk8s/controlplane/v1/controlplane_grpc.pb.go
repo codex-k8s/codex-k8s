@@ -60,6 +60,8 @@ const (
 	ControlPlaneService_PrepareRunEnvironment_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/PrepareRunEnvironment"
 	ControlPlaneService_ListRuntimeDeployTasks_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/ListRuntimeDeployTasks"
 	ControlPlaneService_GetRuntimeDeployTask_FullMethodName                 = "/codexk8s.controlplane.v1.ControlPlaneService/GetRuntimeDeployTask"
+	ControlPlaneService_ListRuntimeErrors_FullMethodName                    = "/codexk8s.controlplane.v1.ControlPlaneService/ListRuntimeErrors"
+	ControlPlaneService_MarkRuntimeErrorViewed_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/MarkRuntimeErrorViewed"
 	ControlPlaneService_ListRegistryImages_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/ListRegistryImages"
 	ControlPlaneService_DeleteRegistryImageTag_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/DeleteRegistryImageTag"
 	ControlPlaneService_CleanupRegistryImages_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/CleanupRegistryImages"
@@ -118,6 +120,8 @@ type ControlPlaneServiceClient interface {
 	PrepareRunEnvironment(ctx context.Context, in *PrepareRunEnvironmentRequest, opts ...grpc.CallOption) (*PrepareRunEnvironmentResponse, error)
 	ListRuntimeDeployTasks(ctx context.Context, in *ListRuntimeDeployTasksRequest, opts ...grpc.CallOption) (*ListRuntimeDeployTasksResponse, error)
 	GetRuntimeDeployTask(ctx context.Context, in *GetRuntimeDeployTaskRequest, opts ...grpc.CallOption) (*RuntimeDeployTask, error)
+	ListRuntimeErrors(ctx context.Context, in *ListRuntimeErrorsRequest, opts ...grpc.CallOption) (*ListRuntimeErrorsResponse, error)
+	MarkRuntimeErrorViewed(ctx context.Context, in *MarkRuntimeErrorViewedRequest, opts ...grpc.CallOption) (*RuntimeError, error)
 	ListRegistryImages(ctx context.Context, in *ListRegistryImagesRequest, opts ...grpc.CallOption) (*ListRegistryImagesResponse, error)
 	DeleteRegistryImageTag(ctx context.Context, in *DeleteRegistryImageTagRequest, opts ...grpc.CallOption) (*RegistryImageDeleteResult, error)
 	CleanupRegistryImages(ctx context.Context, in *CleanupRegistryImagesRequest, opts ...grpc.CallOption) (*CleanupRegistryImagesResponse, error)
@@ -539,6 +543,26 @@ func (c *controlPlaneServiceClient) GetRuntimeDeployTask(ctx context.Context, in
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) ListRuntimeErrors(ctx context.Context, in *ListRuntimeErrorsRequest, opts ...grpc.CallOption) (*ListRuntimeErrorsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListRuntimeErrorsResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ListRuntimeErrors_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) MarkRuntimeErrorViewed(ctx context.Context, in *MarkRuntimeErrorViewedRequest, opts ...grpc.CallOption) (*RuntimeError, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RuntimeError)
+	err := c.cc.Invoke(ctx, ControlPlaneService_MarkRuntimeErrorViewed_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) ListRegistryImages(ctx context.Context, in *ListRegistryImagesRequest, opts ...grpc.CallOption) (*ListRegistryImagesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListRegistryImagesResponse)
@@ -685,6 +709,8 @@ type ControlPlaneServiceServer interface {
 	PrepareRunEnvironment(context.Context, *PrepareRunEnvironmentRequest) (*PrepareRunEnvironmentResponse, error)
 	ListRuntimeDeployTasks(context.Context, *ListRuntimeDeployTasksRequest) (*ListRuntimeDeployTasksResponse, error)
 	GetRuntimeDeployTask(context.Context, *GetRuntimeDeployTaskRequest) (*RuntimeDeployTask, error)
+	ListRuntimeErrors(context.Context, *ListRuntimeErrorsRequest) (*ListRuntimeErrorsResponse, error)
+	MarkRuntimeErrorViewed(context.Context, *MarkRuntimeErrorViewedRequest) (*RuntimeError, error)
 	ListRegistryImages(context.Context, *ListRegistryImagesRequest) (*ListRegistryImagesResponse, error)
 	DeleteRegistryImageTag(context.Context, *DeleteRegistryImageTagRequest) (*RegistryImageDeleteResult, error)
 	CleanupRegistryImages(context.Context, *CleanupRegistryImagesRequest) (*CleanupRegistryImagesResponse, error)
@@ -825,6 +851,12 @@ func (UnimplementedControlPlaneServiceServer) ListRuntimeDeployTasks(context.Con
 }
 func (UnimplementedControlPlaneServiceServer) GetRuntimeDeployTask(context.Context, *GetRuntimeDeployTaskRequest) (*RuntimeDeployTask, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRuntimeDeployTask not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ListRuntimeErrors(context.Context, *ListRuntimeErrorsRequest) (*ListRuntimeErrorsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRuntimeErrors not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) MarkRuntimeErrorViewed(context.Context, *MarkRuntimeErrorViewedRequest) (*RuntimeError, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MarkRuntimeErrorViewed not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) ListRegistryImages(context.Context, *ListRegistryImagesRequest) (*ListRegistryImagesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRegistryImages not implemented")
@@ -1597,6 +1629,42 @@ func _ControlPlaneService_GetRuntimeDeployTask_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_ListRuntimeErrors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRuntimeErrorsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ListRuntimeErrors(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ListRuntimeErrors_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ListRuntimeErrors(ctx, req.(*ListRuntimeErrorsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_MarkRuntimeErrorViewed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarkRuntimeErrorViewedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).MarkRuntimeErrorViewed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_MarkRuntimeErrorViewed_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).MarkRuntimeErrorViewed(ctx, req.(*MarkRuntimeErrorViewedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_ListRegistryImages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListRegistryImagesRequest)
 	if err := dec(in); err != nil {
@@ -1943,6 +2011,14 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRuntimeDeployTask",
 			Handler:    _ControlPlaneService_GetRuntimeDeployTask_Handler,
+		},
+		{
+			MethodName: "ListRuntimeErrors",
+			Handler:    _ControlPlaneService_ListRuntimeErrors_Handler,
+		},
+		{
+			MethodName: "MarkRuntimeErrorViewed",
+			Handler:    _ControlPlaneService_MarkRuntimeErrorViewed_Handler,
 		},
 		{
 			MethodName: "ListRegistryImages",

@@ -523,6 +523,72 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /api/v1/staff/runtime-errors:
+    get:
+      summary: List runtime error journal entries
+      operationId: listRuntimeErrors
+      tags: [staff-runtime-deploy]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - in: query
+          name: state
+          schema:
+            type: string
+            enum: [active, viewed, all]
+        - in: query
+          name: level
+          schema:
+            type: string
+            enum: [error, warning, critical]
+        - in: query
+          name: source
+          schema:
+            type: string
+        - in: query
+          name: run_id
+          schema:
+            type: string
+        - in: query
+          name: correlation_id
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Runtime error journal entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimeErrorItemsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/staff/runtime-errors/{runtime_error_id}/viewed:
+    post:
+      summary: Mark runtime error as viewed
+      operationId: markRuntimeErrorViewed
+      tags: [staff-runtime-deploy]
+      parameters:
+        - $ref: "#/components/parameters/RuntimeErrorID"
+      responses:
+        "200":
+          description: Runtime error marked as viewed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimeError"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /api/v1/staff/runtime-deploy/images:
     get:
       summary: List internal registry images
@@ -1090,6 +1156,12 @@ components:
       required: true
       schema:
         type: string
+    RuntimeErrorID:
+      in: path
+      name: runtime_error_id
+      required: true
+      schema:
+        type: string
     ApprovalRequestID:
       in: path
       name: approval_request_id
@@ -1591,6 +1663,51 @@ components:
           items:
             $ref: "#/components/schemas/RuntimeDeployTaskLog"
 
+    RuntimeError:
+      type: object
+      additionalProperties: false
+      required: [id, source, level, message, details_json, created_at]
+      properties:
+        id:
+          type: string
+        source:
+          type: string
+        level:
+          type: string
+          enum: [error, warning, critical]
+        message:
+          type: string
+        details_json:
+          type: string
+        stack_trace:
+          type: string
+          nullable: true
+        correlation_id:
+          type: string
+          nullable: true
+        run_id:
+          type: string
+          nullable: true
+        project_id:
+          type: string
+          nullable: true
+        namespace:
+          type: string
+          nullable: true
+        job_name:
+          type: string
+          nullable: true
+        viewed_at:
+          type: string
+          format: date-time
+          nullable: true
+        viewed_by:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
     RegistryImageTag:
       type: object
       additionalProperties: false
@@ -2067,6 +2184,16 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RuntimeDeployTask"
+
+    RuntimeErrorItemsResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuntimeError"
 
     RegistryImageRepositoryItemsResponse:
       type: object

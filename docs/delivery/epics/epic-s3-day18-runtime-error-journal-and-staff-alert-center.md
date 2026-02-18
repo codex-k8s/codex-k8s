@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S3-D18
 type: epic
 title: "Epic S3 Day 18: Runtime error journal and staff alert center"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-18
 updated_at: 2026-02-18
@@ -55,3 +55,26 @@ approvals:
 ## Риски/зависимости
 - Риск чрезмерного шума: нужна дедупликация/aggregation policy для повторяющихся ошибок.
 - Риск утечки секретов в payload/stack: обязательный redaction на ingress error journal.
+
+## Фактический результат (выполнено)
+- Добавлена новая таблица `runtime_errors` c индексами active/feed и связями на `agent_runs`, `projects`, `users`.
+- Реализованы доменные типы, repository contract и PostgreSQL-репозиторий для runtime error journal.
+- Добавлен доменный service `runtimeerror` (нормализация level/payload, safe JSON details, best-effort запись).
+- Добавлен ingest-hook в control-plane runtime deploy pipeline:
+  - при error-level task logs запись дублируется в `runtime_errors` с контекстом (`run_id`, `source`, `stage`, `namespace/job`).
+- Расширен gRPC control-plane API:
+  - `ListRuntimeErrors`;
+  - `MarkRuntimeErrorViewed`.
+- Расширен staff HTTP API (OpenAPI + api-gateway):
+  - `GET /api/v1/staff/runtime-errors` (active/viewed/all + фильтры);
+  - `POST /api/v1/staff/runtime-errors/{runtime_error_id}/viewed`.
+- Реализован staff UI alert center:
+  - глобальный stack в правом нижнем углу (до 5 свежих ошибок);
+  - polling-refresh без перезагрузки страницы;
+  - `dismiss -> mark viewed`;
+  - быстрый переход к run/deploy details по `run_id`, если доступен.
+
+## Проверки
+- `go test ./services/internal/control-plane/...` — passed.
+- `go test ./services/external/api-gateway/...` — passed.
+- `npm --prefix services/staff/web-console run build` — passed.

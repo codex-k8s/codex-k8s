@@ -289,6 +289,15 @@ export const ru = {
     search: "Поиск по логам",
     noLines: "Строк логов нет.",
   },
+  runtimeErrors: {
+    open: "Открыть",
+    dismiss: "Скрыть",
+    levels: {
+      error: "Ошибка платформы",
+      warning: "Предупреждение платформы",
+      critical: "Критическая ошибка платформы",
+    },
+  },
   pages: {
     projects: {
       title: "Проекты",
