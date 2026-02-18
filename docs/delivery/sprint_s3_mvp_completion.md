@@ -48,7 +48,8 @@ approvals:
 - Realtime transport before e2e:
   - backend event bus: PostgreSQL event log + `LISTEN/NOTIFY`;
   - `api-gateway` WebSocket backplane с catch-up через `last_event_id`;
-  - frontend realtime subscriptions (runs/deploy/errors) с fallback polling.
+  - frontend realtime subscriptions (runs/deploy/errors/logs/events) с fallback polling;
+  - удаление кнопок `Обновить` в экранах с realtime-подпиской.
 
 ## План эпиков по дням
 
@@ -89,5 +90,6 @@ approvals:
 - Полный label/stage контур формально документирован и подтверждён regression evidence.
 - Для `run:self-improve` есть минимум один воспроизводимый цикл с улучшениями в docs/prompt/tools.
 - Core-flow недоделки закрыты: prompt/docs context, env secrets, runtime error alerts, OAuth bypass, frontend hardening.
-- Realtime контур закрыт: multi-server backend bus + frontend WS subscriptions + fallback mode.
+- Realtime контур закрыт: multi-server backend bus + frontend WS subscriptions (включая логи/эвенты) + fallback mode.
+- Кнопки `Обновить` удалены в realtime-экранах, обновление выполняется автоматически.
 - Финальный Day21 e2e проходит без P0 блокеров и формирует owner-ready closeout пакет.
