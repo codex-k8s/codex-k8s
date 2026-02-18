@@ -1,6 +1,11 @@
 package docset
 
-import "testing"
+import (
+	"testing"
+
+	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
+)
 
 func TestBuildSafeSyncPlan_UpdatesAndDrift(t *testing.T) {
 	lock := NewLock(
@@ -8,7 +13,7 @@ func TestBuildSafeSyncPlan_UpdatesAndDrift(t *testing.T) {
 		"oldref",
 		"en",
 		[]string{"base"},
-		[]LockFile{
+		[]valuetypes.DocsetLockFile{
 			{Path: "docs/a.md", SHA256: "sha_old_a", SourcePath: "src/a_en.md"},
 			{Path: "docs/b.md", SHA256: "sha_old_b", SourcePath: "src/b_en.md"},
 			{Path: "docs/c.md", SHA256: "sha_old_c", SourcePath: "src/c_en.md"},
@@ -16,27 +21,27 @@ func TestBuildSafeSyncPlan_UpdatesAndDrift(t *testing.T) {
 		},
 	)
 
-	manifest := Manifest{
+	manifest := entitytypes.DocsetManifest{
 		ManifestVersion: 1,
-		Docset:          ManifestDocset{ID: "docset-1"},
-		Items: []ManifestItem{
+		Docset:          entitytypes.DocsetManifestDocset{ID: "docset-1"},
+		Items: []entitytypes.DocsetManifestItem{
 			{
 				ID:          "file:a",
 				ImportPath:  "docs/a.md",
-				SourcePaths: LocalizedText{EN: "src/a2_en.md"},
-				SHA256:      LocalizedText{EN: "sha_new_a"},
+				SourcePaths: entitytypes.DocsetLocalizedText{EN: "src/a2_en.md"},
+				SHA256:      entitytypes.DocsetLocalizedText{EN: "sha_new_a"},
 			},
 			{
 				ID:          "file:b",
 				ImportPath:  "docs/b.md",
-				SourcePaths: LocalizedText{EN: "src/b2_en.md"},
-				SHA256:      LocalizedText{EN: "sha_old_b"},
+				SourcePaths: entitytypes.DocsetLocalizedText{EN: "src/b2_en.md"},
+				SHA256:      entitytypes.DocsetLocalizedText{EN: "sha_old_b"},
 			},
 			{
 				ID:          "file:d",
 				ImportPath:  "docs/d.md",
-				SourcePaths: LocalizedText{EN: "src/d2_en.md"},
-				SHA256:      LocalizedText{EN: ""},
+				SourcePaths: entitytypes.DocsetLocalizedText{EN: "src/d2_en.md"},
+				SHA256:      entitytypes.DocsetLocalizedText{EN: ""},
 			},
 		},
 	}
@@ -67,7 +72,7 @@ func TestBuildSafeSyncPlan_UpdatesAndDrift(t *testing.T) {
 		t.Fatalf("Drift len=%d, want 3", len(plan.Drift))
 	}
 
-	byPath := make(map[string]SyncDecision, len(plan.Drift))
+	byPath := make(map[string]valuetypes.DocsetSyncDecision, len(plan.Drift))
 	for _, d := range plan.Drift {
 		byPath[d.Path] = d
 	}
@@ -89,13 +94,13 @@ func TestUpdateLockForSync(t *testing.T) {
 		"oldref",
 		"en",
 		[]string{"base"},
-		[]LockFile{
+		[]valuetypes.DocsetLockFile{
 			{Path: "docs/a.md", SHA256: "sha_old_a", SourcePath: "src/a_en.md"},
 			{Path: "docs/b.md", SHA256: "sha_old_b", SourcePath: "src/b_en.md"},
 		},
 	)
 
-	next, err := UpdateLockForSync(lock, "newref", []LockFile{
+	next, err := UpdateLockForSync(lock, "newref", []valuetypes.DocsetLockFile{
 		{Path: "docs/a.md", SHA256: "sha_new_a", SourcePath: "src/a2_en.md"},
 	})
 	if err != nil {
