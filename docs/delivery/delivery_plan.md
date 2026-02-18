@@ -83,6 +83,8 @@ approvals:
 - Day 18: runtime error journal + staff alert center (stacked alerts, mark-as-viewed).
 - Day 19: run access key + controlled OAuth bypass flow.
 - Day 20: frontend manual QA hardening loop (Owner-driven bug cycle до full e2e).
+- Day 20.5: realtime шина на PostgreSQL (`event log + LISTEN/NOTIFY`) + multi-server WebSocket backplane.
+- Day 20.6: интеграция realtime подписок в staff UI (runs/deploy/errors) + fallback polling.
 - Day 21: full e2e regression/security gate + MVP closeout/handover и переход к post-MVP roadmap.
 
 ### Daily delivery contract (обязательный)
