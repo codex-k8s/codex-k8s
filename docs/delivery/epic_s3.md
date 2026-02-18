@@ -17,8 +17,9 @@ approvals:
 # Epic Catalog: Sprint S3 (MVP completion)
 
 ## TL;DR
-- Sprint S3 завершает MVP и переносит платформу от узкого `run:dev` контура к полному stage-driven циклу.
-- Центральные deliverables: full stage labels, staff debug observability, MCP control tools, `run:self-improve` loop, declarative full-env deploy, docset import/sync, unified config/secrets governance, onboarding preflight и новый staff UI контур на Vuetify.
+- Sprint S3 завершает MVP и переводит платформу в устойчивый full stage-driven контур.
+- Центральные deliverables: full stage labels, staff debug observability, MCP control tools, `run:self-improve` loop, declarative full-env deploy, docset import/sync, unified config/secrets governance, onboarding preflight.
+- Дополнительный фокус финальной части S3: закрыть core-flow недоделки (prompt/docs context, env-scoped secrets, runtime error journal, OAuth bypass key, frontend hardening) до полного e2e gate.
 
 ## Эпики Sprint S3
 - Day 1: `docs/delivery/epics/epic-s3-day1-full-stage-and-label-activation.md`
@@ -37,6 +38,11 @@ approvals:
 - Day 14: `docs/delivery/epics/epic-s3-day14-repository-onboarding-preflight.md`
 - Day 15: `docs/delivery/epics/epic-s3-day15-mvp-closeout-and-handover.md`
 - Day 16: `docs/delivery/epics/epic-s3-day16-grpc-transport-boundary-hardening.md`
+- Day 17: `docs/delivery/epics/epic-s3-day17-environment-scoped-secret-overrides-and-oauth-callbacks.md`
+- Day 18: `docs/delivery/epics/epic-s3-day18-runtime-error-journal-and-staff-alert-center.md`
+- Day 19: `docs/delivery/epics/epic-s3-day19-run-access-key-and-oauth-bypass.md`
+- Day 20: `docs/delivery/epics/epic-s3-day20-frontend-manual-qa-hardening-loop.md`
+- Day 21: `docs/delivery/epics/epic-s3-day21-e2e-regression-and-mvp-closeout.md`
 
 ## Прогресс
 - Day 1 (`full stage and label activation`) завершён и согласован Owner.
@@ -47,13 +53,22 @@ approvals:
 - Day 6 (`run:self-improve` ingestion/diagnostics) завершён.
 - Day 7 (`run:self-improve` updater/PR flow) завершён.
 - Day 8 (`agent toolchain auto-extension`) завершён.
+- Day 9 (`declarative full-env deploy and runtime parity`) завершён; финальный e2e контур вынесен в Day21.
 - Day 10 (`staff console redesign on Vuetify`) завершён.
+- Day 11 (`full-env slots + subdomains + TLS`) завершён.
 - Day 12 (`docset import + safe sync`) завершён.
 - Day 13 (`unified config/secrets governance + GitHub creds fallback`) завершён.
 - Day 14 (`repository onboarding preflight`) завершён.
-- Day 11 (`full-env slots + subdomains + TLS`) завершён.
 - Day 16 (`gRPC transport boundary hardening`) завершён как refactoring-hygiene эпик по Issue #45.
-- Day 9 и Day15 остаются в статусе planned/in-progress.
+- В работе остаются Day15/Day17/Day18/Day19/Day20 (core-flow + frontend hardening), после них финальный Day21 full e2e gate.
+
+## Порядок закрытия остатка S3
+1. Day15: docs tree + role prompt matrix + GitHub service templates.
+2. Day17: environment-scoped secret overrides + OAuth callback strategy.
+3. Day18: runtime error journal + staff alert center.
+4. Day19: run access key + OAuth bypass.
+5. Day20: manual frontend QA hardening loop.
+6. Day21: full e2e regression gate + MVP closeout.
 
 ## Критерий успеха Sprint S3 (выжимка)
 - Все MVP-сценарии из Issue #19 покрыты кодом, тестами и эксплуатационной документацией.

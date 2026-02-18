@@ -63,7 +63,7 @@ approvals:
 - Day 6 (completed): approval matrix + MCP control tools + audit hardening.
 - Day 7 (completed): MVP readiness regression gate + Sprint S3 kickoff package (`docs/delivery/regression_s2_gate.md`).
 
-### Sprint S3: MVP completion (Day 1..15)
+### Sprint S3: MVP completion (Day 1..21)
 - Day 1: full stage/label activation.
 - Day 2: staff runtime debug console.
 - Day 3: deterministic secret sync (GitHub + Kubernetes).
@@ -77,8 +77,13 @@ approvals:
 - Day 12 (completed): docset import + safe sync (`agent-knowledge-base` -> projects).
 - Day 13 (completed): unified config/secrets governance (platform/project/repo) + GitHub creds fallback.
 - Day 14 (completed): repository onboarding preflight (token scopes + GitHub ops + domain resolution) + bot params per repo.
-- Day 15: MVP regression/security gate + closeout/handover и переход к post-MVP roadmap.
 - Day 16 (completed): gRPC transport boundary hardening (transport -> service -> repository) по Issue #45.
+- Day 15: prompt context overhaul (`services.yaml` docs tree + role prompt matrix + GitHub service messages templates).
+- Day 17: environment-scoped secret overrides + OAuth callback strategy (без project-specific hardcode).
+- Day 18: runtime error journal + staff alert center (stacked alerts, mark-as-viewed).
+- Day 19: run access key + controlled OAuth bypass flow.
+- Day 20: frontend manual QA hardening loop (Owner-driven bug cycle до full e2e).
+- Day 21: full e2e regression/security gate + MVP closeout/handover и переход к post-MVP roadmap.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
