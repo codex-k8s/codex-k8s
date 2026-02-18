@@ -115,9 +115,16 @@ const (
 
 // Defines values for RuntimeDeployTaskLogLevel.
 const (
-	Error RuntimeDeployTaskLogLevel = "error"
-	Info  RuntimeDeployTaskLogLevel = "info"
-	Warn  RuntimeDeployTaskLogLevel = "warn"
+	RuntimeDeployTaskLogLevelError RuntimeDeployTaskLogLevel = "error"
+	RuntimeDeployTaskLogLevelInfo  RuntimeDeployTaskLogLevel = "info"
+	RuntimeDeployTaskLogLevelWarn  RuntimeDeployTaskLogLevel = "warn"
+)
+
+// Defines values for RuntimeErrorLevel.
+const (
+	RuntimeErrorLevelCritical RuntimeErrorLevel = "critical"
+	RuntimeErrorLevelError    RuntimeErrorLevel = "error"
+	RuntimeErrorLevelWarning  RuntimeErrorLevel = "warning"
 )
 
 // Defines values for UpsertConfigEntryRequestKind.
@@ -159,6 +166,20 @@ const (
 	Pending   ListRuntimeDeployTasksParamsStatus = "pending"
 	Running   ListRuntimeDeployTasksParamsStatus = "running"
 	Succeeded ListRuntimeDeployTasksParamsStatus = "succeeded"
+)
+
+// Defines values for ListRuntimeErrorsParamsState.
+const (
+	Active ListRuntimeErrorsParamsState = "active"
+	All    ListRuntimeErrorsParamsState = "all"
+	Viewed ListRuntimeErrorsParamsState = "viewed"
+)
+
+// Defines values for ListRuntimeErrorsParamsLevel.
+const (
+	Critical ListRuntimeErrorsParamsLevel = "critical"
+	Error    ListRuntimeErrorsParamsLevel = "error"
+	Warning  ListRuntimeErrorsParamsLevel = "warning"
 )
 
 // ApprovalRequest defines model for ApprovalRequest.
@@ -575,6 +596,32 @@ type RuntimeDeployTaskLog struct {
 // RuntimeDeployTaskLogLevel defines model for RuntimeDeployTaskLog.Level.
 type RuntimeDeployTaskLogLevel string
 
+// RuntimeError defines model for RuntimeError.
+type RuntimeError struct {
+	CorrelationId *string           `json:"correlation_id"`
+	CreatedAt     time.Time         `json:"created_at"`
+	DetailsJson   string            `json:"details_json"`
+	Id            string            `json:"id"`
+	JobName       *string           `json:"job_name"`
+	Level         RuntimeErrorLevel `json:"level"`
+	Message       string            `json:"message"`
+	Namespace     *string           `json:"namespace"`
+	ProjectId     *string           `json:"project_id"`
+	RunId         *string           `json:"run_id"`
+	Source        string            `json:"source"`
+	StackTrace    *string           `json:"stack_trace"`
+	ViewedAt      *time.Time        `json:"viewed_at"`
+	ViewedBy      *string           `json:"viewed_by"`
+}
+
+// RuntimeErrorLevel defines model for RuntimeError.Level.
+type RuntimeErrorLevel string
+
+// RuntimeErrorItemsResponse defines model for RuntimeErrorItemsResponse.
+type RuntimeErrorItemsResponse struct {
+	Items []RuntimeError `json:"items"`
+}
+
 // SetProjectMemberLearningModeRequest defines model for SetProjectMemberLearningModeRequest.
 type SetProjectMemberLearningModeRequest struct {
 	Enabled *bool `json:"enabled"`
@@ -699,6 +746,9 @@ type RunID = string
 
 // RunStatusFilter defines model for RunStatusFilter.
 type RunStatusFilter = string
+
+// RuntimeErrorID defines model for RuntimeErrorID.
+type RuntimeErrorID = string
 
 // TailLines defines model for TailLines.
 type TailLines = int
@@ -839,6 +889,22 @@ type ListRuntimeDeployTasksParams struct {
 
 // ListRuntimeDeployTasksParamsStatus defines parameters for ListRuntimeDeployTasks.
 type ListRuntimeDeployTasksParamsStatus string
+
+// ListRuntimeErrorsParams defines parameters for ListRuntimeErrors.
+type ListRuntimeErrorsParams struct {
+	Limit         *Limit                        `form:"limit,omitempty" json:"limit,omitempty"`
+	State         *ListRuntimeErrorsParamsState `form:"state,omitempty" json:"state,omitempty"`
+	Level         *ListRuntimeErrorsParamsLevel `form:"level,omitempty" json:"level,omitempty"`
+	Source        *string                       `form:"source,omitempty" json:"source,omitempty"`
+	RunId         *string                       `form:"run_id,omitempty" json:"run_id,omitempty"`
+	CorrelationId *string                       `form:"correlation_id,omitempty" json:"correlation_id,omitempty"`
+}
+
+// ListRuntimeErrorsParamsState defines parameters for ListRuntimeErrors.
+type ListRuntimeErrorsParamsState string
+
+// ListRuntimeErrorsParamsLevel defines parameters for ListRuntimeErrors.
+type ListRuntimeErrorsParamsLevel string
 
 // ListUsersParams defines parameters for ListUsers.
 type ListUsersParams struct {
@@ -1155,6 +1221,12 @@ type ServerInterface interface {
 	// Get runtime deploy task details
 	// (GET /api/v1/staff/runtime-deploy/tasks/{run_id})
 	GetRuntimeDeployTask(w http.ResponseWriter, r *http.Request, runId RunID)
+	// List runtime error journal entries
+	// (GET /api/v1/staff/runtime-errors)
+	ListRuntimeErrors(w http.ResponseWriter, r *http.Request, params ListRuntimeErrorsParams)
+	// Mark runtime error as viewed
+	// (POST /api/v1/staff/runtime-errors/{runtime_error_id}/viewed)
+	MarkRuntimeErrorViewed(w http.ResponseWriter, r *http.Request, runtimeErrorId RuntimeErrorID)
 	// List users
 	// (GET /api/v1/staff/users)
 	ListUsers(w http.ResponseWriter, r *http.Request, params ListUsersParams)
@@ -2450,6 +2522,98 @@ func (siw *ServerInterfaceWrapper) GetRuntimeDeployTask(w http.ResponseWriter, r
 	handler.ServeHTTP(w, r)
 }
 
+// ListRuntimeErrors operation middleware
+func (siw *ServerInterfaceWrapper) ListRuntimeErrors(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRuntimeErrorsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "state" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "state", r.URL.Query(), &params.State)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "level" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "level", r.URL.Query(), &params.Level)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "level", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "source" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "source", r.URL.Query(), &params.Source)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "source", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "run_id" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "run_id", r.URL.Query(), &params.RunId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "run_id", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "correlation_id" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "correlation_id", r.URL.Query(), &params.CorrelationId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "correlation_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRuntimeErrors(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MarkRuntimeErrorViewed operation middleware
+func (siw *ServerInterfaceWrapper) MarkRuntimeErrorViewed(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "runtime_error_id" -------------
+	var runtimeErrorId RuntimeErrorID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "runtime_error_id", r.PathValue("runtime_error_id"), &runtimeErrorId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "runtime_error_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MarkRuntimeErrorViewed(w, r, runtimeErrorId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListUsers operation middleware
 func (siw *ServerInterfaceWrapper) ListUsers(w http.ResponseWriter, r *http.Request) {
 
@@ -2768,6 +2932,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/runtime-deploy/images/cleanup", wrapper.CleanupRegistryImages)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runtime-deploy/tasks", wrapper.ListRuntimeDeployTasks)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runtime-deploy/tasks/{run_id}", wrapper.GetRuntimeDeployTask)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runtime-errors", wrapper.ListRuntimeErrors)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/runtime-errors/{runtime_error_id}/viewed", wrapper.MarkRuntimeErrorViewed)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/users", wrapper.ListUsers)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/users", wrapper.CreateUser)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/staff/users/{user_id}", wrapper.DeleteUser)
@@ -4543,6 +4709,103 @@ func (response GetRuntimeDeployTask404JSONResponse) VisitGetRuntimeDeployTaskRes
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ListRuntimeErrorsRequestObject struct {
+	Params ListRuntimeErrorsParams
+}
+
+type ListRuntimeErrorsResponseObject interface {
+	VisitListRuntimeErrorsResponse(w http.ResponseWriter) error
+}
+
+type ListRuntimeErrors200JSONResponse RuntimeErrorItemsResponse
+
+func (response ListRuntimeErrors200JSONResponse) VisitListRuntimeErrorsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRuntimeErrors400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListRuntimeErrors400JSONResponse) VisitListRuntimeErrorsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRuntimeErrors401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListRuntimeErrors401JSONResponse) VisitListRuntimeErrorsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRuntimeErrors403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListRuntimeErrors403JSONResponse) VisitListRuntimeErrorsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type MarkRuntimeErrorViewedRequestObject struct {
+	RuntimeErrorId RuntimeErrorID `json:"runtime_error_id"`
+}
+
+type MarkRuntimeErrorViewedResponseObject interface {
+	VisitMarkRuntimeErrorViewedResponse(w http.ResponseWriter) error
+}
+
+type MarkRuntimeErrorViewed200JSONResponse RuntimeError
+
+func (response MarkRuntimeErrorViewed200JSONResponse) VisitMarkRuntimeErrorViewedResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type MarkRuntimeErrorViewed400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response MarkRuntimeErrorViewed400JSONResponse) VisitMarkRuntimeErrorViewedResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type MarkRuntimeErrorViewed401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response MarkRuntimeErrorViewed401JSONResponse) VisitMarkRuntimeErrorViewedResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type MarkRuntimeErrorViewed403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response MarkRuntimeErrorViewed403JSONResponse) VisitMarkRuntimeErrorViewedResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type MarkRuntimeErrorViewed404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response MarkRuntimeErrorViewed404JSONResponse) VisitMarkRuntimeErrorViewedResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListUsersRequestObject struct {
 	Params ListUsersParams
 }
@@ -4847,6 +5110,12 @@ type StrictServerInterface interface {
 	// Get runtime deploy task details
 	// (GET /api/v1/staff/runtime-deploy/tasks/{run_id})
 	GetRuntimeDeployTask(ctx context.Context, request GetRuntimeDeployTaskRequestObject) (GetRuntimeDeployTaskResponseObject, error)
+	// List runtime error journal entries
+	// (GET /api/v1/staff/runtime-errors)
+	ListRuntimeErrors(ctx context.Context, request ListRuntimeErrorsRequestObject) (ListRuntimeErrorsResponseObject, error)
+	// Mark runtime error as viewed
+	// (POST /api/v1/staff/runtime-errors/{runtime_error_id}/viewed)
+	MarkRuntimeErrorViewed(ctx context.Context, request MarkRuntimeErrorViewedRequestObject) (MarkRuntimeErrorViewedResponseObject, error)
 	// List users
 	// (GET /api/v1/staff/users)
 	ListUsers(ctx context.Context, request ListUsersRequestObject) (ListUsersResponseObject, error)
@@ -6069,6 +6338,58 @@ func (sh *strictHandler) GetRuntimeDeployTask(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetRuntimeDeployTaskResponseObject); ok {
 		if err := validResponse.VisitGetRuntimeDeployTaskResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListRuntimeErrors operation middleware
+func (sh *strictHandler) ListRuntimeErrors(w http.ResponseWriter, r *http.Request, params ListRuntimeErrorsParams) {
+	var request ListRuntimeErrorsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListRuntimeErrors(ctx, request.(ListRuntimeErrorsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListRuntimeErrors")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListRuntimeErrorsResponseObject); ok {
+		if err := validResponse.VisitListRuntimeErrorsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MarkRuntimeErrorViewed operation middleware
+func (sh *strictHandler) MarkRuntimeErrorViewed(w http.ResponseWriter, r *http.Request, runtimeErrorId RuntimeErrorID) {
+	var request MarkRuntimeErrorViewedRequestObject
+
+	request.RuntimeErrorId = runtimeErrorId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MarkRuntimeErrorViewed(ctx, request.(MarkRuntimeErrorViewedRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MarkRuntimeErrorViewed")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MarkRuntimeErrorViewedResponseObject); ok {
+		if err := validResponse.VisitMarkRuntimeErrorViewedResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

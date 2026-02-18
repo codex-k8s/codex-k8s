@@ -10,7 +10,7 @@ related_issues: [19]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: ""
 ---
 

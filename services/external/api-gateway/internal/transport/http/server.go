@@ -110,6 +110,8 @@ func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Clien
 	staffGroup.GET("/runs/:run_id/learning-feedback", staffH.ListRunLearningFeedback)
 	staffGroup.GET("/runtime-deploy/tasks", staffH.ListRuntimeDeployTasks)
 	staffGroup.GET("/runtime-deploy/tasks/:run_id", staffH.GetRuntimeDeployTask)
+	staffGroup.GET("/runtime-errors", staffH.ListRuntimeErrors)
+	staffGroup.POST("/runtime-errors/:runtime_error_id/viewed", staffH.MarkRuntimeErrorViewed)
 	staffGroup.GET("/runtime-deploy/images", staffH.ListRegistryImages)
 	staffGroup.DELETE("/runtime-deploy/images", staffH.DeleteRegistryImageTag)
 	staffGroup.POST("/runtime-deploy/images/cleanup", staffH.CleanupRegistryImages)

@@ -7,6 +7,7 @@ import (
 
 	"github.com/codex-k8s/codex-k8s/libs/go/registry"
 	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
+	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
 // PrepareParams describes one run-bound environment preparation request.
@@ -64,6 +65,10 @@ type RegistryClient interface {
 	DeleteTag(ctx context.Context, repository string, tag string) (registry.DeleteResult, error)
 }
 
+type runtimeErrorRecorder interface {
+	RecordBestEffort(ctx context.Context, params querytypes.RuntimeErrorRecordParams)
+}
+
 // AppliedResourceRef identifies one Kubernetes object applied from rendered manifest.
 type AppliedResourceRef struct {
 	APIVersion string
@@ -77,5 +82,6 @@ type Dependencies struct {
 	Kubernetes KubernetesClient
 	Tasks      runtimedeploytaskrepo.Repository
 	Registry   RegistryClient
+	RuntimeErr runtimeErrorRecorder
 	Logger     *slog.Logger
 }

@@ -289,6 +289,15 @@ export const en = {
     search: "Search in logs",
     noLines: "No log lines.",
   },
+  runtimeErrors: {
+    open: "Open",
+    dismiss: "Dismiss",
+    levels: {
+      error: "Platform error",
+      warning: "Platform warning",
+      critical: "Platform critical error",
+    },
+  },
   pages: {
     projects: {
       title: "Projects",

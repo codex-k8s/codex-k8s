@@ -25,11 +25,12 @@ var imageTagSanitizer = regexp.MustCompile(`[^a-zA-Z0-9._-]`)
 
 // Service prepares runtime environments from services.yaml contract.
 type Service struct {
-	cfg      Config
-	k8s      KubernetesClient
-	tasks    runtimedeploytaskrepo.Repository
-	registry RegistryClient
-	logger   *slog.Logger
+	cfg        Config
+	k8s        KubernetesClient
+	tasks      runtimedeploytaskrepo.Repository
+	registry   RegistryClient
+	runtimeErr runtimeErrorRecorder
+	logger     *slog.Logger
 }
 
 // NewService creates runtime deployment service.
@@ -72,10 +73,11 @@ func NewService(cfg Config, deps Dependencies) (*Service, error) {
 		logger = slog.Default()
 	}
 	return &Service{
-		cfg:      cfg,
-		k8s:      deps.Kubernetes,
-		tasks:    deps.Tasks,
-		registry: deps.Registry,
-		logger:   logger,
+		cfg:        cfg,
+		k8s:        deps.Kubernetes,
+		tasks:      deps.Tasks,
+		registry:   deps.Registry,
+		runtimeErr: deps.RuntimeErr,
+		logger:     logger,
 	}, nil
 }

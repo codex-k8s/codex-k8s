@@ -440,6 +440,36 @@ func RuntimeDeployTasks(items []*controlplanev1.RuntimeDeployTask) []models.Runt
 	return out
 }
 
+func RuntimeError(item *controlplanev1.RuntimeError) models.RuntimeError {
+	out := models.RuntimeError{}
+	if item == nil {
+		return out
+	}
+	out.ID = item.GetId()
+	out.Source = item.GetSource()
+	out.Level = item.GetLevel()
+	out.Message = item.GetMessage()
+	out.DetailsJSON = item.GetDetailsJson()
+	out.StackTrace = cast.OptionalTrimmedString(item.StackTrace)
+	out.CorrelationID = cast.OptionalTrimmedString(item.CorrelationId)
+	out.RunID = cast.OptionalTrimmedString(item.RunId)
+	out.ProjectID = cast.OptionalTrimmedString(item.ProjectId)
+	out.Namespace = cast.OptionalTrimmedString(item.Namespace)
+	out.JobName = cast.OptionalTrimmedString(item.JobName)
+	out.ViewedAt = cast.OptionalTimestampRFC3339Nano(item.GetViewedAt())
+	out.ViewedBy = cast.OptionalTrimmedString(item.ViewedBy)
+	out.CreatedAt = cast.TimestampRFC3339Nano(item.GetCreatedAt())
+	return out
+}
+
+func RuntimeErrors(items []*controlplanev1.RuntimeError) []models.RuntimeError {
+	out := make([]models.RuntimeError, 0, len(items))
+	for _, item := range items {
+		out = append(out, RuntimeError(item))
+	}
+	return out
+}
+
 func RegistryImageTag(item *controlplanev1.RegistryImageTag) models.RegistryImageTag {
 	out := models.RegistryImageTag{}
 	if item == nil {

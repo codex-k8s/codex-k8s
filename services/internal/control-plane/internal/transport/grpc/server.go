@@ -55,6 +55,10 @@ type runtimeDeployService interface {
 	PrepareRunEnvironment(ctx context.Context, params runtimedeploydomain.PrepareParams) (runtimedeploydomain.PrepareResult, error)
 }
 
+type runtimeErrorRecorder interface {
+	RecordBestEffort(ctx context.Context, params querytypes.RuntimeErrorRecordParams)
+}
+
 type codexAuthService interface {
 	Get(ctx context.Context) ([]byte, bool, error)
 	Upsert(ctx context.Context, authJSON []byte) error
@@ -67,6 +71,7 @@ type Dependencies struct {
 	AgentCallbacks agentCallbackService
 	RunStatus      runStatusService
 	RuntimeDeploy  runtimeDeployService
+	RuntimeErrors  runtimeErrorRecorder
 	MCP            mcpRunTokenService
 	CodexAuth      codexAuthService
 	Logger         *slog.Logger
@@ -81,6 +86,7 @@ type Server struct {
 	agentCallbacks agentCallbackService
 	runStatus      runStatusService
 	runtimeDeploy  runtimeDeployService
+	runtimeErrors  runtimeErrorRecorder
 	mcp            mcpRunTokenService
 	codexAuth      codexAuthService
 	logger         *slog.Logger
@@ -93,6 +99,7 @@ func NewServer(deps Dependencies) *Server {
 		agentCallbacks: deps.AgentCallbacks,
 		runStatus:      deps.RunStatus,
 		runtimeDeploy:  deps.RuntimeDeploy,
+		runtimeErrors:  deps.RuntimeErrors,
 		mcp:            deps.MCP,
 		codexAuth:      deps.CodexAuth,
 		logger:         deps.Logger,
@@ -1005,6 +1012,47 @@ func (s *Server) GetRuntimeDeployTask(ctx context.Context, req *controlplanev1.G
 	return runtimeDeployTaskToProto(item), nil
 }
 
+func (s *Server) ListRuntimeErrors(ctx context.Context, req *controlplanev1.ListRuntimeErrorsRequest) (*controlplanev1.ListRuntimeErrorsResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	items, err := s.staff.ListRuntimeErrors(ctx, p, querytypes.RuntimeErrorListFilter{
+		Limit:         clampLimit(req.GetLimit(), 100),
+		State:         parseRuntimeErrorListState(optionalProtoString(req.State)),
+		Level:         optionalProtoString(req.Level),
+		Source:        optionalProtoString(req.Source),
+		RunID:         optionalProtoString(req.RunId),
+		CorrelationID: optionalProtoString(req.CorrelationId),
+	})
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	out := make([]*controlplanev1.RuntimeError, 0, len(items))
+	for _, item := range items {
+		out = append(out, runtimeErrorToProto(item))
+	}
+	return &controlplanev1.ListRuntimeErrorsResponse{Items: out}, nil
+}
+
+func (s *Server) MarkRuntimeErrorViewed(ctx context.Context, req *controlplanev1.MarkRuntimeErrorViewedRequest) (*controlplanev1.RuntimeError, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	item, err := s.staff.MarkRuntimeErrorViewed(ctx, p, strings.TrimSpace(req.GetRuntimeErrorId()))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return runtimeErrorToProto(item), nil
+}
+
 func (s *Server) ListRegistryImages(ctx context.Context, req *controlplanev1.ListRegistryImagesRequest) (*controlplanev1.ListRegistryImagesResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "request is required")
@@ -1534,6 +1582,17 @@ func tsToTime(ts *timestamppb.Timestamp) time.Time {
 	return ts.AsTime().UTC()
 }
 
+func parseRuntimeErrorListState(raw string) querytypes.RuntimeErrorListState {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case string(querytypes.RuntimeErrorListStateAll):
+		return querytypes.RuntimeErrorListStateAll
+	case string(querytypes.RuntimeErrorListStateViewed):
+		return querytypes.RuntimeErrorListStateViewed
+	default:
+		return querytypes.RuntimeErrorListStateActive
+	}
+}
+
 func runToProto(r entitytypes.StaffRun) *controlplanev1.Run {
 	out := &controlplanev1.Run{
 		Id:              r.ID,
@@ -1569,6 +1628,32 @@ func runToProto(r entitytypes.StaffRun) *controlplanev1.Run {
 	}
 	if r.LastHeartbeatAt != nil {
 		out.LastHeartbeatAt = timestamppb.New(r.LastHeartbeatAt.UTC())
+	}
+	return out
+}
+
+func runtimeErrorToProto(item entitytypes.RuntimeError) *controlplanev1.RuntimeError {
+	detailsJSON := strings.TrimSpace(string(item.DetailsJSON))
+	if detailsJSON == "" {
+		detailsJSON = "{}"
+	}
+	out := &controlplanev1.RuntimeError{
+		Id:            item.ID,
+		Source:        item.Source,
+		Level:         item.Level,
+		Message:       item.Message,
+		DetailsJson:   detailsJSON,
+		StackTrace:    stringPtrOrNil(item.StackTrace),
+		CorrelationId: stringPtrOrNil(item.CorrelationID),
+		RunId:         stringPtrOrNil(item.RunID),
+		ProjectId:     stringPtrOrNil(item.ProjectID),
+		Namespace:     stringPtrOrNil(item.Namespace),
+		JobName:       stringPtrOrNil(item.JobName),
+		ViewedBy:      stringPtrOrNil(item.ViewedBy),
+		CreatedAt:     timestamppb.New(item.CreatedAt.UTC()),
+	}
+	if item.ViewedAt != nil {
+		out.ViewedAt = timestamppb.New(item.ViewedAt.UTC())
 	}
 	return out
 }

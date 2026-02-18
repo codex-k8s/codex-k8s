@@ -74,6 +74,23 @@ type RuntimeDeployTask struct {
 	Logs               []RuntimeDeployTaskLog `json:"logs"`
 }
 
+type RuntimeError struct {
+	ID            string  `json:"id"`
+	Source        string  `json:"source"`
+	Level         string  `json:"level"`
+	Message       string  `json:"message"`
+	DetailsJSON   string  `json:"details_json"`
+	StackTrace    *string `json:"stack_trace"`
+	CorrelationID *string `json:"correlation_id"`
+	RunID         *string `json:"run_id"`
+	ProjectID     *string `json:"project_id"`
+	Namespace     *string `json:"namespace"`
+	JobName       *string `json:"job_name"`
+	ViewedAt      *string `json:"viewed_at"`
+	ViewedBy      *string `json:"viewed_by"`
+	CreatedAt     string  `json:"created_at"`
+}
+
 type RegistryImageTag struct {
 	Tag             string  `json:"tag"`
 	Digest          string  `json:"digest"`

@@ -576,6 +576,42 @@ message GetRuntimeDeployTaskRequest {
   string run_id = 2;
 }
 
+message RuntimeError {
+  string id = 1;
+  string source = 2;
+  string level = 3;
+  string message = 4;
+  string details_json = 5;
+  optional string stack_trace = 6;
+  optional string correlation_id = 7;
+  optional string run_id = 8;
+  optional string project_id = 9;
+  optional string namespace = 10;
+  optional string job_name = 11;
+  google.protobuf.Timestamp viewed_at = 12;
+  optional string viewed_by = 13;
+  google.protobuf.Timestamp created_at = 14;
+}
+
+message ListRuntimeErrorsRequest {
+  Principal principal = 1;
+  int32 limit = 2;
+  optional string state = 3;
+  optional string level = 4;
+  optional string source = 5;
+  optional string run_id = 6;
+  optional string correlation_id = 7;
+}
+
+message ListRuntimeErrorsResponse {
+  repeated RuntimeError items = 1;
+}
+
+message MarkRuntimeErrorViewedRequest {
+  Principal principal = 1;
+  string runtime_error_id = 2;
+}
+
 message RegistryImageTag {
   string tag = 1;
   string digest = 2;
@@ -813,6 +849,8 @@ service ControlPlaneService {
   rpc PrepareRunEnvironment(PrepareRunEnvironmentRequest) returns (PrepareRunEnvironmentResponse);
   rpc ListRuntimeDeployTasks(ListRuntimeDeployTasksRequest) returns (ListRuntimeDeployTasksResponse);
   rpc GetRuntimeDeployTask(GetRuntimeDeployTaskRequest) returns (RuntimeDeployTask);
+  rpc ListRuntimeErrors(ListRuntimeErrorsRequest) returns (ListRuntimeErrorsResponse);
+  rpc MarkRuntimeErrorViewed(MarkRuntimeErrorViewedRequest) returns (RuntimeError);
   rpc ListRegistryImages(ListRegistryImagesRequest) returns (ListRegistryImagesResponse);
   rpc DeleteRegistryImageTag(DeleteRegistryImageTagRequest) returns (RegistryImageDeleteResult);
   rpc CleanupRegistryImages(CleanupRegistryImagesRequest) returns (CleanupRegistryImagesResponse);

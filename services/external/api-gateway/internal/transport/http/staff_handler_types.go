@@ -34,6 +34,16 @@ type runtimeDeployListArg struct {
 	targetEnv string
 }
 
+// runtimeErrorsListArg keeps filters for runtime errors list endpoint.
+type runtimeErrorsListArg struct {
+	limit         int32
+	state         string
+	level         string
+	source        string
+	runID         string
+	correlationID string
+}
+
 // registryImagesListArg keeps list filters for registry images endpoint.
 type registryImagesListArg struct {
 	repository        string
