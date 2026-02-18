@@ -69,6 +69,7 @@ approvals:
 - В pod передаются минимальные runtime-секреты (`CODEXK8S_OPENAI_API_KEY`, `CODEXK8S_GIT_BOT_TOKEN`) и формируется namespaced `KUBECONFIG`.
 - GitHub операции (issue/PR/comments/review + git push) выполняются напрямую через `gh`/`git` с bot-token.
 - Для PR-flow запрещено использовать `CODEXK8S_GITHUB_PAT`; допустим только `CODEXK8S_GIT_BOT_TOKEN`.
+- Для локальных ручных GitHub операций оператор использует `CODEXK8S_GIT_BOT_TOKEN` из `bootstrap/host/config.env`.
 - Kubernetes runtime-дебаг и изменения в своём namespace выполняются напрямую через `kubectl`.
 - Исключение: прямой доступ к `secrets` (read/write) запрещён RBAC.
 - MCP в MVP baseline используется для label-операций и control tools (`secret sync`, `database lifecycle`, `owner feedback`) по approval policy.
