@@ -1,8 +1,25 @@
 import { deleteConfigEntry as deleteConfigEntryRequest, listConfigEntries as listConfigEntriesRequest, upsertConfigEntry as upsertConfigEntryRequest } from "../../shared/api/sdk";
-import type { ConfigEntry } from "./types";
+import type { ConfigEntry as ApiConfigEntry } from "../../shared/api/generated/types.gen";
+import type { ConfigEntry, ConfigKind, ConfigMutability, ConfigScope } from "./types";
+
+function mapApiConfigEntry(item: ApiConfigEntry): ConfigEntry {
+  return {
+    id: String(item.id ?? ""),
+    scope: item.scope,
+    kind: item.kind,
+    project_id: item.project_id ?? null,
+    repository_id: item.repository_id ?? null,
+    key: String(item.key ?? ""),
+    value: item.value ?? null,
+    sync_targets: Array.isArray(item.sync_targets) ? item.sync_targets.filter((entry): entry is string => typeof entry === "string") : [],
+    mutability: String(item.mutability ?? "startup_required"),
+    is_dangerous: Boolean(item.is_dangerous),
+    updated_at: item.updated_at ?? null,
+  };
+}
 
 export async function listConfigEntries(params: {
-  scope: "platform" | "project" | "repository";
+  scope: ConfigScope;
   projectId?: string;
   repositoryId?: string;
   limit?: number;
@@ -16,19 +33,20 @@ export async function listConfigEntries(params: {
     },
     throwOnError: true,
   });
-  return resp.data.items ?? [];
+  const items = resp.data.items ?? [];
+  return items.map(mapApiConfigEntry);
 }
 
 export async function upsertConfigEntry(params: {
-  scope: "platform" | "project" | "repository";
-  kind: "variable" | "secret";
+  scope: ConfigScope;
+  kind: ConfigKind;
   projectId: string | null;
   repositoryId: string | null;
   key: string;
   valuePlain: string | null;
   valueSecret: string | null;
   syncTargets: string[];
-  mutability: "startup_required" | "runtime_mutable";
+  mutability: ConfigMutability;
   isDangerous: boolean;
   dangerousConfirmed: boolean;
 }): Promise<ConfigEntry> {
@@ -48,7 +66,7 @@ export async function upsertConfigEntry(params: {
     },
     throwOnError: true,
   });
-  return resp.data;
+  return mapApiConfigEntry(resp.data);
 }
 
 export async function deleteConfigEntry(id: string): Promise<void> {

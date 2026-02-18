@@ -14,7 +14,6 @@ import (
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
-	configentryrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/configentry"
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/staffrun"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
@@ -839,7 +838,7 @@ func (s *Server) UpsertConfigEntry(ctx context.Context, req *controlplanev1.Upse
 			return nil, toStatus(err)
 		}
 	}
-	item, err := s.staff.UpsertConfigEntry(ctx, p, configentryrepo.UpsertParams{
+	item, err := s.staff.UpsertConfigEntry(ctx, p, querytypes.ConfigEntryUpsertParams{
 		Scope:           strings.TrimSpace(req.Scope),
 		Kind:            strings.TrimSpace(req.Kind),
 		ProjectID:       strings.TrimSpace(req.GetProjectId()),
