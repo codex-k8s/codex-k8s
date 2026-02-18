@@ -126,19 +126,111 @@ go run ./cmd/codex-bootstrap bootstrap --config services.yaml --env-file bootstr
 - прогресс и логи сборки/деплоя смотрим в staff UI: `Operations -> Build & Deploy`,
   и через `kubectl` (см. `docs/ops/production_runbook.md`).
 
-## 🚀 Как использовать codex-k8s для ЛЮБОГО проекта
+## 🧭 Инструкция по использованию платформы (по завершённым эпикам)
 
-`codex-k8s` не привязан к одному стеку: платформа управляет проектом через `services.yaml`, Kubernetes и GitHub API.
+Ниже рабочий сценарий использования `codex-k8s` для любых проектов на базе того, что уже реализовано в S1/S2/S3.
 
-Базовый сценарий онбординга:
-1. Подготовить репозиторий проекта с `services.yaml` (typed-contract `codex-k8s.dev/v1alpha1`).
-2. В staff UI создать проект (`Проекты`), затем добавить репозиторий (`Репозитории проекта`).
-3. При добавлении репозитория сразу запустить preflight (`Run preflight`) и убедиться, что все checks зелёные.
-4. Настроить конфиги/секреты через `Конфигурация -> Конфиги и секреты` (scope: platform/project/repository).
-5. Для документации проекта выполнить `Docset import`, дальше поддерживать `Docset sync` safe-by-default.
-6. Запускать разработку через label-driven flow (`run:dev`, `run:dev:revise`), отслеживать прогресс в `Запуски` и `Сборка и деплой`.
+### 1) Поднять платформу и проверить базовый контур
 
-Минимальный каркас `services.yaml` для нового проекта:
+1. Подготовить `bootstrap/host/config.env` по `bootstrap/host/config.env.example`.
+2. Запустить:
+   - `go run ./cmd/codex-bootstrap preflight --env-file bootstrap/host/config.env`
+   - `go run ./cmd/codex-bootstrap bootstrap --config services.yaml --env-file bootstrap/host/config.env`
+3. Проверить production по `docs/ops/production_runbook.md`.
+
+Это покрывает фундамент из S1 (`bootstrap`, webhook ingest, worker, auth/RBAC, repository provider, stabilization gate).
+
+### 2) Подключить новый проект и репозиторий
+
+1. В staff UI создать проект.
+2. В `Проекты -> Репозитории` добавить `owner/name`, `services.yaml path` и bot-параметры.
+3. Сразу выполнить `Run preflight`.
+4. Довести preflight до `success` (GitHub webhook/label/issue/PR checks + DNS checks).
+
+Preflight-логика и bot-параметры на уровне репо: S3 Day 14.  
+Базовый repo-provider контур: S1 Day 4.
+
+### 3) Настроить конфиги и секреты через платформу
+
+1. Открыть `Конфигурация -> Конфиги и секреты`.
+2. Выбрать scope:
+   - `platform` для глобальных параметров;
+   - `project` для дефолтов проекта;
+   - `repository` для override конкретного репозитория.
+3. Настроить sync targets (GitHub env secret/var, Kubernetes secret/config).
+4. Для dangerous-ключей подтверждать изменение явно в UI.
+
+Fallback кредов работает как `repository -> project -> platform`.  
+Это реализовано в S3 Day 13.
+
+### 4) Включить shared OAuth для всех AI-слотов (reusable-модель)
+
+По умолчанию для AI-слотов не нужно заводить отдельные OAuth App/секреты на каждый слот:
+
+1. Настроить:
+   - `CODEXK8S_PRODUCTION_DOMAIN`
+   - `CODEXK8S_AI_DOMAIN`
+   - `CODEXK8S_GITHUB_OAUTH_CLIENT_ID`
+   - `CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET`
+2. Убедиться, что wildcard DNS настроен на `*.${CODEXK8S_AI_DOMAIN}`.
+3. Оставить `*_AI` OAuth override-поля пустыми, если хотите переиспользовать основной OAuth.
+4. Проверить `CODEXK8S_OAUTH2_PROXY_COOKIE_DOMAIN` (дефолт: `.<CODEXK8S_PRODUCTION_DOMAIN>`).
+
+Архитектурно это работает так:
+- `oauth2-proxy` деплоится как singleton (`scope: infrastructure-singleton`);
+- AI ingress ходит в centralized `auth-url`/`auth-signin` на основном домене;
+- слот доступен по `<slot-namespace>.<CODEXK8S_AI_DOMAIN>`.
+
+Это реализовано в S3 Day 11 + S3 Day 17.
+
+### 5) Подключить проектную документацию (Docset)
+
+1. В `Проекты -> Репозитории` нажать `Docset import`.
+2. Выбрать `ref`, `locale`, группы документов.
+3. Импорт создаст PR и lock-файл `docs/.docset-lock.json`.
+4. Для обновлений использовать `Docset sync` (safe-by-default: локальные правки не перетираются без явного действия).
+
+Это реализовано в S3 Day 12.
+
+### 6) Запускать работу через issue labels
+
+Основной dev-цикл:
+1. Поставить `run:dev` на issue.
+2. Платформа запускает run/job, поднимает runtime и ведет агента до PR.
+3. Для доработки существующего PR использовать `run:dev:revise`.
+4. Для отладки перед запуском можно поставить `run:debug`, чтобы namespace не удалялся после завершения.
+
+Поддерживается полный stage-набор `run:*` (intake/vision/prd/arch/design/plan/dev/qa/release/ops/self-improve/rethink).  
+S2 дал рабочий dev/revise PR-flow, S3 Day 1 активировал полный stage trigger path.
+
+### 7) Наблюдать, дебажить и управлять деплоем
+
+Основные разделы UI:
+- `Запуски` и `Детали запуска` — run lifecycle, events, namespace/job связка;
+- `Сборка и деплой` — deploy tasks, статусы, логи build/apply/reconcile;
+- `Образы Registry` — образы и cleanup;
+- `Кластер` — runtime-объекты для операционной диагностики.
+
+Для низкоуровневой проверки использовать команды из `docs/ops/production_runbook.md`.  
+Наблюдаемость и staff-debug UX: S2 Day 5 + S3 Day 2 + S3 Day 10.
+
+### 8) Использовать self-improve контур платформы
+
+`run:self-improve`:
+1. Собирает evidence по предыдущим run/session/comment.
+2. Формирует change-set улучшений.
+3. Выпускает PR с трассировкой источников и диагностикой.
+
+Контур реализован в S3 Day 6 + Day 7 (+ Day 8 для toolchain auto-extension).
+
+### 9) Self-deploy платформы
+
+После первичного bootstrap платформа деплоит себя webhook-driven при push/merge в `main`.
+Сборка/деплой выполняются в Kubernetes job-контуре (не через GitHub Actions workflows).
+
+Декларативный runtime deploy и self-hosted build/deploy parity: S3 Day 9.
+
+### 10) Минимальный шаблон `services.yaml` для нового проекта
 
 ```yaml
 apiVersion: codex-k8s.dev/v1alpha1
@@ -153,92 +245,25 @@ spec:
     ai:
       from: production
       namespaceTemplate: "{{ .Project }}-dev-{{ .Slot }}"
-  images: {}
-  infrastructure: []
   services: []
 ```
 
-## 🌐 Shared OAuth для AI-слотов (reusable между проектами)
+## 🧱 Что уже закрыто по спринтам
 
-Если ничего дополнительно по OAuth-секретам не настраивать для AI, слоты всё равно будут защищены через основной OAuth:
-- `oauth2-proxy` работает как singleton-сервис (`scope: infrastructure-singleton`) в platform namespace;
-- AI ingress использует centralized auth (`auth-url` / `auth-signin`) на основном домене платформы;
-- slot-host строится как `<slot-namespace>.<CODEXK8S_AI_DOMAIN>`.
+- ✅ S1 (`docs/delivery/sprint_s1_mvp_vertical_slice.md`): bootstrap baseline, webhook idempotency, worker+slots, auth/RBAC, repo provider, hardening, stabilization gate.
+- ✅ S2 (`docs/delivery/sprint_s2_dogfooding.md`): issue-driven dev flow, per-issue namespace/RBAC, agent job + PR flow, approvals/audit, dogfooding regression gate.
+- 🟡 S3 (`docs/delivery/sprint_s3_mvp_completion.md`): закрыты Day1-14, Day16, Day17; в работе Day15/Day18/Day19/Day20/Day20.5/Day20.6/Day21.
 
-Что нужно для работы без доп. AI OAuth-секретов:
-1. Настроить `CODEXK8S_PRODUCTION_DOMAIN` и `CODEXK8S_AI_DOMAIN`.
-2. Заполнить `CODEXK8S_GITHUB_OAUTH_CLIENT_ID` и `CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET` (production).
-3. Не задавать `*_AI` override-ключи, если хотите переиспользовать production OAuth credentials.
-4. Проверить cookie domain:
-   `CODEXK8S_OAUTH2_PROXY_COOKIE_DOMAIN` (по умолчанию автоматически `.<CODEXK8S_PRODUCTION_DOMAIN>`).
-
-Опционально можно переопределить shared endpoints:
-- `CODEXK8S_SHARED_OAUTH2_PROXY_AUTH_URL`
-- `CODEXK8S_SHARED_OAUTH2_PROXY_SIGNIN_URL`
-
-Пример reusable-паттерна в `services.yaml`:
-
-```yaml
-services:
-  - name: oauth2-proxy
-    scope: infrastructure-singleton
-    deployGroup: edge
-```
-
-Это даёт один OAuth perimeter на кластер и не требует отдельного OAuth App на каждый AI-слот/проект.
-
-## ✨ Ништяки платформы (что уже работает)
-
-- 🧩 Full-env AI slots с отдельными namespace, TLS и поддоменами (Day 11):
-  `docs/delivery/epics/epic-s3-day11-full-env-slots-and-subdomains.md`
-- 📚 Docset import/safe sync через PR и `docs/.docset-lock.json` (Day 12):
-  `docs/delivery/epics/epic-s3-day12-docset-import-and-safe-sync.md`
-- 🔐 Единое управление config/secrets (platform/project/repo) + sync в GitHub/K8s (Day 13):
-  `docs/delivery/epics/epic-s3-day13-config-and-credentials-governance.md`
-- ✅ Repository onboarding preflight с реальными GitHub-операциями и DNS checks (Day 14):
-  `docs/delivery/epics/epic-s3-day14-repository-onboarding-preflight.md`
-- 🧱 Усиленные транспортные границы gRPC (`transport -> service -> repository`) (Day 16):
-  `docs/delivery/epics/epic-s3-day16-grpc-transport-boundary-hardening.md`
-- 🌍 Environment-scoped secret overrides + shared OAuth callback strategy (Day 17):
-  `docs/delivery/epics/epic-s3-day17-environment-scoped-secret-overrides-and-oauth-callbacks.md`
-
-## 📚 Предыдущие спринты и эпики
-
-Чтобы не терять контекст развития платформы, используйте эту навигацию:
-
-- Спринты:
-  - `docs/delivery/sprint_s1_mvp_vertical_slice.md`
-  - `docs/delivery/sprint_s2_dogfooding.md`
-  - `docs/delivery/sprint_s3_mvp_completion.md`
-- Каталоги эпиков по спринтам:
-  - `docs/delivery/epic_s1.md`
-  - `docs/delivery/epic_s2.md`
-  - `docs/delivery/epic_s3.md`
-- Все day-эпики (детализация по дням и статусам):
-  - `docs/delivery/epics/`
-- Трассируемость и карта связей:
-  - `docs/delivery/requirements_traceability.md`
-  - `docs/delivery/issue_map.md`
-  - `docs/delivery/delivery_plan.md`
-  - `docs/delivery/roadmap.md`
-
-Статус каждого эпика смотреть в frontmatter (`status: planned|completed`) конкретного файла в `docs/delivery/epics/`.
-
-## 🧭 Операционная памятка для daily использования
-
-1. `run:dev` — первый запуск разработки по issue.
-2. `run:dev:revise` — доработка существующего PR.
-3. `run:debug` перед `run:dev` — оставить namespace слота после фейла для дебага.
-4. `Operations -> Build & Deploy` — источник правды по job/logs деплоя.
-5. `Operations -> Registry Images` — контроль и cleanup образов.
-6. `Конфигурация -> Конфиги и секреты` — централизованный governance конфигов и секретов.
-7. `Проекты -> Репозитории -> Run preflight` — запуск диагностики перед началом работы с новым репо.
+Каталоги и детализация:
+- `docs/delivery/epic_s1.md`
+- `docs/delivery/epic_s2.md`
+- `docs/delivery/epic_s3.md`
+- `docs/delivery/epics/`
 
 ## 🔑 GitHub токены (важно)
 
-- Для PR-flow агента использовать только `CODEXK8S_GIT_BOT_TOKEN`.
-- `CODEXK8S_GITHUB_PAT` использовать только для bootstrap/sync management операций платформы
-  (webhook/labels/environments/secrets/variables), но не для PR-flow.
+- Для PR-flow использовать только `CODEXK8S_GIT_BOT_TOKEN`.
+- `CODEXK8S_GITHUB_PAT` использовать только для bootstrap/sync management операций платформы (webhook/labels/environments/secrets/variables).
 
 ## 🗺️ Что дальше (planned)
 
