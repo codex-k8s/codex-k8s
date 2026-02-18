@@ -2,10 +2,10 @@
 doc_id: EPC-CK8S-S3-D11
 type: epic
 title: "Epic S3 Day 11: Full-env slot namespace + subdomain templating (TLS) + agent run"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-13
-updated_at: 2026-02-15
+updated_at: 2026-02-18
 related_issues: [19]
 related_prs: []
 approvals:
@@ -66,3 +66,25 @@ approvals:
   - cert-manager выпускает сертификат и `kubectl get certificate` показывает `Ready=True`;
   - слот открывается в браузере и доступен для manual QA.
 - Slot mode не пытается создавать/менять cluster-scoped ресурсы (в т.ч. `ClusterIssuer`), чтобы исключить конфликты с production/prod.
+
+## Реализация (2026-02-18)
+- Слот-режим и full-env контур работают через persisted runtime deploy задачи и reconcile-loop:
+  - `services/internal/control-plane/internal/domain/runtimedeploy/service_prepare.go`
+  - `services/internal/control-plane/internal/domain/runtimedeploy/service_reconcile.go`
+  - `services/internal/control-plane/internal/domain/runtimedeploy/model.go`
+- Поддержан `domainTemplate` и слот-контекст рендера (`Project/Env/Slot/Namespace`) в typed `services.yaml`:
+  - `libs/go/servicescfg/model.go`
+  - `libs/go/servicescfg/load.go`
+- Для AI-слотов используется отдельный домен и slot-specific env:
+  - `CODEXK8S_AI_DOMAIN` в prerequisites/манифестах:
+    - `services/internal/control-plane/internal/domain/runtimedeploy/service_prerequisites.go`
+    - `deploy/base/codex-k8s/app.yaml.tpl`
+- TLS для слотов реализован namespaced-путём (без создания cluster-scoped ресурсов из runtime deploy):
+  - runtime TLS reuse/validation: `services/internal/control-plane/internal/domain/runtimedeploy/service_tls.go`
+  - `ClusterIssuer` остаётся bootstrap/base-ресурсом: `deploy/base/cert-manager/clusterissuer.yaml.tpl`.
+
+## Acceptance checklist
+- [x] Full-env деплой создаёт/обновляет slot namespace и формирует детерминированный public host.
+- [x] Слот использует отдельный namespace/runtime mode (`full-env`) без конфликтов с production/prod.
+- [x] Поддержан `domainTemplate` + slot context (`Project/Env/Slot/Namespace`) в render pipeline.
+- [x] Slot runtime не создаёт cluster-scoped issuer-ресурсы; TLS работает через namespaced контур.

@@ -5,7 +5,7 @@ title: "Epic Catalog: Sprint S3 (MVP completion)"
 status: in-progress
 owner_role: EM
 created_at: 2026-02-13
-updated_at: 2026-02-17
+updated_at: 2026-02-18
 related_issues: [19, 45]
 related_prs: []
 approvals:
@@ -47,11 +47,13 @@ approvals:
 - Day 6 (`run:self-improve` ingestion/diagnostics) завершён.
 - Day 7 (`run:self-improve` updater/PR flow) завершён.
 - Day 8 (`agent toolchain auto-extension`) завершён.
+- Day 10 (`staff console redesign on Vuetify`) завершён.
 - Day 12 (`docset import + safe sync`) завершён.
 - Day 13 (`unified config/secrets governance + GitHub creds fallback`) завершён.
 - Day 14 (`repository onboarding preflight`) завершён.
-- Day 16 (`gRPC transport boundary hardening`) запланирован как обязательный refactoring-hygiene эпик по Issue #45.
-- Day 9..Day11, Day15 и Day16 остаются в статусе planned.
+- Day 11 (`full-env slots + subdomains + TLS`) завершён.
+- Day 16 (`gRPC transport boundary hardening`) завершён как refactoring-hygiene эпик по Issue #45.
+- Day 9 и Day15 остаются в статусе planned/in-progress.
 
 ## Критерий успеха Sprint S3 (выжимка)
 - Все MVP-сценарии из Issue #19 покрыты кодом, тестами и эксплуатационной документацией.

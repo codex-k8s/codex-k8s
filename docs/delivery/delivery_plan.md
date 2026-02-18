@@ -5,7 +5,7 @@ title: "codex-k8s — Delivery Plan"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-16
+updated_at: 2026-02-18
 related_issues: [1, 19]
 related_prs: []
 approvals:
@@ -72,12 +72,13 @@ approvals:
 - Day 6..7: `run:self-improve` ingestion + updater + PR flow.
 - Day 8: agent toolchain auto-extension safeguards.
 - Day 9: declarative full-env deploy, `services.yaml` orchestration, runtime parity/hot-reload.
-- Day 10: полный redesign staff-консоли на Vuetify.
-- Day 11: full-env slots + agent-run + subdomain templating (TLS) для manual QA.
-- Day 12: docset import + safe sync (`agent-knowledge-base` -> projects).
-- Day 13: unified config/secrets governance (platform/project/repo) + GitHub creds fallback.
-- Day 14: repository onboarding preflight (token scopes + GitHub ops + domain resolution) + bot params per repo.
+- Day 10 (completed): полный redesign staff-консоли на Vuetify.
+- Day 11 (completed): full-env slots + agent-run + subdomain templating (TLS) для manual QA.
+- Day 12 (completed): docset import + safe sync (`agent-knowledge-base` -> projects).
+- Day 13 (completed): unified config/secrets governance (platform/project/repo) + GitHub creds fallback.
+- Day 14 (completed): repository onboarding preflight (token scopes + GitHub ops + domain resolution) + bot params per repo.
 - Day 15: MVP regression/security gate + closeout/handover и переход к post-MVP roadmap.
+- Day 16 (completed): gRPC transport boundary hardening (transport -> service -> repository) по Issue #45.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
