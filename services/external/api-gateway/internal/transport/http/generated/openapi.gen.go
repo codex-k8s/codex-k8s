@@ -37,6 +37,12 @@ const (
 	ConfigEntryScopeRepository ConfigEntryScope = "repository"
 )
 
+// Defines values for ConfigEntryMutability.
+const (
+	RuntimeMutable  ConfigEntryMutability = "runtime_mutable"
+	StartupRequired ConfigEntryMutability = "startup_required"
+)
+
 // Defines values for ErrorResponseCode.
 const (
 	ErrorResponseCodeCanceled           ErrorResponseCode = "canceled"
@@ -200,17 +206,17 @@ type CleanupRegistryImagesResponse struct {
 
 // ConfigEntry defines model for ConfigEntry.
 type ConfigEntry struct {
-	Id           string           `json:"id"`
-	IsDangerous  bool             `json:"is_dangerous"`
-	Key          string           `json:"key"`
-	Kind         ConfigEntryKind  `json:"kind"`
-	Mutability   string           `json:"mutability"`
-	ProjectId    *string          `json:"project_id"`
-	RepositoryId *string          `json:"repository_id"`
-	Scope        ConfigEntryScope `json:"scope"`
-	SyncTargets  []string         `json:"sync_targets"`
-	UpdatedAt    *string          `json:"updated_at"`
-	Value        *string          `json:"value"`
+	Id           string                `json:"id"`
+	IsDangerous  bool                  `json:"is_dangerous"`
+	Key          string                `json:"key"`
+	Kind         ConfigEntryKind       `json:"kind"`
+	Mutability   ConfigEntryMutability `json:"mutability"`
+	ProjectId    *string               `json:"project_id"`
+	RepositoryId *string               `json:"repository_id"`
+	Scope        ConfigEntryScope      `json:"scope"`
+	SyncTargets  []string              `json:"sync_targets"`
+	UpdatedAt    *string               `json:"updated_at"`
+	Value        *string               `json:"value"`
 }
 
 // ConfigEntryKind defines model for ConfigEntry.Kind.
@@ -223,6 +229,9 @@ type ConfigEntryScope string
 type ConfigEntryItemsResponse struct {
 	Items []ConfigEntry `json:"items"`
 }
+
+// ConfigEntryMutability defines model for ConfigEntryMutability.
+type ConfigEntryMutability string
 
 // CreateUserRequest defines model for CreateUserRequest.
 type CreateUserRequest struct {
@@ -593,7 +602,7 @@ type UpsertConfigEntryRequest struct {
 	IsDangerous        *bool                         `json:"is_dangerous,omitempty"`
 	Key                string                        `json:"key"`
 	Kind               UpsertConfigEntryRequestKind  `json:"kind"`
-	Mutability         *string                       `json:"mutability,omitempty"`
+	Mutability         *ConfigEntryMutability        `json:"mutability,omitempty"`
 	ProjectId          *string                       `json:"project_id"`
 	RepositoryId       *string                       `json:"repository_id"`
 	Scope              UpsertConfigEntryRequestScope `json:"scope"`

@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/configentry"
+	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
 )
 
 var (
@@ -46,7 +47,7 @@ func (r *Repository) List(ctx context.Context, filter domainrepo.ListFilter) ([]
 		limit = 200
 	}
 
-	rows, err := r.db.Query(ctx, queryList, filter.Scope, filter.ProjectID, filter.RepositoryID, limit)
+	rows, err := r.db.Query(ctx, queryList, string(filter.Scope), filter.ProjectID, filter.RepositoryID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list config entries: %w", err)
 	}
@@ -55,21 +56,27 @@ func (r *Repository) List(ctx context.Context, filter domainrepo.ListFilter) ([]
 	out := make([]domainrepo.ConfigEntry, 0)
 	for rows.Next() {
 		var item domainrepo.ConfigEntry
+		var scope string
+		var kind string
+		var mutability string
 		if err := rows.Scan(
 			&item.ID,
-			&item.Scope,
-			&item.Kind,
+			&scope,
+			&kind,
 			&item.ProjectID,
 			&item.RepositoryID,
 			&item.Key,
 			&item.Value,
 			&item.SyncTargets,
-			&item.Mutability,
+			&mutability,
 			&item.IsDangerous,
 			&item.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan config entry: %w", err)
 		}
+		item.Scope = enumtypes.ConfigEntryScope(strings.TrimSpace(scope))
+		item.Kind = enumtypes.ConfigEntryKind(strings.TrimSpace(kind))
+		item.Mutability = enumtypes.ConfigEntryMutability(strings.TrimSpace(mutability))
 		out = append(out, item)
 	}
 	if err := rows.Err(); err != nil {
@@ -80,20 +87,26 @@ func (r *Repository) List(ctx context.Context, filter domainrepo.ListFilter) ([]
 
 func (r *Repository) GetByID(ctx context.Context, id string) (domainrepo.ConfigEntry, bool, error) {
 	var item domainrepo.ConfigEntry
+	var scope string
+	var kind string
+	var mutability string
 	err := r.db.QueryRow(ctx, queryGetByID, id).Scan(
 		&item.ID,
-		&item.Scope,
-		&item.Kind,
+		&scope,
+		&kind,
 		&item.ProjectID,
 		&item.RepositoryID,
 		&item.Key,
 		&item.Value,
 		&item.SyncTargets,
-		&item.Mutability,
+		&mutability,
 		&item.IsDangerous,
 		&item.UpdatedAt,
 	)
 	if err == nil {
+		item.Scope = enumtypes.ConfigEntryScope(strings.TrimSpace(scope))
+		item.Kind = enumtypes.ConfigEntryKind(strings.TrimSpace(kind))
+		item.Mutability = enumtypes.ConfigEntryMutability(strings.TrimSpace(mutability))
 		return item, true, nil
 	}
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -102,9 +115,9 @@ func (r *Repository) GetByID(ctx context.Context, id string) (domainrepo.ConfigE
 	return domainrepo.ConfigEntry{}, false, fmt.Errorf("get config entry by id: %w", err)
 }
 
-func (r *Repository) Exists(ctx context.Context, scope string, projectID string, repositoryID string, key string) (bool, error) {
+func (r *Repository) Exists(ctx context.Context, scope enumtypes.ConfigEntryScope, projectID string, repositoryID string, key string) (bool, error) {
 	var exists bool
-	if err := r.db.QueryRow(ctx, queryExists, scope, projectID, repositoryID, key).Scan(&exists); err != nil {
+	if err := r.db.QueryRow(ctx, queryExists, string(scope), projectID, repositoryID, key).Scan(&exists); err != nil {
 		return false, fmt.Errorf("check config entry exists: %w", err)
 	}
 	return exists, nil
@@ -112,102 +125,120 @@ func (r *Repository) Exists(ctx context.Context, scope string, projectID string,
 
 func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams) (domainrepo.ConfigEntry, error) {
 	var item domainrepo.ConfigEntry
-	scope := strings.TrimSpace(params.Scope)
+	scope := enumtypes.ConfigEntryScope(strings.TrimSpace(string(params.Scope)))
 	switch scope {
-	case "platform":
+	case enumtypes.ConfigEntryScopePlatform:
+		var itemScope string
+		var itemKind string
+		var itemMutability string
 		err := r.db.QueryRow(
 			ctx,
 			queryUpsertPlatform,
-			params.Kind,
+			string(params.Kind),
 			params.Key,
 			params.ValuePlain,
 			params.ValueEncrypted,
 			params.SyncTargets,
-			params.Mutability,
+			string(params.Mutability),
 			params.IsDangerous,
 			params.CreatedByUserID,
 			params.UpdatedByUserID,
 		).Scan(
 			&item.ID,
-			&item.Scope,
-			&item.Kind,
+			&itemScope,
+			&itemKind,
 			&item.ProjectID,
 			&item.RepositoryID,
 			&item.Key,
 			&item.Value,
 			&item.SyncTargets,
-			&item.Mutability,
+			&itemMutability,
 			&item.IsDangerous,
 			&item.UpdatedAt,
 		)
 		if err != nil {
 			return domainrepo.ConfigEntry{}, fmt.Errorf("upsert config entry: %w", err)
 		}
+		item.Scope = enumtypes.ConfigEntryScope(strings.TrimSpace(itemScope))
+		item.Kind = enumtypes.ConfigEntryKind(strings.TrimSpace(itemKind))
+		item.Mutability = enumtypes.ConfigEntryMutability(strings.TrimSpace(itemMutability))
 		return item, nil
-	case "project":
+	case enumtypes.ConfigEntryScopeProject:
+		var itemScope string
+		var itemKind string
+		var itemMutability string
 		err := r.db.QueryRow(
 			ctx,
 			queryUpsertProject,
-			params.Kind,
+			string(params.Kind),
 			nullUUID(params.ProjectID),
 			params.Key,
 			params.ValuePlain,
 			params.ValueEncrypted,
 			params.SyncTargets,
-			params.Mutability,
+			string(params.Mutability),
 			params.IsDangerous,
 			params.CreatedByUserID,
 			params.UpdatedByUserID,
 		).Scan(
 			&item.ID,
-			&item.Scope,
-			&item.Kind,
+			&itemScope,
+			&itemKind,
 			&item.ProjectID,
 			&item.RepositoryID,
 			&item.Key,
 			&item.Value,
 			&item.SyncTargets,
-			&item.Mutability,
+			&itemMutability,
 			&item.IsDangerous,
 			&item.UpdatedAt,
 		)
 		if err != nil {
 			return domainrepo.ConfigEntry{}, fmt.Errorf("upsert config entry: %w", err)
 		}
+		item.Scope = enumtypes.ConfigEntryScope(strings.TrimSpace(itemScope))
+		item.Kind = enumtypes.ConfigEntryKind(strings.TrimSpace(itemKind))
+		item.Mutability = enumtypes.ConfigEntryMutability(strings.TrimSpace(itemMutability))
 		return item, nil
-	case "repository":
+	case enumtypes.ConfigEntryScopeRepository:
+		var itemScope string
+		var itemKind string
+		var itemMutability string
 		err := r.db.QueryRow(
 			ctx,
 			queryUpsertRepository,
-			params.Kind,
+			string(params.Kind),
 			nullUUID(params.RepositoryID),
 			params.Key,
 			params.ValuePlain,
 			params.ValueEncrypted,
 			params.SyncTargets,
-			params.Mutability,
+			string(params.Mutability),
 			params.IsDangerous,
 			params.CreatedByUserID,
 			params.UpdatedByUserID,
 		).Scan(
 			&item.ID,
-			&item.Scope,
-			&item.Kind,
+			&itemScope,
+			&itemKind,
 			&item.ProjectID,
 			&item.RepositoryID,
 			&item.Key,
 			&item.Value,
 			&item.SyncTargets,
-			&item.Mutability,
+			&itemMutability,
 			&item.IsDangerous,
 			&item.UpdatedAt,
 		)
 		if err != nil {
 			return domainrepo.ConfigEntry{}, fmt.Errorf("upsert config entry: %w", err)
 		}
+		item.Scope = enumtypes.ConfigEntryScope(strings.TrimSpace(itemScope))
+		item.Kind = enumtypes.ConfigEntryKind(strings.TrimSpace(itemKind))
+		item.Mutability = enumtypes.ConfigEntryMutability(strings.TrimSpace(itemMutability))
 		return item, nil
 	default:
-		return domainrepo.ConfigEntry{}, fmt.Errorf("upsert config entry: unsupported scope %q", params.Scope)
+		return domainrepo.ConfigEntry{}, fmt.Errorf("upsert config entry: unsupported scope %q", string(params.Scope))
 	}
 }
 

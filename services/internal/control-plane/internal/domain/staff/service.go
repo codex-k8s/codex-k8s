@@ -20,6 +20,7 @@ import (
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/staffrun"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
 
@@ -815,19 +816,19 @@ func (s *Service) UpsertProjectGitHubTokens(ctx context.Context, principal Princ
 }
 
 func (s *Service) ListConfigEntries(ctx context.Context, principal Principal, scope string, projectID string, repositoryID string, limit int) ([]configentryrepo.ConfigEntry, error) {
-	scope = strings.TrimSpace(scope)
-	if scope == "" {
+	scopeEnum := enumtypes.ConfigEntryScope(strings.TrimSpace(scope))
+	if scopeEnum == "" {
 		return nil, errs.Validation{Field: "scope", Msg: "is required"}
 	}
 
-	switch scope {
-	case "platform":
+	switch scopeEnum {
+	case enumtypes.ConfigEntryScopePlatform:
 		if !principal.IsPlatformAdmin {
 			return nil, errs.Forbidden{Msg: "platform admin required"}
 		}
 		projectID = ""
 		repositoryID = ""
-	case "project":
+	case enumtypes.ConfigEntryScopeProject:
 		if projectID == "" {
 			return nil, errs.Validation{Field: "project_id", Msg: "is required"}
 		}
@@ -841,7 +842,7 @@ func (s *Service) ListConfigEntries(ctx context.Context, principal Principal, sc
 				return nil, errs.Forbidden{Msg: "project access required"}
 			}
 		}
-	case "repository":
+	case enumtypes.ConfigEntryScopeRepository:
 		if repositoryID == "" {
 			return nil, errs.Validation{Field: "repository_id", Msg: "is required"}
 		}
@@ -863,11 +864,11 @@ func (s *Service) ListConfigEntries(ctx context.Context, principal Principal, sc
 			}
 		}
 	default:
-		return nil, errs.Validation{Field: "scope", Msg: fmt.Sprintf("unsupported scope %q", scope)}
+		return nil, errs.Validation{Field: "scope", Msg: fmt.Sprintf("unsupported scope %q", scopeEnum)}
 	}
 
 	items, err := s.configEntries.List(ctx, configentryrepo.ListFilter{
-		Scope:        scope,
+		Scope:        scopeEnum,
 		ProjectID:    projectID,
 		RepositoryID: repositoryID,
 		Limit:        limit,
@@ -876,14 +877,14 @@ func (s *Service) ListConfigEntries(ctx context.Context, principal Principal, sc
 		return nil, err
 	}
 
-	if scope == "platform" && principal.IsPlatformAdmin {
+	if scopeEnum == enumtypes.ConfigEntryScopePlatform && principal.IsPlatformAdmin {
 		// Keep platform config view in sync with what is actually mounted in Kubernetes.
 		// Import is create-if-missing (safe) and does not overwrite existing keys.
 		if err := s.importPlatformConfigEntriesFromKubernetes(ctx, principal.UserID); err != nil {
 			return nil, err
 		}
 		items, err = s.configEntries.List(ctx, configentryrepo.ListFilter{
-			Scope:        scope,
+			Scope:        scopeEnum,
 			ProjectID:    projectID,
 			RepositoryID: repositoryID,
 			Limit:        limit,
@@ -918,7 +919,7 @@ func (s *Service) importPlatformConfigEntriesFromKubernetes(ctx context.Context,
 
 	// Build a fast lookup for existing platform keys to ensure import is create-if-missing.
 	existing, err := s.configEntries.List(ctx, configentryrepo.ListFilter{
-		Scope: "platform",
+		Scope: enumtypes.ConfigEntryScopePlatform,
 		Limit: 5000,
 	})
 	if err != nil {
@@ -971,12 +972,12 @@ func (s *Service) importPlatformConfigEntriesFromKubernetes(ctx context.Context,
 				return fmt.Errorf("encrypt imported secret %s: %w", key, err)
 			}
 			if _, err := s.configEntries.Upsert(ctx, configentryrepo.UpsertParams{
-				Scope:           "platform",
-				Kind:            "secret",
+				Scope:           enumtypes.ConfigEntryScopePlatform,
+				Kind:            enumtypes.ConfigEntryKindSecret,
 				Key:             key,
 				ValueEncrypted:  enc,
 				SyncTargets:     []string{syncTargetK8sSecretPrefix + namespace + "/" + secretName},
-				Mutability:      "startup_required",
+				Mutability:      enumtypes.ConfigEntryMutabilityStartupRequired,
 				IsDangerous:     false,
 				CreatedByUserID: userID,
 				UpdatedByUserID: userID,
@@ -1015,12 +1016,12 @@ func (s *Service) importPlatformConfigEntriesFromKubernetes(ctx context.Context,
 				continue
 			}
 			if _, err := s.configEntries.Upsert(ctx, configentryrepo.UpsertParams{
-				Scope:           "platform",
-				Kind:            "variable",
+				Scope:           enumtypes.ConfigEntryScopePlatform,
+				Kind:            enumtypes.ConfigEntryKindVariable,
 				Key:             key,
 				ValuePlain:      strings.TrimSpace(value),
 				SyncTargets:     []string{syncTargetK8sConfigMapPrefix + namespace + "/" + configMapName},
-				Mutability:      "startup_required",
+				Mutability:      enumtypes.ConfigEntryMutabilityStartupRequired,
 				IsDangerous:     false,
 				CreatedByUserID: userID,
 				UpdatedByUserID: userID,
@@ -1035,8 +1036,9 @@ func (s *Service) importPlatformConfigEntriesFromKubernetes(ctx context.Context,
 }
 
 func (s *Service) UpsertConfigEntry(ctx context.Context, principal Principal, params querytypes.ConfigEntryUpsertParams, dangerousConfirmed bool) (configentryrepo.ConfigEntry, error) {
-	params.Scope = strings.TrimSpace(params.Scope)
-	params.Kind = strings.TrimSpace(params.Kind)
+	params.Scope = enumtypes.ConfigEntryScope(strings.TrimSpace(string(params.Scope)))
+	params.Kind = enumtypes.ConfigEntryKind(strings.TrimSpace(string(params.Kind)))
+	params.Mutability = enumtypes.ConfigEntryMutability(strings.TrimSpace(string(params.Mutability)))
 	params.Key = strings.TrimSpace(params.Key)
 	if params.Scope == "" {
 		return configentryrepo.ConfigEntry{}, errs.Validation{Field: "scope", Msg: "is required"}
@@ -1050,12 +1052,12 @@ func (s *Service) UpsertConfigEntry(ctx context.Context, principal Principal, pa
 
 	// Normalize irrelevant scope refs early (affects dangerous-key exists check).
 	switch params.Scope {
-	case "platform":
+	case enumtypes.ConfigEntryScopePlatform:
 		params.ProjectID = ""
 		params.RepositoryID = ""
-	case "project":
+	case enumtypes.ConfigEntryScopeProject:
 		params.RepositoryID = ""
-	case "repository":
+	case enumtypes.ConfigEntryScopeRepository:
 		params.ProjectID = ""
 	}
 
@@ -1070,11 +1072,11 @@ func (s *Service) UpsertConfigEntry(ctx context.Context, principal Principal, pa
 	}
 
 	switch params.Scope {
-	case "platform":
+	case enumtypes.ConfigEntryScopePlatform:
 		if !principal.IsPlatformAdmin {
 			return configentryrepo.ConfigEntry{}, errs.Forbidden{Msg: "platform admin required"}
 		}
-	case "project":
+	case enumtypes.ConfigEntryScopeProject:
 		if params.ProjectID == "" {
 			return configentryrepo.ConfigEntry{}, errs.Validation{Field: "project_id", Msg: "is required"}
 		}
@@ -1090,7 +1092,7 @@ func (s *Service) UpsertConfigEntry(ctx context.Context, principal Principal, pa
 				return configentryrepo.ConfigEntry{}, errs.Forbidden{Msg: "project write access required"}
 			}
 		}
-	case "repository":
+	case enumtypes.ConfigEntryScopeRepository:
 		if params.RepositoryID == "" {
 			return configentryrepo.ConfigEntry{}, errs.Validation{Field: "repository_id", Msg: "is required"}
 		}
@@ -1118,10 +1120,10 @@ func (s *Service) UpsertConfigEntry(ctx context.Context, principal Principal, pa
 	}
 
 	switch params.Kind {
-	case "variable":
+	case enumtypes.ConfigEntryKindVariable:
 		params.ValuePlain = strings.TrimSpace(params.ValuePlain)
 		params.ValueEncrypted = nil
-	case "secret":
+	case enumtypes.ConfigEntryKindSecret:
 		params.ValuePlain = ""
 		if len(params.ValueEncrypted) == 0 {
 			return configentryrepo.ConfigEntry{}, errs.Validation{Field: "value_secret", Msg: "is required"}
@@ -1159,12 +1161,12 @@ func (s *Service) DeleteConfigEntry(ctx context.Context, principal Principal, co
 		return errs.Validation{Field: "config_entry_id", Msg: "not found"}
 	}
 
-	switch strings.TrimSpace(item.Scope) {
-	case "platform":
+	switch enumtypes.ConfigEntryScope(strings.TrimSpace(string(item.Scope))) {
+	case enumtypes.ConfigEntryScopePlatform:
 		if !principal.IsPlatformAdmin {
 			return errs.Forbidden{Msg: "platform admin required"}
 		}
-	case "project":
+	case enumtypes.ConfigEntryScopeProject:
 		projectID := strings.TrimSpace(item.ProjectID)
 		if projectID == "" {
 			return errs.Validation{Field: "config_entry_id", Msg: "project_id is empty"}
@@ -1181,7 +1183,7 @@ func (s *Service) DeleteConfigEntry(ctx context.Context, principal Principal, co
 				return errs.Forbidden{Msg: "project write access required"}
 			}
 		}
-	case "repository":
+	case enumtypes.ConfigEntryScopeRepository:
 		repositoryID := strings.TrimSpace(item.RepositoryID)
 		if repositoryID == "" {
 			return errs.Validation{Field: "config_entry_id", Msg: "repository_id is empty"}
@@ -1224,10 +1226,10 @@ func (s *Service) syncConfigEntryTargets(ctx context.Context, params querytypes.
 		return nil
 	}
 
-	kind := strings.TrimSpace(params.Kind)
-	mutability := strings.TrimSpace(params.Mutability)
+	kind := enumtypes.ConfigEntryKind(strings.TrimSpace(string(params.Kind)))
+	mutability := enumtypes.ConfigEntryMutability(strings.TrimSpace(string(params.Mutability)))
 	if mutability == "" {
-		mutability = "startup_required"
+		mutability = enumtypes.ConfigEntryMutabilityStartupRequired
 	}
 	key := strings.TrimSpace(params.Key)
 	if key == "" {
@@ -1236,9 +1238,9 @@ func (s *Service) syncConfigEntryTargets(ctx context.Context, params querytypes.
 
 	value := ""
 	switch kind {
-	case "variable":
+	case enumtypes.ConfigEntryKindVariable:
 		value = params.ValuePlain
-	case "secret":
+	case enumtypes.ConfigEntryKindSecret:
 		if len(params.ValueEncrypted) == 0 {
 			return nil
 		}
@@ -1282,7 +1284,7 @@ func (s *Service) syncConfigEntryTargets(ctx context.Context, params querytypes.
 				return err
 			}
 		case strings.HasPrefix(target, syncTargetK8sConfigMapPrefix):
-			if kind != "variable" {
+			if kind != enumtypes.ConfigEntryKindVariable {
 				return errs.Validation{Field: "sync_targets", Msg: "k8s configmap sync target requires kind=variable"}
 			}
 			spec := strings.TrimSpace(strings.TrimPrefix(target, syncTargetK8sConfigMapPrefix))
@@ -1308,7 +1310,7 @@ func (s *Service) syncGitHubEnvironmentValue(
 	targetKind string, // secret|variable
 	key string,
 	value string,
-	mutability string,
+	mutability enumtypes.ConfigEntryMutability,
 ) error {
 	if s.githubMgmt == nil {
 		return fmt.Errorf("failed_precondition: github management client is not configured")
@@ -1324,7 +1326,7 @@ func (s *Service) syncGitHubEnvironmentValue(
 	}
 	for _, repo := range repos {
 		platformToken, _, _, _, tokenErr := s.resolveEffectiveGitHubTokens(ctx, params.ProjectID, repo.ID)
-		if params.Scope == "platform" {
+		if params.Scope == enumtypes.ConfigEntryScopePlatform {
 			platformToken, tokenErr = s.resolvePlatformManagementToken(ctx)
 		}
 		if tokenErr != nil {
@@ -1337,7 +1339,7 @@ func (s *Service) syncGitHubEnvironmentValue(
 
 		switch targetKind {
 		case "secret":
-			if mutability == "startup_required" {
+			if mutability == enumtypes.ConfigEntryMutabilityStartupRequired {
 				names, err := s.githubMgmt.ListEnvSecretNames(ctx, platformToken, repo.Owner, repo.Name, envName)
 				if err != nil {
 					return err
@@ -1355,7 +1357,7 @@ func (s *Service) syncGitHubEnvironmentValue(
 				return err
 			}
 			if current, ok := existing[key]; ok {
-				if mutability == "startup_required" {
+				if mutability == enumtypes.ConfigEntryMutabilityStartupRequired {
 					continue
 				}
 				if strings.TrimSpace(current) == strings.TrimSpace(value) {
@@ -1373,21 +1375,21 @@ func (s *Service) syncGitHubEnvironmentValue(
 }
 
 func (s *Service) resolveGitHubReposForConfigSync(ctx context.Context, params querytypes.ConfigEntryUpsertParams) ([]repocfgrepo.RepositoryBinding, error) {
-	scope := strings.TrimSpace(params.Scope)
+	scope := enumtypes.ConfigEntryScope(strings.TrimSpace(string(params.Scope)))
 	switch scope {
-	case "platform":
+	case enumtypes.ConfigEntryScopePlatform:
 		fullName := getOptionalEnv("CODEXK8S_GITHUB_REPO")
 		owner, name, err := parseGitHubFullName(fullName)
 		if err != nil {
 			return nil, err
 		}
 		return []repocfgrepo.RepositoryBinding{{Owner: owner, Name: name}}, nil
-	case "project":
+	case enumtypes.ConfigEntryScopeProject:
 		if params.ProjectID == "" {
 			return nil, errs.Validation{Field: "project_id", Msg: "is required"}
 		}
 		return s.repos.ListForProject(ctx, params.ProjectID, 1000)
-	case "repository":
+	case enumtypes.ConfigEntryScopeRepository:
 		if params.RepositoryID == "" {
 			return nil, errs.Validation{Field: "repository_id", Msg: "is required"}
 		}
@@ -1404,7 +1406,7 @@ func (s *Service) resolveGitHubReposForConfigSync(ctx context.Context, params qu
 	}
 }
 
-func (s *Service) syncKubernetesSecret(ctx context.Context, namespace string, secretName string, key string, value string, mutability string) error {
+func (s *Service) syncKubernetesSecret(ctx context.Context, namespace string, secretName string, key string, value string, mutability enumtypes.ConfigEntryMutability) error {
 	if s.k8s == nil {
 		return fmt.Errorf("failed_precondition: kubernetes client is not configured")
 	}
@@ -1422,7 +1424,7 @@ func (s *Service) syncKubernetesSecret(ctx context.Context, namespace string, se
 	if !ok {
 		existing = map[string][]byte{}
 	}
-	if _, exists := existing[key]; exists && mutability == "startup_required" {
+	if _, exists := existing[key]; exists && mutability == enumtypes.ConfigEntryMutabilityStartupRequired {
 		return nil
 	}
 
@@ -1434,7 +1436,7 @@ func (s *Service) syncKubernetesSecret(ctx context.Context, namespace string, se
 	return s.k8s.UpsertSecret(ctx, namespace, secretName, merged)
 }
 
-func (s *Service) syncKubernetesConfigMap(ctx context.Context, namespace string, configMapName string, key string, value string, mutability string) error {
+func (s *Service) syncKubernetesConfigMap(ctx context.Context, namespace string, configMapName string, key string, value string, mutability enumtypes.ConfigEntryMutability) error {
 	if s.k8s == nil {
 		return fmt.Errorf("failed_precondition: kubernetes client is not configured")
 	}
@@ -1452,7 +1454,7 @@ func (s *Service) syncKubernetesConfigMap(ctx context.Context, namespace string,
 	if !ok {
 		existing = map[string]string{}
 	}
-	if _, exists := existing[key]; exists && mutability == "startup_required" {
+	if _, exists := existing[key]; exists && mutability == enumtypes.ConfigEntryMutabilityStartupRequired {
 		return nil
 	}
 

@@ -20,6 +20,7 @@ import (
 	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
 	agentcallback "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/agentcallback"
@@ -810,14 +811,14 @@ func (s *Server) ListConfigEntries(ctx context.Context, req *controlplanev1.List
 	for _, item := range items {
 		out = append(out, &controlplanev1.ConfigEntry{
 			Id:           item.ID,
-			Scope:        item.Scope,
-			Kind:         item.Kind,
+			Scope:        string(item.Scope),
+			Kind:         string(item.Kind),
 			ProjectId:    stringPtrOrNil(strings.TrimSpace(item.ProjectID)),
 			RepositoryId: stringPtrOrNil(strings.TrimSpace(item.RepositoryID)),
 			Key:          item.Key,
 			Value:        stringPtrOrNil(strings.TrimSpace(item.Value)),
 			SyncTargets:  item.SyncTargets,
-			Mutability:   item.Mutability,
+			Mutability:   string(item.Mutability),
 			IsDangerous:  item.IsDangerous,
 			UpdatedAt:    stringPtrOrNil(strings.TrimSpace(item.UpdatedAt)),
 		})
@@ -839,15 +840,15 @@ func (s *Server) UpsertConfigEntry(ctx context.Context, req *controlplanev1.Upse
 		}
 	}
 	item, err := s.staff.UpsertConfigEntry(ctx, p, querytypes.ConfigEntryUpsertParams{
-		Scope:           strings.TrimSpace(req.Scope),
-		Kind:            strings.TrimSpace(req.Kind),
+		Scope:           enumtypes.ConfigEntryScope(strings.TrimSpace(req.Scope)),
+		Kind:            enumtypes.ConfigEntryKind(strings.TrimSpace(req.Kind)),
 		ProjectID:       strings.TrimSpace(req.GetProjectId()),
 		RepositoryID:    strings.TrimSpace(req.GetRepositoryId()),
 		Key:             strings.TrimSpace(req.Key),
 		ValuePlain:      strings.TrimSpace(req.GetValuePlain()),
 		ValueEncrypted:  encrypted,
 		SyncTargets:     req.SyncTargets,
-		Mutability:      strings.TrimSpace(req.Mutability),
+		Mutability:      enumtypes.ConfigEntryMutability(strings.TrimSpace(req.Mutability)),
 		IsDangerous:     req.IsDangerous,
 		CreatedByUserID: p.UserID,
 	}, req.DangerousConfirmed)
@@ -856,14 +857,14 @@ func (s *Server) UpsertConfigEntry(ctx context.Context, req *controlplanev1.Upse
 	}
 	return &controlplanev1.ConfigEntry{
 		Id:           item.ID,
-		Scope:        item.Scope,
-		Kind:         item.Kind,
+		Scope:        string(item.Scope),
+		Kind:         string(item.Kind),
 		ProjectId:    stringPtrOrNil(strings.TrimSpace(item.ProjectID)),
 		RepositoryId: stringPtrOrNil(strings.TrimSpace(item.RepositoryID)),
 		Key:          item.Key,
 		Value:        stringPtrOrNil(strings.TrimSpace(item.Value)),
 		SyncTargets:  item.SyncTargets,
-		Mutability:   item.Mutability,
+		Mutability:   string(item.Mutability),
 		IsDangerous:  item.IsDangerous,
 		UpdatedAt:    stringPtrOrNil(strings.TrimSpace(item.UpdatedAt)),
 	}, nil

@@ -11,7 +11,7 @@ export type ConfigEntry = {
   key: string;
   value: string | null;
   sync_targets: string[];
-  mutability: string;
+  mutability: ConfigMutability;
   is_dangerous: boolean;
   updated_at: string | null;
 };
