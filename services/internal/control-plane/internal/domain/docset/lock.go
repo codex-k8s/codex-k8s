@@ -3,52 +3,35 @@ package docset
 import (
 	"encoding/json"
 	"fmt"
+
+	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
 )
 
-type Lock struct {
-	LockVersion int `json:"lock_version"`
-	Docset      LockDocset `json:"docset"`
-	Files       []LockFile `json:"files"`
-}
-
-type LockDocset struct {
-	ID            string   `json:"id"`
-	Ref           string   `json:"ref"`
-	Locale        string   `json:"locale"`
-	SelectedGroups []string `json:"selected_groups"`
-}
-
-type LockFile struct {
-	Path       string `json:"path"`
-	SHA256     string `json:"sha256"`
-	SourcePath string `json:"source_path"`
-}
-
-func NewLock(docsetID string, ref string, locale string, selectedGroups []string, files []LockFile) Lock {
-	return Lock{
+func NewLock(docsetID string, ref string, locale string, selectedGroups []string, files []valuetypes.DocsetLockFile) valuetypes.DocsetLock {
+	return valuetypes.DocsetLock{
 		LockVersion: 1,
-		Docset: LockDocset{
+		Docset: valuetypes.DocsetLockDocset{
 			ID:             docsetID,
 			Ref:            ref,
 			Locale:         locale,
 			SelectedGroups: append([]string(nil), selectedGroups...),
 		},
-		Files: append([]LockFile(nil), files...),
+		Files: append([]valuetypes.DocsetLockFile(nil), files...),
 	}
 }
 
-func ParseLock(blob []byte) (Lock, error) {
-	var lock Lock
+func ParseLock(blob []byte) (valuetypes.DocsetLock, error) {
+	var lock valuetypes.DocsetLock
 	if err := json.Unmarshal(blob, &lock); err != nil {
-		return Lock{}, fmt.Errorf("parse docset lock json: %w", err)
+		return valuetypes.DocsetLock{}, fmt.Errorf("parse docset lock json: %w", err)
 	}
 	if lock.LockVersion != 1 {
-		return Lock{}, fmt.Errorf("unsupported lock_version=%d (expected 1)", lock.LockVersion)
+		return valuetypes.DocsetLock{}, fmt.Errorf("unsupported lock_version=%d (expected 1)", lock.LockVersion)
 	}
 	return lock, nil
 }
 
-func MarshalLock(lock Lock) ([]byte, error) {
+func MarshalLock(lock valuetypes.DocsetLock) ([]byte, error) {
 	blob, err := json.MarshalIndent(lock, "", "  ")
 	if err != nil {
 		return nil, fmt.Errorf("marshal docset lock json: %w", err)
@@ -56,4 +39,3 @@ func MarshalLock(lock Lock) ([]byte, error) {
 	blob = append(blob, '\n')
 	return blob, nil
 }
-

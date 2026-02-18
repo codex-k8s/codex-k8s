@@ -3,7 +3,6 @@ package repocfg
 import (
 	"context"
 	_ "embed"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
+	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/repocfg/dbmodel"
 )
 
 var (
@@ -62,62 +62,35 @@ func (r *Repository) ListForProject(ctx context.Context, projectID string, limit
 	if err != nil {
 		return nil, fmt.Errorf("list repositories: %w", err)
 	}
-	defer rows.Close()
-
-	out := make([]domainrepo.RepositoryBinding, 0, limit)
-	for rows.Next() {
-		var item domainrepo.RepositoryBinding
-		if err := rows.Scan(
-			&item.ID,
-			&item.ProjectID,
-			&item.Provider,
-			&item.ExternalID,
-			&item.Owner,
-			&item.Name,
-			&item.ServicesYAMLPath,
-			&item.BotUsername,
-			&item.BotEmail,
-			&item.PreflightUpdatedAt,
-		); err != nil {
-			return nil, fmt.Errorf("scan repository row: %w", err)
-		}
-		out = append(out, item)
+	items, err := collectRepositoryBindingRows(rows, "repositories")
+	if err != nil {
+		return nil, err
 	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate repositories: %w", err)
+
+	out := make([]domainrepo.RepositoryBinding, 0, len(items))
+	for _, item := range items {
+		out = append(out, repositoryBindingFromDBModel(item))
 	}
 	return out, nil
 }
 
 // GetByID returns one repository binding by id.
 func (r *Repository) GetByID(ctx context.Context, repositoryID string) (domainrepo.RepositoryBinding, bool, error) {
-	var item domainrepo.RepositoryBinding
-	err := r.db.QueryRow(ctx, queryGetByID, repositoryID).Scan(
-		&item.ID,
-		&item.ProjectID,
-		&item.Provider,
-		&item.ExternalID,
-		&item.Owner,
-		&item.Name,
-		&item.ServicesYAMLPath,
-		&item.BotUsername,
-		&item.BotEmail,
-		&item.PreflightUpdatedAt,
-	)
-	if err == nil {
-		return item, true, nil
+	item, ok, err := queryOneRepositoryBinding(ctx, r.db, queryGetByID, repositoryID)
+	if err != nil {
+		return domainrepo.RepositoryBinding{}, false, fmt.Errorf("get repository binding by id: %w", err)
 	}
-	if errors.Is(err, pgx.ErrNoRows) {
+	if !ok {
 		return domainrepo.RepositoryBinding{}, false, nil
 	}
-	return domainrepo.RepositoryBinding{}, false, fmt.Errorf("get repository binding by id: %w", err)
+	return item, true, nil
 }
 
 // Upsert creates or updates a repository binding.
 func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams) (domainrepo.RepositoryBinding, error) {
-	var item domainrepo.RepositoryBinding
-	err := r.db.QueryRow(
+	item, ok, err := queryOneRepositoryBinding(
 		ctx,
+		r.db,
 		queryUpsert,
 		params.ProjectID,
 		params.Provider,
@@ -126,25 +99,14 @@ func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams)
 		params.Name,
 		params.TokenEncrypted,
 		params.ServicesYAMLPath,
-	).Scan(
-		&item.ID,
-		&item.ProjectID,
-		&item.Provider,
-		&item.ExternalID,
-		&item.Owner,
-		&item.Name,
-		&item.ServicesYAMLPath,
-		&item.BotUsername,
-		&item.BotEmail,
-		&item.PreflightUpdatedAt,
 	)
-	if err == nil {
-		return item, nil
+	if err != nil {
+		return domainrepo.RepositoryBinding{}, fmt.Errorf("upsert repository binding: %w", err)
 	}
-	if errors.Is(err, pgx.ErrNoRows) {
+	if !ok {
 		return domainrepo.RepositoryBinding{}, fmt.Errorf("repository is already attached to another project (provider=%s external_id=%d)", params.Provider, params.ExternalID)
 	}
-	return domainrepo.RepositoryBinding{}, fmt.Errorf("upsert repository binding: %w", err)
+	return item, nil
 }
 
 // Delete removes repository binding by id for a project.
@@ -154,54 +116,50 @@ func (r *Repository) Delete(ctx context.Context, projectID string, repositoryID 
 
 // FindByProviderExternalID resolves binding by provider repo id.
 func (r *Repository) FindByProviderExternalID(ctx context.Context, provider string, externalID int64) (domainrepo.FindResult, bool, error) {
-	var res domainrepo.FindResult
-	err := r.db.QueryRow(ctx, queryFindByProviderExternalID, provider, externalID).Scan(&res.ProjectID, &res.RepositoryID, &res.ServicesYAMLPath)
-	if err == nil {
-		return res, true, nil
+	item, ok, err := queryOneLookupRow(ctx, r.db, queryFindByProviderExternalID, provider, externalID)
+	if err != nil {
+		return domainrepo.FindResult{}, false, fmt.Errorf("find repository binding: %w", err)
 	}
-	if errors.Is(err, pgx.ErrNoRows) {
+	if !ok {
 		return domainrepo.FindResult{}, false, nil
 	}
-	return domainrepo.FindResult{}, false, fmt.Errorf("find repository binding: %w", err)
+	return findResultFromDBModel(item), true, nil
 }
 
 // FindByProviderOwnerName resolves binding by provider repo slug (owner/name).
 func (r *Repository) FindByProviderOwnerName(ctx context.Context, provider string, owner string, name string) (domainrepo.FindResult, bool, error) {
-	var res domainrepo.FindResult
-	err := r.db.QueryRow(ctx, queryFindByProviderOwnerName, provider, owner, name).Scan(&res.ProjectID, &res.RepositoryID, &res.ServicesYAMLPath)
-	if err == nil {
-		return res, true, nil
+	item, ok, err := queryOneLookupRow(ctx, r.db, queryFindByProviderOwnerName, provider, owner, name)
+	if err != nil {
+		return domainrepo.FindResult{}, false, fmt.Errorf("find repository binding by owner/name: %w", err)
 	}
-	if errors.Is(err, pgx.ErrNoRows) {
+	if !ok {
 		return domainrepo.FindResult{}, false, nil
 	}
-	return domainrepo.FindResult{}, false, fmt.Errorf("find repository binding by owner/name: %w", err)
+	return findResultFromDBModel(item), true, nil
 }
 
 // GetTokenEncrypted returns encrypted token bytes for a repository binding.
 func (r *Repository) GetTokenEncrypted(ctx context.Context, repositoryID string) ([]byte, bool, error) {
-	var token []byte
-	err := r.db.QueryRow(ctx, queryGetTokenEncrypted, repositoryID).Scan(&token)
-	if err == nil {
-		return token, true, nil
+	token, ok, err := queryOneBytes(ctx, r.db, queryGetTokenEncrypted, repositoryID)
+	if err != nil {
+		return nil, false, fmt.Errorf("get repository token: %w", err)
 	}
-	if errors.Is(err, pgx.ErrNoRows) {
+	if !ok {
 		return nil, false, nil
 	}
-	return nil, false, fmt.Errorf("get repository token: %w", err)
+	return token, true, nil
 }
 
 // GetBotTokenEncrypted returns encrypted bot token bytes for a repository binding.
 func (r *Repository) GetBotTokenEncrypted(ctx context.Context, repositoryID string) ([]byte, bool, error) {
-	var token []byte
-	err := r.db.QueryRow(ctx, queryGetBotTokenEncrypted, repositoryID).Scan(&token)
-	if err == nil {
-		return token, true, nil
+	token, ok, err := queryOneBytes(ctx, r.db, queryGetBotTokenEncrypted, repositoryID)
+	if err != nil {
+		return nil, false, fmt.Errorf("get repository bot token: %w", err)
 	}
-	if errors.Is(err, pgx.ErrNoRows) {
+	if !ok {
 		return nil, false, nil
 	}
-	return nil, false, fmt.Errorf("get repository bot token: %w", err)
+	return token, true, nil
 }
 
 // UpsertBotParams updates bot token + params for a repository binding.
@@ -229,21 +187,22 @@ func (r *Repository) AcquirePreflightLock(ctx context.Context, params domainrepo
 		return "", false, fmt.Errorf("repository id and lock token are required")
 	}
 
-	var acquiredToken string
-	if err := r.db.QueryRow(
+	acquiredToken, ok, err := queryOneString(
 		ctx,
+		r.db,
 		queryAcquirePreflightLock,
 		repositoryID,
 		lockToken,
 		strings.TrimSpace(params.LockedByUserID),
 		params.LockedUntilUTC,
-	).Scan(&acquiredToken); err == nil {
-		return strings.TrimSpace(acquiredToken), true, nil
-	} else if errors.Is(err, pgx.ErrNoRows) {
-		return "", false, nil
-	} else {
+	)
+	if err != nil {
 		return "", false, fmt.Errorf("acquire repository preflight lock: %w", err)
 	}
+	if !ok {
+		return "", false, nil
+	}
+	return strings.TrimSpace(acquiredToken), true, nil
 }
 
 func (r *Repository) ReleasePreflightLock(ctx context.Context, repositoryID string, lockToken string) error {
@@ -265,4 +224,95 @@ func (r *Repository) SetTokenEncryptedForAll(ctx context.Context, tokenEncrypted
 		return 0, fmt.Errorf("set repository token for all: %w", err)
 	}
 	return res.RowsAffected(), nil
+}
+
+func queryOneRepositoryBinding(ctx context.Context, db *pgxpool.Pool, query string, args ...any) (domainrepo.RepositoryBinding, bool, error) {
+	rows, err := db.Query(ctx, query, args...)
+	if err != nil {
+		return domainrepo.RepositoryBinding{}, false, err
+	}
+	items, err := collectRepositoryBindingRows(rows, "repository binding")
+	if err != nil {
+		return domainrepo.RepositoryBinding{}, false, err
+	}
+	if len(items) == 0 {
+		return domainrepo.RepositoryBinding{}, false, nil
+	}
+	return repositoryBindingFromDBModel(items[0]), true, nil
+}
+
+func collectRepositoryBindingRows(rows pgx.Rows, operationLabel string) ([]dbmodel.RepositoryBindingRow, error) {
+	items, err := pgx.CollectRows(rows, pgx.RowToStructByName[dbmodel.RepositoryBindingRow])
+	if err != nil {
+		return nil, fmt.Errorf("collect %s: %w", operationLabel, err)
+	}
+	return items, nil
+}
+
+func repositoryBindingFromDBModel(row dbmodel.RepositoryBindingRow) domainrepo.RepositoryBinding {
+	return domainrepo.RepositoryBinding{
+		ID:                 strings.TrimSpace(row.ID),
+		ProjectID:          strings.TrimSpace(row.ProjectID),
+		Provider:           strings.TrimSpace(row.Provider),
+		ExternalID:         row.ExternalID,
+		Owner:              strings.TrimSpace(row.Owner),
+		Name:               strings.TrimSpace(row.Name),
+		ServicesYAMLPath:   strings.TrimSpace(row.ServicesYAMLPath),
+		BotUsername:        strings.TrimSpace(row.BotUsername),
+		BotEmail:           strings.TrimSpace(row.BotEmail),
+		PreflightUpdatedAt: strings.TrimSpace(row.PreflightUpdatedAt),
+	}
+}
+
+func queryOneLookupRow(ctx context.Context, db *pgxpool.Pool, query string, args ...any) (dbmodel.RepositoryBindingLookupRow, bool, error) {
+	rows, err := db.Query(ctx, query, args...)
+	if err != nil {
+		return dbmodel.RepositoryBindingLookupRow{}, false, err
+	}
+	items, err := pgx.CollectRows(rows, pgx.RowToStructByPos[dbmodel.RepositoryBindingLookupRow])
+	if err != nil {
+		return dbmodel.RepositoryBindingLookupRow{}, false, fmt.Errorf("collect repository binding lookup: %w", err)
+	}
+	if len(items) == 0 {
+		return dbmodel.RepositoryBindingLookupRow{}, false, nil
+	}
+	return items[0], true, nil
+}
+
+func findResultFromDBModel(row dbmodel.RepositoryBindingLookupRow) domainrepo.FindResult {
+	return domainrepo.FindResult{
+		ProjectID:        strings.TrimSpace(row.ProjectID),
+		RepositoryID:     strings.TrimSpace(row.RepositoryID),
+		ServicesYAMLPath: strings.TrimSpace(row.ServicesYAMLPath),
+	}
+}
+
+func queryOneString(ctx context.Context, db *pgxpool.Pool, query string, args ...any) (string, bool, error) {
+	rows, err := db.Query(ctx, query, args...)
+	if err != nil {
+		return "", false, err
+	}
+	items, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		return "", false, fmt.Errorf("collect string row: %w", err)
+	}
+	if len(items) == 0 {
+		return "", false, nil
+	}
+	return items[0], true, nil
+}
+
+func queryOneBytes(ctx context.Context, db *pgxpool.Pool, query string, args ...any) ([]byte, bool, error) {
+	rows, err := db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, false, err
+	}
+	items, err := pgx.CollectRows(rows, pgx.RowTo[[]byte])
+	if err != nil {
+		return nil, false, fmt.Errorf("collect bytes row: %w", err)
+	}
+	if len(items) == 0 {
+		return nil, false, nil
+	}
+	return items[0], true, nil
 }

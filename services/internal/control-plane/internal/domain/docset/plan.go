@@ -6,19 +6,12 @@ import (
 	"fmt"
 	"path"
 	"strings"
+
+	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
 )
 
-type ImportPlanFile struct {
-	SrcPath        string
-	DstPath        string
-	ExpectedSHA256 string
-}
-
-type ImportPlan struct {
-	Files []ImportPlanFile
-}
-
-func BuildImportPlan(m Manifest, locale string, groupIDs []string) (ImportPlan, []string, error) {
+func BuildImportPlan(m entitytypes.DocsetManifest, locale string, groupIDs []string) (valuetypes.DocsetImportPlan, []string, error) {
 	selected := normalizeIDs(groupIDs)
 	if len(selected) == 0 {
 		// Default behavior: pick default_selected groups.
@@ -34,17 +27,17 @@ func BuildImportPlan(m Manifest, locale string, groupIDs []string) (ImportPlan, 
 		selected = normalizeIDs(selected)
 	}
 
-	groupsByID := make(map[string]ManifestGroup, len(m.Groups))
+	groupsByID := make(map[string]entitytypes.DocsetManifestGroup, len(m.Groups))
 	for _, g := range m.Groups {
 		groupsByID[g.ID] = g
 	}
 	for _, id := range selected {
 		if _, ok := groupsByID[id]; !ok {
-			return ImportPlan{}, nil, fmt.Errorf("unknown group id %q", id)
+			return valuetypes.DocsetImportPlan{}, nil, fmt.Errorf("unknown group id %q", id)
 		}
 	}
 
-	itemsByID := make(map[string]ManifestItem, len(m.Items))
+	itemsByID := make(map[string]entitytypes.DocsetManifestItem, len(m.Items))
 	for _, item := range m.Items {
 		if item.ID == "" {
 			continue
@@ -53,7 +46,7 @@ func BuildImportPlan(m Manifest, locale string, groupIDs []string) (ImportPlan, 
 	}
 
 	seen := make(map[string]struct{})
-	files := make([]ImportPlanFile, 0)
+	files := make([]valuetypes.DocsetImportPlanFile, 0)
 	for _, groupID := range selected {
 		g := groupsByID[groupID]
 		for _, itemID := range g.ItemIDs {
@@ -63,12 +56,12 @@ func BuildImportPlan(m Manifest, locale string, groupIDs []string) (ImportPlan, 
 			}
 			item, ok := itemsByID[itemID]
 			if !ok {
-				return ImportPlan{}, nil, fmt.Errorf("unknown item id %q in group %q", itemID, groupID)
+				return valuetypes.DocsetImportPlan{}, nil, fmt.Errorf("unknown item id %q in group %q", itemID, groupID)
 			}
 
 			dst := strings.TrimSpace(item.ImportPath)
 			if err := validateImportPath(dst); err != nil {
-				return ImportPlan{}, nil, fmt.Errorf("invalid import_path %q: %w", dst, err)
+				return valuetypes.DocsetImportPlan{}, nil, fmt.Errorf("invalid import_path %q: %w", dst, err)
 			}
 			if _, ok := seen[dst]; ok {
 				continue
@@ -77,10 +70,10 @@ func BuildImportPlan(m Manifest, locale string, groupIDs []string) (ImportPlan, 
 
 			src := item.SourcePaths.ForLocale(locale)
 			if err := validateSourcePath(src); err != nil {
-				return ImportPlan{}, nil, fmt.Errorf("invalid source_path %q: %w", src, err)
+				return valuetypes.DocsetImportPlan{}, nil, fmt.Errorf("invalid source_path %q: %w", src, err)
 			}
 			wantSHA := strings.TrimSpace(item.SHA256.ForLocale(locale))
-			files = append(files, ImportPlanFile{
+			files = append(files, valuetypes.DocsetImportPlanFile{
 				SrcPath:        src,
 				DstPath:        dst,
 				ExpectedSHA256: wantSHA,
@@ -88,7 +81,7 @@ func BuildImportPlan(m Manifest, locale string, groupIDs []string) (ImportPlan, 
 		}
 	}
 
-	return ImportPlan{Files: files}, selected, nil
+	return valuetypes.DocsetImportPlan{Files: files}, selected, nil
 }
 
 func validateImportPath(p string) error {

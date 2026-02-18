@@ -1,6 +1,10 @@
 package docset
 
-import "testing"
+import (
+	"testing"
+
+	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
+)
 
 func TestLock_MarshalParseRoundtrip(t *testing.T) {
 	in := NewLock(
@@ -8,7 +12,7 @@ func TestLock_MarshalParseRoundtrip(t *testing.T) {
 		"main",
 		"en",
 		[]string{"base", "templates"},
-		[]LockFile{{
+		[]valuetypes.DocsetLockFile{{
 			Path:       "docs/a.md",
 			SHA256:     "sha_a",
 			SourcePath: "src/a_en.md",
