@@ -263,6 +263,7 @@ spec:
 ## 🔑 GitHub токены (важно)
 
 - Для PR-flow использовать только `CODEXK8S_GIT_BOT_TOKEN`.
+- Для локальных операций `gh` (создание PR, комментарии в PR, review) брать `CODEXK8S_GIT_BOT_TOKEN` из `bootstrap/host/config.env`.
 - `CODEXK8S_GITHUB_PAT` использовать только для bootstrap/sync management операций платформы (webhook/labels/environments/secrets/variables).
 
 ## 🗺️ Что дальше (planned)

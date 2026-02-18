@@ -90,6 +90,7 @@ go run ./cmd/codex-bootstrap bootstrap \
 - Для bootstrap нужен `CODEXK8S_GITHUB_PAT` (fine-grained) с правами на `administration` (webhooks/labels), `secrets` и `variables`.
   Этот токен используется только для bootstrap/sync операций платформы (webhook/labels/environments/secrets/variables) и не используется в PR-flow агента.
 - Для PR-flow (создание/обновление PR, комментарии, review, push в рабочие ветки) использовать только `CODEXK8S_GIT_BOT_TOKEN`.
+  При локальных ручных операциях `gh` токен берётся из `bootstrap/host/config.env` (`CODEXK8S_GIT_BOT_TOKEN`).
 - Для staff UI и staff API требуется GitHub OAuth App:
   - создать на `https://github.com/settings/applications/new`;
   - `Homepage URL`: `https://<CODEXK8S_PRODUCTION_DOMAIN>`;
