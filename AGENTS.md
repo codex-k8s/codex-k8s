@@ -14,7 +14,7 @@
   - `services/jobs/agent-runner/README.md`;
   - `services/jobs/worker/README.md`;
   - `services/staff/web-console/README.md`.
-- Временные правила текущего ручного dev/production цикла (до полного dogfooding через `run:dev`) см. `.local/agents-temp-dev-rules.md`. Править `.local/agents-temp-dev-rules.md` строго запрещено, если не стоит явная задача на изменение временных правил.
+- Если ты запущен локально на машине разработчика (а не в спец. окружении kubernetes), то читай правила подключения к кластеру и работы с гитхабом в `.local/agents-temp-dev-rules.md`. Править `.local/agents-temp-dev-rules.md` строго запрещено, если не стоит явная задача на изменение временных правил.
 - Для Go-изменений обязательно исполнять требования из `docs/design-guidelines/go/**.md`, как до правок, так и перед подготовкой PR.
 - Для frontend-изменений обязательно исполнять требования из `docs/design-guidelines/vue/**.md`.
 - Для любых изменений читать `docs/design-guidelines/common/**.md`, который содержит общие требования проектирования для всех частей системы и языков программирования.
@@ -52,15 +52,15 @@
 
 Перед началом работ по типу задачи читать минимум указанный набор:
 
-| Тип задачи | Обязательные документы |
-|---|---|
-| Продуктовые требования/лейблы/этапы | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md` |
+| Тип задачи | Обязательные документы                                                                                                                                                                                                                                                                        |
+|---|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Продуктовые требования/лейблы/этапы | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`                                                                                                                   |
 | Архитектура и модель данных | `docs/architecture/c4_context.md`, `docs/architecture/c4_container.md`, `docs/architecture/api_contract.md`, `docs/architecture/data_model.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/prompt_templates_policy.md` |
-| Delivery/sprint/epics | `docs/delivery/development_process_requirements.md`, `docs/delivery/delivery_plan.md`, `docs/delivery/sprint_s*.md`, `docs/delivery/epic_s*.md`, `docs/delivery/epics/*.md` |
-| Трассируемость | `docs/delivery/requirements_traceability.md`, `docs/delivery/issue_map.md`, `docs/delivery/sprint_s*.md`, `docs/delivery/epic_s*.md` |
-| Ops и production проверки | `.local/agents-temp-dev-rules.md`, `docs/ops/production_runbook.md` |
+| Delivery/sprint/epics | `docs/delivery/development_process_requirements.md`, `docs/delivery/delivery_plan.md`, `docs/delivery/sprint_s*.md`, `docs/delivery/epic_s*.md`, `docs/delivery/epics/*.md`                                                                                                                   |
+| Трассируемость | `docs/delivery/requirements_traceability.md`, `docs/delivery/issue_map.md`, `docs/delivery/sprint_s*.md`, `docs/delivery/epic_s*.md`                                                                                                                                                          |
+| Ops и production проверки | `.local/agents-temp-dev-rules.md` (для локального агента), `docs/ops/production_runbook.md`                                                                                                                                                                                                   |
 
-- Уточнение для agent-run pod: файл `.local/agents-temp-dev-rules.md` может отсутствовать/быть недоступен в runtime-контейнере. В этом случае не блокируй выполнение задачи, а используй `AGENTS.md`, `docs/design-guidelines/**` и релевантные `docs/product/**`, `docs/architecture/**`, `docs/delivery/**` как источник правил.
+- Уточнение для agent-run pod: файл `.local/agents-temp-dev-rules.md` отсутствует в runtime-контейнере твоего Kubernetes-окружения. Используй `AGENTS.md`, `docs/design-guidelines/**` и релевантные `docs/product/**`, `docs/architecture/**`, `docs/delivery/**` как источник правил.
 
 ## Архитектурные границы (обязательны)
 
