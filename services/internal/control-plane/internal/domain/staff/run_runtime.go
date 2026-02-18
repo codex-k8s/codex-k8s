@@ -6,7 +6,8 @@ import (
 	"strings"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
-	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/staffrun"
+	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
 const (
@@ -25,7 +26,7 @@ type runLogsRuntime struct {
 }
 
 // ListRunJobs returns runtime jobs list with optional filters.
-func (s *Service) ListRunJobs(ctx context.Context, principal Principal, filter staffrunrepo.ListFilter) ([]staffrunrepo.Run, error) {
+func (s *Service) ListRunJobs(ctx context.Context, principal Principal, filter querytypes.StaffRunListFilter) ([]entitytypes.StaffRun, error) {
 	return s.listRuntimeRunsByScope(
 		ctx,
 		principal,
@@ -36,7 +37,7 @@ func (s *Service) ListRunJobs(ctx context.Context, principal Principal, filter s
 }
 
 // ListRunWaits returns wait queue list with optional filters.
-func (s *Service) ListRunWaits(ctx context.Context, principal Principal, filter staffrunrepo.ListFilter) ([]staffrunrepo.Run, error) {
+func (s *Service) ListRunWaits(ctx context.Context, principal Principal, filter querytypes.StaffRunListFilter) ([]entitytypes.StaffRun, error) {
 	return s.listRuntimeRunsByScope(
 		ctx,
 		principal,
@@ -46,13 +47,7 @@ func (s *Service) ListRunWaits(ctx context.Context, principal Principal, filter 
 	)
 }
 
-func (s *Service) listRuntimeRunsByScope(
-	ctx context.Context,
-	principal Principal,
-	filter staffrunrepo.ListFilter,
-	listAllFn func(ctx context.Context, filter staffrunrepo.ListFilter) ([]staffrunrepo.Run, error),
-	listForUserFn func(ctx context.Context, userID string, filter staffrunrepo.ListFilter) ([]staffrunrepo.Run, error),
-) ([]staffrunrepo.Run, error) {
+func (s *Service) listRuntimeRunsByScope(ctx context.Context, principal Principal, filter querytypes.StaffRunListFilter, listAllFn func(ctx context.Context, filter querytypes.StaffRunListFilter) ([]entitytypes.StaffRun, error), listForUserFn func(ctx context.Context, userID string, filter querytypes.StaffRunListFilter) ([]entitytypes.StaffRun, error)) ([]entitytypes.StaffRun, error) {
 	normalizedFilter := normalizeRuntimeListFilter(filter)
 	if principal.IsPlatformAdmin {
 		return listAllFn(ctx, normalizedFilter)
@@ -61,29 +56,29 @@ func (s *Service) listRuntimeRunsByScope(
 }
 
 // GetRunLogs returns run logs snapshot and tail lines.
-func (s *Service) GetRunLogs(ctx context.Context, principal Principal, runID string, tailLines int) (staffrunrepo.RunLogs, error) {
+func (s *Service) GetRunLogs(ctx context.Context, principal Principal, runID string, tailLines int) (entitytypes.StaffRunLogs, error) {
 	normalizedRunID := strings.TrimSpace(runID)
 	if normalizedRunID == "" {
-		return staffrunrepo.RunLogs{}, errs.Validation{Field: "run_id", Msg: "is required"}
+		return entitytypes.StaffRunLogs{}, errs.Validation{Field: "run_id", Msg: "is required"}
 	}
 	_, _, err := s.resolveRunAccess(ctx, principal, normalizedRunID)
 	if err != nil {
-		return staffrunrepo.RunLogs{}, err
+		return entitytypes.StaffRunLogs{}, err
 	}
 
 	item, ok, err := s.runs.GetLogsByRunID(ctx, normalizedRunID)
 	if err != nil {
-		return staffrunrepo.RunLogs{}, err
+		return entitytypes.StaffRunLogs{}, err
 	}
 	if !ok {
-		return staffrunrepo.RunLogs{}, errs.Validation{Field: "run_id", Msg: "not found"}
+		return entitytypes.StaffRunLogs{}, errs.Validation{Field: "run_id", Msg: "not found"}
 	}
 
 	item.TailLines = buildRunLogsTailLines(item.SnapshotJSON, normalizeTailLinesLimit(tailLines))
 	return item, nil
 }
 
-func normalizeRuntimeListFilter(filter staffrunrepo.ListFilter) staffrunrepo.ListFilter {
+func normalizeRuntimeListFilter(filter querytypes.StaffRunListFilter) querytypes.StaffRunListFilter {
 	normalized := filter
 	if normalized.Limit <= 0 {
 		normalized.Limit = defaultRunRuntimeListLimit
