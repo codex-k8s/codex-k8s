@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S3-D9
 type: epic
 title: "Epic S3 Day 9: Declarative full-env deploy and runtime parity"
-status: in_progress
+status: completed
 owner_role: EM
 created_at: 2026-02-13
 updated_at: 2026-02-18
@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - Цель: ввести универсальный контракт `services.yaml` (любой стек, любой проект) и общий движок рендера/планирования для `control-plane` и bootstrap binary.
 - Ключевая ценность: единый source of truth для full-env runtime, dogfooding `codex-k8s`, prompt context и первичного развертывания платформы.
-- MVP-результат: webhook-driven `codex-k8s` разворачивает окружения по typed execution-plan из `services.yaml`; shell-скрипты остаются thin-wrapper.
+- Фактический результат: webhook-driven `codex-k8s` разворачивает окружения по typed execution-plan из `services.yaml`, c repo-sync/pvc snapshot контуром и idempotent reconcile в runtime deploy.
 
 ## Priority
 - `P0`.
@@ -58,7 +58,6 @@ approvals:
   - настройка чистого Ubuntu 24.04: зависимости, Kubernetes, базовые скрипты/секреты/env;
   - раздельная подготовка GitHub-репозиториев: platform repo для CI/runtime secrets + webhook/labels, first-project repo (если отдельный) для дополнительной настройки webhook/labels;
   - деплой `codex-k8s` и handoff в webhook-driven `control-plane`.
-- E2E маршрут на отдельном чистом VPS через `bootstrap/host/config-e2e-test.env`.
 
 ### Out of scope
 - Внедрение `vcluster`/nested cluster в MVP.
@@ -110,7 +109,7 @@ approvals:
   - отдельный пустой GitHub repo проекта-примера подключается в e2e и проходит provisioning/deploy smoke;
   - проверка, что platform secrets/variables пишутся только в platform repo, webhook/labels всегда настраиваются в platform repo и дополнительно в first-project repo (если он отдельный).
 
-## Фактический статус реализации (2026-02-14)
+## Фактический статус реализации (2026-02-18)
 - Story-1 (`done`):
   - typed контракт `services.yaml` зафиксирован в `libs/go/servicescfg` (`apiVersion=codex-k8s.dev/v1alpha1`, `kind=ServiceStack`);
   - отдельный JSON Schema артефакт добавлен в `libs/go/servicescfg/schema/services.schema.json`;
@@ -125,22 +124,23 @@ approvals:
   - `control-plane` ставит desired state, выполнение делает отдельный worker/reconciler.
 - Story-5 (`done`):
   - prompt context экспортирует runtime hints, resolved service inventory и `codeUpdateStrategy` для сервисов.
-- Story-6 (`in_progress`):
-  - `codex-bootstrap` уже валидирует/рендерит `services.yaml` и запускает bootstrap сценарий;
-  - финальная проверка repo-isolation политики переносится в Story-8 e2e.
+- Story-6 (`done`):
+  - `codex-bootstrap` валидирует/рендерит `services.yaml`, синхронизирует GitHub/Kubernetes конфигурацию и запускает bootstrap сценарий;
+  - cleanup/emergency/preflight команды добавлены в CLI и включены в рабочий контур self-deploy.
 - Story-7 (`done`):
   - правило `codex-k8s production => {{ .Project }}-production` валидируется в loader;
   - namespace-level изоляция runtime и anti-conflict guardrails включены в текущий full-env путь.
-- Story-8 (`planned`):
-  - ожидает выполнения на отдельном чистом VPS с `bootstrap/host/config-e2e-test.env` и новым repo `codex-k8s/test`.
+- Story-8 (`moved`):
+  - full e2e на чистом VPS вынесен в финальный закрывающий эпик `docs/delivery/epics/epic-s3-day21-e2e-regression-and-mvp-closeout.md`;
+  - причина переноса: до e2e нужно закрыть оставшиеся core-flow блоки (prompt/templates, oauth override model, runtime error journal, run access key) и пройти ручной frontend цикл.
 
-## Текущий статус критериев приемки (2026-02-14)
-- `in_progress`: full-env сценарий для `codex-k8s` подтверждён на production; cross-project e2e (`project-example` + новый чистый VPS) остаётся открытым.
+## Текущий статус критериев приемки (2026-02-18)
+- `done`: full-env сценарий для `codex-k8s` подтверждён на production; typed runtime deploy работает через persisted reconcile loop.
 - `done`: `imports/components/deep-merge` и validation покрыты тестами `libs/go/servicescfg`; отдельная JSON Schema введена и валидируется в runtime loader.
 - `done`: `codeUpdateStrategy` присутствует и учитывается в runtime-рендере; экспорт в prompt context (runtime hints + inventory) реализован.
 - `done`: правило `production={{ .Project }}-production` для `codex-k8s` соблюдается и валидируется.
-- `in_progress`: dogfooding isolation на production подтверждён; финальная проверка через e2e runbook остаётся открытой.
-- `planned`: bootstrap e2e + evidence bundle будут закрыты после выполнения Story-8.
+- `done`: dogfooding isolation в namespace подтверждён и закреплён guardrails.
+- `moved`: bootstrap e2e + evidence bundle переносятся в Day21 (финальный e2e gate).
 
 ## Критерии приемки
 - Для минимум двух проектов (`project-example` и `codex-k8s`) full-env поднимается из `services.yaml` через typed execution-plan.
@@ -148,25 +148,18 @@ approvals:
 - `codeUpdateStrategy` (enum) присутствует в контракте, учитывается в runtime orchestration и попадает в prompt context.
 - Для `codex-k8s` подтверждено правило шаблона: `production` задаётся как `{{ .Project }}-production` и для `project=codex-k8s` резолвится в `codex-k8s-prod`.
 - Для ai-slot dogfooding подтверждено отсутствие конфликтов со production/prod платформой (namespace и runtime resources).
-- Bootstrap binary успешно отрабатывает e2e на чистом Ubuntu 24.04 с входом `bootstrap/host/config-e2e-test.env`.
-- Подтверждена repo-isolation политика bootstrap: platform secrets/variables не записываются в first-project repo; webhook/labels настраиваются в platform repo и в first-project repo только при его отдельном указании.
-- По e2e опубликован evidence bundle:
-  - команды/логи bootstrap;
-  - состояние k8s ресурсов;
-  - webhook ingest + run lifecycle evidence;
-  - ссылка на тестовый репозиторий и итоговый smoke-check.
+- Требования полного e2e вынесены в отдельный финальный эпик Day21 и не блокируют статус Day9.
 
 ## Риски/зависимости
-- Зависимость от готовности отдельного чистого VPS и заполненного `bootstrap/host/config-e2e-test.env`.
-- Зависимость от тестового пустого GitHub repository для project-example e2e контура.
 - Риск регрессий при миграции со shell-first на execution-plan путь; нужен dual-run/feature-flag rollout.
 - Риск несогласованности namespace policy и текущих production манифестов; нужен отдельный preflight check.
+- Финальная cross-project e2e верификация вынесена в Day21 и должна быть выполнена до MVP closeout.
 
 ## План релиза (верхний уровень)
 - Wave-1: спецификация и библиотека `services.yaml v2`.
 - Wave-2: runtime интеграция (`control-plane`/`worker`) + prompt context.
 - Wave-3: bootstrap binary + preflight checks.
-- Wave-4: dogfooding policy + e2e на новом VPS + evidence.
+- Wave-4: dogfooding policy.
 
 ## Апрув
 - request_id: approved-day9-rework

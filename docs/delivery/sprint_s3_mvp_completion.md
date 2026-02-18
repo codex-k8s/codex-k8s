@@ -19,8 +19,8 @@ approvals:
 ## TL;DR
 - Sprint S3 завершает MVP после S2 Day6/Day7 hardening.
 - Главная цель: включить полный stage/label контур, расширить staff debug observability, добавить обязательные MCP control tools и автоматический `run:self-improve` цикл.
-- Дополнительная цель: закрепить декларативный full-env deploy на `services.yaml` и полностью обновить staff-консоль на Vuetify до финального regression gate.
-- Результат спринта: платформа поддерживает полный цикл разработки в GitHub, с проверяемым аудитом и формализованным go/no-go.
+- Дополнительная цель: закрыть core-flow пробелы до запуска полного e2e (prompt/docs context, env-scoped secret governance, runtime error journal, OAuth bypass key, frontend hardening).
+- Финальный шаг спринта: full e2e regression gate и formal MVP closeout.
 
 ## Scope спринта
 - Полный run-label контур: `run:intake -> run:vision -> run:prd -> run:arch -> run:design -> run:plan -> run:dev -> run:qa -> run:release -> run:postdeploy -> run:ops` + revise/rethink.
@@ -33,19 +33,17 @@ approvals:
   - database create/delete по окружениям;
   - owner feedback handle (варианты + custom answer);
   - HTTP approver/executor contracts + Telegram adapter.
-- Docset import/sync (safe-by-default):
-  - import доксета документации из `agent-knowledge-base` в проект через PR;
-  - sync обновлений доксета с drift detection и lock-файлом.
-- Unified config/secrets governance:
-  - platform/project/repo конфиги и креды в admin UI;
-  - sync в GitHub/Kubernetes с безопасной политикой overwrite.
-- Repository onboarding preflight:
-  - проверки token scopes (platform+bot) и реальных GitHub операций;
-  - проверка резолва доменов проекта на кластер (ai/staging и ai slots).
-- Self-improve loop:
-  - trigger `run:self-improve`;
-  - анализ логов/комментариев/артефактов;
-  - обновление docs/prompt templates/instructions/tooling по результатам.
+- Declarative full-env deploy:
+  - typed `services.yaml` contract + execution plan;
+  - repo-sync/runtime parity;
+  - namespace-level isolation для ai-slot.
+- Core-flow completion перед e2e:
+  - docs tree/roles в `services.yaml` для prompt context;
+  - role-aware prompt templates + GitHub service message templates;
+  - environment-scoped secret overrides и OAuth callback strategy;
+  - runtime error journal + staff alert stack;
+  - run-scoped access key для controlled OAuth bypass;
+  - frontend manual QA hardening loop.
 
 ## План эпиков по дням
 
@@ -59,14 +57,19 @@ approvals:
 | Day 6 | `run:self-improve`: ingestion and diagnostics | P0 | `docs/delivery/epics/epic-s3-day6-self-improve-ingestion-and-diagnostics.md` | completed |
 | Day 7 | `run:self-improve`: docs/prompt/instruction updater + minimal stage prompt matrix | P0 | `docs/delivery/epics/epic-s3-day7-self-improve-updater-and-pr-flow.md` | completed |
 | Day 8 | Agent toolchain auto-extension and policy safeguards | P1 | `docs/delivery/epics/epic-s3-day8-agent-toolchain-auto-extension.md` | completed |
-| Day 9 | Declarative full-env deploy and runtime parity | P0 | `docs/delivery/epics/epic-s3-day9-declarative-full-env-deploy-and-runtime-parity.md` | in_progress |
+| Day 9 | Declarative full-env deploy and runtime parity | P0 | `docs/delivery/epics/epic-s3-day9-declarative-full-env-deploy-and-runtime-parity.md` | completed |
 | Day 10 | Staff console full redesign on Vuetify | P0 | `docs/delivery/epics/epic-s3-day10-staff-console-vuetify-redesign.md` | completed |
 | Day 11 | Full-env slot namespace + subdomain templating (TLS) + agent run | P0 | `docs/delivery/epics/epic-s3-day11-full-env-slots-and-subdomains.md` | completed |
 | Day 12 | Docset import + safe sync (agent-knowledge-base -> projects) | P0 | `docs/delivery/epics/epic-s3-day12-docset-import-and-safe-sync.md` | completed |
 | Day 13 | Unified config/secrets governance + GitHub credentials fallback | P0 | `docs/delivery/epics/epic-s3-day13-config-and-credentials-governance.md` | completed |
 | Day 14 | Repository onboarding preflight + bot params per repo | P0 | `docs/delivery/epics/epic-s3-day14-repository-onboarding-preflight.md` | completed |
-| Day 15 | MVP regression/security gate + closeout and handover | P0 | `docs/delivery/epics/epic-s3-day15-mvp-closeout-and-handover.md` | planned |
+| Day 15 | Prompt context overhaul (docs tree, role matrix, GitHub service messages) | P0 | `docs/delivery/epics/epic-s3-day15-mvp-closeout-and-handover.md` | planned |
 | Day 16 | gRPC transport boundary hardening (исключить прямые вызовы repository из handlers) | P0 | `docs/delivery/epics/epic-s3-day16-grpc-transport-boundary-hardening.md` | completed |
+| Day 17 | Environment-scoped secret overrides and OAuth callback strategy | P0 | `docs/delivery/epics/epic-s3-day17-environment-scoped-secret-overrides-and-oauth-callbacks.md` | planned |
+| Day 18 | Runtime error journal and staff alert center | P0 | `docs/delivery/epics/epic-s3-day18-runtime-error-journal-and-staff-alert-center.md` | planned |
+| Day 19 | Run access key and OAuth bypass flow | P0 | `docs/delivery/epics/epic-s3-day19-run-access-key-and-oauth-bypass.md` | planned |
+| Day 20 | Frontend manual QA hardening loop | P0 | `docs/delivery/epics/epic-s3-day20-frontend-manual-qa-hardening-loop.md` | planned |
+| Day 21 | Full e2e regression gate + MVP closeout | P0 | `docs/delivery/epics/epic-s3-day21-e2e-regression-and-mvp-closeout.md` | planned |
 
 ## Daily gate (обязательно)
 - Green CI + успешный deploy на production.
@@ -78,7 +81,5 @@ approvals:
 - MVP-функции из Issue #19 реализованы и проверены на production.
 - Полный label/stage контур формально документирован и подтверждён regression evidence.
 - Для `run:self-improve` есть минимум один воспроизводимый цикл с улучшениями в docs/prompt/tools.
-- Docset import/sync работает в режиме safe-by-default: создаёт PR и не перезаписывает локальные правки без явного действия пользователя.
-- Конфиги/секреты платформы и проектов управляются через UI и синхронизируются в GitHub/Kubernetes с безопасной overwrite-политикой.
-- Onboarding preflight для репозитория показывает pass/fail по токенам, GitHub операциям и резолву доменов проекта.
-- Owner принимает итоговый go/no-go протокол для перехода к post-MVP roadmap.
+- Core-flow недоделки закрыты: prompt/docs context, env secrets, runtime error alerts, OAuth bypass, frontend hardening.
+- Финальный Day21 e2e проходит без P0 блокеров и формирует owner-ready closeout пакет.
