@@ -1,6 +1,10 @@
 package cli
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
+)
 
 func cloneStringMap(values map[string]string) map[string]string {
 	if len(values) == 0 {
@@ -13,7 +17,7 @@ func cloneStringMap(values map[string]string) map[string]string {
 	return out
 }
 
-func applyEnvironmentOverrides(values map[string]string, envName string, keys []string) {
+func applyEnvironmentOverrides(values map[string]string, envName string, keys []string, resolver servicescfg.SecretResolver) {
 	trimmedEnv := strings.ToLower(strings.TrimSpace(envName))
 	if trimmedEnv == "" || len(keys) == 0 || len(values) == 0 {
 		return
@@ -24,35 +28,12 @@ func applyEnvironmentOverrides(values map[string]string, envName string, keys []
 		if key == "" {
 			continue
 		}
-		overrideKey := environmentOverrideKey(trimmedEnv, key)
-		if overrideKey == "" {
+		overrideKey, ok := resolver.ResolveOverrideKey(trimmedEnv, key)
+		if !ok {
 			continue
 		}
 		if overrideValue := strings.TrimSpace(values[overrideKey]); overrideValue != "" {
 			values[key] = overrideValue
 		}
-	}
-}
-
-func environmentOverrideKey(envName string, key string) string {
-	if !strings.HasPrefix(key, "CODEXK8S_") {
-		return ""
-	}
-	if strings.HasPrefix(key, "CODEXK8S_AI_") || strings.HasPrefix(key, "CODEXK8S_PRODUCTION_") {
-		return ""
-	}
-
-	suffix := strings.TrimPrefix(key, "CODEXK8S_")
-	if suffix == "" {
-		return ""
-	}
-
-	switch strings.ToLower(strings.TrimSpace(envName)) {
-	case githubEnvironmentProduction:
-		return "CODEXK8S_PRODUCTION_" + suffix
-	case githubEnvironmentAI:
-		return "CODEXK8S_AI_" + suffix
-	default:
-		return ""
 	}
 }

@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/manifesttpl"
-	"github.com/codex-k8s/codex-k8s/libs/go/registry"
 	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
 )
 
@@ -611,19 +610,6 @@ func splitImageRef(ref string) (string, string) {
 		return trimmed, ""
 	}
 	return trimmed[:lastColon], trimmed[lastColon+1:]
-}
-
-func hasRegistryTag(tags []registry.TagInfo, tag string) bool {
-	target := strings.TrimSpace(tag)
-	if target == "" {
-		return false
-	}
-	for _, item := range tags {
-		if strings.TrimSpace(item.Tag) == target {
-			return true
-		}
-	}
-	return false
 }
 
 func hasRegistryStringTag(tags []string, tag string) bool {

@@ -1,6 +1,10 @@
 package cli
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
+)
 
 func TestCollectGitHubVariableKeys(t *testing.T) {
 	values := map[string]string{
@@ -58,9 +62,10 @@ func TestApplyGitHubEnvironmentOverrides(t *testing.T) {
 	}
 
 	keys := append(append([]string(nil), githubRepoSecretKeys...), githubEnvVariableKeys...)
+	resolver := servicescfg.NewSecretResolver(nil)
 
 	production := cloneStringMap(values)
-	applyEnvironmentOverrides(production, "production", keys)
+	applyEnvironmentOverrides(production, "production", keys, resolver)
 	if got, want := production["CODEXK8S_OPENAI_API_KEY"], "prod-override-key"; got != want {
 		t.Fatalf("production override mismatch: got %q want %q", got, want)
 	}
@@ -69,7 +74,7 @@ func TestApplyGitHubEnvironmentOverrides(t *testing.T) {
 	}
 
 	ai := cloneStringMap(values)
-	applyEnvironmentOverrides(ai, "ai", keys)
+	applyEnvironmentOverrides(ai, "ai", keys, resolver)
 	if got, want := ai["CODEXK8S_OPENAI_API_KEY"], "ai-key"; got != want {
 		t.Fatalf("ai override mismatch: got %q want %q", got, want)
 	}

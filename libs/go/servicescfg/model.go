@@ -72,16 +72,17 @@ type Metadata struct {
 
 // Spec contains deployable stack definition.
 type Spec struct {
-	Project        string                 `yaml:"project,omitempty"`
-	Versions       map[string]string      `yaml:"versions,omitempty"`
-	Imports        []ImportRef            `yaml:"imports,omitempty"`
-	Components     []Component            `yaml:"components,omitempty"`
-	Environments   map[string]Environment `yaml:"environments,omitempty"`
-	WebhookRuntime WebhookRuntime         `yaml:"webhookRuntime,omitempty"`
-	Images         map[string]Image       `yaml:"images,omitempty"`
-	Infrastructure []InfrastructureItem   `yaml:"infrastructure,omitempty"`
-	Services       []Service              `yaml:"services,omitempty"`
-	Orchestration  Orchestration          `yaml:"orchestration,omitempty"`
+	Project          string                 `yaml:"project,omitempty"`
+	Versions         map[string]string      `yaml:"versions,omitempty"`
+	Imports          []ImportRef            `yaml:"imports,omitempty"`
+	Components       []Component            `yaml:"components,omitempty"`
+	Environments     map[string]Environment `yaml:"environments,omitempty"`
+	WebhookRuntime   WebhookRuntime         `yaml:"webhookRuntime,omitempty"`
+	SecretResolution SecretResolution       `yaml:"secretResolution,omitempty"`
+	Images           map[string]Image       `yaml:"images,omitempty"`
+	Infrastructure   []InfrastructureItem   `yaml:"infrastructure,omitempty"`
+	Services         []Service              `yaml:"services,omitempty"`
+	Orchestration    Orchestration          `yaml:"orchestration,omitempty"`
 }
 
 // ImportRef points to reusable services.yaml fragment.
@@ -114,6 +115,34 @@ type Environment struct {
 type WebhookRuntime struct {
 	DefaultMode  RuntimeMode            `yaml:"defaultMode,omitempty"`
 	TriggerModes map[string]RuntimeMode `yaml:"triggerModes,omitempty"`
+}
+
+// SecretResolution configures environment-scoped secret override strategy.
+type SecretResolution struct {
+	EnvironmentAliases map[string][]string     `yaml:"environmentAliases,omitempty"`
+	KeyOverrides       []SecretKeyOverrideRule `yaml:"keyOverrides,omitempty"`
+	Patterns           []SecretOverridePattern `yaml:"patterns,omitempty"`
+}
+
+// SecretKeyOverrideRule binds one logical key to environment-specific override keys.
+type SecretKeyOverrideRule struct {
+	SourceKey    string            `yaml:"sourceKey"`
+	OverrideKeys map[string]string `yaml:"overrideKeys,omitempty"`
+}
+
+// SecretOverridePattern derives override key names from source key and environment.
+//
+// Supported tokens in OverrideTemplate:
+//   - {key}
+//   - {suffix}
+//   - {env}
+//   - {env_upper}
+type SecretOverridePattern struct {
+	SourcePrefix     string   `yaml:"sourcePrefix,omitempty"`
+	ExcludePrefixes  []string `yaml:"excludePrefixes,omitempty"`
+	ExcludeSuffixes  []string `yaml:"excludeSuffixes,omitempty"`
+	Environments     []string `yaml:"environments,omitempty"`
+	OverrideTemplate string   `yaml:"overrideTemplate"`
 }
 
 // Image describes a stack image entry.

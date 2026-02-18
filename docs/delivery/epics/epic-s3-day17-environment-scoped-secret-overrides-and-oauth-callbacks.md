@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S3-D17
 type: epic
 title: "Epic S3 Day 17: Environment-scoped secret overrides and OAuth callback strategy"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-18
 updated_at: 2026-02-18
@@ -56,3 +56,30 @@ approvals:
 ## Риски/зависимости
 - Риск неправильного fallback и silent misconfiguration: нужен явный audit лог резолва ключа.
 - Зависимость от чистого миграционного пути для уже существующих production secrets.
+
+## Фактический результат (выполнено)
+- Расширен typed-контракт `services.yaml`:
+  - `spec.secretResolution.environmentAliases`;
+  - `spec.secretResolution.keyOverrides` (`sourceKey -> overrideKeys{env:key}`);
+  - `spec.secretResolution.patterns` (`sourcePrefix/exclude*/environments/overrideTemplate`).
+- Добавлена schema-валидация и runtime-валидация для `spec.secretResolution` в `libs/go/servicescfg`.
+- Реализован единый `SecretResolver` в `libs/go/servicescfg` и подключен в оба контура:
+  - `cmd/codex-bootstrap` (`github-sync`, `sync-secrets`);
+  - `control-plane` runtime prerequisites (`runtimedeploy`).
+- Реализована детерминированная цепочка резолва:
+  - `env override -> environment secret -> shared/platform secret -> base value`.
+- OAuth split production/ai доведен до env-aware резолва:
+  - `CODEXK8S_GITHUB_OAUTH_CLIENT_ID/SECRET` теперь резолвятся через общий resolver;
+  - в task logs пишется источник резолва OAuth ключей (без утечки значений).
+- В `services.yaml` codex-k8s добавлены правила для OAuth credentials:
+  - explicit `*_AI` override keys;
+  - pattern-mode `CODEXK8S_<NAME>_AI`.
+- `bootstrap/host/config.env.example` обновлен:
+  - задокументированы оба override-режима;
+  - добавлены `CODEXK8S_GITHUB_OAUTH_CLIENT_ID_AI`, `CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET_AI`,
+    `CODEXK8S_PRODUCTION_GITHUB_OAUTH_CLIENT_ID`, `CODEXK8S_PRODUCTION_GITHUB_OAUTH_CLIENT_SECRET`.
+
+## Проверки
+- `go test ./libs/go/servicescfg` — passed.
+- `go test ./cmd/codex-bootstrap/...` — passed.
+- `go test ./services/internal/control-plane/...` — passed.

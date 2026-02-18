@@ -202,7 +202,7 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 
 	if strings.EqualFold(strings.TrimSpace(loaded.Stack.Spec.Project), "codex-k8s") {
 		s.appendTaskLogBestEffort(ctx, runID, "prerequisites", "info", "Ensuring codex-k8s prerequisites")
-		if err := s.ensureCodexK8sPrerequisites(ctx, repositoryRoot, targetNamespace, templateVars); err != nil {
+		if err := s.ensureCodexK8sPrerequisites(ctx, repositoryRoot, targetNamespace, templateVars, loaded.Stack, runID); err != nil {
 			s.appendTaskLogBestEffort(ctx, runID, "prerequisites", "error", "Ensure prerequisites failed: "+err.Error())
 			return zero, fmt.Errorf("ensure codex-k8s prerequisites: %w", err)
 		}
@@ -227,8 +227,7 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 		loaded = reloaded
 	}
 
-	appliedInfra, err := s.applyInfrastructure(ctx, repositoryRoot, loaded.Stack, targetNamespace, templateVars, runID)
-	if err != nil {
+	if _, err := s.applyInfrastructure(ctx, repositoryRoot, loaded.Stack, targetNamespace, templateVars, runID); err != nil {
 		s.appendTaskLogBestEffort(ctx, runID, "infrastructure", "error", "Apply infrastructure failed: "+err.Error())
 		return zero, fmt.Errorf("apply infrastructure: %w", err)
 	}
@@ -236,7 +235,7 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 		s.appendTaskLogBestEffort(ctx, runID, "build", "error", "Build images failed: "+err.Error())
 		return zero, fmt.Errorf("build images: %w", err)
 	}
-	appliedInfra, err = s.applyInfrastructure(ctx, repositoryRoot, loaded.Stack, targetNamespace, templateVars, runID)
+	appliedInfra, err := s.applyInfrastructure(ctx, repositoryRoot, loaded.Stack, targetNamespace, templateVars, runID)
 	if err != nil {
 		s.appendTaskLogBestEffort(ctx, runID, "infrastructure", "error", "Re-apply infrastructure failed: "+err.Error())
 		return zero, fmt.Errorf("re-apply infrastructure: %w", err)

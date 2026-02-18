@@ -273,6 +273,9 @@ func normalizeAndValidate(stack *Stack, env string) error {
 		}
 		stack.Spec.WebhookRuntime.TriggerModes = normalizedTriggerModes
 	}
+	if err := validateSecretResolution(stack.Spec.SecretResolution); err != nil {
+		return err
+	}
 
 	seenServices := make(map[string]struct{})
 	for i := range stack.Spec.Services {

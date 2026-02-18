@@ -15,6 +15,7 @@ import (
 
 	"github.com/codex-k8s/codex-k8s/cmd/codex-bootstrap/internal/envfile"
 	"github.com/codex-k8s/codex-k8s/libs/go/k8s/clientcfg"
+	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,6 +40,7 @@ func runSyncSecrets(args []string, stdout io.Writer, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 
 	envPath := fs.String("env-file", "bootstrap/host/config.env", "Path to bootstrap env file")
+	configPath := fs.String("config", "services.yaml", "Path to services.yaml (optional, for secret override policy)")
 	kubeconfigPath := fs.String("kubeconfig", "", "Optional kubeconfig path")
 	namespace := fs.String("namespace", "", "Override target namespace for secret sync")
 	timeout := fs.Duration("timeout", defaultSyncSecretsTimeout, "Timeout for kubernetes operations")
@@ -69,6 +71,11 @@ func runSyncSecrets(args []string, stdout io.Writer, stderr io.Writer) int {
 
 	applyGitHubSyncDefaults(values)
 	applySyncSecretsDefaults(values)
+	secretResolver, err := loadSecretResolver(*configPath, values)
+	if err != nil {
+		writef(stderr, "sync-secrets failed: load services config: %v\n", err)
+		return 1
+	}
 	missing := missingRequiredKeys(values, syncSecretsRequiredKeys)
 	if len(missing) > 0 {
 		writef(stderr, "sync-secrets failed: missing required env keys: %s\n", strings.Join(missing, ", "))
@@ -132,9 +139,9 @@ func runSyncSecrets(args []string, stdout io.Writer, stderr io.Writer) int {
 	runtimeSecret := buildRuntimeSecretValues(values)
 	oauthSecret := buildOAuthSecretValues(values)
 
-	aiRuntimeSecret := buildEnvScopedSecretValues(values, existingRuntimeAI, runtimeSecret, githubEnvironmentAI)
-	aiOAuthSecret := buildEnvScopedSecretValues(values, existingOAuthAI, oauthSecret, githubEnvironmentAI)
-	hydrateEnvOverrideValuesFromSecret(values, existingRuntimeAI, runtimeSecret, githubEnvironmentAI)
+	aiRuntimeSecret := buildEnvScopedSecretValues(values, existingRuntimeAI, runtimeSecret, githubEnvironmentAI, secretResolver)
+	aiOAuthSecret := buildEnvScopedSecretValues(values, existingOAuthAI, oauthSecret, githubEnvironmentAI, secretResolver)
+	hydrateEnvOverrideValuesFromSecret(values, existingRuntimeAI, runtimeSecret, githubEnvironmentAI, secretResolver)
 
 	if *dryRun {
 		writef(stdout, "sync-secrets env-file=%s namespace=%s dry-run=true\n", absEnv, targetNamespace)
@@ -515,7 +522,7 @@ func randomHexString(numBytes int) (string, error) {
 	return hex.EncodeToString(raw), nil
 }
 
-func buildEnvScopedSecretValues(values map[string]string, existing map[string][]byte, production map[string]string, envName string) map[string]string {
+func buildEnvScopedSecretValues(values map[string]string, existing map[string][]byte, production map[string]string, envName string, resolver servicescfg.SecretResolver) map[string]string {
 	out := make(map[string]string, len(production))
 	for key, raw := range existing {
 		trimmedKey := strings.TrimSpace(key)
@@ -543,8 +550,8 @@ func buildEnvScopedSecretValues(values map[string]string, existing map[string][]
 		if trimmedKey == "" {
 			continue
 		}
-		overrideKey := environmentOverrideKey(envName, trimmedKey)
-		if overrideKey == "" {
+		overrideKey, ok := resolver.ResolveOverrideKey(envName, trimmedKey)
+		if !ok {
 			continue
 		}
 		if overrideValue := strings.TrimSpace(values[overrideKey]); overrideValue != "" {
@@ -555,7 +562,7 @@ func buildEnvScopedSecretValues(values map[string]string, existing map[string][]
 	return compactStringMap(out)
 }
 
-func hydrateEnvOverrideValuesFromSecret(values map[string]string, existing map[string][]byte, production map[string]string, envName string) {
+func hydrateEnvOverrideValuesFromSecret(values map[string]string, existing map[string][]byte, production map[string]string, envName string, resolver servicescfg.SecretResolver) {
 	if len(existing) == 0 || len(production) == 0 || len(values) == 0 {
 		return
 	}
@@ -565,8 +572,8 @@ func hydrateEnvOverrideValuesFromSecret(values map[string]string, existing map[s
 		if trimmedKey == "" {
 			continue
 		}
-		overrideKey := environmentOverrideKey(envName, trimmedKey)
-		if overrideKey == "" {
+		overrideKey, ok := resolver.ResolveOverrideKey(envName, trimmedKey)
+		if !ok {
 			continue
 		}
 		if strings.TrimSpace(values[overrideKey]) != "" {
