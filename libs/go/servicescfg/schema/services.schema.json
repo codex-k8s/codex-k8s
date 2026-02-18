@@ -1,0 +1,331 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://codex-k8s.dev/schemas/services.schema.json",
+  "title": "codex-k8s services.yaml",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "const": "codex-k8s.dev/v1alpha1"
+    },
+    "kind": {
+      "type": "string",
+      "const": "ServiceStack"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": true
+    },
+    "spec": {
+      "type": "object",
+      "required": ["environments"],
+      "properties": {
+        "project": {
+          "type": "string",
+          "minLength": 1
+        },
+        "versions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "imports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/importRef"
+          }
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/component"
+          }
+        },
+        "environments": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "$ref": "#/$defs/environment"
+          }
+        },
+        "webhookRuntime": {
+          "$ref": "#/$defs/webhookRuntime"
+        },
+        "images": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/image"
+          }
+        },
+        "infrastructure": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/infrastructureItem"
+          }
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/service"
+          }
+        },
+        "orchestration": {
+          "$ref": "#/$defs/orchestration"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "importRef": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "object",
+          "required": ["path"],
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "component": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "serviceDefaults": {
+          "$ref": "#/$defs/serviceDefaults"
+        }
+      },
+      "additionalProperties": false
+    },
+    "serviceDefaults": {
+      "type": "object",
+      "properties": {
+        "codeUpdateStrategy": {
+          "$ref": "#/$defs/codeUpdateStrategy"
+        },
+        "deployGroup": {
+          "type": "string"
+        },
+        "dependsOn": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "environment": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "namespaceTemplate": {
+          "type": "string"
+        },
+        "domainTemplate": {
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "webhookRuntime": {
+      "type": "object",
+      "properties": {
+        "defaultMode": {
+          "$ref": "#/$defs/runtimeMode"
+        },
+        "triggerModes": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/runtimeMode"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "runtimeMode": {
+      "type": "string",
+      "enum": ["full-env", "code-only"]
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["external", "build", "skip"]
+        },
+        "from": {
+          "type": "string"
+        },
+        "local": {
+          "type": "string"
+        },
+        "repository": {
+          "type": "string"
+        },
+        "tagTemplate": {
+          "type": "string"
+        },
+        "dockerfile": {
+          "type": "string"
+        },
+        "context": {
+          "type": "string"
+        },
+        "buildArgs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "infrastructureItem": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dependsOn": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "manifests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/manifestRef"
+          }
+        },
+        "when": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "service": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "use": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "codeUpdateStrategy": {
+          "$ref": "#/$defs/codeUpdateStrategy"
+        },
+        "deployGroup": {
+          "type": "string"
+        },
+        "dependsOn": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "manifests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/manifestRef"
+          }
+        },
+        "when": {
+          "type": "string"
+        },
+        "image": {
+          "$ref": "#/$defs/serviceImage"
+        }
+      },
+      "additionalProperties": false
+    },
+    "codeUpdateStrategy": {
+      "type": "string",
+      "enum": ["hot-reload", "rebuild", "restart"]
+    },
+    "manifestRef": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "serviceImage": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string"
+        },
+        "tagTemplate": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "orchestration": {
+      "type": "object",
+      "properties": {
+        "deployOrder": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cleanupPolicy": {
+          "$ref": "#/$defs/cleanupPolicy"
+        }
+      },
+      "additionalProperties": false
+    },
+    "cleanupPolicy": {
+      "type": "object",
+      "properties": {
+        "fullEnvIdleTTL": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

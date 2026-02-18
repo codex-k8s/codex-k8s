@@ -51,6 +51,9 @@ func Load(path string, opts LoadOptions) (LoadResult, error) {
 	if err != nil {
 		return zero, err
 	}
+	if err := validateRenderedSchema(rendered); err != nil {
+		return zero, err
+	}
 
 	var stack Stack
 	if err := yaml.Unmarshal(rendered, &stack); err != nil {
@@ -103,6 +106,9 @@ func LoadFromYAML(raw []byte, opts LoadOptions) (LoadResult, error) {
 	}
 	rendered, err := renderTemplate("services.yaml", raw, ctx)
 	if err != nil {
+		return zero, err
+	}
+	if err := validateRenderedSchema(rendered); err != nil {
 		return zero, err
 	}
 

@@ -37,6 +37,8 @@ type Config struct {
 	ServerName                   string
 	PublicBaseURL                string
 	InternalMCPBaseURL           string
+	RepositoryRoot               string
+	ServicesConfigEnv            string
 	DefaultTokenTTL              time.Duration
 	DatabaseLifecycleAllowedEnvs []string
 }
@@ -127,6 +129,14 @@ func NewService(cfg Config, deps Dependencies) (*Service, error) {
 	cfg.InternalMCPBaseURL = strings.TrimSpace(cfg.InternalMCPBaseURL)
 	if cfg.InternalMCPBaseURL == "" {
 		cfg.InternalMCPBaseURL = defaultInternalMCPBaseURL
+	}
+	cfg.RepositoryRoot = strings.TrimSpace(cfg.RepositoryRoot)
+	if cfg.RepositoryRoot == "" {
+		cfg.RepositoryRoot = "."
+	}
+	cfg.ServicesConfigEnv = strings.TrimSpace(cfg.ServicesConfigEnv)
+	if cfg.ServicesConfigEnv == "" {
+		cfg.ServicesConfigEnv = "production"
 	}
 	if cfg.DefaultTokenTTL <= 0 {
 		cfg.DefaultTokenTTL = defaultTokenTTL
