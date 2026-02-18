@@ -129,6 +129,7 @@ type PromptContext struct {
 	Repository  PromptRepositoryContext  `json:"repository"`
 	Issue       *PromptIssueContext      `json:"issue,omitempty"`
 	Environment PromptEnvironmentContext `json:"environment"`
+	Runtime     PromptRuntimeContext     `json:"runtime"`
 	Services    []PromptServiceContext   `json:"services"`
 	MCP         PromptMCPContext         `json:"mcp"`
 }
@@ -163,6 +164,32 @@ type PromptIssueContext struct {
 type PromptEnvironmentContext struct {
 	ServiceName string `json:"service_name"`
 	MCPBaseURL  string `json:"mcp_base_url"`
+}
+
+// PromptRuntimeContext describes resolved runtime/deploy hints for current run.
+type PromptRuntimeContext struct {
+	TargetEnv       string                        `json:"target_env"`
+	ServicesYAML    string                        `json:"services_yaml"`
+	InventorySource string                        `json:"inventory_source,omitempty"`
+	Inventory       []PromptRuntimeServiceContext `json:"inventory,omitempty"`
+	Hints           PromptRuntimeHints            `json:"hints"`
+}
+
+// PromptRuntimeServiceContext describes one deploy service resolved from services.yaml.
+type PromptRuntimeServiceContext struct {
+	Name               string   `json:"name"`
+	DeployGroup        string   `json:"deploy_group,omitempty"`
+	CodeUpdateStrategy string   `json:"code_update_strategy"`
+	DependsOn          []string `json:"depends_on,omitempty"`
+	ManifestPaths      []string `json:"manifest_paths,omitempty"`
+}
+
+// PromptRuntimeHints describes runtime context metadata used by the agent.
+type PromptRuntimeHints struct {
+	RuntimeMode     agentdomain.RuntimeMode `json:"runtime_mode"`
+	RepositoryRoot  string                  `json:"repository_root,omitempty"`
+	InventoryLoaded bool                    `json:"inventory_loaded"`
+	InventoryError  string                  `json:"inventory_error,omitempty"`
 }
 
 // PromptServiceContext describes one platform service useful for prompt context.

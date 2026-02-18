@@ -245,6 +245,56 @@ spec:
 	}
 }
 
+func TestLoadFromYAML_SchemaValidationFailFast(t *testing.T) {
+	t.Parallel()
+
+	raw := []byte(strings.TrimSpace(`
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+  services: 123
+`))
+
+	_, err := LoadFromYAML(raw, LoadOptions{Env: "production"})
+	if err == nil {
+		t.Fatalf("expected schema validation error")
+	}
+	if !strings.Contains(err.Error(), "services schema validation failed") {
+		t.Fatalf("expected schema validation error, got: %v", err)
+	}
+}
+
+func TestLoadFromYAML_SchemaValidationUnknownServiceField(t *testing.T) {
+	t.Parallel()
+
+	raw := []byte(strings.TrimSpace(`
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+  services:
+    - name: api
+      unknownField: true
+`))
+
+	_, err := LoadFromYAML(raw, LoadOptions{Env: "production"})
+	if err == nil {
+		t.Fatalf("expected schema validation error")
+	}
+	if !strings.Contains(err.Error(), "services schema validation failed") {
+		t.Fatalf("expected schema validation error, got: %v", err)
+	}
+}
+
 func writeFile(t *testing.T, path string, content string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(strings.TrimSpace(content)+"\n"), 0o644); err != nil {

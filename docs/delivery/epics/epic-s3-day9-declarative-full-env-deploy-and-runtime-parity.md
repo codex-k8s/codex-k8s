@@ -5,7 +5,7 @@ title: "Epic S3 Day 9: Declarative full-env deploy and runtime parity"
 status: in_progress
 owner_role: EM
 created_at: 2026-02-13
-updated_at: 2026-02-14
+updated_at: 2026-02-18
 related_issues: [19]
 related_prs: []
 approvals:
@@ -111,9 +111,10 @@ approvals:
   - проверка, что platform secrets/variables пишутся только в platform repo, webhook/labels всегда настраиваются в platform repo и дополнительно в first-project repo (если он отдельный).
 
 ## Фактический статус реализации (2026-02-14)
-- Story-1 (`in_progress`):
+- Story-1 (`done`):
   - typed контракт `services.yaml` зафиксирован в `libs/go/servicescfg` (`apiVersion=codex-k8s.dev/v1alpha1`, `kind=ServiceStack`);
-  - JSON Schema как отдельный артефакт ещё не введена.
+  - отдельный JSON Schema артефакт добавлен в `libs/go/servicescfg/schema/services.schema.json`;
+  - schema-validation включена в `Load/LoadFromYAML` (fail-fast до typed parsing) и покрыта тестами.
 - Story-2 (`done`):
   - общая Go-библиотека `servicescfg` используется и в runtime (`control-plane`), и в `cmd/codex-bootstrap`.
 - Story-3 (`done`):
@@ -122,8 +123,8 @@ approvals:
   - webhook-runtime mode резолвится из `services.yaml` (`webhookRuntime.defaultMode/triggerModes`);
   - full-env deploy вынесен в persisted reconcile-контур: `runtime_deploy_tasks` + lease/lock + idempotent reconcile loop;
   - `control-plane` ставит desired state, выполнение делает отдельный worker/reconciler.
-- Story-5 (`planned`):
-  - экспорт `codeUpdateStrategy` в prompt context и inventory-hints ещё не завершён.
+- Story-5 (`done`):
+  - prompt context экспортирует runtime hints, resolved service inventory и `codeUpdateStrategy` для сервисов.
 - Story-6 (`in_progress`):
   - `codex-bootstrap` уже валидирует/рендерит `services.yaml` и запускает bootstrap сценарий;
   - финальная проверка repo-isolation политики переносится в Story-8 e2e.
@@ -135,8 +136,8 @@ approvals:
 
 ## Текущий статус критериев приемки (2026-02-14)
 - `in_progress`: full-env сценарий для `codex-k8s` подтверждён на production; cross-project e2e (`project-example` + новый чистый VPS) остаётся открытым.
-- `in_progress`: `imports/components/deep-merge` и validation покрыты тестами `libs/go/servicescfg`; отдельная JSON Schema остаётся открытой.
-- `in_progress`: `codeUpdateStrategy` присутствует и учитывается в runtime-рендере; экспорт в prompt context остаётся открытым.
+- `done`: `imports/components/deep-merge` и validation покрыты тестами `libs/go/servicescfg`; отдельная JSON Schema введена и валидируется в runtime loader.
+- `done`: `codeUpdateStrategy` присутствует и учитывается в runtime-рендере; экспорт в prompt context (runtime hints + inventory) реализован.
 - `done`: правило `production={{ .Project }}-production` для `codex-k8s` соблюдается и валидируется.
 - `in_progress`: dogfooding isolation на production подтверждён; финальная проверка через e2e runbook остаётся открытой.
 - `planned`: bootstrap e2e + evidence bundle будут закрыты после выполнения Story-8.

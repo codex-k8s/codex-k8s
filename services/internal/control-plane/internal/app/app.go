@@ -153,6 +153,8 @@ func Run() error {
 		TokenSigningKey:              mcpSigningKey,
 		PublicBaseURL:                cfg.PublicBaseURL,
 		InternalMCPBaseURL:           cfg.ControlPlaneMCPBaseURL,
+		RepositoryRoot:               cfg.RepositoryRoot,
+		ServicesConfigEnv:            cfg.ServicesConfigEnv,
 		DefaultTokenTTL:              mcpTokenTTL,
 		DatabaseLifecycleAllowedEnvs: cfg.ProjectDBLifecycleAllowedEnvs,
 	}, mcpdomain.Dependencies{
