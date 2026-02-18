@@ -202,6 +202,28 @@ services:
 - 🌍 Environment-scoped secret overrides + shared OAuth callback strategy (Day 17):
   `docs/delivery/epics/epic-s3-day17-environment-scoped-secret-overrides-and-oauth-callbacks.md`
 
+## 📚 Предыдущие спринты и эпики
+
+Чтобы не терять контекст развития платформы, используйте эту навигацию:
+
+- Спринты:
+  - `docs/delivery/sprint_s1_mvp_vertical_slice.md`
+  - `docs/delivery/sprint_s2_dogfooding.md`
+  - `docs/delivery/sprint_s3_mvp_completion.md`
+- Каталоги эпиков по спринтам:
+  - `docs/delivery/epic_s1.md`
+  - `docs/delivery/epic_s2.md`
+  - `docs/delivery/epic_s3.md`
+- Все day-эпики (детализация по дням и статусам):
+  - `docs/delivery/epics/`
+- Трассируемость и карта связей:
+  - `docs/delivery/requirements_traceability.md`
+  - `docs/delivery/issue_map.md`
+  - `docs/delivery/delivery_plan.md`
+  - `docs/delivery/roadmap.md`
+
+Статус каждого эпика смотреть в frontmatter (`status: planned|completed`) конкретного файла в `docs/delivery/epics/`.
+
 ## 🧭 Операционная памятка для daily использования
 
 1. `run:dev` — первый запуск разработки по issue.
