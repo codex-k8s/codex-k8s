@@ -15,4 +15,5 @@ type ProjectUpsertParams struct {
 // ProjectSettings stores project-level defaults in JSONB settings.
 type ProjectSettings struct {
 	LearningModeDefault bool `json:"learning_mode_default"`
+	SlotsPerProject     int  `json:"slots_per_project,omitempty"`
 }

@@ -25,6 +25,8 @@ var (
 	queryUpsertProject string
 	//go:embed sql/ensure_project_exists.sql
 	queryEnsureProjectExists string
+	//go:embed sql/get_project_settings.sql
+	queryGetProjectSettings string
 	//go:embed sql/ensure_project_slots.sql
 	queryEnsureProjectSlots string
 	//go:embed sql/release_expired_slots.sql
@@ -114,7 +116,12 @@ func (r *Repository) ClaimNextPending(ctx context.Context, params domainrepo.Cla
 		slotNo int
 	)
 	if !deployOnlyRun {
-		if _, err := tx.Exec(ctx, queryEnsureProjectSlots, projectID, params.SlotsPerProject); err != nil {
+		projectSettingsJSON, err := r.getProjectSettingsJSON(ctx, tx, projectID)
+		if err != nil {
+			return domainrepo.ClaimedRun{}, false, fmt.Errorf("get project settings for project %s: %w", projectID, err)
+		}
+		effectiveSlotsPerProject := resolveSlotsPerProject(projectSettingsJSON, params.SlotsPerProject)
+		if _, err := tx.Exec(ctx, queryEnsureProjectSlots, projectID, effectiveSlotsPerProject); err != nil {
 			return domainrepo.ClaimedRun{}, false, fmt.Errorf("ensure slots for project %s: %w", projectID, err)
 		}
 		if _, err := tx.Exec(ctx, queryReleaseExpiredSlots, projectID); err != nil {
@@ -247,6 +254,37 @@ func parseRunQueuePayload(raw []byte) querytypes.RunQueuePayload {
 	}
 
 	return payload
+}
+
+func (r *Repository) getProjectSettingsJSON(ctx context.Context, tx pgx.Tx, projectID string) ([]byte, error) {
+	var settingsRaw []byte
+	err := tx.QueryRow(ctx, queryGetProjectSettings, projectID).Scan(&settingsRaw)
+	if err == nil {
+		return settingsRaw, nil
+	}
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	return nil, err
+}
+
+func resolveSlotsPerProject(projectSettingsJSON []byte, fallback int) int {
+	if fallback <= 0 {
+		fallback = 1
+	}
+	if len(projectSettingsJSON) == 0 {
+		return fallback
+	}
+
+	var settings querytypes.ProjectSettings
+	if err := json.Unmarshal(projectSettingsJSON, &settings); err != nil {
+		return fallback
+	}
+	if settings.SlotsPerProject > 0 {
+		return settings.SlotsPerProject
+	}
+
+	return fallback
 }
 
 func isDeployOnlyRun(payload querytypes.RunQueuePayload) bool {
