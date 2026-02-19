@@ -758,6 +758,12 @@ type AgentKeyFilter = string
 // ApprovalRequestID defines model for ApprovalRequestID.
 type ApprovalRequestID = int64
 
+// IncludePayload defines model for IncludePayload.
+type IncludePayload = bool
+
+// IncludeSnapshot defines model for IncludeSnapshot.
+type IncludeSnapshot = bool
+
 // Limit defines model for Limit.
 type Limit = int
 
@@ -886,7 +892,8 @@ type ListRunWaitsParams struct {
 
 // ListRunEventsParams defines parameters for ListRunEvents.
 type ListRunEventsParams struct {
-	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+	Limit          *Limit          `form:"limit,omitempty" json:"limit,omitempty"`
+	IncludePayload *IncludePayload `form:"include_payload,omitempty" json:"include_payload,omitempty"`
 }
 
 // ListRunLearningFeedbackParams defines parameters for ListRunLearningFeedback.
@@ -896,7 +903,8 @@ type ListRunLearningFeedbackParams struct {
 
 // GetRunLogsParams defines parameters for GetRunLogs.
 type GetRunLogsParams struct {
-	TailLines *TailLines `form:"tail_lines,omitempty" json:"tail_lines,omitempty"`
+	TailLines       *TailLines       `form:"tail_lines,omitempty" json:"tail_lines,omitempty"`
+	IncludeSnapshot *IncludeSnapshot `form:"include_snapshot,omitempty" json:"include_snapshot,omitempty"`
 }
 
 // ListRegistryImagesParams defines parameters for ListRegistryImages.
@@ -2301,6 +2309,14 @@ func (siw *ServerInterfaceWrapper) ListRunEvents(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// ------------- Optional query parameter "include_payload" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "include_payload", r.URL.Query(), &params.IncludePayload)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "include_payload", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListRunEvents(w, r, runId, params)
 	}))
@@ -2370,6 +2386,14 @@ func (siw *ServerInterfaceWrapper) GetRunLogs(w http.ResponseWriter, r *http.Req
 	err = runtime.BindQueryParameter("form", true, false, "tail_lines", r.URL.Query(), &params.TailLines)
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tail_lines", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "include_snapshot" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "include_snapshot", r.URL.Query(), &params.IncludeSnapshot)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "include_snapshot", Err: err})
 		return
 	}
 

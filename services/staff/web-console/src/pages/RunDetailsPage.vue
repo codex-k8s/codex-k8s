@@ -143,19 +143,31 @@
               <VAlert v-if="!details.events.length" type="info" variant="tonal">
                 {{ t("states.noEvents") }}
               </VAlert>
-              <VExpansionPanels v-else density="compact" variant="accordion">
-                <VExpansionPanel v-for="e in details.events" :key="e.created_at + ':' + e.event_type">
-                  <VExpansionPanelTitle>
-                    <div class="d-flex align-center justify-space-between ga-2 flex-wrap w-100">
-                      <VChip size="x-small" variant="tonal" class="font-weight-bold">{{ e.event_type }}</VChip>
-                      <span class="mono text-medium-emphasis">{{ formatDateTime(e.created_at, locale) }}</span>
-                    </div>
-                  </VExpansionPanelTitle>
-                  <VExpansionPanelText>
-                    <pre class="pre">{{ prettyJSON(e.payload_json) }}</pre>
-                  </VExpansionPanelText>
-                </VExpansionPanel>
-              </VExpansionPanels>
+              <template v-else>
+                <div class="d-flex justify-end mb-3">
+                  <AdaptiveBtn
+                    variant="tonal"
+                    icon="mdi-database-arrow-down-outline"
+                    :label="details.eventsPayloadLoaded ? t('pages.runDetails.eventPayloadLoaded') : t('pages.runDetails.loadEventPayloads')"
+                    :loading="details.eventsPayloadLoading"
+                    :disabled="details.eventsPayloadLoaded"
+                    @click="loadEventPayloads"
+                  />
+                </div>
+                <VExpansionPanels density="compact" variant="accordion">
+                  <VExpansionPanel v-for="e in details.events" :key="e.created_at + ':' + e.event_type">
+                    <VExpansionPanelTitle>
+                      <div class="d-flex align-center justify-space-between ga-2 flex-wrap w-100">
+                        <VChip size="x-small" variant="tonal" class="font-weight-bold">{{ e.event_type }}</VChip>
+                        <span class="mono text-medium-emphasis">{{ formatDateTime(e.created_at, locale) }}</span>
+                      </div>
+                    </VExpansionPanelTitle>
+                    <VExpansionPanelText>
+                      <pre class="pre">{{ prettyJSON(e.payload_json) }}</pre>
+                    </VExpansionPanelText>
+                  </VExpansionPanel>
+                </VExpansionPanels>
+              </template>
             </VExpansionPanelText>
           </VExpansionPanel>
 
@@ -164,6 +176,16 @@
               {{ t("pages.runDetails.rawLogsSnapshot") }}
             </VExpansionPanelTitle>
             <VExpansionPanelText>
+              <div class="d-flex justify-end mb-3">
+                <AdaptiveBtn
+                  variant="tonal"
+                  icon="mdi-database-arrow-down-outline"
+                  :label="details.snapshotLoaded ? t('pages.runDetails.snapshotLoaded') : t('pages.runDetails.loadSnapshot')"
+                  :loading="details.snapshotLoading"
+                  :disabled="details.snapshotLoaded"
+                  @click="loadSnapshot"
+                />
+              </div>
               <pre class="pre">{{ details.logs?.snapshot_json || "{}" }}</pre>
             </VExpansionPanelText>
           </VExpansionPanel>
@@ -272,6 +294,14 @@ const codexAuthPayload = computed(() => {
 
 async function loadAll() {
   await details.load(props.runId);
+}
+
+async function loadEventPayloads() {
+  await details.loadEventPayloads(props.runId);
+}
+
+async function loadSnapshot() {
+  await details.loadSnapshot(props.runId);
 }
 
 function goBack() {
