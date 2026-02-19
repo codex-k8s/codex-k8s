@@ -52,22 +52,24 @@
   - `self_improve_runs_list` (история запусков с пагинацией, 50 на страницу, от новых к старым);
   - `self_improve_run_lookup` (поиск запусков по `issue_number`/`pull_request_number`);
   - `self_improve_session_get` (извлечение `codex-cli` session JSON и целевого пути в `/tmp/codex-sessions/...`).
-- MCP для лейблов также доступен: `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`.
+- MCP для оперативного фидбека и лейблов также доступен: `run_status_report`, `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`.
 - Каталог `/tmp/codex-sessions` подготовлен заранее; перед записью создавайте подкаталог конкретного run (`mkdir -p ...`).
 {{- else }}
-- MCP используйте только для лейблов: `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`.
+- MCP используйте только для обратной связи статуса и лейблов: `run_status_report`, `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`.
 {{- end }}
 
 Обязательные правила:
 - Не используйте MCP для PR/comments/веток: эти операции выполняются через `gh`.
 - Не используйте `list_mcp_resources` для проверки доступности MCP-инструментов: это нерелевантный источник для run-scoped tool access.
 - Доступность MCP-инструментов определяйте только по каталогу MCP в контексте (`mcp.tools`) и/или через `tools/list`/прямой `tools/call`.
+- Регулярно публикуйте текущий прогресс через `run_status_report`: минимум один вызов после каждых 5-7 вызовов любых других инструментов, а также перед долгими операциями/ожиданием.
 {{- if eq .TriggerKind "self_improve" }}
 - Для `run:self-improve` сначала выполните диагностику через MCP (`self_improve_runs_list`/`self_improve_run_lookup`/`self_improve_session_get`), затем анализируйте issue/PR через `gh`.
 {{- end }}
 - Не публикуйте секреты в коде, логах, комментариях, PR body и финальном JSON.
 - Работайте в ветке `{{ .TargetBranch }}`.
-- Пользовательский язык: русский.
+- Язык пользовательской коммуникации в этом запуске: {{ .CommunicationLanguage }}.
+- На этом языке вы обязаны: писать PR (title/body/комментарии), отвечать в issue/PR и передавать текст в feedback-инструменты (включая `run_status_report`).
 - Финальный ответ модели должен быть ТОЛЬКО JSON-объект по output schema.
 
 Требования к завершению:
@@ -148,22 +150,24 @@ Tools and access:
   - `self_improve_runs_list` (paginated run history, 50 per page, newest-first);
   - `self_improve_run_lookup` (find runs by `issue_number`/`pull_request_number`);
   - `self_improve_session_get` (extract `codex-cli` session JSON and target path under `/tmp/codex-sessions/...`).
-- MCP labels tools remain available: `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`.
+- MCP status-feedback and labels tools remain available: `run_status_report`, `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`.
 - `/tmp/codex-sessions` is pre-created; create per-run subdirectories before writing extracted session files (`mkdir -p ...`).
 {{- else }}
-- Use MCP for labels only: `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`.
+- Use MCP only for status feedback and labels: `run_status_report`, `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`.
 {{- end }}
 
 Mandatory rules:
 - Do not use MCP for PR/comments/branch operations; use `gh` for those.
 - Do not use `list_mcp_resources` to validate MCP tool availability: it is not a valid source for run-scoped tool access.
 - Determine MCP tool availability only from prompt context (`mcp.tools`) and/or via `tools/list` and direct `tools/call`.
+- Regularly report current progress via `run_status_report`: at least once after every 5-7 calls to other tools, and before long-running actions/waits.
 {{- if eq .TriggerKind "self_improve" }}
 - For `run:self-improve`, execute MCP diagnostics first (`self_improve_runs_list`/`self_improve_run_lookup`/`self_improve_session_get`) and then inspect issue/PR details via `gh`.
 {{- end }}
 - Never expose secrets in code/logs/comments/PR body/final JSON.
 - Stay on branch `{{ .TargetBranch }}`.
-- User-facing language: English.
+- Communication language for user-facing output in this run: {{ .CommunicationLanguage }}.
+- Use this language for PR content (title/body/comments), issue/PR replies, and feedback-tool text (including `run_status_report`).
 - Return ONLY a JSON object matching the output schema.
 
 Completion requirements:

@@ -3,6 +3,7 @@ package mcp
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
@@ -66,6 +67,15 @@ type runWaitEventPayload struct {
 	TimeoutGuardDisabled bool   `json:"timeout_guard_disabled"`
 }
 
+type runAgentStatusReportedEventPayload struct {
+	RunID       string                  `json:"run_id"`
+	ProjectID   string                  `json:"project_id,omitempty"`
+	AgentKey    string                  `json:"agent_key,omitempty"`
+	StatusText  string                  `json:"status_text"`
+	RuntimeMode agentdomain.RuntimeMode `json:"runtime_mode"`
+	Namespace   string                  `json:"namespace,omitempty"`
+}
+
 type marshalErrorPayload struct {
 	Error string `json:"error"`
 }
@@ -87,6 +97,10 @@ func encodeApprovalEventPayload(payload approvalEventPayload) json.RawMessage {
 }
 
 func encodeRunWaitEventPayload(payload runWaitEventPayload) json.RawMessage {
+	return marshalEventPayload(payload)
+}
+
+func encodeRunAgentStatusReportedEventPayload(payload runAgentStatusReportedEventPayload) json.RawMessage {
 	return marshalEventPayload(payload)
 }
 
@@ -264,6 +278,37 @@ func (s *Service) auditPromptContextAssembled(ctx context.Context, runCtx resolv
 			RepositoryID:    runCtx.Repository.ID,
 			RepositoryOwner: runCtx.Repository.Owner,
 			RepositoryName:  runCtx.Repository.Name,
+		}),
+		CreatedAt: s.now().UTC(),
+	})
+}
+
+func (s *Service) auditRunAgentStatusReported(ctx context.Context, runCtx resolvedRunContext, statusText string) {
+	if s.flowEvents == nil {
+		return
+	}
+
+	agentKey := ""
+	if runCtx.Payload.Agent != nil {
+		agentKey = strings.TrimSpace(runCtx.Payload.Agent.Key)
+	}
+	actorID := floweventdomain.ActorIDAgentRunner
+	if agentKey != "" {
+		actorID = floweventdomain.ActorID(agentKey)
+	}
+
+	_ = s.flowEvents.Insert(ctx, floweventrepo.InsertParams{
+		CorrelationID: runCtx.Session.CorrelationID,
+		ActorType:     floweventdomain.ActorTypeAgent,
+		ActorID:       actorID,
+		EventType:     floweventdomain.EventTypeRunAgentStatusReported,
+		Payload: encodeRunAgentStatusReportedEventPayload(runAgentStatusReportedEventPayload{
+			RunID:       runCtx.Session.RunID,
+			ProjectID:   runCtx.Session.ProjectID,
+			AgentKey:    agentKey,
+			StatusText:  statusText,
+			RuntimeMode: runCtx.Session.RuntimeMode,
+			Namespace:   runCtx.Session.Namespace,
 		}),
 		CreatedAt: s.now().UTC(),
 	})

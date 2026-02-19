@@ -64,6 +64,13 @@ func normalizePromptLocale(value string) string {
 	}
 }
 
+func promptCommunicationLanguage(value string) string {
+	if normalizePromptLocale(value) == promptLocaleRU {
+		return "русский"
+	}
+	return "English"
+}
+
 func (s *Service) renderTaskTemplate(templateKind string, repoDir string) (string, error) {
 	templateData := promptTaskTemplateData{
 		BaseBranch:   s.cfg.AgentBaseBranch,
@@ -124,28 +131,29 @@ func (s *Service) buildPrompt(taskBody string, result runResult, repoDir string)
 	roleDisplayName, roleCapabilities := resolvePromptRoleProfile(s.cfg.AgentKey)
 	projectDocs, docsTotal, docsTrimmed := loadProjectDocsForPrompt(repoDir, s.cfg.AgentKey, result.triggerKind, runtimeMode)
 	return renderTemplate(templateNamePromptEnvelope, promptEnvelopeTemplateData{
-		RepositoryFullName: s.cfg.RepositoryFullName,
-		RunID:              s.cfg.RunID,
-		IssueNumber:        s.cfg.IssueNumber,
-		AgentKey:           s.cfg.AgentKey,
-		RoleDisplayName:    roleDisplayName,
-		RoleCapabilities:   roleCapabilities,
-		RuntimeMode:        runtimeMode,
-		IsFullEnv:          runtimeMode == runtimeModeFullEnv,
-		TargetBranch:       result.targetBranch,
-		BaseBranch:         s.cfg.AgentBaseBranch,
-		TriggerKind:        result.triggerKind,
-		IsReviseTrigger:    isReviseTrigger,
-		HasExistingPR:      isReviseTrigger && result.existingPRNumber > 0,
-		ExistingPRNumber:   result.existingPRNumber,
-		TriggerLabel:       strings.TrimSpace(s.cfg.TriggerLabel),
-		StateInReviewLabel: strings.TrimSpace(s.cfg.StateInReviewLabel),
-		HasContext7:        hasContext7,
-		PromptLocale:       normalizePromptLocale(s.cfg.PromptTemplateLocale),
-		ProjectDocs:        projectDocs,
-		ProjectDocsTotal:   docsTotal,
-		ProjectDocsTrimmed: docsTrimmed,
-		TaskBody:           taskBody,
+		RepositoryFullName:    s.cfg.RepositoryFullName,
+		RunID:                 s.cfg.RunID,
+		IssueNumber:           s.cfg.IssueNumber,
+		AgentKey:              s.cfg.AgentKey,
+		RoleDisplayName:       roleDisplayName,
+		RoleCapabilities:      roleCapabilities,
+		RuntimeMode:           runtimeMode,
+		IsFullEnv:             runtimeMode == runtimeModeFullEnv,
+		TargetBranch:          result.targetBranch,
+		BaseBranch:            s.cfg.AgentBaseBranch,
+		TriggerKind:           result.triggerKind,
+		IsReviseTrigger:       isReviseTrigger,
+		HasExistingPR:         isReviseTrigger && result.existingPRNumber > 0,
+		ExistingPRNumber:      result.existingPRNumber,
+		TriggerLabel:          strings.TrimSpace(s.cfg.TriggerLabel),
+		StateInReviewLabel:    strings.TrimSpace(s.cfg.StateInReviewLabel),
+		HasContext7:           hasContext7,
+		PromptLocale:          normalizePromptLocale(s.cfg.PromptTemplateLocale),
+		CommunicationLanguage: promptCommunicationLanguage(s.cfg.PromptTemplateLocale),
+		ProjectDocs:           projectDocs,
+		ProjectDocsTotal:      docsTotal,
+		ProjectDocsTrimmed:    docsTrimmed,
+		TaskBody:              taskBody,
 	})
 }
 

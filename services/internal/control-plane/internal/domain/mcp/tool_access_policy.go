@@ -13,6 +13,7 @@ var (
 		ToolGitHubLabelsAdd,
 		ToolGitHubLabelsRemove,
 		ToolGitHubLabelsTransition,
+		ToolRunStatusReport,
 	}
 	selfImproveDiagnosticTools = []ToolName{
 		ToolSelfImproveRunsList,
