@@ -418,6 +418,14 @@ func (s *Service) resolveIssueRunTrigger(eventType string, envelope githubWebhoo
 		if !strings.EqualFold(strings.TrimSpace(envelope.Review.State), webhookdomain.GitHubReviewStateChangesRequested) {
 			return issueRunTrigger{}, false, triggerConflictResult{}
 		}
+		hasDevLabel := containsLabel(envelope.PullRequest.Labels, s.triggerLabels.RunDev)
+		hasDevReviseLabel := containsLabel(envelope.PullRequest.Labels, s.triggerLabels.RunDevRevise)
+		if !hasDevLabel && !hasDevReviseLabel {
+			return issueRunTrigger{}, false, triggerConflictResult{}
+		}
+		if hasDevLabel && hasDevReviseLabel {
+			return issueRunTrigger{}, false, triggerConflictResult{}
+		}
 		return issueRunTrigger{
 			Source: webhookdomain.TriggerSourcePullRequestReview,
 			Label:  s.triggerLabels.RunDevRevise,
@@ -468,6 +476,19 @@ func isDeletedGitCommitSHA(sha string) bool {
 		}
 	}
 	return true
+}
+
+func containsLabel(labels []githubLabelRecord, expected string) bool {
+	target := normalizeLabelToken(expected)
+	if target == "" {
+		return false
+	}
+	for _, item := range labels {
+		if normalizeLabelToken(item.Name) == target {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Service) postTriggerConflictComment(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope, trigger issueRunTrigger, conflictingLabels []string) error {

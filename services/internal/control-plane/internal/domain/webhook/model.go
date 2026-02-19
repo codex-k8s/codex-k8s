@@ -150,6 +150,7 @@ type githubPullRequestRecord struct {
 	Title   string                `json:"title"`
 	HTMLURL string                `json:"html_url"`
 	State   string                `json:"state"`
+	Labels  []githubLabelRecord   `json:"labels"`
 	Head    githubPullRequestHead `json:"head"`
 	User    githubActorRecord     `json:"user"`
 	Base    githubPullRequestBase `json:"base"`
