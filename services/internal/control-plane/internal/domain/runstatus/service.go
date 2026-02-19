@@ -70,6 +70,10 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		// Push-main deploy runs do not have issue/PR threads to post status comments into.
 		return UpsertCommentResult{}, nil
 	}
+	if runCtx.commentTargetKind == commentTargetKindIssue &&
+		(params.Phase == PhaseCreated || params.Phase == PhasePreparingRuntime) {
+		_ = s.ensureIssueWatchingReactionForRunContext(ctx, runCtx)
+	}
 
 	currentState := commentState{
 		RunID:                    runID,
@@ -145,6 +149,41 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		CommentID:  savedComment.ID,
 		CommentURL: savedComment.URL,
 	}, nil
+}
+
+func (s *Service) ensureIssueWatchingReactionForRunContext(ctx context.Context, runCtx runContext) error {
+	if runCtx.commentTargetKind != commentTargetKindIssue || runCtx.commentTargetNumber <= 0 {
+		return nil
+	}
+
+	reactions, err := s.github.ListIssueReactions(ctx, mcpdomain.GitHubListIssueReactionsParams{
+		Token:       runCtx.githubToken,
+		Owner:       runCtx.repoOwner,
+		Repository:  runCtx.repoName,
+		IssueNumber: runCtx.commentTargetNumber,
+		Limit:       200,
+	})
+	if err != nil {
+		return fmt.Errorf("list issue reactions: %w", err)
+	}
+
+	for _, reaction := range reactions {
+		if strings.EqualFold(strings.TrimSpace(reaction.Content), githubIssueReactionEyes) {
+			return nil
+		}
+	}
+
+	_, err = s.github.CreateIssueReaction(ctx, mcpdomain.GitHubCreateIssueReactionParams{
+		Token:       runCtx.githubToken,
+		Owner:       runCtx.repoOwner,
+		Repository:  runCtx.repoName,
+		IssueNumber: runCtx.commentTargetNumber,
+		Content:     githubIssueReactionEyes,
+	})
+	if err != nil {
+		return fmt.Errorf("create issue reaction: %w", err)
+	}
+	return nil
 }
 
 // PostTriggerLabelConflictComment posts localized diagnostics when multiple run:* labels conflict.

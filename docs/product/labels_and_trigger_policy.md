@@ -117,6 +117,7 @@ approvals:
 - `run:debug` не запускает workflow/deploy напрямую.
 - Если label присутствует на issue при старте `run:dev`/`run:dev:revise`, worker не удаляет run-namespace автоматически.
 - Для такого случая пишется событие `run.namespace.cleanup_skipped` с `cleanup_command` для ручного удаления namespace.
+- В статус-комментарии запуска явно указывается, что namespace не удалён, и даётся ссылка на run details, где его можно удалить вручную.
 
 
 ### Service (`state:*`, `need:*`)
@@ -168,6 +169,10 @@ approvals:
     В этом случае платформа запускает соответствующий `run:<stage>:revise`.
     Если stage labels нет или их несколько, ран не создается.
 - Для `run:dev:revise` при отсутствии связанного PR run отклоняется с `failed_precondition` и событием `run.revise.pr_not_found`.
+- При постановке trigger-лейбла платформа сразу даёт обратную связь в issue:
+  - ставит reaction `:eyes:` (если ещё нет);
+  - публикует/обновляет единый статус-комментарий в фазе «планируется запуск агента»;
+  - дальше обновляет тот же комментарий по фазам `подготовка окружения -> запуск -> завершение`.
 - Label transitions после завершения run должны выполняться через MCP (а не вручную в коде агента), чтобы сохранять единый policy/audit контур.
 - Для dev/dev:revise transition выполняется так:
   - снять trigger label с Issue;

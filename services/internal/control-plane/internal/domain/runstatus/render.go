@@ -20,43 +20,47 @@ var commentTemplatesFS embed.FS
 var commentTemplates = template.Must(template.New("runstatus-comments").ParseFS(commentTemplatesFS, "templates/comment_*.md.tmpl"))
 
 type commentTemplateContext struct {
-	RunID           string
-	TriggerKind     string
-	RuntimeMode     string
-	JobName         string
-	JobNamespace    string
-	Namespace       string
-	SlotURL         string
-	Model           string
-	ReasoningEffort string
-	RunStatus       string
+	RunID                    string
+	TriggerKind              string
+	RuntimeMode              string
+	JobName                  string
+	JobNamespace             string
+	Namespace                string
+	SlotURL                  string
+	Model                    string
+	ReasoningEffort          string
+	RunStatus                string
 	CodexAuthVerificationURL string
 	CodexAuthUserCode        string
 
 	ManagementURL string
 	StateMarker   string
 
-	ShowTriggerKind     bool
-	ShowRuntimeMode     bool
-	ShowJobRef          bool
-	ShowNamespace       bool
-	ShowSlotURL         bool
-	ShowModel           bool
-	ShowReasoningEffort bool
-	ShowFinished        bool
-	ShowNamespaceAction bool
+	ShowTriggerKind        bool
+	ShowRuntimeMode        bool
+	ShowJobRef             bool
+	ShowNamespace          bool
+	ShowSlotURL            bool
+	ShowModel              bool
+	ShowReasoningEffort    bool
+	ShowFinished           bool
+	ShowNamespaceAction    bool
+	ShowRuntimePreparation bool
 
-	CreatedReached      bool
-	StartedReached      bool
-	AuthRequested       bool
-	AuthResolvedReached bool
+	CreatedReached              bool
+	PreparingRuntimeReached     bool
+	RuntimePreparationCompleted bool
+	StartedReached              bool
+	AgentStarted                bool
+	AuthRequested               bool
+	AuthResolvedReached         bool
 
 	IsRunSucceeded bool
 	IsRunFailed    bool
 	Deleted        bool
 	AlreadyDeleted bool
 
-	NeedsCodexAuth bool
+	NeedsCodexAuth               bool
 	ShowCodexAuthVerificationURL bool
 	ShowCodexAuthUserCode        bool
 }
@@ -86,46 +90,51 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 	trimmedModel := strings.TrimSpace(state.Model)
 	trimmedReasoningEffort := strings.TrimSpace(state.ReasoningEffort)
 	normalizedRunStatus := strings.ToLower(strings.TrimSpace(state.RunStatus))
+	normalizedRuntimeMode := strings.ToLower(strings.TrimSpace(state.RuntimeMode))
 	phaseLevel := phaseOrder(state.Phase)
 
 	return commentTemplateContext{
-		RunID:           strings.TrimSpace(state.RunID),
-		TriggerKind:     normalizeTriggerKind(trimmedTriggerKind),
-		RuntimeMode:     trimmedRuntimeMode,
-		JobName:         trimmedJobName,
-		JobNamespace:    trimmedJobNamespace,
-		Namespace:       trimmedNamespace,
-		SlotURL:         trimmedSlotURL,
-		Model:           trimmedModel,
-		ReasoningEffort: trimmedReasoningEffort,
-		RunStatus:       strings.TrimSpace(state.RunStatus),
+		RunID:                    strings.TrimSpace(state.RunID),
+		TriggerKind:              normalizeTriggerKind(trimmedTriggerKind),
+		RuntimeMode:              trimmedRuntimeMode,
+		JobName:                  trimmedJobName,
+		JobNamespace:             trimmedJobNamespace,
+		Namespace:                trimmedNamespace,
+		SlotURL:                  trimmedSlotURL,
+		Model:                    trimmedModel,
+		ReasoningEffort:          trimmedReasoningEffort,
+		RunStatus:                strings.TrimSpace(state.RunStatus),
 		CodexAuthVerificationURL: strings.TrimSpace(state.CodexAuthVerificationURL),
 		CodexAuthUserCode:        strings.TrimSpace(state.CodexAuthUserCode),
 
 		ManagementURL: managementURL,
 		StateMarker:   marker,
 
-		ShowTriggerKind:     trimmedTriggerKind != "",
-		ShowRuntimeMode:     trimmedRuntimeMode != "",
-		ShowJobRef:          trimmedJobName != "" && trimmedJobNamespace != "",
-		ShowNamespace:       trimmedNamespace != "",
-		ShowSlotURL:         trimmedSlotURL != "",
-		ShowModel:           trimmedModel != "",
-		ShowReasoningEffort: trimmedReasoningEffort != "",
-		ShowFinished:        phaseLevel >= phaseOrder(PhaseFinished),
-		ShowNamespaceAction: trimmedNamespace != "" && phaseLevel >= phaseOrder(PhaseNamespaceDeleted),
+		ShowTriggerKind:        trimmedTriggerKind != "",
+		ShowRuntimeMode:        trimmedRuntimeMode != "",
+		ShowJobRef:             trimmedJobName != "" && trimmedJobNamespace != "",
+		ShowNamespace:          trimmedNamespace != "",
+		ShowSlotURL:            trimmedSlotURL != "",
+		ShowModel:              trimmedModel != "",
+		ShowReasoningEffort:    trimmedReasoningEffort != "",
+		ShowFinished:           phaseLevel >= phaseOrder(PhaseFinished),
+		ShowNamespaceAction:    trimmedNamespace != "" && phaseLevel >= phaseOrder(PhaseNamespaceDeleted),
+		ShowRuntimePreparation: normalizedRuntimeMode == runtimeModeFullEnv,
 
-		CreatedReached:      phaseLevel >= phaseOrder(PhaseCreated),
-		StartedReached:      phaseLevel >= phaseOrder(PhaseStarted),
-		AuthRequested:       phaseLevel >= phaseOrder(PhaseAuthRequired),
-		AuthResolvedReached: phaseLevel >= phaseOrder(PhaseAuthResolved),
+		CreatedReached:              phaseLevel >= phaseOrder(PhaseCreated),
+		PreparingRuntimeReached:     phaseLevel >= phaseOrder(PhasePreparingRuntime),
+		RuntimePreparationCompleted: phaseLevel >= phaseOrder(PhaseStarted),
+		StartedReached:              phaseLevel >= phaseOrder(PhaseStarted),
+		AgentStarted:                phaseLevel >= phaseOrder(PhaseStarted),
+		AuthRequested:               phaseLevel >= phaseOrder(PhaseAuthRequired),
+		AuthResolvedReached:         phaseLevel >= phaseOrder(PhaseAuthResolved),
 
 		IsRunSucceeded: normalizedRunStatus == runStatusSucceeded,
 		IsRunFailed:    normalizedRunStatus == runStatusFailed,
 		Deleted:        state.Deleted,
 		AlreadyDeleted: state.AlreadyDeleted,
 
-		NeedsCodexAuth: state.Phase == PhaseAuthRequired,
+		NeedsCodexAuth:               state.Phase == PhaseAuthRequired,
 		ShowCodexAuthVerificationURL: strings.TrimSpace(state.CodexAuthVerificationURL) != "",
 		ShowCodexAuthUserCode:        strings.TrimSpace(state.CodexAuthUserCode) != "",
 	}

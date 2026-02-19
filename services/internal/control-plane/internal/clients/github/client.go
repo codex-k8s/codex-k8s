@@ -99,6 +99,40 @@ func (c *Client) ListIssueComments(ctx context.Context, params mcpdomain.GitHubL
 	return out, nil
 }
 
+func (c *Client) ListIssueReactions(ctx context.Context, params mcpdomain.GitHubListIssueReactionsParams) ([]mcpdomain.GitHubIssueReaction, error) {
+	client := c.clientWithToken(params.Token)
+	limit := clampLimit(params.Limit, defaultPageSize, maxPageSize)
+
+	items, _, err := client.Reactions.ListIssueReactions(ctx, params.Owner, params.Repository, params.IssueNumber, &gh.ListReactionOptions{
+		ListOptions: gh.ListOptions{PerPage: limit},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]mcpdomain.GitHubIssueReaction, 0, len(items))
+	for _, item := range items {
+		out = append(out, toIssueReaction(item))
+	}
+	return out, nil
+}
+
+func (c *Client) CreateIssueReaction(ctx context.Context, params mcpdomain.GitHubCreateIssueReactionParams) (mcpdomain.GitHubIssueReaction, error) {
+	client := c.clientWithToken(params.Token)
+
+	reaction, _, err := client.Reactions.CreateIssueReaction(
+		ctx,
+		params.Owner,
+		params.Repository,
+		params.IssueNumber,
+		strings.TrimSpace(params.Content),
+	)
+	if err != nil {
+		return mcpdomain.GitHubIssueReaction{}, err
+	}
+	return toIssueReaction(reaction), nil
+}
+
 func (c *Client) ListIssueLabels(ctx context.Context, params mcpdomain.GitHubListIssueLabelsParams) ([]mcpdomain.GitHubLabel, error) {
 	client := c.clientWithToken(params.Token)
 
@@ -420,5 +454,16 @@ func toIssueComment(item *gh.IssueComment) mcpdomain.GitHubIssueComment {
 		Body: item.GetBody(),
 		URL:  item.GetHTMLURL(),
 		User: item.GetUser().GetLogin(),
+	}
+}
+
+func toIssueReaction(item *gh.Reaction) mcpdomain.GitHubIssueReaction {
+	if item == nil {
+		return mcpdomain.GitHubIssueReaction{}
+	}
+	return mcpdomain.GitHubIssueReaction{
+		ID:      item.GetID(),
+		Content: item.GetContent(),
+		User:    item.GetUser().GetLogin(),
 	}
 }

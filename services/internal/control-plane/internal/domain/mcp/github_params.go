@@ -25,6 +25,15 @@ type GitHubListIssueCommentsParams struct {
 	Limit       int
 }
 
+// GitHubListIssueReactionsParams describes issue reactions list operation in adapter.
+type GitHubListIssueReactionsParams struct {
+	Token       string
+	Owner       string
+	Repository  string
+	IssueNumber int
+	Limit       int
+}
+
 // GitHubListIssueLabelsParams describes issue labels list operation in adapter.
 type GitHubListIssueLabelsParams struct {
 	Token       string
@@ -81,6 +90,15 @@ type GitHubEditIssueCommentParams struct {
 	Repository string
 	CommentID  int64
 	Body       string
+}
+
+// GitHubCreateIssueReactionParams describes issue reaction create operation in adapter.
+type GitHubCreateIssueReactionParams struct {
+	Token       string
+	Owner       string
+	Repository  string
+	IssueNumber int
+	Content     string
 }
 
 // GitHubMutateLabelsParams describes labels add/remove operation in adapter.

@@ -412,6 +412,13 @@ type GitHubIssueComment struct {
 	User string `json:"user"`
 }
 
+// GitHubIssueReaction describes normalized issue reaction details.
+type GitHubIssueReaction struct {
+	ID      int64  `json:"id"`
+	Content string `json:"content"`
+	User    string `json:"user"`
+}
+
 // GitHubLabel describes normalized label details.
 type GitHubLabel struct {
 	Name string `json:"name"`

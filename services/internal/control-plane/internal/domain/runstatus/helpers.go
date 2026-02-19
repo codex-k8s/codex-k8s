@@ -66,14 +66,16 @@ func normalizeRequestedByType(value RequestedByType) RequestedByType {
 func phaseOrder(phase Phase) int {
 	switch phase {
 	case PhaseNamespaceDeleted:
-		return 6
+		return 7
 	case PhaseFinished:
-		return 5
+		return 6
 	case PhaseAuthResolved:
-		return 4
+		return 5
 	case PhaseAuthRequired:
-		return 3
+		return 4
 	case PhaseStarted:
+		return 3
+	case PhasePreparingRuntime:
 		return 2
 	case PhaseCreated:
 		return 1

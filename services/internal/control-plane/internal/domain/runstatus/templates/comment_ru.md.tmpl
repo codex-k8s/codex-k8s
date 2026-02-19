@@ -8,7 +8,13 @@
 - Код авторизации: `{{ .CodexAuthUserCode }}`
 {{- end }}
 {{- else }}
+{{- if .AgentStarted }}
 ✅ Агент запущен{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Ссылка на запуск]({{ .ManagementURL }}){{- end }}
+{{- else if .PreparingRuntimeReached }}
+🛠 Идёт подготовка окружения{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Ссылка на запуск]({{ .ManagementURL }}){{- end }}
+{{- else }}
+👀 Планируется запуск агента{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Ссылка на запуск]({{ .ManagementURL }}){{- end }}
+{{- end }}
 {{- end }}
 
 - Run ID: `{{ .RunID }}`
@@ -43,6 +49,17 @@
 {{- else }}
 - ⏳ Run создаётся
 {{- end }}
+{{- if .ShowRuntimePreparation }}
+{{- if .PreparingRuntimeReached }}
+{{- if .RuntimePreparationCompleted }}
+- ✅ Подготовка окружения завершена (namespace, runtime stack, slot URL)
+{{- else }}
+- 🛠 Идёт подготовка окружения (namespace, runtime stack, slot URL)
+{{- end }}
+{{- else }}
+- ⏳ Ожидание подготовки окружения
+{{- end }}
+{{- end }}
 {{- if .StartedReached }}
 - ✅ Агент запущен
 {{- else }}
@@ -72,7 +89,7 @@
 {{- else if .Deleted }}
 - 🗑️ Namespace удален
 {{- else }}
-- 🗑️ Namespace ожидает удаления
+- 🧪 Namespace не удален. Удалить его можно на странице запуска.
 {{- end }}
 {{- end }}
 
