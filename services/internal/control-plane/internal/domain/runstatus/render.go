@@ -30,6 +30,8 @@ type commentTemplateContext struct {
 	Model           string
 	ReasoningEffort string
 	RunStatus       string
+	CodexAuthVerificationURL string
+	CodexAuthUserCode        string
 
 	ManagementURL string
 	StateMarker   string
@@ -55,6 +57,8 @@ type commentTemplateContext struct {
 	AlreadyDeleted bool
 
 	NeedsCodexAuth bool
+	ShowCodexAuthVerificationURL bool
+	ShowCodexAuthUserCode        bool
 }
 
 func renderCommentBody(state commentState, managementURL string) (string, error) {
@@ -95,6 +99,8 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 		Model:           trimmedModel,
 		ReasoningEffort: trimmedReasoningEffort,
 		RunStatus:       strings.TrimSpace(state.RunStatus),
+		CodexAuthVerificationURL: strings.TrimSpace(state.CodexAuthVerificationURL),
+		CodexAuthUserCode:        strings.TrimSpace(state.CodexAuthUserCode),
 
 		ManagementURL: managementURL,
 		StateMarker:   marker,
@@ -120,6 +126,8 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 		AlreadyDeleted: state.AlreadyDeleted,
 
 		NeedsCodexAuth: state.Phase == PhaseAuthRequired,
+		ShowCodexAuthVerificationURL: strings.TrimSpace(state.CodexAuthVerificationURL) != "",
+		ShowCodexAuthUserCode:        strings.TrimSpace(state.CodexAuthUserCode) != "",
 	}
 }
 

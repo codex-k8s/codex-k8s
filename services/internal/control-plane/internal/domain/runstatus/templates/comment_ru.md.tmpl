@@ -1,6 +1,12 @@
 ### 🧠 Запуск ИИ-агента
 {{- if .NeedsCodexAuth }}
 🔐 Требуется авторизация Codex{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Ссылка на запуск]({{ .ManagementURL }}){{- end }}
+{{- if .ShowCodexAuthVerificationURL }}
+- Ссылка авторизации: [{{ .CodexAuthVerificationURL }}]({{ .CodexAuthVerificationURL }})
+{{- end }}
+{{- if .ShowCodexAuthUserCode }}
+- Код авторизации: `{{ .CodexAuthUserCode }}`
+{{- end }}
 {{- else }}
 ✅ Агент запущен{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Ссылка на запуск]({{ .ManagementURL }}){{- end }}
 {{- end }}

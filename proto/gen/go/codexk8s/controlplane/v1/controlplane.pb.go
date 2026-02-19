@@ -7077,22 +7077,24 @@ func (x *InsertRunFlowEventResponse) GetEventType() string {
 }
 
 type UpsertRunStatusCommentRequest struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	RunId           string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
-	Phase           string                 `protobuf:"bytes,2,opt,name=phase,proto3" json:"phase,omitempty"`
-	JobName         *string                `protobuf:"bytes,3,opt,name=job_name,json=jobName,proto3,oneof" json:"job_name,omitempty"`
-	JobNamespace    *string                `protobuf:"bytes,4,opt,name=job_namespace,json=jobNamespace,proto3,oneof" json:"job_namespace,omitempty"`
-	RuntimeMode     *string                `protobuf:"bytes,5,opt,name=runtime_mode,json=runtimeMode,proto3,oneof" json:"runtime_mode,omitempty"`
-	Namespace       *string                `protobuf:"bytes,6,opt,name=namespace,proto3,oneof" json:"namespace,omitempty"`
-	TriggerKind     *string                `protobuf:"bytes,7,opt,name=trigger_kind,json=triggerKind,proto3,oneof" json:"trigger_kind,omitempty"`
-	PromptLocale    *string                `protobuf:"bytes,8,opt,name=prompt_locale,json=promptLocale,proto3,oneof" json:"prompt_locale,omitempty"`
-	RunStatus       *string                `protobuf:"bytes,9,opt,name=run_status,json=runStatus,proto3,oneof" json:"run_status,omitempty"`
-	Deleted         bool                   `protobuf:"varint,10,opt,name=deleted,proto3" json:"deleted,omitempty"`
-	AlreadyDeleted  bool                   `protobuf:"varint,11,opt,name=already_deleted,json=alreadyDeleted,proto3" json:"already_deleted,omitempty"`
-	Model           *string                `protobuf:"bytes,12,opt,name=model,proto3,oneof" json:"model,omitempty"`
-	ReasoningEffort *string                `protobuf:"bytes,13,opt,name=reasoning_effort,json=reasoningEffort,proto3,oneof" json:"reasoning_effort,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"open.v1"`
+	RunId                    string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
+	Phase                    string                 `protobuf:"bytes,2,opt,name=phase,proto3" json:"phase,omitempty"`
+	JobName                  *string                `protobuf:"bytes,3,opt,name=job_name,json=jobName,proto3,oneof" json:"job_name,omitempty"`
+	JobNamespace             *string                `protobuf:"bytes,4,opt,name=job_namespace,json=jobNamespace,proto3,oneof" json:"job_namespace,omitempty"`
+	RuntimeMode              *string                `protobuf:"bytes,5,opt,name=runtime_mode,json=runtimeMode,proto3,oneof" json:"runtime_mode,omitempty"`
+	Namespace                *string                `protobuf:"bytes,6,opt,name=namespace,proto3,oneof" json:"namespace,omitempty"`
+	TriggerKind              *string                `protobuf:"bytes,7,opt,name=trigger_kind,json=triggerKind,proto3,oneof" json:"trigger_kind,omitempty"`
+	PromptLocale             *string                `protobuf:"bytes,8,opt,name=prompt_locale,json=promptLocale,proto3,oneof" json:"prompt_locale,omitempty"`
+	RunStatus                *string                `protobuf:"bytes,9,opt,name=run_status,json=runStatus,proto3,oneof" json:"run_status,omitempty"`
+	Deleted                  bool                   `protobuf:"varint,10,opt,name=deleted,proto3" json:"deleted,omitempty"`
+	AlreadyDeleted           bool                   `protobuf:"varint,11,opt,name=already_deleted,json=alreadyDeleted,proto3" json:"already_deleted,omitempty"`
+	Model                    *string                `protobuf:"bytes,12,opt,name=model,proto3,oneof" json:"model,omitempty"`
+	ReasoningEffort          *string                `protobuf:"bytes,13,opt,name=reasoning_effort,json=reasoningEffort,proto3,oneof" json:"reasoning_effort,omitempty"`
+	CodexAuthVerificationUrl *string                `protobuf:"bytes,14,opt,name=codex_auth_verification_url,json=codexAuthVerificationUrl,proto3,oneof" json:"codex_auth_verification_url,omitempty"`
+	CodexAuthUserCode        *string                `protobuf:"bytes,15,opt,name=codex_auth_user_code,json=codexAuthUserCode,proto3,oneof" json:"codex_auth_user_code,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *UpsertRunStatusCommentRequest) Reset() {
@@ -7212,6 +7214,20 @@ func (x *UpsertRunStatusCommentRequest) GetModel() string {
 func (x *UpsertRunStatusCommentRequest) GetReasoningEffort() string {
 	if x != nil && x.ReasoningEffort != nil {
 		return *x.ReasoningEffort
+	}
+	return ""
+}
+
+func (x *UpsertRunStatusCommentRequest) GetCodexAuthVerificationUrl() string {
+	if x != nil && x.CodexAuthVerificationUrl != nil {
+		return *x.CodexAuthVerificationUrl
+	}
+	return ""
+}
+
+func (x *UpsertRunStatusCommentRequest) GetCodexAuthUserCode() string {
+	if x != nil && x.CodexAuthUserCode != nil {
+		return *x.CodexAuthUserCode
 	}
 	return ""
 }
@@ -8379,7 +8395,7 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\x1aInsertRunFlowEventResponse\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x1d\n" +
 	"\n" +
-	"event_type\x18\x02 \x01(\tR\teventType\"\xf4\x04\n" +
+	"event_type\x18\x02 \x01(\tR\teventType\"\xa7\x06\n" +
 	"\x1dUpsertRunStatusCommentRequest\x12\x15\n" +
 	"\x06run_id\x18\x01 \x01(\tR\x05runId\x12\x14\n" +
 	"\x05phase\x18\x02 \x01(\tR\x05phase\x12\x1e\n" +
@@ -8395,7 +8411,10 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	" \x01(\bR\adeleted\x12'\n" +
 	"\x0falready_deleted\x18\v \x01(\bR\x0ealreadyDeleted\x12\x19\n" +
 	"\x05model\x18\f \x01(\tH\aR\x05model\x88\x01\x01\x12.\n" +
-	"\x10reasoning_effort\x18\r \x01(\tH\bR\x0freasoningEffort\x88\x01\x01B\v\n" +
+	"\x10reasoning_effort\x18\r \x01(\tH\bR\x0freasoningEffort\x88\x01\x01\x12B\n" +
+	"\x1bcodex_auth_verification_url\x18\x0e \x01(\tH\tR\x18codexAuthVerificationUrl\x88\x01\x01\x124\n" +
+	"\x14codex_auth_user_code\x18\x0f \x01(\tH\n" +
+	"R\x11codexAuthUserCode\x88\x01\x01B\v\n" +
 	"\t_job_nameB\x10\n" +
 	"\x0e_job_namespaceB\x0f\n" +
 	"\r_runtime_modeB\f\n" +
@@ -8405,7 +8424,9 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\x0e_prompt_localeB\r\n" +
 	"\v_run_statusB\b\n" +
 	"\x06_modelB\x13\n" +
-	"\x11_reasoning_effort\"\x9c\x01\n" +
+	"\x11_reasoning_effortB\x1e\n" +
+	"\x1c_codex_auth_verification_urlB\x17\n" +
+	"\x15_codex_auth_user_code\"\x9c\x01\n" +
 	"\x1eUpsertRunStatusCommentResponse\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x15\n" +
 	"\x06run_id\x18\x02 \x01(\tR\x05runId\x12\x1d\n" +

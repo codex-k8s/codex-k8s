@@ -83,6 +83,8 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		Model:           strings.TrimSpace(params.Model),
 		ReasoningEffort: strings.TrimSpace(params.ReasoningEffort),
 		RunStatus:       strings.TrimSpace(params.RunStatus),
+		CodexAuthVerificationURL: strings.TrimSpace(params.CodexAuthVerificationURL),
+		CodexAuthUserCode:        strings.TrimSpace(params.CodexAuthUserCode),
 		Deleted:         params.Deleted,
 		AlreadyDeleted:  params.AlreadyDeleted,
 	}

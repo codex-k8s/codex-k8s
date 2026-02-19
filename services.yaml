@@ -7,7 +7,7 @@ spec:
   project: codex-k8s
   projectDocs:
     - path: README.md
-      description: Карта репозитория и быстрый вход в сервисы/слои платформы.
+      description: Обзор платформы, роли агентов, сценарии использования и пошаговый workflow от Issue до деплоя.
     - path: AGENTS.md
       description: Обязательные правила для ИИ-агентов в этом репозитории.
     - path: docs/design-guidelines
