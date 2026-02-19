@@ -19,8 +19,8 @@ approvals:
 # Prompt Templates Policy
 
 ## TL;DR
-- Поддерживаются два класса шаблонов: `work` и `review`.
-- Каноническая модель шаблонов role-specific: отдельный body для каждого `agent_key` в каждой ветке `work/review`.
+- Поддерживаются два класса шаблонов: `work` и `revise`.
+- Каноническая модель шаблонов role-specific: отдельный body для каждого `agent_key` в каждой ветке `work/revise`.
 - `services.yaml` поддерживает декларативный `spec.projectDocs[]` (`path`, `description`, `roles[]`, `optional`) для role-aware docs context.
 - Источник шаблона определяется по приоритету: project override в БД -> global override в БД -> seed в репозитории.
 - Для каждого run фиксируется effective template version/hash для аудита и воспроизводимости.
@@ -32,7 +32,7 @@ approvals:
 | Kind | Назначение | Пример seed |
 |---|---|---|
 | `work` | Выполнение задачи (plan/implement/test/doc update) | `docs/product/prompt-seeds/dev-work.md`, `docs/product/prompt-seeds/plan-work.md` |
-| `review` | Ревизия/аудит изменений | `docs/product/prompt-seeds/dev-review.md`, `docs/product/prompt-seeds/plan-review.md` |
+| `revise` | Устранение замечаний Owner к существующему PR | `docs/product/prompt-seeds/dev-revise.md`, `docs/product/prompt-seeds/plan-revise.md` |
 
 Примечание:
 - seed-файлы в репозитории задают baseline-структуру и требования;
@@ -43,7 +43,7 @@ approvals:
 - Ключ шаблона: `(scope, role, kind, locale, version)`.
 - Для каждого `agent_key` обязателен отдельный body-шаблон:
   - `kind=work`;
-  - `kind=review`.
+  - `kind=revise`.
 - Для каждого `(agent_key, kind)` обязательны минимум локали:
   - `ru`;
   - `en`.
@@ -51,9 +51,9 @@ approvals:
 - Stage-specific seed-файлы в репозитории являются bootstrap/fallback и не заменяют role-specific модель.
 
 Реализованный seed fallback (runtime):
-1. `stage-role-kind_locale` (например: `design-sa-review_ru.md`);
+1. `stage-role-kind_locale` (например: `design-sa-revise_ru.md`);
 2. `stage-role-kind`;
-3. `role-role-kind_locale` (например: `role-sa-review_ru.md`);
+3. `role-role-kind_locale` (например: `role-sa-revise_ru.md`);
 4. `role-role-kind`;
 5. `stage-kind_locale`;
 6. `stage-kind`;
@@ -82,7 +82,7 @@ approvals:
 
 ### Repo seeds
 - Базовые stage-specific шаблоны в `docs/product/prompt-seeds/*.md`.
-- Нейминг baseline: `<stage>-work.md` и `<stage>-review.md` (для revise-loop стадий).
+- Нейминг baseline: `<stage>-work.md` и `<stage>-revise.md` (для revise-loop стадий).
 - Используются как fallback при отсутствии override в БД по `(role, kind, locale)`.
 - В seed-файлах хранится только prompt body (инструкции агенту).
 - В seed-файлах не допускаются документные секции и мета-описания.
@@ -152,7 +152,7 @@ approvals:
   - требования по тестам/документации/PR flow;
   - правила безопасности (секреты, policy, аудит).
 - Допускается отложить только необязательные расширенные поля (например, расширенную observability телеметрию), если это явно зафиксировано в `flow_events` как технический долг.
-- Для `run:dev:revise` используется `review`-класс шаблонов, даже если запуск идет через resume-path.
+- Для `run:dev:revise` используется `revise`-класс шаблонов, даже если запуск идет через resume-path.
 - Для `run:dev:revise` effective model/reasoning перечитываются из актуальных issue labels перед запуском.
 - Долг/план замены:
   - Day5: расширить наблюдаемость effective prompt/session/template metadata в UI;
@@ -160,7 +160,7 @@ approvals:
 
 ## Политика `run:self-improve` для шаблонов
 
-- Для `run:self-improve` используется `review`-класс шаблонов с расширенным output contract:
+- Для `run:self-improve` используется `work`-класс шаблонов с расширенным output contract:
   - классификация findings (`docs`, `prompts`, `instructions`, `tools`);
   - ссылки на источники (`flow_events`, `agent_sessions`, PR/Issue comments);
   - proposal diff с оценкой риска.
@@ -170,12 +170,13 @@ approvals:
   - `self_improve_session_get` (получение `codex-cli` session JSON и путь под `/tmp/codex-sessions/...`).
 - Перед анализом session JSON prompt обязан требовать создание целевого каталога `/tmp/codex-sessions/<run-id>`.
 - Repo seed baseline для этого контура:
-  - `docs/product/prompt-seeds/self-improve-work.md`;
-  - `docs/product/prompt-seeds/self-improve-review.md`.
+  - `docs/product/prompt-seeds/self-improve-work.md`.
 - Изменения seed/override, внесённые через self-improve, проходят стандартный PR/review цикл.
 - Для предотвращения drift:
   - каждый self-improve diff должен содержать traceable rationale;
   - шаблон не может ослаблять security/policy блоки final prompt.
+- Backward compatibility:
+  - runtime принимает legacy `kind=review` и `*-review*.md` как fallback для `kind=revise`.
 
 ## Требования безопасности и качества
 
@@ -187,5 +188,5 @@ approvals:
 - `docs/product/agents_operating_model.md`
 - `docs/product/prompt-seeds/README.md`
 - `docs/product/prompt-seeds/dev-work.md`
-- `docs/product/prompt-seeds/dev-review.md`
+- `docs/product/prompt-seeds/dev-revise.md`
 - `docs/architecture/data_model.md`

@@ -15,7 +15,7 @@ spec:
       roles: [dev, reviewer, qa, sa, em, km, sre]
     - path: docs/product
       description: Продуктовая модель этапов, ролей, лейблов и операционных политик.
-      roles: [pm, sa, em, km, reviewer]
+      roles: [dev, pm, sa, em, km, reviewer]
     - path: docs/architecture
       description: Архитектурные контракты, C4, RBAC, transport boundary и prompt policy.
       roles: [sa, dev, reviewer, km, sre]

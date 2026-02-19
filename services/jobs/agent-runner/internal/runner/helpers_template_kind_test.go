@@ -12,9 +12,10 @@ func TestNormalizeTemplateKind(t *testing.T) {
 		want        string
 	}{
 		{name: "work by default", value: "", triggerKind: "dev", want: promptTemplateKindWork},
-		{name: "review by explicit value", value: promptTemplateKindReview, triggerKind: "dev", want: promptTemplateKindReview},
-		{name: "review by revise trigger", value: "", triggerKind: "dev_revise", want: promptTemplateKindReview},
-		{name: "review by self-improve trigger", value: "", triggerKind: "self_improve", want: promptTemplateKindReview},
+		{name: "revise by explicit value", value: promptTemplateKindRevise, triggerKind: "dev", want: promptTemplateKindRevise},
+		{name: "revise by legacy explicit value", value: promptTemplateKindReviewOld, triggerKind: "dev", want: promptTemplateKindRevise},
+		{name: "revise by revise trigger", value: "", triggerKind: "dev_revise", want: promptTemplateKindRevise},
+		{name: "work by self-improve trigger", value: "", triggerKind: "self_improve", want: promptTemplateKindWork},
 	}
 
 	for _, testCase := range tests {

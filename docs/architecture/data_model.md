@@ -313,7 +313,7 @@ Planned extension (Day6+):
 | created_at | timestamptz | no | now() | index | |
 
 ### Entity: prompt_templates
-- Назначение: хранение global/project override шаблонов промптов (`work`/`review`).
+- Назначение: хранение global/project override шаблонов промптов (`work`/`revise`).
 - Важные инварианты: уникальность active версии по `(scope_type, scope_id, role_key, template_kind, locale)`.
 - Поля:
 
@@ -323,7 +323,7 @@ Planned extension (Day6+):
 | scope_type | text | no |  | check(global/project) | |
 | scope_id | uuid | yes |  | fk -> projects | null for global |
 | role_key | text | no |  |  | pm/sa/em/dev/reviewer/qa/sre/km/custom |
-| template_kind | text | no |  | check(work/review) | |
+| template_kind | text | no |  | check(work/revise) + legacy `review` alias | |
 | locale | text | no | "en" |  | i18n locale key (`ru`, `en`, ...) |
 | body_markdown | text | no |  |  | |
 | source | text | no | "db_override" |  | db_override/repo_seed_ref |

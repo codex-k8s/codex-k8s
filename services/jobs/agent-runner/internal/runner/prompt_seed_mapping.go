@@ -13,10 +13,12 @@ const (
 )
 
 func normalizePromptTemplateKind(value string) string {
-	if value == promptTemplateKindReview {
-		return promptTemplateKindReview
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case promptTemplateKindRevise, promptTemplateKindReviewOld:
+		return promptTemplateKindRevise
+	default:
+		return promptTemplateKindWork
 	}
-	return promptTemplateKindWork
 }
 
 func promptSeedStageByTriggerKind(triggerKind string) string {
@@ -57,31 +59,39 @@ func promptSeedCandidates(agentKey string, triggerKind string, templateKind stri
 	kind := normalizePromptTemplateKind(templateKind)
 	normalizedLocale := normalizePromptLocale(locale)
 	normalizedRole := strings.ToLower(strings.TrimSpace(agentKey))
-
-	candidates := make([]string, 0, 12)
-	if normalizedRole != "" {
-		candidates = append(candidates,
-			fmt.Sprintf("%s-%s-%s_%s.md", stage, normalizedRole, kind, normalizedLocale),
-			fmt.Sprintf("%s-%s-%s.md", stage, normalizedRole, kind),
-			fmt.Sprintf("role-%s-%s_%s.md", normalizedRole, kind, normalizedLocale),
-			fmt.Sprintf("role-%s-%s.md", normalizedRole, kind),
-		)
+	kinds := []string{kind}
+	if kind == promptTemplateKindRevise {
+		// Backward compatibility: allow legacy `*-review*.md` seeds as fallback
+		// while runtime canonical kind is `revise`.
+		kinds = append(kinds, promptTemplateKindReviewOld)
 	}
 
-	candidates = append(candidates,
-		fmt.Sprintf("%s-%s_%s.md", stage, kind, normalizedLocale),
-		fmt.Sprintf("%s-%s.md", stage, kind),
-	)
-	if stage != promptSeedStageDev {
+	candidates := make([]string, 0, 24)
+	for _, currentKind := range kinds {
+		if normalizedRole != "" {
+			candidates = append(candidates,
+				fmt.Sprintf("%s-%s-%s_%s.md", stage, normalizedRole, currentKind, normalizedLocale),
+				fmt.Sprintf("%s-%s-%s.md", stage, normalizedRole, currentKind),
+				fmt.Sprintf("role-%s-%s_%s.md", normalizedRole, currentKind, normalizedLocale),
+				fmt.Sprintf("role-%s-%s.md", normalizedRole, currentKind),
+			)
+		}
+
 		candidates = append(candidates,
-			fmt.Sprintf("%s-%s_%s.md", promptSeedStageDev, kind, normalizedLocale),
-			fmt.Sprintf("%s-%s.md", promptSeedStageDev, kind),
+			fmt.Sprintf("%s-%s_%s.md", stage, currentKind, normalizedLocale),
+			fmt.Sprintf("%s-%s.md", stage, currentKind),
+		)
+		if stage != promptSeedStageDev {
+			candidates = append(candidates,
+				fmt.Sprintf("%s-%s_%s.md", promptSeedStageDev, currentKind, normalizedLocale),
+				fmt.Sprintf("%s-%s.md", promptSeedStageDev, currentKind),
+			)
+		}
+		candidates = append(candidates,
+			fmt.Sprintf("default-%s_%s.md", currentKind, normalizedLocale),
+			fmt.Sprintf("default-%s.md", currentKind),
 		)
 	}
-	candidates = append(candidates,
-		fmt.Sprintf("default-%s_%s.md", kind, normalizedLocale),
-		fmt.Sprintf("default-%s.md", kind),
-	)
 
 	return slices.Compact(candidates)
 }

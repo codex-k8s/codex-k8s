@@ -159,8 +159,8 @@ func TestResolveRunAgentContext_UsesPullRequestHintsForRevise(t *testing.T) {
 	if got.ExistingPRNumber != 200 {
 		t.Fatalf("ExistingPRNumber = %d, want 200", got.ExistingPRNumber)
 	}
-	if got.PromptTemplateKind != promptTemplateKindReview {
-		t.Fatalf("PromptTemplateKind = %q, want %q", got.PromptTemplateKind, promptTemplateKindReview)
+	if got.PromptTemplateKind != promptTemplateKindRevise {
+		t.Fatalf("PromptTemplateKind = %q, want %q", got.PromptTemplateKind, promptTemplateKindRevise)
 	}
 }
 
@@ -173,7 +173,7 @@ func TestResolveRunAgentContext_ReviewTemplateKinds(t *testing.T) {
 		wantTriggerKind string
 	}{
 		{
-			name: "stage revise uses review template",
+			name: "stage revise uses revise template",
 			runPayload: json.RawMessage(`{
 				"repository":{"full_name":"codex-k8s/codex-k8s"},
 				"issue":{"number":201},
@@ -184,7 +184,7 @@ func TestResolveRunAgentContext_ReviewTemplateKinds(t *testing.T) {
 			wantTriggerKind: "vision_revise",
 		},
 		{
-			name: "self improve uses review template",
+			name: "self improve uses work template",
 			runPayload: json.RawMessage(`{
 				"repository":{"full_name":"codex-k8s/codex-k8s"},
 				"issue":{"number":202},
@@ -213,8 +213,12 @@ func TestResolveRunAgentContext_ReviewTemplateKinds(t *testing.T) {
 			if got.TriggerKind != testCase.wantTriggerKind {
 				t.Fatalf("TriggerKind = %q, want %q", got.TriggerKind, testCase.wantTriggerKind)
 			}
-			if got.PromptTemplateKind != promptTemplateKindReview {
-				t.Fatalf("PromptTemplateKind = %q, want %q", got.PromptTemplateKind, promptTemplateKindReview)
+			wantTemplateKind := promptTemplateKindWork
+			if testCase.wantTriggerKind == "vision_revise" {
+				wantTemplateKind = promptTemplateKindRevise
+			}
+			if got.PromptTemplateKind != wantTemplateKind {
+				t.Fatalf("PromptTemplateKind = %q, want %q", got.PromptTemplateKind, wantTemplateKind)
 			}
 		})
 	}

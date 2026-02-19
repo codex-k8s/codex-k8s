@@ -81,7 +81,7 @@ func resolveOutputSchemaProfile(params outputSchemaParams) outputSchemaProfile {
 		return outputSchemaProfileSelfImprove
 	}
 
-	if normalizedTemplate == promptTemplateKindReview && normalizedAgentKey != "" {
+	if normalizedTemplate == promptTemplateKindRevise && normalizedAgentKey != "" {
 		return outputSchemaProfilePRFlow
 	}
 

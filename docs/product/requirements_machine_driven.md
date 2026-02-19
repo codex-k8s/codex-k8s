@@ -61,7 +61,7 @@ approvals:
 | FR-027 | Для агент-инициированных trigger/deploy лейблов (`run:*`) обязателен апрув Owner до применения; `state:*` и `need:*` допускают автоустановку по политике проекта. |
 | FR-028 | Процесс поставки фиксируется stage-моделью `intake -> vision -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops` с поддержкой `*:revise`, `run:rethink`. |
 | FR-029 | Модель ролей агентов: базовый штат из 8 системных ролей (`pm`, `sa`, `em`, `dev`, `reviewer`, `qa`, `sre`, `km`) + расширяемые custom-агенты на проект (с явными RBAC, execution mode и quota). |
-| FR-030 | Для агентных инструкций поддерживается role-specific матрица шаблонов: для каждого `agent_key` отдельные body-шаблоны `work/review`, с приоритетом `DB project override -> DB global override -> repo seed`. |
+| FR-030 | Для агентных инструкций поддерживается role-specific матрица шаблонов: для каждого `agent_key` отдельные body-шаблоны `work/revise`, с приоритетом `DB project override -> DB global override -> repo seed`. |
 | FR-031 | Для агентных ролей поддерживается смешанный режим исполнения `full-env`/`code-only`, с политикой выбора режима по роли. |
 | FR-032 | В БД как обязательный контур аудита и учета включены сущности `agent_sessions`, `token_usage`, `links` (в дополнение к `agent_runs` и `flow_events`). |
 | FR-033 | Traceability поддерживается для всех этапов: связи Issue/PR ↔ docs ↔ stage status обновляются синхронно с выполнением этапов. |
@@ -145,7 +145,7 @@ approvals:
       - ai-slots — destructive действия только dry-run (кнопки есть для dogfooding/debug, реальное действие не выполняется).
   - Agents + prompt templates:
     - управление настройками агента;
-    - prompt templates `work/review` минимум в `ru/en` с diff/preview и preview effective template (редактор на Monaco).
+    - prompt templates `work/revise` минимум в `ru/en` с diff/preview и preview effective template (редактор на Monaco).
   - System settings:
     - управление локалями (add locale + default locale);
     - базовые UI prefs (density, debug hints).
