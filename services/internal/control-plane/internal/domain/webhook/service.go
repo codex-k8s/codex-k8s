@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -21,6 +22,7 @@ import (
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
+	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
 const githubWebhookActorID = floweventdomain.ActorIDGitHubWebhook
@@ -48,6 +50,11 @@ type runStatusService interface {
 	CleanupNamespacesByIssue(ctx context.Context, params runstatusdomain.CleanupByIssueParams) (runstatusdomain.CleanupByIssueResult, error)
 	CleanupNamespacesByPullRequest(ctx context.Context, params runstatusdomain.CleanupByPullRequestParams) (runstatusdomain.CleanupByIssueResult, error)
 	PostTriggerLabelConflictComment(ctx context.Context, params runstatusdomain.TriggerLabelConflictCommentParams) (runstatusdomain.TriggerLabelConflictCommentResult, error)
+	PostTriggerWarningComment(ctx context.Context, params runstatusdomain.TriggerWarningCommentParams) (runstatusdomain.TriggerWarningCommentResult, error)
+}
+
+type runtimeErrorRecorder interface {
+	RecordBestEffort(ctx context.Context, params querytypes.RuntimeErrorRecordParams)
 }
 
 // Service ingests provider webhooks into idempotent run and flow-event records.
@@ -60,6 +67,7 @@ type Service struct {
 	users      userrepo.Repository
 	members    projectmemberrepo.Repository
 	runStatus  runStatusService
+	runtimeErr runtimeErrorRecorder
 
 	learningModeDefault bool
 	triggerLabels       TriggerLabels
@@ -74,6 +82,7 @@ type Config struct {
 	RuntimeModePolicy   RuntimeModePolicy
 	PlatformNamespace   string
 	RunStatus           runStatusService
+	RuntimeErrors       runtimeErrorRecorder
 	Members             projectmemberrepo.Repository
 	Users               userrepo.Repository
 	Projects            projectrepo.Repository
@@ -96,6 +105,7 @@ func NewService(cfg Config) *Service {
 		users:               cfg.Users,
 		members:             cfg.Members,
 		runStatus:           cfg.RunStatus,
+		runtimeErr:          cfg.RuntimeErrors,
 		learningModeDefault: cfg.LearningModeDefault,
 		triggerLabels:       triggerLabels,
 		runtimeModePolicy:   cfg.RuntimeModePolicy.withDefaults(),
@@ -151,6 +161,14 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
 			Reason:            "issue_trigger_label_conflict",
 			RunKind:           trigger.Kind,
+			HasBinding:        hasBinding,
+			ConflictingLabels: conflict.ConflictingLabels,
+		})
+	}
+	if !hasIssueRunTrigger && conflict.IgnoreReason != "" {
+		return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
+			Reason:            conflict.IgnoreReason,
+			RunKind:           "",
 			HasBinding:        hasBinding,
 			ConflictingLabels: conflict.ConflictingLabels,
 		})
@@ -298,6 +316,9 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 }
 
 func (s *Service) recordIgnoredWebhook(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope, params ignoredWebhookParams) (IngestResult, error) {
+	s.recordIgnoredWebhookWarning(ctx, cmd, envelope, params)
+	s.postIgnoredWebhookDiagnosticComment(ctx, cmd, envelope, params)
+
 	payload, err := buildIgnoredEventPayload(ignoredEventPayloadInput{
 		Command:           cmd,
 		Envelope:          envelope,
@@ -418,9 +439,12 @@ func (s *Service) resolveIssueRunTrigger(eventType string, envelope githubWebhoo
 		if !strings.EqualFold(strings.TrimSpace(envelope.Review.State), webhookdomain.GitHubReviewStateChangesRequested) {
 			return issueRunTrigger{}, false, triggerConflictResult{}
 		}
-		trigger, ok := s.resolvePullRequestReviewReviseTrigger(envelope.PullRequest.Labels)
+		trigger, ok, reason, conflictingLabels := s.resolvePullRequestReviewReviseTrigger(envelope.PullRequest.Labels)
 		if !ok {
-			return issueRunTrigger{}, false, triggerConflictResult{}
+			return issueRunTrigger{}, false, triggerConflictResult{
+				ConflictingLabels: conflictingLabels,
+				IgnoreReason:      reason,
+			}
 		}
 		return trigger, true, triggerConflictResult{}
 	default:
@@ -492,7 +516,7 @@ func hasAnyLabel(labels []githubLabelRecord, candidates ...string) bool {
 	return false
 }
 
-func (s *Service) resolvePullRequestReviewReviseTrigger(labels []githubLabelRecord) (issueRunTrigger, bool) {
+func (s *Service) resolvePullRequestReviewReviseTrigger(labels []githubLabelRecord) (issueRunTrigger, bool, string, []string) {
 	type stageCandidate struct {
 		runLabel    string
 		reviseLabel string
@@ -510,10 +534,12 @@ func (s *Service) resolvePullRequestReviewReviseTrigger(labels []githubLabelReco
 	}
 
 	matched := make([]issueRunTrigger, 0, 1)
+	matchedLabels := make([]string, 0, 1)
 	for _, stage := range catalog {
 		if !hasAnyLabel(labels, stage.runLabel, stage.reviseLabel) {
 			continue
 		}
+		matchedLabels = append(matchedLabels, strings.TrimSpace(stage.reviseLabel))
 		matched = append(matched, issueRunTrigger{
 			Source: webhookdomain.TriggerSourcePullRequestReview,
 			Label:  strings.TrimSpace(stage.reviseLabel),
@@ -521,10 +547,29 @@ func (s *Service) resolvePullRequestReviewReviseTrigger(labels []githubLabelReco
 		})
 	}
 
-	if len(matched) != 1 {
-		return issueRunTrigger{}, false
+	switch len(matched) {
+	case 0:
+		return issueRunTrigger{}, false, "pull_request_review_missing_stage_label", nil
+	case 1:
+		return matched[0], true, "", nil
+	default:
+		return issueRunTrigger{}, false, "pull_request_review_stage_label_conflict", normalizeWebhookLabels(matchedLabels)
 	}
-	return matched[0], true
+}
+
+func normalizeWebhookLabels(labels []string) []string {
+	result := make([]string, 0, len(labels))
+	for _, raw := range labels {
+		label := strings.TrimSpace(raw)
+		if label == "" {
+			continue
+		}
+		if !slices.Contains(result, label) {
+			result = append(result, label)
+		}
+	}
+	slices.Sort(result)
+	return result
 }
 
 func (s *Service) postTriggerConflictComment(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope, trigger issueRunTrigger, conflictingLabels []string) error {
@@ -548,6 +593,77 @@ func (s *Service) postTriggerConflictComment(ctx context.Context, cmd IngestComm
 
 func localeFromEventType(_ string) string {
 	return "ru"
+}
+
+func (s *Service) recordIgnoredWebhookWarning(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope, params ignoredWebhookParams) {
+	if s.runtimeErr == nil || !isRunCreationWarningReason(params.Reason) {
+		return
+	}
+	details, _ := json.Marshal(map[string]any{
+		"reason":              strings.TrimSpace(params.Reason),
+		"event_type":          strings.TrimSpace(cmd.EventType),
+		"repository_fullname": strings.TrimSpace(envelope.Repository.FullName),
+		"issue_number":        envelope.Issue.Number,
+		"pull_request_number": envelope.PullRequest.Number,
+		"run_kind":            strings.TrimSpace(string(params.RunKind)),
+		"conflicting_labels":  params.ConflictingLabels,
+	})
+	message := "Run was not created: " + strings.TrimSpace(params.Reason)
+	s.runtimeErr.RecordBestEffort(ctx, querytypes.RuntimeErrorRecordParams{
+		Source:        "webhook.trigger",
+		Level:         "warning",
+		Message:       message,
+		CorrelationID: strings.TrimSpace(cmd.CorrelationID),
+		ProjectID:     "",
+		DetailsJSON:   details,
+	})
+}
+
+func (s *Service) postIgnoredWebhookDiagnosticComment(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope, params ignoredWebhookParams) {
+	if s.runStatus == nil || !isRunCreationWarningReason(params.Reason) {
+		return
+	}
+	repositoryFullName := strings.TrimSpace(envelope.Repository.FullName)
+	if repositoryFullName == "" {
+		return
+	}
+
+	threadKind := ""
+	threadNumber := 0
+	if strings.EqualFold(strings.TrimSpace(cmd.EventType), string(webhookdomain.GitHubEventPullRequestReview)) && envelope.PullRequest.Number > 0 {
+		threadKind = "pull_request"
+		threadNumber = int(envelope.PullRequest.Number)
+	} else if envelope.Issue.Number > 0 {
+		threadKind = "issue"
+		threadNumber = int(envelope.Issue.Number)
+	}
+	if threadKind == "" || threadNumber <= 0 {
+		return
+	}
+
+	_, _ = s.runStatus.PostTriggerWarningComment(ctx, runstatusdomain.TriggerWarningCommentParams{
+		CorrelationID:      cmd.CorrelationID,
+		RepositoryFullName: repositoryFullName,
+		ThreadKind:         threadKind,
+		ThreadNumber:       threadNumber,
+		Locale:             localeFromEventType(cmd.EventType),
+		ReasonCode:         strings.TrimSpace(params.Reason),
+		ConflictingLabels:  params.ConflictingLabels,
+	})
+}
+
+func isRunCreationWarningReason(reason string) bool {
+	normalized := strings.TrimSpace(reason)
+	if normalized == "" {
+		return false
+	}
+	if normalized == "pull_request_review_missing_stage_label" || normalized == "pull_request_review_stage_label_conflict" {
+		return true
+	}
+	if normalized == "repository_not_bound_for_issue_label" {
+		return true
+	}
+	return strings.HasPrefix(normalized, "sender_")
 }
 
 func (s *Service) isActorAllowedForIssueTrigger(ctx context.Context, projectID string, senderLogin string) (bool, string, error) {

@@ -280,6 +280,7 @@ func Run() error {
 		Users:               users,
 		Members:             members,
 		RunStatus:           runStatusService,
+		RuntimeErrors:       runtimeErrorService,
 		LearningModeDefault: learningDefault,
 		TriggerLabels:       buildWebhookTriggerLabels(cfg),
 		RuntimeModePolicy:   webhookRuntimeModePolicy,

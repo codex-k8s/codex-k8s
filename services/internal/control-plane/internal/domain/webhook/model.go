@@ -82,6 +82,7 @@ type issueRunTrigger struct {
 
 type triggerConflictResult struct {
 	ConflictingLabels []string
+	IgnoreReason      string
 }
 
 type runAgentProfile struct {
