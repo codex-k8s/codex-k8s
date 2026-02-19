@@ -186,7 +186,7 @@ func NewForClient(cfg Config, client kubernetes.Interface) *Launcher {
 		cfg.TTLSeconds = 600
 	}
 	if cfg.ActiveDeadlineSeconds <= 0 {
-		cfg.ActiveDeadlineSeconds = 900
+		cfg.ActiveDeadlineSeconds = 18000
 	}
 	if cfg.RunServiceAccountName == "" {
 		cfg.RunServiceAccountName = "codex-runner"
