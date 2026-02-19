@@ -51,6 +51,7 @@ spec:
               fi
               mkdir -p /www/.well-known/codex-k8s-probe
               echo -n "$token" > "/www/.well-known/codex-k8s-probe/$token"
+              echo -n "ok" > /www/index.html
               exec httpd -f -p 8080 -h /www
           readinessProbe:
             httpGet:
