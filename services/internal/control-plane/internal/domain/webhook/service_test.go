@@ -290,6 +290,191 @@ func TestIngestGitHubWebhook_PushMainFork_CreatesDeployOnlyProductionRun(t *test
 	}
 }
 
+func TestIngestGitHubWebhook_PushMain_AutoBumpsVersionsAndSkipsCurrentRun(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	githubMgmt := &inMemoryPushMainVersionBumpClient{
+		filesByRef: map[string][]byte{
+			"services.yaml@0123456789abcdef0123456789abcdef01234567": []byte(strings.TrimSpace(`
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: codex-k8s
+spec:
+  versions:
+    control-plane:
+      value: "0.1.2"
+      bumpOn:
+        - services/internal/control-plane
+    worker:
+      value: "0.1.1"
+      bumpOn:
+        - services/jobs/worker
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+`)),
+		},
+		changedPaths: []string{
+			"services/internal/control-plane/internal/app/app.go",
+		},
+	}
+	svc := NewService(Config{
+		AgentRuns:        runs,
+		FlowEvents:       events,
+		Repos:            repos,
+		GitHubToken:      "token",
+		GitHubMgmt:       githubMgmt,
+		PushMainAutoBump: true,
+	})
+
+	buildRef := "0123456789abcdef0123456789abcdef01234567"
+	beforeRef := "1111111111111111111111111111111111111111"
+	payload := json.RawMessage(fmt.Sprintf(`{
+		"ref":"refs/heads/main",
+		"before":"%s",
+		"after":"%s",
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`, beforeRef, buildRef))
+	cmd := IngestCommand{
+		CorrelationID: "delivery-push-main-bump-1",
+		DeliveryID:    "delivery-push-main-bump-1",
+		EventType:     string(webhookdomain.GitHubEventPush),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.Status != webhookdomain.IngestStatusIgnored || got.Duplicate {
+		t.Fatalf("unexpected ingest result: %+v", got)
+	}
+	if got.RunID != "" {
+		t.Fatalf("expected no run id when auto bump commits follow-up push, got %q", got.RunID)
+	}
+	if len(runs.items) != 0 {
+		t.Fatalf("expected no run creation on auto bump path, got %d", len(runs.items))
+	}
+	if githubMgmt.commitCalls != 1 {
+		t.Fatalf("expected one commit call, got %d", githubMgmt.commitCalls)
+	}
+	if got, want := githubMgmt.lastCommitBranch, "main"; got != want {
+		t.Fatalf("unexpected commit branch: got %q want %q", got, want)
+	}
+	if got, want := githubMgmt.lastCommitBaseSHA, buildRef; got != want {
+		t.Fatalf("unexpected commit base sha: got %q want %q", got, want)
+	}
+	updated := string(githubMgmt.lastCommitFiles["services.yaml"])
+	if !strings.Contains(updated, `value: "0.1.3"`) {
+		t.Fatalf("expected control-plane version bump to 0.1.3, got:\n%s", updated)
+	}
+	if !strings.Contains(updated, `value: "0.1.1"`) {
+		t.Fatalf("worker version should stay 0.1.1, got:\n%s", updated)
+	}
+
+	if len(events.items) != 1 {
+		t.Fatalf("expected one flow event, got %d", len(events.items))
+	}
+	if events.items[0].EventType != floweventdomain.EventTypeWebhookIgnored {
+		t.Fatalf("unexpected event type: %s", events.items[0].EventType)
+	}
+	var eventPayload githubFlowEventPayload
+	if err := json.Unmarshal(events.items[0].Payload, &eventPayload); err != nil {
+		t.Fatalf("unmarshal flow event payload: %v", err)
+	}
+	if got, want := strings.TrimSpace(eventPayload.Reason), "push_main_versions_autobumped"; got != want {
+		t.Fatalf("unexpected ignored reason: got %q want %q", got, want)
+	}
+}
+
+func TestIngestGitHubWebhook_PushMain_AutoBumpNoMatchesCreatesRun(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	githubMgmt := &inMemoryPushMainVersionBumpClient{
+		filesByRef: map[string][]byte{
+			"services.yaml@89abcdef0123456789abcdef0123456789abcdef": []byte(strings.TrimSpace(`
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: codex-k8s
+spec:
+  versions:
+    control-plane:
+      value: "0.1.2"
+      bumpOn:
+        - services/internal/control-plane
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+`)),
+		},
+		changedPaths: []string{
+			"docs/architecture/c4_container.md",
+		},
+	}
+	svc := NewService(Config{
+		AgentRuns:        runs,
+		FlowEvents:       events,
+		Repos:            repos,
+		GitHubToken:      "token",
+		GitHubMgmt:       githubMgmt,
+		PushMainAutoBump: true,
+	})
+
+	buildRef := "89abcdef0123456789abcdef0123456789abcdef"
+	payload := json.RawMessage(fmt.Sprintf(`{
+		"ref":"refs/heads/main",
+		"before":"1111111111111111111111111111111111111111",
+		"after":"%s",
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`, buildRef))
+	cmd := IngestCommand{
+		CorrelationID: "delivery-push-main-no-bump-1",
+		DeliveryID:    "delivery-push-main-no-bump-1",
+		EventType:     string(webhookdomain.GitHubEventPush),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.Status != webhookdomain.IngestStatusAccepted || got.Duplicate {
+		t.Fatalf("unexpected ingest result: %+v", got)
+	}
+	if got.RunID == "" {
+		t.Fatal("expected run id when no auto bump changes matched")
+	}
+	if githubMgmt.commitCalls != 0 {
+		t.Fatalf("expected no commit calls, got %d", githubMgmt.commitCalls)
+	}
+}
+
 func TestIngestGitHubWebhook_ClosedEvents_TriggersNamespaceCleanup(t *testing.T) {
 	t.Parallel()
 
@@ -1471,4 +1656,67 @@ func (r *inMemoryProjectMemberRepo) SetLearningModeOverride(_ context.Context, _
 
 func (r *inMemoryProjectMemberRepo) GetLearningModeOverride(_ context.Context, _, _ string) (*bool, bool, error) {
 	return nil, false, nil
+}
+
+type inMemoryPushMainVersionBumpClient struct {
+	filesByRef map[string][]byte
+
+	changedPaths []string
+	changedErr   error
+	commitErr    error
+
+	commitCalls       int
+	lastCommitOwner   string
+	lastCommitRepo    string
+	lastCommitBranch  string
+	lastCommitBaseSHA string
+	lastCommitMessage string
+	lastCommitFiles   map[string][]byte
+}
+
+func (c *inMemoryPushMainVersionBumpClient) GetFile(_ context.Context, _ string, _ string, _ string, filePath string, ref string) ([]byte, bool, error) {
+	if c == nil {
+		return nil, false, nil
+	}
+	if c.filesByRef == nil {
+		return nil, false, nil
+	}
+	key := strings.TrimSpace(filePath) + "@" + strings.TrimSpace(ref)
+	if raw, ok := c.filesByRef[key]; ok {
+		return append([]byte(nil), raw...), true, nil
+	}
+	if raw, ok := c.filesByRef[strings.TrimSpace(filePath)]; ok {
+		return append([]byte(nil), raw...), true, nil
+	}
+	return nil, false, nil
+}
+
+func (c *inMemoryPushMainVersionBumpClient) ListChangedFilesBetweenCommits(_ context.Context, _ string, _ string, _ string, _ string, _ string) ([]string, error) {
+	if c == nil {
+		return nil, nil
+	}
+	if c.changedErr != nil {
+		return nil, c.changedErr
+	}
+	return append([]string(nil), c.changedPaths...), nil
+}
+
+func (c *inMemoryPushMainVersionBumpClient) CommitFilesOnBranch(_ context.Context, _ string, owner string, repo string, branch string, baseSHA string, message string, files map[string][]byte) (string, error) {
+	if c == nil {
+		return "", nil
+	}
+	if c.commitErr != nil {
+		return "", c.commitErr
+	}
+	c.commitCalls++
+	c.lastCommitOwner = owner
+	c.lastCommitRepo = repo
+	c.lastCommitBranch = branch
+	c.lastCommitBaseSHA = baseSHA
+	c.lastCommitMessage = message
+	c.lastCommitFiles = make(map[string][]byte, len(files))
+	for path, raw := range files {
+		c.lastCommitFiles[path] = append([]byte(nil), raw...)
+	}
+	return "bumped-sha", nil
 }

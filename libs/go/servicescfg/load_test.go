@@ -405,10 +405,16 @@ spec:
 `, "duplicate spec.projectDocs path")
 }
 
-func TestLoadFromYAML_SchemaValidationFailFast(t *testing.T) {
+func TestLoadFromYAML_SchemaValidationErrors(t *testing.T) {
 	t.Parallel()
 
-	raw := []byte(strings.TrimSpace(`
+	testCases := []struct {
+		name string
+		raw  string
+	}{
+		{
+			name: "services_not_array",
+			raw: `
 apiVersion: codex-k8s.dev/v1alpha1
 kind: ServiceStack
 metadata:
@@ -418,21 +424,11 @@ spec:
     production:
       namespaceTemplate: "{{ .Project }}-prod"
   services: 123
-`))
-
-	_, err := LoadFromYAML(raw, LoadOptions{Env: "production"})
-	if err == nil {
-		t.Fatalf("expected schema validation error")
-	}
-	if !strings.Contains(err.Error(), "services schema validation failed") {
-		t.Fatalf("expected schema validation error, got: %v", err)
-	}
-}
-
-func TestLoadFromYAML_SchemaValidationUnknownServiceField(t *testing.T) {
-	t.Parallel()
-
-	raw := []byte(strings.TrimSpace(`
+`,
+		},
+		{
+			name: "unknown_service_field",
+			raw: `
 apiVersion: codex-k8s.dev/v1alpha1
 kind: ServiceStack
 metadata:
@@ -444,14 +440,83 @@ spec:
   services:
     - name: api
       unknownField: true
-`))
-
-	_, err := LoadFromYAML(raw, LoadOptions{Env: "production"})
-	if err == nil {
-		t.Fatalf("expected schema validation error")
+`,
+		},
 	}
-	if !strings.Contains(err.Error(), "services schema validation failed") {
-		t.Fatalf("expected schema validation error, got: %v", err)
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := LoadFromYAML([]byte(strings.TrimSpace(tc.raw)), LoadOptions{Env: "production"})
+			if err == nil {
+				t.Fatalf("expected schema validation error")
+			}
+			if !strings.Contains(err.Error(), "services schema validation failed") {
+				t.Fatalf("expected schema validation error, got: %v", err)
+			}
+		})
+	}
+}
+
+func TestLoad_VersionsRenderTagTemplates(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "services.yaml")
+	writeFile(t, path, `
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  versions:
+    api-gateway:
+      value: "0.2.1"
+      bumpOn:
+        - ./services/external/api-gateway
+    worker: "0.4.0"
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+  images:
+    api-gateway:
+      type: build
+      repository: registry.local/demo/api-gateway
+      tagTemplate: '{{ .Env }}-{{ index .Versions "api-gateway" }}'
+    worker:
+      type: build
+      repository: registry.local/demo/worker
+      tagTemplate: '{{ .Env }}-{{ index .Versions "worker" }}'
+`)
+
+	result, err := Load(path, LoadOptions{Env: "production"})
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+
+	if got, want := result.Context.Versions["api-gateway"], "0.2.1"; got != want {
+		t.Fatalf("unexpected api-gateway version in context: got %q want %q", got, want)
+	}
+	if got, want := result.Context.Versions["worker"], "0.4.0"; got != want {
+		t.Fatalf("unexpected worker version in context: got %q want %q", got, want)
+	}
+
+	apiVersion := result.Stack.Spec.Versions["api-gateway"]
+	if got, want := apiVersion.Value, "0.2.1"; got != want {
+		t.Fatalf("unexpected api-gateway version value: got %q want %q", got, want)
+	}
+	if got, want := strings.Join(apiVersion.BumpOn, ","), "services/external/api-gateway"; got != want {
+		t.Fatalf("unexpected api-gateway bumpOn: got %q want %q", got, want)
+	}
+
+	image := result.Stack.Spec.Images["api-gateway"]
+	if got, want := image.TagTemplate, "production-0.2.1"; got != want {
+		t.Fatalf("unexpected api-gateway tagTemplate: got %q want %q", got, want)
+	}
+	workerImage := result.Stack.Spec.Images["worker"]
+	if got, want := workerImage.TagTemplate, "production-0.4.0"; got != want {
+		t.Fatalf("unexpected worker tagTemplate: got %q want %q", got, want)
 	}
 }
 

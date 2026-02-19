@@ -99,6 +99,7 @@ type githubWebhookEnvelope struct {
 	Before       string                   `json:"before"`
 	After        string                   `json:"after"`
 	Deleted      bool                     `json:"deleted"`
+	Commits      []githubPushCommitRecord `json:"commits"`
 	Installation githubInstallationRecord `json:"installation"`
 	Repository   githubRepositoryRecord   `json:"repository"`
 	Issue        githubIssueRecord        `json:"issue"`
@@ -167,4 +168,11 @@ type githubPullRequestBase struct {
 
 type githubReviewRecord struct {
 	State string `json:"state"`
+}
+
+type githubPushCommitRecord struct {
+	ID       string   `json:"id"`
+	Added    []string `json:"added"`
+	Modified []string `json:"modified"`
+	Removed  []string `json:"removed"`
 }

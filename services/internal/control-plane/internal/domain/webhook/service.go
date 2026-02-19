@@ -57,6 +57,12 @@ type runtimeErrorRecorder interface {
 	RecordBestEffort(ctx context.Context, params querytypes.RuntimeErrorRecordParams)
 }
 
+type pushMainVersionBumpClient interface {
+	GetFile(ctx context.Context, token string, owner string, repo string, filePath string, ref string) ([]byte, bool, error)
+	ListChangedFilesBetweenCommits(ctx context.Context, token string, owner string, repo string, beforeSHA string, afterSHA string) ([]string, error)
+	CommitFilesOnBranch(ctx context.Context, token string, owner string, repo string, branch string, baseSHA string, message string, files map[string][]byte) (string, error)
+}
+
 // Service ingests provider webhooks into idempotent run and flow-event records.
 type Service struct {
 	agentRuns  agentrunrepo.Repository
@@ -73,6 +79,9 @@ type Service struct {
 	triggerLabels       TriggerLabels
 	runtimeModePolicy   RuntimeModePolicy
 	platformNamespace   string
+	githubToken         string
+	githubMgmt          pushMainVersionBumpClient
+	autoVersionBump     bool
 }
 
 // Config wires webhook domain dependencies.
@@ -81,6 +90,9 @@ type Config struct {
 	TriggerLabels       TriggerLabels
 	RuntimeModePolicy   RuntimeModePolicy
 	PlatformNamespace   string
+	GitHubToken         string
+	GitHubMgmt          pushMainVersionBumpClient
+	PushMainAutoBump    bool
 	RunStatus           runStatusService
 	RuntimeErrors       runtimeErrorRecorder
 	Members             projectmemberrepo.Repository
@@ -110,6 +122,9 @@ func NewService(cfg Config) *Service {
 		triggerLabels:       triggerLabels,
 		runtimeModePolicy:   cfg.RuntimeModePolicy.withDefaults(),
 		platformNamespace:   strings.TrimSpace(cfg.PlatformNamespace),
+		githubToken:         strings.TrimSpace(cfg.GitHubToken),
+		githubMgmt:          cfg.GitHubMgmt,
+		autoVersionBump:     cfg.PushMainAutoBump,
 	}
 }
 
@@ -198,6 +213,20 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		if !hasBinding || strings.TrimSpace(projectID) == "" {
 			return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
 				Reason:     "repository_not_bound_for_push_main",
+				RunKind:    "",
+				HasBinding: hasBinding,
+			})
+		}
+		if strings.TrimSpace(servicesYAMLPath) == "" {
+			servicesYAMLPath = "services.yaml"
+		}
+		bumped, err := s.maybeAutoBumpMainVersions(ctx, envelope, servicesYAMLPath, pushTarget.BuildRef)
+		if err != nil {
+			return IngestResult{}, fmt.Errorf("auto bump services versions for push main: %w", err)
+		}
+		if bumped {
+			return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
+				Reason:     "push_main_versions_autobumped",
 				RunKind:    "",
 				HasBinding: hasBinding,
 			})

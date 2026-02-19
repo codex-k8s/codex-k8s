@@ -98,7 +98,7 @@ type Metadata struct {
 type Spec struct {
 	Project          string                 `yaml:"project,omitempty"`
 	ProjectDocs      []ProjectDocRef        `yaml:"projectDocs,omitempty"`
-	Versions         map[string]string      `yaml:"versions,omitempty"`
+	Versions         map[string]VersionSpec `yaml:"versions,omitempty"`
 	Imports          []ImportRef            `yaml:"imports,omitempty"`
 	Components       []Component            `yaml:"components,omitempty"`
 	Environments     map[string]Environment `yaml:"environments,omitempty"`

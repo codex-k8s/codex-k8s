@@ -285,6 +285,9 @@ func Run() error {
 		TriggerLabels:       buildWebhookTriggerLabels(cfg),
 		RuntimeModePolicy:   webhookRuntimeModePolicy,
 		PlatformNamespace:   strings.TrimSpace(cfg.PlatformNamespace),
+		GitHubToken:         strings.TrimSpace(cfg.GitHubPAT),
+		GitHubMgmt:          githubMgmtClient,
+		PushMainAutoBump:    true,
 	})
 
 	webhookURL := strings.TrimSpace(cfg.GitHubWebhookURL)

@@ -26,11 +26,34 @@ spec:
       description: Планы спринтов/эпиков, трассируемость и критерии готовности.
       roles: [em, pm, km, reviewer]
   versions:
-    api-gateway: "0.1.0"
-    control-plane: "0.1.2"
-    worker: "0.1.1"
-    agent-runner: "0.1.0"
-    web-console: "0.1.0"
+    api-gateway:
+      value: "0.1.0"
+      bumpOn:
+        - services/external/api-gateway
+        - libs/go
+        - proto
+    control-plane:
+      value: "0.1.2"
+      bumpOn:
+        - services/internal/control-plane
+        - libs/go
+        - proto
+    worker:
+      value: "0.1.1"
+      bumpOn:
+        - services/jobs/worker
+        - libs/go
+        - proto
+    agent-runner:
+      value: "0.1.0"
+      bumpOn:
+        - services/jobs/agent-runner
+        - libs/go
+        - proto
+    web-console:
+      value: "0.1.0"
+      bumpOn:
+        - services/staff/web-console
     alpine-git: "2.47.2"
     kaniko-executor: "v1.23.2-debug"
     busybox: "1.36"
@@ -95,96 +118,96 @@ spec:
   images:
     kaniko-clone:
       type: external
-      from: 'alpine/git:2.47.2'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/alpine-git:2.47.2'
+      from: 'alpine/git:{{ index .Versions "alpine-git" }}'
+      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/alpine-git:{{ index .Versions "alpine-git" }}'
 
     kaniko-executor:
       type: external
-      from: 'gcr.io/kaniko-project/executor:v1.23.2-debug'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/kaniko-executor:v1.23.2-debug'
+      from: 'gcr.io/kaniko-project/executor:{{ index .Versions "kaniko-executor" }}'
+      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/kaniko-executor:{{ index .Versions "kaniko-executor" }}'
 
     repo-sync:
       type: external
-      from: 'alpine/git:2.47.2'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/alpine-git:2.47.2'
+      from: 'alpine/git:{{ index .Versions "alpine-git" }}'
+      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/alpine-git:{{ index .Versions "alpine-git" }}'
 
     busybox:
       type: external
-      from: 'busybox:1.36'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/busybox:1.36'
+      from: 'busybox:{{ index .Versions "busybox" }}'
+      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/busybox:{{ index .Versions "busybox" }}'
 
     postgres:
       type: external
-      from: 'pgvector/pgvector:pg16'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/pgvector:pg16'
+      from: 'pgvector/pgvector:{{ index .Versions "pgvector" }}'
+      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/pgvector:{{ index .Versions "pgvector" }}'
 
     oauth2-proxy:
       type: external
-      from: 'quay.io/oauth2-proxy/oauth2-proxy:v7.6.0'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/oauth2-proxy:v7.6.0'
+      from: 'quay.io/oauth2-proxy/oauth2-proxy:{{ index .Versions "oauth2-proxy" }}'
+      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/oauth2-proxy:{{ index .Versions "oauth2-proxy" }}'
 
     codegen-check:
       type: external
-      from: 'golang:1.24-bookworm'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/golang:1.24-bookworm'
+      from: 'golang:{{ index .Versions "golang-codegen" }}'
+      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/golang:{{ index .Versions "golang-codegen" }}'
 
     golang-alpine:
       type: external
-      from: 'golang:1.25.6-alpine'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/golang:1.25.6-alpine'
+      from: 'golang:{{ index .Versions "golang-alpine" }}'
+      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/golang:{{ index .Versions "golang-alpine" }}'
 
     golang-bookworm:
       type: external
-      from: 'golang:1.25.6-bookworm'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/golang:1.25.6-bookworm'
+      from: 'golang:{{ index .Versions "golang-bookworm" }}'
+      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/golang:{{ index .Versions "golang-bookworm" }}'
 
     node-alpine:
       type: external
-      from: 'node:22-alpine'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/node:22-alpine'
+      from: 'node:{{ index .Versions "node-alpine" }}'
+      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/node:{{ index .Versions "node-alpine" }}'
 
     node-bookworm:
       type: external
-      from: 'node:22-bookworm'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/node:22-bookworm'
+      from: 'node:{{ index .Versions "node-bookworm" }}'
+      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/node:{{ index .Versions "node-bookworm" }}'
 
     nginx-alpine:
       type: external
-      from: 'nginx:1.27-alpine'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/nginx:1.27-alpine'
+      from: 'nginx:{{ index .Versions "nginx-alpine" }}'
+      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/nginx:{{ index .Versions "nginx-alpine" }}'
 
     api-gateway:
       type: build
       repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/api-gateway" }}'
-      tagTemplate: '{{ .Env }}-0.1.0'
+      tagTemplate: '{{ .Env }}-{{ index .Versions "api-gateway" }}'
       dockerfile: services/external/api-gateway/Dockerfile
       context: .
 
     control-plane:
       type: build
       repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/control-plane" }}'
-      tagTemplate: '{{ .Env }}-0.1.1'
+      tagTemplate: '{{ .Env }}-{{ index .Versions "control-plane" }}'
       dockerfile: services/internal/control-plane/Dockerfile
       context: .
 
     worker:
       type: build
       repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/worker" }}'
-      tagTemplate: '{{ .Env }}-0.1.0'
+      tagTemplate: '{{ .Env }}-{{ index .Versions "worker" }}'
       dockerfile: services/jobs/worker/Dockerfile
       context: .
 
     agent-runner:
       type: build
       repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_AGENT_RUNNER_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/agent-runner" }}'
-      tagTemplate: '{{ .Env }}-0.1.0'
+      tagTemplate: '{{ .Env }}-{{ index .Versions "agent-runner" }}'
       dockerfile: services/jobs/agent-runner/Dockerfile
       context: .
 
     web-console:
       type: '{{ ternary (eq .Env "ai") "build" "skip" }}'
       repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/web-console" }}'
-      tagTemplate: '{{ .Env }}-0.1.0'
+      tagTemplate: '{{ .Env }}-{{ index .Versions "web-console" }}'
       dockerfile: services/staff/web-console/Dockerfile
       context: services/staff/web-console
 
