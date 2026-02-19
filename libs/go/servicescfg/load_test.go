@@ -409,11 +409,13 @@ func TestLoadFromYAML_SchemaValidationErrors(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		name string
-		raw  string
+		name        string
+		raw         string
+		errContains string
 	}{
 		{
-			name: "services_not_array",
+			name:        "services_not_array",
+			errContains: "services schema validation failed",
 			raw: `
 apiVersion: codex-k8s.dev/v1alpha1
 kind: ServiceStack
@@ -427,7 +429,8 @@ spec:
 `,
 		},
 		{
-			name: "unknown_service_field",
+			name:        "unknown_service_field",
+			errContains: "services schema validation failed",
 			raw: `
 apiVersion: codex-k8s.dev/v1alpha1
 kind: ServiceStack
@@ -442,6 +445,22 @@ spec:
       unknownField: true
 `,
 		},
+		{
+			name:        "version_scalar_not_allowed",
+			errContains: "cannot unmarshal",
+			raw: `
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+  versions:
+    worker: "0.1.0"
+`,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -453,8 +472,8 @@ spec:
 			if err == nil {
 				t.Fatalf("expected schema validation error")
 			}
-			if !strings.Contains(err.Error(), "services schema validation failed") {
-				t.Fatalf("expected schema validation error, got: %v", err)
+			if !strings.Contains(err.Error(), tc.errContains) {
+				t.Fatalf("expected error containing %q, got: %v", tc.errContains, err)
 			}
 		})
 	}
@@ -475,7 +494,8 @@ spec:
       value: "0.2.1"
       bumpOn:
         - ./services/external/api-gateway
-    worker: "0.4.0"
+    worker:
+      value: "0.4.0"
   environments:
     production:
       namespaceTemplate: "{{ .Project }}-prod"
