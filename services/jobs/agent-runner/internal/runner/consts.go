@@ -6,11 +6,10 @@ const (
 	templateNamePromptRevise   = "templates/prompt_revise.tmpl"
 	templateNameCodexConfig    = "templates/codex_config.toml.tmpl"
 	templateNameKubeconfig     = "templates/kubeconfig.tmpl"
-	promptSeedsDirRelativePath = "docs/product/prompt-seeds"
+	promptSeedsDirRelativePath = "promptseeds"
 
-	promptTemplateKindWork      = "work"
-	promptTemplateKindRevise    = "revise"
-	promptTemplateKindReviewOld = "review"
+	promptTemplateKindWork   = "work"
+	promptTemplateKindRevise = "revise"
 
 	promptLocaleRU = "ru"
 	promptLocaleEN = "en"

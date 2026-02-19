@@ -3,7 +3,7 @@
 `agent-runner` — job-сервис запуска агентных сессий в Kubernetes: подготавливает runtime-контекст, выполняет run и собирает артефакты.
 
 Prompt seed policy:
-- task-body шаблон берётся из `docs/product/prompt-seeds/*.md` по связке `agent_key + trigger_kind + template_kind + locale`;
+- task-body шаблон берётся из встроенного каталога `services/jobs/agent-runner/internal/runner/promptseeds/*.md` (embed) по связке `agent_key + trigger_kind + template_kind + locale`;
 - поддержаны role-aware шаблоны:
   - `<stage>-<agent_key>-<kind>_<locale>.md` / `<stage>-<agent_key>-<kind>.md`;
   - `role-<agent_key>-<kind>_<locale>.md` / `role-<agent_key>-<kind>.md`;

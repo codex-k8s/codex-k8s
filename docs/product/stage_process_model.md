@@ -92,8 +92,8 @@ approvals:
 Ограничение текущего этапа:
 - для части стадий пока активирован базовый orchestration path (routing/audit/policy),
   а специализированная бизнес-логика стадий дорабатывается следующими S3 эпиками.
-- для prompt-body используется минимальная stage-matrix seed-шаблонов в `docs/product/prompt-seeds/`
-  (по схеме `<stage>-work.md` и `<stage>-review.md` для revise-loop стадий).
+- для prompt-body используется минимальная stage-matrix seed-шаблонов в `services/jobs/agent-runner/internal/runner/promptseeds/`
+  (по схеме `<stage>-work.md` и `<stage>-revise.md` для revise-loop стадий).
 
 ## План активации контуров
 

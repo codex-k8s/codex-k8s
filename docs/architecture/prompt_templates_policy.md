@@ -31,8 +31,8 @@ approvals:
 
 | Kind | Назначение | Пример seed |
 |---|---|---|
-| `work` | Выполнение задачи (plan/implement/test/doc update) | `docs/product/prompt-seeds/dev-work.md`, `docs/product/prompt-seeds/plan-work.md` |
-| `revise` | Устранение замечаний Owner к существующему PR | `docs/product/prompt-seeds/dev-revise.md`, `docs/product/prompt-seeds/plan-revise.md` |
+| `work` | Выполнение задачи (plan/implement/test/doc update) | `services/jobs/agent-runner/internal/runner/promptseeds/dev-work.md`, `services/jobs/agent-runner/internal/runner/promptseeds/plan-work.md` |
+| `revise` | Устранение замечаний Owner к существующему PR | `services/jobs/agent-runner/internal/runner/promptseeds/dev-revise.md`, `services/jobs/agent-runner/internal/runner/promptseeds/plan-revise.md` |
 
 Примечание:
 - seed-файлы в репозитории задают baseline-структуру и требования;
@@ -65,7 +65,7 @@ approvals:
 
 ## Seed vs final prompt
 
-- `docs/product/prompt-seeds/*.md` не отправляются агенту "как есть" в изоляции.
+- `services/jobs/agent-runner/internal/runner/promptseeds/*.md` не отправляются агенту "как есть" в изоляции.
 - Seed/override — это только task-body слой шаблона.
 - В рантайме формируется final prompt, который включает:
   1. system policy envelope (правила безопасности, source-of-truth документы, формат результата);
@@ -81,7 +81,7 @@ approvals:
 - `../codexctl/internal/prompt/templates/*.tmpl` (кроме `env_comment_*.tmpl`).
 
 ### Repo seeds
-- Базовые stage-specific шаблоны в `docs/product/prompt-seeds/*.md`.
+- Базовые stage-specific шаблоны в `services/jobs/agent-runner/internal/runner/promptseeds/*.md`.
 - Нейминг baseline: `<stage>-work.md` и `<stage>-revise.md` (для revise-loop стадий).
 - Используются как fallback при отсутствии override в БД по `(role, kind, locale)`.
 - В seed-файлах хранится только prompt body (инструкции агенту).
@@ -170,13 +170,11 @@ approvals:
   - `self_improve_session_get` (получение `codex-cli` session JSON и путь под `/tmp/codex-sessions/...`).
 - Перед анализом session JSON prompt обязан требовать создание целевого каталога `/tmp/codex-sessions/<run-id>`.
 - Repo seed baseline для этого контура:
-  - `docs/product/prompt-seeds/self-improve-work.md`.
+  - `services/jobs/agent-runner/internal/runner/promptseeds/self-improve-work.md`.
 - Изменения seed/override, внесённые через self-improve, проходят стандартный PR/review цикл.
 - Для предотвращения drift:
   - каждый self-improve diff должен содержать traceable rationale;
   - шаблон не может ослаблять security/policy блоки final prompt.
-- Backward compatibility:
-  - runtime принимает legacy `kind=review` и `*-review*.md` как fallback для `kind=revise`.
 
 ## Требования безопасности и качества
 
@@ -186,7 +184,7 @@ approvals:
 
 ## Связанные документы
 - `docs/product/agents_operating_model.md`
-- `docs/product/prompt-seeds/README.md`
-- `docs/product/prompt-seeds/dev-work.md`
-- `docs/product/prompt-seeds/dev-revise.md`
+- `services/jobs/agent-runner/internal/runner/promptseeds/README.md`
+- `services/jobs/agent-runner/internal/runner/promptseeds/dev-work.md`
+- `services/jobs/agent-runner/internal/runner/promptseeds/dev-revise.md`
 - `docs/architecture/data_model.md`

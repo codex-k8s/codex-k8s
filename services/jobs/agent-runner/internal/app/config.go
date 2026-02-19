@@ -57,9 +57,6 @@ func LoadConfig() (Config, error) {
 	if isReviseTriggerKind(cfg.TriggerKind) {
 		cfg.PromptTemplateKind = promptTemplateKindRevise
 	}
-	if cfg.PromptTemplateKind == promptTemplateKindReviewOld {
-		cfg.PromptTemplateKind = promptTemplateKindRevise
-	}
 	if cfg.PromptTemplateKind != promptTemplateKindRevise {
 		cfg.PromptTemplateKind = promptTemplateKindWork
 	}

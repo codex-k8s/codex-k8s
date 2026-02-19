@@ -71,7 +71,7 @@ approvals:
 - Input from Day3: per-issue namespace и RBAC baseline.
 - Output to Day4:
   - готовый MCP tool layer для git/PR/debug операций;
-  - готовый prompt context assembler для рендера `work/review` шаблонов.
+  - готовый prompt context assembler для рендера `work/revise` шаблонов.
 
 ## Фактическая реализация (2026-02-12)
 - В `services/internal/control-plane` добавлен встроенный MCP transport (`/mcp`, StreamableHTTP) на `github.com/modelcontextprotocol/go-sdk v1.3.0` с bearer auth и run-bound валидацией токена.
