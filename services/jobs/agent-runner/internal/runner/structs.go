@@ -150,29 +150,32 @@ type promptTaskTemplateData struct {
 }
 
 type promptEnvelopeTemplateData struct {
-	RepositoryFullName    string
-	RunID                 string
-	IssueNumber           int64
-	AgentKey              string
-	RoleDisplayName       string
-	RoleCapabilities      []string
-	RuntimeMode           string
-	IsFullEnv             bool
-	TargetBranch          string
-	BaseBranch            string
-	TriggerKind           string
-	IsReviseTrigger       bool
-	HasExistingPR         bool
-	ExistingPRNumber      int
-	TriggerLabel          string
-	StateInReviewLabel    string
-	HasContext7           bool
-	PromptLocale          string
-	CommunicationLanguage string
-	ProjectDocs           []promptProjectDocTemplateData
-	ProjectDocsTotal      int
-	ProjectDocsTrimmed    bool
-	TaskBody              string
+	RepositoryFullName           string
+	RunID                        string
+	IssueNumber                  int64
+	AgentKey                     string
+	RoleDisplayName              string
+	RoleCapabilities             []string
+	RuntimeMode                  string
+	IsFullEnv                    bool
+	TargetBranch                 string
+	BaseBranch                   string
+	TriggerKind                  string
+	IsReviseTrigger              bool
+	IsMarkdownDocsOnlyScope      bool
+	IsReviewerCommentOnlyScope   bool
+	IsSelfImproveRestrictedScope bool
+	HasExistingPR                bool
+	ExistingPRNumber             int
+	TriggerLabel                 string
+	StateInReviewLabel           string
+	HasContext7                  bool
+	PromptLocale                 string
+	CommunicationLanguage        string
+	ProjectDocs                  []promptProjectDocTemplateData
+	ProjectDocsTotal             int
+	ProjectDocsTrimmed           bool
+	TaskBody                     string
 }
 
 type promptProjectDocTemplateData struct {

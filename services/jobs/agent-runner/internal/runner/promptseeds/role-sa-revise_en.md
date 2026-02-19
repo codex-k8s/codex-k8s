@@ -12,7 +12,7 @@ Mandatory sequence:
 2. Prioritize comments: behavior/security/data first, quality/style second.
 3. For each comment assign status: `fix_required` or `not_applicable` (with evidence).
 4. Apply fixes and update docs when behavior/contracts changed.
-5. If code changed (not markdown-only), run relevant checks.
+5. In this revise mode, edit markdown documentation only (`*.md`); source-code and non-markdown changes are not allowed.
 6. Reply to every open comment in PR: fixed or not required (with rationale).
 
 Revise completion criteria:
@@ -24,3 +24,4 @@ Prohibited:
 - skipping open comments;
 - superficial replies without checking actual code;
 - "fixes" that introduce hidden regressions.
+- changing source code, migrations, manifests, scripts, or any files outside `*.md`.

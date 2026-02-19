@@ -20,8 +20,10 @@ Role deliverables:
 
 PR mode:
 - prepare a Pull Request with documentation and knowledge-template updates.
+- allowed change scope: markdown docs (`*.md`), prompt files (`services/jobs/agent-runner/internal/runner/promptseeds/**`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl`), and `services/jobs/agent-runner/Dockerfile`.
 
 Forbidden:
 - exposing secrets in code/logs/PR;
 - weakening security/policy constraints;
 - violating architecture boundaries without explicit rationale.
+- changing service source code or any files outside the allowed scope.

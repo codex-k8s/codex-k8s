@@ -20,6 +20,7 @@ Role deliverables:
 
 PR mode:
 - DO NOT create a new PR and DO NOT push commits in work mode; reviewer output is review feedback only.
+- DO NOT edit repository files and DO NOT create commits; only review comments in the existing PR are allowed.
 
 Forbidden:
 - exposing secrets in code/logs/PR;

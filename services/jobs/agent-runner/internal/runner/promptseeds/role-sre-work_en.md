@@ -14,14 +14,15 @@ Mandatory sequence:
 6. Produce role-specific deliverables.
 
 Role deliverables:
-- Updates to ops/runbook/monitoring/alerts and runtime configuration.
+- Updates to ops/runbook/monitoring/alerts markdown documentation.
 - Pull Request with operational risks, rollback plan, and checks.
 - SLO/SLA impact confirmation (if affected).
 
 PR mode:
-- prepare a Pull Request with operational/infrastructure changes.
+- prepare a Pull Request with operational/monitoring markdown documentation only.
 
 Forbidden:
 - exposing secrets in code/logs/PR;
 - weakening security/policy constraints;
 - violating architecture boundaries without explicit rationale.
+- changing source code, infrastructure manifests, scripts, or any files outside `*.md`.

@@ -41,10 +41,10 @@ approvals:
 | `sa` | Solution Architect | C4/ADR/NFR/design decisions | `full-env` (read-only) | 1 |
 | `em` | Engineering Manager | delivery plan/epics/DoR-DoD | `full-env` (read-only) | 1 |
 | `dev` | Software Engineer | реализация `run:dev`/`run:dev:revise`, код + тесты + docs update | `full-env` | 2 |
-| `reviewer` | Pre-review Engineer | предварительное ревью артефактов `run:*`: inline findings + summary для Owner | `full-env` (read-mostly) | 2 |
-| `qa` | QA Lead | test strategy/plan/matrix/regression | `full-env` | 2 |
-| `sre` | SRE/OPS | runbook/SLO/alerts/postdeploy | `full-env` | 1 |
-| `km` | Doc/KM | issue↔docs traceability, индексы, self-improve диагностика и обновление знаний | `code-only` | 2 |
+| `reviewer` | Pre-review Engineer | комментарии в существующем PR: inline findings + summary для Owner (без изменений репозитория) | `full-env` (read-mostly) | 2 |
+| `qa` | QA Lead | markdown test strategy/plan/matrix/regression evidence | `full-env` | 2 |
+| `sre` | SRE/OPS | markdown runbook/SLO/alerts/postdeploy improvements | `full-env` | 1 |
+| `km` | Doc/KM | issue↔docs traceability, self-improve диагностика, prompts/instructions updates | `code-only` | 2 |
 
 Примечания:
 - `Owner` не является агентом, но остаётся финальным апрувером решений и trigger/deploy действий.
@@ -91,11 +91,13 @@ approvals:
 - `reviewer`:
   - выполняет предварительное ревью до финального ревью Owner для всех `run:*`;
   - проверяет соответствие задаче, проектной документации и `docs/design-guidelines/**`;
-  - оставляет inline-комментарии в PR (если PR есть) и публикует summary для Owner.
+  - оставляет inline-комментарии в PR (если PR есть) и публикует summary для Owner;
+  - не изменяет файлы репозитория и не создает коммиты/новые PR.
 - `Owner`:
   - выполняет финальный review/approve после прохождения pre-review.
 - `km`:
   - ведёт цикл `run:self-improve`: анализирует повторяющиеся замечания/сбои, формирует и вносит улучшения в docs/prompt templates;
+  - в `run:self-improve` changeset ограничен scope: markdown-инструкции, prompt files, `services/jobs/agent-runner/Dockerfile`;
   - обязан использовать MCP-диагностику запусков:
     - `self_improve_runs_list` (пагинация истории запусков);
     - `self_improve_run_lookup` (поиск запусков по Issue/PR);

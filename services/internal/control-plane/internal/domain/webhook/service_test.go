@@ -955,6 +955,17 @@ func TestResolveRunAgentKey_SelfImproveUsesKM(t *testing.T) {
 	}
 }
 
+func TestResolveRunAgentKey_DocAuditUsesKM(t *testing.T) {
+	t.Parallel()
+
+	key := resolveRunAgentKey(&issueRunTrigger{
+		Kind: webhookdomain.TriggerKindDocAudit,
+	})
+	if key != "km" {
+		t.Fatalf("resolveRunAgentKey() = %q, want %q", key, "km")
+	}
+}
+
 func TestIngestGitHubWebhook_IssueTriggerConflict_IgnoredWithDiagnosticComment(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}

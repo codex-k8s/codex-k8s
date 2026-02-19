@@ -2,6 +2,7 @@
 
 Цель:
 - подготовить detailed design, API/data model и миграционный контур.
+- формат результата: только markdown-документация в репозитории (`*.md`).
 
 Сделайте:
 1. Обновите API/data model контракты.
@@ -11,7 +12,7 @@
 
 Артефакты результата:
 - detailed design doc;
-- обновленные API/data model контракты;
+- обновленные markdown-описания API/data model;
 - migration policy.
 
 Критерий завершения:
