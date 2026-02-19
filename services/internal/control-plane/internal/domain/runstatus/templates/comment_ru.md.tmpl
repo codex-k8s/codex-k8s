@@ -18,6 +18,9 @@
 {{- if .ShowNamespace }}
 - Namespace: `{{ .Namespace }}`
 {{- end }}
+{{- if .ShowSlotURL }}
+- Ссылка на слот: [{{ .SlotURL }}]({{ .SlotURL }})
+{{- end }}
 {{- if .ShowModel }}
 - Модель: `{{ .Model }}`
 {{- end }}
@@ -29,9 +32,24 @@
 {{- end }}
 
 ### 🕒 Таймлайн
-- ✅ Запуск создан и выполняется
-{{- if .NeedsCodexAuth }}
+{{- if .CreatedReached }}
+- ✅ Run создан
+{{- else }}
+- ⏳ Run создаётся
+{{- end }}
+{{- if .StartedReached }}
+- ✅ Агент запущен
+{{- else }}
+- ⏳ Ожидание старта агента
+{{- end }}
+{{- if .AuthRequested }}
+{{- if .AuthResolvedReached }}
+- ✅ Авторизация Codex подтверждена
+{{- else if .NeedsCodexAuth }}
 - 🔐 Ожидается авторизация Codex (см. консоль запуска)
+{{- else }}
+- 🔐 Авторизация Codex запрошена
+{{- end }}
 {{- end }}
 {{- if .ShowFinished }}
 {{- if .IsRunSucceeded }}

@@ -3,6 +3,7 @@ package runner
 import (
 	"fmt"
 	"slices"
+	"strings"
 
 	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 )
@@ -51,21 +52,36 @@ func promptSeedStageByTriggerKind(triggerKind string) string {
 	}
 }
 
-func promptSeedCandidates(triggerKind string, templateKind string, locale string) []string {
+func promptSeedCandidates(agentKey string, triggerKind string, templateKind string, locale string) []string {
 	stage := promptSeedStageByTriggerKind(triggerKind)
 	kind := normalizePromptTemplateKind(templateKind)
 	normalizedLocale := normalizePromptLocale(locale)
+	normalizedRole := strings.ToLower(strings.TrimSpace(agentKey))
 
-	candidates := []string{
+	candidates := make([]string, 0, 12)
+	if normalizedRole != "" {
+		candidates = append(candidates,
+			fmt.Sprintf("%s-%s-%s_%s.md", stage, normalizedRole, kind, normalizedLocale),
+			fmt.Sprintf("%s-%s-%s.md", stage, normalizedRole, kind),
+			fmt.Sprintf("role-%s-%s_%s.md", normalizedRole, kind, normalizedLocale),
+			fmt.Sprintf("role-%s-%s.md", normalizedRole, kind),
+		)
+	}
+
+	candidates = append(candidates,
 		fmt.Sprintf("%s-%s_%s.md", stage, kind, normalizedLocale),
 		fmt.Sprintf("%s-%s.md", stage, kind),
-	}
+	)
 	if stage != promptSeedStageDev {
 		candidates = append(candidates,
 			fmt.Sprintf("%s-%s_%s.md", promptSeedStageDev, kind, normalizedLocale),
 			fmt.Sprintf("%s-%s.md", promptSeedStageDev, kind),
 		)
 	}
+	candidates = append(candidates,
+		fmt.Sprintf("default-%s_%s.md", kind, normalizedLocale),
+		fmt.Sprintf("default-%s.md", kind),
+	)
 
 	return slices.Compact(candidates)
 }

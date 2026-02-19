@@ -156,7 +156,7 @@ func (s *Service) ensureCodexAuthenticated(ctx context.Context, state codexState
 	// Restore status comment back to started to avoid leaving "auth required" marker in GitHub thread.
 	_ = s.cp.UpsertRunStatusComment(ctx, cpclient.UpsertRunStatusCommentParams{
 		RunID: s.cfg.RunID,
-		Phase: "started",
+		Phase: "auth_resolved",
 	})
 
 	return nil

@@ -97,6 +97,7 @@ type Metadata struct {
 // Spec contains deployable stack definition.
 type Spec struct {
 	Project          string                 `yaml:"project,omitempty"`
+	ProjectDocs      []ProjectDocRef        `yaml:"projectDocs,omitempty"`
 	Versions         map[string]string      `yaml:"versions,omitempty"`
 	Imports          []ImportRef            `yaml:"imports,omitempty"`
 	Components       []Component            `yaml:"components,omitempty"`
@@ -167,6 +168,14 @@ type SecretOverridePattern struct {
 	ExcludeSuffixes  []string `yaml:"excludeSuffixes,omitempty"`
 	Environments     []string `yaml:"environments,omitempty"`
 	OverrideTemplate string   `yaml:"overrideTemplate"`
+}
+
+// ProjectDocRef declares one documentation path to include in prompt context.
+type ProjectDocRef struct {
+	Path        string   `yaml:"path"`
+	Description string   `yaml:"description,omitempty"`
+	Roles       []string `yaml:"roles,omitempty"`
+	Optional    bool     `yaml:"optional,omitempty"`
 }
 
 // Image describes a stack image entry.

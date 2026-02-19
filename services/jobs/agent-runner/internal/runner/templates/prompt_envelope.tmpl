@@ -13,6 +13,22 @@
 {{- if .HasExistingPR }}
 - Текущий PR: #{{ .ExistingPRNumber }}
 {{- end }}
+- Роль агента: {{ .RoleDisplayName }} (`{{ .AgentKey }}`)
+
+Ролевой профиль:
+{{- range .RoleCapabilities }}
+- {{ . }}
+{{- end }}
+
+{{- if .ProjectDocs }}
+Контекст проектной документации (role-aware):
+{{- range .ProjectDocs }}
+- `{{ .Path }}`{{ if .Description }} — {{ .Description }}{{ end }}{{ if .Optional }} (optional){{ end }}
+{{- end }}
+{{- if .ProjectDocsTrimmed }}
+- Показано {{ len .ProjectDocs }} из {{ .ProjectDocsTotal }} ссылок (сокращено для контроля размера промпта).
+{{- end }}
+{{- end }}
 
 Контур выполнения:
 - Вы запущены в headless-режиме внутри выделенного Kubernetes pod (без интерактивного TTY).
@@ -90,6 +106,22 @@ Environment context:
 - Runtime mode: {{ .RuntimeMode }}
 {{- if .HasExistingPR }}
 - Existing PR: #{{ .ExistingPRNumber }}
+{{- end }}
+- Agent role: {{ .RoleDisplayName }} (`{{ .AgentKey }}`)
+
+Role profile:
+{{- range .RoleCapabilities }}
+- {{ . }}
+{{- end }}
+
+{{- if .ProjectDocs }}
+Project documentation context (role-aware):
+{{- range .ProjectDocs }}
+- `{{ .Path }}`{{ if .Description }} — {{ .Description }}{{ end }}{{ if .Optional }} (optional){{ end }}
+{{- end }}
+{{- if .ProjectDocsTrimmed }}
+- Showing {{ len .ProjectDocs }} of {{ .ProjectDocsTotal }} references (trimmed to control prompt size).
+{{- end }}
 {{- end }}
 
 Execution context:

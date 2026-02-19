@@ -12,12 +12,14 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"text/template"
 	"time"
 
 	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
+	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
 )
 
 //go:embed templates/*.tmpl
@@ -64,7 +66,7 @@ func (s *Service) renderTaskTemplate(templateKind string, repoDir string) (strin
 		BaseBranch:   s.cfg.AgentBaseBranch,
 		PromptLocale: normalizePromptLocale(s.cfg.PromptTemplateLocale),
 	}
-	for _, candidate := range promptSeedCandidates(s.cfg.TriggerKind, templateKind, s.cfg.PromptTemplateLocale) {
+	for _, candidate := range promptSeedCandidates(s.cfg.AgentKey, s.cfg.TriggerKind, templateKind, s.cfg.PromptTemplateLocale) {
 		seedPath := filepath.Join(repoDir, promptSeedsDirRelativePath, candidate)
 		seedBytes, err := os.ReadFile(seedPath)
 		if err != nil {
@@ -110,15 +112,19 @@ func (s *Service) writeCodexConfig(codexDir string, model string, reasoningEffor
 	return nil
 }
 
-func (s *Service) buildPrompt(taskBody string, result runResult) (string, error) {
+func (s *Service) buildPrompt(taskBody string, result runResult, repoDir string) (string, error) {
 	hasContext7 := strings.TrimSpace(os.Getenv(envContext7APIKey)) != ""
 	runtimeMode := normalizeRuntimeMode(s.cfg.RuntimeMode)
 	isReviseTrigger := webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(result.triggerKind))
+	roleDisplayName, roleCapabilities := resolvePromptRoleProfile(s.cfg.AgentKey)
+	projectDocs, docsTotal, docsTrimmed := loadProjectDocsForPrompt(repoDir, s.cfg.AgentKey, result.triggerKind, runtimeMode)
 	return renderTemplate(templateNamePromptEnvelope, promptEnvelopeTemplateData{
 		RepositoryFullName: s.cfg.RepositoryFullName,
 		RunID:              s.cfg.RunID,
 		IssueNumber:        s.cfg.IssueNumber,
 		AgentKey:           s.cfg.AgentKey,
+		RoleDisplayName:    roleDisplayName,
+		RoleCapabilities:   roleCapabilities,
 		RuntimeMode:        runtimeMode,
 		IsFullEnv:          runtimeMode == runtimeModeFullEnv,
 		TargetBranch:       result.targetBranch,
@@ -131,8 +137,167 @@ func (s *Service) buildPrompt(taskBody string, result runResult) (string, error)
 		StateInReviewLabel: strings.TrimSpace(s.cfg.StateInReviewLabel),
 		HasContext7:        hasContext7,
 		PromptLocale:       normalizePromptLocale(s.cfg.PromptTemplateLocale),
+		ProjectDocs:        projectDocs,
+		ProjectDocsTotal:   docsTotal,
+		ProjectDocsTrimmed: docsTrimmed,
 		TaskBody:           taskBody,
 	})
+}
+
+func resolvePromptRoleProfile(agentKey string) (string, []string) {
+	key := strings.ToLower(strings.TrimSpace(agentKey))
+	profiles := map[string]struct {
+		name         string
+		capabilities []string
+	}{
+		"dev": {
+			name: "Developer",
+			capabilities: []string{
+				"Реализация изменений в коде и миграциях",
+				"Запуск тестов и исправление регрессий",
+				"Обновление документации при изменении поведения",
+			},
+		},
+		"pm": {
+			name: "Product Manager",
+			capabilities: []string{
+				"Уточнение продуктовых требований и критериев готовности",
+				"Декомпозиция работ на реализуемые инкременты",
+				"Контроль трассируемости изменений по этапам",
+			},
+		},
+		"sa": {
+			name: "Solution Architect",
+			capabilities: []string{
+				"Проектирование сервисных границ и контрактов",
+				"Анализ архитектурных рисков и компромиссов",
+				"Контроль соответствия кодовой базы архитектурным стандартам",
+			},
+		},
+		"em": {
+			name: "Engineering Manager",
+			capabilities: []string{
+				"Планирование исполнения и синхронизация командных задач",
+				"Контроль quality-gates и критериев завершения",
+				"Управление handover между ролями",
+			},
+		},
+		"reviewer": {
+			name: "Reviewer",
+			capabilities: []string{
+				"Поиск багов, рисков и регрессий в PR",
+				"Проверка полноты тестового покрытия",
+				"Проверка консистентности кода и документации",
+			},
+		},
+		"qa": {
+			name: "QA",
+			capabilities: []string{
+				"Проектирование тест-кейсов и edge-case сценариев",
+				"Воспроизведение дефектов и верификация исправлений",
+				"Регрессионные проверки критических пользовательских потоков",
+			},
+		},
+		"sre": {
+			name: "SRE",
+			capabilities: []string{
+				"Диагностика runtime/deploy проблем в Kubernetes",
+				"Оценка надежности и эксплуатационных рисков",
+				"Стабилизация и hardening инфраструктурных сценариев",
+			},
+		},
+		"km": {
+			name: "Knowledge Manager",
+			capabilities: []string{
+				"Поддержка актуальности docset и эксплуатационной документации",
+				"Эволюция prompt templates и операционных инструкций",
+				"Сбор evidence для self-improve цикла",
+			},
+		},
+	}
+
+	if profile, ok := profiles[key]; ok {
+		return profile.name, profile.capabilities
+	}
+	if key == "" {
+		return "Developer", profiles["dev"].capabilities
+	}
+	return strings.ToUpper(key), []string{"Следовать контракту задачи и проектным стандартам"}
+}
+
+func loadProjectDocsForPrompt(repoDir string, roleKey string, triggerKind string, runtimeMode string) ([]promptProjectDocTemplateData, int, bool) {
+	const maxPromptDocs = 16
+
+	servicesPath := filepath.Join(strings.TrimSpace(repoDir), "services.yaml")
+	raw, err := os.ReadFile(servicesPath)
+	if err != nil {
+		return nil, 0, false
+	}
+
+	env := resolvePromptDocsEnv(triggerKind, runtimeMode)
+	loadResult, err := servicescfg.LoadFromYAML(raw, servicescfg.LoadOptions{Env: env})
+	if err != nil || loadResult.Stack == nil {
+		return nil, 0, false
+	}
+	if len(loadResult.Stack.Spec.ProjectDocs) == 0 {
+		return nil, 0, false
+	}
+
+	normalizedRole := strings.ToLower(strings.TrimSpace(roleKey))
+	items := make([]promptProjectDocTemplateData, 0, len(loadResult.Stack.Spec.ProjectDocs))
+	for _, doc := range loadResult.Stack.Spec.ProjectDocs {
+		path := strings.TrimSpace(doc.Path)
+		if path == "" {
+			continue
+		}
+
+		roles := make([]string, 0, len(doc.Roles))
+		for _, rawRole := range doc.Roles {
+			role := strings.ToLower(strings.TrimSpace(rawRole))
+			if role == "" || slices.Contains(roles, role) {
+				continue
+			}
+			roles = append(roles, role)
+		}
+		if len(roles) > 0 && normalizedRole != "" && !slices.Contains(roles, normalizedRole) {
+			continue
+		}
+
+		items = append(items, promptProjectDocTemplateData{
+			Path:        path,
+			Description: strings.TrimSpace(doc.Description),
+			Optional:    doc.Optional,
+		})
+	}
+	if len(items) == 0 {
+		return nil, 0, false
+	}
+
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Path < items[j].Path
+	})
+
+	total := len(items)
+	trimmed := false
+	if total > maxPromptDocs {
+		items = items[:maxPromptDocs]
+		trimmed = true
+	}
+	return items, total, trimmed
+}
+
+func resolvePromptDocsEnv(triggerKind string, runtimeMode string) string {
+	if strings.EqualFold(strings.TrimSpace(runtimeMode), runtimeModeFullEnv) {
+		normalizedTrigger := webhookdomain.NormalizeTriggerKind(triggerKind)
+		switch normalizedTrigger {
+		case webhookdomain.TriggerKindDev,
+			webhookdomain.TriggerKindDevRevise,
+			webhookdomain.TriggerKindQA,
+			webhookdomain.TriggerKindOps:
+			return "ai"
+		}
+	}
+	return "production"
 }
 
 func normalizeTriggerKind(value string) string {

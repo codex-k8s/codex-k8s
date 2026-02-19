@@ -24,3 +24,26 @@ func TestRenderCommentBody_RendersTemplateByLocale(t *testing.T) {
 		t.Fatalf("rendered body does not contain run id: %q", body)
 	}
 }
+
+func TestRenderCommentBody_RendersSlotURLAndAuthTimeline(t *testing.T) {
+	t.Parallel()
+
+	body, err := renderCommentBody(commentState{
+		RunID:        "run-2",
+		Phase:        PhaseAuthResolved,
+		RuntimeMode:  runtimeModeFullEnv,
+		Namespace:    "codex-k8s-dev-2",
+		SlotURL:      "https://codex-k8s-dev-2.ai.platform.codex-k8s.dev",
+		RunStatus:    "running",
+		PromptLocale: localeRU,
+	}, "https://platform.codex-k8s.dev/runs/run-2")
+	if err != nil {
+		t.Fatalf("renderCommentBody returned error: %v", err)
+	}
+	if !strings.Contains(body, "Ссылка на слот") {
+		t.Fatalf("rendered body does not contain slot url label: %q", body)
+	}
+	if !strings.Contains(body, "Авторизация Codex подтверждена") {
+		t.Fatalf("rendered body does not contain auth resolved timeline item: %q", body)
+	}
+}

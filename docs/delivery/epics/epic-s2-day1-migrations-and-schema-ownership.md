@@ -11,7 +11,9 @@ related_prs: []
 approvals:
   required: ["Owner"]
   status: approved
-  request_id: "owner-2026-02-11-s2-day1"
+  request_id: "owner-2026-02-19-full-docset"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-19
 ---
 
 # Epic S2 Day 1: Migrations, schema ownership and OpenAPI contract-first baseline

@@ -11,9 +11,9 @@ related_prs: []
 approvals:
   required: ["Owner"]
   status: approved
-  request_id: "owner-2026-02-12-project-docs-approval"
+  request_id: "owner-2026-02-19-full-docset"
   approved_by: "ai-da-stas"
-  approved_at: 2026-02-12
+  approved_at: 2026-02-19
 ---
 
 # Requirements Traceability Matrix
@@ -75,6 +75,8 @@ approvals:
 | FR-047 | Docset import + safe sync в проекты | `docs/product/requirements_machine_driven.md`, `docs/delivery/epics/epic-s3-day12-docset-import-and-safe-sync.md` | covered |
 | FR-048 | Unified config/secrets governance + sync в GitHub/K8s | `docs/product/requirements_machine_driven.md`, `docs/delivery/epics/epic-s3-day13-config-and-credentials-governance.md` | covered |
 | FR-049 | Repo onboarding preflight (GitHub ops + domain resolution) | `docs/product/requirements_machine_driven.md`, `docs/delivery/epics/epic-s3-day14-repository-onboarding-preflight.md` | covered |
+| FR-050 | Prompt context docs tree + role-aware capabilities | `docs/product/requirements_machine_driven.md`, `docs/architecture/prompt_templates_policy.md`, `docs/delivery/epics/epic-s3-day15-mvp-closeout-and-handover.md` | covered |
+| FR-051 | GitHub run service messages v2 + slot URL for full-env | `docs/product/requirements_machine_driven.md`, `docs/architecture/api_contract.md`, `docs/delivery/epics/epic-s3-day15-mvp-closeout-and-handover.md` | covered |
 | NFR-001 | Security baseline | `docs/product/requirements_machine_driven.md`, `docs/product/constraints.md`, `AGENTS.md` | covered |
 | NFR-002 | Multi-pod consistency | `docs/product/requirements_machine_driven.md`, `docs/architecture/c4_container.md`, `docs/architecture/data_model.md` | covered |
 | NFR-003 | No event outbox on MVP | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/constraints.md` | covered |

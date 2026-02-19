@@ -18,6 +18,9 @@
 {{- if .ShowNamespace }}
 - Namespace: `{{ .Namespace }}`
 {{- end }}
+{{- if .ShowSlotURL }}
+- Slot URL: [{{ .SlotURL }}]({{ .SlotURL }})
+{{- end }}
 {{- if .ShowModel }}
 - Model: `{{ .Model }}`
 {{- end }}
@@ -29,9 +32,24 @@
 {{- end }}
 
 ### 🕒 Timeline
-- ✅ Run was created and is running
-{{- if .NeedsCodexAuth }}
+{{- if .CreatedReached }}
+- ✅ Run created
+{{- else }}
+- ⏳ Run is being created
+{{- end }}
+{{- if .StartedReached }}
+- ✅ Agent started
+{{- else }}
+- ⏳ Waiting for agent start
+{{- end }}
+{{- if .AuthRequested }}
+{{- if .AuthResolvedReached }}
+- ✅ Codex authentication resolved
+{{- else if .NeedsCodexAuth }}
 - 🔐 Waiting for Codex authentication (see run console)
+{{- else }}
+- 🔐 Codex authentication requested
+{{- end }}
 {{- end }}
 {{- if .ShowFinished }}
 {{- if .IsRunSucceeded }}

@@ -11,7 +11,9 @@ related_prs: []
 approvals:
   required: ["Owner"]
   status: approved
-  request_id: "owner-2026-02-13-s2-day4.5"
+  request_id: "owner-2026-02-19-full-docset"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-19
 ---
 
 # Epic S2 Day 4.5: PGX repository baseline and db-model rollout

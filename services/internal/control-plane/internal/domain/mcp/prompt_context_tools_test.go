@@ -103,3 +103,61 @@ func TestResolvePromptServicesConfigPath_ResolvesRepoSnapshot(t *testing.T) {
 		t.Fatalf("resolved path=%q, want %q", resolved, servicesPath)
 	}
 }
+
+func TestBuildPromptProjectDocs_FiltersByRole(t *testing.T) {
+	t.Parallel()
+
+	stack := &servicescfg.Stack{
+		Spec: servicescfg.Spec{
+			ProjectDocs: []servicescfg.ProjectDocRef{
+				{Path: "README.md"},
+				{Path: "docs/arch", Roles: []string{"sa", "dev"}},
+				{Path: "docs/ops", Roles: []string{"sre"}},
+			},
+		},
+	}
+
+	docs := buildPromptProjectDocs(stack, "dev")
+	if len(docs) != 2 {
+		t.Fatalf("docs len=%d, want 2", len(docs))
+	}
+	if docs[0].Path != "README.md" || docs[1].Path != "docs/arch" {
+		t.Fatalf("unexpected docs order/content: %+v", docs)
+	}
+
+	sreDocs := buildPromptProjectDocs(stack, "sre")
+	if len(sreDocs) != 2 {
+		t.Fatalf("sre docs len=%d, want 2", len(sreDocs))
+	}
+	if sreDocs[1].Path != "docs/ops" {
+		t.Fatalf("unexpected sre docs: %+v", sreDocs)
+	}
+}
+
+func TestBuildPromptRoleContext_DefaultAndKnownRole(t *testing.T) {
+	t.Parallel()
+
+	known := buildPromptRoleContext(resolvedRunContext{
+		Payload: querytypes.RunPayload{
+			Agent: &querytypes.RunPayloadAgent{Key: "qa"},
+		},
+	})
+	if known.AgentKey != "qa" {
+		t.Fatalf("known role key=%q, want qa", known.AgentKey)
+	}
+	if len(known.Capabilities) == 0 {
+		t.Fatalf("known role capabilities must not be empty")
+	}
+
+	unknown := buildPromptRoleContext(resolvedRunContext{
+		Payload: querytypes.RunPayload{
+			Agent: &querytypes.RunPayloadAgent{Key: "custom-role"},
+		},
+	})
+	if unknown.AgentKey != "custom-role" {
+		t.Fatalf("unknown role key=%q, want custom-role", unknown.AgentKey)
+	}
+	if len(unknown.Capabilities) != 1 {
+		t.Fatalf("unknown role capabilities len=%d, want 1", len(unknown.Capabilities))
+	}
+}

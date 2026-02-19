@@ -6,6 +6,7 @@ import "context"
 type RunStatusPhase string
 
 const (
+	RunStatusPhaseCreated          RunStatusPhase = "created"
 	RunStatusPhaseStarted          RunStatusPhase = "started"
 	RunStatusPhaseFinished         RunStatusPhase = "finished"
 	RunStatusPhaseNamespaceDeleted RunStatusPhase = "namespace_deleted"

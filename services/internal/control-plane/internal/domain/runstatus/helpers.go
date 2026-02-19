@@ -55,11 +55,19 @@ func normalizeRequestedByType(value RequestedByType) RequestedByType {
 func phaseOrder(phase Phase) int {
 	switch phase {
 	case PhaseNamespaceDeleted:
-		return 3
+		return 6
 	case PhaseFinished:
+		return 5
+	case PhaseAuthResolved:
+		return 4
+	case PhaseAuthRequired:
+		return 3
+	case PhaseStarted:
 		return 2
-	default:
+	case PhaseCreated:
 		return 1
+	default:
+		return 0
 	}
 }
 
@@ -78,6 +86,9 @@ func mergeState(base commentState, update commentState) commentState {
 	}
 	if strings.TrimSpace(update.Namespace) != "" {
 		base.Namespace = strings.TrimSpace(update.Namespace)
+	}
+	if strings.TrimSpace(update.SlotURL) != "" {
+		base.SlotURL = strings.TrimSpace(update.SlotURL)
 	}
 	if strings.TrimSpace(update.TriggerKind) != "" {
 		base.TriggerKind = normalizeTriggerKind(update.TriggerKind)
