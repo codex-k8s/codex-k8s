@@ -18,7 +18,7 @@ type rawHeader struct {
 	Metadata Metadata `yaml:"metadata"`
 	Spec     struct {
 		Project      string                 `yaml:"project"`
-		Versions     map[string]string      `yaml:"versions"`
+		Versions     map[string]VersionSpec `yaml:"versions"`
 		Environments map[string]Environment `yaml:"environments"`
 	} `yaml:"spec"`
 }
@@ -66,21 +66,8 @@ func Load(path string, opts LoadOptions) (LoadResult, error) {
 	if err := normalizeAndValidate(&stack, ctx.Env); err != nil {
 		return zero, err
 	}
-
-	if strings.TrimSpace(opts.Namespace) == "" {
-		envCfg, err := ResolveEnvironment(&stack, ctx.Env)
-		if err != nil {
-			return zero, err
-		}
-		if strings.TrimSpace(envCfg.NamespaceTemplate) != "" {
-			nsRaw, err := renderTemplate("namespace", []byte(envCfg.NamespaceTemplate), ctx)
-			if err != nil {
-				return zero, fmt.Errorf("render namespace template: %w", err)
-			}
-			if ns := strings.TrimSpace(string(nsRaw)); ns != "" {
-				ctx.Namespace = ns
-			}
-		}
+	if err := applyNamespaceTemplate(&stack, opts, &ctx); err != nil {
+		return zero, err
 	}
 
 	return LoadResult{
@@ -123,21 +110,8 @@ func LoadFromYAML(raw []byte, opts LoadOptions) (LoadResult, error) {
 	if err := normalizeAndValidate(&stack, ctx.Env); err != nil {
 		return zero, err
 	}
-
-	if strings.TrimSpace(opts.Namespace) == "" {
-		envCfg, err := ResolveEnvironment(&stack, ctx.Env)
-		if err != nil {
-			return zero, err
-		}
-		if strings.TrimSpace(envCfg.NamespaceTemplate) != "" {
-			nsRaw, err := renderTemplate("namespace", []byte(envCfg.NamespaceTemplate), ctx)
-			if err != nil {
-				return zero, fmt.Errorf("render namespace template: %w", err)
-			}
-			if ns := strings.TrimSpace(string(nsRaw)); ns != "" {
-				ctx.Namespace = ns
-			}
-		}
+	if err := applyNamespaceTemplate(&stack, opts, &ctx); err != nil {
+		return zero, err
 	}
 
 	return LoadResult{
@@ -158,6 +132,32 @@ func Render(path string, opts LoadOptions) ([]byte, ResolvedContext, error) {
 		return nil, ResolvedContext{}, fmt.Errorf("marshal rendered stack: %w", err)
 	}
 	return out, result.Context, nil
+}
+
+func applyNamespaceTemplate(stack *Stack, opts LoadOptions, ctx *ResolvedContext) error {
+	if strings.TrimSpace(opts.Namespace) != "" {
+		return nil
+	}
+	if ctx == nil {
+		return fmt.Errorf("context is nil")
+	}
+
+	envCfg, err := ResolveEnvironment(stack, ctx.Env)
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(envCfg.NamespaceTemplate) == "" {
+		return nil
+	}
+
+	nsRaw, err := renderTemplate("namespace", []byte(envCfg.NamespaceTemplate), *ctx)
+	if err != nil {
+		return fmt.Errorf("render namespace template: %w", err)
+	}
+	if ns := strings.TrimSpace(string(nsRaw)); ns != "" {
+		ctx.Namespace = ns
+	}
+	return nil
 }
 
 // ResolveEnvironment returns final env config with inheritance resolved.
@@ -273,6 +273,13 @@ func normalizeAndValidate(stack *Stack, env string) error {
 		}
 		stack.Spec.WebhookRuntime.TriggerModes = normalizedTriggerModes
 	}
+
+	normalizedVersions, err := normalizeVersions(stack.Spec.Versions)
+	if err != nil {
+		return err
+	}
+	stack.Spec.Versions = normalizedVersions
+
 	if err := validateSecretResolution(stack.Spec.SecretResolution); err != nil {
 		return err
 	}
@@ -437,7 +444,7 @@ func buildContext(raw []byte, opts LoadOptions) (ResolvedContext, error) {
 		Project:   project,
 		Slot:      opts.Slot,
 		Vars:      cloneStringMap(opts.Vars),
-		Versions:  cloneStringMap(header.Spec.Versions),
+		Versions:  versionValues(header.Spec.Versions),
 	}
 	if ctx.Env == "" {
 		ctx.Env = "production"

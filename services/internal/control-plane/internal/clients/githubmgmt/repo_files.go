@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	gh "github.com/google/go-github/v82/github"
@@ -76,6 +77,58 @@ func (c *Client) GetFile(ctx context.Context, token string, owner string, repo s
 	return []byte(rawContent), true, nil
 }
 
+func (c *Client) ListChangedFilesBetweenCommits(ctx context.Context, token string, owner string, repo string, beforeSHA string, afterSHA string) ([]string, error) {
+	client := c.clientWithToken(token)
+	owner = strings.TrimSpace(owner)
+	repo = strings.TrimSpace(repo)
+	beforeSHA = strings.TrimSpace(beforeSHA)
+	afterSHA = strings.TrimSpace(afterSHA)
+	if owner == "" || repo == "" {
+		return nil, fmt.Errorf("owner and repository are required")
+	}
+	if beforeSHA == "" || afterSHA == "" {
+		return nil, fmt.Errorf("before and after sha are required")
+	}
+
+	opts := &gh.ListOptions{PerPage: 250}
+	changedSet := make(map[string]struct{})
+	for {
+		comparison, resp, err := client.Repositories.CompareCommits(ctx, owner, repo, beforeSHA, afterSHA, opts)
+		if err != nil {
+			return nil, fmt.Errorf("github compare commits %s...%s for %s/%s: %w", beforeSHA, afterSHA, owner, repo, err)
+		}
+		if comparison != nil {
+			for _, file := range comparison.Files {
+				if file == nil {
+					continue
+				}
+				name := strings.TrimSpace(file.GetFilename())
+				if name != "" {
+					changedSet[name] = struct{}{}
+				}
+				previous := strings.TrimSpace(file.GetPreviousFilename())
+				if previous != "" {
+					changedSet[previous] = struct{}{}
+				}
+			}
+		}
+		if resp == nil || resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+
+	if len(changedSet) == 0 {
+		return nil, nil
+	}
+	changed := make([]string, 0, len(changedSet))
+	for path := range changedSet {
+		changed = append(changed, path)
+	}
+	sort.Strings(changed)
+	return changed, nil
+}
+
 var errGitHubContentNeedsDownload = errors.New("github content needs download")
 
 func decodeRepositoryContent(content *gh.RepositoryContent) (string, error) {
@@ -106,6 +159,29 @@ func decodeRepositoryContent(content *gh.RepositoryContent) (string, error) {
 	default:
 		return "", fmt.Errorf("unsupported content encoding: %s", encoding)
 	}
+}
+
+func (c *Client) CommitFilesOnBranch(ctx context.Context, token string, owner string, repo string, branch string, baseSHA string, message string, files map[string][]byte) (string, error) {
+	client := c.clientWithToken(token)
+	owner = strings.TrimSpace(owner)
+	repo = strings.TrimSpace(repo)
+	branch = strings.TrimSpace(branch)
+	baseSHA = strings.TrimSpace(baseSHA)
+	message = strings.TrimSpace(message)
+	if owner == "" || repo == "" {
+		return "", fmt.Errorf("owner and repository are required")
+	}
+	if branch == "" {
+		return "", fmt.Errorf("branch is required")
+	}
+	if len(files) == 0 {
+		return "", fmt.Errorf("files are required")
+	}
+	if message == "" {
+		message = "chore: update files"
+	}
+
+	return c.createCommitOnBranch(ctx, client, owner, repo, branch, baseSHA, message, files, false)
 }
 
 func (c *Client) CreatePullRequestWithFiles(ctx context.Context, token string, owner string, repo string, baseBranch string, headBranch string, title string, body string, files map[string][]byte) (prNumber int, prURL string, err error) {
@@ -144,63 +220,12 @@ func (c *Client) CreatePullRequestWithFiles(ctx context.Context, token string, o
 			return 0, "", fmt.Errorf("github create head ref %s: %w", headRef, createErr)
 		}
 	}
-
-	baseCommit, _, err := client.Git.GetCommit(ctx, owner, repo, baseSHA)
-	if err != nil {
-		return 0, "", fmt.Errorf("github get base commit: %w", err)
-	}
-	baseTreeSHA := strings.TrimSpace(baseCommit.GetTree().GetSHA())
-	if baseTreeSHA == "" {
-		return 0, "", fmt.Errorf("github base tree sha is empty")
-	}
-
-	entries := make([]*gh.TreeEntry, 0, len(files))
-	for filePath, data := range files {
-		filePath = strings.TrimSpace(filePath)
-		if filePath == "" {
-			return 0, "", fmt.Errorf("file path is empty")
-		}
-		blob, _, err := client.Git.CreateBlob(ctx, owner, repo, gh.Blob{
-			Content:  gh.Ptr(string(data)),
-			Encoding: gh.Ptr("utf-8"),
-		})
-		if err != nil {
-			return 0, "", fmt.Errorf("github create blob %s: %w", filePath, err)
-		}
-		entries = append(entries, &gh.TreeEntry{
-			Path: gh.Ptr(filePath),
-			Mode: gh.Ptr("100644"),
-			Type: gh.Ptr("blob"),
-			SHA:  blob.SHA,
-		})
-	}
-
-	tree, _, err := client.Git.CreateTree(ctx, owner, repo, baseTreeSHA, entries)
-	if err != nil {
-		return 0, "", fmt.Errorf("github create tree: %w", err)
-	}
 	commitMsg := strings.TrimSpace(title)
 	if commitMsg == "" {
 		commitMsg = "chore: docset sync"
 	}
-	newCommit, _, err := client.Git.CreateCommit(ctx, owner, repo, gh.Commit{
-		Message: gh.Ptr(commitMsg),
-		Tree:    tree,
-		Parents: []*gh.Commit{{SHA: gh.Ptr(baseSHA)}},
-	}, nil)
-	if err != nil {
-		return 0, "", fmt.Errorf("github create commit: %w", err)
-	}
-	newSHA := strings.TrimSpace(newCommit.GetSHA())
-	if newSHA == "" {
-		return 0, "", fmt.Errorf("github created commit sha is empty")
-	}
-
-	if _, _, err := client.Git.UpdateRef(ctx, owner, repo, "heads/"+headBranch, gh.UpdateRef{
-		SHA:   newSHA,
-		Force: gh.Ptr(true),
-	}); err != nil {
-		return 0, "", fmt.Errorf("github update ref heads/%s: %w", headBranch, err)
+	if _, err := c.createCommitOnBranch(ctx, client, owner, repo, headBranch, baseSHA, commitMsg, files, true); err != nil {
+		return 0, "", err
 	}
 
 	pr, _, err := client.PullRequests.Create(ctx, owner, repo, &gh.NewPullRequest{
@@ -213,4 +238,92 @@ func (c *Client) CreatePullRequestWithFiles(ctx context.Context, token string, o
 		return 0, "", fmt.Errorf("github create pr: %w", err)
 	}
 	return pr.GetNumber(), strings.TrimSpace(pr.GetHTMLURL()), nil
+}
+
+func (c *Client) createCommitOnBranch(ctx context.Context, client *gh.Client, owner string, repo string, branch string, baseSHA string, message string, files map[string][]byte, forceRefUpdate bool) (string, error) {
+	if client == nil {
+		return "", fmt.Errorf("github client is required")
+	}
+	if len(files) == 0 {
+		return "", fmt.Errorf("files are required")
+	}
+
+	branch = strings.TrimSpace(branch)
+	if branch == "" {
+		return "", fmt.Errorf("branch is required")
+	}
+	baseSHA = strings.TrimSpace(baseSHA)
+	if baseSHA == "" {
+		refPath := "refs/heads/" + branch
+		ref, _, err := client.Git.GetRef(ctx, owner, repo, refPath)
+		if err != nil {
+			return "", fmt.Errorf("github get ref %s: %w", refPath, err)
+		}
+		baseSHA = strings.TrimSpace(ref.GetObject().GetSHA())
+		if baseSHA == "" {
+			return "", fmt.Errorf("github ref %s has empty sha", refPath)
+		}
+	}
+
+	baseCommit, _, err := client.Git.GetCommit(ctx, owner, repo, baseSHA)
+	if err != nil {
+		return "", fmt.Errorf("github get base commit %s: %w", baseSHA, err)
+	}
+	baseTreeSHA := strings.TrimSpace(baseCommit.GetTree().GetSHA())
+	if baseTreeSHA == "" {
+		return "", fmt.Errorf("github base tree sha is empty")
+	}
+
+	paths := make([]string, 0, len(files))
+	for filePath := range files {
+		trimmed := strings.TrimSpace(filePath)
+		if trimmed == "" {
+			return "", fmt.Errorf("file path is empty")
+		}
+		paths = append(paths, trimmed)
+	}
+	sort.Strings(paths)
+
+	entries := make([]*gh.TreeEntry, 0, len(paths))
+	for _, filePath := range paths {
+		data := files[filePath]
+		blob, _, err := client.Git.CreateBlob(ctx, owner, repo, gh.Blob{
+			Content:  gh.Ptr(string(data)),
+			Encoding: gh.Ptr("utf-8"),
+		})
+		if err != nil {
+			return "", fmt.Errorf("github create blob %s: %w", filePath, err)
+		}
+		entries = append(entries, &gh.TreeEntry{
+			Path: gh.Ptr(filePath),
+			Mode: gh.Ptr("100644"),
+			Type: gh.Ptr("blob"),
+			SHA:  blob.SHA,
+		})
+	}
+
+	tree, _, err := client.Git.CreateTree(ctx, owner, repo, baseTreeSHA, entries)
+	if err != nil {
+		return "", fmt.Errorf("github create tree: %w", err)
+	}
+	newCommit, _, err := client.Git.CreateCommit(ctx, owner, repo, gh.Commit{
+		Message: gh.Ptr(strings.TrimSpace(message)),
+		Tree:    tree,
+		Parents: []*gh.Commit{{SHA: gh.Ptr(baseSHA)}},
+	}, nil)
+	if err != nil {
+		return "", fmt.Errorf("github create commit: %w", err)
+	}
+	newSHA := strings.TrimSpace(newCommit.GetSHA())
+	if newSHA == "" {
+		return "", fmt.Errorf("github created commit sha is empty")
+	}
+
+	if _, _, err := client.Git.UpdateRef(ctx, owner, repo, "heads/"+branch, gh.UpdateRef{
+		SHA:   newSHA,
+		Force: gh.Ptr(forceRefUpdate),
+	}); err != nil {
+		return "", fmt.Errorf("github update ref heads/%s: %w", branch, err)
+	}
+	return newSHA, nil
 }
