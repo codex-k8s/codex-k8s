@@ -90,3 +90,51 @@ func TestDeriveProjectID(t *testing.T) {
 		}
 	})
 }
+
+func TestResolveSlotsPerProject(t *testing.T) {
+	tests := []struct {
+		name         string
+		projectJSON  []byte
+		fallback     int
+		wantSlotsNum int
+	}{
+		{
+			name:         "empty settings uses fallback",
+			projectJSON:  nil,
+			fallback:     2,
+			wantSlotsNum: 2,
+		},
+		{
+			name:         "invalid settings uses fallback",
+			projectJSON:  []byte(`{"slots_per_project":`),
+			fallback:     3,
+			wantSlotsNum: 3,
+		},
+		{
+			name:         "zero fallback normalized to one",
+			projectJSON:  nil,
+			fallback:     0,
+			wantSlotsNum: 1,
+		},
+		{
+			name:         "settings override fallback",
+			projectJSON:  []byte(`{"learning_mode_default":true,"slots_per_project":10}`),
+			fallback:     2,
+			wantSlotsNum: 10,
+		},
+		{
+			name:         "non-positive settings value ignored",
+			projectJSON:  []byte(`{"slots_per_project":-1}`),
+			fallback:     4,
+			wantSlotsNum: 4,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := resolveSlotsPerProject(tt.projectJSON, tt.fallback); got != tt.wantSlotsNum {
+				t.Fatalf("resolveSlotsPerProject()=%d want %d", got, tt.wantSlotsNum)
+			}
+		})
+	}
+}

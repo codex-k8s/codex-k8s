@@ -33,6 +33,7 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 	events := &fakeFlowEvents{}
 	launcher := &fakeLauncher{states: map[string]JobState{}}
 	mcpTokens := &fakeMCPTokenIssuer{token: "token-run-1"}
+	runStatus := &fakeRunStatusNotifier{}
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 
 	svc := NewService(Config{
@@ -47,6 +48,7 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 		Events:         events,
 		Launcher:       launcher,
 		MCPTokenIssuer: mcpTokens,
+		RunStatus:      runStatus,
 		Logger:         logger,
 	})
 	svc.now = func() time.Time { return time.Date(2026, 2, 9, 10, 0, 0, 0, time.UTC) }
@@ -72,6 +74,12 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 	}
 	if events.inserted[1].EventType != floweventdomain.EventTypeRunStarted {
 		t.Fatalf("expected second event run.started, got %s", events.inserted[1].EventType)
+	}
+	if len(runStatus.upserts) < 1 {
+		t.Fatalf("expected run status upserts, got %d", len(runStatus.upserts))
+	}
+	if runStatus.upserts[0].Phase != RunStatusPhasePreparingRuntime {
+		t.Fatalf("expected first run status phase %q, got %q", RunStatusPhasePreparingRuntime, runStatus.upserts[0].Phase)
 	}
 }
 
@@ -493,6 +501,7 @@ func TestTickFinalizesFullEnvRunSkipsCleanupForDebugLabel(t *testing.T) {
 	}
 	events := &fakeFlowEvents{}
 	launcher := &fakeLauncher{states: map[string]JobState{"run-5": JobStateSucceeded}}
+	runStatus := &fakeRunStatusNotifier{}
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 
 	svc := NewService(Config{
@@ -505,10 +514,11 @@ func TestTickFinalizesFullEnvRunSkipsCleanupForDebugLabel(t *testing.T) {
 		CleanupFullEnvNamespace: true,
 		RunDebugLabel:           "run:debug",
 	}, Dependencies{
-		Runs:     runs,
-		Events:   events,
-		Launcher: launcher,
-		Logger:   logger,
+		Runs:      runs,
+		Events:    events,
+		Launcher:  launcher,
+		RunStatus: runStatus,
+		Logger:    logger,
 	})
 	svc.now = func() time.Time { return time.Date(2026, 2, 11, 12, 0, 0, 0, time.UTC) }
 
@@ -531,6 +541,18 @@ func TestTickFinalizesFullEnvRunSkipsCleanupForDebugLabel(t *testing.T) {
 	}
 	if !strings.Contains(string(events.inserted[1].Payload), "debug_label_present") {
 		t.Fatalf("expected cleanup_skipped payload to include debug reason, got %s", string(events.inserted[1].Payload))
+	}
+	if len(runStatus.upserts) != 2 {
+		t.Fatalf("expected finished + namespace cleanup skipped run status upserts, got %d", len(runStatus.upserts))
+	}
+	if runStatus.upserts[1].Phase != RunStatusPhaseNamespaceDeleted {
+		t.Fatalf("expected second run status phase %q, got %q", RunStatusPhaseNamespaceDeleted, runStatus.upserts[1].Phase)
+	}
+	if runStatus.upserts[1].Deleted {
+		t.Fatalf("expected namespace cleanup skipped marker to keep Deleted=false")
+	}
+	if runStatus.upserts[1].AlreadyDeleted {
+		t.Fatalf("expected namespace cleanup skipped marker to keep AlreadyDeleted=false")
 	}
 }
 
@@ -684,6 +706,15 @@ type fakeRuntimePreparer struct {
 	prepared []PrepareRunEnvironmentParams
 	result   PrepareRunEnvironmentResult
 	err      error
+}
+
+type fakeRunStatusNotifier struct {
+	upserts []RunStatusCommentParams
+}
+
+func (f *fakeRunStatusNotifier) UpsertRunStatusComment(_ context.Context, params RunStatusCommentParams) (RunStatusCommentResult, error) {
+	f.upserts = append(f.upserts, params)
+	return RunStatusCommentResult{CommentID: int64(len(f.upserts))}, nil
 }
 
 func (f *fakeRuntimePreparer) PrepareRunEnvironment(_ context.Context, params PrepareRunEnvironmentParams) (PrepareRunEnvironmentResult, error) {

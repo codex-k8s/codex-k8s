@@ -34,6 +34,10 @@ const (
 	runStatusFailed    = "failed"
 )
 
+const (
+	githubIssueReactionEyes = "eyes"
+)
+
 type commentTargetKind string
 
 const (
