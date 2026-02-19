@@ -242,12 +242,6 @@ spec:
       when: '{{ ternary (eq .Env "ai") "false" "true" }}'
       manifests:
         - path: deploy/base/registry/registry.yaml.tpl
-    - name: registry-gc
-      dependsOn:
-        - registry
-      when: '{{ ternary (eq .Env "ai") "false" "true" }}'
-      manifests:
-        - path: deploy/base/registry/registry-gc.yaml.tpl
     - name: cert-manager-clusterissuer
       # Manage ClusterIssuer only when runtime TLS flow explicitly requests it.
       # Otherwise keep existing issuer (if any) untouched to avoid invalid patches.
@@ -290,6 +284,16 @@ spec:
       when: '{{ ternary (eq .Env "ai") "true" "false" }}'
       manifests:
         - path: deploy/base/web-console/web-console.yaml.tpl
+    - name: registry-gc
+      use:
+        - hot-reload-defaults
+      deployGroup: edge
+      dependsOn:
+        - registry
+        - codex-k8s-app
+      when: '{{ ternary (eq .Env "ai") "false" "true" }}'
+      manifests:
+        - path: deploy/base/registry/registry-gc.yaml.tpl
     - name: ingress
       use:
         - hot-reload-defaults
