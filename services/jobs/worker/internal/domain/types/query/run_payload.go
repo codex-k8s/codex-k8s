@@ -48,7 +48,8 @@ type RepositoryPayload struct {
 
 // RunQueuePayload keeps only payload fields required in runqueue repository.
 type RunQueuePayload struct {
-	Repository RepositoryPayload `json:"repository"`
+	Repository RepositoryPayload  `json:"repository"`
+	Runtime    *RunRuntimeProfile `json:"runtime,omitempty"`
 }
 
 // ProjectSettings stores project-level defaults in JSONB settings.

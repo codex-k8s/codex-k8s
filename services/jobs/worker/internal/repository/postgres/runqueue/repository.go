@@ -53,7 +53,7 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
-// ClaimNextPending atomically claims one pending run and leases a slot.
+// ClaimNextPending atomically claims one pending run and optionally leases a slot.
 func (r *Repository) ClaimNextPending(ctx context.Context, params domainrepo.ClaimParams) (domainrepo.ClaimedRun, bool, error) {
 	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
@@ -85,12 +85,14 @@ func (r *Repository) ClaimNextPending(ctx context.Context, params domainrepo.Cla
 		return domainrepo.ClaimedRun{}, false, fmt.Errorf("select pending run for claim: %w", err)
 	}
 
+	payload := parseRunQueuePayload(runPayload)
 	projectID := projectIDRaw.String
 	explicitProjectID := projectIDRaw.Valid && strings.TrimSpace(projectIDRaw.String) != ""
 	if projectID == "" {
-		projectID = deriveProjectID(correlationID, runPayload)
+		projectID = deriveProjectID(correlationID, payload)
 	}
-	projectSlug, projectName := deriveProjectMeta(projectID, correlationID, runPayload)
+	projectSlug, projectName := deriveProjectMeta(projectID, correlationID, payload)
+	deployOnlyRun := isDeployOnlyRun(payload)
 
 	settingsJSON, err := json.Marshal(querytypes.ProjectSettings{LearningModeDefault: params.ProjectLearningModeDefault})
 	if err != nil {
@@ -107,23 +109,25 @@ func (r *Repository) ClaimNextPending(ctx context.Context, params domainrepo.Cla
 		}
 	}
 
-	if _, err := tx.Exec(ctx, queryEnsureProjectSlots, projectID, params.SlotsPerProject); err != nil {
-		return domainrepo.ClaimedRun{}, false, fmt.Errorf("ensure slots for project %s: %w", projectID, err)
-	}
-	if _, err := tx.Exec(ctx, queryReleaseExpiredSlots, projectID); err != nil {
-		return domainrepo.ClaimedRun{}, false, fmt.Errorf("release expired slots for project %s: %w", projectID, err)
-	}
-
-	leaseUntilInterval := fmt.Sprintf("%d seconds", maxInt64(1, int64(params.LeaseTTL.Seconds())))
 	var (
 		slotID string
 		slotNo int
 	)
-	if err := tx.QueryRow(ctx, queryLeaseSlot, projectID, runID, leaseUntilInterval).Scan(&slotID, &slotNo); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return domainrepo.ClaimedRun{}, false, nil
+	if !deployOnlyRun {
+		if _, err := tx.Exec(ctx, queryEnsureProjectSlots, projectID, params.SlotsPerProject); err != nil {
+			return domainrepo.ClaimedRun{}, false, fmt.Errorf("ensure slots for project %s: %w", projectID, err)
 		}
-		return domainrepo.ClaimedRun{}, false, fmt.Errorf("lease slot for run %s: %w", runID, err)
+		if _, err := tx.Exec(ctx, queryReleaseExpiredSlots, projectID); err != nil {
+			return domainrepo.ClaimedRun{}, false, fmt.Errorf("release expired slots for project %s: %w", projectID, err)
+		}
+
+		leaseUntilInterval := fmt.Sprintf("%d seconds", maxInt64(1, int64(params.LeaseTTL.Seconds())))
+		if err := tx.QueryRow(ctx, queryLeaseSlot, projectID, runID, leaseUntilInterval).Scan(&slotID, &slotNo); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return domainrepo.ClaimedRun{}, false, nil
+			}
+			return domainrepo.ClaimedRun{}, false, fmt.Errorf("lease slot for run %s: %w", runID, err)
+		}
 	}
 
 	res, err := tx.Exec(ctx, queryMarkRunRunning, runID, projectID)
@@ -231,10 +235,27 @@ func (r *Repository) FinishRun(ctx context.Context, params domainrepo.FinishPara
 	return true, nil
 }
 
-// deriveProjectID prefers repository identity and falls back to correlation-scoped synthetic id.
-func deriveProjectID(correlationID string, runPayload []byte) string {
+// parseRunQueuePayload unmarshals only fields required by runqueue repository logic.
+func parseRunQueuePayload(raw []byte) querytypes.RunQueuePayload {
+	if len(raw) == 0 {
+		return querytypes.RunQueuePayload{}
+	}
+
 	var payload querytypes.RunQueuePayload
-	if err := json.Unmarshal(runPayload, &payload); err == nil && payload.Repository.FullName != "" {
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		return querytypes.RunQueuePayload{}
+	}
+
+	return payload
+}
+
+func isDeployOnlyRun(payload querytypes.RunQueuePayload) bool {
+	return payload.Runtime != nil && payload.Runtime.DeployOnly
+}
+
+// deriveProjectID prefers repository identity and falls back to correlation-scoped synthetic id.
+func deriveProjectID(correlationID string, payload querytypes.RunQueuePayload) string {
+	if payload.Repository.FullName != "" {
 		return uuid.NewSHA1(uuid.NameSpaceDNS, []byte("repo:"+strings.ToLower(payload.Repository.FullName))).String()
 	}
 
@@ -242,10 +263,8 @@ func deriveProjectID(correlationID string, runPayload []byte) string {
 }
 
 // deriveProjectMeta builds stable project slug/name values from payload or synthetic fallback.
-func deriveProjectMeta(projectID string, correlationID string, runPayload []byte) (slug string, name string) {
-	var payload querytypes.RunQueuePayload
-
-	if err := json.Unmarshal(runPayload, &payload); err == nil && payload.Repository.FullName != "" {
+func deriveProjectMeta(projectID string, correlationID string, payload querytypes.RunQueuePayload) (slug string, name string) {
+	if payload.Repository.FullName != "" {
 		slug = strings.ToLower(strings.TrimSpace(payload.Repository.FullName))
 		name = slug
 		if strings.TrimSpace(payload.Repository.Name) != "" {

@@ -15,10 +15,10 @@ type (
 
 // Repository provides queue-like operations over agent runs and slots.
 type Repository interface {
-	// ClaimNextPending atomically claims one pending run and leases a free slot.
+	// ClaimNextPending atomically claims one pending run and leases a free slot when required by runtime profile.
 	ClaimNextPending(ctx context.Context, params ClaimParams) (ClaimedRun, bool, error)
 	// ListRunning returns active runs for reconciliation.
 	ListRunning(ctx context.Context, limit int) ([]RunningRun, error)
-	// FinishRun finalizes run status and releases slot lease.
+	// FinishRun finalizes run status and releases slot lease when it exists.
 	FinishRun(ctx context.Context, params FinishParams) (bool, error)
 }

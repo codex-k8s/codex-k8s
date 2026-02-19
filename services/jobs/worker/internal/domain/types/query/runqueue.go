@@ -20,7 +20,7 @@ type RunQueueClaimParams struct {
 	ProjectLearningModeDefault bool
 }
 
-// RunQueueClaimedRun represents a pending run promoted into running state with slot lease.
+// RunQueueClaimedRun represents a pending run promoted into running state.
 type RunQueueClaimedRun struct {
 	// RunID is a unique run identifier.
 	RunID string
@@ -32,9 +32,9 @@ type RunQueueClaimedRun struct {
 	LearningMode bool
 	// RunPayload stores normalized webhook payload.
 	RunPayload json.RawMessage
-	// SlotNo is a slot number leased for this run.
+	// SlotNo is a slot number leased for this run, zero when lease is not required.
 	SlotNo int
-	// SlotID is a unique slot identifier.
+	// SlotID is a unique slot identifier, empty when lease is not required.
 	SlotID string
 }
 
