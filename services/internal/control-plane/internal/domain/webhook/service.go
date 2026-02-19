@@ -418,19 +418,11 @@ func (s *Service) resolveIssueRunTrigger(eventType string, envelope githubWebhoo
 		if !strings.EqualFold(strings.TrimSpace(envelope.Review.State), webhookdomain.GitHubReviewStateChangesRequested) {
 			return issueRunTrigger{}, false, triggerConflictResult{}
 		}
-		hasDevLabel := containsLabel(envelope.PullRequest.Labels, s.triggerLabels.RunDev)
-		hasDevReviseLabel := containsLabel(envelope.PullRequest.Labels, s.triggerLabels.RunDevRevise)
-		if !hasDevLabel && !hasDevReviseLabel {
+		trigger, ok := s.resolvePullRequestReviewReviseTrigger(envelope.PullRequest.Labels)
+		if !ok {
 			return issueRunTrigger{}, false, triggerConflictResult{}
 		}
-		if hasDevLabel && hasDevReviseLabel {
-			return issueRunTrigger{}, false, triggerConflictResult{}
-		}
-		return issueRunTrigger{
-			Source: webhookdomain.TriggerSourcePullRequestReview,
-			Label:  s.triggerLabels.RunDevRevise,
-			Kind:   webhookdomain.TriggerKindDevRevise,
-		}, true, triggerConflictResult{}
+		return trigger, true, triggerConflictResult{}
 	default:
 		return issueRunTrigger{}, false, triggerConflictResult{}
 	}
@@ -489,6 +481,50 @@ func containsLabel(labels []githubLabelRecord, expected string) bool {
 		}
 	}
 	return false
+}
+
+func hasAnyLabel(labels []githubLabelRecord, candidates ...string) bool {
+	for _, label := range candidates {
+		if containsLabel(labels, label) {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Service) resolvePullRequestReviewReviseTrigger(labels []githubLabelRecord) (issueRunTrigger, bool) {
+	type stageCandidate struct {
+		runLabel    string
+		reviseLabel string
+		kind        webhookdomain.TriggerKind
+	}
+
+	catalog := []stageCandidate{
+		{runLabel: s.triggerLabels.RunIntake, reviseLabel: s.triggerLabels.RunIntakeRevise, kind: webhookdomain.TriggerKindIntakeRevise},
+		{runLabel: s.triggerLabels.RunVision, reviseLabel: s.triggerLabels.RunVisionRevise, kind: webhookdomain.TriggerKindVisionRevise},
+		{runLabel: s.triggerLabels.RunPRD, reviseLabel: s.triggerLabels.RunPRDRevise, kind: webhookdomain.TriggerKindPRDRevise},
+		{runLabel: s.triggerLabels.RunArch, reviseLabel: s.triggerLabels.RunArchRevise, kind: webhookdomain.TriggerKindArchRevise},
+		{runLabel: s.triggerLabels.RunDesign, reviseLabel: s.triggerLabels.RunDesignRevise, kind: webhookdomain.TriggerKindDesignRevise},
+		{runLabel: s.triggerLabels.RunPlan, reviseLabel: s.triggerLabels.RunPlanRevise, kind: webhookdomain.TriggerKindPlanRevise},
+		{runLabel: s.triggerLabels.RunDev, reviseLabel: s.triggerLabels.RunDevRevise, kind: webhookdomain.TriggerKindDevRevise},
+	}
+
+	matched := make([]issueRunTrigger, 0, 1)
+	for _, stage := range catalog {
+		if !hasAnyLabel(labels, stage.runLabel, stage.reviseLabel) {
+			continue
+		}
+		matched = append(matched, issueRunTrigger{
+			Source: webhookdomain.TriggerSourcePullRequestReview,
+			Label:  strings.TrimSpace(stage.reviseLabel),
+			Kind:   stage.kind,
+		})
+	}
+
+	if len(matched) != 1 {
+		return issueRunTrigger{}, false
+	}
+	return matched[0], true
 }
 
 func (s *Service) postTriggerConflictComment(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope, trigger issueRunTrigger, conflictingLabels []string) error {

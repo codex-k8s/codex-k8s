@@ -160,7 +160,13 @@ approvals:
 - `run:dev:revise` может запускаться:
   - по label `run:dev:revise` на Issue;
   - по webhook `pull_request_review` с `action=submitted` и `review.state=changes_requested`,
-    только если на PR уже стоит один из trigger labels `run:dev` или `run:dev:revise`.
+    если на PR стоит ровно один stage label из поддержанных пар:
+    `run:intake|run:intake:revise`, `run:vision|run:vision:revise`,
+    `run:prd|run:prd:revise`, `run:arch|run:arch:revise`,
+    `run:design|run:design:revise`, `run:plan|run:plan:revise`,
+    `run:dev|run:dev:revise`.
+    В этом случае платформа запускает соответствующий `run:<stage>:revise`.
+    Если stage labels нет или их несколько, ран не создается.
 - Для `run:dev:revise` при отсутствии связанного PR run отклоняется с `failed_precondition` и событием `run.revise.pr_not_found`.
 - Label transitions после завершения run должны выполняться через MCP (а не вручную в коде агента), чтобы сохранять единый policy/audit контур.
 - Для dev/dev:revise transition выполняется так:
