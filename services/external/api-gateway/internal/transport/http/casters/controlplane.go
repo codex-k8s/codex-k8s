@@ -140,6 +140,23 @@ func FlowEvents(items []*controlplanev1.FlowEvent) []models.FlowEvent {
 	return out
 }
 
+func FlowEventsSummary(items []*controlplanev1.FlowEvent) []models.FlowEvent {
+	out := make([]models.FlowEvent, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			out = append(out, models.FlowEvent{})
+			continue
+		}
+		out = append(out, models.FlowEvent{
+			CorrelationID: item.GetCorrelationId(),
+			EventType:     item.GetEventType(),
+			CreatedAt:     cast.TimestampRFC3339Nano(item.GetCreatedAt()),
+			PayloadJSON:   "",
+		})
+	}
+	return out
+}
+
 func LearningFeedback(item *controlplanev1.LearningFeedback) models.LearningFeedback {
 	if item == nil {
 		return models.LearningFeedback{}

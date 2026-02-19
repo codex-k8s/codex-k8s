@@ -71,19 +71,19 @@ export async function deleteRunNamespace(runId: string): Promise<RunNamespaceCle
   return resp.data;
 }
 
-export async function listRunEvents(runId: string, limit = 200): Promise<FlowEvent[]> {
+export async function listRunEvents(runId: string, limit = 200, includePayload = false): Promise<FlowEvent[]> {
   const resp = await listRunEventsRequest({
     path: { run_id: runId },
-    query: { limit },
+    query: { limit, include_payload: includePayload },
     throwOnError: true,
   });
   return resp.data.items ?? [];
 }
 
-export async function getRunLogs(runId: string, tailLines = 200): Promise<RunLogs> {
+export async function getRunLogs(runId: string, tailLines = 200, includeSnapshot = false): Promise<RunLogs> {
   const resp = await getRunLogsRequest({
     path: { run_id: runId },
-    query: { tail_lines: tailLines },
+    query: { tail_lines: tailLines, include_snapshot: includeSnapshot },
     throwOnError: true,
   });
   return resp.data;

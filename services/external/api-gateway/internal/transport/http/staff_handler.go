@@ -155,6 +155,19 @@ func parseOptionalPositiveInt(raw string, field string) (int, error) {
 	return value, nil
 }
 
+func parseOptionalBool(raw string, field string) (bool, error) {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "":
+		return false, nil
+	case "1", "true", "yes", "on":
+		return true, nil
+	case "0", "false", "no", "off":
+		return false, nil
+	default:
+		return false, errs.Validation{Field: field, Msg: "must be a boolean"}
+	}
+}
+
 func resolveRegistryImagesListFilters(defLimitRepositories int, defLimitTags int) func(c *echo.Context) (registryImagesListArg, error) {
 	return func(c *echo.Context) (registryImagesListArg, error) {
 		limitRepositories, err := parseOptionalPositiveInt(c.QueryParam("limit_repositories"), "limit_repositories")
@@ -181,6 +194,31 @@ func resolveRegistryImagesListFilters(defLimitRepositories int, defLimitTags int
 	}
 }
 
+func resolveRunEventsArg(defLimit int) func(c *echo.Context) (runEventsArg, error) {
+	return func(c *echo.Context) (runEventsArg, error) {
+		runID, err := requirePathParam(c, "run_id")
+		if err != nil {
+			return runEventsArg{}, err
+		}
+
+		limit, err := parseLimit(c, defLimit)
+		if err != nil {
+			return runEventsArg{}, err
+		}
+
+		includePayload, err := parseOptionalBool(c.QueryParam("include_payload"), "include_payload")
+		if err != nil {
+			return runEventsArg{}, err
+		}
+
+		return runEventsArg{
+			runID:          runID,
+			limit:          int32(limit),
+			includePayload: includePayload,
+		}, nil
+	}
+}
+
 func resolveRunLogsArg(defTailLines int) func(c *echo.Context) (runLogsArg, error) {
 	return func(c *echo.Context) (runLogsArg, error) {
 		runID, err := requirePathParam(c, "run_id")
@@ -200,7 +238,16 @@ func resolveRunLogsArg(defTailLines int) func(c *echo.Context) (runLogsArg, erro
 			tailLines = value
 		}
 
-		return runLogsArg{runID: runID, tailLines: int32(tailLines)}, nil
+		includeSnapshot, err := parseOptionalBool(c.QueryParam("include_snapshot"), "include_snapshot")
+		if err != nil {
+			return runLogsArg{}, err
+		}
+
+		return runLogsArg{
+			runID:           runID,
+			tailLines:       int32(tailLines),
+			includeSnapshot: includeSnapshot,
+		}, nil
 	}
 }
 
@@ -440,7 +487,17 @@ func (h *staffHandler) DeleteRunNamespace(c *echo.Context) error {
 }
 
 func (h *staffHandler) ListRunEvents(c *echo.Context) error {
-	return listByPathLimitResp(c, "run_id", 500, h.listRunEventsCall, casters.FlowEvents)
+	return withPrincipalAndResolved(c, resolveRunEventsArg(500), func(principal *controlplanev1.Principal, arg runEventsArg) error {
+		resp, err := h.listRunEventsCall(c.Request().Context(), principal, arg)
+		if err != nil {
+			return err
+		}
+		items := resp.GetItems()
+		if !arg.includePayload {
+			return c.JSON(http.StatusOK, models.ItemsResponse[models.FlowEvent]{Items: casters.FlowEventsSummary(items)})
+		}
+		return c.JSON(http.StatusOK, models.ItemsResponse[models.FlowEvent]{Items: casters.FlowEvents(items)})
+	})
 }
 
 func (h *staffHandler) ListRunLearningFeedback(c *echo.Context) error {
@@ -898,8 +955,8 @@ func buildDeleteRunNamespaceRequest(principal *controlplanev1.Principal, id stri
 	return &controlplanev1.DeleteRunNamespaceRequest{Principal: principal, RunId: id}
 }
 
-func buildListRunEventsRequest(principal *controlplanev1.Principal, arg idLimitArg) *controlplanev1.ListRunEventsRequest {
-	return &controlplanev1.ListRunEventsRequest{Principal: principal, RunId: arg.id, Limit: arg.limit}
+func buildListRunEventsRequest(principal *controlplanev1.Principal, arg runEventsArg) *controlplanev1.ListRunEventsRequest {
+	return &controlplanev1.ListRunEventsRequest{Principal: principal, RunId: arg.runID, Limit: arg.limit}
 }
 
 func buildListRunLearningFeedbackRequest(principal *controlplanev1.Principal, arg idLimitArg) *controlplanev1.ListRunLearningFeedbackRequest {
@@ -1025,7 +1082,14 @@ func (h *staffHandler) getRunCall(ctx context.Context, principal *controlplanev1
 }
 
 func (h *staffHandler) getRunLogsCall(ctx context.Context, principal *controlplanev1.Principal, arg runLogsArg) (*controlplanev1.RunLogs, error) {
-	return callUnaryWithArg(ctx, principal, arg, buildGetRunLogsRequest, h.cp.Service().GetRunLogs)
+	item, err := callUnaryWithArg(ctx, principal, arg, buildGetRunLogsRequest, h.cp.Service().GetRunLogs)
+	if err != nil {
+		return nil, err
+	}
+	if !arg.includeSnapshot && item != nil {
+		item.SnapshotJson = "{}"
+	}
+	return item, nil
 }
 
 func (h *staffHandler) resolveApprovalDecisionCall(
@@ -1040,8 +1104,7 @@ func (h *staffHandler) deleteRunNamespaceCall(ctx context.Context, principal *co
 	return callUnaryWithArg(ctx, principal, id, buildDeleteRunNamespaceRequest, h.cp.Service().DeleteRunNamespace)
 }
 
-func (h *staffHandler) listRunEventsCall(ctx context.Context, principal *controlplanev1.Principal, id string, limit int32) (*controlplanev1.ListRunEventsResponse, error) {
-	arg := idLimitArg{id: id, limit: limit}
+func (h *staffHandler) listRunEventsCall(ctx context.Context, principal *controlplanev1.Principal, arg runEventsArg) (*controlplanev1.ListRunEventsResponse, error) {
 	return callUnaryWithArg(ctx, principal, arg, buildListRunEventsRequest, h.cp.Service().ListRunEvents)
 }
 

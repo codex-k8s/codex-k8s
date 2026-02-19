@@ -402,6 +402,10 @@ export const en = {
       runLogs: "Run logs",
       logsUpdatedAt: "updated at",
       rawLogsSnapshot: "Raw JSON snapshot",
+      loadEventPayloads: "Load event payloads",
+      eventPayloadLoaded: "Event payloads loaded",
+      loadSnapshot: "Load snapshot",
+      snapshotLoaded: "Snapshot loaded",
       codexAuthRequiredTitle: "Codex authorization required",
       codexAuthRequiredBadge: "AUTH",
       codexAuthRequiredText:

@@ -416,6 +416,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/RunID"
         - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/IncludePayload"
       responses:
         "200":
           description: Flow events list
@@ -436,6 +437,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/RunID"
         - $ref: "#/components/parameters/TailLines"
+        - $ref: "#/components/parameters/IncludeSnapshot"
       responses:
         "200":
           description: Run logs snapshot
@@ -1215,6 +1217,20 @@ components:
         type: integer
         minimum: 1
         maximum: 2000
+    IncludePayload:
+      in: query
+      name: include_payload
+      required: false
+      schema:
+        type: boolean
+        default: false
+    IncludeSnapshot:
+      in: query
+      name: include_snapshot
+      required: false
+      schema:
+        type: boolean
+        default: false
     MCPCallbackToken:
       in: header
       name: X-Codex-MCP-Token

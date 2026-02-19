@@ -472,6 +472,10 @@ export type WaitStateFilter = string;
 
 export type TailLines = number;
 
+export type IncludePayload = boolean;
+
+export type IncludeSnapshot = boolean;
+
 export type McpCallbackToken = string;
 
 export type IngestGithubWebhookData = {
@@ -1072,6 +1076,7 @@ export type ListRunEventsData = {
     };
     query?: {
         limit?: number;
+        include_payload?: boolean;
     };
     url: '/api/v1/staff/runs/{run_id}/events';
 };
@@ -1105,6 +1110,7 @@ export type GetRunLogsData = {
     };
     query?: {
         tail_lines?: number;
+        include_snapshot?: boolean;
     };
     url: '/api/v1/staff/runs/{run_id}/logs';
 };

@@ -24,6 +24,11 @@ import type {
 } from "./types";
 
 const errorAutoHideMs = 5000;
+const codexAuthRequiredEventType = "run.codex.auth.required";
+
+function sortEventsNewest(items: FlowEvent[]): FlowEvent[] {
+  return [...items].sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0));
+}
 
 export const useRunsStore = defineStore("runs", {
   state: () => ({
@@ -160,7 +165,11 @@ export const useRunDetailsStore = defineStore("runDetails", {
     loading: false,
     error: null as ApiError | null,
     events: [] as FlowEvent[],
+    eventsPayloadLoaded: false,
+    eventsPayloadLoading: false,
     logs: null as RunLogs | null,
+    snapshotLoaded: false,
+    snapshotLoading: false,
     deletingNamespace: false,
     deleteNamespaceError: null as ApiError | null,
     namespaceDeleteResult: null as RunNamespaceCleanupResponse | null,
@@ -189,16 +198,24 @@ export const useRunDetailsStore = defineStore("runDetails", {
       try {
         const [run, events, logs] = await Promise.all([
           getRun(runId),
-          listRunEvents(runId),
-          getRunLogs(runId, 200),
+          listRunEvents(runId, 200, false),
+          getRunLogs(runId, 200, false),
         ]);
         this.run = run;
-        this.events = [...events].sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0));
+        this.events = sortEventsNewest(events);
+        this.eventsPayloadLoaded = false;
         this.logs = logs;
+        this.snapshotLoaded = false;
+
+        if (this.events.some((eventItem) => eventItem.event_type === codexAuthRequiredEventType)) {
+          await this.loadEventPayloads(runId);
+        }
       } catch (e) {
         this.run = null;
         this.events = [];
+        this.eventsPayloadLoaded = false;
         this.logs = null;
+        this.snapshotLoaded = false;
         this.error = normalizeApiError(e);
         this.scheduleErrorHide("error", "errorTimerId");
       } finally {
@@ -206,12 +223,48 @@ export const useRunDetailsStore = defineStore("runDetails", {
       }
     },
 
-    async refreshLogs(runId: string, tailLines = 200): Promise<void> {
+    async loadEventPayloads(runId: string): Promise<void> {
+      if (this.eventsPayloadLoading) {
+        return;
+      }
+      this.eventsPayloadLoading = true;
       try {
-        this.logs = await getRunLogs(runId, tailLines);
+        const events = await listRunEvents(runId, 200, true);
+        this.events = sortEventsNewest(events);
+        this.eventsPayloadLoaded = true;
       } catch (e) {
         this.error = normalizeApiError(e);
         this.scheduleErrorHide("error", "errorTimerId");
+      } finally {
+        this.eventsPayloadLoading = false;
+      }
+    },
+
+    async refreshLogs(runId: string, tailLines = 200, includeSnapshot = false): Promise<void> {
+      try {
+        const freshLogs = await getRunLogs(runId, tailLines, includeSnapshot);
+        if (!includeSnapshot && this.snapshotLoaded && this.logs?.snapshot_json) {
+          freshLogs.snapshot_json = this.logs.snapshot_json;
+        }
+        this.logs = freshLogs;
+        if (includeSnapshot) {
+          this.snapshotLoaded = true;
+        }
+      } catch (e) {
+        this.error = normalizeApiError(e);
+        this.scheduleErrorHide("error", "errorTimerId");
+      }
+    },
+
+    async loadSnapshot(runId: string, tailLines = 200): Promise<void> {
+      if (this.snapshotLoading) {
+        return;
+      }
+      this.snapshotLoading = true;
+      try {
+        await this.refreshLogs(runId, tailLines, true);
+      } finally {
+        this.snapshotLoading = false;
       }
     },
 

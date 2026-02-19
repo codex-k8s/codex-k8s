@@ -402,6 +402,10 @@ export const ru = {
       runLogs: "Логи запуска",
       logsUpdatedAt: "обновлено",
       rawLogsSnapshot: "Сырой JSON snapshot",
+      loadEventPayloads: "Загрузить payload событий",
+      eventPayloadLoaded: "Payload событий загружен",
+      loadSnapshot: "Загрузить snapshot",
+      snapshotLoaded: "Snapshot загружен",
       codexAuthRequiredTitle: "Требуется авторизация Codex",
       codexAuthRequiredBadge: "AUTH",
       codexAuthRequiredText:

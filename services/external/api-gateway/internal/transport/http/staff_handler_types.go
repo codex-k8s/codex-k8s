@@ -23,8 +23,16 @@ type runListFilterArg struct {
 
 // runLogsArg keeps path+query input for run logs endpoint.
 type runLogsArg struct {
-	runID     string
-	tailLines int32
+	runID           string
+	tailLines       int32
+	includeSnapshot bool
+}
+
+// runEventsArg keeps path+query input for run events endpoint.
+type runEventsArg struct {
+	runID          string
+	limit          int32
+	includePayload bool
 }
 
 // runtimeDeployListArg keeps filters for runtime deploy tasks list endpoint.
