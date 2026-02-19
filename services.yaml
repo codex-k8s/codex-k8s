@@ -54,6 +54,8 @@ spec:
       value: "0.1.0"
       bumpOn:
         - services/staff/web-console
+        - libs/ts
+        - libs/vue
     alpine-git:
       value: "2.47.2"
     kaniko-executor:
