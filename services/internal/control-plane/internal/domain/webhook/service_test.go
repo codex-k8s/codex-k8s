@@ -942,6 +942,151 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithRunDevReviseL
 	}
 }
 
+func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithRunIntakeLabel_CreatesIntakeReviseRun(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"pm": {ID: "agent-pm", AgentKey: "pm", Name: "AI PM"}}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {ID: "user-1", GitHubLogin: "member"},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{"project-1|user-1": "read_write"},
+	}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"submitted",
+		"review":{"state":"changes_requested"},
+		"pull_request":{
+			"id":501,
+			"number":201,
+			"title":"Intake artifacts",
+			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/201",
+			"state":"open",
+			"labels":[{"name":"run:intake"}],
+			"head":{"ref":"codex/issue-201"},
+			"user":{"id":55,"login":"member"}
+		},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-pr-review-intake",
+		DeliveryID:    "delivery-pr-review-intake",
+		EventType:     string(webhookdomain.GitHubEventPullRequestReview),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.RunID == "" {
+		t.Fatalf("expected run id for pull_request_review trigger with run:intake label")
+	}
+
+	var runPayload githubRunPayload
+	if err := json.Unmarshal(runs.last.RunPayload, &runPayload); err != nil {
+		t.Fatalf("unmarshal run payload: %v", err)
+	}
+	if runPayload.Trigger == nil {
+		t.Fatalf("expected trigger object in run payload")
+	}
+	if runPayload.Trigger.Kind != webhookdomain.TriggerKindIntakeRevise {
+		t.Fatalf("unexpected trigger kind: %#v", runPayload.Trigger.Kind)
+	}
+	if runPayload.Trigger.Label != webhookdomain.DefaultRunIntakeReviseLabel {
+		t.Fatalf("unexpected trigger label: %#v", runPayload.Trigger.Label)
+	}
+}
+
+func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithMultipleStageLabels_IsIgnored(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {ID: "user-1", GitHubLogin: "member"},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{"project-1|user-1": "read_write"},
+	}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"submitted",
+		"review":{"state":"changes_requested"},
+		"pull_request":{
+			"id":501,
+			"number":202,
+			"title":"Conflicting stage labels",
+			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/202",
+			"state":"open",
+			"labels":[{"name":"run:dev"},{"name":"run:plan"}],
+			"head":{"ref":"codex/issue-202"},
+			"user":{"id":55,"login":"member"}
+		},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-pr-review-conflict",
+		DeliveryID:    "delivery-pr-review-conflict",
+		EventType:     string(webhookdomain.GitHubEventPullRequestReview),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.RunID != "" {
+		t.Fatalf("expected no run id for pull_request_review with multiple stage labels, got %q", got.RunID)
+	}
+	if len(runs.items) != 0 {
+		t.Fatalf("expected no run creation, got %d runs", len(runs.items))
+	}
+}
+
 func TestIngestGitHubWebhook_IssueRunDev_DeniesUnknownSender(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
