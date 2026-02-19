@@ -27,8 +27,8 @@ spec:
       roles: [em, pm, km, reviewer]
   versions:
     api-gateway: "0.1.0"
-    control-plane: "0.1.1"
-    worker: "0.1.0"
+    control-plane: "0.1.2"
+    worker: "0.1.1"
     agent-runner: "0.1.0"
     web-console: "0.1.0"
     alpine-git: "2.47.2"
