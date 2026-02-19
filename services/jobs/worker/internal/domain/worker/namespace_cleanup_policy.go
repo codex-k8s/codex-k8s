@@ -14,6 +14,8 @@ type namespaceCleanupSkipReason string
 const (
 	namespaceCleanupSkipReasonDisabledByConfig namespaceCleanupSkipReason = "cleanup_disabled_by_config"
 	namespaceCleanupSkipReasonDebugLabel       namespaceCleanupSkipReason = "debug_label_present"
+	namespaceCleanupSkipReasonSlotHasPeerRun   namespaceCleanupSkipReason = "slot_has_running_peer"
+	namespaceCleanupSkipReasonPeerCheckFailed  namespaceCleanupSkipReason = "slot_peer_check_failed"
 )
 
 // runDebugPolicy decides whether full-env namespace cleanup should be skipped.

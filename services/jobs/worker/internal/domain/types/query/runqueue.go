@@ -69,3 +69,13 @@ type RunQueueFinishParams struct {
 	// FinishedAt is a final status timestamp.
 	FinishedAt time.Time
 }
+
+// RunQueueExtendLeaseParams describes slot lease keepalive update for one running run.
+type RunQueueExtendLeaseParams struct {
+	// RunID is a running run that currently owns slot lease.
+	RunID string
+	// ProjectID scopes slot ownership lookup.
+	ProjectID string
+	// LeaseTTL extends lease_until from current timestamp.
+	LeaseTTL time.Duration
+}

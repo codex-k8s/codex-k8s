@@ -37,6 +37,8 @@ var (
 	queryMarkRunRunning string
 	//go:embed sql/list_running.sql
 	queryListRunning string
+	//go:embed sql/extend_slot_lease.sql
+	queryExtendSlotLease string
 	//go:embed sql/mark_run_finished.sql
 	queryMarkRunFinished string
 	//go:embed sql/mark_slot_releasing.sql
@@ -203,6 +205,23 @@ func (r *Repository) ListRunning(ctx context.Context, limit int) ([]domainrepo.R
 	}
 
 	return result, nil
+}
+
+// ExtendLease refreshes slot lease ownership for one running run.
+func (r *Repository) ExtendLease(ctx context.Context, params domainrepo.ExtendLeaseParams) (bool, error) {
+	projectID := strings.TrimSpace(params.ProjectID)
+	runID := strings.TrimSpace(params.RunID)
+	if projectID == "" || runID == "" {
+		return false, nil
+	}
+
+	leaseUntilInterval := fmt.Sprintf("%d seconds", maxInt64(1, int64(params.LeaseTTL.Seconds())))
+	res, err := r.db.Exec(ctx, queryExtendSlotLease, projectID, runID, leaseUntilInterval)
+	if err != nil {
+		return false, fmt.Errorf("extend slot lease for run %s: %w", runID, err)
+	}
+
+	return res.RowsAffected() > 0, nil
 }
 
 // FinishRun sets final status and releases leased slot.

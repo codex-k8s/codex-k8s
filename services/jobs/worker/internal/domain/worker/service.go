@@ -243,6 +243,8 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 	}
 
 	for _, run := range running {
+		s.keepRunSlotLeaseAlive(ctx, run)
+
 		execution := resolveRunExecutionContext(run.RunID, run.ProjectID, run.RunPayload, s.cfg.RunNamespacePrefix)
 		runtimePayload := parseRunRuntimePayload(run.RunPayload)
 		deployOnlyRun := runtimePayload.Runtime != nil && runtimePayload.Runtime.DeployOnly
@@ -612,19 +614,21 @@ func (s *Service) finishRun(ctx context.Context, params finishRunParams) error {
 		!params.SkipNamespaceCleanup {
 		debugPolicy := s.resolveRunDebugPolicy(params.Run.RunPayload)
 		if debugPolicy.SkipCleanup {
-			if err := s.insertNamespaceLifecycleEvent(ctx, namespaceLifecycleEventParams{
-				CorrelationID: params.Run.CorrelationID,
-				EventType:     floweventdomain.EventTypeRunNamespaceCleanupSkipped,
-				RunID:         params.Run.RunID,
-				ProjectID:     params.Run.ProjectID,
-				Execution:     params.Execution,
-				Extra: namespaceLifecycleEventExtra{
-					Reason:         debugPolicy.Reason,
-					CleanupCommand: buildNamespaceCleanupCommand(params.Execution.Namespace),
-				},
-			}); err != nil {
-				s.logger.Error("insert run.namespace.cleanup_skipped event failed", "run_id", params.Run.RunID, "err", err)
-			}
+			s.emitNamespaceCleanupSkipped(ctx, params, debugPolicy.Reason, "")
+			s.upsertNamespaceStatusComment(ctx, params, false, "upsert run status comment (namespace cleanup skipped) failed")
+			return nil
+		}
+
+		peerRunID, err := s.findRunningPeerOnSameSlot(ctx, params.Run)
+		if err != nil {
+			s.logger.Warn("namespace cleanup peer-slot check failed; cleanup skipped", "run_id", params.Run.RunID, "slot_no", params.Run.SlotNo, "err", err)
+			s.emitNamespaceCleanupSkipped(ctx, params, namespaceCleanupSkipReasonPeerCheckFailed, err.Error())
+			s.upsertNamespaceStatusComment(ctx, params, false, "upsert run status comment (namespace cleanup skipped) failed")
+			return nil
+		}
+		if peerRunID != "" {
+			s.logger.Warn("namespace cleanup skipped because slot has another active run", "run_id", params.Run.RunID, "peer_run_id", peerRunID, "slot_no", params.Run.SlotNo)
+			s.emitNamespaceCleanupSkipped(ctx, params, namespaceCleanupSkipReasonSlotHasPeerRun, fmt.Sprintf("peer_run_id=%s", peerRunID))
 			s.upsertNamespaceStatusComment(ctx, params, false, "upsert run status comment (namespace cleanup skipped) failed")
 			return nil
 		}
