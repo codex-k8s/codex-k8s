@@ -26,22 +26,58 @@ spec:
       description: Планы спринтов/эпиков, трассируемость и критерии готовности.
       roles: [em, pm, km, reviewer]
   versions:
-    api-gateway: "0.1.0"
-    control-plane: "0.1.2"
-    worker: "0.1.1"
-    agent-runner: "0.1.0"
-    web-console: "0.1.0"
-    alpine-git: "2.47.2"
-    kaniko-executor: "v1.23.2-debug"
-    busybox: "1.36"
-    pgvector: "pg16"
-    oauth2-proxy: "v7.6.0"
-    golang-alpine: "1.25.6-alpine"
-    golang-bookworm: "1.25.6-bookworm"
-    golang-codegen: "1.24-bookworm"
-    node-alpine: "22-alpine"
-    node-bookworm: "22-bookworm"
-    nginx-alpine: "1.27-alpine"
+    api-gateway:
+      value: "0.1.0"
+      bumpOn:
+        - services/external/api-gateway
+        - libs/go
+        - proto
+    control-plane:
+      value: "0.1.2"
+      bumpOn:
+        - services/internal/control-plane
+        - libs/go
+        - proto
+    worker:
+      value: "0.1.1"
+      bumpOn:
+        - services/jobs/worker
+        - libs/go
+        - proto
+    agent-runner:
+      value: "0.1.0"
+      bumpOn:
+        - services/jobs/agent-runner
+        - libs/go
+        - proto
+    web-console:
+      value: "0.1.0"
+      bumpOn:
+        - services/staff/web-console
+        - libs/ts
+        - libs/vue
+    alpine-git:
+      value: "2.47.2"
+    kaniko-executor:
+      value: "v1.23.2-debug"
+    busybox:
+      value: "1.36"
+    pgvector:
+      value: "pg16"
+    oauth2-proxy:
+      value: "v7.6.0"
+    golang-alpine:
+      value: "1.25.6-alpine"
+    golang-bookworm:
+      value: "1.25.6-bookworm"
+    golang-codegen:
+      value: "1.24-bookworm"
+    node-alpine:
+      value: "22-alpine"
+    node-bookworm:
+      value: "22-bookworm"
+    nginx-alpine:
+      value: "1.27-alpine"
 
   components:
     - name: hot-reload-defaults
