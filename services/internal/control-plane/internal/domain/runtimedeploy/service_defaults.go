@@ -13,6 +13,7 @@ func defaultTemplateVars() map[string]string {
 		"CODEXK8S_BUSYBOX_IMAGE":                      "127.0.0.1:5000/codex-k8s/mirror/busybox:1.36",
 		"CODEXK8S_OAUTH2_PROXY_IMAGE":                 "127.0.0.1:5000/codex-k8s/mirror/oauth2-proxy:v7.6.0",
 		"CODEXK8S_CODEGEN_CHECK_IMAGE":                "127.0.0.1:5000/codex-k8s/mirror/golang:1.24-bookworm",
+		"CODEXK8S_KUBECTL_IMAGE":                      "127.0.0.1:5000/codex-k8s/mirror/kubectl:v1.32.2",
 		"CODEXK8S_CODEGEN_CHECK_ENABLED":              "true",
 		"CODEXK8S_CODEGEN_CHECK_TIMEOUT":              "30m",
 		"CODEXK8S_KANIKO_CACHE_ENABLED":               "true",

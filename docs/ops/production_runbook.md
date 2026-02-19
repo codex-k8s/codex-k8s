@@ -5,7 +5,7 @@ title: "Production Runbook (MVP)"
 status: active
 owner_role: SRE
 created_at: 2026-02-09
-updated_at: 2026-02-14
+updated_at: 2026-02-19
 related_issues: [1]
 related_prs: []
 approvals:
@@ -99,6 +99,29 @@ done
 
 # Legacy runtime keys must not appear after Day3 rollout
 kubectl get ns -o json | grep -E 'codexk8s.io/(managed-by|namespace-purpose|runtime-mode|project-id|run-id|correlation-id)' || true
+```
+
+## Registry GC (автоматический)
+
+- В production/non-ai окружениях включён `CronJob` `codex-k8s-registry-gc`.
+- Расписание по умолчанию: ежедневно в `03:17 UTC`.
+- Job делает `scale deployment/codex-k8s-registry 1 -> 0`, выполняет `registry garbage-collect --delete-untagged`, затем возвращает `replicas=1`.
+
+Проверка статуса:
+
+```bash
+ns="codex-k8s-prod"
+kubectl -n "$ns" get cronjob codex-k8s-registry-gc
+kubectl -n "$ns" get jobs -l app.kubernetes.io/name=codex-k8s-registry-gc
+kubectl -n "$ns" logs job/<gc_job_name> --tail=200
+```
+
+Форсированный запуск вне расписания:
+
+```bash
+ns="codex-k8s-prod"
+kubectl -n "$ns" create job --from=cronjob/codex-k8s-registry-gc codex-k8s-registry-gc-manual-$(date +%s)
+kubectl -n "$ns" get jobs -l app.kubernetes.io/name=codex-k8s-registry-gc
 ```
 
 ## Типовые проблемы
