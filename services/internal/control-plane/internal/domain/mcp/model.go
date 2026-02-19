@@ -13,6 +13,7 @@ type ToolName string
 const ToolPromptContextGet ToolName = "codex_prompt_context_get"
 
 const (
+	ToolRunStatusReport         ToolName = "run_status_report"
 	ToolMCPSecretSyncEnv        ToolName = "secret.sync.github_k8s"
 	ToolMCPDatabaseLifecycle    ToolName = "database.lifecycle"
 	ToolMCPOwnerFeedbackRequest ToolName = "owner.feedback.request"
@@ -310,6 +311,18 @@ type GitHubLabelsTransitionInput struct {
 	IssueNumber  int      `json:"issue_number,omitempty"`
 	RemoveLabels []string `json:"remove_labels,omitempty"`
 	AddLabels    []string `json:"add_labels,omitempty"`
+}
+
+// RunStatusReportInput describes one short progress status update from agent.
+type RunStatusReportInput struct {
+	Status string `json:"status"`
+}
+
+// RunStatusReportResult is output for run_status_report tool.
+type RunStatusReportResult struct {
+	Status         ToolExecutionStatus `json:"status"`
+	ReportedStatus string              `json:"reported_status"`
+	Message        string              `json:"message,omitempty"`
 }
 
 // KubernetesPodsListInput describes pod list input.

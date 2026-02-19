@@ -147,6 +147,9 @@ Seed-файлы:
 ### Контекстный рендер шаблонов
 - Effective prompt рендерится с runtime-контекстом (окружение, namespace/slot, доступные MCP-сервера и инструменты, project/services context, issue/pr/run identifiers).
 - Контракт контекстного рендера должен быть стабильным между версиями рантайма, чтобы избежать несовместимости seed/override шаблонов.
+- В output contract рендера обязательно фиксируются:
+  - communication language текущего запуска (для PR/комментариев/feedback-инструментов);
+  - cadence для `run_status_report` (регулярный progress-feedback каждые 5-7 инструментальных вызовов).
 
 ### Role-specific prompt template matrix
 - Для каждого `agent_key` используются отдельные шаблоны `work/revise`:

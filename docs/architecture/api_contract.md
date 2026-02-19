@@ -38,6 +38,7 @@ approvals:
 - Внутренний gRPC контракт расширен RPC `IssueRunMCPToken` для выдачи MCP токена worker-у перед запуском run pod.
 - MCP-слой в текущем MVP baseline покрывает:
   - label-операции (`github_labels_*`);
+  - прогресс-статусы агента (`run_status_report`, короткий статус до 100 символов);
   - `secret.sync.github_k8s` (deterministic secret sync GitHub + Kubernetes);
   - `database.lifecycle` (`create/delete/describe`);
   - `owner.feedback.request` (options + custom answer).
@@ -49,6 +50,8 @@ approvals:
   - `github_labels_add`;
   - `github_labels_remove`;
   - `github_labels_transition` (remove+add).
+- Базовый MCP инструмент обратной связи по прогрессу:
+  - `run_status_report` (агент публикует текущий короткий статус выполнения в выбранной locale).
 - Остальные GitHub/Kubernetes runtime-операции выполняются напрямую из agent pod через `gh`/`kubectl` в рамках RBAC/policy.
 
 ## Модель доступа GitHub для агентного pod (S2 Day4)
@@ -182,6 +185,10 @@ approvals:
   - `system default locale`;
   - fallback `en`.
 - Для системных агентов baseline включает как минимум `ru` и `en` версии шаблонов.
+- Язык, выбранный для prompt locale, обязателен для user-facing коммуникации агента:
+  - PR title/body/comments;
+  - issue/PR ответы;
+  - вызовы feedback-инструментов, включая `run_status_report`.
 
 ## Backward compatibility
 - Что гарантируем: стабильность `/api/v1` и мягкие additive changes.

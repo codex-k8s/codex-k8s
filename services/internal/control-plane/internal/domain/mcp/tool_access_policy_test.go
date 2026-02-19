@@ -24,6 +24,7 @@ func TestAllowedToolsForRunContext(t *testing.T) {
 				ToolGitHubLabelsList,
 				ToolGitHubLabelsRemove,
 				ToolGitHubLabelsTransition,
+				ToolRunStatusReport,
 			},
 		},
 		{
@@ -35,6 +36,7 @@ func TestAllowedToolsForRunContext(t *testing.T) {
 				ToolGitHubLabelsList,
 				ToolGitHubLabelsRemove,
 				ToolGitHubLabelsTransition,
+				ToolRunStatusReport,
 				ToolSelfImproveRunLookup,
 				ToolSelfImproveRunsList,
 				ToolSelfImproveSessionGet,
@@ -51,6 +53,7 @@ func TestAllowedToolsForRunContext(t *testing.T) {
 				ToolGitHubLabelsRemove,
 				ToolGitHubLabelsTransition,
 				ToolMCPOwnerFeedbackRequest,
+				ToolRunStatusReport,
 				ToolMCPSecretSyncEnv,
 			},
 		},
@@ -63,6 +66,7 @@ func TestAllowedToolsForRunContext(t *testing.T) {
 				ToolGitHubLabelsList,
 				ToolGitHubLabelsRemove,
 				ToolGitHubLabelsTransition,
+				ToolRunStatusReport,
 			},
 		},
 	}

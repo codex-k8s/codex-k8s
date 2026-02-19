@@ -10,6 +10,7 @@ func DefaultToolCatalog() []ToolCapability {
 		{Name: ToolGitHubLabelsAdd, Description: "Add labels to GitHub issue or pull request", Category: ToolCategoryWrite, Approval: ToolApprovalNone},
 		{Name: ToolGitHubLabelsRemove, Description: "Remove labels from GitHub issue or pull request", Category: ToolCategoryWrite, Approval: ToolApprovalNone},
 		{Name: ToolGitHubLabelsTransition, Description: "Replace labels atomically on GitHub issue or pull request", Category: ToolCategoryWrite, Approval: ToolApprovalNone},
+		{Name: ToolRunStatusReport, Description: "Report current agent status to run audit timeline (status text up to 100 characters)", Category: ToolCategoryWrite, Approval: ToolApprovalNone},
 		{Name: ToolMCPSecretSyncEnv, Description: "Sync one secret value between GitHub repository and Kubernetes namespace", Category: ToolCategoryWrite, Approval: ToolApprovalOwner},
 		{Name: ToolMCPDatabaseLifecycle, Description: "Create, drop or describe one environment database", Category: ToolCategoryWrite, Approval: ToolApprovalOwner},
 		{Name: ToolMCPOwnerFeedbackRequest, Description: "Request owner feedback with predefined options", Category: ToolCategoryWrite, Approval: ToolApprovalOwner},

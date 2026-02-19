@@ -75,6 +75,14 @@ approvals:
   5. task-body (DB override или repo seed);
   6. output contract block (проверки, PR/audit требования, learning mode при необходимости).
 
+Для output contract block (обязательное правило baseline):
+- указывается communication language (из effective locale запуска), обязательный для:
+  - PR title/body/comments;
+  - issue/PR replies;
+  - feedback-инструментов MCP.
+- добавляется требование регулярного progress-feedback через MCP tool `run_status_report`
+  (минимум 1 вызов после каждых 5-7 вызовов других инструментов, плюс перед долгими операциями/ожиданием).
+
 ## Модель источников
 
 Референс подхода к объёму и структуре шаблонов:

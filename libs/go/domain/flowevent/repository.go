@@ -51,6 +51,7 @@ const (
 const (
 	EventTypeRunMCPTokenIssued            EventType = "run.mcp.token.issued"
 	EventTypeRunAgentStarted              EventType = "run.agent.started"
+	EventTypeRunAgentStatusReported       EventType = "run.agent.status_reported"
 	EventTypeRunAgentSessionRestored      EventType = "run.agent.session.restored"
 	EventTypeRunAgentSessionSaved         EventType = "run.agent.session.saved"
 	EventTypeRunAgentResumeUsed           EventType = "run.agent.resume.used"

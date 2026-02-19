@@ -19,7 +19,7 @@ approvals:
 # MCP Approval and Audit Flow
 
 ## TL;DR
-- MCP в MVP baseline используется для GitHub label-операций, self-improve diagnostics tools и control tools (secret sync, database lifecycle, owner feedback).
+- MCP в MVP baseline используется для GitHub label-операций, progress-feedback (`run_status_report`), self-improve diagnostics tools и control tools (secret sync, database lifecycle, owner feedback).
 - GitHub issue/PR/comments и Kubernetes runtime-операции выполняются агентом напрямую через `gh`/`kubectl`.
 - Approval gate в MCP управляется policy matrix: для label-инструментов возможен `approval:none`, для privileged control tools — `approval:required`.
 - Все действия логируются в единый audit-контур (`flow_events`, `agent_sessions`, `links`, `token_usage`).
@@ -33,6 +33,8 @@ approvals:
   - `tools/list` возвращает только ручки, разрешённые для текущего `trigger/agent_key/runtime`;
   - `tools/call` повторно валидирует доступность ручки и отклоняет недоступные вызовы.
 - Для MCP label-инструментов (`github_labels_list|add|remove|transition`) используется `approval:none`.
+- Для MCP progress-feedback инструмента (`run_status_report`) используется `approval:none`;
+  входной `status` ограничен 100 символами для компактного статуса.
 - Для self-improve read-инструментов (`self_improve_runs_list`, `self_improve_run_lookup`, `self_improve_session_get`) используется `approval:none`.
 - Label transitions всё равно проходят через control-plane MCP, чтобы сохранять единый audit-контур.
 - Для control tools (`secret.sync.github_k8s`, `database.lifecycle`, `owner.feedback.request`) включается approver gate по policy.
@@ -130,6 +132,7 @@ approvals:
 - `mcp.tool.failed`
 - `run.enqueued`
 - `run.started`
+- `run.agent.status_reported`
 - `run.finished`
 - `run.wait.paused`
 - `run.wait.resumed`
