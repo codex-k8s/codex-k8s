@@ -32,6 +32,12 @@ const (
 	ControlPlaneService_ListRunWaits_FullMethodName                         = "/codexk8s.controlplane.v1.ControlPlaneService/ListRunWaits"
 	ControlPlaneService_GetRun_FullMethodName                               = "/codexk8s.controlplane.v1.ControlPlaneService/GetRun"
 	ControlPlaneService_GetRunLogs_FullMethodName                           = "/codexk8s.controlplane.v1.ControlPlaneService/GetRunLogs"
+	ControlPlaneService_GetRunByAccessKey_FullMethodName                    = "/codexk8s.controlplane.v1.ControlPlaneService/GetRunByAccessKey"
+	ControlPlaneService_ListRunEventsByAccessKey_FullMethodName             = "/codexk8s.controlplane.v1.ControlPlaneService/ListRunEventsByAccessKey"
+	ControlPlaneService_GetRunLogsByAccessKey_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/GetRunLogsByAccessKey"
+	ControlPlaneService_GetRunAccessKeyStatus_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/GetRunAccessKeyStatus"
+	ControlPlaneService_RegenerateRunAccessKey_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/RegenerateRunAccessKey"
+	ControlPlaneService_RevokeRunAccessKey_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/RevokeRunAccessKey"
 	ControlPlaneService_ListPendingApprovals_FullMethodName                 = "/codexk8s.controlplane.v1.ControlPlaneService/ListPendingApprovals"
 	ControlPlaneService_ResolveApprovalDecision_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/ResolveApprovalDecision"
 	ControlPlaneService_ListRunEvents_FullMethodName                        = "/codexk8s.controlplane.v1.ControlPlaneService/ListRunEvents"
@@ -57,6 +63,7 @@ const (
 	ControlPlaneService_ImportDocset_FullMethodName                         = "/codexk8s.controlplane.v1.ControlPlaneService/ImportDocset"
 	ControlPlaneService_SyncDocset_FullMethodName                           = "/codexk8s.controlplane.v1.ControlPlaneService/SyncDocset"
 	ControlPlaneService_IssueRunMCPToken_FullMethodName                     = "/codexk8s.controlplane.v1.ControlPlaneService/IssueRunMCPToken"
+	ControlPlaneService_IssueRunAccessKey_FullMethodName                    = "/codexk8s.controlplane.v1.ControlPlaneService/IssueRunAccessKey"
 	ControlPlaneService_PrepareRunEnvironment_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/PrepareRunEnvironment"
 	ControlPlaneService_ListRuntimeDeployTasks_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/ListRuntimeDeployTasks"
 	ControlPlaneService_GetRuntimeDeployTask_FullMethodName                 = "/codexk8s.controlplane.v1.ControlPlaneService/GetRuntimeDeployTask"
@@ -92,6 +99,12 @@ type ControlPlaneServiceClient interface {
 	ListRunWaits(ctx context.Context, in *ListRunWaitsRequest, opts ...grpc.CallOption) (*ListRunWaitsResponse, error)
 	GetRun(ctx context.Context, in *GetRunRequest, opts ...grpc.CallOption) (*Run, error)
 	GetRunLogs(ctx context.Context, in *GetRunLogsRequest, opts ...grpc.CallOption) (*RunLogs, error)
+	GetRunByAccessKey(ctx context.Context, in *GetRunByAccessKeyRequest, opts ...grpc.CallOption) (*Run, error)
+	ListRunEventsByAccessKey(ctx context.Context, in *ListRunEventsByAccessKeyRequest, opts ...grpc.CallOption) (*ListRunEventsResponse, error)
+	GetRunLogsByAccessKey(ctx context.Context, in *GetRunLogsByAccessKeyRequest, opts ...grpc.CallOption) (*RunLogs, error)
+	GetRunAccessKeyStatus(ctx context.Context, in *GetRunAccessKeyStatusRequest, opts ...grpc.CallOption) (*RunAccessKeyStatus, error)
+	RegenerateRunAccessKey(ctx context.Context, in *RegenerateRunAccessKeyRequest, opts ...grpc.CallOption) (*RegenerateRunAccessKeyResponse, error)
+	RevokeRunAccessKey(ctx context.Context, in *RevokeRunAccessKeyRequest, opts ...grpc.CallOption) (*RevokeRunAccessKeyResponse, error)
 	ListPendingApprovals(ctx context.Context, in *ListPendingApprovalsRequest, opts ...grpc.CallOption) (*ListPendingApprovalsResponse, error)
 	ResolveApprovalDecision(ctx context.Context, in *ResolveApprovalDecisionRequest, opts ...grpc.CallOption) (*ResolveApprovalDecisionResponse, error)
 	ListRunEvents(ctx context.Context, in *ListRunEventsRequest, opts ...grpc.CallOption) (*ListRunEventsResponse, error)
@@ -117,6 +130,7 @@ type ControlPlaneServiceClient interface {
 	ImportDocset(ctx context.Context, in *ImportDocsetRequest, opts ...grpc.CallOption) (*ImportDocsetResponse, error)
 	SyncDocset(ctx context.Context, in *SyncDocsetRequest, opts ...grpc.CallOption) (*SyncDocsetResponse, error)
 	IssueRunMCPToken(ctx context.Context, in *IssueRunMCPTokenRequest, opts ...grpc.CallOption) (*IssueRunMCPTokenResponse, error)
+	IssueRunAccessKey(ctx context.Context, in *IssueRunAccessKeyRequest, opts ...grpc.CallOption) (*IssueRunAccessKeyResponse, error)
 	PrepareRunEnvironment(ctx context.Context, in *PrepareRunEnvironmentRequest, opts ...grpc.CallOption) (*PrepareRunEnvironmentResponse, error)
 	ListRuntimeDeployTasks(ctx context.Context, in *ListRuntimeDeployTasksRequest, opts ...grpc.CallOption) (*ListRuntimeDeployTasksResponse, error)
 	GetRuntimeDeployTask(ctx context.Context, in *GetRuntimeDeployTaskRequest, opts ...grpc.CallOption) (*RuntimeDeployTask, error)
@@ -257,6 +271,66 @@ func (c *controlPlaneServiceClient) GetRunLogs(ctx context.Context, in *GetRunLo
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RunLogs)
 	err := c.cc.Invoke(ctx, ControlPlaneService_GetRunLogs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) GetRunByAccessKey(ctx context.Context, in *GetRunByAccessKeyRequest, opts ...grpc.CallOption) (*Run, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Run)
+	err := c.cc.Invoke(ctx, ControlPlaneService_GetRunByAccessKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) ListRunEventsByAccessKey(ctx context.Context, in *ListRunEventsByAccessKeyRequest, opts ...grpc.CallOption) (*ListRunEventsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListRunEventsResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ListRunEventsByAccessKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) GetRunLogsByAccessKey(ctx context.Context, in *GetRunLogsByAccessKeyRequest, opts ...grpc.CallOption) (*RunLogs, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RunLogs)
+	err := c.cc.Invoke(ctx, ControlPlaneService_GetRunLogsByAccessKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) GetRunAccessKeyStatus(ctx context.Context, in *GetRunAccessKeyStatusRequest, opts ...grpc.CallOption) (*RunAccessKeyStatus, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RunAccessKeyStatus)
+	err := c.cc.Invoke(ctx, ControlPlaneService_GetRunAccessKeyStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) RegenerateRunAccessKey(ctx context.Context, in *RegenerateRunAccessKeyRequest, opts ...grpc.CallOption) (*RegenerateRunAccessKeyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RegenerateRunAccessKeyResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_RegenerateRunAccessKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) RevokeRunAccessKey(ctx context.Context, in *RevokeRunAccessKeyRequest, opts ...grpc.CallOption) (*RevokeRunAccessKeyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RevokeRunAccessKeyResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_RevokeRunAccessKey_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -513,6 +587,16 @@ func (c *controlPlaneServiceClient) IssueRunMCPToken(ctx context.Context, in *Is
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) IssueRunAccessKey(ctx context.Context, in *IssueRunAccessKeyRequest, opts ...grpc.CallOption) (*IssueRunAccessKeyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IssueRunAccessKeyResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_IssueRunAccessKey_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) PrepareRunEnvironment(ctx context.Context, in *PrepareRunEnvironmentRequest, opts ...grpc.CallOption) (*PrepareRunEnvironmentResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PrepareRunEnvironmentResponse)
@@ -681,6 +765,12 @@ type ControlPlaneServiceServer interface {
 	ListRunWaits(context.Context, *ListRunWaitsRequest) (*ListRunWaitsResponse, error)
 	GetRun(context.Context, *GetRunRequest) (*Run, error)
 	GetRunLogs(context.Context, *GetRunLogsRequest) (*RunLogs, error)
+	GetRunByAccessKey(context.Context, *GetRunByAccessKeyRequest) (*Run, error)
+	ListRunEventsByAccessKey(context.Context, *ListRunEventsByAccessKeyRequest) (*ListRunEventsResponse, error)
+	GetRunLogsByAccessKey(context.Context, *GetRunLogsByAccessKeyRequest) (*RunLogs, error)
+	GetRunAccessKeyStatus(context.Context, *GetRunAccessKeyStatusRequest) (*RunAccessKeyStatus, error)
+	RegenerateRunAccessKey(context.Context, *RegenerateRunAccessKeyRequest) (*RegenerateRunAccessKeyResponse, error)
+	RevokeRunAccessKey(context.Context, *RevokeRunAccessKeyRequest) (*RevokeRunAccessKeyResponse, error)
 	ListPendingApprovals(context.Context, *ListPendingApprovalsRequest) (*ListPendingApprovalsResponse, error)
 	ResolveApprovalDecision(context.Context, *ResolveApprovalDecisionRequest) (*ResolveApprovalDecisionResponse, error)
 	ListRunEvents(context.Context, *ListRunEventsRequest) (*ListRunEventsResponse, error)
@@ -706,6 +796,7 @@ type ControlPlaneServiceServer interface {
 	ImportDocset(context.Context, *ImportDocsetRequest) (*ImportDocsetResponse, error)
 	SyncDocset(context.Context, *SyncDocsetRequest) (*SyncDocsetResponse, error)
 	IssueRunMCPToken(context.Context, *IssueRunMCPTokenRequest) (*IssueRunMCPTokenResponse, error)
+	IssueRunAccessKey(context.Context, *IssueRunAccessKeyRequest) (*IssueRunAccessKeyResponse, error)
 	PrepareRunEnvironment(context.Context, *PrepareRunEnvironmentRequest) (*PrepareRunEnvironmentResponse, error)
 	ListRuntimeDeployTasks(context.Context, *ListRuntimeDeployTasksRequest) (*ListRuntimeDeployTasksResponse, error)
 	GetRuntimeDeployTask(context.Context, *GetRuntimeDeployTaskRequest) (*RuntimeDeployTask, error)
@@ -767,6 +858,24 @@ func (UnimplementedControlPlaneServiceServer) GetRun(context.Context, *GetRunReq
 }
 func (UnimplementedControlPlaneServiceServer) GetRunLogs(context.Context, *GetRunLogsRequest) (*RunLogs, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRunLogs not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) GetRunByAccessKey(context.Context, *GetRunByAccessKeyRequest) (*Run, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRunByAccessKey not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ListRunEventsByAccessKey(context.Context, *ListRunEventsByAccessKeyRequest) (*ListRunEventsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRunEventsByAccessKey not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) GetRunLogsByAccessKey(context.Context, *GetRunLogsByAccessKeyRequest) (*RunLogs, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRunLogsByAccessKey not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) GetRunAccessKeyStatus(context.Context, *GetRunAccessKeyStatusRequest) (*RunAccessKeyStatus, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRunAccessKeyStatus not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) RegenerateRunAccessKey(context.Context, *RegenerateRunAccessKeyRequest) (*RegenerateRunAccessKeyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegenerateRunAccessKey not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) RevokeRunAccessKey(context.Context, *RevokeRunAccessKeyRequest) (*RevokeRunAccessKeyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RevokeRunAccessKey not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) ListPendingApprovals(context.Context, *ListPendingApprovalsRequest) (*ListPendingApprovalsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPendingApprovals not implemented")
@@ -842,6 +951,9 @@ func (UnimplementedControlPlaneServiceServer) SyncDocset(context.Context, *SyncD
 }
 func (UnimplementedControlPlaneServiceServer) IssueRunMCPToken(context.Context, *IssueRunMCPTokenRequest) (*IssueRunMCPTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IssueRunMCPToken not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) IssueRunAccessKey(context.Context, *IssueRunAccessKeyRequest) (*IssueRunAccessKeyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IssueRunAccessKey not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) PrepareRunEnvironment(context.Context, *PrepareRunEnvironmentRequest) (*PrepareRunEnvironmentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PrepareRunEnvironment not implemented")
@@ -1121,6 +1233,114 @@ func _ControlPlaneService_GetRunLogs_Handler(srv interface{}, ctx context.Contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ControlPlaneServiceServer).GetRunLogs(ctx, req.(*GetRunLogsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_GetRunByAccessKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRunByAccessKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).GetRunByAccessKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_GetRunByAccessKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).GetRunByAccessKey(ctx, req.(*GetRunByAccessKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_ListRunEventsByAccessKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRunEventsByAccessKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ListRunEventsByAccessKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ListRunEventsByAccessKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ListRunEventsByAccessKey(ctx, req.(*ListRunEventsByAccessKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_GetRunLogsByAccessKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRunLogsByAccessKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).GetRunLogsByAccessKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_GetRunLogsByAccessKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).GetRunLogsByAccessKey(ctx, req.(*GetRunLogsByAccessKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_GetRunAccessKeyStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRunAccessKeyStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).GetRunAccessKeyStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_GetRunAccessKeyStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).GetRunAccessKeyStatus(ctx, req.(*GetRunAccessKeyStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_RegenerateRunAccessKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegenerateRunAccessKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).RegenerateRunAccessKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_RegenerateRunAccessKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).RegenerateRunAccessKey(ctx, req.(*RegenerateRunAccessKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_RevokeRunAccessKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeRunAccessKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).RevokeRunAccessKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_RevokeRunAccessKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).RevokeRunAccessKey(ctx, req.(*RevokeRunAccessKeyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1575,6 +1795,24 @@ func _ControlPlaneService_IssueRunMCPToken_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_IssueRunAccessKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IssueRunAccessKeyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).IssueRunAccessKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_IssueRunAccessKey_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).IssueRunAccessKey(ctx, req.(*IssueRunAccessKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_PrepareRunEnvironment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PrepareRunEnvironmentRequest)
 	if err := dec(in); err != nil {
@@ -1901,6 +2139,30 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ControlPlaneService_GetRunLogs_Handler,
 		},
 		{
+			MethodName: "GetRunByAccessKey",
+			Handler:    _ControlPlaneService_GetRunByAccessKey_Handler,
+		},
+		{
+			MethodName: "ListRunEventsByAccessKey",
+			Handler:    _ControlPlaneService_ListRunEventsByAccessKey_Handler,
+		},
+		{
+			MethodName: "GetRunLogsByAccessKey",
+			Handler:    _ControlPlaneService_GetRunLogsByAccessKey_Handler,
+		},
+		{
+			MethodName: "GetRunAccessKeyStatus",
+			Handler:    _ControlPlaneService_GetRunAccessKeyStatus_Handler,
+		},
+		{
+			MethodName: "RegenerateRunAccessKey",
+			Handler:    _ControlPlaneService_RegenerateRunAccessKey_Handler,
+		},
+		{
+			MethodName: "RevokeRunAccessKey",
+			Handler:    _ControlPlaneService_RevokeRunAccessKey_Handler,
+		},
+		{
 			MethodName: "ListPendingApprovals",
 			Handler:    _ControlPlaneService_ListPendingApprovals_Handler,
 		},
@@ -1999,6 +2261,10 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IssueRunMCPToken",
 			Handler:    _ControlPlaneService_IssueRunMCPToken_Handler,
+		},
+		{
+			MethodName: "IssueRunAccessKey",
+			Handler:    _ControlPlaneService_IssueRunAccessKey_Handler,
 		},
 		{
 			MethodName: "PrepareRunEnvironment",

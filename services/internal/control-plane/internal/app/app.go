@@ -29,6 +29,7 @@ import (
 	codexauthdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/codexauth"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	registryimagesdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/registryimages"
+	runaccessdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runaccess"
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
 	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
 	runtimeerrordomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimeerror"
@@ -47,6 +48,7 @@ import (
 	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projectmember"
 	projecttokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projecttoken"
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/repocfg"
+	runaccesskeyrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/runaccesskey"
 	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/runtimedeploytask"
 	runtimeerrorrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/runtimeerror"
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/staffrun"
@@ -95,6 +97,7 @@ func Run() error {
 	platformTokens := platformtokenrepo.NewRepository(pgxPool)
 	projectTokens := projecttokenrepo.NewRepository(pgxPool)
 	configEntries := configentryrepo.NewRepository(pgxPool)
+	runAccessKeys := runaccesskeyrepo.NewRepository(pgxPool)
 	mcpActionRequests := mcpactionrequestrepo.NewRepository(pgxPool)
 	projectDatabases := projectdatabaserepo.NewRepository(pgxPool)
 	runtimeDeployTasks := runtimedeploytaskrepo.NewRepository(pgxPool)
@@ -189,6 +192,30 @@ func Run() error {
 	})
 	if err != nil {
 		return fmt.Errorf("init runstatus domain service: %w", err)
+	}
+	runAccessDefaultTTL, err := time.ParseDuration(cfg.RunAccessKeyDefaultTTL)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_RUN_ACCESS_KEY_DEFAULT_TTL=%q: %w", cfg.RunAccessKeyDefaultTTL, err)
+	}
+	runAccessMinTTL, err := time.ParseDuration(cfg.RunAccessKeyMinTTL)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_RUN_ACCESS_KEY_MIN_TTL=%q: %w", cfg.RunAccessKeyMinTTL, err)
+	}
+	runAccessMaxTTL, err := time.ParseDuration(cfg.RunAccessKeyMaxTTL)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_RUN_ACCESS_KEY_MAX_TTL=%q: %w", cfg.RunAccessKeyMaxTTL, err)
+	}
+	runAccessService, err := runaccessdomain.NewService(runaccessdomain.Config{
+		DefaultTTL: runAccessDefaultTTL,
+		MinTTL:     runAccessMinTTL,
+		MaxTTL:     runAccessMaxTTL,
+	}, runaccessdomain.Dependencies{
+		Keys:       runAccessKeys,
+		Runs:       runs,
+		FlowEvents: flowEvents,
+	})
+	if err != nil {
+		return fmt.Errorf("init run access service: %w", err)
 	}
 	runtimeDeployRolloutTimeout, err := time.ParseDuration(cfg.RuntimeDeployRolloutTimeout)
 	if err != nil {
@@ -321,7 +348,7 @@ func Run() error {
 		},
 		ProtectedProjectIDs:    bootstrapSeed.ProtectedProjectIDs,
 		ProtectedRepositoryIDs: bootstrapSeed.ProtectedRepositoryIDs,
-	}, users, projects, members, repos, projectTokens, configEntries, feedback, runs, runtimeDeployTasks, runtimeErrors, registryImagesService, k8sClient, tokenCrypto, platformTokens, githubRepoProvider, githubMgmtClient, runStatusService)
+	}, users, projects, members, repos, projectTokens, configEntries, feedback, runs, runtimeDeployTasks, runtimeErrors, registryImagesService, k8sClient, runAccessService, tokenCrypto, platformTokens, githubRepoProvider, githubMgmtClient, runStatusService)
 
 	// Ensure bootstrap users exist so that the first login can be matched by email.
 	if _, err := users.EnsureOwner(runCtx, cfg.BootstrapOwnerEmail); err != nil {
@@ -357,6 +384,7 @@ func Run() error {
 		RuntimeDeploy:  runtimeDeployService,
 		RuntimeErrors:  runtimeErrorService,
 		MCP:            mcpService,
+		RunAccess:      runAccessService,
 		CodexAuth:      codexAuthService,
 		Logger:         logger,
 	}))

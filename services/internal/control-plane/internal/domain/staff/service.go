@@ -14,6 +14,7 @@ import (
 	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
 	runtimeerrorrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimeerror"
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/staffrun"
+	runaccessdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runaccess"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
@@ -55,6 +56,7 @@ type Service struct {
 	github         provider.RepositoryProvider
 	githubMgmt     githubManagementClient
 	runStatus      runNamespaceService
+	runAccess      runAccessService
 }
 
 type platformTokensRepository interface {
@@ -77,6 +79,12 @@ type registryImageService interface {
 	List(ctx context.Context, filter querytypes.RegistryImageListFilter) ([]entitytypes.RegistryImageRepository, error)
 	DeleteTag(ctx context.Context, params querytypes.RegistryImageDeleteParams) (entitytypes.RegistryImageDeleteResult, error)
 	Cleanup(ctx context.Context, filter querytypes.RegistryImageCleanupFilter) (entitytypes.RegistryImageCleanupResult, error)
+}
+
+type runAccessService interface {
+	GetStatus(ctx context.Context, runID string) (runaccessdomain.KeyStatus, error)
+	Regenerate(ctx context.Context, params runaccessdomain.IssueParams) (runaccessdomain.IssuedKey, error)
+	Revoke(ctx context.Context, runID string, revokedBy string) (runaccessdomain.KeyStatus, error)
 }
 
 type kubernetesConfigSync interface {
@@ -103,6 +111,7 @@ func NewService(
 	runtimeErrors runtimeerrorrepo.Repository,
 	images registryImageService,
 	k8s kubernetesConfigSync,
+	runAccess runAccessService,
 	tokencrypt *tokencrypt.Service,
 	platformTokens platformTokensRepository,
 	github provider.RepositoryProvider,
@@ -123,6 +132,7 @@ func NewService(
 		runtimeErrors:  runtimeErrors,
 		images:         images,
 		k8s:            k8s,
+		runAccess:      runAccess,
 		tokencrypt:     tokencrypt,
 		platformTokens: platformTokens,
 		github:         github,

@@ -121,6 +121,91 @@
           </VCardText>
         </VCard>
 
+        <VCard class="mt-4" variant="outlined">
+          <VCardTitle class="text-subtitle-1 d-flex align-center justify-space-between ga-2 flex-wrap">
+            <span>{{ t("pages.runDetails.accessKey.title") }}</span>
+            <VChip size="small" variant="tonal" class="font-weight-bold" :color="runAccessKeyStatusColor">
+              {{ runAccessKeyStatusLabel }}
+            </VChip>
+          </VCardTitle>
+          <VCardText>
+            <VAlert v-if="details.accessKeyError" type="error" variant="tonal" class="mb-4">
+              {{ t(details.accessKeyError.messageKey) }}
+            </VAlert>
+
+            <div class="d-flex flex-column ga-2">
+              <div class="text-body-2">
+                <strong>{{ t("pages.runDetails.accessKey.issuedAt") }}:</strong>
+                <span class="mono">{{ formatDateTime(details.runAccessKeyStatus?.issued_at, locale) }}</span>
+              </div>
+              <div class="text-body-2">
+                <strong>{{ t("pages.runDetails.accessKey.expiresAt") }}:</strong>
+                <span class="mono">{{ formatDateTime(details.runAccessKeyStatus?.expires_at, locale) }}</span>
+              </div>
+              <div class="text-body-2">
+                <strong>{{ t("pages.runDetails.accessKey.revokedAt") }}:</strong>
+                <span class="mono">{{ formatDateTime(details.runAccessKeyStatus?.revoked_at, locale) }}</span>
+              </div>
+              <div class="text-body-2">
+                <strong>{{ t("pages.runDetails.accessKey.lastUsedAt") }}:</strong>
+                <span class="mono">{{ formatDateTime(details.runAccessKeyStatus?.last_used_at, locale) }}</span>
+              </div>
+              <div class="text-body-2">
+                <strong>{{ t("pages.runDetails.accessKey.runtimeMode") }}:</strong>
+                <span class="mono">{{ details.runAccessKeyStatus?.runtime_mode || "-" }}</span>
+              </div>
+              <div class="text-body-2">
+                <strong>{{ t("pages.runDetails.accessKey.targetEnv") }}:</strong>
+                <span class="mono">{{ details.runAccessKeyStatus?.target_env || "-" }}</span>
+              </div>
+              <div class="text-body-2">
+                <strong>{{ t("pages.runDetails.accessKey.namespace") }}:</strong>
+                <span class="mono">{{ details.runAccessKeyStatus?.namespace || "-" }}</span>
+              </div>
+              <div class="text-body-2">
+                <strong>{{ t("pages.runDetails.accessKey.hasKey") }}:</strong>
+                <span class="mono">
+                  {{
+                    details.runAccessKeyStatus?.has_key
+                      ? t("pages.runDetails.accessKey.yes")
+                      : t("pages.runDetails.accessKey.no")
+                  }}
+                </span>
+              </div>
+            </div>
+
+            <VAlert v-if="details.runAccessKeyPlaintext" type="warning" variant="tonal" class="mt-4">
+              <div class="d-flex flex-column ga-2">
+                <div class="text-body-2">{{ t("pages.runDetails.accessKey.plaintextHint") }}</div>
+                <CopyChip
+                  :label="t('pages.runDetails.accessKey.plaintextLabel')"
+                  :value="details.runAccessKeyPlaintext"
+                  icon="mdi-key-variant"
+                />
+              </div>
+            </VAlert>
+          </VCardText>
+          <VCardActions class="justify-end ga-2">
+            <AdaptiveBtn
+              variant="tonal"
+              color="primary"
+              icon="mdi-key-plus"
+              :label="t('pages.runDetails.accessKey.regenerate')"
+              :loading="details.regeneratingAccessKey"
+              @click="regenerateAccessKey"
+            />
+            <AdaptiveBtn
+              variant="tonal"
+              color="error"
+              icon="mdi-key-remove"
+              :label="t('pages.runDetails.accessKey.revoke')"
+              :loading="details.revokingAccessKey"
+              :disabled="!canRevokeRunAccessKey"
+              @click="revokeAccessKey"
+            />
+          </VCardActions>
+        </VCard>
+
         <RunTimeline class="mt-4" :run="details.run" :locale="locale" />
       </VCol>
 
@@ -254,6 +339,14 @@ const snackbar = useSnackbarStore();
 
 const confirmDeleteNamespaceOpen = ref(false);
 const canDeleteNamespace = computed(() => Boolean(details.run?.job_exists && details.run?.namespace));
+const canRevokeRunAccessKey = computed(() => details.runAccessKeyStatus?.status === "active");
+const runAccessKeyStatus = computed(() => details.runAccessKeyStatus?.status || "missing");
+const runAccessKeyStatusLabel = computed(() => t(`pages.runDetails.accessKey.statusValues.${runAccessKeyStatus.value}`));
+const runAccessKeyStatusColor = computed(() => {
+  if (runAccessKeyStatus.value === "active") return "success";
+  if (runAccessKeyStatus.value === "missing") return "default";
+  return "warning";
+});
 
 type CodexAuthRequiredPayload = { verification_url: string; user_code: string };
 
@@ -329,6 +422,20 @@ async function doDeleteNamespace() {
   await details.deleteNamespace(props.runId);
   if (!details.deleteNamespaceError) {
     snackbar.success(t("common.saved"));
+  }
+}
+
+async function regenerateAccessKey(): Promise<void> {
+  await details.regenerateAccessKey(props.runId);
+  if (!details.accessKeyError) {
+    snackbar.success(t("pages.runDetails.accessKey.regenerated"));
+  }
+}
+
+async function revokeAccessKey(): Promise<void> {
+  await details.revokeAccessKey(props.runId);
+  if (!details.accessKeyError) {
+    snackbar.success(t("pages.runDetails.accessKey.revoked"));
   }
 }
 

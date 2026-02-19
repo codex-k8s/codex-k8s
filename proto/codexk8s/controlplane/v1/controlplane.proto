@@ -205,6 +205,87 @@ message RunLogs {
   repeated string tail_lines = 5;
 }
 
+message RunAccessKeyStatus {
+  string run_id = 1;
+  optional string project_id = 2;
+  optional string correlation_id = 3;
+  optional string runtime_mode = 4;
+  optional string namespace = 5;
+  optional string target_env = 6;
+  string status = 7;
+  google.protobuf.Timestamp issued_at = 8;
+  google.protobuf.Timestamp expires_at = 9;
+  google.protobuf.Timestamp revoked_at = 10;
+  google.protobuf.Timestamp last_used_at = 11;
+  optional string created_by = 12;
+  bool has_key = 13;
+}
+
+message IssueRunAccessKeyRequest {
+  string run_id = 1;
+  optional string runtime_mode = 2;
+  optional string namespace = 3;
+  optional string target_env = 4;
+  optional string created_by = 5;
+  int32 ttl_seconds = 6;
+}
+
+message IssueRunAccessKeyResponse {
+  string access_key = 1;
+  RunAccessKeyStatus status = 2;
+}
+
+message GetRunAccessKeyStatusRequest {
+  Principal principal = 1;
+  string run_id = 2;
+}
+
+message RegenerateRunAccessKeyRequest {
+  Principal principal = 1;
+  string run_id = 2;
+  int32 ttl_seconds = 3;
+}
+
+message RegenerateRunAccessKeyResponse {
+  string access_key = 1;
+  RunAccessKeyStatus status = 2;
+}
+
+message RevokeRunAccessKeyRequest {
+  Principal principal = 1;
+  string run_id = 2;
+}
+
+message RevokeRunAccessKeyResponse {
+  RunAccessKeyStatus status = 1;
+}
+
+message GetRunByAccessKeyRequest {
+  string run_id = 1;
+  string access_key = 2;
+  optional string namespace = 3;
+  optional string target_env = 4;
+  optional string runtime_mode = 5;
+}
+
+message ListRunEventsByAccessKeyRequest {
+  string run_id = 1;
+  string access_key = 2;
+  optional string namespace = 3;
+  optional string target_env = 4;
+  optional string runtime_mode = 5;
+  int32 limit = 6;
+}
+
+message GetRunLogsByAccessKeyRequest {
+  string run_id = 1;
+  string access_key = 2;
+  optional string namespace = 3;
+  optional string target_env = 4;
+  optional string runtime_mode = 5;
+  int32 tail_lines = 6;
+}
+
 message FlowEvent {
   string correlation_id = 1;
   string event_type = 2;
@@ -815,6 +896,12 @@ service ControlPlaneService {
   rpc ListRunWaits(ListRunWaitsRequest) returns (ListRunWaitsResponse);
   rpc GetRun(GetRunRequest) returns (Run);
   rpc GetRunLogs(GetRunLogsRequest) returns (RunLogs);
+  rpc GetRunByAccessKey(GetRunByAccessKeyRequest) returns (Run);
+  rpc ListRunEventsByAccessKey(ListRunEventsByAccessKeyRequest) returns (ListRunEventsResponse);
+  rpc GetRunLogsByAccessKey(GetRunLogsByAccessKeyRequest) returns (RunLogs);
+  rpc GetRunAccessKeyStatus(GetRunAccessKeyStatusRequest) returns (RunAccessKeyStatus);
+  rpc RegenerateRunAccessKey(RegenerateRunAccessKeyRequest) returns (RegenerateRunAccessKeyResponse);
+  rpc RevokeRunAccessKey(RevokeRunAccessKeyRequest) returns (RevokeRunAccessKeyResponse);
   rpc ListPendingApprovals(ListPendingApprovalsRequest) returns (ListPendingApprovalsResponse);
   rpc ResolveApprovalDecision(ResolveApprovalDecisionRequest) returns (ResolveApprovalDecisionResponse);
   rpc ListRunEvents(ListRunEventsRequest) returns (ListRunEventsResponse);
@@ -846,6 +933,7 @@ service ControlPlaneService {
   rpc ImportDocset(ImportDocsetRequest) returns (ImportDocsetResponse);
   rpc SyncDocset(SyncDocsetRequest) returns (SyncDocsetResponse);
   rpc IssueRunMCPToken(IssueRunMCPTokenRequest) returns (IssueRunMCPTokenResponse);
+  rpc IssueRunAccessKey(IssueRunAccessKeyRequest) returns (IssueRunAccessKeyResponse);
   rpc PrepareRunEnvironment(PrepareRunEnvironmentRequest) returns (PrepareRunEnvironmentResponse);
   rpc ListRuntimeDeployTasks(ListRuntimeDeployTasksRequest) returns (ListRuntimeDeployTasksResponse);
   rpc GetRuntimeDeployTask(GetRuntimeDeployTaskRequest) returns (RuntimeDeployTask);

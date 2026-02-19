@@ -4,19 +4,23 @@ import { normalizeApiError, type ApiError } from "../../shared/api/errors";
 import {
   deleteRunNamespace,
   getRun,
+  getRunAccessKeyStatus,
   getRunLogs,
   listPendingApprovals,
   listRunJobs,
   listRunEvents,
   listRunWaits,
   listRuns,
+  regenerateRunAccessKey,
   resolveApprovalDecision,
+  revokeRunAccessKey,
   type RunListFilters,
   type RunWaitFilters,
 } from "./api";
 import type {
   ApprovalRequest,
   FlowEvent,
+  RunAccessKeyStatus,
   ResolveApprovalDecisionResponse,
   Run,
   RunLogs,
@@ -160,21 +164,30 @@ export const useRunDetailsStore = defineStore("runDetails", {
     error: null as ApiError | null,
     events: [] as FlowEvent[],
     logs: null as RunLogs | null,
+    runAccessKeyStatus: null as RunAccessKeyStatus | null,
+    runAccessKeyPlaintext: "" as string,
+    regeneratingAccessKey: false,
+    revokingAccessKey: false,
+    accessKeyError: null as ApiError | null,
     deletingNamespace: false,
     deleteNamespaceError: null as ApiError | null,
     namespaceDeleteResult: null as RunNamespaceCleanupResponse | null,
     errorTimerId: null as number | null,
+    accessKeyErrorTimerId: null as number | null,
     deleteNamespaceErrorTimerId: null as number | null,
   }),
   actions: {
-    clearErrorTimer(timerField: "errorTimerId" | "deleteNamespaceErrorTimerId"): void {
+    clearErrorTimer(timerField: "errorTimerId" | "accessKeyErrorTimerId" | "deleteNamespaceErrorTimerId"): void {
       const timerId = this[timerField];
       if (timerId !== null) {
         window.clearTimeout(timerId);
         this[timerField] = null;
       }
     },
-    scheduleErrorHide(errorField: "error" | "deleteNamespaceError", timerField: "errorTimerId" | "deleteNamespaceErrorTimerId"): void {
+    scheduleErrorHide(
+      errorField: "error" | "accessKeyError" | "deleteNamespaceError",
+      timerField: "errorTimerId" | "accessKeyErrorTimerId" | "deleteNamespaceErrorTimerId",
+    ): void {
       this.clearErrorTimer(timerField);
       this[timerField] = window.setTimeout(() => {
         this[errorField] = null;
@@ -194,10 +207,14 @@ export const useRunDetailsStore = defineStore("runDetails", {
         this.run = run;
         this.events = [...events].sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0));
         this.logs = logs;
+        this.runAccessKeyStatus = await getRunAccessKeyStatus(runId);
+        this.runAccessKeyPlaintext = "";
       } catch (e) {
         this.run = null;
         this.events = [];
         this.logs = null;
+        this.runAccessKeyStatus = null;
+        this.runAccessKeyPlaintext = "";
         this.error = normalizeApiError(e);
         this.scheduleErrorHide("error", "errorTimerId");
       } finally {
@@ -211,6 +228,35 @@ export const useRunDetailsStore = defineStore("runDetails", {
       } catch (e) {
         this.error = normalizeApiError(e);
         this.scheduleErrorHide("error", "errorTimerId");
+      }
+    },
+
+    async regenerateAccessKey(runId: string, ttlSeconds?: number): Promise<void> {
+      this.regeneratingAccessKey = true;
+      this.accessKeyError = null;
+      try {
+        const issued = await regenerateRunAccessKey(runId, ttlSeconds);
+        this.runAccessKeyStatus = issued.status;
+        this.runAccessKeyPlaintext = issued.access_key;
+      } catch (e) {
+        this.accessKeyError = normalizeApiError(e);
+        this.scheduleErrorHide("accessKeyError", "accessKeyErrorTimerId");
+      } finally {
+        this.regeneratingAccessKey = false;
+      }
+    },
+
+    async revokeAccessKey(runId: string): Promise<void> {
+      this.revokingAccessKey = true;
+      this.accessKeyError = null;
+      try {
+        this.runAccessKeyStatus = await revokeRunAccessKey(runId);
+        this.runAccessKeyPlaintext = "";
+      } catch (e) {
+        this.accessKeyError = normalizeApiError(e);
+        this.scheduleErrorHide("accessKeyError", "accessKeyErrorTimerId");
+      } finally {
+        this.revokingAccessKey = false;
       }
     },
 

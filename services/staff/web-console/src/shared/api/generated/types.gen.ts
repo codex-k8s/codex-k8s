@@ -125,6 +125,31 @@ export type RunLogs = {
     tail_lines: Array<string>;
 };
 
+export type RunAccessKeyStatus = {
+    run_id: string;
+    project_id?: string | null;
+    correlation_id?: string | null;
+    runtime_mode?: string | null;
+    namespace?: string | null;
+    target_env?: string | null;
+    status: 'active' | 'revoked' | 'expired' | 'missing';
+    issued_at?: string | null;
+    expires_at?: string | null;
+    revoked_at?: string | null;
+    last_used_at?: string | null;
+    created_by?: string | null;
+    has_key: boolean;
+};
+
+export type RunAccessKeyIssueResponse = {
+    access_key: string;
+    status: RunAccessKeyStatus;
+};
+
+export type RegenerateRunAccessKeyRequest = {
+    ttl_seconds?: number;
+};
+
 export type RuntimeDeployTaskLog = {
     stage: string;
     level: 'info' | 'warn' | 'error';
@@ -457,6 +482,14 @@ export type AgentKeyFilter = string;
 export type WaitStateFilter = string;
 
 export type TailLines = number;
+
+export type RunAccessKeyQuery = string;
+
+export type BypassNamespaceQuery = string;
+
+export type BypassTargetEnvQuery = string;
+
+export type BypassRuntimeModeQuery = string;
 
 export type McpCallbackToken = string;
 
@@ -807,6 +840,128 @@ export type GetProjectResponses = {
 
 export type GetProjectResponse = GetProjectResponses[keyof GetProjectResponses];
 
+export type GetRunByAccessKeyData = {
+    body?: never;
+    path: {
+        run_id: string;
+    };
+    query: {
+        access_key: string;
+        namespace?: string;
+        target_env?: string;
+        runtime_mode?: string;
+    };
+    url: '/api/v1/runs/{run_id}/bypass';
+};
+
+export type GetRunByAccessKeyErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type GetRunByAccessKeyError = GetRunByAccessKeyErrors[keyof GetRunByAccessKeyErrors];
+
+export type GetRunByAccessKeyResponses = {
+    /**
+     * Run details
+     */
+    200: Run;
+};
+
+export type GetRunByAccessKeyResponse = GetRunByAccessKeyResponses[keyof GetRunByAccessKeyResponses];
+
+export type ListRunEventsByAccessKeyData = {
+    body?: never;
+    path: {
+        run_id: string;
+    };
+    query: {
+        access_key: string;
+        namespace?: string;
+        target_env?: string;
+        runtime_mode?: string;
+        limit?: number;
+    };
+    url: '/api/v1/runs/{run_id}/bypass/events';
+};
+
+export type ListRunEventsByAccessKeyErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type ListRunEventsByAccessKeyError = ListRunEventsByAccessKeyErrors[keyof ListRunEventsByAccessKeyErrors];
+
+export type ListRunEventsByAccessKeyResponses = {
+    /**
+     * Flow events list
+     */
+    200: FlowEventItemsResponse;
+};
+
+export type ListRunEventsByAccessKeyResponse = ListRunEventsByAccessKeyResponses[keyof ListRunEventsByAccessKeyResponses];
+
+export type GetRunLogsByAccessKeyData = {
+    body?: never;
+    path: {
+        run_id: string;
+    };
+    query: {
+        access_key: string;
+        namespace?: string;
+        target_env?: string;
+        runtime_mode?: string;
+        tail_lines?: number;
+    };
+    url: '/api/v1/runs/{run_id}/bypass/logs';
+};
+
+export type GetRunLogsByAccessKeyErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type GetRunLogsByAccessKeyError = GetRunLogsByAccessKeyErrors[keyof GetRunLogsByAccessKeyErrors];
+
+export type GetRunLogsByAccessKeyResponses = {
+    /**
+     * Run logs snapshot
+     */
+    200: RunLogs;
+};
+
+export type GetRunLogsByAccessKeyResponse = GetRunLogsByAccessKeyResponses[keyof GetRunLogsByAccessKeyResponses];
+
 export type ListRunsData = {
     body?: never;
     path?: never;
@@ -1015,6 +1170,123 @@ export type GetRunResponses = {
 };
 
 export type GetRunResponse = GetRunResponses[keyof GetRunResponses];
+
+export type GetRunAccessKeyStatusData = {
+    body?: never;
+    path: {
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/runs/{run_id}/access-key';
+};
+
+export type GetRunAccessKeyStatusErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+};
+
+export type GetRunAccessKeyStatusError = GetRunAccessKeyStatusErrors[keyof GetRunAccessKeyStatusErrors];
+
+export type GetRunAccessKeyStatusResponses = {
+    /**
+     * Run access key status
+     */
+    200: RunAccessKeyStatus;
+};
+
+export type GetRunAccessKeyStatusResponse = GetRunAccessKeyStatusResponses[keyof GetRunAccessKeyStatusResponses];
+
+export type RegenerateRunAccessKeyData = {
+    body?: RegenerateRunAccessKeyRequest;
+    path: {
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/runs/{run_id}/access-key/regenerate';
+};
+
+export type RegenerateRunAccessKeyErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+};
+
+export type RegenerateRunAccessKeyError = RegenerateRunAccessKeyErrors[keyof RegenerateRunAccessKeyErrors];
+
+export type RegenerateRunAccessKeyResponses = {
+    /**
+     * Run access key rotated
+     */
+    200: RunAccessKeyIssueResponse;
+};
+
+export type RegenerateRunAccessKeyResponse = RegenerateRunAccessKeyResponses[keyof RegenerateRunAccessKeyResponses];
+
+export type RevokeRunAccessKeyData = {
+    body?: never;
+    path: {
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/runs/{run_id}/access-key/revoke';
+};
+
+export type RevokeRunAccessKeyErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+};
+
+export type RevokeRunAccessKeyError = RevokeRunAccessKeyErrors[keyof RevokeRunAccessKeyErrors];
+
+export type RevokeRunAccessKeyResponses = {
+    /**
+     * Run access key revoked
+     */
+    200: RunAccessKeyStatus;
+};
+
+export type RevokeRunAccessKeyResponse = RevokeRunAccessKeyResponses[keyof RevokeRunAccessKeyResponses];
 
 export type DeleteRunNamespaceData = {
     body?: never;

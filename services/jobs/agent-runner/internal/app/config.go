@@ -23,6 +23,7 @@ type Config struct {
 	ControlPlaneGRPCTarget string `env:"CODEXK8S_CONTROL_PLANE_GRPC_TARGET,required,notEmpty"`
 	MCPBaseURL             string `env:"CODEXK8S_MCP_BASE_URL,required,notEmpty"`
 	MCPBearerToken         string `env:"CODEXK8S_MCP_BEARER_TOKEN,required,notEmpty"`
+	RunAccessKey           string `env:"CODEXK8S_RUN_ACCESS_KEY"`
 
 	TriggerKind          string `env:"CODEXK8S_RUN_TRIGGER_KIND" envDefault:"dev"`
 	TriggerLabel         string `env:"CODEXK8S_RUN_TRIGGER_LABEL"`
@@ -100,6 +101,7 @@ func LoadConfig() (Config, error) {
 	cfg.ControlPlaneGRPCTarget = strings.TrimSpace(cfg.ControlPlaneGRPCTarget)
 	cfg.MCPBaseURL = strings.TrimRight(strings.TrimSpace(cfg.MCPBaseURL), "/")
 	cfg.MCPBearerToken = strings.TrimSpace(cfg.MCPBearerToken)
+	cfg.RunAccessKey = strings.TrimSpace(cfg.RunAccessKey)
 	cfg.RepositoryFullName = strings.TrimSpace(cfg.RepositoryFullName)
 	cfg.AgentKey = strings.TrimSpace(cfg.AgentKey)
 	cfg.RunTargetBranch = strings.TrimSpace(cfg.RunTargetBranch)

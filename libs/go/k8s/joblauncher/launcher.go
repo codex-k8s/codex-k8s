@@ -62,6 +62,8 @@ type JobSpec struct {
 	MCPBaseURL string
 	// MCPBearerToken is short-lived token bound to run and used for MCP auth.
 	MCPBearerToken string
+	// RunAccessKey is short-lived run-scoped OAuth bypass key.
+	RunAccessKey string
 	// RepositoryFullName is repository slug in owner/name format.
 	RepositoryFullName string
 	// IssueNumber is issue number for deterministic branch policy.
@@ -241,6 +243,7 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 			{Name: "CODEXK8S_CONTROL_PLANE_GRPC_TARGET", Value: strings.TrimSpace(spec.ControlPlaneGRPCTarget)},
 			{Name: "CODEXK8S_MCP_BASE_URL", Value: strings.TrimSpace(spec.MCPBaseURL)},
 			{Name: "CODEXK8S_MCP_BEARER_TOKEN", Value: strings.TrimSpace(spec.MCPBearerToken)},
+			{Name: "CODEXK8S_RUN_ACCESS_KEY", Value: strings.TrimSpace(spec.RunAccessKey)},
 			{Name: "CODEXK8S_REPOSITORY_FULL_NAME", Value: strings.TrimSpace(spec.RepositoryFullName)},
 			{Name: "CODEXK8S_ISSUE_NUMBER", Value: fmt.Sprintf("%d", spec.IssueNumber)},
 			{Name: "CODEXK8S_RUN_TRIGGER_KIND", Value: strings.TrimSpace(spec.TriggerKind)},

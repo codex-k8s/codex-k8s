@@ -105,6 +105,14 @@ const (
 	ResolveApprovalDecisionResponseApprovalStateRequested ResolveApprovalDecisionResponseApprovalState = "requested"
 )
 
+// Defines values for RunAccessKeyStatusStatus.
+const (
+	RunAccessKeyStatusStatusActive  RunAccessKeyStatusStatus = "active"
+	RunAccessKeyStatusStatusExpired RunAccessKeyStatusStatus = "expired"
+	RunAccessKeyStatusStatusMissing RunAccessKeyStatusStatus = "missing"
+	RunAccessKeyStatusStatusRevoked RunAccessKeyStatusStatus = "revoked"
+)
+
 // Defines values for RuntimeDeployTaskStatus.
 const (
 	RuntimeDeployTaskStatusFailed    RuntimeDeployTaskStatus = "failed"
@@ -162,10 +170,10 @@ const (
 
 // Defines values for ListRuntimeDeployTasksParamsStatus.
 const (
-	Failed    ListRuntimeDeployTasksParamsStatus = "failed"
-	Pending   ListRuntimeDeployTasksParamsStatus = "pending"
-	Running   ListRuntimeDeployTasksParamsStatus = "running"
-	Succeeded ListRuntimeDeployTasksParamsStatus = "succeeded"
+	ListRuntimeDeployTasksParamsStatusFailed    ListRuntimeDeployTasksParamsStatus = "failed"
+	ListRuntimeDeployTasksParamsStatusPending   ListRuntimeDeployTasksParamsStatus = "pending"
+	ListRuntimeDeployTasksParamsStatusRunning   ListRuntimeDeployTasksParamsStatus = "running"
+	ListRuntimeDeployTasksParamsStatusSucceeded ListRuntimeDeployTasksParamsStatus = "succeeded"
 )
 
 // Defines values for ListRuntimeErrorsParamsState.
@@ -422,6 +430,11 @@ type ProjectMemberItemsResponse struct {
 	Items []ProjectMember `json:"items"`
 }
 
+// RegenerateRunAccessKeyRequest defines model for RegenerateRunAccessKeyRequest.
+type RegenerateRunAccessKeyRequest struct {
+	TtlSeconds *int32 `json:"ttl_seconds,omitempty"`
+}
+
 // RegistryImageDeleteResult defines model for RegistryImageDeleteResult.
 type RegistryImageDeleteResult struct {
 	Deleted    bool   `json:"deleted"`
@@ -519,6 +532,32 @@ type Run struct {
 	WaitSince       *time.Time `json:"wait_since"`
 	WaitState       *string    `json:"wait_state"`
 }
+
+// RunAccessKeyIssueResponse defines model for RunAccessKeyIssueResponse.
+type RunAccessKeyIssueResponse struct {
+	AccessKey string             `json:"access_key"`
+	Status    RunAccessKeyStatus `json:"status"`
+}
+
+// RunAccessKeyStatus defines model for RunAccessKeyStatus.
+type RunAccessKeyStatus struct {
+	CorrelationId *string                  `json:"correlation_id"`
+	CreatedBy     *string                  `json:"created_by"`
+	ExpiresAt     *time.Time               `json:"expires_at"`
+	HasKey        bool                     `json:"has_key"`
+	IssuedAt      *time.Time               `json:"issued_at"`
+	LastUsedAt    *time.Time               `json:"last_used_at"`
+	Namespace     *string                  `json:"namespace"`
+	ProjectId     *string                  `json:"project_id"`
+	RevokedAt     *time.Time               `json:"revoked_at"`
+	RunId         string                   `json:"run_id"`
+	RuntimeMode   *string                  `json:"runtime_mode"`
+	Status        RunAccessKeyStatusStatus `json:"status"`
+	TargetEnv     *string                  `json:"target_env"`
+}
+
+// RunAccessKeyStatusStatus defines model for RunAccessKeyStatus.Status.
+type RunAccessKeyStatusStatus string
 
 // RunItemsResponse defines model for RunItemsResponse.
 type RunItemsResponse struct {
@@ -732,6 +771,15 @@ type AgentKeyFilter = string
 // ApprovalRequestID defines model for ApprovalRequestID.
 type ApprovalRequestID = int64
 
+// BypassNamespaceQuery defines model for BypassNamespaceQuery.
+type BypassNamespaceQuery = string
+
+// BypassRuntimeModeQuery defines model for BypassRuntimeModeQuery.
+type BypassRuntimeModeQuery = string
+
+// BypassTargetEnvQuery defines model for BypassTargetEnvQuery.
+type BypassTargetEnvQuery = string
+
 // Limit defines model for Limit.
 type Limit = int
 
@@ -740,6 +788,9 @@ type MCPCallbackToken = string
 
 // ProjectID defines model for ProjectID.
 type ProjectID = string
+
+// RunAccessKeyQuery defines model for RunAccessKeyQuery.
+type RunAccessKeyQuery = string
 
 // RunID defines model for RunID.
 type RunID = string
@@ -794,6 +845,32 @@ type McpApproverCallbackParams struct {
 // McpExecutorCallbackParams defines parameters for McpExecutorCallback.
 type McpExecutorCallbackParams struct {
 	XCodexMCPToken *MCPCallbackToken `json:"X-Codex-MCP-Token,omitempty"`
+}
+
+// GetRunByAccessKeyParams defines parameters for GetRunByAccessKey.
+type GetRunByAccessKeyParams struct {
+	AccessKey   RunAccessKeyQuery       `form:"access_key" json:"access_key"`
+	Namespace   *BypassNamespaceQuery   `form:"namespace,omitempty" json:"namespace,omitempty"`
+	TargetEnv   *BypassTargetEnvQuery   `form:"target_env,omitempty" json:"target_env,omitempty"`
+	RuntimeMode *BypassRuntimeModeQuery `form:"runtime_mode,omitempty" json:"runtime_mode,omitempty"`
+}
+
+// ListRunEventsByAccessKeyParams defines parameters for ListRunEventsByAccessKey.
+type ListRunEventsByAccessKeyParams struct {
+	AccessKey   RunAccessKeyQuery       `form:"access_key" json:"access_key"`
+	Namespace   *BypassNamespaceQuery   `form:"namespace,omitempty" json:"namespace,omitempty"`
+	TargetEnv   *BypassTargetEnvQuery   `form:"target_env,omitempty" json:"target_env,omitempty"`
+	RuntimeMode *BypassRuntimeModeQuery `form:"runtime_mode,omitempty" json:"runtime_mode,omitempty"`
+	Limit       *Limit                  `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// GetRunLogsByAccessKeyParams defines parameters for GetRunLogsByAccessKey.
+type GetRunLogsByAccessKeyParams struct {
+	AccessKey   RunAccessKeyQuery       `form:"access_key" json:"access_key"`
+	Namespace   *BypassNamespaceQuery   `form:"namespace,omitempty" json:"namespace,omitempty"`
+	TargetEnv   *BypassTargetEnvQuery   `form:"target_env,omitempty" json:"target_env,omitempty"`
+	RuntimeMode *BypassRuntimeModeQuery `form:"runtime_mode,omitempty" json:"runtime_mode,omitempty"`
+	TailLines   *TailLines              `form:"tail_lines,omitempty" json:"tail_lines,omitempty"`
 }
 
 // ListPendingApprovalsParams defines parameters for ListPendingApprovals.
@@ -957,6 +1034,9 @@ type UpsertProjectRepositoryJSONRequestBody = UpsertProjectRepositoryRequest
 // UpsertRepositoryBotParamsJSONRequestBody defines body for UpsertRepositoryBotParams for application/json ContentType.
 type UpsertRepositoryBotParamsJSONRequestBody = UpsertRepositoryBotParamsRequest
 
+// RegenerateRunAccessKeyJSONRequestBody defines body for RegenerateRunAccessKey for application/json ContentType.
+type RegenerateRunAccessKeyJSONRequestBody = RegenerateRunAccessKeyRequest
+
 // DeleteRegistryImageTagJSONRequestBody defines body for DeleteRegistryImageTag for application/json ContentType.
 type DeleteRegistryImageTagJSONRequestBody = DeleteRegistryImageTagRequest
 
@@ -1113,6 +1193,15 @@ type ServerInterface interface {
 	// Resolve one MCP approval request from external executor callback
 	// (POST /api/v1/mcp/executor/callback)
 	McpExecutorCallback(w http.ResponseWriter, r *http.Request, params McpExecutorCallbackParams)
+	// Get run by run access key (OAuth bypass)
+	// (GET /api/v1/runs/{run_id}/bypass)
+	GetRunByAccessKey(w http.ResponseWriter, r *http.Request, runId RunID, params GetRunByAccessKeyParams)
+	// List run flow events by run access key (OAuth bypass)
+	// (GET /api/v1/runs/{run_id}/bypass/events)
+	ListRunEventsByAccessKey(w http.ResponseWriter, r *http.Request, runId RunID, params ListRunEventsByAccessKeyParams)
+	// Get run logs by run access key (OAuth bypass)
+	// (GET /api/v1/runs/{run_id}/bypass/logs)
+	GetRunLogsByAccessKey(w http.ResponseWriter, r *http.Request, runId RunID, params GetRunLogsByAccessKeyParams)
 	// List pending approval requests
 	// (GET /api/v1/staff/approvals)
 	ListPendingApprovals(w http.ResponseWriter, r *http.Request, params ListPendingApprovalsParams)
@@ -1194,6 +1283,15 @@ type ServerInterface interface {
 	// Get run by id
 	// (GET /api/v1/staff/runs/{run_id})
 	GetRun(w http.ResponseWriter, r *http.Request, runId RunID)
+	// Get run access key status
+	// (GET /api/v1/staff/runs/{run_id}/access-key)
+	GetRunAccessKeyStatus(w http.ResponseWriter, r *http.Request, runId RunID)
+	// Regenerate run access key
+	// (POST /api/v1/staff/runs/{run_id}/access-key/regenerate)
+	RegenerateRunAccessKey(w http.ResponseWriter, r *http.Request, runId RunID)
+	// Revoke run access key
+	// (POST /api/v1/staff/runs/{run_id}/access-key/revoke)
+	RevokeRunAccessKey(w http.ResponseWriter, r *http.Request, runId RunID)
 	// List run flow events
 	// (GET /api/v1/staff/runs/{run_id}/events)
 	ListRunEvents(w http.ResponseWriter, r *http.Request, runId RunID, params ListRunEventsParams)
@@ -1412,6 +1510,223 @@ func (siw *ServerInterfaceWrapper) McpExecutorCallback(w http.ResponseWriter, r 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.McpExecutorCallback(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetRunByAccessKey operation middleware
+func (siw *ServerInterfaceWrapper) GetRunByAccessKey(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "run_id" -------------
+	var runId RunID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "run_id", r.PathValue("run_id"), &runId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "run_id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetRunByAccessKeyParams
+
+	// ------------- Required query parameter "access_key" -------------
+
+	if paramValue := r.URL.Query().Get("access_key"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "access_key"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "access_key", r.URL.Query(), &params.AccessKey)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "access_key", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "namespace" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "namespace", r.URL.Query(), &params.Namespace)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "namespace", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "target_env" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "target_env", r.URL.Query(), &params.TargetEnv)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "target_env", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "runtime_mode" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "runtime_mode", r.URL.Query(), &params.RuntimeMode)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "runtime_mode", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRunByAccessKey(w, r, runId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListRunEventsByAccessKey operation middleware
+func (siw *ServerInterfaceWrapper) ListRunEventsByAccessKey(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "run_id" -------------
+	var runId RunID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "run_id", r.PathValue("run_id"), &runId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "run_id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRunEventsByAccessKeyParams
+
+	// ------------- Required query parameter "access_key" -------------
+
+	if paramValue := r.URL.Query().Get("access_key"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "access_key"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "access_key", r.URL.Query(), &params.AccessKey)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "access_key", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "namespace" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "namespace", r.URL.Query(), &params.Namespace)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "namespace", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "target_env" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "target_env", r.URL.Query(), &params.TargetEnv)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "target_env", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "runtime_mode" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "runtime_mode", r.URL.Query(), &params.RuntimeMode)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "runtime_mode", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRunEventsByAccessKey(w, r, runId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetRunLogsByAccessKey operation middleware
+func (siw *ServerInterfaceWrapper) GetRunLogsByAccessKey(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "run_id" -------------
+	var runId RunID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "run_id", r.PathValue("run_id"), &runId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "run_id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetRunLogsByAccessKeyParams
+
+	// ------------- Required query parameter "access_key" -------------
+
+	if paramValue := r.URL.Query().Get("access_key"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "access_key"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "access_key", r.URL.Query(), &params.AccessKey)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "access_key", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "namespace" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "namespace", r.URL.Query(), &params.Namespace)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "namespace", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "target_env" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "target_env", r.URL.Query(), &params.TargetEnv)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "target_env", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "runtime_mode" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "runtime_mode", r.URL.Query(), &params.RuntimeMode)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "runtime_mode", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "tail_lines" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "tail_lines", r.URL.Query(), &params.TailLines)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tail_lines", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRunLogsByAccessKey(w, r, runId, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2250,6 +2565,81 @@ func (siw *ServerInterfaceWrapper) GetRun(w http.ResponseWriter, r *http.Request
 	handler.ServeHTTP(w, r)
 }
 
+// GetRunAccessKeyStatus operation middleware
+func (siw *ServerInterfaceWrapper) GetRunAccessKeyStatus(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "run_id" -------------
+	var runId RunID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "run_id", r.PathValue("run_id"), &runId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "run_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRunAccessKeyStatus(w, r, runId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RegenerateRunAccessKey operation middleware
+func (siw *ServerInterfaceWrapper) RegenerateRunAccessKey(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "run_id" -------------
+	var runId RunID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "run_id", r.PathValue("run_id"), &runId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "run_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RegenerateRunAccessKey(w, r, runId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeRunAccessKey operation middleware
+func (siw *ServerInterfaceWrapper) RevokeRunAccessKey(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "run_id" -------------
+	var runId RunID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "run_id", r.PathValue("run_id"), &runId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "run_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeRunAccessKey(w, r, runId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListRunEvents operation middleware
 func (siw *ServerInterfaceWrapper) ListRunEvents(w http.ResponseWriter, r *http.Request) {
 
@@ -2896,6 +3286,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/auth/me", wrapper.GetMe)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/mcp/approver/callback", wrapper.McpApproverCallback)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/mcp/executor/callback", wrapper.McpExecutorCallback)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/runs/{run_id}/bypass", wrapper.GetRunByAccessKey)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/runs/{run_id}/bypass/events", wrapper.ListRunEventsByAccessKey)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/runs/{run_id}/bypass/logs", wrapper.GetRunLogsByAccessKey)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/approvals", wrapper.ListPendingApprovals)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/approvals/{approval_request_id}/decision", wrapper.ResolveApprovalDecision)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/config-entries", wrapper.ListConfigEntries)
@@ -2923,6 +3316,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/jobs", wrapper.ListRunJobs)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/waits", wrapper.ListRunWaits)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}", wrapper.GetRun)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}/access-key", wrapper.GetRunAccessKeyStatus)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/runs/{run_id}/access-key/regenerate", wrapper.RegenerateRunAccessKey)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/runs/{run_id}/access-key/revoke", wrapper.RevokeRunAccessKey)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}/events", wrapper.ListRunEvents)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}/learning-feedback", wrapper.ListRunLearningFeedback)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}/logs", wrapper.GetRunLogs)
@@ -3156,6 +3552,141 @@ type McpExecutorCallback500JSONResponse struct{ InternalJSONResponse }
 func (response McpExecutorCallback500JSONResponse) VisitMcpExecutorCallbackResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRunByAccessKeyRequestObject struct {
+	RunId  RunID `json:"run_id"`
+	Params GetRunByAccessKeyParams
+}
+
+type GetRunByAccessKeyResponseObject interface {
+	VisitGetRunByAccessKeyResponse(w http.ResponseWriter) error
+}
+
+type GetRunByAccessKey200JSONResponse Run
+
+func (response GetRunByAccessKey200JSONResponse) VisitGetRunByAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRunByAccessKey400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetRunByAccessKey400JSONResponse) VisitGetRunByAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRunByAccessKey401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetRunByAccessKey401JSONResponse) VisitGetRunByAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRunByAccessKey403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetRunByAccessKey403JSONResponse) VisitGetRunByAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRunEventsByAccessKeyRequestObject struct {
+	RunId  RunID `json:"run_id"`
+	Params ListRunEventsByAccessKeyParams
+}
+
+type ListRunEventsByAccessKeyResponseObject interface {
+	VisitListRunEventsByAccessKeyResponse(w http.ResponseWriter) error
+}
+
+type ListRunEventsByAccessKey200JSONResponse FlowEventItemsResponse
+
+func (response ListRunEventsByAccessKey200JSONResponse) VisitListRunEventsByAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRunEventsByAccessKey400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListRunEventsByAccessKey400JSONResponse) VisitListRunEventsByAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRunEventsByAccessKey401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListRunEventsByAccessKey401JSONResponse) VisitListRunEventsByAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRunEventsByAccessKey403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListRunEventsByAccessKey403JSONResponse) VisitListRunEventsByAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRunLogsByAccessKeyRequestObject struct {
+	RunId  RunID `json:"run_id"`
+	Params GetRunLogsByAccessKeyParams
+}
+
+type GetRunLogsByAccessKeyResponseObject interface {
+	VisitGetRunLogsByAccessKeyResponse(w http.ResponseWriter) error
+}
+
+type GetRunLogsByAccessKey200JSONResponse RunLogs
+
+func (response GetRunLogsByAccessKey200JSONResponse) VisitGetRunLogsByAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRunLogsByAccessKey400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetRunLogsByAccessKey400JSONResponse) VisitGetRunLogsByAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRunLogsByAccessKey401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetRunLogsByAccessKey401JSONResponse) VisitGetRunLogsByAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRunLogsByAccessKey403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetRunLogsByAccessKey403JSONResponse) VisitGetRunLogsByAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -4319,6 +4850,166 @@ func (response GetRun404JSONResponse) VisitGetRunResponse(w http.ResponseWriter)
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetRunAccessKeyStatusRequestObject struct {
+	RunId RunID `json:"run_id"`
+}
+
+type GetRunAccessKeyStatusResponseObject interface {
+	VisitGetRunAccessKeyStatusResponse(w http.ResponseWriter) error
+}
+
+type GetRunAccessKeyStatus200JSONResponse RunAccessKeyStatus
+
+func (response GetRunAccessKeyStatus200JSONResponse) VisitGetRunAccessKeyStatusResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRunAccessKeyStatus400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetRunAccessKeyStatus400JSONResponse) VisitGetRunAccessKeyStatusResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRunAccessKeyStatus401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetRunAccessKeyStatus401JSONResponse) VisitGetRunAccessKeyStatusResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRunAccessKeyStatus403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetRunAccessKeyStatus403JSONResponse) VisitGetRunAccessKeyStatusResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRunAccessKeyStatus404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetRunAccessKeyStatus404JSONResponse) VisitGetRunAccessKeyStatusResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RegenerateRunAccessKeyRequestObject struct {
+	RunId RunID `json:"run_id"`
+	Body  *RegenerateRunAccessKeyJSONRequestBody
+}
+
+type RegenerateRunAccessKeyResponseObject interface {
+	VisitRegenerateRunAccessKeyResponse(w http.ResponseWriter) error
+}
+
+type RegenerateRunAccessKey200JSONResponse RunAccessKeyIssueResponse
+
+func (response RegenerateRunAccessKey200JSONResponse) VisitRegenerateRunAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RegenerateRunAccessKey400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response RegenerateRunAccessKey400JSONResponse) VisitRegenerateRunAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RegenerateRunAccessKey401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response RegenerateRunAccessKey401JSONResponse) VisitRegenerateRunAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RegenerateRunAccessKey403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response RegenerateRunAccessKey403JSONResponse) VisitRegenerateRunAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RegenerateRunAccessKey404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response RegenerateRunAccessKey404JSONResponse) VisitRegenerateRunAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RevokeRunAccessKeyRequestObject struct {
+	RunId RunID `json:"run_id"`
+}
+
+type RevokeRunAccessKeyResponseObject interface {
+	VisitRevokeRunAccessKeyResponse(w http.ResponseWriter) error
+}
+
+type RevokeRunAccessKey200JSONResponse RunAccessKeyStatus
+
+func (response RevokeRunAccessKey200JSONResponse) VisitRevokeRunAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RevokeRunAccessKey400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response RevokeRunAccessKey400JSONResponse) VisitRevokeRunAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RevokeRunAccessKey401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response RevokeRunAccessKey401JSONResponse) VisitRevokeRunAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RevokeRunAccessKey403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response RevokeRunAccessKey403JSONResponse) VisitRevokeRunAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RevokeRunAccessKey404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response RevokeRunAccessKey404JSONResponse) VisitRevokeRunAccessKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListRunEventsRequestObject struct {
 	RunId  RunID `json:"run_id"`
 	Params ListRunEventsParams
@@ -5002,6 +5693,15 @@ type StrictServerInterface interface {
 	// Resolve one MCP approval request from external executor callback
 	// (POST /api/v1/mcp/executor/callback)
 	McpExecutorCallback(ctx context.Context, request McpExecutorCallbackRequestObject) (McpExecutorCallbackResponseObject, error)
+	// Get run by run access key (OAuth bypass)
+	// (GET /api/v1/runs/{run_id}/bypass)
+	GetRunByAccessKey(ctx context.Context, request GetRunByAccessKeyRequestObject) (GetRunByAccessKeyResponseObject, error)
+	// List run flow events by run access key (OAuth bypass)
+	// (GET /api/v1/runs/{run_id}/bypass/events)
+	ListRunEventsByAccessKey(ctx context.Context, request ListRunEventsByAccessKeyRequestObject) (ListRunEventsByAccessKeyResponseObject, error)
+	// Get run logs by run access key (OAuth bypass)
+	// (GET /api/v1/runs/{run_id}/bypass/logs)
+	GetRunLogsByAccessKey(ctx context.Context, request GetRunLogsByAccessKeyRequestObject) (GetRunLogsByAccessKeyResponseObject, error)
 	// List pending approval requests
 	// (GET /api/v1/staff/approvals)
 	ListPendingApprovals(ctx context.Context, request ListPendingApprovalsRequestObject) (ListPendingApprovalsResponseObject, error)
@@ -5083,6 +5783,15 @@ type StrictServerInterface interface {
 	// Get run by id
 	// (GET /api/v1/staff/runs/{run_id})
 	GetRun(ctx context.Context, request GetRunRequestObject) (GetRunResponseObject, error)
+	// Get run access key status
+	// (GET /api/v1/staff/runs/{run_id}/access-key)
+	GetRunAccessKeyStatus(ctx context.Context, request GetRunAccessKeyStatusRequestObject) (GetRunAccessKeyStatusResponseObject, error)
+	// Regenerate run access key
+	// (POST /api/v1/staff/runs/{run_id}/access-key/regenerate)
+	RegenerateRunAccessKey(ctx context.Context, request RegenerateRunAccessKeyRequestObject) (RegenerateRunAccessKeyResponseObject, error)
+	// Revoke run access key
+	// (POST /api/v1/staff/runs/{run_id}/access-key/revoke)
+	RevokeRunAccessKey(ctx context.Context, request RevokeRunAccessKeyRequestObject) (RevokeRunAccessKeyResponseObject, error)
 	// List run flow events
 	// (GET /api/v1/staff/runs/{run_id}/events)
 	ListRunEvents(ctx context.Context, request ListRunEventsRequestObject) (ListRunEventsResponseObject, error)
@@ -5316,6 +6025,87 @@ func (sh *strictHandler) McpExecutorCallback(w http.ResponseWriter, r *http.Requ
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(McpExecutorCallbackResponseObject); ok {
 		if err := validResponse.VisitMcpExecutorCallbackResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetRunByAccessKey operation middleware
+func (sh *strictHandler) GetRunByAccessKey(w http.ResponseWriter, r *http.Request, runId RunID, params GetRunByAccessKeyParams) {
+	var request GetRunByAccessKeyRequestObject
+
+	request.RunId = runId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetRunByAccessKey(ctx, request.(GetRunByAccessKeyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetRunByAccessKey")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetRunByAccessKeyResponseObject); ok {
+		if err := validResponse.VisitGetRunByAccessKeyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListRunEventsByAccessKey operation middleware
+func (sh *strictHandler) ListRunEventsByAccessKey(w http.ResponseWriter, r *http.Request, runId RunID, params ListRunEventsByAccessKeyParams) {
+	var request ListRunEventsByAccessKeyRequestObject
+
+	request.RunId = runId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListRunEventsByAccessKey(ctx, request.(ListRunEventsByAccessKeyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListRunEventsByAccessKey")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListRunEventsByAccessKeyResponseObject); ok {
+		if err := validResponse.VisitListRunEventsByAccessKeyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetRunLogsByAccessKey operation middleware
+func (sh *strictHandler) GetRunLogsByAccessKey(w http.ResponseWriter, r *http.Request, runId RunID, params GetRunLogsByAccessKeyParams) {
+	var request GetRunLogsByAccessKeyRequestObject
+
+	request.RunId = runId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetRunLogsByAccessKey(ctx, request.(GetRunLogsByAccessKeyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetRunLogsByAccessKey")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetRunLogsByAccessKeyResponseObject); ok {
+		if err := validResponse.VisitGetRunLogsByAccessKeyResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -6091,6 +6881,91 @@ func (sh *strictHandler) GetRun(w http.ResponseWriter, r *http.Request, runId Ru
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetRunResponseObject); ok {
 		if err := validResponse.VisitGetRunResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetRunAccessKeyStatus operation middleware
+func (sh *strictHandler) GetRunAccessKeyStatus(w http.ResponseWriter, r *http.Request, runId RunID) {
+	var request GetRunAccessKeyStatusRequestObject
+
+	request.RunId = runId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetRunAccessKeyStatus(ctx, request.(GetRunAccessKeyStatusRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetRunAccessKeyStatus")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetRunAccessKeyStatusResponseObject); ok {
+		if err := validResponse.VisitGetRunAccessKeyStatusResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RegenerateRunAccessKey operation middleware
+func (sh *strictHandler) RegenerateRunAccessKey(w http.ResponseWriter, r *http.Request, runId RunID) {
+	var request RegenerateRunAccessKeyRequestObject
+
+	request.RunId = runId
+
+	var body RegenerateRunAccessKeyJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RegenerateRunAccessKey(ctx, request.(RegenerateRunAccessKeyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RegenerateRunAccessKey")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RegenerateRunAccessKeyResponseObject); ok {
+		if err := validResponse.VisitRegenerateRunAccessKeyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokeRunAccessKey operation middleware
+func (sh *strictHandler) RevokeRunAccessKey(w http.ResponseWriter, r *http.Request, runId RunID) {
+	var request RevokeRunAccessKeyRequestObject
+
+	request.RunId = runId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokeRunAccessKey(ctx, request.(RevokeRunAccessKeyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokeRunAccessKey")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokeRunAccessKeyResponseObject); ok {
+		if err := validResponse.VisitRevokeRunAccessKeyResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

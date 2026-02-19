@@ -41,6 +41,14 @@
 {{- else }}
 - MCP используйте только для лейблов: `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`.
 {{- end }}
+{{- if .HasRunAccessKey }}
+- Временный OAuth bypass key для этого запуска: `{{ .RunAccessKey }}`.
+- Используйте его только для чтения статуса/логов/событий текущего рана через публичные endpoints:
+  - `/api/v1/runs/{{ .RunID }}/bypass?access_key={{ .RunAccessKey }}`
+  - `/api/v1/runs/{{ .RunID }}/bypass/events?access_key={{ .RunAccessKey }}`
+  - `/api/v1/runs/{{ .RunID }}/bypass/logs?access_key={{ .RunAccessKey }}`
+- Никогда не публикуйте этот ключ в issue/PR/comments/logs.
+{{- end }}
 
 Обязательные правила:
 - Не используйте MCP для PR/comments/веток: эти операции выполняются через `gh`.
@@ -118,6 +126,14 @@ Tools and access:
 - `/tmp/codex-sessions` is pre-created; create per-run subdirectories before writing extracted session files (`mkdir -p ...`).
 {{- else }}
 - Use MCP for labels only: `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`.
+{{- end }}
+{{- if .HasRunAccessKey }}
+- Temporary OAuth bypass key for this run: `{{ .RunAccessKey }}`.
+- Use it only for read-only run observability endpoints:
+  - `/api/v1/runs/{{ .RunID }}/bypass?access_key={{ .RunAccessKey }}`
+  - `/api/v1/runs/{{ .RunID }}/bypass/events?access_key={{ .RunAccessKey }}`
+  - `/api/v1/runs/{{ .RunID }}/bypass/logs?access_key={{ .RunAccessKey }}`
+- Never expose this key in issue/PR/comments/logs.
 {{- end }}
 
 Mandatory rules:

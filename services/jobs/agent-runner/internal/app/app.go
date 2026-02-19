@@ -67,6 +67,7 @@ func Run() error {
 		ControlPlaneGRPCTarget: cfg.ControlPlaneGRPCTarget,
 		MCPBaseURL:             cfg.MCPBaseURL,
 		MCPBearerToken:         cfg.MCPBearerToken,
+		RunAccessKey:           cfg.RunAccessKey,
 		GitBotConfig: runner.GitBotConfig{
 			GitBotToken:    cfg.GitBotToken,
 			GitBotUsername: cfg.GitBotUsername,

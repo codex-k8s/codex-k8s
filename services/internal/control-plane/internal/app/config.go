@@ -103,6 +103,12 @@ type Config struct {
 	MCPTokenTTL string `env:"CODEXK8S_MCP_TOKEN_TTL" envDefault:"24h"`
 	// ControlPlaneMCPBaseURL is effective MCP endpoint included in prompt context and run env.
 	ControlPlaneMCPBaseURL string `env:"CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" envDefault:"http://codex-k8s-control-plane:8081/mcp"`
+	// RunAccessKeyDefaultTTL defines default TTL for run-scoped OAuth bypass keys.
+	RunAccessKeyDefaultTTL string `env:"CODEXK8S_RUN_ACCESS_KEY_DEFAULT_TTL" envDefault:"8h"`
+	// RunAccessKeyMinTTL defines lower TTL bound for run-scoped OAuth bypass keys.
+	RunAccessKeyMinTTL string `env:"CODEXK8S_RUN_ACCESS_KEY_MIN_TTL" envDefault:"5m"`
+	// RunAccessKeyMaxTTL defines upper TTL bound for run-scoped OAuth bypass keys.
+	RunAccessKeyMaxTTL string `env:"CODEXK8S_RUN_ACCESS_KEY_MAX_TTL" envDefault:"24h"`
 	// RunAgentLogsRetentionDays controls how long run-scoped agent logs are retained in agent_runs.
 	RunAgentLogsRetentionDays int `env:"CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS" envDefault:"14"`
 

@@ -47,6 +47,20 @@ func (s *Service) launchPreparedFullEnvRunJob(ctx context.Context, run runqueuer
 		}
 	}
 
+	issuedRunAccessKey, err := s.runAccess.IssueRunAccessKey(ctx, IssueRunAccessKeyParams{
+		RunID:       run.RunID,
+		Namespace:   execution.Namespace,
+		RuntimeMode: execution.RuntimeMode,
+		CreatedBy:   s.cfg.WorkerID,
+	})
+	if err != nil {
+		s.logger.Error("issue run access key failed", "run_id", run.RunID, "err", err)
+		if finishErr := s.finishLaunchFailedRun(ctx, run, execution, err, runFailureReasonRunAccessKeyIssueFailed); finishErr != nil {
+			return fmt.Errorf("mark run failed after run access key issue error: %w", finishErr)
+		}
+		return nil
+	}
+
 	issuedMCPToken, err := s.mcpTokens.IssueRunMCPToken(ctx, IssueMCPTokenParams{
 		RunID:       run.RunID,
 		Namespace:   execution.Namespace,
@@ -70,6 +84,7 @@ func (s *Service) launchPreparedFullEnvRunJob(ctx context.Context, run runqueuer
 		ControlPlaneGRPCTarget: s.cfg.ControlPlaneGRPCTarget,
 		MCPBaseURL:             s.cfg.ControlPlaneMCPBaseURL,
 		MCPBearerToken:         issuedMCPToken.Token,
+		RunAccessKey:           issuedRunAccessKey.AccessKey,
 		RepositoryFullName:     agentCtx.RepositoryFullName,
 		IssueNumber:            agentCtx.IssueNumber,
 		TriggerKind:            agentCtx.TriggerKind,

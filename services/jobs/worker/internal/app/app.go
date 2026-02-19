@@ -163,6 +163,7 @@ func Run() error {
 		Launcher:        launcher,
 		RuntimePreparer: controlPlane,
 		MCPTokenIssuer:  controlPlane,
+		RunAccessKeys:   controlPlane,
 		RunStatus:       controlPlane,
 		Logger:          logger,
 	})

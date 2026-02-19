@@ -73,7 +73,7 @@ approvals:
 | Day 16 | gRPC transport boundary hardening (исключить прямые вызовы repository из handlers) | P0 | `docs/delivery/epics/epic-s3-day16-grpc-transport-boundary-hardening.md` | completed |
 | Day 17 | Environment-scoped secret overrides and OAuth callback strategy | P0 | `docs/delivery/epics/epic-s3-day17-environment-scoped-secret-overrides-and-oauth-callbacks.md` | completed (approved) |
 | Day 18 | Runtime error journal and staff alert center | P0 | `docs/delivery/epics/epic-s3-day18-runtime-error-journal-and-staff-alert-center.md` | completed (approved) |
-| Day 19 | Run access key and OAuth bypass flow | P0 | `docs/delivery/epics/epic-s3-day19-run-access-key-and-oauth-bypass.md` | planned |
+| Day 19 | Run access key and OAuth bypass flow | P0 | `docs/delivery/epics/epic-s3-day19-run-access-key-and-oauth-bypass.md` | completed |
 | Day 20 | Frontend manual QA hardening loop | P0 | `docs/delivery/epics/epic-s3-day20-frontend-manual-qa-hardening-loop.md` | planned |
 | Day 20.5 | Realtime event bus (PostgreSQL LISTEN/NOTIFY) and WebSocket backplane | P0 | `docs/delivery/epics/epic-s3-day20.5-realtime-event-bus-and-websocket-backplane.md` | planned |
 | Day 20.6 | Staff realtime subscriptions and UI integration | P0 | `docs/delivery/epics/epic-s3-day20.6-staff-realtime-subscriptions-and-ui.md` | planned |

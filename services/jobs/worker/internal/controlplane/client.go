@@ -64,6 +64,32 @@ func (c *Client) IssueRunMCPToken(ctx context.Context, params workerdomain.Issue
 	}, nil
 }
 
+// IssueRunAccessKey requests one run-scoped OAuth bypass key from control-plane.
+func (c *Client) IssueRunAccessKey(ctx context.Context, params workerdomain.IssueRunAccessKeyParams) (workerdomain.IssuedRunAccessKey, error) {
+	ttlSeconds := int32(0)
+	if params.TTL > 0 {
+		ttlSeconds = int32(params.TTL / time.Second)
+	}
+
+	resp, err := c.svc.IssueRunAccessKey(ctx, &controlplanev1.IssueRunAccessKeyRequest{
+		RunId:       strings.TrimSpace(params.RunID),
+		RuntimeMode: optionalString(strings.TrimSpace(string(params.RuntimeMode))),
+		Namespace:   optionalString(strings.TrimSpace(params.Namespace)),
+		TargetEnv:   optionalString(strings.TrimSpace(params.TargetEnv)),
+		CreatedBy:   optionalString(strings.TrimSpace(params.CreatedBy)),
+		TtlSeconds:  ttlSeconds,
+	})
+	if err != nil {
+		return workerdomain.IssuedRunAccessKey{}, err
+	}
+
+	accessKey := strings.TrimSpace(resp.GetAccessKey())
+	if accessKey == "" {
+		return workerdomain.IssuedRunAccessKey{}, fmt.Errorf("control-plane returned empty run access key")
+	}
+	return workerdomain.IssuedRunAccessKey{AccessKey: accessKey}, nil
+}
+
 // PrepareRunEnvironment asks control-plane to build images and deploy stack for run runtime target.
 func (c *Client) PrepareRunEnvironment(ctx context.Context, params workerdomain.PrepareRunEnvironmentParams) (workerdomain.PrepareRunEnvironmentResult, error) {
 	resp, err := c.svc.PrepareRunEnvironment(ctx, &controlplanev1.PrepareRunEnvironmentRequest{

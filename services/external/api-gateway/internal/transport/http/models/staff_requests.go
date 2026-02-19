@@ -40,6 +40,10 @@ type ResolveApprovalDecisionRequest struct {
 	Reason   string `json:"reason"`
 }
 
+type RegenerateRunAccessKeyRequest struct {
+	TTLSeconds *int32 `json:"ttl_seconds"`
+}
+
 // DeleteRegistryImageTagRequest identifies one registry tag for deletion.
 type DeleteRegistryImageTagRequest struct {
 	Repository string `json:"repository"`

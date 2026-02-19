@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CallbackGithubData, CallbackGithubErrors, CleanupRegistryImagesData, CleanupRegistryImagesErrors, CleanupRegistryImagesResponses, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteConfigEntryData, DeleteConfigEntryErrors, DeleteConfigEntryResponses, DeleteProjectData, DeleteProjectErrors, DeleteProjectMemberData, DeleteProjectMemberErrors, DeleteProjectMemberResponses, DeleteProjectRepositoryData, DeleteProjectRepositoryErrors, DeleteProjectRepositoryResponses, DeleteProjectResponses, DeleteRegistryImageTagData, DeleteRegistryImageTagErrors, DeleteRegistryImageTagResponses, DeleteRunNamespaceData, DeleteRunNamespaceErrors, DeleteRunNamespaceResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, GetMeData, GetMeErrors, GetMeResponses, GetProjectData, GetProjectErrors, GetProjectGitHubTokensData, GetProjectGitHubTokensErrors, GetProjectGitHubTokensResponses, GetProjectResponses, GetRunData, GetRunErrors, GetRunLogsData, GetRunLogsErrors, GetRunLogsResponses, GetRunResponses, GetRuntimeDeployTaskData, GetRuntimeDeployTaskErrors, GetRuntimeDeployTaskResponses, ImportDocsetData, ImportDocsetErrors, ImportDocsetResponses, IngestGithubWebhookData, IngestGithubWebhookErrors, IngestGithubWebhookResponses, ListConfigEntriesData, ListConfigEntriesErrors, ListConfigEntriesResponses, ListDocsetGroupsData, ListDocsetGroupsErrors, ListDocsetGroupsResponses, ListPendingApprovalsData, ListPendingApprovalsErrors, ListPendingApprovalsResponses, ListProjectMembersData, ListProjectMembersErrors, ListProjectMembersResponses, ListProjectRepositoriesData, ListProjectRepositoriesErrors, ListProjectRepositoriesResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRegistryImagesData, ListRegistryImagesErrors, ListRegistryImagesResponses, ListRunEventsData, ListRunEventsErrors, ListRunEventsResponses, ListRunJobsData, ListRunJobsErrors, ListRunJobsResponses, ListRunLearningFeedbackData, ListRunLearningFeedbackErrors, ListRunLearningFeedbackResponses, ListRunsData, ListRunsErrors, ListRunsResponses, ListRuntimeDeployTasksData, ListRuntimeDeployTasksErrors, ListRuntimeDeployTasksResponses, ListRuntimeErrorsData, ListRuntimeErrorsErrors, ListRuntimeErrorsResponses, ListRunWaitsData, ListRunWaitsErrors, ListRunWaitsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginGithubData, LoginGithubErrors, LogoutData, LogoutErrors, LogoutResponses, MarkRuntimeErrorViewedData, MarkRuntimeErrorViewedErrors, MarkRuntimeErrorViewedResponses, McpApproverCallbackData, McpApproverCallbackErrors, McpApproverCallbackResponses, McpExecutorCallbackData, McpExecutorCallbackErrors, McpExecutorCallbackResponses, ResolveApprovalDecisionData, ResolveApprovalDecisionErrors, ResolveApprovalDecisionResponses, RunRepositoryPreflightData, RunRepositoryPreflightErrors, RunRepositoryPreflightResponses, SetProjectMemberLearningModeOverrideData, SetProjectMemberLearningModeOverrideErrors, SetProjectMemberLearningModeOverrideResponses, SyncDocsetData, SyncDocsetErrors, SyncDocsetResponses, UpsertConfigEntryData, UpsertConfigEntryErrors, UpsertConfigEntryResponses, UpsertProjectData, UpsertProjectErrors, UpsertProjectGitHubTokensData, UpsertProjectGitHubTokensErrors, UpsertProjectGitHubTokensResponses, UpsertProjectMemberData, UpsertProjectMemberErrors, UpsertProjectMemberResponses, UpsertProjectRepositoryData, UpsertProjectRepositoryErrors, UpsertProjectRepositoryResponses, UpsertProjectResponses, UpsertRepositoryBotParamsData, UpsertRepositoryBotParamsErrors, UpsertRepositoryBotParamsResponses } from './types.gen';
+import type { CallbackGithubData, CallbackGithubErrors, CleanupRegistryImagesData, CleanupRegistryImagesErrors, CleanupRegistryImagesResponses, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteConfigEntryData, DeleteConfigEntryErrors, DeleteConfigEntryResponses, DeleteProjectData, DeleteProjectErrors, DeleteProjectMemberData, DeleteProjectMemberErrors, DeleteProjectMemberResponses, DeleteProjectRepositoryData, DeleteProjectRepositoryErrors, DeleteProjectRepositoryResponses, DeleteProjectResponses, DeleteRegistryImageTagData, DeleteRegistryImageTagErrors, DeleteRegistryImageTagResponses, DeleteRunNamespaceData, DeleteRunNamespaceErrors, DeleteRunNamespaceResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, GetMeData, GetMeErrors, GetMeResponses, GetProjectData, GetProjectErrors, GetProjectGitHubTokensData, GetProjectGitHubTokensErrors, GetProjectGitHubTokensResponses, GetProjectResponses, GetRunAccessKeyStatusData, GetRunAccessKeyStatusErrors, GetRunAccessKeyStatusResponses, GetRunByAccessKeyData, GetRunByAccessKeyErrors, GetRunByAccessKeyResponses, GetRunData, GetRunErrors, GetRunLogsByAccessKeyData, GetRunLogsByAccessKeyErrors, GetRunLogsByAccessKeyResponses, GetRunLogsData, GetRunLogsErrors, GetRunLogsResponses, GetRunResponses, GetRuntimeDeployTaskData, GetRuntimeDeployTaskErrors, GetRuntimeDeployTaskResponses, ImportDocsetData, ImportDocsetErrors, ImportDocsetResponses, IngestGithubWebhookData, IngestGithubWebhookErrors, IngestGithubWebhookResponses, ListConfigEntriesData, ListConfigEntriesErrors, ListConfigEntriesResponses, ListDocsetGroupsData, ListDocsetGroupsErrors, ListDocsetGroupsResponses, ListPendingApprovalsData, ListPendingApprovalsErrors, ListPendingApprovalsResponses, ListProjectMembersData, ListProjectMembersErrors, ListProjectMembersResponses, ListProjectRepositoriesData, ListProjectRepositoriesErrors, ListProjectRepositoriesResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRegistryImagesData, ListRegistryImagesErrors, ListRegistryImagesResponses, ListRunEventsByAccessKeyData, ListRunEventsByAccessKeyErrors, ListRunEventsByAccessKeyResponses, ListRunEventsData, ListRunEventsErrors, ListRunEventsResponses, ListRunJobsData, ListRunJobsErrors, ListRunJobsResponses, ListRunLearningFeedbackData, ListRunLearningFeedbackErrors, ListRunLearningFeedbackResponses, ListRunsData, ListRunsErrors, ListRunsResponses, ListRuntimeDeployTasksData, ListRuntimeDeployTasksErrors, ListRuntimeDeployTasksResponses, ListRuntimeErrorsData, ListRuntimeErrorsErrors, ListRuntimeErrorsResponses, ListRunWaitsData, ListRunWaitsErrors, ListRunWaitsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginGithubData, LoginGithubErrors, LogoutData, LogoutErrors, LogoutResponses, MarkRuntimeErrorViewedData, MarkRuntimeErrorViewedErrors, MarkRuntimeErrorViewedResponses, McpApproverCallbackData, McpApproverCallbackErrors, McpApproverCallbackResponses, McpExecutorCallbackData, McpExecutorCallbackErrors, McpExecutorCallbackResponses, RegenerateRunAccessKeyData, RegenerateRunAccessKeyErrors, RegenerateRunAccessKeyResponses, ResolveApprovalDecisionData, ResolveApprovalDecisionErrors, ResolveApprovalDecisionResponses, RevokeRunAccessKeyData, RevokeRunAccessKeyErrors, RevokeRunAccessKeyResponses, RunRepositoryPreflightData, RunRepositoryPreflightErrors, RunRepositoryPreflightResponses, SetProjectMemberLearningModeOverrideData, SetProjectMemberLearningModeOverrideErrors, SetProjectMemberLearningModeOverrideResponses, SyncDocsetData, SyncDocsetErrors, SyncDocsetResponses, UpsertConfigEntryData, UpsertConfigEntryErrors, UpsertConfigEntryResponses, UpsertProjectData, UpsertProjectErrors, UpsertProjectGitHubTokensData, UpsertProjectGitHubTokensErrors, UpsertProjectGitHubTokensResponses, UpsertProjectMemberData, UpsertProjectMemberErrors, UpsertProjectMemberResponses, UpsertProjectRepositoryData, UpsertProjectRepositoryErrors, UpsertProjectRepositoryResponses, UpsertProjectResponses, UpsertRepositoryBotParamsData, UpsertRepositoryBotParamsErrors, UpsertRepositoryBotParamsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -118,6 +118,33 @@ export const getProject = <ThrowOnError extends boolean = false>(options: Option
 });
 
 /**
+ * Get run by run access key (OAuth bypass)
+ */
+export const getRunByAccessKey = <ThrowOnError extends boolean = false>(options: Options<GetRunByAccessKeyData, ThrowOnError>) => (options.client ?? client).get<GetRunByAccessKeyResponses, GetRunByAccessKeyErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/runs/{run_id}/bypass',
+    ...options
+});
+
+/**
+ * List run flow events by run access key (OAuth bypass)
+ */
+export const listRunEventsByAccessKey = <ThrowOnError extends boolean = false>(options: Options<ListRunEventsByAccessKeyData, ThrowOnError>) => (options.client ?? client).get<ListRunEventsByAccessKeyResponses, ListRunEventsByAccessKeyErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/runs/{run_id}/bypass/events',
+    ...options
+});
+
+/**
+ * Get run logs by run access key (OAuth bypass)
+ */
+export const getRunLogsByAccessKey = <ThrowOnError extends boolean = false>(options: Options<GetRunLogsByAccessKeyData, ThrowOnError>) => (options.client ?? client).get<GetRunLogsByAccessKeyResponses, GetRunLogsByAccessKeyErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/runs/{run_id}/bypass/logs',
+    ...options
+});
+
+/**
  * List runs
  */
 export const listRuns = <ThrowOnError extends boolean = false>(options?: Options<ListRunsData, ThrowOnError>) => (options?.client ?? client).get<ListRunsResponses, ListRunsErrors, ThrowOnError>({
@@ -172,6 +199,37 @@ export const resolveApprovalDecision = <ThrowOnError extends boolean = false>(op
 export const getRun = <ThrowOnError extends boolean = false>(options: Options<GetRunData, ThrowOnError>) => (options.client ?? client).get<GetRunResponses, GetRunErrors, ThrowOnError>({
     responseType: 'json',
     url: '/api/v1/staff/runs/{run_id}',
+    ...options
+});
+
+/**
+ * Get run access key status
+ */
+export const getRunAccessKeyStatus = <ThrowOnError extends boolean = false>(options: Options<GetRunAccessKeyStatusData, ThrowOnError>) => (options.client ?? client).get<GetRunAccessKeyStatusResponses, GetRunAccessKeyStatusErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/runs/{run_id}/access-key',
+    ...options
+});
+
+/**
+ * Regenerate run access key
+ */
+export const regenerateRunAccessKey = <ThrowOnError extends boolean = false>(options: Options<RegenerateRunAccessKeyData, ThrowOnError>) => (options.client ?? client).post<RegenerateRunAccessKeyResponses, RegenerateRunAccessKeyErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/runs/{run_id}/access-key/regenerate',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Revoke run access key
+ */
+export const revokeRunAccessKey = <ThrowOnError extends boolean = false>(options: Options<RevokeRunAccessKeyData, ThrowOnError>) => (options.client ?? client).post<RevokeRunAccessKeyResponses, RevokeRunAccessKeyErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/runs/{run_id}/access-key/revoke',
     ...options
 });
 

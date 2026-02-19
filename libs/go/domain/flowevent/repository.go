@@ -65,6 +65,11 @@ const (
 	EventTypeRunTriggerConflictComment    EventType = "run.trigger.conflict.comment"
 	EventTypeRunNamespaceDeleteByStaff    EventType = "run.namespace.delete_by_staff"
 	EventTypeRunNamespaceDeleteBySystem   EventType = "run.namespace.delete_by_system"
+	EventTypeRunAccessKeyIssued           EventType = "run.access_key.issued"
+	EventTypeRunAccessKeyRegenerated      EventType = "run.access_key.regenerated"
+	EventTypeRunAccessKeyRevoked          EventType = "run.access_key.revoked"
+	EventTypeRunAccessKeyAuthorized       EventType = "run.access_key.authorized"
+	EventTypeRunAccessKeyDenied           EventType = "run.access_key.denied"
 )
 
 const (

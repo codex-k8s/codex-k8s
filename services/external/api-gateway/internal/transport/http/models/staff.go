@@ -43,6 +43,27 @@ type RunLogs struct {
 	TailLines    []string `json:"tail_lines"`
 }
 
+type RunAccessKeyStatus struct {
+	RunID         string  `json:"run_id"`
+	ProjectID     *string `json:"project_id"`
+	CorrelationID *string `json:"correlation_id"`
+	RuntimeMode   *string `json:"runtime_mode"`
+	Namespace     *string `json:"namespace"`
+	TargetEnv     *string `json:"target_env"`
+	Status        string  `json:"status"`
+	IssuedAt      *string `json:"issued_at"`
+	ExpiresAt     *string `json:"expires_at"`
+	RevokedAt     *string `json:"revoked_at"`
+	LastUsedAt    *string `json:"last_used_at"`
+	CreatedBy     *string `json:"created_by"`
+	HasKey        bool    `json:"has_key"`
+}
+
+type RunAccessKeyIssueResponse struct {
+	AccessKey string             `json:"access_key"`
+	Status    RunAccessKeyStatus `json:"status"`
+}
+
 type RuntimeDeployTaskLog struct {
 	Stage     string  `json:"stage"`
 	Level     string  `json:"level"`

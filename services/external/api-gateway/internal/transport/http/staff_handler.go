@@ -204,6 +204,27 @@ func resolveRunLogsArg(defTailLines int) func(c *echo.Context) (runLogsArg, erro
 	}
 }
 
+func resolveRunAccessBypassArg(c *echo.Context) (runAccessBypassArg, error) {
+	runID, err := requirePathParam(c, "run_id")
+	if err != nil {
+		return runAccessBypassArg{}, err
+	}
+	accessKey := strings.TrimSpace(c.QueryParam("access_key"))
+	if accessKey == "" {
+		accessKey = strings.TrimSpace(c.Request().Header.Get("X-Codex-Run-Access-Key"))
+	}
+	if accessKey == "" {
+		return runAccessBypassArg{}, errs.Validation{Field: "access_key", Msg: "is required"}
+	}
+	return runAccessBypassArg{
+		runID:       runID,
+		accessKey:   accessKey,
+		namespace:   strings.TrimSpace(c.QueryParam("namespace")),
+		targetEnv:   strings.TrimSpace(c.QueryParam("target_env")),
+		runtimeMode: strings.TrimSpace(c.QueryParam("runtime_mode")),
+	}, nil
+}
+
 func withPrincipal(c *echo.Context, fn func(principal *controlplanev1.Principal) error) error {
 	principal, err := requirePrincipal(c)
 	if err != nil {
@@ -429,6 +450,97 @@ func (h *staffHandler) ResolveApprovalDecision(c *echo.Context) error {
 
 func (h *staffHandler) GetRun(c *echo.Context) error {
 	return getByPathResp(c, "run_id", h.getRunCall, casters.Run)
+}
+
+func (h *staffHandler) GetRunByAccessKey(c *echo.Context) error {
+	arg, err := resolveRunAccessBypassArg(c)
+	if err != nil {
+		return err
+	}
+	item, err := h.cp.Service().GetRunByAccessKey(c.Request().Context(), buildGetRunByAccessKeyRequest(arg))
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, casters.Run(item))
+}
+
+func (h *staffHandler) ListRunEventsByAccessKey(c *echo.Context) error {
+	arg, err := resolveRunAccessBypassArg(c)
+	if err != nil {
+		return err
+	}
+	limit, err := parseLimit(c, 500)
+	if err != nil {
+		return err
+	}
+	resp, err := h.cp.Service().ListRunEventsByAccessKey(c.Request().Context(), buildListRunEventsByAccessKeyRequest(arg, int32(limit)))
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, models.ItemsResponse[models.FlowEvent]{Items: casters.FlowEvents(resp.GetItems())})
+}
+
+func (h *staffHandler) GetRunLogsByAccessKey(c *echo.Context) error {
+	arg, err := resolveRunAccessBypassArg(c)
+	if err != nil {
+		return err
+	}
+	tailLines := int32(200)
+	if rawTailLines := strings.TrimSpace(c.QueryParam("tail_lines")); rawTailLines != "" {
+		value, convErr := strconv.Atoi(rawTailLines)
+		if convErr != nil || value <= 0 {
+			return errs.Validation{Field: "tail_lines", Msg: "must be a positive integer"}
+		}
+		if value > 2000 {
+			value = 2000
+		}
+		tailLines = int32(value)
+	}
+	item, err := h.cp.Service().GetRunLogsByAccessKey(c.Request().Context(), buildGetRunLogsByAccessKeyRequest(arg, tailLines))
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, casters.RunLogs(item))
+}
+
+func (h *staffHandler) GetRunAccessKeyStatus(c *echo.Context) error {
+	return getByPathResp(c, "run_id", h.getRunAccessKeyStatusCall, casters.RunAccessKeyStatus)
+}
+
+func (h *staffHandler) RegenerateRunAccessKey(c *echo.Context) error {
+	return withPrincipalAndResolved(c, resolvePath("run_id"), func(principal *controlplanev1.Principal, runID string) error {
+		var req models.RegenerateRunAccessKeyRequest
+		if c.Request().ContentLength > 0 {
+			if err := bindBody(c, &req); err != nil {
+				return err
+			}
+		}
+		if req.TTLSeconds != nil && *req.TTLSeconds <= 0 {
+			return errs.Validation{Field: "ttl_seconds", Msg: "must be a positive integer"}
+		}
+		item, err := h.cp.Service().RegenerateRunAccessKey(c.Request().Context(), &controlplanev1.RegenerateRunAccessKeyRequest{
+			Principal:  principal,
+			RunId:      runID,
+			TtlSeconds: valueOrZero(req.TTLSeconds),
+		})
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, casters.RunAccessKeyIssue(item))
+	})
+}
+
+func (h *staffHandler) RevokeRunAccessKey(c *echo.Context) error {
+	return withPrincipalAndResolved(c, resolvePath("run_id"), func(principal *controlplanev1.Principal, runID string) error {
+		item, err := h.cp.Service().RevokeRunAccessKey(c.Request().Context(), &controlplanev1.RevokeRunAccessKeyRequest{
+			Principal: principal,
+			RunId:     runID,
+		})
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, casters.RunAccessKeyStatus(item.GetStatus()))
+	})
 }
 
 func (h *staffHandler) GetRunLogs(c *echo.Context) error {
@@ -880,6 +992,38 @@ func buildGetRunLogsRequest(principal *controlplanev1.Principal, arg runLogsArg)
 	}
 }
 
+func buildGetRunByAccessKeyRequest(arg runAccessBypassArg) *controlplanev1.GetRunByAccessKeyRequest {
+	return &controlplanev1.GetRunByAccessKeyRequest{
+		RunId:       arg.runID,
+		AccessKey:   arg.accessKey,
+		Namespace:   optionalStringPtr(arg.namespace),
+		TargetEnv:   optionalStringPtr(arg.targetEnv),
+		RuntimeMode: optionalStringPtr(arg.runtimeMode),
+	}
+}
+
+func buildListRunEventsByAccessKeyRequest(arg runAccessBypassArg, limit int32) *controlplanev1.ListRunEventsByAccessKeyRequest {
+	return &controlplanev1.ListRunEventsByAccessKeyRequest{
+		RunId:       arg.runID,
+		AccessKey:   arg.accessKey,
+		Namespace:   optionalStringPtr(arg.namespace),
+		TargetEnv:   optionalStringPtr(arg.targetEnv),
+		RuntimeMode: optionalStringPtr(arg.runtimeMode),
+		Limit:       limit,
+	}
+}
+
+func buildGetRunLogsByAccessKeyRequest(arg runAccessBypassArg, tailLines int32) *controlplanev1.GetRunLogsByAccessKeyRequest {
+	return &controlplanev1.GetRunLogsByAccessKeyRequest{
+		RunId:       arg.runID,
+		AccessKey:   arg.accessKey,
+		Namespace:   optionalStringPtr(arg.namespace),
+		TargetEnv:   optionalStringPtr(arg.targetEnv),
+		RuntimeMode: optionalStringPtr(arg.runtimeMode),
+		TailLines:   tailLines,
+	}
+}
+
 type approvalDecisionArg struct {
 	approvalRequestID int64
 	body              models.ResolveApprovalDecisionRequest
@@ -896,6 +1040,10 @@ func buildResolveApprovalDecisionRequest(principal *controlplanev1.Principal, ar
 
 func buildDeleteRunNamespaceRequest(principal *controlplanev1.Principal, id string) *controlplanev1.DeleteRunNamespaceRequest {
 	return &controlplanev1.DeleteRunNamespaceRequest{Principal: principal, RunId: id}
+}
+
+func buildGetRunAccessKeyStatusRequest(principal *controlplanev1.Principal, id string) *controlplanev1.GetRunAccessKeyStatusRequest {
+	return &controlplanev1.GetRunAccessKeyStatusRequest{Principal: principal, RunId: id}
 }
 
 func buildListRunEventsRequest(principal *controlplanev1.Principal, arg idLimitArg) *controlplanev1.ListRunEventsRequest {
@@ -1024,6 +1172,10 @@ func (h *staffHandler) getRunCall(ctx context.Context, principal *controlplanev1
 	return callUnaryWithArg(ctx, principal, id, buildGetRunRequest, h.cp.Service().GetRun)
 }
 
+func (h *staffHandler) getRunAccessKeyStatusCall(ctx context.Context, principal *controlplanev1.Principal, id string) (*controlplanev1.RunAccessKeyStatus, error) {
+	return callUnaryWithArg(ctx, principal, id, buildGetRunAccessKeyStatusRequest, h.cp.Service().GetRunAccessKeyStatus)
+}
+
 func (h *staffHandler) getRunLogsCall(ctx context.Context, principal *controlplanev1.Principal, arg runLogsArg) (*controlplanev1.RunLogs, error) {
 	return callUnaryWithArg(ctx, principal, arg, buildGetRunLogsRequest, h.cp.Service().GetRunLogs)
 }
@@ -1125,4 +1277,11 @@ func optionalStringPtr(value string) *string {
 		return nil
 	}
 	return &value
+}
+
+func valueOrZero(value *int32) int32 {
+	if value == nil || *value <= 0 {
+		return 0
+	}
+	return *value
 }

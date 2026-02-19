@@ -1,18 +1,23 @@
 import {
   deleteRunNamespace as deleteRunNamespaceRequest,
   getRun as getRunRequest,
+  getRunAccessKeyStatus as getRunAccessKeyStatusRequest,
   getRunLogs as getRunLogsRequest,
   listPendingApprovals as listPendingApprovalsRequest,
   listRunJobs as listRunJobsRequest,
   listRunEvents as listRunEventsRequest,
   listRunWaits as listRunWaitsRequest,
+  regenerateRunAccessKey as regenerateRunAccessKeyRequest,
   listRuns as listRunsRequest,
+  revokeRunAccessKey as revokeRunAccessKeyRequest,
   resolveApprovalDecision as resolveApprovalDecisionRequest,
 } from "../../shared/api/sdk";
 
 import type {
   ApprovalRequest,
   FlowEvent,
+  RunAccessKeyIssueResponse,
+  RunAccessKeyStatus,
   ResolveApprovalDecisionResponse,
   Run,
   RunLogs,
@@ -84,6 +89,32 @@ export async function getRunLogs(runId: string, tailLines = 200): Promise<RunLog
   const resp = await getRunLogsRequest({
     path: { run_id: runId },
     query: { tail_lines: tailLines },
+    throwOnError: true,
+  });
+  return resp.data;
+}
+
+export async function getRunAccessKeyStatus(runId: string): Promise<RunAccessKeyStatus> {
+  const resp = await getRunAccessKeyStatusRequest({
+    path: { run_id: runId },
+    throwOnError: true,
+  });
+  return resp.data;
+}
+
+export async function regenerateRunAccessKey(runId: string, ttlSeconds?: number): Promise<RunAccessKeyIssueResponse> {
+  const body = ttlSeconds && ttlSeconds > 0 ? { ttl_seconds: ttlSeconds } : undefined;
+  const resp = await regenerateRunAccessKeyRequest({
+    path: { run_id: runId },
+    body,
+    throwOnError: true,
+  });
+  return resp.data;
+}
+
+export async function revokeRunAccessKey(runId: string): Promise<RunAccessKeyStatus> {
+  const resp = await revokeRunAccessKeyRequest({
+    path: { run_id: runId },
     throwOnError: true,
   });
   return resp.data;

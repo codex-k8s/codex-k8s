@@ -104,6 +104,8 @@ type Dependencies struct {
 	RuntimePreparer RuntimeEnvironmentPreparer
 	// MCPTokenIssuer issues short-lived MCP token for run pods.
 	MCPTokenIssuer MCPTokenIssuer
+	// RunAccessKeys issues run-scoped OAuth bypass keys for run pods.
+	RunAccessKeys RunAccessKeyIssuer
 	// RunStatus updates one run-bound issue status comment.
 	RunStatus RunStatusNotifier
 	// Logger records worker diagnostics.
@@ -119,6 +121,7 @@ type Service struct {
 	launcher  Launcher
 	deployer  RuntimeEnvironmentPreparer
 	mcpTokens MCPTokenIssuer
+	runAccess RunAccessKeyIssuer
 	runStatus RunStatusNotifier
 	logger    *slog.Logger
 	labels    runAgentLabelCatalog
@@ -202,6 +205,9 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if deps.MCPTokenIssuer == nil {
 		deps.MCPTokenIssuer = noopMCPTokenIssuer{}
 	}
+	if deps.RunAccessKeys == nil {
+		deps.RunAccessKeys = noopRunAccessKeyIssuer{}
+	}
 	if deps.RuntimePreparer == nil {
 		deps.RuntimePreparer = noopRuntimeEnvironmentPreparer{}
 	}
@@ -217,6 +223,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 		launcher:  deps.Launcher,
 		deployer:  deps.RuntimePreparer,
 		mcpTokens: deps.MCPTokenIssuer,
+		runAccess: deps.RunAccessKeys,
 		runStatus: deps.RunStatus,
 		logger:    deps.Logger,
 		labels:    labelCatalog,

@@ -1,6 +1,8 @@
 export type {
   ApprovalRequest,
   FlowEvent,
+  RunAccessKeyIssueResponse,
+  RunAccessKeyStatus,
   ResolveApprovalDecisionResponse,
   Run,
   RunLogs,

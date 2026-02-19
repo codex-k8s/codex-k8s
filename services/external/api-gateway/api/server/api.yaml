@@ -252,6 +252,83 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /api/v1/runs/{run_id}/bypass:
+    get:
+      summary: Get run by run access key (OAuth bypass)
+      operationId: getRunByAccessKey
+      tags: [run-bypass]
+      parameters:
+        - $ref: "#/components/parameters/RunID"
+        - $ref: "#/components/parameters/RunAccessKeyQuery"
+        - $ref: "#/components/parameters/BypassNamespaceQuery"
+        - $ref: "#/components/parameters/BypassTargetEnvQuery"
+        - $ref: "#/components/parameters/BypassRuntimeModeQuery"
+      responses:
+        "200":
+          description: Run details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Run"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/runs/{run_id}/bypass/events:
+    get:
+      summary: List run flow events by run access key (OAuth bypass)
+      operationId: listRunEventsByAccessKey
+      tags: [run-bypass]
+      parameters:
+        - $ref: "#/components/parameters/RunID"
+        - $ref: "#/components/parameters/RunAccessKeyQuery"
+        - $ref: "#/components/parameters/BypassNamespaceQuery"
+        - $ref: "#/components/parameters/BypassTargetEnvQuery"
+        - $ref: "#/components/parameters/BypassRuntimeModeQuery"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Flow events list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowEventItemsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/runs/{run_id}/bypass/logs:
+    get:
+      summary: Get run logs by run access key (OAuth bypass)
+      operationId: getRunLogsByAccessKey
+      tags: [run-bypass]
+      parameters:
+        - $ref: "#/components/parameters/RunID"
+        - $ref: "#/components/parameters/RunAccessKeyQuery"
+        - $ref: "#/components/parameters/BypassNamespaceQuery"
+        - $ref: "#/components/parameters/BypassTargetEnvQuery"
+        - $ref: "#/components/parameters/BypassRuntimeModeQuery"
+        - $ref: "#/components/parameters/TailLines"
+      responses:
+        "200":
+          description: Run logs snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunLogs"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /api/v1/staff/runs:
     get:
       summary: List runs
@@ -384,6 +461,81 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/staff/runs/{run_id}/access-key:
+    get:
+      summary: Get run access key status
+      operationId: getRunAccessKeyStatus
+      tags: [staff-runs]
+      parameters:
+        - $ref: "#/components/parameters/RunID"
+      responses:
+        "200":
+          description: Run access key status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunAccessKeyStatus"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/staff/runs/{run_id}/access-key/regenerate:
+    post:
+      summary: Regenerate run access key
+      operationId: regenerateRunAccessKey
+      tags: [staff-runs]
+      parameters:
+        - $ref: "#/components/parameters/RunID"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegenerateRunAccessKeyRequest"
+      responses:
+        "200":
+          description: Run access key rotated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunAccessKeyIssueResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/staff/runs/{run_id}/access-key/revoke:
+    post:
+      summary: Revoke run access key
+      operationId: revokeRunAccessKey
+      tags: [staff-runs]
+      parameters:
+        - $ref: "#/components/parameters/RunID"
+      responses:
+        "200":
+          description: Run access key revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunAccessKeyStatus"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -1215,6 +1367,30 @@ components:
         type: integer
         minimum: 1
         maximum: 2000
+    RunAccessKeyQuery:
+      in: query
+      name: access_key
+      required: true
+      schema:
+        type: string
+    BypassNamespaceQuery:
+      in: query
+      name: namespace
+      required: false
+      schema:
+        type: string
+    BypassTargetEnvQuery:
+      in: query
+      name: target_env
+      required: false
+      schema:
+        type: string
+    BypassRuntimeModeQuery:
+      in: query
+      name: runtime_mode
+      required: false
+      schema:
+        type: string
     MCPCallbackToken:
       in: header
       name: X-Codex-MCP-Token
@@ -1578,6 +1754,72 @@ components:
           type: array
           items:
             type: string
+
+    RunAccessKeyStatus:
+      type: object
+      additionalProperties: false
+      required: [run_id, status, has_key]
+      properties:
+        run_id:
+          type: string
+        project_id:
+          type: string
+          nullable: true
+        correlation_id:
+          type: string
+          nullable: true
+        runtime_mode:
+          type: string
+          nullable: true
+        namespace:
+          type: string
+          nullable: true
+        target_env:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [active, revoked, expired, missing]
+        issued_at:
+          type: string
+          format: date-time
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        revoked_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_used_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_by:
+          type: string
+          nullable: true
+        has_key:
+          type: boolean
+
+    RunAccessKeyIssueResponse:
+      type: object
+      additionalProperties: false
+      required: [access_key, status]
+      properties:
+        access_key:
+          type: string
+        status:
+          $ref: "#/components/schemas/RunAccessKeyStatus"
+
+    RegenerateRunAccessKeyRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        ttl_seconds:
+          type: integer
+          format: int32
+          minimum: 1
 
     RuntimeDeployTaskLog:
       type: object

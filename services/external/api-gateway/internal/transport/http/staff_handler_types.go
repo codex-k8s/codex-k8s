@@ -27,6 +27,15 @@ type runLogsArg struct {
 	tailLines int32
 }
 
+// runAccessBypassArg keeps query/path input for public run bypass endpoints.
+type runAccessBypassArg struct {
+	runID       string
+	accessKey   string
+	namespace   string
+	targetEnv   string
+	runtimeMode string
+}
+
 // runtimeDeployListArg keeps filters for runtime deploy tasks list endpoint.
 type runtimeDeployListArg struct {
 	limit     int32

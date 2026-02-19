@@ -14,6 +14,7 @@ import (
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
+	runaccessdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runaccess"
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
 	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
@@ -55,6 +56,16 @@ type runtimeDeployService interface {
 	PrepareRunEnvironment(ctx context.Context, params runtimedeploydomain.PrepareParams) (runtimedeploydomain.PrepareResult, error)
 }
 
+type runAccessService interface {
+	Issue(ctx context.Context, params runaccessdomain.IssueParams) (runaccessdomain.IssuedKey, error)
+	Regenerate(ctx context.Context, params runaccessdomain.IssueParams) (runaccessdomain.IssuedKey, error)
+	GetStatus(ctx context.Context, runID string) (runaccessdomain.KeyStatus, error)
+	Revoke(ctx context.Context, runID string, revokedBy string) (runaccessdomain.KeyStatus, error)
+	GetRunByAccessKey(ctx context.Context, params runaccessdomain.AuthorizeParams) (entitytypes.StaffRun, error)
+	ListRunEventsByAccessKey(ctx context.Context, params runaccessdomain.AuthorizeParams, limit int) ([]entitytypes.StaffFlowEvent, error)
+	GetRunLogsByAccessKey(ctx context.Context, params runaccessdomain.AuthorizeParams) (entitytypes.StaffRunLogs, error)
+}
+
 type runtimeErrorRecorder interface {
 	RecordBestEffort(ctx context.Context, params querytypes.RuntimeErrorRecordParams)
 }
@@ -73,6 +84,7 @@ type Dependencies struct {
 	RuntimeDeploy  runtimeDeployService
 	RuntimeErrors  runtimeErrorRecorder
 	MCP            mcpRunTokenService
+	RunAccess      runAccessService
 	CodexAuth      codexAuthService
 	Logger         *slog.Logger
 }
@@ -88,6 +100,7 @@ type Server struct {
 	runtimeDeploy  runtimeDeployService
 	runtimeErrors  runtimeErrorRecorder
 	mcp            mcpRunTokenService
+	runAccess      runAccessService
 	codexAuth      codexAuthService
 	logger         *slog.Logger
 }
@@ -101,6 +114,7 @@ func NewServer(deps Dependencies) *Server {
 		runtimeDeploy:  deps.RuntimeDeploy,
 		runtimeErrors:  deps.RuntimeErrors,
 		mcp:            deps.MCP,
+		runAccess:      deps.RunAccess,
 		codexAuth:      deps.CodexAuth,
 		logger:         deps.Logger,
 	}
@@ -307,21 +321,122 @@ func (s *Server) GetRunLogs(ctx context.Context, req *controlplanev1.GetRunLogsR
 	if err != nil {
 		return nil, toStatus(err)
 	}
+	return runLogsToProto(item), nil
+}
 
-	snapshotJSON := strings.TrimSpace(string(item.SnapshotJSON))
-	if snapshotJSON == "" {
-		snapshotJSON = "{}"
+func (s *Server) GetRunByAccessKey(ctx context.Context, req *controlplanev1.GetRunByAccessKeyRequest) (*controlplanev1.Run, error) {
+	if s.runAccess == nil {
+		return nil, status.Error(codes.FailedPrecondition, "run access service is not configured")
 	}
-	out := &controlplanev1.RunLogs{
-		RunId:        item.RunID,
-		Status:       item.Status,
-		SnapshotJson: snapshotJSON,
-		TailLines:    item.TailLines,
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
 	}
-	if item.UpdatedAt != nil {
-		out.UpdatedAt = timestamppb.New(item.UpdatedAt.UTC())
+
+	runItem, err := s.runAccess.GetRunByAccessKey(ctx, runaccessdomain.AuthorizeParams{
+		RunID:       strings.TrimSpace(req.GetRunId()),
+		AccessKey:   strings.TrimSpace(req.GetAccessKey()),
+		Scope:       runaccessdomain.BypassScopeRunDetails,
+		Namespace:   strings.TrimSpace(req.GetNamespace()),
+		TargetEnv:   strings.TrimSpace(req.GetTargetEnv()),
+		RuntimeMode: strings.TrimSpace(req.GetRuntimeMode()),
+	})
+	if err != nil {
+		return nil, toStatus(err)
 	}
-	return out, nil
+	return runToProto(runItem), nil
+}
+
+func (s *Server) ListRunEventsByAccessKey(ctx context.Context, req *controlplanev1.ListRunEventsByAccessKeyRequest) (*controlplanev1.ListRunEventsResponse, error) {
+	if s.runAccess == nil {
+		return nil, status.Error(codes.FailedPrecondition, "run access service is not configured")
+	}
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	items, err := s.runAccess.ListRunEventsByAccessKey(ctx, runaccessdomain.AuthorizeParams{
+		RunID:       strings.TrimSpace(req.GetRunId()),
+		AccessKey:   strings.TrimSpace(req.GetAccessKey()),
+		Scope:       runaccessdomain.BypassScopeRunEvents,
+		Namespace:   strings.TrimSpace(req.GetNamespace()),
+		TargetEnv:   strings.TrimSpace(req.GetTargetEnv()),
+		RuntimeMode: strings.TrimSpace(req.GetRuntimeMode()),
+	}, clampLimit(req.GetLimit(), 500))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return &controlplanev1.ListRunEventsResponse{Items: flowEventsToProto(items)}, nil
+}
+
+func (s *Server) GetRunLogsByAccessKey(ctx context.Context, req *controlplanev1.GetRunLogsByAccessKeyRequest) (*controlplanev1.RunLogs, error) {
+	if s.runAccess == nil {
+		return nil, status.Error(codes.FailedPrecondition, "run access service is not configured")
+	}
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	item, err := s.runAccess.GetRunLogsByAccessKey(ctx, runaccessdomain.AuthorizeParams{
+		RunID:       strings.TrimSpace(req.GetRunId()),
+		AccessKey:   strings.TrimSpace(req.GetAccessKey()),
+		Scope:       runaccessdomain.BypassScopeRunLogs,
+		Namespace:   strings.TrimSpace(req.GetNamespace()),
+		TargetEnv:   strings.TrimSpace(req.GetTargetEnv()),
+		RuntimeMode: strings.TrimSpace(req.GetRuntimeMode()),
+	})
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	item.TailLines = normalizeRunLogsTailLines(item.TailLines, req.GetTailLines())
+	return runLogsToProto(item), nil
+}
+
+func (s *Server) GetRunAccessKeyStatus(ctx context.Context, req *controlplanev1.GetRunAccessKeyStatusRequest) (*controlplanev1.RunAccessKeyStatus, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	statusItem, err := s.staff.GetRunAccessKeyStatus(ctx, p, strings.TrimSpace(req.GetRunId()))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return runAccessKeyStatusToProto(statusItem), nil
+}
+
+func (s *Server) RegenerateRunAccessKey(ctx context.Context, req *controlplanev1.RegenerateRunAccessKeyRequest) (*controlplanev1.RegenerateRunAccessKeyResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	issued, err := s.staff.RegenerateRunAccessKey(ctx, p, strings.TrimSpace(req.GetRunId()), time.Duration(req.GetTtlSeconds())*time.Second)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return &controlplanev1.RegenerateRunAccessKeyResponse{
+		AccessKey: issued.AccessKey,
+		Status:    runAccessKeyStatusToProto(issued.Status),
+	}, nil
+}
+
+func (s *Server) RevokeRunAccessKey(ctx context.Context, req *controlplanev1.RevokeRunAccessKeyRequest) (*controlplanev1.RevokeRunAccessKeyResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	statusItem, err := s.staff.RevokeRunAccessKey(ctx, p, strings.TrimSpace(req.GetRunId()))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return &controlplanev1.RevokeRunAccessKeyResponse{Status: runAccessKeyStatusToProto(statusItem)}, nil
 }
 
 func (s *Server) ListPendingApprovals(ctx context.Context, req *controlplanev1.ListPendingApprovalsRequest) (*controlplanev1.ListPendingApprovalsResponse, error) {
@@ -402,16 +517,7 @@ func (s *Server) ListRunEvents(ctx context.Context, req *controlplanev1.ListRunE
 	if err != nil {
 		return nil, toStatus(err)
 	}
-	out := make([]*controlplanev1.FlowEvent, 0, len(items))
-	for _, e := range items {
-		out = append(out, &controlplanev1.FlowEvent{
-			CorrelationId: e.CorrelationID,
-			EventType:     e.EventType,
-			CreatedAt:     timestamppb.New(e.CreatedAt.UTC()),
-			PayloadJson:   string(e.PayloadJSON),
-		})
-	}
-	return &controlplanev1.ListRunEventsResponse{Items: out}, nil
+	return &controlplanev1.ListRunEventsResponse{Items: flowEventsToProto(items)}, nil
 }
 
 func (s *Server) ListRunLearningFeedback(ctx context.Context, req *controlplanev1.ListRunLearningFeedbackRequest) (*controlplanev1.ListRunLearningFeedbackResponse, error) {
@@ -939,6 +1045,37 @@ func (s *Server) IssueRunMCPToken(ctx context.Context, req *controlplanev1.Issue
 	return &controlplanev1.IssueRunMCPTokenResponse{
 		Token:     issuedToken.Token,
 		ExpiresAt: timestamppb.New(issuedToken.ExpiresAt.UTC()),
+	}, nil
+}
+
+func (s *Server) IssueRunAccessKey(ctx context.Context, req *controlplanev1.IssueRunAccessKeyRequest) (*controlplanev1.IssueRunAccessKeyResponse, error) {
+	if s.runAccess == nil {
+		return nil, status.Error(codes.FailedPrecondition, "run access service is not configured")
+	}
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	runID := strings.TrimSpace(req.GetRunId())
+	if runID == "" {
+		return nil, status.Error(codes.InvalidArgument, "run_id is required")
+	}
+
+	issued, err := s.runAccess.Issue(ctx, runaccessdomain.IssueParams{
+		RunID:       runID,
+		RuntimeMode: strings.TrimSpace(req.GetRuntimeMode()),
+		Namespace:   strings.TrimSpace(req.GetNamespace()),
+		TargetEnv:   strings.TrimSpace(req.GetTargetEnv()),
+		CreatedBy:   strings.TrimSpace(req.GetCreatedBy()),
+		TTL:         time.Duration(req.GetTtlSeconds()) * time.Second,
+	})
+	if err != nil {
+		return nil, toStatus(err)
+	}
+
+	return &controlplanev1.IssueRunAccessKeyResponse{
+		AccessKey: issued.AccessKey,
+		Status:    runAccessKeyStatusToProto(issued.Status),
 	}, nil
 }
 
@@ -1628,6 +1765,80 @@ func runToProto(r entitytypes.StaffRun) *controlplanev1.Run {
 	}
 	if r.LastHeartbeatAt != nil {
 		out.LastHeartbeatAt = timestamppb.New(r.LastHeartbeatAt.UTC())
+	}
+	return out
+}
+
+func flowEventsToProto(items []entitytypes.StaffFlowEvent) []*controlplanev1.FlowEvent {
+	if len(items) == 0 {
+		return []*controlplanev1.FlowEvent{}
+	}
+	out := make([]*controlplanev1.FlowEvent, 0, len(items))
+	for _, item := range items {
+		out = append(out, &controlplanev1.FlowEvent{
+			CorrelationId: item.CorrelationID,
+			EventType:     item.EventType,
+			CreatedAt:     timestamppb.New(item.CreatedAt.UTC()),
+			PayloadJson:   string(item.PayloadJSON),
+		})
+	}
+	return out
+}
+
+func runLogsToProto(item entitytypes.StaffRunLogs) *controlplanev1.RunLogs {
+	snapshotJSON := strings.TrimSpace(string(item.SnapshotJSON))
+	if snapshotJSON == "" {
+		snapshotJSON = "{}"
+	}
+	out := &controlplanev1.RunLogs{
+		RunId:        item.RunID,
+		Status:       item.Status,
+		SnapshotJson: snapshotJSON,
+		TailLines:    item.TailLines,
+	}
+	if item.UpdatedAt != nil {
+		out.UpdatedAt = timestamppb.New(item.UpdatedAt.UTC())
+	}
+	return out
+}
+
+func normalizeRunLogsTailLines(lines []string, limit int32) []string {
+	if limit <= 0 {
+		return lines
+	}
+	maxLines := int(limit)
+	if maxLines > 2000 {
+		maxLines = 2000
+	}
+	if len(lines) <= maxLines {
+		return lines
+	}
+	return lines[len(lines)-maxLines:]
+}
+
+func runAccessKeyStatusToProto(item runaccessdomain.KeyStatus) *controlplanev1.RunAccessKeyStatus {
+	out := &controlplanev1.RunAccessKeyStatus{
+		RunId:         item.RunID,
+		ProjectId:     stringPtrOrNil(item.ProjectID),
+		CorrelationId: stringPtrOrNil(item.CorrelationID),
+		RuntimeMode:   stringPtrOrNil(item.RuntimeMode),
+		Namespace:     stringPtrOrNil(item.Namespace),
+		TargetEnv:     stringPtrOrNil(item.TargetEnv),
+		Status:        string(item.Status),
+		CreatedBy:     stringPtrOrNil(item.CreatedBy),
+		HasKey:        item.HasKey,
+	}
+	if item.IssuedAt != nil {
+		out.IssuedAt = timestamppb.New(item.IssuedAt.UTC())
+	}
+	if item.ExpiresAt != nil {
+		out.ExpiresAt = timestamppb.New(item.ExpiresAt.UTC())
+	}
+	if item.RevokedAt != nil {
+		out.RevokedAt = timestamppb.New(item.RevokedAt.UTC())
+	}
+	if item.LastUsedAt != nil {
+		out.LastUsedAt = timestamppb.New(item.LastUsedAt.UTC())
 	}
 	return out
 }

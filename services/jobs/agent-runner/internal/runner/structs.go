@@ -70,6 +70,7 @@ type Config struct {
 	ControlPlaneGRPCTarget string
 	MCPBaseURL             string
 	MCPBearerToken         string
+	RunAccessKey           string
 
 	GitBotConfig
 	OpenAIConfig
@@ -165,6 +166,8 @@ type promptEnvelopeTemplateData struct {
 	TriggerLabel       string
 	StateInReviewLabel string
 	HasContext7        bool
+	HasRunAccessKey    bool
+	RunAccessKey       string
 	PromptLocale       string
 	TaskBody           string
 }

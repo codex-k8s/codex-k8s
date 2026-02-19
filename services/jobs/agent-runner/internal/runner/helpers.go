@@ -130,6 +130,8 @@ func (s *Service) buildPrompt(taskBody string, result runResult) (string, error)
 		TriggerLabel:       strings.TrimSpace(s.cfg.TriggerLabel),
 		StateInReviewLabel: strings.TrimSpace(s.cfg.StateInReviewLabel),
 		HasContext7:        hasContext7,
+		HasRunAccessKey:    strings.TrimSpace(s.cfg.RunAccessKey) != "",
+		RunAccessKey:       strings.TrimSpace(s.cfg.RunAccessKey),
 		PromptLocale:       normalizePromptLocale(s.cfg.PromptTemplateLocale),
 		TaskBody:           taskBody,
 	})

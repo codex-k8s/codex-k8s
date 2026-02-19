@@ -388,6 +388,37 @@ func RunLogs(item *controlplanev1.RunLogs) models.RunLogs {
 	return out
 }
 
+func RunAccessKeyStatus(item *controlplanev1.RunAccessKeyStatus) models.RunAccessKeyStatus {
+	out := models.RunAccessKeyStatus{}
+	if item == nil {
+		return out
+	}
+	out.RunID = item.GetRunId()
+	out.ProjectID = cast.OptionalTrimmedString(item.ProjectId)
+	out.CorrelationID = cast.OptionalTrimmedString(item.CorrelationId)
+	out.RuntimeMode = cast.OptionalTrimmedString(item.RuntimeMode)
+	out.Namespace = cast.OptionalTrimmedString(item.Namespace)
+	out.TargetEnv = cast.OptionalTrimmedString(item.TargetEnv)
+	out.Status = item.GetStatus()
+	out.IssuedAt = cast.OptionalTimestampRFC3339Nano(item.GetIssuedAt())
+	out.ExpiresAt = cast.OptionalTimestampRFC3339Nano(item.GetExpiresAt())
+	out.RevokedAt = cast.OptionalTimestampRFC3339Nano(item.GetRevokedAt())
+	out.LastUsedAt = cast.OptionalTimestampRFC3339Nano(item.GetLastUsedAt())
+	out.CreatedBy = cast.OptionalTrimmedString(item.CreatedBy)
+	out.HasKey = item.GetHasKey()
+	return out
+}
+
+func RunAccessKeyIssue(item *controlplanev1.RegenerateRunAccessKeyResponse) models.RunAccessKeyIssueResponse {
+	out := models.RunAccessKeyIssueResponse{}
+	if item == nil {
+		return out
+	}
+	out.AccessKey = item.GetAccessKey()
+	out.Status = RunAccessKeyStatus(item.GetStatus())
+	return out
+}
+
 func RuntimeDeployTaskLog(item *controlplanev1.RuntimeDeployTaskLog) models.RuntimeDeployTaskLog {
 	out := models.RuntimeDeployTaskLog{}
 	if item == nil {

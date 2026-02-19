@@ -18,6 +18,7 @@ const (
 	runFailureReasonNamespacePrepareFailed runFailureReason = "namespace_prepare_failed"
 	runFailureReasonRuntimeDeployFailed    runFailureReason = "runtime_deploy_failed"
 	runFailureReasonMCPTokenIssueFailed    runFailureReason = "mcp_token_issue_failed"
+	runFailureReasonRunAccessKeyIssueFailed runFailureReason = "run_access_key_issue_failed"
 	runFailureReasonAgentContextResolve    runFailureReason = "agent_context_resolve_failed"
 	runFailureReasonPreconditionFailed     runFailureReason = "failed_precondition"
 )

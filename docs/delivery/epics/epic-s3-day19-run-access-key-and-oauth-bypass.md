@@ -2,10 +2,10 @@
 doc_id: EPC-CK8S-S3-D19
 type: epic
 title: "Epic S3 Day 19: Run access key and OAuth bypass flow"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-18
-updated_at: 2026-02-18
+updated_at: 2026-02-19
 related_issues: [19]
 related_prs: []
 approvals:
@@ -57,3 +57,33 @@ approvals:
 ## Риски/зависимости
 - Высокий security-risk: нужен строгий scope, TTL, rotation/revocation.
 - Риск неправильного UX: требуется явное разграничение обычного OAuth и временного bypass режима.
+
+## Фактический результат (выполнено)
+- Добавлена run-scoped модель доступа `run_access_keys`:
+  - миграция БД;
+  - доменные типы и repository contract;
+  - PostgreSQL-репозиторий с upsert/revoke/touch-last-used.
+- Реализован domain service `runaccess`:
+  - issue/regenerate/revoke/get-status;
+  - authorize-by-key с проверкой scope (`run_id`, `project_id`, `namespace`, `target_env`, `runtime_mode`) и TTL;
+  - audit событий в flow events (`issued`, `regenerated`, `revoked`, `authorized`, `denied`).
+- Интеграция в run lifecycle:
+  - worker выпускает key при старте run;
+  - key прокидывается в job env как `CODEXK8S_RUN_ACCESS_KEY`;
+  - agent-runner передаёт key в prompt envelope как ограниченный bypass-механизм.
+- Расширен gRPC transport control-plane:
+  - staff operations: `GetRunAccessKeyStatus`, `RegenerateRunAccessKey`, `RevokeRunAccessKey`;
+  - bypass operations: `GetRunByAccessKey`, `ListRunEventsByAccessKey`, `GetRunLogsByAccessKey`;
+  - proto-контракт и generated-код синхронизированы.
+- Расширен HTTP/API gateway:
+  - staff endpoints для rotate/revoke/status;
+  - public bypass endpoints (`/api/v1/runs/{run_id}/bypass*`) с обязательным `access_key`;
+  - OpenAPI contract и generated SDK синхронизированы.
+- Реализован staff UI (Run Details):
+  - отображение статуса и метаданных bypass key;
+  - действия regenerate/revoke;
+  - показ plaintext key только сразу после выпуска/ротации.
+
+## Проверки
+- `go test ./services/internal/control-plane/... ./services/jobs/worker/... ./services/jobs/agent-runner/... ./services/external/api-gateway/... ./libs/go/k8s/joblauncher/...` — passed.
+- `npm --prefix services/staff/web-console run build` — passed.
