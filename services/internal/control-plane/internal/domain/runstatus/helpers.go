@@ -105,6 +105,12 @@ func mergeState(base commentState, update commentState) commentState {
 	if strings.TrimSpace(update.RunStatus) != "" {
 		base.RunStatus = strings.TrimSpace(update.RunStatus)
 	}
+	if strings.TrimSpace(update.CodexAuthVerificationURL) != "" {
+		base.CodexAuthVerificationURL = strings.TrimSpace(update.CodexAuthVerificationURL)
+	}
+	if strings.TrimSpace(update.CodexAuthUserCode) != "" {
+		base.CodexAuthUserCode = strings.TrimSpace(update.CodexAuthUserCode)
+	}
 	if update.Deleted {
 		base.Deleted = true
 	}

@@ -47,3 +47,24 @@ func TestRenderCommentBody_RendersSlotURLAndAuthTimeline(t *testing.T) {
 		t.Fatalf("rendered body does not contain auth resolved timeline item: %q", body)
 	}
 }
+
+func TestRenderCommentBody_RendersAuthVerificationPayload(t *testing.T) {
+	t.Parallel()
+
+	body, err := renderCommentBody(commentState{
+		RunID:                    "run-auth",
+		Phase:                    PhaseAuthRequired,
+		PromptLocale:             localeRU,
+		CodexAuthVerificationURL: "https://example.com/device",
+		CodexAuthUserCode:        "ABCD-EFGH",
+	}, "https://platform.codex-k8s.dev/runs/run-auth")
+	if err != nil {
+		t.Fatalf("renderCommentBody returned error: %v", err)
+	}
+	if !strings.Contains(body, "Ссылка авторизации") {
+		t.Fatalf("rendered body does not contain auth verification url label: %q", body)
+	}
+	if !strings.Contains(body, "ABCD-EFGH") {
+		t.Fatalf("rendered body does not contain auth user code: %q", body)
+	}
+}

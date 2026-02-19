@@ -758,6 +758,8 @@ message UpsertRunStatusCommentRequest {
   bool already_deleted = 11;
   optional string model = 12;
   optional string reasoning_effort = 13;
+  optional string codex_auth_verification_url = 14;
+  optional string codex_auth_user_code = 15;
 }
 
 message UpsertRunStatusCommentResponse {

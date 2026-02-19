@@ -1,6 +1,12 @@
 ### 🧠 AI Agent Run
 {{- if .NeedsCodexAuth }}
 🔐 Codex authentication required{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Run link]({{ .ManagementURL }}){{- end }}
+{{- if .ShowCodexAuthVerificationURL }}
+- Verification URL: [{{ .CodexAuthVerificationURL }}]({{ .CodexAuthVerificationURL }})
+{{- end }}
+{{- if .ShowCodexAuthUserCode }}
+- User code: `{{ .CodexAuthUserCode }}`
+{{- end }}
 {{- else }}
 ✅ Agent started{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Run link]({{ .ManagementURL }}){{- end }}
 {{- end }}

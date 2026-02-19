@@ -111,6 +111,8 @@ type UpsertRunStatusCommentParams struct {
 	Model           string
 	ReasoningEffort string
 	RunStatus       string
+	CodexAuthVerificationURL string
+	CodexAuthUserCode        string
 }
 
 // Dial creates control-plane gRPC client with run-bound bearer auth.
@@ -271,6 +273,8 @@ func (c *Client) UpsertRunStatusComment(ctx context.Context, params UpsertRunSta
 		Model:           optionalString(strings.TrimSpace(params.Model)),
 		ReasoningEffort: optionalString(strings.TrimSpace(params.ReasoningEffort)),
 		RunStatus:       optionalString(strings.TrimSpace(params.RunStatus)),
+		CodexAuthVerificationUrl: optionalString(strings.TrimSpace(params.CodexAuthVerificationURL)),
+		CodexAuthUserCode:        optionalString(strings.TrimSpace(params.CodexAuthUserCode)),
 	})
 	if err != nil {
 		return fmt.Errorf("upsert run status comment: %w", err)

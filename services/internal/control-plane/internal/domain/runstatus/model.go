@@ -37,6 +37,8 @@ type UpsertCommentParams struct {
 	Model           string
 	ReasoningEffort string
 	RunStatus       string
+	CodexAuthVerificationURL string
+	CodexAuthUserCode        string
 	Deleted         bool
 	AlreadyDeleted  bool
 }
@@ -193,6 +195,8 @@ type commentState struct {
 	Model           string `json:"model,omitempty"`
 	ReasoningEffort string `json:"reasoning_effort,omitempty"`
 	RunStatus       string `json:"run_status,omitempty"`
+	CodexAuthVerificationURL string `json:"codex_auth_verification_url,omitempty"`
+	CodexAuthUserCode        string `json:"codex_auth_user_code,omitempty"`
 	Deleted         bool   `json:"deleted,omitempty"`
 	AlreadyDeleted  bool   `json:"already_deleted,omitempty"`
 }

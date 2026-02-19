@@ -1355,6 +1355,8 @@ func (s *Server) UpsertRunStatusComment(ctx context.Context, req *controlplanev1
 		Model:           strings.TrimSpace(req.GetModel()),
 		ReasoningEffort: strings.TrimSpace(req.GetReasoningEffort()),
 		RunStatus:       strings.TrimSpace(req.GetRunStatus()),
+		CodexAuthVerificationURL: strings.TrimSpace(req.GetCodexAuthVerificationUrl()),
+		CodexAuthUserCode:        strings.TrimSpace(req.GetCodexAuthUserCode()),
 		Deleted:         req.GetDeleted(),
 		AlreadyDeleted:  req.GetAlreadyDeleted(),
 	})

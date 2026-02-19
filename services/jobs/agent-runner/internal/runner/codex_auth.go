@@ -135,6 +135,12 @@ func (s *Service) ensureCodexAuthenticated(ctx context.Context, state codexState
 			VerificationURL: url,
 			UserCode:        code,
 		})
+		_ = s.cp.UpsertRunStatusComment(ctx, cpclient.UpsertRunStatusCommentParams{
+			RunID:                    s.cfg.RunID,
+			Phase:                    "auth_required",
+			CodexAuthVerificationURL: url,
+			CodexAuthUserCode:        code,
+		})
 	})
 
 	cmd := exec.CommandContext(ctx, "codex", "login", "--device-auth")
