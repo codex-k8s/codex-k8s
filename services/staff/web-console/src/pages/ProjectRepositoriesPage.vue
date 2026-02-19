@@ -6,7 +6,7 @@
       </template>
       <template #actions>
         <CopyChip :label="t('pages.projectRepositories.projectId')" :value="projectId" icon="mdi-identifier" />
-        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="repos.loading" @click="load" />
+        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="repos.loading" @click="refreshRepositories" />
       </template>
     </PageHeader>
 
@@ -44,7 +44,7 @@
 
     <VCard class="mt-4" variant="outlined">
       <VCardText>
-        <VDataTable :headers="headers" :items="repos.items" :loading="repos.loading" :items-per-page="10" hover>
+        <VDataTable v-model:page="tablePage" :headers="headers" :items="repos.items" :loading="repos.loading" :items-per-page="itemsPerPage" hover>
           <template #item.repo="{ item }">
             <span class="mono text-medium-emphasis">{{ item.owner }}/{{ item.name }}</span>
           </template>
@@ -358,6 +358,7 @@ import { useProjectRepositoriesStore } from "../features/projects/repositories-s
 import { useProjectDetailsStore } from "../features/projects/details-store";
 import type { DocsetGroup, RepositoryBinding, RunRepositoryPreflightResponse } from "../features/projects/types";
 import { formatDateTime } from "../shared/lib/datetime";
+import { createProgressiveTableState } from "../shared/lib/progressive-table";
 
 const props = defineProps<{ projectId: string }>();
 
@@ -365,6 +366,9 @@ const { t, locale } = useI18n({ useScope: "global" });
 const repos = useProjectRepositoriesStore();
 const details = useProjectDetailsStore();
 const snackbar = useSnackbarStore();
+const itemsPerPage = 10;
+const paging = createProgressiveTableState({ itemsPerPage });
+const tablePage = paging.page;
 
 const owner = ref("");
 const name = ref("");
@@ -387,9 +391,27 @@ const headers = [
   { title: "", key: "actions", sortable: false, width: 72, align: "end" },
 ] as const;
 
-async function load() {
-  await details.load(props.projectId);
-  await repos.load(props.projectId);
+async function loadRepositories(): Promise<void> {
+  await repos.load(props.projectId, paging.limit.value);
+  paging.markLoaded(repos.items.length);
+}
+
+async function refreshRepositories(): Promise<void> {
+  paging.reset();
+  await Promise.all([
+    details.load(props.projectId),
+    loadRepositories(),
+  ]);
+}
+
+async function loadMoreRepositoriesIfNeeded(nextPage: number, prevPage: number): Promise<void> {
+  if (repos.loading) {
+    return;
+  }
+  if (!paging.shouldGrowForPage(repos.items.length, nextPage, prevPage)) {
+    return;
+  }
+  await loadRepositories();
 }
 
 async function attach() {
@@ -401,7 +423,8 @@ async function attach() {
     botToken: newBotToken.value.trim() === "" ? null : newBotToken.value,
     botUsername: newBotUsername.value.trim() ? newBotUsername.value.trim() : null,
     botEmail: newBotEmail.value.trim() ? newBotEmail.value.trim() : null,
-  });
+  }, paging.limit.value);
+  paging.markLoaded(repos.items.length);
   if (binding && !repos.attachError) {
     owner.value = "";
     name.value = "";
@@ -423,7 +446,8 @@ async function attachAndPreflight() {
     botToken: newBotToken.value.trim() === "" ? null : newBotToken.value,
     botUsername: newBotUsername.value.trim() ? newBotUsername.value.trim() : null,
     botEmail: newBotEmail.value.trim() ? newBotEmail.value.trim() : null,
-  });
+  }, paging.limit.value);
+  paging.markLoaded(repos.items.length);
   if (!binding || repos.attachError) return;
   openPreflightDialog(binding);
   await runPreflightNow();
@@ -443,7 +467,8 @@ async function doRemove() {
   const id = confirmRepoId.value;
   confirmRepoId.value = "";
   if (!id) return;
-  await repos.remove(id);
+  await repos.remove(id, paging.limit.value);
+  paging.markLoaded(repos.items.length);
   snackbar.success(t("common.deleted"));
 }
 
@@ -473,7 +498,8 @@ async function saveBotParams() {
     botToken: botToken.value.trim() === "" ? null : botToken.value,
     botUsername: botUsername.value.trim() ? botUsername.value.trim() : null,
     botEmail: botEmail.value.trim() ? botEmail.value.trim() : null,
-  });
+  }, paging.limit.value);
+  paging.markLoaded(repos.items.length);
   if (!repos.botUpdateError) {
     botDialogOpen.value = false;
     snackbar.success(t("common.saved"));
@@ -560,7 +586,12 @@ async function syncDocsetNow() {
   }
 }
 
-onMounted(() => void load());
+watch(
+  tablePage,
+  (nextPage, prevPage) => void loadMoreRepositoriesIfNeeded(nextPage, prevPage),
+);
+
+onMounted(() => void refreshRepositories());
 
 let attachErrorTimer: ReturnType<typeof setTimeout> | null = null;
 watch(

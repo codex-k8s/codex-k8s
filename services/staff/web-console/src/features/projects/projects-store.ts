@@ -15,11 +15,11 @@ export const useProjectsStore = defineStore("projects", {
     deleteError: null as ApiError | null,
   }),
   actions: {
-    async load(): Promise<void> {
+    async load(limit?: number): Promise<void> {
       this.loading = true;
       this.error = null;
       try {
-        this.items = await listProjects();
+        this.items = await listProjects(limit);
       } catch (e) {
         this.error = normalizeApiError(e);
       } finally {
@@ -27,12 +27,12 @@ export const useProjectsStore = defineStore("projects", {
       }
     },
 
-    async createOrUpdate(slug: string, name: string): Promise<void> {
+    async createOrUpdate(slug: string, name: string, limit?: number): Promise<void> {
       this.saving = true;
       this.saveError = null;
       try {
         await upsertProject(slug, name);
-        await this.load();
+        await this.load(limit);
       } catch (e) {
         this.saveError = normalizeApiError(e);
       } finally {
@@ -40,12 +40,12 @@ export const useProjectsStore = defineStore("projects", {
       }
     },
 
-    async remove(projectId: string): Promise<void> {
+    async remove(projectId: string, limit?: number): Promise<void> {
       this.deleting = true;
       this.deleteError = null;
       try {
         await deleteProject(projectId);
-        await this.load();
+        await this.load(limit);
       } catch (e) {
         this.deleteError = normalizeApiError(e);
       } finally {

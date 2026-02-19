@@ -20,7 +20,7 @@ SELECT
     updated_at,
     started_at,
     finished_at,
-    COALESCE(logs_json, '[]'::jsonb) AS logs_json
+    '[]'::jsonb AS logs_json
 FROM runtime_deploy_tasks
 WHERE ($1::text = '' OR status = $1::text)
   AND ($2::text = '' OR target_env = $2::text)

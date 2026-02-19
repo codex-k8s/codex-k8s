@@ -1596,6 +1596,41 @@ components:
           format: date-time
           nullable: true
 
+    RuntimeDeployTaskListItem:
+      type: object
+      additionalProperties: false
+      required: [run_id, status, repository_full_name, target_env, namespace, runtime_mode, build_ref]
+      properties:
+        run_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, running, succeeded, failed]
+        repository_full_name:
+          type: string
+        target_env:
+          type: string
+        result_target_env:
+          type: string
+          nullable: true
+        namespace:
+          type: string
+        result_namespace:
+          type: string
+          nullable: true
+        runtime_mode:
+          type: string
+        build_ref:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+
     RuntimeDeployTask:
       type: object
       additionalProperties: false
@@ -2183,7 +2218,7 @@ components:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/RuntimeDeployTask"
+            $ref: "#/components/schemas/RuntimeDeployTaskListItem"
 
     RuntimeErrorItemsResponse:
       type: object

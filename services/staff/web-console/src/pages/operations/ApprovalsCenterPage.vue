@@ -7,7 +7,7 @@
           icon="mdi-refresh"
           :label="t('common.refresh')"
           :disabled="runs.approvalsLoading"
-          @click="runs.loadPendingApprovals()"
+          @click="refreshApprovals"
         />
       </template>
     </PageHeader>
@@ -53,10 +53,11 @@
     <VCard class="mt-4" variant="outlined">
       <VCardText>
         <VDataTable
+          v-model:page="tablePage"
           :headers="headers"
           :items="filtered"
           :loading="runs.approvalsLoading"
-          :items-per-page="10"
+          :items-per-page="itemsPerPage"
           density="comfortable"
           hover
         >
@@ -146,19 +147,23 @@
 
 <script setup lang="ts">
 // TODO(#19): Доработать approvals center: фильтры по tool/action/state, история решений, и единый feedback слой (VSnackbar).
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
 import PageHeader from "../../shared/ui/PageHeader.vue";
 import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
 import { formatDateTime } from "../../shared/lib/datetime";
+import { createProgressiveTableState } from "../../shared/lib/progressive-table";
 import { useSnackbarStore } from "../../shared/ui/feedback/snackbar-store";
 import { useRunsStore } from "../../features/runs/store";
 
 const runs = useRunsStore();
 const snackbar = useSnackbarStore();
 const { t, locale } = useI18n({ useScope: "global" });
+const itemsPerPage = 10;
+const paging = createProgressiveTableState({ itemsPerPage });
+const tablePage = paging.page;
 
 const toolFilter = ref("");
 const actionFilter = ref("");
@@ -207,11 +212,36 @@ async function submitDecision() {
   const id = decisionId.value;
   decisionDialogOpen.value = false;
   decisionId.value = null;
-  const resp = await runs.resolvePendingApproval(id, decision.value, decisionReason.value);
+  const resp = await runs.resolvePendingApproval(id, decision.value, decisionReason.value, paging.limit.value);
   if (resp) {
     snackbar.success(t("common.saved"));
   }
 }
 
-onMounted(() => void runs.loadPendingApprovals());
+async function loadApprovals(): Promise<void> {
+  await runs.loadPendingApprovals(paging.limit.value);
+  paging.markLoaded(runs.pendingApprovals.length);
+}
+
+async function refreshApprovals(): Promise<void> {
+  paging.reset();
+  await loadApprovals();
+}
+
+async function loadMoreApprovalsIfNeeded(nextPage: number, prevPage: number): Promise<void> {
+  if (runs.approvalsLoading) {
+    return;
+  }
+  if (!paging.shouldGrowForPage(filtered.value.length, nextPage, prevPage)) {
+    return;
+  }
+  await loadApprovals();
+}
+
+watch(
+  tablePage,
+  (nextPage, prevPage) => void loadMoreApprovalsIfNeeded(nextPage, prevPage),
+);
+
+onMounted(() => void refreshApprovals());
 </script>

@@ -6,7 +6,7 @@ import {
 
 import type { User } from "./types";
 
-export async function listUsers(limit = 200): Promise<User[]> {
+export async function listUsers(limit = 20): Promise<User[]> {
   const resp = await listUsersRequest({ query: { limit }, throwOnError: true });
   return resp.data.items ?? [];
 }

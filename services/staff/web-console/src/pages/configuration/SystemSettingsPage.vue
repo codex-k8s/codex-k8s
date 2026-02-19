@@ -238,7 +238,7 @@ async function loadPlatformTokens(): Promise<void> {
   platformTokensLoading.value = true;
   platformTokensError.value = null;
   try {
-    const items = await listConfigEntries({ scope: "platform", limit: 5000 });
+    const items = await listConfigEntries({ scope: "platform", limit: 200 });
     platformEntries.value = items;
     platformTokenFields.value = buildPlatformTokenFields(items);
   } catch (e) {

@@ -395,7 +395,7 @@ watch(
 );
 
 onMounted(() => {
-  if (projects.items.length === 0) void projects.load();
+  if (projects.items.length === 0) void projects.load(100);
   void loadImages();
 });
 </script>

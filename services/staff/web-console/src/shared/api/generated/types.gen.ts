@@ -132,6 +132,20 @@ export type RuntimeDeployTaskLog = {
     created_at?: string | null;
 };
 
+export type RuntimeDeployTaskListItem = {
+    run_id: string;
+    status: 'pending' | 'running' | 'succeeded' | 'failed';
+    repository_full_name: string;
+    target_env: string;
+    result_target_env?: string | null;
+    namespace: string;
+    result_namespace?: string | null;
+    runtime_mode: string;
+    build_ref: string;
+    created_at?: string | null;
+    updated_at?: string | null;
+};
+
 export type RuntimeDeployTask = {
     run_id: string;
     runtime_mode: string;
@@ -373,7 +387,7 @@ export type RunItemsResponse = {
 };
 
 export type RuntimeDeployTaskItemsResponse = {
-    items: Array<RuntimeDeployTask>;
+    items: Array<RuntimeDeployTaskListItem>;
 };
 
 export type RuntimeErrorItemsResponse = {

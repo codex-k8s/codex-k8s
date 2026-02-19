@@ -2,7 +2,7 @@
   <div>
     <PageHeader :title="t('pages.waitQueue.title')" :hint="t('pages.waitQueue.hint')">
       <template #actions>
-        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :disabled="runs.waitsLoading" @click="runs.loadRunWaits()" />
+        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :disabled="runs.waitsLoading" @click="refreshWaits" />
       </template>
     </PageHeader>
 
@@ -31,7 +31,7 @@
             variant="tonal"
             icon="mdi-check"
             :label="t('pages.runs.applyFilters')"
-            @click="runs.loadRunWaits()"
+            @click="refreshWaits"
             :disabled="runs.waitsLoading"
           />
           <AdaptiveBtn variant="text" icon="mdi-backspace-outline" :label="t('pages.runs.resetFilters')" @click="reset" />
@@ -42,10 +42,11 @@
     <VCard class="mt-4" variant="outlined">
       <VCardText>
         <VDataTable
+          v-model:page="tablePage"
           :headers="headers"
           :items="runs.waitQueue"
           :loading="runs.waitsLoading"
-          :items-per-page="10"
+          :items-per-page="itemsPerPage"
           density="comfortable"
           hover
         >
@@ -99,7 +100,7 @@
 
 <script setup lang="ts">
 // TODO(#19): Добавить SLA/heartbeat индикацию и перейти на общий DataTable wrapper (table settings + row actions menu).
-import { onMounted } from "vue";
+import { onMounted, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
@@ -107,10 +108,14 @@ import PageHeader from "../../shared/ui/PageHeader.vue";
 import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
 import { formatDateTime } from "../../shared/lib/datetime";
 import { colorForRunStatus } from "../../shared/lib/chips";
+import { createProgressiveTableState } from "../../shared/lib/progressive-table";
 import { useRunsStore } from "../../features/runs/store";
 
 const runs = useRunsStore();
 const { t, locale } = useI18n({ useScope: "global" });
+const itemsPerPage = 10;
+const paging = createProgressiveTableState({ itemsPerPage });
+const tablePage = paging.page;
 
 const headers = [
   { title: t("table.fields.status"), key: "status", width: 140, align: "center" },
@@ -129,5 +134,30 @@ function reset(): void {
   runs.waitsFilters.waitState = "";
 }
 
-onMounted(() => void runs.loadRunWaits());
+async function loadWaits(): Promise<void> {
+  await runs.loadRunWaits(paging.limit.value);
+  paging.markLoaded(runs.waitQueue.length);
+}
+
+async function refreshWaits(): Promise<void> {
+  paging.reset();
+  await loadWaits();
+}
+
+async function loadMoreWaitsIfNeeded(nextPage: number, prevPage: number): Promise<void> {
+  if (runs.waitsLoading) {
+    return;
+  }
+  if (!paging.shouldGrowForPage(runs.waitQueue.length, nextPage, prevPage)) {
+    return;
+  }
+  await loadWaits();
+}
+
+watch(
+  tablePage,
+  (nextPage, prevPage) => void loadMoreWaitsIfNeeded(nextPage, prevPage),
+);
+
+onMounted(() => void refreshWaits());
 </script>

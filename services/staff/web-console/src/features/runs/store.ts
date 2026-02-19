@@ -79,11 +79,11 @@ export const useRunsStore = defineStore("runs", {
         this.approvalsErrorTimerId = null;
       }, errorAutoHideMs);
     },
-    async load(): Promise<void> {
+    async load(limit?: number): Promise<void> {
       this.loading = true;
       this.error = null;
       try {
-        this.items = await listRuns();
+        this.items = await listRuns(limit);
       } catch (e) {
         this.error = normalizeApiError(e);
         this.scheduleErrorHide();
@@ -91,14 +91,14 @@ export const useRunsStore = defineStore("runs", {
         this.loading = false;
       }
     },
-    async loadRuntimeViews(): Promise<void> {
-      await Promise.all([this.loadRunJobs(), this.loadRunWaits()]);
+    async loadRuntimeViews(params: { jobsLimit?: number; waitsLimit?: number } = {}): Promise<void> {
+      await Promise.all([this.loadRunJobs(params.jobsLimit), this.loadRunWaits(params.waitsLimit)]);
     },
-    async loadRunJobs(): Promise<void> {
+    async loadRunJobs(limit?: number): Promise<void> {
       this.jobsLoading = true;
       this.error = null;
       try {
-        this.runningJobs = await listRunJobs(this.jobsFilters, 200);
+        this.runningJobs = await listRunJobs(this.jobsFilters, limit);
       } catch (e) {
         this.error = normalizeApiError(e);
         this.scheduleErrorHide();
@@ -106,11 +106,11 @@ export const useRunsStore = defineStore("runs", {
         this.jobsLoading = false;
       }
     },
-    async loadRunWaits(): Promise<void> {
+    async loadRunWaits(limit?: number): Promise<void> {
       this.waitsLoading = true;
       this.error = null;
       try {
-        this.waitQueue = await listRunWaits(this.waitsFilters, 200);
+        this.waitQueue = await listRunWaits(this.waitsFilters, limit);
       } catch (e) {
         this.error = normalizeApiError(e);
         this.scheduleErrorHide();
@@ -118,11 +118,11 @@ export const useRunsStore = defineStore("runs", {
         this.waitsLoading = false;
       }
     },
-    async loadPendingApprovals(): Promise<void> {
+    async loadPendingApprovals(limit?: number): Promise<void> {
       this.approvalsLoading = true;
       this.approvalsError = null;
       try {
-        this.pendingApprovals = await listPendingApprovals();
+        this.pendingApprovals = await listPendingApprovals(limit);
       } catch (e) {
         this.approvalsError = normalizeApiError(e);
         this.scheduleApprovalsErrorHide();
@@ -134,12 +134,13 @@ export const useRunsStore = defineStore("runs", {
       approvalRequestId: number,
       decision: "approved" | "denied" | "expired" | "failed",
       reason = "",
+      limit?: number,
     ): Promise<ResolveApprovalDecisionResponse | null> {
       this.resolvingApprovalID = approvalRequestId;
       this.approvalsError = null;
       try {
         const response = await resolveApprovalDecision(approvalRequestId, decision, reason);
-        await this.loadPendingApprovals();
+        await this.loadPendingApprovals(limit);
         return response;
       } catch (e) {
         this.approvalsError = normalizeApiError(e);

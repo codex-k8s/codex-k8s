@@ -400,6 +400,33 @@ func RuntimeDeployTaskLog(item *controlplanev1.RuntimeDeployTaskLog) models.Runt
 	return out
 }
 
+func RuntimeDeployTaskListItem(item *controlplanev1.RuntimeDeployTask) models.RuntimeDeployTaskListItem {
+	out := models.RuntimeDeployTaskListItem{}
+	if item == nil {
+		return out
+	}
+	out.RunID = item.GetRunId()
+	out.Status = item.GetStatus()
+	out.RepositoryFullName = item.GetRepositoryFullName()
+	out.TargetEnv = item.GetTargetEnv()
+	out.ResultTargetEnv = cast.OptionalTrimmedString(item.ResultTargetEnv)
+	out.Namespace = item.GetNamespace()
+	out.ResultNamespace = cast.OptionalTrimmedString(item.ResultNamespace)
+	out.RuntimeMode = item.GetRuntimeMode()
+	out.BuildRef = item.GetBuildRef()
+	out.CreatedAt = cast.OptionalTimestampRFC3339Nano(item.GetCreatedAt())
+	out.UpdatedAt = cast.OptionalTimestampRFC3339Nano(item.GetUpdatedAt())
+	return out
+}
+
+func RuntimeDeployTaskListItems(items []*controlplanev1.RuntimeDeployTask) []models.RuntimeDeployTaskListItem {
+	out := make([]models.RuntimeDeployTaskListItem, 0, len(items))
+	for _, item := range items {
+		out = append(out, RuntimeDeployTaskListItem(item))
+	}
+	return out
+}
+
 func RuntimeDeployTask(item *controlplanev1.RuntimeDeployTask) models.RuntimeDeployTask {
 	out := models.RuntimeDeployTask{}
 	if item == nil {

@@ -25,12 +25,12 @@ export const useProjectRepositoriesStore = defineStore("projectRepositories", {
     docsetSyncError: null as ApiError | null,
   }),
   actions: {
-    async load(projectId: string): Promise<void> {
+    async load(projectId: string, limit?: number): Promise<void> {
       this.projectId = projectId;
       this.loading = true;
       this.error = null;
       try {
-        this.items = await listProjectRepositories(projectId);
+        this.items = await listProjectRepositories(projectId, limit);
       } catch (e) {
         this.error = normalizeApiError(e);
       } finally {
@@ -46,7 +46,7 @@ export const useProjectRepositoriesStore = defineStore("projectRepositories", {
       botToken?: string | null;
       botUsername?: string | null;
       botEmail?: string | null;
-    }): Promise<RepositoryBinding | null> {
+    }, limit?: number): Promise<RepositoryBinding | null> {
       if (!this.projectId) return null;
       this.attaching = true;
       this.attachError = null;
@@ -75,7 +75,7 @@ export const useProjectRepositoriesStore = defineStore("projectRepositories", {
             this.botUpdateError = normalizeApiError(e);
           }
         }
-        await this.load(this.projectId);
+        await this.load(this.projectId, limit);
         return binding;
       } catch (e) {
         this.attachError = normalizeApiError(e);
@@ -85,12 +85,12 @@ export const useProjectRepositoriesStore = defineStore("projectRepositories", {
       }
     },
 
-    async remove(repositoryId: string): Promise<void> {
+    async remove(repositoryId: string, limit?: number): Promise<void> {
       if (!this.projectId) return;
       this.removing = true;
       try {
         await deleteProjectRepository(this.projectId, repositoryId);
-        await this.load(this.projectId);
+        await this.load(this.projectId, limit);
       } catch (e) {
         this.error = normalizeApiError(e);
       } finally {
@@ -98,7 +98,7 @@ export const useProjectRepositoriesStore = defineStore("projectRepositories", {
       }
     },
 
-    async upsertBotParams(repositoryId: string, params: { botToken: string | null; botUsername: string | null; botEmail: string | null }): Promise<void> {
+    async upsertBotParams(repositoryId: string, params: { botToken: string | null; botUsername: string | null; botEmail: string | null }, limit?: number): Promise<void> {
       if (!this.projectId) return;
       this.botUpdating = true;
       this.botUpdateError = null;
@@ -110,7 +110,7 @@ export const useProjectRepositoriesStore = defineStore("projectRepositories", {
           botUsername: params.botUsername,
           botEmail: params.botEmail,
         });
-        await this.load(this.projectId);
+        await this.load(this.projectId, limit);
       } catch (e) {
         this.botUpdateError = normalizeApiError(e);
       } finally {

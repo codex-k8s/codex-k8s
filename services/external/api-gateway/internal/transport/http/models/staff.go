@@ -50,6 +50,20 @@ type RuntimeDeployTaskLog struct {
 	CreatedAt *string `json:"created_at"`
 }
 
+type RuntimeDeployTaskListItem struct {
+	RunID              string  `json:"run_id"`
+	Status             string  `json:"status"`
+	RepositoryFullName string  `json:"repository_full_name"`
+	TargetEnv          string  `json:"target_env"`
+	ResultTargetEnv    *string `json:"result_target_env"`
+	Namespace          string  `json:"namespace"`
+	ResultNamespace    *string `json:"result_namespace"`
+	RuntimeMode        string  `json:"runtime_mode"`
+	BuildRef           string  `json:"build_ref"`
+	CreatedAt          *string `json:"created_at"`
+	UpdatedAt          *string `json:"updated_at"`
+}
+
 type RuntimeDeployTask struct {
 	RunID              string                 `json:"run_id"`
 	RuntimeMode        string                 `json:"runtime_mode"`

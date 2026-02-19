@@ -22,12 +22,12 @@ export const useProjectMembersStore = defineStore("projectMembers", {
     removing: false,
   }),
   actions: {
-    async load(projectId: string): Promise<void> {
+    async load(projectId: string, limit?: number): Promise<void> {
       this.projectId = projectId;
       this.loading = true;
       this.error = null;
       try {
-        const members = await listProjectMembers(projectId);
+        const members = await listProjectMembers(projectId, limit);
         this.items = members.map((m) => ({
           ...m,
           learning_mode_override: m.learning_mode_override ?? null,
@@ -39,14 +39,14 @@ export const useProjectMembersStore = defineStore("projectMembers", {
       }
     },
 
-    async save(member: { user_id: string; role: ProjectMember["role"]; learning_mode_override: boolean | null }): Promise<void> {
+    async save(member: { user_id: string; role: ProjectMember["role"]; learning_mode_override: boolean | null }, limit?: number): Promise<void> {
       if (!this.projectId) return;
       this.saving = true;
       this.error = null;
       try {
         await upsertProjectMember(this.projectId, member.user_id, member.role);
         await setProjectMemberLearningModeOverride(this.projectId, member.user_id, member.learning_mode_override);
-        await this.load(this.projectId);
+        await this.load(this.projectId, limit);
       } catch (e) {
         this.error = normalizeApiError(e);
       } finally {
@@ -54,13 +54,13 @@ export const useProjectMembersStore = defineStore("projectMembers", {
       }
     },
 
-    async addByEmail(email: string, role: ProjectMember["role"]): Promise<void> {
+    async addByEmail(email: string, role: ProjectMember["role"], limit?: number): Promise<void> {
       if (!this.projectId) return;
       this.adding = true;
       this.addError = null;
       try {
         await upsertProjectMemberByEmail(this.projectId, email, role);
-        await this.load(this.projectId);
+        await this.load(this.projectId, limit);
       } catch (e) {
         this.addError = normalizeApiError(e);
       } finally {
@@ -68,13 +68,13 @@ export const useProjectMembersStore = defineStore("projectMembers", {
       }
     },
 
-    async remove(userId: string): Promise<void> {
+    async remove(userId: string, limit?: number): Promise<void> {
       if (!this.projectId) return;
       this.removing = true;
       this.error = null;
       try {
         await deleteProjectMember(this.projectId, userId);
-        await this.load(this.projectId);
+        await this.load(this.projectId, limit);
       } catch (e) {
         this.error = normalizeApiError(e);
       } finally {

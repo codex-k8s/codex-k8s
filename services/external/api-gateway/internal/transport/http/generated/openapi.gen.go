@@ -113,6 +113,14 @@ const (
 	RuntimeDeployTaskStatusSucceeded RuntimeDeployTaskStatus = "succeeded"
 )
 
+// Defines values for RuntimeDeployTaskListItemStatus.
+const (
+	RuntimeDeployTaskListItemStatusFailed    RuntimeDeployTaskListItemStatus = "failed"
+	RuntimeDeployTaskListItemStatusPending   RuntimeDeployTaskListItemStatus = "pending"
+	RuntimeDeployTaskListItemStatusRunning   RuntimeDeployTaskListItemStatus = "running"
+	RuntimeDeployTaskListItemStatusSucceeded RuntimeDeployTaskListItemStatus = "succeeded"
+)
+
 // Defines values for RuntimeDeployTaskLogLevel.
 const (
 	RuntimeDeployTaskLogLevelError RuntimeDeployTaskLogLevel = "error"
@@ -162,10 +170,10 @@ const (
 
 // Defines values for ListRuntimeDeployTasksParamsStatus.
 const (
-	Failed    ListRuntimeDeployTasksParamsStatus = "failed"
-	Pending   ListRuntimeDeployTasksParamsStatus = "pending"
-	Running   ListRuntimeDeployTasksParamsStatus = "running"
-	Succeeded ListRuntimeDeployTasksParamsStatus = "succeeded"
+	ListRuntimeDeployTasksParamsStatusFailed    ListRuntimeDeployTasksParamsStatus = "failed"
+	ListRuntimeDeployTasksParamsStatusPending   ListRuntimeDeployTasksParamsStatus = "pending"
+	ListRuntimeDeployTasksParamsStatusRunning   ListRuntimeDeployTasksParamsStatus = "running"
+	ListRuntimeDeployTasksParamsStatusSucceeded ListRuntimeDeployTasksParamsStatus = "succeeded"
 )
 
 // Defines values for ListRuntimeErrorsParamsState.
@@ -582,8 +590,26 @@ type RuntimeDeployTaskStatus string
 
 // RuntimeDeployTaskItemsResponse defines model for RuntimeDeployTaskItemsResponse.
 type RuntimeDeployTaskItemsResponse struct {
-	Items []RuntimeDeployTask `json:"items"`
+	Items []RuntimeDeployTaskListItem `json:"items"`
 }
+
+// RuntimeDeployTaskListItem defines model for RuntimeDeployTaskListItem.
+type RuntimeDeployTaskListItem struct {
+	BuildRef           string                          `json:"build_ref"`
+	CreatedAt          *time.Time                      `json:"created_at"`
+	Namespace          string                          `json:"namespace"`
+	RepositoryFullName string                          `json:"repository_full_name"`
+	ResultNamespace    *string                         `json:"result_namespace"`
+	ResultTargetEnv    *string                         `json:"result_target_env"`
+	RunId              string                          `json:"run_id"`
+	RuntimeMode        string                          `json:"runtime_mode"`
+	Status             RuntimeDeployTaskListItemStatus `json:"status"`
+	TargetEnv          string                          `json:"target_env"`
+	UpdatedAt          *time.Time                      `json:"updated_at"`
+}
+
+// RuntimeDeployTaskListItemStatus defines model for RuntimeDeployTaskListItem.Status.
+type RuntimeDeployTaskListItemStatus string
 
 // RuntimeDeployTaskLog defines model for RuntimeDeployTaskLog.
 type RuntimeDeployTaskLog struct {

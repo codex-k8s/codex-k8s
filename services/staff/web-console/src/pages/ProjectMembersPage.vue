@@ -6,7 +6,7 @@
       </template>
       <template #actions>
         <CopyChip :label="t('pages.projectMembers.projectId')" :value="projectId" icon="mdi-identifier" />
-        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="members.loading" @click="load" />
+        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="members.loading" @click="refreshMembers" />
       </template>
     </PageHeader>
 
@@ -26,7 +26,7 @@
 
     <VCard class="mt-4" variant="outlined">
       <VCardText>
-        <VDataTable :headers="headers" :items="members.items" :loading="members.loading" :items-per-page="10" hover>
+        <VDataTable v-model:page="tablePage" :headers="headers" :items="members.items" :loading="members.loading" :items-per-page="itemsPerPage" hover>
           <template #item.role="{ item }">
             <div class="d-flex justify-center">
               <VSelect v-model="item.role" :items="roleOptions" density="compact" hide-details style="max-width: 220px" />
@@ -121,7 +121,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
@@ -131,6 +131,7 @@ import PageHeader from "../shared/ui/PageHeader.vue";
 import AdaptiveBtn from "../shared/ui/AdaptiveBtn.vue";
 import BackBtn from "../shared/ui/BackBtn.vue";
 import { useSnackbarStore } from "../shared/ui/feedback/snackbar-store";
+import { createProgressiveTableState } from "../shared/lib/progressive-table";
 import { useAuthStore } from "../features/auth/store";
 import { useProjectMembersStore } from "../features/projects/members-store";
 import { useProjectDetailsStore } from "../features/projects/details-store";
@@ -143,6 +144,9 @@ const auth = useAuthStore();
 const members = useProjectMembersStore();
 const details = useProjectDetailsStore();
 const snackbar = useSnackbarStore();
+const itemsPerPage = 10;
+const paging = createProgressiveTableState({ itemsPerPage });
+const tablePage = paging.page;
 
 const newEmail = ref("");
 const newRole = ref<"read" | "read_write" | "admin">("read");
@@ -170,9 +174,27 @@ const headers = [
   { title: "", key: "actions", sortable: false, width: 220, align: "end" },
 ] as const;
 
-async function load() {
-  await details.load(props.projectId);
-  await members.load(props.projectId);
+async function loadMembers(): Promise<void> {
+  await members.load(props.projectId, paging.limit.value);
+  paging.markLoaded(members.items.length);
+}
+
+async function refreshMembers(): Promise<void> {
+  paging.reset();
+  await Promise.all([
+    details.load(props.projectId),
+    loadMembers(),
+  ]);
+}
+
+async function loadMoreMembersIfNeeded(nextPage: number, prevPage: number): Promise<void> {
+  if (members.loading) {
+    return;
+  }
+  if (!paging.shouldGrowForPage(members.items.length, nextPage, prevPage)) {
+    return;
+  }
+  await loadMembers();
 }
 
 async function save(m: ProjectMember) {
@@ -180,12 +202,14 @@ async function save(m: ProjectMember) {
     user_id: m.user_id,
     role: m.role,
     learning_mode_override: m.learning_mode_override ?? null,
-  });
+  }, paging.limit.value);
+  paging.markLoaded(members.items.length);
   snackbar.success(t("common.saved"));
 }
 
 async function add() {
-  await members.addByEmail(newEmail.value, newRole.value);
+  await members.addByEmail(newEmail.value, newRole.value, paging.limit.value);
+  paging.markLoaded(members.items.length);
   if (!members.addError) {
     newEmail.value = "";
     newRole.value = "read";
@@ -203,11 +227,17 @@ async function doRemove() {
   const id = confirmUserId.value;
   confirmUserId.value = "";
   if (!id) return;
-  await members.remove(id);
+  await members.remove(id, paging.limit.value);
+  paging.markLoaded(members.items.length);
   snackbar.success(t("common.deleted"));
 }
 
-onMounted(() => void load());
+watch(
+  tablePage,
+  (nextPage, prevPage) => void loadMoreMembersIfNeeded(nextPage, prevPage),
+);
+
+onMounted(() => void refreshMembers());
 </script>
 
 <style scoped>
