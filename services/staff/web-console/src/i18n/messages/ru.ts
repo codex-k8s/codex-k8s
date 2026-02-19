@@ -87,9 +87,9 @@ export const ru = {
   },
   realtime: {
     status: {
-      connected: "Realtime: online",
+      connected: "Realtime: онлайн",
       connecting: "Realtime: подключение",
-      disconnected: "Realtime: offline",
+      disconnected: "Realtime: офлайн",
     },
   },
   warnings: {

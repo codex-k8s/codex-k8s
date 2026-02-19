@@ -53,3 +53,37 @@ func TestLoadConfig_MissingRequired(t *testing.T) {
 		t.Fatal("expected error for missing required webhook secret")
 	}
 }
+
+func TestLoadConfig_RealtimeDisabled_NoDBVars(t *testing.T) {
+	t.Setenv("CODEXK8S_CONTROL_PLANE_GRPC_TARGET", "codex-k8s-control-plane:9090")
+	t.Setenv("CODEXK8S_PUBLIC_BASE_URL", "https://platform.codex-k8s.dev")
+	t.Setenv("CODEXK8S_GITHUB_OAUTH_CLIENT_ID", "client-id")
+	t.Setenv("CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET", "client-secret")
+	t.Setenv("CODEXK8S_JWT_SIGNING_KEY", "jwt-key")
+	t.Setenv("CODEXK8S_GITHUB_WEBHOOK_SECRET", "secret")
+	t.Setenv("CODEXK8S_REALTIME_BACKPLANE_ENABLED", "false")
+
+	cfg, err := LoadConfig()
+	if err != nil {
+		t.Fatalf("LoadConfig returned error: %v", err)
+	}
+	if cfg.RealtimeBackplaneEnabled {
+		t.Fatal("expected realtime backplane to be disabled")
+	}
+}
+
+func TestLoadConfig_RealtimeEnabled_MissingDBVars(t *testing.T) {
+	t.Setenv("CODEXK8S_CONTROL_PLANE_GRPC_TARGET", "codex-k8s-control-plane:9090")
+	t.Setenv("CODEXK8S_PUBLIC_BASE_URL", "https://platform.codex-k8s.dev")
+	t.Setenv("CODEXK8S_GITHUB_OAUTH_CLIENT_ID", "client-id")
+	t.Setenv("CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET", "client-secret")
+	t.Setenv("CODEXK8S_JWT_SIGNING_KEY", "jwt-key")
+	t.Setenv("CODEXK8S_GITHUB_WEBHOOK_SECRET", "secret")
+	t.Setenv("CODEXK8S_REALTIME_BACKPLANE_ENABLED", "true")
+	// DB vars intentionally unset
+
+	_, err := LoadConfig()
+	if err == nil {
+		t.Fatal("expected error for missing required realtime DB vars")
+	}
+}

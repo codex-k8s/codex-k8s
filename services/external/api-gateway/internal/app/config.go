@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/caarlos0/env/v11"
 )
@@ -49,15 +50,15 @@ type Config struct {
 	WebhookMaxBodyBytes int64 `env:"CODEXK8S_WEBHOOK_MAX_BODY_BYTES" envDefault:"1048576"`
 
 	// DBHost is PostgreSQL host for realtime event backplane.
-	DBHost string `env:"CODEXK8S_DB_HOST,required,notEmpty"`
+	DBHost string `env:"CODEXK8S_DB_HOST"`
 	// DBPort is PostgreSQL port for realtime event backplane.
 	DBPort int `env:"CODEXK8S_DB_PORT" envDefault:"5432"`
 	// DBName is PostgreSQL database name for realtime event backplane.
-	DBName string `env:"CODEXK8S_DB_NAME,required,notEmpty"`
+	DBName string `env:"CODEXK8S_DB_NAME"`
 	// DBUser is PostgreSQL username for realtime event backplane.
-	DBUser string `env:"CODEXK8S_DB_USER,required,notEmpty"`
+	DBUser string `env:"CODEXK8S_DB_USER"`
 	// DBPassword is PostgreSQL password for realtime event backplane.
-	DBPassword string `env:"CODEXK8S_DB_PASSWORD,required,notEmpty"`
+	DBPassword string `env:"CODEXK8S_DB_PASSWORD"`
 	// DBSSLMode is PostgreSQL SSL mode for realtime event backplane.
 	DBSSLMode string `env:"CODEXK8S_DB_SSLMODE" envDefault:"disable"`
 
@@ -77,6 +78,28 @@ func LoadConfig() (Config, error) {
 	if err != nil {
 		return Config{}, fmt.Errorf("parse app config from environment: %w", err)
 	}
+	if err := cfg.validate(); err != nil {
+		return Config{}, err
+	}
 
 	return cfg, nil
+}
+
+func (c Config) validate() error {
+	if !c.RealtimeBackplaneEnabled {
+		return nil
+	}
+	if strings.TrimSpace(c.DBHost) == "" {
+		return fmt.Errorf("parse app config from environment: env: required environment variable %q is not set", "CODEXK8S_DB_HOST")
+	}
+	if strings.TrimSpace(c.DBName) == "" {
+		return fmt.Errorf("parse app config from environment: env: required environment variable %q is not set", "CODEXK8S_DB_NAME")
+	}
+	if strings.TrimSpace(c.DBUser) == "" {
+		return fmt.Errorf("parse app config from environment: env: required environment variable %q is not set", "CODEXK8S_DB_USER")
+	}
+	if strings.TrimSpace(c.DBPassword) == "" {
+		return fmt.Errorf("parse app config from environment: env: required environment variable %q is not set", "CODEXK8S_DB_PASSWORD")
+	}
+	return nil
 }

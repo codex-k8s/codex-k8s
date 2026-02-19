@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -87,8 +89,8 @@ func newRealtimeHandler(backplane *realtime.Backplane, repo *realtime.Repository
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
-			CheckOrigin: func(_ *http.Request) bool {
-				return true
+			CheckOrigin: func(r *http.Request) bool {
+				return isRealtimeOriginAllowed(r)
 			},
 		},
 	}
@@ -384,4 +386,37 @@ func (s *realtimeSession) setLastEventID(value int64) {
 	if value > s.lastEvent {
 		s.lastEvent = value
 	}
+}
+
+func isRealtimeOriginAllowed(r *http.Request) bool {
+	if r == nil {
+		return false
+	}
+	origin := strings.TrimSpace(r.Header.Get("Origin"))
+	if origin == "" {
+		// Non-browser websocket clients may omit Origin.
+		return true
+	}
+	parsedOrigin, err := url.Parse(origin)
+	if err != nil || parsedOrigin.Host == "" {
+		return false
+	}
+
+	requestHost := strings.TrimSpace(r.Header.Get("X-Forwarded-Host"))
+	if requestHost == "" {
+		requestHost = strings.TrimSpace(r.Host)
+	}
+	if requestHost == "" {
+		return false
+	}
+
+	originHost := parsedOrigin.Host
+	if host, _, splitErr := net.SplitHostPort(originHost); splitErr == nil {
+		originHost = host
+	}
+	if host, _, splitErr := net.SplitHostPort(requestHost); splitErr == nil {
+		requestHost = host
+	}
+
+	return strings.EqualFold(strings.TrimSpace(originHost), strings.TrimSpace(requestHost))
 }
