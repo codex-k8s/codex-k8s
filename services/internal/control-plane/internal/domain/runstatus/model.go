@@ -73,7 +73,7 @@ type TriggerWarningCommentParams struct {
 	ThreadKind         string
 	ThreadNumber       int
 	Locale             string
-	ReasonCode         string
+	ReasonCode         TriggerWarningReasonCode
 	ConflictingLabels  []string
 }
 

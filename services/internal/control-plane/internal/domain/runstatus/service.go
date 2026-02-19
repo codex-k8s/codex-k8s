@@ -229,7 +229,7 @@ func (s *Service) PostTriggerWarningComment(ctx context.Context, params TriggerW
 	body, err := renderTriggerWarningCommentBody(triggerWarningRenderParams{
 		Locale:            params.Locale,
 		ThreadKind:        string(threadKind),
-		ReasonCode:        strings.TrimSpace(params.ReasonCode),
+		ReasonCode:        TriggerWarningReasonCode(strings.TrimSpace(string(params.ReasonCode))),
 		ConflictingLabels: params.ConflictingLabels,
 	})
 	if err != nil {
