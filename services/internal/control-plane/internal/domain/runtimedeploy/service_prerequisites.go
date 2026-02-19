@@ -13,6 +13,8 @@ import (
 	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
 )
 
+const defaultLetsEncryptDirectoryURL = "https://acme-v02.api.letsencrypt.org/directory"
+
 func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoot string, namespace string, vars map[string]string, stack *servicescfg.Stack, runID string) error {
 	targetNamespace := strings.TrimSpace(namespace)
 	if targetNamespace == "" {
@@ -146,6 +148,14 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoo
 	if err != nil {
 		return fmt.Errorf("resolve CODEXK8S_JWT_SIGNING_KEY: %w", err)
 	}
+	bootstrapOwnerEmail := valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_BOOTSTRAP_OWNER_EMAIL", "owner@example.invalid")
+	letsEncryptEmailFallback := strings.TrimSpace(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_BOOTSTRAP_OWNER_EMAIL", ""))
+	letsEncryptEmail := strings.TrimSpace(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_LETSENCRYPT_EMAIL", letsEncryptEmailFallback))
+	letsEncryptServer := strings.TrimSpace(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_LETSENCRYPT_SERVER", defaultLetsEncryptDirectoryURL))
+
+	// TLS preparation runs in the same reconcile cycle; keep resolved values in template vars.
+	vars["CODEXK8S_LETSENCRYPT_EMAIL"] = letsEncryptEmail
+	vars["CODEXK8S_LETSENCRYPT_SERVER"] = letsEncryptServer
 
 	postgresData := map[string][]byte{
 		"CODEXK8S_POSTGRES_DB":       []byte(postgresDB),
@@ -192,7 +202,9 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoo
 		"CODEXK8S_PRODUCTION_DOMAIN":                 []byte(valueOr(vars, "CODEXK8S_PRODUCTION_DOMAIN", "")),
 		"CODEXK8S_AI_DOMAIN":                         []byte(valueOr(vars, "CODEXK8S_AI_DOMAIN", "")),
 		"CODEXK8S_PUBLIC_BASE_URL":                   []byte(valueOr(vars, "CODEXK8S_PUBLIC_BASE_URL", "https://example.invalid")),
-		"CODEXK8S_BOOTSTRAP_OWNER_EMAIL":             []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_BOOTSTRAP_OWNER_EMAIL", "owner@example.invalid")),
+		"CODEXK8S_BOOTSTRAP_OWNER_EMAIL":             []byte(bootstrapOwnerEmail),
+		"CODEXK8S_LETSENCRYPT_EMAIL":                 []byte(letsEncryptEmail),
+		"CODEXK8S_LETSENCRYPT_SERVER":                []byte(letsEncryptServer),
 		"CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS":          []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_BOOTSTRAP_ALLOWED_EMAILS", "")),
 		"CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS":   []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS", "")),
 		"CODEXK8S_GITHUB_OAUTH_CLIENT_ID":            []byte(oauthClientID),
