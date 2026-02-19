@@ -4,9 +4,6 @@
       <template #leading>
         <BackBtn :label="t('common.back')" @click="goBack" />
       </template>
-      <template #actions>
-        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :disabled="loading" @click="loadTask" />
-      </template>
     </PageHeader>
 
     <VAlert v-if="error" type="error" variant="tonal" class="mt-4">
@@ -80,16 +77,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 
-import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
 import BackBtn from "../../shared/ui/BackBtn.vue";
 import PageHeader from "../../shared/ui/PageHeader.vue";
 import { normalizeApiError, type ApiError } from "../../shared/api/errors";
 import { formatDateTime } from "../../shared/lib/datetime";
 import { colorForRunStatus } from "../../shared/lib/chips";
+import { useRealtimeStore } from "../../features/realtime/store";
 import { getRuntimeDeployTask } from "../../features/runtime-deploy/api";
 import type { RuntimeDeployTask } from "../../features/runtime-deploy/types";
 
@@ -97,10 +94,14 @@ const props = defineProps<{ runId: string }>();
 
 const { t, locale } = useI18n({ useScope: "global" });
 const router = useRouter();
+const realtime = useRealtimeStore();
 
 const task = ref<RuntimeDeployTask | null>(null);
 const loading = ref(false);
 const error = ref<ApiError | null>(null);
+let fallbackPollTimer: number | null = null;
+let unsubscribeRealtime: (() => void) | null = null;
+let reloadTimer: number | null = null;
 
 const sortedLogs = computed(() => {
   const logs = task.value?.logs ? [...task.value.logs] : [];
@@ -148,6 +149,67 @@ function goBack(): void {
 }
 
 onMounted(() => void loadTask());
+
+function scheduleReload(): void {
+  if (reloadTimer !== null) {
+    window.clearTimeout(reloadTimer);
+  }
+  reloadTimer = window.setTimeout(() => {
+    reloadTimer = null;
+    void loadTask();
+  }, 250);
+}
+
+function startFallbackPolling(): void {
+  stopFallbackPolling();
+  fallbackPollTimer = window.setInterval(() => {
+    void loadTask();
+  }, 10000);
+}
+
+function stopFallbackPolling(): void {
+  if (fallbackPollTimer !== null) {
+    window.clearInterval(fallbackPollTimer);
+    fallbackPollTimer = null;
+  }
+}
+
+onMounted(() => {
+  unsubscribeRealtime = realtime.subscribe((event) => {
+    if (event.run_id !== props.runId && event.task_id !== props.runId) {
+      return;
+    }
+    if (event.topic === "deploy.events" || event.topic === "deploy.logs") {
+      scheduleReload();
+    }
+  });
+  if (!realtime.isConnected) {
+    startFallbackPolling();
+  }
+});
+
+watch(
+  () => realtime.isConnected,
+  (connected) => {
+    if (connected) {
+      stopFallbackPolling();
+      return;
+    }
+    startFallbackPolling();
+  },
+);
+
+onBeforeUnmount(() => {
+  if (unsubscribeRealtime) {
+    unsubscribeRealtime();
+    unsubscribeRealtime = null;
+  }
+  stopFallbackPolling();
+  if (reloadTimer !== null) {
+    window.clearTimeout(reloadTimer);
+    reloadTimer = null;
+  }
+});
 </script>
 
 <style scoped>

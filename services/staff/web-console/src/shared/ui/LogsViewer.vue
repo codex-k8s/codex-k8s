@@ -16,6 +16,7 @@
         />
         <VSwitch v-model="followTail" :label="t('logs.follow')" hide-details density="compact" />
         <AdaptiveBtn
+          v-if="showRefresh"
           variant="tonal"
           icon="mdi-refresh"
           :label="t('common.refresh')"
@@ -93,6 +94,7 @@ const props = withDefaults(
     updatedAtLabel?: string;
     loading?: boolean;
     fileName?: string;
+    showRefresh?: boolean;
   }>(),
   {
     title: "",
@@ -100,6 +102,7 @@ const props = withDefaults(
     updatedAtLabel: "",
     loading: false,
     fileName: "logs.txt",
+    showRefresh: true,
   },
 );
 
@@ -135,7 +138,7 @@ watch(
       window.clearInterval(intervalId);
       intervalId = null;
     }
-    if (!enabled) return;
+    if (!enabled || !props.showRefresh) return;
     intervalId = window.setInterval(() => emit("refresh", tailLines.value), 2000);
   },
   { immediate: true },

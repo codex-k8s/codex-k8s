@@ -75,8 +75,8 @@ approvals:
 | Day 17 | Environment-scoped secret overrides and OAuth callback strategy | P0 | `docs/delivery/epics/epic-s3-day17-environment-scoped-secret-overrides-and-oauth-callbacks.md` | completed (approved) |
 | Day 18 | Runtime error journal and staff alert center | P0 | `docs/delivery/epics/epic-s3-day18-runtime-error-journal-and-staff-alert-center.md` | completed (approved) |
 | Day 19 | Frontend manual QA hardening loop | P0 | `docs/delivery/epics/epic-s3-day19-frontend-manual-qa-hardening-loop.md` | planned |
-| Day 19.5 | Realtime event bus (PostgreSQL LISTEN/NOTIFY) and WebSocket backplane | P0 | `docs/delivery/epics/epic-s3-day19.5-realtime-event-bus-and-websocket-backplane.md` | planned |
-| Day 19.6 | Staff realtime subscriptions and UI integration | P0 | `docs/delivery/epics/epic-s3-day19.6-staff-realtime-subscriptions-and-ui.md` | planned |
+| Day 19.5 | Realtime event bus (PostgreSQL LISTEN/NOTIFY) and WebSocket backplane | P0 | `docs/delivery/epics/epic-s3-day19.5-realtime-event-bus-and-websocket-backplane.md` | completed |
+| Day 19.6 | Staff realtime subscriptions and UI integration | P0 | `docs/delivery/epics/epic-s3-day19.6-staff-realtime-subscriptions-and-ui.md` | completed |
 | Day 20 | Full e2e regression gate + MVP closeout | P0 | `docs/delivery/epics/epic-s3-day20-e2e-regression-and-mvp-closeout.md` | planned |
 
 ## Daily gate (обязательно)

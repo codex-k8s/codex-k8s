@@ -85,6 +85,13 @@ export const en = {
       sample2: { title: "Run waiting", subtitle: "wait_state = owner_review" },
     },
   },
+  realtime: {
+    status: {
+      connected: "Realtime: online",
+      connecting: "Realtime: connecting",
+      disconnected: "Realtime: offline",
+    },
+  },
   warnings: {
     adminCluster: {
       title: "Caution: cluster administration",

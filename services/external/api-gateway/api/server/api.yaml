@@ -271,6 +271,47 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /api/v1/staff/realtime/ws:
+    get:
+      summary: Open staff realtime websocket stream
+      operationId: connectRealtimeWS
+      tags: [staff-runs]
+      parameters:
+        - in: query
+          name: topics
+          required: false
+          description: Comma-separated list of topics (run.events, run.status, run.logs, deploy.events, deploy.logs, system.errors)
+          schema:
+            type: string
+        - in: query
+          name: project_id
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: run_id
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: task_id
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: last_event_id
+          required: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "101":
+          description: Switching protocols to websocket
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/Internal"
+
   /api/v1/staff/runs/jobs:
     get:
       summary: List running jobs

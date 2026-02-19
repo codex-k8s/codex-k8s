@@ -11,8 +11,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
 	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/auth"
 	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/controlplane"
+	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/realtime"
 	httptransport "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http"
 )
 
@@ -49,6 +51,48 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("init auth service: %w", err)
 	}
+
+	var realtimeBackplane *realtime.Backplane
+	var realtimeRepo *realtime.Repository
+	var realtimeDBPoolCloser interface{ Close() }
+	if cfg.RealtimeBackplaneEnabled {
+		realtimeDBPool, poolErr := postgres.OpenPGXPool(appCtx, postgres.OpenParams{
+			Host:        cfg.DBHost,
+			Port:        cfg.DBPort,
+			DBName:      cfg.DBName,
+			User:        cfg.DBUser,
+			Password:    cfg.DBPassword,
+			SSLMode:     cfg.DBSSLMode,
+			PingTimeout: 5 * time.Second,
+		})
+		if poolErr != nil {
+			return fmt.Errorf("open realtime postgres pool: %w", poolErr)
+		}
+		realtimeDBPoolCloser = realtimeDBPool
+		realtimeRepo = realtime.NewRepository(realtimeDBPool)
+
+		cleanupInterval, cleanupErr := time.ParseDuration(cfg.RealtimeCleanupInterval)
+		if cleanupErr != nil {
+			return fmt.Errorf("parse CODEXK8S_REALTIME_CLEANUP_INTERVAL=%q: %w", cfg.RealtimeCleanupInterval, cleanupErr)
+		}
+		retention, retentionErr := time.ParseDuration(cfg.RealtimeRetention)
+		if retentionErr != nil {
+			return fmt.Errorf("parse CODEXK8S_REALTIME_RETENTION=%q: %w", cfg.RealtimeRetention, retentionErr)
+		}
+
+		realtimeBackplane = realtime.NewBackplane(realtime.Config{
+			DSN:             postgres.BuildDSN(postgres.OpenParams{Host: cfg.DBHost, Port: cfg.DBPort, DBName: cfg.DBName, User: cfg.DBUser, Password: cfg.DBPassword, SSLMode: cfg.DBSSLMode}),
+			Channel:         cfg.RealtimeChannel,
+			CleanupInterval: cleanupInterval,
+			Retention:       retention,
+		}, realtimeRepo, logger)
+		realtimeBackplane.Start(appCtx)
+		defer realtimeBackplane.Stop()
+	}
+	if realtimeDBPoolCloser != nil {
+		defer realtimeDBPoolCloser.Close()
+	}
+
 	server, err := httptransport.NewServer(appCtx, httptransport.ServerConfig{
 		HTTPAddr:                 cfg.HTTPAddr,
 		GitHubWebhookSecret:      cfg.GitHubWebhookSecret,
@@ -59,7 +103,7 @@ func Run() error {
 		ViteDevUpstream:          cfg.ViteDevUpstream,
 		OpenAPISpecPath:          cfg.OpenAPISpecPath,
 		OpenAPIValidationEnabled: cfg.OpenAPIValidationEnabled,
-	}, cp, authService, logger)
+	}, cp, authService, logger, realtimeBackplane, realtimeRepo)
 	if err != nil {
 		return fmt.Errorf("init http server: %w", err)
 	}

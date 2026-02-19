@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S3-D19-6
 type: epic
 title: "Epic S3 Day 19.6: Staff realtime subscriptions and UI integration"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-18
 updated_at: 2026-02-19

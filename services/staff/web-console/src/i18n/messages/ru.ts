@@ -85,6 +85,13 @@ export const ru = {
       sample2: { title: "Запуск в ожидании", subtitle: "wait_state = owner_review" },
     },
   },
+  realtime: {
+    status: {
+      connected: "Realtime: online",
+      connecting: "Realtime: подключение",
+      disconnected: "Realtime: offline",
+    },
+  },
   warnings: {
     adminCluster: {
       title: "Осторожно: управление кластером",

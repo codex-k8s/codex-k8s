@@ -836,6 +836,16 @@ type ListProjectRepositoriesParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ConnectRealtimeWSParams defines parameters for ConnectRealtimeWS.
+type ConnectRealtimeWSParams struct {
+	// Topics Comma-separated list of topics (run.events, run.status, run.logs, deploy.events, deploy.logs, system.errors)
+	Topics      *string `form:"topics,omitempty" json:"topics,omitempty"`
+	ProjectId   *string `form:"project_id,omitempty" json:"project_id,omitempty"`
+	RunId       *string `form:"run_id,omitempty" json:"run_id,omitempty"`
+	TaskId      *string `form:"task_id,omitempty" json:"task_id,omitempty"`
+	LastEventId *int64  `form:"last_event_id,omitempty" json:"last_event_id,omitempty"`
+}
+
 // ListRunsParams defines parameters for ListRuns.
 type ListRunsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
@@ -1182,6 +1192,9 @@ type ServerInterface interface {
 	// Run repository onboarding preflight
 	// (POST /api/v1/staff/projects/{project_id}/repositories/{repository_id}/preflight)
 	RunRepositoryPreflight(w http.ResponseWriter, r *http.Request, projectId ProjectID, repositoryId string)
+	// Open staff realtime websocket stream
+	// (GET /api/v1/staff/realtime/ws)
+	ConnectRealtimeWS(w http.ResponseWriter, r *http.Request, params ConnectRealtimeWSParams)
 	// List runs
 	// (GET /api/v1/staff/runs)
 	ListRuns(w http.ResponseWriter, r *http.Request, params ListRunsParams)
@@ -2088,6 +2101,65 @@ func (siw *ServerInterfaceWrapper) RunRepositoryPreflight(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// ConnectRealtimeWS operation middleware
+func (siw *ServerInterfaceWrapper) ConnectRealtimeWS(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ConnectRealtimeWSParams
+
+	// ------------- Optional query parameter "topics" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "topics", r.URL.Query(), &params.Topics)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "topics", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "project_id" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "project_id", r.URL.Query(), &params.ProjectId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "project_id", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "run_id" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "run_id", r.URL.Query(), &params.RunId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "run_id", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "task_id" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "task_id", r.URL.Query(), &params.TaskId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "task_id", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "last_event_id" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "last_event_id", r.URL.Query(), &params.LastEventId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "last_event_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConnectRealtimeWS(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListRuns operation middleware
 func (siw *ServerInterfaceWrapper) ListRuns(w http.ResponseWriter, r *http.Request) {
 
@@ -2919,6 +2991,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/staff/projects/{project_id}/repositories/{repository_id}", wrapper.DeleteProjectRepository)
 	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/staff/projects/{project_id}/repositories/{repository_id}/bot-params", wrapper.UpsertRepositoryBotParams)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/projects/{project_id}/repositories/{repository_id}/preflight", wrapper.RunRepositoryPreflight)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/realtime/ws", wrapper.ConnectRealtimeWS)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs", wrapper.ListRuns)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/jobs", wrapper.ListRunJobs)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/waits", wrapper.ListRunWaits)
@@ -4170,6 +4243,40 @@ func (response RunRepositoryPreflight403JSONResponse) VisitRunRepositoryPrefligh
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ConnectRealtimeWSRequestObject struct {
+	Params ConnectRealtimeWSParams
+}
+
+type ConnectRealtimeWSResponseObject interface {
+	VisitConnectRealtimeWSResponse(w http.ResponseWriter) error
+}
+
+type ConnectRealtimeWS101Response struct {
+}
+
+func (response ConnectRealtimeWS101Response) VisitConnectRealtimeWSResponse(w http.ResponseWriter) error {
+	w.WriteHeader(101)
+	return nil
+}
+
+type ConnectRealtimeWS401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ConnectRealtimeWS401JSONResponse) VisitConnectRealtimeWSResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ConnectRealtimeWS503JSONResponse struct{ InternalJSONResponse }
+
+func (response ConnectRealtimeWS503JSONResponse) VisitConnectRealtimeWSResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListRunsRequestObject struct {
 	Params ListRunsParams
 }
@@ -5071,6 +5178,9 @@ type StrictServerInterface interface {
 	// Run repository onboarding preflight
 	// (POST /api/v1/staff/projects/{project_id}/repositories/{repository_id}/preflight)
 	RunRepositoryPreflight(ctx context.Context, request RunRepositoryPreflightRequestObject) (RunRepositoryPreflightResponseObject, error)
+	// Open staff realtime websocket stream
+	// (GET /api/v1/staff/realtime/ws)
+	ConnectRealtimeWS(ctx context.Context, request ConnectRealtimeWSRequestObject) (ConnectRealtimeWSResponseObject, error)
 	// List runs
 	// (GET /api/v1/staff/runs)
 	ListRuns(ctx context.Context, request ListRunsRequestObject) (ListRunsResponseObject, error)
@@ -5987,6 +6097,32 @@ func (sh *strictHandler) RunRepositoryPreflight(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RunRepositoryPreflightResponseObject); ok {
 		if err := validResponse.VisitRunRepositoryPreflightResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConnectRealtimeWS operation middleware
+func (sh *strictHandler) ConnectRealtimeWS(w http.ResponseWriter, r *http.Request, params ConnectRealtimeWSParams) {
+	var request ConnectRealtimeWSRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConnectRealtimeWS(ctx, request.(ConnectRealtimeWSRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConnectRealtimeWS")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConnectRealtimeWSResponseObject); ok {
+		if err := validResponse.VisitConnectRealtimeWSResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

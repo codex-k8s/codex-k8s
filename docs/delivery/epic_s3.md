@@ -66,13 +66,13 @@ approvals:
 - Day 16 (`gRPC transport boundary hardening`) завершён как refactoring-hygiene эпик по Issue #45.
 - Day 17 (`environment-scoped secret overrides + OAuth callback strategy`) завершён и согласован Owner (PR #49).
 - Day 18 (`runtime error journal + staff alert center`) завершён и согласован Owner (PR #50).
-- В работе остаются Day19/Day19.5/Day19.6 (frontend hardening + realtime), после них финальный Day20 full e2e gate.
+- Day19.5 (`realtime event bus + WS backplane`) завершён.
+- Day19.6 (`staff realtime subscriptions + UI integration`) завершён.
+- В работе остаётся Day19 (manual frontend hardening), после него финальный Day20 full e2e gate.
 
 ## Порядок закрытия остатка S3
 1. Day19: manual frontend QA hardening loop.
-2. Day19.5: PostgreSQL LISTEN/NOTIFY realtime bus + WS backplane (multi-server).
-3. Day19.6: staff realtime subscriptions and UI integration.
-4. Day20: full e2e regression gate + MVP closeout.
+2. Day20: full e2e regression gate + MVP closeout.
 
 ## Критерий успеха Sprint S3 (выжимка)
 - Все MVP-сценарии из Issue #19 покрыты кодом, тестами и эксплуатационной документацией.

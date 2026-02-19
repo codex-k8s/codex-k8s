@@ -46,6 +46,16 @@
 
       <VSpacer />
 
+      <VChip
+        v-if="auth.isAuthed"
+        size="small"
+        variant="tonal"
+        class="mr-2"
+        :color="realtimeStatusColor"
+      >
+        {{ realtimeStatusLabel }}
+      </VChip>
+
       <VMenu v-if="showContextFilter" :close-on-content-click="false">
         <template #activator="{ props: menuProps }">
           <AdaptiveBtn v-bind="menuProps" variant="tonal" icon="mdi-filter-variant" :label="filterButtonLabel" class="context-filter-btn" />
@@ -255,6 +265,7 @@ import { useDisplay } from "vuetify";
 import { persistLocale, type Locale } from "../i18n/locale";
 import { useAuthStore } from "../features/auth/store";
 import { useProjectsStore } from "../features/projects/projects-store";
+import { useRealtimeStore } from "../features/realtime/store";
 import { useRuntimeErrorsStore } from "../features/runtime-errors/store";
 import type { RuntimeError } from "../features/runtime-errors/types";
 import { useUiContextStore } from "../features/ui-context/store";
@@ -265,6 +276,7 @@ import SnackbarHost from "../shared/ui/feedback/SnackbarHost.vue";
 
 const auth = useAuthStore();
 const projects = useProjectsStore();
+const realtime = useRealtimeStore();
 const runtimeErrors = useRuntimeErrorsStore();
 const uiContext = useUiContextStore();
 const { t, locale } = useI18n({ useScope: "global" });
@@ -276,6 +288,7 @@ const drawerRail = ref(false);
 const isMobile = computed(() => display.mobile.value);
 const runtimeErrorsPollMs = 10_000;
 let runtimeErrorsPollTimer: number | null = null;
+let realtimeErrorsUnsubscribe: (() => void) | null = null;
 
 const envModel = computed({
   get: () => uiContext.env,
@@ -311,6 +324,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  stopRealtime();
   stopRuntimeErrorsPolling();
 });
 
@@ -318,9 +332,11 @@ watch(
   () => auth.status,
   (status) => {
     if (status === "authed") {
-      startRuntimeErrorsPolling();
+      startRealtime();
+      syncRuntimeErrorsMode();
       return;
     }
+    stopRealtime();
     stopRuntimeErrorsPolling();
     runtimeErrors.clear();
   },
@@ -351,6 +367,42 @@ function stopRuntimeErrorsPolling(): void {
     runtimeErrorsPollTimer = null;
   }
 }
+
+function syncRuntimeErrorsMode(): void {
+  if (realtime.isConnected) {
+    stopRuntimeErrorsPolling();
+    void runtimeErrors.loadActive(5);
+    return;
+  }
+  startRuntimeErrorsPolling();
+}
+
+function startRealtime(): void {
+  realtime.start();
+  if (!realtimeErrorsUnsubscribe) {
+    realtimeErrorsUnsubscribe = realtime.subscribe((event) => {
+      if (event.topic === "system.errors") {
+        void runtimeErrors.loadActive(5);
+      }
+    });
+  }
+}
+
+function stopRealtime(): void {
+  realtime.stop();
+  if (realtimeErrorsUnsubscribe) {
+    realtimeErrorsUnsubscribe();
+    realtimeErrorsUnsubscribe = null;
+  }
+}
+
+watch(
+  () => realtime.status,
+  () => {
+    if (!auth.isAuthed) return;
+    syncRuntimeErrorsMode();
+  },
+);
 
 function runtimeErrorColor(level: string): string {
   switch (String(level || "").toLowerCase()) {
@@ -401,6 +453,14 @@ watch(
     }
   },
   { immediate: true },
+);
+
+watch(
+  () => uiContext.projectId,
+  () => {
+    if (!auth.isAuthed) return;
+    realtime.reconnect();
+  },
 );
 
 const projectSelectOptions = computed(() =>
@@ -484,6 +544,18 @@ const filterButtonLabel = computed(() => {
 const profileButtonLabel = computed(() =>
   auth.me?.githubLogin ? `@${auth.me.githubLogin}` : auth.me?.email || t("common.loading"),
 );
+
+const realtimeStatusColor = computed(() => {
+  if (realtime.status === "connected") return "success";
+  if (realtime.status === "connecting") return "warning";
+  return "error";
+});
+
+const realtimeStatusLabel = computed(() => {
+  if (realtime.status === "connected") return t("realtime.status.connected");
+  if (realtime.status === "connecting") return t("realtime.status.connecting");
+  return t("realtime.status.disconnected");
+});
 
 const notifications = [
   { id: "n1", title: t("notifications.items.sample1.title"), subtitle: t("notifications.items.sample1.subtitle") },

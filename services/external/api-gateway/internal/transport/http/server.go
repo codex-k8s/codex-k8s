@@ -18,6 +18,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/controlplane"
+	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/realtime"
 )
 
 // ServerConfig defines HTTP transport runtime options.
@@ -53,7 +54,15 @@ type Server struct {
 }
 
 // NewServer builds and configures HTTP routes and middleware.
-func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Client, auth authService, logger *slog.Logger) (*Server, error) {
+func NewServer(
+	initCtx context.Context,
+	cfg ServerConfig,
+	cp *controlplane.Client,
+	auth authService,
+	logger *slog.Logger,
+	realtimeBackplane *realtime.Backplane,
+	realtimeRepo *realtime.Repository,
+) (*Server, error) {
 	if initCtx == nil {
 		return nil, fmt.Errorf("init context is nil")
 	}
@@ -75,6 +84,7 @@ func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Clien
 	mcpH := newMCPCallbackHandler(cfg, cp)
 	authH := newAuthHandler(auth, cfg.CookieSecure)
 	staffH := newStaffHandler(cp)
+	realtimeH := newRealtimeHandler(realtimeBackplane, realtimeRepo)
 
 	staffAuthMw := requireStaffAuth(auth, cp.ResolveStaffByEmail)
 
@@ -94,6 +104,7 @@ func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Clien
 	e.GET("/api/v1/auth/me", authH.Me, staffAuthMw)
 
 	staffGroup := e.Group("/api/v1/staff", staffAuthMw)
+	staffGroup.GET("/realtime/ws", realtimeH.Connect)
 	staffGroup.GET("/projects", staffH.ListProjects)
 	staffGroup.POST("/projects", staffH.UpsertProject)
 	staffGroup.GET("/projects/:project_id", staffH.GetProject)

@@ -838,6 +838,35 @@ export type ListRunsResponses = {
 
 export type ListRunsResponse = ListRunsResponses[keyof ListRunsResponses];
 
+export type ConnectRealtimeWsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Comma-separated list of topics (run.events, run.status, run.logs, deploy.events, deploy.logs, system.errors)
+         */
+        topics?: string;
+        project_id?: string;
+        run_id?: string;
+        task_id?: string;
+        last_event_id?: number;
+    };
+    url: '/api/v1/staff/realtime/ws';
+};
+
+export type ConnectRealtimeWsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Internal error
+     */
+    503: ErrorResponse;
+};
+
+export type ConnectRealtimeWsError = ConnectRealtimeWsErrors[keyof ConnectRealtimeWsErrors];
+
 export type ListRunJobsData = {
     body?: never;
     path?: never;

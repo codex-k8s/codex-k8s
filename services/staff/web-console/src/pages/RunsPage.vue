@@ -1,9 +1,6 @@
 <template>
   <div>
     <PageHeader :title="t('pages.runs.title')">
-      <template #actions>
-        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="runs.loading" @click="loadAll" />
-      </template>
     </PageHeader>
 
     <VAlert v-if="runs.error" type="error" variant="tonal" class="mt-4">
@@ -139,18 +136,23 @@
 
 <script setup lang="ts">
 // TODO(#19): Добавить table settings + row actions menu через общий DataTable wrapper и master-detail layout для Runs/Approvals.
-import { onMounted } from "vue";
+import { onBeforeUnmount, onMounted, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
 import PageHeader from "../shared/ui/PageHeader.vue";
-import AdaptiveBtn from "../shared/ui/AdaptiveBtn.vue";
 import { formatDateTime } from "../shared/lib/datetime";
 import { colorForRunStatus } from "../shared/lib/chips";
 import { useRunsStore } from "../features/runs/store";
+import { useRealtimeStore } from "../features/realtime/store";
 
 const { t, locale } = useI18n({ useScope: "global" });
 const runs = useRunsStore();
+const realtime = useRealtimeStore();
+
+let pollTimer: number | null = null;
+let unsubscribeRealtime: (() => void) | null = null;
+let reloadTimer: number | null = null;
 
 const headers = [
   { title: t("pages.runs.status"), key: "status", width: 140, align: "center" },
@@ -168,7 +170,64 @@ async function loadAll() {
   await Promise.all([runs.load(), runs.loadRuntimeViews(), runs.loadPendingApprovals()]);
 }
 
-onMounted(() => void loadAll());
+function scheduleReload(): void {
+  if (reloadTimer !== null) {
+    window.clearTimeout(reloadTimer);
+  }
+  reloadTimer = window.setTimeout(() => {
+    reloadTimer = null;
+    void loadAll();
+  }, 300);
+}
+
+function startPollingFallback(): void {
+  stopPollingFallback();
+  pollTimer = window.setInterval(() => {
+    void loadAll();
+  }, 10000);
+}
+
+function stopPollingFallback(): void {
+  if (pollTimer !== null) {
+    window.clearInterval(pollTimer);
+    pollTimer = null;
+  }
+}
+
+onMounted(() => {
+  void loadAll();
+  unsubscribeRealtime = realtime.subscribe((event) => {
+    if (event.topic === "run.events" || event.topic === "run.status") {
+      scheduleReload();
+    }
+  });
+  if (!realtime.isConnected) {
+    startPollingFallback();
+  }
+});
+
+watch(
+  () => realtime.isConnected,
+  (connected) => {
+    if (connected) {
+      stopPollingFallback();
+      return;
+    }
+    startPollingFallback();
+  },
+);
+
+onBeforeUnmount(() => {
+  if (unsubscribeRealtime) {
+    unsubscribeRealtime();
+    unsubscribeRealtime = null;
+  }
+  stopPollingFallback();
+  if (reloadTimer !== null) {
+    window.clearTimeout(reloadTimer);
+    reloadTimer = null;
+  }
+});
 </script>
 
 <style scoped>

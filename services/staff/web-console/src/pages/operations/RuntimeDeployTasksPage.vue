@@ -13,7 +13,6 @@
             hide-details
             clearable
           />
-          <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :disabled="loading" @click="loadTasks" />
         </div>
       </template>
     </PageHeader>
@@ -81,26 +80,30 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
-import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
 import PageHeader from "../../shared/ui/PageHeader.vue";
 import { normalizeApiError, type ApiError } from "../../shared/api/errors";
 import { formatDateTime } from "../../shared/lib/datetime";
 import { colorForRunStatus } from "../../shared/lib/chips";
+import { useRealtimeStore } from "../../features/realtime/store";
 import { useUiContextStore } from "../../features/ui-context/store";
 import { listRuntimeDeployTasks } from "../../features/runtime-deploy/api";
 import type { RuntimeDeployTask } from "../../features/runtime-deploy/types";
 
 const { t, locale } = useI18n({ useScope: "global" });
 const uiContext = useUiContextStore();
+const realtime = useRealtimeStore();
 
 const loading = ref(false);
 const error = ref<ApiError | null>(null);
 const statusFilter = ref<"" | "pending" | "running" | "succeeded" | "failed" | null>("");
 const items = ref<RuntimeDeployTask[]>([]);
+let fallbackPollTimer: number | null = null;
+let unsubscribeRealtime: (() => void) | null = null;
+let reloadTimer: number | null = null;
 
 const statusOptions = computed(() => [
   { title: t("context.allObjects"), value: "" },
@@ -161,6 +164,41 @@ async function loadTasks(): Promise<void> {
 
 onMounted(() => void loadTasks());
 
+function scheduleReload(): void {
+  if (reloadTimer !== null) {
+    window.clearTimeout(reloadTimer);
+  }
+  reloadTimer = window.setTimeout(() => {
+    reloadTimer = null;
+    void loadTasks();
+  }, 300);
+}
+
+function startFallbackPolling(): void {
+  stopFallbackPolling();
+  fallbackPollTimer = window.setInterval(() => {
+    void loadTasks();
+  }, 10000);
+}
+
+function stopFallbackPolling(): void {
+  if (fallbackPollTimer !== null) {
+    window.clearInterval(fallbackPollTimer);
+    fallbackPollTimer = null;
+  }
+}
+
+onMounted(() => {
+  unsubscribeRealtime = realtime.subscribe((event) => {
+    if (event.topic === "deploy.events" || event.topic === "deploy.logs") {
+      scheduleReload();
+    }
+  });
+  if (!realtime.isConnected) {
+    startFallbackPolling();
+  }
+});
+
 watch(
   () => uiContext.env,
   () => void loadTasks(),
@@ -170,6 +208,29 @@ watch(
   () => statusFilter.value,
   () => void loadTasks(),
 );
+
+watch(
+  () => realtime.isConnected,
+  (connected) => {
+    if (connected) {
+      stopFallbackPolling();
+      return;
+    }
+    startFallbackPolling();
+  },
+);
+
+onBeforeUnmount(() => {
+  if (unsubscribeRealtime) {
+    unsubscribeRealtime();
+    unsubscribeRealtime = null;
+  }
+  stopFallbackPolling();
+  if (reloadTimer !== null) {
+    window.clearTimeout(reloadTimer);
+    reloadTimer = null;
+  }
+});
 </script>
 
 <style scoped>

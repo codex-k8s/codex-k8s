@@ -14,7 +14,6 @@
         />
         <CopyChip v-if="details.run?.namespace" :label="t('pages.runDetails.namespace')" :value="details.run.namespace" icon="mdi-kubernetes" />
 
-        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="details.loading" @click="loadAll" />
         <AdaptiveBtn
           v-if="canDeleteNamespace"
           color="error"
@@ -130,6 +129,7 @@
           :status="details.logs?.status || ''"
           :updated-at-label="formatDateTime(details.logs?.updated_at, locale)"
           :loading="details.loading"
+          :show-refresh="!realtime.isConnected"
           :file-name="`run-${runId}.log`"
           @refresh="(n) => details.refreshLogs(runId, n)"
         />
@@ -229,7 +229,7 @@
 
 <script setup lang="ts">
 // TODO(#19): Доработать Run details: master-detail layout, улучшенный stepper по стадиям/событиям и feedback слой через VSnackbar.
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 
@@ -242,6 +242,7 @@ import LogsViewer from "../shared/ui/LogsViewer.vue";
 import RunTimeline from "../shared/ui/RunTimeline.vue";
 import { formatDateTime } from "../shared/lib/datetime";
 import { colorForRunStatus } from "../shared/lib/chips";
+import { useRealtimeStore } from "../features/realtime/store";
 import { useRunDetailsStore } from "../features/runs/store";
 import { useSnackbarStore } from "../shared/ui/feedback/snackbar-store";
 
@@ -249,6 +250,7 @@ const props = defineProps<{ runId: string }>();
 
 const { t, locale } = useI18n({ useScope: "global" });
 const details = useRunDetailsStore();
+const realtime = useRealtimeStore();
 const router = useRouter();
 const snackbar = useSnackbarStore();
 
@@ -259,6 +261,9 @@ type CodexAuthRequiredPayload = { verification_url: string; user_code: string };
 
 const codexAuthDialogOpen = ref(false);
 const codexAuthShownKey = ref("");
+let fallbackPollTimer: number | null = null;
+let unsubscribeRealtime: (() => void) | null = null;
+let reloadTimer: number | null = null;
 
 const codexAuthRequiredEvent = computed(() => details.events.find((e) => e.event_type === "run.codex.auth.required") || null);
 const codexAuthPayload = computed(() => {
@@ -334,6 +339,61 @@ async function doDeleteNamespace() {
 
 onMounted(() => void loadAll());
 
+function scheduleReload(): void {
+  if (reloadTimer !== null) {
+    window.clearTimeout(reloadTimer);
+  }
+  reloadTimer = window.setTimeout(() => {
+    reloadTimer = null;
+    void loadAll();
+  }, 250);
+}
+
+function startFallbackPolling(): void {
+  stopFallbackPolling();
+  fallbackPollTimer = window.setInterval(() => {
+    void loadAll();
+  }, 10000);
+}
+
+function stopFallbackPolling(): void {
+  if (fallbackPollTimer !== null) {
+    window.clearInterval(fallbackPollTimer);
+    fallbackPollTimer = null;
+  }
+}
+
+onMounted(() => {
+  unsubscribeRealtime = realtime.subscribe((event) => {
+    if (event.run_id !== props.runId) {
+      return;
+    }
+    if (
+      event.topic === "run.logs" ||
+      event.topic === "run.status" ||
+      event.topic === "run.events" ||
+      event.topic === "deploy.events" ||
+      event.topic === "deploy.logs"
+    ) {
+      scheduleReload();
+    }
+  });
+  if (!realtime.isConnected) {
+    startFallbackPolling();
+  }
+});
+
+watch(
+  () => realtime.isConnected,
+  (connected) => {
+    if (connected) {
+      stopFallbackPolling();
+      return;
+    }
+    startFallbackPolling();
+  },
+);
+
 watch(
   () => [codexAuthRequiredEvent.value?.created_at, codexAuthRequiredEvent.value?.event_type],
   (keyParts) => {
@@ -349,6 +409,18 @@ watch(
   },
   { immediate: true },
 );
+
+onBeforeUnmount(() => {
+  if (unsubscribeRealtime) {
+    unsubscribeRealtime();
+    unsubscribeRealtime = null;
+  }
+  stopFallbackPolling();
+  if (reloadTimer !== null) {
+    window.clearTimeout(reloadTimer);
+    reloadTimer = null;
+  }
+});
 </script>
 
 <style scoped>

@@ -47,6 +47,28 @@ type Config struct {
 	MCPCallbackToken string `env:"CODEXK8S_MCP_CALLBACK_TOKEN"`
 	// WebhookMaxBodyBytes limits accepted webhook payload size.
 	WebhookMaxBodyBytes int64 `env:"CODEXK8S_WEBHOOK_MAX_BODY_BYTES" envDefault:"1048576"`
+
+	// DBHost is PostgreSQL host for realtime event backplane.
+	DBHost string `env:"CODEXK8S_DB_HOST,required,notEmpty"`
+	// DBPort is PostgreSQL port for realtime event backplane.
+	DBPort int `env:"CODEXK8S_DB_PORT" envDefault:"5432"`
+	// DBName is PostgreSQL database name for realtime event backplane.
+	DBName string `env:"CODEXK8S_DB_NAME,required,notEmpty"`
+	// DBUser is PostgreSQL username for realtime event backplane.
+	DBUser string `env:"CODEXK8S_DB_USER,required,notEmpty"`
+	// DBPassword is PostgreSQL password for realtime event backplane.
+	DBPassword string `env:"CODEXK8S_DB_PASSWORD,required,notEmpty"`
+	// DBSSLMode is PostgreSQL SSL mode for realtime event backplane.
+	DBSSLMode string `env:"CODEXK8S_DB_SSLMODE" envDefault:"disable"`
+
+	// RealtimeBackplaneEnabled enables LISTEN/NOTIFY websocket backplane.
+	RealtimeBackplaneEnabled bool `env:"CODEXK8S_REALTIME_BACKPLANE_ENABLED" envDefault:"true"`
+	// RealtimeChannel is PostgreSQL LISTEN/NOTIFY channel name.
+	RealtimeChannel string `env:"CODEXK8S_REALTIME_CHANNEL" envDefault:"codex_realtime"`
+	// RealtimeCleanupInterval controls cleanup loop frequency for realtime_events table.
+	RealtimeCleanupInterval string `env:"CODEXK8S_REALTIME_CLEANUP_INTERVAL" envDefault:"10m"`
+	// RealtimeRetention controls how long realtime_events rows are retained.
+	RealtimeRetention string `env:"CODEXK8S_REALTIME_RETENTION" envDefault:"72h"`
 }
 
 // LoadConfig parses and validates configuration from environment variables.

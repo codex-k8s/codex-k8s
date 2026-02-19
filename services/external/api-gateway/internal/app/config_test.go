@@ -9,6 +9,10 @@ func TestLoadConfig_Defaults(t *testing.T) {
 	t.Setenv("CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET", "client-secret")
 	t.Setenv("CODEXK8S_JWT_SIGNING_KEY", "jwt-key")
 	t.Setenv("CODEXK8S_GITHUB_WEBHOOK_SECRET", "secret")
+	t.Setenv("CODEXK8S_DB_HOST", "postgres")
+	t.Setenv("CODEXK8S_DB_NAME", "codex_k8s")
+	t.Setenv("CODEXK8S_DB_USER", "codex_k8s")
+	t.Setenv("CODEXK8S_DB_PASSWORD", "secret")
 
 	cfg, err := LoadConfig()
 	if err != nil {
@@ -38,6 +42,10 @@ func TestLoadConfig_MissingRequired(t *testing.T) {
 	t.Setenv("CODEXK8S_GITHUB_OAUTH_CLIENT_ID", "client-id")
 	t.Setenv("CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET", "client-secret")
 	t.Setenv("CODEXK8S_JWT_SIGNING_KEY", "jwt-key")
+	t.Setenv("CODEXK8S_DB_HOST", "postgres")
+	t.Setenv("CODEXK8S_DB_NAME", "codex_k8s")
+	t.Setenv("CODEXK8S_DB_USER", "codex_k8s")
+	t.Setenv("CODEXK8S_DB_PASSWORD", "secret")
 	// CODEXK8S_GITHUB_WEBHOOK_SECRET intentionally unset
 
 	_, err := LoadConfig()
