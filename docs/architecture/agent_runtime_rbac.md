@@ -57,6 +57,7 @@ approvals:
   - service account per role/profile,
   - network policy baseline.
 - Cleanup обязателен после завершения run. Если на issue присутствует `run:debug`, cleanup пропускается и namespace сохраняется для отладки.
+- При сохранении namespace в debug-сценарии статус-комментарий run обязан явно отмечать, что namespace не удалён, и давать ссылку на run details для ручного удаления.
 
 Текущий baseline реализации (S2 Day3):
 - Worker создаёт namespace idempotent, применяет `ServiceAccount + Role + RoleBinding + ResourceQuota + LimitRange`.

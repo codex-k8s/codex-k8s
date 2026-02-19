@@ -7,6 +7,7 @@ type RunStatusPhase string
 
 const (
 	RunStatusPhaseCreated          RunStatusPhase = "created"
+	RunStatusPhasePreparingRuntime RunStatusPhase = "preparing_runtime"
 	RunStatusPhaseStarted          RunStatusPhase = "started"
 	RunStatusPhaseFinished         RunStatusPhase = "finished"
 	RunStatusPhaseNamespaceDeleted RunStatusPhase = "namespace_deleted"

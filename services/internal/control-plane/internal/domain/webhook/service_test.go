@@ -705,6 +705,87 @@ func TestIngestGitHubWebhook_IssueRunDev_CreatesRunForAllowedMember(t *testing.T
 	}
 }
 
+func TestIngestGitHubWebhook_IssueRunDev_PostsPlannedRunStatusImmediately(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	runStatus := &inMemoryRunStatusService{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {
+				ID:          "user-1",
+				GitHubLogin: "member",
+			},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{
+			"project-1|user-1": "read_write",
+		},
+	}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
+		RunStatus:  runStatus,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"labeled",
+		"label":{"name":"run:dev"},
+		"issue":{"id":1001,"number":177,"title":"Implement feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/177","state":"open","user":{"id":55,"login":"owner"}},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-177-planned",
+		DeliveryID:    "delivery-177-planned",
+		EventType:     string(webhookdomain.GitHubEventIssues),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.RunID == "" {
+		t.Fatal("expected run id")
+	}
+	if len(runStatus.statusCommentUpsertCalls) != 1 {
+		t.Fatalf("expected one status comment upsert call, got %d", len(runStatus.statusCommentUpsertCalls))
+	}
+	comment := runStatus.statusCommentUpsertCalls[0]
+	if comment.RunID != got.RunID {
+		t.Fatalf("unexpected run id in status comment call: got %q want %q", comment.RunID, got.RunID)
+	}
+	if comment.Phase != runstatusdomain.PhaseCreated {
+		t.Fatalf("expected phase %q, got %q", runstatusdomain.PhaseCreated, comment.Phase)
+	}
+	if comment.RunStatus != "pending" {
+		t.Fatalf("expected pending run status, got %q", comment.RunStatus)
+	}
+	if comment.TriggerKind != string(webhookdomain.TriggerKindDev) {
+		t.Fatalf("expected trigger kind %q, got %q", webhookdomain.TriggerKindDev, comment.TriggerKind)
+	}
+	if comment.PromptLocale != "ru" {
+		t.Fatalf("expected prompt locale ru, got %q", comment.PromptLocale)
+	}
+}
+
 func TestIngestGitHubWebhook_RuntimePolicyOverrideFromServicesYAML(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
@@ -1470,13 +1551,22 @@ func (r *inMemoryRunRepo) ListRunIDsByRepositoryPullRequest(_ context.Context, _
 }
 
 type inMemoryRunStatusService struct {
-	issueCleanupCalls       int
-	pullRequestCleanupCalls int
-	lastIssueCleanup        runstatusdomain.CleanupByIssueParams
-	lastPullRequestCleanup  runstatusdomain.CleanupByPullRequestParams
-	conflictCommentCalls    int
-	lastConflictComment     runstatusdomain.TriggerLabelConflictCommentParams
-	warningCommentCalls     []runstatusdomain.TriggerWarningCommentParams
+	issueCleanupCalls        int
+	pullRequestCleanupCalls  int
+	lastIssueCleanup         runstatusdomain.CleanupByIssueParams
+	lastPullRequestCleanup   runstatusdomain.CleanupByPullRequestParams
+	conflictCommentCalls     int
+	lastConflictComment      runstatusdomain.TriggerLabelConflictCommentParams
+	warningCommentCalls      []runstatusdomain.TriggerWarningCommentParams
+	statusCommentUpsertCalls []runstatusdomain.UpsertCommentParams
+}
+
+func (s *inMemoryRunStatusService) UpsertRunStatusComment(_ context.Context, params runstatusdomain.UpsertCommentParams) (runstatusdomain.UpsertCommentResult, error) {
+	s.statusCommentUpsertCalls = append(s.statusCommentUpsertCalls, params)
+	return runstatusdomain.UpsertCommentResult{
+		CommentID:  1,
+		CommentURL: "https://example.invalid/run-status",
+	}, nil
 }
 
 func (s *inMemoryRunStatusService) CleanupNamespacesByIssue(_ context.Context, params runstatusdomain.CleanupByIssueParams) (runstatusdomain.CleanupByIssueResult, error) {
@@ -1501,9 +1591,6 @@ func (s *inMemoryRunStatusService) PostTriggerLabelConflictComment(_ context.Con
 }
 
 func (s *inMemoryRunStatusService) PostTriggerWarningComment(_ context.Context, params runstatusdomain.TriggerWarningCommentParams) (runstatusdomain.TriggerWarningCommentResult, error) {
-	if s == nil {
-		return runstatusdomain.TriggerWarningCommentResult{}, nil
-	}
 	s.warningCommentCalls = append(s.warningCommentCalls, params)
 	return runstatusdomain.TriggerWarningCommentResult{
 		CommentID:  int64(len(s.warningCommentCalls)),

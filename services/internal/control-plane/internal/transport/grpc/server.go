@@ -1344,21 +1344,21 @@ func (s *Server) UpsertRunStatusComment(ctx context.Context, req *controlplanev1
 	}
 
 	result, err := s.runStatus.UpsertRunStatusComment(ctx, runstatusdomain.UpsertCommentParams{
-		RunID:           runID,
-		Phase:           phase,
-		JobName:         strings.TrimSpace(req.GetJobName()),
-		JobNamespace:    strings.TrimSpace(req.GetJobNamespace()),
-		RuntimeMode:     strings.TrimSpace(req.GetRuntimeMode()),
-		Namespace:       strings.TrimSpace(req.GetNamespace()),
-		TriggerKind:     strings.TrimSpace(req.GetTriggerKind()),
-		PromptLocale:    strings.TrimSpace(req.GetPromptLocale()),
-		Model:           strings.TrimSpace(req.GetModel()),
-		ReasoningEffort: strings.TrimSpace(req.GetReasoningEffort()),
-		RunStatus:       strings.TrimSpace(req.GetRunStatus()),
+		RunID:                    runID,
+		Phase:                    phase,
+		JobName:                  strings.TrimSpace(req.GetJobName()),
+		JobNamespace:             strings.TrimSpace(req.GetJobNamespace()),
+		RuntimeMode:              strings.TrimSpace(req.GetRuntimeMode()),
+		Namespace:                strings.TrimSpace(req.GetNamespace()),
+		TriggerKind:              strings.TrimSpace(req.GetTriggerKind()),
+		PromptLocale:             strings.TrimSpace(req.GetPromptLocale()),
+		Model:                    strings.TrimSpace(req.GetModel()),
+		ReasoningEffort:          strings.TrimSpace(req.GetReasoningEffort()),
+		RunStatus:                strings.TrimSpace(req.GetRunStatus()),
 		CodexAuthVerificationURL: strings.TrimSpace(req.GetCodexAuthVerificationUrl()),
 		CodexAuthUserCode:        strings.TrimSpace(req.GetCodexAuthUserCode()),
-		Deleted:         req.GetDeleted(),
-		AlreadyDeleted:  req.GetAlreadyDeleted(),
+		Deleted:                  req.GetDeleted(),
+		AlreadyDeleted:           req.GetAlreadyDeleted(),
 	})
 	if err != nil {
 		s.logger.Error("upsert run status comment via grpc failed", "run_id", runID, "phase", phase, "err", err)
@@ -1821,6 +1821,8 @@ func parseRunStatusPhase(value string) (runstatusdomain.Phase, error) {
 	switch strings.TrimSpace(value) {
 	case string(runstatusdomain.PhaseCreated):
 		return runstatusdomain.PhaseCreated, nil
+	case string(runstatusdomain.PhasePreparingRuntime):
+		return runstatusdomain.PhasePreparingRuntime, nil
 	case string(runstatusdomain.PhaseStarted):
 		return runstatusdomain.PhaseStarted, nil
 	case string(runstatusdomain.PhaseAuthRequired):

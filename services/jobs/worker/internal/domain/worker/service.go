@@ -448,6 +448,22 @@ func (s *Service) launchPending(ctx context.Context) error {
 			continue
 		}
 
+		runPayload := parseRunRuntimePayload(claimed.RunPayload)
+		triggerKind := ""
+		if runPayload.Trigger != nil {
+			triggerKind = string(runPayload.Trigger.Kind)
+		}
+		if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
+			RunID:       runningRun.RunID,
+			Phase:       RunStatusPhasePreparingRuntime,
+			RuntimeMode: string(execution.RuntimeMode),
+			Namespace:   execution.Namespace,
+			TriggerKind: triggerKind,
+			RunStatus:   string(rundomain.StatusRunning),
+		}); err != nil {
+			s.logger.Warn("upsert run status comment (preparing runtime) failed", "run_id", runningRun.RunID, "err", err)
+		}
+
 		prepared, err := s.prepareRuntimeEnvironmentWithRetry(ctx, prepareParams)
 		if err != nil {
 			s.logger.Error("prepare runtime environment failed", "run_id", claimed.RunID, "err", err)
@@ -609,6 +625,7 @@ func (s *Service) finishRun(ctx context.Context, params finishRunParams) error {
 			}); err != nil {
 				s.logger.Error("insert run.namespace.cleanup_skipped event failed", "run_id", params.Run.RunID, "err", err)
 			}
+			s.upsertNamespaceStatusComment(ctx, params, false, "upsert run status comment (namespace cleanup skipped) failed")
 			return nil
 		}
 
@@ -649,18 +666,7 @@ func (s *Service) finishRun(ctx context.Context, params finishRunParams) error {
 			}); err != nil {
 				s.logger.Error("insert run.namespace.cleaned event failed", "run_id", params.Run.RunID, "err", err)
 			}
-			if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
-				RunID:        params.Run.RunID,
-				Phase:        RunStatusPhaseNamespaceDeleted,
-				JobName:      params.Ref.Name,
-				JobNamespace: params.Ref.Namespace,
-				RuntimeMode:  string(params.Execution.RuntimeMode),
-				Namespace:    params.Execution.Namespace,
-				RunStatus:    string(params.Status),
-				Deleted:      true,
-			}); err != nil {
-				s.logger.Warn("upsert run status comment (namespace deleted) failed", "run_id", params.Run.RunID, "err", err)
-			}
+			s.upsertNamespaceStatusComment(ctx, params, true, "upsert run status comment (namespace deleted) failed")
 		}
 	}
 
@@ -678,6 +684,21 @@ func (s *Service) finishLaunchFailedRun(ctx context.Context, run runqueuerepo.Ru
 			Reason: reason,
 		},
 	})
+}
+
+func (s *Service) upsertNamespaceStatusComment(ctx context.Context, params finishRunParams, deleted bool, warnMessage string) {
+	if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
+		RunID:        params.Run.RunID,
+		Phase:        RunStatusPhaseNamespaceDeleted,
+		JobName:      params.Ref.Name,
+		JobNamespace: params.Ref.Namespace,
+		RuntimeMode:  string(params.Execution.RuntimeMode),
+		Namespace:    params.Execution.Namespace,
+		RunStatus:    string(params.Status),
+		Deleted:      deleted,
+	}); err != nil {
+		s.logger.Warn(warnMessage, "run_id", params.Run.RunID, "err", err)
+	}
 }
 
 // insertEvent persists one flow event with contextual error wrapping.

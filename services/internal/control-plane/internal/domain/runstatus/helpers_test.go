@@ -85,3 +85,14 @@ func TestResolveCommentTarget(t *testing.T) {
 		})
 	}
 }
+
+func TestPhaseOrder_PreparingRuntimeBetweenCreatedAndStarted(t *testing.T) {
+	t.Parallel()
+
+	if gotCreated, gotPreparing := phaseOrder(PhaseCreated), phaseOrder(PhasePreparingRuntime); gotPreparing <= gotCreated {
+		t.Fatalf("expected preparing phase order to be greater than created: created=%d preparing=%d", gotCreated, gotPreparing)
+	}
+	if gotPreparing, gotStarted := phaseOrder(PhasePreparingRuntime), phaseOrder(PhaseStarted); gotPreparing >= gotStarted {
+		t.Fatalf("expected preparing phase order to be less than started: preparing=%d started=%d", gotPreparing, gotStarted)
+	}
+}

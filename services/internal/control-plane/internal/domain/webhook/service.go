@@ -10,6 +10,7 @@ import (
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
+	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
 	"github.com/google/uuid"
 
 	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
@@ -47,6 +48,7 @@ type pushMainDeployTarget struct {
 }
 
 type runStatusService interface {
+	UpsertRunStatusComment(ctx context.Context, params runstatusdomain.UpsertCommentParams) (runstatusdomain.UpsertCommentResult, error)
 	CleanupNamespacesByIssue(ctx context.Context, params runstatusdomain.CleanupByIssueParams) (runstatusdomain.CleanupByIssueResult, error)
 	CleanupNamespacesByPullRequest(ctx context.Context, params runstatusdomain.CleanupByPullRequestParams) (runstatusdomain.CleanupByIssueResult, error)
 	PostTriggerLabelConflictComment(ctx context.Context, params runstatusdomain.TriggerLabelConflictCommentParams) (runstatusdomain.TriggerLabelConflictCommentResult, error)
@@ -305,6 +307,9 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 	})
 	if err != nil {
 		return IngestResult{}, fmt.Errorf("create pending agent run: %w", err)
+	}
+	if hasIssueRunTrigger && createResult.Inserted {
+		s.postRunLaunchPlannedFeedback(ctx, createResult.RunID, trigger, runtimeMode, runtimeNamespace, cmd.EventType)
 	}
 
 	eventPayload, err := buildEventPayload(eventPayloadInput{
@@ -694,6 +699,26 @@ func isRunCreationWarningReason(reason string) bool {
 		return true
 	}
 	return strings.HasPrefix(normalized, "sender_")
+}
+
+func (s *Service) postRunLaunchPlannedFeedback(ctx context.Context, runID string, trigger issueRunTrigger, runtimeMode agentdomain.RuntimeMode, runtimeNamespace string, eventType string) {
+	if s.runStatus == nil {
+		return
+	}
+	trimmedRunID := strings.TrimSpace(runID)
+	if trimmedRunID == "" {
+		return
+	}
+
+	_, _ = s.runStatus.UpsertRunStatusComment(ctx, runstatusdomain.UpsertCommentParams{
+		RunID:        trimmedRunID,
+		Phase:        runstatusdomain.PhaseCreated,
+		RuntimeMode:  string(runtimeMode),
+		Namespace:    strings.TrimSpace(runtimeNamespace),
+		TriggerKind:  string(trigger.Kind),
+		PromptLocale: localeFromEventType(eventType),
+		RunStatus:    string(rundomain.StatusPending),
+	})
 }
 
 func (s *Service) isActorAllowedForIssueTrigger(ctx context.Context, projectID string, senderLogin string) (bool, string, error) {

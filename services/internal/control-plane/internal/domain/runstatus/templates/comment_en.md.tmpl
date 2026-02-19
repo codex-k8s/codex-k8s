@@ -8,7 +8,13 @@
 - User code: `{{ .CodexAuthUserCode }}`
 {{- end }}
 {{- else }}
+{{- if .AgentStarted }}
 ✅ Agent started{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Run link]({{ .ManagementURL }}){{- end }}
+{{- else if .PreparingRuntimeReached }}
+🛠 Runtime preparation in progress{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Run link]({{ .ManagementURL }}){{- end }}
+{{- else }}
+👀 Agent launch is planned{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Run link]({{ .ManagementURL }}){{- end }}
+{{- end }}
 {{- end }}
 
 - Run ID: `{{ .RunID }}`
@@ -43,6 +49,17 @@
 {{- else }}
 - ⏳ Run is being created
 {{- end }}
+{{- if .ShowRuntimePreparation }}
+{{- if .PreparingRuntimeReached }}
+{{- if .RuntimePreparationCompleted }}
+- ✅ Runtime preparation completed (namespace, runtime stack, slot URL)
+{{- else }}
+- 🛠 Runtime preparation in progress (namespace, runtime stack, slot URL)
+{{- end }}
+{{- else }}
+- ⏳ Waiting for runtime preparation
+{{- end }}
+{{- end }}
 {{- if .StartedReached }}
 - ✅ Agent started
 {{- else }}
@@ -72,7 +89,7 @@
 {{- else if .Deleted }}
 - 🗑️ Namespace deleted
 {{- else }}
-- 🗑️ Namespace is waiting for cleanup
+- 🧪 Namespace was kept. You can delete it from the run details page.
 {{- end }}
 {{- end }}
 
