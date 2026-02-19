@@ -96,3 +96,17 @@ func TestPhaseOrder_PreparingRuntimeBetweenCreatedAndStarted(t *testing.T) {
 		t.Fatalf("expected preparing phase order to be less than started: preparing=%d started=%d", gotPreparing, gotStarted)
 	}
 }
+
+func TestResolveUpsertTriggerKind(t *testing.T) {
+	t.Parallel()
+
+	if got := resolveUpsertTriggerKind("design", "dev"); got != "design" {
+		t.Fatalf("resolveUpsertTriggerKind(design, dev) = %q, want %q", got, "design")
+	}
+	if got := resolveUpsertTriggerKind("", "design"); got != "design" {
+		t.Fatalf("resolveUpsertTriggerKind(empty, design) = %q, want %q", got, "design")
+	}
+	if got := resolveUpsertTriggerKind("  ", ""); got != "dev" {
+		t.Fatalf("resolveUpsertTriggerKind(blank, empty) = %q, want %q", got, "dev")
+	}
+}
