@@ -32,13 +32,13 @@ spec:
         - libs/go
         - proto
     control-plane:
-      value: "0.1.5"
+      value: "0.1.6"
       bumpOn:
         - services/internal/control-plane
         - libs/go
         - proto
     worker:
-      value: "0.1.1"
+      value: "0.1.2"
       bumpOn:
         - services/jobs/worker
         - libs/go
