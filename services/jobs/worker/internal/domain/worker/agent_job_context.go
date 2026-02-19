@@ -11,7 +11,7 @@ import (
 
 const (
 	promptTemplateKindWork   = "work"
-	promptTemplateKindReview = "review"
+	promptTemplateKindRevise = "revise"
 	promptTemplateSourceSeed = "repo_seed"
 
 	modelSourceDefault          = "agent_default"
@@ -115,8 +115,8 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 			ReasoningSource: modelSourceDefault,
 		},
 	}
-	if resolvePromptTemplateKindForTrigger(ctx.TriggerKind) == promptTemplateKindReview {
-		ctx.PromptTemplateKind = promptTemplateKindReview
+	if resolvePromptTemplateKindForTrigger(ctx.TriggerKind) == promptTemplateKindRevise {
+		ctx.PromptTemplateKind = promptTemplateKindRevise
 	}
 	if ctx.AgentKey == "" {
 		return runAgentContext{}, fmt.Errorf("failed_precondition: run payload missing agent.key")
@@ -158,8 +158,8 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 
 func resolvePromptTemplateKindForTrigger(triggerKind string) string {
 	normalized := webhookdomain.NormalizeTriggerKind(triggerKind)
-	if webhookdomain.IsReviseTriggerKind(normalized) || normalized == webhookdomain.TriggerKindSelfImprove {
-		return promptTemplateKindReview
+	if webhookdomain.IsReviseTriggerKind(normalized) {
+		return promptTemplateKindRevise
 	}
 	return promptTemplateKindWork
 }

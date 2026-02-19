@@ -3,13 +3,14 @@ package runner
 const (
 	templateNamePromptEnvelope = "templates/prompt_envelope.tmpl"
 	templateNamePromptWork     = "templates/prompt_work.tmpl"
-	templateNamePromptReview   = "templates/prompt_review.tmpl"
+	templateNamePromptRevise   = "templates/prompt_revise.tmpl"
 	templateNameCodexConfig    = "templates/codex_config.toml.tmpl"
 	templateNameKubeconfig     = "templates/kubeconfig.tmpl"
 	promptSeedsDirRelativePath = "docs/product/prompt-seeds"
 
-	promptTemplateKindWork   = "work"
-	promptTemplateKindReview = "review"
+	promptTemplateKindWork      = "work"
+	promptTemplateKindRevise    = "revise"
+	promptTemplateKindReviewOld = "review"
 
 	promptLocaleRU = "ru"
 	promptLocaleEN = "en"

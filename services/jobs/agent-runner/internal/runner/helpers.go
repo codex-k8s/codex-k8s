@@ -87,8 +87,8 @@ func (s *Service) renderTaskTemplate(templateKind string, repoDir string) (strin
 	}
 
 	templateName := templateNamePromptWork
-	if normalizePromptTemplateKind(templateKind) == promptTemplateKindReview {
-		templateName = templateNamePromptReview
+	if normalizePromptTemplateKind(templateKind) == promptTemplateKindRevise {
+		templateName = templateNamePromptRevise
 	}
 	return renderTemplate(templateName, templateData)
 }
@@ -313,11 +313,12 @@ func normalizeRuntimeMode(value string) string {
 
 func normalizeTemplateKind(value string, triggerKind string) string {
 	normalizedTrigger := webhookdomain.NormalizeTriggerKind(triggerKind)
-	if webhookdomain.IsReviseTriggerKind(normalizedTrigger) || normalizedTrigger == webhookdomain.TriggerKindSelfImprove {
-		return promptTemplateKindReview
+	if webhookdomain.IsReviseTriggerKind(normalizedTrigger) {
+		return promptTemplateKindRevise
 	}
-	if strings.EqualFold(strings.TrimSpace(value), promptTemplateKindReview) {
-		return promptTemplateKindReview
+	normalized := strings.TrimSpace(strings.ToLower(value))
+	if normalized == promptTemplateKindRevise || normalized == promptTemplateKindReviewOld {
+		return promptTemplateKindRevise
 	}
 	return promptTemplateKindWork
 }

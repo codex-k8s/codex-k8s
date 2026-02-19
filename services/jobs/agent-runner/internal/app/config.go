@@ -55,9 +55,12 @@ func LoadConfig() (Config, error) {
 	}
 	cfg.PromptTemplateKind = strings.TrimSpace(strings.ToLower(cfg.PromptTemplateKind))
 	if isReviseTriggerKind(cfg.TriggerKind) {
-		cfg.PromptTemplateKind = promptTemplateKindReview
+		cfg.PromptTemplateKind = promptTemplateKindRevise
 	}
-	if cfg.PromptTemplateKind != promptTemplateKindReview {
+	if cfg.PromptTemplateKind == promptTemplateKindReviewOld {
+		cfg.PromptTemplateKind = promptTemplateKindRevise
+	}
+	if cfg.PromptTemplateKind != promptTemplateKindRevise {
 		cfg.PromptTemplateKind = promptTemplateKindWork
 	}
 

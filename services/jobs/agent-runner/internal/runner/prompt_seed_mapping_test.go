@@ -1,6 +1,9 @@
 package runner
 
-import "testing"
+import (
+	"slices"
+	"testing"
+)
 
 func TestPromptSeedStageByTriggerKind(t *testing.T) {
 	testCases := []struct {
@@ -37,21 +40,27 @@ func TestPromptSeedStageByTriggerKind(t *testing.T) {
 }
 
 func TestPromptSeedCandidates(t *testing.T) {
-	candidates := promptSeedCandidates("sa", "design_revise", "review", "ru")
+	candidates := promptSeedCandidates("sa", "design_revise", "revise", "ru")
 	if len(candidates) < 6 {
 		t.Fatalf("expected role-aware candidate chain, got %d", len(candidates))
 	}
-	if candidates[0] != "design-sa-review_ru.md" {
+	if candidates[0] != "design-sa-revise_ru.md" {
 		t.Fatalf("unexpected first candidate: %q", candidates[0])
 	}
-	if candidates[1] != "design-sa-review.md" {
+	if candidates[1] != "design-sa-revise.md" {
 		t.Fatalf("unexpected second candidate: %q", candidates[1])
 	}
-	if candidates[2] != "role-sa-review_ru.md" {
+	if candidates[2] != "role-sa-revise_ru.md" {
 		t.Fatalf("unexpected third candidate: %q", candidates[2])
 	}
-	if candidates[3] != "role-sa-review.md" {
+	if candidates[3] != "role-sa-revise.md" {
 		t.Fatalf("unexpected fourth candidate: %q", candidates[3])
+	}
+	if candidates[4] != "design-revise_ru.md" {
+		t.Fatalf("unexpected fifth candidate: %q", candidates[4])
+	}
+	if !slices.Contains(candidates, "design-sa-review_ru.md") {
+		t.Fatalf("legacy review fallback candidate is missing: %v", candidates)
 	}
 
 	fallback := promptSeedCandidates("", "nonexistent", "work", "ru")

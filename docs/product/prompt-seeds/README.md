@@ -3,11 +3,11 @@
 Назначение:
 - `prompt-seeds` — это базовые task-body шаблоны для runtime prompt.
 - Финальный prompt формируется рантаймом поверх этих seed (envelope + context + policy).
-- Каноническая модель шаблонов — role-specific (`agent_key + work/review + locale`); этот каталог используется как bootstrap/fallback слой.
+- Каноническая модель шаблонов — role-specific (`agent_key + work/revise + locale`); этот каталог используется как bootstrap/fallback слой.
 
 Нейминг:
 - `<stage>-work.md` — шаблон выполнения этапа.
-- `<stage>-review.md` — шаблон ревизии этапа (`run:*:revise`).
+- `<stage>-revise.md` — шаблон ревизии этапа (`run:*:revise`).
 - опционально поддерживается локализованный вариант: `<stage>-<kind>_<locale>.md`.
 - role-aware варианты:
   - `<stage>-<agent_key>-<kind>_<locale>.md`;
@@ -29,27 +29,29 @@
 11. встроенные templates runner.
 
 Текущий минимальный каталог:
-- `intake-work.md`, `intake-review.md`
-- `vision-work.md`, `vision-review.md`
-- `prd-work.md`, `prd-review.md`
-- `arch-work.md`, `arch-review.md`
-- `design-work.md`, `design-review.md`
-- `plan-work.md`, `plan-review.md`
-- `dev-work.md`, `dev-review.md`
+- `intake-work.md`, `intake-revise.md`
+- `vision-work.md`, `vision-revise.md`
+- `prd-work.md`, `prd-revise.md`
+- `arch-work.md`, `arch-revise.md`
+- `design-work.md`, `design-revise.md`
+- `plan-work.md`, `plan-revise.md`
+- `dev-work.md`, `dev-revise.md`
 - `doc-audit-work.md`
 - `qa-work.md`
 - `release-work.md`
 - `postdeploy-work.md`
 - `ops-work.md`
-- `self-improve-work.md`, `self-improve-review.md`
+- `self-improve-work.md`
 - `rethink-work.md`
 
 Важно:
 - шаблон должен описывать цель этапа, обязательные шаги, ожидаемые артефакты и критерий завершения;
 - секреты, токены и обход policy в шаблонах запрещены.
-- stage-specific seed-файлы не отменяют requirement на отдельные role-specific body-шаблоны `work/review` в локалях минимум `ru` и `en`.
+- stage-specific seed-файлы не отменяют requirement на отдельные role-specific body-шаблоны `work/revise` в локалях минимум `ru` и `en`.
 - role-specific baseline для поддержанных ролей:
-  - `dev`, `pm`, `sa`, `em`, `reviewer`, `qa`, `sre`, `km` (каждая: `work/review` и `ru/en`).
+  - `dev`, `pm`, `sa`, `em`, `reviewer`, `qa`, `sre`, `km` (каждая: `work/revise` и `ru/en`).
+- backward compatibility:
+  - runtime принимает legacy seed-файлы с `*-review*.md` как fallback для `kind=revise`.
 - Для `self-improve-*` seed обязателен диагностический контур:
   - MCP `self_improve_runs_list` / `self_improve_run_lookup` / `self_improve_session_get`;
   - сохранение извлеченного `codex-cli` session JSON в `/tmp/codex-sessions/<run-id>`.

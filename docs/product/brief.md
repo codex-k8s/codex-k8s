@@ -54,7 +54,7 @@ approvals:
 - Зафиксировать stage-driven delivery модель и label taxonomy (`run:*`, `state:*`, `need:*`) как единый процессный контракт.
 - Зафиксировать operating model агентов: базовый штат из 8 ролей (включая `dev` и `reviewer`) + custom-агенты проекта, mixed runtime (`full-env`/`code-only`).
 - Зафиксировать review контур: для всех `run:*` выполняется pre-review (`reviewer` и/или профильная роль), затем финальный Owner review.
-- Зафиксировать policy шаблонов промптов: seed в репозитории + override в БД (`work/review`).
+- Зафиксировать policy шаблонов промптов: seed в репозитории + override в БД (`work/revise`).
 - Добавить locale-aware prompt policy: `project locale -> system default -> en`, с baseline локалями `ru` и `en`.
 - Добавить resumable lifecycle для agent runs: сохранение `codex-cli` session JSON и возобновление после пауз.
 - Ввести contract-first OpenAPI для external/staff API с codegen server/client до расширения транспорта внешних клиентов.
@@ -129,7 +129,7 @@ approvals:
       - ai-slots — destructive действия только dry-run (кнопки есть для dogfooding/debug, реальное действие не выполняется).
   - Agents:
     - управление настройками агента;
-    - prompt templates `work/review` минимум в `ru/en` с diff/preview и preview effective template (редактор на Monaco).
+    - prompt templates `work/revise` минимум в `ru/en` с diff/preview и preview effective template (редактор на Monaco).
   - System settings:
     - управление локалями системы (add locale + default locale);
     - базовые UI prefs (density, debug hints).

@@ -22,7 +22,7 @@ approvals:
 - Базовый штат платформы: 8 системных агентных ролей (`pm`, `sa`, `em`, `dev`, `reviewer`, `qa`, `sre`, `km`) + человек `Owner`.
 - Для каждого проекта допускаются расширяемые custom-агенты без нарушения базовых ролей.
 - Режим исполнения смешанный: часть ролей работает в `full-env`, часть в `code-only`.
-- Шаблоны промптов ведутся в role-specific матрице: для каждого `agent_key` отдельные body-шаблоны `work/review`, с override в БД и seed fallback.
+- Шаблоны промптов ведутся в role-specific матрице: для каждого `agent_key` отдельные body-шаблоны `work/revise`, с override в БД и seed fallback.
 - Для каждого системного агента шаблоны поддерживаются минимум в `ru` и `en`; язык выбирается по locale с fallback до `en`.
 - Управление агентами и шаблонами промптов проектируется как staff UI/API контур: `Agents` (настройки) и `Prompt templates` (diff/preview/effective preview), с использованием Monaco Editor для markdown.
 - Для `run:self-improve` применяется совместный контур `km + dev + reviewer` с обязательной трассировкой источников улучшений.
@@ -57,7 +57,7 @@ approvals:
 
 Обязательные правила:
 - custom-агент привязан к конкретному проекту и не меняет обязанности базовых системных ролей;
-- для custom-агента обязательно задаются: ответственность, execution mode, RBAC-права, лимит параллелизма, шаблоны `work/review`;
+- для custom-агента обязательно задаются: ответственность, execution mode, RBAC-права, лимит параллелизма, шаблоны `work/revise`;
 - custom-агент проходит тот же аудит событий (`flow_events`, `agent_sessions`, `token_usage`) и policy апрувов;
 - custom-агент не может обходить политику trigger/deploy labels.
 
@@ -103,11 +103,11 @@ approvals:
 - `dev` (в self-improve контуре):
   - дорабатывает toolchain/agent image, если self-improve выявил отсутствие инструментов или runtime-gap.
 
-## Политика шаблонов промптов (work/review)
+## Политика шаблонов промптов (work/revise)
 
 Классы шаблонов:
 - `work` — шаблон на выполнение задачи;
-- `review` — шаблон на аудит/ревью результата.
+- `revise` — шаблон на устранение замечаний Owner к существующему PR.
 
 Источник и приоритет:
 1. project-level override в БД;
@@ -115,10 +115,11 @@ approvals:
 3. seed-файл в репозитории.
 
 Seed-файлы:
-- каталог `docs/product/prompt-seeds/*.md` как bootstrap/fallback слой (минимальная stage-матрица, включая `dev-work`/`dev-review`).
+- каталог `docs/product/prompt-seeds/*.md` как bootstrap/fallback слой (минимальная stage-матрица, включая `dev-work`/`dev-revise`).
+- runtime поддерживает legacy `kind=review` и `*-review*.md` как fallback для `kind=revise`.
 
 Обязательная целевая модель:
-- для каждого `agent_key` поддерживаются отдельные body-шаблоны `work` и `review`;
+- для каждого `agent_key` поддерживаются отдельные body-шаблоны `work` и `revise`;
 - для каждого `(agent_key, kind)` поддерживаются минимум локали `ru` и `en`;
 - резолв в runtime выполняется по цепочке `project override -> global override -> repo seed`, с language fallback `project locale -> system default -> en`.
 
@@ -132,7 +133,7 @@ Seed-файлы:
 - шаблон не должен содержать секреты и не должен ослаблять policy безопасности.
 
 ### Локализация шаблонов
-- Базовая загрузка в БД для системных агентов включает как минимум локали `ru` и `en` для `work` и `review`.
+- Базовая загрузка в БД для системных агентов включает как минимум локали `ru` и `en` для `work` и `revise`.
 - Выбор языка шаблона выполняется по цепочке:
   1. locale проекта;
   2. default locale системы;
@@ -148,7 +149,7 @@ Seed-файлы:
 - Контракт контекстного рендера должен быть стабильным между версиями рантайма, чтобы избежать несовместимости seed/override шаблонов.
 
 ### Role-specific prompt template matrix
-- Для каждого `agent_key` используются отдельные шаблоны `work/review`:
+- Для каждого `agent_key` используются отдельные шаблоны `work/revise`:
   - `pm`, `sa`, `em`, `dev`, `reviewer`, `qa`, `sre`, `km`;
   - отдельные шаблоны для специализированных режимов: `run:self-improve`, `mode:discussion`.
 - Для каждого `(agent_key, kind)` обязательны минимум локали `ru` и `en`.
@@ -164,7 +165,7 @@ Seed-файлы:
 - На конкретном issue профиль может быть переопределен конфигурационными лейблами:
   - `[ai-model-*]` для модели;
   - `[ai-reasoning-*]` для уровня рассуждений.
-- Для `run:dev:revise` effective model/reasoning перечитываются на каждый запуск, чтобы Owner мог поменять профиль между итерациями review.
+- Для `run:dev:revise` effective model/reasoning перечитываются на каждый запуск, чтобы Owner мог поменять профиль между итерациями revise.
 - При конфликтующих лейблах одной группы запуск отклоняется как `failed_precondition` и требует ручного исправления labels.
 
 ## Инфраструктурная модель и capacity baseline
