@@ -41,30 +41,22 @@
         "versions": {
           "type": "object",
           "additionalProperties": {
-            "oneOf": [
-              {
+            "type": "object",
+            "required": ["value"],
+            "properties": {
+              "value": {
                 "type": "string",
                 "minLength": 1
               },
-              {
-                "type": "object",
-                "required": ["value"],
-                "properties": {
-                  "value": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "bumpOn": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "minLength": 1
-                    }
-                  }
-                },
-                "additionalProperties": false
+              "bumpOn": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
               }
-            ]
+            },
+            "additionalProperties": false
           }
         },
         "imports": {

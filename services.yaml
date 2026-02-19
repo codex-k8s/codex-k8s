@@ -54,17 +54,28 @@ spec:
       value: "0.1.0"
       bumpOn:
         - services/staff/web-console
-    alpine-git: "2.47.2"
-    kaniko-executor: "v1.23.2-debug"
-    busybox: "1.36"
-    pgvector: "pg16"
-    oauth2-proxy: "v7.6.0"
-    golang-alpine: "1.25.6-alpine"
-    golang-bookworm: "1.25.6-bookworm"
-    golang-codegen: "1.24-bookworm"
-    node-alpine: "22-alpine"
-    node-bookworm: "22-bookworm"
-    nginx-alpine: "1.27-alpine"
+    alpine-git:
+      value: "2.47.2"
+    kaniko-executor:
+      value: "v1.23.2-debug"
+    busybox:
+      value: "1.36"
+    pgvector:
+      value: "pg16"
+    oauth2-proxy:
+      value: "v7.6.0"
+    golang-alpine:
+      value: "1.25.6-alpine"
+    golang-bookworm:
+      value: "1.25.6-bookworm"
+    golang-codegen:
+      value: "1.24-bookworm"
+    node-alpine:
+      value: "22-alpine"
+    node-bookworm:
+      value: "22-bookworm"
+    nginx-alpine:
+      value: "1.27-alpine"
 
   components:
     - name: hot-reload-defaults

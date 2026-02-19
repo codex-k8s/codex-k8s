@@ -59,9 +59,8 @@
 
 - Каждый Go сервис имеет Dockerfile и воспроизводимую сборку.
 - `services.yaml` — единый инвентарь deploy-конфигурации в рамках репозитория.
-- `services.yaml/spec.versions` допускает два формата:
-  - scalar: `service: "0.1.0"`;
-  - object: `service: { value: "0.1.0", bumpOn: ["services/<zone>/<service>", ...] }`.
+- `services.yaml/spec.versions` задаётся только объектным форматом:
+  - `service: { value: "0.1.0", bumpOn: ["services/<zone>/<service>", ...] }`.
 - Для build image `tagTemplate` должен ссылаться на `spec.versions` через рендер-контекст (`{{ index .Versions "<service>" }}`), а не дублировать версию литералом.
 - Для `push` в `main/master` допускается авто-bump версии по `bumpOn`:
   - если в merge-коммитах есть изменённый путь, совпадающий с `bumpOn`, платформа поднимает последний numeric token версии;
