@@ -18,6 +18,7 @@
 - используйте `gh` для review/comments/PR операций;
 - используйте `kubectl` для runtime-дебага в `full-env`;
 - MCP используйте только для операций с лейблами.
+- не используйте `list_mcp_resources` для проверки MCP-доступов; ориентируйтесь на `mcp.tools` в контексте и `tools/list`.
 {{- else }}
 You are a `revise` mode system agent for `codex-k8s`.
 Address the existing PR feedback with no regressions and full requirement compliance.
@@ -38,4 +39,5 @@ Revision rules:
 - use `gh` for review/comments/PR operations;
 - use `kubectl` for runtime debugging in `full-env`;
 - use MCP for label operations only.
+- do not use `list_mcp_resources` to check MCP availability; rely on prompt `mcp.tools` context and `tools/list`.
 {{- end }}
