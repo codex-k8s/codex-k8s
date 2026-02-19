@@ -72,21 +72,21 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 	}
 
 	currentState := commentState{
-		RunID:           runID,
-		Phase:           params.Phase,
-		JobName:         strings.TrimSpace(params.JobName),
-		JobNamespace:    strings.TrimSpace(params.JobNamespace),
-		RuntimeMode:     normalizeRuntimeMode(params.RuntimeMode, params.TriggerKind),
-		Namespace:       strings.TrimSpace(params.Namespace),
-		TriggerKind:     normalizeTriggerKind(params.TriggerKind),
-		PromptLocale:    normalizeLocale(params.PromptLocale, s.cfg.DefaultLocale),
-		Model:           strings.TrimSpace(params.Model),
-		ReasoningEffort: strings.TrimSpace(params.ReasoningEffort),
-		RunStatus:       strings.TrimSpace(params.RunStatus),
+		RunID:                    runID,
+		Phase:                    params.Phase,
+		JobName:                  strings.TrimSpace(params.JobName),
+		JobNamespace:             strings.TrimSpace(params.JobNamespace),
+		RuntimeMode:              normalizeRuntimeMode(params.RuntimeMode, params.TriggerKind),
+		Namespace:                strings.TrimSpace(params.Namespace),
+		TriggerKind:              normalizeTriggerKind(params.TriggerKind),
+		PromptLocale:             normalizeLocale(params.PromptLocale, s.cfg.DefaultLocale),
+		Model:                    strings.TrimSpace(params.Model),
+		ReasoningEffort:          strings.TrimSpace(params.ReasoningEffort),
+		RunStatus:                strings.TrimSpace(params.RunStatus),
 		CodexAuthVerificationURL: strings.TrimSpace(params.CodexAuthVerificationURL),
 		CodexAuthUserCode:        strings.TrimSpace(params.CodexAuthUserCode),
-		Deleted:         params.Deleted,
-		AlreadyDeleted:  params.AlreadyDeleted,
+		Deleted:                  params.Deleted,
+		AlreadyDeleted:           params.AlreadyDeleted,
 	}
 
 	comments, err := s.listRunIssueComments(ctx, runCtx)
@@ -197,6 +197,57 @@ func (s *Service) PostTriggerLabelConflictComment(ctx context.Context, params Tr
 	})
 
 	return TriggerLabelConflictCommentResult{
+		CommentID:  comment.ID,
+		CommentURL: comment.URL,
+	}, nil
+}
+
+// PostTriggerWarningComment posts localized diagnostics when webhook was accepted but run was not created.
+func (s *Service) PostTriggerWarningComment(ctx context.Context, params TriggerWarningCommentParams) (TriggerWarningCommentResult, error) {
+	repositoryFullName := strings.TrimSpace(params.RepositoryFullName)
+	if repositoryFullName == "" {
+		return TriggerWarningCommentResult{}, errs.Validation{Field: "repository_full_name", Msg: "is required"}
+	}
+	if params.ThreadNumber <= 0 {
+		return TriggerWarningCommentResult{}, errs.Validation{Field: "thread_number", Msg: "must be positive"}
+	}
+	threadKind := normalizeCommentTargetKind(params.ThreadKind)
+	if threadKind == "" {
+		return TriggerWarningCommentResult{}, errs.Validation{Field: "thread_kind", Msg: "must be issue or pull_request"}
+	}
+
+	owner, repository, ok := strings.Cut(repositoryFullName, "/")
+	if !ok || strings.TrimSpace(owner) == "" || strings.TrimSpace(repository) == "" {
+		return TriggerWarningCommentResult{}, errs.Validation{Field: "repository_full_name", Msg: "must be owner/name"}
+	}
+
+	token, err := s.loadBotToken(ctx)
+	if err != nil {
+		return TriggerWarningCommentResult{}, err
+	}
+
+	body, err := renderTriggerWarningCommentBody(triggerWarningRenderParams{
+		Locale:            params.Locale,
+		ThreadKind:        string(threadKind),
+		ReasonCode:        strings.TrimSpace(params.ReasonCode),
+		ConflictingLabels: params.ConflictingLabels,
+	})
+	if err != nil {
+		return TriggerWarningCommentResult{}, err
+	}
+
+	comment, err := s.github.CreateIssueComment(ctx, mcpdomain.GitHubCreateIssueCommentParams{
+		Token:       token,
+		Owner:       strings.TrimSpace(owner),
+		Repository:  strings.TrimSpace(repository),
+		IssueNumber: params.ThreadNumber,
+		Body:        body,
+	})
+	if err != nil {
+		return TriggerWarningCommentResult{}, fmt.Errorf("create trigger warning issue comment: %w", err)
+	}
+
+	return TriggerWarningCommentResult{
 		CommentID:  comment.ID,
 		CommentURL: comment.URL,
 	}, nil

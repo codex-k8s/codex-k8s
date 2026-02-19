@@ -777,6 +777,7 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithoutRunLabel_I
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
 	events := &inMemoryEventRepo{}
+	runStatus := &inMemoryRunStatusService{}
 	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
 	repos := &inMemoryRepoCfgRepo{
 		byExternalID: map[int64]repocfgrepo.FindResult{
@@ -807,6 +808,7 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithoutRunLabel_I
 		Repos:      repos,
 		Users:      users,
 		Members:    members,
+		RunStatus:  runStatus,
 	})
 
 	payload := json.RawMessage(`{
@@ -836,7 +838,7 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithoutRunLabel_I
 	if err != nil {
 		t.Fatalf("ingest failed: %v", err)
 	}
-	if got.Status != webhookdomain.IngestStatusAccepted || got.Duplicate {
+	if got.Status != webhookdomain.IngestStatusIgnored || got.Duplicate {
 		t.Fatalf("unexpected result: %+v", got)
 	}
 	if got.RunID != "" {
@@ -844,6 +846,12 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithoutRunLabel_I
 	}
 	if len(runs.items) != 0 {
 		t.Fatalf("expected no run creation, got %d runs", len(runs.items))
+	}
+	if len(runStatus.warningCommentCalls) != 1 {
+		t.Fatalf("expected warning comment call, got %d", len(runStatus.warningCommentCalls))
+	}
+	if runStatus.warningCommentCalls[0].ReasonCode != "pull_request_review_missing_stage_label" {
+		t.Fatalf("unexpected warning reason: %q", runStatus.warningCommentCalls[0].ReasonCode)
 	}
 }
 
@@ -1024,6 +1032,7 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithMultipleStage
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
 	events := &inMemoryEventRepo{}
+	runStatus := &inMemoryRunStatusService{}
 	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
 	repos := &inMemoryRepoCfgRepo{
 		byExternalID: map[int64]repocfgrepo.FindResult{
@@ -1049,6 +1058,7 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithMultipleStage
 		Repos:      repos,
 		Users:      users,
 		Members:    members,
+		RunStatus:  runStatus,
 	})
 
 	payload := json.RawMessage(`{
@@ -1082,8 +1092,17 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithMultipleStage
 	if got.RunID != "" {
 		t.Fatalf("expected no run id for pull_request_review with multiple stage labels, got %q", got.RunID)
 	}
+	if got.Status != webhookdomain.IngestStatusIgnored {
+		t.Fatalf("expected ignored status, got %+v", got)
+	}
 	if len(runs.items) != 0 {
 		t.Fatalf("expected no run creation, got %d runs", len(runs.items))
+	}
+	if len(runStatus.warningCommentCalls) != 1 {
+		t.Fatalf("expected warning comment call, got %d", len(runStatus.warningCommentCalls))
+	}
+	if runStatus.warningCommentCalls[0].ReasonCode != "pull_request_review_stage_label_conflict" {
+		t.Fatalf("unexpected warning reason: %q", runStatus.warningCommentCalls[0].ReasonCode)
 	}
 }
 
@@ -1091,6 +1110,7 @@ func TestIngestGitHubWebhook_IssueRunDev_DeniesUnknownSender(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
 	events := &inMemoryEventRepo{}
+	runStatus := &inMemoryRunStatusService{}
 	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
 	repos := &inMemoryRepoCfgRepo{
 		byExternalID: map[int64]repocfgrepo.FindResult{
@@ -1108,6 +1128,7 @@ func TestIngestGitHubWebhook_IssueRunDev_DeniesUnknownSender(t *testing.T) {
 		Repos:      repos,
 		Users:      &inMemoryUserRepo{},
 		Members:    &inMemoryProjectMemberRepo{},
+		RunStatus:  runStatus,
 	})
 
 	payload := json.RawMessage(`{
@@ -1140,6 +1161,12 @@ func TestIngestGitHubWebhook_IssueRunDev_DeniesUnknownSender(t *testing.T) {
 	}
 	if events.items[0].EventType != floweventdomain.EventTypeWebhookIgnored {
 		t.Fatalf("unexpected event type: %s", events.items[0].EventType)
+	}
+	if len(runStatus.warningCommentCalls) != 1 {
+		t.Fatalf("expected warning comment call, got %d", len(runStatus.warningCommentCalls))
+	}
+	if runStatus.warningCommentCalls[0].ThreadKind != "issue" {
+		t.Fatalf("expected issue thread warning, got %q", runStatus.warningCommentCalls[0].ThreadKind)
 	}
 }
 
@@ -1264,6 +1291,7 @@ type inMemoryRunStatusService struct {
 	lastPullRequestCleanup  runstatusdomain.CleanupByPullRequestParams
 	conflictCommentCalls    int
 	lastConflictComment     runstatusdomain.TriggerLabelConflictCommentParams
+	warningCommentCalls     []runstatusdomain.TriggerWarningCommentParams
 }
 
 func (s *inMemoryRunStatusService) CleanupNamespacesByIssue(_ context.Context, params runstatusdomain.CleanupByIssueParams) (runstatusdomain.CleanupByIssueResult, error) {
@@ -1284,6 +1312,17 @@ func (s *inMemoryRunStatusService) PostTriggerLabelConflictComment(_ context.Con
 	return runstatusdomain.TriggerLabelConflictCommentResult{
 		CommentID:  1,
 		CommentURL: "https://example.test/comment/1",
+	}, nil
+}
+
+func (s *inMemoryRunStatusService) PostTriggerWarningComment(_ context.Context, params runstatusdomain.TriggerWarningCommentParams) (runstatusdomain.TriggerWarningCommentResult, error) {
+	if s == nil {
+		return runstatusdomain.TriggerWarningCommentResult{}, nil
+	}
+	s.warningCommentCalls = append(s.warningCommentCalls, params)
+	return runstatusdomain.TriggerWarningCommentResult{
+		CommentID:  int64(len(s.warningCommentCalls)),
+		CommentURL: "https://example.invalid/warning",
 	}, nil
 }
 

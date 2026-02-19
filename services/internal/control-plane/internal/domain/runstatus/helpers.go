@@ -33,6 +33,17 @@ func normalizeTriggerSource(value string) string {
 	}
 }
 
+func normalizeCommentTargetKind(value string) commentTargetKind {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case string(commentTargetKindIssue):
+		return commentTargetKindIssue
+	case string(commentTargetKindPullRequest):
+		return commentTargetKindPullRequest
+	default:
+		return ""
+	}
+}
+
 func normalizeRuntimeMode(value string, triggerKind string) string {
 	if strings.EqualFold(strings.TrimSpace(value), runtimeModeFullEnv) {
 		return runtimeModeFullEnv

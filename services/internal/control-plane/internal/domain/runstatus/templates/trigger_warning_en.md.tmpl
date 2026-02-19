@@ -1,0 +1,21 @@
+### ⚠️ Run not created
+Webhook was accepted, but no run was created for this flow branch.
+
+- Reason: {{ .ReasonText }}
+{{- if .HintText }}
+- Next step: {{ .HintText }}
+{{- end }}
+{{- if .ConflictingLabels }}
+- Conflicting labels:
+{{- range .ConflictingLabels }}
+  - `{{ . }}`
+{{- end }}
+{{- end }}
+
+{{- if .IsPullRequest }}
+This message is attached to the current Pull Request.
+{{- else }}
+This message is attached to the current Issue.
+{{- end }}
+
+Reason code: `{{ .ReasonCode }}`

@@ -26,21 +26,21 @@ const (
 
 // UpsertCommentParams describes one run status comment update request.
 type UpsertCommentParams struct {
-	RunID           string
-	Phase           Phase
-	JobName         string
-	JobNamespace    string
-	RuntimeMode     string
-	Namespace       string
-	TriggerKind     string
-	PromptLocale    string
-	Model           string
-	ReasoningEffort string
-	RunStatus       string
+	RunID                    string
+	Phase                    Phase
+	JobName                  string
+	JobNamespace             string
+	RuntimeMode              string
+	Namespace                string
+	TriggerKind              string
+	PromptLocale             string
+	Model                    string
+	ReasoningEffort          string
+	RunStatus                string
 	CodexAuthVerificationURL string
 	CodexAuthUserCode        string
-	Deleted         bool
-	AlreadyDeleted  bool
+	Deleted                  bool
+	AlreadyDeleted           bool
 }
 
 // UpsertCommentResult returns tracked issue comment metadata.
@@ -61,6 +61,24 @@ type TriggerLabelConflictCommentParams struct {
 
 // TriggerLabelConflictCommentResult returns posted GitHub comment metadata.
 type TriggerLabelConflictCommentResult struct {
+	CommentID  int64
+	CommentURL string
+}
+
+// TriggerWarningCommentParams describes one localized warning comment request
+// when a webhook event was processed but run was not created.
+type TriggerWarningCommentParams struct {
+	CorrelationID      string
+	RepositoryFullName string
+	ThreadKind         string
+	ThreadNumber       int
+	Locale             string
+	ReasonCode         string
+	ConflictingLabels  []string
+}
+
+// TriggerWarningCommentResult returns posted GitHub comment metadata.
+type TriggerWarningCommentResult struct {
 	CommentID  int64
 	CommentURL string
 }
@@ -183,20 +201,20 @@ func (c runContext) hasCommentTarget() bool {
 }
 
 type commentState struct {
-	RunID           string `json:"run_id"`
-	Phase           Phase  `json:"phase"`
-	JobName         string `json:"job_name,omitempty"`
-	JobNamespace    string `json:"job_namespace,omitempty"`
-	RuntimeMode     string `json:"runtime_mode,omitempty"`
-	Namespace       string `json:"namespace,omitempty"`
-	SlotURL         string `json:"slot_url,omitempty"`
-	TriggerKind     string `json:"trigger_kind,omitempty"`
-	PromptLocale    string `json:"prompt_locale,omitempty"`
-	Model           string `json:"model,omitempty"`
-	ReasoningEffort string `json:"reasoning_effort,omitempty"`
-	RunStatus       string `json:"run_status,omitempty"`
+	RunID                    string `json:"run_id"`
+	Phase                    Phase  `json:"phase"`
+	JobName                  string `json:"job_name,omitempty"`
+	JobNamespace             string `json:"job_namespace,omitempty"`
+	RuntimeMode              string `json:"runtime_mode,omitempty"`
+	Namespace                string `json:"namespace,omitempty"`
+	SlotURL                  string `json:"slot_url,omitempty"`
+	TriggerKind              string `json:"trigger_kind,omitempty"`
+	PromptLocale             string `json:"prompt_locale,omitempty"`
+	Model                    string `json:"model,omitempty"`
+	ReasoningEffort          string `json:"reasoning_effort,omitempty"`
+	RunStatus                string `json:"run_status,omitempty"`
 	CodexAuthVerificationURL string `json:"codex_auth_verification_url,omitempty"`
 	CodexAuthUserCode        string `json:"codex_auth_user_code,omitempty"`
-	Deleted         bool   `json:"deleted,omitempty"`
-	AlreadyDeleted  bool   `json:"already_deleted,omitempty"`
+	Deleted                  bool   `json:"deleted,omitempty"`
+	AlreadyDeleted           bool   `json:"already_deleted,omitempty"`
 }
