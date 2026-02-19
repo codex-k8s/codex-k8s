@@ -850,7 +850,7 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithoutRunLabel_I
 	if len(runStatus.warningCommentCalls) != 1 {
 		t.Fatalf("expected warning comment call, got %d", len(runStatus.warningCommentCalls))
 	}
-	if runStatus.warningCommentCalls[0].ReasonCode != "pull_request_review_missing_stage_label" {
+	if runStatus.warningCommentCalls[0].ReasonCode != runstatusdomain.TriggerWarningReasonPullRequestReviewMissingStageLabel {
 		t.Fatalf("unexpected warning reason: %q", runStatus.warningCommentCalls[0].ReasonCode)
 	}
 }
@@ -1101,7 +1101,7 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithMultipleStage
 	if len(runStatus.warningCommentCalls) != 1 {
 		t.Fatalf("expected warning comment call, got %d", len(runStatus.warningCommentCalls))
 	}
-	if runStatus.warningCommentCalls[0].ReasonCode != "pull_request_review_stage_label_conflict" {
+	if runStatus.warningCommentCalls[0].ReasonCode != runstatusdomain.TriggerWarningReasonPullRequestReviewStageLabelConflict {
 		t.Fatalf("unexpected warning reason: %q", runStatus.warningCommentCalls[0].ReasonCode)
 	}
 }

@@ -176,7 +176,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 	if hasIssueRunTrigger {
 		if !hasBinding || strings.TrimSpace(projectID) == "" {
 			return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
-				Reason:     "repository_not_bound_for_issue_label",
+				Reason:     string(runstatusdomain.TriggerWarningReasonRepositoryNotBoundForIssueLabel),
 				RunKind:    trigger.Kind,
 				HasBinding: hasBinding,
 			})
@@ -549,11 +549,11 @@ func (s *Service) resolvePullRequestReviewReviseTrigger(labels []githubLabelReco
 
 	switch len(matched) {
 	case 0:
-		return issueRunTrigger{}, false, "pull_request_review_missing_stage_label", nil
+		return issueRunTrigger{}, false, string(runstatusdomain.TriggerWarningReasonPullRequestReviewMissingStageLabel), nil
 	case 1:
 		return matched[0], true, "", nil
 	default:
-		return issueRunTrigger{}, false, "pull_request_review_stage_label_conflict", normalizeWebhookLabels(matchedLabels)
+		return issueRunTrigger{}, false, string(runstatusdomain.TriggerWarningReasonPullRequestReviewStageLabelConflict), normalizeWebhookLabels(matchedLabels)
 	}
 }
 
@@ -647,7 +647,7 @@ func (s *Service) postIgnoredWebhookDiagnosticComment(ctx context.Context, cmd I
 		ThreadKind:         threadKind,
 		ThreadNumber:       threadNumber,
 		Locale:             localeFromEventType(cmd.EventType),
-		ReasonCode:         strings.TrimSpace(params.Reason),
+		ReasonCode:         runstatusdomain.TriggerWarningReasonCode(strings.TrimSpace(params.Reason)),
 		ConflictingLabels:  params.ConflictingLabels,
 	})
 }
@@ -657,10 +657,11 @@ func isRunCreationWarningReason(reason string) bool {
 	if normalized == "" {
 		return false
 	}
-	if normalized == "pull_request_review_missing_stage_label" || normalized == "pull_request_review_stage_label_conflict" {
+	if normalized == string(runstatusdomain.TriggerWarningReasonPullRequestReviewMissingStageLabel) ||
+		normalized == string(runstatusdomain.TriggerWarningReasonPullRequestReviewStageLabelConflict) {
 		return true
 	}
-	if normalized == "repository_not_bound_for_issue_label" {
+	if normalized == string(runstatusdomain.TriggerWarningReasonRepositoryNotBoundForIssueLabel) {
 		return true
 	}
 	return strings.HasPrefix(normalized, "sender_")

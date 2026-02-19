@@ -40,3 +40,13 @@ const (
 	commentTargetKindIssue       commentTargetKind = "issue"
 	commentTargetKindPullRequest commentTargetKind = "pull_request"
 )
+
+// TriggerWarningReasonCode is a stable machine-readable reason code
+// for webhook events where run was not created and warning comment is posted.
+type TriggerWarningReasonCode string
+
+const (
+	TriggerWarningReasonPullRequestReviewMissingStageLabel  TriggerWarningReasonCode = "pull_request_review_missing_stage_label"
+	TriggerWarningReasonPullRequestReviewStageLabelConflict TriggerWarningReasonCode = "pull_request_review_stage_label_conflict"
+	TriggerWarningReasonRepositoryNotBoundForIssueLabel     TriggerWarningReasonCode = "repository_not_bound_for_issue_label"
+)

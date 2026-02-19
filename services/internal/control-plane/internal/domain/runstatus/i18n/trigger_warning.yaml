@@ -1,0 +1,80 @@
+locales:
+  ru:
+    template: |
+      ### ⚠️ Запуск не создан
+      Платформа обработала webhook, но не создала run для этой ветки процесса.
+
+      - Причина: {{ .ReasonText }}
+      {{- if .HintText }}
+      - Что сделать: {{ .HintText }}
+      {{- end }}
+      {{- if .ConflictingLabels }}
+      - Конфликтующие лейблы:
+      {{- range .ConflictingLabels }}
+        - `{{ . }}`
+      {{- end }}
+      {{- end }}
+
+      {{- if .IsPullRequest }}
+      Это сообщение относится к текущему Pull Request.
+      {{- else }}
+      Это сообщение относится к текущей Issue.
+      {{- end }}
+
+      Код причины: `{{ .ReasonCode }}`
+    reasons:
+      pull_request_review_missing_stage_label:
+        reason: "в PR review пришло changes_requested, но на PR нет stage-лейбла run:*."
+        hint: "Поставьте на PR ровно один stage-лейбл run:<stage> (или run:<stage>:revise) и отправьте review снова."
+      pull_request_review_stage_label_conflict:
+        reason: "в PR одновременно несколько stage-лейблов run:*, из-за чего невозможно выбрать единый revise-этап."
+        hint: "Оставьте на PR только один stage-лейбл и повторите review."
+      repository_not_bound_for_issue_label:
+        reason: "репозиторий не привязан к проекту платформы."
+        hint: "Привяжите репозиторий к проекту в staff console и повторите запуск."
+    sender_prefix:
+      reason: "инициатор события не имеет прав запускать trigger-лейблы."
+      hint: "Проверьте роль пользователя (owner/admin/read_write) и доступ в проект."
+    default:
+      reason: "платформа не создала run для этого webhook-события."
+      hint: "Проверьте лейблы и ограничения policy в документации."
+
+  en:
+    template: |
+      ### ⚠️ Run not created
+      Webhook was accepted, but no run was created for this flow branch.
+
+      - Reason: {{ .ReasonText }}
+      {{- if .HintText }}
+      - Next step: {{ .HintText }}
+      {{- end }}
+      {{- if .ConflictingLabels }}
+      - Conflicting labels:
+      {{- range .ConflictingLabels }}
+        - `{{ . }}`
+      {{- end }}
+      {{- end }}
+
+      {{- if .IsPullRequest }}
+      This message is attached to the current Pull Request.
+      {{- else }}
+      This message is attached to the current Issue.
+      {{- end }}
+
+      Reason code: `{{ .ReasonCode }}`
+    reasons:
+      pull_request_review_missing_stage_label:
+        reason: "changes_requested was received for PR review, but PR has no run:* stage label."
+        hint: "Set exactly one run:<stage> (or run:<stage>:revise) label on PR and submit review again."
+      pull_request_review_stage_label_conflict:
+        reason: "PR contains multiple run:* stage labels, so revise stage cannot be selected unambiguously."
+        hint: "Keep only one stage label on PR and submit review again."
+      repository_not_bound_for_issue_label:
+        reason: "repository is not bound to a platform project."
+        hint: "Bind repository to a project in staff console and retry."
+    sender_prefix:
+      reason: "event sender is not permitted to trigger run labels."
+      hint: "Verify sender role (owner/admin/read_write) and project membership."
+    default:
+      reason: "platform did not create a run for this webhook event."
+      hint: "Check labels and trigger policy constraints in documentation."
