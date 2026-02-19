@@ -336,6 +336,75 @@ spec:
 `, "serviceScope")
 }
 
+func TestLoad_ProjectDocsNormalizationAndRoles(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "services.yaml")
+	writeFile(t, path, `
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+  projectDocs:
+    - path: ./docs/../docs/README.md
+      description: "  Main handbook  "
+      roles: [DEV, qa, DEV]
+`)
+
+	result, err := Load(path, LoadOptions{Env: "production"})
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if len(result.Stack.Spec.ProjectDocs) != 1 {
+		t.Fatalf("projectDocs len=%d, want 1", len(result.Stack.Spec.ProjectDocs))
+	}
+	item := result.Stack.Spec.ProjectDocs[0]
+	if got, want := item.Path, "docs/README.md"; got != want {
+		t.Fatalf("projectDocs[0].path=%q, want %q", got, want)
+	}
+	if got, want := item.Description, "Main handbook"; got != want {
+		t.Fatalf("projectDocs[0].description=%q, want %q", got, want)
+	}
+	if got, want := strings.Join(item.Roles, ","), "dev,qa"; got != want {
+		t.Fatalf("projectDocs[0].roles=%q, want %q", got, want)
+	}
+}
+
+func TestLoad_ProjectDocsValidation(t *testing.T) {
+	t.Parallel()
+
+	assertLoadErrorContains(t, `
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+  projectDocs:
+    - path: ../outside.md
+`, "projectDocs[0].path")
+
+	assertLoadErrorContains(t, `
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+  projectDocs:
+    - path: docs/README.md
+    - path: ./docs/README.md
+`, "duplicate spec.projectDocs path")
+}
+
 func TestLoadFromYAML_SchemaValidationFailFast(t *testing.T) {
 	t.Parallel()
 

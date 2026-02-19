@@ -300,6 +300,9 @@ func normalizeAndValidate(stack *Stack, env string) error {
 		}
 		svc.Scope = scope
 	}
+	if err := normalizeAndValidateProjectDocs(stack); err != nil {
+		return err
+	}
 
 	projectName := strings.TrimSpace(stack.Spec.Project)
 	if projectName == "" {
@@ -318,6 +321,53 @@ func normalizeAndValidate(stack *Stack, env string) error {
 		}
 	}
 
+	return nil
+}
+
+func normalizeAndValidateProjectDocs(stack *Stack) error {
+	if len(stack.Spec.ProjectDocs) == 0 {
+		return nil
+	}
+
+	seenByPath := make(map[string]struct{}, len(stack.Spec.ProjectDocs))
+	for i := range stack.Spec.ProjectDocs {
+		item := &stack.Spec.ProjectDocs[i]
+
+		path := strings.TrimSpace(item.Path)
+		if path == "" {
+			return fmt.Errorf("spec.projectDocs[%d].path is required", i)
+		}
+		normalizedPath := filepath.ToSlash(filepath.Clean(path))
+		if normalizedPath == "." || normalizedPath == ".." || normalizedPath == "/" ||
+			strings.HasPrefix(normalizedPath, "/") || strings.HasPrefix(normalizedPath, "../") {
+			return fmt.Errorf("spec.projectDocs[%d].path must be repository-relative: %q", i, path)
+		}
+		lowerPath := strings.ToLower(normalizedPath)
+		if _, exists := seenByPath[lowerPath]; exists {
+			return fmt.Errorf("duplicate spec.projectDocs path %q", normalizedPath)
+		}
+		seenByPath[lowerPath] = struct{}{}
+		item.Path = normalizedPath
+
+		item.Description = strings.TrimSpace(item.Description)
+		if len(item.Roles) > 0 {
+			seenRoles := make(map[string]struct{}, len(item.Roles))
+			roles := make([]string, 0, len(item.Roles))
+			for _, rawRole := range item.Roles {
+				role := strings.ToLower(strings.TrimSpace(rawRole))
+				if role == "" {
+					continue
+				}
+				if _, exists := seenRoles[role]; exists {
+					continue
+				}
+				seenRoles[role] = struct{}{}
+				roles = append(roles, role)
+			}
+			sort.Strings(roles)
+			item.Roles = roles
+		}
+	}
 	return nil
 }
 

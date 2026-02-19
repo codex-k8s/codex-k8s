@@ -1817,10 +1817,14 @@ func parseRuntimeMode(value string) agentdomain.RuntimeMode {
 
 func parseRunStatusPhase(value string) (runstatusdomain.Phase, error) {
 	switch strings.TrimSpace(value) {
+	case string(runstatusdomain.PhaseCreated):
+		return runstatusdomain.PhaseCreated, nil
 	case string(runstatusdomain.PhaseStarted):
 		return runstatusdomain.PhaseStarted, nil
 	case string(runstatusdomain.PhaseAuthRequired):
 		return runstatusdomain.PhaseAuthRequired, nil
+	case string(runstatusdomain.PhaseAuthResolved):
+		return runstatusdomain.PhaseAuthResolved, nil
 	case string(runstatusdomain.PhaseFinished):
 		return runstatusdomain.PhaseFinished, nil
 	case string(runstatusdomain.PhaseNamespaceDeleted):

@@ -19,6 +19,8 @@ import (
 func NewService(cfg Config, deps Dependencies) (*Service, error) {
 	cfg.PublicBaseURL = strings.TrimRight(strings.TrimSpace(cfg.PublicBaseURL), "/")
 	cfg.DefaultLocale = normalizeLocale(cfg.DefaultLocale, localeEN)
+	cfg.AIDomain = normalizeDomainValue(cfg.AIDomain)
+	cfg.ProductionDomain = normalizeDomainValue(cfg.ProductionDomain)
 
 	if cfg.PublicBaseURL == "" {
 		return nil, fmt.Errorf("public base url is required")
@@ -95,6 +97,7 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		existingCommentID = existingComment.ID
 		currentState = mergeState(existingState, currentState)
 	}
+	currentState.SlotURL = s.resolveRunSlotURL(runCtx, currentState)
 
 	body, err := renderCommentBody(currentState, s.buildRunManagementURL(runID))
 	if err != nil {
@@ -493,6 +496,72 @@ func (s *Service) buildRunManagementURL(runID string) string {
 		return ""
 	}
 	return s.cfg.PublicBaseURL + runManagementPathPrefix + id
+}
+
+func normalizeDomainValue(value string) string {
+	trimmed := strings.TrimSpace(value)
+	trimmed = strings.TrimPrefix(trimmed, "https://")
+	trimmed = strings.TrimPrefix(trimmed, "http://")
+	trimmed = strings.Trim(trimmed, " /")
+	trimmed = strings.TrimPrefix(trimmed, ".")
+	return trimmed
+}
+
+func (s *Service) resolveRunSlotURL(runCtx runContext, state commentState) string {
+	if strings.TrimSpace(state.SlotURL) != "" {
+		return strings.TrimSpace(state.SlotURL)
+	}
+	if !strings.EqualFold(strings.TrimSpace(state.RuntimeMode), runtimeModeFullEnv) {
+		return ""
+	}
+
+	if runCtx.payload.Runtime != nil {
+		if host := strings.TrimSpace(runCtx.payload.Runtime.PublicHost); host != "" {
+			return ensureHTTPSURL(host)
+		}
+	}
+
+	namespace := strings.TrimSpace(state.Namespace)
+	if namespace == "" {
+		return ""
+	}
+
+	targetEnv := ""
+	if runCtx.payload.Runtime != nil {
+		targetEnv = strings.ToLower(strings.TrimSpace(runCtx.payload.Runtime.TargetEnv))
+	}
+	if targetEnv == "" {
+		normalizedNamespace := strings.ToLower(namespace)
+		if strings.Contains(normalizedNamespace, "-dev-") || strings.HasSuffix(normalizedNamespace, "-dev") {
+			targetEnv = "ai"
+		} else {
+			targetEnv = "production"
+		}
+	}
+
+	switch targetEnv {
+	case "ai", "dev":
+		if s.cfg.AIDomain == "" {
+			return ""
+		}
+		return ensureHTTPSURL(namespace + "." + s.cfg.AIDomain)
+	default:
+		if s.cfg.ProductionDomain == "" {
+			return ""
+		}
+		return ensureHTTPSURL(s.cfg.ProductionDomain)
+	}
+}
+
+func ensureHTTPSURL(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return ""
+	}
+	if strings.HasPrefix(trimmed, "https://") || strings.HasPrefix(trimmed, "http://") {
+		return trimmed
+	}
+	return "https://" + trimmed
 }
 
 func findRunStatusComment(comments []mcpdomain.GitHubIssueComment, runID string) (mcpdomain.GitHubIssueComment, commentState, bool) {

@@ -26,6 +26,7 @@ type commentTemplateContext struct {
 	JobName         string
 	JobNamespace    string
 	Namespace       string
+	SlotURL         string
 	Model           string
 	ReasoningEffort string
 	RunStatus       string
@@ -37,10 +38,16 @@ type commentTemplateContext struct {
 	ShowRuntimeMode     bool
 	ShowJobRef          bool
 	ShowNamespace       bool
+	ShowSlotURL         bool
 	ShowModel           bool
 	ShowReasoningEffort bool
 	ShowFinished        bool
 	ShowNamespaceAction bool
+
+	CreatedReached      bool
+	StartedReached      bool
+	AuthRequested       bool
+	AuthResolvedReached bool
 
 	IsRunSucceeded bool
 	IsRunFailed    bool
@@ -71,9 +78,11 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 	trimmedJobName := strings.TrimSpace(state.JobName)
 	trimmedJobNamespace := strings.TrimSpace(state.JobNamespace)
 	trimmedNamespace := strings.TrimSpace(state.Namespace)
+	trimmedSlotURL := strings.TrimSpace(state.SlotURL)
 	trimmedModel := strings.TrimSpace(state.Model)
 	trimmedReasoningEffort := strings.TrimSpace(state.ReasoningEffort)
 	normalizedRunStatus := strings.ToLower(strings.TrimSpace(state.RunStatus))
+	phaseLevel := phaseOrder(state.Phase)
 
 	return commentTemplateContext{
 		RunID:           strings.TrimSpace(state.RunID),
@@ -82,6 +91,7 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 		JobName:         trimmedJobName,
 		JobNamespace:    trimmedJobNamespace,
 		Namespace:       trimmedNamespace,
+		SlotURL:         trimmedSlotURL,
 		Model:           trimmedModel,
 		ReasoningEffort: trimmedReasoningEffort,
 		RunStatus:       strings.TrimSpace(state.RunStatus),
@@ -93,10 +103,16 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 		ShowRuntimeMode:     trimmedRuntimeMode != "",
 		ShowJobRef:          trimmedJobName != "" && trimmedJobNamespace != "",
 		ShowNamespace:       trimmedNamespace != "",
+		ShowSlotURL:         trimmedSlotURL != "",
 		ShowModel:           trimmedModel != "",
 		ShowReasoningEffort: trimmedReasoningEffort != "",
-		ShowFinished:        phaseOrder(state.Phase) >= phaseOrder(PhaseFinished),
-		ShowNamespaceAction: trimmedNamespace != "" && phaseOrder(state.Phase) >= phaseOrder(PhaseNamespaceDeleted),
+		ShowFinished:        phaseLevel >= phaseOrder(PhaseFinished),
+		ShowNamespaceAction: trimmedNamespace != "" && phaseLevel >= phaseOrder(PhaseNamespaceDeleted),
+
+		CreatedReached:      phaseLevel >= phaseOrder(PhaseCreated),
+		StartedReached:      phaseLevel >= phaseOrder(PhaseStarted),
+		AuthRequested:       phaseLevel >= phaseOrder(PhaseAuthRequired),
+		AuthResolvedReached: phaseLevel >= phaseOrder(PhaseAuthResolved),
 
 		IsRunSucceeded: normalizedRunStatus == runStatusSucceeded,
 		IsRunFailed:    normalizedRunStatus == runStatusFailed,

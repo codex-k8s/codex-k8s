@@ -11,7 +11,9 @@ related_prs: []
 approvals:
   required: ["Owner"]
   status: approved
-  request_id: "owner-2026-02-16-s3-day14"
+  request_id: "owner-2026-02-19-full-docset"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-19
 ---
 
 # Epic S3 Day 14: Repository onboarding preflight (token scopes, GitHub ops, domain resolution) + bot params per repo

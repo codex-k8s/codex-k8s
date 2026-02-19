@@ -11,7 +11,9 @@ related_prs: []
 approvals:
   required: ["Owner"]
   status: approved
-  request_id: "approved-day9-rework"
+  request_id: "owner-2026-02-19-full-docset"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-19
 ---
 
 # Epic S3 Day 9: Declarative full-env deploy and runtime parity

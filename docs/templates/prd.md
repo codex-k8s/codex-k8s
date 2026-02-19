@@ -11,8 +11,10 @@ related_prs: []
 related_docsets: []
 approvals:
   required: ["CTO"]
-  status: pending
-  request_id: ""
+  status: approved
+  request_id: "owner-2026-02-19-full-docset"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-19
 ---
 
 # PRD: <Название>

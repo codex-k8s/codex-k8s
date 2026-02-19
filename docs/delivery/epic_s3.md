@@ -10,8 +10,10 @@ related_issues: [19, 45]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
-  request_id: ""
+  status: approved
+  request_id: "owner-2026-02-19-full-docset"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-19
 ---
 
 # Epic Catalog: Sprint S3 (MVP completion)
@@ -60,17 +62,17 @@ approvals:
 - Day 12 (`docset import + safe sync`) завершён.
 - Day 13 (`unified config/secrets governance + GitHub creds fallback`) завершён.
 - Day 14 (`repository onboarding preflight`) завершён.
+- Day 15 (`prompt context overhaul: docs tree + role matrix + GitHub service messages`) завершён и согласован Owner.
 - Day 16 (`gRPC transport boundary hardening`) завершён как refactoring-hygiene эпик по Issue #45.
 - Day 17 (`environment-scoped secret overrides + OAuth callback strategy`) завершён и согласован Owner (PR #49).
 - Day 18 (`runtime error journal + staff alert center`) завершён и согласован Owner (PR #50).
-- В работе остаются Day15/Day19/Day19.5/Day19.6 (core-flow + frontend hardening + realtime), после них финальный Day20 full e2e gate.
+- В работе остаются Day19/Day19.5/Day19.6 (frontend hardening + realtime), после них финальный Day20 full e2e gate.
 
 ## Порядок закрытия остатка S3
-1. Day15: docs tree + role prompt matrix + GitHub service templates.
-2. Day19: manual frontend QA hardening loop.
-3. Day19.5: PostgreSQL LISTEN/NOTIFY realtime bus + WS backplane (multi-server).
-4. Day19.6: staff realtime subscriptions and UI integration.
-5. Day20: full e2e regression gate + MVP closeout.
+1. Day19: manual frontend QA hardening loop.
+2. Day19.5: PostgreSQL LISTEN/NOTIFY realtime bus + WS backplane (multi-server).
+3. Day19.6: staff realtime subscriptions and UI integration.
+4. Day20: full e2e regression gate + MVP closeout.
 
 ## Критерий успеха Sprint S3 (выжимка)
 - Все MVP-сценарии из Issue #19 покрыты кодом, тестами и эксплуатационной документацией.

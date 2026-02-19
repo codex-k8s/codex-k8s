@@ -10,8 +10,10 @@ related_issues: [19, 45]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
-  request_id: ""
+  status: approved
+  request_id: "owner-2026-02-19-full-docset"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-19
 ---
 
 # Sprint S3: MVP completion (full stage flow, MCP control tools, self-improve, declarative full-env)
@@ -68,7 +70,7 @@ approvals:
 | Day 12 | Docset import + safe sync (agent-knowledge-base -> projects) | P0 | `docs/delivery/epics/epic-s3-day12-docset-import-and-safe-sync.md` | completed |
 | Day 13 | Unified config/secrets governance + GitHub credentials fallback | P0 | `docs/delivery/epics/epic-s3-day13-config-and-credentials-governance.md` | completed |
 | Day 14 | Repository onboarding preflight + bot params per repo | P0 | `docs/delivery/epics/epic-s3-day14-repository-onboarding-preflight.md` | completed |
-| Day 15 | Prompt context overhaul (docs tree, role matrix, GitHub service messages) | P0 | `docs/delivery/epics/epic-s3-day15-mvp-closeout-and-handover.md` | planned |
+| Day 15 | Prompt context overhaul (docs tree, role matrix, GitHub service messages) | P0 | `docs/delivery/epics/epic-s3-day15-mvp-closeout-and-handover.md` | completed (approved) |
 | Day 16 | gRPC transport boundary hardening (исключить прямые вызовы repository из handlers) | P0 | `docs/delivery/epics/epic-s3-day16-grpc-transport-boundary-hardening.md` | completed |
 | Day 17 | Environment-scoped secret overrides and OAuth callback strategy | P0 | `docs/delivery/epics/epic-s3-day17-environment-scoped-secret-overrides-and-oauth-callbacks.md` | completed (approved) |
 | Day 18 | Runtime error journal and staff alert center | P0 | `docs/delivery/epics/epic-s3-day18-runtime-error-journal-and-staff-alert-center.md` | completed (approved) |

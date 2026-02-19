@@ -60,6 +60,20 @@ func (s *Service) launchPreparedFullEnvRunJob(ctx context.Context, run runqueuer
 		return nil
 	}
 
+	if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
+		RunID:           run.RunID,
+		Phase:           RunStatusPhaseCreated,
+		RuntimeMode:     string(execution.RuntimeMode),
+		Namespace:       execution.Namespace,
+		TriggerKind:     agentCtx.TriggerKind,
+		PromptLocale:    agentCtx.PromptTemplateLocale,
+		Model:           agentCtx.Model,
+		ReasoningEffort: agentCtx.ReasoningEffort,
+		RunStatus:       string(rundomain.StatusRunning),
+	}); err != nil {
+		s.logger.Warn("upsert run status comment (created) failed", "run_id", run.RunID, "err", err)
+	}
+
 	ref, err := s.launcher.Launch(ctx, JobSpec{
 		RunID:                  run.RunID,
 		CorrelationID:          run.CorrelationID,

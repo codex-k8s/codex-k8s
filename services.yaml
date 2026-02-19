@@ -5,6 +5,26 @@ metadata:
 
 spec:
   project: codex-k8s
+  projectDocs:
+    - path: README.md
+      description: Карта репозитория и быстрый вход в сервисы/слои платформы.
+    - path: AGENTS.md
+      description: Обязательные правила для ИИ-агентов в этом репозитории.
+    - path: docs/design-guidelines
+      description: Стандарты проектирования и чек-листы разработки (Go/Vue/Common).
+      roles: [dev, reviewer, qa, sa, em, km, sre]
+    - path: docs/product
+      description: Продуктовая модель этапов, ролей, лейблов и операционных политик.
+      roles: [pm, sa, em, km, reviewer]
+    - path: docs/architecture
+      description: Архитектурные контракты, C4, RBAC, transport boundary и prompt policy.
+      roles: [sa, dev, reviewer, km, sre]
+    - path: docs/ops
+      description: Production runbook и эксплуатационные процедуры платформы.
+      roles: [sre, em, dev]
+    - path: docs/delivery
+      description: Планы спринтов/эпиков, трассируемость и критерии готовности.
+      roles: [em, pm, km, reviewer]
   versions:
     api-gateway: "0.1.0"
     control-plane: "0.1.1"

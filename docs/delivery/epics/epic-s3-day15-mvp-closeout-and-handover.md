@@ -2,16 +2,18 @@
 doc_id: EPC-CK8S-S3-D15
 type: epic
 title: "Epic S3 Day 15: Prompt context overhaul (docs tree, role matrix, GitHub service messages)"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-13
-updated_at: 2026-02-18
+updated_at: 2026-02-19
 related_issues: [19]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
-  request_id: ""
+  status: approved
+  request_id: "owner-2026-02-19-full-docset"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-19
 ---
 
 # Epic S3 Day 15: Prompt context overhaul (docs tree, role matrix, GitHub service messages)
@@ -60,6 +62,21 @@ approvals:
 - Story-4: GitHub service messages templates v2 и подключение в `runstatus`/связанные use-cases.
   - Task: добавить в шаблоны run-сообщений обязательный блок `Slot URL`/`Ссылка на слот` для `full-env`/slot run, чтобы из issue/PR можно было открыть слот в один клик.
 - Story-5: документация и трассируемость (policy + delivery docs + traceability updates).
+
+## Статус выполнения (2026-02-19)
+- Story-1: выполнено.
+  - `libs/go/servicescfg`: добавлен `spec.projectDocs[]` (`path`, `description`, `roles[]`, `optional`) в typed model + JSON schema + валидация путей/дублей/ролей.
+- Story-2: выполнено.
+  - `services/internal/control-plane/internal/domain/mcp`: prompt context расширен блоками `role` + `docs` (role-aware filtering).
+  - `services/jobs/agent-runner/internal/runner`: role-aware docs context подмешивается в итоговый prompt envelope (с лимитом refs для контроля размера).
+- Story-3: выполнено.
+  - Добавлена role-aware матрица выбора prompt-seed с fallback: `stage+role -> role -> stage -> default`.
+  - Добавлены role templates `work/review` для поддержанных ролей (`dev/pm/sa/em/reviewer/qa/sre/km`) в локалях `ru/en`.
+- Story-4: выполнено.
+  - `runstatus` переведен на v2 lifecycle phases (`created`, `started`, `auth_required`, `auth_resolved`, `finished`, `namespace_deleted`).
+  - В run-сообщения добавлен `Slot URL` для full-env run (по runtime host или расчету из namespace + `CODEXK8S_AI_DOMAIN`/`CODEXK8S_PRODUCTION_DOMAIN`).
+- Story-5: выполнено.
+  - Обновлены sprint/traceability/policy связанные документы и статусы выполнения Day15.
 
 ## Критерии приемки
 - `services.yaml` поддерживает декларативный docs tree с `path`, `description`, `roles[]`; контракт валидируется typed loader и тестами.

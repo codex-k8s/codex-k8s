@@ -16,8 +16,10 @@ import (
 type Phase string
 
 const (
+	PhaseCreated          Phase = "created"
 	PhaseStarted          Phase = "started"
 	PhaseAuthRequired     Phase = "auth_required"
+	PhaseAuthResolved     Phase = "auth_resolved"
 	PhaseFinished         Phase = "finished"
 	PhaseNamespaceDeleted Phase = "namespace_deleted"
 )
@@ -120,8 +122,10 @@ type CleanupByIssueResult struct {
 
 // Config controls run status operations.
 type Config struct {
-	PublicBaseURL string
-	DefaultLocale string
+	PublicBaseURL    string
+	DefaultLocale    string
+	AIDomain         string
+	ProductionDomain string
 }
 
 // KubernetesClient provides namespace cleanup operation for runstatus service.
@@ -183,6 +187,7 @@ type commentState struct {
 	JobNamespace    string `json:"job_namespace,omitempty"`
 	RuntimeMode     string `json:"runtime_mode,omitempty"`
 	Namespace       string `json:"namespace,omitempty"`
+	SlotURL         string `json:"slot_url,omitempty"`
 	TriggerKind     string `json:"trigger_kind,omitempty"`
 	PromptLocale    string `json:"prompt_locale,omitempty"`
 	Model           string `json:"model,omitempty"`

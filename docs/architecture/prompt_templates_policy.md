@@ -5,15 +5,15 @@ title: "codex-k8s — Prompt Templates Policy"
 status: active
 owner_role: SA
 created_at: 2026-02-11
-updated_at: 2026-02-14
+updated_at: 2026-02-19
 related_issues: [1, 19]
 related_prs: []
 approvals:
   required: ["Owner"]
   status: approved
-  request_id: "owner-2026-02-12-project-docs-approval"
+  request_id: "owner-2026-02-19-full-docset"
   approved_by: "ai-da-stas"
-  approved_at: 2026-02-12
+  approved_at: 2026-02-19
 ---
 
 # Prompt Templates Policy
@@ -21,6 +21,7 @@ approvals:
 ## TL;DR
 - Поддерживаются два класса шаблонов: `work` и `review`.
 - Каноническая модель шаблонов role-specific: отдельный body для каждого `agent_key` в каждой ветке `work/review`.
+- `services.yaml` поддерживает декларативный `spec.projectDocs[]` (`path`, `description`, `roles[]`, `optional`) для role-aware docs context.
 - Источник шаблона определяется по приоритету: project override в БД -> global override в БД -> seed в репозитории.
 - Для каждого run фиксируется effective template version/hash для аудита и воспроизводимости.
 - Шаблоны хранятся по локалям; выбор языка выполняется по цепочке project locale -> system default locale -> `en`.
@@ -48,6 +49,19 @@ approvals:
   - `en`.
 - Использование одного общего body-шаблона для разных ролей не допускается.
 - Stage-specific seed-файлы в репозитории являются bootstrap/fallback и не заменяют role-specific модель.
+
+Реализованный seed fallback (runtime):
+1. `stage-role-kind_locale` (например: `design-sa-review_ru.md`);
+2. `stage-role-kind`;
+3. `role-role-kind_locale` (например: `role-sa-review_ru.md`);
+4. `role-role-kind`;
+5. `stage-kind_locale`;
+6. `stage-kind`;
+7. `dev-kind_locale`;
+8. `dev-kind`;
+9. `default-kind_locale`;
+10. `default-kind`;
+11. встроенные fallback templates runner-а.
 
 ## Seed vs final prompt
 
@@ -122,6 +136,10 @@ approvals:
   - environment/services: namespace, сервисы проекта, основные endpoints, диагностические команды;
   - MCP catalog: серверы, инструменты, категории (read/write), approval policy;
   - template metadata: source/version/hash/locale, render context version.
+- Дополнительно для Day15:
+  - role profile (display name + capability areas);
+  - role-aware docs refs из `services.yaml/spec.projectDocs[]`;
+  - лимит на количество docs refs в final prompt (для контроля размера prompt payload).
 - Формат контекста должен быть версионирован; изменения контракта рендера должны быть обратно совместимы либо сопровождаться миграцией шаблонов.
 
 ## Переходный профиль Day3.5 -> Day4

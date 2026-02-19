@@ -13,7 +13,9 @@ superseded_by: []
 approvals:
   required: ["Owner"]
   status: approved
-  request_id: ""
+  request_id: "owner-2026-02-19-full-docset"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-19
 ---
 
 # ADR-0004: Repository provider abstraction (GitHub first, GitLab-ready)

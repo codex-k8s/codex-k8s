@@ -22,6 +22,10 @@ type Config struct {
 
 	// PublicBaseURL is used to build default webhook URL when CODEXK8S_GITHUB_WEBHOOK_URL is empty.
 	PublicBaseURL string `env:"CODEXK8S_PUBLIC_BASE_URL,required,notEmpty"`
+	// ProductionDomain is canonical production host used in run status links.
+	ProductionDomain string `env:"CODEXK8S_PRODUCTION_DOMAIN"`
+	// AIDomain is base domain for full-env AI slots (<namespace>.<ai_domain>).
+	AIDomain string `env:"CODEXK8S_AI_DOMAIN"`
 
 	// BootstrapOwnerEmail is the first allowed email for staff access (platform admin).
 	BootstrapOwnerEmail          string   `env:"CODEXK8S_BOOTSTRAP_OWNER_EMAIL,required,notEmpty"`

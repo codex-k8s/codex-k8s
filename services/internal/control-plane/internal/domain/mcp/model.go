@@ -128,6 +128,8 @@ type PromptContext struct {
 	Run         PromptRunContext         `json:"run"`
 	Repository  PromptRepositoryContext  `json:"repository"`
 	Issue       *PromptIssueContext      `json:"issue,omitempty"`
+	Role        PromptRoleContext        `json:"role"`
+	Docs        []PromptProjectDocRef    `json:"docs,omitempty"`
 	Environment PromptEnvironmentContext `json:"environment"`
 	Runtime     PromptRuntimeContext     `json:"runtime"`
 	Services    []PromptServiceContext   `json:"services"`
@@ -158,6 +160,28 @@ type PromptIssueContext struct {
 	Title  string `json:"title"`
 	State  string `json:"state"`
 	URL    string `json:"url,omitempty"`
+}
+
+// PromptRoleContext describes agent role-specific responsibilities and limits.
+type PromptRoleContext struct {
+	AgentKey     string                 `json:"agent_key,omitempty"`
+	DisplayName  string                 `json:"display_name,omitempty"`
+	Capabilities []PromptRoleCapability `json:"capabilities,omitempty"`
+}
+
+// PromptRoleCapability describes one role capability domain.
+type PromptRoleCapability struct {
+	Area  string `json:"area"`
+	Scope string `json:"scope"`
+	Notes string `json:"notes,omitempty"`
+}
+
+// PromptProjectDocRef is one role-filtered docs tree entry exported from services.yaml.
+type PromptProjectDocRef struct {
+	Path        string   `json:"path"`
+	Description string   `json:"description,omitempty"`
+	Roles       []string `json:"roles,omitempty"`
+	Optional    bool     `json:"optional,omitempty"`
 }
 
 // PromptEnvironmentContext contains environment metadata.

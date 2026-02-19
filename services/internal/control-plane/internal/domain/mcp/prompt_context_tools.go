@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -29,7 +30,8 @@ func (s *Service) PromptContext(ctx context.Context, session SessionContext) (Pr
 	s.auditToolCalled(ctx, runCtx.Session, tool)
 
 	issueCtx := buildPromptIssueContext(runCtx.Payload.Issue)
-	runtimeCtx := s.buildPromptRuntimeContext(runCtx)
+	roleCtx := buildPromptRoleContext(runCtx)
+	runtimeCtx, docs := s.buildPromptRuntimeContext(runCtx, roleCtx.AgentKey)
 	result := PromptContextResult{
 		Status: ToolExecutionStatusOK,
 		Context: PromptContext{
@@ -49,6 +51,8 @@ func (s *Service) PromptContext(ctx context.Context, session SessionContext) (Pr
 				ServicesYAML: runCtx.Repository.ServicesYAMLPath,
 			},
 			Issue: issueCtx,
+			Role:  roleCtx,
+			Docs:  docs,
 			Environment: PromptEnvironmentContext{
 				ServiceName: s.cfg.ServerName,
 				MCPBaseURL:  s.cfg.InternalMCPBaseURL,
@@ -98,7 +102,7 @@ func buildPromptServices(publicBaseURL string, internalMCPBaseURL string) []Prom
 	return items
 }
 
-func (s *Service) buildPromptRuntimeContext(runCtx resolvedRunContext) PromptRuntimeContext {
+func (s *Service) buildPromptRuntimeContext(runCtx resolvedRunContext, roleKey string) (PromptRuntimeContext, []PromptProjectDocRef) {
 	targetEnv := resolvePromptTargetEnv(runCtx, s.cfg.ServicesConfigEnv)
 	servicesPath := strings.TrimSpace(runCtx.Repository.ServicesYAMLPath)
 	if servicesPath == "" {
@@ -117,7 +121,7 @@ func (s *Service) buildPromptRuntimeContext(runCtx resolvedRunContext) PromptRun
 	configPath, err := s.resolvePromptServicesConfigPath(runCtx, servicesPath)
 	if err != nil {
 		result.Hints.InventoryError = err.Error()
-		return result
+		return result, nil
 	}
 
 	loadResult, err := servicescfg.Load(configPath, servicescfg.LoadOptions{
@@ -127,13 +131,13 @@ func (s *Service) buildPromptRuntimeContext(runCtx resolvedRunContext) PromptRun
 	if err != nil {
 		result.InventorySource = configPath
 		result.Hints.InventoryError = err.Error()
-		return result
+		return result, nil
 	}
 
 	result.InventorySource = configPath
 	result.Inventory = buildPromptRuntimeInventory(loadResult.Stack)
 	result.Hints.InventoryLoaded = true
-	return result
+	return result, buildPromptProjectDocs(loadResult.Stack, roleKey)
 }
 
 func resolvePromptTargetEnv(runCtx resolvedRunContext, fallback string) string {
@@ -207,6 +211,134 @@ func manifestPaths(items []servicescfg.ManifestRef) []string {
 		return nil
 	}
 	return out
+}
+
+func buildPromptProjectDocs(stack *servicescfg.Stack, roleKey string) []PromptProjectDocRef {
+	if stack == nil || len(stack.Spec.ProjectDocs) == 0 {
+		return nil
+	}
+
+	normalizedRole := strings.ToLower(strings.TrimSpace(roleKey))
+	out := make([]PromptProjectDocRef, 0, len(stack.Spec.ProjectDocs))
+	for _, item := range stack.Spec.ProjectDocs {
+		path := strings.TrimSpace(item.Path)
+		if path == "" {
+			continue
+		}
+		roles := trimAndFilter(item.Roles)
+		if len(roles) > 0 && normalizedRole != "" && !slices.Contains(roles, normalizedRole) {
+			continue
+		}
+		out = append(out, PromptProjectDocRef{
+			Path:        path,
+			Description: strings.TrimSpace(item.Description),
+			Roles:       roles,
+			Optional:    item.Optional,
+		})
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].Path < out[j].Path
+	})
+	return out
+}
+
+func buildPromptRoleContext(runCtx resolvedRunContext) PromptRoleContext {
+	key := ""
+	if runCtx.Payload.Agent != nil {
+		key = strings.ToLower(strings.TrimSpace(runCtx.Payload.Agent.Key))
+	}
+	if key == "" {
+		key = "dev"
+	}
+
+	capabilitiesByRole := map[string]PromptRoleContext{
+		"dev": {
+			AgentKey:    "dev",
+			DisplayName: "Developer",
+			Capabilities: []PromptRoleCapability{
+				{Area: "code", Scope: "implement"},
+				{Area: "tests", Scope: "run-and-fix"},
+				{Area: "docs", Scope: "update-when-behavior-changes"},
+			},
+		},
+		"pm": {
+			AgentKey:    "pm",
+			DisplayName: "Product Manager",
+			Capabilities: []PromptRoleCapability{
+				{Area: "requirements", Scope: "refine-and-structure"},
+				{Area: "delivery", Scope: "prioritize-and-scope"},
+				{Area: "traceability", Scope: "keep-links-consistent"},
+			},
+		},
+		"sa": {
+			AgentKey:    "sa",
+			DisplayName: "Solution Architect",
+			Capabilities: []PromptRoleCapability{
+				{Area: "architecture", Scope: "define-boundaries"},
+				{Area: "contracts", Scope: "enforce-typed-interfaces"},
+				{Area: "risks", Scope: "analyze-tradeoffs"},
+			},
+		},
+		"em": {
+			AgentKey:    "em",
+			DisplayName: "Engineering Manager",
+			Capabilities: []PromptRoleCapability{
+				{Area: "planning", Scope: "decompose-and-sequence"},
+				{Area: "quality-gates", Scope: "enforce-checklists"},
+				{Area: "delivery", Scope: "coordinate-handovers"},
+			},
+		},
+		"reviewer": {
+			AgentKey:    "reviewer",
+			DisplayName: "Reviewer",
+			Capabilities: []PromptRoleCapability{
+				{Area: "code-review", Scope: "find-bugs-risks-regressions"},
+				{Area: "tests", Scope: "identify-coverage-gaps"},
+				{Area: "docs", Scope: "verify-consistency"},
+			},
+		},
+		"qa": {
+			AgentKey:    "qa",
+			DisplayName: "QA",
+			Capabilities: []PromptRoleCapability{
+				{Area: "test-design", Scope: "derive-cases-and-edges"},
+				{Area: "verification", Scope: "reproduce-and-validate"},
+				{Area: "regression", Scope: "protect-critical-flows"},
+			},
+		},
+		"sre": {
+			AgentKey:    "sre",
+			DisplayName: "SRE",
+			Capabilities: []PromptRoleCapability{
+				{Area: "operations", Scope: "diagnose-runtime-issues"},
+				{Area: "kubernetes", Scope: "inspect-and-remediate"},
+				{Area: "reliability", Scope: "stabilize-deploy-flow"},
+			},
+		},
+		"km": {
+			AgentKey:    "km",
+			DisplayName: "Knowledge Manager",
+			Capabilities: []PromptRoleCapability{
+				{Area: "docset", Scope: "maintain-quality"},
+				{Area: "prompts", Scope: "improve-role-templates"},
+				{Area: "self-improve", Scope: "collect-evidence-and-propose-fixes"},
+			},
+		},
+	}
+
+	if roleCtx, ok := capabilitiesByRole[key]; ok {
+		return roleCtx
+	}
+	return PromptRoleContext{
+		AgentKey:    key,
+		DisplayName: strings.ToUpper(key),
+		Capabilities: []PromptRoleCapability{
+			{Area: "generic", Scope: "follow-task-contract"},
+		},
+	}
 }
 
 func trimAndFilter(values []string) []string {

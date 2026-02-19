@@ -132,7 +132,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	prompt, err := s.buildPrompt(taskBody, result)
+	prompt, err := s.buildPrompt(taskBody, result, state.repoDir)
 	if err != nil {
 		return err
 	}

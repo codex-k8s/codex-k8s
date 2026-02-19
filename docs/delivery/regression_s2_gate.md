@@ -11,7 +11,9 @@ related_prs: [20, 22, 23]
 approvals:
   required: ["Owner"]
   status: approved
-  request_id: "owner-2026-02-13-s2-day7"
+  request_id: "owner-2026-02-19-full-docset"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-19
 ---
 
 # Sprint S2 Regression Gate (production)

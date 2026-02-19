@@ -37,18 +37,24 @@ func TestPromptSeedStageByTriggerKind(t *testing.T) {
 }
 
 func TestPromptSeedCandidates(t *testing.T) {
-	candidates := promptSeedCandidates("design_revise", "review", "ru")
-	if len(candidates) < 2 {
-		t.Fatalf("expected at least two candidates, got %d", len(candidates))
+	candidates := promptSeedCandidates("sa", "design_revise", "review", "ru")
+	if len(candidates) < 6 {
+		t.Fatalf("expected role-aware candidate chain, got %d", len(candidates))
 	}
-	if candidates[0] != "design-review_ru.md" {
+	if candidates[0] != "design-sa-review_ru.md" {
 		t.Fatalf("unexpected first candidate: %q", candidates[0])
 	}
-	if candidates[1] != "design-review.md" {
+	if candidates[1] != "design-sa-review.md" {
 		t.Fatalf("unexpected second candidate: %q", candidates[1])
 	}
+	if candidates[2] != "role-sa-review_ru.md" {
+		t.Fatalf("unexpected third candidate: %q", candidates[2])
+	}
+	if candidates[3] != "role-sa-review.md" {
+		t.Fatalf("unexpected fourth candidate: %q", candidates[3])
+	}
 
-	fallback := promptSeedCandidates("nonexistent", "work", "ru")
+	fallback := promptSeedCandidates("", "nonexistent", "work", "ru")
 	if len(fallback) < 2 {
 		t.Fatalf("expected fallback candidates, got %d", len(fallback))
 	}

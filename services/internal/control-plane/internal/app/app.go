@@ -177,8 +177,10 @@ func Run() error {
 		return fmt.Errorf("init mcp domain service: %w", err)
 	}
 	runStatusService, err := runstatusdomain.NewService(runstatusdomain.Config{
-		PublicBaseURL: cfg.PublicBaseURL,
-		DefaultLocale: "ru",
+		PublicBaseURL:    cfg.PublicBaseURL,
+		DefaultLocale:    "ru",
+		AIDomain:         cfg.AIDomain,
+		ProductionDomain: cfg.ProductionDomain,
 	}, runstatusdomain.Dependencies{
 		Runs:       agentRuns,
 		Platform:   platformTokens,
