@@ -252,7 +252,7 @@ spec:
 
 - ✅ S1 (`docs/delivery/sprint_s1_mvp_vertical_slice.md`): bootstrap baseline, webhook idempotency, worker+slots, auth/RBAC, repo provider, hardening, stabilization gate.
 - ✅ S2 (`docs/delivery/sprint_s2_dogfooding.md`): issue-driven dev flow, per-issue namespace/RBAC, agent job + PR flow, approvals/audit, dogfooding regression gate.
-- 🟡 S3 (`docs/delivery/sprint_s3_mvp_completion.md`): закрыты Day1-14, Day16, Day17; в работе Day15/Day18/Day19/Day20/Day20.5/Day20.6/Day21.
+- 🟡 S3 (`docs/delivery/sprint_s3_mvp_completion.md`): закрыты Day1-14, Day16, Day17; в работе Day15/Day18/Day19/Day19.5/Day19.6/Day20.
 
 Каталоги и детализация:
 - `docs/delivery/epic_s1.md`
@@ -270,5 +270,5 @@ spec:
 
 - Day 15: полноразмерные role-based prompt templates + service messages v2  
   `docs/delivery/epics/epic-s3-day15-mvp-closeout-and-handover.md`
-- Day 20.5: realtime event bus + WebSocket backplane (без polling-кнопок обновления)  
-  `docs/delivery/epics/epic-s3-day20.5-realtime-event-bus-and-websocket-backplane.md`
+- Day 19.5: realtime event bus + WebSocket backplane (без polling-кнопок обновления)  
+  `docs/delivery/epics/epic-s3-day19.5-realtime-event-bus-and-websocket-backplane.md`
