@@ -31,11 +31,11 @@ approvals:
 - PR flow с traceability: что исправлено, из каких run/log/comment выводов.
 - Guardrails против деградации стандартов (checks против ослабления policy/security).
 - Привязка результата к исходному issue/pr через `links`.
-- Подготовка и сопровождение минимальной stage-matrix prompt seeds (`docs/product/prompt-seeds/<stage>-work.md`, `<stage>-review.md`) для изоляции dev-шаблона при тестировании остальных stage-run.
+- Подготовка и сопровождение минимальной stage-matrix prompt seeds (`services/jobs/agent-runner/internal/runner/promptseeds/<stage>-work.md`, `<stage>-revise.md`) для изоляции dev-шаблона при тестировании остальных stage-run.
 
 ### Planned follow-up (post-MVP hardening)
 - Комплексная проработка role-specific prompt matrix:
-  - отдельные `work/review` шаблоны для всех системных ролей (`pm`, `sa`, `em`, `dev`, `reviewer`, `qa`, `sre`, `km`);
+  - отдельные `work/revise` шаблоны для всех системных ролей (`pm`, `sa`, `em`, `dev`, `reviewer`, `qa`, `sre`, `km`);
   - отдельные шаблоны для специальных режимов (`mode:discussion`, `run:self-improve`);
   - унификация locale-пакетов (`ru`/`en`) и проверка консистентности policy-blocks;
   - автоматические quality checks для prompt templates (lint/validation/traceability coverage).
@@ -47,11 +47,11 @@ approvals:
 - Минимум один self-improve PR создаётся end-to-end с проверяемым улучшением и понятной аргументацией.
 
 ## Фактический результат (выполнено)
-- Для `run:self-improve` закреплён review-контур шаблонов:
-  - в runtime self-improve trigger всегда использует `template_kind=review`.
-- В stage prompt matrix добавлен self-improve review seed:
-  - `docs/product/prompt-seeds/self-improve-review.md`.
-- Обновлены seed-инструкции self-improve work/review:
+- Для `run:self-improve` закреплён work-контур шаблонов:
+  - в runtime self-improve trigger всегда использует `template_kind=work`.
+- В stage prompt matrix добавлен self-improve work seed:
+  - `services/jobs/agent-runner/internal/runner/promptseeds/self-improve-work.md`.
+- Обновлены seed-инструкции self-improve work:
   - сначала `AGENTS.md`, затем Issue/comments, затем связанная документация;
   - обязательная MCP-диагностика run/session (`self_improve_runs_list`, `self_improve_run_lookup`, `self_improve_session_get`);
   - обязательное сохранение session JSON во временный каталог `/tmp/codex-sessions/<run-id>`;

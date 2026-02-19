@@ -130,7 +130,7 @@ approvals:
 Политика источника prompt:
 1. `project override` в БД;
 2. `global override` в БД;
-3. `repo seed` (`docs/product/prompt-seeds/<stage>-work.md`, `docs/product/prompt-seeds/<stage>-review.md`).
+3. `repo seed` (`services/jobs/agent-runner/internal/runner/promptseeds/<stage>-work.md`, `services/jobs/agent-runner/internal/runner/promptseeds/<stage>-revise.md`).
 
 Seed usage:
 - `prompt-seeds` используются как task-body шаблоны.

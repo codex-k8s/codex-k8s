@@ -50,8 +50,6 @@
 - stage-specific seed-файлы не отменяют requirement на отдельные role-specific body-шаблоны `work/revise` в локалях минимум `ru` и `en`.
 - role-specific baseline для поддержанных ролей:
   - `dev`, `pm`, `sa`, `em`, `reviewer`, `qa`, `sre`, `km` (каждая: `work/revise` и `ru/en`).
-- backward compatibility:
-  - runtime принимает legacy seed-файлы с `*-review*.md` как fallback для `kind=revise`.
 - Для `self-improve-*` seed обязателен диагностический контур:
   - MCP `self_improve_runs_list` / `self_improve_run_lookup` / `self_improve_session_get`;
   - сохранение извлеченного `codex-cli` session JSON в `/tmp/codex-sessions/<run-id>`.

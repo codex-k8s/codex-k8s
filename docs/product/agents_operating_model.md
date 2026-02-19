@@ -115,8 +115,8 @@ approvals:
 3. seed-файл в репозитории.
 
 Seed-файлы:
-- каталог `docs/product/prompt-seeds/*.md` как bootstrap/fallback слой (минимальная stage-матрица, включая `dev-work`/`dev-revise`).
-- runtime поддерживает legacy `kind=review` и `*-review*.md` как fallback для `kind=revise`.
+- каталог `services/jobs/agent-runner/internal/runner/promptseeds/*.md` (embed в `agent-runner`) как bootstrap/fallback слой
+  (минимальная stage-матрица, включая `dev-work`/`dev-revise`).
 
 Обязательная целевая модель:
 - для каждого `agent_key` поддерживаются отдельные body-шаблоны `work` и `revise`;

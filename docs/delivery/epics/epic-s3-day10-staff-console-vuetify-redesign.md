@@ -273,7 +273,7 @@ approvals:
 - Для `production`/`prod` страницы `Admin / Cluster` показывают режим “только просмотр”.
 - Для `ai` окружений destructive действия в `Admin / Cluster` отрабатывают как dry-run и дают явную обратную связь “dry-run OK, но действие запрещено”.
 - Есть `Agents` и `System settings (locales)` scaffolds:
-  - prompt templates `work/review` минимум в `ru/en` с diff/preview + effective template preview;
+  - prompt templates `work/revise` минимум в `ru/en` с diff/preview + effective template preview;
   - locales table + add locale dialog;
   - UI prefs scaffold.
 - Есть scaffolds `Audit log`, `Docs/knowledge`, `MCP tools`.

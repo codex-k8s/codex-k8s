@@ -323,7 +323,7 @@ Planned extension (Day6+):
 | scope_type | text | no |  | check(global/project) | |
 | scope_id | uuid | yes |  | fk -> projects | null for global |
 | role_key | text | no |  |  | pm/sa/em/dev/reviewer/qa/sre/km/custom |
-| template_kind | text | no |  | check(work/revise) + legacy `review` alias | |
+| template_kind | text | no |  | check(work/revise) | |
 | locale | text | no | "en" |  | i18n locale key (`ru`, `en`, ...) |
 | body_markdown | text | no |  |  | |
 | source | text | no | "db_override" |  | db_override/repo_seed_ref |

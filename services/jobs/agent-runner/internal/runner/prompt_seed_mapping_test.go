@@ -1,9 +1,6 @@
 package runner
 
-import (
-	"slices"
-	"testing"
-)
+import "testing"
 
 func TestPromptSeedStageByTriggerKind(t *testing.T) {
 	testCases := []struct {
@@ -58,9 +55,6 @@ func TestPromptSeedCandidates(t *testing.T) {
 	}
 	if candidates[4] != "design-revise_ru.md" {
 		t.Fatalf("unexpected fifth candidate: %q", candidates[4])
-	}
-	if !slices.Contains(candidates, "design-sa-review_ru.md") {
-		t.Fatalf("legacy review fallback candidate is missing: %v", candidates)
 	}
 
 	fallback := promptSeedCandidates("", "nonexistent", "work", "ru")

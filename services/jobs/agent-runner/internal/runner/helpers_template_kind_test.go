@@ -13,7 +13,6 @@ func TestNormalizeTemplateKind(t *testing.T) {
 	}{
 		{name: "work by default", value: "", triggerKind: "dev", want: promptTemplateKindWork},
 		{name: "revise by explicit value", value: promptTemplateKindRevise, triggerKind: "dev", want: promptTemplateKindRevise},
-		{name: "revise by legacy explicit value", value: promptTemplateKindReviewOld, triggerKind: "dev", want: promptTemplateKindRevise},
 		{name: "revise by revise trigger", value: "", triggerKind: "dev_revise", want: promptTemplateKindRevise},
 		{name: "work by self-improve trigger", value: "", triggerKind: "self_improve", want: promptTemplateKindWork},
 	}

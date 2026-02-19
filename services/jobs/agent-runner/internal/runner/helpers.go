@@ -25,6 +25,9 @@ import (
 //go:embed templates/*.tmpl
 var runnerTemplates embed.FS
 
+//go:embed promptseeds/*.md
+var promptSeedsFS embed.FS
+
 var (
 	toolGapNotFoundQuotedPattern  = regexp.MustCompile(`['"]([a-zA-Z0-9._-]+)['"]:\s+executable file not found`)
 	toolGapCommandNotFoundPattern = regexp.MustCompile(`(?m)(?:^|:\s)([a-zA-Z0-9._-]+):\s+command not found$`)
@@ -66,9 +69,11 @@ func (s *Service) renderTaskTemplate(templateKind string, repoDir string) (strin
 		BaseBranch:   s.cfg.AgentBaseBranch,
 		PromptLocale: normalizePromptLocale(s.cfg.PromptTemplateLocale),
 	}
+	_ = repoDir
+
 	for _, candidate := range promptSeedCandidates(s.cfg.AgentKey, s.cfg.TriggerKind, templateKind, s.cfg.PromptTemplateLocale) {
-		seedPath := filepath.Join(repoDir, promptSeedsDirRelativePath, candidate)
-		seedBytes, err := os.ReadFile(seedPath)
+		seedPath := filepath.Join(promptSeedsDirRelativePath, candidate)
+		seedBytes, err := promptSeedsFS.ReadFile(seedPath)
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				continue
@@ -316,8 +321,7 @@ func normalizeTemplateKind(value string, triggerKind string) string {
 	if webhookdomain.IsReviseTriggerKind(normalizedTrigger) {
 		return promptTemplateKindRevise
 	}
-	normalized := strings.TrimSpace(strings.ToLower(value))
-	if normalized == promptTemplateKindRevise || normalized == promptTemplateKindReviewOld {
+	if strings.EqualFold(strings.TrimSpace(value), promptTemplateKindRevise) {
 		return promptTemplateKindRevise
 	}
 	return promptTemplateKindWork

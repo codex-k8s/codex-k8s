@@ -58,7 +58,7 @@ approvals:
 ## Декомпозиция (Stories/Tasks)
 - Story-1: `services.yaml` docs tree contract + schema + loader validation.
 - Story-2: prompt context расширение (docs tree + role-aware capabilities).
-- Story-3: полноразмерные prompt templates по ролям и типам задач (work/review) + fallback matrix.
+- Story-3: полноразмерные prompt templates по ролям и типам задач (work/revise) + fallback matrix.
 - Story-4: GitHub service messages templates v2 и подключение в `runstatus`/связанные use-cases.
   - Task: добавить в шаблоны run-сообщений обязательный блок `Slot URL`/`Ссылка на слот` для `full-env`/slot run, чтобы из issue/PR можно было открыть слот в один клик.
 - Story-5: документация и трассируемость (policy + delivery docs + traceability updates).
@@ -71,7 +71,7 @@ approvals:
   - `services/jobs/agent-runner/internal/runner`: role-aware docs context подмешивается в итоговый prompt envelope (с лимитом refs для контроля размера).
 - Story-3: выполнено.
   - Добавлена role-aware матрица выбора prompt-seed с fallback: `stage+role -> role -> stage -> default`.
-  - Добавлены role templates `work/review` для поддержанных ролей (`dev/pm/sa/em/reviewer/qa/sre/km`) в локалях `ru/en`.
+  - Добавлены role templates `work/revise` для поддержанных ролей (`dev/pm/sa/em/reviewer/qa/sre/km`) в локалях `ru/en`.
 - Story-4: выполнено.
   - `runstatus` переведен на v2 lifecycle phases (`created`, `started`, `auth_required`, `auth_resolved`, `finished`, `namespace_deleted`).
   - В run-сообщения добавлен `Slot URL` для full-env run (по runtime host или расчету из namespace + `CODEXK8S_AI_DOMAIN`/`CODEXK8S_PRODUCTION_DOMAIN`).
