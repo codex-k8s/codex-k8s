@@ -534,14 +534,88 @@ func TestTickFinalizesFullEnvRunSkipsCleanupForDebugLabel(t *testing.T) {
 	}
 }
 
+func TestTickFinalizesFullEnvRunSkipsCleanupWhenSlotHasRunningPeer(t *testing.T) {
+	t.Parallel()
+
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev"},"issue":{"number":11},"agent":{"key":"dev","name":"AI Developer"}}`)
+	runs := &fakeRunQueue{
+		running: []runqueuerepo.RunningRun{
+			{
+				RunID:         "run-main",
+				CorrelationID: "corr-main",
+				ProjectID:     "550e8400-e29b-41d4-a716-446655440000",
+				SlotNo:        1,
+				RunPayload:    payload,
+			},
+			{
+				RunID:         "run-peer",
+				CorrelationID: "corr-peer",
+				ProjectID:     "550e8400-e29b-41d4-a716-446655440000",
+				SlotNo:        1,
+				RunPayload:    payload,
+			},
+		},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{states: map[string]JobState{
+		"run-main": JobStateSucceeded,
+		"run-peer": JobStateRunning,
+	}}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:                "worker-1",
+		ClaimLimit:              1,
+		RunningCheckLimit:       10,
+		SlotsPerProject:         2,
+		SlotLeaseTTL:            time.Minute,
+		RunNamespacePrefix:      "codex-issue",
+		CleanupFullEnvNamespace: true,
+	}, Dependencies{
+		Runs:     runs,
+		Events:   events,
+		Launcher: launcher,
+		Logger:   logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 2, 11, 12, 30, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if len(launcher.cleaned) != 0 {
+		t.Fatalf("expected namespace cleanup to be skipped for slot peer run, got %d cleanups", len(launcher.cleaned))
+	}
+	if len(events.inserted) < 2 {
+		t.Fatalf("expected at least two events, got %d", len(events.inserted))
+	}
+	if events.inserted[0].EventType != floweventdomain.EventTypeRunSucceeded {
+		t.Fatalf("expected first event run.succeeded, got %s", events.inserted[0].EventType)
+	}
+	if events.inserted[1].EventType != floweventdomain.EventTypeRunNamespaceCleanupSkipped {
+		t.Fatalf("expected second event run.namespace.cleanup_skipped, got %s", events.inserted[1].EventType)
+	}
+	if !strings.Contains(string(events.inserted[1].Payload), "slot_has_running_peer") {
+		t.Fatalf("expected cleanup_skipped payload to include slot_has_running_peer reason, got %s", string(events.inserted[1].Payload))
+	}
+	if !strings.Contains(string(events.inserted[1].Payload), "run-peer") {
+		t.Fatalf("expected cleanup_skipped payload to include peer run id, got %s", string(events.inserted[1].Payload))
+	}
+	if len(runs.extended) == 0 {
+		t.Fatal("expected slot lease keepalive to be called at least once")
+	}
+}
+
 type fakeRunQueue struct {
 	claims     []runqueuerepo.ClaimedRun
 	claimCalls int
 	running    []runqueuerepo.RunningRun
 	finished   []runqueuerepo.FinishParams
+	extended   []runqueuerepo.ExtendLeaseParams
 	claimErr   error
 	listErr    error
 	finishErr  error
+	extendErr  error
 }
 
 func (f *fakeRunQueue) ClaimNextPending(_ context.Context, _ runqueuerepo.ClaimParams) (runqueuerepo.ClaimedRun, bool, error) {
@@ -563,11 +637,19 @@ func (f *fakeRunQueue) ListRunning(_ context.Context, _ int) ([]runqueuerepo.Run
 	return f.running, nil
 }
 
+func (f *fakeRunQueue) ExtendLease(_ context.Context, params runqueuerepo.ExtendLeaseParams) (bool, error) {
+	return appendIfNoError(&f.extended, params, f.extendErr)
+}
+
 func (f *fakeRunQueue) FinishRun(_ context.Context, params runqueuerepo.FinishParams) (bool, error) {
-	if f.finishErr != nil {
-		return false, f.finishErr
+	return appendIfNoError(&f.finished, params, f.finishErr)
+}
+
+func appendIfNoError[T any](dst *[]T, value T, err error) (bool, error) {
+	if err != nil {
+		return false, err
 	}
-	f.finished = append(f.finished, params)
+	*dst = append(*dst, value)
 	return true, nil
 }
 
