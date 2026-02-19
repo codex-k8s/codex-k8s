@@ -5,7 +5,7 @@ title: "Epic S3 Day 9: Declarative full-env deploy and runtime parity"
 status: completed
 owner_role: EM
 created_at: 2026-02-13
-updated_at: 2026-02-18
+updated_at: 2026-02-19
 related_issues: [19]
 related_prs: []
 approvals:
@@ -131,8 +131,8 @@ approvals:
   - правило `codex-k8s production => {{ .Project }}-production` валидируется в loader;
   - namespace-level изоляция runtime и anti-conflict guardrails включены в текущий full-env путь.
 - Story-8 (`moved`):
-  - full e2e на чистом VPS вынесен в финальный закрывающий эпик `docs/delivery/epics/epic-s3-day21-e2e-regression-and-mvp-closeout.md`;
-  - причина переноса: до e2e нужно закрыть оставшиеся core-flow блоки (prompt/templates, oauth override model, runtime error journal, run access key) и пройти ручной frontend цикл.
+  - full e2e на чистом VPS вынесен в финальный закрывающий эпик `docs/delivery/epics/epic-s3-day20-e2e-regression-and-mvp-closeout.md`;
+  - причина переноса: до e2e нужно закрыть оставшиеся core-flow блоки (prompt/templates, oauth override model, runtime error journal) и пройти ручной frontend цикл.
 
 ## Текущий статус критериев приемки (2026-02-18)
 - `done`: full-env сценарий для `codex-k8s` подтверждён на production; typed runtime deploy работает через persisted reconcile loop.
@@ -140,7 +140,7 @@ approvals:
 - `done`: `codeUpdateStrategy` присутствует и учитывается в runtime-рендере; экспорт в prompt context (runtime hints + inventory) реализован.
 - `done`: правило `production={{ .Project }}-production` для `codex-k8s` соблюдается и валидируется.
 - `done`: dogfooding isolation в namespace подтверждён и закреплён guardrails.
-- `moved`: bootstrap e2e + evidence bundle переносятся в Day21 (финальный e2e gate).
+- `moved`: bootstrap e2e + evidence bundle переносятся в Day20 (финальный e2e gate).
 
 ## Критерии приемки
 - Для минимум двух проектов (`project-example` и `codex-k8s`) full-env поднимается из `services.yaml` через typed execution-plan.
@@ -148,12 +148,12 @@ approvals:
 - `codeUpdateStrategy` (enum) присутствует в контракте, учитывается в runtime orchestration и попадает в prompt context.
 - Для `codex-k8s` подтверждено правило шаблона: `production` задаётся как `{{ .Project }}-production` и для `project=codex-k8s` резолвится в `codex-k8s-prod`.
 - Для ai-slot dogfooding подтверждено отсутствие конфликтов со production/prod платформой (namespace и runtime resources).
-- Требования полного e2e вынесены в отдельный финальный эпик Day21 и не блокируют статус Day9.
+- Требования полного e2e вынесены в отдельный финальный эпик Day20 и не блокируют статус Day9.
 
 ## Риски/зависимости
 - Риск регрессий при миграции со shell-first на execution-plan путь; нужен dual-run/feature-flag rollout.
 - Риск несогласованности namespace policy и текущих production манифестов; нужен отдельный preflight check.
-- Финальная cross-project e2e верификация вынесена в Day21 и должна быть выполнена до MVP closeout.
+- Финальная cross-project e2e верификация вынесена в Day20 и должна быть выполнена до MVP closeout.
 
 ## План релиза (верхний уровень)
 - Wave-1: спецификация и библиотека `services.yaml v2`.

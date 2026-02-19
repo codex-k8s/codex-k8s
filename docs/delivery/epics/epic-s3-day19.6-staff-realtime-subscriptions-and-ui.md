@@ -1,11 +1,11 @@
 ---
-doc_id: EPC-CK8S-S3-D20-6
+doc_id: EPC-CK8S-S3-D19-6
 type: epic
-title: "Epic S3 Day 20.6: Staff realtime subscriptions and UI integration"
+title: "Epic S3 Day 19.6: Staff realtime subscriptions and UI integration"
 status: planned
 owner_role: EM
 created_at: 2026-02-18
-updated_at: 2026-02-18
+updated_at: 2026-02-19
 related_issues: [19]
 related_prs: []
 approvals:
@@ -14,7 +14,7 @@ approvals:
   request_id: ""
 ---
 
-# Epic S3 Day 20.6: Staff realtime subscriptions and UI integration
+# Epic S3 Day 19.6: Staff realtime subscriptions and UI integration
 
 ## TL;DR
 - Цель: подключить staff frontend к новой WS-шине и перевести ключевые экраны на near-realtime обновления.
@@ -40,7 +40,7 @@ approvals:
   - удаление кнопок `Обновить` в экранах с realtime-подпиской (обновление только автоматически).
 - Тестовый контур:
   - manual сценарии multi-tab/multi-reconnect;
-  - smoke check на production перед Day21.
+  - smoke check на production перед Day20.
 
 ### Out of scope
 - Полная замена всех текущих polling вызовов в экранах без WS-подписки.
@@ -51,15 +51,15 @@ approvals:
 - Story-2: интеграция в runs/deploy/errors/logs/events views.
 - Story-3: удаление ручных кнопок `Обновить` в realtime-экранах + автообновление по событиям.
 - Story-4: UX polish (indicators, degraded mode, dedupe).
-- Story-5: regression checklist и readiness report к Day21.
+- Story-5: regression checklist и readiness report к Day20.
 
 ## Критерии приемки
 - Изменения статусов run/deploy, логи и события отображаются в UI без ручного refresh.
 - При обрыве соединения фронт восстанавливается и догружает пропущенные события.
 - При отключенном WS интерфейс продолжает работать через polling (без функциональной деградации).
 - Кнопки `Обновить` удалены из всех экранов, покрытых realtime подпиской.
-- Realtime-интеграция проходит ручной regression перед Day21 e2e.
+- Realtime-интеграция проходит ручной regression перед Day20 e2e.
 
 ## Риски/зависимости
-- Зависимость от Day20.5 (backend bus + WS endpoint).
+- Зависимость от Day19.5 (backend bus + WS endpoint).
 - Риск race-condition при смешанном WS + polling режиме: требуется единая стратегия merge обновлений.

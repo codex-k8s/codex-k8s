@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - Sprint S3 завершает MVP и переводит платформу в устойчивый full stage-driven контур.
 - Центральные deliverables: full stage labels, staff debug observability, MCP control tools, `run:self-improve` loop, declarative full-env deploy, docset import/sync, unified config/secrets governance, onboarding preflight.
-- Дополнительный фокус финальной части S3: закрыть core-flow недоделки (prompt/docs context, env-scoped secrets, runtime error journal, OAuth bypass key, frontend hardening) до полного e2e gate.
+- Дополнительный фокус финальной части S3: закрыть core-flow недоделки (prompt/docs context, env-scoped secrets, runtime error journal, frontend hardening) до полного e2e gate.
 
 ## Эпики Sprint S3
 - Day 1: `docs/delivery/epics/epic-s3-day1-full-stage-and-label-activation.md`
@@ -40,11 +40,10 @@ approvals:
 - Day 16: `docs/delivery/epics/epic-s3-day16-grpc-transport-boundary-hardening.md`
 - Day 17: `docs/delivery/epics/epic-s3-day17-environment-scoped-secret-overrides-and-oauth-callbacks.md`
 - Day 18: `docs/delivery/epics/epic-s3-day18-runtime-error-journal-and-staff-alert-center.md`
-- Day 19: `docs/delivery/epics/epic-s3-day19-run-access-key-and-oauth-bypass.md`
-- Day 20: `docs/delivery/epics/epic-s3-day20-frontend-manual-qa-hardening-loop.md`
-- Day 20.5: `docs/delivery/epics/epic-s3-day20.5-realtime-event-bus-and-websocket-backplane.md`
-- Day 20.6: `docs/delivery/epics/epic-s3-day20.6-staff-realtime-subscriptions-and-ui.md`
-- Day 21: `docs/delivery/epics/epic-s3-day21-e2e-regression-and-mvp-closeout.md`
+- Day 19: `docs/delivery/epics/epic-s3-day19-frontend-manual-qa-hardening-loop.md`
+- Day 19.5: `docs/delivery/epics/epic-s3-day19.5-realtime-event-bus-and-websocket-backplane.md`
+- Day 19.6: `docs/delivery/epics/epic-s3-day19.6-staff-realtime-subscriptions-and-ui.md`
+- Day 20: `docs/delivery/epics/epic-s3-day20-e2e-regression-and-mvp-closeout.md`
 
 ## Прогресс
 - Day 1 (`full stage and label activation`) завершён и согласован Owner.
@@ -55,7 +54,7 @@ approvals:
 - Day 6 (`run:self-improve` ingestion/diagnostics) завершён.
 - Day 7 (`run:self-improve` updater/PR flow) завершён.
 - Day 8 (`agent toolchain auto-extension`) завершён.
-- Day 9 (`declarative full-env deploy and runtime parity`) завершён; финальный e2e контур вынесен в Day21.
+- Day 9 (`declarative full-env deploy and runtime parity`) завершён; финальный e2e контур вынесен в Day20.
 - Day 10 (`staff console redesign on Vuetify`) завершён.
 - Day 11 (`full-env slots + subdomains + TLS`) завершён.
 - Day 12 (`docset import + safe sync`) завершён.
@@ -64,15 +63,14 @@ approvals:
 - Day 16 (`gRPC transport boundary hardening`) завершён как refactoring-hygiene эпик по Issue #45.
 - Day 17 (`environment-scoped secret overrides + OAuth callback strategy`) завершён и согласован Owner (PR #49).
 - Day 18 (`runtime error journal + staff alert center`) завершён и согласован Owner (PR #50).
-- В работе остаются Day15/Day19/Day20/Day20.5/Day20.6 (core-flow + frontend hardening + realtime), после них финальный Day21 full e2e gate.
+- В работе остаются Day15/Day19/Day19.5/Day19.6 (core-flow + frontend hardening + realtime), после них финальный Day20 full e2e gate.
 
 ## Порядок закрытия остатка S3
 1. Day15: docs tree + role prompt matrix + GitHub service templates.
-2. Day19: run access key + OAuth bypass.
-3. Day20: manual frontend QA hardening loop.
-4. Day20.5: PostgreSQL LISTEN/NOTIFY realtime bus + WS backplane (multi-server).
-5. Day20.6: staff realtime subscriptions and UI integration.
-6. Day21: full e2e regression gate + MVP closeout.
+2. Day19: manual frontend QA hardening loop.
+3. Day19.5: PostgreSQL LISTEN/NOTIFY realtime bus + WS backplane (multi-server).
+4. Day19.6: staff realtime subscriptions and UI integration.
+5. Day20: full e2e regression gate + MVP closeout.
 
 ## Критерий успеха Sprint S3 (выжимка)
 - Все MVP-сценарии из Issue #19 покрыты кодом, тестами и эксплуатационной документацией.

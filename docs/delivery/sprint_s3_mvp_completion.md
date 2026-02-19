@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - Sprint S3 завершает MVP после S2 Day6/Day7 hardening.
 - Главная цель: включить полный stage/label контур, расширить staff debug observability, добавить обязательные MCP control tools и автоматический `run:self-improve` цикл.
-- Дополнительная цель: закрыть core-flow пробелы до запуска полного e2e (prompt/docs context, env-scoped secret governance, runtime error journal, OAuth bypass key, frontend hardening).
+- Дополнительная цель: закрыть core-flow пробелы до запуска полного e2e (prompt/docs context, env-scoped secret governance, runtime error journal, frontend hardening).
 - Дополнительная цель: добавить realtime контур (multi-server WebSocket updates через PostgreSQL LISTEN/NOTIFY шину) до запуска полного e2e.
 - Финальный шаг спринта: full e2e regression gate и formal MVP closeout.
 
@@ -43,7 +43,6 @@ approvals:
   - role-aware prompt templates + GitHub service message templates;
   - environment-scoped secret overrides и OAuth callback strategy;
   - runtime error journal + staff alert stack;
-  - run-scoped access key для controlled OAuth bypass;
   - frontend manual QA hardening loop.
 - Realtime transport before e2e:
   - backend event bus: PostgreSQL event log + `LISTEN/NOTIFY`;
@@ -73,11 +72,10 @@ approvals:
 | Day 16 | gRPC transport boundary hardening (исключить прямые вызовы repository из handlers) | P0 | `docs/delivery/epics/epic-s3-day16-grpc-transport-boundary-hardening.md` | completed |
 | Day 17 | Environment-scoped secret overrides and OAuth callback strategy | P0 | `docs/delivery/epics/epic-s3-day17-environment-scoped-secret-overrides-and-oauth-callbacks.md` | completed (approved) |
 | Day 18 | Runtime error journal and staff alert center | P0 | `docs/delivery/epics/epic-s3-day18-runtime-error-journal-and-staff-alert-center.md` | completed (approved) |
-| Day 19 | Run access key and OAuth bypass flow | P0 | `docs/delivery/epics/epic-s3-day19-run-access-key-and-oauth-bypass.md` | planned |
-| Day 20 | Frontend manual QA hardening loop | P0 | `docs/delivery/epics/epic-s3-day20-frontend-manual-qa-hardening-loop.md` | planned |
-| Day 20.5 | Realtime event bus (PostgreSQL LISTEN/NOTIFY) and WebSocket backplane | P0 | `docs/delivery/epics/epic-s3-day20.5-realtime-event-bus-and-websocket-backplane.md` | planned |
-| Day 20.6 | Staff realtime subscriptions and UI integration | P0 | `docs/delivery/epics/epic-s3-day20.6-staff-realtime-subscriptions-and-ui.md` | planned |
-| Day 21 | Full e2e regression gate + MVP closeout | P0 | `docs/delivery/epics/epic-s3-day21-e2e-regression-and-mvp-closeout.md` | planned |
+| Day 19 | Frontend manual QA hardening loop | P0 | `docs/delivery/epics/epic-s3-day19-frontend-manual-qa-hardening-loop.md` | planned |
+| Day 19.5 | Realtime event bus (PostgreSQL LISTEN/NOTIFY) and WebSocket backplane | P0 | `docs/delivery/epics/epic-s3-day19.5-realtime-event-bus-and-websocket-backplane.md` | planned |
+| Day 19.6 | Staff realtime subscriptions and UI integration | P0 | `docs/delivery/epics/epic-s3-day19.6-staff-realtime-subscriptions-and-ui.md` | planned |
+| Day 20 | Full e2e regression gate + MVP closeout | P0 | `docs/delivery/epics/epic-s3-day20-e2e-regression-and-mvp-closeout.md` | planned |
 
 ## Daily gate (обязательно)
 - Green CI + успешный deploy на production.
@@ -89,7 +87,7 @@ approvals:
 - MVP-функции из Issue #19 реализованы и проверены на production.
 - Полный label/stage контур формально документирован и подтверждён regression evidence.
 - Для `run:self-improve` есть минимум один воспроизводимый цикл с улучшениями в docs/prompt/tools.
-- Core-flow недоделки закрыты: prompt/docs context, env secrets, runtime error alerts, OAuth bypass, frontend hardening.
+- Core-flow недоделки закрыты: prompt/docs context, env secrets, runtime error alerts, frontend hardening.
 - Realtime контур закрыт: multi-server backend bus + frontend WS subscriptions (включая логи/эвенты) + fallback mode.
 - Кнопки `Обновить` удалены в realtime-экранах, обновление выполняется автоматически.
-- Финальный Day21 e2e проходит без P0 блокеров и формирует owner-ready closeout пакет.
+- Финальный Day20 e2e проходит без P0 блокеров и формирует owner-ready closeout пакет.

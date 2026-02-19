@@ -5,7 +5,7 @@ title: "codex-k8s — Delivery Plan"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-18
+updated_at: 2026-02-19
 related_issues: [1, 19]
 related_prs: []
 approvals:
@@ -81,11 +81,10 @@ approvals:
 - Day 15: prompt context overhaul (`services.yaml` docs tree + role prompt matrix + GitHub service messages templates).
 - Day 17: environment-scoped secret overrides + OAuth callback strategy (без project-specific hardcode).
 - Day 18: runtime error journal + staff alert center (stacked alerts, mark-as-viewed).
-- Day 19: run access key + controlled OAuth bypass flow.
-- Day 20: frontend manual QA hardening loop (Owner-driven bug cycle до full e2e).
-- Day 20.5: realtime шина на PostgreSQL (`event log + LISTEN/NOTIFY`) + multi-server WebSocket backplane.
-- Day 20.6: интеграция realtime подписок в staff UI (runs/deploy/errors/logs/events), удаление кнопок `Обновить` в realtime-экранах, fallback polling.
-- Day 21: full e2e regression/security gate + MVP closeout/handover и переход к post-MVP roadmap.
+- Day 19: frontend manual QA hardening loop (Owner-driven bug cycle до full e2e).
+- Day 19.5: realtime шина на PostgreSQL (`event log + LISTEN/NOTIFY`) + multi-server WebSocket backplane.
+- Day 19.6: интеграция realtime подписок в staff UI (runs/deploy/errors/logs/events), удаление кнопок `Обновить` в realtime-экранах, fallback polling.
+- Day 20: full e2e regression/security gate + MVP closeout/handover и переход к post-MVP roadmap.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

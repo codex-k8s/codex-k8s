@@ -1,11 +1,11 @@
 ---
-doc_id: EPC-CK8S-S3-D20
+doc_id: EPC-CK8S-S3-D19
 type: epic
-title: "Epic S3 Day 20: Frontend manual QA hardening loop before full e2e"
+title: "Epic S3 Day 19: Frontend manual QA hardening loop before full e2e"
 status: planned
 owner_role: EM
 created_at: 2026-02-18
-updated_at: 2026-02-18
+updated_at: 2026-02-19
 related_issues: [19]
 related_prs: []
 approvals:
@@ -14,7 +14,7 @@ approvals:
   request_id: ""
 ---
 
-# Epic S3 Day 20: Frontend manual QA hardening loop before full e2e
+# Epic S3 Day 19: Frontend manual QA hardening loop before full e2e
 
 ## TL;DR
 - Цель: до финального e2e закрыть UI/UX дефекты в основном staff flow через управляемый цикл: ручная проверка Owner -> баг-репорты -> быстрые фиксы -> повторная проверка.
@@ -42,7 +42,7 @@ approvals:
 - Story-1: сформировать ручную QA матрицу и acceptance checklist.
 - Story-2: пройти цикл баг-репортов и закрыть P0/P1.
 - Story-3: выполнить regression pass по критичным экранам.
-- Story-4: зафиксировать readiness report для перехода к Day21.
+- Story-4: зафиксировать readiness report для перехода к Day20.
 
 ## Критерии приемки
 - Все критичные P0/P1 баги из ручного frontend цикла закрыты.

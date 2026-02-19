@@ -1,11 +1,11 @@
 ---
-doc_id: EPC-CK8S-S3-D20-5
+doc_id: EPC-CK8S-S3-D19-5
 type: epic
-title: "Epic S3 Day 20.5: Realtime event bus (PostgreSQL LISTEN/NOTIFY) and WebSocket backplane"
+title: "Epic S3 Day 19.5: Realtime event bus (PostgreSQL LISTEN/NOTIFY) and WebSocket backplane"
 status: planned
 owner_role: EM
 created_at: 2026-02-18
-updated_at: 2026-02-18
+updated_at: 2026-02-19
 related_issues: [19]
 related_prs: []
 approvals:
@@ -14,7 +14,7 @@ approvals:
   request_id: ""
 ---
 
-# Epic S3 Day 20.5: Realtime event bus (PostgreSQL LISTEN/NOTIFY) and WebSocket backplane
+# Epic S3 Day 19.5: Realtime event bus (PostgreSQL LISTEN/NOTIFY) and WebSocket backplane
 
 ## TL;DR
 - Выбран вариант реализации `#1`: PostgreSQL event log + `LISTEN/NOTIFY` как межсерверная шина для realtime.

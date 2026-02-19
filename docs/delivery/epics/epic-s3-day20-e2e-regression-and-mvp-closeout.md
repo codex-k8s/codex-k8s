@@ -1,11 +1,11 @@
 ---
-doc_id: EPC-CK8S-S3-D21
+doc_id: EPC-CK8S-S3-D20
 type: epic
-title: "Epic S3 Day 21: Full e2e regression gate and MVP closeout"
+title: "Epic S3 Day 20: Full e2e regression gate and MVP closeout"
 status: planned
 owner_role: EM
 created_at: 2026-02-18
-updated_at: 2026-02-18
+updated_at: 2026-02-19
 related_issues: [19]
 related_prs: []
 approvals:
@@ -14,7 +14,7 @@ approvals:
   request_id: ""
 ---
 
-# Epic S3 Day 21: Full e2e regression gate and MVP closeout
+# Epic S3 Day 20: Full e2e regression gate and MVP closeout
 
 ## TL;DR
 - Цель: выполнить финальный full e2e после закрытия core-flow и frontend hardening, собрать evidence bundle и завершить MVP formal handover.
