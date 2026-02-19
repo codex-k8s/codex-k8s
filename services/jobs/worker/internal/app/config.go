@@ -102,7 +102,7 @@ type Config struct {
 	// JobBackoffLimit controls Job retry attempts.
 	JobBackoffLimit int32 `env:"CODEXK8S_WORKER_JOB_BACKOFF_LIMIT" envDefault:"0"`
 	// JobActiveDeadlineSeconds controls max run duration before termination.
-	JobActiveDeadlineSeconds int64 `env:"CODEXK8S_WORKER_JOB_ACTIVE_DEADLINE_SECONDS" envDefault:"900"`
+	JobActiveDeadlineSeconds int64 `env:"CODEXK8S_WORKER_JOB_ACTIVE_DEADLINE_SECONDS" envDefault:"18000"`
 	// RunNamespacePrefix defines prefix for full-env runtime namespaces.
 	RunNamespacePrefix string `env:"CODEXK8S_WORKER_RUN_NAMESPACE_PREFIX" envDefault:"codex-issue"`
 	// RunNamespaceCleanup enables namespace cleanup after run completion.

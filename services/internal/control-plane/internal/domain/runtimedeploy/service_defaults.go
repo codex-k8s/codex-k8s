@@ -52,7 +52,7 @@ func defaultTemplateVars() map[string]string {
 		"CODEXK8S_WORKER_JOB_COMMAND":                 "/usr/local/bin/codex-k8s-agent-runner",
 		"CODEXK8S_WORKER_JOB_TTL_SECONDS":             "600",
 		"CODEXK8S_WORKER_JOB_BACKOFF_LIMIT":           "0",
-		"CODEXK8S_WORKER_JOB_ACTIVE_DEADLINE_SECONDS": "900",
+		"CODEXK8S_WORKER_JOB_ACTIVE_DEADLINE_SECONDS": "18000",
 		"CODEXK8S_WORKER_RUN_NAMESPACE_PREFIX":        "codex-issue",
 		"CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP":       "true",
 		"CODEXK8S_WORKER_RUN_SERVICE_ACCOUNT":         "codex-runner",
