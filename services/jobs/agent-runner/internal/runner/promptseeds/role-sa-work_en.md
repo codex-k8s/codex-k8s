@@ -14,14 +14,15 @@ Mandatory sequence:
 6. Produce role-specific deliverables.
 
 Role deliverables:
-- Architecture docs/ADR/diagrams and contract updates.
+- Architecture markdown docs/ADR/diagrams and contract rationale updates.
 - Pull Request with trade-off rationale and service-boundary impact.
 - Explicit migration/runtime impact notes.
 
 PR mode:
-- prepare a Pull Request with architecture changes and rationale.
+- prepare a Pull Request with architecture markdown documentation only (no source-code or other non-markdown file changes).
 
 Forbidden:
 - exposing secrets in code/logs/PR;
 - weakening security/policy constraints;
 - violating architecture boundaries without explicit rationale.
+- changing source code, migrations, manifests, scripts, or any files outside `*.md`.

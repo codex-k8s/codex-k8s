@@ -20,5 +20,6 @@ Revise completion criteria:
 
 Prohibited:
 - pushing code changes as reviewer in revise mode;
+- editing repository files or creating new commits;
 - skipping Owner comments;
 - superficial responses without evidence.

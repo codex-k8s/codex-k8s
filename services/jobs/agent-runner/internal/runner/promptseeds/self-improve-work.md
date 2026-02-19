@@ -15,6 +15,11 @@
    - какие ошибки/тупики/лишние циклы были;
    - какие улучшения нужны в `prompts`, `requirements/docs/guidelines`, `agent image/toolchain`, `bootstrap scripts`.
 7. Подготовьте минимально достаточный change-set и PR с явной трассировкой `источник -> проблема -> изменение`.
+   Разрешенные типы изменений:
+   - prompt files (`services/jobs/agent-runner/internal/runner/promptseeds/**`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl`);
+   - инструкции и документация в markdown (`*.md`);
+   - `services/jobs/agent-runner/Dockerfile`.
+   Изменения исходного кода сервисов и других неразрешенных файлов не вносите.
 8. Если есть правки кода/скриптов — выполните релевантные проверки; если правки только markdown — проверки не запускать.
 
 Ожидаемые артефакты:

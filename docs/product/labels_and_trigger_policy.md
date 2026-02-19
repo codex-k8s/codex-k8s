@@ -113,6 +113,16 @@ approvals:
   - pre-review от системного `reviewer` для технических артефактов;
   - role-specific review через `need:*` labels для профильных артефактов.
 - Для control tools (`secret sync`, `database lifecycle`, `owner feedback`) применяется policy-driven approval matrix по связке `agent_key + run_label + action`.
+
+### Политика scope изменений для `run:*`
+- Для `run:intake|vision|prd|arch|design|plan|doc-audit|qa|release|postdeploy|ops|rethink` разрешены только изменения markdown-документации (`*.md`).
+- `run:dev|run:dev:revise` остаются единственными trigger-лейблами для кодовых изменений.
+- Роль `reviewer` работает только в существующем PR и оставляет комментарии; изменения репозитория для reviewer запрещены.
+- Для `run:self-improve` разрешены только:
+  - prompt files (`services/jobs/agent-runner/internal/runner/promptseeds/**`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl`);
+  - markdown-инструкции/документация (`*.md`);
+  - `services/jobs/agent-runner/Dockerfile`.
+  Остальные изменения считаются policy violation.
 ### Diagnostic labels (`run:debug`)
 - `run:debug` не запускает workflow/deploy напрямую.
 - Если label присутствует на issue при старте `run:dev`/`run:dev:revise`, worker не удаляет run-namespace автоматически.

@@ -48,6 +48,9 @@
 - шаблон должен описывать цель этапа, обязательные шаги, ожидаемые артефакты и критерий завершения;
 - envelope-слой рантайма требует регулярный MCP feedback через `run_status_report` (каждые 5-7 инструментальных вызовов);
 - секреты, токены и обход policy в шаблонах запрещены.
+- для `run:intake|vision|prd|arch|design|plan|doc-audit|qa|release|postdeploy|ops|rethink` runtime policy ограничивает изменения только markdown-файлами (`*.md`);
+- для роли `reviewer` runtime policy запрещает изменения репозитория (только комментарии в существующем PR);
+- для `run:self-improve` runtime policy разрешает только: markdown-инструкции, prompt файлы и `services/jobs/agent-runner/Dockerfile`.
 - stage-specific seed-файлы не отменяют requirement на отдельные role-specific body-шаблоны `work/revise` в локалях минимум `ru` и `en`.
 - role-specific baseline для поддержанных ролей:
   - `dev`, `pm`, `sa`, `em`, `reviewer`, `qa`, `sre`, `km` (каждая: `work/revise` и `ru/en`).

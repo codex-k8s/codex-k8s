@@ -67,6 +67,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		templateKind:     templateKind,
 		existingPRNumber: s.cfg.ExistingPRNumber,
 	}
+	writeScopePolicy := resolveRunWriteScopePolicy(result.triggerKind, s.cfg.AgentKey)
 	finalized := false
 
 	defer func() {
@@ -106,9 +107,16 @@ func (s *Service) Run(ctx context.Context) (err error) {
 			return s.failRevisePRNotFound(ctx, result, state, "pr_not_found")
 		}
 	}
+	if writeScopePolicy.RequireExistingPR && result.existingPRNumber <= 0 {
+		return fmt.Errorf("failed_precondition: reviewer run requires existing PR context")
+	}
 
 	if err := s.prepareRepository(ctx, result, state); err != nil {
 		return err
+	}
+	baselineHead, err := gitCurrentHead(ctx, state.repoDir)
+	if err != nil {
+		return fmt.Errorf("resolve repository baseline head: %w", err)
 	}
 
 	if err := s.ensureCodexReady(ctx, state); err != nil {
@@ -225,6 +233,9 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	result.sessionFilePath = latestSessionFile(state.sessionsDir)
 	if result.sessionID == "" && result.sessionFilePath != "" {
 		result.sessionID = extractSessionIDFromFile(result.sessionFilePath)
+	}
+	if err := enforceRunWriteScope(ctx, state.repoDir, baselineHead, result.triggerKind, s.cfg.AgentKey, result.existingPRNumber); err != nil {
+		return err
 	}
 
 	gitPushOutput, pushErr := runCommandCaptureCombinedOutput(ctx, state.repoDir, "git", "push", "origin", result.targetBranch)

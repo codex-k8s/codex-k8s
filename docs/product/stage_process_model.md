@@ -38,14 +38,14 @@ approvals:
 | Vision | `run:vision`, `run:vision:revise` | charter, success metrics, risk register | `pm`, `em` |
 | PRD | `run:prd`, `run:prd:revise` | PRD, acceptance criteria, NFR draft | `pm`, `sa` |
 | Architecture | `run:arch`, `run:arch:revise` | C4, ADR backlog/ADR, alternatives | `sa` |
-| Design | `run:design`, `run:design:revise` | design doc, API contract, data model, migration policy | `sa`, `qa` |
+| Design | `run:design`, `run:design:revise` | markdown design doc package (design/API/data model/migration policy notes) | `sa`, `qa` |
 | Plan | `run:plan`, `run:plan:revise` | delivery plan, epics/stories, DoD | `em`, `km` |
 | Development | `run:dev`, `run:dev:revise` | code changes, PR, docs updates | `dev`, `reviewer` |
-| QA | `run:qa` | test strategy/plan/matrix, regression result | `qa` |
+| QA | `run:qa` | markdown test strategy/plan/matrix + regression evidence | `qa` |
 | Release | `run:release` | release plan/notes, rollback plan | `em`, `sre` |
 | Postdeploy | `run:postdeploy` | postdeploy review, postmortem | `qa`, `sre` |
-| Ops | `run:ops` | SLO/alerts/runbook improvements | `sre`, `km` |
-| Self-Improve | `run:self-improve` | run/session diagnosis (MCP), change-set PR, policy/tooling recommendations | `km`, `dev`, `reviewer` |
+| Ops | `run:ops` | markdown SLO/alerts/runbook improvements | `sre`, `km` |
+| Self-Improve | `run:self-improve` | run/session diagnosis (MCP), PR with prompt/instruction updates and/or agent-runner Dockerfile changes | `km`, `dev`, `reviewer` |
 
 ## Петли ревизии и переосмысления
 
@@ -65,6 +65,15 @@ approvals:
 - артефакты этапа обновлены и связаны с Issue/PR в traceability документах (`issue_map`, sprint/epic docs);
 - статус этапа отражён через `state:*` лейблы;
 - события перехода записаны в аудит.
+
+### Политика scope изменений
+- Для `run:intake|vision|prd|arch|design|plan|doc-audit|qa|release|postdeploy|ops|rethink` разрешены только изменения markdown-документации (`*.md`).
+- `run:dev|run:dev:revise` остаются единственными trigger-этапами для кодовых изменений.
+- Для роли `reviewer` repository-write запрещён: только комментарии в существующем PR.
+- Для `run:self-improve` разрешены только изменения:
+  - prompt files (`services/jobs/agent-runner/internal/runner/promptseeds/**`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl`);
+  - markdown-инструкции/документация (`*.md`);
+  - `services/jobs/agent-runner/Dockerfile`.
 
 ### Правило review gate для всех этапов
 - Для всех `run:*` выход этапа проходит через review gate перед финальным review Owner:

@@ -19,9 +19,10 @@ Role deliverables:
 - Explicit what-was-tested / what-was-not-tested list.
 
 PR mode:
-- prepare a Pull Request with test documentation and/or test code.
+- prepare a Pull Request with markdown testing documentation only (no source-code or test-code changes).
 
 Forbidden:
 - exposing secrets in code/logs/PR;
 - weakening security/policy constraints;
 - violating architecture boundaries without explicit rationale.
+- changing source code, test code, manifests, scripts, or any files outside `*.md`.

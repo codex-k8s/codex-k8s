@@ -66,6 +66,15 @@
 {{- if eq .TriggerKind "self_improve" }}
 - Для `run:self-improve` сначала выполните диагностику через MCP (`self_improve_runs_list`/`self_improve_run_lookup`/`self_improve_session_get`), затем анализируйте issue/PR через `gh`.
 {{- end }}
+{{- if .IsMarkdownDocsOnlyScope }}
+- Для текущего trigger разрешены только изменения markdown-документов (`*.md`); изменения кода, YAML/JSON, Dockerfile, shell-скриптов и любых не-markdown файлов запрещены.
+{{- end }}
+{{- if .IsReviewerCommentOnlyScope }}
+- Режим reviewer: репозиторий изменять нельзя (без коммитов, без правок файлов, без нового PR); разрешены только review-комментарии в существующем PR.
+{{- end }}
+{{- if .IsSelfImproveRestrictedScope }}
+- Для `run:self-improve` разрешены только изменения: prompt files (`services/jobs/agent-runner/internal/runner/promptseeds/**`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl`), инструкций в markdown (`*.md`) и `services/jobs/agent-runner/Dockerfile`.
+{{- end }}
 - Не публикуйте секреты в коде, логах, комментариях, PR body и финальном JSON.
 - Работайте в ветке `{{ .TargetBranch }}`.
 - Язык пользовательской коммуникации в этом запуске: {{ .CommunicationLanguage }}.
@@ -73,7 +82,15 @@
 - Финальный ответ модели должен быть ТОЛЬКО JSON-объект по output schema.
 
 Требования к завершению:
-{{- if .IsReviseTrigger }}
+{{- if .IsReviewerCommentOnlyScope }}
+- Работайте только в существующем PR #{{ .ExistingPRNumber }}.
+- Не создавайте коммиты и не пушьте изменения в ветку.
+- Подготовьте review-комментарии (inline + summary) в текущем PR.
+- После завершения review:
+  - через `github_labels_transition` снимите триггер-лейбл `{{ .TriggerLabel }}` с Issue #{{ .IssueNumber }};
+  - через `github_labels_transition` установите `{{ .StateInReviewLabel }}` на PR;
+  - через `github_labels_transition` установите `{{ .StateInReviewLabel }}` на Issue #{{ .IssueNumber }}.
+{{- else if .IsReviseTrigger }}
 - Обновляйте существующий PR в той же ветке.
 - Соберите все unresolved inline review-комментарии и ответьте на КАЖДЫЙ (или явно закройте аргументированным ответом).
 - Запушьте исправления в ту же ветку.
@@ -164,6 +181,15 @@ Mandatory rules:
 {{- if eq .TriggerKind "self_improve" }}
 - For `run:self-improve`, execute MCP diagnostics first (`self_improve_runs_list`/`self_improve_run_lookup`/`self_improve_session_get`) and then inspect issue/PR details via `gh`.
 {{- end }}
+{{- if .IsMarkdownDocsOnlyScope }}
+- For this trigger, only markdown documentation changes (`*.md`) are allowed; source code, YAML/JSON, Dockerfile, shell scripts, and other non-markdown files are forbidden.
+{{- end }}
+{{- if .IsReviewerCommentOnlyScope }}
+- Reviewer mode: repository changes are forbidden (no commits, no file edits, no new PR); only review comments on an existing PR are allowed.
+{{- end }}
+{{- if .IsSelfImproveRestrictedScope }}
+- For `run:self-improve`, only these changes are allowed: prompt files (`services/jobs/agent-runner/internal/runner/promptseeds/**`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl`), markdown instructions (`*.md`), and `services/jobs/agent-runner/Dockerfile`.
+{{- end }}
 - Never expose secrets in code/logs/comments/PR body/final JSON.
 - Stay on branch `{{ .TargetBranch }}`.
 - Communication language for user-facing output in this run: {{ .CommunicationLanguage }}.
@@ -171,7 +197,15 @@ Mandatory rules:
 - Return ONLY a JSON object matching the output schema.
 
 Completion requirements:
-{{- if .IsReviseTrigger }}
+{{- if .IsReviewerCommentOnlyScope }}
+- Work only in the existing PR #{{ .ExistingPRNumber }}.
+- Do not create commits and do not push branch changes.
+- Provide review comments (inline + summary) in the current PR.
+- After review completion:
+  - use `github_labels_transition` to remove trigger label `{{ .TriggerLabel }}` from Issue #{{ .IssueNumber }};
+  - use `github_labels_transition` to apply `{{ .StateInReviewLabel }}` on PR;
+  - use `github_labels_transition` to apply `{{ .StateInReviewLabel }}` on Issue #{{ .IssueNumber }}.
+{{- else if .IsReviseTrigger }}
 - Update the existing PR in the same branch.
 - Collect all unresolved inline review comments and respond to EVERY one.
 - Push fixes to the same branch.
