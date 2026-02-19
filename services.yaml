@@ -78,6 +78,8 @@ spec:
       value: "22-bookworm"
     nginx-alpine:
       value: "1.27-alpine"
+    kubectl:
+      value: "v1.32.2"
 
   components:
     - name: hot-reload-defaults
@@ -189,6 +191,11 @@ spec:
       from: 'nginx:{{ index .Versions "nginx-alpine" }}'
       local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/nginx:{{ index .Versions "nginx-alpine" }}'
 
+    kubectl:
+      type: external
+      from: 'registry.k8s.io/kubectl:{{ index .Versions "kubectl" }}'
+      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/kubectl:{{ index .Versions "kubectl" }}'
+
     api-gateway:
       type: build
       repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/api-gateway" }}'
@@ -264,6 +271,13 @@ spec:
       when: '{{ ternary (eq .Env "ai") "false" "true" }}'
       manifests:
         - path: deploy/base/registry/registry.yaml.tpl
+
+    - name: registry-gc
+      dependsOn:
+        - registry
+      when: '{{ ternary (eq .Env "ai") "false" "true" }}'
+      manifests:
+        - path: deploy/base/registry/registry-gc.yaml.tpl
 
     - name: cert-manager-clusterissuer
       # Manage ClusterIssuer only when runtime TLS flow explicitly requests it.
