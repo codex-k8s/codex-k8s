@@ -5,7 +5,7 @@ title: "Epic Catalog: Sprint S3 (MVP completion)"
 status: in-progress
 owner_role: EM
 created_at: 2026-02-13
-updated_at: 2026-02-18
+updated_at: 2026-02-19
 related_issues: [19, 45]
 related_prs: []
 approvals:
@@ -62,8 +62,8 @@ approvals:
 - Day 13 (`unified config/secrets governance + GitHub creds fallback`) завершён.
 - Day 14 (`repository onboarding preflight`) завершён.
 - Day 16 (`gRPC transport boundary hardening`) завершён как refactoring-hygiene эпик по Issue #45.
-- Day 17 (`environment-scoped secret overrides + OAuth callback strategy`) завершён.
-- Day 18 (`runtime error journal + staff alert center`) завершён.
+- Day 17 (`environment-scoped secret overrides + OAuth callback strategy`) завершён и согласован Owner (PR #49).
+- Day 18 (`runtime error journal + staff alert center`) завершён и согласован Owner (PR #50).
 - В работе остаются Day15/Day19/Day20/Day20.5/Day20.6 (core-flow + frontend hardening + realtime), после них финальный Day21 full e2e gate.
 
 ## Порядок закрытия остатка S3
