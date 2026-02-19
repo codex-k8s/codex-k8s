@@ -29,12 +29,12 @@ export type RunWaitFilters = RunListFilters & {
   waitState?: string;
 };
 
-export async function listRuns(limit = 1000): Promise<Run[]> {
+export async function listRuns(limit = 40): Promise<Run[]> {
   const resp = await listRunsRequest({ query: { limit }, throwOnError: true });
   return resp.data.items ?? [];
 }
 
-export async function listRunJobs(filters: RunListFilters = {}, limit = 200): Promise<Run[]> {
+export async function listRunJobs(filters: RunListFilters = {}, limit = 20): Promise<Run[]> {
   const resp = await listRunJobsRequest({
     query: {
       limit,
@@ -47,7 +47,7 @@ export async function listRunJobs(filters: RunListFilters = {}, limit = 200): Pr
   return resp.data.items ?? [];
 }
 
-export async function listRunWaits(filters: RunWaitFilters = {}, limit = 200): Promise<Run[]> {
+export async function listRunWaits(filters: RunWaitFilters = {}, limit = 20): Promise<Run[]> {
   const resp = await listRunWaitsRequest({
     query: {
       limit,
@@ -71,7 +71,7 @@ export async function deleteRunNamespace(runId: string): Promise<RunNamespaceCle
   return resp.data;
 }
 
-export async function listRunEvents(runId: string, limit = 500): Promise<FlowEvent[]> {
+export async function listRunEvents(runId: string, limit = 200): Promise<FlowEvent[]> {
   const resp = await listRunEventsRequest({
     path: { run_id: runId },
     query: { limit },
@@ -89,7 +89,7 @@ export async function getRunLogs(runId: string, tailLines = 200): Promise<RunLog
   return resp.data;
 }
 
-export async function listPendingApprovals(limit = 200): Promise<ApprovalRequest[]> {
+export async function listPendingApprovals(limit = 20): Promise<ApprovalRequest[]> {
   const resp = await listPendingApprovalsRequest({ query: { limit }, throwOnError: true });
   return resp.data.items ?? [];
 }

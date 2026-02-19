@@ -13,7 +13,7 @@
             hide-details
             clearable
           />
-          <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :disabled="loading" @click="loadTasks" />
+          <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :disabled="loading" @click="reloadTasks" />
         </div>
       </template>
     </PageHeader>
@@ -25,10 +25,11 @@
     <VCard class="mt-4" variant="outlined">
       <VCardText>
         <VDataTable
+          v-model:page="tablePage"
           :headers="headers"
           :items="items"
           :loading="loading"
-          :items-per-page="15"
+          :items-per-page="itemsPerPage"
           density="comfortable"
           hover
         >
@@ -90,9 +91,10 @@ import PageHeader from "../../shared/ui/PageHeader.vue";
 import { normalizeApiError, type ApiError } from "../../shared/api/errors";
 import { formatDateTime } from "../../shared/lib/datetime";
 import { colorForRunStatus } from "../../shared/lib/chips";
+import { createProgressiveTableState } from "../../shared/lib/progressive-table";
 import { useUiContextStore } from "../../features/ui-context/store";
 import { listRuntimeDeployTasks } from "../../features/runtime-deploy/api";
-import type { RuntimeDeployTask } from "../../features/runtime-deploy/types";
+import type { RuntimeDeployTaskListItem } from "../../features/runtime-deploy/types";
 
 const { t, locale } = useI18n({ useScope: "global" });
 const uiContext = useUiContextStore();
@@ -100,7 +102,10 @@ const uiContext = useUiContextStore();
 const loading = ref(false);
 const error = ref<ApiError | null>(null);
 const statusFilter = ref<"" | "pending" | "running" | "succeeded" | "failed" | null>("");
-const items = ref<RuntimeDeployTask[]>([]);
+const items = ref<RuntimeDeployTaskListItem[]>([]);
+const itemsPerPage = 15;
+const paging = createProgressiveTableState({ itemsPerPage });
+const tablePage = paging.page;
 
 const statusOptions = computed(() => [
   { title: t("context.allObjects"), value: "" },
@@ -135,7 +140,7 @@ function envLabel(value: string | null | undefined): string {
   return v || "-";
 }
 
-function matchesUiEnv(item: RuntimeDeployTask, uiEnv: "ai" | "production" | "all"): boolean {
+function matchesUiEnv(item: RuntimeDeployTaskListItem, uiEnv: "ai" | "production" | "all"): boolean {
   if (uiEnv === "all") return true;
   const env = normalizeEnv(item.result_target_env || item.target_env);
   return env === uiEnv;
@@ -150,7 +155,8 @@ async function loadTasks(): Promise<void> {
     const loaded = await listRuntimeDeployTasks({
       status: statusFilter.value || undefined,
       targetEnv: "",
-    }, 200);
+    }, paging.limit.value);
+    paging.markLoaded(loaded.length);
     items.value = loaded.filter((x) => matchesUiEnv(x, uiContext.env));
   } catch (err) {
     error.value = normalizeApiError(err);
@@ -159,16 +165,36 @@ async function loadTasks(): Promise<void> {
   }
 }
 
-onMounted(() => void loadTasks());
+async function reloadTasks(): Promise<void> {
+  paging.reset();
+  await loadTasks();
+}
+
+async function loadMoreTasksIfNeeded(nextPage: number, prevPage: number): Promise<void> {
+  if (loading.value) {
+    return;
+  }
+  if (!paging.shouldGrowForPage(items.value.length, nextPage, prevPage)) {
+    return;
+  }
+  await loadTasks();
+}
+
+onMounted(() => void reloadTasks());
 
 watch(
   () => uiContext.env,
-  () => void loadTasks(),
+  () => void reloadTasks(),
 );
 
 watch(
   () => statusFilter.value,
-  () => void loadTasks(),
+  () => void reloadTasks(),
+);
+
+watch(
+  tablePage,
+  (nextPage, prevPage) => void loadMoreTasksIfNeeded(nextPage, prevPage),
 );
 </script>
 

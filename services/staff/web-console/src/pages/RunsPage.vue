@@ -2,7 +2,7 @@
   <div>
     <PageHeader :title="t('pages.runs.title')">
       <template #actions>
-        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="runs.loading" @click="loadAll" />
+        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="runs.loading" @click="refreshAll" />
       </template>
     </PageHeader>
 
@@ -59,7 +59,7 @@
 
     <VCard class="mt-4" variant="outlined">
       <VCardText>
-        <VDataTable :headers="headers" :items="runs.items" :loading="runs.loading" :items-per-page="20" hover>
+        <VDataTable v-model:page="runsTablePage" :headers="headers" :items="runs.items" :loading="runs.loading" :items-per-page="runsItemsPerPage" hover>
           <template #item.status="{ item }">
             <div class="d-flex justify-center">
               <VChip size="small" variant="tonal" class="font-weight-bold" :color="colorForRunStatus(item.status)">
@@ -139,7 +139,7 @@
 
 <script setup lang="ts">
 // TODO(#19): Добавить table settings + row actions menu через общий DataTable wrapper и master-detail layout для Runs/Approvals.
-import { onMounted } from "vue";
+import { onMounted, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
@@ -147,10 +147,14 @@ import PageHeader from "../shared/ui/PageHeader.vue";
 import AdaptiveBtn from "../shared/ui/AdaptiveBtn.vue";
 import { formatDateTime } from "../shared/lib/datetime";
 import { colorForRunStatus } from "../shared/lib/chips";
+import { createProgressiveTableState } from "../shared/lib/progressive-table";
 import { useRunsStore } from "../features/runs/store";
 
 const { t, locale } = useI18n({ useScope: "global" });
 const runs = useRunsStore();
+const runsItemsPerPage = 20;
+const runsPaging = createProgressiveTableState({ itemsPerPage: runsItemsPerPage });
+const runsTablePage = runsPaging.page;
 
 const headers = [
   { title: t("pages.runs.status"), key: "status", width: 140, align: "center" },
@@ -165,10 +169,39 @@ const headers = [
 ] as const;
 
 async function loadAll() {
-  await Promise.all([runs.load(), runs.loadRuntimeViews(), runs.loadPendingApprovals()]);
+  await Promise.all([
+    loadRuns(),
+    runs.loadRuntimeViews({ jobsLimit: 20, waitsLimit: 20 }),
+    runs.loadPendingApprovals(20),
+  ]);
 }
 
-onMounted(() => void loadAll());
+async function loadRuns(): Promise<void> {
+  await runs.load(runsPaging.limit.value);
+  runsPaging.markLoaded(runs.items.length);
+}
+
+async function refreshAll(): Promise<void> {
+  runsPaging.reset();
+  await loadAll();
+}
+
+async function loadMoreRunsIfNeeded(nextPage: number, prevPage: number): Promise<void> {
+  if (runs.loading) {
+    return;
+  }
+  if (!runsPaging.shouldGrowForPage(runs.items.length, nextPage, prevPage)) {
+    return;
+  }
+  await loadRuns();
+}
+
+watch(
+  runsTablePage,
+  (nextPage, prevPage) => void loadMoreRunsIfNeeded(nextPage, prevPage),
+);
+
+onMounted(() => void refreshAll());
 </script>
 
 <style scoped>

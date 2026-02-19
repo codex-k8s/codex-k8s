@@ -2,7 +2,7 @@
   <div>
     <PageHeader :title="t('pages.users.title')">
       <template #actions>
-        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="users.loading" @click="load" />
+        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="users.loading" @click="refreshUsers" />
       </template>
     </PageHeader>
 
@@ -17,7 +17,7 @@
 
         <VCard variant="outlined">
           <VCardText>
-            <VDataTable :headers="headers" :items="users.items" :loading="users.loading" :items-per-page="10" hover>
+            <VDataTable v-model:page="tablePage" :headers="headers" :items="users.items" :loading="users.loading" :items-per-page="itemsPerPage" hover>
               <template #item.github_login="{ item }">
                 <span class="mono text-medium-emphasis">{{ item.github_login || "-" }}</span>
               </template>
@@ -125,13 +125,14 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import ConfirmDialog from "../shared/ui/ConfirmDialog.vue";
 import PageHeader from "../shared/ui/PageHeader.vue";
 import AdaptiveBtn from "../shared/ui/AdaptiveBtn.vue";
 import { useSnackbarStore } from "../shared/ui/feedback/snackbar-store";
+import { createProgressiveTableState } from "../shared/lib/progressive-table";
 import { useAuthStore } from "../features/auth/store";
 import { useUsersStore } from "../features/users/store";
 
@@ -139,6 +140,9 @@ const { t } = useI18n({ useScope: "global" });
 const auth = useAuthStore();
 const users = useUsersStore();
 const snackbar = useSnackbarStore();
+const itemsPerPage = 10;
+const paging = createProgressiveTableState({ itemsPerPage });
+const tablePage = paging.page;
 
 const email = ref("");
 const isAdmin = ref(false);
@@ -159,11 +163,28 @@ const headers = [
 ] as const;
 
 async function load() {
-  await users.load();
+  await users.load(paging.limit.value);
+  paging.markLoaded(users.items.length);
+}
+
+async function refreshUsers(): Promise<void> {
+  paging.reset();
+  await load();
+}
+
+async function loadMoreUsersIfNeeded(nextPage: number, prevPage: number): Promise<void> {
+  if (users.loading) {
+    return;
+  }
+  if (!paging.shouldGrowForPage(users.items.length, nextPage, prevPage)) {
+    return;
+  }
+  await load();
 }
 
 async function create() {
-  await users.create(email.value, isAdmin.value);
+  await users.create(email.value, isAdmin.value, paging.limit.value);
+  paging.markLoaded(users.items.length);
   if (!users.createError) {
     email.value = "";
     isAdmin.value = false;
@@ -199,7 +220,8 @@ async function doRemove() {
   const id = confirmUserId.value;
   confirmUserId.value = "";
   if (!id) return;
-  await users.remove(id);
+  await users.remove(id, paging.limit.value);
+  paging.markLoaded(users.items.length);
   if (!users.deleteError) {
     snackbar.success(t("common.deleted"));
   }
@@ -213,14 +235,20 @@ function openEditDialog(userEmail: string, isPlatformAdmin: boolean): void {
 }
 
 async function saveEdit(): Promise<void> {
-  await users.create(editEmail.value, editIsAdmin.value);
+  await users.create(editEmail.value, editIsAdmin.value, paging.limit.value);
+  paging.markLoaded(users.items.length);
   if (!users.createError) {
     editDialogOpen.value = false;
     snackbar.success(t("common.saved"));
   }
 }
 
-onMounted(() => void load());
+watch(
+  tablePage,
+  (nextPage, prevPage) => void loadMoreUsersIfNeeded(nextPage, prevPage),
+);
+
+onMounted(() => void refreshUsers());
 </script>
 
 <style scoped>

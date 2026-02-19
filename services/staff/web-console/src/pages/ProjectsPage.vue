@@ -12,7 +12,7 @@
           :disabled="projects.loading"
           @click="openCreateDialog"
         />
-        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="projects.loading" @click="load" />
+        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="projects.loading" @click="refreshProjects" />
       </template>
     </PageHeader>
 
@@ -22,7 +22,7 @@
 
     <VCard class="mt-4" variant="outlined">
       <VCardText>
-        <VDataTable :headers="headers" :items="projects.items" :loading="projects.loading" :items-per-page="10" hover>
+        <VDataTable v-model:page="tablePage" :headers="headers" :items="projects.items" :loading="projects.loading" :items-per-page="itemsPerPage" hover>
           <template #item.name="{ item }">
             <div class="d-flex justify-center">
               <RouterLink class="text-primary font-weight-bold text-decoration-none" :to="{ name: 'project-details', params: { projectId: item.id } }">
@@ -174,7 +174,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
@@ -186,12 +186,16 @@ import { useAuthStore } from "../features/auth/store";
 import { useProjectsStore } from "../features/projects/projects-store";
 import { useUiContextStore } from "../features/ui-context/store";
 import { colorForProjectRole } from "../shared/lib/chips";
+import { createProgressiveTableState } from "../shared/lib/progressive-table";
 
 const { t } = useI18n({ useScope: "global" });
 const auth = useAuthStore();
 const projects = useProjectsStore();
 const snackbar = useSnackbarStore();
 const uiContext = useUiContextStore();
+const itemsPerPage = 10;
+const paging = createProgressiveTableState({ itemsPerPage });
+const tablePage = paging.page;
 
 const confirmOpen = ref(false);
 const confirmProjectId = ref<string>("");
@@ -215,7 +219,23 @@ function roleLabel(role: string): string {
 }
 
 async function load() {
-  await projects.load();
+  await projects.load(paging.limit.value);
+  paging.markLoaded(projects.items.length);
+}
+
+async function refreshProjects(): Promise<void> {
+  paging.reset();
+  await load();
+}
+
+async function loadMoreProjectsIfNeeded(nextPage: number, prevPage: number): Promise<void> {
+  if (projects.loading) {
+    return;
+  }
+  if (!paging.shouldGrowForPage(projects.items.length, nextPage, prevPage)) {
+    return;
+  }
+  await load();
 }
 
 function selectProject(projectId: string): void {
@@ -233,13 +253,19 @@ async function doDelete() {
   confirmOpen.value = false;
   confirmProjectId.value = "";
   if (!id) return;
-  await projects.remove(id);
+  await projects.remove(id, paging.limit.value);
+  paging.markLoaded(projects.items.length);
   if (!projects.deleteError) {
     snackbar.success(t("common.deleted"));
   }
 }
 
-onMounted(() => void load());
+watch(
+  tablePage,
+  (nextPage, prevPage) => void loadMoreProjectsIfNeeded(nextPage, prevPage),
+);
+
+onMounted(() => void refreshProjects());
 
 const upsertDialogOpen = ref(false);
 const upsertMode = ref<"create" | "edit">("create");
@@ -277,7 +303,8 @@ const canSave = computed(() => {
 });
 
 async function saveProject(): Promise<void> {
-  await projects.createOrUpdate(formSlug.value, formName.value);
+  await projects.createOrUpdate(formSlug.value, formName.value, paging.limit.value);
+  paging.markLoaded(projects.items.length);
   if (!projects.saveError) {
     upsertDialogOpen.value = false;
     snackbar.success(t("common.saved"));

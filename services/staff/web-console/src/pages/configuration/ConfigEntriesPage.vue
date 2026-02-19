@@ -11,7 +11,7 @@
           class="mr-2"
           @click="openCreateDialog"
         />
-        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="store.loading" @click="load" />
+        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="store.loading" @click="refreshEntries" />
       </template>
     </PageHeader>
 
@@ -78,7 +78,7 @@
     <VCard class="mt-4" variant="outlined">
       <VCardTitle class="text-subtitle-1">{{ t("pages.configEntries.listTitle") }}</VCardTitle>
       <VCardText>
-        <VDataTable :headers="headers" :items="store.items" :loading="store.loading" :items-per-page="10" hover>
+        <VDataTable v-model:page="tablePage" :headers="headers" :items="store.items" :loading="store.loading" :items-per-page="itemsPerPage" hover>
           <template #item.scope="{ item }">
             <div class="d-flex justify-center">
               <VChip size="x-small" variant="tonal" class="font-weight-bold" color="secondary">
@@ -283,6 +283,7 @@ import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
 import ConfirmDialog from "../../shared/ui/ConfirmDialog.vue";
 import PageHeader from "../../shared/ui/PageHeader.vue";
 import { formatDateTime } from "../../shared/lib/datetime";
+import { createProgressiveTableState } from "../../shared/lib/progressive-table";
 import { useSnackbarStore } from "../../shared/ui/feedback/snackbar-store";
 import { useConfigEntriesStore } from "../../features/config/config-entries-store";
 import { useProjectsStore } from "../../features/projects/projects-store";
@@ -301,6 +302,9 @@ const snackbar = useSnackbarStore();
 const store = useConfigEntriesStore();
 const projects = useProjectsStore();
 const uiContext = useUiContextStore();
+const itemsPerPage = 10;
+const paging = createProgressiveTableState({ itemsPerPage });
+const tablePage = paging.page;
 
 const scope = ref<ScopeFilter>("platform");
 const projectId = ref(uiContext.projectId || "");
@@ -341,7 +345,7 @@ watch(
 
     repositoriesLoading.value = true;
     try {
-      repositories.value = await listProjectRepositories(trimmed);
+      repositories.value = await listProjectRepositories(trimmed, 100);
     } catch (e) {
       snackbar.error(t("errors.unknown"));
     } finally {
@@ -409,23 +413,28 @@ async function load(): Promise<void> {
   if (scope.value === "project" && !projectId.value) {
     store.items = [];
     store.error = null;
+    paging.markLoaded(0);
     return;
   }
   if (scope.value === "repository" && !repositoryId.value) {
     store.items = [];
     store.error = null;
+    paging.markLoaded(0);
     return;
   }
-  const limit = 200;
+  const limit = paging.limit.value;
   switch (scope.value) {
     case "platform":
       await store.load({ scope: "platform", limit });
+      paging.markLoaded(store.items.length);
       return;
     case "project":
       await store.load({ scope: "project", projectId: projectId.value, limit });
+      paging.markLoaded(store.items.length);
       return;
     case "repository":
       await store.load({ scope: "repository", repositoryId: repositoryId.value, limit });
+      paging.markLoaded(store.items.length);
       return;
     default:
       await store.load({
@@ -434,8 +443,24 @@ async function load(): Promise<void> {
         repositoryId: repositoryId.value || undefined,
         limit,
       });
+      paging.markLoaded(store.items.length);
       return;
   }
+}
+
+async function refreshEntries(): Promise<void> {
+  paging.reset();
+  await load();
+}
+
+async function loadMoreEntriesIfNeeded(nextPage: number, prevPage: number): Promise<void> {
+  if (store.loading) {
+    return;
+  }
+  if (!paging.shouldGrowForPage(store.items.length, nextPage, prevPage)) {
+    return;
+  }
+  await load();
 }
 
 function resetFilters(): void {
@@ -618,12 +643,17 @@ async function save(): Promise<void> {
 
 watch(
   () => [scope.value, projectId.value, repositoryId.value] as const,
-  () => void load(),
+  () => void refreshEntries(),
   { immediate: true },
 );
 
+watch(
+  tablePage,
+  (nextPage, prevPage) => void loadMoreEntriesIfNeeded(nextPage, prevPage),
+);
+
 onMounted(() => {
-  if (projects.items.length === 0) void projects.load();
+  if (projects.items.length === 0) void projects.load(100);
 });
 </script>
 

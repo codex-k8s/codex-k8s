@@ -10,6 +10,7 @@ import type {
   CleanupRegistryImagesResponse,
   RegistryImageDeleteResult,
   RegistryImageRepository,
+  RuntimeDeployTaskListItem,
   RuntimeDeployTask,
 } from "./types";
 
@@ -31,7 +32,7 @@ export type CleanupRegistryImagesParams = {
   dryRun: boolean;
 };
 
-export async function listRuntimeDeployTasks(filters: RuntimeDeployTaskFilters = {}, limit = 200): Promise<RuntimeDeployTask[]> {
+export async function listRuntimeDeployTasks(filters: RuntimeDeployTaskFilters = {}, limit = 30): Promise<RuntimeDeployTaskListItem[]> {
   const resp = await listRuntimeDeployTasksRequest({
     query: {
       limit,

@@ -453,7 +453,7 @@ func (h *staffHandler) ListRuntimeDeployTasks(c *echo.Context) error {
 		if err != nil {
 			return err
 		}
-		return c.JSON(http.StatusOK, models.ItemsResponse[models.RuntimeDeployTask]{Items: casters.RuntimeDeployTasks(resp.GetItems())})
+		return c.JSON(http.StatusOK, models.ItemsResponse[models.RuntimeDeployTaskListItem]{Items: casters.RuntimeDeployTaskListItems(resp.GetItems())})
 	})
 }
 

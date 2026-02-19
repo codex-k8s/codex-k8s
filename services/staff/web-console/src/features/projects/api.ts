@@ -18,7 +18,7 @@ import {
 } from "../../shared/api/sdk";
 import type { DocsetGroup, ImportDocsetResponse, Project, ProjectMember, RepositoryBinding, RunRepositoryPreflightResponse, SyncDocsetResponse } from "./types";
 
-export async function listProjects(limit = 200): Promise<Project[]> {
+export async function listProjects(limit = 20): Promise<Project[]> {
   const resp = await listProjectsRequest({ query: { limit }, throwOnError: true });
   return resp.data.items ?? [];
 }
@@ -36,7 +36,7 @@ export async function deleteProject(projectId: string): Promise<void> {
   await deleteProjectRequest({ path: { project_id: projectId }, throwOnError: true });
 }
 
-export async function listProjectRepositories(projectId: string, limit = 200): Promise<RepositoryBinding[]> {
+export async function listProjectRepositories(projectId: string, limit = 20): Promise<RepositoryBinding[]> {
   const resp = await listProjectRepositoriesRequest({
     path: { project_id: projectId },
     query: { limit },
@@ -137,7 +137,7 @@ export async function syncDocset(params: { projectId: string; repositoryId: stri
   return resp.data;
 }
 
-export async function listProjectMembers(projectId: string, limit = 200): Promise<ProjectMember[]> {
+export async function listProjectMembers(projectId: string, limit = 20): Promise<ProjectMember[]> {
   const resp = await listProjectMembersRequest({
     path: { project_id: projectId },
     query: { limit },

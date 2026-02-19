@@ -1,4 +1,5 @@
 export type {
+  RuntimeDeployTaskListItem,
   RuntimeDeployTask,
   RuntimeDeployTaskLog,
   RegistryImageRepository,
