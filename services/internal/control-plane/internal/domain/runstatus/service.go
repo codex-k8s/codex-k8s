@@ -74,15 +74,16 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		(params.Phase == PhaseCreated || params.Phase == PhasePreparingRuntime) {
 		_ = s.ensureIssueWatchingReactionForRunContext(ctx, runCtx)
 	}
+	effectiveTriggerKind := resolveUpsertTriggerKind(params.TriggerKind, runCtx.triggerKind)
 
 	currentState := commentState{
 		RunID:                    runID,
 		Phase:                    params.Phase,
 		JobName:                  strings.TrimSpace(params.JobName),
 		JobNamespace:             strings.TrimSpace(params.JobNamespace),
-		RuntimeMode:              normalizeRuntimeMode(params.RuntimeMode, params.TriggerKind),
+		RuntimeMode:              normalizeRuntimeMode(params.RuntimeMode, effectiveTriggerKind),
 		Namespace:                strings.TrimSpace(params.Namespace),
-		TriggerKind:              normalizeTriggerKind(params.TriggerKind),
+		TriggerKind:              effectiveTriggerKind,
 		PromptLocale:             normalizeLocale(params.PromptLocale, s.cfg.DefaultLocale),
 		Model:                    strings.TrimSpace(params.Model),
 		ReasoningEffort:          strings.TrimSpace(params.ReasoningEffort),

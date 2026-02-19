@@ -24,6 +24,14 @@ func normalizeTriggerKind(value string) string {
 	return string(webhookdomain.NormalizeTriggerKind(value))
 }
 
+func resolveUpsertTriggerKind(explicit string, fallback string) string {
+	trimmedExplicit := strings.TrimSpace(explicit)
+	if trimmedExplicit != "" {
+		return normalizeTriggerKind(trimmedExplicit)
+	}
+	return normalizeTriggerKind(fallback)
+}
+
 func normalizeTriggerSource(value string) string {
 	switch strings.ToLower(strings.TrimSpace(value)) {
 	case triggerSourcePullRequestReview:
