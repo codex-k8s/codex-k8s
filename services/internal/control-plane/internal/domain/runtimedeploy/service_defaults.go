@@ -45,7 +45,7 @@ func defaultTemplateVars() map[string]string {
 		"CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS":       "",
 		"CODEXK8S_WORKER_REPLICAS":                    "",
 		"CODEXK8S_WORKER_POLL_INTERVAL":               "5s",
-		"CODEXK8S_WORKER_CLAIM_LIMIT":                 "2",
+		"CODEXK8S_WORKER_CLAIM_LIMIT":                 "10",
 		"CODEXK8S_WORKER_RUNNING_CHECK_LIMIT":         "200",
 		"CODEXK8S_WORKER_SLOTS_PER_PROJECT":           "2",
 		"CODEXK8S_WORKER_SLOT_LEASE_TTL":              "10m",
