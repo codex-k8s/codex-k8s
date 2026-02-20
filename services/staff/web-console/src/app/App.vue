@@ -201,53 +201,12 @@
       </VContainer>
     </VMain>
 
-    <div v-if="auth.isAuthed && runtimeErrorItems.length > 0" class="runtime-error-stack">
-      <VAlert
-        v-for="item in runtimeErrorItems"
-        :key="item.id"
-        border="start"
-        variant="tonal"
-        density="comfortable"
-        :color="runtimeErrorColor(item.level)"
-        closable
-        @click:close="dismissRuntimeError(item.id)"
-      >
-        <template #title>
-          <div class="runtime-error-title d-flex align-center ga-2">
-            <VIcon size="18" icon="mdi-alert-circle-outline" />
-            <span>{{ runtimeErrorLevelLabel(item.level) }}</span>
-          </div>
-        </template>
-
-        <div class="runtime-error-meta mono">
-          {{ item.source }}
-        </div>
-        <div class="runtime-error-message">{{ item.message }}</div>
-        <div class="d-flex justify-space-between align-center ga-2 mt-2">
-          <span class="text-caption text-medium-emphasis">{{ formatDateTime(item.created_at, locale) }}</span>
-          <div class="d-flex ga-1">
-            <VBtn
-              v-if="runtimeErrorToRoute(item)"
-              size="x-small"
-              variant="text"
-              :to="runtimeErrorToRoute(item)"
-            >
-              {{ t("runtimeErrors.open") }}
-            </VBtn>
-            <VBtn size="x-small" variant="text" @click="dismissRuntimeError(item.id)">
-              {{ t("runtimeErrors.dismiss") }}
-            </VBtn>
-          </div>
-        </div>
-      </VAlert>
-    </div>
-
     <SnackbarHost />
   </VApp>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, RouterView, type RouteLocationRaw, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useDisplay } from "vuetify";
@@ -255,17 +214,13 @@ import { useDisplay } from "vuetify";
 import { persistLocale, type Locale } from "../i18n/locale";
 import { useAuthStore } from "../features/auth/store";
 import { useProjectsStore } from "../features/projects/projects-store";
-import { useRuntimeErrorsStore } from "../features/runtime-errors/store";
-import type { RuntimeError } from "../features/runtime-errors/types";
 import { useUiContextStore } from "../features/ui-context/store";
 import { navGroups, navItems, findNavItemByRouteName, type NavItem } from "./navigation";
-import { formatDateTime } from "../shared/lib/datetime";
 import AdaptiveBtn from "../shared/ui/AdaptiveBtn.vue";
 import SnackbarHost from "../shared/ui/feedback/SnackbarHost.vue";
 
 const auth = useAuthStore();
 const projects = useProjectsStore();
-const runtimeErrors = useRuntimeErrorsStore();
 const uiContext = useUiContextStore();
 const { t, locale } = useI18n({ useScope: "global" });
 const route = useRoute();
@@ -274,8 +229,6 @@ const display = useDisplay();
 const drawerOpen = ref(true);
 const drawerRail = ref(false);
 const isMobile = computed(() => display.mobile.value);
-const runtimeErrorsPollMs = 10_000;
-let runtimeErrorsPollTimer: number | null = null;
 
 const envModel = computed({
   get: () => uiContext.env,
@@ -309,81 +262,6 @@ onMounted(() => {
     }
   });
 });
-
-onBeforeUnmount(() => {
-  stopRuntimeErrorsPolling();
-});
-
-watch(
-  () => auth.status,
-  (status) => {
-    if (status === "authed") {
-      startRuntimeErrorsPolling();
-      return;
-    }
-    stopRuntimeErrorsPolling();
-    runtimeErrors.clear();
-  },
-  { immediate: true },
-);
-
-const runtimeErrorItems = computed(() => runtimeErrors.items.slice(0, 5));
-
-function startRuntimeErrorsPolling(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-  if (runtimeErrorsPollTimer !== null) {
-    window.clearInterval(runtimeErrorsPollTimer);
-  }
-  void runtimeErrors.loadActive(5);
-  runtimeErrorsPollTimer = window.setInterval(() => {
-    void runtimeErrors.loadActive(5);
-  }, runtimeErrorsPollMs);
-}
-
-function stopRuntimeErrorsPolling(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-  if (runtimeErrorsPollTimer !== null) {
-    window.clearInterval(runtimeErrorsPollTimer);
-    runtimeErrorsPollTimer = null;
-  }
-}
-
-function runtimeErrorColor(level: string): string {
-  switch (String(level || "").toLowerCase()) {
-    case "critical":
-      return "deep-orange-darken-2";
-    case "warning":
-      return "warning";
-    default:
-      return "error";
-  }
-}
-
-function runtimeErrorLevelLabel(level: string): string {
-  const normalized = String(level || "").toLowerCase();
-  if (normalized === "warning") return t("runtimeErrors.levels.warning");
-  if (normalized === "critical") return t("runtimeErrors.levels.critical");
-  return t("runtimeErrors.levels.error");
-}
-
-function runtimeErrorToRoute(item: RuntimeError): RouteLocationRaw | undefined {
-  const runID = String(item.run_id || "").trim();
-  if (!runID) {
-    return undefined;
-  }
-  if (String(item.source || "").startsWith("control-plane.runtime-deploy")) {
-    return { name: "runtime-deploy-task-details", params: { runId: runID } };
-  }
-  return { name: "run-details", params: { runId: runID } };
-}
-
-async function dismissRuntimeError(id: string): Promise<void> {
-  await runtimeErrors.dismiss(id);
-}
 
 function ensureSelectedProjectExists(): void {
   const selected = String(uiContext.projectId || "").trim();
@@ -625,38 +503,5 @@ const breadcrumbs = computed(() => {
   background: radial-gradient(1200px 600px at 15% 0%, rgba(255, 246, 229, 0.8), transparent 55%),
     radial-gradient(900px 450px at 95% 10%, rgba(232, 246, 255, 0.9), transparent 55%),
     linear-gradient(180deg, #fbfbfc, #f4f5f7);
-}
-.runtime-error-stack {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  width: min(540px, calc(100vw - 24px));
-  z-index: 1500;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  pointer-events: none;
-}
-.runtime-error-stack :deep(.v-alert) {
-  pointer-events: auto;
-}
-.runtime-error-title {
-  font-weight: 700;
-}
-.runtime-error-meta {
-  opacity: 0.72;
-  font-size: 12px;
-  margin-bottom: 4px;
-}
-.runtime-error-message {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-.mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 </style>
