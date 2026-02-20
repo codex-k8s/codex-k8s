@@ -61,9 +61,7 @@ approvals:
   - TTL определяется по роли агента из `services.yaml/spec.webhookRuntime.namespaceTTLByRole`;
   - если роль не указана явно, применяется `services.yaml/spec.webhookRuntime.defaultNamespaceTTL` (по умолчанию `24h`);
   - при `run:<stage>:revise` worker переиспользует активный namespace текущей связки `(project, issue, agent_key)` и продлевает lease (`expires_at = now + role_ttl`).
-- `run:debug` переводит namespace в manual-retention режим:
-  - автоматический cleanup по TTL отключается;
-  - в статус-комментарии run обязательно указывается, что namespace удерживается до ручного удаления.
+- Отдельный debug-label для manual-retention не используется.
 - В Kubernetes нет встроенного TTL-контроллера для namespace; cleanup реализуется worker-sweep по lease-метаданным (аннотация/БД) managed namespace'ов.
 
 Целевой baseline реализации (S2 Day3 + Issue #74):
@@ -73,8 +71,7 @@ approvals:
   - `run.namespace.ttl_scheduled`,
   - `run.namespace.ttl_extended`,
   - `run.namespace.cleaned`,
-  - `run.namespace.cleanup_failed`,
-  - `run.namespace.cleanup_skipped`.
+  - `run.namespace.cleanup_failed`.
 - Runtime metadata namespace/job унифицированы через labels/annotations с префиксом `codex-k8s.dev/*`.
 - Cleanup удаляет только managed namespaces с `codex-k8s.dev/managed-by=codex-k8s-worker` и `codex-k8s.dev/namespace-purpose=run`.
 

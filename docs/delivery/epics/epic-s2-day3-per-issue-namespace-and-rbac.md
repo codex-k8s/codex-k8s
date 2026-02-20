@@ -58,7 +58,7 @@ approvals:
 - Worker запускает Job в целевом namespace и передаёт runtime metadata в env/payload.
 - Добавлен cleanup baseline:
   - по завершении `full-env` run namespace удаляется (управляемо через env-флаг cleanup);
-  - при `run:debug` cleanup пропускается, namespace сохраняется для отладки и фиксируется в `flow_events`.
+  - в S2 baseline поддерживался legacy manual-retention label: cleanup пропускался, namespace сохранялся для отладки и фиксировался в `flow_events` (позже удалено как избыточное поведение).
   - удаляются только managed namespace’ы, промаркированные worker’ом.
 - Для runtime metadata закреплён доменный префикс:
   - labels/annotations в namespace/job используют `codex-k8s.dev/*`.
@@ -66,7 +66,7 @@ approvals:
   - `run.namespace.prepared`,
   - `run.namespace.cleaned`,
   - `run.namespace.cleanup_failed`,
-  - `run.namespace.cleanup_skipped` (например, из-за `run:debug`).
+  - `run.namespace.cleanup_skipped` (например, при legacy manual-retention режиме в S2).
 - Для reconciliation running runs расширено чтение `agent_runs.run_payload`, чтобы namespace/runtime mode определялись детерминированно и после рестартов worker.
 - Deploy baseline обновлён:
   - worker получил cluster-scope RBAC для lifecycle namespace и runtime-объектов;

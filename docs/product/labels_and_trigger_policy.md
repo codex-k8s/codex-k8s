@@ -81,7 +81,6 @@ approvals:
 
 | Label | Назначение |
 |---|---|
-| `run:debug` | не запускает run сам по себе; при наличии на issue в момент `run:*` отключает авто-cleanup по TTL для run namespace и переводит его в manual-retention режим (`run.namespace.cleanup_skipped`) |
 | `mode:discussion` | planned: диалоговый pre-run режим для brainstorming под Issue; сам по себе run не запускает |
 
 ## Конфигурационные лейблы модели/рассуждений
@@ -123,14 +122,10 @@ approvals:
   - markdown-инструкции/документация (`*.md`);
   - `services/jobs/agent-runner/Dockerfile`.
   Остальные изменения считаются policy violation.
-### Diagnostic labels (`run:debug`)
-- `run:debug` не запускает workflow/deploy напрямую.
-- Базовый режим без `run:debug`:
-  - для `full-env` namespace сохраняется по role-based TTL из `services.yaml` (default `24h`);
-  - для `run:<stage>:revise` lease namespace продлевается (`expires_at = now + role_ttl`).
-- Если label присутствует на issue при старте `run:*`, worker отключает авто-cleanup по TTL для run namespace.
-- Для такого случая пишется событие `run.namespace.cleanup_skipped` с `cleanup_command` для ручного удаления namespace.
-- В статус-комментарии запуска явно указывается manual-retention режим и ссылка на run details для удаления namespace.
+### Namespace retention policy (`full-env`)
+- Для `full-env` namespace сохраняется по role-based TTL из `services.yaml` (default `24h`).
+- Для `run:<stage>:revise` lease namespace продлевается (`expires_at = now + role_ttl`).
+- Отдельный diagnostic label для manual-retention не используется.
 
 
 ### Service (`state:*`, `need:*`)
@@ -218,7 +213,7 @@ approvals:
 
 - Все workflow условия сравнения label должны использовать `vars.*`, а не строковые литералы.
 - В GitHub Variables хранится **полный каталог** `run:*`, `state:*`, `need:*`:
-  - для `run:*`: `CODEXK8S_RUN_<STAGE>_LABEL` и `CODEXK8S_RUN_<STAGE>_REVISE_LABEL` (где применимо), плюс `CODEXK8S_RUN_DEBUG_LABEL`, `CODEXK8S_RUN_SELF_IMPROVE_LABEL`, `CODEXK8S_MODE_DISCUSSION_LABEL`,
+  - для `run:*`: `CODEXK8S_RUN_<STAGE>_LABEL` и `CODEXK8S_RUN_<STAGE>_REVISE_LABEL` (где применимо), плюс `CODEXK8S_RUN_SELF_IMPROVE_LABEL`, `CODEXK8S_MODE_DISCUSSION_LABEL`,
   - для `state:*`: `CODEXK8S_STATE_*_LABEL`,
   - для `need:*`: `CODEXK8S_NEED_*_LABEL`.
 - Для model/reasoning также хранится каталог vars:

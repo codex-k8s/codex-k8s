@@ -69,7 +69,7 @@ approvals:
 - Lifecycle run namespace управляется lease-policy:
   - TTL определяется по роли агента из `services.yaml` (default `24h`);
   - `run:<stage>:revise` переиспользует namespace текущей связки `(project, issue, agent_key)` и продлевает TTL от момента старта revise-run.
-- `run:debug` отключает авто-cleanup по TTL и переводит namespace в manual-retention режим до явного удаления.
+- Отдельный debug-label для manual-retention не используется; lifecycle namespace управляется только TTL lease и revise extension.
 - В pod передаются минимальные runtime-секреты (`CODEXK8S_OPENAI_API_KEY`, `CODEXK8S_GIT_BOT_TOKEN`) и формируется namespaced `KUBECONFIG`.
 - GitHub операции (issue/PR/comments/review + git push) выполняются напрямую через `gh`/`git` с bot-token.
 - Для PR-flow запрещено использовать `CODEXK8S_GITHUB_PAT`; допустим только `CODEXK8S_GIT_BOT_TOKEN`.

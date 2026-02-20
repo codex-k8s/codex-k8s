@@ -46,7 +46,7 @@ approvals:
   - wait queue (`waiting_mcp`, `waiting_owner_review`) и причина ожидания.
 - Проверка runtime hygiene:
   - отсутствие утечек namespace/job/slot после успешных/ошибочных прогонов;
-  - поведение `run:debug` (cleanup skip + audit evidence).
+  - поведение legacy manual-retention label (cleanup skip + audit evidence; сценарий S2, позже удалён).
 - Документационный gate:
   - синхронизация product/architecture/delivery docs с расширенным MVP scope;
   - готовый Sprint S3 plan с 7-15 эпиками (в этом пакете: Day1..Day15).
@@ -69,7 +69,7 @@ approvals:
 - Подтверждена observability и runtime hygiene:
   - production deploy на `main` успешен (workflow run `21985095587`);
   - на момент gate отсутствуют активные run namespaces (`codex-k8s.dev/namespace-purpose=run`);
-  - `run:debug` режим фиксируется аудитом (`run.namespace.cleanup_skipped=5`).
+  - legacy manual-retention режим фиксируется аудитом (`run.namespace.cleanup_skipped=5`).
 - Подтверждена регрессия label-конфликтов и приоритета config labels тестами worker-домена.
 - Approval queue консистентна: зависших `mcp_action_requests` в `requested` состоянии нет.
 

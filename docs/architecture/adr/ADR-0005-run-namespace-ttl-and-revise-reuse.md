@@ -22,13 +22,12 @@ approvals:
 - Контекст: run-namespace удаляется сразу после завершения run, что ломает ревью и диагностику.
 - Решение: сохранять `full-env` run namespace по role-based TTL из `services.yaml` (default `24h`).
 - Для `run:*:revise`: переиспользовать namespace текущей связки `(project, issue, agent_key)` и продлевать lease.
-- `run:debug` сохраняет режим manual cleanup (без автоудаления по TTL).
+- Отдельный debug-label для manual-retention удаляется как избыточный: retention управляется TTL lease-политикой.
 
 ## Контекст
 - Текущий baseline после S2 Day3:
   - namespace создаётся на run;
-  - после run удаляется;
-  - исключение: `run:debug`.
+  - после run удаляется.
 - Проблема из Issue #74:
   - после завершения run пропадает среда, невозможно пройти на домен/слот и проверить результат;
   - при revise нет гарантированного продолжения в том же runtime-контексте.
@@ -42,7 +41,7 @@ approvals:
 - Совместимость с существующей security/policy моделью (`managed namespace`, RBAC, audit).
 
 ## Рассмотренные варианты
-### Вариант A: текущая модель (immediate cleanup + `run:debug`)
+### Вариант A: текущая модель (immediate cleanup без TTL lease)
 - Плюсы: минимальные ресурсы.
 - Минусы: неудобный review/revise, высокий ручной overhead.
 - Риск: деградация воспроизводимости.
@@ -96,12 +95,11 @@ webhookRuntime:
   - удаление по достижении lease expiry;
   - write-audit на каждое действие.
 
-### Поведение `run:debug`
-- `run:debug` не запускает run сам по себе.
-- Если label есть в момент старта `run:*`:
-  - авто-cleanup по TTL отключается;
-  - namespace переводится в manual-retention режим;
-  - публикуется `cleanup_command` для ручного удаления.
+### Retention без manual-retention label
+- Отдельный debug-label для бессрочного удержания namespace не поддерживается.
+- Единая модель retention:
+  - `full-env` namespace живёт по TTL роли;
+  - на `run:*:revise` lease продлевается.
 
 ## Обоснование (Rationale)
 - Решение закрывает основной UX-gap Issue #74 без бесконтрольного роста ресурсов.
@@ -119,14 +117,13 @@ webhookRuntime:
 - Нужны дополнительные guardrails против reuse повреждённого namespace.
 
 ### Технический долг
-- Добавить в staff UI явное отображение lease (`expires_at`, источник TTL, debug/manual mode).
+- Добавить в staff UI явное отображение lease (`expires_at`, источник TTL, режим reuse).
 - Ввести пер-role policy presets в UI/API управления агентами/проектом.
 
 ## Data/Audit изменения
 - `flow_events` (новые события):
   - `run.namespace.ttl_scheduled`,
   - `run.namespace.ttl_extended`,
-  - `run.namespace.cleanup_skipped` (debug),
   - `run.namespace.cleaned` (reason=`ttl_expired`).
 - `run_payload`/runtime metadata (минимум):
   - `namespace_lease_ttl`,
@@ -139,7 +136,7 @@ webhookRuntime:
    - schedule lease на create;
    - extend lease на revise reuse;
    - sweep-cleanup по expiry.
-3. Обновить сообщения в issue/run status (включая `run:debug` manual-retention).
+3. Обновить сообщения в issue/run status (TTL lease, `expires_at`, факт reuse при revise).
 4. Обновить `services.yaml` проекта `codex-k8s`:
    - выставить `24h` для всех системных ролей.
 
@@ -148,15 +145,13 @@ webhookRuntime:
   - проставить lease c fallback `24h` от момента миграции.
 - Для незавершённых/текущих run:
   - lease вычисляется при следующем heartbeat/update события.
-- Для `run:debug` namespace:
-  - не удалять автоматически до ручной команды.
 
 ## План отката/замены
 - Временный rollback:
   - установить минимальный TTL (например, `15m`) для ролей;
   - отключить revise reuse feature-flag и вернуться к create-per-run.
 - Полный rollback:
-  - возврат к immediate cleanup policy (кроме `run:debug`).
+  - возврат к immediate cleanup policy.
 
 ## Внешние ссылки
 - Kubernetes TTL-after-finished (работает для Jobs, не для namespace):
