@@ -32,7 +32,7 @@ spec:
         - libs/go
         - proto
     control-plane:
-      value: "0.1.11"
+      value: "0.1.12"
       bumpOn:
         - services/internal/control-plane
         - libs/go
