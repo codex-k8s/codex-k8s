@@ -45,6 +45,13 @@ func Run() error {
 	if slotLeaseTTL <= 0 {
 		return fmt.Errorf("CODEXK8S_WORKER_SLOT_LEASE_TTL must be > 0")
 	}
+	runLeaseTTL, err := time.ParseDuration(cfg.RunLeaseTTL)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_WORKER_RUN_LEASE_TTL: %w", err)
+	}
+	if runLeaseTTL <= 0 {
+		return fmt.Errorf("CODEXK8S_WORKER_RUN_LEASE_TTL must be > 0")
+	}
 	tickTimeout, err := time.ParseDuration(cfg.TickTimeout)
 	if err != nil {
 		return fmt.Errorf("parse CODEXK8S_WORKER_TICK_TIMEOUT: %w", err)
@@ -128,6 +135,7 @@ func Run() error {
 		RunningCheckLimit:           cfg.RunningCheckLimit,
 		SlotsPerProject:             cfg.SlotsPerProject,
 		SlotLeaseTTL:                slotLeaseTTL,
+		RunLeaseTTL:                 runLeaseTTL,
 		RuntimePrepareRetryTimeout:  runtimePrepareRetryTimeout,
 		RuntimePrepareRetryInterval: runtimePrepareRetryInterval,
 		ProjectLearningModeDefault:  learningDefault,

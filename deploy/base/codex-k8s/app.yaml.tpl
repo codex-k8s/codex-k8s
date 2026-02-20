@@ -737,6 +737,8 @@ spec:
               value: '{{ envOr "CODEXK8S_WORKER_SLOTS_PER_PROJECT" "" }}'
             - name: CODEXK8S_WORKER_SLOT_LEASE_TTL
               value: '{{ envOr "CODEXK8S_WORKER_SLOT_LEASE_TTL" "" }}'
+            - name: CODEXK8S_WORKER_RUN_LEASE_TTL
+              value: '{{ envOr "CODEXK8S_WORKER_RUN_LEASE_TTL" "" }}'
             - name: CODEXK8S_WORKER_K8S_NAMESPACE
               value: '{{ envOr "CODEXK8S_WORKER_K8S_NAMESPACE" "" }}'
             - name: CODEXK8S_WORKER_JOB_IMAGE

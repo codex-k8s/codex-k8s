@@ -137,6 +137,9 @@ func TestTickSkipsCodeOnlyRun(t *testing.T) {
 	if runs.finished[0].Status != rundomain.StatusSucceeded {
 		t.Fatalf("expected code-only run to finish as succeeded, got %s", runs.finished[0].Status)
 	}
+	if runs.finished[0].LeaseOwner != "worker-1" {
+		t.Fatalf("expected finish lease owner %q, got %q", "worker-1", runs.finished[0].LeaseOwner)
+	}
 	if len(events.inserted) != 1 || events.inserted[0].EventType != floweventdomain.EventTypeRunSucceeded {
 		t.Fatalf("expected single run.succeeded event, got %#v", events.inserted)
 	}
@@ -805,6 +808,12 @@ func TestTickRunningFullEnvJobNotFound_RuntimePreparingKeepsRunRunning(t *testin
 	if len(deployer.prepared) != 1 {
 		t.Fatalf("expected one runtime prepare poll call, got %d", len(deployer.prepared))
 	}
+	if runs.claimRunningCalls != 1 {
+		t.Fatalf("expected one running-claim call, got %d", runs.claimRunningCalls)
+	}
+	if got := runs.claimRunning[0].WorkerID; got != "worker-1" {
+		t.Fatalf("expected running claim worker_id %q, got %q", "worker-1", got)
+	}
 	if len(runs.finished) != 0 {
 		t.Fatalf("expected run to stay running while runtime prepare is in progress, got %d finished runs", len(runs.finished))
 	}
@@ -814,15 +823,18 @@ func TestTickRunningFullEnvJobNotFound_RuntimePreparingKeepsRunRunning(t *testin
 }
 
 type fakeRunQueue struct {
-	claims     []runqueuerepo.ClaimedRun
-	claimCalls int
-	running    []runqueuerepo.RunningRun
-	finished   []runqueuerepo.FinishParams
-	extended   []runqueuerepo.ExtendLeaseParams
-	claimErr   error
-	listErr    error
-	finishErr  error
-	extendErr  error
+	claims            []runqueuerepo.ClaimedRun
+	claimCalls        int
+	running           []runqueuerepo.RunningRun
+	claimRunningCalls int
+	claimRunning      []runqueuerepo.ClaimRunningParams
+	finished          []runqueuerepo.FinishParams
+	extended          []runqueuerepo.ExtendLeaseParams
+	claimErr          error
+	claimRunningErr   error
+	listErr           error
+	finishErr         error
+	extendErr         error
 }
 
 func (f *fakeRunQueue) ClaimNextPending(_ context.Context, _ runqueuerepo.ClaimParams) (runqueuerepo.ClaimedRun, bool, error) {
@@ -841,6 +853,15 @@ func (f *fakeRunQueue) ListRunning(_ context.Context, _ int) ([]runqueuerepo.Run
 	if f.listErr != nil {
 		return nil, f.listErr
 	}
+	return f.running, nil
+}
+
+func (f *fakeRunQueue) ClaimRunning(_ context.Context, params runqueuerepo.ClaimRunningParams) ([]runqueuerepo.RunningRun, error) {
+	if f.claimRunningErr != nil {
+		return nil, f.claimRunningErr
+	}
+	f.claimRunningCalls++
+	f.claimRunning = append(f.claimRunning, params)
 	return f.running, nil
 }
 

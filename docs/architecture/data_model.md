@@ -181,6 +181,8 @@ Planned extension (Day6+):
 | timeout_at | timestamptz | yes |  |  | hard timeout deadline |
 | timeout_paused | bool | no | false |  | true while paused on allowed waits |
 | wait_reason | text | yes |  |  | owner_review/mcp/none |
+| lease_owner | text | yes |  |  | worker instance currently owning running-run reconciliation |
+| lease_until | timestamptz | yes |  |  | reconciliation lease expiration |
 | started_at | timestamptz | yes |  |  | |
 | finished_at | timestamptz | yes |  |  | |
 
@@ -424,7 +426,7 @@ Planned extension (Day6+):
 
 ## Индексы и запросы (критичные)
 - Запрос: выбрать ожидающие webhook jobs по статусу/времени.
-- Индексы: `agent_runs(status, started_at)`, `flow_events(correlation_id, created_at)`.
+- Индексы: `agent_runs(status, started_at)`, `agent_runs(status, lease_until, started_at)`, `flow_events(correlation_id, created_at)`.
 - Запрос: аудит сессий и стоимости по run/agent/model.
 - Индексы: `agent_sessions(run_id, started_at)`, `token_usage(session_id, created_at)`.
 - Запрос: найти pending/failed MCP action requests.

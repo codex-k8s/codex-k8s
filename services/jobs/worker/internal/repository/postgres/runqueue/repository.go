@@ -35,6 +35,8 @@ var (
 	queryLeaseSlot string
 	//go:embed sql/mark_run_running.sql
 	queryMarkRunRunning string
+	//go:embed sql/claim_running.sql
+	queryClaimRunning string
 	//go:embed sql/list_running.sql
 	queryListRunning string
 	//go:embed sql/extend_slot_lease.sql
@@ -59,6 +61,18 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 
 // ClaimNextPending atomically claims one pending run and optionally leases a slot.
 func (r *Repository) ClaimNextPending(ctx context.Context, params domainrepo.ClaimParams) (domainrepo.ClaimedRun, bool, error) {
+	workerID := strings.TrimSpace(params.WorkerID)
+	if workerID == "" {
+		return domainrepo.ClaimedRun{}, false, fmt.Errorf("claim pending run: worker_id is required")
+	}
+	runLeaseTTL := params.RunLeaseTTL
+	if runLeaseTTL <= 0 {
+		runLeaseTTL = params.LeaseTTL
+	}
+	if runLeaseTTL <= 0 {
+		return domainrepo.ClaimedRun{}, false, fmt.Errorf("claim pending run: run_lease_ttl is required")
+	}
+
 	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return domainrepo.ClaimedRun{}, false, fmt.Errorf("begin claim transaction: %w", err)
@@ -139,7 +153,8 @@ func (r *Repository) ClaimNextPending(ctx context.Context, params domainrepo.Cla
 		}
 	}
 
-	res, err := tx.Exec(ctx, queryMarkRunRunning, runID, projectID)
+	runLeaseInterval := fmt.Sprintf("%d seconds", maxInt64(1, int64(runLeaseTTL.Seconds())))
+	res, err := tx.Exec(ctx, queryMarkRunRunning, runID, projectID, workerID, runLeaseInterval)
 	if err != nil {
 		return domainrepo.ClaimedRun{}, false, fmt.Errorf("mark run %s as running: %w", runID, err)
 	}
@@ -163,7 +178,38 @@ func (r *Repository) ClaimNextPending(ctx context.Context, params domainrepo.Cla
 	}, true, nil
 }
 
-// ListRunning returns active runs eligible for job reconciliation.
+// ClaimRunning atomically leases running runs for one worker reconciliation tick.
+func (r *Repository) ClaimRunning(ctx context.Context, params domainrepo.ClaimRunningParams) ([]domainrepo.RunningRun, error) {
+	workerID := strings.TrimSpace(params.WorkerID)
+	if workerID == "" {
+		return nil, fmt.Errorf("claim running runs: worker_id is required")
+	}
+
+	limit := params.Limit
+	if limit <= 0 {
+		limit = 100
+	}
+
+	leaseTTL := params.LeaseTTL
+	if leaseTTL <= 0 {
+		return nil, fmt.Errorf("claim running runs: lease_ttl is required")
+	}
+	leaseInterval := fmt.Sprintf("%d seconds", maxInt64(1, int64(leaseTTL.Seconds())))
+
+	rows, err := r.db.Query(ctx, queryClaimRunning, workerID, leaseInterval, limit)
+	if err != nil {
+		return nil, fmt.Errorf("claim running runs: %w", err)
+	}
+	defer rows.Close()
+
+	items, err := scanRunningRows(rows, limit)
+	if err != nil {
+		return nil, fmt.Errorf("scan claimed running runs: %w", err)
+	}
+	return items, nil
+}
+
+// ListRunning returns active runs for diagnostics/peer checks.
 func (r *Repository) ListRunning(ctx context.Context, limit int) ([]domainrepo.RunningRun, error) {
 	rows, err := r.db.Query(ctx, queryListRunning, limit)
 	if err != nil {
@@ -171,6 +217,75 @@ func (r *Repository) ListRunning(ctx context.Context, limit int) ([]domainrepo.R
 	}
 	defer rows.Close()
 
+	items, err := scanRunningRows(rows, limit)
+	if err != nil {
+		return nil, fmt.Errorf("scan running runs: %w", err)
+	}
+	return items, nil
+}
+
+// ExtendLease refreshes slot lease ownership for one running run.
+func (r *Repository) ExtendLease(ctx context.Context, params domainrepo.ExtendLeaseParams) (bool, error) {
+	projectID := strings.TrimSpace(params.ProjectID)
+	runID := strings.TrimSpace(params.RunID)
+	if projectID == "" || runID == "" {
+		return false, nil
+	}
+
+	leaseUntilInterval := fmt.Sprintf("%d seconds", maxInt64(1, int64(params.LeaseTTL.Seconds())))
+	res, err := r.db.Exec(ctx, queryExtendSlotLease, projectID, runID, leaseUntilInterval)
+	if err != nil {
+		return false, fmt.Errorf("extend slot lease for run %s: %w", runID, err)
+	}
+
+	return res.RowsAffected() > 0, nil
+}
+
+// FinishRun sets final status and releases leased slot.
+func (r *Repository) FinishRun(ctx context.Context, params domainrepo.FinishParams) (bool, error) {
+	if params.Status != rundomain.StatusSucceeded && params.Status != rundomain.StatusFailed && params.Status != rundomain.StatusCanceled {
+		return false, fmt.Errorf("unsupported final run status %q", params.Status)
+	}
+	leaseOwner := strings.TrimSpace(params.LeaseOwner)
+	if leaseOwner == "" {
+		return false, fmt.Errorf("finish run %s: lease_owner is required", params.RunID)
+	}
+
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return false, fmt.Errorf("begin finish transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	res, err := tx.Exec(ctx, queryMarkRunFinished, params.RunID, string(params.Status), params.FinishedAt.UTC(), leaseOwner)
+	if err != nil {
+		return false, fmt.Errorf("mark run %s as %s: %w", params.RunID, params.Status, err)
+	}
+	rows := res.RowsAffected()
+	if rows == 0 {
+		return false, nil
+	}
+
+	if _, err := tx.Exec(ctx, queryMarkSlotReleasing, params.ProjectID, params.RunID); err != nil {
+		return false, fmt.Errorf("mark slot releasing for run %s: %w", params.RunID, err)
+	}
+	if _, err := tx.Exec(ctx, queryMarkSlotFree, params.ProjectID, params.RunID); err != nil {
+		return false, fmt.Errorf("mark slot free for run %s: %w", params.RunID, err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return false, fmt.Errorf("commit finish transaction: %w", err)
+	}
+
+	return true, nil
+}
+
+func scanRunningRows(rows pgx.Rows, limit int) ([]domainrepo.RunningRun, error) {
+	if limit <= 0 {
+		limit = 100
+	}
 	result := make([]domainrepo.RunningRun, 0, limit)
 	for rows.Next() {
 		var (
@@ -203,62 +318,7 @@ func (r *Repository) ListRunning(ctx context.Context, limit int) ([]domainrepo.R
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("iterate running runs: %w", err)
 	}
-
 	return result, nil
-}
-
-// ExtendLease refreshes slot lease ownership for one running run.
-func (r *Repository) ExtendLease(ctx context.Context, params domainrepo.ExtendLeaseParams) (bool, error) {
-	projectID := strings.TrimSpace(params.ProjectID)
-	runID := strings.TrimSpace(params.RunID)
-	if projectID == "" || runID == "" {
-		return false, nil
-	}
-
-	leaseUntilInterval := fmt.Sprintf("%d seconds", maxInt64(1, int64(params.LeaseTTL.Seconds())))
-	res, err := r.db.Exec(ctx, queryExtendSlotLease, projectID, runID, leaseUntilInterval)
-	if err != nil {
-		return false, fmt.Errorf("extend slot lease for run %s: %w", runID, err)
-	}
-
-	return res.RowsAffected() > 0, nil
-}
-
-// FinishRun sets final status and releases leased slot.
-func (r *Repository) FinishRun(ctx context.Context, params domainrepo.FinishParams) (bool, error) {
-	if params.Status != rundomain.StatusSucceeded && params.Status != rundomain.StatusFailed && params.Status != rundomain.StatusCanceled {
-		return false, fmt.Errorf("unsupported final run status %q", params.Status)
-	}
-
-	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return false, fmt.Errorf("begin finish transaction: %w", err)
-	}
-	defer func() {
-		_ = tx.Rollback(ctx)
-	}()
-
-	res, err := tx.Exec(ctx, queryMarkRunFinished, params.RunID, string(params.Status), params.FinishedAt.UTC())
-	if err != nil {
-		return false, fmt.Errorf("mark run %s as %s: %w", params.RunID, params.Status, err)
-	}
-	rows := res.RowsAffected()
-	if rows == 0 {
-		return false, nil
-	}
-
-	if _, err := tx.Exec(ctx, queryMarkSlotReleasing, params.ProjectID, params.RunID); err != nil {
-		return false, fmt.Errorf("mark slot releasing for run %s: %w", params.RunID, err)
-	}
-	if _, err := tx.Exec(ctx, queryMarkSlotFree, params.ProjectID, params.RunID); err != nil {
-		return false, fmt.Errorf("mark slot free for run %s: %w", params.RunID, err)
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return false, fmt.Errorf("commit finish transaction: %w", err)
-	}
-
-	return true, nil
 }
 
 // parseRunQueuePayload unmarshals only fields required by runqueue repository logic.

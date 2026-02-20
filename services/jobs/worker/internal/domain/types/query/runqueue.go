@@ -15,9 +15,21 @@ type RunQueueClaimParams struct {
 	SlotsPerProject int
 	// LeaseTTL defines slot lease duration.
 	LeaseTTL time.Duration
+	// RunLeaseTTL defines ownership lease duration for running run reconciliation.
+	RunLeaseTTL time.Duration
 
 	// ProjectLearningModeDefault is the default learning-mode flag to apply when auto-creating projects.
 	ProjectLearningModeDefault bool
+}
+
+// RunQueueClaimRunningParams defines constraints for claiming running runs for reconciliation.
+type RunQueueClaimRunningParams struct {
+	// WorkerID identifies worker instance claiming running runs.
+	WorkerID string
+	// LeaseTTL defines reconciliation ownership lease duration.
+	LeaseTTL time.Duration
+	// Limit caps number of running runs claimed per tick.
+	Limit int
 }
 
 // RunQueueClaimedRun represents a pending run promoted into running state.
@@ -64,6 +76,8 @@ type RunQueueFinishParams struct {
 	RunID string
 	// ProjectID is a project scope used for slot release.
 	ProjectID string
+	// LeaseOwner identifies reconciler that currently owns run lease.
+	LeaseOwner string
 	// Status must be succeeded, failed, or canceled.
 	Status rundomain.Status
 	// FinishedAt is a final status timestamp.

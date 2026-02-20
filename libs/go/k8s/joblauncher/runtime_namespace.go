@@ -11,6 +11,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
 )
 
 const (
@@ -114,40 +115,44 @@ func (l *Launcher) ensureNamespaceObject(ctx context.Context, spec NamespaceSpec
 		runNamespaceCorrelationAnnotKey: spec.CorrelationID,
 	}
 
-	existing, err := l.client.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("get namespace: %w", err)
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		existing, getErr := l.client.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
+		if getErr != nil {
+			if !apierrors.IsNotFound(getErr) {
+				return fmt.Errorf("get namespace: %w", getErr)
+			}
+			_, createErr := l.client.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        namespace,
+					Labels:      labels,
+					Annotations: annotations,
+				},
+			}, metav1.CreateOptions{})
+			if createErr != nil && !apierrors.IsAlreadyExists(createErr) {
+				return fmt.Errorf("create namespace: %w", createErr)
+			}
+			return nil
 		}
-		_, createErr := l.client.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        namespace,
-				Labels:      labels,
-				Annotations: annotations,
-			},
-		}, metav1.CreateOptions{})
-		if createErr != nil && !apierrors.IsAlreadyExists(createErr) {
-			return fmt.Errorf("create namespace: %w", createErr)
+
+		existing = existing.DeepCopy()
+		if existing.Labels == nil {
+			existing.Labels = map[string]string{}
 		}
-		return nil
-	}
+		for key, value := range labels {
+			existing.Labels[key] = value
+		}
+		if existing.Annotations == nil {
+			existing.Annotations = map[string]string{}
+		}
+		for key, value := range annotations {
+			existing.Annotations[key] = value
+		}
 
-	if existing.Labels == nil {
-		existing.Labels = map[string]string{}
-	}
-	for key, value := range labels {
-		existing.Labels[key] = value
-	}
-	if existing.Annotations == nil {
-		existing.Annotations = map[string]string{}
-	}
-	for key, value := range annotations {
-		existing.Annotations[key] = value
-	}
-
-	_, err = l.client.CoreV1().Namespaces().Update(ctx, existing, metav1.UpdateOptions{})
+		_, updateErr := l.client.CoreV1().Namespaces().Update(ctx, existing, metav1.UpdateOptions{})
+		return updateErr
+	})
 	if err != nil {
-		return fmt.Errorf("update namespace: %w", err)
+		return fmt.Errorf("upsert namespace: %w", err)
 	}
 	return nil
 }
@@ -155,32 +160,36 @@ func (l *Launcher) ensureNamespaceObject(ctx context.Context, spec NamespaceSpec
 // ensureRunServiceAccount ensures ServiceAccount exists for in-namespace run access.
 func (l *Launcher) ensureRunServiceAccount(ctx context.Context, namespace string) error {
 	name := l.cfg.RunServiceAccountName
-	existing, err := l.client.CoreV1().ServiceAccounts(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("get serviceaccount %s: %w", name, err)
-		}
-		_, createErr := l.client.CoreV1().ServiceAccounts(namespace).Create(ctx, &corev1.ServiceAccount{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: name,
-				Labels: map[string]string{
-					runNamespaceManagedByLabel: runNamespaceManagedByValue,
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		existing, getErr := l.client.CoreV1().ServiceAccounts(namespace).Get(ctx, name, metav1.GetOptions{})
+		if getErr != nil {
+			if !apierrors.IsNotFound(getErr) {
+				return fmt.Errorf("get serviceaccount %s: %w", name, getErr)
+			}
+			_, createErr := l.client.CoreV1().ServiceAccounts(namespace).Create(ctx, &corev1.ServiceAccount{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: name,
+					Labels: map[string]string{
+						runNamespaceManagedByLabel: runNamespaceManagedByValue,
+					},
 				},
-			},
-		}, metav1.CreateOptions{})
-		if createErr != nil && !apierrors.IsAlreadyExists(createErr) {
-			return fmt.Errorf("create serviceaccount %s: %w", name, createErr)
+			}, metav1.CreateOptions{})
+			if createErr != nil && !apierrors.IsAlreadyExists(createErr) {
+				return fmt.Errorf("create serviceaccount %s: %w", name, createErr)
+			}
+			return nil
 		}
-		return nil
-	}
 
-	if existing.Labels == nil {
-		existing.Labels = map[string]string{}
-	}
-	existing.Labels[runNamespaceManagedByLabel] = runNamespaceManagedByValue
-	_, err = l.client.CoreV1().ServiceAccounts(namespace).Update(ctx, existing, metav1.UpdateOptions{})
+		existing = existing.DeepCopy()
+		if existing.Labels == nil {
+			existing.Labels = map[string]string{}
+		}
+		existing.Labels[runNamespaceManagedByLabel] = runNamespaceManagedByValue
+		_, updateErr := l.client.CoreV1().ServiceAccounts(namespace).Update(ctx, existing, metav1.UpdateOptions{})
+		return updateErr
+	})
 	if err != nil {
-		return fmt.Errorf("update serviceaccount %s: %w", name, err)
+		return fmt.Errorf("upsert serviceaccount %s: %w", name, err)
 	}
 	return nil
 }
@@ -237,35 +246,39 @@ func (l *Launcher) ensureRunRole(ctx context.Context, namespace string) error {
 		},
 	}
 
-	existing, err := l.client.RbacV1().Roles(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("get role %s: %w", name, err)
-		}
-		_, createErr := l.client.RbacV1().Roles(namespace).Create(ctx, &rbacv1.Role{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: name,
-				Labels: map[string]string{
-					runNamespaceManagedByLabel: runNamespaceManagedByValue,
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		existing, getErr := l.client.RbacV1().Roles(namespace).Get(ctx, name, metav1.GetOptions{})
+		if getErr != nil {
+			if !apierrors.IsNotFound(getErr) {
+				return fmt.Errorf("get role %s: %w", name, getErr)
+			}
+			_, createErr := l.client.RbacV1().Roles(namespace).Create(ctx, &rbacv1.Role{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: name,
+					Labels: map[string]string{
+						runNamespaceManagedByLabel: runNamespaceManagedByValue,
+					},
 				},
-			},
-			Rules: expectedRules,
-		}, metav1.CreateOptions{})
-		if createErr != nil && !apierrors.IsAlreadyExists(createErr) {
-			return fmt.Errorf("create role %s: %w", name, createErr)
+				Rules: expectedRules,
+			}, metav1.CreateOptions{})
+			if createErr != nil && !apierrors.IsAlreadyExists(createErr) {
+				return fmt.Errorf("create role %s: %w", name, createErr)
+			}
+			return nil
 		}
-		return nil
-	}
 
-	if existing.Labels == nil {
-		existing.Labels = map[string]string{}
-	}
-	existing.Labels[runNamespaceManagedByLabel] = runNamespaceManagedByValue
-	existing.Rules = expectedRules
+		existing = existing.DeepCopy()
+		if existing.Labels == nil {
+			existing.Labels = map[string]string{}
+		}
+		existing.Labels[runNamespaceManagedByLabel] = runNamespaceManagedByValue
+		existing.Rules = expectedRules
 
-	_, err = l.client.RbacV1().Roles(namespace).Update(ctx, existing, metav1.UpdateOptions{})
+		_, updateErr := l.client.RbacV1().Roles(namespace).Update(ctx, existing, metav1.UpdateOptions{})
+		return updateErr
+	})
 	if err != nil {
-		return fmt.Errorf("update role %s: %w", name, err)
+		return fmt.Errorf("upsert role %s: %w", name, err)
 	}
 	return nil
 }
@@ -286,37 +299,41 @@ func (l *Launcher) ensureRunRoleBinding(ctx context.Context, namespace string) e
 		Name:     l.cfg.RunRoleName,
 	}
 
-	existing, err := l.client.RbacV1().RoleBindings(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("get rolebinding %s: %w", name, err)
-		}
-		_, createErr := l.client.RbacV1().RoleBindings(namespace).Create(ctx, &rbacv1.RoleBinding{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: name,
-				Labels: map[string]string{
-					runNamespaceManagedByLabel: runNamespaceManagedByValue,
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		existing, getErr := l.client.RbacV1().RoleBindings(namespace).Get(ctx, name, metav1.GetOptions{})
+		if getErr != nil {
+			if !apierrors.IsNotFound(getErr) {
+				return fmt.Errorf("get rolebinding %s: %w", name, getErr)
+			}
+			_, createErr := l.client.RbacV1().RoleBindings(namespace).Create(ctx, &rbacv1.RoleBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: name,
+					Labels: map[string]string{
+						runNamespaceManagedByLabel: runNamespaceManagedByValue,
+					},
 				},
-			},
-			RoleRef:  expectedRoleRef,
-			Subjects: expectedSubjects,
-		}, metav1.CreateOptions{})
-		if createErr != nil && !apierrors.IsAlreadyExists(createErr) {
-			return fmt.Errorf("create rolebinding %s: %w", name, createErr)
+				RoleRef:  expectedRoleRef,
+				Subjects: expectedSubjects,
+			}, metav1.CreateOptions{})
+			if createErr != nil && !apierrors.IsAlreadyExists(createErr) {
+				return fmt.Errorf("create rolebinding %s: %w", name, createErr)
+			}
+			return nil
 		}
-		return nil
-	}
 
-	if existing.Labels == nil {
-		existing.Labels = map[string]string{}
-	}
-	existing.Labels[runNamespaceManagedByLabel] = runNamespaceManagedByValue
-	existing.RoleRef = expectedRoleRef
-	existing.Subjects = expectedSubjects
+		existing = existing.DeepCopy()
+		if existing.Labels == nil {
+			existing.Labels = map[string]string{}
+		}
+		existing.Labels[runNamespaceManagedByLabel] = runNamespaceManagedByValue
+		existing.RoleRef = expectedRoleRef
+		existing.Subjects = expectedSubjects
 
-	_, err = l.client.RbacV1().RoleBindings(namespace).Update(ctx, existing, metav1.UpdateOptions{})
+		_, updateErr := l.client.RbacV1().RoleBindings(namespace).Update(ctx, existing, metav1.UpdateOptions{})
+		return updateErr
+	})
 	if err != nil {
-		return fmt.Errorf("update rolebinding %s: %w", name, err)
+		return fmt.Errorf("upsert rolebinding %s: %w", name, err)
 	}
 	return nil
 }
@@ -329,34 +346,38 @@ func (l *Launcher) ensureResourceQuota(ctx context.Context, namespace string) er
 
 	name := l.cfg.RunResourceQuotaName
 
-	existing, err := l.client.CoreV1().ResourceQuotas(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("get resourcequota %s: %w", name, err)
-		}
-		_, createErr := l.client.CoreV1().ResourceQuotas(namespace).Create(ctx, &corev1.ResourceQuota{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: name,
-				Labels: map[string]string{
-					runNamespaceManagedByLabel: runNamespaceManagedByValue,
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		existing, getErr := l.client.CoreV1().ResourceQuotas(namespace).Get(ctx, name, metav1.GetOptions{})
+		if getErr != nil {
+			if !apierrors.IsNotFound(getErr) {
+				return fmt.Errorf("get resourcequota %s: %w", name, getErr)
+			}
+			_, createErr := l.client.CoreV1().ResourceQuotas(namespace).Create(ctx, &corev1.ResourceQuota{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: name,
+					Labels: map[string]string{
+						runNamespaceManagedByLabel: runNamespaceManagedByValue,
+					},
 				},
-			},
-			Spec: corev1.ResourceQuotaSpec{Hard: hard},
-		}, metav1.CreateOptions{})
-		if createErr != nil && !apierrors.IsAlreadyExists(createErr) {
-			return fmt.Errorf("create resourcequota %s: %w", name, createErr)
+				Spec: corev1.ResourceQuotaSpec{Hard: hard},
+			}, metav1.CreateOptions{})
+			if createErr != nil && !apierrors.IsAlreadyExists(createErr) {
+				return fmt.Errorf("create resourcequota %s: %w", name, createErr)
+			}
+			return nil
 		}
-		return nil
-	}
 
-	if existing.Labels == nil {
-		existing.Labels = map[string]string{}
-	}
-	existing.Labels[runNamespaceManagedByLabel] = runNamespaceManagedByValue
-	existing.Spec.Hard = hard
-	_, err = l.client.CoreV1().ResourceQuotas(namespace).Update(ctx, existing, metav1.UpdateOptions{})
+		existing = existing.DeepCopy()
+		if existing.Labels == nil {
+			existing.Labels = map[string]string{}
+		}
+		existing.Labels[runNamespaceManagedByLabel] = runNamespaceManagedByValue
+		existing.Spec.Hard = hard
+		_, updateErr := l.client.CoreV1().ResourceQuotas(namespace).Update(ctx, existing, metav1.UpdateOptions{})
+		return updateErr
+	})
 	if err != nil {
-		return fmt.Errorf("update resourcequota %s: %w", name, err)
+		return fmt.Errorf("upsert resourcequota %s: %w", name, err)
 	}
 	return nil
 }
