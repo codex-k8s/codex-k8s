@@ -75,14 +75,17 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 	if launcher.launched[0].MCPBearerToken != "token-run-1" {
 		t.Fatalf("expected mcp token to be propagated, got %q", launcher.launched[0].MCPBearerToken)
 	}
-	if len(events.inserted) != 2 {
-		t.Fatalf("expected run.namespace.prepared + run.started events, got %d", len(events.inserted))
+	if len(events.inserted) != 3 {
+		t.Fatalf("expected run.namespace.prepared + run.namespace.ttl_scheduled + run.started events, got %d", len(events.inserted))
 	}
 	if events.inserted[0].EventType != floweventdomain.EventTypeRunNamespacePrepared {
 		t.Fatalf("expected first event run.namespace.prepared, got %s", events.inserted[0].EventType)
 	}
-	if events.inserted[1].EventType != floweventdomain.EventTypeRunStarted {
-		t.Fatalf("expected second event run.started, got %s", events.inserted[1].EventType)
+	if events.inserted[1].EventType != floweventdomain.EventTypeRunNamespaceTTLScheduled {
+		t.Fatalf("expected second event run.namespace.ttl_scheduled, got %s", events.inserted[1].EventType)
+	}
+	if events.inserted[2].EventType != floweventdomain.EventTypeRunStarted {
+		t.Fatalf("expected third event run.started, got %s", events.inserted[2].EventType)
 	}
 	if len(runStatus.upserts) < 1 {
 		t.Fatalf("expected run status upserts, got %d", len(runStatus.upserts))
@@ -346,9 +349,6 @@ func TestTickDeployOnlyRunningRun_IsReconciledWithoutKubernetesJob(t *testing.T)
 	if runs.finished[0].Status != rundomain.StatusSucceeded {
 		t.Fatalf("expected deploy-only running run to finish as succeeded, got %s", runs.finished[0].Status)
 	}
-	if len(launcher.cleaned) != 0 {
-		t.Fatalf("expected no namespace cleanup for deploy-only run, got %d", len(launcher.cleaned))
-	}
 	if len(events.inserted) != 1 || events.inserted[0].EventType != floweventdomain.EventTypeRunSucceeded {
 		t.Fatalf("expected one run.succeeded event, got %#v", events.inserted)
 	}
@@ -459,14 +459,13 @@ func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 
 	svc := NewService(Config{
-		WorkerID:                "worker-1",
-		ClaimLimit:              1,
-		RunningCheckLimit:       10,
-		SlotsPerProject:         2,
-		SlotLeaseTTL:            time.Minute,
-		RunNamespacePrefix:      "codex-issue",
-		CleanupFullEnvNamespace: true,
-		ControlPlaneMCPBaseURL:  "http://codex-k8s-control-plane.test.svc:8081/mcp",
+		WorkerID:               "worker-1",
+		ClaimLimit:             1,
+		RunningCheckLimit:      10,
+		SlotsPerProject:        2,
+		SlotLeaseTTL:           time.Minute,
+		RunNamespacePrefix:     "codex-issue",
+		ControlPlaneMCPBaseURL: "http://codex-k8s-control-plane.test.svc:8081/mcp",
 	}, Dependencies{
 		Runs:            runs,
 		Events:          events,
@@ -514,9 +513,21 @@ func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 	if launcher.launched[0].MCPBearerToken != "token-run-3" {
 		t.Fatalf("expected mcp token to be set, got %q", launcher.launched[0].MCPBearerToken)
 	}
+	if len(events.inserted) != 3 {
+		t.Fatalf("expected run.namespace.prepared + run.namespace.ttl_scheduled + run.started events, got %d", len(events.inserted))
+	}
+	if events.inserted[0].EventType != floweventdomain.EventTypeRunNamespacePrepared {
+		t.Fatalf("expected first event %q, got %q", floweventdomain.EventTypeRunNamespacePrepared, events.inserted[0].EventType)
+	}
+	if events.inserted[1].EventType != floweventdomain.EventTypeRunNamespaceTTLScheduled {
+		t.Fatalf("expected second event %q, got %q", floweventdomain.EventTypeRunNamespaceTTLScheduled, events.inserted[1].EventType)
+	}
+	if events.inserted[2].EventType != floweventdomain.EventTypeRunStarted {
+		t.Fatalf("expected third event %q, got %q", floweventdomain.EventTypeRunStarted, events.inserted[2].EventType)
+	}
 }
 
-func TestTickFinalizesFullEnvRunAndCleansNamespace(t *testing.T) {
+func TestTickFinalizesFullEnvRunRetainsNamespaceByTTL(t *testing.T) {
 	t.Parallel()
 
 	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev_revise"},"issue":{"number":10},"agent":{"key":"dev","name":"AI Developer"}}`)
@@ -530,62 +541,16 @@ func TestTickFinalizesFullEnvRunAndCleansNamespace(t *testing.T) {
 	}
 	events := &fakeFlowEvents{}
 	launcher := &fakeLauncher{states: map[string]JobState{"run-4": JobStateSucceeded}}
-	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
-
-	svc := NewService(Config{
-		WorkerID:                "worker-1",
-		ClaimLimit:              1,
-		RunningCheckLimit:       10,
-		SlotsPerProject:         2,
-		SlotLeaseTTL:            time.Minute,
-		RunNamespacePrefix:      "codex-issue",
-		CleanupFullEnvNamespace: true,
-	}, Dependencies{
-		Runs:     runs,
-		Events:   events,
-		Launcher: launcher,
-		Logger:   logger,
-	})
-	svc.now = func() time.Time { return time.Date(2026, 2, 11, 11, 0, 0, 0, time.UTC) }
-
-	if err := svc.Tick(context.Background()); err != nil {
-		t.Fatalf("Tick() error = %v", err)
-	}
-
-	if len(launcher.cleaned) != 1 {
-		t.Fatalf("expected 1 cleaned namespace, got %d", len(launcher.cleaned))
-	}
-	if launcher.cleaned[0].Namespace == "" {
-		t.Fatal("expected cleaned namespace to be set")
-	}
-}
-
-func TestTickFinalizesFullEnvRunSkipsCleanupForDebugLabel(t *testing.T) {
-	t.Parallel()
-
-	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev"},"issue":{"number":10},"agent":{"key":"dev","name":"AI Developer"},"raw_payload":{"issue":{"labels":[{"name":"run:debug"}]}}}`)
-	runs := &fakeRunQueue{
-		running: []runqueuerepo.RunningRun{{
-			RunID:         "run-5",
-			CorrelationID: "corr-5",
-			ProjectID:     "550e8400-e29b-41d4-a716-446655440000",
-			RunPayload:    payload,
-		}},
-	}
-	events := &fakeFlowEvents{}
-	launcher := &fakeLauncher{states: map[string]JobState{"run-5": JobStateSucceeded}}
 	runStatus := &fakeRunStatusNotifier{}
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 
 	svc := NewService(Config{
-		WorkerID:                "worker-1",
-		ClaimLimit:              1,
-		RunningCheckLimit:       10,
-		SlotsPerProject:         2,
-		SlotLeaseTTL:            time.Minute,
-		RunNamespacePrefix:      "codex-issue",
-		CleanupFullEnvNamespace: true,
-		RunDebugLabel:           "run:debug",
+		WorkerID:           "worker-1",
+		ClaimLimit:         1,
+		RunningCheckLimit:  10,
+		SlotsPerProject:    2,
+		SlotLeaseTTL:       time.Minute,
+		RunNamespacePrefix: "codex-issue",
 	}, Dependencies{
 		Runs:      runs,
 		Events:    events,
@@ -593,111 +558,125 @@ func TestTickFinalizesFullEnvRunSkipsCleanupForDebugLabel(t *testing.T) {
 		RunStatus: runStatus,
 		Logger:    logger,
 	})
-	svc.now = func() time.Time { return time.Date(2026, 2, 11, 12, 0, 0, 0, time.UTC) }
+	svc.now = func() time.Time { return time.Date(2026, 2, 11, 11, 0, 0, 0, time.UTC) }
 
 	if err := svc.Tick(context.Background()); err != nil {
 		t.Fatalf("Tick() error = %v", err)
 	}
-
-	if len(launcher.cleaned) != 0 {
-		t.Fatalf("expected namespace cleanup to be skipped, got %d cleanups", len(launcher.cleaned))
+	if len(events.inserted) != 1 || events.inserted[0].EventType != floweventdomain.EventTypeRunSucceeded {
+		t.Fatalf("expected one run.succeeded event, got %#v", events.inserted)
 	}
-
-	if len(events.inserted) != 2 {
-		t.Fatalf("expected run.succeeded + run.namespace.cleanup_skipped events, got %d", len(events.inserted))
+	if len(runStatus.upserts) < 2 {
+		t.Fatalf("expected finished + retained-namespace status upserts, got %d", len(runStatus.upserts))
 	}
-	if events.inserted[0].EventType != floweventdomain.EventTypeRunSucceeded {
-		t.Fatalf("expected first event run.succeeded, got %s", events.inserted[0].EventType)
-	}
-	if events.inserted[1].EventType != floweventdomain.EventTypeRunNamespaceCleanupSkipped {
-		t.Fatalf("expected second event run.namespace.cleanup_skipped, got %s", events.inserted[1].EventType)
-	}
-	if !strings.Contains(string(events.inserted[1].Payload), "debug_label_present") {
-		t.Fatalf("expected cleanup_skipped payload to include debug reason, got %s", string(events.inserted[1].Payload))
-	}
-	if len(runStatus.upserts) != 2 {
-		t.Fatalf("expected finished + namespace cleanup skipped run status upserts, got %d", len(runStatus.upserts))
-	}
-	if runStatus.upserts[1].Phase != RunStatusPhaseNamespaceDeleted {
-		t.Fatalf("expected second run status phase %q, got %q", RunStatusPhaseNamespaceDeleted, runStatus.upserts[1].Phase)
-	}
-	if runStatus.upserts[1].Deleted {
-		t.Fatalf("expected namespace cleanup skipped marker to keep Deleted=false")
-	}
-	if runStatus.upserts[1].AlreadyDeleted {
-		t.Fatalf("expected namespace cleanup skipped marker to keep AlreadyDeleted=false")
+	if got := runStatus.upserts[len(runStatus.upserts)-1]; got.Phase != RunStatusPhaseNamespaceDeleted || got.Deleted {
+		t.Fatalf("expected retained namespace marker (phase=%q deleted=false), got phase=%q deleted=%v", RunStatusPhaseNamespaceDeleted, got.Phase, got.Deleted)
 	}
 }
 
-func TestTickFinalizesFullEnvRunSkipsCleanupWhenSlotHasRunningPeer(t *testing.T) {
+func TestTickLaunchesReviseRunReusesNamespaceAndExtendsTTL(t *testing.T) {
 	t.Parallel()
 
-	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev"},"issue":{"number":11},"agent":{"key":"dev","name":"AI Developer"}}`)
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev_revise"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
 	runs := &fakeRunQueue{
-		running: []runqueuerepo.RunningRun{
-			{
-				RunID:         "run-main",
-				CorrelationID: "corr-main",
-				ProjectID:     "550e8400-e29b-41d4-a716-446655440000",
-				SlotNo:        1,
-				RunPayload:    payload,
-			},
-			{
-				RunID:         "run-peer",
-				CorrelationID: "corr-peer",
-				ProjectID:     "550e8400-e29b-41d4-a716-446655440000",
-				SlotNo:        1,
-				RunPayload:    payload,
-			},
+		claims: []runqueuerepo.ClaimedRun{
+			{RunID: "run-revise", CorrelationID: "corr-revise", ProjectID: "550e8400-e29b-41d4-a716-446655440000", RunPayload: payload, SlotNo: 1},
 		},
 	}
 	events := &fakeFlowEvents{}
-	launcher := &fakeLauncher{states: map[string]JobState{
-		"run-main": JobStateSucceeded,
-		"run-peer": JobStateRunning,
-	}}
+	launcher := &fakeLauncher{
+		states:        map[string]JobState{},
+		reusableFound: true,
+		reusable: NamespaceReuseResult{
+			Namespace: "codex-k8s-dev-1",
+			ExpiresAt: time.Date(2026, 2, 11, 15, 0, 0, 0, time.UTC),
+		},
+		ensureResult: NamespaceEnsureResult{Reused: true, LeaseExpiresAt: time.Date(2026, 2, 12, 10, 0, 0, 0, time.UTC)},
+	}
+	mcpTokens := &fakeMCPTokenIssuer{token: "token-run-revise"}
+	deployer := &fakeRuntimePreparer{
+		result: PrepareRunEnvironmentResult{
+			Namespace: "codex-k8s-dev-1",
+			TargetEnv: "ai",
+		},
+	}
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 
 	svc := NewService(Config{
-		WorkerID:                "worker-1",
-		ClaimLimit:              1,
-		RunningCheckLimit:       10,
-		SlotsPerProject:         2,
-		SlotLeaseTTL:            time.Minute,
-		RunNamespacePrefix:      "codex-issue",
-		CleanupFullEnvNamespace: true,
+		WorkerID:           "worker-1",
+		ClaimLimit:         1,
+		RunningCheckLimit:  10,
+		SlotsPerProject:    2,
+		SlotLeaseTTL:       time.Minute,
+		RunNamespacePrefix: "codex-issue",
 	}, Dependencies{
-		Runs:     runs,
-		Events:   events,
-		Launcher: launcher,
-		Logger:   logger,
+		Runs:            runs,
+		Events:          events,
+		Launcher:        launcher,
+		RuntimePreparer: deployer,
+		MCPTokenIssuer:  mcpTokens,
+		Logger:          logger,
 	})
-	svc.now = func() time.Time { return time.Date(2026, 2, 11, 12, 30, 0, 0, time.UTC) }
+	svc.now = func() time.Time { return time.Date(2026, 2, 11, 10, 0, 0, 0, time.UTC) }
 
 	if err := svc.Tick(context.Background()); err != nil {
 		t.Fatalf("Tick() error = %v", err)
 	}
+	if len(deployer.prepared) != 1 {
+		t.Fatalf("expected one runtime prepare call, got %d", len(deployer.prepared))
+	}
+	if got, want := deployer.prepared[0].Namespace, "codex-k8s-dev-1"; got != want {
+		t.Fatalf("expected revise run to reuse namespace %q, got %q", want, got)
+	}
+	if len(events.inserted) < 3 {
+		t.Fatalf("expected namespace prepared + ttl extended + run started events, got %d", len(events.inserted))
+	}
+	if events.inserted[1].EventType != floweventdomain.EventTypeRunNamespaceTTLExtended {
+		t.Fatalf("expected second event %q, got %q", floweventdomain.EventTypeRunNamespaceTTLExtended, events.inserted[1].EventType)
+	}
+}
 
-	if len(launcher.cleaned) != 0 {
-		t.Fatalf("expected namespace cleanup to be skipped for slot peer run, got %d cleanups", len(launcher.cleaned))
+func TestTickCleanupExpiredNamespaces_UpdatesRunStatusComment(t *testing.T) {
+	t.Parallel()
+
+	runs := &fakeRunQueue{}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{
+		states: map[string]JobState{},
+		expiredCleanups: []NamespaceCleanupResult{
+			{
+				Namespace: "codex-k8s-dev-1",
+				RunID:     "run-expired",
+				ExpiresAt: time.Date(2026, 2, 11, 9, 0, 0, 0, time.UTC),
+			},
+		},
 	}
-	if len(events.inserted) < 2 {
-		t.Fatalf("expected at least two events, got %d", len(events.inserted))
+	runStatus := &fakeRunStatusNotifier{}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:          "worker-1",
+		ClaimLimit:        1,
+		RunningCheckLimit: 10,
+		SlotsPerProject:   2,
+		SlotLeaseTTL:      time.Minute,
+	}, Dependencies{
+		Runs:      runs,
+		Events:    events,
+		Launcher:  launcher,
+		RunStatus: runStatus,
+		Logger:    logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 2, 11, 10, 0, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
 	}
-	if events.inserted[0].EventType != floweventdomain.EventTypeRunSucceeded {
-		t.Fatalf("expected first event run.succeeded, got %s", events.inserted[0].EventType)
+	if len(runStatus.upserts) != 1 {
+		t.Fatalf("expected one status upsert for ttl cleanup, got %d", len(runStatus.upserts))
 	}
-	if events.inserted[1].EventType != floweventdomain.EventTypeRunNamespaceCleanupSkipped {
-		t.Fatalf("expected second event run.namespace.cleanup_skipped, got %s", events.inserted[1].EventType)
-	}
-	if !strings.Contains(string(events.inserted[1].Payload), "slot_has_running_peer") {
-		t.Fatalf("expected cleanup_skipped payload to include slot_has_running_peer reason, got %s", string(events.inserted[1].Payload))
-	}
-	if !strings.Contains(string(events.inserted[1].Payload), "run-peer") {
-		t.Fatalf("expected cleanup_skipped payload to include peer run id, got %s", string(events.inserted[1].Payload))
-	}
-	if len(runs.extended) == 0 {
-		t.Fatal("expected slot lease keepalive to be called at least once")
+	if got := runStatus.upserts[0]; got.RunID != "run-expired" || got.Phase != RunStatusPhaseNamespaceDeleted || !got.Deleted {
+		t.Fatalf("unexpected ttl cleanup run-status params: %+v", got)
 	}
 }
 
@@ -895,12 +874,16 @@ func (f *fakeFlowEvents) Insert(_ context.Context, params floweventrepo.InsertPa
 }
 
 type fakeLauncher struct {
-	states    map[string]JobState
-	launched  []JobSpec
-	prepared  []NamespaceSpec
-	cleaned   []NamespaceSpec
-	launchErr error
-	statusErr error
+	states           map[string]JobState
+	launched         []JobSpec
+	prepared         []NamespaceSpec
+	ensureResult     NamespaceEnsureResult
+	reusable         NamespaceReuseResult
+	reusableFound    bool
+	expiredCleanups  []NamespaceCleanupResult
+	cleanupSweepCall []NamespaceCleanupParams
+	launchErr        error
+	statusErr        error
 }
 
 type fakeMCPTokenIssuer struct {
@@ -949,14 +932,32 @@ func (f *fakeLauncher) FindRunJobRefByRunID(_ context.Context, _ string) (JobRef
 	return JobRef{}, false, nil
 }
 
-func (f *fakeLauncher) EnsureNamespace(_ context.Context, spec NamespaceSpec) error {
-	f.prepared = append(f.prepared, spec)
-	return nil
+func (f *fakeLauncher) FindReusableNamespace(_ context.Context, _ NamespaceReuseLookup) (NamespaceReuseResult, bool, error) {
+	if !f.reusableFound {
+		return NamespaceReuseResult{}, false, nil
+	}
+	return f.reusable, true, nil
 }
 
-func (f *fakeLauncher) CleanupNamespace(_ context.Context, spec NamespaceSpec) error {
-	f.cleaned = append(f.cleaned, spec)
-	return nil
+func (f *fakeLauncher) EnsureNamespace(_ context.Context, spec NamespaceSpec) (NamespaceEnsureResult, error) {
+	f.prepared = append(f.prepared, spec)
+	if f.ensureResult.LeaseExpiresAt.IsZero() && spec.LeaseExpiresAt.IsZero() {
+		f.ensureResult.LeaseExpiresAt = time.Now().UTC().Add(24 * time.Hour)
+	}
+	if f.ensureResult.LeaseExpiresAt.IsZero() {
+		f.ensureResult.LeaseExpiresAt = spec.LeaseExpiresAt
+	}
+	return f.ensureResult, nil
+}
+
+func (f *fakeLauncher) CleanupExpiredNamespaces(_ context.Context, params NamespaceCleanupParams) ([]NamespaceCleanupResult, error) {
+	f.cleanupSweepCall = append(f.cleanupSweepCall, params)
+	if len(f.expiredCleanups) == 0 {
+		return nil, nil
+	}
+	out := make([]NamespaceCleanupResult, len(f.expiredCleanups))
+	copy(out, f.expiredCleanups)
+	return out, nil
 }
 
 func (f *fakeLauncher) Launch(_ context.Context, spec JobSpec) (JobRef, error) {

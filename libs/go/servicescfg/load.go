@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 	"text/template"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -255,6 +256,19 @@ func normalizeAndValidate(stack *Stack, env string) error {
 	}
 	stack.Spec.WebhookRuntime.DefaultMode = defaultRuntimeMode
 
+	defaultNamespaceTTLRaw := strings.TrimSpace(stack.Spec.WebhookRuntime.DefaultNamespaceTTL)
+	if defaultNamespaceTTLRaw == "" {
+		defaultNamespaceTTLRaw = "24h"
+	}
+	defaultNamespaceTTL, err := time.ParseDuration(defaultNamespaceTTLRaw)
+	if err != nil {
+		return fmt.Errorf("spec.webhookRuntime.defaultNamespaceTTL: parse duration %q: %w", defaultNamespaceTTLRaw, err)
+	}
+	if defaultNamespaceTTL <= 0 {
+		return fmt.Errorf("spec.webhookRuntime.defaultNamespaceTTL must be > 0")
+	}
+	stack.Spec.WebhookRuntime.DefaultNamespaceTTL = defaultNamespaceTTL.String()
+
 	if len(stack.Spec.WebhookRuntime.TriggerModes) > 0 {
 		normalizedTriggerModes := make(map[string]RuntimeMode, len(stack.Spec.WebhookRuntime.TriggerModes))
 		for rawTrigger, rawMode := range stack.Spec.WebhookRuntime.TriggerModes {
@@ -272,6 +286,33 @@ func normalizeAndValidate(stack *Stack, env string) error {
 			normalizedTriggerModes[triggerKey] = mode
 		}
 		stack.Spec.WebhookRuntime.TriggerModes = normalizedTriggerModes
+	}
+	if len(stack.Spec.WebhookRuntime.NamespaceTTLByRole) > 0 {
+		normalizedNamespaceTTLByRole := make(map[string]string, len(stack.Spec.WebhookRuntime.NamespaceTTLByRole))
+		for rawRole, rawTTL := range stack.Spec.WebhookRuntime.NamespaceTTLByRole {
+			roleKey := strings.ToLower(strings.TrimSpace(rawRole))
+			if roleKey == "" {
+				return fmt.Errorf("spec.webhookRuntime.namespaceTTLByRole contains empty role key")
+			}
+			if _, exists := normalizedNamespaceTTLByRole[roleKey]; exists {
+				return fmt.Errorf("spec.webhookRuntime.namespaceTTLByRole contains duplicate role key %q", roleKey)
+			}
+
+			ttlRaw := strings.TrimSpace(rawTTL)
+			if ttlRaw == "" {
+				return fmt.Errorf("spec.webhookRuntime.namespaceTTLByRole[%q] is empty", rawRole)
+			}
+
+			ttl, ttlErr := time.ParseDuration(ttlRaw)
+			if ttlErr != nil {
+				return fmt.Errorf("spec.webhookRuntime.namespaceTTLByRole[%q]: parse duration %q: %w", rawRole, ttlRaw, ttlErr)
+			}
+			if ttl <= 0 {
+				return fmt.Errorf("spec.webhookRuntime.namespaceTTLByRole[%q] must be > 0", rawRole)
+			}
+			normalizedNamespaceTTLByRole[roleKey] = ttl.String()
+		}
+		stack.Spec.WebhookRuntime.NamespaceTTLByRole = normalizedNamespaceTTLByRole
 	}
 
 	normalizedVersions, err := normalizeVersions(stack.Spec.Versions)

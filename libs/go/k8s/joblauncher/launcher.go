@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	"github.com/codex-k8s/codex-k8s/libs/go/k8s/clientcfg"
@@ -110,12 +111,54 @@ type NamespaceSpec struct {
 	RunID string
 	// ProjectID identifies project scope for namespace metadata.
 	ProjectID string
+	// IssueNumber identifies issue/pr thread for revise namespace reuse.
+	IssueNumber int64
+	// AgentKey identifies role for namespace ttl-by-role policy and revise reuse.
+	AgentKey string
 	// CorrelationID links namespace events to webhook flow.
 	CorrelationID string
 	// RuntimeMode controls whether namespace should be managed.
 	RuntimeMode agentdomain.RuntimeMode
 	// Namespace is target namespace name.
 	Namespace string
+	// LeaseTTL keeps role-based namespace retention duration.
+	LeaseTTL time.Duration
+	// LeaseExpiresAt pins effective lease expiration timestamp when already resolved by caller.
+	LeaseExpiresAt time.Time
+}
+
+// NamespaceEnsureResult reports whether namespace was newly created or reused.
+type NamespaceEnsureResult struct {
+	Created        bool
+	Reused         bool
+	LeaseExpiresAt time.Time
+}
+
+// NamespaceReuseLookup resolves one active namespace lease for project/issue/agent tuple.
+type NamespaceReuseLookup struct {
+	ProjectID   string
+	IssueNumber int64
+	AgentKey    string
+	Now         time.Time
+}
+
+// NamespaceReuseResult describes one active reusable namespace lease.
+type NamespaceReuseResult struct {
+	Namespace string
+	ExpiresAt time.Time
+}
+
+// NamespaceCleanupParams configures ttl-based cleanup sweep over managed namespaces.
+type NamespaceCleanupParams struct {
+	Now   time.Time
+	Limit int
+}
+
+// NamespaceCleanupResult describes one namespace deleted by ttl sweep.
+type NamespaceCleanupResult struct {
+	Namespace string
+	RunID     string
+	ExpiresAt time.Time
 }
 
 // Config defines Job launcher runtime options.

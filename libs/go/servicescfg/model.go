@@ -138,8 +138,10 @@ type Environment struct {
 
 // WebhookRuntime configures trigger->runtime mode mapping for webhook orchestration.
 type WebhookRuntime struct {
-	DefaultMode  RuntimeMode            `yaml:"defaultMode,omitempty"`
-	TriggerModes map[string]RuntimeMode `yaml:"triggerModes,omitempty"`
+	DefaultMode         RuntimeMode            `yaml:"defaultMode,omitempty"`
+	TriggerModes        map[string]RuntimeMode `yaml:"triggerModes,omitempty"`
+	DefaultNamespaceTTL string                 `yaml:"defaultNamespaceTTL,omitempty"`
+	NamespaceTTLByRole  map[string]string      `yaml:"namespaceTTLByRole,omitempty"`
 }
 
 // SecretResolution configures environment-scoped secret override strategy.
