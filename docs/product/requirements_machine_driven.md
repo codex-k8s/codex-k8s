@@ -5,8 +5,8 @@ title: "codex-k8s — Machine-Driven Requirements Baseline"
 status: active
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-16
-related_issues: [1]
+updated_at: 2026-02-20
+related_issues: [1, 74]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -43,7 +43,7 @@ approvals:
 | FR-009 | Шаблоны инструкций агентов, настройки агентов, сессии и журнал действий хранятся в БД и доступны в минимальном staff UI/API. |
 | FR-010 | Набор агентов на MVP фиксирован штатной моделью из `machine_driven_company_requirements` с архитектурным заделом на будущие пользовательские агенты и процессы. |
 | FR-011 | У агента есть `name`, `github_nick`, `email`, `token`; токены генерируются через API provider с нужными scope, ротируются платформой и хранятся в БД в зашифрованном виде. |
-| FR-012 | Состояние запусков агентов, жизненный цикл pod/namespace и runtime-переходы хранятся в БД и отображаются в минимальном UI/API. |
+| FR-012 | Состояние запусков агентов, жизненный цикл pod/namespace и runtime-переходы хранятся в БД и отображаются в минимальном UI/API; для `full-env` namespace сохраняется по role-based TTL из `services.yaml` (default `24h`) с продлением lease при `run:*:revise`. |
 | FR-013 | Поддерживается многоподовость `codex-k8s`; синхронизация между pod выполняется через БД; архитектура сразу разделяется на сервисы и jobs по зонам (`services/external|staff|internal|jobs|dev`). |
 | FR-014 | Система слотов реализуется через БД. |
 | FR-015 | Шаблоны документов (по `codexctl/docs/templates/**.md`) хранятся в БД и редактируются через markdown editor в staff UI (Monaco Editor). |

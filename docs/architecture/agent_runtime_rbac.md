@@ -5,8 +5,8 @@ title: "codex-k8s — Agent Runtime and RBAC Model"
 status: active
 owner_role: SA
 created_at: 2026-02-11
-updated_at: 2026-02-14
-related_issues: [1, 19]
+updated_at: 2026-02-20
+related_issues: [1, 19, 74]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -22,6 +22,7 @@ approvals:
 - Поддерживаются два режима исполнения: `full-env` и `code-only`.
 - Права назначаются по роли агента и окружению запуска.
 - Для `full-env` обязательно изолированное namespace-исполнение; agent pod получает прямой `kubectl` доступ в свой namespace, кроме `secrets`.
+- Для `full-env` run-namespace сохраняется по role-based TTL из `services.yaml` (default `24h`); для `*:revise` lease продлевается от текущего времени.
 - Привилегированные операции с секретами/БД выполняются через MCP control tools с approval policy, а не прямым `kubectl`/SQL доступом.
 
 ## Режимы исполнения
@@ -56,12 +57,21 @@ approvals:
   - `ResourceQuota`/`LimitRange`,
   - service account per role/profile,
   - network policy baseline.
-- Cleanup обязателен после завершения run. Если на issue присутствует `run:debug`, cleanup пропускается и namespace сохраняется для отладки.
-- При сохранении namespace в debug-сценарии статус-комментарий run обязан явно отмечать, что namespace не удалён, и давать ссылку на run details для ручного удаления.
+- Для `full-env` run-namespace действует lease-policy:
+  - TTL определяется по роли агента из `services.yaml/spec.webhookRuntime.namespaceTTLByRole`;
+  - если роль не указана явно, применяется `services.yaml/spec.webhookRuntime.defaultNamespaceTTL` (по умолчанию `24h`);
+  - при `run:<stage>:revise` worker переиспользует активный namespace текущей связки `(project, issue, agent_key)` и продлевает lease (`expires_at = now + role_ttl`).
+- Отдельный debug-label для manual-retention не используется.
+- В Kubernetes нет встроенного TTL-контроллера для namespace; cleanup реализуется worker-sweep по lease-метаданным (аннотация/БД) managed namespace'ов.
 
-Текущий baseline реализации (S2 Day3):
+Целевой baseline реализации (S2 Day3 + Issue #74):
 - Worker создаёт namespace idempotent, применяет `ServiceAccount + Role + RoleBinding + ResourceQuota + LimitRange`.
-- В `flow_events` пишутся lifecycle события `run.namespace.prepared|cleaned|cleanup_failed|cleanup_skipped`.
+- В `flow_events` пишутся lifecycle события:
+  - `run.namespace.prepared`,
+  - `run.namespace.ttl_scheduled`,
+  - `run.namespace.ttl_extended`,
+  - `run.namespace.cleaned`,
+  - `run.namespace.cleanup_failed`.
 - Runtime metadata namespace/job унифицированы через labels/annotations с префиксом `codex-k8s.dev/*`.
 - Cleanup удаляет только managed namespaces с `codex-k8s.dev/managed-by=codex-k8s-worker` и `codex-k8s.dev/namespace-purpose=run`.
 
@@ -114,3 +124,4 @@ approvals:
 - `docs/product/labels_and_trigger_policy.md`
 - `docs/architecture/mcp_approval_and_audit_flow.md`
 - `docs/architecture/data_model.md`
+- `docs/architecture/adr/ADR-0005-run-namespace-ttl-and-revise-reuse.md`

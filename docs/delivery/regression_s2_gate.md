@@ -35,7 +35,7 @@ approvals:
 | `run:dev` -> run -> job -> PR | `agent_runs`: `run:dev succeeded=9`; `flow_events`: `run.pr.created=5`; примеры: run `8867c62e-ff01-4ada-b0a2-d5cbd15111df`, PR `#22` | pass |
 | `run:dev:revise` -> changes -> update PR | `agent_runs`: `run:dev:revise succeeded=3`; `flow_events`: `run.pr.updated=3`; примеры: run `536beaea-a17d-4843-a8a6-1698addccb37`, PR `#20` | pass |
 | Конфликтные `ai-model`/`ai-reasoning` labels отклоняются | Unit regression: `TestResolveModelFromLabels_ConflictingLabels`, `TestResolveRunAgentContext_ConflictingPullRequestLabelsFail` | pass |
-| `run:debug` сохраняет namespace и фиксирует аудит | `flow_events`: `run.namespace.cleanup_skipped=5`, payload reason=`debug_label_present` | pass |
+| Legacy manual-retention label сохраняет namespace и фиксирует аудит (сценарий S2, позже удалён) | `flow_events`: `run.namespace.cleanup_skipped=5`, payload reason=`debug_label_present` | pass |
 | Runtime hygiene (утечки namespace/job) | На момент gate: `kubectl get ns -l codex-k8s.dev/namespace-purpose=run` возвращает пусто | pass |
 | Staff observability baseline (runs/events/waits) | `flow_events` и `agent_runs` консистентны; `agent_sessions.wait_state`: только `null` в текущем окне, pending approvals не зависли | pass |
 | Day6 approval queue consistency | `mcp_action_requests` не содержит зависших `requested`; `pending_approvals=0` | pass |

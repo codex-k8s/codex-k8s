@@ -5,8 +5,8 @@ title: "Requirements Traceability Matrix"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-19
-related_issues: [1, 19]
+updated_at: 2026-02-20
+related_issues: [1, 19, 74]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -37,7 +37,7 @@ approvals:
 | FR-009 | Агенты/сессии/журналы в БД + UI | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/architecture/c4_container.md` | covered |
 | FR-010 | Фиксированный roster агентов + задел на расширение | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/delivery/roadmap.md` | covered |
 | FR-011 | Агентные токены: генерация/ротация/шифрование | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/constraints.md` | covered |
-| FR-012 | Жизненный цикл run/pod/namespace в БД + UI | `docs/product/requirements_machine_driven.md`, `docs/architecture/c4_container.md`, `docs/architecture/data_model.md`, `docs/delivery/epics/epic-s2-day3-per-issue-namespace-and-rbac.md` | covered |
+| FR-012 | Жизненный цикл run/pod/namespace в БД + UI | `docs/product/requirements_machine_driven.md`, `docs/architecture/c4_container.md`, `docs/architecture/data_model.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/architecture/adr/ADR-0005-run-namespace-ttl-and-revise-reuse.md`, `docs/delivery/epics/epic-s2-day3-per-issue-namespace-and-rbac.md` | covered |
 | FR-013 | Многоподовость + split service/job zones | `docs/product/requirements_machine_driven.md`, `AGENTS.md`, `docs/design-guidelines/common/project_architecture.md` | covered |
 | FR-014 | Слоты через БД | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md` | covered |
 | FR-015 | Шаблоны документов в БД + markdown editor | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/architecture/api_contract.md` | covered |
