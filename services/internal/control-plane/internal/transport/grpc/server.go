@@ -1012,6 +1012,8 @@ func (s *Server) GetRuntimeDeployTask(ctx context.Context, req *controlplanev1.G
 	return runtimeDeployTaskToProto(item), nil
 }
 
+// TODO(codex-k8s#81): This RPC is temporarily unused after staff UI removed
+// "platform error" alerts. Decide later whether to keep, repurpose, or remove it.
 func (s *Server) ListRuntimeErrors(ctx context.Context, req *controlplanev1.ListRuntimeErrorsRequest) (*controlplanev1.ListRuntimeErrorsResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "request is required")
@@ -1038,6 +1040,8 @@ func (s *Server) ListRuntimeErrors(ctx context.Context, req *controlplanev1.List
 	return &controlplanev1.ListRuntimeErrorsResponse{Items: out}, nil
 }
 
+// TODO(codex-k8s#81): This RPC is temporarily unused after staff UI removed
+// "platform error" alerts. Decide later whether to keep, repurpose, or remove it.
 func (s *Server) MarkRuntimeErrorViewed(ctx context.Context, req *controlplanev1.MarkRuntimeErrorViewedRequest) (*controlplanev1.RuntimeError, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "request is required")

@@ -518,6 +518,8 @@ func (h *staffHandler) GetRuntimeDeployTask(c *echo.Context) error {
 	return getByPathResp(c, "run_id", h.getRuntimeDeployTaskCall, casters.RuntimeDeployTask)
 }
 
+// TODO(codex-k8s#81): This endpoint is temporarily unused after staff UI removed
+// "platform error" alerts. Decide later whether to keep, repurpose, or remove it.
 func (h *staffHandler) ListRuntimeErrors(c *echo.Context) error {
 	return withPrincipalAndResolved(c, resolveRuntimeErrorsListFilters(5), func(principal *controlplanev1.Principal, arg runtimeErrorsListArg) error {
 		resp, err := h.listRuntimeErrorsCall(c.Request().Context(), principal, arg)
@@ -528,6 +530,8 @@ func (h *staffHandler) ListRuntimeErrors(c *echo.Context) error {
 	})
 }
 
+// TODO(codex-k8s#81): This endpoint is temporarily unused after staff UI removed
+// "platform error" alerts. Decide later whether to keep, repurpose, or remove it.
 func (h *staffHandler) MarkRuntimeErrorViewed(c *echo.Context) error {
 	return getByPathResp(c, "runtime_error_id", h.markRuntimeErrorViewedCall, casters.RuntimeError)
 }
