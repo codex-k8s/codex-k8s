@@ -15,6 +15,9 @@ WITH candidate AS (
             AND t.updated_at < NOW() - INTERVAL '2 minutes'
         )
     )
+      -- Serialize claims by resolved namespace when it is known.
+      -- For pending full-env tasks namespace may still be empty, so fallback to slot_no
+      -- to allow parallel claims across different slots of the same environment.
       AND NOT EXISTS (
           SELECT 1
           FROM runtime_deploy_tasks active
@@ -22,8 +25,21 @@ WITH candidate AS (
             AND active.status = 'running'
             AND active.lease_until IS NOT NULL
             AND active.lease_until >= NOW()
-            AND active.namespace = t.namespace
             AND active.target_env = t.target_env
+            AND (
+                (
+                    NULLIF(active.namespace, '') IS NOT NULL
+                    AND NULLIF(t.namespace, '') IS NOT NULL
+                    AND active.namespace = t.namespace
+                )
+                OR (
+                    (
+                        NULLIF(active.namespace, '') IS NULL
+                        OR NULLIF(t.namespace, '') IS NULL
+                    )
+                    AND active.slot_no = t.slot_no
+                )
+            )
       )
     ORDER BY t.updated_at ASC
     FOR UPDATE SKIP LOCKED
