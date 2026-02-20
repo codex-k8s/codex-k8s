@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -119,7 +120,7 @@ func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[
 		vars["CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS"] = defaultPlatformDeploymentReplicas(params.TargetEnv)
 	}
 	if strings.TrimSpace(vars["CODEXK8S_WORKER_REPLICAS"]) == "" {
-		vars["CODEXK8S_WORKER_REPLICAS"] = vars["CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS"]
+		vars["CODEXK8S_WORKER_REPLICAS"] = defaultWorkerReplicas(params.TargetEnv, vars["CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS"])
 	}
 
 	return vars
@@ -138,6 +139,22 @@ func defaultPlatformDeploymentReplicas(targetEnv string) string {
 		return "2"
 	default:
 		return "1"
+	}
+}
+
+func defaultWorkerReplicas(targetEnv string, platformReplicas string) string {
+	normalized := strings.TrimSpace(platformReplicas)
+	switch strings.ToLower(strings.TrimSpace(targetEnv)) {
+	case "production", "prod":
+		if replicas, err := strconv.Atoi(normalized); err == nil && replicas >= 3 {
+			return strconv.Itoa(replicas)
+		}
+		return "3"
+	default:
+		if normalized == "" {
+			return "1"
+		}
+		return normalized
 	}
 }
 

@@ -14,7 +14,7 @@ type Config struct {
 	// PollInterval controls tick interval for run-loop.
 	PollInterval string `env:"CODEXK8S_WORKER_POLL_INTERVAL" envDefault:"5s"`
 	// ClaimLimit controls how many pending runs worker claims per tick.
-	ClaimLimit int `env:"CODEXK8S_WORKER_CLAIM_LIMIT" envDefault:"2"`
+	ClaimLimit int `env:"CODEXK8S_WORKER_CLAIM_LIMIT" envDefault:"10"`
 	// RunningCheckLimit controls how many running runs are reconciled per tick.
 	RunningCheckLimit int `env:"CODEXK8S_WORKER_RUNNING_CHECK_LIMIT" envDefault:"200"`
 	// SlotsPerProject defines initial slot pool size per project.

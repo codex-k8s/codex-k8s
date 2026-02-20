@@ -2,12 +2,8 @@ package worker
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
-	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
-	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
 	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
 	valuetypes "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/types/value"
 )
@@ -26,27 +22,17 @@ func (s *Service) tryRecoverMissingRunJob(ctx context.Context, run runqueuerepo.
 		return false, nil
 	}
 
-	// PrepareRunEnvironment is a blocking RPC (it waits for reconciler completion). Use a short timeout
-	// to keep reconcile loop responsive while still allowing progress on stuck runs.
-	pollTimeout := s.cfg.RuntimePrepareRetryInterval
-	if pollTimeout <= 0 {
-		pollTimeout = 3 * time.Second
-	}
-	if pollTimeout < 2*time.Second {
-		pollTimeout = 2 * time.Second
-	}
-
-	pollCtx, cancel := context.WithTimeout(ctx, pollTimeout)
-	prepared, err := s.deployer.PrepareRunEnvironment(pollCtx, prepareParams)
-	cancel()
+	prepared, ready, err := s.prepareRuntimeEnvironmentPoll(ctx, prepareParams)
 	if err != nil {
-		if isRetryableRuntimeDeployError(err) {
-			return false, nil
-		}
 		s.logger.Error("prepare runtime environment for running run failed", "run_id", run.RunID, "err", err)
 		if finishErr := s.finishLaunchFailedRun(ctx, run, execution, err, runFailureReasonRuntimeDeployFailed); finishErr != nil {
 			return true, finishErr
 		}
+		return true, nil
+	}
+	if !ready {
+		// Runtime deploy is still preparing (or transiently unavailable). Keep run in
+		// running state and retry on next tick without flipping to failed.
 		return true, nil
 	}
 
@@ -67,24 +53,8 @@ func (s *Service) tryRecoverMissingRunJob(ctx context.Context, run runqueuerepo.
 	})
 	if err != nil {
 		s.logger.Error("resolve run agent context failed", "run_id", run.RunID, "err", err)
-		eventType := floweventdomain.EventTypeRunFailedLaunchError
-		reason := runFailureReasonAgentContextResolve
-		if isFailedPreconditionError(err) {
-			eventType = floweventdomain.EventTypeRunFailedPrecondition
-			reason = runFailureReasonPreconditionFailed
-		}
-		if finishErr := s.finishRun(ctx, finishRunParams{
-			Run:       run,
-			Execution: launchExecution,
-			Status:    rundomain.StatusFailed,
-			EventType: eventType,
-			Ref:       s.launcher.JobRef(run.RunID, launchExecution.Namespace),
-			Extra: runFinishedEventExtra{
-				Error:  err.Error(),
-				Reason: reason,
-			},
-		}); finishErr != nil {
-			return true, fmt.Errorf("mark run failed after context resolve error: %w", finishErr)
+		if finishErr := s.failRunAfterAgentContextResolve(ctx, run, launchExecution, err); finishErr != nil {
+			return true, finishErr
 		}
 		return true, nil
 	}

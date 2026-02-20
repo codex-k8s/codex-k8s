@@ -32,6 +32,12 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 	}
 	events := &fakeFlowEvents{}
 	launcher := &fakeLauncher{states: map[string]JobState{}}
+	deployer := &fakeRuntimePreparer{
+		result: PrepareRunEnvironmentResult{
+			Namespace: "codex-k8s-dev-1",
+			TargetEnv: "ai",
+		},
+	}
 	mcpTokens := &fakeMCPTokenIssuer{token: "token-run-1"}
 	runStatus := &fakeRunStatusNotifier{}
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
@@ -44,12 +50,13 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 		SlotLeaseTTL:           time.Minute,
 		ControlPlaneMCPBaseURL: "http://codex-k8s-control-plane.test.svc:8081/mcp",
 	}, Dependencies{
-		Runs:           runs,
-		Events:         events,
-		Launcher:       launcher,
-		MCPTokenIssuer: mcpTokens,
-		RunStatus:      runStatus,
-		Logger:         logger,
+		Runs:            runs,
+		Events:          events,
+		Launcher:        launcher,
+		RuntimePreparer: deployer,
+		MCPTokenIssuer:  mcpTokens,
+		RunStatus:       runStatus,
+		Logger:          logger,
 	})
 	svc.now = func() time.Time { return time.Date(2026, 2, 9, 10, 0, 0, 0, time.UTC) }
 
@@ -625,6 +632,121 @@ func TestTickFinalizesFullEnvRunSkipsCleanupWhenSlotHasRunningPeer(t *testing.T)
 	}
 	if len(runs.extended) == 0 {
 		t.Fatal("expected slot lease keepalive to be called at least once")
+	}
+}
+
+func TestTickPendingFullEnvPreparing_DoesNotBlockNextClaim(t *testing.T) {
+	t.Parallel()
+
+	fullEnvPayload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
+	codeOnlyPayload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"issue":{"number":75},"agent":{"key":"km","name":"Knowledge Manager"}}`)
+	runs := &fakeRunQueue{
+		claims: []runqueuerepo.ClaimedRun{
+			{
+				RunID:         "run-fullenv",
+				CorrelationID: "corr-fullenv",
+				ProjectID:     "550e8400-e29b-41d4-a716-446655440000",
+				RunPayload:    fullEnvPayload,
+				SlotNo:        1,
+			},
+			{
+				RunID:         "run-code-only",
+				CorrelationID: "corr-code-only",
+				ProjectID:     "550e8400-e29b-41d4-a716-446655440000",
+				RunPayload:    codeOnlyPayload,
+				SlotNo:        2,
+			},
+		},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{states: map[string]JobState{}}
+	deployer := &fakeRuntimePreparer{result: PrepareRunEnvironmentResult{}}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:          "worker-1",
+		ClaimLimit:        2,
+		RunningCheckLimit: 10,
+		SlotsPerProject:   2,
+		SlotLeaseTTL:      time.Minute,
+	}, Dependencies{
+		Runs:            runs,
+		Events:          events,
+		Launcher:        launcher,
+		RuntimePreparer: deployer,
+		Logger:          logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 2, 20, 1, 0, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if len(deployer.prepared) != 1 {
+		t.Fatalf("expected 1 runtime prepare call for first full-env run, got %d", len(deployer.prepared))
+	}
+	if len(runs.finished) != 1 {
+		t.Fatalf("expected second claimed code-only run to be finished, got %d finished runs", len(runs.finished))
+	}
+	if runs.finished[0].RunID != "run-code-only" {
+		t.Fatalf("expected finished run %q, got %q", "run-code-only", runs.finished[0].RunID)
+	}
+	if runs.finished[0].Status != rundomain.StatusSucceeded {
+		t.Fatalf("expected code-only run to finish as succeeded, got %s", runs.finished[0].Status)
+	}
+}
+
+func TestTickRunningFullEnvJobNotFound_RuntimePreparingKeepsRunRunning(t *testing.T) {
+	t.Parallel()
+
+	fullEnvPayload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
+	runs := &fakeRunQueue{
+		running: []runqueuerepo.RunningRun{
+			{
+				RunID:         "run-fullenv",
+				CorrelationID: "corr-fullenv",
+				ProjectID:     "550e8400-e29b-41d4-a716-446655440000",
+				SlotNo:        1,
+				RunPayload:    fullEnvPayload,
+				StartedAt:     time.Date(2026, 2, 20, 0, 0, 0, 0, time.UTC),
+			},
+		},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{states: map[string]JobState{
+		"run-fullenv": JobStateNotFound,
+	}}
+	deployer := &fakeRuntimePreparer{result: PrepareRunEnvironmentResult{}}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:                   "worker-1",
+		ClaimLimit:                 1,
+		RunningCheckLimit:          10,
+		SlotsPerProject:            2,
+		SlotLeaseTTL:               time.Minute,
+		RuntimePrepareRetryTimeout: 5 * time.Minute,
+	}, Dependencies{
+		Runs:            runs,
+		Events:          events,
+		Launcher:        launcher,
+		RuntimePreparer: deployer,
+		Logger:          logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 2, 20, 1, 0, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if len(deployer.prepared) != 1 {
+		t.Fatalf("expected one runtime prepare poll call, got %d", len(deployer.prepared))
+	}
+	if len(runs.finished) != 0 {
+		t.Fatalf("expected run to stay running while runtime prepare is in progress, got %d finished runs", len(runs.finished))
+	}
+	if len(events.inserted) != 0 {
+		t.Fatalf("expected no terminal events while runtime prepare is in progress, got %d", len(events.inserted))
 	}
 }
 
