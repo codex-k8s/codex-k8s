@@ -6,7 +6,7 @@ status: active
 owner_role: PM
 created_at: 2026-02-06
 updated_at: 2026-02-20
-related_issues: [1, 74]
+related_issues: [1, 74, 90]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -81,6 +81,9 @@ approvals:
 | FR-047 | Поддерживается импорт и безопасная синхронизация доксета документации из внешнего репозитория (например `agent-knowledge-base`) в проекты: manifest v1, выбор групп/локали, PR-based import и safe-by-default sync с `docs/.docset-lock.json`. |
 | FR-048 | Конфигурация и секреты платформы/проектов/репозиториев управляются централизованно через staff UI/API: хранение в БД (шифрование), синхронизация в GitHub/Kubernetes, предупреждения о рисках обновления и управляемая политика overwrite. |
 | FR-049 | Добавление репозитория поддерживает onboarding preflight: проверка токенов (platform+bot) и реальных GitHub операций (webhook/labels/issues/PR/code), а также проверка резолва доменов проекта на кластер для full-env/ai slots. |
+| FR-050 | Prompt context включает docs tree и role-aware capability блоки (policy-governed), чтобы агент получал релевантный контекст по роли и stage. |
+| FR-051 | GitHub service messages v2 должны отражать run lifecycle и давать прямые ссылки на следующий операционный шаг (включая slot URL для full-env при наличии host). |
+| FR-052 | Для review-driven revise обязателен детерминированный stage resolver (`PR labels -> Issue labels -> run context -> flow_events`) и stage-aware next-step action cards; при ambiguity revise-run не запускается, ставится `need:input`. |
 
 ## Non-Functional Requirements (NFR)
 
