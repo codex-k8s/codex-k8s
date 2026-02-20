@@ -5,8 +5,8 @@ title: "Sprint S3: MVP completion (full stage flow, MCP control tools, self-impr
 status: in-progress
 owner_role: EM
 created_at: 2026-02-13
-updated_at: 2026-02-19
-related_issues: [19, 45]
+updated_at: 2026-02-20
+related_issues: [19, 45, 74]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -23,6 +23,7 @@ approvals:
 - Главная цель: включить полный stage/label контур, расширить staff debug observability, добавить обязательные MCP control tools и автоматический `run:self-improve` цикл.
 - Дополнительная цель: закрыть core-flow пробелы до запуска полного e2e (prompt/docs context, env-scoped secret governance, runtime error journal, frontend hardening).
 - Дополнительная цель: добавить realtime контур (multi-server WebSocket updates через PostgreSQL LISTEN/NOTIFY шину) до запуска полного e2e.
+- Дополнительная цель: убрать immediate cleanup для `full-env` run namespace и зафиксировать lease retention/revise-reuse policy в delivery (Issue #74).
 - Финальный шаг спринта: full e2e regression gate и formal MVP closeout.
 
 ## Scope спринта
@@ -51,6 +52,10 @@ approvals:
   - `api-gateway` WebSocket backplane с catch-up через `last_event_id`;
   - frontend realtime subscriptions (runs/deploy/errors/logs/events) с fallback polling;
   - удаление кнопок `Обновить` в экранах с realtime-подпиской.
+- Full-env namespace retention policy:
+  - role-based TTL из `services.yaml` (default `24h`);
+  - на `run:<stage>:revise` reuse текущего namespace и продление lease от текущего времени;
+  - cleanup только для managed run namespace по expiry lease.
 
 ## План эпиков по дням
 
@@ -77,6 +82,7 @@ approvals:
 | Day 19 | Frontend manual QA hardening loop | P0 | `docs/delivery/epics/epic-s3-day19-frontend-manual-qa-hardening-loop.md` | planned |
 | Day 19.5 | Realtime event bus (PostgreSQL LISTEN/NOTIFY) and WebSocket backplane | P0 | `docs/delivery/epics/epic-s3-day19.5-realtime-event-bus-and-websocket-backplane.md` | planned |
 | Day 19.6 | Staff realtime subscriptions and UI integration | P0 | `docs/delivery/epics/epic-s3-day19.6-staff-realtime-subscriptions-and-ui.md` | planned |
+| Day 19.7 | Run namespace TTL retention and revise namespace reuse (Issue #74) | P0 | `docs/delivery/epics/epic-s3-day19.7-run-namespace-ttl-and-revise-reuse.md` | planned |
 | Day 20 | Full e2e regression gate + MVP closeout | P0 | `docs/delivery/epics/epic-s3-day20-e2e-regression-and-mvp-closeout.md` | planned |
 
 ## Daily gate (обязательно)
@@ -92,4 +98,5 @@ approvals:
 - Core-flow недоделки закрыты: prompt/docs context, env secrets, runtime error alerts, frontend hardening.
 - Realtime контур закрыт: multi-server backend bus + frontend WS subscriptions (включая логи/эвенты) + fallback mode.
 - Кнопки `Обновить` удалены в realtime-экранах, обновление выполняется автоматически.
+- Для `full-env` закрыт retention-gap: namespace живёт по role-based TTL, а `run:*:revise` продлевает lease и переиспользует активный namespace.
 - Финальный Day20 e2e проходит без P0 блокеров и формирует owner-ready closeout пакет.

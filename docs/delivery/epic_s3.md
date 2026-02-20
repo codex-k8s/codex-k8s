@@ -5,8 +5,8 @@ title: "Epic Catalog: Sprint S3 (MVP completion)"
 status: in-progress
 owner_role: EM
 created_at: 2026-02-13
-updated_at: 2026-02-19
-related_issues: [19, 45]
+updated_at: 2026-02-20
+related_issues: [19, 45, 74]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -22,6 +22,7 @@ approvals:
 - Sprint S3 завершает MVP и переводит платформу в устойчивый full stage-driven контур.
 - Центральные deliverables: full stage labels, staff debug observability, MCP control tools, `run:self-improve` loop, declarative full-env deploy, docset import/sync, unified config/secrets governance, onboarding preflight.
 - Дополнительный фокус финальной части S3: закрыть core-flow недоделки (prompt/docs context, env-scoped secrets, runtime error journal, frontend hardening) до полного e2e gate.
+- Добавлен P0 эпик Issue #74: role-based retention для `full-env` namespace и reuse/lease-extension на `run:*:revise`.
 
 ## Эпики Sprint S3
 - Day 1: `docs/delivery/epics/epic-s3-day1-full-stage-and-label-activation.md`
@@ -45,6 +46,7 @@ approvals:
 - Day 19: `docs/delivery/epics/epic-s3-day19-frontend-manual-qa-hardening-loop.md`
 - Day 19.5: `docs/delivery/epics/epic-s3-day19.5-realtime-event-bus-and-websocket-backplane.md`
 - Day 19.6: `docs/delivery/epics/epic-s3-day19.6-staff-realtime-subscriptions-and-ui.md`
+- Day 19.7: `docs/delivery/epics/epic-s3-day19.7-run-namespace-ttl-and-revise-reuse.md`
 - Day 20: `docs/delivery/epics/epic-s3-day20-e2e-regression-and-mvp-closeout.md`
 
 ## Прогресс
@@ -66,15 +68,17 @@ approvals:
 - Day 16 (`gRPC transport boundary hardening`) завершён как refactoring-hygiene эпик по Issue #45.
 - Day 17 (`environment-scoped secret overrides + OAuth callback strategy`) завершён и согласован Owner (PR #49).
 - Day 18 (`runtime error journal + staff alert center`) завершён и согласован Owner (PR #50).
-- В работе остаются Day19/Day19.5/Day19.6 (frontend hardening + realtime), после них финальный Day20 full e2e gate.
+- В работе остаются Day19/Day19.5/Day19.6/Day19.7 (frontend hardening + realtime + namespace retention), после них финальный Day20 full e2e gate.
 
 ## Порядок закрытия остатка S3
 1. Day19: manual frontend QA hardening loop.
 2. Day19.5: PostgreSQL LISTEN/NOTIFY realtime bus + WS backplane (multi-server).
 3. Day19.6: staff realtime subscriptions and UI integration.
-4. Day20: full e2e regression gate + MVP closeout.
+4. Day19.7: namespace TTL retention + revise reuse/lease extension (Issue #74).
+5. Day20: full e2e regression gate + MVP closeout.
 
 ## Критерий успеха Sprint S3 (выжимка)
 - Все MVP-сценарии из Issue #19 покрыты кодом, тестами и эксплуатационной документацией.
+- Runtime lifecycle сценарий Issue #74 закрывает review-friendly retention без ослабления RBAC/security policy.
 - `run:self-improve` работает как управляемый и аудируемый контур улучшений.
 - У Owner есть полный evidence bundle для решения о переходе к post-MVP фазе.

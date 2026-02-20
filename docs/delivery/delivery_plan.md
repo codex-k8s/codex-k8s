@@ -5,8 +5,8 @@ title: "codex-k8s — Delivery Plan"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-19
-related_issues: [1, 19]
+updated_at: 2026-02-20
+related_issues: [1, 19, 74]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -84,6 +84,7 @@ approvals:
 - Day 19: frontend manual QA hardening loop (Owner-driven bug cycle до full e2e).
 - Day 19.5: realtime шина на PostgreSQL (`event log + LISTEN/NOTIFY`) + multi-server WebSocket backplane.
 - Day 19.6: интеграция realtime подписок в staff UI (runs/deploy/errors/logs/events), удаление кнопок `Обновить` в realtime-экранах, fallback polling.
+- Day 19.7: retention full-env namespace по role-based TTL + lease extension/reuse на `run:*:revise` (Issue #74).
 - Day 20: full e2e regression/security gate + MVP closeout/handover и переход к post-MVP roadmap.
 
 ### Daily delivery contract (обязательный)
@@ -130,6 +131,7 @@ approvals:
 - [ ] Для активного спринта: каждый эпик закрыт по своим acceptance criteria.
 - [ ] Для активного спринта: ежедневный merge -> auto deploy -> smoke check выполнен.
 - [ ] Webhook -> run -> worker -> k8s -> UI цепочка проходит regression.
+- [ ] Для `full-env` подтверждены role-based TTL retention namespace и lease extension на `run:*:revise` (Issue #74).
 - [ ] Learning mode и self-improve mode проверены на production.
 - [ ] MCP governance tools (secret/db/feedback) прошли approve/deny regression.
 
