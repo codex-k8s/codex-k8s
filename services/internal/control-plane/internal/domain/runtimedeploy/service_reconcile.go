@@ -22,10 +22,14 @@ func (s *Service) ReconcileNext(ctx context.Context, leaseOwner string, leaseTTL
 		leaseTTL = time.Second
 	}
 
+	renewInterval := runtimeDeployLeaseRenewInterval(leaseTTL)
+	staleRunningTimeout := runtimeDeployStaleRunningTimeout(renewInterval)
 	leaseTTLString := fmt.Sprintf("%d seconds", int64(leaseTTL.Seconds()))
+	staleRunningTimeoutString := fmt.Sprintf("%d seconds", int64(staleRunningTimeout.Seconds()))
 	task, ok, err := s.tasks.ClaimNext(ctx, runtimedeploytaskrepo.ClaimParams{
-		LeaseOwner: leaseOwner,
-		LeaseTTL:   leaseTTLString,
+		LeaseOwner:          leaseOwner,
+		LeaseTTL:            leaseTTLString,
+		StaleRunningTimeout: staleRunningTimeoutString,
 	})
 	if err != nil {
 		return false, fmt.Errorf("claim runtime deploy task: %w", err)
@@ -42,15 +46,7 @@ func (s *Service) ReconcileNext(ctx context.Context, leaseOwner string, leaseTTL
 
 		// Keep the lease short for fast recovery when the reconciler dies during self-deploy,
 		// but renew it while we are actively processing the task.
-		interval := leaseTTL / 2
-		if interval > 30*time.Second {
-			interval = 30 * time.Second
-		}
-		if interval < time.Second {
-			interval = time.Second
-		}
-
-		ticker := time.NewTicker(interval)
+		ticker := time.NewTicker(renewInterval)
 		defer ticker.Stop()
 
 		for {
@@ -93,7 +89,22 @@ func (s *Service) ReconcileNext(ctx context.Context, leaseOwner string, leaseTTL
 		s.appendTaskLogBestEffort(ctx, task.RunID, "reconcile", "error", "Task failed: "+runErr.Error())
 		if errors.Is(runErr, context.Canceled) || errors.Is(runErr, context.DeadlineExceeded) {
 			if ctx.Err() != nil {
-				return true, runErr
+				requeueMessage := "Reconciler shutdown detected while task was running; requeued for another instance"
+				s.appendTaskLogBestEffort(ctx, task.RunID, "reconcile", "warning", requeueMessage)
+				requeueCtx, cancelRequeue := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+				requeued, requeueErr := s.tasks.Requeue(requeueCtx, runtimedeploytaskrepo.RequeueParams{
+					RunID:      task.RunID,
+					LeaseOwner: leaseOwner,
+					LastError:  requeueMessage,
+				})
+				cancelRequeue()
+				if requeueErr != nil {
+					return true, fmt.Errorf("requeue runtime deploy task %s after shutdown: %w", task.RunID, requeueErr)
+				}
+				if !requeued {
+					s.logger.Warn("runtime deploy task requeue skipped after shutdown (lease lost)", "run_id", task.RunID, "lease_owner", leaseOwner)
+				}
+				return true, nil
 			}
 			if s.isTaskCanceled(ctx, task.RunID) {
 				s.appendTaskLogBestEffort(ctx, task.RunID, "reconcile", "info", "Task canceled because newer deploy superseded current one")
@@ -152,6 +163,28 @@ func (s *Service) isTaskCanceled(ctx context.Context, runID string) bool {
 		return false
 	}
 	return task.Status == entitytypes.RuntimeDeployTaskStatusCanceled
+}
+
+func runtimeDeployLeaseRenewInterval(leaseTTL time.Duration) time.Duration {
+	interval := leaseTTL / 2
+	if interval > 30*time.Second {
+		interval = 30 * time.Second
+	}
+	if interval < time.Second {
+		interval = time.Second
+	}
+	return interval
+}
+
+func runtimeDeployStaleRunningTimeout(renewInterval time.Duration) time.Duration {
+	timeout := renewInterval*2 + 5*time.Second
+	if timeout < 30*time.Second {
+		return 30 * time.Second
+	}
+	if timeout > 2*time.Minute {
+		return 2 * time.Minute
+	}
+	return timeout
 }
 
 // applyDesiredState builds images and applies infrastructure/services for one runtime target namespace.

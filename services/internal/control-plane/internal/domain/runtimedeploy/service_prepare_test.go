@@ -81,6 +81,10 @@ func (*fakePrepareRuntimeDeployTasksRepo) RenewLease(_ context.Context, _ runtim
 	return false, nil
 }
 
+func (*fakePrepareRuntimeDeployTasksRepo) Requeue(_ context.Context, _ runtimedeploytaskrepo.RequeueParams) (bool, error) {
+	return false, nil
+}
+
 func (*fakePrepareRuntimeDeployTasksRepo) ListRecent(_ context.Context, _ runtimedeploytaskrepo.ListFilter) ([]runtimedeploytaskrepo.Task, error) {
 	return nil, nil
 }

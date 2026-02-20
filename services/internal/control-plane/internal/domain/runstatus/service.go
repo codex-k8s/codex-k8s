@@ -601,49 +601,56 @@ func normalizeDomainValue(value string) string {
 }
 
 func (s *Service) resolveRunSlotURL(runCtx runContext, state commentState) string {
-	if strings.TrimSpace(state.SlotURL) != "" {
-		return strings.TrimSpace(state.SlotURL)
-	}
 	if !strings.EqualFold(strings.TrimSpace(state.RuntimeMode), runtimeModeFullEnv) {
 		return ""
 	}
 
+	runtimeTargetEnv := ""
+	runtimePublicHost := ""
 	if runCtx.payload.Runtime != nil {
-		if host := strings.TrimSpace(runCtx.payload.Runtime.PublicHost); host != "" {
-			return ensureHTTPSURL(host)
-		}
+		runtimeTargetEnv = strings.ToLower(strings.TrimSpace(runCtx.payload.Runtime.TargetEnv))
+		runtimePublicHost = strings.TrimSpace(runCtx.payload.Runtime.PublicHost)
+	}
+
+	if runtimePublicHost != "" {
+		return ensureHTTPSURL(runtimePublicHost)
 	}
 
 	namespace := strings.TrimSpace(state.Namespace)
-	if namespace == "" {
-		return ""
-	}
 
-	targetEnv := ""
-	if runCtx.payload.Runtime != nil {
-		targetEnv = strings.ToLower(strings.TrimSpace(runCtx.payload.Runtime.TargetEnv))
-	}
-	if targetEnv == "" {
-		normalizedNamespace := strings.ToLower(namespace)
-		if strings.Contains(normalizedNamespace, "-dev-") || strings.HasSuffix(normalizedNamespace, "-dev") {
-			targetEnv = "ai"
-		} else {
-			targetEnv = "production"
-		}
-	}
-
-	switch targetEnv {
+	switch runtimeTargetEnv {
 	case "ai", "dev":
-		if s.cfg.AIDomain == "" {
+		if namespace == "" || s.cfg.AIDomain == "" {
 			return ""
 		}
 		return ensureHTTPSURL(namespace + "." + s.cfg.AIDomain)
-	default:
+	case "production":
 		if s.cfg.ProductionDomain == "" {
 			return ""
 		}
 		return ensureHTTPSURL(s.cfg.ProductionDomain)
 	}
+
+	if namespace == "" {
+		return ""
+	}
+
+	if isAISlotNamespace(namespace) {
+		if s.cfg.AIDomain == "" {
+			return ""
+		}
+		return ensureHTTPSURL(namespace + "." + s.cfg.AIDomain)
+	}
+
+	return ""
+}
+
+func isAISlotNamespace(namespace string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(namespace))
+	if normalized == "" {
+		return false
+	}
+	return strings.Contains(normalized, "-dev-") || strings.HasSuffix(normalized, "-dev")
 }
 
 func ensureHTTPSURL(value string) string {

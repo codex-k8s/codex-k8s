@@ -35,6 +35,8 @@ var (
 	queryMarkFailed string
 	//go:embed sql/renew_lease.sql
 	queryRenewLease string
+	//go:embed sql/requeue_running.sql
+	queryRequeueRunning string
 	//go:embed sql/list_recent.sql
 	queryListRecent string
 	//go:embed sql/append_log.sql
@@ -129,14 +131,18 @@ func (r *Repository) GetByRunID(ctx context.Context, runID string) (domainrepo.T
 func (r *Repository) ClaimNext(ctx context.Context, params domainrepo.ClaimParams) (domainrepo.Task, bool, error) {
 	leaseOwner := strings.TrimSpace(params.LeaseOwner)
 	leaseTTL := strings.TrimSpace(params.LeaseTTL)
+	staleRunningTimeout := strings.TrimSpace(params.StaleRunningTimeout)
 	if leaseOwner == "" {
 		return domainrepo.Task{}, false, fmt.Errorf("claim runtime deploy task: lease_owner is required")
 	}
 	if leaseTTL == "" {
 		return domainrepo.Task{}, false, fmt.Errorf("claim runtime deploy task: lease_ttl is required")
 	}
+	if staleRunningTimeout == "" {
+		staleRunningTimeout = "2 minutes"
+	}
 
-	row := r.db.QueryRow(ctx, queryClaimNext, leaseOwner, leaseTTL)
+	row := r.db.QueryRow(ctx, queryClaimNext, leaseOwner, leaseTTL, staleRunningTimeout)
 	task, err := scanTask(row)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -213,6 +219,29 @@ func (r *Repository) RenewLease(ctx context.Context, params domainrepo.RenewLeas
 			return false, nil
 		}
 		return false, fmt.Errorf("renew runtime deploy task lease for run %s: %w", runID, err)
+	}
+	return strings.TrimSpace(returnedRunID) != "", nil
+}
+
+// Requeue returns one running task lease back to pending for a new reconciler.
+func (r *Repository) Requeue(ctx context.Context, params domainrepo.RequeueParams) (bool, error) {
+	runID := strings.TrimSpace(params.RunID)
+	leaseOwner := strings.TrimSpace(params.LeaseOwner)
+	lastError := strings.TrimSpace(params.LastError)
+	if runID == "" {
+		return false, fmt.Errorf("requeue runtime deploy task: run_id is required")
+	}
+	if leaseOwner == "" {
+		return false, fmt.Errorf("requeue runtime deploy task: lease_owner is required")
+	}
+
+	var returnedRunID string
+	err := r.db.QueryRow(ctx, queryRequeueRunning, runID, leaseOwner, lastError).Scan(&returnedRunID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		return false, fmt.Errorf("requeue runtime deploy task %s: %w", runID, err)
 	}
 	return strings.TrimSpace(returnedRunID) != "", nil
 }

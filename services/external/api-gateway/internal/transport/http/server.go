@@ -110,6 +110,8 @@ func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Clien
 	staffGroup.GET("/runs/:run_id/learning-feedback", staffH.ListRunLearningFeedback)
 	staffGroup.GET("/runtime-deploy/tasks", staffH.ListRuntimeDeployTasks)
 	staffGroup.GET("/runtime-deploy/tasks/:run_id", staffH.GetRuntimeDeployTask)
+	// TODO(codex-k8s#81): Staff UI no longer renders "platform error" alerts.
+	// Revisit runtime-errors endpoints usage and decide whether to keep, repurpose, or remove them.
 	staffGroup.GET("/runtime-errors", staffH.ListRuntimeErrors)
 	staffGroup.POST("/runtime-errors/:runtime_error_id/viewed", staffH.MarkRuntimeErrorViewed)
 	staffGroup.GET("/runtime-deploy/images", staffH.ListRegistryImages)
