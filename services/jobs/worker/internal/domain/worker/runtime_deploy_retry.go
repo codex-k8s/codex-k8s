@@ -3,7 +3,6 @@ package worker
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -11,55 +10,37 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (s *Service) prepareRuntimeEnvironmentWithRetry(ctx context.Context, params PrepareRunEnvironmentParams) (PrepareRunEnvironmentResult, error) {
-	if s.cfg.RuntimePrepareRetryTimeout <= 0 {
-		return s.deployer.PrepareRunEnvironment(ctx, params)
+func (s *Service) prepareRuntimeEnvironmentPoll(ctx context.Context, params PrepareRunEnvironmentParams) (PrepareRunEnvironmentResult, bool, error) {
+	attemptCtx, cancel := context.WithTimeout(ctx, runtimePrepareAttemptTimeout(s.cfg.RuntimePrepareRetryInterval))
+	prepared, err := s.deployer.PrepareRunEnvironment(attemptCtx, params)
+	cancel()
+	if err != nil {
+		if isRetryableRuntimeDeployError(err) {
+			return PrepareRunEnvironmentResult{}, false, nil
+		}
+		return PrepareRunEnvironmentResult{}, false, err
 	}
-
-	deadline := time.Now().Add(s.cfg.RuntimePrepareRetryTimeout)
-	attempt := 0
-	for {
-		attempt++
-
-		// PrepareRunEnvironment is implemented as a blocking unary RPC on control-plane side
-		// (it waits until runtime deploy task becomes terminal). Keep per-attempt context short
-		// to avoid long-lived idle gRPC calls being terminated by infrastructure timeouts.
-		attemptTimeout := s.cfg.RuntimePrepareRetryInterval * 4
-		if attemptTimeout <= 0 {
-			attemptTimeout = 15 * time.Second
-		}
-		if attemptTimeout < 5*time.Second {
-			attemptTimeout = 5 * time.Second
-		}
-		if attemptTimeout > 30*time.Second {
-			attemptTimeout = 30 * time.Second
-		}
-
-		attemptCtx, cancel := context.WithTimeout(ctx, attemptTimeout)
-		prepared, err := s.deployer.PrepareRunEnvironment(attemptCtx, params)
-		cancel()
-		if err == nil {
-			return prepared, nil
-		}
-		if !isRetryableRuntimeDeployError(err) {
-			return PrepareRunEnvironmentResult{}, err
-		}
-		if time.Now().After(deadline) {
-			return PrepareRunEnvironmentResult{}, fmt.Errorf("runtime deploy prepare retry timeout exceeded after %d attempts: %w", attempt, err)
-		}
-
-		wait := s.cfg.RuntimePrepareRetryInterval
-		if wait <= 0 {
-			wait = 3 * time.Second
-		}
-		timer := time.NewTimer(wait)
-		select {
-		case <-ctx.Done():
-			timer.Stop()
-			return PrepareRunEnvironmentResult{}, ctx.Err()
-		case <-timer.C:
-		}
+	if sanitizeDNSLabelValue(prepared.Namespace) == "" {
+		return prepared, false, nil
 	}
+	return prepared, true, nil
+}
+
+func runtimePrepareAttemptTimeout(retryInterval time.Duration) time.Duration {
+	// PrepareRunEnvironment is a blocking unary RPC on control-plane side
+	// (it waits until runtime deploy task becomes terminal). Keep per-attempt context short
+	// to avoid long-lived idle gRPC calls being terminated by infrastructure timeouts.
+	attemptTimeout := retryInterval * 4
+	if attemptTimeout <= 0 {
+		attemptTimeout = 15 * time.Second
+	}
+	if attemptTimeout < 5*time.Second {
+		attemptTimeout = 5 * time.Second
+	}
+	if attemptTimeout > 30*time.Second {
+		attemptTimeout = 30 * time.Second
+	}
+	return attemptTimeout
 }
 
 func isRetryableRuntimeDeployError(err error) bool {
