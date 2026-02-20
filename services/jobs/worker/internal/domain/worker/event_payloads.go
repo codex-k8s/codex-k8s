@@ -17,6 +17,7 @@ const (
 	runFailureReasonKubernetesJobNotFound  runFailureReason = "kubernetes job not found"
 	runFailureReasonNamespacePrepareFailed runFailureReason = "namespace_prepare_failed"
 	runFailureReasonRuntimeDeployFailed    runFailureReason = "runtime_deploy_failed"
+	runFailureReasonRuntimeDeployCanceled  runFailureReason = "runtime_deploy_canceled"
 	runFailureReasonMCPTokenIssueFailed    runFailureReason = "mcp_token_issue_failed"
 	runFailureReasonAgentContextResolve    runFailureReason = "agent_context_resolve_failed"
 	runFailureReasonPreconditionFailed     runFailureReason = "failed_precondition"

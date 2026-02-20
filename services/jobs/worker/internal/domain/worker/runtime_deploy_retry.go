@@ -10,11 +10,16 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var errRuntimeDeployTaskCanceled = errors.New("runtime deploy task canceled")
+
 func (s *Service) prepareRuntimeEnvironmentPoll(ctx context.Context, params PrepareRunEnvironmentParams) (PrepareRunEnvironmentResult, bool, error) {
 	attemptCtx, cancel := context.WithTimeout(ctx, runtimePrepareAttemptTimeout(s.cfg.RuntimePrepareRetryInterval))
 	prepared, err := s.deployer.PrepareRunEnvironment(attemptCtx, params)
 	cancel()
 	if err != nil {
+		if isRuntimeDeployTaskCanceledError(err) {
+			return PrepareRunEnvironmentResult{}, false, errRuntimeDeployTaskCanceled
+		}
 		if isRetryableRuntimeDeployError(err) {
 			return PrepareRunEnvironmentResult{}, false, nil
 		}
@@ -55,8 +60,10 @@ func isRetryableRuntimeDeployError(err error) bool {
 		return false
 	}
 	switch st.Code() {
-	case codes.Unavailable, codes.DeadlineExceeded, codes.Canceled, codes.Aborted, codes.ResourceExhausted:
+	case codes.Unavailable, codes.DeadlineExceeded, codes.Aborted, codes.ResourceExhausted:
 		return true
+	case codes.Canceled:
+		return !isRuntimeDeployTaskCanceledError(err)
 	case codes.Internal:
 		// Control-plane may wrap transient infra errors into Internal. Treat the most common
 		// cases as retryable to avoid stuck runs when DB/control-plane temporarily restarts.
@@ -80,4 +87,19 @@ func isRetryableRuntimeDeployError(err error) bool {
 	default:
 		return false
 	}
+}
+
+func isRuntimeDeployTaskCanceledError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, errRuntimeDeployTaskCanceled) {
+		return true
+	}
+	st, ok := status.FromError(err)
+	if !ok || st.Code() != codes.Canceled {
+		return false
+	}
+	msg := strings.ToLower(strings.TrimSpace(st.Message()))
+	return strings.Contains(msg, "runtime deploy task canceled")
 }

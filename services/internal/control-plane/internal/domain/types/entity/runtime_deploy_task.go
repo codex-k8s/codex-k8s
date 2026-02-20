@@ -10,6 +10,7 @@ const (
 	RuntimeDeployTaskStatusRunning   RuntimeDeployTaskStatus = "running"
 	RuntimeDeployTaskStatusSucceeded RuntimeDeployTaskStatus = "succeeded"
 	RuntimeDeployTaskStatusFailed    RuntimeDeployTaskStatus = "failed"
+	RuntimeDeployTaskStatusCanceled  RuntimeDeployTaskStatus = "canceled"
 )
 
 // RuntimeDeployTask stores desired and actual runtime deployment state for one run.
@@ -47,5 +48,5 @@ type RuntimeDeployTaskLogEntry struct {
 
 // IsTerminal returns true when task reached a terminal state.
 func (s RuntimeDeployTaskStatus) IsTerminal() bool {
-	return s == RuntimeDeployTaskStatusSucceeded || s == RuntimeDeployTaskStatusFailed
+	return s == RuntimeDeployTaskStatusSucceeded || s == RuntimeDeployTaskStatusFailed || s == RuntimeDeployTaskStatusCanceled
 }

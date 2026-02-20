@@ -61,6 +61,11 @@ func (s *Service) waitForTaskResult(ctx context.Context, runID string) (PrepareR
 				return PrepareResult{}, fmt.Errorf("runtime deploy task failed for run_id=%s", runID)
 			}
 			return PrepareResult{}, fmt.Errorf("runtime deploy task failed for run_id=%s: %s", runID, task.LastError)
+		case entitytypes.RuntimeDeployTaskStatusCanceled:
+			return PrepareResult{}, TaskCanceledError{
+				RunID:  runID,
+				Reason: strings.TrimSpace(task.LastError),
+			}
 		}
 
 		timer := time.NewTimer(s.cfg.WaitPollInterval)

@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -266,6 +267,12 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 			prepareParams := buildPrepareRunEnvironmentParamsFromRunning(run, execution)
 			prepared, ready, err := s.prepareRuntimeEnvironmentPoll(ctx, prepareParams)
 			if err != nil {
+				if errors.Is(err, errRuntimeDeployTaskCanceled) {
+					if cancelErr := s.finishRuntimePrepareCanceledRun(ctx, run, execution, true); cancelErr != nil {
+						return cancelErr
+					}
+					continue
+				}
 				s.logger.Error("prepare runtime environment for running deploy-only run failed", "run_id", run.RunID, "err", err)
 				if finishErr := s.finishLaunchFailedRun(ctx, run, execution, err, runFailureReasonRuntimeDeployFailed); finishErr != nil {
 					return finishErr
@@ -455,6 +462,12 @@ func (s *Service) launchPending(ctx context.Context) error {
 
 		prepared, ready, err := s.prepareRuntimeEnvironmentPoll(ctx, prepareParams)
 		if err != nil {
+			if errors.Is(err, errRuntimeDeployTaskCanceled) {
+				if cancelErr := s.finishRuntimePrepareCanceledRun(ctx, runningRun, execution, deployOnlyRun); cancelErr != nil {
+					return cancelErr
+				}
+				continue
+			}
 			s.logger.Error("prepare runtime environment failed", "run_id", claimed.RunID, "err", err)
 			if finishErr := s.finishLaunchFailedRun(ctx, runningRun, execution, err, runFailureReasonRuntimeDeployFailed); finishErr != nil {
 				return fmt.Errorf("mark run failed after runtime deploy error: %w", finishErr)

@@ -1533,6 +1533,13 @@ func toStatus(err error) error {
 	if errors.Is(err, context.DeadlineExceeded) {
 		return status.Error(codes.DeadlineExceeded, context.DeadlineExceeded.Error())
 	}
+	if errors.Is(err, runtimedeploydomain.ErrTaskCanceled) {
+		msg := strings.TrimSpace(err.Error())
+		if msg == "" {
+			msg = runtimedeploydomain.ErrTaskCanceled.Error()
+		}
+		return status.Error(codes.Canceled, msg)
+	}
 	// Pass through existing gRPC statuses unchanged.
 	if _, ok := status.FromError(err); ok {
 		return err
