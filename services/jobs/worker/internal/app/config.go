@@ -21,6 +21,8 @@ type Config struct {
 	SlotsPerProject int `env:"CODEXK8S_WORKER_SLOTS_PER_PROJECT" envDefault:"2"`
 	// SlotLeaseTTL controls for how long slot is leased before expiration.
 	SlotLeaseTTL string `env:"CODEXK8S_WORKER_SLOT_LEASE_TTL" envDefault:"10m"`
+	// RunLeaseTTL controls for how long one worker owns a running run reconciliation lease.
+	RunLeaseTTL string `env:"CODEXK8S_WORKER_RUN_LEASE_TTL" envDefault:"45m"`
 	// TickTimeout limits one worker Tick execution duration.
 	TickTimeout string `env:"CODEXK8S_WORKER_TICK_TIMEOUT" envDefault:"45m"`
 	// RuntimePrepareRetryTimeout limits total retry time for runtime deploy preparation RPC.

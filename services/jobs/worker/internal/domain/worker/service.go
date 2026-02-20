@@ -32,6 +32,8 @@ type Config struct {
 	SlotsPerProject int
 	// SlotLeaseTTL defines maximum duration of slot ownership.
 	SlotLeaseTTL time.Duration
+	// RunLeaseTTL defines maximum duration of running-run ownership by one worker.
+	RunLeaseTTL time.Duration
 	// RuntimePrepareRetryTimeout limits total retry time for runtime deploy preparation.
 	RuntimePrepareRetryTimeout time.Duration
 	// RuntimePrepareRetryInterval defines delay between retryable runtime deploy attempts.
@@ -143,6 +145,12 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if cfg.RuntimePrepareRetryTimeout <= 0 {
 		cfg.RuntimePrepareRetryTimeout = 30 * time.Minute
 	}
+	if cfg.RunLeaseTTL <= 0 {
+		cfg.RunLeaseTTL = cfg.RuntimePrepareRetryTimeout + 5*time.Minute
+	}
+	if cfg.RunLeaseTTL <= 0 {
+		cfg.RunLeaseTTL = 45 * time.Minute
+	}
 	if cfg.RuntimePrepareRetryInterval <= 0 {
 		cfg.RuntimePrepareRetryInterval = 3 * time.Second
 	}
@@ -238,9 +246,13 @@ func (s *Service) Tick(ctx context.Context) error {
 
 // reconcileRunning polls active runs and finalizes those with terminal Kubernetes job states.
 func (s *Service) reconcileRunning(ctx context.Context) error {
-	running, err := s.runs.ListRunning(ctx, s.cfg.RunningCheckLimit)
+	running, err := s.runs.ClaimRunning(ctx, runqueuerepo.ClaimRunningParams{
+		WorkerID: s.cfg.WorkerID,
+		LeaseTTL: s.cfg.RunLeaseTTL,
+		Limit:    s.cfg.RunningCheckLimit,
+	})
 	if err != nil {
-		return fmt.Errorf("list running runs: %w", err)
+		return fmt.Errorf("claim running runs: %w", err)
 	}
 
 	for _, run := range running {
@@ -417,6 +429,7 @@ func (s *Service) launchPending(ctx context.Context) error {
 			WorkerID:                   s.cfg.WorkerID,
 			SlotsPerProject:            s.cfg.SlotsPerProject,
 			LeaseTTL:                   s.cfg.SlotLeaseTTL,
+			RunLeaseTTL:                s.cfg.RunLeaseTTL,
 			ProjectLearningModeDefault: s.cfg.ProjectLearningModeDefault,
 		})
 		if err != nil {
@@ -525,6 +538,7 @@ func (s *Service) finishRun(ctx context.Context, params finishRunParams) error {
 	updated, err := s.runs.FinishRun(ctx, runqueuerepo.FinishParams{
 		RunID:      params.Run.RunID,
 		ProjectID:  params.Run.ProjectID,
+		LeaseOwner: s.cfg.WorkerID,
 		Status:     params.Status,
 		FinishedAt: finishedAt,
 	})
