@@ -12,7 +12,7 @@ WITH candidate AS (
         OR (
             t.status = 'running'
             AND t.lease_until IS NOT NULL
-            AND t.updated_at < NOW() - INTERVAL '2 minutes'
+            AND t.updated_at < NOW() - ($3::text)::interval
         )
     )
       -- Serialize claims by resolved namespace when it is known.

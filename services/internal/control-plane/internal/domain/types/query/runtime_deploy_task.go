@@ -15,8 +15,9 @@ type RuntimeDeployTaskUpsertDesiredParams struct {
 
 // RuntimeDeployTaskClaimParams describes one runtime deploy lease claim request.
 type RuntimeDeployTaskClaimParams struct {
-	LeaseOwner string
-	LeaseTTL   string
+	LeaseOwner          string
+	LeaseTTL            string
+	StaleRunningTimeout string
 }
 
 // RuntimeDeployTaskMarkSucceededParams describes one successful deployment completion.
@@ -39,6 +40,13 @@ type RuntimeDeployTaskRenewLeaseParams struct {
 	RunID      string
 	LeaseOwner string
 	LeaseTTL   string
+}
+
+// RuntimeDeployTaskRequeueParams describes one running task requeue request for graceful handover.
+type RuntimeDeployTaskRequeueParams struct {
+	RunID      string
+	LeaseOwner string
+	LastError  string
 }
 
 // RuntimeDeployTaskListFilter describes optional task list filters.
