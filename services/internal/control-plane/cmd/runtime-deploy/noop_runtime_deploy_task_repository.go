@@ -35,6 +35,10 @@ func (noopRuntimeDeployTaskRepository) RenewLease(_ context.Context, _ runtimede
 	return false, fmt.Errorf("runtime deploy queue is not available in one-shot mode")
 }
 
+func (noopRuntimeDeployTaskRepository) Requeue(_ context.Context, _ runtimedeploytaskrepo.RequeueParams) (bool, error) {
+	return false, fmt.Errorf("runtime deploy queue is not available in one-shot mode")
+}
+
 func (noopRuntimeDeployTaskRepository) ListRecent(_ context.Context, _ runtimedeploytaskrepo.ListFilter) ([]runtimedeploytaskrepo.Task, error) {
 	return nil, fmt.Errorf("runtime deploy queue is not available in one-shot mode")
 }
