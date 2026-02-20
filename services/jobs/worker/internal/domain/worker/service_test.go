@@ -14,6 +14,8 @@ import (
 	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/flowevent"
 	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func TestTickLaunchesPendingRun(t *testing.T) {
@@ -216,6 +218,67 @@ func TestTickDeployOnlyRun_PreparesEnvironmentWithoutLaunchingJob(t *testing.T) 
 	}
 	if len(events.inserted) != 1 || events.inserted[0].EventType != floweventdomain.EventTypeRunSucceeded {
 		t.Fatalf("expected one run.succeeded event, got %#v", events.inserted)
+	}
+}
+
+func TestTickDeployOnlyRun_RuntimeTaskCanceled_FinishesRunCanceled(t *testing.T) {
+	t.Parallel()
+
+	payload := json.RawMessage(`{
+		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"runtime":{
+			"mode":"full-env",
+			"target_env":"production",
+			"namespace":"codex-k8s-prod",
+			"build_ref":"0123456789abcdef0123456789abcdef01234567",
+			"deploy_only":true
+		}
+	}`)
+	runs := &fakeRunQueue{
+		claims: []runqueuerepo.ClaimedRun{
+			{
+				RunID:         "run-deploy-only-canceled",
+				CorrelationID: "corr-deploy-only-canceled",
+				ProjectID:     "proj-1",
+				RunPayload:    payload,
+				SlotNo:        1,
+			},
+		},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{states: map[string]JobState{}}
+	deployer := &fakeRuntimePreparer{
+		err: status.Error(codes.Canceled, "runtime deploy task canceled for run_id=run-deploy-only-canceled: superseded"),
+	}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:          "worker-1",
+		ClaimLimit:        1,
+		RunningCheckLimit: 10,
+		SlotsPerProject:   2,
+		SlotLeaseTTL:      time.Minute,
+	}, Dependencies{
+		Runs:            runs,
+		Events:          events,
+		Launcher:        launcher,
+		RuntimePreparer: deployer,
+		Logger:          logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 2, 20, 9, 0, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if len(runs.finished) != 1 {
+		t.Fatalf("expected 1 finished run, got %d", len(runs.finished))
+	}
+	if runs.finished[0].Status != rundomain.StatusCanceled {
+		t.Fatalf("expected deploy-only run to finish as canceled, got %s", runs.finished[0].Status)
+	}
+	if len(events.inserted) != 1 || events.inserted[0].EventType != floweventdomain.EventTypeRunCanceled {
+		t.Fatalf("expected one run.canceled event, got %#v", events.inserted)
 	}
 }
 

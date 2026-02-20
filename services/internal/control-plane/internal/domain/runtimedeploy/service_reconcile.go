@@ -9,6 +9,7 @@ import (
 
 	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
 	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
+	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 )
 
 // ReconcileNext claims one pending deploy task and applies desired state.
@@ -68,6 +69,7 @@ func (s *Service) ReconcileNext(ctx context.Context, leaseOwner string, leaseTTL
 				}
 				if !updated {
 					s.logger.Warn("runtime deploy task lease lost while renewing", "run_id", task.RunID, "lease_owner", leaseOwner)
+					cancelRenew()
 					return
 				}
 			}
@@ -93,6 +95,10 @@ func (s *Service) ReconcileNext(ctx context.Context, leaseOwner string, leaseTTL
 			if ctx.Err() != nil {
 				return true, runErr
 			}
+			if s.isTaskCanceled(ctx, task.RunID) {
+				s.appendTaskLogBestEffort(ctx, task.RunID, "reconcile", "info", "Task canceled because newer deploy superseded current one")
+				return true, nil
+			}
 		}
 		lastError := strings.TrimSpace(runErr.Error())
 		if len(lastError) > 4000 {
@@ -107,6 +113,10 @@ func (s *Service) ReconcileNext(ctx context.Context, leaseOwner string, leaseTTL
 			return true, fmt.Errorf("mark runtime deploy task %s as failed: %w", task.RunID, markErr)
 		}
 		if !updated {
+			if s.isTaskCanceled(ctx, task.RunID) {
+				s.appendTaskLogBestEffort(ctx, task.RunID, "reconcile", "info", "Task canceled before failed mark commit")
+				return true, nil
+			}
 			return true, fmt.Errorf("mark runtime deploy task %s as failed: lease lost", task.RunID)
 		}
 		return true, nil
@@ -122,10 +132,26 @@ func (s *Service) ReconcileNext(ctx context.Context, leaseOwner string, leaseTTL
 		return true, fmt.Errorf("mark runtime deploy task %s as succeeded: %w", task.RunID, err)
 	}
 	if !updated {
+		if s.isTaskCanceled(ctx, task.RunID) {
+			s.appendTaskLogBestEffort(ctx, task.RunID, "reconcile", "info", "Task result ignored because task was canceled")
+			return true, nil
+		}
 		return true, fmt.Errorf("mark runtime deploy task %s as succeeded: lease lost", task.RunID)
 	}
 	s.appendTaskLogBestEffort(ctx, task.RunID, "reconcile", "info", "Task succeeded for namespace "+result.Namespace+" env "+result.TargetEnv)
 	return true, nil
+}
+
+func (s *Service) isTaskCanceled(ctx context.Context, runID string) bool {
+	task, ok, err := s.tasks.GetByRunID(ctx, runID)
+	if err != nil {
+		s.logger.Warn("load runtime deploy task status for cancellation check failed", "run_id", runID, "err", err)
+		return false
+	}
+	if !ok {
+		return false
+	}
+	return task.Status == entitytypes.RuntimeDeployTaskStatusCanceled
 }
 
 // applyDesiredState builds images and applies infrastructure/services for one runtime target namespace.

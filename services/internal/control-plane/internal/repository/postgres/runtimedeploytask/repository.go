@@ -2,8 +2,8 @@ package runtimedeploytask
 
 import (
 	"context"
-	"encoding/json"
 	_ "embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -25,6 +25,8 @@ var (
 	queryInsertPending string
 	//go:embed sql/reset_desired_to_pending.sql
 	queryResetDesiredToPending string
+	//go:embed sql/cancel_superseded_deploy_only.sql
+	queryCancelSupersededDeployOnly string
 	//go:embed sql/claim_next.sql
 	queryClaimNext string
 	//go:embed sql/mark_succeeded.sql
@@ -73,6 +75,11 @@ func (r *Repository) UpsertDesired(ctx context.Context, params domainrepo.Upsert
 		if insertErr != nil {
 			return domainrepo.Task{}, insertErr
 		}
+		if shouldCancelSupersededDeployOnly(inserted, normalized) {
+			if _, cancelErr := cancelSupersededDeployOnlyTasks(ctx, tx, inserted.RunID, normalized); cancelErr != nil {
+				return domainrepo.Task{}, cancelErr
+			}
+		}
 		if err := tx.Commit(ctx); err != nil {
 			return domainrepo.Task{}, fmt.Errorf("commit runtime deploy upsert transaction: %w", err)
 		}
@@ -89,6 +96,11 @@ func (r *Repository) UpsertDesired(ctx context.Context, params domainrepo.Upsert
 	updated, err := resetDesiredToPending(ctx, tx, normalized)
 	if err != nil {
 		return domainrepo.Task{}, err
+	}
+	if shouldCancelSupersededDeployOnly(updated, normalized) {
+		if _, cancelErr := cancelSupersededDeployOnlyTasks(ctx, tx, updated.RunID, normalized); cancelErr != nil {
+			return domainrepo.Task{}, cancelErr
+		}
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return domainrepo.Task{}, fmt.Errorf("commit runtime deploy upsert transaction: %w", err)
@@ -422,7 +434,8 @@ func parseRuntimeDeployStatus(raw string) (entitytypes.RuntimeDeployTaskStatus, 
 	case entitytypes.RuntimeDeployTaskStatusPending,
 		entitytypes.RuntimeDeployTaskStatusRunning,
 		entitytypes.RuntimeDeployTaskStatusSucceeded,
-		entitytypes.RuntimeDeployTaskStatusFailed:
+		entitytypes.RuntimeDeployTaskStatusFailed,
+		entitytypes.RuntimeDeployTaskStatusCanceled:
 		return status, nil
 	default:
 		return "", fmt.Errorf("unknown runtime deploy task status %q", raw)
@@ -485,4 +498,42 @@ func sameDesired(existing domainrepo.Task, params domainrepo.UpsertDesiredParams
 		return false
 	}
 	return true
+}
+
+func shouldCancelSupersededDeployOnly(task domainrepo.Task, params domainrepo.UpsertDesiredParams) bool {
+	if !task.DeployOnly || !params.DeployOnly {
+		return false
+	}
+	if strings.TrimSpace(params.BuildRef) == "" {
+		return false
+	}
+	if strings.TrimSpace(params.TargetEnv) == "" {
+		return false
+	}
+	if strings.TrimSpace(params.RepositoryFullName) == "" {
+		return false
+	}
+	return true
+}
+
+func cancelSupersededDeployOnlyTasks(ctx context.Context, tx pgx.Tx, currentRunID string, params domainrepo.UpsertDesiredParams) (int64, error) {
+	reason := fmt.Sprintf("superseded by newer deploy task run_id=%s build_ref=%s", currentRunID, strings.TrimSpace(params.BuildRef))
+	if len(reason) > 4000 {
+		reason = reason[:4000]
+	}
+	tag, err := tx.Exec(
+		ctx,
+		queryCancelSupersededDeployOnly,
+		currentRunID,
+		strings.TrimSpace(params.RepositoryFullName),
+		strings.TrimSpace(params.TargetEnv),
+		strings.TrimSpace(params.Namespace),
+		params.SlotNo,
+		strings.TrimSpace(params.BuildRef),
+		reason,
+	)
+	if err != nil {
+		return 0, fmt.Errorf("cancel superseded deploy-only tasks for run_id=%s: %w", currentRunID, err)
+	}
+	return tag.RowsAffected(), nil
 }

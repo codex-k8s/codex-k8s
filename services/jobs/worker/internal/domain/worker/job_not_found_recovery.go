@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"errors"
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
@@ -24,6 +25,12 @@ func (s *Service) tryRecoverMissingRunJob(ctx context.Context, run runqueuerepo.
 
 	prepared, ready, err := s.prepareRuntimeEnvironmentPoll(ctx, prepareParams)
 	if err != nil {
+		if errors.Is(err, errRuntimeDeployTaskCanceled) {
+			if cancelErr := s.finishRuntimePrepareCanceledRun(ctx, run, execution, false); cancelErr != nil {
+				return true, cancelErr
+			}
+			return true, nil
+		}
 		s.logger.Error("prepare runtime environment for running run failed", "run_id", run.RunID, "err", err)
 		if finishErr := s.finishLaunchFailedRun(ctx, run, execution, err, runFailureReasonRuntimeDeployFailed); finishErr != nil {
 			return true, finishErr

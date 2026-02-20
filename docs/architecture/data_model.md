@@ -269,7 +269,7 @@ Planned extension (Day6+):
 | services_yaml_path | text | no | '' |  | path hint from payload |
 | build_ref | text | no | '' |  | commit/branch ref for build |
 | deploy_only | bool | no | false |  | deploy-only run flag |
-| status | text | no | 'pending' | check enum | pending/running/succeeded/failed |
+| status | text | no | 'pending' | check enum | pending/running/succeeded/failed/canceled |
 | lease_owner | text | yes |  |  | reconciler instance id |
 | lease_until | timestamptz | yes |  |  | lease expiration |
 | attempts | int | no | 0 |  | reconcile attempts |
