@@ -40,11 +40,18 @@ func addToolWithInputSchema[In any, Out any](
 	inputSchema *jsonschema.Schema,
 	run func(context.Context, mcpdomain.SessionContext, In) (Out, error),
 ) {
-	sdkmcp.AddTool(server, &sdkmcp.Tool{
+	tool := &sdkmcp.Tool{
 		Name:        string(name),
 		Description: description,
-		InputSchema: inputSchema,
-	}, func(ctx context.Context, req *sdkmcp.CallToolRequest, input In) (*sdkmcp.CallToolResult, Out, error) {
+	}
+	// Avoid passing typed nil (*jsonschema.Schema)(nil) into interface field:
+	// go-sdk treats non-nil interface as explicitly provided schema and panics
+	// when trying to resolve nil pointer.
+	if inputSchema != nil {
+		tool.InputSchema = inputSchema
+	}
+
+	sdkmcp.AddTool(server, tool, func(ctx context.Context, req *sdkmcp.CallToolRequest, input In) (*sdkmcp.CallToolResult, Out, error) {
 		var zero Out
 
 		session, err := sessionFromTokenInfo(req.Extra)
