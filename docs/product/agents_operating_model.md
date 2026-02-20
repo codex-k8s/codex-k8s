@@ -5,8 +5,8 @@ title: "codex-k8s — Agents Operating Model"
 status: active
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-02-15
-related_issues: [1, 19]
+updated_at: 2026-02-20
+related_issues: [1, 19, 74]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -66,6 +66,10 @@ approvals:
 ### `full-env`
 - Запуск в issue/run namespace рядом со стеком.
 - Доступ: логи, events, сервисы, метрики, DB/cache в рамках namespace, `exec` в pod'ы namespace.
+- Lifecycle run namespace управляется lease-policy:
+  - TTL определяется по роли агента из `services.yaml` (default `24h`);
+  - `run:<stage>:revise` переиспользует namespace текущей связки `(project, issue, agent_key)` и продлевает TTL от момента старта revise-run.
+- `run:debug` отключает авто-cleanup по TTL и переводит namespace в manual-retention режим до явного удаления.
 - В pod передаются минимальные runtime-секреты (`CODEXK8S_OPENAI_API_KEY`, `CODEXK8S_GIT_BOT_TOKEN`) и формируется namespaced `KUBECONFIG`.
 - GitHub операции (issue/PR/comments/review + git push) выполняются напрямую через `gh`/`git` с bot-token.
 - Для PR-flow запрещено использовать `CODEXK8S_GITHUB_PAT`; допустим только `CODEXK8S_GIT_BOT_TOKEN`.
@@ -182,7 +186,7 @@ Seed-файлы:
   - анализ причин;
   - PR с улучшениями prompt/docs/guidelines/toolchain.
 - Лимиты параллелизма на проект задаются в настройках проекта и применяются worker-очередью.
-- Для `full-env` запусков обязателен отдельный namespace на run/issue с контролем cleanup.
+- Для `full-env` запусков обязателен отдельный namespace с управляемым TTL lease и cleanup sweep.
 - MCP policy для инструментов/ресурсов определяется по связке:
   - `agent_key` (базовый профиль роли);
   - `run:*` label/тип задачи (task override).

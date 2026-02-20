@@ -5,8 +5,8 @@ title: "codex-k8s — Labels and Trigger Policy"
 status: active
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-02-14
-related_issues: [1, 19]
+updated_at: 2026-02-20
+related_issues: [1, 19, 74]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -81,7 +81,7 @@ approvals:
 
 | Label | Назначение |
 |---|---|
-| `run:debug` | не запускает run сам по себе; при наличии на issue в момент `run:dev`/`run:dev:revise` worker сохраняет namespace/job после завершения и пишет `run.namespace.cleanup_skipped` |
+| `run:debug` | не запускает run сам по себе; при наличии на issue в момент `run:*` отключает авто-cleanup по TTL для run namespace и переводит его в manual-retention режим (`run.namespace.cleanup_skipped`) |
 | `mode:discussion` | planned: диалоговый pre-run режим для brainstorming под Issue; сам по себе run не запускает |
 
 ## Конфигурационные лейблы модели/рассуждений
@@ -125,9 +125,12 @@ approvals:
   Остальные изменения считаются policy violation.
 ### Diagnostic labels (`run:debug`)
 - `run:debug` не запускает workflow/deploy напрямую.
-- Если label присутствует на issue при старте `run:dev`/`run:dev:revise`, worker не удаляет run-namespace автоматически.
+- Базовый режим без `run:debug`:
+  - для `full-env` namespace сохраняется по role-based TTL из `services.yaml` (default `24h`);
+  - для `run:<stage>:revise` lease namespace продлевается (`expires_at = now + role_ttl`).
+- Если label присутствует на issue при старте `run:*`, worker отключает авто-cleanup по TTL для run namespace.
 - Для такого случая пишется событие `run.namespace.cleanup_skipped` с `cleanup_command` для ручного удаления namespace.
-- В статус-комментарии запуска явно указывается, что namespace не удалён, и даётся ссылка на run details, где его можно удалить вручную.
+- В статус-комментарии запуска явно указывается manual-retention режим и ссылка на run details для удаления namespace.
 
 
 ### Service (`state:*`, `need:*`)
@@ -179,6 +182,7 @@ approvals:
     В этом случае платформа запускает соответствующий `run:<stage>:revise`.
     Если stage labels нет или их несколько, ран не создается.
 - Для `run:dev:revise` при отсутствии связанного PR run отклоняется с `failed_precondition` и событием `run.revise.pr_not_found`.
+- Для `run:<stage>:revise` в `full-env` worker пытается переиспользовать активный namespace текущей связки `(project, issue, agent_key)` и продлить lease по TTL роли; если namespace отсутствует или уже в `Terminating`, создаётся новый.
 - При постановке trigger-лейбла платформа сразу даёт обратную связь в issue:
   - ставит reaction `:eyes:` (если ещё нет);
   - публикует/обновляет единый статус-комментарий в фазе «планируется запуск агента»;

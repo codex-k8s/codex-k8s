@@ -5,7 +5,7 @@ title: "Issue ↔ Docs Map"
 status: active
 owner_role: KM
 created_at: 2026-02-06
-updated_at: 2026-02-19
+updated_at: 2026-02-20
 approvals:
   required: ["Owner"]
   status: approved
@@ -27,6 +27,7 @@ approvals:
 | #29 | `docs/delivery/issue_map.md` + project docset metadata alignment (`status/approvals`) | `docs/product/requirements_machine_driven.md` + `docs/product/brief.md` + `docs/product/constraints.md` + `docs/product/agents_operating_model.md` + `docs/product/labels_and_trigger_policy.md` + `docs/product/stage_process_model.md` | `docs/architecture/c4_context.md`, `docs/architecture/c4_container.md`, `docs/architecture/data_model.md`, `docs/architecture/api_contract.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/prompt_templates_policy.md` | `ADR-0001..0004` | n/a (документационные правки) | n/a | n/a | completed |
 | #45 | `docs/delivery/issue_map.md` + `docs/delivery/sprint_s3_mvp_completion.md` + `docs/delivery/epic_s3.md` + `docs/delivery/epics/epic-s3-day16-grpc-transport-boundary-hardening.md` | `docs/product/requirements_machine_driven.md` + `docs/product/labels_and_trigger_policy.md` + `docs/product/stage_process_model.md` | `docs/architecture/c4_container.md`, `docs/architecture/api_contract.md` + `docs/design-guidelines/go/services_design_requirements.md` + `docs/design-guidelines/go/grpc.md` | `ADR-0001..0004` | Day16 реализован: transport -> service boundary enforced, прямые repository вызовы удалены из gRPC handlers; проверка `go test ./services/internal/control-plane/...` | TBD | TBD | completed |
 | #57 | `docs/delivery/issue_map.md` + `docs/delivery/requirements_traceability.md` + `docs/product/agents_operating_model.md` | `docs/product/requirements_machine_driven.md` + `docs/product/agents_operating_model.md` + `docs/product/labels_and_trigger_policy.md` | `docs/architecture/api_contract.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/prompt_templates_policy.md` | `ADR-0001..0004` | MCP progress-feedback tool `run_status_report` + prompt policy update (cadence 5-7 tool calls, locale-bound communication); проверка `go test` по `mcp`/`agent-runner` пакетам | TBD | TBD | in-progress |
+| #74 | `docs/delivery/issue_map.md` + `docs/delivery/requirements_traceability.md` + `docs/architecture/adr/ADR-0005-run-namespace-ttl-and-revise-reuse.md` | `docs/product/requirements_machine_driven.md` + `docs/product/labels_and_trigger_policy.md` + `docs/product/agents_operating_model.md` | `docs/architecture/agent_runtime_rbac.md`, `docs/architecture/adr/ADR-0005-run-namespace-ttl-and-revise-reuse.md` | `ADR-0005` | Design-only: зафиксированы role-based TTL policy для run namespace, reuse/lease extension на `run:*:revise`, режим `run:debug` как manual-retention; реализация и runtime-проверки выполняются следующим `run:dev` циклом | TBD | TBD | in-progress |
 
 ## Требования и трассировка
 - Source of truth требований: `docs/product/requirements_machine_driven.md`.
