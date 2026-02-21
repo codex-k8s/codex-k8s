@@ -6,7 +6,7 @@ status: active
 owner_role: PM
 created_at: 2026-02-11
 updated_at: 2026-02-20
-related_issues: [1, 19, 74]
+related_issues: [1, 19, 74, 90]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -22,6 +22,7 @@ approvals:
 - Канонический набор лейблов включает классы `run:*`, `state:*`, `need:*` и диагностические labels.
 - Trigger/deploy лейблы управляют запуском этапов и требуют апрува Owner при агент-инициации.
 - `state:*`, `need:*` и диагностические labels не запускают деплой/исполнение и могут ставиться автоматически по политике.
+- Для review->revise цикла зафиксирован целевой (planned) гибридный resolver stage/profile и stage-aware сервисные сообщения (Issue #90).
 
 ## Source of truth
 - `docs/product/stage_process_model.md`
@@ -169,13 +170,21 @@ approvals:
 - `run:dev:revise` может запускаться:
   - по label `run:dev:revise` на Issue;
   - по webhook `pull_request_review` с `action=submitted` и `review.state=changes_requested`,
-    если на PR стоит ровно один stage label из поддержанных пар:
+    если удаётся детерминированно определить stage по policy резолва.
+- Active baseline (текущая реализация S3):
+  - stage определяется только если на PR стоит ровно один stage label из поддержанных пар:
     `run:intake|run:intake:revise`, `run:vision|run:vision:revise`,
     `run:prd|run:prd:revise`, `run:arch|run:arch:revise`,
     `run:design|run:design:revise`, `run:plan|run:plan:revise`,
     `run:dev|run:dev:revise`.
-    В этом случае платформа запускает соответствующий `run:<stage>:revise`.
-    Если stage labels нет или их несколько, ран не создается.
+  - если stage labels нет или их несколько, ран не создаётся.
+- Planned target (Issue #90):
+  - stage резолвится по цепочке:
+    1. PR stage label (если ровно один),
+    2. Issue stage label (если ровно один),
+    3. последний run context по связке `(repo, issue, pr)`,
+    4. последний stage transition в `flow_events`;
+  - при конфликте/неопределённости revise-run не создаётся, выставляется `need:input` и публикуется action-card с remediation.
 - Для `run:dev:revise` при отсутствии связанного PR run отклоняется с `failed_precondition` и событием `run.revise.pr_not_found`.
 - Для `run:<stage>:revise` в `full-env` worker пытается переиспользовать активный namespace текущей связки `(project, issue, agent_key)` и продлить lease по TTL роли; если namespace отсутствует или уже в `Terminating`, создаётся новый.
 - При постановке trigger-лейбла платформа сразу даёт обратную связь в issue:
@@ -192,6 +201,38 @@ approvals:
 - S3 Day1 факт:
 - активирован полный stage-контур `run:intake..run:ops` + revise/rethink;
   - активирован trigger path для `run:self-improve` (расширенная бизнес-логика дорабатывается по S3 Day6+).
+
+### Planned UX improvements for review/revise (Issue #90)
+
+#### Варианты организации
+| Вариант | Суть | Плюсы | Минусы |
+|---|---|---|---|
+| A | Оставить только PR stage label как триггер auto-revise | простая и прозрачная логика | высокий ручной overhead у Owner |
+| B | Резолвить stage только по Issue | меньше ручных действий на PR | ломается при рассинхроне Issue labels |
+| C (recommended) | Гибридный resolver + sticky profile + stage-aware сервисные сообщения | лучший баланс UX и детерминированности | выше сложность orchestration |
+
+#### Sticky model/reasoning profile (planned)
+- Для `changes_requested` effective profile резолвится по приоритету:
+  1. `[ai-model-*]`/`[ai-reasoning-*]` на Issue;
+  2. те же лейблы на PR;
+  3. профиль последнего run по связке `(repo, issue, pr)`;
+  4. project/agent defaults.
+- Цель: убрать обязательность ручного повторного выбора model/reasoning перед каждой revise-итерацией.
+
+#### Stage-aware action cards в service-comment (planned)
+- Платформа обновляет единый service-comment и добавляет stage-aware подсказки:
+  - `intake|vision|prd|arch|design|plan`: `run:<stage>:revise` и `run:<next-stage>`;
+  - `dev`: `run:dev:revise`, `run:qa`;
+  - `qa|release|postdeploy|ops`: revise текущего stage (если применимо) и следующий stage.
+- В сообщении всегда остаются ссылки:
+  - на Issue;
+  - на PR;
+  - на актуальный run-status/диагностический комментарий;
+  - на явный список рекомендованных label-действий.
+- При ambiguous stage resolve:
+  - revise-run не стартует;
+  - выставляется `need:input`;
+  - публикуется remediation-message с конкретным требуемым label action.
 
 ## Оркестрационный flow для `run:self-improve`
 

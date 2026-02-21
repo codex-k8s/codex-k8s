@@ -5,8 +5,8 @@ title: "codex-k8s — MCP Approval and Audit Flow"
 status: active
 owner_role: SA
 created_at: 2026-02-11
-updated_at: 2026-02-14
-related_issues: [1, 19]
+updated_at: 2026-02-20
+related_issues: [1, 19, 90]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -25,6 +25,7 @@ approvals:
 - Все действия логируются в единый audit-контур (`flow_events`, `agent_sessions`, `links`, `token_usage`).
 - HTTP approver/executor поддерживаются как стандартные контракты интеграции; Telegram зафиксирован как приоритетный adapter path для следующего этапа.
 - В `codex-k8s` сохраняется двухслойная модель MCP: встроенные Go-ручки платформы + внешний декларативный слой (`github.com/codex-k8s/yaml-mcp-server`).
+- Для review->revise UX (Issue #90, planned) label orchestration и сервисные action-cards остаются в MCP policy/audit контуре.
 
 ## Политика апрувов
 
@@ -58,6 +59,23 @@ approvals:
 3. Owner принимает `approve/deny`.
 4. При `approve` выполняется действие и создаётся `approval.approved` + `mcp.tool.applied`.
 5. При `deny` создаётся `approval.denied`; действие не выполняется.
+
+## Planned: review-driven revise label orchestration (Issue #90)
+
+- Вход: webhook `pull_request_review` с `action=submitted` и `review.state=changes_requested`.
+- Stage resolver (planned) использует детерминированную цепочку:
+  1. PR stage label,
+  2. Issue stage label,
+  3. last run context,
+  4. stage transitions из `flow_events`.
+- MCP действия в happy-path:
+  - `github_labels_list` (PR + Issue) для резолва контекста;
+  - `github_labels_transition` для постановки `run:<stage>:revise` на Issue;
+  - `run_status_report` для прогресса и диагностики.
+- MCP действия при ambiguity:
+  - `github_labels_transition` для установки `need:input` (без запуска revise);
+  - `owner.feedback.request` для явного выбора stage/следующего действия.
+- Сервисные сообщения next-step (action-cards) публикуются как policy-governed update и аудитятся как часть label/service-message path.
 
 ## Базовый режим S2 Day4+
 
@@ -136,6 +154,11 @@ approvals:
 - `run.finished`
 - `run.wait.paused`
 - `run.wait.resumed`
+- `run.review.changes_requested.received` (planned)
+- `run.revise.stage_resolved` (planned)
+- `run.revise.stage_ambiguous` (planned)
+- `run.profile.resolved` (planned)
+- `run.service_message.updated` (planned)
 
 ## Интеграция с traceability
 

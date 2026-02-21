@@ -5,8 +5,8 @@ title: "codex-k8s — Stage Process Model"
 status: active
 owner_role: EM
 created_at: 2026-02-11
-updated_at: 2026-02-15
-related_issues: [1, 19]
+updated_at: 2026-02-20
+related_issues: [1, 19, 90]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -53,6 +53,21 @@ approvals:
   - `run:<stage>:revise` для доработки артефактов;
   - `run:rethink` для возврата на более ранний этап.
 - После `run:rethink` предыдущие версии артефактов маркируются как `state:superseded`.
+
+### Planned: review-driven revise automation (Issue #90)
+- При `pull_request_review` с `review.state=changes_requested` платформа целится в авто-запуск `run:<stage>:revise`.
+- Resolver stage (planned target) детерминирован и идёт по цепочке:
+  1. stage label на PR (если ровно один);
+  2. stage label на Issue (если ровно один);
+  3. последний run context по связке `(repo, issue, pr)`;
+  4. последний stage transition в `flow_events` по Issue.
+- При конфликте stage labels или отсутствии резолва:
+  - revise-run не стартует;
+  - выставляется `need:input`;
+  - публикуется service-comment с remediation.
+- Коммуникация в review gate становится stage-aware:
+  - для doc/design этапов подсказки включают `run:<stage>:revise` и `run:<next-stage>`;
+  - для dev цикла — `run:dev:revise` и `run:qa`.
 
 ## Вход/выход этапа
 
