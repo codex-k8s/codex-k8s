@@ -165,6 +165,6 @@ kubectl -n "$ns" get jobs -l app.kubernetes.io/name=codex-k8s-registry-gc
   - убедиться, что `codex-k8s-control-plane` подтянул значение после rollout;
   - повторить deploy.
 - Дополнительно:
-  - mirror шаг выполняет health-check и ремонтирует stale mirror;
+  - mirror шаг выполняет platform-aware health-check (`--platform linux/amd64`) и ремонтирует stale mirror;
   - mirror выполняется в single-arch режиме (`CODEXK8S_IMAGE_MIRROR_PLATFORM=linux/amd64`), чтобы не оставлять multi-arch index с отсутствующими дочерними манифестами;
   - при cache-related `MANIFEST_UNKNOWN` build автоматически ретраится без cache.
