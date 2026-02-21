@@ -26,6 +26,8 @@ spec:
               value: '{{ envOr "CODEXK8S_IMAGE_MIRROR_SOURCE" "" }}'
             - name: TARGET_IMAGE
               value: '{{ envOr "CODEXK8S_IMAGE_MIRROR_TARGET" "" }}'
+            - name: MIRROR_PLATFORM
+              value: '{{ envOr "CODEXK8S_IMAGE_MIRROR_PLATFORM" "linux/amd64" }}'
           command:
             - sh
             - -ec
@@ -52,4 +54,5 @@ spec:
                 echo "Mirror is missing, syncing: ${TARGET_IMAGE}"
               fi
 
-              crane copy --insecure "$SOURCE_IMAGE" "$TARGET_IMAGE"
+              platform="${MIRROR_PLATFORM:-linux/amd64}"
+              crane copy --insecure --platform "$platform" "$SOURCE_IMAGE" "$TARGET_IMAGE"

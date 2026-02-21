@@ -159,9 +159,12 @@ kubectl -n "$ns" get jobs -l app.kubernetes.io/name=codex-k8s-registry-gc
 ### Build падает с `MANIFEST_UNKNOWN` при `retrieving image from cache`
 - Симптом: Kaniko падает на base image с логом вида `Error while retrieving image from cache ... MANIFEST_UNKNOWN`.
 - Причина: в registry мог остаться stale mirror/cache state после cleanup/GC (тег виден, но digest манифест недоступен).
-- Временный обход (до фикса control-plane):
-  - вручную перезеркалить проблемный образ в `127.0.0.1:5000/codex-k8s/mirror/*`;
-  - временно отключить kaniko cache: `CODEXK8S_KANIKO_CACHE_ENABLED=false` в `codex-k8s-runtime`.
-- После фикса control-plane:
-  - mirror шаг всегда выполняет health-check и ремонтирует stale mirror;
+- Текущее безопасное значение по умолчанию: `CODEXK8S_KANIKO_CACHE_ENABLED=false`.
+- Если cache включали вручную и снова получили `MANIFEST_UNKNOWN`:
+  - переключить `CODEXK8S_KANIKO_CACHE_ENABLED=false` в `codex-k8s-runtime`;
+  - убедиться, что `codex-k8s-control-plane` подтянул значение после rollout;
+  - повторить deploy.
+- Дополнительно:
+  - mirror шаг выполняет health-check и ремонтирует stale mirror;
+  - mirror выполняется в single-arch режиме (`CODEXK8S_IMAGE_MIRROR_PLATFORM=linux/amd64`), чтобы не оставлять multi-arch index с отсутствующими дочерними манифестами;
   - при cache-related `MANIFEST_UNKNOWN` build автоматически ретраится без cache.
