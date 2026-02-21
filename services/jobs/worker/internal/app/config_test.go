@@ -26,11 +26,14 @@ func TestLoadConfigDefaults(t *testing.T) {
 	if cfg.RunNamespacePrefix != "codex-issue" {
 		t.Fatalf("expected default run namespace prefix codex-issue, got %s", cfg.RunNamespacePrefix)
 	}
-	if !cfg.RunNamespaceCleanup {
-		t.Fatal("expected run namespace cleanup to be enabled by default")
+	if cfg.ServicesConfigPath != "services.yaml" {
+		t.Fatalf("expected default services config path services.yaml, got %s", cfg.ServicesConfigPath)
 	}
-	if cfg.RunDebugLabel != "run:debug" {
-		t.Fatalf("expected default run debug label run:debug, got %s", cfg.RunDebugLabel)
+	if cfg.ServicesConfigEnv != "production" {
+		t.Fatalf("expected default services config env production, got %s", cfg.ServicesConfigEnv)
+	}
+	if cfg.NamespaceLeaseSweepLimit != 200 {
+		t.Fatalf("expected default namespace lease sweep limit 200, got %d", cfg.NamespaceLeaseSweepLimit)
 	}
 	if cfg.ControlPlaneMCPBaseURL != "" {
 		t.Fatalf("expected empty control-plane mcp url before runtime fallback, got %s", cfg.ControlPlaneMCPBaseURL)

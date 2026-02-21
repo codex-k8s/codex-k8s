@@ -29,6 +29,10 @@ type Config struct {
 	RuntimePrepareRetryTimeout string `env:"CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_TIMEOUT" envDefault:"30m"`
 	// RuntimePrepareRetryInterval defines delay between retryable runtime deploy preparation attempts.
 	RuntimePrepareRetryInterval string `env:"CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_INTERVAL" envDefault:"3s"`
+	// ServicesConfigPath points to services.yaml for runtime policy (mode/namespace TTL).
+	ServicesConfigPath string `env:"CODEXK8S_SERVICES_CONFIG_PATH" envDefault:"services.yaml"`
+	// ServicesConfigEnv selects render environment for services.yaml policy.
+	ServicesConfigEnv string `env:"CODEXK8S_SERVICES_CONFIG_ENV" envDefault:"production"`
 
 	// LearningModeDefault controls default project learning-mode when worker auto-creates projects.
 	// Keep empty value to disable by default; set to "true" to enable by default.
@@ -107,10 +111,8 @@ type Config struct {
 	JobActiveDeadlineSeconds int64 `env:"CODEXK8S_WORKER_JOB_ACTIVE_DEADLINE_SECONDS" envDefault:"18000"`
 	// RunNamespacePrefix defines prefix for full-env runtime namespaces.
 	RunNamespacePrefix string `env:"CODEXK8S_WORKER_RUN_NAMESPACE_PREFIX" envDefault:"codex-issue"`
-	// RunNamespaceCleanup enables namespace cleanup after run completion.
-	RunNamespaceCleanup bool `env:"CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP" envDefault:"true"`
-	// RunDebugLabel keeps full-env namespace for post-run debugging when present on issue labels.
-	RunDebugLabel string `env:"CODEXK8S_RUN_DEBUG_LABEL" envDefault:"run:debug"`
+	// NamespaceLeaseSweepLimit limits managed namespaces inspected per tick for ttl-based cleanup.
+	NamespaceLeaseSweepLimit int `env:"CODEXK8S_WORKER_NAMESPACE_LEASE_SWEEP_LIMIT" envDefault:"200"`
 	// StateInReviewLabel is applied to PR when agent run is ready for owner review.
 	StateInReviewLabel string `env:"CODEXK8S_STATE_IN_REVIEW_LABEL" envDefault:"state:in-review"`
 	// RunServiceAccountName is service account for full-env run jobs.

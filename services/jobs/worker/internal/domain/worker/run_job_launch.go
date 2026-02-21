@@ -12,17 +12,27 @@ import (
 	valuetypes "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/types/value"
 )
 
-func (s *Service) launchPreparedFullEnvRunJob(ctx context.Context, run runqueuerepo.RunningRun, execution valuetypes.RunExecutionContext, agentCtx runAgentContext) error {
+func (s *Service) launchPreparedFullEnvRunJob(ctx context.Context, run runqueuerepo.RunningRun, execution valuetypes.RunExecutionContext, agentCtx runAgentContext, lease namespaceLeaseSpec) error {
 	namespaceSpec := NamespaceSpec{
 		RunID:         run.RunID,
 		ProjectID:     run.ProjectID,
+		IssueNumber:   lease.IssueNumber,
+		AgentKey:      lease.AgentKey,
 		CorrelationID: run.CorrelationID,
 		RuntimeMode:   execution.RuntimeMode,
 		Namespace:     execution.Namespace,
 	}
 
 	if execution.RuntimeMode == agentdomain.RuntimeModeFullEnv {
-		if err := s.launcher.EnsureNamespace(ctx, namespaceSpec); err != nil {
+		ttl := lease.TTL
+		if ttl <= 0 {
+			ttl = s.cfg.DefaultNamespaceTTL
+		}
+		namespaceSpec.LeaseTTL = ttl
+		namespaceSpec.LeaseExpiresAt = s.now().UTC().Add(ttl)
+
+		ensureResult, err := s.launcher.EnsureNamespace(ctx, namespaceSpec)
+		if err != nil {
 			s.logger.Error(
 				"prepare run namespace failed",
 				"run_id", run.RunID,
@@ -35,6 +45,10 @@ func (s *Service) launchPreparedFullEnvRunJob(ctx context.Context, run runqueuer
 			}
 			return nil
 		}
+		leaseExpiresAt := ensureResult.LeaseExpiresAt
+		if leaseExpiresAt.IsZero() {
+			leaseExpiresAt = namespaceSpec.LeaseExpiresAt
+		}
 
 		if err := s.insertNamespaceLifecycleEvent(ctx, namespaceLifecycleEventParams{
 			CorrelationID: run.CorrelationID,
@@ -44,6 +58,25 @@ func (s *Service) launchPreparedFullEnvRunJob(ctx context.Context, run runqueuer
 			Execution:     execution,
 		}); err != nil {
 			return fmt.Errorf("insert run.namespace.prepared event: %w", err)
+		}
+
+		namespaceTTLEventType := floweventdomain.EventTypeRunNamespaceTTLScheduled
+		if ensureResult.Reused {
+			namespaceTTLEventType = floweventdomain.EventTypeRunNamespaceTTLExtended
+		}
+		if err := s.insertNamespaceLifecycleEvent(ctx, namespaceLifecycleEventParams{
+			CorrelationID: run.CorrelationID,
+			EventType:     namespaceTTLEventType,
+			RunID:         run.RunID,
+			ProjectID:     run.ProjectID,
+			Execution:     execution,
+			Extra: namespaceLifecycleEventExtra{
+				NamespaceLeaseTTL:       ttl,
+				NamespaceLeaseExpiresAt: leaseExpiresAt,
+				NamespaceReused:         ensureResult.Reused,
+			},
+		}); err != nil {
+			return fmt.Errorf("insert %s event: %w", namespaceTTLEventType, err)
 		}
 	}
 

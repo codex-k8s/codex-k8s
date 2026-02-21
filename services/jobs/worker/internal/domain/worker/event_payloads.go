@@ -2,12 +2,16 @@ package worker
 
 import (
 	"encoding/json"
+	"time"
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
 )
 
 const payloadMarshalFailedError = "payload_marshal_failed"
+
+// namespaceCleanupSkipReason keeps legacy reason field for backwards-compatible payload decoding.
+type namespaceCleanupSkipReason string
 
 // runFailureReason keeps normalized worker-side failure reasons in flow-event payloads.
 type runFailureReason string
@@ -67,20 +71,26 @@ type runFinishedEventExtra struct {
 
 // namespaceLifecycleEventPayload defines payload shape for namespace lifecycle flow events.
 type namespaceLifecycleEventPayload struct {
-	RunID          string                     `json:"run_id"`
-	ProjectID      string                     `json:"project_id"`
-	RuntimeMode    agentdomain.RuntimeMode    `json:"runtime_mode"`
-	Namespace      string                     `json:"namespace"`
-	Error          string                     `json:"error,omitempty"`
-	Reason         namespaceCleanupSkipReason `json:"reason,omitempty"`
-	CleanupCommand string                     `json:"cleanup_command,omitempty"`
+	RunID                   string                     `json:"run_id"`
+	ProjectID               string                     `json:"project_id"`
+	RuntimeMode             agentdomain.RuntimeMode    `json:"runtime_mode"`
+	Namespace               string                     `json:"namespace"`
+	Error                   string                     `json:"error,omitempty"`
+	Reason                  namespaceCleanupSkipReason `json:"reason,omitempty"`
+	CleanupCommand          string                     `json:"cleanup_command,omitempty"`
+	NamespaceLeaseTTL       string                     `json:"namespace_lease_ttl,omitempty"`
+	NamespaceLeaseExpiresAt string                     `json:"namespace_lease_expires_at,omitempty"`
+	NamespaceReused         bool                       `json:"namespace_reused,omitempty"`
 }
 
 // namespaceLifecycleEventExtra carries optional namespace lifecycle diagnostics.
 type namespaceLifecycleEventExtra struct {
-	Error          string
-	Reason         namespaceCleanupSkipReason
-	CleanupCommand string
+	Error                   string
+	Reason                  namespaceCleanupSkipReason
+	CleanupCommand          string
+	NamespaceLeaseTTL       time.Duration
+	NamespaceLeaseExpiresAt time.Time
+	NamespaceReused         bool
 }
 
 // payloadMarshalError is fallback payload shape used when JSON serialization unexpectedly fails.

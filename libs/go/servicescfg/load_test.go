@@ -224,6 +224,10 @@ spec:
       namespaceTemplate: "{{ .Project }}-production"
   webhookRuntime:
     defaultMode: full-env
+    defaultNamespaceTTL: 24h
+    namespaceTTLByRole:
+      dev: 24h
+      QA: 30m
     triggerModes:
       self_improve: code-only
       dev: full-env
@@ -243,6 +247,51 @@ spec:
 	if got, want := ResolveTriggerRuntimeMode(result.Stack, "unknown"), RuntimeModeFullEnv; got != want {
 		t.Fatalf("unexpected runtime mode for unknown trigger: got %q want %q", got, want)
 	}
+
+	if got, want := result.Stack.Spec.WebhookRuntime.DefaultNamespaceTTL, "24h0m0s"; got != want {
+		t.Fatalf("unexpected default namespace ttl: got %q want %q", got, want)
+	}
+	if got, want := result.Stack.Spec.WebhookRuntime.NamespaceTTLByRole["dev"], "24h0m0s"; got != want {
+		t.Fatalf("unexpected dev namespace ttl: got %q want %q", got, want)
+	}
+	if got, want := result.Stack.Spec.WebhookRuntime.NamespaceTTLByRole["qa"], "30m0s"; got != want {
+		t.Fatalf("unexpected qa namespace ttl: got %q want %q", got, want)
+	}
+	if _, ok := result.Stack.Spec.WebhookRuntime.NamespaceTTLByRole["QA"]; ok {
+		t.Fatalf("expected namespace ttl role keys to be normalized to lower-case")
+	}
+}
+
+func TestLoad_WebhookRuntimeNamespaceTTLValidation(t *testing.T) {
+	t.Parallel()
+
+	assertLoadErrorContains(t, `
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-production"
+  webhookRuntime:
+    defaultMode: full-env
+    defaultNamespaceTTL: zero
+`, "defaultNamespaceTTL")
+
+	assertLoadErrorContains(t, `
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-production"
+  webhookRuntime:
+    namespaceTTLByRole:
+      dev: bogus
+`, "namespaceTTLByRole")
 }
 
 func TestLoad_SecretResolutionContract(t *testing.T) {

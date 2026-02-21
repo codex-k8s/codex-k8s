@@ -18,6 +18,11 @@ const (
 
 type JobRef = libslauncher.JobRef
 type NamespaceSpec = libslauncher.NamespaceSpec
+type NamespaceEnsureResult = libslauncher.NamespaceEnsureResult
+type NamespaceReuseLookup = libslauncher.NamespaceReuseLookup
+type NamespaceReuseResult = libslauncher.NamespaceReuseResult
+type NamespaceCleanupParams = libslauncher.NamespaceCleanupParams
+type NamespaceCleanupResult = libslauncher.NamespaceCleanupResult
 type JobSpec = libslauncher.JobSpec
 
 // Launcher creates and reconciles Kubernetes Jobs for runs.
@@ -28,10 +33,12 @@ type Launcher interface {
 	// Used when run job is created outside of the default full-env namespace strategy
 	// (for example, inside a persistent slot namespace).
 	FindRunJobRefByRunID(ctx context.Context, runID string) (JobRef, bool, error)
+	// FindReusableNamespace resolves active namespace lease for one project/issue/agent tuple.
+	FindReusableNamespace(ctx context.Context, lookup NamespaceReuseLookup) (NamespaceReuseResult, bool, error)
 	// EnsureNamespace prepares namespace baseline for full-env execution.
-	EnsureNamespace(ctx context.Context, spec NamespaceSpec) error
-	// CleanupNamespace removes runtime namespace after run completion.
-	CleanupNamespace(ctx context.Context, spec NamespaceSpec) error
+	EnsureNamespace(ctx context.Context, spec NamespaceSpec) (NamespaceEnsureResult, error)
+	// CleanupExpiredNamespaces removes managed namespaces with expired lease annotation.
+	CleanupExpiredNamespaces(ctx context.Context, params NamespaceCleanupParams) ([]NamespaceCleanupResult, error)
 	// Launch creates Job if needed and returns its reference.
 	Launch(ctx context.Context, spec JobSpec) (JobRef, error)
 	// Status returns current workload state for a given Job reference.

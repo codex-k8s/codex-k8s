@@ -191,6 +191,15 @@
           "additionalProperties": {
             "$ref": "#/$defs/runtimeMode"
           }
+        },
+        "defaultNamespaceTTL": {
+          "$ref": "#/$defs/duration"
+        },
+        "namespaceTTLByRole": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/duration"
+          }
         }
       },
       "additionalProperties": false
@@ -304,6 +313,10 @@
     "runtimeMode": {
       "type": "string",
       "enum": ["full-env", "code-only"]
+    },
+    "duration": {
+      "type": "string",
+      "minLength": 1
     },
     "image": {
       "type": "object",

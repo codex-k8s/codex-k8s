@@ -84,6 +84,7 @@ func Run() error {
 	}
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	namespaceLeaseDefaultTTL, namespaceLeaseTTLByRole := loadWebhookRuntimeNamespaceTTLPolicy(cfg, logger)
 
 	dialCtx, cancelDial := context.WithTimeout(appCtx, 30*time.Second)
 	defer cancelDial()
@@ -140,8 +141,9 @@ func Run() error {
 		RuntimePrepareRetryInterval: runtimePrepareRetryInterval,
 		ProjectLearningModeDefault:  learningDefault,
 		RunNamespacePrefix:          cfg.RunNamespacePrefix,
-		CleanupFullEnvNamespace:     cfg.RunNamespaceCleanup,
-		RunDebugLabel:               cfg.RunDebugLabel,
+		DefaultNamespaceTTL:         namespaceLeaseDefaultTTL,
+		NamespaceTTLByRole:          namespaceLeaseTTLByRole,
+		NamespaceLeaseSweepLimit:    cfg.NamespaceLeaseSweepLimit,
 		StateInReviewLabel:          cfg.StateInReviewLabel,
 		ControlPlaneGRPCTarget:      cfg.ControlPlaneGRPCTarget,
 		ControlPlaneMCPBaseURL:      cfg.ControlPlaneMCPBaseURL,

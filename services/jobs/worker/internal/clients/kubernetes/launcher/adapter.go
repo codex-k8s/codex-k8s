@@ -35,23 +35,26 @@ func (a *Adapter) FindRunJobRefByRunID(ctx context.Context, runID string) (worke
 	return ref, ok, nil
 }
 
+func (a *Adapter) FindReusableNamespace(ctx context.Context, lookup worker.NamespaceReuseLookup) (worker.NamespaceReuseResult, bool, error) {
+	result, ok, err := a.impl.FindReusableNamespace(ctx, lookup)
+	if err != nil {
+		return worker.NamespaceReuseResult{}, false, err
+	}
+	return result, ok, nil
+}
+
 // EnsureNamespace prepares namespace baseline for full-env run.
-func (a *Adapter) EnsureNamespace(ctx context.Context, spec worker.NamespaceSpec) error {
+func (a *Adapter) EnsureNamespace(ctx context.Context, spec worker.NamespaceSpec) (worker.NamespaceEnsureResult, error) {
 	return a.impl.EnsureNamespace(ctx, spec)
 }
 
-// CleanupNamespace removes run namespace after completion.
-func (a *Adapter) CleanupNamespace(ctx context.Context, spec worker.NamespaceSpec) error {
-	return a.impl.CleanupNamespace(ctx, spec)
+func (a *Adapter) CleanupExpiredNamespaces(ctx context.Context, params worker.NamespaceCleanupParams) ([]worker.NamespaceCleanupResult, error) {
+	return a.impl.CleanupExpiredNamespaces(ctx, params)
 }
 
 // Launch creates Kubernetes Job for run.
 func (a *Adapter) Launch(ctx context.Context, spec worker.JobSpec) (worker.JobRef, error) {
-	ref, err := a.impl.Launch(ctx, spec)
-	if err != nil {
-		return worker.JobRef{}, err
-	}
-	return ref, nil
+	return a.impl.Launch(ctx, spec)
 }
 
 // Status returns current Kubernetes Job state.

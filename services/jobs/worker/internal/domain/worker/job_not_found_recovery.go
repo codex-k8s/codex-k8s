@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"errors"
+	"strings"
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
@@ -65,9 +66,21 @@ func (s *Service) tryRecoverMissingRunJob(ctx context.Context, run runqueuerepo.
 		}
 		return true, nil
 	}
+	leaseCtx := resolveNamespaceLeaseContext(run.RunPayload)
+	if leaseCtx.AgentKey == "" {
+		leaseCtx.AgentKey = strings.ToLower(strings.TrimSpace(agentCtx.AgentKey))
+	}
+	if leaseCtx.IssueNumber <= 0 {
+		leaseCtx.IssueNumber = agentCtx.IssueNumber
+	}
+	leaseTTL := s.resolveNamespaceTTL(leaseCtx.AgentKey)
 
 	s.logger.Info("recovering run without job by launching into prepared namespace", "run_id", run.RunID, "namespace", launchExecution.Namespace)
-	if err := s.launchPreparedFullEnvRunJob(ctx, run, launchExecution, agentCtx); err != nil {
+	if err := s.launchPreparedFullEnvRunJob(ctx, run, launchExecution, agentCtx, namespaceLeaseSpec{
+		AgentKey:    leaseCtx.AgentKey,
+		IssueNumber: leaseCtx.IssueNumber,
+		TTL:         leaseTTL,
+	}); err != nil {
 		return true, err
 	}
 

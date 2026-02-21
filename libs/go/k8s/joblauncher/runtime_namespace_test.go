@@ -2,40 +2,66 @@ package joblauncher
 
 import (
 	"context"
-	"errors"
 	"testing"
+	"time"
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/fake"
-	k8stesting "k8s.io/client-go/testing"
 )
 
-func TestLauncher_EnsureNamespace_PreparesBaselineResources(t *testing.T) {
+func TestLauncher_EnsureNamespace_PreparesBaselineResourcesAndLeaseMetadata(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 	client := fake.NewClientset()
 	launcher := NewForClient(Config{Namespace: "codex-k8s-prod"}, client)
 
+	expiresAt := time.Date(2026, 2, 21, 12, 0, 0, 0, time.UTC)
 	spec := NamespaceSpec{
-		RunID:         "run-1",
-		ProjectID:     "project-1",
-		CorrelationID: "corr-1",
-		RuntimeMode:   agentdomain.RuntimeModeFullEnv,
-		Namespace:     "codex-issue-p1-i1-r1",
-	}
-	if err := launcher.EnsureNamespace(ctx, spec); err != nil {
-		t.Fatalf("EnsureNamespace() error = %v", err)
+		RunID:          "run-1",
+		ProjectID:      "project-1",
+		IssueNumber:    74,
+		AgentKey:       "dev",
+		CorrelationID:  "corr-1",
+		RuntimeMode:    agentdomain.RuntimeModeFullEnv,
+		Namespace:      "codex-issue-p1-i74-r1",
+		LeaseTTL:       24 * time.Hour,
+		LeaseExpiresAt: expiresAt,
 	}
 
-	if _, err := client.CoreV1().Namespaces().Get(ctx, spec.Namespace, metav1.GetOptions{}); err != nil {
+	result, err := launcher.EnsureNamespace(ctx, spec)
+	if err != nil {
+		t.Fatalf("EnsureNamespace() error = %v", err)
+	}
+	if !result.Created {
+		t.Fatal("expected namespace to be created on first ensure")
+	}
+	if result.Reused {
+		t.Fatal("expected created namespace not to be marked as reused")
+	}
+	if !result.LeaseExpiresAt.Equal(expiresAt) {
+		t.Fatalf("unexpected lease expires at: got %s want %s", result.LeaseExpiresAt.Format(time.RFC3339), expiresAt.Format(time.RFC3339))
+	}
+
+	ns, err := client.CoreV1().Namespaces().Get(ctx, spec.Namespace, metav1.GetOptions{})
+	if err != nil {
 		t.Fatalf("namespace not created: %v", err)
 	}
+	if got, want := ns.Labels[runNamespaceIssueNumberLabel], "74"; got != want {
+		t.Fatalf("unexpected issue-number label: got %q want %q", got, want)
+	}
+	if got, want := ns.Labels[runNamespaceAgentKeyLabel], "dev"; got != want {
+		t.Fatalf("unexpected agent-key label: got %q want %q", got, want)
+	}
+	if got, want := ns.Annotations[runNamespaceLeaseExpAnnotKey], expiresAt.Format(time.RFC3339); got != want {
+		t.Fatalf("unexpected lease expires annotation: got %q want %q", got, want)
+	}
+	if got, want := ns.Annotations[runNamespaceLeaseTTLAnnotKey], (24 * time.Hour).String(); got != want {
+		t.Fatalf("unexpected lease ttl annotation: got %q want %q", got, want)
+	}
+
 	if _, err := client.CoreV1().ServiceAccounts(spec.Namespace).Get(ctx, launcher.cfg.RunServiceAccountName, metav1.GetOptions{}); err != nil {
 		t.Fatalf("serviceaccount not created: %v", err)
 	}
@@ -50,6 +76,85 @@ func TestLauncher_EnsureNamespace_PreparesBaselineResources(t *testing.T) {
 	}
 	if _, err := client.CoreV1().LimitRanges(spec.Namespace).Get(ctx, launcher.cfg.RunLimitRangeName, metav1.GetOptions{}); err == nil {
 		t.Fatalf("limitrange should not be present in managed runtime namespace")
+	}
+}
+
+func TestLauncher_FindReusableNamespace_ReturnsLatestActiveLease(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	now := time.Date(2026, 2, 21, 10, 0, 0, 0, time.UTC)
+	project := "project-1"
+	projectLabel := sanitizeLabel(project)
+	client := fake.NewClientset(
+		newLeaseNamespace("ns-old", leaseNamespaceParams{
+			projectLabel: projectLabel,
+			issueNumber:  "74",
+			agentKey:     "dev",
+			expiresAt:    now.Add(1 * time.Hour),
+		}),
+		newLeaseNamespace("ns-new", leaseNamespaceParams{
+			projectLabel: projectLabel,
+			issueNumber:  "74",
+			agentKey:     "dev",
+			expiresAt:    now.Add(3 * time.Hour),
+		}),
+	)
+	launcher := NewForClient(Config{Namespace: "codex-k8s-prod"}, client)
+
+	result, ok, err := launcher.FindReusableNamespace(ctx, NamespaceReuseLookup{
+		ProjectID:   project,
+		IssueNumber: 74,
+		AgentKey:    "dev",
+		Now:         now,
+	})
+	if err != nil {
+		t.Fatalf("FindReusableNamespace() error = %v", err)
+	}
+	if !ok {
+		t.Fatal("expected reusable namespace to be found")
+	}
+	if got, want := result.Namespace, "ns-new"; got != want {
+		t.Fatalf("unexpected reusable namespace: got %q want %q", got, want)
+	}
+}
+
+func TestLauncher_CleanupExpiredNamespaces_DeletesOnlyExpired(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	now := time.Date(2026, 2, 21, 10, 0, 0, 0, time.UTC)
+	client := fake.NewClientset(
+		newLeaseNamespace("ns-expired", leaseNamespaceParams{
+			runID:     "run-expired",
+			expiresAt: now.Add(-1 * time.Minute),
+		}),
+		newLeaseNamespace("ns-active", leaseNamespaceParams{
+			runID:     "run-active",
+			expiresAt: now.Add(1 * time.Hour),
+		}),
+	)
+	launcher := NewForClient(Config{Namespace: "codex-k8s-prod"}, client)
+
+	cleaned, err := launcher.CleanupExpiredNamespaces(ctx, NamespaceCleanupParams{Now: now, Limit: 10})
+	if err != nil {
+		t.Fatalf("CleanupExpiredNamespaces() error = %v", err)
+	}
+	if len(cleaned) != 1 {
+		t.Fatalf("expected one expired namespace cleaned, got %d", len(cleaned))
+	}
+	if got, want := cleaned[0].Namespace, "ns-expired"; got != want {
+		t.Fatalf("unexpected cleaned namespace: got %q want %q", got, want)
+	}
+	if got, want := cleaned[0].RunID, "run-expired"; got != want {
+		t.Fatalf("unexpected cleaned run id: got %q want %q", got, want)
+	}
+
+	if _, err := client.CoreV1().Namespaces().Get(ctx, "ns-expired", metav1.GetOptions{}); err == nil {
+		t.Fatal("expected expired namespace to be deleted")
+	}
+	if _, err := client.CoreV1().Namespaces().Get(ctx, "ns-active", metav1.GetOptions{}); err != nil {
+		t.Fatalf("expected active namespace to remain: %v", err)
 	}
 }
 
@@ -98,7 +203,7 @@ func TestLauncher_EnsureNamespace_RunRoleDoesNotGrantSecretsAccess(t *testing.T)
 		RuntimeMode:   agentdomain.RuntimeModeFullEnv,
 		Namespace:     "codex-issue-p2-i2-r2",
 	}
-	if err := launcher.EnsureNamespace(ctx, spec); err != nil {
+	if _, err := launcher.EnsureNamespace(ctx, spec); err != nil {
 		t.Fatalf("EnsureNamespace() error = %v", err)
 	}
 
@@ -126,45 +231,43 @@ func TestLauncher_EnsureNamespace_RunRoleDoesNotGrantSecretsAccess(t *testing.T)
 	}
 }
 
-func TestLauncher_EnsureNamespace_RetriesNamespaceUpdateOnConflict(t *testing.T) {
-	t.Parallel()
+type leaseNamespaceParams struct {
+	projectLabel string
+	issueNumber  string
+	agentKey     string
+	runID        string
+	expiresAt    time.Time
+}
 
-	ctx := context.Background()
-	spec := NamespaceSpec{
-		RunID:         "run-3",
-		ProjectID:     "project-3",
-		CorrelationID: "corr-3",
-		RuntimeMode:   agentdomain.RuntimeModeFullEnv,
-		Namespace:     "codex-issue-p3-i3-r3",
+func newLeaseNamespace(name string, params leaseNamespaceParams) *corev1.Namespace {
+	labels := map[string]string{
+		runNamespaceManagedByLabel:   runNamespaceManagedByValue,
+		runNamespacePurposeLabel:     runNamespacePurposeValue,
+		runNamespaceRuntimeModeLabel: string(agentdomain.RuntimeModeFullEnv),
 	}
-	client := fake.NewClientset(&corev1.Namespace{
+	if params.projectLabel != "" {
+		labels[runNamespaceProjectIDLabel] = params.projectLabel
+	}
+	if params.issueNumber != "" {
+		labels[runNamespaceIssueNumberLabel] = params.issueNumber
+	}
+	if params.agentKey != "" {
+		labels[runNamespaceAgentKeyLabel] = params.agentKey
+	}
+	if params.runID != "" {
+		labels[runNamespaceRunIDLabel] = params.runID
+	}
+
+	annotations := map[string]string{}
+	if !params.expiresAt.IsZero() {
+		annotations[runNamespaceLeaseExpAnnotKey] = params.expiresAt.Format(time.RFC3339)
+	}
+
+	return &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: spec.Namespace,
+			Name:        name,
+			Labels:      labels,
+			Annotations: annotations,
 		},
-	})
-	launcher := NewForClient(Config{Namespace: "codex-k8s-prod"}, client)
-
-	conflicts := 0
-	client.PrependReactor("update", "namespaces", func(k8stesting.Action) (bool, runtime.Object, error) {
-		if conflicts > 0 {
-			return false, nil, nil
-		}
-		conflicts++
-		return true, nil, apierrors.NewConflict(schema.GroupResource{Resource: "namespaces"}, spec.Namespace, errors.New("simulated conflict"))
-	})
-
-	if err := launcher.EnsureNamespace(ctx, spec); err != nil {
-		t.Fatalf("EnsureNamespace() error after conflict retry = %v", err)
-	}
-	if conflicts != 1 {
-		t.Fatalf("expected exactly one injected conflict, got %d", conflicts)
-	}
-
-	ns, err := client.CoreV1().Namespaces().Get(ctx, spec.Namespace, metav1.GetOptions{})
-	if err != nil {
-		t.Fatalf("namespace lookup failed: %v", err)
-	}
-	if got := ns.Labels[runNamespaceManagedByLabel]; got != runNamespaceManagedByValue {
-		t.Fatalf("managed-by label mismatch: got %q", got)
 	}
 }

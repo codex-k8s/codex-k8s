@@ -37,6 +37,8 @@ const (
 
 const (
 	EventTypeRunNamespacePrepared       EventType = "run.namespace.prepared"
+	EventTypeRunNamespaceTTLScheduled   EventType = "run.namespace.ttl_scheduled"
+	EventTypeRunNamespaceTTLExtended    EventType = "run.namespace.ttl_extended"
 	EventTypeRunNamespaceCleaned        EventType = "run.namespace.cleaned"
 	EventTypeRunNamespaceCleanupFailed  EventType = "run.namespace.cleanup_failed"
 	EventTypeRunNamespaceCleanupSkipped EventType = "run.namespace.cleanup_skipped"

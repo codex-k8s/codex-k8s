@@ -43,10 +43,12 @@ type Config struct {
 	ProjectLearningModeDefault bool
 	// RunNamespacePrefix defines prefix for full-env run namespaces.
 	RunNamespacePrefix string
-	// CleanupFullEnvNamespace enables namespace cleanup after run completion.
-	CleanupFullEnvNamespace bool
-	// RunDebugLabel keeps namespace for post-run debugging when present on the issue.
-	RunDebugLabel string
+	// DefaultNamespaceTTL applies to full-env namespace retention when role-specific override is absent.
+	DefaultNamespaceTTL time.Duration
+	// NamespaceTTLByRole contains full-env namespace retention overrides per agent role key.
+	NamespaceTTLByRole map[string]time.Duration
+	// NamespaceLeaseSweepLimit limits how many expired managed namespaces are cleaned per tick.
+	NamespaceLeaseSweepLimit int
 	// StateInReviewLabel is applied to PR when run is ready for owner review.
 	StateInReviewLabel string
 	// ControlPlaneGRPCTarget is control-plane gRPC endpoint used by run jobs for callbacks.
@@ -160,9 +162,11 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if cfg.RunNamespacePrefix == "" {
 		cfg.RunNamespacePrefix = defaultRunNamespacePrefix
 	}
-	cfg.RunDebugLabel = strings.TrimSpace(cfg.RunDebugLabel)
-	if cfg.RunDebugLabel == "" {
-		cfg.RunDebugLabel = defaultRunDebugLabel
+	if cfg.DefaultNamespaceTTL <= 0 {
+		cfg.DefaultNamespaceTTL = 24 * time.Hour
+	}
+	if cfg.NamespaceLeaseSweepLimit <= 0 {
+		cfg.NamespaceLeaseSweepLimit = 200
 	}
 	cfg.StateInReviewLabel = strings.TrimSpace(cfg.StateInReviewLabel)
 	if cfg.StateInReviewLabel == "" {
@@ -205,6 +209,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 		cfg.AgentBaseBranch = "main"
 	}
 	labelCatalog := runAgentLabelCatalogFromConfig(cfg)
+	cfg.NamespaceTTLByRole = normalizeNamespaceTTLByRole(cfg.NamespaceTTLByRole)
 	if deps.Logger == nil {
 		deps.Logger = slog.Default()
 	}
@@ -235,11 +240,46 @@ func NewService(cfg Config, deps Dependencies) *Service {
 
 // Tick executes one reconciliation iteration.
 func (s *Service) Tick(ctx context.Context) error {
+	if err := s.cleanupExpiredNamespaces(ctx); err != nil {
+		return fmt.Errorf("cleanup expired namespaces: %w", err)
+	}
 	if err := s.reconcileRunning(ctx); err != nil {
 		return fmt.Errorf("reconcile running runs: %w", err)
 	}
 	if err := s.launchPending(ctx); err != nil {
 		return fmt.Errorf("launch pending runs: %w", err)
+	}
+	return nil
+}
+
+func (s *Service) cleanupExpiredNamespaces(ctx context.Context) error {
+	cleaned, err := s.launcher.CleanupExpiredNamespaces(ctx, NamespaceCleanupParams{
+		Now:   s.now().UTC(),
+		Limit: s.cfg.NamespaceLeaseSweepLimit,
+	})
+	if err != nil {
+		return err
+	}
+	for _, item := range cleaned {
+		s.logger.Info(
+			"cleaned expired run namespace",
+			"namespace", item.Namespace,
+			"run_id", item.RunID,
+			"expires_at", item.ExpiresAt.Format(time.RFC3339),
+		)
+		runID := strings.TrimSpace(item.RunID)
+		if runID == "" {
+			continue
+		}
+		if _, upsertErr := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
+			RunID:       runID,
+			Phase:       RunStatusPhaseNamespaceDeleted,
+			RuntimeMode: string(agentdomain.RuntimeModeFullEnv),
+			Namespace:   item.Namespace,
+			Deleted:     true,
+		}); upsertErr != nil {
+			s.logger.Warn("upsert run status comment (namespace ttl cleanup) failed", "run_id", runID, "namespace", item.Namespace, "err", upsertErr)
+		}
 	}
 	return nil
 }
@@ -458,10 +498,69 @@ func (s *Service) launchPending(ctx context.Context) error {
 		}
 
 		runPayload := parseRunRuntimePayload(claimed.RunPayload)
+		leaseCtx := resolveNamespaceLeaseContext(claimed.RunPayload)
+		leaseTTL := s.cfg.DefaultNamespaceTTL
 		triggerKind := ""
-		if runPayload.Trigger != nil {
-			triggerKind = string(runPayload.Trigger.Kind)
+		var agentCtx runAgentContext
+
+		if deployOnlyRun {
+			if runPayload.Trigger != nil {
+				triggerKind = string(runPayload.Trigger.Kind)
+			}
+		} else {
+			agentCtx, err = resolveRunAgentContext(claimed.RunPayload, runAgentDefaults{
+				DefaultModel:           s.cfg.AgentDefaultModel,
+				DefaultReasoningEffort: s.cfg.AgentDefaultReasoningEffort,
+				DefaultLocale:          s.cfg.AgentDefaultLocale,
+				AllowGPT53:             true,
+				LabelCatalog:           s.labels,
+			})
+			if err != nil {
+				s.logger.Error("resolve run agent context failed", "run_id", claimed.RunID, "err", err)
+				if finishErr := s.failRunAfterAgentContextResolve(ctx, runningRun, execution, err); finishErr != nil {
+					return finishErr
+				}
+				continue
+			}
+			triggerKind = agentCtx.TriggerKind
+			if leaseCtx.AgentKey == "" {
+				leaseCtx.AgentKey = strings.ToLower(strings.TrimSpace(agentCtx.AgentKey))
+			}
+			if leaseCtx.IssueNumber <= 0 {
+				leaseCtx.IssueNumber = agentCtx.IssueNumber
+			}
+			if !leaseCtx.IsRevise {
+				leaseCtx.IsRevise = resolvePromptTemplateKindForTrigger(agentCtx.TriggerKind) == promptTemplateKindRevise
+			}
+			leaseTTL = s.resolveNamespaceTTL(leaseCtx.AgentKey)
+
+			if execution.RuntimeMode == agentdomain.RuntimeModeFullEnv &&
+				leaseCtx.IsRevise &&
+				prepareParams.Namespace == "" &&
+				leaseCtx.IssueNumber > 0 &&
+				leaseCtx.AgentKey != "" {
+				reusableNamespace, found, reuseErr := s.launcher.FindReusableNamespace(ctx, NamespaceReuseLookup{
+					ProjectID:   runningRun.ProjectID,
+					IssueNumber: leaseCtx.IssueNumber,
+					AgentKey:    leaseCtx.AgentKey,
+					Now:         s.now().UTC(),
+				})
+				if reuseErr != nil {
+					s.logger.Warn(
+						"resolve reusable namespace for revise run failed",
+						"run_id", runningRun.RunID,
+						"project_id", runningRun.ProjectID,
+						"issue_number", leaseCtx.IssueNumber,
+						"agent_key", leaseCtx.AgentKey,
+						"err", reuseErr,
+					)
+				} else if found {
+					prepareParams.Namespace = reusableNamespace.Namespace
+					execution.Namespace = reusableNamespace.Namespace
+				}
+			}
 		}
+
 		if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
 			RunID:       runningRun.RunID,
 			Phase:       RunStatusPhasePreparingRuntime,
@@ -509,22 +608,11 @@ func (s *Service) launchPending(ctx context.Context) error {
 			continue
 		}
 
-		agentCtx, err := resolveRunAgentContext(claimed.RunPayload, runAgentDefaults{
-			DefaultModel:           s.cfg.AgentDefaultModel,
-			DefaultReasoningEffort: s.cfg.AgentDefaultReasoningEffort,
-			DefaultLocale:          s.cfg.AgentDefaultLocale,
-			AllowGPT53:             true,
-			LabelCatalog:           s.labels,
-		})
-		if err != nil {
-			s.logger.Error("resolve run agent context failed", "run_id", claimed.RunID, "err", err)
-			if finishErr := s.failRunAfterAgentContextResolve(ctx, runningRun, launchExecution, err); finishErr != nil {
-				return finishErr
-			}
-			continue
-		}
-
-		if err := s.launchPreparedFullEnvRunJob(ctx, runningRun, launchExecution, agentCtx); err != nil {
+		if err := s.launchPreparedFullEnvRunJob(ctx, runningRun, launchExecution, agentCtx, namespaceLeaseSpec{
+			AgentKey:    leaseCtx.AgentKey,
+			IssueNumber: leaseCtx.IssueNumber,
+			TTL:         leaseTTL,
+		}); err != nil {
 			return err
 		}
 	}
@@ -613,66 +701,7 @@ func (s *Service) finishRun(ctx context.Context, params finishRunParams) error {
 	if params.Execution.RuntimeMode == agentdomain.RuntimeModeFullEnv &&
 		params.Execution.Namespace != "" &&
 		!params.SkipNamespaceCleanup {
-		debugPolicy := s.resolveRunDebugPolicy(params.Run.RunPayload)
-		if debugPolicy.SkipCleanup {
-			s.emitNamespaceCleanupSkipped(ctx, params, debugPolicy.Reason, "")
-			s.upsertNamespaceStatusComment(ctx, params, false, "upsert run status comment (namespace cleanup skipped) failed")
-			return nil
-		}
-
-		peerRunID, err := s.findRunningPeerOnSameSlot(ctx, params.Run)
-		if err != nil {
-			s.logger.Warn("namespace cleanup peer-slot check failed; cleanup skipped", "run_id", params.Run.RunID, "slot_no", params.Run.SlotNo, "err", err)
-			s.emitNamespaceCleanupSkipped(ctx, params, namespaceCleanupSkipReasonPeerCheckFailed, err.Error())
-			s.upsertNamespaceStatusComment(ctx, params, false, "upsert run status comment (namespace cleanup skipped) failed")
-			return nil
-		}
-		if peerRunID != "" {
-			s.logger.Warn("namespace cleanup skipped because slot has another active run", "run_id", params.Run.RunID, "peer_run_id", peerRunID, "slot_no", params.Run.SlotNo)
-			s.emitNamespaceCleanupSkipped(ctx, params, namespaceCleanupSkipReasonSlotHasPeerRun, fmt.Sprintf("peer_run_id=%s", peerRunID))
-			s.upsertNamespaceStatusComment(ctx, params, false, "upsert run status comment (namespace cleanup skipped) failed")
-			return nil
-		}
-
-		cleanupSpec := NamespaceSpec{
-			RunID:         params.Run.RunID,
-			ProjectID:     params.Run.ProjectID,
-			CorrelationID: params.Run.CorrelationID,
-			RuntimeMode:   params.Execution.RuntimeMode,
-			Namespace:     params.Execution.Namespace,
-		}
-		cleanupErr := s.launcher.CleanupNamespace(ctx, cleanupSpec)
-		if cleanupErr != nil {
-			s.logger.Error(
-				"cleanup run namespace failed",
-				"run_id", params.Run.RunID,
-				"namespace", params.Execution.Namespace,
-				"err", cleanupErr,
-			)
-			if err := s.insertNamespaceLifecycleEvent(ctx, namespaceLifecycleEventParams{
-				CorrelationID: params.Run.CorrelationID,
-				EventType:     floweventdomain.EventTypeRunNamespaceCleanupFailed,
-				RunID:         params.Run.RunID,
-				ProjectID:     params.Run.ProjectID,
-				Execution:     params.Execution,
-				Extra: namespaceLifecycleEventExtra{
-					Error: cleanupErr.Error(),
-				},
-			}); err != nil {
-				s.logger.Error("insert run.namespace.cleanup_failed event failed", "run_id", params.Run.RunID, "err", err)
-			}
-		} else {
-			if err := s.insertNamespaceLifecycleEvent(ctx, namespaceLifecycleEventParams{
-				CorrelationID: params.Run.CorrelationID,
-				EventType:     floweventdomain.EventTypeRunNamespaceCleaned,
-				RunID:         params.Run.RunID,
-				ProjectID:     params.Run.ProjectID,
-				Execution:     params.Execution,
-			}); err != nil {
-				s.logger.Error("insert run.namespace.cleaned event failed", "run_id", params.Run.RunID, "err", err)
-			}
-			s.upsertNamespaceStatusComment(ctx, params, true, "upsert run status comment (namespace deleted) failed")
-		}
+		s.upsertNamespaceStatusComment(ctx, params, false, "upsert run status comment (namespace retained by ttl policy) failed")
 	}
 
 	return nil
@@ -729,6 +758,19 @@ func (s *Service) insertNamespaceLifecycleEvent(ctx context.Context, params name
 			Error:          params.Extra.Error,
 			Reason:         params.Extra.Reason,
 			CleanupCommand: params.Extra.CleanupCommand,
+			NamespaceLeaseTTL: func() string {
+				if params.Extra.NamespaceLeaseTTL <= 0 {
+					return ""
+				}
+				return params.Extra.NamespaceLeaseTTL.String()
+			}(),
+			NamespaceLeaseExpiresAt: func() string {
+				if params.Extra.NamespaceLeaseExpiresAt.IsZero() {
+					return ""
+				}
+				return params.Extra.NamespaceLeaseExpiresAt.UTC().Format(time.RFC3339)
+			}(),
+			NamespaceReused: params.Extra.NamespaceReused,
 		}),
 		CreatedAt: s.now().UTC(),
 	})
