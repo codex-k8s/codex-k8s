@@ -285,29 +285,63 @@ func (s *Service) runKanikoBuild(ctx context.Context, namespace string, reposito
 	jobVars["CODEXK8S_KANIKO_DESTINATION_LATEST"] = destinationLatest
 	jobVars["CODEXK8S_KANIKO_DESTINATION_SHA"] = destinationTagged
 
-	renderedJobRaw, err := manifesttpl.Render(templatePath, templateRaw, jobVars)
-	if err != nil {
-		return buildImageResult{}, fmt.Errorf("render kaniko job template %s for image %s: %w", templatePath, entry.Name, err)
-	}
-	renderedJob := string(renderedJobRaw)
-	if err := s.k8s.DeleteJobIfExists(ctx, namespace, jobName); err != nil {
-		return buildImageResult{}, fmt.Errorf("delete previous kaniko job %s: %w", jobName, err)
-	}
-	if _, err := s.k8s.ApplyManifest(ctx, []byte(renderedJob), namespace, s.cfg.KanikoFieldManager); err != nil {
-		return buildImageResult{}, fmt.Errorf("apply kaniko job %s: %w", jobName, err)
-	}
-	if err := s.k8s.WaitForJobComplete(ctx, namespace, jobName, s.cfg.KanikoTimeout); err != nil {
-		jobLogs, logsErr := s.k8s.GetJobLogs(ctx, namespace, jobName, s.cfg.KanikoJobLogTailLines)
-		if logsErr == nil && strings.TrimSpace(jobLogs) != "" {
-			s.appendTaskLogBestEffort(ctx, runID, "build", "error", "Build image "+entry.Name+" failed logs:\n"+jobLogs)
-			return buildImageResult{}, fmt.Errorf("wait kaniko job %s: %w; logs: %s", jobName, err, trimLogForError(jobLogs))
+	runKanikoOnce := func(attemptVars map[string]string, attemptLabel string) (string, error) {
+		renderedJobRaw, renderErr := manifesttpl.Render(templatePath, templateRaw, attemptVars)
+		if renderErr != nil {
+			return "", fmt.Errorf("render kaniko job template %s for image %s: %w", templatePath, entry.Name, renderErr)
 		}
-		return buildImageResult{}, fmt.Errorf("wait kaniko job %s: %w", jobName, err)
+		renderedJob := string(renderedJobRaw)
+		if err := s.k8s.DeleteJobIfExists(ctx, namespace, jobName); err != nil {
+			return "", fmt.Errorf("delete previous kaniko job %s: %w", jobName, err)
+		}
+		if _, err := s.k8s.ApplyManifest(ctx, []byte(renderedJob), namespace, s.cfg.KanikoFieldManager); err != nil {
+			return "", fmt.Errorf("apply kaniko job %s: %w", jobName, err)
+		}
+		waitErr := s.k8s.WaitForJobComplete(ctx, namespace, jobName, s.cfg.KanikoTimeout)
+		jobLogs, logsErr := s.k8s.GetJobLogs(ctx, namespace, jobName, s.cfg.KanikoJobLogTailLines)
+		if waitErr != nil {
+			if logsErr == nil && strings.TrimSpace(jobLogs) != "" {
+				return jobLogs, fmt.Errorf("wait kaniko job %s: %w; logs: %s", jobName, waitErr, trimLogForError(jobLogs))
+			}
+			return "", fmt.Errorf("wait kaniko job %s: %w", jobName, waitErr)
+		}
+		if logsErr == nil && strings.TrimSpace(jobLogs) != "" {
+			logSuffix := ""
+			if attemptLabel != "" {
+				logSuffix = " (" + attemptLabel + ")"
+			}
+			s.appendTaskLogBestEffort(ctx, runID, "build", "info", "Build image "+entry.Name+" logs"+logSuffix+":\n"+jobLogs)
+		}
+		return jobLogs, nil
 	}
-	jobLogs, logsErr := s.k8s.GetJobLogs(ctx, namespace, jobName, s.cfg.KanikoJobLogTailLines)
-	if logsErr == nil && strings.TrimSpace(jobLogs) != "" {
-		s.appendTaskLogBestEffort(ctx, runID, "build", "info", "Build image "+entry.Name+" logs:\n"+jobLogs)
+
+	failureLogs, buildErr := runKanikoOnce(jobVars, "")
+	if buildErr != nil {
+		if isKanikoCacheEnabled(jobVars) && shouldRetryKanikoWithoutCache(failureLogs) {
+			s.appendTaskLogBestEffort(ctx, runID, "build", "warning", "Build image "+entry.Name+" failed due stale kaniko cache, retrying without cache")
+			noCacheVars := cloneStringMap(jobVars)
+			noCacheVars["CODEXK8S_KANIKO_CACHE_ENABLED"] = "false"
+			noCacheVars["CODEXK8S_KANIKO_CACHE_REPO"] = ""
+			noCacheVars["CODEXK8S_KANIKO_CACHE_TTL"] = ""
+			retryLogs, retryErr := runKanikoOnce(noCacheVars, "retry-no-cache")
+			if retryErr == nil {
+				if strings.TrimSpace(retryLogs) != "" {
+					s.appendTaskLogBestEffort(ctx, runID, "build", "info", "Build image "+entry.Name+" retry without cache succeeded")
+				}
+			} else {
+				if strings.TrimSpace(retryLogs) != "" {
+					s.appendTaskLogBestEffort(ctx, runID, "build", "error", "Build image "+entry.Name+" retry without cache failed logs:\n"+retryLogs)
+				}
+				return buildImageResult{}, fmt.Errorf("build image %s retry without cache failed: %w", entry.Name, retryErr)
+			}
+		} else {
+			if strings.TrimSpace(failureLogs) != "" {
+				s.appendTaskLogBestEffort(ctx, runID, "build", "error", "Build image "+entry.Name+" failed logs:\n"+failureLogs)
+			}
+			return buildImageResult{}, buildErr
+		}
 	}
+
 	s.appendTaskLogBestEffort(ctx, runID, "build", "info", "Build image "+entry.Name+" finished: "+destinationTagged)
 
 	return buildImageResult{
@@ -391,15 +425,7 @@ func (s *Service) mirrorExternalDependencies(ctx context.Context, namespace stri
 			continue
 		}
 
-		exists, checkErr := s.checkRegistryTagExists(ctx, repoPath, targetTag, runID, "mirror", entry.Name)
-		if checkErr != nil {
-			return fmt.Errorf("check mirror target %s:%s: %w", repoPath, targetTag, checkErr)
-		}
-		if exists {
-			s.appendTaskLogBestEffort(ctx, runID, "mirror", "info", "Mirror already exists: "+targetImage)
-			continue
-		}
-		s.appendTaskLogBestEffort(ctx, runID, "mirror", "info", "Mirror is missing, syncing "+sourceImage+" -> "+targetImage)
+		s.appendTaskLogBestEffort(ctx, runID, "mirror", "info", "Ensuring mirror "+sourceImage+" -> "+targetImage)
 
 		jobName := fmt.Sprintf("codex-k8s-mirror-%s-%s", sanitizeNameToken(entry.Name, 20), jobToken)
 		if len(jobName) > 63 {
@@ -553,17 +579,22 @@ func (s *Service) checkRegistryTagExists(ctx context.Context, repositoryPath str
 		return false, fmt.Errorf("registry repository path and tag are required")
 	}
 	s.appendTaskLogBestEffort(ctx, runID, stage, "info", "Registry check for "+imageName+": "+repositoryPath+":"+tag)
-	tags, err := s.registry.ListTags(ctx, repositoryPath)
+	info, found, err := s.registry.GetTagInfo(ctx, repositoryPath, tag)
 	if err != nil {
 		s.appendTaskLogBestEffort(ctx, runID, stage, "error", "Registry check failed for "+repositoryPath+":"+tag+": "+err.Error())
 		return false, err
 	}
-	if hasRegistryStringTag(tags, tag) {
-		s.appendTaskLogBestEffort(ctx, runID, stage, "info", "Registry check result for "+imageName+": found "+repositoryPath+":"+tag)
-		return true, nil
+	if !found {
+		s.appendTaskLogBestEffort(ctx, runID, stage, "info", "Registry check result for "+imageName+": missing "+repositoryPath+":"+tag)
+		return false, nil
 	}
-	s.appendTaskLogBestEffort(ctx, runID, stage, "info", "Registry check result for "+imageName+": missing "+repositoryPath+":"+tag)
-	return false, nil
+	digest := strings.TrimSpace(info.Digest)
+	if digest == "" {
+		s.appendTaskLogBestEffort(ctx, runID, stage, "warning", "Registry check result for "+imageName+": tag exists without digest, treat as missing "+repositoryPath+":"+tag)
+		return false, nil
+	}
+	s.appendTaskLogBestEffort(ctx, runID, stage, "info", "Registry check result for "+imageName+": found "+repositoryPath+":"+tag+" digest="+digest)
+	return true, nil
 }
 
 func parsePositiveInt(raw string, fallback int) int {
@@ -612,17 +643,25 @@ func splitImageRef(ref string) (string, string) {
 	return trimmed[:lastColon], trimmed[lastColon+1:]
 }
 
-func hasRegistryStringTag(tags []string, tag string) bool {
-	target := strings.TrimSpace(tag)
-	if target == "" {
+func isKanikoCacheEnabled(vars map[string]string) bool {
+	value := strings.TrimSpace(vars["CODEXK8S_KANIKO_CACHE_ENABLED"])
+	if value == "" {
+		return true
+	}
+	enabled, err := strconv.ParseBool(strings.ToLower(value))
+	if err != nil {
+		return true
+	}
+	return enabled
+}
+
+func shouldRetryKanikoWithoutCache(jobLogs string) bool {
+	lower := strings.ToLower(strings.TrimSpace(jobLogs))
+	if lower == "" {
 		return false
 	}
-	for _, item := range tags {
-		if strings.TrimSpace(item) == target {
-			return true
-		}
-	}
-	return false
+	return strings.Contains(lower, "error while retrieving image from cache") ||
+		(strings.Contains(lower, "manifest_unknown") && strings.Contains(lower, "from cache"))
 }
 
 func trimLogForError(logs string) string {

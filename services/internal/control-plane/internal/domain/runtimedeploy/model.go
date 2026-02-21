@@ -61,6 +61,7 @@ type KubernetesClient interface {
 // RegistryClient describes internal registry operations required by runtime deploy.
 type RegistryClient interface {
 	ListTags(ctx context.Context, repository string) ([]string, error)
+	GetTagInfo(ctx context.Context, repository string, tag string) (registry.TagInfo, bool, error)
 	ListTagInfos(ctx context.Context, repository string) ([]registry.TagInfo, error)
 	DeleteTag(ctx context.Context, repository string, tag string) (registry.DeleteResult, error)
 }
