@@ -96,6 +96,12 @@ func mergeState(base commentState, update commentState) commentState {
 	if phaseOrder(update.Phase) >= phaseOrder(base.Phase) {
 		base.Phase = update.Phase
 	}
+	if strings.TrimSpace(update.RepositoryFullName) != "" {
+		base.RepositoryFullName = strings.TrimSpace(update.RepositoryFullName)
+	}
+	if update.IssueNumber > 0 {
+		base.IssueNumber = update.IssueNumber
+	}
 	if strings.TrimSpace(update.JobName) != "" {
 		base.JobName = strings.TrimSpace(update.JobName)
 	}

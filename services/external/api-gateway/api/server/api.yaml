@@ -978,6 +978,31 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /api/v1/staff/github/issues/stage-transition:
+    post:
+      summary: Transition stage label on GitHub issue
+      operationId: transitionIssueStageLabel
+      tags: [staff-projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransitionIssueStageLabelRequest"
+      responses:
+        "200":
+          description: Issue stage label transitioned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransitionIssueStageLabelResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /api/v1/staff/config-entries:
     get:
       summary: List configuration entries
@@ -1989,6 +2014,45 @@ components:
         bot_email:
           type: string
           nullable: true
+
+    TransitionIssueStageLabelRequest:
+      type: object
+      additionalProperties: false
+      required: [repository_full_name, issue_number, target_label]
+      properties:
+        repository_full_name:
+          type: string
+        issue_number:
+          type: integer
+          format: int32
+        target_label:
+          type: string
+
+    TransitionIssueStageLabelResponse:
+      type: object
+      additionalProperties: false
+      required: [repository_full_name, issue_number, removed_labels, added_labels, final_labels]
+      properties:
+        repository_full_name:
+          type: string
+        issue_number:
+          type: integer
+          format: int32
+        issue_url:
+          type: string
+          nullable: true
+        removed_labels:
+          type: array
+          items:
+            type: string
+        added_labels:
+          type: array
+          items:
+            type: string
+        final_labels:
+          type: array
+          items:
+            type: string
 
     UpsertRepositoryBotParamsRequest:
       type: object

@@ -5,6 +5,8 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"strconv"
 	"strings"
 	"text/template"
 )
@@ -35,7 +37,11 @@ type commentTemplateContext struct {
 	CodexAuthVerificationURL string
 	CodexAuthUserCode        string
 	ReviseActionLabel        string
+	ReviseActionURL          string
 	NextStageActionLabel     string
+	NextStageActionURL       string
+	AlternativeActionLabel   string
+	AlternativeActionURL     string
 
 	ManagementURL string
 	StateMarker   string
@@ -72,13 +78,13 @@ type commentTemplateContext struct {
 	ShowCodexAuthUserCode        bool
 }
 
-func renderCommentBody(state commentState, managementURL string) (string, error) {
+func renderCommentBody(state commentState, managementURL string, publicBaseURL string) (string, error) {
 	marker, err := renderStateMarker(state)
 	if err != nil {
 		return "", err
 	}
 
-	ctx := buildCommentTemplateContext(state, strings.TrimSpace(managementURL), marker)
+	ctx := buildCommentTemplateContext(state, strings.TrimSpace(managementURL), strings.TrimSpace(publicBaseURL), marker)
 	templateName := resolveCommentTemplateName(normalizeLocale(state.PromptLocale, localeEN))
 	var out bytes.Buffer
 	if err := commentTemplates.ExecuteTemplate(&out, templateName, ctx); err != nil {
@@ -87,8 +93,9 @@ func renderCommentBody(state commentState, managementURL string) (string, error)
 	return strings.TrimSpace(out.String()) + "\n", nil
 }
 
-func buildCommentTemplateContext(state commentState, managementURL string, marker string) commentTemplateContext {
+func buildCommentTemplateContext(state commentState, managementURL string, publicBaseURL string, marker string) commentTemplateContext {
 	trimmedTriggerKind := strings.TrimSpace(state.TriggerKind)
+	trimmedRepositoryFullName := strings.TrimSpace(state.RepositoryFullName)
 	trimmedRuntimeMode := strings.TrimSpace(state.RuntimeMode)
 	trimmedJobName := strings.TrimSpace(state.JobName)
 	trimmedJobNamespace := strings.TrimSpace(state.JobNamespace)
@@ -101,7 +108,10 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 	normalizedRunStatus := strings.ToLower(strings.TrimSpace(state.RunStatus))
 	normalizedRuntimeMode := strings.ToLower(strings.TrimSpace(state.RuntimeMode))
 	phaseLevel := phaseOrder(state.Phase)
-	reviseLabel, nextStageLabel := resolveStageActionLabels(trimmedTriggerKind)
+	reviseLabel, nextStageLabel, alternativeLabel := resolveStageActionLabels(trimmedTriggerKind)
+	reviseActionURL := buildStageTransitionActionURL(publicBaseURL, trimmedRepositoryFullName, state.IssueNumber, reviseLabel, trimmedIssueURL)
+	nextStageActionURL := buildStageTransitionActionURL(publicBaseURL, trimmedRepositoryFullName, state.IssueNumber, nextStageLabel, trimmedIssueURL)
+	alternativeActionURL := buildStageTransitionActionURL(publicBaseURL, trimmedRepositoryFullName, state.IssueNumber, alternativeLabel, trimmedIssueURL)
 
 	return commentTemplateContext{
 		RunID:                    strings.TrimSpace(state.RunID),
@@ -119,7 +129,11 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 		CodexAuthVerificationURL: strings.TrimSpace(state.CodexAuthVerificationURL),
 		CodexAuthUserCode:        strings.TrimSpace(state.CodexAuthUserCode),
 		ReviseActionLabel:        reviseLabel,
+		ReviseActionURL:          reviseActionURL,
 		NextStageActionLabel:     nextStageLabel,
+		NextStageActionURL:       nextStageActionURL,
+		AlternativeActionLabel:   alternativeLabel,
+		AlternativeActionURL:     alternativeActionURL,
 
 		ManagementURL: managementURL,
 		StateMarker:   marker,
@@ -136,7 +150,7 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 		ShowFinished:           phaseLevel >= phaseOrder(PhaseFinished),
 		ShowNamespaceAction:    trimmedNamespace != "" && phaseLevel >= phaseOrder(PhaseNamespaceDeleted),
 		ShowRuntimePreparation: normalizedRuntimeMode == runtimeModeFullEnv,
-		ShowActionCards:        reviseLabel != "" || nextStageLabel != "",
+		ShowActionCards:        reviseLabel != "" || nextStageLabel != "" || alternativeLabel != "",
 
 		CreatedReached:              phaseLevel >= phaseOrder(PhaseCreated),
 		PreparingRuntimeReached:     phaseLevel >= phaseOrder(PhasePreparingRuntime),
@@ -164,31 +178,50 @@ func resolveCommentTemplateName(locale string) string {
 	return commentTemplateNameEN
 }
 
-func resolveStageActionLabels(triggerKind string) (reviseLabel string, nextStageLabel string) {
+func resolveStageActionLabels(triggerKind string) (reviseLabel string, nextStageLabel string, alternativeLabel string) {
 	switch normalizeTriggerKind(triggerKind) {
 	case "intake", "intake_revise":
-		return "run:intake:revise", "run:vision"
+		return "run:intake:revise", "run:vision", ""
 	case "vision", "vision_revise":
-		return "run:vision:revise", "run:prd"
+		return "run:vision:revise", "run:prd", ""
 	case "prd", "prd_revise":
-		return "run:prd:revise", "run:arch"
+		return "run:prd:revise", "run:arch", ""
 	case "arch", "arch_revise":
-		return "run:arch:revise", "run:design"
+		return "run:arch:revise", "run:design", ""
 	case "design", "design_revise":
-		return "run:design:revise", "run:plan"
+		return "run:design:revise", "run:plan", "run:dev"
 	case "plan", "plan_revise":
-		return "run:plan:revise", "run:dev"
+		return "run:plan:revise", "run:dev", ""
 	case "dev", "dev_revise":
-		return "run:dev:revise", "run:qa"
+		return "run:dev:revise", "run:qa", ""
 	case "qa":
-		return "", "run:release"
+		return "", "run:release", ""
 	case "release":
-		return "", "run:postdeploy"
+		return "", "run:postdeploy", ""
 	case "postdeploy":
-		return "", "run:ops"
+		return "", "run:ops", ""
 	default:
-		return "", ""
+		return "", "", ""
 	}
+}
+
+func buildStageTransitionActionURL(publicBaseURL string, repositoryFullName string, issueNumber int, targetLabel string, issueURL string) string {
+	baseURL := strings.TrimRight(strings.TrimSpace(publicBaseURL), "/")
+	repositoryFullName = strings.TrimSpace(repositoryFullName)
+	targetLabel = strings.TrimSpace(targetLabel)
+	if baseURL == "" || repositoryFullName == "" || issueNumber <= 0 || targetLabel == "" {
+		return ""
+	}
+
+	values := url.Values{}
+	values.Set("repo", repositoryFullName)
+	values.Set("issue", strconv.Itoa(issueNumber))
+	values.Set("target", targetLabel)
+	if trimmedIssueURL := strings.TrimSpace(issueURL); trimmedIssueURL != "" {
+		values.Set("issue_url", trimmedIssueURL)
+	}
+
+	return baseURL + "/governance/labels-stages?" + values.Encode()
 }
 
 func renderStateMarker(state commentState) (string, error) {

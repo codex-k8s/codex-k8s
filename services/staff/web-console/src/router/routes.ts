@@ -63,7 +63,7 @@ export const routes: RouteRecordRaw[] = [
 
   // Governance (scaffold)
   { path: "/governance/audit-log", name: "audit-log", component: AuditLogPage, meta: { section: "governance", crumbKey: "crumb.auditLog" } },
-  { path: "/governance/labels-stages", name: "labels-stages", component: LabelsStagesPage, meta: { section: "governance", crumbKey: "crumb.labelsStages" } },
+  { path: "/governance/labels-stages", name: "labels-stages", component: LabelsStagesPage, meta: { adminOnly: true, section: "governance", crumbKey: "crumb.labelsStages" } },
 
   // Admin / Cluster (scaffold)
   { path: "/admin/namespaces", name: "cluster-namespaces", component: NamespacesPage, meta: { section: "admin", crumbKey: "crumb.clusterNamespaces" } },

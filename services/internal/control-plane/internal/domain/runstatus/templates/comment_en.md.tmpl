@@ -102,10 +102,13 @@
 {{- if .ShowActionCards }}
 ### ⏭ Next Steps
 {{- if .ReviseActionLabel }}
-- Revise current stage: `{{ .ReviseActionLabel }}`
+- Revise current stage: {{- if .ReviseActionURL }}[`{{ .ReviseActionLabel }}`]({{ .ReviseActionURL }}){{- else }}`{{ .ReviseActionLabel }}`{{- end }}
 {{- end }}
 {{- if .NextStageActionLabel }}
-- Move to next stage: `{{ .NextStageActionLabel }}`
+- Move to next stage: {{- if .NextStageActionURL }}[`{{ .NextStageActionLabel }}`]({{ .NextStageActionURL }}){{- else }}`{{ .NextStageActionLabel }}`{{- end }}
+{{- end }}
+{{- if .AlternativeActionLabel }}
+- Fast-track option: {{- if .AlternativeActionURL }}[`{{ .AlternativeActionLabel }}`]({{ .AlternativeActionURL }}){{- else }}`{{ .AlternativeActionLabel }}`{{- end }}
 {{- end }}
 {{- end }}
 

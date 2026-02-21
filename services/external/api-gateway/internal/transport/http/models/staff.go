@@ -216,6 +216,15 @@ type ProjectGitHubTokens struct {
 	BotEmail         *string `json:"bot_email"`
 }
 
+type TransitionIssueStageLabelResponse struct {
+	RepositoryFullName string   `json:"repository_full_name"`
+	IssueNumber        int32    `json:"issue_number"`
+	IssueURL           *string  `json:"issue_url"`
+	RemovedLabels      []string `json:"removed_labels"`
+	AddedLabels        []string `json:"added_labels"`
+	FinalLabels        []string `json:"final_labels"`
+}
+
 type PreflightCheckResult struct {
 	Name    string  `json:"name"`
 	Status  string  `json:"status"`

@@ -207,6 +207,8 @@ func (c runContext) hasCommentTarget() bool {
 type commentState struct {
 	RunID                    string `json:"run_id"`
 	Phase                    Phase  `json:"phase"`
+	RepositoryFullName       string `json:"repository_full_name,omitempty"`
+	IssueNumber              int    `json:"issue_number,omitempty"`
 	JobName                  string `json:"job_name,omitempty"`
 	JobNamespace             string `json:"job_namespace,omitempty"`
 	RuntimeMode              string `json:"runtime_mode,omitempty"`

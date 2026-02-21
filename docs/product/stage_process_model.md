@@ -69,10 +69,9 @@ approvals:
   - для doc/design этапов подсказки включают `run:<stage>:revise` и `run:<next-stage>`;
   - для dev цикла — `run:dev:revise` и `run:qa`.
 - Подсказки в GitHub-комментарии intentionally compact:
-  - максимум 2 действия (`revise` + канонический `next-stage`);
-  - для `design` канонический переход фиксирован как `run:plan`;
-  - ручной fast-track `design -> run:dev` допускается, но не публикуется как отдельная auto-подсказка в baseline.
-- Planned UX после MVP: next-step action-link открывает staff web-console, где frontend проверяет RBAC и подтверждает переход через модалку, а backend выполняет label transition через policy/audit контур.
+  - обычно 2 действия (`revise` + канонический `next-stage`);
+  - для `design` дополнительно публикуется fast-track `run:dev` вместе с `run:plan`.
+- Реализованный UX: next-step action-link открывает staff web-console, где frontend проверяет RBAC и подтверждает переход через модалку, а backend выполняет label transition на Issue.
 
 ## Вход/выход этапа
 

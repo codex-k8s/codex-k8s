@@ -102,10 +102,13 @@
 {{- if .ShowActionCards }}
 ### ⏭ Следующие шаги
 {{- if .ReviseActionLabel }}
-- Доработка текущего этапа: `{{ .ReviseActionLabel }}`
+- Доработка текущего этапа: {{- if .ReviseActionURL }}[`{{ .ReviseActionLabel }}`]({{ .ReviseActionURL }}){{- else }}`{{ .ReviseActionLabel }}`{{- end }}
 {{- end }}
 {{- if .NextStageActionLabel }}
-- Переход к следующему этапу: `{{ .NextStageActionLabel }}`
+- Переход к следующему этапу: {{- if .NextStageActionURL }}[`{{ .NextStageActionLabel }}`]({{ .NextStageActionURL }}){{- else }}`{{ .NextStageActionLabel }}`{{- end }}
+{{- end }}
+{{- if .AlternativeActionLabel }}
+- Быстрый переход: {{- if .AlternativeActionURL }}[`{{ .AlternativeActionLabel }}`]({{ .AlternativeActionURL }}){{- else }}`{{ .AlternativeActionLabel }}`{{- end }}
 {{- end }}
 {{- end }}
 

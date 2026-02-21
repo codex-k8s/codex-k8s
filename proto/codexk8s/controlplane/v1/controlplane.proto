@@ -402,6 +402,22 @@ message UpsertProjectGitHubTokensRequest {
   optional string bot_email = 6;
 }
 
+message TransitionIssueStageLabelRequest {
+  Principal principal = 1;
+  string repository_full_name = 2;
+  int32 issue_number = 3;
+  string target_label = 4;
+}
+
+message TransitionIssueStageLabelResponse {
+  string repository_full_name = 1;
+  int32 issue_number = 2;
+  optional string issue_url = 3;
+  repeated string removed_labels = 4;
+  repeated string added_labels = 5;
+  repeated string final_labels = 6;
+}
+
 message ConfigEntry {
   string id = 1;
   string scope = 2;
@@ -839,6 +855,7 @@ service ControlPlaneService {
 
   rpc GetProjectGitHubTokens(GetProjectGitHubTokensRequest) returns (ProjectGitHubTokens);
   rpc UpsertProjectGitHubTokens(UpsertProjectGitHubTokensRequest) returns (google.protobuf.Empty);
+  rpc TransitionIssueStageLabel(TransitionIssueStageLabelRequest) returns (TransitionIssueStageLabelResponse);
 
   rpc ListConfigEntries(ListConfigEntriesRequest) returns (ListConfigEntriesResponse);
   rpc UpsertConfigEntry(UpsertConfigEntryRequest) returns (ConfigEntry);

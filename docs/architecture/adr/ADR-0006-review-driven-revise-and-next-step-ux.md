@@ -31,7 +31,7 @@ approvals:
   - при необходимости отдельно проставлять model/reasoning override;
   - после ревью вручную ориентироваться, какие next-stage лейблы ставить дальше.
 - Одновременно нельзя ослаблять существующие ограничения:
-  - label transitions только через MCP с аудитом;
+  - label transitions должны оставаться audit-friendly (MCP для run-scoped операций и staff API для owner next-step действий);
   - run trigger остаётся один на Issue;
   - при неоднозначности запуск не должен становиться недетерминированным.
 
@@ -102,9 +102,8 @@ approvals:
   - переход к следующему stage.
 
 Ограничение плотности подсказок в GitHub-сообщении (чтобы не перегружать Owner):
-- максимум 2 action-подсказки (`revise` + канонический `next-stage`);
-- для `design` канонический переход = `run:plan`;
-- ускоренный путь `design -> dev` допускается вручную через `run:dev`, но в MVP baseline не публикуется как отдельная auto-подсказка в service-comment.
+- обычно 2 action-подсказки (`revise` + канонический `next-stage`);
+- для `design` публикуется третий fast-track вариант `run:dev` (в дополнение к `run:plan`).
 
 Минимальный набор ссылок в сообщении:
 - Issue;
@@ -112,14 +111,13 @@ approvals:
 - run-status/диагностический комментарий;
 - явный список рекомендуемых лейблов для следующего шага.
 
-Planned-расширение UX (после MVP baseline):
-- next-step action-link из GitHub ведёт в staff web-console на экран перехода этапа;
-- frontend выполняет проверку прав (RBAC) и показывает confirm-модалку;
-- после подтверждения backend выполняет label transition (снятие текущего trigger + постановка нового) через policy/audit контур.
-- до этого расширения в GitHub остаются текстовые label-подсказки и прямые ссылки на Issue/PR/run.
+Реализованное расширение UX:
+- next-step action-link из GitHub ведёт в staff web-console на экран перехода этапа (`/governance/labels-stages?...`);
+- frontend выполняет проверку прав (platform admin guard) и показывает confirm-модалку;
+- после подтверждения backend выполняет label transition на Issue (снятие текущих `run:*` + постановка целевого `run:*`) через staff API control-plane.
 
 ### 4. Оркестрационные ограничения
-- Все label transitions выполняются только через MCP (`github_labels_*`).
+- Label transitions для next-step UX выполняются через staff API control-plane с RBAC-проверкой и аудитом.
 - На Issue остаётся правило одного активного trigger `run:*`.
 - При ambiguous resolve не допускается эвристический “best guess” запуск без явного Owner input.
 

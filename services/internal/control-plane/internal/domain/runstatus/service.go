@@ -79,6 +79,7 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 	currentState := commentState{
 		RunID:                    runID,
 		Phase:                    params.Phase,
+		RepositoryFullName:       strings.TrimSpace(runCtx.payload.Repository.FullName),
 		JobName:                  strings.TrimSpace(params.JobName),
 		JobNamespace:             strings.TrimSpace(params.JobNamespace),
 		RuntimeMode:              normalizeRuntimeMode(params.RuntimeMode, effectiveTriggerKind),
@@ -94,6 +95,7 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		AlreadyDeleted:           params.AlreadyDeleted,
 	}
 	if runCtx.payload.Issue != nil {
+		currentState.IssueNumber = int(runCtx.payload.Issue.Number)
 		currentState.IssueURL = strings.TrimSpace(runCtx.payload.Issue.HTMLURL)
 	}
 	if runCtx.payload.PullRequest != nil {
@@ -112,7 +114,7 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 	}
 	currentState.SlotURL = s.resolveRunSlotURL(runCtx, currentState)
 
-	body, err := renderCommentBody(currentState, s.buildRunManagementURL(runID))
+	body, err := renderCommentBody(currentState, s.buildRunManagementURL(runID), s.cfg.PublicBaseURL)
 	if err != nil {
 		return UpsertCommentResult{}, err
 	}
