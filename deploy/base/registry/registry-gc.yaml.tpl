@@ -75,22 +75,21 @@ spec:
               emptyDir: {}
           initContainers:
             - name: copy-kubectl
-              image: {{ envOr "CODEXK8S_KUBECTL_IMAGE" "127.0.0.1:5000/codex-k8s/mirror/kubectl:v1.32.2" }}
+              image: {{ envOr "CODEXK8S_KUBECTL_IMAGE" "alpine/k8s:1.32.2" }}
               imagePullPolicy: IfNotPresent
               command:
                 - sh
                 - -ec
                 - |
                   set -eu
-                  for candidate in /usr/local/bin/kubectl /usr/bin/kubectl /bin/kubectl; do
-                    if [ -x "$candidate" ]; then
-                      cp "$candidate" /tools/kubectl
-                      chmod +x /tools/kubectl
-                      exit 0
-                    fi
-                  done
-                  echo "kubectl binary not found in image" >&2
-                  exit 1
+                  candidate="$(command -v kubectl || true)"
+                  [ -n "$candidate" ] && [ -x "$candidate" ] || {
+                    echo "kubectl binary not found in image" >&2
+                    exit 1
+                  }
+                  cp "$candidate" /tools/kubectl
+                  chmod +x /tools/kubectl
+                  exit 0
               volumeMounts:
                 - name: tools
                   mountPath: /tools

@@ -347,8 +347,12 @@ func Run() error {
 	defer func() { _ = grpcLis.Close() }()
 
 	agentCallbackService := agentcallbackdomain.NewService(agentSessions, flowEvents, agentRuns)
-	if err := startRunAgentLogsCleanupLoop(runCtx, agentCallbackService, logger, cfg.RunAgentLogsRetentionDays); err != nil {
-		return fmt.Errorf("start run agent logs cleanup loop: %w", err)
+	retentionDays := cfg.RunHeavyFieldsRetentionDays
+	if retentionDays <= 0 {
+		retentionDays = cfg.RunAgentLogsRetentionDays
+	}
+	if err := startRunHeavyFieldsCleanupLoop(runCtx, agentCallbackService, runtimeDeployService, logger, retentionDays); err != nil {
+		return fmt.Errorf("start run heavy fields cleanup loop: %w", err)
 	}
 	if err := startRuntimeDeployReconcilerLoop(runCtx, runtimeDeployService, logger, runtimeDeployWorkerID, runtimeDeployReconcileInterval, runtimeDeployLeaseTTL); err != nil {
 		return fmt.Errorf("start runtime deploy reconciler loop: %w", err)

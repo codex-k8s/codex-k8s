@@ -106,6 +106,7 @@ kubectl get ns -o json | grep -E 'codexk8s.io/(managed-by|namespace-purpose|runt
 - В production/non-ai окружениях включён `CronJob` `codex-k8s-registry-gc`.
 - Расписание по умолчанию: ежедневно в `03:17 UTC`.
 - Job делает `scale deployment/codex-k8s-registry 1 -> 0`, выполняет `registry garbage-collect --delete-untagged`, затем возвращает `replicas=1`.
+- Для init-контейнера GC helper по умолчанию используется `alpine/k8s:1.32.2` (можно переопределить через `CODEXK8S_KUBECTL_IMAGE`).
 
 Проверка статуса:
 
@@ -123,6 +124,16 @@ ns="codex-k8s-prod"
 kubectl -n "$ns" create job --from=cronjob/codex-k8s-registry-gc codex-k8s-registry-gc-manual-$(date +%s)
 kubectl -n "$ns" get jobs -l app.kubernetes.io/name=codex-k8s-registry-gc
 ```
+
+## Cleanup heavy JSON payloads (автоматический)
+
+- Control-plane выполняет hourly cleanup heavy JSON-полей для старых записей (по умолчанию `7` дней):
+  - `agent_runs.agent_logs_json`;
+  - `agent_sessions.session_json`, `agent_sessions.codex_cli_session_json`;
+  - `runtime_deploy_tasks.logs_json`.
+- Retention настраивается через:
+  - `CODEXK8S_RUN_HEAVY_FIELDS_RETENTION_DAYS` (основной ключ);
+  - `CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS` (legacy fallback).
 
 ## Типовые проблемы
 
