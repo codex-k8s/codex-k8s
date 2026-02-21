@@ -429,6 +429,24 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /api/v1/staff/runs/{run_id}/realtime:
+    get:
+      summary: Open realtime run stream (WebSocket upgrade)
+      operationId: runRealtime
+      tags: [staff-runs]
+      parameters:
+        - $ref: "#/components/parameters/RunID"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/TailLines"
+        - $ref: "#/components/parameters/IncludeLogs"
+      responses:
+        "200":
+          description: Realtime stream endpoint (expects WebSocket upgrade)
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /api/v1/staff/runs/{run_id}/logs:
     get:
       summary: Get run logs snapshot with tail lines
@@ -1252,6 +1270,13 @@ components:
     IncludeSnapshot:
       in: query
       name: include_snapshot
+      required: false
+      schema:
+        type: boolean
+        default: false
+    IncludeLogs:
+      in: query
+      name: include_logs
       required: false
       schema:
         type: boolean

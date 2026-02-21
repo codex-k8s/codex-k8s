@@ -188,6 +188,7 @@ func Run() error {
 		GitHub:     githubMCPClient,
 		Kubernetes: k8sClient,
 		FlowEvents: flowEvents,
+		StaffRuns:  runs,
 	})
 	if err != nil {
 		return fmt.Errorf("init runstatus domain service: %w", err)

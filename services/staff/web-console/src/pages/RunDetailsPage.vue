@@ -14,7 +14,6 @@
         />
         <CopyChip v-if="details.run?.namespace" :label="t('pages.runDetails.namespace')" :value="details.run.namespace" icon="mdi-kubernetes" />
 
-        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="details.loading" @click="loadAll" />
         <AdaptiveBtn
           v-if="canDeleteNamespace"
           color="error"
@@ -47,13 +46,18 @@
     </VAlert>
 
     <VRow class="mt-4" density="compact">
-      <VCol cols="12" md="5">
+      <VCol cols="12" md="7">
         <VCard variant="outlined">
           <VCardTitle class="text-subtitle-1 d-flex align-center justify-space-between ga-2 flex-wrap">
             <span>{{ t("pages.runDetails.title") }}</span>
-            <VChip size="small" variant="tonal" class="font-weight-bold" :color="colorForRunStatus(details.run?.status)">
-              {{ details.run?.status || "-" }}
-            </VChip>
+            <div class="d-flex align-center ga-2 flex-wrap">
+              <VChip size="small" variant="tonal" class="font-weight-bold" :color="colorForRunStatus(details.run?.status)">
+                {{ details.run?.status || "-" }}
+              </VChip>
+              <VChip size="small" variant="tonal" :color="realtimeChipColor">
+                {{ t("pages.runDetails.realtime") }}: {{ t(realtimeChipLabelKey) }}
+              </VChip>
+            </div>
           </VCardTitle>
           <VCardText>
             <div class="d-flex flex-column ga-2">
@@ -121,75 +125,31 @@
           </VCardText>
         </VCard>
 
-        <RunTimeline class="mt-4" :run="details.run" :locale="locale" />
+        <VCard class="mt-4" variant="outlined">
+          <VCardTitle>{{ t("pages.runDetails.flowEvents") }} ({{ details.events.length }})</VCardTitle>
+          <VCardText>
+            <VAlert v-if="!details.events.length" type="info" variant="tonal">
+              {{ t("states.noEvents") }}
+            </VAlert>
+            <VExpansionPanels v-else density="compact" variant="accordion">
+              <VExpansionPanel v-for="e in details.events" :key="e.created_at + ':' + e.event_type">
+                <VExpansionPanelTitle>
+                  <div class="d-flex align-center justify-space-between ga-2 flex-wrap w-100">
+                    <VChip size="x-small" variant="tonal" class="font-weight-bold">{{ e.event_type }}</VChip>
+                    <span class="mono text-medium-emphasis">{{ formatDateTime(e.created_at, locale) }}</span>
+                  </div>
+                </VExpansionPanelTitle>
+                <VExpansionPanelText>
+                  <pre class="pre">{{ prettyJSON(e.payload_json) }}</pre>
+                </VExpansionPanelText>
+              </VExpansionPanel>
+            </VExpansionPanels>
+          </VCardText>
+        </VCard>
       </VCol>
 
-      <VCol cols="12" md="7">
-        <LogsViewer
-          :lines="details.logs?.tail_lines || []"
-          :status="details.logs?.status || ''"
-          :updated-at-label="formatDateTime(details.logs?.updated_at, locale)"
-          :loading="details.loading"
-          :file-name="`run-${runId}.log`"
-          @refresh="(n) => details.refreshLogs(runId, n)"
-        />
-
-        <VExpansionPanels class="mt-4" variant="accordion">
-          <VExpansionPanel>
-            <VExpansionPanelTitle>
-              {{ t("pages.runDetails.flowEvents") }} ({{ details.events.length }})
-            </VExpansionPanelTitle>
-            <VExpansionPanelText>
-              <VAlert v-if="!details.events.length" type="info" variant="tonal">
-                {{ t("states.noEvents") }}
-              </VAlert>
-              <template v-else>
-                <div class="d-flex justify-end mb-3">
-                  <AdaptiveBtn
-                    variant="tonal"
-                    icon="mdi-database-arrow-down-outline"
-                    :label="details.eventsPayloadLoaded ? t('pages.runDetails.eventPayloadLoaded') : t('pages.runDetails.loadEventPayloads')"
-                    :loading="details.eventsPayloadLoading"
-                    :disabled="details.eventsPayloadLoaded"
-                    @click="loadEventPayloads"
-                  />
-                </div>
-                <VExpansionPanels density="compact" variant="accordion">
-                  <VExpansionPanel v-for="e in details.events" :key="e.created_at + ':' + e.event_type">
-                    <VExpansionPanelTitle>
-                      <div class="d-flex align-center justify-space-between ga-2 flex-wrap w-100">
-                        <VChip size="x-small" variant="tonal" class="font-weight-bold">{{ e.event_type }}</VChip>
-                        <span class="mono text-medium-emphasis">{{ formatDateTime(e.created_at, locale) }}</span>
-                      </div>
-                    </VExpansionPanelTitle>
-                    <VExpansionPanelText>
-                      <pre class="pre">{{ prettyJSON(e.payload_json) }}</pre>
-                    </VExpansionPanelText>
-                  </VExpansionPanel>
-                </VExpansionPanels>
-              </template>
-            </VExpansionPanelText>
-          </VExpansionPanel>
-
-          <VExpansionPanel>
-            <VExpansionPanelTitle>
-              {{ t("pages.runDetails.rawLogsSnapshot") }}
-            </VExpansionPanelTitle>
-            <VExpansionPanelText>
-              <div class="d-flex justify-end mb-3">
-                <AdaptiveBtn
-                  variant="tonal"
-                  icon="mdi-database-arrow-down-outline"
-                  :label="details.snapshotLoaded ? t('pages.runDetails.snapshotLoaded') : t('pages.runDetails.loadSnapshot')"
-                  :loading="details.snapshotLoading"
-                  :disabled="details.snapshotLoaded"
-                  @click="loadSnapshot"
-                />
-              </div>
-              <pre class="pre">{{ details.logs?.snapshot_json || "{}" }}</pre>
-            </VExpansionPanelText>
-          </VExpansionPanel>
-        </VExpansionPanels>
+      <VCol cols="12" md="5">
+        <RunTimeline :run="details.run" :events="details.events" :locale="locale" />
       </VCol>
     </VRow>
   </div>
@@ -251,7 +211,7 @@
 
 <script setup lang="ts">
 // TODO(#19): Доработать Run details: master-detail layout, улучшенный stepper по стадиям/событиям и feedback слой через VSnackbar.
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 
@@ -260,10 +220,10 @@ import ConfirmDialog from "../shared/ui/ConfirmDialog.vue";
 import CopyChip from "../shared/ui/CopyChip.vue";
 import AdaptiveBtn from "../shared/ui/AdaptiveBtn.vue";
 import BackBtn from "../shared/ui/BackBtn.vue";
-import LogsViewer from "../shared/ui/LogsViewer.vue";
 import RunTimeline from "../shared/ui/RunTimeline.vue";
 import { formatDateTime } from "../shared/lib/datetime";
 import { colorForRunStatus } from "../shared/lib/chips";
+import { subscribeRunRealtime, type RunRealtimeState } from "../features/runs/realtime";
 import { useRunDetailsStore } from "../features/runs/store";
 import { useSnackbarStore } from "../shared/ui/feedback/snackbar-store";
 
@@ -281,6 +241,21 @@ type CodexAuthRequiredPayload = { verification_url: string; user_code: string };
 
 const codexAuthDialogOpen = ref(false);
 const codexAuthShownKey = ref("");
+const realtimeState = ref<RunRealtimeState>("connecting");
+const stopRealtimeRef = ref<(() => void) | null>(null);
+const fallbackPollTimer = ref<number | null>(null);
+
+const realtimeChipColor = computed(() => {
+  if (realtimeState.value === "connected") return "success";
+  if (realtimeState.value === "reconnecting") return "warning";
+  return "secondary";
+});
+
+const realtimeChipLabelKey = computed(() => {
+  if (realtimeState.value === "connected") return "pages.runDetails.realtimeConnected";
+  if (realtimeState.value === "reconnecting") return "pages.runDetails.realtimeReconnecting";
+  return "pages.runDetails.realtimeConnecting";
+});
 
 const codexAuthRequiredEvent = computed(() => details.events.find((e) => e.event_type === "run.codex.auth.required") || null);
 const codexAuthPayload = computed(() => {
@@ -294,14 +269,6 @@ const codexAuthPayload = computed(() => {
 
 async function loadAll() {
   await details.load(props.runId);
-}
-
-async function loadEventPayloads() {
-  await details.loadEventPayloads(props.runId);
-}
-
-async function loadSnapshot() {
-  await details.loadSnapshot(props.runId);
 }
 
 function goBack() {
@@ -362,7 +329,63 @@ async function doDeleteNamespace() {
   }
 }
 
-onMounted(() => void loadAll());
+function clearFallbackPolling(): void {
+  if (fallbackPollTimer.value !== null) {
+    window.clearInterval(fallbackPollTimer.value);
+    fallbackPollTimer.value = null;
+  }
+}
+
+function ensureFallbackPolling(): void {
+  if (fallbackPollTimer.value !== null) return;
+  fallbackPollTimer.value = window.setInterval(() => {
+    void details.load(props.runId);
+  }, 10000);
+}
+
+function stopRealtime(): void {
+  stopRealtimeRef.value?.();
+  stopRealtimeRef.value = null;
+}
+
+function startRealtime(): void {
+  stopRealtime();
+  stopRealtimeRef.value = subscribeRunRealtime({
+    runId: props.runId,
+    includeLogs: false,
+    onMessage: (message) => {
+      details.applyRealtimeMessage(message);
+    },
+    onStateChange: (state) => {
+      realtimeState.value = state;
+      if (state === "connected") {
+        clearFallbackPolling();
+        return;
+      }
+      ensureFallbackPolling();
+    },
+  });
+}
+
+onMounted(async () => {
+  await loadAll();
+  startRealtime();
+});
+
+onBeforeUnmount(() => {
+  stopRealtime();
+  clearFallbackPolling();
+});
+
+watch(
+  () => props.runId,
+  async (nextRunID, prevRunID) => {
+    if (nextRunID === prevRunID) return;
+    clearFallbackPolling();
+    await details.load(nextRunID);
+    startRealtime();
+  },
+);
 
 watch(
   () => [codexAuthRequiredEvent.value?.created_at, codexAuthRequiredEvent.value?.event_type],

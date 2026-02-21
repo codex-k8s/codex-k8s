@@ -1,10 +1,6 @@
 <template>
   <div>
-    <PageHeader :title="t('pages.runs.title')">
-      <template #actions>
-        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :loading="runs.loading" @click="refreshAll" />
-      </template>
-    </PageHeader>
+    <PageHeader :title="t('pages.runs.title')" />
 
     <VAlert v-if="runs.error" type="error" variant="tonal" class="mt-4">
       {{ t(runs.error.messageKey) }}
@@ -139,12 +135,11 @@
 
 <script setup lang="ts">
 // TODO(#19): Добавить table settings + row actions menu через общий DataTable wrapper и master-detail layout для Runs/Approvals.
-import { onMounted, watch } from "vue";
+import { onBeforeUnmount, onMounted, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
 import PageHeader from "../shared/ui/PageHeader.vue";
-import AdaptiveBtn from "../shared/ui/AdaptiveBtn.vue";
 import { formatDateTime } from "../shared/lib/datetime";
 import { colorForRunStatus } from "../shared/lib/chips";
 import { createProgressiveTableState } from "../shared/lib/progressive-table";
@@ -155,6 +150,7 @@ const runs = useRunsStore();
 const runsItemsPerPage = 20;
 const runsPaging = createProgressiveTableState({ itemsPerPage: runsItemsPerPage });
 const runsTablePage = runsPaging.page;
+let autoRefreshTimer: number | null = null;
 
 const headers = [
   { title: t("pages.runs.status"), key: "status", width: 140, align: "center" },
@@ -186,6 +182,19 @@ async function refreshAll(): Promise<void> {
   await loadAll();
 }
 
+function startAutoRefresh(): void {
+  if (autoRefreshTimer !== null) return;
+  autoRefreshTimer = window.setInterval(() => {
+    void loadAll();
+  }, 10000);
+}
+
+function stopAutoRefresh(): void {
+  if (autoRefreshTimer === null) return;
+  window.clearInterval(autoRefreshTimer);
+  autoRefreshTimer = null;
+}
+
 async function loadMoreRunsIfNeeded(nextPage: number, prevPage: number): Promise<void> {
   if (runs.loading) {
     return;
@@ -201,7 +210,14 @@ watch(
   (nextPage, prevPage) => void loadMoreRunsIfNeeded(nextPage, prevPage),
 );
 
-onMounted(() => void refreshAll());
+onMounted(() => {
+  void refreshAll();
+  startAutoRefresh();
+});
+
+onBeforeUnmount(() => {
+  stopAutoRefresh();
+});
 </script>
 
 <style scoped>

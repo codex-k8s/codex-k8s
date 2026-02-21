@@ -491,6 +491,8 @@ export type IncludePayload = boolean;
 
 export type IncludeSnapshot = boolean;
 
+export type IncludeLogs = boolean;
+
 export type McpCallbackToken = string;
 
 export type IngestGithubWebhookData = {
@@ -1117,6 +1119,39 @@ export type ListRunEventsResponses = {
 };
 
 export type ListRunEventsResponse = ListRunEventsResponses[keyof ListRunEventsResponses];
+
+export type RunRealtimeData = {
+    body?: never;
+    path: {
+        run_id: string;
+    };
+    query?: {
+        limit?: number;
+        tail_lines?: number;
+        include_logs?: boolean;
+    };
+    url: '/api/v1/staff/runs/{run_id}/realtime';
+};
+
+export type RunRealtimeErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+};
+
+export type RunRealtimeError = RunRealtimeErrors[keyof RunRealtimeErrors];
+
+export type RunRealtimeResponses = {
+    /**
+     * Realtime stream endpoint (expects WebSocket upgrade)
+     */
+    200: unknown;
+};
 
 export type GetRunLogsData = {
     body?: never;

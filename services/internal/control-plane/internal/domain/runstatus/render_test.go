@@ -8,7 +8,7 @@ import (
 func mustRenderCommentBody(t *testing.T, state commentState, managementURL string) string {
 	t.Helper()
 
-	body, err := renderCommentBody(state, managementURL, "https://platform.codex-k8s.dev")
+	body, err := renderCommentBody(state, managementURL, "https://platform.codex-k8s.dev", nil)
 	if err != nil {
 		t.Fatalf("renderCommentBody returned error: %v", err)
 	}
@@ -208,4 +208,47 @@ func TestRenderCommentBody_RendersIssueAndPRLinks(t *testing.T) {
 		IssueURL:       "https://github.com/codex-k8s/codex-k8s/issues/95",
 		PullRequestURL: "https://github.com/codex-k8s/codex-k8s/pull/123",
 	}, "https://platform.codex-k8s.dev/runs/run-links", "issues/95", "pull/123")
+}
+
+func TestRenderCommentBody_RendersRecentAgentStatusesRU(t *testing.T) {
+	t.Parallel()
+
+	body, err := renderCommentBody(commentState{
+		RunID:        "run-statuses-ru",
+		Phase:        PhaseStarted,
+		PromptLocale: localeRU,
+	}, "https://platform.codex-k8s.dev/runs/run-statuses-ru", "https://platform.codex-k8s.dev", []recentAgentStatus{
+		{AgentKey: "dev", StatusText: "Обновляю API"},
+		{AgentKey: "dev", StatusText: "Проверяю тесты"},
+	})
+	if err != nil {
+		t.Fatalf("renderCommentBody returned error: %v", err)
+	}
+	if !strings.Contains(body, "Последние статусы агента") {
+		t.Fatalf("expected recent agent statuses section in body: %q", body)
+	}
+	if !strings.Contains(body, "Проверяю тесты") {
+		t.Fatalf("expected status text in body: %q", body)
+	}
+}
+
+func TestRenderCommentBody_RendersRecentAgentStatusesEN(t *testing.T) {
+	t.Parallel()
+
+	body, err := renderCommentBody(commentState{
+		RunID:        "run-statuses-en",
+		Phase:        PhaseStarted,
+		PromptLocale: localeEN,
+	}, "https://platform.codex-k8s.dev/runs/run-statuses-en", "https://platform.codex-k8s.dev", []recentAgentStatus{
+		{AgentKey: "qa", StatusText: "Running regression"},
+	})
+	if err != nil {
+		t.Fatalf("renderCommentBody returned error: %v", err)
+	}
+	if !strings.Contains(body, "Latest Agent Statuses") {
+		t.Fatalf("expected recent agent statuses section in body: %q", body)
+	}
+	if !strings.Contains(body, "Running regression") {
+		t.Fatalf("expected status text in body: %q", body)
+	}
 }

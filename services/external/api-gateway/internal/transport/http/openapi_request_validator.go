@@ -61,6 +61,9 @@ func (v *openAPIRequestValidator) middleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
 			req := c.Request()
+			if isRunRealtimeWebSocketRequest(req) {
+				return next(c)
+			}
 			if !shouldValidateOpenAPI(req.URL.Path) {
 				return next(c)
 			}
@@ -155,6 +158,17 @@ func cloneRequestWithBufferedBody(req *http.Request) (*http.Request, error) {
 
 func shouldValidateOpenAPI(path string) bool {
 	return strings.HasPrefix(path, "/api/")
+}
+
+func isRunRealtimeWebSocketRequest(req *http.Request) bool {
+	if req == nil {
+		return false
+	}
+	if !strings.EqualFold(strings.TrimSpace(req.Header.Get("Upgrade")), "websocket") {
+		return false
+	}
+	path := strings.TrimSpace(req.URL.Path)
+	return strings.HasPrefix(path, "/api/v1/staff/runs/") && strings.HasSuffix(path, "/realtime")
 }
 
 func resolveOpenAPISpecPath(configPath string) (string, error) {
