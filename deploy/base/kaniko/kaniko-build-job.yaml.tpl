@@ -1,3 +1,6 @@
+{{- $kanikoCacheEnabled := envOr "CODEXK8S_KANIKO_CACHE_ENABLED" "false" -}}
+{{- $kanikoCacheRepo := envOr "CODEXK8S_KANIKO_CACHE_REPO" "" -}}
+{{- $kanikoCacheTTL := envOr "CODEXK8S_KANIKO_CACHE_TTL" "" -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -56,11 +59,17 @@ spec:
             - --dockerfile={{ envOr "CODEXK8S_KANIKO_DOCKERFILE" "" }}
             - --destination={{ envOr "CODEXK8S_KANIKO_DESTINATION_LATEST" "" }}
             - --destination={{ envOr "CODEXK8S_KANIKO_DESTINATION_SHA" "" }}
-            - --cache={{ envOr "CODEXK8S_KANIKO_CACHE_ENABLED" "" }}
-            - --cache-repo={{ envOr "CODEXK8S_KANIKO_CACHE_REPO" "" }}
-            - --cache-ttl={{ envOr "CODEXK8S_KANIKO_CACHE_TTL" "" }}
-            - --compressed-caching={{ envOr "CODEXK8S_KANIKO_CACHE_COMPRESSED" "" }}
+            - --cache={{ $kanikoCacheEnabled }}
+{{ if ne $kanikoCacheEnabled "false" }}
+{{ if ne $kanikoCacheRepo "" }}
+            - --cache-repo={{ $kanikoCacheRepo }}
+{{ end }}
+{{ if ne $kanikoCacheTTL "" }}
+            - --cache-ttl={{ $kanikoCacheTTL }}
+{{ end }}
+            - --compressed-caching={{ envOr "CODEXK8S_KANIKO_CACHE_COMPRESSED" "false" }}
             - --cache-copy-layers={{ envOr "CODEXK8S_KANIKO_CACHE_COPY_LAYERS" "true" }}
+{{ end }}
             - --snapshot-mode={{ envOr "CODEXK8S_KANIKO_SNAPSHOT_MODE" "redo" }}
             - --single-snapshot={{ envOr "CODEXK8S_KANIKO_SINGLE_SNAPSHOT" "true" }}
             - --use-new-run={{ envOr "CODEXK8S_KANIKO_USE_NEW_RUN" "true" }}

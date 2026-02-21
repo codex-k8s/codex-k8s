@@ -193,6 +193,24 @@ spec:
               value: '{{ envOr "CODEXK8S_SERVICES_CONFIG_ENV" "" }}'
             - name: CODEXK8S_REPOSITORY_ROOT
               value: /repo-cache
+            - name: CODEXK8S_KANIKO_CACHE_ENABLED
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_KANIKO_CACHE_ENABLED
+                  optional: true
+            - name: CODEXK8S_KANIKO_CACHE_REPO
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_KANIKO_CACHE_REPO
+                  optional: true
+            - name: CODEXK8S_KANIKO_CACHE_TTL
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_KANIKO_CACHE_TTL
+                  optional: true
             - name: CODEXK8S_PRODUCTION_DOMAIN
               valueFrom:
                 secretKeyRef:

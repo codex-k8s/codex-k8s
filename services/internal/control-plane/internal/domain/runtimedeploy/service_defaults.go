@@ -16,7 +16,7 @@ func defaultTemplateVars() map[string]string {
 		"CODEXK8S_KUBECTL_IMAGE":                      "127.0.0.1:5000/codex-k8s/mirror/kubectl:v1.32.2",
 		"CODEXK8S_CODEGEN_CHECK_ENABLED":              "true",
 		"CODEXK8S_CODEGEN_CHECK_TIMEOUT":              "30m",
-		"CODEXK8S_KANIKO_CACHE_ENABLED":               "true",
+		"CODEXK8S_KANIKO_CACHE_ENABLED":               "false",
 		"CODEXK8S_KANIKO_CACHE_TTL":                   "168h",
 		"CODEXK8S_KANIKO_CACHE_COMPRESSED":            "false",
 		"CODEXK8S_KANIKO_CACHE_COPY_LAYERS":           "true",
