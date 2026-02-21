@@ -105,7 +105,7 @@ spec:
       prd: code-only
       prd_revise: code-only
       self_improve: code-only
-  defaultNamespaceTTL: 24h
+  # defaultNamespaceTTL: 24h
   # namespaceTTLByRole:
   #   pm: 24h
   #   sa: 24h
