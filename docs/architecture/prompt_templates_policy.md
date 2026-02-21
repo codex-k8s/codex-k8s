@@ -5,8 +5,8 @@ title: "codex-k8s — Prompt Templates Policy"
 status: active
 owner_role: SA
 created_at: 2026-02-11
-updated_at: 2026-02-19
-related_issues: [1, 19]
+updated_at: 2026-02-21
+related_issues: [1, 19, 100]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -21,7 +21,7 @@ approvals:
 ## TL;DR
 - Поддерживаются два класса шаблонов: `work` и `revise`.
 - Каноническая модель шаблонов role-specific: отдельный body для каждого `agent_key` в каждой ветке `work/revise`.
-- `services.yaml` поддерживает декларативный `spec.projectDocs[]` (`path`, `description`, `roles[]`, `optional`) для role-aware docs context.
+- `services.yaml` поддерживает repo-aware `spec.projectDocs[]` (`repository`, `path`, `description`, `roles[]`, `optional`) для role-aware docs context в multi-repo проектах.
 - Источник шаблона определяется по приоритету: project override в БД -> global override в БД -> seed в репозитории.
 - Для каждого run фиксируется effective template version/hash для аудита и воспроизводимости.
 - Шаблоны хранятся по локалям; выбор языка выполняется по цепочке project locale -> system default locale -> `en`.
@@ -140,7 +140,7 @@ approvals:
   - режим исполнения агента (`full-env`/`code-only`) и feature flags.
 - Минимальный обязательный набор runtime context полей:
   - run metadata: `run_id`, `correlation_id`, `project_id`, `agent_id`, `role_key`, `mode`;
-  - repo/issue metadata: repo slug, issue number/title/body, labels, PR refs;
+  - repo/issue metadata: primary repo slug, repository graph (aliases + refs), issue number/title/body, labels, PR refs;
   - environment/services: namespace, сервисы проекта, основные endpoints, диагностические команды;
   - MCP catalog: серверы, инструменты, категории (read/write), approval policy;
   - template metadata: source/version/hash/locale, render context version.
@@ -149,6 +149,16 @@ approvals:
   - role-aware docs refs из `services.yaml/spec.projectDocs[]`;
   - лимит на количество docs refs в final prompt (для контроля размера prompt payload).
 - Формат контекста должен быть версионирован; изменения контракта рендера должны быть обратно совместимы либо сопровождаться миграцией шаблонов.
+
+### Multi-repo docs federation (Issue #100, design)
+- В multi-repo проекте каждый docs ref в `spec.projectDocs[]` обязан указывать `repository` (alias из project repositories topology).
+- Для monorepo режимов `repository` может быть опущен (используется primary/trigger repository).
+- При формировании docs context применяется deterministic priority:
+  1. policy/docs repository;
+  2. orchestrator repository;
+  3. service repositories.
+- Для каждой записи сохраняется resolved commit SHA источника docs, чтобы prompt context был воспроизводим.
+- При недоступности `optional: true` источника контекст строится без hard-fail; для `optional: false` возвращается `failed_precondition`.
 
 ## Переходный профиль Day3.5 -> Day4
 
