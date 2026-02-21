@@ -767,6 +767,34 @@ func (s *Server) UpsertProjectGitHubTokens(ctx context.Context, req *controlplan
 	return &emptypb.Empty{}, nil
 }
 
+func (s *Server) TransitionIssueStageLabel(ctx context.Context, req *controlplanev1.TransitionIssueStageLabelRequest) (*controlplanev1.TransitionIssueStageLabelResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := s.staff.TransitionIssueStageLabel(ctx, p, querytypes.IssueStageLabelTransitionParams{
+		RepositoryFullName: strings.TrimSpace(req.RepositoryFullName),
+		IssueNumber:        int(req.GetIssueNumber()),
+		TargetLabel:        strings.TrimSpace(req.TargetLabel),
+	})
+	if err != nil {
+		return nil, toStatus(err)
+	}
+
+	return &controlplanev1.TransitionIssueStageLabelResponse{
+		RepositoryFullName: result.RepositoryFullName,
+		IssueNumber:        int32(result.IssueNumber),
+		IssueUrl:           stringPtrOrNil(strings.TrimSpace(result.IssueURL)),
+		RemovedLabels:      result.RemovedLabels,
+		AddedLabels:        result.AddedLabels,
+		FinalLabels:        result.FinalLabels,
+	}, nil
+}
+
 func (s *Server) ListConfigEntries(ctx context.Context, req *controlplanev1.ListConfigEntriesRequest) (*controlplanev1.ListConfigEntriesResponse, error) {
 	p, err := requirePrincipal(req.GetPrincipal())
 	if err != nil {

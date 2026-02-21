@@ -50,6 +50,20 @@ type runStartedEventPayload struct {
 	BaseBranch           string                  `json:"base_branch,omitempty"`
 }
 
+// runProfileResolvedEventPayload defines payload shape for run.profile.resolved flow events.
+type runProfileResolvedEventPayload struct {
+	RunID              string `json:"run_id"`
+	ProjectID          string `json:"project_id"`
+	RepositoryFullName string `json:"repository_full_name,omitempty"`
+	IssueNumber        int64  `json:"issue_number,omitempty"`
+	PullRequestNumber  int    `json:"pull_request_number,omitempty"`
+	TriggerKind        string `json:"trigger_kind,omitempty"`
+	Model              string `json:"model,omitempty"`
+	ModelSource        string `json:"model_source,omitempty"`
+	ReasoningEffort    string `json:"reasoning_effort,omitempty"`
+	ReasoningSource    string `json:"reasoning_source,omitempty"`
+}
+
 // runFinishedEventPayload defines payload shape for run finish flow events.
 type runFinishedEventPayload struct {
 	RunID        string                  `json:"run_id"`
@@ -100,6 +114,12 @@ type payloadMarshalError struct {
 
 // encodeRunStartedEventPayload serializes run.started payload with safe fallback JSON.
 func encodeRunStartedEventPayload(payload runStartedEventPayload) json.RawMessage {
+	bytes, err := json.Marshal(payload)
+	return marshalPayload(bytes, err)
+}
+
+// encodeRunProfileResolvedEventPayload serializes run.profile.resolved payload with safe fallback JSON.
+func encodeRunProfileResolvedEventPayload(payload runProfileResolvedEventPayload) json.RawMessage {
 	bytes, err := json.Marshal(payload)
 	return marshalPayload(bytes, err)
 }

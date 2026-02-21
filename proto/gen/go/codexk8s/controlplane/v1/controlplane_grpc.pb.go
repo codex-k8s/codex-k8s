@@ -50,6 +50,7 @@ const (
 	ControlPlaneService_RunRepositoryPreflight_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/RunRepositoryPreflight"
 	ControlPlaneService_GetProjectGitHubTokens_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/GetProjectGitHubTokens"
 	ControlPlaneService_UpsertProjectGitHubTokens_FullMethodName            = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertProjectGitHubTokens"
+	ControlPlaneService_TransitionIssueStageLabel_FullMethodName            = "/codexk8s.controlplane.v1.ControlPlaneService/TransitionIssueStageLabel"
 	ControlPlaneService_ListConfigEntries_FullMethodName                    = "/codexk8s.controlplane.v1.ControlPlaneService/ListConfigEntries"
 	ControlPlaneService_UpsertConfigEntry_FullMethodName                    = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertConfigEntry"
 	ControlPlaneService_DeleteConfigEntry_FullMethodName                    = "/codexk8s.controlplane.v1.ControlPlaneService/DeleteConfigEntry"
@@ -110,6 +111,7 @@ type ControlPlaneServiceClient interface {
 	RunRepositoryPreflight(ctx context.Context, in *RunRepositoryPreflightRequest, opts ...grpc.CallOption) (*RunRepositoryPreflightResponse, error)
 	GetProjectGitHubTokens(ctx context.Context, in *GetProjectGitHubTokensRequest, opts ...grpc.CallOption) (*ProjectGitHubTokens, error)
 	UpsertProjectGitHubTokens(ctx context.Context, in *UpsertProjectGitHubTokensRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	TransitionIssueStageLabel(ctx context.Context, in *TransitionIssueStageLabelRequest, opts ...grpc.CallOption) (*TransitionIssueStageLabelResponse, error)
 	ListConfigEntries(ctx context.Context, in *ListConfigEntriesRequest, opts ...grpc.CallOption) (*ListConfigEntriesResponse, error)
 	UpsertConfigEntry(ctx context.Context, in *UpsertConfigEntryRequest, opts ...grpc.CallOption) (*ConfigEntry, error)
 	DeleteConfigEntry(ctx context.Context, in *DeleteConfigEntryRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -443,6 +445,16 @@ func (c *controlPlaneServiceClient) UpsertProjectGitHubTokens(ctx context.Contex
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) TransitionIssueStageLabel(ctx context.Context, in *TransitionIssueStageLabelRequest, opts ...grpc.CallOption) (*TransitionIssueStageLabelResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TransitionIssueStageLabelResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_TransitionIssueStageLabel_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) ListConfigEntries(ctx context.Context, in *ListConfigEntriesRequest, opts ...grpc.CallOption) (*ListConfigEntriesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListConfigEntriesResponse)
@@ -699,6 +711,7 @@ type ControlPlaneServiceServer interface {
 	RunRepositoryPreflight(context.Context, *RunRepositoryPreflightRequest) (*RunRepositoryPreflightResponse, error)
 	GetProjectGitHubTokens(context.Context, *GetProjectGitHubTokensRequest) (*ProjectGitHubTokens, error)
 	UpsertProjectGitHubTokens(context.Context, *UpsertProjectGitHubTokensRequest) (*emptypb.Empty, error)
+	TransitionIssueStageLabel(context.Context, *TransitionIssueStageLabelRequest) (*TransitionIssueStageLabelResponse, error)
 	ListConfigEntries(context.Context, *ListConfigEntriesRequest) (*ListConfigEntriesResponse, error)
 	UpsertConfigEntry(context.Context, *UpsertConfigEntryRequest) (*ConfigEntry, error)
 	DeleteConfigEntry(context.Context, *DeleteConfigEntryRequest) (*emptypb.Empty, error)
@@ -821,6 +834,9 @@ func (UnimplementedControlPlaneServiceServer) GetProjectGitHubTokens(context.Con
 }
 func (UnimplementedControlPlaneServiceServer) UpsertProjectGitHubTokens(context.Context, *UpsertProjectGitHubTokensRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpsertProjectGitHubTokens not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) TransitionIssueStageLabel(context.Context, *TransitionIssueStageLabelRequest) (*TransitionIssueStageLabelResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TransitionIssueStageLabel not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) ListConfigEntries(context.Context, *ListConfigEntriesRequest) (*ListConfigEntriesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListConfigEntries not implemented")
@@ -1449,6 +1465,24 @@ func _ControlPlaneService_UpsertProjectGitHubTokens_Handler(srv interface{}, ctx
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_TransitionIssueStageLabel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TransitionIssueStageLabelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).TransitionIssueStageLabel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_TransitionIssueStageLabel_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).TransitionIssueStageLabel(ctx, req.(*TransitionIssueStageLabelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_ListConfigEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListConfigEntriesRequest)
 	if err := dec(in); err != nil {
@@ -1971,6 +2005,10 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpsertProjectGitHubTokens",
 			Handler:    _ControlPlaneService_UpsertProjectGitHubTokens_Handler,
+		},
+		{
+			MethodName: "TransitionIssueStageLabel",
+			Handler:    _ControlPlaneService_TransitionIssueStageLabel_Handler,
 		},
 		{
 			MethodName: "ListConfigEntries",

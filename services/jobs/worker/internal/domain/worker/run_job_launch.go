@@ -107,6 +107,28 @@ func (s *Service) launchPreparedFullEnvRunJob(ctx context.Context, run runqueuer
 		s.logger.Warn("upsert run status comment (created) failed", "run_id", run.RunID, "err", err)
 	}
 
+	if err := s.insertEvent(ctx, floweventrepo.InsertParams{
+		CorrelationID: run.CorrelationID,
+		ActorType:     floweventdomain.ActorTypeSystem,
+		ActorID:       floweventdomain.ActorID(s.cfg.WorkerID),
+		EventType:     floweventdomain.EventTypeRunProfileResolved,
+		Payload: encodeRunProfileResolvedEventPayload(runProfileResolvedEventPayload{
+			RunID:              run.RunID,
+			ProjectID:          run.ProjectID,
+			RepositoryFullName: agentCtx.RepositoryFullName,
+			IssueNumber:        agentCtx.IssueNumber,
+			PullRequestNumber:  agentCtx.ExistingPRNumber,
+			TriggerKind:        agentCtx.TriggerKind,
+			Model:              agentCtx.Model,
+			ModelSource:        agentCtx.ModelSource,
+			ReasoningEffort:    agentCtx.ReasoningEffort,
+			ReasoningSource:    agentCtx.ReasoningSource,
+		}),
+		CreatedAt: s.now().UTC(),
+	}); err != nil {
+		return fmt.Errorf("insert run.profile.resolved event: %w", err)
+	}
+
 	ref, err := s.launcher.Launch(ctx, JobSpec{
 		RunID:                  run.RunID,
 		CorrelationID:          run.CorrelationID,

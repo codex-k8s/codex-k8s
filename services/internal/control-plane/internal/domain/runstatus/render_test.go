@@ -8,11 +8,22 @@ import (
 func mustRenderCommentBody(t *testing.T, state commentState, managementURL string) string {
 	t.Helper()
 
-	body, err := renderCommentBody(state, managementURL)
+	body, err := renderCommentBody(state, managementURL, "https://platform.codex-k8s.dev")
 	if err != nil {
 		t.Fatalf("renderCommentBody returned error: %v", err)
 	}
 	return body
+}
+
+func assertRenderedBodyContains(t *testing.T, state commentState, managementURL string, expected ...string) {
+	t.Helper()
+
+	body := mustRenderCommentBody(t, state, managementURL)
+	for _, item := range expected {
+		if !strings.Contains(body, item) {
+			t.Fatalf("rendered body does not contain %q: %q", item, body)
+		}
+	}
 }
 
 func TestRenderCommentBody_RendersTemplateByLocale(t *testing.T) {
@@ -73,19 +84,13 @@ func TestRenderCommentBody_RendersSlotURLAndAuthTimeline(t *testing.T) {
 func TestRenderCommentBody_RendersAuthVerificationPayload(t *testing.T) {
 	t.Parallel()
 
-	body := mustRenderCommentBody(t, commentState{
+	assertRenderedBodyContains(t, commentState{
 		RunID:                    "run-auth",
 		Phase:                    PhaseAuthRequired,
 		PromptLocale:             localeRU,
 		CodexAuthVerificationURL: "https://example.com/device",
 		CodexAuthUserCode:        "ABCD-EFGH",
-	}, "https://platform.codex-k8s.dev/runs/run-auth")
-	if !strings.Contains(body, "Ссылка авторизации") {
-		t.Fatalf("rendered body does not contain auth verification url label: %q", body)
-	}
-	if !strings.Contains(body, "ABCD-EFGH") {
-		t.Fatalf("rendered body does not contain auth user code: %q", body)
-	}
+	}, "https://platform.codex-k8s.dev/runs/run-auth", "Ссылка авторизации", "ABCD-EFGH")
 }
 
 func TestRenderCommentBody_RuntimePreparationAndNamespaceMessages(t *testing.T) {
@@ -144,4 +149,63 @@ func TestRenderCommentBody_RuntimePreparationAndNamespaceMessages(t *testing.T) 
 			}
 		})
 	}
+}
+
+func TestRenderCommentBody_RendersStageAwareActionCards(t *testing.T) {
+	t.Parallel()
+
+	body := mustRenderCommentBody(t, commentState{
+		RunID:              "run-dev",
+		Phase:              PhaseStarted,
+		TriggerKind:        triggerKindDev,
+		PromptLocale:       localeRU,
+		RepositoryFullName: "codex-k8s/codex-k8s",
+		IssueNumber:        95,
+	}, "https://platform.codex-k8s.dev/runs/run-dev")
+	if !strings.Contains(body, "Следующие шаги") {
+		t.Fatalf("expected next steps section in body: %q", body)
+	}
+	if !strings.Contains(body, "`run:dev:revise`") {
+		t.Fatalf("expected revise action label in body: %q", body)
+	}
+	if !strings.Contains(body, "`run:qa`") {
+		t.Fatalf("expected next stage action label in body: %q", body)
+	}
+	if !strings.Contains(body, "/governance/labels-stages?") {
+		t.Fatalf("expected deep-link action url in body: %q", body)
+	}
+	if !strings.Contains(body, "target=run%3Aqa") {
+		t.Fatalf("expected deep-link target label in body: %q", body)
+	}
+}
+
+func TestRenderCommentBody_RendersDesignFastTrackAction(t *testing.T) {
+	t.Parallel()
+
+	body := mustRenderCommentBody(t, commentState{
+		RunID:              "run-design",
+		Phase:              PhaseStarted,
+		TriggerKind:        "design",
+		PromptLocale:       localeRU,
+		RepositoryFullName: "codex-k8s/codex-k8s",
+		IssueNumber:        95,
+	}, "https://platform.codex-k8s.dev/runs/run-design")
+	if !strings.Contains(body, "`run:dev`") {
+		t.Fatalf("expected fast-track run:dev action label in body: %q", body)
+	}
+	if !strings.Contains(body, "target=run%3Adev") {
+		t.Fatalf("expected fast-track deep-link target in body: %q", body)
+	}
+}
+
+func TestRenderCommentBody_RendersIssueAndPRLinks(t *testing.T) {
+	t.Parallel()
+
+	assertRenderedBodyContains(t, commentState{
+		RunID:          "run-links",
+		Phase:          PhaseStarted,
+		PromptLocale:   localeRU,
+		IssueURL:       "https://github.com/codex-k8s/codex-k8s/issues/95",
+		PullRequestURL: "https://github.com/codex-k8s/codex-k8s/pull/123",
+	}, "https://platform.codex-k8s.dev/runs/run-links", "issues/95", "pull/123")
 }

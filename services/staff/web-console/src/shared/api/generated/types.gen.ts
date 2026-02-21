@@ -284,6 +284,21 @@ export type UpsertProjectGitHubTokensRequest = {
     bot_email?: string | null;
 };
 
+export type TransitionIssueStageLabelRequest = {
+    repository_full_name: string;
+    issue_number: number;
+    target_label: string;
+};
+
+export type TransitionIssueStageLabelResponse = {
+    repository_full_name: string;
+    issue_number: number;
+    issue_url?: string | null;
+    removed_labels: Array<string>;
+    added_labels: Array<string>;
+    final_labels: Array<string>;
+};
+
 export type UpsertRepositoryBotParamsRequest = {
     bot_token?: string | null;
     bot_username?: string | null;
@@ -1916,6 +1931,39 @@ export type UpsertProjectGitHubTokensResponses = {
 };
 
 export type UpsertProjectGitHubTokensResponse = UpsertProjectGitHubTokensResponses[keyof UpsertProjectGitHubTokensResponses];
+
+export type TransitionIssueStageLabelData = {
+    body: TransitionIssueStageLabelRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/staff/github/issues/stage-transition';
+};
+
+export type TransitionIssueStageLabelErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type TransitionIssueStageLabelError = TransitionIssueStageLabelErrors[keyof TransitionIssueStageLabelErrors];
+
+export type TransitionIssueStageLabelResponses = {
+    /**
+     * Issue stage label transitioned
+     */
+    200: TransitionIssueStageLabelResponse;
+};
+
+export type TransitionIssueStageLabelResponse2 = TransitionIssueStageLabelResponses[keyof TransitionIssueStageLabelResponses];
 
 export type ListConfigEntriesData = {
     body?: never;

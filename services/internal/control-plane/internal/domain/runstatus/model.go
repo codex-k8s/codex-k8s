@@ -76,6 +76,7 @@ type TriggerWarningCommentParams struct {
 	Locale             string
 	ReasonCode         TriggerWarningReasonCode
 	ConflictingLabels  []string
+	SuggestedLabels    []string
 }
 
 // TriggerWarningCommentResult returns posted GitHub comment metadata.
@@ -206,11 +207,15 @@ func (c runContext) hasCommentTarget() bool {
 type commentState struct {
 	RunID                    string `json:"run_id"`
 	Phase                    Phase  `json:"phase"`
+	RepositoryFullName       string `json:"repository_full_name,omitempty"`
+	IssueNumber              int    `json:"issue_number,omitempty"`
 	JobName                  string `json:"job_name,omitempty"`
 	JobNamespace             string `json:"job_namespace,omitempty"`
 	RuntimeMode              string `json:"runtime_mode,omitempty"`
 	Namespace                string `json:"namespace,omitempty"`
 	SlotURL                  string `json:"slot_url,omitempty"`
+	IssueURL                 string `json:"issue_url,omitempty"`
+	PullRequestURL           string `json:"pull_request_url,omitempty"`
 	TriggerKind              string `json:"trigger_kind,omitempty"`
 	PromptLocale             string `json:"prompt_locale,omitempty"`
 	Model                    string `json:"model,omitempty"`

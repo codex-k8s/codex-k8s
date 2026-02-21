@@ -52,5 +52,7 @@ type TriggerWarningReasonCode string
 const (
 	TriggerWarningReasonPullRequestReviewMissingStageLabel  TriggerWarningReasonCode = "pull_request_review_missing_stage_label"
 	TriggerWarningReasonPullRequestReviewStageLabelConflict TriggerWarningReasonCode = "pull_request_review_stage_label_conflict"
+	TriggerWarningReasonPullRequestReviewStageNotResolved   TriggerWarningReasonCode = "pull_request_review_stage_not_resolved"
+	TriggerWarningReasonPullRequestReviewStageAmbiguous     TriggerWarningReasonCode = "pull_request_review_stage_ambiguous"
 	TriggerWarningReasonRepositoryNotBoundForIssueLabel     TriggerWarningReasonCode = "repository_not_bound_for_issue_label"
 )

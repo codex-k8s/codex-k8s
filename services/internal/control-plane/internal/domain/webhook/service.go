@@ -162,7 +162,18 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		return IngestResult{}, fmt.Errorf("cleanup run namespaces on close event: %w", err)
 	}
 
-	trigger, hasIssueRunTrigger, conflict := s.resolveIssueRunTrigger(cmd.EventType, envelope)
+	trigger, hasIssueRunTrigger, conflict, reviewMeta, err := s.resolveIssueRunTrigger(ctx, projectID, cmd.EventType, envelope)
+	if err != nil {
+		return IngestResult{}, fmt.Errorf("resolve issue run trigger: %w", err)
+	}
+	if reviewMeta.ReceivedChangesRequested {
+		s.recordPullRequestReviewChangesRequestedEvent(ctx, cmd, envelope)
+		if hasIssueRunTrigger {
+			s.recordPullRequestReviewStageResolvedEvent(ctx, cmd, envelope, trigger, reviewMeta)
+		} else if strings.TrimSpace(conflict.IgnoreReason) != "" {
+			s.recordPullRequestReviewStageAmbiguousEvent(ctx, cmd, envelope, conflict, reviewMeta)
+		}
+	}
 	pushTarget, hasPushMainDeploy := s.resolvePushMainDeploy(cmd.EventType, envelope)
 	if strings.EqualFold(strings.TrimSpace(cmd.EventType), string(webhookdomain.GitHubEventIssues)) && !hasIssueRunTrigger {
 		return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
@@ -188,6 +199,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 			RunKind:           "",
 			HasBinding:        hasBinding,
 			ConflictingLabels: conflict.ConflictingLabels,
+			SuggestedLabels:   conflict.SuggestedLabels,
 		})
 	}
 	if hasIssueRunTrigger {
@@ -254,6 +266,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 
 	learningMode := false
 	agent := runAgentProfile{}
+	var profileHints *githubRunProfileHints
 	runtimeMode := agentdomain.RuntimeModeFullEnv
 	runtimeModeSource := runtimeModeSourcePushMain
 	runtimeTargetEnv := pushTarget.TargetEnv
@@ -269,6 +282,12 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		agent, err = s.resolveRunAgent(ctx, payloadProjectID, triggerPtr(trigger, hasIssueRunTrigger))
 		if err != nil {
 			return IngestResult{}, fmt.Errorf("resolve run agent: %w", err)
+		}
+		if strings.EqualFold(strings.TrimSpace(trigger.Source), webhookdomain.TriggerSourcePullRequestReview) {
+			profileHints, err = s.loadProfileHintsFromRunHistory(ctx, payloadProjectID, strings.TrimSpace(envelope.Repository.FullName), reviewMeta.ResolvedIssueNumber, envelope.PullRequest.Number)
+			if err != nil {
+				return IngestResult{}, fmt.Errorf("resolve profile hints from run history: %w", err)
+			}
 		}
 		runtimeMode, runtimeModeSource = s.resolveRunRuntimeMode(triggerPtr(trigger, hasIssueRunTrigger))
 		runtimeTargetEnv = ""
@@ -287,6 +306,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		LearningMode:      learningMode,
 		Trigger:           triggerPtr(trigger, hasIssueRunTrigger),
 		Agent:             agent,
+		ProfileHints:      profileHints,
 		RuntimeMode:       runtimeMode,
 		RuntimeSource:     runtimeModeSource,
 		RuntimeTargetEnv:  runtimeTargetEnv,
@@ -360,6 +380,7 @@ func (s *Service) recordIgnoredWebhook(ctx context.Context, cmd IngestCommand, e
 		RunKind:           params.RunKind,
 		HasBinding:        params.HasBinding,
 		ConflictingLabels: params.ConflictingLabels,
+		SuggestedLabels:   params.SuggestedLabels,
 	})
 	if err != nil {
 		return IngestResult{}, fmt.Errorf("build ignored flow event payload: %w", err)
@@ -404,6 +425,62 @@ func (s *Service) insertSystemFlowEvent(ctx context.Context, correlationID strin
 	})
 }
 
+type pullRequestReviewFlowEventPayload struct {
+	RepositoryFullName string                    `json:"repository_full_name"`
+	PullRequestNumber  int64                     `json:"pull_request_number,omitempty"`
+	IssueNumber        int64                     `json:"issue_number,omitempty"`
+	ResolverSource     string                    `json:"resolver_source,omitempty"`
+	TriggerLabel       string                    `json:"trigger_label,omitempty"`
+	TriggerKind        webhookdomain.TriggerKind `json:"trigger_kind,omitempty"`
+	Reason             string                    `json:"reason,omitempty"`
+	ConflictingLabels  []string                  `json:"conflicting_labels,omitempty"`
+	SuggestedLabels    []string                  `json:"suggested_labels,omitempty"`
+}
+
+func (s *Service) recordPullRequestReviewChangesRequestedEvent(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope) {
+	payload, err := json.Marshal(pullRequestReviewFlowEventPayload{
+		RepositoryFullName: strings.TrimSpace(envelope.Repository.FullName),
+		PullRequestNumber:  envelope.PullRequest.Number,
+		IssueNumber:        envelope.Issue.Number,
+	})
+	if err != nil {
+		return
+	}
+	_ = s.insertSystemFlowEvent(ctx, cmd.CorrelationID, floweventdomain.EventTypeRunReviewChangesRequested, payload, cmd.ReceivedAt)
+}
+
+func (s *Service) recordPullRequestReviewStageResolvedEvent(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope, trigger issueRunTrigger, meta pullRequestReviewResolutionMeta) {
+	payload, err := json.Marshal(pullRequestReviewFlowEventPayload{
+		RepositoryFullName: strings.TrimSpace(envelope.Repository.FullName),
+		PullRequestNumber:  envelope.PullRequest.Number,
+		IssueNumber:        meta.ResolvedIssueNumber,
+		ResolverSource:     strings.TrimSpace(meta.ResolverSource),
+		TriggerLabel:       strings.TrimSpace(trigger.Label),
+		TriggerKind:        trigger.Kind,
+		SuggestedLabels:    normalizeWebhookLabels(meta.SuggestedLabels),
+	})
+	if err != nil {
+		return
+	}
+	_ = s.insertSystemFlowEvent(ctx, cmd.CorrelationID, floweventdomain.EventTypeRunReviseStageResolved, payload, cmd.ReceivedAt)
+}
+
+func (s *Service) recordPullRequestReviewStageAmbiguousEvent(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope, conflict triggerConflictResult, meta pullRequestReviewResolutionMeta) {
+	payload, err := json.Marshal(pullRequestReviewFlowEventPayload{
+		RepositoryFullName: strings.TrimSpace(envelope.Repository.FullName),
+		PullRequestNumber:  envelope.PullRequest.Number,
+		IssueNumber:        meta.ResolvedIssueNumber,
+		ResolverSource:     strings.TrimSpace(meta.ResolverSource),
+		Reason:             strings.TrimSpace(conflict.IgnoreReason),
+		ConflictingLabels:  normalizeWebhookLabels(conflict.ConflictingLabels),
+		SuggestedLabels:    normalizeWebhookLabels(meta.SuggestedLabels),
+	})
+	if err != nil {
+		return
+	}
+	_ = s.insertSystemFlowEvent(ctx, cmd.CorrelationID, floweventdomain.EventTypeRunReviseStageAmbiguous, payload, cmd.ReceivedAt)
+}
+
 func (s *Service) maybeCleanupRunNamespaces(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope, hasBinding bool) error {
 	if s.runStatus == nil || !hasBinding {
 		return nil
@@ -443,20 +520,20 @@ func (s *Service) maybeCleanupRunNamespaces(ctx context.Context, cmd IngestComma
 	return nil
 }
 
-func (s *Service) resolveIssueRunTrigger(eventType string, envelope githubWebhookEnvelope) (issueRunTrigger, bool, triggerConflictResult) {
+func (s *Service) resolveIssueRunTrigger(ctx context.Context, projectID string, eventType string, envelope githubWebhookEnvelope) (issueRunTrigger, bool, triggerConflictResult, pullRequestReviewResolutionMeta, error) {
 	switch strings.TrimSpace(strings.ToLower(eventType)) {
 	case string(webhookdomain.GitHubEventIssues):
 		if !strings.EqualFold(strings.TrimSpace(envelope.Action), string(webhookdomain.GitHubActionLabeled)) {
-			return issueRunTrigger{}, false, triggerConflictResult{}
+			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
 		}
 
 		label := strings.TrimSpace(envelope.Label.Name)
 		if label == "" {
-			return issueRunTrigger{}, false, triggerConflictResult{}
+			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
 		}
 		kind, ok := s.triggerLabels.resolveKind(label)
 		if !ok {
-			return issueRunTrigger{}, false, triggerConflictResult{}
+			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
 		}
 		conflictingLabels := s.triggerLabels.collectIssueTriggerLabels(envelope.Issue.Labels)
 		return issueRunTrigger{
@@ -465,24 +542,39 @@ func (s *Service) resolveIssueRunTrigger(eventType string, envelope githubWebhoo
 				Kind:   kind,
 			}, true, triggerConflictResult{
 				ConflictingLabels: conflictingLabels,
-			}
+			}, pullRequestReviewResolutionMeta{}, nil
 	case string(webhookdomain.GitHubEventPullRequestReview):
 		if !strings.EqualFold(strings.TrimSpace(envelope.Action), string(webhookdomain.GitHubActionSubmitted)) {
-			return issueRunTrigger{}, false, triggerConflictResult{}
+			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
 		}
 		if !strings.EqualFold(strings.TrimSpace(envelope.Review.State), webhookdomain.GitHubReviewStateChangesRequested) {
-			return issueRunTrigger{}, false, triggerConflictResult{}
+			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
 		}
-		trigger, ok, reason, conflictingLabels := s.resolvePullRequestReviewReviseTrigger(envelope.PullRequest.Labels)
-		if !ok {
+		resolution, err := s.resolvePullRequestReviewReviseTrigger(ctx, projectID, envelope)
+		if err != nil {
+			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, err
+		}
+		meta := pullRequestReviewResolutionMeta{
+			ReceivedChangesRequested: true,
+			ResolverSource:           resolution.resolverSource,
+			ResolvedIssueNumber:      resolution.resolvedIssue,
+			SuggestedLabels:          resolution.suggestedLabels,
+		}
+		if !resolution.ok {
 			return issueRunTrigger{}, false, triggerConflictResult{
-				ConflictingLabels: conflictingLabels,
-				IgnoreReason:      reason,
-			}
+				ConflictingLabels: resolution.conflicting,
+				IgnoreReason:      resolution.ignoreReason,
+				SuggestedLabels:   resolution.suggestedLabels,
+				ResolverSource:    resolution.resolverSource,
+				ResolvedIssue:     resolution.resolvedIssue,
+			}, meta, nil
 		}
-		return trigger, true, triggerConflictResult{}
+		return resolution.trigger, true, triggerConflictResult{
+			ResolverSource: resolution.resolverSource,
+			ResolvedIssue:  resolution.resolvedIssue,
+		}, meta, nil
 	default:
-		return issueRunTrigger{}, false, triggerConflictResult{}
+		return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
 	}
 }
 
@@ -550,47 +642,6 @@ func hasAnyLabel(labels []githubLabelRecord, candidates ...string) bool {
 	return false
 }
 
-func (s *Service) resolvePullRequestReviewReviseTrigger(labels []githubLabelRecord) (issueRunTrigger, bool, string, []string) {
-	type stageCandidate struct {
-		runLabel    string
-		reviseLabel string
-		kind        webhookdomain.TriggerKind
-	}
-
-	catalog := []stageCandidate{
-		{runLabel: s.triggerLabels.RunIntake, reviseLabel: s.triggerLabels.RunIntakeRevise, kind: webhookdomain.TriggerKindIntakeRevise},
-		{runLabel: s.triggerLabels.RunVision, reviseLabel: s.triggerLabels.RunVisionRevise, kind: webhookdomain.TriggerKindVisionRevise},
-		{runLabel: s.triggerLabels.RunPRD, reviseLabel: s.triggerLabels.RunPRDRevise, kind: webhookdomain.TriggerKindPRDRevise},
-		{runLabel: s.triggerLabels.RunArch, reviseLabel: s.triggerLabels.RunArchRevise, kind: webhookdomain.TriggerKindArchRevise},
-		{runLabel: s.triggerLabels.RunDesign, reviseLabel: s.triggerLabels.RunDesignRevise, kind: webhookdomain.TriggerKindDesignRevise},
-		{runLabel: s.triggerLabels.RunPlan, reviseLabel: s.triggerLabels.RunPlanRevise, kind: webhookdomain.TriggerKindPlanRevise},
-		{runLabel: s.triggerLabels.RunDev, reviseLabel: s.triggerLabels.RunDevRevise, kind: webhookdomain.TriggerKindDevRevise},
-	}
-
-	matched := make([]issueRunTrigger, 0, 1)
-	matchedLabels := make([]string, 0, 1)
-	for _, stage := range catalog {
-		if !hasAnyLabel(labels, stage.runLabel, stage.reviseLabel) {
-			continue
-		}
-		matchedLabels = append(matchedLabels, strings.TrimSpace(stage.reviseLabel))
-		matched = append(matched, issueRunTrigger{
-			Source: webhookdomain.TriggerSourcePullRequestReview,
-			Label:  strings.TrimSpace(stage.reviseLabel),
-			Kind:   stage.kind,
-		})
-	}
-
-	switch len(matched) {
-	case 0:
-		return issueRunTrigger{}, false, string(runstatusdomain.TriggerWarningReasonPullRequestReviewMissingStageLabel), nil
-	case 1:
-		return matched[0], true, "", nil
-	default:
-		return issueRunTrigger{}, false, string(runstatusdomain.TriggerWarningReasonPullRequestReviewStageLabelConflict), normalizeWebhookLabels(matchedLabels)
-	}
-}
-
 func normalizeWebhookLabels(labels []string) []string {
 	result := make([]string, 0, len(labels))
 	for _, raw := range labels {
@@ -641,6 +692,7 @@ func (s *Service) recordIgnoredWebhookWarning(ctx context.Context, cmd IngestCom
 		"pull_request_number": envelope.PullRequest.Number,
 		"run_kind":            strings.TrimSpace(string(params.RunKind)),
 		"conflicting_labels":  params.ConflictingLabels,
+		"suggested_labels":    params.SuggestedLabels,
 	})
 	message := "Run was not created: " + strings.TrimSpace(params.Reason)
 	s.runtimeErr.RecordBestEffort(ctx, querytypes.RuntimeErrorRecordParams{
@@ -683,6 +735,7 @@ func (s *Service) postIgnoredWebhookDiagnosticComment(ctx context.Context, cmd I
 		Locale:             localeFromEventType(cmd.EventType),
 		ReasonCode:         runstatusdomain.TriggerWarningReasonCode(strings.TrimSpace(params.Reason)),
 		ConflictingLabels:  params.ConflictingLabels,
+		SuggestedLabels:    params.SuggestedLabels,
 	})
 }
 
@@ -692,7 +745,9 @@ func isRunCreationWarningReason(reason string) bool {
 		return false
 	}
 	if normalized == string(runstatusdomain.TriggerWarningReasonPullRequestReviewMissingStageLabel) ||
-		normalized == string(runstatusdomain.TriggerWarningReasonPullRequestReviewStageLabelConflict) {
+		normalized == string(runstatusdomain.TriggerWarningReasonPullRequestReviewStageLabelConflict) ||
+		normalized == string(runstatusdomain.TriggerWarningReasonPullRequestReviewStageNotResolved) ||
+		normalized == string(runstatusdomain.TriggerWarningReasonPullRequestReviewStageAmbiguous) {
 		return true
 	}
 	if normalized == string(runstatusdomain.TriggerWarningReasonRepositoryNotBoundForIssueLabel) {

@@ -20,6 +20,7 @@ type runPayloadInput struct {
 	LearningMode      bool
 	Trigger           *issueRunTrigger
 	Agent             runAgentProfile
+	ProfileHints      *githubRunProfileHints
 	RuntimeMode       agentdomain.RuntimeMode
 	RuntimeSource     string
 	RuntimeTargetEnv  string
@@ -43,6 +44,7 @@ type ignoredEventPayloadInput struct {
 	RunKind           webhookdomain.TriggerKind
 	HasBinding        bool
 	ConflictingLabels []string
+	SuggestedLabels   []string
 }
 
 type ignoredWebhookParams struct {
@@ -50,6 +52,7 @@ type ignoredWebhookParams struct {
 	RunKind           webhookdomain.TriggerKind
 	HasBinding        bool
 	ConflictingLabels []string
+	SuggestedLabels   []string
 }
 
 func buildRunPayload(input runPayloadInput) (json.RawMessage, error) {
@@ -159,6 +162,12 @@ func buildRunPayload(input runPayloadInput) (json.RawMessage, error) {
 			Kind:   input.Trigger.Kind,
 		}
 	}
+	if input.ProfileHints != nil {
+		payload.ProfileHints = &githubRunProfileHints{
+			LastRunIssueLabels:       normalizeWebhookLabels(input.ProfileHints.LastRunIssueLabels),
+			LastRunPullRequestLabels: normalizeWebhookLabels(input.ProfileHints.LastRunPullRequestLabels),
+		}
+	}
 
 	raw, err := json.Marshal(payload)
 	if err != nil {
@@ -208,6 +217,7 @@ func buildIgnoredEventPayload(input ignoredEventPayloadInput) (json.RawMessage, 
 	payload.Reason = input.Reason
 	payload.BindingResolved = &input.HasBinding
 	payload.ConflictingLabels = input.ConflictingLabels
+	payload.SuggestedLabels = input.SuggestedLabels
 
 	if strings.TrimSpace(input.Envelope.Label.Name) != "" {
 		payload.Label = input.Envelope.Label.Name

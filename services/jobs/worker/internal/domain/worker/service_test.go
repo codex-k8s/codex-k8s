@@ -75,8 +75,8 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 	if launcher.launched[0].MCPBearerToken != "token-run-1" {
 		t.Fatalf("expected mcp token to be propagated, got %q", launcher.launched[0].MCPBearerToken)
 	}
-	if len(events.inserted) != 3 {
-		t.Fatalf("expected run.namespace.prepared + run.namespace.ttl_scheduled + run.started events, got %d", len(events.inserted))
+	if len(events.inserted) != 4 {
+		t.Fatalf("expected run.namespace.prepared + run.namespace.ttl_scheduled + run.profile.resolved + run.started events, got %d", len(events.inserted))
 	}
 	if events.inserted[0].EventType != floweventdomain.EventTypeRunNamespacePrepared {
 		t.Fatalf("expected first event run.namespace.prepared, got %s", events.inserted[0].EventType)
@@ -84,8 +84,11 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 	if events.inserted[1].EventType != floweventdomain.EventTypeRunNamespaceTTLScheduled {
 		t.Fatalf("expected second event run.namespace.ttl_scheduled, got %s", events.inserted[1].EventType)
 	}
-	if events.inserted[2].EventType != floweventdomain.EventTypeRunStarted {
-		t.Fatalf("expected third event run.started, got %s", events.inserted[2].EventType)
+	if events.inserted[2].EventType != floweventdomain.EventTypeRunProfileResolved {
+		t.Fatalf("expected third event run.profile.resolved, got %s", events.inserted[2].EventType)
+	}
+	if events.inserted[3].EventType != floweventdomain.EventTypeRunStarted {
+		t.Fatalf("expected fourth event run.started, got %s", events.inserted[3].EventType)
 	}
 	if len(runStatus.upserts) < 1 {
 		t.Fatalf("expected run status upserts, got %d", len(runStatus.upserts))
@@ -513,8 +516,8 @@ func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 	if launcher.launched[0].MCPBearerToken != "token-run-3" {
 		t.Fatalf("expected mcp token to be set, got %q", launcher.launched[0].MCPBearerToken)
 	}
-	if len(events.inserted) != 3 {
-		t.Fatalf("expected run.namespace.prepared + run.namespace.ttl_scheduled + run.started events, got %d", len(events.inserted))
+	if len(events.inserted) != 4 {
+		t.Fatalf("expected run.namespace.prepared + run.namespace.ttl_scheduled + run.profile.resolved + run.started events, got %d", len(events.inserted))
 	}
 	if events.inserted[0].EventType != floweventdomain.EventTypeRunNamespacePrepared {
 		t.Fatalf("expected first event %q, got %q", floweventdomain.EventTypeRunNamespacePrepared, events.inserted[0].EventType)
@@ -522,8 +525,11 @@ func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 	if events.inserted[1].EventType != floweventdomain.EventTypeRunNamespaceTTLScheduled {
 		t.Fatalf("expected second event %q, got %q", floweventdomain.EventTypeRunNamespaceTTLScheduled, events.inserted[1].EventType)
 	}
-	if events.inserted[2].EventType != floweventdomain.EventTypeRunStarted {
-		t.Fatalf("expected third event %q, got %q", floweventdomain.EventTypeRunStarted, events.inserted[2].EventType)
+	if events.inserted[2].EventType != floweventdomain.EventTypeRunProfileResolved {
+		t.Fatalf("expected third event %q, got %q", floweventdomain.EventTypeRunProfileResolved, events.inserted[2].EventType)
+	}
+	if events.inserted[3].EventType != floweventdomain.EventTypeRunStarted {
+		t.Fatalf("expected fourth event %q, got %q", floweventdomain.EventTypeRunStarted, events.inserted[3].EventType)
 	}
 }
 

@@ -5,8 +5,8 @@ title: "codex-k8s — Stage Process Model"
 status: active
 owner_role: EM
 created_at: 2026-02-11
-updated_at: 2026-02-20
-related_issues: [1, 19, 90]
+updated_at: 2026-02-21
+related_issues: [1, 19, 90, 95]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -54,9 +54,9 @@ approvals:
   - `run:rethink` для возврата на более ранний этап.
 - После `run:rethink` предыдущие версии артефактов маркируются как `state:superseded`.
 
-### Planned: review-driven revise automation (Issue #90)
-- При `pull_request_review` с `review.state=changes_requested` платформа целится в авто-запуск `run:<stage>:revise`.
-- Resolver stage (planned target) детерминирован и идёт по цепочке:
+### Review-driven revise automation (implemented, Issue #95)
+- При `pull_request_review` с `review.state=changes_requested` платформа автоматически запускает `run:<stage>:revise` при успешном stage-resolve.
+- Resolver stage детерминирован и идёт по цепочке:
   1. stage label на PR (если ровно один);
   2. stage label на Issue (если ровно один);
   3. последний run context по связке `(repo, issue, pr)`;
@@ -68,6 +68,10 @@ approvals:
 - Коммуникация в review gate становится stage-aware:
   - для doc/design этапов подсказки включают `run:<stage>:revise` и `run:<next-stage>`;
   - для dev цикла — `run:dev:revise` и `run:qa`.
+- Подсказки в GitHub-комментарии intentionally compact:
+  - обычно 2 действия (`revise` + канонический `next-stage`);
+  - для `design` дополнительно публикуется fast-track `run:dev` вместе с `run:plan`.
+- Реализованный UX: next-step action-link открывает staff web-console, где frontend проверяет RBAC и подтверждает переход через модалку, а backend выполняет label transition на Issue.
 
 ## Вход/выход этапа
 

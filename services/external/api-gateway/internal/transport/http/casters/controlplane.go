@@ -264,6 +264,24 @@ func ProjectGitHubTokens(item *controlplanev1.ProjectGitHubTokens) models.Projec
 	}
 }
 
+func TransitionIssueStageLabelResponse(item *controlplanev1.TransitionIssueStageLabelResponse) models.TransitionIssueStageLabelResponse {
+	if item == nil {
+		return models.TransitionIssueStageLabelResponse{
+			RemovedLabels: []string{},
+			AddedLabels:   []string{},
+			FinalLabels:   []string{},
+		}
+	}
+	return models.TransitionIssueStageLabelResponse{
+		RepositoryFullName: item.GetRepositoryFullName(),
+		IssueNumber:        item.GetIssueNumber(),
+		IssueURL:           cast.OptionalTrimmedString(item.IssueUrl),
+		RemovedLabels:      item.GetRemovedLabels(),
+		AddedLabels:        item.GetAddedLabels(),
+		FinalLabels:        item.GetFinalLabels(),
+	}
+}
+
 func PreflightCheckResult(item *controlplanev1.PreflightCheckResult) models.PreflightCheckResult {
 	if item == nil {
 		return models.PreflightCheckResult{}

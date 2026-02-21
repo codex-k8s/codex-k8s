@@ -5,8 +5,8 @@ title: "codex-k8s — MCP Approval and Audit Flow"
 status: active
 owner_role: SA
 created_at: 2026-02-11
-updated_at: 2026-02-20
-related_issues: [1, 19, 90]
+updated_at: 2026-02-21
+related_issues: [1, 19, 90, 95]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -25,7 +25,7 @@ approvals:
 - Все действия логируются в единый audit-контур (`flow_events`, `agent_sessions`, `links`, `token_usage`).
 - HTTP approver/executor поддерживаются как стандартные контракты интеграции; Telegram зафиксирован как приоритетный adapter path для следующего этапа.
 - В `codex-k8s` сохраняется двухслойная модель MCP: встроенные Go-ручки платформы + внешний декларативный слой (`github.com/codex-k8s/yaml-mcp-server`).
-- Для review->revise UX (Issue #90, planned) label orchestration и сервисные action-cards остаются в MCP policy/audit контуре.
+- Для review->revise UX (Issue #95, ADR-0006) label orchestration и сервисные action-cards остаются в MCP policy/audit контуре.
 
 ## Политика апрувов
 
@@ -60,10 +60,10 @@ approvals:
 4. При `approve` выполняется действие и создаётся `approval.approved` + `mcp.tool.applied`.
 5. При `deny` создаётся `approval.denied`; действие не выполняется.
 
-## Planned: review-driven revise label orchestration (Issue #90)
+## Review-driven revise label orchestration (implemented, Issue #95)
 
 - Вход: webhook `pull_request_review` с `action=submitted` и `review.state=changes_requested`.
-- Stage resolver (planned) использует детерминированную цепочку:
+- Stage resolver использует детерминированную цепочку:
   1. PR stage label,
   2. Issue stage label,
   3. last run context,
@@ -154,11 +154,11 @@ approvals:
 - `run.finished`
 - `run.wait.paused`
 - `run.wait.resumed`
-- `run.review.changes_requested.received` (planned)
-- `run.revise.stage_resolved` (planned)
-- `run.revise.stage_ambiguous` (planned)
-- `run.profile.resolved` (planned)
-- `run.service_message.updated` (planned)
+- `run.review.changes_requested.received`
+- `run.revise.stage_resolved`
+- `run.revise.stage_ambiguous`
+- `run.profile.resolved`
+- `run.service_message.updated`
 
 ## Интеграция с traceability
 

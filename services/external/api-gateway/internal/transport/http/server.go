@@ -131,6 +131,7 @@ func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Clien
 	staffGroup.POST("/projects/:project_id/repositories/:repository_id/preflight", staffH.RunRepositoryPreflight)
 	staffGroup.GET("/projects/:project_id/github-tokens", staffH.GetProjectGitHubTokens)
 	staffGroup.PUT("/projects/:project_id/github-tokens", staffH.UpsertProjectGitHubTokens)
+	staffGroup.POST("/github/issues/stage-transition", staffH.TransitionIssueStageLabel)
 	staffGroup.GET("/config-entries", staffH.ListConfigEntries)
 	staffGroup.POST("/config-entries", staffH.UpsertConfigEntry)
 	staffGroup.DELETE("/config-entries/:config_entry_id", staffH.DeleteConfigEntry)

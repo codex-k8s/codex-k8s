@@ -1127,7 +1127,7 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithoutRunLabel_I
 	if len(runStatus.warningCommentCalls) != 1 {
 		t.Fatalf("expected warning comment call, got %d", len(runStatus.warningCommentCalls))
 	}
-	if runStatus.warningCommentCalls[0].ReasonCode != runstatusdomain.TriggerWarningReasonPullRequestReviewMissingStageLabel {
+	if runStatus.warningCommentCalls[0].ReasonCode != runstatusdomain.TriggerWarningReasonPullRequestReviewStageNotResolved {
 		t.Fatalf("unexpected warning reason: %q", runStatus.warningCommentCalls[0].ReasonCode)
 	}
 }
@@ -1305,6 +1305,187 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithRunIntakeLabe
 	}
 }
 
+func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_ResolvesFromIssueLabelsHistory(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{
+		items: map[string]string{},
+		byRunID: map[string]agentrunrepo.Run{
+			"history-run-1": {
+				ID:            "history-run-1",
+				CorrelationID: "history-correlation-1",
+				ProjectID:     "project-1",
+				Status:        "succeeded",
+				RunPayload:    json.RawMessage(`{"raw_payload":{"issue":{"labels":[{"name":"run:plan"},{"name":"[ai-model-gpt-5.2-codex]"}]}}}`),
+			},
+		},
+		searchItems: []agentrunrepo.RunLookupItem{
+			{
+				RunID:              "history-run-1",
+				ProjectID:          "project-1",
+				RepositoryFullName: "codex-k8s/codex-k8s",
+				IssueNumber:        95,
+				PullRequestNumber:  203,
+				TriggerKind:        "plan",
+			},
+		},
+	}
+	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"em": {ID: "agent-em", AgentKey: "em", Name: "AI EM"}}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{byLogin: map[string]userrepo.User{"member": {ID: "user-1", GitHubLogin: "member"}}}
+	members := &inMemoryProjectMemberRepo{roles: map[string]string{"project-1|user-1": "read_write"}}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"submitted",
+		"review":{"state":"changes_requested"},
+		"pull_request":{
+			"id":501,
+			"number":203,
+			"title":"Plan fixes",
+			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/203",
+			"state":"open",
+			"head":{"ref":"codex/issue-95"},
+			"user":{"id":55,"login":"member"}
+		},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-pr-review-history-issue-labels",
+		DeliveryID:    "delivery-pr-review-history-issue-labels",
+		EventType:     string(webhookdomain.GitHubEventPullRequestReview),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.RunID == "" {
+		t.Fatal("expected run id")
+	}
+
+	var runPayload githubRunPayload
+	if err := json.Unmarshal(runs.last.RunPayload, &runPayload); err != nil {
+		t.Fatalf("unmarshal run payload: %v", err)
+	}
+	if runPayload.Trigger == nil {
+		t.Fatal("expected trigger in run payload")
+	}
+	if runPayload.Trigger.Kind != webhookdomain.TriggerKindPlanRevise {
+		t.Fatalf("unexpected trigger kind: %q", runPayload.Trigger.Kind)
+	}
+	if runPayload.Trigger.Label != webhookdomain.DefaultRunPlanReviseLabel {
+		t.Fatalf("unexpected trigger label: %q", runPayload.Trigger.Label)
+	}
+	if runPayload.ProfileHints == nil {
+		t.Fatal("expected profile hints in run payload")
+	}
+	if len(runPayload.ProfileHints.LastRunIssueLabels) == 0 {
+		t.Fatalf("expected non-empty last run issue labels in profile hints: %#v", runPayload.ProfileHints)
+	}
+}
+
+func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_ResolvesFromLastRunContext(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{
+		items: map[string]string{},
+		searchItems: []agentrunrepo.RunLookupItem{
+			{
+				RunID:              "history-run-2",
+				ProjectID:          "project-1",
+				RepositoryFullName: "codex-k8s/codex-k8s",
+				IssueNumber:        96,
+				PullRequestNumber:  204,
+				TriggerKind:        "design",
+			},
+		},
+	}
+	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"sa": {ID: "agent-sa", AgentKey: "sa", Name: "AI SA"}}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{byLogin: map[string]userrepo.User{"member": {ID: "user-1", GitHubLogin: "member"}}}
+	members := &inMemoryProjectMemberRepo{roles: map[string]string{"project-1|user-1": "read_write"}}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"submitted",
+		"review":{"state":"changes_requested"},
+		"pull_request":{
+			"id":501,
+			"number":204,
+			"title":"Design fixes",
+			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/204",
+			"state":"open",
+			"head":{"ref":"codex/issue-96"},
+			"user":{"id":55,"login":"member"}
+		},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-pr-review-last-run-context",
+		DeliveryID:    "delivery-pr-review-last-run-context",
+		EventType:     string(webhookdomain.GitHubEventPullRequestReview),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.RunID == "" {
+		t.Fatal("expected run id")
+	}
+
+	var runPayload githubRunPayload
+	if err := json.Unmarshal(runs.last.RunPayload, &runPayload); err != nil {
+		t.Fatalf("unmarshal run payload: %v", err)
+	}
+	if runPayload.Trigger == nil {
+		t.Fatal("expected trigger in run payload")
+	}
+	if runPayload.Trigger.Kind != webhookdomain.TriggerKindDesignRevise {
+		t.Fatalf("unexpected trigger kind: %q", runPayload.Trigger.Kind)
+	}
+	if runPayload.Trigger.Label != webhookdomain.DefaultRunDesignReviseLabel {
+		t.Fatalf("unexpected trigger label: %q", runPayload.Trigger.Label)
+	}
+}
+
 func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithMultipleStageLabels_IsIgnored(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
@@ -1378,7 +1559,7 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithMultipleStage
 	if len(runStatus.warningCommentCalls) != 1 {
 		t.Fatalf("expected warning comment call, got %d", len(runStatus.warningCommentCalls))
 	}
-	if runStatus.warningCommentCalls[0].ReasonCode != runstatusdomain.TriggerWarningReasonPullRequestReviewStageLabelConflict {
+	if runStatus.warningCommentCalls[0].ReasonCode != runstatusdomain.TriggerWarningReasonPullRequestReviewStageAmbiguous {
 		t.Fatalf("unexpected warning reason: %q", runStatus.warningCommentCalls[0].ReasonCode)
 	}
 }
@@ -1510,12 +1691,17 @@ func (r *inMemoryAgentRepo) FindEffectiveByKey(_ context.Context, _ string, agen
 }
 
 type inMemoryRunRepo struct {
-	items map[string]string
-	last  agentrunrepo.CreateParams
+	items       map[string]string
+	last        agentrunrepo.CreateParams
+	byRunID     map[string]agentrunrepo.Run
+	searchItems []agentrunrepo.RunLookupItem
 }
 
 func (r *inMemoryRunRepo) CreatePendingIfAbsent(_ context.Context, params agentrunrepo.CreateParams) (agentrunrepo.CreateResult, error) {
 	r.last = params
+	if r.byRunID == nil {
+		r.byRunID = make(map[string]agentrunrepo.Run)
+	}
 	if id, ok := r.items[params.CorrelationID]; ok {
 		return agentrunrepo.CreateResult{
 			RunID:    id,
@@ -1524,6 +1710,13 @@ func (r *inMemoryRunRepo) CreatePendingIfAbsent(_ context.Context, params agentr
 	}
 	id := "run-" + params.CorrelationID
 	r.items[params.CorrelationID] = id
+	r.byRunID[id] = agentrunrepo.Run{
+		ID:            id,
+		CorrelationID: params.CorrelationID,
+		ProjectID:     params.ProjectID,
+		Status:        "pending",
+		RunPayload:    params.RunPayload,
+	}
 	return agentrunrepo.CreateResult{
 		RunID:    id,
 		Inserted: true,
@@ -1531,6 +1724,9 @@ func (r *inMemoryRunRepo) CreatePendingIfAbsent(_ context.Context, params agentr
 }
 
 func (r *inMemoryRunRepo) GetByID(_ context.Context, runID string) (agentrunrepo.Run, bool, error) {
+	if item, ok := r.byRunID[runID]; ok {
+		return item, true, nil
+	}
 	for correlationID, existingRunID := range r.items {
 		if existingRunID == runID {
 			return agentrunrepo.Run{
@@ -1550,7 +1746,9 @@ func (r *inMemoryRunRepo) ListRecentByProject(_ context.Context, _ string, _ str
 }
 
 func (r *inMemoryRunRepo) SearchRecentByProjectIssueOrPullRequest(_ context.Context, _ string, _ string, _ int64, _ int64, _ int) ([]agentrunrepo.RunLookupItem, error) {
-	return nil, nil
+	items := make([]agentrunrepo.RunLookupItem, 0, len(r.searchItems))
+	items = append(items, r.searchItems...)
+	return items, nil
 }
 
 func (r *inMemoryRunRepo) ListRunIDsByRepositoryIssue(_ context.Context, _ string, _ int64, _ int) ([]string, error) {

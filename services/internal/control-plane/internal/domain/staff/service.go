@@ -66,6 +66,9 @@ type githubManagementClient interface {
 	GetDefaultBranch(ctx context.Context, token string, owner string, repo string) (string, error)
 	GetFile(ctx context.Context, token string, owner string, repo string, path string, ref string) ([]byte, bool, error)
 	CreatePullRequestWithFiles(ctx context.Context, token string, owner string, repo string, baseBranch string, headBranch string, title string, body string, files map[string][]byte) (prNumber int, prURL string, err error)
+	ListIssueLabels(ctx context.Context, token string, owner string, repo string, issueNumber int) ([]string, error)
+	AddIssueLabels(ctx context.Context, token string, owner string, repo string, issueNumber int, labels []string) ([]string, error)
+	RemoveIssueLabel(ctx context.Context, token string, owner string, repo string, issueNumber int, label string) error
 	EnsureEnvironment(ctx context.Context, token string, owner string, repo string, envName string) error
 	ListEnvSecretNames(ctx context.Context, token string, owner string, repo string, envName string) (map[string]struct{}, error)
 	ListEnvVariableValues(ctx context.Context, token string, owner string, repo string, envName string) (map[string]string, error)

@@ -96,6 +96,12 @@ func mergeState(base commentState, update commentState) commentState {
 	if phaseOrder(update.Phase) >= phaseOrder(base.Phase) {
 		base.Phase = update.Phase
 	}
+	if strings.TrimSpace(update.RepositoryFullName) != "" {
+		base.RepositoryFullName = strings.TrimSpace(update.RepositoryFullName)
+	}
+	if update.IssueNumber > 0 {
+		base.IssueNumber = update.IssueNumber
+	}
 	if strings.TrimSpace(update.JobName) != "" {
 		base.JobName = strings.TrimSpace(update.JobName)
 	}
@@ -110,6 +116,12 @@ func mergeState(base commentState, update commentState) commentState {
 	}
 	if strings.TrimSpace(update.SlotURL) != "" {
 		base.SlotURL = strings.TrimSpace(update.SlotURL)
+	}
+	if strings.TrimSpace(update.IssueURL) != "" {
+		base.IssueURL = strings.TrimSpace(update.IssueURL)
+	}
+	if strings.TrimSpace(update.PullRequestURL) != "" {
+		base.PullRequestURL = strings.TrimSpace(update.PullRequestURL)
 	}
 	if strings.TrimSpace(update.TriggerKind) != "" {
 		base.TriggerKind = normalizeTriggerKind(update.TriggerKind)

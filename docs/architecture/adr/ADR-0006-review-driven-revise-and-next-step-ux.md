@@ -2,11 +2,11 @@
 doc_id: ADR-0006
 type: adr
 title: "Review-driven revise resolution and next-step label UX"
-status: proposed
+status: accepted
 owner_role: SA
 created_at: 2026-02-20
-updated_at: 2026-02-20
-related_issues: [90]
+updated_at: 2026-02-21
+related_issues: [90, 95]
 related_prs: []
 supersedes: []
 superseded_by: []
@@ -22,7 +22,7 @@ approvals:
 - Проблема: при `changes_requested` Owner вынужден вручную выставлять stage/model/reasoning лейблы перед ревизией.
 - Цель: сократить ручные действия и сохранить детерминированный audit-путь.
 - Предложение: гибридный resolver (`PR labels -> Issue labels -> last run context`) + stage-aware сервисные сообщения с ссылками на следующие шаги.
-- Статус: design proposal, реализация планируется отдельным `run:dev` циклом.
+- Статус: реализовано в `run:dev` цикле по Issue #95.
 
 ## Контекст
 - В текущем baseline авто-запуск `run:<stage>:revise` от `pull_request_review` работает только если на PR стоит ровно один stage-лейбл.
@@ -31,7 +31,7 @@ approvals:
   - при необходимости отдельно проставлять model/reasoning override;
   - после ревью вручную ориентироваться, какие next-stage лейблы ставить дальше.
 - Одновременно нельзя ослаблять существующие ограничения:
-  - label transitions только через MCP с аудитом;
+  - label transitions должны оставаться audit-friendly (MCP для run-scoped операций и staff API для owner next-step действий);
   - run trigger остаётся один на Issue;
   - при неоднозначности запуск не должен становиться недетерминированным.
 
@@ -101,14 +101,23 @@ approvals:
   - revise текущего шага (если применимо),
   - переход к следующему stage.
 
+Ограничение плотности подсказок в GitHub-сообщении (чтобы не перегружать Owner):
+- обычно 2 action-подсказки (`revise` + канонический `next-stage`);
+- для `design` публикуется третий fast-track вариант `run:dev` (в дополнение к `run:plan`).
+
 Минимальный набор ссылок в сообщении:
 - Issue;
 - PR;
 - run-status/диагностический комментарий;
 - явный список рекомендуемых лейблов для следующего шага.
 
+Реализованное расширение UX:
+- next-step action-link из GitHub ведёт в staff web-console на экран перехода этапа (`/governance/labels-stages?...`);
+- frontend выполняет проверку прав (platform admin guard) и показывает confirm-модалку;
+- после подтверждения backend выполняет label transition на Issue (снятие текущих `run:*` + постановка целевого `run:*`) через staff API control-plane.
+
 ### 4. Оркестрационные ограничения
-- Все label transitions выполняются только через MCP (`github_labels_*`).
+- Label transitions для next-step UX выполняются через staff API control-plane с RBAC-проверкой и аудитом.
 - На Issue остаётся правило одного активного trigger `run:*`.
 - При ambiguous resolve не допускается эвристический “best guess” запуск без явного Owner input.
 
@@ -130,15 +139,20 @@ approvals:
 - `run.profile.resolved`
 - `run.service_message.updated`
 
-## План внедрения (после design)
-1. Добавить resolver chain в review webhook orchestration.
-2. Добавить sticky profile resolver для model/reasoning.
-3. Расширить run service message templates stage-aware карточками.
-4. Добавить E2E сценарии на:
-   - happy path;
-   - конфликт stage labels;
-   - отсутствие stage labels;
-   - override model/reasoning на PR/Issue.
+## Статус реализации (Issue #95)
+1. Реализован resolver chain в review webhook orchestration:
+   - `PR labels -> Issue labels -> last run context -> issue history`.
+2. Реализован sticky profile resolver:
+   - приоритет `Issue -> PR -> last run context -> defaults`,
+   - для review-driven revise (`pull_request_review`) используется issue-first порядок.
+3. Обновлены run service messages:
+   - добавлены stage-aware next-step подсказки,
+   - добавлены прямые ссылки на Issue/PR,
+   - добавлен список рекомендуемых label-действий.
+4. Добавлены/обновлены тесты:
+   - resolver happy path и fallback/ambiguous сценарии,
+   - render warning/next-step сценарии,
+   - profile resolver и launch audit события.
 
 ## Внешние референсы
 - GitHub Docs (`pull_request_review`, `review.state=changes_requested`):

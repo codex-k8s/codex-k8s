@@ -5,8 +5,8 @@ title: "codex-k8s — Labels and Trigger Policy"
 status: active
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-02-20
-related_issues: [1, 19, 74, 90]
+updated_at: 2026-02-21
+related_issues: [1, 19, 74, 90, 95]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -22,7 +22,7 @@ approvals:
 - Канонический набор лейблов включает классы `run:*`, `state:*`, `need:*` и диагностические labels.
 - Trigger/deploy лейблы управляют запуском этапов и требуют апрува Owner при агент-инициации.
 - `state:*`, `need:*` и диагностические labels не запускают деплой/исполнение и могут ставиться автоматически по политике.
-- Для review->revise цикла зафиксирован целевой (planned) гибридный resolver stage/profile и stage-aware сервисные сообщения (Issue #90).
+- Для review->revise цикла реализован гибридный resolver stage/profile и stage-aware сервисные сообщения (Issue #95, ADR-0006).
 
 ## Source of truth
 - `docs/product/stage_process_model.md`
@@ -171,14 +171,7 @@ approvals:
   - по label `run:dev:revise` на Issue;
   - по webhook `pull_request_review` с `action=submitted` и `review.state=changes_requested`,
     если удаётся детерминированно определить stage по policy резолва.
-- Active baseline (текущая реализация S3):
-  - stage определяется только если на PR стоит ровно один stage label из поддержанных пар:
-    `run:intake|run:intake:revise`, `run:vision|run:vision:revise`,
-    `run:prd|run:prd:revise`, `run:arch|run:arch:revise`,
-    `run:design|run:design:revise`, `run:plan|run:plan:revise`,
-    `run:dev|run:dev:revise`.
-  - если stage labels нет или их несколько, ран не создаётся.
-- Planned target (Issue #90):
+- Current baseline (S3, Issue #95):
   - stage резолвится по цепочке:
     1. PR stage label (если ровно один),
     2. Issue stage label (если ровно один),
@@ -192,6 +185,7 @@ approvals:
   - публикует/обновляет единый статус-комментарий в фазе «планируется запуск агента»;
   - дальше обновляет тот же комментарий по фазам `подготовка окружения -> запуск -> завершение`.
 - Label transitions после завершения run должны выполняться через MCP (а не вручную в коде агента), чтобы сохранять единый policy/audit контур.
+- Для owner next-step action-link в staff web-console используется отдельный staff endpoint перехода этапа (RBAC + аудит), без прямых мутаций лейблов из frontend.
 - Для dev/dev:revise transition выполняется так:
   - снять trigger label с Issue;
   - поставить `state:in-review` на PR и на Issue.
@@ -202,7 +196,7 @@ approvals:
 - активирован полный stage-контур `run:intake..run:ops` + revise/rethink;
   - активирован trigger path для `run:self-improve` (расширенная бизнес-логика дорабатывается по S3 Day6+).
 
-### Planned UX improvements for review/revise (Issue #90)
+### Implemented UX improvements for review/revise (Issue #95)
 
 #### Варианты организации
 | Вариант | Суть | Плюсы | Минусы |
@@ -211,7 +205,7 @@ approvals:
 | B | Резолвить stage только по Issue | меньше ручных действий на PR | ломается при рассинхроне Issue labels |
 | C (recommended) | Гибридный resolver + sticky profile + stage-aware сервисные сообщения | лучший баланс UX и детерминированности | выше сложность orchestration |
 
-#### Sticky model/reasoning profile (planned)
+#### Sticky model/reasoning profile (implemented)
 - Для `changes_requested` effective profile резолвится по приоритету:
   1. `[ai-model-*]`/`[ai-reasoning-*]` на Issue;
   2. те же лейблы на PR;
@@ -219,11 +213,13 @@ approvals:
   4. project/agent defaults.
 - Цель: убрать обязательность ручного повторного выбора model/reasoning перед каждой revise-итерацией.
 
-#### Stage-aware action cards в service-comment (planned)
+#### Stage-aware action cards в service-comment (implemented)
 - Платформа обновляет единый service-comment и добавляет stage-aware подсказки:
   - `intake|vision|prd|arch|design|plan`: `run:<stage>:revise` и `run:<next-stage>`;
   - `dev`: `run:dev:revise`, `run:qa`;
   - `qa|release|postdeploy|ops`: revise текущего stage (если применимо) и следующий stage.
+- Карточка остаётся компактной: обычно 2 action-подсказки (`revise` + канонический `next-stage`).
+- Для `design` публикуется дополнительный fast-track вариант `run:dev` (вместе с каноническим `run:plan`).
 - В сообщении всегда остаются ссылки:
   - на Issue;
   - на PR;
@@ -233,6 +229,11 @@ approvals:
   - revise-run не стартует;
   - выставляется `need:input`;
   - публикуется remediation-message с конкретным требуемым label action.
+
+#### Next-step deep-link в web-console (implemented)
+- Action-link из GitHub service-comment открывает staff web-console для перехода этапа (`/governance/labels-stages?...`).
+- На фронте выполняется RBAC-проверка (platform admin guard) и показывается confirm-модалка перехода.
+- После подтверждения backend выполняет label transition на Issue: снимает текущие `run:*` и ставит целевой `run:*`.
 
 ## Оркестрационный flow для `run:self-improve`
 

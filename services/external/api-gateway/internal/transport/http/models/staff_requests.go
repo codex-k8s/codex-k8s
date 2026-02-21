@@ -67,6 +67,12 @@ type UpsertProjectGitHubTokensRequest struct {
 	BotEmail      *string `json:"bot_email"`
 }
 
+type TransitionIssueStageLabelRequest struct {
+	RepositoryFullName string `json:"repository_full_name"`
+	IssueNumber        int32  `json:"issue_number"`
+	TargetLabel        string `json:"target_label"`
+}
+
 type UpsertConfigEntryRequest struct {
 	Scope              string   `json:"scope"`
 	Kind               string   `json:"kind"`
