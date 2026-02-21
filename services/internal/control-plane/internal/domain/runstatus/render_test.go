@@ -145,3 +145,41 @@ func TestRenderCommentBody_RuntimePreparationAndNamespaceMessages(t *testing.T) 
 		})
 	}
 }
+
+func TestRenderCommentBody_RendersStageAwareActionCards(t *testing.T) {
+	t.Parallel()
+
+	body := mustRenderCommentBody(t, commentState{
+		RunID:        "run-dev",
+		Phase:        PhaseStarted,
+		TriggerKind:  triggerKindDev,
+		PromptLocale: localeRU,
+	}, "https://platform.codex-k8s.dev/runs/run-dev")
+	if !strings.Contains(body, "Следующие шаги") {
+		t.Fatalf("expected next steps section in body: %q", body)
+	}
+	if !strings.Contains(body, "`run:dev:revise`") {
+		t.Fatalf("expected revise action label in body: %q", body)
+	}
+	if !strings.Contains(body, "`run:qa`") {
+		t.Fatalf("expected next stage action label in body: %q", body)
+	}
+}
+
+func TestRenderCommentBody_RendersIssueAndPRLinks(t *testing.T) {
+	t.Parallel()
+
+	body := mustRenderCommentBody(t, commentState{
+		RunID:          "run-links",
+		Phase:          PhaseStarted,
+		PromptLocale:   localeRU,
+		IssueURL:       "https://github.com/codex-k8s/codex-k8s/issues/95",
+		PullRequestURL: "https://github.com/codex-k8s/codex-k8s/pull/123",
+	}, "https://platform.codex-k8s.dev/runs/run-links")
+	if !strings.Contains(body, "issues/95") {
+		t.Fatalf("expected issue link in body: %q", body)
+	}
+	if !strings.Contains(body, "pull/123") {
+		t.Fatalf("expected pr link in body: %q", body)
+	}
+}

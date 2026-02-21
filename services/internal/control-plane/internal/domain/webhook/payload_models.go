@@ -23,6 +23,7 @@ type githubRunPayload struct {
 	Issue         *githubRunIssuePayload     `json:"issue,omitempty"`
 	PullRequest   *githubRunPRPayload        `json:"pull_request,omitempty"`
 	Trigger       *githubIssueTriggerPayload `json:"trigger,omitempty"`
+	ProfileHints  *githubRunProfileHints     `json:"profile_hints,omitempty"`
 	Runtime       githubRunRuntimePayload    `json:"runtime"`
 }
 
@@ -92,6 +93,11 @@ type githubIssueTriggerPayload struct {
 	Kind   webhookdomain.TriggerKind `json:"kind"`
 }
 
+type githubRunProfileHints struct {
+	LastRunIssueLabels       []string `json:"last_run_issue_labels,omitempty"`
+	LastRunPullRequestLabels []string `json:"last_run_pull_request_labels,omitempty"`
+}
+
 type githubRunRuntimePayload struct {
 	Mode       string `json:"mode"`
 	Source     string `json:"source,omitempty"`
@@ -116,6 +122,7 @@ type githubFlowEventPayload struct {
 	IssueNumber       int64                       `json:"issue_number,omitempty"`
 	Reason            string                      `json:"reason,omitempty"`
 	ConflictingLabels []string                    `json:"conflicting_labels,omitempty"`
+	SuggestedLabels   []string                    `json:"suggested_labels,omitempty"`
 	BindingResolved   *bool                       `json:"binding_resolved,omitempty"`
 	Issue             *githubIgnoredIssuePayload  `json:"issue,omitempty"`
 }

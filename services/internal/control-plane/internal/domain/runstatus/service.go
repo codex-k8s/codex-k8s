@@ -93,6 +93,12 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		Deleted:                  params.Deleted,
 		AlreadyDeleted:           params.AlreadyDeleted,
 	}
+	if runCtx.payload.Issue != nil {
+		currentState.IssueURL = strings.TrimSpace(runCtx.payload.Issue.HTMLURL)
+	}
+	if runCtx.payload.PullRequest != nil {
+		currentState.PullRequestURL = strings.TrimSpace(runCtx.payload.PullRequest.HTMLURL)
+	}
 
 	comments, err := s.listRunIssueComments(ctx, runCtx)
 	if err != nil {
@@ -137,6 +143,15 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 	}
 
 	s.insertFlowEvent(ctx, runCtx.run.CorrelationID, floweventdomain.EventTypeRunStatusCommentUpserted, runStatusCommentUpsertedPayload{
+		RunID:              runID,
+		IssueNumber:        runCtx.commentTargetNumber,
+		ThreadKind:         string(runCtx.commentTargetKind),
+		RepositoryFullName: runCtx.payload.Repository.FullName,
+		CommentID:          savedComment.ID,
+		CommentURL:         savedComment.URL,
+		Phase:              currentState.Phase,
+	})
+	s.insertFlowEvent(ctx, runCtx.run.CorrelationID, floweventdomain.EventTypeRunServiceMessageUpdated, runStatusCommentUpsertedPayload{
 		RunID:              runID,
 		IssueNumber:        runCtx.commentTargetNumber,
 		ThreadKind:         string(runCtx.commentTargetKind),
@@ -271,6 +286,7 @@ func (s *Service) PostTriggerWarningComment(ctx context.Context, params TriggerW
 		ThreadKind:        string(threadKind),
 		ReasonCode:        TriggerWarningReasonCode(strings.TrimSpace(string(params.ReasonCode))),
 		ConflictingLabels: params.ConflictingLabels,
+		SuggestedLabels:   params.SuggestedLabels,
 	})
 	if err != nil {
 		return TriggerWarningCommentResult{}, err

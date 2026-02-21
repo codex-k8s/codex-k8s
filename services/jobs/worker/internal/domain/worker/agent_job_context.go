@@ -17,6 +17,7 @@ const (
 	modelSourceDefault          = "agent_default"
 	modelSourceIssueLabel       = "issue_label"
 	modelSourcePullRequestLabel = "pull_request_label"
+	modelSourceLastRunContext   = "last_run_context"
 	modelSourceFallback         = "auth_file_fallback"
 
 	modelGPT53Codex      = "gpt-5.3-codex"
@@ -58,11 +59,12 @@ type runAgentContext struct {
 }
 
 type runAgentPayload struct {
-	Repository *runAgentRepository `json:"repository"`
-	Issue      *runAgentIssue      `json:"issue"`
-	Trigger    *runAgentTrigger    `json:"trigger"`
-	Agent      *runAgentDescriptor `json:"agent"`
-	RawPayload json.RawMessage     `json:"raw_payload"`
+	Repository   *runAgentRepository   `json:"repository"`
+	Issue        *runAgentIssue        `json:"issue"`
+	Trigger      *runAgentTrigger      `json:"trigger"`
+	Agent        *runAgentDescriptor   `json:"agent"`
+	ProfileHints *runAgentProfileHints `json:"profile_hints"`
+	RawPayload   json.RawMessage       `json:"raw_payload"`
 }
 
 type runAgentRepository struct {
@@ -74,8 +76,14 @@ type runAgentIssue struct {
 }
 
 type runAgentTrigger struct {
-	Kind  string `json:"kind"`
-	Label string `json:"label"`
+	Source string `json:"source"`
+	Kind   string `json:"kind"`
+	Label  string `json:"label"`
+}
+
+type runAgentProfileHints struct {
+	LastRunIssueLabels       []string `json:"last_run_issue_labels"`
+	LastRunPullRequestLabels []string `json:"last_run_pull_request_labels"`
 }
 
 type runAgentDescriptor struct {
@@ -126,20 +134,28 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 	}
 
 	labelCatalog := normalizeRunAgentLabelCatalog(defaults.LabelCatalog)
+	reviewDrivenRevise := strings.EqualFold(strings.TrimSpace(payload.triggerSource), webhookdomain.TriggerSourcePullRequestReview) &&
+		resolvePromptTemplateKindForTrigger(ctx.TriggerKind) == promptTemplateKindRevise
 	model, modelSource, err := resolveModelFromLabelsWithPriorityAndCatalog(
-		payload.pullRequestLabels,
 		payload.issueLabels,
+		payload.pullRequestLabels,
+		payload.historyIssueLabels,
+		payload.historyPRLabels,
 		defaults.DefaultModel,
 		labelCatalog,
+		reviewDrivenRevise,
 	)
 	if err != nil {
 		return runAgentContext{}, err
 	}
 	reasoning, reasoningSource, err := resolveReasoningFromLabelsWithPriorityAndCatalog(
-		payload.pullRequestLabels,
 		payload.issueLabels,
+		payload.pullRequestLabels,
+		payload.historyIssueLabels,
+		payload.historyPRLabels,
 		defaults.DefaultReasoningEffort,
 		labelCatalog,
+		reviewDrivenRevise,
 	)
 	if err != nil {
 		return runAgentContext{}, err
@@ -178,11 +194,14 @@ type parsedRunAgentPayload struct {
 	issueNumber        int64
 	targetBranch       string
 	existingPRNumber   int
+	triggerSource      string
 	triggerKind        string
 	triggerLabel       string
 	agentDisplayName   string
 	issueLabels        []string
 	pullRequestLabels  []string
+	historyIssueLabels []string
+	historyPRLabels    []string
 }
 
 func parseRunAgentPayload(raw json.RawMessage) parsedRunAgentPayload {
@@ -192,8 +211,10 @@ func parseRunAgentPayload(raw json.RawMessage) parsedRunAgentPayload {
 	}
 
 	out := parsedRunAgentPayload{
-		issueLabels:       make([]string, 0, 4),
-		pullRequestLabels: make([]string, 0, 4),
+		issueLabels:        make([]string, 0, 4),
+		pullRequestLabels:  make([]string, 0, 4),
+		historyIssueLabels: make([]string, 0, 4),
+		historyPRLabels:    make([]string, 0, 4),
 	}
 	if payload.Repository != nil {
 		out.repositoryFullName = strings.TrimSpace(payload.Repository.FullName)
@@ -210,12 +231,29 @@ func parseRunAgentPayload(raw json.RawMessage) parsedRunAgentPayload {
 	}
 	out.targetBranch = strings.TrimSpace(targetBranch)
 	if payload.Trigger != nil {
+		out.triggerSource = strings.TrimSpace(payload.Trigger.Source)
 		out.triggerKind = strings.TrimSpace(payload.Trigger.Kind)
 		out.triggerLabel = strings.TrimSpace(payload.Trigger.Label)
 	}
 	if payload.Agent != nil {
 		out.agentKey = strings.TrimSpace(payload.Agent.Key)
 		out.agentDisplayName = strings.TrimSpace(payload.Agent.Name)
+	}
+	if payload.ProfileHints != nil {
+		for _, raw := range payload.ProfileHints.LastRunIssueLabels {
+			label := strings.TrimSpace(raw)
+			if label == "" {
+				continue
+			}
+			out.historyIssueLabels = append(out.historyIssueLabels, label)
+		}
+		for _, raw := range payload.ProfileHints.LastRunPullRequestLabels {
+			label := strings.TrimSpace(raw)
+			if label == "" {
+				continue
+			}
+			out.historyPRLabels = append(out.historyPRLabels, label)
+		}
 	}
 	out.issueLabels, out.pullRequestLabels = extractIssueAndPullRequestLabels(payload.RawPayload)
 	return out
@@ -264,32 +302,44 @@ func resolveModelFromLabelsAndCatalog(labels []string, defaultModel string, labe
 }
 
 func resolveModelFromLabelsWithPriorityAndCatalog(
-	pullRequestLabels []string,
 	issueLabels []string,
+	pullRequestLabels []string,
+	historyIssueLabels []string,
+	historyPullRequestLabels []string,
 	defaultModel string,
 	labelCatalog runAgentLabelCatalog,
+	reviewDrivenRevise bool,
 ) (model string, source string, err error) {
-	return resolveSingleLabelValueWithPriority(
-		pullRequestLabels,
+	return resolveSingleLabelValueWithPriorityAndHistory(
 		issueLabels,
+		pullRequestLabels,
+		historyIssueLabels,
+		historyPullRequestLabels,
 		defaultModel,
 		labelCatalog.modelByLabel(),
 		labelKindAIModel,
+		reviewDrivenRevise,
 	)
 }
 
 func resolveReasoningFromLabelsWithPriorityAndCatalog(
-	pullRequestLabels []string,
 	issueLabels []string,
+	pullRequestLabels []string,
+	historyIssueLabels []string,
+	historyPullRequestLabels []string,
 	defaultReasoning string,
 	labelCatalog runAgentLabelCatalog,
+	reviewDrivenRevise bool,
 ) (reasoning string, source string, err error) {
-	return resolveSingleLabelValueWithPriority(
-		pullRequestLabels,
+	return resolveSingleLabelValueWithPriorityAndHistory(
 		issueLabels,
+		pullRequestLabels,
+		historyIssueLabels,
+		historyPullRequestLabels,
 		defaultReasoning,
 		labelCatalog.reasoningByLabel(),
 		labelKindAIReasoning,
+		reviewDrivenRevise,
 	)
 }
 
@@ -304,27 +354,61 @@ func resolveSingleLabelValue(labels []string, defaultValue string, known map[str
 	return defaultValue, modelSourceDefault, nil
 }
 
-func resolveSingleLabelValueWithPriority(
-	primaryLabels []string,
-	fallbackLabels []string,
+func resolveSingleLabelValueWithPriorityAndHistory(
+	issueLabels []string,
+	pullRequestLabels []string,
+	historyIssueLabels []string,
+	historyPullRequestLabels []string,
 	defaultValue string,
 	known map[string]string,
 	labelKind string,
+	reviewDrivenRevise bool,
 ) (value string, source string, err error) {
-	primaryMatches := collectResolvedLabelValues(primaryLabels, known)
-	if len(primaryMatches) > 1 {
-		return "", "", fmt.Errorf("failed_precondition: multiple %s labels found on pull_request: %s", labelKind, strings.Join(primaryMatches, ", "))
-	}
-	if len(primaryMatches) == 1 {
-		return known[primaryMatches[0]], modelSourcePullRequestLabel, nil
+	primaryLabels := pullRequestLabels
+	primaryScope := "pull_request"
+	primarySource := modelSourcePullRequestLabel
+	secondaryLabels := issueLabels
+	secondaryScope := "issue"
+	secondarySource := modelSourceIssueLabel
+	if reviewDrivenRevise {
+		primaryLabels = issueLabels
+		primaryScope = "issue"
+		primarySource = modelSourceIssueLabel
+		secondaryLabels = pullRequestLabels
+		secondaryScope = "pull_request"
+		secondarySource = modelSourcePullRequestLabel
 	}
 
-	fallbackMatches := collectResolvedLabelValues(fallbackLabels, known)
-	if len(fallbackMatches) > 1 {
-		return "", "", fmt.Errorf("failed_precondition: multiple %s labels found on issue: %s", labelKind, strings.Join(fallbackMatches, ", "))
+	primaryMatches := collectResolvedLabelValues(primaryLabels, known)
+	if len(primaryMatches) > 1 {
+		return "", "", fmt.Errorf("failed_precondition: multiple %s labels found on %s: %s", labelKind, primaryScope, strings.Join(primaryMatches, ", "))
 	}
-	if len(fallbackMatches) == 1 {
-		return known[fallbackMatches[0]], modelSourceIssueLabel, nil
+	if len(primaryMatches) == 1 {
+		return known[primaryMatches[0]], primarySource, nil
+	}
+
+	secondaryMatches := collectResolvedLabelValues(secondaryLabels, known)
+	if len(secondaryMatches) > 1 {
+		return "", "", fmt.Errorf("failed_precondition: multiple %s labels found on %s: %s", labelKind, secondaryScope, strings.Join(secondaryMatches, ", "))
+	}
+	if len(secondaryMatches) == 1 {
+		return known[secondaryMatches[0]], secondarySource, nil
+	}
+
+	historyIssueMatches := collectResolvedLabelValues(historyIssueLabels, known)
+	if len(historyIssueMatches) > 1 {
+		return "", "", fmt.Errorf("failed_precondition: multiple %s labels found in last_run_context(issue): %s", labelKind, strings.Join(historyIssueMatches, ", "))
+	}
+	if len(historyIssueMatches) == 1 {
+		return known[historyIssueMatches[0]], modelSourceLastRunContext, nil
+	}
+
+	historyPRMatches := collectResolvedLabelValues(historyPullRequestLabels, known)
+	if len(historyPRMatches) > 1 {
+		return "", "", fmt.Errorf("failed_precondition: multiple %s labels found in last_run_context(pull_request): %s", labelKind, strings.Join(historyPRMatches, ", "))
+	}
+	if len(historyPRMatches) == 1 {
+		return known[historyPRMatches[0]], modelSourceLastRunContext, nil
 	}
 
 	return defaultValue, modelSourceDefault, nil

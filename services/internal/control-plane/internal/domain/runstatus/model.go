@@ -76,6 +76,7 @@ type TriggerWarningCommentParams struct {
 	Locale             string
 	ReasonCode         TriggerWarningReasonCode
 	ConflictingLabels  []string
+	SuggestedLabels    []string
 }
 
 // TriggerWarningCommentResult returns posted GitHub comment metadata.
@@ -211,6 +212,8 @@ type commentState struct {
 	RuntimeMode              string `json:"runtime_mode,omitempty"`
 	Namespace                string `json:"namespace,omitempty"`
 	SlotURL                  string `json:"slot_url,omitempty"`
+	IssueURL                 string `json:"issue_url,omitempty"`
+	PullRequestURL           string `json:"pull_request_url,omitempty"`
 	TriggerKind              string `json:"trigger_kind,omitempty"`
 	PromptLocale             string `json:"prompt_locale,omitempty"`
 	Model                    string `json:"model,omitempty"`

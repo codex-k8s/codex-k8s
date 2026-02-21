@@ -33,6 +33,12 @@
 {{- if .ShowSlotURL }}
 - Slot URL: [{{ .SlotURL }}]({{ .SlotURL }})
 {{- end }}
+{{- if .ShowIssueURL }}
+- Issue: [{{ .IssueURL }}]({{ .IssueURL }})
+{{- end }}
+{{- if .ShowPullRequestURL }}
+- PR: [{{ .PullRequestURL }}]({{ .PullRequestURL }})
+{{- end }}
 {{- if .ShowModel }}
 - Model: `{{ .Model }}`
 {{- end }}
@@ -90,6 +96,16 @@
 - 🗑️ Namespace deleted
 {{- else }}
 - 🧪 Namespace was kept. You can delete it from the run details page.
+{{- end }}
+{{- end }}
+
+{{- if .ShowActionCards }}
+### ⏭ Next Steps
+{{- if .ReviseActionLabel }}
+- Revise current stage: `{{ .ReviseActionLabel }}`
+{{- end }}
+{{- if .NextStageActionLabel }}
+- Move to next stage: `{{ .NextStageActionLabel }}`
 {{- end }}
 {{- end }}
 

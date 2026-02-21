@@ -14,6 +14,12 @@ locales:
         - `{{ . }}`
       {{- end }}
       {{- end }}
+      {{- if .SuggestedLabels }}
+      - Рекомендуемые лейблы для следующего шага:
+      {{- range .SuggestedLabels }}
+        - `{{ . }}`
+      {{- end }}
+      {{- end }}
 
       {{- if .IsPullRequest }}
       Это сообщение относится к текущему Pull Request.
@@ -24,11 +30,17 @@ locales:
       Код причины: `{{ .ReasonCode }}`
     reasons:
       pull_request_review_missing_stage_label:
-        reason: "в PR review пришло changes_requested, но на PR нет stage-лейбла run:*."
-        hint: "Поставьте на PR ровно один stage-лейбл run:<stage> (или run:<stage>:revise) и отправьте review снова."
+        reason: "в PR review пришло changes_requested, но stage не найден по цепочке resolver (PR labels -> Issue labels -> run context -> issue history)."
+        hint: "Оставьте ровно один stage-лейбл на PR или на связанной Issue и повторите review."
       pull_request_review_stage_label_conflict:
         reason: "в PR одновременно несколько stage-лейблов run:*, из-за чего невозможно выбрать единый revise-этап."
         hint: "Оставьте на PR только один stage-лейбл и повторите review."
+      pull_request_review_stage_not_resolved:
+        reason: "stage для revise не удалось определить детерминированно."
+        hint: "Поставьте один stage-лейбл (`run:<stage>` или `run:<stage>:revise`) на PR/Issue и повторите review."
+      pull_request_review_stage_ambiguous:
+        reason: "resolver обнаружил неоднозначный stage-контекст для revise."
+        hint: "Снимите лишние stage-лейблы и оставьте один корректный stage на PR или Issue."
       repository_not_bound_for_issue_label:
         reason: "репозиторий не привязан к проекту платформы."
         hint: "Привяжите репозиторий к проекту в staff console и повторите запуск."
@@ -54,6 +66,12 @@ locales:
         - `{{ . }}`
       {{- end }}
       {{- end }}
+      {{- if .SuggestedLabels }}
+      - Recommended labels for the next step:
+      {{- range .SuggestedLabels }}
+        - `{{ . }}`
+      {{- end }}
+      {{- end }}
 
       {{- if .IsPullRequest }}
       This message is attached to the current Pull Request.
@@ -64,11 +82,17 @@ locales:
       Reason code: `{{ .ReasonCode }}`
     reasons:
       pull_request_review_missing_stage_label:
-        reason: "changes_requested was received for PR review, but PR has no run:* stage label."
-        hint: "Set exactly one run:<stage> (or run:<stage>:revise) label on PR and submit review again."
+        reason: "changes_requested was received, but stage was not resolved by the resolver chain (PR labels -> Issue labels -> run context -> issue history)."
+        hint: "Keep exactly one stage label on PR or linked Issue and submit review again."
       pull_request_review_stage_label_conflict:
         reason: "PR contains multiple run:* stage labels, so revise stage cannot be selected unambiguously."
         hint: "Keep only one stage label on PR and submit review again."
+      pull_request_review_stage_not_resolved:
+        reason: "revise stage could not be resolved deterministically."
+        hint: "Apply a single stage label (`run:<stage>` or `run:<stage>:revise`) on PR/Issue and submit review again."
+      pull_request_review_stage_ambiguous:
+        reason: "resolver detected ambiguous stage context for revise."
+        hint: "Remove extra stage labels and keep one valid stage on PR or Issue."
       repository_not_bound_for_issue_label:
         reason: "repository is not bound to a platform project."
         hint: "Bind repository to a project in staff console and retry."

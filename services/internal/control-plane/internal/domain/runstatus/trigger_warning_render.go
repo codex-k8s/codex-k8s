@@ -23,6 +23,7 @@ type triggerWarningRenderParams struct {
 	ThreadKind        string
 	ReasonCode        TriggerWarningReasonCode
 	ConflictingLabels []string
+	SuggestedLabels   []string
 }
 
 type triggerWarningTemplateContext struct {
@@ -31,6 +32,7 @@ type triggerWarningTemplateContext struct {
 	HintText          string
 	IsPullRequest     bool
 	ConflictingLabels []string
+	SuggestedLabels   []string
 }
 
 type triggerWarningLocaleStrings struct {
@@ -101,6 +103,7 @@ func renderTriggerWarningCommentBody(params triggerWarningRenderParams) (string,
 		HintText:          strings.TrimSpace(entry.Hint),
 		IsPullRequest:     threadKind == commentTargetKindPullRequest,
 		ConflictingLabels: normalizeConflictLabels(params.ConflictingLabels),
+		SuggestedLabels:   normalizeConflictLabels(params.SuggestedLabels),
 	}); err != nil {
 		return "", fmt.Errorf("render trigger warning template: %w", err)
 	}

@@ -33,6 +33,12 @@
 {{- if .ShowSlotURL }}
 - Ссылка на слот: [{{ .SlotURL }}]({{ .SlotURL }})
 {{- end }}
+{{- if .ShowIssueURL }}
+- Issue: [{{ .IssueURL }}]({{ .IssueURL }})
+{{- end }}
+{{- if .ShowPullRequestURL }}
+- PR: [{{ .PullRequestURL }}]({{ .PullRequestURL }})
+{{- end }}
 {{- if .ShowModel }}
 - Модель: `{{ .Model }}`
 {{- end }}
@@ -90,6 +96,16 @@
 - 🗑️ Namespace удален
 {{- else }}
 - 🧪 Namespace не удален. Удалить его можно на странице запуска.
+{{- end }}
+{{- end }}
+
+{{- if .ShowActionCards }}
+### ⏭ Следующие шаги
+{{- if .ReviseActionLabel }}
+- Доработка текущего этапа: `{{ .ReviseActionLabel }}`
+{{- end }}
+{{- if .NextStageActionLabel }}
+- Переход к следующему этапу: `{{ .NextStageActionLabel }}`
 {{- end }}
 {{- end }}
 

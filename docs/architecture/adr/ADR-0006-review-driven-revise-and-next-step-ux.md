@@ -2,11 +2,11 @@
 doc_id: ADR-0006
 type: adr
 title: "Review-driven revise resolution and next-step label UX"
-status: proposed
+status: accepted
 owner_role: SA
 created_at: 2026-02-20
-updated_at: 2026-02-20
-related_issues: [90]
+updated_at: 2026-02-21
+related_issues: [90, 95]
 related_prs: []
 supersedes: []
 superseded_by: []
@@ -22,7 +22,7 @@ approvals:
 - Проблема: при `changes_requested` Owner вынужден вручную выставлять stage/model/reasoning лейблы перед ревизией.
 - Цель: сократить ручные действия и сохранить детерминированный audit-путь.
 - Предложение: гибридный resolver (`PR labels -> Issue labels -> last run context`) + stage-aware сервисные сообщения с ссылками на следующие шаги.
-- Статус: design proposal, реализация планируется отдельным `run:dev` циклом.
+- Статус: реализовано в `run:dev` цикле по Issue #95.
 
 ## Контекст
 - В текущем baseline авто-запуск `run:<stage>:revise` от `pull_request_review` работает только если на PR стоит ровно один stage-лейбл.
@@ -130,15 +130,20 @@ approvals:
 - `run.profile.resolved`
 - `run.service_message.updated`
 
-## План внедрения (после design)
-1. Добавить resolver chain в review webhook orchestration.
-2. Добавить sticky profile resolver для model/reasoning.
-3. Расширить run service message templates stage-aware карточками.
-4. Добавить E2E сценарии на:
-   - happy path;
-   - конфликт stage labels;
-   - отсутствие stage labels;
-   - override model/reasoning на PR/Issue.
+## Статус реализации (Issue #95)
+1. Реализован resolver chain в review webhook orchestration:
+   - `PR labels -> Issue labels -> last run context -> issue history`.
+2. Реализован sticky profile resolver:
+   - приоритет `Issue -> PR -> last run context -> defaults`,
+   - для review-driven revise (`pull_request_review`) используется issue-first порядок.
+3. Обновлены run service messages:
+   - добавлены stage-aware next-step подсказки,
+   - добавлены прямые ссылки на Issue/PR,
+   - добавлен список рекомендуемых label-действий.
+4. Добавлены/обновлены тесты:
+   - resolver happy path и fallback/ambiguous сценарии,
+   - render warning/next-step сценарии,
+   - profile resolver и launch audit события.
 
 ## Внешние референсы
 - GitHub Docs (`pull_request_review`, `review.state=changes_requested`):

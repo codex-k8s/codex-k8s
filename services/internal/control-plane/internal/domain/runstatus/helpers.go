@@ -111,6 +111,12 @@ func mergeState(base commentState, update commentState) commentState {
 	if strings.TrimSpace(update.SlotURL) != "" {
 		base.SlotURL = strings.TrimSpace(update.SlotURL)
 	}
+	if strings.TrimSpace(update.IssueURL) != "" {
+		base.IssueURL = strings.TrimSpace(update.IssueURL)
+	}
+	if strings.TrimSpace(update.PullRequestURL) != "" {
+		base.PullRequestURL = strings.TrimSpace(update.PullRequestURL)
+	}
 	if strings.TrimSpace(update.TriggerKind) != "" {
 		base.TriggerKind = normalizeTriggerKind(update.TriggerKind)
 	}

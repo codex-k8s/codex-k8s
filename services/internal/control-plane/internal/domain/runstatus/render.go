@@ -27,11 +27,15 @@ type commentTemplateContext struct {
 	JobNamespace             string
 	Namespace                string
 	SlotURL                  string
+	IssueURL                 string
+	PullRequestURL           string
 	Model                    string
 	ReasoningEffort          string
 	RunStatus                string
 	CodexAuthVerificationURL string
 	CodexAuthUserCode        string
+	ReviseActionLabel        string
+	NextStageActionLabel     string
 
 	ManagementURL string
 	StateMarker   string
@@ -41,11 +45,14 @@ type commentTemplateContext struct {
 	ShowJobRef             bool
 	ShowNamespace          bool
 	ShowSlotURL            bool
+	ShowIssueURL           bool
+	ShowPullRequestURL     bool
 	ShowModel              bool
 	ShowReasoningEffort    bool
 	ShowFinished           bool
 	ShowNamespaceAction    bool
 	ShowRuntimePreparation bool
+	ShowActionCards        bool
 
 	CreatedReached              bool
 	PreparingRuntimeReached     bool
@@ -87,11 +94,14 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 	trimmedJobNamespace := strings.TrimSpace(state.JobNamespace)
 	trimmedNamespace := strings.TrimSpace(state.Namespace)
 	trimmedSlotURL := strings.TrimSpace(state.SlotURL)
+	trimmedIssueURL := strings.TrimSpace(state.IssueURL)
+	trimmedPullRequestURL := strings.TrimSpace(state.PullRequestURL)
 	trimmedModel := strings.TrimSpace(state.Model)
 	trimmedReasoningEffort := strings.TrimSpace(state.ReasoningEffort)
 	normalizedRunStatus := strings.ToLower(strings.TrimSpace(state.RunStatus))
 	normalizedRuntimeMode := strings.ToLower(strings.TrimSpace(state.RuntimeMode))
 	phaseLevel := phaseOrder(state.Phase)
+	reviseLabel, nextStageLabel := resolveStageActionLabels(trimmedTriggerKind)
 
 	return commentTemplateContext{
 		RunID:                    strings.TrimSpace(state.RunID),
@@ -101,11 +111,15 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 		JobNamespace:             trimmedJobNamespace,
 		Namespace:                trimmedNamespace,
 		SlotURL:                  trimmedSlotURL,
+		IssueURL:                 trimmedIssueURL,
+		PullRequestURL:           trimmedPullRequestURL,
 		Model:                    trimmedModel,
 		ReasoningEffort:          trimmedReasoningEffort,
 		RunStatus:                strings.TrimSpace(state.RunStatus),
 		CodexAuthVerificationURL: strings.TrimSpace(state.CodexAuthVerificationURL),
 		CodexAuthUserCode:        strings.TrimSpace(state.CodexAuthUserCode),
+		ReviseActionLabel:        reviseLabel,
+		NextStageActionLabel:     nextStageLabel,
 
 		ManagementURL: managementURL,
 		StateMarker:   marker,
@@ -115,11 +129,14 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 		ShowJobRef:             trimmedJobName != "" && trimmedJobNamespace != "",
 		ShowNamespace:          trimmedNamespace != "",
 		ShowSlotURL:            trimmedSlotURL != "",
+		ShowIssueURL:           trimmedIssueURL != "",
+		ShowPullRequestURL:     trimmedPullRequestURL != "",
 		ShowModel:              trimmedModel != "",
 		ShowReasoningEffort:    trimmedReasoningEffort != "",
 		ShowFinished:           phaseLevel >= phaseOrder(PhaseFinished),
 		ShowNamespaceAction:    trimmedNamespace != "" && phaseLevel >= phaseOrder(PhaseNamespaceDeleted),
 		ShowRuntimePreparation: normalizedRuntimeMode == runtimeModeFullEnv,
+		ShowActionCards:        reviseLabel != "" || nextStageLabel != "",
 
 		CreatedReached:              phaseLevel >= phaseOrder(PhaseCreated),
 		PreparingRuntimeReached:     phaseLevel >= phaseOrder(PhasePreparingRuntime),
@@ -145,6 +162,33 @@ func resolveCommentTemplateName(locale string) string {
 		return commentTemplateNameRU
 	}
 	return commentTemplateNameEN
+}
+
+func resolveStageActionLabels(triggerKind string) (reviseLabel string, nextStageLabel string) {
+	switch normalizeTriggerKind(triggerKind) {
+	case "intake", "intake_revise":
+		return "run:intake:revise", "run:vision"
+	case "vision", "vision_revise":
+		return "run:vision:revise", "run:prd"
+	case "prd", "prd_revise":
+		return "run:prd:revise", "run:arch"
+	case "arch", "arch_revise":
+		return "run:arch:revise", "run:design"
+	case "design", "design_revise":
+		return "run:design:revise", "run:plan"
+	case "plan", "plan_revise":
+		return "run:plan:revise", "run:dev"
+	case "dev", "dev_revise":
+		return "run:dev:revise", "run:qa"
+	case "qa":
+		return "", "run:release"
+	case "release":
+		return "", "run:postdeploy"
+	case "postdeploy":
+		return "", "run:ops"
+	default:
+		return "", ""
+	}
 }
 
 func renderStateMarker(state commentState) (string, error) {

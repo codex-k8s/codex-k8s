@@ -83,6 +83,16 @@ type issueRunTrigger struct {
 type triggerConflictResult struct {
 	ConflictingLabels []string
 	IgnoreReason      string
+	SuggestedLabels   []string
+	ResolverSource    string
+	ResolvedIssue     int64
+}
+
+type pullRequestReviewResolutionMeta struct {
+	ReceivedChangesRequested bool
+	ResolverSource           string
+	ResolvedIssueNumber      int64
+	SuggestedLabels          []string
 }
 
 type runAgentProfile struct {

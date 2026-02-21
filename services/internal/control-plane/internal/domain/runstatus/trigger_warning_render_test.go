@@ -9,9 +9,10 @@ func TestRenderTriggerWarningCommentBody_RU(t *testing.T) {
 	t.Parallel()
 
 	body, err := renderTriggerWarningCommentBody(triggerWarningRenderParams{
-		Locale:     localeRU,
-		ThreadKind: string(commentTargetKindPullRequest),
-		ReasonCode: TriggerWarningReasonPullRequestReviewMissingStageLabel,
+		Locale:          localeRU,
+		ThreadKind:      string(commentTargetKindPullRequest),
+		ReasonCode:      TriggerWarningReasonPullRequestReviewMissingStageLabel,
+		SuggestedLabels: []string{"run:dev", "run:dev:revise"},
 	})
 	if err != nil {
 		t.Fatalf("renderTriggerWarningCommentBody() error = %v", err)
@@ -21,5 +22,8 @@ func TestRenderTriggerWarningCommentBody_RU(t *testing.T) {
 	}
 	if !strings.Contains(body, string(TriggerWarningReasonPullRequestReviewMissingStageLabel)) {
 		t.Fatalf("missing reason code in body: %q", body)
+	}
+	if !strings.Contains(body, "`run:dev:revise`") {
+		t.Fatalf("missing suggested label in body: %q", body)
 	}
 }

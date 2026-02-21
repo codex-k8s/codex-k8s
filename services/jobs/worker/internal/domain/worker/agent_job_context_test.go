@@ -309,6 +309,104 @@ func TestResolveRunAgentContext_ConflictingPullRequestLabelsFail(t *testing.T) {
 	}
 }
 
+func TestResolveRunAgentContext_ReviewDrivenReviseIssueLabelsOverridePullRequest(t *testing.T) {
+	t.Parallel()
+
+	runPayload := json.RawMessage(`{
+		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"agent":{"key":"dev","name":"AI Developer"},
+		"trigger":{"source":"pull_request_review","kind":"dev_revise","label":"run:dev:revise"},
+		"raw_payload":{
+			"issue":{
+				"number":20,
+				"labels":[
+					{"name":"[ai-model-gpt-5.1-codex-mini]"},
+					{"name":"[ai-reasoning-low]"}
+				]
+			},
+			"pull_request":{
+				"number":200,
+				"head":{"ref":"codex/issue-20"},
+				"labels":[
+					{"name":"[ai-model-gpt-5.2-codex]"},
+					{"name":"[ai-reasoning-high]"}
+				]
+			}
+		}
+	}`)
+
+	got, err := resolveRunAgentContext(runPayload, runAgentDefaults{
+		DefaultModel:           modelGPT52Codex,
+		DefaultReasoningEffort: reasoningEffortExtraHigh,
+		DefaultLocale:          "ru",
+		AllowGPT53:             true,
+	})
+	if err != nil {
+		t.Fatalf("resolveRunAgentContext() error = %v", err)
+	}
+	if got.Model != modelGPT51CodexMini {
+		t.Fatalf("Model = %q, want %q", got.Model, modelGPT51CodexMini)
+	}
+	if got.ModelSource != modelSourceIssueLabel {
+		t.Fatalf("ModelSource = %q, want %q", got.ModelSource, modelSourceIssueLabel)
+	}
+	if got.ReasoningEffort != reasoningEffortLow {
+		t.Fatalf("ReasoningEffort = %q, want %q", got.ReasoningEffort, reasoningEffortLow)
+	}
+	if got.ReasoningSource != modelSourceIssueLabel {
+		t.Fatalf("ReasoningSource = %q, want %q", got.ReasoningSource, modelSourceIssueLabel)
+	}
+}
+
+func TestResolveRunAgentContext_ReviewDrivenReviseUsesLastRunProfileHints(t *testing.T) {
+	t.Parallel()
+
+	runPayload := json.RawMessage(`{
+		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"agent":{"key":"dev","name":"AI Developer"},
+		"trigger":{"source":"pull_request_review","kind":"dev_revise","label":"run:dev:revise"},
+		"profile_hints":{
+			"last_run_issue_labels":[
+				"[ai-model-gpt-5.1-codex-mini]",
+				"[ai-reasoning-low]"
+			]
+		},
+		"raw_payload":{
+			"pull_request":{
+				"number":200,
+				"head":{"ref":"codex/issue-20"},
+				"labels":[]
+			},
+			"issue":{
+				"number":20,
+				"labels":[]
+			}
+		}
+	}`)
+
+	got, err := resolveRunAgentContext(runPayload, runAgentDefaults{
+		DefaultModel:           modelGPT52Codex,
+		DefaultReasoningEffort: reasoningEffortExtraHigh,
+		DefaultLocale:          "ru",
+		AllowGPT53:             true,
+	})
+	if err != nil {
+		t.Fatalf("resolveRunAgentContext() error = %v", err)
+	}
+	if got.Model != modelGPT51CodexMini {
+		t.Fatalf("Model = %q, want %q", got.Model, modelGPT51CodexMini)
+	}
+	if got.ModelSource != modelSourceLastRunContext {
+		t.Fatalf("ModelSource = %q, want %q", got.ModelSource, modelSourceLastRunContext)
+	}
+	if got.ReasoningEffort != reasoningEffortLow {
+		t.Fatalf("ReasoningEffort = %q, want %q", got.ReasoningEffort, reasoningEffortLow)
+	}
+	if got.ReasoningSource != modelSourceLastRunContext {
+		t.Fatalf("ReasoningSource = %q, want %q", got.ReasoningSource, modelSourceLastRunContext)
+	}
+}
+
 func TestResolveRunAgentContext_ReasoningExtraHighLabel(t *testing.T) {
 	t.Parallel()
 
