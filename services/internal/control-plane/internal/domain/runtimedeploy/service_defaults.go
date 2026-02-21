@@ -32,6 +32,7 @@ func defaultTemplateVars() map[string]string {
 		"CODEXK8S_KANIKO_MAX_PARALLEL":                "4",
 		"CODEXK8S_IMAGE_MIRROR_ENABLED":               "true",
 		"CODEXK8S_IMAGE_MIRROR_TOOL_IMAGE":            "gcr.io/go-containerregistry/crane:debug",
+		"CODEXK8S_IMAGE_MIRROR_PLATFORM":              "linux/amd64",
 		"CODEXK8S_KANIKO_CLONE_IMAGE":                 "127.0.0.1:5000/codex-k8s/mirror/alpine-git:2.47.2",
 		"CODEXK8S_KANIKO_EXECUTOR_IMAGE":              "127.0.0.1:5000/codex-k8s/mirror/kaniko-executor:v1.23.2-debug",
 		"CODEXK8S_REPO_SYNC_IMAGE":                    "127.0.0.1:5000/codex-k8s/mirror/alpine-git:2.47.2",
