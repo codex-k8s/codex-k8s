@@ -217,6 +217,8 @@ approvals:
   - `intake|vision|prd|arch|design|plan`: `run:<stage>:revise` и `run:<next-stage>`;
   - `dev`: `run:dev:revise`, `run:qa`;
   - `qa|release|postdeploy|ops`: revise текущего stage (если применимо) и следующий stage.
+- Карточка остаётся компактной: максимум 2 action-подсказки (`revise` + канонический `next-stage`).
+- Для `design` канонический `next-stage` = `run:plan`; ускоренный переход в `run:dev` остаётся доступным как ручное действие Owner (без отдельной auto-подсказки в MVP baseline).
 - В сообщении всегда остаются ссылки:
   - на Issue;
   - на PR;
@@ -226,6 +228,12 @@ approvals:
   - revise-run не стартует;
   - выставляется `need:input`;
   - публикуется remediation-message с конкретным требуемым label action.
+
+#### Next-step deep-link в web-console (planned)
+- Целевой UX: action-link из GitHub service-comment открывает staff web-console для перехода этапа.
+- На фронте выполняется RBAC-проверка; при успешной проверке показывается confirm-модалка перехода.
+- После подтверждения backend выполняет `github_labels_transition` (снятие старого trigger + постановка нового) в рамках policy/audit.
+- До внедрения deep-link baseline остаётся текстовым: рекомендации по `run:*` лейблам + ссылки на Issue/PR/run.
 
 ## Оркестрационный flow для `run:self-improve`
 
