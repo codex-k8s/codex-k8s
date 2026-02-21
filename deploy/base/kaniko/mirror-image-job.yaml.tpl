@@ -38,21 +38,20 @@ spec:
                 exit 1
               fi
 
-              if digest="$(crane digest --insecure "$TARGET_IMAGE" 2>/dev/null)"; then
-                target_no_digest="${TARGET_IMAGE%@*}"
-                target_last_segment="${target_no_digest##*/}"
-                target_repo="$target_no_digest"
-                if [ "${target_last_segment#*:}" != "$target_last_segment" ]; then
-                  target_repo="${target_no_digest%:*}"
+              platform="${MIRROR_PLATFORM:-linux/amd64}"
+              if crane manifest --insecure --platform "$platform" "$TARGET_IMAGE" >/dev/null 2>&1; then
+                if digest="$(crane digest --insecure "$TARGET_IMAGE" 2>/dev/null)"; then
+                  echo "Mirror is healthy for platform ${platform}: ${TARGET_IMAGE} (${digest})"
+                else
+                  echo "Mirror is healthy for platform ${platform}: ${TARGET_IMAGE}"
                 fi
-                if crane manifest --insecure "${target_repo}@${digest}" >/dev/null 2>&1; then
-                  echo "Mirror is healthy: ${TARGET_IMAGE} (${digest})"
-                  exit 0
-                fi
-                echo "Mirror tag exists but digest is stale, repairing: ${TARGET_IMAGE} (${digest})"
-              else
-                echo "Mirror is missing, syncing: ${TARGET_IMAGE}"
+                exit 0
               fi
 
-              platform="${MIRROR_PLATFORM:-linux/amd64}"
+              if digest="$(crane digest --insecure "$TARGET_IMAGE" 2>/dev/null)"; then
+                echo "Mirror tag exists but platform manifest is stale, repairing: ${TARGET_IMAGE} (${digest}) platform=${platform}"
+              else
+                echo "Mirror is missing, syncing: ${TARGET_IMAGE} platform=${platform}"
+              fi
+
               crane copy --insecure --platform "$platform" "$SOURCE_IMAGE" "$TARGET_IMAGE"
