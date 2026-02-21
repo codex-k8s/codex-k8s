@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentsession"
 	"github.com/jackc/pgx/v5"
@@ -23,6 +24,8 @@ var (
 	queryGetLatestByRepositoryBranchAndAgent string
 	//go:embed sql/set_wait_state_by_run_id.sql
 	querySetWaitStateByRunID string
+	//go:embed sql/cleanup_session_payloads_finished_before.sql
+	queryCleanupSessionPayloadsFinishedBefore string
 )
 
 // Repository stores resumable agent sessions in PostgreSQL.
@@ -146,6 +149,21 @@ func (r *Repository) GetLatestByRepositoryBranchAndAgent(ctx context.Context, re
 		strings.TrimSpace(branchName),
 		strings.TrimSpace(agentKey),
 	)
+}
+
+// CleanupSessionPayloadsFinishedBefore clears heavy session payloads for finished runs older than cutoff.
+func (r *Repository) CleanupSessionPayloadsFinishedBefore(ctx context.Context, finishedBefore time.Time) (int64, error) {
+	cutoff := finishedBefore.UTC()
+	if cutoff.IsZero() {
+		return 0, fmt.Errorf("finished_before is required")
+	}
+
+	res, err := r.db.Exec(ctx, queryCleanupSessionPayloadsFinishedBefore, cutoff)
+	if err != nil {
+		return 0, fmt.Errorf("cleanup agent session payloads before %s: %w", cutoff.Format(time.RFC3339), err)
+	}
+	affected := res.RowsAffected()
+	return affected, nil
 }
 
 func (r *Repository) queryOneSession(ctx context.Context, query string, operationLabel string, args ...any) (domainrepo.Session, bool, error) {

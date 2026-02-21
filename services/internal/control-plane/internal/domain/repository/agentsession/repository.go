@@ -2,6 +2,7 @@ package agentsession
 
 import (
 	"context"
+	"time"
 
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
@@ -23,4 +24,6 @@ type Repository interface {
 	GetByRunID(ctx context.Context, runID string) (Session, bool, error)
 	// GetLatestByRepositoryBranchAndAgent returns latest snapshot by repository + branch + agent key.
 	GetLatestByRepositoryBranchAndAgent(ctx context.Context, repositoryFullName string, branchName string, agentKey string) (Session, bool, error)
+	// CleanupSessionPayloadsFinishedBefore clears heavy JSON payloads for finished runs older than cutoff.
+	CleanupSessionPayloadsFinishedBefore(ctx context.Context, finishedBefore time.Time) (int64, error)
 }

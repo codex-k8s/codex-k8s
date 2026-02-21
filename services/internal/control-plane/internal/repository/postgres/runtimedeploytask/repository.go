@@ -41,6 +41,8 @@ var (
 	queryListRecent string
 	//go:embed sql/append_log.sql
 	queryAppendLog string
+	//go:embed sql/cleanup_task_logs_updated_before.sql
+	queryCleanupTaskLogsUpdatedBefore string
 )
 
 // Repository persists runtime_deploy_tasks state in PostgreSQL.
@@ -315,6 +317,25 @@ func (r *Repository) AppendLog(ctx context.Context, params domainrepo.AppendLogP
 		return nil
 	}
 	return nil
+}
+
+// CleanupTaskLogsUpdatedBefore clears heavy logs payloads for old tasks.
+func (r *Repository) CleanupTaskLogsUpdatedBefore(ctx context.Context, updatedBefore time.Time) (int64, error) {
+	if r == nil || r.db == nil {
+		return 0, fmt.Errorf("runtime deploy task repository is not configured")
+	}
+
+	cutoff := updatedBefore.UTC()
+	if cutoff.IsZero() {
+		return 0, fmt.Errorf("updated_before is required")
+	}
+
+	tag, err := r.db.Exec(ctx, queryCleanupTaskLogsUpdatedBefore, cutoff)
+	if err != nil {
+		return 0, fmt.Errorf("cleanup runtime deploy task logs before %s: %w", cutoff.Format(time.RFC3339), err)
+	}
+	affected := tag.RowsAffected()
+	return affected, nil
 }
 
 type taskRowScanner interface {

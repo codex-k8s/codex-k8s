@@ -16,8 +16,8 @@ func TestPrepareRunEnvironment_ReturnsCanceledError(t *testing.T) {
 
 	repo := &fakePrepareRuntimeDeployTasksRepo{
 		upsertTask: runtimedeploytaskrepo.Task{
-			RunID:   "run-canceled",
-			Status:  entitytypes.RuntimeDeployTaskStatusPending,
+			RunID:  "run-canceled",
+			Status: entitytypes.RuntimeDeployTaskStatusPending,
 		},
 		getTask: runtimedeploytaskrepo.Task{
 			RunID:     "run-canceled",
@@ -44,11 +44,11 @@ func TestPrepareRunEnvironment_ReturnsCanceledError(t *testing.T) {
 }
 
 type fakePrepareRuntimeDeployTasksRepo struct {
-	upsertTask    runtimedeploytaskrepo.Task
-	upsertErr     error
-	getTask       runtimedeploytaskrepo.Task
-	getTaskFound  bool
-	getTaskErr    error
+	upsertTask   runtimedeploytaskrepo.Task
+	upsertErr    error
+	getTask      runtimedeploytaskrepo.Task
+	getTaskFound bool
+	getTaskErr   error
 }
 
 func (f *fakePrepareRuntimeDeployTasksRepo) UpsertDesired(_ context.Context, _ runtimedeploytaskrepo.UpsertDesiredParams) (runtimedeploytaskrepo.Task, error) {
@@ -91,4 +91,8 @@ func (*fakePrepareRuntimeDeployTasksRepo) ListRecent(_ context.Context, _ runtim
 
 func (*fakePrepareRuntimeDeployTasksRepo) AppendLog(_ context.Context, _ runtimedeploytaskrepo.AppendLogParams) error {
 	return nil
+}
+
+func (*fakePrepareRuntimeDeployTasksRepo) CleanupTaskLogsUpdatedBefore(_ context.Context, _ time.Time) (int64, error) {
+	return 0, nil
 }

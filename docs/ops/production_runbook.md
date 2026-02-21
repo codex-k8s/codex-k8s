@@ -5,7 +5,7 @@ title: "Production Runbook (MVP)"
 status: active
 owner_role: SRE
 created_at: 2026-02-09
-updated_at: 2026-02-19
+updated_at: 2026-02-21
 related_issues: [1]
 related_prs: []
 approvals:
@@ -106,6 +106,7 @@ kubectl get ns -o json | grep -E 'codexk8s.io/(managed-by|namespace-purpose|runt
 - В production/non-ai окружениях включён `CronJob` `codex-k8s-registry-gc`.
 - Расписание по умолчанию: ежедневно в `03:17 UTC`.
 - Job делает `scale deployment/codex-k8s-registry 1 -> 0`, выполняет `registry garbage-collect --delete-untagged`, затем возвращает `replicas=1`.
+- Для init-контейнера GC helper по умолчанию используется `alpine/k8s:1.32.2` (можно переопределить через `CODEXK8S_KUBECTL_IMAGE`).
 
 Проверка статуса:
 
@@ -123,6 +124,16 @@ ns="codex-k8s-prod"
 kubectl -n "$ns" create job --from=cronjob/codex-k8s-registry-gc codex-k8s-registry-gc-manual-$(date +%s)
 kubectl -n "$ns" get jobs -l app.kubernetes.io/name=codex-k8s-registry-gc
 ```
+
+## Cleanup heavy JSON payloads (автоматический)
+
+- Control-plane выполняет hourly cleanup heavy JSON-полей для старых записей (по умолчанию `7` дней):
+  - `agent_runs.agent_logs_json`;
+  - `agent_sessions.session_json`, `agent_sessions.codex_cli_session_json`;
+  - `runtime_deploy_tasks.logs_json`.
+- Retention настраивается через:
+  - `CODEXK8S_RUN_HEAVY_FIELDS_RETENTION_DAYS` (основной ключ);
+  - `CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS` (legacy fallback).
 
 ## Типовые проблемы
 
@@ -144,3 +155,13 @@ kubectl -n "$ns" get jobs -l app.kubernetes.io/name=codex-k8s-registry-gc
 - Если это первый выпуск TLS, runtime-deploy использует echo-probe (HTTP) до включения issuer:
   - проверить `kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" get deploy,svc,ingress | grep echo-probe`;
   - проверить логи `kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s-control-plane --tail=200`.
+
+### Build падает с `MANIFEST_UNKNOWN` при `retrieving image from cache`
+- Симптом: Kaniko падает на base image с логом вида `Error while retrieving image from cache ... MANIFEST_UNKNOWN`.
+- Причина: в registry мог остаться stale mirror/cache state после cleanup/GC (тег виден, но digest манифест недоступен).
+- Временный обход (до фикса control-plane):
+  - вручную перезеркалить проблемный образ в `127.0.0.1:5000/codex-k8s/mirror/*`;
+  - временно отключить kaniko cache: `CODEXK8S_KANIKO_CACHE_ENABLED=false` в `codex-k8s-runtime`.
+- После фикса control-plane:
+  - mirror шаг всегда выполняет health-check и ремонтирует stale mirror;
+  - при cache-related `MANIFEST_UNKNOWN` build автоматически ретраится без cache.

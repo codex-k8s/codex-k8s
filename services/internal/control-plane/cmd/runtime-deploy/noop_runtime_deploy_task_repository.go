@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
 
 	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
 )
@@ -45,4 +46,8 @@ func (noopRuntimeDeployTaskRepository) ListRecent(_ context.Context, _ runtimede
 
 func (noopRuntimeDeployTaskRepository) AppendLog(_ context.Context, _ runtimedeploytaskrepo.AppendLogParams) error {
 	return nil
+}
+
+func (noopRuntimeDeployTaskRepository) CleanupTaskLogsUpdatedBefore(_ context.Context, _ time.Time) (int64, error) {
+	return 0, nil
 }

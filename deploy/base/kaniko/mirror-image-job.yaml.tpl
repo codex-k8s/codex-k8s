@@ -30,5 +30,26 @@ spec:
             - sh
             - -ec
             - |
-              crane digest --insecure "$TARGET_IMAGE" >/dev/null 2>&1 || \
+              set -eu
+              if [ -z "${SOURCE_IMAGE:-}" ] || [ -z "${TARGET_IMAGE:-}" ]; then
+                echo "SOURCE_IMAGE and TARGET_IMAGE are required" >&2
+                exit 1
+              fi
+
+              if digest="$(crane digest --insecure "$TARGET_IMAGE" 2>/dev/null)"; then
+                target_no_digest="${TARGET_IMAGE%@*}"
+                target_last_segment="${target_no_digest##*/}"
+                target_repo="$target_no_digest"
+                if [ "${target_last_segment#*:}" != "$target_last_segment" ]; then
+                  target_repo="${target_no_digest%:*}"
+                fi
+                if crane manifest --insecure "${target_repo}@${digest}" >/dev/null 2>&1; then
+                  echo "Mirror is healthy: ${TARGET_IMAGE} (${digest})"
+                  exit 0
+                fi
+                echo "Mirror tag exists but digest is stale, repairing: ${TARGET_IMAGE} (${digest})"
+              else
+                echo "Mirror is missing, syncing: ${TARGET_IMAGE}"
+              fi
+
               crane copy --insecure "$SOURCE_IMAGE" "$TARGET_IMAGE"

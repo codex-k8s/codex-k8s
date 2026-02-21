@@ -198,7 +198,8 @@ func applySyncSecretsDefaults(values map[string]string) {
 	setEnvDefault(values, "CODEXK8S_LEARNING_MODE_DEFAULT", "true")
 	setEnvDefault(values, "CODEXK8S_JWT_TTL", "15m")
 	setEnvDefault(values, "CODEXK8S_MCP_TOKEN_TTL", "24h")
-	setEnvDefault(values, "CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS", "14")
+	setEnvDefault(values, "CODEXK8S_RUN_HEAVY_FIELDS_RETENTION_DAYS", "7")
+	setEnvDefault(values, "CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS", strings.TrimSpace(values["CODEXK8S_RUN_HEAVY_FIELDS_RETENTION_DAYS"]))
 	setEnvDefault(values, "CODEXK8S_GIT_BOT_USERNAME", "codex-bot")
 	setEnvDefault(values, "CODEXK8S_GIT_BOT_MAIL", "codex-bot@codex-k8s.local")
 	setEnvDefault(values, "CODEXK8S_PROJECT_DB_ADMIN_HOST", "postgres")
@@ -237,6 +238,7 @@ func hydrateValuesFromExistingSecrets(values map[string]string, existingPostgres
 		"CODEXK8S_TOKEN_ENCRYPTION_KEY",
 		"CODEXK8S_MCP_TOKEN_SIGNING_KEY",
 		"CODEXK8S_MCP_TOKEN_TTL",
+		"CODEXK8S_RUN_HEAVY_FIELDS_RETENTION_DAYS",
 		"CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS",
 		"CODEXK8S_LEARNING_MODE_DEFAULT",
 		"CODEXK8S_GITHUB_WEBHOOK_SECRET",
@@ -344,6 +346,7 @@ func buildRuntimeSecretValues(values map[string]string) map[string]string {
 		"CODEXK8S_TOKEN_ENCRYPTION_KEY":              strings.TrimSpace(values["CODEXK8S_TOKEN_ENCRYPTION_KEY"]),
 		"CODEXK8S_MCP_TOKEN_SIGNING_KEY":             strings.TrimSpace(values["CODEXK8S_MCP_TOKEN_SIGNING_KEY"]),
 		"CODEXK8S_MCP_TOKEN_TTL":                     strings.TrimSpace(values["CODEXK8S_MCP_TOKEN_TTL"]),
+		"CODEXK8S_RUN_HEAVY_FIELDS_RETENTION_DAYS":   strings.TrimSpace(values["CODEXK8S_RUN_HEAVY_FIELDS_RETENTION_DAYS"]),
 		"CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS":     strings.TrimSpace(values["CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS"]),
 		"CODEXK8S_LEARNING_MODE_DEFAULT":             strings.TrimSpace(values["CODEXK8S_LEARNING_MODE_DEFAULT"]),
 		"CODEXK8S_GITHUB_WEBHOOK_SECRET":             strings.TrimSpace(values["CODEXK8S_GITHUB_WEBHOOK_SECRET"]),

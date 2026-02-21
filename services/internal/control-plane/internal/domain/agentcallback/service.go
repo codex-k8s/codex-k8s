@@ -104,5 +104,34 @@ func (s *Service) CleanupRunAgentLogs(ctx context.Context, finishedBefore time.T
 	if s == nil || s.runLogs == nil {
 		return 0, errors.New("run logs repository is not configured")
 	}
-	return s.runLogs.CleanupRunAgentLogsFinishedBefore(ctx, finishedBefore.UTC())
+	return runCleanupWithCutoff(finishedBefore, func(cutoff time.Time) (int64, error) {
+		return s.runLogs.CleanupRunAgentLogsFinishedBefore(ctx, cutoff)
+	})
+}
+
+// CleanupSessionPayloads clears heavy session payloads for finished runs older than cutoff.
+func (s *Service) CleanupSessionPayloads(ctx context.Context, finishedBefore time.Time) (int64, error) {
+	if s == nil {
+		return 0, errors.New("agent callback service is not configured")
+	}
+	if s.sessions == nil {
+		return 0, errors.New("agent session repository is not configured")
+	}
+	cutoff := finishedBefore.UTC()
+	if cutoff.IsZero() {
+		return 0, errors.New("finished_before is required")
+	}
+	cleared, err := s.sessions.CleanupSessionPayloadsFinishedBefore(ctx, cutoff)
+	if err != nil {
+		return 0, err
+	}
+	return cleared, nil
+}
+
+func runCleanupWithCutoff(finishedBefore time.Time, execute func(cutoff time.Time) (int64, error)) (int64, error) {
+	cutoff := finishedBefore.UTC()
+	if cutoff.IsZero() {
+		return 0, errors.New("finished_before is required")
+	}
+	return execute(cutoff)
 }
