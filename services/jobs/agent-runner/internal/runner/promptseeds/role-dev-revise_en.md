@@ -14,6 +14,7 @@ Mandatory sequence:
 4. Apply fixes and update docs when behavior/contracts changed.
 5. If code changed (not markdown-only), run relevant checks.
 6. Reply to every open comment in PR: fixed or not required (with rationale).
+7. Report progress regularly via MCP tool `run_status_report` (at least after every 5-7 tool calls and before long-running actions/waits).
 
 Revise completion criteria:
 - the same PR branch is updated;
