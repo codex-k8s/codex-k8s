@@ -4,9 +4,6 @@
       <template #leading>
         <BackBtn :label="t('common.back')" @click="goBack" />
       </template>
-      <template #actions>
-        <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :disabled="loading" @click="loadTask" />
-      </template>
     </PageHeader>
 
     <VAlert v-if="error" type="error" variant="tonal" class="mt-4">
@@ -19,9 +16,14 @@
           <VCard variant="outlined">
             <VCardTitle class="d-flex align-center justify-space-between ga-2 flex-wrap">
               <span>{{ t("pages.runtimeDeployTaskDetails.summary") }}</span>
-              <VChip size="small" variant="tonal" class="font-weight-bold" :color="colorForRunStatus(task.status)">
-                {{ task.status }}
-              </VChip>
+              <div class="d-flex align-center ga-2">
+                <VChip size="small" variant="tonal" class="font-weight-bold" :color="colorForRunStatus(task.status)">
+                  {{ task.status }}
+                </VChip>
+                <VChip size="small" variant="tonal" :color="realtimeChipColor">
+                  {{ t("pages.runtimeDeployTaskDetails.realtime") }}: {{ t(realtimeChipLabelKey) }}
+                </VChip>
+              </div>
             </VCardTitle>
             <VCardText>
               <div class="summary-grid text-body-2">
@@ -80,17 +82,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 
-import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
 import BackBtn from "../../shared/ui/BackBtn.vue";
 import PageHeader from "../../shared/ui/PageHeader.vue";
 import { normalizeApiError, type ApiError } from "../../shared/api/errors";
 import { formatDateTime } from "../../shared/lib/datetime";
 import { colorForRunStatus } from "../../shared/lib/chips";
 import { getRuntimeDeployTask } from "../../features/runtime-deploy/api";
+import { subscribeRuntimeDeployRealtime, type RuntimeDeployRealtimeState } from "../../features/runtime-deploy/realtime";
 import type { RuntimeDeployTask } from "../../features/runtime-deploy/types";
 
 const props = defineProps<{ runId: string }>();
@@ -101,6 +103,22 @@ const router = useRouter();
 const task = ref<RuntimeDeployTask | null>(null);
 const loading = ref(false);
 const error = ref<ApiError | null>(null);
+const realtimeState = ref<RuntimeDeployRealtimeState>("connecting");
+const stopRealtimeRef = ref<(() => void) | null>(null);
+const fallbackPollTimer = ref<number | null>(null);
+const reloadPending = ref(false);
+
+const realtimeChipColor = computed(() => {
+  if (realtimeState.value === "connected") return "success";
+  if (realtimeState.value === "reconnecting") return "warning";
+  return "secondary";
+});
+
+const realtimeChipLabelKey = computed(() => {
+  if (realtimeState.value === "connected") return "pages.runtimeDeployTaskDetails.realtimeConnected";
+  if (realtimeState.value === "reconnecting") return "pages.runtimeDeployTaskDetails.realtimeReconnecting";
+  return "pages.runtimeDeployTaskDetails.realtimeConnecting";
+});
 
 const sortedLogs = computed(() => {
   const logs = task.value?.logs ? [...task.value.logs] : [];
@@ -131,6 +149,11 @@ function stripAnsi(value: string): string {
 }
 
 async function loadTask(): Promise<void> {
+  if (loading.value) {
+    reloadPending.value = true;
+    return;
+  }
+
   loading.value = true;
   error.value = null;
   try {
@@ -140,6 +163,10 @@ async function loadTask(): Promise<void> {
     task.value = null;
   } finally {
     loading.value = false;
+    if (reloadPending.value) {
+      reloadPending.value = false;
+      void loadTask();
+    }
   }
 }
 
@@ -147,7 +174,63 @@ function goBack(): void {
   void router.push({ name: "runtime-deploy-tasks" });
 }
 
-onMounted(() => void loadTask());
+function clearFallbackPolling(): void {
+  if (fallbackPollTimer.value !== null) {
+    window.clearInterval(fallbackPollTimer.value);
+    fallbackPollTimer.value = null;
+  }
+}
+
+function ensureFallbackPolling(): void {
+  if (fallbackPollTimer.value !== null) return;
+  fallbackPollTimer.value = window.setInterval(() => {
+    void loadTask();
+  }, 10000);
+}
+
+function stopRealtime(): void {
+  stopRealtimeRef.value?.();
+  stopRealtimeRef.value = null;
+}
+
+function startRealtime(): void {
+  stopRealtime();
+  realtimeState.value = "connecting";
+  stopRealtimeRef.value = subscribeRuntimeDeployRealtime({
+    runId: props.runId,
+    onMessage: () => {
+      void loadTask();
+    },
+    onStateChange: (state) => {
+      realtimeState.value = state;
+      if (state === "connected") {
+        clearFallbackPolling();
+        return;
+      }
+      ensureFallbackPolling();
+    },
+  });
+}
+
+onMounted(async () => {
+  await loadTask();
+  startRealtime();
+});
+
+onBeforeUnmount(() => {
+  stopRealtime();
+  clearFallbackPolling();
+});
+
+watch(
+  () => props.runId,
+  async (nextRunID, prevRunID) => {
+    if (nextRunID === prevRunID) return;
+    clearFallbackPolling();
+    await loadTask();
+    startRealtime();
+  },
+);
 </script>
 
 <style scoped>
