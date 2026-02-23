@@ -499,11 +499,19 @@ export const ru = {
     runtimeDeployTasks: {
       title: "Сборка и деплой",
       hint: "Задачи full-env/runtime deploy: статус, параметры и детализация по логам.",
+      realtime: "Realtime",
+      realtimeConnecting: "подключение",
+      realtimeConnected: "подключено",
+      realtimeReconnecting: "переподключение",
     },
     runtimeDeployTaskDetails: {
       title: "Детали задачи деплоя",
       summary: "Сводка",
       logs: "Логи задачи",
+      realtime: "Realtime",
+      realtimeConnecting: "подключение",
+      realtimeConnected: "подключено",
+      realtimeReconnecting: "переподключение",
     },
     registryImages: {
       title: "Образы registry",

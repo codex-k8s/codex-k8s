@@ -3,6 +3,9 @@
     <PageHeader :title="t('pages.runtimeDeployTasks.title')" :hint="t('pages.runtimeDeployTasks.hint')">
       <template #actions>
         <div class="d-flex align-center ga-2">
+          <VChip size="small" variant="tonal" :color="realtimeChipColor">
+            {{ t("pages.runtimeDeployTasks.realtime") }}: {{ t(realtimeChipLabelKey) }}
+          </VChip>
           <VSelect
             v-model="statusFilter"
             class="status-select"
@@ -13,7 +16,6 @@
             hide-details
             clearable
           />
-          <AdaptiveBtn variant="tonal" icon="mdi-refresh" :label="t('common.refresh')" :disabled="loading" @click="reloadTasks" />
         </div>
       </template>
     </PageHeader>
@@ -82,11 +84,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
-import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
 import PageHeader from "../../shared/ui/PageHeader.vue";
 import { normalizeApiError, type ApiError } from "../../shared/api/errors";
 import { formatDateTime } from "../../shared/lib/datetime";
@@ -94,6 +95,7 @@ import { colorForRunStatus } from "../../shared/lib/chips";
 import { createProgressiveTableState } from "../../shared/lib/progressive-table";
 import { useUiContextStore } from "../../features/ui-context/store";
 import { listRuntimeDeployTasks } from "../../features/runtime-deploy/api";
+import { subscribeRuntimeDeployRealtime, type RuntimeDeployRealtimeState } from "../../features/runtime-deploy/realtime";
 import type { RuntimeDeployTaskListItem } from "../../features/runtime-deploy/types";
 
 const { t, locale } = useI18n({ useScope: "global" });
@@ -106,6 +108,45 @@ const items = ref<RuntimeDeployTaskListItem[]>([]);
 const itemsPerPage = 15;
 const paging = createProgressiveTableState({ itemsPerPage });
 const tablePage = paging.page;
+const trackedRunRealtimeStates = ref<Record<string, RuntimeDeployRealtimeState>>({});
+const reloadPending = ref(false);
+const realtimeReloadTimer = ref<number | null>(null);
+const fallbackPollTimer = ref<number | null>(null);
+const realtimeSubscriptions = new Map<string, () => void>();
+
+const activeRunIDs = computed(() => {
+  const out: string[] = [];
+  for (const item of items.value) {
+    const status = String(item.status || "").trim().toLowerCase();
+    if (status !== "pending" && status !== "running") {
+      continue;
+    }
+    const runID = String(item.run_id || "").trim();
+    if (!runID) continue;
+    out.push(runID);
+  }
+  return out;
+});
+
+const realtimeState = computed<RuntimeDeployRealtimeState>(() => {
+  if (!activeRunIDs.value.length) return "connected";
+  const states = activeRunIDs.value.map((runID) => trackedRunRealtimeStates.value[runID] ?? "connecting");
+  if (states.some((state) => state === "connected")) return "connected";
+  if (states.some((state) => state === "reconnecting")) return "reconnecting";
+  return "connecting";
+});
+
+const realtimeChipColor = computed(() => {
+  if (realtimeState.value === "connected") return "success";
+  if (realtimeState.value === "reconnecting") return "warning";
+  return "secondary";
+});
+
+const realtimeChipLabelKey = computed(() => {
+  if (realtimeState.value === "connected") return "pages.runtimeDeployTasks.realtimeConnected";
+  if (realtimeState.value === "reconnecting") return "pages.runtimeDeployTasks.realtimeReconnecting";
+  return "pages.runtimeDeployTasks.realtimeConnecting";
+});
 
 const statusOptions = computed(() => [
   { title: t("context.allObjects"), value: "" },
@@ -147,6 +188,11 @@ function matchesUiEnv(item: RuntimeDeployTaskListItem, uiEnv: "ai" | "production
 }
 
 async function loadTasks(): Promise<void> {
+  if (loading.value) {
+    reloadPending.value = true;
+    return;
+  }
+
   loading.value = true;
   error.value = null;
   try {
@@ -162,6 +208,10 @@ async function loadTasks(): Promise<void> {
     error.value = normalizeApiError(err);
   } finally {
     loading.value = false;
+    if (reloadPending.value) {
+      reloadPending.value = false;
+      void loadTasks();
+    }
   }
 }
 
@@ -180,7 +230,91 @@ async function loadMoreTasksIfNeeded(nextPage: number, prevPage: number): Promis
   await loadTasks();
 }
 
-onMounted(() => void reloadTasks());
+function upsertRealtimeState(runID: string, state: RuntimeDeployRealtimeState): void {
+  trackedRunRealtimeStates.value = {
+    ...trackedRunRealtimeStates.value,
+    [runID]: state,
+  };
+}
+
+function removeRealtimeState(runID: string): void {
+  if (!(runID in trackedRunRealtimeStates.value)) return;
+  const next = { ...trackedRunRealtimeStates.value };
+  delete next[runID];
+  trackedRunRealtimeStates.value = next;
+}
+
+function stopRealtimeSubscriptions(): void {
+  for (const stop of realtimeSubscriptions.values()) {
+    stop();
+  }
+  realtimeSubscriptions.clear();
+  trackedRunRealtimeStates.value = {};
+}
+
+function syncRealtimeSubscriptions(): void {
+  const nextRunIDs = new Set(activeRunIDs.value);
+
+  for (const [runID, stop] of realtimeSubscriptions.entries()) {
+    if (nextRunIDs.has(runID)) continue;
+    stop();
+    realtimeSubscriptions.delete(runID);
+    removeRealtimeState(runID);
+  }
+
+  for (const runID of nextRunIDs.values()) {
+    if (realtimeSubscriptions.has(runID)) continue;
+    upsertRealtimeState(runID, "connecting");
+    const stop = subscribeRuntimeDeployRealtime({
+      runId: runID,
+      onMessage: () => {
+        scheduleRealtimeReload();
+      },
+      onStateChange: (state) => {
+        upsertRealtimeState(runID, state);
+      },
+    });
+    realtimeSubscriptions.set(runID, stop);
+  }
+}
+
+function scheduleRealtimeReload(): void {
+  if (realtimeReloadTimer.value !== null) return;
+  realtimeReloadTimer.value = window.setTimeout(() => {
+    realtimeReloadTimer.value = null;
+    void loadTasks();
+  }, 700);
+}
+
+function clearRealtimeReloadTimer(): void {
+  if (realtimeReloadTimer.value === null) return;
+  window.clearTimeout(realtimeReloadTimer.value);
+  realtimeReloadTimer.value = null;
+}
+
+function startFallbackPolling(): void {
+  if (fallbackPollTimer.value !== null) return;
+  fallbackPollTimer.value = window.setInterval(() => {
+    void loadTasks();
+  }, 15000);
+}
+
+function stopFallbackPolling(): void {
+  if (fallbackPollTimer.value === null) return;
+  window.clearInterval(fallbackPollTimer.value);
+  fallbackPollTimer.value = null;
+}
+
+onMounted(() => {
+  void reloadTasks();
+  startFallbackPolling();
+});
+
+onBeforeUnmount(() => {
+  stopFallbackPolling();
+  clearRealtimeReloadTimer();
+  stopRealtimeSubscriptions();
+});
 
 watch(
   () => uiContext.env,
@@ -190,6 +324,14 @@ watch(
 watch(
   () => statusFilter.value,
   () => void reloadTasks(),
+);
+
+watch(
+  activeRunIDs,
+  () => {
+    syncRealtimeSubscriptions();
+  },
+  { immediate: true },
 );
 
 watch(
