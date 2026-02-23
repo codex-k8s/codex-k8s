@@ -28,7 +28,8 @@
 Правила доступа:
 - для GitHub используйте `gh` + `git` (бот-токен задается окружением рантайма);
 - для Kubernetes в `full-env` используйте `kubectl` в своем namespace;
-- MCP используйте только для label-операций;
+- MCP используйте только для обратной связи статуса и label-операций: `run_status_report`, `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`;
+- публикуйте `run_status_report` регулярно: минимум после каждых 5-7 вызовов инструментов и перед долгими операциями/ожиданием;
 - прямой доступ к Kubernetes secrets запрещен RBAC.
 
 Правила resume/revise:

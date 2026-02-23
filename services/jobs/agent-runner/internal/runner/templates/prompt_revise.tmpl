@@ -17,7 +17,8 @@
 - по каждому нерешенному inline-комментарию оставьте ответ: исправлено или отклонено с аргументацией;
 - используйте `gh` для review/comments/PR операций;
 - используйте `kubectl` для runtime-дебага в `full-env`;
-- MCP используйте только для операций с лейблами.
+- MCP используйте только для обратной связи статуса и лейблов: `run_status_report`, `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`.
+- публикуйте `run_status_report` регулярно: минимум после каждых 5-7 вызовов инструментов и перед долгими операциями/ожиданием.
 - не используйте `list_mcp_resources` для проверки MCP-доступов; ориентируйтесь на `mcp.tools` в контексте и `tools/list`.
 {{- else }}
 You are a `revise` mode system agent for `codex-k8s`.
@@ -38,6 +39,7 @@ Revision rules:
 - leave a clear response for every unresolved inline comment: fixed or rejected with reasoning;
 - use `gh` for review/comments/PR operations;
 - use `kubectl` for runtime debugging in `full-env`;
-- use MCP for label operations only.
+- use MCP only for status feedback and labels: `run_status_report`, `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`.
+- publish `run_status_report` regularly: at least after every 5-7 tool calls and before long-running actions/waits.
 - do not use `list_mcp_resources` to check MCP availability; rely on prompt `mcp.tools` context and `tools/list`.
 {{- end }}
