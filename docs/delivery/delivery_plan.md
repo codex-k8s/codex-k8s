@@ -5,8 +5,8 @@ title: "codex-k8s — Delivery Plan"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-20
-related_issues: [1, 19, 74]
+updated_at: 2026-02-23
+related_issues: [1, 19, 74, 100]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -43,6 +43,8 @@ approvals:
 - Epic S2 catalog: `docs/delivery/epic_s2.md`
 - Sprint S3 plan: `docs/delivery/sprint_s3_mvp_completion.md`
 - Epic S3 catalog: `docs/delivery/epic_s3.md`
+- Sprint S4 plan: `docs/delivery/sprint_s4_multi_repo_federation.md`
+- Epic S4 catalog: `docs/delivery/epic_s4.md`
 - Process requirements: `docs/delivery/development_process_requirements.md`
 
 ## Структура работ (WBS)
@@ -86,6 +88,11 @@ approvals:
 - Day 19.6: интеграция realtime подписок в staff UI (runs/deploy/errors/logs/events), удаление кнопок `Обновить` в realtime-экранах, fallback polling.
 - Day 19.7: retention full-env namespace по role-based TTL + lease extension/reuse на `run:*:revise` (Issue #74).
 - Day 20: full e2e regression/security gate + MVP closeout/handover и переход к post-MVP roadmap.
+
+### Sprint S4: Multi-repo runtime and docs federation (Issue #100)
+- Day 1 (planned): execution foundation для federated multi-repo composition и docs federation (`docs/delivery/epics/epic-s4-day1-multi-repo-composition-and-docs-federation.md`).
+- Результат Day 1: формальный execution-plan (stories + quality-gates + owner decisions) для перехода в `run:dev`.
+- Следующие day-эпики S4 формируются после Owner review Day 1 и закрытия зависимостей по S3 Day20.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
@@ -132,6 +139,7 @@ approvals:
 - [ ] Для активного спринта: ежедневный merge -> auto deploy -> smoke check выполнен.
 - [ ] Webhook -> run -> worker -> k8s -> UI цепочка проходит regression.
 - [ ] Для `full-env` подтверждены role-based TTL retention namespace и lease extension на `run:*:revise` (Issue #74).
+- [ ] Для Issue #100 утверждён delivery execution-plan Sprint S4 (federated composition + multi-repo docs federation) и подготовлен handover в `run:dev`.
 - [ ] Learning mode и self-improve mode проверены на production.
 - [ ] MCP governance tools (secret/db/feedback) прошли approve/deny regression.
 
