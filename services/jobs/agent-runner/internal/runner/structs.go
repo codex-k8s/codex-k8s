@@ -179,6 +179,7 @@ type promptEnvelopeTemplateData struct {
 }
 
 type promptProjectDocTemplateData struct {
+	Repository  string
 	Path        string
 	Description string
 	Optional    bool

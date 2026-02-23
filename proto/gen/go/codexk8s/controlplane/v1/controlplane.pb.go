@@ -3008,6 +3008,10 @@ type RepositoryBinding struct {
 	BotUsername        *string                `protobuf:"bytes,8,opt,name=bot_username,json=botUsername,proto3,oneof" json:"bot_username,omitempty"`
 	BotEmail           *string                `protobuf:"bytes,9,opt,name=bot_email,json=botEmail,proto3,oneof" json:"bot_email,omitempty"`
 	PreflightUpdatedAt *string                `protobuf:"bytes,10,opt,name=preflight_updated_at,json=preflightUpdatedAt,proto3,oneof" json:"preflight_updated_at,omitempty"`
+	Alias              string                 `protobuf:"bytes,11,opt,name=alias,proto3" json:"alias,omitempty"`
+	Role               string                 `protobuf:"bytes,12,opt,name=role,proto3" json:"role,omitempty"`
+	DefaultRef         string                 `protobuf:"bytes,13,opt,name=default_ref,json=defaultRef,proto3" json:"default_ref,omitempty"`
+	DocsRootPath       *string                `protobuf:"bytes,14,opt,name=docs_root_path,json=docsRootPath,proto3,oneof" json:"docs_root_path,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -3108,6 +3112,34 @@ func (x *RepositoryBinding) GetBotEmail() string {
 func (x *RepositoryBinding) GetPreflightUpdatedAt() string {
 	if x != nil && x.PreflightUpdatedAt != nil {
 		return *x.PreflightUpdatedAt
+	}
+	return ""
+}
+
+func (x *RepositoryBinding) GetAlias() string {
+	if x != nil {
+		return x.Alias
+	}
+	return ""
+}
+
+func (x *RepositoryBinding) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *RepositoryBinding) GetDefaultRef() string {
+	if x != nil {
+		return x.DefaultRef
+	}
+	return ""
+}
+
+func (x *RepositoryBinding) GetDocsRootPath() string {
+	if x != nil && x.DocsRootPath != nil {
+		return *x.DocsRootPath
 	}
 	return ""
 }
@@ -3225,6 +3257,10 @@ type UpsertProjectRepositoryRequest struct {
 	Name             string                 `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
 	Token            string                 `protobuf:"bytes,6,opt,name=token,proto3" json:"token,omitempty"`
 	ServicesYamlPath string                 `protobuf:"bytes,7,opt,name=services_yaml_path,json=servicesYamlPath,proto3" json:"services_yaml_path,omitempty"`
+	Alias            string                 `protobuf:"bytes,8,opt,name=alias,proto3" json:"alias,omitempty"`
+	Role             string                 `protobuf:"bytes,9,opt,name=role,proto3" json:"role,omitempty"`
+	DefaultRef       string                 `protobuf:"bytes,10,opt,name=default_ref,json=defaultRef,proto3" json:"default_ref,omitempty"`
+	DocsRootPath     *string                `protobuf:"bytes,11,opt,name=docs_root_path,json=docsRootPath,proto3,oneof" json:"docs_root_path,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -3304,6 +3340,34 @@ func (x *UpsertProjectRepositoryRequest) GetToken() string {
 func (x *UpsertProjectRepositoryRequest) GetServicesYamlPath() string {
 	if x != nil {
 		return x.ServicesYamlPath
+	}
+	return ""
+}
+
+func (x *UpsertProjectRepositoryRequest) GetAlias() string {
+	if x != nil {
+		return x.Alias
+	}
+	return ""
+}
+
+func (x *UpsertProjectRepositoryRequest) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *UpsertProjectRepositoryRequest) GetDefaultRef() string {
+	if x != nil {
+		return x.DefaultRef
+	}
+	return ""
+}
+
+func (x *UpsertProjectRepositoryRequest) GetDocsRootPath() string {
+	if x != nil && x.DocsRootPath != nil {
+		return *x.DocsRootPath
 	}
 	return ""
 }
@@ -8059,7 +8123,7 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\n" +
 	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x17\n" +
 	"\auser_id\x18\x03 \x01(\tR\x06userId\x124\n" +
-	"\aenabled\x18\x04 \x01(\v2\x1a.google.protobuf.BoolValueR\aenabled\"\x90\x03\n" +
+	"\aenabled\x18\x04 \x01(\v2\x1a.google.protobuf.BoolValueR\aenabled\"\x99\x04\n" +
 	"\x11RepositoryBinding\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -8073,18 +8137,24 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\fbot_username\x18\b \x01(\tH\x00R\vbotUsername\x88\x01\x01\x12 \n" +
 	"\tbot_email\x18\t \x01(\tH\x01R\bbotEmail\x88\x01\x01\x125\n" +
 	"\x14preflight_updated_at\x18\n" +
-	" \x01(\tH\x02R\x12preflightUpdatedAt\x88\x01\x01B\x0f\n" +
+	" \x01(\tH\x02R\x12preflightUpdatedAt\x88\x01\x01\x12\x14\n" +
+	"\x05alias\x18\v \x01(\tR\x05alias\x12\x12\n" +
+	"\x04role\x18\f \x01(\tR\x04role\x12\x1f\n" +
+	"\vdefault_ref\x18\r \x01(\tR\n" +
+	"defaultRef\x12)\n" +
+	"\x0edocs_root_path\x18\x0e \x01(\tH\x03R\fdocsRootPath\x88\x01\x01B\x0f\n" +
 	"\r_bot_usernameB\f\n" +
 	"\n" +
 	"_bot_emailB\x17\n" +
-	"\x15_preflight_updated_at\"\x98\x01\n" +
+	"\x15_preflight_updated_atB\x11\n" +
+	"\x0f_docs_root_path\"\x98\x01\n" +
 	"\x1eListProjectRepositoriesRequest\x12A\n" +
 	"\tprincipal\x18\x01 \x01(\v2#.codexk8s.controlplane.v1.PrincipalR\tprincipal\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x14\n" +
 	"\x05limit\x18\x03 \x01(\x05R\x05limit\"d\n" +
 	"\x1fListProjectRepositoriesResponse\x12A\n" +
-	"\x05items\x18\x01 \x03(\v2+.codexk8s.controlplane.v1.RepositoryBindingR\x05items\"\x8c\x02\n" +
+	"\x05items\x18\x01 \x03(\v2+.codexk8s.controlplane.v1.RepositoryBindingR\x05items\"\x95\x03\n" +
 	"\x1eUpsertProjectRepositoryRequest\x12A\n" +
 	"\tprincipal\x18\x01 \x01(\v2#.codexk8s.controlplane.v1.PrincipalR\tprincipal\x12\x1d\n" +
 	"\n" +
@@ -8093,7 +8163,14 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\x05owner\x18\x04 \x01(\tR\x05owner\x12\x12\n" +
 	"\x04name\x18\x05 \x01(\tR\x04name\x12\x14\n" +
 	"\x05token\x18\x06 \x01(\tR\x05token\x12,\n" +
-	"\x12services_yaml_path\x18\a \x01(\tR\x10servicesYamlPath\"\xa7\x01\n" +
+	"\x12services_yaml_path\x18\a \x01(\tR\x10servicesYamlPath\x12\x14\n" +
+	"\x05alias\x18\b \x01(\tR\x05alias\x12\x12\n" +
+	"\x04role\x18\t \x01(\tR\x04role\x12\x1f\n" +
+	"\vdefault_ref\x18\n" +
+	" \x01(\tR\n" +
+	"defaultRef\x12)\n" +
+	"\x0edocs_root_path\x18\v \x01(\tH\x00R\fdocsRootPath\x88\x01\x01B\x11\n" +
+	"\x0f_docs_root_path\"\xa7\x01\n" +
 	"\x1eDeleteProjectRepositoryRequest\x12A\n" +
 	"\tprincipal\x18\x01 \x01(\v2#.codexk8s.controlplane.v1.PrincipalR\tprincipal\x12\x1d\n" +
 	"\n" +
@@ -9037,6 +9114,7 @@ func file_codexk8s_controlplane_v1_controlplane_proto_init() {
 	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[34].OneofWrappers = []any{}
 	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[42].OneofWrappers = []any{}
 	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[45].OneofWrappers = []any{}
+	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[48].OneofWrappers = []any{}
 	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[50].OneofWrappers = []any{}
 	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[52].OneofWrappers = []any{}
 	file_codexk8s_controlplane_v1_controlplane_proto_msgTypes[54].OneofWrappers = []any{}

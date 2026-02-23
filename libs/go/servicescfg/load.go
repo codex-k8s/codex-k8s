@@ -377,9 +377,14 @@ func normalizeAndValidateProjectDocs(stack *Stack) error {
 		return nil
 	}
 
-	seenByPath := make(map[string]struct{}, len(stack.Spec.ProjectDocs))
+	seenByRepositoryPath := make(map[string]struct{}, len(stack.Spec.ProjectDocs))
 	for i := range stack.Spec.ProjectDocs {
 		item := &stack.Spec.ProjectDocs[i]
+		repository := normalizeProjectDocRepository(item.Repository)
+		if repository != "" && !isValidRepositoryAlias(repository) {
+			return fmt.Errorf("spec.projectDocs[%d].repository must match [a-z0-9][a-z0-9._-]*", i)
+		}
+		item.Repository = repository
 
 		path := strings.TrimSpace(item.Path)
 		if path == "" {
@@ -391,10 +396,17 @@ func normalizeAndValidateProjectDocs(stack *Stack) error {
 			return fmt.Errorf("spec.projectDocs[%d].path must be repository-relative: %q", i, path)
 		}
 		lowerPath := strings.ToLower(normalizedPath)
-		if _, exists := seenByPath[lowerPath]; exists {
-			return fmt.Errorf("duplicate spec.projectDocs path %q", normalizedPath)
+		key := lowerPath
+		if repository != "" {
+			key = repository + "::" + lowerPath
 		}
-		seenByPath[lowerPath] = struct{}{}
+		if _, exists := seenByRepositoryPath[key]; exists {
+			if repository == "" {
+				return fmt.Errorf("duplicate spec.projectDocs path %q", normalizedPath)
+			}
+			return fmt.Errorf("duplicate spec.projectDocs entry %q/%q", repository, normalizedPath)
+		}
+		seenByRepositoryPath[key] = struct{}{}
 		item.Path = normalizedPath
 
 		item.Description = strings.TrimSpace(item.Description)
@@ -417,6 +429,28 @@ func normalizeAndValidateProjectDocs(stack *Stack) error {
 		}
 	}
 	return nil
+}
+
+func normalizeProjectDocRepository(value string) string {
+	return strings.ToLower(strings.TrimSpace(value))
+}
+
+func isValidRepositoryAlias(value string) bool {
+	if value == "" {
+		return false
+	}
+	for i, r := range value {
+		isLetter := r >= 'a' && r <= 'z'
+		isDigit := r >= '0' && r <= '9'
+		isAllowedSpecial := r == '.' || r == '_' || r == '-'
+		if !(isLetter || isDigit || isAllowedSpecial) {
+			return false
+		}
+		if i == 0 && !isLetter && !isDigit {
+			return false
+		}
+	}
+	return true
 }
 
 func applyServiceComponents(stack *Stack) error {

@@ -663,6 +663,10 @@ func (h *staffHandler) UpsertProjectRepository(c *echo.Context) error {
 			Name:             req.Name,
 			Token:            req.Token,
 			ServicesYamlPath: req.ServicesYAMLPath,
+			Alias:            req.Alias,
+			Role:             req.Role,
+			DefaultRef:       req.DefaultRef,
+			DocsRootPath:     optionalStringPtr(req.DocsRootPath),
 		})
 		if err != nil {
 			return err

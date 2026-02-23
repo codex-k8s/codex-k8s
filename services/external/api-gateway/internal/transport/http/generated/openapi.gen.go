@@ -87,6 +87,14 @@ const (
 	ProjectMemberRoleReadWrite ProjectMemberRole = "read_write"
 )
 
+// Defines values for RepositoryBindingRole.
+const (
+	RepositoryBindingRoleDocs         RepositoryBindingRole = "docs"
+	RepositoryBindingRoleMixed        RepositoryBindingRole = "mixed"
+	RepositoryBindingRoleOrchestrator RepositoryBindingRole = "orchestrator"
+	RepositoryBindingRoleService      RepositoryBindingRole = "service"
+)
+
 // Defines values for ResolveApprovalDecisionRequestDecision.
 const (
 	ResolveApprovalDecisionRequestDecisionApproved ResolveApprovalDecisionRequestDecision = "approved"
@@ -153,6 +161,14 @@ const (
 	UpsertProjectMemberRequestRoleAdmin     UpsertProjectMemberRequestRole = "admin"
 	UpsertProjectMemberRequestRoleRead      UpsertProjectMemberRequestRole = "read"
 	UpsertProjectMemberRequestRoleReadWrite UpsertProjectMemberRequestRole = "read_write"
+)
+
+// Defines values for UpsertProjectRepositoryRequestRole.
+const (
+	UpsertProjectRepositoryRequestRoleDocs         UpsertProjectRepositoryRequestRole = "docs"
+	UpsertProjectRepositoryRequestRoleMixed        UpsertProjectRepositoryRequestRole = "mixed"
+	UpsertProjectRepositoryRequestRoleOrchestrator UpsertProjectRepositoryRequestRole = "orchestrator"
+	UpsertProjectRepositoryRequestRoleService      UpsertProjectRepositoryRequestRole = "service"
 )
 
 // Defines values for ListConfigEntriesParamsScope.
@@ -460,17 +476,24 @@ type RegistryImageTag struct {
 
 // RepositoryBinding defines model for RepositoryBinding.
 type RepositoryBinding struct {
-	BotEmail           *string `json:"bot_email"`
-	BotUsername        *string `json:"bot_username"`
-	ExternalId         int64   `json:"external_id"`
-	Id                 string  `json:"id"`
-	Name               string  `json:"name"`
-	Owner              string  `json:"owner"`
-	PreflightUpdatedAt *string `json:"preflight_updated_at"`
-	ProjectId          string  `json:"project_id"`
-	Provider           string  `json:"provider"`
-	ServicesYamlPath   string  `json:"services_yaml_path"`
+	Alias              string                `json:"alias"`
+	BotEmail           *string               `json:"bot_email"`
+	BotUsername        *string               `json:"bot_username"`
+	DefaultRef         string                `json:"default_ref"`
+	DocsRootPath       *string               `json:"docs_root_path"`
+	ExternalId         int64                 `json:"external_id"`
+	Id                 string                `json:"id"`
+	Name               string                `json:"name"`
+	Owner              string                `json:"owner"`
+	PreflightUpdatedAt *string               `json:"preflight_updated_at"`
+	ProjectId          string                `json:"project_id"`
+	Provider           string                `json:"provider"`
+	Role               RepositoryBindingRole `json:"role"`
+	ServicesYamlPath   string                `json:"services_yaml_path"`
 }
+
+// RepositoryBindingRole defines model for RepositoryBinding.Role.
+type RepositoryBindingRole string
 
 // RepositoryBindingItemsResponse defines model for RepositoryBindingItemsResponse.
 type RepositoryBindingItemsResponse struct {
@@ -734,12 +757,19 @@ type UpsertProjectMemberRequest1 = interface{}
 
 // UpsertProjectRepositoryRequest defines model for UpsertProjectRepositoryRequest.
 type UpsertProjectRepositoryRequest struct {
-	Name             string `json:"name"`
-	Owner            string `json:"owner"`
-	Provider         string `json:"provider"`
-	ServicesYamlPath string `json:"services_yaml_path"`
-	Token            string `json:"token"`
+	Alias            *string                             `json:"alias,omitempty"`
+	DefaultRef       *string                             `json:"default_ref,omitempty"`
+	DocsRootPath     *string                             `json:"docs_root_path,omitempty"`
+	Name             string                              `json:"name"`
+	Owner            string                              `json:"owner"`
+	Provider         string                              `json:"provider"`
+	Role             *UpsertProjectRepositoryRequestRole `json:"role,omitempty"`
+	ServicesYamlPath string                              `json:"services_yaml_path"`
+	Token            string                              `json:"token"`
 }
+
+// UpsertProjectRepositoryRequestRole defines model for UpsertProjectRepositoryRequest.Role.
+type UpsertProjectRepositoryRequestRole string
 
 // UpsertProjectRequest defines model for UpsertProjectRequest.
 type UpsertProjectRequest struct {

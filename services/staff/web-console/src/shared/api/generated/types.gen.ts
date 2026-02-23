@@ -259,11 +259,15 @@ export type ProjectMember = {
 export type RepositoryBinding = {
     id: string;
     project_id: string;
+    alias: string;
+    role: 'orchestrator' | 'service' | 'docs' | 'mixed';
+    default_ref: string;
     provider: string;
     external_id: number;
     owner: string;
     name: string;
     services_yaml_path: string;
+    docs_root_path?: string | null;
     bot_username?: string | null;
     bot_email?: string | null;
     preflight_updated_at?: string | null;
@@ -463,6 +467,10 @@ export type UpsertProjectRepositoryRequest = {
     name: string;
     token: string;
     services_yaml_path: string;
+    alias?: string;
+    role?: 'orchestrator' | 'service' | 'docs' | 'mixed';
+    default_ref?: string;
+    docs_root_path?: string;
 };
 
 export type ProjectId = string;

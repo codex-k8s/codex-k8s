@@ -198,11 +198,15 @@ type ProjectMember struct {
 type RepositoryBinding struct {
 	ID                 string  `json:"id"`
 	ProjectID          string  `json:"project_id"`
+	Alias              string  `json:"alias"`
+	Role               string  `json:"role"`
+	DefaultRef         string  `json:"default_ref"`
 	Provider           string  `json:"provider"`
 	ExternalID         int64   `json:"external_id"`
 	Owner              string  `json:"owner"`
 	Name               string  `json:"name"`
 	ServicesYAMLPath   string  `json:"services_yaml_path"`
+	DocsRootPath       *string `json:"docs_root_path"`
 	BotUsername        *string `json:"bot_username"`
 	BotEmail           *string `json:"bot_email"`
 	PreflightUpdatedAt *string `json:"preflight_updated_at"`

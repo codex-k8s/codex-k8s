@@ -93,12 +93,16 @@ func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams)
 		r.db,
 		queryUpsert,
 		params.ProjectID,
+		params.Alias,
+		params.Role,
+		params.DefaultRef,
 		params.Provider,
 		params.ExternalID,
 		params.Owner,
 		params.Name,
 		params.TokenEncrypted,
 		params.ServicesYAMLPath,
+		params.DocsRootPath,
 	)
 	if err != nil {
 		return domainrepo.RepositoryBinding{}, fmt.Errorf("upsert repository binding: %w", err)
@@ -253,11 +257,15 @@ func repositoryBindingFromDBModel(row dbmodel.RepositoryBindingRow) domainrepo.R
 	return domainrepo.RepositoryBinding{
 		ID:                 strings.TrimSpace(row.ID),
 		ProjectID:          strings.TrimSpace(row.ProjectID),
+		Alias:              strings.TrimSpace(row.Alias),
+		Role:               strings.TrimSpace(row.Role),
+		DefaultRef:         strings.TrimSpace(row.DefaultRef),
 		Provider:           strings.TrimSpace(row.Provider),
 		ExternalID:         row.ExternalID,
 		Owner:              strings.TrimSpace(row.Owner),
 		Name:               strings.TrimSpace(row.Name),
 		ServicesYAMLPath:   strings.TrimSpace(row.ServicesYAMLPath),
+		DocsRootPath:       strings.TrimSpace(row.DocsRootPath),
 		BotUsername:        strings.TrimSpace(row.BotUsername),
 		BotEmail:           strings.TrimSpace(row.BotEmail),
 		PreflightUpdatedAt: strings.TrimSpace(row.PreflightUpdatedAt),

@@ -111,7 +111,7 @@ func TestBuildPromptProjectDocs_FiltersByRole(t *testing.T) {
 		Spec: servicescfg.Spec{
 			ProjectDocs: []servicescfg.ProjectDocRef{
 				{Path: "README.md"},
-				{Path: "docs/arch", Roles: []string{"sa", "dev"}},
+				{Repository: "service-api", Path: "docs/arch", Roles: []string{"sa", "dev"}},
 				{Path: "docs/ops", Roles: []string{"sre"}},
 			},
 		},
@@ -124,6 +124,9 @@ func TestBuildPromptProjectDocs_FiltersByRole(t *testing.T) {
 	if docs[0].Path != "README.md" || docs[1].Path != "docs/arch" {
 		t.Fatalf("unexpected docs order/content: %+v", docs)
 	}
+	if docs[1].Repository != "service-api" {
+		t.Fatalf("docs[1].repository=%q, want service-api", docs[1].Repository)
+	}
 
 	sreDocs := buildPromptProjectDocs(stack, "sre")
 	if len(sreDocs) != 2 {
@@ -131,6 +134,31 @@ func TestBuildPromptProjectDocs_FiltersByRole(t *testing.T) {
 	}
 	if sreDocs[1].Path != "docs/ops" {
 		t.Fatalf("unexpected sre docs: %+v", sreDocs)
+	}
+}
+
+func TestBuildPromptProjectDocs_DedupByPathWithPriority(t *testing.T) {
+	t.Parallel()
+
+	stack := &servicescfg.Stack{
+		Spec: servicescfg.Spec{
+			ProjectDocs: []servicescfg.ProjectDocRef{
+				{Repository: "service-orders", Path: "docs/architecture.md", Description: "service copy"},
+				{Repository: "policy-docs", Path: "docs/architecture.md", Description: "policy copy"},
+				{Repository: "orchestrator", Path: "docs/runtime.md", Description: "orchestrator"},
+			},
+		},
+	}
+
+	docs := buildPromptProjectDocs(stack, "dev")
+	if len(docs) != 2 {
+		t.Fatalf("docs len=%d, want 2", len(docs))
+	}
+	if docs[0].Repository != "policy-docs" {
+		t.Fatalf("docs[0].repository=%q, want policy-docs", docs[0].Repository)
+	}
+	if docs[0].Description != "policy copy" {
+		t.Fatalf("docs[0].description=%q, want policy copy", docs[0].Description)
 	}
 }
 

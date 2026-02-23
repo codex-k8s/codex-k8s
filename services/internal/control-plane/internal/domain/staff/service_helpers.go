@@ -5,6 +5,8 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
@@ -16,6 +18,8 @@ type dnsCandidate struct {
 	CheckName string
 	Domain    string
 }
+
+var repositoryAliasPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]*$`)
 
 func parseNamespaceNameSpec(spec string) (namespace string, name string, err error) {
 	spec = strings.TrimSpace(spec)
@@ -254,4 +258,79 @@ func formatIPs(ips []net.IP) string {
 		out = append(out, s)
 	}
 	return strings.Join(out, ",")
+}
+
+func normalizeRepositoryTopology(owner string, name string, alias string, role string, defaultRef string, docsRootPath string) (normalizedAlias string, normalizedRole string, normalizedRef string, normalizedDocsRoot string, err error) {
+	normalizedAlias, err = normalizeRepositoryAlias(alias, owner, name)
+	if err != nil {
+		return "", "", "", "", err
+	}
+
+	normalizedRole = strings.ToLower(strings.TrimSpace(role))
+	if normalizedRole == "" {
+		normalizedRole = "service"
+	}
+	switch normalizedRole {
+	case "orchestrator", "service", "docs", "mixed":
+	default:
+		return "", "", "", "", fmt.Errorf("invalid repository role %q", role)
+	}
+
+	normalizedRef = strings.TrimSpace(defaultRef)
+	if normalizedRef == "" {
+		normalizedRef = "main"
+	}
+
+	normalizedDocsRoot, err = normalizeRepositoryRelativePath(docsRootPath)
+	if err != nil {
+		return "", "", "", "", fmt.Errorf("invalid docs_root_path: %w", err)
+	}
+	return normalizedAlias, normalizedRole, normalizedRef, normalizedDocsRoot, nil
+}
+
+func normalizeRepositoryAlias(alias string, owner string, name string) (string, error) {
+	candidate := strings.ToLower(strings.TrimSpace(alias))
+	if candidate == "" {
+		candidate = strings.ToLower(strings.TrimSpace(owner + "-" + name))
+	}
+	candidate = strings.TrimSpace(candidate)
+	if candidate == "" {
+		return "", fmt.Errorf("alias is required")
+	}
+
+	replaced := make([]rune, 0, len(candidate))
+	lastDash := false
+	for _, ch := range candidate {
+		valid := (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '.' || ch == '_' || ch == '-'
+		if valid {
+			replaced = append(replaced, ch)
+			lastDash = ch == '-'
+			continue
+		}
+		if !lastDash {
+			replaced = append(replaced, '-')
+			lastDash = true
+		}
+	}
+	candidate = strings.Trim(string(replaced), "-")
+	if candidate == "" {
+		return "", fmt.Errorf("alias is empty after normalization")
+	}
+	if !repositoryAliasPattern.MatchString(candidate) {
+		return "", fmt.Errorf("must match %s", repositoryAliasPattern.String())
+	}
+	return candidate, nil
+}
+
+func normalizeRepositoryRelativePath(value string) (string, error) {
+	path := strings.TrimSpace(value)
+	if path == "" {
+		return "", nil
+	}
+	normalized := filepath.ToSlash(filepath.Clean(path))
+	if normalized == "." || normalized == ".." || normalized == "/" ||
+		strings.HasPrefix(normalized, "/") || strings.HasPrefix(normalized, "../") {
+		return "", fmt.Errorf("must be repository-relative path")
+	}
+	return normalized, nil
 }

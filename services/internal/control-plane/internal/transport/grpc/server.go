@@ -609,11 +609,15 @@ func (s *Server) ListProjectRepositories(ctx context.Context, req *controlplanev
 		out = append(out, &controlplanev1.RepositoryBinding{
 			Id:                 r.ID,
 			ProjectId:          r.ProjectID,
+			Alias:              r.Alias,
+			Role:               r.Role,
+			DefaultRef:         r.DefaultRef,
 			Provider:           r.Provider,
 			ExternalId:         r.ExternalID,
 			Owner:              r.Owner,
 			Name:               r.Name,
 			ServicesYamlPath:   r.ServicesYAMLPath,
+			DocsRootPath:       stringPtrOrNil(strings.TrimSpace(r.DocsRootPath)),
 			BotUsername:        stringPtrOrNil(botUsername),
 			BotEmail:           stringPtrOrNil(botEmail),
 			PreflightUpdatedAt: stringPtrOrNil(preflightUpdatedAt),
@@ -636,6 +640,10 @@ func (s *Server) UpsertProjectRepository(ctx context.Context, req *controlplanev
 		strings.TrimSpace(req.Name),
 		req.Token,
 		strings.TrimSpace(req.ServicesYamlPath),
+		strings.TrimSpace(req.GetAlias()),
+		strings.TrimSpace(req.GetRole()),
+		strings.TrimSpace(req.GetDefaultRef()),
+		optionalProtoString(req.DocsRootPath),
 	)
 	if err != nil {
 		return nil, toStatus(err)
@@ -646,11 +654,15 @@ func (s *Server) UpsertProjectRepository(ctx context.Context, req *controlplanev
 	return &controlplanev1.RepositoryBinding{
 		Id:                 item.ID,
 		ProjectId:          item.ProjectID,
+		Alias:              item.Alias,
+		Role:               item.Role,
+		DefaultRef:         item.DefaultRef,
 		Provider:           item.Provider,
 		ExternalId:         item.ExternalID,
 		Owner:              item.Owner,
 		Name:               item.Name,
 		ServicesYamlPath:   item.ServicesYAMLPath,
+		DocsRootPath:       stringPtrOrNil(strings.TrimSpace(item.DocsRootPath)),
 		BotUsername:        stringPtrOrNil(botUsername),
 		BotEmail:           stringPtrOrNil(botEmail),
 		PreflightUpdatedAt: stringPtrOrNil(preflightUpdatedAt),
