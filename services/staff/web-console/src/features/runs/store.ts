@@ -19,13 +19,12 @@ import type {
   FlowEvent,
   ResolveApprovalDecisionResponse,
   Run,
+  RunRealtimeMessage,
   RunLogs,
   RunNamespaceCleanupResponse,
 } from "./types";
 
 const errorAutoHideMs = 5000;
-const codexAuthRequiredEventType = "run.codex.auth.required";
-
 function sortEventsNewest(items: FlowEvent[]): FlowEvent[] {
   return [...items].sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0));
 }
@@ -198,18 +197,14 @@ export const useRunDetailsStore = defineStore("runDetails", {
       try {
         const [run, events, logs] = await Promise.all([
           getRun(runId),
-          listRunEvents(runId, 200, false),
+          listRunEvents(runId, 200, true),
           getRunLogs(runId, 200, false),
         ]);
         this.run = run;
         this.events = sortEventsNewest(events);
-        this.eventsPayloadLoaded = false;
+        this.eventsPayloadLoaded = true;
         this.logs = logs;
         this.snapshotLoaded = false;
-
-        if (this.events.some((eventItem) => eventItem.event_type === codexAuthRequiredEventType)) {
-          await this.loadEventPayloads(runId);
-        }
       } catch (e) {
         this.run = null;
         this.events = [];
@@ -265,6 +260,19 @@ export const useRunDetailsStore = defineStore("runDetails", {
         await this.refreshLogs(runId, tailLines, true);
       } finally {
         this.snapshotLoading = false;
+      }
+    },
+
+    applyRealtimeMessage(message: RunRealtimeMessage): void {
+      if (message.run && this.runId && message.run.id === this.runId) {
+        this.run = message.run;
+      }
+      if (Array.isArray(message.events)) {
+        this.events = sortEventsNewest(message.events);
+        this.eventsPayloadLoaded = true;
+      }
+      if (message.logs) {
+        this.logs = message.logs;
       }
     },
 

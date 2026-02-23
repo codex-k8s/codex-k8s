@@ -48,6 +48,13 @@
 {{- if .RunStatus }}
 - Статус рана: `{{ .RunStatus }}`
 {{- end }}
+{{- if .RecentAgentStatuses }}
+
+### 🤖 Последние статусы агента
+{{- range .RecentAgentStatuses }}
+- {{- if .AgentKey }}`{{ .AgentKey }}`: {{- end }}{{ .StatusText }}
+{{- end }}
+{{- end }}
 
 ### 🕒 Таймлайн
 {{- if .CreatedReached }}

@@ -48,6 +48,13 @@
 {{- if .RunStatus }}
 - Run status: `{{ .RunStatus }}`
 {{- end }}
+{{- if .RecentAgentStatuses }}
+
+### 🤖 Latest Agent Statuses
+{{- range .RecentAgentStatuses }}
+- {{- if .AgentKey }}`{{ .AgentKey }}`: {{- end }}{{ .StatusText }}
+{{- end }}
+{{- end }}
 
 ### 🕒 Timeline
 {{- if .CreatedReached }}

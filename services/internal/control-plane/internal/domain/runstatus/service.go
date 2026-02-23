@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
@@ -49,6 +50,7 @@ func NewService(cfg Config, deps Dependencies) (*Service, error) {
 		github:     deps.GitHub,
 		kubernetes: deps.Kubernetes,
 		flowEvents: deps.FlowEvents,
+		staffRuns:  deps.StaffRuns,
 	}, nil
 }
 
@@ -113,8 +115,9 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		currentState = mergeState(existingState, currentState)
 	}
 	currentState.SlotURL = s.resolveRunSlotURL(runCtx, currentState)
+	recentStatuses := s.loadRecentAgentStatuses(ctx, runCtx.run.CorrelationID, 3)
 
-	body, err := renderCommentBody(currentState, s.buildRunManagementURL(runID), s.cfg.PublicBaseURL)
+	body, err := renderCommentBody(currentState, s.buildRunManagementURL(runID), s.cfg.PublicBaseURL, recentStatuses)
 	if err != nil {
 		return UpsertCommentResult{}, err
 	}
@@ -144,7 +147,7 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		}
 	}
 
-	s.insertFlowEvent(ctx, runCtx.run.CorrelationID, floweventdomain.EventTypeRunStatusCommentUpserted, runStatusCommentUpsertedPayload{
+	commentUpsertedEventPayload := runStatusCommentUpsertedPayload{
 		RunID:              runID,
 		IssueNumber:        runCtx.commentTargetNumber,
 		ThreadKind:         string(runCtx.commentTargetKind),
@@ -152,16 +155,9 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		CommentID:          savedComment.ID,
 		CommentURL:         savedComment.URL,
 		Phase:              currentState.Phase,
-	})
-	s.insertFlowEvent(ctx, runCtx.run.CorrelationID, floweventdomain.EventTypeRunServiceMessageUpdated, runStatusCommentUpsertedPayload{
-		RunID:              runID,
-		IssueNumber:        runCtx.commentTargetNumber,
-		ThreadKind:         string(runCtx.commentTargetKind),
-		RepositoryFullName: runCtx.payload.Repository.FullName,
-		CommentID:          savedComment.ID,
-		CommentURL:         savedComment.URL,
-		Phase:              currentState.Phase,
-	})
+	}
+	s.insertFlowEvent(ctx, runCtx.run.CorrelationID, floweventdomain.EventTypeRunStatusCommentUpserted, commentUpsertedEventPayload)
+	s.insertFlowEvent(ctx, runCtx.run.CorrelationID, floweventdomain.EventTypeRunServiceMessageUpdated, commentUpsertedEventPayload)
 
 	return UpsertCommentResult{
 		CommentID:  savedComment.ID,
@@ -581,6 +577,71 @@ func (s *Service) listRunIssueComments(ctx context.Context, runCtx runContext) (
 		return nil, fmt.Errorf("list issue comments: %w", err)
 	}
 	return comments, nil
+}
+
+func (s *Service) loadRecentAgentStatuses(ctx context.Context, correlationID string, limit int) []recentAgentStatus {
+	if s.staffRuns == nil || limit <= 0 {
+		return nil
+	}
+	normalizedCorrelationID := strings.TrimSpace(correlationID)
+	if normalizedCorrelationID == "" {
+		return nil
+	}
+
+	events, err := s.staffRuns.ListEventsByCorrelation(ctx, normalizedCorrelationID, 200)
+	if err != nil {
+		return nil
+	}
+
+	items := make([]recentAgentStatus, 0, limit)
+	for _, event := range events {
+		if strings.TrimSpace(event.EventType) != string(floweventdomain.EventTypeRunAgentStatusReported) {
+			continue
+		}
+
+		statusText, agentKey := parseRunAgentStatusPayload(event.PayloadJSON)
+		if statusText == "" {
+			continue
+		}
+
+		items = append(items, recentAgentStatus{
+			StatusText: statusText,
+			AgentKey:   agentKey,
+			ReportedAt: event.CreatedAt.UTC().Format(time.RFC3339Nano),
+		})
+		if len(items) >= limit {
+			break
+		}
+	}
+	return items
+}
+
+type runAgentStatusReportedPayload struct {
+	AgentKey   string `json:"agent_key"`
+	StatusText string `json:"status_text"`
+}
+
+func parseRunAgentStatusPayload(rawPayload []byte) (statusText string, agentKey string) {
+	payloadBytes := rawPayload
+	if len(payloadBytes) == 0 {
+		return "", ""
+	}
+
+	var payload runAgentStatusReportedPayload
+	if err := json.Unmarshal(payloadBytes, &payload); err != nil {
+		var nested string
+		if nestedErr := json.Unmarshal(payloadBytes, &nested); nestedErr != nil {
+			return "", ""
+		}
+		if nested == "" {
+			return "", ""
+		}
+		if nestedDecodeErr := json.Unmarshal([]byte(nested), &payload); nestedDecodeErr != nil {
+			return "", ""
+		}
+	}
+
+	return strings.TrimSpace(payload.StatusText), strings.TrimSpace(payload.AgentKey)
 }
 
 func (s *Service) loadBotToken(ctx context.Context) (string, error) {

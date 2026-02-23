@@ -775,6 +775,9 @@ type AgentKeyFilter = string
 // ApprovalRequestID defines model for ApprovalRequestID.
 type ApprovalRequestID = int64
 
+// IncludeLogs defines model for IncludeLogs.
+type IncludeLogs = bool
+
 // IncludePayload defines model for IncludePayload.
 type IncludePayload = bool
 
@@ -922,6 +925,13 @@ type ListRunLearningFeedbackParams struct {
 type GetRunLogsParams struct {
 	TailLines       *TailLines       `form:"tail_lines,omitempty" json:"tail_lines,omitempty"`
 	IncludeSnapshot *IncludeSnapshot `form:"include_snapshot,omitempty" json:"include_snapshot,omitempty"`
+}
+
+// RunRealtimeParams defines parameters for RunRealtime.
+type RunRealtimeParams struct {
+	Limit       *Limit       `form:"limit,omitempty" json:"limit,omitempty"`
+	TailLines   *TailLines   `form:"tail_lines,omitempty" json:"tail_lines,omitempty"`
+	IncludeLogs *IncludeLogs `form:"include_logs,omitempty" json:"include_logs,omitempty"`
 }
 
 // ListRegistryImagesParams defines parameters for ListRegistryImages.
@@ -1263,6 +1273,9 @@ type ServerInterface interface {
 	// Force delete run namespace
 	// (DELETE /api/v1/staff/runs/{run_id}/namespace)
 	DeleteRunNamespace(w http.ResponseWriter, r *http.Request, runId RunID)
+	// Open realtime run stream (WebSocket upgrade)
+	// (GET /api/v1/staff/runs/{run_id}/realtime)
+	RunRealtime(w http.ResponseWriter, r *http.Request, runId RunID, params RunRealtimeParams)
 	// Delete one internal registry image tag
 	// (DELETE /api/v1/staff/runtime-deploy/images)
 	DeleteRegistryImageTag(w http.ResponseWriter, r *http.Request)
@@ -2470,6 +2483,58 @@ func (siw *ServerInterfaceWrapper) DeleteRunNamespace(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// RunRealtime operation middleware
+func (siw *ServerInterfaceWrapper) RunRealtime(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "run_id" -------------
+	var runId RunID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "run_id", r.PathValue("run_id"), &runId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "run_id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RunRealtimeParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "tail_lines" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "tail_lines", r.URL.Query(), &params.TailLines)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tail_lines", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "include_logs" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "include_logs", r.URL.Query(), &params.IncludeLogs)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "include_logs", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RunRealtime(w, r, runId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DeleteRegistryImageTag operation middleware
 func (siw *ServerInterfaceWrapper) DeleteRegistryImageTag(w http.ResponseWriter, r *http.Request) {
 
@@ -3015,6 +3080,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}/learning-feedback", wrapper.ListRunLearningFeedback)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}/logs", wrapper.GetRunLogs)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/staff/runs/{run_id}/namespace", wrapper.DeleteRunNamespace)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}/realtime", wrapper.RunRealtime)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/staff/runtime-deploy/images", wrapper.DeleteRegistryImageTag)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runtime-deploy/images", wrapper.ListRegistryImages)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/runtime-deploy/images/cleanup", wrapper.CleanupRegistryImages)
@@ -4612,6 +4678,41 @@ func (response DeleteRunNamespace403JSONResponse) VisitDeleteRunNamespaceRespons
 	return json.NewEncoder(w).Encode(response)
 }
 
+type RunRealtimeRequestObject struct {
+	RunId  RunID `json:"run_id"`
+	Params RunRealtimeParams
+}
+
+type RunRealtimeResponseObject interface {
+	VisitRunRealtimeResponse(w http.ResponseWriter) error
+}
+
+type RunRealtime200Response struct {
+}
+
+func (response RunRealtime200Response) VisitRunRealtimeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type RunRealtime400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response RunRealtime400JSONResponse) VisitRunRealtimeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RunRealtime401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response RunRealtime401JSONResponse) VisitRunRealtimeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type DeleteRegistryImageTagRequestObject struct {
 	Body *DeleteRegistryImageTagJSONRequestBody
 }
@@ -5230,6 +5331,9 @@ type StrictServerInterface interface {
 	// Force delete run namespace
 	// (DELETE /api/v1/staff/runs/{run_id}/namespace)
 	DeleteRunNamespace(ctx context.Context, request DeleteRunNamespaceRequestObject) (DeleteRunNamespaceResponseObject, error)
+	// Open realtime run stream (WebSocket upgrade)
+	// (GET /api/v1/staff/runs/{run_id}/realtime)
+	RunRealtime(ctx context.Context, request RunRealtimeRequestObject) (RunRealtimeResponseObject, error)
 	// Delete one internal registry image tag
 	// (DELETE /api/v1/staff/runtime-deploy/images)
 	DeleteRegistryImageTag(ctx context.Context, request DeleteRegistryImageTagRequestObject) (DeleteRegistryImageTagResponseObject, error)
@@ -6364,6 +6468,33 @@ func (sh *strictHandler) DeleteRunNamespace(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(DeleteRunNamespaceResponseObject); ok {
 		if err := validResponse.VisitDeleteRunNamespaceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RunRealtime operation middleware
+func (sh *strictHandler) RunRealtime(w http.ResponseWriter, r *http.Request, runId RunID, params RunRealtimeParams) {
+	var request RunRealtimeRequestObject
+
+	request.RunId = runId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RunRealtime(ctx, request.(RunRealtimeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RunRealtime")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RunRealtimeResponseObject); ok {
+		if err := validResponse.VisitRunRealtimeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

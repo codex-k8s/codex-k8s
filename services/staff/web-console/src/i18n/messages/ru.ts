@@ -277,6 +277,7 @@ export const ru = {
       finished: "Завершено",
       waitState: "wait_state",
       status: "status",
+      agent: "agent_key",
     },
   },
   logs: {
@@ -399,6 +400,10 @@ export const ru = {
       agentKey: "agent_key",
       waitSince: "wait_since",
       lastHeartbeatAt: "last_heartbeat_at",
+      realtime: "Realtime",
+      realtimeConnecting: "подключение",
+      realtimeConnected: "подключено",
+      realtimeReconnecting: "переподключение",
       runLogs: "Логи запуска",
       logsUpdatedAt: "обновлено",
       rawLogsSnapshot: "Сырой JSON snapshot",

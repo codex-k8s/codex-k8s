@@ -106,6 +106,7 @@ func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Clien
 	staffGroup.GET("/runs/:run_id", staffH.GetRun)
 	staffGroup.DELETE("/runs/:run_id/namespace", staffH.DeleteRunNamespace)
 	staffGroup.GET("/runs/:run_id/events", staffH.ListRunEvents)
+	staffGroup.GET("/runs/:run_id/realtime", staffH.RunRealtime)
 	staffGroup.GET("/runs/:run_id/logs", staffH.GetRunLogs)
 	staffGroup.GET("/runs/:run_id/learning-feedback", staffH.ListRunLearningFeedback)
 	staffGroup.GET("/runtime-deploy/tasks", staffH.ListRuntimeDeployTasks)

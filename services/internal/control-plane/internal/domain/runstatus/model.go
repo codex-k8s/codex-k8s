@@ -9,6 +9,7 @@ import (
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
 	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/platformtoken"
+	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/staffrun"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
@@ -175,6 +176,7 @@ type Dependencies struct {
 	GitHub     GitHubClient
 	Kubernetes KubernetesClient
 	FlowEvents floweventrepo.Repository
+	StaffRuns  staffrunrepo.Repository
 }
 
 // Service maintains one run status message in issue comments and handles forced namespace cleanup.
@@ -187,6 +189,7 @@ type Service struct {
 	github     GitHubClient
 	kubernetes KubernetesClient
 	flowEvents floweventrepo.Repository
+	staffRuns  staffrunrepo.Repository
 }
 
 type runContext struct {

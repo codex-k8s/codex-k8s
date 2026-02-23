@@ -277,6 +277,7 @@ export const en = {
       finished: "Finished",
       waitState: "wait_state",
       status: "status",
+      agent: "agent_key",
     },
   },
   logs: {
@@ -399,6 +400,10 @@ export const en = {
       agentKey: "agent_key",
       waitSince: "wait_since",
       lastHeartbeatAt: "last_heartbeat_at",
+      realtime: "Realtime",
+      realtimeConnecting: "connecting",
+      realtimeConnected: "connected",
+      realtimeReconnecting: "reconnecting",
       runLogs: "Run logs",
       logsUpdatedAt: "updated at",
       rawLogsSnapshot: "Raw JSON snapshot",

@@ -35,6 +35,14 @@ type runEventsArg struct {
 	includePayload bool
 }
 
+// runRealtimeArg keeps path+query input for run realtime websocket endpoint.
+type runRealtimeArg struct {
+	runID       string
+	eventsLimit int32
+	includeLogs bool
+	tailLines   int32
+}
+
 // runtimeDeployListArg keeps filters for runtime deploy tasks list endpoint.
 type runtimeDeployListArg struct {
 	limit     int32

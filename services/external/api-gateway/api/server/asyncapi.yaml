@@ -9,6 +9,11 @@ channels:
       summary: Flow event produced by webhook ingestion
       message:
         $ref: "#/components/messages/FlowEvent"
+  ws.staff.runs.realtime:
+    subscribe:
+      summary: Staff UI realtime stream for one run (WebSocket message envelope)
+      message:
+        $ref: "#/components/messages/RunRealtimeMessage"
 components:
   messages:
     FlowEvent:
@@ -32,3 +37,89 @@ components:
           payload:
             type: object
             additionalProperties: true
+    RunRealtimeMessage:
+      payload:
+        type: object
+        required: [type, sent_at]
+        properties:
+          type:
+            type: string
+            enum: [snapshot, run, events, logs, error]
+          sent_at:
+            type: string
+            format: date-time
+          message:
+            type: string
+          run:
+            $ref: "#/components/schemas/Run"
+          events:
+            type: array
+            items:
+              $ref: "#/components/schemas/FlowEvent"
+          logs:
+            $ref: "#/components/schemas/RunLogs"
+  schemas:
+    Run:
+      type: object
+      additionalProperties: false
+      required: [id, correlation_id, status, created_at]
+      properties:
+        id:
+          type: string
+        correlation_id:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        started_at:
+          type: string
+          format: date-time
+        finished_at:
+          type: string
+          format: date-time
+        trigger_kind:
+          type: string
+        trigger_label:
+          type: string
+        agent_key:
+          type: string
+        namespace:
+          type: string
+        wait_state:
+          type: string
+        wait_reason:
+          type: string
+    FlowEvent:
+      type: object
+      additionalProperties: false
+      required: [correlation_id, event_type, created_at, payload_json]
+      properties:
+        correlation_id:
+          type: string
+        event_type:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        payload_json:
+          type: string
+    RunLogs:
+      type: object
+      additionalProperties: false
+      required: [run_id, status, snapshot_json, tail_lines]
+      properties:
+        run_id:
+          type: string
+        status:
+          type: string
+        updated_at:
+          type: string
+          format: date-time
+        snapshot_json:
+          type: string
+        tail_lines:
+          type: array
+          items:
+            type: string

@@ -53,6 +53,7 @@ approvals:
   - `github_labels_transition` (remove+add).
 - Базовый MCP инструмент обратной связи по прогрессу:
   - `run_status_report` (агент публикует текущий короткий статус выполнения в выбранной locale).
+  - последние 3 `run_status_report` статуса выводятся в run service-comment в GitHub для видимого прогресса ревью.
 - Остальные GitHub/Kubernetes runtime-операции выполняются напрямую из agent pod через `gh`/`kubectl` в рамках RBAC/policy.
 
 ## Модель доступа GitHub для агентного pod (S2 Day4)
@@ -108,6 +109,7 @@ approvals:
 | List runs | GET | `/api/v1/staff/runs` | staff JWT | run list |
 | Get run | GET | `/api/v1/staff/runs/{run_id}` | staff JWT | run details |
 | List run events | GET | `/api/v1/staff/runs/{run_id}/events` | staff JWT | flow events |
+| Run realtime stream | GET | `/api/v1/staff/runs/{run_id}/realtime` | staff JWT | WebSocket upgrade; server sends `snapshot|run|events|logs|error` envelopes |
 | List pending approvals | GET | `/api/v1/staff/approvals` | staff JWT | MCP approval queue for privileged actions |
 | Resolve approval decision | POST | `/api/v1/staff/approvals/{approval_request_id}/decision` | staff JWT | approve/deny/expire/fail action request |
 | List run learning feedback | GET | `/api/v1/staff/runs/{run_id}/learning-feedback` | staff JWT | educational feedback |

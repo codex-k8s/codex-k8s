@@ -21,6 +21,12 @@ var commentTemplatesFS embed.FS
 
 var commentTemplates = template.Must(template.New("runstatus-comments").ParseFS(commentTemplatesFS, "templates/comment_*.md.tmpl"))
 
+type recentAgentStatus struct {
+	StatusText string
+	AgentKey   string
+	ReportedAt string
+}
+
 type commentTemplateContext struct {
 	RunID                    string
 	TriggerKind              string
@@ -42,6 +48,7 @@ type commentTemplateContext struct {
 	NextStageActionURL       string
 	AlternativeActionLabel   string
 	AlternativeActionURL     string
+	RecentAgentStatuses      []recentAgentStatus
 
 	ManagementURL string
 	StateMarker   string
@@ -78,13 +85,13 @@ type commentTemplateContext struct {
 	ShowCodexAuthUserCode        bool
 }
 
-func renderCommentBody(state commentState, managementURL string, publicBaseURL string) (string, error) {
+func renderCommentBody(state commentState, managementURL string, publicBaseURL string, recentStatuses []recentAgentStatus) (string, error) {
 	marker, err := renderStateMarker(state)
 	if err != nil {
 		return "", err
 	}
 
-	ctx := buildCommentTemplateContext(state, strings.TrimSpace(managementURL), strings.TrimSpace(publicBaseURL), marker)
+	ctx := buildCommentTemplateContext(state, strings.TrimSpace(managementURL), strings.TrimSpace(publicBaseURL), marker, recentStatuses)
 	templateName := resolveCommentTemplateName(normalizeLocale(state.PromptLocale, localeEN))
 	var out bytes.Buffer
 	if err := commentTemplates.ExecuteTemplate(&out, templateName, ctx); err != nil {
@@ -93,7 +100,7 @@ func renderCommentBody(state commentState, managementURL string, publicBaseURL s
 	return strings.TrimSpace(out.String()) + "\n", nil
 }
 
-func buildCommentTemplateContext(state commentState, managementURL string, publicBaseURL string, marker string) commentTemplateContext {
+func buildCommentTemplateContext(state commentState, managementURL string, publicBaseURL string, marker string, recentStatuses []recentAgentStatus) commentTemplateContext {
 	trimmedTriggerKind := strings.TrimSpace(state.TriggerKind)
 	trimmedRepositoryFullName := strings.TrimSpace(state.RepositoryFullName)
 	trimmedRuntimeMode := strings.TrimSpace(state.RuntimeMode)
@@ -134,6 +141,7 @@ func buildCommentTemplateContext(state commentState, managementURL string, publi
 		NextStageActionURL:       nextStageActionURL,
 		AlternativeActionLabel:   alternativeLabel,
 		AlternativeActionURL:     alternativeActionURL,
+		RecentAgentStatuses:      recentStatuses,
 
 		ManagementURL: managementURL,
 		StateMarker:   marker,
