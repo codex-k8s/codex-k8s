@@ -5,8 +5,8 @@ title: "codex-k8s — API Contract Overview"
 status: active
 owner_role: SA
 created_at: 2026-02-06
-updated_at: 2026-02-14
-related_issues: [1, 19]
+updated_at: 2026-02-21
+related_issues: [1, 19, 100]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -26,6 +26,7 @@ approvals:
 - Основные операции текущего среза: webhook ingest (public) + staff/private operations для auth, project/repository/user/run/learning-mode.
 - Для external/staff транспорта в S2 Day1 внедрён contract-first OpenAPI (validation + backend/frontend codegen).
 - В MVP completion (S2 Day6 + S3) добавляются API-контракты для runtime debug observability и MCP control tools orchestration.
+- Для multi-repo режима (Issue #100, design) планируются staff/private контракты composition preview и docs sources resolve.
 
 ## Спецификации (source of truth)
 - OpenAPI (api-gateway): `services/external/api-gateway/api/server/api.yaml`
@@ -124,10 +125,14 @@ approvals:
 | List project repositories | GET | `/api/v1/staff/projects/{project_id}/repositories` | staff JWT | repository bindings |
 | Upsert project repository | POST | `/api/v1/staff/projects/{project_id}/repositories` | staff JWT + admin | token encrypted in backend |
 | Delete project repository | DELETE | `/api/v1/staff/projects/{project_id}/repositories/{repository_id}` | staff JWT + admin | unbind repository |
+| Get project composition | GET | `/api/v1/staff/projects/{project_id}/composition` | staff JWT | planned: resolved topology/root/imports |
+| Preview project composition | POST | `/api/v1/staff/projects/{project_id}/composition/preview` | staff JWT + admin | planned: dry-run resolve + validation/errors |
+| List project docs sources | GET | `/api/v1/staff/projects/{project_id}/docs/sources` | staff JWT | planned: effective role-aware docs graph |
 
 Примечание:
 - маршруты staff runtime debug (`/runs/jobs`, `/runs/{run_id}/logs*`, `/runs/waits`) относятся к MVP target и вводятся в Sprint S3.
 - будущие маршруты сверх MVP (`docs search/edit`, advanced policy management UI и т.д.) вводятся отдельными эпиками post-MVP.
+- маршруты `composition*` и `/docs/sources` относятся к design backlog по Issue #100 и реализуются отдельным `run:dev` циклом.
 
 ## Public API boundary (MVP)
 - Публично (outside/stable): только `POST /api/v1/webhooks/github`.
@@ -141,6 +146,20 @@ approvals:
 ## Контракты данных (DTO)
 - Основные сущности: user, project, project_member, repository, agent, agent_run, slot, flow_event, document.
 - Валидация: schema validation + domain validation.
+
+### Multi-repo DTO extensions (design)
+- `repository` DTO расширяется полями:
+  - `alias`,
+  - `role` (`orchestrator|service|docs|mixed`),
+  - `default_ref`,
+  - `docs_root_path`.
+- `composition preview` response возвращает строго типизированные блоки:
+  - `root_repository`,
+  - `imports[]` (`repository`, `path`, `ref`, `resolved_commit`),
+  - `validation_errors[]`,
+  - `effective_services_manifest_hash`.
+- `docs sources` response возвращает:
+  - `sources[]` (`repository`, `path`, `roles[]`, `optional`, `priority`, `resolved_commit`).
 
 ## Learning mode behavior
 - Если learning mode активен, для user-initiated задач в prompt/context добавляется mandatory block:

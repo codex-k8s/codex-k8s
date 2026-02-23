@@ -5,8 +5,8 @@ title: "codex-k8s — Data Model"
 status: active
 owner_role: SA
 created_at: 2026-02-06
-updated_at: 2026-02-14
-related_issues: [1, 19]
+updated_at: 2026-02-21
+related_issues: [1, 19, 100]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -74,23 +74,70 @@ approvals:
 
 ### Entity: repositories
 - Назначение: подключённые репозитории проектов.
-- Важные инварианты: provider + external_id уникальны.
+- Важные инварианты:
+  - `project_id + alias` уникальны (стабильный repo-key внутри проекта);
+  - `project_id + provider + owner + name` уникальны (одна реальная интеграция на проект).
 - Поля:
 
 | Field | Type | Nullable | Default | Constraints | Notes |
 |---|---|---:|---|---|---|
 | id | uuid | no | gen_random_uuid() | pk | |
 | project_id | uuid | no |  | fk -> projects | |
+| alias | text | no |  | unique(project_id, alias) | stable key for multi-repo imports/docs refs |
 | provider | text | no |  | check(github/gitlab) | |
 | owner | text | no |  |  | |
 | name | text | no |  |  | |
+| role | text | no | "service" | check(orchestrator/service/docs/mixed) | topology role in project composition |
+| default_ref | text | no | "main" |  | default branch/tag for resolve |
 | token_encrypted | bytea | no |  |  | app-level encrypted |
 | services_yaml_path | text | no | "services.yaml" |  | per-repo override |
+| docs_root_path | text | yes |  |  | optional default docs root for repo-aware docs context |
 
 Примечание по token scope (S2 Day4+):
 - `repositories.token_encrypted` используется только для операций управления проектом/репозиторием
   (validate repository, ensure/delete webhook и т.п. staff management path).
 - Runtime сообщения и label-операции в run/mcp контуре используют bot-token из singleton сущности `platform_github_tokens`.
+
+### Entity: repository_compositions
+- Назначение: фиксировать результат runtime-компоновки multi-repo manifest до reconcile/deploy.
+- Важные инварианты:
+  - одна активная компоновка на `(project_id, environment, composition_key)`;
+  - `status=ready` допускается только при валидном `effective_manifest_json`.
+- Поля:
+
+| Field | Type | Nullable | Default | Constraints | Notes |
+|---|---|---:|---|---|---|
+| id | bigserial | no |  | pk | |
+| project_id | uuid | no |  | fk -> projects | |
+| environment | text | no |  |  | e.g. `dev`, `production`, `ai-slot` |
+| composition_key | text | no |  | unique(project_id, environment, composition_key) | deterministic resolver key |
+| root_repository_alias | text | yes |  | fk -> repositories.alias scoped by project | null for virtual-root mode |
+| resolved_repositories_json | jsonb | no | '[]'::jsonb |  | aliases + pinned refs/commits |
+| effective_manifest_json | jsonb | no | '{}'::jsonb |  | final typed compose payload |
+| status | text | no | "pending" | check(pending/ready/failed) | resolver state |
+| error_message | text | yes |  |  | last resolver error |
+| created_at | timestamptz | no | now() |  | |
+| updated_at | timestamptz | no | now() |  | |
+
+### Entity: repository_doc_sources
+- Назначение: role-aware источники docs из разных repo для prompt context и doc governance.
+- Важные инварианты:
+  - `project_id + repository_alias + path` уникальны;
+  - path всегда относительный к repo root.
+- Поля:
+
+| Field | Type | Nullable | Default | Constraints | Notes |
+|---|---|---:|---|---|---|
+| id | bigserial | no |  | pk | |
+| project_id | uuid | no |  | fk -> projects | |
+| repository_alias | text | no |  | fk -> repositories.alias scoped by project | repo binding key |
+| path | text | no |  |  | docs root path in repo |
+| description | text | yes |  |  | human-readable docs source purpose |
+| roles_json | jsonb | no | '[]'::jsonb |  | allowed roles for docs context |
+| optional | bool | no | false |  | resolver may skip if source missing |
+| priority | int | no | 100 |  | lower value = higher priority |
+| created_at | timestamptz | no | now() |  | |
+| updated_at | timestamptz | no | now() |  | |
 
 ### Entity: project_databases
 - Назначение: ownership registry для MCP tool `database.lifecycle`.

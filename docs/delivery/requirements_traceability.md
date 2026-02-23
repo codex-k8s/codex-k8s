@@ -5,8 +5,8 @@ title: "Requirements Traceability Matrix"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-20
-related_issues: [1, 19, 74, 90]
+updated_at: 2026-02-21
+related_issues: [1, 19, 74, 90, 100]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -45,7 +45,7 @@ approvals:
 | FR-017 | Project RBAC read/read_write/admin | `docs/product/requirements_machine_driven.md`, `docs/product/constraints.md`, `docs/architecture/data_model.md` | covered |
 | FR-018 | No self-signup, email matching | `docs/product/requirements_machine_driven.md`, `docs/product/constraints.md`, `docs/architecture/data_model.md` | covered |
 | FR-019 | Добавление пользователей через staff UI | `docs/product/requirements_machine_driven.md`, `docs/architecture/api_contract.md`, `docs/architecture/data_model.md` | covered |
-| FR-020 | Multi-repo per project + per-repo services.yaml | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/brief.md` | covered |
+| FR-020 | Multi-repo per project + per-repo services.yaml | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/architecture/multi_repo_mode_design.md`, `docs/architecture/adr/ADR-0007-multi-repo-composition-and-docs-federation.md`, `docs/product/brief.md` | covered |
 | FR-021 | Repo token per repository + future Vault/JWT path | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/delivery/roadmap.md` | covered |
 | FR-022 | codex-k8s как проект с monorepo services.yaml | `docs/product/requirements_machine_driven.md`, `README.md` | covered |
 | FR-023 | Learning mode + educational PR comments | `docs/product/requirements_machine_driven.md`, `docs/product/brief.md`, `docs/architecture/api_contract.md`, `docs/delivery/delivery_plan.md`, `docs/architecture/data_model.md` | covered |
