@@ -31,6 +31,7 @@ approvals:
 
 ## Прогресс
 - Day 1: completed (execution-plan сформирован, handover в `run:dev` подготовлен в Issue #106).
+- Реализация кода по Story-1..Story-7 вынесена в следующий `run:dev` цикл по Issue #100 (вне scope Issue #106).
 
 ## Критерий успеха Sprint S4 (выжимка)
 - [x] Формализованы stories и quality-gates для всех multi-repo сценариев из Issue #100.

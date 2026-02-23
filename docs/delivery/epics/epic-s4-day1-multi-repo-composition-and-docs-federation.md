@@ -39,6 +39,10 @@ approvals:
 - Изменение policy для `run:*` label-flow вне требуемого для Issue #100.
 - Поддержка non-Kubernetes оркестраторов.
 
+## Граница результата для Issue #106
+- В рамках Issue #106 закрывается только документационный deliverable Day1 (execution package и синхронизация traceability).
+- Реализация Story-1..Story-7 переносится в отдельный `run:dev` цикл по Issue #100 и не является частью текущего PR.
+
 ## Матрица кейсов Issue #100
 
 | Кейс | Что должно поддерживаться | Execution задача | Evidence на выходе |

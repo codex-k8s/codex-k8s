@@ -59,6 +59,7 @@ approvals:
 ## Итог Day 1 (Issue #106)
 - Документационный execution-package Sprint S4 Day1 закрыт.
 - Статусы и факты выполнения синхронизированы в delivery и traceability документах.
+- Граница scope зафиксирована явно: Issue #106 закрывает только docs-only deliverable, без реализации кода.
 - Следующие day-эпики S4 формируются после старта `run:dev` реализации Story-1..Story-7.
 
 ## Handover после закрытия Day1
