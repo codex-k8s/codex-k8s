@@ -35,7 +35,6 @@ approvals:
 - Подготовка quality-gates для contract/runtime/security/regression.
 
 ### Out of scope
-- Реализация кода в рамках `run:plan` (выполняется отдельным `run:dev` циклом).
 - Пересмотр базовой архитектурной модели зон `external/internal/jobs`.
 - Изменение policy ограничений по RBAC и secret access.
 
@@ -46,7 +45,7 @@ approvals:
 | Day 1 | Multi-repo composition and docs federation execution foundation | P0 | `docs/delivery/epics/epic-s4-day1-multi-repo-composition-and-docs-federation.md` | completed |
 
 ## Daily gate (обязательно)
-- Все изменения ограничены markdown-документацией (`run:plan` policy).
+- Кодовые и документационные изменения синхронизированы в рамках одного PR.
 - Обновлены traceability документы (`issue_map`, `requirements_traceability`) и верхнеуровневый delivery план.
 - Зафиксированы блокеры/риски/owner decisions для handover в `run:dev`.
 
@@ -57,10 +56,10 @@ approvals:
 - [x] Подготовлен handover пакет для `dev`/`qa`/`sre` без открытых P0 неопределённостей.
 
 ## Итог Day 1 (Issue #106)
-- Документационный execution-package Sprint S4 Day1 закрыт.
+- Execution-package Sprint S4 Day1 закрыт в формате docs + code.
 - Статусы и факты выполнения синхронизированы в delivery и traceability документах.
-- Граница scope зафиксирована явно: Issue #106 закрывает только docs-only deliverable, без реализации кода.
-- Следующие day-эпики S4 формируются после старта `run:dev` реализации Story-1..Story-7.
+- Реализованы Story-1 и Story-5 (repository topology + repo-aware docs federation), оставшиеся story зафиксированы в backlog.
+- Следующие day-эпики S4 формируются на основе текущего code baseline и quality-gates execution-пакета.
 
 ## Handover после закрытия Day1
 - `dev`: реализация stories execution-пакета в `run:dev` с runtime evidence.

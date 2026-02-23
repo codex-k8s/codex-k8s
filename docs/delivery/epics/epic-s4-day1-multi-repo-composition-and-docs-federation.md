@@ -35,13 +35,14 @@ approvals:
 - Уточнение rollout-порядка (`preview -> enforced`) и quality-gates перехода.
 
 ### Out of scope
-- Непосредственная реализация кода и миграций в рамках текущего запуска.
 - Изменение policy для `run:*` label-flow вне требуемого для Issue #100.
 - Поддержка non-Kubernetes оркестраторов.
 
-## Граница результата для Issue #106
-- В рамках Issue #106 закрывается только документационный deliverable Day1 (execution package и синхронизация traceability).
-- Реализация Story-1..Story-7 переносится в отдельный `run:dev` цикл по Issue #100 и не является частью текущего PR.
+## Статус выполнения в Issue #106
+- В рамках Issue #106 выполнены не только docs-артефакты Day1, но и кодовые изменения:
+  - migration + domain/transport контракты для repository topology (`alias`, `role`, `default_ref`, `docs_root_path`);
+  - repository-aware `projectDocs` federation (priority + dedup) в `control-plane` и `agent-runner`.
+- Статусы/трассировка синхронизированы в Sprint/Epic/Delivery документах.
 
 ## Матрица кейсов Issue #100
 
@@ -89,15 +90,15 @@ approvals:
 
 ## Критерии приемки
 - [x] Для каждого кейса A..F есть отдельный test scenario и ожидаемый результат.
-- [x] Декомпозиция Story-1..Story-7 принята как обязательный scope следующего `run:dev`.
+- [x] Story-1 и Story-5 закрыты кодом; для Story-2/3/4/6/7 зафиксирован execution backlog и quality-gates.
 - [x] Зафиксирован rollout-порядок `preview -> enforced` с условиями перехода.
 - [x] Обновлены `issue_map` и `requirements_traceability` с ссылкой на execution-артефакты.
 - [x] В PR приложен перечень блокеров, рисков и требуемых owner decisions.
 
 ## Итог выполнения (Issue #106)
-- Day1 execution foundation закрыт как документационный deliverable.
-- Handover пакет для `dev`/`qa`/`sre`/`km` подготовлен и синхронизирован с Sprint S4 документами.
-- Реализация Story-1..Story-7 вынесена в следующий `run:dev` цикл по Issue #100.
+- Day1 execution foundation закрыт в формате docs + code.
+- Реализованы Story-1 (repository topology contract/migration) и Story-5 (repo-aware docs federation для prompt context).
+- Handover пакет для `dev`/`qa`/`sre`/`km` синхронизирован с Sprint S4 документами.
 
 ## Блокеры, риски и owner decisions
 ### Блокеры

@@ -31,7 +31,7 @@ approvals:
 
 ## Прогресс
 - Day 1: completed (execution-plan сформирован, handover в `run:dev` подготовлен в Issue #106).
-- Реализация кода по Story-1..Story-7 вынесена в следующий `run:dev` цикл по Issue #100 (вне scope Issue #106).
+- В Issue #106 выполнен code baseline Day1: Story-1 (repository topology) и Story-5 (repo-aware docs federation) закрыты кодом; оставшиеся story зафиксированы как execution backlog Sprint S4.
 
 ## Критерий успеха Sprint S4 (выжимка)
 - [x] Формализованы stories и quality-gates для всех multi-repo сценариев из Issue #100.
