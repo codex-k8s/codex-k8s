@@ -499,11 +499,19 @@ export const en = {
     runtimeDeployTasks: {
       title: "Build & Deploy",
       hint: "Full-env/runtime deploy tasks: status, params and detailed execution logs.",
+      realtime: "Realtime",
+      realtimeConnecting: "connecting",
+      realtimeConnected: "connected",
+      realtimeReconnecting: "reconnecting",
     },
     runtimeDeployTaskDetails: {
       title: "Deploy task details",
       summary: "Summary",
       logs: "Task logs",
+      realtime: "Realtime",
+      realtimeConnecting: "connecting",
+      realtimeConnected: "connected",
+      realtimeReconnecting: "reconnecting",
     },
     registryImages: {
       title: "Registry images",
