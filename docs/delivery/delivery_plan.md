@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-23
-related_issues: [1, 19, 74, 100]
+related_issues: [1, 19, 74, 100, 106]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -90,7 +90,7 @@ approvals:
 - Day 20: full e2e regression/security gate + MVP closeout/handover и переход к post-MVP roadmap.
 
 ### Sprint S4: Multi-repo runtime and docs federation (Issue #100)
-- Day 1 (planned): execution foundation для federated multi-repo composition и docs federation (`docs/delivery/epics/epic-s4-day1-multi-repo-composition-and-docs-federation.md`).
+- Day 1 (completed): execution foundation для federated multi-repo composition и docs federation (`docs/delivery/epics/epic-s4-day1-multi-repo-composition-and-docs-federation.md`).
 - Результат Day 1: формальный execution-plan (stories + quality-gates + owner decisions) для перехода в `run:dev`.
 - Следующие day-эпики S4 формируются после Owner review Day 1 и закрытия зависимостей по S3 Day20.
 
@@ -139,7 +139,7 @@ approvals:
 - [ ] Для активного спринта: ежедневный merge -> auto deploy -> smoke check выполнен.
 - [ ] Webhook -> run -> worker -> k8s -> UI цепочка проходит regression.
 - [ ] Для `full-env` подтверждены role-based TTL retention namespace и lease extension на `run:*:revise` (Issue #74).
-- [ ] Для Issue #100 утверждён delivery execution-plan Sprint S4 (federated composition + multi-repo docs federation) и подготовлен handover в `run:dev`.
+- [x] Для Issue #100 зафиксирован delivery execution-plan Sprint S4 (federated composition + multi-repo docs federation) и подготовлен handover в `run:dev`.
 - [ ] Learning mode и self-improve mode проверены на production.
 - [ ] MCP governance tools (secret/db/feedback) прошли approve/deny regression.
 

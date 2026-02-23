@@ -2,11 +2,11 @@
 doc_id: EPC-CK8S-0004
 type: epic
 title: "Epic Catalog: Sprint S4 (Multi-repo runtime and docs federation)"
-status: planned
+status: completed
 owner_role: EM
 created_at: 2026-02-23
 updated_at: 2026-02-23
-related_issues: [100]
+related_issues: [100, 106]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -30,9 +30,9 @@ approvals:
 - Day 1: `docs/delivery/epics/epic-s4-day1-multi-repo-composition-and-docs-federation.md`
 
 ## Прогресс
-- Day 1: planned (execution-plan сформирован, ожидает Owner review).
+- Day 1: completed (execution-plan сформирован, handover в `run:dev` подготовлен в Issue #106).
 
 ## Критерий успеха Sprint S4 (выжимка)
-- Формализованы stories и quality-gates для всех multi-repo сценариев из Issue #100.
-- Утверждён список owner decisions и рисков, влияющих на запуск реализации.
-- Handover в `run:dev` готов без блокирующих пробелов в документации.
+- [x] Формализованы stories и quality-gates для всех multi-repo сценариев из Issue #100.
+- [x] Список owner decisions и рисков, влияющих на запуск реализации, зафиксирован.
+- [x] Handover в `run:dev` готов без блокирующих пробелов в документации.
