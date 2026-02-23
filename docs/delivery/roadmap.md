@@ -5,7 +5,7 @@ title: "codex-k8s — Roadmap"
 status: active
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-14
+updated_at: 2026-02-23
 approvals:
   required: ["Owner"]
   status: approved
@@ -32,11 +32,12 @@ approvals:
 |---|---|---|---|---|
 | Q1 | MVP core + production bootstrap | запустить рабочий production и ручные тесты | one-command bootstrap, green deploy from main | planned |
 | Q2 | Dogfooding + MVP completion | довести `run:*` контур до полного stage-цикла, добавить MCP control tools и `run:self-improve` | >=95% run:dev и >=85% self-improve проходят без ручного обхода policy | in-progress |
-| Q3 | Stage coverage + production readiness | усилить release/postdeploy gate, стабилизировать governance, подготовить prod hardening | prod runbook + approval latency SLO + full stage traceability | planned |
+| Q3 | Stage coverage + production readiness + multi-repo federation | усилить release/postdeploy gate, стабилизировать governance, внедрить federated multi-repo runtime/docs модель | prod runbook + approval latency SLO + full stage traceability + multi-repo A..F regression pass | planned |
 | Q4 | Extensibility and autonomy | custom-агенты, A2A swarm, периодические автозапуски улучшений/проверок | configurable agent factory + scheduled autonomous runs | planned |
 
 ## Backlog кандидатов
 - Contract-first OpenAPI rollout completion: полное покрытие active external/staff API + строгая CI-проверка codegen.
+- Multi-repo execution track (Issue #100): federated `effective services.yaml`, cross-repo composition preview, docs federation rollout (`preview -> enforced`).
 - Split control-plane по внутренним сервисам при росте нагрузки.
 - Vault/KMS интеграция вместо хранения repo token material в БД.
 - Расширенная политика workflow approvals.
