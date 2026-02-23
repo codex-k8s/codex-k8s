@@ -400,6 +400,7 @@ spec:
       namespaceTemplate: "{{ .Project }}-prod"
   projectDocs:
     - path: ./docs/../docs/README.md
+      repository: Core-Docs
       description: "  Main handbook  "
       roles: [DEV, qa, DEV]
 `)
@@ -412,6 +413,9 @@ spec:
 		t.Fatalf("projectDocs len=%d, want 1", len(result.Stack.Spec.ProjectDocs))
 	}
 	item := result.Stack.Spec.ProjectDocs[0]
+	if got, want := item.Repository, "core-docs"; got != want {
+		t.Fatalf("projectDocs[0].repository=%q, want %q", got, want)
+	}
 	if got, want := item.Path, "docs/README.md"; got != want {
 		t.Fatalf("projectDocs[0].path=%q, want %q", got, want)
 	}
@@ -450,8 +454,44 @@ spec:
       namespaceTemplate: "{{ .Project }}-prod"
   projectDocs:
     - path: docs/README.md
+      repository: docs
     - path: ./docs/README.md
-`, "duplicate spec.projectDocs path")
+      repository: docs
+`, "duplicate spec.projectDocs entry")
+
+	path := filepath.Join(t.TempDir(), "services-allow-duplicate-paths.yaml")
+	writeFile(t, path, `
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+  projectDocs:
+    - repository: docs
+      path: docs/README.md
+    - repository: service-api
+      path: docs/README.md
+`)
+	if _, err := Load(path, LoadOptions{Env: "production"}); err != nil {
+		t.Fatalf("expected duplicate path in different repositories to be valid: %v", err)
+	}
+
+	assertLoadErrorContains(t, `
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+  projectDocs:
+    - path: docs/README.md
+      repository: "@invalid"
+`, "projectDocs[0].repository")
 }
 
 func TestLoadFromYAML_SchemaValidationErrors(t *testing.T) {

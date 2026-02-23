@@ -323,6 +323,10 @@ message RepositoryBinding {
   optional string bot_username = 8;
   optional string bot_email = 9;
   optional string preflight_updated_at = 10;
+  string alias = 11;
+  string role = 12;
+  string default_ref = 13;
+  optional string docs_root_path = 14;
 }
 
 message ListProjectRepositoriesRequest {
@@ -343,6 +347,10 @@ message UpsertProjectRepositoryRequest {
   string name = 5;
   string token = 6;
   string services_yaml_path = 7;
+  string alias = 8;
+  string role = 9;
+  string default_ref = 10;
+  optional string docs_root_path = 11;
 }
 
 message DeleteProjectRepositoryRequest {

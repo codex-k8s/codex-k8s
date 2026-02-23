@@ -219,30 +219,74 @@ func buildPromptProjectDocs(stack *servicescfg.Stack, roleKey string) []PromptPr
 	}
 
 	normalizedRole := strings.ToLower(strings.TrimSpace(roleKey))
-	out := make([]PromptProjectDocRef, 0, len(stack.Spec.ProjectDocs))
+	candidates := make([]PromptProjectDocRef, 0, len(stack.Spec.ProjectDocs))
 	for _, item := range stack.Spec.ProjectDocs {
 		path := strings.TrimSpace(item.Path)
 		if path == "" {
 			continue
 		}
+		repository := strings.ToLower(strings.TrimSpace(item.Repository))
 		roles := trimAndFilter(item.Roles)
 		if len(roles) > 0 && normalizedRole != "" && !slices.Contains(roles, normalizedRole) {
 			continue
 		}
-		out = append(out, PromptProjectDocRef{
+		candidates = append(candidates, PromptProjectDocRef{
+			Repository:  repository,
 			Path:        path,
 			Description: strings.TrimSpace(item.Description),
 			Roles:       roles,
 			Optional:    item.Optional,
 		})
 	}
+	if len(candidates) == 0 {
+		return nil
+	}
+
+	sort.SliceStable(candidates, func(i, j int) bool {
+		left := candidates[i]
+		right := candidates[j]
+		leftPriority := promptDocsRepositoryPriority(left.Repository)
+		rightPriority := promptDocsRepositoryPriority(right.Repository)
+		if leftPriority != rightPriority {
+			return leftPriority < rightPriority
+		}
+		if left.Repository != right.Repository {
+			return left.Repository < right.Repository
+		}
+		return left.Path < right.Path
+	})
+
+	out := make([]PromptProjectDocRef, 0, len(candidates))
+	seenPath := make(map[string]struct{}, len(candidates))
+	for _, item := range candidates {
+		key := strings.ToLower(strings.TrimSpace(item.Path))
+		if key == "" {
+			continue
+		}
+		if _, exists := seenPath[key]; exists {
+			continue
+		}
+		seenPath[key] = struct{}{}
+		out = append(out, item)
+	}
 	if len(out) == 0 {
 		return nil
 	}
-	sort.Slice(out, func(i, j int) bool {
-		return out[i].Path < out[j].Path
-	})
 	return out
+}
+
+func promptDocsRepositoryPriority(repository string) int {
+	repository = strings.ToLower(strings.TrimSpace(repository))
+	switch {
+	case repository == "":
+		return 2
+	case strings.Contains(repository, "policy"), strings.Contains(repository, "docs"):
+		return 0
+	case strings.Contains(repository, "orchestrator"):
+		return 1
+	default:
+		return 2
+	}
 }
 
 func buildPromptRoleContext(runCtx resolvedRunContext) PromptRoleContext {

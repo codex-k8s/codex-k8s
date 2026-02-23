@@ -417,7 +417,20 @@ func (s *Service) ListProjectRepositories(ctx context.Context, principal Princip
 }
 
 // UpsertProjectRepository attaches a GitHub repository to a project (requires write role).
-func (s *Service) UpsertProjectRepository(ctx context.Context, principal Principal, projectID string, providerID string, owner string, name string, token string, servicesYAMLPath string) (repocfgrepo.RepositoryBinding, error) {
+func (s *Service) UpsertProjectRepository(
+	ctx context.Context,
+	principal Principal,
+	projectID string,
+	providerID string,
+	owner string,
+	name string,
+	token string,
+	servicesYAMLPath string,
+	alias string,
+	role string,
+	defaultRef string,
+	docsRootPath string,
+) (repocfgrepo.RepositoryBinding, error) {
 	if projectID == "" {
 		return repocfgrepo.RepositoryBinding{}, errs.Validation{Field: "project_id", Msg: "is required"}
 	}
@@ -436,7 +449,7 @@ func (s *Service) UpsertProjectRepository(ctx context.Context, principal Princip
 		return repocfgrepo.RepositoryBinding{}, errs.Validation{Field: "token", Msg: "is required"}
 	}
 
-	role := "admin"
+	memberRole := "admin"
 	if !principal.IsPlatformAdmin {
 		r, ok, err := s.members.GetRole(ctx, projectID, principal.UserID)
 		if err != nil {
@@ -445,14 +458,22 @@ func (s *Service) UpsertProjectRepository(ctx context.Context, principal Princip
 		if !ok {
 			return repocfgrepo.RepositoryBinding{}, errs.Forbidden{Msg: "project access required"}
 		}
-		role = r
+		memberRole = r
 	}
-	if role != "admin" && role != "read_write" {
+	if memberRole != "admin" && memberRole != "read_write" {
 		return repocfgrepo.RepositoryBinding{}, errs.Forbidden{Msg: "project write access required"}
 	}
 
 	if servicesYAMLPath = strings.TrimSpace(servicesYAMLPath); servicesYAMLPath == "" {
 		servicesYAMLPath = "services.yaml"
+	}
+	servicesPathNormalized, err := normalizeRepositoryRelativePath(servicesYAMLPath)
+	if err != nil {
+		return repocfgrepo.RepositoryBinding{}, errs.Validation{Field: "services_yaml_path", Msg: err.Error()}
+	}
+	aliasNormalized, roleNormalized, defaultRefNormalized, docsRootNormalized, err := normalizeRepositoryTopology(owner, name, alias, role, defaultRef, docsRootPath)
+	if err != nil {
+		return repocfgrepo.RepositoryBinding{}, errs.Validation{Field: "repository_topology", Msg: err.Error()}
 	}
 
 	switch provider.Provider(providerID) {
@@ -476,12 +497,16 @@ func (s *Service) UpsertProjectRepository(ctx context.Context, principal Princip
 
 		return s.repos.Upsert(ctx, repocfgrepo.UpsertParams{
 			ProjectID:        projectID,
+			Alias:            aliasNormalized,
+			Role:             roleNormalized,
+			DefaultRef:       defaultRefNormalized,
 			Provider:         string(info.Provider),
 			ExternalID:       info.ExternalID,
 			Owner:            info.Owner,
 			Name:             info.Name,
 			TokenEncrypted:   enc,
-			ServicesYAMLPath: servicesYAMLPath,
+			ServicesYAMLPath: servicesPathNormalized,
+			DocsRootPath:     docsRootNormalized,
 		})
 	default:
 		return repocfgrepo.RepositoryBinding{}, errs.Validation{Field: "provider", Msg: fmt.Sprintf("unsupported provider %q", providerID)}

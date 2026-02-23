@@ -9,6 +9,16 @@ type RepositoryBinding struct {
 
 	ProjectID string
 
+	// Alias is a stable repository key inside one project topology.
+	Alias string
+
+	// Role describes repository purpose in multi-repo topology.
+	// Allowed values: orchestrator, service, docs, mixed.
+	Role string
+
+	// DefaultRef is a default branch/tag used by runtime resolve.
+	DefaultRef string
+
 	// Provider is a repository hosting provider id (e.g. "github").
 	Provider string
 
@@ -23,6 +33,9 @@ type RepositoryBinding struct {
 
 	// ServicesYAMLPath is a path to services.yaml within the repository.
 	ServicesYAMLPath string
+
+	// DocsRootPath is an optional default documentation root path in the repository.
+	DocsRootPath string
 
 	// BotUsername is an optional GitHub bot login associated with this repository.
 	BotUsername string

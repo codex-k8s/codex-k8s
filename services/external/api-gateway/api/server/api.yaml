@@ -1978,11 +1978,18 @@ components:
     RepositoryBinding:
       type: object
       additionalProperties: false
-      required: [id, project_id, provider, external_id, owner, name, services_yaml_path]
+      required: [id, project_id, alias, role, default_ref, provider, external_id, owner, name, services_yaml_path]
       properties:
         id:
           type: string
         project_id:
+          type: string
+        alias:
+          type: string
+        role:
+          type: string
+          enum: [orchestrator, service, docs, mixed]
+        default_ref:
           type: string
         provider:
           type: string
@@ -1995,6 +2002,9 @@ components:
           type: string
         services_yaml_path:
           type: string
+        docs_root_path:
+          type: string
+          nullable: true
         bot_username:
           type: string
           nullable: true
@@ -2473,3 +2483,12 @@ components:
         services_yaml_path:
           type: string
           minLength: 1
+        alias:
+          type: string
+        role:
+          type: string
+          enum: [orchestrator, service, docs, mixed]
+        default_ref:
+          type: string
+        docs_root_path:
+          type: string

@@ -32,6 +32,10 @@ type UpsertProjectRepositoryRequest struct {
 	Name             string `json:"name"`
 	Token            string `json:"token"`
 	ServicesYAMLPath string `json:"services_yaml_path"`
+	Alias            string `json:"alias"`
+	Role             string `json:"role"`
+	DefaultRef       string `json:"default_ref"`
+	DocsRootPath     string `json:"docs_root_path"`
 }
 
 // ResolveApprovalDecisionRequest is a typed payload for pending approval resolution.

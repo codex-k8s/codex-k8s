@@ -179,6 +179,7 @@ type PromptRoleCapability struct {
 
 // PromptProjectDocRef is one role-filtered docs tree entry exported from services.yaml.
 type PromptProjectDocRef struct {
+	Repository  string   `json:"repository,omitempty"`
 	Path        string   `json:"path"`
 	Description string   `json:"description,omitempty"`
 	Roles       []string `json:"roles,omitempty"`

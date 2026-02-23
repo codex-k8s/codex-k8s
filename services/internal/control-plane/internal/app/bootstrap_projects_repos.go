@@ -203,12 +203,16 @@ func ensureBootstrapGitHubRepositoryBinding(ctx context.Context, params ensureBo
 
 		updated, err := params.Repos.Upsert(ctx, repocfgrepo.UpsertParams{
 			ProjectID:        byExternalID.ProjectID,
+			Alias:            strings.ToLower(strings.TrimSpace(info.Owner + "-" + info.Name)),
+			Role:             "service",
+			DefaultRef:       "main",
 			Provider:         string(info.Provider),
 			ExternalID:       info.ExternalID,
 			Owner:            info.Owner,
 			Name:             info.Name,
 			TokenEncrypted:   enc,
 			ServicesYAMLPath: byExternalID.ServicesYAMLPath,
+			DocsRootPath:     "",
 		})
 		if err != nil {
 			return ensuredBootstrapGitHubRepositoryBinding{}, fmt.Errorf("upsert existing repository binding: %w", err)
@@ -241,12 +245,16 @@ func ensureBootstrapGitHubRepositoryBinding(ctx context.Context, params ensureBo
 
 	binding, err := params.Repos.Upsert(ctx, repocfgrepo.UpsertParams{
 		ProjectID:        project.ID,
+		Alias:            strings.ToLower(strings.TrimSpace(info.Owner + "-" + info.Name)),
+		Role:             "service",
+		DefaultRef:       "main",
 		Provider:         string(info.Provider),
 		ExternalID:       info.ExternalID,
 		Owner:            info.Owner,
 		Name:             info.Name,
 		TokenEncrypted:   enc,
 		ServicesYAMLPath: servicesYAMLPath,
+		DocsRootPath:     "",
 	})
 	if err != nil {
 		return ensuredBootstrapGitHubRepositoryBinding{}, fmt.Errorf("upsert repository binding for %s: %w", info.FullName, err)

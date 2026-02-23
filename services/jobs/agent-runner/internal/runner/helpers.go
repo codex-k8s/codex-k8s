@@ -266,6 +266,7 @@ func loadProjectDocsForPrompt(repoDir string, roleKey string, triggerKind string
 		if path == "" {
 			continue
 		}
+		repository := strings.ToLower(strings.TrimSpace(doc.Repository))
 
 		roles := make([]string, 0, len(doc.Roles))
 		for _, rawRole := range doc.Roles {
@@ -280,6 +281,7 @@ func loadProjectDocsForPrompt(repoDir string, roleKey string, triggerKind string
 		}
 
 		items = append(items, promptProjectDocTemplateData{
+			Repository:  repository,
 			Path:        path,
 			Description: strings.TrimSpace(doc.Description),
 			Optional:    doc.Optional,
@@ -289,9 +291,34 @@ func loadProjectDocsForPrompt(repoDir string, roleKey string, triggerKind string
 		return nil, 0, false
 	}
 
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].Path < items[j].Path
+	sort.SliceStable(items, func(i, j int) bool {
+		left := items[i]
+		right := items[j]
+		leftPriority := promptDocsRepositoryPriority(left.Repository)
+		rightPriority := promptDocsRepositoryPriority(right.Repository)
+		if leftPriority != rightPriority {
+			return leftPriority < rightPriority
+		}
+		if left.Repository != right.Repository {
+			return left.Repository < right.Repository
+		}
+		return left.Path < right.Path
 	})
+
+	deduped := make([]promptProjectDocTemplateData, 0, len(items))
+	seenByPath := make(map[string]struct{}, len(items))
+	for _, item := range items {
+		key := strings.ToLower(strings.TrimSpace(item.Path))
+		if key == "" {
+			continue
+		}
+		if _, exists := seenByPath[key]; exists {
+			continue
+		}
+		seenByPath[key] = struct{}{}
+		deduped = append(deduped, item)
+	}
+	items = deduped
 
 	total := len(items)
 	trimmed := false
@@ -314,6 +341,20 @@ func resolvePromptDocsEnv(triggerKind string, runtimeMode string) string {
 		}
 	}
 	return "production"
+}
+
+func promptDocsRepositoryPriority(repository string) int {
+	repository = strings.ToLower(strings.TrimSpace(repository))
+	switch {
+	case repository == "":
+		return 2
+	case strings.Contains(repository, "policy"), strings.Contains(repository, "docs"):
+		return 0
+	case strings.Contains(repository, "orchestrator"):
+		return 1
+	default:
+		return 2
+	}
 }
 
 func normalizeTriggerKind(value string) string {

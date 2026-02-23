@@ -3,6 +3,9 @@ package query
 // RepositoryBindingUpsertParams defines inputs for repository binding upsert.
 type RepositoryBindingUpsertParams struct {
 	ProjectID  string
+	Alias      string
+	Role       string
+	DefaultRef string
 	Provider   string
 	ExternalID int64
 	Owner      string
@@ -12,6 +15,7 @@ type RepositoryBindingUpsertParams struct {
 	TokenEncrypted []byte
 
 	ServicesYAMLPath string
+	DocsRootPath     string
 }
 
 // RepositoryBindingFindResult is a lookup result for webhook->project binding resolution.

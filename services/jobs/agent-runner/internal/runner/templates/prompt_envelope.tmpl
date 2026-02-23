@@ -23,7 +23,7 @@
 {{- if .ProjectDocs }}
 Контекст проектной документации (role-aware):
 {{- range .ProjectDocs }}
-- `{{ .Path }}`{{ if .Description }} — {{ .Description }}{{ end }}{{ if .Optional }} (optional){{ end }}
+- `{{ if .Repository }}{{ .Repository }}:{{ end }}{{ .Path }}`{{ if .Description }} — {{ .Description }}{{ end }}{{ if .Optional }} (optional){{ end }}
 {{- end }}
 {{- if .ProjectDocsTrimmed }}
 - Показано {{ len .ProjectDocs }} из {{ .ProjectDocsTotal }} ссылок (сокращено для контроля размера промпта).
@@ -138,7 +138,7 @@ Role profile:
 {{- if .ProjectDocs }}
 Project documentation context (role-aware):
 {{- range .ProjectDocs }}
-- `{{ .Path }}`{{ if .Description }} — {{ .Description }}{{ end }}{{ if .Optional }} (optional){{ end }}
+- `{{ if .Repository }}{{ .Repository }}:{{ end }}{{ .Path }}`{{ if .Description }} — {{ .Description }}{{ end }}{{ if .Optional }} (optional){{ end }}
 {{- end }}
 {{- if .ProjectDocsTrimmed }}
 - Showing {{ len .ProjectDocs }} of {{ .ProjectDocsTotal }} references (trimmed to control prompt size).

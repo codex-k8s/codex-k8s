@@ -174,6 +174,7 @@ type SecretOverridePattern struct {
 
 // ProjectDocRef declares one documentation path to include in prompt context.
 type ProjectDocRef struct {
+	Repository  string   `yaml:"repository,omitempty"`
 	Path        string   `yaml:"path"`
 	Description string   `yaml:"description,omitempty"`
 	Roles       []string `yaml:"roles,omitempty"`
