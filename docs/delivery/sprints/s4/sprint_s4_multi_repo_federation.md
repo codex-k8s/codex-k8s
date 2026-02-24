@@ -42,7 +42,7 @@ approvals:
 
 | День | Эпик | Priority | Документ | Статус |
 |---|---|---|---|---|
-| Day 1 | Multi-repo composition and docs federation execution foundation | P0 | `docs/delivery/epics/epic-s4-day1-multi-repo-composition-and-docs-federation.md` | completed |
+| Day 1 | Multi-repo composition and docs federation execution foundation | P0 | `docs/delivery/epics/s4/epic-s4-day1-multi-repo-composition-and-docs-federation.md` | completed |
 
 ## Daily gate (обязательно)
 - Кодовые и документационные изменения синхронизированы в рамках одного PR.

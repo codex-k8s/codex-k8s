@@ -29,16 +29,16 @@ approvals:
 
 | День | Эпик | Priority | Документ | Статус |
 |---|---|---|---|---|
-| Day 0 | Control-plane extraction + thin-edge gateway | P0 | `docs/delivery/epics/epic-s2-day0-control-plane-extraction.md` | completed |
-| Day 1 | Migrations/schema ownership + OpenAPI contract-first baseline | P0 | `docs/delivery/epics/epic-s2-day1-migrations-and-schema-ownership.md` | completed |
-| Day 2 | Issue label triggers: `run:dev`, `run:dev:revise` | P0 | `docs/delivery/epics/epic-s2-day2-issue-label-triggers-run-dev.md` | completed |
-| Day 3 | Per-issue namespace + RBAC/resource policy baseline | P0 | `docs/delivery/epics/epic-s2-day3-per-issue-namespace-and-rbac.md` | completed |
-| Day 3.5 | MCP GitHub/K8s tools + prompt context assembler | P0 | `docs/delivery/epics/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md` | completed |
-| Day 4 | Agent job image + git/PR flow via MCP | P0 | `docs/delivery/epics/epic-s2-day4-agent-job-and-pr-flow.md` | completed |
-| Day 4.5 | PGX + db-model rollout for repository layer | P0 | `docs/delivery/epics/epic-s2-day4.5-pgx-db-models-and-repository-refactor.md` | completed |
-| Day 5 | Staff UI: dogfooding visibility + drilldowns | P1 | `docs/delivery/epics/epic-s2-day5-staff-ui-dogfooding-observability.md` | completed |
-| Day 6 | Approval matrix + MCP control tools + audit hardening | P0 | `docs/delivery/epics/epic-s2-day6-approval-and-audit-hardening.md` | completed |
-| Day 7 | MVP readiness regression gate + Sprint S3 kickoff package | P0 | `docs/delivery/epics/epic-s2-day7-dogfooding-regression-gate.md` | completed |
+| Day 0 | Control-plane extraction + thin-edge gateway | P0 | `docs/delivery/epics/s2/epic-s2-day0-control-plane-extraction.md` | completed |
+| Day 1 | Migrations/schema ownership + OpenAPI contract-first baseline | P0 | `docs/delivery/epics/s2/epic-s2-day1-migrations-and-schema-ownership.md` | completed |
+| Day 2 | Issue label triggers: `run:dev`, `run:dev:revise` | P0 | `docs/delivery/epics/s2/epic-s2-day2-issue-label-triggers-run-dev.md` | completed |
+| Day 3 | Per-issue namespace + RBAC/resource policy baseline | P0 | `docs/delivery/epics/s2/epic-s2-day3-per-issue-namespace-and-rbac.md` | completed |
+| Day 3.5 | MCP GitHub/K8s tools + prompt context assembler | P0 | `docs/delivery/epics/s2/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md` | completed |
+| Day 4 | Agent job image + git/PR flow via MCP | P0 | `docs/delivery/epics/s2/epic-s2-day4-agent-job-and-pr-flow.md` | completed |
+| Day 4.5 | PGX + db-model rollout for repository layer | P0 | `docs/delivery/epics/s2/epic-s2-day4.5-pgx-db-models-and-repository-refactor.md` | completed |
+| Day 5 | Staff UI: dogfooding visibility + drilldowns | P1 | `docs/delivery/epics/s2/epic-s2-day5-staff-ui-dogfooding-observability.md` | completed |
+| Day 6 | Approval matrix + MCP control tools + audit hardening | P0 | `docs/delivery/epics/s2/epic-s2-day6-approval-and-audit-hardening.md` | completed |
+| Day 7 | MVP readiness regression gate + Sprint S3 kickoff package | P0 | `docs/delivery/epics/s2/epic-s2-day7-dogfooding-regression-gate.md` | completed |
 
 ## Daily gate (обязательно)
 - Планирование/DoR на день выполнены.

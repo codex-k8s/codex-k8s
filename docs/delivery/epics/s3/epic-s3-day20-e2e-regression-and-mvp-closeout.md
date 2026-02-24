@@ -5,8 +5,8 @@ title: "Epic S3 Day 20: Full e2e regression gate and MVP closeout"
 status: planned
 owner_role: EM
 created_at: 2026-02-18
-updated_at: 2026-02-19
-related_issues: [19]
+updated_at: 2026-02-24
+related_issues: [19, 112]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -21,6 +21,7 @@ approvals:
 ## TL;DR
 - Цель: выполнить финальный full e2e после закрытия core-flow и frontend hardening, собрать evidence bundle и завершить MVP formal handover.
 - Результат: подтверждён end-to-end контур (bootstrap -> deploy -> run lifecycle -> governance/UI), сформирован go/no-go пакет для Owner.
+- Детальный сценарный план и матрица label coverage вынесены в `docs/delivery/e2e_mvp_master_plan.md`.
 
 ## Priority
 - `P0`.
@@ -55,6 +56,11 @@ approvals:
 - Story-2: прогон e2e smoke + regression сценариев.
 - Story-3: security/reliability checks + устранение найденных блокеров.
 - Story-4: финальный handover пакет и owner sign-off.
+
+## Execution package
+- Канонический test-plan: `docs/delivery/e2e_mvp_master_plan.md`.
+- Label coverage: `run:*`, `run:*:revise`, `state:*`, `need:*`, `[ai-model-*]`, `[ai-reasoning-*]`.
+- Обязательные зоны: review-driven revise, MCP governance tools, runtime TTL/revise reuse, security/RBAC, docs/traceability consistency.
 
 ## Критерии приемки
 - Full e2e проходит без P0 блокеров.

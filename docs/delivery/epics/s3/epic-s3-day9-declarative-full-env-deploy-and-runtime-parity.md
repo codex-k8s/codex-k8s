@@ -133,7 +133,7 @@ approvals:
   - правило `codex-k8s production => {{ .Project }}-production` валидируется в loader;
   - namespace-level изоляция runtime и anti-conflict guardrails включены в текущий full-env путь.
 - Story-8 (`moved`):
-  - full e2e на чистом VPS вынесен в финальный закрывающий эпик `docs/delivery/epics/epic-s3-day20-e2e-regression-and-mvp-closeout.md`;
+  - full e2e на чистом VPS вынесен в финальный закрывающий эпик `docs/delivery/epics/s3/epic-s3-day20-e2e-regression-and-mvp-closeout.md`;
   - причина переноса: до e2e нужно закрыть оставшиеся core-flow блоки (prompt/templates, oauth override model, runtime error journal) и пройти ручной frontend цикл.
 
 ## Текущий статус критериев приемки (2026-02-18)

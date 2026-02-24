@@ -5,7 +5,7 @@ title: "Sprint S2 Regression Gate (production)"
 status: completed
 owner_role: QA
 created_at: 2026-02-13
-updated_at: 2026-02-13
+updated_at: 2026-02-24
 related_issues: [19]
 related_prs: [20, 22, 23]
 approvals:
@@ -21,12 +21,9 @@ approvals:
 Цель: зафиксировать воспроизводимый regression bundle по dogfooding baseline S2 перед стартом Sprint S3.
 
 ## Preconditions
-- Актуальный deploy на `main` завершился успешно:
-  - workflow run: `21985095587`
-  - job: `Deploy codex-k8s to production`
-  - conclusion: `success`.
 - В namespace production все ключевые deploy в состоянии `READY 1/1`:
   - `codex-k8s`, `codex-k8s-control-plane`, `codex-k8s-worker`, `codex-k8s-web-console`, `oauth2-proxy`.
+- Логи `control-plane` и `worker` не содержат активных `panic`/`crashloop`/`failed_precondition` для текущего окна проверки.
 
 ## Regression matrix (S2 Day7)
 
@@ -43,9 +40,6 @@ approvals:
 ## Команды проверки (фактически выполненные)
 
 ```bash
-# GitHub workflow status
-gh run view -R "$CODEXK8S_GITHUB_REPO" 21985095587 --json workflowName,status,conclusion,jobs,url
-
 # Production health
 kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" get deploy,pods,jobs
 kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s-worker --tail=80

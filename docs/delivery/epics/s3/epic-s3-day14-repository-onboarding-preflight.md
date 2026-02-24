@@ -27,8 +27,8 @@ approvals:
 - `P0`.
 
 ## Зависимости
-- Требует базовой модели конфигов и fallback кредов из `docs/delivery/epics/epic-s3-day13-config-and-credentials-governance.md`.
-- Domain preflight должен быть согласован с full-env `domainTemplate` из `docs/delivery/epics/epic-s3-day11-full-env-slots-and-subdomains.md`.
+- Требует базовой модели конфигов и fallback кредов из `docs/delivery/epics/s3/epic-s3-day13-config-and-credentials-governance.md`.
+- Domain preflight должен быть согласован с full-env `domainTemplate` из `docs/delivery/epics/s3/epic-s3-day11-full-env-slots-and-subdomains.md`.
 
 ## Scope
 ### In scope (MVP)

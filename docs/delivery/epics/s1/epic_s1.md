@@ -2,10 +2,10 @@
 doc_id: EPC-CK8S-0001
 type: epic
 title: "Epic Catalog: Sprint S1 (MVP vertical slice, Day 0..7)"
-status: active
+status: completed
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-11
+updated_at: 2026-02-24
 related_issues: [1]
 related_prs: []
 approvals:
@@ -38,14 +38,14 @@ approvals:
 - Подробные технические задачи внутри PR (это уровень story/task в рамках каждого эпика).
 
 ## Декомпозиция (Stories/Tasks)
-- Day 0: `docs/delivery/epics/epic-s1-day0-bootstrap-baseline.md`
-- Day 1: `docs/delivery/epics/epic-s1-day1-webhook-idempotency.md`
-- Day 2: `docs/delivery/epics/epic-s1-day2-worker-slots-k8s.md`
-- Day 3: `docs/delivery/epics/epic-s1-day3-auth-rbac-ui.md`
-- Day 4: `docs/delivery/epics/epic-s1-day4-repository-provider.md`
-- Day 5: `docs/delivery/epics/epic-s1-day5-learning-mode.md`
-- Day 6: `docs/delivery/epics/epic-s1-day6-hardening-observability.md`
-- Day 7: `docs/delivery/epics/epic-s1-day7-stabilization-gate.md`
+- Day 0: `docs/delivery/epics/s1/epic-s1-day0-bootstrap-baseline.md`
+- Day 1: `docs/delivery/epics/s1/epic-s1-day1-webhook-idempotency.md`
+- Day 2: `docs/delivery/epics/s1/epic-s1-day2-worker-slots-k8s.md`
+- Day 3: `docs/delivery/epics/s1/epic-s1-day3-auth-rbac-ui.md`
+- Day 4: `docs/delivery/epics/s1/epic-s1-day4-repository-provider.md`
+- Day 5: `docs/delivery/epics/s1/epic-s1-day5-learning-mode.md`
+- Day 6: `docs/delivery/epics/s1/epic-s1-day6-hardening-observability.md`
+- Day 7: `docs/delivery/epics/s1/epic-s1-day7-stabilization-gate.md`
 
 ## Приоритеты Sprint S1
 - `P0`: Day 0, Day 1, Day 2, Day 3, Day 4, Day 7.
