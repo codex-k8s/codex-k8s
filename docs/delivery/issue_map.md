@@ -34,6 +34,7 @@ approvals:
 | #100 | `docs/delivery/issue_map.md` + `docs/delivery/requirements_traceability.md` + `docs/delivery/sprints/s4/sprint_s4_multi_repo_federation.md` + `docs/delivery/epics/s4/epic_s4.md` + `docs/delivery/epics/s4/epic-s4-day1-multi-repo-composition-and-docs-federation.md` | `docs/product/requirements_machine_driven.md` + `docs/product/brief.md` | `docs/architecture/multi_repo_mode_design.md`, `docs/architecture/data_model.md`, `docs/architecture/api_contract.md`, `docs/architecture/prompt_templates_policy.md`, `docs/architecture/adr/ADR-0007-multi-repo-composition-and-docs-federation.md` | `ADR-0007` | Completed (Issue #106): execution package для federated multi-repo runtime и docs federation финализирован (кейсы A..F, Story-1..Story-7, quality-gates, rollout `preview -> enforced`) | TBD | TBD | completed (day1) |
 | #107 | `docs/delivery/issue_map.md` + `docs/delivery/requirements_traceability.md` + `docs/delivery/sprints/s3/sprint_s3_mvp_completion.md` + `docs/delivery/epics/s3/epic_s3.md` + `docs/delivery/epics/s3/epic-s3-day19.6-staff-realtime-subscriptions-and-ui.md` | `docs/product/requirements_machine_driven.md` + `docs/product/labels_and_trigger_policy.md` + `docs/product/stage_process_model.md` | `docs/architecture/api_contract.md` + `services/external/api-gateway/api/server/asyncapi.yaml` + `docs/design-guidelines/vue/frontend_data_and_state.md` | `ADR-0001..0006` | RuntimeDeployTasks/RuntimeDeployTaskDetails переведены на WebSocket-подписки через `run realtime` endpoint; ручной refresh убран на realtime-экранах, добавлены realtime-индикаторы и fallback polling | Проверки frontend: `npm --prefix services/staff/web-console run build` | TBD | TBD | in-progress |
 | #112 | `docs/delivery/issue_map.md` + `docs/delivery/requirements_traceability.md` + `docs/delivery/delivery_plan.md` + `docs/delivery/e2e_mvp_master_plan.md` + `docs/delivery/sprints/README.md` + `docs/delivery/epics/README.md` | `docs/product/requirements_machine_driven.md` + `docs/product/labels_and_trigger_policy.md` + `docs/product/stage_process_model.md` | `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/prompt_templates_policy.md` | `ADR-0001..0007` | Выполнена нормализация структуры sprint/epic по папкам, синхронизированы ссылки и подготовлен полный E2E master-plan для MVP c label coverage | `docs/delivery/e2e_mvp_master_plan.md` | TBD | TBD | in-progress |
+| #154 | `docs/delivery/issue_map.md` + `docs/delivery/requirements_traceability.md` + `docs/delivery/sprints/s5/sprint_s5_stage_entry_and_label_ux.md` + `docs/delivery/epics/s5/epic_s5.md` + `docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md` | `docs/product/requirements_machine_driven.md` + `docs/product/labels_and_trigger_policy.md` + `docs/product/stage_process_model.md` | `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md` | `ADR-0006` | Intake-этап зафиксировал profile-driven модель запуска (`quick-fix/feature/new-service`) и обязательный fallback для next-step действий при нерабочих web-ссылках | Acceptance matrix S5 Day1 (planned), fallback/broken-link и ambiguity сценарии включены | TBD | TBD | in-progress |
 
 ## Требования и трассировка
 - Source of truth требований: `docs/product/requirements_machine_driven.md`.
@@ -68,6 +69,12 @@ approvals:
 - Epic catalog: `docs/delivery/epics/s4/epic_s4.md`.
 - Epic docs: `docs/delivery/epics/s4/epic-s4-day1-multi-repo-composition-and-docs-federation.md`.
 - Факт на 2026-02-23: Day1 epic для Issue #100 закрыт в Issue #106; execution-plan зафиксирован и handover в `run:dev` подготовлен.
+
+## Sprint S5 артефакты
+- Sprint plan: `docs/delivery/sprints/s5/sprint_s5_stage_entry_and_label_ux.md`.
+- Epic catalog: `docs/delivery/epics/s5/epic_s5.md`.
+- Epic docs: `docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md`.
+- Факт на 2026-02-24: Intake-пакет для Issue #154 подготовлен; следующий этап — `run:vision`/`run:prd` для уточнения product scope перед `run:dev`.
 
 ## Нормализованная структура Delivery (Issue #112)
 - Sprint index: `docs/delivery/sprints/README.md`.

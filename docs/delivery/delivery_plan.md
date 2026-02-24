@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-24
-related_issues: [1, 19, 74, 100, 106, 112]
+related_issues: [1, 19, 74, 100, 106, 112, 154]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -45,6 +45,8 @@ approvals:
 - Epic S3 catalog: `docs/delivery/epics/s3/epic_s3.md`
 - Sprint S4 plan: `docs/delivery/sprints/s4/sprint_s4_multi_repo_federation.md`
 - Epic S4 catalog: `docs/delivery/epics/s4/epic_s4.md`
+- Sprint S5 plan: `docs/delivery/sprints/s5/sprint_s5_stage_entry_and_label_ux.md`
+- Epic S5 catalog: `docs/delivery/epics/s5/epic_s5.md`
 - Sprint index: `docs/delivery/sprints/README.md`
 - Epic index: `docs/delivery/epics/README.md`
 - E2E master plan: `docs/delivery/e2e_mvp_master_plan.md`
@@ -96,6 +98,10 @@ approvals:
 - Day 1 (completed): execution foundation для federated multi-repo composition и docs federation (`docs/delivery/epics/s4/epic-s4-day1-multi-repo-composition-and-docs-federation.md`).
 - Результат Day 1: формальный execution-plan (stories + quality-gates + owner decisions) для перехода в `run:dev`.
 - Следующие day-эпики S4 формируются после Owner review Day 1 и закрытия зависимостей по S3 Day20.
+
+### Sprint S5: Stage entry and label UX orchestration (Issue #154)
+- Day 1 (planned): launch profiles + deterministic next-step actions (`docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md`).
+- Результат Day 1 (ожидаемый): owner-ready execution package для устранения ручных ошибок label-flow и нерабочих next-step ссылок.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
