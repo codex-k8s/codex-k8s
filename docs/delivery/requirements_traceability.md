@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-24
-related_issues: [1, 19, 74, 90, 100, 112]
+related_issues: [1, 19, 74, 90, 100, 112, 139]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -77,7 +77,7 @@ approvals:
 | FR-049 | Repo onboarding preflight (GitHub ops + domain resolution) | `docs/product/requirements_machine_driven.md`, `docs/delivery/epics/s3/epic-s3-day14-repository-onboarding-preflight.md` | covered |
 | FR-050 | Prompt context docs tree + role-aware capabilities | `docs/product/requirements_machine_driven.md`, `docs/architecture/prompt_templates_policy.md`, `docs/delivery/epics/s3/epic-s3-day15-mvp-closeout-and-handover.md` | covered |
 | FR-051 | GitHub run service messages v2 + slot URL for full-env | `docs/product/requirements_machine_driven.md`, `docs/architecture/api_contract.md`, `docs/delivery/epics/s3/epic-s3-day15-mvp-closeout-and-handover.md` | covered |
-| FR-052 | Review-driven revise resolver + stage-aware next-step action cards | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/adr/ADR-0006-review-driven-revise-and-next-step-ux.md` | covered |
+| FR-052 | Review-driven revise resolver + stage-aware next-step action cards | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/adr/ADR-0006-review-driven-revise-and-next-step-ux.md`, `docs/delivery/e2e_mvp_master_plan.md`, `docs/delivery/sprints/s3/sprint_s3_mvp_completion.md` | covered |
 | NFR-001 | Security baseline | `docs/product/requirements_machine_driven.md`, `docs/product/constraints.md`, `AGENTS.md` | covered |
 | NFR-002 | Multi-pod consistency | `docs/product/requirements_machine_driven.md`, `docs/architecture/c4_container.md`, `docs/architecture/data_model.md` | covered |
 | NFR-003 | No event outbox on MVP | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/constraints.md` | covered |
@@ -95,7 +95,7 @@ approvals:
 | NFR-015 | Операционная latency для runtime debug UI | `docs/product/requirements_machine_driven.md`, `docs/architecture/api_contract.md`, `docs/delivery/epics/s3/epic-s3-day2-staff-runtime-debug-console.md` | covered |
 | NFR-016 | Idempotent и secret-safe поведение MCP control tools | `docs/product/requirements_machine_driven.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/delivery/epics/s2/epic-s2-day6-approval-and-audit-hardening.md`, `docs/delivery/epics/s3/epic-s3-day3-mcp-deterministic-secret-sync.md`, `docs/delivery/epics/s3/epic-s3-day4-mcp-database-lifecycle.md` | covered |
 | NFR-017 | Воспроизводимость self-improve цикла | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/delivery/epics/s3/epic-s3-day6-self-improve-ingestion-and-diagnostics.md`, `docs/delivery/epics/s3/epic-s3-day7-self-improve-updater-and-pr-flow.md`, `docs/delivery/epics/s3/epic-s3-day8-agent-toolchain-auto-extension.md` | covered |
-| NFR-018 | Консистентность переходов full stage-flow | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/delivery/epics/s3/epic-s3-day1-full-stage-and-label-activation.md`, `docs/delivery/epics/s3/epic-s3-day20-e2e-regression-and-mvp-closeout.md`, `docs/delivery/e2e_mvp_master_plan.md` | covered |
+| NFR-018 | Консистентность переходов full stage-flow | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/delivery/epics/s3/epic-s3-day1-full-stage-and-label-activation.md`, `docs/delivery/epics/s3/epic-s3-day20-e2e-regression-and-mvp-closeout.md`, `docs/delivery/e2e_mvp_master_plan.md`, `docs/delivery/issue_map.md` | covered |
 
 ## Правило актуализации
 - Любое новое требование сначала добавляется в `docs/product/requirements_machine_driven.md`, затем отражается в этой матрице.
