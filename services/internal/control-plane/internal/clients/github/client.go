@@ -79,8 +79,12 @@ func (c *Client) GetAuthenticatedUserLogin(ctx context.Context, token string) (s
 func (c *Client) ListIssueComments(ctx context.Context, params mcpdomain.GitHubListIssueCommentsParams) ([]mcpdomain.GitHubIssueComment, error) {
 	client := c.clientWithToken(params.Token)
 	limit := clampLimit(params.Limit, defaultPageSize, maxPageSize)
+	sortByUpdated := "updated"
+	sortDirectionDesc := "desc"
 
 	items, _, err := client.Issues.ListComments(ctx, params.Owner, params.Repository, params.IssueNumber, &gh.IssueListCommentsOptions{
+		Sort:        &sortByUpdated,
+		Direction:   &sortDirectionDesc,
 		ListOptions: gh.ListOptions{PerPage: limit},
 	})
 	if err != nil {
