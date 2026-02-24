@@ -6,7 +6,7 @@ status: active
 owner_role: QA
 created_at: 2026-02-24
 updated_at: 2026-02-24
-related_issues: [19, 74, 95, 100, 112]
+related_issues: [19, 74, 95, 100, 112, 132]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -55,6 +55,7 @@ approvals:
 | Группа | Label | Минимальный сценарий | Ожидаемый результат |
 |---|---|---|---|
 | Product stages | `run:intake`, `run:vision`, `run:prd` | запуск stage + выпуск docs артефакта | PR/Issue traceability обновлена, `state:in-review` установлен |
+| Product revise loop | `run:prd:revise` | повторный запуск по ревью/дубликату webhook delivery | создаётся не более одного нового run на уникальный trigger; duplicate-delivery фиксируется как no-op в audit |
 | Architecture/design stages | `run:arch`, `run:design`, `run:plan` | stage run + проверка связей в delivery docs | day/sprint/issue_map синхронизированы |
 | Implementation | `run:dev`, `run:dev:revise` | создание PR + итерация по review | PR обновлён, revise flow без ambiguity |
 | Verification/release | `run:qa`, `run:release`, `run:postdeploy`, `run:ops` | выпуск тест/release/ops артефактов | chain completion без нарушения policy |
@@ -99,6 +100,10 @@ approvals:
 - B1: `changes_requested` при одном stage label на PR.
 - B2: ambiguous labels -> `need:input` без старта revise.
 - B3: sticky model/reasoning profile между revise-итерациями.
+- B4 (Issue #132): идемпотентность для `run:prd` и `run:prd:revise` при повторной доставке одного и того же webhook event/delivery id.
+  - Expected: создаётся ровно один run на уникальную trigger-операцию;
+  - Expected: повторная обработка того же delivery фиксируется как duplicate/no-op без повторной постановки `state:in-review`;
+  - Expected: в `flow_events` есть явная диагностика причины no-op.
 
 ### Набор C. MCP governance tools
 - C1: `github_labels_list|add|remove|transition` с audit trail.
@@ -139,6 +144,18 @@ approvals:
 - Матрица label coverage пройдена полностью.
 - Security/RBAC проверки пройдены без критичных нарушений.
 - Документация и traceability синхронизированы по факту прогона.
+
+## Acceptance Criteria для Issue #132 (`run:prd` + `run:prd:revise`, post-idempotency-fix)
+- AC-132-1: для `run:prd` повторный webhook delivery с тем же delivery-id не создаёт второй run; фиксируется duplicate/no-op событие в audit.
+- AC-132-2: для `run:prd:revise` повторный webhook delivery с тем же delivery-id не создаёт второй revise-run и не дублирует label transition.
+- AC-132-3: после успешного run выполняется единичный transition: trigger label снят с Issue, `state:in-review` установлен на целевых сущностях по stage-policy.
+- AC-132-4: evidence содержит ссылки на `agent_runs`/`flow_events` и подтверждает детерминированность результата при повторном delivery.
+
+## Открытые риски и продуктовые допущения (Issue #132)
+- Риск: если GitHub доставляет события не только duplicate, но и out-of-order, то возможен ложный `need:input` при гонке stage-resolve.
+- Риск: в mixed mode (`code-only` + `full-env`) задержка записи audit-событий может затруднить быструю диагностику duplicate/no-op.
+- Допущение: dedup выполняется по стабильному ключу delivery/event и одинаково применяется для `run:prd` и `run:prd:revise`.
+- Допущение: label transitions выполняются только через MCP policy path, что исключает «второй источник» мутаций статусов.
 
 ## Источники фактов (актуализировано на 2026-02-24 через Context7)
 - Kubernetes rollout/status checks: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
