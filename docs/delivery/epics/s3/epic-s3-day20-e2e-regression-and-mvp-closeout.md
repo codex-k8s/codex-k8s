@@ -7,7 +7,7 @@ owner_role: EM
 created_at: 2026-02-18
 updated_at: 2026-02-24
 related_issues: [19, 112, 128]
-related_prs: []
+related_prs: [129]
 approvals:
   required: ["Owner"]
   status: approved
@@ -68,6 +68,12 @@ approvals:
 - E2E-checkpoint по Issue #128 для `run:intake` и `run:intake:revise` подтверждён и отражён в traceability docs.
 - Собран и опубликован evidence bundle (команды, логи, ссылки на run/deploy artifacts).
 - Owner получает go/no-go пакет и подтверждает завершение MVP фазы.
+
+## Execution evidence (Issue #128 intake revise)
+- PR: `https://github.com/codex-k8s/codex-k8s/pull/129`.
+- Run `aa46a919-d6c4-4512-a7e1-17e088a3a5c2`: intake baseline (Issue #128).
+- Run `d2fe5bdb-6c02-460a-92d4-7583b3ad4787`: intake revise loop (Issue #128).
+- Документы-трассировки: `docs/delivery/e2e_mvp_master_plan.md`, `docs/delivery/issue_map.md`.
 
 ## Риски/зависимости
 - Зависимость от готовности чистого VPS и валидного e2e config.

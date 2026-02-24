@@ -7,7 +7,7 @@ owner_role: QA
 created_at: 2026-02-24
 updated_at: 2026-02-24
 related_issues: [19, 74, 95, 100, 112, 128]
-related_prs: []
+related_prs: [129]
 approvals:
   required: ["Owner"]
   status: pending
@@ -102,6 +102,12 @@ approvals:
 - A0.3: прогон `run:intake:revise` после комментария/уточнения и проверка корректной revise-петли.
 - A0.4: финальный label transition: снятие trigger-лейбла с issue и фиксация `state:in-review` в контуре review.
 - Gate: нет конфликтов `run:*`, сохраняется детерминированная трассировка `issue -> e2e-plan -> issue_map`.
+
+### Факт выполнения A0 (Issue #128, 2026-02-24)
+- Run `aa46a919-d6c4-4512-a7e1-17e088a3a5c2` (`run:intake`): intake-артефакт выпущен в markdown scope, сформирован PR `#129`.
+- Run `d2fe5bdb-6c02-460a-92d4-7583b3ad4787` (`run:intake:revise`): revise-итерация выполнена в той же ветке, traceability-документы синхронизированы.
+- Label transition check: для Issue #128 trigger-лейбл `run:intake:revise` снимается, `state:in-review` удерживается на Issue и PR.
+- PR evidence: `https://github.com/codex-k8s/codex-k8s/pull/129`.
 
 ### Набор B. Review-driven revise (Issue #95)
 - B1: `changes_requested` при одном stage label на PR.
