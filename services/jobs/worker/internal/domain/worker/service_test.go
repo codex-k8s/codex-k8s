@@ -98,7 +98,7 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 	}
 }
 
-func TestTickSkipsCodeOnlyRun(t *testing.T) {
+func TestTickLaunchesCodeOnlyRunWorkload(t *testing.T) {
 	t.Parallel()
 
 	runs := &fakeRunQueue{
@@ -134,20 +134,23 @@ func TestTickSkipsCodeOnlyRun(t *testing.T) {
 		t.Fatalf("Tick() error = %v", err)
 	}
 
-	if len(launcher.launched) != 0 {
-		t.Fatalf("expected no launched jobs for code-only run, got %d", len(launcher.launched))
+	if len(launcher.launched) != 1 {
+		t.Fatalf("expected 1 launched job for code-only run, got %d", len(launcher.launched))
 	}
-	if len(runs.finished) != 1 {
-		t.Fatalf("expected 1 finished run, got %d", len(runs.finished))
+	if launcher.launched[0].RunID != "run-code-only" {
+		t.Fatalf("expected launched run %q, got %q", "run-code-only", launcher.launched[0].RunID)
 	}
-	if runs.finished[0].Status != rundomain.StatusSucceeded {
-		t.Fatalf("expected code-only run to finish as succeeded, got %s", runs.finished[0].Status)
+	if len(runs.finished) != 0 {
+		t.Fatalf("expected no finished runs before job completion, got %d", len(runs.finished))
 	}
-	if runs.finished[0].LeaseOwner != "worker-1" {
-		t.Fatalf("expected finish lease owner %q, got %q", "worker-1", runs.finished[0].LeaseOwner)
+	if len(events.inserted) != 2 {
+		t.Fatalf("expected run.profile.resolved + run.started events, got %d", len(events.inserted))
 	}
-	if len(events.inserted) != 1 || events.inserted[0].EventType != floweventdomain.EventTypeRunSucceeded {
-		t.Fatalf("expected single run.succeeded event, got %#v", events.inserted)
+	if events.inserted[0].EventType != floweventdomain.EventTypeRunProfileResolved {
+		t.Fatalf("expected first event run.profile.resolved, got %s", events.inserted[0].EventType)
+	}
+	if events.inserted[1].EventType != floweventdomain.EventTypeRunStarted {
+		t.Fatalf("expected second event run.started, got %s", events.inserted[1].EventType)
 	}
 }
 
@@ -432,7 +435,7 @@ func TestTickDeployOnlyRunningRun_IsReconciledWithoutKubernetesJob(t *testing.T)
 	}
 }
 
-func TestTickCodeOnlyRunningRun_IsReconciledWithoutKubernetesJob(t *testing.T) {
+func TestTickCodeOnlyRunningRun_IsReconciledByWorkloadState(t *testing.T) {
 	t.Parallel()
 
 	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"}}`)
@@ -448,7 +451,7 @@ func TestTickCodeOnlyRunningRun_IsReconciledWithoutKubernetesJob(t *testing.T) {
 		},
 	}
 	events := &fakeFlowEvents{}
-	launcher := &fakeLauncher{states: map[string]JobState{}, statusErr: context.Canceled}
+	launcher := &fakeLauncher{states: map[string]JobState{"run-code-only": JobStateSucceeded}}
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 
 	svc := NewService(Config{
@@ -473,7 +476,7 @@ func TestTickCodeOnlyRunningRun_IsReconciledWithoutKubernetesJob(t *testing.T) {
 		t.Fatalf("expected 1 finished run, got %d", len(runs.finished))
 	}
 	if runs.finished[0].Status != rundomain.StatusSucceeded {
-		t.Fatalf("expected code-only running run to finish as succeeded, got %s", runs.finished[0].Status)
+		t.Fatalf("expected code-only running run to finish as succeeded by workload state, got %s", runs.finished[0].Status)
 	}
 	if len(events.inserted) != 1 || events.inserted[0].EventType != floweventdomain.EventTypeRunSucceeded {
 		t.Fatalf("expected one run.succeeded event, got %#v", events.inserted)
@@ -865,14 +868,14 @@ func TestTickPendingFullEnvPreparing_DoesNotBlockNextClaim(t *testing.T) {
 	if len(deployer.prepared) != 1 {
 		t.Fatalf("expected 1 runtime prepare call for first full-env run, got %d", len(deployer.prepared))
 	}
-	if len(runs.finished) != 1 {
-		t.Fatalf("expected second claimed code-only run to be finished, got %d finished runs", len(runs.finished))
+	if len(runs.finished) != 0 {
+		t.Fatalf("expected no finished runs while workloads are pending, got %d", len(runs.finished))
 	}
-	if runs.finished[0].RunID != "run-code-only" {
-		t.Fatalf("expected finished run %q, got %q", "run-code-only", runs.finished[0].RunID)
+	if len(launcher.launched) != 1 {
+		t.Fatalf("expected 1 launched workload for second code-only run, got %d", len(launcher.launched))
 	}
-	if runs.finished[0].Status != rundomain.StatusSucceeded {
-		t.Fatalf("expected code-only run to finish as succeeded, got %s", runs.finished[0].Status)
+	if launcher.launched[0].RunID != "run-code-only" {
+		t.Fatalf("expected launched run %q, got %q", "run-code-only", launcher.launched[0].RunID)
 	}
 }
 

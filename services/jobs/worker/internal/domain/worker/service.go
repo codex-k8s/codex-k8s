@@ -351,19 +351,6 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 			execution.Namespace = s.resolveAIRepairNamespace(execution.Namespace)
 		}
 
-		if execution.RuntimeMode != agentdomain.RuntimeModeFullEnv && !deployOnlyRun && !aiRepairRun {
-			if err := s.finishRun(ctx, finishRunParams{
-				Run:       run,
-				Execution: execution,
-				Status:    rundomain.StatusSucceeded,
-				EventType: floweventdomain.EventTypeRunSucceeded,
-				Ref:       s.launcher.JobRef(run.RunID, execution.Namespace),
-			}); err != nil {
-				return err
-			}
-			continue
-		}
-
 		if deployOnlyRun {
 			prepareParams := buildPrepareRunEnvironmentParamsFromRunning(run, execution)
 			prepared, ready, err := s.prepareRuntimeEnvironmentPoll(ctx, prepareParams)
@@ -538,19 +525,6 @@ func (s *Service) launchPending(ctx context.Context) error {
 			execution.Namespace = s.resolveAIRepairNamespace(execution.Namespace)
 		}
 
-		if execution.RuntimeMode != agentdomain.RuntimeModeFullEnv && !deployOnlyRun && !aiRepairRun {
-			if err := s.finishRun(ctx, finishRunParams{
-				Run:       runningRun,
-				Execution: execution,
-				Status:    rundomain.StatusSucceeded,
-				EventType: floweventdomain.EventTypeRunSucceeded,
-				Ref:       s.launcher.JobRef(claimed.RunID, execution.Namespace),
-			}); err != nil {
-				return fmt.Errorf("finish code-only run: %w", err)
-			}
-			continue
-		}
-
 		leaseCtx := resolveNamespaceLeaseContext(claimed.RunPayload)
 		leaseTTL := s.cfg.DefaultNamespaceTTL
 		triggerKind := ""
@@ -618,6 +592,13 @@ func (s *Service) launchPending(ctx context.Context) error {
 			if err := s.launchPreparedRunWorkload(ctx, runningRun, execution, agentCtx, namespaceLeaseSpec{}, runLaunchOptions{
 				ServiceAccountName: s.cfg.AIRepairServiceAccount,
 			}); err != nil {
+				return err
+			}
+			continue
+		}
+
+		if execution.RuntimeMode != agentdomain.RuntimeModeFullEnv && !deployOnlyRun {
+			if err := s.launchPreparedRunWorkload(ctx, runningRun, execution, agentCtx, namespaceLeaseSpec{}, runLaunchOptions{}); err != nil {
 				return err
 			}
 			continue
