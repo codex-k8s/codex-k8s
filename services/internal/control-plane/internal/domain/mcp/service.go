@@ -54,6 +54,7 @@ type GitHubClient interface {
 	EnsureBranch(ctx context.Context, params GitHubEnsureBranchParams) (GitHubBranch, error)
 	UpsertPullRequest(ctx context.Context, params GitHubUpsertPullRequestParams) (GitHubPullRequest, error)
 	CreateIssueComment(ctx context.Context, params GitHubCreateIssueCommentParams) (GitHubIssueComment, error)
+	DeleteIssueComment(ctx context.Context, params GitHubDeleteIssueCommentParams) error
 	AddLabels(ctx context.Context, params GitHubMutateLabelsParams) ([]GitHubLabel, error)
 	RemoveLabels(ctx context.Context, params GitHubMutateLabelsParams) ([]GitHubLabel, error)
 	UpsertRepositorySecret(ctx context.Context, params GitHubUpsertRepositorySecretParams) error

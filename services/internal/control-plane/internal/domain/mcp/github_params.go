@@ -92,6 +92,14 @@ type GitHubEditIssueCommentParams struct {
 	Body       string
 }
 
+// GitHubDeleteIssueCommentParams describes issue/PR comment delete operation in adapter.
+type GitHubDeleteIssueCommentParams struct {
+	Token      string
+	Owner      string
+	Repository string
+	CommentID  int64
+}
+
 // GitHubCreateIssueReactionParams describes issue reaction create operation in adapter.
 type GitHubCreateIssueReactionParams struct {
 	Token       string

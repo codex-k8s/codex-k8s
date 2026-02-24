@@ -164,6 +164,7 @@ type GitHubClient interface {
 	ListIssueComments(ctx context.Context, params mcpdomain.GitHubListIssueCommentsParams) ([]mcpdomain.GitHubIssueComment, error)
 	CreateIssueComment(ctx context.Context, params mcpdomain.GitHubCreateIssueCommentParams) (mcpdomain.GitHubIssueComment, error)
 	EditIssueComment(ctx context.Context, params mcpdomain.GitHubEditIssueCommentParams) (mcpdomain.GitHubIssueComment, error)
+	DeleteIssueComment(ctx context.Context, params mcpdomain.GitHubDeleteIssueCommentParams) error
 	ListIssueReactions(ctx context.Context, params mcpdomain.GitHubListIssueReactionsParams) ([]mcpdomain.GitHubIssueReaction, error)
 	CreateIssueReaction(ctx context.Context, params mcpdomain.GitHubCreateIssueReactionParams) (mcpdomain.GitHubIssueReaction, error)
 }
