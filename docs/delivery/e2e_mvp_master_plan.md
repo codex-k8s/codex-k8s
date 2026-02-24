@@ -122,7 +122,7 @@ Acceptance criteria:
 Риски и продуктовые допущения:
 - Риск: на PR одновременно выставлены конфликтующие stage labels, что ломает авто-resolve.
 - Риск: review оставлен без `changes_requested`, и revise smoke не покрывает автоматический путь.
-- Допущение: smoke выполняется в `code-only` и ограничивается markdown scope без runtime-интеграций full-env.
+- Допущение: базовый smoke выполняется в markdown scope (`code-only`), а при запуске в `full-env` дополнительно проверяются runtime-evidence (`job/pod timeline`, namespace events).
 
 ### Набор C. MCP governance tools
 - C1: `github_labels_list|add|remove|transition` с audit trail.

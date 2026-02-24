@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-24
-related_issues: [1, 19, 74, 90, 100, 112]
+related_issues: [1, 19, 74, 90, 100, 112, 125]
 related_prs: []
 approvals:
   required: ["Owner"]

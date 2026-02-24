@@ -6,7 +6,7 @@ status: in-progress
 owner_role: EM
 created_at: 2026-02-13
 updated_at: 2026-02-24
-related_issues: [19, 45, 74, 112]
+related_issues: [19, 45, 74, 112, 125]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -23,6 +23,7 @@ approvals:
 - Центральные deliverables: full stage labels, staff debug observability, MCP control tools, `run:self-improve` loop, declarative full-env deploy, docset import/sync, unified config/secrets governance, onboarding preflight.
 - Дополнительный фокус финальной части S3: закрыть core-flow недоделки (prompt/docs context, env-scoped secrets, runtime error journal, frontend hardening) до полного e2e gate.
 - Добавлен P0 эпик Issue #74: role-based retention для `full-env` namespace и reuse/lease-extension на `run:*:revise`.
+- В Day20 e2e coverage включён smoke-сценарий Issue #125: `run:vision` -> `changes_requested` -> `run:vision:revise`.
 - Для Day20 утверждён детальный документ покрытия: `docs/delivery/e2e_mvp_master_plan.md`.
 
 ## Эпики Sprint S3
