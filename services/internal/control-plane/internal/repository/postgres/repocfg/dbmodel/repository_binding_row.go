@@ -23,4 +23,5 @@ type RepositoryBindingLookupRow struct {
 	ProjectID        string `db:"project_id"`
 	RepositoryID     string `db:"repository_id"`
 	ServicesYAMLPath string `db:"services_yaml_path"`
+	DefaultRef       string `db:"default_ref"`
 }

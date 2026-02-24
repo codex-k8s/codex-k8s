@@ -292,6 +292,7 @@ func findResultFromDBModel(row dbmodel.RepositoryBindingLookupRow) domainrepo.Fi
 		ProjectID:        strings.TrimSpace(row.ProjectID),
 		RepositoryID:     strings.TrimSpace(row.RepositoryID),
 		ServicesYAMLPath: strings.TrimSpace(row.ServicesYAMLPath),
+		DefaultRef:       strings.TrimSpace(row.DefaultRef),
 	}
 }
 

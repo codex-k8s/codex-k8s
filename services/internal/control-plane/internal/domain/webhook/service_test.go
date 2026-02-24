@@ -31,6 +31,7 @@ func TestIngestGitHubWebhook_Dedup(t *testing.T) {
 				ProjectID:        "project-1",
 				RepositoryID:     "repo-1",
 				ServicesYAMLPath: "services.yaml",
+				DefaultRef:       "codex/feature-branch",
 			},
 		},
 	}
@@ -154,6 +155,7 @@ func TestIngestGitHubWebhook_PushMain_CreatesDeployOnlyProductionRun(t *testing.
 				ProjectID:        "project-1",
 				RepositoryID:     "repo-1",
 				ServicesYAMLPath: "services.yaml",
+				DefaultRef:       "codex/feature-branch",
 			},
 		},
 	}
@@ -233,6 +235,7 @@ func TestIngestGitHubWebhook_PushMainFork_CreatesDeployOnlyProductionRun(t *test
 				ProjectID:        "project-1",
 				RepositoryID:     "repo-1",
 				ServicesYAMLPath: "services.yaml",
+				DefaultRef:       "codex/feature-branch",
 			},
 		},
 	}
@@ -627,6 +630,7 @@ func TestIngestGitHubWebhook_IssueRunDev_CreatesRunForAllowedMember(t *testing.T
 				ProjectID:        "project-1",
 				RepositoryID:     "repo-1",
 				ServicesYAMLPath: "services.yaml",
+				DefaultRef:       "codex/feature-branch",
 			},
 		},
 	}
@@ -696,6 +700,9 @@ func TestIngestGitHubWebhook_IssueRunDev_CreatesRunForAllowedMember(t *testing.T
 	}
 	if got, want := runPayload.Runtime.Source, runtimeModeSourceTriggerDefault; got != want {
 		t.Fatalf("unexpected runtime source: got %q want %q", got, want)
+	}
+	if got, want := runPayload.Runtime.BuildRef, "codex/feature-branch"; got != want {
+		t.Fatalf("unexpected runtime build ref: got %q want %q", got, want)
 	}
 	if runPayload.Agent.Key != "dev" {
 		t.Fatalf("unexpected agent key: %#v", runPayload.Agent.Key)

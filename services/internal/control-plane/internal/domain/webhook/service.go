@@ -154,7 +154,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		return IngestResult{}, errs.Validation{Field: "payload", Msg: "must be valid JSON"}
 	}
 
-	projectID, repositoryID, servicesYAMLPath, hasBinding, err := s.resolveProjectBinding(ctx, envelope)
+	projectID, repositoryID, servicesYAMLPath, repositoryDefaultRef, hasBinding, err := s.resolveProjectBinding(ctx, envelope)
 	if err != nil {
 		return IngestResult{}, fmt.Errorf("resolve project binding: %w", err)
 	}
@@ -292,7 +292,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		runtimeMode, runtimeModeSource = s.resolveRunRuntimeMode(triggerPtr(trigger, hasIssueRunTrigger))
 		runtimeTargetEnv = ""
 		runtimeNamespace = ""
-		runtimeBuildRef = ""
+		runtimeBuildRef = strings.TrimSpace(repositoryDefaultRef)
 		runtimeDeployOnly = false
 	}
 
@@ -887,18 +887,18 @@ func resolveRunAgentKey(trigger *issueRunTrigger) string {
 	}
 }
 
-func (s *Service) resolveProjectBinding(ctx context.Context, envelope githubWebhookEnvelope) (projectID string, repositoryID string, servicesYAMLPath string, ok bool, err error) {
+func (s *Service) resolveProjectBinding(ctx context.Context, envelope githubWebhookEnvelope) (projectID string, repositoryID string, servicesYAMLPath string, defaultRef string, ok bool, err error) {
 	if s.repos == nil || envelope.Repository.ID == 0 {
-		return "", "", "", false, nil
+		return "", "", "", "", false, nil
 	}
 	res, ok, err := s.repos.FindByProviderExternalID(ctx, "github", envelope.Repository.ID)
 	if err != nil {
-		return "", "", "", false, err
+		return "", "", "", "", false, err
 	}
 	if !ok {
-		return "", "", "", false, nil
+		return "", "", "", "", false, nil
 	}
-	return res.ProjectID, res.RepositoryID, res.ServicesYAMLPath, true, nil
+	return res.ProjectID, res.RepositoryID, res.ServicesYAMLPath, strings.TrimSpace(res.DefaultRef), true, nil
 }
 
 func (s *Service) resolveLearningMode(ctx context.Context, projectID string, senderLogin string) (bool, error) {

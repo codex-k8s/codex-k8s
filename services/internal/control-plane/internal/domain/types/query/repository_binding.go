@@ -23,4 +23,5 @@ type RepositoryBindingFindResult struct {
 	ProjectID        string
 	RepositoryID     string
 	ServicesYAMLPath string
+	DefaultRef       string
 }
