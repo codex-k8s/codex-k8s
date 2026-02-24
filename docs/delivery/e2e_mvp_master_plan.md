@@ -6,7 +6,7 @@ status: active
 owner_role: QA
 created_at: 2026-02-24
 updated_at: 2026-02-24
-related_issues: [19, 74, 95, 100, 112]
+related_issues: [19, 74, 95, 100, 112, 125]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -99,6 +99,30 @@ approvals:
 - B1: `changes_requested` при одном stage label на PR.
 - B2: ambiguous labels -> `need:input` без старта revise.
 - B3: sticky model/reasoning profile между revise-итерациями.
+- B4: smoke-сценарий для `run:vision`/`run:vision:revise` (Issue #125) в контуре `changes_requested`.
+
+### Набор B.1. Vision revise smoke (Issue #125)
+Цель:
+- Подтвердить e2e-путь для продуктового этапа `vision` с автоматическим переходом в `run:vision:revise` после `changes_requested`.
+
+Декомпозиция:
+1. Запустить `run:vision` на Issue #125 и зафиксировать сервисный комментарий со stage-aware next steps.
+2. Создать PR с markdown-артефактами vision и перевести связку Issue/PR в `state:in-review`.
+3. Смоделировать `changes_requested` в PR при единственном stage label и подтвердить старт `run:vision:revise`.
+4. Проверить, что revise-run закрывает все открытые замечания и возвращает связку в `state:in-review`.
+5. Проверить audit/traceability: `flow_events`, issue timeline, ссылки на PR и run.
+
+Acceptance criteria:
+- Stage resolver выбирает `vision` без ambiguity и без установки `need:input`.
+- Автоматический revise запускается именно как `run:vision:revise`, а не как `run:dev:revise`.
+- На выходе revise поставлен `state:in-review` на Issue и PR, trigger label снят с Issue.
+- В issue/pr комментариях есть явный next-step для Owner (`approve` или `next stage`).
+- В traceability bundle есть ссылки на run/PR и фиксация фактических проверок.
+
+Риски и продуктовые допущения:
+- Риск: на PR одновременно выставлены конфликтующие stage labels, что ломает авто-resolve.
+- Риск: review оставлен без `changes_requested`, и revise smoke не покрывает автоматический путь.
+- Допущение: smoke выполняется в `code-only` и ограничивается markdown scope без runtime-интеграций full-env.
 
 ### Набор C. MCP governance tools
 - C1: `github_labels_list|add|remove|transition` с audit trail.
@@ -139,6 +163,7 @@ approvals:
 - Матрица label coverage пройдена полностью.
 - Security/RBAC проверки пройдены без критичных нарушений.
 - Документация и traceability синхронизированы по факту прогона.
+- Vision revise smoke по Issue #125 пройден и приложен в evidence bundle.
 
 ## Источники фактов (актуализировано на 2026-02-24 через Context7)
 - Kubernetes rollout/status checks: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/

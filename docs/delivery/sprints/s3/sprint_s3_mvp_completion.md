@@ -6,7 +6,7 @@ status: in-progress
 owner_role: EM
 created_at: 2026-02-13
 updated_at: 2026-02-24
-related_issues: [19, 45, 74, 112]
+related_issues: [19, 45, 74, 112, 125]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -84,7 +84,7 @@ approvals:
 | Day 19.5 | Realtime event bus (PostgreSQL LISTEN/NOTIFY) and WebSocket backplane | P0 | `docs/delivery/epics/s3/epic-s3-day19.5-realtime-event-bus-and-websocket-backplane.md` | planned |
 | Day 19.6 | Staff realtime subscriptions and UI integration | P0 | `docs/delivery/epics/s3/epic-s3-day19.6-staff-realtime-subscriptions-and-ui.md` | planned |
 | Day 19.7 | Run namespace TTL retention and revise namespace reuse (Issue #74) | P0 | `docs/delivery/epics/s3/epic-s3-day19.7-run-namespace-ttl-and-revise-reuse.md` | planned |
-| Day 20 | Full e2e regression gate + MVP closeout | P0 | `docs/delivery/epics/s3/epic-s3-day20-e2e-regression-and-mvp-closeout.md` | planned (master plan prepared) |
+| Day 20 | Full e2e regression gate + MVP closeout | P0 | `docs/delivery/epics/s3/epic-s3-day20-e2e-regression-and-mvp-closeout.md` | planned (master plan prepared + Issue #125 vision revise smoke included) |
 
 ## Daily gate (обязательно)
 - Green CI + успешный deploy на production.
@@ -101,3 +101,4 @@ approvals:
 - Кнопки `Обновить` удалены в realtime-экранах, обновление выполняется автоматически.
 - Для `full-env` закрыт retention-gap: namespace живёт по role-based TTL, а `run:*:revise` продлевает lease и переиспользует активный namespace.
 - Финальный Day20 e2e проходит без P0 блокеров и формирует owner-ready closeout пакет.
+- Для продуктового этапа `vision` подтверждён smoke-путь `run:vision -> run:vision:revise` по Issue #125 с корректной постановкой `state:in-review`.

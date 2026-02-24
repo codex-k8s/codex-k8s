@@ -6,7 +6,7 @@ status: planned
 owner_role: EM
 created_at: 2026-02-18
 updated_at: 2026-02-24
-related_issues: [19, 112]
+related_issues: [19, 112, 125]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -34,6 +34,7 @@ approvals:
   - cross-project сценарий (`project-example` + `codex-k8s`).
 - E2E regression по ключевым MVP сценариям:
   - stage labels flow,
+  - smoke-контур `run:vision` -> `changes_requested` -> `run:vision:revise` (Issue #125),
   - self-improve loop,
   - MCP governance tools,
   - repo onboarding + docset/config governance,
@@ -66,6 +67,7 @@ approvals:
 - Full e2e проходит без P0 блокеров.
 - Собран и опубликован evidence bundle (команды, логи, ссылки на run/deploy artifacts).
 - Owner получает go/no-go пакет и подтверждает завершение MVP фазы.
+- Vision revise smoke для Issue #125 подтверждает детерминированный stage-resolve и корректный label transition в `state:in-review`.
 
 ## Риски/зависимости
 - Зависимость от готовности чистого VPS и валидного e2e config.
