@@ -105,6 +105,11 @@ approvals:
 Цель:
 - Подтвердить e2e-путь для продуктового этапа `vision` с автоматическим переходом в `run:vision:revise` после `changes_requested`.
 
+Предусловия:
+- На PR выставлен ровно один stage label (`run:vision` или `run:vision:revise`), конфликтующих stage labels нет.
+- `changes_requested` отправлен именно в PR, связанный с Issue #125.
+- Изменения в PR ограничены markdown-файлами (`*.md`) в соответствии с policy для `vision`.
+
 Декомпозиция:
 1. Запустить `run:vision` на Issue #125 и зафиксировать сервисный комментарий со stage-aware next steps.
 2. Создать PR с markdown-артефактами vision и перевести связку Issue/PR в `state:in-review`.
@@ -118,6 +123,12 @@ Acceptance criteria:
 - На выходе revise поставлен `state:in-review` на Issue и PR, trigger label снят с Issue.
 - В issue/pr комментариях есть явный next-step для Owner (`approve` или `next stage`).
 - В traceability bundle есть ссылки на run/PR и фиксация фактических проверок.
+
+Проверяемый evidence checklist:
+- `pull_request_review` (`changes_requested`) присутствует в PR timeline и коррелирует со стартом revise-run по времени.
+- В `flow_events` зафиксированы stage-resolve и label transitions без fallback в `need:input`.
+- В labels истории подтверждён переход `run:vision:revise -> state:in-review` для Issue и PR.
+- Все review-комментарии по PR имеют явный ответ (исправлено или аргументированно отклонено).
 
 Риски и продуктовые допущения:
 - Риск: на PR одновременно выставлены конфликтующие stage labels, что ломает авто-resolve.
