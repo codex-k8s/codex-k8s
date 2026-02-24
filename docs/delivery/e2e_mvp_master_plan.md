@@ -6,7 +6,7 @@ status: active
 owner_role: QA
 created_at: 2026-02-24
 updated_at: 2026-02-24
-related_issues: [19, 74, 95, 100, 112]
+related_issues: [19, 74, 95, 100, 112, 152]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -104,6 +104,7 @@ approvals:
 - C1: `github_labels_list|add|remove|transition` с audit trail.
 - C2: `run_status_report` cadence (каждые 5-7 tool calls).
 - C3: `secret.sync.github_k8s`, `database.lifecycle`, `owner.feedback.request` (approve/deny paths).
+- C4: dedupe run-status комментариев: при retry/повторном webhook update для одного `run_id` и той же фазы в Issue остаётся один сервисный комментарий (выполняется update существующего comment id, без создания дубля).
 
 ### Набор D. Runtime and infra
 - D1: run namespace isolation, TTL lease и cleanup sweep.
