@@ -6,7 +6,7 @@ status: planned
 owner_role: EM
 created_at: 2026-02-18
 updated_at: 2026-02-24
-related_issues: [19, 112]
+related_issues: [19, 112, 130]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -61,11 +61,13 @@ approvals:
 - Канонический test-plan: `docs/delivery/e2e_mvp_master_plan.md`.
 - Label coverage: `run:*`, `run:*:revise`, `state:*`, `need:*`, `[ai-model-*]`, `[ai-reasoning-*]`.
 - Обязательные зоны: review-driven revise, MCP governance tools, runtime TTL/revise reuse, security/RBAC, docs/traceability consistency.
+- Обязательный частный сценарий (Issue #130): `run:vision` + `run:vision:revise` с проверкой post-idempotency-fix (отсутствие duplicate run на повторном label event и корректный transition в `state:in-review`).
 
 ## Критерии приемки
 - Full e2e проходит без P0 блокеров.
 - Собран и опубликован evidence bundle (команды, логи, ссылки на run/deploy artifacts).
 - Owner получает go/no-go пакет и подтверждает завершение MVP фазы.
+- Для `run:vision`/`run:vision:revise` подтверждён idempotent revise path: один фактический run на одну итерацию, без дублирования `flow_events`.
 
 ## Риски/зависимости
 - Зависимость от готовности чистого VPS и валидного e2e config.

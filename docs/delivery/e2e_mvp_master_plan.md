@@ -6,7 +6,7 @@ status: active
 owner_role: QA
 created_at: 2026-02-24
 updated_at: 2026-02-24
-related_issues: [19, 74, 95, 100, 112]
+related_issues: [19, 74, 95, 100, 112, 130]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -100,6 +100,14 @@ approvals:
 - B2: ambiguous labels -> `need:input` без старта revise.
 - B3: sticky model/reasoning profile между revise-итерациями.
 
+### Набор B.1. Vision revise label matrix (Issue #130)
+- B1.1: на Issue установлен `run:vision`, выполняется выпуск vision-артефактов без code changes.
+- B1.2: после замечаний запускается `run:vision:revise`; проверяется идемпотентность transition (повторное событие не создаёт дублирующих run).
+- B1.3: проверка post-run transitions: с Issue снимается trigger (`run:vision` или `run:vision:revise`), на Issue и PR ставится `state:in-review` при наличии PR.
+- AC-1: для одной целевой стадии (`vision`) одновременно активен только один trigger-лейбл, конфликтов `run:*` нет.
+- AC-2: `flow_events` отражают один корректный lifecycle на каждую фактическую итерацию (`vision` и `vision:revise`) без дубликатов.
+- AC-3: issue/pr traceability обновляется синхронно в `docs/delivery/issue_map.md` и артефактах текущего прогона.
+
 ### Набор C. MCP governance tools
 - C1: `github_labels_list|add|remove|transition` с audit trail.
 - C2: `run_status_report` cadence (каждые 5-7 tool calls).
@@ -122,7 +130,7 @@ approvals:
 
 ## Порядок прогона
 1. Подготовка окружения и preflight (tokens, namespace health, webhook availability).
-2. Прогон core lifecycle (A + B).
+2. Прогон core lifecycle (A + B + B.1).
 3. Прогон governance/control tools (C).
 4. Прогон runtime/security (D + E).
 5. Прогон multi-repo/docs governance (F).
