@@ -49,12 +49,19 @@ func (policy RuntimeModePolicy) resolve(trigger *issueRunTrigger) (agentdomain.R
 	if trigger == nil {
 		return agentdomain.RuntimeModeCodeOnly, runtimeModeSourceTriggerDefault
 	}
+	triggerKind := normalizeRuntimeTriggerKind(trigger.Kind)
+	if triggerKind == webhookdomain.TriggerKindAIRepair {
+		policy = policy.withDefaults()
+		if mode, ok := policy.TriggerModes[triggerKind]; ok && mode != "" {
+			return mode, runtimeModeSourceServicesYAML
+		}
+		return agentdomain.RuntimeModeCodeOnly, runtimeModeSourceTriggerDefault
+	}
 	if !policy.Configured {
 		return agentdomain.RuntimeModeFullEnv, runtimeModeSourceTriggerDefault
 	}
 
 	policy = policy.withDefaults()
-	triggerKind := normalizeRuntimeTriggerKind(trigger.Kind)
 	if mode, ok := policy.TriggerModes[triggerKind]; ok && mode != "" {
 		return mode, runtimeModeSourceServicesYAML
 	}

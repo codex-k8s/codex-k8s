@@ -32,19 +32,19 @@ spec:
         - libs/go
         - proto
     control-plane:
-      value: "0.1.23"
+      value: "0.1.24"
       bumpOn:
         - services/internal/control-plane
         - libs/go
         - proto
     worker:
-      value: "0.1.13"
+      value: "0.1.14"
       bumpOn:
         - services/jobs/worker
         - libs/go
         - proto
     agent-runner:
-      value: "0.1.10"
+      value: "0.1.11"
       bumpOn:
         - services/jobs/agent-runner
         - libs/go
@@ -104,6 +104,7 @@ spec:
       vision_revise: code-only
       prd: code-only
       prd_revise: code-only
+      ai_repair: code-only
       self_improve: code-only
     defaultNamespaceTTL: 24h
     namespaceTTLByRole:

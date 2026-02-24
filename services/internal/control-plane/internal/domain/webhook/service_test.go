@@ -966,6 +966,17 @@ func TestResolveRunAgentKey_DocAuditUsesKM(t *testing.T) {
 	}
 }
 
+func TestResolveRunAgentKey_AIRepairUsesSRE(t *testing.T) {
+	t.Parallel()
+
+	key := resolveRunAgentKey(&issueRunTrigger{
+		Kind: webhookdomain.TriggerKindAIRepair,
+	})
+	if key != "sre" {
+		t.Fatalf("resolveRunAgentKey() = %q, want %q", key, "sre")
+	}
+}
+
 func TestIngestGitHubWebhook_IssueTriggerConflict_IgnoredWithDiagnosticComment(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}

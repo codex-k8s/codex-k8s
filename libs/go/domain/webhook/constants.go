@@ -46,6 +46,7 @@ const (
 	TriggerKindDev          TriggerKind = "dev"
 	TriggerKindDevRevise    TriggerKind = "dev_revise"
 	TriggerKindDocAudit     TriggerKind = "doc_audit"
+	TriggerKindAIRepair     TriggerKind = "ai_repair"
 	TriggerKindQA           TriggerKind = "qa"
 	TriggerKindRelease      TriggerKind = "release"
 	TriggerKindPostDeploy   TriggerKind = "postdeploy"
@@ -88,6 +89,7 @@ const (
 	DefaultRunDevLabel       = "run:dev"
 	DefaultRunDevReviseLabel = "run:dev:revise"
 	DefaultRunDocAuditLabel  = "run:doc-audit"
+	DefaultRunAIRepairLabel  = "run:ai-repair"
 )
 
 const (

@@ -18,6 +18,7 @@ func TestPromptSeedStageByTriggerKind(t *testing.T) {
 		{name: "design", trigger: "design", wantStage: "design"},
 		{name: "plan", trigger: "plan", wantStage: "plan"},
 		{name: "doc audit", trigger: "doc_audit", wantStage: "doc-audit"},
+		{name: "ai repair", trigger: "ai_repair", wantStage: "ai-repair"},
 		{name: "qa", trigger: "qa", wantStage: "qa"},
 		{name: "release", trigger: "release", wantStage: "release"},
 		{name: "postdeploy", trigger: "postdeploy", wantStage: "postdeploy"},

@@ -101,6 +101,8 @@ type Config struct {
 	K8sNamespace string `env:"CODEXK8S_WORKER_K8S_NAMESPACE" envDefault:"codex-k8s-prod"`
 	// JobImage is a container image used for spawned run Jobs.
 	JobImage string `env:"CODEXK8S_WORKER_JOB_IMAGE" envDefault:"busybox:1.36"`
+	// JobImageFallback is optional fallback image used when primary run image is missing in registry.
+	JobImageFallback string `env:"CODEXK8S_WORKER_JOB_IMAGE_FALLBACK"`
 	// JobCommand is a shell command executed by run Jobs.
 	JobCommand string `env:"CODEXK8S_WORKER_JOB_COMMAND" envDefault:"/usr/local/bin/codex-k8s-agent-runner"`
 	// JobTTLSeconds controls ttlSecondsAfterFinished for run Jobs.
@@ -129,6 +131,12 @@ type Config struct {
 	RunCredentialsSecretName string `env:"CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME" envDefault:"codex-run-credentials"`
 	// RunResourceQuotaPods controls max pods per run namespace.
 	RunResourceQuotaPods int64 `env:"CODEXK8S_WORKER_RUN_QUOTA_PODS" envDefault:"20"`
+	// InternalRegistryHost points to internal registry host:port used for deterministic image checks.
+	InternalRegistryHost string `env:"CODEXK8S_INTERNAL_REGISTRY_HOST" envDefault:"codex-k8s-registry:5000"`
+	// InternalRegistryScheme sets internal registry URL scheme.
+	InternalRegistryScheme string `env:"CODEXK8S_INTERNAL_REGISTRY_SCHEME" envDefault:"http"`
+	// JobImageCheckTimeout controls timeout for checking image availability in internal registry.
+	JobImageCheckTimeout string `env:"CODEXK8S_WORKER_JOB_IMAGE_CHECK_TIMEOUT" envDefault:"10s"`
 }
 
 // LoadConfig parses and validates worker configuration from environment.

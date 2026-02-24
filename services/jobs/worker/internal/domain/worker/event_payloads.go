@@ -40,6 +40,7 @@ type runStartedEventPayload struct {
 	IssueNumber          int64                   `json:"issue_number,omitempty"`
 	TriggerKind          string                  `json:"trigger_kind,omitempty"`
 	TriggerLabel         string                  `json:"trigger_label,omitempty"`
+	JobImage             string                  `json:"job_image,omitempty"`
 	Model                string                  `json:"model,omitempty"`
 	ModelSource          string                  `json:"model_source,omitempty"`
 	ReasoningEffort      string                  `json:"reasoning_effort,omitempty"`
@@ -62,6 +63,19 @@ type runProfileResolvedEventPayload struct {
 	ModelSource        string `json:"model_source,omitempty"`
 	ReasoningEffort    string `json:"reasoning_effort,omitempty"`
 	ReasoningSource    string `json:"reasoning_source,omitempty"`
+}
+
+// runJobImageResolvedEventPayload defines payload shape for run.job.image.resolved flow events.
+type runJobImageResolvedEventPayload struct {
+	RunID             string `json:"run_id"`
+	ProjectID         string `json:"project_id"`
+	SelectedImage     string `json:"selected_image,omitempty"`
+	SelectedSource    string `json:"selected_source,omitempty"`
+	PrimaryImage      string `json:"primary_image,omitempty"`
+	FallbackImage     string `json:"fallback_image,omitempty"`
+	PrimaryAvailable  bool   `json:"primary_available,omitempty"`
+	FallbackAvailable bool   `json:"fallback_available,omitempty"`
+	CheckError        string `json:"check_error,omitempty"`
 }
 
 // runFinishedEventPayload defines payload shape for run finish flow events.
@@ -120,6 +134,12 @@ func encodeRunStartedEventPayload(payload runStartedEventPayload) json.RawMessag
 
 // encodeRunProfileResolvedEventPayload serializes run.profile.resolved payload with safe fallback JSON.
 func encodeRunProfileResolvedEventPayload(payload runProfileResolvedEventPayload) json.RawMessage {
+	bytes, err := json.Marshal(payload)
+	return marshalPayload(bytes, err)
+}
+
+// encodeRunJobImageResolvedEventPayload serializes run.job.image.resolved payload with safe fallback JSON.
+func encodeRunJobImageResolvedEventPayload(payload runJobImageResolvedEventPayload) json.RawMessage {
 	bytes, err := json.Marshal(payload)
 	return marshalPayload(bytes, err)
 }

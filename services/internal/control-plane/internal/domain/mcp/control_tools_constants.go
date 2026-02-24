@@ -22,6 +22,7 @@ const (
 	triggerLabelRunDev       = "run:dev"
 	triggerLabelRunDevRevise = "run:dev:revise"
 	triggerLabelRunOps       = "run:ops"
+	triggerLabelRunAIRepair  = "run:ai-repair"
 	triggerLabelRunSelfPatch = "run:self-improve"
 )
 

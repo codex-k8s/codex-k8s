@@ -42,7 +42,8 @@ type TriggerLabels struct {
 	RunDesign, RunDesignRevise string
 	RunPlan, RunPlanRevise     string
 	RunDev, RunDevRevise       string
-	RunDocAudit, RunQA         string
+	RunDocAudit, RunAIRepair   string
+	RunQA                      string
 	RunRelease, RunPostDeploy  string
 	RunOps, RunSelfImprove     string
 	RunRethink                 string
@@ -65,6 +66,7 @@ func defaultTriggerLabels() TriggerLabels {
 		RunDev:          webhookdomain.DefaultRunDevLabel,
 		RunDevRevise:    webhookdomain.DefaultRunDevReviseLabel,
 		RunDocAudit:     webhookdomain.DefaultRunDocAuditLabel,
+		RunAIRepair:     webhookdomain.DefaultRunAIRepairLabel,
 		RunQA:           webhookdomain.DefaultRunQALabel,
 		RunRelease:      webhookdomain.DefaultRunReleaseLabel,
 		RunPostDeploy:   webhookdomain.DefaultRunPostDeployLabel,

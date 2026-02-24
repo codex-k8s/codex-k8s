@@ -67,6 +67,7 @@ const (
 	EventTypeRunPRCreated                 EventType = "run.pr.created"
 	EventTypeRunPRUpdated                 EventType = "run.pr.updated"
 	EventTypeRunRevisePRNotFound          EventType = "run.revise.pr_not_found"
+	EventTypeRunJobImageResolved          EventType = "run.job.image.resolved"
 	EventTypeRunSelfImproveDiagnosisReady EventType = "run.self_improve.diagnosis_ready"
 	EventTypeRunToolchainGapDetected      EventType = "run.toolchain.gap_detected"
 	EventTypeRunStatusCommentUpserted     EventType = "run.status.comment.upserted"

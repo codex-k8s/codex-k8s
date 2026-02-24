@@ -37,6 +37,7 @@
 - `plan-work.md`, `plan-revise.md`
 - `dev-work.md`, `dev-revise.md`
 - `doc-audit-work.md`
+- `ai-repair-work.md`
 - `qa-work.md`
 - `release-work.md`
 - `postdeploy-work.md`

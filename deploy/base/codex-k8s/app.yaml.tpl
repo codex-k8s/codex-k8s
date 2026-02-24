@@ -439,6 +439,12 @@ spec:
                   name: codex-k8s-label-catalog
                   key: CODEXK8S_RUN_DOC_AUDIT_LABEL
                   optional: true
+            - name: CODEXK8S_RUN_AI_REPAIR_LABEL
+              valueFrom:
+                configMapKeyRef:
+                  name: codex-k8s-label-catalog
+                  key: CODEXK8S_RUN_AI_REPAIR_LABEL
+                  optional: true
             - name: CODEXK8S_RUN_QA_LABEL
               valueFrom:
                 configMapKeyRef:
@@ -755,6 +761,10 @@ spec:
               value: '{{ envOr "CODEXK8S_WORKER_K8S_NAMESPACE" "" }}'
             - name: CODEXK8S_WORKER_JOB_IMAGE
               value: '{{ envOr "CODEXK8S_WORKER_JOB_IMAGE" "" }}'
+            - name: CODEXK8S_WORKER_JOB_IMAGE_FALLBACK
+              value: '{{ envOr "CODEXK8S_WORKER_JOB_IMAGE_FALLBACK" "" }}'
+            - name: CODEXK8S_WORKER_JOB_IMAGE_CHECK_TIMEOUT
+              value: '{{ envOr "CODEXK8S_WORKER_JOB_IMAGE_CHECK_TIMEOUT" "" }}'
             - name: CODEXK8S_WORKER_JOB_COMMAND
               value: '{{ envOr "CODEXK8S_WORKER_JOB_COMMAND" "" }}'
             - name: CODEXK8S_WORKER_JOB_TTL_SECONDS
@@ -767,6 +777,10 @@ spec:
               value: '{{ envOr "CODEXK8S_WORKER_RUN_NAMESPACE_PREFIX" "" }}'
             - name: CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP
               value: '{{ envOr "CODEXK8S_WORKER_RUN_NAMESPACE_CLEANUP" "" }}'
+            - name: CODEXK8S_INTERNAL_REGISTRY_HOST
+              value: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "" }}'
+            - name: CODEXK8S_INTERNAL_REGISTRY_SCHEME
+              value: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_SCHEME" "" }}'
             - name: CODEXK8S_RUN_DEBUG_LABEL
               valueFrom:
                 configMapKeyRef:

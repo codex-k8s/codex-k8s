@@ -129,11 +129,36 @@ func (s *Service) launchPreparedFullEnvRunJob(ctx context.Context, run runqueuer
 		return fmt.Errorf("insert run.profile.resolved event: %w", err)
 	}
 
+	jobImage := s.resolveRunJobImage(ctx)
+	if jobImage.EmitEvent {
+		if err := s.insertEvent(ctx, floweventrepo.InsertParams{
+			CorrelationID: run.CorrelationID,
+			ActorType:     floweventdomain.ActorTypeSystem,
+			ActorID:       floweventdomain.ActorID(s.cfg.WorkerID),
+			EventType:     floweventdomain.EventTypeRunJobImageResolved,
+			Payload: encodeRunJobImageResolvedEventPayload(runJobImageResolvedEventPayload{
+				RunID:             run.RunID,
+				ProjectID:         run.ProjectID,
+				SelectedImage:     jobImage.SelectedImage,
+				SelectedSource:    jobImage.SelectedSource,
+				PrimaryImage:      jobImage.PrimaryImage,
+				FallbackImage:     jobImage.FallbackImage,
+				PrimaryAvailable:  jobImage.PrimaryAvailable,
+				FallbackAvailable: jobImage.FallbackAvailable,
+				CheckError:        jobImage.CheckError,
+			}),
+			CreatedAt: s.now().UTC(),
+		}); err != nil {
+			return fmt.Errorf("insert run.job.image.resolved event: %w", err)
+		}
+	}
+
 	ref, err := s.launcher.Launch(ctx, JobSpec{
 		RunID:                  run.RunID,
 		CorrelationID:          run.CorrelationID,
 		ProjectID:              run.ProjectID,
 		SlotNo:                 run.SlotNo,
+		JobImage:               jobImage.SelectedImage,
 		RuntimeMode:            execution.RuntimeMode,
 		Namespace:              execution.Namespace,
 		ControlPlaneGRPCTarget: s.cfg.ControlPlaneGRPCTarget,
@@ -194,6 +219,7 @@ func (s *Service) launchPreparedFullEnvRunJob(ctx context.Context, run runqueuer
 			IssueNumber:          agentCtx.IssueNumber,
 			TriggerKind:          agentCtx.TriggerKind,
 			TriggerLabel:         agentCtx.TriggerLabel,
+			JobImage:             jobImage.SelectedImage,
 			Model:                agentCtx.Model,
 			ModelSource:          agentCtx.ModelSource,
 			ReasoningEffort:      agentCtx.ReasoningEffort,

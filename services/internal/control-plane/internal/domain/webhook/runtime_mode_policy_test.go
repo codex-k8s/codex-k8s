@@ -39,3 +39,15 @@ func TestRuntimeModePolicyResolve_UsesServicesYAMLMap(t *testing.T) {
 		t.Fatalf("unexpected source: %q", source)
 	}
 }
+
+func TestRuntimeModePolicyResolve_AIRepairDefaultsToCodeOnly(t *testing.T) {
+	t.Parallel()
+
+	mode, source := DefaultRuntimeModePolicy().resolve(&issueRunTrigger{Kind: webhookdomain.TriggerKindAIRepair})
+	if mode != agentdomain.RuntimeModeCodeOnly {
+		t.Fatalf("unexpected mode: %q", mode)
+	}
+	if source != runtimeModeSourceTriggerDefault {
+		t.Fatalf("unexpected source: %q", source)
+	}
+}

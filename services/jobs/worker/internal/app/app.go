@@ -73,6 +73,13 @@ func Run() error {
 	if runtimePrepareRetryInterval <= 0 {
 		return fmt.Errorf("CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_INTERVAL must be > 0")
 	}
+	jobImageCheckTimeout, err := time.ParseDuration(cfg.JobImageCheckTimeout)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_WORKER_JOB_IMAGE_CHECK_TIMEOUT: %w", err)
+	}
+	if jobImageCheckTimeout <= 0 {
+		return fmt.Errorf("CODEXK8S_WORKER_JOB_IMAGE_CHECK_TIMEOUT must be > 0")
+	}
 
 	learningDefault := false
 	if strings.TrimSpace(cfg.LearningModeDefault) != "" {
@@ -129,6 +136,10 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("create kubernetes launcher: %w", err)
 	}
+	jobImageChecker, err := newRegistryJobImageChecker(cfg.InternalRegistryScheme, cfg.InternalRegistryHost, jobImageCheckTimeout)
+	if err != nil {
+		return fmt.Errorf("create worker job image checker: %w", err)
+	}
 
 	service := worker.NewService(worker.Config{
 		WorkerID:                    cfg.WorkerID,
@@ -156,6 +167,8 @@ func Run() error {
 		AgentDefaultReasoningEffort: cfg.AgentDefaultReasoningEffort,
 		AgentDefaultLocale:          cfg.AgentDefaultLocale,
 		AgentBaseBranch:             cfg.AgentBaseBranch,
+		JobImage:                    cfg.JobImage,
+		JobImageFallback:            cfg.JobImageFallback,
 		AIModelGPT53CodexLabel:      cfg.AIModelGPT53CodexLabel,
 		AIModelGPT53CodexSparkLabel: cfg.AIModelGPT53CodexSparkLabel,
 		AIModelGPT52CodexLabel:      cfg.AIModelGPT52CodexLabel,
@@ -174,6 +187,7 @@ func Run() error {
 		RuntimePreparer: controlPlane,
 		MCPTokenIssuer:  controlPlane,
 		RunStatus:       controlPlane,
+		JobImageChecker: jobImageChecker,
 		Logger:          logger,
 	})
 

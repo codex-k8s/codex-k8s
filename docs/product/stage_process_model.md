@@ -45,6 +45,7 @@ approvals:
 | Release | `run:release` | release plan/notes, rollback plan | `em`, `sre` |
 | Postdeploy | `run:postdeploy` | postdeploy review, postmortem | `qa`, `sre` |
 | Ops | `run:ops` | markdown SLO/alerts/runbook improvements | `sre`, `km` |
+| AI Repair | `run:ai-repair` | emergency infra recovery, stabilization fix, incident handover | `sre` |
 | Self-Improve | `run:self-improve` | run/session diagnosis (MCP), PR with prompt/instruction updates and/or agent-runner Dockerfile changes | `km`, `dev`, `reviewer` |
 
 ## Петли ревизии и переосмысления
@@ -114,6 +115,7 @@ approvals:
 
 На текущем этапе реализации активирован полный trigger-контур:
 - `run:intake..run:ops`;
+- `run:ai-repair` (аварийный инфраструктурный контур);
 - `run:<stage>:revise`;
 - `run:rethink`, `run:self-improve`.
 
@@ -129,6 +131,7 @@ approvals:
 - S2 Day6: approval/audit hardening (completed).
 - S2 Day7: regression gate под полный MVP (completed).
 - S3 Day1: активация полного stage-flow (`run:intake..run:ops`) и trigger path для `run:self-improve` (completed).
+- Day21: добавлен trigger `run:ai-repair` для аварийного восстановления инфраструктуры.
 - S3 Day2+ : поэтапное насыщение stage-specific логики и observability.
 
 ## Конфигурационные labels для исполнения stage

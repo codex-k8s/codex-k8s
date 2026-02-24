@@ -35,6 +35,7 @@ ALTER TABLE repositories
     ALTER COLUMN alias SET NOT NULL;
 
 -- Enforce allowed role values only once (safe for repeated migration runs).
+-- +goose StatementBegin
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -47,6 +48,7 @@ BEGIN
                 CHECK (role IN ('orchestrator', 'service', 'docs', 'mixed'));
     END IF;
 END $$;
+-- +goose StatementEnd
 
 -- Alias must be unique within a project for deterministic repository imports.
 CREATE UNIQUE INDEX IF NOT EXISTS uq_repositories_project_alias

@@ -66,7 +66,7 @@ func (s *Service) allowedToolsForRunContext(runCtx resolvedRunContext) []ToolCap
 	switch triggerKind {
 	case webhookdomain.TriggerKindSelfImprove:
 		addAllowedToolNames(allowedNames, selfImproveDiagnosticTools...)
-	case webhookdomain.TriggerKindOps:
+	case webhookdomain.TriggerKindOps, webhookdomain.TriggerKindAIRepair:
 		if agentKey == agentKeySRE || agentKey == agentKeyDev {
 			addAllowedToolNames(allowedNames, controlPlaneControlTools...)
 		}

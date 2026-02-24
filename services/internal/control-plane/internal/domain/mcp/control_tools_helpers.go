@@ -95,12 +95,12 @@ func resolveControlApprovalMode(tool ToolName, runCtx resolvedRunContext) entity
 		if triggerLabel == triggerLabelRunDevRevise || triggerLabel == triggerLabelRunSelfPatch {
 			return entitytypes.MCPApprovalModeDelegated
 		}
-		if triggerLabel == triggerLabelRunOps && agentKey == agentKeySRE {
+		if (triggerLabel == triggerLabelRunOps || triggerLabel == triggerLabelRunAIRepair) && agentKey == agentKeySRE {
 			return entitytypes.MCPApprovalModeDelegated
 		}
 		return entitytypes.MCPApprovalModeOwner
 	case ToolMCPDatabaseLifecycle:
-		if triggerLabel == triggerLabelRunOps && (agentKey == agentKeySRE || agentKey == agentKeyDev) {
+		if (triggerLabel == triggerLabelRunOps || triggerLabel == triggerLabelRunAIRepair) && (agentKey == agentKeySRE || agentKey == agentKeyDev) {
 			return entitytypes.MCPApprovalModeDelegated
 		}
 		return entitytypes.MCPApprovalModeOwner

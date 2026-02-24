@@ -73,6 +73,10 @@ type Config struct {
 	AgentDefaultLocale string
 	// AgentBaseBranch is default base branch for PR flow.
 	AgentBaseBranch string
+	// JobImage is primary image for run Jobs.
+	JobImage string
+	// JobImageFallback is optional fallback image for run Jobs.
+	JobImageFallback string
 	// AIModelGPT53CodexLabel maps GitHub label to gpt-5.3-codex model.
 	AIModelGPT53CodexLabel string
 	// AIModelGPT53CodexSparkLabel maps GitHub label to gpt-5.3-codex-spark model.
@@ -113,6 +117,8 @@ type Dependencies struct {
 	RunStatus RunStatusNotifier
 	// Logger records worker diagnostics.
 	Logger *slog.Logger
+	// JobImageChecker checks whether image references are available before launch.
+	JobImageChecker JobImageAvailabilityChecker
 }
 
 // Service orchestrates pending runs to Kubernetes Jobs and final statuses.
@@ -127,7 +133,21 @@ type Service struct {
 	runStatus RunStatusNotifier
 	logger    *slog.Logger
 	labels    runAgentLabelCatalog
+	image     JobImageSelectionPolicy
 	now       func() time.Time
+}
+
+// JobImageAvailabilityChecker checks run Job image existence.
+type JobImageAvailabilityChecker interface {
+	IsImageAvailable(ctx context.Context, imageRef string) (bool, error)
+	ResolvePreviousImage(ctx context.Context, imageRef string) (string, bool, error)
+}
+
+// JobImageSelectionPolicy defines primary/fallback image configuration for run job launches.
+type JobImageSelectionPolicy struct {
+	Primary  string
+	Fallback string
+	Checker  JobImageAvailabilityChecker
 }
 
 // NewService creates worker orchestrator instance.
@@ -208,6 +228,8 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if cfg.AgentBaseBranch == "" {
 		cfg.AgentBaseBranch = "main"
 	}
+	cfg.JobImage = strings.TrimSpace(cfg.JobImage)
+	cfg.JobImageFallback = strings.TrimSpace(cfg.JobImageFallback)
 	labelCatalog := runAgentLabelCatalogFromConfig(cfg)
 	cfg.NamespaceTTLByRole = normalizeNamespaceTTLByRole(cfg.NamespaceTTLByRole)
 	if deps.Logger == nil {
@@ -234,7 +256,12 @@ func NewService(cfg Config, deps Dependencies) *Service {
 		runStatus: deps.RunStatus,
 		logger:    deps.Logger,
 		labels:    labelCatalog,
-		now:       time.Now,
+		image: JobImageSelectionPolicy{
+			Primary:  cfg.JobImage,
+			Fallback: cfg.JobImageFallback,
+			Checker:  deps.JobImageChecker,
+		},
+		now: time.Now,
 	}
 }
 

@@ -53,6 +53,8 @@ type JobSpec struct {
 	ProjectID string
 	// SlotNo stores slot number assigned to run.
 	SlotNo int
+	// JobImage overrides default run image for this specific run when set.
+	JobImage string
 	// RuntimeMode controls run profile in Kubernetes namespace.
 	RuntimeMode agentdomain.RuntimeMode
 	// Namespace is preferred namespace for this run.
@@ -271,9 +273,13 @@ func (l *Launcher) JobRef(runID string, namespace string) JobRef {
 // Launch creates Kubernetes Job or returns existing one when already present.
 func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 	ref := l.JobRef(spec.RunID, spec.Namespace)
+	jobImage := strings.TrimSpace(spec.JobImage)
+	if jobImage == "" {
+		jobImage = l.cfg.Image
+	}
 	container := corev1.Container{
 		Name:    "run",
-		Image:   l.cfg.Image,
+		Image:   jobImage,
 		Command: []string{"/bin/sh", "-c", l.cfg.Command},
 		Env: []corev1.EnvVar{
 			{Name: "CODEXK8S_RUN_ID", Value: spec.RunID},

@@ -69,6 +69,21 @@ func TestAllowedToolsForRunContext(t *testing.T) {
 				ToolRunStatusReport,
 			},
 		},
+		{
+			name:        "ai-repair sre gets labels and control tools",
+			triggerKind: "ai_repair",
+			agentKey:    "sre",
+			wantAllowedTools: []ToolName{
+				ToolMCPDatabaseLifecycle,
+				ToolGitHubLabelsAdd,
+				ToolGitHubLabelsList,
+				ToolGitHubLabelsRemove,
+				ToolGitHubLabelsTransition,
+				ToolMCPOwnerFeedbackRequest,
+				ToolRunStatusReport,
+				ToolMCPSecretSyncEnv,
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
