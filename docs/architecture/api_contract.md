@@ -5,8 +5,8 @@ title: "codex-k8s — API Contract Overview"
 status: active
 owner_role: SA
 created_at: 2026-02-06
-updated_at: 2026-02-21
-related_issues: [1, 19, 100]
+updated_at: 2026-02-24
+related_issues: [1, 19, 100, 145]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -27,6 +27,7 @@ approvals:
 - Для external/staff транспорта в S2 Day1 внедрён contract-first OpenAPI (validation + backend/frontend codegen).
 - В MVP completion (S2 Day6 + S3) добавляются API-контракты для runtime debug observability и MCP control tools orchestration.
 - Для multi-repo режима (Issue #100, design) планируются staff/private контракты composition preview и docs sources resolve.
+- Для run service-comment зафиксирован idempotent upsert-path (Issue #145): один comment на `run_id`, обновление через `PATCH`, создание через `POST` только при первом появлении.
 
 ## Спецификации (source of truth)
 - OpenAPI (api-gateway): `services/external/api-gateway/api/server/api.yaml`
@@ -54,6 +55,7 @@ approvals:
 - Базовый MCP инструмент обратной связи по прогрессу:
   - `run_status_report` (агент публикует текущий короткий статус выполнения в выбранной locale).
   - последние 3 `run_status_report` статуса выводятся в run service-comment в GitHub для видимого прогресса ревью.
+  - service-comment ведётся как singleton для `(repository, issue_number, run_id)` по marker `codex-k8s:run-status`; повторные update выполняются через GitHub REST `PATCH /issues/comments/{comment_id}`.
 - Остальные GitHub/Kubernetes runtime-операции выполняются напрямую из agent pod через `gh`/`kubectl` в рамках RBAC/policy.
 
 ## Модель доступа GitHub для агентного pod (S2 Day4)

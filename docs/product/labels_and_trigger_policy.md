@@ -5,8 +5,8 @@ title: "codex-k8s — Labels and Trigger Policy"
 status: active
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-02-21
-related_issues: [1, 19, 74, 90, 95]
+updated_at: 2026-02-24
+related_issues: [1, 19, 74, 90, 95, 145]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -185,6 +185,10 @@ approvals:
   - ставит reaction `:eyes:` (если ещё нет);
   - публикует/обновляет единый статус-комментарий в фазе «планируется запуск агента»;
   - дальше обновляет тот же комментарий по фазам `подготовка окружения -> запуск -> завершение`.
+- Единый status/service-comment для конкретного `run_id` обновляется idempotent:
+  - поиск комментария по marker `codex-k8s:run-status`;
+  - `PATCH` существующего комментария;
+  - `POST` только если комментарий для `run_id` ещё не существует.
 - Label transitions после завершения run должны выполняться через MCP (а не вручную в коде агента), чтобы сохранять единый policy/audit контур.
 - Для owner next-step action-link в staff web-console используется отдельный staff endpoint перехода этапа (RBAC + аудит), без прямых мутаций лейблов из frontend.
 - Для dev/dev:revise transition выполняется так:

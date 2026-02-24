@@ -5,8 +5,8 @@ title: "codex-k8s — MCP Approval and Audit Flow"
 status: active
 owner_role: SA
 created_at: 2026-02-11
-updated_at: 2026-02-21
-related_issues: [1, 19, 90, 95]
+updated_at: 2026-02-24
+related_issues: [1, 19, 90, 95, 145]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -36,6 +36,10 @@ approvals:
 - Для MCP label-инструментов (`github_labels_list|add|remove|transition`) используется `approval:none`.
 - Для MCP progress-feedback инструмента (`run_status_report`) используется `approval:none`;
   входной `status` ограничен 100 символами для компактного статуса.
+- `run_status_report` обновляет единый run service-comment по idempotent upsert-модели:
+  - поиск comment по marker `codex-k8s:run-status` + `run_id`;
+  - `PATCH` существующего comment;
+  - `POST` только при первом создании comment для run.
 - Для self-improve read-инструментов (`self_improve_runs_list`, `self_improve_run_lookup`, `self_improve_session_get`) используется `approval:none`.
 - Label transitions всё равно проходят через control-plane MCP, чтобы сохранять единый audit-контур.
 - Для control tools (`secret.sync.github_k8s`, `database.lifecycle`, `owner.feedback.request`) включается approver gate по policy.
@@ -159,6 +163,8 @@ approvals:
 - `run.revise.stage_ambiguous`
 - `run.profile.resolved`
 - `run.service_message.updated`
+- `run.service_message.reused`
+- `run.service_message.duplicate_detected`
 
 ## Интеграция с traceability
 
