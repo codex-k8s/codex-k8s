@@ -6,7 +6,7 @@ status: active
 owner_role: QA
 created_at: 2026-02-24
 updated_at: 2026-02-24
-related_issues: [19, 74, 95, 100, 112]
+related_issues: [19, 74, 95, 100, 112, 118, 119]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -119,6 +119,13 @@ approvals:
 - F1: multi-repo docs federation (Issue #100 day1 baseline).
 - F2: issue_map и requirements_traceability обновляются синхронно.
 - F3: doc-audit run соблюдает markdown-only scope.
+
+## Срез Issue #119: A+B core lifecycle и review-driven revise
+- Scope: A1, A2, A3, B1, B2, B3 из текущего master plan.
+- Acceptance criteria: все прогоны завершены без P0/P1 регрессий.
+- Acceptance criteria: ожидаемые `run:*`/`state:*`/`need:*` transitions зафиксированы в `flow_events`.
+- Evidence: evidence bundle публикуется комментарием в Issue #118.
+- Constraint: действия выполняются в рамках репозиторных правил (без прямой работы в `main`).
 
 ## Порядок прогона
 1. Подготовка окружения и preflight (tokens, namespace health, webhook availability).
