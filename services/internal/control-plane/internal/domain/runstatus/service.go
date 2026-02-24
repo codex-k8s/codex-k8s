@@ -87,6 +87,7 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		_ = s.ensureIssueWatchingReactionForRunContext(ctx, runCtx)
 	}
 	effectiveTriggerKind := resolveUpsertTriggerKind(params.TriggerKind, runCtx.triggerKind)
+	trackedCommentID := s.findTrackedRunStatusCommentID(ctx, runCtx.run.CorrelationID, runID)
 
 	currentState := commentState{
 		RunID:                    runID,
@@ -134,6 +135,9 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 	if found {
 		existingCommentID = existingComment.ID
 		currentState = mergeState(existingState, currentState)
+	} else if trackedCommentID > 0 {
+		// Use the last persisted comment id from flow_events when GitHub list is temporarily stale.
+		existingCommentID = trackedCommentID
 	}
 	currentState.SlotURL = s.resolveRunSlotURL(runCtx, currentState)
 	recentStatuses := s.loadRecentAgentStatuses(ctx, runCtx.run.CorrelationID, 3)
@@ -153,9 +157,13 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 			Body:       body,
 		})
 		if err != nil {
-			return UpsertCommentResult{}, fmt.Errorf("edit run status issue comment: %w", err)
+			if !isGitHubCommentNotFoundError(err) {
+				return UpsertCommentResult{}, fmt.Errorf("edit run status issue comment: %w", err)
+			}
+			existingCommentID = 0
 		}
-	} else {
+	}
+	if existingCommentID == 0 {
 		savedComment, err = s.github.CreateIssueComment(ctx, mcpdomain.GitHubCreateIssueCommentParams{
 			Token:       runCtx.githubToken,
 			Owner:       runCtx.repoOwner,
@@ -708,6 +716,73 @@ func parseRunAgentStatusPayload(rawPayload []byte) (statusText string, agentKey 
 	}
 
 	return strings.TrimSpace(payload.StatusText), strings.TrimSpace(payload.AgentKey)
+}
+
+func (s *Service) findTrackedRunStatusCommentID(ctx context.Context, correlationID string, runID string) int64 {
+	if s.staffRuns == nil {
+		return 0
+	}
+	normalizedCorrelationID := strings.TrimSpace(correlationID)
+	normalizedRunID := strings.TrimSpace(runID)
+	if normalizedCorrelationID == "" || normalizedRunID == "" {
+		return 0
+	}
+
+	events, err := s.staffRuns.ListEventsByCorrelation(ctx, normalizedCorrelationID, 100)
+	if err != nil {
+		return 0
+	}
+
+	for _, event := range events {
+		if strings.TrimSpace(event.EventType) != string(floweventdomain.EventTypeRunStatusCommentUpserted) {
+			continue
+		}
+		payload, ok := parseRunStatusCommentUpsertedPayload(event.PayloadJSON)
+		if !ok {
+			continue
+		}
+		if strings.TrimSpace(payload.RunID) != normalizedRunID {
+			continue
+		}
+		if payload.CommentID > 0 {
+			return payload.CommentID
+		}
+	}
+	return 0
+}
+
+func parseRunStatusCommentUpsertedPayload(rawPayload []byte) (runStatusCommentUpsertedPayload, bool) {
+	payloadBytes := rawPayload
+	if len(payloadBytes) == 0 {
+		return runStatusCommentUpsertedPayload{}, false
+	}
+
+	var payload runStatusCommentUpsertedPayload
+	if err := json.Unmarshal(payloadBytes, &payload); err != nil {
+		var nested string
+		if nestedErr := json.Unmarshal(payloadBytes, &nested); nestedErr != nil {
+			return runStatusCommentUpsertedPayload{}, false
+		}
+		if nested == "" {
+			return runStatusCommentUpsertedPayload{}, false
+		}
+		if nestedDecodeErr := json.Unmarshal([]byte(nested), &payload); nestedDecodeErr != nil {
+			return runStatusCommentUpsertedPayload{}, false
+		}
+	}
+
+	return payload, true
+}
+
+func isGitHubCommentNotFoundError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(strings.TrimSpace(err.Error()))
+	if msg == "" {
+		return false
+	}
+	return strings.Contains(msg, "404") || strings.Contains(msg, "not found")
 }
 
 func (s *Service) loadBotToken(ctx context.Context) (string, error) {
