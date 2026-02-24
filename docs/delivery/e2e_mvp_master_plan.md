@@ -128,6 +128,10 @@ approvals:
 - PRD artifacts: `docs/delivery/prd/issue-119/prd.md`.
 - PRD artifacts: `docs/delivery/prd/issue-119/nfr.md`.
 - PRD artifacts: `docs/delivery/prd/issue-119/user_story.md`.
+- Design artifacts: `docs/delivery/design/issue-119/design_doc.md`.
+- Design artifacts: `docs/delivery/design/issue-119/api_contract.md`.
+- Design artifacts: `docs/delivery/design/issue-119/data_model.md`.
+- Design artifacts: `docs/delivery/design/issue-119/migration_policy.md`.
 - Acceptance criteria: все 6 сценариев A+B завершены в статусе pass без P0/P1 регрессий.
 - Acceptance criteria: ожидаемые `run:*`/`state:*`/`need:*` transitions зафиксированы в `flow_events` с привязкой к `run_id`.
 - Acceptance criteria: для B2 ambiguity выставляется `need:input` и revise-run не стартует.

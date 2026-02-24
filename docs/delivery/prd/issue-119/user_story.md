@@ -73,6 +73,7 @@ approvals:
   - [ ] `need:input` корректно отработан для B2
   - [ ] Evidence опубликован в Issue #118
   - [ ] `docs/delivery/issue_map.md` обновлён и содержит ссылки на PRD-пакет issue #119
+  - [ ] `docs/delivery/design/issue-119/*.md` синхронизирован с PRD/NFR и master plan
 
 ## Открытые вопросы
 1. Нужен ли отдельный owner-формат комментария для evidence bundle в Issue #118.
