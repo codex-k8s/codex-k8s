@@ -43,11 +43,22 @@ approvals:
 3. `docs/delivery/e2e_mvp_master_plan.md` содержит отдельный smoke-сценарий `run:intake`/`run:intake:revise`.
 4. Изменения ограничены markdown-файлами.
 5. Для PR применён review-gate: `state:in-review` на PR и Issue #123 после обновления PR.
+6. Для `run:intake:revise` каждое открытое review-замечание получает явный результат: `fix_required` или `not_applicable` с фактологическим обоснованием.
 
 ## Definition of Done
-- AC-1..AC-5 выполнены.
+- AC-1..AC-6 выполнены.
 - В PR описана трассируемость `Issue #123 -> RQ-123-01..04 -> Acceptance Criteria`.
 - В PR перечислены открытые риски и продуктовые допущения.
+
+## Revise Resolution Log (PR #124, 2026-02-24)
+
+| Источник замечания | Приоритет | Статус | Решение |
+|---|---|---|---|
+| Review `CHANGES_REQUESTED` от `ai-da-stas` (`E2E revise check for intake: please address requested changes.`) | `high` | `fix_required` | Уточнены критерии intake-revise (AC-6), добавлена явная фиксация обработки review-замечаний в этом артефакте и синхронизирована delivery-трассируемость для Issue #123. |
+
+Пояснение:
+- Inline review-треды и незакрытые line-comments в PR #124 отсутствуют (проверено через `gh api graphql` для `reviewThreads` и `gh api pulls/124/comments`).
+- Единственное открытое замечание было общим review-level запросом на доработку; эта итерация закрывает его содержательно через усиление критериев и evidence.
 
 ## Открытые риски
 - RISK-123-01: smoke не покрывает переходы следующих стадий (`vision+`) и может скрыть проблемы stage chaining.

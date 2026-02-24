@@ -124,6 +124,7 @@ approvals:
 - G1: `run:intake` создаёт/обновляет только markdown-артефакт intake с AC/DoD/рисками.
 - G2: после обновления PR выполняется transition `run:intake -> state:in-review` на PR и Issue.
 - G3: `run:intake:revise` вносит точечные правки по замечаниям без выхода за markdown-only policy.
+- G4: в `run:intake:revise` каждое открытое review-замечание классифицируется как `fix_required` или `not_applicable`, и по каждому опубликован проверяемый ответ в PR.
 
 ## Порядок прогона
 1. Подготовка окружения и preflight (tokens, namespace health, webhook availability).
