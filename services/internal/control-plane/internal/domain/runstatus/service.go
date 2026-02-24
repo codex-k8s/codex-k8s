@@ -16,6 +16,11 @@ import (
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
+const (
+	runStatusCommentLookupRetries    = 1
+	runStatusCommentLookupRetryDelay = 250 * time.Millisecond
+)
+
 // NewService creates run-status domain service.
 func NewService(cfg Config, deps Dependencies) (*Service, error) {
 	cfg.PublicBaseURL = strings.TrimRight(strings.TrimSpace(cfg.PublicBaseURL), "/")
@@ -104,13 +109,12 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		currentState.PullRequestURL = strings.TrimSpace(runCtx.payload.PullRequest.HTMLURL)
 	}
 
-	comments, err := s.listRunIssueComments(ctx, runCtx)
+	existingCommentID := int64(0)
+	existingComment, existingState, found, err := s.lookupRunStatusComment(ctx, runCtx, runID)
 	if err != nil {
 		return UpsertCommentResult{}, err
 	}
-
-	existingCommentID := int64(0)
-	if existingComment, existingState, found := findRunStatusComment(comments, runID); found {
+	if found {
 		existingCommentID = existingComment.ID
 		currentState = mergeState(existingState, currentState)
 	}
@@ -579,6 +583,38 @@ func (s *Service) listRunIssueComments(ctx context.Context, runCtx runContext) (
 	return comments, nil
 }
 
+func (s *Service) lookupRunStatusComment(ctx context.Context, runCtx runContext, runID string) (mcpdomain.GitHubIssueComment, commentState, bool, error) {
+	for attempt := 0; ; attempt++ {
+		comments, err := s.listRunIssueComments(ctx, runCtx)
+		if err != nil {
+			return mcpdomain.GitHubIssueComment{}, commentState{}, false, err
+		}
+		if existingComment, existingState, found := findRunStatusComment(comments, runID); found {
+			return existingComment, existingState, true, nil
+		}
+		if attempt >= runStatusCommentLookupRetries {
+			return mcpdomain.GitHubIssueComment{}, commentState{}, false, nil
+		}
+		if err := sleepWithContext(ctx, runStatusCommentLookupRetryDelay); err != nil {
+			return mcpdomain.GitHubIssueComment{}, commentState{}, false, nil
+		}
+	}
+}
+
+func sleepWithContext(ctx context.Context, delay time.Duration) error {
+	if delay <= 0 {
+		return nil
+	}
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
+}
+
 func (s *Service) loadRecentAgentStatuses(ctx context.Context, correlationID string, limit int) []recentAgentStatus {
 	if s.staffRuns == nil || limit <= 0 {
 		return nil
@@ -744,17 +780,24 @@ func ensureHTTPSURL(value string) string {
 }
 
 func findRunStatusComment(comments []mcpdomain.GitHubIssueComment, runID string) (mcpdomain.GitHubIssueComment, commentState, bool) {
+	var selectedComment mcpdomain.GitHubIssueComment
+	var selectedState commentState
+	found := false
 	for _, comment := range comments {
 		if !commentContainsRunID(comment.Body, runID) {
 			continue
 		}
 		state, ok := extractStateMarker(comment.Body)
 		if !ok {
-			return mcpdomain.GitHubIssueComment{}, commentState{}, false
+			continue
 		}
-		return comment, state, true
+		if !found || comment.ID > selectedComment.ID {
+			selectedComment = comment
+			selectedState = state
+			found = true
+		}
 	}
-	return mcpdomain.GitHubIssueComment{}, commentState{}, false
+	return selectedComment, selectedState, found
 }
 
 func isIgnorableCleanupError(err error) bool {

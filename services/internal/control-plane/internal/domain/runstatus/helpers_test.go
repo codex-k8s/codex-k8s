@@ -1,8 +1,11 @@
 package runstatus
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 
+	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
@@ -109,4 +112,60 @@ func TestResolveUpsertTriggerKind(t *testing.T) {
 	if got := resolveUpsertTriggerKind("  ", ""); got != "dev" {
 		t.Fatalf("resolveUpsertTriggerKind(blank, empty) = %q, want %q", got, "dev")
 	}
+}
+
+func TestFindRunStatusComment_PicksLatestCommentByID(t *testing.T) {
+	t.Parallel()
+
+	bodyOld := testRunStatusCommentBody(t, commentState{RunID: "run-1", Phase: PhaseCreated})
+	bodyNew := testRunStatusCommentBody(t, commentState{RunID: "run-1", Phase: PhaseStarted})
+
+	comments := []mcpdomain.GitHubIssueComment{
+		{ID: 101, Body: bodyOld},
+		{ID: 109, Body: bodyNew},
+	}
+
+	gotComment, gotState, found := findRunStatusComment(comments, "run-1")
+	if !found {
+		t.Fatal("expected to find run status comment")
+	}
+	if gotComment.ID != 109 {
+		t.Fatalf("expected latest comment id 109, got %d", gotComment.ID)
+	}
+	if gotState.Phase != PhaseStarted {
+		t.Fatalf("expected phase %q from latest comment, got %q", PhaseStarted, gotState.Phase)
+	}
+}
+
+func TestFindRunStatusComment_IgnoresMalformedMarkerAndFindsValid(t *testing.T) {
+	t.Parallel()
+
+	malformed := "<!-- codex-k8s:run-status {not-valid-json} -->"
+	valid := testRunStatusCommentBody(t, commentState{RunID: "run-2", Phase: PhaseFinished})
+
+	comments := []mcpdomain.GitHubIssueComment{
+		{ID: 201, Body: malformed},
+		{ID: 202, Body: valid},
+	}
+
+	gotComment, gotState, found := findRunStatusComment(comments, "run-2")
+	if !found {
+		t.Fatal("expected to find valid run status comment")
+	}
+	if gotComment.ID != 202 {
+		t.Fatalf("expected comment id 202, got %d", gotComment.ID)
+	}
+	if gotState.Phase != PhaseFinished {
+		t.Fatalf("expected phase %q, got %q", PhaseFinished, gotState.Phase)
+	}
+}
+
+func testRunStatusCommentBody(t *testing.T, state commentState) string {
+	t.Helper()
+
+	raw, err := json.Marshal(state)
+	if err != nil {
+		t.Fatalf("marshal state marker: %v", err)
+	}
+	return fmt.Sprintf("status\n%s%s%s", commentMarkerPrefix, string(raw), commentMarkerSuffix)
 }
