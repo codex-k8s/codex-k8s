@@ -6,7 +6,7 @@ status: active
 owner_role: QA
 created_at: 2026-02-24
 updated_at: 2026-02-24
-related_issues: [19, 74, 95, 100, 112]
+related_issues: [19, 74, 95, 100, 112, 141]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -23,6 +23,7 @@ approvals:
 
 ## Контекст и цель
 - Issue: `#112`.
+- Дополнительный e2e focus-check: `#141` (final check для `run:prd + run:prd:revise` после hardening идемпотентности status comment upsert).
 - Дата фиксации плана: `2026-02-24`.
 - Цель: подтвердить, что MVP-контур `webhook -> run -> review/revise -> release/postdeploy/ops` воспроизводим и безопасен.
 
@@ -99,6 +100,10 @@ approvals:
 - B1: `changes_requested` при одном stage label на PR.
 - B2: ambiguous labels -> `need:input` без старта revise.
 - B3: sticky model/reasoning profile между revise-итерациями.
+- B4: `run:prd` -> `run:prd:revise` для Issue #141 с повторными status updates:
+  - service-comment в Issue переиспользует один и тот же comment-thread (без дублирования);
+  - обновление статуса не ломает трассировку `run_id -> comment_id -> flow_events`;
+  - после revise trigger снимается, а `state:in-review` ставится детерминированно по policy.
 
 ### Набор C. MCP governance tools
 - C1: `github_labels_list|add|remove|transition` с audit trail.
@@ -139,6 +144,7 @@ approvals:
 - Матрица label coverage пройдена полностью.
 - Security/RBAC проверки пройдены без критичных нарушений.
 - Документация и traceability синхронизированы по факту прогона.
+- Для focus-check Issue #141 подтверждена идемпотентность status-comment lifecycle в цикле `run:prd`/`run:prd:revise`.
 
 ## Источники фактов (актуализировано на 2026-02-24 через Context7)
 - Kubernetes rollout/status checks: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/

@@ -6,7 +6,7 @@ status: in-progress
 owner_role: EM
 created_at: 2026-02-13
 updated_at: 2026-02-24
-related_issues: [19, 45, 74, 112]
+related_issues: [19, 45, 74, 112, 141]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -24,6 +24,7 @@ approvals:
 - Дополнительная цель: закрыть core-flow пробелы до запуска полного e2e (prompt/docs context, env-scoped secret governance, runtime error journal, frontend hardening).
 - Дополнительная цель: добавить realtime контур (multi-server WebSocket updates через PostgreSQL LISTEN/NOTIFY шину) до запуска полного e2e.
 - Дополнительная цель: убрать immediate cleanup для `full-env` run namespace и зафиксировать lease retention/revise-reuse policy в delivery (Issue #74).
+- Дополнительная цель: закрыть финальный focus-check Issue #141 для `run:prd + run:prd:revise` после hardening идемпотентности status comment lifecycle.
 - Финальный шаг спринта: full e2e regression gate и formal MVP closeout.
 - Детализация Day20 вынесена в `docs/delivery/e2e_mvp_master_plan.md`.
 

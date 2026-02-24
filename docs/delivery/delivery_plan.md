@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-24
-related_issues: [1, 19, 74, 100, 106, 112]
+related_issues: [1, 19, 74, 100, 106, 112, 141]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -91,6 +91,7 @@ approvals:
 - Day 19.6: интеграция realtime подписок в staff UI (runs/deploy/errors/logs/events), удаление кнопок `Обновить` в realtime-экранах, fallback polling.
 - Day 19.7: retention full-env namespace по role-based TTL + lease extension/reuse на `run:*:revise` (Issue #74).
 - Day 20: full e2e regression/security gate + MVP closeout/handover и переход к post-MVP roadmap (подробности в `docs/delivery/e2e_mvp_master_plan.md`).
+  - Focus-check Issue #141: отдельная валидация `run:prd + run:prd:revise` после hardening идемпотентности status comment lifecycle.
 
 ### Sprint S4: Multi-repo runtime and docs federation (Issue #100)
 - Day 1 (completed): execution foundation для federated multi-repo composition и docs federation (`docs/delivery/epics/s4/epic-s4-day1-multi-repo-composition-and-docs-federation.md`).
