@@ -2,10 +2,10 @@
 doc_id: REG-CK8S-S1-0001
 type: regression
 title: "Sprint S1 Regression Gate (production)"
-status: active
+status: completed
 owner_role: QA
 created_at: 2026-02-09
-updated_at: 2026-02-14
+updated_at: 2026-02-24
 related_issues: [1]
 related_prs: []
 approvals:

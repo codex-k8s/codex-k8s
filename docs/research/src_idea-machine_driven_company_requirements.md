@@ -258,7 +258,7 @@ Postgres/pgvector — **индекс/метаданные/аудит**, но н�
 
 * `docs/delivery/issue_map.md` (каноническая матрица Issue/PR ↔ документы),
 * `docs/delivery/requirements_traceability.md` (покрытие FR/NFR),
-* sprint/epic документы в `docs/delivery/sprint_s*.md`, `docs/delivery/epics/*.md`.
+* sprint/epic документы в `docs/delivery/sprints/**/*.md`, `docs/delivery/epics/**/*.md`.
 
 **DocSet/KM‑агент** обновляет это **через MCP** (правило #5), а MCP:
 

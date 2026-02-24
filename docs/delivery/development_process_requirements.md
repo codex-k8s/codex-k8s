@@ -5,8 +5,8 @@ title: "codex-k8s — Development and Documentation Process Requirements"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-11
-related_issues: [1]
+updated_at: 2026-02-24
+related_issues: [1, 112]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -31,8 +31,11 @@ approvals:
 - `docs/product/labels_and_trigger_policy.md`
 - `docs/product/stage_process_model.md`
 - `docs/delivery/delivery_plan.md`
-- `docs/delivery/sprint_s1_mvp_vertical_slice.md`
-- `docs/delivery/sprint_s2_dogfooding.md`
+- `docs/delivery/sprints/s1/sprint_s1_mvp_vertical_slice.md`
+- `docs/delivery/sprints/s2/sprint_s2_dogfooding.md`
+- `docs/delivery/sprints/README.md`
+- `docs/delivery/epics/README.md`
+- `docs/delivery/e2e_mvp_master_plan.md`
 - `docs/delivery/issue_map.md`
 - `docs/delivery/requirements_traceability.md`
 - `docs/design-guidelines/**`
@@ -52,7 +55,7 @@ approvals:
 |---|---|---|
 | Owner | Утверждает scope, приоритеты, критические решения, go/no-go | Апрувы в frontmatter, решения по рискам |
 | PM | Поддерживает продуктовые требования и ограничения | `docs/product/requirements_machine_driven.md`, `docs/product/brief.md`, `docs/product/constraints.md` |
-| EM | Ведёт спринт-план, эпики, daily delivery gate | `docs/delivery/sprint_s*.md`, `docs/delivery/epic_s*.md`, `docs/delivery/epics/epic-s*-day*.md` |
+| EM | Ведёт спринт-план, эпики, daily delivery gate | `docs/delivery/sprints/s*/sprint_s*.md`, `docs/delivery/epics/s*/epic_s*.md`, `docs/delivery/epics/s*/epic-s*-day*.md` |
 | SA | Архитектурная и data-model консистентность | `docs/architecture/*.md`, миграционная стратегия |
 | Dev | Реализация задач и технические проверки | код, тесты, миграции, изменения API/контрактов |
 | Reviewer | Предварительное ревью PR до Owner | inline findings в PR + summary для Owner |
@@ -66,14 +69,14 @@ approvals:
 
 Правила:
 - Sprint plan файл:
-  - `docs/delivery/sprint_s<номер>_<краткое-имя>.md`
-  - пример: `docs/delivery/sprint_s2_dogfooding.md`
+  - `docs/delivery/sprints/s<номер>/sprint_s<номер>_<краткое-имя>.md`
+  - пример: `docs/delivery/sprints/s2/sprint_s2_dogfooding.md`
 - Epic catalog файл:
-  - `docs/delivery/epic_s<номер>.md`
-  - пример: `docs/delivery/epic_s2.md`
+  - `docs/delivery/epics/s<номер>/epic_s<номер>.md`
+  - пример: `docs/delivery/epics/s2/epic_s2.md`
 - Daily epic docs:
-  - `docs/delivery/epics/epic-s<номер>-day<день>-<краткое-имя>.md`
-  - пример: `docs/delivery/epics/epic-s2-day0-control-plane-extraction.md`
+  - `docs/delivery/epics/s<номер>/epic-s<номер>-day<день>-<краткое-имя>.md`
+  - пример: `docs/delivery/epics/s2/epic-s2-day0-control-plane-extraction.md`
 
 ## Еженедельный цикл спринта
 
@@ -84,8 +87,8 @@ approvals:
 - Провести DoR-check.
 
 Обязательные артефакты:
-- Sprint plan: `docs/delivery/sprint_s<номер>_<краткое-имя>.md` (актуальный sprint-file недели).
-- Epic catalog: `docs/delivery/epic_s<номер>.md` и daily epic docs в `docs/delivery/epics/`.
+- Sprint plan: `docs/delivery/sprints/s<номер>/sprint_s<номер>_<краткое-имя>.md` (актуальный sprint-file недели).
+- Epic catalog: `docs/delivery/epics/s<номер>/epic_s<номер>.md` и daily epic docs в `docs/delivery/epics/s<номер>/`.
 - `docs/delivery/issue_map.md` и `docs/delivery/requirements_traceability.md`.
 
 ### 2. Daily Execution (каждый рабочий день спринта)

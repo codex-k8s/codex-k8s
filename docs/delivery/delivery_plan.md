@@ -5,8 +5,8 @@ title: "codex-k8s — Delivery Plan"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-23
-related_issues: [1, 19, 74, 100, 106]
+updated_at: 2026-02-24
+related_issues: [1, 19, 74, 100, 106, 112]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -37,26 +37,29 @@ approvals:
 - Runtime/RBAC model: `docs/architecture/agent_runtime_rbac.md`
 - MCP approval/audit flow: `docs/architecture/mcp_approval_and_audit_flow.md`
 - Prompt templates policy: `docs/architecture/prompt_templates_policy.md`
-- Sprint plan: `docs/delivery/sprint_s1_mvp_vertical_slice.md`
-- Epic catalog: `docs/delivery/epic_s1.md`
-- Sprint S2 plan: `docs/delivery/sprint_s2_dogfooding.md`
-- Epic S2 catalog: `docs/delivery/epic_s2.md`
-- Sprint S3 plan: `docs/delivery/sprint_s3_mvp_completion.md`
-- Epic S3 catalog: `docs/delivery/epic_s3.md`
-- Sprint S4 plan: `docs/delivery/sprint_s4_multi_repo_federation.md`
-- Epic S4 catalog: `docs/delivery/epic_s4.md`
+- Sprint plan: `docs/delivery/sprints/s1/sprint_s1_mvp_vertical_slice.md`
+- Epic catalog: `docs/delivery/epics/s1/epic_s1.md`
+- Sprint S2 plan: `docs/delivery/sprints/s2/sprint_s2_dogfooding.md`
+- Epic S2 catalog: `docs/delivery/epics/s2/epic_s2.md`
+- Sprint S3 plan: `docs/delivery/sprints/s3/sprint_s3_mvp_completion.md`
+- Epic S3 catalog: `docs/delivery/epics/s3/epic_s3.md`
+- Sprint S4 plan: `docs/delivery/sprints/s4/sprint_s4_multi_repo_federation.md`
+- Epic S4 catalog: `docs/delivery/epics/s4/epic_s4.md`
+- Sprint index: `docs/delivery/sprints/README.md`
+- Epic index: `docs/delivery/epics/README.md`
+- E2E master plan: `docs/delivery/e2e_mvp_master_plan.md`
 - Process requirements: `docs/delivery/development_process_requirements.md`
 
 ## Структура работ (WBS)
 ### Sprint S1: Day 0 + Day 1..7 (8 эпиков)
-- Day 0 (completed): `docs/delivery/epics/epic-s1-day0-bootstrap-baseline.md`
-- Day 1: `docs/delivery/epics/epic-s1-day1-webhook-idempotency.md`
-- Day 2: `docs/delivery/epics/epic-s1-day2-worker-slots-k8s.md`
-- Day 3: `docs/delivery/epics/epic-s1-day3-auth-rbac-ui.md`
-- Day 4: `docs/delivery/epics/epic-s1-day4-repository-provider.md`
-- Day 5: `docs/delivery/epics/epic-s1-day5-learning-mode.md`
-- Day 6: `docs/delivery/epics/epic-s1-day6-hardening-observability.md`
-- Day 7: `docs/delivery/epics/epic-s1-day7-stabilization-gate.md`
+- Day 0 (completed): `docs/delivery/epics/s1/epic-s1-day0-bootstrap-baseline.md`
+- Day 1: `docs/delivery/epics/s1/epic-s1-day1-webhook-idempotency.md`
+- Day 2: `docs/delivery/epics/s1/epic-s1-day2-worker-slots-k8s.md`
+- Day 3: `docs/delivery/epics/s1/epic-s1-day3-auth-rbac-ui.md`
+- Day 4: `docs/delivery/epics/s1/epic-s1-day4-repository-provider.md`
+- Day 5: `docs/delivery/epics/s1/epic-s1-day5-learning-mode.md`
+- Day 6: `docs/delivery/epics/s1/epic-s1-day6-hardening-observability.md`
+- Day 7: `docs/delivery/epics/s1/epic-s1-day7-stabilization-gate.md`
 
 ### Sprint S2: Dogfooding baseline + hardening (Day 0..7)
 - Day 0..4 (completed): архитектурное выравнивание, label triggers, namespace/RBAC, MCP prompt context, agent PR flow.
@@ -87,10 +90,10 @@ approvals:
 - Day 19.5: realtime шина на PostgreSQL (`event log + LISTEN/NOTIFY`) + multi-server WebSocket backplane.
 - Day 19.6: интеграция realtime подписок в staff UI (runs/deploy/errors/logs/events), удаление кнопок `Обновить` в realtime-экранах, fallback polling.
 - Day 19.7: retention full-env namespace по role-based TTL + lease extension/reuse на `run:*:revise` (Issue #74).
-- Day 20: full e2e regression/security gate + MVP closeout/handover и переход к post-MVP roadmap.
+- Day 20: full e2e regression/security gate + MVP closeout/handover и переход к post-MVP roadmap (подробности в `docs/delivery/e2e_mvp_master_plan.md`).
 
 ### Sprint S4: Multi-repo runtime and docs federation (Issue #100)
-- Day 1 (completed): execution foundation для federated multi-repo composition и docs federation (`docs/delivery/epics/epic-s4-day1-multi-repo-composition-and-docs-federation.md`).
+- Day 1 (completed): execution foundation для federated multi-repo composition и docs federation (`docs/delivery/epics/s4/epic-s4-day1-multi-repo-composition-and-docs-federation.md`).
 - Результат Day 1: формальный execution-plan (stories + quality-gates + owner decisions) для перехода в `run:dev`.
 - Следующие day-эпики S4 формируются после Owner review Day 1 и закрытия зависимостей по S3 Day20.
 

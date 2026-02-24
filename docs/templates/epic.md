@@ -19,7 +19,7 @@ approvals:
 # Epic: <Название>
 
 Рекомендуемый нейминг файла (монорепо, per-sprint):
-- `docs/delivery/epics/epic-s<номер>-day<день>-<краткое-имя>.md`
+- `docs/delivery/epics/s<номер>/epic-s<номер>-day<день>-<краткое-имя>.md`
 
 ## TL;DR
 - Цель эпика:

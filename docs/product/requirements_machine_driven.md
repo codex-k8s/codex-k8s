@@ -5,8 +5,8 @@ title: "codex-k8s — Machine-Driven Requirements Baseline"
 status: active
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-20
-related_issues: [1, 74, 90]
+updated_at: 2026-02-24
+related_issues: [1, 74, 90, 112]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -174,8 +174,9 @@ approvals:
 - `docs/architecture/mcp_approval_and_audit_flow.md`
 - `docs/architecture/prompt_templates_policy.md`
 - `docs/delivery/delivery_plan.md`
-- `docs/delivery/sprint_s3_mvp_completion.md`
-- `docs/delivery/epic_s3.md`
+- `docs/delivery/sprints/s3/sprint_s3_mvp_completion.md`
+- `docs/delivery/epics/s3/epic_s3.md`
+- `docs/delivery/e2e_mvp_master_plan.md`
 - `docs/delivery/issue_map.md`
 - `docs/delivery/development_process_requirements.md`
 - `docs/design-guidelines/AGENTS.md`

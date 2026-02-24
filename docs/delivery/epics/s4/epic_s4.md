@@ -27,7 +27,7 @@ approvals:
 - Delivery process source of truth: `docs/delivery/development_process_requirements.md`.
 
 ## Эпики Sprint S4
-- Day 1: `docs/delivery/epics/epic-s4-day1-multi-repo-composition-and-docs-federation.md`
+- Day 1: `docs/delivery/epics/s4/epic-s4-day1-multi-repo-composition-and-docs-federation.md`
 
 ## Прогресс
 - Day 1: completed (execution-plan сформирован, handover в `run:dev` подготовлен в Issue #106).
