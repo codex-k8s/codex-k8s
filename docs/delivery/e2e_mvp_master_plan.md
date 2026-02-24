@@ -6,7 +6,7 @@ status: active
 owner_role: QA
 created_at: 2026-02-24
 updated_at: 2026-02-24
-related_issues: [19, 74, 95, 100, 112]
+related_issues: [19, 74, 95, 100, 112, 134]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -60,6 +60,21 @@ approvals:
 | Verification/release | `run:qa`, `run:release`, `run:postdeploy`, `run:ops` | выпуск тест/release/ops артефактов | chain completion без нарушения policy |
 | Special | `run:doc-audit`, `run:self-improve`, `run:rethink`, `run:ai-repair` | узкоспециализированные run и scope-проверка | ограничение файлового scope соблюдено, audit events полные |
 
+### 1.1. Targeted regression: `run:arch` + `run:arch:revise` idempotency (Issue #134)
+
+| ID | Сценарий | Ожидаемый результат |
+|---|---|---|
+| ARCH-IDEMP-1 | Повторный delivery одного и того же label-события `run:arch` (same delivery id / replay) | второй run не создаётся, в audit фиксируется duplicate/ignored path |
+| ARCH-IDEMP-2 | Повторный запрос transition `run:arch -> run:arch:revise` | на Issue сохраняется ровно один trigger `run:arch:revise`, старый `run:arch` снят, дубликаты не появляются |
+| ARCH-IDEMP-3 | `changes_requested` по PR архитектурного этапа при однозначном stage resolve | запускается только один `run:arch:revise`, без повторного запуска от replay webhook |
+| ARCH-IDEMP-4 | ambiguity в stage labels (конфликт на PR/Issue) | revise-run не запускается, выставляется `need:input`, remediation-comment публикуется один раз на событие |
+| ARCH-IDEMP-5 | Завершение архитектурного run с PR-артефактами | trigger `run:arch`/`run:arch:revise` снят, `state:in-review` выставлен на PR и Issue; traceability bundle обновлён |
+
+Обязательные evidence для ARCH-IDEMP набора:
+- срез `agent_runs` по issue `#134` с проверкой отсутствия дублирующих запусков для одного события;
+- `flow_events` по transition `run:arch -> run:arch:revise` и по ambiguous-path;
+- ссылки на service-comment с next-step action cards для архитектурной стадии.
+
 ### 2. `state:*`
 
 | Label | Сценарий | Ожидаемый результат |
@@ -99,6 +114,7 @@ approvals:
 - B1: `changes_requested` при одном stage label на PR.
 - B2: ambiguous labels -> `need:input` без старта revise.
 - B3: sticky model/reasoning profile между revise-итерациями.
+- B4: для архитектурной стадии (`run:arch`) replay webhook/retry не создаёт повторный `run:arch:revise` (Issue #134).
 
 ### Набор C. MCP governance tools
 - C1: `github_labels_list|add|remove|transition` с audit trail.

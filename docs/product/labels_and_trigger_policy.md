@@ -5,8 +5,8 @@ title: "codex-k8s — Labels and Trigger Policy"
 status: active
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-02-21
-related_issues: [1, 19, 74, 90, 95]
+updated_at: 2026-02-24
+related_issues: [1, 19, 74, 90, 95, 134]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -232,6 +232,14 @@ approvals:
   - revise-run не стартует;
   - выставляется `need:input`;
   - публикуется remediation-message с конкретным требуемым label action.
+
+#### Idempotent replay policy для архитектурного revise (Issue #134)
+- Для `run:arch` и `run:arch:revise` повторная обработка одного и того же webhook delivery/event не должна порождать повторный run.
+- При повторном transition-запросе `run:arch -> run:arch:revise` финальное состояние Issue должно оставаться детерминированным:
+  - ровно один trigger `run:arch:revise`;
+  - отсутствие конкурентного `run:arch`;
+  - отсутствие дублирующих service-message side effects.
+- При `changes_requested` для PR архитектурного этапа допускается только один revise-launch на одно уникальное review-событие; replay/delivery retry должен фиксироваться как duplicate/ignored path в аудите.
 
 #### Next-step deep-link в web-console (implemented)
 - Action-link из GitHub service-comment открывает staff web-console для перехода этапа (`/governance/labels-stages?...`).
