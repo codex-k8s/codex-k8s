@@ -47,6 +47,11 @@ approvals:
 - ссылка на ключевой service-comment (или комментарий с remediation для B2).
 - статус `pass/fail` на сценарий с коротким обоснованием.
 
+## Связь с трассируемостью
+- Для проверки покрытия FR/NFR и AC использовать:
+  - `docs/delivery/design/issue-119/traceability_matrix.md`;
+  - `docs/delivery/requirements_traceability.md`.
+
 ## Изменения OpenAPI/proto
 - OpenAPI: без изменений.
 - gRPC/proto: без изменений.

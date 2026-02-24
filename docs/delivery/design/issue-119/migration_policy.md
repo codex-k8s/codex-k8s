@@ -39,6 +39,7 @@ approvals:
 - Mitigation:
   - обязательный evidence schema из `data_model.md`;
   - обновление `issue_map` и master plan в том же PR.
+  - явная матрица связей в `traceability_matrix.md`.
 
 ## Rollback plan
 1. Отменить PR с design-изменениями.

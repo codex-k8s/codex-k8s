@@ -71,6 +71,12 @@ ORDER BY created_at DESC;
 - Backfill: none.
 - Data retention policy: без изменений.
 
+## Связь с трассируемостью
+- Scenario/AC mapping зафиксирован в:
+  `docs/delivery/design/issue-119/traceability_matrix.md`.
+- Глобальное покрытие требований фиксируется в:
+  `docs/delivery/requirements_traceability.md`.
+
 ## Runtime impact
 - Только дополнительный анализ существующих данных для evidence bundle.
 - Путь записи данных не меняется.

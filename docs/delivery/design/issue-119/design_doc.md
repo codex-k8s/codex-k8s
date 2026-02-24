@@ -21,6 +21,14 @@ approvals:
 - Изменений API/схемы БД не требуется: используется текущий stage/label/runtime контур.
 - Основной результат: единый design-пакет для воспроизводимой проверки и handover evidence в Issue #118.
 
+## Структура design-пакета
+- Индекс: `docs/delivery/design/issue-119/README.md`
+- Трассируемость A+B: `docs/delivery/design/issue-119/traceability_matrix.md`
+- Контрактные/данные/migration артефакты:
+  - `docs/delivery/design/issue-119/api_contract.md`
+  - `docs/delivery/design/issue-119/data_model.md`
+  - `docs/delivery/design/issue-119/migration_policy.md`
+
 ## Scope
 - In scope:
   - архитектурная декомпозиция сценариев A+B по слоям `external -> internal -> jobs -> github`;
@@ -85,6 +93,10 @@ approvals:
 - [ ] Зафиксированы контрактные инварианты B1/B2/B3.
 - [ ] Зафиксирован формат evidence и traceability links для Issue #118.
 - [ ] Подтверждено отсутствие необходимости API/DB миграций.
+
+## Матрица трассируемости
+- Детальная матрица `требование -> сценарий -> артефакт -> evidence` вынесена в:
+  `docs/delivery/design/issue-119/traceability_matrix.md`.
 
 ## Связанные артефакты
 - `docs/delivery/e2e_mvp_master_plan.md`
