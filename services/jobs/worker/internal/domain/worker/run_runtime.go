@@ -28,9 +28,9 @@ func resolveRunExecutionContext(runID string, projectID string, runPayload json.
 		RuntimeMode: mode,
 		IssueNumber: resolveIssueNumber(meta),
 	}
+	context.Namespace = resolveRuntimeNamespace(meta)
 
 	if mode == agentdomain.RuntimeModeFullEnv {
-		context.Namespace = resolveRuntimeNamespace(meta)
 		if context.Namespace == "" {
 			context.Namespace = buildRunNamespace(namespacePrefix, projectID, runID, context.IssueNumber)
 		}

@@ -151,6 +151,81 @@ func TestTickSkipsCodeOnlyRun(t *testing.T) {
 	}
 }
 
+func TestTickLaunchesAIRepairCodeOnlyRunAsPodWorkload(t *testing.T) {
+	t.Parallel()
+
+	runs := &fakeRunQueue{
+		claims: []runqueuerepo.ClaimedRun{
+			{
+				RunID:         "run-ai-repair",
+				CorrelationID: "corr-ai-repair",
+				ProjectID:     "proj-1",
+				RunPayload: json.RawMessage(`{
+					"repository":{"full_name":"codex-k8s/codex-k8s"},
+					"trigger":{"kind":"ai_repair"},
+					"issue":{"number":45},
+					"agent":{"key":"sre","name":"AI SRE"},
+					"runtime":{"mode":"code-only","namespace":"codex-k8s-prod"}
+				}`),
+				SlotNo: 1,
+			},
+		},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{states: map[string]JobState{}}
+	mcpTokens := &fakeMCPTokenIssuer{token: "token-ai-repair"}
+	deployer := &fakeRuntimePreparer{}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:               "worker-1",
+		ClaimLimit:             1,
+		RunningCheckLimit:      10,
+		SlotsPerProject:        2,
+		SlotLeaseTTL:           time.Minute,
+		AgentBaseBranch:        "main",
+		AIRepairNamespace:      "codex-k8s-prod",
+		AIRepairServiceAccount: "codex-k8s-control-plane",
+	}, Dependencies{
+		Runs:            runs,
+		Events:          events,
+		Launcher:        launcher,
+		MCPTokenIssuer:  mcpTokens,
+		RuntimePreparer: deployer,
+		Logger:          logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 2, 24, 11, 0, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if len(deployer.prepared) != 0 {
+		t.Fatalf("expected no runtime deploy calls for ai-repair code-only run, got %d", len(deployer.prepared))
+	}
+	if len(launcher.launched) != 1 {
+		t.Fatalf("expected 1 launched workload, got %d", len(launcher.launched))
+	}
+	if got, want := launcher.launched[0].Namespace, "codex-k8s-prod"; got != want {
+		t.Fatalf("expected ai-repair namespace %q, got %q", want, got)
+	}
+	if got, want := launcher.launched[0].ServiceAccountName, "codex-k8s-control-plane"; got != want {
+		t.Fatalf("expected ai-repair service account %q, got %q", want, got)
+	}
+	if got, want := launcher.launched[0].TargetBranch, "main"; got != want {
+		t.Fatalf("expected ai-repair target branch %q, got %q", want, got)
+	}
+	if len(events.inserted) != 2 {
+		t.Fatalf("expected run.profile.resolved + run.started events, got %d", len(events.inserted))
+	}
+	if events.inserted[0].EventType != floweventdomain.EventTypeRunProfileResolved {
+		t.Fatalf("expected first event run.profile.resolved, got %s", events.inserted[0].EventType)
+	}
+	if events.inserted[1].EventType != floweventdomain.EventTypeRunStarted {
+		t.Fatalf("expected second event run.started, got %s", events.inserted[1].EventType)
+	}
+}
+
 func TestTickDeployOnlyRun_PreparesEnvironmentWithoutLaunchingJob(t *testing.T) {
 	t.Parallel()
 
@@ -399,6 +474,60 @@ func TestTickCodeOnlyRunningRun_IsReconciledWithoutKubernetesJob(t *testing.T) {
 	}
 	if runs.finished[0].Status != rundomain.StatusSucceeded {
 		t.Fatalf("expected code-only running run to finish as succeeded, got %s", runs.finished[0].Status)
+	}
+	if len(events.inserted) != 1 || events.inserted[0].EventType != floweventdomain.EventTypeRunSucceeded {
+		t.Fatalf("expected one run.succeeded event, got %#v", events.inserted)
+	}
+}
+
+func TestTickAIRepairRunningRun_IsReconciledByWorkloadState(t *testing.T) {
+	t.Parallel()
+
+	payload := json.RawMessage(`{
+		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"trigger":{"kind":"ai_repair"},
+		"issue":{"number":45},
+		"runtime":{"mode":"code-only","namespace":"codex-k8s-prod"},
+		"agent":{"key":"sre","name":"AI SRE"}
+	}`)
+	runs := &fakeRunQueue{
+		running: []runqueuerepo.RunningRun{
+			{
+				RunID:         "run-ai-repair",
+				CorrelationID: "corr-ai-repair",
+				ProjectID:     "proj-1",
+				SlotNo:        1,
+				RunPayload:    payload,
+			},
+		},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{states: map[string]JobState{"run-ai-repair": JobStateSucceeded}}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:          "worker-1",
+		ClaimLimit:        1,
+		RunningCheckLimit: 10,
+		SlotsPerProject:   2,
+		SlotLeaseTTL:      time.Minute,
+	}, Dependencies{
+		Runs:     runs,
+		Events:   events,
+		Launcher: launcher,
+		Logger:   logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 2, 24, 12, 0, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if len(runs.finished) != 1 {
+		t.Fatalf("expected 1 finished run, got %d", len(runs.finished))
+	}
+	if runs.finished[0].Status != rundomain.StatusSucceeded {
+		t.Fatalf("expected ai-repair run to finish as succeeded, got %s", runs.finished[0].Status)
 	}
 	if len(events.inserted) != 1 || events.inserted[0].EventType != floweventdomain.EventTypeRunSucceeded {
 		t.Fatalf("expected one run.succeeded event, got %#v", events.inserted)

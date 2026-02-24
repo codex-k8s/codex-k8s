@@ -15,7 +15,7 @@ import (
 	cpclient "github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/controlplane"
 )
 
-// Run executes full runner flow and returns nil only on successful PR update/create path.
+// Run executes full runner flow and returns nil on successful completion.
 func (s *Service) Run(ctx context.Context) (err error) {
 	homeDir := strings.TrimSpace(os.Getenv("HOME"))
 	if homeDir == "" {
@@ -54,7 +54,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	}
 	defer cleanupKubectlEnv()
 
-	targetBranch := buildTargetBranch(s.cfg.RunTargetBranch, s.cfg.RunID, s.cfg.IssueNumber)
+	targetBranch := buildTargetBranch(s.cfg.RunTargetBranch, s.cfg.RunID, s.cfg.IssueNumber, s.cfg.TriggerKind, s.cfg.AgentBaseBranch)
 	triggerKind := normalizeTriggerKind(s.cfg.TriggerKind)
 	templateKind := normalizeTemplateKind(s.cfg.PromptTemplateKind, triggerKind)
 	runtimeMode := normalizeRuntimeMode(s.cfg.RuntimeMode)
@@ -197,6 +197,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	report.ToolGaps = normalizeStringList(report.ToolGaps)
 	result.report = report
 	normalizedTriggerKind := webhookdomain.NormalizeTriggerKind(triggerKind)
+	requiresPRFlow := !isAIRepairMainDirectTrigger(result.triggerKind)
 	if normalizedTriggerKind == webhookdomain.TriggerKindSelfImprove {
 		if strings.TrimSpace(result.report.Diagnosis) == "" {
 			return fmt.Errorf("invalid codex result: diagnosis is required for self_improve")
@@ -216,11 +217,13 @@ func (s *Service) Run(ctx context.Context) (err error) {
 			s.logger.Warn("emit run.self_improve.diagnosis_ready failed", "err", err)
 		}
 	}
-	if report.PRNumber <= 0 {
-		return fmt.Errorf("invalid codex result: pr_number is required")
-	}
-	if strings.TrimSpace(report.PRURL) == "" {
-		return fmt.Errorf("invalid codex result: pr_url is required")
+	if requiresPRFlow {
+		if report.PRNumber <= 0 {
+			return fmt.Errorf("invalid codex result: pr_number is required")
+		}
+		if strings.TrimSpace(report.PRURL) == "" {
+			return fmt.Errorf("invalid codex result: pr_url is required")
+		}
 	}
 	result.prNumber = report.PRNumber
 	result.prURL = strings.TrimSpace(report.PRURL)
@@ -273,13 +276,23 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		s.logger.Warn("emit run.agent.session.saved failed", "err", err)
 	}
 
-	if webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(triggerKind)) {
-		if err := s.emitEvent(ctx, floweventdomain.EventTypeRunPRUpdated, map[string]any{"branch": result.targetBranch, "pr_url": result.prURL, "pr_number": result.prNumber}); err != nil {
-			s.logger.Warn("emit run.pr.updated failed", "err", err)
+	if requiresPRFlow {
+		if webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(triggerKind)) {
+			if err := s.emitEvent(ctx, floweventdomain.EventTypeRunPRUpdated, map[string]any{"branch": result.targetBranch, "pr_url": result.prURL, "pr_number": result.prNumber}); err != nil {
+				s.logger.Warn("emit run.pr.updated failed", "err", err)
+			}
+		} else {
+			if err := s.emitEvent(ctx, floweventdomain.EventTypeRunPRCreated, map[string]any{"branch": result.targetBranch, "pr_url": result.prURL, "pr_number": result.prNumber}); err != nil {
+				s.logger.Warn("emit run.pr.created failed", "err", err)
+			}
 		}
 	} else {
-		if err := s.emitEvent(ctx, floweventdomain.EventTypeRunPRCreated, map[string]any{"branch": result.targetBranch, "pr_url": result.prURL, "pr_number": result.prNumber}); err != nil {
-			s.logger.Warn("emit run.pr.created failed", "err", err)
+		if err := s.emitEvent(ctx, floweventdomain.EventTypeRunAgentStatusReported, map[string]any{
+			"branch":      result.targetBranch,
+			"trigger":     normalizedTriggerKind,
+			"main_direct": true,
+		}); err != nil {
+			s.logger.Warn("emit run.agent.status_reported failed", "err", err)
 		}
 	}
 

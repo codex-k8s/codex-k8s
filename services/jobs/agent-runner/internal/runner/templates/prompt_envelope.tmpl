@@ -82,7 +82,14 @@
 - Финальный ответ модели должен быть ТОЛЬКО JSON-объект по output schema.
 
 Требования к завершению:
-{{- if .IsReviewerCommentOnlyScope }}
+{{- if .IsAIRepairMainDirect }}
+- Аварийный режим `run:ai-repair`: допускается работать напрямую в `{{ .BaseBranch }}` (приоритетно) и деплоить изменения без PR.
+- Не создавайте новый PR; фокус на восстановлении инфраструктуры и работоспособности платформы.
+- Зафиксируйте изменения в git и выполните `push` в `{{ .TargetBranch }}`.
+- После стабилизации:
+  - через `github_labels_transition` снимите триггер-лейбл `{{ .TriggerLabel }}` с Issue #{{ .IssueNumber }};
+  - через `github_labels_transition` установите `{{ .StateInReviewLabel }}` на Issue #{{ .IssueNumber }}.
+{{- else if .IsReviewerCommentOnlyScope }}
 - Работайте только в существующем PR #{{ .ExistingPRNumber }}.
 - Не создавайте коммиты и не пушьте изменения в ветку.
 - Подготовьте review-комментарии (inline + summary) в текущем PR.
@@ -197,7 +204,14 @@ Mandatory rules:
 - Return ONLY a JSON object matching the output schema.
 
 Completion requirements:
-{{- if .IsReviewerCommentOnlyScope }}
+{{- if .IsAIRepairMainDirect }}
+- Emergency mode `run:ai-repair`: you may work directly in `{{ .BaseBranch }}` (preferred) and deploy changes without PR.
+- Do not create a new PR; focus on infrastructure recovery and platform operability.
+- Commit changes and push to `{{ .TargetBranch }}`.
+- After stabilization:
+  - use `github_labels_transition` to remove trigger label `{{ .TriggerLabel }}` from Issue #{{ .IssueNumber }};
+  - use `github_labels_transition` to apply `{{ .StateInReviewLabel }}` on Issue #{{ .IssueNumber }}.
+{{- else if .IsReviewerCommentOnlyScope }}
 - Work only in the existing PR #{{ .ExistingPRNumber }}.
 - Do not create commits and do not push branch changes.
 - Provide review comments (inline + summary) in the current PR.

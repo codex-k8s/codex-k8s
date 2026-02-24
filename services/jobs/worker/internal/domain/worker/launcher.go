@@ -25,9 +25,9 @@ type NamespaceCleanupParams = libslauncher.NamespaceCleanupParams
 type NamespaceCleanupResult = libslauncher.NamespaceCleanupResult
 type JobSpec = libslauncher.JobSpec
 
-// Launcher creates and reconciles Kubernetes Jobs for runs.
+// Launcher creates and reconciles Kubernetes run workloads (Job/Pod) for runs.
 type Launcher interface {
-	// JobRef builds deterministic Job reference for run id.
+	// JobRef builds deterministic workload reference for run id.
 	JobRef(runID string, namespace string) JobRef
 	// FindRunJobRefByRunID resolves Kubernetes Job reference by run-id label across namespaces.
 	// Used when run job is created outside of the default full-env namespace strategy
@@ -39,8 +39,8 @@ type Launcher interface {
 	EnsureNamespace(ctx context.Context, spec NamespaceSpec) (NamespaceEnsureResult, error)
 	// CleanupExpiredNamespaces removes managed namespaces with expired lease annotation.
 	CleanupExpiredNamespaces(ctx context.Context, params NamespaceCleanupParams) ([]NamespaceCleanupResult, error)
-	// Launch creates Job if needed and returns its reference.
+	// Launch creates workload if needed and returns its reference.
 	Launch(ctx context.Context, spec JobSpec) (JobRef, error)
-	// Status returns current workload state for a given Job reference.
+	// Status returns current workload state for a given run workload reference.
 	Status(ctx context.Context, ref JobRef) (JobState, error)
 }

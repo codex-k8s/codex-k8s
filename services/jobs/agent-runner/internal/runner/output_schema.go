@@ -13,6 +13,7 @@ type outputSchemaProfile string
 const (
 	outputSchemaProfilePRFlow      outputSchemaProfile = "pr_flow"
 	outputSchemaProfileSelfImprove outputSchemaProfile = "self_improve"
+	outputSchemaProfileMainDirect  outputSchemaProfile = "main_direct"
 	outputSchemaTypeObject         string              = "object"
 	outputSchemaTypeArray          string              = "array"
 	outputSchemaTypeString         string              = "string"
@@ -61,7 +62,8 @@ type outputSchemaItem struct {
 
 func buildOutputSchemaJSON(params outputSchemaParams) ([]byte, error) {
 	profile := resolveOutputSchemaProfile(params)
-	schema := newBaseOutputSchema()
+	requirePRFields := profile != outputSchemaProfileMainDirect
+	schema := newBaseOutputSchema(requirePRFields)
 	if profile == outputSchemaProfileSelfImprove {
 		addSelfImproveOutputFields(schema)
 	}
@@ -77,6 +79,10 @@ func resolveOutputSchemaProfile(params outputSchemaParams) outputSchemaProfile {
 	normalizedTemplate := normalizeTemplateKind(params.TemplateKind, string(normalizedTrigger))
 	normalizedAgentKey := strings.TrimSpace(params.AgentKey)
 
+	if normalizedTrigger == webhookdomain.TriggerKindAIRepair {
+		return outputSchemaProfileMainDirect
+	}
+
 	if normalizedTrigger == webhookdomain.TriggerKindSelfImprove {
 		return outputSchemaProfileSelfImprove
 	}
@@ -88,7 +94,7 @@ func resolveOutputSchemaProfile(params outputSchemaParams) outputSchemaProfile {
 	return outputSchemaProfilePRFlow
 }
 
-func newBaseOutputSchema() *outputSchemaDocument {
+func newBaseOutputSchema(requirePRFields bool) *outputSchemaDocument {
 	schema := &outputSchemaDocument{
 		Type:                 outputSchemaTypeObject,
 		Properties:           make(map[string]outputSchemaProperty),
@@ -98,8 +104,10 @@ func newBaseOutputSchema() *outputSchemaDocument {
 
 	addOutputField(schema, outputFieldSummary, outputSchemaProperty{Type: outputSchemaTypeString})
 	addOutputField(schema, outputFieldBranch, outputSchemaProperty{Type: outputSchemaTypeString})
-	addOutputField(schema, outputFieldPRNumber, outputSchemaProperty{Type: outputSchemaTypeInteger, Minimum: intPtr(outputSchemaMinPRNumber)})
-	addOutputField(schema, outputFieldPRURL, outputSchemaProperty{Type: outputSchemaTypeString, MinLength: intPtr(outputSchemaMinPRURLLength)})
+	if requirePRFields {
+		addOutputField(schema, outputFieldPRNumber, outputSchemaProperty{Type: outputSchemaTypeInteger, Minimum: intPtr(outputSchemaMinPRNumber)})
+		addOutputField(schema, outputFieldPRURL, outputSchemaProperty{Type: outputSchemaTypeString, MinLength: intPtr(outputSchemaMinPRURLLength)})
+	}
 	addOutputField(schema, outputFieldSessionID, outputSchemaProperty{Type: outputSchemaTypeString})
 	addOutputField(schema, outputFieldModel, outputSchemaProperty{Type: outputSchemaTypeString})
 	addOutputField(schema, outputFieldReasoningEffort, outputSchemaProperty{Type: outputSchemaTypeString})

@@ -142,6 +142,7 @@ func (s *Service) buildPrompt(taskBody string, result runResult, repoDir string)
 		TargetBranch:                 result.targetBranch,
 		BaseBranch:                   s.cfg.AgentBaseBranch,
 		TriggerKind:                  result.triggerKind,
+		IsAIRepairMainDirect:         isAIRepairMainDirectTrigger(result.triggerKind),
 		IsReviseTrigger:              isReviseTrigger,
 		IsMarkdownDocsOnlyScope:      isMarkdownOnlyScope(result.triggerKind, s.cfg.AgentKey),
 		IsReviewerCommentOnlyScope:   isReviewerCommentOnlyScope(result.triggerKind, s.cfg.AgentKey),
@@ -379,10 +380,17 @@ func normalizeTemplateKind(value string, triggerKind string) string {
 	return promptTemplateKindWork
 }
 
-func buildTargetBranch(explicitBranch string, runID string, issueNumber int64) string {
+func buildTargetBranch(explicitBranch string, runID string, issueNumber int64, triggerKind string, baseBranch string) string {
 	trimmedExplicit := strings.TrimSpace(explicitBranch)
 	if trimmedExplicit != "" {
 		return trimmedExplicit
+	}
+	if isAIRepairMainDirectTrigger(triggerKind) {
+		base := strings.TrimSpace(baseBranch)
+		if base != "" {
+			return base
+		}
+		return "main"
 	}
 	if issueNumber > 0 {
 		return fmt.Sprintf("codex/issue-%d", issueNumber)
@@ -392,6 +400,10 @@ func buildTargetBranch(explicitBranch string, runID string, issueNumber int64) s
 		trimmedRunID = trimmedRunID[:12]
 	}
 	return "codex/run-" + trimmedRunID
+}
+
+func isAIRepairMainDirectTrigger(triggerKind string) bool {
+	return webhookdomain.NormalizeTriggerKind(strings.TrimSpace(triggerKind)) == webhookdomain.TriggerKindAIRepair
 }
 
 func optionalIssueNumber(value int64) *int {

@@ -43,7 +43,7 @@ approvals:
 | `dev` | Software Engineer | реализация `run:dev`/`run:dev:revise`, код + тесты + docs update | `full-env` | 2 |
 | `reviewer` | Pre-review Engineer | комментарии в существующем PR: inline findings + summary для Owner (без изменений репозитория) | `full-env` (read-mostly) | 2 |
 | `qa` | QA Lead | markdown test strategy/plan/matrix/regression evidence | `full-env` | 2 |
-| `sre` | SRE/OPS | runbook/SLO/alerts/postdeploy improvements + emergency infra recovery (`run:ai-repair`) | `full-env` | 1 |
+| `sre` | SRE/OPS | runbook/SLO/alerts/postdeploy improvements + emergency infra recovery (`run:ai-repair`) | `code-only` (production pod) | 1 |
 | `km` | Doc/KM | issue↔docs traceability, self-improve диагностика, prompts/instructions updates | `code-only` | 2 |
 
 Примечания:
@@ -102,6 +102,7 @@ approvals:
 - `sre`:
   - ведёт операционные улучшения на `run:ops`;
   - ведёт аварийный контур `run:ai-repair`: восстанавливает инфраструктуру и runtime-поток, при необходимости использует fallback-стратегии.
+  - для `run:ai-repair` допускается main-direct recovery режим (без обязательного PR) и прямой deploy в production по политике аварийного восстановления.
 - `km`:
   - ведёт цикл `run:self-improve`: анализирует повторяющиеся замечания/сбои, формирует и вносит улучшения в docs/prompt templates;
   - в `run:self-improve` changeset ограничен scope: markdown-инструкции, prompt files, `services/jobs/agent-runner/Dockerfile`;

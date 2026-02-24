@@ -131,7 +131,7 @@ approvals:
 - S2 Day6: approval/audit hardening (completed).
 - S2 Day7: regression gate под полный MVP (completed).
 - S3 Day1: активация полного stage-flow (`run:intake..run:ops`) и trigger path для `run:self-improve` (completed).
-- Day21: добавлен trigger `run:ai-repair` для аварийного восстановления инфраструктуры.
+- Day21: добавлен trigger `run:ai-repair` для аварийного восстановления инфраструктуры (production pod-path, fallback image strategy, main-direct recovery режим).
 - S3 Day2+ : поэтапное насыщение stage-specific логики и observability.
 
 ## Конфигурационные labels для исполнения stage

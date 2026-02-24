@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
@@ -12,7 +13,7 @@ import (
 	valuetypes "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/types/value"
 )
 
-func (s *Service) launchPreparedFullEnvRunJob(ctx context.Context, run runqueuerepo.RunningRun, execution valuetypes.RunExecutionContext, agentCtx runAgentContext, lease namespaceLeaseSpec) error {
+func (s *Service) launchPreparedRunWorkload(ctx context.Context, run runqueuerepo.RunningRun, execution valuetypes.RunExecutionContext, agentCtx runAgentContext, lease namespaceLeaseSpec, options runLaunchOptions) error {
 	namespaceSpec := NamespaceSpec{
 		RunID:         run.RunID,
 		ProjectID:     run.ProjectID,
@@ -153,6 +154,11 @@ func (s *Service) launchPreparedFullEnvRunJob(ctx context.Context, run runqueuer
 		}
 	}
 
+	targetBranch := strings.TrimSpace(agentCtx.TargetBranch)
+	if isAIRepairTriggerKind(agentCtx.TriggerKind) && targetBranch == "" {
+		targetBranch = strings.TrimSpace(s.cfg.AgentBaseBranch)
+	}
+
 	ref, err := s.launcher.Launch(ctx, JobSpec{
 		RunID:                  run.RunID,
 		CorrelationID:          run.CorrelationID,
@@ -168,7 +174,7 @@ func (s *Service) launchPreparedFullEnvRunJob(ctx context.Context, run runqueuer
 		IssueNumber:            agentCtx.IssueNumber,
 		TriggerKind:            agentCtx.TriggerKind,
 		TriggerLabel:           agentCtx.TriggerLabel,
-		TargetBranch:           agentCtx.TargetBranch,
+		TargetBranch:           targetBranch,
 		ExistingPRNumber:       agentCtx.ExistingPRNumber,
 		AgentKey:               agentCtx.AgentKey,
 		AgentModel:             agentCtx.Model,
@@ -184,6 +190,7 @@ func (s *Service) launchPreparedFullEnvRunJob(ctx context.Context, run runqueuer
 		AgentDisplayName:       agentCtx.AgentDisplayName,
 		GitBotUsername:         s.cfg.GitBotUsername,
 		GitBotMail:             s.cfg.GitBotMail,
+		ServiceAccountName:     strings.TrimSpace(options.ServiceAccountName),
 	})
 	if err != nil {
 		s.logger.Error("launch run job failed", "run_id", run.RunID, "err", err)

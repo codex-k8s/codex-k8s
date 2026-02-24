@@ -48,7 +48,7 @@ approvals:
 | `run:dev` | разработка и создание PR | active (S2) |
 | `run:dev:revise` | доработка существующего PR | active (S2) |
 | `run:doc-audit` | аудит код↔доки↔чек-листы | active (S3 Day1 trigger path) |
-| `run:ai-repair` | аварийное восстановление инфраструктуры и runtime-потока | active |
+| `run:ai-repair` | аварийное восстановление инфраструктуры и runtime-потока (production pod, main-direct режим без обязательного PR) | active |
 | `run:qa` | тест-артефакты и прогоны | active (S3 Day1 trigger path) |
 | `run:release` | релиз и release artifacts | active (S3 Day1 trigger path) |
 | `run:postdeploy` | post-deploy review / postmortem | active (S3 Day1 trigger path) |
@@ -196,7 +196,8 @@ approvals:
 - S3 Day1 факт:
 - активирован полный stage-контур `run:intake..run:ops` + revise/rethink;
   - добавлен аварийный инфраструктурный trigger `run:ai-repair`;
-  - активирован trigger path для `run:self-improve` (расширенная бизнес-логика дорабатывается по S3 Day6+).
+- для `run:ai-repair` используется специальный pod-path в production namespace (не full-env slot), с fallback по образу и main-direct recovery режимом;
+- активирован trigger path для `run:self-improve` (расширенная бизнес-логика дорабатывается по S3 Day6+).
 
 ### Implemented UX improvements for review/revise (Issue #95)
 

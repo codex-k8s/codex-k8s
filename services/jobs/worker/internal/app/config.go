@@ -99,6 +99,8 @@ type Config struct {
 	KubeconfigPath string `env:"CODEXK8S_KUBECONFIG"`
 	// K8sNamespace is a namespace for worker-created Jobs.
 	K8sNamespace string `env:"CODEXK8S_WORKER_K8S_NAMESPACE" envDefault:"codex-k8s-prod"`
+	// ProductionNamespace is platform production namespace used by ai-repair pod runs.
+	ProductionNamespace string `env:"CODEXK8S_PRODUCTION_NAMESPACE" envDefault:"codex-k8s-prod"`
 	// JobImage is a container image used for spawned run Jobs.
 	JobImage string `env:"CODEXK8S_WORKER_JOB_IMAGE" envDefault:"busybox:1.36"`
 	// JobImageFallback is optional fallback image used when primary run image is missing in registry.
@@ -131,6 +133,10 @@ type Config struct {
 	RunCredentialsSecretName string `env:"CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME" envDefault:"codex-run-credentials"`
 	// RunResourceQuotaPods controls max pods per run namespace.
 	RunResourceQuotaPods int64 `env:"CODEXK8S_WORKER_RUN_QUOTA_PODS" envDefault:"20"`
+	// AIRepairNamespace overrides namespace for ai-repair runs; defaults to production namespace.
+	AIRepairNamespace string `env:"CODEXK8S_WORKER_AI_REPAIR_NAMESPACE"`
+	// AIRepairServiceAccount is service account used by ai-repair pod runs.
+	AIRepairServiceAccount string `env:"CODEXK8S_WORKER_AI_REPAIR_SERVICE_ACCOUNT" envDefault:"codex-k8s-control-plane"`
 	// InternalRegistryHost points to internal registry host:port used for deterministic image checks.
 	InternalRegistryHost string `env:"CODEXK8S_INTERNAL_REGISTRY_HOST" envDefault:"codex-k8s-registry:5000"`
 	// InternalRegistryScheme sets internal registry URL scheme.
