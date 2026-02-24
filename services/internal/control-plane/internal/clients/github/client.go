@@ -274,6 +274,12 @@ func (c *Client) EditIssueComment(ctx context.Context, params mcpdomain.GitHubEd
 	return c.mutateIssueComment(ctx, newEditIssueCommentMutationParams(params))
 }
 
+func (c *Client) DeleteIssueComment(ctx context.Context, params mcpdomain.GitHubDeleteIssueCommentParams) error {
+	client := c.clientWithToken(params.Token)
+	_, err := client.Issues.DeleteComment(ctx, params.Owner, params.Repository, params.CommentID)
+	return err
+}
+
 type issueCommentMutationParams struct {
 	Token       string
 	Owner       string

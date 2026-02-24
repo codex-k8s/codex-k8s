@@ -24,6 +24,9 @@ const (
 	// Give the API extra time before creating a second comment for the same run.
 	runStatusCommentLookupLatePhaseRetries    = 8
 	runStatusCommentLookupLatePhaseRetryDelay = 500 * time.Millisecond
+
+	runStatusCommentDedupeFinishedRetries    = 3
+	runStatusCommentDedupeFinishedRetryDelay = 1 * time.Second
 )
 
 // NewService creates run-status domain service.
@@ -175,6 +178,7 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 			return UpsertCommentResult{}, fmt.Errorf("create run status issue comment: %w", err)
 		}
 	}
+	savedComment = s.dedupeRunStatusCommentsBestEffort(ctx, runCtx, runID, params.Phase, savedComment)
 
 	commentUpsertedEventPayload := runStatusCommentUpsertedPayload{
 		RunID:              runID,
@@ -651,6 +655,79 @@ func sleepWithContext(ctx context.Context, delay time.Duration) error {
 	case <-timer.C:
 		return nil
 	}
+}
+
+func (s *Service) dedupeRunStatusCommentsBestEffort(ctx context.Context, runCtx runContext, runID string, phase Phase, fallback mcpdomain.GitHubIssueComment) mcpdomain.GitHubIssueComment {
+	attempts := 1
+	delay := time.Duration(0)
+	if phase == PhaseFinished {
+		attempts += runStatusCommentDedupeFinishedRetries
+		delay = runStatusCommentDedupeFinishedRetryDelay
+	}
+
+	selected := fallback
+	for attempt := 0; attempt < attempts; attempt++ {
+		candidate, changed, ok := s.dedupeRunStatusCommentsOnce(ctx, runCtx, runID, selected)
+		if ok {
+			selected = candidate
+		}
+		if !changed || attempt >= attempts-1 {
+			return selected
+		}
+		if err := sleepWithContext(ctx, delay); err != nil {
+			return selected
+		}
+	}
+	return selected
+}
+
+func (s *Service) dedupeRunStatusCommentsOnce(ctx context.Context, runCtx runContext, runID string, fallback mcpdomain.GitHubIssueComment) (mcpdomain.GitHubIssueComment, bool, bool) {
+	comments, err := s.listRunIssueComments(ctx, runCtx)
+	if err != nil {
+		return fallback, false, false
+	}
+
+	matches := make([]mcpdomain.GitHubIssueComment, 0, 2)
+	for _, comment := range comments {
+		if !commentContainsRunID(comment.Body, runID) {
+			continue
+		}
+		if _, ok := extractStateMarker(comment.Body); !ok {
+			continue
+		}
+		matches = append(matches, comment)
+	}
+	if len(matches) == 0 {
+		return fallback, false, true
+	}
+
+	selected := matches[0]
+	for _, item := range matches[1:] {
+		if item.ID > selected.ID {
+			selected = item
+		}
+	}
+	if len(matches) == 1 {
+		return selected, false, true
+	}
+
+	changed := false
+	for _, item := range matches {
+		if item.ID == selected.ID {
+			continue
+		}
+		err = s.github.DeleteIssueComment(ctx, mcpdomain.GitHubDeleteIssueCommentParams{
+			Token:      runCtx.githubToken,
+			Owner:      runCtx.repoOwner,
+			Repository: runCtx.repoName,
+			CommentID:  item.ID,
+		})
+		if err != nil && !isGitHubCommentNotFoundError(err) {
+			continue
+		}
+		changed = true
+	}
+	return selected, changed, true
 }
 
 func (s *Service) loadRecentAgentStatuses(ctx context.Context, correlationID string, limit int) []recentAgentStatus {
