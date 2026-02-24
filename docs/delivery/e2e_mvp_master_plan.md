@@ -103,6 +103,7 @@ approvals:
 - B4: `run:prd` -> `run:prd:revise` для Issue #141 с повторными status updates:
   - service-comment в Issue переиспользует один и тот же comment-thread (без дублирования);
   - обновление статуса не ломает трассировку `run_id -> comment_id -> flow_events`;
+  - перед завершением revise-итерации собраны все открытые PR review-комментарии (threads/review comments) и на каждый дан явный ответ; при отсутствии открытых замечаний это зафиксировано в evidence;
   - после revise trigger снимается, а `state:in-review` ставится детерминированно по policy.
 
 ### Набор C. MCP governance tools
@@ -145,6 +146,7 @@ approvals:
 - Security/RBAC проверки пройдены без критичных нарушений.
 - Документация и traceability синхронизированы по факту прогона.
 - Для focus-check Issue #141 подтверждена идемпотентность status-comment lifecycle в цикле `run:prd`/`run:prd:revise`.
+- Для focus-check Issue #141 подтверждён revise-gate по review-feedback: нет пропущенных открытых PR замечаний.
 
 ## Источники фактов (актуализировано на 2026-02-24 через Context7)
 - Kubernetes rollout/status checks: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/

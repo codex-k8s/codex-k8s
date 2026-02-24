@@ -68,6 +68,7 @@ approvals:
 - Собран и опубликован evidence bundle (команды, логи, ссылки на run/deploy artifacts).
 - Owner получает go/no-go пакет и подтверждает завершение MVP фазы.
 - Для Issue #141 подтверждено отсутствие дублей service-comment и корректная связка `run_id -> status comment -> flow_events` в revise-цикле `run:prd`.
+- Для Issue #141 подтверждено, что в revise-цикле не остаётся необработанных открытых review-комментариев PR.
 
 ## Риски/зависимости
 - Зависимость от готовности чистого VPS и валидного e2e config.
