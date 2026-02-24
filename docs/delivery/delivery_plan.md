@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-24
-related_issues: [1, 19, 74, 100, 106, 112]
+related_issues: [1, 19, 74, 100, 106, 112, 145, 147]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -91,6 +91,7 @@ approvals:
 - Day 19.6: интеграция realtime подписок в staff UI (runs/deploy/errors/logs/events), удаление кнопок `Обновить` в realtime-экранах, fallback polling.
 - Day 19.7: retention full-env namespace по role-based TTL + lease extension/reuse на `run:*:revise` (Issue #74).
 - Day 20: full e2e regression/security gate + MVP closeout/handover и переход к post-MVP roadmap (подробности в `docs/delivery/e2e_mvp_master_plan.md`).
+- Day 20.1 (final revise checks): e2e regression для `run:design:revise` (Issue #145) и `run:plan:revise` (Issue #147) после hardening идемпотентности run service-comment (ADR-0008).
 
 ### Sprint S4: Multi-repo runtime and docs federation (Issue #100)
 - Day 1 (completed): execution foundation для federated multi-repo composition и docs federation (`docs/delivery/epics/s4/epic-s4-day1-multi-repo-composition-and-docs-federation.md`).
@@ -141,6 +142,7 @@ approvals:
 - [ ] Для активного спринта: каждый эпик закрыт по своим acceptance criteria.
 - [ ] Для активного спринта: ежедневный merge -> auto deploy -> smoke check выполнен.
 - [ ] Webhook -> run -> worker -> k8s -> UI цепочка проходит regression.
+- [ ] Для `run:design:revise` и `run:plan:revise` подтвержден singleton/idempotent update service-comment после ADR-0008.
 - [ ] Для `full-env` подтверждены role-based TTL retention namespace и lease extension на `run:*:revise` (Issue #74).
 - [x] Для Issue #100 зафиксирован delivery execution-plan Sprint S4 (federated composition + multi-repo docs federation) и подготовлен handover в `run:dev`.
 - [ ] Learning mode и self-improve mode проверены на production.
@@ -149,6 +151,8 @@ approvals:
 ## Риски и буферы
 - Риск: нестабильная сеть/доступы при bootstrap.
 - Буфер: fallback runbook ручной установки.
+- Риск: ложноположительное прохождение revise-loop при скрытых duplicate status-comment.
+- Буфер: отдельный Day20.1 regression-gate (Issue #145/#147) с проверкой числа сервисных комментариев и replay-поведения.
 
 ## План релиза (верхний уровень)
 - Релизные окна:

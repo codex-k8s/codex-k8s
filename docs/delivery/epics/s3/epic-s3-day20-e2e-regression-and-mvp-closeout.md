@@ -6,7 +6,7 @@ status: planned
 owner_role: EM
 created_at: 2026-02-18
 updated_at: 2026-02-24
-related_issues: [19, 112]
+related_issues: [19, 112, 145, 147]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -36,6 +36,7 @@ approvals:
   - stage labels flow,
   - self-improve loop,
   - MCP governance tools,
+  - финальная проверка revise-loop `run:design:revise` и `run:plan:revise` после ADR-0008,
   - repo onboarding + docset/config governance,
   - runtime deploy/build/image management.
 - Security/reliability checks:
@@ -56,6 +57,7 @@ approvals:
 - Story-2: прогон e2e smoke + regression сценариев.
 - Story-3: security/reliability checks + устранение найденных блокеров.
 - Story-4: финальный handover пакет и owner sign-off.
+- Story-5: stage-specific regression для `run:plan`/`run:plan:revise` с проверкой идемпотентности status-comment.
 
 ## Execution package
 - Канонический test-plan: `docs/delivery/e2e_mvp_master_plan.md`.
@@ -64,6 +66,7 @@ approvals:
 
 ## Критерии приемки
 - Full e2e проходит без P0 блокеров.
+- Для `run:design:revise` и `run:plan:revise` подтверждено отсутствие duplicate service-comments при retry/replay.
 - Собран и опубликован evidence bundle (команды, логи, ссылки на run/deploy artifacts).
 - Owner получает go/no-go пакет и подтверждает завершение MVP фазы.
 

@@ -6,7 +6,7 @@ status: active
 owner_role: QA
 created_at: 2026-02-24
 updated_at: 2026-02-24
-related_issues: [19, 74, 95, 100, 112]
+related_issues: [19, 74, 95, 100, 112, 145, 147]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -93,12 +93,17 @@ approvals:
 - A1: `run:intake -> run:vision -> run:prd -> run:arch -> run:design -> run:plan`.
 - A2: `run:dev` создаёт PR, `run:dev:revise` отрабатывает review.
 - A3: `run:qa -> run:release -> run:postdeploy -> run:ops`.
+- A4: финальный `run:design:revise` и `run:plan:revise` e2e-проход после hardening идемпотентности service-comment (ADR-0008).
 - Gate: ни один next-stage не проходит без актуального `state:*` и traceability.
 
 ### Набор B. Review-driven revise (Issue #95)
 - B1: `changes_requested` при одном stage label на PR.
 - B2: ambiguous labels -> `need:input` без старта revise.
 - B3: sticky model/reasoning profile между revise-итерациями.
+- B4: для `run:plan`/`run:plan:revise` проверяется singleton-service-comment поведение:
+  - при retry обновляется существующий комментарий, а не создаётся новый;
+  - idempotent replay с одинаковым payload не меняет число сервисных комментариев;
+  - stage-aware next-step подсказки остаются консистентными.
 
 ### Набор C. MCP governance tools
 - C1: `github_labels_list|add|remove|transition` с audit trail.
