@@ -5,8 +5,8 @@ title: "Review-driven revise resolution and next-step label UX"
 status: accepted
 owner_role: SA
 created_at: 2026-02-20
-updated_at: 2026-02-21
-related_issues: [90, 95]
+updated_at: 2026-02-24
+related_issues: [90, 95, 119]
 related_prs: []
 supersedes: []
 superseded_by: []
@@ -153,6 +153,14 @@ approvals:
    - resolver happy path и fallback/ambiguous сценарии,
    - render warning/next-step сценарии,
    - profile resolver и launch audit события.
+
+## E2E регрессионное покрытие (Issue #119)
+- Source: `docs/delivery/e2e_mvp_master_plan.md` (наборы A2 и B1–B3).
+- A2: `run:dev` создаёт PR, `run:dev:revise` отрабатывает `changes_requested`.
+- B1: один stage label на PR -> автоматический revise.
+- B2: ambiguous labels -> `need:input` без старта revise.
+- B3: sticky model/reasoning профиль между revise-итерациями.
+- Evidence фиксируется в Issue #118 (e2e evidence bundle).
 
 ## Внешние референсы
 - GitHub Docs (`pull_request_review`, `review.state=changes_requested`):
