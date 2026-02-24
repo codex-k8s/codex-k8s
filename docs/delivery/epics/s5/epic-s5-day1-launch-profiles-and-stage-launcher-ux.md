@@ -1,25 +1,27 @@
 ---
 doc_id: EPC-CK8S-S5-D1
 type: epic
-title: "Epic S5 Day 1: Launch profiles and deterministic next-step actions (Issue #154)"
-status: planned
+title: "Epic S5 Day 1: Launch profiles and deterministic next-step actions (Issues #154/#155)"
+status: in-review
 owner_role: PM
 created_at: 2026-02-24
 updated_at: 2026-02-24
-related_issues: [154]
+related_issues: [154, 155]
 related_prs: []
 approvals:
   required: ["Owner"]
   status: pending
-  request_id: "owner-2026-02-24-issue-154-day1"
+  request_id: "owner-2026-02-24-issue-155-day1-vision-prd"
 ---
 
-# Epic S5 Day 1: Launch profiles and deterministic next-step actions (Issue #154)
+# Epic S5 Day 1: Launch profiles and deterministic next-step actions (Issues #154/#155)
 
 ## TL;DR
 - Проблема: текущий label-driven flow неудобен для ручного управления; пользователи забывают порядок этапов, а часть быстрых ссылок не работает.
-- Цель Day1: формализовать profile-driven процесс запуска и задать приемочные критерии для стабильного next-step UX.
-- Результат Day1: подготовлен owner-ready execution package для `run:dev` без изменения архитектурных границ.
+- Day1 split:
+  - Issue #154: intake baseline и фиксация проблемы;
+  - Issue #155: vision/prd пакет с каноническими профилями и детерминированным next-step UX.
+- Результат Day1: подготовлен owner-ready execution package для входа в `run:dev` без изменения архитектурных границ.
 
 ## Priority
 - `P0`.
@@ -41,21 +43,44 @@ approvals:
 - Пересмотр базовых label-классов и security policy.
 - Изменения процесса ревью вне связки stage launch / stage transition.
 
+## Vision/PRD package (Issue #155)
+
+### 1. Канонический набор launch profiles и эскалации
+
+| Profile | Обязательная траектория | Когда применять | Детерминированные триггеры эскалации |
+|---|---|---|---|
+| `quick-fix` | `intake -> plan -> dev -> qa -> release -> postdeploy -> ops` | точечная правка в одном сервисе без изменения контрактов/схемы | любой из триггеров: `cross-service impact`, новая интеграция, миграция БД, изменение RBAC/policy |
+| `feature` | `intake -> prd -> design -> plan -> dev -> qa -> release -> postdeploy -> ops` | функциональное изменение в существующих сервисах | при изменении архитектурных границ/NFR добавить `arch`; при изменении продуктовой стратегии добавить `vision` |
+| `new-service` | `intake -> vision -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops` | новый сервис или крупная инициатива со сменой системного контура | сокращение этапов запрещено без явного owner-решения в audit trail |
+
+### 2. Контракт next-step action cards
+
+| Поле карточки | Требование |
+|---|---|
+| `launch_profile` | Обязателен (`quick-fix`, `feature`, `new-service`) |
+| `stage_path` | Краткая строка траектории текущего профиля |
+| `primary_action` | Валидированный deep-link в staff web-console |
+| `fallback_action` | Копируемая команда label transition |
+| `guardrail_note` | Явное правило по ambiguity и policy-gate |
+
+### 3. Fallback command templates
+- Переход на следующий stage:
+  - `gh issue edit <ISSUE_NUMBER> --remove-label "run:<current-stage>" --add-label "run:<next-stage>"`.
+- Постановка explicit input-gate при неоднозначности:
+  - `gh issue edit <ISSUE_NUMBER> --add-label "need:input"`.
+- Переход в review gate после формирования PR:
+  - `gh issue edit <ISSUE_NUMBER> --add-label "state:in-review"`;
+  - `gh pr edit <PR_NUMBER> --add-label "state:in-review"`.
+- Безопасность:
+  - команды не содержат секретов/токенов;
+  - команды используют только labels из каталога `run:*|state:*|need:*`.
+
 ## Stories (handover в `run:dev`)
-- Story-1: Profile Registry
-  - хранение и выдача канонических профилей;
-  - валидация допустимых переходов между profile-режимами.
-- Story-2: Next-step Action Contract
-  - единый contract для action cards с primary/fallback каналами;
-  - обязательная диагностика при невалидном deep-link.
-- Story-3: Service-message Rendering
-  - profile-aware описание шага и следующего действия;
-  - явный fallback-блок с безопасной командой без секретов.
-- Story-4: Governance Guardrails
-  - запрещение silent-skip этапов;
-  - автоматическая постановка `need:input` при ambiguity profile/stage.
-- Story-5: Traceability Sync
-  - синхронизация `issue_map`, `requirements_traceability`, sprint/epic артефактов.
+- Story-1: Profile Registry + escalation resolver.
+- Story-2: Next-step Action Contract + fallback template builder.
+- Story-3: Service-message Rendering with profile path and guardrail note.
+- Story-4: Governance Guardrails (`need:input`, ambiguity-stop, no silent-skip).
+- Story-5: Traceability Sync (`issue_map`, `requirements_traceability`, sprint/epic docs).
 
 ## Quality gates
 - Planning gate:
@@ -73,17 +98,25 @@ approvals:
   - изменения отражены в `issue_map` и `requirements_traceability`.
 
 ## Acceptance criteria
-- [ ] Для каждого профиля (`quick-fix`, `feature`, `new-service`) определены вход, выход и эскалация.
-- [ ] Каждая next-step подсказка включает `primary + fallback` и не блокирует переход при отказе primary.
-- [ ] В ambiguous-сценариях платформа не делает best-guess переход, а требует `need:input`.
-- [ ] Подготовлен список рисков и продуктовых допущений для `run:dev` этапа.
+- [x] Подтвержден канонический набор launch profiles и правила эскалации.
+- [x] Подтвержден формат next-step action-карт (`primary deep-link + fallback command`).
+- [x] Подготовлены риски и продуктовые допущения для `run:dev`.
+- [ ] Получен Owner approval vision/prd пакета для запуска `run:dev`.
 
 ## Открытые риски
 - Риск UX-перегрузки: слишком много действий в service-comment снижает читаемость.
 - Риск policy-drift: profile shortcut может быть использован для обхода обязательных этапов.
 - Риск интеграции: fallback-команды могут расходиться с фактической policy, если не централизовать шаблон.
+- Риск операционной рассинхронизации: ручной `gh` fallback может быть выполнен с неверным `current-stage` без pre-check.
 
 ## Продуктовые допущения
 - Launch profiles не заменяют канонический stage-pipeline, а задают управляемые “траектории входа”.
 - Primary канал (`web-console`) может временно быть недоступен; fallback обязан быть достаточным для продолжения процесса.
 - Для P0/P1 инициатив Owner может принудительно переводить задачу в `new-service` траекторию независимо от исходного профиля.
+
+## Readiness gate для `run:dev`
+- [x] FR-053 и FR-054 синхронизированы между product policy и delivery docs.
+- [x] Profile matrix, escalation rules и ambiguity handling формализованы.
+- [x] Next-step action-card contract и fallback templates зафиксированы.
+- [x] Риски и продуктовые допущения отражены в Day1 epic.
+- [ ] Owner review/approve в этом PR.
