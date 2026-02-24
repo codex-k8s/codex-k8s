@@ -122,9 +122,12 @@ approvals:
 
 ## Срез Issue #119: A+B core lifecycle и review-driven revise
 - Scope: A1, A2, A3, B1, B2, B3 из текущего master plan.
+- Vision artifacts: `docs/delivery/vision/issue-119/project_charter.md`.
+- Vision artifacts: `docs/delivery/vision/issue-119/success_metrics.md`.
+- Vision artifacts: `docs/delivery/vision/issue-119/risks_register.md`.
 - Acceptance criteria: все прогоны завершены без P0/P1 регрессий.
 - Acceptance criteria: ожидаемые `run:*`/`state:*`/`need:*` transitions зафиксированы в `flow_events`.
-- Evidence: evidence bundle публикуется комментарием в Issue #118.
+- Evidence: evidence bundle публикуется комментарием в Issue #118 и содержит run_id, label transitions и ссылки на логи.
 - Constraint: действия выполняются в рамках репозиторных правил (без прямой работы в `main`).
 
 ## Порядок прогона
