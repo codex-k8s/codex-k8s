@@ -5,8 +5,8 @@ title: "codex-k8s — Stage Process Model"
 status: active
 owner_role: EM
 created_at: 2026-02-11
-updated_at: 2026-02-21
-related_issues: [1, 19, 90, 95]
+updated_at: 2026-02-24
+related_issues: [1, 19, 90, 95, 152]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -84,6 +84,7 @@ approvals:
 Общие правила выхода:
 - артефакты этапа обновлены и связаны с Issue/PR в traceability документах (`issue_map`, sprint/epic docs);
 - статус этапа отражён через `state:*` лейблы;
+- для одного `run_id` и одной фазы run-status в Issue допускается только один активный сервисный комментарий (retry/update обязаны обновлять существующий comment id без дубликатов);
 - события перехода записаны в аудит.
 
 ### Политика scope изменений
