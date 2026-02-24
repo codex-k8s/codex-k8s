@@ -19,6 +19,11 @@ import (
 const (
 	runStatusCommentLookupRetries    = 1
 	runStatusCommentLookupRetryDelay = 250 * time.Millisecond
+
+	// Non-created phases can arrive milliseconds after "created" and race GitHub eventual consistency.
+	// Give the API extra time before creating a second comment for the same run.
+	runStatusCommentLookupLatePhaseRetries    = 8
+	runStatusCommentLookupLatePhaseRetryDelay = 500 * time.Millisecond
 )
 
 // NewService creates run-status domain service.
@@ -113,6 +118,18 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 	existingComment, existingState, found, err := s.lookupRunStatusComment(ctx, runCtx, runID)
 	if err != nil {
 		return UpsertCommentResult{}, err
+	}
+	if !found && params.Phase != PhaseCreated {
+		existingComment, existingState, found, err = s.lookupRunStatusCommentWithAttempts(
+			ctx,
+			runCtx,
+			runID,
+			runStatusCommentLookupLatePhaseRetries,
+			runStatusCommentLookupLatePhaseRetryDelay,
+		)
+		if err != nil {
+			return UpsertCommentResult{}, err
+		}
 	}
 	if found {
 		existingCommentID = existingComment.ID
@@ -584,6 +601,19 @@ func (s *Service) listRunIssueComments(ctx context.Context, runCtx runContext) (
 }
 
 func (s *Service) lookupRunStatusComment(ctx context.Context, runCtx runContext, runID string) (mcpdomain.GitHubIssueComment, commentState, bool, error) {
+	return s.lookupRunStatusCommentWithAttempts(
+		ctx,
+		runCtx,
+		runID,
+		runStatusCommentLookupRetries,
+		runStatusCommentLookupRetryDelay,
+	)
+}
+
+func (s *Service) lookupRunStatusCommentWithAttempts(ctx context.Context, runCtx runContext, runID string, retries int, retryDelay time.Duration) (mcpdomain.GitHubIssueComment, commentState, bool, error) {
+	if retries < 0 {
+		retries = 0
+	}
 	for attempt := 0; ; attempt++ {
 		comments, err := s.listRunIssueComments(ctx, runCtx)
 		if err != nil {
@@ -592,10 +622,10 @@ func (s *Service) lookupRunStatusComment(ctx context.Context, runCtx runContext,
 		if existingComment, existingState, found := findRunStatusComment(comments, runID); found {
 			return existingComment, existingState, true, nil
 		}
-		if attempt >= runStatusCommentLookupRetries {
+		if attempt >= retries {
 			return mcpdomain.GitHubIssueComment{}, commentState{}, false, nil
 		}
-		if err := sleepWithContext(ctx, runStatusCommentLookupRetryDelay); err != nil {
+		if err := sleepWithContext(ctx, retryDelay); err != nil {
 			return mcpdomain.GitHubIssueComment{}, commentState{}, false, nil
 		}
 	}
