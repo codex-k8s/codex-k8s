@@ -5,8 +5,8 @@ title: "codex-k8s — Stage Process Model"
 status: active
 owner_role: EM
 created_at: 2026-02-11
-updated_at: 2026-02-21
-related_issues: [1, 19, 90, 95]
+updated_at: 2026-02-24
+related_issues: [1, 19, 90, 95, 132]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -73,6 +73,8 @@ approvals:
   - обычно 2 действия (`revise` + канонический `next-stage`);
   - для `design` дополнительно публикуется fast-track `run:dev` вместе с `run:plan`.
 - Реализованный UX: next-step action-link открывает staff web-console, где frontend проверяет RBAC и подтверждает переход через модалку, а backend выполняет label transition на Issue.
+- Идемпотентность trigger-пути обязательна: duplicate delivery/event не создаёт второй run и фиксируется как no-op в `flow_events`.
+- Для doc-stage PRD это вынесено в отдельный e2e-gate (Issue #132): `run:prd` и `run:prd:revise` должны сохранять детерминированный результат при повторной доставке одного и того же webhook delivery-id.
 
 ## Вход/выход этапа
 
