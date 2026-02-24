@@ -6,7 +6,7 @@ status: active
 owner_role: PM
 created_at: 2026-02-11
 updated_at: 2026-02-24
-related_issues: [1, 19, 74, 90, 95, 154]
+related_issues: [1, 19, 74, 90, 95, 154, 155]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -238,17 +238,26 @@ approvals:
 - На фронте выполняется RBAC-проверка (platform admin guard) и показывается confirm-модалка перехода.
 - После подтверждения backend выполняет label transition на Issue: снимает текущие `run:*` и ставит целевой `run:*`.
 
-### Planned UX hardening for launch/transition (Issue #154)
-- Проблема текущего UX: ссылки для быстрого добавления лейблов могут быть нерабочими в зависимости от контекста comment/web/session и блокируют owner-flow.
-- Норматив:
-  - next-step action-card обязан содержать два канала запуска:
-    - validated deep-link в staff web-console (primary);
-    - fallback-команду в текстовом виде (copy-paste для `gh`/label transition) без открытия UI.
-  - сервисные сообщения должны публиковать не только next-step label, но и выбранный launch profile (`quick-fix`, `feature`, `new-service`) с краткой расшифровкой stage-пути.
-  - если primary deep-link недоступен (invalid host/RBAC/session), run не блокируется: owner может завершить переход через fallback-команду.
+### Vision/PRD contract for launch/transition (Issues #154/#155)
+- Проблема: ссылки для быстрого перехода могут быть нерабочими в контексте comment/web/session и блокируют owner-flow.
+- Норматив action-card:
+  - сервисное сообщение обязано публиковать `launch_profile` (`quick-fix|feature|new-service`) и краткий `stage_path`;
+  - каждая next-step карточка обязана содержать два канала:
+    - `primary_action`: validated deep-link в staff web-console;
+    - `fallback_action`: копируемая текстовая команда без открытия UI.
+- Канонические fallback-шаблоны:
+  - переход на следующий stage:
+    - `gh issue edit <ISSUE_NUMBER> --remove-label "run:<current-stage>" --add-label "run:<next-stage>"`;
+  - ручная эскалация профиля (без запуска stage):
+    - `gh issue edit <ISSUE_NUMBER> --add-label "need:input"`;
+  - переход в review gate после формирования PR:
+    - `gh issue edit <ISSUE_NUMBER> --add-label "state:in-review"`.
+- Правила детерминизма:
+  - fallback-шаблон формируется только для однозначно резолвленного `(profile, current-stage, next-stage)`;
+  - при ambiguity карточка публикует только remediation с `need:input`, без best-guess команды.
 - Ограничения безопасности:
-  - fallback-команды не содержат секретов/токенов;
-  - любой transition остаётся в policy/audit контуре (`flow_events` + actor + correlation_id).
+  - fallback-команды не содержат секретов/токенов и используют только labels из каталога `run:*|state:*|need:*`;
+  - любой transition проходит через webhook policy/audit контур (`flow_events`, `actor`, `correlation_id`).
 
 ## Оркестрационный flow для `run:self-improve`
 

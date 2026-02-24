@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-11
 updated_at: 2026-02-24
-related_issues: [1, 19, 90, 95, 154]
+related_issues: [1, 19, 90, 95, 154, 155]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -74,18 +74,19 @@ approvals:
   - для `design` дополнительно публикуется fast-track `run:dev` вместе с `run:plan`.
 - Реализованный UX: next-step action-link открывает staff web-console, где frontend проверяет RBAC и подтверждает переход через модалку, а backend выполняет label transition на Issue.
 
-## Preset stage trajectories (planned, Issue #154)
+## Preset stage trajectories (baseline confirmed, Issues #154/#155)
 
 Цель: убрать ручной “памятный” выбор следующего stage и стандартизовать разные типы задач без разрыва traceability.
 
 | Профиль | Обязательная траектория | Когда применять | Эскалация в full pipeline |
 |---|---|---|---|
-| `quick-fix` | `intake -> plan -> dev -> qa -> release -> postdeploy -> ops` | точечные исправления без изменения доменной/архитектурной модели | при появлении cross-service impact или новых интеграций обязателен переход в `feature`/`new-service` путь |
-| `feature` | `intake -> prd -> design -> plan -> dev -> qa -> release -> postdeploy -> ops` | функциональные доработки в существующих сервисах | при архитектурных рисках/NFR-изменениях добавляется `arch` и при необходимости `vision` |
+| `quick-fix` | `intake -> plan -> dev -> qa -> release -> postdeploy -> ops` | точечные исправления в пределах одного сервиса без изменения контрактов/данных | при любом триггере риска (`cross-service impact`, новая интеграция, миграция БД, RBAC/policy изменение) обязателен переход в `feature` или сразу в `new-service` |
+| `feature` | `intake -> prd -> design -> plan -> dev -> qa -> release -> postdeploy -> ops` | функциональные доработки существующих сервисов с предсказуемым impact | при изменении архитектурных границ или NFR добавляется `arch`; при изменении продуктовой стратегии/метрик добавляется `vision` |
 | `new-service` | `intake -> vision -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops` | новые сервисы/крупные инициативы с изменением системного контура | сокращение этапов не допускается без явного owner-решения в audit trail |
 
 Правила применения:
 - launch profile выбирается явно и фиксируется в service-message и traceability артефактах;
+- допустимы только forward-переходы профилей: `quick-fix -> feature -> new-service`; обратный переход требует явного owner-решения;
 - пропуск этапа возможен только при наличии правила в профиле или через явное owner-решение с записью в аудит;
 - при ambiguity по профилю выставляется `need:input`, запуск следующего stage блокируется.
 

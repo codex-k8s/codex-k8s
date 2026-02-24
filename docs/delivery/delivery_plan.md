@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-24
-related_issues: [1, 19, 74, 100, 106, 112, 154]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -99,9 +99,9 @@ approvals:
 - Результат Day 1: формальный execution-plan (stories + quality-gates + owner decisions) для перехода в `run:dev`.
 - Следующие day-эпики S4 формируются после Owner review Day 1 и закрытия зависимостей по S3 Day20.
 
-### Sprint S5: Stage entry and label UX orchestration (Issue #154)
-- Day 1 (planned): launch profiles + deterministic next-step actions (`docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md`).
-- Результат Day 1 (ожидаемый): owner-ready execution package для устранения ручных ошибок label-flow и нерабочих next-step ссылок.
+### Sprint S5: Stage entry and label UX orchestration (Issues #154/#155)
+- Day 1 (in-review): launch profiles + deterministic next-step actions (`docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md`).
+- Результат Day 1 (факт): owner-ready vision/prd execution package для входа в `run:dev` подготовлен в Issue #155; ожидается Owner approval.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

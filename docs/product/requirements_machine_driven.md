@@ -6,7 +6,7 @@ status: active
 owner_role: PM
 created_at: 2026-02-06
 updated_at: 2026-02-24
-related_issues: [1, 74, 90, 112, 154]
+related_issues: [1, 74, 90, 112, 154, 155]
 related_prs: []
 approvals:
   required: ["Owner"]
