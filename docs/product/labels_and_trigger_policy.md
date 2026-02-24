@@ -5,8 +5,8 @@ title: "codex-k8s — Labels and Trigger Policy"
 status: active
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-02-21
-related_issues: [1, 19, 74, 90, 95]
+updated_at: 2026-02-24
+related_issues: [1, 19, 74, 90, 95, 154]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -237,6 +237,18 @@ approvals:
 - Action-link из GitHub service-comment открывает staff web-console для перехода этапа (`/governance/labels-stages?...`).
 - На фронте выполняется RBAC-проверка (platform admin guard) и показывается confirm-модалка перехода.
 - После подтверждения backend выполняет label transition на Issue: снимает текущие `run:*` и ставит целевой `run:*`.
+
+### Planned UX hardening for launch/transition (Issue #154)
+- Проблема текущего UX: ссылки для быстрого добавления лейблов могут быть нерабочими в зависимости от контекста comment/web/session и блокируют owner-flow.
+- Норматив:
+  - next-step action-card обязан содержать два канала запуска:
+    - validated deep-link в staff web-console (primary);
+    - fallback-команду в текстовом виде (copy-paste для `gh`/label transition) без открытия UI.
+  - сервисные сообщения должны публиковать не только next-step label, но и выбранный launch profile (`quick-fix`, `feature`, `new-service`) с краткой расшифровкой stage-пути.
+  - если primary deep-link недоступен (invalid host/RBAC/session), run не блокируется: owner может завершить переход через fallback-команду.
+- Ограничения безопасности:
+  - fallback-команды не содержат секретов/токенов;
+  - любой transition остаётся в policy/audit контуре (`flow_events` + actor + correlation_id).
 
 ## Оркестрационный flow для `run:self-improve`
 
