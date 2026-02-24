@@ -6,7 +6,7 @@ status: planned
 owner_role: EM
 created_at: 2026-02-18
 updated_at: 2026-02-24
-related_issues: [19, 112]
+related_issues: [19, 112, 128]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -34,6 +34,7 @@ approvals:
   - cross-project сценарий (`project-example` + `codex-k8s`).
 - E2E regression по ключевым MVP сценариям:
   - stage labels flow,
+  - intake/revise matrix checkpoint (`run:intake` + `run:intake:revise`) по Issue #128,
   - self-improve loop,
   - MCP governance tools,
   - repo onboarding + docset/config governance,
@@ -64,6 +65,7 @@ approvals:
 
 ## Критерии приемки
 - Full e2e проходит без P0 блокеров.
+- E2E-checkpoint по Issue #128 для `run:intake` и `run:intake:revise` подтверждён и отражён в traceability docs.
 - Собран и опубликован evidence bundle (команды, логи, ссылки на run/deploy artifacts).
 - Owner получает go/no-go пакет и подтверждает завершение MVP фазы.
 

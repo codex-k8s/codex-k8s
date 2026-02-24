@@ -6,7 +6,7 @@ status: active
 owner_role: QA
 created_at: 2026-02-24
 updated_at: 2026-02-24
-related_issues: [19, 74, 95, 100, 112]
+related_issues: [19, 74, 95, 100, 112, 128]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -23,6 +23,7 @@ approvals:
 
 ## Контекст и цель
 - Issue: `#112`.
+- Дополнительный intake-checkpoint: `#128` (`run:intake` + `run:intake:revise`).
 - Дата фиксации плана: `2026-02-24`.
 - Цель: подтвердить, что MVP-контур `webhook -> run -> review/revise -> release/postdeploy/ops` воспроизводим и безопасен.
 
@@ -54,7 +55,7 @@ approvals:
 
 | Группа | Label | Минимальный сценарий | Ожидаемый результат |
 |---|---|---|---|
-| Product stages | `run:intake`, `run:vision`, `run:prd` | запуск stage + выпуск docs артефакта | PR/Issue traceability обновлена, `state:in-review` установлен |
+| Product stages | `run:intake`, `run:intake:revise`, `run:vision`, `run:prd` | запуск stage + revise-итерация + выпуск docs артефакта | PR/Issue traceability обновлена, `state:in-review` установлен |
 | Architecture/design stages | `run:arch`, `run:design`, `run:plan` | stage run + проверка связей в delivery docs | day/sprint/issue_map синхронизированы |
 | Implementation | `run:dev`, `run:dev:revise` | создание PR + итерация по review | PR обновлён, revise flow без ambiguity |
 | Verification/release | `run:qa`, `run:release`, `run:postdeploy`, `run:ops` | выпуск тест/release/ops артефактов | chain completion без нарушения policy |
@@ -94,6 +95,13 @@ approvals:
 - A2: `run:dev` создаёт PR, `run:dev:revise` отрабатывает review.
 - A3: `run:qa -> run:release -> run:postdeploy -> run:ops`.
 - Gate: ни один next-stage не проходит без актуального `state:*` и traceability.
+
+### Набор A0. Intake revise label matrix (Issue #128)
+- A0.1: старт `run:intake` на Issue #128 и выпуск intake-артефакта только в markdown scope.
+- A0.2: завершение intake с переводом в review gate (`state:in-review` на issue/PR по фактическому артефакту).
+- A0.3: прогон `run:intake:revise` после комментария/уточнения и проверка корректной revise-петли.
+- A0.4: финальный label transition: снятие trigger-лейбла с issue и фиксация `state:in-review` в контуре review.
+- Gate: нет конфликтов `run:*`, сохраняется детерминированная трассировка `issue -> e2e-plan -> issue_map`.
 
 ### Набор B. Review-driven revise (Issue #95)
 - B1: `changes_requested` при одном stage label на PR.
@@ -137,8 +145,15 @@ approvals:
 ## Критерии завершения (Go)
 - Нет открытых P0/P1 блокеров.
 - Матрица label coverage пройдена полностью.
+- Intake E2E-checkpoint по Issue #128 (`run:intake` + `run:intake:revise`) пройден и отражён в traceability.
 - Security/RBAC проверки пройдены без критичных нарушений.
 - Документация и traceability синхронизированы по факту прогона.
+
+## Открытые риски и продуктовые допущения
+- Риск: при конкурирующих `run:*` лейблах на issue intake/revise-run может не стартовать из-за precondition-конфликта.
+- Риск: если review gate пропущен вручную, можно потерять обязательную связку `state:in-review` и evidence по revise-петле.
+- Допущение: intake и intake:revise в `code-only` режиме ограничиваются markdown-изменениями и не требуют runtime-зависимостей.
+- Допущение: для Issue #128 достаточно policy/e2e-трассировки без расширения функционального scope beyond intake.
 
 ## Источники фактов (актуализировано на 2026-02-24 через Context7)
 - Kubernetes rollout/status checks: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
