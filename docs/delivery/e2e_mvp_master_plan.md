@@ -6,7 +6,7 @@ status: active
 owner_role: QA
 created_at: 2026-02-24
 updated_at: 2026-02-24
-related_issues: [19, 74, 95, 100, 112]
+related_issues: [19, 74, 95, 100, 112, 123]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -119,6 +119,11 @@ approvals:
 - F1: multi-repo docs federation (Issue #100 day1 baseline).
 - F2: issue_map и requirements_traceability обновляются синхронно.
 - F3: doc-audit run соблюдает markdown-only scope.
+
+### Набор G. Intake revise smoke (Issue #123)
+- G1: `run:intake` создаёт/обновляет только markdown-артефакт intake с AC/DoD/рисками.
+- G2: после обновления PR выполняется transition `run:intake -> state:in-review` на PR и Issue.
+- G3: `run:intake:revise` вносит точечные правки по замечаниям без выхода за markdown-only policy.
 
 ## Порядок прогона
 1. Подготовка окружения и preflight (tokens, namespace health, webhook availability).
