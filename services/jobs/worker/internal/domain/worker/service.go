@@ -703,18 +703,16 @@ func (s *Service) finishRun(ctx context.Context, params finishRunParams) error {
 		return fmt.Errorf("insert finish event: %w", err)
 	}
 
-	if params.Execution.RuntimeMode == agentdomain.RuntimeModeFullEnv {
-		if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
-			RunID:        params.Run.RunID,
-			Phase:        RunStatusPhaseFinished,
-			JobName:      params.Ref.Name,
-			JobNamespace: params.Ref.Namespace,
-			RuntimeMode:  string(params.Execution.RuntimeMode),
-			Namespace:    params.Execution.Namespace,
-			RunStatus:    string(params.Status),
-		}); err != nil {
-			s.logger.Warn("upsert run status comment (finished) failed", "run_id", params.Run.RunID, "err", err)
-		}
+	if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
+		RunID:        params.Run.RunID,
+		Phase:        RunStatusPhaseFinished,
+		JobName:      params.Ref.Name,
+		JobNamespace: params.Ref.Namespace,
+		RuntimeMode:  string(params.Execution.RuntimeMode),
+		Namespace:    params.Execution.Namespace,
+		RunStatus:    string(params.Status),
+	}); err != nil {
+		s.logger.Warn("upsert run status comment (finished) failed", "run_id", params.Run.RunID, "err", err)
 	}
 
 	if params.Run.LearningMode && s.feedback != nil {

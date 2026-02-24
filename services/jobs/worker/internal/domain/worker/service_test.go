@@ -573,6 +573,47 @@ func TestTickFinalizesSucceededRun(t *testing.T) {
 	}
 }
 
+func TestTickFinalizesCodeOnlyRun_UpdatesFinishedStatusComment(t *testing.T) {
+	t.Parallel()
+
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"prd"},"issue":{"number":119},"agent":{"key":"pm","name":"AI Product Manager"},"runtime":{"mode":"code-only"}}`)
+	runs := &fakeRunQueue{
+		running: []runqueuerepo.RunningRun{{
+			RunID:         "run-code-only-finish",
+			CorrelationID: "corr-code-only-finish",
+			ProjectID:     "proj-code-only-finish",
+			RunPayload:    payload,
+		}},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{states: map[string]JobState{"run-code-only-finish": JobStateSucceeded}}
+	runStatus := &fakeRunStatusNotifier{}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{WorkerID: "worker-1", ClaimLimit: 1, RunningCheckLimit: 10, SlotsPerProject: 2, SlotLeaseTTL: time.Minute}, Dependencies{
+		Runs:      runs,
+		Events:    events,
+		Launcher:  launcher,
+		RunStatus: runStatus,
+		Logger:    logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 2, 24, 12, 30, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if len(events.inserted) != 1 || events.inserted[0].EventType != floweventdomain.EventTypeRunSucceeded {
+		t.Fatalf("expected one run.succeeded event, got %#v", events.inserted)
+	}
+	if len(runStatus.upserts) != 1 {
+		t.Fatalf("expected one finished status comment upsert, got %d", len(runStatus.upserts))
+	}
+	if got := runStatus.upserts[0]; got.Phase != RunStatusPhaseFinished || got.RuntimeMode != string(agentdomain.RuntimeModeCodeOnly) || got.RunStatus != string(rundomain.StatusSucceeded) {
+		t.Fatalf("unexpected finished status comment payload: %#v", got)
+	}
+}
+
 func TestTickLaunchesFullEnvRunWithNamespacePreparation(t *testing.T) {
 	t.Parallel()
 
