@@ -91,6 +91,7 @@ import PageHeader from "../../shared/ui/PageHeader.vue";
 import { normalizeApiError, type ApiError } from "../../shared/api/errors";
 import { formatDateTime } from "../../shared/lib/datetime";
 import { colorForRunStatus } from "../../shared/lib/chips";
+import { bindRealtimePageLifecycle } from "../../shared/ws/lifecycle";
 import { getRuntimeDeployTask } from "../../features/runtime-deploy/api";
 import { subscribeRuntimeDeployRealtime, type RuntimeDeployRealtimeState } from "../../features/runtime-deploy/realtime";
 import type { RuntimeDeployTask } from "../../features/runtime-deploy/types";
@@ -107,6 +108,7 @@ const realtimeState = ref<RuntimeDeployRealtimeState>("connecting");
 const stopRealtimeRef = ref<(() => void) | null>(null);
 const fallbackPollTimer = ref<number | null>(null);
 const reloadPending = ref(false);
+const stopLifecycleBindingRef = ref<(() => void) | null>(null);
 
 const realtimeChipColor = computed(() => {
   if (realtimeState.value === "connected") return "success";
@@ -193,6 +195,11 @@ function stopRealtime(): void {
   stopRealtimeRef.value = null;
 }
 
+function stopLifecycleBinding(): void {
+  stopLifecycleBindingRef.value?.();
+  stopLifecycleBindingRef.value = null;
+}
+
 function startRealtime(): void {
   stopRealtime();
   realtimeState.value = "connecting";
@@ -212,12 +219,27 @@ function startRealtime(): void {
   });
 }
 
+function handlePageSuspend(): void {
+  stopRealtime();
+  clearFallbackPolling();
+}
+
+function handlePageResume(): void {
+  void loadTask();
+  startRealtime();
+}
+
 onMounted(async () => {
   await loadTask();
   startRealtime();
+  stopLifecycleBindingRef.value = bindRealtimePageLifecycle({
+    onResume: handlePageResume,
+    onSuspend: handlePageSuspend,
+  });
 });
 
 onBeforeUnmount(() => {
+  stopLifecycleBinding();
   stopRealtime();
   clearFallbackPolling();
 });
