@@ -55,7 +55,12 @@ func NewHandler(service domainService, logger *slog.Logger) http.Handler {
 
 	streamHandler := sdkmcp.NewStreamableHTTPHandler(func(_ *http.Request) *sdkmcp.Server {
 		return server
-	}, nil)
+	}, &sdkmcp.StreamableHTTPOptions{
+		// Control-plane is deployed with multiple replicas behind one Service.
+		// Stateless mode avoids per-pod in-memory session stickiness issues
+		// ("session not found") for MCP tool calls routed across replicas.
+		Stateless: true,
+	})
 	authMiddleware := auth.RequireBearerToken(verifyBearerToken(service), nil)
 	return authMiddleware(streamHandler)
 }
