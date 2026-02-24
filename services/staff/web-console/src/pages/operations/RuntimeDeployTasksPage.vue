@@ -93,6 +93,7 @@ import { normalizeApiError, type ApiError } from "../../shared/api/errors";
 import { formatDateTime } from "../../shared/lib/datetime";
 import { colorForRunStatus } from "../../shared/lib/chips";
 import { createProgressiveTableState } from "../../shared/lib/progressive-table";
+import { bindRealtimePageLifecycle } from "../../shared/ws/lifecycle";
 import { useUiContextStore } from "../../features/ui-context/store";
 import { listRuntimeDeployTasks } from "../../features/runtime-deploy/api";
 import { subscribeRuntimeDeployRealtime, type RuntimeDeployRealtimeState } from "../../features/runtime-deploy/realtime";
@@ -113,6 +114,7 @@ const reloadPending = ref(false);
 const realtimeReloadTimer = ref<number | null>(null);
 const fallbackPollTimer = ref<number | null>(null);
 const realtimeSubscriptions = new Map<string, () => void>();
+const stopLifecycleBindingRef = ref<(() => void) | null>(null);
 
 const activeRunIDs = computed(() => {
   const out: string[] = [];
@@ -305,12 +307,32 @@ function stopFallbackPolling(): void {
   fallbackPollTimer.value = null;
 }
 
+function stopLifecycleBinding(): void {
+  stopLifecycleBindingRef.value?.();
+  stopLifecycleBindingRef.value = null;
+}
+
+function handlePageSuspend(): void {
+  clearRealtimeReloadTimer();
+  stopRealtimeSubscriptions();
+}
+
+function handlePageResume(): void {
+  syncRealtimeSubscriptions();
+  void loadTasks();
+}
+
 onMounted(() => {
   void reloadTasks();
   startFallbackPolling();
+  stopLifecycleBindingRef.value = bindRealtimePageLifecycle({
+    onResume: handlePageResume,
+    onSuspend: handlePageSuspend,
+  });
 });
 
 onBeforeUnmount(() => {
+  stopLifecycleBinding();
   stopFallbackPolling();
   clearRealtimeReloadTimer();
   stopRealtimeSubscriptions();
