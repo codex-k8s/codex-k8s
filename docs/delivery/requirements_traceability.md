@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-24
-related_issues: [1, 19, 74, 90, 100, 112]
+related_issues: [1, 19, 74, 90, 100, 112, 123]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -100,3 +100,9 @@ approvals:
 ## Правило актуализации
 - Любое новое требование сначала добавляется в `docs/product/requirements_machine_driven.md`, затем отражается в этой матрице.
 - Если строка в матрице теряет ссылку на целевой документ, статус меняется на `gap` до устранения.
+
+## Issue-scoped traceability slices
+
+| Issue | Requirements slice | Evidence docs | Статус |
+|---|---|---|---|
+| #123 | `RQ-123-01..RQ-123-04` + `AC-1..AC-5` (intake smoke/revise) | `docs/product/intake_issue_123_e2e_smoke.md`, `docs/delivery/issue_map.md`, `docs/delivery/e2e_mvp_master_plan.md` (Набор G) | covered |
