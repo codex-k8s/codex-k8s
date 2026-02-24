@@ -31,6 +31,12 @@ approvals:
 2) Подтвердить B1/B2/B3 (review-driven revise, ambiguity handling, sticky model/reasoning).
 3) Зафиксировать audit/evidence и обновить трассируемость (Issue #118 + issue_map).
 
+## Декомпозиция инкрементов
+1) Incr-1: PRD-пакет issue #119 (`prd.md`, `nfr.md`, `user_story.md`) с формальными AC и DoD.
+2) Incr-2: Прогон A-сценариев (A1-A3) и фиксация pass/fail + переходов в evidence.
+3) Incr-3: Прогон B-сценариев (B1-B3), включая ambiguity и sticky profile проверки.
+4) Incr-4: Публикация evidence bundle в Issue #118 и синхронизация traceability в delivery-документах.
+
 ## Пользователи / Стейкхолдеры
 - Основные пользователи: Owner, QA, EM, PM.
 - Стейкхолдеры: контроль качества MVP, release gate.

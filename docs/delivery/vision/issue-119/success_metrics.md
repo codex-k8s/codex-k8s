@@ -50,6 +50,12 @@ approvals:
   - Источник: Issue #118.
   - Target: 100%.
 
+### 3) Quality gate по сценариям
+- Scenario-level pass accuracy
+  - Определение: каждый из 6 сценариев A1/A2/A3/B1/B2/B3 имеет явный статус `pass|fail` в evidence.
+  - Источник: issue-комментарий evidence bundle в Issue #118.
+  - Target: 100%.
+
 ## Сигналы раннего предупреждения (Guardrails)
 - Любая P0/P1 регрессия на A/B сценариях.
 - Отсутствие audit-событий для run/label переходов.

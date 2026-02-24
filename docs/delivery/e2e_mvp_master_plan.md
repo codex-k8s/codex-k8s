@@ -125,8 +125,12 @@ approvals:
 - Vision artifacts: `docs/delivery/vision/issue-119/project_charter.md`.
 - Vision artifacts: `docs/delivery/vision/issue-119/success_metrics.md`.
 - Vision artifacts: `docs/delivery/vision/issue-119/risks_register.md`.
-- Acceptance criteria: все прогоны завершены без P0/P1 регрессий.
-- Acceptance criteria: ожидаемые `run:*`/`state:*`/`need:*` transitions зафиксированы в `flow_events`.
+- PRD artifacts: `docs/delivery/prd/issue-119/prd.md`.
+- PRD artifacts: `docs/delivery/prd/issue-119/nfr.md`.
+- PRD artifacts: `docs/delivery/prd/issue-119/user_story.md`.
+- Acceptance criteria: все 6 сценариев A+B завершены в статусе pass без P0/P1 регрессий.
+- Acceptance criteria: ожидаемые `run:*`/`state:*`/`need:*` transitions зафиксированы в `flow_events` с привязкой к `run_id`.
+- Acceptance criteria: для B2 ambiguity выставляется `need:input` и revise-run не стартует.
 - Evidence: evidence bundle публикуется комментарием в Issue #118 и содержит run_id, label transitions и ссылки на логи.
 - Constraint: действия выполняются в рамках репозиторных правил (без прямой работы в `main`).
 
