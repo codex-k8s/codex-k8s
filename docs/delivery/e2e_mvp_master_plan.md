@@ -6,7 +6,7 @@ status: active
 owner_role: QA
 created_at: 2026-02-24
 updated_at: 2026-02-24
-related_issues: [19, 74, 95, 100, 112]
+related_issues: [19, 74, 95, 100, 112, 143]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -103,6 +103,7 @@ approvals:
 ### Набор C. MCP governance tools
 - C1: `github_labels_list|add|remove|transition` с audit trail.
 - C2: `run_status_report` cadence (каждые 5-7 tool calls).
+- C2.1: idempotent service-comment upsert (`ADR-0008`) при повторных/дублирующих status-report вызовах.
 - C3: `secret.sync.github_k8s`, `database.lifecycle`, `owner.feedback.request` (approve/deny paths).
 
 ### Набор D. Runtime and infra

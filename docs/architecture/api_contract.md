@@ -5,8 +5,8 @@ title: "codex-k8s — API Contract Overview"
 status: active
 owner_role: SA
 created_at: 2026-02-06
-updated_at: 2026-02-21
-related_issues: [1, 19, 100]
+updated_at: 2026-02-24
+related_issues: [1, 19, 100, 143]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -54,6 +54,7 @@ approvals:
 - Базовый MCP инструмент обратной связи по прогрессу:
   - `run_status_report` (агент публикует текущий короткий статус выполнения в выбранной locale).
   - последние 3 `run_status_report` статуса выводятся в run service-comment в GitHub для видимого прогресса ревью.
+  - service-comment обновляется по idempotent upsert одного anchor `comment_id` на run (см. `docs/architecture/adr/ADR-0008-run-status-service-comment-idempotency.md`).
 - Остальные GitHub/Kubernetes runtime-операции выполняются напрямую из agent pod через `gh`/`kubectl` в рамках RBAC/policy.
 
 ## Модель доступа GitHub для агентного pod (S2 Day4)
@@ -181,6 +182,16 @@ approvals:
 - Trigger/deploy label, инициированный агентом, проходит owner approval до применения.
 - `state:*` и `need:*` могут применяться автоматически в рамках project policy.
 - Любая операция с label фиксируется в `flow_events` и связывается с `agent_sessions`/`links`.
+
+## Run status comment idempotency
+- Контур `run_status_report` обязан быть retry-safe:
+  - повторный вызов не должен создавать новый service-comment, если anchor `comment_id` уже зафиксирован;
+  - обновление выполняется как upsert существующего anchor-комментария.
+- В audit trail сохраняются минимум события:
+  - `run.agent.status_reported`;
+  - `run.service_message.updated`;
+  - `mcp.tool.failed` (при ошибке публикации).
+- При утрате anchor (например, ручное удаление комментария) допускается controlled recovery с фиксацией нового `comment_id` в аудите.
 
 ## MCP approver/executor contract behavior
 - Approver/executor интеграции подключаются по HTTP-контрактам через MCP-слой.

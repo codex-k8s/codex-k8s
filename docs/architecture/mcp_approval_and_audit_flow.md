@@ -5,8 +5,8 @@ title: "codex-k8s — MCP Approval and Audit Flow"
 status: active
 owner_role: SA
 created_at: 2026-02-11
-updated_at: 2026-02-21
-related_issues: [1, 19, 90, 95]
+updated_at: 2026-02-24
+related_issues: [1, 19, 90, 95, 143]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -26,6 +26,7 @@ approvals:
 - HTTP approver/executor поддерживаются как стандартные контракты интеграции; Telegram зафиксирован как приоритетный adapter path для следующего этапа.
 - В `codex-k8s` сохраняется двухслойная модель MCP: встроенные Go-ручки платформы + внешний декларативный слой (`github.com/codex-k8s/yaml-mcp-server`).
 - Для review->revise UX (Issue #95, ADR-0006) label orchestration и сервисные action-cards остаются в MCP policy/audit контуре.
+- Для progress-feedback path (Issue #143, ADR-0008) `run_status_report` обязан обновлять один anchor service-comment idempotent-режимом.
 
 ## Политика апрувов
 
@@ -36,6 +37,9 @@ approvals:
 - Для MCP label-инструментов (`github_labels_list|add|remove|transition`) используется `approval:none`.
 - Для MCP progress-feedback инструмента (`run_status_report`) используется `approval:none`;
   входной `status` ограничен 100 символами для компактного статуса.
+- Для `run_status_report` действует retry-safe правило:
+  - после первичной фиксации `comment_id` все последующие апдейты выполняются как upsert этого же комментария;
+  - создание нового комментария допускается только в controlled recovery сценарии с аудитом перепривязки.
 - Для self-improve read-инструментов (`self_improve_runs_list`, `self_improve_run_lookup`, `self_improve_session_get`) используется `approval:none`.
 - Label transitions всё равно проходят через control-plane MCP, чтобы сохранять единый audit-контур.
 - Для control tools (`secret.sync.github_k8s`, `database.lifecycle`, `owner.feedback.request`) включается approver gate по policy.
@@ -172,4 +176,5 @@ approvals:
 - `docs/product/labels_and_trigger_policy.md`
 - `docs/product/stage_process_model.md`
 - `docs/architecture/data_model.md`
+- `docs/architecture/adr/ADR-0008-run-status-service-comment-idempotency.md`
 - `docs/delivery/requirements_traceability.md`

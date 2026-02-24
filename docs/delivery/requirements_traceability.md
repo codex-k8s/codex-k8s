@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-24
-related_issues: [1, 19, 74, 90, 100, 112]
+related_issues: [1, 19, 74, 90, 100, 112, 143]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -76,7 +76,7 @@ approvals:
 | FR-048 | Unified config/secrets governance + sync в GitHub/K8s | `docs/product/requirements_machine_driven.md`, `docs/delivery/epics/s3/epic-s3-day13-config-and-credentials-governance.md` | covered |
 | FR-049 | Repo onboarding preflight (GitHub ops + domain resolution) | `docs/product/requirements_machine_driven.md`, `docs/delivery/epics/s3/epic-s3-day14-repository-onboarding-preflight.md` | covered |
 | FR-050 | Prompt context docs tree + role-aware capabilities | `docs/product/requirements_machine_driven.md`, `docs/architecture/prompt_templates_policy.md`, `docs/delivery/epics/s3/epic-s3-day15-mvp-closeout-and-handover.md` | covered |
-| FR-051 | GitHub run service messages v2 + slot URL for full-env | `docs/product/requirements_machine_driven.md`, `docs/architecture/api_contract.md`, `docs/delivery/epics/s3/epic-s3-day15-mvp-closeout-and-handover.md` | covered |
+| FR-051 | GitHub run service messages v2 + slot URL for full-env | `docs/product/requirements_machine_driven.md`, `docs/architecture/api_contract.md`, `docs/architecture/adr/ADR-0008-run-status-service-comment-idempotency.md`, `docs/delivery/epics/s3/epic-s3-day15-mvp-closeout-and-handover.md` | covered |
 | FR-052 | Review-driven revise resolver + stage-aware next-step action cards | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/adr/ADR-0006-review-driven-revise-and-next-step-ux.md` | covered |
 | NFR-001 | Security baseline | `docs/product/requirements_machine_driven.md`, `docs/product/constraints.md`, `AGENTS.md` | covered |
 | NFR-002 | Multi-pod consistency | `docs/product/requirements_machine_driven.md`, `docs/architecture/c4_container.md`, `docs/architecture/data_model.md` | covered |
@@ -87,7 +87,7 @@ approvals:
 | NFR-007 | CI/CD model (main->production webhook-driven self-deploy) | `docs/product/requirements_machine_driven.md`, `docs/product/brief.md`, `docs/product/constraints.md`, `docs/delivery/delivery_plan.md` | covered |
 | NFR-008 | MVP storage profile local-path | `docs/product/requirements_machine_driven.md`, `docs/product/constraints.md`, `docs/delivery/delivery_plan.md` | covered |
 | NFR-009 | Управляемые лимиты параллелизма agent-runs | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/delivery/epics/s2/epic-s2-day3-per-issue-namespace-and-rbac.md`, `docs/delivery/epics/s3/epic-s3-day19.7-run-namespace-ttl-and-revise-reuse.md` | covered |
-| NFR-010 | Полная audit-трассировка stage/label действий | `docs/product/requirements_machine_driven.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/data_model.md`, `docs/delivery/epics/s2/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md` | covered |
+| NFR-010 | Полная audit-трассировка stage/label действий | `docs/product/requirements_machine_driven.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/data_model.md`, `docs/architecture/adr/ADR-0008-run-status-service-comment-idempotency.md`, `docs/delivery/epics/s2/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md` | covered |
 | NFR-011 | Labels-as-vars в runtime orchestration | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/delivery/epics/s2/epic-s2-day2-issue-label-triggers-run-dev.md` | covered |
 | NFR-012 | Запрет timeout-kill при ожидании MCP | `docs/product/requirements_machine_driven.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/agent_runtime_rbac.md` | covered |
 | NFR-013 | Надёжное хранение resumable session snapshot | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/constraints.md`, `docs/delivery/epics/s2/epic-s2-day4-agent-job-and-pr-flow.md` | covered |
