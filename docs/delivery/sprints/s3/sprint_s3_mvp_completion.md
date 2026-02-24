@@ -6,7 +6,7 @@ status: in-progress
 owner_role: EM
 created_at: 2026-02-13
 updated_at: 2026-02-24
-related_issues: [19, 45, 74, 112]
+related_issues: [19, 45, 74, 112, 139]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -100,4 +100,5 @@ approvals:
 - Realtime контур закрыт: multi-server backend bus + frontend WS subscriptions (включая логи/эвенты) + fallback mode.
 - Кнопки `Обновить` удалены в realtime-экранах, обновление выполняется автоматически.
 - Для `full-env` закрыт retention-gap: namespace живёт по role-based TTL, а `run:*:revise` продлевает lease и переиспользует активный namespace.
+- Для Issue #139 пройден финальный e2e-check `run:vision -> run:vision:revise`, включая идемпотентность service status-comment и корректную постановку `state:in-review`.
 - Финальный Day20 e2e проходит без P0 блокеров и формирует owner-ready closeout пакет.

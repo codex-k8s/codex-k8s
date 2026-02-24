@@ -5,8 +5,8 @@ title: "codex-k8s — Stage Process Model"
 status: active
 owner_role: EM
 created_at: 2026-02-11
-updated_at: 2026-02-21
-related_issues: [1, 19, 90, 95]
+updated_at: 2026-02-24
+related_issues: [1, 19, 90, 95, 139]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -85,6 +85,21 @@ approvals:
 - артефакты этапа обновлены и связаны с Issue/PR в traceability документах (`issue_map`, sprint/epic docs);
 - статус этапа отражён через `state:*` лейблы;
 - события перехода записаны в аудит.
+
+### Критерии приемки для Vision / Vision:Revise (E2E finalize, Issue #139)
+- Для `run:vision` артефакты этапа обязаны содержать обновлённые:
+  - `charter` (цель и границы результата),
+  - `success metrics` (измеримые критерии успеха),
+  - `risk register` (ключевые продуктовые риски и mitigation).
+- Для `run:vision:revise` обязательно обработать все нерешённые комментарии Owner по vision-артефактам:
+  - каждый комментарий получает ответ (внесено изменение или обоснованное отклонение),
+  - unresolved threads не остаются без статуса.
+- Для `run:vision` и `run:vision:revise` сервисный status-comment в Issue должен быть идемпотентным:
+  - платформа поддерживает один активный status-comment на run,
+  - повторные webhook/reconcile обновляют существующий комментарий, а не создают дубликаты.
+- После завершения run обновляется traceability bundle:
+  - записи в `docs/delivery/issue_map.md` и релевантных sprint/epic документах,
+  - `state:in-review` установлен на Issue (и на PR при наличии PR-артефакта).
 
 ### Политика scope изменений
 - Для `run:intake|vision|prd|arch|design|plan|doc-audit|qa|release|postdeploy|ops|rethink` разрешены только изменения markdown-документации (`*.md`).

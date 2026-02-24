@@ -6,7 +6,7 @@ status: active
 owner_role: QA
 created_at: 2026-02-24
 updated_at: 2026-02-24
-related_issues: [19, 74, 95, 100, 112]
+related_issues: [19, 74, 95, 100, 112, 139]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -54,7 +54,7 @@ approvals:
 
 | Группа | Label | Минимальный сценарий | Ожидаемый результат |
 |---|---|---|---|
-| Product stages | `run:intake`, `run:vision`, `run:prd` | запуск stage + выпуск docs артефакта | PR/Issue traceability обновлена, `state:in-review` установлен |
+| Product stages | `run:intake`, `run:vision`, `run:vision:revise`, `run:prd` | запуск stage + выпуск/ревизия docs артефакта | PR/Issue traceability обновлена, `state:in-review` установлен |
 | Architecture/design stages | `run:arch`, `run:design`, `run:plan` | stage run + проверка связей в delivery docs | day/sprint/issue_map синхронизированы |
 | Implementation | `run:dev`, `run:dev:revise` | создание PR + итерация по review | PR обновлён, revise flow без ambiguity |
 | Verification/release | `run:qa`, `run:release`, `run:postdeploy`, `run:ops` | выпуск тест/release/ops артефактов | chain completion без нарушения policy |
@@ -120,9 +120,15 @@ approvals:
 - F2: issue_map и requirements_traceability обновляются синхронно.
 - F3: doc-audit run соблюдает markdown-only scope.
 
+### Набор G. Vision revise + status comment idempotency (Issue #139)
+- G1: `run:vision` формирует vision-артефакт и ставит `state:in-review` на Issue.
+- G2: `run:vision:revise` после комментариев Owner обновляет тот же набор артефактов без потери traceability.
+- G3: service status-comment остаётся единым (idempotent upsert): повторный запуск/повторный webhook обновляет существующий комментарий, не создавая дубликаты.
+- G4: после цикла `run:vision -> run:vision:revise` в Issue отсутствуют необработанные комментарии по vision-артефактам.
+
 ## Порядок прогона
 1. Подготовка окружения и preflight (tokens, namespace health, webhook availability).
-2. Прогон core lifecycle (A + B).
+2. Прогон core lifecycle (A + B + G).
 3. Прогон governance/control tools (C).
 4. Прогон runtime/security (D + E).
 5. Прогон multi-repo/docs governance (F).
@@ -139,6 +145,13 @@ approvals:
 - Матрица label coverage пройдена полностью.
 - Security/RBAC проверки пройдены без критичных нарушений.
 - Документация и traceability синхронизированы по факту прогона.
+- Final gate Issue #139 пройден: подтверждены `run:vision`, `run:vision:revise` и идемпотентность status-comment.
+
+## Открытые риски и продуктовые допущения
+- Риск: если concurrent webhook-события приходят вне гарантированного порядка, возможны race-condition при обновлении service comment.
+- Риск: при ручном удалении service-comment в Issue идемпотентный update-path требует корректного recreate-поведения и повторной привязки.
+- Допущение: для acceptance-gate Issue #139 достаточно проверить idempotent поведение в рамках одной связки `(repo, issue, run)` без multi-repo конкуренции.
+- Допущение: `state:in-review` остаётся обязательным выходным состоянием Vision/Vision:Revise до финального Owner approve.
 
 ## Источники фактов (актуализировано на 2026-02-24 через Context7)
 - Kubernetes rollout/status checks: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
