@@ -5,8 +5,8 @@ title: "codex-k8s — Labels and Trigger Policy"
 status: active
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-02-21
-related_issues: [1, 19, 74, 90, 95]
+updated_at: 2026-02-24
+related_issues: [1, 19, 74, 90, 95, 137]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -232,6 +232,16 @@ approvals:
   - revise-run не стартует;
   - выставляется `need:input`;
   - публикуется remediation-message с конкретным требуемым label action.
+
+#### Intake/revise status-comment idempotency gate (Issue #137)
+- Для `run:intake` и `run:intake:revise` действует отдельный acceptance gate:
+  - в рамках одного запуска допускается только один активный status/service-comment;
+  - повторные webhook события должны обновлять существующий комментарий, а не создавать новый.
+- Финальный комментарий этапа обязан содержать:
+  - итоговый статус запуска;
+  - stage-aware next-step рекомендации (`run:intake:revise`, `run:vision`);
+  - ссылки на актуальный run-status контекст без конфликтующих дублей.
+- Если idempotency нарушена (дубли статуса или conflicting next-step), run считается не прошедшим acceptance и требует revise-итерации до постановки `state:in-review`.
 
 #### Next-step deep-link в web-console (implemented)
 - Action-link из GitHub service-comment открывает staff web-console для перехода этапа (`/governance/labels-stages?...`).

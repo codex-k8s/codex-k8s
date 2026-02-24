@@ -27,7 +27,7 @@ approvals:
 |---|---|---|
 | `docs/delivery/epics/s1/` | Day0..Day7 + каталог Sprint S1 | `docs/delivery/epics/s1/epic_s1.md` |
 | `docs/delivery/epics/s2/` | Day0..Day7 (+ Day3.5/Day4.5) + каталог Sprint S2 | `docs/delivery/epics/s2/epic_s2.md` |
-| `docs/delivery/epics/s3/` | Day1..Day20 + каталог Sprint S3 | `docs/delivery/epics/s3/epic_s3.md` |
+| `docs/delivery/epics/s3/` | Day1..Day20 + Day20.1 + каталог Sprint S3 | `docs/delivery/epics/s3/epic_s3.md` |
 | `docs/delivery/epics/s4/` | Day1 + каталог Sprint S4 | `docs/delivery/epics/s4/epic_s4.md` |
 
 ## Проверка консистентности

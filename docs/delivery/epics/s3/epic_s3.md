@@ -6,7 +6,7 @@ status: in-progress
 owner_role: EM
 created_at: 2026-02-13
 updated_at: 2026-02-24
-related_issues: [19, 45, 74, 112]
+related_issues: [19, 45, 74, 112, 137]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -49,6 +49,7 @@ approvals:
 - Day 19.6: `docs/delivery/epics/s3/epic-s3-day19.6-staff-realtime-subscriptions-and-ui.md`
 - Day 19.7: `docs/delivery/epics/s3/epic-s3-day19.7-run-namespace-ttl-and-revise-reuse.md`
 - Day 20: `docs/delivery/epics/s3/epic-s3-day20-e2e-regression-and-mvp-closeout.md`
+- Day 20.1: `docs/delivery/epics/s3/epic-s3-day20.1-intake-revise-status-comment-idempotency.md`
 
 ## Прогресс
 - Day 1 (`full stage and label activation`) завершён и согласован Owner.
@@ -70,6 +71,7 @@ approvals:
 - Day 17 (`environment-scoped secret overrides + OAuth callback strategy`) завершён и согласован Owner (PR #49).
 - Day 18 (`runtime error journal + staff alert center`) завершён и согласован Owner (PR #50).
 - В работе остаются Day19/Day19.5/Day19.6/Day19.7 (frontend hardening + realtime + namespace retention), после них финальный Day20 full e2e gate по `docs/delivery/e2e_mvp_master_plan.md`.
+- Day20.1 (Issue #137): финальная валидация intake/revise service-comment idempotency и stage-aware handover для Owner — in-progress.
 
 ## Порядок закрытия остатка S3
 1. Day19: manual frontend QA hardening loop.
@@ -77,6 +79,7 @@ approvals:
 3. Day19.6: staff realtime subscriptions and UI integration.
 4. Day19.7: namespace TTL retention + revise reuse/lease extension (Issue #74).
 5. Day20: full e2e regression gate + MVP closeout.
+6. Day20.1: intake/revise final e2e check for status-comment idempotency (Issue #137).
 
 ## Критерий успеха Sprint S3 (выжимка)
 - Все MVP-сценарии из Issue #19 покрыты кодом, тестами и эксплуатационной документацией.
