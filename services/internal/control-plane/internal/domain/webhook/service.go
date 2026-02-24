@@ -294,6 +294,10 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		runtimeNamespace = ""
 		runtimeBuildRef = strings.TrimSpace(repositoryDefaultRef)
 		runtimeDeployOnly = false
+		if trigger.Kind == webhookdomain.TriggerKindAIRepair {
+			runtimeTargetEnv = "production"
+			runtimeNamespace = strings.TrimSpace(s.platformNamespace)
+		}
 	}
 
 	runPayload, err := buildRunPayload(runPayloadInput{

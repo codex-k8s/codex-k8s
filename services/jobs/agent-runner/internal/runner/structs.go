@@ -161,6 +161,7 @@ type promptEnvelopeTemplateData struct {
 	TargetBranch                 string
 	BaseBranch                   string
 	TriggerKind                  string
+	IsAIRepairMainDirect         bool
 	IsReviseTrigger              bool
 	IsMarkdownDocsOnlyScope      bool
 	IsReviewerCommentOnlyScope   bool

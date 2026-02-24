@@ -868,6 +868,92 @@ func TestIngestGitHubWebhook_RuntimePolicyOverrideFromServicesYAML(t *testing.T)
 	}
 }
 
+func TestIngestGitHubWebhook_IssueRunAIRepair_UsesProductionNamespaceAndSREAgent(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{
+		"sre": {ID: "agent-sre", AgentKey: "sre", Name: "AI SRE"},
+	}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+				DefaultRef:       "main",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {
+				ID:          "user-1",
+				GitHubLogin: "member",
+			},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{
+			"project-1|user-1": "read_write",
+		},
+	}
+	svc := NewService(Config{
+		AgentRuns:         runs,
+		Agents:            agents,
+		FlowEvents:        events,
+		Repos:             repos,
+		Users:             users,
+		Members:           members,
+		PlatformNamespace: "codex-k8s-prod",
+	})
+
+	payload := json.RawMessage(`{
+		"action":"labeled",
+		"label":{"name":"run:ai-repair"},
+		"issue":{"id":1001,"number":145,"title":"Repair production infra","html_url":"https://github.com/codex-k8s/codex-k8s/issues/145","state":"open","user":{"id":55,"login":"owner"}},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-ai-repair-145",
+		DeliveryID:    "delivery-ai-repair-145",
+		EventType:     string(webhookdomain.GitHubEventIssues),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	if _, err := svc.IngestGitHubWebhook(ctx, cmd); err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+
+	var runPayload githubRunPayload
+	if err := json.Unmarshal(runs.last.RunPayload, &runPayload); err != nil {
+		t.Fatalf("unmarshal run payload: %v", err)
+	}
+	if runPayload.Trigger == nil {
+		t.Fatal("expected trigger payload for ai-repair run")
+	}
+	if got, want := runPayload.Trigger.Kind, webhookdomain.TriggerKindAIRepair; got != want {
+		t.Fatalf("unexpected trigger kind: got %q want %q", got, want)
+	}
+	if got, want := runPayload.Agent.Key, "sre"; got != want {
+		t.Fatalf("unexpected agent key: got %q want %q", got, want)
+	}
+	if got, want := runPayload.Runtime.Mode, "code-only"; got != want {
+		t.Fatalf("unexpected runtime mode: got %q want %q", got, want)
+	}
+	if got, want := runPayload.Runtime.TargetEnv, "production"; got != want {
+		t.Fatalf("unexpected runtime target env: got %q want %q", got, want)
+	}
+	if got, want := runPayload.Runtime.Namespace, "codex-k8s-prod"; got != want {
+		t.Fatalf("unexpected runtime namespace: got %q want %q", got, want)
+	}
+	if got, want := runPayload.Runtime.BuildRef, "main"; got != want {
+		t.Fatalf("unexpected runtime build ref: got %q want %q", got, want)
+	}
+}
+
 func TestIngestGitHubWebhook_IssueRunVision_CreatesStageRunForAllowedMember(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}

@@ -76,6 +76,24 @@ func TestResolveRunExecutionContext_RuntimeModeFromPayloadHasPriority(t *testing
 	assertCodeOnlyWithoutNamespace(t, ctx)
 }
 
+func TestResolveRunExecutionContext_CodeOnlyKeepsExplicitNamespace(t *testing.T) {
+	t.Parallel()
+
+	ctx := resolveRunExecutionContext(
+		"run-ai-repair",
+		"project-1",
+		json.RawMessage(`{"runtime":{"mode":"code-only","namespace":"codex-k8s-prod"},"trigger":{"kind":"ai_repair"},"issue":{"number":45}}`),
+		"codex-issue",
+	)
+
+	if ctx.RuntimeMode != agentdomain.RuntimeModeCodeOnly {
+		t.Fatalf("expected code-only runtime mode, got %q", ctx.RuntimeMode)
+	}
+	if got, want := ctx.Namespace, "codex-k8s-prod"; got != want {
+		t.Fatalf("expected namespace override %q, got %q", want, got)
+	}
+}
+
 func assertCodeOnlyWithoutNamespace(t *testing.T, ctx valuetypes.RunExecutionContext) {
 	t.Helper()
 

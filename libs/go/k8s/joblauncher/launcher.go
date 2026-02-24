@@ -9,6 +9,7 @@ import (
 	"time"
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
+	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 	"github.com/codex-k8s/codex-k8s/libs/go/k8s/clientcfg"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -18,6 +19,13 @@ import (
 )
 
 var nonDNSLabel = regexp.MustCompile(`[^a-z0-9-]`)
+
+const (
+	runWorkloadAppName        = "codex-k8s-run"
+	runContainerName          = "run"
+	aiRepairKeepaliveName     = "keepalive"
+	aiRepairComponentLabelVal = "ai-repair"
+)
 
 // JobState is a current Kubernetes Job execution state.
 type JobState string
@@ -105,6 +113,8 @@ type JobSpec struct {
 	GitBotUsername string
 	// GitBotMail is git author email configured inside run pod.
 	GitBotMail string
+	// ServiceAccountName overrides pod service account for this run workload.
+	ServiceAccountName string
 }
 
 // NamespaceSpec defines runtime namespace metadata.
@@ -277,49 +287,24 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 	if jobImage == "" {
 		jobImage = l.cfg.Image
 	}
-	container := corev1.Container{
-		Name:    "run",
-		Image:   jobImage,
-		Command: []string{"/bin/sh", "-c", l.cfg.Command},
-		Env: []corev1.EnvVar{
-			{Name: "CODEXK8S_RUN_ID", Value: spec.RunID},
-			{Name: "CODEXK8S_CORRELATION_ID", Value: spec.CorrelationID},
-			{Name: "CODEXK8S_PROJECT_ID", Value: spec.ProjectID},
-			{Name: "CODEXK8S_SLOT_NO", Value: fmt.Sprintf("%d", spec.SlotNo)},
-			{Name: "CODEXK8S_RUNTIME_MODE", Value: string(spec.RuntimeMode)},
-			{Name: "CODEXK8S_CONTROL_PLANE_GRPC_TARGET", Value: strings.TrimSpace(spec.ControlPlaneGRPCTarget)},
-			{Name: "CODEXK8S_MCP_BASE_URL", Value: strings.TrimSpace(spec.MCPBaseURL)},
-			{Name: "CODEXK8S_MCP_BEARER_TOKEN", Value: strings.TrimSpace(spec.MCPBearerToken)},
-			{Name: "CODEXK8S_REPOSITORY_FULL_NAME", Value: strings.TrimSpace(spec.RepositoryFullName)},
-			{Name: "CODEXK8S_ISSUE_NUMBER", Value: fmt.Sprintf("%d", spec.IssueNumber)},
-			{Name: "CODEXK8S_RUN_TRIGGER_KIND", Value: strings.TrimSpace(spec.TriggerKind)},
-			{Name: "CODEXK8S_RUN_TRIGGER_LABEL", Value: strings.TrimSpace(spec.TriggerLabel)},
-			{Name: "CODEXK8S_RUN_TARGET_BRANCH", Value: strings.TrimSpace(spec.TargetBranch)},
-			{Name: "CODEXK8S_EXISTING_PR_NUMBER", Value: fmt.Sprintf("%d", spec.ExistingPRNumber)},
-			{Name: "CODEXK8S_AGENT_KEY", Value: strings.TrimSpace(spec.AgentKey)},
-			{Name: "CODEXK8S_AGENT_MODEL", Value: strings.TrimSpace(spec.AgentModel)},
-			{Name: "CODEXK8S_AGENT_REASONING_EFFORT", Value: strings.TrimSpace(spec.AgentReasoningEffort)},
-			{Name: "CODEXK8S_PROMPT_TEMPLATE_KIND", Value: strings.TrimSpace(spec.PromptTemplateKind)},
-			{Name: "CODEXK8S_PROMPT_TEMPLATE_SOURCE", Value: strings.TrimSpace(spec.PromptTemplateSource)},
-			{Name: "CODEXK8S_PROMPT_TEMPLATE_LOCALE", Value: strings.TrimSpace(spec.PromptTemplateLocale)},
-			{Name: "CODEXK8S_STATE_IN_REVIEW_LABEL", Value: strings.TrimSpace(spec.StateInReviewLabel)},
-			{Name: "CODEXK8S_AGENT_BASE_BRANCH", Value: strings.TrimSpace(spec.BaseBranch)},
-			{Name: "CODEXK8S_OPENAI_API_KEY", Value: strings.TrimSpace(spec.OpenAIAPIKey)},
-			{Name: "CODEXK8S_CONTEXT7_API_KEY", Value: strings.TrimSpace(spec.Context7APIKey)},
-			{Name: "CODEXK8S_AGENT_DISPLAY_NAME", Value: strings.TrimSpace(spec.AgentDisplayName)},
-			{Name: "CODEXK8S_GIT_BOT_TOKEN", Value: strings.TrimSpace(spec.GitBotToken)},
-			{Name: "CODEXK8S_GIT_BOT_USERNAME", Value: strings.TrimSpace(spec.GitBotUsername)},
-			{Name: "CODEXK8S_GIT_BOT_MAIL", Value: strings.TrimSpace(spec.GitBotMail)},
-		},
+
+	if isAIRepairTriggerKind(spec.TriggerKind) {
+		return l.launchAIRepairPod(ctx, ref, spec, jobImage)
 	}
+
+	container := buildRunContainer(spec, jobImage, l.cfg.Command)
 
 	podSpec := corev1.PodSpec{
 		RestartPolicy: corev1.RestartPolicyNever,
 		Containers:    []corev1.Container{container},
 	}
 
-	if spec.RuntimeMode == agentdomain.RuntimeModeFullEnv {
-		podSpec.ServiceAccountName = l.cfg.RunServiceAccountName
+	serviceAccountName := strings.TrimSpace(spec.ServiceAccountName)
+	if serviceAccountName == "" && spec.RuntimeMode == agentdomain.RuntimeModeFullEnv {
+		serviceAccountName = l.cfg.RunServiceAccountName
+	}
+	if serviceAccountName != "" {
+		podSpec.ServiceAccountName = serviceAccountName
 	}
 
 	job := &batchv1.Job{
@@ -327,7 +312,7 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 			Name:      ref.Name,
 			Namespace: ref.Namespace,
 			Labels: map[string]string{
-				"app.kubernetes.io/name":       "codex-k8s-run",
+				"app.kubernetes.io/name":       runWorkloadAppName,
 				"app.kubernetes.io/managed-by": "codex-k8s-worker",
 				metadataLabelRunID:             spec.RunID,
 				metadataLabelProjectID:         sanitizeLabel(spec.ProjectID),
@@ -343,7 +328,7 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app.kubernetes.io/name": "codex-k8s-run",
+						"app.kubernetes.io/name": runWorkloadAppName,
 						metadataLabelRunID:       spec.RunID,
 					},
 				},
@@ -363,12 +348,99 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 	return ref, nil
 }
 
+func (l *Launcher) launchAIRepairPod(ctx context.Context, ref JobRef, spec JobSpec, jobImage string) (JobRef, error) {
+	runContainer := buildRunContainer(spec, jobImage, l.cfg.Command)
+	keepaliveContainer := corev1.Container{
+		Name:    aiRepairKeepaliveName,
+		Image:   jobImage,
+		Command: []string{"/bin/sh", "-c", "trap : TERM INT; while true; do sleep 3600; done"},
+	}
+
+	podSpec := corev1.PodSpec{
+		RestartPolicy: corev1.RestartPolicyNever,
+		Containers:    []corev1.Container{runContainer, keepaliveContainer},
+	}
+	serviceAccountName := strings.TrimSpace(spec.ServiceAccountName)
+	if serviceAccountName != "" {
+		podSpec.ServiceAccountName = serviceAccountName
+	}
+
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ref.Name,
+			Namespace: ref.Namespace,
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       runWorkloadAppName,
+				"app.kubernetes.io/component":  aiRepairComponentLabelVal,
+				"app.kubernetes.io/managed-by": "codex-k8s-worker",
+				metadataLabelRunID:             spec.RunID,
+				metadataLabelProjectID:         sanitizeLabel(spec.ProjectID),
+			},
+			Annotations: map[string]string{
+				metadataAnnotationCorrelationID: spec.CorrelationID,
+			},
+		},
+		Spec: podSpec,
+	}
+
+	if _, err := l.client.CoreV1().Pods(ref.Namespace).Create(ctx, pod, metav1.CreateOptions{}); err != nil {
+		if apierrors.IsAlreadyExists(err) {
+			return ref, nil
+		}
+		return JobRef{}, fmt.Errorf("create kubernetes pod %s/%s: %w", ref.Namespace, ref.Name, err)
+	}
+
+	return ref, nil
+}
+
+func buildRunContainer(spec JobSpec, image string, command string) corev1.Container {
+	return corev1.Container{
+		Name:    runContainerName,
+		Image:   image,
+		Command: []string{"/bin/sh", "-c", command},
+		Env:     buildRunContainerEnv(spec),
+	}
+}
+
+func buildRunContainerEnv(spec JobSpec) []corev1.EnvVar {
+	return []corev1.EnvVar{
+		{Name: "CODEXK8S_RUN_ID", Value: spec.RunID},
+		{Name: "CODEXK8S_CORRELATION_ID", Value: spec.CorrelationID},
+		{Name: "CODEXK8S_PROJECT_ID", Value: spec.ProjectID},
+		{Name: "CODEXK8S_SLOT_NO", Value: fmt.Sprintf("%d", spec.SlotNo)},
+		{Name: "CODEXK8S_RUNTIME_MODE", Value: string(spec.RuntimeMode)},
+		{Name: "CODEXK8S_CONTROL_PLANE_GRPC_TARGET", Value: strings.TrimSpace(spec.ControlPlaneGRPCTarget)},
+		{Name: "CODEXK8S_MCP_BASE_URL", Value: strings.TrimSpace(spec.MCPBaseURL)},
+		{Name: "CODEXK8S_MCP_BEARER_TOKEN", Value: strings.TrimSpace(spec.MCPBearerToken)},
+		{Name: "CODEXK8S_REPOSITORY_FULL_NAME", Value: strings.TrimSpace(spec.RepositoryFullName)},
+		{Name: "CODEXK8S_ISSUE_NUMBER", Value: fmt.Sprintf("%d", spec.IssueNumber)},
+		{Name: "CODEXK8S_RUN_TRIGGER_KIND", Value: strings.TrimSpace(spec.TriggerKind)},
+		{Name: "CODEXK8S_RUN_TRIGGER_LABEL", Value: strings.TrimSpace(spec.TriggerLabel)},
+		{Name: "CODEXK8S_RUN_TARGET_BRANCH", Value: strings.TrimSpace(spec.TargetBranch)},
+		{Name: "CODEXK8S_EXISTING_PR_NUMBER", Value: fmt.Sprintf("%d", spec.ExistingPRNumber)},
+		{Name: "CODEXK8S_AGENT_KEY", Value: strings.TrimSpace(spec.AgentKey)},
+		{Name: "CODEXK8S_AGENT_MODEL", Value: strings.TrimSpace(spec.AgentModel)},
+		{Name: "CODEXK8S_AGENT_REASONING_EFFORT", Value: strings.TrimSpace(spec.AgentReasoningEffort)},
+		{Name: "CODEXK8S_PROMPT_TEMPLATE_KIND", Value: strings.TrimSpace(spec.PromptTemplateKind)},
+		{Name: "CODEXK8S_PROMPT_TEMPLATE_SOURCE", Value: strings.TrimSpace(spec.PromptTemplateSource)},
+		{Name: "CODEXK8S_PROMPT_TEMPLATE_LOCALE", Value: strings.TrimSpace(spec.PromptTemplateLocale)},
+		{Name: "CODEXK8S_STATE_IN_REVIEW_LABEL", Value: strings.TrimSpace(spec.StateInReviewLabel)},
+		{Name: "CODEXK8S_AGENT_BASE_BRANCH", Value: strings.TrimSpace(spec.BaseBranch)},
+		{Name: "CODEXK8S_OPENAI_API_KEY", Value: strings.TrimSpace(spec.OpenAIAPIKey)},
+		{Name: "CODEXK8S_CONTEXT7_API_KEY", Value: strings.TrimSpace(spec.Context7APIKey)},
+		{Name: "CODEXK8S_AGENT_DISPLAY_NAME", Value: strings.TrimSpace(spec.AgentDisplayName)},
+		{Name: "CODEXK8S_GIT_BOT_TOKEN", Value: strings.TrimSpace(spec.GitBotToken)},
+		{Name: "CODEXK8S_GIT_BOT_USERNAME", Value: strings.TrimSpace(spec.GitBotUsername)},
+		{Name: "CODEXK8S_GIT_BOT_MAIL", Value: strings.TrimSpace(spec.GitBotMail)},
+	}
+}
+
 // Status returns current Job state by Job status fields.
 func (l *Launcher) Status(ctx context.Context, ref JobRef) (JobState, error) {
 	job, err := l.client.BatchV1().Jobs(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			return JobStateNotFound, nil
+			return l.statusByPod(ctx, ref)
 		}
 		return "", fmt.Errorf("get kubernetes job %s/%s: %w", ref.Namespace, ref.Name, err)
 	}
@@ -411,6 +483,60 @@ func (l *Launcher) Status(ctx context.Context, ref JobRef) (JobState, error) {
 	return JobStatePending, nil
 }
 
+func (l *Launcher) statusByPod(ctx context.Context, ref JobRef) (JobState, error) {
+	pod, err := l.client.CoreV1().Pods(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return JobStateNotFound, nil
+		}
+		return "", fmt.Errorf("get kubernetes pod %s/%s: %w", ref.Namespace, ref.Name, err)
+	}
+
+	if runStatus, ok := findContainerStatusByName(pod.Status.ContainerStatuses, runContainerName); ok {
+		if runStatus.State.Terminated != nil {
+			if runStatus.State.Terminated.ExitCode == 0 {
+				return JobStateSucceeded, nil
+			}
+			return JobStateFailed, nil
+		}
+		if hasTerminalWaitingReason([]corev1.ContainerStatus{runStatus}) {
+			return JobStateFailed, nil
+		}
+		if runStatus.State.Running != nil {
+			return JobStateRunning, nil
+		}
+		if runStatus.State.Waiting != nil {
+			return JobStatePending, nil
+		}
+	}
+
+	if hasTerminalWaitingReason(pod.Status.InitContainerStatuses) || hasTerminalWaitingReason(pod.Status.ContainerStatuses) {
+		return JobStateFailed, nil
+	}
+
+	switch pod.Status.Phase {
+	case corev1.PodSucceeded:
+		return JobStateSucceeded, nil
+	case corev1.PodFailed:
+		return JobStateFailed, nil
+	case corev1.PodRunning:
+		return JobStateRunning, nil
+	case corev1.PodPending:
+		return JobStatePending, nil
+	default:
+		return JobStatePending, nil
+	}
+}
+
+func findContainerStatusByName(statuses []corev1.ContainerStatus, name string) (corev1.ContainerStatus, bool) {
+	for _, item := range statuses {
+		if strings.TrimSpace(item.Name) == name {
+			return item, true
+		}
+	}
+	return corev1.ContainerStatus{}, false
+}
+
 // FindRunJobRefByRunID resolves run Kubernetes Job reference by run id label across namespaces.
 func (l *Launcher) FindRunJobRefByRunID(ctx context.Context, runID string) (JobRef, bool, error) {
 	targetRunID := strings.TrimSpace(runID)
@@ -418,26 +544,59 @@ func (l *Launcher) FindRunJobRefByRunID(ctx context.Context, runID string) (JobR
 		return JobRef{}, false, fmt.Errorf("run id is required")
 	}
 
-	selector := fmt.Sprintf("%s=%s,app.kubernetes.io/name=codex-k8s-run", metadataLabelRunID, targetRunID)
+	selector := fmt.Sprintf("%s=%s,app.kubernetes.io/name=%s", metadataLabelRunID, targetRunID, runWorkloadAppName)
 	jobs, err := l.client.BatchV1().Jobs(metav1.NamespaceAll).List(ctx, metav1.ListOptions{
 		LabelSelector: selector,
 	})
 	if err != nil {
 		return JobRef{}, false, fmt.Errorf("list kubernetes jobs by run id %s: %w", targetRunID, err)
 	}
-	if len(jobs.Items) == 0 {
-		return JobRef{}, false, nil
-	}
-
 	expectedName := BuildRunJobName(targetRunID)
-	candidates := make([]batchv1.Job, 0, len(jobs.Items))
+	candidates := make([]JobRef, 0, len(jobs.Items))
 	for _, item := range jobs.Items {
 		if strings.TrimSpace(item.Name) == expectedName {
-			candidates = append(candidates, item)
+			candidates = append(candidates, JobRef{
+				Namespace: strings.TrimSpace(item.Namespace),
+				Name:      strings.TrimSpace(item.Name),
+			})
 		}
 	}
 	if len(candidates) == 0 {
-		candidates = jobs.Items
+		for _, item := range jobs.Items {
+			candidates = append(candidates, JobRef{
+				Namespace: strings.TrimSpace(item.Namespace),
+				Name:      strings.TrimSpace(item.Name),
+			})
+		}
+	}
+
+	if len(candidates) == 0 {
+		pods, podErr := l.client.CoreV1().Pods(metav1.NamespaceAll).List(ctx, metav1.ListOptions{
+			LabelSelector: selector,
+		})
+		if podErr != nil {
+			return JobRef{}, false, fmt.Errorf("list kubernetes pods by run id %s: %w", targetRunID, podErr)
+		}
+		for _, item := range pods.Items {
+			name := strings.TrimSpace(item.Name)
+			if name == expectedName {
+				candidates = append(candidates, JobRef{
+					Namespace: strings.TrimSpace(item.Namespace),
+					Name:      name,
+				})
+			}
+		}
+		if len(candidates) == 0 {
+			for _, item := range pods.Items {
+				candidates = append(candidates, JobRef{
+					Namespace: strings.TrimSpace(item.Namespace),
+					Name:      strings.TrimSpace(item.Name),
+				})
+			}
+		}
+	}
+	if len(candidates) == 0 {
+		return JobRef{}, false, nil
 	}
 
 	sort.Slice(candidates, func(i, j int) bool {
@@ -447,11 +606,7 @@ func (l *Launcher) FindRunJobRefByRunID(ctx context.Context, runID string) (JobR
 		return candidates[i].Namespace < candidates[j].Namespace
 	})
 
-	item := candidates[0]
-	return JobRef{
-		Namespace: strings.TrimSpace(item.Namespace),
-		Name:      strings.TrimSpace(item.Name),
-	}, true, nil
+	return candidates[0], true, nil
 }
 
 // BuildRunJobName returns deterministic DNS-compatible Job name.
@@ -526,4 +681,8 @@ func hasTerminalWaitingReason(statuses []corev1.ContainerStatus) bool {
 		}
 	}
 	return false
+}
+
+func isAIRepairTriggerKind(value string) bool {
+	return webhookdomain.NormalizeTriggerKind(strings.TrimSpace(value)) == webhookdomain.TriggerKindAIRepair
 }

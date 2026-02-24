@@ -76,11 +76,11 @@ func (s *Service) tryRecoverMissingRunJob(ctx context.Context, run runqueuerepo.
 	leaseTTL := s.resolveNamespaceTTL(leaseCtx.AgentKey)
 
 	s.logger.Info("recovering run without job by launching into prepared namespace", "run_id", run.RunID, "namespace", launchExecution.Namespace)
-	if err := s.launchPreparedFullEnvRunJob(ctx, run, launchExecution, agentCtx, namespaceLeaseSpec{
+	if err := s.launchPreparedRunWorkload(ctx, run, launchExecution, agentCtx, namespaceLeaseSpec{
 		AgentKey:    leaseCtx.AgentKey,
 		IssueNumber: leaseCtx.IssueNumber,
 		TTL:         leaseTTL,
-	}); err != nil {
+	}, runLaunchOptions{}); err != nil {
 		return true, err
 	}
 

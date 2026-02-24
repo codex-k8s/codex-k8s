@@ -36,3 +36,7 @@ type namespaceLeaseSpec struct {
 	IssueNumber int64
 	TTL         time.Duration
 }
+
+type runLaunchOptions struct {
+	ServiceAccountName string
+}

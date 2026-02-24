@@ -759,6 +759,8 @@ spec:
               value: '{{ envOr "CODEXK8S_WORKER_RUN_LEASE_TTL" "" }}'
             - name: CODEXK8S_WORKER_K8S_NAMESPACE
               value: '{{ envOr "CODEXK8S_WORKER_K8S_NAMESPACE" "" }}'
+            - name: CODEXK8S_PRODUCTION_NAMESPACE
+              value: '{{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}'
             - name: CODEXK8S_WORKER_JOB_IMAGE
               value: '{{ envOr "CODEXK8S_WORKER_JOB_IMAGE" "" }}'
             - name: CODEXK8S_WORKER_JOB_IMAGE_FALLBACK
@@ -867,6 +869,10 @@ spec:
               value: '{{ envOr "CODEXK8S_WORKER_RUN_CREDENTIALS_SECRET_NAME" "" }}'
             - name: CODEXK8S_WORKER_RUN_QUOTA_PODS
               value: '{{ envOr "CODEXK8S_WORKER_RUN_QUOTA_PODS" "" }}'
+            - name: CODEXK8S_WORKER_AI_REPAIR_NAMESPACE
+              value: '{{ envOr "CODEXK8S_WORKER_AI_REPAIR_NAMESPACE" "" }}'
+            - name: CODEXK8S_WORKER_AI_REPAIR_SERVICE_ACCOUNT
+              value: '{{ envOr "CODEXK8S_WORKER_AI_REPAIR_SERVICE_ACCOUNT" "" }}'
             - name: CODEXK8S_AGENT_DEFAULT_MODEL
               value: '{{ envOr "CODEXK8S_AGENT_DEFAULT_MODEL" "" }}'
             - name: CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT

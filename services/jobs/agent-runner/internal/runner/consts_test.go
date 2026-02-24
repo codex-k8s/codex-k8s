@@ -47,6 +47,22 @@ func TestOutputSchemaRequiresAllDeclaredProperties(t *testing.T) {
 				outputFieldToolGaps,
 			},
 		},
+		{
+			name: "ai-repair profile works without pr fields",
+			params: outputSchemaParams{
+				TriggerKind:  "ai_repair",
+				TemplateKind: promptTemplateKindWork,
+				AgentKey:     "sre",
+			},
+			extraMiss: []string{
+				outputFieldPRNumber,
+				outputFieldPRURL,
+				outputFieldDiagnosis,
+				outputFieldActionItems,
+				outputFieldEvidenceRefs,
+				outputFieldToolGaps,
+			},
+		},
 	}
 
 	for _, tc := range testCases {

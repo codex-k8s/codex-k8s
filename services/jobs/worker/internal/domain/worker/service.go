@@ -77,6 +77,12 @@ type Config struct {
 	JobImage string
 	// JobImageFallback is optional fallback image for run Jobs.
 	JobImageFallback string
+	// KubernetesNamespace is default worker namespace for run workloads.
+	KubernetesNamespace string
+	// AIRepairNamespace is namespace used by ai-repair workload runs.
+	AIRepairNamespace string
+	// AIRepairServiceAccount is service account used by ai-repair workload pod.
+	AIRepairServiceAccount string
 	// AIModelGPT53CodexLabel maps GitHub label to gpt-5.3-codex model.
 	AIModelGPT53CodexLabel string
 	// AIModelGPT53CodexSparkLabel maps GitHub label to gpt-5.3-codex-spark model.
@@ -230,6 +236,18 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	}
 	cfg.JobImage = strings.TrimSpace(cfg.JobImage)
 	cfg.JobImageFallback = strings.TrimSpace(cfg.JobImageFallback)
+	cfg.KubernetesNamespace = strings.TrimSpace(cfg.KubernetesNamespace)
+	if cfg.KubernetesNamespace == "" {
+		cfg.KubernetesNamespace = "default"
+	}
+	cfg.AIRepairNamespace = sanitizeDNSLabelValue(cfg.AIRepairNamespace)
+	if cfg.AIRepairNamespace == "" {
+		cfg.AIRepairNamespace = cfg.KubernetesNamespace
+	}
+	cfg.AIRepairServiceAccount = strings.TrimSpace(cfg.AIRepairServiceAccount)
+	if cfg.AIRepairServiceAccount == "" {
+		cfg.AIRepairServiceAccount = "codex-k8s-control-plane"
+	}
 	labelCatalog := runAgentLabelCatalogFromConfig(cfg)
 	cfg.NamespaceTTLByRole = normalizeNamespaceTTLByRole(cfg.NamespaceTTLByRole)
 	if deps.Logger == nil {
@@ -328,8 +346,12 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 		execution := resolveRunExecutionContext(run.RunID, run.ProjectID, run.RunPayload, s.cfg.RunNamespacePrefix)
 		runtimePayload := parseRunRuntimePayload(run.RunPayload)
 		deployOnlyRun := runtimePayload.Runtime != nil && runtimePayload.Runtime.DeployOnly
+		aiRepairRun := isAIRepairRuntimePayload(runtimePayload)
+		if aiRepairRun {
+			execution.Namespace = s.resolveAIRepairNamespace(execution.Namespace)
+		}
 
-		if execution.RuntimeMode != agentdomain.RuntimeModeFullEnv && !deployOnlyRun {
+		if execution.RuntimeMode != agentdomain.RuntimeModeFullEnv && !deployOnlyRun && !aiRepairRun {
 			if err := s.finishRun(ctx, finishRunParams{
 				Run:       run,
 				Execution: execution,
@@ -489,7 +511,7 @@ func (s *Service) shouldIgnoreJobNotFound(run runqueuerepo.RunningRun) bool {
 	return now.Sub(startedAt) < grace
 }
 
-// launchPending claims pending runs, prepares runtime namespace (for full-env), and launches Kubernetes jobs.
+// launchPending claims pending runs, prepares runtime namespace (for full-env), and launches run workloads.
 func (s *Service) launchPending(ctx context.Context) error {
 	for range s.cfg.ClaimLimit {
 		claimed, ok, err := s.runs.ClaimNextPending(ctx, runqueuerepo.ClaimParams{
@@ -507,11 +529,16 @@ func (s *Service) launchPending(ctx context.Context) error {
 		}
 
 		execution := resolveRunExecutionContext(claimed.RunID, claimed.ProjectID, claimed.RunPayload, s.cfg.RunNamespacePrefix)
+		runPayload := parseRunRuntimePayload(claimed.RunPayload)
 		runningRun := runningRunFromClaimed(claimed)
 		prepareParams := buildPrepareRunEnvironmentParams(claimed, execution)
 		deployOnlyRun := prepareParams.DeployOnly
+		aiRepairRun := isAIRepairRuntimePayload(runPayload)
+		if aiRepairRun {
+			execution.Namespace = s.resolveAIRepairNamespace(execution.Namespace)
+		}
 
-		if execution.RuntimeMode != agentdomain.RuntimeModeFullEnv && !deployOnlyRun {
+		if execution.RuntimeMode != agentdomain.RuntimeModeFullEnv && !deployOnlyRun && !aiRepairRun {
 			if err := s.finishRun(ctx, finishRunParams{
 				Run:       runningRun,
 				Execution: execution,
@@ -524,7 +551,6 @@ func (s *Service) launchPending(ctx context.Context) error {
 			continue
 		}
 
-		runPayload := parseRunRuntimePayload(claimed.RunPayload)
 		leaseCtx := resolveNamespaceLeaseContext(claimed.RunPayload)
 		leaseTTL := s.cfg.DefaultNamespaceTTL
 		triggerKind := ""
@@ -588,6 +614,15 @@ func (s *Service) launchPending(ctx context.Context) error {
 			}
 		}
 
+		if aiRepairRun {
+			if err := s.launchPreparedRunWorkload(ctx, runningRun, execution, agentCtx, namespaceLeaseSpec{}, runLaunchOptions{
+				ServiceAccountName: s.cfg.AIRepairServiceAccount,
+			}); err != nil {
+				return err
+			}
+			continue
+		}
+
 		if _, err := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
 			RunID:       runningRun.RunID,
 			Phase:       RunStatusPhasePreparingRuntime,
@@ -635,11 +670,11 @@ func (s *Service) launchPending(ctx context.Context) error {
 			continue
 		}
 
-		if err := s.launchPreparedFullEnvRunJob(ctx, runningRun, launchExecution, agentCtx, namespaceLeaseSpec{
+		if err := s.launchPreparedRunWorkload(ctx, runningRun, launchExecution, agentCtx, namespaceLeaseSpec{
 			AgentKey:    leaseCtx.AgentKey,
 			IssueNumber: leaseCtx.IssueNumber,
 			TTL:         leaseTTL,
-		}); err != nil {
+		}, runLaunchOptions{}); err != nil {
 			return err
 		}
 	}
