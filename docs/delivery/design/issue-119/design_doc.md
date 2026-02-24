@@ -23,8 +23,8 @@ approvals:
 
 ## Структура design-пакета
 - Индекс: `docs/delivery/design/issue-119/README.md`
-- Трассируемость A+B: `docs/delivery/design/issue-119/traceability_matrix.md`
-- Контрактные/данные/migration артефакты:
+- Формальная матрица трассируемости: `docs/delivery/design/issue-119/traceability_matrix.md`
+- Контрактные и migration/data артефакты:
   - `docs/delivery/design/issue-119/api_contract.md`
   - `docs/delivery/design/issue-119/data_model.md`
   - `docs/delivery/design/issue-119/migration_policy.md`
@@ -70,6 +70,17 @@ approvals:
 - ambiguity не приводит к silent fallback;
 - коммуникация и feedback остаются на русском языке.
 
+## Матрица трассируемости (scenario -> требования -> evidence)
+
+| Scenario | Требования | Архитектурный источник | Evidence target |
+|---|---|---|---|
+| A1 | FR-028, FR-033 | `docs/product/stage_process_model.md` | `Issue #118` + transitions в `flow_events` |
+| A2 | FR-033, FR-052 | `docs/architecture/adr/ADR-0006-review-driven-revise-and-next-step-ux.md` | PR #120 + run/service comments |
+| A3 | FR-028, NFR-018 | `docs/product/stage_process_model.md` | цепочка stage completion без P0/P1 |
+| B1 | FR-052 | `docs/architecture/mcp_approval_and_audit_flow.md` | факт запуска `run:<stage>:revise` |
+| B2 | FR-052, NFR-018 | `docs/product/labels_and_trigger_policy.md` | `need:input` + отсутствие revise-run |
+| B3 | FR-035, FR-052 | `docs/architecture/adr/ADR-0006-review-driven-revise-and-next-step-ux.md` | сохранение model/reasoning profile |
+
 ## Trade-offs
 - Выбор: не добавлять новые контракты/схему БД в рамках `run:design`.
 - Плюс: минимальный риск регрессии перед MVP gate.
@@ -87,6 +98,12 @@ approvals:
 - Runtime: только использование существующего orchestration path.
 - Data schema: без изменений.
 - Миграции: не требуются.
+
+## План верификации и handover
+1. Сопоставить A1..B3 из `docs/delivery/e2e_mvp_master_plan.md` с фактическими transitions.
+2. Для каждого сценария зафиксировать `run_id`, `correlation_id`, `expected vs actual`.
+3. Публиковать итоговый evidence bundle в Issue #118.
+4. Проверить синхронизацию ссылок в `docs/delivery/issue_map.md` и `traceability_matrix.md`.
 
 ## Acceptance Criteria (design stage)
 - [ ] Зафиксированы сервисные границы и ответственность по A+B.

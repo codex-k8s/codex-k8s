@@ -21,6 +21,11 @@ approvals:
 - Контракт design-этапа состоит из корректного использования существующих label transitions и audit-событий.
 - Для B2 ambiguity обязательный результат: `need:input`, без запуска revise-run.
 
+## Input assumptions
+- Stage resolver и next-step UX реализуются по `ADR-0006`.
+- Label classes `run:*`, `state:*`, `need:*` обрабатываются по `labels_and_trigger_policy`.
+- Evidence публикуется в рамках E2E handover для Issue #118.
+
 ## Контрактные границы
 - Public boundary: только `POST /api/v1/webhooks/github`.
 - Staff/private boundary: существующие endpoints run/approvals/logs без изменений DTO.
@@ -40,6 +45,15 @@ approvals:
 - `state:*`/`need:*` не запускают run сами по себе.
 - Label transitions выполняются через MCP policy path для единого аудита.
 - Пользовательская коммуникация и PR-тексты в этом запуске ведутся на русском языке.
+
+## Verification evidence (A+B)
+
+| Scenario | Проверка | Артефакт подтверждения |
+|---|---|---|
+| A1/A2/A3 | последовательность stage transitions без конфликтов trigger labels | `flow_events` + service comments |
+| B1 | revise стартует только при однозначном stage | transition `run:<stage>:revise` |
+| B2 | ambiguity приводит к `need:input` без revise-run | label snapshot + remediation comment |
+| B3 | model/reasoning не сбрасываются на defaults | `agent_sessions` profile snapshot |
 
 ## Обязательные evidence-поля по контракту
 - `issue_number`, `pr_number`, `run_id`, `correlation_id`, `stage`.

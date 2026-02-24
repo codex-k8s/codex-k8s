@@ -21,6 +21,11 @@ approvals:
 - Evidence для A+B строится на существующих сущностях: `agent_runs`, `flow_events`, `agent_sessions`, `links`.
 - Основная задача design-этапа: зафиксировать обязательный набор атрибутов для проверки pass/fail.
 
+## Input assumptions
+- Источник требований: `docs/product/requirements_machine_driven.md` (FR-033, FR-052, NFR-018).
+- Источник сценариев: `docs/delivery/e2e_mvp_master_plan.md` (A1..B3).
+- Источник правил revise: `docs/architecture/adr/ADR-0006-review-driven-revise-and-next-step-ux.md`.
+
 ## Используемые сущности
 
 | Entity | Роль в issue #119 | Ключевые поля |
@@ -47,6 +52,15 @@ approvals:
 - Для B2 не должно существовать run с trigger `run:<stage>:revise` в момент ambiguity.
 - Для B3 `agent_sessions.model/reasoning_effort` соответствуют policy resolver chain.
 - Все ссылки на evidence в Issue #118 должны иметь трассировку на `run_id` и `flow_events`.
+
+## Scenario -> data coverage
+
+| Scenario | Минимальный срез данных | Критерий pass |
+|---|---|---|
+| A1/A2/A3 | `agent_runs` + `flow_events` | transitions закрывают полный lifecycle |
+| B1 | `flow_events` (`changes_requested` -> `run:<stage>:revise`) | revise стартовал только при однозначном stage |
+| B2 | `flow_events` + labels snapshot | есть `need:input`, нет revise-run |
+| B3 | `agent_sessions` (`model`, `reasoning_effort`) | профиль sticky между итерациями |
 
 ## SQL-шаблоны проверки (read-only)
 

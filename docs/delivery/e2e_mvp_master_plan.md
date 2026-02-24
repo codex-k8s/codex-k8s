@@ -141,6 +141,17 @@ approvals:
 - Evidence: маппинг `requirement -> scenario -> artifact -> evidence` подтверждается по `docs/delivery/design/issue-119/traceability_matrix.md`.
 - Constraint: действия выполняются в рамках репозиторных правил (без прямой работы в `main`).
 
+### Traceability matrix для #119
+
+| Scenario | Source requirements | Design artifact | Expected evidence |
+|---|---|---|---|
+| A1 | FR-028, FR-033 | `docs/delivery/design/issue-119/design_doc.md` | transitions intake->plan в `flow_events` |
+| A2 | FR-033, FR-052 | `docs/delivery/design/issue-119/api_contract.md` | PR update + service comment по revise |
+| A3 | FR-028, NFR-018 | `docs/delivery/design/issue-119/design_doc.md` | chain qa->ops без блокирующих отклонений |
+| B1 | FR-052 | `docs/delivery/design/issue-119/api_contract.md` | старт `run:<stage>:revise` при однозначном stage |
+| B2 | FR-052, NFR-018 | `docs/delivery/design/issue-119/api_contract.md` | `need:input` и отсутствие revise-run |
+| B3 | FR-035, FR-052 | `docs/delivery/design/issue-119/data_model.md` | sticky model/reasoning snapshot в `agent_sessions` |
+
 ## Порядок прогона
 1. Подготовка окружения и preflight (tokens, namespace health, webhook availability).
 2. Прогон core lifecycle (A + B).

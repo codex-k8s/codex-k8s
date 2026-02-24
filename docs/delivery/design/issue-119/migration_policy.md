@@ -41,6 +41,11 @@ approvals:
   - обновление `issue_map` и master plan в том же PR.
   - явная матрица связей в `traceability_matrix.md`.
 
+## Traceability guardrails
+- Каждый design-артефакт должен иметь ссылку на source requirements и evidence target.
+- Срез issue #119 в `docs/delivery/issue_map.md` должен включать весь пакет `docs/delivery/design/issue-119/*.md`.
+- Для сценариев B1/B2/B3 должен быть проверяемый `expected vs actual` в evidence bundle для Issue #118.
+
 ## Rollback plan
 1. Отменить PR с design-изменениями.
 2. Вернуться к предыдущим версиям markdown-артефактов.
