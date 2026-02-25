@@ -122,7 +122,7 @@ approvals:
 - Day 6 (in-review): plan stage в issue #197 (`docs/delivery/epics/s6/epic-s6-day6-agents-prompts-plan.md`).
 - Результат Day 6 (факт): сформирован execution package `run:dev` (W1..W7, QG-S6-D6-01..QG-S6-D6-07, DoR/DoD, blockers/risks/owner decisions), создана issue #199 для stage `run:dev` без trigger-лейбла.
 - Day 7 (in-review): dev stage в issue #199 (contract-first/migrations/staff transport/UI integration).
-- Результат Day 7 (факт): реализация `agents/templates/audit` завершена, сформирован regression evidence package и создана issue #201 для stage `run:qa`.
+- Результат Day 7 (факт): реализация `agents/templates/audit` завершена в PR #202, сформирован regression evidence package и создана issue #201 для stage `run:qa`.
 - Следующие day-эпики S6 формируются строго последовательно по stage-цепочке:
   `arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops -> doc-audit` с отдельной issue на каждый этап.
 

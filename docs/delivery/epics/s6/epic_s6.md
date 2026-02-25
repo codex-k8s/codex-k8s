@@ -26,7 +26,7 @@ approvals:
 - Day4 architecture (`#189`) зафиксировал архитектурный пакет и создал follow-up issue `#195` для `run:design`.
 - Day5 design (`#195`) зафиксировал implementation-ready design package и создал follow-up issue `#197` для `run:plan`.
 - Day6 plan (`#197`) зафиксировал execution roadmap + quality-gates + DoD и создал follow-up issue `#199` для `run:dev`.
-- Day7 dev (`#199`) реализовал lifecycle `agents/templates/audit` и создал follow-up issue `#201` для `run:qa`.
+- Day7 dev (`#199`) реализовал lifecycle `agents/templates/audit` (PR `#202`) и создал follow-up issue `#201` для `run:qa`.
 
 ## Эпики Sprint S6
 - Day 1 (Intake): `docs/delivery/epics/s6/epic-s6-day1-agents-prompts-intake.md`

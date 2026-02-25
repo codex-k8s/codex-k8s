@@ -45,7 +45,7 @@ approvals:
 | Architecture (`#189`) | C4 + ADR + boundaries | `sa` | Подтверждены границы и создана issue Design |
 | Design (`#195`) | API/data model/design package | `sa` + `qa` | Подтвержден design пакет и создана issue Plan |
 | Plan (`#197`) | Delivery plan + epics + DoD | `em` + `km` | Подготовлен execution package и issue Dev |
-| Dev (`#199`) | Реализация + PR + docs sync | `dev` | PR готов, создана issue `run:qa` |
+| Dev (`#199`) | Реализация + PR + docs sync | `dev` | PR `#202` готов, создана issue `run:qa` |
 | QA (`#201`) | Acceptance/regression evidence + readiness decision | `qa` | QA gate пройден и создана issue `run:release` |
 | Doc Audit | Аудит docs/traceability/checklists | `km` + `reviewer` | Закрыт drift и сформирован post-dev improvement backlog |
 

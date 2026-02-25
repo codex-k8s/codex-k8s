@@ -165,6 +165,7 @@ approvals:
   - доменные use-cases/control-plane transport для `agents/templates/audit`;
   - миграция `prompt_templates` + `agents.settings/settings_version`;
   - frontend `Agents` переведён с scaffold на typed API flow (list/details/settings/diff/preview/history).
+- Реализация оформлена в `GitHub PR #202` с синхронным обновлением contract/codegen/docs артефактов.
 - Собрано regression evidence:
   - `go test ./services/internal/control-plane/...`
   - `go test ./services/external/api-gateway/...`
