@@ -2224,6 +2224,83 @@ func TestIngestGitHubWebhook_IssueRunDev_DeniesUnknownSender(t *testing.T) {
 	}
 }
 
+func TestIngestGitHubWebhook_IssueRunDev_DeniesBotSenderEvenWhenUserIsProjectMember(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	runStatus := &inMemoryRunStatusService{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {
+				ID:          "user-1",
+				GitHubLogin: "member",
+			},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{
+			"project-1|user-1": "read_write",
+		},
+	}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
+		RunStatus:  runStatus,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"labeled",
+		"label":{"name":"run:dev"},
+		"issue":{"id":1001,"number":177,"title":"Implement feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/177","state":"open"},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member","type":"Bot"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-177-bot-sender",
+		DeliveryID:    "delivery-177-bot-sender",
+		EventType:     string(webhookdomain.GitHubEventIssues),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.Status != webhookdomain.IngestStatusIgnored || got.RunID != "" || got.Duplicate {
+		t.Fatalf("unexpected result: %+v", got)
+	}
+	if len(runs.items) != 0 {
+		t.Fatalf("expected no run creation for bot sender")
+	}
+	if len(events.items) != 1 {
+		t.Fatalf("expected one flow event, got %d", len(events.items))
+	}
+	if events.items[0].EventType != floweventdomain.EventTypeWebhookIgnored {
+		t.Fatalf("unexpected event type: %s", events.items[0].EventType)
+	}
+	if len(runStatus.warningCommentCalls) != 1 {
+		t.Fatalf("expected warning comment call, got %d", len(runStatus.warningCommentCalls))
+	}
+	if got := string(runStatus.warningCommentCalls[0].ReasonCode); got != "sender_type_bot_not_permitted" {
+		t.Fatalf("unexpected warning reason: %q", got)
+	}
+}
+
 func TestIngestGitHubWebhook_IssueNonTriggerLabelIgnored(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
