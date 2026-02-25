@@ -101,7 +101,7 @@ approvals:
 
 ### Sprint S5: Stage entry and label UX orchestration (Issues #154/#155)
 - Day 1 (in-review): launch profiles + deterministic next-step actions (`docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md`).
-- Результат Day 1 (факт): owner-ready vision/prd execution package для входа в `run:dev` подготовлен в Issue #155; ожидается Owner approval.
+- Результат Day 1 (факт): owner-ready vision/prd + architecture execution package для входа в `run:dev` подготовлен в Issue #155 (включая ADR-0008); ожидается Owner approval.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

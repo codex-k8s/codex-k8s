@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - Sprint S5 фокусируется на управляемом UX запуска stage-процессов и снижении ручных ошибок в label-flow.
 - Базовый deliverable: Day1 execution package для launch profiles и deterministic next-step actions.
-- Текущий статус Day1: vision/prd пакет сформирован в Issue #155 и передан в Owner review.
+- Текущий статус Day1: vision/prd + architecture пакет сформирован в Issue #155 и передан в Owner review.
 
 ## Контекст
 - Product source of truth: `docs/product/requirements_machine_driven.md` (FR-053, FR-054).
@@ -29,6 +29,7 @@ approvals:
 ## Эпики Sprint S5
 - Day 1: `docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md`
 - Day 1 PRD: `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md`
+- Day 1 ADR: `docs/architecture/adr/ADR-0008-profile-driven-stage-launch-and-next-step-contract.md`
 
 ## Критерии успеха Sprint S5 (выжимка)
 - [x] Launch profiles покрывают минимум три сценария (`quick-fix`, `feature`, `new-service`) и имеют понятные guardrails.

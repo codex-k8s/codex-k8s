@@ -21,7 +21,7 @@ approvals:
 - Day1 split:
   - Issue #154: intake baseline и фиксация проблемы;
   - Issue #155: vision/prd пакет с каноническими профилями и детерминированным next-step UX.
-- Результат Day1: подготовлен owner-ready execution package для входа в `run:dev` без изменения архитектурных границ.
+- Результат Day1: подготовлен owner-ready execution package для входа в `run:dev`; архитектурные границы и контракты закреплены ADR-0008.
 
 ## Priority
 - `P0`.
@@ -46,6 +46,7 @@ approvals:
 ## Vision/PRD package (Issue #155)
 
 - Канонический PRD-артефакт Day1: `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md` (по шаблону `docs/templates/prd.md`).
+- Канонический ADR-артефакт Day1: `docs/architecture/adr/ADR-0008-profile-driven-stage-launch-and-next-step-contract.md` (service boundaries + runtime impact/migration).
 
 ### 1. Канонический набор launch profiles и эскалации
 
@@ -107,6 +108,9 @@ approvals:
   - launch profile matrix согласована с `stage_process_model`.
 - Contract gate:
   - next-step action contract детерминирован и допускает только policy-safe transitions.
+- Architecture gate:
+  - ownership resolver/escalation закреплён за `services/internal/control-plane`;
+  - `external` и `staff` контуры остаются thin adapters без доменной логики переходов.
 - UX gate:
   - сценарий broken/dead link не блокирует owner-flow;
   - fallback-путь выполняется детерминированно (`pre-check -> transition`) без best-guess.
@@ -148,5 +152,6 @@ approvals:
 - [x] FR-053 и FR-054 синхронизированы между product policy и delivery docs.
 - [x] Profile matrix, escalation rules и ambiguity handling формализованы.
 - [x] Next-step action-card contract и fallback templates зафиксированы.
+- [x] Архитектурный контракт и runtime impact/migration path зафиксированы в ADR-0008.
 - [x] Риски и продуктовые допущения отражены в Day1 epic.
 - [ ] Owner review/approve в этом PR.
