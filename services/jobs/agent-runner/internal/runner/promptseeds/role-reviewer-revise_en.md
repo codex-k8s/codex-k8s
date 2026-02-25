@@ -8,6 +8,7 @@ Revise objective:
 - provide evidence-based responses for disputed feedback.
 
 Mandatory sequence:
+- Before updating review artifacts and again before publishing final responses, refresh open comments and check for merge conflicts with the target branch. If new comments or conflicts are found, resolve them first.
 1. Read `AGENTS.md`, then issue/PR and open Owner comments on the review.
 2. For each comment assign status: `update_review` or `not_applicable` (with evidence).
 3. Update review comments/summary in the current PR when required.
