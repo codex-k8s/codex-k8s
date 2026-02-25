@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-25
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -78,8 +78,8 @@ approvals:
 | FR-050 | Prompt context docs tree + role-aware capabilities | `docs/product/requirements_machine_driven.md`, `docs/architecture/prompt_templates_policy.md`, `docs/delivery/epics/s3/epic-s3-day15-mvp-closeout-and-handover.md` | covered |
 | FR-051 | GitHub run service messages v2 + slot URL for full-env | `docs/product/requirements_machine_driven.md`, `docs/architecture/api_contract.md`, `docs/delivery/epics/s3/epic-s3-day15-mvp-closeout-and-handover.md` | covered |
 | FR-052 | Review-driven revise resolver + stage-aware next-step action cards | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/adr/ADR-0006-review-driven-revise-and-next-step-ux.md` | covered |
-| FR-053 | Launch profiles для разных типов инициатив (`quick-fix`, `feature`, `new-service`) | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/product/labels_and_trigger_policy.md`, `docs/architecture/api_contract.md`, `docs/architecture/adr/ADR-0008-profile-driven-stage-launch-and-next-step-contract.md`, `docs/delivery/sprints/s5/sprint_s5_stage_entry_and_label_ux.md`, `docs/delivery/epics/s5/epic_s5.md`, `docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md`, `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md`, `docs/delivery/issue_map.md` | covered |
-| FR-054 | Next-step actions: primary deep-link + fallback-команда | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`, `docs/architecture/api_contract.md`, `docs/architecture/adr/ADR-0008-profile-driven-stage-launch-and-next-step-contract.md`, `docs/delivery/sprints/s5/sprint_s5_stage_entry_and_label_ux.md`, `docs/delivery/epics/s5/epic_s5.md`, `docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md`, `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md`, `docs/delivery/issue_map.md` | covered |
+| FR-053 | Launch profiles для разных типов инициатив (`quick-fix`, `feature`, `new-service`) | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/product/labels_and_trigger_policy.md`, `docs/architecture/api_contract.md`, `docs/architecture/adr/ADR-0008-profile-driven-stage-launch-and-next-step-contract.md`, `docs/delivery/sprints/s5/sprint_s5_stage_entry_and_label_ux.md`, `docs/delivery/epics/s5/epic_s5.md`, `docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md`, `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md`, `docs/delivery/epics/s5/epic-s5-day2-launch-profiles-dev-execution.md`, `docs/delivery/issue_map.md` | covered |
+| FR-054 | Next-step actions: primary deep-link + fallback-команда | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`, `docs/architecture/api_contract.md`, `docs/architecture/adr/ADR-0008-profile-driven-stage-launch-and-next-step-contract.md`, `docs/delivery/sprints/s5/sprint_s5_stage_entry_and_label_ux.md`, `docs/delivery/epics/s5/epic_s5.md`, `docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md`, `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md`, `docs/delivery/epics/s5/epic-s5-day2-launch-profiles-dev-execution.md`, `docs/delivery/issue_map.md` | covered |
 | NFR-001 | Security baseline | `docs/product/requirements_machine_driven.md`, `docs/product/constraints.md`, `AGENTS.md` | covered |
 | NFR-002 | Multi-pod consistency | `docs/product/requirements_machine_driven.md`, `docs/architecture/c4_container.md`, `docs/architecture/data_model.md` | covered |
 | NFR-003 | No event outbox on MVP | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/constraints.md` | covered |
@@ -107,3 +107,8 @@ approvals:
 - Для FR-053/FR-054 добавлены execution-governance артефакты Sprint S5 (`epic_s5.md`, обновлённый sprint-plan, issue-map sync).
 - Зафиксированы quality-gates QG-01..QG-05 и критерии завершения handover в `run:dev`; QG-05 закрыт после Owner review в PR #166.
 - Реестр `BLK-155-*`, `RSK-155-*`, `OD-155-*` синхронизирован между `sprint_s5`, `epic_s5` и Day1 epic; `BLK-155-01..02` закрыты, `OD-155-01..03` утверждены (2026-02-25).
+
+## Актуализация по Issue #170 (`run:plan`, 2026-02-25)
+- Добавлен Day2 execution-артефакт `docs/delivery/epics/s5/epic-s5-day2-launch-profiles-dev-execution.md` для single-epic реализации FR-053/FR-054.
+- Зафиксированы quality-gates QG-D2-01..QG-D2-05 и DoD-пакет для handover в `run:dev`.
+- Создана implementation issue #171; связь `#170 -> #171 -> FR-053/FR-054` синхронизирована в `issue_map` и Sprint S5 docs.

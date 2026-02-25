@@ -5,8 +5,8 @@ title: "codex-k8s — Delivery Plan"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-24
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155]
+updated_at: 2026-02-25
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -99,9 +99,11 @@ approvals:
 - Результат Day 1: формальный execution-plan (stories + quality-gates + owner decisions) для перехода в `run:dev`.
 - Следующие day-эпики S4 формируются после Owner review Day 1 и закрытия зависимостей по S3 Day20.
 
-### Sprint S5: Stage entry and label UX orchestration (Issues #154/#155)
+### Sprint S5: Stage entry and label UX orchestration (Issues #154/#155/#170/#171)
 - Day 1 (in-review): launch profiles + deterministic next-step actions (`docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md`).
-- Результат Day 1 (факт): owner-ready vision/prd + architecture execution package для входа в `run:dev` подготовлен в Issue #155 (включая ADR-0008); ожидается Owner approval.
+- Результат Day 1 (факт): owner-ready vision/prd + architecture execution package для входа в `run:dev` подготовлен в Issue #155 (включая ADR-0008); Owner approval получен (PR #166, 2026-02-25).
+- Day 2 (in-review): single-epic execution package для реализации FR-053/FR-054 (`docs/delivery/epics/s5/epic-s5-day2-launch-profiles-dev-execution.md`).
+- Результат Day 2 (факт): в Issue #170 зафиксирован delivery governance пакет (QG-D2-01..QG-D2-05, DoD, handover), создана implementation issue #171 для выполнения одним эпиком.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
