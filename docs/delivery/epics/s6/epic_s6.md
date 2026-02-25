@@ -32,6 +32,7 @@ approvals:
   - `docs/delivery/epics/s6/epic-s6-day3-agents-prompts-prd.md`
   - `docs/delivery/epics/s6/prd-s6-day3-agents-prompts-lifecycle.md`
 - Day 4 (Architecture): `docs/delivery/epics/s6/epic-s6-day4-agents-prompts-arch.md` (Issue `#189`).
+- Day 5 (Design issue): GitHub issue `#195` (создана по итогам `run:arch`).
 
 ## Планируемые epics (следующие stage)
 - Day 5 (Design): API/data model/design package.

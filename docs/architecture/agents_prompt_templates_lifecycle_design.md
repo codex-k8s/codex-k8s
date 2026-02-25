@@ -6,7 +6,7 @@ status: proposed
 owner_role: SA
 created_at: 2026-02-25
 updated_at: 2026-02-25
-related_issues: [184, 185, 187, 189]
+related_issues: [184, 185, 187, 189, 195]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -128,6 +128,17 @@ Rel(worker, db, "Reads/Writes", "SQL")
 - Политика RBAC и error taxonomy (`invalid_argument`, `conflict`, `forbidden`).
 - План observability и тестирования (unit + integration + UI).
 
+## Migration и runtime impact
+- На этапе `run:arch` runtime-поведение не меняется: изменения ограничены архитектурной документацией.
+- На этапе `run:design` требуется зафиксировать миграционный план для `prompt_templates` (дополнительные поля/индексы) с владельцем схемы `services/internal/control-plane`.
+- Порядок внедрения для последующего `run:dev`: `migrations -> internal domain services -> edge services -> frontend`.
+- Обратная совместимость не является обязательной для этой инициативы (проект в ранней стадии), но миграции должны оставаться идемпотентными и с явным rollback-подходом.
+
+## Dependency baseline (Context7)
+- Проверка по `kin-openapi` (`/getkin/kin-openapi`) подтверждает достаточность текущего подхода request/response validation для contract-first staff API.
+- Проверка по `monaco-editor` (`/microsoft/monaco-editor`) подтверждает, что `DiffEditor` покрывает use-case сравнения шаблонов без отдельной diff-библиотеки.
+- Следствие: на этапе `run:arch` новые внешние зависимости не требуются.
+
 ## Открытые вопросы
 1. Нужен ли отдельный `prompt_template_changes` журнал или достаточно `flow_events` + версий?
 2. Какая стратегия хранения diff: вычислять на лету или хранить как артефакт версии?
@@ -138,5 +149,7 @@ Rel(worker, db, "Reads/Writes", "SQL")
 - `docs/architecture/prompt_templates_policy.md`
 - `docs/architecture/api_contract.md`
 - `docs/product/requirements_machine_driven.md`
-- `docs/delivery/epics/s6/epic-s6-day3-agents-prompts-prd.md` (PR #190, ожидает merge)
-- `docs/delivery/epics/s6/prd-s6-day3-agents-prompts-lifecycle.md` (PR #190, ожидает merge)
+- `docs/delivery/epics/s6/epic-s6-day4-agents-prompts-arch.md`
+- `GitHub issue #187` (PRD stage source)
+- `GitHub PR #190` (upstream PRD package, ожидает merge в `main`)
+- `GitHub issue #195` (follow-up stage `run:design`)

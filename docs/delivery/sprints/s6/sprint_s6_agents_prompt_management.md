@@ -6,7 +6,7 @@ status: in-progress
 owner_role: PM
 created_at: 2026-02-25
 updated_at: 2026-02-25
-related_issues: [184, 185, 187, 189]
+related_issues: [184, 185, 187, 189, 195]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -51,11 +51,12 @@ approvals:
 | Gate | Что проверяем | Статус |
 |---|---|---|
 | QG-S6-01 Intake completeness | Problem/Brief/Scope/Constraints и AC зафиксированы с анализом фактического As-Is | passed (Issue #184) |
-| QG-S6-02 Stage continuity (vision) | Для следующего этапа после intake создана issue без trigger-лейбла с обязательной инструкцией | passed (`#185`) |
+| QG-S6-02 Stage continuity | Для каждого следующего этапа создана issue без trigger-лейбла с обязательной инструкцией continuity | passed (`#185` -> `#187` -> `#189` -> `#195`) |
 | QG-S6-03 Vision baseline | Mission/KPI, границы MVP/Post-MVP и риск-рамка зафиксированы для входа в PRD | passed (`#185`) |
-| QG-S6-04 PRD completeness | Подготовлен PRD-пакет с FR/AC/NFR-draft и user stories | passed (`#187`) |
-| QG-S6-05 Traceability | Обновлены `issue_map`, `requirements_traceability`, sprint/epic документы | passed |
-| QG-S6-06 Policy compliance | Изменения ограничены markdown без нарушения stage/label policy | passed |
+| QG-S6-04 PRD completeness | Подготовлен PRD-пакет с FR/AC/NFR-draft и user stories | passed (`#187`, PR `#190` merged) |
+| QG-S6-05 Architecture handover | Архитектурный пакет, ADR/альтернативы и design continuity issue сформированы | passed (`#189` -> `#195`) |
+| QG-S6-06 Traceability | Обновлены `issue_map`, `requirements_traceability`, sprint/epic документы | passed |
+| QG-S6-07 Policy compliance | Изменения ограничены markdown без нарушения stage/label policy | passed |
 
 ## Stage acceptance progress (Intake -> Vision -> PRD)
 - [x] Подтверждено, что текущий UI раздел `Agents` работает как scaffold и не подключен к backend (`#184`).
@@ -71,7 +72,5 @@ approvals:
 - Допущение: существующая модель БД (`agents`, `agent_policies`, `prompt_templates`, `agent_sessions`, `flow_events`) остается базой для архитектурной проработки.
 
 ## Handover в следующий этап
-- Следующий stage после PRD: `run:arch`.
-- Follow-up issue следующего этапа: `#189`.
-- Trigger-лейбл `run:arch` на issue `#189` ставит только Owner.
-- Обязательный выход `run:arch`: создать issue для stage `run:design` без trigger-лейбла с цепочкой ссылок `#184`, `#185`, `#187`, `#189` и явной инструкцией создать следующий stage issue после design (`run:plan`).
+- Актуальная цепочка stage-issues: `#184 (intake) -> #185 (vision) -> #187 (prd) -> #189 (arch) -> #195 (design)`.
+- Для issue `#195` зафиксировано обязательное правило: после `run:design` создать issue следующего этапа `run:plan`.

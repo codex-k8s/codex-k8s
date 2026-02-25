@@ -6,7 +6,7 @@ status: proposed
 owner_role: SA
 created_at: 2026-02-25
 updated_at: 2026-02-25
-related_issues: [184, 185, 187, 189]
+related_issues: [184, 185, 187, 189, 195]
 related_prs: []
 supersedes: []
 superseded_by: []
@@ -94,6 +94,11 @@ PRD по Issue #187 требует:
 - Добавить audit события в `flow_events`.
 - Обновить staff API и UI для diff/preview/history.
 
+## Migration и runtime impact
+- Этап `run:arch` не меняет runtime и схему БД: фиксируются только архитектурные решения и handover-ограничения.
+- Этап `run:design` обязан детализировать миграционный пакет (DDL + индексы + rollback) и порядок rollout.
+- Для `run:dev` внедрение должно идти через owner-схему `services/internal/control-plane` и deployment order из архитектурных правил проекта.
+
 ## План отката/замены
 - Вернуться к single-version режиму, сохранив историю как read-only.
 - Откат не удаляет исторические версии.
@@ -102,5 +107,7 @@ PRD по Issue #187 требует:
 - `docs/architecture/agents_prompt_templates_lifecycle_design.md`
 - `docs/architecture/prompt_templates_policy.md`
 - `docs/architecture/data_model.md`
-- `docs/delivery/epics/s6/epic-s6-day3-agents-prompts-prd.md` (PR #190, ожидает merge)
-- `docs/delivery/epics/s6/prd-s6-day3-agents-prompts-lifecycle.md` (PR #190, ожидает merge)
+- `docs/delivery/epics/s6/epic-s6-day4-agents-prompts-arch.md`
+- `GitHub issue #187` (PRD stage source)
+- `GitHub PR #190` (upstream PRD package, ожидает merge в `main`)
+- `GitHub issue #195` (follow-up stage `run:design`)

@@ -129,11 +129,15 @@ approvals:
   `docs/architecture/alternatives/ALT-0001-agents-prompt-templates-lifecycle.md`.
 - Трассируемость PRD-артефактов S6 Day3 зафиксирована через Issue `#187` и PR `#190` (merged).
 - Handover в `run:design` включает обязательные артефакты OpenAPI, data model/migrations и UI flow для `agents/templates/audit`, а также migration/runtime impact.
+- По итогам `run:arch` создана follow-up issue `#195` для stage `run:design` с обязательной инструкцией после завершения stage создать issue следующего этапа `run:plan`.
+- Через Context7 подтверждено, что для design-этапа не требуется новая внешняя библиотека:
+  достаточно текущего стека `kin-openapi` (валидация контрактов) и `monaco-editor` (DiffEditor).
 
 ## Актуализация по Issue #195 (`run:design`, 2026-02-25)
 - Создана stage-continuity issue `#195` (без trigger-лейбла) как обязательный артефакт по итогам `run:arch` Issue `#189`.
 - В `#195` зафиксированы design acceptance criteria для OpenAPI/gRPC boundaries, data model/migrations policy, UI flow и тестируемости.
 - Зафиксирована обязательная следующая связка: после завершения `run:design` создать issue этапа `run:plan` со ссылками на `#184`, `#185`, `#187`, `#189`, `#195`.
+
 ## Актуализация по Issue #155 (`run:plan`, 2026-02-25)
 - Для FR-053/FR-054 добавлены execution-governance артефакты Sprint S5 (`epic_s5.md`, обновлённый sprint-plan, issue-map sync).
 - Зафиксированы quality-gates QG-01..QG-05 и критерии завершения handover в `run:dev`; QG-05 закрыт после Owner review в PR #166.

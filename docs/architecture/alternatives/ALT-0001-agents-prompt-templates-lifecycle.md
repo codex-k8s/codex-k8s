@@ -6,7 +6,7 @@ status: draft
 owner_role: SA
 created_at: 2026-02-25
 updated_at: 2026-02-25
-related_issues: [184, 185, 187, 189]
+related_issues: [184, 185, 187, 189, 195]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -61,6 +61,11 @@ approvals:
 - Обоснование: минимальный риск при сохранении audit-качества.
 - Что теряем: идеальную нормализацию audit-данных.
 - Что выигрываем: скорость и совместимость с текущей моделью.
+
+## Проверка зависимостей (Context7)
+- `kin-openapi` (`/getkin/kin-openapi`): покрывает runtime request/response validation для contract-first API без дополнительных библиотек.
+- `monaco-editor` (`/microsoft/monaco-editor`): встроенный `DiffEditor` закрывает сценарий сравнения версий шаблонов.
+- Вывод: для `run:design` не требуется вводить новые внешние зависимости, достаточно существующего стека.
 
 ## Нужен апрув от Owner
 - [ ] Выбор варианта
