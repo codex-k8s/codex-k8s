@@ -5,7 +5,7 @@ title: "codex-k8s — Prompt Templates Policy"
 status: active
 owner_role: SA
 created_at: 2026-02-11
-updated_at: 2026-02-21
+updated_at: 2026-02-25
 related_issues: [1, 19, 100]
 related_prs: []
 approvals:
@@ -95,6 +95,10 @@ approvals:
 - Используются как fallback при отсутствии override в БД по `(role, kind, locale)`.
 - В seed-файлах хранится только prompt body (инструкции агенту).
 - В seed-файлах не допускаются документные секции и мета-описания.
+- Для документационных stage seed'ов (`intake|vision|prd|arch|design|plan|doc-audit|qa|release|postdeploy|ops|rethink` и их `*:revise`) обязательно:
+  - использовать role-aware refs из `services.yaml/spec.roleDocTemplates`, переданные в prompt envelope;
+  - указывать только имена шаблонов артефактов без repository-specific/hardcoded путей в самом seed.
+- Non-doc seed'ы (`dev*`, `ai-repair`, `self-improve`) не должны получать лишние требования по документационным шаблонам.
 
 ### DB global overrides
 - Шаблоны уровня платформы.
