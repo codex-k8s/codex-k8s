@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - Цель спринта: убрать ручную сложность управления `run:*` лейблами и дать Owner детерминированный UX переходов по этапам.
 - Основной результат: profile-driven stage launch (`quick-fix`, `feature`, `new-service`) + рабочие next-step action paths с fallback без зависимости от web-link.
-- Day1 split: Issue #154 закрыл intake baseline, Issue #155 фиксирует vision/prd пакет перед входом в `run:dev`.
+- Day1 split: Issue #154 закрыл intake baseline, Issue #155 зафиксировал vision/prd + architecture пакет перед входом в `run:dev`.
 
 ## Scope спринта
 ### In scope
@@ -39,7 +39,7 @@ approvals:
 
 | День | Эпик | Priority | Документ | Статус |
 |---|---|---|---|---|
-| Day 1 | Launch profiles и deterministic next-step actions | P0 | `docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md` + `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md` | in-review (`run:vision`/`run:prd`, Issue #155) |
+| Day 1 | Launch profiles и deterministic next-step actions | P0 | `docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md` + `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md` + `docs/architecture/adr/ADR-0008-profile-driven-stage-launch-and-next-step-contract.md` | in-review (`run:arch`, Issue #155) |
 
 ## Daily gate (обязательно)
 - Любой переход stage должен иметь audit запись и детерминированный fallback.
@@ -69,4 +69,5 @@ approvals:
 - Подтверждён канонический набор launch profiles и deterministic escalation rules.
 - Зафиксирован контракт next-step action-card (`primary deep-link + fallback command`) с guardrails на ambiguity и обязательным pre-check перед ручным transition.
 - Подготовлен отдельный PRD-документ по шаблону `docs/templates/prd.md`: `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md`.
+- Подготовлен ADR-артефакт для реализации в `run:dev`: `docs/architecture/adr/ADR-0008-profile-driven-stage-launch-and-next-step-contract.md`.
 - Пакет требований готов к запуску `run:dev` после Owner approval.

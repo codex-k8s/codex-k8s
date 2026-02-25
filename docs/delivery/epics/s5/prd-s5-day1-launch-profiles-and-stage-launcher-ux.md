@@ -129,11 +129,13 @@ approvals:
 ## План релиза (черновик)
 - Ограничения выката: реализация в `run:dev` по инкрементам I1..I5 из Day1 epic.
 - Риски релиза: policy-drift при ручных label transitions.
+- Архитектурный baseline реализации и миграции закреплён в ADR-0008 (dual-path contract + guardrails).
 - Роллбек: возврат к текущему stage-aware сервисному сообщению без profile-specific fallback логики.
 
 ## Приложения
 - Ссылки на design/ADR:
   - `docs/architecture/adr/ADR-0006-review-driven-revise-and-next-step-ux.md`
+  - `docs/architecture/adr/ADR-0008-profile-driven-stage-launch-and-next-step-contract.md`
   - `docs/product/labels_and_trigger_policy.md`
   - `docs/product/stage_process_model.md`
 - Ссылки на docset:
