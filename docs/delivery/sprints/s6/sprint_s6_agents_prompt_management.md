@@ -6,7 +6,7 @@ status: in-progress
 owner_role: PM
 created_at: 2026-02-25
 updated_at: 2026-02-25
-related_issues: [184, 185]
+related_issues: [184, 185, 187, 189]
 related_prs: []
 approvals:
   required: ["Owner"]

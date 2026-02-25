@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-25
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 189]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -112,6 +112,13 @@ approvals:
 - Зафиксировано продуктовое расхождение As-Is: UI-раздел `Agents` и prompt templates находится в scaffold-состоянии, при этом contract-first staff API пока не содержит endpoint-ов для agents/templates/audit lifecycle.
 - Зафиксирован stage-handover baseline для полного цикла до `run:doc-audit` и обязательное правило создания follow-up issue на каждом следующем stage до `run:plan` включительно.
 
+## Актуализация по Issue #189 (`run:arch`, 2026-02-25)
+- Архитектурный пакет для lifecycle управления агентами и шаблонами промптов зафиксирован в:
+  `docs/architecture/agents_prompt_templates_lifecycle_design.md`,
+  `docs/architecture/adr/ADR-0009-prompt-templates-lifecycle-and-audit.md`,
+  `docs/architecture/alternatives/ALT-0001-agents-prompt-templates-lifecycle.md`.
+- Трассируемость PRD-артефактов S6 Day3 (Issue #187, PR #190) указана как upstream-контекст для design-этапа.
+- Handover в `run:design` включает обязательные артефакты OpenAPI, data model/migrations и UI flow для `agents/templates/audit`.
 ## Актуализация по Issue #155 (`run:plan`, 2026-02-25)
 - Для FR-053/FR-054 добавлены execution-governance артефакты Sprint S5 (`epic_s5.md`, обновлённый sprint-plan, issue-map sync).
 - Зафиксированы quality-gates QG-01..QG-05 и критерии завершения handover в `run:dev`; QG-05 закрыт после Owner review в PR #166.
