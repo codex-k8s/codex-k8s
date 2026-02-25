@@ -108,7 +108,7 @@ approvals:
   `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md`,
   `docs/delivery/epics/s6/epic_s6.md`,
   `docs/delivery/epics/s6/epic-s6-day1-agents-prompts-intake.md`.
-- Создана stage-continuity issue `#185` (`run:vision`) с обязательной инструкцией сформировать issue следующего этапа (`run:prd`), чтобы сохранить последовательную декомпозицию до `run:doc-audit`.
+- Создана stage-continuity issue `#185` для stage `run:vision` без trigger-лейбла (ставит Owner) с обязательной инструкцией сформировать issue следующего этапа (`run:prd`), чтобы сохранить последовательную декомпозицию до `run:doc-audit`.
 - Зафиксировано продуктовое расхождение As-Is: UI-раздел `Agents` и prompt templates находится в scaffold-состоянии, при этом contract-first staff API пока не содержит endpoint-ов для agents/templates/audit lifecycle.
 - Зафиксирован stage-handover baseline для полного цикла до `run:doc-audit` и обязательное правило создания follow-up issue на каждом следующем stage до `run:plan` включительно.
 
@@ -119,7 +119,7 @@ approvals:
   `docs/delivery/epics/s6/epic_s6.md`,
   `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md`.
 - Формализованы требования и критерии приемки для контуров `agents settings`, `prompt templates lifecycle`, `history/audit` в формате FR/AC/NFR-draft.
-- Подтверждена трассируемость stage-цепочки `#184 -> #185 -> #187` и создана follow-up issue `#189` (`run:arch`) с обязательной инструкцией создать issue `run:design` по завершении архитектурного этапа.
+- Подтверждена трассируемость stage-цепочки `#184 -> #185 -> #187` и создана follow-up issue `#189` для stage `run:arch` без trigger-лейбла (ставит Owner) с обязательной инструкцией создать issue `run:design` по завершении архитектурного этапа.
 - Зафиксирован policy-safe scope этапа: markdown-only изменения без обновления code/runtime артефактов.
 
 ## Актуализация по Issue #155 (`run:plan`, 2026-02-25)

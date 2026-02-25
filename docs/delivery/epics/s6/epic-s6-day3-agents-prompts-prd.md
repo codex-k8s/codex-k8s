@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - На PRD-этапе зафиксированы детальные функциональные требования и acceptance criteria для контуров `agents settings`, `prompt templates lifecycle`, `audit/history`.
 - Подготовлен отдельный PRD-артефакт: `docs/delivery/epics/s6/prd-s6-day3-agents-prompts-lifecycle.md`.
-- Сформирован handover в `run:arch` через follow-up issue `#189` с обязательной инструкцией создать issue для `run:design` после завершения архитектурного этапа.
+- Сформирован handover в stage `run:arch` через follow-up issue `#189` без trigger-лейбла (лейбл ставит Owner) с обязательной инструкцией создать issue для `run:design` после завершения архитектурного этапа.
 
 ## Priority
 - `P0`.
@@ -55,7 +55,7 @@ approvals:
 - [x] Зафиксирован NFR-draft, достаточный для архитектурной проработки `run:arch`.
 - [x] Подтверждена трассируемость `#184 -> #185 -> #187` в `issue_map` и `requirements_traceability`.
 - [x] Подготовлен handover-пакет в `run:arch`.
-- [x] Создана отдельная follow-up issue `#189` для следующего этапа.
+- [x] Создана отдельная follow-up issue `#189` для следующего этапа без trigger-лейбла (лейбл ставит Owner).
 
 ## NFR-draft summary
 | Категория | Черновое требование |
@@ -78,11 +78,12 @@ approvals:
 ## Handover в `run:arch`
 - Следующий этап: `run:arch`.
 - Follow-up issue: `#189`.
+- Trigger-лейбл `run:arch` на issue `#189` ставит Owner.
 - Обязательные выходы архитектурного этапа:
   - сервисные границы и ownership по контурам `agents/templates/audit`;
   - C4/ADR решения по transport/data/policy boundaries;
   - mitigation-план по рискам конкурентного редактирования, audit полноты и latency budgets;
-  - отдельная issue на `run:design` по завершении `run:arch`.
+  - отдельная issue на stage `run:design` по завершении `run:arch` (без trigger-лейбла при создании).
 
 ## Трассируемость
 - Intake: `#184` -> `docs/delivery/epics/s6/epic-s6-day1-agents-prompts-intake.md`.

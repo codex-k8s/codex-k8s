@@ -20,15 +20,15 @@ approvals:
 - Sprint S6 ведет инициативу по переводу раздела `Agents` из scaffold в production-ready lifecycle контур.
 - Day1 intake (`#184`) зафиксировал проблему и границы MVP.
 - Day2 vision (`#185`) зафиксировал mission/KPI и риск-рамку.
-- Day3 PRD (`#187`) формализовал FR/AC/NFR-draft и создал handover issue в `run:arch` (`#189`).
+- Day3 PRD (`#187`) формализовал FR/AC/NFR-draft и создал handover issue `#189` для stage `run:arch` (trigger-лейбл ставит Owner).
 
 ## Эпики Sprint S6
 - Day 1 (Intake): `docs/delivery/epics/s6/epic-s6-day1-agents-prompts-intake.md`
-- Day 2 (Vision baseline): GitHub issue `#185` (результаты vision использованы как вход в PRD).
+- Day 2 (Vision baseline): `docs/delivery/epics/s6/epic-s6-day2-agents-prompts-vision.md` (Issue `#185`).
 - Day 3 (PRD):
   - `docs/delivery/epics/s6/epic-s6-day3-agents-prompts-prd.md`
   - `docs/delivery/epics/s6/prd-s6-day3-agents-prompts-lifecycle.md`
-- Day 4 (Architecture issue): GitHub issue `#189` (`run:arch`).
+- Day 4 (Architecture issue): GitHub issue `#189` для stage `run:arch` (без trigger-лейбла при создании).
 
 ## Планируемые epics (следующие stage)
 - Day 4 (Architecture): C4/ADR/boundaries для agents/templates/audit domain.
@@ -38,6 +38,7 @@ approvals:
 
 ## Delivery-governance правила
 - Каждый stage завершает работу созданием issue для следующего stage.
+- Follow-up issue создаются без `run:*`-лейбла; trigger-лейбл на запуск следующего stage ставит Owner.
 - Каждая следующая issue обязана содержать явную инструкцию создать issue после завершения текущего этапа.
 - Для цепочки S6 зафиксирована последовательность continuity:
   - `#184 (intake) -> #185 (vision) -> #187 (prd) -> #189 (arch)`.

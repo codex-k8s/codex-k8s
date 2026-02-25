@@ -30,7 +30,7 @@ approvals:
 | `docs/delivery/epics/s3/` | Day1..Day20 + каталог Sprint S3 | `docs/delivery/epics/s3/epic_s3.md` |
 | `docs/delivery/epics/s4/` | Day1 + каталог Sprint S4 | `docs/delivery/epics/s4/epic_s4.md` |
 | `docs/delivery/epics/s5/` | Day1 + каталог Sprint S5 | `docs/delivery/epics/s5/epic_s5.md` |
-| `docs/delivery/epics/s6/` | Day1 + Day3 (PRD package) + каталог Sprint S6 | `docs/delivery/epics/s6/epic_s6.md` |
+| `docs/delivery/epics/s6/` | Day1..Day3 (intake + vision + PRD package) + каталог Sprint S6 | `docs/delivery/epics/s6/epic_s6.md` |
 
 ## Проверка консистентности
 - Для каждого `s<номер>` должны существовать:

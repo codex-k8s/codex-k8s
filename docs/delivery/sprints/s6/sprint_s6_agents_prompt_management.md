@@ -19,13 +19,14 @@ approvals:
 ## TL;DR
 - Цель спринта: перевести раздел `Configuration -> Agents` из scaffold в управляемый контур продукта с реальными данными, lifecycle шаблонов промптов и аудитом изменений.
 - Базовый As-Is разрыв зафиксирован intake-этапом: UI работает на mock-данных, а staff OpenAPI пока не покрывает `agents/prompt-templates/audit`.
-- На текущий момент цепочка `intake -> vision -> prd` завершена документарно и передана в `run:arch`.
+- На текущий момент цепочка `intake -> vision -> prd` завершена документарно и передана в stage `run:arch` через issue `#189` без trigger-лейбла (лейбл ставит Owner).
 
 ## Scope спринта
 ### In scope
 - Intake -> Vision -> PRD -> Architecture -> Design -> Plan -> Dev -> QA -> Release -> Postdeploy -> Ops.
 - Отдельный контур `run:doc-audit` после `run:dev` для проверки трассируемости `issue -> docs -> implementation`.
 - Формирование последовательных epics и GitHub issues для каждого stage без пропуска этапов.
+- Follow-up issue создаются без `run:*`-лейблов; trigger-лейбл на запуск следующего stage ставит Owner после review.
 
 ### Out of scope
 - Внедрение новых ролей агентов вне утвержденного system roster.
@@ -50,7 +51,7 @@ approvals:
 | Gate | Что проверяем | Статус |
 |---|---|---|
 | QG-S6-01 Intake completeness | Problem/Brief/Scope/Constraints и AC зафиксированы с анализом фактического As-Is | passed (Issue #184) |
-| QG-S6-02 Stage continuity (vision) | Для следующего этапа после intake создана issue с обязательной инструкцией | passed (`#185`) |
+| QG-S6-02 Stage continuity (vision) | Для следующего этапа после intake создана issue без trigger-лейбла с обязательной инструкцией | passed (`#185`) |
 | QG-S6-03 Vision baseline | Mission/KPI, границы MVP/Post-MVP и риск-рамка зафиксированы для входа в PRD | passed (`#185`) |
 | QG-S6-04 PRD completeness | Подготовлен PRD-пакет с FR/AC/NFR-draft и user stories | passed (`#187`) |
 | QG-S6-05 Traceability | Обновлены `issue_map`, `requirements_traceability`, sprint/epic документы | passed |
@@ -61,7 +62,7 @@ approvals:
 - [x] Зафиксирован продуктовый масштаб инициативы: настройки агентов + prompt templates + audit/history (`#184`).
 - [x] Зафиксированы vision baseline-решения по mission/KPI и границам MVP/Post-MVP (`#185`).
 - [x] Утвержден PRD-документ с FR/AC и NFR-draft для handover в архитектуру (`#187`).
-- [x] Создана issue следующего этапа `run:arch` с обязательной инструкцией создать issue `run:design` (`#189`).
+- [x] Создана issue `#189` для stage `run:arch` без trigger-лейбла, с обязательной инструкцией создать issue `run:design`.
 
 ## Риски и допущения
 - Риск: смешение scope между настройками агентов, prompt policy и runtime observability может размыть MVP-инкремент.
@@ -72,4 +73,5 @@ approvals:
 ## Handover в следующий этап
 - Следующий stage после PRD: `run:arch`.
 - Follow-up issue следующего этапа: `#189`.
-- Обязательный выход `run:arch`: создать issue для `run:design` с цепочкой ссылок `#184`, `#185`, `#187`, `#189` и явной инструкцией создать следующий stage issue после design (`run:plan`).
+- Trigger-лейбл `run:arch` на issue `#189` ставит только Owner.
+- Обязательный выход `run:arch`: создать issue для stage `run:design` без trigger-лейбла с цепочкой ссылок `#184`, `#185`, `#187`, `#189` и явной инструкцией создать следующий stage issue после design (`run:plan`).

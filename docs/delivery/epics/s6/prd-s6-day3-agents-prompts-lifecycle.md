@@ -64,7 +64,7 @@ approvals:
 - FR-187-09: поддерживается rollback активной версии шаблона на предыдущую с идемпотентным поведением.
 - FR-187-10: staff-пользователь может просмотреть историю изменений агента/шаблона в едином журнале.
 - FR-187-11: PRD-артефакты должны сохранять stage continuity по цепочке `intake -> vision -> prd -> arch`.
-- FR-187-12: после завершения PRD обязательно создается issue следующего этапа `run:arch` с инструкцией создать issue для `run:design`.
+- FR-187-12: после завершения PRD обязательно создается issue следующего этапа для stage `run:arch` без trigger-лейбла (лейбл ставит Owner), с инструкцией создать issue для `run:design`.
 
 ## Acceptance Criteria (Given/When/Then)
 - AC-01
@@ -98,7 +98,7 @@ approvals:
 - AC-08
   - Given PRD-этап завершен
   - When проверяется stage continuity
-  - Then создана issue `#189` (`run:arch`) с обязательной инструкцией для следующего этапа `run:design`.
+  - Then создана issue `#189` для stage `run:arch` без trigger-лейбла (лейбл ставит Owner) с обязательной инструкцией для следующего этапа `run:design`.
 
 ## Non-Goals (явно)
 - Реализация backend/frontend кода в рамках текущего PRD-этапа.
@@ -157,12 +157,13 @@ approvals:
 
 ## Handover в `run:arch`
 - Следующий этап: `run:arch` (Issue `#189`).
+- Trigger-лейбл `run:arch` на issue `#189` ставит Owner.
 - Ожидаемые архитектурные выходы:
   - сервисные границы и ownership data/transport policy;
   - ADR по versioning/locking/audit consistency;
   - архитектурный пакет для следующего этапа `run:design`.
 - Обязательное правило continuity:
-  - по завершении `run:arch` создать issue на `run:design` с явной инструкцией создать issue следующего этапа `run:plan`.
+  - по завершении `run:arch` создать issue на stage `run:design` без trigger-лейбла, с явной инструкцией создать issue следующего этапа `run:plan`.
 
 ## Приложения
 - `docs/delivery/epics/s6/epic-s6-day1-agents-prompts-intake.md`
