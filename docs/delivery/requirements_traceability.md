@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-25
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -122,6 +122,18 @@ approvals:
 - Подтверждена трассируемость stage-цепочки `#184 -> #185 -> #187` и создана follow-up issue `#189` для stage `run:arch` без trigger-лейбла (ставит Owner) с обязательной инструкцией создать issue `run:design` по завершении архитектурного этапа.
 - Зафиксирован policy-safe scope этапа: markdown-only изменения без обновления code/runtime артефактов.
 
+## Актуализация по Issue #189 (`run:arch`, 2026-02-25)
+- Архитектурный пакет для lifecycle управления агентами и шаблонами промптов зафиксирован в:
+  `docs/architecture/agents_prompt_templates_lifecycle_design.md`,
+  `docs/architecture/adr/ADR-0009-prompt-templates-lifecycle-and-audit.md`,
+  `docs/architecture/alternatives/ALT-0001-agents-prompt-templates-lifecycle.md`.
+- Трассируемость PRD-артефактов S6 Day3 зафиксирована через Issue `#187` и PR `#190` (merged).
+- Handover в `run:design` включает обязательные артефакты OpenAPI, data model/migrations и UI flow для `agents/templates/audit`, а также migration/runtime impact.
+
+## Актуализация по Issue #195 (`run:design`, 2026-02-25)
+- Создана stage-continuity issue `#195` (без trigger-лейбла) как обязательный артефакт по итогам `run:arch` Issue `#189`.
+- В `#195` зафиксированы design acceptance criteria для OpenAPI/gRPC boundaries, data model/migrations policy, UI flow и тестируемости.
+- Зафиксирована обязательная следующая связка: после завершения `run:design` создать issue этапа `run:plan` со ссылками на `#184`, `#185`, `#187`, `#189`, `#195`.
 ## Актуализация по Issue #155 (`run:plan`, 2026-02-25)
 - Для FR-053/FR-054 добавлены execution-governance артефакты Sprint S5 (`epic_s5.md`, обновлённый sprint-plan, issue-map sync).
 - Зафиксированы quality-gates QG-01..QG-05 и критерии завершения handover в `run:dev`; QG-05 закрыт после Owner review в PR #166.
