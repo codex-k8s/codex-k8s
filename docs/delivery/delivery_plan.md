@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-25
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -115,6 +115,12 @@ approvals:
   - `docs/delivery/epics/s6/epic-s6-day3-agents-prompts-prd.md`
   - `docs/delivery/epics/s6/prd-s6-day3-agents-prompts-lifecycle.md`
 - Результат Day 3 (факт): формализованы FR/AC/NFR-draft для `agents settings + prompt lifecycle + audit/history`; создана issue #189 для stage `run:arch` без постановки trigger-лейбла (лейбл ставит Owner) и с обязательной инструкцией создать issue `run:design`.
+- Day 4 (in-review): architecture stage в issue #189 (`docs/delivery/epics/s6/epic-s6-day4-agents-prompts-arch.md`).
+- Результат Day 4 (факт): зафиксированы архитектурные границы и ADR-0009, создана issue #195 для stage `run:design`.
+- Day 5 (in-review): design stage в issue #195 (`docs/delivery/epics/s6/epic-s6-day5-agents-prompts-design.md`).
+- Результат Day 5 (факт): зафиксирован implementation-ready package (`design_doc`, `api_contract`, `data_model`, `migrations_policy`), создана issue #197 для stage `run:plan`.
+- Day 6 (in-review): plan stage в issue #197 (`docs/delivery/epics/s6/epic-s6-day6-agents-prompts-plan.md`).
+- Результат Day 6 (факт): сформирован execution package `run:dev` (W1..W7, QG-S6-D6-01..QG-S6-D6-07, DoR/DoD, blockers/risks/owner decisions), создана issue #199 для stage `run:dev` без trigger-лейбла.
 - Следующие day-эпики S6 формируются строго последовательно по stage-цепочке:
   `arch -> design -> plan -> dev -> doc-audit` с отдельной issue на каждый этап.
 

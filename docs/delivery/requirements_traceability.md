@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-25
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -147,6 +147,17 @@ approvals:
 - Через Context7 подтверждён dependency baseline для реализации без новых библиотек:
   `kin-openapi` (`/getkin/kin-openapi`) и `monaco-editor` (`/microsoft/monaco-editor`).
 - Создана follow-up issue `#197` для stage `run:plan` с обязательной инструкцией после `run:plan` создать issue `run:dev`.
+
+## Актуализация по Issue #197 (`run:plan`, 2026-02-25)
+- Для FR-033/FR-038 и NFR-010/NFR-018 добавлен execution-governance пакет Sprint S6 Day6:
+  `docs/delivery/epics/s6/epic-s6-day6-agents-prompts-plan.md`,
+  `docs/delivery/epics/s6/epic_s6.md`,
+  `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md`,
+  `docs/delivery/delivery_plan.md`.
+- Зафиксирована декомпозиция `run:dev` по потокам W1..W7 с quality-gates QG-S6-D6-01..QG-S6-D6-07 и DoR/DoD-критериями перехода в `run:qa`.
+- Сформирован реестр blockers/risks/owner decisions для handover в реализацию без выхода за архитектурные границы Day5 design package.
+- Создана follow-up issue `#199` для stage `run:dev` без trigger-лейбла с обязательной continuity-инструкцией создать issue `run:qa` после завершения реализации.
+- Через Context7 (`/websites/cli_github_manual`) подтверждён актуальный синтаксис `gh issue/pr` команд для fallback/PR-flow; новые внешние зависимости не требуются.
 
 ## Актуализация по Issue #155 (`run:plan`, 2026-02-25)
 - Для FR-053/FR-054 добавлены execution-governance артефакты Sprint S5 (`epic_s5.md`, обновлённый sprint-plan, issue-map sync).
