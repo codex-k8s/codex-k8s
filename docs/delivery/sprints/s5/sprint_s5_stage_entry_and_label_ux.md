@@ -5,7 +5,7 @@ title: "Sprint S5: Stage entry and label UX orchestration (Issues #154/#155)"
 status: in-progress
 owner_role: EM
 created_at: 2026-02-24
-updated_at: 2026-02-24
+updated_at: 2026-02-25
 related_issues: [154, 155]
 related_prs: []
 approvals:
@@ -59,7 +59,13 @@ approvals:
 - `sre`: проверить аудит/наблюдаемость и отсутствие обходов governance.
 - `km`: поддерживать трассируемость и синхронизацию продуктовой документации.
 
+## Приоритеты входа в `run:dev` (декомпозиция Day1)
+- `P0`: deterministic profile resolver (`quick-fix|feature|new-service`) и блокировка ambiguity через `need:input`.
+- `P0`: контракт next-step action-card + fallback path `pre-check -> transition` на основе `gh issue/pr edit`.
+- `P1`: унифицированный review-gate переход (`state:in-review` на Issue и PR после формирования PR).
+- `P1`: автоматическая синхронизация traceability-артефактов (`issue_map`, `requirements_traceability`) после stage transition.
+
 ## Факт по Issue #155
 - Подтверждён канонический набор launch profiles и deterministic escalation rules.
-- Зафиксирован контракт next-step action-card (`primary deep-link + fallback command`) с guardrails на ambiguity.
+- Зафиксирован контракт next-step action-card (`primary deep-link + fallback command`) с guardrails на ambiguity и обязательным pre-check перед ручным transition.
 - Пакет требований готов к запуску `run:dev` после Owner approval.
