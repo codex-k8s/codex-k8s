@@ -21,6 +21,8 @@ type runPayloadInput struct {
 	Trigger           *issueRunTrigger
 	Agent             runAgentProfile
 	ProfileHints      *githubRunProfileHints
+	ResolvedIssueNo   int64
+	ResolvedIssueURL  string
 	RuntimeMode       agentdomain.RuntimeMode
 	RuntimeSource     string
 	RuntimeTargetEnv  string
@@ -118,20 +120,14 @@ func buildRunPayload(input runPayloadInput) (json.RawMessage, error) {
 				HTMLURL: input.Envelope.Issue.PullRequest.HTMLURL,
 			}
 		}
-	} else if input.Envelope.PullRequest.Number > 0 {
+	} else if input.ResolvedIssueNo > 0 {
+		resolvedIssueURL := strings.TrimSpace(input.ResolvedIssueURL)
+		if resolvedIssueURL == "" {
+			resolvedIssueURL = buildGitHubIssueURL(payload.Repository.FullName, input.ResolvedIssueNo)
+		}
 		payload.Issue = &githubRunIssuePayload{
-			ID:      input.Envelope.PullRequest.ID,
-			Number:  input.Envelope.PullRequest.Number,
-			Title:   input.Envelope.PullRequest.Title,
-			HTMLURL: input.Envelope.PullRequest.HTMLURL,
-			State:   input.Envelope.PullRequest.State,
-			User: githubActorPayload{
-				ID:    input.Envelope.PullRequest.User.ID,
-				Login: input.Envelope.PullRequest.User.Login,
-			},
-			PullRequest: &githubPullRequestPayload{
-				HTMLURL: input.Envelope.PullRequest.HTMLURL,
-			},
+			Number:  input.ResolvedIssueNo,
+			HTMLURL: resolvedIssueURL,
 		}
 	}
 
@@ -267,4 +263,12 @@ func buildBaseFlowEventPayload(cmd IngestCommand, envelope githubWebhookEnvelope
 			Name:     envelope.Repository.Name,
 		},
 	}
+}
+
+func buildGitHubIssueURL(repositoryFullName string, issueNumber int64) string {
+	repo := strings.TrimSpace(repositoryFullName)
+	if repo == "" || issueNumber <= 0 {
+		return ""
+	}
+	return fmt.Sprintf("https://github.com/%s/issues/%d", repo, issueNumber)
 }
