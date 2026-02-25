@@ -39,7 +39,7 @@ approvals:
 
 | День | Эпик | Priority | Документ | Статус |
 |---|---|---|---|---|
-| Day 1 | Launch profiles и deterministic next-step actions | P0 | `docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md` | in-review (`run:vision`/`run:prd`, Issue #155) |
+| Day 1 | Launch profiles и deterministic next-step actions | P0 | `docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md` + `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md` | in-review (`run:vision`/`run:prd`, Issue #155) |
 
 ## Daily gate (обязательно)
 - Любой переход stage должен иметь audit запись и детерминированный fallback.
@@ -68,4 +68,5 @@ approvals:
 ## Факт по Issue #155
 - Подтверждён канонический набор launch profiles и deterministic escalation rules.
 - Зафиксирован контракт next-step action-card (`primary deep-link + fallback command`) с guardrails на ambiguity и обязательным pre-check перед ручным transition.
+- Подготовлен отдельный PRD-документ по шаблону `docs/templates/prd.md`: `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md`.
 - Пакет требований готов к запуску `run:dev` после Owner approval.

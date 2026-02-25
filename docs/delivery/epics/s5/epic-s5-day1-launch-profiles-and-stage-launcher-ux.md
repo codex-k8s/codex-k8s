@@ -45,6 +45,8 @@ approvals:
 
 ## Vision/PRD package (Issue #155)
 
+- Канонический PRD-артефакт Day1: `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md` (по шаблону `docs/templates/prd.md`).
+
 ### 1. Канонический набор launch profiles и эскалации
 
 | Profile | Обязательная траектория | Когда применять | Детерминированные триггеры эскалации |

@@ -5,7 +5,7 @@ title: "Epic Catalog: Sprint S5 (Stage entry and label UX orchestration)"
 status: in-progress
 owner_role: EM
 created_at: 2026-02-24
-updated_at: 2026-02-24
+updated_at: 2026-02-25
 related_issues: [154, 155]
 related_prs: []
 approvals:
@@ -28,6 +28,7 @@ approvals:
 
 ## Эпики Sprint S5
 - Day 1: `docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md`
+- Day 1 PRD: `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md`
 
 ## Критерии успеха Sprint S5 (выжимка)
 - [x] Launch profiles покрывают минимум три сценария (`quick-fix`, `feature`, `new-service`) и имеют понятные guardrails.
