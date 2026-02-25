@@ -31,9 +31,9 @@ func TestDocumentationStageSeeds_UseRoleAwareTemplateRefs(t *testing.T) {
 
 	forbiddenFragments := []string{
 		"docs/templates/",
-		"docs/product/**",
-		"docs/delivery/**",
-		"docs/architecture/**",
+		"docs/product/",
+		"docs/delivery/",
+		"docs/architecture/",
 		"`issue_map`",
 		"`requirements_traceability`",
 	}
