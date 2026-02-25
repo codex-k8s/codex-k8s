@@ -161,15 +161,16 @@ type githubPullRequestRef struct {
 }
 
 type githubPullRequestRecord struct {
-	ID      int64                 `json:"id"`
-	Number  int64                 `json:"number"`
-	Title   string                `json:"title"`
-	HTMLURL string                `json:"html_url"`
-	State   string                `json:"state"`
-	Labels  []githubLabelRecord   `json:"labels"`
-	Head    githubPullRequestHead `json:"head"`
-	User    githubActorRecord     `json:"user"`
-	Base    githubPullRequestBase `json:"base"`
+	ID        int64                 `json:"id"`
+	Number    int64                 `json:"number"`
+	Title     string                `json:"title"`
+	HTMLURL   string                `json:"html_url"`
+	State     string                `json:"state"`
+	UpdatedAt string                `json:"updated_at"`
+	Labels    []githubLabelRecord   `json:"labels"`
+	Head      githubPullRequestHead `json:"head"`
+	User      githubActorRecord     `json:"user"`
+	Base      githubPullRequestBase `json:"base"`
 }
 
 type githubPullRequestHead struct {
