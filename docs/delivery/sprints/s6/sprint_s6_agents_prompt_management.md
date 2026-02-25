@@ -6,7 +6,7 @@ status: in-progress
 owner_role: PM
 created_at: 2026-02-25
 updated_at: 2026-02-25
-related_issues: [184, 185, 187, 189, 195, 197]
+related_issues: [184, 185, 187, 189, 195, 197, 199]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -21,7 +21,7 @@ approvals:
 ## TL;DR
 - Цель спринта: перевести раздел `Configuration -> Agents` из scaffold в управляемый контур продукта с реальными данными, lifecycle шаблонов промптов и аудитом изменений.
 - Базовый As-Is разрыв зафиксирован intake-этапом: UI работает на mock-данных, а staff OpenAPI пока не покрывает `agents/prompt-templates/audit`.
-- На текущий момент chain continuity доведён до `run:plan`: `#184 -> #185 -> #187 -> #189 -> #195 -> #197`.
+- На текущий момент chain continuity доведён до `run:dev`: `#184 -> #185 -> #187 -> #189 -> #195 -> #197 -> #199`.
 
 ## Scope спринта
 ### In scope
@@ -45,7 +45,7 @@ approvals:
 | Architecture (`#189`) | C4 + ADR + boundaries | `sa` | Подтверждены границы и создана issue Design |
 | Design (`#195`) | API/data model/design package | `sa` + `qa` | Подтвержден design пакет и создана issue Plan |
 | Plan (`#197`) | Delivery plan + epics + DoD | `em` + `km` | Подготовлен execution package и issue Dev |
-| Dev | Реализация + PR + docs sync | `dev` | PR готов, review gate пройден |
+| Dev (`#199`) | Реализация + PR + docs sync | `dev` | PR готов, review gate пройден |
 | Doc Audit | Аудит docs/traceability/checklists | `km` + `reviewer` | Закрыт drift и сформирован post-dev improvement backlog |
 
 ## Quality gates (S6 governance)
@@ -53,15 +53,16 @@ approvals:
 | Gate | Что проверяем | Статус |
 |---|---|---|
 | QG-S6-01 Intake completeness | Problem/Brief/Scope/Constraints и AC зафиксированы с анализом фактического As-Is | passed (Issue #184) |
-| QG-S6-02 Stage continuity | Для каждого следующего этапа создана issue без trigger-лейбла с обязательной инструкцией continuity | passed (`#185` -> `#187` -> `#189` -> `#195` -> `#197`) |
+| QG-S6-02 Stage continuity | Для каждого следующего этапа создана issue без trigger-лейбла с обязательной инструкцией continuity | passed (`#185` -> `#187` -> `#189` -> `#195` -> `#197` -> `#199`) |
 | QG-S6-03 Vision baseline | Mission/KPI, границы MVP/Post-MVP и риск-рамка зафиксированы для входа в PRD | passed (`#185`) |
 | QG-S6-04 PRD completeness | Подготовлен PRD-пакет с FR/AC/NFR-draft и user stories | passed (`#187`, PR `#190` merged) |
 | QG-S6-05 Architecture handover | Архитектурный пакет, ADR/альтернативы и design continuity issue сформированы | passed (`#189` -> `#195`) |
 | QG-S6-06 Traceability | Обновлены `issue_map`, `requirements_traceability`, sprint/epic документы | passed |
 | QG-S6-07 Policy compliance | Изменения ограничены markdown без нарушения stage/label policy | passed |
 | QG-S6-08 Design handover | Подготовлен design package и создан follow-up issue `run:plan` | passed (`#195` -> `#197`) |
+| QG-S6-09 Plan handover | Подготовлен execution package `run:dev` (quality-gates + DoD + risks) и создана issue реализации | passed (`#197` -> `#199`) |
 
-## Stage acceptance progress (Intake -> Vision -> PRD -> Arch -> Design)
+## Stage acceptance progress (Intake -> Vision -> PRD -> Arch -> Design -> Plan)
 - [x] Подтверждено, что текущий UI раздел `Agents` работает как scaffold и не подключен к backend (`#184`).
 - [x] Зафиксирован продуктовый масштаб инициативы: настройки агентов + prompt templates + audit/history (`#184`).
 - [x] Зафиксированы vision baseline-решения по mission/KPI и границам MVP/Post-MVP (`#185`).
@@ -69,6 +70,7 @@ approvals:
 - [x] Создана issue `#189` для stage `run:arch` без trigger-лейбла, с обязательной инструкцией создать issue `run:design`.
 - [x] Подготовлен архитектурный пакет (`#189`) и создана issue `#195` для stage `run:design`.
 - [x] Подготовлен design package (`#195`) и создана issue `#197` для stage `run:plan`.
+- [x] Подготовлен execution package (`#197`) и создана issue `#199` для stage `run:dev`.
 
 ## Риски и допущения
 - Риск: смешение scope между настройками агентов, prompt policy и runtime observability может размыть MVP-инкремент.
@@ -77,5 +79,5 @@ approvals:
 - Допущение: существующая модель БД (`agents`, `agent_policies`, `prompt_templates`, `agent_sessions`, `flow_events`) остается базой для архитектурной проработки.
 
 ## Handover в следующий этап
-- Актуальная цепочка stage-issues: `#184 (intake) -> #185 (vision) -> #187 (prd) -> #189 (arch) -> #195 (design) -> #197 (plan)`.
-- Для issue `#197` зафиксировано обязательное правило: после `run:plan` создать issue следующего этапа `run:dev`.
+- Актуальная цепочка stage-issues: `#184 (intake) -> #185 (vision) -> #187 (prd) -> #189 (arch) -> #195 (design) -> #197 (plan) -> #199 (dev)`.
+- Для issue `#199` зафиксировано обязательное правило: после `run:dev` создать issue следующего этапа `run:qa`.
