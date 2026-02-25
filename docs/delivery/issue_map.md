@@ -77,7 +77,7 @@ approvals:
 - Epic catalog: `docs/delivery/epics/s5/epic_s5.md`.
 - Epic docs: `docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md`.
 - PRD docs: `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md`.
-- Факт на 2026-02-25: Intake-пакет для Issue #154 и vision/prd пакет для Issue #155 уточнены acceptance-сценариями, отдельным PRD-артефактом и run:dev декомпозицией; для Issue #159 введён role-aware контур `services.yaml/spec.roleDocTemplates` + prompt envelope для шаблонов артефактов и синхронизированы seed-инструкции `run:prd*`.
+- Факт на 2026-02-25: Intake-пакет для Issue #154 и vision/prd пакет для Issue #155 уточнены acceptance-сценариями, отдельным PRD-артефактом и run:dev декомпозицией; архитектурный этап закрепил ADR-0008 по profile-driven launch/fallback contracts и синхронизировал `docs/architecture/api_contract.md` с FR-053/FR-054; для Issue #159 введён role-aware контур `services.yaml/spec.roleDocTemplates` + prompt envelope для шаблонов артефактов и синхронизированы seed-инструкции `run:prd*`.
 
 ## Нормализованная структура Delivery (Issue #112)
 - Sprint index: `docs/delivery/sprints/README.md`.
