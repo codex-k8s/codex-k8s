@@ -2,7 +2,7 @@
 doc_id: ADR-0008
 type: adr
 title: "Profile-driven stage launch and deterministic next-step contract"
-status: proposed
+status: accepted
 owner_role: SA
 created_at: 2026-02-25
 updated_at: 2026-02-25
@@ -12,8 +12,10 @@ supersedes: []
 superseded_by: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-02-25-issue-155-arch-adr"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-25
 ---
 
 # ADR-0008: Profile-driven stage launch and deterministic next-step contract

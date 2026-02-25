@@ -105,5 +105,5 @@ approvals:
 
 ## Актуализация по Issue #155 (`run:plan`, 2026-02-25)
 - Для FR-053/FR-054 добавлены execution-governance артефакты Sprint S5 (`epic_s5.md`, обновлённый sprint-plan, issue-map sync).
-- Зафиксированы quality-gates QG-01..QG-05 и критерии завершения handover в `run:dev`.
-- Реестр `BLK-155-*`, `RSK-155-*`, `OD-155-*` синхронизирован между `sprint_s5`, `epic_s5` и Day1 epic как owner decision package.
+- Зафиксированы quality-gates QG-01..QG-05 и критерии завершения handover в `run:dev`; QG-05 закрыт после Owner review в PR #166.
+- Реестр `BLK-155-*`, `RSK-155-*`, `OD-155-*` синхронизирован между `sprint_s5`, `epic_s5` и Day1 epic; `BLK-155-01..02` закрыты, `OD-155-01..03` утверждены (2026-02-25).

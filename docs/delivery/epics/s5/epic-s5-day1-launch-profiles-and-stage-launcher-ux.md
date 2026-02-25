@@ -10,8 +10,10 @@ related_issues: [154, 155]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-02-24-issue-155-day1-vision-prd"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-25
 ---
 
 # Epic S5 Day 1: Launch profiles and deterministic next-step actions (Issues #154/#155)
@@ -84,7 +86,7 @@ approvals:
 
 ### 4. Актуальность fallback-синтаксиса (`gh`)
 - Синтаксис `gh issue edit` / `gh pr edit` для `--add-label` и `--remove-label` сверен с актуальным manual GitHub CLI (Context7, источник `/websites/cli_github_manual`).
-- Для Sprint S5 принимаем эти флаги как канонический fallback-контракт до отдельного owner-решения.
+- Для Sprint S5 эти флаги зафиксированы как канонический fallback-контракт (решение Owner в PR #166, 2026-02-25).
 
 ## Stories (handover в `run:dev`)
 - Story-1: Profile Registry + escalation resolver.
@@ -137,7 +139,7 @@ approvals:
 - [x] Подтвержден канонический набор launch profiles и правила эскалации.
 - [x] Подтвержден формат next-step action-карт (`primary deep-link + fallback command`).
 - [x] Подготовлены риски и продуктовые допущения для `run:dev`.
-- [ ] Получен Owner approval vision/prd пакета для запуска `run:dev`.
+- [x] Получен Owner approval vision/prd пакета для запуска `run:dev`.
 
 ## Открытые риски
 - Риск UX-перегрузки: слишком много действий в service-comment снижает читаемость.
@@ -149,11 +151,16 @@ approvals:
 
 | Тип | ID | Суть | Что требуется от Owner | Статус |
 |---|---|---|---|---|
-| blocker | BLK-155-01 | Финальное решение по запуску `run:dev` после review этого пакета | Approve/no-go с явным комментарием | open |
-| blocker | BLK-155-02 | Не зафиксирована единая политика fast-track `design -> dev` | Утвердить allowed/forbidden и канонический fallback | open |
-| owner-decision | OD-155-01 | Fast-track `design -> dev` как опциональный путь | Зафиксировать в policy docs и service-message contract | pending |
-| owner-decision | OD-155-02 | Ambiguity hard-stop (`0` или `>1` stage labels) | Подтвердить обязательный `need:input` без best-guess | pending |
-| owner-decision | OD-155-03 | Единый review-gate для Issue + PR | Подтвердить обязательную синхронизацию `state:in-review` | pending |
+| blocker | BLK-155-01 | Финальное решение по запуску `run:dev` после review этого пакета | Запуск разрешён Owner (`Запуск разрешаю`, PR #166, 2026-02-25) | closed |
+| blocker | BLK-155-02 | Требовалась фиксация единой политики fast-track `design -> dev` | Политика зафиксирована как OD-155-01 с guardrails и каноническим fallback | closed |
+| owner-decision | OD-155-01 | Fast-track `design -> dev` как опциональный путь | Утверждено: fast-track допускается как дополнительный путь вместе с canonical `design -> plan`; обязательны `pre-check` и audit trail | approved |
+| owner-decision | OD-155-02 | Ambiguity hard-stop (`0` или `>1` stage labels) | Утверждено: при неоднозначности обязателен `need:input`, best-guess переходы запрещены | approved |
+| owner-decision | OD-155-03 | Единый review-gate для Issue + PR | Утверждено: обязательная синхронизация `state:in-review` на Issue и PR | approved |
+
+## Зафиксированные Owner-решения (2026-02-25)
+- `OD-155-01`: fast-track `design -> dev` остаётся optional action и публикуется только вместе с canonical `design -> plan`; ручной fallback выполняется строго как `pre-check -> transition`.
+- `OD-155-02`: при ambiguity stage (`0` или `>1` labels `run:*`) transition блокируется, а service-comment публикует только remediation с `need:input`.
+- `OD-155-03`: review-gate после формирования PR обязан устанавливать `state:in-review` на PR и Issue одновременно.
 
 ## Продуктовые допущения
 - Launch profiles не заменяют канонический stage-pipeline, а задают управляемые “траектории входа”.
@@ -175,4 +182,4 @@ approvals:
 - [x] Архитектурный контракт и runtime impact/migration path зафиксированы в ADR-0008.
 - [x] Канонический API-contract (`docs/architecture/api_contract.md`) синхронизирован с FR-053/FR-054.
 - [x] Риски и продуктовые допущения отражены в Day1 epic.
-- [ ] Owner review/approve в этом PR.
+- [x] Owner review/approve в этом PR.

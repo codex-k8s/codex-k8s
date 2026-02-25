@@ -10,8 +10,10 @@ related_issues: [154, 155]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-02-24-issue-155-epic-catalog"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-25
 ---
 
 # Epic Catalog: Sprint S5 (Stage entry and label UX orchestration)
@@ -36,18 +38,18 @@ approvals:
 | Контур | Содержание | Статус |
 |---|---|---|
 | План исполнения | Декомпозиция I1..I5 (`P0/P1`) и role handover (`dev/qa/sre/km`) | ready |
-| Quality-gates | QG-01..QG-05 (planning, contract, governance, traceability, review readiness) | QG-01..QG-04 passed, QG-05 pending |
+| Quality-gates | QG-01..QG-05 (planning, contract, governance, traceability, review readiness) | QG-01..QG-05 passed |
 | Acceptance | AC-01..AC-06 и `run:plan` acceptance criteria в Sprint S5 plan | ready |
 | Traceability | Синхронизация `issue_map` и `requirements_traceability` под FR-053/FR-054 | ready |
 
 ## Blockers, risks и owner decisions
-- Blockers: `BLK-155-01` (Owner approval), `BLK-155-02` (решение по fast-track `design -> dev`).
+- Blockers: `BLK-155-01`, `BLK-155-02` закрыты после Owner review в PR #166.
 - Risks: `RSK-155-01` (comment overload), `RSK-155-02` (manual fallback без pre-check).
-- Owner decisions (pending): `OD-155-01..OD-155-03` по fast-track, ambiguity hard-stop и обязательному dual review-gate.
+- Owner decisions: `OD-155-01..OD-155-03` утверждены (fast-track policy с guardrails, ambiguity hard-stop, dual review-gate).
 
 ## Критерии успеха Sprint S5 (выжимка)
 - [x] Launch profiles покрывают минимум три сценария (`quick-fix`, `feature`, `new-service`) и имеют понятные guardrails.
 - [x] Service-message next-step actions дают рабочий primary + fallback path.
 - [x] Для Owner устранён ручной “по памяти” выбор порядка label-переходов.
 - [x] Подготовлен owner-facing пакет quality-gates и критериев завершения перед `run:dev`.
-- [ ] Owner approval на запуск `run:dev` по Issue #155.
+- [x] Owner approval на запуск `run:dev` по Issue #155.
