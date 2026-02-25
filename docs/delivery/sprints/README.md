@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-24
 updated_at: 2026-02-25
-related_issues: [112, 154, 184, 185]
+related_issues: [112, 154, 184, 185, 187, 189]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -30,7 +30,7 @@ approvals:
 | S3 | `docs/delivery/sprints/s3/sprint_s3_mvp_completion.md` | `docs/delivery/epics/s3/epic_s3.md` | in-progress | Финальный e2e и closeout выполняются по Day20. |
 | S4 | `docs/delivery/sprints/s4/sprint_s4_multi_repo_federation.md` | `docs/delivery/epics/s4/epic_s4.md` | completed (day1) | Execution foundation по multi-repo зафиксирован. |
 | S5 | `docs/delivery/sprints/s5/sprint_s5_stage_entry_and_label_ux.md` | `docs/delivery/epics/s5/epic_s5.md` | in-progress | UX-упрощение stage/label запуска и deterministic next-step actions (Issues #154/#155/#170/#171). |
-| S6 | `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md` | `docs/delivery/epics/s6/epic_s6.md` | in-progress | Полный stage-cycle по разделу `Agents` и lifecycle prompt templates (Issue #184). |
+| S6 | `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md` | `docs/delivery/epics/s6/epic_s6.md` | in-progress | Day1 intake + Day3 PRD завершены документарно; цепочка `#184 -> #185 -> #187 -> #189` подготовлена для `run:arch`. |
 
 ## Правила структуры
 - Sprint-plan: `docs/delivery/sprints/s<номер>/sprint_s<номер>_<name>.md`.

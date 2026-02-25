@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-25
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -111,6 +111,16 @@ approvals:
 - Создана stage-continuity issue `#185` (`run:vision`) с обязательной инструкцией сформировать issue следующего этапа (`run:prd`), чтобы сохранить последовательную декомпозицию до `run:doc-audit`.
 - Зафиксировано продуктовое расхождение As-Is: UI-раздел `Agents` и prompt templates находится в scaffold-состоянии, при этом contract-first staff API пока не содержит endpoint-ов для agents/templates/audit lifecycle.
 - Зафиксирован stage-handover baseline для полного цикла до `run:doc-audit` и обязательное правило создания follow-up issue на каждом следующем stage до `run:plan` включительно.
+
+## Актуализация по Issue #187 (`run:prd`, 2026-02-25)
+- Для FR-009/FR-015/FR-030/FR-033/FR-038 и NFR-010/NFR-015/NFR-018 добавлен PRD traceability пакет Sprint S6:
+  `docs/delivery/epics/s6/epic-s6-day3-agents-prompts-prd.md`,
+  `docs/delivery/epics/s6/prd-s6-day3-agents-prompts-lifecycle.md`,
+  `docs/delivery/epics/s6/epic_s6.md`,
+  `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md`.
+- Формализованы требования и критерии приемки для контуров `agents settings`, `prompt templates lifecycle`, `history/audit` в формате FR/AC/NFR-draft.
+- Подтверждена трассируемость stage-цепочки `#184 -> #185 -> #187` и создана follow-up issue `#189` (`run:arch`) с обязательной инструкцией создать issue `run:design` по завершении архитектурного этапа.
+- Зафиксирован policy-safe scope этапа: markdown-only изменения без обновления code/runtime артефактов.
 
 ## Актуализация по Issue #155 (`run:plan`, 2026-02-25)
 - Для FR-053/FR-054 добавлены execution-governance артефакты Sprint S5 (`epic_s5.md`, обновлённый sprint-plan, issue-map sync).
