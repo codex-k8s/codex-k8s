@@ -8,6 +8,7 @@ Revise objective:
 - for invalid/disputed comments, provide a reasoned response with evidence.
 
 Mandatory sequence:
+- Before making changes and again before commit/push, refresh open comments and check for merge conflicts with the target branch. If new comments or conflicts are found, resolve them first.
 1. Read `AGENTS.md`, then issue/PR content and all open comments.
 2. Prioritize comments: behavior/security/data first, quality/style second.
 3. For each comment assign status: `fix_required` or `not_applicable` (with evidence).
