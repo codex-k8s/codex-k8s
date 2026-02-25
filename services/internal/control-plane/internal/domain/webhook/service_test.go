@@ -1247,6 +1247,96 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithoutRunLabel_I
 	if runStatus.warningCommentCalls[0].ReasonCode != runstatusdomain.TriggerWarningReasonPullRequestReviewStageNotResolved {
 		t.Fatalf("unexpected warning reason: %q", runStatus.warningCommentCalls[0].ReasonCode)
 	}
+	if len(runStatus.needInputLabelCalls) != 1 {
+		t.Fatalf("expected one need:input remediation call, got %d", len(runStatus.needInputLabelCalls))
+	}
+	if got := runStatus.needInputLabelCalls[0]; got.ThreadKind != "pull_request" || got.ThreadNumber != 200 {
+		t.Fatalf("unexpected need:input remediation target: %#v", got)
+	}
+}
+
+func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WhenNeedInputLabelFails_ReturnsErrorAndSkipsWarningComment(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	runStatus := &inMemoryRunStatusService{
+		ensureNeedInputLabelErr: fmt.Errorf("github label api is unavailable"),
+	}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {
+				ID:          "user-1",
+				GitHubLogin: "member",
+			},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{
+			"project-1|user-1": "read_write",
+		},
+	}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
+		RunStatus:  runStatus,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"submitted",
+		"review":{"state":"changes_requested"},
+		"pull_request":{
+			"id":501,
+			"number":200,
+			"title":"WIP feature",
+			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/200",
+			"state":"open",
+			"head":{"ref":"codex/issue-13"},
+			"user":{"id":55,"login":"member"}
+		},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-pr-review-need-input-failure",
+		DeliveryID:    "delivery-pr-review-need-input-failure",
+		EventType:     string(webhookdomain.GitHubEventPullRequestReview),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err == nil {
+		t.Fatalf("expected ingest to fail when need:input remediation cannot be applied, got result=%+v", got)
+	}
+	if !strings.Contains(err.Error(), "ensure need:input label before warning comment") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got.RunID != "" || got.Status != "" {
+		t.Fatalf("expected empty ingest result on remediation error, got %+v", got)
+	}
+	if len(runStatus.needInputLabelCalls) != 1 {
+		t.Fatalf("expected one need:input remediation attempt, got %d", len(runStatus.needInputLabelCalls))
+	}
+	if len(runStatus.warningCommentCalls) != 0 {
+		t.Fatalf("expected warning comment to be skipped when need:input remediation fails, got %d calls", len(runStatus.warningCommentCalls))
+	}
+	if len(events.items) == 0 {
+		t.Fatalf("expected ingest to keep baseline audit trail even on remediation failure")
+	}
 }
 
 func TestIngestGitHubWebhook_PullRequestLabeledNeedReviewer_CreatesReviewerRun(t *testing.T) {
@@ -2062,6 +2152,12 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithMultipleStage
 	if runStatus.warningCommentCalls[0].ReasonCode != runstatusdomain.TriggerWarningReasonPullRequestReviewStageAmbiguous {
 		t.Fatalf("unexpected warning reason: %q", runStatus.warningCommentCalls[0].ReasonCode)
 	}
+	if len(runStatus.needInputLabelCalls) != 1 {
+		t.Fatalf("expected one need:input remediation call, got %d", len(runStatus.needInputLabelCalls))
+	}
+	if got := runStatus.needInputLabelCalls[0]; got.ThreadKind != "pull_request" || got.ThreadNumber != 202 {
+		t.Fatalf("unexpected need:input remediation target: %#v", got)
+	}
 }
 
 func TestIngestGitHubWebhook_IssueRunDev_DeniesUnknownSender(t *testing.T) {
@@ -2267,6 +2363,8 @@ type inMemoryRunStatusService struct {
 	conflictCommentCalls     int
 	lastConflictComment      runstatusdomain.TriggerLabelConflictCommentParams
 	warningCommentCalls      []runstatusdomain.TriggerWarningCommentParams
+	needInputLabelCalls      []runstatusdomain.EnsureNeedInputLabelParams
+	ensureNeedInputLabelErr  error
 	statusCommentUpsertCalls []runstatusdomain.UpsertCommentParams
 }
 
@@ -2304,6 +2402,19 @@ func (s *inMemoryRunStatusService) PostTriggerWarningComment(_ context.Context, 
 	return runstatusdomain.TriggerWarningCommentResult{
 		CommentID:  int64(len(s.warningCommentCalls)),
 		CommentURL: "https://example.invalid/warning",
+	}, nil
+}
+
+func (s *inMemoryRunStatusService) EnsureNeedInputLabel(_ context.Context, params runstatusdomain.EnsureNeedInputLabelParams) (runstatusdomain.EnsureNeedInputLabelResult, error) {
+	s.needInputLabelCalls = append(s.needInputLabelCalls, params)
+	if s.ensureNeedInputLabelErr != nil {
+		return runstatusdomain.EnsureNeedInputLabelResult{}, s.ensureNeedInputLabelErr
+	}
+	return runstatusdomain.EnsureNeedInputLabelResult{
+		ThreadKind:    params.ThreadKind,
+		ThreadNumber:  params.ThreadNumber,
+		Label:         "need:input",
+		AlreadyExists: false,
 	}, nil
 }
 

@@ -43,7 +43,7 @@ approvals:
 | День | Эпик | Priority | Документ | Статус |
 |---|---|---|---|---|
 | Day 1 | Launch profiles и deterministic next-step actions | P0 | `docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md` + `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md` + `docs/architecture/adr/ADR-0008-profile-driven-stage-launch-and-next-step-contract.md` | in-review (`run:plan`, Issue #155) |
-| Day 2 | Single-epic execution package для реализации FR-053/FR-054 | P0 | `docs/delivery/epics/s5/epic-s5-day2-launch-profiles-dev-execution.md` + GitHub issue #171 | in-review (`run:plan`, Issue #170) |
+| Day 2 | Single-epic execution package для реализации FR-053/FR-054 | P0 | `docs/delivery/epics/s5/epic-s5-day2-launch-profiles-dev-execution.md` + GitHub issue #171 | in-progress (`run:dev`, Issue #171) |
 
 ## Daily gate (обязательно)
 - Любой переход stage должен иметь audit запись и детерминированный fallback.

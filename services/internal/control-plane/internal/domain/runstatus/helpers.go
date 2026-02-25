@@ -138,6 +138,30 @@ func mergeState(base commentState, update commentState) commentState {
 	if strings.TrimSpace(update.RunStatus) != "" {
 		base.RunStatus = strings.TrimSpace(update.RunStatus)
 	}
+	if strings.TrimSpace(update.LaunchProfile) != "" {
+		base.LaunchProfile = strings.TrimSpace(update.LaunchProfile)
+	}
+	if strings.TrimSpace(update.StagePath) != "" {
+		base.StagePath = strings.TrimSpace(update.StagePath)
+	}
+	if strings.TrimSpace(update.PrimaryAction) != "" {
+		base.PrimaryAction = strings.TrimSpace(update.PrimaryAction)
+	}
+	if strings.TrimSpace(update.FallbackAction) != "" {
+		base.FallbackAction = strings.TrimSpace(update.FallbackAction)
+	}
+	if strings.TrimSpace(update.GuardrailNote) != "" {
+		base.GuardrailNote = strings.TrimSpace(update.GuardrailNote)
+	}
+	if strings.TrimSpace(update.ReviseActionLabel) != "" {
+		base.ReviseActionLabel = strings.TrimSpace(update.ReviseActionLabel)
+	}
+	if strings.TrimSpace(update.NextStageActionLabel) != "" {
+		base.NextStageActionLabel = strings.TrimSpace(update.NextStageActionLabel)
+	}
+	if strings.TrimSpace(update.AlternativeActionLabel) != "" {
+		base.AlternativeActionLabel = strings.TrimSpace(update.AlternativeActionLabel)
+	}
 	if strings.TrimSpace(update.CodexAuthVerificationURL) != "" {
 		base.CodexAuthVerificationURL = strings.TrimSpace(update.CodexAuthVerificationURL)
 	}

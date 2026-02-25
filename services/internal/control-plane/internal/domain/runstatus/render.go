@@ -48,6 +48,11 @@ type commentTemplateContext struct {
 	NextStageActionURL       string
 	AlternativeActionLabel   string
 	AlternativeActionURL     string
+	ActionCardLaunchProfile  string
+	ActionCardStagePath      string
+	ActionCardPrimaryAction  string
+	ActionCardFallbackAction string
+	ActionCardGuardrailNote  string
 	RecentAgentStatuses      []recentAgentStatus
 
 	ManagementURL string
@@ -66,6 +71,7 @@ type commentTemplateContext struct {
 	ShowNamespaceAction    bool
 	ShowRuntimePreparation bool
 	ShowActionCards        bool
+	ShowActionCardContract bool
 
 	CreatedReached              bool
 	PreparingRuntimeReached     bool
@@ -112,12 +118,33 @@ func buildCommentTemplateContext(state commentState, managementURL string, publi
 	trimmedPullRequestURL := strings.TrimSpace(state.PullRequestURL)
 	trimmedModel := strings.TrimSpace(state.Model)
 	trimmedReasoningEffort := strings.TrimSpace(state.ReasoningEffort)
+	trimmedActionCardLaunchProfile := strings.TrimSpace(state.LaunchProfile)
+	trimmedActionCardStagePath := strings.TrimSpace(state.StagePath)
+	trimmedActionCardPrimaryAction := strings.TrimSpace(state.PrimaryAction)
+	trimmedActionCardFallbackAction := strings.TrimSpace(state.FallbackAction)
+	trimmedActionCardGuardrail := strings.TrimSpace(state.GuardrailNote)
+	trimmedReviseActionLabel := strings.TrimSpace(state.ReviseActionLabel)
+	trimmedNextStageActionLabel := strings.TrimSpace(state.NextStageActionLabel)
+	trimmedAlternativeActionLabel := strings.TrimSpace(state.AlternativeActionLabel)
 	normalizedRunStatus := strings.ToLower(strings.TrimSpace(state.RunStatus))
 	normalizedRuntimeMode := strings.ToLower(strings.TrimSpace(state.RuntimeMode))
 	phaseLevel := phaseOrder(state.Phase)
-	reviseLabel, nextStageLabel, alternativeLabel := resolveStageActionLabels(trimmedTriggerKind)
+	reviseLabel := trimmedReviseActionLabel
+	nextStageLabel := trimmedNextStageActionLabel
+	alternativeLabel := trimmedAlternativeActionLabel
+	if reviseLabel == "" && nextStageLabel == "" && alternativeLabel == "" {
+		reviseLabel, nextStageLabel, alternativeLabel = resolveStageActionLabels(trimmedTriggerKind)
+	}
+	if isBlockedActionCard(trimmedActionCardGuardrail) {
+		reviseLabel = ""
+		nextStageLabel = ""
+		alternativeLabel = ""
+	}
 	reviseActionURL := buildStageTransitionActionURL(publicBaseURL, trimmedRepositoryFullName, state.IssueNumber, reviseLabel, trimmedIssueURL)
-	nextStageActionURL := buildStageTransitionActionURL(publicBaseURL, trimmedRepositoryFullName, state.IssueNumber, nextStageLabel, trimmedIssueURL)
+	nextStageActionURL := strings.TrimSpace(state.PrimaryAction)
+	if nextStageActionURL == "" {
+		nextStageActionURL = buildStageTransitionActionURL(publicBaseURL, trimmedRepositoryFullName, state.IssueNumber, nextStageLabel, trimmedIssueURL)
+	}
 	alternativeActionURL := buildStageTransitionActionURL(publicBaseURL, trimmedRepositoryFullName, state.IssueNumber, alternativeLabel, trimmedIssueURL)
 
 	return commentTemplateContext{
@@ -141,6 +168,11 @@ func buildCommentTemplateContext(state commentState, managementURL string, publi
 		NextStageActionURL:       nextStageActionURL,
 		AlternativeActionLabel:   alternativeLabel,
 		AlternativeActionURL:     alternativeActionURL,
+		ActionCardLaunchProfile:  trimmedActionCardLaunchProfile,
+		ActionCardStagePath:      trimmedActionCardStagePath,
+		ActionCardPrimaryAction:  trimmedActionCardPrimaryAction,
+		ActionCardFallbackAction: trimmedActionCardFallbackAction,
+		ActionCardGuardrailNote:  trimmedActionCardGuardrail,
 		RecentAgentStatuses:      recentStatuses,
 
 		ManagementURL: managementURL,
@@ -159,6 +191,7 @@ func buildCommentTemplateContext(state commentState, managementURL string, publi
 		ShowNamespaceAction:    trimmedNamespace != "" && phaseLevel >= phaseOrder(PhaseNamespaceDeleted),
 		ShowRuntimePreparation: normalizedRuntimeMode == runtimeModeFullEnv,
 		ShowActionCards:        reviseLabel != "" || nextStageLabel != "" || alternativeLabel != "",
+		ShowActionCardContract: trimmedActionCardLaunchProfile != "" || trimmedActionCardStagePath != "" || trimmedActionCardPrimaryAction != "" || trimmedActionCardFallbackAction != "" || trimmedActionCardGuardrail != "",
 
 		CreatedReached:              phaseLevel >= phaseOrder(PhaseCreated),
 		PreparingRuntimeReached:     phaseLevel >= phaseOrder(PhasePreparingRuntime),

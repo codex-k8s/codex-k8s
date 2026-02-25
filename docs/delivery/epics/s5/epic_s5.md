@@ -21,7 +21,7 @@ approvals:
 ## TL;DR
 - Sprint S5 фокусируется на управляемом UX запуска stage-процессов и снижении ручных ошибок в label-flow.
 - Базовые deliverables: Day1 vision/prd/adr package + Day2 single-epic execution package для реализации.
-- Текущий статус: Issue #155 закрыл Day1 governance baseline, Issue #170 зафиксировал Day2 handover и создал implementation issue #171.
+- Текущий статус: Issue #155 закрыл Day1 governance baseline, Issue #170 зафиксировал Day2 handover, Issue #171 находится в `run:dev` реализации.
 
 ## Контекст
 - Product source of truth: `docs/product/requirements_machine_driven.md` (FR-053, FR-054).
