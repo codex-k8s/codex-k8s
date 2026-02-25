@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - Для Issue #185 сформирован vision-пакет: mission, целевые outcomes, метрики успеха, MVP/Post-MVP границы, риск-рамка.
 - Зафиксирован критерий готовности к `run:prd`: PRD должен детализировать FR/AC/NFR для трёх контуров (`agent settings`, `prompt templates lifecycle`, `audit/history`) без расширения baseline label taxonomy.
-- Создана follow-up issue на следующий этап `run:prd`: #187 (с обязательной инструкцией создать issue на `run:arch` после завершения PRD).
+- Создана follow-up issue на следующий этап `run:prd`: #187 (без trigger-лейбла; лейбл ставит Owner) с обязательной инструкцией создать issue на `run:arch` после завершения PRD.
 
 ## Priority
 - `P0`.
@@ -100,7 +100,7 @@ approvals:
 - [x] Метрики успеха и guardrails формализованы (product + operational).
 - [x] Границы MVP/Post-MVP и стоп-факторы зафиксированы.
 - [x] Риски и допущения оформлены для handover в PRD.
-- [x] Создана отдельная issue следующего этапа `run:prd` (#187).
+- [x] Создана отдельная issue следующего этапа `run:prd` (#187) без trigger-лейбла.
 
 ## Acceptance criteria (Issue #185)
 - [x] Утвержден vision-документ с четкой проблемой, целевой аудиторией и expected value.
@@ -111,7 +111,8 @@ approvals:
 ## Handover в следующий этап
 - Следующий stage: `run:prd`.
 - Follow-up issue: #187.
-- Обязательное условие для #187: в конце PRD-stage создать issue для `run:arch` с ссылками на #184, #185 и #187, а также с инструкцией создать issue следующего этапа (`run:design`) после закрытия `run:arch`.
+- Trigger-лейбл `run:prd` на issue #187 ставит Owner.
+- Обязательное условие для #187: в конце PRD-stage создать issue для stage `run:arch` без trigger-лейбла с ссылками на #184, #185 и #187, а также с инструкцией создать issue следующего этапа (`run:design`) после закрытия `run:arch`.
 
 ## Связанные документы
 - `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md`
