@@ -7,6 +7,92 @@ type Project struct {
 	Role string `json:"role"`
 }
 
+type AgentSettings struct {
+	RuntimeMode       string `json:"runtime_mode"`
+	TimeoutSeconds    int32  `json:"timeout_seconds"`
+	MaxRetryCount     int32  `json:"max_retry_count"`
+	PromptLocale      string `json:"prompt_locale"`
+	ApprovalsRequired bool   `json:"approvals_required"`
+}
+
+type Agent struct {
+	ID              string        `json:"id"`
+	AgentKey        string        `json:"agent_key"`
+	RoleKind        string        `json:"role_kind"`
+	ProjectID       *string       `json:"project_id"`
+	Name            string        `json:"name"`
+	IsActive        bool          `json:"is_active"`
+	Settings        AgentSettings `json:"settings"`
+	SettingsVersion int32         `json:"settings_version"`
+}
+
+type PromptTemplateKey struct {
+	TemplateKey   string  `json:"template_key"`
+	Scope         string  `json:"scope"`
+	ProjectID     *string `json:"project_id"`
+	Role          string  `json:"role"`
+	Kind          string  `json:"kind"`
+	Locale        string  `json:"locale"`
+	ActiveVersion int32   `json:"active_version"`
+	UpdatedAt     string  `json:"updated_at"`
+}
+
+type PromptTemplateVersion struct {
+	TemplateKey       string  `json:"template_key"`
+	Version           int32   `json:"version"`
+	Status            string  `json:"status"`
+	Source            string  `json:"source"`
+	Checksum          string  `json:"checksum"`
+	BodyMarkdown      string  `json:"body_markdown"`
+	ChangeReason      *string `json:"change_reason"`
+	SupersedesVersion *int32  `json:"supersedes_version"`
+	UpdatedBy         string  `json:"updated_by"`
+	UpdatedAt         string  `json:"updated_at"`
+	ActivatedAt       *string `json:"activated_at"`
+}
+
+type PromptTemplateSeedSyncItem struct {
+	TemplateKey string  `json:"template_key"`
+	Action      string  `json:"action"`
+	Checksum    *string `json:"checksum"`
+	Reason      *string `json:"reason"`
+}
+
+type PromptTemplateSeedSyncResponse struct {
+	CreatedCount int32                        `json:"created_count"`
+	UpdatedCount int32                        `json:"updated_count"`
+	SkippedCount int32                        `json:"skipped_count"`
+	Items        []PromptTemplateSeedSyncItem `json:"items"`
+}
+
+type PromptTemplateDiffResponse struct {
+	TemplateKey      string `json:"template_key"`
+	FromVersion      int32  `json:"from_version"`
+	ToVersion        int32  `json:"to_version"`
+	FromBodyMarkdown string `json:"from_body_markdown"`
+	ToBodyMarkdown   string `json:"to_body_markdown"`
+}
+
+type PreviewPromptTemplateResponse struct {
+	TemplateKey  string `json:"template_key"`
+	Version      int32  `json:"version"`
+	Source       string `json:"source"`
+	Checksum     string `json:"checksum"`
+	BodyMarkdown string `json:"body_markdown"`
+}
+
+type PromptTemplateAuditEvent struct {
+	ID            int64   `json:"id"`
+	CorrelationID string  `json:"correlation_id"`
+	ProjectID     *string `json:"project_id"`
+	TemplateKey   *string `json:"template_key"`
+	Version       *int32  `json:"version"`
+	ActorID       *string `json:"actor_id"`
+	EventType     string  `json:"event_type"`
+	PayloadJSON   string  `json:"payload_json"`
+	CreatedAt     string  `json:"created_at"`
+}
+
 type Run struct {
 	ID              string  `json:"id"`
 	CorrelationID   string  `json:"correlation_id"`

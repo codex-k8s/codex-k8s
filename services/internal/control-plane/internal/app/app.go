@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -46,6 +47,7 @@ import (
 	projectdatabaserepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projectdatabase"
 	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projectmember"
 	projecttokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projecttoken"
+	prompttemplaterepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/prompttemplate"
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/repocfg"
 	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/runtimedeploytask"
 	runtimeerrorrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/runtimeerror"
@@ -88,6 +90,7 @@ func Run() error {
 	users := userrepo.NewRepository(pgxPool)
 	projects := projectrepo.NewRepository(pgxPool)
 	members := projectmemberrepo.NewRepository(pgxPool)
+	promptTemplates := prompttemplaterepo.NewRepository(pgxPool)
 	runs := staffrunrepo.NewRepository(pgxPool)
 	repos := repocfgrepo.NewRepository(pgxPool)
 	feedback := learningfeedbackrepo.NewRepository(pgxPool)
@@ -321,6 +324,7 @@ func Run() error {
 	}
 	staffService := staff.NewService(staff.Config{
 		LearningModeDefault: learningDefault,
+		PromptSeedsDir:      filepath.Join(cfg.RepositoryRoot, "services/jobs/agent-runner/internal/runner/promptseeds"),
 		WebhookSpec: repoprovider.WebhookSpec{
 			URL:    webhookURL,
 			Secret: cfg.GitHubWebhookSecret,
@@ -328,7 +332,7 @@ func Run() error {
 		},
 		ProtectedProjectIDs:    bootstrapSeed.ProtectedProjectIDs,
 		ProtectedRepositoryIDs: bootstrapSeed.ProtectedRepositoryIDs,
-	}, users, projects, members, repos, projectTokens, configEntries, feedback, runs, runtimeDeployTasks, runtimeErrors, registryImagesService, k8sClient, tokenCrypto, platformTokens, githubRepoProvider, githubMgmtClient, runStatusService)
+	}, users, projects, members, agents, repos, promptTemplates, projectTokens, configEntries, feedback, runs, runtimeDeployTasks, runtimeErrors, registryImagesService, k8sClient, tokenCrypto, platformTokens, githubRepoProvider, githubMgmtClient, runStatusService)
 
 	// Ensure bootstrap users exist so that the first login can be matched by email.
 	if _, err := users.EnsureOwner(runCtx, cfg.BootstrapOwnerEmail); err != nil {

@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-25
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -158,6 +158,20 @@ approvals:
 - Сформирован реестр blockers/risks/owner decisions для handover в реализацию без выхода за архитектурные границы Day5 design package.
 - Создана follow-up issue `#199` для stage `run:dev` без trigger-лейбла с обязательной continuity-инструкцией создать issue `run:qa` после завершения реализации.
 - Через Context7 (`/websites/cli_github_manual`) подтверждён актуальный синтаксис `gh issue/pr` команд для fallback/PR-flow; новые внешние зависимости не требуются.
+
+## Актуализация по Issue #199 (`run:dev`, 2026-02-25)
+- Для FR-009/FR-015/FR-030/FR-033/FR-038 и NFR-010/NFR-015/NFR-018 реализован execution-пакет:
+  - contract-first расширение `services/external/api-gateway/api/server/api.yaml` и `proto/codexk8s/controlplane/v1/controlplane.proto`;
+  - доменные use-cases/control-plane transport для `agents/templates/audit`;
+  - миграция `prompt_templates` + `agents.settings/settings_version`;
+  - frontend `Agents` переведён с scaffold на typed API flow (list/details/settings/diff/preview/history).
+- Собрано regression evidence:
+  - `go test ./services/internal/control-plane/...`
+  - `go test ./services/external/api-gateway/...`
+  - `npm run build` (`services/staff/web-console`)
+  - `make lint-go`
+  - `make dupl-go` (зафиксированы pre-existing дубли вне scope текущих правок).
+- Создана follow-up issue `#201` для stage `run:qa` с обязательной continuity-инструкцией по созданию issue `run:release` после завершения QA.
 
 ## Актуализация по Issue #155 (`run:plan`, 2026-02-25)
 - Для FR-053/FR-054 добавлены execution-governance артефакты Sprint S5 (`epic_s5.md`, обновлённый sprint-plan, issue-map sync).

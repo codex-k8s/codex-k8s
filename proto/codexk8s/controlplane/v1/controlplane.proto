@@ -82,6 +82,189 @@ message DeleteProjectRequest {
   string project_id = 2;
 }
 
+message AgentSettings {
+  string runtime_mode = 1;
+  int32 timeout_seconds = 2;
+  int32 max_retry_count = 3;
+  string prompt_locale = 4;
+  bool approvals_required = 5;
+}
+
+message Agent {
+  string id = 1;
+  string agent_key = 2;
+  string role_kind = 3;
+  optional string project_id = 4;
+  string name = 5;
+  bool is_active = 6;
+  AgentSettings settings = 7;
+  int32 settings_version = 8;
+}
+
+message ListAgentsRequest {
+  Principal principal = 1;
+  int32 limit = 2;
+}
+
+message ListAgentsResponse {
+  repeated Agent items = 1;
+}
+
+message GetAgentRequest {
+  Principal principal = 1;
+  string agent_id = 2;
+}
+
+message UpdateAgentSettingsRequest {
+  Principal principal = 1;
+  string agent_id = 2;
+  int32 expected_version = 3;
+  AgentSettings settings = 4;
+}
+
+message PromptTemplateKey {
+  string template_key = 1;
+  string scope = 2;
+  optional string project_id = 3;
+  string role = 4;
+  string kind = 5;
+  string locale = 6;
+  int32 active_version = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message ListPromptTemplateKeysRequest {
+  Principal principal = 1;
+  int32 limit = 2;
+  optional string scope = 3;
+  optional string project_id = 4;
+  optional string role = 5;
+  optional string kind = 6;
+  optional string locale = 7;
+}
+
+message ListPromptTemplateKeysResponse {
+  repeated PromptTemplateKey items = 1;
+}
+
+message PromptTemplateVersion {
+  string template_key = 1;
+  int32 version = 2;
+  string status = 3;
+  string source = 4;
+  string checksum = 5;
+  string body_markdown = 6;
+  optional string change_reason = 7;
+  optional int32 supersedes_version = 8;
+  string updated_by = 9;
+  google.protobuf.Timestamp updated_at = 10;
+  google.protobuf.Timestamp activated_at = 11;
+}
+
+message ListPromptTemplateVersionsRequest {
+  Principal principal = 1;
+  string template_key = 2;
+  int32 limit = 3;
+}
+
+message ListPromptTemplateVersionsResponse {
+  repeated PromptTemplateVersion items = 1;
+}
+
+message CreatePromptTemplateVersionRequest {
+  Principal principal = 1;
+  string template_key = 2;
+  string body_markdown = 3;
+  int32 expected_version = 4;
+  optional string source = 5;
+  optional string change_reason = 6;
+}
+
+message ActivatePromptTemplateVersionRequest {
+  Principal principal = 1;
+  string template_key = 2;
+  int32 version = 3;
+  int32 expected_version = 4;
+  string change_reason = 5;
+}
+
+message PromptTemplateSeedSyncRequest {
+  Principal principal = 1;
+  string mode = 2;
+  optional string scope = 3;
+  optional string project_id = 4;
+  repeated string include_locales = 5;
+  bool force_overwrite = 6;
+}
+
+message PromptTemplateSeedSyncItem {
+  string template_key = 1;
+  string action = 2;
+  optional string checksum = 3;
+  optional string reason = 4;
+}
+
+message PromptTemplateSeedSyncResponse {
+  int32 created_count = 1;
+  int32 updated_count = 2;
+  int32 skipped_count = 3;
+  repeated PromptTemplateSeedSyncItem items = 4;
+}
+
+message PreviewPromptTemplateRequest {
+  Principal principal = 1;
+  string template_key = 2;
+  optional string project_id = 3;
+  optional int32 version = 4;
+}
+
+message PreviewPromptTemplateResponse {
+  string template_key = 1;
+  int32 version = 2;
+  string source = 3;
+  string checksum = 4;
+  string body_markdown = 5;
+}
+
+message DiffPromptTemplateVersionsRequest {
+  Principal principal = 1;
+  string template_key = 2;
+  int32 from_version = 3;
+  int32 to_version = 4;
+}
+
+message DiffPromptTemplateVersionsResponse {
+  string template_key = 1;
+  int32 from_version = 2;
+  int32 to_version = 3;
+  string from_body_markdown = 4;
+  string to_body_markdown = 5;
+}
+
+message PromptTemplateAuditEvent {
+  int64 id = 1;
+  string correlation_id = 2;
+  optional string project_id = 3;
+  optional string template_key = 4;
+  optional int32 version = 5;
+  optional string actor_id = 6;
+  string event_type = 7;
+  string payload_json = 8;
+  google.protobuf.Timestamp created_at = 9;
+}
+
+message ListPromptTemplateAuditEventsRequest {
+  Principal principal = 1;
+  int32 limit = 2;
+  optional string project_id = 3;
+  optional string template_key = 4;
+  optional string actor_id = 5;
+}
+
+message ListPromptTemplateAuditEventsResponse {
+  repeated PromptTemplateAuditEvent items = 1;
+}
+
 message Run {
   string id = 1;
   string correlation_id = 2;
@@ -835,6 +1018,17 @@ service ControlPlaneService {
   rpc UpsertProject(UpsertProjectRequest) returns (Project);
   rpc GetProject(GetProjectRequest) returns (Project);
   rpc DeleteProject(DeleteProjectRequest) returns (google.protobuf.Empty);
+  rpc ListAgents(ListAgentsRequest) returns (ListAgentsResponse);
+  rpc GetAgent(GetAgentRequest) returns (Agent);
+  rpc UpdateAgentSettings(UpdateAgentSettingsRequest) returns (Agent);
+  rpc ListPromptTemplateKeys(ListPromptTemplateKeysRequest) returns (ListPromptTemplateKeysResponse);
+  rpc ListPromptTemplateVersions(ListPromptTemplateVersionsRequest) returns (ListPromptTemplateVersionsResponse);
+  rpc CreatePromptTemplateVersion(CreatePromptTemplateVersionRequest) returns (PromptTemplateVersion);
+  rpc ActivatePromptTemplateVersion(ActivatePromptTemplateVersionRequest) returns (PromptTemplateVersion);
+  rpc SyncPromptTemplateSeeds(PromptTemplateSeedSyncRequest) returns (PromptTemplateSeedSyncResponse);
+  rpc PreviewPromptTemplate(PreviewPromptTemplateRequest) returns (PreviewPromptTemplateResponse);
+  rpc DiffPromptTemplateVersions(DiffPromptTemplateVersionsRequest) returns (DiffPromptTemplateVersionsResponse);
+  rpc ListPromptTemplateAuditEvents(ListPromptTemplateAuditEventsRequest) returns (ListPromptTemplateAuditEventsResponse);
 
   rpc ListRuns(ListRunsRequest) returns (ListRunsResponse);
   rpc ListRunJobs(ListRunJobsRequest) returns (ListRunJobsResponse);

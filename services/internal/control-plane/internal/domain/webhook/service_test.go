@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -18,6 +19,7 @@ import (
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
+	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
 func TestIngestGitHubWebhook_Dedup(t *testing.T) {
@@ -2364,6 +2366,57 @@ func (r *inMemoryAgentRepo) FindEffectiveByKey(_ context.Context, _ string, agen
 		return agentrepo.Agent{}, false, nil
 	}
 	return item, true, nil
+}
+
+func (r *inMemoryAgentRepo) List(_ context.Context, filter querytypes.AgentListFilter) ([]agentrepo.Agent, error) {
+	if len(r.items) == 0 {
+		return []agentrepo.Agent{}, nil
+	}
+	out := make([]agentrepo.Agent, 0, len(r.items))
+	for _, item := range r.items {
+		out = append(out, item)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].AgentKey < out[j].AgentKey
+	})
+	limit := filter.Limit
+	if limit > 0 && len(out) > limit {
+		out = out[:limit]
+	}
+	return out, nil
+}
+
+func (r *inMemoryAgentRepo) GetByID(_ context.Context, agentID string) (agentrepo.Agent, bool, error) {
+	lookupID := strings.TrimSpace(agentID)
+	if lookupID == "" {
+		return agentrepo.Agent{}, false, nil
+	}
+	for _, item := range r.items {
+		if item.ID == lookupID {
+			return item, true, nil
+		}
+	}
+	return agentrepo.Agent{}, false, nil
+}
+
+func (r *inMemoryAgentRepo) UpdateSettings(_ context.Context, params querytypes.AgentUpdateSettingsParams) (agentrepo.Agent, bool, error) {
+	lookupID := strings.TrimSpace(params.AgentID)
+	if lookupID == "" {
+		return agentrepo.Agent{}, false, nil
+	}
+	for key, item := range r.items {
+		if item.ID != lookupID {
+			continue
+		}
+		if params.ExpectedVersion > 0 && item.SettingsVersion != params.ExpectedVersion {
+			return agentrepo.Agent{}, false, nil
+		}
+		item.Settings = params.Settings
+		item.SettingsVersion++
+		r.items[key] = item
+		return item, true, nil
+	}
+	return agentrepo.Agent{}, false, nil
 }
 
 type inMemoryRunRepo struct {

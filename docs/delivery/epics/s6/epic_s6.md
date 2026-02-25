@@ -6,7 +6,7 @@ status: in-progress
 owner_role: PM
 created_at: 2026-02-25
 updated_at: 2026-02-25
-related_issues: [184, 185, 187, 189, 195, 197, 199]
+related_issues: [184, 185, 187, 189, 195, 197, 199, 201]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -26,6 +26,7 @@ approvals:
 - Day4 architecture (`#189`) зафиксировал архитектурный пакет и создал follow-up issue `#195` для `run:design`.
 - Day5 design (`#195`) зафиксировал implementation-ready design package и создал follow-up issue `#197` для `run:plan`.
 - Day6 plan (`#197`) зафиксировал execution roadmap + quality-gates + DoD и создал follow-up issue `#199` для `run:dev`.
+- Day7 dev (`#199`) реализовал lifecycle `agents/templates/audit` и создал follow-up issue `#201` для `run:qa`.
 
 ## Эпики Sprint S6
 - Day 1 (Intake): `docs/delivery/epics/s6/epic-s6-day1-agents-prompts-intake.md`
@@ -38,12 +39,14 @@ approvals:
 - Day 6 (Plan): `docs/delivery/epics/s6/epic-s6-day6-agents-prompts-plan.md` (Issue `#197`).
 
 ## Планируемые epics (следующие stage)
-- Day 7+ (Dev/QA/Release/Postdeploy/Ops + Doc-Audit): реализация, приемка и аудит трассируемости (Issue `#199` для `run:dev`).
+- Day 7 (Dev): реализация lifecycle `agents/templates/audit` (Issue `#199`, `run:dev`).
+- Day 8 (QA): acceptance/regression по реализации Day7 (Issue `#201`, `run:qa`).
+- Day 9+ (Release/Postdeploy/Ops + Doc-Audit): релизный проход, эксплуатационная проверка и аудит трассируемости.
 
 ## Delivery-governance правила
 - Каждый stage завершает работу созданием issue для следующего stage.
 - Follow-up issue создаются без `run:*`-лейбла; trigger-лейбл на запуск следующего stage ставит Owner.
 - Каждая следующая issue обязана содержать явную инструкцию создать issue после завершения текущего этапа.
 - Для цепочки S6 зафиксирована последовательность continuity:
-  - `#184 (intake) -> #185 (vision) -> #187 (prd) -> #189 (arch) -> #195 (design) -> #197 (plan) -> #199 (dev)`.
-- Для `run:dev` зафиксирован отдельный Day6 execution-эпик и follow-up issue с обязательным continuity в `run:qa`.
+  - `#184 (intake) -> #185 (vision) -> #187 (prd) -> #189 (arch) -> #195 (design) -> #197 (plan) -> #199 (dev) -> #201 (qa)`.
+- Для `run:qa` зафиксирован обязательный continuity-артефакт: после завершения QA создать issue `run:release`.
