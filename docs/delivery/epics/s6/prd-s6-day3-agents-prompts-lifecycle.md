@@ -2,12 +2,12 @@
 doc_id: PRD-CK8S-S6-I187
 type: prd
 title: "Issue #187 — PRD: Agents configuration and prompt templates lifecycle"
-status: in-review
+status: completed
 owner_role: PM
 created_at: 2026-02-25
 updated_at: 2026-02-25
 related_issues: [184, 185, 187, 189]
-related_prs: []
+related_prs: [190]
 related_docsets:
   - docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md
   - docs/delivery/epics/s6/epic_s6.md
@@ -15,8 +15,10 @@ related_docsets:
   - docs/delivery/requirements_traceability.md
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-02-25-issue-187-prd"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-25
 ---
 
 # PRD: Agents configuration and prompt templates lifecycle (Issue #187)

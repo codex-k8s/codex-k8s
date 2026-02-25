@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S6-D1
 type: epic
 title: "Epic S6 Day 1: Intake для раздела управления агентами и шаблонами промптов (Issue #184)"
-status: in-review
+status: completed
 owner_role: PM
 created_at: 2026-02-25
 updated_at: 2026-02-25
@@ -10,8 +10,10 @@ related_issues: [184, 185]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-02-25-issue-184-intake"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-25
 ---
 
 # Epic S6 Day 1: Intake для раздела управления агентами и шаблонами промптов (Issue #184)

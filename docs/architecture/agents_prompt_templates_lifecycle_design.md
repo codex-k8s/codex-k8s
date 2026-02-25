@@ -2,7 +2,7 @@
 doc_id: ARC-APT-CK8S-0001
 type: architecture-design
 title: "codex-k8s — Agents configuration and prompt templates lifecycle architecture"
-status: proposed
+status: in-review
 owner_role: SA
 created_at: 2026-02-25
 updated_at: 2026-02-25
@@ -10,8 +10,10 @@ related_issues: [184, 185, 187, 189, 195]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-02-25-issue-189-arch"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-25
 ---
 
 # Agents configuration and prompt templates lifecycle architecture
@@ -24,7 +26,7 @@ approvals:
 
 ## Контекст и цель
 Инициатива S6 `Agents configuration and prompt templates lifecycle` следует за цепочкой #184 -> #185 -> #187 -> #189.
-PRD-пакет сформирован в рамках Issue #187 и зафиксирован в PR #190 (ожидает merge).
+PRD-пакет сформирован в рамках Issue #187 и смержен в `main` через PR #190.
 
 Цель архитектурного этапа:
 - закрепить сервисные границы и ownership данных для `agents/templates/audit`;
@@ -139,10 +141,10 @@ Rel(worker, db, "Reads/Writes", "SQL")
 - Проверка по `monaco-editor` (`/microsoft/monaco-editor`) подтверждает, что `DiffEditor` покрывает use-case сравнения шаблонов без отдельной diff-библиотеки.
 - Следствие: на этапе `run:arch` новые внешние зависимости не требуются.
 
-## Открытые вопросы
-1. Нужен ли отдельный `prompt_template_changes` журнал или достаточно `flow_events` + версий?
-2. Какая стратегия хранения diff: вычислять на лету или хранить как артефакт версии?
-3. Нужен ли soft-lock для редактирования в UI или достаточно optimistic concurrency?
+## Подтверждённые решения Owner (2026-02-25)
+1. Отдельный журнал `prompt_template_changes` не нужен: достаточно версий `prompt_templates` + `flow_events`.
+2. Diff версий хранить как отдельный артефакт не требуется: вычисление выполняется на лету.
+3. Soft-lock в UI не вводится: используется optimistic concurrency как основной механизм защиты от гонок.
 
 ## Связанные документы
 - `docs/architecture/data_model.md`
@@ -151,5 +153,5 @@ Rel(worker, db, "Reads/Writes", "SQL")
 - `docs/product/requirements_machine_driven.md`
 - `docs/delivery/epics/s6/epic-s6-day4-agents-prompts-arch.md`
 - `GitHub issue #187` (PRD stage source)
-- `GitHub PR #190` (upstream PRD package, ожидает merge в `main`)
+- `GitHub PR #190` (merged PRD package in `main`)
 - `GitHub issue #195` (follow-up stage `run:design`)

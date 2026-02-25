@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S6-D2
 type: epic
 title: "Epic S6 Day 2: Vision для lifecycle управления агентами и шаблонами промптов (Issues #185/#187)"
-status: in-review
+status: completed
 owner_role: PM
 created_at: 2026-02-25
 updated_at: 2026-02-25
@@ -10,8 +10,10 @@ related_issues: [184, 185, 187]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-02-25-issue-185-vision"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-25
 ---
 
 # Epic S6 Day 2: Vision для lifecycle управления агентами и шаблонами промптов (Issues #185/#187)

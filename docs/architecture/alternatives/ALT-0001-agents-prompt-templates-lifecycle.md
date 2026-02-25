@@ -2,7 +2,7 @@
 doc_id: ALT-0001
 type: alternatives
 title: "Agents prompt templates lifecycle — Alternatives & Trade-offs"
-status: draft
+status: accepted
 owner_role: SA
 created_at: 2026-02-25
 updated_at: 2026-02-25
@@ -10,8 +10,10 @@ related_issues: [184, 185, 187, 189, 195]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-02-25-issue-189-arch-alt"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-25
 ---
 
 # Alternatives & Trade-offs: Agents prompt templates lifecycle
@@ -67,11 +69,7 @@ approvals:
 - `monaco-editor` (`/microsoft/monaco-editor`): встроенный `DiffEditor` закрывает сценарий сравнения версий шаблонов.
 - Вывод: для `run:design` не требуется вводить новые внешние зависимости, достаточно существующего стека.
 
-## Нужен апрув от Owner
-- [ ] Выбор варианта
-- [ ] Разрешение компромисса по хранению истории в общей таблице
-
-## Апрув
-- request_id: owner-2026-02-25-issue-189-arch-alt
-- Решение:
-- Комментарий:
+## Решение Owner
+- request_id: `owner-2026-02-25-issue-189-arch-alt`
+- Решение: принят Вариант A (версии в `prompt_templates` + audit через `flow_events`)
+- Комментарий: отдельный журнал изменений не требуется, diff вычисляется на лету, soft-lock не вводится.

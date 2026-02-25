@@ -10,8 +10,10 @@ related_issues: [184, 185, 187, 189, 195]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-02-25-issue-189-arch"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-25
 ---
 
 # Epic S6 Day 4: Architecture для lifecycle управления агентами и шаблонами промптов (Issue #189)
@@ -23,7 +25,7 @@ approvals:
 
 ## Контекст
 Продолжение цепочки S6: #184 (intake) -> #185 (vision) -> #187 (prd) -> #189 (arch).
-PRD-пакет Day3 зафиксирован в Issue #187; upstream PR #190 с PRD-артефактами ожидает merge в `main`.
+PRD-пакет Day3 зафиксирован в Issue #187; PR #190 с PRD-артефактами смержен в `main`.
 
 ## Основные артефакты
 - Архитектурный дизайн: `docs/architecture/agents_prompt_templates_lifecycle_design.md`.

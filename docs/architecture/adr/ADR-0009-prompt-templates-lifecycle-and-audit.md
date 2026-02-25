@@ -2,7 +2,7 @@
 doc_id: ADR-0009
 type: adr
 title: "Prompt templates lifecycle and audit model"
-status: proposed
+status: accepted
 owner_role: SA
 created_at: 2026-02-25
 updated_at: 2026-02-25
@@ -12,8 +12,10 @@ supersedes: []
 superseded_by: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-02-25-issue-189-arch-adr-0009"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-25
 ---
 
 # ADR-0009: Prompt templates lifecycle and audit model
@@ -109,5 +111,5 @@ PRD по Issue #187 требует:
 - `docs/architecture/data_model.md`
 - `docs/delivery/epics/s6/epic-s6-day4-agents-prompts-arch.md`
 - `GitHub issue #187` (PRD stage source)
-- `GitHub PR #190` (upstream PRD package, ожидает merge в `main`)
+- `GitHub PR #190` (merged PRD package in `main`)
 - `GitHub issue #195` (follow-up stage `run:design`)

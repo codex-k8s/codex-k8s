@@ -10,8 +10,10 @@ related_issues: [184, 185, 187, 189, 195]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-02-25-issue-187-prd"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-25
 ---
 
 # Sprint S6: Agents configuration and prompt templates lifecycle (Issue #184)
