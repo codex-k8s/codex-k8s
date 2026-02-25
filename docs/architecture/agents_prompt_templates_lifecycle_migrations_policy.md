@@ -49,6 +49,15 @@ approvals:
 5. Contract cleanup (optional post-stabilization):
    - удалить legacy assumptions в коде, при необходимости скорректировать `is_active` usage.
 
+## Политика seed bootstrap из репозитория (embed)
+- Seed-файлы `services/jobs/agent-runner/internal/runner/promptseeds/*.md` не удаляются и не мигрируются "вместо БД"; они остаются baseline/fallback слоем.
+- Bootstrap seed->DB выполняется как отдельный шаг после DDL/backfill (не SQL-миграция):
+  1. `dry-run`: вычислить diff между embed seeds и текущими DB-записями.
+  2. `apply`: создать только отсутствующие baseline записи (обычно global scope), не перезаписывая project overrides.
+  3. Зафиксировать `source`/`checksum` и аудит-событие загрузки.
+- Если bootstrap не выполнен или выполнен частично, runtime продолжает работать через fallback на embed seeds.
+- Любой rollout запрещает destructive действие по seed-слою: удаление/обнуление seed-файлов не допускается.
+
 ## Как выполняются миграции при деплое
 - Порядок production deploy:
   1. stateful dependencies ready;
@@ -74,7 +83,8 @@ approvals:
 - Rollback strategy:
   1. выключить новый write-path feature flag;
   2. оставить read-path на validated active versions;
-  3. выполнить corrective migration только additive way.
+  3. выполнить corrective migration только additive way;
+  4. при проблемах seed bootstrap использовать fallback на embed seeds без удаления исторических DB-версий.
 
 ## Проверки
 ### Pre-migration checks

@@ -48,7 +48,7 @@ approvals:
 | template_kind | text | no |  | check(work/revise) | existing |
 | locale | text | no | `en` |  | existing |
 | body_markdown | text | no |  |  | existing |
-| source | text | no | `db_override` |  | existing |
+| source | text | no | `db_override` | check(project_override/global_override/repo_seed) | existing; `repo_seed` используется для baseline bootstrap и fallback-трассировки |
 | render_context_version | text | no | `v1` |  | existing |
 | version | int | no | 1 |  | existing |
 | is_active | bool | no | true |  | existing, remains for compatibility |
@@ -103,6 +103,7 @@ approvals:
 - `activate` разрешён только для существующей `draft|archived` версии.
 - `is_active` и `status` должны быть консистентны (`status='active' => is_active=true`).
 - `flow_events` write обязателен для каждой mutating операции.
+- При отсутствии DB-записей по ключу effective template берётся из embed seed; это не нарушает инварианты БД и не требует synthetic rows.
 
 ## Runtime impact / Migration impact
 - Runtime impact (`run:design`): отсутствует, документы-only.

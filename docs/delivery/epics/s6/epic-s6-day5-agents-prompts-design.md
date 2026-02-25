@@ -42,6 +42,9 @@ approvals:
 - API boundary:
   - staff HTTP контур фиксирован через contract-first OpenAPI (обновление в `run:dev`);
   - internal gRPC контур фиксирован через typed RPC/DTO/casters.
+- Seed/fallback strategy:
+  - текущие embed markdown seeds остаются baseline/fallback источником;
+  - перенос в БД выполняется управляемо через `dry-run/apply` seed sync без перезаписи project overrides.
 - Concurrency:
   - все mutating template operations используют `expected_version`;
   - 409 `conflict` возвращает `actual_version` + `latest_checksum`.

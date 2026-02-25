@@ -48,6 +48,22 @@ approvals:
   - `services/staff/web-console`: stateful UX без доменной логики.
 - Текущая проблема: отсутствует детализированный contract package для разработки `agents/templates/audit`.
 
+## Стратегия переноса текущих seed-шаблонов (embed) и fallback
+- Текущие markdown seed-файлы в `services/jobs/agent-runner/internal/runner/promptseeds/*.md` сохраняются как baseline source и обязательный fallback.
+- Обязательная цепочка резолва effective template в runtime:
+  1. project override в БД;
+  2. global override в БД;
+  3. repo seed из embed;
+  4. встроенный runner fallback (последний резервный слой).
+- Перенос seed в БД не является блокирующим prerequisite для запуска:
+  - если в БД нет записей по `(role, kind, locale)`, система использует embed seed напрямую;
+  - поведение run-контура не деградирует при пустой таблице overrides.
+- Для управляемого перехода в `run:dev` вводится seed bootstrap/sync path:
+  - dry-run: показать diff `seed -> db` (что будет создано/обновлено/пропущено);
+  - apply: создать отсутствующие baseline DB-записи из seed без удаления seed-файлов;
+  - существующие project overrides не перезаписываются автоматом.
+- Слой seed в репозитории остаётся постоянно: как bootstrap-источник и аварийный fallback при ошибках/пустых данных в БД.
+
 ## Предлагаемый дизайн (high-level)
 ### Компоненты и boundaries
 - `web-console` использует только staff HTTP DTO из OpenAPI-контракта.
@@ -172,9 +188,10 @@ sequenceDiagram
 - На этапе `run:design` runtime не меняется (markdown-only).
 - Целевой rollout в `run:dev`:
   1. DB migrations (owner: `control-plane`).
-  2. `control-plane` domain/repository/transport updates.
-  3. `api-gateway` HTTP handlers + OpenAPI regeneration.
-  4. `web-console` integration (typed client + state flow).
+  2. seed bootstrap/sync (`dry-run -> apply`) для baseline шаблонов из embed в БД.
+  3. `control-plane` domain/repository/transport updates.
+  4. `api-gateway` HTTP handlers + OpenAPI regeneration.
+  5. `web-console` integration (typed client + state flow).
 - Feature flags (planned):
   - `CODEXK8S_PROMPT_TEMPLATES_V2_ENABLED` (read/write cutover).
 

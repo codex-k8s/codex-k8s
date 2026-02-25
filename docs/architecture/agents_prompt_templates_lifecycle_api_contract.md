@@ -42,6 +42,7 @@ approvals:
 | List template versions | GET | `/api/v1/staff/prompt-templates/{template_key}/versions` | staff JWT | n/a | Sorted desc by version |
 | Create template version | POST | `/api/v1/staff/prompt-templates/{template_key}/versions` | staff JWT + admin | `Idempotency-Key` | Requires `expected_version` |
 | Activate template version | POST | `/api/v1/staff/prompt-templates/{template_key}/versions/{version}/activate` | staff JWT + admin | `Idempotency-Key` | Switches active version |
+| Bootstrap/sync embed seeds (dry-run/apply) | POST | `/api/v1/staff/prompt-templates/seeds/sync` | staff JWT + admin | `Idempotency-Key` | Imports missing baseline templates from repo embed, does not overwrite project overrides |
 | Effective preview | POST | `/api/v1/staff/prompt-templates/{template_key}/preview` | staff JWT | n/a | Returns resolved content + source |
 | Compare versions | GET | `/api/v1/staff/prompt-templates/{template_key}/diff` | staff JWT | n/a | Query: `from_version`, `to_version` |
 | List template audit | GET | `/api/v1/staff/audit/prompt-templates` | staff JWT | n/a | Filters by project/template/actor/date |
@@ -65,9 +66,24 @@ approvals:
 - `version` (int32)
 - `status` (`draft|active|archived`)
 - `checksum` (string, sha256)
+- `source` (`project_override|global_override|repo_seed`)
 - `change_reason` (string)
 - `created_by` (string)
 - `created_at` (RFC3339)
+
+### SeedSyncRequest / SeedSyncResponse DTO
+- Request:
+  - `mode` (`dry_run|apply`)
+  - `scope` (`global|project`)
+  - `project_id` (required for `scope=project`)
+  - `include_locales[]` (optional filter, defaults to all available seeds)
+  - `force_overwrite` (default `false`; for baseline flow remains disabled)
+- Response:
+  - `created_count`
+  - `updated_count`
+  - `skipped_count`
+  - `skipped_reasons[]` (e.g. `project_override_exists`, `same_checksum`)
+  - `items[]` with `{template_key, action, checksum}`
 
 ### Concurrency envelope
 - Request fields:
@@ -107,6 +123,7 @@ approvals:
 ## Backward compatibility
 - Инициатива S6 допускает coordinated breaking changes внутри staff/private API (проект pre-production).
 - Для `run:dev` требуется атомарный rollout `migrations -> internal -> edge -> frontend`, чтобы не допустить transport drift.
+- При отсутствии DB-override записей runtime обязан оставаться работоспособным за счёт fallback на embed seeds.
 
 ## Наблюдаемость
 - Логи: `operation`, `project_id`, `template_key`, `version`, `status`, `correlation_id`, `duration_ms`.
