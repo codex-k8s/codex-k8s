@@ -6,7 +6,7 @@ status: in-progress
 owner_role: PM
 created_at: 2026-02-25
 updated_at: 2026-02-25
-related_issues: [184, 185]
+related_issues: [184, 185, 187]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -37,7 +37,7 @@ approvals:
 | Stage | Основной артефакт | Целевая роль | Правило выхода |
 |---|---|---|---|
 | Intake (`#184`) | Problem/Brief/Scope/Constraints + acceptance baseline | `pm` | Owner review intake-пакета и создана issue следующего этапа |
-| Vision | Project charter + success metrics + риск-рамка | `pm` + `em` | Зафиксирован vision baseline и создана issue PRD |
+| Vision (`#185`) | Project charter + success metrics + риск-рамка | `pm` + `em` | Зафиксирован vision baseline и создана issue PRD (`#187`) |
 | PRD | PRD + user stories + NFR draft | `pm` + `sa` | Подтверждены AC/NFR и создана issue Architecture |
 | Architecture | C4 + ADR + boundaries | `sa` | Подтверждены границы и создана issue Design |
 | Design | API/data model/design package | `sa` + `qa` | Подтвержден design пакет и создана issue Plan |
@@ -51,14 +51,18 @@ approvals:
 |---|---|---|
 | QG-S6-01 Intake completeness | Problem/Brief/Scope/Constraints и AC зафиксированы с анализом фактического As-Is | passed (Issue #184) |
 | QG-S6-02 Stage continuity | Для следующего этапа создана отдельная issue с инструкцией создать issue следующего stage | passed (`#185`) |
-| QG-S6-03 Traceability | Обновлены `issue_map`, `requirements_traceability`, sprint/epic индексы | in-progress |
-| QG-S6-04 Policy compliance | Изменения ограничены markdown, без нарушения stage/label policy | in-progress |
+| QG-S6-03 Vision completeness | Сформированы charter, success metrics, MVP/Post-MVP границы и risk frame | passed (Issue #185) |
+| QG-S6-04 Traceability | Обновлены `issue_map`, `requirements_traceability`, sprint/epic документы S6 | passed (`#184/#185/#187`) |
+| QG-S6-05 Policy compliance | Изменения ограничены markdown, без нарушения stage/label policy | passed |
+| QG-S6-06 Stage continuity (Vision -> PRD) | Создана отдельная issue `run:prd` с инструкцией создать issue следующего stage | passed (`#187`) |
 
-## Stage acceptance baseline (Intake -> Vision)
+## Stage acceptance baseline (Intake -> Vision, updated)
 - [x] Подтверждено, что текущий UI раздел `Agents` работает как scaffold и не подключен к backend.
 - [x] Зафиксирован продуктовый масштаб инициативы: настройки агентов + prompt templates + audit/history.
 - [x] Выбрана траектория `new-service` (полный pipeline, без fast-track).
 - [x] Создана issue на `run:vision` с обязательной инструкцией создать issue на `run:prd` (`#185`).
+- [x] В Issue `#185` сформирован vision-пакет: project charter, success metrics, MVP/Post-MVP границы, риск-рамка.
+- [x] Создана issue следующего этапа `run:prd` (`#187`) с обязательной инструкцией создать issue `run:arch` после завершения PRD.
 
 ## Риски и допущения
 - Риск: смешение scope между настройками агентов, prompt policy и runtime observability может размыть MVP-инкремент.
@@ -67,6 +71,6 @@ approvals:
 - Допущение: существующая модель БД (`agents`, `agent_policies`, `prompt_templates`, `agent_sessions`, `flow_events`) остается базой для проектирования API и UI.
 
 ## Handover в следующий этап
-- Следующий stage после intake: `run:vision`.
-- Follow-up issue следующего этапа: `#185`.
-- Отдельная GitHub issue создается в рамках текущего intake-run и должна включать явный пункт: по завершению vision создать issue для `run:prd` с аналогичной цепочкой.
+- Следующий stage после vision: `run:prd`.
+- Follow-up issue следующего этапа: `#187`.
+- Обязательное правило continuity: после завершения `run:prd` создается issue `run:arch` с ссылками на `#184`, `#185`, `#187` и с явной инструкцией создать issue следующего этапа (`run:design`).

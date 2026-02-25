@@ -6,7 +6,7 @@ status: in-progress
 owner_role: PM
 created_at: 2026-02-25
 updated_at: 2026-02-25
-related_issues: [184, 185]
+related_issues: [184, 185, 187]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -19,15 +19,15 @@ approvals:
 ## TL;DR
 - Sprint S6 открывает полный stage-cycle для инициативы по реальному разделу `Agents` в staff UI и backend.
 - Day1 intake фиксирует problem statement и acceptance baseline по текущему разрыву UI/Backend.
+- Day2 vision фиксирует charter/metrics/risk frame и формирует handover в `run:prd` через issue #187.
 - Далее идут последовательные stage-epics без пропуска этапов, с обязательной генерацией follow-up issue после каждого stage.
 
 ## Эпики Sprint S6
 - Day 1 (Intake): `docs/delivery/epics/s6/epic-s6-day1-agents-prompts-intake.md`
-- Day 2 (Vision issue): GitHub issue `#185` (создана, ожидает запуск `run:vision`).
+- Day 2 (Vision): `docs/delivery/epics/s6/epic-s6-day2-agents-prompts-vision.md` (Issue `#185`).
 
 ## Планируемые epics (будут добавлены на следующих stage)
-- Day 2 (Vision): Charter + Success metrics + risk frame.
-- Day 3 (PRD): Product requirements + user stories + NFR.
+- Day 3 (PRD): Product requirements + user stories + NFR (Issue `#187`).
 - Day 4 (Architecture): C4/ADR/boundaries для agents/templates/audit domain.
 - Day 5 (Design): API/data model/design package.
 - Day 6 (Plan): Execution package и implementation issues.
