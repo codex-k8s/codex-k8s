@@ -145,10 +145,28 @@ approvals:
 - Риск интеграции: fallback-команды могут расходиться с фактической policy, если не централизовать шаблон.
 - Риск операционной рассинхронизации: ручной `gh` fallback может быть выполнен с неверным `current-stage` без pre-check.
 
+## Блокеры и owner decisions (run:plan handover)
+
+| Тип | ID | Суть | Что требуется от Owner | Статус |
+|---|---|---|---|---|
+| blocker | BLK-155-01 | Финальное решение по запуску `run:dev` после review этого пакета | Approve/no-go с явным комментарием | open |
+| blocker | BLK-155-02 | Не зафиксирована единая политика fast-track `design -> dev` | Утвердить allowed/forbidden и канонический fallback | open |
+| owner-decision | OD-155-01 | Fast-track `design -> dev` как опциональный путь | Зафиксировать в policy docs и service-message contract | pending |
+| owner-decision | OD-155-02 | Ambiguity hard-stop (`0` или `>1` stage labels) | Подтвердить обязательный `need:input` без best-guess | pending |
+| owner-decision | OD-155-03 | Единый review-gate для Issue + PR | Подтвердить обязательную синхронизацию `state:in-review` | pending |
+
 ## Продуктовые допущения
 - Launch profiles не заменяют канонический stage-pipeline, а задают управляемые “траектории входа”.
 - Primary канал (`web-console`) может временно быть недоступен; fallback обязан быть достаточным для продолжения процесса.
 - Для P0/P1 инициатив Owner может принудительно переводить задачу в `new-service` траекторию независимо от исходного профиля.
+
+## EM execution control loop для `run:dev`
+
+| Этап контроля | Контрольная точка | Артефакт подтверждения |
+|---|---|---|
+| Pre-start | QG-01..QG-05 и Readiness gate пройдены, блокеры задокументированы | `sprint_s5_stage_entry_and_label_ux.md`, `epic_s5.md` |
+| Mid-execution | I1..I3 закрывают deterministic resolver и fallback contract без policy bypass | PR updates + acceptance evidence AC-01..AC-04 |
+| Exit to QA | I4..I5 закрывают review-gate и traceability sync | `issue_map`, `requirements_traceability`, PR checklist |
 
 ## Readiness gate для `run:dev`
 - [x] FR-053 и FR-054 синхронизированы между product policy и delivery docs.
