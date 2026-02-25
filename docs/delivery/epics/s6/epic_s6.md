@@ -6,7 +6,7 @@ status: in-progress
 owner_role: PM
 created_at: 2026-02-25
 updated_at: 2026-02-25
-related_issues: [184, 185, 187, 189, 195]
+related_issues: [184, 185, 187, 189, 195, 197]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -24,6 +24,7 @@ approvals:
 - Day2 vision (`#185`) зафиксировал mission/KPI и риск-рамку.
 - Day3 PRD (`#187`) формализовал FR/AC/NFR-draft, итоговый PRD-пакет смержен в `main` через PR `#190`.
 - Day4 architecture (`#189`) зафиксировал архитектурный пакет и создал follow-up issue `#195` для `run:design`.
+- Day5 design (`#195`) зафиксировал implementation-ready design package и создал follow-up issue `#197` для `run:plan`.
 
 ## Эпики Sprint S6
 - Day 1 (Intake): `docs/delivery/epics/s6/epic-s6-day1-agents-prompts-intake.md`
@@ -32,10 +33,9 @@ approvals:
   - `docs/delivery/epics/s6/epic-s6-day3-agents-prompts-prd.md`
   - `docs/delivery/epics/s6/prd-s6-day3-agents-prompts-lifecycle.md`
 - Day 4 (Architecture): `docs/delivery/epics/s6/epic-s6-day4-agents-prompts-arch.md` (Issue `#189`).
-- Day 5 (Design issue): GitHub issue `#195` (создана по итогам `run:arch`).
+- Day 5 (Design): `docs/delivery/epics/s6/epic-s6-day5-agents-prompts-design.md` (Issue `#195`).
 
 ## Планируемые epics (следующие stage)
-- Day 5 (Design): API/data model/design package.
 - Day 6 (Plan): Execution package и implementation issues.
 - Day 7+ (Dev/QA/Release/Postdeploy/Ops + Doc-Audit): реализация, приемка и аудит трассируемости.
 
@@ -44,5 +44,5 @@ approvals:
 - Follow-up issue создаются без `run:*`-лейбла; trigger-лейбл на запуск следующего stage ставит Owner.
 - Каждая следующая issue обязана содержать явную инструкцию создать issue после завершения текущего этапа.
 - Для цепочки S6 зафиксирована последовательность continuity:
-  - `#184 (intake) -> #185 (vision) -> #187 (prd) -> #189 (arch) -> #195 (design)`.
+  - `#184 (intake) -> #185 (vision) -> #187 (prd) -> #189 (arch) -> #195 (design) -> #197 (plan)`.
 - До выхода в `run:dev` должны быть сформированы последовательные epics и связанные implementation issues.
