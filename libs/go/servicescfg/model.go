@@ -96,18 +96,19 @@ type Metadata struct {
 
 // Spec contains deployable stack definition.
 type Spec struct {
-	Project          string                 `yaml:"project,omitempty"`
-	ProjectDocs      []ProjectDocRef        `yaml:"projectDocs,omitempty"`
-	Versions         map[string]VersionSpec `yaml:"versions,omitempty"`
-	Imports          []ImportRef            `yaml:"imports,omitempty"`
-	Components       []Component            `yaml:"components,omitempty"`
-	Environments     map[string]Environment `yaml:"environments,omitempty"`
-	WebhookRuntime   WebhookRuntime         `yaml:"webhookRuntime,omitempty"`
-	SecretResolution SecretResolution       `yaml:"secretResolution,omitempty"`
-	Images           map[string]Image       `yaml:"images,omitempty"`
-	Infrastructure   []InfrastructureItem   `yaml:"infrastructure,omitempty"`
-	Services         []Service              `yaml:"services,omitempty"`
-	Orchestration    Orchestration          `yaml:"orchestration,omitempty"`
+	Project          string                          `yaml:"project,omitempty"`
+	ProjectDocs      []ProjectDocRef                 `yaml:"projectDocs,omitempty"`
+	RoleDocTemplates map[string][]RoleDocTemplateRef `yaml:"roleDocTemplates,omitempty"`
+	Versions         map[string]VersionSpec          `yaml:"versions,omitempty"`
+	Imports          []ImportRef                     `yaml:"imports,omitempty"`
+	Components       []Component                     `yaml:"components,omitempty"`
+	Environments     map[string]Environment          `yaml:"environments,omitempty"`
+	WebhookRuntime   WebhookRuntime                  `yaml:"webhookRuntime,omitempty"`
+	SecretResolution SecretResolution                `yaml:"secretResolution,omitempty"`
+	Images           map[string]Image                `yaml:"images,omitempty"`
+	Infrastructure   []InfrastructureItem            `yaml:"infrastructure,omitempty"`
+	Services         []Service                       `yaml:"services,omitempty"`
+	Orchestration    Orchestration                   `yaml:"orchestration,omitempty"`
 }
 
 // ImportRef points to reusable services.yaml fragment.
@@ -179,6 +180,13 @@ type ProjectDocRef struct {
 	Description string   `yaml:"description,omitempty"`
 	Roles       []string `yaml:"roles,omitempty"`
 	Optional    bool     `yaml:"optional,omitempty"`
+}
+
+// RoleDocTemplateRef declares one template path for role-specific artifact guidance.
+type RoleDocTemplateRef struct {
+	Repository  string `yaml:"repository,omitempty"`
+	Path        string `yaml:"path"`
+	Description string `yaml:"description,omitempty"`
 }
 
 // Image describes a stack image entry.

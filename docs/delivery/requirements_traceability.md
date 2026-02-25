@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-25
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -55,10 +55,10 @@ approvals:
 | FR-027 | Approval policy для trigger/deploy labels | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/architecture/mcp_approval_and_audit_flow.md` | covered |
 | FR-028 | Stage process model с revise/rethink | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/delivery/sprints/s2/sprint_s2_dogfooding.md` | covered |
 | FR-029 | Базовый штат агентов (включая `dev` и `reviewer`) + custom роли проекта | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/data_model.md`, `docs/architecture/agent_runtime_rbac.md` | covered |
-| FR-030 | Prompt templates policy: seed + DB override | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/prompt_templates_policy.md`, `docs/delivery/epics/s2/epic-s2-day4-agent-job-and-pr-flow.md` | covered |
+| FR-030 | Prompt templates policy: seed + DB override | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/prompt_templates_policy.md`, `docs/delivery/epics/s2/epic-s2-day4-agent-job-and-pr-flow.md`, `services.yaml`, `docs/templates/prd.md`, `services/jobs/agent-runner/internal/runner/promptseeds/prd-work.md`, `services/jobs/agent-runner/internal/runner/promptseeds/prd-revise.md`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl` | covered |
 | FR-031 | Mixed runtime mode full-env/code-only | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/delivery/epics/s2/epic-s2-day3-per-issue-namespace-and-rbac.md` | covered |
 | FR-032 | Обязательные audit сущности agent_sessions/token_usage/links | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/architecture/mcp_approval_and_audit_flow.md` | covered |
-| FR-033 | Traceability для stage pipeline | `docs/product/requirements_machine_driven.md`, `docs/delivery/issue_map.md`, `docs/delivery/requirements_traceability.md`, `docs/delivery/sprints/README.md`, `docs/delivery/epics/README.md` | covered |
+| FR-033 | Traceability для stage pipeline | `docs/product/requirements_machine_driven.md`, `docs/delivery/issue_map.md`, `docs/delivery/requirements_traceability.md`, `docs/delivery/sprints/README.md`, `docs/delivery/epics/README.md`, `docs/templates/prd.md` | covered |
 | FR-034 | Контекстный рендер prompt templates | `docs/product/requirements_machine_driven.md`, `docs/architecture/prompt_templates_policy.md`, `docs/product/agents_operating_model.md`, `docs/delivery/epics/s2/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md` | covered |
 | FR-035 | Локали prompt templates и fallback по locale | `docs/product/requirements_machine_driven.md`, `docs/architecture/prompt_templates_policy.md`, `docs/product/constraints.md` | covered |
 | FR-036 | Сохранение/возобновление codex-cli session JSON | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/delivery/epics/s2/epic-s2-day4-agent-job-and-pr-flow.md` | covered |

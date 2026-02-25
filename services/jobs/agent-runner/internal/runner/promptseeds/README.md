@@ -55,6 +55,8 @@
 - stage-specific seed-файлы не отменяют requirement на отдельные role-specific body-шаблоны `work/revise` в локалях минимум `ru` и `en`.
 - role-specific baseline для поддержанных ролей:
   - `dev`, `pm`, `sa`, `em`, `reviewer`, `qa`, `sre`, `km` (каждая: `work/revise` и `ru/en`).
+- role-aware пути к шаблонам артефактов берутся из `services.yaml/spec.roleDocTemplates`;
+  в seed-файлах указываются только имена шаблонов (без жестко заданных repository-relative путей).
 - Для `self-improve-*` seed обязателен диагностический контур:
   - MCP `self_improve_runs_list` / `self_improve_run_lookup` / `self_improve_session_get`;
   - сохранение извлеченного `codex-cli` session JSON в `/tmp/codex-sessions/<run-id>`.

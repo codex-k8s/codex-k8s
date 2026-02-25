@@ -176,6 +176,9 @@ type promptEnvelopeTemplateData struct {
 	ProjectDocs                  []promptProjectDocTemplateData
 	ProjectDocsTotal             int
 	ProjectDocsTrimmed           bool
+	RoleDocTemplates             []promptRoleDocTemplateData
+	RoleDocTemplatesTotal        int
+	RoleDocTemplatesTrimmed      bool
 	TaskBody                     string
 }
 
@@ -184,6 +187,13 @@ type promptProjectDocTemplateData struct {
 	Path        string
 	Description string
 	Optional    bool
+}
+
+type promptRoleDocTemplateData struct {
+	Repository   string
+	Path         string
+	TemplateName string
+	Description  string
 }
 
 type codexConfigTemplateData struct {

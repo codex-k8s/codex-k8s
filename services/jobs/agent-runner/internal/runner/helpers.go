@@ -130,6 +130,7 @@ func (s *Service) buildPrompt(taskBody string, result runResult, repoDir string)
 	isReviseTrigger := webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(result.triggerKind))
 	roleDisplayName, roleCapabilities := resolvePromptRoleProfile(s.cfg.AgentKey)
 	projectDocs, docsTotal, docsTrimmed := loadProjectDocsForPrompt(repoDir, s.cfg.AgentKey, result.triggerKind, runtimeMode)
+	roleDocTemplates, roleTemplatesTotal, roleTemplatesTrimmed := loadRoleDocTemplatesForPrompt(repoDir, s.cfg.AgentKey, result.triggerKind, runtimeMode)
 	return renderTemplate(templateNamePromptEnvelope, promptEnvelopeTemplateData{
 		RepositoryFullName:           s.cfg.RepositoryFullName,
 		RunID:                        s.cfg.RunID,
@@ -157,6 +158,9 @@ func (s *Service) buildPrompt(taskBody string, result runResult, repoDir string)
 		ProjectDocs:                  projectDocs,
 		ProjectDocsTotal:             docsTotal,
 		ProjectDocsTrimmed:           docsTrimmed,
+		RoleDocTemplates:             roleDocTemplates,
+		RoleDocTemplatesTotal:        roleTemplatesTotal,
+		RoleDocTemplatesTrimmed:      roleTemplatesTrimmed,
 		TaskBody:                     taskBody,
 	})
 }
@@ -245,24 +249,14 @@ func resolvePromptRoleProfile(agentKey string) (string, []string) {
 func loadProjectDocsForPrompt(repoDir string, roleKey string, triggerKind string, runtimeMode string) ([]promptProjectDocTemplateData, int, bool) {
 	const maxPromptDocs = 16
 
-	servicesPath := filepath.Join(strings.TrimSpace(repoDir), "services.yaml")
-	raw, err := os.ReadFile(servicesPath)
-	if err != nil {
-		return nil, 0, false
-	}
-
-	env := resolvePromptDocsEnv(triggerKind, runtimeMode)
-	loadResult, err := servicescfg.LoadFromYAML(raw, servicescfg.LoadOptions{Env: env})
-	if err != nil || loadResult.Stack == nil {
-		return nil, 0, false
-	}
-	if len(loadResult.Stack.Spec.ProjectDocs) == 0 {
+	stack, ok := loadPromptServicesStackForPrompt(repoDir, triggerKind, runtimeMode)
+	if !ok || len(stack.Spec.ProjectDocs) == 0 {
 		return nil, 0, false
 	}
 
 	normalizedRole := strings.ToLower(strings.TrimSpace(roleKey))
-	items := make([]promptProjectDocTemplateData, 0, len(loadResult.Stack.Spec.ProjectDocs))
-	for _, doc := range loadResult.Stack.Spec.ProjectDocs {
+	items := make([]promptProjectDocTemplateData, 0, len(stack.Spec.ProjectDocs))
+	for _, doc := range stack.Spec.ProjectDocs {
 		path := strings.TrimSpace(doc.Path)
 		if path == "" {
 			continue
@@ -328,6 +322,97 @@ func loadProjectDocsForPrompt(repoDir string, roleKey string, triggerKind string
 		trimmed = true
 	}
 	return items, total, trimmed
+}
+
+func loadRoleDocTemplatesForPrompt(repoDir string, roleKey string, triggerKind string, runtimeMode string) ([]promptRoleDocTemplateData, int, bool) {
+	const maxRoleDocTemplates = 12
+
+	stack, ok := loadPromptServicesStackForPrompt(repoDir, triggerKind, runtimeMode)
+	if !ok || len(stack.Spec.RoleDocTemplates) == 0 {
+		return nil, 0, false
+	}
+	normalizedRole := strings.ToLower(strings.TrimSpace(roleKey))
+	if normalizedRole == "" {
+		return nil, 0, false
+	}
+
+	rawTemplates, exists := stack.Spec.RoleDocTemplates[normalizedRole]
+	if !exists || len(rawTemplates) == 0 {
+		return nil, 0, false
+	}
+
+	items := make([]promptRoleDocTemplateData, 0, len(rawTemplates))
+	for _, templateRef := range rawTemplates {
+		path := strings.TrimSpace(templateRef.Path)
+		if path == "" {
+			continue
+		}
+		templateName := filepath.Base(path)
+		if templateName == "" || templateName == "." || templateName == "/" {
+			templateName = path
+		}
+		items = append(items, promptRoleDocTemplateData{
+			Repository:   strings.ToLower(strings.TrimSpace(templateRef.Repository)),
+			Path:         path,
+			TemplateName: templateName,
+			Description:  strings.TrimSpace(templateRef.Description),
+		})
+	}
+	if len(items) == 0 {
+		return nil, 0, false
+	}
+
+	sort.SliceStable(items, func(i, j int) bool {
+		left := items[i]
+		right := items[j]
+		leftPriority := promptDocsRepositoryPriority(left.Repository)
+		rightPriority := promptDocsRepositoryPriority(right.Repository)
+		if leftPriority != rightPriority {
+			return leftPriority < rightPriority
+		}
+		if left.Repository != right.Repository {
+			return left.Repository < right.Repository
+		}
+		return left.Path < right.Path
+	})
+
+	deduped := make([]promptRoleDocTemplateData, 0, len(items))
+	seenByPath := make(map[string]struct{}, len(items))
+	for _, item := range items {
+		key := strings.ToLower(strings.TrimSpace(item.Path))
+		if key == "" {
+			continue
+		}
+		if _, exists := seenByPath[key]; exists {
+			continue
+		}
+		seenByPath[key] = struct{}{}
+		deduped = append(deduped, item)
+	}
+	items = deduped
+
+	total := len(items)
+	trimmed := false
+	if total > maxRoleDocTemplates {
+		items = items[:maxRoleDocTemplates]
+		trimmed = true
+	}
+	return items, total, trimmed
+}
+
+func loadPromptServicesStackForPrompt(repoDir string, triggerKind string, runtimeMode string) (*servicescfg.Stack, bool) {
+	servicesPath := filepath.Join(strings.TrimSpace(repoDir), "services.yaml")
+	raw, err := os.ReadFile(servicesPath)
+	if err != nil {
+		return nil, false
+	}
+
+	env := resolvePromptDocsEnv(triggerKind, runtimeMode)
+	loadResult, err := servicescfg.LoadFromYAML(raw, servicescfg.LoadOptions{Env: env})
+	if err != nil || loadResult.Stack == nil {
+		return nil, false
+	}
+	return loadResult.Stack, true
 }
 
 func resolvePromptDocsEnv(triggerKind string, runtimeMode string) string {

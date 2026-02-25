@@ -30,6 +30,16 @@
 {{- end }}
 {{- end }}
 
+{{- if .RoleDocTemplates }}
+Шаблоны артефактов по роли (из services.yaml):
+{{- range .RoleDocTemplates }}
+- `{{ .TemplateName }}`{{ if .Path }} (`{{ if .Repository }}{{ .Repository }}:{{ end }}{{ .Path }}`){{ end }}{{ if .Description }} — {{ .Description }}{{ end }}
+{{- end }}
+{{- if .RoleDocTemplatesTrimmed }}
+- Показано {{ len .RoleDocTemplates }} из {{ .RoleDocTemplatesTotal }} шаблонов (сокращено для контроля размера промпта).
+{{- end }}
+{{- end }}
+
 Контур выполнения:
 - Вы запущены в headless-режиме внутри выделенного Kubernetes pod (без интерактивного TTY).
 {{- if .IsFullEnv }}
@@ -149,6 +159,16 @@ Project documentation context (role-aware):
 {{- end }}
 {{- if .ProjectDocsTrimmed }}
 - Showing {{ len .ProjectDocs }} of {{ .ProjectDocsTotal }} references (trimmed to control prompt size).
+{{- end }}
+{{- end }}
+
+{{- if .RoleDocTemplates }}
+Role artifact templates (from services.yaml):
+{{- range .RoleDocTemplates }}
+- `{{ .TemplateName }}`{{ if .Path }} (`{{ if .Repository }}{{ .Repository }}:{{ end }}{{ .Path }}`){{ end }}{{ if .Description }} — {{ .Description }}{{ end }}
+{{- end }}
+{{- if .RoleDocTemplatesTrimmed }}
+- Showing {{ len .RoleDocTemplates }} of {{ .RoleDocTemplatesTotal }} templates (trimmed to control prompt size).
 {{- end }}
 {{- end }}
 

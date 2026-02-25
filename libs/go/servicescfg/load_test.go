@@ -494,6 +494,114 @@ spec:
 `, "projectDocs[0].repository")
 }
 
+func TestLoad_RoleDocTemplatesNormalization(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "services.yaml")
+	writeFile(t, path, `
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+  roleDocTemplates:
+    PM:
+      - path: ./docs/templates/../templates/prd.md
+        repository: Core-Docs
+        description: "  PRD template  "
+      - path: docs/templates/nfr.md
+        repository: core-docs
+`)
+
+	result, err := Load(path, LoadOptions{Env: "production"})
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	templates, ok := result.Stack.Spec.RoleDocTemplates["pm"]
+	if !ok {
+		t.Fatalf("expected normalized role key pm")
+	}
+	if len(templates) != 2 {
+		t.Fatalf("roleDocTemplates[pm] len=%d, want 2", len(templates))
+	}
+	if got, want := templates[0].Repository, "core-docs"; got != want {
+		t.Fatalf("roleDocTemplates[pm][0].repository=%q, want %q", got, want)
+	}
+	if got, want := templates[0].Path, "docs/templates/nfr.md"; got != want {
+		t.Fatalf("roleDocTemplates[pm][0].path=%q, want %q", got, want)
+	}
+	if got, want := templates[1].Path, "docs/templates/prd.md"; got != want {
+		t.Fatalf("roleDocTemplates[pm][1].path=%q, want %q", got, want)
+	}
+	if got, want := templates[1].Description, "PRD template"; got != want {
+		t.Fatalf("roleDocTemplates[pm][1].description=%q, want %q", got, want)
+	}
+}
+
+func TestLoad_RoleDocTemplatesValidation(t *testing.T) {
+	t.Parallel()
+
+	assertLoadErrorContains(t, `
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+  roleDocTemplates:
+    pm: []
+`, "spec.roleDocTemplates[\"pm\"] must contain at least one template")
+
+	assertLoadErrorContains(t, `
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+  roleDocTemplates:
+    pm:
+      - path: docs/templates/prd.md
+      - path: ./docs/templates/prd.md
+`, "duplicate spec.roleDocTemplates entry for role \"pm\" path \"docs/templates/prd.md\"")
+
+	assertLoadErrorContains(t, `
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+  roleDocTemplates:
+    pm:
+      - path: ../outside.md
+`, "spec.roleDocTemplates[\"pm\"][0].path")
+
+	assertLoadErrorContains(t, `
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+  roleDocTemplates:
+    pm:
+      - path: docs/templates/prd.md
+        repository: "@invalid"
+`, "spec.roleDocTemplates[\"pm\"][0].repository")
+}
+
 func TestLoadFromYAML_SchemaValidationErrors(t *testing.T) {
 	t.Parallel()
 
