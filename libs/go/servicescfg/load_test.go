@@ -518,23 +518,6 @@ spec:
 `,
 		},
 		{
-			name:        "unknown_service_field",
-			errContains: "services schema validation failed",
-			raw: `
-apiVersion: codex-k8s.dev/v1alpha1
-kind: ServiceStack
-metadata:
-  name: demo
-spec:
-  environments:
-    production:
-      namespaceTemplate: "{{ .Project }}-prod"
-  services:
-    - name: api
-      unknownField: true
-`,
-		},
-		{
 			name:        "version_scalar_not_allowed",
 			errContains: "cannot unmarshal",
 			raw: `
@@ -565,6 +548,49 @@ spec:
 				t.Fatalf("expected error containing %q, got: %v", tc.errContains, err)
 			}
 		})
+	}
+}
+
+func TestLoadFromYAML_UnknownFieldsAreForwardCompatible(t *testing.T) {
+	t.Parallel()
+
+	result, err := LoadFromYAML([]byte(strings.TrimSpace(`
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+  unknownRootMeta: true
+unknownRootField: "allowed"
+spec:
+  unknownSpecField:
+    enabled: true
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+      unknownEnvironmentField: "ok"
+  versions:
+    worker:
+      value: "0.1.0"
+      unknownVersionField: "future"
+  services:
+    - name: worker
+      unknownServiceField: true
+`)), LoadOptions{Env: "production"})
+	if err != nil {
+		t.Fatalf("expected unknown fields to be ignored for forward compatibility, got: %v", err)
+	}
+
+	if got, want := result.Stack.Metadata.Name, "demo"; got != want {
+		t.Fatalf("unexpected metadata.name: got %q want %q", got, want)
+	}
+	if got, want := len(result.Stack.Spec.Services), 1; got != want {
+		t.Fatalf("unexpected services count: got %d want %d", got, want)
+	}
+	if got, want := result.Stack.Spec.Services[0].Name, "worker"; got != want {
+		t.Fatalf("unexpected service name: got %q want %q", got, want)
+	}
+	if got, want := result.Stack.Spec.Versions["worker"].Value, "0.1.0"; got != want {
+		t.Fatalf("unexpected version value: got %q want %q", got, want)
 	}
 }
 

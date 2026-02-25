@@ -187,7 +187,7 @@ spec:
    - explicit `rootRepository`, либо
    - virtual root (service repos ordered by deterministic key).
 3. Загрузить `services.yaml` root и все `imports` (repo/path/ref).
-4. Построить `effective manifest` (typed merge + cycle detection + strict validation).
+4. Построить `effective manifest` (typed merge + cycle detection + schema/domain validation с forward-compatible unknown fields).
 5. Сформировать execution-plan (deploy order и зависимости).
 6. Сформировать repo checkout plan для worker/agent-runner:
    - только нужные repo/path;
