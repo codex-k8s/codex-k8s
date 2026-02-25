@@ -1352,6 +1352,210 @@ func TestIngestGitHubWebhook_PullRequestLabeledNeedReviewer_CreatesReviewerRun(t
 	}
 }
 
+func TestIngestGitHubWebhook_PullRequestLabeledNeedReviewer_DeduplicatesAcrossDifferentDeliveryIDs(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{
+		"reviewer": {ID: "agent-reviewer", AgentKey: "reviewer", Name: "AI Reviewer"},
+	}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {
+				ID:          "user-1",
+				GitHubLogin: "member",
+			},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{
+			"project-1|user-1": "read_write",
+		},
+	}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"labeled",
+		"label":{"name":"need:reviewer"},
+		"pull_request":{
+			"id":501,
+			"number":205,
+			"title":"Need pre-review",
+			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/205",
+			"state":"open",
+			"updated_at":"2026-02-25T11:01:19Z",
+			"labels":[{"name":"state:in-review"},{"name":"need:reviewer"}],
+			"head":{"ref":"codex/issue-175"},
+			"user":{"id":55,"login":"member"}
+		},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`)
+	firstCmd := IngestCommand{
+		CorrelationID: "delivery-pr-label-reviewer-1",
+		DeliveryID:    "delivery-pr-label-reviewer-1",
+		EventType:     string(webhookdomain.GitHubEventPullRequest),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+	secondCmd := IngestCommand{
+		CorrelationID: "delivery-pr-label-reviewer-2",
+		DeliveryID:    "delivery-pr-label-reviewer-2",
+		EventType:     string(webhookdomain.GitHubEventPullRequest),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	first, err := svc.IngestGitHubWebhook(ctx, firstCmd)
+	if err != nil {
+		t.Fatalf("first ingest failed: %v", err)
+	}
+	if first.Status != webhookdomain.IngestStatusAccepted || first.Duplicate {
+		t.Fatalf("unexpected first result: %+v", first)
+	}
+
+	second, err := svc.IngestGitHubWebhook(ctx, secondCmd)
+	if err != nil {
+		t.Fatalf("second ingest failed: %v", err)
+	}
+	if second.Status != webhookdomain.IngestStatusDuplicate || !second.Duplicate {
+		t.Fatalf("unexpected second result: %+v", second)
+	}
+	if second.RunID != first.RunID {
+		t.Fatalf("expected same run id for duplicate reviewer trigger, got first=%q second=%q", first.RunID, second.RunID)
+	}
+	if first.CorrelationID == firstCmd.CorrelationID || second.CorrelationID == secondCmd.CorrelationID {
+		t.Fatalf("expected deterministic correlation id, got first=%q second=%q", first.CorrelationID, second.CorrelationID)
+	}
+	if first.CorrelationID != second.CorrelationID {
+		t.Fatalf("expected same deterministic correlation id, got first=%q second=%q", first.CorrelationID, second.CorrelationID)
+	}
+	if len(runs.items) != 1 {
+		t.Fatalf("expected one run record after duplicate deliveries, got %d", len(runs.items))
+	}
+	if len(events.items) != 2 {
+		t.Fatalf("expected two flow events, got %d", len(events.items))
+	}
+	if events.items[0].EventType != floweventdomain.EventTypeWebhookReceived {
+		t.Fatalf("expected first flow event webhook.received, got %s", events.items[0].EventType)
+	}
+	if events.items[1].EventType != floweventdomain.EventTypeWebhookDuplicate {
+		t.Fatalf("expected second flow event webhook.duplicate, got %s", events.items[1].EventType)
+	}
+}
+
+func TestIngestGitHubWebhook_PullRequestLabeledNeedReviewer_AllowsNewRunAfterUpdatedAtChanged(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{
+		"reviewer": {ID: "agent-reviewer", AgentKey: "reviewer", Name: "AI Reviewer"},
+	}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {
+				ID:          "user-1",
+				GitHubLogin: "member",
+			},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{
+			"project-1|user-1": "read_write",
+		},
+	}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
+	})
+
+	buildPayload := func(updatedAt string) json.RawMessage {
+		return json.RawMessage(fmt.Sprintf(`{
+			"action":"labeled",
+			"label":{"name":"need:reviewer"},
+			"pull_request":{
+				"id":501,
+				"number":205,
+				"title":"Need pre-review",
+				"html_url":"https://github.com/codex-k8s/codex-k8s/pull/205",
+				"state":"open",
+				"updated_at":"%s",
+				"labels":[{"name":"state:in-review"},{"name":"need:reviewer"}],
+				"head":{"ref":"codex/issue-175"},
+				"user":{"id":55,"login":"member"}
+			},
+			"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+			"sender":{"id":10,"login":"member"}
+		}`, updatedAt))
+	}
+
+	first, err := svc.IngestGitHubWebhook(ctx, IngestCommand{
+		CorrelationID: "delivery-pr-label-reviewer-updated-1",
+		DeliveryID:    "delivery-pr-label-reviewer-updated-1",
+		EventType:     string(webhookdomain.GitHubEventPullRequest),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       buildPayload("2026-02-25T11:01:19Z"),
+	})
+	if err != nil {
+		t.Fatalf("first ingest failed: %v", err)
+	}
+	if first.Status != webhookdomain.IngestStatusAccepted || first.Duplicate {
+		t.Fatalf("unexpected first result: %+v", first)
+	}
+
+	second, err := svc.IngestGitHubWebhook(ctx, IngestCommand{
+		CorrelationID: "delivery-pr-label-reviewer-updated-2",
+		DeliveryID:    "delivery-pr-label-reviewer-updated-2",
+		EventType:     string(webhookdomain.GitHubEventPullRequest),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       buildPayload("2026-02-25T11:07:49Z"),
+	})
+	if err != nil {
+		t.Fatalf("second ingest failed: %v", err)
+	}
+	if second.Status != webhookdomain.IngestStatusAccepted || second.Duplicate {
+		t.Fatalf("unexpected second result: %+v", second)
+	}
+	if second.RunID == first.RunID {
+		t.Fatalf("expected new run id for changed updated_at, got run id %q", second.RunID)
+	}
+	if first.CorrelationID == second.CorrelationID {
+		t.Fatalf("expected different deterministic correlation ids for different updated_at values")
+	}
+	if len(runs.items) != 2 {
+		t.Fatalf("expected two run records for distinct updated_at values, got %d", len(runs.items))
+	}
+}
+
 func TestIngestGitHubWebhook_PullRequestLabeledNonReviewerLabel_DoesNotCreateRun(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}

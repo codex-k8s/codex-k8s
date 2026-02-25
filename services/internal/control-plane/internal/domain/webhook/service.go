@@ -168,27 +168,29 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 	if err != nil {
 		return IngestResult{}, fmt.Errorf("resolve issue run trigger: %w", err)
 	}
+	effectiveCmd := cmd
+	effectiveCmd.CorrelationID = s.resolveCorrelationID(cmd, envelope, trigger, hasIssueRunTrigger)
 	if reviewMeta.ReceivedChangesRequested {
-		s.recordPullRequestReviewChangesRequestedEvent(ctx, cmd, envelope)
+		s.recordPullRequestReviewChangesRequestedEvent(ctx, effectiveCmd, envelope)
 		if hasIssueRunTrigger {
-			s.recordPullRequestReviewStageResolvedEvent(ctx, cmd, envelope, trigger, reviewMeta)
+			s.recordPullRequestReviewStageResolvedEvent(ctx, effectiveCmd, envelope, trigger, reviewMeta)
 		} else if strings.TrimSpace(conflict.IgnoreReason) != "" {
-			s.recordPullRequestReviewStageAmbiguousEvent(ctx, cmd, envelope, conflict, reviewMeta)
+			s.recordPullRequestReviewStageAmbiguousEvent(ctx, effectiveCmd, envelope, conflict, reviewMeta)
 		}
 	}
-	pushTarget, hasPushMainDeploy := s.resolvePushMainDeploy(cmd.EventType, envelope)
-	if strings.EqualFold(strings.TrimSpace(cmd.EventType), string(webhookdomain.GitHubEventIssues)) && !hasIssueRunTrigger {
-		return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
+	pushTarget, hasPushMainDeploy := s.resolvePushMainDeploy(effectiveCmd.EventType, envelope)
+	if strings.EqualFold(strings.TrimSpace(effectiveCmd.EventType), string(webhookdomain.GitHubEventIssues)) && !hasIssueRunTrigger {
+		return s.recordIgnoredWebhook(ctx, effectiveCmd, envelope, ignoredWebhookParams{
 			Reason:     "issue_event_not_trigger_label",
 			RunKind:    "",
 			HasBinding: hasBinding,
 		})
 	}
 	if hasIssueRunTrigger && len(conflict.ConflictingLabels) > 1 {
-		if err := s.postTriggerConflictComment(ctx, cmd, envelope, trigger, conflict.ConflictingLabels); err != nil {
+		if err := s.postTriggerConflictComment(ctx, effectiveCmd, envelope, trigger, conflict.ConflictingLabels); err != nil {
 			return IngestResult{}, fmt.Errorf("post trigger conflict comment: %w", err)
 		}
-		return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
+		return s.recordIgnoredWebhook(ctx, effectiveCmd, envelope, ignoredWebhookParams{
 			Reason:            "issue_trigger_label_conflict",
 			RunKind:           trigger.Kind,
 			HasBinding:        hasBinding,
@@ -196,7 +198,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		})
 	}
 	if !hasIssueRunTrigger && conflict.IgnoreReason != "" {
-		return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
+		return s.recordIgnoredWebhook(ctx, effectiveCmd, envelope, ignoredWebhookParams{
 			Reason:            conflict.IgnoreReason,
 			RunKind:           "",
 			HasBinding:        hasBinding,
@@ -206,7 +208,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 	}
 	if hasIssueRunTrigger {
 		if !hasBinding || strings.TrimSpace(projectID) == "" {
-			return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
+			return s.recordIgnoredWebhook(ctx, effectiveCmd, envelope, ignoredWebhookParams{
 				Reason:     string(runstatusdomain.TriggerWarningReasonRepositoryNotBoundForIssueLabel),
 				RunKind:    trigger.Kind,
 				HasBinding: hasBinding,
@@ -218,7 +220,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 			return IngestResult{}, fmt.Errorf("authorize issue label trigger actor: %w", err)
 		}
 		if !allowed {
-			return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
+			return s.recordIgnoredWebhook(ctx, effectiveCmd, envelope, ignoredWebhookParams{
 				Reason:     reason,
 				RunKind:    trigger.Kind,
 				HasBinding: hasBinding,
@@ -227,7 +229,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 	}
 	if hasPushMainDeploy {
 		if !hasBinding || strings.TrimSpace(projectID) == "" {
-			return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
+			return s.recordIgnoredWebhook(ctx, effectiveCmd, envelope, ignoredWebhookParams{
 				Reason:     "repository_not_bound_for_push_main",
 				RunKind:    "",
 				HasBinding: hasBinding,
@@ -241,7 +243,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 			return IngestResult{}, fmt.Errorf("auto bump services versions for push main: %w", err)
 		}
 		if bumped {
-			return s.recordIgnoredWebhook(ctx, cmd, envelope, ignoredWebhookParams{
+			return s.recordIgnoredWebhook(ctx, effectiveCmd, envelope, ignoredWebhookParams{
 				Reason:     "push_main_versions_autobumped",
 				RunKind:    "",
 				HasBinding: hasBinding,
@@ -249,10 +251,10 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		}
 	}
 	if !hasIssueRunTrigger && !hasPushMainDeploy {
-		return s.recordReceivedWebhookWithoutRun(ctx, cmd, envelope)
+		return s.recordReceivedWebhookWithoutRun(ctx, effectiveCmd, envelope)
 	}
 
-	fallbackProjectID := deriveProjectID(cmd.CorrelationID, envelope)
+	fallbackProjectID := deriveProjectID(effectiveCmd.CorrelationID, envelope)
 
 	learningProjectID := projectID
 	if learningProjectID == "" {
@@ -303,7 +305,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 	}
 
 	runPayload, err := buildRunPayload(runPayloadInput{
-		Command:           cmd,
+		Command:           effectiveCmd,
 		Envelope:          envelope,
 		ProjectID:         payloadProjectID,
 		RepositoryID:      repositoryID,
@@ -327,7 +329,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 	}
 
 	createResult, err := s.agentRuns.CreatePendingIfAbsent(ctx, agentrunrepo.CreateParams{
-		CorrelationID: cmd.CorrelationID,
+		CorrelationID: effectiveCmd.CorrelationID,
 		ProjectID:     projectID,
 		AgentID:       agent.ID,
 		RunPayload:    runPayload,
@@ -337,11 +339,11 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		return IngestResult{}, fmt.Errorf("create pending agent run: %w", err)
 	}
 	if hasIssueRunTrigger && createResult.Inserted {
-		s.postRunLaunchPlannedFeedback(ctx, createResult.RunID, trigger, runtimeMode, runtimeNamespace, cmd.EventType)
+		s.postRunLaunchPlannedFeedback(ctx, createResult.RunID, trigger, runtimeMode, runtimeNamespace, effectiveCmd.EventType)
 	}
 
 	eventPayload, err := buildEventPayload(eventPayloadInput{
-		Command:  cmd,
+		Command:  effectiveCmd,
 		Envelope: envelope,
 		Inserted: createResult.Inserted,
 		RunID:    createResult.RunID,
@@ -359,18 +361,18 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 	}
 
 	if err := s.flowEvents.Insert(ctx, floweventrepo.InsertParams{
-		CorrelationID: cmd.CorrelationID,
+		CorrelationID: effectiveCmd.CorrelationID,
 		ActorType:     floweventdomain.ActorTypeSystem,
 		ActorID:       githubWebhookActorID,
 		EventType:     eventType,
 		Payload:       eventPayload,
-		CreatedAt:     cmd.ReceivedAt,
+		CreatedAt:     effectiveCmd.ReceivedAt,
 	}); err != nil {
 		return IngestResult{}, fmt.Errorf("insert flow event: %w", err)
 	}
 
 	return IngestResult{
-		CorrelationID: cmd.CorrelationID,
+		CorrelationID: effectiveCmd.CorrelationID,
 		RunID:         createResult.RunID,
 		Status:        status,
 		Duplicate:     !createResult.Inserted,
@@ -643,6 +645,49 @@ func isDeletedGitCommitSHA(sha string) bool {
 		}
 	}
 	return true
+}
+
+func (s *Service) resolveCorrelationID(cmd IngestCommand, envelope githubWebhookEnvelope, trigger issueRunTrigger, hasIssueRunTrigger bool) string {
+	correlationID := strings.TrimSpace(cmd.CorrelationID)
+	if correlationID == "" {
+		return correlationID
+	}
+	if !hasIssueRunTrigger {
+		return correlationID
+	}
+	if !strings.EqualFold(strings.TrimSpace(trigger.Source), triggerSourcePullRequestLabel) {
+		return correlationID
+	}
+	if !s.triggerLabels.isNeedReviewerLabel(trigger.Label) {
+		return correlationID
+	}
+
+	repositoryFullName := strings.ToLower(strings.TrimSpace(envelope.Repository.FullName))
+	if repositoryFullName == "" || envelope.PullRequest.Number <= 0 {
+		return correlationID
+	}
+
+	action := strings.ToLower(strings.TrimSpace(envelope.Action))
+	triggerLabel := strings.ToLower(strings.TrimSpace(trigger.Label))
+	updatedAt := normalizeReviewerTriggerTimestamp(envelope.PullRequest.UpdatedAt)
+	if action == "" || triggerLabel == "" || updatedAt == "" {
+		return correlationID
+	}
+
+	signature := fmt.Sprintf("pull_request_label|%s|%d|%s|%s|%s", repositoryFullName, envelope.PullRequest.Number, action, triggerLabel, updatedAt)
+	return "pr-label-reviewer-" + uuid.NewSHA1(uuid.NameSpaceURL, []byte(signature)).String()
+}
+
+func normalizeReviewerTriggerTimestamp(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return ""
+	}
+	parsed, err := time.Parse(time.RFC3339Nano, trimmed)
+	if err != nil {
+		return trimmed
+	}
+	return parsed.UTC().Format(time.RFC3339Nano)
 }
 
 func containsLabel(labels []githubLabelRecord, expected string) bool {
