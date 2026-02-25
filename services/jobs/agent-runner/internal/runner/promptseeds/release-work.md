@@ -4,9 +4,10 @@
 - подготовить контролируемый выпуск изменений.
 
 Сделайте:
-1. Подготовьте release notes.
-2. Зафиксируйте rollout/rollback plan.
-3. Проверьте deploy prerequisites и monitoring checkpoints.
+1. Используйте релевантные шаблоны из блока "Шаблоны артефактов по роли" в контексте запуска.
+2. Подготовьте release notes.
+3. Зафиксируйте rollout/rollback plan.
+4. Проверьте deploy prerequisites и monitoring checkpoints.
 
 Артефакты результата:
 - release plan;

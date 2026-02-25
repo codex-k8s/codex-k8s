@@ -57,6 +57,10 @@
   - `dev`, `pm`, `sa`, `em`, `reviewer`, `qa`, `sre`, `km` (каждая: `work/revise` и `ru/en`).
 - role-aware пути к шаблонам артефактов берутся из `services.yaml/spec.roleDocTemplates`;
   в seed-файлах указываются только имена шаблонов (без жестко заданных repository-relative путей).
+- для документационных stage seed'ов (`intake|vision|prd|arch|design|plan|doc-audit|qa|release|postdeploy|ops|rethink` и их `*:revise`):
+  - обязательно использовать блок "Шаблоны артефактов по роли" из prompt envelope;
+  - нельзя хардкодить пути к шаблонам артефактов в seed.
+- non-doc seed'ы (`dev*`, `ai-repair`, `self-improve`) не должны получать лишние требования по документационным шаблонам.
 - Для `self-improve-*` seed обязателен диагностический контур:
   - MCP `self_improve_runs_list` / `self_improve_run_lookup` / `self_improve_session_get`;
   - сохранение извлеченного `codex-cli` session JSON в `/tmp/codex-sessions/<run-id>`.
