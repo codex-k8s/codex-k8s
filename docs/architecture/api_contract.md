@@ -5,8 +5,8 @@ title: "codex-k8s — API Contract Overview"
 status: active
 owner_role: SA
 created_at: 2026-02-06
-updated_at: 2026-02-21
-related_issues: [1, 19, 100]
+updated_at: 2026-02-25
+related_issues: [1, 19, 100, 154, 155]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -181,6 +181,34 @@ approvals:
 - Trigger/deploy label, инициированный агентом, проходит owner approval до применения.
 - `state:*` и `need:*` могут применяться автоматически в рамках project policy.
 - Любая операция с label фиксируется в `flow_events` и связывается с `agent_sessions`/`links`.
+
+### Profile-driven next-step contract (S5 Day1, Issues #154/#155)
+- Source of truth:
+  - `docs/product/requirements_machine_driven.md` (FR-053, FR-054);
+  - `docs/product/labels_and_trigger_policy.md`;
+  - `docs/product/stage_process_model.md`;
+  - `docs/architecture/adr/ADR-0008-profile-driven-stage-launch-and-next-step-contract.md`.
+- Обязательный publish contract для service-message next-step карточки:
+  - `launch_profile` (`quick-fix|feature|new-service`);
+  - `stage_path` (каноническая траектория профиля);
+  - `primary_action` (валидированный deep-link в staff web-console);
+  - `fallback_action` (copy-paste label transition команда);
+  - `guardrail_note` (правила pre-check/ambiguity).
+- Ownership сервисных границ:
+  - `services/internal/control-plane` владеет profile resolver, escalation rules и ambiguity-gate;
+  - `services/external/api-gateway` и `services/staff/web-console` остаются thin adapters (валидация/RBAC/UX), без доменных правил stage transition.
+- Правила детерминизма:
+  - fallback action формируется только для однозначного `(launch_profile, current_stage, next_stage)`;
+  - перед fallback transition обязателен pre-check текущих labels;
+  - при ambiguity (`0` или `>1` trigger labels) transition блокируется, публикуется remediation и ставится `need:input`.
+- Policy/Audit требования (общие для primary и fallback):
+  - любой transition фиксирует `correlation_id`, actor и `source` (`ui` или `fallback`) в `flow_events`;
+  - fallback-команды не содержат секретов/токенов и используют только labels из каталога `run:*|state:*|need:*`;
+  - review gate после формирования PR синхронизирует `state:in-review` на PR и на Issue.
+- Runtime impact для handover в `run:dev`:
+  - расширить typed payload service-message next-step карточки обязательными полями контракта;
+  - добавить resolver/escalation и ambiguity-stop в `control-plane`;
+  - сохранить rollback path на stage-aware baseline ADR-0006 через feature-flag.
 
 ## MCP approver/executor contract behavior
 - Approver/executor интеграции подключаются по HTTP-контрактам через MCP-слой.

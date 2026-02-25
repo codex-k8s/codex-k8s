@@ -47,6 +47,7 @@ approvals:
 
 - Канонический PRD-артефакт Day1: `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md` (по шаблону `docs/templates/prd.md`).
 - Канонический ADR-артефакт Day1: `docs/architecture/adr/ADR-0008-profile-driven-stage-launch-and-next-step-contract.md` (service boundaries + runtime impact/migration).
+- Канонический API-contract sync Day1: `docs/architecture/api_contract.md` (норматив next-step action-card payload + audit/ambiguity guardrails).
 
 ### 1. Канонический набор launch profiles и эскалации
 
@@ -108,6 +109,7 @@ approvals:
   - launch profile matrix согласована с `stage_process_model`.
 - Contract gate:
   - next-step action contract детерминирован и допускает только policy-safe transitions.
+  - `docs/architecture/api_contract.md` фиксирует обязательные поля action-card и ownership resolver в `control-plane`.
 - Architecture gate:
   - ownership resolver/escalation закреплён за `services/internal/control-plane`;
   - `external` и `staff` контуры остаются thin adapters без доменной логики переходов.
@@ -153,5 +155,6 @@ approvals:
 - [x] Profile matrix, escalation rules и ambiguity handling формализованы.
 - [x] Next-step action-card contract и fallback templates зафиксированы.
 - [x] Архитектурный контракт и runtime impact/migration path зафиксированы в ADR-0008.
+- [x] Канонический API-contract (`docs/architecture/api_contract.md`) синхронизирован с FR-053/FR-054.
 - [x] Риски и продуктовые допущения отражены в Day1 epic.
 - [ ] Owner review/approve в этом PR.
