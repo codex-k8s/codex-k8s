@@ -24,6 +24,54 @@ spec:
     - path: docs/delivery
       description: Планы спринтов/эпиков, трассируемость и критерии готовности.
       roles: [em, pm, km, reviewer]
+  roleDocTemplates:
+    pm:
+      - path: docs/templates/problem.md
+      - path: docs/templates/brief.md
+      - path: docs/templates/scope_mvp.md
+      - path: docs/templates/constraints.md
+      - path: docs/templates/project_charter.md
+      - path: docs/templates/success_metrics.md
+      - path: docs/templates/prd.md
+      - path: docs/templates/user_story.md
+      - path: docs/templates/nfr.md
+    sa:
+      - path: docs/templates/c4_context.md
+      - path: docs/templates/c4_container.md
+      - path: docs/templates/adr.md
+      - path: docs/templates/alternatives.md
+      - path: docs/templates/design_doc.md
+      - path: docs/templates/api_contract.md
+      - path: docs/templates/data_model.md
+      - path: docs/templates/migrations_policy.md
+    em:
+      - path: docs/templates/delivery_plan.md
+      - path: docs/templates/definition_of_done.md
+      - path: docs/templates/epic.md
+      - path: docs/templates/release_plan.md
+    dev:
+      - path: docs/templates/api_contract.md
+      - path: docs/templates/data_model.md
+      - path: docs/templates/migrations_policy.md
+    reviewer:
+      - path: docs/templates/definition_of_done.md
+      - path: docs/templates/test_strategy.md
+      - path: docs/templates/regression_checklist.md
+    qa:
+      - path: docs/templates/test_strategy.md
+      - path: docs/templates/test_plan.md
+      - path: docs/templates/test_matrix.md
+      - path: docs/templates/regression_checklist.md
+    sre:
+      - path: docs/templates/runbook.md
+      - path: docs/templates/slo.md
+      - path: docs/templates/alerts.md
+      - path: docs/templates/monitoring.md
+      - path: docs/templates/rollback_plan.md
+    km:
+      - path: docs/templates/issue_map.md
+      - path: docs/templates/docset_issue.md
+      - path: docs/templates/docset_pr.md
   versions:
     api-gateway:
       value: "0.1.13"

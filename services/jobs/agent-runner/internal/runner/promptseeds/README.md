@@ -55,9 +55,8 @@
 - stage-specific seed-файлы не отменяют requirement на отдельные role-specific body-шаблоны `work/revise` в локалях минимум `ru` и `en`.
 - role-specific baseline для поддержанных ролей:
   - `dev`, `pm`, `sa`, `em`, `reviewer`, `qa`, `sre`, `km` (каждая: `work/revise` и `ru/en`).
-- stage+role override для PRD-этапа роли `pm`:
-  - `prd-pm-work_ru.md`, `prd-pm-work_en.md`, `prd-pm-revise_ru.md`, `prd-pm-revise_en.md`;
-  - эти seed требуют отдельный PRD-файл по `docs/templates/prd.md` и синхронизацию `issue_map`/`requirements_traceability`.
+- role-aware пути к шаблонам артефактов берутся из `services.yaml/spec.roleDocTemplates`;
+  в seed-файлах указываются только имена шаблонов (без жестко заданных repository-relative путей).
 - Для `self-improve-*` seed обязателен диагностический контур:
   - MCP `self_improve_runs_list` / `self_improve_run_lookup` / `self_improve_session_get`;
   - сохранение извлеченного `codex-cli` session JSON в `/tmp/codex-sessions/<run-id>`.

@@ -22,6 +22,7 @@ approvals:
 - Поддерживаются два класса шаблонов: `work` и `revise`.
 - Каноническая модель шаблонов role-specific: отдельный body для каждого `agent_key` в каждой ветке `work/revise`.
 - `services.yaml` поддерживает repo-aware `spec.projectDocs[]` (`repository`, `path`, `description`, `roles[]`, `optional`) для role-aware docs context в multi-repo проектах.
+- `services.yaml` поддерживает `spec.roleDocTemplates` (role -> list of template paths) для role-aware подсказок по шаблонам артефактов в prompt envelope.
 - Источник шаблона определяется по приоритету: project override в БД -> global override в БД -> seed в репозитории.
 - Для каждого run фиксируется effective template version/hash для аудита и воспроизводимости.
 - Шаблоны хранятся по локалям; выбор языка выполняется по цепочке project locale -> system default locale -> `en`.
@@ -147,6 +148,7 @@ approvals:
 - Дополнительно для Day15:
   - role profile (display name + capability areas);
   - role-aware docs refs из `services.yaml/spec.projectDocs[]`;
+  - role-aware template refs из `services.yaml/spec.roleDocTemplates`;
   - лимит на количество docs refs в final prompt (для контроля размера prompt payload).
 - Формат контекста должен быть версионирован; изменения контракта рендера должны быть обратно совместимы либо сопровождаться миграцией шаблонов.
 

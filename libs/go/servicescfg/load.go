@@ -351,6 +351,9 @@ func normalizeAndValidate(stack *Stack, env string) error {
 	if err := normalizeAndValidateProjectDocs(stack); err != nil {
 		return err
 	}
+	if err := normalizeAndValidateRoleDocTemplates(stack); err != nil {
+		return err
+	}
 
 	projectName := strings.TrimSpace(stack.Spec.Project)
 	if projectName == "" {
@@ -386,14 +389,9 @@ func normalizeAndValidateProjectDocs(stack *Stack) error {
 		}
 		item.Repository = repository
 
-		path := strings.TrimSpace(item.Path)
-		if path == "" {
-			return fmt.Errorf("spec.projectDocs[%d].path is required", i)
-		}
-		normalizedPath := filepath.ToSlash(filepath.Clean(path))
-		if normalizedPath == "." || normalizedPath == ".." || normalizedPath == "/" ||
-			strings.HasPrefix(normalizedPath, "/") || strings.HasPrefix(normalizedPath, "../") {
-			return fmt.Errorf("spec.projectDocs[%d].path must be repository-relative: %q", i, path)
+		normalizedPath, err := normalizeRepositoryRelativePath(item.Path)
+		if err != nil {
+			return fmt.Errorf("spec.projectDocs[%d].path %w", i, err)
 		}
 		lowerPath := strings.ToLower(normalizedPath)
 		key := lowerPath
@@ -431,8 +429,98 @@ func normalizeAndValidateProjectDocs(stack *Stack) error {
 	return nil
 }
 
+func normalizeAndValidateRoleDocTemplates(stack *Stack) error {
+	if len(stack.Spec.RoleDocTemplates) == 0 {
+		return nil
+	}
+
+	normalizedByRole := make(map[string][]RoleDocTemplateRef, len(stack.Spec.RoleDocTemplates))
+	for rawRole, rawTemplates := range stack.Spec.RoleDocTemplates {
+		roleKey := normalizeRoleKey(rawRole)
+		if roleKey == "" {
+			return fmt.Errorf("spec.roleDocTemplates contains empty role key")
+		}
+		if !isValidRoleKey(roleKey) {
+			return fmt.Errorf("spec.roleDocTemplates[%q] role key must match [a-z0-9][a-z0-9._-]*", rawRole)
+		}
+		if _, exists := normalizedByRole[roleKey]; exists {
+			return fmt.Errorf("spec.roleDocTemplates contains duplicate role key %q", roleKey)
+		}
+		if len(rawTemplates) == 0 {
+			return fmt.Errorf("spec.roleDocTemplates[%q] must contain at least one template", rawRole)
+		}
+
+		seenByRepositoryPath := make(map[string]struct{}, len(rawTemplates))
+		templates := make([]RoleDocTemplateRef, 0, len(rawTemplates))
+		for idx := range rawTemplates {
+			item := rawTemplates[idx]
+			repository := normalizeProjectDocRepository(item.Repository)
+			if repository != "" && !isValidRepositoryAlias(repository) {
+				return fmt.Errorf("spec.roleDocTemplates[%q][%d].repository must match [a-z0-9][a-z0-9._-]*", rawRole, idx)
+			}
+
+			normalizedPath, err := normalizeRepositoryRelativePath(item.Path)
+			if err != nil {
+				return fmt.Errorf("spec.roleDocTemplates[%q][%d].path %w", rawRole, idx, err)
+			}
+			lowerPath := strings.ToLower(normalizedPath)
+			key := lowerPath
+			if repository != "" {
+				key = repository + "::" + lowerPath
+			}
+			if _, exists := seenByRepositoryPath[key]; exists {
+				if repository == "" {
+					return fmt.Errorf("duplicate spec.roleDocTemplates entry for role %q path %q", roleKey, normalizedPath)
+				}
+				return fmt.Errorf("duplicate spec.roleDocTemplates entry for role %q %q/%q", roleKey, repository, normalizedPath)
+			}
+			seenByRepositoryPath[key] = struct{}{}
+
+			templates = append(templates, RoleDocTemplateRef{
+				Repository:  repository,
+				Path:        normalizedPath,
+				Description: strings.TrimSpace(item.Description),
+			})
+		}
+
+		sort.SliceStable(templates, func(i, j int) bool {
+			left := templates[i]
+			right := templates[j]
+			if left.Repository != right.Repository {
+				return left.Repository < right.Repository
+			}
+			return left.Path < right.Path
+		})
+		normalizedByRole[roleKey] = templates
+	}
+
+	stack.Spec.RoleDocTemplates = normalizedByRole
+	return nil
+}
+
 func normalizeProjectDocRepository(value string) string {
 	return strings.ToLower(strings.TrimSpace(value))
+}
+
+func normalizeRoleKey(value string) string {
+	return strings.ToLower(strings.TrimSpace(value))
+}
+
+func isValidRoleKey(value string) bool {
+	return isValidRepositoryAlias(value)
+}
+
+func normalizeRepositoryRelativePath(path string) (string, error) {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return "", fmt.Errorf("is required")
+	}
+	normalizedPath := filepath.ToSlash(filepath.Clean(path))
+	if normalizedPath == "." || normalizedPath == ".." || normalizedPath == "/" ||
+		strings.HasPrefix(normalizedPath, "/") || strings.HasPrefix(normalizedPath, "../") {
+		return "", fmt.Errorf("must be repository-relative: %q", path)
+	}
+	return normalizedPath, nil
 }
 
 func isValidRepositoryAlias(value string) bool {

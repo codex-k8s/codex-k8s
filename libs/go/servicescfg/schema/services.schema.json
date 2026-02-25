@@ -38,6 +38,15 @@
             "$ref": "#/$defs/projectDocRef"
           }
         },
+        "roleDocTemplates": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/roleDocTemplateRef"
+            }
+          }
+        },
         "versions": {
           "type": "object",
           "additionalProperties": {
@@ -313,6 +322,24 @@
         }
       },
       "additionalProperties": true
+    },
+    "roleDocTemplateRef": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
     },
     "runtimeMode": {
       "type": "string",
