@@ -5,8 +5,8 @@ title: "Epic Index (grouped by sprint)"
 status: active
 owner_role: EM
 created_at: 2026-02-24
-updated_at: 2026-02-24
-related_issues: [112, 154]
+updated_at: 2026-02-25
+related_issues: [112, 154, 184, 185]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -17,7 +17,7 @@ approvals:
 # Epic Index
 
 ## TL;DR
-- Все day-эпики сгруппированы по папкам спринтов (`s1`, `s2`, `s3`, `s4`, `s5`).
+- Все day-эпики сгруппированы по папкам спринтов (`s1`, `s2`, `s3`, `s4`, `s5`, `s6`).
 - Каталог эпиков каждого спринта размещён в той же папке.
 - Это устраняет смешение day-эпиков разных спринтов в одном каталоге.
 
@@ -30,6 +30,7 @@ approvals:
 | `docs/delivery/epics/s3/` | Day1..Day20 + каталог Sprint S3 | `docs/delivery/epics/s3/epic_s3.md` |
 | `docs/delivery/epics/s4/` | Day1 + каталог Sprint S4 | `docs/delivery/epics/s4/epic_s4.md` |
 | `docs/delivery/epics/s5/` | Day1 + каталог Sprint S5 | `docs/delivery/epics/s5/epic_s5.md` |
+| `docs/delivery/epics/s6/` | Day1 + каталог Sprint S6 | `docs/delivery/epics/s6/epic_s6.md` |
 
 ## Проверка консистентности
 - Для каждого `s<номер>` должны существовать:

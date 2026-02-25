@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-25
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -102,6 +102,15 @@ approvals:
 ## Правило актуализации
 - Любое новое требование сначала добавляется в `docs/product/requirements_machine_driven.md`, затем отражается в этой матрице.
 - Если строка в матрице теряет ссылку на целевой документ, статус меняется на `gap` до устранения.
+
+## Актуализация по Issue #184 (`run:intake`, 2026-02-25)
+- Для FR-009/FR-030/FR-032/FR-033/FR-038 добавлен intake traceability пакет Sprint S6:
+  `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md`,
+  `docs/delivery/epics/s6/epic_s6.md`,
+  `docs/delivery/epics/s6/epic-s6-day1-agents-prompts-intake.md`.
+- Создана stage-continuity issue `#185` (`run:vision`) с обязательной инструкцией сформировать issue следующего этапа (`run:prd`), чтобы сохранить последовательную декомпозицию до `run:doc-audit`.
+- Зафиксировано продуктовое расхождение As-Is: UI-раздел `Agents` и prompt templates находится в scaffold-состоянии, при этом contract-first staff API пока не содержит endpoint-ов для agents/templates/audit lifecycle.
+- Зафиксирован stage-handover baseline для полного цикла до `run:doc-audit` и обязательное правило создания follow-up issue на каждом следующем stage до `run:plan` включительно.
 
 ## Актуализация по Issue #155 (`run:plan`, 2026-02-25)
 - Для FR-053/FR-054 добавлены execution-governance артефакты Sprint S5 (`epic_s5.md`, обновлённый sprint-plan, issue-map sync).

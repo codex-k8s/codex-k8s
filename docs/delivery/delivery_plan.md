@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-25
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -47,6 +47,8 @@ approvals:
 - Epic S4 catalog: `docs/delivery/epics/s4/epic_s4.md`
 - Sprint S5 plan: `docs/delivery/sprints/s5/sprint_s5_stage_entry_and_label_ux.md`
 - Epic S5 catalog: `docs/delivery/epics/s5/epic_s5.md`
+- Sprint S6 plan: `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md`
+- Epic S6 catalog: `docs/delivery/epics/s6/epic_s6.md`
 - Sprint index: `docs/delivery/sprints/README.md`
 - Epic index: `docs/delivery/epics/README.md`
 - E2E master plan: `docs/delivery/e2e_mvp_master_plan.md`
@@ -104,6 +106,13 @@ approvals:
 - Результат Day 1 (факт): owner-ready vision/prd + architecture execution package для входа в `run:dev` подготовлен в Issue #155 (включая ADR-0008); Owner approval получен (PR #166, 2026-02-25).
 - Day 2 (in-review): single-epic execution package для реализации FR-053/FR-054 (`docs/delivery/epics/s5/epic-s5-day2-launch-profiles-dev-execution.md`).
 - Результат Day 2 (факт): в Issue #170 зафиксирован delivery governance пакет (QG-D2-01..QG-D2-05, DoD, handover), создана implementation issue #171 для выполнения одним эпиком.
+
+### Sprint S6: Agents configuration and prompt templates lifecycle (Issue #184)
+- Day 1 (in-review): intake baseline по разделу `Agents` (`docs/delivery/epics/s6/epic-s6-day1-agents-prompts-intake.md`).
+- Результат Day 1 (факт): подтвержден разрыв между scaffold UI и отсутствием staff API контрактов для agents/templates/audit; зафиксирована полная stage-траектория до `run:doc-audit` и требование создавать follow-up issue на каждом этапе.
+- Day 2 (planned): vision stage в отдельной issue #185 (с обязательным выходом в issue `run:prd`).
+- Следующие day-эпики S6 формируются строго последовательно по stage-цепочке:
+  `vision -> prd -> arch -> design -> plan -> dev -> doc-audit` с отдельной issue на каждый этап.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
