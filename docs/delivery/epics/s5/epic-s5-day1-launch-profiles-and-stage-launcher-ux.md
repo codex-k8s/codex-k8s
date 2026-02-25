@@ -10,8 +10,10 @@ related_issues: [154, 155]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-02-24-issue-155-day1-vision-prd"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-25
 ---
 
 # Epic S5 Day 1: Launch profiles and deterministic next-step actions (Issues #154/#155)
@@ -84,7 +86,7 @@ approvals:
 
 ### 4. Актуальность fallback-синтаксиса (`gh`)
 - Синтаксис `gh issue edit` / `gh pr edit` для `--add-label` и `--remove-label` сверен с актуальным manual GitHub CLI (Context7, источник `/websites/cli_github_manual`).
-- Для Sprint S5 принимаем эти флаги как канонический fallback-контракт до отдельного owner-решения.
+- Для Sprint S5 эти флаги зафиксированы как канонический fallback-контракт (решение Owner в PR #166, 2026-02-25).
 
 ## Stories (handover в `run:dev`)
 - Story-1: Profile Registry + escalation resolver.
@@ -137,7 +139,7 @@ approvals:
 - [x] Подтвержден канонический набор launch profiles и правила эскалации.
 - [x] Подтвержден формат next-step action-карт (`primary deep-link + fallback command`).
 - [x] Подготовлены риски и продуктовые допущения для `run:dev`.
-- [ ] Получен Owner approval vision/prd пакета для запуска `run:dev`.
+- [x] Получен Owner approval vision/prd пакета для запуска `run:dev`.
 
 ## Открытые риски
 - Риск UX-перегрузки: слишком много действий в service-comment снижает читаемость.
@@ -145,10 +147,33 @@ approvals:
 - Риск интеграции: fallback-команды могут расходиться с фактической policy, если не централизовать шаблон.
 - Риск операционной рассинхронизации: ручной `gh` fallback может быть выполнен с неверным `current-stage` без pre-check.
 
+## Блокеры и owner decisions (run:plan handover)
+
+| Тип | ID | Суть | Что требуется от Owner | Статус |
+|---|---|---|---|---|
+| blocker | BLK-155-01 | Финальное решение по запуску `run:dev` после review этого пакета | Запуск разрешён Owner (`Запуск разрешаю`, PR #166, 2026-02-25) | closed |
+| blocker | BLK-155-02 | Требовалась фиксация единой политики fast-track `design -> dev` | Политика зафиксирована как OD-155-01 с guardrails и каноническим fallback | closed |
+| owner-decision | OD-155-01 | Fast-track `design -> dev` как опциональный путь | Утверждено: fast-track допускается как дополнительный путь вместе с canonical `design -> plan`; обязательны `pre-check` и audit trail | approved |
+| owner-decision | OD-155-02 | Ambiguity hard-stop (`0` или `>1` stage labels) | Утверждено: при неоднозначности обязателен `need:input`, best-guess переходы запрещены | approved |
+| owner-decision | OD-155-03 | Единый review-gate для Issue + PR | Утверждено: обязательная синхронизация `state:in-review` на Issue и PR | approved |
+
+## Зафиксированные Owner-решения (2026-02-25)
+- `OD-155-01`: fast-track `design -> dev` остаётся optional action и публикуется только вместе с canonical `design -> plan`; ручной fallback выполняется строго как `pre-check -> transition`.
+- `OD-155-02`: при ambiguity stage (`0` или `>1` labels `run:*`) transition блокируется, а service-comment публикует только remediation с `need:input`.
+- `OD-155-03`: review-gate после формирования PR обязан устанавливать `state:in-review` на PR и Issue одновременно.
+
 ## Продуктовые допущения
 - Launch profiles не заменяют канонический stage-pipeline, а задают управляемые “траектории входа”.
 - Primary канал (`web-console`) может временно быть недоступен; fallback обязан быть достаточным для продолжения процесса.
 - Для P0/P1 инициатив Owner может принудительно переводить задачу в `new-service` траекторию независимо от исходного профиля.
+
+## EM execution control loop для `run:dev`
+
+| Этап контроля | Контрольная точка | Артефакт подтверждения |
+|---|---|---|
+| Pre-start | QG-01..QG-05 и Readiness gate пройдены, блокеры задокументированы | `sprint_s5_stage_entry_and_label_ux.md`, `epic_s5.md` |
+| Mid-execution | I1..I3 закрывают deterministic resolver и fallback contract без policy bypass | PR updates + acceptance evidence AC-01..AC-04 |
+| Exit to QA | I4..I5 закрывают review-gate и traceability sync | `issue_map`, `requirements_traceability`, PR checklist |
 
 ## Readiness gate для `run:dev`
 - [x] FR-053 и FR-054 синхронизированы между product policy и delivery docs.
@@ -157,4 +182,4 @@ approvals:
 - [x] Архитектурный контракт и runtime impact/migration path зафиксированы в ADR-0008.
 - [x] Канонический API-contract (`docs/architecture/api_contract.md`) синхронизирован с FR-053/FR-054.
 - [x] Риски и продуктовые допущения отражены в Day1 epic.
-- [ ] Owner review/approve в этом PR.
+- [x] Owner review/approve в этом PR.

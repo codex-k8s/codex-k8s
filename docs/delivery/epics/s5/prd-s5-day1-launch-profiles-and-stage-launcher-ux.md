@@ -13,8 +13,10 @@ related_docsets:
   - docs/delivery/requirements_traceability.md
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-02-25-issue-155-prd"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-02-25
 ---
 
 # PRD: Launch profiles and deterministic next-step transitions (Issue #155)
@@ -122,9 +124,9 @@ approvals:
   - UX перегрузка service-comment при расширении количества actions;
   - рассинхронизация fallback шаблонов и runtime policy;
   - ложная уверенность в stage-контексте без pre-check.
-- Открытые вопросы:
-  - Нужны ли отдельные fallback-шаблоны для fast-track (`design -> dev`) при сохранении canonical path?
-  - Требуется ли отдельная визуальная маркировка для forced escalation Owner-решением?
+- Статус вопросов:
+  - Fast-track `design -> dev`: решено как optional путь вместе с canonical `design -> plan` (Owner decision `OD-155-01`, 2026-02-25).
+  - Отдельная визуальная маркировка forced escalation: переносится в backlog `run:dev` как UX-enhancement (не блокирует текущий handover).
 
 ## План релиза (черновик)
 - Ограничения выката: реализация в `run:dev` по инкрементам I1..I5 из Day1 epic.
@@ -146,5 +148,5 @@ approvals:
 
 ## Апрув
 - request_id: owner-2026-02-25-issue-155-prd
-- Решение: pending
-- Комментарий: PRD подготовлен в рамках `run:prd:revise`, ожидается Owner review.
+- Решение: approved
+- Комментарий: Owner approval получен в PR #166; пакет готов к входу в `run:dev`.
