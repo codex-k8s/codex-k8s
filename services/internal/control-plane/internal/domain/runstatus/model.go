@@ -248,6 +248,9 @@ type commentState struct {
 	PrimaryAction            string `json:"primary_action,omitempty"`
 	FallbackAction           string `json:"fallback_action,omitempty"`
 	GuardrailNote            string `json:"guardrail_note,omitempty"`
+	ReviseActionLabel        string `json:"revise_action_label,omitempty"`
+	NextStageActionLabel     string `json:"next_stage_action_label,omitempty"`
+	AlternativeActionLabel   string `json:"alternative_action_label,omitempty"`
 	CodexAuthVerificationURL string `json:"codex_auth_verification_url,omitempty"`
 	CodexAuthUserCode        string `json:"codex_auth_user_code,omitempty"`
 	Deleted                  bool   `json:"deleted,omitempty"`

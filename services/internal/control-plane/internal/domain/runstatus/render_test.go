@@ -197,6 +197,34 @@ func TestRenderCommentBody_RendersStageAwareActionCards(t *testing.T) {
 	}
 }
 
+func TestRenderCommentBody_UsesActionCardLabelsAsNextStepsSourceOfTruth(t *testing.T) {
+	t.Parallel()
+
+	body := mustRenderCommentBody(t, commentState{
+		RunID:                  "run-intake",
+		Phase:                  PhaseStarted,
+		TriggerKind:            "intake",
+		PromptLocale:           localeRU,
+		RepositoryFullName:     "codex-k8s/codex-k8s",
+		IssueNumber:            95,
+		LaunchProfile:          "quick-fix",
+		StagePath:              "intake -> plan -> dev -> qa -> release -> postdeploy -> ops",
+		PrimaryAction:          "https://platform.codex-k8s.dev/governance/labels-stages?repo=codex-k8s%2Fcodex-k8s&issue=95&target=run%3Aplan",
+		FallbackAction:         `gh issue edit 95 --remove-label "run:intake" --remove-label "run:intake:revise" --add-label "run:plan"`,
+		GuardrailNote:          guardrailNotePrecheckRequired,
+		ReviseActionLabel:      "run:intake:revise",
+		NextStageActionLabel:   "run:plan",
+		AlternativeActionLabel: "",
+	}, "https://platform.codex-k8s.dev/runs/run-intake")
+
+	if !strings.Contains(body, "`run:plan`") {
+		t.Fatalf("expected profile-driven next stage action label in body: %q", body)
+	}
+	if strings.Contains(body, "`run:vision`") {
+		t.Fatalf("expected legacy next stage label to be suppressed when action-card labels are provided: %q", body)
+	}
+}
+
 func TestRenderCommentBody_RendersDesignFastTrackAction(t *testing.T) {
 	t.Parallel()
 

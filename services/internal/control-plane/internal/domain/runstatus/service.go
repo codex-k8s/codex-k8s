@@ -149,6 +149,9 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 	currentState.PrimaryAction = actionCard.PrimaryAction
 	currentState.FallbackAction = actionCard.FallbackAction
 	currentState.GuardrailNote = actionCard.GuardrailNote
+	currentState.ReviseActionLabel = actionCard.ReviseLabel
+	currentState.NextStageActionLabel = actionCard.NextStageLabel
+	currentState.AlternativeActionLabel = actionCard.AlternativeLabel
 	recentStatuses := s.loadRecentAgentStatuses(ctx, runCtx.run.CorrelationID, 3)
 
 	body, err := renderCommentBody(currentState, s.buildRunManagementURL(runID), s.cfg.PublicBaseURL, recentStatuses)
@@ -1025,6 +1028,7 @@ func (s *Service) resolveNextStepActionCard(runCtx runContext, state commentStat
 		LaunchProfile: string(resolvedProfile),
 		StagePath:     profileStagePathString(resolvedProfile),
 		GuardrailNote: guardrailNotePrecheckRequired,
+		ReviseLabel:   stage.ReviseLabel,
 	}
 
 	stageLabels := collectStageLabels(threadLabels)
@@ -1032,6 +1036,9 @@ func (s *Service) resolveNextStepActionCard(runCtx runContext, state commentStat
 		card.Blocked = true
 		card.GuardrailNote = guardrailNoteAmbiguousStageLabel
 		card.FallbackAction = buildNeedInputCommand(runCtx.commentTargetKind, runCtx.commentTargetNumber, state.IssueNumber)
+		card.ReviseLabel = ""
+		card.NextStageLabel = ""
+		card.AlternativeLabel = ""
 		return card
 	}
 
@@ -1048,7 +1055,16 @@ func (s *Service) resolveNextStepActionCard(runCtx runContext, state commentStat
 		card.Blocked = true
 		card.GuardrailNote = guardrailNoteStagePathUnresolved
 		card.FallbackAction = buildNeedInputCommand(runCtx.commentTargetKind, runCtx.commentTargetNumber, state.IssueNumber)
+		card.ReviseLabel = ""
+		card.NextStageLabel = ""
+		card.AlternativeLabel = ""
 		return card
+	}
+	card.NextStageLabel = nextStage.RunLabel
+	if stage.Stage == "design" {
+		if fastTrack, fastTrackOK := stageDescriptorByName("dev"); fastTrackOK && fastTrack.RunLabel != nextStage.RunLabel {
+			card.AlternativeLabel = fastTrack.RunLabel
+		}
 	}
 
 	card.PrimaryAction = buildStageTransitionActionURL(
@@ -1064,6 +1080,9 @@ func (s *Service) resolveNextStepActionCard(runCtx runContext, state commentStat
 		card.GuardrailNote = guardrailNoteNeedInputOnly
 		card.PrimaryAction = ""
 		card.FallbackAction = buildNeedInputCommand(runCtx.commentTargetKind, runCtx.commentTargetNumber, state.IssueNumber)
+		card.ReviseLabel = ""
+		card.NextStageLabel = ""
+		card.AlternativeLabel = ""
 	}
 
 	return card

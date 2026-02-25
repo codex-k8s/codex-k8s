@@ -153,6 +153,15 @@ func mergeState(base commentState, update commentState) commentState {
 	if strings.TrimSpace(update.GuardrailNote) != "" {
 		base.GuardrailNote = strings.TrimSpace(update.GuardrailNote)
 	}
+	if strings.TrimSpace(update.ReviseActionLabel) != "" {
+		base.ReviseActionLabel = strings.TrimSpace(update.ReviseActionLabel)
+	}
+	if strings.TrimSpace(update.NextStageActionLabel) != "" {
+		base.NextStageActionLabel = strings.TrimSpace(update.NextStageActionLabel)
+	}
+	if strings.TrimSpace(update.AlternativeActionLabel) != "" {
+		base.AlternativeActionLabel = strings.TrimSpace(update.AlternativeActionLabel)
+	}
 	if strings.TrimSpace(update.CodexAuthVerificationURL) != "" {
 		base.CodexAuthVerificationURL = strings.TrimSpace(update.CodexAuthVerificationURL)
 	}

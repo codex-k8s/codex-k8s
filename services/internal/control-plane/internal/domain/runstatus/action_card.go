@@ -35,16 +35,30 @@ type stageDescriptor struct {
 }
 
 type nextStepActionCard struct {
-	LaunchProfile  string
-	StagePath      string
-	PrimaryAction  string
-	FallbackAction string
-	GuardrailNote  string
-	Blocked        bool
+	LaunchProfile    string
+	StagePath        string
+	PrimaryAction    string
+	FallbackAction   string
+	GuardrailNote    string
+	ReviseLabel      string
+	NextStageLabel   string
+	AlternativeLabel string
+	Blocked          bool
 }
 
 type runPayloadRawEnvelope struct {
-	RawPayload json.RawMessage `json:"raw_payload"`
+	RawPayload   json.RawMessage            `json:"raw_payload"`
+	Trigger      *runPayloadTrigger         `json:"trigger,omitempty"`
+	ProfileHints *runPayloadRawProfileHints `json:"profile_hints,omitempty"`
+}
+
+type runPayloadTrigger struct {
+	Label string `json:"label"`
+}
+
+type runPayloadRawProfileHints struct {
+	LastRunIssueLabels       []string `json:"last_run_issue_labels,omitempty"`
+	LastRunPullRequestLabels []string `json:"last_run_pull_request_labels,omitempty"`
 }
 
 type runRawLabelsPayload struct {
@@ -256,16 +270,15 @@ func extractThreadLabelsFromRunPayload(runPayload json.RawMessage, targetKind co
 	if err := json.Unmarshal(runPayload, &envelope); err != nil {
 		return nil
 	}
-	if len(envelope.RawPayload) == 0 {
-		return nil
+	issueLabels := []string(nil)
+	pullRequestLabels := []string(nil)
+	if len(envelope.RawPayload) > 0 {
+		var payload runRawLabelsPayload
+		if err := json.Unmarshal(envelope.RawPayload, &payload); err == nil {
+			issueLabels = extractLabelNames(payload.Issue)
+			pullRequestLabels = extractLabelNames(payload.PullRequest)
+		}
 	}
-	var payload runRawLabelsPayload
-	if err := json.Unmarshal(envelope.RawPayload, &payload); err != nil {
-		return nil
-	}
-
-	issueLabels := extractLabelNames(payload.Issue)
-	pullRequestLabels := extractLabelNames(payload.PullRequest)
 
 	if targetKind == commentTargetKindPullRequest && len(pullRequestLabels) > 0 {
 		return normalizeLabelNames(pullRequestLabels)
@@ -273,7 +286,55 @@ func extractThreadLabelsFromRunPayload(runPayload json.RawMessage, targetKind co
 	if len(issueLabels) > 0 {
 		return normalizeLabelNames(issueLabels)
 	}
+	if fallbackLabels := extractFallbackLabelsFromRunEnvelope(envelope, targetKind); len(fallbackLabels) > 0 {
+		return fallbackLabels
+	}
 	return normalizeLabelNames(pullRequestLabels)
+}
+
+func extractFallbackLabelsFromRunEnvelope(envelope runPayloadRawEnvelope, targetKind commentTargetKind) []string {
+	candidates := make([]string, 0, 8)
+	triggerLabel := ""
+	if envelope.Trigger != nil {
+		triggerLabel = strings.ToLower(strings.TrimSpace(envelope.Trigger.Label))
+		if triggerLabel != "" {
+			candidates = append(candidates, triggerLabel)
+		}
+	}
+	candidates = append(candidates, selectProfileHintLabels(envelope.ProfileHints, targetKind)...)
+
+	normalized := normalizeLabelNames(candidates)
+	if triggerLabel == "" || !isStageRunLabel(triggerLabel) {
+		return normalized
+	}
+
+	filtered := make([]string, 0, len(normalized))
+	for _, label := range normalized {
+		if label == triggerLabel {
+			filtered = append(filtered, label)
+			continue
+		}
+		if isStageRunLabel(label) {
+			continue
+		}
+		filtered = append(filtered, label)
+	}
+	return filtered
+}
+
+func selectProfileHintLabels(profileHints *runPayloadRawProfileHints, targetKind commentTargetKind) []string {
+	if profileHints == nil {
+		return nil
+	}
+	labels := make([]string, 0, len(profileHints.LastRunIssueLabels)+len(profileHints.LastRunPullRequestLabels))
+	if targetKind == commentTargetKindPullRequest {
+		labels = append(labels, profileHints.LastRunPullRequestLabels...)
+		labels = append(labels, profileHints.LastRunIssueLabels...)
+		return labels
+	}
+	labels = append(labels, profileHints.LastRunIssueLabels...)
+	labels = append(labels, profileHints.LastRunPullRequestLabels...)
+	return labels
 }
 
 func extractLabelNames(scope *runRawLabelsScope) []string {
@@ -302,6 +363,11 @@ func normalizeLabelNames(labels []string) []string {
 	}
 	slices.Sort(out)
 	return out
+}
+
+func isStageRunLabel(label string) bool {
+	_, ok := stageDescriptorByRunLabel(strings.ToLower(strings.TrimSpace(label)))
+	return ok
 }
 
 func collectStageLabels(labels []string) []string {

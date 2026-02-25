@@ -382,7 +382,9 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 
 func (s *Service) recordIgnoredWebhook(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope, params ignoredWebhookParams) (IngestResult, error) {
 	s.recordIgnoredWebhookWarning(ctx, cmd, envelope, params)
-	s.postIgnoredWebhookDiagnosticComment(ctx, cmd, envelope, params)
+	if err := s.postIgnoredWebhookDiagnosticComment(ctx, cmd, envelope, params); err != nil {
+		return IngestResult{}, err
+	}
 
 	payload, err := buildIgnoredEventPayload(ignoredEventPayloadInput{
 		Command:           cmd,
@@ -776,13 +778,13 @@ func (s *Service) recordIgnoredWebhookWarning(ctx context.Context, cmd IngestCom
 	})
 }
 
-func (s *Service) postIgnoredWebhookDiagnosticComment(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope, params ignoredWebhookParams) {
+func (s *Service) postIgnoredWebhookDiagnosticComment(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope, params ignoredWebhookParams) error {
 	if s.runStatus == nil || !isRunCreationWarningReason(params.Reason) {
-		return
+		return nil
 	}
 	repositoryFullName := strings.TrimSpace(envelope.Repository.FullName)
 	if repositoryFullName == "" {
-		return
+		return nil
 	}
 
 	threadKind := ""
@@ -795,16 +797,20 @@ func (s *Service) postIgnoredWebhookDiagnosticComment(ctx context.Context, cmd I
 		threadNumber = int(envelope.Issue.Number)
 	}
 	if threadKind == "" || threadNumber <= 0 {
-		return
+		return nil
 	}
 
 	if shouldEnsureNeedInputLabel(params.Reason) {
-		_, _ = s.runStatus.EnsureNeedInputLabel(ctx, runstatusdomain.EnsureNeedInputLabelParams{
+		_, err := s.runStatus.EnsureNeedInputLabel(ctx, runstatusdomain.EnsureNeedInputLabelParams{
 			CorrelationID:      cmd.CorrelationID,
 			RepositoryFullName: repositoryFullName,
 			ThreadKind:         threadKind,
 			ThreadNumber:       threadNumber,
 		})
+		if err != nil {
+			s.recordNeedInputLabelFailure(ctx, cmd, envelope, threadKind, threadNumber, params.Reason, err)
+			return fmt.Errorf("ensure need:input label before warning comment: %w", err)
+		}
 	}
 
 	_, _ = s.runStatus.PostTriggerWarningComment(ctx, runstatusdomain.TriggerWarningCommentParams{
@@ -816,6 +822,31 @@ func (s *Service) postIgnoredWebhookDiagnosticComment(ctx context.Context, cmd I
 		ReasonCode:         runstatusdomain.TriggerWarningReasonCode(strings.TrimSpace(params.Reason)),
 		ConflictingLabels:  params.ConflictingLabels,
 		SuggestedLabels:    params.SuggestedLabels,
+	})
+	return nil
+}
+
+func (s *Service) recordNeedInputLabelFailure(ctx context.Context, cmd IngestCommand, envelope githubWebhookEnvelope, threadKind string, threadNumber int, reason string, ensureErr error) {
+	if s.runtimeErr == nil {
+		return
+	}
+	details, _ := json.Marshal(map[string]any{
+		"reason":              strings.TrimSpace(reason),
+		"event_type":          strings.TrimSpace(cmd.EventType),
+		"repository_fullname": strings.TrimSpace(envelope.Repository.FullName),
+		"issue_number":        envelope.Issue.Number,
+		"pull_request_number": envelope.PullRequest.Number,
+		"thread_kind":         strings.TrimSpace(threadKind),
+		"thread_number":       threadNumber,
+		"error":               strings.TrimSpace(ensureErr.Error()),
+	})
+	s.runtimeErr.RecordBestEffort(ctx, querytypes.RuntimeErrorRecordParams{
+		Source:        "webhook.trigger",
+		Level:         "error",
+		Message:       "Failed to set need:input label before warning comment",
+		CorrelationID: strings.TrimSpace(cmd.CorrelationID),
+		ProjectID:     "",
+		DetailsJSON:   details,
 	})
 }
 

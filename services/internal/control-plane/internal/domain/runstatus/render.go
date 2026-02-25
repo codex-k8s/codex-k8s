@@ -123,17 +123,28 @@ func buildCommentTemplateContext(state commentState, managementURL string, publi
 	trimmedActionCardPrimaryAction := strings.TrimSpace(state.PrimaryAction)
 	trimmedActionCardFallbackAction := strings.TrimSpace(state.FallbackAction)
 	trimmedActionCardGuardrail := strings.TrimSpace(state.GuardrailNote)
+	trimmedReviseActionLabel := strings.TrimSpace(state.ReviseActionLabel)
+	trimmedNextStageActionLabel := strings.TrimSpace(state.NextStageActionLabel)
+	trimmedAlternativeActionLabel := strings.TrimSpace(state.AlternativeActionLabel)
 	normalizedRunStatus := strings.ToLower(strings.TrimSpace(state.RunStatus))
 	normalizedRuntimeMode := strings.ToLower(strings.TrimSpace(state.RuntimeMode))
 	phaseLevel := phaseOrder(state.Phase)
-	reviseLabel, nextStageLabel, alternativeLabel := resolveStageActionLabels(trimmedTriggerKind)
+	reviseLabel := trimmedReviseActionLabel
+	nextStageLabel := trimmedNextStageActionLabel
+	alternativeLabel := trimmedAlternativeActionLabel
+	if reviseLabel == "" && nextStageLabel == "" && alternativeLabel == "" {
+		reviseLabel, nextStageLabel, alternativeLabel = resolveStageActionLabels(trimmedTriggerKind)
+	}
 	if isBlockedActionCard(trimmedActionCardGuardrail) {
 		reviseLabel = ""
 		nextStageLabel = ""
 		alternativeLabel = ""
 	}
 	reviseActionURL := buildStageTransitionActionURL(publicBaseURL, trimmedRepositoryFullName, state.IssueNumber, reviseLabel, trimmedIssueURL)
-	nextStageActionURL := buildStageTransitionActionURL(publicBaseURL, trimmedRepositoryFullName, state.IssueNumber, nextStageLabel, trimmedIssueURL)
+	nextStageActionURL := strings.TrimSpace(state.PrimaryAction)
+	if nextStageActionURL == "" {
+		nextStageActionURL = buildStageTransitionActionURL(publicBaseURL, trimmedRepositoryFullName, state.IssueNumber, nextStageLabel, trimmedIssueURL)
+	}
 	alternativeActionURL := buildStageTransitionActionURL(publicBaseURL, trimmedRepositoryFullName, state.IssueNumber, alternativeLabel, trimmedIssueURL)
 
 	return commentTemplateContext{
