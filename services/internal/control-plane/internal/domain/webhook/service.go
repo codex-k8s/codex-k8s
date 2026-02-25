@@ -55,6 +55,7 @@ type runStatusService interface {
 	CleanupNamespacesByPullRequest(ctx context.Context, params runstatusdomain.CleanupByPullRequestParams) (runstatusdomain.CleanupByIssueResult, error)
 	PostTriggerLabelConflictComment(ctx context.Context, params runstatusdomain.TriggerLabelConflictCommentParams) (runstatusdomain.TriggerLabelConflictCommentResult, error)
 	PostTriggerWarningComment(ctx context.Context, params runstatusdomain.TriggerWarningCommentParams) (runstatusdomain.TriggerWarningCommentResult, error)
+	EnsureNeedInputLabel(ctx context.Context, params runstatusdomain.EnsureNeedInputLabelParams) (runstatusdomain.EnsureNeedInputLabelResult, error)
 }
 
 type runtimeErrorRecorder interface {
@@ -797,6 +798,15 @@ func (s *Service) postIgnoredWebhookDiagnosticComment(ctx context.Context, cmd I
 		return
 	}
 
+	if shouldEnsureNeedInputLabel(params.Reason) {
+		_, _ = s.runStatus.EnsureNeedInputLabel(ctx, runstatusdomain.EnsureNeedInputLabelParams{
+			CorrelationID:      cmd.CorrelationID,
+			RepositoryFullName: repositoryFullName,
+			ThreadKind:         threadKind,
+			ThreadNumber:       threadNumber,
+		})
+	}
+
 	_, _ = s.runStatus.PostTriggerWarningComment(ctx, runstatusdomain.TriggerWarningCommentParams{
 		CorrelationID:      cmd.CorrelationID,
 		RepositoryFullName: repositoryFullName,
@@ -807,6 +817,19 @@ func (s *Service) postIgnoredWebhookDiagnosticComment(ctx context.Context, cmd I
 		ConflictingLabels:  params.ConflictingLabels,
 		SuggestedLabels:    params.SuggestedLabels,
 	})
+}
+
+func shouldEnsureNeedInputLabel(reason string) bool {
+	normalized := strings.TrimSpace(reason)
+	switch normalized {
+	case string(runstatusdomain.TriggerWarningReasonPullRequestReviewMissingStageLabel),
+		string(runstatusdomain.TriggerWarningReasonPullRequestReviewStageLabelConflict),
+		string(runstatusdomain.TriggerWarningReasonPullRequestReviewStageNotResolved),
+		string(runstatusdomain.TriggerWarningReasonPullRequestReviewStageAmbiguous):
+		return true
+	default:
+		return false
+	}
 }
 
 func isRunCreationWarningReason(reason string) bool {

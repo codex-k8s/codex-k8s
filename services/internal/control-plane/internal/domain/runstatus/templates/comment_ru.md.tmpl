@@ -106,6 +106,35 @@
 {{- end }}
 {{- end }}
 
+{{- if .ShowActionCardContract }}
+### 🧭 Контракт next-step action-card
+- `launch_profile`: {{- if .ActionCardLaunchProfile }}`{{ .ActionCardLaunchProfile }}`{{- else }}`n/a`{{- end }}
+- `stage_path`: {{- if .ActionCardStagePath }}`{{ .ActionCardStagePath }}`{{- else }}`n/a`{{- end }}
+- `primary_action`: {{- if .ActionCardPrimaryAction }}[{{ .ActionCardPrimaryAction }}]({{ .ActionCardPrimaryAction }}){{- else }}`n/a`{{- end }}
+- `fallback_action`:
+{{- if .ActionCardFallbackAction }}
+```bash
+{{ .ActionCardFallbackAction }}
+```
+{{- else }}
+`n/a`
+{{- end }}
+- `guardrail_note`:
+{{- if eq .ActionCardGuardrailNote "precheck_required" }}
+`Перед fallback-переходом обязателен pre-check текущих labels; best-guess переходы запрещены.`
+{{- else if eq .ActionCardGuardrailNote "ambiguous_stage_labels" }}
+`Обнаружена неоднозначность stage labels; transition блокируется до установки need:input.`
+{{- else if eq .ActionCardGuardrailNote "stage_path_unresolved" }}
+`Не удалось детерминированно вычислить следующий stage в текущем launch profile; требуется need:input.`
+{{- else if eq .ActionCardGuardrailNote "need_input_only" }}
+`Целевой переход недоступен, публикуется только remediation-команда для need:input.`
+{{- else if .ActionCardGuardrailNote }}
+`{{ .ActionCardGuardrailNote }}`
+{{- else }}
+`n/a`
+{{- end }}
+{{- end }}
+
 {{- if .ShowActionCards }}
 ### ⏭ Следующие шаги
 {{- if .ReviseActionLabel }}

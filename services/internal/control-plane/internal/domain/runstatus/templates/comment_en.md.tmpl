@@ -106,6 +106,35 @@
 {{- end }}
 {{- end }}
 
+{{- if .ShowActionCardContract }}
+### 🧭 Next-step action-card contract
+- `launch_profile`: {{- if .ActionCardLaunchProfile }}`{{ .ActionCardLaunchProfile }}`{{- else }}`n/a`{{- end }}
+- `stage_path`: {{- if .ActionCardStagePath }}`{{ .ActionCardStagePath }}`{{- else }}`n/a`{{- end }}
+- `primary_action`: {{- if .ActionCardPrimaryAction }}[{{ .ActionCardPrimaryAction }}]({{ .ActionCardPrimaryAction }}){{- else }}`n/a`{{- end }}
+- `fallback_action`:
+{{- if .ActionCardFallbackAction }}
+```bash
+{{ .ActionCardFallbackAction }}
+```
+{{- else }}
+`n/a`
+{{- end }}
+- `guardrail_note`:
+{{- if eq .ActionCardGuardrailNote "precheck_required" }}
+`Fallback transition requires a labels pre-check; best-guess transitions are blocked.`
+{{- else if eq .ActionCardGuardrailNote "ambiguous_stage_labels" }}
+`Stage labels are ambiguous; transition is blocked until need:input is applied.`
+{{- else if eq .ActionCardGuardrailNote "stage_path_unresolved" }}
+`Next stage could not be resolved deterministically for this launch profile; need:input is required.`
+{{- else if eq .ActionCardGuardrailNote "need_input_only" }}
+`Target transition is unavailable, so only need:input remediation command is published.`
+{{- else if .ActionCardGuardrailNote }}
+`{{ .ActionCardGuardrailNote }}`
+{{- else }}
+`n/a`
+{{- end }}
+{{- end }}
+
 {{- if .ShowActionCards }}
 ### ⏭ Next Steps
 {{- if .ReviseActionLabel }}

@@ -143,6 +143,12 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		existingCommentID = trackedCommentID
 	}
 	currentState.SlotURL = s.resolveRunSlotURL(runCtx, currentState)
+	actionCard := s.resolveNextStepActionCard(runCtx, currentState)
+	currentState.LaunchProfile = actionCard.LaunchProfile
+	currentState.StagePath = actionCard.StagePath
+	currentState.PrimaryAction = actionCard.PrimaryAction
+	currentState.FallbackAction = actionCard.FallbackAction
+	currentState.GuardrailNote = actionCard.GuardrailNote
 	recentStatuses := s.loadRecentAgentStatuses(ctx, runCtx.run.CorrelationID, 3)
 
 	body, err := renderCommentBody(currentState, s.buildRunManagementURL(runID), s.cfg.PublicBaseURL, recentStatuses)
@@ -337,6 +343,71 @@ func (s *Service) PostTriggerWarningComment(ctx context.Context, params TriggerW
 	return TriggerWarningCommentResult{
 		CommentID:  comment.ID,
 		CommentURL: comment.URL,
+	}, nil
+}
+
+// EnsureNeedInputLabel guarantees `need:input` label on issue/pr thread for ambiguity hard-stop remediation.
+func (s *Service) EnsureNeedInputLabel(ctx context.Context, params EnsureNeedInputLabelParams) (EnsureNeedInputLabelResult, error) {
+	repositoryFullName := strings.TrimSpace(params.RepositoryFullName)
+	if repositoryFullName == "" {
+		return EnsureNeedInputLabelResult{}, errs.Validation{Field: "repository_full_name", Msg: "is required"}
+	}
+	threadKind := normalizeCommentTargetKind(params.ThreadKind)
+	if threadKind == "" {
+		return EnsureNeedInputLabelResult{}, errs.Validation{Field: "thread_kind", Msg: "must be issue or pull_request"}
+	}
+	if params.ThreadNumber <= 0 {
+		return EnsureNeedInputLabelResult{}, errs.Validation{Field: "thread_number", Msg: "must be positive"}
+	}
+
+	owner, repo, ok := strings.Cut(repositoryFullName, "/")
+	owner = strings.TrimSpace(owner)
+	repo = strings.TrimSpace(repo)
+	if !ok || owner == "" || repo == "" {
+		return EnsureNeedInputLabelResult{}, errs.Validation{Field: "repository_full_name", Msg: "must be owner/name"}
+	}
+
+	token, err := s.loadBotToken(ctx)
+	if err != nil {
+		return EnsureNeedInputLabelResult{}, err
+	}
+
+	issueNumber := params.ThreadNumber
+	labels, err := s.github.ListIssueLabels(ctx, mcpdomain.GitHubListIssueLabelsParams{
+		Token:       token,
+		Owner:       owner,
+		Repository:  repo,
+		IssueNumber: issueNumber,
+	})
+	if err != nil {
+		return EnsureNeedInputLabelResult{}, fmt.Errorf("list issue labels: %w", err)
+	}
+	for _, label := range labels {
+		if strings.EqualFold(strings.TrimSpace(label.Name), needInputLabel) {
+			return EnsureNeedInputLabelResult{
+				ThreadKind:    string(threadKind),
+				ThreadNumber:  issueNumber,
+				Label:         needInputLabel,
+				AlreadyExists: true,
+			}, nil
+		}
+	}
+
+	if _, err := s.github.AddLabels(ctx, mcpdomain.GitHubMutateLabelsParams{
+		Token:       token,
+		Owner:       owner,
+		Repository:  repo,
+		IssueNumber: issueNumber,
+		Labels:      []string{needInputLabel},
+	}); err != nil {
+		return EnsureNeedInputLabelResult{}, fmt.Errorf("add need:input label: %w", err)
+	}
+
+	return EnsureNeedInputLabelResult{
+		ThreadKind:    string(threadKind),
+		ThreadNumber:  issueNumber,
+		Label:         needInputLabel,
+		AlreadyExists: false,
 	}, nil
 }
 
@@ -940,6 +1011,62 @@ func (s *Service) resolveRunSlotURL(runCtx runContext, state commentState) strin
 	}
 
 	return ""
+}
+
+func (s *Service) resolveNextStepActionCard(runCtx runContext, state commentState) nextStepActionCard {
+	stage, ok := stageDescriptorFromTriggerKind(state.TriggerKind)
+	if !ok {
+		return nextStepActionCard{}
+	}
+
+	threadLabels := extractThreadLabelsFromRunPayload(runCtx.run.RunPayload, runCtx.commentTargetKind)
+	resolvedProfile := resolveLaunchProfileForStage(stage.Stage, threadLabels)
+	card := nextStepActionCard{
+		LaunchProfile: string(resolvedProfile),
+		StagePath:     profileStagePathString(resolvedProfile),
+		GuardrailNote: guardrailNotePrecheckRequired,
+	}
+
+	stageLabels := collectStageLabels(threadLabels)
+	if len(stageLabels) != 1 {
+		card.Blocked = true
+		card.GuardrailNote = guardrailNoteAmbiguousStageLabel
+		card.FallbackAction = buildNeedInputCommand(runCtx.commentTargetKind, runCtx.commentTargetNumber, state.IssueNumber)
+		return card
+	}
+
+	nextStageName, hasNextStage := resolveNextStageForProfile(resolvedProfile, stage.Stage)
+	if !hasNextStage {
+		// Final stages (for example `ops`) do not render transition cards.
+		card.GuardrailNote = ""
+		card.FallbackAction = ""
+		card.PrimaryAction = ""
+		return card
+	}
+	nextStage, ok := stageDescriptorByName(nextStageName)
+	if !ok {
+		card.Blocked = true
+		card.GuardrailNote = guardrailNoteStagePathUnresolved
+		card.FallbackAction = buildNeedInputCommand(runCtx.commentTargetKind, runCtx.commentTargetNumber, state.IssueNumber)
+		return card
+	}
+
+	card.PrimaryAction = buildStageTransitionActionURL(
+		s.cfg.PublicBaseURL,
+		strings.TrimSpace(state.RepositoryFullName),
+		state.IssueNumber,
+		nextStage.RunLabel,
+		state.IssueURL,
+	)
+	card.FallbackAction = buildFallbackTransitionCommand(state.IssueNumber, stage.RunLabel, stage.ReviseLabel, nextStage.RunLabel)
+	if strings.TrimSpace(card.PrimaryAction) == "" || strings.TrimSpace(card.FallbackAction) == "" {
+		card.Blocked = true
+		card.GuardrailNote = guardrailNoteNeedInputOnly
+		card.PrimaryAction = ""
+		card.FallbackAction = buildNeedInputCommand(runCtx.commentTargetKind, runCtx.commentTargetNumber, state.IssueNumber)
+	}
+
+	return card
 }
 
 func isAISlotNamespace(namespace string) bool {

@@ -161,6 +161,12 @@ func TestRenderCommentBody_RendersStageAwareActionCards(t *testing.T) {
 		PromptLocale:       localeRU,
 		RepositoryFullName: "codex-k8s/codex-k8s",
 		IssueNumber:        95,
+		LaunchProfile:      "quick-fix",
+		StagePath:          "intake -> plan -> dev -> qa -> release -> postdeploy -> ops",
+		PrimaryAction:      "https://platform.codex-k8s.dev/governance/labels-stages?repo=codex-k8s%2Fcodex-k8s&issue=95&target=run%3Aqa",
+		FallbackAction: "gh issue view 95 --json labels --jq '.labels[].name'\n" +
+			`gh issue edit 95 --remove-label "run:dev" --remove-label "run:dev:revise" --add-label "run:qa"`,
+		GuardrailNote: guardrailNotePrecheckRequired,
 	}, "https://platform.codex-k8s.dev/runs/run-dev")
 	if !strings.Contains(body, "Следующие шаги") {
 		t.Fatalf("expected next steps section in body: %q", body)
@@ -176,6 +182,18 @@ func TestRenderCommentBody_RendersStageAwareActionCards(t *testing.T) {
 	}
 	if !strings.Contains(body, "target=run%3Aqa") {
 		t.Fatalf("expected deep-link target label in body: %q", body)
+	}
+	if !strings.Contains(body, "`launch_profile`") || !strings.Contains(body, "`quick-fix`") {
+		t.Fatalf("expected launch_profile contract field in body: %q", body)
+	}
+	if !strings.Contains(body, "`fallback_action`") {
+		t.Fatalf("expected fallback_action contract field in body: %q", body)
+	}
+	if !strings.Contains(body, `gh issue edit 95 --remove-label "run:dev" --remove-label "run:dev:revise" --add-label "run:qa"`) {
+		t.Fatalf("expected fallback transition command in body: %q", body)
+	}
+	if !strings.Contains(body, "`guardrail_note`") {
+		t.Fatalf("expected guardrail_note contract field in body: %q", body)
 	}
 }
 
@@ -195,6 +213,30 @@ func TestRenderCommentBody_RendersDesignFastTrackAction(t *testing.T) {
 	}
 	if !strings.Contains(body, "target=run%3Adev") {
 		t.Fatalf("expected fast-track deep-link target in body: %q", body)
+	}
+}
+
+func TestRenderCommentBody_BlocksNextStageActionsWhenActionCardGuardrailRequiresNeedInput(t *testing.T) {
+	t.Parallel()
+
+	body := mustRenderCommentBody(t, commentState{
+		RunID:              "run-dev-ambiguous",
+		Phase:              PhaseStarted,
+		TriggerKind:        triggerKindDev,
+		PromptLocale:       localeRU,
+		RepositoryFullName: "codex-k8s/codex-k8s",
+		IssueNumber:        95,
+		LaunchProfile:      "quick-fix",
+		StagePath:          "intake -> plan -> dev -> qa -> release -> postdeploy -> ops",
+		FallbackAction:     `gh issue edit 95 --add-label "need:input"`,
+		GuardrailNote:      guardrailNoteAmbiguousStageLabel,
+	}, "https://platform.codex-k8s.dev/runs/run-dev-ambiguous")
+
+	if strings.Contains(body, "`run:qa`") {
+		t.Fatalf("expected stage transition links to be hidden for blocked action card: %q", body)
+	}
+	if !strings.Contains(body, `gh issue edit 95 --add-label "need:input"`) {
+		t.Fatalf("expected need:input remediation command in body: %q", body)
 	}
 }
 

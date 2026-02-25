@@ -116,3 +116,12 @@ approvals:
 ## Актуализация по Issue #175 (`run:dev`, 2026-02-25)
 - Для FR-026/FR-027 зафиксировано исключение в label policy: `need:reviewer` на PR (`pull_request:labeled`) запускает reviewer-run для ручного pre-review.
 - Обновлены связные документы: `README.md`, `docs/product/{requirements_machine_driven,labels_and_trigger_policy,agents_operating_model,stage_process_model}.md`, `docs/architecture/api_contract.md`.
+
+## Актуализация по Issue #171 (`run:dev`, 2026-02-25)
+- В `runstatus` реализован typed next-step action-card contract с обязательными полями:
+  `launch_profile`, `stage_path`, `primary_action`, `fallback_action`, `guardrail_note`.
+- Добавлен deterministic profile resolver для action-card (baseline `quick-fix|feature|new-service`) и fallback path `pre-check -> transition`.
+- Для ambiguity/not-resolved review-stage сценариев добавлен hard-stop remediation:
+  автоматическая постановка `need:input` через runstatus/webhook path до публикации warning comment.
+- Проверка изменений зафиксирована unit-пакетом:
+  `go test ./services/internal/control-plane/internal/domain/runstatus ./services/internal/control-plane/internal/domain/webhook`.

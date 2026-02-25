@@ -1247,6 +1247,12 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithoutRunLabel_I
 	if runStatus.warningCommentCalls[0].ReasonCode != runstatusdomain.TriggerWarningReasonPullRequestReviewStageNotResolved {
 		t.Fatalf("unexpected warning reason: %q", runStatus.warningCommentCalls[0].ReasonCode)
 	}
+	if len(runStatus.needInputLabelCalls) != 1 {
+		t.Fatalf("expected one need:input remediation call, got %d", len(runStatus.needInputLabelCalls))
+	}
+	if got := runStatus.needInputLabelCalls[0]; got.ThreadKind != "pull_request" || got.ThreadNumber != 200 {
+		t.Fatalf("unexpected need:input remediation target: %#v", got)
+	}
 }
 
 func TestIngestGitHubWebhook_PullRequestLabeledNeedReviewer_CreatesReviewerRun(t *testing.T) {
@@ -2062,6 +2068,12 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithMultipleStage
 	if runStatus.warningCommentCalls[0].ReasonCode != runstatusdomain.TriggerWarningReasonPullRequestReviewStageAmbiguous {
 		t.Fatalf("unexpected warning reason: %q", runStatus.warningCommentCalls[0].ReasonCode)
 	}
+	if len(runStatus.needInputLabelCalls) != 1 {
+		t.Fatalf("expected one need:input remediation call, got %d", len(runStatus.needInputLabelCalls))
+	}
+	if got := runStatus.needInputLabelCalls[0]; got.ThreadKind != "pull_request" || got.ThreadNumber != 202 {
+		t.Fatalf("unexpected need:input remediation target: %#v", got)
+	}
 }
 
 func TestIngestGitHubWebhook_IssueRunDev_DeniesUnknownSender(t *testing.T) {
@@ -2267,6 +2279,7 @@ type inMemoryRunStatusService struct {
 	conflictCommentCalls     int
 	lastConflictComment      runstatusdomain.TriggerLabelConflictCommentParams
 	warningCommentCalls      []runstatusdomain.TriggerWarningCommentParams
+	needInputLabelCalls      []runstatusdomain.EnsureNeedInputLabelParams
 	statusCommentUpsertCalls []runstatusdomain.UpsertCommentParams
 }
 
@@ -2304,6 +2317,16 @@ func (s *inMemoryRunStatusService) PostTriggerWarningComment(_ context.Context, 
 	return runstatusdomain.TriggerWarningCommentResult{
 		CommentID:  int64(len(s.warningCommentCalls)),
 		CommentURL: "https://example.invalid/warning",
+	}, nil
+}
+
+func (s *inMemoryRunStatusService) EnsureNeedInputLabel(_ context.Context, params runstatusdomain.EnsureNeedInputLabelParams) (runstatusdomain.EnsureNeedInputLabelResult, error) {
+	s.needInputLabelCalls = append(s.needInputLabelCalls, params)
+	return runstatusdomain.EnsureNeedInputLabelResult{
+		ThreadKind:    params.ThreadKind,
+		ThreadNumber:  params.ThreadNumber,
+		Label:         "need:input",
+		AlreadyExists: false,
 	}, nil
 }
 
