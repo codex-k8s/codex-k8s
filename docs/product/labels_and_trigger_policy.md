@@ -110,6 +110,9 @@ approvals:
 ### Trigger/deploy (`run:*`)
 - Если лейбл инициирует агент, требуется апрув Owner до фактического применения.
 - Если лейбл инициирует человек с правами admin/owner, применяется по правам GitHub и политике репозитория.
+- Webhook guard для `issues:labeled` принимает trigger только от human-actor (`sender.type=User`);
+  события от `Bot`/`App` блокируются с диагностикой в `flow_events` и warning-comment.
+- Для human-actor дополнительно обязателен RBAC-check в проекте: platform owner/admin или project member с ролью `admin`/`read_write`.
 - Любая операция с `run:*` логируется в `flow_events`.
 - Для всех `run:*` обязателен review gate перед финальным Owner review:
   - pre-review от системного `reviewer` для технических артефактов;

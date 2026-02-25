@@ -153,6 +153,7 @@ type githubLabelRecord struct {
 type githubActorRecord struct {
 	Login string `json:"login"`
 	ID    int64  `json:"id"`
+	Type  string `json:"type"`
 }
 
 type githubPullRequestRef struct {

@@ -29,6 +29,8 @@ import (
 const githubWebhookActorID = floweventdomain.ActorIDGitHubWebhook
 
 const (
+	gitHubSenderTypeUser = "user"
+
 	agentKeyPM = "pm" // Product manager: defines and refines product artifacts.
 	agentKeySA = "sa" // Solution architect: drives architecture decisions and constraints.
 
@@ -216,7 +218,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 			})
 		}
 
-		allowed, reason, err := s.isActorAllowedForIssueTrigger(ctx, projectID, envelope.Sender.Login)
+		allowed, reason, err := s.isActorAllowedForIssueTrigger(ctx, projectID, envelope.Sender.Login, envelope.Sender.Type)
 		if err != nil {
 			return IngestResult{}, fmt.Errorf("authorize issue label trigger actor: %w", err)
 		}
@@ -900,7 +902,12 @@ func (s *Service) postRunLaunchPlannedFeedback(ctx context.Context, runID string
 	})
 }
 
-func (s *Service) isActorAllowedForIssueTrigger(ctx context.Context, projectID string, senderLogin string) (bool, string, error) {
+func (s *Service) isActorAllowedForIssueTrigger(ctx context.Context, projectID string, senderLogin string, senderType string) (bool, string, error) {
+	actorType := normalizeLabelToken(senderType)
+	if actorType != "" && actorType != gitHubSenderTypeUser {
+		return false, "sender_type_" + actorType + "_not_permitted", nil
+	}
+
 	login := strings.TrimSpace(senderLogin)
 	if login == "" {
 		return false, "sender_login_missing", nil
