@@ -26,25 +26,25 @@ spec:
       roles: [em, pm, km, reviewer]
   versions:
     api-gateway:
-      value: "0.1.12"
+      value: "0.1.13"
       bumpOn:
         - services/external/api-gateway
         - libs/go
         - proto
     control-plane:
-      value: "0.1.33"
+      value: "0.1.34"
       bumpOn:
         - services/internal/control-plane
         - libs/go
         - proto
     worker:
-      value: "0.1.18"
+      value: "0.1.19"
       bumpOn:
         - services/jobs/worker
         - libs/go
         - proto
     agent-runner:
-      value: "0.1.13"
+      value: "0.1.14"
       bumpOn:
         - services/jobs/agent-runner
         - libs/go
