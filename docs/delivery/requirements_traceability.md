@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-25
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -51,7 +51,7 @@ approvals:
 | FR-023 | Learning mode + educational PR comments | `docs/product/requirements_machine_driven.md`, `docs/product/brief.md`, `docs/architecture/api_contract.md`, `docs/delivery/delivery_plan.md`, `docs/architecture/data_model.md` | covered |
 | FR-024 | CODEXK8S_ prefix для env/secrets/CI vars | `docs/product/requirements_machine_driven.md`, `AGENTS.md` | covered |
 | FR-025 | MVP public API: only webhook ingress | `docs/product/requirements_machine_driven.md`, `docs/product/constraints.md`, `docs/architecture/api_contract.md` | covered |
-| FR-026 | Канонический каталог лейблов run/state/need | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`, `docs/delivery/e2e_mvp_master_plan.md` | covered |
+| FR-026 | Канонический каталог лейблов run/state/need + PR trigger `need:reviewer` для pre-review | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`, `docs/product/agents_operating_model.md`, `docs/delivery/e2e_mvp_master_plan.md` | covered |
 | FR-027 | Approval policy для trigger/deploy labels | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/architecture/mcp_approval_and_audit_flow.md` | covered |
 | FR-028 | Stage process model с revise/rethink | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/delivery/sprints/s2/sprint_s2_dogfooding.md` | covered |
 | FR-029 | Базовый штат агентов (включая `dev` и `reviewer`) + custom роли проекта | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/data_model.md`, `docs/architecture/agent_runtime_rbac.md` | covered |
@@ -112,3 +112,7 @@ approvals:
 - Добавлен Day2 execution-артефакт `docs/delivery/epics/s5/epic-s5-day2-launch-profiles-dev-execution.md` для single-epic реализации FR-053/FR-054.
 - Зафиксированы quality-gates QG-D2-01..QG-D2-05 и DoD-пакет для handover в `run:dev`.
 - Создана implementation issue #171; связь `#170 -> #171 -> FR-053/FR-054` синхронизирована в `issue_map` и Sprint S5 docs.
+
+## Актуализация по Issue #175 (`run:dev`, 2026-02-25)
+- Для FR-026/FR-027 зафиксировано исключение в label policy: `need:reviewer` на PR (`pull_request:labeled`) запускает reviewer-run для ручного pre-review.
+- Обновлены связные документы: `README.md`, `docs/product/{requirements_machine_driven,labels_and_trigger_policy,agents_operating_model,stage_process_model}.md`, `docs/architecture/api_contract.md`.

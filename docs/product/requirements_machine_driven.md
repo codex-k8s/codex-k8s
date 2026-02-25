@@ -5,8 +5,8 @@ title: "codex-k8s — Machine-Driven Requirements Baseline"
 status: active
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-24
-related_issues: [1, 74, 90, 112, 154, 155]
+updated_at: 2026-02-25
+related_issues: [1, 74, 90, 112, 154, 155, 175]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -57,8 +57,8 @@ approvals:
 | FR-023 | Learning mode: при user-initiated задачах в инструкции подмешивается блок объяснений (`почему так`, `что это даёт`, `какие альтернативы и почему хуже`), плюс после PR возможны образовательные комментарии по ключевым файлам/строкам. |
 | FR-024 | Имена env/secrets/CI variables платформы используют префикс `CODEXK8S_` (исключения только для внешних контрактов). |
 | FR-025 | На MVP public API ограничен webhook ingress; staff/private API используется для управления платформой. |
-| FR-026 | В платформе фиксируется канонический каталог лейблов классов `run:*`, `state:*`, `need:*`, с поддержкой label-driven stage pipeline. |
-| FR-027 | Для агент-инициированных trigger/deploy лейблов (`run:*`) обязателен апрув Owner до применения; `state:*` и `need:*` допускают автоустановку по политике проекта. |
+| FR-026 | В платформе фиксируется канонический каталог лейблов классов `run:*`, `state:*`, `need:*`, с поддержкой label-driven stage pipeline и PR-driven pre-review триггера `need:reviewer`. |
+| FR-027 | Для агент-инициированных trigger/deploy лейблов (`run:*`) обязателен апрув Owner до применения; `state:*` и `need:*` допускают автоустановку по политике проекта, при этом `need:reviewer` на PR может запускать pre-review ран роли `reviewer`. |
 | FR-028 | Процесс поставки фиксируется stage-моделью `intake -> vision -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops` с поддержкой `*:revise`, `run:rethink`. |
 | FR-029 | Модель ролей агентов: базовый штат из 8 системных ролей (`pm`, `sa`, `em`, `dev`, `reviewer`, `qa`, `sre`, `km`) + расширяемые custom-агенты на проект (с явными RBAC, execution mode и quota). |
 | FR-030 | Для агентных инструкций поддерживается role-specific матрица шаблонов: для каждого `agent_key` отдельные body-шаблоны `work/revise`, с приоритетом `DB project override -> DB global override -> repo seed`. |

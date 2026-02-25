@@ -75,6 +75,9 @@ func (labels TriggerLabels) withDefaults() TriggerLabels {
 	if strings.TrimSpace(labels.RunRethink) == "" {
 		labels.RunRethink = defaults.RunRethink
 	}
+	if strings.TrimSpace(labels.NeedReviewer) == "" {
+		labels.NeedReviewer = defaults.NeedReviewer
+	}
 	return labels
 }
 
@@ -131,6 +134,14 @@ func (labels TriggerLabels) collectIssueTriggerLabels(issueLabels []githubLabelR
 	}
 	slices.Sort(resolved)
 	return resolved
+}
+
+func (labels TriggerLabels) isNeedReviewerLabel(label string) bool {
+	reviewerLabel := normalizeLabelToken(labels.withDefaults().NeedReviewer)
+	if reviewerLabel == "" {
+		return false
+	}
+	return normalizeLabelToken(label) == reviewerLabel
 }
 
 func normalizeLabelToken(value string) string {

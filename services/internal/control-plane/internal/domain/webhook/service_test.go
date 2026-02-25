@@ -1070,6 +1070,19 @@ func TestResolveRunAgentKey_AIRepairUsesSRE(t *testing.T) {
 	}
 }
 
+func TestResolveRunAgentKey_PullRequestLabelUsesReviewer(t *testing.T) {
+	t.Parallel()
+
+	key := resolveRunAgentKey(&issueRunTrigger{
+		Source: triggerSourcePullRequestLabel,
+		Label:  webhookdomain.DefaultNeedReviewerLabel,
+		Kind:   webhookdomain.TriggerKindDev,
+	})
+	if key != "reviewer" {
+		t.Fatalf("resolveRunAgentKey() = %q, want %q", key, "reviewer")
+	}
+}
+
 func TestIngestGitHubWebhook_IssueTriggerConflict_IgnoredWithDiagnosticComment(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}
@@ -1233,6 +1246,173 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithoutRunLabel_I
 	}
 	if runStatus.warningCommentCalls[0].ReasonCode != runstatusdomain.TriggerWarningReasonPullRequestReviewStageNotResolved {
 		t.Fatalf("unexpected warning reason: %q", runStatus.warningCommentCalls[0].ReasonCode)
+	}
+}
+
+func TestIngestGitHubWebhook_PullRequestLabeledNeedReviewer_CreatesReviewerRun(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{
+		"reviewer": {ID: "agent-reviewer", AgentKey: "reviewer", Name: "AI Reviewer"},
+	}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {
+				ID:          "user-1",
+				GitHubLogin: "member",
+			},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{
+			"project-1|user-1": "read_write",
+		},
+	}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"labeled",
+		"label":{"name":"need:reviewer"},
+		"pull_request":{
+			"id":501,
+			"number":205,
+			"title":"Need pre-review",
+			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/205",
+			"state":"open",
+			"labels":[{"name":"state:in-review"},{"name":"need:reviewer"}],
+			"head":{"ref":"codex/issue-175"},
+			"user":{"id":55,"login":"member"}
+		},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-pr-label-reviewer",
+		DeliveryID:    "delivery-pr-label-reviewer",
+		EventType:     string(webhookdomain.GitHubEventPullRequest),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.Status != webhookdomain.IngestStatusAccepted || got.Duplicate {
+		t.Fatalf("unexpected result: %+v", got)
+	}
+	if got.RunID == "" {
+		t.Fatalf("expected run id for pull_request labeled need:reviewer")
+	}
+
+	var runPayload githubRunPayload
+	if err := json.Unmarshal(runs.last.RunPayload, &runPayload); err != nil {
+		t.Fatalf("unmarshal run payload: %v", err)
+	}
+	if runPayload.Trigger == nil {
+		t.Fatalf("expected trigger object in run payload")
+	}
+	if runPayload.Trigger.Source != triggerSourcePullRequestLabel {
+		t.Fatalf("unexpected trigger source: %#v", runPayload.Trigger.Source)
+	}
+	if runPayload.Trigger.Kind != webhookdomain.TriggerKindDev {
+		t.Fatalf("unexpected trigger kind: %#v", runPayload.Trigger.Kind)
+	}
+	if runPayload.Trigger.Label != webhookdomain.DefaultNeedReviewerLabel {
+		t.Fatalf("unexpected trigger label: %#v", runPayload.Trigger.Label)
+	}
+	if runPayload.Agent.Key != "reviewer" {
+		t.Fatalf("unexpected agent key: %#v", runPayload.Agent.Key)
+	}
+	if runPayload.Agent.Name != "AI Reviewer" {
+		t.Fatalf("unexpected agent name: %#v", runPayload.Agent.Name)
+	}
+	if runPayload.Issue != nil {
+		t.Fatalf("expected no issue payload for pull_request label trigger, got %#v", runPayload.Issue)
+	}
+	if runPayload.PullRequest == nil || runPayload.PullRequest.Number != 205 {
+		t.Fatalf("expected pull_request payload with number=205, got %#v", runPayload.PullRequest)
+	}
+}
+
+func TestIngestGitHubWebhook_PullRequestLabeledNonReviewerLabel_DoesNotCreateRun(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{
+		"reviewer": {ID: "agent-reviewer", AgentKey: "reviewer", Name: "AI Reviewer"},
+	}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+	}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+		Repos:      repos,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"labeled",
+		"label":{"name":"state:in-review"},
+		"pull_request":{
+			"id":501,
+			"number":206,
+			"title":"No trigger",
+			"html_url":"https://github.com/codex-k8s/codex-k8s/pull/206",
+			"state":"open",
+			"head":{"ref":"codex/issue-206"},
+			"user":{"id":55,"login":"member"}
+		},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-pr-label-non-trigger",
+		DeliveryID:    "delivery-pr-label-non-trigger",
+		EventType:     string(webhookdomain.GitHubEventPullRequest),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.Status != webhookdomain.IngestStatusAccepted || got.Duplicate {
+		t.Fatalf("unexpected result: %+v", got)
+	}
+	if got.RunID != "" {
+		t.Fatalf("expected no run id for non-trigger PR label, got %q", got.RunID)
+	}
+	if len(runs.items) != 0 {
+		t.Fatalf("expected no run creation, got %d", len(runs.items))
+	}
+	if len(events.items) != 1 || events.items[0].EventType != floweventdomain.EventTypeWebhookReceived {
+		t.Fatalf("expected one webhook_received event, got %#v", events.items)
 	}
 }
 

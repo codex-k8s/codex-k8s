@@ -39,6 +39,8 @@ const (
 	agentKeyQA         = "qa"       // QA: validates quality, test scenarios, and regressions.
 	agentKeySRE        = "sre"      // SRE/OPS: handles operations, stability, and runtime diagnostics.
 	agentKeyKM         = "km"       // Knowledge manager: maintains traceability and self-improve loop.
+
+	triggerSourcePullRequestLabel = "pull_request_label"
 )
 
 type pushMainDeployTarget struct {
@@ -549,6 +551,23 @@ func (s *Service) resolveIssueRunTrigger(ctx context.Context, projectID string, 
 			}, true, triggerConflictResult{
 				ConflictingLabels: conflictingLabels,
 			}, pullRequestReviewResolutionMeta{}, nil
+	case string(webhookdomain.GitHubEventPullRequest):
+		if !strings.EqualFold(strings.TrimSpace(envelope.Action), string(webhookdomain.GitHubActionLabeled)) {
+			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
+		}
+		if envelope.PullRequest.Number <= 0 {
+			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
+		}
+
+		label := strings.TrimSpace(envelope.Label.Name)
+		if label == "" || !s.triggerLabels.isNeedReviewerLabel(label) {
+			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
+		}
+		return issueRunTrigger{
+			Source: triggerSourcePullRequestLabel,
+			Label:  label,
+			Kind:   webhookdomain.TriggerKindDev,
+		}, true, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
 	case string(webhookdomain.GitHubEventPullRequestReview):
 		if !strings.EqualFold(strings.TrimSpace(envelope.Action), string(webhookdomain.GitHubActionSubmitted)) {
 			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
@@ -859,6 +878,9 @@ func (s *Service) resolveRunAgent(ctx context.Context, projectID string, trigger
 func resolveRunAgentKey(trigger *issueRunTrigger) string {
 	if trigger == nil {
 		return defaultRunAgentKey
+	}
+	if strings.EqualFold(strings.TrimSpace(trigger.Source), triggerSourcePullRequestLabel) {
+		return agentKeyReviewer
 	}
 	switch trigger.Kind {
 	case webhookdomain.TriggerKindDev, webhookdomain.TriggerKindDevRevise:

@@ -103,3 +103,7 @@ const (
 	DefaultRunSelfImproveLabel = "run:self-improve"
 	DefaultRunRethinkLabel     = "run:rethink"
 )
+
+const (
+	DefaultNeedReviewerLabel = "need:reviewer"
+)
