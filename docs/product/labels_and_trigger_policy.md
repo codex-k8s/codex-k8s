@@ -5,8 +5,8 @@ title: "codex-k8s — Labels and Trigger Policy"
 status: active
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-02-24
-related_issues: [1, 19, 74, 90, 95, 154, 155]
+updated_at: 2026-02-25
+related_issues: [1, 19, 74, 90, 95, 154, 155, 175]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -21,7 +21,8 @@ approvals:
 ## TL;DR
 - Канонический набор лейблов включает классы `run:*`, `state:*`, `need:*` и диагностические labels.
 - Trigger/deploy лейблы управляют запуском этапов и требуют апрува Owner при агент-инициации.
-- `state:*`, `need:*` и диагностические labels не запускают деплой/исполнение и могут ставиться автоматически по политике.
+- `state:*`, диагностические labels и большинство `need:*` labels не запускают деплой/исполнение и могут ставиться автоматически по политике.
+- Исключение: `need:reviewer` на PR (webhook `pull_request:labeled`) запускает pre-review ран роли `reviewer`.
 - Для review->revise цикла реализован гибридный resolver stage/profile и stage-aware сервисные сообщения (Issue #95, ADR-0006).
 
 ## Source of truth
@@ -77,7 +78,7 @@ approvals:
 | `need:sre` | нужно участие SRE/OPS |
 | `need:em` | нужен review/решение Engineering Manager |
 | `need:km` | нужен review по документации/трассировке |
-| `need:reviewer` | нужен предварительный технический pre-review |
+| `need:reviewer` | нужен предварительный технический pre-review; на PR работает как trigger ручного запуска reviewer-run |
 
 ## Диагностические labels
 
@@ -133,6 +134,7 @@ approvals:
 ### Service (`state:*`, `need:*`)
 - Могут ставиться агентом автоматически в рамках политики проекта.
 - Не должны запускать workflow/deploy напрямую.
+- Исключение: `need:reviewer` на PR (событие `pull_request:labeled`) запускает reviewer-run с trigger kind `dev` и ограничением reviewer write-scope.
 - Обязательна запись в аудит с actor/correlation.
 - Для role-specific ревью артефактов используются `need:*` labels (вместе с `state:in-review`).
 - Для всех `run:*` при наличии артефактов для проверки Owner ставится `state:in-review`:
@@ -172,6 +174,10 @@ approvals:
   - по label `run:dev:revise` на Issue;
   - по webhook `pull_request_review` с `action=submitted` и `review.state=changes_requested`,
     если удаётся детерминированно определить stage по policy резолва.
+- Для ручного pre-review поддержан PR trigger:
+  - webhook `pull_request` с `action=labeled` и label `need:reviewer`;
+  - создаётся reviewer-run в контексте текущего PR;
+  - reviewer-run не делает commit/push и публикует только review-комментарии в существующем PR.
 - Current baseline (S3, Issue #95):
   - stage резолвится по цепочке:
     1. PR stage label (если ровно один),

@@ -62,6 +62,7 @@ type Config struct {
 	RunOpsLabel          string   `env:"CODEXK8S_RUN_OPS_LABEL" envDefault:"run:ops"`
 	RunSelfImproveLabel  string   `env:"CODEXK8S_RUN_SELF_IMPROVE_LABEL" envDefault:"run:self-improve"`
 	RunRethinkLabel      string   `env:"CODEXK8S_RUN_RETHINK_LABEL" envDefault:"run:rethink"`
+	NeedReviewerLabel    string   `env:"CODEXK8S_NEED_REVIEWER_LABEL" envDefault:"need:reviewer"`
 	// ServicesConfigPath points to services.yaml used for webhook runtime policy.
 	ServicesConfigPath string `env:"CODEXK8S_SERVICES_CONFIG_PATH" envDefault:"services.yaml"`
 	// ServicesConfigEnv selects environment context when rendering services.yaml.

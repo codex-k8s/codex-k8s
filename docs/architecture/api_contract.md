@@ -6,7 +6,7 @@ status: active
 owner_role: SA
 created_at: 2026-02-06
 updated_at: 2026-02-25
-related_issues: [1, 19, 100, 154, 155]
+related_issues: [1, 19, 100, 154, 155, 175]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -180,6 +180,7 @@ approvals:
 - S3 target: активируется полный stage-контур `run:intake..run:ops` и `run:self-improve`.
 - Trigger/deploy label, инициированный агентом, проходит owner approval до применения.
 - `state:*` и `need:*` могут применяться автоматически в рамках project policy.
+- Исключение для PR review-flow: webhook `pull_request` с `action=labeled` и label `need:reviewer` запускает reviewer-run в контексте PR.
 - Любая операция с label фиксируется в `flow_events` и связывается с `agent_sessions`/`links`.
 
 ### Profile-driven next-step contract (S5 Day1, Issues #154/#155)

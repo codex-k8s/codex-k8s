@@ -26,5 +26,6 @@ func buildWebhookTriggerLabels(cfg Config) webhook.TriggerLabels {
 	labels.RunOps = cfg.RunOpsLabel
 	labels.RunSelfImprove = cfg.RunSelfImproveLabel
 	labels.RunRethink = cfg.RunRethinkLabel
+	labels.NeedReviewer = cfg.NeedReviewerLabel
 	return labels
 }

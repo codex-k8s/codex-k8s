@@ -5,8 +5,8 @@ title: "codex-k8s — Stage Process Model"
 status: active
 owner_role: EM
 created_at: 2026-02-11
-updated_at: 2026-02-24
-related_issues: [1, 19, 90, 95, 154, 155]
+updated_at: 2026-02-25
+related_issues: [1, 19, 90, 95, 154, 155, 175]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -115,6 +115,7 @@ approvals:
 - Для всех `run:*` выход этапа проходит через review gate перед финальным review Owner:
   - pre-review от `reviewer` (для технических артефактов) и/или профильной роли через `need:*`;
   - финальное решение Owner по принятию артефактов.
+- Для ручного запуска pre-review на существующем PR допускается trigger через label `need:reviewer` на PR (`pull_request:labeled`).
 - Постановка `state:in-review` выполняется так:
   - на PR и на Issue, если run завершился артефактами в PR;
   - только на Issue, если run завершился без PR.

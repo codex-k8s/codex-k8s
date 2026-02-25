@@ -5,8 +5,8 @@ title: "codex-k8s — Agents Operating Model"
 status: active
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-02-20
-related_issues: [1, 19, 74]
+updated_at: 2026-02-25
+related_issues: [1, 19, 74, 175]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -94,6 +94,7 @@ approvals:
   - формирует PR и прикладывает evidence проверок.
 - `reviewer`:
   - выполняет предварительное ревью до финального ревью Owner для всех `run:*`;
+  - для ручного запуска pre-review по конкретному PR используется label `need:reviewer` на PR (`pull_request:labeled`);
   - проверяет соответствие задаче, проектной документации и `docs/design-guidelines/**`;
   - оставляет inline-комментарии в PR (если PR есть) и публикует summary для Owner;
   - не изменяет файлы репозитория и не создает коммиты/новые PR.
