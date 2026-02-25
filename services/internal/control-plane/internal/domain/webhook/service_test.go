@@ -1323,8 +1323,8 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithRunDevReviseL
 	if runPayload.Trigger.Label != webhookdomain.DefaultRunDevReviseLabel {
 		t.Fatalf("unexpected trigger label: %#v", runPayload.Trigger.Label)
 	}
-	if runPayload.Issue == nil || runPayload.Issue.Number != 200 {
-		t.Fatalf("expected issue payload with number=200, got %#v", runPayload.Issue)
+	if runPayload.Issue != nil {
+		t.Fatalf("expected no issue payload when linked issue is not resolved, got %#v", runPayload.Issue)
 	}
 	if runPayload.PullRequest == nil || runPayload.PullRequest.Number != 200 {
 		t.Fatalf("expected pull_request payload with number=200, got %#v", runPayload.PullRequest)
@@ -1499,6 +1499,12 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_ResolvesFromIssue
 	if runPayload.Trigger.Label != webhookdomain.DefaultRunPlanReviseLabel {
 		t.Fatalf("unexpected trigger label: %q", runPayload.Trigger.Label)
 	}
+	if runPayload.Issue == nil || runPayload.Issue.Number != 95 {
+		t.Fatalf("expected resolved issue payload with number=95, got %#v", runPayload.Issue)
+	}
+	if runPayload.Issue.HTMLURL != "https://github.com/codex-k8s/codex-k8s/issues/95" {
+		t.Fatalf("unexpected resolved issue url: %q", runPayload.Issue.HTMLURL)
+	}
 	if runPayload.ProfileHints == nil {
 		t.Fatal("expected profile hints in run payload")
 	}
@@ -1587,6 +1593,12 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_ResolvesFromLastR
 	}
 	if runPayload.Trigger.Label != webhookdomain.DefaultRunDesignReviseLabel {
 		t.Fatalf("unexpected trigger label: %q", runPayload.Trigger.Label)
+	}
+	if runPayload.Issue == nil || runPayload.Issue.Number != 96 {
+		t.Fatalf("expected resolved issue payload with number=96, got %#v", runPayload.Issue)
+	}
+	if runPayload.Issue.HTMLURL != "https://github.com/codex-k8s/codex-k8s/issues/96" {
+		t.Fatalf("unexpected resolved issue url: %q", runPayload.Issue.HTMLURL)
 	}
 }
 

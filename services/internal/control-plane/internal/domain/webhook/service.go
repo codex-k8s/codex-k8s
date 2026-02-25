@@ -311,6 +311,8 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		Trigger:           triggerPtr(trigger, hasIssueRunTrigger),
 		Agent:             agent,
 		ProfileHints:      profileHints,
+		ResolvedIssueNo:   reviewMeta.ResolvedIssueNumber,
+		ResolvedIssueURL:  buildGitHubIssueURL(strings.TrimSpace(envelope.Repository.FullName), reviewMeta.ResolvedIssueNumber),
 		RuntimeMode:       runtimeMode,
 		RuntimeSource:     runtimeModeSource,
 		RuntimeTargetEnv:  runtimeTargetEnv,
