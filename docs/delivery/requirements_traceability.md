@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-25
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -111,6 +111,17 @@ approvals:
 - Создана stage-continuity issue `#185` (`run:vision`) с обязательной инструкцией сформировать issue следующего этапа (`run:prd`), чтобы сохранить последовательную декомпозицию до `run:doc-audit`.
 - Зафиксировано продуктовое расхождение As-Is: UI-раздел `Agents` и prompt templates находится в scaffold-состоянии, при этом contract-first staff API пока не содержит endpoint-ов для agents/templates/audit lifecycle.
 - Зафиксирован stage-handover baseline для полного цикла до `run:doc-audit` и обязательное правило создания follow-up issue на каждом следующем stage до `run:plan` включительно.
+
+## Актуализация по Issue #185 (`run:vision`, 2026-02-25)
+- Для FR-009/FR-030/FR-032/FR-033/FR-038 добавлен vision traceability артефакт Sprint S6:
+  `docs/delivery/epics/s6/epic-s6-day2-agents-prompts-vision.md`.
+- В vision-пакете формализованы:
+  - project charter (mission, stakeholders, expected value);
+  - success metrics (North Star + supporting + guardrails);
+  - границы MVP/Post-MVP;
+  - открытые риски и продуктовые допущения.
+- Подтверждена stage-continuity связка `#184 -> #185 -> #187` и создана отдельная issue `#187` (`run:prd`) с обязательной инструкцией создать issue `run:arch` после завершения PRD.
+- Для текущего этапа зафиксирован формат приемки: markdown-only (runtime tests не применяются).
 
 ## Актуализация по Issue #155 (`run:plan`, 2026-02-25)
 - Для FR-053/FR-054 добавлены execution-governance артефакты Sprint S5 (`epic_s5.md`, обновлённый sprint-plan, issue-map sync).

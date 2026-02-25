@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-25
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -110,9 +110,11 @@ approvals:
 ### Sprint S6: Agents configuration and prompt templates lifecycle (Issue #184)
 - Day 1 (in-review): intake baseline по разделу `Agents` (`docs/delivery/epics/s6/epic-s6-day1-agents-prompts-intake.md`).
 - Результат Day 1 (факт): подтвержден разрыв между scaffold UI и отсутствием staff API контрактов для agents/templates/audit; зафиксирована полная stage-траектория до `run:doc-audit` и требование создавать follow-up issue на каждом этапе.
-- Day 2 (planned): vision stage в отдельной issue #185 (с обязательным выходом в issue `run:prd`).
+- Day 2 (in-review): vision stage (`docs/delivery/epics/s6/epic-s6-day2-agents-prompts-vision.md`, issue #185).
+- Результат Day 2 (факт): сформирован vision-пакет (charter + success metrics + risk frame + MVP/Post-MVP boundaries), создана follow-up issue `run:prd` #187 с инструкцией создать issue `run:arch` после PRD.
+- Day 3 (planned): PRD stage в отдельной issue #187.
 - Следующие day-эпики S6 формируются строго последовательно по stage-цепочке:
-  `vision -> prd -> arch -> design -> plan -> dev -> doc-audit` с отдельной issue на каждый этап.
+  `prd -> arch -> design -> plan -> dev -> doc-audit` с отдельной issue на каждый этап.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
