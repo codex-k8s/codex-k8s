@@ -103,6 +103,9 @@ LEFT JOIN LATERAL (
     ORDER BY ags.updated_at DESC
     LIMIT 1
 ) ws ON true
-WHERE COALESCE(ar.run_payload->'trigger'->>'label', '') ILIKE 'run:%'
+WHERE (
+        COALESCE(ar.run_payload->'trigger'->>'label', '') ILIKE 'run:%'
+        OR COALESCE(ar.run_payload->'trigger'->>'label', '') ILIKE 'need:reviewer'
+    )
 ORDER BY created_at DESC
 LIMIT $1;
