@@ -5,7 +5,7 @@ title: "Epic S5 Day 1: Launch profiles and deterministic next-step actions (Issu
 status: in-review
 owner_role: PM
 created_at: 2026-02-24
-updated_at: 2026-02-24
+updated_at: 2026-02-25
 related_issues: [154, 155]
 related_prs: []
 approvals:
@@ -45,6 +45,8 @@ approvals:
 
 ## Vision/PRD package (Issue #155)
 
+- Канонический PRD-артефакт Day1: `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md` (по шаблону `docs/templates/prd.md`).
+
 ### 1. Канонический набор launch profiles и эскалации
 
 | Profile | Обязательная траектория | Когда применять | Детерминированные триггеры эскалации |
@@ -64,6 +66,8 @@ approvals:
 | `guardrail_note` | Явное правило по ambiguity и policy-gate |
 
 ### 3. Fallback command templates
+- Pre-check перед ручным transition (обязателен):
+  - `gh issue view <ISSUE_NUMBER> --json labels --jq '.labels[].name'` (оператор подтверждает, что `run:<current-stage>` единственный stage-trigger).
 - Переход на следующий stage:
   - `gh issue edit <ISSUE_NUMBER> --remove-label "run:<current-stage>" --add-label "run:<next-stage>"`.
 - Постановка explicit input-gate при неоднозначности:
@@ -74,6 +78,11 @@ approvals:
 - Безопасность:
   - команды не содержат секретов/токенов;
   - команды используют только labels из каталога `run:*|state:*|need:*`.
+  - при неоднозначном текущем stage (`0` или `>1` labels из `run:*`) transition не выполняется, ставится `need:input`.
+
+### 4. Актуальность fallback-синтаксиса (`gh`)
+- Синтаксис `gh issue edit` / `gh pr edit` для `--add-label` и `--remove-label` сверен с актуальным manual GitHub CLI (Context7, источник `/websites/cli_github_manual`).
+- Для Sprint S5 принимаем эти флаги как канонический fallback-контракт до отдельного owner-решения.
 
 ## Stories (handover в `run:dev`)
 - Story-1: Profile Registry + escalation resolver.
@@ -81,6 +90,16 @@ approvals:
 - Story-3: Service-message Rendering with profile path and guardrail note.
 - Story-4: Governance Guardrails (`need:input`, ambiguity-stop, no silent-skip).
 - Story-5: Traceability Sync (`issue_map`, `requirements_traceability`, sprint/epic docs).
+
+## Декомпозиция реализации для `run:dev`
+
+| Инкремент | Priority | Что реализовать | DoD инкремента |
+|---|---|---|---|
+| I1: Profile resolver core | P0 | Deterministic resolver `quick-fix/feature/new-service` + escalation rules | profile определяется однозначно; ambiguity приводит к `need:input` |
+| I2: Next-step card contract | P0 | Рендер `launch_profile`, `stage_path`, `primary_action`, `fallback_action`, `guardrail_note` | service-comment в GitHub содержит полный контракт без ручных дописок |
+| I3: Fallback pre-check + transition | P0 | Генератор fallback-команд: pre-check labels + transition | fallback не выполняет best-guess; при конфликте stage публикуется remediation |
+| I4: Review-gate transitions | P1 | Унифицированный post-PR переход в `state:in-review` для Issue+PR | после формирования PR обе сущности получают `state:in-review` без дрейфа |
+| I5: Traceability sync | P1 | Автообновление `issue_map`/`requirements_traceability` при переходах S5 | связь `issue -> требования -> AC` остаётся актуальной после каждого merge |
 
 ## Quality gates
 - Planning gate:
@@ -90,12 +109,23 @@ approvals:
   - next-step action contract детерминирован и допускает только policy-safe transitions.
 - UX gate:
   - сценарий broken/dead link не блокирует owner-flow;
-  - fallback-путь выполняется в один шаг (copy-paste).
+  - fallback-путь выполняется детерминированно (`pre-check -> transition`) без best-guess.
 - Security gate:
   - fallback-команды не содержат секретов;
   - любой transition сохраняет audit trail.
 - Traceability gate:
   - изменения отражены в `issue_map` и `requirements_traceability`.
+
+## Acceptance scenarios (owner-ready)
+
+| ID | Сценарий | Ожидаемый результат |
+|---|---|---|
+| AC-01 | Profile=`feature`, deep-link доступен | Owner выполняет переход через `primary_action`; stage меняется по профилю и фиксируется в audit |
+| AC-02 | Deep-link недоступен (404/timeout), stage однозначен | Owner использует fallback (`pre-check -> transition`), процесс не блокируется |
+| AC-03 | Stage ambiguity (`0` или `>1` trigger labels) | Transition блокируется, ставится `need:input`, публикуется remediation-message |
+| AC-04 | `quick-fix` с признаком `cross-service impact` | Происходит обязательная эскалация профиля (`feature` или `new-service`) без silent-skip |
+| AC-05 | После формирования PR требуется review gate | На PR и Issue устанавливается `state:in-review`; trigger label снимается |
+| AC-06 | Security/policy проверка fallback | Команды содержат только `run:*|state:*|need:*` labels и не содержат секретов |
 
 ## Acceptance criteria
 - [x] Подтвержден канонический набор launch profiles и правила эскалации.
