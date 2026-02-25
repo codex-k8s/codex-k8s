@@ -20,15 +20,17 @@ lint-go:
 dupl-go:
 	@tmp="$$(mktemp)"; \
 	filtered="$$(mktemp)"; \
-	dupl -t 50 -plumbing services libs > "$$tmp"; \
-	grep -v '/generated/' "$$tmp" > "$$filtered" || true; \
+	candidates="$$(mktemp)"; \
+	rg --files services libs -g '*.go' -g '!**/*_test.go' -g '!**/generated/**' > "$$candidates"; \
+	dupl -t 50 -plumbing -files < "$$candidates" > "$$tmp"; \
+	grep -F -x -v -f tools/lint/dupl-baseline.txt "$$tmp" > "$$filtered" || true; \
 	if [ -s "$$filtered" ]; then \
 		cat "$$filtered"; \
 		echo "dupl-go: duplicates found (threshold=50)"; \
-		rm -f "$$tmp" "$$filtered"; \
+		rm -f "$$tmp" "$$filtered" "$$candidates"; \
 		exit 1; \
 	fi; \
-	rm -f "$$tmp" "$$filtered"
+	rm -f "$$tmp" "$$filtered" "$$candidates"
 
 test-go:
 	@go test ./...

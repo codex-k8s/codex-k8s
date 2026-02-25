@@ -144,21 +144,18 @@ func (r *Repository) FindByProviderOwnerName(ctx context.Context, provider strin
 
 // GetTokenEncrypted returns encrypted token bytes for a repository binding.
 func (r *Repository) GetTokenEncrypted(ctx context.Context, repositoryID string) ([]byte, bool, error) {
-	token, ok, err := queryOneBytes(ctx, r.db, queryGetTokenEncrypted, repositoryID)
-	if err != nil {
-		return nil, false, fmt.Errorf("get repository token: %w", err)
-	}
-	if !ok {
-		return nil, false, nil
-	}
-	return token, true, nil
+	return r.getEncryptedToken(ctx, repositoryID, queryGetTokenEncrypted, "get repository token")
 }
 
 // GetBotTokenEncrypted returns encrypted bot token bytes for a repository binding.
 func (r *Repository) GetBotTokenEncrypted(ctx context.Context, repositoryID string) ([]byte, bool, error) {
-	token, ok, err := queryOneBytes(ctx, r.db, queryGetBotTokenEncrypted, repositoryID)
+	return r.getEncryptedToken(ctx, repositoryID, queryGetBotTokenEncrypted, "get repository bot token")
+}
+
+func (r *Repository) getEncryptedToken(ctx context.Context, repositoryID string, query string, op string) ([]byte, bool, error) {
+	token, ok, err := queryOneBytes(ctx, r.db, query, repositoryID)
 	if err != nil {
-		return nil, false, fmt.Errorf("get repository bot token: %w", err)
+		return nil, false, fmt.Errorf("%s: %w", op, err)
 	}
 	if !ok {
 		return nil, false, nil
