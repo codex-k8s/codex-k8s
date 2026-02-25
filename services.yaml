@@ -80,7 +80,7 @@ spec:
         - libs/go
         - proto
     control-plane:
-      value: "0.1.39"
+      value: "0.1.40"
       bumpOn:
         - services/internal/control-plane
         - libs/go
