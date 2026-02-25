@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-25
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -134,9 +134,19 @@ approvals:
   достаточно текущего стека `kin-openapi` (валидация контрактов) и `monaco-editor` (DiffEditor).
 
 ## Актуализация по Issue #195 (`run:design`, 2026-02-25)
-- Создана stage-continuity issue `#195` (без trigger-лейбла) как обязательный артефакт по итогам `run:arch` Issue `#189`.
-- В `#195` зафиксированы design acceptance criteria для OpenAPI/gRPC boundaries, data model/migrations policy, UI flow и тестируемости.
-- Зафиксирована обязательная следующая связка: после завершения `run:design` создать issue этапа `run:plan` со ссылками на `#184`, `#185`, `#187`, `#189`, `#195`.
+- Подготовлен полный design package для `agents/templates/audit`:
+  `docs/architecture/agents_prompt_templates_lifecycle_design_doc.md`,
+  `docs/architecture/agents_prompt_templates_lifecycle_api_contract.md`,
+  `docs/architecture/agents_prompt_templates_lifecycle_data_model.md`,
+  `docs/architecture/agents_prompt_templates_lifecycle_migrations_policy.md`.
+- Зафиксированы typed transport boundaries (staff HTTP + internal gRPC), error/validator/concurrency contract и UI flow для list/details/diff/preview/history.
+- Обновлены артефакты Sprint S6 Day5:
+  `docs/delivery/epics/s6/epic-s6-day5-agents-prompts-design.md`,
+  `docs/delivery/epics/s6/epic_s6.md`,
+  `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md`.
+- Через Context7 подтверждён dependency baseline для реализации без новых библиотек:
+  `kin-openapi` (`/getkin/kin-openapi`) и `monaco-editor` (`/microsoft/monaco-editor`).
+- Создана follow-up issue `#197` для stage `run:plan` с обязательной инструкцией после `run:plan` создать issue `run:dev`.
 
 ## Актуализация по Issue #155 (`run:plan`, 2026-02-25)
 - Для FR-053/FR-054 добавлены execution-governance артефакты Sprint S5 (`epic_s5.md`, обновлённый sprint-plan, issue-map sync).

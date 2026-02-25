@@ -6,7 +6,7 @@ status: in-review
 owner_role: SA
 created_at: 2026-02-25
 updated_at: 2026-02-25
-related_issues: [184, 185, 187, 189, 195]
+related_issues: [184, 185, 187, 189, 195, 197]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -129,6 +129,14 @@ Rel(worker, db, "Reads/Writes", "SQL")
 - UI flow и state-management для agents/templates (list, diff, preview, history).
 - Политика RBAC и error taxonomy (`invalid_argument`, `conflict`, `forbidden`).
 - План observability и тестирования (unit + integration + UI).
+
+## Результаты `run:design` (Issue #195)
+- `docs/architecture/agents_prompt_templates_lifecycle_design_doc.md`
+- `docs/architecture/agents_prompt_templates_lifecycle_api_contract.md`
+- `docs/architecture/agents_prompt_templates_lifecycle_data_model.md`
+- `docs/architecture/agents_prompt_templates_lifecycle_migrations_policy.md`
+- `docs/delivery/epics/s6/epic-s6-day5-agents-prompts-design.md`
+- Continuity: создана follow-up issue `#197` для stage `run:plan`.
 
 ## Migration и runtime impact
 - На этапе `run:arch` runtime-поведение не меняется: изменения ограничены архитектурной документацией.
