@@ -99,6 +99,12 @@ spec:
                 secretKeyRef:
                   name: codex-k8s-runtime
                   key: CODEXK8S_JWT_TTL
+{{ if eq (envOr "CODEXK8S_HOT_RELOAD" "") "true" }}
+          volumeMounts:
+            - name: repo-cache
+              mountPath: /workspace
+              readOnly: true
+{{ end }}
           readinessProbe:
             httpGet:
               path: /readyz
@@ -117,6 +123,12 @@ spec:
               port: http
             initialDelaySeconds: 15
             periodSeconds: 20
+{{ if eq (envOr "CODEXK8S_HOT_RELOAD" "") "true" }}
+      volumes:
+        - name: repo-cache
+          persistentVolumeClaim:
+            claimName: codex-k8s-repo-cache
+{{ end }}
 ---
 apiVersion: v1
 kind: Service
@@ -192,7 +204,7 @@ spec:
             - name: CODEXK8S_SERVICES_CONFIG_ENV
               value: '{{ envOr "CODEXK8S_SERVICES_CONFIG_ENV" "" }}'
             - name: CODEXK8S_REPOSITORY_ROOT
-              value: /repo-cache
+              value: '{{ envOr "CODEXK8S_REPOSITORY_ROOT" "/repo-cache" }}'
             - name: CODEXK8S_KANIKO_CACHE_ENABLED
               value: '{{ envOr "CODEXK8S_KANIKO_CACHE_ENABLED" "false" }}'
             - name: CODEXK8S_KANIKO_CACHE_REPO
@@ -514,6 +526,11 @@ spec:
                   key: CODEXK8S_BOOTSTRAP_PLATFORM_ADMIN_EMAILS
                   optional: true
           volumeMounts:
+{{ if eq (envOr "CODEXK8S_HOT_RELOAD" "") "true" }}
+            - name: repo-cache
+              mountPath: /workspace
+              readOnly: true
+{{ end }}
             - name: repo-cache
               mountPath: /repo-cache
               readOnly: true
@@ -881,3 +898,15 @@ spec:
               value: '{{ envOr "CODEXK8S_AGENT_DEFAULT_LOCALE" "" }}'
             - name: CODEXK8S_AGENT_BASE_BRANCH
               value: '{{ envOr "CODEXK8S_AGENT_BASE_BRANCH" "" }}'
+{{ if eq (envOr "CODEXK8S_HOT_RELOAD" "") "true" }}
+          volumeMounts:
+            - name: repo-cache
+              mountPath: /workspace
+              readOnly: true
+{{ end }}
+{{ if eq (envOr "CODEXK8S_HOT_RELOAD" "") "true" }}
+      volumes:
+        - name: repo-cache
+          persistentVolumeClaim:
+            claimName: codex-k8s-repo-cache
+{{ end }}

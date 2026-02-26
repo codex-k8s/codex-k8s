@@ -123,10 +123,8 @@ func defaultHotReloadFlag(targetEnv string) string {
 }
 
 func resolveHotReloadFlag(targetEnv string, currentValue string) string {
-	// AI slots currently rely on immutable images for apply/runtime boot.
-	// Force hot-reload off to avoid CompileDaemon requiring runtime source mounts.
 	if strings.EqualFold(strings.TrimSpace(targetEnv), "ai") {
-		return "false"
+		return "true"
 	}
 	trimmed := strings.TrimSpace(currentValue)
 	if trimmed != "" {
