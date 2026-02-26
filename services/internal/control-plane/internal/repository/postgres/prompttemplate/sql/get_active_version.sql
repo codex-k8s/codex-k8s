@@ -1,5 +1,6 @@
 -- name: prompttemplate__get_active_version :one
 SELECT
+    -- Единый канонический ключ шаблона для transport/audit DTO.
     CASE
         WHEN scope_type = 'project'
             THEN 'project/' || scope_id::text || '/' || role_key || '/' || template_kind || '/' || locale
@@ -18,6 +19,7 @@ SELECT
     activated_at
 FROM prompt_templates
 WHERE scope_type = $1
+  -- Для global scope в БД хранится NULL scope_id; снаружи он передается как пустая строка.
   AND COALESCE(scope_id::text, '') = $2
   AND role_key = $3
   AND template_kind = $4
@@ -25,4 +27,3 @@ WHERE scope_type = $1
   AND status = 'active'
 ORDER BY version DESC
 LIMIT 1;
-
