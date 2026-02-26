@@ -53,9 +53,7 @@ func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[
 	// Manifests and runtime prerequisites rely on CODEXK8S_ENV / CODEXK8S_SERVICES_CONFIG_ENV.
 	vars["CODEXK8S_ENV"] = targetEnv
 	vars["CODEXK8S_SERVICES_CONFIG_ENV"] = targetEnv
-	if strings.TrimSpace(vars["CODEXK8S_HOT_RELOAD"]) == "" {
-		vars["CODEXK8S_HOT_RELOAD"] = defaultHotReloadFlag(targetEnv)
-	}
+	vars["CODEXK8S_HOT_RELOAD"] = resolveHotReloadFlag(targetEnv, vars["CODEXK8S_HOT_RELOAD"])
 	// AI hot-reload requires Go sources to stay in the image; disable kaniko cleanup by default.
 	if strings.EqualFold(strings.TrimSpace(targetEnv), "ai") {
 		if strings.TrimSpace(vars["CODEXK8S_KANIKO_CLEANUP"]) == "" {
@@ -131,6 +129,19 @@ func defaultHotReloadFlag(targetEnv string) string {
 		return "true"
 	}
 	return "false"
+}
+
+func resolveHotReloadFlag(targetEnv string, currentValue string) string {
+	// AI slots must always run in hot-reload mode even if control-plane inherited
+	// CODEXK8S_HOT_RELOAD=false from production bootstrap environment.
+	if strings.EqualFold(strings.TrimSpace(targetEnv), "ai") {
+		return "true"
+	}
+	trimmed := strings.TrimSpace(currentValue)
+	if trimmed != "" {
+		return trimmed
+	}
+	return defaultHotReloadFlag(targetEnv)
 }
 
 func defaultPlatformDeploymentReplicas(targetEnv string) string {
