@@ -68,29 +68,32 @@ func (s *Service) resolveRunRepositoryRoot(ctx context.Context, params PreparePa
 		valueOr(vars, "CODEXK8S_AGENT_BASE_BRANCH", ""),
 	)
 
-	platformNamespace := strings.TrimSpace(valueOr(vars, "CODEXK8S_PLATFORM_NAMESPACE", ""))
-	if platformNamespace == "" {
-		platformNamespace = strings.TrimSpace(valueOr(vars, "CODEXK8S_PRODUCTION_NAMESPACE", ""))
+	syncNamespace := strings.TrimSpace(params.Namespace)
+	if syncNamespace == "" {
+		syncNamespace = strings.TrimSpace(valueOr(vars, "CODEXK8S_PRODUCTION_NAMESPACE", ""))
 	}
-	if platformNamespace == "" {
-		return "", fmt.Errorf("CODEXK8S_PLATFORM_NAMESPACE is required for repo sync")
+	if syncNamespace == "" {
+		syncNamespace = strings.TrimSpace(valueOr(vars, "CODEXK8S_PLATFORM_NAMESPACE", ""))
+	}
+	if syncNamespace == "" {
+		return "", fmt.Errorf("target namespace is required for repo sync")
 	}
 
-	repoRoot := s.repoSnapshotPath(owner, name, buildRef)
+	repoRoot := s.repoSnapshotPath(params.TargetEnv, owner, name, buildRef)
 	if repoRoot == "" {
 		return "", fmt.Errorf("resolve repository snapshot path: empty")
 	}
 
 	// Immutable refs (commit hashes) can reuse the snapshot without refresh.
 	// Mutable refs (branches/tags) must be refreshed to avoid stale templates/migrations.
-	if _, err := os.Stat(filepath.Join(repoRoot, ".git")); err == nil && isImmutableGitRef(buildRef) {
+	if _, err := os.Stat(filepath.Join(repoRoot, ".git")); err == nil && isImmutableGitRef(buildRef) && !isAIEnv(params.TargetEnv) {
 		return repoRoot, nil
 	}
 
-	if err := s.ensureRepoCachePVC(ctx, platformNamespace, vars, runID); err != nil {
+	if err := s.ensureRepoCachePVC(ctx, syncNamespace, vars, runID); err != nil {
 		return "", err
 	}
-	if err := s.ensureRepoSnapshot(ctx, platformNamespace, repositoryFullName, buildRef, repoRoot, vars, runID); err != nil {
+	if err := s.ensureRepoSnapshot(ctx, syncNamespace, repositoryFullName, buildRef, repoRoot, vars, runID); err != nil {
 		return "", err
 	}
 
@@ -133,10 +136,13 @@ func isImmutableGitRef(ref string) bool {
 	return true
 }
 
-func (s *Service) repoSnapshotPath(owner string, name string, buildRef string) string {
+func (s *Service) repoSnapshotPath(targetEnv string, owner string, name string, buildRef string) string {
 	cacheRoot := strings.TrimSpace(s.cfg.RepositoryRoot)
 	if cacheRoot == "" {
 		return ""
+	}
+	if isAIEnv(targetEnv) {
+		return cacheRoot
 	}
 	refToken := sanitizeNameToken(buildRef, 120)
 	if refToken == "" {
@@ -146,10 +152,14 @@ func (s *Service) repoSnapshotPath(owner string, name string, buildRef string) s
 	return filepath.Join(cacheRoot, "github", owner, name, refToken)
 }
 
-func (s *Service) ensureRepoCachePVC(ctx context.Context, platformNamespace string, vars map[string]string, runID string) error {
-	namespace := strings.TrimSpace(platformNamespace)
+func isAIEnv(targetEnv string) bool {
+	return strings.EqualFold(strings.TrimSpace(targetEnv), "ai")
+}
+
+func (s *Service) ensureRepoCachePVC(ctx context.Context, targetNamespace string, vars map[string]string, runID string) error {
+	namespace := strings.TrimSpace(targetNamespace)
 	if namespace == "" {
-		return fmt.Errorf("platform namespace is required")
+		return fmt.Errorf("target namespace is required")
 	}
 
 	renderVars := cloneStringMap(vars)
@@ -167,10 +177,10 @@ func (s *Service) ensureRepoCachePVC(ctx context.Context, platformNamespace stri
 	return nil
 }
 
-func (s *Service) ensureRepoSnapshot(ctx context.Context, platformNamespace string, repositoryFullName string, buildRef string, repoRoot string, vars map[string]string, runID string) error {
-	namespace := strings.TrimSpace(platformNamespace)
+func (s *Service) ensureRepoSnapshot(ctx context.Context, targetNamespace string, repositoryFullName string, buildRef string, repoRoot string, vars map[string]string, runID string) error {
+	namespace := strings.TrimSpace(targetNamespace)
 	if namespace == "" {
-		return fmt.Errorf("platform namespace is required")
+		return fmt.Errorf("target namespace is required")
 	}
 
 	repositoryFullName = strings.TrimSpace(repositoryFullName)

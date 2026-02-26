@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ envOr "CODEXK8S_REPO_SYNC_JOB_NAME" "" }}
-  namespace: {{ envOr "CODEXK8S_PLATFORM_NAMESPACE" "" }}
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
   labels:
     app.kubernetes.io/name: codex-k8s-repo-sync
 spec:
@@ -61,7 +61,7 @@ spec:
               fi
 
               case "$CODEXK8S_REPO_SYNC_DEST_DIR" in
-                "$CODEXK8S_REPOSITORY_ROOT"/*) ;;
+                "$CODEXK8S_REPOSITORY_ROOT"|"${CODEXK8S_REPOSITORY_ROOT}"/*) ;;
                 *)
                   echo "CODEXK8S_REPO_SYNC_DEST_DIR must be under $CODEXK8S_REPOSITORY_ROOT, got: $CODEXK8S_REPO_SYNC_DEST_DIR"
                   exit 1
