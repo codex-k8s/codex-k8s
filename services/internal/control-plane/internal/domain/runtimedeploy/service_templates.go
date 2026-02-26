@@ -119,17 +119,14 @@ func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[
 }
 
 func defaultHotReloadFlag(targetEnv string) string {
-	if strings.EqualFold(strings.TrimSpace(targetEnv), "ai") {
-		return "true"
-	}
 	return "false"
 }
 
 func resolveHotReloadFlag(targetEnv string, currentValue string) string {
-	// AI slots must always run in hot-reload mode even if control-plane inherited
-	// CODEXK8S_HOT_RELOAD=false from production bootstrap environment.
+	// AI slots currently rely on immutable images for apply/runtime boot.
+	// Force hot-reload off to avoid CompileDaemon requiring runtime source mounts.
 	if strings.EqualFold(strings.TrimSpace(targetEnv), "ai") {
-		return "true"
+		return "false"
 	}
 	trimmed := strings.TrimSpace(currentValue)
 	if trimmed != "" {

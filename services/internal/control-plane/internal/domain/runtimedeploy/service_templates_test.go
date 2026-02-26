@@ -21,16 +21,16 @@ func TestResolveHotReloadFlag(t *testing.T) {
 		want      string
 	}{
 		{
-			name:      "ai overrides inherited false",
+			name:      "ai overrides inherited true",
 			targetEnv: "ai",
-			current:   "false",
-			want:      "true",
+			current:   "true",
+			want:      "false",
 		},
 		{
-			name:      "ai default true",
+			name:      "ai default false",
 			targetEnv: "ai",
 			current:   "",
-			want:      "true",
+			want:      "false",
 		},
 		{
 			name:      "production keeps explicit value",
@@ -63,6 +63,9 @@ func TestBuildTemplateVars_AiForcesKanikoCleanupDisabled(t *testing.T) {
 	vars := svc.buildTemplateVars(PrepareParams{TargetEnv: "ai"}, "codex-k8s-dev-1")
 	if got, want := vars["CODEXK8S_KANIKO_CLEANUP"], "false"; got != want {
 		t.Fatalf("buildTemplateVars ai CODEXK8S_KANIKO_CLEANUP=%q want %q", got, want)
+	}
+	if got, want := vars["CODEXK8S_HOT_RELOAD"], "false"; got != want {
+		t.Fatalf("buildTemplateVars ai CODEXK8S_HOT_RELOAD=%q want %q", got, want)
 	}
 }
 
