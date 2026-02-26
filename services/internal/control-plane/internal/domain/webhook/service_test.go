@@ -1803,6 +1803,9 @@ func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithRunDevReviseL
 	if runPayload.PullRequest == nil || runPayload.PullRequest.Number != 200 {
 		t.Fatalf("expected pull_request payload with number=200, got %#v", runPayload.PullRequest)
 	}
+	if got, want := runPayload.Runtime.BuildRef, "codex/issue-13"; got != want {
+		t.Fatalf("unexpected runtime build ref: got %q want %q", got, want)
+	}
 }
 
 func TestIngestGitHubWebhook_PullRequestReviewChangesRequested_WithRunIntakeLabel_CreatesIntakeReviseRun(t *testing.T) {
