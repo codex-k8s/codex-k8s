@@ -33,4 +33,4 @@ ENV NODE_ENV=development
 
 EXPOSE 5173
 
-CMD ["sh", "-ec", "exec npm run dev -- --host 0.0.0.0 --port 5173"]
+CMD ["sh", "-ec", "if [ -d /workspace/services/staff/web-console ]; then cd /workspace/services/staff/web-console; if [ ! -d node_modules ]; then npm ci; fi; exec npm run dev -- --host 0.0.0.0 --port 5173; fi; cd /app; exec npm run dev -- --host 0.0.0.0 --port 5173"]

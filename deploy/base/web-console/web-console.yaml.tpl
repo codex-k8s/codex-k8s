@@ -36,6 +36,21 @@ spec:
         - name: web-console
           image: {{ envOr "CODEXK8S_WEB_CONSOLE_IMAGE" "" }}
           imagePullPolicy: Always
+{{ if eq (envOr "CODEXK8S_HOT_RELOAD" "") "true" }}
+          command:
+            - sh
+            - -ec
+            - |
+              if [ -d /workspace/services/staff/web-console ]; then
+                cd /workspace/services/staff/web-console
+                if [ ! -d node_modules ]; then
+                  npm ci
+                fi
+                exec npm run dev -- --host 0.0.0.0 --port 5173
+              fi
+              cd /app
+              exec npm run dev -- --host 0.0.0.0 --port 5173
+{{ end }}
           ports:
             - containerPort: 5173
               name: http
@@ -65,3 +80,14 @@ spec:
               port: http
             initialDelaySeconds: 10
             periodSeconds: 20
+{{ if eq (envOr "CODEXK8S_HOT_RELOAD" "") "true" }}
+          volumeMounts:
+            - name: repo-cache
+              mountPath: /workspace
+{{ end }}
+{{ if eq (envOr "CODEXK8S_HOT_RELOAD" "") "true" }}
+      volumes:
+        - name: repo-cache
+          persistentVolumeClaim:
+            claimName: codex-k8s-repo-cache
+{{ end }}
