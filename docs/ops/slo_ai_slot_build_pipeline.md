@@ -21,7 +21,7 @@ approvals:
 - Основные SLI: build success ratio, recovery MTTR.
 - Цели:
   - availability SLO: `>=99.0%` успешных ai-slot build за 7 дней;
-  - incident recovery SLO: `<=30m` до восстановления после cache-related сбоя.
+  - incident recovery SLO: `<=30m` до восстановления после cache-related или build-ref-related сбоя.
 - Error budget: `1.0%` на 7 дней.
 
 ## Сервис и границы
@@ -30,7 +30,7 @@ approvals:
 - Клиенты:
   - пользователи, запускающие agent-run в ai-слотах.
 - Зависимости:
-  - `control-plane`, `worker`, registry/mirror path, Kubernetes jobs.
+  - `control-plane`, `worker`, registry/mirror path, Kubernetes jobs, `codegen-check` job.
 
 ## Critical User Journeys (CUJ)
 1. CUJ-1: пользователь запускает задачу, build-пайплайн завершается успешно, run стартует.
@@ -39,7 +39,7 @@ approvals:
 ## SLIs
 ### SLI-1: Build Availability
 - Определение:
-  - `successful_build_jobs / total_build_jobs` для ai-slot за окно измерения.
+  - `successful_build_and_codegen_jobs / total_build_and_codegen_jobs` для ai-slot за окно измерения.
 - Источник:
   - Kubernetes jobs status (+ при наличии Prometheus `kube_job_status_*`).
 - Период:
@@ -47,7 +47,7 @@ approvals:
 
 ### SLI-2: Recovery MTTR
 - Определение:
-  - время от первого зафиксированного cache-related failure до первого успешного build после mitigation.
+  - время от первого зафиксированного cache/build-ref failure до первого успешного build/codegen-check после mitigation.
 - Источник:
   - control-plane/worker logs + job timelines.
 - Период:
@@ -56,7 +56,7 @@ approvals:
 ## SLO targets
 | CUJ/SLI | SLO target | Окно | Исключения | Примечания |
 |---|---:|---|---|---|
-| CUJ-1 / SLI-1 | `>= 99.0%` | 7d rolling | maintenance windows | контроль через alerts + job stats |
+| CUJ-1 / SLI-1 | `>= 99.0%` | 7d rolling | maintenance windows | контроль через alerts + build/codegen job stats |
 | CUJ-2 / SLI-2 | `<= 30m` | per incident | external registry outage (подтвержденный) | контроль через incident timeline |
 
 ## Error Budget
@@ -70,6 +70,7 @@ approvals:
 - Alerts:
   - `AI_SLOT_BUILD_FAILURE_BURST`;
   - `AI_SLOT_BUILD_MANIFEST_UNKNOWN_PERSISTENT`;
+  - `AI_SLOT_CODEGEN_CHECK_BUILD_REF_INVALID`;
   - `AI_SLOT_BUILD_FAILURE_RATE_ELEVATED`;
   - `AI_SLOT_BUILD_MTTR_SLO_RISK`.
 - Runbook link:

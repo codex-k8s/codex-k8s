@@ -168,7 +168,7 @@ kubectl -n "$ns" get jobs -l app.kubernetes.io/name=codex-k8s-registry-gc
 - Симптом: Kaniko падает на base image с логом вида `Error while retrieving image from cache ... MANIFEST_UNKNOWN`.
 - Причина: в registry мог остаться stale mirror/cache state после cleanup/GC (тег виден, но digest манифест недоступен).
 - Текущее безопасное значение по умолчанию: `CODEXK8S_KANIKO_CACHE_ENABLED=false`.
-- Детальный playbook: `docs/ops/runbook_ai_slot_build_failures.md`.
+- Детальный playbook: `docs/ops/runbook_ai_slot_build_failures.md` (включает cache и build-ref сигнатуры).
 - Если cache включали вручную и снова получили `MANIFEST_UNKNOWN`:
   - переключить `CODEXK8S_KANIKO_CACHE_ENABLED=false` в `codex-k8s-runtime`;
   - убедиться, что `codex-k8s-control-plane` подтянул значение после rollout;
@@ -177,3 +177,25 @@ kubectl -n "$ns" get jobs -l app.kubernetes.io/name=codex-k8s-registry-gc
   - mirror шаг выполняет platform-aware health-check (`--platform linux/amd64`) и ремонтирует stale mirror;
   - mirror выполняется в single-arch режиме (`CODEXK8S_IMAGE_MIRROR_PLATFORM=linux/amd64`), чтобы не оставлять multi-arch index с отсутствующими дочерними манифестами;
   - при cache-related `MANIFEST_UNKNOWN` build автоматически ретраится без cache.
+
+### Codegen-check падает на `git checkout --detach` (некорректный `CODEXK8S_BUILD_REF`)
+- Симптом:
+  - `codegen-check` job падает до `make gen-openapi`;
+  - в логах есть `checkout --detach`, `unknown switch 'b'` или `is not a commit`.
+- Причина:
+  - в `CODEXK8S_BUILD_REF` попал некорректный ref (например, значение с префиксом `-b` или другим CLI-флагом).
+- Быстрая проверка:
+
+```bash
+ns="codex-k8s-prod"
+kubectl -n "$ns" logs deploy/codex-k8s-control-plane --since=2h \
+  | grep -E "codegen-check|CODEXK8S_BUILD_REF|checkout --detach|unknown switch|is not a commit" || true
+kubectl -n "$ns" logs job/codex-k8s-codegen-check --tail=200 2>/dev/null \
+  | grep -E "checkout --detach|unknown switch|is not a commit|CODEXK8S_BUILD_REF" || true
+```
+
+- Mitigation:
+  - нормализовать `CODEXK8S_BUILD_REF` до валидного git ref без CLI-флагов (`main`, `feature/<branch>`, commit SHA);
+  - повторить runtime deploy/codegen-check;
+  - убедиться, что новые jobs завершаются `Complete`.
+- Детальный playbook: `docs/ops/runbook_ai_slot_build_failures.md`.

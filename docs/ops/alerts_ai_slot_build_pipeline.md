@@ -19,7 +19,8 @@ approvals:
 ## TL;DR
 - Paging alerts:
   - `AI_SLOT_BUILD_FAILURE_BURST`;
-  - `AI_SLOT_BUILD_MANIFEST_UNKNOWN_PERSISTENT`.
+  - `AI_SLOT_BUILD_MANIFEST_UNKNOWN_PERSISTENT`;
+  - `AI_SLOT_CODEGEN_CHECK_BUILD_REF_INVALID`.
 - Ticket alerts:
   - `AI_SLOT_BUILD_FAILURE_RATE_ELEVATED`;
   - `AI_SLOT_BUILD_MTTR_SLO_RISK`.
@@ -28,13 +29,16 @@ approvals:
 ## Принципы
 - Алёрты должны отражать пользовательский impact: невозможность собрать/запустить задачу в ai-слоте.
 - Paging только при повторяемой деградации или отсутствии автоматического восстановления.
-- Любой paging алерт обязан иметь быстрый mitigation (cache kill switch + verification).
+- Любой paging алерт обязан иметь быстрый mitigation:
+  - cache kill switch для `MANIFEST_UNKNOWN`;
+  - build-ref normalization для `codegen-check checkout` сигнатуры.
 
 ## Каталог алертов
 | Alert | Тип | Условие | Окно | Порог | Действие | Runbook |
 |---|---|---|---|---:|---|---|
 | `AI_SLOT_BUILD_FAILURE_BURST` | page | failed build/mirror jobs | 15m | `>=3` | on-call SRE, mitigation в течение 10m | `docs/ops/runbook_ai_slot_build_failures.md` |
 | `AI_SLOT_BUILD_MANIFEST_UNKNOWN_PERSISTENT` | page | `MANIFEST_UNKNOWN` в control-plane logs | 15m | `>=2` после mitigation | on-call SRE + Owner escalation | `docs/ops/runbook_ai_slot_build_failures.md` |
+| `AI_SLOT_CODEGEN_CHECK_BUILD_REF_INVALID` | page | `codegen-check` логи содержат `checkout --detach` + (`unknown switch` или `is not a commit`) | 15m | `>=2` после mitigation | on-call SRE, зафиксировать valid `CODEXK8S_BUILD_REF`, при повторе — Owner escalation | `docs/ops/runbook_ai_slot_build_failures.md` |
 | `AI_SLOT_BUILD_FAILURE_RATE_ELEVATED` | ticket | failure ratio build jobs | 1h | `>5%` | создать issue и разобрать trend | `docs/ops/runbook_ai_slot_build_failures.md` |
 | `AI_SLOT_BUILD_MTTR_SLO_RISK` | ticket | recovery time превышает целевой | 24h | `>30m` | постмортем и корректировка порогов | `docs/ops/rollback_plan_ai_slot_build_pipeline.md` |
 
@@ -48,10 +52,10 @@ approvals:
 - При burn-rate нарушении запускается rollback decision flow.
 
 ## Anti-noise меры
-- Дедупликация page-alert по `namespace + error_signature`.
+- Дедупликация page-alert по `namespace + error_signature + job_kind`.
 - Silence на maintenance window релиза (явно ограниченный период).
 - Авто-закрытие ticket-alert при восстановлении в пределах SLO окна.
 
 ## Открытые вопросы
-- Нужна финальная унификация имен метрик build/mirror jobs в Prometheus правилах.
+- Нужна финальная унификация имен метрик build/mirror/codegen-check jobs в Prometheus правилах.
 - Нужна привязка алертов к staff alert-center карточкам (если включено в окружении).
