@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -318,7 +319,35 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 
 func (s *Service) repositoryRootForRuntimeEnv(resolvedRepositoryRoot string) string {
 	if configured := strings.TrimSpace(s.cfg.RepositoryRoot); configured != "" {
-		return configured
+		return normalizeRepositoryCacheRoot(configured)
 	}
-	return strings.TrimSpace(resolvedRepositoryRoot)
+	return normalizeRepositoryCacheRoot(resolvedRepositoryRoot)
+}
+
+func normalizeRepositoryCacheRoot(path string) string {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return ""
+	}
+	cleanPath := filepath.Clean(path)
+	marker := string(filepath.Separator) + "github" + string(filepath.Separator)
+	idx := strings.Index(cleanPath, marker)
+	if idx < 0 {
+		return cleanPath
+	}
+	rest := strings.Trim(cleanPath[idx+len(marker):], string(filepath.Separator))
+	if rest == "" {
+		return cleanPath
+	}
+	parts := strings.Split(rest, string(filepath.Separator))
+	// Snapshot layout: <cacheRoot>/github/<owner>/<repo>/<ref>.
+	// If the path matches this (or deeper), keep only <cacheRoot>.
+	if len(parts) < 3 {
+		return cleanPath
+	}
+	root := strings.TrimRight(cleanPath[:idx], string(filepath.Separator))
+	if root == "" {
+		return string(filepath.Separator)
+	}
+	return root
 }

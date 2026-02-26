@@ -48,7 +48,48 @@ func TestRepositoryRootForRuntimeEnv_FallsBackToResolvedWhenConfigEmpty(t *testi
 	svc := &Service{
 		cfg: Config{},
 	}
-	if got := svc.repositoryRootForRuntimeEnv("/repo-cache/github/codex-k8s/codex-k8s/main"); got != "/repo-cache/github/codex-k8s/codex-k8s/main" {
-		t.Fatalf("repositoryRootForRuntimeEnv() = %q, want %q", got, "/repo-cache/github/codex-k8s/codex-k8s/main")
+	if got := svc.repositoryRootForRuntimeEnv("/repo-cache/github/codex-k8s/codex-k8s/main"); got != "/repo-cache" {
+		t.Fatalf("repositoryRootForRuntimeEnv() = %q, want %q", got, "/repo-cache")
+	}
+}
+
+func TestNormalizeRepositoryCacheRoot(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{
+			name: "snapshot path collapses to cache root",
+			in:   "/repo-cache/github/codex-k8s/codex-k8s/0acb7d5",
+			want: "/repo-cache",
+		},
+		{
+			name: "cache root stays unchanged",
+			in:   "/repo-cache",
+			want: "/repo-cache",
+		},
+		{
+			name: "non github path stays unchanged",
+			in:   "/var/lib/codex",
+			want: "/var/lib/codex",
+		},
+		{
+			name: "empty path stays empty",
+			in:   "",
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := normalizeRepositoryCacheRoot(tt.in); got != tt.want {
+				t.Fatalf("normalizeRepositoryCacheRoot(%q) = %q, want %q", tt.in, got, tt.want)
+			}
+		})
 	}
 }
