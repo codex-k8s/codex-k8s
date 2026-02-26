@@ -189,6 +189,9 @@ func (s *Service) ensureRuntimeNamespaceRepoSnapshot(ctx context.Context, params
 	if runtimeRepositoryRoot == "" {
 		return fmt.Errorf("runtime repository root is empty")
 	}
+	if err := s.k8s.EnsureNamespace(ctx, targetNamespace); err != nil {
+		return fmt.Errorf("ensure runtime namespace %s: %w", targetNamespace, err)
+	}
 	if err := s.ensureRepoCachePVC(ctx, targetNamespace, vars, runID); err != nil {
 		return fmt.Errorf("ensure repo cache pvc in runtime namespace %s: %w", targetNamespace, err)
 	}
