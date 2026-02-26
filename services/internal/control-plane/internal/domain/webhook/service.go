@@ -725,14 +725,17 @@ func hasAnyLabel(labels []githubLabelRecord, candidates ...string) bool {
 
 func normalizeWebhookLabels(labels []string) []string {
 	result := make([]string, 0, len(labels))
+	seen := make(map[string]struct{}, len(labels))
 	for _, raw := range labels {
 		label := strings.TrimSpace(raw)
 		if label == "" {
 			continue
 		}
-		if !slices.Contains(result, label) {
-			result = append(result, label)
+		if _, exists := seen[label]; exists {
+			continue
 		}
+		seen[label] = struct{}{}
+		result = append(result, label)
 	}
 	slices.Sort(result)
 	return result
