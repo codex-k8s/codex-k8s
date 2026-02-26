@@ -37,12 +37,6 @@ func (s *Service) resolveRunRepositoryRoot(ctx context.Context, params PreparePa
 	if configuredRoot == "" {
 		return s.cfg.RepositoryRoot, nil
 	}
-	// Prefer "direct filesystem" mode when the configured root already contains deploy/templates.
-	// This keeps runtime-deploy CLI (repository-root=/opt/codex-k8s) working and avoids an
-	// unnecessary repo-sync roundtrip when the image already ships sources.
-	if looksLikeRepositoryRoot(configuredRoot) {
-		return configuredRoot, nil
-	}
 	// Keep local/dev mode shell-free: do not attempt repo-sync when the root is relative.
 	if !filepath.IsAbs(configuredRoot) {
 		return configuredRoot, nil
@@ -51,6 +45,9 @@ func (s *Service) resolveRunRepositoryRoot(ctx context.Context, params PreparePa
 	repositoryFullName := strings.TrimSpace(params.RepositoryFullName)
 	if repositoryFullName == "" {
 		repositoryFullName = strings.TrimSpace(valueOr(vars, "CODEXK8S_GITHUB_REPO", ""))
+	}
+	if shouldUseDirectRepositoryRoot(configuredRoot, repositoryFullName) {
+		return configuredRoot, nil
 	}
 	if repositoryFullName == "" {
 		return "", fmt.Errorf("repository_full_name is required to resolve repository snapshot")
@@ -116,6 +113,10 @@ func looksLikeRepositoryRoot(root string) bool {
 		return true
 	}
 	return false
+}
+
+func shouldUseDirectRepositoryRoot(configuredRoot string, repositoryFullName string) bool {
+	return looksLikeRepositoryRoot(configuredRoot) && strings.TrimSpace(repositoryFullName) == ""
 }
 
 func isImmutableGitRef(ref string) bool {
