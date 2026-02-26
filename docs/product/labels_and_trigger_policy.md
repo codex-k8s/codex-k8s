@@ -177,6 +177,8 @@ approvals:
   - по label `run:dev:revise` на Issue;
   - по webhook `pull_request_review` с `action=submitted` и `review.state=changes_requested`,
     если удаётся детерминированно определить stage по policy резолва.
+- Для `run:dev:revise`, запущенного по `pull_request_review`, runtime build ref берётся из `pull_request.head.ref`,
+  чтобы full-env собирался по коду ветки PR, а не по default branch.
 - Для ручного pre-review поддержан PR trigger:
   - webhook `pull_request` с `action=labeled` и label `need:reviewer`;
   - создаётся reviewer-run в контексте текущего PR;
