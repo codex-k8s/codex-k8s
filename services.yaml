@@ -74,19 +74,19 @@ spec:
       - path: docs/templates/docset_pr.md
   versions:
     api-gateway:
-      value: "0.1.16"
+      value: "0.1.17"
       bumpOn:
         - services/external/api-gateway
         - libs/go
         - proto
     control-plane:
-      value: "0.1.45"
+      value: "0.1.46"
       bumpOn:
         - services/internal/control-plane
         - libs/go
         - proto
     worker:
-      value: "0.1.22"
+      value: "0.1.23"
       bumpOn:
         - services/jobs/worker
         - libs/go
