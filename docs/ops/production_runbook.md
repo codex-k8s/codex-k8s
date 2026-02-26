@@ -5,8 +5,8 @@ title: "Production Runbook (MVP)"
 status: active
 owner_role: SRE
 created_at: 2026-02-09
-updated_at: 2026-02-21
-related_issues: [1]
+updated_at: 2026-02-26
+related_issues: [1, 205]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -19,6 +19,14 @@ approvals:
 # Production Runbook (MVP)
 
 Цель: минимальный набор проверок и действий для ежедневного деплоя и ручного smoke/regression на production.
+
+## Связанные SRE документы (Issue #205)
+
+- Детальный runbook по падениям сборки в ai-слоте: `docs/ops/runbook_ai_slot_build_failures.md`.
+- Monitoring/observability профиль: `docs/ops/monitoring_ai_slot_build_pipeline.md`.
+- Каталог алертов: `docs/ops/alerts_ai_slot_build_pipeline.md`.
+- Rollback-процедура: `docs/ops/rollback_plan_ai_slot_build_pipeline.md`.
+- SLO/SLI и burn-rate policy: `docs/ops/slo_ai_slot_build_pipeline.md`.
 
 ## Быстрый ручной smoke (на сервере)
 
@@ -160,6 +168,7 @@ kubectl -n "$ns" get jobs -l app.kubernetes.io/name=codex-k8s-registry-gc
 - Симптом: Kaniko падает на base image с логом вида `Error while retrieving image from cache ... MANIFEST_UNKNOWN`.
 - Причина: в registry мог остаться stale mirror/cache state после cleanup/GC (тег виден, но digest манифест недоступен).
 - Текущее безопасное значение по умолчанию: `CODEXK8S_KANIKO_CACHE_ENABLED=false`.
+- Детальный playbook: `docs/ops/runbook_ai_slot_build_failures.md`.
 - Если cache включали вручную и снова получили `MANIFEST_UNKNOWN`:
   - переключить `CODEXK8S_KANIKO_CACHE_ENABLED=false` в `codex-k8s-runtime`;
   - убедиться, что `codex-k8s-control-plane` подтянул значение после rollout;
