@@ -62,16 +62,11 @@ func (s *Service) resolveRunRepositoryRoot(ctx context.Context, params PreparePa
 	owner = strings.TrimSpace(owner)
 	name = strings.TrimSpace(name)
 
-	buildRef := strings.TrimSpace(params.BuildRef)
-	if buildRef == "" {
-		buildRef = strings.TrimSpace(valueOr(vars, "CODEXK8S_BUILD_REF", ""))
-	}
-	if buildRef == "" {
-		buildRef = strings.TrimSpace(valueOr(vars, "CODEXK8S_AGENT_BASE_BRANCH", "main"))
-	}
-	if buildRef == "" {
-		buildRef = "main"
-	}
+	buildRef := resolveRuntimeBuildRef(
+		params.BuildRef,
+		valueOr(vars, "CODEXK8S_BUILD_REF", ""),
+		valueOr(vars, "CODEXK8S_AGENT_BASE_BRANCH", ""),
+	)
 
 	platformNamespace := strings.TrimSpace(valueOr(vars, "CODEXK8S_PLATFORM_NAMESPACE", ""))
 	if platformNamespace == "" {
@@ -182,10 +177,7 @@ func (s *Service) ensureRepoSnapshot(ctx context.Context, platformNamespace stri
 	if repositoryFullName == "" {
 		return fmt.Errorf("repository_full_name is required")
 	}
-	buildRef = strings.TrimSpace(buildRef)
-	if buildRef == "" {
-		buildRef = "main"
-	}
+	buildRef = resolveRuntimeBuildRef(buildRef)
 	repoRoot = strings.TrimSpace(repoRoot)
 	if repoRoot == "" {
 		return fmt.Errorf("repo_root is required")

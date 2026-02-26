@@ -2,8 +2,11 @@ package runtimedeploy
 
 import (
 	"os"
+	"regexp"
 	"strings"
 )
+
+var runtimeBuildRefAllowedPattern = regexp.MustCompile(`^[A-Za-z0-9._/@+-]+$`)
 
 func sanitizeNameToken(value string, max int) string {
 	normalized := strings.ToLower(strings.TrimSpace(value))
@@ -57,4 +60,106 @@ func cloneStringMap(input map[string]string) map[string]string {
 		out[key] = value
 	}
 	return out
+}
+
+func resolveRuntimeBuildRef(candidates ...string) string {
+	for _, candidate := range candidates {
+		if normalized := normalizeRuntimeBuildRef(candidate); normalized != "" {
+			return normalized
+		}
+	}
+	return "main"
+}
+
+func normalizeRuntimeBuildRef(raw string) string {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return ""
+	}
+	trimmed = trimMatchingQuotes(trimmed)
+	if trimmed == "" {
+		return ""
+	}
+	if strings.ContainsAny(trimmed, ";|&`$(){}<>") {
+		return ""
+	}
+
+	// Happy path: already a plain ref.
+	if !strings.ContainsAny(trimmed, " \t\r\n") {
+		return normalizeRuntimeBuildRefToken(trimmed)
+	}
+
+	fields := strings.Fields(trimmed)
+	if len(fields) == 0 {
+		return ""
+	}
+	for idx, field := range fields {
+		switch strings.TrimSpace(field) {
+		case "-b", "--branch":
+			if idx+1 < len(fields) {
+				return normalizeRuntimeBuildRefToken(fields[idx+1])
+			}
+		}
+	}
+	for _, field := range fields {
+		token := strings.TrimSpace(field)
+		if token == "" {
+			continue
+		}
+		switch token {
+		case "git", "checkout", "switch", "--detach":
+			continue
+		}
+		if strings.HasPrefix(token, "-") {
+			continue
+		}
+		if normalized := normalizeRuntimeBuildRefToken(token); normalized != "" {
+			return normalized
+		}
+	}
+	return ""
+}
+
+func normalizeRuntimeBuildRefToken(token string) string {
+	normalized := trimMatchingQuotes(strings.TrimSpace(token))
+	if normalized == "" {
+		return ""
+	}
+	normalized = strings.TrimPrefix(normalized, "refs/heads/")
+	normalized = strings.TrimPrefix(normalized, "origin/")
+	if normalized == "" {
+		return ""
+	}
+	if normalized == "." || normalized == ".." || normalized == "/" {
+		return ""
+	}
+	if strings.HasPrefix(normalized, "/") || strings.HasSuffix(normalized, "/") {
+		return ""
+	}
+	if strings.Contains(normalized, "//") {
+		return ""
+	}
+	if strings.HasPrefix(normalized, "-") {
+		return ""
+	}
+	if strings.ContainsAny(normalized, " \t\r\n") {
+		return ""
+	}
+	if !runtimeBuildRefAllowedPattern.MatchString(normalized) {
+		return ""
+	}
+	return normalized
+}
+
+func trimMatchingQuotes(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if len(trimmed) < 2 {
+		return trimmed
+	}
+	first := trimmed[0]
+	last := trimmed[len(trimmed)-1]
+	if (first == '\'' && last == '\'') || (first == '"' && last == '"') {
+		return strings.TrimSpace(trimmed[1 : len(trimmed)-1])
+	}
+	return trimmed
 }

@@ -61,16 +61,11 @@ func (s *Service) buildImages(ctx context.Context, repositoryRoot string, params
 	if repositoryFullName == "" {
 		return fmt.Errorf("repository_full_name is required for kaniko build jobs")
 	}
-	buildRef := strings.TrimSpace(params.BuildRef)
-	if buildRef == "" {
-		buildRef = strings.TrimSpace(vars["CODEXK8S_BUILD_REF"])
-	}
-	if buildRef == "" {
-		buildRef = strings.TrimSpace(vars["CODEXK8S_AGENT_BASE_BRANCH"])
-	}
-	if buildRef == "" {
-		buildRef = "main"
-	}
+	buildRef := resolveRuntimeBuildRef(
+		params.BuildRef,
+		vars["CODEXK8S_BUILD_REF"],
+		vars["CODEXK8S_AGENT_BASE_BRANCH"],
+	)
 	vars["CODEXK8S_BUILD_REF"] = buildRef
 
 	runToken := sanitizeNameToken(params.RunID, 12)

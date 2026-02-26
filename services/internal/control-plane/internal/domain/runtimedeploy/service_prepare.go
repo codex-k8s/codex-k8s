@@ -94,7 +94,7 @@ func normalizePrepareParams(params PrepareParams) PrepareParams {
 	}
 	params.RepositoryFullName = strings.TrimSpace(params.RepositoryFullName)
 	params.ServicesYAMLPath = strings.TrimSpace(params.ServicesYAMLPath)
-	params.BuildRef = strings.TrimSpace(params.BuildRef)
+	params.BuildRef = resolveRuntimeBuildRef(params.BuildRef)
 	return params
 }
 

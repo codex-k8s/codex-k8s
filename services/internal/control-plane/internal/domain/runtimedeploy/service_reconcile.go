@@ -189,6 +189,7 @@ func runtimeDeployStaleRunningTimeout(renewInterval time.Duration) time.Duration
 
 // applyDesiredState builds images and applies infrastructure/services for one runtime target namespace.
 func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (PrepareResult, error) {
+	params = normalizePrepareParams(params)
 	zero := PrepareResult{}
 	runID := strings.TrimSpace(params.RunID)
 	if runID == "" {

@@ -99,16 +99,11 @@ func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[
 		vars["CODEXK8S_TLS_SECRET_NAME"] = defaultTLSSecretName(targetEnv)
 	}
 
-	buildRef := strings.TrimSpace(params.BuildRef)
-	if buildRef == "" {
-		buildRef = strings.TrimSpace(vars["CODEXK8S_BUILD_REF"])
-	}
-	if buildRef == "" {
-		buildRef = strings.TrimSpace(vars["CODEXK8S_AGENT_BASE_BRANCH"])
-	}
-	if buildRef == "" {
-		buildRef = "main"
-	}
+	buildRef := resolveRuntimeBuildRef(
+		params.BuildRef,
+		vars["CODEXK8S_BUILD_REF"],
+		vars["CODEXK8S_AGENT_BASE_BRANCH"],
+	)
 	vars["CODEXK8S_BUILD_REF"] = buildRef
 	vars["CODEXK8S_BUILD_TAG"] = sanitizeImageTag(buildRef)
 	if repo := strings.TrimSpace(params.RepositoryFullName); repo != "" {
