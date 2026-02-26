@@ -8,14 +8,14 @@ SET
     updated_at = NOW(),
     activated_at = NOW()
 WHERE scope_type = $1
-  -- Для global scope в БД хранится NULL scope_id; снаружи он передается как пустая строка.
+  -- For global scope, the DB stores NULL scope_id; externally it is passed as an empty string.
   AND COALESCE(scope_id::text, '') = $2
   AND role_key = $3
   AND template_kind = $4
   AND locale = $5
   AND version = $8
 RETURNING
-    -- Единый канонический ключ шаблона для transport/audit DTO.
+    -- Use a single canonical template key for transport/audit DTO.
     CASE
         WHEN scope_type = 'project'
             THEN 'project/' || scope_id::text || '/' || role_key || '/' || template_kind || '/' || locale

@@ -2,7 +2,7 @@
 SELECT version
 FROM prompt_templates
 WHERE scope_type = $1
-  -- Для global scope в БД хранится NULL scope_id; снаружи он передается как пустая строка.
+  -- For global scope, the DB stores NULL scope_id; externally it is passed as an empty string.
   AND COALESCE(scope_id::text, '') = $2
   AND role_key = $3
   AND template_kind = $4

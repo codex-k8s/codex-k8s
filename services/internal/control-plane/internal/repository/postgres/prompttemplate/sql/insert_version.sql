@@ -40,7 +40,7 @@ VALUES (
     NOW()
 )
 RETURNING
-    -- Единый канонический ключ шаблона для transport/audit DTO.
+    -- Use a single canonical template key for transport/audit DTO.
     CASE
         WHEN scope_type = 'project'
             THEN 'project/' || scope_id::text || '/' || role_key || '/' || template_kind || '/' || locale
