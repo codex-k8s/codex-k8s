@@ -100,7 +100,7 @@ spec:
         - libs/go
         - proto
     web-console:
-      value: "0.1.9"
+      value: "0.1.10"
       bumpOn:
         - services/staff/web-console
         - libs/ts
