@@ -103,7 +103,6 @@ spec:
           volumeMounts:
             - name: repo-cache
               mountPath: /workspace
-              readOnly: true
 {{ end }}
           readinessProbe:
             httpGet:
@@ -529,11 +528,12 @@ spec:
 {{ if eq (envOr "CODEXK8S_HOT_RELOAD" "") "true" }}
             - name: repo-cache
               mountPath: /workspace
-              readOnly: true
 {{ end }}
             - name: repo-cache
               mountPath: /repo-cache
+{{ if ne (envOr "CODEXK8S_HOT_RELOAD" "") "true" }}
               readOnly: true
+{{ end }}
           readinessProbe:
             httpGet:
               path: /health/readyz
@@ -902,7 +902,6 @@ spec:
           volumeMounts:
             - name: repo-cache
               mountPath: /workspace
-              readOnly: true
 {{ end }}
 {{ if eq (envOr "CODEXK8S_HOT_RELOAD" "") "true" }}
       volumes:
