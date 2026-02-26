@@ -42,4 +42,4 @@ USER app
 EXPOSE 8081
 EXPOSE 9090
 
-ENTRYPOINT ["sh", "-ec", "if [ \"${CODEXK8S_ENV:-production}\" = \"production\" ] || [ \"${CODEXK8S_HOT_RELOAD:-true}\" = \"false\" ]; then exec /usr/local/bin/codex-k8s-control-plane; fi; exec CompileDaemon --build='go build -mod=readonly -o /tmp/codex-k8s-control-plane ./services/internal/control-plane/cmd/control-plane' --command='/tmp/codex-k8s-control-plane' --polling --graceful-kill"]
+ENTRYPOINT ["sh", "-ec", "if [ \"${CODEXK8S_ENV:-production}\" = \"production\" ] || [ \"${CODEXK8S_HOT_RELOAD:-true}\" = \"false\" ]; then exec /usr/local/bin/codex-k8s-control-plane; fi; exec CompileDaemon --build='go -C /workspace build -mod=readonly -o /tmp/codex-k8s-control-plane ./services/internal/control-plane/cmd/control-plane' --command='/tmp/codex-k8s-control-plane' --polling --graceful-kill"]
