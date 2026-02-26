@@ -83,6 +83,8 @@ spec:
       value: "0.1.49"
       bumpOn:
         - services/internal/control-plane
+        - deploy/base/kaniko
+        - deploy/base/codex-k8s/codegen-check-job.yaml.tpl
         - libs/go
         - proto
     worker:

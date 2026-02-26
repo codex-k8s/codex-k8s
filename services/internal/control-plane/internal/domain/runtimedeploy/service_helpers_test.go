@@ -46,6 +46,33 @@ func TestResolveRuntimeBuildRef(t *testing.T) {
 	}
 }
 
+func TestNormalizeRuntimeBuildCheckoutRef(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		ref  string
+		want string
+	}{
+		{name: "main branch", ref: "main", want: "origin/main"},
+		{name: "feature branch", ref: "codex/issue-199", want: "origin/codex/issue-199"},
+		{name: "already origin", ref: "origin/codex/dev", want: "origin/codex/dev"},
+		{name: "commit sha", ref: "748abae3b2c58d512b675858437129a87e14a690", want: "748abae3b2c58d512b675858437129a87e14a690"},
+		{name: "tag ref", ref: "refs/tags/v1.2.3", want: "refs/tags/v1.2.3"},
+		{name: "fallback default", ref: "", want: "origin/main"},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := normalizeRuntimeBuildCheckoutRef(tt.ref); got != tt.want {
+				t.Fatalf("normalizeRuntimeBuildCheckoutRef(%q) = %q, want %q", tt.ref, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestNormalizePrepareParamsBuildRef(t *testing.T) {
 	t.Parallel()
 
