@@ -238,7 +238,7 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 
 	templateVars["CODEXK8S_PRODUCTION_NAMESPACE"] = targetNamespace
 	templateVars["CODEXK8S_WORKER_K8S_NAMESPACE"] = targetNamespace
-	templateVars["CODEXK8S_REPOSITORY_ROOT"] = repositoryRoot
+	templateVars["CODEXK8S_REPOSITORY_ROOT"] = s.repositoryRootForRuntimeEnv(repositoryRoot)
 	if repoName := strings.TrimSpace(params.RepositoryFullName); repoName != "" {
 		templateVars["CODEXK8S_GITHUB_REPO"] = repoName
 	}
@@ -314,4 +314,11 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 		Namespace: targetNamespace,
 		TargetEnv: targetEnv,
 	}, nil
+}
+
+func (s *Service) repositoryRootForRuntimeEnv(resolvedRepositoryRoot string) string {
+	if configured := strings.TrimSpace(s.cfg.RepositoryRoot); configured != "" {
+		return configured
+	}
+	return strings.TrimSpace(resolvedRepositoryRoot)
 }

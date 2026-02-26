@@ -28,3 +28,27 @@ func TestRuntimeDeployLeaseTiming(t *testing.T) {
 		t.Fatalf("runtimeDeployStaleRunningTimeout(2m) = %s, want %s", got, 2*time.Minute)
 	}
 }
+
+func TestRepositoryRootForRuntimeEnv_PrefersConfiguredRoot(t *testing.T) {
+	t.Parallel()
+
+	svc := &Service{
+		cfg: Config{
+			RepositoryRoot: "/repo-cache",
+		},
+	}
+	if got := svc.repositoryRootForRuntimeEnv("/repo-cache/github/codex-k8s/codex-k8s/main"); got != "/repo-cache" {
+		t.Fatalf("repositoryRootForRuntimeEnv() = %q, want %q", got, "/repo-cache")
+	}
+}
+
+func TestRepositoryRootForRuntimeEnv_FallsBackToResolvedWhenConfigEmpty(t *testing.T) {
+	t.Parallel()
+
+	svc := &Service{
+		cfg: Config{},
+	}
+	if got := svc.repositoryRootForRuntimeEnv("/repo-cache/github/codex-k8s/codex-k8s/main"); got != "/repo-cache/github/codex-k8s/codex-k8s/main" {
+		t.Fatalf("repositoryRootForRuntimeEnv() = %q, want %q", got, "/repo-cache/github/codex-k8s/codex-k8s/main")
+	}
+}
