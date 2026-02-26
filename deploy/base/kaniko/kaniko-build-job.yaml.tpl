@@ -46,7 +46,11 @@ spec:
               # Use shell runtime variables from container env (set above via secret refs).
               git clone "https://x-access-token:$GIT_TOKEN@github.com/$CODEXK8S_GITHUB_REPO.git" /workspace
               cd /workspace
-              git checkout --detach "$CODEXK8S_BUILD_REF"
+              checkout_ref="$CODEXK8S_BUILD_REF"
+              if git rev-parse --verify -q "origin/$CODEXK8S_BUILD_REF^{commit}" >/dev/null 2>&1; then
+                checkout_ref="origin/$CODEXK8S_BUILD_REF"
+              fi
+              git checkout --detach "$checkout_ref"
           volumeMounts:
             - name: workspace
               mountPath: /workspace
