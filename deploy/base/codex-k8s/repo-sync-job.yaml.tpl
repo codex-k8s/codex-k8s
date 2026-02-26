@@ -77,8 +77,13 @@ spec:
                 git remote set-url origin "$repo_url"
                 git fetch --prune --tags origin
               else
-                rm -rf "$repo_dir"
-                mkdir -p "$(dirname "$repo_dir")"
+                if [ "$repo_dir" = "$CODEXK8S_REPOSITORY_ROOT" ]; then
+                  mkdir -p "$repo_dir"
+                  find "$repo_dir" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+                else
+                  rm -rf "$repo_dir"
+                  mkdir -p "$(dirname "$repo_dir")"
+                fi
                 git clone "$repo_url" "$repo_dir"
                 cd "$repo_dir"
               fi
