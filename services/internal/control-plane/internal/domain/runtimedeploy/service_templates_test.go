@@ -1,6 +1,10 @@
 package runtimedeploy
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestDefaultWorkerReplicas(t *testing.T) {
 	t.Parallel()
@@ -75,6 +79,69 @@ func TestBuildTemplateVars_ProductionPreservesKanikoCleanupValue(t *testing.T) {
 	vars := svc.buildTemplateVars(PrepareParams{TargetEnv: "production"}, "codex-k8s-prod")
 	if got, want := vars["CODEXK8S_KANIKO_CLEANUP"], "true"; got != want {
 		t.Fatalf("buildTemplateVars production CODEXK8S_KANIKO_CLEANUP=%q want %q", got, want)
+	}
+}
+
+func TestResolveServicesConfigPath_PrefersRepoSnapshotWhenConfigPathIsAbsolute(t *testing.T) {
+	t.Parallel()
+
+	repoRoot := t.TempDir()
+	repoServicesPath := filepath.Join(repoRoot, "services.yaml")
+	if err := os.WriteFile(repoServicesPath, []byte("apiVersion: codex-k8s.dev/v1alpha1\n"), 0o644); err != nil {
+		t.Fatalf("write %s: %v", repoServicesPath, err)
+	}
+
+	svc := &Service{
+		cfg: Config{
+			ServicesConfigPath: "/app/services.yaml",
+			RepositoryRoot:     repoRoot,
+		},
+	}
+	if got := svc.resolveServicesConfigPath(repoRoot, ""); got != repoServicesPath {
+		t.Fatalf("resolveServicesConfigPath() = %q, want %q", got, repoServicesPath)
+	}
+}
+
+func TestResolveServicesConfigPath_UsesAbsolutePathWhenRepoSnapshotMissing(t *testing.T) {
+	t.Parallel()
+
+	absoluteRoot := t.TempDir()
+	absolutePath := filepath.Join(absoluteRoot, "services.yaml")
+	if err := os.WriteFile(absolutePath, []byte("apiVersion: codex-k8s.dev/v1alpha1\n"), 0o644); err != nil {
+		t.Fatalf("write %s: %v", absolutePath, err)
+	}
+
+	svc := &Service{
+		cfg: Config{
+			ServicesConfigPath: absolutePath,
+		},
+	}
+	if got := svc.resolveServicesConfigPath(t.TempDir(), ""); got != absolutePath {
+		t.Fatalf("resolveServicesConfigPath() = %q, want %q", got, absolutePath)
+	}
+}
+
+func TestResolveServicesConfigPath_PathFromRunRelativeHasPriority(t *testing.T) {
+	t.Parallel()
+
+	repoRoot := t.TempDir()
+	pathFromRun := "configs/services.ai.yaml"
+	fullPath := filepath.Join(repoRoot, pathFromRun)
+	if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
+		t.Fatalf("mkdir %s: %v", filepath.Dir(fullPath), err)
+	}
+	if err := os.WriteFile(fullPath, []byte("apiVersion: codex-k8s.dev/v1alpha1\n"), 0o644); err != nil {
+		t.Fatalf("write %s: %v", fullPath, err)
+	}
+
+	svc := &Service{
+		cfg: Config{
+			ServicesConfigPath: "/app/services.yaml",
+			RepositoryRoot:     repoRoot,
+		},
+	}
+	if got := svc.resolveServicesConfigPath(repoRoot, pathFromRun); got != fullPath {
+		t.Fatalf("resolveServicesConfigPath(%q) = %q, want %q", pathFromRun, got, fullPath)
 	}
 }
 

@@ -199,7 +199,7 @@ spec:
             - name: CODEXK8S_HOT_RELOAD
               value: '{{ envOr "CODEXK8S_HOT_RELOAD" "" }}'
             - name: CODEXK8S_SERVICES_CONFIG_PATH
-              value: /app/services.yaml
+              value: '{{ envOr "CODEXK8S_SERVICES_CONFIG_PATH" "services.yaml" }}'
             - name: CODEXK8S_SERVICES_CONFIG_ENV
               value: '{{ envOr "CODEXK8S_SERVICES_CONFIG_ENV" "" }}'
             - name: CODEXK8S_REPOSITORY_ROOT

@@ -16,20 +16,49 @@ func (s *Service) resolveServicesConfigPath(repositoryRoot string, pathFromRun s
 	trimmed := strings.TrimSpace(pathFromRun)
 	if trimmed != "" {
 		if filepath.IsAbs(trimmed) {
-			if _, err := os.Stat(trimmed); err == nil {
+			if servicesConfigExists(trimmed) {
 				return trimmed
 			}
 		} else {
 			candidate := filepath.Join(repoRoot, trimmed)
-			if _, err := os.Stat(candidate); err == nil {
+			if servicesConfigExists(candidate) {
 				return candidate
 			}
 		}
 	}
-	if filepath.IsAbs(s.cfg.ServicesConfigPath) {
-		return s.cfg.ServicesConfigPath
+	configPath := strings.TrimSpace(s.cfg.ServicesConfigPath)
+	if configPath == "" {
+		configPath = defaultServicesConfigPath
 	}
-	return filepath.Join(repoRoot, s.cfg.ServicesConfigPath)
+	if filepath.IsAbs(configPath) {
+		// In runtime deploy flows we should prefer repository snapshot config,
+		// otherwise an absolute in-image path (for example /app/services.yaml)
+		// can pin deploy logic to stale versions.
+		if repoRoot != "" {
+			repoByBase := filepath.Join(repoRoot, filepath.Base(configPath))
+			if servicesConfigExists(repoByBase) {
+				return repoByBase
+			}
+			repoDefault := filepath.Join(repoRoot, defaultServicesConfigPath)
+			if servicesConfigExists(repoDefault) {
+				return repoDefault
+			}
+		}
+		return configPath
+	}
+	return filepath.Join(repoRoot, configPath)
+}
+
+func servicesConfigExists(path string) bool {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return false
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return !info.IsDir()
 }
 
 func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[string]string {
