@@ -66,6 +66,7 @@ func (s *Service) buildImages(ctx context.Context, repositoryRoot string, params
 		vars["CODEXK8S_BUILD_REF"],
 		vars["CODEXK8S_AGENT_BASE_BRANCH"],
 	)
+	checkoutBuildRef := normalizeRuntimeBuildCheckoutRef(buildRef)
 	vars["CODEXK8S_BUILD_REF"] = buildRef
 
 	runToken := sanitizeNameToken(params.RunID, 12)
@@ -107,7 +108,7 @@ func (s *Service) buildImages(ctx context.Context, repositoryRoot string, params
 		if codegenErr != nil {
 			return fmt.Errorf("read codegen check template %s: %w", codegenTemplatePath, codegenErr)
 		}
-		if err := s.runCodegenCheck(ctx, namespace, repositoryFullName, buildRef, runToken, runID, vars, codegenTemplatePath, codegenTemplateRaw); err != nil {
+		if err := s.runCodegenCheck(ctx, namespace, repositoryFullName, checkoutBuildRef, runToken, runID, vars, codegenTemplatePath, codegenTemplateRaw); err != nil {
 			return err
 		}
 	}
@@ -140,7 +141,7 @@ func (s *Service) buildImages(ctx context.Context, repositoryRoot string, params
 			}
 			defer func() { <-sem }()
 
-			result, runErr := s.runKanikoBuild(ctxBuild, namespace, repositoryFullName, buildRef, runToken, runID, entry, vars, kanikoTemplatePath, kanikoTemplateRaw)
+			result, runErr := s.runKanikoBuild(ctxBuild, namespace, repositoryFullName, checkoutBuildRef, runToken, runID, entry, vars, kanikoTemplatePath, kanikoTemplateRaw)
 			if runErr != nil {
 				errCh <- runErr
 				cancel()

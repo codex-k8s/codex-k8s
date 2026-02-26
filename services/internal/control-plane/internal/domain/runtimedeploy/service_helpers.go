@@ -6,7 +6,10 @@ import (
 	"strings"
 )
 
-var runtimeBuildRefAllowedPattern = regexp.MustCompile(`^[A-Za-z0-9._/@+-]+$`)
+var (
+	runtimeBuildRefAllowedPattern = regexp.MustCompile(`^[A-Za-z0-9._/@+-]+$`)
+	gitCommitRefPattern           = regexp.MustCompile(`(?i)^[0-9a-f]{7,64}$`)
+)
 
 func sanitizeNameToken(value string, max int) string {
 	normalized := strings.ToLower(strings.TrimSpace(value))
@@ -69,6 +72,17 @@ func resolveRuntimeBuildRef(candidates ...string) string {
 		}
 	}
 	return "main"
+}
+
+func normalizeRuntimeBuildCheckoutRef(buildRef string) string {
+	resolved := resolveRuntimeBuildRef(buildRef)
+	if strings.HasPrefix(resolved, "refs/") {
+		return resolved
+	}
+	if gitCommitRefPattern.MatchString(resolved) {
+		return resolved
+	}
+	return "origin/" + strings.TrimPrefix(resolved, "origin/")
 }
 
 func normalizeRuntimeBuildRef(raw string) string {
