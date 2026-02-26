@@ -452,6 +452,36 @@ function parseProjectIDFromTemplateKey(templateKey: string): string {
   return parts[1]?.trim() || "";
 }
 
+function normalizeProjectID(projectID: string | null | undefined): string {
+  return projectID?.trim() || "";
+}
+
+function currentAgentProjectID(): string {
+  return normalizeProjectID(agent.value?.project_id);
+}
+
+function selectDefaultTemplateKey(items: PromptTemplateKey[], projectID: string): string {
+  if (items.length === 0) {
+    return "";
+  }
+  if (!projectID) {
+    return items[0]?.template_key || "";
+  }
+  const projectScoped = items.find((item) => normalizeProjectID(item.project_id) === projectID);
+  if (projectScoped) {
+    return projectScoped.template_key;
+  }
+  return items[0]?.template_key || "";
+}
+
+function resolveTemplateProjectIDContext(templateKey: string): string {
+  const projectIDFromKey = parseProjectIDFromTemplateKey(templateKey);
+  if (projectIDFromKey) {
+    return projectIDFromKey;
+  }
+  return currentAgentProjectID();
+}
+
 function versionStatusColor(status: string): string {
   if (status === "active") {
     return "success";
@@ -500,8 +530,11 @@ async function loadTemplateKeys(): Promise<void> {
   loadingTemplateData.value = true;
   templateError.value = null;
   try {
+    const projectID = currentAgentProjectID();
     const items = await listPromptTemplateKeys({
       role: agent.value.agent_key,
+      scope: projectID ? undefined : "global",
+      projectId: projectID || undefined,
       limit: 500,
     });
     templateKeys.value = [...items].sort((left, right) => left.template_key.localeCompare(right.template_key));
@@ -516,7 +549,7 @@ async function loadTemplateKeys(): Promise<void> {
 
     const hasSelectedKey = templateKeys.value.some((item) => item.template_key === selectedTemplateKey.value);
     if (!hasSelectedKey) {
-      selectedTemplateKey.value = templateKeys.value[0]?.template_key || "";
+      selectedTemplateKey.value = selectDefaultTemplateKey(templateKeys.value, projectID);
     } else {
       await loadTemplateData();
     }
@@ -534,8 +567,10 @@ async function loadPreview(): Promise<void> {
     preview.value = null;
     return;
   }
+  const projectID = resolveTemplateProjectIDContext(selectedTemplateKey.value);
   preview.value = await previewPromptTemplate({
     templateKey: selectedTemplateKey.value,
+    projectId: projectID || undefined,
   });
 }
 
@@ -693,7 +728,7 @@ async function loadAuditEvents(): Promise<void> {
   loadingAudit.value = true;
   auditError.value = null;
   try {
-    const projectID = parseProjectIDFromTemplateKey(selectedTemplateKey.value);
+    const projectID = resolveTemplateProjectIDContext(selectedTemplateKey.value);
     if (!auth.isPlatformAdmin && !projectID) {
       auditEvents.value = [];
       return;
@@ -777,4 +812,3 @@ onMounted(async () => {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 </style>
-

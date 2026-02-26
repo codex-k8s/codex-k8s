@@ -335,7 +335,8 @@ func Run() error {
 	}, users, projects, members, agents, repos, promptTemplates, projectTokens, configEntries, feedback, runs, runtimeDeployTasks, runtimeErrors, registryImagesService, k8sClient, tokenCrypto, platformTokens, githubRepoProvider, githubMgmtClient, runStatusService)
 
 	// Ensure bootstrap users exist so that the first login can be matched by email.
-	if _, err := users.EnsureOwner(runCtx, cfg.BootstrapOwnerEmail); err != nil {
+	bootstrapOwner, err := users.EnsureOwner(runCtx, cfg.BootstrapOwnerEmail)
+	if err != nil {
 		return fmt.Errorf("ensure bootstrap owner user: %w", err)
 	}
 	if err := ensureBootstrapAllowedUsers(runCtx, users, cfg.BootstrapOwnerEmail, cfg.BootstrapAllowedEmails, logger); err != nil {
@@ -343,6 +344,9 @@ func Run() error {
 	}
 	if err := ensureBootstrapPlatformAdmins(runCtx, users, cfg.BootstrapOwnerEmail, cfg.BootstrapPlatformAdminEmails, logger); err != nil {
 		return fmt.Errorf("ensure bootstrap platform admins: %w", err)
+	}
+	if err := syncBootstrapPromptTemplateSeeds(runCtx, staffService, bootstrapOwner.ID, logger); err != nil {
+		return fmt.Errorf("sync bootstrap prompt template seeds: %w", err)
 	}
 
 	grpcLis, err := net.Listen("tcp", cfg.GRPCAddr)

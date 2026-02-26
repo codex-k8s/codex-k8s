@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -67,6 +68,24 @@ func bindBody(c *echo.Context, target interface{}) error {
 func resolvePath(param string) func(c *echo.Context) (string, error) {
 	return func(c *echo.Context) (string, error) {
 		return requirePathParam(c, param)
+	}
+}
+
+func resolvePathUnescaped(param string) func(c *echo.Context) (string, error) {
+	return func(c *echo.Context) (string, error) {
+		value, err := requirePathParam(c, param)
+		if err != nil {
+			return "", err
+		}
+		decoded, decodeErr := url.PathUnescape(value)
+		if decodeErr != nil {
+			return "", errs.Validation{Field: param, Msg: "must be valid URL-encoded path value"}
+		}
+		decoded = strings.TrimSpace(decoded)
+		if decoded == "" {
+			return "", errs.Validation{Field: param, Msg: "is required"}
+		}
+		return decoded, nil
 	}
 }
 
@@ -501,7 +520,7 @@ func (h *staffHandler) ListPromptTemplateKeys(c *echo.Context) error {
 }
 
 func (h *staffHandler) ListPromptTemplateVersions(c *echo.Context) error {
-	return withPrincipalAndResolved(c, resolvePath("template_key"), func(principal *controlplanev1.Principal, templateKey string) error {
+	return withPrincipalAndResolved(c, resolvePathUnescaped("template_key"), func(principal *controlplanev1.Principal, templateKey string) error {
 		limit, err := parseLimit(c, 200)
 		if err != nil {
 			return err
@@ -519,7 +538,7 @@ func (h *staffHandler) ListPromptTemplateVersions(c *echo.Context) error {
 }
 
 func (h *staffHandler) CreatePromptTemplateVersion(c *echo.Context) error {
-	return withPrincipalAndResolved(c, resolvePath("template_key"), func(principal *controlplanev1.Principal, templateKey string) error {
+	return withPrincipalAndResolved(c, resolvePathUnescaped("template_key"), func(principal *controlplanev1.Principal, templateKey string) error {
 		var req models.CreatePromptTemplateVersionRequest
 		if err := bindBody(c, &req); err != nil {
 			return err
@@ -540,7 +559,7 @@ func (h *staffHandler) CreatePromptTemplateVersion(c *echo.Context) error {
 }
 
 func (h *staffHandler) ActivatePromptTemplateVersion(c *echo.Context) error {
-	return withPrincipalAndResolved(c, resolvePath("template_key"), func(principal *controlplanev1.Principal, templateKey string) error {
+	return withPrincipalAndResolved(c, resolvePathUnescaped("template_key"), func(principal *controlplanev1.Principal, templateKey string) error {
 		versionRaw, err := requirePathParam(c, "version")
 		if err != nil {
 			return err
@@ -589,7 +608,7 @@ func (h *staffHandler) SyncPromptTemplateSeeds(c *echo.Context) error {
 }
 
 func (h *staffHandler) PreviewPromptTemplate(c *echo.Context) error {
-	return withPrincipalAndResolved(c, resolvePath("template_key"), func(principal *controlplanev1.Principal, templateKey string) error {
+	return withPrincipalAndResolved(c, resolvePathUnescaped("template_key"), func(principal *controlplanev1.Principal, templateKey string) error {
 		var req models.PreviewPromptTemplateRequest
 		if err := bindBody(c, &req); err != nil {
 			return err
@@ -608,7 +627,7 @@ func (h *staffHandler) PreviewPromptTemplate(c *echo.Context) error {
 }
 
 func (h *staffHandler) DiffPromptTemplateVersions(c *echo.Context) error {
-	return withPrincipalAndResolved(c, resolvePath("template_key"), func(principal *controlplanev1.Principal, templateKey string) error {
+	return withPrincipalAndResolved(c, resolvePathUnescaped("template_key"), func(principal *controlplanev1.Principal, templateKey string) error {
 		fromVersionRaw := strings.TrimSpace(c.QueryParam("from_version"))
 		toVersionRaw := strings.TrimSpace(c.QueryParam("to_version"))
 		if fromVersionRaw == "" {
