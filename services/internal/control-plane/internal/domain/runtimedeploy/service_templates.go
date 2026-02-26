@@ -54,11 +54,10 @@ func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[
 	vars["CODEXK8S_ENV"] = targetEnv
 	vars["CODEXK8S_SERVICES_CONFIG_ENV"] = targetEnv
 	vars["CODEXK8S_HOT_RELOAD"] = resolveHotReloadFlag(targetEnv, vars["CODEXK8S_HOT_RELOAD"])
-	// AI hot-reload requires Go sources to stay in the image; disable kaniko cleanup by default.
+	// AI hot-reload requires Go sources to stay in the image.
+	// Force cleanup=false for AI builds even if production env exported true.
 	if strings.EqualFold(strings.TrimSpace(targetEnv), "ai") {
-		if strings.TrimSpace(vars["CODEXK8S_KANIKO_CLEANUP"]) == "" {
-			vars["CODEXK8S_KANIKO_CLEANUP"] = "false"
-		}
+		vars["CODEXK8S_KANIKO_CLEANUP"] = "false"
 	}
 
 	targetNamespace := strings.TrimSpace(namespace)

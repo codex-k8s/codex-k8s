@@ -57,6 +57,24 @@ func TestResolveHotReloadFlag(t *testing.T) {
 	}
 }
 
+func TestBuildTemplateVars_AiForcesKanikoCleanupDisabled(t *testing.T) {
+	t.Setenv("CODEXK8S_KANIKO_CLEANUP", "true")
+	svc := &Service{}
+	vars := svc.buildTemplateVars(PrepareParams{TargetEnv: "ai"}, "codex-k8s-dev-1")
+	if got, want := vars["CODEXK8S_KANIKO_CLEANUP"], "false"; got != want {
+		t.Fatalf("buildTemplateVars ai CODEXK8S_KANIKO_CLEANUP=%q want %q", got, want)
+	}
+}
+
+func TestBuildTemplateVars_ProductionPreservesKanikoCleanupValue(t *testing.T) {
+	t.Setenv("CODEXK8S_KANIKO_CLEANUP", "true")
+	svc := &Service{}
+	vars := svc.buildTemplateVars(PrepareParams{TargetEnv: "production"}, "codex-k8s-prod")
+	if got, want := vars["CODEXK8S_KANIKO_CLEANUP"], "true"; got != want {
+		t.Fatalf("buildTemplateVars production CODEXK8S_KANIKO_CLEANUP=%q want %q", got, want)
+	}
+}
+
 func assertDefaultWorkerReplicas(t *testing.T, targetEnv string, platformReplicas string, want string) {
 	t.Helper()
 
