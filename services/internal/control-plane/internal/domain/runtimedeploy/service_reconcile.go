@@ -243,6 +243,10 @@ func (s *Service) applyDesiredState(ctx context.Context, params PrepareParams) (
 	if repoName := strings.TrimSpace(params.RepositoryFullName); repoName != "" {
 		templateVars["CODEXK8S_GITHUB_REPO"] = repoName
 	}
+	if err := s.ensureRuntimeNamespaceRepoSnapshot(ctx, params, targetEnv, targetNamespace, repositoryRoot, templateVars, runID); err != nil {
+		s.appendTaskLogBestEffort(ctx, runID, "repo-sync", "error", "Ensure runtime namespace repo snapshot failed: "+err.Error())
+		return zero, fmt.Errorf("ensure runtime namespace repo snapshot: %w", err)
+	}
 	if strings.TrimSpace(templateVars["CODEXK8S_WORKER_JOB_IMAGE"]) == "" {
 		if value := strings.TrimSpace(templateVars["CODEXK8S_AGENT_RUNNER_IMAGE"]); value != "" {
 			templateVars["CODEXK8S_WORKER_JOB_IMAGE"] = value

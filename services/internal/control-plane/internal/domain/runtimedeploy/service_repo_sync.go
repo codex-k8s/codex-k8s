@@ -157,6 +157,47 @@ func isAIEnv(targetEnv string) bool {
 	return strings.EqualFold(strings.TrimSpace(targetEnv), "ai")
 }
 
+func shouldSyncRepoSnapshotToRuntimeNamespace(configuredRoot string, targetEnv string, targetNamespace string, repositoryFullName string, hotReload string) bool {
+	if !filepath.IsAbs(strings.TrimSpace(configuredRoot)) {
+		return false
+	}
+	if strings.TrimSpace(targetNamespace) == "" || strings.TrimSpace(repositoryFullName) == "" {
+		return false
+	}
+	if isAIEnv(targetEnv) {
+		return true
+	}
+	return strings.EqualFold(strings.TrimSpace(hotReload), "true")
+}
+
+func (s *Service) ensureRuntimeNamespaceRepoSnapshot(ctx context.Context, params PrepareParams, targetEnv string, targetNamespace string, repositoryRoot string, vars map[string]string, runID string) error {
+	repositoryFullName := strings.TrimSpace(params.RepositoryFullName)
+	if repositoryFullName == "" {
+		repositoryFullName = strings.TrimSpace(valueOr(vars, "CODEXK8S_GITHUB_REPO", ""))
+	}
+	hotReload := strings.TrimSpace(valueOr(vars, "CODEXK8S_HOT_RELOAD", ""))
+	if !shouldSyncRepoSnapshotToRuntimeNamespace(s.cfg.RepositoryRoot, targetEnv, targetNamespace, repositoryFullName, hotReload) {
+		return nil
+	}
+
+	buildRef := resolveRuntimeBuildRef(
+		params.BuildRef,
+		valueOr(vars, "CODEXK8S_BUILD_REF", ""),
+		valueOr(vars, "CODEXK8S_AGENT_BASE_BRANCH", ""),
+	)
+	runtimeRepositoryRoot := strings.TrimSpace(s.repositoryRootForRuntimeEnv(repositoryRoot))
+	if runtimeRepositoryRoot == "" {
+		return fmt.Errorf("runtime repository root is empty")
+	}
+	if err := s.ensureRepoCachePVC(ctx, targetNamespace, vars, runID); err != nil {
+		return fmt.Errorf("ensure repo cache pvc in runtime namespace %s: %w", targetNamespace, err)
+	}
+	if err := s.ensureRepoSnapshot(ctx, targetNamespace, repositoryFullName, buildRef, runtimeRepositoryRoot, vars, runID); err != nil {
+		return fmt.Errorf("ensure repo snapshot in runtime namespace %s: %w", targetNamespace, err)
+	}
+	return nil
+}
+
 func (s *Service) ensureRepoCachePVC(ctx context.Context, targetNamespace string, vars map[string]string, runID string) error {
 	namespace := strings.TrimSpace(targetNamespace)
 	if namespace == "" {
