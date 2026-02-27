@@ -5,8 +5,8 @@ title: "codex-k8s — Development and Documentation Process Requirements"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-24
-related_issues: [1, 112]
+updated_at: 2026-02-27
+related_issues: [1, 112, 210, 212]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -22,6 +22,8 @@ approvals:
 - Этот документ задаёт обязательный weekly-процесс: планирование спринта, ежедневное выполнение, ежедневный deploy на production, закрытие спринта.
 - Требования обязательны для разработки и для ведения документации.
 - Любое отклонение от процесса фиксируется явно и согласуется с Owner.
+- Для Issue/PR действует единый стандарт заголовков и содержимого, зависящий от stage и роли агента.
+- Проектная документация ведётся по фиксированной карте размещения (`product/architecture/delivery/ops/templates`) без смешения типов документов.
 
 ## Нормативные ссылки (source of truth)
 - `AGENTS.md`
@@ -78,6 +80,55 @@ approvals:
   - `docs/delivery/epics/s<номер>/epic-s<номер>-day<день>-<краткое-имя>.md`
   - пример: `docs/delivery/epics/s2/epic-s2-day0-control-plane-extraction.md`
 
+## Стандарт заголовков и содержимого Issue/PR (обязателен)
+
+Цель: заголовок и body должны сразу показывать stage, роль и тип результата.
+
+### Заголовки
+
+| Тип | Формат | Пример |
+|---|---|---|
+| Stage issue (doc stages) | `S<спринт> Day<день>: <Stage> для <краткая цель>` | `S7 Day1: Intake для закрытия MVP readiness gaps` |
+| Stage issue (`run:dev`) | `S<спринт> Day<день>: Dev — <краткая реализация>` | `S6 Day7: Dev — lifecycle управления агентами и prompt templates` |
+| PR по stage-документации | `Issue #<номер>: <stage>-пакет <краткая цель>` | `Issue #212: intake-пакет Sprint S7 для закрытия MVP readiness gaps` |
+| PR по `run:dev` | `Issue #<номер>: <краткая реализация> (#<номер>)` | `Issue #199: реализация lifecycle управления агентами и шаблонами промптов (#199)` |
+
+### Обязательные секции в body
+
+| Артефакт | Обязательные блоки |
+|---|---|
+| Issue (любой stage) | `Контекст`, `Проблема`, `Scope (in/out)`, `Acceptance Criteria`, `Риски/допущения`, `Next stage handover` |
+| PR для doc-stage (`run:intake..run:plan`, `run:qa`, `run:release`, `run:postdeploy`, `run:ops`, `run:doc-audit`) | `Контекст stage/role`, `Что обновлено`, `Traceability`, `Проверки`, `Риски`, `Next action` |
+| PR для `run:dev` | `Контекст`, `Что изменено (code+docs)`, `Проверки (tests/lint/build)`, `Риски/миграции`, `Traceability` |
+
+## Информационная архитектура документации (обязательна)
+
+| Каталог | Что хранится | Запрещено смешивать |
+|---|---|---|
+| `docs/product/` | продуктовые требования, роли, labels/stage policy, charter/brief/constraints | delivery-планы, day-эпики, runbooks |
+| `docs/architecture/` | C4, ADR, API/data model, RBAC/prompt policy, design alternatives | спринт-план и release backlog |
+| `docs/delivery/` | delivery plan, sprint/epic документы, issue map, traceability, process requirements | дублирование product source-of-truth и архитектурных контрактов |
+| `docs/ops/` | production runbooks и эксплуатационные инструкции | stage-планирование и product scope |
+| `docs/templates/` | канонические markdown-шаблоны документов | фактические артефакты этапов вместо шаблонов |
+
+Правила:
+- Один документ описывает одну цель и один уровень абстракции.
+- Если документ описывает процесс/политику, он должен ссылаться на source-of-truth документ более высокого уровня.
+- Любой новый документ сразу добавляется в релевантный индекс (`delivery/sprints/README.md`, `delivery/epics/README.md`, `issue_map`, `requirements_traceability`).
+
+## Ролевая матрица шаблонов документов (обязательна)
+
+| Роль | Основные stage | Обязательные шаблоны (`docs/templates/*.md`) |
+|---|---|---|
+| PM | `run:intake`, `run:vision`, `run:prd` | `problem.md`, `scope_mvp.md`, `constraints.md`, `brief.md`, `project_charter.md`, `success_metrics.md`, `prd.md`, `nfr.md`, `user_story.md` |
+| EM | `run:plan`, `run:release` | `delivery_plan.md`, `epic.md`, `definition_of_done.md`, `release_plan.md`, `release_notes.md`, `rollback_plan.md` |
+| SA | `run:arch`, `run:design` | `c4_context.md`, `c4_container.md`, `adr.md`, `alternatives.md`, `api_contract.md`, `data_model.md`, `design_doc.md`, `migrations_policy.md` |
+| Dev | `run:dev` | `user_story.md`, `definition_of_done.md` + обязательная синхронизация traceability-доков |
+| QA | `run:qa`, `run:qa:revise`, `run:postdeploy` | `test_strategy.md`, `test_plan.md`, `test_matrix.md`, `regression_checklist.md`, `postdeploy_review.md` |
+| SRE | `run:ops`, `run:ai-repair` | `runbook.md`, `monitoring.md`, `alerts.md`, `slo.md`, `incident_playbook.md`, `incident_postmortem.md` |
+| KM | cross-stage traceability | `issue_map.md`, `delivery_plan.md`, `roadmap.md`, `docset_issue.md`, `docset_pr.md` |
+| Reviewer | pre-review (`need:reviewer`) | шаблоны не генерирует; публикует findings/commentary в PR |
+
 ## Еженедельный цикл спринта
 
 ### 1. Sprint Start (день начала недели)
@@ -97,6 +148,7 @@ approvals:
 - Подтвердить автоматический deploy на production.
 - Выполнить ручной smoke-check и зафиксировать результат.
 - Обновить документацию при изменении API/data model/webhook/RBAC/процессов.
+- Для `run:qa` и `run:qa:revise` проверять новые/изменённые ручки через DNS Kubernetes namespace (service-to-service path), без блокировки на интерактивный OAuth browser-flow.
 
 Daily gate (must pass):
 - PR/merge только при green CI.

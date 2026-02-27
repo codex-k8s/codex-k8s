@@ -134,7 +134,12 @@ approvals:
   - незавершённая S6-цепочка (`#199` и `#201`);
   - крупный UI-scaffold контур с `comingSoon`/TODO в staff web-console;
   - отсутствие подтверждённого run-evidence для `run:doc-audit` в текущем delivery-цикле.
-- Дополнительно по owner-review комментариям сформирована candidate-декомпозиция на 12 execution-эпиков (`S7-E01..S7-E12`) с приоритетами и трассировкой в `docs/delivery/epics/s7/epic_s7.md`.
+- Дополнительно по owner-review комментариям сформирована candidate-декомпозиция на 18 execution-эпиков (`S7-E01..S7-E18`) с приоритетами и трассировкой в `docs/delivery/epics/s7/epic_s7.md`.
+- Добавлены отдельные P0-потоки для:
+  - coverage `run:qa:revise` в stage/labels policy;
+  - QA acceptance-проверок через Kubernetes DNS path для новых/изменённых ручек;
+  - reliability-контуров (`run:intake:revise` false-failed, `run:self-improve` session snapshot persistence);
+  - документационного governance (единый issue/PR стандарт + doc IA + role-template matrix).
 - Day 2+ (planned): `vision -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops -> doc-audit` с отдельной issue на каждый stage и owner-governed trigger-лейблами.
 
 ### Daily delivery contract (обязательный)

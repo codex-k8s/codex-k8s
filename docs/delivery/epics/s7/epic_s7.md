@@ -7,7 +7,7 @@ owner_role: PM
 created_at: 2026-02-27
 updated_at: 2026-02-27
 related_issues: [212, 199, 201, 210]
-related_prs: []
+related_prs: [213, 215]
 approvals:
   required: ["Owner"]
   status: pending
@@ -19,17 +19,17 @@ approvals:
 ## TL;DR
 - Sprint S7 консолидирует незакрытые MVP-разрывы из UI, stage-flow и delivery-governance в единый execution backlog.
 - Day1 intake (`#212`) зафиксировал P0/P1/P2-потоки и зависимости от открытых задач S6 (`#199`, `#201`).
-- Цель каталога: дать однозначную stage-декомпозицию и candidate backlog на 12 эпиков до полного readiness цикла `dev -> qa -> release -> postdeploy -> ops -> doc-audit`.
+- Цель каталога: дать однозначную stage-декомпозицию и candidate backlog на 18 эпиков до полного readiness цикла `dev -> qa -> release -> postdeploy -> ops -> doc-audit`.
 
 ## Stage roadmap
 - Day 1 (Intake): `docs/delivery/epics/s7/epic-s7-day1-mvp-readiness-intake.md` (Issue `#212`).
-- Day 2 (Vision): зафиксировать KPI и success metrics по `S7-E01..S7-E12` (`run:vision`).
+- Day 2 (Vision): зафиксировать KPI и success metrics по `S7-E01..S7-E18` (`run:vision`).
 - Day 3 (PRD): формализовать FR/AC/NFR + edge cases по каждому epic-кандидату (`run:prd`).
 - Day 4 (Architecture): проверить сервисные границы и контракты для implementation-пакетов (`run:arch`).
 - Day 5 (Design/Plan): утвердить execution-sequence, quality gates, DoR/DoD (`run:design`, `run:plan`).
 - Day 6+ (Execution): реализация и приемка `run:dev -> run:qa -> run:release -> run:postdeploy -> run:ops -> run:doc-audit`.
 
-## Candidate execution backlog (12 эпиков)
+## Candidate execution backlog (18 эпиков)
 
 | Epic ID | Priority | Scope | Источник замечаний |
 |---|---|---|---|
@@ -45,6 +45,12 @@ approvals:
 | S7-E10 | P0 | Runtime deploy UX: кнопка cancel/stop для зависших deploy tasks + guardrails | PRC-07 |
 | S7-E11 | P0 | Label orchestration reliability: исправить `mode:discussion` trigger-поведение | PRC-08 |
 | S7-E12 | P1 | Final MVP readiness gate: e2e evidence bundle + go/no-go для release chain | PRC-01..PRC-08 |
+| S7-E13 | P0 | Label policy alignment: добавить `run:qa:revise` и покрыть revise-loop QA-stage | PRC-09 |
+| S7-E14 | P0 | QA execution contract: проверка новых/изменённых ручек через Kubernetes DNS path + evidence | PRC-10 |
+| S7-E15 | P0 | Agents prompt lifecycle UX: кнопка обновления prompt templates из repo с версионированием | PRC-11 |
+| S7-E16 | P0 | Run status reliability: устранить false-failed для фактически успешных `run:intake:revise` | PRC-12 |
+| S7-E17 | P0 | Self-improve reliability: доступность и корректная перезапись `agent_sessions` snapshot | PRC-13 |
+| S7-E18 | P0 | Documentation governance: единый стандарт issue/PR + doc IA + role-template matrix | PRC-14, PRC-15, PRC-16 |
 
 ## Delivery-governance правила
 - Каждая следующая stage-issue создаётся отдельной задачей и без trigger-лейбла.

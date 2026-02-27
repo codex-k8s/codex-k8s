@@ -31,7 +31,7 @@ approvals:
 | `docs/delivery/epics/s4/` | Day1 + каталог Sprint S4 | `docs/delivery/epics/s4/epic_s4.md` |
 | `docs/delivery/epics/s5/` | Day1 + каталог Sprint S5 | `docs/delivery/epics/s5/epic_s5.md` |
 | `docs/delivery/epics/s6/` | Day1..Day6 (intake + vision + PRD package + architecture + design + plan) + каталог Sprint S6 | `docs/delivery/epics/s6/epic_s6.md` |
-| `docs/delivery/epics/s7/` | Day1 intake + каталог Sprint S7 (MVP readiness gap closure) + candidate backlog `S7-E01..S7-E12` | `docs/delivery/epics/s7/epic_s7.md` |
+| `docs/delivery/epics/s7/` | Day1 intake + каталог Sprint S7 (MVP readiness gap closure) + candidate backlog `S7-E01..S7-E18` | `docs/delivery/epics/s7/epic_s7.md` |
 
 ## Проверка консистентности
 - Для каждого `s<номер>` должны существовать:

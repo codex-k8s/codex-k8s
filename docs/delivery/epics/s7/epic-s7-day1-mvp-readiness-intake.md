@@ -7,7 +7,7 @@ owner_role: PM
 created_at: 2026-02-27
 updated_at: 2026-02-27
 related_issues: [212, 199, 201, 210]
-related_prs: []
+related_prs: [213, 215]
 approvals:
   required: ["Owner"]
   status: pending
@@ -41,7 +41,7 @@ approvals:
 
 ## MVP Scope
 ### In scope
-- MVP-gap backlog с декомпозицией на 12 candidate execution-эпиков (P0/P1/P2).
+- MVP-gap backlog с декомпозицией на 18 candidate execution-эпиков (P0/P1/P2).
 - Закрытие зависимостей S6 (`#199`, `#201`) как обязательный вход в MVP closeout.
 - Формализация критериев готовности для UI readiness, stage reliability и governance quality.
 - Включение требования PMO: user story + edge cases для будущих implementation issues.
@@ -74,6 +74,8 @@ approvals:
 | S7-W4: Backlog quality governance | P1 | Стандартизировать постановку задач по user story + edge cases (Issue `#210`) | обновлённые issue templates/process rules + AC/edge-case checklist |
 | S7-W5: Final MVP gate | P1 | Провести финальный e2e regression и зафиксировать go/no-go | consolidated QA/release/postdeploy/ops/doc-audit пакет |
 | S7-W6: Post-MVP spillover control | P2 | Отделить то, что не входит в MVP, чтобы не блокировать релиз | owner-approved post-MVP backlog с traceability |
+| S7-W7: Documentation governance | P0 | Унифицировать issue/PR и структуру project-docs по ролям/шаблонам | единый стандарт заголовков/body + role template matrix + обновлённый process doc |
+| S7-W8: Run reliability hardening | P0 | Закрыть reliability-разрывы review/revise/self-improve контуров | QA revise-label coverage + run status consistency + self-improve session persistence |
 
 ## Матрица owner-замечаний PR #213
 
@@ -87,8 +89,16 @@ approvals:
 | PRC-06 | В Runs убрать тип запуска, в деталях всегда давать delete namespace | behavior/data | `fix_required` | `S7-E09` |
 | PRC-07 | В runtime deploy details добавить кнопку cancel/stop | behavior/data | `fix_required` | `S7-E10` |
 | PRC-08 | Не работает `mode:discussion` | behavior/data | `fix_required` | `S7-E11` |
+| PRC-09 | Добавить revise-петлю для `run:qa` | behavior/data | `fix_required` | `S7-E13` |
+| PRC-10 | QA должен проверять новые/изменённые ручки через DNS Kubernetes (без упора в OAuth UI-flow) | behavior/data | `fix_required` | `S7-E14` |
+| PRC-11 | В Agents нужна кнопка обновления prompt templates из репозитория с созданием новых версий | behavior/data | `fix_required` | `S7-E15` |
+| PRC-12 | `run:intake:revise` (run `398275e1-161f-4bfa-86ac-baf27004dcaa`) отработал по факту, но отмечен как failed | behavior/data | `fix_required` | `S7-E16` |
+| PRC-13 | `run:self-improve` не извлёк целевую сессию агента; нужна верификация сохранения/перезаписи session snapshot | behavior/data | `fix_required` | `S7-E17` |
+| PRC-14 | Привести заголовки issue/PR к единому стилю по роли и типу задачи | quality/style | `fix_required` | `S7-E18` |
+| PRC-15 | Систематизировать документацию по типам документов и их месту | quality/style | `fix_required` | `S7-E18` |
+| PRC-16 | Явно закрепить, какие роли какие документы и шаблоны готовят | quality/style | `fix_required` | `S7-E18` |
 
-## Candidate execution backlog (12 эпиков)
+## Candidate execution backlog (18 эпиков)
 
 | Epic ID | Priority | Краткая задача | Основной вход |
 |---|---|---|---|
@@ -104,9 +114,15 @@ approvals:
 | S7-E10 | P0 | Runtime deploy cancel/stop action + safety guardrails | PRC-07 |
 | S7-E11 | P0 | `mode:discussion` trigger/review-flow remediation | PRC-08 |
 | S7-E12 | P1 | Final readiness gate: consolidated evidence + go/no-go | PRC-01..PRC-08 |
+| S7-E13 | P0 | Label taxonomy alignment: добавить `run:qa:revise` в stage/labels policy и review automation | PRC-09 |
+| S7-E14 | P0 | QA execution policy: проверка новых/изменённых ручек через K8s DNS path + evidence requirements | PRC-10 |
+| S7-E15 | P0 | Agents prompt lifecycle UX: обновление prompt templates из repo с версионированием | PRC-11 |
+| S7-E16 | P0 | Run status consistency: устранить false-failed для `run:intake:revise` при фактически успешном completion | PRC-12 |
+| S7-E17 | P0 | Self-improve diagnostics hardening: гарантировать доступность и перезапись session snapshot | PRC-13 |
+| S7-E18 | P0 | Documentation governance hardening: единый стандарт issue/PR + doc IA + role-template matrix | PRC-14, PRC-15, PRC-16 |
 
 ## Предварительный candidate set для stage `run:vision`
-1. Перенести `S7-E01..S7-E12` в отдельные issue-кандидаты с user-story формулировкой.
+1. Перенести `S7-E01..S7-E18` в отдельные issue-кандидаты с user-story формулировкой.
 2. Для каждого epic-кандидата дополнить блок edge cases и метрики готовности.
 3. Зафиксировать dependency graph (`must-have P0` перед стартом P1).
 
@@ -124,5 +140,5 @@ approvals:
 
 ## Stage Handover Instructions
 - Следующий этап: `run:vision`.
-- Обязательный артефакт vision-этапа: зафиксировать KPI и measurable readiness criteria по backlog-набору `S7-E01..S7-E12`.
+- Обязательный артефакт vision-этапа: зафиксировать KPI и measurable readiness criteria по backlog-набору `S7-E01..S7-E18`.
 - В конце vision-этапа создать follow-up issue для `run:prd` без trigger-лейбла с обязательным блоком edge cases.

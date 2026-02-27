@@ -198,16 +198,23 @@ approvals:
   `go test ./services/internal/control-plane/internal/domain/runstatus ./services/internal/control-plane/internal/domain/webhook`.
 
 ## Актуализация по Issue #212 (`run:intake`, 2026-02-27)
-- Для FR-033/FR-040/FR-045 и NFR-010/NFR-018 добавлен Sprint S7 intake traceability пакет:
+- Для FR-026/FR-028/FR-033/FR-036/FR-040/FR-043/FR-045 и NFR-010/NFR-013/NFR-017/NFR-018 добавлен Sprint S7 intake traceability пакет:
   `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md`,
   `docs/delivery/epics/s7/epic_s7.md`,
-  `docs/delivery/epics/s7/epic-s7-day1-mvp-readiness-intake.md`.
+  `docs/delivery/epics/s7/epic-s7-day1-mvp-readiness-intake.md`,
+  `docs/delivery/development_process_requirements.md`,
+  `docs/product/labels_and_trigger_policy.md`,
+  `docs/product/stage_process_model.md`.
 - Intake зафиксировал фактические MVP gaps:
   - `comingSoon`/scaffold контур в staff UI (`navigation.ts` + профильные TODO-страницы);
   - незавершённые S6 dependency-этапы (`#199`, `#201`);
   - отсутствие подтверждённого run-evidence для `run:doc-audit` в текущем delivery-цикле.
 - Для всех открытых owner-замечаний PR #213 выставлен статус `fix_required`; замечания сгруппированы по приоритету `behavior/data -> quality/style`.
-- В backlog S7 добавлены 12 candidate execution-эпиков (`S7-E01..S7-E12`) с owner-aligned handover в `run:vision`:
-  rebase/mainline hygiene, UI cleanup (navigation/sections/filter), agents UX/runtime settings, runs/deploy UX, `mode:discussion` reliability, финальный readiness gate.
+- В backlog S7 добавлены 18 candidate execution-эпиков (`S7-E01..S7-E18`) с owner-aligned handover в `run:vision`:
+  rebase/mainline hygiene, UI cleanup (navigation/sections/filter), agents UX/runtime settings, runs/deploy UX, `mode:discussion` reliability, `run:qa:revise` coverage, QA DNS acceptance-policy, `run:intake:revise` status consistency, `run:self-improve` session reliability, финальный readiness gate.
 - Для стандартизации качества backlog зафиксировано требование PMO из Issue `#210`:
   формулировка задач в формате user story и обязательный блок edge cases для QA-ready acceptance.
+- Для процессного governance добавлен единый стандарт:
+  - заголовков и body для Issue/PR по stage/role;
+  - информационной архитектуры проектной документации (каталоги `product/architecture/delivery/ops/templates`);
+  - ролевой матрицы обязательных шаблонов документации.

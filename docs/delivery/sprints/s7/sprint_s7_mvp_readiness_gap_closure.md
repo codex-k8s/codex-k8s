@@ -7,7 +7,7 @@ owner_role: PM
 created_at: 2026-02-27
 updated_at: 2026-02-27
 related_issues: [212, 199, 201, 210]
-related_prs: []
+related_prs: [213, 215]
 approvals:
   required: ["Owner"]
   status: pending
@@ -25,7 +25,7 @@ approvals:
 ### In scope
 - Формализация и приоритизация глобальных MVP-gaps (product + delivery + stage-flow).
 - Закрытие блокеров по S6 (`run:dev` и `run:qa`) как обязательной зависимости.
-- Декомпозиция owner-замечаний в candidate backlog на 12 execution-эпиков (`S7-E01..S7-E12`).
+- Декомпозиция owner-замечаний в candidate backlog на 18 execution-эпиков (`S7-E01..S7-E18`).
 - Подготовка release-ready цепочки `qa -> release -> postdeploy -> ops -> doc-audit`.
 
 ### Out of scope
@@ -44,7 +44,7 @@ approvals:
 | Day 5 | Design + Plan: execution package и quality gates | P0 | TBD (`run:design`, `run:plan`) | planned |
 | Day 6+ | Dev/QA/Release/Postdeploy/Ops/Doc-Audit | P0/P1 | TBD (`run:dev..run:doc-audit`) | planned |
 
-## Candidate execution-эпики (`S7-E01..S7-E12`)
+## Candidate execution-эпики (`S7-E01..S7-E18`)
 
 | Epic | Priority | Scope | Блокер/зависимость |
 |---|---|---|---|
@@ -60,6 +60,12 @@ approvals:
 | S7-E10 | P0 | Runtime deploy task cancel/stop control | release-blocking ops UX |
 | S7-E11 | P0 | Исправление поведения `mode:discussion` в label orchestration | stage reliability |
 | S7-E12 | P1 | Финальный readiness gate (`qa -> release -> postdeploy -> ops -> doc-audit`) | requires S7-E01..E11 |
+| S7-E13 | P0 | Добавить revise-петлю `run:qa:revise` в stage/labels policy | review/revise reliability |
+| S7-E14 | P0 | QA policy: проверка новых/изменённых ручек через Kubernetes DNS path | QA acceptance gate |
+| S7-E15 | P0 | Agents: обновление prompt templates из repo с version bump | agents lifecycle readiness |
+| S7-E16 | P0 | Run status reliability: false-failed для `run:intake:revise` | stage reliability |
+| S7-E17 | P0 | Self-improve: доступность и перезапись session snapshot | self-improve reliability |
+| S7-E18 | P0 | Documentation governance: issue/PR standard + doc IA + role-template matrix | backlog quality gate |
 
 ## Quality gates (S7 governance)
 
@@ -91,4 +97,4 @@ approvals:
 ## Handover в следующий этап
 - Следующий этап: `run:vision`.
 - Для continuity нужно создать отдельную issue `run:vision` (без trigger-лейбла при создании, лейбл ставит Owner).
-- В issue `run:vision` обязательно повторить декомпозицию `S7-E01..S7-E12` из Day1 intake и зафиксировать KPI/метрики закрытия MVP-gaps.
+- В issue `run:vision` обязательно повторить декомпозицию `S7-E01..S7-E18` из Day1 intake и зафиксировать KPI/метрики закрытия MVP-gaps.
