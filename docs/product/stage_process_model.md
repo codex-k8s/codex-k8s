@@ -5,8 +5,8 @@ title: "codex-k8s — Stage Process Model"
 status: active
 owner_role: EM
 created_at: 2026-02-11
-updated_at: 2026-02-25
-related_issues: [1, 19, 90, 95, 154, 155, 175]
+updated_at: 2026-02-27
+related_issues: [1, 19, 90, 95, 154, 155, 175, 212]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -41,7 +41,7 @@ approvals:
 | Design | `run:design`, `run:design:revise` | markdown design doc package (design/API/data model/migration policy notes) | `sa`, `qa` |
 | Plan | `run:plan`, `run:plan:revise` | delivery plan, epics/stories, DoD | `em`, `km` |
 | Development | `run:dev`, `run:dev:revise` | code changes, PR, docs updates | `dev`, `reviewer` |
-| QA | `run:qa` | markdown test strategy/plan/matrix + regression evidence | `qa` |
+| QA | `run:qa`, `run:qa:revise` | markdown test strategy/plan/matrix + regression evidence | `qa` |
 | Release | `run:release` | release plan/notes, rollback plan | `em`, `sre` |
 | Postdeploy | `run:postdeploy` | postdeploy review, postmortem | `qa`, `sre` |
 | Ops | `run:ops` | markdown SLO/alerts/runbook improvements | `sre`, `km` |

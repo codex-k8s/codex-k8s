@@ -5,8 +5,8 @@ title: "codex-k8s — Labels and Trigger Policy"
 status: active
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-02-25
-related_issues: [1, 19, 74, 90, 95, 154, 155, 175]
+updated_at: 2026-02-27
+related_issues: [1, 19, 74, 90, 95, 154, 155, 175, 212]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -51,6 +51,7 @@ approvals:
 | `run:doc-audit` | аудит код↔доки↔чек-листы | active (S3 Day1 trigger path) |
 | `run:ai-repair` | аварийное восстановление инфраструктуры и runtime-потока (production pod, main-direct режим без обязательного PR) | active |
 | `run:qa` | тест-артефакты и прогоны | active (S3 Day1 trigger path) |
+| `run:qa:revise` | ревизия QA-артефактов и регрессионных проверок | active (S3 Day1 trigger path) |
 | `run:release` | релиз и release artifacts | active (S3 Day1 trigger path) |
 | `run:postdeploy` | post-deploy review / postmortem | active (S3 Day1 trigger path) |
 | `run:ops` | эксплуатационные улучшения | active (S3 Day1 trigger path) |

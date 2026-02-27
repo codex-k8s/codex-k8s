@@ -5,8 +5,8 @@ title: "codex-k8s — Delivery Plan"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-25
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201]
+updated_at: 2026-02-27
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -49,6 +49,8 @@ approvals:
 - Epic S5 catalog: `docs/delivery/epics/s5/epic_s5.md`
 - Sprint S6 plan: `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md`
 - Epic S6 catalog: `docs/delivery/epics/s6/epic_s6.md`
+- Sprint S7 plan: `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md`
+- Epic S7 catalog: `docs/delivery/epics/s7/epic_s7.md`
 - Sprint index: `docs/delivery/sprints/README.md`
 - Epic index: `docs/delivery/epics/README.md`
 - E2E master plan: `docs/delivery/e2e_mvp_master_plan.md`
@@ -121,10 +123,25 @@ approvals:
 - Результат Day 5 (факт): зафиксирован implementation-ready package (`design_doc`, `api_contract`, `data_model`, `migrations_policy`), создана issue #197 для stage `run:plan`.
 - Day 6 (in-review): plan stage в issue #197 (`docs/delivery/epics/s6/epic-s6-day6-agents-prompts-plan.md`).
 - Результат Day 6 (факт): сформирован execution package `run:dev` (W1..W7, QG-S6-D6-01..QG-S6-D6-07, DoR/DoD, blockers/risks/owner decisions), создана issue #199 для stage `run:dev` без trigger-лейбла.
-- Day 7 (in-review): dev stage в issue #199 (contract-first/migrations/staff transport/UI integration).
-- Результат Day 7 (факт): реализация `agents/templates/audit` завершена в PR #202, сформирован regression evidence package и создана issue #201 для stage `run:qa`.
+- Day 7 (completed): dev stage в issue #199 (contract-first/migrations/staff transport/UI integration).
+- Результат Day 7 (факт): реализация `agents/templates/audit` завершена в PR #202 (merged), сформирован regression evidence package и создана issue #201 для stage `run:qa`.
+- Day 8 (completed): QA stage в issue #201 закрыт с решением GO в `run:release`; создана issue #216 для следующего этапа release-continuity.
 - Следующие day-эпики S6 формируются строго последовательно по stage-цепочке:
   `arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops -> doc-audit` с отдельной issue на каждый этап.
+
+### Sprint S7: MVP readiness gap closure (Issue #212)
+- Day 1 (in-review): intake пакет по незакрытым MVP-разрывам (`docs/delivery/epics/s7/epic-s7-day1-mvp-readiness-intake.md`).
+- Результат Day 1 (факт): подтверждены P0/P1/P2-потоки и dependency-блокеры:
+  - актуальная S6 release-зависимость (`#199` и `#201` закрыты, открыта issue `#216`);
+  - крупный UI-scaffold контур с `comingSoon`/TODO в staff web-console;
+  - отсутствие подтверждённого run-evidence для `run:doc-audit` в текущем delivery-цикле.
+- Дополнительно по owner-review комментариям сформирована candidate-декомпозиция на 18 execution-эпиков (`S7-E01..S7-E18`) с приоритетами и трассировкой в `docs/delivery/epics/s7/epic_s7.md`.
+- Добавлены отдельные P0-потоки для:
+  - coverage `run:qa:revise` в stage/labels policy;
+  - QA acceptance-проверок через Kubernetes DNS path для новых/изменённых ручек;
+  - reliability-контуров (`run:intake:revise` false-failed, `run:self-improve` session snapshot persistence);
+  - документационного governance (единый issue/PR стандарт + doc IA + role-template matrix).
+- Day 2+ (planned): `vision -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops -> doc-audit` с отдельной issue на каждый stage и owner-governed trigger-лейблами.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
