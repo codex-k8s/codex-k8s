@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-24
 updated_at: 2026-02-27
-related_issues: [112, 154, 184, 185, 187, 189, 195, 197, 199, 201, 212, 216]
+related_issues: [112, 154, 184, 185, 187, 189, 195, 197, 199, 201, 212, 218, 220, 222, 216]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -31,7 +31,7 @@ approvals:
 | `docs/delivery/epics/s4/` | Day1 + каталог Sprint S4 | `docs/delivery/epics/s4/epic_s4.md` |
 | `docs/delivery/epics/s5/` | Day1 + каталог Sprint S5 | `docs/delivery/epics/s5/epic_s5.md` |
 | `docs/delivery/epics/s6/` | Day1..Day6 (intake + vision + PRD package + architecture + design + plan) + каталог Sprint S6 | `docs/delivery/epics/s6/epic_s6.md` |
-| `docs/delivery/epics/s7/` | Day1 intake + каталог Sprint S7 (MVP readiness gap closure) + candidate backlog `S7-E01..S7-E18` | `docs/delivery/epics/s7/epic_s7.md` |
+| `docs/delivery/epics/s7/` | Day1 intake + Day2 vision + Day3 PRD package (`epic + prd`) + каталог Sprint S7 и candidate backlog `S7-E01..S7-E18` | `docs/delivery/epics/s7/epic_s7.md` |
 
 ## Проверка консистентности
 - Для каждого `s<номер>` должны существовать:
