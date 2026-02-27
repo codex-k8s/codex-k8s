@@ -1,0 +1,94 @@
+---
+doc_id: SPR-CK8S-0007
+type: sprint-plan
+title: "Sprint S7: MVP readiness gap closure (Issue #212)"
+status: in-progress
+owner_role: PM
+created_at: 2026-02-27
+updated_at: 2026-02-27
+related_issues: [212, 199, 201, 210]
+related_prs: []
+approvals:
+  required: ["Owner"]
+  status: pending
+  request_id: "owner-2026-02-27-issue-212-intake"
+---
+
+# Sprint S7: MVP readiness gap closure (Issue #212)
+
+## TL;DR
+- Цель спринта: закрыть продуктовые и операционные разрывы, из-за которых MVP сейчас выглядит и работает как незавершённый.
+- Фактический сигнал из intake (#212): в staff UI остаётся большое количество `comingSoon`-разделов, а stage-контур `run:doc-audit` не подтверждён как рабочий в реальном цикле.
+- Sprint S7 фокусируется на завершении цепочки от открытых задач S6 (`#199`, `#201`) до полного MVP readiness gate.
+
+## Scope спринта
+### In scope
+- Формализация и приоритизация глобальных MVP-gaps (product + delivery + stage-flow).
+- Закрытие блокеров по S6 (`run:dev` и `run:qa`) как обязательной зависимости.
+- Декомпозиция owner-замечаний в candidate backlog на 12 execution-эпиков (`S7-E01..S7-E12`).
+- Подготовка release-ready цепочки `qa -> release -> postdeploy -> ops -> doc-audit`.
+
+### Out of scope
+- Post-MVP расширения (A2A swarm, custom-agent factory, marketplace шаблонов).
+- Изменение базовой taxonomy labels и архитектурных ограничений платформы.
+- Изменение security-policy (RBAC, approval-gates, secret governance).
+
+## План эпиков по дням
+
+| День | Эпик | Priority | Документ | Статус |
+|---|---|---|---|---|
+| Day 1 | Intake по MVP readiness gaps | P0 | `docs/delivery/epics/s7/epic-s7-day1-mvp-readiness-intake.md` | in-review (`#212`) |
+| Day 2 | Vision: целевая картина MVP closeout и KPI | P0 | TBD (`run:vision`) | planned |
+| Day 3 | PRD: AC/NFR для gap-closure streams | P0 | TBD (`run:prd`) | planned |
+| Day 4 | Architecture: границы и ownership по stream'ам | P0 | TBD (`run:arch`) | planned |
+| Day 5 | Design + Plan: execution package и quality gates | P0 | TBD (`run:design`, `run:plan`) | planned |
+| Day 6+ | Dev/QA/Release/Postdeploy/Ops/Doc-Audit | P0/P1 | TBD (`run:dev..run:doc-audit`) | planned |
+
+## Candidate execution-эпики (`S7-E01..S7-E12`)
+
+| Epic | Priority | Scope | Блокер/зависимость |
+|---|---|---|---|
+| S7-E01 | P0 | Rebase/mainline hygiene для PR revise-итераций | required before merge |
+| S7-E02 | P0 | Sidebar cleanup: удаление не-MVP разделов и dead code | UI readiness gate |
+| S7-E03 | P0 | Удаление глобального фильтра и зависимого кода | UI readiness gate |
+| S7-E04 | P0 | Удаление runtime-deploy/images секции и связанного фронтенд-кода | UI readiness gate |
+| S7-E05 | P0 | Agents table cleanup + removal of `Скоро` badge | depends on S6 baseline |
+| S7-E06 | P0 | Agents import defaults: runtime mode + locale policy + bulk update | depends on S6 baseline |
+| S7-E07 | P0 | Worker prompt source selector (`repo`/`db`) в agents settings | depends on API/worker contracts |
+| S7-E08 | P1 | Agents UX hardening и массовые операции | after S7-E05..E07 |
+| S7-E09 | P0 | Runs UX: убрать run type + гарантировать delete namespace | release-blocking UX |
+| S7-E10 | P0 | Runtime deploy task cancel/stop control | release-blocking ops UX |
+| S7-E11 | P0 | Исправление поведения `mode:discussion` в label orchestration | stage reliability |
+| S7-E12 | P1 | Финальный readiness gate (`qa -> release -> postdeploy -> ops -> doc-audit`) | requires S7-E01..E11 |
+
+## Quality gates (S7 governance)
+
+| Gate | Что проверяем | Статус |
+|---|---|---|
+| QG-S7-01 Intake completeness | Проблема, scope, ограничения, AC и backlog streams формализованы на фактах | passed (`#212`) |
+| QG-S7-02 Dependency visibility | Зависимости от `#199` и `#201` зафиксированы как release-blockers | passed |
+| QG-S7-03 Traceability | Обновлены `issue_map`, `requirements_traceability`, sprint/epic indexes и delivery plan | passed |
+| QG-S7-04 Stage continuity | Подготовлен handover в `run:vision` с явной декомпозицией потоков | in-review |
+| QG-S7-05 Owner comments coverage | Каждое открытое замечание PR #213 классифицировано и сопоставлено с `S7-E*` | in-review |
+
+## Completion критерии спринта
+- [ ] Закрыты P0-блокеры из S6 (реализация и QA-приёмка).
+- [ ] Разделы staff UI с `comingSoon`, попадающие в MVP-сценарии, либо реализованы, либо переведены в явный post-MVP backlog с owner-approved статусом.
+- [ ] Stage-контур `run:doc-audit` подтверждён в реальном delivery-цикле с evidence.
+- [ ] Выполнен полный e2e проход `run:intake -> ... -> run:ops` для целевого MVP-гейта.
+- [ ] Обновлены release/postdeploy/ops артефакты с итоговым go/no-go решением.
+
+## Риски и допущения
+
+| Тип | ID | Описание | Статус |
+|---|---|---|---|
+| risk | RSK-212-01 | PR `#202` (Issue `#199`) не влит в `main`, поэтому часть MVP-функций остаётся недоступной | open |
+| risk | RSK-212-02 | `run:doc-audit` описан в policy, но без подтверждённого сквозного run-evidence в текущем цикле | open |
+| risk | RSK-212-03 | Большой объём UI-scaffold задач может размыть срок MVP closeout без жёсткой P0/P1 декомпозиции | open |
+| assumption | ASM-212-01 | Базовые backend-контракты для закрытия P0 уже существуют в ветке `codex/issue-199` | accepted |
+| assumption | ASM-212-02 | Owner подтверждает последовательное закрытие stage-цепочки без параллельных конфликтующих `run:*` | accepted |
+
+## Handover в следующий этап
+- Следующий этап: `run:vision`.
+- Для continuity нужно создать отдельную issue `run:vision` (без trigger-лейбла при создании, лейбл ставит Owner).
+- В issue `run:vision` обязательно повторить декомпозицию `S7-E01..S7-E12` из Day1 intake и зафиксировать KPI/метрики закрытия MVP-gaps.
