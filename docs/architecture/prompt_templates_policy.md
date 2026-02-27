@@ -193,6 +193,10 @@ approvals:
   - `self_improve_run_lookup` (поиск run по Issue/PR);
   - `self_improve_session_get` (получение `codex-cli` session JSON и путь под `/tmp/codex-sessions/...`).
 - Перед анализом session JSON prompt обязан требовать создание целевого каталога `/tmp/codex-sessions/<run-id>`.
+- Если `self_improve_session_get` вернул `empty`/`not found`, prompt обязан:
+  - зафиксировать gap в `tool_gaps` с указанием `run_id` и причины;
+  - продолжить диагностику по доступным источникам (`flow_events`, issue/PR comments, review threads, service-comments);
+  - не завершать self-improve run с ошибкой только из-за отсутствующего session JSON.
 - Repo seed baseline для этого контура:
   - `services/jobs/agent-runner/internal/runner/promptseeds/self-improve-work.md`.
 - Изменения seed/override, внесённые через self-improve, проходят стандартный PR/review цикл.
