@@ -6,7 +6,7 @@ status: in-progress
 owner_role: PM
 created_at: 2026-02-27
 updated_at: 2026-02-27
-related_issues: [212, 199, 201, 210, 216]
+related_issues: [212, 199, 201, 210, 216, 218]
 related_prs: [213, 215]
 approvals:
   required: ["Owner"]
@@ -38,7 +38,7 @@ approvals:
 | День | Эпик | Priority | Документ | Статус |
 |---|---|---|---|---|
 | Day 1 | Intake по MVP readiness gaps | P0 | `docs/delivery/epics/s7/epic-s7-day1-mvp-readiness-intake.md` | in-review (`#212`) |
-| Day 2 | Vision: целевая картина MVP closeout и KPI | P0 | TBD (`run:vision`) | planned |
+| Day 2 | Vision: целевая картина MVP closeout и KPI | P0 | `GitHub issue #218` (`run:vision`) | planned |
 | Day 3 | PRD: AC/NFR для gap-closure streams | P0 | TBD (`run:prd`) | planned |
 | Day 4 | Architecture: границы и ownership по stream'ам | P0 | TBD (`run:arch`) | planned |
 | Day 5 | Design + Plan: execution package и quality gates | P0 | TBD (`run:design`, `run:plan`) | planned |
@@ -74,7 +74,7 @@ approvals:
 | QG-S7-01 Intake completeness | Проблема, scope, ограничения, AC и backlog streams формализованы на фактах | passed (`#212`) |
 | QG-S7-02 Dependency visibility | Зафиксирована актуальная цепочка зависимостей S6: `#199/#201` закрыты, открытый release-блокер — `#216` | passed |
 | QG-S7-03 Traceability | Обновлены `issue_map`, `requirements_traceability`, sprint/epic indexes и delivery plan | passed |
-| QG-S7-04 Stage continuity | Подготовлен handover в `run:vision` с явной декомпозицией потоков | in-review |
+| QG-S7-04 Stage continuity | Подготовлен handover в `run:vision` с явной декомпозицией потоков и создана issue `#218` | passed |
 | QG-S7-05 Owner comments coverage | Каждое открытое замечание PR #213 классифицировано и сопоставлено с `S7-E*` | in-review |
 
 ## Completion критерии спринта
@@ -96,5 +96,5 @@ approvals:
 
 ## Handover в следующий этап
 - Следующий этап: `run:vision`.
-- Для continuity нужно создать отдельную issue `run:vision` (без trigger-лейбла при создании, лейбл ставит Owner).
+- Для continuity уже создана отдельная issue `run:vision`: `#218` (без trigger-лейбла; лейбл ставит Owner после review).
 - В issue `run:vision` обязательно повторить декомпозицию `S7-E01..S7-E18` из Day1 intake и зафиксировать KPI/метрики закрытия MVP-gaps.

@@ -6,7 +6,7 @@ status: in-review
 owner_role: PM
 created_at: 2026-02-27
 updated_at: 2026-02-27
-related_issues: [212, 199, 201, 210, 216]
+related_issues: [212, 199, 201, 210, 216, 218]
 related_prs: [213, 215]
 approvals:
   required: ["Owner"]
@@ -125,6 +125,7 @@ approvals:
 1. Перенести `S7-E01..S7-E18` в отдельные issue-кандидаты с user-story формулировкой.
 2. Для каждого epic-кандидата дополнить блок edge cases и метрики готовности.
 3. Зафиксировать dependency graph (`must-have P0` перед стартом P1).
+4. Использовать шаблон создания следующей stage-задачи из issue `#218` (обязательные секции `Контекст/Проблема/Scope/AC/Риски/Next stage handover`).
 
 ## Risks and Product Assumptions
 ### Risks
@@ -140,5 +141,6 @@ approvals:
 
 ## Stage Handover Instructions
 - Следующий этап: `run:vision`.
+- Follow-up issue для следующего этапа создана: `#218` (без trigger-лейбла, запуск — после Owner review).
 - Обязательный артефакт vision-этапа: зафиксировать KPI и measurable readiness criteria по backlog-набору `S7-E01..S7-E18`.
 - В конце vision-этапа создать follow-up issue для `run:prd` без trigger-лейбла с обязательным блоком edge cases.
