@@ -74,13 +74,13 @@ spec:
       - path: docs/templates/docset_pr.md
   versions:
     api-gateway:
-      value: "0.1.18"
+      value: "0.1.19"
       bumpOn:
         - services/external/api-gateway
         - libs/go
         - proto
     control-plane:
-      value: "0.1.58"
+      value: "0.1.59"
       bumpOn:
         - services/internal/control-plane
         - deploy/base/kaniko
@@ -88,19 +88,19 @@ spec:
         - libs/go
         - proto
     worker:
-      value: "0.1.24"
+      value: "0.1.25"
       bumpOn:
         - services/jobs/worker
         - libs/go
         - proto
     agent-runner:
-      value: "0.1.19"
+      value: "0.1.20"
       bumpOn:
         - services/jobs/agent-runner
         - libs/go
         - proto
     web-console:
-      value: "0.1.10"
+      value: "0.1.11"
       bumpOn:
         - services/staff/web-console
         - libs/ts
