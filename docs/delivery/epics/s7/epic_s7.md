@@ -6,7 +6,7 @@ status: in-progress
 owner_role: PM
 created_at: 2026-02-27
 updated_at: 2026-02-27
-related_issues: [212, 199, 201, 210, 216]
+related_issues: [212, 218, 220, 199, 201, 210, 216]
 related_prs: [213, 215]
 approvals:
   required: ["Owner"]
@@ -23,11 +23,18 @@ approvals:
 
 ## Stage roadmap
 - Day 1 (Intake): `docs/delivery/epics/s7/epic-s7-day1-mvp-readiness-intake.md` (Issue `#212`).
-- Day 2 (Vision): зафиксировать KPI и success metrics по `S7-E01..S7-E18` (`run:vision`).
-- Day 3 (PRD): формализовать FR/AC/NFR + edge cases по каждому epic-кандидату (`run:prd`).
+- Day 2 (Vision): `docs/delivery/epics/s7/epic-s7-day2-mvp-readiness-vision.md` (Issue `#218`).
+- Day 3 (PRD): формализовать FR/AC/NFR + edge cases по каждому epic-кандидату (`run:prd`, Issue `#220`).
 - Day 4 (Architecture): проверить сервисные границы и контракты для implementation-пакетов (`run:arch`).
 - Day 5 (Design/Plan): утвердить execution-sequence, quality gates, DoR/DoD (`run:design`, `run:plan`).
 - Day 6+ (Execution): реализация и приемка `run:dev -> run:qa -> run:release -> run:postdeploy -> run:ops -> run:doc-audit`.
+
+## Day 2 vision fact
+- В Issue `#218` зафиксированы mission, KPI/success metrics и measurable readiness criteria для потоков `S7-E01..S7-E18`.
+- Для каждого execution-эпика оформлен baseline: user story, AC, edge cases, expected evidence.
+- Зафиксировано обязательное правило decomposition parity перед входом в `run:dev`:
+  `approved_execution_epics_count == created_run_dev_issues_count` (coverage ratio = `1.0`).
+- Создана continuity issue `#220` для этапа `run:prd` без trigger-лейбла.
 
 ## Candidate execution backlog (18 эпиков)
 

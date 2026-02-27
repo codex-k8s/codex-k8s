@@ -6,7 +6,7 @@ status: in-progress
 owner_role: PM
 created_at: 2026-02-27
 updated_at: 2026-02-27
-related_issues: [212, 199, 201, 210, 216]
+related_issues: [212, 218, 220, 199, 201, 210, 216]
 related_prs: [213, 215]
 approvals:
   required: ["Owner"]
@@ -38,8 +38,8 @@ approvals:
 | День | Эпик | Priority | Документ | Статус |
 |---|---|---|---|---|
 | Day 1 | Intake по MVP readiness gaps | P0 | `docs/delivery/epics/s7/epic-s7-day1-mvp-readiness-intake.md` | in-review (`#212`) |
-| Day 2 | Vision: целевая картина MVP closeout и KPI | P0 | TBD (`run:vision`) | planned |
-| Day 3 | PRD: AC/NFR для gap-closure streams | P0 | TBD (`run:prd`) | planned |
+| Day 2 | Vision: целевая картина MVP closeout, KPI и decomposition baseline | P0 | `docs/delivery/epics/s7/epic-s7-day2-mvp-readiness-vision.md` | in-review (`#218`) |
+| Day 3 | PRD: FR/AC/NFR и sequencing для gap-closure streams | P0 | Issue `#220` (`run:prd`) | planned |
 | Day 4 | Architecture: границы и ownership по stream'ам | P0 | TBD (`run:arch`) | planned |
 | Day 5 | Design + Plan: execution package и quality gates | P0 | TBD (`run:design`, `run:plan`) | planned |
 | Day 6+ | Dev/QA/Release/Postdeploy/Ops/Doc-Audit | P0/P1 | TBD (`run:dev..run:doc-audit`) | planned |
@@ -74,8 +74,9 @@ approvals:
 | QG-S7-01 Intake completeness | Проблема, scope, ограничения, AC и backlog streams формализованы на фактах | passed (`#212`) |
 | QG-S7-02 Dependency visibility | Зафиксирована актуальная цепочка зависимостей S6: `#199/#201` закрыты, открытый release-блокер — `#216` | passed |
 | QG-S7-03 Traceability | Обновлены `issue_map`, `requirements_traceability`, sprint/epic indexes и delivery plan | passed |
-| QG-S7-04 Stage continuity | Подготовлен handover в `run:vision` с явной декомпозицией потоков | in-review |
-| QG-S7-05 Owner comments coverage | Каждое открытое замечание PR #213 классифицировано и сопоставлено с `S7-E*` | in-review |
+| QG-S7-04 Stage continuity | Для Day2 создана follow-up issue `#220` в `run:prd` (без trigger-лейбла) | passed |
+| QG-S7-05 Owner comments coverage | Каждое открытое замечание PR #213 классифицировано и сопоставлено с `S7-E*` | passed |
+| QG-S7-06 Decomposition parity rule | Перед `run:dev` зафиксировано правило `approved_execution_epics == implementation issues` | passed |
 
 ## Completion критерии спринта
 - [ ] Закрыт открытый P0-блокер S6 (`#216`, `run:release`) и подтверждён переход в `run:postdeploy`.
@@ -95,6 +96,6 @@ approvals:
 | assumption | ASM-212-02 | Owner подтверждает последовательное закрытие stage-цепочки без параллельных конфликтующих `run:*` | accepted |
 
 ## Handover в следующий этап
-- Следующий этап: `run:vision`.
-- Для continuity нужно создать отдельную issue `run:vision` (без trigger-лейбла при создании, лейбл ставит Owner).
-- В issue `run:vision` обязательно повторить декомпозицию `S7-E01..S7-E18` из Day1 intake и зафиксировать KPI/метрики закрытия MVP-gaps.
+- Следующий этап: `run:prd`.
+- Для continuity создана отдельная issue `#220` в `run:prd` (без trigger-лейбла при создании, лейбл ставит Owner).
+- В Issue `#220` передан обязательный шаблон создания следующей stage-задачи (`run:arch`) и правила decomposition parity до `run:dev`.

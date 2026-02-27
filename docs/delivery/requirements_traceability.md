@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-27
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 216]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -218,3 +218,17 @@ approvals:
   - заголовков и body для Issue/PR по stage/role;
   - информационной архитектуры проектной документации (каталоги `product/architecture/delivery/ops/templates`);
   - ролевой матрицы обязательных шаблонов документации.
+
+## Актуализация по Issue #218 (`run:vision`, 2026-02-27)
+- Для FR-026/FR-028/FR-033/FR-045/FR-052/FR-053/FR-054 и NFR-010/NFR-018 добавлен vision traceability пакет Sprint S7:
+  `docs/delivery/epics/s7/epic-s7-day2-mvp-readiness-vision.md`,
+  `docs/delivery/epics/s7/epic_s7.md`,
+  `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md`,
+  `docs/delivery/delivery_plan.md`,
+  `docs/delivery/issue_map.md`.
+- Vision-stage формализовал measurable KPI для всех execution-потоков `S7-E01..S7-E18` и зафиксировал baseline по каждому потоку:
+  `user story + acceptance criteria + edge cases + expected evidence`.
+- Введено обязательное governance-правило decomposition parity перед `run:dev`:
+  `approved_execution_epics_count == created_run_dev_issues_count` (coverage ratio = `1.0`).
+- Для stage continuity создана follow-up issue `#220` (`run:prd`) без trigger-лейбла; в issue передан обязательный шаблон создания следующей stage-задачи (`run:arch`).
+- Scope этапа сохранён policy-safe: markdown-only изменения без модификации code/runtime артефактов.
