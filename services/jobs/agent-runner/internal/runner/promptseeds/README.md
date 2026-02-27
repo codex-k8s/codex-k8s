@@ -48,7 +48,8 @@
 Важно:
 - шаблон должен описывать цель этапа, обязательные шаги, ожидаемые артефакты и критерий завершения;
 - envelope-слой рантайма требует регулярный MCP feedback через `run_status_report` (каждые 5-7 инструментальных вызовов);
-- для всех `*revise*` seed'ов обязателен pre-check: перед правками и перед commit/push повторно проверить новые комментарии и merge conflicts; при наличии — сначала разрешить их.
+- для всех `*revise*` seed'ов обязателен pre-check: перед правками и перед commit/push повторно проверить новые комментарии и merge conflicts; при наличии — сначала разрешить их;
+- для `*revise*` seed'ов перед финальным статусом/label transition обязателен preflight: проверить `mergeable` и отсутствие stage ambiguity по `run:*` label context (PR + Issue).
 - секреты, токены и обход policy в шаблонах запрещены.
 - для `run:intake|vision|prd|arch|design|plan|doc-audit|qa|release|postdeploy|ops|rethink` runtime policy ограничивает изменения только markdown-файлами (`*.md`);
 - для роли `reviewer` runtime policy запрещает изменения репозитория (только комментарии в существующем PR);
@@ -64,4 +65,6 @@
 - non-doc seed'ы (`dev*`, `ai-repair`, `self-improve`) не должны получать лишние требования по документационным шаблонам.
 - Для `self-improve-*` seed обязателен диагностический контур:
   - MCP `self_improve_runs_list` / `self_improve_run_lookup` / `self_improve_session_get`;
-  - сохранение извлеченного `codex-cli` session JSON в `/tmp/codex-sessions/<run-id>`.
+  - сохранение извлеченного `codex-cli` session JSON в `/tmp/codex-sessions/<run-id>`;
+  - если `self_improve_session_get` возвращает `empty`/`not found`, run не прерывается:
+    факт фиксируется в `tool_gaps` (с `run_id`), а анализ продолжается по issue/PR evidence.
