@@ -6,7 +6,7 @@ status: in-progress
 owner_role: PM
 created_at: 2026-02-27
 updated_at: 2026-02-27
-related_issues: [212, 218, 220, 199, 201, 210, 216]
+related_issues: [212, 218, 220, 222, 199, 201, 210, 216]
 related_prs: [213, 215]
 approvals:
   required: ["Owner"]
@@ -24,8 +24,8 @@ approvals:
 ## Stage roadmap
 - Day 1 (Intake): `docs/delivery/epics/s7/epic-s7-day1-mvp-readiness-intake.md` (Issue `#212`).
 - Day 2 (Vision): `docs/delivery/epics/s7/epic-s7-day2-mvp-readiness-vision.md` (Issue `#218`).
-- Day 3 (PRD): формализовать FR/AC/NFR + edge cases по каждому epic-кандидату (`run:prd`, Issue `#220`).
-- Day 4 (Architecture): проверить сервисные границы и контракты для implementation-пакетов (`run:arch`).
+- Day 3 (PRD): `docs/delivery/epics/s7/epic-s7-day3-mvp-readiness-prd.md` + `docs/delivery/epics/s7/prd-s7-day3-mvp-readiness-gap-closure.md` (Issue `#220`).
+- Day 4 (Architecture): проверить сервисные границы и контракты для implementation-пакетов (`run:arch`, Issue `#222`).
 - Day 5 (Design/Plan): утвердить execution-sequence, quality gates, DoR/DoD (`run:design`, `run:plan`).
 - Day 6+ (Execution): реализация и приемка `run:dev -> run:qa -> run:release -> run:postdeploy -> run:ops -> run:doc-audit`.
 
@@ -35,6 +35,16 @@ approvals:
 - Зафиксировано обязательное правило decomposition parity перед входом в `run:dev`:
   `approved_execution_epics_count == created_run_dev_issues_count` (coverage ratio = `1.0`).
 - Создана continuity issue `#220` для этапа `run:prd` без trigger-лейбла.
+
+## Day 3 PRD fact
+- В Issue `#220` подготовлен PRD-пакет Sprint S7:
+  - `docs/delivery/epics/s7/epic-s7-day3-mvp-readiness-prd.md`;
+  - `docs/delivery/epics/s7/prd-s7-day3-mvp-readiness-gap-closure.md`.
+- Для каждого execution-эпика `S7-E01..S7-E18` формализованы `user story`, `FR`, `AC`, `NFR`, `edge cases`, `expected evidence`.
+- Зафиксированы dependency graph и sequencing-waves для перехода `run:prd -> run:arch -> run:design -> run:plan`.
+- Подтверждено parity-правило перед `run:dev`:
+  `approved_execution_epics_count == created_run_dev_issues_count`.
+- Создана continuity issue `#222` для этапа `run:arch` без trigger-лейбла.
 
 ## Candidate execution backlog (18 эпиков)
 
