@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-27
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 216]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -141,7 +141,14 @@ approvals:
   - QA acceptance-проверок через Kubernetes DNS path для новых/изменённых ручек;
   - reliability-контуров (`run:intake:revise` false-failed, `run:self-improve` session snapshot persistence);
   - документационного governance (единый issue/PR стандарт + doc IA + role-template matrix).
-- Day 2+ (planned): `vision -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops -> doc-audit` с отдельной issue на каждый stage и owner-governed trigger-лейблами.
+- Day 2 (in-review): vision-пакет в Issue `#218` (`docs/delivery/epics/s7/epic-s7-day2-mvp-readiness-vision.md`).
+- Результат Day 2 (факт):
+  - зафиксированы mission, KPI/success metrics и measurable readiness criteria по `S7-E01..S7-E18`;
+  - для каждого execution-эпика оформлен baseline (`user story`, `AC`, `edge cases`, `expected evidence`);
+  - закреплено governance-правило decomposition parity перед `run:dev`:
+    `approved_execution_epics_count == created_run_dev_issues_count`;
+  - создана follow-up issue `#220` для stage `run:prd` без trigger-лейбла.
+- Day 3+ (planned): `prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops -> doc-audit` с отдельной issue на каждый stage и owner-governed trigger-лейблами.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
