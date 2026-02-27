@@ -6,7 +6,7 @@ status: in-review
 owner_role: PM
 created_at: 2026-02-27
 updated_at: 2026-02-27
-related_issues: [212, 199, 201, 210]
+related_issues: [212, 199, 201, 210, 216]
 related_prs: [213, 215]
 approvals:
   required: ["Owner"]
@@ -19,14 +19,14 @@ approvals:
 ## TL;DR
 - Подтверждён системный разрыв между заявленным MVP stage-flow и фактической готовностью ключевых контуров.
 - В staff UI остаются крупные функциональные зоны в статусе `comingSoon` и scaffold/TODO (`services/staff/web-console/src/app/navigation.ts`, страницы `governance/*`, `admin/*`, `configuration/*`).
-- Цепочка S6 не доведена до `run:release`: Issue `#199` (dev) и `#201` (qa) остаются открытыми, из-за чего часть MVP-функций фактически недоступна в `main`.
+- На момент первичного intake блокерами были `#199` (dev) и `#201` (qa); по факту на 2026-02-27 они закрыты (`PR #202` merged), а текущая открытая зависимость S6 — Issue `#216` (`run:release`).
 - Для `run:doc-audit` есть policy/seed/config-база, но нет подтверждённого сквозного evidence успешного stage-run в текущем delivery-цикле.
 
 ## Problem Statement
 ### As-Is
 - Навигация staff UI содержит `comingSoon` для governance/admin/platform разделов (Audit Log, Labels & Stages, Cluster resources, Agents, Docs/Knowledge, MCP Tools).
 - В коде UI зафиксированы TODO на подключение реальных backend-контуров (например, `AuditLogPage.vue`, `LabelsStagesPage.vue`, `McpToolsPage.vue`, `DocsKnowledgePage.vue`, `AgentDetailsPage.vue`, `NamespacesPage.vue`, `PodsPage.vue` и др.).
-- Реализация S6 Day7 находится в open PR `#202`, а QA-этап `#201` не запущен trigger-лейблом.
+- Реализация S6 Day7 уже влита в `main` (`PR #202` merged), QA-этап `#201` закрыт, и цепочка продолжена в Issue `#216` (`run:release`).
 - Запрос PMO (`#210`) добавляет обязательные требования к качеству постановки задач: user-story формулировка и edge cases.
 
 ### To-Be
@@ -42,7 +42,7 @@ approvals:
 ## MVP Scope
 ### In scope
 - MVP-gap backlog с декомпозицией на 18 candidate execution-эпиков (P0/P1/P2).
-- Закрытие зависимостей S6 (`#199`, `#201`) как обязательный вход в MVP closeout.
+- Закрытие текущей зависимости S6 (`#216`, `run:release`) как обязательный вход в MVP closeout.
 - Формализация критериев готовности для UI readiness, stage reliability и governance quality.
 - Включение требования PMO: user story + edge cases для будущих implementation issues.
 
@@ -60,7 +60,7 @@ approvals:
 ## Acceptance Criteria (Intake stage)
 - [x] Подтверждены фактические MVP-gaps по UI scaffold и stage continuity на основе кода/issue/PR состояния.
 - [x] Зафиксирован приоритетный backlog потоков P0/P1/P2 с owner-role alignment.
-- [x] Зафиксированы явные dependency-блокеры (Issue `#199`, `#201`) для MVP closeout.
+- [x] Зафиксирована актуальная dependency-цепочка S6 (`#199`/`#201` закрыты, открытый блокер — `#216`) для MVP closeout.
 - [x] Зафиксированы продуктовые риски и допущения с привязкой к execution-плану.
 - [x] Зафиксирован handover в `run:vision` с требованиями к KPI и edge-case coverage.
 
@@ -68,7 +68,7 @@ approvals:
 
 | Stream | Priority | Цель | Основные deliverables |
 |---|---|---|---|
-| S7-W1: S6 closure dependency | P0 | Закрыть `#199` и `#201`, подтвердить готовность к release chain | merged implementation + QA evidence + issue continuity `release -> postdeploy -> ops` |
+| S7-W1: S6 closure dependency | P0 | Закрыть открытый release-этап `#216` и подтвердить готовность к полной цепочке `release -> postdeploy -> ops` | release evidence + issue continuity `postdeploy -> ops` |
 | S7-W2: UI readiness | P0 | Убрать `comingSoon` из MVP-критичных разделов или формально вывести в post-MVP с owner approval | реализация/декомпозиция governance+platform+admin страниц с typed API |
 | S7-W3: Stage reliability | P0 | Подтвердить работоспособность завершающих stage-циклов, включая `run:doc-audit` | stage-run evidence, audit trail, обновлённые runbooks/checklists |
 | S7-W4: Backlog quality governance | P1 | Стандартизировать постановку задач по user story + edge cases (Issue `#210`) | обновлённые issue templates/process rules + AC/edge-case checklist |
@@ -128,13 +128,13 @@ approvals:
 
 ## Risks and Product Assumptions
 ### Risks
-- `RSK-212-01`: без merge PR `#202` часть функционала S6 остаётся вне `main`.
+- `RSK-212-01`: Issue `#216` (`run:release`) остаётся открытой; без закрытия release/postdeploy/ops цепочки MVP-gate не может считаться завершённым.
 - `RSK-212-02`: без подтверждения `run:doc-audit` возможен ложный сигнал готовности MVP.
 - `RSK-212-03`: объём UI-scaffold задач может превысить окно спринта без жёсткой приоритизации.
 - `RSK-212-04`: отсутствие стандарта edge cases в issue продолжит снижать качество QA-приёмки.
 
 ### Assumptions
-- `ASM-212-01`: технический фундамент для закрытия P0 уже реализован частично и требует интеграции/доведения.
+- `ASM-212-01`: технический фундамент P0 по S6 закрыт в `main` (PR `#202` merged), дальнейший риск смещён в release/postdeploy continuity.
 - `ASM-212-02`: Owner подтвердит staged-подход без параллельных конфликтующих `run:*`.
 - `ASM-212-03`: post-MVP потоки можно отделить без влияния на MVP-go/no-go.
 

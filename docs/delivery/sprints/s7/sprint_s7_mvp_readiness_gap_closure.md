@@ -6,7 +6,7 @@ status: in-progress
 owner_role: PM
 created_at: 2026-02-27
 updated_at: 2026-02-27
-related_issues: [212, 199, 201, 210]
+related_issues: [212, 199, 201, 210, 216]
 related_prs: [213, 215]
 approvals:
   required: ["Owner"]
@@ -19,12 +19,12 @@ approvals:
 ## TL;DR
 - Цель спринта: закрыть продуктовые и операционные разрывы, из-за которых MVP сейчас выглядит и работает как незавершённый.
 - Фактический сигнал из intake (#212): в staff UI остаётся большое количество `comingSoon`-разделов, а stage-контур `run:doc-audit` не подтверждён как рабочий в реальном цикле.
-- Sprint S7 фокусируется на завершении цепочки от открытых задач S6 (`#199`, `#201`) до полного MVP readiness gate.
+- Sprint S7 фокусируется на завершении S6 release-continuity: `#199`/`#201` уже закрыты, текущая открытая зависимость — `#216` (`run:release`).
 
 ## Scope спринта
 ### In scope
 - Формализация и приоритизация глобальных MVP-gaps (product + delivery + stage-flow).
-- Закрытие блокеров по S6 (`run:dev` и `run:qa`) как обязательной зависимости.
+- Закрытие открытого S6-блокера (`run:release`, Issue `#216`) как обязательной зависимости.
 - Декомпозиция owner-замечаний в candidate backlog на 18 execution-эпиков (`S7-E01..S7-E18`).
 - Подготовка release-ready цепочки `qa -> release -> postdeploy -> ops -> doc-audit`.
 
@@ -72,13 +72,13 @@ approvals:
 | Gate | Что проверяем | Статус |
 |---|---|---|
 | QG-S7-01 Intake completeness | Проблема, scope, ограничения, AC и backlog streams формализованы на фактах | passed (`#212`) |
-| QG-S7-02 Dependency visibility | Зависимости от `#199` и `#201` зафиксированы как release-blockers | passed |
+| QG-S7-02 Dependency visibility | Зафиксирована актуальная цепочка зависимостей S6: `#199/#201` закрыты, открытый release-блокер — `#216` | passed |
 | QG-S7-03 Traceability | Обновлены `issue_map`, `requirements_traceability`, sprint/epic indexes и delivery plan | passed |
 | QG-S7-04 Stage continuity | Подготовлен handover в `run:vision` с явной декомпозицией потоков | in-review |
 | QG-S7-05 Owner comments coverage | Каждое открытое замечание PR #213 классифицировано и сопоставлено с `S7-E*` | in-review |
 
 ## Completion критерии спринта
-- [ ] Закрыты P0-блокеры из S6 (реализация и QA-приёмка).
+- [ ] Закрыт открытый P0-блокер S6 (`#216`, `run:release`) и подтверждён переход в `run:postdeploy`.
 - [ ] Разделы staff UI с `comingSoon`, попадающие в MVP-сценарии, либо реализованы, либо переведены в явный post-MVP backlog с owner-approved статусом.
 - [ ] Stage-контур `run:doc-audit` подтверждён в реальном delivery-цикле с evidence.
 - [ ] Выполнен полный e2e проход `run:intake -> ... -> run:ops` для целевого MVP-гейта.
@@ -88,10 +88,10 @@ approvals:
 
 | Тип | ID | Описание | Статус |
 |---|---|---|---|
-| risk | RSK-212-01 | PR `#202` (Issue `#199`) не влит в `main`, поэтому часть MVP-функций остаётся недоступной | open |
+| risk | RSK-212-01 | Issue `#216` (`run:release`) остаётся открытой; без release/postdeploy continuity нельзя фиксировать MVP go/no-go | open |
 | risk | RSK-212-02 | `run:doc-audit` описан в policy, но без подтверждённого сквозного run-evidence в текущем цикле | open |
 | risk | RSK-212-03 | Большой объём UI-scaffold задач может размыть срок MVP closeout без жёсткой P0/P1 декомпозиции | open |
-| assumption | ASM-212-01 | Базовые backend-контракты для закрытия P0 уже существуют в ветке `codex/issue-199` | accepted |
+| assumption | ASM-212-01 | Базовые backend-контракты для закрытия P0 уже в `main` (PR `#202` merged) | accepted |
 | assumption | ASM-212-02 | Owner подтверждает последовательное закрытие stage-цепочки без параллельных конфликтующих `run:*` | accepted |
 
 ## Handover в следующий этап

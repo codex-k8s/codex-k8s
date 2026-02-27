@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-24
 updated_at: 2026-02-27
-related_issues: [112, 154, 184, 185, 187, 189, 195, 197, 199, 201, 212]
+related_issues: [112, 154, 184, 185, 187, 189, 195, 197, 199, 201, 212, 216]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -30,8 +30,8 @@ approvals:
 | S3 | `docs/delivery/sprints/s3/sprint_s3_mvp_completion.md` | `docs/delivery/epics/s3/epic_s3.md` | in-progress | Финальный e2e и closeout выполняются по Day20. |
 | S4 | `docs/delivery/sprints/s4/sprint_s4_multi_repo_federation.md` | `docs/delivery/epics/s4/epic_s4.md` | completed (day1) | Execution foundation по multi-repo зафиксирован. |
 | S5 | `docs/delivery/sprints/s5/sprint_s5_stage_entry_and_label_ux.md` | `docs/delivery/epics/s5/epic_s5.md` | in-progress | UX-упрощение stage/label запуска и deterministic next-step actions (Issues #154/#155/#170/#171). |
-| S6 | `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md` | `docs/delivery/epics/s6/epic_s6.md` | in-progress | Day1..Day7 (intake/vision/prd/arch/design/plan/dev) синхронизированы; создана issue `#201` для stage `run:qa` (trigger-лейбл ставит Owner). |
-| S7 | `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md` | `docs/delivery/epics/s7/epic_s7.md` | in-progress | Day1 intake (`#212`) зафиксировал MVP readiness gaps, dependency-блокеры (`#199`, `#201`) и candidate backlog на 18 execution-эпиков (`S7-E01..S7-E18`). |
+| S6 | `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md` | `docs/delivery/epics/s6/epic_s6.md` | in-progress | Day1..Day8 (до `run:qa`) синхронизированы: `#199/#201` закрыты, следующий этап оформлен в issue `#216` (`run:release`). |
+| S7 | `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md` | `docs/delivery/epics/s7/epic_s7.md` | in-progress | Day1 intake (`#212`) зафиксировал MVP readiness gaps и актуализировал dependency-цепочку S6 (`#199/#201` закрыты, открытый блокер — `#216`), с candidate backlog на 18 execution-эпиков (`S7-E01..S7-E18`). |
 
 ## Правила структуры
 - Sprint-plan: `docs/delivery/sprints/s<номер>/sprint_s<номер>_<name>.md`.

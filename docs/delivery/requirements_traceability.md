@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-27
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -207,7 +207,7 @@ approvals:
   `docs/product/stage_process_model.md`.
 - Intake зафиксировал фактические MVP gaps:
   - `comingSoon`/scaffold контур в staff UI (`navigation.ts` + профильные TODO-страницы);
-  - незавершённые S6 dependency-этапы (`#199`, `#201`);
+  - S6 dependency-chain: `#199/#201` закрыты, открытый release-блокер перенесён в Issue `#216`;
   - отсутствие подтверждённого run-evidence для `run:doc-audit` в текущем delivery-цикле.
 - Для всех открытых owner-замечаний PR #213 выставлен статус `fix_required`; замечания сгруппированы по приоритету `behavior/data -> quality/style`.
 - В backlog S7 добавлены 18 candidate execution-эпиков (`S7-E01..S7-E18`) с owner-aligned handover в `run:vision`:

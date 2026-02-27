@@ -6,7 +6,7 @@ status: in-progress
 owner_role: PM
 created_at: 2026-02-27
 updated_at: 2026-02-27
-related_issues: [212, 199, 201, 210]
+related_issues: [212, 199, 201, 210, 216]
 related_prs: [213, 215]
 approvals:
   required: ["Owner"]
@@ -18,7 +18,7 @@ approvals:
 
 ## TL;DR
 - Sprint S7 консолидирует незакрытые MVP-разрывы из UI, stage-flow и delivery-governance в единый execution backlog.
-- Day1 intake (`#212`) зафиксировал P0/P1/P2-потоки и зависимости от открытых задач S6 (`#199`, `#201`).
+- Day1 intake (`#212`) зафиксировал P0/P1/P2-потоки и актуализировал S6 dependency-chain: `#199/#201` закрыты, открытый блокер — `#216` (`run:release`).
 - Цель каталога: дать однозначную stage-декомпозицию и candidate backlog на 18 эпиков до полного readiness цикла `dev -> qa -> release -> postdeploy -> ops -> doc-audit`.
 
 ## Stage roadmap
