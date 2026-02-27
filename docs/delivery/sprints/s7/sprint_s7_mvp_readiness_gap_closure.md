@@ -6,7 +6,7 @@ status: in-progress
 owner_role: PM
 created_at: 2026-02-27
 updated_at: 2026-02-27
-related_issues: [212, 218, 220, 199, 201, 210, 216]
+related_issues: [212, 218, 220, 223, 225, 226, 227, 228, 229, 230, 199, 201, 210, 216]
 related_prs: [213, 215]
 approvals:
   required: ["Owner"]
@@ -41,10 +41,10 @@ approvals:
 | Day 2 | Vision: целевая картина MVP closeout, KPI и decomposition baseline | P0 | `docs/delivery/epics/s7/epic-s7-day2-mvp-readiness-vision.md` | in-review (`#218`) |
 | Day 3 | PRD: FR/AC/NFR и sequencing для gap-closure streams | P0 | Issue `#220` (`run:prd`) | planned |
 | Day 4 | Architecture: границы и ownership по stream'ам | P0 | TBD (`run:arch`) | planned |
-| Day 5 | Design + Plan: execution package и quality gates | P0 | TBD (`run:design`, `run:plan`) | planned |
+| Day 5 | Design + Plan: execution package и quality gates | P0 | `docs/delivery/epics/s7/epic-s7-day5-go-refactoring-plan.md` (`run:plan`, Issue `#223`) | in-review |
 | Day 6+ | Dev/QA/Release/Postdeploy/Ops/Doc-Audit | P0/P1 | TBD (`run:dev..run:doc-audit`) | planned |
 
-## Candidate execution-эпики (`S7-E01..S7-E18`)
+## Candidate execution-эпики (`S7-E01..S7-E24`)
 
 | Epic | Priority | Scope | Блокер/зависимость |
 |---|---|---|---|
@@ -66,6 +66,12 @@ approvals:
 | S7-E16 | P0 | Run status reliability: false-failed для `run:intake:revise` | stage reliability |
 | S7-E17 | P0 | Self-improve: доступность и перезапись session snapshot | self-improve reliability |
 | S7-E18 | P0 | Documentation governance: issue/PR standard + doc IA + role-template matrix | backlog quality gate |
+| S7-E19 | P0 | Control-plane Go refactor: decomposition oversized files | parallel stream (`#225`) |
+| S7-E20 | P0 | API-gateway Go refactor: transport cleanup | parallel stream (`#226`) |
+| S7-E21 | P0 | Worker Go refactor: service decomposition | parallel stream (`#227`) |
+| S7-E22 | P0 | Agent-runner Go refactor: helper normalization | parallel stream (`#228`) |
+| S7-E23 | P0 | Shared libs Go refactor: pgx/servicescfg | parallel stream (`#229`) |
+| S7-E24 | P1 | Cross-service Go hygiene closure report | after `S7-E19..S7-E23` (`#230`) |
 
 ## Quality gates (S7 governance)
 
@@ -77,6 +83,7 @@ approvals:
 | QG-S7-04 Stage continuity | Для Day2 создана follow-up issue `#220` в `run:prd` (без trigger-лейбла) | passed |
 | QG-S7-05 Owner comments coverage | Каждое открытое замечание PR #213 классифицировано и сопоставлено с `S7-E*` | passed |
 | QG-S7-06 Decomposition parity rule | Перед `run:dev` зафиксировано правило `approved_execution_epics == implementation issues` | passed |
+| QG-S7-07 Parallelization readiness | Для Go-refactor stream созданы независимые implementation issues `#225..#230` с явным scope | passed (`#223`) |
 
 ## Completion критерии спринта
 - [ ] Закрыт открытый P0-блокер S6 (`#216`, `run:release`) и подтверждён переход в `run:postdeploy`.
@@ -92,10 +99,11 @@ approvals:
 | risk | RSK-212-01 | Issue `#216` (`run:release`) остаётся открытой; без release/postdeploy continuity нельзя фиксировать MVP go/no-go | open |
 | risk | RSK-212-02 | `run:doc-audit` описан в policy, но без подтверждённого сквозного run-evidence в текущем цикле | open |
 | risk | RSK-212-03 | Большой объём UI-scaffold задач может размыть срок MVP closeout без жёсткой P0/P1 декомпозиции | open |
+| risk | RSK-223-01 | Рефакторинг Go-кода может дать регрессии без строгого запрета на функциональные изменения | open |
 | assumption | ASM-212-01 | Базовые backend-контракты для закрытия P0 уже в `main` (PR `#202` merged) | accepted |
 | assumption | ASM-212-02 | Owner подтверждает последовательное закрытие stage-цепочки без параллельных конфликтующих `run:*` | accepted |
 
 ## Handover в следующий этап
-- Следующий этап: `run:prd`.
-- Для continuity создана отдельная issue `#220` в `run:prd` (без trigger-лейбла при создании, лейбл ставит Owner).
-- В Issue `#220` передан обязательный шаблон создания следующей stage-задачи (`run:arch`) и правила decomposition parity до `run:dev`.
+- Следующий этап: `run:dev` для execution-stream `S7-E19..S7-E24`.
+- Для continuity созданы implementation issues `#225..#230` (без trigger-лейблов; лейбл запуска ставит Owner).
+- Для `#225..#230` переданы quality-gates и DoD в `docs/delivery/epics/s7/epic-s7-day5-go-refactoring-plan.md`.

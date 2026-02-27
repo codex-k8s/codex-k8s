@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-27
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 216]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 223, 225, 226, 227, 228, 229, 230, 216]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -218,6 +218,22 @@ approvals:
   - заголовков и body для Issue/PR по stage/role;
   - информационной архитектуры проектной документации (каталоги `product/architecture/delivery/ops/templates`);
   - ролевой матрицы обязательных шаблонов документации.
+
+## Актуализация по Issue #223 (`run:plan`, 2026-02-27)
+- Для FR-002/FR-004/FR-033 и NFR-002/NFR-010/NFR-018 добавлен execution-governance пакет Sprint S7 Day5:
+  `docs/delivery/epics/s7/epic-s7-day5-go-refactoring-plan.md`,
+  `docs/delivery/epics/s7/epic_s7.md`,
+  `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md`,
+  `docs/delivery/delivery_plan.md`.
+- Выполнен plan-аудит Go-кода по сервисам и библиотекам (oversized files, duplicate hotspots, database access alignment).
+- Создан параллельный implementation backlog `#225..#230`:
+  - `#225` control-plane decomposition;
+  - `#226` api-gateway transport cleanup;
+  - `#227` worker decomposition;
+  - `#228` agent-runner helper normalization;
+  - `#229` shared libs pgx/servicescfg alignment;
+  - `#230` cross-service hygiene closure.
+- Через Context7 (`/websites/cli_github_manual`) подтвержден актуальный CLI-синтаксис `gh issue create`/`gh pr create`/`gh pr edit`; новые внешние зависимости не добавлялись.
 
 ## Актуализация по Issue #218 (`run:vision`, 2026-02-27)
 - Для FR-026/FR-028/FR-033/FR-045/FR-052/FR-053/FR-054 и NFR-010/NFR-018 добавлен vision traceability пакет Sprint S7:
