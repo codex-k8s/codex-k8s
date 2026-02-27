@@ -6,7 +6,7 @@ status: in-progress
 owner_role: PM
 created_at: 2026-02-27
 updated_at: 2026-02-27
-related_issues: [212, 199, 201, 210, 216]
+related_issues: [212, 199, 201, 210, 216, 218]
 related_prs: [213, 215]
 approvals:
   required: ["Owner"]
@@ -23,7 +23,7 @@ approvals:
 
 ## Stage roadmap
 - Day 1 (Intake): `docs/delivery/epics/s7/epic-s7-day1-mvp-readiness-intake.md` (Issue `#212`).
-- Day 2 (Vision): зафиксировать KPI и success metrics по `S7-E01..S7-E18` (`run:vision`).
+- Day 2 (Vision): issue `#218` (`run:vision`) создана; зафиксировать KPI и success metrics по `S7-E01..S7-E18`.
 - Day 3 (PRD): формализовать FR/AC/NFR + edge cases по каждому epic-кандидату (`run:prd`).
 - Day 4 (Architecture): проверить сервисные границы и контракты для implementation-пакетов (`run:arch`).
 - Day 5 (Design/Plan): утвердить execution-sequence, quality gates, DoR/DoD (`run:design`, `run:plan`).
@@ -56,4 +56,5 @@ approvals:
 - Каждая следующая stage-issue создаётся отдельной задачей и без trigger-лейбла.
 - Trigger-лейбл на запуск этапа ставит Owner после review предыдущего артефакта.
 - Для каждого execution-эпика обязательно фиксируются: priority, user story, AC, edge cases, dependency и expected evidence.
+- Для continuity используется единый шаблон создания stage-issue (впервые зафиксирован в issue `#218`) и передаётся в каждую следующую stage-задачу до `run:dev`.
 - MVP-closeout не считается завершённым без явного доказательства работоспособности `run:doc-audit`.

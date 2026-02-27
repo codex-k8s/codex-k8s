@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-27
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -218,3 +218,12 @@ approvals:
   - заголовков и body для Issue/PR по stage/role;
   - информационной архитектуры проектной документации (каталоги `product/architecture/delivery/ops/templates`);
   - ролевой матрицы обязательных шаблонов документации.
+- По Owner-комментарию создана stage-continuity issue `#218` (`run:vision`) с обязательным шаблоном создания следующей stage-задачи и правилом декомпозиции: к входу в `run:dev` количество implementation issues должно соответствовать количеству утверждённых execution-эпиков.
+
+## Актуализация по Issue #218 (`run:vision`, 2026-02-27)
+- Создана follow-up issue для следующего этапа после intake `#212` без trigger-лейбла (лейбл ставит Owner после review).
+- В issue `#218` зафиксированы обязательные acceptance-пункты для continuity:
+  - KPI/success metrics по `S7-E01..S7-E18`;
+  - user story + AC + edge cases + expected evidence для каждого epic-кандидата;
+  - создание следующей stage-issue `run:prd` в конце vision-этапа.
+- Зафиксирован и передан шаблон `Контекст -> Проблема -> Scope -> AC -> Риски/допущения -> Next stage handover`, который обязателен для всех следующих stage-issues до `run:dev`.

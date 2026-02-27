@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-24
 updated_at: 2026-02-27
-related_issues: [112, 154, 184, 185, 187, 189, 195, 197, 199, 201, 212, 216]
+related_issues: [112, 154, 184, 185, 187, 189, 195, 197, 199, 201, 212, 216, 218]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -31,7 +31,7 @@ approvals:
 | S4 | `docs/delivery/sprints/s4/sprint_s4_multi_repo_federation.md` | `docs/delivery/epics/s4/epic_s4.md` | completed (day1) | Execution foundation по multi-repo зафиксирован. |
 | S5 | `docs/delivery/sprints/s5/sprint_s5_stage_entry_and_label_ux.md` | `docs/delivery/epics/s5/epic_s5.md` | in-progress | UX-упрощение stage/label запуска и deterministic next-step actions (Issues #154/#155/#170/#171). |
 | S6 | `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md` | `docs/delivery/epics/s6/epic_s6.md` | in-progress | Day1..Day8 (до `run:qa`) синхронизированы: `#199/#201` закрыты, следующий этап оформлен в issue `#216` (`run:release`). |
-| S7 | `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md` | `docs/delivery/epics/s7/epic_s7.md` | in-progress | Day1 intake (`#212`) зафиксировал MVP readiness gaps и актуализировал dependency-цепочку S6 (`#199/#201` закрыты, открытый блокер — `#216`), с candidate backlog на 18 execution-эпиков (`S7-E01..S7-E18`). |
+| S7 | `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md` | `docs/delivery/epics/s7/epic_s7.md` | in-progress | Day1 intake (`#212`) зафиксировал MVP readiness gaps; создана vision issue `#218` для continuity stage-цепочки и передан шаблон создания следующих stage-задач до `run:dev`. |
 
 ## Правила структуры
 - Sprint-plan: `docs/delivery/sprints/s<номер>/sprint_s<номер>_<name>.md`.

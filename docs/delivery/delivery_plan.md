@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-27
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -135,6 +135,7 @@ approvals:
   - актуальная S6 release-зависимость (`#199` и `#201` закрыты, открыта issue `#216`);
   - крупный UI-scaffold контур с `comingSoon`/TODO в staff web-console;
   - отсутствие подтверждённого run-evidence для `run:doc-audit` в текущем delivery-цикле.
+- По Owner feedback создана follow-up issue `#218` для stage `run:vision` с шаблоном обязательного создания следующей stage-задачи до входа в `run:dev`.
 - Дополнительно по owner-review комментариям сформирована candidate-декомпозиция на 18 execution-эпиков (`S7-E01..S7-E18`) с приоритетами и трассировкой в `docs/delivery/epics/s7/epic_s7.md`.
 - Добавлены отдельные P0-потоки для:
   - coverage `run:qa:revise` в stage/labels policy;
