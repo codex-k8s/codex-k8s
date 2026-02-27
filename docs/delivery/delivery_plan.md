@@ -5,8 +5,8 @@ title: "codex-k8s — Delivery Plan"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-25
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201]
+updated_at: 2026-02-27
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 216]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -123,6 +123,8 @@ approvals:
 - Результат Day 6 (факт): сформирован execution package `run:dev` (W1..W7, QG-S6-D6-01..QG-S6-D6-07, DoR/DoD, blockers/risks/owner decisions), создана issue #199 для stage `run:dev` без trigger-лейбла.
 - Day 7 (in-review): dev stage в issue #199 (contract-first/migrations/staff transport/UI integration).
 - Результат Day 7 (факт): реализация `agents/templates/audit` завершена в PR #202, сформирован regression evidence package и создана issue #201 для stage `run:qa`.
+- Day 8 (in-review): qa stage в issue #201 (`docs/delivery/epics/s6/epic-s6-day8-agents-prompts-qa.md`).
+- Результат Day 8 (факт): QA-приёмка `agents/templates/audit` завершена, выпущен пакет `test_strategy/test_plan/test_matrix/regression_checklist`, решение readiness = GO в `run:release`, создана issue #216 без trigger-лейбла.
 - Следующие day-эпики S6 формируются строго последовательно по stage-цепочке:
   `arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops -> doc-audit` с отдельной issue на каждый этап.
 

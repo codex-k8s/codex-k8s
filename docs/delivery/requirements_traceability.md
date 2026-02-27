@@ -5,8 +5,8 @@ title: "Requirements Traceability Matrix"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-25
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201]
+updated_at: 2026-02-27
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 216]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -171,8 +171,24 @@ approvals:
   - `go test ./services/external/api-gateway/...`
   - `npm run build` (`services/staff/web-console`)
   - `make lint-go`
-  - `make dupl-go` (зафиксированы pre-existing дубли вне scope текущих правок).
+- `make dupl-go` (зафиксированы pre-existing дубли вне scope текущих правок).
 - Создана follow-up issue `#201` для stage `run:qa` с обязательной continuity-инструкцией по созданию issue `run:release` после завершения QA.
+
+## Актуализация по Issue #201 (`run:qa`, 2026-02-27)
+- Для FR-009/FR-015/FR-030/FR-033/FR-038 и NFR-010/NFR-015/NFR-018 выполнен QA acceptance/regression пакет:
+  - `docs/delivery/epics/s6/epic-s6-day8-agents-prompts-qa.md`
+  - `docs/delivery/epics/s6/test-strategy-s6-day8-agents-prompts-qa.md`
+  - `docs/delivery/epics/s6/test-plan-s6-day8-agents-prompts-qa.md`
+  - `docs/delivery/epics/s6/test-matrix-s6-day8-agents-prompts-qa.md`
+  - `docs/delivery/epics/s6/regression-checklist-s6-day8-agents-prompts-qa.md`
+- Подтверждены:
+  - contract coverage для staff HTTP/gRPC `agents/templates/audit`;
+  - миграция и schema invariants `prompt_templates`/`agents.settings_version` в runtime БД;
+  - typed UI integration flow для `Agents` без mock API слоя;
+  - regression evidence (`go test`, `npm build`, `kubectl rollout/logs`, schema checks).
+- Зафиксирован риск `RSK-201-01`: `make dupl-go` остаётся non-green (дубли в репозитории); риск перенесён в release-stage контроль.
+- QA readiness decision: `GO` в `run:release`.
+- Создана follow-up issue `#216` для stage `run:release` без trigger-лейбла с обязательной continuity-инструкцией создать issue `run:postdeploy`.
 
 ## Актуализация по Issue #155 (`run:plan`, 2026-02-25)
 - Для FR-053/FR-054 добавлены execution-governance артефакты Sprint S5 (`epic_s5.md`, обновлённый sprint-plan, issue-map sync).

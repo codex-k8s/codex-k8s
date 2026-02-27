@@ -5,8 +5,8 @@ title: "Epic Index (grouped by sprint)"
 status: active
 owner_role: EM
 created_at: 2026-02-24
-updated_at: 2026-02-25
-related_issues: [112, 154, 184, 185, 187, 189, 195, 197, 199, 201]
+updated_at: 2026-02-27
+related_issues: [112, 154, 184, 185, 187, 189, 195, 197, 199, 201, 216]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -30,7 +30,7 @@ approvals:
 | `docs/delivery/epics/s3/` | Day1..Day20 + каталог Sprint S3 | `docs/delivery/epics/s3/epic_s3.md` |
 | `docs/delivery/epics/s4/` | Day1 + каталог Sprint S4 | `docs/delivery/epics/s4/epic_s4.md` |
 | `docs/delivery/epics/s5/` | Day1 + каталог Sprint S5 | `docs/delivery/epics/s5/epic_s5.md` |
-| `docs/delivery/epics/s6/` | Day1..Day6 (intake + vision + PRD package + architecture + design + plan) + каталог Sprint S6 | `docs/delivery/epics/s6/epic_s6.md` |
+| `docs/delivery/epics/s6/` | Day1..Day8 (intake + vision + PRD package + architecture + design + plan + QA) + каталог Sprint S6 | `docs/delivery/epics/s6/epic_s6.md` |
 
 ## Проверка консистентности
 - Для каждого `s<номер>` должны существовать:
