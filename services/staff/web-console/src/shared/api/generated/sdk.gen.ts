@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CallbackGithubData, CallbackGithubErrors, CleanupRegistryImagesData, CleanupRegistryImagesErrors, CleanupRegistryImagesResponses, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteConfigEntryData, DeleteConfigEntryErrors, DeleteConfigEntryResponses, DeleteProjectData, DeleteProjectErrors, DeleteProjectMemberData, DeleteProjectMemberErrors, DeleteProjectMemberResponses, DeleteProjectRepositoryData, DeleteProjectRepositoryErrors, DeleteProjectRepositoryResponses, DeleteProjectResponses, DeleteRegistryImageTagData, DeleteRegistryImageTagErrors, DeleteRegistryImageTagResponses, DeleteRunNamespaceData, DeleteRunNamespaceErrors, DeleteRunNamespaceResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, GetMeData, GetMeErrors, GetMeResponses, GetProjectData, GetProjectErrors, GetProjectGitHubTokensData, GetProjectGitHubTokensErrors, GetProjectGitHubTokensResponses, GetProjectResponses, GetRunData, GetRunErrors, GetRunLogsData, GetRunLogsErrors, GetRunLogsResponses, GetRunResponses, GetRuntimeDeployTaskData, GetRuntimeDeployTaskErrors, GetRuntimeDeployTaskResponses, ImportDocsetData, ImportDocsetErrors, ImportDocsetResponses, IngestGithubWebhookData, IngestGithubWebhookErrors, IngestGithubWebhookResponses, ListConfigEntriesData, ListConfigEntriesErrors, ListConfigEntriesResponses, ListDocsetGroupsData, ListDocsetGroupsErrors, ListDocsetGroupsResponses, ListPendingApprovalsData, ListPendingApprovalsErrors, ListPendingApprovalsResponses, ListProjectMembersData, ListProjectMembersErrors, ListProjectMembersResponses, ListProjectRepositoriesData, ListProjectRepositoriesErrors, ListProjectRepositoriesResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRegistryImagesData, ListRegistryImagesErrors, ListRegistryImagesResponses, ListRunEventsData, ListRunEventsErrors, ListRunEventsResponses, ListRunJobsData, ListRunJobsErrors, ListRunJobsResponses, ListRunLearningFeedbackData, ListRunLearningFeedbackErrors, ListRunLearningFeedbackResponses, ListRunsData, ListRunsErrors, ListRunsResponses, ListRuntimeDeployTasksData, ListRuntimeDeployTasksErrors, ListRuntimeDeployTasksResponses, ListRuntimeErrorsData, ListRuntimeErrorsErrors, ListRuntimeErrorsResponses, ListRunWaitsData, ListRunWaitsErrors, ListRunWaitsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginGithubData, LoginGithubErrors, LogoutData, LogoutErrors, LogoutResponses, MarkRuntimeErrorViewedData, MarkRuntimeErrorViewedErrors, MarkRuntimeErrorViewedResponses, McpApproverCallbackData, McpApproverCallbackErrors, McpApproverCallbackResponses, McpExecutorCallbackData, McpExecutorCallbackErrors, McpExecutorCallbackResponses, ResolveApprovalDecisionData, ResolveApprovalDecisionErrors, ResolveApprovalDecisionResponses, RunRealtimeData, RunRealtimeErrors, RunRealtimeResponses, RunRepositoryPreflightData, RunRepositoryPreflightErrors, RunRepositoryPreflightResponses, SetProjectMemberLearningModeOverrideData, SetProjectMemberLearningModeOverrideErrors, SetProjectMemberLearningModeOverrideResponses, SyncDocsetData, SyncDocsetErrors, SyncDocsetResponses, TransitionIssueStageLabelData, TransitionIssueStageLabelErrors, TransitionIssueStageLabelResponses, UpsertConfigEntryData, UpsertConfigEntryErrors, UpsertConfigEntryResponses, UpsertProjectData, UpsertProjectErrors, UpsertProjectGitHubTokensData, UpsertProjectGitHubTokensErrors, UpsertProjectGitHubTokensResponses, UpsertProjectMemberData, UpsertProjectMemberErrors, UpsertProjectMemberResponses, UpsertProjectRepositoryData, UpsertProjectRepositoryErrors, UpsertProjectRepositoryResponses, UpsertProjectResponses, UpsertRepositoryBotParamsData, UpsertRepositoryBotParamsErrors, UpsertRepositoryBotParamsResponses } from './types.gen';
+import type { ActivatePromptTemplateVersionData, ActivatePromptTemplateVersionErrors, ActivatePromptTemplateVersionResponses, CallbackGithubData, CallbackGithubErrors, CleanupRegistryImagesData, CleanupRegistryImagesErrors, CleanupRegistryImagesResponses, CreatePromptTemplateVersionData, CreatePromptTemplateVersionErrors, CreatePromptTemplateVersionResponses, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteConfigEntryData, DeleteConfigEntryErrors, DeleteConfigEntryResponses, DeleteProjectData, DeleteProjectErrors, DeleteProjectMemberData, DeleteProjectMemberErrors, DeleteProjectMemberResponses, DeleteProjectRepositoryData, DeleteProjectRepositoryErrors, DeleteProjectRepositoryResponses, DeleteProjectResponses, DeleteRegistryImageTagData, DeleteRegistryImageTagErrors, DeleteRegistryImageTagResponses, DeleteRunNamespaceData, DeleteRunNamespaceErrors, DeleteRunNamespaceResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, DiffPromptTemplateVersionsData, DiffPromptTemplateVersionsErrors, DiffPromptTemplateVersionsResponses, GetAgentData, GetAgentErrors, GetAgentResponses, GetMeData, GetMeErrors, GetMeResponses, GetProjectData, GetProjectErrors, GetProjectGitHubTokensData, GetProjectGitHubTokensErrors, GetProjectGitHubTokensResponses, GetProjectResponses, GetRunData, GetRunErrors, GetRunLogsData, GetRunLogsErrors, GetRunLogsResponses, GetRunResponses, GetRuntimeDeployTaskData, GetRuntimeDeployTaskErrors, GetRuntimeDeployTaskResponses, ImportDocsetData, ImportDocsetErrors, ImportDocsetResponses, IngestGithubWebhookData, IngestGithubWebhookErrors, IngestGithubWebhookResponses, ListAgentsData, ListAgentsErrors, ListAgentsResponses, ListConfigEntriesData, ListConfigEntriesErrors, ListConfigEntriesResponses, ListDocsetGroupsData, ListDocsetGroupsErrors, ListDocsetGroupsResponses, ListPendingApprovalsData, ListPendingApprovalsErrors, ListPendingApprovalsResponses, ListProjectMembersData, ListProjectMembersErrors, ListProjectMembersResponses, ListProjectRepositoriesData, ListProjectRepositoriesErrors, ListProjectRepositoriesResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListPromptTemplateAuditEventsData, ListPromptTemplateAuditEventsErrors, ListPromptTemplateAuditEventsResponses, ListPromptTemplateKeysData, ListPromptTemplateKeysErrors, ListPromptTemplateKeysResponses, ListPromptTemplateVersionsData, ListPromptTemplateVersionsErrors, ListPromptTemplateVersionsResponses, ListRegistryImagesData, ListRegistryImagesErrors, ListRegistryImagesResponses, ListRunEventsData, ListRunEventsErrors, ListRunEventsResponses, ListRunJobsData, ListRunJobsErrors, ListRunJobsResponses, ListRunLearningFeedbackData, ListRunLearningFeedbackErrors, ListRunLearningFeedbackResponses, ListRunsData, ListRunsErrors, ListRunsResponses, ListRuntimeDeployTasksData, ListRuntimeDeployTasksErrors, ListRuntimeDeployTasksResponses, ListRuntimeErrorsData, ListRuntimeErrorsErrors, ListRuntimeErrorsResponses, ListRunWaitsData, ListRunWaitsErrors, ListRunWaitsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginGithubData, LoginGithubErrors, LogoutData, LogoutErrors, LogoutResponses, MarkRuntimeErrorViewedData, MarkRuntimeErrorViewedErrors, MarkRuntimeErrorViewedResponses, McpApproverCallbackData, McpApproverCallbackErrors, McpApproverCallbackResponses, McpExecutorCallbackData, McpExecutorCallbackErrors, McpExecutorCallbackResponses, PreviewPromptTemplateData, PreviewPromptTemplateErrors, PreviewPromptTemplateResponses, ResolveApprovalDecisionData, ResolveApprovalDecisionErrors, ResolveApprovalDecisionResponses, RunRealtimeData, RunRealtimeErrors, RunRealtimeResponses, RunRepositoryPreflightData, RunRepositoryPreflightErrors, RunRepositoryPreflightResponses, SetProjectMemberLearningModeOverrideData, SetProjectMemberLearningModeOverrideErrors, SetProjectMemberLearningModeOverrideResponses, SyncDocsetData, SyncDocsetErrors, SyncDocsetResponses, SyncPromptTemplateSeedsData, SyncPromptTemplateSeedsErrors, SyncPromptTemplateSeedsResponses, TransitionIssueStageLabelData, TransitionIssueStageLabelErrors, TransitionIssueStageLabelResponses, UpdateAgentSettingsData, UpdateAgentSettingsErrors, UpdateAgentSettingsResponses, UpsertConfigEntryData, UpsertConfigEntryErrors, UpsertConfigEntryResponses, UpsertProjectData, UpsertProjectErrors, UpsertProjectGitHubTokensData, UpsertProjectGitHubTokensErrors, UpsertProjectGitHubTokensResponses, UpsertProjectMemberData, UpsertProjectMemberErrors, UpsertProjectMemberResponses, UpsertProjectRepositoryData, UpsertProjectRepositoryErrors, UpsertProjectRepositoryResponses, UpsertProjectResponses, UpsertRepositoryBotParamsData, UpsertRepositoryBotParamsErrors, UpsertRepositoryBotParamsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -114,6 +114,125 @@ export const deleteProject = <ThrowOnError extends boolean = false>(options: Opt
 export const getProject = <ThrowOnError extends boolean = false>(options: Options<GetProjectData, ThrowOnError>) => (options.client ?? client).get<GetProjectResponses, GetProjectErrors, ThrowOnError>({
     responseType: 'json',
     url: '/api/v1/staff/projects/{project_id}',
+    ...options
+});
+
+/**
+ * List agents
+ */
+export const listAgents = <ThrowOnError extends boolean = false>(options?: Options<ListAgentsData, ThrowOnError>) => (options?.client ?? client).get<ListAgentsResponses, ListAgentsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/agents',
+    ...options
+});
+
+/**
+ * Get agent details
+ */
+export const getAgent = <ThrowOnError extends boolean = false>(options: Options<GetAgentData, ThrowOnError>) => (options.client ?? client).get<GetAgentResponses, GetAgentErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/agents/{agent_id}',
+    ...options
+});
+
+/**
+ * Update agent settings
+ */
+export const updateAgentSettings = <ThrowOnError extends boolean = false>(options: Options<UpdateAgentSettingsData, ThrowOnError>) => (options.client ?? client).patch<UpdateAgentSettingsResponses, UpdateAgentSettingsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/agents/{agent_id}/settings',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List prompt template keys
+ */
+export const listPromptTemplateKeys = <ThrowOnError extends boolean = false>(options?: Options<ListPromptTemplateKeysData, ThrowOnError>) => (options?.client ?? client).get<ListPromptTemplateKeysResponses, ListPromptTemplateKeysErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/prompt-templates',
+    ...options
+});
+
+/**
+ * List prompt template versions
+ */
+export const listPromptTemplateVersions = <ThrowOnError extends boolean = false>(options: Options<ListPromptTemplateVersionsData, ThrowOnError>) => (options.client ?? client).get<ListPromptTemplateVersionsResponses, ListPromptTemplateVersionsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/prompt-templates/{template_key}/versions',
+    ...options
+});
+
+/**
+ * Create prompt template version
+ */
+export const createPromptTemplateVersion = <ThrowOnError extends boolean = false>(options: Options<CreatePromptTemplateVersionData, ThrowOnError>) => (options.client ?? client).post<CreatePromptTemplateVersionResponses, CreatePromptTemplateVersionErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/prompt-templates/{template_key}/versions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Activate prompt template version
+ */
+export const activatePromptTemplateVersion = <ThrowOnError extends boolean = false>(options: Options<ActivatePromptTemplateVersionData, ThrowOnError>) => (options.client ?? client).post<ActivatePromptTemplateVersionResponses, ActivatePromptTemplateVersionErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/prompt-templates/{template_key}/versions/{version}/activate',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Sync prompt template seeds into DB
+ */
+export const syncPromptTemplateSeeds = <ThrowOnError extends boolean = false>(options: Options<SyncPromptTemplateSeedsData, ThrowOnError>) => (options.client ?? client).post<SyncPromptTemplateSeedsResponses, SyncPromptTemplateSeedsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/prompt-templates/seeds/sync',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Preview effective prompt template
+ */
+export const previewPromptTemplate = <ThrowOnError extends boolean = false>(options: Options<PreviewPromptTemplateData, ThrowOnError>) => (options.client ?? client).post<PreviewPromptTemplateResponses, PreviewPromptTemplateErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/prompt-templates/{template_key}/preview',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Compare prompt template versions
+ */
+export const diffPromptTemplateVersions = <ThrowOnError extends boolean = false>(options: Options<DiffPromptTemplateVersionsData, ThrowOnError>) => (options.client ?? client).get<DiffPromptTemplateVersionsResponses, DiffPromptTemplateVersionsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/prompt-templates/{template_key}/diff',
+    ...options
+});
+
+/**
+ * List prompt template audit events
+ */
+export const listPromptTemplateAuditEvents = <ThrowOnError extends boolean = false>(options?: Options<ListPromptTemplateAuditEventsData, ThrowOnError>) => (options?.client ?? client).get<ListPromptTemplateAuditEventsResponses, ListPromptTemplateAuditEventsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/audit/prompt-templates',
     ...options
 });
 

@@ -252,6 +252,323 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
+  /api/v1/staff/agents:
+    get:
+      summary: List agents
+      operationId: listAgents
+      tags: [staff-agents]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Agents list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentItemsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/staff/agents/{agent_id}:
+    get:
+      summary: Get agent details
+      operationId: getAgent
+      tags: [staff-agents]
+      parameters:
+        - $ref: "#/components/parameters/AgentID"
+      responses:
+        "200":
+          description: Agent details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/staff/agents/{agent_id}/settings:
+    patch:
+      summary: Update agent settings
+      operationId: updateAgentSettings
+      tags: [staff-agents]
+      parameters:
+        - $ref: "#/components/parameters/AgentID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAgentSettingsRequest"
+      responses:
+        "200":
+          description: Updated agent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/staff/prompt-templates:
+    get:
+      summary: List prompt template keys
+      operationId: listPromptTemplateKeys
+      tags: [staff-prompt-templates]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - in: query
+          name: scope
+          required: false
+          schema:
+            type: string
+            enum: [global, project]
+        - in: query
+          name: project_id
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: role
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: kind
+          required: false
+          schema:
+            type: string
+            enum: [work, revise]
+        - in: query
+          name: locale
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Prompt template keys
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromptTemplateKeyItemsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/staff/prompt-templates/{template_key}/versions:
+    get:
+      summary: List prompt template versions
+      operationId: listPromptTemplateVersions
+      tags: [staff-prompt-templates]
+      parameters:
+        - $ref: "#/components/parameters/TemplateKey"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Prompt template versions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromptTemplateVersionItemsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      summary: Create prompt template version
+      operationId: createPromptTemplateVersion
+      tags: [staff-prompt-templates]
+      parameters:
+        - $ref: "#/components/parameters/TemplateKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePromptTemplateVersionRequest"
+      responses:
+        "201":
+          description: Prompt template version created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromptTemplateVersion"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/staff/prompt-templates/{template_key}/versions/{version}/activate:
+    post:
+      summary: Activate prompt template version
+      operationId: activatePromptTemplateVersion
+      tags: [staff-prompt-templates]
+      parameters:
+        - $ref: "#/components/parameters/TemplateKey"
+        - $ref: "#/components/parameters/TemplateVersion"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivatePromptTemplateVersionRequest"
+      responses:
+        "200":
+          description: Activated prompt template version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromptTemplateVersion"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/staff/prompt-templates/seeds/sync:
+    post:
+      summary: Sync prompt template seeds into DB
+      operationId: syncPromptTemplateSeeds
+      tags: [staff-prompt-templates]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PromptTemplateSeedSyncRequest"
+      responses:
+        "200":
+          description: Seed sync result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromptTemplateSeedSyncResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/staff/prompt-templates/{template_key}/preview:
+    post:
+      summary: Preview effective prompt template
+      operationId: previewPromptTemplate
+      tags: [staff-prompt-templates]
+      parameters:
+        - $ref: "#/components/parameters/TemplateKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreviewPromptTemplateRequest"
+      responses:
+        "200":
+          description: Prompt template preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreviewPromptTemplateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/staff/prompt-templates/{template_key}/diff:
+    get:
+      summary: Compare prompt template versions
+      operationId: diffPromptTemplateVersions
+      tags: [staff-prompt-templates]
+      parameters:
+        - $ref: "#/components/parameters/TemplateKey"
+        - $ref: "#/components/parameters/FromVersion"
+        - $ref: "#/components/parameters/ToVersion"
+      responses:
+        "200":
+          description: Prompt template diff
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromptTemplateDiffResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/staff/audit/prompt-templates:
+    get:
+      summary: List prompt template audit events
+      operationId: listPromptTemplateAuditEvents
+      tags: [staff-prompt-templates]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - in: query
+          name: project_id
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: template_key
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: actor_id
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Prompt template audit events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromptTemplateAuditEventItemsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /api/v1/staff/runs:
     get:
       summary: List runs
@@ -1220,6 +1537,41 @@ components:
       required: true
       schema:
         type: string
+    AgentID:
+      in: path
+      name: agent_id
+      required: true
+      schema:
+        type: string
+    TemplateKey:
+      in: path
+      name: template_key
+      required: true
+      schema:
+        type: string
+    TemplateVersion:
+      in: path
+      name: version
+      required: true
+      schema:
+        type: integer
+        format: int32
+    FromVersion:
+      in: query
+      name: from_version
+      required: true
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+    ToVersion:
+      in: query
+      name: to_version
+      required: true
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
     Limit:
       in: query
       name: limit
@@ -1419,6 +1771,247 @@ components:
           type: string
         role:
           type: string
+
+    AgentRuntimeMode:
+      type: string
+      enum: [full-env, code-only]
+
+    AgentRoleKind:
+      type: string
+      enum: [system, custom]
+
+    AgentSettings:
+      type: object
+      additionalProperties: false
+      required: [runtime_mode, timeout_seconds, max_retry_count, prompt_locale, approvals_required]
+      properties:
+        runtime_mode:
+          $ref: "#/components/schemas/AgentRuntimeMode"
+        timeout_seconds:
+          type: integer
+          format: int32
+        max_retry_count:
+          type: integer
+          format: int32
+        prompt_locale:
+          type: string
+        approvals_required:
+          type: boolean
+
+    Agent:
+      type: object
+      additionalProperties: false
+      required: [id, agent_key, role_kind, name, is_active, settings, settings_version]
+      properties:
+        id:
+          type: string
+        agent_key:
+          type: string
+        role_kind:
+          $ref: "#/components/schemas/AgentRoleKind"
+        project_id:
+          type: string
+          nullable: true
+        name:
+          type: string
+        is_active:
+          type: boolean
+        settings:
+          $ref: "#/components/schemas/AgentSettings"
+        settings_version:
+          type: integer
+          format: int32
+          minimum: 1
+
+    PromptTemplateScope:
+      type: string
+      enum: [global, project]
+
+    PromptTemplateKind:
+      type: string
+      enum: [work, revise]
+
+    PromptTemplateStatus:
+      type: string
+      enum: [draft, active, archived]
+
+    PromptTemplateSource:
+      type: string
+      enum: [project_override, global_override, repo_seed]
+
+    PromptTemplateKey:
+      type: object
+      additionalProperties: false
+      required: [template_key, scope, role, kind, locale, active_version, updated_at]
+      properties:
+        template_key:
+          type: string
+        scope:
+          $ref: "#/components/schemas/PromptTemplateScope"
+        project_id:
+          type: string
+          nullable: true
+        role:
+          type: string
+        kind:
+          $ref: "#/components/schemas/PromptTemplateKind"
+        locale:
+          type: string
+        active_version:
+          type: integer
+          format: int32
+        updated_at:
+          type: string
+          format: date-time
+
+    PromptTemplateVersion:
+      type: object
+      additionalProperties: false
+      required:
+        - template_key
+        - version
+        - status
+        - source
+        - checksum
+        - body_markdown
+        - updated_by
+        - updated_at
+      properties:
+        template_key:
+          type: string
+        version:
+          type: integer
+          format: int32
+        status:
+          $ref: "#/components/schemas/PromptTemplateStatus"
+        source:
+          $ref: "#/components/schemas/PromptTemplateSource"
+        checksum:
+          type: string
+        body_markdown:
+          type: string
+        change_reason:
+          type: string
+          nullable: true
+        supersedes_version:
+          type: integer
+          format: int32
+          nullable: true
+        updated_by:
+          type: string
+        updated_at:
+          type: string
+          format: date-time
+        activated_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    PromptTemplateSeedSyncMode:
+      type: string
+      enum: [dry_run, apply]
+
+    PromptTemplateSeedSyncItem:
+      type: object
+      additionalProperties: false
+      required: [template_key, action]
+      properties:
+        template_key:
+          type: string
+        action:
+          type: string
+          enum: [created, updated, skipped]
+        checksum:
+          type: string
+          nullable: true
+        reason:
+          type: string
+          nullable: true
+
+    PromptTemplateSeedSyncResponse:
+      type: object
+      additionalProperties: false
+      required: [created_count, updated_count, skipped_count, items]
+      properties:
+        created_count:
+          type: integer
+          format: int32
+        updated_count:
+          type: integer
+          format: int32
+        skipped_count:
+          type: integer
+          format: int32
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PromptTemplateSeedSyncItem"
+
+    PreviewPromptTemplateResponse:
+      type: object
+      additionalProperties: false
+      required: [template_key, version, source, checksum, body_markdown]
+      properties:
+        template_key:
+          type: string
+        version:
+          type: integer
+          format: int32
+        source:
+          $ref: "#/components/schemas/PromptTemplateSource"
+        checksum:
+          type: string
+        body_markdown:
+          type: string
+
+    PromptTemplateDiffResponse:
+      type: object
+      additionalProperties: false
+      required: [template_key, from_version, to_version, from_body_markdown, to_body_markdown]
+      properties:
+        template_key:
+          type: string
+        from_version:
+          type: integer
+          format: int32
+        to_version:
+          type: integer
+          format: int32
+        from_body_markdown:
+          type: string
+        to_body_markdown:
+          type: string
+
+    PromptTemplateAuditEvent:
+      type: object
+      additionalProperties: false
+      required: [id, correlation_id, event_type, payload_json, created_at]
+      properties:
+        id:
+          type: integer
+          format: int64
+        correlation_id:
+          type: string
+        project_id:
+          type: string
+          nullable: true
+        template_key:
+          type: string
+          nullable: true
+        version:
+          type: integer
+          format: int32
+          nullable: true
+        actor_id:
+          type: string
+          nullable: true
+        event_type:
+          type: string
+        payload_json:
+          type: string
+        created_at:
+          type: string
+          format: date-time
 
     Run:
       type: object
@@ -2415,6 +3008,46 @@ components:
           items:
             $ref: "#/components/schemas/RepositoryBinding"
 
+    AgentItemsResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Agent"
+
+    PromptTemplateKeyItemsResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PromptTemplateKey"
+
+    PromptTemplateVersionItemsResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PromptTemplateVersion"
+
+    PromptTemplateAuditEventItemsResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PromptTemplateAuditEvent"
+
     UpsertProjectRequest:
       type: object
       additionalProperties: false
@@ -2492,3 +3125,75 @@ components:
           type: string
         docs_root_path:
           type: string
+
+    UpdateAgentSettingsRequest:
+      type: object
+      additionalProperties: false
+      required: [expected_version, settings]
+      properties:
+        expected_version:
+          type: integer
+          format: int32
+          minimum: 1
+        settings:
+          $ref: "#/components/schemas/AgentSettings"
+
+    CreatePromptTemplateVersionRequest:
+      type: object
+      additionalProperties: false
+      required: [body_markdown, expected_version]
+      properties:
+        body_markdown:
+          type: string
+        expected_version:
+          type: integer
+          format: int32
+          minimum: 1
+        source:
+          $ref: "#/components/schemas/PromptTemplateSource"
+        change_reason:
+          type: string
+
+    ActivatePromptTemplateVersionRequest:
+      type: object
+      additionalProperties: false
+      required: [expected_version, change_reason]
+      properties:
+        expected_version:
+          type: integer
+          format: int32
+          minimum: 1
+        change_reason:
+          type: string
+
+    PromptTemplateSeedSyncRequest:
+      type: object
+      additionalProperties: false
+      required: [mode]
+      properties:
+        mode:
+          $ref: "#/components/schemas/PromptTemplateSeedSyncMode"
+        scope:
+          $ref: "#/components/schemas/PromptTemplateScope"
+        project_id:
+          type: string
+          nullable: true
+        include_locales:
+          type: array
+          items:
+            type: string
+        force_overwrite:
+          type: boolean
+          default: false
+
+    PreviewPromptTemplateRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        project_id:
+          type: string
+          nullable: true
+        version:
+          type: integer
+          format: int32
+          minimum: 1

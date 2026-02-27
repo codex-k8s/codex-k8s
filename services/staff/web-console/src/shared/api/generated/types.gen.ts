@@ -44,6 +44,106 @@ export type Project = {
     role: string;
 };
 
+export type AgentRuntimeMode = 'full-env' | 'code-only';
+
+export type AgentRoleKind = 'system' | 'custom';
+
+export type AgentSettings = {
+    runtime_mode: AgentRuntimeMode;
+    timeout_seconds: number;
+    max_retry_count: number;
+    prompt_locale: string;
+    approvals_required: boolean;
+};
+
+export type Agent = {
+    id: string;
+    agent_key: string;
+    role_kind: AgentRoleKind;
+    project_id?: string | null;
+    name: string;
+    is_active: boolean;
+    settings: AgentSettings;
+    settings_version: number;
+};
+
+export type PromptTemplateScope = 'global' | 'project';
+
+export type PromptTemplateKind = 'work' | 'revise';
+
+export type PromptTemplateStatus = 'draft' | 'active' | 'archived';
+
+export type PromptTemplateSource = 'project_override' | 'global_override' | 'repo_seed';
+
+export type PromptTemplateKey = {
+    template_key: string;
+    scope: PromptTemplateScope;
+    project_id?: string | null;
+    role: string;
+    kind: PromptTemplateKind;
+    locale: string;
+    active_version: number;
+    updated_at: string;
+};
+
+export type PromptTemplateVersion = {
+    template_key: string;
+    version: number;
+    status: PromptTemplateStatus;
+    source: PromptTemplateSource;
+    checksum: string;
+    body_markdown: string;
+    change_reason?: string | null;
+    supersedes_version?: number | null;
+    updated_by: string;
+    updated_at: string;
+    activated_at?: string | null;
+};
+
+export type PromptTemplateSeedSyncMode = 'dry_run' | 'apply';
+
+export type PromptTemplateSeedSyncItem = {
+    template_key: string;
+    action: 'created' | 'updated' | 'skipped';
+    checksum?: string | null;
+    reason?: string | null;
+};
+
+export type PromptTemplateSeedSyncResponse = {
+    created_count: number;
+    updated_count: number;
+    skipped_count: number;
+    items: Array<PromptTemplateSeedSyncItem>;
+};
+
+export type PreviewPromptTemplateResponse = {
+    template_key: string;
+    version: number;
+    source: PromptTemplateSource;
+    checksum: string;
+    body_markdown: string;
+};
+
+export type PromptTemplateDiffResponse = {
+    template_key: string;
+    from_version: number;
+    to_version: number;
+    from_body_markdown: string;
+    to_body_markdown: string;
+};
+
+export type PromptTemplateAuditEvent = {
+    id: number;
+    correlation_id: string;
+    project_id?: string | null;
+    template_key?: string | null;
+    version?: number | null;
+    actor_id?: string | null;
+    event_type: string;
+    payload_json: string;
+    created_at: string;
+};
+
 export type Run = {
     id: string;
     correlation_id: string;
@@ -441,6 +541,22 @@ export type RepositoryBindingItemsResponse = {
     items: Array<RepositoryBinding>;
 };
 
+export type AgentItemsResponse = {
+    items: Array<Agent>;
+};
+
+export type PromptTemplateKeyItemsResponse = {
+    items: Array<PromptTemplateKey>;
+};
+
+export type PromptTemplateVersionItemsResponse = {
+    items: Array<PromptTemplateVersion>;
+};
+
+export type PromptTemplateAuditEventItemsResponse = {
+    items: Array<PromptTemplateAuditEvent>;
+};
+
 export type UpsertProjectRequest = {
     slug: string;
     name: string;
@@ -473,6 +589,36 @@ export type UpsertProjectRepositoryRequest = {
     docs_root_path?: string;
 };
 
+export type UpdateAgentSettingsRequest = {
+    expected_version: number;
+    settings: AgentSettings;
+};
+
+export type CreatePromptTemplateVersionRequest = {
+    body_markdown: string;
+    expected_version: number;
+    source?: PromptTemplateSource;
+    change_reason?: string;
+};
+
+export type ActivatePromptTemplateVersionRequest = {
+    expected_version: number;
+    change_reason: string;
+};
+
+export type PromptTemplateSeedSyncRequest = {
+    mode: PromptTemplateSeedSyncMode;
+    scope?: PromptTemplateScope;
+    project_id?: string | null;
+    include_locales?: Array<string>;
+    force_overwrite?: boolean;
+};
+
+export type PreviewPromptTemplateRequest = {
+    project_id?: string | null;
+    version?: number;
+};
+
 export type ProjectId = string;
 
 export type RunId = string;
@@ -482,6 +628,16 @@ export type RuntimeErrorId = string;
 export type ApprovalRequestId = number;
 
 export type UserId = string;
+
+export type AgentId = string;
+
+export type TemplateKey = string;
+
+export type TemplateVersion = number;
+
+export type FromVersion = number;
+
+export type ToVersion = number;
 
 export type Limit = number;
 
@@ -849,6 +1005,431 @@ export type GetProjectResponses = {
 };
 
 export type GetProjectResponse = GetProjectResponses[keyof GetProjectResponses];
+
+export type ListAgentsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+    };
+    url: '/api/v1/staff/agents';
+};
+
+export type ListAgentsErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type ListAgentsError = ListAgentsErrors[keyof ListAgentsErrors];
+
+export type ListAgentsResponses = {
+    /**
+     * Agents list
+     */
+    200: AgentItemsResponse;
+};
+
+export type ListAgentsResponse = ListAgentsResponses[keyof ListAgentsResponses];
+
+export type GetAgentData = {
+    body?: never;
+    path: {
+        agent_id: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/agents/{agent_id}';
+};
+
+export type GetAgentErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+};
+
+export type GetAgentError = GetAgentErrors[keyof GetAgentErrors];
+
+export type GetAgentResponses = {
+    /**
+     * Agent details
+     */
+    200: Agent;
+};
+
+export type GetAgentResponse = GetAgentResponses[keyof GetAgentResponses];
+
+export type UpdateAgentSettingsData = {
+    body: UpdateAgentSettingsRequest;
+    path: {
+        agent_id: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/agents/{agent_id}/settings';
+};
+
+export type UpdateAgentSettingsErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+};
+
+export type UpdateAgentSettingsError = UpdateAgentSettingsErrors[keyof UpdateAgentSettingsErrors];
+
+export type UpdateAgentSettingsResponses = {
+    /**
+     * Updated agent
+     */
+    200: Agent;
+};
+
+export type UpdateAgentSettingsResponse = UpdateAgentSettingsResponses[keyof UpdateAgentSettingsResponses];
+
+export type ListPromptTemplateKeysData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+        scope?: 'global' | 'project';
+        project_id?: string;
+        role?: string;
+        kind?: 'work' | 'revise';
+        locale?: string;
+    };
+    url: '/api/v1/staff/prompt-templates';
+};
+
+export type ListPromptTemplateKeysErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type ListPromptTemplateKeysError = ListPromptTemplateKeysErrors[keyof ListPromptTemplateKeysErrors];
+
+export type ListPromptTemplateKeysResponses = {
+    /**
+     * Prompt template keys
+     */
+    200: PromptTemplateKeyItemsResponse;
+};
+
+export type ListPromptTemplateKeysResponse = ListPromptTemplateKeysResponses[keyof ListPromptTemplateKeysResponses];
+
+export type ListPromptTemplateVersionsData = {
+    body?: never;
+    path: {
+        template_key: string;
+    };
+    query?: {
+        limit?: number;
+    };
+    url: '/api/v1/staff/prompt-templates/{template_key}/versions';
+};
+
+export type ListPromptTemplateVersionsErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type ListPromptTemplateVersionsError = ListPromptTemplateVersionsErrors[keyof ListPromptTemplateVersionsErrors];
+
+export type ListPromptTemplateVersionsResponses = {
+    /**
+     * Prompt template versions
+     */
+    200: PromptTemplateVersionItemsResponse;
+};
+
+export type ListPromptTemplateVersionsResponse = ListPromptTemplateVersionsResponses[keyof ListPromptTemplateVersionsResponses];
+
+export type CreatePromptTemplateVersionData = {
+    body: CreatePromptTemplateVersionRequest;
+    path: {
+        template_key: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/prompt-templates/{template_key}/versions';
+};
+
+export type CreatePromptTemplateVersionErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+};
+
+export type CreatePromptTemplateVersionError = CreatePromptTemplateVersionErrors[keyof CreatePromptTemplateVersionErrors];
+
+export type CreatePromptTemplateVersionResponses = {
+    /**
+     * Prompt template version created
+     */
+    201: PromptTemplateVersion;
+};
+
+export type CreatePromptTemplateVersionResponse = CreatePromptTemplateVersionResponses[keyof CreatePromptTemplateVersionResponses];
+
+export type ActivatePromptTemplateVersionData = {
+    body: ActivatePromptTemplateVersionRequest;
+    path: {
+        template_key: string;
+        version: number;
+    };
+    query?: never;
+    url: '/api/v1/staff/prompt-templates/{template_key}/versions/{version}/activate';
+};
+
+export type ActivatePromptTemplateVersionErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+};
+
+export type ActivatePromptTemplateVersionError = ActivatePromptTemplateVersionErrors[keyof ActivatePromptTemplateVersionErrors];
+
+export type ActivatePromptTemplateVersionResponses = {
+    /**
+     * Activated prompt template version
+     */
+    200: PromptTemplateVersion;
+};
+
+export type ActivatePromptTemplateVersionResponse = ActivatePromptTemplateVersionResponses[keyof ActivatePromptTemplateVersionResponses];
+
+export type SyncPromptTemplateSeedsData = {
+    body: PromptTemplateSeedSyncRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/staff/prompt-templates/seeds/sync';
+};
+
+export type SyncPromptTemplateSeedsErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type SyncPromptTemplateSeedsError = SyncPromptTemplateSeedsErrors[keyof SyncPromptTemplateSeedsErrors];
+
+export type SyncPromptTemplateSeedsResponses = {
+    /**
+     * Seed sync result
+     */
+    200: PromptTemplateSeedSyncResponse;
+};
+
+export type SyncPromptTemplateSeedsResponse = SyncPromptTemplateSeedsResponses[keyof SyncPromptTemplateSeedsResponses];
+
+export type PreviewPromptTemplateData = {
+    body: PreviewPromptTemplateRequest;
+    path: {
+        template_key: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/prompt-templates/{template_key}/preview';
+};
+
+export type PreviewPromptTemplateErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+};
+
+export type PreviewPromptTemplateError = PreviewPromptTemplateErrors[keyof PreviewPromptTemplateErrors];
+
+export type PreviewPromptTemplateResponses = {
+    /**
+     * Prompt template preview
+     */
+    200: PreviewPromptTemplateResponse;
+};
+
+export type PreviewPromptTemplateResponse2 = PreviewPromptTemplateResponses[keyof PreviewPromptTemplateResponses];
+
+export type DiffPromptTemplateVersionsData = {
+    body?: never;
+    path: {
+        template_key: string;
+    };
+    query: {
+        from_version: number;
+        to_version: number;
+    };
+    url: '/api/v1/staff/prompt-templates/{template_key}/diff';
+};
+
+export type DiffPromptTemplateVersionsErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+};
+
+export type DiffPromptTemplateVersionsError = DiffPromptTemplateVersionsErrors[keyof DiffPromptTemplateVersionsErrors];
+
+export type DiffPromptTemplateVersionsResponses = {
+    /**
+     * Prompt template diff
+     */
+    200: PromptTemplateDiffResponse;
+};
+
+export type DiffPromptTemplateVersionsResponse = DiffPromptTemplateVersionsResponses[keyof DiffPromptTemplateVersionsResponses];
+
+export type ListPromptTemplateAuditEventsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+        project_id?: string;
+        template_key?: string;
+        actor_id?: string;
+    };
+    url: '/api/v1/staff/audit/prompt-templates';
+};
+
+export type ListPromptTemplateAuditEventsErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type ListPromptTemplateAuditEventsError = ListPromptTemplateAuditEventsErrors[keyof ListPromptTemplateAuditEventsErrors];
+
+export type ListPromptTemplateAuditEventsResponses = {
+    /**
+     * Prompt template audit events
+     */
+    200: PromptTemplateAuditEventItemsResponse;
+};
+
+export type ListPromptTemplateAuditEventsResponse = ListPromptTemplateAuditEventsResponses[keyof ListPromptTemplateAuditEventsResponses];
 
 export type ListRunsData = {
     body?: never;

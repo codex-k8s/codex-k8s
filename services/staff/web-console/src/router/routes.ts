@@ -126,10 +126,10 @@ export const routes: RouteRecordRaw[] = [
   // Configuration (scaffold)
   { path: "/configuration/agents", name: "agents", component: AgentsPage, meta: { section: "configuration", crumbKey: "crumb.agents" } },
   {
-    path: "/configuration/agents/:agentName",
+    path: "/configuration/agents/:agentId",
     name: "agent-details",
     component: AgentDetailsPage,
-    props: (r) => ({ agentName: typeof r.params.agentName === "string" ? r.params.agentName : "" }),
+    props: (r) => ({ agentId: typeof r.params.agentId === "string" ? r.params.agentId : "" }),
     meta: { section: "configuration", crumbKey: "crumb.agents" },
   },
   { path: "/configuration/system-settings", name: "system-settings", component: SystemSettingsPage, meta: { adminOnly: true, section: "configuration", crumbKey: "crumb.systemSettings" } },

@@ -27,6 +27,166 @@ func Projects(items []*controlplanev1.Project) []models.Project {
 	return out
 }
 
+func Agent(item *controlplanev1.Agent) models.Agent {
+	if item == nil {
+		return models.Agent{}
+	}
+	return models.Agent{
+		ID:              item.GetId(),
+		AgentKey:        item.GetAgentKey(),
+		RoleKind:        item.GetRoleKind(),
+		ProjectID:       cast.OptionalTrimmedString(item.ProjectId),
+		Name:            item.GetName(),
+		IsActive:        item.GetIsActive(),
+		Settings:        AgentSettings(item.GetSettings()),
+		SettingsVersion: item.GetSettingsVersion(),
+	}
+}
+
+func AgentSettings(item *controlplanev1.AgentSettings) models.AgentSettings {
+	if item == nil {
+		return models.AgentSettings{}
+	}
+	return models.AgentSettings{
+		RuntimeMode:       item.GetRuntimeMode(),
+		TimeoutSeconds:    item.GetTimeoutSeconds(),
+		MaxRetryCount:     item.GetMaxRetryCount(),
+		PromptLocale:      item.GetPromptLocale(),
+		ApprovalsRequired: item.GetApprovalsRequired(),
+	}
+}
+
+func Agents(items []*controlplanev1.Agent) []models.Agent {
+	out := make([]models.Agent, 0, len(items))
+	for _, item := range items {
+		out = append(out, Agent(item))
+	}
+	return out
+}
+
+func PromptTemplateKey(item *controlplanev1.PromptTemplateKey) models.PromptTemplateKey {
+	if item == nil {
+		return models.PromptTemplateKey{}
+	}
+	return models.PromptTemplateKey{
+		TemplateKey:   item.GetTemplateKey(),
+		Scope:         item.GetScope(),
+		ProjectID:     cast.OptionalTrimmedString(item.ProjectId),
+		Role:          item.GetRole(),
+		Kind:          item.GetKind(),
+		Locale:        item.GetLocale(),
+		ActiveVersion: item.GetActiveVersion(),
+		UpdatedAt:     cast.TimestampRFC3339Nano(item.GetUpdatedAt()),
+	}
+}
+
+func PromptTemplateKeys(items []*controlplanev1.PromptTemplateKey) []models.PromptTemplateKey {
+	out := make([]models.PromptTemplateKey, 0, len(items))
+	for _, item := range items {
+		out = append(out, PromptTemplateKey(item))
+	}
+	return out
+}
+
+func PromptTemplateVersion(item *controlplanev1.PromptTemplateVersion) models.PromptTemplateVersion {
+	if item == nil {
+		return models.PromptTemplateVersion{}
+	}
+	return models.PromptTemplateVersion{
+		TemplateKey:       item.GetTemplateKey(),
+		Version:           item.GetVersion(),
+		Status:            item.GetStatus(),
+		Source:            item.GetSource(),
+		Checksum:          item.GetChecksum(),
+		BodyMarkdown:      item.GetBodyMarkdown(),
+		ChangeReason:      cast.OptionalTrimmedString(item.ChangeReason),
+		SupersedesVersion: cast.PositiveInt32Ptr(item.SupersedesVersion),
+		UpdatedBy:         item.GetUpdatedBy(),
+		UpdatedAt:         cast.TimestampRFC3339Nano(item.GetUpdatedAt()),
+		ActivatedAt:       cast.OptionalTimestampRFC3339Nano(item.GetActivatedAt()),
+	}
+}
+
+func PromptTemplateVersions(items []*controlplanev1.PromptTemplateVersion) []models.PromptTemplateVersion {
+	out := make([]models.PromptTemplateVersion, 0, len(items))
+	for _, item := range items {
+		out = append(out, PromptTemplateVersion(item))
+	}
+	return out
+}
+
+func PromptTemplateSeedSyncResponse(item *controlplanev1.PromptTemplateSeedSyncResponse) models.PromptTemplateSeedSyncResponse {
+	if item == nil {
+		return models.PromptTemplateSeedSyncResponse{Items: []models.PromptTemplateSeedSyncItem{}}
+	}
+	out := models.PromptTemplateSeedSyncResponse{
+		CreatedCount: item.GetCreatedCount(),
+		UpdatedCount: item.GetUpdatedCount(),
+		SkippedCount: item.GetSkippedCount(),
+		Items:        make([]models.PromptTemplateSeedSyncItem, 0, len(item.GetItems())),
+	}
+	for _, current := range item.GetItems() {
+		out.Items = append(out.Items, models.PromptTemplateSeedSyncItem{
+			TemplateKey: current.GetTemplateKey(),
+			Action:      current.GetAction(),
+			Checksum:    cast.OptionalTrimmedString(current.Checksum),
+			Reason:      cast.OptionalTrimmedString(current.Reason),
+		})
+	}
+	return out
+}
+
+func PreviewPromptTemplateResponse(item *controlplanev1.PreviewPromptTemplateResponse) models.PreviewPromptTemplateResponse {
+	if item == nil {
+		return models.PreviewPromptTemplateResponse{}
+	}
+	return models.PreviewPromptTemplateResponse{
+		TemplateKey:  item.GetTemplateKey(),
+		Version:      item.GetVersion(),
+		Source:       item.GetSource(),
+		Checksum:     item.GetChecksum(),
+		BodyMarkdown: item.GetBodyMarkdown(),
+	}
+}
+
+func PromptTemplateDiffResponse(item *controlplanev1.DiffPromptTemplateVersionsResponse) models.PromptTemplateDiffResponse {
+	if item == nil {
+		return models.PromptTemplateDiffResponse{}
+	}
+	return models.PromptTemplateDiffResponse{
+		TemplateKey:      item.GetTemplateKey(),
+		FromVersion:      item.GetFromVersion(),
+		ToVersion:        item.GetToVersion(),
+		FromBodyMarkdown: item.GetFromBodyMarkdown(),
+		ToBodyMarkdown:   item.GetToBodyMarkdown(),
+	}
+}
+
+func PromptTemplateAuditEvent(item *controlplanev1.PromptTemplateAuditEvent) models.PromptTemplateAuditEvent {
+	if item == nil {
+		return models.PromptTemplateAuditEvent{}
+	}
+	return models.PromptTemplateAuditEvent{
+		ID:            item.GetId(),
+		CorrelationID: item.GetCorrelationId(),
+		ProjectID:     cast.OptionalTrimmedString(item.ProjectId),
+		TemplateKey:   cast.OptionalTrimmedString(item.TemplateKey),
+		Version:       cast.PositiveInt32Ptr(item.Version),
+		ActorID:       cast.OptionalTrimmedString(item.ActorId),
+		EventType:     item.GetEventType(),
+		PayloadJSON:   item.GetPayloadJson(),
+		CreatedAt:     cast.TimestampRFC3339Nano(item.GetCreatedAt()),
+	}
+}
+
+func PromptTemplateAuditEvents(items []*controlplanev1.PromptTemplateAuditEvent) []models.PromptTemplateAuditEvent {
+	out := make([]models.PromptTemplateAuditEvent, 0, len(items))
+	for _, item := range items {
+		out = append(out, PromptTemplateAuditEvent(item))
+	}
+	return out
+}
+
 func Run(item *controlplanev1.Run) models.Run {
 	if item == nil {
 		return models.Run{}

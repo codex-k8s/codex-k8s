@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-25
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -121,8 +121,10 @@ approvals:
 - Результат Day 5 (факт): зафиксирован implementation-ready package (`design_doc`, `api_contract`, `data_model`, `migrations_policy`), создана issue #197 для stage `run:plan`.
 - Day 6 (in-review): plan stage в issue #197 (`docs/delivery/epics/s6/epic-s6-day6-agents-prompts-plan.md`).
 - Результат Day 6 (факт): сформирован execution package `run:dev` (W1..W7, QG-S6-D6-01..QG-S6-D6-07, DoR/DoD, blockers/risks/owner decisions), создана issue #199 для stage `run:dev` без trigger-лейбла.
+- Day 7 (in-review): dev stage в issue #199 (contract-first/migrations/staff transport/UI integration).
+- Результат Day 7 (факт): реализация `agents/templates/audit` завершена в PR #202, сформирован regression evidence package и создана issue #201 для stage `run:qa`.
 - Следующие day-эпики S6 формируются строго последовательно по stage-цепочке:
-  `arch -> design -> plan -> dev -> doc-audit` с отдельной issue на каждый этап.
+  `arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops -> doc-audit` с отдельной issue на каждый этап.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

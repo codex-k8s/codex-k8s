@@ -6,7 +6,7 @@ status: in-progress
 owner_role: PM
 created_at: 2026-02-25
 updated_at: 2026-02-25
-related_issues: [184, 185, 187, 189, 195, 197, 199]
+related_issues: [184, 185, 187, 189, 195, 197, 199, 201]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -21,7 +21,7 @@ approvals:
 ## TL;DR
 - Цель спринта: перевести раздел `Configuration -> Agents` из scaffold в управляемый контур продукта с реальными данными, lifecycle шаблонов промптов и аудитом изменений.
 - Базовый As-Is разрыв зафиксирован intake-этапом: UI работает на mock-данных, а staff OpenAPI пока не покрывает `agents/prompt-templates/audit`.
-- На текущий момент chain continuity доведён до `run:dev`: `#184 -> #185 -> #187 -> #189 -> #195 -> #197 -> #199`.
+- На текущий момент chain continuity доведён до `run:qa`: `#184 -> #185 -> #187 -> #189 -> #195 -> #197 -> #199 -> #201`.
 
 ## Scope спринта
 ### In scope
@@ -45,7 +45,8 @@ approvals:
 | Architecture (`#189`) | C4 + ADR + boundaries | `sa` | Подтверждены границы и создана issue Design |
 | Design (`#195`) | API/data model/design package | `sa` + `qa` | Подтвержден design пакет и создана issue Plan |
 | Plan (`#197`) | Delivery plan + epics + DoD | `em` + `km` | Подготовлен execution package и issue Dev |
-| Dev (`#199`) | Реализация + PR + docs sync | `dev` | PR готов, review gate пройден |
+| Dev (`#199`) | Реализация + PR + docs sync | `dev` | PR `#202` готов, создана issue `run:qa` |
+| QA (`#201`) | Acceptance/regression evidence + readiness decision | `qa` | QA gate пройден и создана issue `run:release` |
 | Doc Audit | Аудит docs/traceability/checklists | `km` + `reviewer` | Закрыт drift и сформирован post-dev improvement backlog |
 
 ## Quality gates (S6 governance)
@@ -71,6 +72,7 @@ approvals:
 - [x] Подготовлен архитектурный пакет (`#189`) и создана issue `#195` для stage `run:design`.
 - [x] Подготовлен design package (`#195`) и создана issue `#197` для stage `run:plan`.
 - [x] Подготовлен execution package (`#197`) и создана issue `#199` для stage `run:dev`.
+- [x] Реализован `run:dev` пакет (`#199`) и создана issue `#201` для stage `run:qa`.
 
 ## Риски и допущения
 - Риск: смешение scope между настройками агентов, prompt policy и runtime observability может размыть MVP-инкремент.
@@ -79,5 +81,5 @@ approvals:
 - Допущение: существующая модель БД (`agents`, `agent_policies`, `prompt_templates`, `agent_sessions`, `flow_events`) остается базой для архитектурной проработки.
 
 ## Handover в следующий этап
-- Актуальная цепочка stage-issues: `#184 (intake) -> #185 (vision) -> #187 (prd) -> #189 (arch) -> #195 (design) -> #197 (plan) -> #199 (dev)`.
-- Для issue `#199` зафиксировано обязательное правило: после `run:dev` создать issue следующего этапа `run:qa`.
+- Актуальная цепочка stage-issues: `#184 (intake) -> #185 (vision) -> #187 (prd) -> #189 (arch) -> #195 (design) -> #197 (plan) -> #199 (dev) -> #201 (qa)`.
+- Для issue `#201` зафиксировано обязательное правило: после `run:qa` создать issue следующего этапа `run:release`.

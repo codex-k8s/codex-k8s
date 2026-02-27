@@ -6,6 +6,36 @@ type UpsertProjectRequest struct {
 	Name string `json:"name"`
 }
 
+type UpdateAgentSettingsRequest struct {
+	ExpectedVersion int32         `json:"expected_version"`
+	Settings        AgentSettings `json:"settings"`
+}
+
+type CreatePromptTemplateVersionRequest struct {
+	BodyMarkdown    string  `json:"body_markdown"`
+	ExpectedVersion int32   `json:"expected_version"`
+	Source          *string `json:"source"`
+	ChangeReason    *string `json:"change_reason"`
+}
+
+type ActivatePromptTemplateVersionRequest struct {
+	ExpectedVersion int32  `json:"expected_version"`
+	ChangeReason    string `json:"change_reason"`
+}
+
+type PromptTemplateSeedSyncRequest struct {
+	Mode           string   `json:"mode"`
+	Scope          *string  `json:"scope"`
+	ProjectID      *string  `json:"project_id"`
+	IncludeLocales []string `json:"include_locales"`
+	ForceOverwrite bool     `json:"force_overwrite"`
+}
+
+type PreviewPromptTemplateRequest struct {
+	ProjectID *string `json:"project_id"`
+	Version   *int32  `json:"version"`
+}
+
 // CreateUserRequest is a typed payload for creating an allowlisted user.
 type CreateUserRequest struct {
 	Email           string `json:"email"`

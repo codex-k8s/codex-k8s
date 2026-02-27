@@ -5,11 +5,13 @@ import (
 
 	"github.com/codex-k8s/codex-k8s/libs/go/crypto/tokencrypt"
 	"github.com/codex-k8s/codex-k8s/libs/go/repo/provider"
+	agentrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agent"
 	configentryrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/configentry"
 	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/learningfeedback"
 	projectrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/project"
 	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projectmember"
 	projecttokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projecttoken"
+	prompttemplaterepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/prompttemplate"
 	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
 	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
 	runtimeerrorrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimeerror"
@@ -32,23 +34,27 @@ type Config struct {
 	ProtectedProjectIDs map[string]struct{}
 	// ProtectedRepositoryIDs is a set of repository binding ids that must never be deleted via staff API.
 	ProtectedRepositoryIDs map[string]struct{}
+	// PromptSeedsDir points to runner prompt seeds used for bootstrap sync.
+	PromptSeedsDir string
 }
 
 // Service exposes staff-only read/write operations protected by JWT + RBAC.
 type Service struct {
-	cfg           Config
-	users         userrepo.Repository
-	projects      projectrepo.Repository
-	members       projectmemberrepo.Repository
-	repos         repocfgrepo.Repository
-	projectTokens projecttokenrepo.Repository
-	configEntries configentryrepo.Repository
-	feedback      learningfeedbackrepo.Repository
-	runs          staffrunrepo.Repository
-	tasks         runtimedeploytaskrepo.Repository
-	runtimeErrors runtimeerrorrepo.Repository
-	images        registryImageService
-	k8s           kubernetesConfigSync
+	cfg             Config
+	users           userrepo.Repository
+	projects        projectrepo.Repository
+	members         projectmemberrepo.Repository
+	agents          agentrepo.Repository
+	repos           repocfgrepo.Repository
+	promptTemplates prompttemplaterepo.Repository
+	projectTokens   projecttokenrepo.Repository
+	configEntries   configentryrepo.Repository
+	feedback        learningfeedbackrepo.Repository
+	runs            staffrunrepo.Repository
+	tasks           runtimedeploytaskrepo.Repository
+	runtimeErrors   runtimeerrorrepo.Repository
+	images          registryImageService
+	k8s             kubernetesConfigSync
 
 	tokencrypt     *tokencrypt.Service
 	platformTokens platformTokensRepository
@@ -97,7 +103,9 @@ func NewService(
 	users userrepo.Repository,
 	projects projectrepo.Repository,
 	members projectmemberrepo.Repository,
+	agents agentrepo.Repository,
 	repos repocfgrepo.Repository,
+	promptTemplates prompttemplaterepo.Repository,
 	projectTokens projecttokenrepo.Repository,
 	configEntries configentryrepo.Repository,
 	feedback learningfeedbackrepo.Repository,
@@ -113,23 +121,25 @@ func NewService(
 	runStatus runNamespaceService,
 ) *Service {
 	return &Service{
-		cfg:            cfg,
-		users:          users,
-		projects:       projects,
-		members:        members,
-		repos:          repos,
-		projectTokens:  projectTokens,
-		configEntries:  configEntries,
-		feedback:       feedback,
-		runs:           runs,
-		tasks:          tasks,
-		runtimeErrors:  runtimeErrors,
-		images:         images,
-		k8s:            k8s,
-		tokencrypt:     tokencrypt,
-		platformTokens: platformTokens,
-		github:         github,
-		githubMgmt:     githubMgmt,
-		runStatus:      runStatus,
+		cfg:             cfg,
+		users:           users,
+		projects:        projects,
+		members:         members,
+		agents:          agents,
+		repos:           repos,
+		promptTemplates: promptTemplates,
+		projectTokens:   projectTokens,
+		configEntries:   configEntries,
+		feedback:        feedback,
+		runs:            runs,
+		tasks:           tasks,
+		runtimeErrors:   runtimeErrors,
+		images:          images,
+		k8s:             k8s,
+		tokencrypt:      tokencrypt,
+		platformTokens:  platformTokens,
+		github:          github,
+		githubMgmt:      githubMgmt,
+		runStatus:       runStatus,
 	}
 }
