@@ -41,10 +41,10 @@ approvals:
 | Day 2 | Vision: целевая картина MVP closeout, KPI и decomposition baseline | P0 | `docs/delivery/epics/s7/epic-s7-day2-mvp-readiness-vision.md` | in-review (`#218`) |
 | Day 3 | PRD: FR/AC/NFR и sequencing для gap-closure streams | P0 | Issue `#220` (`run:prd`) | planned |
 | Day 4 | Architecture: границы и ownership по stream'ам | P0 | TBD (`run:arch`) | planned |
-| Day 5 | Design + Plan: execution package и quality gates | P0 | `docs/delivery/epics/s7/epic-s7-day5-go-refactoring-plan.md` (`run:plan`, Issue `#223`) | in-review |
+| Day 5 | Design + Plan: execution package и quality gates | P0 | `docs/delivery/epics/s8/epic-s8-day1-go-refactoring-plan.md` (`run:plan`, Issue `#223`) | in-review |
 | Day 6+ | Dev/QA/Release/Postdeploy/Ops/Doc-Audit | P0/P1 | TBD (`run:dev..run:doc-audit`) | planned |
 
-## Candidate execution-эпики (`S7-E01..S7-E24`)
+## Candidate execution-эпики (`S7-E01..S8-E06`)
 
 | Epic | Priority | Scope | Блокер/зависимость |
 |---|---|---|---|
@@ -66,12 +66,12 @@ approvals:
 | S7-E16 | P0 | Run status reliability: false-failed для `run:intake:revise` | stage reliability |
 | S7-E17 | P0 | Self-improve: доступность и перезапись session snapshot | self-improve reliability |
 | S7-E18 | P0 | Documentation governance: issue/PR standard + doc IA + role-template matrix | backlog quality gate |
-| S7-E19 | P0 | Control-plane Go refactor: decomposition oversized files | parallel stream (`#225`) |
-| S7-E20 | P0 | API-gateway Go refactor: transport cleanup | parallel stream (`#226`) |
-| S7-E21 | P0 | Worker Go refactor: service decomposition | parallel stream (`#227`) |
-| S7-E22 | P0 | Agent-runner Go refactor: helper normalization | parallel stream (`#228`) |
-| S7-E23 | P0 | Shared libs Go refactor: pgx/servicescfg | parallel stream (`#229`) |
-| S7-E24 | P1 | Cross-service Go hygiene closure report | after `S7-E19..S7-E23` (`#230`) |
+| S8-E01 | P0 | Control-plane Go refactor: decomposition oversized files | parallel stream (`#225`) |
+| S8-E02 | P0 | API-gateway Go refactor: transport cleanup | parallel stream (`#226`) |
+| S8-E03 | P0 | Worker Go refactor: service decomposition | parallel stream (`#227`) |
+| S8-E04 | P0 | Agent-runner Go refactor: helper normalization | parallel stream (`#228`) |
+| S8-E05 | P0 | Shared libs Go refactor: pgx/servicescfg | parallel stream (`#229`) |
+| S8-E06 | P1 | Cross-service Go hygiene closure report | after `S8-E01..S8-E05` (`#230`) |
 
 ## Quality gates (S7 governance)
 
@@ -104,6 +104,6 @@ approvals:
 | assumption | ASM-212-02 | Owner подтверждает последовательное закрытие stage-цепочки без параллельных конфликтующих `run:*` | accepted |
 
 ## Handover в следующий этап
-- Следующий этап: `run:dev` для execution-stream `S7-E19..S7-E24`.
+- Следующий этап: `run:dev` для execution-stream `S8-E01..S8-E06`.
 - Для continuity созданы implementation issues `#225..#230` (без trigger-лейблов; лейбл запуска ставит Owner).
-- Для `#225..#230` переданы quality-gates и DoD в `docs/delivery/epics/s7/epic-s7-day5-go-refactoring-plan.md`.
+- Для `#225..#230` переданы quality-gates и DoD в `docs/delivery/epics/s8/epic-s8-day1-go-refactoring-plan.md`.

@@ -27,7 +27,7 @@ approvals:
 - Day 3 (PRD): формализовать FR/AC/NFR + edge cases по каждому epic-кандидату (`run:prd`, Issue `#220`).
 - Day 4 (Architecture): проверить сервисные границы и контракты для implementation-пакетов (`run:arch`).
 - Day 5 (Design/Plan): утвердить execution-sequence, quality gates, DoR/DoD (`run:design`, `run:plan`).
-- Day 5 fact (Plan): сформирован execution backlog по Go-рефакторингу (`run:plan`, Issue `#223`, `docs/delivery/epics/s7/epic-s7-day5-go-refactoring-plan.md`).
+- Day 5 fact (Plan): execution backlog Go-рефакторинга вынесен в Sprint S8 (`run:plan`, Issue `#223`, `docs/delivery/epics/s8/epic-s8-day1-go-refactoring-plan.md`).
 - Day 6+ (Execution): реализация и приемка `run:dev -> run:qa -> run:release -> run:postdeploy -> run:ops -> run:doc-audit`.
 
 ## Day 2 vision fact
@@ -59,12 +59,12 @@ approvals:
 | S7-E16 | P0 | Run status reliability: устранить false-failed для фактически успешных `run:intake:revise` | PRC-12 |
 | S7-E17 | P0 | Self-improve reliability: доступность и корректная перезапись `agent_sessions` snapshot | PRC-13 |
 | S7-E18 | P0 | Documentation governance: единый стандарт issue/PR + doc IA + role-template matrix | PRC-14, PRC-15, PRC-16 |
-| S7-E19 | P0 | Control-plane refactor: decomposition oversized domain/transport files | Issue #223 audit + `#225` |
-| S7-E20 | P0 | API-gateway refactor: transport handlers cleanup and boundary hardening | Issue #223 audit + `#226` |
-| S7-E21 | P0 | Worker refactor: domain service decomposition and duplication cleanup | Issue #223 audit + `#227` |
-| S7-E22 | P0 | Agent-runner refactor: helpers normalization and prompt-context dedup | Issue #223 audit + `#228` |
-| S7-E23 | P0 | Shared Go libs refactor: pgx alignment + servicescfg modularization | Issue #223 audit + `#229` |
-| S7-E24 | P1 | Cross-service Go hygiene closure + residual debt report | Depends on `S7-E19..S7-E23`, issue `#230` |
+| S8-E01 | P0 | Control-plane refactor: decomposition oversized domain/transport files | Issue #223 audit + `#225` |
+| S8-E02 | P0 | API-gateway refactor: transport handlers cleanup and boundary hardening | Issue #223 audit + `#226` |
+| S8-E03 | P0 | Worker refactor: domain service decomposition and duplication cleanup | Issue #223 audit + `#227` |
+| S8-E04 | P0 | Agent-runner refactor: helpers normalization and prompt-context dedup | Issue #223 audit + `#228` |
+| S8-E05 | P0 | Shared Go libs refactor: pgx alignment + servicescfg modularization | Issue #223 audit + `#229` |
+| S8-E06 | P1 | Cross-service Go hygiene closure + residual debt report | Depends on `S8-E01..S8-E05`, issue `#230` |
 
 ## Delivery-governance правила
 - Каждая следующая stage-issue создаётся отдельной задачей и без trigger-лейбла.

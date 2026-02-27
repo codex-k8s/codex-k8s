@@ -1,7 +1,7 @@
 ---
-doc_id: EPC-CK8S-S7-D5-GO-REF
+doc_id: EPC-CK8S-S8-D1-GO-REF
 type: epic
-title: "Sprint S7 Day5: Plan для рефакторинга Go-сервисов (Issue #223)"
+title: "Sprint S8 Day1: Plan для рефакторинга Go-сервисов (Issue #223)"
 status: in-review
 owner_role: EM
 created_at: 2026-02-27
@@ -14,7 +14,7 @@ approvals:
   request_id: "owner-2026-02-27-issue-223-plan"
 ---
 
-# Sprint S7 Day5: Plan для рефакторинга Go-сервисов (Issue #223)
+# Sprint S8 Day1: Plan для рефакторинга Go-сервисов (Issue #223)
 
 ## TL;DR
 - Issue `#223` декомпозирован на 6 параллельных implementation-задач по сервисам и библиотекам Go.
@@ -34,12 +34,12 @@ approvals:
 
 | Epic ID | GitHub Issue | Scope | Owner role |
 |---|---|---|---|
-| S7-E19 | `#225` | control-plane: decomposition больших domain/transport файлов | `dev` |
-| S7-E20 | `#226` | api-gateway: cleanup transport handlers и boundary hardening | `dev` |
-| S7-E21 | `#227` | worker: decomposition service и cleanup duplication | `dev` |
-| S7-E22 | `#228` | agent-runner: normalization helpers и dedup prompt context | `dev` |
-| S7-E23 | `#229` | shared libs: pgx alignment + modularization `servicescfg` | `dev` |
-| S7-E24 | `#230` | cross-service hygiene closure и residual debt report | `dev` |
+| S8-E01 | `#225` | control-plane: decomposition больших domain/transport файлов | `dev` |
+| S8-E02 | `#226` | api-gateway: cleanup transport handlers и boundary hardening | `dev` |
+| S8-E03 | `#227` | worker: decomposition service и cleanup duplication | `dev` |
+| S8-E04 | `#228` | agent-runner: normalization helpers и dedup prompt context | `dev` |
+| S8-E05 | `#229` | shared libs: pgx alignment + modularization `servicescfg` | `dev` |
+| S8-E06 | `#230` | cross-service hygiene closure и residual debt report | `dev` |
 
 ## Последовательность исполнения
 1. Независимо стартуют `#225`, `#226`, `#227`, `#228`, `#229`.

@@ -220,10 +220,10 @@ approvals:
   - ролевой матрицы обязательных шаблонов документации.
 
 ## Актуализация по Issue #223 (`run:plan`, 2026-02-27)
-- Для FR-002/FR-004/FR-033 и NFR-002/NFR-010/NFR-018 добавлен execution-governance пакет Sprint S7 Day5:
-  `docs/delivery/epics/s7/epic-s7-day5-go-refactoring-plan.md`,
-  `docs/delivery/epics/s7/epic_s7.md`,
-  `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md`,
+- Для FR-002/FR-004/FR-033 и NFR-002/NFR-010/NFR-018 добавлен execution-governance пакет Sprint S8 Day1:
+  `docs/delivery/epics/s8/epic-s8-day1-go-refactoring-plan.md`,
+  `docs/delivery/epics/s8/epic_s8.md`,
+  `docs/delivery/sprints/s8/sprint_s8_go_refactoring_parallelization.md`,
   `docs/delivery/delivery_plan.md`.
 - Выполнен plan-аудит Go-кода по сервисам и библиотекам (oversized files, duplicate hotspots, database access alignment).
 - Создан параллельный implementation backlog `#225..#230`:

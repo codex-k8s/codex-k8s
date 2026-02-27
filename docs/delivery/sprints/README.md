@@ -17,7 +17,7 @@ approvals:
 # Sprint Index
 
 ## TL;DR
-- Спринты вынесены в отдельную структуру `docs/delivery/sprints/s<номер>/` (S1..S7).
+- Спринты вынесены в отдельную структуру `docs/delivery/sprints/s<номер>/` (S1..S8).
 - Для каждого спринта сохранён единый формат: sprint plan + epic catalog + day epics + traceability.
 - Источник процесса: `docs/delivery/development_process_requirements.md`.
 
@@ -32,6 +32,7 @@ approvals:
 | S5 | `docs/delivery/sprints/s5/sprint_s5_stage_entry_and_label_ux.md` | `docs/delivery/epics/s5/epic_s5.md` | in-progress | UX-упрощение stage/label запуска и deterministic next-step actions (Issues #154/#155/#170/#171). |
 | S6 | `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md` | `docs/delivery/epics/s6/epic_s6.md` | in-progress | Day1..Day8 (до `run:qa`) синхронизированы: `#199/#201` закрыты, следующий этап оформлен в issue `#216` (`run:release`). |
 | S7 | `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md` | `docs/delivery/epics/s7/epic_s7.md` | in-progress | Day1 intake (`#212`) зафиксировал MVP readiness gaps и актуализировал dependency-цепочку S6 (`#199/#201` закрыты, открытый блокер — `#216`), с candidate backlog на 18 execution-эпиков (`S7-E01..S7-E18`). |
+| S8 | `docs/delivery/sprints/s8/sprint_s8_go_refactoring_parallelization.md` | `docs/delivery/epics/s8/epic_s8.md` | in-progress | Параллельный Go-refactor stream вынесен из Sprint S7 для задач `#223` и `#225..#230`. |
 
 ## Правила структуры
 - Sprint-plan: `docs/delivery/sprints/s<номер>/sprint_s<номер>_<name>.md`.
