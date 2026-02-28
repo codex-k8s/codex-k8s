@@ -5,7 +5,7 @@ title: "Requirements Traceability Matrix"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-27
+updated_at: 2026-02-28
 related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 223, 225, 226, 227, 228, 229, 230, 216]
 related_prs: []
 approvals:
@@ -248,3 +248,24 @@ approvals:
   `approved_execution_epics_count == created_run_dev_issues_count` (coverage ratio = `1.0`).
 - Для stage continuity создана follow-up issue `#220` (`run:prd`) без trigger-лейбла; в issue передан обязательный шаблон создания следующей stage-задачи (`run:arch`).
 - Scope этапа сохранён policy-safe: markdown-only изменения без модификации code/runtime артефактов.
+
+## Актуализация по Issue #225 (`run:dev`, 2026-02-28)
+- Для FR-002/FR-033 и NFR-002/NFR-010/NFR-018 выполнен рефакторинг bounded scope `S8-E01`:
+  декомпозированы oversized-файлы `webhook/service.go`, `staff/service_methods.go`, `transport/grpc/server.go`
+  в тематические smaller units без изменения API/proto/OpenAPI контрактов.
+- По правилам размещения кода вынесены helper- и methods-блоки в отдельные файлы:
+  - `services/internal/control-plane/internal/domain/webhook/service_helpers.go`;
+  - `services/internal/control-plane/internal/domain/staff/service_config_entries.go`;
+  - `services/internal/control-plane/internal/domain/staff/service_repository_management.go`;
+  - `services/internal/control-plane/internal/domain/staff/service_repository_management_types.go`;
+  - `services/internal/control-plane/internal/transport/grpc/server_staff_methods.go`;
+  - `services/internal/control-plane/internal/transport/grpc/server_runtime_methods.go`.
+- Устранён ad-hoc payload в `RunRepositoryPreflight`: локальный `[]struct{...}` заменён на typed модель `servicesYAMLPreflightEnvSlot`.
+- Сохранён единый подход к error mapping на транспортной границе:
+  gRPC-преобразование ошибок продолжает выполняться через `toStatus`, без локальных межслойных трансляторов в handlers/domain.
+- Проверки по изменённому scope:
+  - `go test ./services/internal/control-plane/internal/domain/webhook ./services/internal/control-plane/internal/domain/staff ./services/internal/control-plane/internal/transport/grpc`;
+  - `go test ./services/internal/control-plane/...`;
+  - `make lint-go` (pass);
+  - `make dupl-go` (обнаруживает pre-existing дубли в репозитории, включая исторически повторяющиеся блоки вне scope `#225`).
+- Через Context7 (`/grpc/grpc-go`) подтверждена актуальная рекомендация по возврату gRPC-ошибок через `status.Error` и сохранению уже типизированных status-кодов.
