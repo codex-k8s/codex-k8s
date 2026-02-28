@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-02-27
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 216]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 223, 225, 226, 227, 228, 229, 230, 216]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -51,6 +51,8 @@ approvals:
 - Epic S6 catalog: `docs/delivery/epics/s6/epic_s6.md`
 - Sprint S7 plan: `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md`
 - Epic S7 catalog: `docs/delivery/epics/s7/epic_s7.md`
+- Sprint S8 plan: `docs/delivery/sprints/s8/sprint_s8_go_refactoring_parallelization.md`
+- Epic S8 catalog: `docs/delivery/epics/s8/epic_s8.md`
 - Sprint index: `docs/delivery/sprints/README.md`
 - Epic index: `docs/delivery/epics/README.md`
 - E2E master plan: `docs/delivery/e2e_mvp_master_plan.md`
@@ -149,6 +151,13 @@ approvals:
     `approved_execution_epics_count == created_run_dev_issues_count`;
   - создана follow-up issue `#220` для stage `run:prd` без trigger-лейбла.
 - Day 3+ (planned): `prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops -> doc-audit` с отдельной issue на каждый stage и owner-governed trigger-лейблами.
+
+### Sprint S8: Go refactoring parallelization (Issue #223)
+- Day 1 (in-review): plan-пакет по параллельному Go-рефакторингу (`docs/delivery/epics/s8/epic-s8-day1-go-refactoring-plan.md`).
+- Результат Day 1 (факт):
+  - execution-поток выделен из Sprint S7 для исключения конфликтов с параллельными задачами MVP readiness;
+  - сохранены 6 независимых implementation issues `#225..#230` в bounded scopes;
+  - quality-gates `QG-223-01..QG-223-05` и handover в `run:dev` зафиксированы в Sprint S8.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
