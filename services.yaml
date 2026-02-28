@@ -74,7 +74,7 @@ spec:
       - path: docs/templates/docset_pr.md
   versions:
     api-gateway:
-      value: "0.1.19"
+      value: "0.1.20"
       bumpOn:
         - services/external/api-gateway
         - libs/go
