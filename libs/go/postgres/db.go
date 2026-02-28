@@ -7,7 +7,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
+
+const defaultPingTimeout = 5 * time.Second
 
 // OpenParams defines the minimal required connection settings for Postgres.
 type OpenParams struct {
@@ -21,27 +24,33 @@ type OpenParams struct {
 	PingTimeout time.Duration
 }
 
-// Open opens a Postgres connection using pgx stdlib driver and verifies it via Ping.
+// Open opens a compatibility database/sql connection.
+//
+// Deprecated: use OpenPGXPool for all new code paths. Keep this helper only for
+// integrations that explicitly require database/sql.
 func Open(ctx context.Context, params OpenParams) (*sql.DB, error) {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	if params.PingTimeout <= 0 {
-		params.PingTimeout = 5 * time.Second
-	}
+	return OpenSQLDB(ctx, params)
+}
+
+// OpenSQLDB opens a compatibility database/sql connection using pgx stdlib and
+// verifies it via Ping.
+//
+// This helper is intended only for integrations that cannot work with pgxpool.
+func OpenSQLDB(ctx context.Context, params OpenParams) (*sql.DB, error) {
+	ctx, params = normalizeOpenInput(ctx, params)
 
 	dsn := BuildDSN(params)
 
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
-		return nil, fmt.Errorf("open postgres connection: %w", err)
+		return nil, fmt.Errorf("open postgres sql db: %w", err)
 	}
 
 	pingCtx, cancel := context.WithTimeout(ctx, params.PingTimeout)
 	defer cancel()
 	if err := db.PingContext(pingCtx); err != nil {
 		_ = db.Close()
-		return nil, fmt.Errorf("ping postgres: %w", err)
+		return nil, fmt.Errorf("ping postgres sql db: %w", err)
 	}
 
 	return db, nil
@@ -49,12 +58,7 @@ func Open(ctx context.Context, params OpenParams) (*sql.DB, error) {
 
 // OpenPGXPool opens a pgx native pool and verifies it via Ping.
 func OpenPGXPool(ctx context.Context, params OpenParams) (*pgxpool.Pool, error) {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	if params.PingTimeout <= 0 {
-		params.PingTimeout = 5 * time.Second
-	}
+	ctx, params = normalizeOpenInput(ctx, params)
 
 	cfg, err := pgxpool.ParseConfig(BuildDSN(params))
 	if err != nil {
@@ -74,6 +78,16 @@ func OpenPGXPool(ctx context.Context, params OpenParams) (*pgxpool.Pool, error) 
 	}
 
 	return pool, nil
+}
+
+func normalizeOpenInput(ctx context.Context, params OpenParams) (context.Context, OpenParams) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if params.PingTimeout <= 0 {
+		params.PingTimeout = defaultPingTimeout
+	}
+	return ctx, params
 }
 
 // BuildDSN builds PostgreSQL connection string from open params.

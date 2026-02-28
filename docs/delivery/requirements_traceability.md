@@ -249,6 +249,24 @@ approvals:
   для изменённого набора файлов `worker` локальная проверка `dupl` не выявила новых дублей.
 - Трассируемость синхронизирована с `docs/delivery/issue_map.md` (добавлена строка по Issue `#227`).
 
+## Актуализация по Issue #229 (`run:dev`, 2026-02-28)
+- Для FR-004/FR-033 и NFR-018 выполнено выравнивание shared Go-библиотек в bounded scope `S8-E05`:
+  `libs/go/postgres` и `libs/go/servicescfg`.
+- В `libs/go/postgres` закреплён pgx-native baseline:
+  - `OpenPGXPool` остаётся основным API для нового кода;
+  - `Open` переведён в explicit compatibility-wrapper `OpenSQLDB` с `Deprecated`-пометкой;
+  - добавлен unit coverage (`db_test.go`) для normalization/DSN helper-функций.
+- В `libs/go/servicescfg` выполнена модульная декомпозиция без изменения поведения:
+  `load.go` разделён на тематические файлы `load_namespace.go`, `load_validation.go`,
+  `load_components.go`, `load_context.go`, `load_imports.go`, `load_helpers.go`.
+- Релевантный дизайн-гайд обновлён:
+  `docs/design-guidelines/go/infrastructure_integration_requirements.md` теперь явно фиксирует правило
+  `pgxpool` по умолчанию и `database/sql` только как compatibility-path.
+- Проверки по изменённому scope:
+  `go test ./libs/go/servicescfg ./libs/go/postgres/...`, `go test ./...`, `make lint-go`.
+- `make dupl-go` фиксирует pre-existing дубли вне scope текущего issue (в `control-plane` и `api-gateway`).
+- Трассируемость синхронизирована с `docs/delivery/issue_map.md` (добавлена строка по Issue `#229`).
+
 ## Актуализация по Issue #218 (`run:vision`, 2026-02-27)
 - Для FR-026/FR-028/FR-033/FR-045/FR-052/FR-053/FR-054 и NFR-010/NFR-018 добавлен vision traceability пакет Sprint S7:
   `docs/delivery/epics/s7/epic-s7-day2-mvp-readiness-vision.md`,
