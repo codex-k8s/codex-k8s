@@ -332,7 +332,27 @@ func Run() error {
 		},
 		ProtectedProjectIDs:    bootstrapSeed.ProtectedProjectIDs,
 		ProtectedRepositoryIDs: bootstrapSeed.ProtectedRepositoryIDs,
-	}, users, projects, members, agents, repos, promptTemplates, projectTokens, configEntries, feedback, runs, runtimeDeployTasks, runtimeErrors, registryImagesService, k8sClient, tokenCrypto, platformTokens, githubRepoProvider, githubMgmtClient, runStatusService)
+	}, staff.Dependencies{
+		Users:           users,
+		Projects:        projects,
+		Members:         members,
+		Agents:          agents,
+		Repos:           repos,
+		PromptTemplates: promptTemplates,
+		ProjectTokens:   projectTokens,
+		ConfigEntries:   configEntries,
+		Feedback:        feedback,
+		Runs:            runs,
+		Tasks:           runtimeDeployTasks,
+		RuntimeErrors:   runtimeErrors,
+		Images:          registryImagesService,
+		K8s:             k8sClient,
+		Tokencrypt:      tokenCrypto,
+		PlatformTokens:  platformTokens,
+		GitHub:          githubRepoProvider,
+		GitHubMgmt:      githubMgmtClient,
+		RunStatus:       runStatusService,
+	})
 
 	// Ensure bootstrap users exist so that the first login can be matched by email.
 	bootstrapOwner, err := users.EnsureOwner(runCtx, cfg.BootstrapOwnerEmail)

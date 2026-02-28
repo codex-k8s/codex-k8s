@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/manifesttpl"
+	"github.com/codex-k8s/codex-k8s/libs/go/registry"
 	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
 )
 
@@ -220,13 +221,17 @@ func (s *Service) runCodegenCheck(ctx context.Context, namespace string, reposit
 			timeout = parsedTimeout
 		}
 	}
-	if err := s.k8s.WaitForJobComplete(ctx, namespace, jobName, timeout); err != nil {
-		jobLogs, logsErr := s.k8s.GetJobLogs(ctx, namespace, jobName, s.cfg.KanikoJobLogTailLines)
-		if logsErr == nil && strings.TrimSpace(jobLogs) != "" {
-			s.appendTaskLogBestEffort(ctx, runID, "codegen-check", "error", "Codegen check failed logs:\n"+jobLogs)
-			return fmt.Errorf("wait codegen check job %s: %w; logs: %s", jobName, err, trimLogForError(jobLogs))
-		}
-		return fmt.Errorf("wait codegen check job %s: %w", jobName, err)
+	if err := s.waitForJobCompletionWithFailureLogs(
+		ctx,
+		namespace,
+		jobName,
+		timeout,
+		runID,
+		"codegen-check",
+		"wait codegen check job",
+		"Codegen check failed logs:",
+	); err != nil {
+		return err
 	}
 
 	jobLogs, logsErr := s.k8s.GetJobLogs(ctx, namespace, jobName, s.cfg.KanikoJobLogTailLines)
@@ -410,12 +415,12 @@ func (s *Service) mirrorExternalDependencies(ctx context.Context, namespace stri
 			vars[envKey] = targetImage
 		}
 
-		targetRepo, targetTag := splitImageRef(targetImage)
+		targetRepo, targetTag := registry.SplitImageRef(targetImage)
 		if targetRepo == "" || targetTag == "" {
 			s.appendTaskLogBestEffort(ctx, runID, "mirror", "warning", "Skip mirror for "+entry.Name+": invalid target "+targetImage)
 			continue
 		}
-		repoPath := extractRegistryRepositoryPath(targetRepo, internalHost)
+		repoPath := registry.ExtractRepositoryPath(targetRepo, internalHost)
 		if repoPath == "" {
 			s.appendTaskLogBestEffort(ctx, runID, "mirror", "warning", "Skip mirror for "+entry.Name+": invalid registry path for "+targetImage)
 			continue
@@ -473,7 +478,7 @@ func (s *Service) cleanupBuiltImageRepositories(ctx context.Context, vars map[st
 	internalHost := strings.TrimSpace(vars["CODEXK8S_INTERNAL_REGISTRY_HOST"])
 
 	for repository := range repositories {
-		repoPath := extractRegistryRepositoryPath(repository, internalHost)
+		repoPath := registry.ExtractRepositoryPath(repository, internalHost)
 		if repoPath == "" {
 			continue
 		}
@@ -552,7 +557,7 @@ func (s *Service) shouldSkipKanikoBuild(ctx context.Context, repository string, 
 		return false, nil
 	}
 	internalHost := strings.TrimSpace(vars["CODEXK8S_INTERNAL_REGISTRY_HOST"])
-	repoPath := extractRegistryRepositoryPath(repository, internalHost)
+	repoPath := registry.ExtractRepositoryPath(repository, internalHost)
 	if repoPath == "" {
 		return false, nil
 	}
@@ -603,40 +608,6 @@ func parsePositiveInt(raw string, fallback int) int {
 		return fallback
 	}
 	return parsed
-}
-
-func extractRegistryRepositoryPath(imageRepository string, internalHost string) string {
-	repository := strings.TrimSpace(imageRepository)
-	host := strings.TrimSpace(internalHost)
-	if repository == "" {
-		return ""
-	}
-	repository = strings.TrimPrefix(repository, "http://")
-	repository = strings.TrimPrefix(repository, "https://")
-	if host == "" {
-		return repository
-	}
-	prefix := host + "/"
-	if strings.HasPrefix(repository, prefix) {
-		return strings.TrimSpace(strings.TrimPrefix(repository, prefix))
-	}
-	return ""
-}
-
-func splitImageRef(ref string) (string, string) {
-	trimmed := strings.TrimSpace(ref)
-	if trimmed == "" {
-		return "", ""
-	}
-	if at := strings.Index(trimmed, "@"); at >= 0 {
-		trimmed = trimmed[:at]
-	}
-	lastSlash := strings.LastIndex(trimmed, "/")
-	lastColon := strings.LastIndex(trimmed, ":")
-	if lastColon == -1 || lastColon < lastSlash {
-		return trimmed, ""
-	}
-	return trimmed[:lastColon], trimmed[lastColon+1:]
 }
 
 func isKanikoCacheEnabled(vars map[string]string) bool {

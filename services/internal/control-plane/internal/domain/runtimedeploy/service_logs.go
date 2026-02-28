@@ -3,7 +3,9 @@ package runtimedeploy
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
+	"time"
 
 	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
@@ -52,4 +54,25 @@ func (s *Service) appendTaskLogBestEffort(ctx context.Context, runID string, sta
 			RunID:       runID,
 		})
 	}
+}
+
+func (s *Service) waitForJobCompletionWithFailureLogs(
+	ctx context.Context,
+	namespace string,
+	jobName string,
+	timeout time.Duration,
+	runID string,
+	stage string,
+	waitErrorPrefix string,
+	failureLogsPrefix string,
+) error {
+	if err := s.k8s.WaitForJobComplete(ctx, namespace, jobName, timeout); err != nil {
+		jobLogs, logsErr := s.k8s.GetJobLogs(ctx, namespace, jobName, s.cfg.KanikoJobLogTailLines)
+		if logsErr == nil && strings.TrimSpace(jobLogs) != "" {
+			s.appendTaskLogBestEffort(ctx, runID, stage, "error", failureLogsPrefix+"\n"+jobLogs)
+			return fmt.Errorf("%s %s: %w; logs: %s", waitErrorPrefix, jobName, err, trimLogForError(jobLogs))
+		}
+		return fmt.Errorf("%s %s: %w", waitErrorPrefix, jobName, err)
+	}
+	return nil
 }

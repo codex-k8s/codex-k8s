@@ -293,13 +293,17 @@ func (s *Service) ensureRepoSnapshot(ctx context.Context, targetNamespace string
 	if timeout <= 0 {
 		timeout = s.cfg.KanikoTimeout
 	}
-	if err := s.k8s.WaitForJobComplete(ctx, namespace, jobName, timeout); err != nil {
-		jobLogs, logsErr := s.k8s.GetJobLogs(ctx, namespace, jobName, s.cfg.KanikoJobLogTailLines)
-		if logsErr == nil && strings.TrimSpace(jobLogs) != "" {
-			s.appendTaskLogBestEffort(ctx, runID, "repo-sync", "error", "Repo sync failed logs:\n"+jobLogs)
-			return fmt.Errorf("wait repo sync job %s: %w; logs: %s", jobName, err, trimLogForError(jobLogs))
-		}
-		return fmt.Errorf("wait repo sync job %s: %w", jobName, err)
+	if err := s.waitForJobCompletionWithFailureLogs(
+		ctx,
+		namespace,
+		jobName,
+		timeout,
+		runID,
+		"repo-sync",
+		"wait repo sync job",
+		"Repo sync failed logs:",
+	); err != nil {
+		return err
 	}
 
 	s.appendTaskLogBestEffort(ctx, runID, "repo-sync", "info", "Repo sync finished for "+repositoryFullName)

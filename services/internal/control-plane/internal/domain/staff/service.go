@@ -97,49 +97,51 @@ type kubernetesConfigSync interface {
 	UpsertConfigMap(ctx context.Context, namespace string, name string, data map[string]string) error
 }
 
+// Dependencies defines external collaborators required by staff service.
+type Dependencies struct {
+	Users           userrepo.Repository
+	Projects        projectrepo.Repository
+	Members         projectmemberrepo.Repository
+	Agents          agentrepo.Repository
+	Repos           repocfgrepo.Repository
+	PromptTemplates prompttemplaterepo.Repository
+	ProjectTokens   projecttokenrepo.Repository
+	ConfigEntries   configentryrepo.Repository
+	Feedback        learningfeedbackrepo.Repository
+	Runs            staffrunrepo.Repository
+	Tasks           runtimedeploytaskrepo.Repository
+	RuntimeErrors   runtimeerrorrepo.Repository
+	Images          registryImageService
+	K8s             kubernetesConfigSync
+	Tokencrypt      *tokencrypt.Service
+	PlatformTokens  platformTokensRepository
+	GitHub          provider.RepositoryProvider
+	GitHubMgmt      githubManagementClient
+	RunStatus       runNamespaceService
+}
+
 // NewService constructs staff service.
-func NewService(
-	cfg Config,
-	users userrepo.Repository,
-	projects projectrepo.Repository,
-	members projectmemberrepo.Repository,
-	agents agentrepo.Repository,
-	repos repocfgrepo.Repository,
-	promptTemplates prompttemplaterepo.Repository,
-	projectTokens projecttokenrepo.Repository,
-	configEntries configentryrepo.Repository,
-	feedback learningfeedbackrepo.Repository,
-	runs staffrunrepo.Repository,
-	tasks runtimedeploytaskrepo.Repository,
-	runtimeErrors runtimeerrorrepo.Repository,
-	images registryImageService,
-	k8s kubernetesConfigSync,
-	tokencrypt *tokencrypt.Service,
-	platformTokens platformTokensRepository,
-	github provider.RepositoryProvider,
-	githubMgmt githubManagementClient,
-	runStatus runNamespaceService,
-) *Service {
+func NewService(cfg Config, deps Dependencies) *Service {
 	return &Service{
 		cfg:             cfg,
-		users:           users,
-		projects:        projects,
-		members:         members,
-		agents:          agents,
-		repos:           repos,
-		promptTemplates: promptTemplates,
-		projectTokens:   projectTokens,
-		configEntries:   configEntries,
-		feedback:        feedback,
-		runs:            runs,
-		tasks:           tasks,
-		runtimeErrors:   runtimeErrors,
-		images:          images,
-		k8s:             k8s,
-		tokencrypt:      tokencrypt,
-		platformTokens:  platformTokens,
-		github:          github,
-		githubMgmt:      githubMgmt,
-		runStatus:       runStatus,
+		users:           deps.Users,
+		projects:        deps.Projects,
+		members:         deps.Members,
+		agents:          deps.Agents,
+		repos:           deps.Repos,
+		promptTemplates: deps.PromptTemplates,
+		projectTokens:   deps.ProjectTokens,
+		configEntries:   deps.ConfigEntries,
+		feedback:        deps.Feedback,
+		runs:            deps.Runs,
+		tasks:           deps.Tasks,
+		runtimeErrors:   deps.RuntimeErrors,
+		images:          deps.Images,
+		k8s:             deps.K8s,
+		tokencrypt:      deps.Tokencrypt,
+		platformTokens:  deps.PlatformTokens,
+		github:          deps.GitHub,
+		githubMgmt:      deps.GitHubMgmt,
+		runStatus:       deps.RunStatus,
 	}
 }
