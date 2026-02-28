@@ -150,11 +150,6 @@ approvals:
   - закреплено governance-правило decomposition parity перед `run:dev`:
     `approved_execution_epics_count == created_run_dev_issues_count`;
   - создана follow-up issue `#220` для stage `run:prd` без trigger-лейбла.
-- Day 5 (in-review): план Go-refactoring вынесен в Sprint S8 в Issue `#223` (`docs/delivery/epics/s8/epic-s8-day1-go-refactoring-plan.md`).
-- Результат Day 5 (факт):
-  - выполнен audit-срез по Go-сервисам/библиотекам (oversized files, duplication hotspots, db access alignment);
-  - создано 6 параллельных implementation issues `#225..#230` с разделением по bounded scopes;
-  - зафиксированы quality-gates `QG-223-01..QG-223-05` и DoD для handover в `run:dev`.
 - Day 3+ (planned): `prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops -> doc-audit` с отдельной issue на каждый stage и owner-governed trigger-лейблами.
 
 ### Sprint S8: Go refactoring parallelization (Issue #223)

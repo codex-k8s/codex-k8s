@@ -112,12 +112,10 @@ approvals:
 - Epic catalog: `docs/delivery/epics/s7/epic_s7.md`.
 - Epic docs: `docs/delivery/epics/s7/epic-s7-day1-mvp-readiness-intake.md`.
 - Epic docs: `docs/delivery/epics/s7/epic-s7-day2-mvp-readiness-vision.md`.
-- Epic docs: `docs/delivery/epics/s8/epic-s8-day1-go-refactoring-plan.md`.
 - Факт на 2026-02-27:
   - intake (`#212`) зафиксировал MVP readiness gaps и dependency-цепочку S6 (`#199/#201` закрыты, открытая release-зависимость — `#216`);
   - vision (`#218`) зафиксировал KPI/success metrics и baseline-декомпозицию по `S7-E01..S7-E18`;
-  - создана continuity issue `#220` для stage `run:prd` без trigger-лейбла;
-  - plan (`#223`) сформировал Go-refactor execution backlog `#225..#230` для параллельной реализации.
+  - создана continuity issue `#220` для stage `run:prd` без trigger-лейбла.
 
 ## Sprint S8 артефакты
 - Sprint plan: `docs/delivery/sprints/s8/sprint_s8_go_refactoring_parallelization.md`.
