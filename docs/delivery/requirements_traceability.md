@@ -235,6 +235,20 @@ approvals:
   - `#230` cross-service hygiene closure.
 - Через Context7 (`/websites/cli_github_manual`) подтвержден актуальный CLI-синтаксис `gh issue create`/`gh pr create`/`gh pr edit`; новые внешние зависимости не добавлялись.
 
+## Актуализация по Issue #227 (`run:dev`, 2026-02-28)
+- Для FR-033 и NFR-018 выполнена декомпозиция worker orchestration-сервиса без изменения продуктового поведения:
+  `services/jobs/worker/internal/domain/worker/service.go` разделён на
+  `service_queue_cleanup.go`, `service_queue_lifecycle.go`, `service_queue_dispatch.go`, `service_queue_finalize.go`.
+- Для сокращения повторов namespace-resolution добавлен package-level helper:
+  `services/jobs/worker/internal/domain/worker/service_queue_helpers.go` (`applyPreparedNamespace`),
+  и обновлён recovery-путь в `job_not_found_recovery.go`.
+- Поведенческое покрытие сохранено: пройдены проверки
+  `go test ./services/jobs/worker/internal/domain/worker/...` и `go test ./services/jobs/worker/...`.
+- По checklist gate выполнен `make lint-go`.
+- `make dupl-go` зафиксировал pre-existing дубли вне scope текущего issue (в `control-plane` и `api-gateway`);
+  для изменённого набора файлов `worker` локальная проверка `dupl` не выявила новых дублей.
+- Трассируемость синхронизирована с `docs/delivery/issue_map.md` (добавлена строка по Issue `#227`).
+
 ## Актуализация по Issue #218 (`run:vision`, 2026-02-27)
 - Для FR-026/FR-028/FR-033/FR-045/FR-052/FR-053/FR-054 и NFR-010/NFR-018 добавлен vision traceability пакет Sprint S7:
   `docs/delivery/epics/s7/epic-s7-day2-mvp-readiness-vision.md`,

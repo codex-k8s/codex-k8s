@@ -44,10 +44,8 @@ func (s *Service) tryRecoverMissingRunJob(ctx context.Context, run runqueuerepo.
 		return true, nil
 	}
 
-	launchExecution := execution
-	if resolvedNamespace := sanitizeDNSLabelValue(prepared.Namespace); resolvedNamespace != "" {
-		launchExecution.Namespace = resolvedNamespace
-	} else {
+	launchExecution := applyPreparedNamespace(execution, prepared.Namespace)
+	if launchExecution.Namespace == "" {
 		// No resolved runtime namespace yet: the run is still preparing.
 		return false, nil
 	}
