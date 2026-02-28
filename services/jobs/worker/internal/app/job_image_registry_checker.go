@@ -38,8 +38,8 @@ func newRegistryJobImageChecker(scheme string, host string, timeout time.Duratio
 }
 
 func (c *registryJobImageChecker) IsImageAvailable(ctx context.Context, imageRef string) (bool, error) {
-	repository, tag := splitImageRef(imageRef)
-	repositoryPath := extractRegistryRepositoryPath(repository, c.internalHost)
+	repository, tag := registry.SplitImageRef(imageRef)
+	repositoryPath := registry.ExtractRepositoryPath(repository, c.internalHost)
 	if repositoryPath == "" || strings.TrimSpace(tag) == "" {
 		// Not an internal-registry image reference; treat as available and skip fallback switching.
 		return true, nil
@@ -53,8 +53,8 @@ func (c *registryJobImageChecker) IsImageAvailable(ctx context.Context, imageRef
 }
 
 func (c *registryJobImageChecker) ResolvePreviousImage(ctx context.Context, imageRef string) (string, bool, error) {
-	repository, primaryTag := splitImageRef(imageRef)
-	repositoryPath := extractRegistryRepositoryPath(repository, c.internalHost)
+	repository, primaryTag := registry.SplitImageRef(imageRef)
+	repositoryPath := registry.ExtractRepositoryPath(repository, c.internalHost)
 	if repositoryPath == "" || strings.TrimSpace(primaryTag) == "" {
 		return "", false, nil
 	}
@@ -91,38 +91,4 @@ func (c *registryJobImageChecker) ResolvePreviousImage(ctx context.Context, imag
 		return repository + ":" + tag, true, nil
 	}
 	return "", false, nil
-}
-
-func extractRegistryRepositoryPath(imageRepository string, internalHost string) string {
-	repository := strings.TrimSpace(imageRepository)
-	host := strings.TrimSpace(internalHost)
-	if repository == "" {
-		return ""
-	}
-	repository = strings.TrimPrefix(repository, "http://")
-	repository = strings.TrimPrefix(repository, "https://")
-	if host == "" {
-		return repository
-	}
-	prefix := host + "/"
-	if strings.HasPrefix(repository, prefix) {
-		return strings.TrimSpace(strings.TrimPrefix(repository, prefix))
-	}
-	return ""
-}
-
-func splitImageRef(ref string) (string, string) {
-	trimmed := strings.TrimSpace(ref)
-	if trimmed == "" {
-		return "", ""
-	}
-	if at := strings.Index(trimmed, "@"); at >= 0 {
-		trimmed = trimmed[:at]
-	}
-	lastSlash := strings.LastIndex(trimmed, "/")
-	lastColon := strings.LastIndex(trimmed, ":")
-	if lastColon == -1 || lastColon < lastSlash {
-		return trimmed, ""
-	}
-	return trimmed[:lastColon], trimmed[lastColon+1:]
 }

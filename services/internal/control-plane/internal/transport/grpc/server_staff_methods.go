@@ -7,6 +7,8 @@ import (
 
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
+	configentryrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/configentry"
+	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
 	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 	"google.golang.org/grpc/codes"
@@ -460,25 +462,7 @@ func (s *Server) ListProjectRepositories(ctx context.Context, req *controlplanev
 	}
 	out := make([]*controlplanev1.RepositoryBinding, 0, len(items))
 	for _, r := range items {
-		botUsername := strings.TrimSpace(r.BotUsername)
-		botEmail := strings.TrimSpace(r.BotEmail)
-		preflightUpdatedAt := strings.TrimSpace(r.PreflightUpdatedAt)
-		out = append(out, &controlplanev1.RepositoryBinding{
-			Id:                 r.ID,
-			ProjectId:          r.ProjectID,
-			Alias:              r.Alias,
-			Role:               r.Role,
-			DefaultRef:         r.DefaultRef,
-			Provider:           r.Provider,
-			ExternalId:         r.ExternalID,
-			Owner:              r.Owner,
-			Name:               r.Name,
-			ServicesYamlPath:   r.ServicesYAMLPath,
-			DocsRootPath:       stringPtrOrNil(strings.TrimSpace(r.DocsRootPath)),
-			BotUsername:        stringPtrOrNil(botUsername),
-			BotEmail:           stringPtrOrNil(botEmail),
-			PreflightUpdatedAt: stringPtrOrNil(preflightUpdatedAt),
-		})
+		out = append(out, repositoryBindingToProto(r))
 	}
 	return &controlplanev1.ListProjectRepositoriesResponse{Items: out}, nil
 }
@@ -505,25 +489,7 @@ func (s *Server) UpsertProjectRepository(ctx context.Context, req *controlplanev
 	if err != nil {
 		return nil, toStatus(err)
 	}
-	botUsername := strings.TrimSpace(item.BotUsername)
-	botEmail := strings.TrimSpace(item.BotEmail)
-	preflightUpdatedAt := strings.TrimSpace(item.PreflightUpdatedAt)
-	return &controlplanev1.RepositoryBinding{
-		Id:                 item.ID,
-		ProjectId:          item.ProjectID,
-		Alias:              item.Alias,
-		Role:               item.Role,
-		DefaultRef:         item.DefaultRef,
-		Provider:           item.Provider,
-		ExternalId:         item.ExternalID,
-		Owner:              item.Owner,
-		Name:               item.Name,
-		ServicesYamlPath:   item.ServicesYAMLPath,
-		DocsRootPath:       stringPtrOrNil(strings.TrimSpace(item.DocsRootPath)),
-		BotUsername:        stringPtrOrNil(botUsername),
-		BotEmail:           stringPtrOrNil(botEmail),
-		PreflightUpdatedAt: stringPtrOrNil(preflightUpdatedAt),
-	}, nil
+	return repositoryBindingToProto(item), nil
 }
 
 func (s *Server) DeleteProjectRepository(ctx context.Context, req *controlplanev1.DeleteProjectRepositoryRequest) (*emptypb.Empty, error) {
@@ -679,19 +645,7 @@ func (s *Server) ListConfigEntries(ctx context.Context, req *controlplanev1.List
 	}
 	out := make([]*controlplanev1.ConfigEntry, 0, len(items))
 	for _, item := range items {
-		out = append(out, &controlplanev1.ConfigEntry{
-			Id:           item.ID,
-			Scope:        string(item.Scope),
-			Kind:         string(item.Kind),
-			ProjectId:    stringPtrOrNil(strings.TrimSpace(item.ProjectID)),
-			RepositoryId: stringPtrOrNil(strings.TrimSpace(item.RepositoryID)),
-			Key:          item.Key,
-			Value:        stringPtrOrNil(strings.TrimSpace(item.Value)),
-			SyncTargets:  item.SyncTargets,
-			Mutability:   string(item.Mutability),
-			IsDangerous:  item.IsDangerous,
-			UpdatedAt:    stringPtrOrNil(strings.TrimSpace(item.UpdatedAt)),
-		})
+		out = append(out, configEntryToProto(item))
 	}
 	return &controlplanev1.ListConfigEntriesResponse{Items: out}, nil
 }
@@ -725,6 +679,32 @@ func (s *Server) UpsertConfigEntry(ctx context.Context, req *controlplanev1.Upse
 	if err != nil {
 		return nil, toStatus(err)
 	}
+	return configEntryToProto(item), nil
+}
+
+func repositoryBindingToProto(item repocfgrepo.RepositoryBinding) *controlplanev1.RepositoryBinding {
+	botUsername := strings.TrimSpace(item.BotUsername)
+	botEmail := strings.TrimSpace(item.BotEmail)
+	preflightUpdatedAt := strings.TrimSpace(item.PreflightUpdatedAt)
+	return &controlplanev1.RepositoryBinding{
+		Id:                 item.ID,
+		ProjectId:          item.ProjectID,
+		Alias:              item.Alias,
+		Role:               item.Role,
+		DefaultRef:         item.DefaultRef,
+		Provider:           item.Provider,
+		ExternalId:         item.ExternalID,
+		Owner:              item.Owner,
+		Name:               item.Name,
+		ServicesYamlPath:   item.ServicesYAMLPath,
+		DocsRootPath:       stringPtrOrNil(strings.TrimSpace(item.DocsRootPath)),
+		BotUsername:        stringPtrOrNil(botUsername),
+		BotEmail:           stringPtrOrNil(botEmail),
+		PreflightUpdatedAt: stringPtrOrNil(preflightUpdatedAt),
+	}
+}
+
+func configEntryToProto(item configentryrepo.ConfigEntry) *controlplanev1.ConfigEntry {
 	return &controlplanev1.ConfigEntry{
 		Id:           item.ID,
 		Scope:        string(item.Scope),
@@ -737,7 +717,7 @@ func (s *Server) UpsertConfigEntry(ctx context.Context, req *controlplanev1.Upse
 		Mutability:   string(item.Mutability),
 		IsDangerous:  item.IsDangerous,
 		UpdatedAt:    stringPtrOrNil(strings.TrimSpace(item.UpdatedAt)),
-	}, nil
+	}
 }
 
 func (s *Server) DeleteConfigEntry(ctx context.Context, req *controlplanev1.DeleteConfigEntryRequest) (*emptypb.Empty, error) {
