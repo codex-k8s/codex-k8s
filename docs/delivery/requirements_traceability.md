@@ -267,6 +267,24 @@ approvals:
 - `make dupl-go` фиксирует pre-existing дубли вне scope текущего issue (в `control-plane` и `api-gateway`).
 - Трассируемость синхронизирована с `docs/delivery/issue_map.md` (добавлена строка по Issue `#229`).
 
+## Актуализация по Issue #230 (`run:dev`, 2026-02-28)
+- Для FR-002/FR-004/FR-033 и NFR-002/NFR-010/NFR-018 выполнен финальный consolidating stream `S8-E06`:
+  cross-service hygiene closure и residual debt report.
+- Удалены low-risk дубли в `control-plane`/`worker`/`libs`:
+  - вынесен общий helper `libs/go/registry/image_ref.go` и удалено дублирование `extractRegistryRepositoryPath/splitImageRef`;
+  - добавлен общий helper ожидания job с логами ошибок (`waitForJobCompletionWithFailureLogs`) для `runtimedeploy` build/repo-sync path;
+  - унифицирован gRPC mapping `RepositoryBinding`/`ConfigEntry` через package-level helper-caster'ы;
+  - конструктор `staff.Service` переведён на `staff.Dependencies` для устранения сигнатурной дубликации.
+- `tools/lint/dupl-baseline.txt` синхронизирован с текущим кодом:
+  baseline сокращён с `62` до `43` строк, удалены устаревшие записи и зафиксированы только актуальные residual duplicates.
+- Подготовлен consolidated отчёт:
+  `docs/delivery/epics/s8/epic-s8-e06-go-hygiene-closure-report.md`
+  (self-check по `common/go` чек-листам, residual debt backlog с приоритетами и owner-decision предложениями).
+- Проверки по изменённому scope:
+  `make dupl-go`, `make lint-go`, `go test ./services/internal/control-plane/...`,
+  `go test ./services/jobs/worker/...`, `go test ./libs/go/registry/...`.
+- Трассируемость синхронизирована с `docs/delivery/issue_map.md` (добавлены строки по `#226`, `#228`, `#230`).
+
 ## Актуализация по Issue #218 (`run:vision`, 2026-02-27)
 - Для FR-026/FR-028/FR-033/FR-045/FR-052/FR-053/FR-054 и NFR-010/NFR-018 добавлен vision traceability пакет Sprint S7:
   `docs/delivery/epics/s7/epic-s7-day2-mvp-readiness-vision.md`,
