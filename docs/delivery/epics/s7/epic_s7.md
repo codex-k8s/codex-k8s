@@ -6,7 +6,7 @@ status: in-progress
 owner_role: PM
 created_at: 2026-02-27
 updated_at: 2026-03-02
-related_issues: [212, 218, 220, 222, 238, 241, 199, 201, 210, 216]
+related_issues: [212, 218, 220, 222, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 199, 201, 210, 216]
 related_prs: [213, 215]
 approvals:
   required: ["Owner"]
@@ -27,8 +27,8 @@ approvals:
 - Day 3 (PRD): `docs/delivery/epics/s7/epic-s7-day3-mvp-readiness-prd.md` + `docs/delivery/epics/s7/prd-s7-day3-mvp-readiness-gap-closure.md` (Issue `#220`).
 - Day 4 (Architecture): `docs/delivery/epics/s7/epic-s7-day4-mvp-readiness-arch.md` (Issue `#222`).
 - Day 5 (Design): `docs/delivery/epics/s7/epic-s7-day5-mvp-readiness-design.md` (Issue `#238`).
-- Day 6 (Plan): `run:plan` в Issue `#241`.
-- Day 7+ (Execution): реализация и приемка `run:dev -> run:qa -> run:release -> run:postdeploy -> run:ops -> run:doc-audit`.
+- Day 6 (Plan): `docs/delivery/epics/s7/epic-s7-day6-mvp-readiness-plan.md` (Issue `#241`).
+- Day 7+ (Execution): реализация и приемка `run:dev -> run:qa -> run:release -> run:postdeploy -> run:ops -> run:doc-audit` по implementation issues `#243..#260`.
 
 ## Day 2 vision fact
 - В Issue `#218` зафиксированы mission, KPI/success metrics и measurable readiness criteria для потоков `S7-E01..S7-E18`.
@@ -71,6 +71,16 @@ approvals:
 - Для потоков `S7-E06/S7-E07/S7-E09/S7-E10/S7-E13/S7-E16/S7-E17` зафиксированы typed contract decisions и risk-mitigation.
 - Для persisted-state потоков определены migration/rollback правила и rollout order `migrations -> internal -> edge -> frontend`.
 - Создана continuity issue `#241` для этапа `run:plan` без trigger-лейбла.
+
+## Day 6 plan fact
+- В Issue `#241` выпущен plan package Sprint S7:
+  - `docs/delivery/epics/s7/epic-s7-day6-mvp-readiness-plan.md`.
+- По owner-уточнению создана отдельная implementation issue на каждый execution-поток `S7-E01..S7-E18`:
+  - `#243..#260`.
+- Зафиксирован parity-gate перед входом в `run:dev`:
+  `approved_execution_epics_count == created_run_dev_issues_count` (`18 == 18`).
+- Зафиксирован launch-order по waves и правило запуска:
+  trigger `run:dev` на implementation issues ставит Owner в порядке wave-sequencing.
 
 ## Candidate execution backlog (18 эпиков)
 

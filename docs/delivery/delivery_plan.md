@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-02
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 216]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -180,7 +180,13 @@ approvals:
   - зафиксированы typed contract decisions для потоков `S7-E06/S7-E07/S7-E09/S7-E10/S7-E13/S7-E16/S7-E17`;
   - формализованы data/migration/rollback правила для persisted-state потоков;
   - создана follow-up issue `#241` для stage `run:plan` без trigger-лейбла.
-- Day 6+ (planned): `plan -> dev -> qa -> release -> postdeploy -> ops -> doc-audit` с отдельной issue на каждый stage и owner-governed trigger-лейблами.
+- Day 6 (in-review): plan stage в issue `#241`:
+  - `docs/delivery/epics/s7/epic-s7-day6-mvp-readiness-plan.md`.
+- Результат Day 6 (факт):
+  - по owner-уточнению создана отдельная implementation issue на каждый execution-поток `S7-E01..S7-E18`;
+  - сформирован execution issue package `#243..#260` без trigger-лейблов с wave-sequencing;
+  - parity-гейт перед `run:dev` подтверждён: `approved_execution_epics_count == created_run_dev_issues_count` (`18 == 18`).
+- Day 7+ (planned): `dev -> qa -> release -> postdeploy -> ops -> doc-audit` по implementation issues `#243..#260` и owner-governed trigger-лейблам.
 
 ### Sprint S8: Go refactoring parallelization (Issue #223)
 - Day 1 (in-review): plan-пакет по параллельному Go-рефакторингу (`docs/delivery/epics/s8/epic-s8-day1-go-refactoring-plan.md`).

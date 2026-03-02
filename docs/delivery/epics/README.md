@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-24
 updated_at: 2026-03-02
-related_issues: [112, 154, 184, 185, 187, 189, 195, 197, 199, 201, 212, 218, 220, 222, 238, 216]
+related_issues: [112, 154, 184, 185, 187, 189, 195, 197, 199, 201, 212, 218, 220, 222, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -31,7 +31,7 @@ approvals:
 | `docs/delivery/epics/s4/` | Day1 + каталог Sprint S4 | `docs/delivery/epics/s4/epic_s4.md` |
 | `docs/delivery/epics/s5/` | Day1 + каталог Sprint S5 | `docs/delivery/epics/s5/epic_s5.md` |
 | `docs/delivery/epics/s6/` | Day1..Day6 (intake + vision + PRD package + architecture + design + plan) + каталог Sprint S6 | `docs/delivery/epics/s6/epic_s6.md` |
-| `docs/delivery/epics/s7/` | Day1 intake + Day2 vision + Day3 PRD package (`epic + prd`) + Day4 architecture package (`epic + C4 overlays + ADR/alternatives`) + Day5 design package (`epic + design_doc/api_contract/data_model/migrations_policy`), включая MVP policy `repo-only` по prompt templates, + каталог Sprint S7 и candidate backlog `S7-E01..S7-E18` | `docs/delivery/epics/s7/epic_s7.md` |
+| `docs/delivery/epics/s7/` | Day1 intake + Day2 vision + Day3 PRD package (`epic + prd`) + Day4 architecture package (`epic + C4 overlays + ADR/alternatives`) + Day5 design package (`epic + design_doc/api_contract/data_model/migrations_policy`) + Day6 plan package (`epic-s7-day6-mvp-readiness-plan.md`) c execution issues `#243..#260` по `S7-E01..S7-E18`, включая MVP policy `repo-only` по prompt templates | `docs/delivery/epics/s7/epic_s7.md` |
 | `docs/delivery/epics/s8/` | Day1 plan + каталог Sprint S8 (Go refactoring parallelization) + execution backlog `S8-E01..S8-E06` | `docs/delivery/epics/s8/epic_s8.md` |
 
 ## Проверка консистентности

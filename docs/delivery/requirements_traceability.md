@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-02
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 216]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -358,6 +358,21 @@ approvals:
   `/microsoft/monaco-editor` (DiffEditor API `createDiffEditor`/`setModel`).
 - Новые внешние зависимости не добавлялись; каталог зависимостей не требует обновления.
 - Для stage continuity создана follow-up issue `#241` (`run:plan`) без trigger-лейбла.
+- Scope этапа сохранён policy-safe: markdown-only изменения без модификации code/runtime артефактов.
+
+## Актуализация по Issue #241 (`run:plan`, 2026-03-02)
+- Для FR-026/FR-028/FR-033/FR-053/FR-054 и NFR-010/NFR-018 добавлен plan traceability пакет Sprint S7:
+  `docs/delivery/epics/s7/epic-s7-day6-mvp-readiness-plan.md`,
+  `docs/delivery/epics/s7/epic_s7.md`,
+  `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md`,
+  `docs/delivery/delivery_plan.md`,
+  `docs/delivery/issue_map.md`.
+- На plan-stage сформирован execution package для `S7-E01..S7-E18` с wave-sequencing и quality-gates перед `run:dev`.
+- По owner-уточнению в Issue `#241` создана отдельная implementation issue на каждый поток:
+  `#243..#260` (один issue на `S7-E01..S7-E18`), без trigger-лейблов `run:*`.
+- Подтверждено decomposition parity-правило перед входом в `run:dev`:
+  `approved_execution_epics_count == created_run_dev_issues_count` (`18 == 18`).
+- Через Context7 (`/websites/cli_github_manual`) подтверждён актуальный неинтерактивный синтаксис `gh issue create` / `gh pr create` / `gh pr edit`; новые внешние зависимости не добавлялись.
 - Scope этапа сохранён policy-safe: markdown-only изменения без модификации code/runtime артефактов.
 
 ## Актуализация по Issue #225 (`run:dev`, 2026-02-28)
