@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-02
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 216]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 216]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -159,7 +159,18 @@ approvals:
   - закреплён owner policy для MVP: custom agents/prompt lifecycle выведены в post-MVP, prompt templates меняются через repo workflow;
   - подтверждено parity-правило перед `run:dev`: `approved_execution_epics_count == created_run_dev_issues_count`;
   - создана follow-up issue `#222` для stage `run:arch` без trigger-лейбла.
-- Day 4+ (planned): `arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops -> doc-audit` с отдельной issue на каждый stage и owner-governed trigger-лейблами.
+- Day 4 (in-review): architecture stage в issue `#222`:
+  - `docs/delivery/epics/s7/epic-s7-day4-mvp-readiness-arch.md`;
+  - `docs/architecture/s7_mvp_readiness_gap_closure_architecture.md`;
+  - `docs/architecture/c4_context_s7_mvp_readiness_gap_closure.md`;
+  - `docs/architecture/c4_container_s7_mvp_readiness_gap_closure.md`;
+  - `docs/architecture/adr/ADR-0010-s7-mvp-readiness-stream-boundaries-and-parity-gate.md`;
+  - `docs/architecture/alternatives/ALT-0002-s7-mvp-readiness-stream-architecture.md`.
+- Результат Day 4 (факт):
+  - зафиксированы service boundaries/ownership matrix по `S7-E01..S7-E18`;
+  - подтверждены wave-sequencing ограничения и architecture parity-gate перед `run:dev`;
+  - создана follow-up issue `#238` для stage `run:design` без trigger-лейбла.
+- Day 5+ (planned): `design -> plan -> dev -> qa -> release -> postdeploy -> ops -> doc-audit` с отдельной issue на каждый stage и owner-governed trigger-лейблами.
 
 ### Sprint S8: Go refactoring parallelization (Issue #223)
 - Day 1 (in-review): plan-пакет по параллельному Go-рефакторингу (`docs/delivery/epics/s8/epic-s8-day1-go-refactoring-plan.md`).

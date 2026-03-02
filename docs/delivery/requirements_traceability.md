@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-02
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 216]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 216]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -315,6 +315,27 @@ approvals:
 - Подтверждено governance-правило decomposition parity перед `run:dev`:
   `approved_execution_epics_count == created_run_dev_issues_count` (coverage ratio = `1.0`, блокировка при mismatch).
 - Для stage continuity создана follow-up issue `#222` (`run:arch`) без trigger-лейбла; в handover переданы PRD-пакет, sequencing-ограничения и parity-gate правила.
+- Scope этапа сохранён policy-safe: markdown-only изменения без модификации code/runtime артефактов.
+
+## Актуализация по Issue #222 (`run:arch`, 2026-03-02)
+- Для FR-026/FR-028/FR-033/FR-053/FR-054 и NFR-010/NFR-018 добавлен architecture traceability пакет Sprint S7:
+  `docs/delivery/epics/s7/epic-s7-day4-mvp-readiness-arch.md`,
+  `docs/architecture/s7_mvp_readiness_gap_closure_architecture.md`,
+  `docs/architecture/c4_context_s7_mvp_readiness_gap_closure.md`,
+  `docs/architecture/c4_container_s7_mvp_readiness_gap_closure.md`,
+  `docs/architecture/adr/ADR-0010-s7-mvp-readiness-stream-boundaries-and-parity-gate.md`,
+  `docs/architecture/alternatives/ALT-0002-s7-mvp-readiness-stream-architecture.md`,
+  `docs/delivery/epics/s7/epic_s7.md`,
+  `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md`,
+  `docs/delivery/delivery_plan.md`,
+  `docs/delivery/issue_map.md`.
+- На architecture-stage зафиксированы:
+  - ownership matrix и сервисные границы по `S7-E01..S7-E18`;
+  - deterministic wave-sequencing для перехода `run:arch -> run:design -> run:plan`;
+  - parity-gate перед `run:dev`: `approved_execution_epics_count == created_run_dev_issues_count`.
+- Для stage continuity создана follow-up issue `#238` (`run:design`) без trigger-лейбла с обязательным handover на подготовку `design_doc/api_contract/data_model/migrations_policy`.
+- Через Context7 подтверждён baseline для инструментов stage-handover и C4-артефактов:
+  `/websites/cli_github_manual` (актуальный `gh issue/pr` синтаксис) и `/mermaid-js/mermaid` (валидный C4 синтаксис).
 - Scope этапа сохранён policy-safe: markdown-only изменения без модификации code/runtime артефактов.
 
 ## Актуализация по Issue #225 (`run:dev`, 2026-02-28)
