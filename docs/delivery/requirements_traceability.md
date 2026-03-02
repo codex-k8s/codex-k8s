@@ -202,6 +202,24 @@ approvals:
   - Kubernetes probe semantics (`startupProbe` для slow-start): `/websites/kubernetes_io`;
   - anti-noise alerting (`for`, `keep_firing_for`) и user-impact paging: `/prometheus/docs`, `/websites/prometheus_io`.
 
+## Актуализация по Issue #265 (`run:ops`, 2026-03-02)
+- Для FR-028/FR-033/FR-045 и NFR-001/NFR-007/NFR-010/NFR-018 оформлен ops closeout пакет Sprint S6:
+  `docs/delivery/epics/s6/epic-s6-day11-ops-operational-closeout.md`,
+  `docs/ops/s6_ops_operational_baseline.md`,
+  `docs/ops/production_runbook.md`,
+  `docs/ops/s6_postdeploy_ops_handover.md`,
+  `docs/delivery/epics/s6/epic_s6.md`,
+  `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md`,
+  `docs/delivery/delivery_plan.md`,
+  `docs/delivery/issue_map.md`.
+- Подтверждена stage continuity цепочка:
+  `#199 -> #201 -> #216 -> #262 -> #263 -> #265`; зафиксирован handover на следующий контур `run:doc-audit`.
+- Зафиксированы формальные эксплуатационные решения:
+  runbook triage baseline, monitoring/alert thresholds, SLO burn-rate policy и rollback readiness критерии.
+- Через Context7 подтверждены актуальные рекомендации:
+  - Kubernetes probes и handoff `startupProbe -> liveness/readiness`: `/websites/kubernetes_io`;
+  - Prometheus alerting anti-noise (`for`, `keep_firing_for`) и rule baseline: `/prometheus/docs`, `/websites/prometheus_io`.
+
 ## Актуализация по Issue #155 (`run:plan`, 2026-02-25)
 - Для FR-053/FR-054 добавлены execution-governance артефакты Sprint S5 (`epic_s5.md`, обновлённый sprint-plan, issue-map sync).
 - Зафиксированы quality-gates QG-01..QG-05 и критерии завершения handover в `run:dev`; QG-05 закрыт после Owner review в PR #166.

@@ -30,6 +30,7 @@ approvals:
 - Day8 QA (`#201`) подтвердил readiness и оформил переход в `run:release` через issue `#216`.
 - Day9 release closeout (`#262`) завершил release-governance Sprint S6 и создал issue `#263` для `run:postdeploy`.
 - Day10 postdeploy (`#263`) зафиксировал runtime evidence, обновил ops handover и подготовил переход в `run:ops`.
+- Day11 ops (`#265`) закрыл операционный хвост S6: зафиксирован production ops baseline (runbook/monitoring/alerts/SLO/rollback).
 
 ## Эпики Sprint S6
 - Day 1 (Intake): `docs/delivery/epics/s6/epic-s6-day1-agents-prompts-intake.md`
@@ -42,13 +43,15 @@ approvals:
 - Day 6 (Plan): `docs/delivery/epics/s6/epic-s6-day6-agents-prompts-plan.md` (Issue `#197`).
 - Day 9 (Release closeout): `docs/delivery/epics/s6/epic-s6-day9-release-closeout.md` (Issue `#262`).
 - Day 10 (Postdeploy review): `docs/delivery/epics/s6/epic-s6-day10-postdeploy-review.md` (Issue `#263`).
+- Day 11 (Ops closeout): `docs/delivery/epics/s6/epic-s6-day11-ops-operational-closeout.md` (Issue `#265`).
 
 ## Закрывающие этапы и continuity
 - Day 7 (Dev, completed): Issue `#199`, PR `#202`.
 - Day 8 (QA, completed): Issue `#201`, решение GO в `run:release`.
 - Day 9 (Release, completed): Issue `#262`, release closeout и traceability sync.
-- Day 10 (Postdeploy, in-review): Issue `#263`, сформирован postdeploy evidence package и ops handover.
-- Следующий этап после `run:postdeploy`: создана issue `#265` для stage `run:ops`.
+- Day 10 (Postdeploy, completed): Issue `#263`, сформирован postdeploy evidence package и ops handover.
+- Day 11 (Ops, in-review): Issue `#265`, сформирован и синхронизирован операционный baseline.
+- Следующий этап после `run:ops`: подготовить follow-up issue для stage `run:doc-audit`.
 
 ## Delivery-governance правила
 - Каждый stage завершает работу созданием issue для следующего stage.

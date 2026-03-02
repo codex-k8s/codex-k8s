@@ -131,6 +131,8 @@ approvals:
 - Day 9 (completed): release closeout в issue #262 с фиксацией release-governance пакета (`quality-gates`, DoD, release notes, rollback strategy).
 - Day 10 (in-review): postdeploy review в issue #263 с runtime evidence, обновлением ops handover и проверкой rollback readiness.
 - Результат Day 10 (факт): сформирована follow-up issue `#265` для stage `run:ops` (без trigger-лейбла, лейбл ставит Owner).
+- Day 11 (in-review): ops closeout в issue #265 с фиксацией production baseline по runbook/monitoring/alerts/SLO/rollback.
+- Результат Day 11 (факт): операционный хвост S6 закрыт, traceability синхронизирована, следующий continuity-шаг переведён в `run:doc-audit` issue flow.
 - Следующий continuity-контур S6: `ops -> doc-audit` с отдельной issue на каждый этап.
 
 ### Sprint S7: MVP readiness gap closure (Issue #212)

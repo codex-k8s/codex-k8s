@@ -21,7 +21,7 @@ approvals:
 ## TL;DR
 - Цель спринта: перевести раздел `Configuration -> Agents` из scaffold в управляемый контур продукта с реальными данными, lifecycle шаблонов промптов и аудитом изменений.
 - Базовый As-Is разрыв зафиксирован intake-этапом: UI работает на mock-данных, а staff OpenAPI пока не покрывает `agents/prompt-templates/audit`.
-- Sprint S6 прошёл postdeploy-проверку в issue `#263`; continuity передаётся в `run:ops` через отдельную follow-up issue.
+- Sprint S6 прошёл postdeploy и ops-контур (`#263` -> `#265`) с формализацией production baseline по runbook/monitoring/alerts/SLO/rollback.
 
 ## Scope спринта
 ### In scope
@@ -49,6 +49,7 @@ approvals:
 | QA (`#201`) | Acceptance/regression evidence + readiness decision | `qa` | QA gate пройден и создана issue `run:release` |
 | Release (`#262`) | Release closeout package (quality-gates/DoD/release notes/rollback) | `em` + `sre` | Sprint S6 формально закрыт, создана issue `run:postdeploy` |
 | Postdeploy (`#263`) | Postdeploy review + runtime evidence + ops handover | `qa` + `sre` | Stage evidence оформлен, создана issue `#265` для `run:ops` |
+| Ops (`#265`) | Ops closeout package (runbook/monitoring/alerts/SLO/rollback) | `sre` + `km` | Операционный baseline зафиксирован, подготовлен handover в `run:doc-audit` |
 | Doc Audit | Аудит docs/traceability/checklists | `km` + `reviewer` | Закрыт drift и сформирован post-dev improvement backlog |
 
 ## Quality gates (S6 governance)
@@ -67,6 +68,7 @@ approvals:
 | QG-S6-10 Release closeout | Зафиксированы release governance artifacts и закрытие Sprint S6 | passed (`#262`) |
 | QG-S6-11 Postdeploy continuity | Создана follow-up issue `run:postdeploy` без trigger-лейбла | passed (`#262` -> `#263`) |
 | QG-S6-12 Ops continuity | После postdeploy создана отдельная issue `run:ops` и подготовлен ops handover пакет | passed (`#263` -> `#265`) |
+| QG-S6-13 Ops closeout | Зафиксирован production ops baseline и обновлены traceability документы | passed (`#265`) |
 
 ## Stage acceptance progress (Intake -> Vision -> PRD -> Arch -> Design -> Plan)
 - [x] Подтверждено, что текущий UI раздел `Agents` работает как scaffold и не подключен к backend (`#184`).
@@ -81,6 +83,7 @@ approvals:
 - [x] QA stage (`#201`) завершён с решением GO в `run:release`, continuity оформлен через issue `#216`.
 - [x] Release closeout stage (`#262`) завершён, создана issue `#263` для `run:postdeploy`.
 - [x] Postdeploy stage (`#263`) завершил runtime проверки и подготовил continuity в `run:ops` (issue `#265`).
+- [x] Ops stage (`#265`) завершил операционный hardening и зафиксировал baseline в `docs/ops/s6_ops_operational_baseline.md`.
 
 ## Риски и допущения
 - Риск: смешение scope между настройками агентов, prompt policy и runtime observability может размыть MVP-инкремент.
@@ -91,4 +94,4 @@ approvals:
 ## Handover в следующий этап
 - Актуальная цепочка stage-issues:
   `#184 (intake) -> #185 (vision) -> #187 (prd) -> #189 (arch) -> #195 (design) -> #197 (plan) -> #199 (dev) -> #201 (qa) -> #216 (release continuity) -> #262 (release closeout) -> #263 (postdeploy) -> #265 (ops)`.
-- Следующий обязательный шаг: запустить `run:ops` на issue `#265` по trigger-лейблу Owner.
+- Следующий обязательный шаг: создать follow-up issue для `run:doc-audit` (без trigger-лейбла; trigger ставит Owner).

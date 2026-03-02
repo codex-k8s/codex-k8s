@@ -72,7 +72,25 @@ kubectl -n "$ns" get events --sort-by=.lastTimestamp | tail -n 120
 
 Операционный handover для Sprint S6:
 - `docs/ops/s6_postdeploy_ops_handover.md`;
+- `docs/ops/s6_ops_operational_baseline.md`;
 - `docs/delivery/epics/s6/epic-s6-day10-postdeploy-review.md`.
+
+## Ops baseline checklist (S6 Day11)
+
+Использовать после `run:ops` (Issue `#265`) как обязательный gate для production decision.
+
+| Проверка | Условие PASS | Решение при FAIL |
+|---|---|---|
+| Availability | success-rate не ниже 99.5% в 10m окне | page incident + rollback assessment |
+| API latency p95 | не выше 2.0s в 10m окне | mitigation, затем rollback decision при отсутствии снижения |
+| 5xx error rate | не выше 3% в 5m окне | немедленный incident triage, ограничение blast radius |
+| Worker backlog | нет устойчивого роста >30m | queue/retry analysis, capacity mitigation |
+| Postgres health | `pg_isready` стабильно OK | DB incident procedure |
+
+Эскалация:
+- `ticket`: burn-rate > `2x` на окнах `1h + 6h`;
+- `page`: burn-rate > `6x` на окнах `5m + 1h`;
+- anti-noise: для page-сигналов использовать `for >= 5m` и `keep_firing_for >= 5m`.
 
 ## Проверка внешних портов (снаружи)
 
