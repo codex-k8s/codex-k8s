@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-02
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -128,13 +128,14 @@ approvals:
 - Day 7 (completed): dev stage в issue #199 (contract-first/migrations/staff transport/UI integration).
 - Результат Day 7 (факт): реализация `agents/templates/audit` завершена в PR #202 (merged), сформирован regression evidence package и создана issue #201 для stage `run:qa`.
 - Day 8 (completed): QA stage в issue #201 закрыт с решением GO в `run:release`; создана issue #216 для следующего этапа release-continuity.
-- Следующие day-эпики S6 формируются строго последовательно по stage-цепочке:
-  `arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops -> doc-audit` с отдельной issue на каждый этап.
+- Day 9 (completed): release closeout в issue #262 с фиксацией release-governance пакета (`quality-gates`, DoD, release notes, rollback strategy).
+- Результат Day 9 (факт): Sprint S6 закрыт как успешно выполненный; создана issue #263 для stage `run:postdeploy` (без trigger-лейбла, лейбл ставит Owner).
+- Следующий continuity-контур S6: `postdeploy -> ops -> doc-audit` с отдельной issue на каждый этап.
 
 ### Sprint S7: MVP readiness gap closure (Issue #212)
 - Day 1 (in-review): intake пакет по незакрытым MVP-разрывам (`docs/delivery/epics/s7/epic-s7-day1-mvp-readiness-intake.md`).
 - Результат Day 1 (факт): подтверждены P0/P1/P2-потоки и dependency-блокеры:
-  - актуальная S6 release-зависимость (`#199` и `#201` закрыты, открыта issue `#216`);
+  - release-зависимость S6 закрыта (`#262`), активный continuity-блокер перенесён в postdeploy issue `#263`;
   - крупный UI-scaffold контур с `comingSoon`/TODO в staff web-console;
   - отсутствие подтверждённого run-evidence для `run:doc-audit` в текущем delivery-цикле.
 - Дополнительно по owner-review комментариям сформирована candidate-декомпозиция на 18 execution-эпиков (`S7-E01..S7-E18`) с приоритетами и трассировкой в `docs/delivery/epics/s7/epic_s7.md`.

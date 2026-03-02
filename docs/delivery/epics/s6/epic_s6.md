@@ -2,11 +2,11 @@
 doc_id: EPC-CK8S-0006
 type: epic
 title: "Epic Catalog: Sprint S6 (Agents configuration and prompt templates lifecycle)"
-status: in-progress
+status: completed
 owner_role: PM
 created_at: 2026-02-25
-updated_at: 2026-02-25
-related_issues: [184, 185, 187, 189, 195, 197, 199, 201]
+updated_at: 2026-03-02
+related_issues: [184, 185, 187, 189, 195, 197, 199, 201, 216, 262, 263]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -27,6 +27,8 @@ approvals:
 - Day5 design (`#195`) зафиксировал implementation-ready design package и создал follow-up issue `#197` для `run:plan`.
 - Day6 plan (`#197`) зафиксировал execution roadmap + quality-gates + DoD и создал follow-up issue `#199` для `run:dev`.
 - Day7 dev (`#199`) реализовал lifecycle `agents/templates/audit` (PR `#202`) и создал follow-up issue `#201` для `run:qa`.
+- Day8 QA (`#201`) подтвердил readiness и оформил переход в `run:release` через issue `#216`.
+- Day9 release closeout (`#262`) завершил release-governance Sprint S6 и создал issue `#263` для `run:postdeploy`.
 
 ## Эпики Sprint S6
 - Day 1 (Intake): `docs/delivery/epics/s6/epic-s6-day1-agents-prompts-intake.md`
@@ -37,16 +39,19 @@ approvals:
 - Day 4 (Architecture): `docs/delivery/epics/s6/epic-s6-day4-agents-prompts-arch.md` (Issue `#189`).
 - Day 5 (Design): `docs/delivery/epics/s6/epic-s6-day5-agents-prompts-design.md` (Issue `#195`).
 - Day 6 (Plan): `docs/delivery/epics/s6/epic-s6-day6-agents-prompts-plan.md` (Issue `#197`).
+- Day 9 (Release closeout): `docs/delivery/epics/s6/epic-s6-day9-release-closeout.md` (Issue `#262`).
 
-## Планируемые epics (следующие stage)
-- Day 7 (Dev): реализация lifecycle `agents/templates/audit` (Issue `#199`, `run:dev`).
-- Day 8 (QA): acceptance/regression по реализации Day7 (Issue `#201`, `run:qa`).
-- Day 9+ (Release/Postdeploy/Ops + Doc-Audit): релизный проход, эксплуатационная проверка и аудит трассируемости.
+## Закрывающие этапы и continuity
+- Day 7 (Dev, completed): Issue `#199`, PR `#202`.
+- Day 8 (QA, completed): Issue `#201`, решение GO в `run:release`.
+- Day 9 (Release, completed): Issue `#262`, release closeout и traceability sync.
+- Day 10 (Postdeploy, handover): создана issue `#263` для stage `run:postdeploy` (без trigger-лейбла).
+- Следующий этап после `run:postdeploy`: `run:ops` с отдельной continuity issue.
 
 ## Delivery-governance правила
 - Каждый stage завершает работу созданием issue для следующего stage.
 - Follow-up issue создаются без `run:*`-лейбла; trigger-лейбл на запуск следующего stage ставит Owner.
 - Каждая следующая issue обязана содержать явную инструкцию создать issue после завершения текущего этапа.
 - Для цепочки S6 зафиксирована последовательность continuity:
-  - `#184 (intake) -> #185 (vision) -> #187 (prd) -> #189 (arch) -> #195 (design) -> #197 (plan) -> #199 (dev) -> #201 (qa)`.
-- Для `run:qa` зафиксирован обязательный continuity-артефакт: после завершения QA создать issue `run:release`.
+  - `#184 (intake) -> #185 (vision) -> #187 (prd) -> #189 (arch) -> #195 (design) -> #197 (plan) -> #199 (dev) -> #201 (qa) -> #216 (release continuity) -> #262 (release closeout) -> #263 (postdeploy)`.
+- Для `run:postdeploy` зафиксирован обязательный continuity-артефакт: после завершения stage создать issue `run:ops`.

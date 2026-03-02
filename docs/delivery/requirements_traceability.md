@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-02
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -174,6 +174,18 @@ approvals:
   - `make dupl-go` (зафиксированы pre-existing дубли вне scope текущих правок).
 - Создана follow-up issue `#201` для stage `run:qa` с обязательной continuity-инструкцией по созданию issue `run:release` после завершения QA.
 
+## Актуализация по Issue #262 (`run:release`, 2026-03-02)
+- Для FR-028/FR-033/FR-045 и NFR-007/NFR-010/NFR-018 зафиксирован release closeout пакет Sprint S6:
+  `docs/delivery/epics/s6/epic-s6-day9-release-closeout.md`,
+  `docs/delivery/epics/s6/epic_s6.md`,
+  `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md`,
+  `docs/delivery/delivery_plan.md`,
+  `docs/delivery/issue_map.md`.
+- Подтверждена release continuity цепочка:
+  `#199 -> #201 -> #216 -> #262`, сформирован handover в `run:postdeploy` через issue `#263`.
+- Зафиксированы release quality-gates, DoD, release notes и rollback/mitigation план без расширения scope за пределы markdown-only policy.
+- Через Context7 (`/websites/cli_github_manual`) подтверждён актуальный синтаксис `gh issue/pr` команд для PR-flow и label-transition fallback.
+
 ## Актуализация по Issue #155 (`run:plan`, 2026-02-25)
 - Для FR-053/FR-054 добавлены execution-governance артефакты Sprint S5 (`epic_s5.md`, обновлённый sprint-plan, issue-map sync).
 - Зафиксированы quality-gates QG-01..QG-05 и критерии завершения handover в `run:dev`; QG-05 закрыт после Owner review в PR #166.
@@ -207,7 +219,7 @@ approvals:
   `docs/product/stage_process_model.md`.
 - Intake зафиксировал фактические MVP gaps:
   - `comingSoon`/scaffold контур в staff UI (`navigation.ts` + профильные TODO-страницы);
-  - S6 dependency-chain: `#199/#201` закрыты, открытый release-блокер перенесён в Issue `#216`;
+  - S6 dependency-chain: `#199/#201` закрыты, release closeout выполнен в Issue `#262`, активный continuity-блокер перенесён в `#263` (`run:postdeploy`);
   - отсутствие подтверждённого run-evidence для `run:doc-audit` в текущем delivery-цикле.
 - Для всех открытых owner-замечаний PR #213 выставлен статус `fix_required`; замечания сгруппированы по приоритету `behavior/data -> quality/style`.
 - В backlog S7 добавлены 18 candidate execution-эпиков (`S7-E01..S7-E18`) с owner-aligned handover в `run:vision`:

@@ -2,11 +2,11 @@
 doc_id: SPR-CK8S-0006
 type: sprint-plan
 title: "Sprint S6: Agents configuration and prompt templates lifecycle (Issue #184)"
-status: in-progress
+status: completed
 owner_role: PM
 created_at: 2026-02-25
-updated_at: 2026-02-25
-related_issues: [184, 185, 187, 189, 195, 197, 199, 201]
+updated_at: 2026-03-02
+related_issues: [184, 185, 187, 189, 195, 197, 199, 201, 216, 262, 263]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -21,7 +21,7 @@ approvals:
 ## TL;DR
 - Цель спринта: перевести раздел `Configuration -> Agents` из scaffold в управляемый контур продукта с реальными данными, lifecycle шаблонов промптов и аудитом изменений.
 - Базовый As-Is разрыв зафиксирован intake-этапом: UI работает на mock-данных, а staff OpenAPI пока не покрывает `agents/prompt-templates/audit`.
-- На текущий момент chain continuity доведён до `run:qa`: `#184 -> #185 -> #187 -> #189 -> #195 -> #197 -> #199 -> #201`.
+- Sprint S6 закрыт release-этапом `#262`; continuity передан в `run:postdeploy` через issue `#263`.
 
 ## Scope спринта
 ### In scope
@@ -47,6 +47,8 @@ approvals:
 | Plan (`#197`) | Delivery plan + epics + DoD | `em` + `km` | Подготовлен execution package и issue Dev |
 | Dev (`#199`) | Реализация + PR + docs sync | `dev` | PR `#202` готов, создана issue `run:qa` |
 | QA (`#201`) | Acceptance/regression evidence + readiness decision | `qa` | QA gate пройден и создана issue `run:release` |
+| Release (`#262`) | Release closeout package (quality-gates/DoD/release notes/rollback) | `em` + `sre` | Sprint S6 формально закрыт, создана issue `run:postdeploy` |
+| Postdeploy (`#263`) | Postdeploy review + runtime evidence | `qa` + `sre` | После завершения stage создаётся issue `run:ops` |
 | Doc Audit | Аудит docs/traceability/checklists | `km` + `reviewer` | Закрыт drift и сформирован post-dev improvement backlog |
 
 ## Quality gates (S6 governance)
@@ -62,6 +64,8 @@ approvals:
 | QG-S6-07 Policy compliance | Изменения ограничены markdown без нарушения stage/label policy | passed |
 | QG-S6-08 Design handover | Подготовлен design package и создан follow-up issue `run:plan` | passed (`#195` -> `#197`) |
 | QG-S6-09 Plan handover | Подготовлен execution package `run:dev` (quality-gates + DoD + risks) и создана issue реализации | passed (`#197` -> `#199`) |
+| QG-S6-10 Release closeout | Зафиксированы release governance artifacts и закрытие Sprint S6 | passed (`#262`) |
+| QG-S6-11 Postdeploy continuity | Создана follow-up issue `run:postdeploy` без trigger-лейбла | passed (`#262` -> `#263`) |
 
 ## Stage acceptance progress (Intake -> Vision -> PRD -> Arch -> Design -> Plan)
 - [x] Подтверждено, что текущий UI раздел `Agents` работает как scaffold и не подключен к backend (`#184`).
@@ -73,6 +77,8 @@ approvals:
 - [x] Подготовлен design package (`#195`) и создана issue `#197` для stage `run:plan`.
 - [x] Подготовлен execution package (`#197`) и создана issue `#199` для stage `run:dev`.
 - [x] Реализован `run:dev` пакет (`#199`) и создана issue `#201` для stage `run:qa`.
+- [x] QA stage (`#201`) завершён с решением GO в `run:release`, continuity оформлен через issue `#216`.
+- [x] Release closeout stage (`#262`) завершён, создана issue `#263` для `run:postdeploy`.
 
 ## Риски и допущения
 - Риск: смешение scope между настройками агентов, prompt policy и runtime observability может размыть MVP-инкремент.
@@ -81,5 +87,6 @@ approvals:
 - Допущение: существующая модель БД (`agents`, `agent_policies`, `prompt_templates`, `agent_sessions`, `flow_events`) остается базой для архитектурной проработки.
 
 ## Handover в следующий этап
-- Актуальная цепочка stage-issues: `#184 (intake) -> #185 (vision) -> #187 (prd) -> #189 (arch) -> #195 (design) -> #197 (plan) -> #199 (dev) -> #201 (qa)`.
-- Для issue `#201` зафиксировано обязательное правило: после `run:qa` создать issue следующего этапа `run:release`.
+- Актуальная цепочка stage-issues:
+  `#184 (intake) -> #185 (vision) -> #187 (prd) -> #189 (arch) -> #195 (design) -> #197 (plan) -> #199 (dev) -> #201 (qa) -> #216 (release continuity) -> #262 (release closeout) -> #263 (postdeploy)`.
+- Следующее обязательное правило continuity: после завершения `run:postdeploy` создать issue следующего этапа `run:ops`.
