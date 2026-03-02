@@ -5,7 +5,7 @@ title: "Epic S7 Day 2: Vision для закрытия MVP readiness gaps (Issue 
 status: in-review
 owner_role: PM
 created_at: 2026-02-27
-updated_at: 2026-02-27
+updated_at: 2026-03-02
 related_issues: [212, 218, 220, 216]
 related_prs: []
 approvals:
@@ -53,6 +53,7 @@ approvals:
 - Кодовые изменения сервисов, frontend и инфраструктуры.
 - Изменение архитектурных границ и базовой label taxonomy.
 - Исполнение самих implementation-эпиков (это scope стадий `run:dev+`).
+- Возврат custom agents/prompt lifecycle в MVP (этот контур перенесён в post-MVP).
 
 ## Success metrics
 
@@ -79,16 +80,16 @@ approvals:
 | S7-E03 | KPI-S7-E03 | Наличие глобального filter-кода вне scope | 0 | code search evidence + UI behavior checks |
 | S7-E04 | KPI-S7-E04 | Наличие runtime-deploy/images UI-контуров в MVP | 0 | UI/nav diff + dead-code cleanup report |
 | S7-E05 | KPI-S7-E05 | Наличие badge `Скоро` и лишних колонок в Agents | 0 | UI screenshots + acceptance checklist |
-| S7-E06 | KPI-S7-E06 | Консистентность runtime mode + locale defaults при import | 100% кейсов | import scenario matrix + QA evidence |
-| S7-E07 | KPI-S7-E07 | Наличие selector `repo|db` и policy-консистентность worker | 100% случаев | API/UI contract evidence + worker behavior checks |
-| S7-E08 | KPI-S7-E08 | Покрытие массовых операций в Agents UX | 100% заявленного scope | UX сценарии + regression notes |
+| S7-E06 | KPI-S7-E06 | Отсутствие runtime mode/locale настройки в MVP UI и зафиксированный default policy | 100% screens/flows | UI diff + policy note + cleanup evidence |
+| S7-E07 | KPI-S7-E07 | Repo-only prompt source policy без selector `repo|db` | 100% agent flows | API/UI contract evidence + worker behavior checks |
+| S7-E08 | KPI-S7-E08 | Отсутствие non-MVP массовых операций в Agents UX | 0 non-MVP actions | UX scenarios + cleanup regression notes |
 | S7-E09 | KPI-S7-E09 | Наличие run type колонки и availability namespace delete | run type = 0, delete action = 100% | Runs UI screenshots + action logs |
 | S7-E10 | KPI-S7-E10 | Доля зависших deploy tasks без cancel/stop пути | 0 | runtime deploy сценарии + ops evidence |
 | S7-E11 | KPI-S7-E11 | Частота некорректного поведения `mode:discussion` | 0 регрессий | orchestration checks + flow evidence |
 | S7-E12 | KPI-S7-E12 | Проход финального readiness gate по цепочке stage | 100% required gates | consolidated readiness package |
 | S7-E13 | KPI-S7-E13 | Поддержка `run:qa:revise` в policy + transitions | 100% | policy docs + revise scenario evidence |
 | S7-E14 | KPI-S7-E14 | Покрытие QA проверок новых/изменённых ручек через DNS path | 100% применимых ручек | QA matrix + DNS-path run logs |
-| S7-E15 | KPI-S7-E15 | Наличие repo refresh + version bump для prompt templates | 100% | UI/API evidence + version history |
+| S7-E15 | KPI-S7-E15 | Prompt templates изменяются только через repo-commit workflow (без UI refresh/versioning) | 100% | policy docs + repo-based update evidence |
 | S7-E16 | KPI-S7-E16 | Количество false-failed для `run:intake:revise` | 0 | run status audit evidence |
 | S7-E17 | KPI-S7-E17 | Доля self-improve запусков с доступным session snapshot | 100% | session retrieval/rewrite evidence |
 | S7-E18 | KPI-S7-E18 | Соответствие issue/PR/doc IA + role templates стандарту | 100% | governance checklist + docs diff |
@@ -102,16 +103,16 @@ approvals:
 | S7-E03 | Как пользователь staff UI, я хочу убрать глобальный фильтр, чтобы избежать ложных ожиданий и лишней сложности. | 1) Глобальный фильтр полностью удалён. 2) Связанные зависимости и UI-следы удалены. | Скрытые зависимости фильтра в дочерних компонентах. | Поиск по коду + UI smoke до/после. |
 | S7-E04 | Как Owner, я хочу исключить runtime-deploy/images контуры из MVP UI, чтобы не смешивать scope readiness. | 1) UI-секции runtime-deploy/images удалены из MVP контуров. 2) Связанный код очищен. | Внешние ссылки/кнопки на удалённые разделы. | UI diff, route cleanup report, проверка отсутствия битых переходов. |
 | S7-E05 | Как оператор Agents, я хочу чистую таблицу без `Скоро` и лишних колонок, чтобы UI был функционально завершён. | 1) Badge `Скоро` удалён. 2) Таблица пересобрана по утверждённому MVP-составу. | Пустой список агентов; длинные значения полей. | Скриншоты UI, checklist по полям таблицы, smoke-отчёт. |
-| S7-E06 | Как оператор, я хочу консистентные defaults runtime mode и locale при import, чтобы избежать ручных исправлений. | 1) Runtime mode defaults формализованы. 2) Locale policy и bulk update правила определены и проверяемы. | Частичный импорт; конфликт owner-locale и repo-locale. | Матрица import-сценариев, policy notes, acceptance evidence. |
-| S7-E07 | Как оператор, я хочу выбирать source prompt templates (`repo`/`db`), чтобы контролировать поведение worker без ручных обходов. | 1) Selector `repo|db` формализован в policy/контрактах. 2) Поведение worker согласовано с выбранным source. | Source недоступен; рассинхрон версий между repo и db. | Контрактные тест-кейсы, UI/API сценарии, worker run evidence. |
-| S7-E08 | Как Owner, я хочу hardening массовых операций Agents UX, чтобы управлять большим набором агентов без ручной рутины. | 1) Список массовых операций формализован. 2) Для каждой операции есть AC и rollback/guardrails. | Частичный успех batch-операции; конфликт прав доступа. | UX сценарии, лог массовых операций, rollback checks. |
+| S7-E06 | Как Owner, я хочу убрать runtime mode/locale настройки из MVP Agents UI, чтобы не поддерживать кастомизацию агентов в первой версии. | 1) Настройки runtime mode/locale отсутствуют в MVP UI/API. 2) Зафиксирован детерминированный default policy для системных агентов. | Legacy deep-link на удалённые controls; рассинхрон docs vs UI. | UI diff, policy notes, cleanup evidence. |
+| S7-E07 | Как оператор, я хочу repo-only prompt source в MVP, чтобы убрать selector `repo|db` и снизить риск рассинхрона. | 1) Selector `repo|db` удалён из MVP-контуров. 2) Worker/контракты используют только repo source. | Repo template недоступен; fallback поведение при ошибке чтения. | Контрактные проверки, worker run evidence, negative-case notes. |
+| S7-E08 | Как Owner, я хочу убрать non-MVP массовые операции в Agents UX, чтобы оставить только минимальный operational контур. | 1) Non-MVP batch operations удалены. 2) Пользователь видит только утверждённые MVP-действия. | Ссылки/кнопки на удалённые действия; stale docs screenshots. | UX сценарии, cleanup checklist, regression notes. |
 | S7-E09 | Как QA/SRE, я хочу в Runs UI видеть только релевантные поля и всегда иметь delete namespace, чтобы ускорить диагностику. | 1) Колонка run type удалена. 2) Delete namespace action доступен детерминированно по policy. | Namespace уже удалён; namespace в terminating state. | Скриншоты Runs/RunDetails, action evidence, negative-case checks. |
 | S7-E10 | Как SRE, я хочу cancel/stop для зависших deploy tasks, чтобы управлять инцидентами без ручных обходов. | 1) Для зависших tasks существует явный cancel/stop path. 2) Guardrails предотвращают опасные действия. | Гонка статусов task в момент отмены; повторный cancel. | Ops-сценарии, task lifecycle logs, guardrail evidence. |
 | S7-E11 | Как PM/Owner, я хочу корректный `mode:discussion`, чтобы stage orchestration не ломала обсуждение и handover. | 1) `mode:discussion` ведёт себя согласно policy. 2) Нет ложных trigger/flow переходов. | Одновременный комментарий и label transition; снятие режима в процессе run. | Flow-event evidence, issue timeline, regression сценарии. |
 | S7-E12 | Как Owner, я хочу финальный readiness gate с доказательствами, чтобы принять go/no-go по MVP обоснованно. | 1) Собран единый evidence bundle по stage-цепочке. 2) Зафиксировано решение go/no-go. | Частично закрытые P0; незавершённые dependencies. | Consolidated readiness report, release/postdeploy/ops/doc-audit evidence. |
 | S7-E13 | Как QA, я хочу revise-петлю `run:qa:revise`, чтобы корректно дорабатывать QA-артефакты по review feedback. | 1) `run:qa:revise` отражён в stage/labels policy. 2) revise loop подтверждён сценариями переходов. | Конфликт stage labels; запуск revise без исходного QA контекста. | Policy diffs, transition checks, QA revise run evidence. |
 | S7-E14 | Как QA, я хочу проверять новые/изменённые ручки через Kubernetes DNS path, чтобы acceptance не зависела от UI OAuth-flow. | 1) Для всех применимых ручек определён DNS-path check. 2) Evidence включён в QA artifacts. | Недоступность сервиса в namespace; частичный DNS resolution. | QA matrix, команды/логи DNS-path проверок, traceability ссылки. |
-| S7-E15 | Как оператор Agents, я хочу обновлять prompt templates из repo с version bump, чтобы поддерживать актуальность шаблонов. | 1) Есть действие refresh из repo. 2) Каждое обновление создаёт новую версию шаблона. | Невалидный шаблон в repo; конфликт одновременных обновлений. | Version history, diff evidence, negative-case handling notes. |
+| S7-E15 | Как Owner, я хочу закрепить для MVP workflow «правки prompt templates только в repo», чтобы не добавлять UI refresh/versioning контур. | 1) UI refresh/versioning для шаблонов отсутствует в MVP scope. 2) Обновление шаблонов выполняется через commit в repo и стандартный review-flow. | Невалидный шаблон в repo; отсутствие commit-review перед обновлением. | Policy docs, repo-based update evidence, review logs. |
 | S7-E16 | Как Owner, я хочу исключить false-failed статусы для `run:intake:revise`, чтобы статус run отражал фактический результат. | 1) Устранён сценарий false-failed. 2) Статус run консистентен с фактическим completion. | Дубли callback-событий; race при финализации run. | Сравнение run logs/status, regression scenario evidence. |
 | S7-E17 | Как KM, я хочу гарантированно получать и перезаписывать session snapshot в self-improve, чтобы диагностика была воспроизводимой. | 1) Session snapshot всегда доступен для self-improve. 2) Перезапись snapshot работает без потери контекста. | Частично повреждённый snapshot; повторная запись с тем же ключом. | Session retrieval/rewrite evidence, diagnostic logs, consistency checks. |
 | S7-E18 | Как PM/KM, я хочу единый governance-стандарт для issue/PR/документов, чтобы снизить quality drift в delivery. | 1) Зафиксирован и применён единый формат issue/PR. 2) Документация приведена к утверждённой IA и role-template matrix. | Legacy-документы вне стандарта; смешение типов документов в одном файле. | Governance checklist, docs diff, traceability updates. |

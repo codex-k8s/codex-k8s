@@ -5,8 +5,8 @@ title: "Requirements Traceability Matrix"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-28
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 223, 225, 226, 227, 228, 229, 230, 216]
+updated_at: 2026-03-02
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 216]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -211,7 +211,7 @@ approvals:
   - отсутствие подтверждённого run-evidence для `run:doc-audit` в текущем delivery-цикле.
 - Для всех открытых owner-замечаний PR #213 выставлен статус `fix_required`; замечания сгруппированы по приоритету `behavior/data -> quality/style`.
 - В backlog S7 добавлены 18 candidate execution-эпиков (`S7-E01..S7-E18`) с owner-aligned handover в `run:vision`:
-  rebase/mainline hygiene, UI cleanup (navigation/sections/filter), agents UX/runtime settings, runs/deploy UX, `mode:discussion` reliability, `run:qa:revise` coverage, QA DNS acceptance-policy, `run:intake:revise` status consistency, `run:self-improve` session reliability, финальный readiness gate.
+  rebase/mainline hygiene, UI cleanup (navigation/sections/filter), agents de-scope + repo-only prompt policy для MVP, runs/deploy UX, `mode:discussion` reliability, `run:qa:revise` coverage, QA DNS acceptance-policy, `run:intake:revise` status consistency, `run:self-improve` session reliability, финальный readiness gate.
 - Для стандартизации качества backlog зафиксировано требование PMO из Issue `#210`:
   формулировка задач в формате user story и обязательный блок edge cases для QA-ready acceptance.
 - Для процессного governance добавлен единый стандарт:
@@ -294,9 +294,27 @@ approvals:
   `docs/delivery/issue_map.md`.
 - Vision-stage формализовал measurable KPI для всех execution-потоков `S7-E01..S7-E18` и зафиксировал baseline по каждому потоку:
   `user story + acceptance criteria + edge cases + expected evidence`.
+- В vision baseline добавлена owner policy для MVP: custom agents/prompt lifecycle вынесены в post-MVP, prompt templates обслуживаются по repo workflow.
 - Введено обязательное governance-правило decomposition parity перед `run:dev`:
   `approved_execution_epics_count == created_run_dev_issues_count` (coverage ratio = `1.0`).
 - Для stage continuity создана follow-up issue `#220` (`run:prd`) без trigger-лейбла; в issue передан обязательный шаблон создания следующей stage-задачи (`run:arch`).
+- Scope этапа сохранён policy-safe: markdown-only изменения без модификации code/runtime артефактов.
+
+## Актуализация по Issue #220 (`run:prd`, 2026-02-27)
+- Для FR-026/FR-028/FR-033/FR-045/FR-052/FR-053/FR-054 и NFR-010/NFR-018 добавлен PRD traceability пакет Sprint S7:
+  `docs/delivery/epics/s7/epic-s7-day3-mvp-readiness-prd.md`,
+  `docs/delivery/epics/s7/prd-s7-day3-mvp-readiness-gap-closure.md`,
+  `docs/delivery/epics/s7/epic_s7.md`,
+  `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md`,
+  `docs/delivery/delivery_plan.md`,
+  `docs/delivery/issue_map.md`.
+- PRD-stage формализовал stream-level execution contract для `S7-E01..S7-E18`:
+  `user story + FR + AC + NFR + edge cases + expected evidence + dependencies`.
+- Зафиксированы deterministic sequencing и dependency graph для перехода `run:prd -> run:arch -> run:design -> run:plan`.
+- В PRD явным контуром зафиксирован `repo-only` policy для prompt templates на MVP и de-scope custom agents/prompt lifecycle.
+- Подтверждено governance-правило decomposition parity перед `run:dev`:
+  `approved_execution_epics_count == created_run_dev_issues_count` (coverage ratio = `1.0`, блокировка при mismatch).
+- Для stage continuity создана follow-up issue `#222` (`run:arch`) без trigger-лейбла; в handover переданы PRD-пакет, sequencing-ограничения и parity-gate правила.
 - Scope этапа сохранён policy-safe: markdown-only изменения без модификации code/runtime артефактов.
 
 ## Актуализация по Issue #225 (`run:dev`, 2026-02-28)

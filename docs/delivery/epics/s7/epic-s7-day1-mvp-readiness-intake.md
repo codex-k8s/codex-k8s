@@ -5,7 +5,7 @@ title: "Epic S7 Day 1: Intake для закрытия MVP readiness gaps (Issue 
 status: in-review
 owner_role: PM
 created_at: 2026-02-27
-updated_at: 2026-02-27
+updated_at: 2026-03-02
 related_issues: [212, 199, 201, 210, 216, 218]
 related_prs: [213, 215]
 approvals:
@@ -83,7 +83,7 @@ approvals:
 |---|---|---|---|---|
 | PRC-01 | Нужен rebase | behavior/data | `fix_required` | `S7-E01` |
 | PRC-02 | Убрать runtime-deploy/images и неиспользуемый код | behavior/data | `fix_required` | `S7-E04` |
-| PRC-03 | Блок замечаний по Agents (badge, runtime mode, locale, prompt-source, таблица) | behavior/data | `fix_required` | `S7-E05`, `S7-E06`, `S7-E07`, `S7-E08` |
+| PRC-03 | Блок замечаний по Agents: убрать `Скоро` и выпилить не-MVP настройки (`runtime mode`, `locale`, `prompt-source`, массовые операции) | behavior/data | `fix_required` | `S7-E05`, `S7-E06`, `S7-E07`, `S7-E08` |
 | PRC-04 | Удалить глобальный фильтр и связанный dead code | quality/style | `fix_required` | `S7-E03` |
 | PRC-05 | Удалить не-MVP разделы в левом меню и связанный код | behavior/data | `fix_required` | `S7-E02`, `S7-E04` |
 | PRC-06 | В Runs убрать тип запуска, в деталях всегда давать delete namespace | behavior/data | `fix_required` | `S7-E09` |
@@ -91,7 +91,7 @@ approvals:
 | PRC-08 | Не работает `mode:discussion` | behavior/data | `fix_required` | `S7-E11` |
 | PRC-09 | Добавить revise-петлю для `run:qa` | behavior/data | `fix_required` | `S7-E13` |
 | PRC-10 | QA должен проверять новые/изменённые ручки через DNS Kubernetes (без упора в OAuth UI-flow) | behavior/data | `fix_required` | `S7-E14` |
-| PRC-11 | В Agents нужна кнопка обновления prompt templates из репозитория с созданием новых версий | behavior/data | `fix_required` | `S7-E15` |
+| PRC-11 | В MVP не нужна кнопка refresh/versioning для prompt templates: правки шаблонов выполняются напрямую в репозитории | behavior/data | `fix_required` | `S7-E15` |
 | PRC-12 | `run:intake:revise` (run `398275e1-161f-4bfa-86ac-baf27004dcaa`) отработал по факту, но отмечен как failed | behavior/data | `fix_required` | `S7-E16` |
 | PRC-13 | `run:self-improve` не извлёк целевую сессию агента; нужна верификация сохранения/перезаписи session snapshot | behavior/data | `fix_required` | `S7-E17` |
 | PRC-14 | Привести заголовки issue/PR к единому стилю по роли и типу задачи | quality/style | `fix_required` | `S7-E18` |
@@ -107,16 +107,16 @@ approvals:
 | S7-E03 | P0 | Удаление глобального фильтра + удаление зависимого кода | PRC-04 |
 | S7-E04 | P0 | Удаление runtime-deploy/images контуров | PRC-02, PRC-05 |
 | S7-E05 | P0 | Agents UI cleanup: убрать `Скоро`, переразметить таблицу | PRC-03 |
-| S7-E06 | P0 | Agents import defaults: runtime mode policy + locale policy/bulk update | PRC-03 |
-| S7-E07 | P0 | Worker prompt source selector (`repo`/`db`) + contract alignment | PRC-03 |
-| S7-E08 | P1 | Agents UX hardening и пакет массовых операций | PRC-03 |
+| S7-E06 | P0 | Agents MVP de-scope: убрать runtime mode/locale настройки из UI и зафиксировать фиксированные platform defaults | PRC-03 |
+| S7-E07 | P0 | Prompt source MVP contract: убрать selector `repo|db`, закрепить `repo-only` policy и cleanup зависимого кода | PRC-03 |
+| S7-E08 | P1 | Agents UX de-scope hardening: удалить не-MVP массовые операции и сохранить только минимальный read-only/operational контур | PRC-03 |
 | S7-E09 | P0 | Runs UX cleanup: удалить run-type, добавить deterministic namespace delete action | PRC-06 |
 | S7-E10 | P0 | Runtime deploy cancel/stop action + safety guardrails | PRC-07 |
 | S7-E11 | P0 | `mode:discussion` trigger/review-flow remediation | PRC-08 |
 | S7-E12 | P1 | Final readiness gate: consolidated evidence + go/no-go | PRC-01..PRC-08 |
 | S7-E13 | P0 | Label taxonomy alignment: добавить `run:qa:revise` в stage/labels policy и review automation | PRC-09 |
 | S7-E14 | P0 | QA execution policy: проверка новых/изменённых ручек через K8s DNS path + evidence requirements | PRC-10 |
-| S7-E15 | P0 | Agents prompt lifecycle UX: обновление prompt templates из repo с версионированием | PRC-11 |
+| S7-E15 | P0 | Prompt templates MVP policy: без UI refresh/versioning, изменения шаблонов только через коммиты в repo | PRC-11 |
 | S7-E16 | P0 | Run status consistency: устранить false-failed для `run:intake:revise` при фактически успешном completion | PRC-12 |
 | S7-E17 | P0 | Self-improve diagnostics hardening: гарантировать доступность и перезапись session snapshot | PRC-13 |
 | S7-E18 | P0 | Documentation governance hardening: единый стандарт issue/PR + doc IA + role-template matrix | PRC-14, PRC-15, PRC-16 |

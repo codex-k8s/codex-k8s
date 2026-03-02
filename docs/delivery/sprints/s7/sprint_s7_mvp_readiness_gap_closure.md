@@ -5,8 +5,8 @@ title: "Sprint S7: MVP readiness gap closure (Issue #212)"
 status: in-progress
 owner_role: PM
 created_at: 2026-02-27
-updated_at: 2026-02-27
-related_issues: [212, 218, 220, 199, 201, 210, 216]
+updated_at: 2026-03-02
+related_issues: [212, 218, 220, 222, 199, 201, 210, 216]
 related_prs: [213, 215]
 approvals:
   required: ["Owner"]
@@ -39,8 +39,8 @@ approvals:
 |---|---|---|---|---|
 | Day 1 | Intake по MVP readiness gaps | P0 | `docs/delivery/epics/s7/epic-s7-day1-mvp-readiness-intake.md` | in-review (`#212`) |
 | Day 2 | Vision: целевая картина MVP closeout, KPI и decomposition baseline | P0 | `docs/delivery/epics/s7/epic-s7-day2-mvp-readiness-vision.md` | in-review (`#218`) |
-| Day 3 | PRD: FR/AC/NFR и sequencing для gap-closure streams | P0 | Issue `#220` (`run:prd`) | planned |
-| Day 4 | Architecture: границы и ownership по stream'ам | P0 | TBD (`run:arch`) | planned |
+| Day 3 | PRD: FR/AC/NFR и sequencing для gap-closure streams | P0 | `docs/delivery/epics/s7/epic-s7-day3-mvp-readiness-prd.md` + `docs/delivery/epics/s7/prd-s7-day3-mvp-readiness-gap-closure.md` | in-review (`#220`) |
+| Day 4 | Architecture: границы и ownership по stream'ам | P0 | Issue `#222` (`run:arch`) | planned |
 | Day 5 | Design + Plan: execution package и quality gates | P0 | TBD (`run:design`, `run:plan`) | planned |
 | Day 6+ | Dev/QA/Release/Postdeploy/Ops/Doc-Audit | P0/P1 | TBD (`run:dev..run:doc-audit`) | planned |
 
@@ -53,16 +53,16 @@ approvals:
 | S7-E03 | P0 | Удаление глобального фильтра и зависимого кода | UI readiness gate |
 | S7-E04 | P0 | Удаление runtime-deploy/images секции и связанного фронтенд-кода | UI readiness gate |
 | S7-E05 | P0 | Agents table cleanup + removal of `Скоро` badge | depends on S6 baseline |
-| S7-E06 | P0 | Agents import defaults: runtime mode + locale policy + bulk update | depends on S6 baseline |
-| S7-E07 | P0 | Worker prompt source selector (`repo`/`db`) в agents settings | depends on API/worker contracts |
-| S7-E08 | P1 | Agents UX hardening и массовые операции | after S7-E05..E07 |
+| S7-E06 | P0 | Agents MVP de-scope: убрать runtime mode/locale настройки, оставить фиксированные defaults | depends on S6 baseline |
+| S7-E07 | P0 | Prompt source contract: удалить selector `repo|db`, закрепить `repo-only` policy | depends on API/worker contracts |
+| S7-E08 | P1 | Agents UX de-scope hardening: удалить non-MVP массовые операции | after S7-E05..E07 |
 | S7-E09 | P0 | Runs UX: убрать run type + гарантировать delete namespace | release-blocking UX |
 | S7-E10 | P0 | Runtime deploy task cancel/stop control | release-blocking ops UX |
 | S7-E11 | P0 | Исправление поведения `mode:discussion` в label orchestration | stage reliability |
 | S7-E12 | P1 | Финальный readiness gate (`qa -> release -> postdeploy -> ops -> doc-audit`) | requires S7-E01..E11 |
 | S7-E13 | P0 | Добавить revise-петлю `run:qa:revise` в stage/labels policy | review/revise reliability |
 | S7-E14 | P0 | QA policy: проверка новых/изменённых ручек через Kubernetes DNS path | QA acceptance gate |
-| S7-E15 | P0 | Agents: обновление prompt templates из repo с version bump | agents lifecycle readiness |
+| S7-E15 | P0 | Prompt templates MVP policy: изменения только через repo commit workflow (без UI refresh/versioning) | agents/prompt policy readiness |
 | S7-E16 | P0 | Run status reliability: false-failed для `run:intake:revise` | stage reliability |
 | S7-E17 | P0 | Self-improve: доступность и перезапись session snapshot | self-improve reliability |
 | S7-E18 | P0 | Documentation governance: issue/PR standard + doc IA + role-template matrix | backlog quality gate |
@@ -77,6 +77,7 @@ approvals:
 | QG-S7-04 Stage continuity | Для Day2 создана follow-up issue `#220` в `run:prd` (без trigger-лейбла) | passed |
 | QG-S7-05 Owner comments coverage | Каждое открытое замечание PR #213 классифицировано и сопоставлено с `S7-E*` | passed |
 | QG-S7-06 Decomposition parity rule | Перед `run:dev` зафиксировано правило `approved_execution_epics == implementation issues` | passed |
+| QG-S7-07 PRD completion | Для Day3 выпущен PRD-пакет (`epic + prd`) и создана follow-up issue `#222` в `run:arch` | passed |
 
 ## Completion критерии спринта
 - [ ] Закрыт открытый P0-блокер S6 (`#216`, `run:release`) и подтверждён переход в `run:postdeploy`.
@@ -96,6 +97,8 @@ approvals:
 | assumption | ASM-212-02 | Owner подтверждает последовательное закрытие stage-цепочки без параллельных конфликтующих `run:*` | accepted |
 
 ## Handover в следующий этап
-- Следующий этап: `run:prd`.
-- Для continuity создана отдельная issue `#220` в `run:prd` (без trigger-лейбла при создании, лейбл ставит Owner).
-- В Issue `#220` передан обязательный шаблон создания следующей stage-задачи (`run:arch`) и правила decomposition parity до `run:dev`.
+- Следующий этап: `run:arch`.
+- Для continuity создана отдельная issue `#222` в `run:arch` (без trigger-лейбла при создании, лейбл ставит Owner).
+- В Stage `run:arch` переданы обязательные артефакты Day3:
+  - `docs/delivery/epics/s7/epic-s7-day3-mvp-readiness-prd.md`;
+  - `docs/delivery/epics/s7/prd-s7-day3-mvp-readiness-gap-closure.md`.
