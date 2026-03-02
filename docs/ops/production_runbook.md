@@ -5,7 +5,7 @@ title: "Production Runbook (MVP)"
 status: active
 owner_role: SRE
 created_at: 2026-02-09
-updated_at: 2026-02-21
+updated_at: 2026-03-02
 related_issues: [1]
 related_prs: []
 approvals:
@@ -50,6 +50,29 @@ kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s-worker --tail=
 Порядок выкладки production:
 - `PostgreSQL -> migrations -> control-plane -> api-gateway -> frontend`.
 - Зависимости между сервисами ожидаются через `initContainers` в манифестах.
+
+## Postdeploy checklist (S6 continuity)
+
+Для postdeploy-контуров (`run:postdeploy` / `run:ops`) используйте минимальный gate:
+
+```bash
+ns="${CODEXK8S_PRODUCTION_NAMESPACE:-codex-k8s-prod}"
+
+kubectl -n "$ns" get pods,deploy,job -o wide
+kubectl -n "$ns" logs deploy/codex-k8s-control-plane --tail=200
+kubectl -n "$ns" logs deploy/codex-k8s-worker --tail=200
+kubectl -n "$ns" logs deploy/codex-k8s --tail=200
+kubectl -n "$ns" get events --sort-by=.lastTimestamp | tail -n 120
+```
+
+Интерпретация:
+- единичные `startup probe failed` в первые минуты rollout допустимы, если pod стабильно переходит в `Running/Ready`;
+- рост restart count, повторяющиеся probe-failures или `CrashLoopBackOff` считаются деградацией и требуют rollback decision;
+- paging принимается только по user-impact сигналам (availability/error/critical latency), noise-сигналы должны быть подавлены через `for`/`keep_firing_for`.
+
+Операционный handover для Sprint S6:
+- `docs/ops/s6_postdeploy_ops_handover.md`;
+- `docs/delivery/epics/s6/epic-s6-day10-postdeploy-review.md`.
 
 ## Проверка внешних портов (снаружи)
 

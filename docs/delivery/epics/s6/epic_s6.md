@@ -6,7 +6,7 @@ status: completed
 owner_role: PM
 created_at: 2026-02-25
 updated_at: 2026-03-02
-related_issues: [184, 185, 187, 189, 195, 197, 199, 201, 216, 262, 263]
+related_issues: [184, 185, 187, 189, 195, 197, 199, 201, 216, 262, 263, 265]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -29,6 +29,7 @@ approvals:
 - Day7 dev (`#199`) реализовал lifecycle `agents/templates/audit` (PR `#202`) и создал follow-up issue `#201` для `run:qa`.
 - Day8 QA (`#201`) подтвердил readiness и оформил переход в `run:release` через issue `#216`.
 - Day9 release closeout (`#262`) завершил release-governance Sprint S6 и создал issue `#263` для `run:postdeploy`.
+- Day10 postdeploy (`#263`) зафиксировал runtime evidence, обновил ops handover и подготовил переход в `run:ops`.
 
 ## Эпики Sprint S6
 - Day 1 (Intake): `docs/delivery/epics/s6/epic-s6-day1-agents-prompts-intake.md`
@@ -40,18 +41,19 @@ approvals:
 - Day 5 (Design): `docs/delivery/epics/s6/epic-s6-day5-agents-prompts-design.md` (Issue `#195`).
 - Day 6 (Plan): `docs/delivery/epics/s6/epic-s6-day6-agents-prompts-plan.md` (Issue `#197`).
 - Day 9 (Release closeout): `docs/delivery/epics/s6/epic-s6-day9-release-closeout.md` (Issue `#262`).
+- Day 10 (Postdeploy review): `docs/delivery/epics/s6/epic-s6-day10-postdeploy-review.md` (Issue `#263`).
 
 ## Закрывающие этапы и continuity
 - Day 7 (Dev, completed): Issue `#199`, PR `#202`.
 - Day 8 (QA, completed): Issue `#201`, решение GO в `run:release`.
 - Day 9 (Release, completed): Issue `#262`, release closeout и traceability sync.
-- Day 10 (Postdeploy, handover): создана issue `#263` для stage `run:postdeploy` (без trigger-лейбла).
-- Следующий этап после `run:postdeploy`: `run:ops` с отдельной continuity issue.
+- Day 10 (Postdeploy, in-review): Issue `#263`, сформирован postdeploy evidence package и ops handover.
+- Следующий этап после `run:postdeploy`: создана issue `#265` для stage `run:ops`.
 
 ## Delivery-governance правила
 - Каждый stage завершает работу созданием issue для следующего stage.
 - Follow-up issue создаются без `run:*`-лейбла; trigger-лейбл на запуск следующего stage ставит Owner.
 - Каждая следующая issue обязана содержать явную инструкцию создать issue после завершения текущего этапа.
 - Для цепочки S6 зафиксирована последовательность continuity:
-  - `#184 (intake) -> #185 (vision) -> #187 (prd) -> #189 (arch) -> #195 (design) -> #197 (plan) -> #199 (dev) -> #201 (qa) -> #216 (release continuity) -> #262 (release closeout) -> #263 (postdeploy)`.
-- Для `run:postdeploy` зафиксирован обязательный continuity-артефакт: после завершения stage создать issue `run:ops`.
+  - `#184 (intake) -> #185 (vision) -> #187 (prd) -> #189 (arch) -> #195 (design) -> #197 (plan) -> #199 (dev) -> #201 (qa) -> #216 (release continuity) -> #262 (release closeout) -> #263 (postdeploy) -> #265 (ops)`.
+- Для `run:postdeploy` continuity-правило выполнено: подготовлена отдельная issue `run:ops`.

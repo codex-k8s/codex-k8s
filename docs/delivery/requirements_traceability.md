@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-02
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263, 265]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -185,6 +185,22 @@ approvals:
   `#199 -> #201 -> #216 -> #262`, сформирован handover в `run:postdeploy` через issue `#263`.
 - Зафиксированы release quality-gates, DoD, release notes и rollback/mitigation план без расширения scope за пределы markdown-only policy.
 - Через Context7 (`/websites/cli_github_manual`) подтверждён актуальный синтаксис `gh issue/pr` команд для PR-flow и label-transition fallback.
+
+## Актуализация по Issue #263 (`run:postdeploy`, 2026-03-02)
+- Для FR-028/FR-033/FR-045 и NFR-001/NFR-003/NFR-010/NFR-018 оформлен postdeploy evidence пакет Sprint S6:
+  `docs/delivery/epics/s6/epic-s6-day10-postdeploy-review.md`,
+  `docs/ops/s6_postdeploy_ops_handover.md`,
+  `docs/ops/production_runbook.md`,
+  `docs/delivery/epics/s6/epic_s6.md`,
+  `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md`,
+  `docs/delivery/delivery_plan.md`,
+  `docs/delivery/issue_map.md`.
+- Подтверждена stage continuity цепочка:
+  `#199 -> #201 -> #216 -> #262 -> #263`, подготовлен handover в `run:ops` через issue `#265`.
+- Зафиксированы runtime проверки postdeploy (health/logs/events/services/jobs), residual operational risks и action items для следующего этапа.
+- Через Context7 подтверждены актуальные рекомендации:
+  - Kubernetes probe semantics (`startupProbe` для slow-start): `/websites/kubernetes_io`;
+  - anti-noise alerting (`for`, `keep_firing_for`) и user-impact paging: `/prometheus/docs`, `/websites/prometheus_io`.
 
 ## Актуализация по Issue #155 (`run:plan`, 2026-02-25)
 - Для FR-053/FR-054 добавлены execution-governance артефакты Sprint S5 (`epic_s5.md`, обновлённый sprint-plan, issue-map sync).
