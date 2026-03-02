@@ -5,8 +5,8 @@ title: "codex-k8s — Development and Documentation Process Requirements"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-02-27
-related_issues: [1, 112, 210, 212]
+updated_at: 2026-03-02
+related_issues: [1, 112, 210, 212, 241, 243]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -156,6 +156,29 @@ Daily gate (must pass):
 - Smoke-check успешен или заведен блокер с решением.
 - Документация синхронизирована.
 
+### 2.1 Mainline Hygiene для `run:dev` и `run:dev:revise` (обязательно)
+- Цель: детерминированно синхронизировать рабочую PR-ветку с `main` перед каждой revise-итерацией и исключить скрытые conflict-markers.
+- Область применения:
+  - все `run:dev` implementation PR;
+  - обязательно для Sprint S7 execution issue-потоков `#243..#260`.
+- Перед каждым push в открытую PR-ветку выполняется единый порядок:
+  1. `git fetch origin --prune`
+  2. `git checkout <pr-branch>`
+  3. `git rebase origin/main`
+  4. При конфликте: разрешить конфликт, `git add <file>`, `git rebase --continue`; при невозможности корректно разрешить конфликт — `git rebase --abort`, зафиксировать блокер и не пушить частично конфликтное состояние.
+  5. Проверить отсутствие conflict-markers в рабочем дереве: `rg -n '^(<<<<<<<|=======|>>>>>>>)' .`
+  6. Выполнить релевантные проверки (tests/lint/build/doc checks) в рамках scope PR.
+  7. Публиковать rewritten историю только через `git push --force-with-lease origin <pr-branch>`.
+- Запрещено:
+  - делать `git merge origin/main` в рабочую PR-ветку для revise-итераций;
+  - использовать `git push --force` вместо `--force-with-lease`;
+  - открывать/обновлять review gate при найденных conflict-markers.
+- Обязательный rebase-checklist для PR body:
+  - [ ] Ветка синхронизирована с актуальным `origin/main` через `git rebase origin/main`.
+  - [ ] Проверка `rg -n '^(<<<<<<<|=======|>>>>>>>)' .` не нашла conflict-markers.
+  - [ ] После rebase повторно выполнены релевантные проверки по scope PR.
+  - [ ] Публикация обновлённой истории выполнена через `git push --force-with-lease`.
+
 ### 3. Mid-Sprint Control (середина недели)
 - Перепроверить риски, блокеры, зависимости.
 - Разрешается перераспределение `P1/P2`; `P0` меняется только через явное решение Owner.
@@ -182,6 +205,7 @@ Daily gate (must pass):
 
 ## Обязательные quality gates
 - Planning gate: DoR пройден, приоритеты и артефакты на день назначены.
+- Mainline hygiene gate: рабочая PR-ветка ребейзнута на актуальный `origin/main`, conflict-markers отсутствуют, rewritten history опубликована только через `--force-with-lease`.
 - Merge gate: green CI + pre-review (`reviewer`) + финальное ревью Owner + синхронная документация.
 - Deploy gate: production deployment success + ручной smoke.
 - Close gate: regression pass + согласованный backlog следующего спринта.

@@ -82,6 +82,13 @@ approvals:
 - Зафиксирован launch-order по waves и правило запуска:
   trigger `run:dev` на implementation issues ставит Owner в порядке wave-sequencing.
 
+## Day 7 execution fact (`S7-E01`)
+- В Issue `#243` реализован foundation stream `S7-E01`:
+  зафиксирован единый deterministic rebase/mainline процесс для revise-итераций в `run:dev`.
+- Process baseline закреплён в `docs/delivery/development_process_requirements.md`:
+  обязательный `rebase -> conflict-marker check -> checks -> force-with-lease` и PR checklist для команды.
+- В traceability добавлена отдельная запись по issue `#243`; remaining backlog нормализован как `#244..#260`.
+
 ## Candidate execution backlog (18 эпиков)
 
 | Epic ID | Priority | Scope | Источник замечаний |

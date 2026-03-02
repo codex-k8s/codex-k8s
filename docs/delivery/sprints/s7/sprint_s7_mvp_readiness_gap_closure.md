@@ -43,13 +43,13 @@ approvals:
 | Day 4 | Architecture: границы и ownership по stream'ам | P0 | `docs/delivery/epics/s7/epic-s7-day4-mvp-readiness-arch.md` | in-review (`#222`) |
 | Day 5 | Design: execution-ready contracts/data/migrations package | P0 | `docs/delivery/epics/s7/epic-s7-day5-mvp-readiness-design.md` (`#238`) | in-review (`#238`) |
 | Day 6 | Plan: execution package и quality gates | P0 | `docs/delivery/epics/s7/epic-s7-day6-mvp-readiness-plan.md` (`#241`) | in-review (`#241`) |
-| Day 7+ | Dev/QA/Release/Postdeploy/Ops/Doc-Audit | P0/P1 | implementation issues `#243..#260` (`run:dev`) | planned |
+| Day 7+ | Dev/QA/Release/Postdeploy/Ops/Doc-Audit | P0/P1 | implementation issues `#243..#260` (`run:dev`) | in-progress (`#243` in-review; `#244..#260` planned) |
 
 ## Candidate execution-эпики (`S7-E01..S7-E18`)
 
 | Epic | Priority | Scope | Блокер/зависимость |
 |---|---|---|---|
-| S7-E01 | P0 | Rebase/mainline hygiene для PR revise-итераций | required before merge |
+| S7-E01 | P0 | Rebase/mainline hygiene для PR revise-итераций | in-review (`#243`) |
 | S7-E02 | P0 | Sidebar cleanup: удаление не-MVP разделов и dead code | UI readiness gate |
 | S7-E03 | P0 | Удаление глобального фильтра и зависимого кода | UI readiness gate |
 | S7-E04 | P0 | Удаление runtime-deploy/images секции и связанного фронтенд-кода | UI readiness gate |
@@ -82,6 +82,7 @@ approvals:
 | QG-S7-08 Architecture completion | Для Day4 выпущен architecture-пакет (ownership matrix + C4 overlays + ADR-0010) и создана follow-up issue `#238` в `run:design` | passed |
 | QG-S7-09 Design completion | Для Day5 выпущен design package (`design_doc`, `api_contract`, `data_model`, `migrations_policy`) и создана follow-up issue `#241` в `run:plan` | passed |
 | QG-S7-10 Plan completion | Для Day6 выпущен execution package, создано 18 implementation issues `#243..#260`, parity-check `18/18` подтверждён | passed |
+| QG-S7-11 Foundation stream S7-E01 | Для issue `#243` зафиксирован единый rebase/mainline process и обязательный PR checklist для revise-итераций | passed |
 
 ## Completion критерии спринта
 - [ ] Закрыт открытый P0-блокер S6 (`#216`, `run:release`) и подтверждён переход в `run:postdeploy`.

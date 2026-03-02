@@ -421,6 +421,19 @@ approvals:
 - Через Context7 (`/websites/cli_github_manual`) подтверждён актуальный неинтерактивный синтаксис `gh issue create` / `gh pr create` / `gh pr edit`; новые внешние зависимости не добавлялись.
 - Scope этапа сохранён policy-safe: markdown-only изменения без модификации code/runtime артефактов.
 
+## Актуализация по Issue #243 (`run:dev`, 2026-03-02)
+- Для FR-026/FR-028/FR-033 и NFR-010/NFR-018 реализован foundation stream `S7-E01`:
+  зафиксирован единый deterministic rebase/mainline процесс для revise-итераций в `run:dev`.
+- Обновлён process source-of-truth:
+  `docs/delivery/development_process_requirements.md` закрепил обязательный порядок
+  `git fetch -> git rebase origin/main -> conflict-marker check -> checks -> git push --force-with-lease`,
+  запрет `git merge origin/main` для revise-веток и обязательный PR rebase-checklist.
+- Актуализирована traceability-матрица Sprint S7:
+  `docs/delivery/issue_map.md` (выделен отдельный статус issue `#243`, остаток backlog перенесён в диапазон `#244..#260`).
+- Через Context7 (`/websites/git-scm`) подтверждены актуальные команды `git rebase --continue|--abort`
+  и безопасный push-path `git push --force-with-lease` для rebased PR-веток.
+- Новые внешние зависимости не добавлялись; изменения ограничены markdown/process governance контуром.
+
 ## Актуализация по Issue #225 (`run:dev`, 2026-02-28)
 - Для FR-002/FR-033 и NFR-002/NFR-010/NFR-018 выполнен рефакторинг bounded scope `S8-E01`:
   декомпозированы oversized-файлы `webhook/service.go`, `staff/service_methods.go`, `transport/grpc/server.go`
