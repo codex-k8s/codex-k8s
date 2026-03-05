@@ -48,6 +48,18 @@ func (s *Service) buildImages(ctx context.Context, repositoryRoot string, params
 	}
 	sort.Slice(buildEntries, func(i, j int) bool { return buildEntries[i].Name < buildEntries[j].Name })
 
+	prebuilt, allPrebuilt, err := s.resolveReusableBuildImages(ctx, buildEntries, vars, runID)
+	if err != nil {
+		return err
+	}
+	if allPrebuilt {
+		for _, result := range prebuilt {
+			applyBuiltImageResult(vars, result.Name, result.ImageRef)
+		}
+		s.appendTaskLogBestEffort(ctx, runID, "build", "info", "All build images already exist in registry, skipping mirror/codegen/kaniko stages")
+		return nil
+	}
+
 	githubPAT := strings.TrimSpace(s.cfg.GitHubPAT)
 	if githubPAT == "" {
 		githubPAT = strings.TrimSpace(vars["CODEXK8S_GITHUB_PAT"])
@@ -637,4 +649,40 @@ func trimLogForError(logs string) string {
 		return trimmed[:500] + "..."
 	}
 	return trimmed
+}
+
+func (s *Service) resolveReusableBuildImages(ctx context.Context, buildEntries []buildImageEntry, vars map[string]string, runID string) ([]buildImageResult, bool, error) {
+	if len(buildEntries) == 0 {
+		return nil, true, nil
+	}
+	if s.registry == nil {
+		return nil, false, nil
+	}
+
+	results := make([]buildImageResult, 0, len(buildEntries))
+	for _, entry := range buildEntries {
+		repository := strings.TrimSpace(entry.Image.Repository)
+		if repository == "" {
+			return nil, false, fmt.Errorf("image %q repository is required for build type", entry.Name)
+		}
+		tag := sanitizeImageTag(strings.TrimSpace(entry.Image.TagTemplate))
+		if tag == "" {
+			tag = "latest"
+		}
+
+		shouldSkip, err := s.shouldSkipKanikoBuild(ctx, repository, tag, vars, runID, entry.Name)
+		if err != nil {
+			return nil, false, err
+		}
+		if !shouldSkip {
+			return nil, false, nil
+		}
+
+		results = append(results, buildImageResult{
+			Name:       entry.Name,
+			ImageRef:   repository + ":" + tag,
+			Repository: repository,
+		})
+	}
+	return results, len(results) == len(buildEntries), nil
 }

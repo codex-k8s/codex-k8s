@@ -129,6 +129,72 @@ func (c *Client) ListChangedFilesBetweenCommits(ctx context.Context, token strin
 	return changed, nil
 }
 
+func (c *Client) ResolveRefToCommitSHA(ctx context.Context, token string, owner string, repo string, ref string) (string, error) {
+	client := c.clientWithToken(token)
+	owner = strings.TrimSpace(owner)
+	repo = strings.TrimSpace(repo)
+	ref = strings.TrimSpace(ref)
+	if owner == "" || repo == "" {
+		return "", fmt.Errorf("owner and repository are required")
+	}
+	if ref == "" {
+		return "", fmt.Errorf("ref is required")
+	}
+
+	normalizedRef := strings.TrimPrefix(strings.TrimPrefix(ref, "refs/heads/"), "origin/")
+	normalizedRef = strings.TrimSpace(normalizedRef)
+	if normalizedRef == "" {
+		return "", fmt.Errorf("ref is required")
+	}
+
+	if len(normalizedRef) >= 7 && len(normalizedRef) <= 64 {
+		isHex := true
+		for _, ch := range strings.ToLower(normalizedRef) {
+			if (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') {
+				continue
+			}
+			isHex = false
+			break
+		}
+		if isHex {
+			return normalizedRef, nil
+		}
+	}
+
+	resolved := ""
+	tryResolve := func(refPath string) error {
+		result, _, err := client.Git.GetRef(ctx, owner, repo, refPath)
+		if err != nil {
+			return err
+		}
+		sha := strings.TrimSpace(result.GetObject().GetSHA())
+		if sha == "" {
+			return fmt.Errorf("github ref %s has empty sha", refPath)
+		}
+		resolved = sha
+		return nil
+	}
+
+	for _, candidate := range []string{
+		"refs/heads/" + normalizedRef,
+		normalizedRef,
+	} {
+		if err := tryResolve(candidate); err == nil {
+			return resolved, nil
+		}
+	}
+
+	branch, _, err := client.Repositories.GetBranch(ctx, owner, repo, normalizedRef, 0)
+	if err != nil {
+		return "", fmt.Errorf("github resolve ref %s in %s/%s: %w", normalizedRef, owner, repo, err)
+	}
+	sha := strings.TrimSpace(branch.GetCommit().GetSHA())
+	if sha == "" {
+		return "", fmt.Errorf("github branch %s has empty commit sha", normalizedRef)
+	}
+	return sha, nil
+}
+
 var errGitHubContentNeedsDownload = errors.New("github content needs download")
 
 func decodeRepositoryContent(content *gh.RepositoryContent) (string, error) {

@@ -2700,6 +2700,7 @@ func (r *inMemoryProjectMemberRepo) GetLearningModeOverride(_ context.Context, _
 
 type inMemoryPushMainVersionBumpClient struct {
 	filesByRef map[string][]byte
+	refToSHA   map[string]string
 
 	changedPaths []string
 	changedErr   error
@@ -2759,4 +2760,15 @@ func (c *inMemoryPushMainVersionBumpClient) CommitFilesOnBranch(_ context.Contex
 		c.lastCommitFiles[path] = append([]byte(nil), raw...)
 	}
 	return "bumped-sha", nil
+}
+
+func (c *inMemoryPushMainVersionBumpClient) ResolveRefToCommitSHA(_ context.Context, _ string, owner string, repo string, ref string) (string, error) {
+	if c == nil || c.refToSHA == nil {
+		return strings.TrimSpace(ref), nil
+	}
+	key := strings.TrimSpace(owner) + "/" + strings.TrimSpace(repo) + "@" + strings.TrimSpace(ref)
+	if value, ok := c.refToSHA[key]; ok {
+		return strings.TrimSpace(value), nil
+	}
+	return strings.TrimSpace(ref), nil
 }

@@ -140,6 +140,7 @@ func buildRunPayload(input runPayloadInput) (json.RawMessage, error) {
 			State:   input.Envelope.PullRequest.State,
 			Head: githubRunPRRef{
 				Ref: input.Envelope.PullRequest.Head.Ref,
+				SHA: input.Envelope.PullRequest.Head.SHA,
 			},
 			Base: githubRunPRRef{
 				Ref: input.Envelope.PullRequest.Base.Ref,

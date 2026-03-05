@@ -85,6 +85,7 @@ type githubRunPRPayload struct {
 
 type githubRunPRRef struct {
 	Ref string `json:"ref"`
+	SHA string `json:"sha,omitempty"`
 }
 
 type githubIssueTriggerPayload struct {

@@ -176,6 +176,7 @@ type githubPullRequestRecord struct {
 
 type githubPullRequestHead struct {
 	Ref string `json:"ref"`
+	SHA string `json:"sha"`
 }
 
 type githubPullRequestBase struct {

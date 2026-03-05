@@ -65,6 +65,7 @@ type pushMainVersionBumpClient interface {
 	GetFile(ctx context.Context, token string, owner string, repo string, filePath string, ref string) ([]byte, bool, error)
 	ListChangedFilesBetweenCommits(ctx context.Context, token string, owner string, repo string, beforeSHA string, afterSHA string) ([]string, error)
 	CommitFilesOnBranch(ctx context.Context, token string, owner string, repo string, branch string, baseSHA string, message string, files map[string][]byte) (string, error)
+	ResolveRefToCommitSHA(ctx context.Context, token string, owner string, repo string, ref string) (string, error)
 }
 
 // Service ingests provider webhooks into idempotent run and flow-event records.
@@ -304,8 +305,10 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		}
 		triggerSource := strings.TrimSpace(trigger.Source)
 		if strings.EqualFold(triggerSource, webhookdomain.TriggerSourcePullRequestReview) || strings.EqualFold(triggerSource, triggerSourcePullRequestLabel) {
-			prHeadRef := strings.TrimSpace(envelope.PullRequest.Head.Ref)
-			if prHeadRef != "" {
+			prHeadSHA := strings.TrimSpace(envelope.PullRequest.Head.SHA)
+			if prHeadSHA != "" {
+				runtimeBuildRef = prHeadSHA
+			} else if prHeadRef := strings.TrimSpace(envelope.PullRequest.Head.Ref); prHeadRef != "" {
 				runtimeBuildRef = prHeadRef
 			}
 		} else if strings.EqualFold(triggerSource, webhookdomain.TriggerSourceIssueLabel) {

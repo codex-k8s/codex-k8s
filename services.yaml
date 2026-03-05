@@ -241,31 +241,31 @@ spec:
     api-gateway:
       type: build
       repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/api-gateway" }}'
-      tagTemplate: '{{ .Env }}-{{ index .Versions "api-gateway" }}'
+      tagTemplate: '{{ index .Versions "api-gateway" }}'
       dockerfile: services/external/api-gateway/Dockerfile
       context: .
     control-plane:
       type: build
       repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/control-plane" }}'
-      tagTemplate: '{{ .Env }}-{{ index .Versions "control-plane" }}'
+      tagTemplate: '{{ index .Versions "control-plane" }}'
       dockerfile: services/internal/control-plane/Dockerfile
       context: .
     worker:
       type: build
       repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_WORKER_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/worker" }}'
-      tagTemplate: '{{ .Env }}-{{ index .Versions "worker" }}'
+      tagTemplate: '{{ index .Versions "worker" }}'
       dockerfile: services/jobs/worker/Dockerfile
       context: .
     agent-runner:
       type: build
       repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_AGENT_RUNNER_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/agent-runner" }}'
-      tagTemplate: '{{ .Env }}-{{ index .Versions "agent-runner" }}'
+      tagTemplate: '{{ index .Versions "agent-runner" }}'
       dockerfile: services/jobs/agent-runner/Dockerfile
       context: .
     web-console:
       type: '{{ ternary (eq .Env "ai") "build" "skip" }}'
       repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_WEB_CONSOLE_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/web-console" }}'
-      tagTemplate: '{{ .Env }}-{{ index .Versions "web-console" }}'
+      tagTemplate: '{{ index .Versions "web-console" }}'
       dockerfile: services/staff/web-console/Dockerfile
       context: services/staff/web-console
   orchestration:
