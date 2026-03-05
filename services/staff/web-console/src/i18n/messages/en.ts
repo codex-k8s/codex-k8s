@@ -62,18 +62,9 @@ export const en = {
     collapse: "Collapse",
   },
   context: {
-    title: "Global filter",
-    button: "Filter: {value}",
-    buttonNotSelected: "FILTER: NOT SELECTED",
     allObjects: "All objects",
     projectNotSelected: "Project not selected",
     project: "Project",
-    env: "Env",
-    namespace: "Slot",
-    envAi: "ai",
-    envProduction: "production",
-    reset: "reset",
-    notSelected: "Not selected",
   },
   notifications: {
     title: "Notifications",

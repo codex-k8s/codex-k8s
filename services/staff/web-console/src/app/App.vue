@@ -46,45 +46,6 @@
 
       <VSpacer />
 
-      <VMenu v-if="showContextFilter" :close-on-content-click="false">
-        <template #activator="{ props: menuProps }">
-          <AdaptiveBtn v-bind="menuProps" variant="tonal" icon="mdi-filter-variant" :label="filterButtonLabel" class="context-filter-btn" />
-        </template>
-        <VCard min-width="420">
-          <VCardTitle class="text-subtitle-2">{{ t("context.title") }}</VCardTitle>
-          <VCardSubtitle class="text-caption text-medium-emphasis">{{ filterSummary }}</VCardSubtitle>
-          <VCardText>
-            <VRow density="compact">
-              <VCol cols="12" md="6">
-                <VSelect
-                  v-model="projectIdModel"
-                  :items="projectSelectOptions"
-                  :label="t('context.project')"
-                  hide-details
-                />
-              </VCol>
-              <VCol cols="12" md="6">
-                <div class="d-flex justify-end">
-                  <VBtn
-                    size="x-small"
-                    variant="text"
-                    class="mb-1"
-                    :disabled="auth.status !== 'authed'"
-                    @click="resetContextFilter"
-                  >
-                    {{ t("context.reset") }}
-                  </VBtn>
-                </div>
-                <VSelect v-model="envModel" :items="envOptions" :label="t('context.env')" hide-details />
-              </VCol>
-              <VCol cols="12">
-                <VSelect v-model="namespaceModel" :items="namespaceOptions" :label="t('context.namespace')" hide-details />
-              </VCol>
-            </VRow>
-          </VCardText>
-        </VCard>
-      </VMenu>
-
       <VMenu v-if="auth.isAuthed">
         <template #activator="{ props: menuProps }">
           <VBtn v-bind="menuProps" icon="mdi-bell-outline" variant="text" />
@@ -230,14 +191,6 @@ const drawerOpen = ref(true);
 const drawerRail = ref(false);
 const isMobile = computed(() => display.mobile.value);
 
-const envModel = computed({
-  get: () => uiContext.env,
-  set: (v) => uiContext.setEnv(v),
-});
-const namespaceModel = computed({
-  get: () => uiContext.namespace,
-  set: (v) => uiContext.setNamespace(v),
-});
 const projectIdModel = computed({
   get: () => uiContext.projectId,
   set: (v) => uiContext.setProjectId(v),
@@ -291,74 +244,6 @@ const projectSelectOptions = computed(() =>
   ],
 );
 
-const envOptions = computed(() => [
-  { title: t("context.allObjects"), value: "all" },
-  { title: t("context.envAi"), value: "ai" },
-  { title: t("context.envProduction"), value: "production" },
-] as const);
-
-type SelectItem = { title: string; value: string };
-
-const namespaceOptions = computed<SelectItem[]>(() => {
-  const all = { title: t("context.allObjects"), value: "" };
-  const project = "codex-k8s";
-  const ai = [`${project}-dev-1`, `${project}-dev-2`, `${project}-dev-3`];
-  const production = [`${project}-prod`];
-
-  const values =
-    uiContext.env === "ai"
-      ? ai
-      : uiContext.env === "production"
-        ? production
-        : [...ai, ...production];
-
-  return [all, ...values.map((v) => ({ title: v, value: v }))];
-});
-
-watch(
-  () => namespaceOptions.value,
-  (items) => {
-    if (uiContext.namespace === "") return; // "All objects" sentinel.
-    const allowed = new Set(items.map((i) => i.value));
-    if (allowed.has(uiContext.namespace)) return;
-    uiContext.setNamespace("");
-  },
-  { immediate: true },
-);
-
-const showContextFilter = computed(() => {
-  if (!auth.isAuthed) return false;
-  const section = String((route.meta as Record<string, unknown>).section || "");
-  return section === "runs" || section === "operations";
-});
-
-const filterSummaryParts = computed(() => {
-  const parts: string[] = [];
-
-  const projectTitle = projectSelectOptions.value.find((p) => p.value === uiContext.projectId)?.title;
-  if (uiContext.projectId && projectTitle) parts.push(projectTitle);
-
-  const envTitle = envOptions.value.find((e) => e.value === uiContext.env)?.title;
-  if (uiContext.env !== "all" && envTitle) parts.push(envTitle);
-
-  const namespaceTitle = String(uiContext.namespace || "").trim();
-  if (namespaceTitle) parts.push(namespaceTitle);
-
-  return parts;
-});
-
-const filterSummary = computed(() => {
-  const parts = filterSummaryParts.value;
-  if (parts.length === 0) return t("context.notSelected");
-  return parts.join(" / ");
-});
-
-const filterButtonLabel = computed(() => {
-  const parts = filterSummaryParts.value;
-  if (parts.length === 0) return t("context.buttonNotSelected");
-  return t("context.button", { value: parts.join(" / ") });
-});
-
 const profileButtonLabel = computed(() =>
   auth.me?.githubLogin ? `@${auth.me.githubLogin}` : auth.me?.email || t("common.loading"),
 );
@@ -399,12 +284,6 @@ function toggleDrawer(): void {
     return;
   }
   drawerRail.value = !drawerRail.value;
-}
-
-function resetContextFilter(): void {
-  uiContext.setProjectId("");
-  uiContext.setEnv("all");
-  uiContext.setNamespace("");
 }
 
 const breadcrumbs = computed(() => {
@@ -487,12 +366,6 @@ const breadcrumbs = computed(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.context-filter-btn :deep(.v-btn__content) {
-  max-width: 520px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .content {
   max-width: 1800px;

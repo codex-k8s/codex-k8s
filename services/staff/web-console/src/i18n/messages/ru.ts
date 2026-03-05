@@ -62,18 +62,9 @@ export const ru = {
     collapse: "свернуть",
   },
   context: {
-    title: "Глобальный фильтр",
-    button: "Фильтр: {value}",
-    buttonNotSelected: "ФИЛЬТР: НЕ ВЫБРАН",
     allObjects: "Все объекты",
     projectNotSelected: "Проект не выбран",
     project: "Проект",
-    env: "Окружение",
-    namespace: "Слот",
-    envAi: "ai",
-    envProduction: "production",
-    reset: "сбросить",
-    notSelected: "Не выбрано",
   },
   notifications: {
     title: "Уведомления",
