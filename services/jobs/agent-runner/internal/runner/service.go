@@ -25,13 +25,19 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	if codexHomeDir == "" {
 		codexHomeDir = filepath.Join(homeDir, ".codex")
 	}
+	runtimeMode := normalizeRuntimeMode(s.cfg.RuntimeMode)
+
+	repoDir := filepath.Join("/workspace", "repo")
+	if runtimeMode == runtimeModeFullEnv {
+		repoDir = "/workspace"
+	}
 
 	state := codexState{
 		homeDir:      homeDir,
 		codexDir:     codexHomeDir,
 		sessionsDir:  filepath.Join(codexHomeDir, "sessions"),
 		workspaceDir: "/workspace",
-		repoDir:      filepath.Join("/workspace", "repo"),
+		repoDir:      repoDir,
 	}
 
 	if mkErr := os.MkdirAll(state.sessionsDir, 0o755); mkErr != nil {
@@ -40,10 +46,14 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	if mkErr := os.MkdirAll(state.workspaceDir, 0o755); mkErr != nil {
 		return fmt.Errorf("create workspace dir: %w", mkErr)
 	}
+	gitAuthDir := filepath.Join(os.TempDir(), "codex-k8s-agent-runner-auth")
+	if mkErr := os.MkdirAll(gitAuthDir, 0o755); mkErr != nil {
+		return fmt.Errorf("create git auth dir: %w", mkErr)
+	}
 	if mkErr := os.MkdirAll(selfImproveSessionsDir, 0o755); mkErr != nil {
 		return fmt.Errorf("create self-improve sessions dir: %w", mkErr)
 	}
-	cleanupGitAuthEnv, err := s.configureGitAuthEnvironment(state.workspaceDir)
+	cleanupGitAuthEnv, err := s.configureGitAuthEnvironment(gitAuthDir)
 	if err != nil {
 		return fmt.Errorf("configure git auth environment: %w", err)
 	}
@@ -57,7 +67,6 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	targetBranch := buildTargetBranch(s.cfg.RunTargetBranch, s.cfg.RunID, s.cfg.IssueNumber, s.cfg.TriggerKind, s.cfg.AgentBaseBranch)
 	triggerKind := normalizeTriggerKind(s.cfg.TriggerKind)
 	templateKind := normalizeTemplateKind(s.cfg.PromptTemplateKind, triggerKind)
-	runtimeMode := normalizeRuntimeMode(s.cfg.RuntimeMode)
 	sensitiveValues := s.sensitiveValues()
 
 	runStartedAt := time.Now().UTC()
@@ -348,33 +357,92 @@ func (s *Service) restoreLatestSession(ctx context.Context, branch string, sessi
 }
 
 func (s *Service) prepareRepository(ctx context.Context, result runResult, state codexState) error {
-	if err := os.RemoveAll(state.repoDir); err != nil {
-		return fmt.Errorf("cleanup repo dir: %w", err)
-	}
-
 	repoURL := fmt.Sprintf("https://github.com/%s.git", s.cfg.RepositoryFullName)
-	if err := runCommandQuiet(ctx, "", "git", "clone", repoURL, state.repoDir); err != nil {
-		return fmt.Errorf("git clone failed")
+	if err := ensureRepoDirCheckout(ctx, state.repoDir, repoURL); err != nil {
+		return err
 	}
 
 	_ = runCommandQuiet(ctx, state.repoDir, "git", "config", "user.name", s.cfg.AgentDisplayName)
 	_ = runCommandQuiet(ctx, state.repoDir, "git", "config", "user.email", s.cfg.GitBotMail)
-	_ = runCommandQuiet(ctx, state.repoDir, "git", "fetch", "origin", s.cfg.AgentBaseBranch, "--depth=50")
+	if err := runCommandQuiet(ctx, state.repoDir, "git", "fetch", "--prune", "--tags", "origin"); err != nil {
+		return fmt.Errorf("git fetch failed")
+	}
 
 	branchExists := runCommandQuiet(ctx, state.repoDir, "git", "ls-remote", "--exit-code", "--heads", "origin", result.targetBranch) == nil
 	if branchExists {
 		if err := runCommandQuiet(ctx, state.repoDir, "git", "checkout", "-B", result.targetBranch, "origin/"+result.targetBranch); err != nil {
 			return fmt.Errorf("checkout existing branch failed")
 		}
+	} else {
+		if webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(result.triggerKind)) {
+			return s.failRevisePRNotFound(ctx, result, state, "branch_not_found")
+		}
+		if err := runCommandQuiet(ctx, state.repoDir, "git", "checkout", "-B", result.targetBranch, "origin/"+s.cfg.AgentBaseBranch); err != nil {
+			return fmt.Errorf("checkout base branch failed")
+		}
+	}
+
+	if err := runCommandQuiet(ctx, state.repoDir, "git", "reset", "--hard"); err != nil {
+		return fmt.Errorf("git reset failed")
+	}
+	if err := runCommandQuiet(ctx, state.repoDir, "git", "clean", "-fdx"); err != nil {
+		return fmt.Errorf("git clean failed")
+	}
+
+	return nil
+}
+
+func ensureRepoDirCheckout(ctx context.Context, repoDir string, repoURL string) error {
+	repoDir = strings.TrimSpace(repoDir)
+	repoURL = strings.TrimSpace(repoURL)
+	if repoDir == "" {
+		return fmt.Errorf("repo dir is required")
+	}
+	if repoURL == "" {
+		return fmt.Errorf("repo url is required")
+	}
+
+	if err := os.MkdirAll(repoDir, 0o755); err != nil {
+		return fmt.Errorf("create repo dir: %w", err)
+	}
+
+	if runCommandQuiet(ctx, repoDir, "git", "rev-parse", "--is-inside-work-tree") != nil {
+		if err := cleanupDirectoryContents(repoDir); err != nil {
+			return fmt.Errorf("cleanup repo dir contents: %w", err)
+		}
+		if err := runCommandQuiet(ctx, repoDir, "git", "init"); err != nil {
+			return fmt.Errorf("git init failed")
+		}
+		if err := runCommandQuiet(ctx, repoDir, "git", "remote", "add", "origin", repoURL); err != nil {
+			return fmt.Errorf("configure git origin failed")
+		}
 		return nil
 	}
 
-	if webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(result.triggerKind)) {
-		return s.failRevisePRNotFound(ctx, result, state, "branch_not_found")
+	if err := runCommandQuiet(ctx, repoDir, "git", "remote", "set-url", "origin", repoURL); err == nil {
+		return nil
 	}
+	if err := runCommandQuiet(ctx, repoDir, "git", "remote", "add", "origin", repoURL); err == nil {
+		return nil
+	}
+	if err := runCommandQuiet(ctx, repoDir, "git", "remote", "remove", "origin"); err != nil {
+		return fmt.Errorf("remove stale git origin failed")
+	}
+	if err := runCommandQuiet(ctx, repoDir, "git", "remote", "add", "origin", repoURL); err != nil {
+		return fmt.Errorf("reconfigure git origin failed")
+	}
+	return nil
+}
 
-	if err := runCommandQuiet(ctx, state.repoDir, "git", "checkout", "-B", result.targetBranch, "origin/"+s.cfg.AgentBaseBranch); err != nil {
-		return fmt.Errorf("checkout base branch failed")
+func cleanupDirectoryContents(path string) error {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if err := os.RemoveAll(filepath.Join(path, entry.Name())); err != nil {
+			return err
+		}
 	}
 	return nil
 }
