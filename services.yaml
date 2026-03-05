@@ -74,9 +74,13 @@ spec:
       - path: docs/templates/docset_pr.md
   versions:
     api-gateway:
-      value: "0.1.23"
+      value: "0.1.24"
       bumpOn:
         - services/external/api-gateway
+        # Production staff UI is embedded into api-gateway image.
+        - services/staff/web-console
+        - libs/ts
+        - libs/vue
         - libs/go
         - proto
     control-plane:
