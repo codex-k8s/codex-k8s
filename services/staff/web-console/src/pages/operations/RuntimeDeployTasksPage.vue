@@ -94,13 +94,11 @@ import { formatDateTime } from "../../shared/lib/datetime";
 import { colorForRunStatus } from "../../shared/lib/chips";
 import { createProgressiveTableState } from "../../shared/lib/progressive-table";
 import { bindRealtimePageLifecycle } from "../../shared/ws/lifecycle";
-import { useUiContextStore } from "../../features/ui-context/store";
 import { listRuntimeDeployTasks } from "../../features/runtime-deploy/api";
 import { subscribeRuntimeDeployRealtime, type RuntimeDeployRealtimeState } from "../../features/runtime-deploy/realtime";
 import type { RuntimeDeployTaskListItem } from "../../features/runtime-deploy/types";
 
 const { t, locale } = useI18n({ useScope: "global" });
-const uiContext = useUiContextStore();
 
 const loading = ref(false);
 const error = ref<ApiError | null>(null);
@@ -183,12 +181,6 @@ function envLabel(value: string | null | undefined): string {
   return v || "-";
 }
 
-function matchesUiEnv(item: RuntimeDeployTaskListItem, uiEnv: "ai" | "production" | "all"): boolean {
-  if (uiEnv === "all") return true;
-  const env = normalizeEnv(item.result_target_env || item.target_env);
-  return env === uiEnv;
-}
-
 async function loadTasks(): Promise<void> {
   if (loading.value) {
     reloadPending.value = true;
@@ -198,14 +190,11 @@ async function loadTasks(): Promise<void> {
   loading.value = true;
   error.value = null;
   try {
-    // We intentionally load without server-side env filtering to handle legacy values
-    // (e.g. target_env="prod" or empty string) and keep UI filter stable.
     const loaded = await listRuntimeDeployTasks({
       status: statusFilter.value || undefined,
-      targetEnv: "",
     }, paging.limit.value);
     paging.markLoaded(loaded.length);
-    items.value = loaded.filter((x) => matchesUiEnv(x, uiContext.env));
+    items.value = loaded;
   } catch (err) {
     error.value = normalizeApiError(err);
   } finally {
@@ -337,11 +326,6 @@ onBeforeUnmount(() => {
   clearRealtimeReloadTimer();
   stopRealtimeSubscriptions();
 });
-
-watch(
-  () => uiContext.env,
-  () => void reloadTasks(),
-);
 
 watch(
   () => statusFilter.value,

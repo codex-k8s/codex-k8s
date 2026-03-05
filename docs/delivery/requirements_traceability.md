@@ -5,7 +5,7 @@ title: "Requirements Traceability Matrix"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-03-02
+updated_at: 2026-03-05
 related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263, 265]
 related_prs: []
 approvals:
@@ -450,6 +450,22 @@ approvals:
   `npm --prefix services/staff/web-console run build`, route inventory search (`rg -n` по удалённым route names),
   smoke-check MVP навигации (`projects`, `project-repositories`, `project-members`, `runs`, `runtime-deploy/tasks`, `runtime-deploy/images`,
   `running-jobs`, `wait-queue`, `approvals`, `system-settings`, `users`).
+
+## Актуализация по Issue #245 (`run:dev`, 2026-03-05)
+- Для FR-026/FR-028/FR-033 и NFR-010/NFR-018 реализован stream `S7-E03`:
+  удалён глобальный filter-entry в app shell вместе с зависимым UI summary/reset контуром.
+- В `services/staff/web-console/src/features/ui-context/store.ts` удалено глобальное состояние `env/namespace`
+  и связанный cookie-persistence path; сохранён только selected project context, нужный для MVP-навигации.
+- В `services/staff/web-console/src/pages/operations/RuntimeDeployTasksPage.vue`
+  загрузка списка отвязана от `uiContext.env`, чтобы глобальный фильтр больше не влиял на list/load поведение.
+- Удалён связанный неиспользуемый компонент `services/staff/web-console/src/shared/ui/AdminClusterContextBar.vue`,
+  очищены i18n-ключи глобального фильтра в `services/staff/web-console/src/i18n/messages/{en,ru}.ts`.
+- Актуализирована Sprint S7 traceability:
+  `docs/delivery/issue_map.md`, `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md`, `docs/delivery/epics/s7/epic_s7.md`;
+  remaining backlog нормализован как `#246..#260` + post-plan `#274`.
+- Проверки по scope:
+  cleanup-поиск `rg -n` по `Global filter`/`uiContext.env`/`uiContext.namespace`,
+  `npm --prefix services/staff/web-console run build`.
 
 ## Актуализация по Issue #225 (`run:dev`, 2026-02-28)
 - Для FR-002/FR-033 и NFR-002/NFR-010/NFR-018 выполнен рефакторинг bounded scope `S8-E01`:
