@@ -128,6 +128,81 @@ func TestLauncher_Launch_AIRepairCreatesPod(t *testing.T) {
 	if got, want := len(pod.Spec.Containers), 2; got != want {
 		t.Fatalf("expected %d containers, got %d", want, got)
 	}
+	if got, want := len(pod.Spec.Volumes), 1; got != want {
+		t.Fatalf("expected %d volume, got %d", want, got)
+	}
+	if got, want := pod.Spec.Volumes[0].Name, runRepoCacheVolumeName; got != want {
+		t.Fatalf("expected volume name %q, got %q", want, got)
+	}
+	if pod.Spec.Volumes[0].PersistentVolumeClaim == nil {
+		t.Fatalf("expected pvc volume for %q", runRepoCacheVolumeName)
+	}
+	if got, want := pod.Spec.Volumes[0].PersistentVolumeClaim.ClaimName, runRepoCacheClaimName; got != want {
+		t.Fatalf("expected pvc claim %q, got %q", want, got)
+	}
+	for _, container := range pod.Spec.Containers {
+		if len(container.VolumeMounts) != 1 {
+			t.Fatalf("expected one volume mount in container %q, got %d", container.Name, len(container.VolumeMounts))
+		}
+		if got, want := container.VolumeMounts[0].Name, runRepoCacheVolumeName; got != want {
+			t.Fatalf("expected mount volume name %q in container %q, got %q", want, container.Name, got)
+		}
+		if got, want := container.VolumeMounts[0].MountPath, runRepoCacheMountPath; got != want {
+			t.Fatalf("expected mount path %q in container %q, got %q", want, container.Name, got)
+		}
+	}
+}
+
+func TestLauncher_Launch_FullEnvMountsRepoCachePVC(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	client := fake.NewClientset()
+	l := NewForClient(Config{Namespace: "ns", Image: "busybox:1.36"}, client)
+
+	spec := JobSpec{
+		RunID:         "run-full-env",
+		CorrelationID: "corr-full-env",
+		ProjectID:     "project-1",
+		Namespace:     "codex-k8s-dev-1",
+		RuntimeMode:   "full-env",
+	}
+
+	ref, err := l.Launch(ctx, spec)
+	if err != nil {
+		t.Fatalf("Launch returned error: %v", err)
+	}
+
+	job, err := client.BatchV1().Jobs(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("expected job %s/%s, got error: %v", ref.Namespace, ref.Name, err)
+	}
+
+	podSpec := job.Spec.Template.Spec
+	if got, want := len(podSpec.Volumes), 1; got != want {
+		t.Fatalf("expected %d volume, got %d", want, got)
+	}
+	if got, want := podSpec.Volumes[0].Name, runRepoCacheVolumeName; got != want {
+		t.Fatalf("expected volume name %q, got %q", want, got)
+	}
+	if podSpec.Volumes[0].PersistentVolumeClaim == nil {
+		t.Fatalf("expected pvc volume for %q", runRepoCacheVolumeName)
+	}
+	if got, want := podSpec.Volumes[0].PersistentVolumeClaim.ClaimName, runRepoCacheClaimName; got != want {
+		t.Fatalf("expected pvc claim %q, got %q", want, got)
+	}
+	if got, want := len(podSpec.Containers), 1; got != want {
+		t.Fatalf("expected %d container, got %d", want, got)
+	}
+	if got, want := len(podSpec.Containers[0].VolumeMounts), 1; got != want {
+		t.Fatalf("expected %d mount in run container, got %d", want, got)
+	}
+	if got, want := podSpec.Containers[0].VolumeMounts[0].Name, runRepoCacheVolumeName; got != want {
+		t.Fatalf("expected mount volume name %q, got %q", want, got)
+	}
+	if got, want := podSpec.Containers[0].VolumeMounts[0].MountPath, runRepoCacheMountPath; got != want {
+		t.Fatalf("expected mount path %q, got %q", want, got)
+	}
 }
 
 func TestLauncher_Status_AIRepairPodRunContainerSucceeded(t *testing.T) {

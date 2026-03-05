@@ -25,6 +25,9 @@ const (
 	runContainerName          = "run"
 	aiRepairKeepaliveName     = "keepalive"
 	aiRepairComponentLabelVal = "ai-repair"
+	runRepoCacheVolumeName    = "repo-cache"
+	runRepoCacheClaimName     = "codex-k8s-repo-cache"
+	runRepoCacheMountPath     = "/workspace"
 )
 
 // JobState is a current Kubernetes Job execution state.
@@ -293,10 +296,16 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 	}
 
 	container := buildRunContainer(spec, jobImage, l.cfg.Command)
+	if shouldMountRepoCache(spec) {
+		container = withRepoCacheVolumeMount(container)
+	}
 
 	podSpec := corev1.PodSpec{
 		RestartPolicy: corev1.RestartPolicyNever,
 		Containers:    []corev1.Container{container},
+	}
+	if shouldMountRepoCache(spec) {
+		podSpec.Volumes = append(podSpec.Volumes, repoCacheVolume())
 	}
 
 	serviceAccountName := strings.TrimSpace(spec.ServiceAccountName)
@@ -355,10 +364,17 @@ func (l *Launcher) launchAIRepairPod(ctx context.Context, ref JobRef, spec JobSp
 		Image:   jobImage,
 		Command: []string{"/bin/sh", "-c", "trap : TERM INT; while true; do sleep 3600; done"},
 	}
+	if shouldMountRepoCache(spec) {
+		runContainer = withRepoCacheVolumeMount(runContainer)
+		keepaliveContainer = withRepoCacheVolumeMount(keepaliveContainer)
+	}
 
 	podSpec := corev1.PodSpec{
 		RestartPolicy: corev1.RestartPolicyNever,
 		Containers:    []corev1.Container{runContainer, keepaliveContainer},
+	}
+	if shouldMountRepoCache(spec) {
+		podSpec.Volumes = append(podSpec.Volumes, repoCacheVolume())
 	}
 	serviceAccountName := strings.TrimSpace(spec.ServiceAccountName)
 	if serviceAccountName != "" {
@@ -432,6 +448,32 @@ func buildRunContainerEnv(spec JobSpec) []corev1.EnvVar {
 		{Name: "CODEXK8S_GIT_BOT_TOKEN", Value: strings.TrimSpace(spec.GitBotToken)},
 		{Name: "CODEXK8S_GIT_BOT_USERNAME", Value: strings.TrimSpace(spec.GitBotUsername)},
 		{Name: "CODEXK8S_GIT_BOT_MAIL", Value: strings.TrimSpace(spec.GitBotMail)},
+	}
+}
+
+func shouldMountRepoCache(spec JobSpec) bool {
+	if isAIRepairTriggerKind(spec.TriggerKind) {
+		return true
+	}
+	return spec.RuntimeMode == agentdomain.RuntimeModeFullEnv
+}
+
+func withRepoCacheVolumeMount(container corev1.Container) corev1.Container {
+	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+		Name:      runRepoCacheVolumeName,
+		MountPath: runRepoCacheMountPath,
+	})
+	return container
+}
+
+func repoCacheVolume() corev1.Volume {
+	return corev1.Volume{
+		Name: runRepoCacheVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+				ClaimName: runRepoCacheClaimName,
+			},
+		},
 	}
 }
 
