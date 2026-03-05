@@ -20,7 +20,7 @@ approvals:
 - Подготовлен execution package для перехода в `run:dev` по Sprint S7.
 - По требованию Owner создана отдельная implementation issue на каждый поток `S7-E01..S7-E18`: `#243..#260`.
 - Зафиксированы sequencing-waves, quality-gates, DoR/DoD и parity-check (`18/18`) перед запуском dev-этапа.
-- Post-plan дополнение: создан issue `#274` (`S7-E19`) для backend cleanup Agents/Configs/Secrets.
+- Post-plan дополнение: создан issue `#274` (`S7-E19`) для backend cleanup Agents/Configs/Secrets + registry images + running jobs.
 
 ## Контекст
 - Stage continuity: `#212 -> #218 -> #220 -> #222 -> #238 -> #241`.
@@ -51,7 +51,7 @@ approvals:
 | `S7-E12` | #254 | Wave 5 | P1 | Финальный MVP readiness gate + go/no-go пакет |
 
 ## Post-plan additions
-- `S7-E19` (`#274`): backend cleanup Agents/Configs/Secrets (Owner request после plan; не входит в parity `18/18`).
+- `S7-E19` (`#274`): backend cleanup Agents/Configs/Secrets + registry images + running jobs (Owner request после plan; не входит в parity `18/18`).
 
 ## Sequencing constraints
 - Wave 1 (`#243`, `#253`, `#255`) — foundation для стабильного dev/revise контура.

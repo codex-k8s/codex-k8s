@@ -10,7 +10,7 @@
     </VAlert>
 
     <VRow class="mt-4" density="compact">
-      <VCol cols="12" md="3">
+      <VCol cols="12" md="4">
         <VCard variant="tonal">
           <VCardText>
             <div class="text-caption text-medium-emphasis">{{ t("pages.runs.title") }}</div>
@@ -18,18 +18,7 @@
           </VCardText>
         </VCard>
       </VCol>
-      <VCol cols="12" md="3">
-        <VCard variant="tonal">
-          <VCardText class="d-flex align-center justify-space-between ga-2 flex-wrap">
-            <div>
-              <div class="text-caption text-medium-emphasis">{{ t("pages.runs.runningJobs") }}</div>
-              <div class="text-h6 font-weight-bold">{{ runs.runningJobs.length }}</div>
-            </div>
-            <VBtn size="small" variant="text" icon="mdi-open-in-new" :title="t('pages.runs.details')" :to="{ name: 'running-jobs' }" />
-          </VCardText>
-        </VCard>
-      </VCol>
-      <VCol cols="12" md="3">
+      <VCol cols="12" md="4">
         <VCard variant="tonal">
           <VCardText class="d-flex align-center justify-space-between ga-2 flex-wrap">
             <div>
@@ -40,7 +29,7 @@
           </VCardText>
         </VCard>
       </VCol>
-      <VCol cols="12" md="3">
+      <VCol cols="12" md="4">
         <VCard variant="tonal">
           <VCardText class="d-flex align-center justify-space-between ga-2 flex-wrap">
             <div>
@@ -167,7 +156,7 @@ const headers = [
 async function loadAll() {
   await Promise.all([
     loadRuns(),
-    runs.loadRuntimeViews({ jobsLimit: 20, waitsLimit: 20 }),
+    runs.loadRunWaits(20),
     runs.loadPendingApprovals(20),
   ]);
 }

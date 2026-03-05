@@ -92,8 +92,8 @@ approvals:
 
 ## Day 7 execution fact (`S7-E02`)
 - В Issue `#244` реализован UI cleanup stream `S7-E02`:
-  из sidebar удалены non-MVP секции `governance`/`admin` и non-MVP пункты `configuration/docs`, `configuration/mcp-tools`,
-  `configuration/agents`, `configuration/config-entries`.
+  из sidebar удалены non-MVP секции `governance`/`admin`, non-MVP пункты `configuration/docs`, `configuration/mcp-tools`,
+  `configuration/agents`, `configuration/config-entries`, а также operations-контуры `runtime-deploy/images` и `running-jobs`.
 - В роутинге staff UI удалены соответствующие non-MVP маршруты и добавлен fallback redirect на `projects` для stale deep-links.
 - Удалён связанный dead code non-MVP страниц, UI-контур `config-entries` и platform-tokens scaffold в `system-settings`.
 - В traceability добавлены обновления по issue `#244`; remaining backlog нормализован как `#245..#260` + post-plan `#274`.
@@ -103,9 +103,9 @@ approvals:
 | Epic ID | Priority | Scope | Источник замечаний |
 |---|---|---|---|
 | S7-E01 | P0 | Rebase/mainline hygiene и merge-conflict policy для PR-итераций | PRC-01 |
-| S7-E02 | P0 | Удаление не-MVP разделов (включая Agents и Configs/Secrets) и связанного dead code | PRC-05 |
+| S7-E02 | P0 | Удаление не-MVP разделов (включая Agents, Configs/Secrets, Registry images, Running jobs) и связанного dead code | PRC-05 |
 | S7-E03 | P0 | Удаление глобального frontend-фильтра и связанного неиспользуемого кода | PRC-04 |
-| S7-E04 | P0 | Удаление runtime-deploy/images контуров и cleanup связанных страниц | PRC-02, PRC-05 |
+| S7-E04 | P0 | Удаление runtime-deploy/images контуров и cleanup связанных страниц (закрыто в `#244`) | PRC-02, PRC-05 |
 | S7-E05 | P0 | Agents UI cleanup: убрать badge `Скоро`, пересобрать таблицу (без role/project-id) | PRC-03 |
 | S7-E06 | P0 | Agents MVP de-scope: убрать runtime mode/locale настройки, оставить фиксированные platform defaults | PRC-03 |
 | S7-E07 | P0 | Prompt source MVP contract: удалить selector `repo|db`, закрепить `repo-only` policy | PRC-03 |
@@ -120,7 +120,7 @@ approvals:
 | S7-E16 | P0 | Run status reliability: устранить false-failed для фактически успешных `run:intake:revise` | PRC-12 |
 | S7-E17 | P0 | Self-improve reliability: доступность и корректная перезапись `agent_sessions` snapshot | PRC-13 |
 | S7-E18 | P0 | Documentation governance: единый стандарт issue/PR + doc IA + role-template matrix | PRC-14, PRC-15, PRC-16 |
-| S7-E19 | P1 | Backend cleanup: удалить non-MVP контуры Agents/Configs/Secrets | Owner request (PR #272) |
+| S7-E19 | P1 | Backend cleanup: удалить non-MVP контуры Agents/Configs/Secrets + registry images + running jobs | Owner request (PR #272) |
 
 ## Delivery-governance правила
 - Каждая следующая stage-issue создаётся отдельной задачей и без trigger-лейбла.

@@ -3,7 +3,6 @@ import {
   getRun as getRunRequest,
   getRunLogs as getRunLogsRequest,
   listPendingApprovals as listPendingApprovalsRequest,
-  listRunJobs as listRunJobsRequest,
   listRunEvents as listRunEventsRequest,
   listRunWaits as listRunWaitsRequest,
   listRuns as listRunsRequest,
@@ -31,19 +30,6 @@ export type RunWaitFilters = RunListFilters & {
 
 export async function listRuns(limit = 40): Promise<Run[]> {
   const resp = await listRunsRequest({ query: { limit }, throwOnError: true });
-  return resp.data.items ?? [];
-}
-
-export async function listRunJobs(filters: RunListFilters = {}, limit = 20): Promise<Run[]> {
-  const resp = await listRunJobsRequest({
-    query: {
-      limit,
-      trigger_kind: filters.triggerKind?.trim() || undefined,
-      status: filters.status?.trim() || undefined,
-      agent_key: filters.agentKey?.trim() || undefined,
-    },
-    throwOnError: true,
-  });
   return resp.data.items ?? [];
 }
 

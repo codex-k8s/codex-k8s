@@ -6,12 +6,10 @@ import {
   getRun,
   getRunLogs,
   listPendingApprovals,
-  listRunJobs,
   listRunEvents,
   listRunWaits,
   listRuns,
   resolveApprovalDecision,
-  type RunListFilters,
   type RunWaitFilters,
 } from "./api";
 import type {
@@ -32,14 +30,8 @@ function sortEventsNewest(items: FlowEvent[]): FlowEvent[] {
 export const useRunsStore = defineStore("runs", {
   state: () => ({
     items: [] as Run[],
-    runningJobs: [] as Run[],
     waitQueue: [] as Run[],
     pendingApprovals: [] as ApprovalRequest[],
-    jobsFilters: {
-      triggerKind: "",
-      status: "",
-      agentKey: "",
-    } as RunListFilters,
     waitsFilters: {
       triggerKind: "",
       status: "",
@@ -47,7 +39,6 @@ export const useRunsStore = defineStore("runs", {
       waitState: "",
     } as RunWaitFilters,
     loading: false,
-    jobsLoading: false,
     waitsLoading: false,
     approvalsLoading: false,
     resolvingApprovalID: null as number | null,
@@ -93,21 +84,6 @@ export const useRunsStore = defineStore("runs", {
         this.scheduleErrorHide();
       } finally {
         this.loading = false;
-      }
-    },
-    async loadRuntimeViews(params: { jobsLimit?: number; waitsLimit?: number } = {}): Promise<void> {
-      await Promise.all([this.loadRunJobs(params.jobsLimit), this.loadRunWaits(params.waitsLimit)]);
-    },
-    async loadRunJobs(limit?: number): Promise<void> {
-      this.jobsLoading = true;
-      this.error = null;
-      try {
-        this.runningJobs = await listRunJobs(this.jobsFilters, limit);
-      } catch (e) {
-        this.error = normalizeApiError(e);
-        this.scheduleErrorHide();
-      } finally {
-        this.jobsLoading = false;
       }
     },
     async loadRunWaits(limit?: number): Promise<void> {

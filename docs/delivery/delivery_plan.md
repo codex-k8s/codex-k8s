@@ -190,7 +190,7 @@ approvals:
   - по owner-уточнению создана отдельная implementation issue на каждый execution-поток `S7-E01..S7-E18`;
   - сформирован execution issue package `#243..#260` без trigger-лейблов с wave-sequencing;
   - parity-гейт перед `run:dev` подтверждён: `approved_execution_epics_count == created_run_dev_issues_count` (`18 == 18`).
-  - post-plan добавление: issue `#274` (`S7-E19`) на backend cleanup Agents/Configs/Secrets.
+  - post-plan добавление: issue `#274` (`S7-E19`) на backend cleanup Agents/Configs/Secrets + registry images + running jobs.
 - Day 7+ (planned): `dev -> qa -> release -> postdeploy -> ops -> doc-audit` по implementation issues `#243..#260`, `#274` и owner-governed trigger-лейблам.
 
 ### Sprint S8: Go refactoring parallelization (Issue #223)

@@ -50,9 +50,9 @@ approvals:
 | Epic | Priority | Scope | Блокер/зависимость |
 |---|---|---|---|
 | S7-E01 | P0 | Rebase/mainline hygiene для PR revise-итераций | done (owner-approved, `#243`) |
-| S7-E02 | P0 | Sidebar cleanup: удаление не-MVP разделов (включая Agents и Configs/Secrets) и dead code | done (owner-approved, `#244`) |
+| S7-E02 | P0 | Sidebar cleanup: удаление не-MVP разделов (включая Agents, Configs/Secrets, Registry images, Running jobs) и dead code | done (owner-approved, `#244`) |
 | S7-E03 | P0 | Удаление глобального фильтра и зависимого кода | UI readiness gate |
-| S7-E04 | P0 | Удаление runtime-deploy/images секции и связанного фронтенд-кода | UI readiness gate |
+| S7-E04 | P0 | Удаление runtime-deploy/images секции и связанного фронтенд-кода | done (owner-approved, `#244`) |
 | S7-E05 | P0 | Agents table cleanup + removal of `Скоро` badge | depends on S6 baseline |
 | S7-E06 | P0 | Agents MVP de-scope: убрать runtime mode/locale настройки, оставить фиксированные defaults | depends on S6 baseline |
 | S7-E07 | P0 | Prompt source contract: удалить selector `repo|db`, закрепить `repo-only` policy | depends on API/worker contracts |
@@ -67,7 +67,7 @@ approvals:
 | S7-E16 | P0 | Run status reliability: false-failed для `run:intake:revise` | stage reliability |
 | S7-E17 | P0 | Self-improve: доступность и перезапись session snapshot | self-improve reliability |
 | S7-E18 | P0 | Documentation governance: issue/PR standard + doc IA + role-template matrix | backlog quality gate |
-| S7-E19 | P1 | Backend cleanup: удалить non-MVP контуры Agents/Configs/Secrets | after S7-E02 |
+| S7-E19 | P1 | Backend cleanup: удалить non-MVP контуры Agents/Configs/Secrets + registry images + running jobs | after S7-E02 |
 
 ## Quality gates (S7 governance)
 
@@ -84,7 +84,7 @@ approvals:
 | QG-S7-09 Design completion | Для Day5 выпущен design package (`design_doc`, `api_contract`, `data_model`, `migrations_policy`) и создана follow-up issue `#241` в `run:plan` | passed |
 | QG-S7-10 Plan completion | Для Day6 выпущен execution package, создано 18 implementation issues `#243..#260`, parity-check `18/18` подтверждён | passed |
 | QG-S7-11 Foundation stream S7-E01 | Для issue `#243` зафиксирован единый rebase/mainline process и обязательный PR checklist для revise-итераций | passed (owner-approved) |
-| QG-S7-12 UI stream S7-E02 | Для issue `#244` удалены non-MVP sidebar/routes (включая Agents и Configs/Secrets) и выполнен навигационный smoke-check без broken transitions | passed (owner-approved) |
+| QG-S7-12 UI stream S7-E02 | Для issue `#244` удалены non-MVP sidebar/routes (включая Agents, Configs/Secrets, Registry images, Running jobs) и выполнен навигационный smoke-check без broken transitions | passed (owner-approved) |
 
 ## Completion критерии спринта
 - [ ] Закрыт открытый P0-блокер S6 (`#216`, `run:release`) и подтверждён переход в `run:postdeploy`.
