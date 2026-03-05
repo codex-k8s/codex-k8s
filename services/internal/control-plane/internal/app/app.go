@@ -229,6 +229,10 @@ func Run() error {
 			runtimeDeployWorkerID = "runtime-deploy-" + strings.TrimSpace(hostname)
 		}
 	}
+	runtimeDeployWorkersPerPod := cfg.RuntimeDeployWorkersPerPod
+	if runtimeDeployWorkersPerPod <= 0 {
+		return fmt.Errorf("parse CODEXK8S_RUNTIME_DEPLOY_WORKERS_PER_POD=%d: value must be > 0", cfg.RuntimeDeployWorkersPerPod)
+	}
 	registryScheme := strings.TrimSpace(cfg.InternalRegistryScheme)
 	if registryScheme == "" {
 		registryScheme = "http"
@@ -383,7 +387,15 @@ func Run() error {
 	if err := startRunHeavyFieldsCleanupLoop(runCtx, agentCallbackService, runtimeDeployService, logger, retentionDays); err != nil {
 		return fmt.Errorf("start run heavy fields cleanup loop: %w", err)
 	}
-	if err := startRuntimeDeployReconcilerLoop(runCtx, runtimeDeployService, logger, runtimeDeployWorkerID, runtimeDeployReconcileInterval, runtimeDeployLeaseTTL); err != nil {
+	if err := startRuntimeDeployReconcilerLoop(
+		runCtx,
+		runtimeDeployService,
+		logger,
+		runtimeDeployWorkerID,
+		runtimeDeployReconcileInterval,
+		runtimeDeployLeaseTTL,
+		runtimeDeployWorkersPerPod,
+	); err != nil {
 		return fmt.Errorf("start runtime deploy reconciler loop: %w", err)
 	}
 

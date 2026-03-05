@@ -210,6 +210,24 @@ spec:
               value: '{{ envOr "CODEXK8S_KANIKO_CACHE_REPO" "" }}'
             - name: CODEXK8S_KANIKO_CACHE_TTL
               value: '{{ envOr "CODEXK8S_KANIKO_CACHE_TTL" "" }}'
+            - name: CODEXK8S_KANIKO_MAX_PARALLEL
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_KANIKO_MAX_PARALLEL
+                  optional: true
+            - name: CODEXK8S_IMAGE_MIRROR_MAX_PARALLEL
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_IMAGE_MIRROR_MAX_PARALLEL
+                  optional: true
+            - name: CODEXK8S_RUNTIME_DEPLOY_WORKERS_PER_POD
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_RUNTIME_DEPLOY_WORKERS_PER_POD
+                  optional: true
             - name: CODEXK8S_PRODUCTION_DOMAIN
               valueFrom:
                 secretKeyRef:

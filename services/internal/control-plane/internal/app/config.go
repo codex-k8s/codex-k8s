@@ -79,6 +79,8 @@ type Config struct {
 	RuntimeDeployReconcileInterval string `env:"CODEXK8S_RUNTIME_DEPLOY_RECONCILE_INTERVAL" envDefault:"3s"`
 	// RuntimeDeployLeaseTTL controls deploy task lease duration for reconciler lock.
 	RuntimeDeployLeaseTTL string `env:"CODEXK8S_RUNTIME_DEPLOY_LEASE_TTL" envDefault:"10m"`
+	// RuntimeDeployWorkersPerPod controls how many runtime deploy reconciler workers run inside one control-plane pod.
+	RuntimeDeployWorkersPerPod int `env:"CODEXK8S_RUNTIME_DEPLOY_WORKERS_PER_POD" envDefault:"4"`
 	// RuntimeDeployWorkerID identifies current deploy reconciler instance.
 	RuntimeDeployWorkerID string `env:"CODEXK8S_RUNTIME_DEPLOY_WORKER_ID"`
 	// RuntimeDeployFieldManager is a server-side apply field manager name.

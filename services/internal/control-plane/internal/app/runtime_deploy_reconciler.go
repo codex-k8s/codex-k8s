@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"strings"
 	"time"
 
@@ -21,6 +22,7 @@ func startRuntimeDeployReconcilerLoop(
 	workerID string,
 	interval time.Duration,
 	leaseTTL time.Duration,
+	workersPerPod int,
 ) error {
 	if reconciler == nil {
 		return fmt.Errorf("runtime deploy reconciler is required")
@@ -38,15 +40,18 @@ func startRuntimeDeployReconcilerLoop(
 	if leaseTTL <= 0 {
 		return fmt.Errorf("runtime deploy lease ttl must be > 0")
 	}
+	if workersPerPod <= 0 {
+		return fmt.Errorf("runtime deploy workers per pod must be > 0")
+	}
 
-	runOnce := func() {
+	runOnce := func(leaseOwner string) {
 		for {
-			processed, err := reconciler.ReconcileNext(ctx, workerID, leaseTTL)
+			processed, err := reconciler.ReconcileNext(ctx, leaseOwner, leaseTTL)
 			if err != nil {
 				if ctx.Err() != nil {
 					return
 				}
-				logger.Error("runtime deploy reconcile tick failed", "worker_id", workerID, "err", err)
+				logger.Error("runtime deploy reconcile tick failed", "worker_id", leaseOwner, "err", err)
 				return
 			}
 			if !processed {
@@ -55,22 +60,39 @@ func startRuntimeDeployReconcilerLoop(
 		}
 	}
 
-	runOnce()
-
-	go func() {
-		ticker := time.NewTicker(interval)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				runOnce()
-			}
+	for idx := 0; idx < workersPerPod; idx++ {
+		leaseOwner := workerID
+		if workersPerPod > 1 {
+			leaseOwner = workerID + "-w" + strconv.Itoa(idx+1)
 		}
-	}()
 
-	logger.Info("runtime deploy reconciler loop started", "worker_id", workerID, "interval", interval.String(), "lease_ttl", leaseTTL.String())
+		runOnce(leaseOwner)
+
+		go func(owner string) {
+			ticker := time.NewTicker(interval)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+					runOnce(owner)
+				}
+			}
+		}(leaseOwner)
+	}
+
+	logger.Info(
+		"runtime deploy reconciler loop started",
+		"worker_id",
+		workerID,
+		"interval",
+		interval.String(),
+		"lease_ttl",
+		leaseTTL.String(),
+		"workers_per_pod",
+		workersPerPod,
+	)
 	return nil
 }
 

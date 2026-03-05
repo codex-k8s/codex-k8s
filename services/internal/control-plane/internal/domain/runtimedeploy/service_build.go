@@ -27,6 +27,13 @@ type buildImageResult struct {
 	Repository string
 }
 
+type mirrorJobSpec struct {
+	EntryName   string
+	SourceImage string
+	TargetImage string
+	JobName     string
+}
+
 func (s *Service) buildImages(ctx context.Context, repositoryRoot string, params PrepareParams, stack *servicescfg.Stack, namespace string, vars map[string]string) error {
 	runID := strings.TrimSpace(params.RunID)
 	if stack == nil {
@@ -408,7 +415,12 @@ func (s *Service) mirrorExternalDependencies(ctx context.Context, namespace stri
 	if err != nil {
 		return fmt.Errorf("generate image mirror token: %w", err)
 	}
+	maxParallel := parsePositiveInt(vars["CODEXK8S_IMAGE_MIRROR_MAX_PARALLEL"], 1)
+	if maxParallel <= 0 {
+		maxParallel = 1
+	}
 
+	jobs := make([]mirrorJobSpec, 0, len(entries))
 	for _, entry := range entries {
 		if entry.Name == "" {
 			continue
@@ -438,38 +450,85 @@ func (s *Service) mirrorExternalDependencies(ctx context.Context, namespace stri
 			continue
 		}
 
-		s.appendTaskLogBestEffort(ctx, runID, "mirror", "info", "Ensuring mirror "+sourceImage+" -> "+targetImage)
-
 		jobName := fmt.Sprintf("codex-k8s-mirror-%s-%s", sanitizeNameToken(entry.Name, 20), jobToken)
 		if len(jobName) > 63 {
 			jobName = strings.TrimRight(jobName[:63], "-")
 		}
-		jobVars := cloneStringMap(vars)
-		jobVars["CODEXK8S_PRODUCTION_NAMESPACE"] = namespace
-		jobVars["CODEXK8S_IMAGE_MIRROR_JOB_NAME"] = jobName
-		jobVars["CODEXK8S_IMAGE_MIRROR_SOURCE"] = sourceImage
-		jobVars["CODEXK8S_IMAGE_MIRROR_TARGET"] = targetImage
-		jobVars["CODEXK8S_IMAGE_MIRROR_TOOL_IMAGE"] = mirrorToolImage
-
-		renderedRaw, renderErr := manifesttpl.Render(templatePath, templateRaw, jobVars)
-		if renderErr != nil {
-			return fmt.Errorf("render mirror job for %s: %w", entry.Name, renderErr)
-		}
-		if err := s.k8s.DeleteJobIfExists(ctx, namespace, jobName); err != nil {
-			return fmt.Errorf("delete previous mirror job %s: %w", jobName, err)
-		}
-		if _, err := s.k8s.ApplyManifest(ctx, renderedRaw, namespace, s.cfg.KanikoFieldManager); err != nil {
-			return fmt.Errorf("apply mirror job %s: %w", jobName, err)
-		}
-		if err := s.k8s.WaitForJobComplete(ctx, namespace, jobName, s.cfg.KanikoTimeout); err != nil {
-			jobLogs, logsErr := s.k8s.GetJobLogs(ctx, namespace, jobName, s.cfg.KanikoJobLogTailLines)
-			if logsErr == nil && strings.TrimSpace(jobLogs) != "" {
-				s.appendTaskLogBestEffort(ctx, runID, "mirror", "error", "Mirror failed for "+targetImage+":\n"+jobLogs)
-			}
-			return fmt.Errorf("wait mirror job %s: %w", jobName, err)
-		}
-		s.appendTaskLogBestEffort(ctx, runID, "mirror", "info", "Mirrored "+sourceImage+" -> "+targetImage)
+		jobs = append(jobs, mirrorJobSpec{
+			EntryName:   entry.Name,
+			SourceImage: sourceImage,
+			TargetImage: targetImage,
+			JobName:     jobName,
+		})
 	}
+	if len(jobs) == 0 {
+		return nil
+	}
+	if maxParallel > len(jobs) {
+		maxParallel = len(jobs)
+	}
+
+	ctxMirror, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	errCh := make(chan error, len(jobs))
+	sem := make(chan struct{}, maxParallel)
+	var wg sync.WaitGroup
+
+	for _, job := range jobs {
+		job := job
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			select {
+			case sem <- struct{}{}:
+			case <-ctxMirror.Done():
+				return
+			}
+			defer func() { <-sem }()
+
+			if runErr := s.runMirrorJob(ctxMirror, namespace, vars, runID, templatePath, templateRaw, mirrorToolImage, job); runErr != nil {
+				errCh <- runErr
+				cancel()
+			}
+		}()
+	}
+	wg.Wait()
+	close(errCh)
+	if len(errCh) > 0 {
+		return <-errCh
+	}
+	return nil
+}
+
+func (s *Service) runMirrorJob(ctx context.Context, namespace string, vars map[string]string, runID string, templatePath string, templateRaw []byte, mirrorToolImage string, job mirrorJobSpec) error {
+	s.appendTaskLogBestEffort(ctx, runID, "mirror", "info", "Ensuring mirror "+job.SourceImage+" -> "+job.TargetImage)
+
+	jobVars := cloneStringMap(vars)
+	jobVars["CODEXK8S_PRODUCTION_NAMESPACE"] = namespace
+	jobVars["CODEXK8S_IMAGE_MIRROR_JOB_NAME"] = job.JobName
+	jobVars["CODEXK8S_IMAGE_MIRROR_SOURCE"] = job.SourceImage
+	jobVars["CODEXK8S_IMAGE_MIRROR_TARGET"] = job.TargetImage
+	jobVars["CODEXK8S_IMAGE_MIRROR_TOOL_IMAGE"] = mirrorToolImage
+
+	renderedRaw, renderErr := manifesttpl.Render(templatePath, templateRaw, jobVars)
+	if renderErr != nil {
+		return fmt.Errorf("render mirror job for %s: %w", job.EntryName, renderErr)
+	}
+	if err := s.k8s.DeleteJobIfExists(ctx, namespace, job.JobName); err != nil {
+		return fmt.Errorf("delete previous mirror job %s: %w", job.JobName, err)
+	}
+	if _, err := s.k8s.ApplyManifest(ctx, renderedRaw, namespace, s.cfg.KanikoFieldManager); err != nil {
+		return fmt.Errorf("apply mirror job %s: %w", job.JobName, err)
+	}
+	if err := s.k8s.WaitForJobComplete(ctx, namespace, job.JobName, s.cfg.KanikoTimeout); err != nil {
+		jobLogs, logsErr := s.k8s.GetJobLogs(ctx, namespace, job.JobName, s.cfg.KanikoJobLogTailLines)
+		if logsErr == nil && strings.TrimSpace(jobLogs) != "" {
+			s.appendTaskLogBestEffort(ctx, runID, "mirror", "error", "Mirror failed for "+job.TargetImage+":\n"+jobLogs)
+		}
+		return fmt.Errorf("wait mirror job %s: %w", job.JobName, err)
+	}
+	s.appendTaskLogBestEffort(ctx, runID, "mirror", "info", "Mirrored "+job.SourceImage+" -> "+job.TargetImage)
 	return nil
 }
 
