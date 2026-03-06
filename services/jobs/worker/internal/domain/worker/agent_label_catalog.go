@@ -10,6 +10,7 @@ const (
 	// Codex CLI uses "xhigh" for the highest reasoning effort.
 	reasoningEffortExtraHigh = "xhigh"
 
+	defaultAIModelGPT54Label           = "ai-model-gpt-5.4"
 	defaultAIModelGPT53CodexLabel      = "ai-model-gpt-5.3-codex"
 	defaultAIModelGPT53CodexSparkLabel = "ai-model-gpt-5.3-codex-spark"
 	defaultAIModelGPT52CodexLabel      = "ai-model-gpt-5.2-codex"
@@ -24,6 +25,7 @@ const (
 )
 
 type runAgentLabelCatalog struct {
+	AIModelGPT54Label           string
 	AIModelGPT53CodexLabel      string
 	AIModelGPT53CodexSparkLabel string
 	AIModelGPT52CodexLabel      string
@@ -39,6 +41,7 @@ type runAgentLabelCatalog struct {
 
 func defaultRunAgentLabelCatalog() runAgentLabelCatalog {
 	return runAgentLabelCatalog{
+		AIModelGPT54Label:           defaultAIModelGPT54Label,
 		AIModelGPT53CodexLabel:      defaultAIModelGPT53CodexLabel,
 		AIModelGPT53CodexSparkLabel: defaultAIModelGPT53CodexSparkLabel,
 		AIModelGPT52CodexLabel:      defaultAIModelGPT52CodexLabel,
@@ -54,6 +57,7 @@ func defaultRunAgentLabelCatalog() runAgentLabelCatalog {
 
 func normalizeRunAgentLabelCatalog(catalog runAgentLabelCatalog) runAgentLabelCatalog {
 	def := defaultRunAgentLabelCatalog()
+	catalog.AIModelGPT54Label = normalizeLabelCatalogValue(catalog.AIModelGPT54Label, def.AIModelGPT54Label)
 	catalog.AIModelGPT53CodexLabel = normalizeLabelCatalogValue(catalog.AIModelGPT53CodexLabel, def.AIModelGPT53CodexLabel)
 	catalog.AIModelGPT53CodexSparkLabel = normalizeLabelCatalogValue(catalog.AIModelGPT53CodexSparkLabel, def.AIModelGPT53CodexSparkLabel)
 	catalog.AIModelGPT52CodexLabel = normalizeLabelCatalogValue(catalog.AIModelGPT52CodexLabel, def.AIModelGPT52CodexLabel)
@@ -77,6 +81,7 @@ func normalizeLabelCatalogValue(value string, fallback string) string {
 
 func runAgentLabelCatalogFromConfig(cfg Config) runAgentLabelCatalog {
 	return normalizeRunAgentLabelCatalog(runAgentLabelCatalog{
+		AIModelGPT54Label:           cfg.AIModelGPT54Label,
 		AIModelGPT53CodexLabel:      cfg.AIModelGPT53CodexLabel,
 		AIModelGPT53CodexSparkLabel: cfg.AIModelGPT53CodexSparkLabel,
 		AIModelGPT52CodexLabel:      cfg.AIModelGPT52CodexLabel,
@@ -92,6 +97,7 @@ func runAgentLabelCatalogFromConfig(cfg Config) runAgentLabelCatalog {
 
 func (c runAgentLabelCatalog) modelByLabel() map[string]string {
 	return map[string]string{
+		c.AIModelGPT54Label:           modelGPT54,
 		c.AIModelGPT53CodexLabel:      modelGPT53Codex,
 		c.AIModelGPT53CodexSparkLabel: modelGPT53CodexSpark,
 		c.AIModelGPT52CodexLabel:      modelGPT52Codex,

@@ -31,7 +31,7 @@ type Config struct {
 	PromptTemplateLocale string `env:"CODEXK8S_PROMPT_TEMPLATE_LOCALE" envDefault:"ru"`
 	StateInReviewLabel   string `env:"CODEXK8S_STATE_IN_REVIEW_LABEL" envDefault:"state:in-review"`
 	AgentModel           string `env:"CODEXK8S_AGENT_MODEL"`
-	AgentReasoningEffort string `env:"CODEXK8S_AGENT_REASONING_EFFORT" envDefault:"xhigh"`
+	AgentReasoningEffort string `env:"CODEXK8S_AGENT_REASONING_EFFORT" envDefault:"high"`
 	AgentBaseBranch      string `env:"CODEXK8S_AGENT_BASE_BRANCH" envDefault:"main"`
 	AgentDisplayName     string `env:"CODEXK8S_AGENT_DISPLAY_NAME,required,notEmpty"`
 
@@ -76,7 +76,7 @@ func LoadConfig() (Config, error) {
 
 	cfg.AgentModel = strings.TrimSpace(cfg.AgentModel)
 	if cfg.AgentModel == "" {
-		cfg.AgentModel = modelGPT52Codex
+		cfg.AgentModel = modelGPT54
 	}
 	cfg.AgentReasoningEffort = strings.TrimSpace(strings.ToLower(cfg.AgentReasoningEffort))
 	// Codex CLI expects "xhigh" for the highest reasoning effort.
@@ -85,7 +85,7 @@ func LoadConfig() (Config, error) {
 		cfg.AgentReasoningEffort = "xhigh"
 	}
 	if cfg.AgentReasoningEffort == "" {
-		cfg.AgentReasoningEffort = "xhigh"
+		cfg.AgentReasoningEffort = "high"
 	}
 	cfg.AgentBaseBranch = strings.TrimSpace(cfg.AgentBaseBranch)
 	if cfg.AgentBaseBranch == "" {

@@ -156,5 +156,6 @@ approvals:
 - Помимо trigger/status labels используются конфигурационные labels:
   - `[ai-model-*]` — выбор модели;
   - `[ai-reasoning-*]` — выбор уровня рассуждений.
+- Базовый профиль без override: `gpt-5.4` + `high`.
 - Эти labels не запускают stage сами по себе, но влияют на effective runtime profile.
 - Для `run:dev:revise` профиль model/reasoning перечитывается перед каждым запуском.

@@ -77,6 +77,8 @@ type Config struct {
 	AIRepairNamespace string
 	// AIRepairServiceAccount is service account used by ai-repair workload pod.
 	AIRepairServiceAccount string
+	// AIModelGPT54Label maps GitHub label to gpt-5.4 model.
+	AIModelGPT54Label string
 	// AIModelGPT53CodexLabel maps GitHub label to gpt-5.3-codex model.
 	AIModelGPT53CodexLabel string
 	// AIModelGPT53CodexSparkLabel maps GitHub label to gpt-5.3-codex-spark model.
@@ -210,7 +212,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	}
 	cfg.AgentDefaultModel = strings.TrimSpace(cfg.AgentDefaultModel)
 	if cfg.AgentDefaultModel == "" {
-		cfg.AgentDefaultModel = modelGPT53Codex
+		cfg.AgentDefaultModel = modelGPT54
 	}
 	cfg.AgentDefaultReasoningEffort = strings.TrimSpace(strings.ToLower(cfg.AgentDefaultReasoningEffort))
 	switch cfg.AgentDefaultReasoningEffort {
