@@ -5,8 +5,8 @@ title: "Requirements Traceability Matrix"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-03-05
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263, 265]
+updated_at: 2026-03-06
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263, 265, 281, 282]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -280,6 +280,45 @@ approvals:
   - `#229` shared libs pgx/servicescfg alignment;
   - `#230` cross-service hygiene closure.
 - Через Context7 (`/websites/cli_github_manual`) подтвержден актуальный CLI-синтаксис `gh issue create`/`gh pr create`/`gh pr edit`; новые внешние зависимости не добавлялись.
+
+## Актуализация по Issue #281 (`run:dev`, planned 2026-03-06)
+- Для FR-020/FR-033/FR-049/FR-050 и NFR-010/NFR-018 добавлен execution backlog Sprint S8 Day2:
+  `docs/delivery/epics/s8/epic-s8-day2-empty-repository-initialization.md`,
+  `docs/delivery/epics/s8/epic_s8.md`,
+  `docs/delivery/sprints/s8/sprint_s8_go_refactoring_parallelization.md`,
+  `docs/delivery/delivery_plan.md`,
+  `docs/delivery/issue_map.md`.
+- Зафиксирован отдельный onboarding path для пустого GitHub-репозитория:
+  deterministic detection -> bootstrap bundle -> direct initial commit в default branch -> onboarding summary issue.
+- В traceability baseline закреплено, что empty-repo onboarding:
+  - не использует PR как обязательный init-механизм до появления первой ветки/коммита;
+  - обязан создавать typed `services.yaml` и docs scaffold как стартовую точку для stage-flow;
+  - обязан быть идемпотентным и сохранять audit trail по созданным файлам и bootstrap SHA.
+- Источники требований и решений:
+  - FR-020 (per-repo `services.yaml`);
+  - FR-049 (repository onboarding preflight);
+  - FR-050 (docs tree в prompt context);
+  - ADR-0007 (multi-repo composition/docs federation как будущий режим).
+
+## Актуализация по Issue #282 (`run:dev`, planned 2026-03-06)
+- Для FR-002/FR-020/FR-033/FR-049/FR-050 и NFR-010/NFR-018 добавлен execution backlog Sprint S8 Day3:
+  `docs/delivery/epics/s8/epic-s8-day3-existing-repository-adoption.md`,
+  `docs/delivery/epics/s8/epic_s8.md`,
+  `docs/delivery/sprints/s8/sprint_s8_go_refactoring_parallelization.md`,
+  `docs/delivery/delivery_plan.md`,
+  `docs/delivery/issue_map.md`.
+- Зафиксирован целевой adoption path для существующего репозитория с кодом:
+  repository classification -> deterministic scan report -> dedicated onboarding-task -> PR с `services.yaml` и docs baseline.
+- В traceability baseline закреплены ограничения безопасности и качества:
+  - onboarding-task имеет ограниченный writable scope и не должна делать произвольный рефакторинг приложения;
+  - adoption выполняется только через reviewable PR;
+  - rerun должен быть идемпотентным на уровне onboarding branch/PR для одного и того же `ref`.
+- Источники требований и решений:
+  - FR-002 (provider abstraction);
+  - FR-020 (per-repo `services.yaml`);
+  - FR-049 (repository onboarding preflight);
+  - FR-050 (role-aware docs context);
+  - ADR-0007 и S4 Day1 (multi-repo compose/docs federation).
 
 ## Актуализация по Issue #227 (`run:dev`, 2026-02-28)
 - Для FR-033 и NFR-018 выполнена декомпозиция worker orchestration-сервиса без изменения продуктового поведения:
