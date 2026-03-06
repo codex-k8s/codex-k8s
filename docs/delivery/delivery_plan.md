@@ -5,8 +5,8 @@ title: "codex-k8s — Delivery Plan"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-03-05
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265]
+updated_at: 2026-03-06
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, __ISSUE_EMPTY__, __ISSUE_EXISTING__]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -193,12 +193,18 @@ approvals:
   - post-plan добавление: issue `#274` (`S7-E19`) на backend cleanup Agents/Configs/Secrets + registry images + running jobs.
 - Day 7+ (planned): `dev -> qa -> release -> postdeploy -> ops -> doc-audit` по implementation issues `#243..#260`, `#274` и owner-governed trigger-лейблам.
 
-### Sprint S8: Go refactoring parallelization (Issue #223)
+### Sprint S8: Go refactoring parallelization + repository onboarding automation
 - Day 1 (in-review): plan-пакет по параллельному Go-рефакторингу (`docs/delivery/epics/s8/epic-s8-day1-go-refactoring-plan.md`).
 - Результат Day 1 (факт):
   - execution-поток выделен из Sprint S7 для исключения конфликтов с параллельными задачами MVP readiness;
   - сохранены 6 независимых implementation issues `#225..#230` в bounded scopes;
   - quality-gates `QG-223-01..QG-223-05` и handover в `run:dev` зафиксированы в Sprint S8.
+- Day 2 (planned): empty repository initialization (`docs/delivery/epics/s8/epic-s8-day2-empty-repository-initialization.md`, Issue `#__ISSUE_EMPTY__`).
+  - Цель: автоматизировать bootstrap пустого GitHub-репозитория при attach в платформу.
+  - Ожидаемый результат: default branch + initial commit + `services.yaml` + docs scaffold + onboarding summary issue.
+- Day 3 (planned): existing repository adoption (`docs/delivery/epics/s8/epic-s8-day3-existing-repository-adoption.md`, Issue `#__ISSUE_EXISTING__`).
+  - Цель: перевести существующий кодовый репозиторий без `services.yaml`/docs baseline в управляемый PR-based onboarding flow.
+  - Ожидаемый результат: deterministic scan report + специализированная onboarding-task + PR с draft `services.yaml` и docs baseline.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
