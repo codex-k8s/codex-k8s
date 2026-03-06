@@ -23,6 +23,13 @@ func TestResolveModelFromLabels(t *testing.T) {
 			wantSource:   modelSourceDefault,
 		},
 		{
+			name:         "gpt-5.4",
+			labels:       []string{"[ai-model-gpt-5.4]"},
+			defaultModel: "gpt-5.2-codex",
+			wantModel:    "gpt-5.4",
+			wantSource:   modelSourceIssueLabel,
+		},
+		{
 			name:         "gpt-5.3-codex",
 			labels:       []string{"[ai-model-gpt-5.3-codex]"},
 			defaultModel: "gpt-5.2-codex",

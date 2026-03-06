@@ -20,6 +20,7 @@ const (
 	modelSourceLastRunContext   = "last_run_context"
 	modelSourceFallback         = "auth_file_fallback"
 
+	modelGPT54           = "gpt-5.4"
 	modelGPT53Codex      = "gpt-5.3-codex"
 	modelGPT53CodexSpark = "gpt-5.3-codex-spark"
 	modelGPT52Codex      = "gpt-5.2-codex"

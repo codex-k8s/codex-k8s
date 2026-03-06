@@ -90,6 +90,7 @@ approvals:
 ## Конфигурационные лейблы модели/рассуждений
 
 Лейблы модели (одновременно активен один):
+- `[ai-model-gpt-5.4]`
 - `[ai-model-gpt-5.3-codex]`
 - `[ai-model-gpt-5.3-codex-spark]`
 - `[ai-model-gpt-5.2-codex]`
@@ -295,7 +296,7 @@ approvals:
   - для `state:*`: `CODEXK8S_STATE_*_LABEL`,
   - для `need:*`: `CODEXK8S_NEED_*_LABEL`.
 - Для model/reasoning также хранится каталог vars:
-  - `CODEXK8S_AI_MODEL_GPT_5_3_CODEX_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_2_CODEX_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MAX_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_2_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MINI_LABEL`,
+  - `CODEXK8S_AI_MODEL_GPT_5_4_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_3_CODEX_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_2_CODEX_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MAX_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_2_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MINI_LABEL`,
   - `CODEXK8S_AI_REASONING_LOW_LABEL`, `CODEXK8S_AI_REASONING_MEDIUM_LABEL`, `CODEXK8S_AI_REASONING_HIGH_LABEL`, `CODEXK8S_AI_REASONING_EXTRA_HIGH_LABEL`.
 - Для новых `run:*` лейблов vars заводятся заранее до активации соответствующего этапа.
 - Bootstrap синхронизация каталога выполняется командой `go run ./cmd/codex-bootstrap github-sync`.

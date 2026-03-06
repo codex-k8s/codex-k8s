@@ -172,6 +172,7 @@ func Run() error {
 		KubernetesNamespace:         cfg.K8sNamespace,
 		AIRepairNamespace:           resolveAIRepairNamespace(cfg),
 		AIRepairServiceAccount:      cfg.AIRepairServiceAccount,
+		AIModelGPT54Label:           cfg.AIModelGPT54Label,
 		AIModelGPT53CodexLabel:      cfg.AIModelGPT53CodexLabel,
 		AIModelGPT53CodexSparkLabel: cfg.AIModelGPT53CodexSparkLabel,
 		AIModelGPT52CodexLabel:      cfg.AIModelGPT52CodexLabel,

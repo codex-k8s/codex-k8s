@@ -54,9 +54,11 @@ type Config struct {
 	// GitBotMail is git author email configured in run pods.
 	GitBotMail string `env:"CODEXK8S_GIT_BOT_MAIL" envDefault:"codex-bot@codex-k8s.local"`
 	// AgentDefaultModel is fallback model when run config labels do not override model.
-	AgentDefaultModel string `env:"CODEXK8S_AGENT_DEFAULT_MODEL" envDefault:"gpt-5.2-codex"`
+	AgentDefaultModel string `env:"CODEXK8S_AGENT_DEFAULT_MODEL" envDefault:"gpt-5.4"`
 	// AgentDefaultReasoningEffort is fallback reasoning profile when run config labels do not override reasoning.
-	AgentDefaultReasoningEffort string `env:"CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT" envDefault:"xhigh"`
+	AgentDefaultReasoningEffort string `env:"CODEXK8S_AGENT_DEFAULT_REASONING_EFFORT" envDefault:"high"`
+	// AIModelGPT54Label configures label -> model mapping for gpt-5.4.
+	AIModelGPT54Label string `env:"CODEXK8S_AI_MODEL_GPT_5_4_LABEL" envDefault:"[ai-model-gpt-5.4]"`
 	// AgentDefaultLocale is fallback prompt locale.
 	AgentDefaultLocale string `env:"CODEXK8S_AGENT_DEFAULT_LOCALE" envDefault:"ru"`
 	// AgentBaseBranch is default base branch for PR flow.
