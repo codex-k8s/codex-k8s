@@ -5,7 +5,7 @@ title: "Requirements Traceability Matrix"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-03-06
+updated_at: 2026-03-09
 related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263, 265, 281, 282]
 related_prs: []
 approvals:
@@ -235,9 +235,9 @@ approvals:
 - Обновлены связные документы: `README.md`, `docs/product/{requirements_machine_driven,labels_and_trigger_policy,agents_operating_model,stage_process_model}.md`, `docs/architecture/api_contract.md`.
 
 ## Актуализация по Issue #171 (`run:dev`, 2026-02-25)
-- В `runstatus` реализован typed next-step action-card contract с обязательными полями:
-  `launch_profile`, `stage_path`, `primary_action`, `fallback_action`, `guardrail_note`.
-- Добавлен deterministic profile resolver для action-card (baseline `quick-fix|feature|new-service`) и fallback path `pre-check -> transition`.
+- В `runstatus` реализована typed next-step action matrix:
+  `action_kind`, `target_label`, `display_variant`, `url`.
+- Добавлен deterministic profile resolver для next-step матрицы (baseline `quick-fix|feature|new-service`) и preview/execute path через staff API.
 - Для ambiguity/not-resolved review-stage сценариев добавлен hard-stop remediation:
   автоматическая постановка `need:input` через runstatus/webhook path до публикации warning comment.
 - Проверка изменений зафиксирована unit-пакетом:

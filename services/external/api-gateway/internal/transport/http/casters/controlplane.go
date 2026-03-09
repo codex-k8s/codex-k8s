@@ -428,18 +428,19 @@ func ProjectGitHubTokens(item *controlplanev1.ProjectGitHubTokens) models.Projec
 	}
 }
 
-func TransitionIssueStageLabelResponse(item *controlplanev1.TransitionIssueStageLabelResponse) models.TransitionIssueStageLabelResponse {
+func NextStepActionResponse(item *controlplanev1.NextStepActionResponse) models.NextStepActionResponse {
 	if item == nil {
-		return models.TransitionIssueStageLabelResponse{
+		return models.NextStepActionResponse{
 			RemovedLabels: []string{},
 			AddedLabels:   []string{},
 			FinalLabels:   []string{},
 		}
 	}
-	return models.TransitionIssueStageLabelResponse{
+	return models.NextStepActionResponse{
 		RepositoryFullName: item.GetRepositoryFullName(),
-		IssueNumber:        item.GetIssueNumber(),
-		IssueURL:           cast.OptionalTrimmedString(item.IssueUrl),
+		ThreadKind:         item.GetThreadKind(),
+		ThreadNumber:       item.GetThreadNumber(),
+		ThreadURL:          cast.OptionalTrimmedString(item.ThreadUrl),
 		RemovedLabels:      item.GetRemovedLabels(),
 		AddedLabels:        item.GetAddedLabels(),
 		FinalLabels:        item.GetFinalLabels(),

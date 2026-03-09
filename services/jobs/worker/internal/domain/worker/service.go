@@ -6,13 +6,14 @@ import (
 	"strings"
 	"time"
 
+	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/flowevent"
 	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/learningfeedback"
 	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
 )
 
 const defaultWorkerID = "worker"
-const defaultStateInReviewLabel = "state:in-review"
+const defaultStateInReviewLabel = webhookdomain.DefaultStateInReviewLabel
 
 // Config defines worker run-loop behavior.
 type Config struct {

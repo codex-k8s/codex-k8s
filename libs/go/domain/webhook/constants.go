@@ -86,24 +86,47 @@ const (
 )
 
 const (
-	DefaultRunDevLabel       = "run:dev"
-	DefaultRunDevReviseLabel = "run:dev:revise"
-	DefaultRunDocAuditLabel  = "run:doc-audit"
-	DefaultRunAIRepairLabel  = "run:ai-repair"
+	DefaultRunDevLabel            = "run:dev"
+	DefaultRunDevReviseLabel      = "run:dev:revise"
+	DefaultRunDebugLabel          = "run:debug"
+	DefaultRunDocAuditLabel       = "run:doc-audit"
+	DefaultRunDocAuditReviseLabel = "run:doc-audit:revise"
+	DefaultRunAIRepairLabel       = "run:ai-repair"
 )
 
 const (
-	DefaultRunQALabel         = "run:qa"
-	DefaultRunReleaseLabel    = "run:release"
-	DefaultRunPostDeployLabel = "run:postdeploy"
+	DefaultRunQALabel               = "run:qa"
+	DefaultRunQAReviseLabel         = "run:qa:revise"
+	DefaultRunReleaseLabel          = "run:release"
+	DefaultRunReleaseReviseLabel    = "run:release:revise"
+	DefaultRunPostDeployLabel       = "run:postdeploy"
+	DefaultRunPostDeployReviseLabel = "run:postdeploy:revise"
 )
 
 const (
-	DefaultRunOpsLabel         = "run:ops"
-	DefaultRunSelfImproveLabel = "run:self-improve"
-	DefaultRunRethinkLabel     = "run:rethink"
+	DefaultRunOpsLabel               = "run:ops"
+	DefaultRunOpsReviseLabel         = "run:ops:revise"
+	DefaultRunSelfImproveLabel       = "run:self-improve"
+	DefaultRunSelfImproveReviseLabel = "run:self-improve:revise"
+	DefaultRunRethinkLabel           = "run:rethink"
+	DefaultModeDiscussionLabel       = "mode:discussion"
 )
 
 const (
+	DefaultStateBlockedLabel    = "state:blocked"
+	DefaultStateInReviewLabel   = "state:in-review"
+	DefaultStateApprovedLabel   = "state:approved"
+	DefaultStateSupersededLabel = "state:superseded"
+	DefaultStateAbandonedLabel  = "state:abandoned"
+)
+
+const (
+	DefaultNeedInputLabel    = "need:input"
+	DefaultNeedPMLabel       = "need:pm"
+	DefaultNeedSALabel       = "need:sa"
+	DefaultNeedQALabel       = "need:qa"
+	DefaultNeedSRELabel      = "need:sre"
+	DefaultNeedEMLabel       = "need:em"
+	DefaultNeedKMLabel       = "need:km"
 	DefaultNeedReviewerLabel = "need:reviewer"
 )

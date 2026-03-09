@@ -1,5 +1,7 @@
 package mcp
 
+import webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
+
 type controlAction string
 
 const (
@@ -19,11 +21,11 @@ const (
 )
 
 const (
-	triggerLabelRunDev       = "run:dev"
-	triggerLabelRunDevRevise = "run:dev:revise"
-	triggerLabelRunOps       = "run:ops"
-	triggerLabelRunAIRepair  = "run:ai-repair"
-	triggerLabelRunSelfPatch = "run:self-improve"
+	triggerLabelRunDev       = webhookdomain.DefaultRunDevLabel
+	triggerLabelRunDevRevise = webhookdomain.DefaultRunDevReviseLabel
+	triggerLabelRunOps       = webhookdomain.DefaultRunOpsLabel
+	triggerLabelRunAIRepair  = webhookdomain.DefaultRunAIRepairLabel
+	triggerLabelRunSelfPatch = webhookdomain.DefaultRunSelfImproveLabel
 )
 
 const (

@@ -101,9 +101,11 @@ type UpsertProjectGitHubTokensRequest struct {
 	BotEmail      *string `json:"bot_email"`
 }
 
-type TransitionIssueStageLabelRequest struct {
+type NextStepActionRequest struct {
 	RepositoryFullName string `json:"repository_full_name"`
-	IssueNumber        int32  `json:"issue_number"`
+	IssueNumber        *int32 `json:"issue_number"`
+	PullRequestNumber  *int32 `json:"pull_request_number"`
+	ActionKind         string `json:"action_kind"`
 	TargetLabel        string `json:"target_label"`
 }
 

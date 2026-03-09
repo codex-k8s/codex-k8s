@@ -248,16 +248,19 @@ export type UpsertProjectGitHubTokensRequest = {
     bot_email?: string | null;
 };
 
-export type TransitionIssueStageLabelRequest = {
+export type NextStepActionRequest = {
     repository_full_name: string;
-    issue_number: number;
+    issue_number?: number | null;
+    pull_request_number?: number | null;
+    action_kind: string;
     target_label: string;
 };
 
-export type TransitionIssueStageLabelResponse = {
+export type NextStepActionResponse = {
     repository_full_name: string;
-    issue_number: number;
-    issue_url?: string | null;
+    thread_kind: string;
+    thread_number: number;
+    thread_url?: string | null;
     removed_labels: Array<string>;
     added_labels: Array<string>;
     final_labels: Array<string>;
@@ -1760,14 +1763,14 @@ export type UpsertProjectGitHubTokensResponses = {
 
 export type UpsertProjectGitHubTokensResponse = UpsertProjectGitHubTokensResponses[keyof UpsertProjectGitHubTokensResponses];
 
-export type TransitionIssueStageLabelData = {
-    body: TransitionIssueStageLabelRequest;
+export type PreviewNextStepActionData = {
+    body: NextStepActionRequest;
     path?: never;
     query?: never;
-    url: '/api/v1/staff/github/issues/stage-transition';
+    url: '/api/v1/staff/github/next-step-actions/preview';
 };
 
-export type TransitionIssueStageLabelErrors = {
+export type PreviewNextStepActionErrors = {
     /**
      * Invalid request
      */
@@ -1782,16 +1785,49 @@ export type TransitionIssueStageLabelErrors = {
     403: ErrorResponse;
 };
 
-export type TransitionIssueStageLabelError = TransitionIssueStageLabelErrors[keyof TransitionIssueStageLabelErrors];
+export type PreviewNextStepActionError = PreviewNextStepActionErrors[keyof PreviewNextStepActionErrors];
 
-export type TransitionIssueStageLabelResponses = {
+export type PreviewNextStepActionResponses = {
     /**
-     * Issue stage label transitioned
+     * Next-step action preview
      */
-    200: TransitionIssueStageLabelResponse;
+    200: NextStepActionResponse;
 };
 
-export type TransitionIssueStageLabelResponse2 = TransitionIssueStageLabelResponses[keyof TransitionIssueStageLabelResponses];
+export type PreviewNextStepActionResponse = PreviewNextStepActionResponses[keyof PreviewNextStepActionResponses];
+
+export type ExecuteNextStepActionData = {
+    body: NextStepActionRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/staff/github/next-step-actions/execute';
+};
+
+export type ExecuteNextStepActionErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type ExecuteNextStepActionError = ExecuteNextStepActionErrors[keyof ExecuteNextStepActionErrors];
+
+export type ExecuteNextStepActionResponses = {
+    /**
+     * Next-step action executed
+     */
+    200: NextStepActionResponse;
+};
+
+export type ExecuteNextStepActionResponse = ExecuteNextStepActionResponses[keyof ExecuteNextStepActionResponses];
 
 export type ListDocsetGroupsData = {
     body?: never;

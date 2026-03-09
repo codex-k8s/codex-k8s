@@ -59,39 +59,30 @@ approvals:
 | `feature` | `intake -> prd -> design -> plan -> dev -> qa -> release -> postdeploy -> ops` | функциональное изменение в существующих сервисах | при изменении архитектурных границ/NFR добавить `arch`; при изменении продуктовой стратегии добавить `vision` |
 | `new-service` | `intake -> vision -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops` | новый сервис или крупная инициатива со сменой системного контура | сокращение этапов запрещено без явного owner-решения в audit trail |
 
-### 2. Контракт next-step action cards
+### 2. Контракт next-step action matrix
 
-| Поле карточки | Требование |
+| Поле действия | Требование |
 |---|---|
-| `launch_profile` | Обязателен (`quick-fix`, `feature`, `new-service`) |
-| `stage_path` | Краткая строка траектории текущего профиля |
-| `primary_action` | Валидированный deep-link в staff web-console |
-| `fallback_action` | Копируемая команда label transition |
-| `guardrail_note` | Явное правило по ambiguity и policy-gate |
+| `action_kind` | Тип действия (`issue_stage_transition`, `pull_request_label_add`) |
+| `target_label` | Целевой label |
+| `display_variant` | Человекочитаемый тип действия (`revise`, `full_flow`, `reviewer` и т.д.) |
+| `url` | Deep-link на `/` staff web-console с confirm-modal |
 
-### 3. Fallback command templates
-- Pre-check перед ручным transition (обязателен):
-  - `gh issue view <ISSUE_NUMBER> --json labels --jq '.labels[].name'` (оператор подтверждает, что `run:<current-stage>` единственный stage-trigger).
-- Переход на следующий stage:
-  - `gh issue edit <ISSUE_NUMBER> --remove-label "run:<current-stage>" --add-label "run:<next-stage>"`.
-- Постановка explicit input-gate при неоднозначности:
-  - `gh issue edit <ISSUE_NUMBER> --add-label "need:input"`.
-- Переход в review gate после формирования PR:
-  - `gh issue edit <ISSUE_NUMBER> --add-label "state:in-review"`;
-  - `gh pr edit <PR_NUMBER> --add-label "state:in-review"`.
-- Безопасность:
-  - команды не содержат секретов/токенов;
-  - команды используют только labels из каталога `run:*|state:*|need:*`.
-  - при неоднозначном текущем stage (`0` или `>1` labels из `run:*`) transition не выполняется, ставится `need:input`.
+### 3. Preview / execute flow
+- GitHub service-message публикует список typed действий.
+- Deep-link всегда ведёт на `/` и открывает confirm-модалку.
+- Frontend выполняет preview через staff API и показывает `removed_labels`, `added_labels`, `final_labels`.
+- После подтверждения execute-path выполняет transition с аудитом.
+- При неоднозначном текущем stage (`0` или `>1` labels из `run:*`) transition не выполняется, ставится `need:input`.
 
-### 4. Актуальность fallback-синтаксиса (`gh`)
-- Синтаксис `gh issue edit` / `gh pr edit` для `--add-label` и `--remove-label` сверен с актуальным manual GitHub CLI (Context7, источник `/websites/cli_github_manual`).
-- Для Sprint S5 эти флаги зафиксированы как канонический fallback-контракт (решение Owner в PR #166, 2026-02-25).
+### 4. Актуальность контракта
+- OpenAPI / proto фиксируют preview/execute endpoints и typed responses.
+- Для Sprint S5 канонический next-step UX закреплён как matrix-based contract без raw fallback-команд в GitHub.
 
 ## Stories (handover в `run:dev`)
 - Story-1: Profile Registry + escalation resolver.
-- Story-2: Next-step Action Contract + fallback template builder.
-- Story-3: Service-message Rendering with profile path and guardrail note.
+- Story-2: Next-step Action Matrix + preview/execute contract.
+- Story-3: Service-message Rendering with typed actions and display variants.
 - Story-4: Governance Guardrails (`need:input`, ambiguity-stop, no silent-skip).
 - Story-5: Traceability Sync (`issue_map`, `requirements_traceability`, sprint/epic docs).
 
@@ -100,8 +91,8 @@ approvals:
 | Инкремент | Priority | Что реализовать | DoD инкремента |
 |---|---|---|---|
 | I1: Profile resolver core | P0 | Deterministic resolver `quick-fix/feature/new-service` + escalation rules | profile определяется однозначно; ambiguity приводит к `need:input` |
-| I2: Next-step card contract | P0 | Рендер `launch_profile`, `stage_path`, `primary_action`, `fallback_action`, `guardrail_note` | service-comment в GitHub содержит полный контракт без ручных дописок |
-| I3: Fallback pre-check + transition | P0 | Генератор fallback-команд: pre-check labels + transition | fallback не выполняет best-guess; при конфликте stage публикуется remediation |
+| I2: Next-step action matrix | P0 | Рендер `action_kind`, `target_label`, `display_variant`, `url` | service-comment в GitHub содержит полный список typed действий без raw-команд |
+| I3: Preview / execute path | P0 | Preview diff labels + execute transition через staff API | transition не выполняет best-guess; при конфликте stage публикуется remediation |
 | I4: Review-gate transitions | P1 | Унифицированный post-PR переход в `state:in-review` для Issue+PR | после формирования PR обе сущности получают `state:in-review` без дрейфа |
 | I5: Traceability sync | P1 | Автообновление `issue_map`/`requirements_traceability` при переходах S5 | связь `issue -> требования -> AC` остаётся актуальной после каждого merge |
 
@@ -110,16 +101,16 @@ approvals:
   - FR-053/FR-054 отражены в продуктовых документах;
   - launch profile matrix согласована с `stage_process_model`.
 - Contract gate:
-  - next-step action contract детерминирован и допускает только policy-safe transitions.
-  - `docs/architecture/api_contract.md` фиксирует обязательные поля action-card и ownership resolver в `control-plane`.
+  - next-step action matrix детерминирована и допускает только policy-safe transitions.
+  - `docs/architecture/api_contract.md` фиксирует обязательные поля typed action и ownership resolver в `control-plane`.
 - Architecture gate:
   - ownership resolver/escalation закреплён за `services/internal/control-plane`;
   - `external` и `staff` контуры остаются thin adapters без доменной логики переходов.
 - UX gate:
-  - сценарий broken/dead link не блокирует owner-flow;
-  - fallback-путь выполняется детерминированно (`pre-check -> transition`) без best-guess.
+  - confirm-модалка на `/` показывает preview diff перед execute;
+  - transition выполняется детерминированно без best-guess.
 - Security gate:
-  - fallback-команды не содержат секретов;
+  - frontend не делает прямые GitHub mutations;
   - любой transition сохраняет audit trail.
 - Traceability gate:
   - изменения отражены в `issue_map` и `requirements_traceability`.
@@ -128,8 +119,8 @@ approvals:
 
 | ID | Сценарий | Ожидаемый результат |
 |---|---|---|
-| AC-01 | Profile=`feature`, deep-link доступен | Owner выполняет переход через `primary_action`; stage меняется по профилю и фиксируется в audit |
-| AC-02 | Deep-link недоступен (404/timeout), stage однозначен | Owner использует fallback (`pre-check -> transition`), процесс не блокируется |
+| AC-01 | Profile=`feature`, deep-link доступен | Owner открывает confirm-модалку, видит preview diff и выполняет transition; stage меняется по профилю и фиксируется в audit |
+| AC-02 | Stage однозначен, available next-step action существует | Owner использует action-link и confirm-modal, процесс не блокируется |
 | AC-03 | Stage ambiguity (`0` или `>1` trigger labels) | Transition блокируется, ставится `need:input`, публикуется remediation-message |
 | AC-04 | `quick-fix` с признаком `cross-service impact` | Происходит обязательная эскалация профиля (`feature` или `new-service`) без silent-skip |
 | AC-05 | После формирования PR требуется review gate | На PR и Issue устанавливается `state:in-review`; trigger label снимается |
@@ -137,7 +128,7 @@ approvals:
 
 ## Acceptance criteria
 - [x] Подтвержден канонический набор launch profiles и правила эскалации.
-- [x] Подтвержден формат next-step action-карт (`primary deep-link + fallback command`).
+- [x] Подтвержден формат next-step action matrix (`action_kind`, `target_label`, `display_variant`, `url`).
 - [x] Подготовлены риски и продуктовые допущения для `run:dev`.
 - [x] Получен Owner approval vision/prd пакета для запуска `run:dev`.
 

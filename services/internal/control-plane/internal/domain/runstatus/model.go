@@ -243,14 +243,6 @@ type commentState struct {
 	Model                    string `json:"model,omitempty"`
 	ReasoningEffort          string `json:"reasoning_effort,omitempty"`
 	RunStatus                string `json:"run_status,omitempty"`
-	LaunchProfile            string `json:"launch_profile,omitempty"`
-	StagePath                string `json:"stage_path,omitempty"`
-	PrimaryAction            string `json:"primary_action,omitempty"`
-	FallbackAction           string `json:"fallback_action,omitempty"`
-	GuardrailNote            string `json:"guardrail_note,omitempty"`
-	ReviseActionLabel        string `json:"revise_action_label,omitempty"`
-	NextStageActionLabel     string `json:"next_stage_action_label,omitempty"`
-	AlternativeActionLabel   string `json:"alternative_action_label,omitempty"`
 	CodexAuthVerificationURL string `json:"codex_auth_verification_url,omitempty"`
 	CodexAuthUserCode        string `json:"codex_auth_user_code,omitempty"`
 	Deleted                  bool   `json:"deleted,omitempty"`

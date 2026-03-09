@@ -66,6 +66,105 @@ export const en = {
     projectNotSelected: "Project not selected",
     project: "Project",
   },
+  nextStep: {
+    loading: "Checking the transition and calculating label changes...",
+    confirm: "Start step",
+    executeSuccess: "The next step has been started.",
+    fields: {
+      repository: "Repository",
+      thread: "GitHub thread",
+      actionKind: "Action kind",
+      targetLabel: "Target label",
+    },
+    actionKinds: {
+      issue_stage_transition: "Issue stage transition",
+      pull_request_label_add: "Pull request label add",
+    },
+    thread: {
+      issue: "Issue",
+      pullRequest: "PR",
+    },
+    labels: {
+      removed: "Will be removed",
+      added: "Will be added",
+      final: "Final label set",
+      empty: "No changes",
+    },
+    variants: {
+      revise: {
+        title: "🔁 Revise current stage",
+        description: "The platform will remove current run labels from the Issue and start the revise iteration for the selected stage.",
+      },
+      full_flow: {
+        title: "🧭 Full flow",
+        description: "Transition to the next stage of the full delivery flow for large initiatives and new services.",
+      },
+      shortened_flow: {
+        title: "⚡ Shortened flow",
+        description: "Transition to the next stage of the shortened flow for an existing service or product enhancement.",
+      },
+      very_short_flow: {
+        title: "🚀 Very short flow",
+        description: "Transition to the next stage of the quick-fix trajectory with the smallest stage set.",
+      },
+      full_or_shortened_flow: {
+        title: "🧭 Full or shortened flow",
+        description: "This step is valid for both the full and the shortened delivery flow.",
+      },
+      full_or_very_short_flow: {
+        title: "🧭 Full or very short flow",
+        description: "This step is valid for the full flow and for the very short quick-fix trajectory.",
+      },
+      shortened_or_very_short_flow: {
+        title: "⚡ Shortened or very short flow",
+        description: "This step is valid for the shortened feature flow and for the very short quick-fix trajectory.",
+      },
+      all_flows: {
+        title: "🧭 Any delivery flow",
+        description: "This step is valid across all main delivery flows and leads to the common next stage.",
+      },
+      reviewer: {
+        title: "🔎 Start reviewer",
+        description: "The platform will add `need:reviewer` to the PR and start reviewer without changing Issue run labels.",
+      },
+      rethink: {
+        title: "♻️ Rethink the task",
+        description: "The platform will remove current run labels and start a rethink pass before choosing a new trajectory.",
+      },
+      doc_audit: {
+        title: "📚 Start doc-audit",
+        description: "The platform will switch the Issue to documentation, traceability, and codebase consistency audit.",
+      },
+      self_improve: {
+        title: "🧠 Start self-improve",
+        description: "The platform will switch the Issue to prompts, instructions, and platform tools improvement.",
+      },
+      prepare_plan: {
+        title: "🗂 Prepare plan/remediation",
+        description: "The platform will switch the Issue to remediation planning after an audit or problem analysis.",
+      },
+      go_to_dev: {
+        title: "🛠 Move to fixes",
+        description: "The platform will switch the Issue to implementing fixes and preparing code or documentation changes.",
+      },
+      go_to_qa: {
+        title: "🧪 Verify fixes",
+        description: "The platform will switch the Issue to validating prepared changes and regression scenarios.",
+      },
+      restart_full: {
+        title: "🧭 Full flow restart",
+        description: "The platform will restart the work on the full trajectory beginning with `run:intake`.",
+      },
+      restart_shortened: {
+        title: "⚡ Shortened flow restart",
+        description: "The platform will restart the work on the shortened feature flow beginning with `run:prd`.",
+      },
+      restart_very_short: {
+        title: "🚀 Very short flow restart",
+        description: "The platform will restart the work on the quick-fix trajectory beginning with `run:plan`.",
+      },
+    },
+  },
   notifications: {
     title: "Notifications",
     items: {

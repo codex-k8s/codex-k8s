@@ -576,7 +576,15 @@ func (s *Server) UpsertProjectGitHubTokens(ctx context.Context, req *controlplan
 	return &emptypb.Empty{}, nil
 }
 
-func (s *Server) TransitionIssueStageLabel(ctx context.Context, req *controlplanev1.TransitionIssueStageLabelRequest) (*controlplanev1.TransitionIssueStageLabelResponse, error) {
+func (s *Server) PreviewNextStepAction(ctx context.Context, req *controlplanev1.NextStepActionRequest) (*controlplanev1.NextStepActionResponse, error) {
+	return s.handleNextStepAction(ctx, req, false)
+}
+
+func (s *Server) ExecuteNextStepAction(ctx context.Context, req *controlplanev1.NextStepActionRequest) (*controlplanev1.NextStepActionResponse, error) {
+	return s.handleNextStepAction(ctx, req, true)
+}
+
+func (s *Server) handleNextStepAction(ctx context.Context, req *controlplanev1.NextStepActionRequest, execute bool) (*controlplanev1.NextStepActionResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "request is required")
 	}
@@ -585,23 +593,37 @@ func (s *Server) TransitionIssueStageLabel(ctx context.Context, req *controlplan
 		return nil, err
 	}
 
-	result, err := s.staff.TransitionIssueStageLabel(ctx, p, querytypes.IssueStageLabelTransitionParams{
+	params := querytypes.NextStepActionParams{
 		RepositoryFullName: strings.TrimSpace(req.RepositoryFullName),
 		IssueNumber:        int(req.GetIssueNumber()),
+		PullRequestNumber:  int(req.GetPullRequestNumber()),
+		ActionKind:         strings.TrimSpace(req.ActionKind),
 		TargetLabel:        strings.TrimSpace(req.TargetLabel),
-	})
+	}
+
+	var result querytypes.NextStepActionResult
+	if execute {
+		result, err = s.staff.ExecuteNextStepAction(ctx, p, params)
+	} else {
+		result, err = s.staff.PreviewNextStepAction(ctx, p, params)
+	}
 	if err != nil {
 		return nil, toStatus(err)
 	}
 
-	return &controlplanev1.TransitionIssueStageLabelResponse{
+	return nextStepActionResponse(result), nil
+}
+
+func nextStepActionResponse(result querytypes.NextStepActionResult) *controlplanev1.NextStepActionResponse {
+	return &controlplanev1.NextStepActionResponse{
 		RepositoryFullName: result.RepositoryFullName,
-		IssueNumber:        int32(result.IssueNumber),
-		IssueUrl:           stringPtrOrNil(strings.TrimSpace(result.IssueURL)),
+		ThreadKind:         result.ThreadKind,
+		ThreadNumber:       int32(result.ThreadNumber),
+		ThreadUrl:          stringPtrOrNil(strings.TrimSpace(result.ThreadURL)),
 		RemovedLabels:      result.RemovedLabels,
 		AddedLabels:        result.AddedLabels,
 		FinalLabels:        result.FinalLabels,
-	}, nil
+	}
 }
 
 func repositoryBindingToProto(item repocfgrepo.RepositoryBinding) *controlplanev1.RepositoryBinding {

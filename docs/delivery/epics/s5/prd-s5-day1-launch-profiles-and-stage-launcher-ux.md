@@ -22,17 +22,17 @@ approvals:
 # PRD: Launch profiles and deterministic next-step transitions (Issue #155)
 
 ## TL;DR
-- Что строим: profile-driven контракт переходов по stage (`quick-fix`, `feature`, `new-service`) с обязательным fallback для next-step действий.
+- Что строим: profile-driven контракт переходов по stage (`quick-fix`, `feature`, `new-service`) с typed next-step action matrix.
 - Для кого: Owner и команды, которые управляют pipeline через labels и service-message подсказки.
 - Почему: текущий flow зависит от web-ссылок и ручного выбора этапов "по памяти", что создаёт блокировки и ошибки переходов.
-- MVP: deterministic profile resolver + action-card contract (`primary_action` + `fallback_action`) + ambiguity guardrails.
-- Критерии успеха: сценарии AC-01..AC-06 проходят без bypass policy и без блокировки при недоступности UI deep-link.
+- MVP: deterministic profile resolver + typed action matrix + ambiguity guardrails.
+- Критерии успеха: сценарии AC-01..AC-06 проходят без bypass policy и с preview/execute flow через staff UI.
 
 ## Проблема и цель
 - Problem statement: при review/revise и stage-переходах owner-flow может блокироваться из-за недоступного deep-link или неоднозначного stage контекста.
 - Цели:
   - зафиксировать канонические launch profiles и правила эскалации;
-  - сделать next-step действия двухканальными (`web-console deep-link` + `text fallback command`);
+  - сделать next-step действия typed и управляемыми через preview/execute flow staff UI;
   - запретить best-guess transition при ambiguity и требовать `need:input`.
 - Почему сейчас: Sprint S5 Day1 формирует owner-ready пакет для перехода в `run:dev` по FR-053/FR-054.
 
@@ -42,26 +42,26 @@ approvals:
 - Persona C: Dev/QA/SRE, которые получают детерминированный handover path в `run:dev` и downstream этапы.
 
 ## Сценарии/Use Cases (кратко)
-- UC-1: Owner запускает следующий stage через `primary_action` в staff UI.
-- UC-2: При недоступности UI owner использует fallback-команду и продолжает процесс без блокировки.
+- UC-1: Owner запускает следующий stage через action-link в staff UI.
+- UC-2: Owner видит preview diff лейблов и подтверждает transition в модалке.
 - UC-3: При неоднозначности stage система блокирует transition, выставляет `need:input` и публикует remediation.
 
 ## Требования (Functional Requirements)
 - FR-155-01: Поддерживаются три launch profile: `quick-fix`, `feature`, `new-service`.
 - FR-155-02: Для каждого profile фиксируется обязательная stage trajectory и детерминированные escalation rules.
-- FR-155-03: Каждая next-step карточка содержит `launch_profile`, `stage_path`, `primary_action`, `fallback_action`, `guardrail_note`.
-- FR-155-04: Fallback contract использует pre-check (`gh issue view ... labels`) перед transition.
+- FR-155-03: Каждое next-step действие содержит `action_kind`, `target_label`, `display_variant`, `url`.
+- FR-155-04: Preview contract возвращает `removed_labels`, `added_labels`, `final_labels` перед execute.
 - FR-155-05: При ambiguity stage (`0` или `>1` trigger labels) transition запрещён, ставится `need:input`.
 - FR-155-06: Review gate после формирования PR синхронизирует `state:in-review` на Issue и PR.
 
 ## Acceptance Criteria (AC)
 - AC-01
   - Given profile=`feature` и доступный deep-link
-  - When owner выбирает `primary_action`
+  - When owner выбирает action-link и подтверждает preview
   - Then stage transition выполняется по профилю и фиксируется в audit.
 - AC-02
-  - Given deep-link недоступен и текущий stage однозначен
-  - When owner выполняет fallback (`pre-check -> transition`)
+  - Given deep-link доступен и текущий stage однозначен
+  - When owner выполняет preview + execute
   - Then процесс не блокируется, переход выполняется детерминированно.
 - AC-03
   - Given ambiguity stage (`0` или `>1` trigger labels)

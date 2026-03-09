@@ -309,6 +309,26 @@ type MeUser struct {
 	IsPlatformOwner bool   `json:"is_platform_owner"`
 }
 
+// NextStepActionRequest defines model for NextStepActionRequest.
+type NextStepActionRequest struct {
+	ActionKind         string `json:"action_kind"`
+	IssueNumber        *int32 `json:"issue_number"`
+	PullRequestNumber  *int32 `json:"pull_request_number"`
+	RepositoryFullName string `json:"repository_full_name"`
+	TargetLabel        string `json:"target_label"`
+}
+
+// NextStepActionResponse defines model for NextStepActionResponse.
+type NextStepActionResponse struct {
+	AddedLabels        []string `json:"added_labels"`
+	FinalLabels        []string `json:"final_labels"`
+	RemovedLabels      []string `json:"removed_labels"`
+	RepositoryFullName string   `json:"repository_full_name"`
+	ThreadKind         string   `json:"thread_kind"`
+	ThreadNumber       int32    `json:"thread_number"`
+	ThreadUrl          *string  `json:"thread_url"`
+}
+
 // PreflightCheckResult defines model for PreflightCheckResult.
 type PreflightCheckResult struct {
 	Details *string `json:"details"`
@@ -571,23 +591,6 @@ type SyncDocsetResponse struct {
 	PrNumber           int    `json:"pr_number"`
 	PrUrl              string `json:"pr_url"`
 	RepositoryFullName string `json:"repository_full_name"`
-}
-
-// TransitionIssueStageLabelRequest defines model for TransitionIssueStageLabelRequest.
-type TransitionIssueStageLabelRequest struct {
-	IssueNumber        int32  `json:"issue_number"`
-	RepositoryFullName string `json:"repository_full_name"`
-	TargetLabel        string `json:"target_label"`
-}
-
-// TransitionIssueStageLabelResponse defines model for TransitionIssueStageLabelResponse.
-type TransitionIssueStageLabelResponse struct {
-	AddedLabels        []string `json:"added_labels"`
-	FinalLabels        []string `json:"final_labels"`
-	IssueNumber        int32    `json:"issue_number"`
-	IssueUrl           *string  `json:"issue_url"`
-	RemovedLabels      []string `json:"removed_labels"`
-	RepositoryFullName string   `json:"repository_full_name"`
 }
 
 // UpsertProjectGitHubTokensRequest defines model for UpsertProjectGitHubTokensRequest.
@@ -855,8 +858,11 @@ type McpExecutorCallbackJSONRequestBody = MCPApprovalCallbackRequest
 // ResolveApprovalDecisionJSONRequestBody defines body for ResolveApprovalDecision for application/json ContentType.
 type ResolveApprovalDecisionJSONRequestBody = ResolveApprovalDecisionRequest
 
-// TransitionIssueStageLabelJSONRequestBody defines body for TransitionIssueStageLabel for application/json ContentType.
-type TransitionIssueStageLabelJSONRequestBody = TransitionIssueStageLabelRequest
+// ExecuteNextStepActionJSONRequestBody defines body for ExecuteNextStepAction for application/json ContentType.
+type ExecuteNextStepActionJSONRequestBody = NextStepActionRequest
+
+// PreviewNextStepActionJSONRequestBody defines body for PreviewNextStepAction for application/json ContentType.
+type PreviewNextStepActionJSONRequestBody = NextStepActionRequest
 
 // UpsertProjectJSONRequestBody defines body for UpsertProject for application/json ContentType.
 type UpsertProjectJSONRequestBody = UpsertProjectRequest
@@ -1041,9 +1047,12 @@ type ServerInterface interface {
 	// List docset groups (manifest v1)
 	// (GET /api/v1/staff/docset/groups)
 	ListDocsetGroups(w http.ResponseWriter, r *http.Request, params ListDocsetGroupsParams)
-	// Transition stage label on GitHub issue
-	// (POST /api/v1/staff/github/issues/stage-transition)
-	TransitionIssueStageLabel(w http.ResponseWriter, r *http.Request)
+	// Execute one GitHub next-step action
+	// (POST /api/v1/staff/github/next-step-actions/execute)
+	ExecuteNextStepAction(w http.ResponseWriter, r *http.Request)
+	// Preview one GitHub next-step action
+	// (POST /api/v1/staff/github/next-step-actions/preview)
+	PreviewNextStepAction(w http.ResponseWriter, r *http.Request)
 	// List projects
 	// (GET /api/v1/staff/projects)
 	ListProjects(w http.ResponseWriter, r *http.Request, params ListProjectsParams)
@@ -1412,11 +1421,25 @@ func (siw *ServerInterfaceWrapper) ListDocsetGroups(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
-// TransitionIssueStageLabel operation middleware
-func (siw *ServerInterfaceWrapper) TransitionIssueStageLabel(w http.ResponseWriter, r *http.Request) {
+// ExecuteNextStepAction operation middleware
+func (siw *ServerInterfaceWrapper) ExecuteNextStepAction(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.TransitionIssueStageLabel(w, r)
+		siw.Handler.ExecuteNextStepAction(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PreviewNextStepAction operation middleware
+func (siw *ServerInterfaceWrapper) PreviewNextStepAction(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PreviewNextStepAction(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2666,7 +2689,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/approvals", wrapper.ListPendingApprovals)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/approvals/{approval_request_id}/decision", wrapper.ResolveApprovalDecision)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/docset/groups", wrapper.ListDocsetGroups)
-	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/github/issues/stage-transition", wrapper.TransitionIssueStageLabel)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/github/next-step-actions/execute", wrapper.ExecuteNextStepAction)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/github/next-step-actions/preview", wrapper.PreviewNextStepAction)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/projects", wrapper.ListProjects)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/projects", wrapper.UpsertProject)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/staff/projects/{project_id}", wrapper.DeleteProject)
@@ -3064,44 +3088,88 @@ func (response ListDocsetGroups403JSONResponse) VisitListDocsetGroupsResponse(w 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type TransitionIssueStageLabelRequestObject struct {
-	Body *TransitionIssueStageLabelJSONRequestBody
+type ExecuteNextStepActionRequestObject struct {
+	Body *ExecuteNextStepActionJSONRequestBody
 }
 
-type TransitionIssueStageLabelResponseObject interface {
-	VisitTransitionIssueStageLabelResponse(w http.ResponseWriter) error
+type ExecuteNextStepActionResponseObject interface {
+	VisitExecuteNextStepActionResponse(w http.ResponseWriter) error
 }
 
-type TransitionIssueStageLabel200JSONResponse TransitionIssueStageLabelResponse
+type ExecuteNextStepAction200JSONResponse NextStepActionResponse
 
-func (response TransitionIssueStageLabel200JSONResponse) VisitTransitionIssueStageLabelResponse(w http.ResponseWriter) error {
+func (response ExecuteNextStepAction200JSONResponse) VisitExecuteNextStepActionResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type TransitionIssueStageLabel400JSONResponse struct{ BadRequestJSONResponse }
+type ExecuteNextStepAction400JSONResponse struct{ BadRequestJSONResponse }
 
-func (response TransitionIssueStageLabel400JSONResponse) VisitTransitionIssueStageLabelResponse(w http.ResponseWriter) error {
+func (response ExecuteNextStepAction400JSONResponse) VisitExecuteNextStepActionResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type TransitionIssueStageLabel401JSONResponse struct{ UnauthorizedJSONResponse }
+type ExecuteNextStepAction401JSONResponse struct{ UnauthorizedJSONResponse }
 
-func (response TransitionIssueStageLabel401JSONResponse) VisitTransitionIssueStageLabelResponse(w http.ResponseWriter) error {
+func (response ExecuteNextStepAction401JSONResponse) VisitExecuteNextStepActionResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type TransitionIssueStageLabel403JSONResponse struct{ ForbiddenJSONResponse }
+type ExecuteNextStepAction403JSONResponse struct{ ForbiddenJSONResponse }
 
-func (response TransitionIssueStageLabel403JSONResponse) VisitTransitionIssueStageLabelResponse(w http.ResponseWriter) error {
+func (response ExecuteNextStepAction403JSONResponse) VisitExecuteNextStepActionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PreviewNextStepActionRequestObject struct {
+	Body *PreviewNextStepActionJSONRequestBody
+}
+
+type PreviewNextStepActionResponseObject interface {
+	VisitPreviewNextStepActionResponse(w http.ResponseWriter) error
+}
+
+type PreviewNextStepAction200JSONResponse NextStepActionResponse
+
+func (response PreviewNextStepAction200JSONResponse) VisitPreviewNextStepActionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PreviewNextStepAction400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response PreviewNextStepAction400JSONResponse) VisitPreviewNextStepActionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PreviewNextStepAction401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response PreviewNextStepAction401JSONResponse) VisitPreviewNextStepActionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PreviewNextStepAction403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response PreviewNextStepAction403JSONResponse) VisitPreviewNextStepActionResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(403)
 
@@ -4554,9 +4622,12 @@ type StrictServerInterface interface {
 	// List docset groups (manifest v1)
 	// (GET /api/v1/staff/docset/groups)
 	ListDocsetGroups(ctx context.Context, request ListDocsetGroupsRequestObject) (ListDocsetGroupsResponseObject, error)
-	// Transition stage label on GitHub issue
-	// (POST /api/v1/staff/github/issues/stage-transition)
-	TransitionIssueStageLabel(ctx context.Context, request TransitionIssueStageLabelRequestObject) (TransitionIssueStageLabelResponseObject, error)
+	// Execute one GitHub next-step action
+	// (POST /api/v1/staff/github/next-step-actions/execute)
+	ExecuteNextStepAction(ctx context.Context, request ExecuteNextStepActionRequestObject) (ExecuteNextStepActionResponseObject, error)
+	// Preview one GitHub next-step action
+	// (POST /api/v1/staff/github/next-step-actions/preview)
+	PreviewNextStepAction(ctx context.Context, request PreviewNextStepActionRequestObject) (PreviewNextStepActionResponseObject, error)
 	// List projects
 	// (GET /api/v1/staff/projects)
 	ListProjects(ctx context.Context, request ListProjectsRequestObject) (ListProjectsResponseObject, error)
@@ -4936,11 +5007,11 @@ func (sh *strictHandler) ListDocsetGroups(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// TransitionIssueStageLabel operation middleware
-func (sh *strictHandler) TransitionIssueStageLabel(w http.ResponseWriter, r *http.Request) {
-	var request TransitionIssueStageLabelRequestObject
+// ExecuteNextStepAction operation middleware
+func (sh *strictHandler) ExecuteNextStepAction(w http.ResponseWriter, r *http.Request) {
+	var request ExecuteNextStepActionRequestObject
 
-	var body TransitionIssueStageLabelJSONRequestBody
+	var body ExecuteNextStepActionJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -4948,18 +5019,49 @@ func (sh *strictHandler) TransitionIssueStageLabel(w http.ResponseWriter, r *htt
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.TransitionIssueStageLabel(ctx, request.(TransitionIssueStageLabelRequestObject))
+		return sh.ssi.ExecuteNextStepAction(ctx, request.(ExecuteNextStepActionRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "TransitionIssueStageLabel")
+		handler = middleware(handler, "ExecuteNextStepAction")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(TransitionIssueStageLabelResponseObject); ok {
-		if err := validResponse.VisitTransitionIssueStageLabelResponse(w); err != nil {
+	} else if validResponse, ok := response.(ExecuteNextStepActionResponseObject); ok {
+		if err := validResponse.VisitExecuteNextStepActionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PreviewNextStepAction operation middleware
+func (sh *strictHandler) PreviewNextStepAction(w http.ResponseWriter, r *http.Request) {
+	var request PreviewNextStepActionRequestObject
+
+	var body PreviewNextStepActionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PreviewNextStepAction(ctx, request.(PreviewNextStepActionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PreviewNextStepAction")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PreviewNextStepActionResponseObject); ok {
+		if err := validResponse.VisitPreviewNextStepActionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

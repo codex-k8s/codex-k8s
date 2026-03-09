@@ -5,7 +5,7 @@ title: "codex-k8s — Stage Process Model"
 status: active
 owner_role: EM
 created_at: 2026-02-11
-updated_at: 2026-02-27
+updated_at: 2026-03-09
 related_issues: [1, 19, 90, 95, 154, 155, 175, 212]
 related_prs: []
 approvals:
@@ -66,13 +66,12 @@ approvals:
   - revise-run не стартует;
   - выставляется `need:input`;
   - публикуется service-comment с remediation.
-- Коммуникация в review gate становится stage-aware:
-  - для doc/design этапов подсказки включают `run:<stage>:revise` и `run:<next-stage>`;
-  - для dev цикла — `run:dev:revise` и `run:qa`.
-- Подсказки в GitHub-комментарии intentionally compact:
-  - обычно 2 действия (`revise` + канонический `next-stage`);
-  - для `design` дополнительно публикуется fast-track `run:dev` вместе с `run:plan`.
-- Реализованный UX: next-step action-link открывает staff web-console, где frontend проверяет RBAC и подтверждает переход через модалку, а backend выполняет label transition на Issue.
+- Коммуникация в review gate становится stage-aware и публикуется как матрица следующих шагов:
+  - `revise` для текущего stage;
+  - переходы по full / shortened / very-short flow, когда они допустимы;
+  - reviewer, rethink, doc-audit, self-improve и специальные remediation-переходы для спецстадий.
+- Для `design` дополнительно публикуется fast-track `run:dev` вместе с `run:plan`.
+- Реализованный UX: next-step action-link открывает `/` staff web-console, frontend выполняет preview через staff API и подтверждает transition через модалку, после чего backend применяет label change на Issue/PR.
 
 ## Preset stage trajectories (baseline confirmed, Issues #154/#155)
 

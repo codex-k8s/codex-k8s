@@ -5,7 +5,7 @@ title: "codex-k8s — Machine-Driven Requirements Baseline"
 status: active
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-25
+updated_at: 2026-03-09
 related_issues: [1, 74, 90, 112, 154, 155, 175]
 related_prs: []
 approvals:
@@ -83,9 +83,9 @@ approvals:
 | FR-049 | Добавление репозитория поддерживает onboarding preflight: проверка токенов (platform+bot) и реальных GitHub операций (webhook/labels/issues/PR/code), а также проверка резолва доменов проекта на кластер для full-env/ai slots. |
 | FR-050 | Prompt context включает docs tree и role-aware capability блоки (policy-governed), чтобы агент получал релевантный контекст по роли и stage. |
 | FR-051 | GitHub service messages v2 должны отражать run lifecycle и давать прямые ссылки на следующий операционный шаг (включая slot URL для full-env при наличии host). |
-| FR-052 | Для review-driven revise обязателен детерминированный stage resolver (`PR labels -> Issue labels -> run context -> flow_events`) и stage-aware next-step action cards; при ambiguity revise-run не запускается, ставится `need:input`. |
+| FR-052 | Для review-driven revise обязателен детерминированный stage resolver (`PR labels -> Issue labels -> run context -> flow_events`) и stage-aware next-step action matrix; при ambiguity revise-run не запускается, ставится `need:input`. |
 | FR-053 | Для управления stage-переходами поддерживаются role-aware launch profiles (минимум: `quick-fix`, `feature`, `new-service`) с явной матрицей обязательных/опциональных этапов и детерминированными правилами эскалации в полный pipeline при росте риска/сложности. |
-| FR-054 | Любая next-step подсказка в service-message должна иметь как минимум два операционных канала: рабочий deep-link в staff web-console и текстовый fallback (копируемая label-команда/transition action), чтобы переходы не блокировались при недоступности UI-ссылок. |
+| FR-054 | Любая next-step подсказка в service-message должна публиковаться как typed action из матрицы следующих шагов: deep-link на стартовую страницу staff web-console с confirm-modal, preview diff лейблов (`removed_labels`, `added_labels`, `final_labels`) и последующим execute через staff API, без сырых fallback-команд в GitHub-комментарии. |
 
 ## Non-Functional Requirements (NFR)
 

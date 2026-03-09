@@ -66,6 +66,105 @@ export const ru = {
     projectNotSelected: "Проект не выбран",
     project: "Проект",
   },
+  nextStep: {
+    loading: "Проверяю переход и рассчитываю изменения лейблов...",
+    confirm: "Запустить шаг",
+    executeSuccess: "Следующий шаг запущен.",
+    fields: {
+      repository: "Репозиторий",
+      thread: "Тред GitHub",
+      actionKind: "Тип действия",
+      targetLabel: "Целевой лейбл",
+    },
+    actionKinds: {
+      issue_stage_transition: "Переход этапа на Issue",
+      pull_request_label_add: "Постановка лейбла на PR",
+    },
+    thread: {
+      issue: "Issue",
+      pullRequest: "PR",
+    },
+    labels: {
+      removed: "Будут сняты",
+      added: "Будут добавлены",
+      final: "Итоговый набор лейблов",
+      empty: "Нет изменений",
+    },
+    variants: {
+      revise: {
+        title: "🔁 Доработать текущий этап",
+        description: "Платформа снимет текущие run-лейблы с Issue и запустит revise-итерацию для выбранного этапа.",
+      },
+      full_flow: {
+        title: "🧭 Полный флоу",
+        description: "Переход к следующему этапу полного delivery-флоу для крупных инициатив и новых сервисов.",
+      },
+      shortened_flow: {
+        title: "⚡ Сокращенный флоу",
+        description: "Переход к следующему этапу сокращенного флоу для доработки существующего сервиса или продукта.",
+      },
+      very_short_flow: {
+        title: "🚀 Очень короткий флоу",
+        description: "Переход к следующему этапу quick-fix траектории с минимальным числом стадий.",
+      },
+      full_or_shortened_flow: {
+        title: "🧭 Полный или сокращенный флоу",
+        description: "Этот шаг подходит одновременно для полного и сокращенного delivery-флоу.",
+      },
+      full_or_very_short_flow: {
+        title: "🧭 Полный или очень короткий флоу",
+        description: "Этот шаг подходит для полного флоу и для очень короткой quick-fix траектории.",
+      },
+      shortened_or_very_short_flow: {
+        title: "⚡ Сокращенный или очень короткий флоу",
+        description: "Этот шаг подходит для сокращенного feature-флоу и для очень короткой quick-fix траектории.",
+      },
+      all_flows: {
+        title: "🧭 Любой рабочий флоу",
+        description: "Этот шаг разрешен во всех основных delivery-флоу и ведет к общей следующей стадии.",
+      },
+      reviewer: {
+        title: "🔎 Запустить reviewer",
+        description: "Платформа добавит `need:reviewer` на PR и запустит reviewer без изменения run-лейблов на Issue.",
+      },
+      rethink: {
+        title: "♻️ Переосмыслить задачу",
+        description: "Платформа снимет текущие run-лейблы и запустит переосмысление задачи перед новым выбором траектории.",
+      },
+      doc_audit: {
+        title: "📚 Запустить doc-audit",
+        description: "Платформа переключит Issue на аудит документации, трассируемости и соответствия кодовой базы.",
+      },
+      self_improve: {
+        title: "🧠 Запустить self-improve",
+        description: "Платформа переключит Issue на улучшение промптов, инструкций и вспомогательных инструментов платформы.",
+      },
+      prepare_plan: {
+        title: "🗂 Подготовить plan/remediation",
+        description: "Платформа переключит Issue на подготовку remediation-плана после аудита или анализа проблемы.",
+      },
+      go_to_dev: {
+        title: "🛠 Перейти к исправлениям",
+        description: "Платформа переключит Issue на реализацию исправлений и подготовку изменений в коде или документации.",
+      },
+      go_to_qa: {
+        title: "🧪 Проверить исправления",
+        description: "Платформа переключит Issue на проверку уже подготовленных изменений и регрессионных сценариев.",
+      },
+      restart_full: {
+        title: "🧭 Полный перезапуск флоу",
+        description: "Платформа перезапустит проработку по полной траектории, начиная с `run:intake`.",
+      },
+      restart_shortened: {
+        title: "⚡ Сокращенный перезапуск",
+        description: "Платформа перезапустит проработку по сокращенному feature-флоу, начиная с `run:prd`.",
+      },
+      restart_very_short: {
+        title: "🚀 Очень короткий перезапуск",
+        description: "Платформа перезапустит проработку по quick-fix траектории, начиная с `run:plan`.",
+      },
+    },
+  },
   notifications: {
     title: "Уведомления",
     items: {

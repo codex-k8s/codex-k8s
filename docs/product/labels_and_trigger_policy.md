@@ -5,7 +5,7 @@ title: "codex-k8s — Labels and Trigger Policy"
 status: active
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-02-27
+updated_at: 2026-03-09
 related_issues: [1, 19, 74, 90, 95, 154, 155, 175, 212]
 related_prs: []
 approvals:
@@ -191,7 +191,7 @@ approvals:
     2. Issue stage label (если ровно один),
     3. последний run context по связке `(repo, issue, pr)`,
     4. последний stage transition в `flow_events`;
-  - при конфликте/неопределённости revise-run не создаётся, выставляется `need:input` и публикуется action-card с remediation.
+  - при конфликте/неопределённости revise-run не создаётся, выставляется `need:input` и публикуется remediation service-message.
 - Для `run:dev:revise` при отсутствии связанного PR run отклоняется с `failed_precondition` и событием `run.revise.pr_not_found`.
 - Для `run:<stage>:revise` в `full-env` worker пытается переиспользовать активный namespace текущей связки `(project, issue, agent_key)` и продлить lease по TTL роли; если namespace отсутствует или уже в `Terminating`, создаётся новый.
 - При постановке trigger-лейбла платформа сразу даёт обратную связь в issue:
@@ -229,48 +229,42 @@ approvals:
   4. project/agent defaults.
 - Цель: убрать обязательность ручного повторного выбора model/reasoning перед каждой revise-итерацией.
 
-#### Stage-aware action cards в service-comment (implemented)
-- Платформа обновляет единый service-comment и добавляет stage-aware подсказки:
-  - `intake|vision|prd|arch|design|plan`: `run:<stage>:revise` и `run:<next-stage>`;
-  - `dev`: `run:dev:revise`, `run:qa`;
-  - `qa|release|postdeploy|ops`: revise текущего stage (если применимо) и следующий stage.
-- Карточка остаётся компактной: обычно 2 action-подсказки (`revise` + канонический `next-stage`).
-- Для `design` публикуется дополнительный fast-track вариант `run:dev` (вместе с каноническим `run:plan`).
-- В сообщении всегда остаются ссылки:
-  - на Issue;
-  - на PR;
-  - на актуальный run-status/диагностический комментарий;
-  - на явный список рекомендованных label-действий.
+#### Stage-aware next-step matrix в service-comment (implemented)
+- Платформа обновляет единый service-comment и публикует матрицу typed next-step действий.
+- Матрица включает все релевантные варианты для текущего stage:
+  - `run:<stage>:revise` для доработки текущего этапа;
+  - переходы по полному / сокращённому / very-short флоу, когда они допустимы;
+  - `need:reviewer` для ручного pre-review на PR;
+  - специальные действия `run:rethink`, `run:doc-audit`, `run:self-improve`, а также remediation-переходы для `doc-audit`/`self-improve`.
+- Для `design` дополнительно публикуется fast-track `run:dev` вместе с каноническим `run:plan`.
+- В GitHub-комментарии публикуются только понятные действия и deep-link; внутренние поля resolver-а (`launch_profile`, `stage_path`, guardrails) наружу как raw contract не выводятся.
 - При ambiguous stage resolve:
   - revise-run не стартует;
   - выставляется `need:input`;
-  - публикуется remediation-message с конкретным требуемым label action.
+  - публикуется remediation-message с конкретным требуемым действием.
 
 #### Next-step deep-link в web-console (implemented)
-- Action-link из GitHub service-comment открывает staff web-console для перехода этапа (`/governance/labels-stages?...`).
-- На фронте выполняется RBAC-проверка (platform admin guard) и показывается confirm-модалка перехода.
-- После подтверждения backend выполняет label transition на Issue: снимает текущие `run:*` и ставит целевой `run:*`.
+- Action-link из GitHub service-comment открывает стартовую страницу staff web-console (`/?modal=next-step&...`).
+- Frontend читает typed query-параметры действия, выполняет RBAC-check и запрашивает preview через staff API.
+- В confirm-модалке пользователь видит:
+  - тип действия;
+  - thread (`Issue` или `PR`);
+  - `removed_labels`, `added_labels`, `final_labels`.
+- После подтверждения frontend вызывает execute staff API, а backend выполняет label transition на Issue/PR с аудитом.
 
 ### Vision/PRD contract for launch/transition (Issues #154/#155)
-- Проблема: ссылки для быстрого перехода могут быть нерабочими в контексте comment/web/session и блокируют owner-flow.
-- Норматив action-card:
-  - сервисное сообщение обязано публиковать `launch_profile` (`quick-fix|feature|new-service`) и краткий `stage_path`;
-  - каждая next-step карточка обязана содержать два канала:
-    - `primary_action`: validated deep-link в staff web-console;
-    - `fallback_action`: копируемая текстовая команда без открытия UI.
-- Канонические fallback-шаблоны:
-  - переход на следующий stage:
-    - `gh issue edit <ISSUE_NUMBER> --remove-label "run:<current-stage>" --add-label "run:<next-stage>"`;
-  - ручная эскалация профиля (без запуска stage):
-    - `gh issue edit <ISSUE_NUMBER> --add-label "need:input"`;
-  - переход в review gate после формирования PR:
-    - `gh issue edit <ISSUE_NUMBER> --add-label "state:in-review"`.
+- Проблема: next-step UX не должен зависеть от устаревающих raw-контрактов в GitHub-комментарии.
+- Норматив текущего контракта:
+  - `control-plane` внутренне резолвит launch profile (`quick-fix|feature|new-service`) и stage path;
+  - service-message публикует список typed действий;
+  - каждое действие содержит `action_kind`, `target_label`, `display_variant` и deep-link в staff UI.
+- Typed deep-link обязан вести на `/` и открывать confirm-модалку через preview/execute flow.
 - Правила детерминизма:
-  - fallback-шаблон формируется только для однозначно резолвленного `(profile, current-stage, next-stage)`;
-  - при ambiguity карточка публикует только remediation с `need:input`, без best-guess команды.
+  - набор next-step действий вычисляется только из текущего stage, resolver state и доступного PR context;
+  - при ambiguity публикуется только remediation path с `need:input`, без best-guess transition.
 - Ограничения безопасности:
-  - fallback-команды не содержат секретов/токенов и используют только labels из каталога `run:*|state:*|need:*`;
-  - любой transition проходит через webhook policy/audit контур (`flow_events`, `actor`, `correlation_id`).
+  - label transition выполняется только через staff API/control-plane;
+  - любой transition проходит через единый webhook policy/audit контур (`flow_events`, `actor`, `correlation_id`).
 
 ## Оркестрационный flow для `run:self-improve`
 

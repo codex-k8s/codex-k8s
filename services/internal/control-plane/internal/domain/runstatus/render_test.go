@@ -3,22 +3,24 @@ package runstatus
 import (
 	"strings"
 	"testing"
+
+	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
-func mustRenderCommentBody(t *testing.T, state commentState, managementURL string) string {
+func mustRenderCommentBody(t *testing.T, state commentState, managementURL string, nextStepActions []nextStepCommentAction, recentStatuses []recentAgentStatus) string {
 	t.Helper()
 
-	body, err := renderCommentBody(state, managementURL, "https://platform.codex-k8s.dev", nil)
+	body, err := renderCommentBody(state, managementURL, nextStepActions, recentStatuses)
 	if err != nil {
 		t.Fatalf("renderCommentBody returned error: %v", err)
 	}
 	return body
 }
 
-func assertRenderedBodyContains(t *testing.T, state commentState, managementURL string, expected ...string) {
+func assertRenderedBodyContains(t *testing.T, state commentState, managementURL string, nextStepActions []nextStepCommentAction, recentStatuses []recentAgentStatus, expected ...string) {
 	t.Helper()
 
-	body := mustRenderCommentBody(t, state, managementURL)
+	body := mustRenderCommentBody(t, state, managementURL, nextStepActions, recentStatuses)
 	for _, item := range expected {
 		if !strings.Contains(body, item) {
 			t.Fatalf("rendered body does not contain %q: %q", item, body)
@@ -34,7 +36,7 @@ func TestRenderCommentBody_RendersTemplateByLocale(t *testing.T) {
 		Phase:        PhaseStarted,
 		TriggerKind:  triggerKindDev,
 		PromptLocale: localeRU,
-	}, "https://platform.codex-k8s.dev/runs/run-1")
+	}, "https://platform.codex-k8s.dev/runs/run-1", nil, nil)
 	if !strings.Contains(body, "### 🧠 Запуск ИИ-агента") {
 		t.Fatalf("rendered body does not contain russian title: %q", body)
 	}
@@ -52,7 +54,7 @@ func TestRenderCommentBody_RendersPlannedLaunchState(t *testing.T) {
 		RuntimeMode:  runtimeModeFullEnv,
 		RunStatus:    "pending",
 		PromptLocale: localeRU,
-	}, "https://platform.codex-k8s.dev/runs/run-planned")
+	}, "https://platform.codex-k8s.dev/runs/run-planned", nil, nil)
 	if !strings.Contains(body, "Планируется запуск агента") {
 		t.Fatalf("rendered body does not contain planned launch marker: %q", body)
 	}
@@ -72,7 +74,7 @@ func TestRenderCommentBody_RendersSlotURLAndAuthTimeline(t *testing.T) {
 		SlotURL:      "https://codex-k8s-dev-2.ai.platform.codex-k8s.dev",
 		RunStatus:    "running",
 		PromptLocale: localeRU,
-	}, "https://platform.codex-k8s.dev/runs/run-2")
+	}, "https://platform.codex-k8s.dev/runs/run-2", nil, nil)
 	if !strings.Contains(body, "Ссылка на слот") {
 		t.Fatalf("rendered body does not contain slot url label: %q", body)
 	}
@@ -90,7 +92,7 @@ func TestRenderCommentBody_RendersAuthVerificationPayload(t *testing.T) {
 		PromptLocale:             localeRU,
 		CodexAuthVerificationURL: "https://example.com/device",
 		CodexAuthUserCode:        "ABCD-EFGH",
-	}, "https://platform.codex-k8s.dev/runs/run-auth", "Ссылка авторизации", "ABCD-EFGH")
+	}, "https://platform.codex-k8s.dev/runs/run-auth", nil, nil, "Ссылка авторизации", "ABCD-EFGH")
 }
 
 func TestRenderCommentBody_RuntimePreparationAndNamespaceMessages(t *testing.T) {
@@ -141,7 +143,7 @@ func TestRenderCommentBody_RuntimePreparationAndNamespaceMessages(t *testing.T) 
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			body := mustRenderCommentBody(t, testCase.state, testCase.managementURL)
+			body := mustRenderCommentBody(t, testCase.state, testCase.managementURL, nil, nil)
 			for _, expected := range testCase.mustContain {
 				if !strings.Contains(body, expected) {
 					t.Fatalf("rendered body does not contain %q: %q", expected, body)
@@ -151,8 +153,35 @@ func TestRenderCommentBody_RuntimePreparationAndNamespaceMessages(t *testing.T) 
 	}
 }
 
-func TestRenderCommentBody_RendersStageAwareActionCards(t *testing.T) {
+func TestRenderCommentBody_RendersNextStepMatrix(t *testing.T) {
 	t.Parallel()
+
+	nextStepActions := []nextStepCommentAction{
+		{
+			ActionKind:     querytypes.NextStepActionKindIssueStageTransition,
+			DisplayVariant: nextStepDisplayRevise,
+			TargetLabel:    "run:dev:revise",
+			URL:            "https://platform.codex-k8s.dev/?modal=next-step&repository_full_name=codex-k8s%2Fcodex-k8s&issue_number=95&action_kind=issue_stage_transition&target_label=run%3Adev%3Arevise&display_variant=revise",
+		},
+		{
+			ActionKind:     querytypes.NextStepActionKindIssueStageTransition,
+			DisplayVariant: nextStepDisplayVeryShortFlow,
+			TargetLabel:    "run:qa",
+			URL:            "https://platform.codex-k8s.dev/?modal=next-step&repository_full_name=codex-k8s%2Fcodex-k8s&issue_number=95&pull_request_number=123&action_kind=issue_stage_transition&target_label=run%3Aqa&display_variant=very_short_flow",
+		},
+		{
+			ActionKind:     querytypes.NextStepActionKindPullRequestLabelAdd,
+			DisplayVariant: nextStepDisplayReviewer,
+			TargetLabel:    "need:reviewer",
+			URL:            "https://platform.codex-k8s.dev/?modal=next-step&repository_full_name=codex-k8s%2Fcodex-k8s&issue_number=95&pull_request_number=123&action_kind=pull_request_label_add&target_label=need%3Areviewer&display_variant=reviewer",
+		},
+		{
+			ActionKind:     querytypes.NextStepActionKindIssueStageTransition,
+			DisplayVariant: nextStepDisplayDocAudit,
+			TargetLabel:    "run:doc-audit",
+			URL:            "https://platform.codex-k8s.dev/?modal=next-step&repository_full_name=codex-k8s%2Fcodex-k8s&issue_number=95&action_kind=issue_stage_transition&target_label=run%3Adoc-audit&display_variant=doc_audit",
+		},
+	}
 
 	body := mustRenderCommentBody(t, commentState{
 		RunID:              "run-dev",
@@ -161,67 +190,22 @@ func TestRenderCommentBody_RendersStageAwareActionCards(t *testing.T) {
 		PromptLocale:       localeRU,
 		RepositoryFullName: "codex-k8s/codex-k8s",
 		IssueNumber:        95,
-		LaunchProfile:      "quick-fix",
-		StagePath:          "intake -> plan -> dev -> qa -> release -> postdeploy -> ops",
-		PrimaryAction:      "https://platform.codex-k8s.dev/governance/labels-stages?repo=codex-k8s%2Fcodex-k8s&issue=95&target=run%3Aqa",
-		FallbackAction: "gh issue view 95 --json labels --jq '.labels[].name'\n" +
-			`gh issue edit 95 --remove-label "run:dev" --remove-label "run:dev:revise" --add-label "run:qa"`,
-		GuardrailNote: guardrailNotePrecheckRequired,
-	}, "https://platform.codex-k8s.dev/runs/run-dev")
+	}, "https://platform.codex-k8s.dev/runs/run-dev", nextStepActions, nil)
+
 	if !strings.Contains(body, "Следующие шаги") {
 		t.Fatalf("expected next steps section in body: %q", body)
 	}
-	if !strings.Contains(body, "`run:dev:revise`") {
-		t.Fatalf("expected revise action label in body: %q", body)
+	if !strings.Contains(body, "`run:dev:revise`") || !strings.Contains(body, "`run:qa`") || !strings.Contains(body, "`need:reviewer`") {
+		t.Fatalf("expected next step labels in body: %q", body)
 	}
-	if !strings.Contains(body, "`run:qa`") {
-		t.Fatalf("expected next stage action label in body: %q", body)
+	if !strings.Contains(body, "/?modal=next-step") {
+		t.Fatalf("expected root next-step deep-link in body: %q", body)
 	}
-	if !strings.Contains(body, "/governance/labels-stages?") {
-		t.Fatalf("expected deep-link action url in body: %q", body)
+	if strings.Contains(body, "/governance/labels-stages?") {
+		t.Fatalf("expected legacy labels-stages link to be removed: %q", body)
 	}
-	if !strings.Contains(body, "target=run%3Aqa") {
-		t.Fatalf("expected deep-link target label in body: %q", body)
-	}
-	if !strings.Contains(body, "`launch_profile`") || !strings.Contains(body, "`quick-fix`") {
-		t.Fatalf("expected launch_profile contract field in body: %q", body)
-	}
-	if !strings.Contains(body, "`fallback_action`") {
-		t.Fatalf("expected fallback_action contract field in body: %q", body)
-	}
-	if !strings.Contains(body, `gh issue edit 95 --remove-label "run:dev" --remove-label "run:dev:revise" --add-label "run:qa"`) {
-		t.Fatalf("expected fallback transition command in body: %q", body)
-	}
-	if !strings.Contains(body, "`guardrail_note`") {
-		t.Fatalf("expected guardrail_note contract field in body: %q", body)
-	}
-}
-
-func TestRenderCommentBody_UsesActionCardLabelsAsNextStepsSourceOfTruth(t *testing.T) {
-	t.Parallel()
-
-	body := mustRenderCommentBody(t, commentState{
-		RunID:                  "run-intake",
-		Phase:                  PhaseStarted,
-		TriggerKind:            "intake",
-		PromptLocale:           localeRU,
-		RepositoryFullName:     "codex-k8s/codex-k8s",
-		IssueNumber:            95,
-		LaunchProfile:          "quick-fix",
-		StagePath:              "intake -> plan -> dev -> qa -> release -> postdeploy -> ops",
-		PrimaryAction:          "https://platform.codex-k8s.dev/governance/labels-stages?repo=codex-k8s%2Fcodex-k8s&issue=95&target=run%3Aplan",
-		FallbackAction:         `gh issue edit 95 --remove-label "run:intake" --remove-label "run:intake:revise" --add-label "run:plan"`,
-		GuardrailNote:          guardrailNotePrecheckRequired,
-		ReviseActionLabel:      "run:intake:revise",
-		NextStageActionLabel:   "run:plan",
-		AlternativeActionLabel: "",
-	}, "https://platform.codex-k8s.dev/runs/run-intake")
-
-	if !strings.Contains(body, "`run:plan`") {
-		t.Fatalf("expected profile-driven next stage action label in body: %q", body)
-	}
-	if strings.Contains(body, "`run:vision`") {
-		t.Fatalf("expected legacy next stage label to be suppressed when action-card labels are provided: %q", body)
+	if strings.Contains(body, "Контракт next-step action-card") || strings.Contains(body, "`fallback_action`") || strings.Contains(body, "`launch_profile`") {
+		t.Fatalf("expected legacy action-card contract to be removed: %q", body)
 	}
 }
 
@@ -235,36 +219,16 @@ func TestRenderCommentBody_RendersDesignFastTrackAction(t *testing.T) {
 		PromptLocale:       localeRU,
 		RepositoryFullName: "codex-k8s/codex-k8s",
 		IssueNumber:        95,
-	}, "https://platform.codex-k8s.dev/runs/run-design")
+	}, "https://platform.codex-k8s.dev/runs/run-design", buildNextStepActions("https://platform.codex-k8s.dev", runContext{}, commentState{
+		TriggerKind:        "design",
+		RepositoryFullName: "codex-k8s/codex-k8s",
+		IssueNumber:        95,
+	}), nil)
 	if !strings.Contains(body, "`run:dev`") {
 		t.Fatalf("expected fast-track run:dev action label in body: %q", body)
 	}
-	if !strings.Contains(body, "target=run%3Adev") {
+	if !strings.Contains(body, "target_label=run%3Adev") {
 		t.Fatalf("expected fast-track deep-link target in body: %q", body)
-	}
-}
-
-func TestRenderCommentBody_BlocksNextStageActionsWhenActionCardGuardrailRequiresNeedInput(t *testing.T) {
-	t.Parallel()
-
-	body := mustRenderCommentBody(t, commentState{
-		RunID:              "run-dev-ambiguous",
-		Phase:              PhaseStarted,
-		TriggerKind:        triggerKindDev,
-		PromptLocale:       localeRU,
-		RepositoryFullName: "codex-k8s/codex-k8s",
-		IssueNumber:        95,
-		LaunchProfile:      "quick-fix",
-		StagePath:          "intake -> plan -> dev -> qa -> release -> postdeploy -> ops",
-		FallbackAction:     `gh issue edit 95 --add-label "need:input"`,
-		GuardrailNote:      guardrailNoteAmbiguousStageLabel,
-	}, "https://platform.codex-k8s.dev/runs/run-dev-ambiguous")
-
-	if strings.Contains(body, "`run:qa`") {
-		t.Fatalf("expected stage transition links to be hidden for blocked action card: %q", body)
-	}
-	if !strings.Contains(body, `gh issue edit 95 --add-label "need:input"`) {
-		t.Fatalf("expected need:input remediation command in body: %q", body)
 	}
 }
 
@@ -277,23 +241,20 @@ func TestRenderCommentBody_RendersIssueAndPRLinks(t *testing.T) {
 		PromptLocale:   localeRU,
 		IssueURL:       "https://github.com/codex-k8s/codex-k8s/issues/95",
 		PullRequestURL: "https://github.com/codex-k8s/codex-k8s/pull/123",
-	}, "https://platform.codex-k8s.dev/runs/run-links", "issues/95", "pull/123")
+	}, "https://platform.codex-k8s.dev/runs/run-links", nil, nil, "issues/95", "pull/123")
 }
 
 func TestRenderCommentBody_RendersRecentAgentStatusesRU(t *testing.T) {
 	t.Parallel()
 
-	body, err := renderCommentBody(commentState{
+	body := mustRenderCommentBody(t, commentState{
 		RunID:        "run-statuses-ru",
 		Phase:        PhaseStarted,
 		PromptLocale: localeRU,
-	}, "https://platform.codex-k8s.dev/runs/run-statuses-ru", "https://platform.codex-k8s.dev", []recentAgentStatus{
+	}, "https://platform.codex-k8s.dev/runs/run-statuses-ru", nil, []recentAgentStatus{
 		{AgentKey: "dev", StatusText: "Обновляю API"},
 		{AgentKey: "dev", StatusText: "Проверяю тесты"},
 	})
-	if err != nil {
-		t.Fatalf("renderCommentBody returned error: %v", err)
-	}
 	if !strings.Contains(body, "Последние статусы агента") {
 		t.Fatalf("expected recent agent statuses section in body: %q", body)
 	}
@@ -305,16 +266,13 @@ func TestRenderCommentBody_RendersRecentAgentStatusesRU(t *testing.T) {
 func TestRenderCommentBody_RendersRecentAgentStatusesEN(t *testing.T) {
 	t.Parallel()
 
-	body, err := renderCommentBody(commentState{
+	body := mustRenderCommentBody(t, commentState{
 		RunID:        "run-statuses-en",
 		Phase:        PhaseStarted,
 		PromptLocale: localeEN,
-	}, "https://platform.codex-k8s.dev/runs/run-statuses-en", "https://platform.codex-k8s.dev", []recentAgentStatus{
+	}, "https://platform.codex-k8s.dev/runs/run-statuses-en", nil, []recentAgentStatus{
 		{AgentKey: "qa", StatusText: "Running regression"},
 	})
-	if err != nil {
-		t.Fatalf("renderCommentBody returned error: %v", err)
-	}
 	if !strings.Contains(body, "Latest Agent Statuses") {
 		t.Fatalf("expected recent agent statuses section in body: %q", body)
 	}

@@ -106,45 +106,46 @@
 {{- end }}
 {{- end }}
 
-{{- if .ShowActionCardContract }}
-### 🧭 Next-step action-card contract
-- `launch_profile`: {{- if .ActionCardLaunchProfile }}`{{ .ActionCardLaunchProfile }}`{{- else }}`n/a`{{- end }}
-- `stage_path`: {{- if .ActionCardStagePath }}`{{ .ActionCardStagePath }}`{{- else }}`n/a`{{- end }}
-- `primary_action`: {{- if .ActionCardPrimaryAction }}[{{ .ActionCardPrimaryAction }}]({{ .ActionCardPrimaryAction }}){{- else }}`n/a`{{- end }}
-- `fallback_action`:
-{{- if .ActionCardFallbackAction }}
-```bash
-{{ .ActionCardFallbackAction }}
-```
-{{- else }}
-`n/a`
-{{- end }}
-- `guardrail_note`:
-{{- if eq .ActionCardGuardrailNote "precheck_required" }}
-`Fallback transition requires a labels pre-check; best-guess transitions are blocked.`
-{{- else if eq .ActionCardGuardrailNote "ambiguous_stage_labels" }}
-`Stage labels are ambiguous; transition is blocked until need:input is applied.`
-{{- else if eq .ActionCardGuardrailNote "stage_path_unresolved" }}
-`Next stage could not be resolved deterministically for this launch profile; need:input is required.`
-{{- else if eq .ActionCardGuardrailNote "need_input_only" }}
-`Target transition is unavailable, so only need:input remediation command is published.`
-{{- else if .ActionCardGuardrailNote }}
-`{{ .ActionCardGuardrailNote }}`
-{{- else }}
-`n/a`
-{{- end }}
-{{- end }}
-
-{{- if .ShowActionCards }}
+{{- if .ShowNextStepActions }}
 ### ⏭ Next Steps
-{{- if .ReviseActionLabel }}
-- Revise current stage: {{- if .ReviseActionURL }}[`{{ .ReviseActionLabel }}`]({{ .ReviseActionURL }}){{- else }}`{{ .ReviseActionLabel }}`{{- end }}
+{{- range .NextStepActions }}
+{{- if eq .DisplayVariant "revise" }}
+- 🔁 Revise current stage: {{- if .URL }}[`{{ .TargetLabel }}`]({{ .URL }}){{- else }}`{{ .TargetLabel }}`{{- end }}
+{{- else if eq .DisplayVariant "full_flow" }}
+- 🧭 Full flow: {{- if .URL }}[`{{ .TargetLabel }}`]({{ .URL }}){{- else }}`{{ .TargetLabel }}`{{- end }}
+{{- else if eq .DisplayVariant "shortened_flow" }}
+- ⚡ Shortened flow: {{- if .URL }}[`{{ .TargetLabel }}`]({{ .URL }}){{- else }}`{{ .TargetLabel }}`{{- end }}
+{{- else if eq .DisplayVariant "very_short_flow" }}
+- 🚀 Very short flow: {{- if .URL }}[`{{ .TargetLabel }}`]({{ .URL }}){{- else }}`{{ .TargetLabel }}`{{- end }}
+{{- else if eq .DisplayVariant "full_or_shortened_flow" }}
+- 🧭 Full or shortened flow: {{- if .URL }}[`{{ .TargetLabel }}`]({{ .URL }}){{- else }}`{{ .TargetLabel }}`{{- end }}
+{{- else if eq .DisplayVariant "full_or_very_short_flow" }}
+- 🧭 Full or very short flow: {{- if .URL }}[`{{ .TargetLabel }}`]({{ .URL }}){{- else }}`{{ .TargetLabel }}`{{- end }}
+{{- else if eq .DisplayVariant "shortened_or_very_short_flow" }}
+- ⚡ Shortened or very short flow: {{- if .URL }}[`{{ .TargetLabel }}`]({{ .URL }}){{- else }}`{{ .TargetLabel }}`{{- end }}
+{{- else if eq .DisplayVariant "all_flows" }}
+- 🧭 Any delivery flow: {{- if .URL }}[`{{ .TargetLabel }}`]({{ .URL }}){{- else }}`{{ .TargetLabel }}`{{- end }}
+{{- else if eq .DisplayVariant "reviewer" }}
+- 🔎 Start reviewer: {{- if .URL }}[`{{ .TargetLabel }}`]({{ .URL }}){{- else }}`{{ .TargetLabel }}`{{- end }}
+{{- else if eq .DisplayVariant "rethink" }}
+- ♻️ Rethink the task: {{- if .URL }}[`{{ .TargetLabel }}`]({{ .URL }}){{- else }}`{{ .TargetLabel }}`{{- end }}
+{{- else if eq .DisplayVariant "doc_audit" }}
+- 📚 Start doc-audit: {{- if .URL }}[`{{ .TargetLabel }}`]({{ .URL }}){{- else }}`{{ .TargetLabel }}`{{- end }}
+{{- else if eq .DisplayVariant "self_improve" }}
+- 🧠 Start self-improve: {{- if .URL }}[`{{ .TargetLabel }}`]({{ .URL }}){{- else }}`{{ .TargetLabel }}`{{- end }}
+{{- else if eq .DisplayVariant "prepare_plan" }}
+- 🗂 Prepare plan/remediation: {{- if .URL }}[`{{ .TargetLabel }}`]({{ .URL }}){{- else }}`{{ .TargetLabel }}`{{- end }}
+{{- else if eq .DisplayVariant "go_to_dev" }}
+- 🛠 Move to fixes: {{- if .URL }}[`{{ .TargetLabel }}`]({{ .URL }}){{- else }}`{{ .TargetLabel }}`{{- end }}
+{{- else if eq .DisplayVariant "go_to_qa" }}
+- 🧪 Verify fixes: {{- if .URL }}[`{{ .TargetLabel }}`]({{ .URL }}){{- else }}`{{ .TargetLabel }}`{{- end }}
+{{- else if eq .DisplayVariant "restart_full" }}
+- 🧭 Full flow restart: {{- if .URL }}[`{{ .TargetLabel }}`]({{ .URL }}){{- else }}`{{ .TargetLabel }}`{{- end }}
+{{- else if eq .DisplayVariant "restart_shortened" }}
+- ⚡ Shortened flow restart: {{- if .URL }}[`{{ .TargetLabel }}`]({{ .URL }}){{- else }}`{{ .TargetLabel }}`{{- end }}
+{{- else if eq .DisplayVariant "restart_very_short" }}
+- 🚀 Very short flow restart: {{- if .URL }}[`{{ .TargetLabel }}`]({{ .URL }}){{- else }}`{{ .TargetLabel }}`{{- end }}
 {{- end }}
-{{- if .NextStageActionLabel }}
-- Move to next stage: {{- if .NextStageActionURL }}[`{{ .NextStageActionLabel }}`]({{ .NextStageActionURL }}){{- else }}`{{ .NextStageActionLabel }}`{{- end }}
-{{- end }}
-{{- if .AlternativeActionLabel }}
-- Fast-track option: {{- if .AlternativeActionURL }}[`{{ .AlternativeActionLabel }}`]({{ .AlternativeActionURL }}){{- else }}`{{ .AlternativeActionLabel }}`{{- end }}
 {{- end }}
 {{- end }}
 

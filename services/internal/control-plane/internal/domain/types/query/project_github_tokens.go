@@ -10,4 +10,3 @@ type ProjectGitHubTokensUpsertParams struct {
 	BotUsername string
 	BotEmail    string
 }
-

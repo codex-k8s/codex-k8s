@@ -163,6 +163,7 @@
     </VMain>
 
     <SnackbarHost />
+    <NextStepActionDialog />
   </VApp>
 </template>
 
@@ -174,6 +175,7 @@ import { useDisplay } from "vuetify";
 
 import { persistLocale, type Locale } from "../i18n/locale";
 import { useAuthStore } from "../features/auth/store";
+import NextStepActionDialog from "../features/next-step-actions/NextStepActionDialog.vue";
 import { useProjectsStore } from "../features/projects/projects-store";
 import { useUiContextStore } from "../features/ui-context/store";
 import { navGroups, navItems, findNavItemByRouteName, type NavItem } from "./navigation";

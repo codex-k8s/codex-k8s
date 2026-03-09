@@ -593,20 +593,23 @@ message UpsertProjectGitHubTokensRequest {
   optional string bot_email = 6;
 }
 
-message TransitionIssueStageLabelRequest {
+message NextStepActionRequest {
   Principal principal = 1;
   string repository_full_name = 2;
-  int32 issue_number = 3;
-  string target_label = 4;
+  optional int32 issue_number = 3;
+  optional int32 pull_request_number = 4;
+  string action_kind = 5;
+  string target_label = 6;
 }
 
-message TransitionIssueStageLabelResponse {
+message NextStepActionResponse {
   string repository_full_name = 1;
-  int32 issue_number = 2;
-  optional string issue_url = 3;
-  repeated string removed_labels = 4;
-  repeated string added_labels = 5;
-  repeated string final_labels = 6;
+  string thread_kind = 2;
+  int32 thread_number = 3;
+  optional string thread_url = 4;
+  repeated string removed_labels = 5;
+  repeated string added_labels = 6;
+  repeated string final_labels = 7;
 }
 
 message ConfigEntry {
@@ -1045,7 +1048,8 @@ service ControlPlaneService {
 
   rpc GetProjectGitHubTokens(GetProjectGitHubTokensRequest) returns (ProjectGitHubTokens);
   rpc UpsertProjectGitHubTokens(UpsertProjectGitHubTokensRequest) returns (google.protobuf.Empty);
-  rpc TransitionIssueStageLabel(TransitionIssueStageLabelRequest) returns (TransitionIssueStageLabelResponse);
+  rpc PreviewNextStepAction(NextStepActionRequest) returns (NextStepActionResponse);
+  rpc ExecuteNextStepAction(NextStepActionRequest) returns (NextStepActionResponse);
 
   rpc ListDocsetGroups(ListDocsetGroupsRequest) returns (ListDocsetGroupsResponse);
   rpc ImportDocset(ImportDocsetRequest) returns (ImportDocsetResponse);

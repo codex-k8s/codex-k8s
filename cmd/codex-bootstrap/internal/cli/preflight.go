@@ -16,12 +16,13 @@ import (
 	"time"
 
 	"github.com/codex-k8s/codex-k8s/cmd/codex-bootstrap/internal/envfile"
+	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 	gh "github.com/google/go-github/v82/github"
 )
 
 const (
 	preflightDefaultTimeout   = 15 * time.Second
-	preflightDefaultLabelName = "run:dev"
+	preflightDefaultLabelName = webhookdomain.DefaultRunDevLabel
 )
 
 var preflightRequiredEnvKeys = []string{

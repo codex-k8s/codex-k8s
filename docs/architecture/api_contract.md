@@ -5,7 +5,7 @@ title: "codex-k8s — API Contract Overview"
 status: active
 owner_role: SA
 created_at: 2026-02-06
-updated_at: 2026-03-05
+updated_at: 2026-03-09
 related_issues: [1, 19, 100, 154, 155, 175, 274]
 related_prs: []
 approvals:
@@ -182,33 +182,39 @@ approvals:
 - Исключение для PR review-flow: webhook `pull_request` с `action=labeled` и label `need:reviewer` запускает reviewer-run в контексте PR.
 - Любая операция с label фиксируется в `flow_events` и связывается с `agent_sessions`/`links`.
 
-### Profile-driven next-step contract (S5 Day1, Issues #154/#155)
+### Profile-driven next-step action matrix (S5 Day1, Issues #154/#155)
 - Source of truth:
   - `docs/product/requirements_machine_driven.md` (FR-053, FR-054);
   - `docs/product/labels_and_trigger_policy.md`;
   - `docs/product/stage_process_model.md`;
   - `docs/architecture/adr/ADR-0008-profile-driven-stage-launch-and-next-step-contract.md`.
-- Обязательный publish contract для service-message next-step карточки:
-  - `launch_profile` (`quick-fix|feature|new-service`);
-  - `stage_path` (каноническая траектория профиля);
-  - `primary_action` (валидированный deep-link в staff web-console);
-  - `fallback_action` (copy-paste label transition команда);
-  - `guardrail_note` (правила pre-check/ambiguity).
-- Ownership сервисных границ:
-  - `services/internal/control-plane` владеет profile resolver, escalation rules и ambiguity-gate;
+- Внутренний ownership:
+  - `services/internal/control-plane` владеет profile resolver, stage-path logic, ambiguity-gate и вычислением next-step матрицы;
   - `services/external/api-gateway` и `services/staff/web-console` остаются thin adapters (валидация/RBAC/UX), без доменных правил stage transition.
+- Публичный GitHub/service-message контракт публикует не raw resolver state, а список typed действий:
+  - `action_kind` (`issue_stage_transition`, `pull_request_label_add`);
+  - `target_label`;
+  - `display_variant`;
+  - `url` (deep-link на `/` с query для confirm-модалки).
+- Staff API для этого UX:
+  - `POST /api/v1/staff/github/next-step-actions/preview`
+  - `POST /api/v1/staff/github/next-step-actions/execute`
+- Staff preview/execute response возвращает typed diff:
+  - `thread_kind`, `thread_number`, `thread_url`;
+  - `removed_labels[]`, `added_labels[]`, `final_labels[]`.
+- Ownership сервисных границ:
 - Правила детерминизма:
-  - fallback action формируется только для однозначного `(launch_profile, current_stage, next_stage)`;
-  - перед fallback transition обязателен pre-check текущих labels;
-  - при ambiguity (`0` или `>1` trigger labels) transition блокируется, публикуется remediation и ставится `need:input`.
-- Policy/Audit требования (общие для primary и fallback):
+  - внешний action-list формируется только для однозначного `(current_stage, resolver_state, PR context)`;
+  - при ambiguity (`0` или `>1` trigger labels) transition блокируется, публикуется remediation и ставится `need:input`;
+  - `display_variant` определяет UX-подпись действия, но не заменяет `target_label`.
+- Policy/Audit требования:
   - любой transition фиксирует `correlation_id`, actor и `source` (`ui` или `fallback`) в `flow_events`;
-  - fallback-команды не содержат секретов/токенов и используют только labels из каталога `run:*|state:*|need:*`;
+  - прямые GitHub label mutations из frontend запрещены;
   - review gate после формирования PR синхронизирует `state:in-review` на PR и на Issue.
 - Runtime impact для handover в `run:dev`:
-  - расширить typed payload service-message next-step карточки обязательными полями контракта;
-  - добавить resolver/escalation и ambiguity-stop в `control-plane`;
-  - сохранить rollback path на stage-aware baseline ADR-0006 через feature-flag.
+  - расширить typed payload service-message списком next-step действий;
+  - добавить preview/execute endpoints и frontend confirm-modal на `/`;
+  - сохранить resolver/escalation и ambiguity-stop в `control-plane`.
 
 ## MCP approver/executor contract behavior
 - Approver/executor интеграции подключаются по HTTP-контрактам через MCP-слой.

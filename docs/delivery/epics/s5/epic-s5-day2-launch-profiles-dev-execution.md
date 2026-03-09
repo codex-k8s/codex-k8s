@@ -37,8 +37,8 @@ approvals:
 ## Scope
 ### In scope
 - I1 (`P0`): deterministic profile resolver (`quick-fix|feature|new-service`) + escalation rules.
-- I2 (`P0`): typed next-step action-card contract (`launch_profile`, `stage_path`, `primary_action`, `fallback_action`, `guardrail_note`).
-- I3 (`P0`): fallback pre-check + transition path, ambiguity hard-stop (`need:input`).
+- I2 (`P0`): typed next-step action matrix (`action_kind`, `target_label`, `display_variant`, `url`).
+- I3 (`P0`): preview / execute transition path, ambiguity hard-stop (`need:input`).
 - I4 (`P1`): review-gate sync для пары `Issue + PR` (`state:in-review`).
 - I5 (`P1`): traceability sync после переходов (`issue_map`, `requirements_traceability`, sprint/epic docs).
 
@@ -51,8 +51,8 @@ approvals:
 | Gate | Что проверяем | Критерий выхода |
 |---|---|---|
 | QG-D2-01 Planning | Single-epic scope зафиксирован между #170 и #171 | Один delivery-эпик и один implementation issue, без параллельных dev-epics |
-| QG-D2-02 Contract | Next-step contract соответствует ADR-0008 и API-contract | Все обязательные поля action-card определены и трассируемы |
-| QG-D2-03 Governance | Fallback path policy-safe | Есть pre-check, ambiguity-stop и запрет best-guess |
+| QG-D2-02 Contract | Next-step contract соответствует ADR-0008 и API-contract | Все обязательные поля typed action определены и трассируемы |
+| QG-D2-03 Governance | Preview/execute path policy-safe | Есть ambiguity-stop и запрет best-guess |
 | QG-D2-04 Architecture | Service boundaries не нарушены | Resolver/escalation остаётся в `control-plane`, edge/UI thin |
 | QG-D2-05 Traceability | FR-053/FR-054 и issue-map синхронизированы | Документы Sprint S5, issue_map и RTM обновлены |
 | QG-D2-06 Readiness | Пакет готов к `run:dev` | Owner-ready handover для `dev/qa/sre/km` сформирован |

@@ -79,6 +79,10 @@
 1. Вешаете на Issue один trigger-лейбл `run:<stage>`.
 2. Платформа создает run и стартует роль, соответствующую stage.
 3. По завершению stage вы переходите к следующему `run:<next-stage>` или к `run:<stage>:revise` при замечаниях.
+4. После завершения run платформа обновляет единый GitHub service-comment и публикует матрицу `Следующие шаги`:
+   - каждая ссылка ведёт на `/` staff web-console;
+   - на фронте открывается confirm-модалка с preview diff лейблов (`removed / added / final`);
+   - после подтверждения transition применяется через staff API и аудитится в `flow_events`.
 
 Поддержанные stage:
 - `run:intake`, `run:vision`, `run:prd`, `run:arch`, `run:design`, `run:plan`, `run:dev`, `run:doc-audit`, `run:qa`, `run:release`, `run:postdeploy`, `run:ops`, `run:self-improve`, `run:rethink`.

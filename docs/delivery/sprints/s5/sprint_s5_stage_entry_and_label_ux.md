@@ -55,7 +55,7 @@ approvals:
 | Gate | Что проверяем | Статус |
 |---|---|---|
 | QG-01 Planning | Канонические launch profiles + escalation rules синхронизированы между PRD, stage policy и epic Day1 | passed |
-| QG-02 Contract | Next-step contract фиксирует `primary_action + fallback_action` и ambiguity guardrails | passed |
+| QG-02 Contract | Next-step contract фиксирует typed action matrix и ambiguity guardrails | passed |
 | QG-03 Governance | Fallback path использует только labels из каталога и не содержит секретов | passed |
 | QG-04 Traceability | Обновлены `issue_map` и `requirements_traceability`; связь `Issue -> FR-053/FR-054 -> epic` сохранена | passed |
 | QG-05 Review readiness | Owner decision package (блокеры, риски, решения) подготовлен и подтверждён в review | passed (Owner approved, 2026-02-25) |
@@ -66,13 +66,13 @@ approvals:
 |---|---|---|
 | QG-D2-01 Planning | Реализация зафиксирована как один эпик и одна implementation issue | passed |
 | QG-D2-02 Contract | Day2 пакет синхронизирован с ADR-0008 и API contract | passed |
-| QG-D2-03 Governance | Fallback path включает `pre-check -> transition` и ambiguity stop | passed |
+| QG-D2-03 Governance | Preview/execute path включает ambiguity stop и policy-safe transition | passed |
 | QG-D2-04 Traceability | `issue_map`, `requirements_traceability`, sprint/epic S5 синхронизированы | passed |
 | QG-D2-05 Readiness | Роли `dev/qa/sre/km` получили handover по #171 | passed |
 
 ## Completion критерии спринта
 - [x] Launch profiles закреплены как продуктовый стандарт и связаны с stage policy.
-- [x] Next-step action UX не зависит от единственного web-link канала.
+- [x] Next-step action UX публикуется как матрица typed действий и не требует raw fallback-команд в GitHub.
 - [x] Для каждого profile определены acceptance scenarios и failure modes.
 - [x] Подготовлен handover в `run:dev` с приоритетами реализации и рисками.
 - [x] Owner review/approval vision-prd пакета по Issue #155.
@@ -80,7 +80,7 @@ approvals:
 
 ## Критерии приемки `run:plan` по Issue #155
 - [x] Подтвержден канонический набор launch profiles и правила эскалации.
-- [x] Подтвержден формат next-step action-карт и fallback-команд.
+- [x] Подтвержден формат next-step action matrix и confirm-modal preview/execute flow.
 - [x] Подготовлен owner-facing пакет quality-gates и критериев завершения перед `run:dev`.
 - [x] Получено финальное Owner approval на запуск `run:dev`.
 

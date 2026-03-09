@@ -5,7 +5,7 @@ title: "Review-driven revise resolution and next-step label UX"
 status: accepted
 owner_role: SA
 created_at: 2026-02-20
-updated_at: 2026-02-21
+updated_at: 2026-03-09
 related_issues: [90, 95]
 related_prs: []
 supersedes: []
@@ -89,32 +89,27 @@ approvals:
 
 Цель: убрать обязательность ручного повторного выставления profile-лейблов перед каждым `changes_requested`.
 
-### 3. Stage-aware сервисные сообщения (next-step cards)
-Платформа обновляет единый service-comment и показывает ссылки/действия по контексту:
-- для `intake|vision|prd|arch|design|plan`:
-  - `run:<stage>:revise` (доработка текущего артефакта),
-  - `run:<next-stage>` (переход по pipeline после принятия).
-- для `dev`:
-  - `run:dev:revise`,
-  - `run:qa`.
-- для `qa|release|postdeploy|ops`:
-  - revise текущего шага (если применимо),
-  - переход к следующему stage.
+### 3. Stage-aware сервисные сообщения (next-step matrix)
+Платформа обновляет единый service-comment и показывает матрицу typed действий по текущему контексту:
+- `run:<stage>:revise` для доработки текущего артефакта;
+- переходы по full / shortened / very-short flow, когда они допустимы;
+- `need:reviewer` для ручного pre-review на PR;
+- `run:rethink`, `run:doc-audit`, `run:self-improve` и специальные remediation-переходы для спецстадий.
 
-Ограничение плотности подсказок в GitHub-сообщении (чтобы не перегружать Owner):
-- обычно 2 action-подсказки (`revise` + канонический `next-stage`);
-- для `design` публикуется третий fast-track вариант `run:dev` (в дополнение к `run:plan`).
+Ограничение плотности подсказок в GitHub-сообщении:
+- публикуются все осмысленные действия для текущего stage;
+- для `design` дополнительно публикуется fast-track `run:dev` в дополнение к `run:plan`.
 
 Минимальный набор ссылок в сообщении:
 - Issue;
 - PR;
 - run-status/диагностический комментарий;
-- явный список рекомендуемых лейблов для следующего шага.
+- deep-link на каждое action из матрицы.
 
 Реализованное расширение UX:
-- next-step action-link из GitHub ведёт в staff web-console на экран перехода этапа (`/governance/labels-stages?...`);
-- frontend выполняет проверку прав (platform admin guard) и показывает confirm-модалку;
-- после подтверждения backend выполняет label transition на Issue (снятие текущих `run:*` + постановка целевого `run:*`) через staff API control-plane.
+- next-step action-link из GitHub ведёт на `/` staff web-console c query `modal=next-step`;
+- frontend выполняет RBAC-check, запрашивает preview diff лейблов и показывает confirm-модалку;
+- после подтверждения backend выполняет label transition на Issue/PR через staff API control-plane.
 
 ### 4. Оркестрационные ограничения
 - Label transitions для next-step UX выполняются через staff API control-plane с RBAC-проверкой и аудитом.

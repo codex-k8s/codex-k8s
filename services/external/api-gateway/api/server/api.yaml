@@ -892,24 +892,49 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/v1/staff/github/issues/stage-transition:
+  /api/v1/staff/github/next-step-actions/preview:
     post:
-      summary: Transition stage label on GitHub issue
-      operationId: transitionIssueStageLabel
+      summary: Preview one GitHub next-step action
+      operationId: previewNextStepAction
       tags: [staff-projects]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/TransitionIssueStageLabelRequest"
+              $ref: "#/components/schemas/NextStepActionRequest"
       responses:
         "200":
-          description: Issue stage label transitioned
+          description: Next-step action preview
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TransitionIssueStageLabelResponse"
+                $ref: "#/components/schemas/NextStepActionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/staff/github/next-step-actions/execute:
+    post:
+      summary: Execute one GitHub next-step action
+      operationId: executeNextStepAction
+      tags: [staff-projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NextStepActionRequest"
+      responses:
+        "200":
+          description: Next-step action executed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NextStepActionResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1770,30 +1795,39 @@ components:
           type: string
           nullable: true
 
-    TransitionIssueStageLabelRequest:
+    NextStepActionRequest:
       type: object
       additionalProperties: false
-      required: [repository_full_name, issue_number, target_label]
+      required: [repository_full_name, action_kind, target_label]
       properties:
         repository_full_name:
           type: string
         issue_number:
           type: integer
           format: int32
+          nullable: true
+        pull_request_number:
+          type: integer
+          format: int32
+          nullable: true
+        action_kind:
+          type: string
         target_label:
           type: string
 
-    TransitionIssueStageLabelResponse:
+    NextStepActionResponse:
       type: object
       additionalProperties: false
-      required: [repository_full_name, issue_number, removed_labels, added_labels, final_labels]
+      required: [repository_full_name, thread_kind, thread_number, removed_labels, added_labels, final_labels]
       properties:
         repository_full_name:
           type: string
-        issue_number:
+        thread_kind:
+          type: string
+        thread_number:
           type: integer
           format: int32
-        issue_url:
+        thread_url:
           type: string
           nullable: true
         removed_labels:

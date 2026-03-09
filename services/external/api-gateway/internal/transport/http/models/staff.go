@@ -306,10 +306,11 @@ type ProjectGitHubTokens struct {
 	BotEmail         *string `json:"bot_email"`
 }
 
-type TransitionIssueStageLabelResponse struct {
+type NextStepActionResponse struct {
 	RepositoryFullName string   `json:"repository_full_name"`
-	IssueNumber        int32    `json:"issue_number"`
-	IssueURL           *string  `json:"issue_url"`
+	ThreadKind         string   `json:"thread_kind"`
+	ThreadNumber       int32    `json:"thread_number"`
+	ThreadURL          *string  `json:"thread_url"`
 	RemovedLabels      []string `json:"removed_labels"`
 	AddedLabels        []string `json:"added_labels"`
 	FinalLabels        []string `json:"final_labels"`

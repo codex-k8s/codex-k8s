@@ -49,7 +49,8 @@ const (
 	ControlPlaneService_RunRepositoryPreflight_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/RunRepositoryPreflight"
 	ControlPlaneService_GetProjectGitHubTokens_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/GetProjectGitHubTokens"
 	ControlPlaneService_UpsertProjectGitHubTokens_FullMethodName            = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertProjectGitHubTokens"
-	ControlPlaneService_TransitionIssueStageLabel_FullMethodName            = "/codexk8s.controlplane.v1.ControlPlaneService/TransitionIssueStageLabel"
+	ControlPlaneService_PreviewNextStepAction_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/PreviewNextStepAction"
+	ControlPlaneService_ExecuteNextStepAction_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/ExecuteNextStepAction"
 	ControlPlaneService_ListDocsetGroups_FullMethodName                     = "/codexk8s.controlplane.v1.ControlPlaneService/ListDocsetGroups"
 	ControlPlaneService_ImportDocset_FullMethodName                         = "/codexk8s.controlplane.v1.ControlPlaneService/ImportDocset"
 	ControlPlaneService_SyncDocset_FullMethodName                           = "/codexk8s.controlplane.v1.ControlPlaneService/SyncDocset"
@@ -103,7 +104,8 @@ type ControlPlaneServiceClient interface {
 	RunRepositoryPreflight(ctx context.Context, in *RunRepositoryPreflightRequest, opts ...grpc.CallOption) (*RunRepositoryPreflightResponse, error)
 	GetProjectGitHubTokens(ctx context.Context, in *GetProjectGitHubTokensRequest, opts ...grpc.CallOption) (*ProjectGitHubTokens, error)
 	UpsertProjectGitHubTokens(ctx context.Context, in *UpsertProjectGitHubTokensRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	TransitionIssueStageLabel(ctx context.Context, in *TransitionIssueStageLabelRequest, opts ...grpc.CallOption) (*TransitionIssueStageLabelResponse, error)
+	PreviewNextStepAction(ctx context.Context, in *NextStepActionRequest, opts ...grpc.CallOption) (*NextStepActionResponse, error)
+	ExecuteNextStepAction(ctx context.Context, in *NextStepActionRequest, opts ...grpc.CallOption) (*NextStepActionResponse, error)
 	ListDocsetGroups(ctx context.Context, in *ListDocsetGroupsRequest, opts ...grpc.CallOption) (*ListDocsetGroupsResponse, error)
 	ImportDocset(ctx context.Context, in *ImportDocsetRequest, opts ...grpc.CallOption) (*ImportDocsetResponse, error)
 	SyncDocset(ctx context.Context, in *SyncDocsetRequest, opts ...grpc.CallOption) (*SyncDocsetResponse, error)
@@ -421,10 +423,20 @@ func (c *controlPlaneServiceClient) UpsertProjectGitHubTokens(ctx context.Contex
 	return out, nil
 }
 
-func (c *controlPlaneServiceClient) TransitionIssueStageLabel(ctx context.Context, in *TransitionIssueStageLabelRequest, opts ...grpc.CallOption) (*TransitionIssueStageLabelResponse, error) {
+func (c *controlPlaneServiceClient) PreviewNextStepAction(ctx context.Context, in *NextStepActionRequest, opts ...grpc.CallOption) (*NextStepActionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(TransitionIssueStageLabelResponse)
-	err := c.cc.Invoke(ctx, ControlPlaneService_TransitionIssueStageLabel_FullMethodName, in, out, cOpts...)
+	out := new(NextStepActionResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_PreviewNextStepAction_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) ExecuteNextStepAction(ctx context.Context, in *NextStepActionRequest, opts ...grpc.CallOption) (*NextStepActionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NextStepActionResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ExecuteNextStepAction_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -626,7 +638,8 @@ type ControlPlaneServiceServer interface {
 	RunRepositoryPreflight(context.Context, *RunRepositoryPreflightRequest) (*RunRepositoryPreflightResponse, error)
 	GetProjectGitHubTokens(context.Context, *GetProjectGitHubTokensRequest) (*ProjectGitHubTokens, error)
 	UpsertProjectGitHubTokens(context.Context, *UpsertProjectGitHubTokensRequest) (*emptypb.Empty, error)
-	TransitionIssueStageLabel(context.Context, *TransitionIssueStageLabelRequest) (*TransitionIssueStageLabelResponse, error)
+	PreviewNextStepAction(context.Context, *NextStepActionRequest) (*NextStepActionResponse, error)
+	ExecuteNextStepAction(context.Context, *NextStepActionRequest) (*NextStepActionResponse, error)
 	ListDocsetGroups(context.Context, *ListDocsetGroupsRequest) (*ListDocsetGroupsResponse, error)
 	ImportDocset(context.Context, *ImportDocsetRequest) (*ImportDocsetResponse, error)
 	SyncDocset(context.Context, *SyncDocsetRequest) (*SyncDocsetResponse, error)
@@ -741,8 +754,11 @@ func (UnimplementedControlPlaneServiceServer) GetProjectGitHubTokens(context.Con
 func (UnimplementedControlPlaneServiceServer) UpsertProjectGitHubTokens(context.Context, *UpsertProjectGitHubTokensRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpsertProjectGitHubTokens not implemented")
 }
-func (UnimplementedControlPlaneServiceServer) TransitionIssueStageLabel(context.Context, *TransitionIssueStageLabelRequest) (*TransitionIssueStageLabelResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TransitionIssueStageLabel not implemented")
+func (UnimplementedControlPlaneServiceServer) PreviewNextStepAction(context.Context, *NextStepActionRequest) (*NextStepActionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PreviewNextStepAction not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ExecuteNextStepAction(context.Context, *NextStepActionRequest) (*NextStepActionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExecuteNextStepAction not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) ListDocsetGroups(context.Context, *ListDocsetGroupsRequest) (*ListDocsetGroupsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListDocsetGroups not implemented")
@@ -1335,20 +1351,38 @@ func _ControlPlaneService_UpsertProjectGitHubTokens_Handler(srv interface{}, ctx
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ControlPlaneService_TransitionIssueStageLabel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TransitionIssueStageLabelRequest)
+func _ControlPlaneService_PreviewNextStepAction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NextStepActionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ControlPlaneServiceServer).TransitionIssueStageLabel(ctx, in)
+		return srv.(ControlPlaneServiceServer).PreviewNextStepAction(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ControlPlaneService_TransitionIssueStageLabel_FullMethodName,
+		FullMethod: ControlPlaneService_PreviewNextStepAction_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ControlPlaneServiceServer).TransitionIssueStageLabel(ctx, req.(*TransitionIssueStageLabelRequest))
+		return srv.(ControlPlaneServiceServer).PreviewNextStepAction(ctx, req.(*NextStepActionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_ExecuteNextStepAction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NextStepActionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ExecuteNextStepAction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ExecuteNextStepAction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ExecuteNextStepAction(ctx, req.(*NextStepActionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1765,8 +1799,12 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ControlPlaneService_UpsertProjectGitHubTokens_Handler,
 		},
 		{
-			MethodName: "TransitionIssueStageLabel",
-			Handler:    _ControlPlaneService_TransitionIssueStageLabel_Handler,
+			MethodName: "PreviewNextStepAction",
+			Handler:    _ControlPlaneService_PreviewNextStepAction_Handler,
+		},
+		{
+			MethodName: "ExecuteNextStepAction",
+			Handler:    _ControlPlaneService_ExecuteNextStepAction_Handler,
 		},
 		{
 			MethodName: "ListDocsetGroups",

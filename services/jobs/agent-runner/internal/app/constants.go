@@ -15,7 +15,7 @@ const (
 	runtimeModeFullEnv  = "full-env"
 	runtimeModeCodeOnly = "code-only"
 
-	stateInReviewLabelDefault = "state:in-review"
+	stateInReviewLabelDefault = webhookdomain.DefaultStateInReviewLabel
 )
 
 func normalizeTriggerKind(value string) string {

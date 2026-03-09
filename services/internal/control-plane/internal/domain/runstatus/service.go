@@ -143,18 +143,10 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		existingCommentID = trackedCommentID
 	}
 	currentState.SlotURL = s.resolveRunSlotURL(runCtx, currentState)
-	actionCard := s.resolveNextStepActionCard(runCtx, currentState)
-	currentState.LaunchProfile = actionCard.LaunchProfile
-	currentState.StagePath = actionCard.StagePath
-	currentState.PrimaryAction = actionCard.PrimaryAction
-	currentState.FallbackAction = actionCard.FallbackAction
-	currentState.GuardrailNote = actionCard.GuardrailNote
-	currentState.ReviseActionLabel = actionCard.ReviseLabel
-	currentState.NextStageActionLabel = actionCard.NextStageLabel
-	currentState.AlternativeActionLabel = actionCard.AlternativeLabel
+	nextStepActions := buildNextStepActions(s.cfg.PublicBaseURL, runCtx, currentState)
 	recentStatuses := s.loadRecentAgentStatuses(ctx, runCtx.run.CorrelationID, 3)
 
-	body, err := renderCommentBody(currentState, s.buildRunManagementURL(runID), s.cfg.PublicBaseURL, recentStatuses)
+	body, err := renderCommentBody(currentState, s.buildRunManagementURL(runID), nextStepActions, recentStatuses)
 	if err != nil {
 		return UpsertCommentResult{}, err
 	}
@@ -1014,78 +1006,6 @@ func (s *Service) resolveRunSlotURL(runCtx runContext, state commentState) strin
 	}
 
 	return ""
-}
-
-func (s *Service) resolveNextStepActionCard(runCtx runContext, state commentState) nextStepActionCard {
-	stage, ok := stageDescriptorFromTriggerKind(state.TriggerKind)
-	if !ok {
-		return nextStepActionCard{}
-	}
-
-	threadLabels := extractThreadLabelsFromRunPayload(runCtx.run.RunPayload, runCtx.commentTargetKind)
-	resolvedProfile := resolveLaunchProfileForStage(stage.Stage, threadLabels)
-	card := nextStepActionCard{
-		LaunchProfile: string(resolvedProfile),
-		StagePath:     profileStagePathString(resolvedProfile),
-		GuardrailNote: guardrailNotePrecheckRequired,
-		ReviseLabel:   stage.ReviseLabel,
-	}
-
-	stageLabels := collectStageLabels(threadLabels)
-	if len(stageLabels) != 1 {
-		card.Blocked = true
-		card.GuardrailNote = guardrailNoteAmbiguousStageLabel
-		card.FallbackAction = buildNeedInputCommand(runCtx.commentTargetKind, runCtx.commentTargetNumber, state.IssueNumber)
-		card.ReviseLabel = ""
-		card.NextStageLabel = ""
-		card.AlternativeLabel = ""
-		return card
-	}
-
-	nextStageName, hasNextStage := resolveNextStageForProfile(resolvedProfile, stage.Stage)
-	if !hasNextStage {
-		// Final stages (for example `ops`) do not render transition cards.
-		card.GuardrailNote = ""
-		card.FallbackAction = ""
-		card.PrimaryAction = ""
-		return card
-	}
-	nextStage, ok := stageDescriptorByName(nextStageName)
-	if !ok {
-		card.Blocked = true
-		card.GuardrailNote = guardrailNoteStagePathUnresolved
-		card.FallbackAction = buildNeedInputCommand(runCtx.commentTargetKind, runCtx.commentTargetNumber, state.IssueNumber)
-		card.ReviseLabel = ""
-		card.NextStageLabel = ""
-		card.AlternativeLabel = ""
-		return card
-	}
-	card.NextStageLabel = nextStage.RunLabel
-	if stage.Stage == "design" {
-		if fastTrack, fastTrackOK := stageDescriptorByName("dev"); fastTrackOK && fastTrack.RunLabel != nextStage.RunLabel {
-			card.AlternativeLabel = fastTrack.RunLabel
-		}
-	}
-
-	card.PrimaryAction = buildStageTransitionActionURL(
-		s.cfg.PublicBaseURL,
-		strings.TrimSpace(state.RepositoryFullName),
-		state.IssueNumber,
-		nextStage.RunLabel,
-		state.IssueURL,
-	)
-	card.FallbackAction = buildFallbackTransitionCommand(state.IssueNumber, stage.RunLabel, stage.ReviseLabel, nextStage.RunLabel)
-	if strings.TrimSpace(card.PrimaryAction) == "" || strings.TrimSpace(card.FallbackAction) == "" {
-		card.Blocked = true
-		card.GuardrailNote = guardrailNoteNeedInputOnly
-		card.PrimaryAction = ""
-		card.FallbackAction = buildNeedInputCommand(runCtx.commentTargetKind, runCtx.commentTargetNumber, state.IssueNumber)
-		card.ReviseLabel = ""
-		card.NextStageLabel = ""
-		card.AlternativeLabel = ""
-	}
-
-	return card
 }
 
 func isAISlotNamespace(namespace string) bool {
