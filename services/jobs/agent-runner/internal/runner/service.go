@@ -139,7 +139,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		syncCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 20*time.Second)
 		defer cancel()
 
-		// Best-effort: Codex может обновить auth.json во время выполнения (ротация/refresh).
+		// Best-effort: Codex may update auth.json during execution (token refresh/rotation).
 		if err := s.syncCodexAuthToControlPlane(syncCtx, state, "final"); err != nil {
 			s.logger.Warn("final sync codex auth failed", "err", err)
 		}

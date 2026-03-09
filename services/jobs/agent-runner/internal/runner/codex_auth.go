@@ -273,8 +273,8 @@ func parseCodexAuthMode(raw string) codexAuthMode {
 }
 
 func (s *Service) desiredCodexAuthMode() codexAuthMode {
-	// Основной поток платформы — device-code / ChatGPT auth.
-	// Выбор API-key режима из UI будет реализован отдельной задачей.
+	// Platform primary flow is device-code / ChatGPT auth.
+	// UI-selected API-key mode will be added in a follow-up task.
 	return codexAuthModeChatGPT
 }
 
