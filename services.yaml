@@ -74,7 +74,7 @@ spec:
       - path: docs/templates/docset_pr.md
   versions:
     api-gateway:
-      value: "0.1.26"
+      value: "0.1.27"
       bumpOn:
         - services/external/api-gateway
         # Production staff UI is embedded into api-gateway image.
@@ -84,7 +84,7 @@ spec:
         - libs/go
         - proto
     control-plane:
-      value: "0.1.68"
+      value: "0.1.69"
       bumpOn:
         - services/internal/control-plane
         - deploy/base/kaniko
@@ -92,19 +92,19 @@ spec:
         - libs/go
         - proto
     worker:
-      value: "0.1.31"
+      value: "0.1.32"
       bumpOn:
         - services/jobs/worker
         - libs/go
         - proto
     agent-runner:
-      value: "0.1.29"
+      value: "0.1.30"
       bumpOn:
         - services/jobs/agent-runner
         - libs/go
         - proto
     web-console:
-      value: "0.1.15"
+      value: "0.1.16"
       bumpOn:
         - services/staff/web-console
         - libs/ts
