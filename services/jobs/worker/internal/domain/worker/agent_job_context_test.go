@@ -171,6 +171,34 @@ func TestResolveRunAgentContext_UsesPullRequestHintsForRevise(t *testing.T) {
 	}
 }
 
+func TestResolveRunAgentContext_UsesRepoSeedAndDefaultLocale(t *testing.T) {
+	t.Parallel()
+
+	runPayload := json.RawMessage(`{
+		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"issue":{"number":42},
+		"agent":{"key":"dev","name":"AI Developer"},
+		"trigger":{"kind":"dev","label":"run:dev"},
+		"raw_payload":{"issue":{"labels":[{"name":"run:dev"}]}}
+	}`)
+
+	got, err := resolveRunAgentContext(runPayload, runAgentDefaults{
+		DefaultModel:           modelGPT54,
+		DefaultReasoningEffort: reasoningEffortHigh,
+		DefaultLocale:          "en",
+		AllowGPT53:             true,
+	})
+	if err != nil {
+		t.Fatalf("resolveRunAgentContext() error = %v", err)
+	}
+	if got.PromptTemplateSource != promptTemplateSourceSeed {
+		t.Fatalf("PromptTemplateSource = %q, want %q", got.PromptTemplateSource, promptTemplateSourceSeed)
+	}
+	if got.PromptTemplateLocale != "en" {
+		t.Fatalf("PromptTemplateLocale = %q, want %q", got.PromptTemplateLocale, "en")
+	}
+}
+
 func TestResolveRunAgentContext_ReviewTemplateKinds(t *testing.T) {
 	t.Parallel()
 

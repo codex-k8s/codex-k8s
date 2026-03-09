@@ -34,7 +34,7 @@ approvals:
 | FR-006 | MCP service tools в Go | `docs/product/requirements_machine_driven.md`, `docs/product/brief.md`, `docs/design-guidelines/AGENTS.md` | covered |
 | FR-007 | GitHub OAuth для staff UI | `docs/product/requirements_machine_driven.md`, `docs/architecture/c4_context.md`, `docs/architecture/api_contract.md` | covered |
 | FR-008 | Настройки в БД, deploy secrets из env | `docs/product/requirements_machine_driven.md`, `docs/product/constraints.md`, `AGENTS.md` | covered |
-| FR-009 | Агенты/сессии/журналы в БД + UI | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/architecture/c4_container.md` | covered |
+| FR-009 | Сессии/журналы в БД + runtime debug UI; prompt templates вне staff UI | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/data_model.md`, `docs/architecture/c4_container.md` | covered |
 | FR-010 | Фиксированный roster агентов + задел на расширение | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/delivery/roadmap.md` | covered |
 | FR-011 | Агентные токены: генерация/ротация/шифрование | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/constraints.md` | covered |
 | FR-012 | Жизненный цикл run/pod/namespace в БД + UI | `docs/product/requirements_machine_driven.md`, `docs/architecture/c4_container.md`, `docs/architecture/data_model.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/architecture/adr/ADR-0005-run-namespace-ttl-and-revise-reuse.md`, `docs/delivery/epics/s2/epic-s2-day3-per-issue-namespace-and-rbac.md`, `docs/delivery/epics/s3/epic-s3-day19.7-run-namespace-ttl-and-revise-reuse.md` | covered |
@@ -54,15 +54,15 @@ approvals:
 | FR-026 | Канонический каталог лейблов run/state/need + PR trigger `need:reviewer` для pre-review | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`, `docs/product/agents_operating_model.md`, `docs/delivery/e2e_mvp_master_plan.md` | covered |
 | FR-027 | Approval policy для trigger/deploy labels | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/architecture/mcp_approval_and_audit_flow.md` | covered |
 | FR-028 | Stage process model с revise/rethink | `docs/product/requirements_machine_driven.md`, `docs/product/stage_process_model.md`, `docs/delivery/sprints/s2/sprint_s2_dogfooding.md` | covered |
-| FR-029 | Базовый штат агентов (включая `dev` и `reviewer`) + custom роли проекта | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/data_model.md`, `docs/architecture/agent_runtime_rbac.md` | covered |
-| FR-030 | Prompt templates policy: seed + DB override | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/prompt_templates_policy.md`, `docs/delivery/epics/s2/epic-s2-day4-agent-job-and-pr-flow.md`, `services.yaml`, `services/jobs/agent-runner/internal/runner/promptseeds/README.md`, `services/jobs/agent-runner/internal/runner/promptseeds/*.md`, `services/jobs/agent-runner/internal/runner/helpers_prompt_doc_stage_seeds_test.go`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl` | covered |
+| FR-029 | Базовый штат системных агентов; custom-agent factory post-MVP | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/data_model.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/delivery/roadmap.md` | covered |
+| FR-030 | Prompt templates policy: repo-only role-specific seeds | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/prompt_templates_policy.md`, `docs/delivery/epics/s2/epic-s2-day4-agent-job-and-pr-flow.md`, `services.yaml`, `services/jobs/agent-runner/internal/runner/promptseeds/README.md`, `services/jobs/agent-runner/internal/runner/promptseeds/*.md`, `services/jobs/agent-runner/internal/runner/helpers_prompt_doc_stage_seeds_test.go`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl`, `services/jobs/worker/internal/domain/worker/agent_job_context_test.go` | covered |
 | FR-031 | Mixed runtime mode full-env/code-only | `docs/product/requirements_machine_driven.md`, `docs/product/agents_operating_model.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/delivery/epics/s2/epic-s2-day3-per-issue-namespace-and-rbac.md` | covered |
 | FR-032 | Обязательные audit сущности agent_sessions/token_usage/links | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/architecture/mcp_approval_and_audit_flow.md` | covered |
 | FR-033 | Traceability для stage pipeline | `docs/product/requirements_machine_driven.md`, `docs/delivery/issue_map.md`, `docs/delivery/requirements_traceability.md`, `docs/delivery/sprints/README.md`, `docs/delivery/epics/README.md`, `docs/templates/prd.md` | covered |
 | FR-034 | Контекстный рендер prompt templates | `docs/product/requirements_machine_driven.md`, `docs/architecture/prompt_templates_policy.md`, `docs/product/agents_operating_model.md`, `docs/delivery/epics/s2/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md` | covered |
-| FR-035 | Локали prompt templates и fallback по locale | `docs/product/requirements_machine_driven.md`, `docs/architecture/prompt_templates_policy.md`, `docs/product/constraints.md` | covered |
+| FR-035 | Локали prompt templates и fallback по platform default locale | `docs/product/requirements_machine_driven.md`, `docs/architecture/prompt_templates_policy.md`, `docs/product/constraints.md`, `docs/architecture/api_contract.md`, `services/jobs/worker/internal/app/config.go` | covered |
 | FR-036 | Сохранение/возобновление codex-cli session JSON | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/delivery/epics/s2/epic-s2-day4-agent-job-and-pr-flow.md` | covered |
-| FR-037 | `agent` как центр настроек и политик выполнения | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/agents_operating_model.md` | covered |
+| FR-037 | `agent` как реестр системных профилей, без settings UI в MVP | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/agents_operating_model.md` | covered |
 | FR-038 | Contract-first OpenAPI + backend/frontend codegen | `docs/product/requirements_machine_driven.md`, `docs/architecture/api_contract.md`, `docs/delivery/sprints/s2/sprint_s2_dogfooding.md`, `docs/delivery/epics/s2/epic-s2-day1-migrations-and-schema-ownership.md` | covered |
 | FR-039 | Универсальные HTTP-контракты approver/executor через MCP | `docs/product/requirements_machine_driven.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/c4_context.md`, `docs/delivery/epics/s2/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md` | covered |
 | FR-040 | Staff UI runtime debug: jobs/logs/wait queue | `docs/product/requirements_machine_driven.md`, `docs/architecture/api_contract.md`, `docs/delivery/epics/s3/epic-s3-day2-staff-runtime-debug-console.md` | covered |
@@ -522,6 +522,30 @@ approvals:
 - Проверки по scope:
   `rg -n "pathMatch" services/staff/web-console/src/router/routes.ts`,
   `npm --prefix services/staff/web-console run build`.
+
+## Актуализация по Issues #247 / #248 / #249 (`run:dev`, 2026-03-09)
+- Для FR-009/FR-029/FR-030/FR-035/FR-037 и NFR-010 выполнен combined cleanup/doco-sync pass по потокам `S7-E05`, `S7-E06`, `S7-E07`.
+- Подтверждено фактическое MVP-состояние после ранее выполненных `#244` и `#274`:
+  - UI-раздел `Agents` больше не входит в MVP navigation;
+  - runtime mode/locale agent settings не редактируются через staff UI/API;
+  - prompt templates работают только по repo-seed policy без selector `repo|db`.
+- В коде удалены остаточные stale references:
+  - agent-related i18n scaffold keys;
+  - тест `resolvePathUnescaped`, привязанный к удаленному `/staff/prompt-templates/*` path;
+  - мертвые proto messages и HTTP DTO/caster модели старого `Agents/PromptTemplates` staff API.
+- В `worker` добавлен unit-test, фиксирующий инвариант:
+  - `PromptTemplateSource == repo_seed`;
+  - `PromptTemplateLocale` берется из platform default worker config.
+- Обновлены source-of-truth документы:
+  `docs/product/agents_operating_model.md`,
+  `docs/product/requirements_machine_driven.md`,
+  `docs/product/constraints.md`,
+  `docs/product/brief.md`,
+  `docs/architecture/prompt_templates_policy.md`,
+  `docs/architecture/api_contract.md`,
+  `docs/architecture/data_model.md`,
+  а также Sprint S7 traceability docs.
+- Remaining backlog Sprint S7 после закрытия этих потоков нормализован как `#250..#260`.
 
 ## Актуализация по Issue #274 (`run:dev`, 2026-03-05)
 - Для FR-026/FR-028/FR-033 и NFR-010/NFR-018 реализован stream `S7-E19`:

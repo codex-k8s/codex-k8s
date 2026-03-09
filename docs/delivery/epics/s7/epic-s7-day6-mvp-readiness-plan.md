@@ -37,9 +37,9 @@ approvals:
 | `S7-E02` | #244 | Wave 2 | P0 | Sidebar cleanup (удаление не-MVP разделов) |
 | `S7-E03` | #245 | Wave 2 | P0 | Удаление глобального фильтра |
 | `S7-E04` | #246 | Wave 2 | P0 | Удаление runtime-deploy/images UI контуров |
-| `S7-E05` | #247 | Wave 2 | P0 | Agents table cleanup + удаление badge `Скоро` |
-| `S7-E06` | #248 | Wave 3 | P0 | De-scope Agents settings (`runtime mode/locale`) |
-| `S7-E07` | #249 | Wave 3 | P0 | Prompt source `repo-only` (без selector `repo|db`) |
+| `S7-E05` | #247 | Wave 2 | P0 | Cleanup residual references после удаления `Agents` из MVP UI |
+| `S7-E06` | #248 | Wave 3 | P0 | Зафиксировать фактический de-scope agent settings (`runtime mode/locale`) |
+| `S7-E07` | #249 | Wave 3 | P0 | Зафиксировать фактический prompt source `repo-only` и убрать residual stale traces |
 | `S7-E08` | #250 | Wave 3 | P1 | Agents UX de-scope hardening |
 | `S7-E15` | #257 | Wave 3 | P0 | Prompt templates только через repo commit workflow |
 | `S7-E17` | #259 | Wave 3 | P0 | Self-improve session snapshot reliability |
@@ -59,6 +59,14 @@ approvals:
 - Wave 3 (`#248`, `#249`, `#250`, `#257`, `#259`) — agents/prompt policy и self-improve reliability.
 - Wave 4 (`#251`, `#252`, `#258`) — runtime/run reliability.
 - Wave 5 (`#256`, `#260`, `#254`) — QA/governance closeout и финальный readiness gate.
+
+## Актуализация после cleanup `#244` и `#274`
+- Первоначальные формулировки `S7-E05/S7-E06/S7-E07` предполагали существование MVP-контуров `Agents` и `Prompt templates`.
+- После выполнения `#244` и `#274` эти контуры выведены из MVP, поэтому:
+  - `#247` закрывает residual frontend/test/doc/transport references;
+  - `#248` фиксирует source-of-truth контракт без agent settings UI/API;
+  - `#249` фиксирует source-of-truth контракт `repo-only prompt seeds`.
+- После closure `#247/#248/#249` remaining Sprint S7 backlog нормализуется как `#250..#260`.
 
 ## Quality gates (`run:plan`)
 
