@@ -5,7 +5,7 @@ title: "Epic Catalog: Sprint S7 (MVP readiness gap closure)"
 status: in-progress
 owner_role: PM
 created_at: 2026-02-27
-updated_at: 2026-03-05
+updated_at: 2026-03-09
 related_issues: [212, 218, 220, 222, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 199, 201, 210, 216]
 related_prs: [213, 215]
 approvals:
@@ -114,7 +114,7 @@ approvals:
   не нужен.
 - Stale deeplink продолжает закрываться уже существующим catch-all route
   `/:pathMatch(.*)* -> projects`, поэтому `runtime-deploy/images` не возвращается в MVP-контур.
-- В traceability добавлены updates по issue `#246`; remaining backlog нормализован как `#250..#260` + post-plan `#274`.
+- В traceability добавлены updates по issue `#246`; позднее combined cleanup `#247/#248/#249/#274` показал, что standalone issues `#250` и `#257` больше не требуют отдельного implementation PR.
 
 ## Day 7 execution fact (`S7-E05` / `S7-E06` / `S7-E07`)
 - После уже выполненных `#244` (frontend cleanup) и `#274` (backend cleanup) MVP-контур `Agents`/`Prompt templates`
@@ -124,7 +124,10 @@ approvals:
   - source-of-truth документы переводятся на фактический контракт:
     `repo-only prompt seeds`, `platform default locale`, `no agent settings UI/API`;
   - worker behavior фиксируется unit-test'ом на `repo_seed + default locale`.
-- После этого remaining backlog Sprint S7 нормализуется как `#250..#260` + post-plan `#274`.
+- После этого MVP-предпосылки для `S7-E08` и `S7-E15` тоже считаются закрытыми:
+  - `#250` не требует отдельной реализации, потому что отдельного Agents UX-контура больше нет после `#244` и `#274`;
+  - `#257` не требует отдельной реализации, потому что repo-only prompt policy и отсутствие UI refresh/versioning уже зафиксированы combined pass `#247/#248/#249` и backend cleanup `#274`.
+- Remaining standalone backlog Sprint S7 после этой актуализации нормализуется как `#251..#256`, `#258..#260`.
 
 ## Candidate execution backlog (19 эпиков)
 
@@ -137,14 +140,14 @@ approvals:
 | S7-E05 | P0 | Финальный cleanup residual references после удаления `Agents` из MVP UI (frontend/test/transport/proto) | PRC-03 |
 | S7-E06 | P0 | Зафиксировать фактический MVP de-scope: без runtime mode/locale settings UI/API | PRC-03 |
 | S7-E07 | P0 | Зафиксировать фактический repo-only prompt contract и удалить residual stale traces | PRC-03 |
-| S7-E08 | P1 | Agents UX de-scope hardening: удалить non-MVP массовые операции и cleanup зависимого UX | PRC-03 |
+| S7-E08 | P1 | Agents UX de-scope hardening: absorbed by `#244` + `#247/#248/#249` + `#274`; standalone issue `#250` закрывается doc-actualization pass | PRC-03 |
 | S7-E09 | P0 | Runs UX: удалить колонку типа запуска и гарантировать namespace delete из run details | PRC-06 |
 | S7-E10 | P0 | Runtime deploy UX: кнопка cancel/stop для зависших deploy tasks + guardrails | PRC-07 |
 | S7-E11 | P0 | Label orchestration reliability: исправить `mode:discussion` trigger-поведение | PRC-08 |
 | S7-E12 | P1 | Final MVP readiness gate: e2e evidence bundle + go/no-go для release chain | PRC-01..PRC-08 |
 | S7-E13 | P0 | Label policy alignment: добавить `run:qa:revise` и покрыть revise-loop QA-stage | PRC-09 |
 | S7-E14 | P0 | QA execution contract: проверка новых/изменённых ручек через Kubernetes DNS path + evidence | PRC-10 |
-| S7-E15 | P0 | Prompt templates MVP policy: изменения только через repo commit workflow, без UI refresh/versioning | PRC-11 |
+| S7-E15 | P0 | Prompt templates MVP policy: absorbed by `#247/#248/#249` + `#274`; standalone issue `#257` закрывается doc-actualization pass | PRC-11 |
 | S7-E16 | P0 | Run status reliability: устранить false-failed для фактически успешных `run:intake:revise` | PRC-12 |
 | S7-E17 | P0 | Self-improve reliability: доступность и корректная перезапись `agent_sessions` snapshot | PRC-13 |
 | S7-E18 | P0 | Documentation governance: единый стандарт issue/PR + doc IA + role-template matrix | PRC-14, PRC-15, PRC-16 |

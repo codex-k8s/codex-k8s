@@ -545,7 +545,8 @@ approvals:
   `docs/architecture/api_contract.md`,
   `docs/architecture/data_model.md`,
   а также Sprint S7 traceability docs.
-- Remaining backlog Sprint S7 после закрытия этих потоков нормализован как `#250..#260`.
+- Combined cleanup `#247/#248/#249` вместе с backend cleanup `#274` также поглотили standalone streams `S7-E08/#250` и `S7-E15/#257`: отдельные `run:dev` для них больше не требуются.
+- Remaining standalone backlog Sprint S7 после этой актуализации нормализован как `#251..#256`, `#258..#260`.
 
 ## Актуализация по Issue #274 (`run:dev`, 2026-03-05)
 - Для FR-026/FR-028/FR-033 и NFR-010/NFR-018 реализован stream `S7-E19`:

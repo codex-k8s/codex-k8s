@@ -5,7 +5,7 @@ title: "Epic S7 Day 6: Plan для закрытия MVP readiness gaps (Issue #2
 status: in-review
 owner_role: EM
 created_at: 2026-03-02
-updated_at: 2026-03-05
+updated_at: 2026-03-09
 related_issues: [212, 218, 220, 222, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216]
 related_prs: []
 approvals:
@@ -40,8 +40,8 @@ approvals:
 | `S7-E05` | #247 | Wave 2 | P0 | Cleanup residual references после удаления `Agents` из MVP UI |
 | `S7-E06` | #248 | Wave 3 | P0 | Зафиксировать фактический de-scope agent settings (`runtime mode/locale`) |
 | `S7-E07` | #249 | Wave 3 | P0 | Зафиксировать фактический prompt source `repo-only` и убрать residual stale traces |
-| `S7-E08` | #250 | Wave 3 | P1 | Agents UX de-scope hardening |
-| `S7-E15` | #257 | Wave 3 | P0 | Prompt templates только через repo commit workflow |
+| `S7-E08` | #250 | Wave 3 | P1 | Agents UX de-scope hardening (standalone issue позднее поглощена cleanup-потоками `#244/#247/#248/#249/#274`) |
+| `S7-E15` | #257 | Wave 3 | P0 | Prompt templates только через repo commit workflow (standalone issue позднее поглощена cleanup-потоками `#247/#248/#249/#274`) |
 | `S7-E17` | #259 | Wave 3 | P0 | Self-improve session snapshot reliability |
 | `S7-E09` | #251 | Wave 4 | P0 | Runs UX cleanup + deterministic namespace delete |
 | `S7-E10` | #252 | Wave 4 | P0 | Cancel/stop для зависших runtime deploy tasks |
@@ -56,7 +56,7 @@ approvals:
 ## Sequencing constraints
 - Wave 1 (`#243`, `#253`, `#255`) — foundation для стабильного dev/revise контура.
 - Wave 2 (`#244..#247`) — UI cleanup до перехода в de-scope потоков.
-- Wave 3 (`#248`, `#249`, `#250`, `#257`, `#259`) — agents/prompt policy и self-improve reliability.
+- Wave 3 (`#248`, `#249`, `#250`, `#257`, `#259`) — agents/prompt policy и self-improve reliability; по факту выполнения later cleanup `#250/#257` были поглощены и не требуют отдельного implementation PR.
 - Wave 4 (`#251`, `#252`, `#258`) — runtime/run reliability.
 - Wave 5 (`#256`, `#260`, `#254`) — QA/governance closeout и финальный readiness gate.
 
@@ -66,7 +66,10 @@ approvals:
   - `#247` закрывает residual frontend/test/doc/transport references;
   - `#248` фиксирует source-of-truth контракт без agent settings UI/API;
   - `#249` фиксирует source-of-truth контракт `repo-only prompt seeds`.
-- После closure `#247/#248/#249` remaining Sprint S7 backlog нормализуется как `#250..#260`.
+- После closure `#247/#248/#249` стало видно, что `#250` и `#257` не требуют отдельного implementation PR:
+  - `#250` поглощён тем, что после `#244` и `#274` в MVP не осталось отдельного Agents UX контура и non-MVP batch operations;
+  - `#257` поглощён тем, что repo-only prompt policy и отсутствие UI refresh/versioning уже зафиксированы `#247/#248/#249` и `#274`.
+- Remaining Sprint S7 standalone execution backlog после этой актуализации нормализуется как `#251..#256`, `#258..#260`.
 
 ## Quality gates (`run:plan`)
 
