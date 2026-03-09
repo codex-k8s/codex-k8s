@@ -14,8 +14,6 @@ import RunsPage from "../pages/RunsPage.vue";
 import SystemSettingsPage from "../pages/configuration/SystemSettingsPage.vue";
 import UsersPage from "../pages/UsersPage.vue";
 
-const staleRuntimeDeployImagesRedirect = { name: "runtime-deploy-tasks" } as const;
-
 export const routes: RouteRecordRaw[] = [
   { path: "/", name: "projects", component: ProjectsPage, meta: { section: "projects" } },
   { path: "/projects/:projectId", name: "project-details", component: ProjectDetailsPage, props: true, meta: { section: "projects", crumbKey: "crumb.projectDetails" } },
@@ -39,9 +37,6 @@ export const routes: RouteRecordRaw[] = [
   // Operations
   { path: "/runtime-deploy/tasks", name: "runtime-deploy-tasks", component: RuntimeDeployTasksPage, meta: { section: "operations", crumbKey: "crumb.runtimeDeployTasks" } },
   { path: "/runtime-deploy/tasks/:runId", name: "runtime-deploy-task-details", component: RuntimeDeployTaskDetailsPage, props: true, meta: { section: "operations", crumbKey: "crumb.runtimeDeployTaskDetails" } },
-  // Preserve operations context for stale bookmarks after removing the images UI from MVP.
-  { path: "/runtime-deploy/images", redirect: staleRuntimeDeployImagesRedirect },
-  { path: "/runtime-deploy/images/:pathMatch(.*)*", redirect: staleRuntimeDeployImagesRedirect },
   { path: "/wait-queue", name: "wait-queue", component: WaitQueuePage, meta: { section: "operations", crumbKey: "crumb.waitQueue" } },
   { path: "/approvals", name: "approvals", component: ApprovalsCenterPage, meta: { section: "operations", crumbKey: "crumb.approvals" } },
 

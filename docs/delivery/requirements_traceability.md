@@ -508,19 +508,19 @@ approvals:
   `npm --prefix services/staff/web-console run build`.
 
 ## Актуализация по Issue #246 (`run:dev`, 2026-03-09)
-- Для FR-E04-1/FR-E04-2 и NFR-E04-1 завершён stream `S7-E04`:
-  после удаления UI-контура `runtime-deploy/images` добавлен dedicated redirect
-  `/runtime-deploy/images` и `/runtime-deploy/images/:pathMatch(.*)*` -> `runtime-deploy/tasks`,
-  чтобы stale deeplink оставался внутри operations MVP-контура.
-- В `services/staff/web-console/src/router/routes.ts` redirect оформлен через named route
-  `runtime-deploy-tasks`; общий fallback `/:pathMatch(.*)* -> projects` сохранён только для нерелевантных stale URL.
+- Для FR-E04-1/FR-E04-2 и NFR-E04-1 stream `S7-E04` финализирован без нового redirect-кода:
+  owner-review подтвердил, что после удаления UI-контура `runtime-deploy/images`
+  отдельный redirect для `/runtime-deploy/images*` не нужен.
+- В `services/staff/web-console/src/router/routes.ts` сохраняется только общий fallback
+  `/:pathMatch(.*)* -> projects`; stale URL `/runtime-deploy/images*` попадает в него
+  после cleanup `#244`, поэтому удалённый раздел не возвращается в MVP navigation.
 - Нормализована Sprint S7 traceability:
   `docs/delivery/issue_map.md`, `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md`, `docs/delivery/epics/s7/epic_s7.md`;
   remaining backlog нормализован как `#247..#260` + post-plan `#274`.
-- Через Context7 (`/vuejs/router`) подтверждён актуальный синтаксис Vue Router 4 для redirect route record
-  (`redirect: { name: "runtime-deploy-tasks" }`) и catch-all path `:pathMatch(.*)*`.
+- Через Context7 (`/vuejs/router`) подтверждён актуальный синтаксис Vue Router 4 для catch-all path
+  `:pathMatch(.*)*`, которым закрываются удалённые пути без отдельного route record.
 - Проверки по scope:
-  `rg -n "/runtime-deploy/images|runtime-deploy-tasks" services/staff/web-console/src/router/routes.ts`,
+  `rg -n "pathMatch" services/staff/web-console/src/router/routes.ts`,
   `npm --prefix services/staff/web-console run build`.
 
 ## Актуализация по Issue #274 (`run:dev`, 2026-03-05)

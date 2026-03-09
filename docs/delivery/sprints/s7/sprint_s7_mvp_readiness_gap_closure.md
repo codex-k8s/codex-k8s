@@ -52,7 +52,7 @@ approvals:
 | S7-E01 | P0 | Rebase/mainline hygiene для PR revise-итераций | done (owner-approved, `#243`) |
 | S7-E02 | P0 | Sidebar cleanup: удаление не-MVP разделов (включая Agents, Configs/Secrets, Registry images, Running jobs) и dead code | done (owner-approved, `#244`) |
 | S7-E03 | P0 | Удаление глобального фильтра и зависимого кода | in-review (`#245`) |
-| S7-E04 | P0 | Удаление runtime-deploy/images секции и dedicated redirect для stale deeplinks | in-review (`#246`) |
+| S7-E04 | P0 | Удаление runtime-deploy/images секции; stale deeplinks закрываются общим fallback route | in-review (`#246`) |
 | S7-E05 | P0 | Agents table cleanup + removal of `Скоро` badge | depends on S6 baseline |
 | S7-E06 | P0 | Agents MVP de-scope: убрать runtime mode/locale настройки, оставить фиксированные defaults | depends on S6 baseline |
 | S7-E07 | P0 | Prompt source contract: удалить selector `repo|db`, закрепить `repo-only` policy | depends on API/worker contracts |
@@ -86,7 +86,7 @@ approvals:
 | QG-S7-11 Foundation stream S7-E01 | Для issue `#243` зафиксирован единый rebase/mainline process и обязательный PR checklist для revise-итераций | passed (owner-approved) |
 | QG-S7-12 UI stream S7-E02 | Для issue `#244` удалены non-MVP sidebar/routes (включая Agents, Configs/Secrets, Registry images, Running jobs) и выполнен навигационный smoke-check без broken transitions | passed (owner-approved) |
 | QG-S7-13 UI stream S7-E03 | Для issue `#245` удалены global filter UI/state зависимости и подтверждён list-load без env-фильтра в `runtime-deploy/tasks` | passed (in-review `#245`) |
-| QG-S7-14 UI stream S7-E04 | Для issue `#246` добавлен dedicated redirect `/runtime-deploy/images* -> runtime-deploy/tasks` и подтверждён cleanup traceability без broken transitions | passed (in-review `#246`) |
+| QG-S7-14 UI stream S7-E04 | Для issue `#246` подтверждено, что stale `/runtime-deploy/images*` закрывается существующим catch-all route `/:pathMatch(.*)* -> projects`, dedicated redirect не добавляется и traceability синхронизирована | passed (in-review `#246`) |
 
 ## Completion критерии спринта
 - [ ] Закрыт открытый P0-блокер S6 (`#216`, `run:release`) и подтверждён переход в `run:postdeploy`.
