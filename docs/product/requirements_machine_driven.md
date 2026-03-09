@@ -6,7 +6,7 @@ status: active
 owner_role: PM
 created_at: 2026-02-06
 updated_at: 2026-03-09
-related_issues: [1, 74, 90, 112, 154, 155, 175]
+related_issues: [1, 74, 90, 112, 154, 155, 175, 247, 248, 249]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -40,7 +40,7 @@ approvals:
 | FR-006 | Служебные MCP ручки платформы реализуются в Go внутри `codex-k8s`; `github.com/codex-k8s/yaml-mcp-server` остаётся пользовательским расширяемым слоем для кастомных ручек. |
 | FR-007 | Staff frontend защищён GitHub OAuth. |
 | FR-008 | Пользовательские настройки платформы хранятся в БД и редактируются через frontend; системные секреты и deploy-настройки `codex-k8s` берутся из env. |
-| FR-009 | Шаблоны инструкций агентов, настройки агентов, сессии и журнал действий хранятся в БД и доступны в минимальном staff UI/API. |
+| FR-009 | Сессии агентов, журналы действий и run-observability хранятся в БД и доступны через MVP staff UI/API; prompt templates в текущем MVP поставляются из repo seeds и не редактируются через UI. |
 | FR-010 | Набор агентов на MVP фиксирован штатной моделью из `machine_driven_company_requirements` с архитектурным заделом на будущие пользовательские агенты и процессы. |
 | FR-011 | У агента есть `name`, `github_nick`, `email`, `token`; токены генерируются через API provider с нужными scope, ротируются платформой и хранятся в БД в зашифрованном виде. |
 | FR-012 | Состояние запусков агентов, жизненный цикл pod/namespace и runtime-переходы хранятся в БД и отображаются в минимальном UI/API; для `full-env` namespace сохраняется по role-based TTL из `services.yaml` (default `24h`) с продлением lease при `run:*:revise`. |
@@ -60,15 +60,15 @@ approvals:
 | FR-026 | В платформе фиксируется канонический каталог лейблов классов `run:*`, `state:*`, `need:*`, с поддержкой label-driven stage pipeline и PR-driven pre-review триггера `need:reviewer`. |
 | FR-027 | Для агент-инициированных trigger/deploy лейблов (`run:*`) обязателен апрув Owner до применения; `state:*` и `need:*` допускают автоустановку по политике проекта, при этом `need:reviewer` на PR может запускать pre-review ран роли `reviewer`. |
 | FR-028 | Процесс поставки фиксируется stage-моделью `intake -> vision -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops` с поддержкой `*:revise`, `run:rethink`. |
-| FR-029 | Модель ролей агентов: базовый штат из 8 системных ролей (`pm`, `sa`, `em`, `dev`, `reviewer`, `qa`, `sre`, `km`) + расширяемые custom-агенты на проект (с явными RBAC, execution mode и quota). |
-| FR-030 | Для агентных инструкций поддерживается role-specific матрица шаблонов: для каждого `agent_key` отдельные body-шаблоны `work/revise`, с приоритетом `DB project override -> DB global override -> repo seed`. |
+| FR-029 | Модель ролей агентов на MVP: фиксированный штат из 8 системных ролей (`pm`, `sa`, `em`, `dev`, `reviewer`, `qa`, `sre`, `km`); custom-agent factory выведен в post-MVP. |
+| FR-030 | Для агентных инструкций поддерживается role-specific матрица repo seeds: для каждого `agent_key` отдельные body-шаблоны `work/revise`, без `DB override` в MVP. |
 | FR-031 | Для агентных ролей поддерживается смешанный режим исполнения `full-env`/`code-only`, с политикой выбора режима по роли. |
 | FR-032 | В БД как обязательный контур аудита и учета включены сущности `agent_sessions`, `token_usage`, `links` (в дополнение к `agent_runs` и `flow_events`). |
 | FR-033 | Traceability поддерживается для всех этапов: связи Issue/PR ↔ docs ↔ stage status обновляются синхронно с выполнением этапов. |
 | FR-034 | Шаблоны промптов рендерятся с runtime-контекстом (env/namespace/slot, project context, MCP servers/tools, issue/pr/run context). |
-| FR-035 | Шаблоны промптов поддерживают локали; язык выбирается по цепочке `project locale -> system default locale -> en`, с базовой загрузкой `ru` и `en`. |
+| FR-035 | Шаблоны промптов поддерживают локали; в текущем MVP effective locale берется из platform default `CODEXK8S_AGENT_DEFAULT_LOCALE` (fallback `ru`), а unsupported locale нормализуется к `en`; базовая загрузка seed-локалей — `ru` и `en`. |
 | FR-036 | Для каждой agent session сохраняется JSON-снимок `codex-cli` сессии, чтобы возобновлять выполнение с того же места после паузы/перезапуска. |
-| FR-037 | Сущность `agent` остаётся центральной точкой настроек/политик выполнения (runtime mode, timeout policy, approval policy, prompt policy). |
+| FR-037 | Сущность `agent` в MVP хранит реестр системных профилей и identity-метаданные; runtime mode, locale и prompt policy определяются platform defaults, label policy и repo seeds, а не пользовательским settings UI. |
 | FR-038 | Для внешнего/staff HTTP API применяется contract-first OpenAPI: единая спецификация, runtime валидация запросов/ответов, codegen server DTO/backend stubs и frontend API client. |
 | FR-039 | Approver/executor интеграции стандартизованы через HTTP-контракты MCP: платформа поддерживает встроенные MCP-ручки и внешний расширяемый слой (например, `github.com/codex-k8s/yaml-mcp-server` с Telegram/Slack/Mattermost/Jira адаптерами). |
 | FR-040 | Staff UI на MVP предоставляет runtime-debug контур: список активных jobs, live/historical логи агентов, очередь ожидающих запусков с причинами ожидания (`waiting_mcp`, `waiting_owner_review`). |
@@ -149,10 +149,10 @@ approvals:
       - `production`/`prod` — строго view-only для ресурсов с `app.kubernetes.io/part-of=codex-k8s`;
       - ai-slots — destructive действия только dry-run (кнопки есть для dogfooding/debug, реальное действие не выполняется).
   - Agents + prompt templates:
-    - управление настройками агента;
-    - prompt templates `work/revise` минимум в `ru/en` с diff/preview и preview effective template (редактор на Monaco).
+    - UI lifecycle для agent settings и prompt templates;
+    - diff/preview/versioning/rollback для `work/revise` шаблонов.
   - System settings:
-    - управление локалями (add locale + default locale);
+    - расширенное управление локалями;
     - базовые UI prefs (density, debug hints).
   - Обратная связь пользователю: алерты/снеки + notifications menu.
 - A2A swarm контур: несколько агентов разных ролей работают параллельно в общем контексте задачи с protocol-level coordination.

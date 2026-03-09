@@ -5,8 +5,8 @@ title: "codex-k8s — Data Model"
 status: active
 owner_role: SA
 created_at: 2026-02-06
-updated_at: 2026-02-21
-related_issues: [1, 19, 100]
+updated_at: 2026-03-09
+related_issues: [1, 19, 100, 247, 248, 249]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -19,7 +19,7 @@ approvals:
 # Data Model: codex-k8s
 
 ## TL;DR
-- Ключевые сущности: users, projects, system_settings, repositories, project_databases, agent_policies, agents, agent_runs, agent_sessions, token_usage, slots, flow_events, links, prompt_templates, docs_meta, doc_chunks.
+- Ключевые сущности: users, projects, system_settings, repositories, project_databases, agents, agent_runs, agent_sessions, token_usage, slots, runtime_deploy_tasks, flow_events, links, docs_meta, doc_chunks.
 - Основные связи: user<->project (RBAC), project->repositories, project->project_databases, agent->agent_runs, issue/pr->doc links.
 - Риски миграций: ранний выбор индексов для webhook/event throughput и vector search.
 
@@ -47,7 +47,7 @@ approvals:
 | id | uuid | no | gen_random_uuid() | pk | |
 | key | text | no |  | unique | short id |
 | name | text | no |  | unique | |
-| settings | jsonb | no | '{}'::jsonb |  | user-configurable (`learning_mode_default`, `locale`, etc.) |
+| settings | jsonb | no | '{}'::jsonb |  | project-level flags (`learning_mode_default`, repository/onboarding hints, etc.) |
 
 ### Entity: project_members
 - Назначение: доступы пользователей к проектам.
@@ -62,14 +62,14 @@ approvals:
 | learning_mode_enabled | bool | no | false |  | user-level override |
 
 ### Entity: system_settings
-- Назначение: глобальные настройки платформы (включая default locale).
+- Назначение: глобальные настройки платформы.
 - Важные инварианты: ключ уникален.
 - Поля:
 
 | Field | Type | Nullable | Default | Constraints | Notes |
 |---|---|---:|---|---|---|
 | key | text | no |  | pk | |
-| value | jsonb | no | '{}'::jsonb |  | e.g. `{"default_locale":"ru"}` |
+| value | jsonb | no | '{}'::jsonb |  | generic platform settings payload |
 | updated_at | timestamptz | no | now() |  | |
 
 ### Entity: repositories
@@ -166,8 +166,8 @@ approvals:
 | updated_at | timestamptz | no | now() |  | |
 
 ### Entity: agents
-- Назначение: системные и project-scoped custom-агенты.
-- Важные инварианты: уникальный agent_key; для custom-агента обязательна привязка к проекту.
+- Назначение: реестр системных агентных профилей и возможных project-scoped overrides.
+- Важные инварианты: уникальный `agent_key` для system-profile; project-scoped запись с тем же `agent_key` имеет приоритет при резолве effective agent.
 - Поля:
 
 | Field | Type | Nullable | Default | Constraints | Notes |
@@ -175,40 +175,16 @@ approvals:
 | id | uuid | no | gen_random_uuid() | pk | |
 | agent_key | text | no |  | unique | pm/sa/em/dev/reviewer/qa/sre/km или custom key |
 | role_kind | text | no | "system" | check(system/custom) | |
-| policy_id | bigint | yes |  | fk -> agent_policies | null allowed only until policy bootstrap |
 | project_id | uuid | yes |  | fk -> projects | not null for role_kind=custom |
 | name | text | no |  |  | |
-| github_nick | text | yes |  |  | |
-| email | text | yes |  |  | |
-| token_encrypted | bytea | yes |  |  | rotated by worker |
-| instruction_template | text | no |  |  | fallback markdown |
-| review_template | text | yes |  |  | optional review fallback |
-| settings | jsonb | no | '{}'::jsonb |  | runtime/options |
-| policies | jsonb | no | '{}'::jsonb |  | execution/timeout/approval policy snapshot |
-
-### Entity: agent_policies
-- Назначение: централизованные policy-профили работы агентов.
-- Важные инварианты: `agents` всегда ссылается на policy (явно или через default).
-- Поля:
-
-| Field | Type | Nullable | Default | Constraints | Notes |
-|---|---|---:|---|---|---|
-| id | bigserial | no |  | pk | |
-| policy_key | text | no |  | unique | e.g. `default-dev`, `default-review` |
-| runtime_mode | text | no |  | check(full-env/code-only) | |
-| max_parallel_runs | int | no | 1 |  | per project baseline |
-| run_timeout_sec | int | no | 0 |  | 0 = no hard timeout |
-| owner_review_timeout_sec | int | yes |  |  | pause/resume aware |
-| kill_on_mcp_wait_timeout | bool | no | false |  | must stay false |
-| approval_required_for_run_labels | bool | no | true |  | |
-| config | jsonb | no | '{}'::jsonb |  | extensible policy fields, включая MCP tool/resource matrix и label-based overrides |
+| is_active | bool | no | true |  | inactive записи исключаются из effective resolve |
 | created_at | timestamptz | no | now() |  | |
+| updated_at | timestamptz | no | now() |  | |
 
-Planned extension (Day6+):
-- policy snapshot хранит отдельные блоки:
-  - `mcp.default_capabilities` (базовый набор ручек/ресурсов по агенту);
-  - `mcp.label_overrides` (дополнительные ограничения/разрешения по типу задачи, например `run:dev`, `run:dev:revise`);
-  - `mcp.composite_tools` (профили для комбинированных ручек вида GitHub+Kubernetes).
+Примечание:
+- В S7 cleanup из `agents` удалены non-MVP поля `settings` и `settings_version`.
+- Runtime mode, locale и prompt policy больше не хранятся как user-editable agent settings в БД.
+- Эти параметры определяются platform defaults, label policy, `services.yaml` и repo seeds.
 
 ### Entity: agent_runs
 - Назначение: запуски и сессии агентов.
@@ -361,26 +337,6 @@ Planned extension (Day6+):
 | metadata | jsonb | no | '{}'::jsonb |  | |
 | created_at | timestamptz | no | now() | index | |
 
-### Entity: prompt_templates
-- Назначение: хранение global/project override шаблонов промптов (`work`/`revise`).
-- Важные инварианты: уникальность active версии по `(scope_type, scope_id, role_key, template_kind, locale)`.
-- Поля:
-
-| Field | Type | Nullable | Default | Constraints | Notes |
-|---|---|---:|---|---|---|
-| id | bigserial | no |  | pk | |
-| scope_type | text | no |  | check(global/project) | |
-| scope_id | uuid | yes |  | fk -> projects | null for global |
-| role_key | text | no |  |  | pm/sa/em/dev/reviewer/qa/sre/km/custom |
-| template_kind | text | no |  | check(work/revise) | |
-| locale | text | no | "en" |  | i18n locale key (`ru`, `en`, ...) |
-| body_markdown | text | no |  |  | |
-| source | text | no | "db_override" |  | db_override/repo_seed_ref |
-| render_context_version | text | no | "v1" |  | contract version for template context |
-| version | int | no | 1 |  | |
-| is_active | bool | no | true |  | |
-| created_at | timestamptz | no | now() |  | |
-
 ### Entity: docs_meta
 - Назначение: шаблоны и документы платформы.
 - Важные инварианты: уникальный doc_id.
@@ -449,12 +405,11 @@ Planned extension (Day6+):
 | metadata | jsonb | no | '{}'::jsonb |  | headings, links |
 
 ## Связи
-- `system_settings` задаёт глобальные fallback policy (включая default locale)
+- `system_settings` хранит глобальные platform-wide настройки
 - `projects` 1:N `repositories`
 - `projects` M:N `users` через `project_members`
-- `agent_policies` 1:N `agents`
 - `agents` 1:N `agent_runs`
-- `projects` 1:N `agents` (для custom-агентов)
+- `projects` 1:N `agents` (только для project-scoped overrides/custom profiles, если они присутствуют)
 - `agent_runs` 1:1 `agent_sessions` (текущий baseline Day4 по `run_id unique`; может эволюционировать до 1:N при multi-session run)
 - `agent_sessions` 1:N `token_usage`
 - `projects` 1:N `slots`
@@ -462,12 +417,11 @@ Planned extension (Day6+):
 - `agent_runs` 1:N `flow_events` (по `correlation_id`)
 - `agent_runs` 1:N `learning_feedback`
 - `agent_runs` 1:N `mcp_action_requests`
-- `projects` 1:N `prompt_templates` (scope=project)
 - `links` хранит M:N трассировки между `issue/pr/run/doc/adr`
 
 ## Логическое размещение по БД-контурам (MVP)
 - PostgreSQL cluster единый.
-- Core contour: `users`, `projects`, `project_members`, `system_settings`, `repositories`, `agent_policies`, `agents`, `agent_runs`, `slots`, `docs_meta`, `learning_feedback`, `prompt_templates`.
+- Core contour: `users`, `projects`, `project_members`, `system_settings`, `repositories`, `agents`, `agent_runs`, `slots`, `runtime_deploy_tasks`, `docs_meta`, `learning_feedback`.
 - Audit/chunks contour: `agent_sessions`, `token_usage`, `flow_events`, `links`, `doc_chunks`, `mcp_action_requests`.
 - Связи между контурами — через устойчивые ключи (`correlation_id`, `doc_id`), без требования к cross-contour FK.
 
@@ -480,8 +434,6 @@ Planned extension (Day6+):
 - Индексы: `mcp_action_requests(approval_state, created_at)`, `mcp_action_requests(correlation_id)`.
 - Запрос: возобновление прерванной/ожидающей сессии по run.
 - Индексы: `agent_sessions(run_id, wait_state, last_heartbeat_at)`.
-- Запрос: выбор effective prompt template по role/kind/locale.
-- Индексы: `prompt_templates(scope_type, scope_id, role_key, template_kind, locale, is_active)`.
 - Запрос: traceability issue/pr/run/doc.
 - Индексы: `links(source_type, source_id, created_at)`, `links(target_type, target_id, created_at)`.
 - Запрос: поиск релевантных doc chunks.
@@ -505,7 +457,7 @@ Roadmap (Day5+):
 - Размер вектора `3072` подтверждён как базовый для MVP.
 - Отдельный `event_outbox` на MVP не вводится; используем статусы `agent_runs` + `flow_events`.
 - Контур аудита и учета обязателен: `agent_sessions`, `token_usage`, `links`.
-- Шаблоны промптов поддерживают модель `repo seed + DB override` c фиксацией effective version/hash.
+- Шаблоны промптов в текущем MVP поддерживают repo-only seed model; effective source фиксируется в `agent_sessions.template_source`.
 - Для paused-состояний сохраняется `codex-cli` session snapshot, чтобы run можно было продолжить с того же места.
 - При ожидании ответа MCP (`wait_state=mcp`) timeout-kill для pod/run не применяется до завершения ожидания.
 

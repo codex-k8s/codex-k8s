@@ -6,7 +6,7 @@ status: active
 owner_role: SA
 created_at: 2026-02-06
 updated_at: 2026-03-09
-related_issues: [1, 19, 100, 154, 155, 175, 274]
+related_issues: [1, 19, 100, 154, 155, 175, 247, 248, 249, 274]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -235,11 +235,13 @@ approvals:
 - Для resume используется сохранённый `codex-cli` session snapshot из `agent_sessions`.
 
 ## Prompt locale behavior
-- Prompt templates выбираются по цепочке locale:
-  - `project locale`;
-  - `system default locale`;
-  - fallback `en`.
-- Для системных агентов baseline включает как минимум `ru` и `en` версии шаблонов.
+- В текущем MVP locale prompt templates берется из platform default `CODEXK8S_AGENT_DEFAULT_LOCALE`.
+- Если значение пустое, worker использует `ru`.
+- При рендере `agent-runner` нормализует locale к поддержанным значениям:
+  - `ru*` -> `ru`
+  - `en*` -> `en`
+  - все остальное -> `en`
+- Для системных агентов baseline включает как минимум `ru` и `en` seed-версии шаблонов.
 - Язык, выбранный для prompt locale, обязателен для user-facing коммуникации агента:
   - PR title/body/comments;
   - issue/PR ответы;

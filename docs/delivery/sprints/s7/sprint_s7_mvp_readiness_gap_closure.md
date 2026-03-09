@@ -43,7 +43,7 @@ approvals:
 | Day 4 | Architecture: границы и ownership по stream'ам | P0 | `docs/delivery/epics/s7/epic-s7-day4-mvp-readiness-arch.md` | in-review (`#222`) |
 | Day 5 | Design: execution-ready contracts/data/migrations package | P0 | `docs/delivery/epics/s7/epic-s7-day5-mvp-readiness-design.md` (`#238`) | in-review (`#238`) |
 | Day 6 | Plan: execution package и quality gates | P0 | `docs/delivery/epics/s7/epic-s7-day6-mvp-readiness-plan.md` (`#241`) | in-review (`#241`) |
-| Day 7+ | Dev/QA/Release/Postdeploy/Ops/Doc-Audit | P0/P1 | implementation issues `#243..#260`, `#274` (`run:dev`) | in-progress (`#243` и `#244` completed + owner-approved; `#245`, `#246` и `#274` in-review; `#247..#260` planned) |
+| Day 7+ | Dev/QA/Release/Postdeploy/Ops/Doc-Audit | P0/P1 | implementation issues `#243..#260`, `#274` (`run:dev`) | in-progress (`#243` и `#244` completed + owner-approved; `#245`, `#246`, `#247/#248/#249` и `#274` in-review; `#250..#260` planned) |
 
 ## Candidate execution-эпики (`S7-E01..S7-E18`)
 
@@ -53,9 +53,9 @@ approvals:
 | S7-E02 | P0 | Sidebar cleanup: удаление не-MVP разделов (включая Agents, Configs/Secrets, Registry images, Running jobs) и dead code | done (owner-approved, `#244`) |
 | S7-E03 | P0 | Удаление глобального фильтра и зависимого кода | in-review (`#245`) |
 | S7-E04 | P0 | Удаление runtime-deploy/images секции; stale deeplinks закрываются общим fallback route | in-review (`#246`) |
-| S7-E05 | P0 | Agents table cleanup + removal of `Скоро` badge | depends on S6 baseline |
-| S7-E06 | P0 | Agents MVP de-scope: убрать runtime mode/locale настройки, оставить фиксированные defaults | depends on S6 baseline |
-| S7-E07 | P0 | Prompt source contract: удалить selector `repo|db`, закрепить `repo-only` policy | depends on API/worker contracts |
+| S7-E05 | P0 | Финальный cleanup residual references после удаления `Agents` из MVP UI | closes via `#247` |
+| S7-E06 | P0 | Зафиксировать фактический MVP de-scope: без runtime mode/locale settings UI/API | closes via `#248` |
+| S7-E07 | P0 | Зафиксировать фактический repo-only prompt contract и удалить residual stale traces | closes via `#249` |
 | S7-E08 | P1 | Agents UX de-scope hardening: удалить non-MVP массовые операции | after S7-E05..E07 |
 | S7-E09 | P0 | Runs UX: убрать run type + гарантировать delete namespace | release-blocking UX |
 | S7-E10 | P0 | Runtime deploy task cancel/stop control | release-blocking ops UX |
@@ -111,7 +111,7 @@ approvals:
   - Wave 1: `#243`, `#253`, `#255`;
   - Wave 2: `#244`, `#245`, `#246`, `#247`;
   - Wave 3: `#248`, `#249`, `#250`, `#257`, `#259`;
-  - Wave 4: `#251`, `#252`, `#258`;
+- Wave 4: `#251`, `#252`, `#258`;
 - Wave 5: `#256`, `#260`, `#254`.
 - Дополнительно (post-plan): `#274` (`S7-E19`, backend cleanup Agents/Configs/Secrets).
 - Trigger-лейбл `run:dev` на implementation issues ставит Owner, сохраняя wave-sequencing.
@@ -119,3 +119,11 @@ approvals:
   - `docs/delivery/epics/s7/epic-s7-day6-mvp-readiness-plan.md`;
   - синхронизированные `issue_map` и `requirements_traceability`;
   - parity evidence: `approved_execution_epics_count == created_run_dev_issues_count` (`18 == 18`).
+
+## Актуализация фактического состояния по `#247/#248/#249`
+- После cleanup `#244` и backend cleanup `#274` страницы и staff API для `Agents`/`Prompt templates` больше не входят в MVP.
+- Issue `#247/#248/#249` закрываются не через возврат удалённых экранов, а через:
+  - cleanup residual dead code/reference layers;
+  - фиксацию реального MVP контракта в source-of-truth документах;
+  - явный unit-test для `repo_seed + default locale` поведения worker-а.
+- Remaining Sprint S7 execution backlog после этих потоков: `#250..#260`.

@@ -48,8 +48,8 @@ approvals:
 - Stage-процесс управления задачами фиксирован через label taxonomy `run:*` + `state:*` + `need:*`.
 - Для MVP обязательна активация полного stage-каталога (`run:intake..run:ops`, `run:*:revise`, `run:rethink`) и `run:self-improve`.
 - Базовый системный штат агентов включает `dev` и `reviewer` как обязательные роли review-контура: для всех `run:*` pre-review обязателен перед финальным Owner review.
-- Шаблоны агентных промптов обязаны поддерживать схему: repo seed + DB override (`work` и `review`).
-- Шаблоны промптов хранятся по локалям; выбор языка обязателен по цепочке `project locale -> system default locale -> en`.
+- Шаблоны агентных промптов в MVP обязаны поддерживать repo-only схему: role-specific repo seeds для `work` и `revise`, без DB override.
+- Шаблоны промптов в MVP используют platform default locale (`CODEXK8S_AGENT_DEFAULT_LOCALE`, fallback `ru`); unsupported locale нормализуется к `en`.
 - Для системных агентов обязательно наличие seed-шаблонов минимум для `ru` и `en`.
 - Для external/staff HTTP API обязателен contract-first подход по OpenAPI (spec + runtime validation + codegen backend/frontend).
 - В окружениях `production` и `prod` платформенные Kubernetes ресурсы помечаются label `app.kubernetes.io/part-of=codex-k8s` (канонический критерий для UI/guardrails и backend policy).

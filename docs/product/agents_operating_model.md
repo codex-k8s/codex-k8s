@@ -5,8 +5,8 @@ title: "codex-k8s — Agents Operating Model"
 status: active
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-02-25
-related_issues: [1, 19, 74, 175]
+updated_at: 2026-03-09
+related_issues: [1, 19, 74, 175, 247, 248, 249]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -19,21 +19,21 @@ approvals:
 # Agents Operating Model
 
 ## TL;DR
-- Базовый штат платформы: 8 системных агентных ролей (`pm`, `sa`, `em`, `dev`, `reviewer`, `qa`, `sre`, `km`) + человек `Owner`.
-- Для каждого проекта допускаются расширяемые custom-агенты без нарушения базовых ролей.
-- Режим исполнения смешанный: часть ролей работает в `full-env`, часть в `code-only`.
-- Шаблоны промптов ведутся в role-specific матрице: для каждого `agent_key` отдельные body-шаблоны `work/revise`, с override в БД и seed fallback.
-- Для каждого системного агента шаблоны поддерживаются минимум в `ru` и `en`; язык выбирается по locale с fallback до `en`.
-- Управление агентами и шаблонами промптов проектируется как staff UI/API контур: `Agents` (настройки) и `Prompt templates` (diff/preview/effective preview), с использованием Monaco Editor для markdown.
-- Для `run:self-improve` применяется совместный контур `km + dev + reviewer` с обязательной трассировкой источников улучшений.
+- MVP использует фиксированный штат из 8 системных ролей: `pm`, `sa`, `em`, `dev`, `reviewer`, `qa`, `sre`, `km`.
+- `Owner` не является агентом и остается финальным человеком-апрувером stage-переходов, PR и deploy-решений.
+- Режимы исполнения смешанные: часть ролей работает в `full-env`, часть в `code-only`.
+- Prompt templates в текущем MVP берутся только из repo seeds (`services/jobs/agent-runner/internal/runner/promptseeds/*.md`), без DB overrides и без staff UI редактирования.
+- Locale для prompt templates в текущем MVP задается platform default (`CODEXK8S_AGENT_DEFAULT_LOCALE`, fallback `ru`); при unsupported locale рендер нормализует значение к `en`.
+- Контуры `Agents UI`, `Prompt templates UI`, кастомные runtime settings и custom-agent factory выведены из MVP и остаются post-MVP направлением.
 
 ## Source of truth
 - `docs/product/requirements_machine_driven.md`
 - `docs/product/labels_and_trigger_policy.md`
 - `docs/product/stage_process_model.md`
-- `docs/research/src_idea-machine_driven_company_requirements.md`
+- `docs/architecture/agent_runtime_rbac.md`
+- `docs/architecture/prompt_templates_policy.md`
 
-## Базовый штат (system agents)
+## Базовый штат системных агентов
 
 | agent_key | Роль | Основной результат | Режим по умолчанию | Базовый лимит параллельных run на проект |
 |---|---|---|---|---:|
@@ -41,181 +41,120 @@ approvals:
 | `sa` | Solution Architect | C4/ADR/NFR/design decisions | `full-env` (read-only) | 1 |
 | `em` | Engineering Manager | delivery plan/epics/DoR-DoD | `full-env` (read-only) | 1 |
 | `dev` | Software Engineer | реализация `run:dev`/`run:dev:revise`, код + тесты + docs update | `full-env` | 2 |
-| `reviewer` | Pre-review Engineer | комментарии в существующем PR: inline findings + summary для Owner (без изменений репозитория) | `full-env` (read-mostly) | 2 |
-| `qa` | QA Lead | markdown test strategy/plan/matrix/regression evidence | `full-env` | 2 |
-| `sre` | SRE/OPS | runbook/SLO/alerts/postdeploy improvements + emergency infra recovery (`run:ai-repair`) | `code-only` (production pod) | 1 |
-| `km` | Doc/KM | issue↔docs traceability, self-improve диагностика, prompts/instructions updates | `code-only` | 2 |
+| `reviewer` | Pre-review Engineer | замечания в PR и summary для Owner | `full-env` (read-mostly) | 2 |
+| `qa` | QA Lead | test strategy/plan/matrix/regression evidence | `full-env` | 2 |
+| `sre` | SRE / OPS | runbook/SLO/alerts/postdeploy/ops, emergency recovery (`run:ai-repair`) | `code-only` / special production pod | 1 |
+| `km` | Knowledge Manager | traceability, docs governance, `run:self-improve` | `code-only` | 2 |
 
 Примечания:
-- `Owner` не является агентом, но остаётся финальным апрувером решений и trigger/deploy действий.
-- Базовый профиль `run:dev` закреплён за системным агентом `dev`; custom-агенты могут расширять его поведение в рамках project policy.
-- Роль `reviewer` заменяет прежний ad-hoc `auditor` режим: выполняет pre-review для всех `run:*`, где формируются артефакты на проверку Owner.
+- `dev` остается единственной системной ролью, которая готовит production code changes и PR.
+- `reviewer` не изменяет репозиторий и не создает коммиты: его зона ответственности ограничена review feedback.
+- `sre` использует отдельный аварийный контур `run:ai-repair`, работающий рядом с production namespace.
 
-## Расширяемые custom-агенты проекта
-
-Для каждого проекта допускается добавление custom-агентов.
-
-Обязательные правила:
-- custom-агент привязан к конкретному проекту и не меняет обязанности базовых системных ролей;
-- для custom-агента обязательно задаются: ответственность, execution mode, RBAC-права, лимит параллелизма, шаблоны `work/revise`;
-- custom-агент проходит тот же аудит событий (`flow_events`, `agent_sessions`, `token_usage`) и policy апрувов;
-- custom-агент не может обходить политику trigger/deploy labels.
-
-## Режимы исполнения
+## Execution modes
 
 ### `full-env`
-- Запуск в issue/run namespace рядом со стеком.
-- Доступ: логи, events, сервисы, метрики, DB/cache в рамках namespace, `exec` в pod'ы namespace.
-- Lifecycle run namespace управляется lease-policy:
-  - TTL определяется по роли агента из `services.yaml` (default `24h`);
-  - `run:<stage>:revise` переиспользует namespace текущей связки `(project, issue, agent_key)` и продлевает TTL от момента старта revise-run.
-- Отдельный debug-label для manual-retention не используется; lifecycle namespace управляется только TTL lease и revise extension.
-- В pod передаются минимальные runtime-секреты (`CODEXK8S_OPENAI_API_KEY`, `CODEXK8S_GIT_BOT_TOKEN`) и формируется namespaced `KUBECONFIG`.
-- GitHub операции (issue/PR/comments/review + git push) выполняются напрямую через `gh`/`git` с bot-token.
-- Для PR-flow запрещено использовать `CODEXK8S_GITHUB_PAT`; допустим только `CODEXK8S_GIT_BOT_TOKEN`.
-- Для локальных ручных GitHub операций оператор использует `CODEXK8S_GIT_BOT_TOKEN` из `bootstrap/host/config.env`.
-- Kubernetes runtime-дебаг и изменения в своём namespace выполняются напрямую через `kubectl`.
-- Исключение: прямой доступ к `secrets` (read/write) запрещён RBAC.
-- MCP в MVP baseline используется для label-операций и control tools (`secret sync`, `database lifecycle`, `owner feedback`) по approval policy.
-- Используется для ролей, где нужно подтверждать решения по фактическому состоянию окружения.
-
-### Канал апрувов и уточнений
-- Для операций через MCP используются HTTP approver/executor контракты.
-- Telegram (`github.com/codex-k8s/telegram-approver`, `github.com/codex-k8s/telegram-executor`) является первым адаптером, но модель должна поддерживать и другие интеграции без изменений core-кода платформы.
+- Запуск выполняется в отдельном issue/run namespace рядом со стеком проекта.
+- Агент имеет доступ к логам, events, pod/deploy/service runtime и диагностике через `kubectl`.
+- Прямой доступ к `secrets` запрещен RBAC.
+- Для `run:*:revise` namespace переиспользуется и TTL lease продлевается.
+- GitHub операции выполняются напрямую через `gh`/`git` с `CODEXK8S_GIT_BOT_TOKEN`.
 
 ### `code-only`
-- Доступ только к репозиторию и API контексту без прямого Kubernetes runtime доступа.
-- Используется для продуктовых/документационных задач без необходимости runtime-диагностики.
+- Агент работает только с репозиторием, сервисными API и документами без runtime-доступа к Kubernetes namespace задачи.
+- Используется для продуктовых, документационных и governance-задач, которым не нужен live runtime-debug.
 
-## Роли в цикле разработки и ревью
+## Роли в delivery-цикле
 
+- `pm`:
+  - формализует проблему, scope, KPI, PRD и acceptance criteria;
+  - синхронизирует продуктовые документы с delivery traceability.
+- `sa`:
+  - проектирует сервисные границы, контракты и ADR;
+  - проверяет архитектурную консистентность решений.
+- `em`:
+  - управляет decomposition, quality gates и handover между stage.
 - `dev`:
-  - реализует задачу, обновляет тесты и проектную документацию, в процессе выполняет дебаг решений;
-  - формирует PR и прикладывает evidence проверок.
+  - реализует изменения в коде;
+  - обновляет тесты и docs, если меняется поведение.
 - `reviewer`:
-  - выполняет предварительное ревью до финального ревью Owner для всех `run:*`;
-  - для ручного запуска pre-review по конкретному PR используется label `need:reviewer` на PR (`pull_request:labeled`);
-  - проверяет соответствие задаче, проектной документации и `docs/design-guidelines/**`;
-  - оставляет inline-комментарии в PR (если PR есть) и публикует summary для Owner;
-  - не изменяет файлы репозитория и не создает коммиты/новые PR.
-- `Owner`:
-  - выполняет финальный review/approve после прохождения pre-review.
+  - ищет баги, риски, регрессии и пробелы в tests/docs;
+  - работает только review-комментариями в существующем PR.
+- `qa`:
+  - готовит acceptance/regression evidence;
+  - проводит stage `run:qa` и revise-итерации QA.
 - `sre`:
-  - ведёт операционные улучшения на `run:ops`;
-  - ведёт аварийный контур `run:ai-repair`: восстанавливает инфраструктуру и runtime-поток, при необходимости использует fallback-стратегии.
-  - для `run:ai-repair` допускается main-direct recovery режим (без обязательного PR) и прямой deploy в production по политике аварийного восстановления.
+  - закрывает release/postdeploy/ops и аварийные recovery-сценарии.
 - `km`:
-  - ведёт цикл `run:self-improve`: анализирует повторяющиеся замечания/сбои, формирует и вносит улучшения в docs/prompt templates;
-  - в `run:self-improve` changeset ограничен scope: markdown-инструкции, prompt files, `services/jobs/agent-runner/Dockerfile`;
-  - обязан использовать MCP-диагностику запусков:
-    - `self_improve_runs_list` (пагинация истории запусков);
-    - `self_improve_run_lookup` (поиск запусков по Issue/PR);
-    - `self_improve_session_get` (извлечение `codex-cli` session JSON для анализа).
-- `dev` (в self-improve контуре):
-  - дорабатывает toolchain/agent image, если self-improve выявил отсутствие инструментов или runtime-gap.
+  - ведет `run:doc-audit` и `run:self-improve`;
+  - синхронизирует traceability и docs governance.
 
-## Политика шаблонов промптов (work/revise)
+## Prompt templates: текущая MVP-модель
 
-Классы шаблонов:
-- `work` — шаблон на выполнение задачи;
-- `revise` — шаблон на устранение замечаний Owner к существующему PR.
+### Классы шаблонов
+- `work` — выполнение задачи.
+- `revise` — устранение замечаний по существующему PR/артефакту.
 
-Источник и приоритет:
-1. project-level override в БД;
-2. global override в БД;
-3. seed-файл в репозитории.
+### Источник шаблонов
+- В текущем MVP шаблоны берутся только из embed seed-каталога:
+  `services/jobs/agent-runner/internal/runner/promptseeds/*.md`.
+- Источник effective template в runtime/audit фиксируется как `repo_seed`.
+- DB overrides, versioned prompt lifecycle в БД и UI-редактор шаблонов в MVP отсутствуют.
 
-Seed-файлы:
-- каталог `services/jobs/agent-runner/internal/runner/promptseeds/*.md` (embed в `agent-runner`) как bootstrap/fallback слой
-  (минимальная stage-матрица, включая `dev-work`/`dev-revise`).
+### Locale policy
+- Worker определяет locale из platform default:
+  `CODEXK8S_AGENT_DEFAULT_LOCALE`.
+- Если значение пустое, используется `ru`.
+- При рендере prompt envelope неподдерживаемое locale нормализуется к `en`.
+- Базовый набор seed-локалей для системных ролей: `ru` и `en`.
 
-Обязательная целевая модель:
-- для каждого `agent_key` поддерживаются отдельные body-шаблоны `work` и `revise`;
-- для каждого `(agent_key, kind)` поддерживаются минимум локали `ru` и `en`;
-- резолв в runtime выполняется по цепочке `project override -> global override -> repo seed`, с language fallback `project locale -> system default -> en`.
+### Что считается источником правды для prompt behavior
+- repo seeds;
+- `services.yaml/spec.projectDocs[]` для role-aware docs context;
+- `services.yaml/spec.roleDocTemplates` для role-aware refs к шаблонам артефактов;
+- `docs/architecture/prompt_templates_policy.md`.
 
-Текущий переходный профиль:
-- stage-specific seed-шаблоны в репозитории остаются bootstrap/fallback источником до полного заполнения role-specific матрицы в БД;
-- по мере наполнения role-specific матрицы stage seed остаются резервным fallback и не отменяют требования к отдельному body по роли.
+## Review и revise loop
 
-Требования:
-- изменение seed/override должно быть трассируемо через `flow_events`;
-- в рантайме сохраняется effective template version/hash;
-- шаблон не должен содержать секреты и не должен ослаблять policy безопасности.
+- Основной цикл артефактных stage:
+  `run:<stage>` -> `state:in-review` -> review/comments -> `run:<stage>:revise` при необходимости.
+- Для PR pre-review применяется отдельный trigger `need:reviewer` на PR.
+- Для review-driven revise stage определяется детерминированно по policy resolver:
+  `PR labels -> Issue labels -> run context -> flow_events`.
+- Конфликтующие stage/model/reasoning labels трактуются как `failed_precondition`.
 
-### Локализация шаблонов
-- Базовая загрузка в БД для системных агентов включает как минимум локали `ru` и `en` для `work` и `revise`.
-- Выбор языка шаблона выполняется по цепочке:
-  1. locale проекта;
-  2. default locale системы;
-  3. fallback `en`.
-- Добавление новой локали планируется как отдельная фича (TODO следующего спринта):
-  - оператор добавляет locale через staff UI (`System settings -> Locales`) или эквивалентный staff API;
-  - платформа готовит версионируемые шаблоны на новую локаль (копия/инициализация от базовой локали);
-  - опционально платформа генерирует первичный перевод шаблонов через ИИ;
-  - перевод сохраняется как новая версия шаблона и может быть вручную скорректирован в staff UI (Monaco Editor).
+## Модель и reasoning profile
 
-### Контекстный рендер шаблонов
-- Effective prompt рендерится с runtime-контекстом (окружение, namespace/slot, доступные MCP-сервера и инструменты, project/services context, issue/pr/run identifiers).
-- Контракт контекстного рендера должен быть стабильным между версиями рантайма, чтобы избежать несовместимости seed/override шаблонов.
-- В output contract рендера обязательно фиксируются:
-  - communication language текущего запуска (для PR/комментариев/feedback-инструментов);
-  - cadence для `run_status_report` (регулярный progress-feedback каждые 5-7 инструментальных вызовов).
+- Platform baseline:
+  - model: `gpt-5.4`
+  - reasoning: `high`
+- На Issue/PR профиль может быть переопределен через:
+  - `[ai-model-*]`
+  - `[ai-reasoning-*]`
+- Для revise-run effective profile перечитывается заново на каждом запуске.
 
-### Role-specific prompt template matrix
-- Для каждого `agent_key` используются отдельные шаблоны `work/revise`:
-  - `pm`, `sa`, `em`, `dev`, `reviewer`, `qa`, `sre`, `km`;
-  - отдельные шаблоны для специализированных режимов: `run:self-improve`, `mode:discussion`.
-- Для каждого `(agent_key, kind)` обязательны минимум локали `ru` и `en`.
-- Использование единого общего body-шаблона для всех ролей запрещено.
-- Для `mode:discussion` шаблон обязан:
-  - явно запрещать commit/push/PR;
-  - требовать работу только комментариями под Issue;
-  - требовать обработку новых пользовательских комментариев как продолжение той же сессии.
-- Для стадий с артефактным ревью шаблон должен завершать run переходом в `state:in-review` и постановкой role-specific `need:*` labels.
+## Что не входит в текущий MVP
 
-### Модель и степень рассуждения
-- По умолчанию профиль модели/рассуждений задается в настройках агента/проекта.
-- Текущий baseline платформы: `gpt-5.4` + `high`, если проект/агент/issue не переопределяют профиль.
-- На конкретном issue профиль может быть переопределен конфигурационными лейблами:
-  - `[ai-model-*]` для модели;
-  - `[ai-reasoning-*]` для уровня рассуждений.
-- Для `run:dev:revise` effective model/reasoning перечитываются на каждый запуск, чтобы Owner мог поменять профиль между итерациями revise.
-- При конфликтующих лейблах одной группы запуск отклоняется как `failed_precondition` и требует ручного исправления labels.
+- Staff UI/API для управления агентами.
+- Staff UI/API для prompt templates.
+- DB lifecycle prompt templates (`project override`, `global override`, version history).
+- Runtime mode/locale settings per agent через UI/API.
+- Массовые Agents UX operations.
+- Custom-agent factory и self-service создание пользовательских ролей.
 
-## Инфраструктурная модель и capacity baseline
+## Post-MVP направления
 
-- По умолчанию одновременно активен максимум 1 `run:dev` на issue.
-- Для `run:self-improve` допускается не более 1 активного запуска на issue/PR связку, чтобы избежать конфликтующих улучшений.
-- `run:self-improve` выполняется как управляемый диагностический цикл:
-  - извлечение run/session evidence;
-  - анализ причин;
-  - PR с улучшениями prompt/docs/guidelines/toolchain.
-- Лимиты параллелизма на проект задаются в настройках проекта и применяются worker-очередью.
-- Для `full-env` запусков обязателен отдельный namespace с управляемым TTL lease и cleanup sweep.
-- MCP policy для инструментов/ресурсов определяется по связке:
-  - `agent_key` (базовый профиль роли);
-  - `run:*` label/тип задачи (task override).
+- custom-agent factory на проект;
+- UI lifecycle prompt templates;
+- richer locale management;
+- project-scoped execution policies для пользовательских ролей;
+- расширенные governance controls для roles/prompts/policies.
 
-## Resume и timeout-policy
+## Управление изменениями operating model
 
-- Во время ожидания review от Owner run может быть приостановлен и возобновлён.
-- Во время ожидания ответа MCP (`wait_state=mcp`) pod/run не должен завершаться по timeout.
-- Для resumable выполнения в сессии сохраняется `codex-cli` session JSON, чтобы продолжать с того же места.
-
-## Planned: discussion-mode before implementation
-
-- Для `run:dev`/`run:dev:revise` планируется режим `mode:discussion`:
-  - запускается отдельный `discussion` pod (не job) с сохранением `codex-cli` session snapshot;
-  - агент работает только в комментариях Issue (brainstorming/уточнения), commit/push/PR не выполняются;
-  - pod живёт до первого события: idle timeout `8h`, закрытие Issue или постановка любого `run:*` label;
-  - на webhook `issue_comment`, если автор комментария не агент, сессия продолжается и агент публикует ответ под Issue;
-  - после снятия `mode:discussion` следующий trigger продолжает ту же session snapshot и переходит к реализации.
-
-## Управление изменениями модели
-
-- Изменения состава базового штата, execution modes или policy шаблонов фиксируются в:
-  - `docs/product/requirements_machine_driven.md`,
-  - `docs/architecture/data_model.md`,
-  - `docs/architecture/agent_runtime_rbac.md`,
-  - `docs/delivery/requirements_traceability.md`.
+- Любое изменение roster/mode/prompt policy должно синхронно обновлять:
+  - `docs/product/requirements_machine_driven.md`
+  - `docs/architecture/data_model.md`
+  - `docs/architecture/agent_runtime_rbac.md`
+  - `docs/architecture/prompt_templates_policy.md`
+  - `docs/delivery/requirements_traceability.md`

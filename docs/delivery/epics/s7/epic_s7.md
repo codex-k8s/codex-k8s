@@ -114,7 +114,17 @@ approvals:
   не нужен.
 - Stale deeplink продолжает закрываться уже существующим catch-all route
   `/:pathMatch(.*)* -> projects`, поэтому `runtime-deploy/images` не возвращается в MVP-контур.
-- В traceability добавлены updates по issue `#246`; remaining backlog нормализован как `#247..#260` + post-plan `#274`.
+- В traceability добавлены updates по issue `#246`; remaining backlog нормализован как `#250..#260` + post-plan `#274`.
+
+## Day 7 execution fact (`S7-E05` / `S7-E06` / `S7-E07`)
+- После уже выполненных `#244` (frontend cleanup) и `#274` (backend cleanup) MVP-контур `Agents`/`Prompt templates`
+  не должен возвращаться в UI/API.
+- Потоки `S7-E05`, `S7-E06`, `S7-E07` закрываются combined pass по issues `#247/#248/#249`:
+  - удаляются остаточные stale i18n/test references к удалённым разделам;
+  - source-of-truth документы переводятся на фактический контракт:
+    `repo-only prompt seeds`, `platform default locale`, `no agent settings UI/API`;
+  - worker behavior фиксируется unit-test'ом на `repo_seed + default locale`.
+- После этого remaining backlog Sprint S7 нормализуется как `#250..#260` + post-plan `#274`.
 
 ## Candidate execution backlog (19 эпиков)
 
@@ -124,9 +134,9 @@ approvals:
 | S7-E02 | P0 | Удаление не-MVP разделов (включая Agents, Configs/Secrets, Registry images, Running jobs) и связанного dead code | PRC-05 |
 | S7-E03 | P0 | Удаление глобального frontend-фильтра и связанного неиспользуемого кода (выполнено в `#245`) | PRC-04 |
 | S7-E04 | P0 | Удаление runtime-deploy/images контуров; stale deeplinks остаются на общем fallback route (in-review `#246`) | PRC-02, PRC-05 |
-| S7-E05 | P0 | Agents UI cleanup: убрать badge `Скоро`, пересобрать таблицу (без role/project-id) | PRC-03 |
-| S7-E06 | P0 | Agents MVP de-scope: убрать runtime mode/locale настройки, оставить фиксированные platform defaults | PRC-03 |
-| S7-E07 | P0 | Prompt source MVP contract: удалить selector `repo|db`, закрепить `repo-only` policy | PRC-03 |
+| S7-E05 | P0 | Финальный cleanup residual references после удаления `Agents` из MVP UI (frontend/test/transport/proto) | PRC-03 |
+| S7-E06 | P0 | Зафиксировать фактический MVP de-scope: без runtime mode/locale settings UI/API | PRC-03 |
+| S7-E07 | P0 | Зафиксировать фактический repo-only prompt contract и удалить residual stale traces | PRC-03 |
 | S7-E08 | P1 | Agents UX de-scope hardening: удалить non-MVP массовые операции и cleanup зависимого UX | PRC-03 |
 | S7-E09 | P0 | Runs UX: удалить колонку типа запуска и гарантировать namespace delete из run details | PRC-06 |
 | S7-E10 | P0 | Runtime deploy UX: кнопка cancel/stop для зависших deploy tasks + guardrails | PRC-07 |

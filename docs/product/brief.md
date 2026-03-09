@@ -5,8 +5,8 @@ title: "codex-k8s platform bootstrap"
 status: active
 owner_role: PM
 created_at: 2026-02-06
-updated_at: 2026-02-15
-related_issues: [1, 19]
+updated_at: 2026-03-09
+related_issues: [1, 19, 247, 248, 249]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -52,10 +52,10 @@ approvals:
 - Добавить bootstrap-скрипт развёртывания production по SSH на Ubuntu 24.04.
 - Включить CI/CD deploy для самой платформы через self-hosted runner в Kubernetes (production first).
 - Зафиксировать stage-driven delivery модель и label taxonomy (`run:*`, `state:*`, `need:*`) как единый процессный контракт.
-- Зафиксировать operating model агентов: базовый штат из 8 ролей (включая `dev` и `reviewer`) + custom-агенты проекта, mixed runtime (`full-env`/`code-only`).
+- Зафиксировать operating model агентов: базовый штат из 8 ролей (включая `dev` и `reviewer`), mixed runtime (`full-env`/`code-only`); custom-agent factory вынести в post-MVP.
 - Зафиксировать review контур: для всех `run:*` выполняется pre-review (`reviewer` и/или профильная роль), затем финальный Owner review.
-- Зафиксировать policy шаблонов промптов: seed в репозитории + override в БД (`work/revise`).
-- Добавить locale-aware prompt policy: `project locale -> system default -> en`, с baseline локалями `ru` и `en`.
+- Зафиксировать policy шаблонов промптов: role-specific repo seeds (`work/revise`) без DB override в MVP.
+- Добавить locale-aware prompt policy: platform default locale (`CODEXK8S_AGENT_DEFAULT_LOCALE`, fallback `ru`) с baseline локалями `ru` и `en`.
 - Добавить resumable lifecycle для agent runs: сохранение `codex-cli` session JSON и возобновление после пауз.
 - Ввести contract-first OpenAPI для external/staff API с codegen server/client до расширения транспорта внешних клиентов.
 - Добавить режим обучения для пользовательских задач:
@@ -128,13 +128,12 @@ approvals:
       - `production`/`prod` — строго view-only для ресурсов с `app.kubernetes.io/part-of=codex-k8s`;
       - ai-slots — destructive действия только dry-run (кнопки есть для dogfooding/debug, реальное действие не выполняется).
   - Agents:
-    - управление настройками агента;
-    - prompt templates `work/revise` минимум в `ru/en` с diff/preview и preview effective template (редактор на Monaco).
+    - UI lifecycle для agent settings и prompt templates.
   - System settings:
-    - управление локалями системы (add locale + default locale);
+    - расширенное управление локалями системы;
     - базовые UI prefs (density, debug hints).
   - Обратная связь пользователю: алерты/снеки + notifications menu.
-  - Ближайший TODO (следующий спринт): подключить staff API/БД для `Admin / Cluster`, `Agents` и `System settings` (с аудитом и RBAC).
+  - Ближайший TODO (следующий спринт): подключить staff API/БД для post-MVP контуров `Admin / Cluster`, `Agents` и расширенных `System settings` (с аудитом и RBAC).
 - A2A swarm концепция: параллельные агенты разных ролей в одном процессе с протоколом координации.
 - Периодические автономные циклы: security/dependency/docs drift checks, плановые `run:self-improve`, поиск улучшений по телеметрии.
 

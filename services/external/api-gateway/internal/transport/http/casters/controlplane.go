@@ -11,178 +11,18 @@ func Project(item *controlplanev1.Project) models.Project {
 	if item == nil {
 		return models.Project{}
 	}
-	return models.Project{
-		ID:   item.GetId(),
-		Slug: item.GetSlug(),
-		Name: item.GetName(),
-		Role: item.GetRole(),
-	}
+	out := models.Project{}
+	out.ID = item.GetId()
+	out.Slug = item.GetSlug()
+	out.Name = item.GetName()
+	out.Role = item.GetRole()
+	return out
 }
 
 func Projects(items []*controlplanev1.Project) []models.Project {
 	out := make([]models.Project, 0, len(items))
 	for _, item := range items {
 		out = append(out, Project(item))
-	}
-	return out
-}
-
-func Agent(item *controlplanev1.Agent) models.Agent {
-	if item == nil {
-		return models.Agent{}
-	}
-	return models.Agent{
-		ID:              item.GetId(),
-		AgentKey:        item.GetAgentKey(),
-		RoleKind:        item.GetRoleKind(),
-		ProjectID:       cast.OptionalTrimmedString(item.ProjectId),
-		Name:            item.GetName(),
-		IsActive:        item.GetIsActive(),
-		Settings:        AgentSettings(item.GetSettings()),
-		SettingsVersion: item.GetSettingsVersion(),
-	}
-}
-
-func AgentSettings(item *controlplanev1.AgentSettings) models.AgentSettings {
-	if item == nil {
-		return models.AgentSettings{}
-	}
-	return models.AgentSettings{
-		RuntimeMode:       item.GetRuntimeMode(),
-		TimeoutSeconds:    item.GetTimeoutSeconds(),
-		MaxRetryCount:     item.GetMaxRetryCount(),
-		PromptLocale:      item.GetPromptLocale(),
-		ApprovalsRequired: item.GetApprovalsRequired(),
-	}
-}
-
-func Agents(items []*controlplanev1.Agent) []models.Agent {
-	out := make([]models.Agent, 0, len(items))
-	for _, item := range items {
-		out = append(out, Agent(item))
-	}
-	return out
-}
-
-func PromptTemplateKey(item *controlplanev1.PromptTemplateKey) models.PromptTemplateKey {
-	if item == nil {
-		return models.PromptTemplateKey{}
-	}
-	return models.PromptTemplateKey{
-		TemplateKey:   item.GetTemplateKey(),
-		Scope:         item.GetScope(),
-		ProjectID:     cast.OptionalTrimmedString(item.ProjectId),
-		Role:          item.GetRole(),
-		Kind:          item.GetKind(),
-		Locale:        item.GetLocale(),
-		ActiveVersion: item.GetActiveVersion(),
-		UpdatedAt:     cast.TimestampRFC3339Nano(item.GetUpdatedAt()),
-	}
-}
-
-func PromptTemplateKeys(items []*controlplanev1.PromptTemplateKey) []models.PromptTemplateKey {
-	out := make([]models.PromptTemplateKey, 0, len(items))
-	for _, item := range items {
-		out = append(out, PromptTemplateKey(item))
-	}
-	return out
-}
-
-func PromptTemplateVersion(item *controlplanev1.PromptTemplateVersion) models.PromptTemplateVersion {
-	if item == nil {
-		return models.PromptTemplateVersion{}
-	}
-	return models.PromptTemplateVersion{
-		TemplateKey:       item.GetTemplateKey(),
-		Version:           item.GetVersion(),
-		Status:            item.GetStatus(),
-		Source:            item.GetSource(),
-		Checksum:          item.GetChecksum(),
-		BodyMarkdown:      item.GetBodyMarkdown(),
-		ChangeReason:      cast.OptionalTrimmedString(item.ChangeReason),
-		SupersedesVersion: cast.PositiveInt32Ptr(item.SupersedesVersion),
-		UpdatedBy:         item.GetUpdatedBy(),
-		UpdatedAt:         cast.TimestampRFC3339Nano(item.GetUpdatedAt()),
-		ActivatedAt:       cast.OptionalTimestampRFC3339Nano(item.GetActivatedAt()),
-	}
-}
-
-func PromptTemplateVersions(items []*controlplanev1.PromptTemplateVersion) []models.PromptTemplateVersion {
-	out := make([]models.PromptTemplateVersion, 0, len(items))
-	for _, item := range items {
-		out = append(out, PromptTemplateVersion(item))
-	}
-	return out
-}
-
-func PromptTemplateSeedSyncResponse(item *controlplanev1.PromptTemplateSeedSyncResponse) models.PromptTemplateSeedSyncResponse {
-	if item == nil {
-		return models.PromptTemplateSeedSyncResponse{Items: []models.PromptTemplateSeedSyncItem{}}
-	}
-	out := models.PromptTemplateSeedSyncResponse{
-		CreatedCount: item.GetCreatedCount(),
-		UpdatedCount: item.GetUpdatedCount(),
-		SkippedCount: item.GetSkippedCount(),
-		Items:        make([]models.PromptTemplateSeedSyncItem, 0, len(item.GetItems())),
-	}
-	for _, current := range item.GetItems() {
-		out.Items = append(out.Items, models.PromptTemplateSeedSyncItem{
-			TemplateKey: current.GetTemplateKey(),
-			Action:      current.GetAction(),
-			Checksum:    cast.OptionalTrimmedString(current.Checksum),
-			Reason:      cast.OptionalTrimmedString(current.Reason),
-		})
-	}
-	return out
-}
-
-func PreviewPromptTemplateResponse(item *controlplanev1.PreviewPromptTemplateResponse) models.PreviewPromptTemplateResponse {
-	if item == nil {
-		return models.PreviewPromptTemplateResponse{}
-	}
-	return models.PreviewPromptTemplateResponse{
-		TemplateKey:  item.GetTemplateKey(),
-		Version:      item.GetVersion(),
-		Source:       item.GetSource(),
-		Checksum:     item.GetChecksum(),
-		BodyMarkdown: item.GetBodyMarkdown(),
-	}
-}
-
-func PromptTemplateDiffResponse(item *controlplanev1.DiffPromptTemplateVersionsResponse) models.PromptTemplateDiffResponse {
-	if item == nil {
-		return models.PromptTemplateDiffResponse{}
-	}
-	return models.PromptTemplateDiffResponse{
-		TemplateKey:      item.GetTemplateKey(),
-		FromVersion:      item.GetFromVersion(),
-		ToVersion:        item.GetToVersion(),
-		FromBodyMarkdown: item.GetFromBodyMarkdown(),
-		ToBodyMarkdown:   item.GetToBodyMarkdown(),
-	}
-}
-
-func PromptTemplateAuditEvent(item *controlplanev1.PromptTemplateAuditEvent) models.PromptTemplateAuditEvent {
-	if item == nil {
-		return models.PromptTemplateAuditEvent{}
-	}
-	return models.PromptTemplateAuditEvent{
-		ID:            item.GetId(),
-		CorrelationID: item.GetCorrelationId(),
-		ProjectID:     cast.OptionalTrimmedString(item.ProjectId),
-		TemplateKey:   cast.OptionalTrimmedString(item.TemplateKey),
-		Version:       cast.PositiveInt32Ptr(item.Version),
-		ActorID:       cast.OptionalTrimmedString(item.ActorId),
-		EventType:     item.GetEventType(),
-		PayloadJSON:   item.GetPayloadJson(),
-		CreatedAt:     cast.TimestampRFC3339Nano(item.GetCreatedAt()),
-	}
-}
-
-func PromptTemplateAuditEvents(items []*controlplanev1.PromptTemplateAuditEvent) []models.PromptTemplateAuditEvent {
-	out := make([]models.PromptTemplateAuditEvent, 0, len(items))
-	for _, item := range items {
-		out = append(out, PromptTemplateAuditEvent(item))
 	}
 	return out
 }
@@ -508,11 +348,15 @@ func DocsetGroup(item *controlplanev1.DocsetGroup) models.DocsetGroup {
 	if item == nil {
 		return models.DocsetGroup{}
 	}
+	id := item.GetId()
+	title := item.GetTitle()
+	description := item.GetDescription()
+	defaultSelected := item.GetDefaultSelected()
 	return models.DocsetGroup{
-		ID:              item.GetId(),
-		Title:           item.GetTitle(),
-		Description:     item.GetDescription(),
-		DefaultSelected: item.GetDefaultSelected(),
+		ID:              id,
+		Title:           title,
+		Description:     description,
+		DefaultSelected: defaultSelected,
 	}
 }
 
@@ -528,27 +372,21 @@ func ImportDocsetResponse(item *controlplanev1.ImportDocsetResponse) models.Impo
 	if item == nil {
 		return models.ImportDocsetResponse{}
 	}
-	return models.ImportDocsetResponse{
-		RepositoryFullName: item.GetRepositoryFullName(),
-		PRNumber:           item.GetPrNumber(),
-		PRURL:              item.GetPrUrl(),
-		Branch:             item.GetBranch(),
-		FilesTotal:         item.GetFilesTotal(),
-	}
+	out := models.ImportDocsetResponse{}
+	fillDocsetPRFields(&out.RepositoryFullName, &out.PRNumber, &out.PRURL, &out.Branch, item.GetRepositoryFullName(), item.GetPrNumber(), item.GetPrUrl(), item.GetBranch())
+	out.FilesTotal = item.GetFilesTotal()
+	return out
 }
 
 func SyncDocsetResponse(item *controlplanev1.SyncDocsetResponse) models.SyncDocsetResponse {
 	if item == nil {
 		return models.SyncDocsetResponse{}
 	}
-	return models.SyncDocsetResponse{
-		RepositoryFullName: item.GetRepositoryFullName(),
-		PRNumber:           item.GetPrNumber(),
-		PRURL:              item.GetPrUrl(),
-		Branch:             item.GetBranch(),
-		FilesUpdated:       item.GetFilesUpdated(),
-		FilesDrift:         item.GetFilesDrift(),
-	}
+	out := models.SyncDocsetResponse{}
+	fillDocsetPRFields(&out.RepositoryFullName, &out.PRNumber, &out.PRURL, &out.Branch, item.GetRepositoryFullName(), item.GetPrNumber(), item.GetPrUrl(), item.GetBranch())
+	out.FilesUpdated = item.GetFilesUpdated()
+	out.FilesDrift = item.GetFilesDrift()
+	return out
 }
 
 func Me(principal *controlplanev1.Principal) models.MeResponse {
@@ -564,15 +402,15 @@ func Me(principal *controlplanev1.Principal) models.MeResponse {
 }
 
 func IngestGitHubWebhook(item *controlplanev1.IngestGitHubWebhookResponse) models.IngestGitHubWebhookResponse {
-	out := models.IngestGitHubWebhookResponse{}
 	if item == nil {
-		return out
+		return models.IngestGitHubWebhookResponse{}
 	}
-	out.CorrelationID = item.GetCorrelationId()
-	out.RunID = item.GetRunId()
-	out.Status = item.GetStatus()
-	out.Duplicate = item.GetDuplicate()
-	return out
+	return models.IngestGitHubWebhookResponse{
+		CorrelationID: item.GetCorrelationId(),
+		RunID:         item.GetRunId(),
+		Status:        item.GetStatus(),
+		Duplicate:     item.GetDuplicate(),
+	}
 }
 
 func RunLogs(item *controlplanev1.RunLogs) models.RunLogs {
@@ -741,6 +579,13 @@ func RegistryImageDeleteResult(item *controlplanev1.RegistryImageDeleteResult) m
 	out.Digest = item.GetDigest()
 	out.Deleted = item.GetDeleted()
 	return out
+}
+
+func fillDocsetPRFields(repositoryFullName *string, prNumber *int32, prURL *string, branch *string, repo string, number int32, url string, branchName string) {
+	*repositoryFullName = repo
+	*prNumber = number
+	*prURL = url
+	*branch = branchName
 }
 
 func RegistryImageCleanupResult(item *controlplanev1.CleanupRegistryImagesResponse) models.CleanupRegistryImagesResponse {
