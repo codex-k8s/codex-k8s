@@ -91,6 +91,10 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 	}
 	effectiveTriggerKind := resolveUpsertTriggerKind(params.TriggerKind, runCtx.triggerKind)
 	trackedCommentID := s.findTrackedRunStatusCommentID(ctx, runCtx.run.CorrelationID, runID)
+	triggerLabel := ""
+	if runCtx.payload.Trigger != nil {
+		triggerLabel = strings.TrimSpace(runCtx.payload.Trigger.Label)
+	}
 
 	currentState := commentState{
 		RunID:                    runID,
@@ -101,6 +105,7 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		RuntimeMode:              normalizeRuntimeMode(params.RuntimeMode, effectiveTriggerKind),
 		Namespace:                strings.TrimSpace(params.Namespace),
 		TriggerKind:              effectiveTriggerKind,
+		TriggerLabel:             triggerLabel,
 		PromptLocale:             normalizeLocale(params.PromptLocale, s.cfg.DefaultLocale),
 		Model:                    strings.TrimSpace(params.Model),
 		ReasoningEffort:          strings.TrimSpace(params.ReasoningEffort),

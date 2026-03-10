@@ -34,7 +34,8 @@ type commentTemplateNextStepAction struct {
 
 type commentTemplateContext struct {
 	RunID                    string
-	TriggerKind              string
+	TriggerKindDisplay       string
+	WorkloadKind             string
 	RuntimeMode              string
 	JobName                  string
 	JobNamespace             string
@@ -127,7 +128,8 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 
 	return commentTemplateContext{
 		RunID:                        strings.TrimSpace(state.RunID),
-		TriggerKind:                  normalizeTriggerKind(trimmedTriggerKind),
+		TriggerKindDisplay:           resolveTriggerKindDisplay(trimmedTriggerKind, state.TriggerLabel),
+		WorkloadKind:                 resolveWorkloadKind(trimmedTriggerKind, state.TriggerLabel),
 		RuntimeMode:                  trimmedRuntimeMode,
 		JobName:                      trimmedJobName,
 		JobNamespace:                 trimmedJobNamespace,
@@ -144,7 +146,7 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 		NextStepActions:              templateActions,
 		ManagementURL:                managementURL,
 		StateMarker:                  marker,
-		ShowTriggerKind:              trimmedTriggerKind != "",
+		ShowTriggerKind:              resolveTriggerKindDisplay(trimmedTriggerKind, state.TriggerLabel) != "",
 		ShowRuntimeMode:              trimmedRuntimeMode != "",
 		ShowJobRef:                   trimmedJobName != "" && trimmedJobNamespace != "",
 		ShowNamespace:                trimmedNamespace != "",

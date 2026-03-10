@@ -280,3 +280,35 @@ func TestRenderCommentBody_RendersRecentAgentStatusesEN(t *testing.T) {
 		t.Fatalf("expected status text in body: %q", body)
 	}
 }
+
+func TestRenderCommentBody_RendersDiscussionRunAsPod(t *testing.T) {
+	t.Parallel()
+
+	body := mustRenderCommentBody(t, commentState{
+		RunID:        "run-discussion",
+		Phase:        PhaseStarted,
+		TriggerKind:  triggerKindDev,
+		TriggerLabel: "mode:discussion",
+		RuntimeMode:  runtimeModeCode,
+		JobName:      "codex-k8s-run-run-discussion",
+		JobNamespace: "codex-issue-demo",
+		Namespace:    "codex-issue-demo",
+		PromptLocale: localeRU,
+	}, "https://platform.codex-k8s.dev/runs/run-discussion", nil, nil)
+
+	if !strings.Contains(body, "Режим запуска: `discussion`") {
+		t.Fatalf("expected discussion trigger display in body: %q", body)
+	}
+	if !strings.Contains(body, "Runtime mode: `code-only`") {
+		t.Fatalf("expected code-only runtime mode in body: %q", body)
+	}
+	if !strings.Contains(body, "Pod: `codex-issue-demo/codex-k8s-run-run-discussion`") {
+		t.Fatalf("expected pod workload reference in body: %q", body)
+	}
+	if strings.Contains(body, "Job: `codex-issue-demo/codex-k8s-run-run-discussion`") {
+		t.Fatalf("expected job workload reference to be hidden for discussion run: %q", body)
+	}
+	if strings.Contains(body, "Ожидание подготовки окружения") {
+		t.Fatalf("expected runtime preparation timeline to be hidden for discussion run: %q", body)
+	}
+}

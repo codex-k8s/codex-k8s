@@ -114,6 +114,14 @@ func TestResolveUpsertTriggerKind(t *testing.T) {
 	}
 }
 
+func TestNormalizeRuntimeMode_PreservesExplicitCodeOnly(t *testing.T) {
+	t.Parallel()
+
+	if got := normalizeRuntimeMode(runtimeModeCode, triggerKindDev); got != runtimeModeCode {
+		t.Fatalf("normalizeRuntimeMode(code-only, dev) = %q, want %q", got, runtimeModeCode)
+	}
+}
+
 func TestFindRunStatusComment_PicksLatestCommentByID(t *testing.T) {
 	t.Parallel()
 

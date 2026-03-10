@@ -30,6 +30,11 @@ const (
 )
 
 const (
+	workloadKindJob = "job"
+	workloadKindPod = "pod"
+)
+
+const (
 	runStatusSucceeded = "succeeded"
 	runStatusFailed    = "failed"
 )

@@ -239,6 +239,7 @@ type commentState struct {
 	IssueURL                 string `json:"issue_url,omitempty"`
 	PullRequestURL           string `json:"pull_request_url,omitempty"`
 	TriggerKind              string `json:"trigger_kind,omitempty"`
+	TriggerLabel             string `json:"trigger_label,omitempty"`
 	PromptLocale             string `json:"prompt_locale,omitempty"`
 	Model                    string `json:"model,omitempty"`
 	ReasoningEffort          string `json:"reasoning_effort,omitempty"`

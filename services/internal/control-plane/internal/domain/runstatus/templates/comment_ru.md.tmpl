@@ -19,13 +19,17 @@
 
 - Run ID: `{{ .RunID }}`
 {{- if .ShowTriggerKind }}
-- Режим запуска: `{{ .TriggerKind }}`
+- Режим запуска: `{{ .TriggerKindDisplay }}`
 {{- end }}
 {{- if .ShowRuntimeMode }}
 - Runtime mode: `{{ .RuntimeMode }}`
 {{- end }}
 {{- if .ShowJobRef }}
+{{- if eq .WorkloadKind "pod" }}
+- Pod: `{{ .JobNamespace }}/{{ .JobName }}`
+{{- else }}
 - Job: `{{ .JobNamespace }}/{{ .JobName }}`
+{{- end }}
 {{- end }}
 {{- if .ShowNamespace }}
 - Namespace: `{{ .Namespace }}`

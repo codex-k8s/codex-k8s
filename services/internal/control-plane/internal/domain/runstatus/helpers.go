@@ -53,13 +53,34 @@ func normalizeCommentTargetKind(value string) commentTargetKind {
 }
 
 func normalizeRuntimeMode(value string, triggerKind string) string {
-	if strings.EqualFold(strings.TrimSpace(value), runtimeModeFullEnv) {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case runtimeModeFullEnv:
 		return runtimeModeFullEnv
+	case runtimeModeCode:
+		return runtimeModeCode
 	}
 	if webhookdomain.IsKnownTriggerKind(webhookdomain.NormalizeTriggerKind(triggerKind)) {
 		return runtimeModeFullEnv
 	}
 	return runtimeModeCode
+}
+
+func isDiscussionTriggerLabel(value string) bool {
+	return strings.EqualFold(strings.TrimSpace(value), webhookdomain.DefaultModeDiscussionLabel)
+}
+
+func resolveWorkloadKind(triggerKind string, triggerLabel string) string {
+	if isDiscussionTriggerLabel(triggerLabel) || webhookdomain.NormalizeTriggerKind(triggerKind) == webhookdomain.TriggerKindAIRepair {
+		return workloadKindPod
+	}
+	return workloadKindJob
+}
+
+func resolveTriggerKindDisplay(triggerKind string, triggerLabel string) string {
+	if isDiscussionTriggerLabel(triggerLabel) {
+		return "discussion"
+	}
+	return normalizeTriggerKind(triggerKind)
 }
 
 func normalizeRequestedByType(value RequestedByType) RequestedByType {
@@ -125,6 +146,9 @@ func mergeState(base commentState, update commentState) commentState {
 	}
 	if strings.TrimSpace(update.TriggerKind) != "" {
 		base.TriggerKind = normalizeTriggerKind(update.TriggerKind)
+	}
+	if strings.TrimSpace(update.TriggerLabel) != "" {
+		base.TriggerLabel = strings.TrimSpace(update.TriggerLabel)
 	}
 	if strings.TrimSpace(update.PromptLocale) != "" {
 		base.PromptLocale = normalizeLocale(update.PromptLocale, localeEN)
