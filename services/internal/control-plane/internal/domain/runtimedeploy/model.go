@@ -6,7 +6,10 @@ import (
 	"time"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/registry"
+	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
+	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
 	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
+	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
@@ -27,6 +30,47 @@ type PrepareParams struct {
 type PrepareResult struct {
 	Namespace string
 	TargetEnv string
+}
+
+// TaskAction identifies one operator-triggered runtime deploy control action.
+type TaskAction = querytypes.RuntimeDeployTaskAction
+
+const (
+	TaskActionCancel TaskAction = querytypes.RuntimeDeployTaskActionCancel
+	TaskActionStop   TaskAction = querytypes.RuntimeDeployTaskActionStop
+)
+
+// TaskActionActor identifies the staff principal who requested cancel/stop.
+type TaskActionActor struct {
+	UserID      string
+	Email       string
+	GitHubLogin string
+}
+
+// TaskActionParams describes one staff cancel/stop request.
+type TaskActionParams struct {
+	RunID       string
+	Action      TaskAction
+	Reason      string
+	RequestedAt time.Time
+	Actor       TaskActionActor
+}
+
+// TaskActionResult describes runtime deploy action outcome.
+type TaskActionResult struct {
+	RunID           string
+	Action          TaskAction
+	PreviousStatus  entitytypes.RuntimeDeployTaskStatus
+	CurrentStatus   entitytypes.RuntimeDeployTaskStatus
+	AlreadyTerminal bool
+}
+
+type flowEventRecorder interface {
+	Insert(ctx context.Context, params floweventrepo.InsertParams) error
+}
+
+type runReader interface {
+	GetByID(ctx context.Context, runID string) (agentrunrepo.Run, bool, error)
 }
 
 // Config defines runtime deployment service options.
@@ -82,6 +126,8 @@ type AppliedResourceRef struct {
 type Dependencies struct {
 	Kubernetes KubernetesClient
 	Tasks      runtimedeploytaskrepo.Repository
+	Runs       runReader
+	FlowEvents flowEventRecorder
 	Registry   RegistryClient
 	RuntimeErr runtimeErrorRecorder
 	Logger     *slog.Logger

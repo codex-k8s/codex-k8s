@@ -134,7 +134,7 @@ export type RuntimeDeployTaskLog = {
 
 export type RuntimeDeployTaskListItem = {
     run_id: string;
-    status: 'pending' | 'running' | 'succeeded' | 'failed';
+    status: 'pending' | 'running' | 'succeeded' | 'failed' | 'canceled';
     repository_full_name: string;
     target_env: string;
     result_target_env?: string | null;
@@ -144,6 +144,22 @@ export type RuntimeDeployTaskListItem = {
     build_ref: string;
     created_at?: string | null;
     updated_at?: string | null;
+};
+
+export type RuntimeDeployTaskActionRequest = {
+    reason?: string | null;
+    /**
+     * Must be true for destructive stop requests; ignored by cancel.
+     */
+    force?: boolean;
+};
+
+export type RuntimeDeployTaskActionResponse = {
+    run_id: string;
+    action: 'cancel' | 'stop';
+    previous_status: 'pending' | 'running' | 'succeeded' | 'failed' | 'canceled';
+    current_status: 'pending' | 'running' | 'succeeded' | 'failed' | 'canceled';
+    already_terminal: boolean;
 };
 
 export type RuntimeDeployTask = {
@@ -156,13 +172,21 @@ export type RuntimeDeployTask = {
     services_yaml_path: string;
     build_ref: string;
     deploy_only: boolean;
-    status: 'pending' | 'running' | 'succeeded' | 'failed';
+    status: 'pending' | 'running' | 'succeeded' | 'failed' | 'canceled';
     lease_owner?: string | null;
     lease_until?: string | null;
     attempts: number;
     last_error?: string | null;
     result_namespace?: string | null;
     result_target_env?: string | null;
+    cancel_requested_at?: string | null;
+    cancel_requested_by?: string | null;
+    cancel_reason?: string | null;
+    stop_requested_at?: string | null;
+    stop_requested_by?: string | null;
+    stop_reason?: string | null;
+    terminal_status_source?: 'worker' | 'operator' | 'system';
+    terminal_event_seq?: number;
     created_at?: string | null;
     updated_at?: string | null;
     started_at?: string | null;
@@ -1128,7 +1152,7 @@ export type ListRuntimeDeployTasksData = {
     path?: never;
     query?: {
         limit?: number;
-        status?: 'pending' | 'running' | 'succeeded' | 'failed';
+        status?: 'pending' | 'running' | 'succeeded' | 'failed' | 'canceled';
         target_env?: string;
     };
     url: '/api/v1/staff/runtime-deploy/tasks';
@@ -1198,6 +1222,92 @@ export type GetRuntimeDeployTaskResponses = {
 };
 
 export type GetRuntimeDeployTaskResponse = GetRuntimeDeployTaskResponses[keyof GetRuntimeDeployTaskResponses];
+
+export type CancelRuntimeDeployTaskData = {
+    body?: RuntimeDeployTaskActionRequest;
+    path: {
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/runtime-deploy/tasks/{run_id}/cancel';
+};
+
+export type CancelRuntimeDeployTaskErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+};
+
+export type CancelRuntimeDeployTaskError = CancelRuntimeDeployTaskErrors[keyof CancelRuntimeDeployTaskErrors];
+
+export type CancelRuntimeDeployTaskResponses = {
+    /**
+     * Runtime deploy task action result
+     */
+    200: RuntimeDeployTaskActionResponse;
+};
+
+export type CancelRuntimeDeployTaskResponse = CancelRuntimeDeployTaskResponses[keyof CancelRuntimeDeployTaskResponses];
+
+export type StopRuntimeDeployTaskData = {
+    body?: RuntimeDeployTaskActionRequest;
+    path: {
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/runtime-deploy/tasks/{run_id}/stop';
+};
+
+export type StopRuntimeDeployTaskErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+};
+
+export type StopRuntimeDeployTaskError = StopRuntimeDeployTaskErrors[keyof StopRuntimeDeployTaskErrors];
+
+export type StopRuntimeDeployTaskResponses = {
+    /**
+     * Runtime deploy task action result
+     */
+    200: RuntimeDeployTaskActionResponse;
+};
+
+export type StopRuntimeDeployTaskResponse = StopRuntimeDeployTaskResponses[keyof StopRuntimeDeployTaskResponses];
 
 export type ListRuntimeErrorsData = {
     body?: never;

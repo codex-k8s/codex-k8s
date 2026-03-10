@@ -28,6 +28,8 @@ type Service struct {
 	cfg        Config
 	k8s        KubernetesClient
 	tasks      runtimedeploytaskrepo.Repository
+	runs       runReader
+	flowEvents flowEventRecorder
 	registry   RegistryClient
 	runtimeErr runtimeErrorRecorder
 	logger     *slog.Logger
@@ -76,6 +78,8 @@ func NewService(cfg Config, deps Dependencies) (*Service, error) {
 		cfg:        cfg,
 		k8s:        deps.Kubernetes,
 		tasks:      deps.Tasks,
+		runs:       deps.Runs,
+		flowEvents: deps.FlowEvents,
 		registry:   deps.Registry,
 		runtimeErr: deps.RuntimeErr,
 		logger:     logger,

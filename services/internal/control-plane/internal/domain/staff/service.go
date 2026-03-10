@@ -14,6 +14,7 @@ import (
 	runtimeerrorrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimeerror"
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/staffrun"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
+	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
 )
@@ -53,6 +54,7 @@ type Service struct {
 	github         provider.RepositoryProvider
 	githubMgmt     githubManagementClient
 	runStatus      runNamespaceService
+	runtimeDeploy  runtimeDeployController
 }
 
 type platformTokensRepository interface {
@@ -83,6 +85,10 @@ type kubernetesConfigSync interface {
 	UpsertConfigMap(ctx context.Context, namespace string, name string, data map[string]string) error
 }
 
+type runtimeDeployController interface {
+	RequestTaskAction(ctx context.Context, params runtimedeploydomain.TaskActionParams) (runtimedeploydomain.TaskActionResult, error)
+}
+
 // Dependencies defines external collaborators required by staff service.
 type Dependencies struct {
 	Users          userrepo.Repository
@@ -100,6 +106,7 @@ type Dependencies struct {
 	GitHub         provider.RepositoryProvider
 	GitHubMgmt     githubManagementClient
 	RunStatus      runNamespaceService
+	RuntimeDeploy  runtimeDeployController
 }
 
 // NewService constructs staff service.
@@ -121,5 +128,6 @@ func NewService(cfg Config, deps Dependencies) *Service {
 		github:         deps.GitHub,
 		githubMgmt:     deps.GitHubMgmt,
 		runStatus:      deps.RunStatus,
+		runtimeDeploy:  deps.RuntimeDeploy,
 	}
 }

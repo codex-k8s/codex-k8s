@@ -5,6 +5,9 @@
       <VCardText v-if="message" class="text-body-2 text-medium-emphasis">
         {{ message }}
       </VCardText>
+      <VCardText v-if="$slots.default">
+        <slot />
+      </VCardText>
       <VCardActions>
         <VSpacer />
         <VBtn variant="text" @click="onCancel">
@@ -47,4 +50,3 @@ function onConfirm(): void {
   emit("confirm");
 }
 </script>
-

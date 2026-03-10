@@ -580,11 +580,19 @@ message RuntimeDeployTask {
   optional string last_error = 14;
   optional string result_namespace = 15;
   optional string result_target_env = 16;
-  google.protobuf.Timestamp created_at = 17;
-  google.protobuf.Timestamp updated_at = 18;
-  google.protobuf.Timestamp started_at = 19;
-  google.protobuf.Timestamp finished_at = 20;
-  repeated RuntimeDeployTaskLog logs = 21;
+  google.protobuf.Timestamp cancel_requested_at = 17;
+  optional string cancel_requested_by = 18;
+  optional string cancel_reason = 19;
+  google.protobuf.Timestamp stop_requested_at = 20;
+  optional string stop_requested_by = 21;
+  optional string stop_reason = 22;
+  optional string terminal_status_source = 23;
+  int64 terminal_event_seq = 24;
+  google.protobuf.Timestamp created_at = 25;
+  google.protobuf.Timestamp updated_at = 26;
+  google.protobuf.Timestamp started_at = 27;
+  google.protobuf.Timestamp finished_at = 28;
+  repeated RuntimeDeployTaskLog logs = 29;
 }
 
 message ListRuntimeDeployTasksRequest {
@@ -601,6 +609,28 @@ message ListRuntimeDeployTasksResponse {
 message GetRuntimeDeployTaskRequest {
   Principal principal = 1;
   string run_id = 2;
+}
+
+message CancelRuntimeDeployTaskRequest {
+  Principal principal = 1;
+  string run_id = 2;
+  optional string reason = 3;
+}
+
+message StopRuntimeDeployTaskRequest {
+  Principal principal = 1;
+  string run_id = 2;
+  optional string reason = 3;
+  // force must be true because stop is a destructive operator action.
+  bool force = 4;
+}
+
+message RuntimeDeployTaskActionResponse {
+  string run_id = 1;
+  string action = 2;
+  string previous_status = 3;
+  string current_status = 4;
+  bool already_terminal = 5;
 }
 
 message RuntimeError {
@@ -875,6 +905,8 @@ service ControlPlaneService {
   rpc PrepareRunEnvironment(PrepareRunEnvironmentRequest) returns (PrepareRunEnvironmentResponse);
   rpc ListRuntimeDeployTasks(ListRuntimeDeployTasksRequest) returns (ListRuntimeDeployTasksResponse);
   rpc GetRuntimeDeployTask(GetRuntimeDeployTaskRequest) returns (RuntimeDeployTask);
+  rpc CancelRuntimeDeployTask(CancelRuntimeDeployTaskRequest) returns (RuntimeDeployTaskActionResponse);
+  rpc StopRuntimeDeployTask(StopRuntimeDeployTaskRequest) returns (RuntimeDeployTaskActionResponse);
   rpc ListRuntimeErrors(ListRuntimeErrorsRequest) returns (ListRuntimeErrorsResponse);
   rpc MarkRuntimeErrorViewed(MarkRuntimeErrorViewedRequest) returns (RuntimeError);
 

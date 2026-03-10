@@ -16,6 +16,8 @@ type (
 	MarkFailedParams    = querytypes.RuntimeDeployTaskMarkFailedParams
 	RenewLeaseParams    = querytypes.RuntimeDeployTaskRenewLeaseParams
 	RequeueParams       = querytypes.RuntimeDeployTaskRequeueParams
+	RequestActionParams = querytypes.RuntimeDeployTaskRequestActionParams
+	RequestActionResult = querytypes.RuntimeDeployTaskRequestActionResult
 	ListFilter          = querytypes.RuntimeDeployTaskListFilter
 	AppendLogParams     = querytypes.RuntimeDeployTaskAppendLogParams
 )
@@ -36,6 +38,8 @@ type Repository interface {
 	RenewLease(ctx context.Context, params RenewLeaseParams) (bool, error)
 	// Requeue returns one running task back to pending for another reconciler instance.
 	Requeue(ctx context.Context, params RequeueParams) (bool, error)
+	// RequestAction records operator cancel/stop request and moves task to terminal state idempotently.
+	RequestAction(ctx context.Context, params RequestActionParams) (RequestActionResult, error)
 	// ListRecent returns recent runtime deploy tasks ordered by update time.
 	ListRecent(ctx context.Context, filter ListFilter) ([]Task, error)
 	// AppendLog appends one task log line and keeps latest MaxLines entries.

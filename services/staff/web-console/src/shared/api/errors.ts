@@ -34,6 +34,7 @@ function keyForHttp(status: number | undefined, code: string | undefined, messag
   if (code === "unauthorized") return "errors.unauthorized";
   if (code === "forbidden") return "errors.forbidden";
   if (code === "conflict") return "errors.conflict";
+  if (code === "failed_precondition") return "errors.failedPrecondition";
   return "errors.unknown";
 }
 

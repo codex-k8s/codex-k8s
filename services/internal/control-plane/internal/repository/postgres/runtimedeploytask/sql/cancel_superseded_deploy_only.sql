@@ -4,7 +4,12 @@ SET
     status = 'canceled',
     lease_owner = NULL,
     lease_until = NULL,
+    cancel_requested_at = NOW(),
+    cancel_requested_by = 'system',
+    cancel_reason = $7,
     last_error = $7,
+    terminal_status_source = 'system',
+    terminal_event_seq = terminal_event_seq + 1,
     finished_at = NOW(),
     updated_at = NOW()
 WHERE run_id <> $1::uuid

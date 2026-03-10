@@ -7,6 +7,8 @@ SET
     last_error = NULL,
     result_namespace = $3,
     result_target_env = $4,
+    terminal_status_source = 'worker',
+    terminal_event_seq = terminal_event_seq + 1,
     finished_at = NOW(),
     updated_at = NOW()
 WHERE run_id = $1::uuid

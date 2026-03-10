@@ -5,7 +5,7 @@ title: "Epic Catalog: Sprint S7 (MVP readiness gap closure)"
 status: in-progress
 owner_role: PM
 created_at: 2026-02-27
-updated_at: 2026-03-09
+updated_at: 2026-03-10
 related_issues: [212, 218, 220, 222, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 199, 201, 210, 216]
 related_prs: [213, 215]
 approvals:
@@ -139,6 +139,22 @@ approvals:
   negative-case `already_deleted=true` остаётся на backend и не дублируется фронтендом.
 - В traceability добавлены updates по issue `#251`; remaining backlog нормализован как `#252..#256`, `#258..#260`.
 
+## Day 7 execution fact (`S7-E10`)
+- В Issue `#252` реализован stream `S7-E10`:
+  - в `control-plane` добавлены typed task actions `cancel/stop`, staff use-case и audit events
+    `runtime_deploy.cancel_requested` / `runtime_deploy.stop_requested`;
+  - persisted-модель `runtime_deploy_tasks` расширена полями control/audit state,
+    включая `cancel_requested_*`, `stop_requested_*`, `terminal_status_source`,
+    `terminal_event_seq`, и новой миграцией Day26;
+  - `RequestAction` guardrails закрепляют идемпотентность terminal transitions,
+    а `stop` допускается только для `running` задачи с активным lease;
+  - в staff UI добавлены operator controls `Cancel/Stop`, confirm dialog с optional reason,
+    success/error feedback и отображение audit state на details page.
+- Contract-first артефакты синхронизированы:
+  `api/server/api.yaml`, `proto/codexk8s/controlplane/v1/controlplane.proto`,
+  backend/frontend codegen.
+- В traceability добавлены updates по issue `#252`; remaining backlog нормализован как `#253..#256`, `#258..#260`.
+
 ## Candidate execution backlog (19 эпиков)
 
 | Epic ID | Priority | Scope | Источник замечаний |
@@ -152,7 +168,7 @@ approvals:
 | S7-E07 | P0 | Зафиксировать фактический repo-only prompt contract и удалить residual stale traces | PRC-03 |
 | S7-E08 | P1 | Agents UX de-scope hardening: absorbed by `#244` + `#247/#248/#249` + `#274`; standalone issue `#250` закрывается doc-actualization pass | PRC-03 |
 | S7-E09 | P0 | Runs UX: удалить колонку типа запуска и гарантировать namespace delete из run details (in-review `#251`) | PRC-06 |
-| S7-E10 | P0 | Runtime deploy UX: кнопка cancel/stop для зависших deploy tasks + guardrails | PRC-07 |
+| S7-E10 | P0 | Runtime deploy UX: кнопка cancel/stop для зависших deploy tasks + guardrails (in-review `#252`) | PRC-07 |
 | S7-E11 | P0 | Label orchestration reliability: исправить `mode:discussion` trigger-поведение | PRC-08 |
 | S7-E12 | P1 | Final MVP readiness gate: e2e evidence bundle + go/no-go для release chain | PRC-01..PRC-08 |
 | S7-E13 | P0 | Label policy alignment: добавить `run:qa:revise` и покрыть revise-loop QA-stage | PRC-09 |

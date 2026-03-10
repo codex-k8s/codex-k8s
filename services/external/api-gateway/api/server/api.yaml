@@ -479,7 +479,7 @@ paths:
           name: status
           schema:
             type: string
-            enum: [pending, running, succeeded, failed]
+            enum: [pending, running, succeeded, failed, canceled]
         - in: query
           name: target_env
           schema:
@@ -520,6 +520,68 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+
+  /api/v1/staff/runtime-deploy/tasks/{run_id}/cancel:
+    post:
+      summary: Cancel runtime deploy task
+      operationId: cancelRuntimeDeployTask
+      tags: [staff-runtime-deploy]
+      parameters:
+        - $ref: "#/components/parameters/RunID"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuntimeDeployTaskActionRequest"
+      responses:
+        "200":
+          description: Runtime deploy task action result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimeDeployTaskActionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/staff/runtime-deploy/tasks/{run_id}/stop:
+    post:
+      summary: Stop runtime deploy task
+      operationId: stopRuntimeDeployTask
+      tags: [staff-runtime-deploy]
+      parameters:
+        - $ref: "#/components/parameters/RunID"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuntimeDeployTaskActionRequest"
+      responses:
+        "200":
+          description: Runtime deploy task action result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimeDeployTaskActionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
 
   /api/v1/staff/runtime-errors:
     get:
@@ -1511,7 +1573,7 @@ components:
           type: string
         status:
           type: string
-          enum: [pending, running, succeeded, failed]
+          enum: [pending, running, succeeded, failed, canceled]
         repository_full_name:
           type: string
         target_env:
@@ -1536,6 +1598,36 @@ components:
           type: string
           format: date-time
           nullable: true
+
+    RuntimeDeployTaskActionRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        reason:
+          type: string
+          nullable: true
+        force:
+          type: boolean
+          description: Must be true for destructive stop requests; ignored by cancel.
+
+    RuntimeDeployTaskActionResponse:
+      type: object
+      additionalProperties: false
+      required: [run_id, action, previous_status, current_status, already_terminal]
+      properties:
+        run_id:
+          type: string
+        action:
+          type: string
+          enum: [cancel, stop]
+        previous_status:
+          type: string
+          enum: [pending, running, succeeded, failed, canceled]
+        current_status:
+          type: string
+          enum: [pending, running, succeeded, failed, canceled]
+        already_terminal:
+          type: boolean
 
     RuntimeDeployTask:
       type: object
@@ -1563,7 +1655,7 @@ components:
           type: boolean
         status:
           type: string
-          enum: [pending, running, succeeded, failed]
+          enum: [pending, running, succeeded, failed, canceled]
         lease_owner:
           type: string
           nullable: true
@@ -1583,6 +1675,33 @@ components:
         result_target_env:
           type: string
           nullable: true
+        cancel_requested_at:
+          type: string
+          format: date-time
+          nullable: true
+        cancel_requested_by:
+          type: string
+          nullable: true
+        cancel_reason:
+          type: string
+          nullable: true
+        stop_requested_at:
+          type: string
+          format: date-time
+          nullable: true
+        stop_requested_by:
+          type: string
+          nullable: true
+        stop_reason:
+          type: string
+          nullable: true
+        terminal_status_source:
+          type: string
+          enum: [worker, operator, system]
+          nullable: true
+        terminal_event_seq:
+          type: integer
+          format: int64
         created_at:
           type: string
           format: date-time

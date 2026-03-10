@@ -1,5 +1,7 @@
 package http
 
+import "github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/models"
+
 // pathLimit keeps parsed path id and list limit together for staff list handlers.
 type pathLimit struct {
 	id    string
@@ -48,6 +50,12 @@ type runtimeDeployListArg struct {
 	limit     int32
 	status    string
 	targetEnv string
+}
+
+// runtimeDeployActionArg keeps path+body input for cancel/stop endpoints.
+type runtimeDeployActionArg struct {
+	runID string
+	body  models.RuntimeDeployTaskActionRequest
 }
 
 // runtimeErrorsListArg keeps filters for runtime errors list endpoint.

@@ -5,6 +5,8 @@ SET
     lease_owner = NULL,
     lease_until = NULL,
     last_error = $3,
+    terminal_status_source = 'worker',
+    terminal_event_seq = terminal_event_seq + 1,
     finished_at = NOW(),
     updated_at = NOW()
 WHERE run_id = $1::uuid

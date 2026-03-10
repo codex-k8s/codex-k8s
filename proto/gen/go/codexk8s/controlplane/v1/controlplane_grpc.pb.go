@@ -58,6 +58,8 @@ const (
 	ControlPlaneService_PrepareRunEnvironment_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/PrepareRunEnvironment"
 	ControlPlaneService_ListRuntimeDeployTasks_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/ListRuntimeDeployTasks"
 	ControlPlaneService_GetRuntimeDeployTask_FullMethodName                 = "/codexk8s.controlplane.v1.ControlPlaneService/GetRuntimeDeployTask"
+	ControlPlaneService_CancelRuntimeDeployTask_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/CancelRuntimeDeployTask"
+	ControlPlaneService_StopRuntimeDeployTask_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/StopRuntimeDeployTask"
 	ControlPlaneService_ListRuntimeErrors_FullMethodName                    = "/codexk8s.controlplane.v1.ControlPlaneService/ListRuntimeErrors"
 	ControlPlaneService_MarkRuntimeErrorViewed_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/MarkRuntimeErrorViewed"
 	ControlPlaneService_UpsertAgentSession_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertAgentSession"
@@ -113,6 +115,8 @@ type ControlPlaneServiceClient interface {
 	PrepareRunEnvironment(ctx context.Context, in *PrepareRunEnvironmentRequest, opts ...grpc.CallOption) (*PrepareRunEnvironmentResponse, error)
 	ListRuntimeDeployTasks(ctx context.Context, in *ListRuntimeDeployTasksRequest, opts ...grpc.CallOption) (*ListRuntimeDeployTasksResponse, error)
 	GetRuntimeDeployTask(ctx context.Context, in *GetRuntimeDeployTaskRequest, opts ...grpc.CallOption) (*RuntimeDeployTask, error)
+	CancelRuntimeDeployTask(ctx context.Context, in *CancelRuntimeDeployTaskRequest, opts ...grpc.CallOption) (*RuntimeDeployTaskActionResponse, error)
+	StopRuntimeDeployTask(ctx context.Context, in *StopRuntimeDeployTaskRequest, opts ...grpc.CallOption) (*RuntimeDeployTaskActionResponse, error)
 	ListRuntimeErrors(ctx context.Context, in *ListRuntimeErrorsRequest, opts ...grpc.CallOption) (*ListRuntimeErrorsResponse, error)
 	MarkRuntimeErrorViewed(ctx context.Context, in *MarkRuntimeErrorViewedRequest, opts ...grpc.CallOption) (*RuntimeError, error)
 	// Used by agent-runner for run-bound session persistence and event callbacks.
@@ -513,6 +517,26 @@ func (c *controlPlaneServiceClient) GetRuntimeDeployTask(ctx context.Context, in
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) CancelRuntimeDeployTask(ctx context.Context, in *CancelRuntimeDeployTaskRequest, opts ...grpc.CallOption) (*RuntimeDeployTaskActionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RuntimeDeployTaskActionResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_CancelRuntimeDeployTask_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) StopRuntimeDeployTask(ctx context.Context, in *StopRuntimeDeployTaskRequest, opts ...grpc.CallOption) (*RuntimeDeployTaskActionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RuntimeDeployTaskActionResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_StopRuntimeDeployTask_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) ListRuntimeErrors(ctx context.Context, in *ListRuntimeErrorsRequest, opts ...grpc.CallOption) (*ListRuntimeErrorsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListRuntimeErrorsResponse)
@@ -647,6 +671,8 @@ type ControlPlaneServiceServer interface {
 	PrepareRunEnvironment(context.Context, *PrepareRunEnvironmentRequest) (*PrepareRunEnvironmentResponse, error)
 	ListRuntimeDeployTasks(context.Context, *ListRuntimeDeployTasksRequest) (*ListRuntimeDeployTasksResponse, error)
 	GetRuntimeDeployTask(context.Context, *GetRuntimeDeployTaskRequest) (*RuntimeDeployTask, error)
+	CancelRuntimeDeployTask(context.Context, *CancelRuntimeDeployTaskRequest) (*RuntimeDeployTaskActionResponse, error)
+	StopRuntimeDeployTask(context.Context, *StopRuntimeDeployTaskRequest) (*RuntimeDeployTaskActionResponse, error)
 	ListRuntimeErrors(context.Context, *ListRuntimeErrorsRequest) (*ListRuntimeErrorsResponse, error)
 	MarkRuntimeErrorViewed(context.Context, *MarkRuntimeErrorViewedRequest) (*RuntimeError, error)
 	// Used by agent-runner for run-bound session persistence and event callbacks.
@@ -780,6 +806,12 @@ func (UnimplementedControlPlaneServiceServer) ListRuntimeDeployTasks(context.Con
 }
 func (UnimplementedControlPlaneServiceServer) GetRuntimeDeployTask(context.Context, *GetRuntimeDeployTaskRequest) (*RuntimeDeployTask, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRuntimeDeployTask not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) CancelRuntimeDeployTask(context.Context, *CancelRuntimeDeployTaskRequest) (*RuntimeDeployTaskActionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CancelRuntimeDeployTask not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) StopRuntimeDeployTask(context.Context, *StopRuntimeDeployTaskRequest) (*RuntimeDeployTaskActionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StopRuntimeDeployTask not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) ListRuntimeErrors(context.Context, *ListRuntimeErrorsRequest) (*ListRuntimeErrorsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRuntimeErrors not implemented")
@@ -1513,6 +1545,42 @@ func _ControlPlaneService_GetRuntimeDeployTask_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_CancelRuntimeDeployTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelRuntimeDeployTaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).CancelRuntimeDeployTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_CancelRuntimeDeployTask_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).CancelRuntimeDeployTask(ctx, req.(*CancelRuntimeDeployTaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_StopRuntimeDeployTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StopRuntimeDeployTaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).StopRuntimeDeployTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_StopRuntimeDeployTask_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).StopRuntimeDeployTask(ctx, req.(*StopRuntimeDeployTaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_ListRuntimeErrors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListRuntimeErrorsRequest)
 	if err := dec(in); err != nil {
@@ -1833,6 +1901,14 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRuntimeDeployTask",
 			Handler:    _ControlPlaneService_GetRuntimeDeployTask_Handler,
+		},
+		{
+			MethodName: "CancelRuntimeDeployTask",
+			Handler:    _ControlPlaneService_CancelRuntimeDeployTask_Handler,
+		},
+		{
+			MethodName: "StopRuntimeDeployTask",
+			Handler:    _ControlPlaneService_StopRuntimeDeployTask_Handler,
 		},
 		{
 			MethodName: "ListRuntimeErrors",

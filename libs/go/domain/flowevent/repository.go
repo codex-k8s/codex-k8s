@@ -75,6 +75,8 @@ const (
 	EventTypeRunTriggerConflictComment    EventType = "run.trigger.conflict.comment"
 	EventTypeRunNamespaceDeleteByStaff    EventType = "run.namespace.delete_by_staff"
 	EventTypeRunNamespaceDeleteBySystem   EventType = "run.namespace.delete_by_system"
+	EventTypeRuntimeDeployCancelRequested EventType = "runtime_deploy.cancel_requested"
+	EventTypeRuntimeDeployStopRequested   EventType = "runtime_deploy.stop_requested"
 )
 
 const (

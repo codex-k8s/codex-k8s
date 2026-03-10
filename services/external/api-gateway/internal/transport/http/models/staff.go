@@ -64,28 +64,44 @@ type RuntimeDeployTaskListItem struct {
 	UpdatedAt          *string `json:"updated_at"`
 }
 
+type RuntimeDeployTaskActionResponse struct {
+	RunID           string `json:"run_id"`
+	Action          string `json:"action"`
+	PreviousStatus  string `json:"previous_status"`
+	CurrentStatus   string `json:"current_status"`
+	AlreadyTerminal bool   `json:"already_terminal"`
+}
+
 type RuntimeDeployTask struct {
-	RunID              string                 `json:"run_id"`
-	RuntimeMode        string                 `json:"runtime_mode"`
-	Namespace          string                 `json:"namespace"`
-	TargetEnv          string                 `json:"target_env"`
-	SlotNo             int32                  `json:"slot_no"`
-	RepositoryFullName string                 `json:"repository_full_name"`
-	ServicesYAMLPath   string                 `json:"services_yaml_path"`
-	BuildRef           string                 `json:"build_ref"`
-	DeployOnly         bool                   `json:"deploy_only"`
-	Status             string                 `json:"status"`
-	LeaseOwner         *string                `json:"lease_owner"`
-	LeaseUntil         *string                `json:"lease_until"`
-	Attempts           int32                  `json:"attempts"`
-	LastError          *string                `json:"last_error"`
-	ResultNamespace    *string                `json:"result_namespace"`
-	ResultTargetEnv    *string                `json:"result_target_env"`
-	CreatedAt          *string                `json:"created_at"`
-	UpdatedAt          *string                `json:"updated_at"`
-	StartedAt          *string                `json:"started_at"`
-	FinishedAt         *string                `json:"finished_at"`
-	Logs               []RuntimeDeployTaskLog `json:"logs"`
+	RunID                string                 `json:"run_id"`
+	RuntimeMode          string                 `json:"runtime_mode"`
+	Namespace            string                 `json:"namespace"`
+	TargetEnv            string                 `json:"target_env"`
+	SlotNo               int32                  `json:"slot_no"`
+	RepositoryFullName   string                 `json:"repository_full_name"`
+	ServicesYAMLPath     string                 `json:"services_yaml_path"`
+	BuildRef             string                 `json:"build_ref"`
+	DeployOnly           bool                   `json:"deploy_only"`
+	Status               string                 `json:"status"`
+	LeaseOwner           *string                `json:"lease_owner"`
+	LeaseUntil           *string                `json:"lease_until"`
+	Attempts             int32                  `json:"attempts"`
+	LastError            *string                `json:"last_error"`
+	ResultNamespace      *string                `json:"result_namespace"`
+	ResultTargetEnv      *string                `json:"result_target_env"`
+	CancelRequestedAt    *string                `json:"cancel_requested_at"`
+	CancelRequestedBy    *string                `json:"cancel_requested_by"`
+	CancelReason         *string                `json:"cancel_reason"`
+	StopRequestedAt      *string                `json:"stop_requested_at"`
+	StopRequestedBy      *string                `json:"stop_requested_by"`
+	StopReason           *string                `json:"stop_reason"`
+	TerminalStatusSource *string                `json:"terminal_status_source"`
+	TerminalEventSeq     int64                  `json:"terminal_event_seq"`
+	CreatedAt            *string                `json:"created_at"`
+	UpdatedAt            *string                `json:"updated_at"`
+	StartedAt            *string                `json:"started_at"`
+	FinishedAt           *string                `json:"finished_at"`
+	Logs                 []RuntimeDeployTaskLog `json:"logs"`
 }
 
 type RuntimeError struct {

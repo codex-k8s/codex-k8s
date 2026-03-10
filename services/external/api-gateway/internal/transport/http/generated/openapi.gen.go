@@ -96,14 +96,47 @@ const (
 
 // Defines values for RuntimeDeployTaskStatus.
 const (
+	RuntimeDeployTaskStatusCanceled  RuntimeDeployTaskStatus = "canceled"
 	RuntimeDeployTaskStatusFailed    RuntimeDeployTaskStatus = "failed"
 	RuntimeDeployTaskStatusPending   RuntimeDeployTaskStatus = "pending"
 	RuntimeDeployTaskStatusRunning   RuntimeDeployTaskStatus = "running"
 	RuntimeDeployTaskStatusSucceeded RuntimeDeployTaskStatus = "succeeded"
 )
 
+// Defines values for RuntimeDeployTaskTerminalStatusSource.
+const (
+	Operator RuntimeDeployTaskTerminalStatusSource = "operator"
+	System   RuntimeDeployTaskTerminalStatusSource = "system"
+	Worker   RuntimeDeployTaskTerminalStatusSource = "worker"
+)
+
+// Defines values for RuntimeDeployTaskActionResponseAction.
+const (
+	Cancel RuntimeDeployTaskActionResponseAction = "cancel"
+	Stop   RuntimeDeployTaskActionResponseAction = "stop"
+)
+
+// Defines values for RuntimeDeployTaskActionResponseCurrentStatus.
+const (
+	RuntimeDeployTaskActionResponseCurrentStatusCanceled  RuntimeDeployTaskActionResponseCurrentStatus = "canceled"
+	RuntimeDeployTaskActionResponseCurrentStatusFailed    RuntimeDeployTaskActionResponseCurrentStatus = "failed"
+	RuntimeDeployTaskActionResponseCurrentStatusPending   RuntimeDeployTaskActionResponseCurrentStatus = "pending"
+	RuntimeDeployTaskActionResponseCurrentStatusRunning   RuntimeDeployTaskActionResponseCurrentStatus = "running"
+	RuntimeDeployTaskActionResponseCurrentStatusSucceeded RuntimeDeployTaskActionResponseCurrentStatus = "succeeded"
+)
+
+// Defines values for RuntimeDeployTaskActionResponsePreviousStatus.
+const (
+	RuntimeDeployTaskActionResponsePreviousStatusCanceled  RuntimeDeployTaskActionResponsePreviousStatus = "canceled"
+	RuntimeDeployTaskActionResponsePreviousStatusFailed    RuntimeDeployTaskActionResponsePreviousStatus = "failed"
+	RuntimeDeployTaskActionResponsePreviousStatusPending   RuntimeDeployTaskActionResponsePreviousStatus = "pending"
+	RuntimeDeployTaskActionResponsePreviousStatusRunning   RuntimeDeployTaskActionResponsePreviousStatus = "running"
+	RuntimeDeployTaskActionResponsePreviousStatusSucceeded RuntimeDeployTaskActionResponsePreviousStatus = "succeeded"
+)
+
 // Defines values for RuntimeDeployTaskListItemStatus.
 const (
+	RuntimeDeployTaskListItemStatusCanceled  RuntimeDeployTaskListItemStatus = "canceled"
 	RuntimeDeployTaskListItemStatusFailed    RuntimeDeployTaskListItemStatus = "failed"
 	RuntimeDeployTaskListItemStatusPending   RuntimeDeployTaskListItemStatus = "pending"
 	RuntimeDeployTaskListItemStatusRunning   RuntimeDeployTaskListItemStatus = "running"
@@ -147,10 +180,11 @@ const (
 
 // Defines values for ListRuntimeDeployTasksParamsStatus.
 const (
-	ListRuntimeDeployTasksParamsStatusFailed    ListRuntimeDeployTasksParamsStatus = "failed"
-	ListRuntimeDeployTasksParamsStatusPending   ListRuntimeDeployTasksParamsStatus = "pending"
-	ListRuntimeDeployTasksParamsStatusRunning   ListRuntimeDeployTasksParamsStatus = "running"
-	ListRuntimeDeployTasksParamsStatusSucceeded ListRuntimeDeployTasksParamsStatus = "succeeded"
+	Canceled  ListRuntimeDeployTasksParamsStatus = "canceled"
+	Failed    ListRuntimeDeployTasksParamsStatus = "failed"
+	Pending   ListRuntimeDeployTasksParamsStatus = "pending"
+	Running   ListRuntimeDeployTasksParamsStatus = "running"
+	Succeeded ListRuntimeDeployTasksParamsStatus = "succeeded"
 )
 
 // Defines values for ListRuntimeErrorsParamsState.
@@ -486,31 +520,67 @@ type RunRepositoryPreflightResponse struct {
 
 // RuntimeDeployTask defines model for RuntimeDeployTask.
 type RuntimeDeployTask struct {
-	Attempts           int32                   `json:"attempts"`
-	BuildRef           string                  `json:"build_ref"`
-	CreatedAt          *time.Time              `json:"created_at"`
-	DeployOnly         bool                    `json:"deploy_only"`
-	FinishedAt         *time.Time              `json:"finished_at"`
-	LastError          *string                 `json:"last_error"`
-	LeaseOwner         *string                 `json:"lease_owner"`
-	LeaseUntil         *time.Time              `json:"lease_until"`
-	Logs               []RuntimeDeployTaskLog  `json:"logs"`
-	Namespace          string                  `json:"namespace"`
-	RepositoryFullName string                  `json:"repository_full_name"`
-	ResultNamespace    *string                 `json:"result_namespace"`
-	ResultTargetEnv    *string                 `json:"result_target_env"`
-	RunId              string                  `json:"run_id"`
-	RuntimeMode        string                  `json:"runtime_mode"`
-	ServicesYamlPath   string                  `json:"services_yaml_path"`
-	SlotNo             int32                   `json:"slot_no"`
-	StartedAt          *time.Time              `json:"started_at"`
-	Status             RuntimeDeployTaskStatus `json:"status"`
-	TargetEnv          string                  `json:"target_env"`
-	UpdatedAt          *time.Time              `json:"updated_at"`
+	Attempts             int32                                  `json:"attempts"`
+	BuildRef             string                                 `json:"build_ref"`
+	CancelReason         *string                                `json:"cancel_reason"`
+	CancelRequestedAt    *time.Time                             `json:"cancel_requested_at"`
+	CancelRequestedBy    *string                                `json:"cancel_requested_by"`
+	CreatedAt            *time.Time                             `json:"created_at"`
+	DeployOnly           bool                                   `json:"deploy_only"`
+	FinishedAt           *time.Time                             `json:"finished_at"`
+	LastError            *string                                `json:"last_error"`
+	LeaseOwner           *string                                `json:"lease_owner"`
+	LeaseUntil           *time.Time                             `json:"lease_until"`
+	Logs                 []RuntimeDeployTaskLog                 `json:"logs"`
+	Namespace            string                                 `json:"namespace"`
+	RepositoryFullName   string                                 `json:"repository_full_name"`
+	ResultNamespace      *string                                `json:"result_namespace"`
+	ResultTargetEnv      *string                                `json:"result_target_env"`
+	RunId                string                                 `json:"run_id"`
+	RuntimeMode          string                                 `json:"runtime_mode"`
+	ServicesYamlPath     string                                 `json:"services_yaml_path"`
+	SlotNo               int32                                  `json:"slot_no"`
+	StartedAt            *time.Time                             `json:"started_at"`
+	Status               RuntimeDeployTaskStatus                `json:"status"`
+	StopReason           *string                                `json:"stop_reason"`
+	StopRequestedAt      *time.Time                             `json:"stop_requested_at"`
+	StopRequestedBy      *string                                `json:"stop_requested_by"`
+	TargetEnv            string                                 `json:"target_env"`
+	TerminalEventSeq     *int64                                 `json:"terminal_event_seq,omitempty"`
+	TerminalStatusSource *RuntimeDeployTaskTerminalStatusSource `json:"terminal_status_source"`
+	UpdatedAt            *time.Time                             `json:"updated_at"`
 }
 
 // RuntimeDeployTaskStatus defines model for RuntimeDeployTask.Status.
 type RuntimeDeployTaskStatus string
+
+// RuntimeDeployTaskTerminalStatusSource defines model for RuntimeDeployTask.TerminalStatusSource.
+type RuntimeDeployTaskTerminalStatusSource string
+
+// RuntimeDeployTaskActionRequest defines model for RuntimeDeployTaskActionRequest.
+type RuntimeDeployTaskActionRequest struct {
+	// Force Must be true for destructive stop requests; ignored by cancel.
+	Force  *bool   `json:"force,omitempty"`
+	Reason *string `json:"reason"`
+}
+
+// RuntimeDeployTaskActionResponse defines model for RuntimeDeployTaskActionResponse.
+type RuntimeDeployTaskActionResponse struct {
+	Action          RuntimeDeployTaskActionResponseAction         `json:"action"`
+	AlreadyTerminal bool                                          `json:"already_terminal"`
+	CurrentStatus   RuntimeDeployTaskActionResponseCurrentStatus  `json:"current_status"`
+	PreviousStatus  RuntimeDeployTaskActionResponsePreviousStatus `json:"previous_status"`
+	RunId           string                                        `json:"run_id"`
+}
+
+// RuntimeDeployTaskActionResponseAction defines model for RuntimeDeployTaskActionResponse.Action.
+type RuntimeDeployTaskActionResponseAction string
+
+// RuntimeDeployTaskActionResponseCurrentStatus defines model for RuntimeDeployTaskActionResponse.CurrentStatus.
+type RuntimeDeployTaskActionResponseCurrentStatus string
+
+// RuntimeDeployTaskActionResponsePreviousStatus defines model for RuntimeDeployTaskActionResponse.PreviousStatus.
+type RuntimeDeployTaskActionResponsePreviousStatus string
 
 // RuntimeDeployTaskItemsResponse defines model for RuntimeDeployTaskItemsResponse.
 type RuntimeDeployTaskItemsResponse struct {
@@ -888,6 +958,12 @@ type UpsertProjectRepositoryJSONRequestBody = UpsertProjectRepositoryRequest
 // UpsertRepositoryBotParamsJSONRequestBody defines body for UpsertRepositoryBotParams for application/json ContentType.
 type UpsertRepositoryBotParamsJSONRequestBody = UpsertRepositoryBotParamsRequest
 
+// CancelRuntimeDeployTaskJSONRequestBody defines body for CancelRuntimeDeployTask for application/json ContentType.
+type CancelRuntimeDeployTaskJSONRequestBody = RuntimeDeployTaskActionRequest
+
+// StopRuntimeDeployTaskJSONRequestBody defines body for StopRuntimeDeployTask for application/json ContentType.
+type StopRuntimeDeployTaskJSONRequestBody = RuntimeDeployTaskActionRequest
+
 // CreateUserJSONRequestBody defines body for CreateUser for application/json ContentType.
 type CreateUserJSONRequestBody = CreateUserRequest
 
@@ -1134,6 +1210,12 @@ type ServerInterface interface {
 	// Get runtime deploy task details
 	// (GET /api/v1/staff/runtime-deploy/tasks/{run_id})
 	GetRuntimeDeployTask(w http.ResponseWriter, r *http.Request, runId RunID)
+	// Cancel runtime deploy task
+	// (POST /api/v1/staff/runtime-deploy/tasks/{run_id}/cancel)
+	CancelRuntimeDeployTask(w http.ResponseWriter, r *http.Request, runId RunID)
+	// Stop runtime deploy task
+	// (POST /api/v1/staff/runtime-deploy/tasks/{run_id}/stop)
+	StopRuntimeDeployTask(w http.ResponseWriter, r *http.Request, runId RunID)
 	// List runtime error journal entries
 	// (GET /api/v1/staff/runtime-errors)
 	ListRuntimeErrors(w http.ResponseWriter, r *http.Request, params ListRuntimeErrorsParams)
@@ -2312,6 +2394,56 @@ func (siw *ServerInterfaceWrapper) GetRuntimeDeployTask(w http.ResponseWriter, r
 	handler.ServeHTTP(w, r)
 }
 
+// CancelRuntimeDeployTask operation middleware
+func (siw *ServerInterfaceWrapper) CancelRuntimeDeployTask(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "run_id" -------------
+	var runId RunID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "run_id", r.PathValue("run_id"), &runId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "run_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CancelRuntimeDeployTask(w, r, runId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// StopRuntimeDeployTask operation middleware
+func (siw *ServerInterfaceWrapper) StopRuntimeDeployTask(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "run_id" -------------
+	var runId RunID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "run_id", r.PathValue("run_id"), &runId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "run_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.StopRuntimeDeployTask(w, r, runId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListRuntimeErrors operation middleware
 func (siw *ServerInterfaceWrapper) ListRuntimeErrors(w http.ResponseWriter, r *http.Request) {
 
@@ -2718,6 +2850,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}/realtime", wrapper.RunRealtime)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runtime-deploy/tasks", wrapper.ListRuntimeDeployTasks)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runtime-deploy/tasks/{run_id}", wrapper.GetRuntimeDeployTask)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/runtime-deploy/tasks/{run_id}/cancel", wrapper.CancelRuntimeDeployTask)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/runtime-deploy/tasks/{run_id}/stop", wrapper.StopRuntimeDeployTask)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runtime-errors", wrapper.ListRuntimeErrors)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/runtime-errors/{runtime_error_id}/viewed", wrapper.MarkRuntimeErrorViewed)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/users", wrapper.ListUsers)
@@ -4320,6 +4454,132 @@ func (response GetRuntimeDeployTask404JSONResponse) VisitGetRuntimeDeployTaskRes
 	return json.NewEncoder(w).Encode(response)
 }
 
+type CancelRuntimeDeployTaskRequestObject struct {
+	RunId RunID `json:"run_id"`
+	Body  *CancelRuntimeDeployTaskJSONRequestBody
+}
+
+type CancelRuntimeDeployTaskResponseObject interface {
+	VisitCancelRuntimeDeployTaskResponse(w http.ResponseWriter) error
+}
+
+type CancelRuntimeDeployTask200JSONResponse RuntimeDeployTaskActionResponse
+
+func (response CancelRuntimeDeployTask200JSONResponse) VisitCancelRuntimeDeployTaskResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CancelRuntimeDeployTask400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CancelRuntimeDeployTask400JSONResponse) VisitCancelRuntimeDeployTaskResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CancelRuntimeDeployTask401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CancelRuntimeDeployTask401JSONResponse) VisitCancelRuntimeDeployTaskResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CancelRuntimeDeployTask403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CancelRuntimeDeployTask403JSONResponse) VisitCancelRuntimeDeployTaskResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CancelRuntimeDeployTask404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CancelRuntimeDeployTask404JSONResponse) VisitCancelRuntimeDeployTaskResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CancelRuntimeDeployTask409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CancelRuntimeDeployTask409JSONResponse) VisitCancelRuntimeDeployTaskResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type StopRuntimeDeployTaskRequestObject struct {
+	RunId RunID `json:"run_id"`
+	Body  *StopRuntimeDeployTaskJSONRequestBody
+}
+
+type StopRuntimeDeployTaskResponseObject interface {
+	VisitStopRuntimeDeployTaskResponse(w http.ResponseWriter) error
+}
+
+type StopRuntimeDeployTask200JSONResponse RuntimeDeployTaskActionResponse
+
+func (response StopRuntimeDeployTask200JSONResponse) VisitStopRuntimeDeployTaskResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type StopRuntimeDeployTask400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response StopRuntimeDeployTask400JSONResponse) VisitStopRuntimeDeployTaskResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type StopRuntimeDeployTask401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response StopRuntimeDeployTask401JSONResponse) VisitStopRuntimeDeployTaskResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type StopRuntimeDeployTask403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response StopRuntimeDeployTask403JSONResponse) VisitStopRuntimeDeployTaskResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type StopRuntimeDeployTask404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response StopRuntimeDeployTask404JSONResponse) VisitStopRuntimeDeployTaskResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type StopRuntimeDeployTask409JSONResponse struct{ ConflictJSONResponse }
+
+func (response StopRuntimeDeployTask409JSONResponse) VisitStopRuntimeDeployTaskResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListRuntimeErrorsRequestObject struct {
 	Params ListRuntimeErrorsParams
 }
@@ -4709,6 +4969,12 @@ type StrictServerInterface interface {
 	// Get runtime deploy task details
 	// (GET /api/v1/staff/runtime-deploy/tasks/{run_id})
 	GetRuntimeDeployTask(ctx context.Context, request GetRuntimeDeployTaskRequestObject) (GetRuntimeDeployTaskResponseObject, error)
+	// Cancel runtime deploy task
+	// (POST /api/v1/staff/runtime-deploy/tasks/{run_id}/cancel)
+	CancelRuntimeDeployTask(ctx context.Context, request CancelRuntimeDeployTaskRequestObject) (CancelRuntimeDeployTaskResponseObject, error)
+	// Stop runtime deploy task
+	// (POST /api/v1/staff/runtime-deploy/tasks/{run_id}/stop)
+	StopRuntimeDeployTask(ctx context.Context, request StopRuntimeDeployTaskRequestObject) (StopRuntimeDeployTaskResponseObject, error)
 	// List runtime error journal entries
 	// (GET /api/v1/staff/runtime-errors)
 	ListRuntimeErrors(ctx context.Context, request ListRuntimeErrorsRequestObject) (ListRuntimeErrorsResponseObject, error)
@@ -5829,6 +6095,72 @@ func (sh *strictHandler) GetRuntimeDeployTask(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetRuntimeDeployTaskResponseObject); ok {
 		if err := validResponse.VisitGetRuntimeDeployTaskResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CancelRuntimeDeployTask operation middleware
+func (sh *strictHandler) CancelRuntimeDeployTask(w http.ResponseWriter, r *http.Request, runId RunID) {
+	var request CancelRuntimeDeployTaskRequestObject
+
+	request.RunId = runId
+
+	var body CancelRuntimeDeployTaskJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CancelRuntimeDeployTask(ctx, request.(CancelRuntimeDeployTaskRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CancelRuntimeDeployTask")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CancelRuntimeDeployTaskResponseObject); ok {
+		if err := validResponse.VisitCancelRuntimeDeployTaskResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// StopRuntimeDeployTask operation middleware
+func (sh *strictHandler) StopRuntimeDeployTask(w http.ResponseWriter, r *http.Request, runId RunID) {
+	var request StopRuntimeDeployTaskRequestObject
+
+	request.RunId = runId
+
+	var body StopRuntimeDeployTaskJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.StopRuntimeDeployTask(ctx, request.(StopRuntimeDeployTaskRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "StopRuntimeDeployTask")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(StopRuntimeDeployTaskResponseObject); ok {
+		if err := validResponse.VisitStopRuntimeDeployTaskResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

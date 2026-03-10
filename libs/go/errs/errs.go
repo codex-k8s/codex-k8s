@@ -46,6 +46,20 @@ func (e Forbidden) Error() string {
 	return e.Msg
 }
 
+// NotFound indicates that requested resource does not exist.
+type NotFound struct {
+	// Msg overrides the default not found message when provided.
+	Msg string
+}
+
+// Error returns a stable not found message.
+func (e NotFound) Error() string {
+	if e.Msg == "" {
+		return "not found"
+	}
+	return e.Msg
+}
+
 // Conflict indicates a state conflict such as duplicate or race condition.
 type Conflict struct {
 	// Msg overrides the default conflict message when provided.
@@ -56,6 +70,20 @@ type Conflict struct {
 func (e Conflict) Error() string {
 	if e.Msg == "" {
 		return "conflict"
+	}
+	return e.Msg
+}
+
+// FailedPrecondition indicates that current resource state does not satisfy action guardrails.
+type FailedPrecondition struct {
+	// Msg overrides the default failed precondition message when provided.
+	Msg string
+}
+
+// Error returns a stable failed precondition message.
+func (e FailedPrecondition) Error() string {
+	if e.Msg == "" {
+		return "failed precondition"
 	}
 	return e.Msg
 }

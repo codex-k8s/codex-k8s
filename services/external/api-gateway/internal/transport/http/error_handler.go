@@ -39,6 +39,7 @@ func newHTTPErrorHandler(logger *slog.Logger) func(c *echo.Context, err error) {
 		var validation errs.Validation
 		var unauthorized errs.Unauthorized
 		var forbidden errs.Forbidden
+		var notFound errs.NotFound
 		var conflict errs.Conflict
 		var httpErr *echo.HTTPError
 		grpcErr := grpcStatus(err)
@@ -79,6 +80,13 @@ func newHTTPErrorHandler(logger *slog.Logger) func(c *echo.Context, err error) {
 			resp = models.ErrorResponse{
 				Code:    "forbidden",
 				Message: forbidden.Error(),
+			}
+			logAsError = false
+		case errors.As(err, &notFound):
+			statusCode = http.StatusNotFound
+			resp = models.ErrorResponse{
+				Code:    "not_found",
+				Message: notFound.Error(),
 			}
 			logAsError = false
 		case errors.As(err, &conflict):

@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"strings"
@@ -84,4 +85,32 @@ func (h *staffHandler) ListRuntimeDeployTasks(c *echo.Context) error {
 
 func (h *staffHandler) GetRuntimeDeployTask(c *echo.Context) error {
 	return getByPathResp(c, "run_id", h.getRuntimeDeployTaskCall, casters.RuntimeDeployTask)
+}
+
+func (h *staffHandler) CancelRuntimeDeployTask(c *echo.Context) error {
+	return h.runtimeDeployTaskAction(c, h.cancelRuntimeDeployTaskCall)
+}
+
+func (h *staffHandler) StopRuntimeDeployTask(c *echo.Context) error {
+	return h.runtimeDeployTaskAction(c, h.stopRuntimeDeployTaskCall)
+}
+
+func (h *staffHandler) runtimeDeployTaskAction(
+	c *echo.Context,
+	call func(ctx context.Context, principal *controlplanev1.Principal, arg runtimeDeployActionArg) (*controlplanev1.RuntimeDeployTaskActionResponse, error),
+) error {
+	return withPrincipalAndResolved(c, resolvePath("run_id"), func(principal *controlplanev1.Principal, runID string) error {
+		var req models.RuntimeDeployTaskActionRequest
+		if err := bindBody(c, &req); err != nil {
+			return err
+		}
+		resp, err := call(c.Request().Context(), principal, runtimeDeployActionArg{
+			runID: strings.TrimSpace(runID),
+			body:  req,
+		})
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, casters.RuntimeDeployTaskAction(resp))
+	})
 }

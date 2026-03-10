@@ -9,8 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/codex-k8s/codex-k8s/libs/go/errs"
 	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -37,6 +39,8 @@ var (
 	queryRenewLease string
 	//go:embed sql/requeue_running.sql
 	queryRequeueRunning string
+	//go:embed sql/request_action.sql
+	queryRequestAction string
 	//go:embed sql/list_recent.sql
 	queryListRecent string
 	//go:embed sql/append_log.sql
@@ -248,6 +252,80 @@ func (r *Repository) Requeue(ctx context.Context, params domainrepo.RequeueParam
 	return strings.TrimSpace(returnedRunID) != "", nil
 }
 
+// RequestAction records one operator cancel/stop request and transitions task to canceled idempotently.
+func (r *Repository) RequestAction(ctx context.Context, params domainrepo.RequestActionParams) (domainrepo.RequestActionResult, error) {
+	normalized, err := normalizeRequestActionParams(params)
+	if err != nil {
+		return domainrepo.RequestActionResult{}, err
+	}
+
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return domainrepo.RequestActionResult{}, fmt.Errorf("begin runtime deploy action transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	task, found, err := getByRunIDForUpdate(ctx, tx, normalized.RunID)
+	if err != nil {
+		return domainrepo.RequestActionResult{}, err
+	}
+	if !found {
+		return domainrepo.RequestActionResult{}, errs.NotFound{Msg: "run_id: not found"}
+	}
+	if task.Status.IsTerminal() {
+		if err := tx.Commit(ctx); err != nil {
+			return domainrepo.RequestActionResult{}, fmt.Errorf("commit runtime deploy action transaction: %w", err)
+		}
+		return domainrepo.RequestActionResult{
+			Task:            task,
+			PreviousStatus:  task.Status,
+			CurrentStatus:   task.Status,
+			AlreadyTerminal: true,
+		}, nil
+	}
+	if normalized.Action == querytypes.RuntimeDeployTaskActionStop {
+		if err := validateStopActionTask(task, normalized.RequestedAt); err != nil {
+			return domainrepo.RequestActionResult{}, err
+		}
+	}
+
+	updatedTask, err := requestAction(ctx, tx, normalized)
+	if err != nil {
+		return domainrepo.RequestActionResult{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return domainrepo.RequestActionResult{}, fmt.Errorf("commit runtime deploy action transaction: %w", err)
+	}
+	return domainrepo.RequestActionResult{
+		Task:            updatedTask,
+		PreviousStatus:  task.Status,
+		CurrentStatus:   updatedTask.Status,
+		AlreadyTerminal: false,
+	}, nil
+}
+
+func validateStopActionTask(task domainrepo.Task, requestedAt time.Time) error {
+	if task.Status != entitytypes.RuntimeDeployTaskStatusRunning {
+		return errs.FailedPrecondition{Msg: "stop requires running task"}
+	}
+	if !hasActiveLease(task, requestedAt) {
+		return errs.FailedPrecondition{Msg: "running task lease is not active"}
+	}
+	return nil
+}
+
+func hasActiveLease(task domainrepo.Task, requestedAt time.Time) bool {
+	if strings.TrimSpace(task.LeaseOwner) == "" {
+		return false
+	}
+	if task.LeaseUntil.IsZero() {
+		return false
+	}
+	return task.LeaseUntil.UTC().After(requestedAt.UTC())
+}
+
 // ListRecent returns runtime deploy tasks ordered by updated_at desc.
 func (r *Repository) ListRecent(ctx context.Context, filter domainrepo.ListFilter) ([]domainrepo.Task, error) {
 	limit := filter.Limit
@@ -385,18 +463,25 @@ func applyDesiredStateMutation(ctx context.Context, tx pgx.Tx, sqlQuery string, 
 
 func scanTask(row taskRowScanner) (domainrepo.Task, error) {
 	var (
-		task            domainrepo.Task
-		statusRaw       string
-		leaseUntil      pgtype.Timestamptz
-		createdAt       time.Time
-		updatedAt       time.Time
-		startedAt       pgtype.Timestamptz
-		finishedAt      pgtype.Timestamptz
-		logsRaw         []byte
-		leaseOwner      string
-		lastError       string
-		resultNamespace string
-		resultTargetEnv string
+		task                 domainrepo.Task
+		statusRaw            string
+		leaseUntil           pgtype.Timestamptz
+		cancelRequestedAt    pgtype.Timestamptz
+		stopRequestedAt      pgtype.Timestamptz
+		createdAt            time.Time
+		updatedAt            time.Time
+		startedAt            pgtype.Timestamptz
+		finishedAt           pgtype.Timestamptz
+		logsRaw              []byte
+		leaseOwner           string
+		lastError            string
+		resultNamespace      string
+		resultTargetEnv      string
+		cancelRequestedBy    string
+		cancelReason         string
+		stopRequestedBy      string
+		stopReason           string
+		terminalStatusSource string
 	)
 
 	err := row.Scan(
@@ -416,6 +501,14 @@ func scanTask(row taskRowScanner) (domainrepo.Task, error) {
 		&lastError,
 		&resultNamespace,
 		&resultTargetEnv,
+		&cancelRequestedAt,
+		&cancelRequestedBy,
+		&cancelReason,
+		&stopRequestedAt,
+		&stopRequestedBy,
+		&stopReason,
+		&terminalStatusSource,
+		&task.TerminalEventSeq,
 		&createdAt,
 		&updatedAt,
 		&startedAt,
@@ -438,6 +531,17 @@ func scanTask(row taskRowScanner) (domainrepo.Task, error) {
 	task.LastError = strings.TrimSpace(lastError)
 	task.ResultNamespace = strings.TrimSpace(resultNamespace)
 	task.ResultTargetEnv = strings.TrimSpace(resultTargetEnv)
+	if cancelRequestedAt.Valid {
+		task.CancelRequestedAt = cancelRequestedAt.Time.UTC()
+	}
+	task.CancelRequestedBy = strings.TrimSpace(cancelRequestedBy)
+	task.CancelReason = strings.TrimSpace(cancelReason)
+	if stopRequestedAt.Valid {
+		task.StopRequestedAt = stopRequestedAt.Time.UTC()
+	}
+	task.StopRequestedBy = strings.TrimSpace(stopRequestedBy)
+	task.StopReason = strings.TrimSpace(stopReason)
+	task.TerminalStatusSource = parseTerminalStatusSource(terminalStatusSource)
 	task.CreatedAt = createdAt.UTC()
 	task.UpdatedAt = updatedAt.UTC()
 	if startedAt.Valid {
@@ -492,6 +596,17 @@ func parseRuntimeDeployStatus(raw string) (entitytypes.RuntimeDeployTaskStatus, 
 	}
 }
 
+func parseTerminalStatusSource(raw string) entitytypes.RuntimeDeployTaskTerminalStatusSource {
+	switch source := entitytypes.RuntimeDeployTaskTerminalStatusSource(strings.TrimSpace(raw)); source {
+	case entitytypes.RuntimeDeployTaskTerminalStatusSourceWorker,
+		entitytypes.RuntimeDeployTaskTerminalStatusSourceOperator,
+		entitytypes.RuntimeDeployTaskTerminalStatusSourceSystem:
+		return source
+	default:
+		return ""
+	}
+}
+
 func normalizeUpsertParams(params domainrepo.UpsertDesiredParams) (domainrepo.UpsertDesiredParams, error) {
 	params.RunID = strings.TrimSpace(params.RunID)
 	if params.RunID == "" {
@@ -512,6 +627,32 @@ func normalizeUpsertParams(params domainrepo.UpsertDesiredParams) (domainrepo.Up
 	params.RepositoryFullName = strings.TrimSpace(params.RepositoryFullName)
 	params.ServicesYAMLPath = strings.TrimSpace(params.ServicesYAMLPath)
 	params.BuildRef = strings.TrimSpace(params.BuildRef)
+	return params, nil
+}
+
+func normalizeRequestActionParams(params domainrepo.RequestActionParams) (domainrepo.RequestActionParams, error) {
+	params.RunID = strings.TrimSpace(params.RunID)
+	if params.RunID == "" {
+		return domainrepo.RequestActionParams{}, fmt.Errorf("request runtime deploy action: run_id is required")
+	}
+	switch params.Action {
+	case querytypes.RuntimeDeployTaskActionCancel, querytypes.RuntimeDeployTaskActionStop:
+	default:
+		return domainrepo.RequestActionParams{}, fmt.Errorf("request runtime deploy action: action must be cancel or stop")
+	}
+	params.RequestedBy = strings.TrimSpace(params.RequestedBy)
+	if params.RequestedBy == "" {
+		return domainrepo.RequestActionParams{}, fmt.Errorf("request runtime deploy action: requested_by is required")
+	}
+	params.Reason = strings.TrimSpace(params.Reason)
+	if params.RequestedAt.IsZero() {
+		params.RequestedAt = time.Now().UTC()
+	} else {
+		params.RequestedAt = params.RequestedAt.UTC()
+	}
+	if len(params.Reason) > 4000 {
+		params.Reason = params.Reason[:4000]
+	}
 	return params, nil
 }
 
@@ -586,4 +727,22 @@ func cancelSupersededDeployOnlyTasks(ctx context.Context, tx pgx.Tx, currentRunI
 		return 0, fmt.Errorf("cancel superseded deploy-only tasks for run_id=%s: %w", currentRunID, err)
 	}
 	return tag.RowsAffected(), nil
+}
+
+func requestAction(ctx context.Context, tx pgx.Tx, params domainrepo.RequestActionParams) (domainrepo.Task, error) {
+	row := tx.QueryRow(
+		ctx,
+		queryRequestAction,
+		params.RunID,
+		string(params.Action),
+		params.RequestedAt,
+		params.RequestedBy,
+		params.Reason,
+		params.Reason,
+	)
+	task, err := scanTask(row)
+	if err != nil {
+		return domainrepo.Task{}, fmt.Errorf("request runtime deploy action run_id=%s: %w", params.RunID, err)
+	}
+	return task, nil
 }

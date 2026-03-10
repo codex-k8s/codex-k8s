@@ -72,6 +72,27 @@ func (s *Service) ReconcileNext(ctx context.Context, leaseOwner string, leaseTTL
 			}
 		}
 	}()
+	cancelWatchDone := make(chan struct{})
+	go func() {
+		defer close(cancelWatchDone)
+
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-renewCtx.Done():
+				return
+			case <-ticker.C:
+				if !s.isTaskCanceled(ctx, task.RunID) {
+					continue
+				}
+				s.logger.Info("runtime deploy task canceled while running", "run_id", task.RunID, "lease_owner", leaseOwner)
+				cancelRenew()
+				return
+			}
+		}
+	}()
 
 	result, runErr := s.applyDesiredState(renewCtx, PrepareParams{
 		RunID:              task.RunID,
@@ -86,6 +107,7 @@ func (s *Service) ReconcileNext(ctx context.Context, leaseOwner string, leaseTTL
 	})
 	cancelRenew()
 	<-renewDone
+	<-cancelWatchDone
 	if runErr != nil {
 		s.appendTaskLogBestEffort(ctx, task.RunID, "reconcile", "error", "Task failed: "+runErr.Error())
 		if errors.Is(runErr, context.Canceled) || errors.Is(runErr, context.DeadlineExceeded) {

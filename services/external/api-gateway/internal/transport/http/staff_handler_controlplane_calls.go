@@ -105,6 +105,23 @@ func buildGetRuntimeDeployTaskRequest(principal *controlplanev1.Principal, runID
 	}
 }
 
+func buildCancelRuntimeDeployTaskRequest(principal *controlplanev1.Principal, arg runtimeDeployActionArg) *controlplanev1.CancelRuntimeDeployTaskRequest {
+	return &controlplanev1.CancelRuntimeDeployTaskRequest{
+		Principal: principal,
+		RunId:     strings.TrimSpace(arg.runID),
+		Reason:    optionalStringPtr(arg.body.Reason),
+	}
+}
+
+func buildStopRuntimeDeployTaskRequest(principal *controlplanev1.Principal, arg runtimeDeployActionArg) *controlplanev1.StopRuntimeDeployTaskRequest {
+	return &controlplanev1.StopRuntimeDeployTaskRequest{
+		Principal: principal,
+		RunId:     strings.TrimSpace(arg.runID),
+		Reason:    optionalStringPtr(arg.body.Reason),
+		Force:     arg.body.Force,
+	}
+}
+
 func buildListRuntimeErrorsRequest(principal *controlplanev1.Principal, arg runtimeErrorsListArg) *controlplanev1.ListRuntimeErrorsRequest {
 	return &controlplanev1.ListRuntimeErrorsRequest{
 		Principal:     principal,
@@ -210,6 +227,14 @@ func (h *staffHandler) listRuntimeDeployTasksCall(ctx context.Context, principal
 
 func (h *staffHandler) getRuntimeDeployTaskCall(ctx context.Context, principal *controlplanev1.Principal, runID string) (*controlplanev1.RuntimeDeployTask, error) {
 	return callUnaryWithArg(ctx, principal, runID, buildGetRuntimeDeployTaskRequest, h.cp.Service().GetRuntimeDeployTask)
+}
+
+func (h *staffHandler) cancelRuntimeDeployTaskCall(ctx context.Context, principal *controlplanev1.Principal, arg runtimeDeployActionArg) (*controlplanev1.RuntimeDeployTaskActionResponse, error) {
+	return callUnaryWithArg(ctx, principal, arg, buildCancelRuntimeDeployTaskRequest, h.cp.Service().CancelRuntimeDeployTask)
+}
+
+func (h *staffHandler) stopRuntimeDeployTaskCall(ctx context.Context, principal *controlplanev1.Principal, arg runtimeDeployActionArg) (*controlplanev1.RuntimeDeployTaskActionResponse, error) {
+	return callUnaryWithArg(ctx, principal, arg, buildStopRuntimeDeployTaskRequest, h.cp.Service().StopRuntimeDeployTask)
 }
 
 func (h *staffHandler) listRuntimeErrorsCall(ctx context.Context, principal *controlplanev1.Principal, arg runtimeErrorsListArg) (*controlplanev1.ListRuntimeErrorsResponse, error) {
