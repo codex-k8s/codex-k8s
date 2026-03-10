@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/caarlos0/env/v11"
 	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
@@ -40,6 +41,8 @@ type Config struct {
 	GitBotUsername string `env:"CODEXK8S_GIT_BOT_USERNAME,required,notEmpty"`
 	GitBotMail     string `env:"CODEXK8S_GIT_BOT_MAIL,required,notEmpty"`
 	OpenAIAPIKey   string `env:"CODEXK8S_OPENAI_API_KEY"`
+
+	DiscussionPollInterval time.Duration `env:"CODEXK8S_DISCUSSION_POLL_INTERVAL" envDefault:"15s"`
 }
 
 // LoadConfig parses and validates configuration from environment.
@@ -116,6 +119,9 @@ func LoadConfig() (Config, error) {
 	cfg.GitBotUsername = strings.TrimSpace(cfg.GitBotUsername)
 	cfg.GitBotMail = strings.TrimSpace(cfg.GitBotMail)
 	cfg.OpenAIAPIKey = strings.TrimSpace(cfg.OpenAIAPIKey)
+	if cfg.DiscussionPollInterval <= 0 {
+		cfg.DiscussionPollInterval = 15 * time.Second
+	}
 
 	return cfg, nil
 }

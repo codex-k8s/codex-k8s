@@ -25,6 +25,7 @@ const (
 	runContainerName          = "run"
 	aiRepairKeepaliveName     = "keepalive"
 	aiRepairComponentLabelVal = "ai-repair"
+	discussionComponentLabel  = "discussion"
 	runRepoCacheVolumeName    = "repo-cache"
 	runRepoCacheClaimName     = "codex-k8s-repo-cache"
 	runRepoCacheMountPath     = "/workspace"
@@ -173,9 +174,10 @@ type NamespaceCleanupParams struct {
 
 // NamespaceCleanupResult describes one namespace deleted by ttl sweep.
 type NamespaceCleanupResult struct {
-	Namespace string
-	RunID     string
-	ExpiresAt time.Time
+	Namespace   string
+	RunID       string
+	RuntimeMode agentdomain.RuntimeMode
+	ExpiresAt   time.Time
 }
 
 // Config defines Job launcher runtime options.
@@ -296,6 +298,9 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 	if isAIRepairTriggerKind(spec.TriggerKind) {
 		return l.launchAIRepairPod(ctx, ref, spec, jobImage)
 	}
+	if spec.DiscussionMode {
+		return l.launchRunPod(ctx, ref, spec, jobImage, discussionComponentLabel, false)
+	}
 
 	container := buildRunContainer(spec, jobImage, l.cfg.Command)
 	if shouldMountRepoCache(spec) {
@@ -360,20 +365,31 @@ func (l *Launcher) Launch(ctx context.Context, spec JobSpec) (JobRef, error) {
 }
 
 func (l *Launcher) launchAIRepairPod(ctx context.Context, ref JobRef, spec JobSpec, jobImage string) (JobRef, error) {
+	return l.launchRunPod(ctx, ref, spec, jobImage, aiRepairComponentLabelVal, true)
+}
+
+func (l *Launcher) launchRunPod(ctx context.Context, ref JobRef, spec JobSpec, jobImage string, componentLabel string, withKeepalive bool) (JobRef, error) {
 	runContainer := buildRunContainer(spec, jobImage, l.cfg.Command)
-	keepaliveContainer := corev1.Container{
-		Name:    aiRepairKeepaliveName,
-		Image:   jobImage,
-		Command: []string{"/bin/sh", "-c", "trap : TERM INT; while true; do sleep 3600; done"},
-	}
+	containers := []corev1.Container{runContainer}
 	if shouldMountRepoCache(spec) {
 		runContainer = withRepoCacheVolumeMount(runContainer)
-		keepaliveContainer = withRepoCacheVolumeMount(keepaliveContainer)
+		containers[0] = runContainer
+	}
+	if withKeepalive {
+		keepaliveContainer := corev1.Container{
+			Name:    aiRepairKeepaliveName,
+			Image:   jobImage,
+			Command: []string{"/bin/sh", "-c", "trap : TERM INT; while true; do sleep 3600; done"},
+		}
+		if shouldMountRepoCache(spec) {
+			keepaliveContainer = withRepoCacheVolumeMount(keepaliveContainer)
+		}
+		containers = append(containers, keepaliveContainer)
 	}
 
 	podSpec := corev1.PodSpec{
 		RestartPolicy: corev1.RestartPolicyNever,
-		Containers:    []corev1.Container{runContainer, keepaliveContainer},
+		Containers:    containers,
 	}
 	if shouldMountRepoCache(spec) {
 		podSpec.Volumes = append(podSpec.Volumes, repoCacheVolume())
@@ -389,7 +405,7 @@ func (l *Launcher) launchAIRepairPod(ctx context.Context, ref JobRef, spec JobSp
 			Namespace: ref.Namespace,
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       runWorkloadAppName,
-				"app.kubernetes.io/component":  aiRepairComponentLabelVal,
+				"app.kubernetes.io/component":  strings.TrimSpace(componentLabel),
 				"app.kubernetes.io/managed-by": "codex-k8s-worker",
 				metadataLabelRunID:             spec.RunID,
 				metadataLabelProjectID:         sanitizeLabel(spec.ProjectID),

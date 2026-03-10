@@ -70,6 +70,51 @@ func TestIsDeployOnlyRun(t *testing.T) {
 	}
 }
 
+func TestRequiresProjectSlot(t *testing.T) {
+	tests := []struct {
+		name    string
+		payload querytypes.RunQueuePayload
+		want    bool
+	}{
+		{
+			name: "runtime missing defaults to slot",
+			payload: querytypes.RunQueuePayload{
+				Repository: querytypes.RepositoryPayload{FullName: "codex-k8s/repo"},
+			},
+			want: true,
+		},
+		{
+			name: "deploy only skips slot",
+			payload: querytypes.RunQueuePayload{
+				Runtime: &querytypes.RunRuntimeProfile{DeployOnly: true},
+			},
+			want: false,
+		},
+		{
+			name: "code only skips slot",
+			payload: querytypes.RunQueuePayload{
+				Runtime: &querytypes.RunRuntimeProfile{Mode: "code-only"},
+			},
+			want: false,
+		},
+		{
+			name: "full env requires slot",
+			payload: querytypes.RunQueuePayload{
+				Runtime: &querytypes.RunRuntimeProfile{Mode: "full-env"},
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := requiresProjectSlot(tt.payload); got != tt.want {
+				t.Fatalf("requiresProjectSlot()=%v want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestDeriveProjectID(t *testing.T) {
 	t.Run("from repository full_name", func(t *testing.T) {
 		payload := querytypes.RunQueuePayload{

@@ -112,7 +112,15 @@ func (s *Service) launchPending(ctx context.Context) error {
 		}
 
 		if execution.RuntimeMode != agentdomain.RuntimeModeFullEnv && !deployOnlyRun {
-			if err := s.launchPreparedRunWorkload(ctx, runningRun, execution, agentCtx, namespaceLeaseSpec{}, runLaunchOptions{}); err != nil {
+			leaseSpec := namespaceLeaseSpec{}
+			if agentCtx.DiscussionMode {
+				leaseSpec = namespaceLeaseSpec{
+					AgentKey:    leaseCtx.AgentKey,
+					IssueNumber: leaseCtx.IssueNumber,
+					TTL:         leaseTTL,
+				}
+			}
+			if err := s.launchPreparedRunWorkload(ctx, runningRun, execution, agentCtx, leaseSpec, runLaunchOptions{}); err != nil {
 				return err
 			}
 			continue

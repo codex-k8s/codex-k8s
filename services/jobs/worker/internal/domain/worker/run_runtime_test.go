@@ -94,6 +94,27 @@ func TestResolveRunExecutionContext_CodeOnlyKeepsExplicitNamespace(t *testing.T)
 	}
 }
 
+func TestResolveRunExecutionContext_DiscussionCodeOnlyGetsManagedNamespace(t *testing.T) {
+	t.Parallel()
+
+	ctx := resolveRunExecutionContext(
+		"run-discussion-1",
+		"550e8400-e29b-41d4-a716-446655440009",
+		json.RawMessage(`{"discussion_mode":true,"runtime":{"mode":"code-only"},"trigger":{"kind":"dev"},"issue":{"number":289}}`),
+		"codex-issue",
+	)
+
+	if ctx.RuntimeMode != agentdomain.RuntimeModeCodeOnly {
+		t.Fatalf("expected code-only runtime mode, got %q", ctx.RuntimeMode)
+	}
+	if ctx.Namespace == "" {
+		t.Fatal("expected managed namespace for discussion code-only run")
+	}
+	if !strings.Contains(ctx.Namespace, "-i289-") {
+		t.Fatalf("expected namespace to include issue number, got %q", ctx.Namespace)
+	}
+}
+
 func assertCodeOnlyWithoutNamespace(t *testing.T, ctx valuetypes.RunExecutionContext) {
 	t.Helper()
 

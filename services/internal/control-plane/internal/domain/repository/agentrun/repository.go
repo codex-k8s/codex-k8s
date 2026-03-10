@@ -18,6 +18,8 @@ type Repository interface {
 	CreatePendingIfAbsent(ctx context.Context, params CreateParams) (CreateResult, error)
 	// GetByID returns one run by id.
 	GetByID(ctx context.Context, runID string) (Run, bool, error)
+	// CancelActiveByID marks one pending/running run as canceled and releases its slot lease when present.
+	CancelActiveByID(ctx context.Context, runID string) (bool, error)
 	// ListRecentByProject returns project runs ordered by newest first.
 	ListRecentByProject(ctx context.Context, projectID string, repositoryFullName string, limit int, offset int) ([]RunLookupItem, error)
 	// SearchRecentByProjectIssueOrPullRequest returns project runs by issue/pr references ordered by newest first.

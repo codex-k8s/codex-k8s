@@ -34,6 +34,10 @@ func resolveRunExecutionContext(runID string, projectID string, runPayload json.
 		if context.Namespace == "" {
 			context.Namespace = buildRunNamespace(namespacePrefix, projectID, runID, context.IssueNumber)
 		}
+		return context
+	}
+	if mode == agentdomain.RuntimeModeCodeOnly && meta.DiscussionMode && context.Namespace == "" {
+		context.Namespace = buildRunNamespace(namespacePrefix, projectID, runID, context.IssueNumber)
 	}
 	return context
 }

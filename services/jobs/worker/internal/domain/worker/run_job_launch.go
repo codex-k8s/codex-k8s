@@ -24,7 +24,7 @@ func (s *Service) launchPreparedRunWorkload(ctx context.Context, run runqueuerep
 		Namespace:     execution.Namespace,
 	}
 
-	if execution.RuntimeMode == agentdomain.RuntimeModeFullEnv {
+	if shouldManageRunNamespace(execution, agentCtx) {
 		ttl := lease.TTL
 		if ttl <= 0 {
 			ttl = s.cfg.DefaultNamespaceTTL
@@ -261,4 +261,14 @@ func (s *Service) launchPreparedRunWorkload(ctx context.Context, run runqueuerep
 	}
 
 	return nil
+}
+
+func shouldManageRunNamespace(execution valuetypes.RunExecutionContext, agentCtx runAgentContext) bool {
+	if strings.TrimSpace(execution.Namespace) == "" {
+		return false
+	}
+	if execution.RuntimeMode == agentdomain.RuntimeModeFullEnv {
+		return true
+	}
+	return execution.RuntimeMode == agentdomain.RuntimeModeCodeOnly && agentCtx.DiscussionMode
 }

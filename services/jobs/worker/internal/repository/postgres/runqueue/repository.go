@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
 	domainrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
 	querytypes "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/types/query"
@@ -110,7 +111,7 @@ func (r *Repository) ClaimNextPending(ctx context.Context, params domainrepo.Cla
 		projectID = deriveProjectID(correlationID, payload)
 	}
 	projectSlug, projectName := deriveProjectMeta(projectID, correlationID, payload)
-	deployOnlyRun := isDeployOnlyRun(payload)
+	requiresSlot := requiresProjectSlot(payload)
 
 	settingsJSON, err := json.Marshal(querytypes.ProjectSettings{LearningModeDefault: params.ProjectLearningModeDefault})
 	if err != nil {
@@ -131,7 +132,7 @@ func (r *Repository) ClaimNextPending(ctx context.Context, params domainrepo.Cla
 		slotID string
 		slotNo int
 	)
-	if !deployOnlyRun {
+	if requiresSlot {
 		projectSettingsJSON, err := r.getProjectSettingsJSON(ctx, tx, projectID)
 		if err != nil {
 			return domainrepo.ClaimedRun{}, false, fmt.Errorf("get project settings for project %s: %w", projectID, err)
@@ -368,6 +369,16 @@ func resolveSlotsPerProject(projectSettingsJSON []byte, fallback int) int {
 
 func isDeployOnlyRun(payload querytypes.RunQueuePayload) bool {
 	return payload.Runtime != nil && payload.Runtime.DeployOnly
+}
+
+func requiresProjectSlot(payload querytypes.RunQueuePayload) bool {
+	if isDeployOnlyRun(payload) {
+		return false
+	}
+	if payload.Runtime == nil {
+		return true
+	}
+	return agentdomain.ParseRuntimeMode(payload.Runtime.Mode) != agentdomain.RuntimeModeCodeOnly
 }
 
 // deriveProjectID prefers repository identity and falls back to correlation-scoped synthetic id.

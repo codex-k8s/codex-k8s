@@ -438,6 +438,13 @@ func (s *Service) DeleteRunNamespace(ctx context.Context, params DeleteNamespace
 		}
 	}
 	if namespace == "" {
+		if normalizeRequestedByType(params.RequestedByType) == RequestedByTypeSystem {
+			return DeleteNamespaceResult{
+				RunID:          runID,
+				Deleted:        false,
+				AlreadyDeleted: true,
+			}, nil
+		}
 		return DeleteNamespaceResult{}, errs.Validation{Field: "run_id", Msg: errRunNamespaceMissing.Error()}
 	}
 

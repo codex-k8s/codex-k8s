@@ -72,3 +72,30 @@ func TestRenderTaskTemplate_DevSeedsRequireRunStatusReport(t *testing.T) {
 		})
 	}
 }
+
+func TestRenderTaskTemplate_DiscussionRequiresCommentRefresh(t *testing.T) {
+	t.Parallel()
+
+	service := &Service{
+		cfg: Config{
+			AgentKey: "dev",
+			PromptConfig: PromptConfig{
+				TriggerKind:          "dev",
+				PromptTemplateKind:   promptTemplateKindDiscussion,
+				PromptTemplateLocale: promptLocaleRU,
+			},
+		},
+	}
+
+	body, err := service.renderTaskTemplate(promptTemplateKindDiscussion, t.TempDir())
+	if err != nil {
+		t.Fatalf("renderTaskTemplate() error = %v", err)
+	}
+
+	if !strings.Contains(body, "перед КАЖДЫМ ответом") {
+		t.Fatalf("discussion prompt must require comment refresh before each reply, got: %q", body)
+	}
+	if !strings.Contains(body, "не оставляйте без ответа") {
+		t.Fatalf("discussion prompt must require answering all new human comments, got: %q", body)
+	}
+}

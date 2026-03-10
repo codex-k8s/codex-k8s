@@ -66,14 +66,14 @@
 Служебные лейблы:
 - `state:*` — статус этапа (`state:in-review`, `state:approved` и т.д.);
 - `need:*` — запрос участия роли (`need:qa`, `need:sa`, `need:reviewer` и т.д.);
-- `mode:discussion` — lightweight discussion-run под Issue: стартует comment-only сессию без PR/commit/push.
+- `mode:discussion` — lightweight discussion-run под Issue: поднимает long-lived comment-only pod в отдельном lightweight namespace без PR/commit/push.
 
 ## 🏷️ Полный процесс по лейблам (Issue + PR)
 
 ### 1. Какие лейблы реально запускают ран
 - Базовый запуск ран делает класс `run:*`.
 - Исключение: `need:reviewer` на PR (событие `pull_request:labeled`) запускает pre-review ран роли `reviewer`.
-- `mode:discussion` на Issue сам по себе запускает lightweight discussion-run.
+- `mode:discussion` на Issue сам по себе запускает lightweight long-lived discussion-run.
 - `state:*`, остальные `need:*`, `[ai-model-*]`, `[ai-reasoning-*]` сами по себе ран не запускают.
 
 ### 2. Базовый запуск по Issue
@@ -222,12 +222,13 @@ stage-моделью и политикой лейблов.
 
 Как это работает:
 1. Ставите на Issue `mode:discussion`.
-2. Платформа создает lightweight `code-only` run без PR/commit/push.
+2. Платформа создает long-lived `code-only` pod в отдельном lightweight namespace; PR/commit/push не используются.
 3. Агент отвечает пользователю комментариями под Issue через `gh issue comment`.
-4. Каждый новый пользовательский `issue_comment` под тем же Issue продолжает discussion-сессию, если на Issue по-прежнему есть `mode:discussion`.
-5. Служебные комментарии платформы и комментарии GitHub-бота новый discussion-run не запускают.
-6. Если на Issue дополнительно ставится `run:*`, stage сохраняется в `trigger.kind`, но сам запуск все равно остается discussion-mode, пока висит `mode:discussion`.
-7. Для перехода к реализации снимите `mode:discussion` и поставьте нужный stage (`run:intake`, `run:vision`, `run:plan`, `run:dev` и т.д.).
+4. Пока `mode:discussion` висит на Issue, тот же pod продолжает одну и ту же discussion-сессию и периодически перечитывает Issue/comments.
+5. Каждый новый пользовательский `issue_comment` не создает новый run, если discussion-pod уже активен: текущая сессия должна увидеть новый комментарий и ответить на него.
+6. Служебные комментарии платформы и комментарии GitHub-бота новый discussion-run не запускают.
+7. Если на Issue дополнительно ставится любой `run:*`, discussion-контекст останавливается, discussion namespace удаляется и запускается обычный stage-run.
+8. Если снять `mode:discussion`, закрыть или удалить Issue, discussion namespace и pod удаляются.
 
 ### 7) Self-improve по завершённым задачам
 

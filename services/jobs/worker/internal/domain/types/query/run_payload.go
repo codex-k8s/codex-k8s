@@ -4,11 +4,12 @@ import webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 
 // RunRuntimePayload keeps only fields that influence worker runtime decisions.
 type RunRuntimePayload struct {
-	Project    *RunRuntimeProject    `json:"project"`
-	Repository *RunRuntimeRepository `json:"repository"`
-	Trigger    *RunRuntimeTrigger    `json:"trigger"`
-	Issue      *RunRuntimeIssue      `json:"issue"`
-	Runtime    *RunRuntimeProfile    `json:"runtime"`
+	DiscussionMode bool                  `json:"discussion_mode,omitempty"`
+	Project        *RunRuntimeProject    `json:"project"`
+	Repository     *RunRuntimeRepository `json:"repository"`
+	Trigger        *RunRuntimeTrigger    `json:"trigger"`
+	Issue          *RunRuntimeIssue      `json:"issue"`
+	Runtime        *RunRuntimeProfile    `json:"runtime"`
 }
 
 // RunRuntimeProject captures project metadata used by runtime deploy orchestration.

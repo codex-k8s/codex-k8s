@@ -33,19 +33,24 @@ const (
 	runNamespacePurposeValue   = "run"
 )
 
-// EnsureNamespace prepares baseline runtime resources for full-env execution.
+// EnsureNamespace prepares baseline runtime resources for managed run execution.
 func (l *Launcher) EnsureNamespace(ctx context.Context, spec NamespaceSpec) (NamespaceEnsureResult, error) {
-	if spec.RuntimeMode != agentdomain.RuntimeModeFullEnv {
+	switch spec.RuntimeMode {
+	case agentdomain.RuntimeModeFullEnv, agentdomain.RuntimeModeCodeOnly:
+	default:
 		return NamespaceEnsureResult{}, nil
 	}
 	namespace := strings.TrimSpace(spec.Namespace)
 	if namespace == "" {
-		return NamespaceEnsureResult{}, fmt.Errorf("runtime namespace is required for full-env run")
+		return NamespaceEnsureResult{}, fmt.Errorf("runtime namespace is required for managed run")
 	}
 
 	ensureResult, err := l.ensureNamespaceObject(ctx, spec)
 	if err != nil {
 		return NamespaceEnsureResult{}, fmt.Errorf("ensure namespace %s: %w", namespace, err)
+	}
+	if spec.RuntimeMode != agentdomain.RuntimeModeFullEnv {
+		return ensureResult, nil
 	}
 	if err := l.ensureRunServiceAccount(ctx, namespace); err != nil {
 		return NamespaceEnsureResult{}, fmt.Errorf("ensure serviceaccount in namespace %s: %w", namespace, err)
@@ -65,9 +70,11 @@ func (l *Launcher) EnsureNamespace(ctx context.Context, spec NamespaceSpec) (Nam
 	return ensureResult, nil
 }
 
-// CleanupNamespace removes runtime namespace after run completion.
+// CleanupNamespace removes managed runtime namespace after run completion.
 func (l *Launcher) CleanupNamespace(ctx context.Context, spec NamespaceSpec) error {
-	if spec.RuntimeMode != agentdomain.RuntimeModeFullEnv {
+	switch spec.RuntimeMode {
+	case agentdomain.RuntimeModeFullEnv, agentdomain.RuntimeModeCodeOnly:
+	default:
 		return nil
 	}
 
@@ -92,10 +99,6 @@ func (l *Launcher) CleanupNamespace(ctx context.Context, spec NamespaceSpec) err
 	if strings.TrimSpace(ns.Labels[runNamespacePurposeLabel]) != runNamespacePurposeValue {
 		return nil
 	}
-	if strings.TrimSpace(ns.Labels[runNamespaceRuntimeModeLabel]) != string(agentdomain.RuntimeModeFullEnv) {
-		return nil
-	}
-
 	if err := l.client.CoreV1().Namespaces().Delete(ctx, namespace, metav1.DeleteOptions{}); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
@@ -170,7 +173,7 @@ func (l *Launcher) FindReusableNamespace(ctx context.Context, lookup NamespaceRe
 	return best, true, nil
 }
 
-// CleanupExpiredNamespaces removes managed full-env namespaces when lease is expired.
+// CleanupExpiredNamespaces removes managed run namespaces when lease is expired.
 func (l *Launcher) CleanupExpiredNamespaces(ctx context.Context, params NamespaceCleanupParams) ([]NamespaceCleanupResult, error) {
 	now := params.Now.UTC()
 	if now.IsZero() {
@@ -183,13 +186,11 @@ func (l *Launcher) CleanupExpiredNamespaces(ctx context.Context, params Namespac
 
 	items, err := l.client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{
 		LabelSelector: fmt.Sprintf(
-			"%s=%s,%s=%s,%s=%s",
+			"%s=%s,%s=%s",
 			runNamespaceManagedByLabel,
 			runNamespaceManagedByValue,
 			runNamespacePurposeLabel,
 			runNamespacePurposeValue,
-			runNamespaceRuntimeModeLabel,
-			string(agentdomain.RuntimeModeFullEnv),
 		),
 	})
 	if err != nil {
@@ -221,9 +222,10 @@ func (l *Launcher) CleanupExpiredNamespaces(ctx context.Context, params Namespac
 		}
 
 		cleaned = append(cleaned, NamespaceCleanupResult{
-			Namespace: strings.TrimSpace(item.Name),
-			RunID:     strings.TrimSpace(item.Labels[runNamespaceRunIDLabel]),
-			ExpiresAt: expiresAt,
+			Namespace:   strings.TrimSpace(item.Name),
+			RunID:       strings.TrimSpace(item.Labels[runNamespaceRunIDLabel]),
+			RuntimeMode: agentdomain.ParseRuntimeMode(item.Labels[runNamespaceRuntimeModeLabel]),
+			ExpiresAt:   expiresAt,
 		})
 	}
 
