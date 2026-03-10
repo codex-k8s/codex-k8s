@@ -272,7 +272,7 @@ func (r *Repository) RequestAction(ctx context.Context, params domainrepo.Reques
 		return domainrepo.RequestActionResult{}, err
 	}
 	if !found {
-		return domainrepo.RequestActionResult{}, errs.Validation{Field: "run_id", Msg: "not found"}
+		return domainrepo.RequestActionResult{}, errs.NotFound{Msg: "run_id: not found"}
 	}
 	if task.Status.IsTerminal() {
 		if err := tx.Commit(ctx); err != nil {
@@ -286,11 +286,8 @@ func (r *Repository) RequestAction(ctx context.Context, params domainrepo.Reques
 		}, nil
 	}
 	if normalized.Action == querytypes.RuntimeDeployTaskActionStop {
-		if task.Status != entitytypes.RuntimeDeployTaskStatusRunning {
-			return domainrepo.RequestActionResult{}, errs.FailedPrecondition{Msg: "stop requires running task"}
-		}
-		if strings.TrimSpace(task.LeaseOwner) == "" {
-			return domainrepo.RequestActionResult{}, errs.FailedPrecondition{Msg: "running task lease is not active"}
+		if err := validateStopActionTask(task, normalized.RequestedAt); err != nil {
+			return domainrepo.RequestActionResult{}, err
 		}
 	}
 
@@ -307,6 +304,26 @@ func (r *Repository) RequestAction(ctx context.Context, params domainrepo.Reques
 		CurrentStatus:   updatedTask.Status,
 		AlreadyTerminal: false,
 	}, nil
+}
+
+func validateStopActionTask(task domainrepo.Task, requestedAt time.Time) error {
+	if task.Status != entitytypes.RuntimeDeployTaskStatusRunning {
+		return errs.FailedPrecondition{Msg: "stop requires running task"}
+	}
+	if !hasActiveLease(task, requestedAt) {
+		return errs.FailedPrecondition{Msg: "running task lease is not active"}
+	}
+	return nil
+}
+
+func hasActiveLease(task domainrepo.Task, requestedAt time.Time) bool {
+	if strings.TrimSpace(task.LeaseOwner) == "" {
+		return false
+	}
+	if task.LeaseUntil.IsZero() {
+		return false
+	}
+	return task.LeaseUntil.UTC().After(requestedAt.UTC())
 }
 
 // ListRecent returns runtime deploy tasks ordered by updated_at desc.

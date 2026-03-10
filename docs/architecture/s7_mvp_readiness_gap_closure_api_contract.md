@@ -55,7 +55,7 @@ approvals:
 |---|---|---|---|
 | `UpdateAgentSettings` | MVP-only settings payload | unchanged envelope | `invalid_argument`, `conflict`, `forbidden` |
 | `CancelRuntimeDeployTask` (new) | `run_id`, `actor`, `reason` | `previous_status`, `current_status`, `already_terminal` | `not_found`, `failed_precondition` |
-| `StopRuntimeDeployTask` (new) | `run_id`, `actor`, `reason`, `force` | `previous_status`, `current_status`, `already_terminal` | `not_found`, `failed_precondition`, `forbidden` |
+| `StopRuntimeDeployTask` (new) | `run_id`, `actor`, `reason`, `force=true` | `previous_status`, `current_status`, `already_terminal` | `invalid_argument`, `not_found`, `failed_precondition`, `forbidden` |
 | `PreviewNextStepAction` / `ExecuteNextStepAction` | добавить route `run:qa:revise` в resolver path | unchanged envelope | `failed_precondition` при ambiguity |
 | `UpsertAgentSession` | +`snapshot_version`, +`snapshot_checksum` | +`snapshot_version` | `conflict`, `failed_precondition` |
 | `GetLatestAgentSession` | optional expected checksum/version filters | +`snapshot_version`, +`snapshot_checksum` | `not_found`, `internal` |

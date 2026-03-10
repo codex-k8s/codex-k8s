@@ -148,6 +148,9 @@ export type RuntimeDeployTaskListItem = {
 
 export type RuntimeDeployTaskActionRequest = {
     reason?: string | null;
+    /**
+     * Must be true for destructive stop requests; ignored by cancel.
+     */
     force?: boolean;
 };
 

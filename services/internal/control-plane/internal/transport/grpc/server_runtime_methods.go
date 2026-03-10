@@ -154,6 +154,12 @@ func (s *Server) CancelRuntimeDeployTask(ctx context.Context, req *controlplanev
 }
 
 func (s *Server) StopRuntimeDeployTask(ctx context.Context, req *controlplanev1.StopRuntimeDeployTaskRequest) (*controlplanev1.RuntimeDeployTaskActionResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	if !req.GetForce() {
+		return nil, status.Error(codes.InvalidArgument, "force must be true for stop")
+	}
 	return s.requestRuntimeDeployTaskAction(ctx, req, runtimedeploydomain.TaskActionStop)
 }
 

@@ -287,6 +287,7 @@ func toStatus(err error) error {
 	var v errs.Validation
 	var u errs.Unauthorized
 	var f errs.Forbidden
+	var n errs.NotFound
 	var c errs.Conflict
 	var fp errs.FailedPrecondition
 
@@ -301,6 +302,8 @@ func toStatus(err error) error {
 		return status.Error(codes.Unauthenticated, u.Error())
 	case errors.As(err, &f):
 		return status.Error(codes.PermissionDenied, f.Error())
+	case errors.As(err, &n):
+		return status.Error(codes.NotFound, n.Error())
 	case errors.As(err, &c):
 		return status.Error(codes.AlreadyExists, c.Error())
 	case errors.As(err, &fp):

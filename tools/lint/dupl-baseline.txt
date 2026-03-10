@@ -28,8 +28,8 @@ libs/go/registry/client.go:214-230: duplicate of services/internal/control-plane
 services/internal/control-plane/internal/domain/registryimages/service.go:139-155: duplicate of libs/go/registry/client.go:214-230
 services/internal/control-plane/internal/domain/mcp/model.go:685-701: duplicate of services/internal/control-plane/internal/domain/runstatus/model.go:30-46
 services/internal/control-plane/internal/domain/runstatus/model.go:30-46: duplicate of services/internal/control-plane/internal/domain/mcp/model.go:685-701
-services/internal/control-plane/internal/transport/grpc/server_runtime_methods.go:106-119: duplicate of services/internal/control-plane/internal/transport/grpc/server_runtime_methods.go:190-203
-services/internal/control-plane/internal/transport/grpc/server_runtime_methods.go:190-203: duplicate of services/internal/control-plane/internal/transport/grpc/server_runtime_methods.go:106-119
+services/internal/control-plane/internal/transport/grpc/server_runtime_methods.go:106-119: duplicate of services/internal/control-plane/internal/transport/grpc/server_runtime_methods.go:196-209
+services/internal/control-plane/internal/transport/grpc/server_runtime_methods.go:196-209: duplicate of services/internal/control-plane/internal/transport/grpc/server_runtime_methods.go:106-119
 services/internal/control-plane/cmd/runtime-deploy/runtime_deploy_kubernetes_adapter.go:59-74: duplicate of services/internal/control-plane/internal/app/runtime_deploy_kubernetes_adapter.go:63-78
 services/internal/control-plane/internal/app/runtime_deploy_kubernetes_adapter.go:63-78: duplicate of services/internal/control-plane/cmd/runtime-deploy/runtime_deploy_kubernetes_adapter.go:59-74
 services/external/api-gateway/internal/transport/http/casters/controlplane.go:46-57: duplicate of services/external/api-gateway/internal/transport/http/casters/controlplane.go:139-150

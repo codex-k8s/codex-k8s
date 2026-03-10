@@ -31,6 +31,12 @@ func TestHTTPErrorHandler_GRPCStatusMapping(t *testing.T) {
 			wantBody: "invalid_argument",
 		},
 		{
+			name:     "grpc not found",
+			err:      status.Error(codes.NotFound, "run_id: not found"),
+			wantCode: http.StatusNotFound,
+			wantBody: "not_found",
+		},
+		{
 			name:     "internal is sanitized",
 			err:      status.Error(codes.Internal, "pq: relation users does not exist"),
 			wantCode: http.StatusInternalServerError,

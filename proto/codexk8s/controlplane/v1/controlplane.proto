@@ -621,6 +621,7 @@ message StopRuntimeDeployTaskRequest {
   Principal principal = 1;
   string run_id = 2;
   optional string reason = 3;
+  // force must be true because stop is a destructive operator action.
   bool force = 4;
 }
 

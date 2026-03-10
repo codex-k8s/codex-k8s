@@ -1608,6 +1608,7 @@ components:
           nullable: true
         force:
           type: boolean
+          description: Must be true for destructive stop requests; ignored by cancel.
 
     RuntimeDeployTaskActionResponse:
       type: object

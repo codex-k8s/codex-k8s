@@ -559,6 +559,7 @@ type RuntimeDeployTaskTerminalStatusSource string
 
 // RuntimeDeployTaskActionRequest defines model for RuntimeDeployTaskActionRequest.
 type RuntimeDeployTaskActionRequest struct {
+	// Force Must be true for destructive stop requests; ignored by cancel.
 	Force  *bool   `json:"force,omitempty"`
 	Reason *string `json:"reason"`
 }
