@@ -17,6 +17,7 @@ const (
 	runWriteScopeModeAny             runWriteScopeMode = "any"
 	runWriteScopeModeMarkdownOnly    runWriteScopeMode = "markdown_only"
 	runWriteScopeModeNoRepoChanges   runWriteScopeMode = "no_repo_changes"
+	runWriteScopeModeDiscussion      runWriteScopeMode = "discussion"
 	runWriteScopeModeSelfImproveOnly runWriteScopeMode = "self_improve_only"
 )
 
@@ -46,10 +47,13 @@ var markdownOnlyTriggerKinds = map[webhookdomain.TriggerKind]struct{}{
 	webhookdomain.TriggerKindRethink:      {},
 }
 
-func resolveRunWriteScopePolicy(triggerKind string, agentKey string) runWriteScopePolicy {
+func resolveRunWriteScopePolicy(triggerKind string, agentKey string, discussionMode bool) runWriteScopePolicy {
 	normalizedAgentKey := strings.ToLower(strings.TrimSpace(agentKey))
 	normalizedTriggerKind := webhookdomain.NormalizeTriggerKind(triggerKind)
 
+	if discussionMode {
+		return runWriteScopePolicy{Mode: runWriteScopeModeDiscussion}
+	}
 	if normalizedTriggerKind == webhookdomain.TriggerKindSelfImprove {
 		return runWriteScopePolicy{Mode: runWriteScopeModeSelfImproveOnly}
 	}
@@ -66,19 +70,19 @@ func resolveRunWriteScopePolicy(triggerKind string, agentKey string) runWriteSco
 }
 
 func isMarkdownOnlyScope(triggerKind string, agentKey string) bool {
-	return resolveRunWriteScopePolicy(triggerKind, agentKey).Mode == runWriteScopeModeMarkdownOnly
+	return resolveRunWriteScopePolicy(triggerKind, agentKey, false).Mode == runWriteScopeModeMarkdownOnly
 }
 
 func isReviewerCommentOnlyScope(triggerKind string, agentKey string) bool {
-	return resolveRunWriteScopePolicy(triggerKind, agentKey).Mode == runWriteScopeModeNoRepoChanges
+	return resolveRunWriteScopePolicy(triggerKind, agentKey, false).Mode == runWriteScopeModeNoRepoChanges
 }
 
 func isSelfImproveRestrictedScope(triggerKind string, agentKey string) bool {
-	return resolveRunWriteScopePolicy(triggerKind, agentKey).Mode == runWriteScopeModeSelfImproveOnly
+	return resolveRunWriteScopePolicy(triggerKind, agentKey, false).Mode == runWriteScopeModeSelfImproveOnly
 }
 
-func enforceRunWriteScope(ctx context.Context, repoDir string, baselineHead string, triggerKind string, agentKey string, existingPRNumber int) error {
-	policy := resolveRunWriteScopePolicy(triggerKind, agentKey)
+func enforceRunWriteScope(ctx context.Context, repoDir string, baselineHead string, triggerKind string, agentKey string, existingPRNumber int, discussionMode bool) error {
+	policy := resolveRunWriteScopePolicy(triggerKind, agentKey, discussionMode)
 	if policy.RequireExistingPR && existingPRNumber <= 0 {
 		return fmt.Errorf("failed_precondition: reviewer run requires existing PR context")
 	}
@@ -115,6 +119,13 @@ func enforceRunWriteScope(ctx context.Context, repoDir string, baselineHead stri
 				"failed_precondition: run:self-improve allows only prompts/instructions/agent-runner Dockerfile changes, forbidden paths: %s",
 				formatChangedPathList(invalid, 20),
 			)
+		}
+	case runWriteScopeModeDiscussion:
+		if strings.TrimSpace(baselineHead) != "" && strings.TrimSpace(currentHead) != strings.TrimSpace(baselineHead) {
+			return fmt.Errorf("failed_precondition: discussion mode forbids new commits in repository")
+		}
+		if len(changedPaths) > 0 {
+			return fmt.Errorf("failed_precondition: discussion mode forbids repository file changes, got: %s", formatChangedPathList(changedPaths, 20))
 		}
 	}
 

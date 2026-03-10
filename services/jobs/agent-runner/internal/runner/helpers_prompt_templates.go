@@ -83,8 +83,11 @@ func (s *Service) renderTaskTemplate(templateKind string, repoDir string) (strin
 	}
 
 	templateName := templateNamePromptWork
-	if normalizePromptTemplateKind(templateKind) == promptTemplateKindRevise {
+	switch normalizePromptTemplateKind(templateKind) {
+	case promptTemplateKindRevise:
 		templateName = templateNamePromptRevise
+	case promptTemplateKindDiscussion:
+		templateName = templateNamePromptDiscussion
 	}
 	return renderTemplate(templateName, templateData)
 }
@@ -111,7 +114,8 @@ func (s *Service) writeCodexConfig(codexDir string, model string, reasoningEffor
 func (s *Service) buildPrompt(taskBody string, result runResult, repoDir string) (string, error) {
 	hasContext7 := strings.TrimSpace(os.Getenv(envContext7APIKey)) != ""
 	runtimeMode := normalizeRuntimeMode(s.cfg.RuntimeMode)
-	isReviseTrigger := webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(result.triggerKind))
+	isDiscussionMode := s.cfg.DiscussionMode
+	isReviseTrigger := !isDiscussionMode && webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(result.triggerKind))
 	roleDisplayName, roleCapabilities := resolvePromptRoleProfile(s.cfg.AgentKey)
 	projectDocs, docsTotal, docsTrimmed := loadProjectDocsForPrompt(repoDir, s.cfg.AgentKey, result.triggerKind, runtimeMode)
 	roleDocTemplates, roleTemplatesTotal, roleTemplatesTrimmed := loadRoleDocTemplatesForPrompt(repoDir, s.cfg.AgentKey, result.triggerKind, runtimeMode)
@@ -128,6 +132,7 @@ func (s *Service) buildPrompt(taskBody string, result runResult, repoDir string)
 		BaseBranch:                   s.cfg.AgentBaseBranch,
 		TriggerKind:                  result.triggerKind,
 		IsAIRepairMainDirect:         isAIRepairMainDirectTrigger(result.triggerKind),
+		IsDiscussionMode:             isDiscussionMode,
 		IsReviseTrigger:              isReviseTrigger,
 		IsMarkdownDocsOnlyScope:      isMarkdownOnlyScope(result.triggerKind, s.cfg.AgentKey),
 		IsReviewerCommentOnlyScope:   isReviewerCommentOnlyScope(result.triggerKind, s.cfg.AgentKey),

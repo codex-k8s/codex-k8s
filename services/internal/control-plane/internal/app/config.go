@@ -62,6 +62,7 @@ type Config struct {
 	RunOpsLabel          string   `env:"CODEXK8S_RUN_OPS_LABEL" envDefault:"run:ops"`
 	RunSelfImproveLabel  string   `env:"CODEXK8S_RUN_SELF_IMPROVE_LABEL" envDefault:"run:self-improve"`
 	RunRethinkLabel      string   `env:"CODEXK8S_RUN_RETHINK_LABEL" envDefault:"run:rethink"`
+	ModeDiscussionLabel  string   `env:"CODEXK8S_MODE_DISCUSSION_LABEL" envDefault:"mode:discussion"`
 	NeedReviewerLabel    string   `env:"CODEXK8S_NEED_REVIEWER_LABEL" envDefault:"need:reviewer"`
 	// ServicesConfigPath points to services.yaml used for webhook runtime policy.
 	ServicesConfigPath string `env:"CODEXK8S_SERVICES_CONFIG_PATH" envDefault:"services.yaml"`
@@ -101,6 +102,8 @@ type Config struct {
 	FirstProjectGitHubRepo string `env:"CODEXK8S_FIRST_PROJECT_GITHUB_REPO"`
 	// GitBotToken is runtime GitHub bot token used for comments/labels and run messaging paths.
 	GitBotToken string `env:"CODEXK8S_GIT_BOT_TOKEN"`
+	// GitBotUsername is GitHub login used to filter bot-authored issue comments from webhook triggers.
+	GitBotUsername string `env:"CODEXK8S_GIT_BOT_USERNAME" envDefault:"codex-bot"`
 
 	// TokenEncryptionKey is used to encrypt/decrypt repository tokens stored in DB.
 	TokenEncryptionKey string `env:"CODEXK8S_TOKEN_ENCRYPTION_KEY,required,notEmpty"`

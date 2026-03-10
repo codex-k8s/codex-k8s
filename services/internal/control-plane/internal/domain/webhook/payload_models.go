@@ -7,24 +7,25 @@ import (
 )
 
 type githubRunPayload struct {
-	Source        string                     `json:"source"`
-	DeliveryID    string                     `json:"delivery_id"`
-	EventType     string                     `json:"event_type"`
-	ReceivedAt    string                     `json:"received_at"`
-	Repository    githubRunRepositoryPayload `json:"repository"`
-	Installation  githubInstallationPayload  `json:"installation"`
-	Sender        githubActorPayload         `json:"sender"`
-	Action        string                     `json:"action"`
-	RawPayload    json.RawMessage            `json:"raw_payload"`
-	CorrelationID string                     `json:"correlation_id"`
-	Project       githubRunProjectPayload    `json:"project"`
-	LearningMode  bool                       `json:"learning_mode"`
-	Agent         githubRunAgentPayload      `json:"agent"`
-	Issue         *githubRunIssuePayload     `json:"issue,omitempty"`
-	PullRequest   *githubRunPRPayload        `json:"pull_request,omitempty"`
-	Trigger       *githubIssueTriggerPayload `json:"trigger,omitempty"`
-	ProfileHints  *githubRunProfileHints     `json:"profile_hints,omitempty"`
-	Runtime       githubRunRuntimePayload    `json:"runtime"`
+	Source         string                     `json:"source"`
+	DeliveryID     string                     `json:"delivery_id"`
+	EventType      string                     `json:"event_type"`
+	ReceivedAt     string                     `json:"received_at"`
+	Repository     githubRunRepositoryPayload `json:"repository"`
+	Installation   githubInstallationPayload  `json:"installation"`
+	Sender         githubActorPayload         `json:"sender"`
+	Action         string                     `json:"action"`
+	RawPayload     json.RawMessage            `json:"raw_payload"`
+	CorrelationID  string                     `json:"correlation_id"`
+	Project        githubRunProjectPayload    `json:"project"`
+	LearningMode   bool                       `json:"learning_mode"`
+	DiscussionMode bool                       `json:"discussion_mode,omitempty"`
+	Agent          githubRunAgentPayload      `json:"agent"`
+	Issue          *githubRunIssuePayload     `json:"issue,omitempty"`
+	PullRequest    *githubRunPRPayload        `json:"pull_request,omitempty"`
+	Trigger        *githubIssueTriggerPayload `json:"trigger,omitempty"`
+	ProfileHints   *githubRunProfileHints     `json:"profile_hints,omitempty"`
+	Runtime        githubRunRuntimePayload    `json:"runtime"`
 }
 
 type githubRunRepositoryPayload struct {

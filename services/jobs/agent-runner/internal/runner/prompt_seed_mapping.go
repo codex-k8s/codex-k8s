@@ -13,6 +13,9 @@ const (
 )
 
 func normalizePromptTemplateKind(value string) string {
+	if strings.EqualFold(strings.TrimSpace(value), promptTemplateKindDiscussion) {
+		return promptTemplateKindDiscussion
+	}
 	if strings.EqualFold(strings.TrimSpace(value), promptTemplateKindRevise) {
 		return promptTemplateKindRevise
 	}

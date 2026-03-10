@@ -19,6 +19,9 @@ func normalizeRuntimeMode(value string) string {
 }
 
 func normalizeTemplateKind(value string, triggerKind string) string {
+	if strings.EqualFold(strings.TrimSpace(value), promptTemplateKindDiscussion) {
+		return promptTemplateKindDiscussion
+	}
 	normalizedTrigger := webhookdomain.NormalizeTriggerKind(triggerKind)
 	if webhookdomain.IsReviseTriggerKind(normalizedTrigger) {
 		return promptTemplateKindRevise

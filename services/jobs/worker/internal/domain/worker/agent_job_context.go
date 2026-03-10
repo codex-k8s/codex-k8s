@@ -10,9 +10,10 @@ import (
 )
 
 const (
-	promptTemplateKindWork   = "work"
-	promptTemplateKindRevise = "revise"
-	promptTemplateSourceSeed = "repo_seed"
+	promptTemplateKindWork       = "work"
+	promptTemplateKindRevise     = "revise"
+	promptTemplateKindDiscussion = "discussion"
+	promptTemplateSourceSeed     = "repo_seed"
 
 	modelSourceDefault          = "agent_default"
 	modelSourceIssueLabel       = "issue_label"
@@ -57,15 +58,17 @@ type runAgentContext struct {
 	runAgentTarget
 	runAgentPromptContext
 	runAgentModelContext
+	DiscussionMode bool
 }
 
 type runAgentPayload struct {
-	Repository   *runAgentRepository   `json:"repository"`
-	Issue        *runAgentIssue        `json:"issue"`
-	Trigger      *runAgentTrigger      `json:"trigger"`
-	Agent        *runAgentDescriptor   `json:"agent"`
-	ProfileHints *runAgentProfileHints `json:"profile_hints"`
-	RawPayload   json.RawMessage       `json:"raw_payload"`
+	DiscussionMode bool                  `json:"discussion_mode,omitempty"`
+	Repository     *runAgentRepository   `json:"repository"`
+	Issue          *runAgentIssue        `json:"issue"`
+	Trigger        *runAgentTrigger      `json:"trigger"`
+	Agent          *runAgentDescriptor   `json:"agent"`
+	ProfileHints   *runAgentProfileHints `json:"profile_hints"`
+	RawPayload     json.RawMessage       `json:"raw_payload"`
 }
 
 type runAgentRepository struct {
@@ -117,6 +120,7 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 				return locale
 			}(),
 		},
+		DiscussionMode: payload.discussionMode,
 		runAgentModelContext: runAgentModelContext{
 			Model:           defaults.DefaultModel,
 			ModelSource:     modelSourceDefault,
@@ -124,7 +128,9 @@ func resolveRunAgentContext(runPayload json.RawMessage, defaults runAgentDefault
 			ReasoningSource: modelSourceDefault,
 		},
 	}
-	if resolvePromptTemplateKindForTrigger(ctx.TriggerKind) == promptTemplateKindRevise {
+	if ctx.DiscussionMode {
+		ctx.PromptTemplateKind = promptTemplateKindDiscussion
+	} else if resolvePromptTemplateKindForTrigger(ctx.TriggerKind) == promptTemplateKindRevise {
 		ctx.PromptTemplateKind = promptTemplateKindRevise
 	}
 	if ctx.AgentKey == "" {
@@ -199,6 +205,7 @@ type parsedRunAgentPayload struct {
 	triggerKind        string
 	triggerLabel       string
 	agentDisplayName   string
+	discussionMode     bool
 	issueLabels        []string
 	pullRequestLabels  []string
 	historyIssueLabels []string
@@ -236,6 +243,7 @@ func parseRunAgentPayload(raw json.RawMessage) parsedRunAgentPayload {
 		out.triggerKind = strings.TrimSpace(payload.Trigger.Kind)
 		out.triggerLabel = strings.TrimSpace(payload.Trigger.Label)
 	}
+	out.discussionMode = payload.DiscussionMode
 	if payload.Agent != nil {
 		out.agentKey = strings.TrimSpace(payload.Agent.Key)
 		out.agentDisplayName = strings.TrimSpace(payload.Agent.Name)

@@ -40,6 +40,7 @@ type runStartedEventPayload struct {
 	IssueNumber          int64                   `json:"issue_number,omitempty"`
 	TriggerKind          string                  `json:"trigger_kind,omitempty"`
 	TriggerLabel         string                  `json:"trigger_label,omitempty"`
+	DiscussionMode       bool                    `json:"discussion_mode,omitempty"`
 	JobImage             string                  `json:"job_image,omitempty"`
 	Model                string                  `json:"model,omitempty"`
 	ModelSource          string                  `json:"model_source,omitempty"`
@@ -59,6 +60,7 @@ type runProfileResolvedEventPayload struct {
 	IssueNumber        int64  `json:"issue_number,omitempty"`
 	PullRequestNumber  int    `json:"pull_request_number,omitempty"`
 	TriggerKind        string `json:"trigger_kind,omitempty"`
+	DiscussionMode     bool   `json:"discussion_mode,omitempty"`
 	Model              string `json:"model,omitempty"`
 	ModelSource        string `json:"model_source,omitempty"`
 	ReasoningEffort    string `json:"reasoning_effort,omitempty"`

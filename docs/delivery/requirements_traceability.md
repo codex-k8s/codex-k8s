@@ -589,7 +589,7 @@ approvals:
   `docs/delivery/issue_map.md`,
   `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md`,
   `docs/delivery/epics/s7/epic_s7.md`;
-  remaining backlog нормализован как `#253..#256`, `#258..#260`.
+  remaining backlog нормализован как `#254..#256`, `#258..#260`.
 - Проверки по scope:
   `make gen-proto-go`,
   `make gen-openapi`,

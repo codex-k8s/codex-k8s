@@ -183,9 +183,37 @@ func (s *Service) resolveIssueRunTrigger(ctx context.Context, projectID string, 
 		if label == "" {
 			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
 		}
+		if s.triggerLabels.isModeDiscussionLabel(label) {
+			trigger, conflict := s.resolveDiscussionTrigger(envelope.Issue.Labels, "", webhookdomain.TriggerSourceIssueLabel)
+			if strings.TrimSpace(conflict.IgnoreReason) != "" {
+				return issueRunTrigger{}, false, conflict, pullRequestReviewResolutionMeta{}, nil
+			}
+			active, err := s.hasActiveDiscussionRun(ctx, projectID, strings.TrimSpace(envelope.Repository.FullName), envelope.Issue.Number)
+			if err != nil {
+				return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, err
+			}
+			if active {
+				return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
+			}
+			return trigger, true, conflict, pullRequestReviewResolutionMeta{}, nil
+		}
 		kind, ok := s.triggerLabels.resolveKind(label)
 		if !ok {
 			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
+		}
+		if s.triggerLabels.hasModeDiscussionLabel(envelope.Issue.Labels) {
+			trigger, conflict := s.resolveDiscussionTrigger(envelope.Issue.Labels, kind, webhookdomain.TriggerSourceIssueLabel)
+			if strings.TrimSpace(conflict.IgnoreReason) != "" {
+				return issueRunTrigger{}, false, conflict, pullRequestReviewResolutionMeta{}, nil
+			}
+			active, err := s.hasActiveDiscussionRun(ctx, projectID, strings.TrimSpace(envelope.Repository.FullName), envelope.Issue.Number)
+			if err != nil {
+				return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, err
+			}
+			if active {
+				return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
+			}
+			return trigger, true, conflict, pullRequestReviewResolutionMeta{}, nil
 		}
 		conflictingLabels := s.triggerLabels.collectIssueTriggerLabels(envelope.Issue.Labels)
 		return issueRunTrigger{
@@ -195,6 +223,31 @@ func (s *Service) resolveIssueRunTrigger(ctx context.Context, projectID string, 
 			}, true, triggerConflictResult{
 				ConflictingLabels: conflictingLabels,
 			}, pullRequestReviewResolutionMeta{}, nil
+	case string(webhookdomain.GitHubEventIssueComment):
+		if !strings.EqualFold(strings.TrimSpace(envelope.Action), string(webhookdomain.GitHubActionCreated)) {
+			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
+		}
+		if envelope.Issue.Number <= 0 || envelope.Issue.PullRequest != nil {
+			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
+		}
+		if !s.triggerLabels.hasModeDiscussionLabel(envelope.Issue.Labels) {
+			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
+		}
+		if !s.isDiscussionCommentSenderAllowed(envelope.Sender) {
+			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
+		}
+		trigger, conflict := s.resolveDiscussionTrigger(envelope.Issue.Labels, "", webhookdomain.TriggerSourceIssueComment)
+		if strings.TrimSpace(conflict.IgnoreReason) != "" {
+			return issueRunTrigger{}, false, conflict, pullRequestReviewResolutionMeta{}, nil
+		}
+		active, err := s.hasActiveDiscussionRun(ctx, projectID, strings.TrimSpace(envelope.Repository.FullName), envelope.Issue.Number)
+		if err != nil {
+			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, err
+		}
+		if active {
+			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
+		}
+		return trigger, true, conflict, pullRequestReviewResolutionMeta{}, nil
 	case string(webhookdomain.GitHubEventPullRequest):
 		if !strings.EqualFold(strings.TrimSpace(envelope.Action), string(webhookdomain.GitHubActionLabeled)) {
 			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil

@@ -285,6 +285,7 @@ func Run() error {
 		RuntimeModePolicy:   webhookRuntimeModePolicy,
 		PlatformNamespace:   strings.TrimSpace(cfg.PlatformNamespace),
 		GitHubToken:         strings.TrimSpace(cfg.GitHubPAT),
+		GitBotUsername:      strings.TrimSpace(cfg.GitBotUsername),
 		GitHubMgmt:          githubMgmtClient,
 		PushMainAutoBump:    true,
 	})

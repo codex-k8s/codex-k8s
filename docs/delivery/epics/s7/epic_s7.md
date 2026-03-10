@@ -153,7 +153,7 @@ approvals:
 - Contract-first артефакты синхронизированы:
   `api/server/api.yaml`, `proto/codexk8s/controlplane/v1/controlplane.proto`,
   backend/frontend codegen.
-- В traceability добавлены updates по issue `#252`; remaining backlog нормализован как `#253..#256`, `#258..#260`.
+- В traceability добавлены updates по issue `#252` и `#253`; remaining backlog нормализован как `#254..#256`, `#258..#260`.
 
 ## Candidate execution backlog (19 эпиков)
 
@@ -169,7 +169,7 @@ approvals:
 | S7-E08 | P1 | Agents UX de-scope hardening: absorbed by `#244` + `#247/#248/#249` + `#274`; standalone issue `#250` закрывается doc-actualization pass | PRC-03 |
 | S7-E09 | P0 | Runs UX: удалить колонку типа запуска и гарантировать namespace delete из run details (in-review `#251`) | PRC-06 |
 | S7-E10 | P0 | Runtime deploy UX: кнопка cancel/stop для зависших deploy tasks + guardrails (in-review `#252`) | PRC-07 |
-| S7-E11 | P0 | Label orchestration reliability: исправить `mode:discussion` trigger-поведение | PRC-08 |
+| S7-E11 | P0 | Label orchestration reliability: исправить `mode:discussion` trigger-поведение | implemented (`#253`) |
 | S7-E12 | P1 | Final MVP readiness gate: e2e evidence bundle + go/no-go для release chain | PRC-01..PRC-08 |
 | S7-E13 | P0 | Label policy alignment: добавить `run:qa:revise` и покрыть revise-loop QA-stage | PRC-09 |
 | S7-E14 | P0 | QA execution contract: проверка новых/изменённых ручек через Kubernetes DNS path + evidence | PRC-10 |

@@ -84,6 +84,8 @@ type JobSpec struct {
 	TriggerKind string
 	// TriggerLabel is original label that created this run.
 	TriggerLabel string
+	// DiscussionMode enables comment-only discussion flow without PR/push.
+	DiscussionMode bool
 	// TargetBranch overrides deterministic branch naming when already known.
 	TargetBranch string
 	// ExistingPRNumber preloads PR reference for revise flows when already known.
@@ -94,7 +96,7 @@ type JobSpec struct {
 	AgentModel string
 	// AgentReasoningEffort is effective reasoning profile selected for this run.
 	AgentReasoningEffort string
-	// PromptTemplateKind is effective prompt kind (`work`/`review`).
+	// PromptTemplateKind is effective prompt kind (`work`/`revise`/`discussion`).
 	PromptTemplateKind string
 	// PromptTemplateSource is effective prompt source (`repo_seed` for Day4 baseline).
 	PromptTemplateSource string
@@ -432,6 +434,7 @@ func buildRunContainerEnv(spec JobSpec) []corev1.EnvVar {
 		{Name: "CODEXK8S_ISSUE_NUMBER", Value: fmt.Sprintf("%d", spec.IssueNumber)},
 		{Name: "CODEXK8S_RUN_TRIGGER_KIND", Value: strings.TrimSpace(spec.TriggerKind)},
 		{Name: "CODEXK8S_RUN_TRIGGER_LABEL", Value: strings.TrimSpace(spec.TriggerLabel)},
+		{Name: "CODEXK8S_DISCUSSION_MODE", Value: fmt.Sprintf("%t", spec.DiscussionMode)},
 		{Name: "CODEXK8S_RUN_TARGET_BRANCH", Value: strings.TrimSpace(spec.TargetBranch)},
 		{Name: "CODEXK8S_EXISTING_PR_NUMBER", Value: fmt.Sprintf("%d", spec.ExistingPRNumber)},
 		{Name: "CODEXK8S_AGENT_KEY", Value: strings.TrimSpace(spec.AgentKey)},

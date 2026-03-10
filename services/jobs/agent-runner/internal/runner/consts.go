@@ -1,15 +1,17 @@
 package runner
 
 const (
-	templateNamePromptEnvelope = "templates/prompt_envelope.tmpl"
-	templateNamePromptWork     = "templates/prompt_work.tmpl"
-	templateNamePromptRevise   = "templates/prompt_revise.tmpl"
-	templateNameCodexConfig    = "templates/codex_config.toml.tmpl"
-	templateNameKubeconfig     = "templates/kubeconfig.tmpl"
-	promptSeedsDirRelativePath = "promptseeds"
+	templateNamePromptEnvelope   = "templates/prompt_envelope.tmpl"
+	templateNamePromptWork       = "templates/prompt_work.tmpl"
+	templateNamePromptRevise     = "templates/prompt_revise.tmpl"
+	templateNamePromptDiscussion = "templates/prompt_discussion.tmpl"
+	templateNameCodexConfig      = "templates/codex_config.toml.tmpl"
+	templateNameKubeconfig       = "templates/kubeconfig.tmpl"
+	promptSeedsDirRelativePath   = "promptseeds"
 
-	promptTemplateKindWork   = "work"
-	promptTemplateKindRevise = "revise"
+	promptTemplateKindWork       = "work"
+	promptTemplateKindRevise     = "revise"
+	promptTemplateKindDiscussion = "discussion"
 
 	promptLocaleRU = "ru"
 	promptLocaleEN = "en"

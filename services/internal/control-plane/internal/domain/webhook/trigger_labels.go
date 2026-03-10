@@ -75,6 +75,9 @@ func (labels TriggerLabels) withDefaults() TriggerLabels {
 	if strings.TrimSpace(labels.RunRethink) == "" {
 		labels.RunRethink = defaults.RunRethink
 	}
+	if strings.TrimSpace(labels.ModeDiscussion) == "" {
+		labels.ModeDiscussion = defaults.ModeDiscussion
+	}
 	if strings.TrimSpace(labels.NeedReviewer) == "" {
 		labels.NeedReviewer = defaults.NeedReviewer
 	}
@@ -142,6 +145,27 @@ func (labels TriggerLabels) isNeedReviewerLabel(label string) bool {
 		return false
 	}
 	return normalizeLabelToken(label) == reviewerLabel
+}
+
+func (labels TriggerLabels) isModeDiscussionLabel(label string) bool {
+	discussionLabel := normalizeLabelToken(labels.withDefaults().ModeDiscussion)
+	if discussionLabel == "" {
+		return false
+	}
+	return normalizeLabelToken(label) == discussionLabel
+}
+
+func (labels TriggerLabels) hasModeDiscussionLabel(issueLabels []githubLabelRecord) bool {
+	modeLabel := normalizeLabelToken(labels.withDefaults().ModeDiscussion)
+	if modeLabel == "" {
+		return false
+	}
+	for _, item := range issueLabels {
+		if normalizeLabelToken(item.Name) == modeLabel {
+			return true
+		}
+	}
+	return false
 }
 
 func normalizeLabelToken(value string) string {

@@ -31,6 +31,7 @@ func (e ExitError) Unwrap() error {
 type PromptConfig struct {
 	TriggerKind          string
 	TriggerLabel         string
+	DiscussionMode       bool
 	PromptTemplateKind   string
 	PromptTemplateSource string
 	PromptTemplateLocale string
@@ -162,6 +163,7 @@ type promptEnvelopeTemplateData struct {
 	BaseBranch                   string
 	TriggerKind                  string
 	IsAIRepairMainDirect         bool
+	IsDiscussionMode             bool
 	IsReviseTrigger              bool
 	IsMarkdownDocsOnlyScope      bool
 	IsReviewerCommentOnlyScope   bool

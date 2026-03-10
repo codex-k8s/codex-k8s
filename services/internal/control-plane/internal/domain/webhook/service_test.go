@@ -145,6 +145,330 @@ func TestIngestGitHubWebhook_NonTriggerEventsDoNotCreateRun(t *testing.T) {
 	}
 }
 
+func TestIngestGitHubWebhook_ModeDiscussionLabelCreatesCodeOnlyRun(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+				DefaultRef:       "main",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {ID: "user-1", GitHubLogin: "member"},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{"project-1|user-1": "read_write"},
+	}
+	svc := NewService(Config{
+		AgentRuns:      runs,
+		Agents:         agents,
+		FlowEvents:     events,
+		Repos:          repos,
+		Users:          users,
+		Members:        members,
+		GitBotUsername: "codex-bot",
+	})
+
+	payload := json.RawMessage(`{
+		"action":"labeled",
+		"label":{"name":"mode:discussion"},
+		"issue":{"id":1001,"number":77,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/77","state":"open","labels":[{"name":"mode:discussion"}]},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member","type":"User"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-discussion-label-1",
+		DeliveryID:    "delivery-discussion-label-1",
+		EventType:     string(webhookdomain.GitHubEventIssues),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.RunID == "" {
+		t.Fatal("expected run id for mode:discussion label")
+	}
+
+	var runPayload githubRunPayload
+	if err := json.Unmarshal(runs.last.RunPayload, &runPayload); err != nil {
+		t.Fatalf("unmarshal run payload: %v", err)
+	}
+	if !runPayload.DiscussionMode {
+		t.Fatal("expected discussion_mode=true")
+	}
+	if runPayload.Trigger == nil {
+		t.Fatal("expected trigger payload")
+	}
+	if got, want := runPayload.Trigger.Label, webhookdomain.DefaultModeDiscussionLabel; got != want {
+		t.Fatalf("trigger label = %q, want %q", got, want)
+	}
+	if got, want := runPayload.Trigger.Kind, webhookdomain.TriggerKindDev; got != want {
+		t.Fatalf("trigger kind = %q, want %q", got, want)
+	}
+	if got, want := runPayload.Runtime.Mode, string(agentdomain.RuntimeModeCodeOnly); got != want {
+		t.Fatalf("runtime mode = %q, want %q", got, want)
+	}
+	if got, want := runPayload.Runtime.Source, runtimeModeSourceDiscussionMode; got != want {
+		t.Fatalf("runtime source = %q, want %q", got, want)
+	}
+	if runPayload.Runtime.DeployOnly {
+		t.Fatal("expected deploy_only=false for discussion mode")
+	}
+}
+
+func TestIngestGitHubWebhook_RunLabelWithDiscussionModeCreatesDiscussionRun(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+				DefaultRef:       "main",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {ID: "user-1", GitHubLogin: "member"},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{"project-1|user-1": "read_write"},
+	}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"labeled",
+		"label":{"name":"run:dev"},
+		"issue":{"id":1001,"number":77,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/77","state":"open","labels":[{"name":"mode:discussion"},{"name":"run:dev"}]},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member","type":"User"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-discussion-run-label-1",
+		DeliveryID:    "delivery-discussion-run-label-1",
+		EventType:     string(webhookdomain.GitHubEventIssues),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.RunID == "" {
+		t.Fatal("expected run id for run:dev + mode:discussion")
+	}
+
+	var runPayload githubRunPayload
+	if err := json.Unmarshal(runs.last.RunPayload, &runPayload); err != nil {
+		t.Fatalf("unmarshal run payload: %v", err)
+	}
+	if !runPayload.DiscussionMode {
+		t.Fatal("expected discussion_mode=true")
+	}
+	if runPayload.Trigger == nil || runPayload.Trigger.Label != webhookdomain.DefaultModeDiscussionLabel {
+		t.Fatalf("expected trigger label %q, got %#v", webhookdomain.DefaultModeDiscussionLabel, runPayload.Trigger)
+	}
+}
+
+func TestIngestGitHubWebhook_IssueCommentWithDiscussionModeCreatesRun(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+				DefaultRef:       "main",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {ID: "user-1", GitHubLogin: "member"},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{"project-1|user-1": "read_write"},
+	}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"created",
+		"issue":{"id":1001,"number":77,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/77","state":"open","labels":[{"name":"mode:discussion"}]},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member","type":"User"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-discussion-comment-1",
+		DeliveryID:    "delivery-discussion-comment-1",
+		EventType:     string(webhookdomain.GitHubEventIssueComment),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.RunID == "" {
+		t.Fatal("expected run id for discussion issue_comment")
+	}
+
+	var runPayload githubRunPayload
+	if err := json.Unmarshal(runs.last.RunPayload, &runPayload); err != nil {
+		t.Fatalf("unmarshal run payload: %v", err)
+	}
+	if runPayload.Trigger == nil {
+		t.Fatal("expected trigger payload")
+	}
+	if got, want := runPayload.Trigger.Source, webhookdomain.TriggerSourceIssueComment; got != want {
+		t.Fatalf("trigger source = %q, want %q", got, want)
+	}
+	if !runPayload.DiscussionMode {
+		t.Fatal("expected discussion_mode=true")
+	}
+}
+
+func TestIngestGitHubWebhook_IssueCommentWithDiscussionModeIgnoresBotSender(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{items: map[string]string{}}
+	events := &inMemoryEventRepo{}
+	svc := NewService(Config{
+		AgentRuns:      runs,
+		FlowEvents:     events,
+		GitBotUsername: "codex-bot",
+	})
+
+	payload := json.RawMessage(`{
+		"action":"created",
+		"issue":{"id":1001,"number":77,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/77","state":"open","labels":[{"name":"mode:discussion"}]},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"codex-bot","type":"User"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-discussion-comment-bot-1",
+		DeliveryID:    "delivery-discussion-comment-bot-1",
+		EventType:     string(webhookdomain.GitHubEventIssueComment),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.RunID != "" {
+		t.Fatalf("expected no run for bot-authored discussion comment, got %q", got.RunID)
+	}
+	if len(events.items) != 1 || events.items[0].EventType != floweventdomain.EventTypeWebhookReceived {
+		t.Fatalf("expected webhook.received without run, got %#v", events.items)
+	}
+}
+
+func TestIngestGitHubWebhook_IssueCommentWithActiveDiscussionRunDoesNotCreateSecondRun(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{
+		items: map[string]string{},
+		searchItems: []agentrunrepo.RunLookupItem{{
+			RunID:              "run-existing",
+			ProjectID:          "project-1",
+			RepositoryFullName: "codex-k8s/codex-k8s",
+			IssueNumber:        77,
+			TriggerKind:        string(webhookdomain.TriggerKindDev),
+			TriggerLabel:       webhookdomain.DefaultModeDiscussionLabel,
+			Status:             "running",
+		}},
+	}
+	events := &inMemoryEventRepo{}
+	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+				DefaultRef:       "main",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {ID: "user-1", GitHubLogin: "member"},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{"project-1|user-1": "read_write"},
+	}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		Agents:     agents,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"created",
+		"issue":{"id":1001,"number":77,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/77","state":"open","labels":[{"name":"mode:discussion"}]},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member","type":"User"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-discussion-comment-active-1",
+		DeliveryID:    "delivery-discussion-comment-active-1",
+		EventType:     string(webhookdomain.GitHubEventIssueComment),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.RunID != "" {
+		t.Fatalf("expected no run when active discussion run already exists, got %q", got.RunID)
+	}
+	if len(events.items) != 1 || events.items[0].EventType != floweventdomain.EventTypeWebhookReceived {
+		t.Fatalf("expected webhook.received without run, got %#v", events.items)
+	}
+}
+
 func TestIngestGitHubWebhook_PushMain_CreatesDeployOnlyProductionRun(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}

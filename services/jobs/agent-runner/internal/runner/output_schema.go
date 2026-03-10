@@ -12,6 +12,7 @@ type outputSchemaProfile string
 
 const (
 	outputSchemaProfilePRFlow      outputSchemaProfile = "pr_flow"
+	outputSchemaProfileDiscussion  outputSchemaProfile = "discussion"
 	outputSchemaProfileSelfImprove outputSchemaProfile = "self_improve"
 	outputSchemaProfileMainDirect  outputSchemaProfile = "main_direct"
 	outputSchemaTypeObject         string              = "object"
@@ -62,7 +63,7 @@ type outputSchemaItem struct {
 
 func buildOutputSchemaJSON(params outputSchemaParams) ([]byte, error) {
 	profile := resolveOutputSchemaProfile(params)
-	requirePRFields := profile != outputSchemaProfileMainDirect
+	requirePRFields := profile != outputSchemaProfileMainDirect && profile != outputSchemaProfileDiscussion
 	schema := newBaseOutputSchema(requirePRFields)
 	if profile == outputSchemaProfileSelfImprove {
 		addSelfImproveOutputFields(schema)
@@ -79,6 +80,9 @@ func resolveOutputSchemaProfile(params outputSchemaParams) outputSchemaProfile {
 	normalizedTemplate := normalizeTemplateKind(params.TemplateKind, string(normalizedTrigger))
 	normalizedAgentKey := strings.TrimSpace(params.AgentKey)
 
+	if normalizedTemplate == promptTemplateKindDiscussion {
+		return outputSchemaProfileDiscussion
+	}
 	if normalizedTrigger == webhookdomain.TriggerKindAIRepair {
 		return outputSchemaProfileMainDirect
 	}

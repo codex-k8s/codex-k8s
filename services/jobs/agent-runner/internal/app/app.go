@@ -55,6 +55,7 @@ func Run() error {
 		PromptConfig: runner.PromptConfig{
 			TriggerKind:          cfg.TriggerKind,
 			TriggerLabel:         cfg.TriggerLabel,
+			DiscussionMode:       cfg.DiscussionMode,
 			PromptTemplateKind:   cfg.PromptTemplateKind,
 			PromptTemplateSource: cfg.PromptTemplateSource,
 			PromptTemplateLocale: cfg.PromptTemplateLocale,

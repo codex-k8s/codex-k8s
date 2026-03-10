@@ -199,6 +199,35 @@ func TestResolveRunAgentContext_UsesRepoSeedAndDefaultLocale(t *testing.T) {
 	}
 }
 
+func TestResolveRunAgentContext_DiscussionModeUsesDiscussionTemplate(t *testing.T) {
+	t.Parallel()
+
+	runPayload := json.RawMessage(`{
+		"discussion_mode":true,
+		"repository":{"full_name":"codex-k8s/codex-k8s"},
+		"issue":{"number":42},
+		"agent":{"key":"dev","name":"AI Developer"},
+		"trigger":{"kind":"dev","label":"mode:discussion"},
+		"raw_payload":{"issue":{"labels":[{"name":"mode:discussion"}]}}
+	}`)
+
+	got, err := resolveRunAgentContext(runPayload, runAgentDefaults{
+		DefaultModel:           modelGPT54,
+		DefaultReasoningEffort: reasoningEffortHigh,
+		DefaultLocale:          "ru",
+		AllowGPT53:             true,
+	})
+	if err != nil {
+		t.Fatalf("resolveRunAgentContext() error = %v", err)
+	}
+	if !got.DiscussionMode {
+		t.Fatal("DiscussionMode = false, want true")
+	}
+	if got.PromptTemplateKind != promptTemplateKindDiscussion {
+		t.Fatalf("PromptTemplateKind = %q, want %q", got.PromptTemplateKind, promptTemplateKindDiscussion)
+	}
+}
+
 func TestResolveRunAgentContext_ReviewTemplateKinds(t *testing.T) {
 	t.Parallel()
 

@@ -76,7 +76,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		templateKind:     templateKind,
 		existingPRNumber: s.cfg.ExistingPRNumber,
 	}
-	writeScopePolicy := resolveRunWriteScopePolicy(result.triggerKind, s.cfg.AgentKey)
+	writeScopePolicy := resolveRunWriteScopePolicy(result.triggerKind, s.cfg.AgentKey, s.cfg.DiscussionMode)
 	finalized := false
 
 	defer func() {
@@ -105,7 +105,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		s.logger.Warn("emit run.agent.started failed", "err", err)
 	}
 
-	if webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(triggerKind)) {
+	if s.cfg.DiscussionMode || webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(triggerKind)) {
 		restored, restoreErr := s.restoreLatestSession(ctx, result.targetBranch, state.sessionsDir)
 		if restoreErr != nil {
 			return ExitError{ExitCode: 5, Err: fmt.Errorf("restore latest session: %w", restoreErr)}
@@ -188,7 +188,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	report.ToolGaps = normalizeStringList(report.ToolGaps)
 	result.report = report
 	normalizedTriggerKind := webhookdomain.NormalizeTriggerKind(triggerKind)
-	requiresPRFlow := !isAIRepairMainDirectTrigger(result.triggerKind)
+	requiresPRFlow := !isAIRepairMainDirectTrigger(result.triggerKind) && !s.cfg.DiscussionMode
 	if normalizedTriggerKind == webhookdomain.TriggerKindSelfImprove {
 		if strings.TrimSpace(result.report.Diagnosis) == "" {
 			return fmt.Errorf("invalid codex result: diagnosis is required for self_improve")
@@ -228,14 +228,16 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	if result.sessionID == "" && result.sessionFilePath != "" {
 		result.sessionID = extractSessionIDFromFile(result.sessionFilePath)
 	}
-	if err := enforceRunWriteScope(ctx, state.repoDir, baselineHead, result.triggerKind, s.cfg.AgentKey, result.existingPRNumber); err != nil {
+	if err := enforceRunWriteScope(ctx, state.repoDir, baselineHead, result.triggerKind, s.cfg.AgentKey, result.existingPRNumber, s.cfg.DiscussionMode); err != nil {
 		return err
 	}
 
-	gitPushOutput, pushErr := runCommandCaptureCombinedOutput(ctx, state.repoDir, "git", "push", "origin", result.targetBranch)
-	result.gitPushOutput = redactSensitiveOutput(gitPushOutput, sensitiveValues)
-	if pushErr != nil {
-		return fmt.Errorf("git push failed: %w", pushErr)
+	if !s.cfg.DiscussionMode {
+		gitPushOutput, pushErr := runCommandCaptureCombinedOutput(ctx, state.repoDir, "git", "push", "origin", result.targetBranch)
+		result.gitPushOutput = redactSensitiveOutput(gitPushOutput, sensitiveValues)
+		if pushErr != nil {
+			return fmt.Errorf("git push failed: %w", pushErr)
+		}
 	}
 	result.toolGaps = detectToolGaps(result.report, result.codexExecOutput, result.gitPushOutput)
 	result.report.ToolGaps = result.toolGaps
@@ -279,9 +281,10 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		}
 	} else {
 		if err := s.emitEvent(ctx, floweventdomain.EventTypeRunAgentStatusReported, map[string]any{
-			"branch":      result.targetBranch,
-			"trigger":     normalizedTriggerKind,
-			"main_direct": true,
+			"branch":          result.targetBranch,
+			"trigger":         normalizedTriggerKind,
+			"main_direct":     isAIRepairMainDirectTrigger(result.triggerKind),
+			"discussion_mode": s.cfg.DiscussionMode,
 		}); err != nil {
 			s.logger.Warn("emit run.agent.status_reported failed", "err", err)
 		}
@@ -364,6 +367,20 @@ func (s *Service) restoreLatestSession(ctx context.Context, branch string, sessi
 	}
 
 	if snapshot.PRNumber <= 0 {
+		if s.cfg.DiscussionMode {
+			result := restoredSession{}
+			if len(snapshot.CodexSessionJSON) > 0 {
+				restoredPath := filepath.Join(sessionsDir, fmt.Sprintf("restored-%s.json", s.cfg.RunID))
+				if writeErr := os.WriteFile(restoredPath, snapshot.CodexSessionJSON, 0o600); writeErr != nil {
+					return restoredSession{}, fmt.Errorf("restore codex session file: %w", writeErr)
+				}
+				result.restoredSessionPath = restoredPath
+				if err := s.emitEvent(ctx, floweventdomain.EventTypeRunAgentSessionRestored, map[string]string{"restored_session_path": restoredPath}); err != nil {
+					s.logger.Warn("emit run.agent.session.restored failed", "err", err)
+				}
+			}
+			return result, nil
+		}
 		if s.cfg.ExistingPRNumber > 0 {
 			return restoredSession{existingPRNumber: s.cfg.ExistingPRNumber}, nil
 		}
@@ -402,7 +419,7 @@ func (s *Service) prepareRepository(ctx context.Context, result runResult, state
 			return fmt.Errorf("checkout existing branch failed")
 		}
 	} else {
-		if webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(result.triggerKind)) {
+		if webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(result.triggerKind)) && !s.cfg.DiscussionMode {
 			return s.failRevisePRNotFound(ctx, result, state, "branch_not_found")
 		}
 		if err := runCommandQuiet(ctx, state.repoDir, "git", "checkout", "-B", result.targetBranch, "origin/"+s.cfg.AgentBaseBranch); err != nil {

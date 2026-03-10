@@ -66,14 +66,15 @@
 Служебные лейблы:
 - `state:*` — статус этапа (`state:in-review`, `state:approved` и т.д.);
 - `need:*` — запрос участия роли (`need:qa`, `need:sa`, `need:reviewer` и т.д.);
-- `mode:discussion` — planned: pre-run режим обсуждения, сам по себе ран не запускает.
+- `mode:discussion` — lightweight discussion-run под Issue: стартует comment-only сессию без PR/commit/push.
 
 ## 🏷️ Полный процесс по лейблам (Issue + PR)
 
 ### 1. Какие лейблы реально запускают ран
 - Базовый запуск ран делает класс `run:*`.
 - Исключение: `need:reviewer` на PR (событие `pull_request:labeled`) запускает pre-review ран роли `reviewer`.
-- `state:*`, остальные `need:*`, `[ai-model-*]`, `[ai-reasoning-*]`, `mode:discussion` сами по себе ран не запускают.
+- `mode:discussion` на Issue сам по себе запускает lightweight discussion-run.
+- `state:*`, остальные `need:*`, `[ai-model-*]`, `[ai-reasoning-*]` сами по себе ран не запускают.
 
 ### 2. Базовый запуск по Issue
 1. Вешаете на Issue один trigger-лейбл `run:<stage>`.
@@ -219,14 +220,14 @@ stage-моделью и политикой лейблов.
 
 ### 6) Обсуждение идеи в режиме диалога под Issue
 
-Текущий статус:
-- `mode:discussion` уже есть в taxonomy, но помечен как `planned` и сам по себе run не запускает.
-- Полноценный discussion-pod режим (без commit/push/PR) описан в политике, но не активирован в baseline.
-
-Что делать сейчас:
-1. Вести обсуждение обычными комментариями под Issue.
-2. Когда гипотеза созрела — запускать соответствующий stage (`run:intake`, `run:vision` или `run:rethink`).
-3. После фиксации решения переходить к `run:plan`/`run:dev`.
+Как это работает:
+1. Ставите на Issue `mode:discussion`.
+2. Платформа создает lightweight `code-only` run без PR/commit/push.
+3. Агент отвечает пользователю комментариями под Issue через `gh issue comment`.
+4. Каждый новый пользовательский `issue_comment` под тем же Issue продолжает discussion-сессию, если на Issue по-прежнему есть `mode:discussion`.
+5. Служебные комментарии платформы и комментарии GitHub-бота новый discussion-run не запускают.
+6. Если на Issue дополнительно ставится `run:*`, stage сохраняется в `trigger.kind`, но сам запуск все равно остается discussion-mode, пока висит `mode:discussion`.
+7. Для перехода к реализации снимите `mode:discussion` и поставьте нужный stage (`run:intake`, `run:vision`, `run:plan`, `run:dev` и т.д.).
 
 ### 7) Self-improve по завершённым задачам
 

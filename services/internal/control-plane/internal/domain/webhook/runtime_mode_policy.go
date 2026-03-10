@@ -12,6 +12,7 @@ const (
 	runtimeModeSourceServicesYAML       = "services_yaml"
 	runtimeModeSourceServicesYAMLGlobal = "services_yaml_default"
 	runtimeModeSourcePushMain           = "push_main"
+	runtimeModeSourceDiscussionMode     = "discussion_mode"
 )
 
 // RuntimeModePolicy defines trigger->runtime mapping loaded from services.yaml.
@@ -48,6 +49,9 @@ func normalizeRuntimeTriggerKind(value webhookdomain.TriggerKind) webhookdomain.
 func (policy RuntimeModePolicy) resolve(trigger *issueRunTrigger) (agentdomain.RuntimeMode, string) {
 	if trigger == nil {
 		return agentdomain.RuntimeModeCodeOnly, runtimeModeSourceTriggerDefault
+	}
+	if trigger.DiscussionMode {
+		return agentdomain.RuntimeModeCodeOnly, runtimeModeSourceDiscussionMode
 	}
 	triggerKind := normalizeRuntimeTriggerKind(trigger.Kind)
 	if triggerKind == webhookdomain.TriggerKindAIRepair {

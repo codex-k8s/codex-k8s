@@ -3,9 +3,10 @@ package app
 import webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 
 const (
-	promptTemplateKindWork   = "work"
-	promptTemplateKindRevise = "revise"
-	promptTemplateSourceSeed = "repo_seed"
+	promptTemplateKindWork       = "work"
+	promptTemplateKindRevise     = "revise"
+	promptTemplateKindDiscussion = "discussion"
+	promptTemplateSourceSeed     = "repo_seed"
 
 	modelGPT54           = "gpt-5.4"
 	modelGPT53Codex      = "gpt-5.3-codex"

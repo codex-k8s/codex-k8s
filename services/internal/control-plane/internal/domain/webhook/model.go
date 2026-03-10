@@ -47,6 +47,7 @@ type TriggerLabels struct {
 	RunRelease, RunPostDeploy  string
 	RunOps, RunSelfImprove     string
 	RunRethink                 string
+	ModeDiscussion             string
 	NeedReviewer               string
 }
 
@@ -74,14 +75,16 @@ func defaultTriggerLabels() TriggerLabels {
 		RunOps:          webhookdomain.DefaultRunOpsLabel,
 		RunSelfImprove:  webhookdomain.DefaultRunSelfImproveLabel,
 		RunRethink:      webhookdomain.DefaultRunRethinkLabel,
+		ModeDiscussion:  webhookdomain.DefaultModeDiscussionLabel,
 		NeedReviewer:    webhookdomain.DefaultNeedReviewerLabel,
 	}
 }
 
 type issueRunTrigger struct {
-	Source string
-	Label  string
-	Kind   webhookdomain.TriggerKind
+	Source         string
+	Label          string
+	Kind           webhookdomain.TriggerKind
+	DiscussionMode bool
 }
 
 type triggerConflictResult struct {

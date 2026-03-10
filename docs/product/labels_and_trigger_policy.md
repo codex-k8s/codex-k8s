@@ -85,7 +85,7 @@ approvals:
 
 | Label | Назначение |
 |---|---|
-| `mode:discussion` | planned: диалоговый pre-run режим для brainstorming под Issue; сам по себе run не запускает |
+| `mode:discussion` | lightweight discussion-run под Issue: comment-only режим без PR/commit/push; сам по себе запускает run |
 
 ## Конфигурационные лейблы модели/рассуждений
 
@@ -146,20 +146,19 @@ approvals:
   - на PR и на Issue, если run сформировал PR;
   - только на Issue, если run не формирует PR.
 
-### Discussion mode (`mode:discussion`, planned)
-- Если `mode:discussion` присутствует на Issue в момент `run:dev`/`run:dev:revise`, запуск работает в режиме обсуждения:
-  - агент изучает код/окружение и отвечает комментариями под Issue;
+### Discussion mode (`mode:discussion`)
+- Если на Issue ставится `mode:discussion`, webhook создает lightweight discussion-run:
+  - runtime mode принудительно = `code-only`;
+  - агент отвечает комментариями под Issue;
   - PR/commit/push не выполняются;
-  - вместо job поднимается отдельный `discussion` pod с `codex-cli` session snapshot.
-- `discussion` pod живёт до первого из событий:
-  - idle timeout `8h`;
-  - закрытие Issue;
-  - постановка на Issue любого trigger `run:*`.
+  - write scope репозитория = read-only enforcement.
+- Если на Issue уже есть `mode:discussion` и затем ставится любой `run:*`, stage сохраняется в `trigger.kind`, но запуск остается discussion-mode, пока `mode:discussion` не снят.
 - На webhook `issue_comment`:
-  - если комментарий оставил не агент, раннер продолжает текущую discussion-сессию и публикует ответ под Issue;
-  - служебные комментарии платформы и комментарии агента не считаются пользовательским входом.
-- После снятия `mode:discussion` и повторного trigger (`run:dev`/`run:dev:revise`) агент продолжает ту же сессию и выполняет согласованный план реализации.
-- Политика вводится как planned-фича следующих спринтов (после стабилизации базового dogfooding контура).
+  - если комментарий оставил человек и на Issue есть `mode:discussion`, создается/продолжается discussion-run;
+  - комментарии GitHub-бота платформы не считаются пользовательским входом;
+  - если уже есть активный discussion-run (`pending`/`running`), новый run не создается.
+- При конфликте нескольких `run:*` labels discussion-run не стартует: webhook пишет conflict diagnostics в `flow_events` и service-comment.
+- После снятия `mode:discussion` следующий stage trigger (`run:intake`, `run:vision`, `run:plan`, `run:dev` и т.д.) снова работает как обычный execution-flow.
 
 ### Model/reasoning labels (`[ai-model-*]`, `[ai-reasoning-*]`)
 - Не запускают workflow/deploy напрямую.

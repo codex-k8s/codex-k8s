@@ -63,6 +63,22 @@ func TestOutputSchemaRequiresAllDeclaredProperties(t *testing.T) {
 				outputFieldToolGaps,
 			},
 		},
+		{
+			name: "discussion profile works without pr fields",
+			params: outputSchemaParams{
+				TriggerKind:  "dev",
+				TemplateKind: promptTemplateKindDiscussion,
+				AgentKey:     "dev",
+			},
+			extraMiss: []string{
+				outputFieldPRNumber,
+				outputFieldPRURL,
+				outputFieldDiagnosis,
+				outputFieldActionItems,
+				outputFieldEvidenceRefs,
+				outputFieldToolGaps,
+			},
+		},
 	}
 
 	for _, tc := range testCases {

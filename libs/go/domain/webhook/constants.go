@@ -14,6 +14,7 @@ type GitHubEventType string
 
 const (
 	GitHubEventIssues            GitHubEventType = "issues"
+	GitHubEventIssueComment      GitHubEventType = "issue_comment"
 	GitHubEventPullRequest       GitHubEventType = "pull_request"
 	GitHubEventPullRequestReview GitHubEventType = "pull_request_review"
 	GitHubEventPush              GitHubEventType = "push"
@@ -24,6 +25,7 @@ type GitHubAction string
 
 const (
 	GitHubActionLabeled   GitHubAction = "labeled"
+	GitHubActionCreated   GitHubAction = "created"
 	GitHubActionSubmitted GitHubAction = "submitted"
 )
 
@@ -58,6 +60,7 @@ const (
 const (
 	GitHubReviewStateChangesRequested = "changes_requested"
 	TriggerSourceIssueLabel           = "issue_label"
+	TriggerSourceIssueComment         = "issue_comment"
 	TriggerSourcePullRequestReview    = "pull_request_review"
 )
 

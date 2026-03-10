@@ -6,11 +6,12 @@ func TestResolveRunWriteScopePolicy(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		name          string
-		triggerKind   string
-		agentKey      string
-		wantMode      runWriteScopeMode
-		wantRequirePR bool
+		name           string
+		triggerKind    string
+		agentKey       string
+		discussionMode bool
+		wantMode       runWriteScopeMode
+		wantRequirePR  bool
 	}{
 		{
 			name:          "reviewer is comment only",
@@ -54,6 +55,14 @@ func TestResolveRunWriteScopePolicy(t *testing.T) {
 			wantMode:      runWriteScopeModeAny,
 			wantRequirePR: false,
 		},
+		{
+			name:           "discussion mode is comment only",
+			triggerKind:    "dev",
+			agentKey:       "dev",
+			discussionMode: true,
+			wantMode:       runWriteScopeModeDiscussion,
+			wantRequirePR:  false,
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -61,7 +70,7 @@ func TestResolveRunWriteScopePolicy(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := resolveRunWriteScopePolicy(testCase.triggerKind, testCase.agentKey)
+			got := resolveRunWriteScopePolicy(testCase.triggerKind, testCase.agentKey, testCase.discussionMode)
 			if got.Mode != testCase.wantMode {
 				t.Fatalf("resolveRunWriteScopePolicy().Mode = %q, want %q", got.Mode, testCase.wantMode)
 			}

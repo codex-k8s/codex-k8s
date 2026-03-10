@@ -29,6 +29,7 @@ type runPayloadInput struct {
 	RuntimeNamespace  string
 	RuntimeBuildRef   string
 	RuntimeDeployOnly bool
+	DiscussionMode    bool
 }
 
 type eventPayloadInput struct {
@@ -86,7 +87,8 @@ func buildRunPayload(input runPayloadInput) (json.RawMessage, error) {
 			ServicesYAML:    input.ServicesYAMLPath,
 			BindingResolved: input.HasBinding,
 		},
-		LearningMode: input.LearningMode,
+		LearningMode:   input.LearningMode,
+		DiscussionMode: input.DiscussionMode,
 		Agent: githubRunAgentPayload{
 			ID:   input.Agent.ID,
 			Key:  input.Agent.Key,

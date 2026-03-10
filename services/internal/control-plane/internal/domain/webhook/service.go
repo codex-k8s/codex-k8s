@@ -85,6 +85,7 @@ type Service struct {
 	runtimeModePolicy   RuntimeModePolicy
 	platformNamespace   string
 	githubToken         string
+	gitBotUsername      string
 	githubMgmt          pushMainVersionBumpClient
 	autoVersionBump     bool
 }
@@ -96,6 +97,7 @@ type Config struct {
 	RuntimeModePolicy   RuntimeModePolicy
 	PlatformNamespace   string
 	GitHubToken         string
+	GitBotUsername      string
 	GitHubMgmt          pushMainVersionBumpClient
 	PushMainAutoBump    bool
 	RunStatus           runStatusService
@@ -128,6 +130,7 @@ func NewService(cfg Config) *Service {
 		runtimeModePolicy:   cfg.RuntimeModePolicy.withDefaults(),
 		platformNamespace:   strings.TrimSpace(cfg.PlatformNamespace),
 		githubToken:         strings.TrimSpace(cfg.GitHubToken),
+		gitBotUsername:      normalizeLabelToken(cfg.GitBotUsername),
 		githubMgmt:          cfg.GitHubMgmt,
 		autoVersionBump:     cfg.PushMainAutoBump,
 	}
@@ -180,7 +183,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		}
 	}
 	pushTarget, hasPushMainDeploy := s.resolvePushMainDeploy(effectiveCmd.EventType, envelope)
-	if strings.EqualFold(strings.TrimSpace(effectiveCmd.EventType), string(webhookdomain.GitHubEventIssues)) && !hasIssueRunTrigger {
+	if strings.EqualFold(strings.TrimSpace(effectiveCmd.EventType), string(webhookdomain.GitHubEventIssues)) && !hasIssueRunTrigger && strings.TrimSpace(conflict.IgnoreReason) == "" {
 		return s.recordIgnoredWebhook(ctx, effectiveCmd, envelope, ignoredWebhookParams{
 			Reason:     "issue_event_not_trigger_label",
 			RunKind:    "",
@@ -299,12 +302,16 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		runtimeNamespace = ""
 		runtimeBuildRef = strings.TrimSpace(repositoryDefaultRef)
 		runtimeDeployOnly = false
-		if trigger.Kind == webhookdomain.TriggerKindAIRepair {
+		if trigger.DiscussionMode {
+			runtimeBuildRef = strings.TrimSpace(repositoryDefaultRef)
+		} else if trigger.Kind == webhookdomain.TriggerKindAIRepair {
 			runtimeTargetEnv = "production"
 			runtimeNamespace = strings.TrimSpace(s.platformNamespace)
 		}
 		triggerSource := strings.TrimSpace(trigger.Source)
-		if strings.EqualFold(triggerSource, webhookdomain.TriggerSourcePullRequestReview) || strings.EqualFold(triggerSource, triggerSourcePullRequestLabel) {
+		if trigger.DiscussionMode {
+			runtimeBuildRef = strings.TrimSpace(repositoryDefaultRef)
+		} else if strings.EqualFold(triggerSource, webhookdomain.TriggerSourcePullRequestReview) || strings.EqualFold(triggerSource, triggerSourcePullRequestLabel) {
 			prHeadSHA := strings.TrimSpace(envelope.PullRequest.Head.SHA)
 			if prHeadSHA != "" {
 				runtimeBuildRef = prHeadSHA
@@ -335,6 +342,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		RuntimeNamespace:  runtimeNamespace,
 		RuntimeBuildRef:   runtimeBuildRef,
 		RuntimeDeployOnly: runtimeDeployOnly,
+		DiscussionMode:    hasIssueRunTrigger && trigger.DiscussionMode,
 	})
 	if err != nil {
 		return IngestResult{}, fmt.Errorf("build run payload: %w", err)

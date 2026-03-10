@@ -26,6 +26,7 @@ type Config struct {
 
 	TriggerKind          string `env:"CODEXK8S_RUN_TRIGGER_KIND" envDefault:"dev"`
 	TriggerLabel         string `env:"CODEXK8S_RUN_TRIGGER_LABEL"`
+	DiscussionMode       bool   `env:"CODEXK8S_DISCUSSION_MODE" envDefault:"false"`
 	PromptTemplateKind   string `env:"CODEXK8S_PROMPT_TEMPLATE_KIND" envDefault:"work"`
 	PromptTemplateSource string `env:"CODEXK8S_PROMPT_TEMPLATE_SOURCE" envDefault:"repo_seed"`
 	PromptTemplateLocale string `env:"CODEXK8S_PROMPT_TEMPLATE_LOCALE" envDefault:"ru"`
@@ -50,14 +51,19 @@ func LoadConfig() (Config, error) {
 
 	cfg.TriggerKind = normalizeTriggerKind(cfg.TriggerKind)
 	cfg.TriggerLabel = strings.TrimSpace(cfg.TriggerLabel)
+	if cfg.TriggerLabel == "" && cfg.DiscussionMode {
+		cfg.TriggerLabel = webhookdomain.DefaultModeDiscussionLabel
+	}
 	if cfg.TriggerLabel == "" {
 		cfg.TriggerLabel = webhookdomain.DefaultTriggerLabel(webhookdomain.NormalizeTriggerKind(cfg.TriggerKind))
 	}
 	cfg.PromptTemplateKind = strings.TrimSpace(strings.ToLower(cfg.PromptTemplateKind))
-	if isReviseTriggerKind(cfg.TriggerKind) {
+	if cfg.DiscussionMode {
+		cfg.PromptTemplateKind = promptTemplateKindDiscussion
+	} else if isReviseTriggerKind(cfg.TriggerKind) {
 		cfg.PromptTemplateKind = promptTemplateKindRevise
 	}
-	if cfg.PromptTemplateKind != promptTemplateKindRevise {
+	if cfg.PromptTemplateKind != promptTemplateKindRevise && cfg.PromptTemplateKind != promptTemplateKindDiscussion {
 		cfg.PromptTemplateKind = promptTemplateKindWork
 	}
 

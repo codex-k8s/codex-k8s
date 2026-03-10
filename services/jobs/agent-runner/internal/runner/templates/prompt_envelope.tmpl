@@ -82,6 +82,11 @@
 {{- if .IsReviewerCommentOnlyScope }}
 - Режим reviewer: репозиторий изменять нельзя (без коммитов, без правок файлов, без нового PR); разрешены только review-комментарии в существующем PR.
 {{- end }}
+{{- if .IsDiscussionMode }}
+- Discussion mode: репозиторий изменять нельзя, коммиты и `git push` запрещены, новый PR создавать нельзя.
+- Основной канал ответа пользователю: комментарии под Issue через `gh issue comment`.
+- Лейблы и stage transitions не меняйте автоматически, если это явно не требуется задачей пользователя.
+{{- end }}
 {{- if .IsSelfImproveRestrictedScope }}
 - Для `run:self-improve` разрешены только изменения: prompt files (`services/jobs/agent-runner/internal/runner/promptseeds/**`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl`), инструкций в markdown (`*.md`) и `services/jobs/agent-runner/Dockerfile`.
 {{- end }}
@@ -99,6 +104,11 @@
 - После стабилизации:
   - через `github_labels_transition` снимите триггер-лейбл `{{ .TriggerLabel }}` с Issue #{{ .IssueNumber }};
   - через `github_labels_transition` установите `{{ .StateInReviewLabel }}` на Issue #{{ .IssueNumber }}.
+{{- else if .IsDiscussionMode }}
+- Не создавайте PR и не делайте `git push`.
+- Если по задаче нужен ответ пользователю, публикуйте его под Issue #{{ .IssueNumber }} через `gh issue comment`.
+- Используйте восстановленную Codex session, если она есть, чтобы продолжать ту же discussion-сессию.
+- Сфокусируйтесь на анализе, вопросах, плане работ, рисках и следующем шаге, а не на изменении репозитория.
 {{- else if .IsReviewerCommentOnlyScope }}
 - Работайте только в существующем PR #{{ .ExistingPRNumber }}.
 - Не создавайте коммиты и не пушьте изменения в ветку.
@@ -214,6 +224,11 @@ Mandatory rules:
 {{- if .IsReviewerCommentOnlyScope }}
 - Reviewer mode: repository changes are forbidden (no commits, no file edits, no new PR); only review comments on an existing PR are allowed.
 {{- end }}
+{{- if .IsDiscussionMode }}
+- Discussion mode: repository changes are forbidden, commits and `git push` are forbidden, and no new PR may be created.
+- Your primary response channel is Issue comments via `gh issue comment`.
+- Do not change labels or stage transitions automatically unless the task explicitly asks for it.
+{{- end }}
 {{- if .IsSelfImproveRestrictedScope }}
 - For `run:self-improve`, only these changes are allowed: prompt files (`services/jobs/agent-runner/internal/runner/promptseeds/**`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl`), markdown instructions (`*.md`), and `services/jobs/agent-runner/Dockerfile`.
 {{- end }}
@@ -231,6 +246,11 @@ Completion requirements:
 - After stabilization:
   - use `github_labels_transition` to remove trigger label `{{ .TriggerLabel }}` from Issue #{{ .IssueNumber }};
   - use `github_labels_transition` to apply `{{ .StateInReviewLabel }}` on Issue #{{ .IssueNumber }}.
+{{- else if .IsDiscussionMode }}
+- Do not create a PR and do not execute `git push`.
+- If the task requires a user-facing answer, publish it under Issue #{{ .IssueNumber }} via `gh issue comment`.
+- Reuse the restored Codex session when available to continue the same discussion thread.
+- Focus on analysis, questions, plan, risks, and recommended next step rather than repository changes.
 {{- else if .IsReviewerCommentOnlyScope }}
 - Work only in the existing PR #{{ .ExistingPRNumber }}.
 - Do not create commits and do not push branch changes.
