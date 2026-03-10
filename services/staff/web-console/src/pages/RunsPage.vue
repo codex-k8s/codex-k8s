@@ -146,7 +146,6 @@ const headers = [
   { title: t("pages.runs.project"), key: "project", sortable: false, width: 220, align: "center" },
   { title: t("pages.runs.issue"), key: "issue", sortable: false, width: 120, align: "center" },
   { title: t("pages.runs.pr"), key: "pr", sortable: false, width: 120, align: "center" },
-  { title: t("pages.runs.runType"), key: "trigger_kind", width: 160, align: "center" },
   { title: t("pages.runs.triggerLabel"), key: "trigger_label", width: 200, align: "center" },
   { title: t("pages.runs.started"), key: "started_at", width: 180, align: "center" },
   { title: t("pages.runs.finished"), key: "finished_at", width: 180, align: "center" },

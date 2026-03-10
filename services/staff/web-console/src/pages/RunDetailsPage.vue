@@ -235,7 +235,7 @@ const router = useRouter();
 const snackbar = useSnackbarStore();
 
 const confirmDeleteNamespaceOpen = ref(false);
-const canDeleteNamespace = computed(() => Boolean(details.run?.job_exists && details.run?.namespace));
+const canDeleteNamespace = computed(() => Boolean(details.run?.namespace));
 
 type CodexAuthRequiredPayload = { verification_url: string; user_code: string };
 
