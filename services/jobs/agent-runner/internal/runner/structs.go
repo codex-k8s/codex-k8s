@@ -155,8 +155,6 @@ type promptEnvelopeTemplateData struct {
 	RunID                        string
 	IssueNumber                  int64
 	AgentKey                     string
-	RoleDisplayName              string
-	RoleCapabilities             []string
 	RuntimeMode                  string
 	IsFullEnv                    bool
 	TargetBranch                 string
@@ -174,7 +172,9 @@ type promptEnvelopeTemplateData struct {
 	StateInReviewLabel           string
 	HasContext7                  bool
 	PromptLocale                 string
-	CommunicationLanguage        string
+	RoleProfileBlock             string
+	IssueContractBlock           string
+	PRContractBlock              string
 	ProjectDocs                  []promptProjectDocTemplateData
 	ProjectDocsTotal             int
 	ProjectDocsTrimmed           bool

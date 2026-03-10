@@ -1,0 +1,31 @@
+{{- if eq .AgentKey "reviewer" -}}
+Review summary contract for a revise iteration:
+- No new PR is created; update the review summary in the existing PR.
+- Use exact sections:
+  1. `## Findings`
+  2. `## Evidence`
+  3. `## Checked guides/checklists`
+  4. `## Blocking / non-blocking`
+- For every finding, explicitly include severity, code/document location, and the expected fix.
+{{- else -}}
+Revise-iteration PR contract:
+- Title:
+  - pattern: `Issue #{{ .IssueNumber }}: revise — <what was fixed> (#{{ .IssueNumber }})`
+  - one line;
+  - must include `Issue #{{ .IssueNumber }}` and the `revise` marker.
+- Use exact `##` sections in the PR body in this order:
+  1. `## Revision context`
+  2. `## Basis for changes`
+  3. `## Processed review comments`
+  4. `## Rejected comments and rationale`
+  5. `## What changed`
+  6. `## Re-checks`
+  7. `## Checked checklists`
+  8. `## Risks and constraints`
+  9. `## Recommendations / next step`
+  10. `## Closure`
+- For every open comment, either fix the issue or provide verifiable reasoning for rejecting it.
+- In `## Re-checks`, list commands, requests, inspected logs, and their outcomes.
+- If some checks, logs, requests, or checklists did not apply, state that explicitly.
+- In `## Closure`, end with the exact directive: `Closes {{ .IssueURL }}`.
+{{- end }}

@@ -35,6 +35,14 @@ approvals:
 | `work` | Выполнение задачи | `services/jobs/agent-runner/internal/runner/promptseeds/dev-work.md` |
 | `revise` | Устранение замечаний по существующему PR/артефакту | `services/jobs/agent-runner/internal/runner/promptseeds/dev-revise.md` |
 
+Дополнительные prompt-блоки, которые рендерятся поверх task-body:
+- role profile blocks:
+  - `services/jobs/agent-runner/internal/runner/templates/prompt_blocks/role_profile_<locale>.tmpl`
+- follow-up issue contract blocks:
+  - `services/jobs/agent-runner/internal/runner/templates/prompt_blocks/issue_contract_<locale>.tmpl`
+- PR/review/discussion contract blocks:
+  - `services/jobs/agent-runner/internal/runner/templates/prompt_blocks/pr_contract_<kind>_<locale>.tmpl`
+
 ## Каноническая seed-матрица
 
 - Для каждого `agent_key` должны существовать отдельные body-шаблоны:
@@ -111,7 +119,8 @@ Final prompt должен включать:
 - run metadata (`run_id`, `issue`, `pr`, `branch`, `trigger`);
 - runtime mode (`full-env` / `code-only`);
 - available MCP tools и approval hints;
-- role profile и capability blocks;
+- role profile block;
+- issue/PR artifact contract blocks;
 - role-aware docs refs из `services.yaml/spec.projectDocs[]`;
 - role-aware artifact-template refs из `services.yaml/spec.roleDocTemplates`.
 
@@ -141,4 +150,5 @@ Final prompt должен включать:
 - `services/jobs/agent-runner/internal/runner/promptseeds/README.md`
 - `services/jobs/agent-runner/internal/runner/promptseeds/*.md`
 - `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl`
+- `services/jobs/agent-runner/internal/runner/templates/prompt_blocks/*.tmpl`
 - `docs/architecture/data_model.md`

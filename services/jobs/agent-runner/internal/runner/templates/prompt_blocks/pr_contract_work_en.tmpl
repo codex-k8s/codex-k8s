@@ -1,0 +1,77 @@
+{{- if eq .AgentKey "reviewer" -}}
+Review summary contract instead of a PR:
+- No new PR is created.
+- Publish the review summary in the existing PR with exact sections:
+  1. `## Findings`
+  2. `## Evidence`
+  3. `## Checked guides/checklists`
+  4. `## Blocking / non-blocking`
+- List findings by severity first and only then provide the summary.
+{{- else -}}
+PR formatting contract:
+- Title:
+{{- if eq .AgentKey "dev" }}
+  - pattern: `Issue #{{ .IssueNumber }}: <short technical result> (#{{ .IssueNumber }})`
+{{- else if eq .AgentKey "qa" }}
+  - pattern: `Issue #{{ .IssueNumber }}: qa — <short verification result> (#{{ .IssueNumber }})`
+{{- else if eq .AgentKey "sre" }}
+  - pattern: `Issue #{{ .IssueNumber }}: sre — <short remediation result> (#{{ .IssueNumber }})`
+{{- else }}
+  - pattern: `Issue #{{ .IssueNumber }}: {{ .StageName }}-package — <short package goal>`
+{{- end }}
+  - one line;
+  - must include `Issue #{{ .IssueNumber }}`;
+  - describe the result of the change rather than internal mechanics.
+- Write the PR body as valid Markdown and use exact `##` sections in this order:
+{{- if eq .AgentKey "dev" }}
+  1. `## Context`
+  2. `## Basis for changes`
+  3. `## Main intent of changes`
+  4. `## What was done`
+  5. `## Logs and runtime diagnostics`
+  6. `## DB and migrations`
+  7. `## Checks`
+  8. `## Checked checklists`
+  9. `## Risks and constraints`
+  10. `## Recommendations / next step`
+  11. `## Closure`
+{{- else if eq .AgentKey "qa" }}
+  1. `## Context`
+  2. `## Basis for changes`
+  3. `## What was tested`
+  4. `## Test scenarios and requests`
+  5. `## Where it was verified`
+  6. `## Logs and evidence`
+  7. `## Checks`
+  8. `## Checked checklists`
+  9. `## Risks and constraints`
+  10. `## Recommendations / next step`
+  11. `## Closure`
+{{- else if eq .AgentKey "sre" }}
+  1. `## Context`
+  2. `## Basis for changes`
+  3. `## What was diagnosed`
+  4. `## Logs and infrastructure diagnostics`
+  5. `## Infrastructure changes`
+  6. `## Rollback / mitigation`
+  7. `## Checks`
+  8. `## Checked checklists`
+  9. `## Risks and constraints`
+  10. `## Recommendations / next step`
+  11. `## Closure`
+{{- else }}
+  1. `## Stage/role context`
+  2. `## Basis for changes`
+  3. `## Updated artifacts`
+  4. `## Traceability`
+  5. `## Checks`
+  6. `## Checked checklists`
+  7. `## Risks and constraints`
+  8. `## Recommendations / next step`
+  9. `## Closure`
+{{- end }}
+- Use factual details in every section: commands, tests, logs, requests, files, and environments.
+- If no logs were inspected, no requests were executed, the DB was untouched, or no checklist applied, state that explicitly.
+- In `## Checks`, list every verification action together with its outcome.
+- In `## Closure`, end with the exact directive: `Closes {{ .IssueURL }}`.
+{{- end }}

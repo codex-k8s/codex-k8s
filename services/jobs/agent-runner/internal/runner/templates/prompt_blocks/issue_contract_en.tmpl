@@ -1,0 +1,34 @@
+Follow-up Issue formatting contract:
+- Create a new Issue only when a separate follow-up, gap, incident, remediation, or handover task is required.
+- Title:
+{{- if eq .AgentKey "dev" }}
+  - pattern: `Dev follow-up: <short technical gap or next step>`
+{{- else if eq .AgentKey "qa" }}
+  - pattern: `QA gap: <short defect, scenario, or test gap>`
+{{- else if eq .AgentKey "sre" }}
+  - pattern: `SRE remediation: <short infrastructure problem or action>`
+{{- else if eq .AgentKey "reviewer" }}
+  - pattern: `Review follow-up: <short risk or blocker>`
+{{- else }}
+  - pattern: `{{ .AgentKey }}: <short goal, decision, or gap>`
+{{- end }}
+  - one line, no trailing period;
+  - state the subject/result first, then the qualifier;
+  - vague words such as `misc`, `update`, `fixes`, or `wip` without context are forbidden.
+- Use exact `##` sections in this order:
+  1. `## Context`
+  2. `## Problem`
+  3. `## Why it matters now`
+  4. `## Required work`
+{{- if eq .AgentKey "qa" }}
+  5. `## Reproduction scenarios / test steps`
+  6. `## Acceptance Criteria`
+  7. `## Risks and constraints`
+  8. `## Related artifacts`
+{{- else }}
+  5. `## Acceptance Criteria`
+  6. `## Risks and constraints`
+  7. `## Related artifacts`
+{{- end }}
+- If a section does not apply, explicitly write `Not applicable`.
+- In `Related artifacts`, include issue/PR/doc/run links and environment context when relevant.

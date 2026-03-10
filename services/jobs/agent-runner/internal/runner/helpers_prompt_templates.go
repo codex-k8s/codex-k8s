@@ -12,7 +12,7 @@ import (
 	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 )
 
-//go:embed templates/*.tmpl
+//go:embed templates/*.tmpl templates/prompt_blocks/*.tmpl
 var runnerTemplates embed.FS
 
 //go:embed promptseeds/*.md
@@ -46,13 +46,6 @@ func normalizePromptLocale(value string) string {
 	default:
 		return promptLocaleEN
 	}
-}
-
-func promptCommunicationLanguage(value string) string {
-	if normalizePromptLocale(value) == promptLocaleRU {
-		return "русский"
-	}
-	return "English"
 }
 
 func (s *Service) renderTaskTemplate(templateKind string, repoDir string) (string, error) {
@@ -116,7 +109,14 @@ func (s *Service) buildPrompt(taskBody string, result runResult, repoDir string)
 	runtimeMode := normalizeRuntimeMode(s.cfg.RuntimeMode)
 	isDiscussionMode := s.cfg.DiscussionMode
 	isReviseTrigger := !isDiscussionMode && webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(result.triggerKind))
-	roleDisplayName, roleCapabilities := resolvePromptRoleProfile(s.cfg.AgentKey)
+	roleProfileBlock, err := renderPromptRoleProfileBlock(s.cfg.AgentKey, s.cfg.PromptTemplateLocale)
+	if err != nil {
+		return "", fmt.Errorf("render prompt role profile: %w", err)
+	}
+	issueContractBlock, prContractBlock, err := renderPromptArtifactContractBlocks(s.cfg.RepositoryFullName, s.cfg.IssueNumber, s.cfg.AgentKey, result.triggerKind, result.templateKind, s.cfg.PromptTemplateLocale)
+	if err != nil {
+		return "", fmt.Errorf("render prompt artifact contracts: %w", err)
+	}
 	projectDocs, docsTotal, docsTrimmed := loadProjectDocsForPrompt(repoDir, s.cfg.AgentKey, result.triggerKind, runtimeMode)
 	roleDocTemplates, roleTemplatesTotal, roleTemplatesTrimmed := loadRoleDocTemplatesForPrompt(repoDir, s.cfg.AgentKey, result.triggerKind, runtimeMode)
 	return renderTemplate(templateNamePromptEnvelope, promptEnvelopeTemplateData{
@@ -124,8 +124,6 @@ func (s *Service) buildPrompt(taskBody string, result runResult, repoDir string)
 		RunID:                        s.cfg.RunID,
 		IssueNumber:                  s.cfg.IssueNumber,
 		AgentKey:                     s.cfg.AgentKey,
-		RoleDisplayName:              roleDisplayName,
-		RoleCapabilities:             roleCapabilities,
 		RuntimeMode:                  runtimeMode,
 		IsFullEnv:                    runtimeMode == runtimeModeFullEnv,
 		TargetBranch:                 result.targetBranch,
@@ -143,7 +141,9 @@ func (s *Service) buildPrompt(taskBody string, result runResult, repoDir string)
 		StateInReviewLabel:           strings.TrimSpace(s.cfg.StateInReviewLabel),
 		HasContext7:                  hasContext7,
 		PromptLocale:                 normalizePromptLocale(s.cfg.PromptTemplateLocale),
-		CommunicationLanguage:        promptCommunicationLanguage(s.cfg.PromptTemplateLocale),
+		RoleProfileBlock:             roleProfileBlock,
+		IssueContractBlock:           issueContractBlock,
+		PRContractBlock:              prContractBlock,
 		ProjectDocs:                  projectDocs,
 		ProjectDocsTotal:             docsTotal,
 		ProjectDocsTrimmed:           docsTrimmed,
@@ -152,85 +152,4 @@ func (s *Service) buildPrompt(taskBody string, result runResult, repoDir string)
 		RoleDocTemplatesTrimmed:      roleTemplatesTrimmed,
 		TaskBody:                     taskBody,
 	})
-}
-
-func resolvePromptRoleProfile(agentKey string) (string, []string) {
-	key := strings.ToLower(strings.TrimSpace(agentKey))
-	profiles := map[string]struct {
-		name         string
-		capabilities []string
-	}{
-		"dev": {
-			name: "Developer",
-			capabilities: []string{
-				"Реализация изменений в коде и миграциях",
-				"Запуск тестов и исправление регрессий",
-				"Обновление документации при изменении поведения",
-			},
-		},
-		"pm": {
-			name: "Product Manager",
-			capabilities: []string{
-				"Уточнение продуктовых требований и критериев готовности",
-				"Декомпозиция работ на реализуемые инкременты",
-				"Контроль трассируемости изменений по этапам",
-			},
-		},
-		"sa": {
-			name: "Solution Architect",
-			capabilities: []string{
-				"Проектирование сервисных границ и контрактов",
-				"Анализ архитектурных рисков и компромиссов",
-				"Контроль соответствия кодовой базы архитектурным стандартам",
-			},
-		},
-		"em": {
-			name: "Engineering Manager",
-			capabilities: []string{
-				"Планирование исполнения и синхронизация командных задач",
-				"Контроль quality-gates и критериев завершения",
-				"Управление handover между ролями",
-			},
-		},
-		"reviewer": {
-			name: "Reviewer",
-			capabilities: []string{
-				"Поиск багов, рисков и регрессий в PR",
-				"Проверка полноты тестового покрытия",
-				"Проверка консистентности кода и документации",
-			},
-		},
-		"qa": {
-			name: "QA",
-			capabilities: []string{
-				"Проектирование тест-кейсов и edge-case сценариев",
-				"Воспроизведение дефектов и верификация исправлений",
-				"Регрессионные проверки критических пользовательских потоков",
-			},
-		},
-		"sre": {
-			name: "SRE",
-			capabilities: []string{
-				"Диагностика runtime/deploy проблем в Kubernetes",
-				"Оценка надежности и эксплуатационных рисков",
-				"Стабилизация и hardening инфраструктурных сценариев",
-			},
-		},
-		"km": {
-			name: "Knowledge Manager",
-			capabilities: []string{
-				"Поддержка актуальности docset и эксплуатационной документации",
-				"Эволюция prompt templates и операционных инструкций",
-				"Сбор evidence для self-improve цикла",
-			},
-		},
-	}
-
-	if profile, ok := profiles[key]; ok {
-		return profile.name, profile.capabilities
-	}
-	if key == "" {
-		return "Developer", profiles["dev"].capabilities
-	}
-	return strings.ToUpper(key), []string{"Следовать контракту задачи и проектным стандартам"}
 }

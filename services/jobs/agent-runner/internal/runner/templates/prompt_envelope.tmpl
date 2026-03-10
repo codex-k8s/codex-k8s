@@ -13,12 +13,13 @@
 {{- if .HasExistingPR }}
 - Текущий PR: #{{ .ExistingPRNumber }}
 {{- end }}
-- Роль агента: {{ .RoleDisplayName }} (`{{ .AgentKey }}`)
+- Роль агента: `{{ .AgentKey }}`
 
-Ролевой профиль:
-{{- range .RoleCapabilities }}
-- {{ . }}
-{{- end }}
+{{ .RoleProfileBlock }}
+
+{{ .IssueContractBlock }}
+
+{{ .PRContractBlock }}
 
 {{- if .ProjectDocs }}
 Контекст проектной документации (role-aware):
@@ -88,11 +89,11 @@
 - Лейблы и stage transitions не меняйте автоматически, если это явно не требуется задачей пользователя.
 {{- end }}
 {{- if .IsSelfImproveRestrictedScope }}
-- Для `run:self-improve` разрешены только изменения: prompt files (`services/jobs/agent-runner/internal/runner/promptseeds/**`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl`), инструкций в markdown (`*.md`) и `services/jobs/agent-runner/Dockerfile`.
+- Для `run:self-improve` разрешены только изменения: prompt files (`services/jobs/agent-runner/internal/runner/promptseeds/**`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl`, `services/jobs/agent-runner/internal/runner/templates/prompt_blocks/*.tmpl`), инструкций в markdown (`*.md`) и `services/jobs/agent-runner/Dockerfile`.
 {{- end }}
 - Не публикуйте секреты в коде, логах, комментариях, PR body и финальном JSON.
 - Работайте в ветке `{{ .TargetBranch }}`.
-- Язык пользовательской коммуникации в этом запуске: {{ .CommunicationLanguage }}.
+- Язык пользовательской коммуникации в этом запуске: {{ if eq .PromptLocale "ru" }}русский{{ else }}English{{ end }}.
 - На этом языке вы обязаны: писать PR (title/body/комментарии), отвечать в issue/PR и передавать текст в feedback-инструменты (включая `run_status_report`).
 - Финальный ответ модели должен быть ТОЛЬКО JSON-объект по output schema.
 
@@ -155,12 +156,13 @@ Environment context:
 {{- if .HasExistingPR }}
 - Existing PR: #{{ .ExistingPRNumber }}
 {{- end }}
-- Agent role: {{ .RoleDisplayName }} (`{{ .AgentKey }}`)
+- Agent role: `{{ .AgentKey }}`
 
-Role profile:
-{{- range .RoleCapabilities }}
-- {{ . }}
-{{- end }}
+{{ .RoleProfileBlock }}
+
+{{ .IssueContractBlock }}
+
+{{ .PRContractBlock }}
 
 {{- if .ProjectDocs }}
 Project documentation context (role-aware):
@@ -230,11 +232,11 @@ Mandatory rules:
 - Do not change labels or stage transitions automatically unless the task explicitly asks for it.
 {{- end }}
 {{- if .IsSelfImproveRestrictedScope }}
-- For `run:self-improve`, only these changes are allowed: prompt files (`services/jobs/agent-runner/internal/runner/promptseeds/**`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl`), markdown instructions (`*.md`), and `services/jobs/agent-runner/Dockerfile`.
+- For `run:self-improve`, only these changes are allowed: prompt files (`services/jobs/agent-runner/internal/runner/promptseeds/**`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl`, `services/jobs/agent-runner/internal/runner/templates/prompt_blocks/*.tmpl`), markdown instructions (`*.md`), and `services/jobs/agent-runner/Dockerfile`.
 {{- end }}
 - Never expose secrets in code/logs/comments/PR body/final JSON.
 - Stay on branch `{{ .TargetBranch }}`.
-- Communication language for user-facing output in this run: {{ .CommunicationLanguage }}.
+- Communication language for user-facing output in this run: {{ if eq .PromptLocale "ru" }}русский{{ else }}English{{ end }}.
 - Use this language for PR content (title/body/comments), issue/PR replies, and feedback-tool text (including `run_status_report`).
 - Return ONLY a JSON object matching the output schema.
 

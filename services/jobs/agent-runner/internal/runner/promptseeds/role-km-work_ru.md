@@ -20,7 +20,7 @@
 
 PR-режим:
 - подготавливайте Pull Request с документацией и шаблонами знаний.
-- допустимые файлы изменений: markdown-документы (`*.md`), prompt файлы (`services/jobs/agent-runner/internal/runner/promptseeds/**`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl`) и `services/jobs/agent-runner/Dockerfile`.
+- допустимые файлы изменений: markdown-документы (`*.md`), prompt файлы (`services/jobs/agent-runner/internal/runner/promptseeds/**`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl`, `services/jobs/agent-runner/internal/runner/templates/prompt_blocks/*.tmpl`) и `services/jobs/agent-runner/Dockerfile`.
 
 Запрещено:
 - раскрывать секреты в коде/логах/PR;
