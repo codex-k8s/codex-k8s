@@ -112,6 +112,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		}
 		result.existingPRNumber = restored.existingPRNumber
 		result.restoredSessionPath = restored.restoredSessionPath
+		result.sessionID = restored.sessionID
 		if restored.prNotFound {
 			return s.failRevisePRNotFound(ctx, result, state, "pr_not_found")
 		}
@@ -181,7 +182,13 @@ func (s *Service) Run(ctx context.Context) (err error) {
 			s.logger.Warn("emit run.agent.resume.used failed", "err", err)
 		}
 	}
-	codexOutput, err = s.runCodexExecWithAuthRecovery(ctx, state, result.restoredSessionPath != "", outputSchemaFile, prompt)
+	codexOutput, err = s.runCodexExecWithAuthRecovery(ctx, state, codexExecParams{
+		RepoDir:          state.repoDir,
+		Resume:           result.restoredSessionPath != "" || result.sessionID != "",
+		ResumeSessionID:  result.sessionID,
+		OutputSchemaFile: outputSchemaFile,
+		Prompt:           prompt,
+	})
 	if err != nil {
 		return fmt.Errorf("codex exec failed: %w", err)
 	}
@@ -303,8 +310,8 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	return nil
 }
 
-func (s *Service) runCodexExecWithAuthRecovery(ctx context.Context, state codexState, resume bool, outputSchemaFile string, prompt string) ([]byte, error) {
-	output, stderr, err := runCodexExec(ctx, state.repoDir, resume, outputSchemaFile, prompt)
+func (s *Service) runCodexExecWithAuthRecovery(ctx context.Context, state codexState, params codexExecParams) ([]byte, error) {
+	output, stderr, err := runCodexExec(ctx, params)
 	if err == nil {
 		return output, nil
 	}
@@ -317,36 +324,55 @@ func (s *Service) runCodexExecWithAuthRecovery(ctx context.Context, state codexS
 		return nil, fmt.Errorf("recover codex auth: %w", authErr)
 	}
 
-	output, _, err = runCodexExec(ctx, state.repoDir, resume, outputSchemaFile, prompt)
+	output, _, err = runCodexExec(ctx, params)
 	if err != nil {
 		return nil, err
 	}
 	return output, nil
 }
 
-func runCodexExec(ctx context.Context, repoDir string, resume bool, outputSchemaFile string, prompt string) ([]byte, string, error) {
-	if resume {
-		return runCommandCaptureOutputWithStderr(
-			ctx,
-			repoDir,
-			"codex",
+type codexExecParams struct {
+	RepoDir          string
+	Resume           bool
+	ResumeSessionID  string
+	OutputSchemaFile string
+	Prompt           string
+}
+
+func runCodexExec(ctx context.Context, params codexExecParams) ([]byte, string, error) {
+	outputFile, err := os.CreateTemp("", "codex-output-*.json")
+	if err != nil {
+		return nil, "", fmt.Errorf("create codex output file: %w", err)
+	}
+	outputFilePath := outputFile.Name()
+	_ = outputFile.Close()
+	defer os.Remove(outputFilePath)
+
+	args := make([]string, 0, 12)
+	if params.Resume {
+		args = append(args, "exec", "resume", "--output-last-message", outputFilePath)
+		if sessionID := strings.TrimSpace(params.ResumeSessionID); sessionID != "" {
+			args = append(args, sessionID)
+		} else {
+			args = append(args, "--last")
+		}
+		args = append(args, params.Prompt)
+	} else {
+		args = append(
+			args,
 			"exec",
-			"resume",
-			"--last",
-			"--cd", repoDir,
-			"--output-schema", outputSchemaFile,
-			prompt,
+			"--cd", params.RepoDir,
+			"--output-schema", params.OutputSchemaFile,
+			"--output-last-message", outputFilePath,
+			params.Prompt,
 		)
 	}
-	return runCommandCaptureOutputWithStderr(
-		ctx,
-		repoDir,
-		"codex",
-		"exec",
-		"--cd", repoDir,
-		"--output-schema", outputSchemaFile,
-		prompt,
-	)
+
+	stdout, stderr, err := runCommandCaptureOutputWithStderr(ctx, params.RepoDir, "codex", args...)
+	if captured := readCommandOutputFileOrNil(outputFilePath); len(captured) > 0 {
+		return captured, stderr, err
+	}
+	return stdout, stderr, err
 }
 
 func (s *Service) failRevisePRNotFound(ctx context.Context, result runResult, state codexState, reason string) error {
@@ -377,12 +403,18 @@ func (s *Service) restoreLatestSession(ctx context.Context, branch string, sessi
 	if snapshot.PRNumber <= 0 {
 		if s.cfg.DiscussionMode {
 			result := restoredSession{}
+			if sessionID := strings.TrimSpace(snapshot.SessionID); sessionID != "" {
+				result.sessionID = sessionID
+			}
 			if len(snapshot.CodexSessionJSON) > 0 {
 				restoredPath, err := s.restoreSessionSnapshot(ctx, sessionsDir, snapshot.CodexSessionJSON)
 				if err != nil {
 					return restoredSession{}, err
 				}
 				result.restoredSessionPath = restoredPath
+				if result.sessionID == "" {
+					result.sessionID = extractSessionIDFromFile(restoredPath)
+				}
 			}
 			return result, nil
 		}
@@ -392,13 +424,19 @@ func (s *Service) restoreLatestSession(ctx context.Context, branch string, sessi
 		return restoredSession{prNotFound: true}, nil
 	}
 
-	result := restoredSession{existingPRNumber: snapshot.PRNumber}
+	result := restoredSession{
+		existingPRNumber: snapshot.PRNumber,
+		sessionID:        strings.TrimSpace(snapshot.SessionID),
+	}
 	if len(snapshot.CodexSessionJSON) > 0 {
 		restoredPath, err := s.restoreSessionSnapshot(ctx, sessionsDir, snapshot.CodexSessionJSON)
 		if err != nil {
 			return restoredSession{}, err
 		}
 		result.restoredSessionPath = restoredPath
+		if result.sessionID == "" {
+			result.sessionID = extractSessionIDFromFile(restoredPath)
+		}
 	}
 	return result, nil
 }

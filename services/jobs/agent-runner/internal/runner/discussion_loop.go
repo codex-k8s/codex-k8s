@@ -85,7 +85,13 @@ func (s *Service) runDiscussionLoop(ctx context.Context, state codexState, resul
 			}
 		}
 
-		codexOutput, err := s.runCodexExecWithAuthRecovery(ctx, state, resume, outputSchemaFile, prompt)
+		codexOutput, err := s.runCodexExecWithAuthRecovery(ctx, state, codexExecParams{
+			RepoDir:          state.repoDir,
+			Resume:           resume,
+			ResumeSessionID:  result.sessionID,
+			OutputSchemaFile: outputSchemaFile,
+			Prompt:           prompt,
+		})
 		if err != nil {
 			return fmt.Errorf("codex exec failed: %w", err)
 		}
