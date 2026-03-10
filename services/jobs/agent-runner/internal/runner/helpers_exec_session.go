@@ -47,6 +47,20 @@ func readJSONFileOrNil(path string) json.RawMessage {
 	return json.RawMessage(bytes)
 }
 
+func readCommandOutputFileOrNil(path string) []byte {
+	if strings.TrimSpace(path) == "" {
+		return nil
+	}
+	bytes, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	if len(bytes) == 0 {
+		return nil
+	}
+	return bytes
+}
+
 func latestSessionFile(sessionsDir string) string {
 	files := make([]sessionFileCandidate, 0, 4)
 

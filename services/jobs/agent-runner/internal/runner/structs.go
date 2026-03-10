@@ -122,6 +122,7 @@ type runResult struct {
 
 type restoredSession struct {
 	restoredSessionPath string
+	sessionID           string
 	existingPRNumber    int
 	prNotFound          bool
 }
