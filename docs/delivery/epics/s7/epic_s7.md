@@ -129,6 +129,16 @@ approvals:
   - `#257` не требует отдельной реализации, потому что repo-only prompt policy и отсутствие UI refresh/versioning уже зафиксированы combined pass `#247/#248/#249` и backend cleanup `#274`.
 - Remaining standalone backlog Sprint S7 после этой актуализации нормализуется как `#251..#256`, `#258..#260`.
 
+## Day 7 execution fact (`S7-E09`)
+- В Issue `#251` реализован stream `S7-E09`:
+  - из списка Runs удалена колонка `run type`;
+  - delete namespace action в Run Details больше не зависит от `job_exists` и остаётся доступным по policy-path при известном namespace;
+  - в wait queue/details пользовательские подписи нормализованы как `trigger kind` / `вид триггера`, чтобы MVP UI не показывал термин `run type`.
+- Реализация сознательно переиспользует уже существующий typed endpoint
+  `DELETE /api/v1/staff/runs/{run_id}/namespace` без contract drift;
+  negative-case `already_deleted=true` остаётся на backend и не дублируется фронтендом.
+- В traceability добавлены updates по issue `#251`; remaining backlog нормализован как `#252..#256`, `#258..#260`.
+
 ## Candidate execution backlog (19 эпиков)
 
 | Epic ID | Priority | Scope | Источник замечаний |
@@ -141,7 +151,7 @@ approvals:
 | S7-E06 | P0 | Зафиксировать фактический MVP de-scope: без runtime mode/locale settings UI/API | PRC-03 |
 | S7-E07 | P0 | Зафиксировать фактический repo-only prompt contract и удалить residual stale traces | PRC-03 |
 | S7-E08 | P1 | Agents UX de-scope hardening: absorbed by `#244` + `#247/#248/#249` + `#274`; standalone issue `#250` закрывается doc-actualization pass | PRC-03 |
-| S7-E09 | P0 | Runs UX: удалить колонку типа запуска и гарантировать namespace delete из run details | PRC-06 |
+| S7-E09 | P0 | Runs UX: удалить колонку типа запуска и гарантировать namespace delete из run details (in-review `#251`) | PRC-06 |
 | S7-E10 | P0 | Runtime deploy UX: кнопка cancel/stop для зависших deploy tasks + guardrails | PRC-07 |
 | S7-E11 | P0 | Label orchestration reliability: исправить `mode:discussion` trigger-поведение | PRC-08 |
 | S7-E12 | P1 | Final MVP readiness gate: e2e evidence bundle + go/no-go для release chain | PRC-01..PRC-08 |

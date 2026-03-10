@@ -548,6 +548,25 @@ approvals:
 - Combined cleanup `#247/#248/#249` вместе с backend cleanup `#274` также поглотили standalone streams `S7-E08/#250` и `S7-E15/#257`: отдельные `run:dev` для них больше не требуются.
 - Remaining standalone backlog Sprint S7 после этой актуализации нормализован как `#251..#256`, `#258..#260`.
 
+## Актуализация по Issue #251 (`run:dev`, 2026-03-10)
+- Для FR-012/FR-040 и NFR-010 реализован stream `S7-E09`:
+  в `services/staff/web-console/src/pages/RunsPage.vue` удалена колонка `run type`,
+  чтобы список запусков показывал только релевантные поля операционной диагностики.
+- В `services/staff/web-console/src/pages/RunDetailsPage.vue`
+  delete namespace action больше не зависит от `job_exists`;
+  UI показывает action при наличии известного namespace и переиспользует существующий typed endpoint
+  `DELETE /api/v1/staff/runs/{run_id}/namespace`, который уже идемпотентно обрабатывает повторный delete (`already_deleted=true`).
+- В `services/staff/web-console/src/pages/operations/WaitQueuePage.vue` и
+  `services/staff/web-console/src/i18n/messages/{en,ru}.ts`
+  пользовательские подписи нормализованы как `trigger kind` / `вид триггера`,
+  чтобы в MVP UI не оставался термин `run type`.
+- Актуализирована Sprint S7 traceability:
+  `docs/delivery/issue_map.md`, `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md`, `docs/delivery/epics/s7/epic_s7.md`;
+  remaining backlog нормализован как `#252..#256`, `#258..#260`.
+- Проверки по scope:
+  cleanup-поиск `rg -n "Run type|Тип запуска" services/staff/web-console/src`,
+  `npm --prefix services/staff/web-console run build`.
+
 ## Актуализация по Issue #274 (`run:dev`, 2026-03-05)
 - Для FR-026/FR-028/FR-033 и NFR-010/NFR-018 реализован stream `S7-E19`:
   выполнен backend cleanup non-MVP контуров `agents`, `prompt templates`, `config entries`,

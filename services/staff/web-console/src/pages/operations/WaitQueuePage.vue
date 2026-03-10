@@ -14,7 +14,7 @@
       <VCardText>
         <VRow density="compact">
           <VCol cols="12" md="3">
-            <VTextField v-model.trim="runs.waitsFilters.triggerKind" :label="t('pages.runs.runType')" hide-details clearable />
+            <VTextField v-model.trim="runs.waitsFilters.triggerKind" :label="t('pages.runs.triggerKind')" hide-details clearable />
           </VCol>
           <VCol cols="12" md="3">
             <VTextField v-model.trim="runs.waitsFilters.status" :label="t('pages.runs.status')" hide-details clearable />
