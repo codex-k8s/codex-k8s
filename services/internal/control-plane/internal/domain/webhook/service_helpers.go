@@ -152,12 +152,22 @@ func (s *Service) maybeCleanupRunNamespaces(ctx context.Context, cmd IngestComma
 
 	var cleanupErr error
 	switch {
-	case eventType == string(webhookdomain.GitHubEventIssues) && action == "closed" && envelope.Issue.Number > 0:
+	case eventType == string(webhookdomain.GitHubEventIssues) &&
+		(action == string(webhookdomain.GitHubActionClosed) || action == string(webhookdomain.GitHubActionDeleted)) &&
+		envelope.Issue.Number > 0:
+		if err := s.cleanupActiveDiscussionRunsByIssue(ctx, requestedByID, repositoryFullName, envelope.Issue.Number); err != nil {
+			return err
+		}
 		_, cleanupErr = s.runStatus.CleanupNamespacesByIssue(ctx, runstatusdomain.CleanupByIssueParams{
 			RepositoryFullName: repositoryFullName,
 			IssueNumber:        envelope.Issue.Number,
 			RequestedByID:      requestedByID,
 		})
+	case eventType == string(webhookdomain.GitHubEventIssues) &&
+		envelope.Issue.Number > 0 &&
+		((action == string(webhookdomain.GitHubActionUnlabeled) && s.triggerLabels.isModeDiscussionLabel(envelope.Label.Name)) ||
+			(action == string(webhookdomain.GitHubActionLabeled) && s.triggerLabels.isRunTriggerLabel(envelope.Label.Name))):
+		cleanupErr = s.cleanupActiveDiscussionRunsByIssue(ctx, requestedByID, repositoryFullName, envelope.Issue.Number)
 	case eventType == string(webhookdomain.GitHubEventPullRequest) && action == "closed" && envelope.PullRequest.Number > 0:
 		_, cleanupErr = s.runStatus.CleanupNamespacesByPullRequest(ctx, runstatusdomain.CleanupByPullRequestParams{
 			RepositoryFullName: repositoryFullName,
@@ -170,6 +180,68 @@ func (s *Service) maybeCleanupRunNamespaces(ctx context.Context, cmd IngestComma
 	}
 
 	return nil
+}
+
+func (s *Service) cleanupActiveDiscussionRunsByIssue(ctx context.Context, requestedByID string, repositoryFullName string, issueNumber int64) error {
+	if s.agentRuns == nil || strings.TrimSpace(repositoryFullName) == "" || issueNumber <= 0 {
+		return nil
+	}
+
+	runIDs, err := s.agentRuns.ListRunIDsByRepositoryIssue(ctx, repositoryFullName, issueNumber, 200)
+	if err != nil {
+		return fmt.Errorf("list discussion run ids by repository/issue: %w", err)
+	}
+
+	discussionLabel := normalizeLabelToken(s.triggerLabels.withDefaults().ModeDiscussion)
+	for _, runID := range runIDs {
+		run, ok, err := s.agentRuns.GetByID(ctx, runID)
+		if err != nil {
+			return fmt.Errorf("get run %s for discussion cleanup: %w", runID, err)
+		}
+		if !ok {
+			continue
+		}
+		if normalizeLabelToken(extractTriggerLabel(run.RunPayload)) != discussionLabel {
+			continue
+		}
+		switch rundomain.Status(strings.TrimSpace(run.Status)) {
+		case rundomain.StatusPending, rundomain.StatusRunning:
+		default:
+			continue
+		}
+
+		canceled, err := s.agentRuns.CancelActiveByID(ctx, run.ID)
+		if err != nil {
+			return fmt.Errorf("cancel active discussion run %s: %w", run.ID, err)
+		}
+		if !canceled {
+			continue
+		}
+
+		if _, err := s.runStatus.DeleteRunNamespace(ctx, runstatusdomain.DeleteNamespaceParams{
+			RunID:           run.ID,
+			RequestedByType: runstatusdomain.RequestedByTypeSystem,
+			RequestedByID:   requestedByID,
+		}); err != nil {
+			return fmt.Errorf("delete discussion namespace for run %s: %w", run.ID, err)
+		}
+	}
+
+	return nil
+}
+
+func extractTriggerLabel(runPayload json.RawMessage) string {
+	if len(runPayload) == 0 {
+		return ""
+	}
+	var payload querytypes.RunPayload
+	if err := json.Unmarshal(runPayload, &payload); err != nil {
+		return ""
+	}
+	if payload.Trigger == nil {
+		return ""
+	}
+	return strings.TrimSpace(payload.Trigger.Label)
 }
 
 func (s *Service) resolveIssueRunTrigger(ctx context.Context, projectID string, eventType string, envelope githubWebhookEnvelope) (issueRunTrigger, bool, triggerConflictResult, pullRequestReviewResolutionMeta, error) {
@@ -200,20 +272,6 @@ func (s *Service) resolveIssueRunTrigger(ctx context.Context, projectID string, 
 		kind, ok := s.triggerLabels.resolveKind(label)
 		if !ok {
 			return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
-		}
-		if s.triggerLabels.hasModeDiscussionLabel(envelope.Issue.Labels) {
-			trigger, conflict := s.resolveDiscussionTrigger(envelope.Issue.Labels, kind, webhookdomain.TriggerSourceIssueLabel)
-			if strings.TrimSpace(conflict.IgnoreReason) != "" {
-				return issueRunTrigger{}, false, conflict, pullRequestReviewResolutionMeta{}, nil
-			}
-			active, err := s.hasActiveDiscussionRun(ctx, projectID, strings.TrimSpace(envelope.Repository.FullName), envelope.Issue.Number)
-			if err != nil {
-				return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, err
-			}
-			if active {
-				return issueRunTrigger{}, false, triggerConflictResult{}, pullRequestReviewResolutionMeta{}, nil
-			}
-			return trigger, true, conflict, pullRequestReviewResolutionMeta{}, nil
 		}
 		conflictingLabels := s.triggerLabels.collectIssueTriggerLabels(envelope.Issue.Labels)
 		return issueRunTrigger{

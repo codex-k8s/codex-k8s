@@ -153,6 +153,46 @@ func TestLauncher_Launch_AIRepairCreatesPod(t *testing.T) {
 	}
 }
 
+func TestLauncher_Launch_DiscussionCreatesPodWithoutJob(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	client := fake.NewClientset()
+	l := NewForClient(Config{Namespace: "ns", Image: "busybox:1.36"}, client)
+
+	spec := JobSpec{
+		RunID:          "run-discussion",
+		CorrelationID:  "corr-discussion",
+		ProjectID:      "project-1",
+		Namespace:      "codex-issue-project-i289-r123",
+		RuntimeMode:    "code-only",
+		TriggerKind:    "dev",
+		DiscussionMode: true,
+	}
+
+	ref, err := l.Launch(ctx, spec)
+	if err != nil {
+		t.Fatalf("Launch returned error: %v", err)
+	}
+
+	if _, err := client.BatchV1().Jobs(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{}); err == nil {
+		t.Fatalf("expected discussion launch without Job, but job %s/%s exists", ref.Namespace, ref.Name)
+	}
+	pod, err := client.CoreV1().Pods(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("expected discussion pod %s/%s, got error: %v", ref.Namespace, ref.Name, err)
+	}
+	if got, want := pod.Labels["app.kubernetes.io/component"], discussionComponentLabel; got != want {
+		t.Fatalf("expected component label %q, got %q", want, got)
+	}
+	if got, want := len(pod.Spec.Containers), 1; got != want {
+		t.Fatalf("expected %d container, got %d", want, got)
+	}
+	if got := len(pod.Spec.Volumes); got != 0 {
+		t.Fatalf("expected no repo-cache volumes for discussion pod, got %d", got)
+	}
+}
+
 func TestLauncher_Launch_FullEnvMountsRepoCachePVC(t *testing.T) {
 	t.Parallel()
 

@@ -145,15 +145,6 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		}
 	}()
 
-	taskBody, err := s.renderTaskTemplate(result.templateKind, state.repoDir)
-	if err != nil {
-		return err
-	}
-	prompt, err := s.buildPrompt(taskBody, result, state.repoDir)
-	if err != nil {
-		return err
-	}
-
 	outputSchemaFile := filepath.Join(os.TempDir(), "codex-output-schema.json")
 	outputSchemaJSON, err := buildOutputSchemaJSON(outputSchemaParams{
 		TriggerKind:  result.triggerKind,
@@ -165,6 +156,23 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	}
 	if err := os.WriteFile(outputSchemaFile, outputSchemaJSON, 0o644); err != nil {
 		return fmt.Errorf("write output schema: %w", err)
+	}
+	if s.cfg.DiscussionMode {
+		if err := s.runDiscussionLoop(ctx, state, &result, runStartedAt, outputSchemaFile, sensitiveValues); err != nil {
+			return err
+		}
+		finalized = true
+		s.logger.Info("agent-runner completed", "branch", result.targetBranch, "discussion_mode", true)
+		return nil
+	}
+
+	taskBody, err := s.renderTaskTemplate(result.templateKind, state.repoDir)
+	if err != nil {
+		return err
+	}
+	prompt, err := s.buildPrompt(taskBody, result, state.repoDir)
+	if err != nil {
+		return err
 	}
 
 	var codexOutput []byte
@@ -370,14 +378,11 @@ func (s *Service) restoreLatestSession(ctx context.Context, branch string, sessi
 		if s.cfg.DiscussionMode {
 			result := restoredSession{}
 			if len(snapshot.CodexSessionJSON) > 0 {
-				restoredPath := filepath.Join(sessionsDir, fmt.Sprintf("restored-%s.json", s.cfg.RunID))
-				if writeErr := os.WriteFile(restoredPath, snapshot.CodexSessionJSON, 0o600); writeErr != nil {
-					return restoredSession{}, fmt.Errorf("restore codex session file: %w", writeErr)
+				restoredPath, err := s.restoreSessionSnapshot(ctx, sessionsDir, snapshot.CodexSessionJSON)
+				if err != nil {
+					return restoredSession{}, err
 				}
 				result.restoredSessionPath = restoredPath
-				if err := s.emitEvent(ctx, floweventdomain.EventTypeRunAgentSessionRestored, map[string]string{"restored_session_path": restoredPath}); err != nil {
-					s.logger.Warn("emit run.agent.session.restored failed", "err", err)
-				}
 			}
 			return result, nil
 		}
@@ -389,16 +394,24 @@ func (s *Service) restoreLatestSession(ctx context.Context, branch string, sessi
 
 	result := restoredSession{existingPRNumber: snapshot.PRNumber}
 	if len(snapshot.CodexSessionJSON) > 0 {
-		restoredPath := filepath.Join(sessionsDir, fmt.Sprintf("restored-%s.json", s.cfg.RunID))
-		if writeErr := os.WriteFile(restoredPath, snapshot.CodexSessionJSON, 0o600); writeErr != nil {
-			return restoredSession{}, fmt.Errorf("restore codex session file: %w", writeErr)
+		restoredPath, err := s.restoreSessionSnapshot(ctx, sessionsDir, snapshot.CodexSessionJSON)
+		if err != nil {
+			return restoredSession{}, err
 		}
 		result.restoredSessionPath = restoredPath
-		if err := s.emitEvent(ctx, floweventdomain.EventTypeRunAgentSessionRestored, map[string]string{"restored_session_path": restoredPath}); err != nil {
-			s.logger.Warn("emit run.agent.session.restored failed", "err", err)
-		}
 	}
 	return result, nil
+}
+
+func (s *Service) restoreSessionSnapshot(ctx context.Context, sessionsDir string, sessionJSON []byte) (string, error) {
+	restoredPath := filepath.Join(sessionsDir, fmt.Sprintf("restored-%s.json", s.cfg.RunID))
+	if writeErr := os.WriteFile(restoredPath, sessionJSON, 0o600); writeErr != nil {
+		return "", fmt.Errorf("restore codex session file: %w", writeErr)
+	}
+	if err := s.emitEvent(ctx, floweventdomain.EventTypeRunAgentSessionRestored, map[string]string{"restored_session_path": restoredPath}); err != nil {
+		s.logger.Warn("emit run.agent.session.restored failed", "err", err)
+	}
+	return restoredPath, nil
 }
 
 func (s *Service) prepareRepository(ctx context.Context, result runResult, state codexState) error {

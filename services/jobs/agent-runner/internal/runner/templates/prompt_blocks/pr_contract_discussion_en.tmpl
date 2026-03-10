@@ -2,6 +2,9 @@ Discussion mode contract:
 - No new PR is created.
 - Commits and `git push` are forbidden.
 - Publish the user-facing response as Issue comments.
+- Refresh the Issue and its comment list via `gh` before every reply.
+- Every new human comment after the previous agent reply must be explicitly covered by the next reply.
+- If several new comments accumulated, answer them in one coherent reply instead of splitting the response mechanically.
 - If you write a structured comment, use exact sections:
   1. `## Context`
   2. `## Analysis`

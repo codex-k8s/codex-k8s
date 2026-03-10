@@ -68,7 +68,6 @@ const (
 	runNamespacePurposeLabel     = "codex-k8s.dev/namespace-purpose"
 	runNamespacePurposeValue     = "run"
 	runNamespaceRuntimeModeLabel = "codex-k8s.dev/runtime-mode"
-	runNamespaceRuntimeModeValue = "full-env"
 )
 
 var nonDNSLabel = regexp.MustCompile(`[^a-z0-9-]`)
@@ -361,7 +360,7 @@ func (c *Client) upsertSecret(ctx context.Context, namespace string, secretName 
 	return nil
 }
 
-// DeleteManagedRunNamespace deletes a full-env run namespace when it is marked as worker-managed.
+// DeleteManagedRunNamespace deletes a managed run namespace when it is marked as worker-managed.
 func (c *Client) DeleteManagedRunNamespace(ctx context.Context, namespace string) (bool, error) {
 	targetNamespace := strings.TrimSpace(namespace)
 	if targetNamespace == "" {
@@ -382,8 +381,8 @@ func (c *Client) DeleteManagedRunNamespace(ctx context.Context, namespace string
 	if strings.TrimSpace(ns.Labels[runNamespacePurposeLabel]) != runNamespacePurposeValue {
 		return false, fmt.Errorf("namespace %s is not a run namespace", targetNamespace)
 	}
-	if strings.TrimSpace(ns.Labels[runNamespaceRuntimeModeLabel]) != runNamespaceRuntimeModeValue {
-		return false, fmt.Errorf("namespace %s is not full-env runtime namespace", targetNamespace)
+	if strings.TrimSpace(ns.Labels[runNamespaceRuntimeModeLabel]) == "" {
+		return false, fmt.Errorf("namespace %s does not have runtime mode label", targetNamespace)
 	}
 
 	if err := c.clientset.CoreV1().Namespaces().Delete(ctx, targetNamespace, metav1.DeleteOptions{}); err != nil {
@@ -396,7 +395,7 @@ func (c *Client) DeleteManagedRunNamespace(ctx context.Context, namespace string
 	return true, nil
 }
 
-// FindManagedRunNamespaceByRunID resolves one managed full-env run namespace by run id label.
+// FindManagedRunNamespaceByRunID resolves one managed run namespace by run id label.
 func (c *Client) FindManagedRunNamespaceByRunID(ctx context.Context, runID string) (string, bool, error) {
 	targetRunID := sanitizeRunLabelValue(runID)
 	if targetRunID == "" {
@@ -418,7 +417,7 @@ func (c *Client) FindManagedRunNamespaceByRunID(ctx context.Context, runID strin
 		if strings.TrimSpace(item.Labels[runNamespacePurposeLabel]) != runNamespacePurposeValue {
 			continue
 		}
-		if strings.TrimSpace(item.Labels[runNamespaceRuntimeModeLabel]) != runNamespaceRuntimeModeValue {
+		if strings.TrimSpace(item.Labels[runNamespaceRuntimeModeLabel]) == "" {
 			continue
 		}
 		names = append(names, strings.TrimSpace(item.Name))

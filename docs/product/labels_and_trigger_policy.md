@@ -85,7 +85,7 @@ approvals:
 
 | Label | Назначение |
 |---|---|
-| `mode:discussion` | lightweight discussion-run под Issue: comment-only режим без PR/commit/push; сам по себе запускает run |
+| `mode:discussion` | lightweight discussion-run под Issue: long-lived comment-only pod в отдельном namespace без PR/commit/push; сам по себе запускает run |
 
 ## Конфигурационные лейблы модели/рассуждений
 
@@ -151,13 +151,18 @@ approvals:
   - runtime mode принудительно = `code-only`;
   - агент отвечает комментариями под Issue;
   - PR/commit/push не выполняются;
-  - write scope репозитория = read-only enforcement.
-- Если на Issue уже есть `mode:discussion` и затем ставится любой `run:*`, stage сохраняется в `trigger.kind`, но запуск остается discussion-mode, пока `mode:discussion` не снят.
+  - write scope репозитория = read-only enforcement;
+  - run исполняется как long-lived pod в отдельном lightweight managed namespace.
+- Пока discussion-run активен, новые human `issue_comment` не создают второй run:
+  - активная discussion-session обязана периодически перечитывать Issue/comments и продолжать диалог тем же pod;
+  - новый webhook-комментарий в этом случае не делает fan-out второго run.
+- Если на Issue уже есть `mode:discussion` и затем ставится любой `run:*`, discussion-run отменяется, managed discussion namespace удаляется, после чего запускается обычный stage-run по новому `run:*`.
 - На webhook `issue_comment`:
   - если комментарий оставил человек и на Issue есть `mode:discussion`, создается/продолжается discussion-run;
   - комментарии GitHub-бота платформы не считаются пользовательским входом;
-  - если уже есть активный discussion-run (`pending`/`running`), новый run не создается.
+  - если уже есть активный discussion-run (`pending`/`running`), новый run не создается, а продолжение диалога выполняет текущая сессия.
 - При конфликте нескольких `run:*` labels discussion-run не стартует: webhook пишет conflict diagnostics в `flow_events` и service-comment.
+- После снятия `mode:discussion`, а также при `issues.closed`/`issues.deleted`, managed discussion namespace удаляется.
 - После снятия `mode:discussion` следующий stage trigger (`run:intake`, `run:vision`, `run:plan`, `run:dev` и т.д.) снова работает как обычный execution-flow.
 
 ### Model/reasoning labels (`[ai-model-*]`, `[ai-reasoning-*]`)

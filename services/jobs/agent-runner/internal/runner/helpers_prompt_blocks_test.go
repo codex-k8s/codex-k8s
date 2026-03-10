@@ -3,6 +3,8 @@ package runner
 import (
 	"strings"
 	"testing"
+
+	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 )
 
 func TestRenderPromptArtifactContractBlocks_UsesFullIssueURLAndRoleSpecificSections(t *testing.T) {
@@ -55,5 +57,42 @@ func TestBuildPrompt_EmbedsRenderedPromptBlocks(t *testing.T) {
 	}
 	if !strings.Contains(prompt, "## Тестовые сценарии и запросы") {
 		t.Fatalf("prompt must include qa-specific PR contract section, got: %q", prompt)
+	}
+}
+
+func TestBuildPrompt_DiscussionIncludesDiscussionContinuationContract(t *testing.T) {
+	t.Parallel()
+
+	service := &Service{
+		cfg: Config{
+			RunID:              "run-discussion",
+			RepositoryFullName: "codex-k8s/codex-k8s",
+			AgentKey:           "dev",
+			IssueNumber:        289,
+			RuntimeMode:        runtimeModeCodeOnly,
+			PromptConfig: PromptConfig{
+				TriggerKind:          "dev",
+				TriggerLabel:         webhookdomain.DefaultModeDiscussionLabel,
+				DiscussionMode:       true,
+				PromptTemplateKind:   promptTemplateKindDiscussion,
+				PromptTemplateLocale: promptLocaleRU,
+				AgentBaseBranch:      "main",
+			},
+		},
+	}
+
+	prompt, err := service.buildPrompt("task body", runResult{
+		targetBranch: "codex/issue-289",
+		triggerKind:  "dev",
+		templateKind: promptTemplateKindDiscussion,
+	}, t.TempDir())
+	if err != nil {
+		t.Fatalf("buildPrompt() error = %v", err)
+	}
+	if !strings.Contains(prompt, "Каждый новый человеческий комментарий") {
+		t.Fatalf("prompt must include discussion continuation contract, got: %q", prompt)
+	}
+	if !strings.Contains(prompt, "публикуйте его под Issue #289 через `gh issue comment`") {
+		t.Fatalf("prompt must keep issue comment completion requirement, got: %q", prompt)
 	}
 }

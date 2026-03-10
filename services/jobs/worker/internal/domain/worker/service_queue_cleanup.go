@@ -4,8 +4,6 @@ import (
 	"context"
 	"strings"
 	"time"
-
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 )
 
 func (s *Service) cleanupExpiredNamespaces(ctx context.Context) error {
@@ -30,7 +28,7 @@ func (s *Service) cleanupExpiredNamespaces(ctx context.Context) error {
 		if _, upsertErr := s.runStatus.UpsertRunStatusComment(ctx, RunStatusCommentParams{
 			RunID:       runID,
 			Phase:       RunStatusPhaseNamespaceDeleted,
-			RuntimeMode: string(agentdomain.RuntimeModeFullEnv),
+			RuntimeMode: string(item.RuntimeMode),
 			Namespace:   item.Namespace,
 			Deleted:     true,
 		}); upsertErr != nil {

@@ -24,6 +24,8 @@ var (
 	queryGetRunIDByCorrelationID string
 	//go:embed sql/get_by_id.sql
 	queryGetByID string
+	//go:embed sql/cancel_active_by_id.sql
+	queryCancelActiveByID string
 	//go:embed sql/list_run_ids_by_repository_issue.sql
 	queryListRunIDsByRepositoryIssue string
 	//go:embed sql/list_run_ids_by_repository_pull_request.sql
@@ -32,6 +34,8 @@ var (
 	queryListRecentByProject string
 	//go:embed sql/search_recent_by_project_issue_or_pull_request.sql
 	querySearchRecentByProjectIssueOrPullRequest string
+	//go:embed sql/release_slots_by_run_id.sql
+	queryReleaseSlotsByRunID string
 	//go:embed sql/upsert_run_agent_logs.sql
 	queryUpsertRunAgentLogs string
 	//go:embed sql/cleanup_run_agent_logs_finished_before.sql
@@ -104,6 +108,40 @@ func (r *Repository) GetByID(ctx context.Context, runID string) (domainrepo.Run,
 	}
 	row = items[0]
 	return runFromDBModel(row), true, nil
+}
+
+// CancelActiveByID marks one pending/running run as canceled and releases its slot lease when present.
+func (r *Repository) CancelActiveByID(ctx context.Context, runID string) (bool, error) {
+	trimmedRunID := strings.TrimSpace(runID)
+	if trimmedRunID == "" {
+		return false, fmt.Errorf("run_id is required")
+	}
+
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return false, fmt.Errorf("begin cancel transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	res, err := tx.Exec(ctx, queryCancelActiveByID, trimmedRunID)
+	if err != nil {
+		return false, fmt.Errorf("cancel active run %s: %w", trimmedRunID, err)
+	}
+	if res.RowsAffected() == 0 {
+		return false, nil
+	}
+
+	if _, err := tx.Exec(ctx, queryReleaseSlotsByRunID, trimmedRunID); err != nil {
+		return false, fmt.Errorf("release slots for run %s: %w", trimmedRunID, err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return false, fmt.Errorf("commit cancel transaction: %w", err)
+	}
+
+	return true, nil
 }
 
 // ListRecentByProject returns project runs ordered by newest first.

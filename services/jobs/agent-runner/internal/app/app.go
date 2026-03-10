@@ -76,6 +76,7 @@ func Run() error {
 		OpenAIConfig: runner.OpenAIConfig{
 			OpenAIAPIKey: cfg.OpenAIAPIKey,
 		},
+		DiscussionPollInterval: cfg.DiscussionPollInterval,
 	}, cp, logger)
 
 	if err := runnerService.Run(appCtx); err != nil {

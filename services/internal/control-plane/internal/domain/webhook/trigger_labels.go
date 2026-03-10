@@ -168,6 +168,11 @@ func (labels TriggerLabels) hasModeDiscussionLabel(issueLabels []githubLabelReco
 	return false
 }
 
+func (labels TriggerLabels) isRunTriggerLabel(label string) bool {
+	_, ok := labels.resolveKind(label)
+	return ok
+}
+
 func normalizeLabelToken(value string) string {
 	return strings.ToLower(strings.TrimSpace(value))
 }

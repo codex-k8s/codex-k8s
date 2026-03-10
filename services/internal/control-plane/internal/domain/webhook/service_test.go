@@ -228,9 +228,20 @@ func TestIngestGitHubWebhook_ModeDiscussionLabelCreatesCodeOnlyRun(t *testing.T)
 	}
 }
 
-func TestIngestGitHubWebhook_RunLabelWithDiscussionModeCreatesDiscussionRun(t *testing.T) {
+func TestIngestGitHubWebhook_RunLabelWithDiscussionModeStartsStageRunAndCleansDiscussionContext(t *testing.T) {
 	ctx := context.Background()
-	runs := &inMemoryRunRepo{items: map[string]string{}}
+	runs := &inMemoryRunRepo{
+		items: map[string]string{},
+		byRunID: map[string]agentrunrepo.Run{
+			"run-discussion": {
+				ID:            "run-discussion",
+				CorrelationID: "corr-discussion",
+				ProjectID:     "project-1",
+				Status:        "running",
+				RunPayload:    json.RawMessage(`{"trigger":{"label":"mode:discussion","kind":"dev"}}`),
+			},
+		},
+	}
 	events := &inMemoryEventRepo{}
 	agents := &inMemoryAgentRepo{items: map[string]agentrepo.Agent{"dev": {ID: "agent-dev", AgentKey: "dev", Name: "AI Developer"}}}
 	repos := &inMemoryRepoCfgRepo{
@@ -251,6 +262,7 @@ func TestIngestGitHubWebhook_RunLabelWithDiscussionModeCreatesDiscussionRun(t *t
 	members := &inMemoryProjectMemberRepo{
 		roles: map[string]string{"project-1|user-1": "read_write"},
 	}
+	runStatus := &inMemoryRunStatusService{}
 	svc := NewService(Config{
 		AgentRuns:  runs,
 		Agents:     agents,
@@ -258,7 +270,17 @@ func TestIngestGitHubWebhook_RunLabelWithDiscussionModeCreatesDiscussionRun(t *t
 		Repos:      repos,
 		Users:      users,
 		Members:    members,
+		RunStatus:  runStatus,
 	})
+	runs.searchItems = []agentrunrepo.RunLookupItem{{
+		RunID:              "run-discussion",
+		ProjectID:          "project-1",
+		RepositoryFullName: "codex-k8s/codex-k8s",
+		IssueNumber:        77,
+		TriggerKind:        string(webhookdomain.TriggerKindDev),
+		TriggerLabel:       webhookdomain.DefaultModeDiscussionLabel,
+		Status:             "running",
+	}}
 
 	payload := json.RawMessage(`{
 		"action":"labeled",
@@ -287,11 +309,17 @@ func TestIngestGitHubWebhook_RunLabelWithDiscussionModeCreatesDiscussionRun(t *t
 	if err := json.Unmarshal(runs.last.RunPayload, &runPayload); err != nil {
 		t.Fatalf("unmarshal run payload: %v", err)
 	}
-	if !runPayload.DiscussionMode {
-		t.Fatal("expected discussion_mode=true")
+	if runPayload.DiscussionMode {
+		t.Fatal("expected discussion_mode=false after stage label was added")
 	}
-	if runPayload.Trigger == nil || runPayload.Trigger.Label != webhookdomain.DefaultModeDiscussionLabel {
-		t.Fatalf("expected trigger label %q, got %#v", webhookdomain.DefaultModeDiscussionLabel, runPayload.Trigger)
+	if runPayload.Trigger == nil || runPayload.Trigger.Label != webhookdomain.DefaultRunDevLabel {
+		t.Fatalf("expected trigger label %q, got %#v", webhookdomain.DefaultRunDevLabel, runPayload.Trigger)
+	}
+	if len(runs.canceledRunIDs) != 1 || runs.canceledRunIDs[0] != "run-discussion" {
+		t.Fatalf("expected canceled discussion run, got %#v", runs.canceledRunIDs)
+	}
+	if len(runStatus.deleteNamespaceCalls) != 1 || runStatus.deleteNamespaceCalls[0].RunID != "run-discussion" {
+		t.Fatalf("expected discussion namespace delete call, got %#v", runStatus.deleteNamespaceCalls)
 	}
 }
 
@@ -466,6 +494,88 @@ func TestIngestGitHubWebhook_IssueCommentWithActiveDiscussionRunDoesNotCreateSec
 	}
 	if len(events.items) != 1 || events.items[0].EventType != floweventdomain.EventTypeWebhookReceived {
 		t.Fatalf("expected webhook.received without run, got %#v", events.items)
+	}
+}
+
+func TestIngestGitHubWebhook_ModeDiscussionRemovedCleansDiscussionContext(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{
+		items: map[string]string{},
+		byRunID: map[string]agentrunrepo.Run{
+			"run-discussion": {
+				ID:            "run-discussion",
+				CorrelationID: "corr-discussion",
+				ProjectID:     "project-1",
+				Status:        "running",
+				RunPayload:    json.RawMessage(`{"trigger":{"label":"mode:discussion","kind":"dev"}}`),
+			},
+		},
+		searchItems: []agentrunrepo.RunLookupItem{{
+			RunID:              "run-discussion",
+			ProjectID:          "project-1",
+			RepositoryFullName: "codex-k8s/codex-k8s",
+			IssueNumber:        289,
+			TriggerKind:        string(webhookdomain.TriggerKindDev),
+			TriggerLabel:       webhookdomain.DefaultModeDiscussionLabel,
+			Status:             "running",
+		}},
+	}
+	events := &inMemoryEventRepo{}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+				DefaultRef:       "main",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {ID: "user-1", GitHubLogin: "member"},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{"project-1|user-1": "read_write"},
+	}
+	runStatus := &inMemoryRunStatusService{}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
+		RunStatus:  runStatus,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"unlabeled",
+		"label":{"name":"mode:discussion"},
+		"issue":{"id":1001,"number":289,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/289","state":"open","labels":[]},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member","type":"User"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-discussion-unlabeled-1",
+		DeliveryID:    "delivery-discussion-unlabeled-1",
+		EventType:     string(webhookdomain.GitHubEventIssues),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.RunID != "" {
+		t.Fatalf("expected no new run on mode:discussion removal, got %q", got.RunID)
+	}
+	if len(runs.canceledRunIDs) != 1 || runs.canceledRunIDs[0] != "run-discussion" {
+		t.Fatalf("expected canceled discussion run, got %#v", runs.canceledRunIDs)
+	}
+	if len(runStatus.deleteNamespaceCalls) != 1 || runStatus.deleteNamespaceCalls[0].RunID != "run-discussion" {
+		t.Fatalf("expected discussion namespace delete call, got %#v", runStatus.deleteNamespaceCalls)
 	}
 }
 
@@ -2691,10 +2801,11 @@ func (r *inMemoryAgentRepo) FindEffectiveByKey(_ context.Context, _ string, agen
 }
 
 type inMemoryRunRepo struct {
-	items       map[string]string
-	last        agentrunrepo.CreateParams
-	byRunID     map[string]agentrunrepo.Run
-	searchItems []agentrunrepo.RunLookupItem
+	items          map[string]string
+	last           agentrunrepo.CreateParams
+	byRunID        map[string]agentrunrepo.Run
+	searchItems    []agentrunrepo.RunLookupItem
+	canceledRunIDs []string
 }
 
 func (r *inMemoryRunRepo) CreatePendingIfAbsent(_ context.Context, params agentrunrepo.CreateParams) (agentrunrepo.CreateResult, error) {
@@ -2741,6 +2852,25 @@ func (r *inMemoryRunRepo) GetByID(_ context.Context, runID string) (agentrunrepo
 	return agentrunrepo.Run{}, false, nil
 }
 
+func (r *inMemoryRunRepo) CancelActiveByID(_ context.Context, runID string) (bool, error) {
+	if r.byRunID == nil {
+		r.byRunID = make(map[string]agentrunrepo.Run)
+	}
+	item, ok := r.byRunID[runID]
+	if !ok {
+		return false, nil
+	}
+	switch item.Status {
+	case "pending", "running":
+	default:
+		return false, nil
+	}
+	item.Status = "canceled"
+	r.byRunID[runID] = item
+	r.canceledRunIDs = append(r.canceledRunIDs, runID)
+	return true, nil
+}
+
 func (r *inMemoryRunRepo) ListRecentByProject(_ context.Context, _ string, _ string, _ int, _ int) ([]agentrunrepo.RunLookupItem, error) {
 	return nil, nil
 }
@@ -2752,7 +2882,11 @@ func (r *inMemoryRunRepo) SearchRecentByProjectIssueOrPullRequest(_ context.Cont
 }
 
 func (r *inMemoryRunRepo) ListRunIDsByRepositoryIssue(_ context.Context, _ string, _ int64, _ int) ([]string, error) {
-	return nil, nil
+	runIDs := make([]string, 0, len(r.searchItems))
+	for _, item := range r.searchItems {
+		runIDs = append(runIDs, item.RunID)
+	}
+	return runIDs, nil
 }
 
 func (r *inMemoryRunRepo) ListRunIDsByRepositoryPullRequest(_ context.Context, _ string, _ int64, _ int) ([]string, error) {
@@ -2764,6 +2898,7 @@ type inMemoryRunStatusService struct {
 	pullRequestCleanupCalls  int
 	lastIssueCleanup         runstatusdomain.CleanupByIssueParams
 	lastPullRequestCleanup   runstatusdomain.CleanupByPullRequestParams
+	deleteNamespaceCalls     []runstatusdomain.DeleteNamespaceParams
 	conflictCommentCalls     int
 	lastConflictComment      runstatusdomain.TriggerLabelConflictCommentParams
 	warningCommentCalls      []runstatusdomain.TriggerWarningCommentParams
@@ -2777,6 +2912,16 @@ func (s *inMemoryRunStatusService) UpsertRunStatusComment(_ context.Context, par
 	return runstatusdomain.UpsertCommentResult{
 		CommentID:  1,
 		CommentURL: "https://example.invalid/run-status",
+	}, nil
+}
+
+func (s *inMemoryRunStatusService) DeleteRunNamespace(_ context.Context, params runstatusdomain.DeleteNamespaceParams) (runstatusdomain.DeleteNamespaceResult, error) {
+	s.deleteNamespaceCalls = append(s.deleteNamespaceCalls, params)
+	return runstatusdomain.DeleteNamespaceResult{
+		RunID:          params.RunID,
+		Deleted:        true,
+		AlreadyDeleted: false,
+		CommentURL:     "https://example.invalid/delete-namespace",
 	}, nil
 }
 

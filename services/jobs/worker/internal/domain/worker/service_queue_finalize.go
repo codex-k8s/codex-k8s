@@ -91,9 +91,7 @@ func (s *Service) finishRun(ctx context.Context, params finishRunParams) error {
 		}
 	}
 
-	if params.Execution.RuntimeMode == agentdomain.RuntimeModeFullEnv &&
-		params.Execution.Namespace != "" &&
-		!params.SkipNamespaceCleanup {
+	if shouldRetainManagedNamespace(params.Run.RunPayload, params.Execution) && !params.SkipNamespaceCleanup {
 		s.upsertNamespaceStatusComment(ctx, params, false, "upsert run status comment (namespace retained by ttl policy) failed")
 	}
 
@@ -187,4 +185,17 @@ func isFailedPreconditionError(err error) bool {
 		return false
 	}
 	return strings.HasPrefix(strings.TrimSpace(err.Error()), "failed_precondition:")
+}
+
+func shouldRetainManagedNamespace(runPayload []byte, execution valuetypes.RunExecutionContext) bool {
+	if strings.TrimSpace(execution.Namespace) == "" {
+		return false
+	}
+	if execution.RuntimeMode == agentdomain.RuntimeModeFullEnv {
+		return true
+	}
+	if execution.RuntimeMode != agentdomain.RuntimeModeCodeOnly {
+		return false
+	}
+	return parseRunRuntimePayload(runPayload).DiscussionMode
 }

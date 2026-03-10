@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"time"
 
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	cpclient "github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/controlplane"
@@ -74,6 +75,8 @@ type Config struct {
 
 	GitBotConfig
 	OpenAIConfig
+
+	DiscussionPollInterval time.Duration
 }
 
 // ControlPlaneCallbacks defines required control-plane callbacks for runner lifecycle.
@@ -228,6 +231,15 @@ type sessionRuntimeLogFields struct {
 	CodexExecOutput  string `json:"codex_exec_output,omitempty"`
 	GitPushOutput    string `json:"git_push_output,omitempty"`
 	ExistingPRNumber int    `json:"existing_pr_number,omitempty"`
+}
+
+type discussionIssueState struct {
+	State                   string
+	HasDiscussionLabel      bool
+	HasRunLabel             bool
+	MaxHumanCommentID       int64
+	HasHumanAfterAgentReply bool
+	HasAgentReply           bool
 }
 
 type selfImproveDiagnosisReadyPayload struct {

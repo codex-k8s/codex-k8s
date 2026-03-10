@@ -25,8 +25,11 @@ type GitHubAction string
 
 const (
 	GitHubActionLabeled   GitHubAction = "labeled"
+	GitHubActionUnlabeled GitHubAction = "unlabeled"
 	GitHubActionCreated   GitHubAction = "created"
 	GitHubActionSubmitted GitHubAction = "submitted"
+	GitHubActionClosed    GitHubAction = "closed"
+	GitHubActionDeleted   GitHubAction = "deleted"
 )
 
 // TriggerKind is an issue-label trigger flavor that maps to run behavior.
