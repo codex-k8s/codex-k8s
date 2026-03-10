@@ -59,3 +59,17 @@ func (e Conflict) Error() string {
 	}
 	return e.Msg
 }
+
+// FailedPrecondition indicates that current resource state does not satisfy action guardrails.
+type FailedPrecondition struct {
+	// Msg overrides the default failed precondition message when provided.
+	Msg string
+}
+
+// Error returns a stable failed precondition message.
+func (e FailedPrecondition) Error() string {
+	if e.Msg == "" {
+		return "failed precondition"
+	}
+	return e.Msg
+}

@@ -62,6 +62,13 @@ type specialMatrixAction struct {
 	DisplayVariant string
 }
 
+type specialStageMatrix struct {
+	Actions          []specialMatrixAction
+	AllowDocAudit    bool
+	AllowRethink     bool
+	AllowSelfImprove bool
+}
+
 func stageDescriptorByName(stage string) (stageDescriptor, bool) {
 	switch strings.TrimSpace(stage) {
 	case "intake":
@@ -138,24 +145,18 @@ func buildNextStepActions(publicBaseURL string, runCtx runContext, state comment
 		return nil
 	}
 
-	if descriptor.Stage == "doc-audit" {
-		return buildSpecialMatrixActions(publicBaseURL, state.RepositoryFullName, state.IssueNumber, pullRequestNumberFromRunContext(runCtx), descriptor, []specialMatrixAction{
-			{TargetLabel: webhookdomain.DefaultRunPlanLabel, DisplayVariant: nextStepDisplayPreparePlan},
-			{TargetLabel: webhookdomain.DefaultRunDevLabel, DisplayVariant: nextStepDisplayGoToDev},
-			{TargetLabel: webhookdomain.DefaultRunQALabel, DisplayVariant: nextStepDisplayGoToQA},
-		}, true, false, false)
-	}
-	if descriptor.Stage == "self-improve" {
-		return buildSpecialMatrixActions(publicBaseURL, state.RepositoryFullName, state.IssueNumber, pullRequestNumberFromRunContext(runCtx), descriptor, []specialMatrixAction{
-			{TargetLabel: webhookdomain.DefaultRunQALabel, DisplayVariant: nextStepDisplayGoToQA},
-		}, false, false, true)
-	}
-	if descriptor.Stage == "rethink" {
-		return buildSpecialMatrixActions(publicBaseURL, state.RepositoryFullName, state.IssueNumber, pullRequestNumberFromRunContext(runCtx), descriptor, []specialMatrixAction{
-			{TargetLabel: webhookdomain.DefaultRunIntakeLabel, DisplayVariant: nextStepDisplayRestartFull},
-			{TargetLabel: webhookdomain.DefaultRunPRDLabel, DisplayVariant: nextStepDisplayRestartShortened},
-			{TargetLabel: webhookdomain.DefaultRunPlanLabel, DisplayVariant: nextStepDisplayRestartVeryShort},
-		}, false, false, false)
+	if matrix, ok := specialStageMatrixForStage(descriptor.Stage); ok {
+		return buildSpecialMatrixActions(
+			publicBaseURL,
+			state.RepositoryFullName,
+			state.IssueNumber,
+			pullRequestNumberFromRunContext(runCtx),
+			descriptor,
+			matrix.Actions,
+			matrix.AllowDocAudit,
+			matrix.AllowRethink,
+			matrix.AllowSelfImprove,
+		)
 	}
 
 	actions := make([]nextStepCommentAction, 0, 8)
@@ -223,6 +224,37 @@ func buildNextStepActions(publicBaseURL string, runCtx runContext, state comment
 	}
 
 	return actions
+}
+
+func specialStageMatrixForStage(stage string) (specialStageMatrix, bool) {
+	switch stage {
+	case "doc-audit":
+		return specialStageMatrix{
+			Actions: []specialMatrixAction{
+				{TargetLabel: webhookdomain.DefaultRunPlanLabel, DisplayVariant: nextStepDisplayPreparePlan},
+				{TargetLabel: webhookdomain.DefaultRunDevLabel, DisplayVariant: nextStepDisplayGoToDev},
+				{TargetLabel: webhookdomain.DefaultRunQALabel, DisplayVariant: nextStepDisplayGoToQA},
+			},
+			AllowDocAudit: true,
+		}, true
+	case "self-improve":
+		return specialStageMatrix{
+			Actions: []specialMatrixAction{
+				{TargetLabel: webhookdomain.DefaultRunQALabel, DisplayVariant: nextStepDisplayGoToQA},
+			},
+			AllowSelfImprove: true,
+		}, true
+	case "rethink":
+		return specialStageMatrix{
+			Actions: []specialMatrixAction{
+				{TargetLabel: webhookdomain.DefaultRunIntakeLabel, DisplayVariant: nextStepDisplayRestartFull},
+				{TargetLabel: webhookdomain.DefaultRunPRDLabel, DisplayVariant: nextStepDisplayRestartShortened},
+				{TargetLabel: webhookdomain.DefaultRunPlanLabel, DisplayVariant: nextStepDisplayRestartVeryShort},
+			},
+		}, true
+	default:
+		return specialStageMatrix{}, false
+	}
 }
 
 func buildSpecialMatrixActions(publicBaseURL string, repositoryFullName string, issueNumber int, pullRequestNumber int, descriptor stageDescriptor, targets []specialMatrixAction, includeRethink bool, includeDocAudit bool, includeReviewer bool) []nextStepCommentAction {

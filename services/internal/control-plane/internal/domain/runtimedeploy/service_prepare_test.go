@@ -85,6 +85,10 @@ func (*fakePrepareRuntimeDeployTasksRepo) Requeue(_ context.Context, _ runtimede
 	return false, nil
 }
 
+func (*fakePrepareRuntimeDeployTasksRepo) RequestAction(_ context.Context, _ runtimedeploytaskrepo.RequestActionParams) (runtimedeploytaskrepo.RequestActionResult, error) {
+	return runtimedeploytaskrepo.RequestActionResult{}, nil
+}
+
 func (*fakePrepareRuntimeDeployTasksRepo) ListRecent(_ context.Context, _ runtimedeploytaskrepo.ListFilter) ([]runtimedeploytaskrepo.Task, error) {
 	return nil, nil
 }

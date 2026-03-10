@@ -1,4 +1,5 @@
 export type {
+  RuntimeDeployTaskActionResponse,
   RuntimeDeployTaskListItem,
   RuntimeDeployTask,
   RuntimeDeployTaskLog,

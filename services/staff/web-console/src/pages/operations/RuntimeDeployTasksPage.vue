@@ -102,7 +102,7 @@ const { t, locale } = useI18n({ useScope: "global" });
 
 const loading = ref(false);
 const error = ref<ApiError | null>(null);
-const statusFilter = ref<"" | "pending" | "running" | "succeeded" | "failed" | null>("");
+const statusFilter = ref<"" | "pending" | "running" | "succeeded" | "failed" | "canceled" | null>("");
 const items = ref<RuntimeDeployTaskListItem[]>([]);
 const itemsPerPage = 15;
 const paging = createProgressiveTableState({ itemsPerPage });
@@ -154,6 +154,7 @@ const statusOptions = computed(() => [
   { title: "running", value: "running" },
   { title: "succeeded", value: "succeeded" },
   { title: "failed", value: "failed" },
+  { title: "canceled", value: "canceled" },
 ]);
 
 const headers = computed(() => ([

@@ -254,6 +254,8 @@ func Run() error {
 	}, runtimedeploydomain.Dependencies{
 		Kubernetes: newRuntimeDeployKubernetesAdapter(k8sClient),
 		Tasks:      runtimeDeployTasks,
+		Runs:       agentRuns,
+		FlowEvents: flowEvents,
 		Registry:   registryClient,
 		RuntimeErr: runtimeErrorService,
 		Logger:     logger,
@@ -341,6 +343,7 @@ func Run() error {
 		GitHub:         githubRepoProvider,
 		GitHubMgmt:     githubMgmtClient,
 		RunStatus:      runStatusService,
+		RuntimeDeploy:  runtimeDeployService,
 	})
 
 	// Ensure bootstrap users exist so that the first login can be matched by email.

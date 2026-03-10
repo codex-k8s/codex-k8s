@@ -5,7 +5,7 @@ title: "Requirements Traceability Matrix"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-03-09
+updated_at: 2026-03-10
 related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263, 265, 281, 282]
 related_prs: []
 approvals:
@@ -565,6 +565,35 @@ approvals:
   remaining backlog нормализован как `#252..#256`, `#258..#260`.
 - Проверки по scope:
   cleanup-поиск `rg -n "Run type|Тип запуска" services/staff/web-console/src`,
+  `npm --prefix services/staff/web-console run build`.
+
+## Актуализация по Issue #252 (`run:dev`, 2026-03-10)
+- Для FR-012/FR-038/FR-040 и NFR-010/NFR-018 реализован stream `S7-E10`:
+  contract-first расширены `services/external/api-gateway/api/server/api.yaml` и
+  `proto/codexk8s/controlplane/v1/controlplane.proto`, добавлены typed HTTP/gRPC actions
+  `cancel/stop` и синхронно обновлены backend/frontend codegen артефакты.
+- В control-plane расширена persisted-модель `runtime_deploy_tasks`:
+  добавлены control/audit поля `cancel_requested_*`, `stop_requested_*`,
+  `terminal_status_source`, `terminal_event_seq`, новая миграция
+  `services/internal/control-plane/cmd/cli/migrations/20260310110000_day26_runtime_deploy_task_controls.sql`
+  и идемпотентный repository path `RequestAction`.
+- В доменном слое `runtimedeploy` и staff use-case добавлены guardrails:
+  повторный `cancel/stop` возвращает идемпотентный результат,
+  `stop` разрешён только для `running` задачи с активным lease,
+  операторские actions пишут audit events в `flow_events`,
+  а reconcile-loop быстрее прерывает текущий deploy flow после terminal cancel.
+- В staff UI на странице деталей deploy task добавлены кнопки `cancel/stop`,
+  confirm dialog с optional reason, success/error feedback, отображение новых audit-полей
+  и обработка `failed_precondition` для операторского сценария.
+- Актуализированы traceability документы Sprint S7:
+  `docs/delivery/issue_map.md`,
+  `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md`,
+  `docs/delivery/epics/s7/epic_s7.md`;
+  remaining backlog нормализован как `#253..#256`, `#258..#260`.
+- Проверки по scope:
+  `make gen-proto-go`,
+  `make gen-openapi`,
+  `go test ./services/internal/control-plane/... ./services/external/api-gateway/...`,
   `npm --prefix services/staff/web-console run build`.
 
 ## Актуализация по Issue #274 (`run:dev`, 2026-03-05)

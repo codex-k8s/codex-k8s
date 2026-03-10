@@ -51,6 +51,7 @@ type runStatusService interface {
 
 type runtimeDeployService interface {
 	PrepareRunEnvironment(ctx context.Context, params runtimedeploydomain.PrepareParams) (runtimedeploydomain.PrepareResult, error)
+	RequestTaskAction(ctx context.Context, params runtimedeploydomain.TaskActionParams) (runtimedeploydomain.TaskActionResult, error)
 }
 
 type runtimeErrorRecorder interface {
@@ -287,6 +288,7 @@ func toStatus(err error) error {
 	var u errs.Unauthorized
 	var f errs.Forbidden
 	var c errs.Conflict
+	var fp errs.FailedPrecondition
 
 	switch {
 	case errors.As(err, &v):
@@ -301,6 +303,8 @@ func toStatus(err error) error {
 		return status.Error(codes.PermissionDenied, f.Error())
 	case errors.As(err, &c):
 		return status.Error(codes.AlreadyExists, c.Error())
+	case errors.As(err, &fp):
+		return status.Error(codes.FailedPrecondition, fp.Error())
 	default:
 		// Prefer explicit error text for debugging. Keep it bounded to avoid huge status messages
 		// when upstream includes logs in errors.
@@ -411,27 +415,39 @@ func runtimeErrorToProto(item entitytypes.RuntimeError) *controlplanev1.RuntimeE
 
 func runtimeDeployTaskToProto(item entitytypes.RuntimeDeployTask) *controlplanev1.RuntimeDeployTask {
 	out := &controlplanev1.RuntimeDeployTask{
-		RunId:              item.RunID,
-		RuntimeMode:        item.RuntimeMode,
-		Namespace:          item.Namespace,
-		TargetEnv:          item.TargetEnv,
-		SlotNo:             int32(item.SlotNo),
-		RepositoryFullName: item.RepositoryFullName,
-		ServicesYamlPath:   item.ServicesYAMLPath,
-		BuildRef:           item.BuildRef,
-		DeployOnly:         item.DeployOnly,
-		Status:             string(item.Status),
-		LeaseOwner:         stringPtrOrNil(item.LeaseOwner),
-		Attempts:           int32(item.Attempts),
-		LastError:          stringPtrOrNil(item.LastError),
-		ResultNamespace:    stringPtrOrNil(item.ResultNamespace),
-		ResultTargetEnv:    stringPtrOrNil(item.ResultTargetEnv),
-		CreatedAt:          timestamppb.New(item.CreatedAt.UTC()),
-		UpdatedAt:          timestamppb.New(item.UpdatedAt.UTC()),
-		Logs:               runtimeDeployLogsToProto(item.Logs),
+		RunId:                item.RunID,
+		RuntimeMode:          item.RuntimeMode,
+		Namespace:            item.Namespace,
+		TargetEnv:            item.TargetEnv,
+		SlotNo:               int32(item.SlotNo),
+		RepositoryFullName:   item.RepositoryFullName,
+		ServicesYamlPath:     item.ServicesYAMLPath,
+		BuildRef:             item.BuildRef,
+		DeployOnly:           item.DeployOnly,
+		Status:               string(item.Status),
+		LeaseOwner:           stringPtrOrNil(item.LeaseOwner),
+		Attempts:             int32(item.Attempts),
+		LastError:            stringPtrOrNil(item.LastError),
+		ResultNamespace:      stringPtrOrNil(item.ResultNamespace),
+		ResultTargetEnv:      stringPtrOrNil(item.ResultTargetEnv),
+		CancelRequestedBy:    stringPtrOrNil(item.CancelRequestedBy),
+		CancelReason:         stringPtrOrNil(item.CancelReason),
+		StopRequestedBy:      stringPtrOrNil(item.StopRequestedBy),
+		StopReason:           stringPtrOrNil(item.StopReason),
+		TerminalStatusSource: stringPtrOrNil(string(item.TerminalStatusSource)),
+		TerminalEventSeq:     item.TerminalEventSeq,
+		CreatedAt:            timestamppb.New(item.CreatedAt.UTC()),
+		UpdatedAt:            timestamppb.New(item.UpdatedAt.UTC()),
+		Logs:                 runtimeDeployLogsToProto(item.Logs),
 	}
 	if !item.LeaseUntil.IsZero() {
 		out.LeaseUntil = timestamppb.New(item.LeaseUntil.UTC())
+	}
+	if !item.CancelRequestedAt.IsZero() {
+		out.CancelRequestedAt = timestamppb.New(item.CancelRequestedAt.UTC())
+	}
+	if !item.StopRequestedAt.IsZero() {
+		out.StopRequestedAt = timestamppb.New(item.StopRequestedAt.UTC())
 	}
 	if !item.StartedAt.IsZero() {
 		out.StartedAt = timestamppb.New(item.StartedAt.UTC())
@@ -440,6 +456,16 @@ func runtimeDeployTaskToProto(item entitytypes.RuntimeDeployTask) *controlplanev
 		out.FinishedAt = timestamppb.New(item.FinishedAt.UTC())
 	}
 	return out
+}
+
+func runtimeDeployTaskActionToProto(item runtimedeploydomain.TaskActionResult) *controlplanev1.RuntimeDeployTaskActionResponse {
+	return &controlplanev1.RuntimeDeployTaskActionResponse{
+		RunId:           item.RunID,
+		Action:          string(item.Action),
+		PreviousStatus:  string(item.PreviousStatus),
+		CurrentStatus:   string(item.CurrentStatus),
+		AlreadyTerminal: item.AlreadyTerminal,
+	}
 }
 
 func runtimeDeployLogsToProto(items []entitytypes.RuntimeDeployTaskLogEntry) []*controlplanev1.RuntimeDeployTaskLog {

@@ -44,6 +44,12 @@ type ResolveApprovalDecisionRequest struct {
 	Reason   string `json:"reason"`
 }
 
+// RuntimeDeployTaskActionRequest is a typed payload for cancel/stop control actions.
+type RuntimeDeployTaskActionRequest struct {
+	Reason string `json:"reason"`
+	Force  bool   `json:"force"`
+}
+
 // DeleteRegistryImageTagRequest identifies one registry tag for deletion.
 type DeleteRegistryImageTagRequest struct {
 	Repository string `json:"repository"`

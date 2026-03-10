@@ -118,6 +118,45 @@ func (s *Server) GetRuntimeDeployTask(ctx context.Context, req *controlplanev1.G
 	return runtimeDeployTaskToProto(item), nil
 }
 
+type runtimeDeployTaskActionRequest interface {
+	GetPrincipal() *controlplanev1.Principal
+	GetRunId() string
+	GetReason() string
+}
+
+func (s *Server) requestRuntimeDeployTaskAction(
+	ctx context.Context,
+	req runtimeDeployTaskActionRequest,
+	action runtimedeploydomain.TaskAction,
+) (*controlplanev1.RuntimeDeployTaskActionResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	result, err := s.staff.RequestRuntimeDeployTaskAction(
+		ctx,
+		p,
+		strings.TrimSpace(req.GetRunId()),
+		action,
+		strings.TrimSpace(req.GetReason()),
+	)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return runtimeDeployTaskActionToProto(result), nil
+}
+
+func (s *Server) CancelRuntimeDeployTask(ctx context.Context, req *controlplanev1.CancelRuntimeDeployTaskRequest) (*controlplanev1.RuntimeDeployTaskActionResponse, error) {
+	return s.requestRuntimeDeployTaskAction(ctx, req, runtimedeploydomain.TaskActionCancel)
+}
+
+func (s *Server) StopRuntimeDeployTask(ctx context.Context, req *controlplanev1.StopRuntimeDeployTaskRequest) (*controlplanev1.RuntimeDeployTaskActionResponse, error) {
+	return s.requestRuntimeDeployTaskAction(ctx, req, runtimedeploydomain.TaskActionStop)
+}
+
 // TODO(codex-k8s#81): This RPC is temporarily unused after staff UI removed
 // "platform error" alerts. Decide later whether to keep, repurpose, or remove it.
 func (s *Server) ListRuntimeErrors(ctx context.Context, req *controlplanev1.ListRuntimeErrorsRequest) (*controlplanev1.ListRuntimeErrorsResponse, error) {

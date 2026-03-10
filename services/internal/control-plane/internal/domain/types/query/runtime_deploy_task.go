@@ -1,5 +1,11 @@
 package query
 
+import (
+	"time"
+
+	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+)
+
 // RuntimeDeployTaskUpsertDesiredParams describes one desired runtime deployment state update.
 type RuntimeDeployTaskUpsertDesiredParams struct {
 	RunID              string
@@ -47,6 +53,31 @@ type RuntimeDeployTaskRequeueParams struct {
 	RunID      string
 	LeaseOwner string
 	LastError  string
+}
+
+// RuntimeDeployTaskAction identifies one operator-requested terminal action.
+type RuntimeDeployTaskAction string
+
+const (
+	RuntimeDeployTaskActionCancel RuntimeDeployTaskAction = "cancel"
+	RuntimeDeployTaskActionStop   RuntimeDeployTaskAction = "stop"
+)
+
+// RuntimeDeployTaskRequestActionParams describes one cancel/stop request.
+type RuntimeDeployTaskRequestActionParams struct {
+	RunID       string
+	Action      RuntimeDeployTaskAction
+	RequestedAt time.Time
+	RequestedBy string
+	Reason      string
+}
+
+// RuntimeDeployTaskRequestActionResult describes one action mutation result.
+type RuntimeDeployTaskRequestActionResult struct {
+	Task            entitytypes.RuntimeDeployTask
+	PreviousStatus  entitytypes.RuntimeDeployTaskStatus
+	CurrentStatus   entitytypes.RuntimeDeployTaskStatus
+	AlreadyTerminal bool
 }
 
 // RuntimeDeployTaskListFilter describes optional task list filters.

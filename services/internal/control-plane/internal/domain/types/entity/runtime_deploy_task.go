@@ -13,29 +13,46 @@ const (
 	RuntimeDeployTaskStatusCanceled  RuntimeDeployTaskStatus = "canceled"
 )
 
+// RuntimeDeployTaskTerminalStatusSource describes who finalized task state.
+type RuntimeDeployTaskTerminalStatusSource string
+
+const (
+	RuntimeDeployTaskTerminalStatusSourceWorker   RuntimeDeployTaskTerminalStatusSource = "worker"
+	RuntimeDeployTaskTerminalStatusSourceOperator RuntimeDeployTaskTerminalStatusSource = "operator"
+	RuntimeDeployTaskTerminalStatusSourceSystem   RuntimeDeployTaskTerminalStatusSource = "system"
+)
+
 // RuntimeDeployTask stores desired and actual runtime deployment state for one run.
 type RuntimeDeployTask struct {
-	RunID              string
-	RuntimeMode        string
-	Namespace          string
-	TargetEnv          string
-	SlotNo             int
-	RepositoryFullName string
-	ServicesYAMLPath   string
-	BuildRef           string
-	DeployOnly         bool
-	Status             RuntimeDeployTaskStatus
-	LeaseOwner         string
-	LeaseUntil         time.Time
-	Attempts           int
-	LastError          string
-	ResultNamespace    string
-	ResultTargetEnv    string
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
-	StartedAt          time.Time
-	FinishedAt         time.Time
-	Logs               []RuntimeDeployTaskLogEntry
+	RunID                string
+	RuntimeMode          string
+	Namespace            string
+	TargetEnv            string
+	SlotNo               int
+	RepositoryFullName   string
+	ServicesYAMLPath     string
+	BuildRef             string
+	DeployOnly           bool
+	Status               RuntimeDeployTaskStatus
+	LeaseOwner           string
+	LeaseUntil           time.Time
+	Attempts             int
+	LastError            string
+	ResultNamespace      string
+	ResultTargetEnv      string
+	CancelRequestedAt    time.Time
+	CancelRequestedBy    string
+	CancelReason         string
+	StopRequestedAt      time.Time
+	StopRequestedBy      string
+	StopReason           string
+	TerminalStatusSource RuntimeDeployTaskTerminalStatusSource
+	TerminalEventSeq     int64
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+	StartedAt            time.Time
+	FinishedAt           time.Time
+	Logs                 []RuntimeDeployTaskLogEntry
 }
 
 // RuntimeDeployTaskLogEntry stores one build/deploy task log line.

@@ -4,10 +4,45 @@
       <template #leading>
         <BackBtn :label="t('common.back')" @click="goBack" />
       </template>
+      <template #actions>
+        <div class="d-flex align-center ga-2">
+          <AdaptiveBtn
+            v-if="canCancel"
+            color="warning"
+            variant="tonal"
+            icon="mdi-cancel"
+            :label="t('pages.runtimeDeployTaskDetails.cancelAction')"
+            :loading="actionSubmitting && requestedAction === 'cancel'"
+            @click="openActionConfirm('cancel')"
+          />
+          <AdaptiveBtn
+            v-if="canStop"
+            color="error"
+            variant="tonal"
+            icon="mdi-stop-circle-outline"
+            :label="t('pages.runtimeDeployTaskDetails.stopAction')"
+            :loading="actionSubmitting && requestedAction === 'stop'"
+            @click="openActionConfirm('stop')"
+          />
+        </div>
+      </template>
     </PageHeader>
 
     <VAlert v-if="error" type="error" variant="tonal" class="mt-4">
       {{ t(error.messageKey) }}
+    </VAlert>
+    <VAlert v-if="actionError" type="error" variant="tonal" class="mt-4">
+      {{ t(actionError.messageKey) }}
+    </VAlert>
+    <VAlert v-if="actionResult" type="success" variant="tonal" class="mt-4">
+      {{
+        actionResult.already_terminal
+          ? t("pages.runtimeDeployTaskDetails.actionAlreadyTerminalResult", { status: actionResult.current_status })
+          : t("pages.runtimeDeployTaskDetails.actionRequestedResult", {
+            action: t(actionTitleKey(actionResult.action)),
+            status: actionResult.current_status,
+          })
+      }}
     </VAlert>
 
     <template v-if="task">
@@ -39,6 +74,20 @@
                 <div><strong>{{ t("table.fields.created_at") }}:</strong> {{ formatDateTime(task.created_at, locale) }}</div>
                 <div><strong>{{ t("table.fields.started_at") }}:</strong> {{ formatDateTime(task.started_at, locale) }}</div>
                 <div><strong>{{ t("table.fields.finished_at") }}:</strong> {{ formatDateTime(task.finished_at, locale) }}</div>
+                <div v-if="task.terminal_status_source || task.terminal_event_seq" class="summary-wide">
+                  <strong>{{ t("pages.runtimeDeployTaskDetails.terminalAudit") }}:</strong>
+                  <span class="mono">{{ task.terminal_status_source || "-" }}</span>
+                  ·
+                  <span class="mono">seq={{ task.terminal_event_seq || 0 }}</span>
+                </div>
+                <div v-if="task.cancel_requested_at || task.cancel_requested_by || task.cancel_reason" class="summary-wide">
+                  <strong>{{ t("pages.runtimeDeployTaskDetails.cancelAudit") }}:</strong>
+                  {{ actionAuditText("cancel") }}
+                </div>
+                <div v-if="task.stop_requested_at || task.stop_requested_by || task.stop_reason" class="summary-wide">
+                  <strong>{{ t("pages.runtimeDeployTaskDetails.stopAudit") }}:</strong>
+                  {{ actionAuditText("stop") }}
+                </div>
                 <div v-if="task.last_error" class="summary-wide">
                   <strong>{{ t("table.fields.last_error") }}:</strong> {{ task.last_error }}
                 </div>
@@ -79,6 +128,26 @@
       </VRow>
     </template>
   </div>
+
+  <ConfirmDialog
+    v-model="actionConfirmOpen"
+    :title="t(requestedAction === 'stop' ? 'pages.runtimeDeployTaskDetails.stopAction' : 'pages.runtimeDeployTaskDetails.cancelAction')"
+    :message="t(requestedAction === 'stop' ? 'pages.runtimeDeployTaskDetails.stopConfirm' : 'pages.runtimeDeployTaskDetails.cancelConfirm')"
+    :confirm-text="t(requestedAction === 'stop' ? 'pages.runtimeDeployTaskDetails.stopAction' : 'pages.runtimeDeployTaskDetails.cancelAction')"
+    :cancel-text="t('common.cancel')"
+    :danger="requestedAction === 'stop'"
+    @confirm="confirmRequestedAction"
+  >
+    <VTextarea
+      v-model.trim="actionReason"
+      :label="t('pages.runtimeDeployTaskDetails.actionReasonLabel')"
+      :placeholder="t('pages.runtimeDeployTaskDetails.actionReasonPlaceholder')"
+      :hint="t('pages.runtimeDeployTaskDetails.actionReasonHint')"
+      auto-grow
+      rows="3"
+      persistent-hint
+    />
+  </ConfirmDialog>
 </template>
 
 <script setup lang="ts">
@@ -86,24 +155,34 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 
+import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
 import BackBtn from "../../shared/ui/BackBtn.vue";
+import ConfirmDialog from "../../shared/ui/ConfirmDialog.vue";
 import PageHeader from "../../shared/ui/PageHeader.vue";
 import { normalizeApiError, type ApiError } from "../../shared/api/errors";
 import { formatDateTime } from "../../shared/lib/datetime";
 import { colorForRunStatus } from "../../shared/lib/chips";
 import { bindRealtimePageLifecycle } from "../../shared/ws/lifecycle";
-import { getRuntimeDeployTask } from "../../features/runtime-deploy/api";
+import { useSnackbarStore } from "../../shared/ui/feedback/snackbar-store";
+import { cancelRuntimeDeployTask, getRuntimeDeployTask, stopRuntimeDeployTask } from "../../features/runtime-deploy/api";
 import { subscribeRuntimeDeployRealtime, type RuntimeDeployRealtimeState } from "../../features/runtime-deploy/realtime";
-import type { RuntimeDeployTask } from "../../features/runtime-deploy/types";
+import type { RuntimeDeployTask, RuntimeDeployTaskActionResponse } from "../../features/runtime-deploy/types";
 
 const props = defineProps<{ runId: string }>();
 
 const { t, locale } = useI18n({ useScope: "global" });
 const router = useRouter();
+const snackbar = useSnackbarStore();
 
 const task = ref<RuntimeDeployTask | null>(null);
 const loading = ref(false);
 const error = ref<ApiError | null>(null);
+const actionError = ref<ApiError | null>(null);
+const actionResult = ref<RuntimeDeployTaskActionResponse | null>(null);
+const actionSubmitting = ref(false);
+const actionConfirmOpen = ref(false);
+const requestedAction = ref<"cancel" | "stop" | null>(null);
+const actionReason = ref("");
 const realtimeState = ref<RuntimeDeployRealtimeState>("connecting");
 const stopRealtimeRef = ref<(() => void) | null>(null);
 const fallbackPollTimer = ref<number | null>(null);
@@ -127,6 +206,10 @@ const sortedLogs = computed(() => {
   logs.sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
   return logs;
 });
+
+const normalizedTaskStatus = computed(() => String(task.value?.status || "").trim().toLowerCase());
+const canCancel = computed(() => normalizedTaskStatus.value === "pending" || normalizedTaskStatus.value === "running");
+const canStop = computed(() => normalizedTaskStatus.value === "running");
 
 const logHeaders = computed(() => ([
   { title: t("table.fields.created_at"), key: "created_at", align: "center", width: 180 },
@@ -169,6 +252,62 @@ async function loadTask(): Promise<void> {
       reloadPending.value = false;
       void loadTask();
     }
+  }
+}
+
+function actionTitleKey(action: string | null | undefined): string {
+  return String(action || "").trim().toLowerCase() === "stop"
+    ? "pages.runtimeDeployTaskDetails.stopAction"
+    : "pages.runtimeDeployTaskDetails.cancelAction";
+}
+
+function actionAuditText(kind: "cancel" | "stop"): string {
+  const currentTask = task.value;
+  if (!currentTask) return "-";
+  const requestedAt = kind === "cancel" ? currentTask.cancel_requested_at : currentTask.stop_requested_at;
+  const requestedBy = kind === "cancel" ? currentTask.cancel_requested_by : currentTask.stop_requested_by;
+  const reason = kind === "cancel" ? currentTask.cancel_reason : currentTask.stop_reason;
+
+  const parts: string[] = [];
+  if (requestedAt) parts.push(formatDateTime(requestedAt, locale.value));
+  if (requestedBy) parts.push(String(requestedBy));
+  if (reason) parts.push(String(reason));
+  return parts.length ? parts.join(" · ") : "-";
+}
+
+function openActionConfirm(action: "cancel" | "stop"): void {
+  actionError.value = null;
+  actionReason.value = "";
+  requestedAction.value = action;
+  actionConfirmOpen.value = true;
+}
+
+async function confirmRequestedAction(): Promise<void> {
+  if (!requestedAction.value) return;
+
+  const action = requestedAction.value;
+  actionSubmitting.value = true;
+  actionError.value = null;
+
+  try {
+    actionResult.value = action === "stop"
+      ? await stopRuntimeDeployTask(props.runId, actionReason.value)
+      : await cancelRuntimeDeployTask(props.runId, actionReason.value);
+    await loadTask();
+    snackbar.success(
+      actionResult.value.already_terminal
+        ? t("pages.runtimeDeployTaskDetails.actionAlreadyTerminalResult", { status: actionResult.value.current_status })
+        : t("pages.runtimeDeployTaskDetails.actionRequestedResult", {
+          action: t(actionTitleKey(action)),
+          status: actionResult.value.current_status,
+        }),
+    );
+  } catch (err) {
+    actionError.value = normalizeApiError(err);
+  } finally {
+    actionSubmitting.value = false;
+    actionReason.value = "";
+    requestedAction.value = null;
   }
 }
 

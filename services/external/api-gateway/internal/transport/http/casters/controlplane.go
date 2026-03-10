@@ -486,6 +486,14 @@ func RuntimeDeployTask(item *controlplanev1.RuntimeDeployTask) models.RuntimeDep
 	out.LastError = cast.OptionalTrimmedString(item.LastError)
 	out.ResultNamespace = cast.OptionalTrimmedString(item.ResultNamespace)
 	out.ResultTargetEnv = cast.OptionalTrimmedString(item.ResultTargetEnv)
+	out.CancelRequestedAt = cast.OptionalTimestampRFC3339Nano(item.GetCancelRequestedAt())
+	out.CancelRequestedBy = cast.OptionalTrimmedString(item.CancelRequestedBy)
+	out.CancelReason = cast.OptionalTrimmedString(item.CancelReason)
+	out.StopRequestedAt = cast.OptionalTimestampRFC3339Nano(item.GetStopRequestedAt())
+	out.StopRequestedBy = cast.OptionalTrimmedString(item.StopRequestedBy)
+	out.StopReason = cast.OptionalTrimmedString(item.StopReason)
+	out.TerminalStatusSource = cast.OptionalTrimmedString(item.TerminalStatusSource)
+	out.TerminalEventSeq = item.GetTerminalEventSeq()
 	out.CreatedAt = cast.OptionalTimestampRFC3339Nano(item.GetCreatedAt())
 	out.UpdatedAt = cast.OptionalTimestampRFC3339Nano(item.GetUpdatedAt())
 	out.StartedAt = cast.OptionalTimestampRFC3339Nano(item.GetStartedAt())
@@ -503,6 +511,19 @@ func RuntimeDeployTasks(items []*controlplanev1.RuntimeDeployTask) []models.Runt
 		out = append(out, RuntimeDeployTask(item))
 	}
 	return out
+}
+
+func RuntimeDeployTaskAction(item *controlplanev1.RuntimeDeployTaskActionResponse) models.RuntimeDeployTaskActionResponse {
+	if item == nil {
+		return models.RuntimeDeployTaskActionResponse{}
+	}
+	return models.RuntimeDeployTaskActionResponse{
+		RunID:           item.GetRunId(),
+		Action:          item.GetAction(),
+		PreviousStatus:  item.GetPreviousStatus(),
+		CurrentStatus:   item.GetCurrentStatus(),
+		AlreadyTerminal: item.GetAlreadyTerminal(),
+	}
 }
 
 func RuntimeError(item *controlplanev1.RuntimeError) models.RuntimeError {
@@ -608,14 +629,14 @@ func RegistryImageCleanupResult(item *controlplanev1.CleanupRegistryImagesRespon
 }
 
 func RunNamespaceDelete(item *controlplanev1.DeleteRunNamespaceResponse) models.RunNamespaceCleanupResponse {
-	out := models.RunNamespaceCleanupResponse{}
 	if item == nil {
-		return out
+		return models.RunNamespaceCleanupResponse{}
 	}
-	out.RunID = item.GetRunId()
-	out.Namespace = item.GetNamespace()
-	out.Deleted = item.GetDeleted()
-	out.AlreadyDeleted = item.GetAlreadyDeleted()
-	out.CommentURL = item.GetCommentUrl()
-	return out
+	return models.RunNamespaceCleanupResponse{
+		RunID:          item.GetRunId(),
+		Namespace:      item.GetNamespace(),
+		Deleted:        item.GetDeleted(),
+		AlreadyDeleted: item.GetAlreadyDeleted(),
+		CommentURL:     item.GetCommentUrl(),
+	}
 }

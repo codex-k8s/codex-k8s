@@ -6,6 +6,7 @@ import (
 
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
 	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/runtimedeploytask"
+	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
 )
 
 const defaultRuntimeDeployTaskLimit = 200
@@ -52,4 +53,30 @@ func (s *Service) GetRuntimeDeployTask(ctx context.Context, principal Principal,
 		return runtimedeploytaskrepo.Task{}, errs.Validation{Field: "run_id", Msg: "not found"}
 	}
 	return item, nil
+}
+
+// RequestRuntimeDeployTaskAction applies one cancel/stop control action to runtime deploy task.
+func (s *Service) RequestRuntimeDeployTaskAction(
+	ctx context.Context,
+	principal Principal,
+	runID string,
+	action runtimedeploydomain.TaskAction,
+	reason string,
+) (runtimedeploydomain.TaskActionResult, error) {
+	if !principal.IsPlatformAdmin {
+		return runtimedeploydomain.TaskActionResult{}, errs.Forbidden{Msg: "platform admin required"}
+	}
+	if s.runtimeDeploy == nil {
+		return runtimedeploydomain.TaskActionResult{}, errs.Validation{Field: "runtime_deploy", Msg: "runtime deploy service is not configured"}
+	}
+	return s.runtimeDeploy.RequestTaskAction(ctx, runtimedeploydomain.TaskActionParams{
+		RunID:  strings.TrimSpace(runID),
+		Action: action,
+		Reason: strings.TrimSpace(reason),
+		Actor: runtimedeploydomain.TaskActionActor{
+			UserID:      principal.UserID,
+			Email:       principal.Email,
+			GitHubLogin: principal.GitHubLogin,
+		},
+	})
 }

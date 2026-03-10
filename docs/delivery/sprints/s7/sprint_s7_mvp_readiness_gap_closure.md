@@ -5,7 +5,7 @@ title: "Sprint S7: MVP readiness gap closure (Issue #212)"
 status: in-progress
 owner_role: PM
 created_at: 2026-02-27
-updated_at: 2026-03-09
+updated_at: 2026-03-10
 related_issues: [212, 218, 220, 222, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 199, 201, 210, 216]
 related_prs: [213, 215]
 approvals:
@@ -43,7 +43,7 @@ approvals:
 | Day 4 | Architecture: границы и ownership по stream'ам | P0 | `docs/delivery/epics/s7/epic-s7-day4-mvp-readiness-arch.md` | in-review (`#222`) |
 | Day 5 | Design: execution-ready contracts/data/migrations package | P0 | `docs/delivery/epics/s7/epic-s7-day5-mvp-readiness-design.md` (`#238`) | in-review (`#238`) |
 | Day 6 | Plan: execution package и quality gates | P0 | `docs/delivery/epics/s7/epic-s7-day6-mvp-readiness-plan.md` (`#241`) | in-review (`#241`) |
-| Day 7+ | Dev/QA/Release/Postdeploy/Ops/Doc-Audit | P0/P1 | implementation issues `#243..#260`, `#274` (`run:dev`) | in-progress (`#243` и `#244` completed + owner-approved; `#245`, `#246`, `#247/#248/#249`, `#251` и `#274` in-review; `#250/#257` закрываются doc-actualization pass как уже поглощённые cleanup-потоками; remaining standalone backlog: `#252..#256`, `#258..#260`) |
+| Day 7+ | Dev/QA/Release/Postdeploy/Ops/Doc-Audit | P0/P1 | implementation issues `#243..#260`, `#274` (`run:dev`) | in-progress (`#243` и `#244` completed + owner-approved; `#245`, `#246`, `#247/#248/#249`, `#251`, `#252` и `#274` in-review; `#250/#257` закрываются doc-actualization pass как уже поглощённые cleanup-потоками; remaining standalone backlog: `#253..#256`, `#258..#260`) |
 
 ## Candidate execution-эпики (`S7-E01..S7-E18`)
 
@@ -58,7 +58,7 @@ approvals:
 | S7-E07 | P0 | Зафиксировать фактический repo-only prompt contract и удалить residual stale traces | closes via `#249` |
 | S7-E08 | P1 | Agents UX de-scope hardening: standalone issue больше не нужна после `S7-E05..S7-E07` + `S7-E19`; `#250` закрывается doc-actualization pass | absorbed by S7-E05..E07 + S7-E19 |
 | S7-E09 | P0 | Runs UX: убрать run type + гарантировать delete namespace | passed (in-review `#251`) |
-| S7-E10 | P0 | Runtime deploy task cancel/stop control | release-blocking ops UX |
+| S7-E10 | P0 | Runtime deploy task cancel/stop control | passed (in-review `#252`) |
 | S7-E11 | P0 | Исправление поведения `mode:discussion` в label orchestration | stage reliability |
 | S7-E12 | P1 | Финальный readiness gate (`qa -> release -> postdeploy -> ops -> doc-audit`) | requires S7-E01..E11 |
 | S7-E13 | P0 | Добавить revise-петлю `run:qa:revise` в stage/labels policy | review/revise reliability |
@@ -88,6 +88,7 @@ approvals:
 | QG-S7-13 UI stream S7-E03 | Для issue `#245` удалены global filter UI/state зависимости и подтверждён list-load без env-фильтра в `runtime-deploy/tasks` | passed (in-review `#245`) |
 | QG-S7-14 UI stream S7-E04 | Для issue `#246` подтверждено, что stale `/runtime-deploy/images*` закрывается существующим catch-all route `/:pathMatch(.*)* -> projects`, dedicated redirect не добавляется и traceability синхронизирована | passed (in-review `#246`) |
 | QG-S7-15 UI stream S7-E09 | Для issue `#251` колонка `run type` удалена, delete namespace path больше не зависит от `job_exists`, negative-case path подтверждён идемпотентным typed endpoint | passed (in-review `#251`) |
+| QG-S7-16 Deploy control stream S7-E10 | Для issue `#252` добавлены typed cancel/stop actions, persisted audit/control state, lease-aware/idempotent guardrails и staff UI controls с error/success feedback | passed (in-review `#252`) |
 
 ## Completion критерии спринта
 - [ ] Закрыт открытый P0-блокер S6 (`#216`, `run:release`) и подтверждён переход в `run:postdeploy`.
@@ -115,7 +116,7 @@ approvals:
 - Wave 4: `#251`, `#252`, `#258`;
 - Wave 5: `#256`, `#260`, `#254`.
 - Дополнительно (post-plan): `#274` (`S7-E19`, backend cleanup Agents/Configs/Secrets).
-- После combined cleanup `#247/#248/#249/#274` standalone issues `#250` и `#257` закрываются без отдельного `run:dev`; после реализации `#251` фактический remaining backlog начинается с `#252`.
+- После combined cleanup `#247/#248/#249/#274` standalone issues `#250` и `#257` закрываются без отдельного `run:dev`; после реализации `#252` фактический remaining backlog начинается с `#253`.
 - Trigger-лейбл `run:dev` на implementation issues ставит Owner, сохраняя wave-sequencing.
 - Обязательные артефакты handover:
   - `docs/delivery/epics/s7/epic-s7-day6-mvp-readiness-plan.md`;
@@ -130,4 +131,4 @@ approvals:
   - явный unit-test для `repo_seed + default locale` поведения worker-а.
 - `S7-E08` / Issue `#250` больше не требуют отдельного `run:dev`: после удаления `Agents` UI/API в `#244` и backend cleanup `#274` в MVP не осталось отдельного Agents UX контура, который нужно было бы дополнительно harden'ить.
 - `S7-E15` / Issue `#257` больше не требуют отдельного `run:dev`: repo-only prompt policy уже зафиксирован combined closure pass `#247/#248/#249`, а UI/API контуры refresh/versioning отсутствуют после cleanup `#274`.
-- Remaining Sprint S7 standalone execution backlog после этой актуализации: `#252..#256`, `#258..#260`.
+- Remaining Sprint S7 standalone execution backlog после этой актуализации: `#253..#256`, `#258..#260`.
