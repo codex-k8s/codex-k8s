@@ -4,6 +4,8 @@
 
 Prompt seed policy:
 - task-body шаблон берётся из встроенного каталога `services/jobs/agent-runner/internal/runner/promptseeds/*.md` (embed) по связке `agent_key + trigger_kind + template_kind + locale`;
+- role profile и контракты оформления follow-up Issue / PR / review / discussion рендерятся из
+  `services/jobs/agent-runner/internal/runner/templates/prompt_blocks/*.tmpl`;
 - поддержаны role-aware шаблоны:
   - `<stage>-<agent_key>-<kind>_<locale>.md` / `<stage>-<agent_key>-<kind>.md`;
   - `role-<agent_key>-<kind>_<locale>.md` / `role-<agent_key>-<kind>.md`;

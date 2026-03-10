@@ -245,6 +245,9 @@ func isSelfImproveAllowedPath(path string) bool {
 	if lower == "services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl" {
 		return true
 	}
+	if strings.HasPrefix(lower, "services/jobs/agent-runner/internal/runner/templates/prompt_blocks/") {
+		return true
+	}
 	if lower == "services/jobs/agent-runner/dockerfile" {
 		return true
 	}

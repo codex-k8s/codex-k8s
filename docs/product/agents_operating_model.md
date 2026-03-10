@@ -99,6 +99,11 @@ approvals:
 - В текущем MVP шаблоны берутся только из embed seed-каталога:
   `services/jobs/agent-runner/internal/runner/promptseeds/*.md`.
 - Источник effective template в runtime/audit фиксируется как `repo_seed`.
+- Поверх task-body рендерятся встроенные prompt-блоки из
+  `services/jobs/agent-runner/internal/runner/templates/prompt_blocks/*.tmpl`:
+  - role profile;
+  - follow-up Issue contract;
+  - PR/review/discussion contract.
 - DB overrides, versioned prompt lifecycle в БД и UI-редактор шаблонов в MVP отсутствуют.
 
 ### Locale policy

@@ -106,7 +106,7 @@ approvals:
 - `run:dev|run:dev:revise` остаются единственными trigger-этапами для кодовых изменений.
 - Для роли `reviewer` repository-write запрещён: только комментарии в существующем PR.
 - Для `run:self-improve` разрешены только изменения:
-  - prompt files (`services/jobs/agent-runner/internal/runner/promptseeds/**`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl`);
+  - prompt files (`services/jobs/agent-runner/internal/runner/promptseeds/**`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl`, `services/jobs/agent-runner/internal/runner/templates/prompt_blocks/*.tmpl`);
   - markdown-инструкции/документация (`*.md`);
   - `services/jobs/agent-runner/Dockerfile`.
 

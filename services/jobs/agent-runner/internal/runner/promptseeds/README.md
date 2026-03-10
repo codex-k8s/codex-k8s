@@ -3,6 +3,8 @@
 Назначение:
 - `prompt-seeds` — это базовые task-body шаблоны для runtime prompt.
 - Финальный prompt формируется рантаймом поверх этих seed (envelope + context + policy).
+- Role profile и контракты оформления Issue/PR/review/discussion берутся не из этого каталога,
+  а из `services/jobs/agent-runner/internal/runner/templates/prompt_blocks/*.tmpl`.
 - Каноническая модель шаблонов — role-specific (`agent_key + work/revise + locale`); этот каталог используется как bootstrap/fallback слой.
 
 Нейминг:

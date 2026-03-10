@@ -91,6 +91,7 @@ func TestIsSelfImproveAllowedPath(t *testing.T) {
 		{path: "docs/product/labels_and_trigger_policy.md", want: true},
 		{path: "services/jobs/agent-runner/internal/runner/promptseeds/design-work.md", want: true},
 		{path: "services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl", want: true},
+		{path: "services/jobs/agent-runner/internal/runner/templates/prompt_blocks/pr_contract_work_ru.tmpl", want: true},
 		{path: "services/jobs/agent-runner/Dockerfile", want: true},
 		{path: "services/internal/control-plane/internal/domain/webhook/service.go", want: false},
 		{path: "services/jobs/agent-runner/scripts/bootstrap_tools.sh", want: false},
