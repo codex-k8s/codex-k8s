@@ -124,7 +124,7 @@ approvals:
 
 ## Актуализация по Issue #189 (`run:arch`, 2026-02-25)
 - Архитектурный пакет для lifecycle управления агентами и шаблонами промптов зафиксирован в:
-  `docs/architecture/agents_prompt_templates_lifecycle_design.md`,
+  `docs/architecture/initiatives/agents_prompt_templates_lifecycle/architecture.md`,
   `docs/architecture/adr/ADR-0009-prompt-templates-lifecycle-and-audit.md`,
   `docs/architecture/alternatives/ALT-0001-agents-prompt-templates-lifecycle.md`.
 - Трассируемость PRD-артефактов S6 Day3 зафиксирована через Issue `#187` и PR `#190` (merged).
@@ -135,10 +135,10 @@ approvals:
 
 ## Актуализация по Issue #195 (`run:design`, 2026-02-25)
 - Подготовлен полный design package для `agents/templates/audit`:
-  `docs/architecture/agents_prompt_templates_lifecycle_design_doc.md`,
-  `docs/architecture/agents_prompt_templates_lifecycle_api_contract.md`,
-  `docs/architecture/agents_prompt_templates_lifecycle_data_model.md`,
-  `docs/architecture/agents_prompt_templates_lifecycle_migrations_policy.md`.
+  `docs/architecture/initiatives/agents_prompt_templates_lifecycle/design_doc.md`,
+  `docs/architecture/initiatives/agents_prompt_templates_lifecycle/api_contract.md`,
+  `docs/architecture/initiatives/agents_prompt_templates_lifecycle/data_model.md`,
+  `docs/architecture/initiatives/agents_prompt_templates_lifecycle/migrations_policy.md`.
 - Зафиксированы typed transport boundaries (staff HTTP + internal gRPC), error/validator/concurrency contract и UI flow для list/details/diff/preview/history.
 - Обновлены артефакты Sprint S6 Day5:
   `docs/delivery/epics/s6/epic-s6-day5-agents-prompts-design.md`,
@@ -189,7 +189,7 @@ approvals:
 ## Актуализация по Issue #263 (`run:postdeploy`, 2026-03-02)
 - Для FR-028/FR-033/FR-045 и NFR-001/NFR-003/NFR-010/NFR-018 оформлен postdeploy evidence пакет Sprint S6:
   `docs/delivery/epics/s6/epic-s6-day10-postdeploy-review.md`,
-  `docs/ops/s6_postdeploy_ops_handover.md`,
+  `docs/ops/handovers/s6/postdeploy_ops_handover.md`,
   `docs/ops/production_runbook.md`,
   `docs/delivery/epics/s6/epic_s6.md`,
   `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md`,
@@ -205,9 +205,9 @@ approvals:
 ## Актуализация по Issue #265 (`run:ops`, 2026-03-02)
 - Для FR-028/FR-033/FR-045 и NFR-001/NFR-007/NFR-010/NFR-018 оформлен ops closeout пакет Sprint S6:
   `docs/delivery/epics/s6/epic-s6-day11-ops-operational-closeout.md`,
-  `docs/ops/s6_ops_operational_baseline.md`,
+  `docs/ops/handovers/s6/operational_baseline.md`,
   `docs/ops/production_runbook.md`,
-  `docs/ops/s6_postdeploy_ops_handover.md`,
+  `docs/ops/handovers/s6/postdeploy_ops_handover.md`,
   `docs/delivery/epics/s6/epic_s6.md`,
   `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md`,
   `docs/delivery/delivery_plan.md`,
@@ -337,8 +337,34 @@ approvals:
   - update открытых issues `#254`, `#281`, `#282`, `#309`, `#312`, `#318`, `#322` после смены путей;
   - repo-local doc-drift check с evidence в implementation PR.
 - Зафиксирована зависимость Sprint S8 onboarding streams от этого plan-package:
-  `#281/#282` не должны финализировать docs baseline до merge результата `#320`, иначе будет закреплён устаревший путь `docs/README.md` вместо канонического `docs/index.md`.
+  `#281/#282` не должны финализировать docs baseline до merge результата `#320`, иначе будет закреплён legacy root docs path вместо канонического `docs/index.md`.
 - Через Context7 (`/websites/cli_github_manual`) подтверждён актуальный синтаксис `gh issue edit`/`gh pr create`/`gh pr edit` для будущего update open issues и PR-flow; новые внешние зависимости не требуются.
+
+## Актуализация по Issue #320 (`run:dev`, 2026-03-11)
+- Для FR-033/FR-049/FR-050 и NFR-010/NFR-018 выполнен implementation package documentation governance:
+  `docs/index.md`,
+  `docs/{product,architecture,delivery,ops}/README.md`,
+  `docs/delivery/documentation_ia_migration_map.md`,
+  `docs/architecture/initiatives/**`,
+  `docs/ops/handovers/**`,
+  `tools/check-doc-drift.sh`,
+  `services.yaml`.
+- Каноническая IA теперь зафиксирована не только в process requirements, но и в навигационном слое репозитория:
+  - root navigation = `docs/index.md`;
+  - доменные индексы = `docs/<domain>/README.md`;
+  - `docs/templates/index.md` переведён в template-only catalog;
+  - legacy reference в `docs/templates/user_story.md` переписан на `docs/templates/definition_of_done.md`.
+- Historical/stage-specific пакеты вынесены из корня доменов:
+  - lifecycle agents/prompt templates -> `docs/architecture/initiatives/agents_prompt_templates_lifecycle/*`;
+  - Sprint S7 MVP readiness package -> `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/*`;
+  - Sprint S6 ops handover -> `docs/ops/handovers/s6/*`.
+- Runtime docs context синхронизирован:
+  - `services.yaml/spec.projectDocs` получил явную ссылку на `docs/index.md`;
+  - внутренние markdown-ссылки и delivery traceability приведены к новым путям;
+  - open issue bodies `#281`, `#282`, `#312` очищены от same-repo blob links и branch-specific doc refs.
+- Проверки implementation package:
+  - `make check-doc-drift ISSUES="254 281 282 309 312 318 322"` — passed;
+  - `git diff --check` — passed.
 
 ## Актуализация по Issue #227 (`run:dev`, 2026-02-28)
 - Для FR-033 и NFR-018 выполнена декомпозиция worker orchestration-сервиса без изменения продуктового поведения:
@@ -425,9 +451,9 @@ approvals:
 ## Актуализация по Issue #222 (`run:arch`, 2026-03-02)
 - Для FR-026/FR-028/FR-033/FR-053/FR-054 и NFR-010/NFR-018 добавлен architecture traceability пакет Sprint S7:
   `docs/delivery/epics/s7/epic-s7-day4-mvp-readiness-arch.md`,
-  `docs/architecture/s7_mvp_readiness_gap_closure_architecture.md`,
-  `docs/architecture/c4_context_s7_mvp_readiness_gap_closure.md`,
-  `docs/architecture/c4_container_s7_mvp_readiness_gap_closure.md`,
+  `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/architecture.md`,
+  `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/c4_context.md`,
+  `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/c4_container.md`,
   `docs/architecture/adr/ADR-0010-s7-mvp-readiness-stream-boundaries-and-parity-gate.md`,
   `docs/architecture/alternatives/ALT-0002-s7-mvp-readiness-stream-architecture.md`,
   `docs/delivery/epics/s7/epic_s7.md`,
@@ -446,10 +472,10 @@ approvals:
 ## Актуализация по Issue #238 (`run:design`, 2026-03-02)
 - Для FR-026/FR-028/FR-033/FR-053/FR-054 и NFR-010/NFR-018 добавлен design traceability пакет Sprint S7:
   `docs/delivery/epics/s7/epic-s7-day5-mvp-readiness-design.md`,
-  `docs/architecture/s7_mvp_readiness_gap_closure_design_doc.md`,
-  `docs/architecture/s7_mvp_readiness_gap_closure_api_contract.md`,
-  `docs/architecture/s7_mvp_readiness_gap_closure_data_model.md`,
-  `docs/architecture/s7_mvp_readiness_gap_closure_migrations_policy.md`,
+  `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/design_doc.md`,
+  `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/api_contract.md`,
+  `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/data_model.md`,
+  `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/migrations_policy.md`,
   `docs/delivery/epics/s7/epic_s7.md`,
   `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md`,
   `docs/delivery/delivery_plan.md`,

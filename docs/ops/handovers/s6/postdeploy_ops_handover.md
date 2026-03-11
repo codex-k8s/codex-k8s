@@ -20,7 +20,7 @@ approvals:
 - Runtime после release closeout S6 стабилен в текущем контуре postdeploy-проверки.
 - Подготовлен единый операционный пакет для `run:ops`: runbook, monitoring, alerts, SLO и rollback.
 - Критичных инцидентов в окне postdeploy не выявлено; остаются наблюдаемые риски cold-start и нагрузки.
-- Результаты закрытия операционного хвоста зафиксированы в `docs/ops/s6_ops_operational_baseline.md` (Issue `#265`).
+- Результаты закрытия операционного хвоста зафиксированы в `docs/ops/handovers/s6/operational_baseline.md` (Issue `#265`).
 
 ## Runbook (операционная процедура)
 
@@ -114,9 +114,9 @@ approvals:
 
 | ID | Статус | Артефакт |
 |---|---|---|
-| `OPS-263-01` | closed | `docs/ops/s6_ops_operational_baseline.md` |
-| `OPS-263-02` | closed | `docs/ops/s6_ops_operational_baseline.md` |
-| `OPS-263-03` | closed | `docs/ops/s6_ops_operational_baseline.md` |
+| `OPS-263-01` | closed | `docs/ops/handovers/s6/operational_baseline.md` |
+| `OPS-263-02` | closed | `docs/ops/handovers/s6/operational_baseline.md` |
+| `OPS-263-03` | closed | `docs/ops/handovers/s6/operational_baseline.md` |
 
 ## Context7 references
 - Kubernetes probes guidance: `/websites/kubernetes_io`.
@@ -125,7 +125,7 @@ approvals:
 ## Связанные документы
 - `docs/delivery/epics/s6/epic-s6-day10-postdeploy-review.md`
 - `docs/delivery/epics/s6/epic-s6-day11-ops-operational-closeout.md`
-- `docs/ops/s6_ops_operational_baseline.md`
+- `docs/ops/handovers/s6/operational_baseline.md`
 - `docs/ops/production_runbook.md`
 - `docs/templates/runbook.md`
 - `docs/templates/monitoring.md`

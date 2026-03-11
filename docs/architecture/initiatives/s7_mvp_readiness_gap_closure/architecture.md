@@ -85,8 +85,8 @@ approvals:
   - при mismatch — `need:input` и блок перехода в `run:dev`.
 
 ## C4 Overlays For S7 Day4
-- Context view: `docs/architecture/c4_context_s7_mvp_readiness_gap_closure.md`.
-- Container view: `docs/architecture/c4_container_s7_mvp_readiness_gap_closure.md`.
+- Context view: `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/c4_context.md`.
+- Container view: `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/c4_container.md`.
 
 ## Migration And Runtime Impact
 - На этапе `run:arch` изменения ограничены markdown-артефактами.

@@ -54,7 +54,7 @@ approvals:
 | События namespace | `kubectl -n codex-k8s-dev-1 get events --sort-by=.lastTimestamp` | Зафиксированы единичные startup probe warnings на этапе старта; далее контейнеры перешли в stable `Running` | passed |
 
 ## Monitoring / Alerts / SLO / Rollback (handover)
-- Операционный handover оформлен в `docs/ops/s6_postdeploy_ops_handover.md` и включает:
+- Операционный handover оформлен в `docs/ops/handovers/s6/postdeploy_ops_handover.md` и включает:
   - runbook-паттерн диагностики для postdeploy;
   - мониторинг ключевых сигналов (`availability`, `latency`, `errors`, `saturation`);
   - каталог алертов с anti-noise мерами (`for`, `keep_firing_for`);
@@ -85,4 +85,4 @@ approvals:
 - `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md`
 - `docs/delivery/delivery_plan.md`
 - `docs/ops/production_runbook.md`
-- `docs/ops/s6_postdeploy_ops_handover.md`
+- `docs/ops/handovers/s6/postdeploy_ops_handover.md`

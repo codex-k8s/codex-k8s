@@ -1,4 +1,4 @@
-.PHONY: help lint lint-go dupl-go test-go fmt-go gen-openapi-go gen-openapi-ts gen-openapi gen-proto-go
+.PHONY: help lint lint-go dupl-go test-go fmt-go check-doc-drift gen-openapi-go gen-openapi-ts gen-openapi gen-proto-go
 
 help:
 	@echo "Targets:"
@@ -6,6 +6,7 @@ help:
 	@echo "  make dupl-go   - fail on duplicated Go code (dupl -t 50)"
 	@echo "  make test-go   - go test ./..."
 	@echo "  make fmt-go    - gofmt -w on tracked .go files"
+	@echo "  make check-doc-drift [ISSUES=\"320 321\"] - verify docs path references and optional GitHub issue bodies"
 	@echo "  make gen-openapi-go [SVC=services/external/api-gateway] - generate Go transport code from OpenAPI"
 	@echo "  make gen-openapi-ts [APP=services/staff/web-console] - generate TS API client from OpenAPI"
 	@echo "  make gen-openapi - run Go+TS OpenAPI generators for default services"
@@ -37,6 +38,9 @@ test-go:
 
 fmt-go:
 	@git ls-files '*.go' | xargs gofmt -w
+
+check-doc-drift:
+	@tools/check-doc-drift.sh $$(if [ -n "$$ISSUES" ]; then printf -- '--issues %s' "$$ISSUES"; fi)
 
 gen-openapi-go:
 	@svc="$${SVC:-services/external/api-gateway}"; \

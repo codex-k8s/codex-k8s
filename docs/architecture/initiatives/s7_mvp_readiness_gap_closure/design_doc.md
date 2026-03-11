@@ -38,7 +38,7 @@ approvals:
 
 ## Контекст и текущая архитектура
 - Source architecture:
-  - `docs/architecture/s7_mvp_readiness_gap_closure_architecture.md`
+  - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/architecture.md`
   - `docs/architecture/adr/ADR-0010-s7-mvp-readiness-stream-boundaries-and-parity-gate.md`
 - Stream decomposition baseline:
   - `docs/delivery/epics/s7/prd-s7-day3-mvp-readiness-gap-closure.md`
@@ -76,7 +76,7 @@ approvals:
 | `S7-E17` Self-improve snapshot reliability | Callback contract `UpsertAgentSession` расширяется полями version/checksum для rewrite-safe upsert | Version mismatch -> `conflict` c `actual_snapshot_version` | CAS-like upsert semantics + retry-safe read-after-write |
 
 ## API/Контракты
-- Детализация transport/gRPC: `docs/architecture/s7_mvp_readiness_gap_closure_api_contract.md`.
+- Детализация transport/gRPC: `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/api_contract.md`.
 - Source of truth для реализации в `run:dev`:
   - OpenAPI: `services/external/api-gateway/api/server/api.yaml`;
   - gRPC: `proto/codexk8s/controlplane/v1/controlplane.proto`.
@@ -85,8 +85,8 @@ approvals:
   - domain errors конвертируются только в HTTP error handler / gRPC interceptor.
 
 ## Модель данных и миграции
-- Детализация сущностей: `docs/architecture/s7_mvp_readiness_gap_closure_data_model.md`.
-- Миграционный подход: `docs/architecture/s7_mvp_readiness_gap_closure_migrations_policy.md`.
+- Детализация сущностей: `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/data_model.md`.
+- Миграционный подход: `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/migrations_policy.md`.
 - Потоки с data/runtime impact:
   - `S7-E10` (runtime deploy task state transitions),
   - `S7-E16` (run terminalization consistency),

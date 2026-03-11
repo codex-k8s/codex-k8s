@@ -51,9 +51,9 @@ approvals:
 ## Day 4 architecture fact
 - В Issue `#222` выпущен architecture package Sprint S7:
   - `docs/delivery/epics/s7/epic-s7-day4-mvp-readiness-arch.md`;
-  - `docs/architecture/s7_mvp_readiness_gap_closure_architecture.md`;
-  - `docs/architecture/c4_context_s7_mvp_readiness_gap_closure.md`;
-  - `docs/architecture/c4_container_s7_mvp_readiness_gap_closure.md`;
+  - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/architecture.md`;
+  - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/c4_context.md`;
+  - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/c4_container.md`;
   - `docs/architecture/adr/ADR-0010-s7-mvp-readiness-stream-boundaries-and-parity-gate.md`;
   - `docs/architecture/alternatives/ALT-0002-s7-mvp-readiness-stream-architecture.md`.
 - Для `S7-E01..S7-E18` зафиксированы сервисные границы, ownership и contract/data impact matrix.
@@ -64,10 +64,10 @@ approvals:
 ## Day 5 design fact
 - В Issue `#238` выпущен design package Sprint S7:
   - `docs/delivery/epics/s7/epic-s7-day5-mvp-readiness-design.md`;
-  - `docs/architecture/s7_mvp_readiness_gap_closure_design_doc.md`;
-  - `docs/architecture/s7_mvp_readiness_gap_closure_api_contract.md`;
-  - `docs/architecture/s7_mvp_readiness_gap_closure_data_model.md`;
-  - `docs/architecture/s7_mvp_readiness_gap_closure_migrations_policy.md`.
+  - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/design_doc.md`;
+  - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/api_contract.md`;
+  - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/data_model.md`;
+  - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/migrations_policy.md`.
 - Для потоков `S7-E06/S7-E07/S7-E09/S7-E10/S7-E13/S7-E16/S7-E17` зафиксированы typed contract decisions и risk-mitigation.
 - Для persisted-state потоков определены migration/rollback правила и rollout order `migrations -> internal -> edge -> frontend`.
 - Создана continuity issue `#241` для этапа `run:plan` без trigger-лейбла.

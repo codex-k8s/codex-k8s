@@ -52,7 +52,7 @@ approvals:
   - delivery templates: `delivery_plan.md`, `epic.md`, `definition_of_done.md`, `issue_map.md`, `roadmap.md`, `docset_issue.md`, `docset_pr.md`;
   - quality/release/ops templates: `test_strategy.md`, `test_plan.md`, `test_matrix.md`, `regression_checklist.md`, `release_plan.md`, `release_notes.md`, `rollback_plan.md`, `postdeploy_review.md`, `runbook.md`, `monitoring.md`, `alerts.md`, `slo.md`, `incident_playbook.md`, `incident_postmortem.md`.
 - Стартовый docs baseline, который генерируется поверх template-catalog, должен включать как минимум:
-  - `docs/README.md` с описанием структуры и следующего шага;
+  - `docs/index.md` с описанием структуры и следующего шага;
   - `docs/product/problem.md`;
   - `docs/product/brief.md`;
   - `docs/product/constraints.md`;

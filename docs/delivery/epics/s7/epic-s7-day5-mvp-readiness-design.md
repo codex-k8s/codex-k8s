@@ -31,10 +31,10 @@ approvals:
 - Scope Day5: markdown-only, без runtime/code изменений.
 
 ## Артефакты Day5
-- `docs/architecture/s7_mvp_readiness_gap_closure_design_doc.md`
-- `docs/architecture/s7_mvp_readiness_gap_closure_api_contract.md`
-- `docs/architecture/s7_mvp_readiness_gap_closure_data_model.md`
-- `docs/architecture/s7_mvp_readiness_gap_closure_migrations_policy.md`
+- `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/design_doc.md`
+- `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/api_contract.md`
+- `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/data_model.md`
+- `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/migrations_policy.md`
 
 ## Ключевые design-решения
 - `S7-E06`: контракт agents settings де-scoped до MVP (runtime mode/locale удалены из write DTO).

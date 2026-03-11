@@ -29,14 +29,14 @@ approvals:
 
 ## Контекст
 - Stage continuity: `#184 -> #185 -> #187 -> #189 -> #195 -> #197`.
-- Входной baseline: архитектурный пакет Day4 (`ADR-0009`, `ALT-0001`, `agents_prompt_templates_lifecycle_design.md`).
+- Входной baseline: архитектурный пакет Day4 (`ADR-0009`, `ALT-0001`, `docs/architecture/initiatives/agents_prompt_templates_lifecycle/architecture.md`).
 - Цель Day5: превратить архитектурный baseline в implementation-ready contract package.
 
 ## Артефакты Day5
-- `docs/architecture/agents_prompt_templates_lifecycle_design_doc.md`
-- `docs/architecture/agents_prompt_templates_lifecycle_api_contract.md`
-- `docs/architecture/agents_prompt_templates_lifecycle_data_model.md`
-- `docs/architecture/agents_prompt_templates_lifecycle_migrations_policy.md`
+- `docs/architecture/initiatives/agents_prompt_templates_lifecycle/design_doc.md`
+- `docs/architecture/initiatives/agents_prompt_templates_lifecycle/api_contract.md`
+- `docs/architecture/initiatives/agents_prompt_templates_lifecycle/data_model.md`
+- `docs/architecture/initiatives/agents_prompt_templates_lifecycle/migrations_policy.md`
 
 ## Ключевые design-решения
 - API boundary:

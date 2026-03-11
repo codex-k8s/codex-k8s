@@ -26,7 +26,7 @@ approvals:
   `#184 -> #185 -> #187 -> #189 -> #195 -> #197 -> #199 -> #201 -> #216 -> #262 -> #263 -> #265`.
 - Входные артефакты:
   - `docs/delivery/epics/s6/epic-s6-day10-postdeploy-review.md`;
-  - `docs/ops/s6_postdeploy_ops_handover.md`;
+  - `docs/ops/handovers/s6/postdeploy_ops_handover.md`;
   - `docs/ops/production_runbook.md`.
 - Scope stage `run:ops` ограничен markdown-only policy.
 
@@ -46,8 +46,8 @@ approvals:
 | Артефакт | Файл | Статус |
 |---|---|---|
 | Runbook/incident baseline | `docs/ops/production_runbook.md` | updated |
-| Ops baseline package (runbook + monitoring + alerts + SLO + rollback) | `docs/ops/s6_ops_operational_baseline.md` | created |
-| Postdeploy handover closure mapping | `docs/ops/s6_postdeploy_ops_handover.md` | updated |
+| Ops baseline package (runbook + monitoring + alerts + SLO + rollback) | `docs/ops/handovers/s6/operational_baseline.md` | created |
+| Postdeploy handover closure mapping | `docs/ops/handovers/s6/postdeploy_ops_handover.md` | updated |
 | Sprint/epic/traceability sync | `docs/delivery/{delivery_plan.md,issue_map.md,requirements_traceability.md,sprints/s6/sprint_s6_agents_prompt_management.md,epics/s6/epic_s6.md}` | updated |
 
 ## SLO/SLA impact
@@ -74,6 +74,6 @@ approvals:
 
 ## Связанные документы
 - `docs/delivery/epics/s6/epic-s6-day10-postdeploy-review.md`
-- `docs/ops/s6_postdeploy_ops_handover.md`
-- `docs/ops/s6_ops_operational_baseline.md`
+- `docs/ops/handovers/s6/postdeploy_ops_handover.md`
+- `docs/ops/handovers/s6/operational_baseline.md`
 - `docs/ops/production_runbook.md`

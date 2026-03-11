@@ -31,8 +31,8 @@ approvals:
 - Фактический drift, подтверждённый при анализе репозитория и открытых issues:
   - отсутствует канонический root-index `docs/index.md`;
   - доменные папки `docs/product`, `docs/architecture`, `docs/delivery`, `docs/ops` не имеют собственных `README.md`;
-  - `docs/templates/user_story.md` содержит устаревшую ссылку на `docs/03_engineering/definition_of_done.md`;
-  - onboarding-потоки `#281` и `#282` всё ещё описывают baseline через `docs/README.md`, что конфликтует с новой root-IA;
+  - `docs/templates/user_story.md` содержит устаревшую ссылку на legacy Definition of Done path;
+  - onboarding-потоки `#281` и `#282` всё ещё описывают baseline через legacy root docs README path, что конфликтует с новой root-IA;
   - `services.yaml/spec.projectDocs` и open issues используют жёсткие ссылки на текущие пути, поэтому перенос без migration-map недопустим.
 
 ## Принятое execution-решение
@@ -75,12 +75,12 @@ approvals:
 - [x] Подтверждено, что на этапе `run:plan` достаточно markdown-only изменений; реализация `services.yaml`/issue updates перенесена в `run:dev`.
 
 ## Definition of Done (`run:dev` для Issue #320)
-- [ ] В репозитории есть `docs/index.md` и доменные `README.md`, отражающие новую IA.
-- [ ] Governance-правила размещения и миграции зафиксированы в source-of-truth документе без дублирующего policy-файла.
-- [ ] Инициативные/handover-пакеты перемещены по migration-map без несанкционированного re-root доменов.
-- [ ] `services.yaml`, `docs/delivery/{issue_map,requirements_traceability,delivery_plan}.md`, `docs/delivery/{sprints,epics}/README.md` и внутренние markdown-ссылки синхронизированы.
-- [ ] Открытые issues и PR-артефакты с прямыми ссылками на docs обновлены после migration.
-- [ ] Выполнен repo-local doc-drift check, а evidence добавлен в PR.
+- [x] В репозитории есть `docs/index.md` и доменные `README.md`, отражающие новую IA.
+- [x] Governance-правила размещения и миграции зафиксированы в source-of-truth документе без дублирующего policy-файла.
+- [x] Инициативные/handover-пакеты перемещены по migration-map без несанкционированного re-root доменов.
+- [x] `services.yaml`, `docs/delivery/{issue_map,requirements_traceability,delivery_plan}.md`, `docs/delivery/{sprints,epics}/README.md` и внутренние markdown-ссылки синхронизированы.
+- [x] Открытые issues и PR-артефакты с прямыми ссылками на docs обновлены после migration.
+- [x] Выполнен repo-local doc-drift check, а evidence добавлен в PR.
 
 ## Self-check (common checklist, релевантные пункты)
 - Scope ограничен delivery/documentation governance; код, YAML, scripts и runtime не менялись в рамках `run:plan`.

@@ -83,7 +83,7 @@ approvals:
 - [x] QA stage (`#201`) завершён с решением GO в `run:release`, continuity оформлен через issue `#216`.
 - [x] Release closeout stage (`#262`) завершён, создана issue `#263` для `run:postdeploy`.
 - [x] Postdeploy stage (`#263`) завершил runtime проверки и подготовил continuity в `run:ops` (issue `#265`).
-- [x] Ops stage (`#265`) завершил операционный hardening и зафиксировал baseline в `docs/ops/s6_ops_operational_baseline.md`.
+- [x] Ops stage (`#265`) завершил операционный hardening и зафиксировал baseline в `docs/ops/handovers/s6/operational_baseline.md`.
 
 ## Риски и допущения
 - Риск: смешение scope между настройками агентов, prompt policy и runtime observability может размыть MVP-инкремент.

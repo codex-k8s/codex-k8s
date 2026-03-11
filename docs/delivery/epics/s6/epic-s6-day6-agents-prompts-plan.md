@@ -26,10 +26,10 @@ approvals:
 ## Контекст
 - Stage continuity: `#184 -> #185 -> #187 -> #189 -> #195 -> #197 -> #199`.
 - Входные артефакты:
-  - `docs/architecture/agents_prompt_templates_lifecycle_design_doc.md`
-  - `docs/architecture/agents_prompt_templates_lifecycle_api_contract.md`
-  - `docs/architecture/agents_prompt_templates_lifecycle_data_model.md`
-  - `docs/architecture/agents_prompt_templates_lifecycle_migrations_policy.md`
+  - `docs/architecture/initiatives/agents_prompt_templates_lifecycle/design_doc.md`
+  - `docs/architecture/initiatives/agents_prompt_templates_lifecycle/api_contract.md`
+  - `docs/architecture/initiatives/agents_prompt_templates_lifecycle/data_model.md`
+  - `docs/architecture/initiatives/agents_prompt_templates_lifecycle/migrations_policy.md`
   - `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md`
   - `docs/delivery/epics/s6/epic_s6.md`
 
@@ -117,7 +117,7 @@ approvals:
 - `docs/delivery/epics/s6/epic_s6.md`
 - `docs/delivery/issue_map.md`
 - `docs/delivery/requirements_traceability.md`
-- `docs/architecture/agents_prompt_templates_lifecycle_design_doc.md`
-- `docs/architecture/agents_prompt_templates_lifecycle_api_contract.md`
-- `docs/architecture/agents_prompt_templates_lifecycle_data_model.md`
-- `docs/architecture/agents_prompt_templates_lifecycle_migrations_policy.md`
+- `docs/architecture/initiatives/agents_prompt_templates_lifecycle/design_doc.md`
+- `docs/architecture/initiatives/agents_prompt_templates_lifecycle/api_contract.md`
+- `docs/architecture/initiatives/agents_prompt_templates_lifecycle/data_model.md`
+- `docs/architecture/initiatives/agents_prompt_templates_lifecycle/migrations_policy.md`

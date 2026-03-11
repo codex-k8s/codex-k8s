@@ -29,10 +29,10 @@ approvals:
 
 ## Основные архитектурные артефакты
 - Архитектурная декомпозиция потоков:
-  - `docs/architecture/s7_mvp_readiness_gap_closure_architecture.md`
+  - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/architecture.md`
 - C4 overlays:
-  - `docs/architecture/c4_context_s7_mvp_readiness_gap_closure.md`
-  - `docs/architecture/c4_container_s7_mvp_readiness_gap_closure.md`
+  - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/c4_context.md`
+  - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/c4_container.md`
 - ADR:
   - `docs/architecture/adr/ADR-0010-s7-mvp-readiness-stream-boundaries-and-parity-gate.md`
 - Alternatives:

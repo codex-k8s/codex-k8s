@@ -234,6 +234,22 @@ approvals:
 Правила:
 - Один документ описывает одну цель и один уровень абстракции.
 - Если документ описывает процесс/политику, он должен ссылаться на source-of-truth документ более высокого уровня.
+- Канонический root navigation path проекта: `docs/index.md`.
+- В каждом доменном каталоге `docs/<domain>/` обязателен `README.md` с картой source-of-truth документов и вложенных подпапок.
+- Исторические stage-пакеты и инициативные наборы нельзя оставлять вперемешку с каноническими source-of-truth файлами на корне домена:
+  - для архитектурных инициатив использовать `docs/architecture/initiatives/<slug>/`;
+  - для эксплуатационных handover-пакетов использовать `docs/ops/handovers/<slug>/`;
+  - для delivery уже закреплены специализированные подпапки `docs/delivery/sprints/` и `docs/delivery/epics/`.
+- `docs/templates/` содержит только шаблоны и инструкции по их применению; проектные индексы, handover-пакеты и фактические source-of-truth документы туда не помещаются.
+- Любой перенос документов выполняется только по явной migration-map с форматом
+  `old path -> new path -> owner_role -> affected links/issues -> migration note`.
+- В том же PR, где меняются пути документов, обязательно синхронно обновляются:
+  - `services.yaml/spec.projectDocs`;
+  - `services.yaml/spec.roleDocTemplates` (если затронуты шаблоны);
+  - внутренние markdown-ссылки;
+  - `docs/delivery/issue_map.md`;
+  - `docs/delivery/requirements_traceability.md`;
+  - открытые GitHub issues/PR, где использовались старые doc-path или branch-specific blob links.
 - Любой новый документ сразу добавляется в релевантный индекс (`delivery/sprints/README.md`, `delivery/epics/README.md`, `issue_map`, `requirements_traceability`).
 
 ## Ролевая матрица шаблонов документов (обязательна)

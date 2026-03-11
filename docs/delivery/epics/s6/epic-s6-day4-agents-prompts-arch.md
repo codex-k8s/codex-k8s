@@ -28,7 +28,7 @@ approvals:
 PRD-пакет Day3 зафиксирован в Issue #187; PR #190 с PRD-артефактами смержен в `main`.
 
 ## Основные артефакты
-- Архитектурный дизайн: `docs/architecture/agents_prompt_templates_lifecycle_design.md`.
+- Архитектурный дизайн: `docs/architecture/initiatives/agents_prompt_templates_lifecycle/architecture.md`.
 - ADR: `docs/architecture/adr/ADR-0009-prompt-templates-lifecycle-and-audit.md`.
 - Альтернативы: `docs/architecture/alternatives/ALT-0001-agents-prompt-templates-lifecycle.md`.
 

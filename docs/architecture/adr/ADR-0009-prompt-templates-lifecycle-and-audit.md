@@ -106,7 +106,7 @@ PRD по Issue #187 требует:
 - Откат не удаляет исторические версии.
 
 ## Связанные документы
-- `docs/architecture/agents_prompt_templates_lifecycle_design.md`
+- `docs/architecture/initiatives/agents_prompt_templates_lifecycle/architecture.md`
 - `docs/architecture/prompt_templates_policy.md`
 - `docs/architecture/data_model.md`
 - `docs/delivery/epics/s6/epic-s6-day4-agents-prompts-arch.md`

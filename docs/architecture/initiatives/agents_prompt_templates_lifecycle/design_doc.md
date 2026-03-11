@@ -40,7 +40,7 @@ approvals:
 - Пересмотр базовых архитектурных границ, утвержденных в `run:arch`.
 
 ## Контекст и текущая архитектура
-- Source architecture: `docs/architecture/agents_prompt_templates_lifecycle_design.md`.
+- Source architecture: `docs/architecture/initiatives/agents_prompt_templates_lifecycle/architecture.md`.
 - Контур ответственности:
   - `services/external/api-gateway`: auth/validation/routing.
   - `services/internal/control-plane`: domain rules + schema ownership.
@@ -86,7 +86,7 @@ approvals:
 4. UI получает typed response с `version`, `status`, `checksum`, `conflict_hint` (при конфликте).
 
 ## API/Контракты
-- Детализация HTTP/gRPC: `docs/architecture/agents_prompt_templates_lifecycle_api_contract.md`.
+- Детализация HTTP/gRPC: `docs/architecture/initiatives/agents_prompt_templates_lifecycle/api_contract.md`.
 - Source of truth для реализации в `run:dev`:
   - OpenAPI: `services/external/api-gateway/api/server/api.yaml`.
   - gRPC: `proto/codexk8s/controlplane/v1/controlplane.proto`.
@@ -97,8 +97,8 @@ approvals:
   - conflict response возвращает `actual_version` и `latest_checksum`.
 
 ## Модель данных и миграции
-- Детализация сущностей: `docs/architecture/agents_prompt_templates_lifecycle_data_model.md`.
-- Миграционный подход: `docs/architecture/agents_prompt_templates_lifecycle_migrations_policy.md`.
+- Детализация сущностей: `docs/architecture/initiatives/agents_prompt_templates_lifecycle/data_model.md`.
+- Миграционный подход: `docs/architecture/initiatives/agents_prompt_templates_lifecycle/migrations_policy.md`.
 - Ключевая стратегия:
   - расширить `prompt_templates` полями version-state/checksum/audit-metadata;
   - сохранить модель ADR-0009 (без отдельной audit-table для template changes);

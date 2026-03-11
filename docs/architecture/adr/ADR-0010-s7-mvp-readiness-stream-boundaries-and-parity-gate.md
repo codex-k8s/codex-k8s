@@ -127,6 +127,6 @@ approvals:
 - PRD:
   - `docs/delivery/epics/s7/prd-s7-day3-mvp-readiness-gap-closure.md`
 - Design doc:
-  - `docs/architecture/s7_mvp_readiness_gap_closure_architecture.md`
+  - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/architecture.md`
 - Alternatives:
   - `docs/architecture/alternatives/ALT-0002-s7-mvp-readiness-stream-architecture.md`

@@ -22,7 +22,7 @@ approvals:
 - На текущем evidence (postdeploy 2026-03-02) признаков деградации SLA не обнаружено; сохранён контроль residual risks.
 
 ## Контекст
-- Вход: `docs/ops/s6_postdeploy_ops_handover.md` (issue `#263`) и `docs/ops/production_runbook.md`.
+- Вход: `docs/ops/handovers/s6/postdeploy_ops_handover.md` (issue `#263`) и `docs/ops/production_runbook.md`.
 - Stage continuity:
   `#199 -> #201 -> #216 -> #262 -> #263 -> #265`.
 - Scope `run:ops`: только markdown-обновления без изменения runtime-конфигурации и кода.
@@ -122,7 +122,7 @@ approvals:
 
 ## Связанные документы
 - `docs/delivery/epics/s6/epic-s6-day11-ops-operational-closeout.md`
-- `docs/ops/s6_postdeploy_ops_handover.md`
+- `docs/ops/handovers/s6/postdeploy_ops_handover.md`
 - `docs/ops/production_runbook.md`
 - `docs/templates/runbook.md`
 - `docs/templates/monitoring.md`

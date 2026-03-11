@@ -131,10 +131,10 @@ Rel(worker, db, "Reads/Writes", "SQL")
 - План observability и тестирования (unit + integration + UI).
 
 ## Результаты `run:design` (Issue #195)
-- `docs/architecture/agents_prompt_templates_lifecycle_design_doc.md`
-- `docs/architecture/agents_prompt_templates_lifecycle_api_contract.md`
-- `docs/architecture/agents_prompt_templates_lifecycle_data_model.md`
-- `docs/architecture/agents_prompt_templates_lifecycle_migrations_policy.md`
+- `docs/architecture/initiatives/agents_prompt_templates_lifecycle/design_doc.md`
+- `docs/architecture/initiatives/agents_prompt_templates_lifecycle/api_contract.md`
+- `docs/architecture/initiatives/agents_prompt_templates_lifecycle/data_model.md`
+- `docs/architecture/initiatives/agents_prompt_templates_lifecycle/migrations_policy.md`
 - `docs/delivery/epics/s6/epic-s6-day5-agents-prompts-design.md`
 - Continuity: создана follow-up issue `#197` для stage `run:plan`.
 

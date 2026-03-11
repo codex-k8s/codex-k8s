@@ -9,6 +9,8 @@ spec:
       description: Обзор платформы, роли агентов, сценарии использования и пошаговый workflow от Issue до деплоя.
     - path: AGENTS.md
       description: Обязательные правила для ИИ-агентов в этом репозитории.
+    - path: docs/index.md
+      description: Канонический индекс проектной документации и карта доменных каталогов.
     - path: docs/design-guidelines
       description: Стандарты проектирования и чек-листы разработки (Go/Vue/Common).
       roles: [dev, reviewer, qa, sa, em, km, sre]

@@ -165,9 +165,9 @@ approvals:
   - создана follow-up issue `#222` для stage `run:arch` без trigger-лейбла.
 - Day 4 (in-review): architecture stage в issue `#222`:
   - `docs/delivery/epics/s7/epic-s7-day4-mvp-readiness-arch.md`;
-  - `docs/architecture/s7_mvp_readiness_gap_closure_architecture.md`;
-  - `docs/architecture/c4_context_s7_mvp_readiness_gap_closure.md`;
-  - `docs/architecture/c4_container_s7_mvp_readiness_gap_closure.md`;
+  - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/architecture.md`;
+  - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/c4_context.md`;
+  - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/c4_container.md`;
   - `docs/architecture/adr/ADR-0010-s7-mvp-readiness-stream-boundaries-and-parity-gate.md`;
   - `docs/architecture/alternatives/ALT-0002-s7-mvp-readiness-stream-architecture.md`.
 - Результат Day 4 (факт):
@@ -176,10 +176,10 @@ approvals:
   - создана follow-up issue `#238` для stage `run:design` без trigger-лейбла.
 - Day 5 (in-review): design stage в issue `#238`:
   - `docs/delivery/epics/s7/epic-s7-day5-mvp-readiness-design.md`;
-  - `docs/architecture/s7_mvp_readiness_gap_closure_design_doc.md`;
-  - `docs/architecture/s7_mvp_readiness_gap_closure_api_contract.md`;
-  - `docs/architecture/s7_mvp_readiness_gap_closure_data_model.md`;
-  - `docs/architecture/s7_mvp_readiness_gap_closure_migrations_policy.md`.
+  - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/design_doc.md`;
+  - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/api_contract.md`;
+  - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/data_model.md`;
+  - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/migrations_policy.md`.
 - Результат Day 5 (факт):
   - зафиксированы typed contract decisions для потоков `S7-E06/S7-E07/S7-E09/S7-E10/S7-E13/S7-E16/S7-E17`;
   - формализованы data/migration/rollback правила для persisted-state потоков;
@@ -208,9 +208,13 @@ approvals:
 - Day 3 (planned): existing repository adoption (`docs/delivery/epics/s8/epic-s8-day3-existing-repository-adoption.md`, Issue `#282`).
   - Цель: перевести существующий кодовый репозиторий без `services.yaml`/docs baseline в управляемый PR-based onboarding flow.
   - Ожидаемый результат: deterministic scan report + специализированная onboarding-task + PR с draft `services.yaml` и docs baseline.
-- Day 4 (in-review): documentation IA refactor plan (`docs/delivery/epics/s8/epic-s8-day4-documentation-ia-refactor-plan.md`, Issue `#320`).
-  - Цель: зафиксировать каноническую IA проектной документации, migration-map переносов и синхронизацию `services.yaml`/open issues с новой структурой.
-  - Ожидаемый результат: owner-ready execution package для `run:dev` на том же Issue `#320` с волнами `governance baseline -> migration/sync -> link/drift closure`.
+- Day 4 (in-review): documentation IA refactor (`docs/delivery/epics/s8/epic-s8-day4-documentation-ia-refactor-plan.md`, Issue `#320`).
+  - Цель: привести репозиторий к канонической docs IA без re-root доменов и без drift между `docs/`, `services.yaml` и открытыми issues.
+  - Результат Day 4 (факт):
+    - добавлены `docs/index.md`, доменные `README.md` и `docs/delivery/documentation_ia_migration_map.md`;
+    - initiative/handover пакеты перенесены в `docs/architecture/initiatives/` и `docs/ops/handovers/`;
+    - синхронизированы `services.yaml`, `docs/templates/*`, delivery traceability-документы и индексы;
+    - добавлен repo-local check `make check-doc-drift`, а issue bodies `#281`, `#282`, `#312` очищены от same-repo blob links.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

@@ -43,7 +43,7 @@ approvals:
 - Метрики:
 
 ## Definition of Done (ссылка + дополнительные пункты)
-- Базовый DoD: `docs/03_engineering/definition_of_done.md`
+- Базовый DoD: `docs/templates/definition_of_done.md`
 - Дополнительно для этой истории:
     - [ ] ...
 

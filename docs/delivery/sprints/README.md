@@ -32,7 +32,7 @@ approvals:
 | S5 | `docs/delivery/sprints/s5/sprint_s5_stage_entry_and_label_ux.md` | `docs/delivery/epics/s5/epic_s5.md` | in-progress | UX-упрощение stage/label запуска и deterministic next-step actions (Issues #154/#155/#170/#171). |
 | S6 | `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md` | `docs/delivery/epics/s6/epic_s6.md` | completed | Day1..Day11 закрыты: release closeout `#262`, postdeploy `#263`, ops closeout `#265`; сформирован baseline runbook/monitoring/alerts/SLO/rollback. |
 | S7 | `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md` | `docs/delivery/epics/s7/epic_s7.md` | in-progress | Day1..Day5 закрыли intake/vision/prd/arch/design пакет (`#212/#218/#220/#222/#238`), Day6 plan (`#241`) сформировал execution package и по owner-уточнению создал 18 implementation issues `#243..#260` (по одному на `S7-E01..S7-E18`) с parity-check `18/18` перед `run:dev`. |
-| S8 | `docs/delivery/sprints/s8/sprint_s8_go_refactoring_parallelization.md` | `docs/delivery/epics/s8/epic_s8.md` | in-progress | Параллельный Go-refactor stream расширен onboarding-потоками и Day4 documentation-governance plan (`#223`, `#225..#230`, `#281`, `#282`, `#320`). |
+| S8 | `docs/delivery/sprints/s8/sprint_s8_go_refactoring_parallelization.md` | `docs/delivery/epics/s8/epic_s8.md` | in-progress | Параллельный Go-refactor stream расширен onboarding-потоками; Day4 по `#320` уже внедрил `docs/index.md`, domain `README.md`, migration-map, doc-drift check и remediation issue refs. |
 
 ## Правила структуры
 - Sprint-plan: `docs/delivery/sprints/s<номер>/sprint_s<номер>_<name>.md`.
