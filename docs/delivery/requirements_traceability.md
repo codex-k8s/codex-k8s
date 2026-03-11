@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-11
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263, 265, 281, 282]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263, 265, 281, 282, 320, 322]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -319,6 +319,26 @@ approvals:
   - FR-049 (repository onboarding preflight);
   - FR-050 (role-aware docs context);
   - ADR-0007 и S4 Day1 (multi-repo compose/docs federation).
+
+## Актуализация по Issue #320 (`run:plan`, 2026-03-11)
+- Для FR-033/FR-049/FR-050 и NFR-010/NFR-018 добавлен plan-package Sprint S8 Day4:
+  `docs/delivery/epics/s8/epic-s8-day4-documentation-ia-refactor-plan.md`,
+  `docs/delivery/epics/s8/epic_s8.md`,
+  `docs/delivery/sprints/s8/sprint_s8_go_refactoring_parallelization.md`,
+  `docs/delivery/delivery_plan.md`,
+  `docs/delivery/issue_map.md`.
+- План закрепляет единый execution backlog item для documentation governance без полного re-root `docs/`:
+  - верхний доменный слой сохраняется как `docs/product|architecture|delivery|ops|templates`;
+  - governance source of truth остаётся в `docs/delivery/development_process_requirements.md`;
+  - канонический root navigation path = `docs/index.md`, доменные индексы = `docs/<domain>/README.md`.
+- В plan baseline зафиксированы обязательные execution-wave результаты:
+  - migration-map переносов и affected-links inventory до любого file move;
+  - синхронизация `services.yaml/spec.projectDocs` и `spec.roleDocTemplates` после migration;
+  - update открытых issues `#254`, `#281`, `#282`, `#309`, `#312`, `#318`, `#322` после смены путей;
+  - repo-local doc-drift check с evidence в implementation PR.
+- Зафиксирована зависимость Sprint S8 onboarding streams от этого plan-package:
+  `#281/#282` не должны финализировать docs baseline до merge результата `#320`, иначе будет закреплён устаревший путь `docs/README.md` вместо канонического `docs/index.md`.
+- Через Context7 (`/websites/cli_github_manual`) подтверждён актуальный синтаксис `gh issue edit`/`gh pr create`/`gh pr edit` для будущего update open issues и PR-flow; новые внешние зависимости не требуются.
 
 ## Актуализация по Issue #227 (`run:dev`, 2026-02-28)
 - Для FR-033 и NFR-018 выполнена декомпозиция worker orchestration-сервиса без изменения продуктового поведения:
