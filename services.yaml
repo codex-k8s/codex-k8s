@@ -241,8 +241,8 @@ spec:
       local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/nginx:{{ index .Versions "nginx-alpine" }}'
     kubectl:
       type: external
-      from: 'alpine/k8s:{{ trimPrefix (index .Versions "kubectl") "v" }}'
-      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/alpine-k8s:{{ trimPrefix (index .Versions "kubectl") "v" }}'
+      from: 'alpine/k8s:{{ trimPrefix "v" (index .Versions "kubectl") }}'
+      local: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/codex-k8s/mirror/alpine-k8s:{{ trimPrefix "v" (index .Versions "kubectl") }}'
     api-gateway:
       type: build
       repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_API_GATEWAY_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/api-gateway" }}'
