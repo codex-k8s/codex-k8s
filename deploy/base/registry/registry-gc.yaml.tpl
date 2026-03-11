@@ -75,7 +75,7 @@ spec:
               emptyDir: {}
           initContainers:
             - name: copy-kubectl
-              image: {{ envOr "CODEXK8S_KUBECTL_IMAGE" "alpine/k8s:1.32.2" }}
+              image: {{ envOr "CODEXK8S_KUBECTL_IMAGE" "127.0.0.1:5000/codex-k8s/mirror/alpine-k8s:1.32.2" }}
               imagePullPolicy: IfNotPresent
               command:
                 - sh

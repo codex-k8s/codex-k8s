@@ -200,7 +200,9 @@ kubectl get ns -o json | grep -E 'codexk8s.io/(managed-by|namespace-purpose|runt
 - В production/non-ai окружениях включён `CronJob` `codex-k8s-registry-gc`.
 - Расписание по умолчанию: ежедневно в `03:17 UTC`.
 - Job делает `scale deployment/codex-k8s-registry 1 -> 0`, выполняет `registry garbage-collect --delete-untagged`, затем возвращает `replicas=1`.
-- Для init-контейнера GC helper по умолчанию используется `alpine/k8s:1.32.2` (можно переопределить через `CODEXK8S_KUBECTL_IMAGE`).
+- Для init-контейнера GC helper по умолчанию используется mirrored shell-capable image
+  `127.0.0.1:5000/codex-k8s/mirror/alpine-k8s:1.32.2`
+  (можно переопределить через `CODEXK8S_KUBECTL_IMAGE`).
 
 Проверка статуса:
 
@@ -217,6 +219,30 @@ kubectl -n "$ns" logs job/<gc_job_name> --tail=200
 ns="codex-k8s-prod"
 kubectl -n "$ns" create job --from=cronjob/codex-k8s-registry-gc codex-k8s-registry-gc-manual-$(date +%s)
 kubectl -n "$ns" get jobs -l app.kubernetes.io/name=codex-k8s-registry-gc
+```
+
+## Host containerd image GC (автоматический)
+
+- Registry GC удаляет только untagged blobs из internal registry PVC.
+- Node-level `containerd` cache/snapshots это отдельный слой хранения; его чистит kubelet image GC и host prune timer.
+- Bootstrap настраивает:
+  - kubelet thresholds через `/var/lib/rancher/k3s/agent/etc/kubelet.conf.d/10-codex-k8s-image-gc.conf`;
+  - timer `codex-k8s-image-prune.timer`, который запускает `k3s crictl --timeout 120s rmi --prune`.
+
+Проверка:
+
+```bash
+sudo cat /var/lib/rancher/k3s/agent/etc/kubelet.conf.d/10-codex-k8s-image-gc.conf
+sudo systemctl status codex-k8s-image-prune.timer --no-pager
+sudo journalctl -u codex-k8s-image-prune.service -n 200 --no-pager
+sudo /usr/local/bin/k3s crictl images | head -n 50
+```
+
+Форсированный запуск:
+
+```bash
+sudo systemctl start codex-k8s-image-prune.service
+sudo /usr/local/bin/k3s crictl --timeout 120s rmi --prune
 ```
 
 ## Cleanup heavy JSON payloads (автоматический)

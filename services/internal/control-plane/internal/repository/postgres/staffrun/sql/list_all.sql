@@ -105,6 +105,7 @@ LEFT JOIN LATERAL (
 ) ws ON true
 WHERE (
         COALESCE(ar.run_payload->'trigger'->>'label', '') ILIKE 'run:%'
+        OR COALESCE(ar.run_payload->'trigger'->>'label', '') = 'mode:discussion'
         OR COALESCE(ar.run_payload->'trigger'->>'label', '') ILIKE 'need:reviewer'
     )
 ORDER BY created_at DESC

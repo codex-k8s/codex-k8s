@@ -20,5 +20,7 @@ fi
 
 log "Bootstrap finished. Recommended checks:"
 log "  sudo cat /etc/rancher/k3s/registries.yaml"
+log "  sudo cat /var/lib/rancher/k3s/agent/etc/kubelet.conf.d/10-codex-k8s-image-gc.conf"
+log "  sudo systemctl status codex-k8s-image-prune.timer --no-pager"
 log "  sudo nft list table inet codexk8s_fw"
 log "  go run ./services/internal/control-plane/cmd/runtime-deploy --prerequisites-only --env-file /root/codex-k8s-bootstrap/bootstrap.env --kubeconfig /etc/rancher/k3s/k3s.yaml"

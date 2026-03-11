@@ -12,6 +12,7 @@
 - проверяет DNS до старта раскатки: `CODEXK8S_PRODUCTION_DOMAIN` должен резолвиться в IP `TARGET_HOST`;
 - поднимает внутренний registry без auth в loopback-режиме (`127.0.0.1` на node) и собирает образ через Kaniko;
 - автоматически настраивает `/etc/rancher/k3s/registries.yaml` для mirror на локальный registry (`http://127.0.0.1:<port>`);
+- настраивает kubelet image GC thresholds и host-level prune timer для `containerd`, чтобы node не накапливал сотни гигабайт неиспользуемых образов;
 - разворачивает PostgreSQL и `codex-k8s` в production namespace;
 - TLS для `CODEXK8S_PRODUCTION_DOMAIN` управляется в runtime-deploy:
   - перед выпуском сертификата выполняется HTTP echo-probe (проверка доступности домена на этот кластер);
@@ -115,6 +116,14 @@ go run ./cmd/codex-bootstrap bootstrap \
 - При `CODEXK8S_INGRESS_HOST_NETWORK=true` сервис ingress автоматически приводится к `ClusterIP`, чтобы не оставлять внешние `NodePort`.
 - Внутренний registry работает без auth по design MVP и слушает только `127.0.0.1:<CODEXK8S_INTERNAL_REGISTRY_PORT>` на node.
 - Loopback-режим registry рассчитан на single-node production; для multi-node нужен отдельный registry-профиль.
+- Registry GC и host `containerd` prune — разные механизмы:
+  - registry GC чистит untagged blobs в PVC internal registry;
+  - host prune (`k3s crictl rmi --prune`) чистит неиспользуемые образы и snapshots на node.
+- Параметры host image GC:
+  - `CODEXK8S_K3S_IMAGE_GC_HIGH_THRESHOLD_PERCENT`
+  - `CODEXK8S_K3S_IMAGE_GC_LOW_THRESHOLD_PERCENT`
+  - `CODEXK8S_K3S_IMAGE_PRUNE_TIMER_ENABLED`
+  - `CODEXK8S_K3S_IMAGE_PRUNE_ONCALENDAR`
 - По умолчанию включён baseline `NetworkPolicy` (`CODEXK8S_NETWORK_POLICY_BASELINE=true`).
 - Чтобы worker мог обращаться к Kubernetes API, baseline также разрешает egress на API endpoint
   (для k3s обычно это `nodeIP:6443`). Управляется переменными:

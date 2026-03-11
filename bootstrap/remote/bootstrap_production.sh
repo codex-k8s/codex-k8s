@@ -15,6 +15,7 @@ steps=(
   "00_prepare_host.sh"
   "10_create_operator_user.sh"
   "20_install_k3s.sh"
+  "25_configure_image_gc.sh"
   "40_install_platform_dependencies.sh"
   "65_harden_network_firewall.sh"
   "70_finalize_and_report.sh"
