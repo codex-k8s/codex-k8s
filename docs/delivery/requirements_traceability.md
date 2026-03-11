@@ -5,7 +5,7 @@ title: "Requirements Traceability Matrix"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-03-10
+updated_at: 2026-03-11
 related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263, 265, 281, 282]
 related_prs: []
 approvals:
@@ -595,6 +595,39 @@ approvals:
   `make gen-openapi`,
   `go test ./services/internal/control-plane/... ./services/external/api-gateway/...`,
   `npm --prefix services/staff/web-console run build`.
+
+## Актуализация по Issue #256 (`run:dev`, 2026-03-11)
+- Для FR-028/FR-033 и NFR-010 реализован stream `S7-E14`:
+  `docs/ops/production_runbook.md` закрепил QA policy, по которой новые и изменённые HTTP-ручки
+  проверяются через Kubernetes service DNS path (`<service>.<namespace>.svc.cluster.local`),
+  а browser/OAuth flow больше не считается единственным acceptance gate.
+- Синхронно обновлены QA role templates:
+  `docs/templates/test_strategy.md`,
+  `docs/templates/test_plan.md`,
+  `docs/templates/test_matrix.md`,
+  `docs/templates/regression_checklist.md`.
+  Теперь они требуют DNS evidence bundle:
+  namespace, service FQDN, точную команду, HTTP status, excerpt ответа и `kubectl`-диагностику при fail.
+- Full-env verification выполнен в namespace `codex-k8s-dev-1`:
+  `kubectl config view --minify -o jsonpath='{..namespace}'`,
+  `kubectl get svc -o wide`,
+  `getent hosts codex-k8s.codex-k8s-dev-1.svc.cluster.local`,
+  `curl -sS ... /healthz` (`200`),
+  `curl -sS ... /api/v1/auth/me` (`401`),
+  `curl -sS -X POST ... /api/v1/webhooks/github` (`400`).
+- Актуализированы traceability документы Sprint S7:
+  `docs/delivery/issue_map.md`,
+  `docs/delivery/delivery_plan.md`,
+  `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md`,
+  `docs/delivery/epics/s7/epic_s7.md`;
+  remaining backlog нормализован как `#254`, `#255`, `#258..#260`.
+- Проверки по scope:
+  `kubectl config view --minify -o jsonpath='{..namespace}'`,
+  `kubectl get svc -o wide`,
+  `getent hosts codex-k8s.codex-k8s-dev-1.svc.cluster.local`,
+  `curl -sS -o /tmp/codex-health.out -D /tmp/codex-health.headers -w '%{http_code}\n' http://codex-k8s/healthz`,
+  `curl -sS -o /tmp/codex-authme.out -D /tmp/codex-authme.headers -w '%{http_code}\n' http://codex-k8s/api/v1/auth/me`,
+  `curl -sS -o /tmp/codex-webhook.out -D /tmp/codex-webhook.headers -w '%{http_code}\n' -X POST http://codex-k8s/api/v1/webhooks/github`.
 
 ## Актуализация по Issue #274 (`run:dev`, 2026-03-05)
 - Для FR-026/FR-028/FR-033 и NFR-010/NFR-018 реализован stream `S7-E19`:

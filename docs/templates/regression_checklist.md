@@ -24,6 +24,7 @@ approvals:
 - [ ] Сервис поднимается
 - [ ] Health checks OK
 - [ ] Основной happy-path
+- [ ] Для новых/изменённых HTTP-ручек выполнен запрос через Kubernetes service DNS path
 
 ### Основные сценарии
 - [ ] Сценарий 1: ...
@@ -31,6 +32,12 @@ approvals:
 
 ### Негативные сценарии
 - [ ] ...
+
+### DNS-path acceptance (для новых/изменённых HTTP-ручек)
+- [ ] Зафиксированы namespace и service FQDN
+- [ ] Сохранены команда, HTTP status и excerpt ответа
+- [ ] Browser/OAuth flow не используется как единственный acceptance gate
+- [ ] При fail приложены `kubectl get/logs/events` diagnostics
 
 ### Наблюдаемость
 - [ ] Дашборд доступен
@@ -40,6 +47,7 @@ approvals:
 - Дата:
 - Окружение:
 - Итог: pass/fail
+- DNS evidence:
 - Ссылки на логи/отчеты:
 
 ## Апрув
