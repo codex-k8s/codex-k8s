@@ -20,10 +20,10 @@ spec:
       roles: [sa, dev, reviewer, km, sre]
     - path: docs/ops
       description: Production runbook и эксплуатационные процедуры платформы.
-      roles: [sre, em, dev]
+      roles: [sre, em, dev, qa]
     - path: docs/delivery
       description: Планы спринтов/эпиков, трассируемость и критерии готовности.
-      roles: [em, pm, km, reviewer]
+      roles: [dev, qa, sre, em, pm, km, reviewer]
   roleDocTemplates:
     pm:
       - path: docs/templates/problem.md
@@ -49,27 +49,28 @@ spec:
       - path: docs/templates/definition_of_done.md
       - path: docs/templates/epic.md
       - path: docs/templates/release_plan.md
+      - path: docs/templates/release_notes.md
+      - path: docs/templates/rollback_plan.md
     dev:
-      - path: docs/templates/api_contract.md
-      - path: docs/templates/data_model.md
-      - path: docs/templates/migrations_policy.md
-    reviewer:
+      - path: docs/templates/user_story.md
       - path: docs/templates/definition_of_done.md
-      - path: docs/templates/test_strategy.md
-      - path: docs/templates/regression_checklist.md
     qa:
       - path: docs/templates/test_strategy.md
       - path: docs/templates/test_plan.md
       - path: docs/templates/test_matrix.md
       - path: docs/templates/regression_checklist.md
+      - path: docs/templates/postdeploy_review.md
     sre:
       - path: docs/templates/runbook.md
-      - path: docs/templates/slo.md
-      - path: docs/templates/alerts.md
       - path: docs/templates/monitoring.md
-      - path: docs/templates/rollback_plan.md
+      - path: docs/templates/alerts.md
+      - path: docs/templates/slo.md
+      - path: docs/templates/incident_playbook.md
+      - path: docs/templates/incident_postmortem.md
     km:
       - path: docs/templates/issue_map.md
+      - path: docs/templates/delivery_plan.md
+      - path: docs/templates/roadmap.md
       - path: docs/templates/docset_issue.md
       - path: docs/templates/docset_pr.md
   versions:

@@ -726,6 +726,39 @@ approvals:
   `make lint-go`,
   `make dupl-go`.
 
+## Актуализация по Issue #260 (`run:dev`, 2026-03-11)
+- Для FR-028/FR-033/FR-045 и NFR-010 реализован stream `S7-E18`:
+  documentation governance runtime-проекция в `services.yaml`
+  синхронизирована с `docs/delivery/development_process_requirements.md`.
+- `services.yaml/spec.roleDocTemplates` теперь соответствует role-template matrix:
+  - `em` получает полный release/delivery template set;
+  - `dev` ограничен `user_story.md` + `definition_of_done.md`;
+  - `qa` дополнен `postdeploy_review.md`;
+  - `sre` переведён на ops/incident templates без drift;
+  - `km` получает delivery/roadmap/docset traceability templates;
+  - `reviewer` больше не получает лишние doc templates.
+- `services.yaml/spec.projectDocs` теперь гарантирует доступ runtime prompt к
+  `docs/delivery` для `dev/qa/sre` и к `docs/ops` для `qa`,
+  чтобы role-aware prompt envelope ссылался на релевантные source-of-truth каталоги,
+  а не на устаревший урезанный набор.
+- В `docs/delivery/development_process_requirements.md`
+  явно закреплено, что `services.yaml/spec.roleDocTemplates` и `services.yaml/spec.projectDocs`
+  обязаны оставаться синхронными с role-template matrix и doc IA;
+  тот же governance contract продублирован в
+  `services/jobs/agent-runner/internal/runner/promptseeds/README.md`.
+- Добавлены regression-тесты agent-runner,
+  которые проверяют реальный repository `services.yaml` на соответствие governance-матрице
+  и наличие delivery/ops doc coverage для нужных ролей.
+- Актуализированы traceability документы Sprint S7:
+  `docs/delivery/issue_map.md`,
+  `docs/delivery/delivery_plan.md`,
+  `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md`,
+  `docs/delivery/epics/s7/epic_s7.md`;
+  remaining standalone backlog нормализован как `#254`.
+- Проверки по scope:
+  `go test ./services/jobs/agent-runner/internal/runner/...`,
+  `go test ./services/jobs/agent-runner/...`.
+
 ## Актуализация по Issue #274 (`run:dev`, 2026-03-05)
 - Для FR-026/FR-028/FR-033 и NFR-010/NFR-018 реализован stream `S7-E19`:
   выполнен backend cleanup non-MVP контуров `agents`, `prompt templates`, `config entries`,

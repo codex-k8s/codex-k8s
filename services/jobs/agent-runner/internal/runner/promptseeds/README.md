@@ -61,6 +61,8 @@
   - `dev`, `pm`, `sa`, `em`, `reviewer`, `qa`, `sre`, `km` (каждая: `work/revise` и `ru/en`).
 - role-aware пути к шаблонам артефактов берутся из `services.yaml/spec.roleDocTemplates`;
   в seed-файлах указываются только имена шаблонов (без жестко заданных repository-relative путей).
+- `services.yaml/spec.roleDocTemplates` и `services.yaml/spec.projectDocs` должны оставаться синхронными
+  с `docs/delivery/development_process_requirements.md` (role-template matrix + doc IA).
 - для документационных stage seed'ов (`intake|vision|prd|arch|design|plan|doc-audit|qa|release|postdeploy|ops|rethink` и их `*:revise`):
   - обязательно использовать блок "Шаблоны артефактов по роли" из prompt envelope;
   - нельзя хардкодить пути к шаблонам артефактов в seed.
