@@ -81,7 +81,7 @@ type Config struct {
 
 // ControlPlaneCallbacks defines required control-plane callbacks for runner lifecycle.
 type ControlPlaneCallbacks interface {
-	UpsertAgentSession(ctx context.Context, params cpclient.AgentSessionUpsertParams) error
+	UpsertAgentSession(ctx context.Context, params cpclient.AgentSessionUpsertParams) (cpclient.AgentSessionUpsertResult, error)
 	GetLatestAgentSession(ctx context.Context, query cpclient.LatestAgentSessionQuery) (cpclient.AgentSessionSnapshot, bool, error)
 	InsertRunFlowEvent(ctx context.Context, runID string, eventType floweventdomain.EventType, payload json.RawMessage) error
 	GetCodexAuth(ctx context.Context) ([]byte, bool, error)
@@ -118,6 +118,8 @@ type runResult struct {
 	codexExecOutput     string
 	gitPushOutput       string
 	toolGaps            []string
+	snapshotVersion     int64
+	snapshotChecksum    string
 }
 
 type restoredSession struct {
@@ -125,6 +127,8 @@ type restoredSession struct {
 	sessionID           string
 	existingPRNumber    int
 	prNotFound          bool
+	snapshotVersion     int64
+	snapshotChecksum    string
 }
 
 type codexState struct {

@@ -185,6 +185,11 @@ approvals:
     (`succeeded > failed > running/pending`) с phase-aware fallback, а не по одному только `comment_id`;
   - добавлены unit-тесты на merge/dedupe сценарии, покрывающие false-failed regression class для `run:intake:revise`.
 - В traceability добавлены updates по issue `#258`; remaining backlog нормализован как `#254`, `#255`, `#259..#260`.
+- В Issue `#259` реализован stream `S7-E17`:
+  `agent_sessions` получил version/checksum snapshot metadata,
+  write-path перешёл на CAS-like upsert с сохранением последнего non-empty codex snapshot,
+  internal gRPC callback и `agent-runner` синхронизируют `snapshot_version`/`snapshot_checksum`.
+- В traceability добавлены updates по issue `#259`; remaining backlog нормализован как `#254`, `#255`, `#260`.
 
 ## Candidate execution backlog (19 эпиков)
 

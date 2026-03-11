@@ -745,11 +745,15 @@ message UpsertAgentSessionRequest {
   optional bytes codex_cli_session_json = 20;
   google.protobuf.Timestamp started_at = 21;
   google.protobuf.Timestamp finished_at = 22;
+  int64 snapshot_version = 23;
+  optional string snapshot_checksum = 24;
 }
 
 message UpsertAgentSessionResponse {
   bool ok = 1;
   string run_id = 2;
+  int64 snapshot_version = 3;
+  optional string snapshot_checksum = 4;
 }
 
 message AgentSessionSnapshot {
@@ -777,6 +781,9 @@ message AgentSessionSnapshot {
   google.protobuf.Timestamp finished_at = 22;
   google.protobuf.Timestamp created_at = 23;
   google.protobuf.Timestamp updated_at = 24;
+  int64 snapshot_version = 25;
+  optional string snapshot_checksum = 26;
+  google.protobuf.Timestamp snapshot_updated_at = 27;
 }
 
 message GetLatestAgentSessionRequest {

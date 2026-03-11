@@ -49,8 +49,16 @@ func (s *Service) runDiscussionLoop(ctx context.Context, state codexState, resul
 		}
 		if shouldStopDiscussionLoop(issueState) {
 			finishedAt := time.Now().UTC()
-			if err := s.persistSessionSnapshot(ctx, *result, state, runStartedAt, runStatusSucceeded, &finishedAt); err != nil {
+			persisted, err := s.persistSessionSnapshot(ctx, result, state, runStartedAt, runStatusSucceeded, &finishedAt)
+			if err != nil {
 				return err
+			}
+			if err := s.emitEvent(ctx, floweventdomain.EventTypeRunAgentSessionSaved, map[string]any{
+				"status":            runStatusSucceeded,
+				"snapshot_version":  persisted.SnapshotVersion,
+				"snapshot_checksum": persisted.SnapshotChecksum,
+			}); err != nil {
+				s.logger.Warn("emit run.agent.session.saved failed", "err", err)
 			}
 			if err := s.emitEvent(ctx, floweventdomain.EventTypeRunAgentStatusReported, map[string]any{
 				"branch":                result.targetBranch,
@@ -129,10 +137,15 @@ func (s *Service) runDiscussionLoop(ctx context.Context, state codexState, resul
 		}
 
 		finishedAt := time.Now().UTC()
-		if err := s.persistSessionSnapshot(ctx, *result, state, runStartedAt, runStatusSucceeded, &finishedAt); err != nil {
+		persisted, err := s.persistSessionSnapshot(ctx, result, state, runStartedAt, runStatusSucceeded, &finishedAt)
+		if err != nil {
 			return err
 		}
-		if err := s.emitEvent(ctx, floweventdomain.EventTypeRunAgentSessionSaved, map[string]string{"status": runStatusSucceeded}); err != nil {
+		if err := s.emitEvent(ctx, floweventdomain.EventTypeRunAgentSessionSaved, map[string]any{
+			"status":            runStatusSucceeded,
+			"snapshot_version":  persisted.SnapshotVersion,
+			"snapshot_checksum": persisted.SnapshotChecksum,
+		}); err != nil {
 			s.logger.Warn("emit run.agent.session.saved failed", "err", err)
 		}
 		if err := s.emitEvent(ctx, floweventdomain.EventTypeRunAgentStatusReported, map[string]any{

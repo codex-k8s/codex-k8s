@@ -43,7 +43,7 @@ approvals:
 | Day 4 | Architecture: границы и ownership по stream'ам | P0 | `docs/delivery/epics/s7/epic-s7-day4-mvp-readiness-arch.md` | in-review (`#222`) |
 | Day 5 | Design: execution-ready contracts/data/migrations package | P0 | `docs/delivery/epics/s7/epic-s7-day5-mvp-readiness-design.md` (`#238`) | in-review (`#238`) |
 | Day 6 | Plan: execution package и quality gates | P0 | `docs/delivery/epics/s7/epic-s7-day6-mvp-readiness-plan.md` (`#241`) | in-review (`#241`) |
-| Day 7+ | Dev/QA/Release/Postdeploy/Ops/Doc-Audit | P0/P1 | implementation issues `#243..#260`, `#274` (`run:dev`) | in-progress (`#243` и `#244` completed + owner-approved; `#245`, `#246`, `#247/#248/#249`, `#251`, `#252`, `#253`, `#255`, `#256`, `#258` и `#274` реализованы в execution streams; `#250/#257` закрываются doc-actualization pass как уже поглощённые cleanup-потоками; remaining standalone backlog: `#254`, `#259..#260`) |
+| Day 7+ | Dev/QA/Release/Postdeploy/Ops/Doc-Audit | P0/P1 | implementation issues `#243..#260`, `#274` (`run:dev`) | in-progress (`#243` и `#244` completed + owner-approved; `#245`, `#246`, `#247/#248/#249`, `#251`, `#252`, `#253`, `#255`, `#256`, `#258`, `#259` и `#274` реализованы в execution streams; `#250/#257` закрываются doc-actualization pass как уже поглощённые cleanup-потоками; remaining standalone backlog: `#254`, `#260`) |
 
 ## Candidate execution-эпики (`S7-E01..S7-E18`)
 
@@ -65,7 +65,7 @@ approvals:
 | S7-E14 | P0 | QA policy: проверка новых/изменённых ручек через Kubernetes DNS path | passed (in-review `#256`) |
 | S7-E15 | P0 | Prompt templates MVP policy: standalone issue больше не нужна после `S7-E07` + `S7-E19`; `#257` закрывается doc-actualization pass | absorbed by S7-E07 + S7-E19 |
 | S7-E16 | P0 | Run status reliability: false-failed для `run:intake:revise` | passed (in-review `#258`) |
-| S7-E17 | P0 | Self-improve: доступность и перезапись session snapshot | self-improve reliability |
+| S7-E17 | P0 | Self-improve: доступность и перезапись session snapshot | passed (in-review `#259`) |
 | S7-E18 | P0 | Documentation governance: issue/PR standard + doc IA + role-template matrix | backlog quality gate |
 | S7-E19 | P1 | Backend cleanup: удалить non-MVP контуры Agents/Configs/Secrets + registry images + running jobs | after S7-E02 |
 
@@ -118,7 +118,7 @@ approvals:
 - Wave 4: `#251`, `#252`, `#258`;
 - Wave 5: `#256`, `#260`, `#254`.
 - Дополнительно (post-plan): `#274` (`S7-E19`, backend cleanup Agents/Configs/Secrets).
-- После combined cleanup `#247/#248/#249/#274` standalone issues `#250` и `#257` закрываются без отдельного `run:dev`; после реализации `#252`, `#253`, `#255`, `#256` и `#258` фактический remaining backlog нормализован как `#254`, `#259..#260`.
+- После combined cleanup `#247/#248/#249/#274` standalone issues `#250` и `#257` закрываются без отдельного `run:dev`; после реализации `#252`, `#253`, `#255`, `#256`, `#258` и `#259` фактический remaining backlog нормализован как `#254`, `#260`.
 - Trigger-лейбл `run:dev` на implementation issues ставит Owner, сохраняя wave-sequencing.
 - Обязательные артефакты handover:
   - `docs/delivery/epics/s7/epic-s7-day6-mvp-readiness-plan.md`;
@@ -133,4 +133,4 @@ approvals:
   - явный unit-test для `repo_seed + default locale` поведения worker-а.
 - `S7-E08` / Issue `#250` больше не требуют отдельного `run:dev`: после удаления `Agents` UI/API в `#244` и backend cleanup `#274` в MVP не осталось отдельного Agents UX контура, который нужно было бы дополнительно harden'ить.
 - `S7-E15` / Issue `#257` больше не требуют отдельного `run:dev`: repo-only prompt policy уже зафиксирован combined closure pass `#247/#248/#249`, а UI/API контуры refresh/versioning отсутствуют после cleanup `#274`.
-- Remaining Sprint S7 standalone execution backlog после этой актуализации: `#254`, `#259..#260`.
+- Remaining Sprint S7 standalone execution backlog после этой актуализации: `#254`, `#260`.

@@ -40,7 +40,7 @@ type mcpRunTokenService interface {
 }
 
 type agentCallbackService interface {
-	UpsertAgentSession(ctx context.Context, params agentcallbackdomain.UpsertAgentSessionParams) error
+	UpsertAgentSession(ctx context.Context, params agentcallbackdomain.UpsertAgentSessionParams) (agentcallbackdomain.UpsertAgentSessionResult, error)
 	GetLatestAgentSession(ctx context.Context, query agentcallbackdomain.GetLatestAgentSessionQuery) (agentcallbackdomain.Session, bool, error)
 	InsertRunFlowEvent(ctx context.Context, params agentcallbackdomain.InsertRunFlowEventParams) error
 }
