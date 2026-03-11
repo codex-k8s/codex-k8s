@@ -13,7 +13,9 @@ Revise-iteration PR contract:
   - pattern: `Issue #{{ .IssueNumber }}: revise — <what was fixed> (#{{ .IssueNumber }})`
   - one line;
   - must include `Issue #{{ .IssueNumber }}` and the `revise` marker.
-- Use exact `##` sections in the PR body in this order:
+- Before editing the PR body, load the current description of the existing PR first (`gh pr view <current-pr> --json body --jq '.body'`).
+- Do not overwrite the PR body with a revise-only summary: keep the existing PR sections and append the revise block before the final `## Closure`.
+- For the appended revise block, use exact `##` sections in this order:
   1. `## Revision context`
   2. `## Basis for changes`
   3. `## Processed review comments`
@@ -24,6 +26,7 @@ Revise-iteration PR contract:
   8. `## Risks and constraints`
   9. `## Recommendations / next step`
   10. `## Closure`
+- If the current body already has `## Closure`, move or refresh that final block so `Closes {{ .IssueURL }}` remains the last line of the whole PR body.
 - For every open comment, either fix the issue or provide verifiable reasoning for rejecting it.
 - In `## Re-checks`, list commands, requests, inspected logs, and their outcomes.
 - If some checks, logs, requests, or checklists did not apply, state that explicitly.
