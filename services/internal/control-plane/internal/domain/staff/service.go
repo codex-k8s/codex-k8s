@@ -5,6 +5,7 @@ import (
 
 	"github.com/codex-k8s/codex-k8s/libs/go/crypto/tokencrypt"
 	"github.com/codex-k8s/codex-k8s/libs/go/repo/provider"
+	nextstepdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/nextstep"
 	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/learningfeedback"
 	projectrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/project"
 	projectmemberrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projectmember"
@@ -33,6 +34,8 @@ type Config struct {
 	ProtectedRepositoryIDs map[string]struct{}
 	// PromptSeedsDir points to runner prompt seeds used for bootstrap sync.
 	PromptSeedsDir string
+	// NextStepLabels defines env-aware run:* labels allowed for next-step actions.
+	NextStepLabels nextstepdomain.Labels
 }
 
 // Service exposes staff-only read/write operations protected by JWT + RBAC.

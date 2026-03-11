@@ -74,7 +74,7 @@ graph TD
     A --> L[S7-E11 mode:discussion reliability]
     L --> K
 
-    L --> M[S7-E13 qa:revise policy coverage]
+    L --> M[S7-E13 late-stage revise policy coverage]
     M --> N[S7-E14 QA DNS-path policy]
     N --> K
 

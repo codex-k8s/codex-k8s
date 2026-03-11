@@ -71,7 +71,7 @@ approvals:
 | `S7-E07` Prompt source repo-only | Selector `repo|db` исключается из staff API и runtime payload; effective source детерминируется как `repo` | Отсутствует шаблон в repo -> `failed_precondition` + typed details (`template_key`, `repository_path`) | Единый policy source в `control-plane` + audit event на fallback/error |
 | `S7-E09` Runs UX namespace delete | Переиспользуется typed endpoint `DELETE /api/v1/staff/runs/{run_id}/namespace`; UI удаляет только колонку run type без ломки контракта | Повторное удаление -> `200` c `already_deleted=true` | Confirm UX + RBAC pre-check + audit trail |
 | `S7-E10` Runtime deploy cancel/stop | Добавляются typed staff actions `cancel/stop` для `runtime_deploy_tasks`; внутренние RPC/DTO симметричны | Повтор action в terminal state -> `200` c `already_terminal=true`; конфликт lease -> `failed_precondition` | Idempotent state transitions + lease-aware guard |
-| `S7-E13` `run:qa:revise` policy coverage | Stage resolver расширяется детерминированной веткой `run:qa:revise` без нового public endpoint | Ambiguous stage set -> `failed_precondition` + mandatory `need:input` | Единый precedence chain PR->Issue->run_context->flow_events |
+| `S7-E13` multi-stage revise policy coverage | Stage resolver расширяется детерминированными ветками `run:doc-audit|qa|release|postdeploy|ops|self-improve:revise` без нового public endpoint | Ambiguous stage set -> `failed_precondition` + mandatory `need:input` | Единый precedence chain PR->Issue->run_context->flow_events |
 | `S7-E16` `run:intake:revise` false-failed fix | Финализация run нормализуется через typed terminal metadata и precedence rule (`success > failed` при duplicate callbacks) | Duplicate terminal callback -> idempotent no-op c `already_finalized=true` | Terminal state rank + monotonic finalization event sequence |
 | `S7-E17` Self-improve snapshot reliability | Callback contract `UpsertAgentSession` расширяется полями version/checksum для rewrite-safe upsert | Version mismatch -> `conflict` c `actual_snapshot_version` | CAS-like upsert semantics + retry-safe read-after-write |
 
@@ -153,7 +153,7 @@ sequenceDiagram
   - `runtime_deploy_action_total{action,status}`
   - `run_terminalization_conflict_total`
   - `agent_session_snapshot_conflict_total`
-  - `stage_resolver_qa_revise_total{result}`
+  - `stage_resolver_revise_total{stage,result}`
 - Трейсы:
   - `staff-http -> cp-grpc -> repository -> postgres`.
 - Алерты:
@@ -166,7 +166,7 @@ sequenceDiagram
   - unit: stage resolver, runtime deploy action guards, terminal precedence rules;
   - integration: repository migrations/backfill/CAS snapshot upsert;
   - contract: OpenAPI/proto mapping + error contract checks;
-  - e2e: `run:qa:revise` transition, cancel/stop flows, self-improve snapshot rewrite.
+  - e2e: `run:<stage>:revise` transition для `doc-audit|qa|release|postdeploy|ops|self-improve`, cancel/stop flows, self-improve snapshot rewrite.
 
 ## План выката (Rollout)
 - `run:design`: runtime changes отсутствуют.

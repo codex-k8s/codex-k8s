@@ -179,6 +179,7 @@ func Run() error {
 		DefaultLocale:    "ru",
 		AIDomain:         cfg.AIDomain,
 		ProductionDomain: cfg.ProductionDomain,
+		NextStepLabels:   buildNextStepLabels(cfg),
 	}, runstatusdomain.Dependencies{
 		Runs:       agentRuns,
 		Platform:   platformTokens,
@@ -328,6 +329,7 @@ func Run() error {
 		},
 		ProtectedProjectIDs:    bootstrapSeed.ProtectedProjectIDs,
 		ProtectedRepositoryIDs: bootstrapSeed.ProtectedRepositoryIDs,
+		NextStepLabels:         buildNextStepLabels(cfg),
 	}, staff.Dependencies{
 		Users:          users,
 		Projects:       projects,

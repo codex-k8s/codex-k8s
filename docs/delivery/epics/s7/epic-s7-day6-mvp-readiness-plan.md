@@ -33,7 +33,7 @@ approvals:
 |---|---:|---|---|---|
 | `S7-E01` | #243 | Wave 1 | P0 | Rebase/mainline hygiene для revise-итераций |
 | `S7-E11` | #253 | Wave 1 | P0 | Reliability для `mode:discussion` (implemented) |
-| `S7-E13` | #255 | Wave 1 | P0 | Добавление revise-петли `run:qa:revise` |
+| `S7-E13` | #255 | Wave 1 | P0 | Добавление revise-петель `run:doc-audit|qa|release|postdeploy|ops|self-improve:revise` |
 | `S7-E02` | #244 | Wave 2 | P0 | Sidebar cleanup (удаление не-MVP разделов) |
 | `S7-E03` | #245 | Wave 2 | P0 | Удаление глобального фильтра |
 | `S7-E04` | #246 | Wave 2 | P0 | Удаление runtime-deploy/images UI контуров |

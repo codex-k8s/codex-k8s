@@ -41,7 +41,7 @@ approvals:
 - `S7-E07`: prompt source зафиксирован как repo-only без selector `repo|db`.
 - `S7-E09`: namespace delete path остаётся через существующий typed endpoint, UI cleanup без contract drift.
 - `S7-E10`: добавлены typed action decisions для cancel/stop runtime deploy tasks с idempotency.
-- `S7-E13`: stage resolver расширяется `run:qa:revise` с deterministic ambiguity handling.
+- `S7-E13`: stage resolver расширяется late-stage revise coverage `run:doc-audit|qa|release|postdeploy|ops|self-improve:revise` с deterministic ambiguity handling.
 - `S7-E16`: run finalization нормализуется typed terminal metadata для исключения false-failed.
 - `S7-E17`: snapshot rewrite reliability через version/checksum contract и CAS-like upsert semantics.
 

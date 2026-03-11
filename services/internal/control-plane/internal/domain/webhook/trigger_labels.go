@@ -54,23 +54,41 @@ func (labels TriggerLabels) withDefaults() TriggerLabels {
 	if strings.TrimSpace(labels.RunDocAudit) == "" {
 		labels.RunDocAudit = defaults.RunDocAudit
 	}
+	if strings.TrimSpace(labels.RunDocAuditRevise) == "" {
+		labels.RunDocAuditRevise = defaults.RunDocAuditRevise
+	}
 	if strings.TrimSpace(labels.RunAIRepair) == "" {
 		labels.RunAIRepair = defaults.RunAIRepair
 	}
 	if strings.TrimSpace(labels.RunQA) == "" {
 		labels.RunQA = defaults.RunQA
 	}
+	if strings.TrimSpace(labels.RunQARevise) == "" {
+		labels.RunQARevise = defaults.RunQARevise
+	}
 	if strings.TrimSpace(labels.RunRelease) == "" {
 		labels.RunRelease = defaults.RunRelease
+	}
+	if strings.TrimSpace(labels.RunReleaseRevise) == "" {
+		labels.RunReleaseRevise = defaults.RunReleaseRevise
 	}
 	if strings.TrimSpace(labels.RunPostDeploy) == "" {
 		labels.RunPostDeploy = defaults.RunPostDeploy
 	}
+	if strings.TrimSpace(labels.RunPostDeployRevise) == "" {
+		labels.RunPostDeployRevise = defaults.RunPostDeployRevise
+	}
 	if strings.TrimSpace(labels.RunOps) == "" {
 		labels.RunOps = defaults.RunOps
 	}
+	if strings.TrimSpace(labels.RunOpsRevise) == "" {
+		labels.RunOpsRevise = defaults.RunOpsRevise
+	}
 	if strings.TrimSpace(labels.RunSelfImprove) == "" {
 		labels.RunSelfImprove = defaults.RunSelfImprove
+	}
+	if strings.TrimSpace(labels.RunSelfImproveRevise) == "" {
+		labels.RunSelfImproveRevise = defaults.RunSelfImproveRevise
 	}
 	if strings.TrimSpace(labels.RunRethink) == "" {
 		labels.RunRethink = defaults.RunRethink
@@ -87,28 +105,34 @@ func (labels TriggerLabels) withDefaults() TriggerLabels {
 func (labels TriggerLabels) labelToKind() map[string]webhookdomain.TriggerKind {
 	normalized := labels.withDefaults()
 	return map[string]webhookdomain.TriggerKind{
-		normalizeLabelToken(normalized.RunIntake):       webhookdomain.TriggerKindIntake,
-		normalizeLabelToken(normalized.RunIntakeRevise): webhookdomain.TriggerKindIntakeRevise,
-		normalizeLabelToken(normalized.RunVision):       webhookdomain.TriggerKindVision,
-		normalizeLabelToken(normalized.RunVisionRevise): webhookdomain.TriggerKindVisionRevise,
-		normalizeLabelToken(normalized.RunPRD):          webhookdomain.TriggerKindPRD,
-		normalizeLabelToken(normalized.RunPRDRevise):    webhookdomain.TriggerKindPRDRevise,
-		normalizeLabelToken(normalized.RunArch):         webhookdomain.TriggerKindArch,
-		normalizeLabelToken(normalized.RunArchRevise):   webhookdomain.TriggerKindArchRevise,
-		normalizeLabelToken(normalized.RunDesign):       webhookdomain.TriggerKindDesign,
-		normalizeLabelToken(normalized.RunDesignRevise): webhookdomain.TriggerKindDesignRevise,
-		normalizeLabelToken(normalized.RunPlan):         webhookdomain.TriggerKindPlan,
-		normalizeLabelToken(normalized.RunPlanRevise):   webhookdomain.TriggerKindPlanRevise,
-		normalizeLabelToken(normalized.RunDev):          webhookdomain.TriggerKindDev,
-		normalizeLabelToken(normalized.RunDevRevise):    webhookdomain.TriggerKindDevRevise,
-		normalizeLabelToken(normalized.RunDocAudit):     webhookdomain.TriggerKindDocAudit,
-		normalizeLabelToken(normalized.RunAIRepair):     webhookdomain.TriggerKindAIRepair,
-		normalizeLabelToken(normalized.RunQA):           webhookdomain.TriggerKindQA,
-		normalizeLabelToken(normalized.RunRelease):      webhookdomain.TriggerKindRelease,
-		normalizeLabelToken(normalized.RunPostDeploy):   webhookdomain.TriggerKindPostDeploy,
-		normalizeLabelToken(normalized.RunOps):          webhookdomain.TriggerKindOps,
-		normalizeLabelToken(normalized.RunSelfImprove):  webhookdomain.TriggerKindSelfImprove,
-		normalizeLabelToken(normalized.RunRethink):      webhookdomain.TriggerKindRethink,
+		normalizeLabelToken(normalized.RunIntake):            webhookdomain.TriggerKindIntake,
+		normalizeLabelToken(normalized.RunIntakeRevise):      webhookdomain.TriggerKindIntakeRevise,
+		normalizeLabelToken(normalized.RunVision):            webhookdomain.TriggerKindVision,
+		normalizeLabelToken(normalized.RunVisionRevise):      webhookdomain.TriggerKindVisionRevise,
+		normalizeLabelToken(normalized.RunPRD):               webhookdomain.TriggerKindPRD,
+		normalizeLabelToken(normalized.RunPRDRevise):         webhookdomain.TriggerKindPRDRevise,
+		normalizeLabelToken(normalized.RunArch):              webhookdomain.TriggerKindArch,
+		normalizeLabelToken(normalized.RunArchRevise):        webhookdomain.TriggerKindArchRevise,
+		normalizeLabelToken(normalized.RunDesign):            webhookdomain.TriggerKindDesign,
+		normalizeLabelToken(normalized.RunDesignRevise):      webhookdomain.TriggerKindDesignRevise,
+		normalizeLabelToken(normalized.RunPlan):              webhookdomain.TriggerKindPlan,
+		normalizeLabelToken(normalized.RunPlanRevise):        webhookdomain.TriggerKindPlanRevise,
+		normalizeLabelToken(normalized.RunDev):               webhookdomain.TriggerKindDev,
+		normalizeLabelToken(normalized.RunDevRevise):         webhookdomain.TriggerKindDevRevise,
+		normalizeLabelToken(normalized.RunDocAudit):          webhookdomain.TriggerKindDocAudit,
+		normalizeLabelToken(normalized.RunDocAuditRevise):    webhookdomain.TriggerKindDocAuditRevise,
+		normalizeLabelToken(normalized.RunAIRepair):          webhookdomain.TriggerKindAIRepair,
+		normalizeLabelToken(normalized.RunQA):                webhookdomain.TriggerKindQA,
+		normalizeLabelToken(normalized.RunQARevise):          webhookdomain.TriggerKindQARevise,
+		normalizeLabelToken(normalized.RunRelease):           webhookdomain.TriggerKindRelease,
+		normalizeLabelToken(normalized.RunReleaseRevise):     webhookdomain.TriggerKindReleaseRevise,
+		normalizeLabelToken(normalized.RunPostDeploy):        webhookdomain.TriggerKindPostDeploy,
+		normalizeLabelToken(normalized.RunPostDeployRevise):  webhookdomain.TriggerKindPostDeployRevise,
+		normalizeLabelToken(normalized.RunOps):               webhookdomain.TriggerKindOps,
+		normalizeLabelToken(normalized.RunOpsRevise):         webhookdomain.TriggerKindOpsRevise,
+		normalizeLabelToken(normalized.RunSelfImprove):       webhookdomain.TriggerKindSelfImprove,
+		normalizeLabelToken(normalized.RunSelfImproveRevise): webhookdomain.TriggerKindSelfImproveRevise,
+		normalizeLabelToken(normalized.RunRethink):           webhookdomain.TriggerKindRethink,
 	}
 }
 

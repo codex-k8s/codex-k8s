@@ -49,13 +49,18 @@ approvals:
 | `run:dev` | разработка и создание PR | active (S2) |
 | `run:dev:revise` | доработка существующего PR | active (S2) |
 | `run:doc-audit` | аудит код↔доки↔чек-листы | active (S3 Day1 trigger path) |
+| `run:doc-audit:revise` | ревизия doc-audit артефактов и remediation-выводов | active (S7-E13 coverage) |
 | `run:ai-repair` | аварийное восстановление инфраструктуры и runtime-потока (production pod, main-direct режим без обязательного PR) | active |
 | `run:qa` | тест-артефакты и прогоны | active (S3 Day1 trigger path) |
 | `run:qa:revise` | ревизия QA-артефактов и регрессионных проверок | active (S3 Day1 trigger path) |
 | `run:release` | релиз и release artifacts | active (S3 Day1 trigger path) |
+| `run:release:revise` | ревизия release-артефактов и release decision package | active (S7-E13 coverage) |
 | `run:postdeploy` | post-deploy review / postmortem | active (S3 Day1 trigger path) |
+| `run:postdeploy:revise` | ревизия postdeploy evidence и postmortem-артефактов | active (S7-E13 coverage) |
 | `run:ops` | эксплуатационные улучшения | active (S3 Day1 trigger path) |
+| `run:ops:revise` | ревизия ops/runbook/monitoring улучшений | active (S7-E13 coverage) |
 | `run:self-improve` | анализ запусков/комментариев и подготовка улучшений docs/prompts/tools | active (S3 Day1 trigger path; deep logic S3 Day6+) |
+| `run:self-improve:revise` | ревизия self-improve PR с сохранением диагностики и ограниченного scope | active (S7-E13 coverage) |
 | `run:rethink` | переоткрытие этапа и смена траектории | active (S3 Day1 trigger path) |
 
 ## Класс `state:*` (служебные статусы)

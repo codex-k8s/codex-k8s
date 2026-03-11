@@ -36,19 +36,19 @@ func promptSeedStageByTriggerKind(triggerKind string) string {
 		return "design"
 	case webhookdomain.TriggerKindPlan, webhookdomain.TriggerKindPlanRevise:
 		return "plan"
-	case webhookdomain.TriggerKindDocAudit:
+	case webhookdomain.TriggerKindDocAudit, webhookdomain.TriggerKindDocAuditRevise:
 		return "doc-audit"
 	case webhookdomain.TriggerKindAIRepair:
 		return "ai-repair"
-	case webhookdomain.TriggerKindQA:
+	case webhookdomain.TriggerKindQA, webhookdomain.TriggerKindQARevise:
 		return "qa"
-	case webhookdomain.TriggerKindRelease:
+	case webhookdomain.TriggerKindRelease, webhookdomain.TriggerKindReleaseRevise:
 		return "release"
-	case webhookdomain.TriggerKindPostDeploy:
+	case webhookdomain.TriggerKindPostDeploy, webhookdomain.TriggerKindPostDeployRevise:
 		return "postdeploy"
-	case webhookdomain.TriggerKindOps:
+	case webhookdomain.TriggerKindOps, webhookdomain.TriggerKindOpsRevise:
 		return "ops"
-	case webhookdomain.TriggerKindSelfImprove:
+	case webhookdomain.TriggerKindSelfImprove, webhookdomain.TriggerKindSelfImproveRevise:
 		return "self-improve"
 	case webhookdomain.TriggerKindRethink:
 		return "rethink"

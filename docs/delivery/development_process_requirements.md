@@ -241,12 +241,12 @@ approvals:
 | Роль | Основные stage | Обязательные шаблоны (`docs/templates/*.md`) |
 |---|---|---|
 | PM | `run:intake`, `run:vision`, `run:prd` | `problem.md`, `scope_mvp.md`, `constraints.md`, `brief.md`, `project_charter.md`, `success_metrics.md`, `prd.md`, `nfr.md`, `user_story.md` |
-| EM | `run:plan`, `run:release` | `delivery_plan.md`, `epic.md`, `definition_of_done.md`, `release_plan.md`, `release_notes.md`, `rollback_plan.md` |
+| EM | `run:plan`, `run:release`, `run:release:revise` | `delivery_plan.md`, `epic.md`, `definition_of_done.md`, `release_plan.md`, `release_notes.md`, `rollback_plan.md` |
 | SA | `run:arch`, `run:design` | `c4_context.md`, `c4_container.md`, `adr.md`, `alternatives.md`, `api_contract.md`, `data_model.md`, `design_doc.md`, `migrations_policy.md` |
 | Dev | `run:dev` | `user_story.md`, `definition_of_done.md` + обязательная синхронизация traceability-доков |
-| QA | `run:qa`, `run:qa:revise`, `run:postdeploy` | `test_strategy.md`, `test_plan.md`, `test_matrix.md`, `regression_checklist.md`, `postdeploy_review.md` |
-| SRE | `run:ops`, `run:ai-repair` | `runbook.md`, `monitoring.md`, `alerts.md`, `slo.md`, `incident_playbook.md`, `incident_postmortem.md` |
-| KM | cross-stage traceability | `issue_map.md`, `delivery_plan.md`, `roadmap.md`, `docset_issue.md`, `docset_pr.md` |
+| QA | `run:qa`, `run:qa:revise`, `run:postdeploy`, `run:postdeploy:revise` | `test_strategy.md`, `test_plan.md`, `test_matrix.md`, `regression_checklist.md`, `postdeploy_review.md` |
+| SRE | `run:ops`, `run:ops:revise`, `run:release`, `run:release:revise`, `run:postdeploy`, `run:postdeploy:revise`, `run:ai-repair` | `runbook.md`, `monitoring.md`, `alerts.md`, `slo.md`, `incident_playbook.md`, `incident_postmortem.md` |
+| KM | cross-stage traceability, `run:doc-audit`, `run:doc-audit:revise`, `run:self-improve`, `run:self-improve:revise` | `issue_map.md`, `delivery_plan.md`, `roadmap.md`, `docset_issue.md`, `docset_pr.md` |
 | Reviewer | pre-review (`need:reviewer`) | шаблоны не генерирует; публикует findings/commentary в PR |
 
 ## Еженедельный цикл спринта

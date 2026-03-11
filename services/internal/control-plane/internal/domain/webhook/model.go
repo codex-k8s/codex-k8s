@@ -35,48 +35,57 @@ type IngestResult struct {
 
 // TriggerLabels defines active run:* labels that create stage runs.
 type TriggerLabels struct {
-	RunIntake, RunIntakeRevise string
-	RunVision, RunVisionRevise string
-	RunPRD, RunPRDRevise       string
-	RunArch, RunArchRevise     string
-	RunDesign, RunDesignRevise string
-	RunPlan, RunPlanRevise     string
-	RunDev, RunDevRevise       string
-	RunDocAudit, RunAIRepair   string
-	RunQA                      string
-	RunRelease, RunPostDeploy  string
-	RunOps, RunSelfImprove     string
-	RunRethink                 string
-	ModeDiscussion             string
-	NeedReviewer               string
+	RunIntake, RunIntakeRevise           string
+	RunVision, RunVisionRevise           string
+	RunPRD, RunPRDRevise                 string
+	RunArch, RunArchRevise               string
+	RunDesign, RunDesignRevise           string
+	RunPlan, RunPlanRevise               string
+	RunDev, RunDevRevise                 string
+	RunDocAudit, RunDocAuditRevise       string
+	RunAIRepair                          string
+	RunQA, RunQARevise                   string
+	RunRelease, RunReleaseRevise         string
+	RunPostDeploy, RunPostDeployRevise   string
+	RunOps, RunOpsRevise                 string
+	RunSelfImprove, RunSelfImproveRevise string
+	RunRethink                           string
+	ModeDiscussion                       string
+	NeedReviewer                         string
 }
 
 func defaultTriggerLabels() TriggerLabels {
 	return TriggerLabels{
-		RunIntake:       webhookdomain.DefaultRunIntakeLabel,
-		RunIntakeRevise: webhookdomain.DefaultRunIntakeReviseLabel,
-		RunVision:       webhookdomain.DefaultRunVisionLabel,
-		RunVisionRevise: webhookdomain.DefaultRunVisionReviseLabel,
-		RunPRD:          webhookdomain.DefaultRunPRDLabel,
-		RunPRDRevise:    webhookdomain.DefaultRunPRDReviseLabel,
-		RunArch:         webhookdomain.DefaultRunArchLabel,
-		RunArchRevise:   webhookdomain.DefaultRunArchReviseLabel,
-		RunDesign:       webhookdomain.DefaultRunDesignLabel,
-		RunDesignRevise: webhookdomain.DefaultRunDesignReviseLabel,
-		RunPlan:         webhookdomain.DefaultRunPlanLabel,
-		RunPlanRevise:   webhookdomain.DefaultRunPlanReviseLabel,
-		RunDev:          webhookdomain.DefaultRunDevLabel,
-		RunDevRevise:    webhookdomain.DefaultRunDevReviseLabel,
-		RunDocAudit:     webhookdomain.DefaultRunDocAuditLabel,
-		RunAIRepair:     webhookdomain.DefaultRunAIRepairLabel,
-		RunQA:           webhookdomain.DefaultRunQALabel,
-		RunRelease:      webhookdomain.DefaultRunReleaseLabel,
-		RunPostDeploy:   webhookdomain.DefaultRunPostDeployLabel,
-		RunOps:          webhookdomain.DefaultRunOpsLabel,
-		RunSelfImprove:  webhookdomain.DefaultRunSelfImproveLabel,
-		RunRethink:      webhookdomain.DefaultRunRethinkLabel,
-		ModeDiscussion:  webhookdomain.DefaultModeDiscussionLabel,
-		NeedReviewer:    webhookdomain.DefaultNeedReviewerLabel,
+		RunIntake:            webhookdomain.DefaultRunIntakeLabel,
+		RunIntakeRevise:      webhookdomain.DefaultRunIntakeReviseLabel,
+		RunVision:            webhookdomain.DefaultRunVisionLabel,
+		RunVisionRevise:      webhookdomain.DefaultRunVisionReviseLabel,
+		RunPRD:               webhookdomain.DefaultRunPRDLabel,
+		RunPRDRevise:         webhookdomain.DefaultRunPRDReviseLabel,
+		RunArch:              webhookdomain.DefaultRunArchLabel,
+		RunArchRevise:        webhookdomain.DefaultRunArchReviseLabel,
+		RunDesign:            webhookdomain.DefaultRunDesignLabel,
+		RunDesignRevise:      webhookdomain.DefaultRunDesignReviseLabel,
+		RunPlan:              webhookdomain.DefaultRunPlanLabel,
+		RunPlanRevise:        webhookdomain.DefaultRunPlanReviseLabel,
+		RunDev:               webhookdomain.DefaultRunDevLabel,
+		RunDevRevise:         webhookdomain.DefaultRunDevReviseLabel,
+		RunDocAudit:          webhookdomain.DefaultRunDocAuditLabel,
+		RunDocAuditRevise:    webhookdomain.DefaultRunDocAuditReviseLabel,
+		RunAIRepair:          webhookdomain.DefaultRunAIRepairLabel,
+		RunQA:                webhookdomain.DefaultRunQALabel,
+		RunQARevise:          webhookdomain.DefaultRunQAReviseLabel,
+		RunRelease:           webhookdomain.DefaultRunReleaseLabel,
+		RunReleaseRevise:     webhookdomain.DefaultRunReleaseReviseLabel,
+		RunPostDeploy:        webhookdomain.DefaultRunPostDeployLabel,
+		RunPostDeployRevise:  webhookdomain.DefaultRunPostDeployReviseLabel,
+		RunOps:               webhookdomain.DefaultRunOpsLabel,
+		RunOpsRevise:         webhookdomain.DefaultRunOpsReviseLabel,
+		RunSelfImprove:       webhookdomain.DefaultRunSelfImproveLabel,
+		RunSelfImproveRevise: webhookdomain.DefaultRunSelfImproveReviseLabel,
+		RunRethink:           webhookdomain.DefaultRunRethinkLabel,
+		ModeDiscussion:       webhookdomain.DefaultModeDiscussionLabel,
+		NeedReviewer:         webhookdomain.DefaultNeedReviewerLabel,
 	}
 }
 

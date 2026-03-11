@@ -37,7 +37,7 @@ approvals:
 | `S7-E07` Prompt source repo-only | `POST /preview`/`POST /versions` и related DTO больше не принимают selector source | Prompt resolver request/response исключают dual-source flag | coordinated breaking change |
 | `S7-E09` Runs UX cleanup | Контракт `DELETE /api/v1/staff/runs/{run_id}/namespace` сохраняется typed и без schema drift | `DeleteRunNamespace` RPC без breaking изменений | backward-compatible |
 | `S7-E10` Runtime deploy cancel/stop | Добавить `POST /api/v1/staff/runtime-deploy/tasks/{run_id}/cancel` и `POST /api/v1/staff/runtime-deploy/tasks/{run_id}/stop` | Добавить RPC `CancelRuntimeDeployTask` / `StopRuntimeDeployTask` | additive |
-| `S7-E13` `run:qa:revise` policy | Public REST без новых endpoints сверх next-step matrix API | Next-step action contract расширяется route для `run:qa:revise` | additive |
+| `S7-E13` multi-stage revise policy | Public REST без новых endpoints сверх next-step matrix API | Next-step action contract расширяется route для `run:doc-audit|qa|release|postdeploy|ops|self-improve:revise` | additive |
 | `S7-E16` false-failed fix | Public REST без изменений | Internal finalization payload включает typed terminal metadata (`terminal_status_source`, `terminal_event_seq`) | additive |
 | `S7-E17` snapshot reliability | Public REST без изменений | `UpsertAgentSession`/`GetLatestAgentSession` расширяются полями `snapshot_version`, `snapshot_checksum` | additive |
 
@@ -56,7 +56,7 @@ approvals:
 | `UpdateAgentSettings` | MVP-only settings payload | unchanged envelope | `invalid_argument`, `conflict`, `forbidden` |
 | `CancelRuntimeDeployTask` (new) | `run_id`, `actor`, `reason` | `previous_status`, `current_status`, `already_terminal` | `not_found`, `failed_precondition` |
 | `StopRuntimeDeployTask` (new) | `run_id`, `actor`, `reason`, `force=true` | `previous_status`, `current_status`, `already_terminal` | `invalid_argument`, `not_found`, `failed_precondition`, `forbidden` |
-| `PreviewNextStepAction` / `ExecuteNextStepAction` | добавить route `run:qa:revise` в resolver path | unchanged envelope | `failed_precondition` при ambiguity |
+| `PreviewNextStepAction` / `ExecuteNextStepAction` | добавить routes `run:doc-audit|qa|release|postdeploy|ops|self-improve:revise` в resolver path | unchanged envelope | `failed_precondition` при ambiguity |
 | `UpsertAgentSession` | +`snapshot_version`, +`snapshot_checksum` | +`snapshot_version` | `conflict`, `failed_precondition` |
 | `GetLatestAgentSession` | optional expected checksum/version filters | +`snapshot_version`, +`snapshot_checksum` | `not_found`, `internal` |
 
@@ -106,7 +106,7 @@ approvals:
 - HTTP logs: `endpoint`, `action`, `run_id`, `status_code`, `correlation_id`.
 - Metrics:
   - `staff_runtime_deploy_actions_total{action,result}`
-  - `stage_transition_qa_revise_total{result}`
+  - `stage_transition_revise_total{stage,result}`
   - `agent_settings_deprecated_field_total`
   - `agent_session_snapshot_conflict_total`
 - Trace spans:

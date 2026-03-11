@@ -143,7 +143,7 @@ approvals:
   - отсутствие подтверждённого run-evidence для `run:doc-audit` в текущем delivery-цикле.
 - Дополнительно по owner-review комментариям сформирована candidate-декомпозиция на 18 execution-эпиков (`S7-E01..S7-E18`) + post-plan `S7-E19` с приоритетами и трассировкой в `docs/delivery/epics/s7/epic_s7.md`.
 - Добавлены отдельные P0-потоки для:
-  - coverage `run:qa:revise` в stage/labels policy;
+  - coverage недостающих revise-петель `run:doc-audit|qa|release|postdeploy|ops|self-improve:revise` в stage/labels policy;
   - QA acceptance-проверок через Kubernetes DNS path для новых/изменённых ручек;
   - reliability-контуров (`run:intake:revise` false-failed, `run:self-improve` session snapshot persistence);
   - документационного governance (единый issue/PR стандарт + doc IA + role-template matrix).

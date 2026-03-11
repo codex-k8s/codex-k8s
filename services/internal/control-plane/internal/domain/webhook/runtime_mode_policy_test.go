@@ -40,6 +40,27 @@ func TestRuntimeModePolicyResolve_UsesServicesYAMLMap(t *testing.T) {
 	}
 }
 
+func TestRuntimeModePolicyResolve_UsesServicesYAMLMapForSelfImproveRevise(t *testing.T) {
+	t.Parallel()
+
+	policy := RuntimeModePolicy{
+		Configured:  true,
+		Source:      "services.yaml",
+		DefaultMode: agentdomain.RuntimeModeFullEnv,
+		TriggerModes: map[webhookdomain.TriggerKind]agentdomain.RuntimeMode{
+			webhookdomain.TriggerKindSelfImproveRevise: agentdomain.RuntimeModeCodeOnly,
+		},
+	}
+
+	mode, source := policy.resolve(&issueRunTrigger{Kind: webhookdomain.TriggerKindSelfImproveRevise})
+	if mode != agentdomain.RuntimeModeCodeOnly {
+		t.Fatalf("unexpected mode: %q", mode)
+	}
+	if source != runtimeModeSourceServicesYAML {
+		t.Fatalf("unexpected source: %q", source)
+	}
+}
+
 func TestRuntimeModePolicyResolve_AIRepairDefaultsToCodeOnly(t *testing.T) {
 	t.Parallel()
 

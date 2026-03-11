@@ -41,12 +41,13 @@ approvals:
 | Design | `run:design`, `run:design:revise` | markdown design doc package (design/API/data model/migration policy notes) | `sa`, `qa` |
 | Plan | `run:plan`, `run:plan:revise` | delivery plan, epics/stories, DoD | `em`, `km` |
 | Development | `run:dev`, `run:dev:revise` | code changes, PR, docs updates | `dev`, `reviewer` |
+| Doc Audit | `run:doc-audit`, `run:doc-audit:revise` | audit bundle по code/docs/checklists и remediation notes | `km` |
 | QA | `run:qa`, `run:qa:revise` | markdown test strategy/plan/matrix + regression evidence | `qa` |
-| Release | `run:release` | release plan/notes, rollback plan | `em`, `sre` |
-| Postdeploy | `run:postdeploy` | postdeploy review, postmortem | `qa`, `sre` |
-| Ops | `run:ops` | markdown SLO/alerts/runbook improvements | `sre`, `km` |
+| Release | `run:release`, `run:release:revise` | release plan/notes, rollback plan | `em`, `sre` |
+| Postdeploy | `run:postdeploy`, `run:postdeploy:revise` | postdeploy review, postmortem | `qa`, `sre` |
+| Ops | `run:ops`, `run:ops:revise` | markdown SLO/alerts/runbook improvements | `sre`, `km` |
 | AI Repair | `run:ai-repair` | emergency infra recovery, stabilization fix, incident handover | `sre` |
-| Self-Improve | `run:self-improve` | run/session diagnosis (MCP), PR with prompt/instruction updates and/or agent-runner Dockerfile changes | `km`, `dev`, `reviewer` |
+| Self-Improve | `run:self-improve`, `run:self-improve:revise` | run/session diagnosis (MCP), PR with prompt/instruction updates and/or agent-runner Dockerfile changes | `km`, `dev`, `reviewer` |
 
 ## Петли ревизии и переосмысления
 

@@ -154,7 +154,7 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		existingCommentID = trackedCommentID
 	}
 	currentState.SlotURL = s.resolveRunSlotURL(runCtx, currentState)
-	nextStepActions := buildNextStepActions(s.cfg.PublicBaseURL, runCtx, currentState)
+	nextStepActions := buildNextStepActions(s.cfg.PublicBaseURL, s.cfg.NextStepLabels, runCtx, currentState)
 	recentStatuses := s.loadRecentAgentStatuses(ctx, runCtx.run.CorrelationID, 3)
 
 	body, err := renderCommentBody(currentState, s.buildRunManagementURL(runID), nextStepActions, recentStatuses)
