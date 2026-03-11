@@ -53,9 +53,11 @@ func funcMap(vars map[string]string) template.FuncMap {
 			}
 			return right
 		},
-		"join":       strings.Join,
-		"trimPrefix": strings.TrimPrefix,
-		"toLower":    strings.ToLower,
+		"join": strings.Join,
+		"trimPrefix": func(prefix string, value string) string {
+			return strings.TrimPrefix(value, prefix)
+		},
+		"toLower": strings.ToLower,
 	}
 }
 

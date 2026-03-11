@@ -90,9 +90,11 @@ func renderTemplate(name string, raw []byte, ctx ResolvedContext) ([]byte, error
 			}
 			return right
 		},
-		"join":       strings.Join,
-		"trimPrefix": strings.TrimPrefix,
-		"toLower":    strings.ToLower,
+		"join": strings.Join,
+		"trimPrefix": func(prefix string, value string) string {
+			return strings.TrimPrefix(value, prefix)
+		},
+		"toLower": strings.ToLower,
 	}
 
 	tmpl, err := template.New(name).Funcs(funcs).Parse(string(raw))

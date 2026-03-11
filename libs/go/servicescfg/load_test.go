@@ -763,6 +763,43 @@ spec:
 	}
 }
 
+func TestLoad_TrimPrefixTemplateHelperUsesPrefixFirstOrder(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "services.yaml")
+	writeFile(t, path, `
+apiVersion: codex-k8s.dev/v1alpha1
+kind: ServiceStack
+metadata:
+  name: demo
+spec:
+  versions:
+    kubectl:
+      value: "v1.32.2"
+  environments:
+    production:
+      namespaceTemplate: "{{ .Project }}-prod"
+  images:
+    kubectl:
+      type: external
+      from: 'alpine/k8s:{{ trimPrefix "v" (index .Versions "kubectl") }}'
+      local: 'registry.local/demo/alpine-k8s:{{ trimPrefix "v" (index .Versions "kubectl") }}'
+`)
+
+	result, err := Load(path, LoadOptions{Env: "production"})
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+
+	kubectlImage := result.Stack.Spec.Images["kubectl"]
+	if got, want := kubectlImage.From, "alpine/k8s:1.32.2"; got != want {
+		t.Fatalf("unexpected kubectl source image: got %q want %q", got, want)
+	}
+	if got, want := kubectlImage.Local, "registry.local/demo/alpine-k8s:1.32.2"; got != want {
+		t.Fatalf("unexpected kubectl mirror image: got %q want %q", got, want)
+	}
+}
+
 func writeFile(t *testing.T, path string, content string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(strings.TrimSpace(content)+"\n"), 0o644); err != nil {
