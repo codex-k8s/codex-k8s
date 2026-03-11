@@ -6,7 +6,7 @@ status: in-review
 owner_role: EM
 created_at: 2026-03-11
 updated_at: 2026-03-11
-related_issues: [318, 320, 254, 281, 282, 309, 312]
+related_issues: [318, 320, 254, 281, 282, 309, 312, 322]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - Issue `#320` подготовлен как единый execution backlog item для рефакторинга IA проектной документации без полного re-root дерева `docs/`.
 - Исполнение разбито на три последовательные волны: governance baseline -> migration/sync -> issue/link/drift closure.
-- План явно синхронизирован с зависимыми открытыми потоками `#281`, `#282`, `#309`, `#312`, `#318` и traceability-документами Sprint S8.
+- План явно синхронизирован с зависимыми открытыми потоками `#281`, `#282`, `#309`, `#312`, `#318`, `#322` и traceability-документами Sprint S8.
 
 ## Контекст
 - Stage continuity: `#318 -> #320`.
@@ -48,7 +48,7 @@ approvals:
 |---|---|---|---|
 | Wave 1 | Зафиксировать governance baseline и каноническую навигацию | `docs/delivery/development_process_requirements.md`, `docs/index.md`, `docs/{product,architecture,delivery,ops}/README.md`, `docs/templates/index.md`, `docs/templates/user_story.md` | Утверждены правила размещения, root/domain indexes и template-only роль каталога `docs/templates/` |
 | Wave 2 | Выполнить migration по одобренной карте без нарушения source-of-truth путей | candidate-пакеты `docs/architecture/*`, `docs/ops/*`, `docs/delivery/*`, migration-map, `docs/delivery/{delivery_plan,issue_map,requirements_traceability}.md`, `docs/delivery/{sprints,epics}/README.md` | Инициативные/handover документы разложены по доменным подпапкам, а traceability и внутренние markdown-ссылки синхронизированы |
-| Wave 3 | Закрыть внешние ссылки, runtime contracts и drift-control | `services.yaml`, open issues `#254`, `#281`, `#282`, `#309`, `#312`, `#318`, repo-local doc-drift check entrypoint/evidence | `spec.projectDocs/spec.roleDocTemplates`, issue/PR ссылки и проверка drift приведены к новой IA |
+| Wave 3 | Закрыть внешние ссылки, runtime contracts и drift-control | `services.yaml`, open issues `#254`, `#281`, `#282`, `#309`, `#312`, `#318`, `#322`, repo-local doc-drift check entrypoint/evidence | `spec.projectDocs/spec.roleDocTemplates`, issue/PR ссылки и проверка drift приведены к новой IA |
 
 ## Sequencing constraints
 - Wave 1 обязателен перед любым переносом файлов: без согласованного root/domain convention нельзя безопасно переписывать links и onboarding baselines.
@@ -63,14 +63,14 @@ approvals:
 | `QG-320-01 IA contract` | Канонический root/domain navigation зафиксирован | `docs/index.md` + `docs/<domain>/README.md` согласованы в governance-docs и handover-плане |
 | `QG-320-02 Migration map` | Перед переносом подготовлена и reviewed полная migration-map | Нет ad-hoc move без списка затронутых ссылок и owner-role |
 | `QG-320-03 Runtime docs sync` | `services.yaml/spec.projectDocs` и `spec.roleDocTemplates` указывают только на существующие пути | Агентный docs context и role-aware templates не ломаются после migration |
-| `QG-320-04 External refs sync` | Обновлены открытые issues и artefact references | `#254`, `#281`, `#282`, `#309`, `#312`, `#318` больше не содержат stale doc-path/blob refs |
+| `QG-320-04 External refs sync` | Обновлены открытые issues и artefact references | `#254`, `#281`, `#282`, `#309`, `#312`, `#318`, `#322` больше не содержат stale doc-path/blob refs |
 | `QG-320-05 Reproducible drift check` | Есть один repo-local entrypoint для проверки doc drift | Проверка выявляет broken repo-relative paths, stale blob links и несинхронизированные doc refs |
 | `QG-320-06 Traceability closure` | Delivery docs синхронизированы | `delivery_plan`, `issue_map`, `requirements_traceability`, sprint/epic indexes отражают итоговую IA |
 
 ## Definition of Ready (`run:dev` на Issue #320)
 - [x] Вариант 1 IA из `#318` закреплён как базовый execution direction.
 - [x] Определено, что root navigation path = `docs/index.md`, а доменные индексы = `README.md`.
-- [x] Зафиксирован affected-issues baseline: `#254`, `#281`, `#282`, `#309`, `#312`, `#318`.
+- [x] Зафиксирован affected-issues baseline: `#254`, `#281`, `#282`, `#309`, `#312`, `#318`, `#322`.
 - [x] Execution strategy оставлена в одном issue `#320`, без преждевременного дробления scope.
 - [x] Подтверждено, что на этапе `run:plan` достаточно markdown-only изменений; реализация `services.yaml`/issue updates перенесена в `run:dev`.
 
