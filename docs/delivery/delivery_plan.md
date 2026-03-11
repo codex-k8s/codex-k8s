@@ -5,7 +5,7 @@ title: "codex-k8s — Delivery Plan"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-03-06
+updated_at: 2026-03-11
 related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282]
 related_prs: []
 approvals:
@@ -191,7 +191,10 @@ approvals:
   - сформирован execution issue package `#243..#260` без trigger-лейблов с wave-sequencing;
   - parity-гейт перед `run:dev` подтверждён: `approved_execution_epics_count == created_run_dev_issues_count` (`18 == 18`).
   - post-plan добавление: issue `#274` (`S7-E19`) на backend cleanup Agents/Configs/Secrets + registry images + running jobs.
-- Day 7+ (planned): `dev -> qa -> release -> postdeploy -> ops -> doc-audit` по implementation issues `#243..#260`, `#274` и owner-governed trigger-лейблам.
+- Day 7+ (in-progress): `dev -> qa -> release -> postdeploy -> ops -> doc-audit` по implementation issues `#243..#260`, `#274` и owner-governed trigger-лейблам.
+  - На текущий момент `#243` и `#244` owner-approved; `#245`, `#246`, `#247/#248/#249`, `#251`, `#252`, `#253`, `#256`, `#258` и `#274` реализованы в execution streams.
+  - Standalone issues `#250` и `#257` закрываются doc-actualization pass как уже поглощённые cleanup-потоками.
+  - Remaining standalone backlog Sprint S7 после актуализации `#258`: `#254`, `#255`, `#259..#260`.
 
 ### Sprint S8: Go refactoring parallelization + repository onboarding automation
 - Day 1 (in-review): plan-пакет по параллельному Go-рефакторингу (`docs/delivery/epics/s8/epic-s8-day1-go-refactoring-plan.md`).

@@ -27,6 +27,7 @@ approvals:
 - PRD:
 - Design:
 - ADR:
+- Runbook/DNS policy:
 - DoD:
 
 ## 3. Введение
@@ -36,6 +37,7 @@ approvals:
 ## 4. Test items (что тестируем)
 - Компоненты/модули:
 - API/фичи:
+- Для каждой новой/изменённой HTTP-ручки: service DNS path, метод и ожидаемый status code:
 
 ## 5. Риски (software risk issues)
 - ...
@@ -51,6 +53,7 @@ approvals:
 - Уровни тестов:
 - Автоматизация:
 - Ручные проверки:
+- DNS-path acceptance для новых/изменённых HTTP-ручек:
 
 ## 9. Критерии pass/fail
 - ...
@@ -62,6 +65,7 @@ approvals:
 ## 11. Test deliverables
 - Отчеты:
 - Логи:
+- DNS evidence bundle (namespace/FQDN/команда/status/headers-body excerpt/timestamp/issue-or-pr/checklist reference):
 - Баг-репорты:
 
 ## 12. Remaining test tasks
@@ -70,6 +74,7 @@ approvals:
 ## 13. Environmental needs
 - Окружения:
 - Доступы:
+- Namespace/service DNS + `curl`/`getent`/`kubectl`:
 - Данные:
 
 ## 14. Роли и ответственность

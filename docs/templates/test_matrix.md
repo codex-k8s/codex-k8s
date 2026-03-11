@@ -25,6 +25,13 @@ approvals:
 |---|---:|---:|---:|---:|---:|---:|---|
 |  |  |  |  |  |  |  |  |
 
+## DNS-path coverage для новых/изменённых HTTP-ручек
+Если в scope нет HTTP-ручек, явно написать `Не требуется`.
+
+| Ручка | Service DNS | Метод | Ожидаемый status | Evidence |
+|---|---|---|---|---|
+|  |  |  |  | `status`; excerpt; timestamp; issue/PR/checklist |
+
 ## Дефекты/риски по зонам
 - ...
 

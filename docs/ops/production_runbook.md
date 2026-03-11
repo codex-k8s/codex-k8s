@@ -5,8 +5,8 @@ title: "Production Runbook (MVP)"
 status: active
 owner_role: SRE
 created_at: 2026-02-09
-updated_at: 2026-03-02
-related_issues: [1]
+updated_at: 2026-03-11
+related_issues: [1, 256]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -50,6 +50,59 @@ kubectl -n "$CODEXK8S_PRODUCTION_NAMESPACE" logs deploy/codex-k8s-worker --tail=
 Порядок выкладки production:
 - `PostgreSQL -> migrations -> control-plane -> api-gateway -> frontend`.
 - Зависимости между сервисами ожидаются через `initContainers` в манифестах.
+
+## QA acceptance через Kubernetes service DNS (S7-E14)
+
+Для новых или изменённых HTTP-ручек QA acceptance не должна зависеть только от browser/OAuth flow через Ingress.
+Базовый путь проверки: обращаться к сервису по Kubernetes DNS внутри namespace и фиксировать отдельный evidence bundle.
+
+Обязательный минимум evidence по каждой применимой ручке:
+- namespace и service FQDN;
+- точная команда (`getent`/`curl`);
+- HTTP status;
+- краткий excerpt headers/body;
+- timestamp и ссылка на issue/PR/checklist;
+- при fail — `kubectl`-диагностика по сервису и pod'ам.
+
+Канонический формат service DNS по Kubernetes:
+- короткое имя `<service>` работает только внутри того же namespace и зависит от search path pod'а;
+- для QA evidence использовать явный FQDN `<service>.<namespace>.svc.cluster.local`, чтобы было видно, какой namespace/service проверялся.
+
+Минимальный шаблон проверки:
+
+```bash
+ns="<runtime-namespace>" # например codex-k8s-dev-1; не подставлять production default
+svc="codex-k8s"
+fqdn="${svc}.${ns}.svc.cluster.local"
+base="http://${fqdn}"
+ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+issue_or_pr="<issue-or-pr-url>"
+checklist_ref="<checklist-url-or-path>"
+
+getent hosts "$fqdn"
+curl -sS -o /tmp/health.out -D /tmp/health.headers -w '%{http_code}\n' "$base/healthz"
+curl -sS -o /tmp/authme.out -D /tmp/authme.headers -w '%{http_code}\n' "$base/api/v1/auth/me"
+curl -sS -o /tmp/webhook.out -D /tmp/webhook.headers -w '%{http_code}\n' -X POST "$base/api/v1/webhooks/github"
+printf 'timestamp=%s\nissue_or_pr=%s\nchecklist=%s\n' "$ts" "$issue_or_pr" "$checklist_ref"
+```
+
+Интерпретация baseline:
+- `GET /healthz` ожидаемо возвращает `200`;
+- защищённая ручка без credentials ожидаемо возвращает `401` или `403`;
+- invalid webhook request ожидаемо возвращает `400` или `401` по контракту сервиса;
+- наличие только browser redirect/OAuth-path не считается достаточным acceptance evidence для ручки.
+
+Если DNS-path проверка падает, добавить базовую диагностику:
+
+```bash
+kubectl -n "$ns" get svc,pods -o wide
+kubectl -n "$ns" logs deploy/codex-k8s --tail=200
+kubectl -n "$ns" get events --sort-by=.lastTimestamp | tail -n 80
+```
+
+Примечание:
+- Ingress/TLS/browser smoke остаются отдельной проверкой для production;
+- для acceptance новых/изменённых HTTP-ручек первичным evidence считается именно service DNS path из runtime namespace.
 
 ## Postdeploy checklist (S6 continuity)
 

@@ -5,7 +5,7 @@ title: "Epic Catalog: Sprint S7 (MVP readiness gap closure)"
 status: in-progress
 owner_role: PM
 created_at: 2026-02-27
-updated_at: 2026-03-10
+updated_at: 2026-03-11
 related_issues: [212, 218, 220, 222, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 199, 201, 210, 216]
 related_prs: [213, 215]
 approvals:
@@ -155,6 +155,19 @@ approvals:
   backend/frontend codegen.
 - В traceability добавлены updates по issue `#252` и `#253`; remaining backlog нормализован как `#254..#256`, `#258..#260`.
 
+## Day 7 execution fact (`S7-E14`)
+- В Issue `#256` реализован stream `S7-E14`:
+  - в `docs/ops/production_runbook.md` закреплена QA policy:
+    новые и изменённые HTTP-ручки проверяются через Kubernetes service DNS path
+    (`<service>.<namespace>.svc.cluster.local`), а не только через browser/OAuth flow;
+  - QA templates `docs/templates/test_strategy.md`, `docs/templates/test_plan.md`,
+    `docs/templates/test_matrix.md`, `docs/templates/regression_checklist.md`
+    синхронно требуют DNS evidence bundle:
+    namespace, service FQDN, команда, status, excerpt ответа и `kubectl`-диагностику при fail;
+  - full-env reference check подтвердил service DNS resolution и baseline statuses:
+    `200` для `/healthz`, `401` для `/api/v1/auth/me`, `400` для invalid `POST /api/v1/webhooks/github`.
+- В traceability добавлены updates по issue `#256`; remaining backlog нормализован как `#254`, `#255`, `#258..#260`.
+
 ## Day 7 execution fact (`S7-E16`)
 - В Issue `#258` реализован stream `S7-E16`:
   - run-status comment normalization в `control-plane` больше не позволяет позднему duplicate/stale update
@@ -162,7 +175,7 @@ approvals:
   - canonical comment и dedupe path теперь выбираются по state precedence
     (`succeeded > failed > running/pending`) с phase-aware fallback, а не по одному только `comment_id`;
   - добавлены unit-тесты на merge/dedupe сценарии, покрывающие false-failed regression class для `run:intake:revise`.
-- В traceability добавлены updates по issue `#258`; remaining backlog нормализован как `#254..#256`, `#259..#260`.
+- В traceability добавлены updates по issue `#258`; remaining backlog нормализован как `#254`, `#255`, `#259..#260`.
 
 ## Candidate execution backlog (19 эпиков)
 
@@ -181,7 +194,7 @@ approvals:
 | S7-E11 | P0 | Label orchestration reliability: исправить `mode:discussion` trigger-поведение | implemented (`#253`) |
 | S7-E12 | P1 | Final MVP readiness gate: e2e evidence bundle + go/no-go для release chain | PRC-01..PRC-08 |
 | S7-E13 | P0 | Label policy alignment: добавить `run:qa:revise` и покрыть revise-loop QA-stage | PRC-09 |
-| S7-E14 | P0 | QA execution contract: проверка новых/изменённых ручек через Kubernetes DNS path + evidence | PRC-10 |
+| S7-E14 | P0 | QA execution contract: проверка новых/изменённых ручек через Kubernetes DNS path + evidence (in-review `#256`) | PRC-10 |
 | S7-E15 | P0 | Prompt templates MVP policy: absorbed by `#247/#248/#249` + `#274`; standalone issue `#257` закрывается doc-actualization pass | PRC-11 |
 | S7-E16 | P0 | Run status reliability: устранить false-failed для фактически успешных `run:intake:revise` | PRC-12 |
 | S7-E17 | P0 | Self-improve reliability: доступность и корректная перезапись `agent_sessions` snapshot | PRC-13 |

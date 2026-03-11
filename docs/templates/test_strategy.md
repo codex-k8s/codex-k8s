@@ -22,6 +22,7 @@ approvals:
 - Подход:
 - Уровни тестирования:
 - Автоматизация:
+- DNS-path coverage для новых/изменённых HTTP-ручек:
 - Риски:
 
 ## Цели тестирования
@@ -38,12 +39,14 @@ approvals:
 - Unit:
 - Integration:
 - E2E:
+- Manual acceptance: для новых/изменённых HTTP-ручек использовать Kubernetes service DNS path, а не только browser/OAuth flow:
 - Performance:
 - Security:
 - Chaos (если нужно):
 
 ## Окружения
 - Dev slot:
+- Full-env namespace/service DNS:
 - Production:
 - Prod (только smoke/наблюдение):
 
@@ -59,9 +62,11 @@ approvals:
 ## Критерии входа/выхода
 ### Entry criteria
 - [ ] ...
+- [ ] Для каждой новой/изменённой HTTP-ручки определён service DNS path и ожидаемый status code.
 
 ### Exit criteria
 - [ ] ...
+- [ ] Для применимых HTTP-ручек приложен DNS evidence bundle: namespace, FQDN, команда, status, excerpt ответа, timestamp, ссылка на issue/PR/checklist.
 
 ## Риски и меры
 - ...
