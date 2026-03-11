@@ -192,9 +192,9 @@ approvals:
   - parity-гейт перед `run:dev` подтверждён: `approved_execution_epics_count == created_run_dev_issues_count` (`18 == 18`).
   - post-plan добавление: issue `#274` (`S7-E19`) на backend cleanup Agents/Configs/Secrets + registry images + running jobs.
 - Day 7+ (in-progress): `dev -> qa -> release -> postdeploy -> ops -> doc-audit` по implementation issues `#243..#260`, `#274` и owner-governed trigger-лейблам.
-  - На текущий момент `#243` и `#244` owner-approved; `#245`, `#246`, `#247/#248/#249`, `#251`, `#252`, `#253`, `#256`, `#258`, `#259` и `#274` реализованы в execution streams.
+  - На текущий момент `#243` и `#244` owner-approved; `#245`, `#246`, `#247/#248/#249`, `#251`, `#252`, `#253`, `#255`, `#256`, `#258`, `#259`, `#260` и `#274` реализованы в execution streams.
   - Standalone issues `#250` и `#257` закрываются doc-actualization pass как уже поглощённые cleanup-потоками.
-  - Remaining standalone backlog Sprint S7 после актуализации `#259`: `#254`, `#255`, `#260`.
+  - Remaining standalone backlog Sprint S7 после актуализации `#260`: `#254`.
 
 ### Sprint S8: Go refactoring parallelization + repository onboarding automation
 - Day 1 (in-review): plan-пакет по параллельному Go-рефакторингу (`docs/delivery/epics/s8/epic-s8-day1-go-refactoring-plan.md`).

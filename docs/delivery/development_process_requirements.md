@@ -238,6 +238,11 @@ approvals:
 
 ## Ролевая матрица шаблонов документов (обязательна)
 
+Эта матрица обязательна не только для людей, но и для runtime-конфигурации:
+- `services.yaml/spec.roleDocTemplates` должен оставаться синхронным с таблицей ниже;
+- `services.yaml/spec.projectDocs` должен давать роли доступ к релевантным source-of-truth каталогам;
+- любые расхождения считаются documentation governance drift и исправляются в том же PR.
+
 | Роль | Основные stage | Обязательные шаблоны (`docs/templates/*.md`) |
 |---|---|---|
 | PM | `run:intake`, `run:vision`, `run:prd` | `problem.md`, `scope_mvp.md`, `constraints.md`, `brief.md`, `project_charter.md`, `success_metrics.md`, `prd.md`, `nfr.md`, `user_story.md` |

@@ -190,6 +190,14 @@ approvals:
   write-path перешёл на CAS-like upsert с сохранением последнего non-empty codex snapshot,
   internal gRPC callback и `agent-runner` синхронизируют `snapshot_version`/`snapshot_checksum`.
 - В traceability добавлены updates по issue `#259`; remaining backlog нормализован как `#254`, `#255`, `#260`.
+- В Issue `#260` реализован stream `S7-E18`:
+  `services.yaml/spec.roleDocTemplates` и `services.yaml/spec.projectDocs`
+  синхронизированы с governance-матрицей из `docs/delivery/development_process_requirements.md`,
+  `reviewer` больше не получает лишние doc templates,
+  а `dev/qa/sre` prompt envelope получает обязательные delivery/ops source-of-truth ссылки.
+- В `agent-runner` добавлены regression-тесты на реальный repository `services.yaml`,
+  чтобы role-template matrix и doc IA не дрейфовали при следующих изменениях.
+- В traceability добавлены updates по issue `#260`; remaining backlog нормализован как `#254`.
 
 ## Candidate execution backlog (19 эпиков)
 

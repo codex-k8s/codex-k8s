@@ -3,6 +3,7 @@ package runner
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 )
 
@@ -200,5 +201,99 @@ spec:
 	}
 	if len(templates) != 0 {
 		t.Fatalf("len(templates)=%d, want 0", len(templates))
+	}
+}
+
+func TestRepositoryServicesYAML_RoleDocTemplatesMatchGovernanceMatrix(t *testing.T) {
+	t.Parallel()
+
+	repoDir := findRepositoryRootForPromptTests(t)
+	expected := map[string][]string{
+		"pm":  {"problem.md", "scope_mvp.md", "constraints.md", "brief.md", "project_charter.md", "success_metrics.md", "prd.md", "nfr.md", "user_story.md"},
+		"em":  {"delivery_plan.md", "epic.md", "definition_of_done.md", "release_plan.md", "release_notes.md", "rollback_plan.md"},
+		"sa":  {"c4_context.md", "c4_container.md", "adr.md", "alternatives.md", "api_contract.md", "data_model.md", "design_doc.md", "migrations_policy.md"},
+		"dev": {"user_story.md", "definition_of_done.md"},
+		"qa":  {"test_strategy.md", "test_plan.md", "test_matrix.md", "regression_checklist.md", "postdeploy_review.md"},
+		"sre": {"runbook.md", "monitoring.md", "alerts.md", "slo.md", "incident_playbook.md", "incident_postmortem.md"},
+		"km":  {"issue_map.md", "delivery_plan.md", "roadmap.md", "docset_issue.md", "docset_pr.md"},
+	}
+
+	for role, want := range expected {
+		templates, total, trimmed := loadRoleDocTemplatesForPrompt(repoDir, role, role, runtimeModeFullEnv)
+		if trimmed {
+			t.Fatalf("role %q templates trimmed unexpectedly", role)
+		}
+		if total != len(want) {
+			t.Fatalf("role %q total=%d, want %d", role, total, len(want))
+		}
+
+		got := make([]string, 0, len(templates))
+		for _, template := range templates {
+			got = append(got, template.TemplateName)
+		}
+		slices.Sort(got)
+		slices.Sort(want)
+		if !slices.Equal(got, want) {
+			t.Fatalf("role %q templates=%v, want %v", role, got, want)
+		}
+	}
+
+	reviewerTemplates, total, trimmed := loadRoleDocTemplatesForPrompt(repoDir, "reviewer", "reviewer", runtimeModeFullEnv)
+	if trimmed {
+		t.Fatalf("reviewer templates trimmed unexpectedly")
+	}
+	if total != 0 || len(reviewerTemplates) != 0 {
+		t.Fatalf("reviewer must not expose role templates, total=%d len=%d", total, len(reviewerTemplates))
+	}
+}
+
+func TestRepositoryServicesYAML_ProjectDocsCoverDeliveryAndOpsRoles(t *testing.T) {
+	t.Parallel()
+
+	repoDir := findRepositoryRootForPromptTests(t)
+	docs, total, trimmed := loadProjectDocsForPrompt(repoDir, "dev", "dev", runtimeModeFullEnv)
+	if trimmed {
+		t.Fatalf("dev project docs trimmed unexpectedly")
+	}
+	if total == 0 || len(docs) == 0 {
+		t.Fatalf("dev project docs must not be empty")
+	}
+
+	assertPromptDocVisible(t, repoDir, "dev", "dev", "docs/delivery")
+	assertPromptDocVisible(t, repoDir, "qa", "qa", "docs/delivery")
+	assertPromptDocVisible(t, repoDir, "qa", "qa", "docs/ops")
+	assertPromptDocVisible(t, repoDir, "sre", "ops", "docs/delivery")
+	assertPromptDocVisible(t, repoDir, "sre", "ops", "docs/ops")
+}
+
+func assertPromptDocVisible(t *testing.T, repoDir string, role string, triggerKind string, wantPath string) {
+	t.Helper()
+
+	docs, _, _ := loadProjectDocsForPrompt(repoDir, role, triggerKind, runtimeModeFullEnv)
+	for _, doc := range docs {
+		if doc.Path == wantPath {
+			return
+		}
+	}
+	t.Fatalf("role %q trigger %q must see project doc %q", role, triggerKind, wantPath)
+}
+
+func findRepositoryRootForPromptTests(t *testing.T) string {
+	t.Helper()
+
+	dir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "services.yaml")); err == nil {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			t.Fatalf("repository root with services.yaml not found from %q", dir)
+		}
+		dir = parent
 	}
 }
