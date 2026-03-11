@@ -27,24 +27,29 @@ type runWriteScopePolicy struct {
 }
 
 var markdownOnlyTriggerKinds = map[webhookdomain.TriggerKind]struct{}{
-	webhookdomain.TriggerKindIntake:       {},
-	webhookdomain.TriggerKindIntakeRevise: {},
-	webhookdomain.TriggerKindVision:       {},
-	webhookdomain.TriggerKindVisionRevise: {},
-	webhookdomain.TriggerKindPRD:          {},
-	webhookdomain.TriggerKindPRDRevise:    {},
-	webhookdomain.TriggerKindArch:         {},
-	webhookdomain.TriggerKindArchRevise:   {},
-	webhookdomain.TriggerKindDesign:       {},
-	webhookdomain.TriggerKindDesignRevise: {},
-	webhookdomain.TriggerKindPlan:         {},
-	webhookdomain.TriggerKindPlanRevise:   {},
-	webhookdomain.TriggerKindDocAudit:     {},
-	webhookdomain.TriggerKindQA:           {},
-	webhookdomain.TriggerKindRelease:      {},
-	webhookdomain.TriggerKindPostDeploy:   {},
-	webhookdomain.TriggerKindOps:          {},
-	webhookdomain.TriggerKindRethink:      {},
+	webhookdomain.TriggerKindIntake:           {},
+	webhookdomain.TriggerKindIntakeRevise:     {},
+	webhookdomain.TriggerKindVision:           {},
+	webhookdomain.TriggerKindVisionRevise:     {},
+	webhookdomain.TriggerKindPRD:              {},
+	webhookdomain.TriggerKindPRDRevise:        {},
+	webhookdomain.TriggerKindArch:             {},
+	webhookdomain.TriggerKindArchRevise:       {},
+	webhookdomain.TriggerKindDesign:           {},
+	webhookdomain.TriggerKindDesignRevise:     {},
+	webhookdomain.TriggerKindPlan:             {},
+	webhookdomain.TriggerKindPlanRevise:       {},
+	webhookdomain.TriggerKindDocAudit:         {},
+	webhookdomain.TriggerKindDocAuditRevise:   {},
+	webhookdomain.TriggerKindQA:               {},
+	webhookdomain.TriggerKindQARevise:         {},
+	webhookdomain.TriggerKindRelease:          {},
+	webhookdomain.TriggerKindReleaseRevise:    {},
+	webhookdomain.TriggerKindPostDeploy:       {},
+	webhookdomain.TriggerKindPostDeployRevise: {},
+	webhookdomain.TriggerKindOps:              {},
+	webhookdomain.TriggerKindOpsRevise:        {},
+	webhookdomain.TriggerKindRethink:          {},
 }
 
 func resolveRunWriteScopePolicy(triggerKind string, agentKey string, discussionMode bool) runWriteScopePolicy {
@@ -54,7 +59,7 @@ func resolveRunWriteScopePolicy(triggerKind string, agentKey string, discussionM
 	if discussionMode {
 		return runWriteScopePolicy{Mode: runWriteScopeModeDiscussion}
 	}
-	if normalizedTriggerKind == webhookdomain.TriggerKindSelfImprove {
+	if normalizedTriggerKind == webhookdomain.TriggerKindSelfImprove || normalizedTriggerKind == webhookdomain.TriggerKindSelfImproveRevise {
 		return runWriteScopePolicy{Mode: runWriteScopeModeSelfImproveOnly}
 	}
 	if normalizedAgentKey == "reviewer" {

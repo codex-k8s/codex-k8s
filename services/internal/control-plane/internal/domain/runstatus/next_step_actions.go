@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
+	nextstepdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/nextstep"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
@@ -39,12 +39,6 @@ const (
 	nextStepDisplayRestartVeryShort         = "restart_very_short"
 )
 
-type stageDescriptor struct {
-	Stage       string
-	RunLabel    string
-	ReviseLabel string
-}
-
 type nextStepCommentAction struct {
 	ActionKind     string
 	DisplayVariant string
@@ -58,7 +52,7 @@ type groupedFlowAction struct {
 }
 
 type specialMatrixAction struct {
-	TargetLabel    string
+	TargetStage    string
 	DisplayVariant string
 }
 
@@ -69,78 +63,16 @@ type specialStageMatrix struct {
 	AllowSelfImprove bool
 }
 
-func stageDescriptorByName(stage string) (stageDescriptor, bool) {
-	switch strings.TrimSpace(stage) {
-	case "intake":
-		return stageDescriptor{Stage: "intake", RunLabel: webhookdomain.DefaultRunIntakeLabel, ReviseLabel: webhookdomain.DefaultRunIntakeReviseLabel}, true
-	case "vision":
-		return stageDescriptor{Stage: "vision", RunLabel: webhookdomain.DefaultRunVisionLabel, ReviseLabel: webhookdomain.DefaultRunVisionReviseLabel}, true
-	case "prd":
-		return stageDescriptor{Stage: "prd", RunLabel: webhookdomain.DefaultRunPRDLabel, ReviseLabel: webhookdomain.DefaultRunPRDReviseLabel}, true
-	case "arch":
-		return stageDescriptor{Stage: "arch", RunLabel: webhookdomain.DefaultRunArchLabel, ReviseLabel: webhookdomain.DefaultRunArchReviseLabel}, true
-	case "design":
-		return stageDescriptor{Stage: "design", RunLabel: webhookdomain.DefaultRunDesignLabel, ReviseLabel: webhookdomain.DefaultRunDesignReviseLabel}, true
-	case "plan":
-		return stageDescriptor{Stage: "plan", RunLabel: webhookdomain.DefaultRunPlanLabel, ReviseLabel: webhookdomain.DefaultRunPlanReviseLabel}, true
-	case "dev":
-		return stageDescriptor{Stage: "dev", RunLabel: webhookdomain.DefaultRunDevLabel, ReviseLabel: webhookdomain.DefaultRunDevReviseLabel}, true
-	case "doc-audit":
-		return stageDescriptor{Stage: "doc-audit", RunLabel: webhookdomain.DefaultRunDocAuditLabel, ReviseLabel: webhookdomain.DefaultRunDocAuditReviseLabel}, true
-	case "qa":
-		return stageDescriptor{Stage: "qa", RunLabel: webhookdomain.DefaultRunQALabel, ReviseLabel: webhookdomain.DefaultRunQAReviseLabel}, true
-	case "release":
-		return stageDescriptor{Stage: "release", RunLabel: webhookdomain.DefaultRunReleaseLabel, ReviseLabel: webhookdomain.DefaultRunReleaseReviseLabel}, true
-	case "postdeploy":
-		return stageDescriptor{Stage: "postdeploy", RunLabel: webhookdomain.DefaultRunPostDeployLabel, ReviseLabel: webhookdomain.DefaultRunPostDeployReviseLabel}, true
-	case "ops":
-		return stageDescriptor{Stage: "ops", RunLabel: webhookdomain.DefaultRunOpsLabel, ReviseLabel: webhookdomain.DefaultRunOpsReviseLabel}, true
-	case "self-improve":
-		return stageDescriptor{Stage: "self-improve", RunLabel: webhookdomain.DefaultRunSelfImproveLabel, ReviseLabel: webhookdomain.DefaultRunSelfImproveReviseLabel}, true
-	case "rethink":
-		return stageDescriptor{Stage: "rethink", RunLabel: webhookdomain.DefaultRunRethinkLabel}, true
-	default:
-		return stageDescriptor{}, false
-	}
+func stageDescriptorByName(labels nextstepdomain.Labels, stage string) (nextstepdomain.StageDescriptor, bool) {
+	return labels.DescriptorByStage(stage)
 }
 
-func stageDescriptorFromTriggerKind(triggerKind string) (stageDescriptor, bool) {
-	switch normalizeTriggerKind(triggerKind) {
-	case string(webhookdomain.TriggerKindIntake), string(webhookdomain.TriggerKindIntakeRevise):
-		return stageDescriptorByName("intake")
-	case string(webhookdomain.TriggerKindVision), string(webhookdomain.TriggerKindVisionRevise):
-		return stageDescriptorByName("vision")
-	case string(webhookdomain.TriggerKindPRD), string(webhookdomain.TriggerKindPRDRevise):
-		return stageDescriptorByName("prd")
-	case string(webhookdomain.TriggerKindArch), string(webhookdomain.TriggerKindArchRevise):
-		return stageDescriptorByName("arch")
-	case string(webhookdomain.TriggerKindDesign), string(webhookdomain.TriggerKindDesignRevise):
-		return stageDescriptorByName("design")
-	case string(webhookdomain.TriggerKindPlan), string(webhookdomain.TriggerKindPlanRevise):
-		return stageDescriptorByName("plan")
-	case string(webhookdomain.TriggerKindDev), string(webhookdomain.TriggerKindDevRevise):
-		return stageDescriptorByName("dev")
-	case string(webhookdomain.TriggerKindDocAudit):
-		return stageDescriptorByName("doc-audit")
-	case string(webhookdomain.TriggerKindQA):
-		return stageDescriptorByName("qa")
-	case string(webhookdomain.TriggerKindRelease):
-		return stageDescriptorByName("release")
-	case string(webhookdomain.TriggerKindPostDeploy):
-		return stageDescriptorByName("postdeploy")
-	case string(webhookdomain.TriggerKindOps):
-		return stageDescriptorByName("ops")
-	case string(webhookdomain.TriggerKindSelfImprove):
-		return stageDescriptorByName("self-improve")
-	case string(webhookdomain.TriggerKindRethink):
-		return stageDescriptorByName("rethink")
-	default:
-		return stageDescriptor{}, false
-	}
+func stageDescriptorFromTriggerKind(labels nextstepdomain.Labels, triggerKind string) (nextstepdomain.StageDescriptor, bool) {
+	return labels.DescriptorByTriggerKind(normalizeTriggerKind(triggerKind))
 }
 
-func buildNextStepActions(publicBaseURL string, runCtx runContext, state commentState) []nextStepCommentAction {
-	descriptor, ok := stageDescriptorFromTriggerKind(state.TriggerKind)
+func buildNextStepActions(publicBaseURL string, labels nextstepdomain.Labels, runCtx runContext, state commentState) []nextStepCommentAction {
+	descriptor, ok := stageDescriptorFromTriggerKind(labels, state.TriggerKind)
 	if !ok {
 		return nil
 	}
@@ -151,6 +83,7 @@ func buildNextStepActions(publicBaseURL string, runCtx runContext, state comment
 			state.RepositoryFullName,
 			state.IssueNumber,
 			pullRequestNumberFromRunContext(runCtx),
+			labels,
 			descriptor,
 			matrix.Actions,
 			matrix.AllowDocAudit,
@@ -169,25 +102,19 @@ func buildNextStepActions(publicBaseURL string, runCtx runContext, state comment
 		})
 	}
 
-	for _, item := range groupProfileFlowActions(descriptor.Stage) {
+	for _, item := range groupProfileFlowActions(descriptor.Stage, labels) {
 		displayVariant := displayVariantForProfiles(item.Profiles)
 		if displayVariant == "" {
 			continue
 		}
-		actions = append(actions, nextStepCommentAction{
-			ActionKind:     querytypes.NextStepActionKindIssueStageTransition,
-			DisplayVariant: displayVariant,
-			TargetLabel:    item.TargetLabel,
-			URL:            buildNextStepActionURL(publicBaseURL, state.RepositoryFullName, state.IssueNumber, pullRequestNumberFromRunContext(runCtx), querytypes.NextStepActionKindIssueStageTransition, item.TargetLabel, displayVariant),
-		})
+		actions = appendIssueStageTransitionAction(actions, publicBaseURL, state.RepositoryFullName, state.IssueNumber, pullRequestNumberFromRunContext(runCtx), item.TargetLabel, displayVariant)
 	}
 	if descriptor.Stage == "design" {
-		actions = append(actions, nextStepCommentAction{
-			ActionKind:     querytypes.NextStepActionKindIssueStageTransition,
-			DisplayVariant: nextStepDisplayGoToDev,
-			TargetLabel:    webhookdomain.DefaultRunDevLabel,
-			URL:            buildNextStepActionURL(publicBaseURL, state.RepositoryFullName, state.IssueNumber, pullRequestNumberFromRunContext(runCtx), querytypes.NextStepActionKindIssueStageTransition, webhookdomain.DefaultRunDevLabel, nextStepDisplayGoToDev),
-		})
+		updatedActions, ok := appendStageTransitionAction(actions, publicBaseURL, state.RepositoryFullName, state.IssueNumber, pullRequestNumberFromRunContext(runCtx), labels, "dev", nextStepDisplayGoToDev)
+		if !ok {
+			return actions
+		}
+		actions = updatedActions
 	}
 
 	if pullRequestNumber := pullRequestNumberFromRunContext(runCtx); pullRequestNumber > 0 {
@@ -199,28 +126,25 @@ func buildNextStepActions(publicBaseURL string, runCtx runContext, state comment
 		})
 	}
 	if allowRethinkAction(descriptor.Stage) {
-		actions = append(actions, nextStepCommentAction{
-			ActionKind:     querytypes.NextStepActionKindIssueStageTransition,
-			DisplayVariant: nextStepDisplayRethink,
-			TargetLabel:    webhookdomain.DefaultRunRethinkLabel,
-			URL:            buildNextStepActionURL(publicBaseURL, state.RepositoryFullName, state.IssueNumber, pullRequestNumberFromRunContext(runCtx), querytypes.NextStepActionKindIssueStageTransition, webhookdomain.DefaultRunRethinkLabel, nextStepDisplayRethink),
-		})
+		updatedActions, ok := appendStageTransitionAction(actions, publicBaseURL, state.RepositoryFullName, state.IssueNumber, pullRequestNumberFromRunContext(runCtx), labels, "rethink", nextStepDisplayRethink)
+		if !ok {
+			return actions
+		}
+		actions = updatedActions
 	}
 	if allowDocAuditAction(descriptor.Stage) {
-		actions = append(actions, nextStepCommentAction{
-			ActionKind:     querytypes.NextStepActionKindIssueStageTransition,
-			DisplayVariant: nextStepDisplayDocAudit,
-			TargetLabel:    webhookdomain.DefaultRunDocAuditLabel,
-			URL:            buildNextStepActionURL(publicBaseURL, state.RepositoryFullName, state.IssueNumber, pullRequestNumberFromRunContext(runCtx), querytypes.NextStepActionKindIssueStageTransition, webhookdomain.DefaultRunDocAuditLabel, nextStepDisplayDocAudit),
-		})
+		updatedActions, ok := appendStageTransitionAction(actions, publicBaseURL, state.RepositoryFullName, state.IssueNumber, pullRequestNumberFromRunContext(runCtx), labels, "doc-audit", nextStepDisplayDocAudit)
+		if !ok {
+			return actions
+		}
+		actions = updatedActions
 	}
 	if allowSelfImproveAction(descriptor.Stage) {
-		actions = append(actions, nextStepCommentAction{
-			ActionKind:     querytypes.NextStepActionKindIssueStageTransition,
-			DisplayVariant: nextStepDisplaySelfImprove,
-			TargetLabel:    webhookdomain.DefaultRunSelfImproveLabel,
-			URL:            buildNextStepActionURL(publicBaseURL, state.RepositoryFullName, state.IssueNumber, pullRequestNumberFromRunContext(runCtx), querytypes.NextStepActionKindIssueStageTransition, webhookdomain.DefaultRunSelfImproveLabel, nextStepDisplaySelfImprove),
-		})
+		updatedActions, ok := appendStageTransitionAction(actions, publicBaseURL, state.RepositoryFullName, state.IssueNumber, pullRequestNumberFromRunContext(runCtx), labels, "self-improve", nextStepDisplaySelfImprove)
+		if !ok {
+			return actions
+		}
+		actions = updatedActions
 	}
 
 	return actions
@@ -231,25 +155,25 @@ func specialStageMatrixForStage(stage string) (specialStageMatrix, bool) {
 	case "doc-audit":
 		return specialStageMatrix{
 			Actions: []specialMatrixAction{
-				{TargetLabel: webhookdomain.DefaultRunPlanLabel, DisplayVariant: nextStepDisplayPreparePlan},
-				{TargetLabel: webhookdomain.DefaultRunDevLabel, DisplayVariant: nextStepDisplayGoToDev},
-				{TargetLabel: webhookdomain.DefaultRunQALabel, DisplayVariant: nextStepDisplayGoToQA},
+				{TargetStage: "plan", DisplayVariant: nextStepDisplayPreparePlan},
+				{TargetStage: "dev", DisplayVariant: nextStepDisplayGoToDev},
+				{TargetStage: "qa", DisplayVariant: nextStepDisplayGoToQA},
 			},
 			AllowDocAudit: true,
 		}, true
 	case "self-improve":
 		return specialStageMatrix{
 			Actions: []specialMatrixAction{
-				{TargetLabel: webhookdomain.DefaultRunQALabel, DisplayVariant: nextStepDisplayGoToQA},
+				{TargetStage: "qa", DisplayVariant: nextStepDisplayGoToQA},
 			},
 			AllowSelfImprove: true,
 		}, true
 	case "rethink":
 		return specialStageMatrix{
 			Actions: []specialMatrixAction{
-				{TargetLabel: webhookdomain.DefaultRunIntakeLabel, DisplayVariant: nextStepDisplayRestartFull},
-				{TargetLabel: webhookdomain.DefaultRunPRDLabel, DisplayVariant: nextStepDisplayRestartShortened},
-				{TargetLabel: webhookdomain.DefaultRunPlanLabel, DisplayVariant: nextStepDisplayRestartVeryShort},
+				{TargetStage: "intake", DisplayVariant: nextStepDisplayRestartFull},
+				{TargetStage: "prd", DisplayVariant: nextStepDisplayRestartShortened},
+				{TargetStage: "plan", DisplayVariant: nextStepDisplayRestartVeryShort},
 			},
 		}, true
 	default:
@@ -257,7 +181,7 @@ func specialStageMatrixForStage(stage string) (specialStageMatrix, bool) {
 	}
 }
 
-func buildSpecialMatrixActions(publicBaseURL string, repositoryFullName string, issueNumber int, pullRequestNumber int, descriptor stageDescriptor, targets []specialMatrixAction, includeRethink bool, includeDocAudit bool, includeReviewer bool) []nextStepCommentAction {
+func buildSpecialMatrixActions(publicBaseURL string, repositoryFullName string, issueNumber int, pullRequestNumber int, labels nextstepdomain.Labels, descriptor nextstepdomain.StageDescriptor, targets []specialMatrixAction, includeRethink bool, includeDocAudit bool, includeReviewer bool) []nextStepCommentAction {
 	actions := make([]nextStepCommentAction, 0, len(targets)+4)
 	if descriptor.ReviseLabel != "" {
 		actions = append(actions, nextStepCommentAction{
@@ -268,15 +192,14 @@ func buildSpecialMatrixActions(publicBaseURL string, repositoryFullName string, 
 		})
 	}
 	for _, target := range targets {
-		if strings.TrimSpace(target.TargetLabel) == "" || strings.TrimSpace(target.DisplayVariant) == "" {
+		if strings.TrimSpace(target.TargetStage) == "" || strings.TrimSpace(target.DisplayVariant) == "" {
 			continue
 		}
-		actions = append(actions, nextStepCommentAction{
-			ActionKind:     querytypes.NextStepActionKindIssueStageTransition,
-			DisplayVariant: target.DisplayVariant,
-			TargetLabel:    target.TargetLabel,
-			URL:            buildNextStepActionURL(publicBaseURL, repositoryFullName, issueNumber, pullRequestNumber, querytypes.NextStepActionKindIssueStageTransition, target.TargetLabel, target.DisplayVariant),
-		})
+		updatedActions, ok := appendStageTransitionAction(actions, publicBaseURL, repositoryFullName, issueNumber, pullRequestNumber, labels, target.TargetStage, target.DisplayVariant)
+		if !ok {
+			continue
+		}
+		actions = updatedActions
 	}
 	if includeReviewer && pullRequestNumber > 0 {
 		actions = append(actions, nextStepCommentAction{
@@ -287,22 +210,37 @@ func buildSpecialMatrixActions(publicBaseURL string, repositoryFullName string, 
 		})
 	}
 	if includeRethink {
-		actions = append(actions, nextStepCommentAction{
-			ActionKind:     querytypes.NextStepActionKindIssueStageTransition,
-			DisplayVariant: nextStepDisplayRethink,
-			TargetLabel:    webhookdomain.DefaultRunRethinkLabel,
-			URL:            buildNextStepActionURL(publicBaseURL, repositoryFullName, issueNumber, pullRequestNumber, querytypes.NextStepActionKindIssueStageTransition, webhookdomain.DefaultRunRethinkLabel, nextStepDisplayRethink),
-		})
+		updatedActions, ok := appendStageTransitionAction(actions, publicBaseURL, repositoryFullName, issueNumber, pullRequestNumber, labels, "rethink", nextStepDisplayRethink)
+		if !ok {
+			return actions
+		}
+		actions = updatedActions
 	}
 	if includeDocAudit {
-		actions = append(actions, nextStepCommentAction{
-			ActionKind:     querytypes.NextStepActionKindIssueStageTransition,
-			DisplayVariant: nextStepDisplayDocAudit,
-			TargetLabel:    webhookdomain.DefaultRunDocAuditLabel,
-			URL:            buildNextStepActionURL(publicBaseURL, repositoryFullName, issueNumber, pullRequestNumber, querytypes.NextStepActionKindIssueStageTransition, webhookdomain.DefaultRunDocAuditLabel, nextStepDisplayDocAudit),
-		})
+		updatedActions, ok := appendStageTransitionAction(actions, publicBaseURL, repositoryFullName, issueNumber, pullRequestNumber, labels, "doc-audit", nextStepDisplayDocAudit)
+		if !ok {
+			return actions
+		}
+		actions = updatedActions
 	}
 	return actions
+}
+
+func appendStageTransitionAction(actions []nextStepCommentAction, publicBaseURL string, repositoryFullName string, issueNumber int, pullRequestNumber int, labels nextstepdomain.Labels, stage string, displayVariant string) ([]nextStepCommentAction, bool) {
+	descriptor, ok := stageDescriptorByName(labels, stage)
+	if !ok || strings.TrimSpace(descriptor.RunLabel) == "" {
+		return actions, false
+	}
+	return appendIssueStageTransitionAction(actions, publicBaseURL, repositoryFullName, issueNumber, pullRequestNumber, descriptor.RunLabel, displayVariant), true
+}
+
+func appendIssueStageTransitionAction(actions []nextStepCommentAction, publicBaseURL string, repositoryFullName string, issueNumber int, pullRequestNumber int, targetLabel string, displayVariant string) []nextStepCommentAction {
+	return append(actions, nextStepCommentAction{
+		ActionKind:     querytypes.NextStepActionKindIssueStageTransition,
+		DisplayVariant: displayVariant,
+		TargetLabel:    targetLabel,
+		URL:            buildNextStepActionURL(publicBaseURL, repositoryFullName, issueNumber, pullRequestNumber, querytypes.NextStepActionKindIssueStageTransition, targetLabel, displayVariant),
+	})
 }
 
 func pullRequestNumberFromRunContext(runCtx runContext) int {
@@ -312,28 +250,28 @@ func pullRequestNumberFromRunContext(runCtx runContext) int {
 	return int(runCtx.payload.PullRequest.Number)
 }
 
-func groupProfileFlowActions(currentStage string) []groupedFlowAction {
+func groupProfileFlowActions(currentStage string, labels nextstepdomain.Labels) []groupedFlowAction {
 	targetToProfiles := make(map[string][]launchProfile, 3)
 	for _, profile := range []launchProfile{launchProfileNewService, launchProfileFeature, launchProfileQuickFix} {
 		targetStage, ok := resolveProfileTargetStage(currentStage, profile)
 		if !ok {
 			continue
 		}
-		targetDescriptor, ok := stageDescriptorByName(targetStage)
+		targetDescriptor, ok := stageDescriptorByName(labels, targetStage)
 		if !ok {
 			continue
 		}
 		targetToProfiles[targetDescriptor.RunLabel] = append(targetToProfiles[targetDescriptor.RunLabel], profile)
 	}
-	labels := make([]string, 0, len(targetToProfiles))
+	targetLabels := make([]string, 0, len(targetToProfiles))
 	for targetLabel := range targetToProfiles {
-		labels = append(labels, targetLabel)
+		targetLabels = append(targetLabels, targetLabel)
 	}
-	slices.SortFunc(labels, func(left string, right string) int {
+	slices.SortFunc(targetLabels, func(left string, right string) int {
 		return compareFlowTargets(left, right, targetToProfiles)
 	})
-	out := make([]groupedFlowAction, 0, len(labels))
-	for _, targetLabel := range labels {
+	out := make([]groupedFlowAction, 0, len(targetLabels))
+	for _, targetLabel := range targetLabels {
 		profiles := targetToProfiles[targetLabel]
 		slices.SortFunc(profiles, compareLaunchProfile)
 		out = append(out, groupedFlowAction{TargetLabel: targetLabel, Profiles: profiles})

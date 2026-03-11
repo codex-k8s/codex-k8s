@@ -757,15 +757,22 @@ func resolveRunAgentKey(trigger *issueRunTrigger) string {
 	case webhookdomain.TriggerKindPlan,
 		webhookdomain.TriggerKindPlanRevise,
 		webhookdomain.TriggerKindRelease,
+		webhookdomain.TriggerKindReleaseRevise,
 		webhookdomain.TriggerKindRethink:
 		return agentKeyEM
-	case webhookdomain.TriggerKindDocAudit:
+	case webhookdomain.TriggerKindDocAudit,
+		webhookdomain.TriggerKindDocAuditRevise:
 		return agentKeyKM
-	case webhookdomain.TriggerKindQA:
+	case webhookdomain.TriggerKindQA, webhookdomain.TriggerKindQARevise:
 		return agentKeyQA
-	case webhookdomain.TriggerKindAIRepair, webhookdomain.TriggerKindPostDeploy, webhookdomain.TriggerKindOps:
+	case webhookdomain.TriggerKindAIRepair,
+		webhookdomain.TriggerKindPostDeploy,
+		webhookdomain.TriggerKindPostDeployRevise,
+		webhookdomain.TriggerKindOps,
+		webhookdomain.TriggerKindOpsRevise:
 		return agentKeySRE
-	case webhookdomain.TriggerKindSelfImprove:
+	case webhookdomain.TriggerKindSelfImprove,
+		webhookdomain.TriggerKindSelfImproveRevise:
 		return agentKeyKM
 	default:
 		return defaultRunAgentKey

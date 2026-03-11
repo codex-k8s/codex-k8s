@@ -120,6 +120,7 @@
   - через `github_labels_transition` установите `{{ .StateInReviewLabel }}` на Issue #{{ .IssueNumber }}.
 {{- else if .IsReviseTrigger }}
 - Обновляйте существующий PR в той же ветке.
+- Не перезатирайте title/body существующего PR: сохраняйте исходные заголовок и описание, а body дополняйте revise-блоком перед финальным `## Закрытие`.
 - Соберите все unresolved inline review-комментарии и ответьте на КАЖДЫЙ (или явно закройте аргументированным ответом).
 - Запушьте исправления в ту же ветку.
 - После обновления PR:
@@ -263,6 +264,7 @@ Completion requirements:
   - use `github_labels_transition` to apply `{{ .StateInReviewLabel }}` on Issue #{{ .IssueNumber }}.
 {{- else if .IsReviseTrigger }}
 - Update the existing PR in the same branch.
+- Do not overwrite the existing PR body: preserve the original description and append the revise block before the final `## Closure`.
 - Collect all unresolved inline review comments and respond to EVERY one.
 - Push fixes to the same branch.
 - After PR update:

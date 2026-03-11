@@ -25,6 +25,24 @@ func TestRenderPromptArtifactContractBlocks_UsesFullIssueURLAndRoleSpecificSecti
 	}
 }
 
+func TestRenderPromptArtifactContractBlocks_ReviseInstructsAppendNotOverwrite(t *testing.T) {
+	t.Parallel()
+
+	_, prBlock, err := renderPromptArtifactContractBlocks("codex-k8s/codex-k8s", 310, "dev", "dev_revise", promptTemplateKindRevise, promptLocaleRU)
+	if err != nil {
+		t.Fatalf("renderPromptArtifactContractBlocks() error = %v", err)
+	}
+	if !strings.Contains(prBlock, "сохраняйте текущий заголовок существующего PR") {
+		t.Fatalf("revise pr contract must preserve the existing title, got: %q", prBlock)
+	}
+	if !strings.Contains(prBlock, "gh pr view <current-pr> --json title,body") {
+		t.Fatalf("revise pr contract must instruct to read current pr title and body, got: %q", prBlock)
+	}
+	if !strings.Contains(prBlock, "Не перезатирайте PR title/body новым revise-summary") {
+		t.Fatalf("revise pr contract must preserve the existing title/body, got: %q", prBlock)
+	}
+}
+
 func TestBuildPrompt_EmbedsRenderedPromptBlocks(t *testing.T) {
 	t.Parallel()
 
@@ -94,5 +112,47 @@ func TestBuildPrompt_DiscussionIncludesDiscussionContinuationContract(t *testing
 	}
 	if !strings.Contains(prompt, "публикуйте его под Issue #289 через `gh issue comment`") {
 		t.Fatalf("prompt must keep issue comment completion requirement, got: %q", prompt)
+	}
+}
+
+func TestBuildPrompt_RevisePreservesExistingPRBodyInstructions(t *testing.T) {
+	t.Parallel()
+
+	service := &Service{
+		cfg: Config{
+			RunID:              "run-revise",
+			RepositoryFullName: "codex-k8s/codex-k8s",
+			AgentKey:           "dev",
+			IssueNumber:        310,
+			RuntimeMode:        runtimeModeCodeOnly,
+			ExistingPRNumber:   512,
+			PromptConfig: PromptConfig{
+				TriggerKind:          "dev_revise",
+				TriggerLabel:         "run:dev:revise",
+				StateInReviewLabel:   "state:in-review",
+				PromptTemplateKind:   promptTemplateKindRevise,
+				PromptTemplateLocale: promptLocaleRU,
+				AgentBaseBranch:      "main",
+			},
+		},
+	}
+
+	prompt, err := service.buildPrompt("task body", runResult{
+		targetBranch:     "codex/issue-310",
+		triggerKind:      "dev_revise",
+		templateKind:     promptTemplateKindRevise,
+		existingPRNumber: 512,
+	}, t.TempDir())
+	if err != nil {
+		t.Fatalf("buildPrompt() error = %v", err)
+	}
+	if !strings.Contains(prompt, "Не перезатирайте title/body существующего PR") {
+		t.Fatalf("revise prompt must preserve existing pr title/body, got: %q", prompt)
+	}
+	if !strings.Contains(prompt, "Не перезатирайте PR title/body новым revise-summary") {
+		t.Fatalf("revise prompt must include revise append contract for title/body, got: %q", prompt)
+	}
+	if !strings.Contains(prompt, "gh pr view <current-pr> --json title,body") {
+		t.Fatalf("revise prompt must instruct to read current pr title/body, got: %q", prompt)
 	}
 }

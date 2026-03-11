@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	nextstepdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/nextstep"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
@@ -219,7 +220,7 @@ func TestRenderCommentBody_RendersDesignFastTrackAction(t *testing.T) {
 		PromptLocale:       localeRU,
 		RepositoryFullName: "codex-k8s/codex-k8s",
 		IssueNumber:        95,
-	}, "https://platform.codex-k8s.dev/runs/run-design", buildNextStepActions("https://platform.codex-k8s.dev", runContext{}, commentState{
+	}, "https://platform.codex-k8s.dev/runs/run-design", buildNextStepActions("https://platform.codex-k8s.dev", nextstepdomain.DefaultLabels(), runContext{}, commentState{
 		TriggerKind:        "design",
 		RepositoryFullName: "codex-k8s/codex-k8s",
 		IssueNumber:        95,

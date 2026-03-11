@@ -89,7 +89,7 @@ approvals:
 | PRC-06 | В Runs убрать тип запуска, в деталях всегда давать delete namespace | behavior/data | `fix_required` | `S7-E09` |
 | PRC-07 | В runtime deploy details добавить кнопку cancel/stop | behavior/data | `fix_required` | `S7-E10` |
 | PRC-08 | Не работает `mode:discussion` | behavior/data | `fix_required` | `S7-E11` |
-| PRC-09 | Добавить revise-петлю для `run:qa` | behavior/data | `fix_required` | `S7-E13` |
+| PRC-09 | Добавить недостающие revise-петли для late-stage labels `run:doc-audit|qa|release|postdeploy|ops|self-improve` | behavior/data | `fix_required` | `S7-E13` |
 | PRC-10 | QA должен проверять новые/изменённые ручки через DNS Kubernetes (без упора в OAuth UI-flow) | behavior/data | `fix_required` | `S7-E14` |
 | PRC-11 | В MVP не нужна кнопка refresh/versioning для prompt templates: правки шаблонов выполняются напрямую в репозитории | behavior/data | `fix_required` | `S7-E15` |
 | PRC-12 | `run:intake:revise` (run `398275e1-161f-4bfa-86ac-baf27004dcaa`) отработал по факту, но отмечен как failed | behavior/data | `fix_required` | `S7-E16` |
@@ -114,7 +114,7 @@ approvals:
 | S7-E10 | P0 | Runtime deploy cancel/stop action + safety guardrails | PRC-07 |
 | S7-E11 | P0 | `mode:discussion` trigger/review-flow remediation | PRC-08 |
 | S7-E12 | P1 | Final readiness gate: consolidated evidence + go/no-go | PRC-01..PRC-08 |
-| S7-E13 | P0 | Label taxonomy alignment: добавить `run:qa:revise` в stage/labels policy и review automation | PRC-09 |
+| S7-E13 | P0 | Label taxonomy alignment: добавить недостающие `run:doc-audit|qa|release|postdeploy|ops|self-improve:revise` в stage/labels policy и review automation | PRC-09 |
 | S7-E14 | P0 | QA execution policy: проверка новых/изменённых ручек через K8s DNS path + evidence requirements | PRC-10 |
 | S7-E15 | P0 | Prompt templates MVP policy: без UI refresh/versioning, изменения шаблонов только через коммиты в repo | PRC-11 |
 | S7-E16 | P0 | Run status consistency: устранить false-failed для `run:intake:revise` при фактически успешном completion | PRC-12 |

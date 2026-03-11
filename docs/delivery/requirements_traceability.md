@@ -257,7 +257,7 @@ approvals:
   - отсутствие подтверждённого run-evidence для `run:doc-audit` в текущем delivery-цикле.
 - Для всех открытых owner-замечаний PR #213 выставлен статус `fix_required`; замечания сгруппированы по приоритету `behavior/data -> quality/style`.
 - В backlog S7 добавлены 18 candidate execution-эпиков (`S7-E01..S7-E18`) с owner-aligned handover в `run:vision`:
-  rebase/mainline hygiene, UI cleanup (navigation/sections/filter), agents de-scope + repo-only prompt policy для MVP, runs/deploy UX, `mode:discussion` reliability, `run:qa:revise` coverage, QA DNS acceptance-policy, `run:intake:revise` status consistency, `run:self-improve` session reliability, финальный readiness gate.
+  rebase/mainline hygiene, UI cleanup (navigation/sections/filter), agents de-scope + repo-only prompt policy для MVP, runs/deploy UX, `mode:discussion` reliability, late-stage `run:<stage>:revise` coverage, QA DNS acceptance-policy, `run:intake:revise` status consistency, `run:self-improve` session reliability, финальный readiness gate.
 - Для стандартизации качества backlog зафиксировано требование PMO из Issue `#210`:
   формулировка задач в формате user story и обязательный блок edge cases для QA-ready acceptance.
 - Для процессного governance добавлен единый стандарт:
@@ -596,6 +596,34 @@ approvals:
   `go test ./services/internal/control-plane/... ./services/external/api-gateway/...`,
   `npm --prefix services/staff/web-console run build`.
 
+## Актуализация по Issue #255 (`run:dev`, 2026-03-11)
+- Для FR-026/FR-028/FR-030/FR-033/FR-052 и NFR-010/NFR-011/NFR-018 реализован stream `S7-E13`:
+  revise-loop для недостающих late-stage labels `run:doc-audit|qa|release|postdeploy|ops|self-improve:revise`
+  доведён до фактического рабочего состояния в code path.
+- В label/runtime source-of-truth добавлены отсутствовавшие revise-элементы:
+  typed trigger kinds `doc_audit_revise`, `qa_revise`, `release_revise`, `postdeploy_revise`, `ops_revise`, `self_improve_revise` в `libs/go/domain/webhook`,
+  env labels `CODEXK8S_RUN_*_REVISE_LABEL` в `services/internal/control-plane/internal/app/config.go`,
+  runtime defaults в `services/internal/control-plane/internal/domain/runtimedeploy/service_defaults.go`,
+  а также revise-поля в `TriggerLabels` / next-step label catalog path.
+- В control-plane закрыт resolver/runtime gap:
+  `services/internal/control-plane/internal/domain/webhook/pull_request_review_resolver.go`
+  теперь резолвит PR review `changes_requested` из `run:doc-audit|qa|release|postdeploy|ops|self-improve`
+  в детерминированный trigger `run:<stage>:revise`;
+  `resolveRunAgentKey` направляет такой run в корректную stage-role;
+  `services/internal/control-plane/internal/domain/runstatus/next_step_actions.go`
+  строит next-step матрицу для этих revise trigger kinds без потери stage context.
+- В `agent-runner` multi-stage revise синхронизирован с policy исполнения:
+  `prompt_seed_mapping.go` сохраняет stage mapping для всех новых revise seed'ов,
+  `helpers_prompt_docs.go` оставляет full-env prompt docs env = `ai` для `ops_revise`,
+  `write_scope_policy.go` сохраняет markdown-only scope для doc-stage revise и restricted scope для `self_improve_revise`.
+- Добавлены unit-тесты на ключевые сценарии:
+  PR review с label `run:<stage>` создаёт run с trigger `run:<stage>:revise` и корректным агентом для late-stage revise-loop,
+  `resolveRunAgentKey` для новых revise trigger kinds,
+  mapping next-step stage descriptor,
+  runner prompt/docs/write-scope policy.
+- Через Context7 (`/caarlos0/env`) перепроверен актуальный baseline для env-tag конфигурации `env`/`envDefault`;
+  новые внешние зависимости не добавлялись.
+
 ## Актуализация по Issue #256 (`run:dev`, 2026-03-11)
 - Для FR-028/FR-033 и NFR-010 реализован stream `S7-E14`:
   `docs/ops/production_runbook.md` закрепил QA policy, по которой новые и изменённые HTTP-ручки
@@ -620,7 +648,7 @@ approvals:
   `docs/delivery/delivery_plan.md`,
   `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md`,
   `docs/delivery/epics/s7/epic_s7.md`;
-  remaining backlog нормализован как `#254`, `#255`, `#258..#260`.
+  remaining backlog нормализован как `#254`, `#258..#260`.
 - Проверки по scope:
   `kubectl config view --minify -o jsonpath='{..namespace}'`,
   `kubectl get svc -o wide`,

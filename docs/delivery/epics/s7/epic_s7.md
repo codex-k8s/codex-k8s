@@ -153,7 +153,16 @@ approvals:
 - Contract-first артефакты синхронизированы:
   `api/server/api.yaml`, `proto/codexk8s/controlplane/v1/controlplane.proto`,
   backend/frontend codegen.
-- В traceability добавлены updates по issue `#252` и `#253`; remaining backlog нормализован как `#254..#256`, `#258..#260`.
+- В traceability добавлены updates по issue `#252`, `#253` и `#255`; remaining backlog нормализован как `#254`, `#256`, `#258..#260`.
+
+## Day 7 execution fact (`S7-E13`)
+- В Issue `#255` реализован stream `S7-E13`:
+  - в `libs/go/domain/webhook` добавлены typed trigger kinds `doc_audit_revise`, `qa_revise`, `release_revise`, `postdeploy_revise`, `ops_revise`, `self_improve_revise` с default labels `run:<stage>:revise`;
+  - в `control-plane` доведены env/runtime defaults, PR review resolver, stage-agent routing и next-step stage mapping для всех недостающих revise-loop стадий `doc-audit|qa|release|postdeploy|ops|self-improve`;
+  - в `agent-runner` синхронизированы prompt stage mapping, runtime env selection и markdown-only/self-improve write-scope policy для этих revise trigger kinds.
+- Unit coverage подтверждает ключевой сценарий:
+  review `changes_requested` на PR с label `run:<stage>` создаёт revise-run c trigger `run:<stage>:revise` и корректной ролью для `doc-audit|qa|release|postdeploy|ops|self-improve`.
+- Remaining backlog после этого stream остаётся `#254`, `#256`, `#258..#260`.
 
 ## Day 7 execution fact (`S7-E14`)
 - В Issue `#256` реализован stream `S7-E14`:
@@ -193,7 +202,7 @@ approvals:
 | S7-E10 | P0 | Runtime deploy UX: кнопка cancel/stop для зависших deploy tasks + guardrails (in-review `#252`) | PRC-07 |
 | S7-E11 | P0 | Label orchestration reliability: исправить `mode:discussion` trigger-поведение | implemented (`#253`) |
 | S7-E12 | P1 | Final MVP readiness gate: e2e evidence bundle + go/no-go для release chain | PRC-01..PRC-08 |
-| S7-E13 | P0 | Label policy alignment: добавить `run:qa:revise` и покрыть revise-loop QA-stage | PRC-09 |
+| S7-E13 | P0 | Label policy alignment: добавить недостающие `run:doc-audit|qa|release|postdeploy|ops|self-improve:revise` и покрыть revise-loop этих stages | passed (in-review `#255`) |
 | S7-E14 | P0 | QA execution contract: проверка новых/изменённых ручек через Kubernetes DNS path + evidence (in-review `#256`) | PRC-10 |
 | S7-E15 | P0 | Prompt templates MVP policy: absorbed by `#247/#248/#249` + `#274`; standalone issue `#257` закрывается doc-actualization pass | PRC-11 |
 | S7-E16 | P0 | Run status reliability: устранить false-failed для фактически успешных `run:intake:revise` | PRC-12 |

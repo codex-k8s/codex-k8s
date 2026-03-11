@@ -12,36 +12,6 @@ import (
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
-var knownNextStepStageLabels = map[string]struct{}{
-	webhookdomain.DefaultRunIntakeLabel:            {},
-	webhookdomain.DefaultRunIntakeReviseLabel:      {},
-	webhookdomain.DefaultRunVisionLabel:            {},
-	webhookdomain.DefaultRunVisionReviseLabel:      {},
-	webhookdomain.DefaultRunPRDLabel:               {},
-	webhookdomain.DefaultRunPRDReviseLabel:         {},
-	webhookdomain.DefaultRunArchLabel:              {},
-	webhookdomain.DefaultRunArchReviseLabel:        {},
-	webhookdomain.DefaultRunDesignLabel:            {},
-	webhookdomain.DefaultRunDesignReviseLabel:      {},
-	webhookdomain.DefaultRunPlanLabel:              {},
-	webhookdomain.DefaultRunPlanReviseLabel:        {},
-	webhookdomain.DefaultRunDevLabel:               {},
-	webhookdomain.DefaultRunDevReviseLabel:         {},
-	webhookdomain.DefaultRunDocAuditLabel:          {},
-	webhookdomain.DefaultRunDocAuditReviseLabel:    {},
-	webhookdomain.DefaultRunQALabel:                {},
-	webhookdomain.DefaultRunQAReviseLabel:          {},
-	webhookdomain.DefaultRunReleaseLabel:           {},
-	webhookdomain.DefaultRunReleaseReviseLabel:     {},
-	webhookdomain.DefaultRunPostDeployLabel:        {},
-	webhookdomain.DefaultRunPostDeployReviseLabel:  {},
-	webhookdomain.DefaultRunOpsLabel:               {},
-	webhookdomain.DefaultRunOpsReviseLabel:         {},
-	webhookdomain.DefaultRunSelfImproveLabel:       {},
-	webhookdomain.DefaultRunSelfImproveReviseLabel: {},
-	webhookdomain.DefaultRunRethinkLabel:           {},
-}
-
 var knownNextStepPRLabels = map[string]struct{}{
 	webhookdomain.DefaultNeedReviewerLabel: {},
 }
@@ -109,7 +79,7 @@ func (s *Service) previewOrExecuteIssueStageTransition(ctx context.Context, botT
 	if issueNumber <= 0 {
 		return querytypes.NextStepActionResult{}, errs.Validation{Field: "issue_number", Msg: "must be positive"}
 	}
-	if _, ok := knownNextStepStageLabels[targetLabel]; !ok {
+	if !s.cfg.NextStepLabels.IsKnownStageLabel(targetLabel) {
 		return querytypes.NextStepActionResult{}, errs.Validation{Field: "target_label", Msg: "must be a known run:* label"}
 	}
 

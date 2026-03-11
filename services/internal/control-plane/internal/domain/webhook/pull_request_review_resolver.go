@@ -46,6 +46,12 @@ func (s *Service) pullRequestReviewStageCatalog() []pullRequestReviewStageCandid
 		{stage: "design", runLabel: strings.TrimSpace(s.triggerLabels.RunDesign), reviseLabel: strings.TrimSpace(s.triggerLabels.RunDesignRevise), kind: "design_revise"},
 		{stage: "plan", runLabel: strings.TrimSpace(s.triggerLabels.RunPlan), reviseLabel: strings.TrimSpace(s.triggerLabels.RunPlanRevise), kind: "plan_revise"},
 		{stage: "dev", runLabel: strings.TrimSpace(s.triggerLabels.RunDev), reviseLabel: strings.TrimSpace(s.triggerLabels.RunDevRevise), kind: "dev_revise"},
+		{stage: "doc-audit", runLabel: strings.TrimSpace(s.triggerLabels.RunDocAudit), reviseLabel: strings.TrimSpace(s.triggerLabels.RunDocAuditRevise), kind: "doc_audit_revise"},
+		{stage: "qa", runLabel: strings.TrimSpace(s.triggerLabels.RunQA), reviseLabel: strings.TrimSpace(s.triggerLabels.RunQARevise), kind: "qa_revise"},
+		{stage: "release", runLabel: strings.TrimSpace(s.triggerLabels.RunRelease), reviseLabel: strings.TrimSpace(s.triggerLabels.RunReleaseRevise), kind: "release_revise"},
+		{stage: "postdeploy", runLabel: strings.TrimSpace(s.triggerLabels.RunPostDeploy), reviseLabel: strings.TrimSpace(s.triggerLabels.RunPostDeployRevise), kind: "postdeploy_revise"},
+		{stage: "ops", runLabel: strings.TrimSpace(s.triggerLabels.RunOps), reviseLabel: strings.TrimSpace(s.triggerLabels.RunOpsRevise), kind: "ops_revise"},
+		{stage: "self-improve", runLabel: strings.TrimSpace(s.triggerLabels.RunSelfImprove), reviseLabel: strings.TrimSpace(s.triggerLabels.RunSelfImproveRevise), kind: "self_improve_revise"},
 	}
 }
 

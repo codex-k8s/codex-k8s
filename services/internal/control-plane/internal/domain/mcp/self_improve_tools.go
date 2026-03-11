@@ -184,7 +184,8 @@ func (s *Service) resolveSelfImproveRunContext(ctx context.Context, session Sess
 	if runCtx.Payload.Trigger == nil {
 		return resolvedRunContext{}, "", fmt.Errorf("run trigger is required")
 	}
-	if webhookdomain.NormalizeTriggerKind(runCtx.Payload.Trigger.Kind) != webhookdomain.TriggerKindSelfImprove {
+	triggerKind := webhookdomain.NormalizeTriggerKind(runCtx.Payload.Trigger.Kind)
+	if triggerKind != webhookdomain.TriggerKindSelfImprove && triggerKind != webhookdomain.TriggerKindSelfImproveRevise {
 		return resolvedRunContext{}, "", fmt.Errorf("tool is available only for run:self-improve")
 	}
 

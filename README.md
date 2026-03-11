@@ -99,6 +99,12 @@
     - `run:design`/`run:design:revise`
     - `run:plan`/`run:plan:revise`
     - `run:dev`/`run:dev:revise`
+    - `run:doc-audit`/`run:doc-audit:revise`
+    - `run:qa`/`run:qa:revise`
+    - `run:release`/`run:release:revise`
+    - `run:postdeploy`/`run:postdeploy:revise`
+    - `run:ops`/`run:ops:revise`
+    - `run:self-improve`/`run:self-improve:revise`
   - результат: платформа запускает соответствующий `run:<stage>:revise`.
   - если на PR нет stage-лейбла или stage-лейблов несколько, ран не создается.
 
@@ -205,7 +211,7 @@ stage-моделью и политикой лейблов.
    - собрать все открытые review-комментарии;
    - ответить на каждый (исправлено или обоснованно отклонено);
    - запушить правки в ту же PR-ветку.
-5. Для авто-revise по `changes_requested` на PR держите ровно один stage label (`run:dev` или `run:dev:revise`).
+5. Для авто-revise по `changes_requested` на PR держите ровно один поддержанный stage label (`run:<stage>` или `run:<stage>:revise`).
 
 ### 5) Проверка соответствия гайдам/документации и создание эпика на устранение нарушений
 

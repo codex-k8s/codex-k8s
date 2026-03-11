@@ -21,11 +21,13 @@ const (
 )
 
 const (
-	triggerLabelRunDev       = webhookdomain.DefaultRunDevLabel
-	triggerLabelRunDevRevise = webhookdomain.DefaultRunDevReviseLabel
-	triggerLabelRunOps       = webhookdomain.DefaultRunOpsLabel
-	triggerLabelRunAIRepair  = webhookdomain.DefaultRunAIRepairLabel
-	triggerLabelRunSelfPatch = webhookdomain.DefaultRunSelfImproveLabel
+	triggerLabelRunDev             = webhookdomain.DefaultRunDevLabel
+	triggerLabelRunDevRevise       = webhookdomain.DefaultRunDevReviseLabel
+	triggerLabelRunOps             = webhookdomain.DefaultRunOpsLabel
+	triggerLabelRunOpsRevise       = webhookdomain.DefaultRunOpsReviseLabel
+	triggerLabelRunAIRepair        = webhookdomain.DefaultRunAIRepairLabel
+	triggerLabelRunSelfPatch       = webhookdomain.DefaultRunSelfImproveLabel
+	triggerLabelRunSelfPatchRevise = webhookdomain.DefaultRunSelfImproveReviseLabel
 )
 
 const (

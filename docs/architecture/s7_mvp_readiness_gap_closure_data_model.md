@@ -79,7 +79,7 @@ approvals:
 - Новые типизированные event payload keys:
   - `runtime_deploy.cancel_requested` (`run_id`, `actor`, `reason`)
   - `runtime_deploy.stop_requested` (`run_id`, `actor`, `reason`)
-  - `stage_transition.qa_revise_selected` (`resolver_source`, `issue_number`, `pr_number`)
+  - `stage_transition.revise_selected` (`stage`, `resolver_source`, `issue_number`, `pr_number`)
   - `run.finalization_normalized` (`from_status`, `to_status`, `terminal_event_seq`)
   - `agent_session.snapshot_upserted` (`run_id`, `snapshot_version`, `snapshot_checksum`)
 
@@ -110,7 +110,7 @@ approvals:
 - Terminal event sequence всегда monotonic per `run_id`.
 - Repeated cancel/stop actions не создают новый terminal transition.
 - Snapshot checksum должен пересчитываться на каждом успешном upsert.
-- Resolver `run:qa:revise` публикует ровно один decision event на transition попытку.
+- Resolver `run:<stage>:revise` для late-stage coverage публикует ровно один decision event на transition попытку.
 
 ## Runtime impact / Migration impact
 - Runtime impact (`run:design`): отсутствует.

@@ -37,33 +37,39 @@ type Config struct {
 	LearningModeDefault string `env:"CODEXK8S_LEARNING_MODE_DEFAULT" envDefault:"false"`
 
 	// GitHubWebhookSecret is used when attaching repository hooks (staff operations).
-	GitHubWebhookSecret  string   `env:"CODEXK8S_GITHUB_WEBHOOK_SECRET,required,notEmpty"`
-	GitHubWebhookURL     string   `env:"CODEXK8S_GITHUB_WEBHOOK_URL"`
-	GitHubWebhookEvents  []string `env:"CODEXK8S_GITHUB_WEBHOOK_EVENTS" envDefault:"push,pull_request,issues,issue_comment,pull_request_review,pull_request_review_comment"`
-	RunIntakeLabel       string   `env:"CODEXK8S_RUN_INTAKE_LABEL" envDefault:"run:intake"`
-	RunIntakeReviseLabel string   `env:"CODEXK8S_RUN_INTAKE_REVISE_LABEL" envDefault:"run:intake:revise"`
-	RunVisionLabel       string   `env:"CODEXK8S_RUN_VISION_LABEL" envDefault:"run:vision"`
-	RunVisionReviseLabel string   `env:"CODEXK8S_RUN_VISION_REVISE_LABEL" envDefault:"run:vision:revise"`
-	RunPRDLabel          string   `env:"CODEXK8S_RUN_PRD_LABEL" envDefault:"run:prd"`
-	RunPRDReviseLabel    string   `env:"CODEXK8S_RUN_PRD_REVISE_LABEL" envDefault:"run:prd:revise"`
-	RunArchLabel         string   `env:"CODEXK8S_RUN_ARCH_LABEL" envDefault:"run:arch"`
-	RunArchReviseLabel   string   `env:"CODEXK8S_RUN_ARCH_REVISE_LABEL" envDefault:"run:arch:revise"`
-	RunDesignLabel       string   `env:"CODEXK8S_RUN_DESIGN_LABEL" envDefault:"run:design"`
-	RunDesignReviseLabel string   `env:"CODEXK8S_RUN_DESIGN_REVISE_LABEL" envDefault:"run:design:revise"`
-	RunPlanLabel         string   `env:"CODEXK8S_RUN_PLAN_LABEL" envDefault:"run:plan"`
-	RunPlanReviseLabel   string   `env:"CODEXK8S_RUN_PLAN_REVISE_LABEL" envDefault:"run:plan:revise"`
-	RunDevLabel          string   `env:"CODEXK8S_RUN_DEV_LABEL" envDefault:"run:dev"`
-	RunDevReviseLabel    string   `env:"CODEXK8S_RUN_DEV_REVISE_LABEL" envDefault:"run:dev:revise"`
-	RunDocAuditLabel     string   `env:"CODEXK8S_RUN_DOC_AUDIT_LABEL" envDefault:"run:doc-audit"`
-	RunAIRepairLabel     string   `env:"CODEXK8S_RUN_AI_REPAIR_LABEL" envDefault:"run:ai-repair"`
-	RunQALabel           string   `env:"CODEXK8S_RUN_QA_LABEL" envDefault:"run:qa"`
-	RunReleaseLabel      string   `env:"CODEXK8S_RUN_RELEASE_LABEL" envDefault:"run:release"`
-	RunPostDeployLabel   string   `env:"CODEXK8S_RUN_POSTDEPLOY_LABEL" envDefault:"run:postdeploy"`
-	RunOpsLabel          string   `env:"CODEXK8S_RUN_OPS_LABEL" envDefault:"run:ops"`
-	RunSelfImproveLabel  string   `env:"CODEXK8S_RUN_SELF_IMPROVE_LABEL" envDefault:"run:self-improve"`
-	RunRethinkLabel      string   `env:"CODEXK8S_RUN_RETHINK_LABEL" envDefault:"run:rethink"`
-	ModeDiscussionLabel  string   `env:"CODEXK8S_MODE_DISCUSSION_LABEL" envDefault:"mode:discussion"`
-	NeedReviewerLabel    string   `env:"CODEXK8S_NEED_REVIEWER_LABEL" envDefault:"need:reviewer"`
+	GitHubWebhookSecret       string   `env:"CODEXK8S_GITHUB_WEBHOOK_SECRET,required,notEmpty"`
+	GitHubWebhookURL          string   `env:"CODEXK8S_GITHUB_WEBHOOK_URL"`
+	GitHubWebhookEvents       []string `env:"CODEXK8S_GITHUB_WEBHOOK_EVENTS" envDefault:"push,pull_request,issues,issue_comment,pull_request_review,pull_request_review_comment"`
+	RunIntakeLabel            string   `env:"CODEXK8S_RUN_INTAKE_LABEL" envDefault:"run:intake"`
+	RunIntakeReviseLabel      string   `env:"CODEXK8S_RUN_INTAKE_REVISE_LABEL" envDefault:"run:intake:revise"`
+	RunVisionLabel            string   `env:"CODEXK8S_RUN_VISION_LABEL" envDefault:"run:vision"`
+	RunVisionReviseLabel      string   `env:"CODEXK8S_RUN_VISION_REVISE_LABEL" envDefault:"run:vision:revise"`
+	RunPRDLabel               string   `env:"CODEXK8S_RUN_PRD_LABEL" envDefault:"run:prd"`
+	RunPRDReviseLabel         string   `env:"CODEXK8S_RUN_PRD_REVISE_LABEL" envDefault:"run:prd:revise"`
+	RunArchLabel              string   `env:"CODEXK8S_RUN_ARCH_LABEL" envDefault:"run:arch"`
+	RunArchReviseLabel        string   `env:"CODEXK8S_RUN_ARCH_REVISE_LABEL" envDefault:"run:arch:revise"`
+	RunDesignLabel            string   `env:"CODEXK8S_RUN_DESIGN_LABEL" envDefault:"run:design"`
+	RunDesignReviseLabel      string   `env:"CODEXK8S_RUN_DESIGN_REVISE_LABEL" envDefault:"run:design:revise"`
+	RunPlanLabel              string   `env:"CODEXK8S_RUN_PLAN_LABEL" envDefault:"run:plan"`
+	RunPlanReviseLabel        string   `env:"CODEXK8S_RUN_PLAN_REVISE_LABEL" envDefault:"run:plan:revise"`
+	RunDevLabel               string   `env:"CODEXK8S_RUN_DEV_LABEL" envDefault:"run:dev"`
+	RunDevReviseLabel         string   `env:"CODEXK8S_RUN_DEV_REVISE_LABEL" envDefault:"run:dev:revise"`
+	RunDocAuditLabel          string   `env:"CODEXK8S_RUN_DOC_AUDIT_LABEL" envDefault:"run:doc-audit"`
+	RunDocAuditReviseLabel    string   `env:"CODEXK8S_RUN_DOC_AUDIT_REVISE_LABEL" envDefault:"run:doc-audit:revise"`
+	RunAIRepairLabel          string   `env:"CODEXK8S_RUN_AI_REPAIR_LABEL" envDefault:"run:ai-repair"`
+	RunQALabel                string   `env:"CODEXK8S_RUN_QA_LABEL" envDefault:"run:qa"`
+	RunQAReviseLabel          string   `env:"CODEXK8S_RUN_QA_REVISE_LABEL" envDefault:"run:qa:revise"`
+	RunReleaseLabel           string   `env:"CODEXK8S_RUN_RELEASE_LABEL" envDefault:"run:release"`
+	RunReleaseReviseLabel     string   `env:"CODEXK8S_RUN_RELEASE_REVISE_LABEL" envDefault:"run:release:revise"`
+	RunPostDeployLabel        string   `env:"CODEXK8S_RUN_POSTDEPLOY_LABEL" envDefault:"run:postdeploy"`
+	RunPostDeployReviseLabel  string   `env:"CODEXK8S_RUN_POSTDEPLOY_REVISE_LABEL" envDefault:"run:postdeploy:revise"`
+	RunOpsLabel               string   `env:"CODEXK8S_RUN_OPS_LABEL" envDefault:"run:ops"`
+	RunOpsReviseLabel         string   `env:"CODEXK8S_RUN_OPS_REVISE_LABEL" envDefault:"run:ops:revise"`
+	RunSelfImproveLabel       string   `env:"CODEXK8S_RUN_SELF_IMPROVE_LABEL" envDefault:"run:self-improve"`
+	RunSelfImproveReviseLabel string   `env:"CODEXK8S_RUN_SELF_IMPROVE_REVISE_LABEL" envDefault:"run:self-improve:revise"`
+	RunRethinkLabel           string   `env:"CODEXK8S_RUN_RETHINK_LABEL" envDefault:"run:rethink"`
+	ModeDiscussionLabel       string   `env:"CODEXK8S_MODE_DISCUSSION_LABEL" envDefault:"mode:discussion"`
+	NeedReviewerLabel         string   `env:"CODEXK8S_NEED_REVIEWER_LABEL" envDefault:"need:reviewer"`
 	// ServicesConfigPath points to services.yaml used for webhook runtime policy.
 	ServicesConfigPath string `env:"CODEXK8S_SERVICES_CONFIG_PATH" envDefault:"services.yaml"`
 	// ServicesConfigEnv selects environment context when rendering services.yaml.
