@@ -107,6 +107,7 @@ WHERE pm.user_id = $1::uuid
   AND ar.project_id IS NOT NULL
   AND (
         COALESCE(ar.run_payload->'trigger'->>'label', '') ILIKE 'run:%'
+        OR COALESCE(ar.run_payload->'trigger'->>'label', '') = 'mode:discussion'
         OR COALESCE(ar.run_payload->'trigger'->>'label', '') ILIKE 'need:reviewer'
       )
 ORDER BY ar.created_at DESC
