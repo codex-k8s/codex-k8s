@@ -3,12 +3,14 @@ package grpc
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"time"
 
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
+	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentsession"
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
 	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
@@ -244,6 +246,9 @@ func (s *Server) UpsertAgentSession(ctx context.Context, req *controlplanev1.Ups
 	if agentKey == "" {
 		return nil, status.Error(codes.InvalidArgument, "agent_key is required")
 	}
+	if req.GetSnapshotVersion() < 0 {
+		return nil, status.Error(codes.InvalidArgument, "snapshot_version must be >= 0")
+	}
 
 	correlationID := strings.TrimSpace(req.GetCorrelationId())
 	if correlationID == "" {
@@ -268,35 +273,47 @@ func (s *Server) UpsertAgentSession(ctx context.Context, req *controlplanev1.Ups
 		startedAt = req.GetStartedAt().AsTime().UTC()
 	}
 
-	if err := s.agentCallbacks.UpsertAgentSession(ctx, agentcallbackdomain.UpsertAgentSessionParams{
-		RunID:              runID,
-		CorrelationID:      correlationID,
-		ProjectID:          projectID,
-		RepositoryFullName: repositoryFullName,
-		AgentKey:           agentKey,
-		IssueNumber:        intPtrFromOptional(req.GetIssueNumber()),
-		BranchName:         branchName,
-		PRNumber:           intPtrFromOptional(req.GetPrNumber()),
-		PRURL:              strings.TrimSpace(req.GetPrUrl()),
-		TriggerKind:        strings.TrimSpace(req.GetTriggerKind()),
-		TemplateKind:       strings.TrimSpace(req.GetTemplateKind()),
-		TemplateSource:     strings.TrimSpace(req.GetTemplateSource()),
-		TemplateLocale:     strings.TrimSpace(req.GetTemplateLocale()),
-		Model:              strings.TrimSpace(req.GetModel()),
-		ReasoningEffort:    strings.TrimSpace(req.GetReasoningEffort()),
-		Status:             statusValue,
-		SessionID:          strings.TrimSpace(req.GetSessionId()),
-		SessionJSON:        json.RawMessage(req.GetSessionJson()),
-		CodexSessionPath:   strings.TrimSpace(req.GetCodexCliSessionPath()),
-		CodexSessionJSON:   json.RawMessage(req.GetCodexCliSessionJson()),
-		StartedAt:          startedAt,
-		FinishedAt:         optionalTime(req.GetFinishedAt()),
-	}); err != nil {
+	result, err := s.agentCallbacks.UpsertAgentSession(ctx, agentcallbackdomain.UpsertAgentSessionParams{
+		RunID:                   runID,
+		CorrelationID:           correlationID,
+		ProjectID:               projectID,
+		RepositoryFullName:      repositoryFullName,
+		AgentKey:                agentKey,
+		IssueNumber:             intPtrFromOptional(req.GetIssueNumber()),
+		BranchName:              branchName,
+		PRNumber:                intPtrFromOptional(req.GetPrNumber()),
+		PRURL:                   strings.TrimSpace(req.GetPrUrl()),
+		TriggerKind:             strings.TrimSpace(req.GetTriggerKind()),
+		TemplateKind:            strings.TrimSpace(req.GetTemplateKind()),
+		TemplateSource:          strings.TrimSpace(req.GetTemplateSource()),
+		TemplateLocale:          strings.TrimSpace(req.GetTemplateLocale()),
+		Model:                   strings.TrimSpace(req.GetModel()),
+		ReasoningEffort:         strings.TrimSpace(req.GetReasoningEffort()),
+		Status:                  statusValue,
+		SessionID:               strings.TrimSpace(req.GetSessionId()),
+		SessionJSON:             json.RawMessage(req.GetSessionJson()),
+		CodexSessionPath:        strings.TrimSpace(req.GetCodexCliSessionPath()),
+		CodexSessionJSON:        json.RawMessage(req.GetCodexCliSessionJson()),
+		ExpectedSnapshotVersion: req.GetSnapshotVersion(),
+		SnapshotChecksum:        strings.TrimSpace(req.GetSnapshotChecksum()),
+		StartedAt:               startedAt,
+		FinishedAt:              optionalTime(req.GetFinishedAt()),
+	})
+	if err != nil {
+		var conflict agentsessionrepo.SnapshotVersionConflict
+		if errors.As(err, &conflict) {
+			return nil, agentSessionSnapshotVersionConflictStatus(conflict)
+		}
 		s.logger.Error("upsert agent session via grpc failed", "run_id", runID, "err", err)
 		return nil, status.Error(codes.Internal, "failed to persist agent session")
 	}
 
-	return &controlplanev1.UpsertAgentSessionResponse{Ok: true, RunId: runID}, nil
+	return &controlplanev1.UpsertAgentSessionResponse{
+		Ok:               true,
+		RunId:            runID,
+		SnapshotVersion:  result.SnapshotVersion,
+		SnapshotChecksum: stringPtrOrNil(result.SnapshotChecksum),
+	}, nil
 }
 
 func (s *Server) GetLatestAgentSession(ctx context.Context, req *controlplanev1.GetLatestAgentSessionRequest) (*controlplanev1.GetLatestAgentSessionResponse, error) {
@@ -352,12 +369,17 @@ func (s *Server) GetLatestAgentSession(ctx context.Context, req *controlplanev1.
 		SessionJson:         bytesOrNil(item.SessionJSON),
 		CodexCliSessionPath: stringPtrOrNil(item.CodexSessionPath),
 		CodexCliSessionJson: bytesOrNil(item.CodexSessionJSON),
+		SnapshotVersion:     item.SnapshotVersion,
+		SnapshotChecksum:    stringPtrOrNil(item.SnapshotChecksum),
 		StartedAt:           timestamppb.New(item.StartedAt.UTC()),
 		CreatedAt:           timestamppb.New(item.CreatedAt.UTC()),
 		UpdatedAt:           timestamppb.New(item.UpdatedAt.UTC()),
 	}
 	if !item.FinishedAt.IsZero() {
 		snapshot.FinishedAt = timestamppb.New(item.FinishedAt.UTC())
+	}
+	if !item.SnapshotUpdatedAt.IsZero() {
+		snapshot.SnapshotUpdatedAt = timestamppb.New(item.SnapshotUpdatedAt.UTC())
 	}
 
 	return &controlplanev1.GetLatestAgentSessionResponse{

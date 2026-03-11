@@ -31,6 +31,9 @@ type AgentSession struct {
 	SessionJSON          json.RawMessage
 	CodexSessionPath     string
 	CodexSessionJSON     json.RawMessage
+	SnapshotVersion      int64
+	SnapshotChecksum     string
+	SnapshotUpdatedAt    time.Time
 	StartedAt            time.Time
 	FinishedAt           time.Time
 	CreatedAt            time.Time

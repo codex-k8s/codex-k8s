@@ -19,6 +19,9 @@ type Session = agentsessionrepo.Session
 // UpsertAgentSessionParams describes persistence payload for run session snapshot.
 type UpsertAgentSessionParams = agentsessionrepo.UpsertParams
 
+// UpsertAgentSessionResult returns persisted snapshot version metadata.
+type UpsertAgentSessionResult = agentsessionrepo.UpsertResult
+
 // GetLatestAgentSessionQuery describes latest snapshot lookup identity.
 type GetLatestAgentSessionQuery struct {
 	RepositoryFullName string
@@ -47,19 +50,20 @@ func NewService(sessions agentsessionrepo.Repository, flowEvents floweventrepo.R
 }
 
 // UpsertAgentSession stores or updates run session snapshot.
-func (s *Service) UpsertAgentSession(ctx context.Context, params UpsertAgentSessionParams) error {
+func (s *Service) UpsertAgentSession(ctx context.Context, params UpsertAgentSessionParams) (UpsertAgentSessionResult, error) {
 	if s == nil || s.sessions == nil {
-		return errors.New("agent session repository is not configured")
+		return UpsertAgentSessionResult{}, errors.New("agent session repository is not configured")
 	}
-	if err := s.sessions.Upsert(ctx, params); err != nil {
-		return err
+	result, err := s.sessions.Upsert(ctx, params)
+	if err != nil {
+		return UpsertAgentSessionResult{}, err
 	}
 	if s.runLogs != nil {
 		if err := s.runLogs.UpsertRunAgentLogs(ctx, strings.TrimSpace(params.RunID), params.SessionJSON); err != nil {
-			return err
+			return UpsertAgentSessionResult{}, err
 		}
 	}
-	return nil
+	return result, nil
 }
 
 // GetLatestAgentSession returns latest persisted snapshot by repo/branch/agent.

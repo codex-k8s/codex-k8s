@@ -53,6 +53,8 @@ type SessionRuntimeState struct {
 	SessionJSON      json.RawMessage
 	CodexSessionPath string
 	CodexSessionJSON json.RawMessage
+	SnapshotVersion  int64
+	SnapshotChecksum string
 	StartedAt        time.Time
 	FinishedAt       *time.Time
 }
@@ -64,32 +66,41 @@ type AgentSessionUpsertParams struct {
 	Runtime  SessionRuntimeState
 }
 
+// AgentSessionUpsertResult returns persisted snapshot metadata for this run.
+type AgentSessionUpsertResult struct {
+	SnapshotVersion  int64
+	SnapshotChecksum string
+}
+
 // AgentSessionSnapshot is latest persisted session snapshot for resume.
 type AgentSessionSnapshot struct {
-	RunID            string
-	CorrelationID    string
-	ProjectID        string
-	RepositoryName   string
-	AgentKey         string
-	IssueNumber      int
-	BranchName       string
-	PRNumber         int
-	PRURL            string
-	TriggerKind      string
-	TemplateKind     string
-	TemplateSource   string
-	TemplateLocale   string
-	Model            string
-	ReasoningEffort  string
-	Status           string
-	SessionID        string
-	SessionJSON      json.RawMessage
-	CodexSessionPath string
-	CodexSessionJSON json.RawMessage
-	StartedAt        time.Time
-	FinishedAt       time.Time
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
+	RunID             string
+	CorrelationID     string
+	ProjectID         string
+	RepositoryName    string
+	AgentKey          string
+	IssueNumber       int
+	BranchName        string
+	PRNumber          int
+	PRURL             string
+	TriggerKind       string
+	TemplateKind      string
+	TemplateSource    string
+	TemplateLocale    string
+	Model             string
+	ReasoningEffort   string
+	Status            string
+	SessionID         string
+	SessionJSON       json.RawMessage
+	CodexSessionPath  string
+	CodexSessionJSON  json.RawMessage
+	SnapshotVersion   int64
+	SnapshotChecksum  string
+	SnapshotUpdatedAt time.Time
+	StartedAt         time.Time
+	FinishedAt        time.Time
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
 
 // LatestAgentSessionQuery describes latest-session lookup identity.
@@ -100,17 +111,17 @@ type LatestAgentSessionQuery struct {
 }
 
 type UpsertRunStatusCommentParams struct {
-	RunID           string
-	Phase           string
-	JobName         string
-	JobNamespace    string
-	RuntimeMode     string
-	Namespace       string
-	TriggerKind     string
-	PromptLocale    string
-	Model           string
-	ReasoningEffort string
-	RunStatus       string
+	RunID                    string
+	Phase                    string
+	JobName                  string
+	JobNamespace             string
+	RuntimeMode              string
+	Namespace                string
+	TriggerKind              string
+	PromptLocale             string
+	Model                    string
+	ReasoningEffort          string
+	RunStatus                string
 	CodexAuthVerificationURL string
 	CodexAuthUserCode        string
 }
@@ -137,7 +148,7 @@ func (c *Client) Close() error {
 }
 
 // UpsertAgentSession stores or updates run session snapshot.
-func (c *Client) UpsertAgentSession(ctx context.Context, params AgentSessionUpsertParams) error {
+func (c *Client) UpsertAgentSession(ctx context.Context, params AgentSessionUpsertParams) (AgentSessionUpsertResult, error) {
 	identity := params.Identity
 	template := params.Template
 	runtime := params.Runtime
@@ -163,15 +174,20 @@ func (c *Client) UpsertAgentSession(ctx context.Context, params AgentSessionUpse
 		SessionJson:         optionalBytes(runtime.SessionJSON),
 		CodexCliSessionPath: optionalString(strings.TrimSpace(runtime.CodexSessionPath)),
 		CodexCliSessionJson: optionalBytes(runtime.CodexSessionJSON),
+		SnapshotVersion:     runtime.SnapshotVersion,
+		SnapshotChecksum:    optionalString(strings.TrimSpace(runtime.SnapshotChecksum)),
 		StartedAt:           timestamppb.New(runtime.StartedAt.UTC()),
 		FinishedAt:          optionalTimestamp(runtime.FinishedAt),
 	}
 
-	_, err := c.svc.UpsertAgentSession(c.withAuth(ctx), request)
+	resp, err := c.svc.UpsertAgentSession(c.withAuth(ctx), request)
 	if err != nil {
-		return fmt.Errorf("upsert agent session: %w", err)
+		return AgentSessionUpsertResult{}, fmt.Errorf("upsert agent session: %w", err)
 	}
-	return nil
+	return AgentSessionUpsertResult{
+		SnapshotVersion:  resp.GetSnapshotVersion(),
+		SnapshotChecksum: strings.TrimSpace(resp.GetSnapshotChecksum()),
+	}, nil
 }
 
 // GetLatestAgentSession loads latest snapshot by repository/branch/agent key.
@@ -190,30 +206,33 @@ func (c *Client) GetLatestAgentSession(ctx context.Context, query LatestAgentSes
 
 	snapshot := resp.GetSession()
 	result := AgentSessionSnapshot{
-		RunID:            strings.TrimSpace(snapshot.GetRunId()),
-		CorrelationID:    strings.TrimSpace(snapshot.GetCorrelationId()),
-		ProjectID:        strings.TrimSpace(snapshot.GetProjectId()),
-		RepositoryName:   strings.TrimSpace(snapshot.GetRepositoryFullName()),
-		AgentKey:         strings.TrimSpace(snapshot.GetAgentKey()),
-		IssueNumber:      optionalToInt(snapshot.GetIssueNumber()),
-		BranchName:       strings.TrimSpace(snapshot.GetBranchName()),
-		PRNumber:         optionalToInt(snapshot.GetPrNumber()),
-		PRURL:            strings.TrimSpace(snapshot.GetPrUrl()),
-		TriggerKind:      strings.TrimSpace(snapshot.GetTriggerKind()),
-		TemplateKind:     strings.TrimSpace(snapshot.GetTemplateKind()),
-		TemplateSource:   strings.TrimSpace(snapshot.GetTemplateSource()),
-		TemplateLocale:   strings.TrimSpace(snapshot.GetTemplateLocale()),
-		Model:            strings.TrimSpace(snapshot.GetModel()),
-		ReasoningEffort:  strings.TrimSpace(snapshot.GetReasoningEffort()),
-		Status:           strings.TrimSpace(snapshot.GetStatus()),
-		SessionID:        strings.TrimSpace(snapshot.GetSessionId()),
-		SessionJSON:      json.RawMessage(snapshot.GetSessionJson()),
-		CodexSessionPath: strings.TrimSpace(snapshot.GetCodexCliSessionPath()),
-		CodexSessionJSON: json.RawMessage(snapshot.GetCodexCliSessionJson()),
-		StartedAt:        timestampOrZero(snapshot.GetStartedAt()),
-		FinishedAt:       timestampOrZero(snapshot.GetFinishedAt()),
-		CreatedAt:        timestampOrZero(snapshot.GetCreatedAt()),
-		UpdatedAt:        timestampOrZero(snapshot.GetUpdatedAt()),
+		RunID:             strings.TrimSpace(snapshot.GetRunId()),
+		CorrelationID:     strings.TrimSpace(snapshot.GetCorrelationId()),
+		ProjectID:         strings.TrimSpace(snapshot.GetProjectId()),
+		RepositoryName:    strings.TrimSpace(snapshot.GetRepositoryFullName()),
+		AgentKey:          strings.TrimSpace(snapshot.GetAgentKey()),
+		IssueNumber:       optionalToInt(snapshot.GetIssueNumber()),
+		BranchName:        strings.TrimSpace(snapshot.GetBranchName()),
+		PRNumber:          optionalToInt(snapshot.GetPrNumber()),
+		PRURL:             strings.TrimSpace(snapshot.GetPrUrl()),
+		TriggerKind:       strings.TrimSpace(snapshot.GetTriggerKind()),
+		TemplateKind:      strings.TrimSpace(snapshot.GetTemplateKind()),
+		TemplateSource:    strings.TrimSpace(snapshot.GetTemplateSource()),
+		TemplateLocale:    strings.TrimSpace(snapshot.GetTemplateLocale()),
+		Model:             strings.TrimSpace(snapshot.GetModel()),
+		ReasoningEffort:   strings.TrimSpace(snapshot.GetReasoningEffort()),
+		Status:            strings.TrimSpace(snapshot.GetStatus()),
+		SessionID:         strings.TrimSpace(snapshot.GetSessionId()),
+		SessionJSON:       json.RawMessage(snapshot.GetSessionJson()),
+		CodexSessionPath:  strings.TrimSpace(snapshot.GetCodexCliSessionPath()),
+		CodexSessionJSON:  json.RawMessage(snapshot.GetCodexCliSessionJson()),
+		SnapshotVersion:   snapshot.GetSnapshotVersion(),
+		SnapshotChecksum:  strings.TrimSpace(snapshot.GetSnapshotChecksum()),
+		SnapshotUpdatedAt: timestampOrZero(snapshot.GetSnapshotUpdatedAt()),
+		StartedAt:         timestampOrZero(snapshot.GetStartedAt()),
+		FinishedAt:        timestampOrZero(snapshot.GetFinishedAt()),
+		CreatedAt:         timestampOrZero(snapshot.GetCreatedAt()),
+		UpdatedAt:         timestampOrZero(snapshot.GetUpdatedAt()),
 	}
 	return result, true, nil
 }
@@ -262,17 +281,17 @@ func (c *Client) UpsertCodexAuth(ctx context.Context, authJSON []byte) error {
 
 func (c *Client) UpsertRunStatusComment(ctx context.Context, params UpsertRunStatusCommentParams) error {
 	_, err := c.svc.UpsertRunStatusComment(c.withAuth(ctx), &controlplanev1.UpsertRunStatusCommentRequest{
-		RunId:           strings.TrimSpace(params.RunID),
-		Phase:           strings.TrimSpace(params.Phase),
-		JobName:         optionalString(strings.TrimSpace(params.JobName)),
-		JobNamespace:    optionalString(strings.TrimSpace(params.JobNamespace)),
-		RuntimeMode:     optionalString(strings.TrimSpace(params.RuntimeMode)),
-		Namespace:       optionalString(strings.TrimSpace(params.Namespace)),
-		TriggerKind:     optionalString(strings.TrimSpace(params.TriggerKind)),
-		PromptLocale:    optionalString(strings.TrimSpace(params.PromptLocale)),
-		Model:           optionalString(strings.TrimSpace(params.Model)),
-		ReasoningEffort: optionalString(strings.TrimSpace(params.ReasoningEffort)),
-		RunStatus:       optionalString(strings.TrimSpace(params.RunStatus)),
+		RunId:                    strings.TrimSpace(params.RunID),
+		Phase:                    strings.TrimSpace(params.Phase),
+		JobName:                  optionalString(strings.TrimSpace(params.JobName)),
+		JobNamespace:             optionalString(strings.TrimSpace(params.JobNamespace)),
+		RuntimeMode:              optionalString(strings.TrimSpace(params.RuntimeMode)),
+		Namespace:                optionalString(strings.TrimSpace(params.Namespace)),
+		TriggerKind:              optionalString(strings.TrimSpace(params.TriggerKind)),
+		PromptLocale:             optionalString(strings.TrimSpace(params.PromptLocale)),
+		Model:                    optionalString(strings.TrimSpace(params.Model)),
+		ReasoningEffort:          optionalString(strings.TrimSpace(params.ReasoningEffort)),
+		RunStatus:                optionalString(strings.TrimSpace(params.RunStatus)),
 		CodexAuthVerificationUrl: optionalString(strings.TrimSpace(params.CodexAuthVerificationURL)),
 		CodexAuthUserCode:        optionalString(strings.TrimSpace(params.CodexAuthUserCode)),
 	})

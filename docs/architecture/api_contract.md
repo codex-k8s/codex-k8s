@@ -74,8 +74,8 @@ approvals:
 
 ## Internal agent callbacks (S2 Day4)
 - Для agent-runner добавлены внутренние gRPC callback RPC в `control-plane`:
-  - `UpsertAgentSession` — upsert session snapshot;
-  - `GetLatestAgentSession` — latest session by `(repository_full_name, branch_name, agent_key)`;
+  - `UpsertAgentSession` — CAS-like upsert session snapshot c `snapshot_version`/`snapshot_checksum` и защитой от replay/data loss;
+  - `GetLatestAgentSession` — latest session by `(repository_full_name, branch_name, agent_key)` вместе с version/checksum metadata;
   - `InsertRunFlowEvent` — append Day4 run events.
 - Авторизация callback'ов: run-bound MCP bearer token в gRPC metadata (`authorization: Bearer ...`), проверка через `VerifyRunToken`.
 - Эти RPC внутренние (service-to-service), не входят в public/staff OpenAPI контракт.
@@ -233,6 +233,8 @@ approvals:
 - run/session поддерживает paused states `waiting_owner_review` и `waiting_mcp`.
 - При `waiting_mcp` timeout-kill не применяется; таймер возобновляется после ответа MCP.
 - Для resume используется сохранённый `codex-cli` session snapshot из `agent_sessions`.
+- Перезапись snapshot идёт через `snapshot_version`/`snapshot_checksum`: одинаковый replay не теряет данные,
+  а stale write получает conflict c `actual_snapshot_version`.
 
 ## Prompt locale behavior
 - В текущем MVP locale prompt templates берется из platform default `CODEXK8S_AGENT_DEFAULT_LOCALE`.

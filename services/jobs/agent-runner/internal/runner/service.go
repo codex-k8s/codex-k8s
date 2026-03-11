@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 	cpclient "github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/controlplane"
@@ -88,10 +89,16 @@ func (s *Service) Run(ctx context.Context) (err error) {
 			return
 		}
 		finishedAt := time.Now().UTC()
-		if persistErr := s.persistSessionSnapshot(ctx, result, state, runStartedAt, runStatusFailed, &finishedAt); persistErr != nil {
+		persisted, persistErr := s.persistSessionSnapshot(ctx, &result, state, runStartedAt, runStatusFailed, &finishedAt)
+		if persistErr != nil {
 			s.logger.Warn("persist failed snapshot skipped", "err", persistErr)
+		} else {
+			_ = s.emitEvent(ctx, floweventdomain.EventTypeRunAgentSessionSaved, map[string]any{
+				"status":            runStatusFailed,
+				"snapshot_version":  persisted.SnapshotVersion,
+				"snapshot_checksum": persisted.SnapshotChecksum,
+			})
 		}
-		_ = s.emitEvent(ctx, floweventdomain.EventTypeRunAgentSessionSaved, map[string]string{"status": runStatusFailed})
 	}()
 
 	if err := s.emitEvent(ctx, floweventdomain.EventTypeRunAgentStarted, map[string]string{
@@ -113,6 +120,8 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		result.existingPRNumber = restored.existingPRNumber
 		result.restoredSessionPath = restored.restoredSessionPath
 		result.sessionID = restored.sessionID
+		result.snapshotVersion = restored.snapshotVersion
+		result.snapshotChecksum = restored.snapshotChecksum
 		if restored.prNotFound {
 			return s.failRevisePRNotFound(ctx, result, state, "pr_not_found")
 		}
@@ -277,10 +286,15 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	}
 
 	finishedAt := time.Now().UTC()
-	if err := s.persistSessionSnapshot(ctx, result, state, runStartedAt, runStatusSucceeded, &finishedAt); err != nil {
+	persisted, err := s.persistSessionSnapshot(ctx, &result, state, runStartedAt, runStatusSucceeded, &finishedAt)
+	if err != nil {
 		return err
 	}
-	if err := s.emitEvent(ctx, floweventdomain.EventTypeRunAgentSessionSaved, map[string]string{"status": runStatusSucceeded}); err != nil {
+	if err := s.emitEvent(ctx, floweventdomain.EventTypeRunAgentSessionSaved, map[string]any{
+		"status":            runStatusSucceeded,
+		"snapshot_version":  persisted.SnapshotVersion,
+		"snapshot_checksum": persisted.SnapshotChecksum,
+	}); err != nil {
 		s.logger.Warn("emit run.agent.session.saved failed", "err", err)
 	}
 
@@ -382,10 +396,17 @@ func (s *Service) failRevisePRNotFound(ctx context.Context, result runResult, st
 		s.logger.Warn("emit run.revise.pr_not_found failed", "err", err)
 	}
 	finishedAt := time.Now().UTC()
-	if err := s.persistSessionSnapshot(ctx, result, state, time.Now().UTC(), runStatusFailedPrecondition, &finishedAt); err != nil {
+	persisted, err := s.persistSessionSnapshot(ctx, &result, state, time.Now().UTC(), runStatusFailedPrecondition, &finishedAt)
+	if err != nil {
 		s.logger.Warn("persist failed_precondition snapshot failed", "err", err)
 	}
-	_ = s.emitEvent(ctx, floweventdomain.EventTypeRunAgentSessionSaved, map[string]string{"status": runStatusFailedPrecondition})
+	if err == nil {
+		_ = s.emitEvent(ctx, floweventdomain.EventTypeRunAgentSessionSaved, map[string]any{
+			"status":            runStatusFailedPrecondition,
+			"snapshot_version":  persisted.SnapshotVersion,
+			"snapshot_checksum": persisted.SnapshotChecksum,
+		})
+	}
 	return ExitError{ExitCode: 42, Err: errors.New("revise precondition failed: pull request not found")}
 }
 
@@ -405,6 +426,10 @@ func (s *Service) restoreLatestSession(ctx context.Context, branch string, sessi
 	if snapshot.PRNumber <= 0 {
 		if s.cfg.DiscussionMode {
 			result := restoredSession{}
+			if snapshot.RunID == s.cfg.RunID {
+				result.snapshotVersion = snapshot.SnapshotVersion
+				result.snapshotChecksum = snapshot.SnapshotChecksum
+			}
 			if sessionID := strings.TrimSpace(snapshot.SessionID); sessionID != "" {
 				result.sessionID = sessionID
 			}
@@ -421,7 +446,12 @@ func (s *Service) restoreLatestSession(ctx context.Context, branch string, sessi
 			return result, nil
 		}
 		if s.cfg.ExistingPRNumber > 0 {
-			return restoredSession{existingPRNumber: s.cfg.ExistingPRNumber}, nil
+			result := restoredSession{existingPRNumber: s.cfg.ExistingPRNumber}
+			if snapshot.RunID == s.cfg.RunID {
+				result.snapshotVersion = snapshot.SnapshotVersion
+				result.snapshotChecksum = snapshot.SnapshotChecksum
+			}
+			return result, nil
 		}
 		return restoredSession{prNotFound: true}, nil
 	}
@@ -429,6 +459,10 @@ func (s *Service) restoreLatestSession(ctx context.Context, branch string, sessi
 	result := restoredSession{
 		existingPRNumber: snapshot.PRNumber,
 		sessionID:        strings.TrimSpace(snapshot.SessionID),
+	}
+	if snapshot.RunID == s.cfg.RunID {
+		result.snapshotVersion = snapshot.SnapshotVersion
+		result.snapshotChecksum = snapshot.SnapshotChecksum
 	}
 	if len(snapshot.CodexSessionJSON) > 0 {
 		restoredPath, err := s.restoreSessionSnapshot(ctx, sessionsDir, snapshot.CodexSessionJSON)
@@ -545,12 +579,19 @@ func cleanupDirectoryContents(path string) error {
 	return nil
 }
 
-func (s *Service) persistSessionSnapshot(ctx context.Context, result runResult, state codexState, startedAt time.Time, status string, finishedAt *time.Time) error {
+func (s *Service) persistSessionSnapshot(ctx context.Context, result *runResult, state codexState, startedAt time.Time, status string, finishedAt *time.Time) (cpclient.AgentSessionUpsertResult, error) {
+	if result == nil {
+		return cpclient.AgentSessionUpsertResult{}, fmt.Errorf("run result is required")
+	}
 	issueNumber := optionalIssueNumber(s.cfg.IssueNumber)
 	prNumber := optionalInt(result.prNumber)
 
 	codexSessionJSON := readJSONFileOrNil(result.sessionFilePath)
-	sessionJSON := buildSessionLogJSON(result, status)
+	sessionJSON := buildSessionLogJSON(*result, status)
+	snapshotChecksum, err := agentdomain.ComputeSessionSnapshotChecksum(sessionJSON, codexSessionJSON)
+	if err != nil {
+		return cpclient.AgentSessionUpsertResult{}, fmt.Errorf("compute session snapshot checksum: %w", err)
+	}
 
 	params := cpclient.AgentSessionUpsertParams{
 		Identity: cpclient.SessionIdentity{
@@ -578,14 +619,19 @@ func (s *Service) persistSessionSnapshot(ctx context.Context, result runResult, 
 			SessionJSON:      sessionJSON,
 			CodexSessionPath: result.sessionFilePath,
 			CodexSessionJSON: codexSessionJSON,
+			SnapshotVersion:  result.snapshotVersion,
+			SnapshotChecksum: snapshotChecksum,
 			StartedAt:        startedAt.UTC(),
 			FinishedAt:       finishedAt,
 		},
 	}
-	if err := s.cp.UpsertAgentSession(ctx, params); err != nil {
-		return fmt.Errorf("persist session snapshot: %w", err)
+	persisted, err := s.cp.UpsertAgentSession(ctx, params)
+	if err != nil {
+		return cpclient.AgentSessionUpsertResult{}, fmt.Errorf("persist session snapshot: %w", err)
 	}
-	return nil
+	result.snapshotVersion = persisted.SnapshotVersion
+	result.snapshotChecksum = persisted.SnapshotChecksum
+	return persisted, nil
 }
 
 func (s *Service) emitEvent(ctx context.Context, eventType floweventdomain.EventType, payload any) error {

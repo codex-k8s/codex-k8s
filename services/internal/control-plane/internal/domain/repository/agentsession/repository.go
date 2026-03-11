@@ -6,18 +6,20 @@ import (
 
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
+	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
 )
 
 type (
 	Session            = entitytypes.AgentSession
 	UpsertParams       = querytypes.AgentSessionUpsertParams
+	UpsertResult       = valuetypes.AgentSessionSnapshotState
 	SetWaitStateParams = querytypes.AgentSessionSetWaitStateParams
 )
 
 // Repository persists resumable codex-cli sessions for agent runs.
 type Repository interface {
 	// Upsert stores or updates run session snapshot by run_id.
-	Upsert(ctx context.Context, params UpsertParams) error
+	Upsert(ctx context.Context, params UpsertParams) (UpsertResult, error)
 	// SetWaitStateByRunID updates wait-state and timeout guard fields for the latest run session.
 	SetWaitStateByRunID(ctx context.Context, params SetWaitStateParams) (bool, error)
 	// GetByRunID returns latest session snapshot for one run id.

@@ -236,6 +236,9 @@ approvals:
 | session_json | jsonb | no | '{}'::jsonb |  | run execution snapshot (report + condensed runtime logs) |
 | codex_cli_session_path | text | yes |  |  | path to saved session file in workspace/storage |
 | codex_cli_session_json | jsonb | yes |  |  | persisted codex-cli session snapshot for resume |
+| snapshot_version | bigint | no | 1 |  | CAS-like snapshot rewrite version |
+| snapshot_checksum | text | yes |  |  | sha256 canonical checksum of persisted snapshot payload |
+| snapshot_updated_at | timestamptz | no | now() |  | latest successful snapshot rewrite timestamp |
 | wait_state | text | yes |  | check(owner_review/mcp) | current wait-state for timeout governance |
 | timeout_guard_disabled | bool | no | false |  | `true` while timeout-kill must stay paused |
 | last_heartbeat_at | timestamptz | yes |  |  | heartbeat for wait-state/recovery |
@@ -459,6 +462,8 @@ Roadmap (Day5+):
 - Контур аудита и учета обязателен: `agent_sessions`, `token_usage`, `links`.
 - Шаблоны промптов в текущем MVP поддерживают repo-only seed model; effective source фиксируется в `agent_sessions.template_source`.
 - Для paused-состояний сохраняется `codex-cli` session snapshot, чтобы run можно было продолжить с того же места.
+- Для rewrite-safe snapshot persistence используются `snapshot_version`, `snapshot_checksum`, `snapshot_updated_at`;
+  repeated replay с тем же payload остаётся идемпотентным, stale rewrite не должен затирать более новую версию.
 - При ожидании ответа MCP (`wait_state=mcp`) timeout-kill для pod/run не применяется до завершения ожидания.
 
 ## Апрув

@@ -24,6 +24,9 @@ SELECT
     session_json,
     codex_cli_session_path,
     codex_cli_session_json,
+    snapshot_version,
+    snapshot_checksum,
+    snapshot_updated_at,
     started_at,
     finished_at,
     created_at,
@@ -32,5 +35,5 @@ FROM agent_sessions
 WHERE repository_full_name = $1
   AND branch_name = $2
   AND agent_key = $3
-ORDER BY updated_at DESC, created_at DESC
+ORDER BY snapshot_updated_at DESC, snapshot_version DESC, updated_at DESC, created_at DESC
 LIMIT 1;

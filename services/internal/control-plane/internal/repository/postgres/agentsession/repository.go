@@ -16,8 +16,10 @@ import (
 )
 
 var (
-	//go:embed sql/upsert.sql
-	queryUpsert string
+	//go:embed sql/insert_if_absent.sql
+	queryInsertIfAbsent string
+	//go:embed sql/update_if_version_matches.sql
+	queryUpdateIfVersionMatches string
 	//go:embed sql/get_by_run_id.sql
 	queryGetByRunID string
 	//go:embed sql/get_latest_by_repository_branch_and_agent.sql
@@ -39,72 +41,77 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 }
 
 // Upsert stores or updates run session snapshot by run_id.
-func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams) error {
-	status := strings.TrimSpace(params.Status)
-	if status == "" {
-		status = "running"
+func (r *Repository) Upsert(ctx context.Context, params domainrepo.UpsertParams) (domainrepo.UpsertResult, error) {
+	if params.ExpectedSnapshotVersion < 0 {
+		return domainrepo.UpsertResult{}, fmt.Errorf("upsert agent session: snapshot_version must be >= 0")
 	}
 
-	issueNumber := pgtype.Int8{}
-	if params.IssueNumber != nil {
-		issueNumber = pgtype.Int8{Int64: int64(*params.IssueNumber), Valid: true}
+	record, err := buildUpsertRecord(normalizeUpsertParams(params), nil)
+	if err != nil {
+		return domainrepo.UpsertResult{}, fmt.Errorf("upsert agent session: build record: %w", err)
 	}
 
-	prNumber := pgtype.Int8{}
-	if params.PRNumber != nil {
-		prNumber = pgtype.Int8{Int64: int64(*params.PRNumber), Valid: true}
+	if record.ExpectedVersion == 0 {
+		inserted, result, err := r.insertIfAbsent(ctx, record)
+		if err != nil {
+			return domainrepo.UpsertResult{}, err
+		}
+		if inserted {
+			return result, nil
+		}
+
+		current, found, err := r.GetByRunID(ctx, record.RunID)
+		if err != nil {
+			return domainrepo.UpsertResult{}, err
+		}
+		if found && isIdempotentReplay(current, record.ExpectedVersion, record.SnapshotChecksum) {
+			return snapshotStateFromSession(current), nil
+		}
+		return domainrepo.UpsertResult{}, domainrepo.SnapshotVersionConflict{
+			ExpectedSnapshotVersion: record.ExpectedVersion,
+			ActualSnapshotVersion:   current.SnapshotVersion,
+		}
 	}
 
-	finishedAt := pgtype.Timestamptz{}
-	if params.FinishedAt != nil {
-		finishedAt = pgtype.Timestamptz{Time: params.FinishedAt.UTC(), Valid: true}
+	current, found, err := r.GetByRunID(ctx, record.RunID)
+	if err != nil {
+		return domainrepo.UpsertResult{}, err
+	}
+	if !found {
+		return domainrepo.UpsertResult{}, domainrepo.SnapshotVersionConflict{
+			ExpectedSnapshotVersion: record.ExpectedVersion,
+			ActualSnapshotVersion:   0,
+		}
 	}
 
-	startedAt := pgtype.Timestamptz{}
-	if !params.StartedAt.IsZero() {
-		startedAt = pgtype.Timestamptz{Time: params.StartedAt.UTC(), Valid: true}
+	record, err = buildUpsertRecord(normalizeUpsertParams(params), &current)
+	if err != nil {
+		return domainrepo.UpsertResult{}, fmt.Errorf("upsert agent session: build merged record: %w", err)
 	}
 
-	var sessionJSON []byte
-	if len(params.SessionJSON) > 0 {
-		sessionJSON = []byte(params.SessionJSON)
+	updated, result, err := r.updateIfVersionMatches(ctx, record)
+	if err != nil {
+		return domainrepo.UpsertResult{}, err
+	}
+	if updated {
+		return result, nil
 	}
 
-	var codexJSON []byte
-	if len(params.CodexSessionJSON) > 0 {
-		codexJSON = []byte(params.CodexSessionJSON)
+	current, found, err = r.GetByRunID(ctx, record.RunID)
+	if err != nil {
+		return domainrepo.UpsertResult{}, err
 	}
-
-	if _, err := r.db.Exec(
-		ctx,
-		queryUpsert,
-		params.RunID,
-		params.CorrelationID,
-		strings.TrimSpace(params.ProjectID),
-		strings.TrimSpace(params.RepositoryFullName),
-		strings.TrimSpace(params.AgentKey),
-		issueNumber,
-		strings.TrimSpace(params.BranchName),
-		prNumber,
-		strings.TrimSpace(params.PRURL),
-		strings.TrimSpace(params.TriggerKind),
-		strings.TrimSpace(params.TemplateKind),
-		strings.TrimSpace(params.TemplateSource),
-		strings.TrimSpace(params.TemplateLocale),
-		strings.TrimSpace(params.Model),
-		strings.TrimSpace(params.ReasoningEffort),
-		status,
-		strings.TrimSpace(params.SessionID),
-		sessionJSON,
-		strings.TrimSpace(params.CodexSessionPath),
-		codexJSON,
-		startedAt,
-		finishedAt,
-	); err != nil {
-		return fmt.Errorf("upsert agent session: %w", err)
+	if found && isIdempotentReplay(current, record.ExpectedVersion, record.SnapshotChecksum) {
+		return snapshotStateFromSession(current), nil
 	}
-
-	return nil
+	actualVersion := int64(0)
+	if found {
+		actualVersion = current.SnapshotVersion
+	}
+	return domainrepo.UpsertResult{}, domainrepo.SnapshotVersionConflict{
+		ExpectedSnapshotVersion: record.ExpectedVersion,
+		ActualSnapshotVersion:   actualVersion,
+	}
 }
 
 // SetWaitStateByRunID updates wait-state and timeout guard fields for run session.
@@ -166,28 +173,105 @@ func (r *Repository) CleanupSessionPayloadsFinishedBefore(ctx context.Context, f
 	return affected, nil
 }
 
+func (r *Repository) insertIfAbsent(ctx context.Context, record upsertRecord) (bool, domainrepo.UpsertResult, error) {
+	row := r.db.QueryRow(
+		ctx,
+		queryInsertIfAbsent,
+		record.RunID,
+		record.CorrelationID,
+		nullableTrimmedUUID(record.ProjectID),
+		record.RepositoryFullName,
+		record.AgentKey,
+		intPtrToPGType(record.IssueNumber),
+		nullableTrimmedText(record.BranchName),
+		intPtrToPGType(record.PRNumber),
+		nullableTrimmedText(record.PRURL),
+		nullableTrimmedText(record.TriggerKind),
+		nullableTrimmedText(record.TemplateKind),
+		nullableTrimmedText(record.TemplateSource),
+		nullableTrimmedText(record.TemplateLocale),
+		nullableTrimmedText(record.Model),
+		nullableTrimmedText(record.ReasoningEffort),
+		record.Status,
+		nullableTrimmedText(record.SessionID),
+		record.SessionJSON,
+		nullableTrimmedText(record.CodexSessionPath),
+		bytesOrNil(record.CodexSessionJSON),
+		timestamptzOrNil(record.StartedAt),
+		timestamptzPtrOrNil(record.FinishedAt),
+		record.SnapshotChecksum,
+		record.SnapshotUpdatedAt,
+	)
+
+	result, found, err := scanUpsertResult(row)
+	if err != nil {
+		return false, domainrepo.UpsertResult{}, fmt.Errorf("insert agent session if absent: %w", err)
+	}
+	return found, result, nil
+}
+
+func (r *Repository) updateIfVersionMatches(ctx context.Context, record upsertRecord) (bool, domainrepo.UpsertResult, error) {
+	row := r.db.QueryRow(
+		ctx,
+		queryUpdateIfVersionMatches,
+		record.RunID,
+		record.CorrelationID,
+		nullableTrimmedUUID(record.ProjectID),
+		record.RepositoryFullName,
+		record.AgentKey,
+		intPtrToPGType(record.IssueNumber),
+		nullableTrimmedText(record.BranchName),
+		intPtrToPGType(record.PRNumber),
+		nullableTrimmedText(record.PRURL),
+		nullableTrimmedText(record.TriggerKind),
+		nullableTrimmedText(record.TemplateKind),
+		nullableTrimmedText(record.TemplateSource),
+		nullableTrimmedText(record.TemplateLocale),
+		nullableTrimmedText(record.Model),
+		nullableTrimmedText(record.ReasoningEffort),
+		record.Status,
+		nullableTrimmedText(record.SessionID),
+		record.SessionJSON,
+		nullableTrimmedText(record.CodexSessionPath),
+		bytesOrNil(record.CodexSessionJSON),
+		timestamptzOrNil(record.StartedAt),
+		timestamptzPtrOrNil(record.FinishedAt),
+		record.ExpectedVersion,
+		record.SnapshotChecksum,
+		record.SnapshotUpdatedAt,
+	)
+
+	result, found, err := scanUpsertResult(row)
+	if err != nil {
+		return false, domainrepo.UpsertResult{}, fmt.Errorf("update agent session by snapshot version: %w", err)
+	}
+	return found, result, nil
+}
+
 func (r *Repository) queryOneSession(ctx context.Context, query string, operationLabel string, args ...any) (domainrepo.Session, bool, error) {
 	var (
-		item       domainrepo.Session
-		projectID  pgtype.Text
-		issueNum   pgtype.Int8
-		prNum      pgtype.Int8
-		prURL      pgtype.Text
-		trigger    pgtype.Text
-		tplKind    pgtype.Text
-		tplSource  pgtype.Text
-		tplLocale  pgtype.Text
-		model      pgtype.Text
-		reasoning  pgtype.Text
-		waitState  pgtype.Text
-		heartbeat  pgtype.Timestamptz
-		sessionID  pgtype.Text
-		sessionRaw []byte
-		path       pgtype.Text
-		codexRaw   []byte
-		guardOff   bool
-		startedAt  pgtype.Timestamptz
-		finishedAt pgtype.Timestamptz
+		item              domainrepo.Session
+		projectID         pgtype.Text
+		issueNum          pgtype.Int8
+		prNum             pgtype.Int8
+		prURL             pgtype.Text
+		trigger           pgtype.Text
+		tplKind           pgtype.Text
+		tplSource         pgtype.Text
+		tplLocale         pgtype.Text
+		model             pgtype.Text
+		reasoning         pgtype.Text
+		waitState         pgtype.Text
+		heartbeat         pgtype.Timestamptz
+		sessionID         pgtype.Text
+		sessionRaw        []byte
+		path              pgtype.Text
+		codexRaw          []byte
+		guardOff          bool
+		startedAt         pgtype.Timestamptz
+		finishedAt        pgtype.Timestamptz
+		snapshotChecksum  pgtype.Text
+		snapshotUpdatedAt pgtype.Timestamptz
 	)
 
 	err := r.db.QueryRow(ctx, query, args...).Scan(
@@ -215,6 +299,9 @@ func (r *Repository) queryOneSession(ctx context.Context, query string, operatio
 		&sessionRaw,
 		&path,
 		&codexRaw,
+		&item.SnapshotVersion,
+		&snapshotChecksum,
+		&snapshotUpdatedAt,
 		&startedAt,
 		&finishedAt,
 		&item.CreatedAt,
@@ -274,6 +361,12 @@ func (r *Repository) queryOneSession(ctx context.Context, query string, operatio
 	if len(codexRaw) > 0 {
 		item.CodexSessionJSON = json.RawMessage(codexRaw)
 	}
+	if snapshotChecksum.Valid {
+		item.SnapshotChecksum = snapshotChecksum.String
+	}
+	if snapshotUpdatedAt.Valid {
+		item.SnapshotUpdatedAt = snapshotUpdatedAt.Time.UTC()
+	}
 	if startedAt.Valid {
 		item.StartedAt = startedAt.Time.UTC()
 	}
@@ -292,4 +385,62 @@ func nullableTrimmedText(value string) any {
 		return nil
 	}
 	return trimmed
+}
+
+func nullableTrimmedUUID(value string) any {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return nil
+	}
+	return trimmed
+}
+
+func intPtrToPGType(value *int) pgtype.Int8 {
+	if value == nil {
+		return pgtype.Int8{}
+	}
+	return pgtype.Int8{Int64: int64(*value), Valid: true}
+}
+
+func bytesOrNil(value []byte) any {
+	if len(value) == 0 {
+		return nil
+	}
+	return value
+}
+
+func timestamptzOrNil(value time.Time) pgtype.Timestamptz {
+	if value.IsZero() {
+		return pgtype.Timestamptz{}
+	}
+	return pgtype.Timestamptz{Time: value.UTC(), Valid: true}
+}
+
+func timestamptzPtrOrNil(value *time.Time) pgtype.Timestamptz {
+	if value == nil || value.IsZero() {
+		return pgtype.Timestamptz{}
+	}
+	return pgtype.Timestamptz{Time: value.UTC(), Valid: true}
+}
+
+func scanUpsertResult(row pgx.Row) (domainrepo.UpsertResult, bool, error) {
+	var (
+		result domainrepo.UpsertResult
+	)
+	err := row.Scan(&result.SnapshotVersion, &result.SnapshotChecksum, &result.SnapshotUpdatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domainrepo.UpsertResult{}, false, nil
+		}
+		return domainrepo.UpsertResult{}, false, err
+	}
+	result.SnapshotUpdatedAt = result.SnapshotUpdatedAt.UTC()
+	return result, true, nil
+}
+
+func normalizeUpsertParams(params domainrepo.UpsertParams) domainrepo.UpsertParams {
+	if strings.TrimSpace(params.Status) == "" {
+		params.Status = "running"
+	}
+	return params
 }
