@@ -47,4 +47,4 @@ approvals:
 2. Move files into target domain subfolders.
 3. Rewrite internal repo links and `services.yaml`.
 4. Update affected GitHub issues after repo paths are stable.
-5. Run repo-local doc-drift check and attach evidence to PR.
+5. Validate repo-local path refs and stale blob links, then attach evidence to PR.

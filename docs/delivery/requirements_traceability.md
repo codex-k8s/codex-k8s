@@ -335,9 +335,9 @@ approvals:
   - migration-map переносов и affected-links inventory до любого file move;
   - синхронизация `services.yaml/spec.projectDocs` и `spec.roleDocTemplates` после migration;
   - update открытых issues `#254`, `#281`, `#282`, `#309`, `#312`, `#318`, `#322` после смены путей;
-  - repo-local doc-drift check с evidence в implementation PR.
+  - явная валидация repo-local path refs и stale blob links с evidence в implementation PR.
 - Зафиксирована зависимость Sprint S8 onboarding streams от этого plan-package:
-  `#281/#282` не должны финализировать docs baseline до merge результата `#320`, иначе будет закреплён legacy root docs path вместо канонического `docs/index.md`.
+  `#281/#282` не должны финализировать docs baseline до merge результата `#320`, иначе будет закреплён неканонический root docs path вместо `docs/index.md`.
 - Через Context7 (`/websites/cli_github_manual`) подтверждён актуальный синтаксис `gh issue edit`/`gh pr create`/`gh pr edit` для будущего update open issues и PR-flow; новые внешние зависимости не требуются.
 
 ## Актуализация по Issue #320 (`run:dev`, 2026-03-11)
@@ -347,14 +347,14 @@ approvals:
   `docs/delivery/documentation_ia_migration_map.md`,
   `docs/architecture/initiatives/**`,
   `docs/ops/handovers/**`,
-  `tools/check-doc-drift.sh`,
+  `Makefile`,
   `services.yaml`.
 - Каноническая IA теперь зафиксирована не только в process requirements, но и в навигационном слое репозитория:
   - root navigation = `docs/index.md`;
   - доменные индексы = `docs/<domain>/README.md`;
   - `docs/templates/index.md` переведён в template-only catalog;
-  - legacy reference в `docs/templates/user_story.md` переписан на `docs/templates/definition_of_done.md`.
-- Historical/stage-specific пакеты вынесены из корня доменов:
+  - устаревшая ссылка в `docs/templates/user_story.md` переписана на `docs/templates/definition_of_done.md`.
+- Initiative/stage-specific пакеты разложены по доменным подпапкам:
   - lifecycle agents/prompt templates -> `docs/architecture/initiatives/agents_prompt_templates_lifecycle/*`;
   - Sprint S7 MVP readiness package -> `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/*`;
   - Sprint S6 ops handover -> `docs/ops/handovers/s6/*`.
@@ -363,7 +363,8 @@ approvals:
   - внутренние markdown-ссылки и delivery traceability приведены к новым путям;
   - open issue bodies `#281`, `#282`, `#312` очищены от same-repo blob links и branch-specific doc refs.
 - Проверки implementation package:
-  - `make check-doc-drift ISSUES="254 281 282 309 312 318 322"` — passed;
+  - `rg -n -g '!docs/delivery/documentation_ia_migration_map.md' -g '!docs/delivery/issue_map.md' -g '!docs/delivery/requirements_traceability.md' 'docs/README\.md|docs/03_engineering/' docs services.yaml` — no matches;
+  - `rg -n -g '!docs/delivery/issue_map.md' -g '!docs/delivery/requirements_traceability.md' 'https://github\.com/codex-k8s/codex-k8s/blob/' docs services.yaml` — no matches;
   - `git diff --check` — passed.
 
 ## Актуализация по Issue #227 (`run:dev`, 2026-02-28)

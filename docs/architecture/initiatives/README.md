@@ -18,7 +18,7 @@ approvals:
 
 ## TL;DR
 - Здесь лежат архитектурные пакеты, относящиеся к отдельным инициативам, stage-cycle или handover-потокам.
-- Корневой каталог `docs/architecture/` больше не используется как плоское хранилище таких пакетов.
+- Корневой каталог `docs/architecture/` содержит канонические архитектурные документы и общие индексы.
 
 ## Пакеты
 - `docs/architecture/initiatives/agents_prompt_templates_lifecycle/README.md`

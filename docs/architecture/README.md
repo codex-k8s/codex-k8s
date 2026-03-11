@@ -18,7 +18,7 @@ approvals:
 
 ## TL;DR
 - На корне `docs/architecture/` остаются только канонические архитектурные source-of-truth документы и общие каталоги `adr/`, `alternatives/`, `initiatives/`.
-- Исторические stage-specific пакеты вынесены в `docs/architecture/initiatives/`.
+- `docs/architecture/initiatives/` содержит initiative/stage-specific пакеты с собственными индексами.
 
 ## Канонические документы
 - `docs/architecture/c4_context.md`
@@ -33,7 +33,7 @@ approvals:
 ## Вложенные каталоги
 - `docs/architecture/adr/` — архитектурные решения.
 - `docs/architecture/alternatives/` — варианты решений и зафиксированные альтернативы.
-- `docs/architecture/initiatives/` — исторические initiative/stage-specific пакеты с собственными индексами.
+- `docs/architecture/initiatives/` — initiative/stage-specific пакеты с собственными индексами.
 
 ## Навигация по пакетам
 - Lifecycle agents/prompt templates: `docs/architecture/initiatives/agents_prompt_templates_lifecycle/README.md`

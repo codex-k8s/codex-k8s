@@ -18,7 +18,7 @@ approvals:
 
 ## TL;DR
 - На корне `docs/ops/` остаются production runbook и навигация по эксплуатационным handover-пакетам.
-- Исторические postdeploy/ops пакеты складываются в `docs/ops/handovers/`.
+- Postdeploy/ops handover-пакеты размещаются в `docs/ops/handovers/`.
 
 ## Канонические документы
 - `docs/ops/production_runbook.md`

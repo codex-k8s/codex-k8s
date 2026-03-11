@@ -48,7 +48,7 @@ approvals:
 |---|---|---|---|
 | Wave 1 | Зафиксировать governance baseline и каноническую навигацию | `docs/delivery/development_process_requirements.md`, `docs/index.md`, `docs/{product,architecture,delivery,ops}/README.md`, `docs/templates/index.md`, `docs/templates/user_story.md` | Утверждены правила размещения, root/domain indexes и template-only роль каталога `docs/templates/` |
 | Wave 2 | Выполнить migration по одобренной карте без нарушения source-of-truth путей | candidate-пакеты `docs/architecture/*`, `docs/ops/*`, `docs/delivery/*`, migration-map, `docs/delivery/{delivery_plan,issue_map,requirements_traceability}.md`, `docs/delivery/{sprints,epics}/README.md` | Инициативные/handover документы разложены по доменным подпапкам, а traceability и внутренние markdown-ссылки синхронизированы |
-| Wave 3 | Закрыть внешние ссылки, runtime contracts и drift-control | `services.yaml`, open issues `#254`, `#281`, `#282`, `#309`, `#312`, `#318`, `#322`, repo-local doc-drift check entrypoint/evidence | `spec.projectDocs/spec.roleDocTemplates`, issue/PR ссылки и проверка drift приведены к новой IA |
+| Wave 3 | Закрыть внешние ссылки, runtime contracts и validation evidence | `services.yaml`, open issues `#254`, `#281`, `#282`, `#309`, `#312`, `#318`, `#322`, PR evidence по repo-local path/blob validation | `spec.projectDocs/spec.roleDocTemplates`, issue/PR ссылки и evidence по repo-local refs приведены к новой IA |
 
 ## Sequencing constraints
 - Wave 1 обязателен перед любым переносом файлов: без согласованного root/domain convention нельзя безопасно переписывать links и onboarding baselines.
@@ -64,7 +64,7 @@ approvals:
 | `QG-320-02 Migration map` | Перед переносом подготовлена и reviewed полная migration-map | Нет ad-hoc move без списка затронутых ссылок и owner-role |
 | `QG-320-03 Runtime docs sync` | `services.yaml/spec.projectDocs` и `spec.roleDocTemplates` указывают только на существующие пути | Агентный docs context и role-aware templates не ломаются после migration |
 | `QG-320-04 External refs sync` | Обновлены открытые issues и artefact references | `#254`, `#281`, `#282`, `#309`, `#312`, `#318`, `#322` больше не содержат stale doc-path/blob refs |
-| `QG-320-05 Reproducible drift check` | Есть один repo-local entrypoint для проверки doc drift | Проверка выявляет broken repo-relative paths, stale blob links и несинхронизированные doc refs |
+| `QG-320-05 Reference validation evidence` | В implementation PR есть явная проверка repo-local path refs и stale blob links | Evidence выявляет broken repo-relative paths, stale blob links и несинхронизированные doc refs |
 | `QG-320-06 Traceability closure` | Delivery docs синхронизированы | `delivery_plan`, `issue_map`, `requirements_traceability`, sprint/epic indexes отражают итоговую IA |
 
 ## Definition of Ready (`run:dev` на Issue #320)
@@ -80,7 +80,7 @@ approvals:
 - [x] Инициативные/handover-пакеты перемещены по migration-map без несанкционированного re-root доменов.
 - [x] `services.yaml`, `docs/delivery/{issue_map,requirements_traceability,delivery_plan}.md`, `docs/delivery/{sprints,epics}/README.md` и внутренние markdown-ссылки синхронизированы.
 - [x] Открытые issues и PR-артефакты с прямыми ссылками на docs обновлены после migration.
-- [x] Выполнен repo-local doc-drift check, а evidence добавлен в PR.
+- [x] В implementation PR добавлено явное evidence по repo-local path refs и stale blob links.
 
 ## Self-check (common checklist, релевантные пункты)
 - Scope ограничен delivery/documentation governance; код, YAML, scripts и runtime не менялись в рамках `run:plan`.
@@ -97,7 +97,7 @@ approvals:
 | blocker | `BLK-320-02` | Если до merge `#320` начнётся реализация `#281/#282` с новым docs baseline, возникнет двойной источник правды по структуре onboarding docs | open |
 | risk | `RSK-320-01` | Частичный перенос без полного migration-map сломает внутренние ссылки, prompt context и ссылочную навигацию открытых issues | open |
 | risk | `RSK-320-02` | Попытка вынести governance в отдельный новый policy-файл создаст конкурирующие source-of-truth и усложнит поддержку | open |
-| risk | `RSK-320-03` | Массовое обновление open issues после migration может оставить часть branch-specific blob links, если не будет автоматизированной проверки | open |
+| risk | `RSK-320-03` | Массовое обновление open issues после migration может оставить часть branch-specific blob links, если в PR не будет явной проверки repo-local refs | open |
 | decision | `OD-320-01` | Канонический root index = `docs/index.md`; доменные индексы = `docs/<domain>/README.md` | accepted |
 | decision | `OD-320-02` | Governance source of truth остаётся в `docs/delivery/development_process_requirements.md`; отдельный параллельный policy-файл не создаётся | accepted |
 | decision | `OD-320-03` | Execution выполняется в одном issue `#320` по трем волнам; новые follow-up issues создаются только при обнаружении blocker'а во время migration | accepted |
@@ -117,7 +117,7 @@ approvals:
 - Следующий этап: `run:dev` на том же Issue `#320`.
 - Порядок исполнения: `Wave 1 -> Wave 2 -> Wave 3`, без параллельного docs-migration PR.
 - Обязательные проверки в `run:dev`:
-  - repo-local doc-drift check;
+  - явная проверка repo-local path refs и stale blob links;
   - `git diff --check`;
   - синхронизация `services.yaml` и traceability-доков;
   - update открытых issues после завершения migration.

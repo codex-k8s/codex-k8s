@@ -214,7 +214,7 @@ approvals:
     - добавлены `docs/index.md`, доменные `README.md` и `docs/delivery/documentation_ia_migration_map.md`;
     - initiative/handover пакеты перенесены в `docs/architecture/initiatives/` и `docs/ops/handovers/`;
     - синхронизированы `services.yaml`, `docs/templates/*`, delivery traceability-документы и индексы;
-    - добавлен repo-local check `make check-doc-drift`, а issue bodies `#281`, `#282`, `#312` очищены от same-repo blob links.
+    - синхронизированы repo-local path refs, а issue bodies `#281`, `#282`, `#312` очищены от same-repo blob links и branch-specific doc refs.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

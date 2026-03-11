@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - `docs/index.md` — канонический корневой навигатор по проектной документации.
 - Source-of-truth документы остаются в доменах `product`, `architecture`, `delivery`, `ops`.
-- Исторические инициативные и handover-пакеты выносятся во вложенные доменные подпапки, а `docs/templates/` остаётся только каталогом шаблонов.
+- Инициативные и handover-пакеты размещаются во вложенных доменных подпапках, а `docs/templates/` используется только как каталог шаблонов.
 
 ## Доменные каталоги
 
@@ -38,7 +38,7 @@ approvals:
 - Если нужен ops baseline: `docs/ops/production_runbook.md`.
 - Если нужен шаблон артефакта: `docs/templates/index.md`.
 
-## Исторические пакеты
+## Специализированные каталоги
 - Архитектурные initiative/stage-specific пакеты хранятся в `docs/architecture/initiatives/`.
 - Эксплуатационные handover-пакеты хранятся в `docs/ops/handovers/`.
 - Delivery day-эпики и sprint планы хранятся в `docs/delivery/epics/` и `docs/delivery/sprints/`.
