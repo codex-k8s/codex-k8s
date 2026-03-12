@@ -1,7 +1,7 @@
 import type { AxiosError } from "axios";
 import { isAxiosError } from "axios";
 
-import { isErrorResponseDto } from "./types";
+import { isErrorResponseDto } from "./types.ts";
 
 export type ApiErrorKind = "network" | "timeout" | "http" | "unknown";
 

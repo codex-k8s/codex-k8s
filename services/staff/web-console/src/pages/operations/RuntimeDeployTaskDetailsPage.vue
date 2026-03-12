@@ -46,6 +46,24 @@
     </VAlert>
 
     <template v-if="task">
+      <VCard variant="tonal" color="info" class="mt-4">
+        <VCardText class="text-body-2">
+          <div class="text-subtitle-2 mb-2">{{ t("pages.runtimeDeployTaskDetails.actionsGuideTitle") }}</div>
+          <div class="text-medium-emphasis mb-3">{{ t("pages.runtimeDeployTaskDetails.actionsGuideIntro") }}</div>
+          <div class="action-guide-grid">
+            <div class="action-guide-item">
+              <strong>{{ t("pages.runtimeDeployTaskDetails.cancelAction") }}</strong>
+              <span>{{ t("pages.runtimeDeployTaskDetails.cancelHelp") }}</span>
+            </div>
+            <div class="action-guide-item">
+              <strong>{{ t("pages.runtimeDeployTaskDetails.stopAction") }}</strong>
+              <span>{{ t("pages.runtimeDeployTaskDetails.stopHelp") }}</span>
+            </div>
+          </div>
+          <div class="text-medium-emphasis mt-3">{{ stopAvailabilityText }}</div>
+        </VCardText>
+      </VCard>
+
       <VRow class="mt-4" density="compact">
         <VCol cols="12">
           <VCard variant="outlined">
@@ -159,9 +177,14 @@ import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
 import BackBtn from "../../shared/ui/BackBtn.vue";
 import ConfirmDialog from "../../shared/ui/ConfirmDialog.vue";
 import PageHeader from "../../shared/ui/PageHeader.vue";
-import { normalizeApiError, type ApiError } from "../../shared/api/errors";
+import { ApiError, normalizeApiError } from "../../shared/api/errors";
 import { formatDateTime } from "../../shared/lib/datetime";
 import { colorForRunStatus } from "../../shared/lib/chips";
+import {
+  hasActiveRuntimeDeployLease,
+  localizeRuntimeDeployActionError,
+  resolveRuntimeDeployLeaseStatus,
+} from "../../shared/lib/runtime-deploy-task-actions";
 import { bindRealtimePageLifecycle } from "../../shared/ws/lifecycle";
 import { useSnackbarStore } from "../../shared/ui/feedback/snackbar-store";
 import { cancelRuntimeDeployTask, getRuntimeDeployTask, stopRuntimeDeployTask } from "../../features/runtime-deploy/api";
@@ -209,7 +232,22 @@ const sortedLogs = computed(() => {
 
 const normalizedTaskStatus = computed(() => String(task.value?.status || "").trim().toLowerCase());
 const canCancel = computed(() => normalizedTaskStatus.value === "pending" || normalizedTaskStatus.value === "running");
-const canStop = computed(() => normalizedTaskStatus.value === "running");
+const leaseStatus = computed(() => resolveRuntimeDeployLeaseStatus(task.value));
+const canStop = computed(() => normalizedTaskStatus.value === "running" && hasActiveRuntimeDeployLease(task.value));
+const stopAvailabilityText = computed(() => {
+  if (leaseStatus.value === "active") {
+    return t("pages.runtimeDeployTaskDetails.stopAvailabilityActive", {
+      owner: task.value?.lease_owner || "-",
+      until: formatDateTime(task.value?.lease_until, locale.value),
+    });
+  }
+  if (leaseStatus.value === "expired") {
+    return t("pages.runtimeDeployTaskDetails.stopAvailabilityExpired", {
+      until: formatDateTime(task.value?.lease_until, locale.value),
+    });
+  }
+  return t("pages.runtimeDeployTaskDetails.stopAvailabilityMissing");
+});
 
 const logHeaders = computed(() => ([
   { title: t("table.fields.created_at"), key: "created_at", align: "center", width: 180 },
@@ -276,6 +314,19 @@ function actionAuditText(kind: "cancel" | "stop"): string {
 }
 
 function openActionConfirm(action: "cancel" | "stop"): void {
+  if ((action === "cancel" && !canCancel.value) || (action === "stop" && !canStop.value)) {
+    actionError.value = localizeRuntimeDeployActionError(
+      new ApiError({
+        kind: "http",
+        status: 409,
+        code: "failed_precondition",
+        messageKey: "errors.failedPrecondition",
+      }),
+      action,
+    );
+    return;
+  }
+
   actionError.value = null;
   actionReason.value = "";
   requestedAction.value = action;
@@ -286,6 +337,20 @@ async function confirmRequestedAction(): Promise<void> {
   if (!requestedAction.value) return;
 
   const action = requestedAction.value;
+  if ((action === "cancel" && !canCancel.value) || (action === "stop" && !canStop.value)) {
+    actionError.value = localizeRuntimeDeployActionError(
+      new ApiError({
+        kind: "http",
+        status: 409,
+        code: "failed_precondition",
+        messageKey: "errors.failedPrecondition",
+      }),
+      action,
+    );
+    requestedAction.value = null;
+    return;
+  }
+
   actionSubmitting.value = true;
   actionError.value = null;
 
@@ -303,7 +368,7 @@ async function confirmRequestedAction(): Promise<void> {
         }),
     );
   } catch (err) {
-    actionError.value = normalizeApiError(err);
+    actionError.value = localizeRuntimeDeployActionError(normalizeApiError(err), action);
   } finally {
     actionSubmitting.value = false;
     actionReason.value = "";
@@ -414,6 +479,24 @@ watch(
 
 .summary-wide {
   grid-column: 1 / -1;
+}
+
+.action-guide-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.action-guide-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+@media (min-width: 960px) {
+  .action-guide-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .log-message {
