@@ -15,8 +15,9 @@ const (
 )
 
 const (
-	triggerKindDev       = "dev"
-	triggerKindDevRevise = "dev_revise"
+	triggerKindDev        = "dev"
+	triggerKindDevRevise  = "dev_revise"
+	triggerKindDiscussion = "discussion"
 )
 
 const (

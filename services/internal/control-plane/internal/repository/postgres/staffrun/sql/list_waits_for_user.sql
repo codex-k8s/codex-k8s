@@ -11,7 +11,12 @@ SELECT
         ELSE NULL
     END AS issue_number,
     COALESCE(ar.run_payload->'issue'->>'html_url', '') AS issue_url,
-    COALESCE(ar.run_payload->'trigger'->>'kind', '') AS trigger_kind,
+    CASE
+        WHEN COALESCE(ar.run_payload->>'discussion_mode', '') = 'true'
+            OR COALESCE(ar.run_payload->'trigger'->>'label', '') = 'mode:discussion'
+            THEN 'discussion'
+        ELSE COALESCE(ar.run_payload->'trigger'->>'kind', '')
+    END AS trigger_kind,
     COALESCE(ar.run_payload->'trigger'->>'label', '') AS trigger_label,
     COALESCE(ws.agent_key, '') AS agent_key,
     COALESCE(rt.job_name, '') AS job_name,
@@ -103,7 +108,15 @@ WHERE pm.user_id = $1::uuid
   AND ar.project_id IS NOT NULL
   AND COALESCE(ws.wait_state, '') <> ''
   AND ar.status = COALESCE(NULLIF($4::text, ''), 'running')
-  AND ($3::text = '' OR COALESCE(ar.run_payload->'trigger'->>'kind', '') = $3::text)
+  AND (
+        $3::text = ''
+        OR CASE
+            WHEN COALESCE(ar.run_payload->>'discussion_mode', '') = 'true'
+                OR COALESCE(ar.run_payload->'trigger'->>'label', '') = 'mode:discussion'
+                THEN 'discussion'
+            ELSE COALESCE(ar.run_payload->'trigger'->>'kind', '')
+        END = $3::text
+      )
   AND ($5::text = '' OR COALESCE(ws.agent_key, '') = $5::text)
   AND ($6::text = '' OR COALESCE(ws.wait_state, '') = $6::text)
 ORDER BY ar.created_at DESC

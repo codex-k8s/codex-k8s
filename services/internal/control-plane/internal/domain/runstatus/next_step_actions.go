@@ -72,6 +72,9 @@ func stageDescriptorFromTriggerKind(labels nextstepdomain.Labels, triggerKind st
 }
 
 func buildNextStepActions(publicBaseURL string, labels nextstepdomain.Labels, runCtx runContext, state commentState) []nextStepCommentAction {
+	if isDiscussionTriggerKind(state.TriggerKind, state.TriggerLabel, state.DiscussionMode) {
+		return nil
+	}
 	descriptor, ok := stageDescriptorFromTriggerKind(labels, state.TriggerKind)
 	if !ok {
 		return nil

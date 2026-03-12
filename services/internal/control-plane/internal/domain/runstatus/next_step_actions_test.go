@@ -61,3 +61,18 @@ func TestStageDescriptorFromTriggerKind_UsesConfiguredReviseLabels(t *testing.T)
 		})
 	}
 }
+
+func TestBuildNextStepActions_SkipsDiscussionMode(t *testing.T) {
+	t.Parallel()
+
+	actions := buildNextStepActions("https://platform.codex-k8s.dev", nextstepdomain.DefaultLabels(), runContext{}, commentState{
+		RepositoryFullName: "codex-k8s/codex-k8s",
+		IssueNumber:        298,
+		TriggerKind:        triggerKindDiscussion,
+		TriggerLabel:       "mode:discussion",
+		DiscussionMode:     true,
+	})
+	if len(actions) != 0 {
+		t.Fatalf("expected no next-step actions for discussion run, got %#v", actions)
+	}
+}

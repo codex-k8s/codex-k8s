@@ -16,7 +16,12 @@ SELECT
         ELSE NULL
     END AS issue_number,
     COALESCE(ar.run_payload->'issue'->>'html_url', '') AS issue_url,
-    COALESCE(ar.run_payload->'trigger'->>'kind', '') AS trigger_kind,
+    CASE
+        WHEN COALESCE(ar.run_payload->>'discussion_mode', '') = 'true'
+            OR COALESCE(ar.run_payload->'trigger'->>'label', '') = 'mode:discussion'
+            THEN 'discussion'
+        ELSE COALESCE(ar.run_payload->'trigger'->>'kind', '')
+    END AS trigger_kind,
     COALESCE(ar.run_payload->'trigger'->>'label', '') AS trigger_label,
     COALESCE(ws.agent_key, '') AS agent_key,
     COALESCE(rt.job_name, '') AS job_name,

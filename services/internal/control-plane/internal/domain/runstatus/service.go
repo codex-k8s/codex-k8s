@@ -95,6 +95,8 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 	if runCtx.payload.Trigger != nil {
 		triggerLabel = strings.TrimSpace(runCtx.payload.Trigger.Label)
 	}
+	discussionMode := runCtx.payload.DiscussionMode || isDiscussionTriggerLabel(triggerLabel)
+	effectiveCommentTriggerKind := resolveCommentTriggerKind(effectiveTriggerKind, triggerLabel, discussionMode)
 
 	currentState := commentState{
 		RunID:                    runID,
@@ -102,10 +104,11 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		RepositoryFullName:       strings.TrimSpace(runCtx.payload.Repository.FullName),
 		JobName:                  strings.TrimSpace(params.JobName),
 		JobNamespace:             strings.TrimSpace(params.JobNamespace),
-		RuntimeMode:              normalizeRuntimeMode(params.RuntimeMode, effectiveTriggerKind),
+		RuntimeMode:              normalizeRuntimeMode(params.RuntimeMode, effectiveCommentTriggerKind),
 		Namespace:                strings.TrimSpace(params.Namespace),
-		TriggerKind:              effectiveTriggerKind,
+		TriggerKind:              effectiveCommentTriggerKind,
 		TriggerLabel:             triggerLabel,
+		DiscussionMode:           discussionMode,
 		PromptLocale:             normalizeLocale(params.PromptLocale, s.cfg.DefaultLocale),
 		Model:                    strings.TrimSpace(params.Model),
 		ReasoningEffort:          strings.TrimSpace(params.ReasoningEffort),

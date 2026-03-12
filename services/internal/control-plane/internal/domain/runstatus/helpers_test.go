@@ -122,6 +122,14 @@ func TestNormalizeRuntimeMode_PreservesExplicitCodeOnly(t *testing.T) {
 	}
 }
 
+func TestNormalizeRuntimeMode_DefaultsDiscussionToCodeOnly(t *testing.T) {
+	t.Parallel()
+
+	if got := normalizeRuntimeMode("", triggerKindDiscussion); got != runtimeModeCode {
+		t.Fatalf("normalizeRuntimeMode(empty, discussion) = %q, want %q", got, runtimeModeCode)
+	}
+}
+
 func TestFindRunStatusComment_PrefersHigherPhaseAndFallsBackToLatestCommentByID(t *testing.T) {
 	t.Parallel()
 

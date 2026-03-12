@@ -59,6 +59,9 @@ func normalizeRuntimeMode(value string, triggerKind string) string {
 	case runtimeModeCode:
 		return runtimeModeCode
 	}
+	if strings.EqualFold(strings.TrimSpace(triggerKind), triggerKindDiscussion) {
+		return runtimeModeCode
+	}
 	if webhookdomain.IsKnownTriggerKind(webhookdomain.NormalizeTriggerKind(triggerKind)) {
 		return runtimeModeFullEnv
 	}
@@ -69,16 +72,30 @@ func isDiscussionTriggerLabel(value string) bool {
 	return strings.EqualFold(strings.TrimSpace(value), webhookdomain.DefaultModeDiscussionLabel)
 }
 
-func resolveWorkloadKind(triggerKind string, triggerLabel string) string {
-	if isDiscussionTriggerLabel(triggerLabel) || webhookdomain.NormalizeTriggerKind(triggerKind) == webhookdomain.TriggerKindAIRepair {
+func isDiscussionTriggerKind(triggerKind string, triggerLabel string, discussionMode bool) bool {
+	if discussionMode || isDiscussionTriggerLabel(triggerLabel) {
+		return true
+	}
+	return strings.EqualFold(strings.TrimSpace(triggerKind), triggerKindDiscussion)
+}
+
+func resolveCommentTriggerKind(triggerKind string, triggerLabel string, discussionMode bool) string {
+	if isDiscussionTriggerKind(triggerKind, triggerLabel, discussionMode) {
+		return triggerKindDiscussion
+	}
+	return normalizeTriggerKind(triggerKind)
+}
+
+func resolveWorkloadKind(triggerKind string, triggerLabel string, discussionMode bool) string {
+	if isDiscussionTriggerKind(triggerKind, triggerLabel, discussionMode) || webhookdomain.NormalizeTriggerKind(triggerKind) == webhookdomain.TriggerKindAIRepair {
 		return workloadKindPod
 	}
 	return workloadKindJob
 }
 
-func resolveTriggerKindDisplay(triggerKind string, triggerLabel string) string {
-	if isDiscussionTriggerLabel(triggerLabel) {
-		return "discussion"
+func resolveTriggerKindDisplay(triggerKind string, triggerLabel string, discussionMode bool) string {
+	if isDiscussionTriggerKind(triggerKind, triggerLabel, discussionMode) {
+		return triggerKindDiscussion
 	}
 	return normalizeTriggerKind(triggerKind)
 }
@@ -145,11 +162,15 @@ func mergeState(base commentState, update commentState) commentState {
 		base.PullRequestURL = strings.TrimSpace(update.PullRequestURL)
 	}
 	if strings.TrimSpace(update.TriggerKind) != "" {
-		base.TriggerKind = normalizeTriggerKind(update.TriggerKind)
+		base.TriggerKind = strings.TrimSpace(update.TriggerKind)
 	}
 	if strings.TrimSpace(update.TriggerLabel) != "" {
 		base.TriggerLabel = strings.TrimSpace(update.TriggerLabel)
 	}
+	if update.DiscussionMode {
+		base.DiscussionMode = true
+	}
+	base.TriggerKind = resolveCommentTriggerKind(base.TriggerKind, base.TriggerLabel, base.DiscussionMode)
 	if strings.TrimSpace(update.PromptLocale) != "" {
 		base.PromptLocale = normalizeLocale(update.PromptLocale, localeEN)
 	}

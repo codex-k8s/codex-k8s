@@ -128,8 +128,8 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 
 	return commentTemplateContext{
 		RunID:                        strings.TrimSpace(state.RunID),
-		TriggerKindDisplay:           resolveTriggerKindDisplay(trimmedTriggerKind, state.TriggerLabel),
-		WorkloadKind:                 resolveWorkloadKind(trimmedTriggerKind, state.TriggerLabel),
+		TriggerKindDisplay:           resolveTriggerKindDisplay(trimmedTriggerKind, state.TriggerLabel, state.DiscussionMode),
+		WorkloadKind:                 resolveWorkloadKind(trimmedTriggerKind, state.TriggerLabel, state.DiscussionMode),
 		RuntimeMode:                  trimmedRuntimeMode,
 		JobName:                      trimmedJobName,
 		JobNamespace:                 trimmedJobNamespace,
@@ -146,7 +146,7 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 		NextStepActions:              templateActions,
 		ManagementURL:                managementURL,
 		StateMarker:                  marker,
-		ShowTriggerKind:              resolveTriggerKindDisplay(trimmedTriggerKind, state.TriggerLabel) != "",
+		ShowTriggerKind:              resolveTriggerKindDisplay(trimmedTriggerKind, state.TriggerLabel, state.DiscussionMode) != "",
 		ShowRuntimeMode:              trimmedRuntimeMode != "",
 		ShowJobRef:                   trimmedJobName != "" && trimmedJobNamespace != "",
 		ShowNamespace:                trimmedNamespace != "",

@@ -2,13 +2,14 @@ package query
 
 // RunPayload represents normalized run payload persisted in agent_runs.
 type RunPayload struct {
-	Project     RunPayloadProject      `json:"project"`
-	Repository  RunPayloadRepository   `json:"repository"`
-	Agent       *RunPayloadAgent       `json:"agent,omitempty"`
-	Issue       *RunPayloadIssue       `json:"issue,omitempty"`
-	PullRequest *RunPayloadPullRequest `json:"pull_request,omitempty"`
-	Trigger     *RunPayloadTrigger     `json:"trigger,omitempty"`
-	Runtime     *RunPayloadRuntime     `json:"runtime,omitempty"`
+	DiscussionMode bool                   `json:"discussion_mode,omitempty"`
+	Project        RunPayloadProject      `json:"project"`
+	Repository     RunPayloadRepository   `json:"repository"`
+	Agent          *RunPayloadAgent       `json:"agent,omitempty"`
+	Issue          *RunPayloadIssue       `json:"issue,omitempty"`
+	PullRequest    *RunPayloadPullRequest `json:"pull_request,omitempty"`
+	Trigger        *RunPayloadTrigger     `json:"trigger,omitempty"`
+	Runtime        *RunPayloadRuntime     `json:"runtime,omitempty"`
 }
 
 // RunPayloadProject is project section of run payload.

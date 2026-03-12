@@ -3,11 +3,13 @@ package runstatus
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/crypto/tokencrypt"
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
+	nextstepdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/nextstep"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/platformtoken"
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/staffrun"
@@ -148,6 +150,107 @@ func TestUpsertRunStatusComment_MergesTrackedCommentStateBeforeFallbackEdit(t *t
 	}
 }
 
+func TestUpsertRunStatusComment_DiscussionRunUsesDiscussionMarkerAndSkipsDevNextSteps(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	tokenCrypt, err := tokencrypt.NewService("00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff")
+	if err != nil {
+		t.Fatalf("tokencrypt.NewService: %v", err)
+	}
+	botTokenEncrypted, err := tokenCrypt.EncryptString("bot-token")
+	if err != nil {
+		t.Fatalf("EncryptString: %v", err)
+	}
+
+	runPayload, err := json.Marshal(querytypes.RunPayload{
+		DiscussionMode: true,
+		Repository:     querytypes.RunPayloadRepository{FullName: "codex-k8s/codex-k8s"},
+		Issue:          &querytypes.RunPayloadIssue{Number: 298, HTMLURL: "https://github.com/codex-k8s/codex-k8s/issues/298"},
+		Trigger: &querytypes.RunPayloadTrigger{
+			Source: triggerSourceIssueLabel,
+			Label:  "mode:discussion",
+			Kind:   triggerKindDev,
+		},
+	})
+	if err != nil {
+		t.Fatalf("json.Marshal(runPayload): %v", err)
+	}
+
+	github := &runstatusTestGitHub{
+		listIssueCommentsFunc: func(context.Context, mcpdomain.GitHubListIssueCommentsParams) ([]mcpdomain.GitHubIssueComment, error) {
+			return nil, nil
+		},
+		createIssueCommentFunc: func(_ context.Context, params mcpdomain.GitHubCreateIssueCommentParams) (mcpdomain.GitHubIssueComment, error) {
+			return mcpdomain.GitHubIssueComment{
+				ID:   501,
+				Body: params.Body,
+				URL:  "https://github.com/codex-k8s/codex-k8s/issues/298#issuecomment-501",
+			}, nil
+		},
+	}
+
+	service, err := NewService(Config{
+		PublicBaseURL:  "https://platform.codex-k8s.dev",
+		DefaultLocale:  localeRU,
+		NextStepLabels: nextstepdomain.DefaultLabels(),
+	}, Dependencies{
+		Runs: &runstatusTestRunsRepository{
+			run: agentrunrepo.Run{
+				ID:            "run-discussion",
+				CorrelationID: "corr-discussion",
+				RunPayload:    runPayload,
+			},
+		},
+		Platform: &runstatusTestPlatformTokenRepository{
+			item: platformtokenrepo.PlatformGitHubTokens{BotTokenEncrypted: botTokenEncrypted},
+		},
+		TokenCrypt: tokenCrypt,
+		GitHub:     github,
+		Kubernetes: runstatusTestKubernetesClient{},
+		StaffRuns:  &runstatusTestStaffRunsRepository{},
+	})
+	if err != nil {
+		t.Fatalf("NewService: %v", err)
+	}
+
+	result, err := service.UpsertRunStatusComment(ctx, UpsertCommentParams{
+		RunID:        "run-discussion",
+		Phase:        PhaseAuthRequired,
+		PromptLocale: localeRU,
+		RunStatus:    "running",
+	})
+	if err != nil {
+		t.Fatalf("UpsertRunStatusComment: %v", err)
+	}
+	if result.CommentID != 501 {
+		t.Fatalf("unexpected comment id: got %d want 501", result.CommentID)
+	}
+	if github.lastCreatedBody == "" {
+		t.Fatal("expected CreateIssueComment body to be captured")
+	}
+	if strings.Contains(github.lastCreatedBody, "run:dev:revise") {
+		t.Fatalf("discussion comment must not suggest dev revise next steps: %q", github.lastCreatedBody)
+	}
+	if strings.Contains(github.lastCreatedBody, "Runtime mode: `full-env`") {
+		t.Fatalf("discussion comment must not fall back to full-env: %q", github.lastCreatedBody)
+	}
+
+	state, ok := extractStateMarker(github.lastCreatedBody)
+	if !ok {
+		t.Fatalf("created comment body does not contain state marker: %q", github.lastCreatedBody)
+	}
+	if state.TriggerKind != triggerKindDiscussion {
+		t.Fatalf("expected trigger kind %q, got %q", triggerKindDiscussion, state.TriggerKind)
+	}
+	if !state.DiscussionMode {
+		t.Fatal("expected discussion_mode=true in state marker")
+	}
+	if state.RuntimeMode != runtimeModeCode {
+		t.Fatalf("expected runtime mode %q, got %q", runtimeModeCode, state.RuntimeMode)
+	}
+}
+
 type runstatusTestRunsRepository struct {
 	run agentrunrepo.Run
 }
@@ -267,6 +370,7 @@ type runstatusTestGitHub struct {
 	getIssueCommentCalls  int
 	editIssueCommentCalls int
 	lastEditedBody        string
+	lastCreatedBody       string
 }
 
 func (g *runstatusTestGitHub) ListIssueComments(ctx context.Context, params mcpdomain.GitHubListIssueCommentsParams) ([]mcpdomain.GitHubIssueComment, error) {
@@ -285,6 +389,7 @@ func (g *runstatusTestGitHub) GetIssueComment(ctx context.Context, params mcpdom
 }
 
 func (g *runstatusTestGitHub) CreateIssueComment(ctx context.Context, params mcpdomain.GitHubCreateIssueCommentParams) (mcpdomain.GitHubIssueComment, error) {
+	g.lastCreatedBody = params.Body
 	if g.createIssueCommentFunc == nil {
 		return mcpdomain.GitHubIssueComment{}, nil
 	}
