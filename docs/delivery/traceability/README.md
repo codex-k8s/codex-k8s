@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-12
 updated_at: 2026-03-12
-related_issues: [325, 327, 333, 335, 337, 340, 351]
+related_issues: [325, 327, 333, 335, 337, 340, 351, 360, 378]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -30,6 +30,7 @@ approvals:
 | `docs/delivery/traceability/s7_mvp_readiness_gap_closure_history.md` | Sprint S7 | История stage/development evidence по MVP readiness execution streams |
 | `docs/delivery/traceability/s8_go_refactoring_parallelization_history.md` | Sprint S8 | История go-refactor/onboarding/doc-governance потоков, включая doc-audit decomposition issue `#327` |
 | `docs/delivery/traceability/s9_mission_control_dashboard_history.md` | Sprint S9 | История intake/vision/prd/arch/design решений по Mission Control Dashboard и continuity issues `#351`/`#363` для design -> plan handover |
+| `docs/delivery/traceability/s10_mcp_user_interactions_history.md` | Sprint S10 | История intake baseline по built-in MCP user interactions и continuity issue `#378` для перехода в `run:vision` |
 
 ## Правила обновления
 - В `docs/delivery/issue_map.md` обновляется только текущая каноническая карта связей, bundle refs и статус issue/PR.

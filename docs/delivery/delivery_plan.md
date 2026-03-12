@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-12
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 360, 378]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -251,6 +251,16 @@ approvals:
   - inline write-path ограничен provider-safe typed commands, а provider review/merge/comment editing оставлены deep-link-only;
   - зафиксирован rollout order `migrations -> control-plane -> worker -> api-gateway -> web-console` и limited rollback после provider side effects;
   - создана follow-up issue `#363` для stage `run:plan` без trigger-лейбла.
+
+### Sprint S10: Built-in MCP user interactions
+- Day 1 (in-review): intake-пакет для built-in MCP user interactions (`docs/delivery/epics/s10/epic-s10-day1-mcp-user-interactions-intake.md`, Issue `#360`).
+- Результат Day 1 (факт):
+  - инициатива зафиксирована как отдельный platform stream поверх существующего built-in server `codex_k8s`, а не как расширение approval flow;
+  - MVP baseline ограничен `user.notify` и `user.decision.request` с channel-neutral semantics и typed response contract;
+  - закреплены неподвижные ограничения: отдельный interaction-domain, wait-state только для response-required сценариев, platform-owned retry/idempotency/audit/correlation, Telegram как отдельный follow-up stream;
+  - создана follow-up issue `#378` для stage `run:vision` без trigger-лейбла.
+- Day 2 (planned): vision-пакет в Issue `#378`.
+  - Цель: зафиксировать mission, north star, persona outcomes, KPI/guardrails и handover в `run:prd`.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
