@@ -20,9 +20,10 @@ var commentTemplatesFS embed.FS
 var commentTemplates = template.Must(template.New("runstatus-comments").ParseFS(commentTemplatesFS, "templates/comment_*.md.tmpl"))
 
 type recentAgentStatus struct {
-	StatusText string
-	AgentKey   string
-	ReportedAt string
+	StatusText  string
+	ReportedAt  string
+	TimeLabel   string
+	RepeatCount int
 }
 
 type commentTemplateNextStepAction struct {
@@ -70,11 +71,12 @@ type commentTemplateContext struct {
 
 	CreatedReached              bool
 	PreparingRuntimeReached     bool
+	RuntimePreparationActive    bool
 	RuntimePreparationCompleted bool
 	StartedReached              bool
-	AgentStarted                bool
 	AuthRequested               bool
 	AuthResolvedReached         bool
+	ReadyReached                bool
 
 	IsRunSucceeded bool
 	IsRunFailed    bool
@@ -115,6 +117,13 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 	normalizedRunStatus := strings.ToLower(strings.TrimSpace(state.RunStatus))
 	normalizedRuntimeMode := strings.ToLower(strings.TrimSpace(state.RuntimeMode))
 	phaseLevel := phaseOrder(state.Phase)
+	hasAuthRequested := state.AuthRequested
+
+	formattedRecentStatuses := make([]recentAgentStatus, 0, len(recentStatuses))
+	for _, item := range recentStatuses {
+		item.TimeLabel = formatRecentStatusTimeLabel(item.ReportedAt, state.PromptLocale, nowUTC())
+		formattedRecentStatuses = append(formattedRecentStatuses, item)
+	}
 
 	templateActions := make([]commentTemplateNextStepAction, 0, len(nextStepActions))
 	for _, item := range nextStepActions {
@@ -127,45 +136,48 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 	}
 
 	return commentTemplateContext{
-		RunID:                        strings.TrimSpace(state.RunID),
-		TriggerKindDisplay:           resolveTriggerKindDisplay(trimmedTriggerKind, state.TriggerLabel, state.DiscussionMode),
-		WorkloadKind:                 resolveWorkloadKind(trimmedTriggerKind, state.TriggerLabel, state.DiscussionMode),
-		RuntimeMode:                  trimmedRuntimeMode,
-		JobName:                      trimmedJobName,
-		JobNamespace:                 trimmedJobNamespace,
-		Namespace:                    trimmedNamespace,
-		SlotURL:                      trimmedSlotURL,
-		IssueURL:                     trimmedIssueURL,
-		PullRequestURL:               trimmedPullRequestURL,
-		Model:                        trimmedModel,
-		ReasoningEffort:              trimmedReasoningEffort,
-		RunStatus:                    strings.TrimSpace(state.RunStatus),
-		CodexAuthVerificationURL:     strings.TrimSpace(state.CodexAuthVerificationURL),
-		CodexAuthUserCode:            strings.TrimSpace(state.CodexAuthUserCode),
-		RecentAgentStatuses:          recentStatuses,
-		NextStepActions:              templateActions,
-		ManagementURL:                managementURL,
-		StateMarker:                  marker,
-		ShowTriggerKind:              resolveTriggerKindDisplay(trimmedTriggerKind, state.TriggerLabel, state.DiscussionMode) != "",
-		ShowRuntimeMode:              trimmedRuntimeMode != "",
-		ShowJobRef:                   trimmedJobName != "" && trimmedJobNamespace != "",
-		ShowNamespace:                trimmedNamespace != "",
-		ShowSlotURL:                  trimmedSlotURL != "",
-		ShowIssueURL:                 trimmedIssueURL != "",
-		ShowPullRequestURL:           trimmedPullRequestURL != "",
-		ShowModel:                    trimmedModel != "",
-		ShowReasoningEffort:          trimmedReasoningEffort != "",
-		ShowFinished:                 phaseLevel >= phaseOrder(PhaseFinished),
-		ShowNamespaceAction:          trimmedNamespace != "" && phaseLevel >= phaseOrder(PhaseNamespaceDeleted),
-		ShowRuntimePreparation:       normalizedRuntimeMode == runtimeModeFullEnv,
-		ShowNextStepActions:          len(templateActions) > 0,
-		CreatedReached:               phaseLevel >= phaseOrder(PhaseCreated),
-		PreparingRuntimeReached:      phaseLevel >= phaseOrder(PhasePreparingRuntime),
+		RunID:                    strings.TrimSpace(state.RunID),
+		TriggerKindDisplay:       resolveTriggerKindDisplay(trimmedTriggerKind, state.TriggerLabel, state.DiscussionMode),
+		WorkloadKind:             resolveWorkloadKind(trimmedTriggerKind, state.TriggerLabel, state.DiscussionMode),
+		RuntimeMode:              trimmedRuntimeMode,
+		JobName:                  trimmedJobName,
+		JobNamespace:             trimmedJobNamespace,
+		Namespace:                trimmedNamespace,
+		SlotURL:                  trimmedSlotURL,
+		IssueURL:                 trimmedIssueURL,
+		PullRequestURL:           trimmedPullRequestURL,
+		Model:                    trimmedModel,
+		ReasoningEffort:          trimmedReasoningEffort,
+		RunStatus:                strings.TrimSpace(state.RunStatus),
+		CodexAuthVerificationURL: strings.TrimSpace(state.CodexAuthVerificationURL),
+		CodexAuthUserCode:        strings.TrimSpace(state.CodexAuthUserCode),
+		RecentAgentStatuses:      formattedRecentStatuses,
+		NextStepActions:          templateActions,
+		ManagementURL:            managementURL,
+		StateMarker:              marker,
+		ShowTriggerKind:          resolveTriggerKindDisplay(trimmedTriggerKind, state.TriggerLabel, state.DiscussionMode) != "",
+		ShowRuntimeMode:          trimmedRuntimeMode != "",
+		ShowJobRef:               trimmedJobName != "" && trimmedJobNamespace != "",
+		ShowNamespace:            trimmedNamespace != "",
+		ShowSlotURL:              trimmedSlotURL != "",
+		ShowIssueURL:             trimmedIssueURL != "",
+		ShowPullRequestURL:       trimmedPullRequestURL != "",
+		ShowModel:                trimmedModel != "",
+		ShowReasoningEffort:      trimmedReasoningEffort != "",
+		ShowFinished:             phaseLevel >= phaseOrder(PhaseFinished),
+		ShowNamespaceAction:      trimmedNamespace != "" && phaseLevel >= phaseOrder(PhaseNamespaceDeleted),
+		ShowRuntimePreparation:   normalizedRuntimeMode == runtimeModeFullEnv,
+		ShowNextStepActions:      len(templateActions) > 0,
+		CreatedReached:           phaseLevel >= phaseOrder(PhaseCreated),
+		PreparingRuntimeReached:  phaseLevel >= phaseOrder(PhasePreparingRuntime),
+		RuntimePreparationActive: normalizedRuntimeMode == runtimeModeFullEnv &&
+			phaseLevel >= phaseOrder(PhasePreparingRuntime) &&
+			phaseLevel < phaseOrder(PhaseStarted),
 		RuntimePreparationCompleted:  phaseLevel >= phaseOrder(PhaseStarted),
 		StartedReached:               phaseLevel >= phaseOrder(PhaseStarted),
-		AgentStarted:                 phaseLevel >= phaseOrder(PhaseStarted),
-		AuthRequested:                phaseLevel >= phaseOrder(PhaseAuthRequired),
-		AuthResolvedReached:          phaseLevel >= phaseOrder(PhaseAuthResolved),
+		AuthRequested:                hasAuthRequested,
+		AuthResolvedReached:          hasAuthRequested && phaseLevel >= phaseOrder(PhaseAuthResolved),
+		ReadyReached:                 phaseLevel >= phaseOrder(PhaseReady),
 		IsRunSucceeded:               normalizedRunStatus == runStatusSucceeded,
 		IsRunFailed:                  normalizedRunStatus == runStatusFailed,
 		Deleted:                      state.Deleted,

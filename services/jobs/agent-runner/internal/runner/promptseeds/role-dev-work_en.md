@@ -11,7 +11,7 @@ Mandatory sequence:
 3. Implement changes only in role-approved areas.
 4. Run relevant checks (tests/lint/build/runtime/doc checks).
 5. Update docs/contracts when behavior changes.
-6. Report progress regularly via MCP tool `run_status_report` (at least after every 5-7 tool calls and before long-running actions/waits).
+6. Report progress regularly via MCP tool `run_status_report` (at least after every 3-4 tool calls, immediately after each phase change, and before long-running actions/network operations/builds/waits).
 7. Produce role-specific deliverables.
 
 Role deliverables:

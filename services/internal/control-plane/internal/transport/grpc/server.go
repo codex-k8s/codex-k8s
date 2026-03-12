@@ -574,6 +574,8 @@ func parseRunStatusPhase(value string) (runstatusdomain.Phase, error) {
 		return runstatusdomain.PhaseAuthRequired, nil
 	case string(runstatusdomain.PhaseAuthResolved):
 		return runstatusdomain.PhaseAuthResolved, nil
+	case string(runstatusdomain.PhaseReady):
+		return runstatusdomain.PhaseReady, nil
 	case string(runstatusdomain.PhaseFinished):
 		return runstatusdomain.PhaseFinished, nil
 	case string(runstatusdomain.PhaseNamespaceDeleted):

@@ -141,6 +141,20 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	if err := s.ensureCodexReady(ctx, state); err != nil {
 		return err
 	}
+	if err := s.emitEvent(ctx, floweventdomain.EventTypeRunAgentReady, map[string]string{
+		"branch":       targetBranch,
+		"trigger_kind": triggerKind,
+		"runtime_mode": runtimeMode,
+		"agent_key":    s.cfg.AgentKey,
+	}); err != nil {
+		s.logger.Warn("emit run.agent.ready failed", "err", err)
+	}
+	if err := s.cp.UpsertRunStatusComment(ctx, cpclient.UpsertRunStatusCommentParams{
+		RunID: s.cfg.RunID,
+		Phase: "ready",
+	}); err != nil {
+		s.logger.Warn("upsert run status comment (ready) failed", "run_id", s.cfg.RunID, "err", err)
+	}
 	defer func() {
 		if s.desiredCodexAuthMode() != codexAuthModeChatGPT {
 			return

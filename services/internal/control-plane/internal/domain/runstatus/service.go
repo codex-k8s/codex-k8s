@@ -101,6 +101,7 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 	currentState := commentState{
 		RunID:                    runID,
 		Phase:                    params.Phase,
+		AuthRequested:            params.Phase == PhaseAuthRequired,
 		RepositoryFullName:       strings.TrimSpace(runCtx.payload.Repository.FullName),
 		JobName:                  strings.TrimSpace(params.JobName),
 		JobNamespace:             strings.TrimSpace(params.JobNamespace),
@@ -861,15 +862,19 @@ func (s *Service) loadRecentAgentStatuses(ctx context.Context, correlationID str
 			continue
 		}
 
-		statusText, agentKey := parseRunAgentStatusPayload(event.PayloadJSON)
+		statusText := parseRunAgentStatusPayload(event.PayloadJSON)
 		if statusText == "" {
+			continue
+		}
+		if len(items) > 0 && items[len(items)-1].StatusText == statusText {
+			items[len(items)-1].RepeatCount++
 			continue
 		}
 
 		items = append(items, recentAgentStatus{
-			StatusText: statusText,
-			AgentKey:   agentKey,
-			ReportedAt: event.CreatedAt.UTC().Format(time.RFC3339Nano),
+			StatusText:  statusText,
+			ReportedAt:  event.CreatedAt.UTC().Format(time.RFC3339Nano),
+			RepeatCount: 1,
 		})
 		if len(items) >= limit {
 			break
@@ -879,31 +884,30 @@ func (s *Service) loadRecentAgentStatuses(ctx context.Context, correlationID str
 }
 
 type runAgentStatusReportedPayload struct {
-	AgentKey   string `json:"agent_key"`
 	StatusText string `json:"status_text"`
 }
 
-func parseRunAgentStatusPayload(rawPayload []byte) (statusText string, agentKey string) {
+func parseRunAgentStatusPayload(rawPayload []byte) string {
 	payloadBytes := rawPayload
 	if len(payloadBytes) == 0 {
-		return "", ""
+		return ""
 	}
 
 	var payload runAgentStatusReportedPayload
 	if err := json.Unmarshal(payloadBytes, &payload); err != nil {
 		var nested string
 		if nestedErr := json.Unmarshal(payloadBytes, &nested); nestedErr != nil {
-			return "", ""
+			return ""
 		}
 		if nested == "" {
-			return "", ""
+			return ""
 		}
 		if nestedDecodeErr := json.Unmarshal([]byte(nested), &payload); nestedDecodeErr != nil {
-			return "", ""
+			return ""
 		}
 	}
 
-	return strings.TrimSpace(payload.StatusText), strings.TrimSpace(payload.AgentKey)
+	return strings.TrimSpace(payload.StatusText)
 }
 
 func (s *Service) findTrackedRunStatusCommentID(ctx context.Context, correlationID string, runID string) int64 {

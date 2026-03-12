@@ -1,4 +1,5 @@
-import { format, isValid, parseISO } from "date-fns";
+import { format, isSameDay, isValid, parseISO } from "date-fns";
+import { enUS, ru } from "date-fns/locale";
 
 // formatDateTime formats an RFC3339 datetime to a stable, locale-specific string:
 // - en: YYYY-MM-DD HH:MM
@@ -10,6 +11,26 @@ export function formatDateTime(value: string | null | undefined, locale: string)
 
   const pattern = locale === "ru" ? "dd.MM.yyyy HH:mm" : "yyyy-MM-dd HH:mm";
   return format(d, pattern);
+}
+
+function resolveDateLocale(locale: string) {
+  return locale === "ru" ? ru : enUS;
+}
+
+function stripMonthDots(value: string): string {
+  return value.replace(/\./g, "");
+}
+
+export function formatCompactDateTime(value: string | null | undefined, locale: string, referenceDate: Date = new Date()): string {
+  if (!value) return "-";
+  const d = parseISO(value);
+  if (!isValid(d)) return value;
+
+  const dateLocale = resolveDateLocale(locale);
+  if (isSameDay(d, referenceDate)) {
+    return format(d, "HH:mm", { locale: dateLocale });
+  }
+  return stripMonthDots(format(d, "d MMM HH:mm", { locale: dateLocale }));
 }
 
 // formatDurationSince returns compact SLA-like elapsed time from value until now.

@@ -8,10 +8,12 @@
 - Код авторизации: `{{ .CodexAuthUserCode }}`
 {{- end }}
 {{- else }}
-{{- if .AgentStarted }}
-✅ Агент запущен{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Ссылка на запуск]({{ .ManagementURL }}){{- end }}
-{{- else if .PreparingRuntimeReached }}
-🛠 Идёт подготовка окружения{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Ссылка на запуск]({{ .ManagementURL }}){{- end }}
+{{- if .ReadyReached }}
+✅ Агент готов{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Ссылка на запуск]({{ .ManagementURL }}){{- end }}
+{{- else if .StartedReached }}
+▶️ Запуск начат{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Ссылка на запуск]({{ .ManagementURL }}){{- end }}
+{{- else if .RuntimePreparationActive }}
+🛠 Идёт сборка и деплой{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Ссылка на запуск]({{ .ManagementURL }}){{- end }}
 {{- else }}
 👀 Планируется запуск агента{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Ссылка на запуск]({{ .ManagementURL }}){{- end }}
 {{- end }}
@@ -56,7 +58,7 @@
 
 ### 🤖 Последние статусы агента
 {{- range .RecentAgentStatuses }}
-- {{- if .AgentKey }}`{{ .AgentKey }}`: {{- end }}{{ .StatusText }}
+- {{ .StatusText }}{{- if .TimeLabel }} `{{ .TimeLabel }}`{{- end }}{{- if gt .RepeatCount 1 }} (x{{ .RepeatCount }}){{- end }}
 {{- end }}
 {{- end }}
 
@@ -69,16 +71,16 @@
 {{- if .ShowRuntimePreparation }}
 {{- if .PreparingRuntimeReached }}
 {{- if .RuntimePreparationCompleted }}
-- ✅ Подготовка окружения завершена (namespace, runtime stack, slot URL)
+- ✅ Сборка и деплой завершены (namespace, runtime stack, slot URL)
 {{- else }}
-- 🛠 Идёт подготовка окружения (namespace, runtime stack, slot URL)
+- 🛠 Идёт сборка и деплой (namespace, runtime stack, slot URL)
 {{- end }}
 {{- else }}
-- ⏳ Ожидание подготовки окружения
+- ⏳ Ожидание сборки и деплоя
 {{- end }}
 {{- end }}
 {{- if .StartedReached }}
-- ✅ Агент запущен
+- ✅ Начато
 {{- else }}
 - ⏳ Ожидание старта агента
 {{- end }}
@@ -90,6 +92,11 @@
 {{- else }}
 - 🔐 Авторизация Codex запрошена
 {{- end }}
+{{- end }}
+{{- if .ReadyReached }}
+- ✅ Агент готов
+{{- else if .StartedReached }}
+- ⏳ Ожидание готовности агента
 {{- end }}
 {{- if .ShowFinished }}
 {{- if .IsRunSucceeded }}

@@ -53,7 +53,7 @@ approvals:
   - `github_labels_transition` (remove+add).
 - Базовый MCP инструмент обратной связи по прогрессу:
   - `run_status_report` (агент публикует текущий короткий статус выполнения в выбранной locale).
-  - последние 3 `run_status_report` статуса выводятся в run service-comment в GitHub для видимого прогресса ревью.
+  - последние 3 дедуплицированные группы `run_status_report` выводятся в run service-comment в GitHub в компактном inline-виде с временем.
 - Остальные GitHub/Kubernetes runtime-операции выполняются напрямую из agent pod через `gh`/`kubectl` в рамках RBAC/policy.
 
 ## Модель доступа GitHub для агентного pod (S2 Day4)

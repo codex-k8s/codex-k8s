@@ -28,6 +28,7 @@ func ParseEventType(value string) (floweventdomain.EventType, error) {
 	eventType := floweventdomain.EventType(strings.TrimSpace(value))
 	switch eventType {
 	case floweventdomain.EventTypeRunAgentStarted,
+		floweventdomain.EventTypeRunAgentReady,
 		floweventdomain.EventTypeRunAgentSessionRestored,
 		floweventdomain.EventTypeRunAgentSessionSaved,
 		floweventdomain.EventTypeRunAgentResumeUsed,

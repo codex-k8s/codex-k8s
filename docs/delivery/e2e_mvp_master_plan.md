@@ -102,7 +102,7 @@ approvals:
 
 ### Набор C. MCP governance tools
 - C1: `github_labels_list|add|remove|transition` с audit trail.
-- C2: `run_status_report` cadence (каждые 5-7 tool calls).
+- C2: `run_status_report` cadence (каждые 3-4 tool calls, сразу после смены фазы и перед долгими операциями/сетевыми запросами/сборкой/ожиданием).
 - C3: `secret.sync.github_k8s`, `database.lifecycle`, `owner.feedback.request` (approve/deny paths).
 
 ### Набор D. Runtime and infra

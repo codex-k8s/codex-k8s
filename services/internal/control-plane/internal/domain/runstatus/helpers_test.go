@@ -98,6 +98,9 @@ func TestPhaseOrder_PreparingRuntimeBetweenCreatedAndStarted(t *testing.T) {
 	if gotPreparing, gotStarted := phaseOrder(PhasePreparingRuntime), phaseOrder(PhaseStarted); gotPreparing >= gotStarted {
 		t.Fatalf("expected preparing phase order to be less than started: preparing=%d started=%d", gotPreparing, gotStarted)
 	}
+	if gotResolved, gotReady := phaseOrder(PhaseAuthResolved), phaseOrder(PhaseReady); gotReady <= gotResolved {
+		t.Fatalf("expected ready phase order to be greater than auth_resolved: auth_resolved=%d ready=%d", gotResolved, gotReady)
+	}
 }
 
 func TestResolveUpsertTriggerKind(t *testing.T) {
@@ -233,6 +236,19 @@ func TestMergeState_PreservesTerminalStatusAgainstEarlierRunningUpdate(t *testin
 	}
 	if merged.Phase != PhaseFinished {
 		t.Fatalf("expected phase %q, got %q", PhaseFinished, merged.Phase)
+	}
+}
+
+func TestMergeState_PreservesAuthRequestedFlag(t *testing.T) {
+	t.Parallel()
+
+	merged := mergeState(
+		commentState{RunID: "run-3", Phase: PhaseAuthRequired, AuthRequested: true},
+		commentState{RunID: "run-3", Phase: PhaseReady},
+	)
+
+	if !merged.AuthRequested {
+		t.Fatal("expected auth_requested flag to be preserved")
 	}
 }
 

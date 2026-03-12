@@ -8,10 +8,12 @@
 - User code: `{{ .CodexAuthUserCode }}`
 {{- end }}
 {{- else }}
-{{- if .AgentStarted }}
-✅ Agent started{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Run link]({{ .ManagementURL }}){{- end }}
-{{- else if .PreparingRuntimeReached }}
-🛠 Runtime preparation in progress{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Run link]({{ .ManagementURL }}){{- end }}
+{{- if .ReadyReached }}
+✅ Agent ready{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Run link]({{ .ManagementURL }}){{- end }}
+{{- else if .StartedReached }}
+▶️ Run started{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Run link]({{ .ManagementURL }}){{- end }}
+{{- else if .RuntimePreparationActive }}
+🛠 Build and deploy in progress{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Run link]({{ .ManagementURL }}){{- end }}
 {{- else }}
 👀 Agent launch is planned{{- if .ManagementURL }}&nbsp;&nbsp;&nbsp;&nbsp;📎 [Run link]({{ .ManagementURL }}){{- end }}
 {{- end }}
@@ -56,7 +58,7 @@
 
 ### 🤖 Latest Agent Statuses
 {{- range .RecentAgentStatuses }}
-- {{- if .AgentKey }}`{{ .AgentKey }}`: {{- end }}{{ .StatusText }}
+- {{ .StatusText }}{{- if .TimeLabel }} `{{ .TimeLabel }}`{{- end }}{{- if gt .RepeatCount 1 }} (x{{ .RepeatCount }}){{- end }}
 {{- end }}
 {{- end }}
 
@@ -69,16 +71,16 @@
 {{- if .ShowRuntimePreparation }}
 {{- if .PreparingRuntimeReached }}
 {{- if .RuntimePreparationCompleted }}
-- ✅ Runtime preparation completed (namespace, runtime stack, slot URL)
+- ✅ Build and deploy completed (namespace, runtime stack, slot URL)
 {{- else }}
-- 🛠 Runtime preparation in progress (namespace, runtime stack, slot URL)
+- 🛠 Build and deploy in progress (namespace, runtime stack, slot URL)
 {{- end }}
 {{- else }}
-- ⏳ Waiting for runtime preparation
+- ⏳ Waiting for build and deploy
 {{- end }}
 {{- end }}
 {{- if .StartedReached }}
-- ✅ Agent started
+- ✅ Started
 {{- else }}
 - ⏳ Waiting for agent start
 {{- end }}
@@ -90,6 +92,11 @@
 {{- else }}
 - 🔐 Codex authentication requested
 {{- end }}
+{{- end }}
+{{- if .ReadyReached }}
+- ✅ Agent ready
+{{- else if .StartedReached }}
+- ⏳ Waiting for agent readiness
 {{- end }}
 {{- if .ShowFinished }}
 {{- if .IsRunSucceeded }}

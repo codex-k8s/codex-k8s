@@ -329,12 +329,17 @@ export const ru = {
     timeline: {
       title: "Таймлайн",
       created: "Создано",
+      buildDeploy: "Сборка и деплой",
       started: "Начато",
+      authResolved: "Авторизация Codex пройдена",
+      agentReady: "Агент готов",
       waiting: "Ожидание",
       finished: "Завершено",
+      statusUpdates: "Статусы агента",
       waitState: "wait_state",
       status: "status",
-      agent: "agent_key",
+      inProgress: "в процессе",
+      buildFailed: "Завершилось до передачи управления агенту",
     },
   },
   logs: {

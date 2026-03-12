@@ -112,8 +112,10 @@ func normalizeRequestedByType(value RequestedByType) RequestedByType {
 func phaseOrder(phase Phase) int {
 	switch phase {
 	case PhaseNamespaceDeleted:
-		return 7
+		return 8
 	case PhaseFinished:
+		return 7
+	case PhaseReady:
 		return 6
 	case PhaseAuthResolved:
 		return 5
@@ -133,6 +135,9 @@ func phaseOrder(phase Phase) int {
 func mergeState(base commentState, update commentState) commentState {
 	if phaseOrder(update.Phase) >= phaseOrder(base.Phase) {
 		base.Phase = update.Phase
+	}
+	if base.AuthRequested || update.AuthRequested || update.Phase == PhaseAuthRequired {
+		base.AuthRequested = true
 	}
 	if strings.TrimSpace(update.RepositoryFullName) != "" {
 		base.RepositoryFullName = strings.TrimSpace(update.RepositoryFullName)

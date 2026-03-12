@@ -3,6 +3,7 @@ package runstatus
 import (
 	"strings"
 	"testing"
+	"time"
 
 	nextstepdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/nextstep"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
@@ -59,7 +60,7 @@ func TestRenderCommentBody_RendersPlannedLaunchState(t *testing.T) {
 	if !strings.Contains(body, "Планируется запуск агента") {
 		t.Fatalf("rendered body does not contain planned launch marker: %q", body)
 	}
-	if !strings.Contains(body, "Ожидание подготовки окружения") {
+	if !strings.Contains(body, "Ожидание сборки и деплоя") {
 		t.Fatalf("rendered body does not contain waiting runtime preparation marker: %q", body)
 	}
 }
@@ -68,13 +69,14 @@ func TestRenderCommentBody_RendersSlotURLAndAuthTimeline(t *testing.T) {
 	t.Parallel()
 
 	body := mustRenderCommentBody(t, commentState{
-		RunID:        "run-2",
-		Phase:        PhaseAuthResolved,
-		RuntimeMode:  runtimeModeFullEnv,
-		Namespace:    "codex-k8s-dev-2",
-		SlotURL:      "https://codex-k8s-dev-2.ai.platform.codex-k8s.dev",
-		RunStatus:    "running",
-		PromptLocale: localeRU,
+		RunID:         "run-2",
+		Phase:         PhaseReady,
+		AuthRequested: true,
+		RuntimeMode:   runtimeModeFullEnv,
+		Namespace:     "codex-k8s-dev-2",
+		SlotURL:       "https://codex-k8s-dev-2.ai.platform.codex-k8s.dev",
+		RunStatus:     "running",
+		PromptLocale:  localeRU,
 	}, "https://platform.codex-k8s.dev/runs/run-2", nil, nil)
 	if !strings.Contains(body, "Ссылка на слот") {
 		t.Fatalf("rendered body does not contain slot url label: %q", body)
@@ -117,7 +119,7 @@ func TestRenderCommentBody_RuntimePreparationAndNamespaceMessages(t *testing.T) 
 			},
 			managementURL: "https://platform.codex-k8s.dev/runs/run-preparing",
 			mustContain: []string{
-				"Идёт подготовка окружения",
+				"Идёт сборка и деплой",
 				"namespace, runtime stack, slot URL",
 			},
 		},
@@ -253,14 +255,20 @@ func TestRenderCommentBody_RendersRecentAgentStatusesRU(t *testing.T) {
 		Phase:        PhaseStarted,
 		PromptLocale: localeRU,
 	}, "https://platform.codex-k8s.dev/runs/run-statuses-ru", nil, []recentAgentStatus{
-		{AgentKey: "dev", StatusText: "Обновляю API"},
-		{AgentKey: "dev", StatusText: "Проверяю тесты"},
+		{StatusText: "Обновляю API", ReportedAt: nowUTC().Format(time.RFC3339Nano)},
+		{StatusText: "Проверяю тесты", ReportedAt: nowUTC().Format(time.RFC3339Nano), RepeatCount: 2},
 	})
 	if !strings.Contains(body, "Последние статусы агента") {
 		t.Fatalf("expected recent agent statuses section in body: %q", body)
 	}
 	if !strings.Contains(body, "Проверяю тесты") {
 		t.Fatalf("expected status text in body: %q", body)
+	}
+	if strings.Contains(body, "agent_key") || strings.Contains(body, "`dev`:") {
+		t.Fatalf("expected agent key to be hidden in body: %q", body)
+	}
+	if !strings.Contains(body, "(x2)") {
+		t.Fatalf("expected dedupe marker in body: %q", body)
 	}
 }
 
@@ -272,7 +280,7 @@ func TestRenderCommentBody_RendersRecentAgentStatusesEN(t *testing.T) {
 		Phase:        PhaseStarted,
 		PromptLocale: localeEN,
 	}, "https://platform.codex-k8s.dev/runs/run-statuses-en", nil, []recentAgentStatus{
-		{AgentKey: "qa", StatusText: "Running regression"},
+		{StatusText: "Running regression", ReportedAt: nowUTC().Format(time.RFC3339Nano)},
 	})
 	if !strings.Contains(body, "Latest Agent Statuses") {
 		t.Fatalf("expected recent agent statuses section in body: %q", body)

@@ -329,12 +329,17 @@ export const en = {
     timeline: {
       title: "Timeline",
       created: "Created",
+      buildDeploy: "Build & Deploy",
       started: "Started",
+      authResolved: "Codex Auth Resolved",
+      agentReady: "Agent Ready",
       waiting: "Waiting",
       finished: "Finished",
+      statusUpdates: "Agent Status Updates",
       waitState: "wait_state",
       status: "status",
-      agent: "agent_key",
+      inProgress: "in progress",
+      buildFailed: "Finished before agent handoff",
     },
   },
   logs: {

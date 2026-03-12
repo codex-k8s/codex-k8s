@@ -66,8 +66,8 @@ func TestRenderTaskTemplate_DevSeedsRequireRunStatusReport(t *testing.T) {
 			if !strings.Contains(normalizedBody, "run_status_report") {
 				t.Fatalf("rendered template must mention run_status_report, got: %q", body)
 			}
-			if !strings.Contains(normalizedBody, "5-7") {
-				t.Fatalf("rendered template must mention 5-7 cadence, got: %q", body)
+			if !strings.Contains(normalizedBody, "3-4") {
+				t.Fatalf("rendered template must mention 3-4 cadence, got: %q", body)
 			}
 		})
 	}

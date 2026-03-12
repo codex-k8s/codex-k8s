@@ -150,6 +150,7 @@ approvals:
 - `mcp.tool.failed`
 - `run.enqueued`
 - `run.started`
+- `run.agent.ready`
 - `run.agent.status_reported`
 - `run.finished`
 - `run.wait.paused`

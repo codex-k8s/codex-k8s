@@ -23,6 +23,7 @@ const (
 	PhaseStarted          Phase = "started"
 	PhaseAuthRequired     Phase = "auth_required"
 	PhaseAuthResolved     Phase = "auth_resolved"
+	PhaseReady            Phase = "ready"
 	PhaseFinished         Phase = "finished"
 	PhaseNamespaceDeleted Phase = "namespace_deleted"
 )
@@ -232,6 +233,7 @@ func (c runContext) hasCommentTarget() bool {
 type commentState struct {
 	RunID                    string `json:"run_id"`
 	Phase                    Phase  `json:"phase"`
+	AuthRequested            bool   `json:"auth_requested,omitempty"`
 	RepositoryFullName       string `json:"repository_full_name,omitempty"`
 	IssueNumber              int    `json:"issue_number,omitempty"`
 	JobName                  string `json:"job_name,omitempty"`
