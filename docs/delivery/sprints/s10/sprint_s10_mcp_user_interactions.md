@@ -69,3 +69,7 @@ approvals:
 - Завершённый текущий stage: `run:intake` в Issue `#360`.
 - Следующий stage: `run:vision` в Issue `#378`.
 - Trigger-лейбл для Issue `#378` не ставится автоматически и остаётся owner-managed переходом после review intake-пакета.
+- Для всех следующих continuity issues Sprint S10 действует обязательный нейминг из
+  `docs/delivery/development_process_requirements.md`:
+  `S10 Day<день>: <Stage> для <краткая цель>` для doc-stage issue и
+  `S10 Day7: Dev — <краткая реализация>` для implementation stage.

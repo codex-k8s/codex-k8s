@@ -123,6 +123,10 @@ approvals:
 ## Stage Handover Instructions
 - Следующий этап: `run:vision`.
 - Созданная issue следующего этапа: `#378`.
+- Все continuity issues для Sprint S10 до `run:plan` должны использовать канонический формат stage issue
+  `S10 Day<день>: <Stage> для <краткая цель>` согласно `docs/delivery/development_process_requirements.md`.
+- Для implementation handover в `run:dev` обязателен отдельный формат
+  `S10 Day7: Dev — <краткая реализация>` из того же process baseline.
 - На stage `run:vision` обязательно сохранить и не размыть следующие решения intake:
   - расширяется существующий built-in server `codex_k8s`;
   - approval flow и user interaction flow остаются раздельными;
