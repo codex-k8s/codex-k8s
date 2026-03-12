@@ -245,6 +245,11 @@ type discussionIssueState struct {
 	MaxHumanCommentID       int64
 	HasHumanAfterAgentReply bool
 	HasAgentReply           bool
+	PendingHumanComments    []discussionPendingHumanComment
+}
+
+type discussionPendingHumanComment struct {
+	ID int64
 }
 
 type selfImproveDiagnosisReadyPayload struct {

@@ -2,7 +2,6 @@ package runner
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -10,6 +9,7 @@ import (
 
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
+	gh "github.com/google/go-github/v82/github"
 )
 
 const runStatusCommentMarker = "<!-- codex-k8s:run-status "
@@ -77,6 +77,8 @@ func (s *Service) runDiscussionLoop(ctx context.Context, state codexState, resul
 			}
 			continue
 		}
+		pendingHumanComments := append([]discussionPendingHumanComment(nil), issueState.PendingHumanComments...)
+		s.ensureDiscussionCommentsObserved(ctx, pendingHumanComments)
 
 		if err := s.prepareRepository(ctx, *result, state); err != nil {
 			return err
@@ -156,6 +158,12 @@ func (s *Service) runDiscussionLoop(ctx context.Context, state codexState, resul
 		}); err != nil {
 			s.logger.Warn("emit run.agent.status_reported failed", "err", err)
 		}
+		updatedIssueState, err := s.loadDiscussionIssueState(ctx)
+		if err != nil {
+			s.logger.Warn("load discussion issue state for processed reactions failed", "err", err)
+		} else {
+			s.ensureDiscussionCommentsProcessed(ctx, processedDiscussionCommentIDs(pendingHumanComments, updatedIssueState))
+		}
 
 		lastProcessedHumanCommentID = issueState.MaxHumanCommentID
 		result.restoredSessionPath = result.sessionFilePath
@@ -166,66 +174,58 @@ func (s *Service) runDiscussionLoop(ctx context.Context, state codexState, resul
 }
 
 func (s *Service) loadDiscussionIssueState(ctx context.Context) (discussionIssueState, error) {
-	issuePath := fmt.Sprintf("repos/%s/issues/%d", strings.TrimSpace(s.cfg.RepositoryFullName), s.cfg.IssueNumber)
-	issueOutput, err := runCommandCaptureCombinedOutput(ctx, "", "gh", "api", issuePath)
+	client, repositoryOwner, repositoryName, err := s.newDiscussionGitHubClient()
+	if err != nil {
+		return discussionIssueState{}, fmt.Errorf("build github client: %w", err)
+	}
+
+	issueItem, _, err := client.Issues.Get(ctx, repositoryOwner, repositoryName, int(s.cfg.IssueNumber))
 	if err != nil {
 		return discussionIssueState{}, fmt.Errorf("load discussion issue state: %w", err)
 	}
 
-	var issue discussionIssueAPIResponse
-	if err := json.Unmarshal([]byte(issueOutput), &issue); err != nil {
-		return discussionIssueState{}, fmt.Errorf("decode discussion issue state: %w", err)
-	}
-
-	commentsPath := fmt.Sprintf("repos/%s/issues/%d/comments?per_page=100", strings.TrimSpace(s.cfg.RepositoryFullName), s.cfg.IssueNumber)
-	commentsOutput, err := runCommandCaptureCombinedOutput(ctx, "", "gh", "api", commentsPath)
+	sortByCreated := "created"
+	sortDirectionAsc := "asc"
+	commentItems, _, err := client.Issues.ListComments(ctx, repositoryOwner, repositoryName, int(s.cfg.IssueNumber), &gh.IssueListCommentsOptions{
+		Sort:        &sortByCreated,
+		Direction:   &sortDirectionAsc,
+		ListOptions: gh.ListOptions{PerPage: 100},
+	})
 	if err != nil {
 		return discussionIssueState{}, fmt.Errorf("load discussion issue comments: %w", err)
 	}
 
-	comments := make([]discussionIssueCommentResponse, 0, 16)
-	if strings.TrimSpace(commentsOutput) != "" {
-		if err := json.Unmarshal([]byte(commentsOutput), &comments); err != nil {
-			return discussionIssueState{}, fmt.Errorf("decode discussion issue comments: %w", err)
+	issue := discussionIssueAPIResponse{
+		State: issueItem.GetState(),
+	}
+	if len(issueItem.Labels) > 0 {
+		issue.Labels = make([]discussionIssueLabelItem, 0, len(issueItem.Labels))
+		for _, label := range issueItem.Labels {
+			issue.Labels = append(issue.Labels, discussionIssueLabelItem{Name: label.GetName()})
 		}
+	}
+
+	comments := make([]discussionIssueCommentResponse, 0, len(commentItems))
+	for _, item := range commentItems {
+		createdAt := ""
+		if item != nil && item.CreatedAt != nil {
+			createdAt = item.CreatedAt.Time.UTC().Format(time.RFC3339Nano)
+		}
+		comments = append(comments, discussionIssueCommentResponse{
+			ID:        item.GetID(),
+			Body:      item.GetBody(),
+			CreatedAt: createdAt,
+			User: discussionIssueCommentUser{
+				Login: item.GetUser().GetLogin(),
+				Type:  item.GetUser().GetType(),
+			},
+		})
 	}
 	sort.Slice(comments, func(i, j int) bool {
 		return strings.TrimSpace(comments[i].CreatedAt) < strings.TrimSpace(comments[j].CreatedAt)
 	})
 
-	state := discussionIssueState{
-		State: strings.TrimSpace(issue.State),
-	}
-	for _, label := range issue.Labels {
-		normalized := normalizeDiscussionLogin(label.Name)
-		switch {
-		case normalized == normalizeDiscussionLogin(webhookdomain.DefaultModeDiscussionLabel):
-			state.HasDiscussionLabel = true
-		case strings.HasPrefix(normalized, "run:"):
-			state.HasRunLabel = true
-		}
-	}
-
-	botLogin := normalizeDiscussionLogin(s.cfg.GitBotUsername)
-	seenAgentReply := false
-	for _, item := range comments {
-		login := normalizeDiscussionLogin(item.User.Login)
-		userType := strings.ToLower(strings.TrimSpace(item.User.Type))
-		if login != botLogin && (userType == "" || userType == "user") && item.ID > state.MaxHumanCommentID {
-			state.MaxHumanCommentID = item.ID
-		}
-		if login == botLogin && !strings.Contains(item.Body, runStatusCommentMarker) {
-			state.HasAgentReply = true
-			state.HasHumanAfterAgentReply = false
-			seenAgentReply = true
-			continue
-		}
-		if seenAgentReply && login != botLogin && (userType == "" || userType == "user") {
-			state.HasHumanAfterAgentReply = true
-		}
-	}
-
-	return state, nil
+	return deriveDiscussionIssueState(issue, comments, s.cfg.GitBotUsername), nil
 }
 
 func shouldRunDiscussionCycle(state discussionIssueState, lastProcessedHumanCommentID int64) bool {
