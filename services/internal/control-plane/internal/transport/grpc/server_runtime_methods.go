@@ -304,7 +304,6 @@ func (s *Server) UpsertAgentSession(ctx context.Context, req *controlplanev1.Ups
 		if errors.As(err, &conflict) {
 			return nil, agentSessionSnapshotVersionConflictStatus(conflict)
 		}
-		s.logger.Error("upsert agent session via grpc failed", "run_id", runID, "err", err)
 		return nil, status.Error(codes.Internal, "failed to persist agent session")
 	}
 
@@ -341,7 +340,6 @@ func (s *Server) GetLatestAgentSession(ctx context.Context, req *controlplanev1.
 		AgentKey:           agentKey,
 	})
 	if err != nil {
-		s.logger.Error("get latest agent session via grpc failed", "repository_full_name", repositoryFullName, "branch_name", branchName, "agent_key", agentKey, "err", err)
 		return nil, status.Error(codes.Internal, "failed to load latest agent session")
 	}
 	if !found {
@@ -419,14 +417,6 @@ func (s *Server) LookupRunPullRequest(ctx context.Context, req *controlplanev1.L
 		HeadBranch:         headBranch,
 	})
 	if err != nil {
-		s.logger.Error(
-			"lookup run pull request via grpc failed",
-			"project_id", projectID,
-			"repository_full_name", repositoryFullName,
-			"pr_number", pullRequestNumber,
-			"head_branch", headBranch,
-			"err", err,
-		)
 		return nil, status.Error(codes.Internal, "failed to lookup pull request")
 	}
 	if !found {
@@ -475,7 +465,6 @@ func (s *Server) InsertRunFlowEvent(ctx context.Context, req *controlplanev1.Ins
 		Payload:       json.RawMessage(req.GetPayloadJson()),
 		CreatedAt:     time.Now().UTC(),
 	}); err != nil {
-		s.logger.Error("insert run flow event via grpc failed", "run_id", runID, "event_type", eventType, "err", err)
 		return nil, status.Error(codes.Internal, "failed to persist flow event")
 	}
 
@@ -518,7 +507,6 @@ func (s *Server) UpsertRunStatusComment(ctx context.Context, req *controlplanev1
 		AlreadyDeleted:           req.GetAlreadyDeleted(),
 	})
 	if err != nil {
-		s.logger.Error("upsert run status comment via grpc failed", "run_id", runID, "phase", phase, "err", err)
 		return nil, status.Error(codes.Internal, "failed to upsert run status comment")
 	}
 
@@ -543,7 +531,6 @@ func (s *Server) GetCodexAuth(ctx context.Context, req *controlplanev1.GetCodexA
 
 	authJSON, found, err := s.codexAuth.Get(ctx)
 	if err != nil {
-		s.logger.Error("get codex auth via grpc failed", "err", err)
 		return nil, status.Error(codes.Internal, "failed to load codex auth")
 	}
 	return &controlplanev1.GetCodexAuthResponse{
@@ -564,7 +551,6 @@ func (s *Server) UpsertCodexAuth(ctx context.Context, req *controlplanev1.Upsert
 	}
 
 	if err := s.codexAuth.Upsert(ctx, req.GetAuthJson()); err != nil {
-		s.logger.Error("upsert codex auth via grpc failed", "err", err)
 		return nil, status.Error(codes.Internal, "failed to persist codex auth")
 	}
 	return &controlplanev1.UpsertCodexAuthResponse{Ok: true}, nil
