@@ -20,7 +20,7 @@ func (s *Service) MCPSecretSyncEnv(ctx context.Context, session SessionContext, 
 		return SecretSyncEnvResult{}, err
 	}
 
-	runCtx, err := s.resolveRunContext(ctx, session, true)
+	runCtx, err := s.resolveRunContext(ctx, session, false)
 	if err != nil {
 		s.auditToolFailed(ctx, session, tool, err)
 		return SecretSyncEnvResult{}, err
@@ -69,12 +69,6 @@ func (s *Service) MCPSecretSyncEnv(ctx context.Context, session SessionContext, 
 		s.auditToolFailed(ctx, runCtx.Session, tool, err)
 		return SecretSyncEnvResult{}, err
 	}
-	githubSecretName := strings.TrimSpace(input.GitHubSecretName)
-	if githubSecretName == "" {
-		err := fmt.Errorf("github_secret_name is required")
-		s.auditToolFailed(ctx, runCtx.Session, tool, err)
-		return SecretSyncEnvResult{}, err
-	}
 	kubernetesNamespace := normalizeSecretTargetNamespace(runCtx.Session, input.KubernetesNamespace)
 	if kubernetesNamespace == "" {
 		err := fmt.Errorf("kubernetes_namespace is required")
@@ -108,7 +102,6 @@ func (s *Service) MCPSecretSyncEnv(ctx context.Context, session SessionContext, 
 				ProjectID:            projectID,
 				Repository:           repositoryFullName,
 				Environment:          environment,
-				GitHubSecretName:     githubSecretName,
 				KubernetesNamespace:  kubernetesNamespace,
 				KubernetesSecretName: kubernetesSecretName,
 				KubernetesSecretKey:  kubernetesSecretKey,
@@ -124,7 +117,6 @@ func (s *Service) MCPSecretSyncEnv(ctx context.Context, session SessionContext, 
 		ProjectID:            projectID,
 		Repository:           repositoryFullName,
 		Environment:          environment,
-		GitHubSecretName:     githubSecretName,
 		KubernetesNamespace:  kubernetesNamespace,
 		KubernetesSecretName: kubernetesSecretName,
 		KubernetesSecretKey:  kubernetesSecretKey,
@@ -146,7 +138,6 @@ func (s *Service) MCPSecretSyncEnv(ctx context.Context, session SessionContext, 
 		ProjectID:            projectID,
 		Repository:           repositoryFullName,
 		Environment:          environment,
-		GitHubSecretName:     githubSecretName,
 		KubernetesNamespace:  kubernetesNamespace,
 		KubernetesSecretName: kubernetesSecretName,
 		KubernetesSecretKey:  kubernetesSecretKey,
@@ -157,7 +148,6 @@ func (s *Service) MCPSecretSyncEnv(ctx context.Context, session SessionContext, 
 		ProjectID:            projectID,
 		Repository:           repositoryFullName,
 		Environment:          environment,
-		GitHubSecretName:     githubSecretName,
 		KubernetesNamespace:  kubernetesNamespace,
 		KubernetesSecretName: kubernetesSecretName,
 		KubernetesSecretKey:  kubernetesSecretKey,
@@ -172,7 +162,6 @@ func (s *Service) MCPSecretSyncEnv(ctx context.Context, session SessionContext, 
 			Status:         ToolExecutionStatusOK,
 			ApprovalState:  string(entitytypes.MCPApprovalModeNone),
 			Environment:    environment,
-			GitHubSecret:   githubSecretName,
 			KubernetesRef:  kubernetesNamespace + "/" + kubernetesSecretName + "#" + kubernetesSecretKey,
 			Policy:         string(policy),
 			IdempotencyKey: idempotencyKey,
@@ -195,7 +184,6 @@ func (s *Service) MCPSecretSyncEnv(ctx context.Context, session SessionContext, 
 				RequestID:      existing.ID,
 				ApprovalState:  string(existing.ApprovalState),
 				Environment:    environment,
-				GitHubSecret:   githubSecretName,
 				KubernetesRef:  kubernetesNamespace + "/" + kubernetesSecretName + "#" + kubernetesSecretKey,
 				Policy:         string(policy),
 				IdempotencyKey: idempotencyKey,
@@ -208,7 +196,6 @@ func (s *Service) MCPSecretSyncEnv(ctx context.Context, session SessionContext, 
 				RequestID:      existing.ID,
 				ApprovalState:  string(existing.ApprovalState),
 				Environment:    environment,
-				GitHubSecret:   githubSecretName,
 				KubernetesRef:  kubernetesNamespace + "/" + kubernetesSecretName + "#" + kubernetesSecretKey,
 				Policy:         string(policy),
 				IdempotencyKey: idempotencyKey,
@@ -244,7 +231,6 @@ func (s *Service) MCPSecretSyncEnv(ctx context.Context, session SessionContext, 
 			RequestID:      item.ID,
 			ApprovalState:  string(item.ApprovalState),
 			Environment:    environment,
-			GitHubSecret:   githubSecretName,
 			KubernetesRef:  kubernetesNamespace + "/" + kubernetesSecretName + "#" + kubernetesSecretKey,
 			Policy:         string(policy),
 			IdempotencyKey: idempotencyKey,
@@ -266,7 +252,6 @@ func (s *Service) MCPSecretSyncEnv(ctx context.Context, session SessionContext, 
 		RequestID:      request.ID,
 		ApprovalState:  string(request.ApprovalState),
 		Environment:    environment,
-		GitHubSecret:   githubSecretName,
 		KubernetesRef:  kubernetesNamespace + "/" + kubernetesSecretName + "#" + kubernetesSecretKey,
 		Policy:         string(policy),
 		IdempotencyKey: idempotencyKey,
@@ -800,8 +785,7 @@ func (s *Service) applyApprovedControlAction(
 		CorrelationID: item.CorrelationID,
 		ProjectID:     item.ProjectID,
 	}
-	requiresGitHubToken := item.ToolName == string(ToolMCPSecretSyncEnv)
-	runCtx, err := s.resolveRunContext(ctx, session, requiresGitHubToken)
+	runCtx, err := s.resolveRunContext(ctx, session, false)
 	if err != nil {
 		return entitytypes.MCPActionRequest{}, err
 	}
@@ -870,16 +854,6 @@ func (s *Service) applySecretSync(ctx context.Context, runCtx resolvedRunContext
 	}
 	if strings.TrimSpace(secretValue) == "" {
 		return fmt.Errorf("secret value is empty")
-	}
-
-	if err := s.github.UpsertRepositorySecret(ctx, GitHubUpsertRepositorySecretParams{
-		Token:      runCtx.Token,
-		Owner:      runCtx.Repository.Owner,
-		Repository: runCtx.Repository.Name,
-		SecretName: payload.GitHubSecretName,
-		Value:      secretValue,
-	}); err != nil {
-		return fmt.Errorf("sync github secret: %w", err)
 	}
 
 	if err := s.kubernetes.UpsertSecret(ctx, payload.KubernetesNamespace, payload.KubernetesSecretName, map[string][]byte{
@@ -960,7 +934,6 @@ func decodeSecretSyncPayload(raw json.RawMessage) (secretSyncPayload, error) {
 	payload.ProjectID = strings.TrimSpace(payload.ProjectID)
 	payload.Repository = strings.TrimSpace(payload.Repository)
 	payload.Environment = normalizeEnvName(payload.Environment)
-	payload.GitHubSecretName = strings.TrimSpace(payload.GitHubSecretName)
 	payload.KubernetesNamespace = strings.TrimSpace(payload.KubernetesNamespace)
 	payload.KubernetesSecretName = strings.TrimSpace(payload.KubernetesSecretName)
 	payload.KubernetesSecretKey = normalizeKubernetesSecretDataKey(payload.KubernetesSecretKey)
@@ -977,9 +950,6 @@ func decodeSecretSyncPayload(raw json.RawMessage) (secretSyncPayload, error) {
 
 	if payload.Environment == "" {
 		return payload, fmt.Errorf("secret sync payload environment is required")
-	}
-	if payload.GitHubSecretName == "" {
-		return payload, fmt.Errorf("secret sync payload github_secret_name is required")
 	}
 	if payload.KubernetesNamespace == "" {
 		return payload, fmt.Errorf("secret sync payload kubernetes_namespace is required")

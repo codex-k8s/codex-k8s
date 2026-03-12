@@ -68,7 +68,7 @@ approvals:
 
 ## План внедрения (минимально)
 - Добавить манифесты Kubernetes job для build/deploy/codegen check.
-- Вынести управление GitHub secrets/vars/webhooks и Kubernetes ресурсами в Go-код (`codex-bootstrap` + control-plane), без shell-first orchestration.
+- Вынести управление GitHub webhook/labels и Kubernetes ресурсами в Go-код (`codex-bootstrap` + control-plane), без shell-first orchestration; platform config/secrets хранить только в Kubernetes.
 - Bootstrap-скрипт оставить только для первичной подготовки хоста.
 
 ## План отката/замены

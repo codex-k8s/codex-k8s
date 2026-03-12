@@ -61,7 +61,7 @@ approvals:
   - значения `Secret` по умолчанию не показывать (только метаданные); reveal/редактирование только как отдельное осознанное действие под RBAC и аудитом.
 - Интеграции approver/executor должны реализовываться через универсальные HTTP-контракты MCP, без вендорной привязки к конкретному мессенджеру.
 - Для MVP обязателен минимальный контур MCP control tools:
-  - deterministic secret sync между GitHub и Kubernetes;
+  - deterministic secret sync внутри Kubernetes;
   - database create/delete по окружениям;
   - owner feedback handle с вариантами ответа + custom input.
 

@@ -38,8 +38,8 @@ approvals:
   входной `status` ограничен 100 символами для компактного статуса.
 - Для self-improve read-инструментов (`self_improve_runs_list`, `self_improve_run_lookup`, `self_improve_session_get`) используется `approval:none`.
 - Label transitions всё равно проходят через control-plane MCP, чтобы сохранять единый audit-контур.
-- Для control tools (`secret.sync.github_k8s`, `database.lifecycle`, `owner.feedback.request`) включается approver gate по policy.
-- Для `secret.sync.github_k8s` действует idempotency-key и retry-safe replay без повторного side effect.
+- Для control tools (`secret.sync.k8s`, `database.lifecycle`, `owner.feedback.request`) включается approver gate по policy.
+- Для `secret.sync.k8s` действует idempotency-key и retry-safe replay без повторного side effect.
 - Для `database.lifecycle`:
   - `create/delete` идут через approval flow;
   - `describe` выполняется как read-only action без side effects;
@@ -88,7 +88,7 @@ approvals:
   и остаётся в domain-path управления репозиториями (staff/project management).
 - Day6+ расширяет policy: approver matrix, secret-management инструменты через MCP, единообразные события и отказоустойчивость.
 - Day6+ также включает контур `run:self-improve`, где MCP используется для traceable diagnostics (runs/session evidence), label transitions и owner feedback loops.
-- В Day3 добавлен deterministic secret materialization для `secret.sync.github_k8s` (policy-driven generation + idempotent apply/replay).
+- В Day3 добавлен deterministic secret materialization для `secret.sync.k8s` (policy-driven generation + idempotent apply/replay).
 
 ## Политики доступа к MCP (S2 Day6 baseline + roadmap)
 
@@ -104,7 +104,7 @@ approvals:
 
 ### Комбинированные ручки
 - В roadmap закладываются composite MCP-ручки для атомарных операций между системами:
-  - пример: `secret.sync.github_k8s` (создание/обновление секрета одновременно в GitHub и Kubernetes);
+  - пример: `secret.sync.k8s` (создание/обновление секрета в Kubernetes namespace);
   - composite-ручки имеют отдельный approval профиль и отдельные события аудита.
 
 ## HTTP-контракты интеграций approver/executor

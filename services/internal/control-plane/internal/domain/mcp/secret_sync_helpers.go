@@ -14,7 +14,6 @@ type secretSyncDeterministicParams struct {
 	ProjectID            string
 	Repository           string
 	Environment          string
-	GitHubSecretName     string
 	KubernetesNamespace  string
 	KubernetesSecretName string
 	KubernetesSecretKey  string
@@ -25,7 +24,6 @@ type secretSyncIdempotencyParams struct {
 	ProjectID            string
 	Repository           string
 	Environment          string
-	GitHubSecretName     string
 	KubernetesNamespace  string
 	KubernetesSecretName string
 	KubernetesSecretKey  string
@@ -68,7 +66,6 @@ func deriveDeterministicSecretValue(seed string, params secretSyncDeterministicP
 		strings.TrimSpace(params.ProjectID),
 		strings.TrimSpace(params.Repository),
 		normalizeEnvName(params.Environment),
-		strings.TrimSpace(params.GitHubSecretName),
 		strings.TrimSpace(params.KubernetesNamespace),
 		strings.TrimSpace(params.KubernetesSecretName),
 		normalizeKubernetesSecretDataKey(params.KubernetesSecretKey),
@@ -103,7 +100,6 @@ func deriveSecretSyncIdempotencyKey(seed string, params secretSyncIdempotencyPar
 		strings.TrimSpace(params.ProjectID),
 		strings.TrimSpace(params.Repository),
 		normalizeEnvName(params.Environment),
-		strings.TrimSpace(params.GitHubSecretName),
 		strings.TrimSpace(params.KubernetesNamespace),
 		strings.TrimSpace(params.KubernetesSecretName),
 		normalizeKubernetesSecretDataKey(params.KubernetesSecretKey),

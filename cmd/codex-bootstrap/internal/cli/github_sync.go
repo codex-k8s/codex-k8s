@@ -2,8 +2,6 @@ package cli
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"errors"
 	"flag"
 	"fmt"
@@ -18,7 +16,6 @@ import (
 
 	"github.com/codex-k8s/codex-k8s/cmd/codex-bootstrap/internal/envfile"
 	gh "github.com/google/go-github/v82/github"
-	"golang.org/x/crypto/nacl/box"
 )
 
 const (
@@ -27,76 +24,19 @@ const (
 	defaultGitHubWebhookEvents    = "push,pull_request,issues,issue_comment,pull_request_review,pull_request_review_comment"
 	defaultGitHubLabelDescription = "codex-k8s managed label"
 	defaultGitHubLabelColor       = "1f6feb"
-
-	githubEnvironmentProduction = "production"
-	githubEnvironmentAI         = "ai"
 )
 
-var (
-	githubEnvVariableKeys = []string{
-		"CODEXK8S_PRODUCTION_NAMESPACE",
-		"CODEXK8S_PRODUCTION_DOMAIN",
-		"CODEXK8S_AI_DOMAIN",
-		"CODEXK8S_PUBLIC_BASE_URL",
-	}
-	githubRepoSecretKeys = []string{
-		"CODEXK8S_OPENAI_API_KEY",
-		"CODEXK8S_POSTGRES_PASSWORD",
-		"CODEXK8S_APP_SECRET_KEY",
-		"CODEXK8S_TOKEN_ENCRYPTION_KEY",
-		"CODEXK8S_GITHUB_WEBHOOK_SECRET",
-		"CODEXK8S_GITHUB_PAT",
-		"CODEXK8S_GIT_BOT_TOKEN",
-		"CODEXK8S_PROJECT_DB_ADMIN_HOST",
-		"CODEXK8S_PROJECT_DB_ADMIN_PORT",
-		"CODEXK8S_PROJECT_DB_ADMIN_USER",
-		"CODEXK8S_PROJECT_DB_ADMIN_PASSWORD",
-		"CODEXK8S_PROJECT_DB_ADMIN_SSLMODE",
-		"CODEXK8S_PROJECT_DB_ADMIN_DATABASE",
-		"CODEXK8S_PROJECT_DB_LIFECYCLE_ALLOWED_ENVS",
-		"CODEXK8S_GITHUB_OAUTH_CLIENT_ID",
-		"CODEXK8S_GITHUB_OAUTH_CLIENT_SECRET",
-		"CODEXK8S_JWT_SIGNING_KEY",
-		"CODEXK8S_MCP_TOKEN_SIGNING_KEY",
-		"CODEXK8S_CONTEXT7_API_KEY",
-	}
-	githubLegacyVariableKeys = []string{
-		"POSTGRES_DB",
-		"POSTGRES_USER",
-		"LEARNING_MODE_DEFAULT",
-		"RUNNER_NAMESPACE",
-		"RUNNER_SCALE_SET_NAME",
-		"RUNNER_MIN",
-		"RUNNER_MAX",
-		"RUNNER_IMAGE",
-		"CODEXK8S_GITHUB_USERNAME",
-		"CODEXK8S_IMAGE",
-		"CODEXK8S_INTERNAL_IMAGE_REPOSITORY",
-	}
-	githubLegacySecretKeys = []string{
-		"OPENAI_API_KEY",
-		"CONTEXT7_API_KEY",
-		"CODEXK8S_GITHUB_TOKEN",
-		"CODEXK8S_GITHUB_USERNAME",
-	}
-	githubRequiredSyncKeys = []string{
-		"CODEXK8S_GITHUB_REPO",
-		"CODEXK8S_GITHUB_PAT",
-		"CODEXK8S_GITHUB_WEBHOOK_SECRET",
-		"CODEXK8S_PRODUCTION_DOMAIN",
-		"CODEXK8S_AI_DOMAIN",
-	}
-)
+var githubRequiredSyncKeys = []string{
+	"CODEXK8S_GITHUB_REPO",
+	"CODEXK8S_GITHUB_PAT",
+	"CODEXK8S_GITHUB_WEBHOOK_SECRET",
+	"CODEXK8S_PRODUCTION_DOMAIN",
+}
 
 type githubRepositoryRef struct {
 	Owner    string
 	Name     string
 	FullName string
-}
-
-type githubRepoPublicKey struct {
-	KeyID string
-	Key   [32]byte
 }
 
 func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
@@ -105,12 +45,9 @@ func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 
 	envPath := fs.String("env-file", "bootstrap/host/config.env", "Path to bootstrap env file")
-	configPath := fs.String("config", "services.yaml", "Path to services.yaml (optional, for secret override policy)")
 	timeout := fs.Duration("timeout", defaultGitHubSyncTimeout, "GitHub API timeout")
-	workers := fs.Int("workers", defaultGitHubSyncWorkers, "Parallel workers for variable/secret sync")
+	workers := fs.Int("workers", defaultGitHubSyncWorkers, "Parallel workers for label sync")
 	dryRun := fs.Bool("dry-run", false, "Print planned changes without applying them")
-	skipVariables := fs.Bool("skip-variables", false, "Skip environment variables sync")
-	skipSecrets := fs.Bool("skip-secrets", false, "Skip environment secrets sync")
 	skipWebhook := fs.Bool("skip-webhook", false, "Skip repository webhook sync")
 	skipLabels := fs.Bool("skip-labels", false, "Skip repository label sync")
 	fs.Var(&vars, "var", "Template variable in KEY=VALUE format (repeatable)")
@@ -141,11 +78,6 @@ func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
 		values[key] = value
 	}
 	applyGitHubSyncDefaults(values)
-	secretResolver, err := loadSecretResolver(*configPath, values)
-	if err != nil {
-		writef(stderr, "github-sync failed: load services config: %v\n", err)
-		return 1
-	}
 
 	missing := missingRequiredKeys(values, githubRequiredSyncKeys)
 	if len(missing) > 0 {
@@ -196,44 +128,6 @@ func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 
-	repoID, err := getGitHubRepositoryID(ctx, client, platformRepo)
-	if err != nil {
-		writef(stderr, "github-sync failed: resolve repository id: %v\n", err)
-		return 1
-	}
-
-	environments := []string{githubEnvironmentProduction, githubEnvironmentAI}
-	for _, envName := range environments {
-		if err := ensureGitHubEnvironment(ctx, client, platformRepo, envName); err != nil {
-			writef(stderr, "github-sync failed: ensure environment %s: %v\n", envName, err)
-			return 1
-		}
-	}
-
-	if !*skipVariables {
-		for _, envName := range environments {
-			envValues := cloneStringMap(values)
-			applyEnvironmentOverrides(envValues, envName, githubEnvVariableKeys, secretResolver)
-			variableKeys := collectGitHubVariableKeys(envValues)
-			writef(stdout, "sync %s environment variables=%d\n", envName, len(variableKeys))
-			if err := syncGitHubEnvVariables(ctx, client, platformRepo, envName, envValues, variableKeys, *workers); err != nil {
-				writef(stderr, "github-sync failed: sync %s environment variables: %v\n", envName, err)
-				return 1
-			}
-		}
-	}
-	if !*skipSecrets {
-		for _, envName := range environments {
-			envValues := cloneStringMap(values)
-			applyEnvironmentOverrides(envValues, envName, githubRepoSecretKeys, secretResolver)
-			secretValues := collectGitHubSecretValues(envValues)
-			writef(stdout, "sync %s environment secrets=%d\n", envName, len(secretValues))
-			if err := syncGitHubEnvSecrets(ctx, client, platformRepo, repoID, envName, envValues, githubRepoSecretKeys, *workers); err != nil {
-				writef(stderr, "github-sync failed: sync %s environment secrets: %v\n", envName, err)
-				return 1
-			}
-		}
-	}
 	if !*skipWebhook {
 		for _, repo := range reposForWebhookAndLabels {
 			if err := ensureGitHubWebhook(ctx, client, repo, webhookURL, webhookSecret, webhookEvents); err != nil {
@@ -249,10 +143,6 @@ func runGitHubSync(args []string, stdout io.Writer, stderr io.Writer) int {
 				return 1
 			}
 		}
-	}
-	if err := cleanupLegacyGitHubMetadata(ctx, client, platformRepo); err != nil {
-		writef(stderr, "github-sync failed: cleanup legacy metadata: %v\n", err)
-		return 1
 	}
 
 	writeln(stdout, "github-sync completed")
@@ -287,57 +177,11 @@ func parseGitHubRepository(value string) (githubRepositoryRef, error) {
 	if err != nil {
 		return githubRepositoryRef{}, err
 	}
-	return githubRepositoryRef{
-		Owner:    owner,
-		Name:     repo,
-		FullName: owner + "/" + repo,
-	}, nil
-}
-
-func collectGitHubVariableKeys(values map[string]string) []string {
-	secretSet := make(map[string]struct{}, len(githubRepoSecretKeys))
-	for _, key := range githubRepoSecretKeys {
-		secretSet[key] = struct{}{}
-	}
-
-	keysSet := make(map[string]struct{})
-	for _, key := range githubEnvVariableKeys {
-		trimmed := strings.TrimSpace(key)
-		if trimmed == "" {
-			continue
-		}
-		if _, isSecret := secretSet[trimmed]; isSecret {
-			continue
-		}
-		if strings.TrimSpace(values[trimmed]) == "" {
-			continue
-		}
-		keysSet[trimmed] = struct{}{}
-	}
-
-	keys := make([]string, 0, len(keysSet))
-	for key := range keysSet {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
-func collectGitHubSecretValues(values map[string]string) map[string]string {
-	out := make(map[string]string)
-	for _, key := range githubRepoSecretKeys {
-		value := strings.TrimSpace(values[key])
-		if value == "" {
-			continue
-		}
-		out[key] = value
-	}
-	return out
+	return githubRepositoryRef{Owner: owner, Name: repo, FullName: owner + "/" + repo}, nil
 }
 
 func collectGitHubLabels(values map[string]string) map[string]string {
 	out := make(map[string]string)
-	keys := make([]string, 0)
 	for key, value := range values {
 		if !strings.HasSuffix(key, "_LABEL") {
 			continue
@@ -347,9 +191,7 @@ func collectGitHubLabels(values map[string]string) map[string]string {
 			continue
 		}
 		out[trimmed] = labelDescriptionForKey(key)
-		keys = append(keys, trimmed)
 	}
-	sort.Strings(keys)
 	return out
 }
 
@@ -390,196 +232,6 @@ func joinRepositoryNames(repos []githubRepositoryRef) string {
 		items = append(items, repo.FullName)
 	}
 	return strings.Join(items, ",")
-}
-
-func getGitHubRepositoryID(ctx context.Context, client *gh.Client, repo githubRepositoryRef) (int, error) {
-	repository, _, err := client.Repositories.Get(ctx, repo.Owner, repo.Name)
-	if err != nil {
-		return 0, fmt.Errorf("get repository %s: %w", repo.FullName, err)
-	}
-	id := repository.GetID()
-	if id <= 0 {
-		return 0, fmt.Errorf("repository %s has invalid id", repo.FullName)
-	}
-	return int(id), nil
-}
-
-func ensureGitHubEnvironment(ctx context.Context, client *gh.Client, repo githubRepositoryRef, name string) error {
-	trimmed := strings.TrimSpace(name)
-	if trimmed == "" {
-		return nil
-	}
-	if _, _, err := client.Repositories.CreateUpdateEnvironment(ctx, repo.Owner, repo.Name, trimmed, &gh.CreateUpdateEnvironment{}); err != nil {
-		return err
-	}
-	return nil
-}
-
-func syncGitHubEnvVariables(ctx context.Context, client *gh.Client, repo githubRepositoryRef, env string, values map[string]string, keys []string, workers int) error {
-	existingVars, err := listGitHubEnvVariableValues(ctx, client, repo, env)
-	if err != nil {
-		return err
-	}
-
-	ops := make([]githubOperation, 0, len(keys))
-	for _, key := range keys {
-		trimmedKey := strings.TrimSpace(key)
-		value := strings.TrimSpace(values[trimmedKey])
-		if value == "" {
-			continue
-		}
-		existingValue, exists := existingVars[trimmedKey]
-		if exists && strings.TrimSpace(existingValue) == value {
-			continue
-		}
-
-		keyCopy := trimmedKey
-		valueCopy := value
-		existsCopy := exists
-		ops = append(ops, githubOperation{
-			Name: "variable " + keyCopy,
-			Run: func(ctx context.Context) error {
-				return upsertGitHubEnvVariable(ctx, client, repo, env, keyCopy, valueCopy, existsCopy)
-			},
-		})
-	}
-	// Environment variables endpoint is aggressively rate-limited; keep it sequential to
-	// avoid secondary rate-limit storms.
-	return runGitHubOperations(ctx, 1, ops)
-}
-
-func upsertGitHubEnvVariable(ctx context.Context, client *gh.Client, repo githubRepositoryRef, env string, key string, value string, exists bool) error {
-	trimmedKey := strings.TrimSpace(key)
-	trimmedEnv := strings.TrimSpace(env)
-	if trimmedKey == "" || trimmedEnv == "" {
-		return nil
-	}
-	if strings.TrimSpace(value) == "" {
-		// Empty values mean "do not overwrite GitHub".
-		return nil
-	}
-
-	payload := &gh.ActionsVariable{Name: trimmedKey, Value: value}
-	if exists {
-		if _, err := client.Actions.UpdateEnvVariable(ctx, repo.Owner, repo.Name, trimmedEnv, payload); err == nil {
-			return nil
-		} else if !isGitHubNotFound(err) {
-			if !isGitHubConflict(err) && !isGitHubUnprocessable(err) {
-				return fmt.Errorf("update variable %s: %w", trimmedKey, err)
-			}
-		}
-	}
-
-	if _, err := client.Actions.CreateEnvVariable(ctx, repo.Owner, repo.Name, trimmedEnv, payload); err != nil {
-		if isGitHubConflict(err) || isGitHubUnprocessable(err) {
-			if _, updateErr := client.Actions.UpdateEnvVariable(ctx, repo.Owner, repo.Name, trimmedEnv, payload); updateErr != nil {
-				return fmt.Errorf("update variable %s after conflict: %w", trimmedKey, updateErr)
-			}
-			return nil
-		}
-		return fmt.Errorf("create variable %s: %w", trimmedKey, err)
-	}
-	return nil
-}
-
-func listGitHubEnvVariableValues(ctx context.Context, client *gh.Client, repo githubRepositoryRef, envName string) (map[string]string, error) {
-	page := 1
-	out := make(map[string]string)
-	for {
-		vars, resp, err := client.Actions.ListEnvVariables(ctx, repo.Owner, repo.Name, envName, &gh.ListOptions{PerPage: 100, Page: page})
-		if err != nil {
-			return nil, err
-		}
-		if vars != nil {
-			for _, item := range vars.Variables {
-				if item == nil {
-					continue
-				}
-				name := strings.TrimSpace(item.Name)
-				if name == "" {
-					continue
-				}
-				out[name] = strings.TrimSpace(item.Value)
-			}
-		}
-		if resp == nil || resp.NextPage == 0 {
-			break
-		}
-		page = resp.NextPage
-	}
-	return out, nil
-}
-
-func syncGitHubEnvSecrets(ctx context.Context, client *gh.Client, repo githubRepositoryRef, repoID int, env string, values map[string]string, keys []string, workers int) error {
-	publicKey, err := getGitHubEnvPublicKey(ctx, client, repo, repoID, env)
-	if err != nil {
-		return err
-	}
-
-	ops := make([]githubOperation, 0, len(keys))
-	for _, key := range keys {
-		key := strings.TrimSpace(key)
-		if key == "" {
-			continue
-		}
-		value := strings.TrimSpace(values[key])
-		ops = append(ops, githubOperation{
-			Name: "secret " + key,
-			Run: func(ctx context.Context) error {
-				return upsertGitHubEnvSecret(ctx, client, repoID, env, publicKey, key, value)
-			},
-		})
-	}
-	return runGitHubOperations(ctx, workers, ops)
-}
-
-func getGitHubEnvPublicKey(ctx context.Context, client *gh.Client, repo githubRepositoryRef, repoID int, env string) (githubRepoPublicKey, error) {
-	publicKey, _, err := client.Actions.GetEnvPublicKey(ctx, repoID, strings.TrimSpace(env))
-	if err != nil {
-		return githubRepoPublicKey{}, fmt.Errorf("get environment public key for %s env %s: %w", repo.FullName, env, err)
-	}
-
-	keyID := strings.TrimSpace(publicKey.GetKeyID())
-	keyEncoded := strings.TrimSpace(publicKey.GetKey())
-	if keyID == "" || keyEncoded == "" {
-		return githubRepoPublicKey{}, fmt.Errorf("environment public key for %s env %s is invalid", repo.FullName, env)
-	}
-	decoded, err := base64.StdEncoding.DecodeString(keyEncoded)
-	if err != nil {
-		return githubRepoPublicKey{}, fmt.Errorf("decode environment public key for %s env %s: %w", repo.FullName, env, err)
-	}
-	if len(decoded) != 32 {
-		return githubRepoPublicKey{}, fmt.Errorf("environment public key for %s env %s has invalid length", repo.FullName, env)
-	}
-	var key [32]byte
-	copy(key[:], decoded)
-	return githubRepoPublicKey{KeyID: keyID, Key: key}, nil
-}
-
-func upsertGitHubEnvSecret(ctx context.Context, client *gh.Client, repoID int, env string, publicKey githubRepoPublicKey, key string, value string) error {
-	name := strings.TrimSpace(key)
-	targetEnv := strings.TrimSpace(env)
-	if name == "" || targetEnv == "" {
-		return nil
-	}
-	trimmedValue := strings.TrimSpace(value)
-	if trimmedValue == "" {
-		// Empty values mean "do not overwrite GitHub".
-		return nil
-	}
-
-	encrypted, err := encryptGitHubSecretValue(trimmedValue, publicKey.Key)
-	if err != nil {
-		return fmt.Errorf("encrypt secret %s: %w", name, err)
-	}
-	if _, err := client.Actions.CreateOrUpdateEnvSecret(ctx, repoID, targetEnv, &gh.EncryptedSecret{
-		Name:           name,
-		KeyID:          publicKey.KeyID,
-		EncryptedValue: encrypted,
-	}); err != nil {
-		return fmt.Errorf("upsert secret %s: %w", name, err)
-	}
-	return nil
 }
 
 func ensureGitHubWebhook(ctx context.Context, client *gh.Client, repo githubRepositoryRef, webhookURL string, webhookSecret string, events []string) error {
@@ -694,30 +346,6 @@ func ensureGitHubLabel(ctx context.Context, client *gh.Client, repo githubReposi
 	return nil
 }
 
-func cleanupLegacyGitHubMetadata(ctx context.Context, client *gh.Client, repo githubRepositoryRef) error {
-	var cleanupErrors []error
-
-	for _, key := range githubLegacySecretKeys {
-		if _, err := client.Actions.DeleteRepoSecret(ctx, repo.Owner, repo.Name, key); err != nil && !isGitHubNotFound(err) {
-			cleanupErrors = append(cleanupErrors, fmt.Errorf("delete legacy secret %s: %w", key, err))
-		}
-	}
-	for _, key := range githubLegacyVariableKeys {
-		if _, err := client.Actions.DeleteRepoVariable(ctx, repo.Owner, repo.Name, key); err != nil && !isGitHubNotFound(err) {
-			cleanupErrors = append(cleanupErrors, fmt.Errorf("delete legacy variable %s: %w", key, err))
-		}
-	}
-	return errors.Join(cleanupErrors...)
-}
-
-func encryptGitHubSecretValue(value string, publicKey [32]byte) (string, error) {
-	encryptedRaw, err := box.SealAnonymous(nil, []byte(value), &publicKey, rand.Reader)
-	if err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(encryptedRaw), nil
-}
-
 type githubOperation struct {
 	Name string
 	Run  func(ctx context.Context) error
@@ -799,7 +427,6 @@ func isGitHubRetryable(err error) bool {
 	if code >= 500 && code < 600 {
 		return true
 	}
-	// GitHub sometimes responds with 403 for secondary rate limits.
 	if code == http.StatusForbidden {
 		_, ok := gitHubRetryAfter(err)
 		return ok
@@ -814,8 +441,6 @@ func gitHubRetryDelay(err error, attempt int) time.Duration {
 		}
 		return delay
 	}
-
-	// Exponential backoff with a tight cap to prevent secondary rate-limit storms.
 	if attempt < 1 {
 		attempt = 1
 	}

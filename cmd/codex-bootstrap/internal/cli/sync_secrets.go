@@ -139,9 +139,9 @@ func runSyncSecrets(args []string, stdout io.Writer, stderr io.Writer) int {
 	runtimeSecret := buildRuntimeSecretValues(values)
 	oauthSecret := buildOAuthSecretValues(values)
 
-	aiRuntimeSecret := buildEnvScopedSecretValues(values, existingRuntimeAI, runtimeSecret, githubEnvironmentAI, secretResolver)
-	aiOAuthSecret := buildEnvScopedSecretValues(values, existingOAuthAI, oauthSecret, githubEnvironmentAI, secretResolver)
-	hydrateEnvOverrideValuesFromSecret(values, existingRuntimeAI, runtimeSecret, githubEnvironmentAI, secretResolver)
+	aiRuntimeSecret := buildEnvScopedSecretValues(values, existingRuntimeAI, runtimeSecret, runtimeEnvironmentAI, secretResolver)
+	aiOAuthSecret := buildEnvScopedSecretValues(values, existingOAuthAI, oauthSecret, runtimeEnvironmentAI, secretResolver)
+	hydrateEnvOverrideValuesFromSecret(values, existingRuntimeAI, runtimeSecret, runtimeEnvironmentAI, secretResolver)
 
 	if *dryRun {
 		writef(stdout, "sync-secrets env-file=%s namespace=%s dry-run=true\n", absEnv, targetNamespace)

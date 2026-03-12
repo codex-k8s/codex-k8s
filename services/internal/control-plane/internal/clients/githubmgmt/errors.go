@@ -23,11 +23,3 @@ func isGitHubStatus(err error, code int) bool {
 func isGitHubNotFound(err error) bool {
 	return isGitHubStatus(err, http.StatusNotFound)
 }
-
-func isGitHubConflict(err error) bool {
-	return isGitHubStatus(err, http.StatusConflict)
-}
-
-func isGitHubUnprocessable(err error) bool {
-	return isGitHubStatus(err, http.StatusUnprocessableEntity)
-}

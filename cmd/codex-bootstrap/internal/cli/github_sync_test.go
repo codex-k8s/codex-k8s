@@ -6,23 +6,6 @@ import (
 	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
 )
 
-func TestCollectGitHubVariableKeys(t *testing.T) {
-	values := map[string]string{
-		"CODEXK8S_PRODUCTION_NAMESPACE": "codex-k8s-prod",
-		"CODEXK8S_GITHUB_PAT":           "secret",
-		"CODEXK8S_PUBLIC_BASE_URL":      "https://platform.codex-k8s.dev",
-		"TARGET_HOST":                   "example.org",
-	}
-
-	keys := collectGitHubVariableKeys(values)
-	if len(keys) != 2 {
-		t.Fatalf("expected 2 variable keys, got %d: %v", len(keys), keys)
-	}
-	if keys[0] != "CODEXK8S_PRODUCTION_NAMESPACE" || keys[1] != "CODEXK8S_PUBLIC_BASE_URL" {
-		t.Fatalf("unexpected variable keys: %v", keys)
-	}
-}
-
 func TestCollectGitHubLabels(t *testing.T) {
 	values := map[string]string{
 		"CODEXK8S_RUN_DEV_LABEL":   "run:dev",
@@ -61,7 +44,7 @@ func TestApplyGitHubEnvironmentOverrides(t *testing.T) {
 		"CODEXK8S_AI_AI_DOMAIN":              "should-not-be-used",
 	}
 
-	keys := append(append([]string(nil), githubRepoSecretKeys...), githubEnvVariableKeys...)
+	keys := []string{"CODEXK8S_OPENAI_API_KEY", "CODEXK8S_AI_DOMAIN"}
 	resolver := servicescfg.NewSecretResolver(nil)
 
 	production := cloneStringMap(values)

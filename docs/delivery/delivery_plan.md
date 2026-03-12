@@ -79,7 +79,7 @@ approvals:
 ### Sprint S3: MVP completion (Day 1..21)
 - Day 1: full stage/label activation.
 - Day 2: staff runtime debug console.
-- Day 3: deterministic secret sync (GitHub + Kubernetes).
+- Day 3: deterministic secret sync (Kubernetes).
 - Day 4: database lifecycle MCP tools.
 - Day 5: owner feedback handle + HTTP approver/executor + Telegram adapter.
 - Day 6..7: `run:self-improve` ingestion + updater + PR flow.
@@ -282,7 +282,7 @@ approvals:
 - разворачивает PostgreSQL и `codex-k8s`;
 - спрашивает внешние креды (`GitHub fine-grained token`, `CODEXK8S_OPENAI_API_KEY`), внутренние секреты генерирует сам;
 - передаёт default `learning_mode` из `bootstrap/host/config.env` (по умолчанию включён, пустое значение = выключен);
-- настраивает GitHub webhooks/labels/secrets/variables через API без GitHub Actions runner;
+- настраивает GitHub webhook/labels через API без GitHub Actions runner и хранит runtime config/secrets только в Kubernetes;
 - запускает self-deploy через control-plane runtime deploy job (build/mirror/apply/cleanup).
 
 ## Чек-листы готовности

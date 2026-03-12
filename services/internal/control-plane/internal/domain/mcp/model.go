@@ -14,7 +14,7 @@ const ToolPromptContextGet ToolName = "codex_prompt_context_get"
 
 const (
 	ToolRunStatusReport         ToolName = "run_status_report"
-	ToolMCPSecretSyncEnv        ToolName = "secret.sync.github_k8s"
+	ToolMCPSecretSyncEnv        ToolName = "secret.sync.k8s"
 	ToolMCPDatabaseLifecycle    ToolName = "database.lifecycle"
 	ToolMCPOwnerFeedbackRequest ToolName = "owner.feedback.request"
 	ToolSelfImproveRunsList     ToolName = "self_improve_runs_list"
@@ -578,12 +578,11 @@ const (
 	SecretSyncPolicyProvided      SecretSyncPolicy = "provided"
 )
 
-// SecretSyncEnvInput describes deterministic secret sync request across GitHub and Kubernetes.
+// SecretSyncEnvInput describes deterministic secret sync request for Kubernetes namespace.
 type SecretSyncEnvInput struct {
 	ProjectID            string           `json:"project_id,omitempty"`
 	Repository           string           `json:"repository,omitempty"`
 	Environment          string           `json:"environment"`
-	GitHubSecretName     string           `json:"github_secret_name"`
 	KubernetesNamespace  string           `json:"kubernetes_namespace,omitempty"`
 	KubernetesSecretName string           `json:"kubernetes_secret_name"`
 	KubernetesSecretKey  string           `json:"kubernetes_secret_key,omitempty"`
@@ -593,13 +592,12 @@ type SecretSyncEnvInput struct {
 	DryRun               bool             `json:"dry_run,omitempty"`
 }
 
-// SecretSyncEnvResult is output for secret.sync.github_k8s tool.
+// SecretSyncEnvResult is output for secret.sync.k8s tool.
 type SecretSyncEnvResult struct {
 	Status         ToolExecutionStatus `json:"status"`
 	RequestID      int64               `json:"request_id,omitempty"`
 	ApprovalState  string              `json:"approval_state,omitempty"`
 	Environment    string              `json:"environment,omitempty"`
-	GitHubSecret   string              `json:"github_secret,omitempty"`
 	KubernetesRef  string              `json:"kubernetes_ref,omitempty"`
 	Policy         string              `json:"policy,omitempty"`
 	IdempotencyKey string              `json:"idempotency_key,omitempty"`

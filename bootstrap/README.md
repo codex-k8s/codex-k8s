@@ -20,7 +20,7 @@
 - применяет baseline `NetworkPolicy` (platform namespace + labels для `system/platform` зон);
 - включает host firewall hardening: с внешней сети доступны только `SSH`, `HTTP`, `HTTPS`;
 - запрашивает внешние креды (`GitHub fine-grained token`, `CODEXK8S_OPENAI_API_KEY`), внутренние секреты генерирует автоматически;
-- настраивает GitHub Environments (`production`, `ai`) и синхронизирует env-level secrets/variables для platform repo (`CODEXK8S_GITHUB_REPO`);
+- настраивает GitHub webhook и каталог labels для platform repo (`CODEXK8S_GITHUB_REPO`);
 - создаёт или обновляет GitHub webhook и каталог labels в platform repo (`CODEXK8S_GITHUB_REPO`) и, если задан отдельный `CODEXK8S_FIRST_PROJECT_GITHUB_REPO`, дополнительно синхронизирует webhook/labels там;
 - при старте `control-plane` автоматически создаёт/обновляет записи Project/Repositories в БД для `CODEXK8S_GITHUB_REPO`
   (и опционально для `CODEXK8S_FIRST_PROJECT_GITHUB_REPO`); platform project защищён от удаления через staff UI/API;
@@ -80,16 +80,16 @@ go run ./cmd/codex-bootstrap bootstrap \
 - `bootstrap/host/bootstrap_remote_production.sh` может читать env из кастомного файла через `CODEXK8S_BOOTSTRAP_CONFIG_FILE`; по умолчанию используется `bootstrap/host/config.env`.
 - `CODEXK8S_GITHUB_REPO` — platform repo (репозиторий с кодом `codex-k8s` и bootstrap/runtime metadata).
 - `CODEXK8S_FIRST_PROJECT_GITHUB_REPO` (опционально) — отдельный репозиторий первого подключаемого проекта, где bootstrap дополнительно создаёт webhook и каталог labels; если пусто, используется только `CODEXK8S_GITHUB_REPO` (dogfooding).
-- Platform secrets/variables (`CODEXK8S_*`) записываются в `CODEXK8S_GITHUB_REPO` на уровне GitHub Environments (`production`, `ai`).
-  В `CODEXK8S_FIRST_PROJECT_GITHUB_REPO` bootstrap не записывает platform secrets (там только webhook/labels).
+- Bootstrap-секреты и platform-конфиг (`CODEXK8S_*`) записываются только в Kubernetes `Secret`/`ConfigMap`.
+  В `CODEXK8S_FIRST_PROJECT_GITHUB_REPO` bootstrap настраивает только webhook и labels.
 - Для AI слотов (env `ai`) runtime deploy берёт общие секреты из `codex-k8s-runtime-ai` и `codex-k8s-oauth2-proxy-ai`
   в production namespace. Это позволяет задавать отдельные credentials/политику для AI слотов, не затрагивая production.
 - Для раздельных значений между окружениями можно использовать ключи-оверрайды в `bootstrap/host/config.env`:
-  - `CODEXK8S_AI_<NAME>` для GitHub environment `ai` и k8s secret `codex-k8s-runtime-ai`;
-  - `CODEXK8S_PRODUCTION_<NAME>` для GitHub environment `production`.
+  - `CODEXK8S_AI_<NAME>` для k8s secret `codex-k8s-runtime-ai`;
+  - `CODEXK8S_PRODUCTION_<NAME>` для production runtime secret.
   Пустая строка означает "не перезаписывать существующее значение".
-- Для bootstrap нужен `CODEXK8S_GITHUB_PAT` (fine-grained) с правами на `administration` (webhooks/labels), `secrets` и `variables`.
-  Этот токен используется только для bootstrap/sync операций платформы (webhook/labels/environments/secrets/variables) и не используется в PR-flow агента.
+- Для bootstrap нужен `CODEXK8S_GITHUB_PAT` (fine-grained) с правами, достаточными для работы с репозиторием и `administration` (webhooks/labels).
+  GitHub secrets/variables платформа больше не синхронизирует и не использует как runtime source of truth.
 - Для PR-flow (создание/обновление PR, комментарии, review, push в рабочие ветки) использовать только `CODEXK8S_GIT_BOT_TOKEN`.
   При локальных ручных операциях `gh` токен берётся из `bootstrap/host/config.env` (`CODEXK8S_GIT_BOT_TOKEN`).
 - Для staff UI и staff API требуется GitHub OAuth App:
@@ -108,7 +108,7 @@ go run ./cmd/codex-bootstrap bootstrap \
 - `CODEXK8S_GITHUB_WEBHOOK_URL` (опционально) позволяет переопределить URL webhook; по умолчанию используется `https://<CODEXK8S_PRODUCTION_DOMAIN>/api/v1/webhooks/github`.
 - `CODEXK8S_GITHUB_WEBHOOK_EVENTS` задаёт список событий webhook (comma-separated).
 - `CODEXK8S_PLATFORM_DEPLOYMENT_REPLICAS` управляет replicas для platform `Deployment`-объектов (кроме PostgreSQL); для `production` по умолчанию `2`.
-- Worker-параметры (`CODEXK8S_WORKER_*`) также синхронизируются в GitHub Variables и применяются при deploy.
+- Worker-параметры (`CODEXK8S_WORKER_*`) сохраняются в Kubernetes runtime secret и применяются при deploy.
 - `CODEXK8S_LEARNING_MODE_DEFAULT` задаёт default для новых проектов (`true` в шаблоне; пустое значение = выключено).
 - В `bootstrap/host/config.env` используйте только переменные с префиксом `CODEXK8S_` для платформенных параметров и секретов.
 - `CODEXK8S_PRODUCTION_DOMAIN`, `CODEXK8S_AI_DOMAIN` и `CODEXK8S_LETSENCRYPT_EMAIL` обязательны.

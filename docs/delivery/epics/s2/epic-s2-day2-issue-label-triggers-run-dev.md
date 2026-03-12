@@ -68,5 +68,5 @@ approvals:
   - `api-gateway` возвращает `200` для `duplicate|ignored`, `202` для `accepted`.
 - Bootstrap/deploy синхронизация:
   - `CODEXK8S_GITHUB_WEBHOOK_EVENTS` включает `issues`;
-  - каталог vars `run:*|state:*|need:*` синхронизируется в GitHub Variables;
+  - каталог `run:*|state:*|need:*` задаётся platform env/config и синхронизируется в GitHub labels без GitHub Variables;
   - runtime secret пополнен `CODEXK8S_RUN_DEV_LABEL` и `CODEXK8S_RUN_DEV_REVISE_LABEL`.

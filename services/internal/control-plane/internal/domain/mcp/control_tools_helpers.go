@@ -18,7 +18,6 @@ type approvalTargetRef struct {
 	ProjectID            string `json:"project_id,omitempty"`
 	Repository           string `json:"repository,omitempty"`
 	Environment          string `json:"environment,omitempty"`
-	GitHubSecretName     string `json:"github_secret_name,omitempty"`
 	KubernetesNamespace  string `json:"kubernetes_namespace,omitempty"`
 	KubernetesSecretName string `json:"kubernetes_secret_name,omitempty"`
 	KubernetesSecretKey  string `json:"kubernetes_secret_key,omitempty"`
@@ -31,7 +30,6 @@ type secretSyncPayload struct {
 	ProjectID            string           `json:"project_id,omitempty"`
 	Repository           string           `json:"repository,omitempty"`
 	Environment          string           `json:"environment"`
-	GitHubSecretName     string           `json:"github_secret_name"`
 	KubernetesNamespace  string           `json:"kubernetes_namespace"`
 	KubernetesSecretName string           `json:"kubernetes_secret_name"`
 	KubernetesSecretKey  string           `json:"kubernetes_secret_key"`

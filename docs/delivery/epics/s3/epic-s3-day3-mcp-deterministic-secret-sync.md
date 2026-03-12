@@ -1,7 +1,7 @@
 ---
 doc_id: EPC-CK8S-S3-D3
 type: epic
-title: "Epic S3 Day 3: MCP deterministic secret sync (GitHub + Kubernetes)"
+title: "Epic S3 Day 3: MCP deterministic secret sync (Kubernetes)"
 status: completed
 owner_role: EM
 created_at: 2026-02-13
@@ -16,10 +16,10 @@ approvals:
   approved_at: 2026-02-19
 ---
 
-# Epic S3 Day 3: MCP deterministic secret sync (GitHub + Kubernetes)
+# Epic S3 Day 3: MCP deterministic secret sync (Kubernetes)
 
 ## TL;DR
-- Цель: реализовать безопасный инструмент синхронного создания секрета в GitHub и Kubernetes без раскрытия значения модели.
+- Цель: реализовать безопасный инструмент синхронного создания секрета в Kubernetes без раскрытия значения модели.
 - MVP-результат: deterministic secret lifecycle по окружению и проекту.
 
 ## Priority
@@ -27,7 +27,7 @@ approvals:
 
 ## Scope
 ### In scope
-- MCP tool `secret.sync.github_k8s` с входом: project/repository/environment/secret_name/policy.
+- MCP tool `secret.sync.k8s` с входом: project/repository/environment/kubernetes_secret_name/policy.
 - Генерация секрета внутри trusted tool runtime, masking в логах и callback payload.
 - Idempotency-key и retry-safe поведение.
 - Approval policy и детальный audit trail.
@@ -44,9 +44,9 @@ approvals:
 
 ## Фактический результат (выполнено)
 - Канонизирован MCP tool name для секрета:
-  - `secret.sync.github_k8s`.
+  - `secret.sync.k8s`.
 - Расширен вход `SecretSyncEnvInput`:
-  - `project_id`, `repository`, `environment`, `github_secret_name`, `kubernetes_secret_name`, `kubernetes_namespace`, `kubernetes_secret_key`;
+  - `project_id`, `repository`, `environment`, `kubernetes_secret_name`, `kubernetes_namespace`, `kubernetes_secret_key`;
   - `policy` (`deterministic|random|provided`);
   - `idempotency_key` (опциональный; при отсутствии вычисляется детерминированно).
 - Реализована детерминированная генерация секрета (default policy):

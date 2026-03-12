@@ -40,26 +40,6 @@ func (s *stubNextStepGitHubMgmt) RemoveIssueLabel(context.Context, string, strin
 	return nil
 }
 
-func (s *stubNextStepGitHubMgmt) EnsureEnvironment(context.Context, string, string, string, string) error {
-	return nil
-}
-
-func (s *stubNextStepGitHubMgmt) ListEnvSecretNames(context.Context, string, string, string, string) (map[string]struct{}, error) {
-	return map[string]struct{}{}, nil
-}
-
-func (s *stubNextStepGitHubMgmt) ListEnvVariableValues(context.Context, string, string, string, string) (map[string]string, error) {
-	return map[string]string{}, nil
-}
-
-func (s *stubNextStepGitHubMgmt) UpsertEnvSecret(context.Context, string, string, string, string, string, string) error {
-	return nil
-}
-
-func (s *stubNextStepGitHubMgmt) UpsertEnvVariable(context.Context, string, string, string, string, string, string) error {
-	return nil
-}
-
 var _ githubManagementClient = (*stubNextStepGitHubMgmt)(nil)
 
 func TestPreviewOrExecuteIssueStageTransition_AcceptsConfiguredReviseLabels(t *testing.T) {

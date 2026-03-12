@@ -19,9 +19,9 @@ approvals:
 # Epic S3 Day 13: Unified config/secrets governance (platform/project/repo) + GitHub credentials fallback
 
 ## TL;DR
-- Цель: убрать путаницу env/secrets и вынести конфигурацию платформы, проектов и репозиториев в централизованный admin UI, сохраняя секреты в БД в зашифрованном виде и синхронизируя их в GitHub и Kubernetes.
+- Цель: убрать путаницу env/secrets и вынести конфигурацию платформы, проектов и репозиториев в централизованный admin UI, сохраняя runtime-конфигурацию в Kubernetes `Secret`/`ConfigMap` и исключая GitHub env/secrets из runtime-контура.
 - Ключевая ценность: управляемые и воспроизводимые настройки без ручного редактирования `bootstrap/host/config.env`, с безопасной политикой обновлений и предсказуемым fallback по кредам.
-- MVP-результат: модель конфигов по scope (platform/project/repo) + UI/API для редактирования + sync/reconcile в GitHub/K8s + предупреждения о рисках замены секретов.
+- MVP-результат: модель конфигов по scope (platform/project/repo) + UI/API для редактирования + sync/reconcile в Kubernetes + предупреждения о рисках замены секретов.
 
 ## Priority
 - `P0`.
@@ -45,20 +45,21 @@ approvals:
   - scope: `platform | project | repository`;
   - kind: `secret | variable`;
   - mutability: `startup_required | runtime_mutable`;
-  - sync targets: `github_secret`, `github_variable`, `kubernetes_secret`, `kubernetes_configmap` (минимум: GitHub secrets + K8s secrets).
+  - sync targets: `kubernetes_secret`, `kubernetes_configmap`.
 - GitHub credentials model:
   - два типа кредов: `platform token` (management path) и `bot token` (agent-run path);
   - параметры бота: `username`, `email` (и где применяются);
   - fallback: repo creds -> project creds -> platform creds.
 - Хранение:
-  - секреты хранятся в PostgreSQL в зашифрованном виде;
+  - runtime-конфигурация и runtime-секреты materialize в Kubernetes `ConfigMap`/`Secret`;
+  - repo/provider access tokens для management-path хранятся в PostgreSQL в зашифрованном виде;
   - plaintext секретов не должен появляться в логах/DTO/flow events.
 - UI/API:
   - admin UI для платформенных настроек;
   - UI на уровне проекта для project-level настроек;
   - UI на уровне репозитория для repo overrides (включая bot-параметры).
 - Sync/reconcile контур:
-  - при создании/изменении конфигов выполнять идемпотентную синхронизацию в GitHub и Kubernetes;
+  - при создании/изменении конфигов выполнять идемпотентную синхронизацию только в Kubernetes;
   - не переписывать “опасные” секреты без явного подтверждения пользователя и предупреждения о последствиях;
   - поддержать режим “create-if-missing” для чувствительных секретов (дефолт).
 - Политика предупреждений:
@@ -84,7 +85,7 @@ approvals:
 - Story-3: Effective config resolver:
   - алгоритм fallback repo -> project -> platform;
   - отдельный resolver для GitHub credentials (platform-token и bot-token).
-- Story-4: Sync engine (GitHub + Kubernetes):
+- Story-4: Sync engine (Kubernetes only):
   - idempotent apply;
   - policy по overwrite (default: create-if-missing, update только при явном флаге);
   - dry-run/preview diff для UI.
@@ -101,7 +102,7 @@ approvals:
 - Для GitHub кредов работает fallback:
   - если repo creds не заданы, используются project creds;
   - если project creds не заданы, используются platform creds.
-- Синхронизация в GitHub/Kubernetes идемпотентна и не перезаписывает “опасные” секреты по умолчанию.
+- Синхронизация в Kubernetes идемпотентна и не перезаписывает “опасные” секреты по умолчанию.
 - UI предупреждает о рисках при update опасных секретов и требует явного подтверждения действия.
 
 ## Риски/зависимости
@@ -115,9 +116,8 @@ approvals:
   - list/upsert/delete конфигов;
   - warning/confirmation для “опасных” ключей (запрещено обновление без явного подтверждения).
 - Реализована синхронизация (idempotent apply) по sync targets:
-  - GitHub environment secrets: `github_env_secret:<env>`;
-  - GitHub environment variables: `github_env_var:<env>`;
-  - Kubernetes secrets: `k8s_secret:<namespace>/<name>`.
+  - Kubernetes secrets: `k8s_secret:<namespace>/<name>`;
+  - Kubernetes config maps: `k8s_configmap:<namespace>/<name>`.
 - Реализован effective resolver GitHub credentials с fallback:
   - repository -> project -> platform (для platform token и bot token).
 - Усилен governance слой:

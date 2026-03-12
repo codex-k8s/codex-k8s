@@ -125,12 +125,3 @@ type GitHubMutateLabelsParams struct {
 	IssueNumber int
 	Labels      []string
 }
-
-// GitHubUpsertRepositorySecretParams describes repository secret upsert operation in adapter.
-type GitHubUpsertRepositorySecretParams struct {
-	Token      string
-	Owner      string
-	Repository string
-	SecretName string
-	Value      string
-}

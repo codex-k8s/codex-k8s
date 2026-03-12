@@ -382,7 +382,7 @@ approvals:
 | id | bigserial | no |  | pk | |
 | correlation_id | text | no |  | index | |
 | run_id | uuid | yes |  | fk -> agent_runs | |
-| tool_name | text | no |  |  | e.g. `secret.sync.github_k8s` |
+| tool_name | text | no |  |  | e.g. `secret.sync.k8s` |
 | action | text | no |  |  | create/update/delete/request |
 | target_ref | jsonb | no | '{}'::jsonb |  | project/repo/env refs + policy/idempotency_key |
 | approval_mode | text | no | "owner" | check enum | none/owner/delegated |

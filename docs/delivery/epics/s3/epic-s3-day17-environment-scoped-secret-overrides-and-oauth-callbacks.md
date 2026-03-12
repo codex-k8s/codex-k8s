@@ -36,7 +36,7 @@ approvals:
 - OAuth callback strategy:
   - отдельные secrets для production и ai environment;
   - интеграция в `oauth2-proxy` deployment/secret wiring для ai-slot доменов.
-- GitHub/Kubernetes sync:
+- Kubernetes sync:
   - environment-aware запись/чтение секретов;
   - обратная синхронизация в config/env при восстановлении значений.
 
@@ -52,7 +52,7 @@ approvals:
 ## Критерии приемки
 - Для одного и того же логического секрета можно задать разные значения по окружениям без правок кода.
 - Ai-slot использует отдельные OAuth callback credentials и не ломает production login flow.
-- Secret sync в GitHub/Kubernetes учитывает environment и не перетирает соседние env значения.
+- Secret sync в Kubernetes учитывает environment и не перетирает соседние env значения.
 - Поведение описано в docs и покрыто тестами на override/fallback цепочку.
 
 ## Риски/зависимости
@@ -70,10 +70,10 @@ approvals:
 - AI ingress переведён на shared OAuth (nginx `auth-url`/`auth-signin`) через centralized oauth2-proxy endpoint.
 - Добавлена schema-валидация и runtime-валидация для `spec.secretResolution` в `libs/go/servicescfg`.
 - Реализован единый `SecretResolver` в `libs/go/servicescfg` и подключен в оба контура:
-  - `cmd/codex-bootstrap` (`github-sync`, `sync-secrets`);
+  - `cmd/codex-bootstrap` (`sync-secrets`);
   - `control-plane` runtime prerequisites (`runtimedeploy`).
 - Реализована детерминированная цепочка резолва:
-  - `env override -> environment secret -> shared/platform secret -> base value`.
+  - `env override -> environment-scoped k8s secret -> shared/platform k8s secret -> base value`.
 - OAuth split production/ai доведен до env-aware резолва:
   - `CODEXK8S_GITHUB_OAUTH_CLIENT_ID/SECRET` теперь резолвятся через общий resolver;
   - в task logs пишется источник резолва OAuth ключей (без утечки значений).

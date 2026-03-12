@@ -90,7 +90,7 @@ approvals:
 
 ## Риски и допущения
 - Риск: root SSH bootstrap может быть хрупким на нестандартных образах Ubuntu.
-- Допущение: доступен GitHub fine-grained token с правами на repo/actions/secrets/variables для runner и webhook-настроек.
+- Допущение: доступен GitHub fine-grained token с правами на repository management и administration для webhook/labels/bootstrap path; runtime-агенты используют отдельный `CODEXK8S_GIT_BOT_TOKEN`.
 - Риск: learning mode может зашумлять PR комментарии при слабой фильтрации "важных мест".
 
 ## Решение по self-deploy (принято)

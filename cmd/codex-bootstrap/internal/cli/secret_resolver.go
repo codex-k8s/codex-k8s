@@ -29,15 +29,15 @@ func loadSecretResolver(configPath string, values map[string]string) (servicescf
 
 	envName := strings.TrimSpace(values["CODEXK8S_SERVICES_CONFIG_ENV"])
 	if envName == "" {
-		envName = githubEnvironmentProduction
+		envName = runtimeEnvironmentProduction
 	}
 	loaded, err := servicescfg.Load(absPath, servicescfg.LoadOptions{
 		Env:  envName,
 		Vars: values,
 	})
-	if err != nil && !strings.EqualFold(envName, githubEnvironmentProduction) {
+	if err != nil && !strings.EqualFold(envName, runtimeEnvironmentProduction) {
 		loaded, err = servicescfg.Load(absPath, servicescfg.LoadOptions{
-			Env:  githubEnvironmentProduction,
+			Env:  runtimeEnvironmentProduction,
 			Vars: values,
 		})
 	}

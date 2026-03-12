@@ -34,7 +34,7 @@ approvals:
   - live/historical logs;
   - wait queue по `waiting_mcp` и `waiting_owner_review`.
 - MCP control tools MVP:
-  - deterministic secret sync GitHub + Kubernetes;
+  - deterministic secret sync в Kubernetes;
   - database create/delete по окружениям;
   - owner feedback handle (варианты + custom answer);
   - HTTP approver/executor contracts + Telegram adapter.
@@ -64,7 +64,7 @@ approvals:
 |---|---|---|---|---|
 | Day 1 | Full stage and label activation | P0 | `docs/delivery/epics/s3/epic-s3-day1-full-stage-and-label-activation.md` | completed (approved) |
 | Day 2 | Staff runtime debug console (jobs/logs/waits) | P0 | `docs/delivery/epics/s3/epic-s3-day2-staff-runtime-debug-console.md` | completed (approved) |
-| Day 3 | MCP deterministic secret sync (GitHub + K8s) | P0 | `docs/delivery/epics/s3/epic-s3-day3-mcp-deterministic-secret-sync.md` | completed |
+| Day 3 | MCP deterministic secret sync (Kubernetes) | P0 | `docs/delivery/epics/s3/epic-s3-day3-mcp-deterministic-secret-sync.md` | completed |
 | Day 4 | MCP database lifecycle (create/delete/describe per env) | P0 | `docs/delivery/epics/s3/epic-s3-day4-mcp-database-lifecycle.md` | completed |
 | Day 5 | Owner feedback handle + HTTP approver/executor + Telegram adapter | P0 | `docs/delivery/epics/s3/epic-s3-day5-feedback-and-approver-interfaces.md` | completed |
 | Day 6 | `run:self-improve`: ingestion and diagnostics | P0 | `docs/delivery/epics/s3/epic-s3-day6-self-improve-ingestion-and-diagnostics.md` | completed |

@@ -57,7 +57,6 @@ type GitHubClient interface {
 	DeleteIssueComment(ctx context.Context, params GitHubDeleteIssueCommentParams) error
 	AddLabels(ctx context.Context, params GitHubMutateLabelsParams) ([]GitHubLabel, error)
 	RemoveLabels(ctx context.Context, params GitHubMutateLabelsParams) ([]GitHubLabel, error)
-	UpsertRepositorySecret(ctx context.Context, params GitHubUpsertRepositorySecretParams) error
 }
 
 // KubernetesClient defines Kubernetes operations used by MCP tools.

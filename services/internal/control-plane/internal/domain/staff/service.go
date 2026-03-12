@@ -72,11 +72,6 @@ type githubManagementClient interface {
 	ListIssueLabels(ctx context.Context, token string, owner string, repo string, issueNumber int) ([]string, error)
 	AddIssueLabels(ctx context.Context, token string, owner string, repo string, issueNumber int, labels []string) ([]string, error)
 	RemoveIssueLabel(ctx context.Context, token string, owner string, repo string, issueNumber int, label string) error
-	EnsureEnvironment(ctx context.Context, token string, owner string, repo string, envName string) error
-	ListEnvSecretNames(ctx context.Context, token string, owner string, repo string, envName string) (map[string]struct{}, error)
-	ListEnvVariableValues(ctx context.Context, token string, owner string, repo string, envName string) (map[string]string, error)
-	UpsertEnvSecret(ctx context.Context, token string, owner string, repo string, envName string, key string, value string) error
-	UpsertEnvVariable(ctx context.Context, token string, owner string, repo string, envName string, key string, value string) error
 }
 
 type kubernetesConfigSync interface {

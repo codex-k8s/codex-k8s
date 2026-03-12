@@ -135,9 +135,7 @@ func Run() error {
 
 	codexAuthService, err := codexauthdomain.NewService(codexauthdomain.Config{
 		PlatformNamespace: strings.TrimSpace(cfg.PlatformNamespace),
-		GitHubRepo:        strings.TrimSpace(cfg.GitHubRepo),
-		GitHubPAT:         strings.TrimSpace(cfg.GitHubPAT),
-	}, k8sClient, githubMgmtClient)
+	}, k8sClient)
 	if err != nil {
 		return fmt.Errorf("init codex auth domain service: %w", err)
 	}

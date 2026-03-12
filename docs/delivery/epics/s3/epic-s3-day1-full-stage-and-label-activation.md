@@ -30,7 +30,7 @@ approvals:
 - Активация trigger-label обработки для `run:intake..run:ops`, `run:*:revise`, `run:rethink`, `run:self-improve`.
 - Обновление state machine переходов между стадиями и revise/rollback петлями.
 - Валидация конфликтов labels и preconditions на вход stage.
-- Синхронизация labels-as-vars каталога и audit событий.
+- Синхронизация полного каталога GitHub labels и audit событий.
 - При ошибках валидации labels — локализованная отбивка под Issue/PR по шаблону run-status:
   - какие labels конфликтуют;
   - просьба снять конфликтующие labels и оставить один валидный trigger.
@@ -61,9 +61,9 @@ approvals:
 - Runtime-профиль и template selection синхронизированы с full-stage моделью:
   - `full-env` применяется для всех известных stage-trigger;
   - revise-шаблон выбирается по общему правилу revise-trigger (не только `dev_revise`).
-- Каталог labels-as-vars синхронизирован в bootstrap/deploy/workflows:
+- Каталог label-имен синхронизирован в bootstrap/deploy runtime:
   - добавлен `CODEXK8S_RUN_SELF_IMPROVE_LABEL`,
-  - полный каталог `CODEXK8S_RUN_* / CODEXK8S_STATE_* / CODEXK8S_NEED_*` прокинут в deploy pipeline и ConfigMap.
+  - полный каталог `CODEXK8S_RUN_* / CODEXK8S_STATE_* / CODEXK8S_NEED_*` задается через platform env/config и разворачивается в GitHub labels без использования GitHub Variables.
 - Для control-plane/worker/agent-runner добавлены/обновлены тесты на full-stage trigger routing и conflict handling.
 
 ## Проверки

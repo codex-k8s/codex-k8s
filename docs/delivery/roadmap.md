@@ -41,7 +41,7 @@ approvals:
 - Split control-plane по внутренним сервисам при росте нагрузки.
 - Vault/KMS интеграция вместо хранения repo token material в БД.
 - Расширенная политика workflow approvals.
-- Автоматическое управление labels-as-vars через staff UI.
+- Управление каталогом label-имен и их синхронизацией через staff UI.
 - Квоты и policy packs для custom-агентов по проектам.
 - Расширение i18n prompt templates: добавление locale + авто-перевод шаблонов через ИИ.
 - Система управления prompt templates/agent parameters через UI (versioning, preview, rollback, diff).

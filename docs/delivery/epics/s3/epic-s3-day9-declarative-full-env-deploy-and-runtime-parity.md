@@ -109,7 +109,7 @@ approvals:
   - входной конфиг: `bootstrap/host/config-e2e-test.env`;
   - сценарий: установка зависимостей на Ubuntu 24.04, поднятие Kubernetes, деплой `codex-k8s`, проверка webhook-driven lifecycle;
   - отдельный пустой GitHub repo проекта-примера подключается в e2e и проходит provisioning/deploy smoke;
-  - проверка, что platform secrets/variables пишутся только в platform repo, webhook/labels всегда настраиваются в platform repo и дополнительно в first-project repo (если он отдельный).
+  - проверка, что platform runtime config/secrets materialize только в Kubernetes, а webhook/labels всегда настраиваются в platform repo и дополнительно в first-project repo (если он отдельный).
 
 ## Фактический статус реализации (2026-02-18)
 - Story-1 (`done`):
@@ -127,7 +127,7 @@ approvals:
 - Story-5 (`done`):
   - prompt context экспортирует runtime hints, resolved service inventory и `codeUpdateStrategy` для сервисов.
 - Story-6 (`done`):
-  - `codex-bootstrap` валидирует/рендерит `services.yaml`, синхронизирует GitHub/Kubernetes конфигурацию и запускает bootstrap сценарий;
+  - `codex-bootstrap` валидирует/рендерит `services.yaml`, синхронизирует webhook/labels в GitHub, runtime config/secrets в Kubernetes и запускает bootstrap сценарий;
   - cleanup/emergency/preflight команды добавлены в CLI и включены в рабочий контур self-deploy.
 - Story-7 (`done`):
   - правило `codex-k8s production => {{ .Project }}-production` валидируется в loader;

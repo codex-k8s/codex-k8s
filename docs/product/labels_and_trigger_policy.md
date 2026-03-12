@@ -293,18 +293,17 @@ approvals:
   - снять `run:self-improve` с Issue;
   - поставить `state:in-review` на PR и на Issue (для явного owner decision по улучшениям).
 
-## Требования к GitHub variables (labels-as-vars)
+## Каталог label-имен
 
-- Все workflow условия сравнения label должны использовать `vars.*`, а не строковые литералы.
-- В GitHub Variables хранится **полный каталог** `run:*`, `state:*`, `need:*`:
-  - для `run:*`: `CODEXK8S_RUN_<STAGE>_LABEL` и `CODEXK8S_RUN_<STAGE>_REVISE_LABEL` (где применимо), плюс `CODEXK8S_RUN_SELF_IMPROVE_LABEL`, `CODEXK8S_MODE_DISCUSSION_LABEL`,
-  - для `state:*`: `CODEXK8S_STATE_*_LABEL`,
-  - для `need:*`: `CODEXK8S_NEED_*_LABEL`.
-- Для model/reasoning также хранится каталог vars:
-  - `CODEXK8S_AI_MODEL_GPT_5_4_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_3_CODEX_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_3_CODEX_SPARK_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_2_CODEX_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MAX_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_2_LABEL`, `CODEXK8S_AI_MODEL_GPT_5_1_CODEX_MINI_LABEL`,
-  - `CODEXK8S_AI_REASONING_LOW_LABEL`, `CODEXK8S_AI_REASONING_MEDIUM_LABEL`, `CODEXK8S_AI_REASONING_HIGH_LABEL`, `CODEXK8S_AI_REASONING_EXTRA_HIGH_LABEL`.
-- Для новых `run:*` лейблов vars заводятся заранее до активации соответствующего этапа.
-- Bootstrap синхронизация каталога выполняется командой `go run ./cmd/codex-bootstrap github-sync`.
+- Источник правды для label-имен — `bootstrap/host/config.env`, `bootstrap/host/config.env.example` и runtime env `CODEXK8S_*`.
+- `github-sync` создает/обновляет только GitHub webhook и сами label-объекты в репозиториях.
+- GitHub Variables для каталога labels больше не используются и не являются частью runtime-контура.
+- Полный каталог по-прежнему задается через:
+  - `CODEXK8S_RUN_<STAGE>_LABEL` и `CODEXK8S_RUN_<STAGE>_REVISE_LABEL` (где применимо),
+  - `CODEXK8S_STATE_*_LABEL`,
+  - `CODEXK8S_NEED_*_LABEL`,
+  - `CODEXK8S_AI_MODEL_*_LABEL`,
+  - `CODEXK8S_AI_REASONING_*_LABEL`.
 
 ## Аудит и наблюдаемость
 

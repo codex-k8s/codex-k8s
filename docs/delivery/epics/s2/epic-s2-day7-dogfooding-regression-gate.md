@@ -37,7 +37,7 @@ approvals:
   - процесс ведут агенты end-to-end;
   - Owner участвует в контрольных точках и принимает `approve/deny` решения по запросам агента.
 - Regression matrix по Day6 control tools:
-  - deterministic secret sync (GitHub + Kubernetes) с проверкой idempotency;
+  - deterministic secret sync в Kubernetes с проверкой idempotency;
   - database create/delete по окружению;
   - owner feedback request (варианты + custom input).
 - Проверка staff observability:

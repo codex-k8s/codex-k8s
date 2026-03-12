@@ -21,7 +21,7 @@ func registerTools(server *sdkmcp.Server, service domainService) {
 		buildRunStatusReportInputSchema(),
 		service.RunStatusReport,
 	)
-	addTool(server, mcpdomain.ToolMCPSecretSyncEnv, "Sync one secret to GitHub repository and Kubernetes namespace", service.MCPSecretSyncEnv)
+	addTool(server, mcpdomain.ToolMCPSecretSyncEnv, "Sync one secret into Kubernetes namespace", service.MCPSecretSyncEnv)
 	addTool(server, mcpdomain.ToolMCPDatabaseLifecycle, "Create, drop or describe one environment database", service.MCPDatabaseLifecycle)
 	addTool(server, mcpdomain.ToolMCPOwnerFeedbackRequest, "Request owner feedback with predefined options", service.MCPOwnerFeedbackRequest)
 	addTool(server, mcpdomain.ToolSelfImproveRunsList, "List project runs for self-improve diagnostics", service.SelfImproveRunsList)

@@ -40,7 +40,7 @@ approvals:
 - MCP-слой в текущем MVP baseline покрывает:
   - label-операции (`github_labels_*`);
   - прогресс-статусы агента (`run_status_report`, короткий статус до 100 символов);
-  - `secret.sync.github_k8s` (deterministic secret sync GitHub + Kubernetes);
+  - `secret.sync.k8s` (deterministic secret sync в Kubernetes);
   - `database.lifecycle` (`create/delete/describe`);
   - `owner.feedback.request` (options + custom answer).
 - Для внешних approver/executor адаптеров активированы callback endpoint'ы:
@@ -61,9 +61,9 @@ approvals:
 - Токен используется напрямую через `gh` и `git`:
   - clone/fetch/commit/push в рабочую ветку;
   - issue/PR/review/comments операции.
-- Разрешённые scopes для bot-token:
-  - Read: actions, actions variables, artifact metadata, custom properties for repositories, deployments, environments, merge queues, metadata, secrets;
-  - Read/Write: code, commit statuses, discussions, issues, pages, pull requests, workflows.
+- Минимально необходимые scopes для bot-token:
+  - Read: metadata;
+  - Read/Write: code, commit statuses, discussions, issues, pages, pull requests.
 - Через MCP выполняются label transitions и control tools, требующие governance approvals и единый audit контур.
 
 ## Модель доступа Kubernetes для агентного pod (S2 Day4)
