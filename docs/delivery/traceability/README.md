@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-12
 updated_at: 2026-03-12
-related_issues: [325, 327]
+related_issues: [325, 327, 333, 335, 337, 340]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -29,6 +29,7 @@ approvals:
 | `docs/delivery/traceability/s6_agents_prompt_management_history.md` | Sprint S6 | История полного stage-контура `intake -> dev -> release -> postdeploy -> ops` для lifecycle agents/prompts |
 | `docs/delivery/traceability/s7_mvp_readiness_gap_closure_history.md` | Sprint S7 | История stage/development evidence по MVP readiness execution streams |
 | `docs/delivery/traceability/s8_go_refactoring_parallelization_history.md` | Sprint S8 | История go-refactor/onboarding/doc-governance потоков, включая doc-audit decomposition issue `#327` |
+| `docs/delivery/traceability/s9_mission_control_dashboard_history.md` | Sprint S9 | История intake/vision/prd решений по Mission Control Dashboard и continuity issue `#340` для architecture stage |
 
 ## Правила обновления
 - В `docs/delivery/issue_map.md` обновляется только текущая каноническая карта связей, bundle refs и статус issue/PR.

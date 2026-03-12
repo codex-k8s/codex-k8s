@@ -6,7 +6,7 @@ status: in-review
 owner_role: PM
 created_at: 2026-03-12
 updated_at: 2026-03-12
-related_issues: [333, 335, 337]
+related_issues: [333, 335, 337, 340]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -20,13 +20,14 @@ approvals:
 - Sprint S9 открывает отдельную продуктовую инициативу Mission Control Dashboard: staff console должна стать основным control-plane UX для активной работы, а не только набором runtime/debug страниц.
 - Day1 intake (`#333`) фиксирует проблему, границы MVP и continuity в `run:vision`.
 - Day2 vision (`#335`) закрепляет mission, persona outcomes, KPI/guardrails и handover в PRD issue `#337`.
+- Day3 PRD (`#337`) формализует user stories, FR/AC/NFR, edge cases и wave priorities и передаёт continuity в architecture issue `#340`.
 - До `run:plan` Sprint S9 остаётся markdown-only контуром: execution issues и library lock-in откладываются до подтверждённых product/architecture decisions.
 
 ## Stage roadmap
 - Day 1 (Intake): `docs/delivery/epics/s9/epic-s9-day1-mission-control-dashboard-intake.md` (Issue `#333`).
 - Day 2 (Vision): `docs/delivery/epics/s9/epic-s9-day2-mission-control-dashboard-vision.md` (Issue `#335`).
-- Day 3 (PRD): follow-up issue `#337`; должна формализовать user stories, FR/AC/NFR, edge cases и wave priorities.
-- Day 4 (Architecture): issue создаётся на этапе PRD; должна зафиксировать service boundaries, projections, realtime contracts и provider-sync ownership.
+- Day 3 (PRD): `docs/delivery/epics/s9/epic-s9-day3-mission-control-dashboard-prd.md` + `docs/delivery/epics/s9/prd-s9-day3-mission-control-dashboard.md` (Issue `#337`).
+- Day 4 (Architecture): follow-up issue `#340`; должна зафиксировать service boundaries, projections, realtime contracts и provider-sync ownership.
 - Day 5 (Design): issue создаётся на этапе architecture; должна подготовить implementation-ready package по API/data/UI/reconciliation.
 - Day 6 (Plan): issue создаётся на этапе design; должна сформировать execution backlog и quality-gates перед `run:dev`.
 

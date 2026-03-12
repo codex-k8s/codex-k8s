@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-12
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263, 265, 281, 282, 320, 322, 327]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263, 265, 281, 282, 320, 322, 327, 333, 335, 337, 340]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -109,6 +109,7 @@ approvals:
 - Sprint S6: `docs/delivery/traceability/s6_agents_prompt_management_history.md`
 - Sprint S7: `docs/delivery/traceability/s7_mvp_readiness_gap_closure_history.md`
 - Sprint S8: `docs/delivery/traceability/s8_go_refactoring_parallelization_history.md`
+- Sprint S9: `docs/delivery/traceability/s9_mission_control_dashboard_history.md`
 
 ## Правило хранения evidence
 - Root-матрица фиксирует только текущее покрытие требований и не хранит narrative execution-history.
