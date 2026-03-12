@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-12
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 363, 369, 370, 371, 372, 373, 374, 375, 378]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 363, 369, 370, 371, 372, 373, 374, 375, 378, 383]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -267,8 +267,14 @@ approvals:
   - MVP baseline ограничен `user.notify` и `user.decision.request` с channel-neutral semantics и typed response contract;
   - закреплены неподвижные ограничения: отдельный interaction-domain, wait-state только для response-required сценариев, platform-owned retry/idempotency/audit/correlation, Telegram как отдельный follow-up stream;
   - создана follow-up issue `#378` для stage `run:vision` без trigger-лейбла.
-- Day 2 (planned): vision-пакет в Issue `#378`.
-  - Цель: зафиксировать mission, north star, persona outcomes, KPI/guardrails и handover в `run:prd`.
+- Day 2 (in-review): vision-пакет для built-in MCP user interactions (`docs/delivery/epics/s10/epic-s10-day2-mcp-user-interactions-vision.md`, Issue `#378`).
+- Результат Day 2 (факт):
+  - built-in MCP user interactions зафиксированы как channel-neutral user-facing capability платформы, а не как расширение approval flow;
+  - mission, north star, persona outcomes и KPI/guardrails определены для actionable notifications, typed user decisions, wait-state discipline и adapter readiness;
+  - подтверждены неподвижные ограничения: `user.notify` остаётся non-blocking, wait-state допускается только для `user.decision.request`, delivery/retry/correlation/audit принадлежат platform domain, Telegram остаётся отдельным follow-up stream;
+  - создана follow-up issue `#383` для stage `run:prd` без trigger-лейбла.
+- Day 3 (planned): PRD-пакет в Issue `#383`.
+  - Цель: зафиксировать user stories, FR/AC/NFR, edge cases, expected evidence и handover в `run:arch`.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

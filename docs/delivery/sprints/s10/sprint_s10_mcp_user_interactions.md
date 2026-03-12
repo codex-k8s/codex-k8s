@@ -6,7 +6,7 @@ status: in-review
 owner_role: PM
 created_at: 2026-03-12
 updated_at: 2026-03-12
-related_issues: [360, 378]
+related_issues: [360, 378, 383]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - Sprint S10 открывает отдельный product stream для встроенных MCP-взаимодействий с пользователем поверх уже существующего built-in сервера `codex_k8s`.
 - Issue `#360` фиксирует intake baseline: MVP строится вокруг `user.notify` и `user.decision.request`, approval semantics не смешиваются с user-dialog semantics, а core interaction-domain остаётся channel-neutral.
-- Intake-пакет создаёт continuity issue `#378` для `run:vision`; Telegram и другие channel adapters остаются отдельным последовательным потоком после проработки core platform contracts.
+- Vision-пакет по Issue `#378` фиксирует mission, KPI/guardrails, persona outcomes и continuity issue `#383` для `run:prd`; Telegram и другие channel adapters остаются отдельным последовательным потоком после проработки core platform contracts.
 
 ## Scope спринта
 ### In scope
@@ -51,8 +51,8 @@ approvals:
 | Stage | Основной артефакт | Целевая роль | Правило выхода |
 |---|---|---|---|
 | Intake (`#360`) | Problem/Brief/Scope/Constraints + intake AC | `pm` | Owner review intake-пакета и создана issue следующего этапа |
-| Vision (`#378`) | Mission, persona outcomes, KPI, MVP/Post-MVP границы | `pm` | Зафиксирован vision baseline и создана issue `run:prd` |
-| PRD | User stories, FR/AC/NFR, delivery evidence expectations | `pm` + `sa` | Подтверждён PRD package и создана issue `run:arch` |
+| Vision (`#378`) | Mission, persona outcomes, KPI, MVP/Post-MVP границы | `pm` | Зафиксирован vision baseline и создана issue `#383` (`run:prd`) |
+| PRD (`#383`) | User stories, FR/AC/NFR, delivery evidence expectations | `pm` + `sa` | Подтверждён PRD package и создана issue `run:arch` |
 | Architecture | Service boundaries, ownership матрица, interaction lifecycle | `sa` | Подтверждены архитектурные границы и создана issue `run:design` |
 | Design | API/data/wait-state/adapter contracts и rollout notes | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue `run:plan` |
 | Plan | Delivery waves, quality-gates, execution issues, DoR/DoD | `em` + `km` | Сформирован execution package и backlog отдельных implementation issues |
@@ -66,6 +66,6 @@ approvals:
 - Telegram остаётся отдельным follow-up stream после завершения Sprint S10 doc-stage цепочки.
 
 ## Handover
-- Завершённый текущий stage: `run:intake` в Issue `#360`.
-- Следующий stage: `run:vision` в Issue `#378`.
-- Trigger-лейбл для Issue `#378` не ставится автоматически и остаётся owner-managed переходом после review intake-пакета.
+- Завершённый текущий stage: `run:vision` в Issue `#378`.
+- Следующий stage: `run:prd` в Issue `#383`.
+- Trigger-лейбл для Issue `#383` не ставится автоматически и остаётся owner-managed переходом после review vision-пакета.
