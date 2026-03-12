@@ -32,6 +32,18 @@ type RunQueueClaimRunningParams struct {
 	Limit int
 }
 
+// RunQueueReclaimStaleRunningParams defines constraints for reclaiming one stale running run lease.
+type RunQueueReclaimStaleRunningParams struct {
+	// RunID is a running run to reclaim.
+	RunID string
+	// WorkerID identifies worker instance reclaiming the run.
+	WorkerID string
+	// PreviousLeaseOwner is the stale worker instance that previously owned the run.
+	PreviousLeaseOwner string
+	// LeaseTTL defines reconciliation ownership lease duration after reclaim.
+	LeaseTTL time.Duration
+}
+
 // RunQueueClaimedRun represents a pending run promoted into running state.
 type RunQueueClaimedRun struct {
 	// RunID is a unique run identifier.
@@ -68,6 +80,10 @@ type RunQueueRunningRun struct {
 	RunPayload json.RawMessage
 	// StartedAt is timestamp when run entered running state.
 	StartedAt time.Time
+	// LeaseOwner is current worker instance holding run reconciliation lease.
+	LeaseOwner string
+	// LeaseUntil is reconciliation lease expiration timestamp.
+	LeaseUntil time.Time
 }
 
 // RunQueueFinishParams describes final run transition and slot release.

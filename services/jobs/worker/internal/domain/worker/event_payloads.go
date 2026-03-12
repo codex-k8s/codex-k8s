@@ -99,6 +99,15 @@ type runFinishedEventExtra struct {
 	Reason runFailureReason
 }
 
+// runLeaseEventPayload defines payload shape for stale lease diagnostics.
+type runLeaseEventPayload struct {
+	RunID              string `json:"run_id"`
+	ProjectID          string `json:"project_id"`
+	PreviousLeaseOwner string `json:"previous_lease_owner,omitempty"`
+	CurrentLeaseOwner  string `json:"current_lease_owner,omitempty"`
+	PreviousLeaseUntil string `json:"previous_lease_until,omitempty"`
+}
+
 // namespaceLifecycleEventPayload defines payload shape for namespace lifecycle flow events.
 type namespaceLifecycleEventPayload struct {
 	RunID                   string                     `json:"run_id"`
@@ -148,6 +157,12 @@ func encodeRunJobImageResolvedEventPayload(payload runJobImageResolvedEventPaylo
 
 // encodeRunFinishedEventPayload serializes run finish payload with safe fallback JSON.
 func encodeRunFinishedEventPayload(payload runFinishedEventPayload) json.RawMessage {
+	bytes, err := json.Marshal(payload)
+	return marshalPayload(bytes, err)
+}
+
+// encodeRunLeaseEventPayload serializes stale lease diagnostics payload with safe fallback JSON.
+func encodeRunLeaseEventPayload(payload runLeaseEventPayload) json.RawMessage {
 	bytes, err := json.Marshal(payload)
 	return marshalPayload(bytes, err)
 }

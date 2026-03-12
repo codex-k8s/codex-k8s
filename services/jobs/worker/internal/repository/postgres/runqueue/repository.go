@@ -40,6 +40,8 @@ var (
 	queryClaimRunning string
 	//go:embed sql/list_running.sql
 	queryListRunning string
+	//go:embed sql/reclaim_stale_running.sql
+	queryReclaimStaleRunning string
 	//go:embed sql/extend_slot_lease.sql
 	queryExtendSlotLease string
 	//go:embed sql/mark_run_finished.sql
@@ -225,6 +227,45 @@ func (r *Repository) ListRunning(ctx context.Context, limit int) ([]domainrepo.R
 	return items, nil
 }
 
+// ReclaimStaleRunning steals one running-run lease from a missing worker instance.
+func (r *Repository) ReclaimStaleRunning(ctx context.Context, params domainrepo.ReclaimStaleRunningParams) (domainrepo.RunningRun, bool, error) {
+	runID := strings.TrimSpace(params.RunID)
+	if runID == "" {
+		return domainrepo.RunningRun{}, false, fmt.Errorf("reclaim stale running run: run_id is required")
+	}
+
+	workerID := strings.TrimSpace(params.WorkerID)
+	if workerID == "" {
+		return domainrepo.RunningRun{}, false, fmt.Errorf("reclaim stale running run %s: worker_id is required", runID)
+	}
+
+	previousLeaseOwner := strings.TrimSpace(params.PreviousLeaseOwner)
+	if previousLeaseOwner == "" {
+		return domainrepo.RunningRun{}, false, fmt.Errorf("reclaim stale running run %s: previous_lease_owner is required", runID)
+	}
+
+	leaseTTL := params.LeaseTTL
+	if leaseTTL <= 0 {
+		return domainrepo.RunningRun{}, false, fmt.Errorf("reclaim stale running run %s: lease_ttl is required", runID)
+	}
+	leaseInterval := fmt.Sprintf("%d seconds", maxInt64(1, int64(leaseTTL.Seconds())))
+
+	rows, err := r.db.Query(ctx, queryReclaimStaleRunning, runID, workerID, previousLeaseOwner, leaseInterval)
+	if err != nil {
+		return domainrepo.RunningRun{}, false, fmt.Errorf("reclaim stale running run %s: %w", runID, err)
+	}
+	defer rows.Close()
+
+	items, err := scanRunningRows(rows, 1)
+	if err != nil {
+		return domainrepo.RunningRun{}, false, fmt.Errorf("scan reclaimed stale running run %s: %w", runID, err)
+	}
+	if len(items) == 0 {
+		return domainrepo.RunningRun{}, false, nil
+	}
+	return items[0], true, nil
+}
+
 // ExtendLease refreshes slot lease ownership for one running run.
 func (r *Repository) ExtendLease(ctx context.Context, params domainrepo.ExtendLeaseParams) (bool, error) {
 	projectID := strings.TrimSpace(params.ProjectID)
@@ -298,8 +339,10 @@ func scanRunningRows(rows pgx.Rows, limit int) ([]domainrepo.RunningRun, error) 
 			learningMode  bool
 			runPayload    []byte
 			startedAt     pgtype.Timestamptz
+			leaseOwner    string
+			leaseUntil    pgtype.Timestamptz
 		)
-		if err := rows.Scan(&runID, &correlationID, &projectID, &slotID, &slotNo, &learningMode, &runPayload, &startedAt); err != nil {
+		if err := rows.Scan(&runID, &correlationID, &projectID, &slotID, &slotNo, &learningMode, &runPayload, &startedAt, &leaseOwner, &leaseUntil); err != nil {
 			return nil, fmt.Errorf("scan running run row: %w", err)
 		}
 		item := domainrepo.RunningRun{
@@ -310,9 +353,13 @@ func scanRunningRows(rows pgx.Rows, limit int) ([]domainrepo.RunningRun, error) 
 			SlotNo:        slotNo,
 			LearningMode:  learningMode,
 			RunPayload:    json.RawMessage(runPayload),
+			LeaseOwner:    leaseOwner,
 		}
 		if startedAt.Valid {
 			item.StartedAt = startedAt.Time.UTC()
+		}
+		if leaseUntil.Valid {
+			item.LeaseUntil = leaseUntil.Time.UTC()
 		}
 		result = append(result, item)
 	}

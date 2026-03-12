@@ -21,7 +21,14 @@ claimed AS (
         updated_at = NOW()
     FROM candidates AS c
     WHERE r.id = c.id
-    RETURNING r.id, r.correlation_id, r.project_id, r.learning_mode, r.run_payload, r.started_at
+    RETURNING r.id,
+              r.correlation_id,
+              r.project_id,
+              r.learning_mode,
+              r.run_payload,
+              r.started_at,
+              r.lease_owner,
+              r.lease_until
 )
 SELECT c.id,
        c.correlation_id,
@@ -30,7 +37,9 @@ SELECT c.id,
        COALESCE(s.slot_no, 0) AS slot_no,
        c.learning_mode,
        c.run_payload,
-       c.started_at
+       c.started_at,
+       COALESCE(c.lease_owner, '') AS lease_owner,
+       c.lease_until
 FROM claimed AS c
 LEFT JOIN slots AS s
   ON s.project_id = c.project_id

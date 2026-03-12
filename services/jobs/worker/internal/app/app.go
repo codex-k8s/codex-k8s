@@ -14,6 +14,7 @@ import (
 	libslauncher "github.com/codex-k8s/codex-k8s/libs/go/k8s/joblauncher"
 	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
 	k8slauncher "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/clients/kubernetes/launcher"
+	k8sworkerpresence "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/clients/kubernetes/workerpresence"
 	"github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/controlplane"
 	"github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/worker"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/flowevent"
@@ -136,6 +137,10 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("create kubernetes launcher: %w", err)
 	}
+	workerPresence, err := k8sworkerpresence.NewAdapter(cfg.KubeconfigPath, cfg.ProductionNamespace)
+	if err != nil {
+		return fmt.Errorf("create kubernetes worker presence adapter: %w", err)
+	}
 	jobImageChecker, err := newRegistryJobImageChecker(cfg.InternalRegistryScheme, cfg.InternalRegistryHost, jobImageCheckTimeout)
 	if err != nil {
 		return fmt.Errorf("create worker job image checker: %w", err)
@@ -191,6 +196,7 @@ func Run() error {
 		RuntimePreparer: controlPlane,
 		MCPTokenIssuer:  controlPlane,
 		RunStatus:       controlPlane,
+		WorkerPresence:  workerPresence,
 		JobImageChecker: jobImageChecker,
 		Logger:          logger,
 	})

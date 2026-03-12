@@ -36,6 +36,15 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 		return fmt.Errorf("claim running runs: %w", err)
 	}
 
+	remaining := s.cfg.RunningCheckLimit - len(running)
+	if remaining > 0 {
+		reclaimed, err := s.reclaimStaleRunning(ctx, remaining)
+		if err != nil {
+			return fmt.Errorf("reclaim stale running runs: %w", err)
+		}
+		running = append(running, reclaimed...)
+	}
+
 	for _, run := range running {
 		s.keepRunSlotLeaseAlive(ctx, run)
 

@@ -7,12 +7,13 @@ import (
 )
 
 type (
-	ClaimParams        = querytypes.RunQueueClaimParams
-	ClaimRunningParams = querytypes.RunQueueClaimRunningParams
-	ClaimedRun         = querytypes.RunQueueClaimedRun
-	RunningRun         = querytypes.RunQueueRunningRun
-	FinishParams       = querytypes.RunQueueFinishParams
-	ExtendLeaseParams  = querytypes.RunQueueExtendLeaseParams
+	ClaimParams               = querytypes.RunQueueClaimParams
+	ClaimRunningParams        = querytypes.RunQueueClaimRunningParams
+	ReclaimStaleRunningParams = querytypes.RunQueueReclaimStaleRunningParams
+	ClaimedRun                = querytypes.RunQueueClaimedRun
+	RunningRun                = querytypes.RunQueueRunningRun
+	FinishParams              = querytypes.RunQueueFinishParams
+	ExtendLeaseParams         = querytypes.RunQueueExtendLeaseParams
 )
 
 // Repository provides queue-like operations over agent runs and slots.
@@ -23,6 +24,8 @@ type Repository interface {
 	ClaimRunning(ctx context.Context, params ClaimRunningParams) ([]RunningRun, error)
 	// ListRunning returns active runs for reconciliation.
 	ListRunning(ctx context.Context, limit int) ([]RunningRun, error)
+	// ReclaimStaleRunning steals one running-run lease from a missing worker instance.
+	ReclaimStaleRunning(ctx context.Context, params ReclaimStaleRunningParams) (RunningRun, bool, error)
 	// ExtendLease refreshes slot lease for one running run.
 	ExtendLease(ctx context.Context, params ExtendLeaseParams) (bool, error)
 	// FinishRun finalizes run status and releases slot lease when it exists.

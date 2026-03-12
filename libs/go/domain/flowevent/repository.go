@@ -49,6 +49,9 @@ const (
 	EventTypeRunFailedJobNotFound       EventType = "run.failed.job_not_found"
 	EventTypeRunFailedLaunchError       EventType = "run.failed.launch_error"
 	EventTypeRunFailedPrecondition      EventType = "run.failed.precondition"
+	EventTypeRunLeaseOwnerMissing       EventType = "run.lease.owner_missing"
+	EventTypeRunLeaseStaleDetected      EventType = "run.lease.stale_detected"
+	EventTypeRunLeaseReclaimed          EventType = "run.lease.reclaimed"
 )
 
 const (
