@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-12
 updated_at: 2026-03-12
-related_issues: [360, 378, 383]
+related_issues: [360, 378, 383, 385]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -43,3 +43,15 @@ approvals:
 - Для continuity создана follow-up issue `#383` (`run:prd`) без trigger-лейбла.
 - Попытка использовать Context7 для GitHub CLI manual завершилась ошибкой `Monthly quota exceeded`; неинтерактивный issue/PR flow дополнительно сверен локально по `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась, потому что vision stage уточняет mission, KPI и scope boundaries, но не меняет канонический requirements baseline.
+
+## Актуализация по Issue #383 (`run:prd`, 2026-03-12)
+- Подготовлен PRD package:
+  - `docs/delivery/epics/s10/epic-s10-day3-mcp-user-interactions-prd.md`;
+  - `docs/delivery/epics/s10/prd-s10-day3-mcp-user-interactions.md`.
+- Зафиксированы:
+  - user stories, FR/AC/NFR и wave priorities для `user.notify`, `user.decision.request`, typed response semantics и adapter-neutral contract;
+  - explicit edge cases для stale/duplicate/invalid responses, fallback-to-comments и separation from approval flow;
+  - handover decisions, которые нельзя потерять на `run:arch`: built-in `codex_k8s`, non-blocking `user.notify`, wait-state только для `user.decision.request`, platform-owned audit/correlation/retry semantics и deferred scope для Telegram/adapters.
+- Для continuity создана follow-up issue `#385` (`run:arch`) без trigger-лейбла.
+- Попытка использовать Context7 для GitHub CLI manual снова завершилась ошибкой `Monthly quota exceeded`; для non-interactive GitHub flow использованы локальные `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: PRD stage уточняет product contract и delivery evidence, а в root-матрице синхронизирована только связь по issue/traceability governance.

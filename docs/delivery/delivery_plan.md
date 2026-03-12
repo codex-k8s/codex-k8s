@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-12
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 363, 369, 370, 371, 372, 373, 374, 375, 378, 383]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 363, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -273,8 +273,14 @@ approvals:
   - mission, north star, persona outcomes и KPI/guardrails определены для actionable notifications, typed user decisions, wait-state discipline и adapter readiness;
   - подтверждены неподвижные ограничения: `user.notify` остаётся non-blocking, wait-state допускается только для `user.decision.request`, delivery/retry/correlation/audit принадлежат platform domain, Telegram остаётся отдельным follow-up stream;
   - создана follow-up issue `#383` для stage `run:prd` без trigger-лейбла.
-- Day 3 (planned): PRD-пакет в Issue `#383`.
-  - Цель: зафиксировать user stories, FR/AC/NFR, edge cases, expected evidence и handover в `run:arch`.
+- Day 3 (in-review): PRD-пакет для built-in MCP user interactions (`docs/delivery/epics/s10/epic-s10-day3-mcp-user-interactions-prd.md`, `docs/delivery/epics/s10/prd-s10-day3-mcp-user-interactions.md`, Issue `#383`).
+- Результат Day 3 (факт):
+  - зафиксированы user stories, FR/AC/NFR, wave priorities и expected evidence для `user.notify`, `user.decision.request`, typed response semantics и adapter-neutral interaction contract;
+  - подтверждены product guardrails: interaction flow не смешивается с approval flow, `user.notify` остаётся non-blocking, wait-state разрешён только для `user.decision.request`, delivery/retry/idempotency/correlation/audit принадлежат platform domain;
+  - deferred scope явно отделён от core MVP: Telegram/adapters, reminder policies, richer threads и voice/STT не блокируют Sprint S10 core baseline;
+  - создана follow-up issue `#385` для stage `run:arch` без trigger-лейбла.
+- Day 4 (planned): architecture-пакет для built-in MCP user interactions (Issue `#385`).
+  - Цель: зафиксировать service boundaries, ownership matrix, callback/wait-state lifecycle и architectural alternatives без потери product invariants Day 3.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
