@@ -55,6 +55,13 @@ export function createRealtimeClient<TMessage>(config: RealtimeClientConfig<TMes
     }
   }
 
+  function detachSocketHandlers(target: WebSocket): void {
+    target.onopen = null;
+    target.onmessage = null;
+    target.onerror = null;
+    target.onclose = null;
+  }
+
   function armFirstMessageTimer(): void {
     const timeoutMs = config.firstMessageTimeoutMs;
     if (!active || hasReceivedMessage || firstMessageTimeoutNotified || !timeoutMs || timeoutMs <= 0) {
@@ -75,16 +82,28 @@ export function createRealtimeClient<TMessage>(config: RealtimeClientConfig<TMes
 
   function closeSocket(): void {
     if (!socket) return;
-    socket.onopen = null;
-    socket.onmessage = null;
-    socket.onerror = null;
-    socket.onclose = null;
+    const currentSocket = socket;
+    socket = null;
+    if (currentSocket.readyState === WebSocket.CONNECTING) {
+      currentSocket.onopen = () => {
+        detachSocketHandlers(currentSocket);
+        try {
+          currentSocket.close();
+        } catch {
+          // Ignore close errors.
+        }
+      };
+      currentSocket.onmessage = null;
+      currentSocket.onerror = null;
+      currentSocket.onclose = null;
+      return;
+    }
+    detachSocketHandlers(currentSocket);
     try {
-      socket.close();
+      currentSocket.close();
     } catch {
       // Ignore close errors.
     }
-    socket = null;
   }
 
   function scheduleReconnect(): void {
@@ -110,14 +129,21 @@ export function createRealtimeClient<TMessage>(config: RealtimeClientConfig<TMes
     closeSocket();
     notifyState(reconnectAttempt === 0 ? "connecting" : "reconnecting");
 
-    socket = new WebSocket(config.url);
+    const currentSocket = new WebSocket(config.url);
+    socket = currentSocket;
 
-    socket.onopen = () => {
+    currentSocket.onopen = () => {
+      if (socket !== currentSocket) {
+        return;
+      }
       reconnectAttempt = 0;
       notifyState("connected");
     };
 
-    socket.onmessage = (event: MessageEvent<string>) => {
+    currentSocket.onmessage = (event: MessageEvent<string>) => {
+      if (socket !== currentSocket) {
+        return;
+      }
       const parsed = config.parseMessage(String(event.data ?? ""));
       if (!parsed) return;
       hasReceivedMessage = true;
@@ -125,17 +151,24 @@ export function createRealtimeClient<TMessage>(config: RealtimeClientConfig<TMes
       config.onMessage(parsed);
     };
 
-    socket.onerror = () => {
-      if (!socket) return;
+    currentSocket.onerror = () => {
+      if (socket !== currentSocket) return;
+      if (currentSocket.readyState === WebSocket.CONNECTING) {
+        return;
+      }
       try {
-        socket.close();
+        currentSocket.close();
       } catch {
         // Ignore close errors.
       }
     };
 
-    socket.onclose = () => {
+    currentSocket.onclose = () => {
+      if (socket === currentSocket) {
+        socket = null;
+      }
       if (!active) return;
+      if (socket !== null) return;
       scheduleReconnect();
     };
   }

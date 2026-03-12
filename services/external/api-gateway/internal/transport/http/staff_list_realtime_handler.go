@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -15,6 +16,7 @@ import (
 const (
 	staffListRealtimeDefaultPage     = 1
 	staffListRealtimeDefaultPageSize = 20
+	staffRunsRealtimeCardsLimit      = 20
 )
 
 type listRealtimeKind string
@@ -44,7 +46,12 @@ type paginatedRealtimeResponse[ProtoItem any] interface {
 	GetTotalCount() int32
 }
 
-type runsListRealtimeSnapshot = paginatedRealtimeSnapshot[models.Run]
+type runsListRealtimeSnapshot struct {
+	Items                 []models.Run
+	Pagination            models.Pagination
+	WaitQueueCount        *int
+	PendingApprovalsCount *int
+}
 type runtimeDeployTasksRealtimeSnapshot = paginatedRealtimeSnapshot[models.RuntimeDeployTaskListItem]
 
 // RunsRealtime opens an authenticated websocket stream for the paginated runs table.
@@ -65,8 +72,8 @@ func (h *staffHandler) streamListRealtime(c *echo.Context, kind listRealtimeKind
 			c,
 			resolveRunListPage(staffListRealtimeDefaultPage, staffListRealtimeDefaultPageSize),
 			(*staffHandler).fetchRunsRealtimeSnapshot,
-			func(snapshot runsListRealtimeSnapshot) any { return newListRealtimeSnapshotMessage(snapshot) },
-			func(err error) any { return newListRealtimeErrorMessage[models.Run](err) },
+			func(snapshot runsListRealtimeSnapshot) any { return newRunsRealtimeSnapshotMessage(snapshot) },
+			func(err error) any { return newRunsRealtimeErrorMessage(err) },
 		)
 	case listRealtimeRuntimeDeployTasks:
 		return streamResolvedRealtime(
@@ -184,7 +191,45 @@ func streamRealtimeSnapshots[Snapshot any](
 }
 
 func (h *staffHandler) fetchRunsRealtimeSnapshot(ctx context.Context, principal *controlplanev1.Principal, arg runListPageArg) (runsListRealtimeSnapshot, error) {
-	return fetchPaginatedRealtimeSnapshot(ctx, principal, arg, h.listRunsCall, casters.Runs)
+	resp, err := h.listRunsCall(ctx, principal, arg)
+	if err != nil {
+		return runsListRealtimeSnapshot{}, err
+	}
+
+	snapshot := runsListRealtimeSnapshot{
+		Items:      casters.Runs(resp.GetItems()),
+		Pagination: newPagination(resp.GetPage(), resp.GetPageSize(), resp.GetTotalCount()),
+	}
+
+	var wait sync.WaitGroup
+	wait.Add(2)
+	var waitQueueCount *int
+	var pendingApprovalsCount *int
+
+	go func() {
+		defer wait.Done()
+		waitsResp, listErr := h.listRunWaitsCall(ctx, principal, runListFilterArg{limit: staffRunsRealtimeCardsLimit})
+		if listErr != nil {
+			return
+		}
+		count := len(waitsResp.GetItems())
+		waitQueueCount = &count
+	}()
+
+	go func() {
+		defer wait.Done()
+		approvalsResp, listErr := h.listPendingApprovalsCall(ctx, principal, staffRunsRealtimeCardsLimit)
+		if listErr != nil {
+			return
+		}
+		count := len(approvalsResp.GetItems())
+		pendingApprovalsCount = &count
+	}()
+
+	wait.Wait()
+	snapshot.WaitQueueCount = waitQueueCount
+	snapshot.PendingApprovalsCount = pendingApprovalsCount
+	return snapshot, nil
 }
 
 func (h *staffHandler) fetchRuntimeDeployTasksRealtimeSnapshot(ctx context.Context, principal *controlplanev1.Principal, arg runtimeDeployListArg) (runtimeDeployTasksRealtimeSnapshot, error) {
@@ -208,6 +253,25 @@ func newListRealtimeErrorMessage[T any](err error) listRealtimeMessage[T] {
 	}
 }
 
+func newRunsRealtimeSnapshotMessage(snapshot runsListRealtimeSnapshot) models.RunsRealtimeMessage {
+	return models.RunsRealtimeMessage{
+		Type:                  models.ListRealtimeMessageTypeSnapshot,
+		Items:                 snapshot.Items,
+		Pagination:            &snapshot.Pagination,
+		WaitQueueCount:        snapshot.WaitQueueCount,
+		PendingApprovalsCount: snapshot.PendingApprovalsCount,
+		SentAt:                realtimeSentAt(),
+	}
+}
+
+func newRunsRealtimeErrorMessage(err error) models.RunsRealtimeMessage {
+	return models.RunsRealtimeMessage{
+		Type:    models.ListRealtimeMessageTypeError,
+		Message: realtimeErrorMessagePtr(err),
+		SentAt:  realtimeSentAt(),
+	}
+}
+
 func realtimeErrorMessagePtr(err error) *string {
 	text := realtimeErrorText(err)
 	return &text
@@ -219,12 +283,16 @@ func realtimeSentAt() string {
 
 func newPaginatedRealtimeSnapshot[T any](items []T, page int32, pageSize int32, totalCount int32) paginatedRealtimeSnapshot[T] {
 	return paginatedRealtimeSnapshot[T]{
-		Items: items,
-		Pagination: models.Pagination{
-			Page:       int(page),
-			PageSize:   int(pageSize),
-			TotalCount: int(totalCount),
-		},
+		Items:      items,
+		Pagination: newPagination(page, pageSize, totalCount),
+	}
+}
+
+func newPagination(page int32, pageSize int32, totalCount int32) models.Pagination {
+	return models.Pagination{
+		Page:       int(page),
+		PageSize:   int(pageSize),
+		TotalCount: int(totalCount),
 	}
 }
 

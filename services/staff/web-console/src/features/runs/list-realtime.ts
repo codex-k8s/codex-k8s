@@ -50,6 +50,12 @@ function parseRunsRealtimeMessage(raw: string): RunsRealtimeMessage | null {
       type,
       items: Array.isArray(payload.items) ? payload.items : undefined,
       pagination: parsePagination(payload.pagination),
+      wait_queue_count: Number.isFinite(Number(payload.wait_queue_count))
+        ? Math.max(0, Math.trunc(Number(payload.wait_queue_count)))
+        : undefined,
+      pending_approvals_count: Number.isFinite(Number(payload.pending_approvals_count))
+        ? Math.max(0, Math.trunc(Number(payload.pending_approvals_count)))
+        : undefined,
       message: typeof payload.message === "string" ? payload.message : undefined,
       sent_at: String(payload.sent_at || new Date().toISOString()),
     };

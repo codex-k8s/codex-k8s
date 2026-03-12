@@ -5,12 +5,6 @@
     <VAlert v-if="runsError" type="error" variant="tonal" class="mt-4">
       {{ t(runsError.messageKey) }}
     </VAlert>
-    <VAlert v-if="runs.error" type="error" variant="tonal" class="mt-4">
-      {{ t(runs.error.messageKey) }}
-    </VAlert>
-    <VAlert v-if="runs.approvalsError" type="error" variant="tonal" class="mt-4">
-      {{ t(runs.approvalsError.messageKey) }}
-    </VAlert>
 
     <VRow class="mt-4" density="compact">
       <VCol cols="12" md="4">
@@ -26,7 +20,7 @@
           <VCardText class="d-flex align-center justify-space-between ga-2 flex-wrap">
             <div>
               <div class="text-caption text-medium-emphasis">{{ t("pages.runs.waitQueue") }}</div>
-              <div class="text-h6 font-weight-bold">{{ runs.waitQueue.length }}</div>
+              <div class="text-h6 font-weight-bold">{{ waitQueueCount }}</div>
             </div>
             <VBtn size="small" variant="text" icon="mdi-open-in-new" :title="t('pages.runs.details')" :to="{ name: 'wait-queue' }" />
           </VCardText>
@@ -37,7 +31,7 @@
           <VCardText class="d-flex align-center justify-space-between ga-2 flex-wrap">
             <div>
               <div class="text-caption text-medium-emphasis">{{ t("pages.runs.pendingApprovals") }}</div>
-              <div class="text-h6 font-weight-bold">{{ runs.pendingApprovals.length }}</div>
+              <div class="text-h6 font-weight-bold">{{ pendingApprovalsCount }}</div>
             </div>
             <VBtn size="small" variant="text" icon="mdi-open-in-new" :title="t('pages.runs.details')" :to="{ name: 'approvals' }" />
           </VCardText>
@@ -135,7 +129,6 @@
 </template>
 
 <script setup lang="ts">
-// TODO(#19): Добавить table settings + row actions menu через общий DataTable wrapper и master-detail layout для Runs/Approvals.
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
@@ -146,15 +139,15 @@ import { formatDateTime } from "../shared/lib/datetime";
 import { colorForRunStatus } from "../shared/lib/chips";
 import { bindRealtimePageLifecycle } from "../shared/ws/lifecycle";
 import { subscribeRunsRealtime } from "../features/runs/list-realtime";
-import { useRunsStore } from "../features/runs/store";
 import type { Run, RunsRealtimeMessage } from "../features/runs/types";
 
 const { t, locale } = useI18n({ useScope: "global" });
-const runs = useRunsStore();
 const loading = ref(true);
 const runsError = ref<ApiError | null>(null);
 const runItems = ref<Run[]>([]);
 const totalCount = ref(0);
+const waitQueueCount = ref(0);
+const pendingApprovalsCount = ref(0);
 const tablePage = ref(1);
 const itemsPerPage = ref(20);
 const stopRunsRealtimeRef = ref<(() => void) | null>(null);
@@ -172,13 +165,6 @@ const headers = [
   { title: "", key: "actions", sortable: false, width: 72, align: "end" },
 ] as const;
 
-async function refreshSidebarCards(): Promise<void> {
-  await Promise.all([
-    runs.loadRunWaits(20),
-    runs.loadPendingApprovals(20),
-  ]);
-}
-
 function applyRunsRealtimeMessage(message: RunsRealtimeMessage): void {
   if (message.type === "error") {
     runsError.value = new ApiError({ kind: "unknown", messageKey: "errors.unknown" });
@@ -187,6 +173,12 @@ function applyRunsRealtimeMessage(message: RunsRealtimeMessage): void {
   }
   if (!message.pagination) {
     return;
+  }
+  if (typeof message.wait_queue_count === "number") {
+    waitQueueCount.value = message.wait_queue_count;
+  }
+  if (typeof message.pending_approvals_count === "number") {
+    pendingApprovalsCount.value = message.pending_approvals_count;
   }
   const maxPage = Math.max(1, Math.ceil(message.pagination.total_count / message.pagination.page_size));
   if (tablePage.value > maxPage) {
@@ -231,12 +223,10 @@ function handlePageSuspend(): void {
 }
 
 function handlePageResume(): void {
-  void refreshSidebarCards();
   startRunsRealtime();
 }
 
 onMounted(() => {
-  void refreshSidebarCards();
   startRunsRealtime();
   stopLifecycleBindingRef.value = bindRealtimePageLifecycle({
     onResume: handlePageResume,

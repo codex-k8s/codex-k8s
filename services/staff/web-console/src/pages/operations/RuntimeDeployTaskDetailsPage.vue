@@ -208,7 +208,6 @@ const requestedAction = ref<"cancel" | "stop" | null>(null);
 const actionReason = ref("");
 const realtimeState = ref<RuntimeDeployRealtimeState>("connecting");
 const stopRealtimeRef = ref<(() => void) | null>(null);
-const fallbackPollTimer = ref<number | null>(null);
 const reloadPending = ref(false);
 const stopLifecycleBindingRef = ref<(() => void) | null>(null);
 
@@ -380,20 +379,6 @@ function goBack(): void {
   void router.push({ name: "runtime-deploy-tasks" });
 }
 
-function clearFallbackPolling(): void {
-  if (fallbackPollTimer.value !== null) {
-    window.clearInterval(fallbackPollTimer.value);
-    fallbackPollTimer.value = null;
-  }
-}
-
-function ensureFallbackPolling(): void {
-  if (fallbackPollTimer.value !== null) return;
-  fallbackPollTimer.value = window.setInterval(() => {
-    void loadTask();
-  }, 10000);
-}
-
 function stopRealtime(): void {
   stopRealtimeRef.value?.();
   stopRealtimeRef.value = null;
@@ -414,18 +399,12 @@ function startRealtime(): void {
     },
     onStateChange: (state) => {
       realtimeState.value = state;
-      if (state === "connected") {
-        clearFallbackPolling();
-        return;
-      }
-      ensureFallbackPolling();
     },
   });
 }
 
 function handlePageSuspend(): void {
   stopRealtime();
-  clearFallbackPolling();
 }
 
 function handlePageResume(): void {
@@ -445,14 +424,12 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   stopLifecycleBinding();
   stopRealtime();
-  clearFallbackPolling();
 });
 
 watch(
   () => props.runId,
   async (nextRunID, prevRunID) => {
     if (nextRunID === prevRunID) return;
-    clearFallbackPolling();
     await loadTask();
     startRealtime();
   },
