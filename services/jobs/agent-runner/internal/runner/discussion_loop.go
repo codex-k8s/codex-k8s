@@ -77,6 +77,8 @@ func (s *Service) runDiscussionLoop(ctx context.Context, state codexState, resul
 			}
 			continue
 		}
+		pendingHumanComments := append([]discussionPendingHumanComment(nil), issueState.PendingHumanComments...)
+		s.ensureDiscussionCommentsObserved(ctx, pendingHumanComments)
 
 		if err := s.prepareRepository(ctx, *result, state); err != nil {
 			return err
@@ -156,6 +158,12 @@ func (s *Service) runDiscussionLoop(ctx context.Context, state codexState, resul
 		}); err != nil {
 			s.logger.Warn("emit run.agent.status_reported failed", "err", err)
 		}
+		updatedIssueState, err := s.loadDiscussionIssueState(ctx)
+		if err != nil {
+			s.logger.Warn("load discussion issue state for processed reactions failed", "err", err)
+		} else {
+			s.ensureDiscussionCommentsProcessed(ctx, processedDiscussionCommentIDs(pendingHumanComments, updatedIssueState))
+		}
 
 		lastProcessedHumanCommentID = issueState.MaxHumanCommentID
 		result.restoredSessionPath = result.sessionFilePath
@@ -193,39 +201,7 @@ func (s *Service) loadDiscussionIssueState(ctx context.Context) (discussionIssue
 		return strings.TrimSpace(comments[i].CreatedAt) < strings.TrimSpace(comments[j].CreatedAt)
 	})
 
-	state := discussionIssueState{
-		State: strings.TrimSpace(issue.State),
-	}
-	for _, label := range issue.Labels {
-		normalized := normalizeDiscussionLogin(label.Name)
-		switch {
-		case normalized == normalizeDiscussionLogin(webhookdomain.DefaultModeDiscussionLabel):
-			state.HasDiscussionLabel = true
-		case strings.HasPrefix(normalized, "run:"):
-			state.HasRunLabel = true
-		}
-	}
-
-	botLogin := normalizeDiscussionLogin(s.cfg.GitBotUsername)
-	seenAgentReply := false
-	for _, item := range comments {
-		login := normalizeDiscussionLogin(item.User.Login)
-		userType := strings.ToLower(strings.TrimSpace(item.User.Type))
-		if login != botLogin && (userType == "" || userType == "user") && item.ID > state.MaxHumanCommentID {
-			state.MaxHumanCommentID = item.ID
-		}
-		if login == botLogin && !strings.Contains(item.Body, runStatusCommentMarker) {
-			state.HasAgentReply = true
-			state.HasHumanAfterAgentReply = false
-			seenAgentReply = true
-			continue
-		}
-		if seenAgentReply && login != botLogin && (userType == "" || userType == "user") {
-			state.HasHumanAfterAgentReply = true
-		}
-	}
-
-	return state, nil
+	return deriveDiscussionIssueState(issue, comments, s.cfg.GitBotUsername), nil
 }
 
 func shouldRunDiscussionCycle(state discussionIssueState, lastProcessedHumanCommentID int64) bool {

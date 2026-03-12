@@ -166,6 +166,8 @@ approvals:
   - если комментарий оставил человек и на Issue есть `mode:discussion`, создается/продолжается discussion-run;
   - комментарии GitHub-бота платформы не считаются пользовательским входом;
   - если уже есть активный discussion-run (`pending`/`running`), новый run не создается, а продолжение диалога выполняет текущая сессия.
+  - когда active discussion-session подхватывает human comment, под этим комментарием публикуется reaction `:eyes:` как сигнал, что сессия увидела вход;
+  - после того как discussion-session отработала этот human comment и опубликовала следующий ответ, под обработанным комментарием публикуется acknowledgement reaction `:+1:`.
 - При конфликте нескольких `run:*` labels discussion-run не стартует: webhook пишет conflict diagnostics в `flow_events` и service-comment.
 - После снятия `mode:discussion`, а также при `issues.closed`/`issues.deleted`, managed discussion namespace удаляется.
 - После снятия `mode:discussion` следующий stage trigger (`run:intake`, `run:vision`, `run:plan`, `run:dev` и т.д.) снова работает как обычный execution-flow.
