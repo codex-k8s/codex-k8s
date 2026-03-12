@@ -5,8 +5,8 @@ title: "Issue ↔ Docs Map"
 status: active
 owner_role: KM
 created_at: 2026-02-06
-updated_at: 2026-03-11
-related_issues: [1, 19, 29, 45, 57, 64, 74, 90, 95, 100, 107, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 322]
+updated_at: 2026-03-12
+related_issues: [1, 19, 29, 45, 57, 64, 74, 90, 95, 100, 107, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 322, 327]
 approvals:
   required: ["Owner"]
   status: approved
@@ -83,120 +83,21 @@ approvals:
 | #281 | `docs/delivery/issue_map.md` + `docs/delivery/requirements_traceability.md` + `docs/delivery/delivery_plan.md` + `docs/delivery/sprints/s8/sprint_s8_go_refactoring_parallelization.md` + `docs/delivery/epics/s8/epic_s8.md` + `docs/delivery/epics/s8/epic-s8-day2-empty-repository-initialization.md` | `docs/product/requirements_machine_driven.md` + `docs/delivery/epics/s3/epic-s3-day14-repository-onboarding-preflight.md` + `docs/delivery/epics/s3/epic-s3-day9-declarative-full-env-deploy-and-runtime-parity.md` | `docs/architecture/adr/ADR-0007-multi-repo-composition-and-docs-federation.md`, `docs/architecture/prompt_templates_policy.md`, `docs/templates/*.md` | `ADR-0007` | Planned execution stream `S8-E07`: bootstrap пустого репозитория при attach в платформу с direct initial commit в default branch, генерацией минимального `services.yaml`, docs scaffold и onboarding summary issue | Planned `run:dev` checks: GitHub empty-repo init path, idempotent repair path, typed `services.yaml` validation, staff UX smoke | TBD | TBD | planned |
 | #282 | `docs/delivery/issue_map.md` + `docs/delivery/requirements_traceability.md` + `docs/delivery/delivery_plan.md` + `docs/delivery/sprints/s8/sprint_s8_go_refactoring_parallelization.md` + `docs/delivery/epics/s8/epic_s8.md` + `docs/delivery/epics/s8/epic-s8-day3-existing-repository-adoption.md` | `docs/product/requirements_machine_driven.md` + `docs/delivery/epics/s3/epic-s3-day14-repository-onboarding-preflight.md` + `docs/delivery/epics/s4/epic-s4-day1-multi-repo-composition-and-docs-federation.md` | `docs/architecture/adr/ADR-0007-multi-repo-composition-and-docs-federation.md`, `docs/architecture/prompt_templates_policy.md`, `docs/delivery/epics/s3/epic-s3-day12-docset-import-and-safe-sync.md` | `ADR-0007` | Planned execution stream `S8-E08`: adoption существующего кодового репозитория через deterministic scan, специальную onboarding-task с ограниченным writable scope и PR с `services.yaml`/docs baseline | Planned `run:dev` checks: repository classification, scan report reproducibility, PR update idempotency, onboarding PR explanation bundle, staff UX smoke | TBD | TBD | planned |
 | #320 | `docs/delivery/issue_map.md` + `docs/delivery/requirements_traceability.md` + `docs/delivery/delivery_plan.md` + `docs/delivery/sprints/s8/sprint_s8_go_refactoring_parallelization.md` + `docs/delivery/epics/s8/epic_s8.md` + `docs/delivery/epics/s8/epic-s8-day4-documentation-ia-refactor-plan.md` | `GitHub issues #318 + #320 + #322` + `docs/delivery/development_process_requirements.md` + updated issue bodies `#281/#282/#312` | `docs/{index.md,product/README.md,architecture/README.md,delivery/README.md,ops/README.md}`, `docs/architecture/initiatives/**`, `docs/ops/handovers/**`, `docs/delivery/documentation_ia_migration_map.md`, `docs/templates/{index.md,user_story.md}`, `Makefile`, `services.yaml` | n/a (delivery governance change; ADR не требуется) | Реализован `S8-E09`: введены канонический root/domain navigation и migration-map; initiative/handover пакеты разложены по доменным подпапкам; синхронизированы `services.yaml`, traceability docs и открытые issue refs без same-repo blob links | `rg -n -g '!docs/delivery/documentation_ia_migration_map.md' -g '!docs/delivery/issue_map.md' -g '!docs/delivery/requirements_traceability.md' 'docs/README\\.md|docs/03_engineering/' docs services.yaml`, `rg -n -g '!docs/delivery/issue_map.md' -g '!docs/delivery/requirements_traceability.md' 'https://github\\.com/codex-k8s/codex-k8s/blob/' docs services.yaml`, `git diff --check`, `gh issue edit 281`, `gh issue edit 282`, `gh issue edit 312` | TBD | TBD | in-review |
+| #327 | `docs/delivery/issue_map.md` + `docs/delivery/requirements_traceability.md` + `docs/delivery/traceability/README.md` + `docs/delivery/traceability/*.md` + `docs/delivery/sprints/README.md` + `docs/delivery/epics/README.md` | `GitHub issues #325 + #327` + `docs/delivery/development_process_requirements.md` | `docs/index.md`, `docs/delivery/README.md`, `docs/delivery/traceability/README.md` | n/a (delivery governance change; ADR не требуется) | Выполнен `run:doc-audit` по traceability-реестрам: `issue_map` сокращён до master-index, `requirements_traceability` оставляет только стабильную FR/NFR-матрицу, а historical evidence вынесено в sprint-specific history packages `docs/delivery/traceability/*.md` | `rg -n '^## Актуализация по Issue' docs/delivery/requirements_traceability.md`, `rg -n '^## Sprint S[1-8] артефакты' docs/delivery/issue_map.md`, `git diff --check` | n/a (doc-audit package) | n/a (doc-audit package) | in-review |
 | #159 | `docs/delivery/issue_map.md` + `docs/delivery/requirements_traceability.md` + `docs/delivery/sprints/s5/sprint_s5_stage_entry_and_label_ux.md` + `docs/delivery/epics/s5/epic_s5.md` + `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md` | `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md` + `docs/templates/prd.md` | `docs/architecture/prompt_templates_policy.md`, `services.yaml`, `libs/go/servicescfg/model.go`, `services/jobs/agent-runner/internal/runner/promptseeds/prd-work.md`, `services/jobs/agent-runner/internal/runner/promptseeds/prd-revise.md`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl` | `ADR-0006` | Для `run:prd*` убран stage+role seed override; требования к PRD сохранены в `prd-work/revise`, а пути к шаблонам артефактов вынесены в `services.yaml/spec.roleDocTemplates` и подмешиваются в prompt envelope | Проверка выполнена через `go test ./libs/go/servicescfg ./services/jobs/agent-runner/internal/runner/...` | TBD | TBD | in-progress |
 | #165 | `docs/delivery/issue_map.md` + `docs/delivery/requirements_traceability.md` + `docs/delivery/sprints/s5/sprint_s5_stage_entry_and_label_ux.md` + `docs/delivery/epics/s5/epic_s5.md` | `docs/product/requirements_machine_driven.md` + `docs/product/stage_process_model.md` | `docs/architecture/prompt_templates_policy.md`, `services/jobs/agent-runner/internal/runner/promptseeds/README.md`, `services/jobs/agent-runner/internal/runner/promptseeds/*.md`, `services/jobs/agent-runner/internal/runner/helpers_prompt_doc_stage_seeds_test.go`, `services/jobs/agent-runner/internal/runner/templates/prompt_envelope.tmpl` | `ADR-0006` | Унифицированы doc-stage seed'ы: role-aware refs к шаблонам артефактов берутся через prompt envelope (`services.yaml/spec.roleDocTemplates`), жёсткие template-path инструкции удалены, non-doc seed'ы не перегружены документационными требованиями | Проверка: `go test ./services/jobs/agent-runner/internal/runner/...`, `make lint-go`; `make dupl-go` падает на существующих дублях вне scope изменений | TBD | TBD | in-progress |
 
 ## Требования и трассировка
 - Source of truth требований: `docs/product/requirements_machine_driven.md`.
 - Матрица трассируемости: `docs/delivery/requirements_traceability.md`.
-
-## Sprint S1 артефакты
-- Process requirements: `docs/delivery/development_process_requirements.md`.
-- Sprint plan: `docs/delivery/sprints/s1/sprint_s1_mvp_vertical_slice.md`.
-- Epic catalog: `docs/delivery/epics/s1/epic_s1.md`.
-- Epic docs: `docs/delivery/epics/s1/epic-s1-day0-bootstrap-baseline.md`, `docs/delivery/epics/s1/epic-s1-day1-webhook-idempotency.md`, `docs/delivery/epics/s1/epic-s1-day2-worker-slots-k8s.md`, `docs/delivery/epics/s1/epic-s1-day3-auth-rbac-ui.md`, `docs/delivery/epics/s1/epic-s1-day4-repository-provider.md`, `docs/delivery/epics/s1/epic-s1-day5-learning-mode.md`, `docs/delivery/epics/s1/epic-s1-day6-hardening-observability.md`, `docs/delivery/epics/s1/epic-s1-day7-stabilization-gate.md`.
-
-## Sprint S2 артефакты
-- Sprint plan: `docs/delivery/sprints/s2/sprint_s2_dogfooding.md`.
-- Epic catalog: `docs/delivery/epics/s2/epic_s2.md`.
-- Epic docs: `docs/delivery/epics/s2/epic-s2-day0-control-plane-extraction.md`, `docs/delivery/epics/s2/epic-s2-day1-migrations-and-schema-ownership.md`, `docs/delivery/epics/s2/epic-s2-day2-issue-label-triggers-run-dev.md`, `docs/delivery/epics/s2/epic-s2-day3-per-issue-namespace-and-rbac.md`, `docs/delivery/epics/s2/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md`, `docs/delivery/epics/s2/epic-s2-day4-agent-job-and-pr-flow.md`, `docs/delivery/epics/s2/epic-s2-day4.5-pgx-db-models-and-repository-refactor.md`, `docs/delivery/epics/s2/epic-s2-day5-staff-ui-dogfooding-observability.md`, `docs/delivery/epics/s2/epic-s2-day6-approval-and-audit-hardening.md`, `docs/delivery/epics/s2/epic-s2-day7-dogfooding-regression-gate.md`.
-- Product process model docs: `docs/product/agents_operating_model.md`, `docs/product/labels_and_trigger_policy.md`, `docs/product/stage_process_model.md`.
-- Day4 implementation (completed): `docs/delivery/epics/s2/epic-s2-day4-agent-job-and-pr-flow.md` (agent-runner runtime, session persistence/resume, PR flow via MCP governance path).
-- Day4.5 implementation (completed): `docs/delivery/epics/s2/epic-s2-day4.5-pgx-db-models-and-repository-refactor.md` (typed db-model/caster rollout в repository слое).
-- Day5 implementation (completed): `docs/delivery/epics/s2/epic-s2-day5-staff-ui-dogfooding-observability.md` (runs observability, drilldown и namespace lifecycle controls).
-- Day3.5 dependency: `docs/delivery/epics/s2/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md` (MCP tool layer + prompt context assembler).
-- Факт на 2026-02-13: Day0..Day7 выполнены; Sprint S2 закрыт, Sprint S3 подготовлен к старту.
-
-## Sprint S3 артефакты
-- Sprint plan: `docs/delivery/sprints/s3/sprint_s3_mvp_completion.md`.
-- Epic catalog: `docs/delivery/epics/s3/epic_s3.md`.
-- Epic docs: `docs/delivery/epics/s3/epic-s3-day1-full-stage-and-label-activation.md`, `docs/delivery/epics/s3/epic-s3-day2-staff-runtime-debug-console.md`, `docs/delivery/epics/s3/epic-s3-day3-mcp-deterministic-secret-sync.md`, `docs/delivery/epics/s3/epic-s3-day4-mcp-database-lifecycle.md`, `docs/delivery/epics/s3/epic-s3-day5-feedback-and-approver-interfaces.md`, `docs/delivery/epics/s3/epic-s3-day6-self-improve-ingestion-and-diagnostics.md`, `docs/delivery/epics/s3/epic-s3-day7-self-improve-updater-and-pr-flow.md`, `docs/delivery/epics/s3/epic-s3-day8-agent-toolchain-auto-extension.md`, `docs/delivery/epics/s3/epic-s3-day9-declarative-full-env-deploy-and-runtime-parity.md`, `docs/delivery/epics/s3/epic-s3-day10-staff-console-vuetify-redesign.md`, `docs/delivery/epics/s3/epic-s3-day11-full-env-slots-and-subdomains.md`, `docs/delivery/epics/s3/epic-s3-day12-docset-import-and-safe-sync.md`, `docs/delivery/epics/s3/epic-s3-day13-config-and-credentials-governance.md`, `docs/delivery/epics/s3/epic-s3-day14-repository-onboarding-preflight.md`, `docs/delivery/epics/s3/epic-s3-day15-mvp-closeout-and-handover.md`, `docs/delivery/epics/s3/epic-s3-day16-grpc-transport-boundary-hardening.md`, `docs/delivery/epics/s3/epic-s3-day17-environment-scoped-secret-overrides-and-oauth-callbacks.md`, `docs/delivery/epics/s3/epic-s3-day18-runtime-error-journal-and-staff-alert-center.md`, `docs/delivery/epics/s3/epic-s3-day19-frontend-manual-qa-hardening-loop.md`, `docs/delivery/epics/s3/epic-s3-day19.5-realtime-event-bus-and-websocket-backplane.md`, `docs/delivery/epics/s3/epic-s3-day19.6-staff-realtime-subscriptions-and-ui.md`, `docs/delivery/epics/s3/epic-s3-day19.7-run-namespace-ttl-and-revise-reuse.md`, `docs/delivery/epics/s3/epic-s3-day20-e2e-regression-and-mvp-closeout.md`.
-- Ключевые deliverables: полный stage label coverage, staff debug observability, MCP control tools, `run:self-improve`.
-- Факт на 2026-02-20: Day1..Day18 выполнены; Day9 закрыт как completed (full e2e часть вынесена в Day20). Sprint S3 в статусе in-progress: в очереди Day19/Day19.5/Day19.6/Day19.7 (frontend hardening + realtime + namespace retention), финальный Day20 — full e2e regression + MVP closeout.
-
-## Sprint S4 артефакты
-- Sprint plan: `docs/delivery/sprints/s4/sprint_s4_multi_repo_federation.md`.
-- Epic catalog: `docs/delivery/epics/s4/epic_s4.md`.
-- Epic docs: `docs/delivery/epics/s4/epic-s4-day1-multi-repo-composition-and-docs-federation.md`.
-- Факт на 2026-02-23: Day1 epic для Issue #100 закрыт в Issue #106; execution-plan зафиксирован и handover в `run:dev` подготовлен.
-
-## Sprint S5 артефакты
-- Sprint plan: `docs/delivery/sprints/s5/sprint_s5_stage_entry_and_label_ux.md`.
-- Epic catalog: `docs/delivery/epics/s5/epic_s5.md`.
-- Epic docs: `docs/delivery/epics/s5/epic-s5-day1-launch-profiles-and-stage-launcher-ux.md`.
-- Epic docs: `docs/delivery/epics/s5/epic-s5-day2-launch-profiles-dev-execution.md`.
-- PRD docs: `docs/delivery/epics/s5/prd-s5-day1-launch-profiles-and-stage-launcher-ux.md`.
-- Факт на 2026-02-25: Intake-пакет для Issue #154 и vision/prd пакет для Issue #155 уточнены acceptance-сценариями, отдельным PRD-артефактом и run:dev декомпозицией; архитектурный этап закрепил ADR-0008 по profile-driven launch/fallback contracts и синхронизировал `docs/architecture/api_contract.md` с FR-053/FR-054; для Issue #170 оформлен Day2 single-epic governance package и создана implementation issue #171; для Issue #159 введён role-aware контур `services.yaml/spec.roleDocTemplates` + prompt envelope для шаблонов артефактов и синхронизированы seed-инструкции `run:prd*`; для Issue #165 эта модель расширена на все doc-stage seed'ы с тестовой фиксацией правил для non-doc seed'ов.
-
-## Sprint S6 артефакты
-- Sprint plan: `docs/delivery/sprints/s6/sprint_s6_agents_prompt_management.md`.
-- Epic catalog: `docs/delivery/epics/s6/epic_s6.md`.
-- Epic docs: `docs/delivery/epics/s6/epic-s6-day1-agents-prompts-intake.md`.
-- Epic docs: `docs/delivery/epics/s6/epic-s6-day2-agents-prompts-vision.md`.
-- Epic docs: `docs/delivery/epics/s6/epic-s6-day3-agents-prompts-prd.md`.
-- Epic docs: `docs/delivery/epics/s6/epic-s6-day4-agents-prompts-arch.md`.
-- Epic docs: `docs/delivery/epics/s6/epic-s6-day5-agents-prompts-design.md`.
-- Epic docs: `docs/delivery/epics/s6/epic-s6-day6-agents-prompts-plan.md`.
-- Epic docs: `docs/delivery/epics/s6/epic-s6-day9-release-closeout.md`.
-- Epic docs: `docs/delivery/epics/s6/epic-s6-day10-postdeploy-review.md`.
-- Epic docs: `docs/delivery/epics/s6/epic-s6-day11-ops-operational-closeout.md`.
-- PRD docs: `docs/delivery/epics/s6/prd-s6-day3-agents-prompts-lifecycle.md`.
-- Факт на 2026-02-25: intake (`#184`), vision (`#185`), PRD (`#187`), architecture (`#189`), design (`#195`) и plan (`#197`) выполнены; PRD-пакет смержен в `main` через PR `#190`, `run:dev` оформлен в issue `#199`, после dev-stage создан follow-up issue `#201` для `run:qa`.
-- Факт на 2026-03-02: release closeout Sprint S6 завершён в issue `#262`; зафиксированы release-governance артефакты и создана postdeploy issue `#263` для следующего этапа continuity.
-- Факт на 2026-03-02 (postdeploy): issue `#263` сформировала postdeploy evidence пакет и подготовила follow-up issue `#265` для stage `run:ops`.
-- Факт на 2026-03-02 (ops): issue `#265` зафиксировала операционный baseline (runbook/monitoring/alerts/SLO/rollback) и подготовила continuity в `run:doc-audit`.
-
-## Sprint S7 артефакты
-- Sprint plan: `docs/delivery/sprints/s7/sprint_s7_mvp_readiness_gap_closure.md`.
-- Epic catalog: `docs/delivery/epics/s7/epic_s7.md`.
-- Epic docs: `docs/delivery/epics/s7/epic-s7-day1-mvp-readiness-intake.md`.
-- Epic docs: `docs/delivery/epics/s7/epic-s7-day2-mvp-readiness-vision.md`.
-- Epic docs: `docs/delivery/epics/s7/epic-s7-day3-mvp-readiness-prd.md`.
-- Epic docs: `docs/delivery/epics/s7/epic-s7-day4-mvp-readiness-arch.md`.
-- Epic docs: `docs/delivery/epics/s7/epic-s7-day5-mvp-readiness-design.md`.
-- Epic docs: `docs/delivery/epics/s7/epic-s7-day6-mvp-readiness-plan.md`.
-- PRD docs: `docs/delivery/epics/s7/prd-s7-day3-mvp-readiness-gap-closure.md`.
-- Architecture docs: `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/architecture.md`, `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/c4_context.md`, `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/c4_container.md`, `docs/architecture/adr/ADR-0010-s7-mvp-readiness-stream-boundaries-and-parity-gate.md`, `docs/architecture/alternatives/ALT-0002-s7-mvp-readiness-stream-architecture.md`.
-- Design docs: `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/design_doc.md`, `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/api_contract.md`, `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/data_model.md`, `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/migrations_policy.md`.
-- Факт на 2026-03-05:
-  - intake (`#212`) зафиксировал MVP readiness gaps и dependency-цепочку S6 (`#199/#201` закрыты, открытая release-зависимость — `#216`);
-  - vision (`#218`) зафиксировал KPI/success metrics и baseline-декомпозицию по `S7-E01..S7-E18`;
-  - PRD stage (`#220`) зафиксировал stream-level `FR/AC/NFR` + sequencing/dependency graph по `S7-E01..S7-E18`;
-  - architecture stage (`#222`) зафиксировал ownership matrix, C4 overlays, ADR-0010 и parity-gate перед `run:dev`;
-  - design stage (`#238`) зафиксировал typed design package и migration policy для impact-потоков;
-  - plan stage (`#241`) сформировал execution package и по owner-уточнению создал 18 implementation issues `#243..#260` (по одному на `S7-E01..S7-E18`);
-  - parity-check перед `run:dev` подтверждён: `approved_execution_epics_count == created_run_dev_issues_count` (`18 == 18`);
-  - implementation issue `#243` (stream `S7-E01`) зафиксировала единый rebase/mainline process для revise-итераций;
-  - implementation issue `#244` (stream `S7-E02`) выполнила sidebar/routes cleanup и убрала non-MVP разделы (включая `Agents` и `Config entries`);
-  - implementation issue `#245` (stream `S7-E03`) удалила global filter UI/state и отвязала загрузку runtime deploy tasks от глобального env-фильтра;
-  - implementation issue `#246` (stream `S7-E04`) зафиксировала, что отдельный redirect для stale `/runtime-deploy/images*` не нужен: cleanup `#244` продолжает закрывать путь через общий catch-all fallback, а traceability вынесена в отдельный evidence bundle;
-  - combined closure pass по `#247/#248/#249` зафиксировал фактический MVP контракт: без `Agents` UI, без agent settings UI/API и с `repo-only` prompt policy;
-  - implementation issue `#251` (stream `S7-E09`) удалила колонку `run type` и сохранила deterministic delete namespace path;
-  - implementation issue `#252` (stream `S7-E10`) добавила typed cancel/stop actions для runtime deploy tasks;
-  - implementation issue `#253` (stream `S7-E11`) стабилизировала `mode:discussion` label orchestration;
-  - implementation issue `#256` (stream `S7-E14`) закрепила QA acceptance через Kubernetes service DNS path и DNS evidence bundle;
-  - issue `#258` (stream `S7-E16`) устранила false-failed в run-status comment normalization для `run:intake:revise`;
-  - issue `#259` (stream `S7-E17`) перевела self-improve session snapshot на versioned CAS-like persistence;
-  - остаток standalone execution backlog нормализован как `#254`, `#255`, `#260`.
-
-## Sprint S8 артефакты
-- Sprint plan: `docs/delivery/sprints/s8/sprint_s8_go_refactoring_parallelization.md`.
-- Epic catalog: `docs/delivery/epics/s8/epic_s8.md`.
-- Epic docs: `docs/delivery/epics/s8/epic-s8-day1-go-refactoring-plan.md`, `docs/delivery/epics/s8/epic-s8-day2-empty-repository-initialization.md`, `docs/delivery/epics/s8/epic-s8-day3-existing-repository-adoption.md`, `docs/delivery/epics/s8/epic-s8-day4-documentation-ia-refactor-plan.md`.
-- Факт/план на 2026-03-11:
-  - поток Issue `#223` перенесён в отдельный Sprint S8;
-  - implementation issues `#225..#230` оставлены как параллельный execution backlog без изменения scope.
-  - добавлены два P0 onboarding-потока:
-    - `#281` — empty repository initialization;
-    - `#282` — existing repository adoption.
-  - добавлен governance-поток `#320` для канонической IA документации и синхронизации docs links/runtime refs перед дальнейшим onboarding execution.
-
-## Нормализованная структура Delivery (Issue #112)
+- Historical evidence и sprint-specific delta: `docs/delivery/traceability/README.md`.
 - Sprint index: `docs/delivery/sprints/README.md`.
 - Epic index: `docs/delivery/epics/README.md`.
-- Полный MVP E2E master-plan: `docs/delivery/e2e_mvp_master_plan.md`.
 
 ## Правила
+- `docs/delivery/issue_map.md` хранит только текущую каноническую карту связей `issue/pr -> docs -> status`.
+- Narrative execution-history и sprint-specific evidence не дублируются в master-index и живут в `docs/delivery/traceability/*.md`.
+- Sprint- и epic-навигация остаётся в профильных индексах `docs/delivery/{sprints,epics}/README.md`.
 - Если нет обязательного документа — статус `blocked`.
 - Ссылки должны быть кликабельны.
 - Матрица обновляется при каждом переходе этапа Delivery Plan.

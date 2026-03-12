@@ -5,8 +5,8 @@ title: "codex-k8s Documentation Index"
 status: in-review
 owner_role: KM
 created_at: 2026-03-11
-updated_at: 2026-03-11
-related_issues: [318, 320]
+updated_at: 2026-03-12
+related_issues: [318, 320, 327]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -27,7 +27,7 @@ approvals:
 |---|---|---|
 | `docs/product/` | Требования, ограничения, роли, label/stage policy | `docs/product/README.md` |
 | `docs/architecture/` | C4, ADR, API/data model, prompt/runtime policy, инициативные архитектурные пакеты | `docs/architecture/README.md` |
-| `docs/delivery/` | Delivery plan, sprint/epic docs, traceability, process requirements, migration-map | `docs/delivery/README.md` |
+| `docs/delivery/` | Delivery plan, sprint/epic docs, master traceability registries, traceability history packages, process requirements, migration-map | `docs/delivery/README.md` |
 | `docs/ops/` | Production runbook и эксплуатационные handover-артефакты | `docs/ops/README.md` |
 | `docs/templates/` | Канонические шаблоны документов по ролям/stage | `docs/templates/index.md` |
 
@@ -35,6 +35,7 @@ approvals:
 - Если нужен продуктовый source of truth: `docs/product/requirements_machine_driven.md`, `docs/product/constraints.md`, `docs/product/stage_process_model.md`.
 - Если нужен архитектурный baseline: `docs/architecture/c4_context.md`, `docs/architecture/c4_container.md`, `docs/architecture/api_contract.md`, `docs/architecture/data_model.md`.
 - Если нужен delivery/process baseline: `docs/delivery/development_process_requirements.md`, `docs/delivery/delivery_plan.md`, `docs/delivery/issue_map.md`, `docs/delivery/requirements_traceability.md`.
+- Если нужен historical traceability delta по спринтам: `docs/delivery/traceability/README.md`.
 - Если нужен ops baseline: `docs/ops/production_runbook.md`.
 - Если нужен шаблон артефакта: `docs/templates/index.md`.
 
@@ -42,6 +43,7 @@ approvals:
 - Архитектурные initiative/stage-specific пакеты хранятся в `docs/architecture/initiatives/`.
 - Эксплуатационные handover-пакеты хранятся в `docs/ops/handovers/`.
 - Delivery day-эпики и sprint планы хранятся в `docs/delivery/epics/` и `docs/delivery/sprints/`.
+- Delivery historical evidence хранится в `docs/delivery/traceability/`.
 
 ## Governance
 - Перенос документов выполняется только с migration-map: `docs/delivery/documentation_ia_migration_map.md`.
