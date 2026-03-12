@@ -193,7 +193,7 @@ type rawCodexReport struct {
 	ActionItems     []string        `json:"action_items"`
 	EvidenceRefs    []string        `json:"evidence_refs"`
 	ToolGaps        []string        `json:"tool_gaps"`
-	PullRequest     *rawCodexPR     `json:"pr"`
+	PullRequest     json.RawMessage `json:"pr"`
 }
 
 type rawCodexPR struct {
@@ -225,13 +225,15 @@ func decodeCodexReport(raw []byte) (codexReport, error) {
 		EvidenceRefs:    normalizeStringList(payload.EvidenceRefs),
 		ToolGaps:        normalizeStringList(payload.ToolGaps),
 	}
-	if payload.PullRequest != nil {
-		if report.PRNumber <= 0 {
-			report.PRNumber = payload.PullRequest.Number
-		}
-		if report.PRURL == "" {
-			report.PRURL = strings.TrimSpace(payload.PullRequest.URL)
-		}
+	prNumber, prURL, err := decodeCodexPR(payload.PullRequest)
+	if err != nil {
+		return codexReport{}, err
+	}
+	if report.PRNumber <= 0 {
+		report.PRNumber = prNumber
+	}
+	if report.PRURL == "" {
+		report.PRURL = prURL
 	}
 	return report, nil
 }
@@ -257,6 +259,25 @@ func decodeCodexSummary(raw json.RawMessage) (string, error) {
 	}
 
 	return "", fmt.Errorf("decode codex summary: unsupported payload %s", trimmed)
+}
+
+func decodeCodexPR(raw json.RawMessage) (int, string, error) {
+	trimmed := strings.TrimSpace(string(raw))
+	if trimmed == "" || trimmed == "null" {
+		return 0, "", nil
+	}
+
+	var number int
+	if err := json.Unmarshal(raw, &number); err == nil {
+		return number, "", nil
+	}
+
+	var payload rawCodexPR
+	if err := json.Unmarshal(raw, &payload); err == nil {
+		return payload.Number, strings.TrimSpace(payload.URL), nil
+	}
+
+	return 0, "", fmt.Errorf("decode codex pr: unsupported payload %s", trimmed)
 }
 
 func trimCapturedOutput(raw string, maxBytes int) string {

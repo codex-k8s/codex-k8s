@@ -80,3 +80,36 @@ func TestParseCodexReportOutput_LastJSONLineFallback(t *testing.T) {
 		t.Fatalf("pr_number = %d, want 324", report.PRNumber)
 	}
 }
+
+func TestParseCodexReportOutput_StatusOKEnvelopeWithNumericPR(t *testing.T) {
+	raw := []byte(`{
+		"status":"ok",
+		"issue":347,
+		"pr":354,
+		"branch":"codex/issue-347",
+		"commit":"3be32de49ac5c7aac3a3581091e613fd085d28e2",
+		"summary":[
+			"Исправлен dev websocket proxy.",
+			"PR обновлен и review threads закрыты."
+		],
+		"checks":[
+			{"command":"git diff --check","result":"passed"}
+		],
+		"next_action":"Откройте PR #354."
+	}`)
+
+	report, _, err := parseCodexReportOutput(raw)
+	if err != nil {
+		t.Fatalf("parseCodexReportOutput() error = %v", err)
+	}
+	if report.Branch != "codex/issue-347" {
+		t.Fatalf("branch = %q, want codex/issue-347", report.Branch)
+	}
+	if report.PRNumber != 354 {
+		t.Fatalf("pr_number = %d, want 354", report.PRNumber)
+	}
+	wantSummary := "Исправлен dev websocket proxy.\nPR обновлен и review threads закрыты."
+	if report.Summary != wantSummary {
+		t.Fatalf("summary = %q, want %q", report.Summary, wantSummary)
+	}
+}
