@@ -6,7 +6,7 @@ status: in-review
 owner_role: PM
 created_at: 2026-03-12
 updated_at: 2026-03-12
-related_issues: [360, 378]
+related_issues: [360, 378, 383]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -19,13 +19,13 @@ approvals:
 ## TL;DR
 - Sprint S10 открывает отдельную продуктовую инициативу вокруг built-in MCP user interactions: платформа должна уметь безопасно уведомлять пользователя и запрашивать его решение без смешения с approval flow.
 - Day1 intake (`#360`) фиксирует problem statement, MVP scope, guardrails и continuity в `run:vision`.
-- Day2 vision (`#378`) должен закрепить mission, persona outcomes, KPI и handover в PRD issue.
+- Day2 vision (`#378`) фиксирует mission, persona outcomes, KPI/guardrails и handover в PRD issue `#383`.
 - До `run:plan` Sprint S10 остаётся markdown-only контуром: implementation issues, кодовые правки и выбор конкретных library/runtime деталей откладываются до подтверждённых product и architecture decisions.
 
 ## Stage roadmap
 - Day 1 (Intake): `docs/delivery/epics/s10/epic-s10-day1-mcp-user-interactions-intake.md` (Issue `#360`).
-- Day 2 (Vision): continuity issue `#378`; должна сформировать mission, KPI, guardrails и persona outcomes.
-- Day 3 (PRD): создаётся после Owner review vision stage; должна зафиксировать user stories, FR/AC/NFR, edge cases и expected evidence.
+- Day 2 (Vision): `docs/delivery/epics/s10/epic-s10-day2-mcp-user-interactions-vision.md` (Issue `#378`).
+- Day 3 (PRD): continuity issue `#383`; должна зафиксировать user stories, FR/AC/NFR, edge cases и expected evidence.
 - Day 4 (Architecture): создаётся после PRD review; должна закрепить boundaries между `control-plane`, `worker`, transport edges и future channel adapters.
 - Day 5 (Design): создаётся после architecture review; должна оформить implementation-ready API/data/wait-state contracts.
 - Day 6 (Plan): создаётся после design review; должна сформировать execution waves, quality-gates и отдельные implementation issues.
