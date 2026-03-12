@@ -6,7 +6,7 @@ status: in-review
 owner_role: PM
 created_at: 2026-03-12
 updated_at: 2026-03-12
-related_issues: [333, 335]
+related_issues: [333, 335, 337, 340]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -18,7 +18,7 @@ approvals:
 
 ## TL;DR
 - Цель спринта: превратить staff console из набора разрозненных operational screen'ов в единый control-plane UX для active work items, discussion, PR и агентов.
-- Sprint S9 стартует с intake-этапа в Issue `#333`; continuity в `run:vision` зафиксирован отдельной issue `#335`.
+- Sprint S9 стартовал с intake-этапа в Issue `#333`; vision baseline зафиксирован в Issue `#335`, PRD baseline зафиксирован в Issue `#337`, continuity в `run:arch` передан в issue `#340`.
 - Базовые ограничения спринта: GitHub-first MVP, review человека в provider UI, webhook-driven orchestration, active-set UX вместо попытки показывать весь исторический граф.
 
 ## Scope спринта
@@ -43,7 +43,7 @@ approvals:
   - `vision` обязателен, потому что инициатива меняет продуктовую миссию staff console и вводит новые KPI;
   - `arch` обязателен, потому что затрагиваются service boundaries, realtime contracts, persisted projections и webhook reconciliation.
 - Целевая continuity-цепочка:
-  `#333 (intake) -> #335 (vision) -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops`.
+  `#333 (intake) -> #335 (vision) -> #337 (prd) -> #340 (arch) -> design -> plan -> dev -> qa -> release -> postdeploy -> ops`.
 
 ## План этапов и handover
 
@@ -51,7 +51,7 @@ approvals:
 |---|---|---|---|
 | Intake (`#333`) | Problem/Brief/Scope/Constraints + intake AC | `pm` | Owner review intake-пакета и создана issue следующего этапа |
 | Vision (`#335`) | Mission, KPI, persona model, MVP/Post-MVP границы | `pm` | Зафиксирован vision baseline и создана issue `run:prd` |
-| PRD | User stories, FR/AC/NFR и wave priorities | `pm` + `sa` | Подтверждён PRD package и создана issue `run:arch` |
+| PRD (`#337`) | User stories, FR/AC/NFR и wave priorities | `pm` + `sa` | Подтверждён PRD package и создана issue `run:arch` |
 | Architecture | C4/ADR/boundary decisions по control-plane UX и realtime | `sa` | Подтверждены сервисные границы и создана issue `run:design` |
 | Design | API/data/realtime/design package | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue `run:plan` |
 | Plan | Delivery waves, execution issues, DoR/DoD, quality-gates | `em` + `km` | Сформирован execution package и отдельные implementation issues |
@@ -63,6 +63,6 @@ approvals:
 - Voice intake рассматривается как условная последующая волна: не блокирует core dashboard wave, пока не подтверждены ROI, AI policy и operational readiness.
 
 ## Handover
-- Текущий stage: `run:intake` в Issue `#333`.
-- Следующий stage: `run:vision` в Issue `#335`.
-- Trigger-лейбл для Issue `#335` не ставится автоматически и остаётся owner-managed переходом после review intake-артефактов.
+- Текущий stage: `run:prd` в Issue `#337`.
+- Следующий stage: `run:arch` в Issue `#340`.
+- Trigger-лейбл для Issue `#340` не ставится автоматически и остаётся owner-managed переходом после review PRD-артефактов.
