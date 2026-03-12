@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-12
 updated_at: 2026-03-12
-related_issues: [360, 378, 383, 385, 387]
+related_issues: [360, 378, 383, 385, 387, 389]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -72,3 +72,19 @@ approvals:
 - Для continuity создана follow-up issue `#387` (`run:design`) без trigger-лейбла.
 - Попытка использовать Context7 для Mermaid/C4 documentation завершилась ошибкой `Monthly quota exceeded`; для пакета использованы существующие Mermaid/C4 conventions репозитория.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: architecture stage фиксирует service boundaries и handover в design, а не меняет канонический requirements baseline.
+
+## Актуализация по Issue #387 (`run:design`, 2026-03-12)
+- Подготовлен design package:
+  - `docs/delivery/epics/s10/epic-s10-day5-mcp-user-interactions-design.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/design_doc.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/api_contract.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/data_model.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/migrations_policy.md`.
+- Зафиксированы:
+  - typed contracts для `user.notify`, `user.decision.request`, outbound adapter envelope и inbound callback family;
+  - отдельный persisted interaction-domain: aggregate, delivery attempts, callback evidence, response records;
+  - wait-state taxonomy с сохранением coarse runtime state `waiting_mcp`, но с отдельным `wait_reason=interaction_response` и typed wait linkage;
+  - resume contract через deterministic `interaction_resume_payload`, использующий existing `agent_sessions` snapshot path без reuse approval tables.
+- Для continuity создана follow-up issue `#389` (`run:plan`) без trigger-лейбла.
+- Попытка использовать Context7 для `kin-openapi` и `goose` завершилась ошибкой `Monthly quota exceeded`; новые внешние зависимости на этапе `run:design` не добавлялись.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: design stage конкретизирует API/data/runtime contracts и migration policy, но не меняет канонический product baseline.
