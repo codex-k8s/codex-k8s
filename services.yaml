@@ -95,13 +95,13 @@ spec:
         - libs/go
         - proto
     worker:
-      value: "0.1.47"
+      value: "0.1.48"
       bumpOn:
         - services/jobs/worker
         - libs/go
         - proto
     agent-runner:
-      value: "0.1.52"
+      value: "0.1.53"
       bumpOn:
         - services/jobs/agent-runner
         - libs/go
