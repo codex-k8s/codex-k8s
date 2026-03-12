@@ -5,8 +5,8 @@ title: "Delivery Documentation Index"
 status: in-review
 owner_role: EM
 created_at: 2026-03-11
-updated_at: 2026-03-11
-related_issues: [320]
+updated_at: 2026-03-12
+related_issues: [320, 327]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -18,6 +18,7 @@ approvals:
 
 ## TL;DR
 - `docs/delivery/` хранит process requirements, delivery plan, sprint/epic execution и traceability.
+- Root traceability разделена по уровням: `issue_map.md` = master-index, `requirements_traceability.md` = стабильная FR/NFR-матрица, `traceability/*.md` = historical evidence.
 - Здесь же лежит migration-map для рефакторинга docs IA.
 
 ## Канонические документы
@@ -25,15 +26,18 @@ approvals:
 - `docs/delivery/delivery_plan.md`
 - `docs/delivery/issue_map.md`
 - `docs/delivery/requirements_traceability.md`
+- `docs/delivery/traceability/README.md`
 - `docs/delivery/e2e_mvp_master_plan.md`
 - `docs/delivery/documentation_ia_migration_map.md`
 
 ## Индексы и каталоги
 - `docs/delivery/sprints/README.md`
 - `docs/delivery/epics/README.md`
+- `docs/delivery/traceability/README.md`
 - `docs/delivery/sprints/`
 - `docs/delivery/epics/`
+- `docs/delivery/traceability/`
 
 ## Правила
-- Любой перенос документов синхронно отражается в `issue_map`, `requirements_traceability`, relevant sprint/epic index и `services.yaml`.
+- Любой перенос документов синхронно отражается в `issue_map`, `requirements_traceability`, `traceability/README.md`, relevant sprint/epic index и `services.yaml`.
 - Delivery docs отвечают за sequencing, quality-gates и traceability, но не дублируют product/architecture source of truth.

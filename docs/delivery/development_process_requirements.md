@@ -5,8 +5,8 @@ title: "codex-k8s — Development and Documentation Process Requirements"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-03-02
-related_issues: [1, 112, 210, 212, 241, 243]
+updated_at: 2026-03-12
+related_issues: [1, 112, 210, 212, 241, 243, 327]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -40,6 +40,7 @@ approvals:
 - `docs/delivery/e2e_mvp_master_plan.md`
 - `docs/delivery/issue_map.md`
 - `docs/delivery/requirements_traceability.md`
+- `docs/delivery/traceability/README.md`
 - `docs/design-guidelines/**`
 - `docs/templates/**`
 
@@ -63,7 +64,7 @@ approvals:
 | Reviewer | Предварительное ревью PR до Owner | inline findings в PR + summary для Owner |
 | QA | Ручной smoke/regression на production, acceptance evidence | test evidence, regression checklist |
 | SRE | Bootstrap/deploy/runbook/операционная устойчивость | bootstrap scripts, deploy manifests, runbook |
-| KM | Трассируемость документации и актуальность карты связей | `docs/delivery/issue_map.md`, `docs/delivery/requirements_traceability.md` |
+| KM | Трассируемость документации и актуальность карты связей | `docs/delivery/issue_map.md`, `docs/delivery/requirements_traceability.md`, `docs/delivery/traceability/README.md` |
 
 ## Нейминг артефактов (обязателен)
 
@@ -227,7 +228,7 @@ approvals:
 |---|---|---|
 | `docs/product/` | продуктовые требования, роли, labels/stage policy, charter/brief/constraints | delivery-планы, day-эпики, runbooks |
 | `docs/architecture/` | C4, ADR, API/data model, RBAC/prompt policy, design alternatives | спринт-план и release backlog |
-| `docs/delivery/` | delivery plan, sprint/epic документы, issue map, traceability, process requirements | дублирование product source-of-truth и архитектурных контрактов |
+| `docs/delivery/` | delivery plan, sprint/epic документы, issue map, requirements traceability, traceability history packages, process requirements | дублирование product source-of-truth и архитектурных контрактов |
 | `docs/ops/` | production runbooks и эксплуатационные инструкции | stage-планирование и product scope |
 | `docs/templates/` | канонические markdown-шаблоны документов | фактические артефакты этапов вместо шаблонов |
 
@@ -239,7 +240,11 @@ approvals:
 - Инициативные/stage-specific пакеты и handover-наборы размещаются в специализированных подпапках, а не на корне домена:
   - для архитектурных инициатив использовать `docs/architecture/initiatives/<slug>/`;
   - для эксплуатационных handover-пакетов использовать `docs/ops/handovers/<slug>/`;
-  - для delivery уже закреплены специализированные подпапки `docs/delivery/sprints/` и `docs/delivery/epics/`.
+  - для delivery уже закреплены специализированные подпапки `docs/delivery/sprints/`, `docs/delivery/epics/` и `docs/delivery/traceability/`.
+- Delivery traceability делится по уровням абстракции:
+  - `docs/delivery/issue_map.md` = current-state master-index по связям issue/pr/doc/status;
+  - `docs/delivery/requirements_traceability.md` = стабильная FR/NFR-матрица текущего состояния;
+  - `docs/delivery/traceability/s<номер>_*.md` = historical evidence и delta по спринтам.
 - `docs/templates/` содержит только шаблоны и инструкции по их применению; проектные индексы, handover-пакеты и фактические source-of-truth документы туда не помещаются.
 - Любой перенос документов выполняется только по явной migration-map с форматом
   `old path -> new path -> owner_role -> affected links/issues -> migration note`.
@@ -249,8 +254,9 @@ approvals:
   - внутренние markdown-ссылки;
   - `docs/delivery/issue_map.md`;
   - `docs/delivery/requirements_traceability.md`;
+  - `docs/delivery/traceability/README.md` и релевантный `docs/delivery/traceability/s<номер>_*.md` (если меняется historical evidence);
   - открытые GitHub issues/PR, где использовались старые doc-path или branch-specific blob links.
-- Любой новый документ сразу добавляется в релевантный индекс (`delivery/sprints/README.md`, `delivery/epics/README.md`, `issue_map`, `requirements_traceability`).
+- Любой новый документ сразу добавляется в релевантный индекс (`delivery/sprints/README.md`, `delivery/epics/README.md`, `issue_map`, `requirements_traceability`, `traceability/README.md`).
 
 ## Ролевая матрица шаблонов документов (обязательна)
 

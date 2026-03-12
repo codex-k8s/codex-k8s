@@ -5,8 +5,8 @@ title: "Sprint Index (normalized structure)"
 status: active
 owner_role: EM
 created_at: 2026-02-24
-updated_at: 2026-03-11
-related_issues: [112, 154, 184, 185, 187, 189, 195, 197, 199, 201, 212, 218, 220, 222, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263, 265, 281, 282, 320]
+updated_at: 2026-03-12
+related_issues: [112, 154, 184, 185, 187, 189, 195, 197, 199, 201, 212, 218, 220, 222, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263, 265, 281, 282, 320, 327]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -17,8 +17,10 @@ approvals:
 # Sprint Index
 
 ## TL;DR
-- Спринты вынесены в отдельную структуру `docs/delivery/sprints/s<номер>/` (S1..S8).
+- Спринты ведутся в структуре `docs/delivery/sprints/s<номер>/` (S1..S8).
 - Для каждого спринта сохранён единый формат: sprint plan + epic catalog + day epics + traceability.
+- Sprint index хранит только каноническую карту спринтов и ссылки на sprint/epic артефакты.
+- Исторические issue-specific updates по спринтам размещаются в `docs/delivery/traceability/s<номер>_*.md` и не дублируются в sprint index.
 - Источник процесса: `docs/delivery/development_process_requirements.md`.
 
 ## Карта спринтов
@@ -42,3 +44,4 @@ approvals:
   - `docs/delivery/delivery_plan.md`;
   - `docs/delivery/issue_map.md`;
   - `docs/delivery/requirements_traceability.md`.
+- Historical delta по sprint-issue evidence синхронно отражается в релевантном файле `docs/delivery/traceability/s<номер>_*.md`.
