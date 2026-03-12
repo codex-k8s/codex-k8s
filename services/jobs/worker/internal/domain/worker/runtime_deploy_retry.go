@@ -83,6 +83,12 @@ func isRetryableRuntimeDeployError(err error) bool {
 		if strings.Contains(msg, "connection reset") || strings.Contains(msg, "broken pipe") {
 			return true
 		}
+		if strings.Contains(msg, "namespace is terminating") {
+			return true
+		}
+		if strings.Contains(msg, "because it is being terminated") {
+			return true
+		}
 		return false
 	default:
 		return false

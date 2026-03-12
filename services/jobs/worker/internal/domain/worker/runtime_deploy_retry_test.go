@@ -24,3 +24,15 @@ func TestIsRetryableRuntimeDeployError_TaskCanceledIsNotRetryable(t *testing.T) 
 		t.Fatal("expected canceled runtime deploy task error to be non-retryable")
 	}
 }
+
+func TestIsRetryableRuntimeDeployError_NamespaceTerminatingIsRetryable(t *testing.T) {
+	t.Parallel()
+
+	err := status.Error(
+		codes.Internal,
+		"runtime deploy task failed: ensure runtime namespace repo snapshot: jobs.batch \"codex-k8s-repo-sync\" is forbidden: unable to create new content in namespace codex-k8s-dev-2 because it is being terminated",
+	)
+	if !isRetryableRuntimeDeployError(err) {
+		t.Fatal("expected terminating namespace runtime deploy error to be retryable")
+	}
+}

@@ -284,8 +284,11 @@ func (c *Client) EnsureNamespace(ctx context.Context, namespace string) error {
 		return fmt.Errorf("namespace is required")
 	}
 
-	_, err := c.clientset.CoreV1().Namespaces().Get(ctx, targetNamespace, metav1.GetOptions{})
+	existing, err := c.clientset.CoreV1().Namespaces().Get(ctx, targetNamespace, metav1.GetOptions{})
 	if err == nil {
+		if existing.DeletionTimestamp != nil {
+			return fmt.Errorf("namespace %s is terminating", targetNamespace)
+		}
 		return nil
 	}
 	if !k8serrors.IsNotFound(err) {
