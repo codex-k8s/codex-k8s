@@ -6,7 +6,7 @@ status: in-review
 owner_role: SA
 created_at: 2026-03-12
 updated_at: 2026-03-12
-related_issues: [333, 335, 337, 340, 344]
+related_issues: [333, 335, 337, 340, 351]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -173,7 +173,7 @@ sequenceDiagram
 
 ## Handover в `run:design`
 - Следующий этап: `run:design`.
-- Follow-up issue: `#344`.
+- Follow-up issue: `#351`.
 - На design-этапе обязательно выпустить:
   - `design_doc.md` с interaction model, degraded UX rules и command/timeline behaviors;
   - `api_contract.md` с typed HTTP/gRPC/async deltas для snapshot, entity details, command admission/status и realtime topics;

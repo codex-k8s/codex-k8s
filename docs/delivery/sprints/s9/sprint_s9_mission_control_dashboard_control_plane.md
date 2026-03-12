@@ -6,7 +6,7 @@ status: in-review
 owner_role: PM
 created_at: 2026-03-12
 updated_at: 2026-03-12
-related_issues: [333, 335, 337, 340, 344]
+related_issues: [333, 335, 337, 340, 351]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -43,7 +43,7 @@ approvals:
   - `vision` обязателен, потому что инициатива меняет продуктовую миссию staff console и вводит новые KPI;
   - `arch` обязателен, потому что затрагиваются service boundaries, realtime contracts, persisted projections и webhook reconciliation.
 - Целевая continuity-цепочка:
-  `#333 (intake) -> #335 (vision) -> #337 (prd) -> #340 (arch) -> #344 (design) -> plan -> dev -> qa -> release -> postdeploy -> ops`.
+  `#333 (intake) -> #335 (vision) -> #337 (prd) -> #340 (arch) -> #351 (design) -> plan -> dev -> qa -> release -> postdeploy -> ops`.
 
 ## План этапов и handover
 
@@ -52,8 +52,8 @@ approvals:
 | Intake (`#333`) | Problem/Brief/Scope/Constraints + intake AC | `pm` | Owner review intake-пакета и создана issue следующего этапа |
 | Vision (`#335`) | Mission, KPI, persona model, MVP/Post-MVP границы | `pm` | Зафиксирован vision baseline и создана issue `run:prd` |
 | PRD (`#337`) | User stories, FR/AC/NFR и wave priorities | `pm` + `sa` | Подтверждён PRD package и создана issue `run:arch` |
-| Architecture (`#340`) | C4/ADR/boundary decisions по control-plane UX и realtime | `sa` | Подтверждены сервисные границы и создана issue `#344` для `run:design` |
-| Design (`#344`) | API/data/realtime/design package | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue `run:plan` |
+| Architecture (`#340`) | C4/ADR/boundary decisions по control-plane UX и realtime | `sa` | Подтверждены сервисные границы и создана issue `#351` для `run:design` |
+| Design (`#351`) | API/data/realtime/design package | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue `run:plan` |
 | Plan | Delivery waves, execution issues, DoR/DoD, quality-gates | `em` + `km` | Сформирован execution package и отдельные implementation issues |
 
 ## Guardrails спринта
@@ -64,5 +64,5 @@ approvals:
 
 ## Handover
 - Завершённый текущий stage: `run:arch` в Issue `#340`.
-- Следующий stage: `run:design` в Issue `#344`.
-- Trigger-лейбл для Issue `#344` не ставится автоматически и остаётся owner-managed переходом после review architecture-пакета.
+- Следующий stage: `run:design` в Issue `#351`.
+- Trigger-лейбл для Issue `#351` не ставится автоматически и остаётся owner-managed переходом после review architecture-пакета.

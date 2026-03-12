@@ -243,7 +243,7 @@ approvals:
   - зафиксирован ownership split: `control-plane` владеет active-set projection, relations, timeline mirror и command lifecycle, `worker` владеет provider sync/retries/reconciliation;
   - подтверждён snapshot-first / delta-second realtime baseline с обязательным degraded mode через HTTP snapshot, explicit refresh и list fallback;
   - voice intake изолирован как optional candidate stream и не входит в core MVP contracts;
-  - подготовлена follow-up issue `#344` для stage `run:design` без trigger-лейбла.
+  - подготовлена follow-up issue `#351` для stage `run:design` без trigger-лейбла.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

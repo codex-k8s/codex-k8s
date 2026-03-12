@@ -6,7 +6,7 @@ status: in-review
 owner_role: SA
 created_at: 2026-03-12
 updated_at: 2026-03-12
-related_issues: [333, 335, 337, 340, 344]
+related_issues: [333, 335, 337, 340, 351]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -58,7 +58,7 @@ approvals:
 - [x] Для core flows определены owner-сервисы и границы ответственности: active-set dashboard, discussion formalization, commands/reconciliation, timeline/comments mirror, degraded mode.
 - [x] Зафиксированы architecture-level trade-offs по realtime transport, projections и voice candidate stream без premature library lock-in.
 - [x] Обновлены delivery/traceability документы и package indexes.
-- [x] Подготовлена follow-up issue `#344` для stage `run:design` без trigger-лейбла.
+- [x] Подготовлена follow-up issue `#351` для stage `run:design` без trigger-лейбла.
 
 ## Quality gates
 | Gate | Что проверяем | Статус |
@@ -71,7 +71,7 @@ approvals:
 
 ## Handover в `run:design`
 - Следующий этап: `run:design`.
-- Follow-up issue: `#344`.
+- Follow-up issue: `#351`.
 - Trigger-лейбл на новую issue ставит Owner после review architecture package.
 - На design-stage обязательно:
   - выпустить `design_doc`, `api_contract`, `data_model`, `migrations_policy`;

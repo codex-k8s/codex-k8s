@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-12
 updated_at: 2026-03-12
-related_issues: [333, 335, 337, 340, 344]
+related_issues: [333, 335, 337, 340, 351]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -62,6 +62,6 @@ approvals:
   - worker-owned provider sync/retries/reconciliation path;
   - snapshot-first / delta-second realtime baseline с degraded mode через explicit refresh и list fallback;
   - isolated voice candidate stream без blocking impact на core MVP.
-- Для continuity подготовлена follow-up issue `#344` (`run:design`) без trigger-лейбла.
+- Для continuity подготовлена follow-up issue `#351` (`run:design`) без trigger-лейбла.
 - Через Context7 повторно подтверждён актуальный Mermaid C4 syntax (`/mermaid-js/mermaid`) и GitHub CLI syntax для issue/PR handover (`/websites/cli_github_manual`).
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась, потому что architecture stage не изменяет канонический requirements baseline, а уточняет service boundaries и trade-offs.

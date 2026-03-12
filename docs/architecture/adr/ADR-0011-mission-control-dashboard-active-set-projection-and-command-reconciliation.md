@@ -6,7 +6,7 @@ status: accepted
 owner_role: SA
 created_at: 2026-03-12
 updated_at: 2026-03-12
-related_issues: [333, 335, 337, 340, 344]
+related_issues: [333, 335, 337, 340, 351]
 related_prs: []
 supersedes: []
 superseded_by: []
