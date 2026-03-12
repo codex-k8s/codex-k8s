@@ -155,8 +155,8 @@ func parseCodexReportOutput(output []byte) (codexReport, json.RawMessage, error)
 		if !json.Valid(raw) {
 			return codexReport{}, false
 		}
-		var report codexReport
-		if err := json.Unmarshal(raw, &report); err != nil {
+		report, err := decodeCodexReport(raw)
+		if err != nil {
 			return codexReport{}, false
 		}
 		return report, true
@@ -178,6 +178,85 @@ func parseCodexReportOutput(output []byte) (codexReport, json.RawMessage, error)
 	}
 
 	return codexReport{}, nil, fmt.Errorf("failed to parse codex structured output")
+}
+
+type rawCodexReport struct {
+	Status          string          `json:"status"`
+	Summary         json.RawMessage `json:"summary"`
+	Branch          string          `json:"branch"`
+	PRNumber        int             `json:"pr_number"`
+	PRURL           string          `json:"pr_url"`
+	SessionID       string          `json:"session_id"`
+	Model           string          `json:"model"`
+	ReasoningEffort string          `json:"reasoning_effort"`
+	Diagnosis       string          `json:"diagnosis"`
+	ActionItems     []string        `json:"action_items"`
+	EvidenceRefs    []string        `json:"evidence_refs"`
+	ToolGaps        []string        `json:"tool_gaps"`
+	PullRequest     *rawCodexPR     `json:"pr"`
+}
+
+type rawCodexPR struct {
+	Number int    `json:"number"`
+	URL    string `json:"url"`
+}
+
+func decodeCodexReport(raw []byte) (codexReport, error) {
+	var payload rawCodexReport
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		return codexReport{}, err
+	}
+
+	summary, err := decodeCodexSummary(payload.Summary)
+	if err != nil {
+		return codexReport{}, err
+	}
+
+	report := codexReport{
+		Summary:         summary,
+		Branch:          strings.TrimSpace(payload.Branch),
+		PRNumber:        payload.PRNumber,
+		PRURL:           strings.TrimSpace(payload.PRURL),
+		SessionID:       strings.TrimSpace(payload.SessionID),
+		Model:           strings.TrimSpace(payload.Model),
+		ReasoningEffort: strings.TrimSpace(payload.ReasoningEffort),
+		Diagnosis:       strings.TrimSpace(payload.Diagnosis),
+		ActionItems:     normalizeStringList(payload.ActionItems),
+		EvidenceRefs:    normalizeStringList(payload.EvidenceRefs),
+		ToolGaps:        normalizeStringList(payload.ToolGaps),
+	}
+	if payload.PullRequest != nil {
+		if report.PRNumber <= 0 {
+			report.PRNumber = payload.PullRequest.Number
+		}
+		if report.PRURL == "" {
+			report.PRURL = strings.TrimSpace(payload.PullRequest.URL)
+		}
+	}
+	return report, nil
+}
+
+func decodeCodexSummary(raw json.RawMessage) (string, error) {
+	trimmed := strings.TrimSpace(string(raw))
+	if trimmed == "" || trimmed == "null" {
+		return "", nil
+	}
+
+	var single string
+	if err := json.Unmarshal(raw, &single); err == nil {
+		return strings.TrimSpace(single), nil
+	}
+
+	var items []string
+	if err := json.Unmarshal(raw, &items); err == nil {
+		normalized := normalizeStringList(items)
+		if len(normalized) == 0 {
+			return "", nil
+		}
+		return strings.Join(normalized, "\n"), nil
+	}
+
+	return "", fmt.Errorf("decode codex summary: unsupported payload %s", trimmed)
 }
 
 func trimCapturedOutput(raw string, maxBytes int) string {
