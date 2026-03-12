@@ -984,16 +984,12 @@ type fakeRunQueue struct {
 	claims            []runqueuerepo.ClaimedRun
 	claimCalls        int
 	running           []runqueuerepo.RunningRun
-	claimedRunning    []runqueuerepo.RunningRun
 	claimRunningCalls int
 	claimRunning      []runqueuerepo.ClaimRunningParams
-	reclaimStale      []runqueuerepo.ReclaimStaleRunningParams
-	reclaimResults    map[string]runqueuerepo.RunningRun
 	finished          []runqueuerepo.FinishParams
 	extended          []runqueuerepo.ExtendLeaseParams
 	claimErr          error
 	claimRunningErr   error
-	reclaimErr        error
 	listErr           error
 	finishErr         error
 	extendErr         error
@@ -1024,25 +1020,7 @@ func (f *fakeRunQueue) ClaimRunning(_ context.Context, params runqueuerepo.Claim
 	}
 	f.claimRunningCalls++
 	f.claimRunning = append(f.claimRunning, params)
-	if f.claimedRunning != nil {
-		return f.claimedRunning, nil
-	}
 	return f.running, nil
-}
-
-func (f *fakeRunQueue) ReclaimStaleRunning(_ context.Context, params runqueuerepo.ReclaimStaleRunningParams) (runqueuerepo.RunningRun, bool, error) {
-	if f.reclaimErr != nil {
-		return runqueuerepo.RunningRun{}, false, f.reclaimErr
-	}
-	f.reclaimStale = append(f.reclaimStale, params)
-	if f.reclaimResults == nil {
-		return runqueuerepo.RunningRun{}, false, nil
-	}
-	item, ok := f.reclaimResults[params.RunID]
-	if !ok {
-		return runqueuerepo.RunningRun{}, false, nil
-	}
-	return item, true, nil
 }
 
 func (f *fakeRunQueue) ExtendLease(_ context.Context, params runqueuerepo.ExtendLeaseParams) (bool, error) {

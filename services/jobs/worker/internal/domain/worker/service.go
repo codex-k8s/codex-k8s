@@ -118,8 +118,6 @@ type Dependencies struct {
 	MCPTokenIssuer MCPTokenIssuer
 	// RunStatus updates one run-bound issue status comment.
 	RunStatus RunStatusNotifier
-	// WorkerPresence lists active worker instances for stale lease reclaim.
-	WorkerPresence WorkerPresenceChecker
 	// Logger records worker diagnostics.
 	Logger *slog.Logger
 	// JobImageChecker checks whether image references are available before launch.
@@ -128,19 +126,18 @@ type Dependencies struct {
 
 // Service orchestrates pending runs to Kubernetes Jobs and final statuses.
 type Service struct {
-	cfg            Config
-	runs           runqueuerepo.Repository
-	events         floweventrepo.Repository
-	feedback       learningfeedbackrepo.Repository
-	launcher       Launcher
-	deployer       RuntimeEnvironmentPreparer
-	mcpTokens      MCPTokenIssuer
-	runStatus      RunStatusNotifier
-	workerPresence WorkerPresenceChecker
-	logger         *slog.Logger
-	labels         runAgentLabelCatalog
-	image          JobImageSelectionPolicy
-	now            func() time.Time
+	cfg       Config
+	runs      runqueuerepo.Repository
+	events    floweventrepo.Repository
+	feedback  learningfeedbackrepo.Repository
+	launcher  Launcher
+	deployer  RuntimeEnvironmentPreparer
+	mcpTokens MCPTokenIssuer
+	runStatus RunStatusNotifier
+	logger    *slog.Logger
+	labels    runAgentLabelCatalog
+	image     JobImageSelectionPolicy
+	now       func() time.Time
 }
 
 // JobImageAvailabilityChecker checks run Job image existence.
@@ -264,17 +261,16 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	}
 
 	return &Service{
-		cfg:            cfg,
-		runs:           deps.Runs,
-		events:         deps.Events,
-		feedback:       deps.Feedback,
-		launcher:       deps.Launcher,
-		deployer:       deps.RuntimePreparer,
-		mcpTokens:      deps.MCPTokenIssuer,
-		runStatus:      deps.RunStatus,
-		workerPresence: deps.WorkerPresence,
-		logger:         deps.Logger,
-		labels:         labelCatalog,
+		cfg:       cfg,
+		runs:      deps.Runs,
+		events:    deps.Events,
+		feedback:  deps.Feedback,
+		launcher:  deps.Launcher,
+		deployer:  deps.RuntimePreparer,
+		mcpTokens: deps.MCPTokenIssuer,
+		runStatus: deps.RunStatus,
+		logger:    deps.Logger,
+		labels:    labelCatalog,
 		image: JobImageSelectionPolicy{
 			Primary:  cfg.JobImage,
 			Fallback: cfg.JobImageFallback,
