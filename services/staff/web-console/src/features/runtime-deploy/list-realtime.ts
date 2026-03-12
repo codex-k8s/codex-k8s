@@ -11,9 +11,11 @@ type SubscribeRuntimeDeployTasksRealtimeParams = {
   targetEnv?: string;
   onMessage: (message: RuntimeDeployTasksRealtimeMessage) => void;
   onStateChange?: (state: RuntimeDeployTasksListRealtimeState) => void;
+  onInitialMessageTimeout?: () => void;
 };
 
 const runtimeDeployTasksRealtimeMessageTypes = new Set<RuntimeDeployTasksRealtimeMessageType>(["snapshot", "error"]);
+const initialRuntimeDeployTasksRealtimeMessageTimeoutMs = 10000;
 
 function buildRuntimeDeployTasksRealtimeURL(params: { page: number; pageSize: number; status?: string; targetEnv?: string }): string {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -77,6 +79,8 @@ export function subscribeRuntimeDeployTasksRealtime(params: SubscribeRuntimeDepl
     url,
     parseMessage: parseRuntimeDeployTasksRealtimeMessage,
     onMessage: params.onMessage,
+    firstMessageTimeoutMs: initialRuntimeDeployTasksRealtimeMessageTimeoutMs,
+    onFirstMessageTimeout: params.onInitialMessageTimeout,
     onStateChange: (state) => {
       if (state === "closed") return;
       params.onStateChange?.(state);

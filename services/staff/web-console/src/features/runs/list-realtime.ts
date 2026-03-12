@@ -8,9 +8,11 @@ type SubscribeRunsRealtimeParams = {
   pageSize: number;
   onMessage: (message: RunsRealtimeMessage) => void;
   onStateChange?: (state: RunsListRealtimeState) => void;
+  onInitialMessageTimeout?: () => void;
 };
 
 const runsRealtimeMessageTypes = new Set<RunsRealtimeMessageType>(["snapshot", "error"]);
+const initialRunsRealtimeMessageTimeoutMs = 10000;
 
 function buildRunsRealtimeURL(params: { page: number; pageSize: number }): string {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -66,6 +68,8 @@ export function subscribeRunsRealtime(params: SubscribeRunsRealtimeParams): () =
     url,
     parseMessage: parseRunsRealtimeMessage,
     onMessage: params.onMessage,
+    firstMessageTimeoutMs: initialRunsRealtimeMessageTimeoutMs,
+    onFirstMessageTimeout: params.onInitialMessageTimeout,
     onStateChange: (state) => {
       if (state === "closed") return;
       params.onStateChange?.(state);

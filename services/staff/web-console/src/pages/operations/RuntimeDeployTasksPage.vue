@@ -169,6 +169,7 @@ async function loadTasks(): Promise<void> {
     pageSize: itemsPerPage.value,
     status: statusFilter.value || undefined,
     onMessage: applyRealtimeMessage,
+    onInitialMessageTimeout: handleInitialRealtimeTimeout,
     onStateChange: (state) => {
       realtimeState.value = state;
     },
@@ -190,6 +191,11 @@ function applyRealtimeMessage(message: RuntimeDeployTasksRealtimeMessage): void 
   items.value = message.items ?? [];
   totalCount.value = message.pagination.total_count;
   error.value = null;
+  loading.value = false;
+}
+
+function handleInitialRealtimeTimeout(): void {
+  error.value = new ApiError({ kind: "network", messageKey: "errors.realtimeUnavailable" });
   loading.value = false;
 }
 

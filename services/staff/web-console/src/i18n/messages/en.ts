@@ -651,6 +651,7 @@ export const en = {
     unknown: "Something went wrong.",
     network: "Network error. Please try again.",
     timeout: "Request timed out. Please try again.",
+    realtimeUnavailable: "Realtime stream is unavailable. Retrying in background.",
     copyFailed: "Copy failed.",
     unauthorized: "Not authenticated.",
     forbidden: "Forbidden.",

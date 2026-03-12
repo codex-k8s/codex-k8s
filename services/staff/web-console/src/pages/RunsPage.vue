@@ -199,6 +199,11 @@ function applyRunsRealtimeMessage(message: RunsRealtimeMessage): void {
   loading.value = false;
 }
 
+function handleInitialRunsRealtimeTimeout(): void {
+  runsError.value = new ApiError({ kind: "network", messageKey: "errors.realtimeUnavailable" });
+  loading.value = false;
+}
+
 function stopRunsRealtime(): void {
   stopRunsRealtimeRef.value?.();
   stopRunsRealtimeRef.value = null;
@@ -212,6 +217,7 @@ function startRunsRealtime(): void {
     page: tablePage.value,
     pageSize: itemsPerPage.value,
     onMessage: applyRunsRealtimeMessage,
+    onInitialMessageTimeout: handleInitialRunsRealtimeTimeout,
   });
 }
 

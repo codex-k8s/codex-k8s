@@ -5,6 +5,8 @@ type RealtimeClientConfig<TMessage> = {
   parseMessage: (raw: string) => TMessage | null;
   onMessage: (message: TMessage) => void;
   onStateChange?: (state: RealtimeConnectionState) => void;
+  firstMessageTimeoutMs?: number;
+  onFirstMessageTimeout?: () => void;
   minReconnectDelayMs?: number;
   maxReconnectDelayMs?: number;
   reconnectFactor?: number;
@@ -24,8 +26,11 @@ const defaultReconnectJitter = 0.2;
 export function createRealtimeClient<TMessage>(config: RealtimeClientConfig<TMessage>): RealtimeClient {
   let socket: WebSocket | null = null;
   let retryTimer: number | null = null;
+  let firstMessageTimer: number | null = null;
   let reconnectAttempt = 0;
   let active = false;
+  let hasReceivedMessage = false;
+  let firstMessageTimeoutNotified = false;
 
   const minDelayMs = Math.max(100, config.minReconnectDelayMs ?? defaultMinReconnectDelayMs);
   const maxDelayMs = Math.max(minDelayMs, config.maxReconnectDelayMs ?? defaultMaxReconnectDelayMs);
@@ -41,6 +46,31 @@ export function createRealtimeClient<TMessage>(config: RealtimeClientConfig<TMes
       window.clearTimeout(retryTimer);
       retryTimer = null;
     }
+  }
+
+  function clearFirstMessageTimer(): void {
+    if (firstMessageTimer !== null) {
+      window.clearTimeout(firstMessageTimer);
+      firstMessageTimer = null;
+    }
+  }
+
+  function armFirstMessageTimer(): void {
+    const timeoutMs = config.firstMessageTimeoutMs;
+    if (!active || hasReceivedMessage || firstMessageTimeoutNotified || !timeoutMs || timeoutMs <= 0) {
+      return;
+    }
+
+    clearFirstMessageTimer();
+    firstMessageTimer = window.setTimeout(() => {
+      firstMessageTimer = null;
+      if (!active || hasReceivedMessage || firstMessageTimeoutNotified) {
+        return;
+      }
+
+      firstMessageTimeoutNotified = true;
+      config.onFirstMessageTimeout?.();
+    }, timeoutMs);
   }
 
   function closeSocket(): void {
@@ -90,6 +120,8 @@ export function createRealtimeClient<TMessage>(config: RealtimeClientConfig<TMes
     socket.onmessage = (event: MessageEvent<string>) => {
       const parsed = config.parseMessage(String(event.data ?? ""));
       if (!parsed) return;
+      hasReceivedMessage = true;
+      clearFirstMessageTimer();
       config.onMessage(parsed);
     };
 
@@ -112,12 +144,16 @@ export function createRealtimeClient<TMessage>(config: RealtimeClientConfig<TMes
     if (active) return;
     active = true;
     reconnectAttempt = 0;
+    hasReceivedMessage = false;
+    firstMessageTimeoutNotified = false;
+    armFirstMessageTimer();
     connect();
   }
 
   function stop(): void {
     active = false;
     clearRetryTimer();
+    clearFirstMessageTimer();
     closeSocket();
     notifyState("closed");
   }
