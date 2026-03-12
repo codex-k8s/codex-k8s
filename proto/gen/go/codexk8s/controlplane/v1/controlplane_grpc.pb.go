@@ -64,6 +64,7 @@ const (
 	ControlPlaneService_MarkRuntimeErrorViewed_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/MarkRuntimeErrorViewed"
 	ControlPlaneService_UpsertAgentSession_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertAgentSession"
 	ControlPlaneService_GetLatestAgentSession_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/GetLatestAgentSession"
+	ControlPlaneService_LookupRunPullRequest_FullMethodName                 = "/codexk8s.controlplane.v1.ControlPlaneService/LookupRunPullRequest"
 	ControlPlaneService_InsertRunFlowEvent_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/InsertRunFlowEvent"
 	ControlPlaneService_UpsertRunStatusComment_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertRunStatusComment"
 	ControlPlaneService_GetCodexAuth_FullMethodName                         = "/codexk8s.controlplane.v1.ControlPlaneService/GetCodexAuth"
@@ -122,6 +123,7 @@ type ControlPlaneServiceClient interface {
 	// Used by agent-runner for run-bound session persistence and event callbacks.
 	UpsertAgentSession(ctx context.Context, in *UpsertAgentSessionRequest, opts ...grpc.CallOption) (*UpsertAgentSessionResponse, error)
 	GetLatestAgentSession(ctx context.Context, in *GetLatestAgentSessionRequest, opts ...grpc.CallOption) (*GetLatestAgentSessionResponse, error)
+	LookupRunPullRequest(ctx context.Context, in *LookupRunPullRequestRequest, opts ...grpc.CallOption) (*LookupRunPullRequestResponse, error)
 	InsertRunFlowEvent(ctx context.Context, in *InsertRunFlowEventRequest, opts ...grpc.CallOption) (*InsertRunFlowEventResponse, error)
 	UpsertRunStatusComment(ctx context.Context, in *UpsertRunStatusCommentRequest, opts ...grpc.CallOption) (*UpsertRunStatusCommentResponse, error)
 	GetCodexAuth(ctx context.Context, in *GetCodexAuthRequest, opts ...grpc.CallOption) (*GetCodexAuthResponse, error)
@@ -577,6 +579,16 @@ func (c *controlPlaneServiceClient) GetLatestAgentSession(ctx context.Context, i
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) LookupRunPullRequest(ctx context.Context, in *LookupRunPullRequestRequest, opts ...grpc.CallOption) (*LookupRunPullRequestResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LookupRunPullRequestResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_LookupRunPullRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) InsertRunFlowEvent(ctx context.Context, in *InsertRunFlowEventRequest, opts ...grpc.CallOption) (*InsertRunFlowEventResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(InsertRunFlowEventResponse)
@@ -678,6 +690,7 @@ type ControlPlaneServiceServer interface {
 	// Used by agent-runner for run-bound session persistence and event callbacks.
 	UpsertAgentSession(context.Context, *UpsertAgentSessionRequest) (*UpsertAgentSessionResponse, error)
 	GetLatestAgentSession(context.Context, *GetLatestAgentSessionRequest) (*GetLatestAgentSessionResponse, error)
+	LookupRunPullRequest(context.Context, *LookupRunPullRequestRequest) (*LookupRunPullRequestResponse, error)
 	InsertRunFlowEvent(context.Context, *InsertRunFlowEventRequest) (*InsertRunFlowEventResponse, error)
 	UpsertRunStatusComment(context.Context, *UpsertRunStatusCommentRequest) (*UpsertRunStatusCommentResponse, error)
 	GetCodexAuth(context.Context, *GetCodexAuthRequest) (*GetCodexAuthResponse, error)
@@ -824,6 +837,9 @@ func (UnimplementedControlPlaneServiceServer) UpsertAgentSession(context.Context
 }
 func (UnimplementedControlPlaneServiceServer) GetLatestAgentSession(context.Context, *GetLatestAgentSessionRequest) (*GetLatestAgentSessionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestAgentSession not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) LookupRunPullRequest(context.Context, *LookupRunPullRequestRequest) (*LookupRunPullRequestResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LookupRunPullRequest not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) InsertRunFlowEvent(context.Context, *InsertRunFlowEventRequest) (*InsertRunFlowEventResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InsertRunFlowEvent not implemented")
@@ -1653,6 +1669,24 @@ func _ControlPlaneService_GetLatestAgentSession_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_LookupRunPullRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LookupRunPullRequestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).LookupRunPullRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_LookupRunPullRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).LookupRunPullRequest(ctx, req.(*LookupRunPullRequestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_InsertRunFlowEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(InsertRunFlowEventRequest)
 	if err := dec(in); err != nil {
@@ -1925,6 +1959,10 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetLatestAgentSession",
 			Handler:    _ControlPlaneService_GetLatestAgentSession_Handler,
+		},
+		{
+			MethodName: "LookupRunPullRequest",
+			Handler:    _ControlPlaneService_LookupRunPullRequest_Handler,
 		},
 		{
 			MethodName: "InsertRunFlowEvent",

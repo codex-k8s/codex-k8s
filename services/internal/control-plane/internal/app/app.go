@@ -367,7 +367,16 @@ func Run() error {
 	}
 	defer func() { _ = grpcLis.Close() }()
 
-	agentCallbackService := agentcallbackdomain.NewService(agentSessions, flowEvents, agentRuns)
+	agentCallbackService := agentcallbackdomain.NewService(
+		agentSessions,
+		flowEvents,
+		agentRuns,
+		repos,
+		tokenCrypto,
+		map[repoprovider.Provider]repoprovider.RepositoryProvider{
+			repoprovider.ProviderGitHub: githubRepoProvider,
+		},
+	)
 	retentionDays := cfg.RunHeavyFieldsRetentionDays
 	if retentionDays <= 0 {
 		retentionDays = cfg.RunAgentLogsRetentionDays

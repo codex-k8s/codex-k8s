@@ -209,16 +209,28 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	}
 	result.codexExecOutput = redactSensitiveOutput(trimCapturedOutput(string(codexOutput), maxCapturedCommandOutput), sensitiveValues)
 
-	report, _, err := parseCodexReportOutput(codexOutput)
+	normalizedTriggerKind := webhookdomain.NormalizeTriggerKind(triggerKind)
+	requiresPRFlow := !isAIRepairMainDirectTrigger(result.triggerKind) && !s.cfg.DiscussionMode
+	result.sessionFilePath = latestSessionFile(state.sessionsDir)
+	if result.sessionID == "" && result.sessionFilePath != "" {
+		result.sessionID = extractSessionIDFromFile(result.sessionFilePath)
+	}
+
+	report, repairedOutput, err := s.resolveCodexReport(ctx, state, &result, outputSchemaFile, codexOutput, requiresPRFlow)
 	if err != nil {
 		return err
+	}
+	if len(repairedOutput) > 0 {
+		result.codexExecOutput = redactSensitiveOutput(trimCapturedOutput(string(repairedOutput), maxCapturedCommandOutput), sensitiveValues)
+		result.sessionFilePath = latestSessionFile(state.sessionsDir)
+		if result.sessionID == "" && result.sessionFilePath != "" {
+			result.sessionID = extractSessionIDFromFile(result.sessionFilePath)
+		}
 	}
 	report.ActionItems = normalizeStringList(report.ActionItems)
 	report.EvidenceRefs = normalizeStringList(report.EvidenceRefs)
 	report.ToolGaps = normalizeStringList(report.ToolGaps)
 	result.report = report
-	normalizedTriggerKind := webhookdomain.NormalizeTriggerKind(triggerKind)
-	requiresPRFlow := !isAIRepairMainDirectTrigger(result.triggerKind) && !s.cfg.DiscussionMode
 	if normalizedTriggerKind == webhookdomain.TriggerKindSelfImprove {
 		if strings.TrimSpace(result.report.Diagnosis) == "" {
 			return fmt.Errorf("invalid codex result: diagnosis is required for self_improve")
@@ -254,10 +266,6 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		s.logger.Warn("codex reported different branch; forcing target branch", "reported_branch", report.Branch, "target_branch", result.targetBranch)
 	}
 
-	result.sessionFilePath = latestSessionFile(state.sessionsDir)
-	if result.sessionID == "" && result.sessionFilePath != "" {
-		result.sessionID = extractSessionIDFromFile(result.sessionFilePath)
-	}
 	if err := enforceRunWriteScope(ctx, state.repoDir, baselineHead, result.triggerKind, s.cfg.AgentKey, result.existingPRNumber, s.cfg.DiscussionMode); err != nil {
 		return err
 	}

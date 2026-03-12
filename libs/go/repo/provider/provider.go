@@ -32,6 +32,15 @@ type RepositoryInfo struct {
 	ExternalID int64
 }
 
+// PullRequestInfo is provider-neutral pull request metadata used by internal services.
+type PullRequestInfo struct {
+	Number int
+	URL    string
+	State  string
+	Head   string
+	Base   string
+}
+
 // RepositoryProvider is an interface to repository hosting services (GitHub first, GitLab-ready).
 //
 // Domain code must rely on this interface instead of importing vendor SDK packages.
@@ -44,4 +53,8 @@ type RepositoryProvider interface {
 	//
 	// Callers should treat errors as best-effort failures (tokens may be revoked, permissions missing, etc).
 	DeleteWebhook(ctx context.Context, token string, owner string, name string, webhookURL string) error
+	// GetPullRequest loads one pull request by provider-native number.
+	GetPullRequest(ctx context.Context, token string, owner string, name string, pullRequestNumber int) (PullRequestInfo, bool, error)
+	// FindPullRequestByHead returns one pull request targeting the same repository head branch.
+	FindPullRequestByHead(ctx context.Context, token string, owner string, name string, headRef string) (PullRequestInfo, bool, error)
 }

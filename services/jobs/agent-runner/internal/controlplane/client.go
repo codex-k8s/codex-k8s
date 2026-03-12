@@ -126,6 +126,23 @@ type UpsertRunStatusCommentParams struct {
 	CodexAuthUserCode        string
 }
 
+// RunPullRequestLookupParams describes PR metadata lookup scoped to one authenticated run.
+type RunPullRequestLookupParams struct {
+	ProjectID          string
+	RepositoryFullName string
+	PRNumber           int
+	HeadBranch         string
+}
+
+// RunPullRequestLookupResult contains recovered PR metadata.
+type RunPullRequestLookupResult struct {
+	PRNumber   int
+	PRURL      string
+	PRState    string
+	HeadBranch string
+	BaseBranch string
+}
+
 // Dial creates control-plane gRPC client with run-bound bearer auth.
 func Dial(ctx context.Context, target string, bearerToken string) (*Client, error) {
 	conn, err := grpcutil.DialInsecureReady(ctx, strings.TrimSpace(target))
@@ -301,6 +318,28 @@ func (c *Client) UpsertRunStatusComment(ctx context.Context, params UpsertRunSta
 	return nil
 }
 
+func (c *Client) LookupRunPullRequest(ctx context.Context, params RunPullRequestLookupParams) (RunPullRequestLookupResult, bool, error) {
+	resp, err := c.svc.LookupRunPullRequest(c.withAuth(ctx), &controlplanev1.LookupRunPullRequestRequest{
+		ProjectId:          optionalString(strings.TrimSpace(params.ProjectID)),
+		RepositoryFullName: strings.TrimSpace(params.RepositoryFullName),
+		PrNumber:           intToOptional(intPtr(params.PRNumber)),
+		HeadBranch:         optionalString(strings.TrimSpace(params.HeadBranch)),
+	})
+	if err != nil {
+		return RunPullRequestLookupResult{}, false, fmt.Errorf("lookup run pull request: %w", err)
+	}
+	if !resp.GetFound() {
+		return RunPullRequestLookupResult{}, false, nil
+	}
+	return RunPullRequestLookupResult{
+		PRNumber:   int(resp.GetPrNumber()),
+		PRURL:      strings.TrimSpace(resp.GetPrUrl()),
+		PRState:    strings.TrimSpace(resp.GetPrState()),
+		HeadBranch: strings.TrimSpace(resp.GetHeadBranch()),
+		BaseBranch: strings.TrimSpace(resp.GetBaseBranch()),
+	}, true, nil
+}
+
 func (c *Client) withAuth(ctx context.Context) context.Context {
 	token := strings.TrimSpace(c.bearerToken)
 	if token == "" {
@@ -329,6 +368,14 @@ func intToOptional(value *int) *wrapperspb.Int32Value {
 		return nil
 	}
 	return wrapperspb.Int32(int32(*value))
+}
+
+func intPtr(value int) *int {
+	if value <= 0 {
+		return nil
+	}
+	result := value
+	return &result
 }
 
 func optionalToInt(value *wrapperspb.Int32Value) int {

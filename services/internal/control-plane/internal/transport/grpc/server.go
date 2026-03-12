@@ -42,6 +42,7 @@ type mcpRunTokenService interface {
 type agentCallbackService interface {
 	UpsertAgentSession(ctx context.Context, params agentcallbackdomain.UpsertAgentSessionParams) (agentcallbackdomain.UpsertAgentSessionResult, error)
 	GetLatestAgentSession(ctx context.Context, query agentcallbackdomain.GetLatestAgentSessionQuery) (agentcallbackdomain.Session, bool, error)
+	LookupPullRequest(ctx context.Context, query agentcallbackdomain.LookupPullRequestQuery) (agentcallbackdomain.PullRequestLookupResult, bool, error)
 	InsertRunFlowEvent(ctx context.Context, params agentcallbackdomain.InsertRunFlowEventParams) error
 }
 
@@ -195,6 +196,13 @@ func intPtrFromOptional(value *wrapperspb.Int32Value) *int {
 	}
 	v := int(value.Value)
 	return &v
+}
+
+func intFromOptional(value *wrapperspb.Int32Value) int {
+	if value == nil || value.Value <= 0 {
+		return 0
+	}
+	return int(value.Value)
 }
 
 func intToOptional(value int32) *wrapperspb.Int32Value {

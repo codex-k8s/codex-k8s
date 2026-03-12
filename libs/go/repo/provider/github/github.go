@@ -2,6 +2,7 @@ package github
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -115,6 +116,55 @@ func (p *Provider) DeleteWebhook(ctx context.Context, token string, owner string
 	return nil
 }
 
+// GetPullRequest returns one GitHub pull request by number.
+func (p *Provider) GetPullRequest(ctx context.Context, token string, owner string, name string, pullRequestNumber int) (provider.PullRequestInfo, bool, error) {
+	if pullRequestNumber <= 0 {
+		return provider.PullRequestInfo{}, false, nil
+	}
+
+	client := gh.NewClient(p.httpClient).WithAuthToken(token)
+	item, _, err := client.PullRequests.Get(ctx, owner, name, pullRequestNumber)
+	if err != nil {
+		if isNotFound(err) {
+			return provider.PullRequestInfo{}, false, nil
+		}
+		return provider.PullRequestInfo{}, false, fmt.Errorf("github get pull request %s/%s#%d: %w", owner, name, pullRequestNumber, err)
+	}
+
+	return toPullRequestInfo(item), true, nil
+}
+
+// FindPullRequestByHead returns the most recent pull request for one head branch.
+func (p *Provider) FindPullRequestByHead(ctx context.Context, token string, owner string, name string, headRef string) (provider.PullRequestInfo, bool, error) {
+	trimmedHeadRef := strings.TrimSpace(headRef)
+	if trimmedHeadRef == "" {
+		return provider.PullRequestInfo{}, false, nil
+	}
+
+	client := gh.NewClient(p.httpClient).WithAuthToken(token)
+	headFilter := trimmedHeadRef
+	if !strings.Contains(headFilter, ":") {
+		headFilter = strings.TrimSpace(owner) + ":" + headFilter
+	}
+
+	items, _, err := client.PullRequests.List(ctx, owner, name, &gh.PullRequestListOptions{
+		State: "all",
+		Head:  headFilter,
+		Sort:  "updated",
+		ListOptions: gh.ListOptions{
+			PerPage: 20,
+		},
+	})
+	if err != nil {
+		return provider.PullRequestInfo{}, false, fmt.Errorf("github list pull requests %s/%s head=%s: %w", owner, name, trimmedHeadRef, err)
+	}
+	if len(items) == 0 {
+		return provider.PullRequestInfo{}, false, nil
+	}
+
+	return toPullRequestInfo(items[0]), true, nil
+}
+
 func normalizeEvents(in []string) []string {
 	out := make([]string, 0, len(in))
 	for _, e := range in {
@@ -136,5 +186,24 @@ func hookConfig(spec provider.WebhookSpec) *gh.HookConfig {
 		URL:         gh.Ptr(spec.URL),
 		ContentType: gh.Ptr("json"),
 		Secret:      gh.Ptr(spec.Secret),
+	}
+}
+
+func isNotFound(err error) bool {
+	var apiErr *gh.ErrorResponse
+	return errors.As(err, &apiErr) && apiErr.Response != nil && apiErr.Response.StatusCode == http.StatusNotFound
+}
+
+func toPullRequestInfo(item *gh.PullRequest) provider.PullRequestInfo {
+	if item == nil {
+		return provider.PullRequestInfo{}
+	}
+
+	return provider.PullRequestInfo{
+		Number: item.GetNumber(),
+		URL:    item.GetHTMLURL(),
+		State:  item.GetState(),
+		Head:   item.GetHead().GetRef(),
+		Base:   item.GetBase().GetRef(),
 	}
 }

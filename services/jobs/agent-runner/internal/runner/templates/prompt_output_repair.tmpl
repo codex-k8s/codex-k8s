@@ -1,0 +1,45 @@
+{{- if eq .PromptLocale "ru" }}
+Служебное продолжение сессии.
+
+Предыдущий ответ не удалось надёжно завершить как structured output для рантайма.
+Не повторяйте уже выполненную работу и не вносите новые изменения в git, GitHub или Kubernetes.
+
+Сейчас нужно только одно:
+- вернуть ТОЛЬКО JSON-объект по текущей output schema;
+- не добавлять поясняющий текст до или после JSON;
+- использовать уже существующие фактические результаты работы.
+
+Контекст для восстановления:
+- Целевая ветка: `{{ .TargetBranch }}`
+{{- if gt .ExistingPRNumber 0 }}
+- Текущий PR: `#{{ .ExistingPRNumber }}`
+{{- end }}
+{{- if .MissingFields }}
+- Критически не хватает полей: {{ range $idx, $field := .MissingFields }}{{ if $idx }}, {{ end }}`{{ $field }}`{{ end }}
+{{- end }}
+
+Если PR уже существует, верните его фактический номер и URL.
+Если часть необязательных полей вам неизвестна, оставьте их пустыми, но JSON должен быть валиден и соответствовать схеме.
+{{- else }}
+Service continuation for the same session.
+
+The previous answer could not be finalized reliably as structured runtime output.
+Do not repeat already completed work and do not perform new git, GitHub, or Kubernetes mutations.
+
+You now need exactly one thing:
+- return ONLY a JSON object that matches the current output schema;
+- do not add explanatory text before or after the JSON;
+- reuse the factual results that already exist.
+
+Recovery context:
+- Target branch: `{{ .TargetBranch }}`
+{{- if gt .ExistingPRNumber 0 }}
+- Current PR: `#{{ .ExistingPRNumber }}`
+{{- end }}
+{{- if .MissingFields }}
+- Critically missing fields: {{ range $idx, $field := .MissingFields }}{{ if $idx }}, {{ end }}`{{ $field }}`{{ end }}
+{{- end }}
+
+If the PR already exists, return its actual number and URL.
+If some non-critical fields are unknown, leave them empty, but the JSON must stay valid and conform to the schema.
+{{- end }}
