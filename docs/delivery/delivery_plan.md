@@ -5,8 +5,8 @@ title: "codex-k8s — Delivery Plan"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-03-11
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320]
+updated_at: 2026-03-12
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -215,6 +215,15 @@ approvals:
     - initiative/handover пакеты перенесены в `docs/architecture/initiatives/` и `docs/ops/handovers/`;
     - синхронизированы `services.yaml`, `docs/templates/*`, delivery traceability-документы и индексы;
     - синхронизированы repo-local path refs, а issue bodies `#281`, `#282`, `#312` очищены от same-repo blob links и branch-specific doc refs.
+
+### Sprint S9: Mission Control Dashboard and console control plane
+- Day 1 (in-review): intake-пакет для Mission Control Dashboard (`docs/delivery/epics/s9/epic-s9-day1-mission-control-dashboard-intake.md`, Issue `#333`).
+- Результат Day 1 (факт):
+  - Mission Control Dashboard зафиксирован как отдельная product initiative, а не как локальный UI-refactor staff console;
+  - принят active-set control-plane baseline: work items, discussion, PR, agents, side panel, realtime updates и provider-safe быстрые действия;
+  - закреплены неподвижные ограничения: GitHub-first MVP, human review в provider UI, webhook-driven orchestration, contract-first API и audit-safe command/reconciliation path;
+  - рекомендован launch profile `feature` с обязательной эскалацией в `vision` и `arch`;
+  - создана follow-up issue `#335` для stage `run:vision` без trigger-лейбла.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
