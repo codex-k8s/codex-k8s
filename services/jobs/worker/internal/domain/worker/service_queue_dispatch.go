@@ -35,6 +35,7 @@ func (s *Service) launchPending(ctx context.Context) error {
 		prepareParams := buildPrepareRunEnvironmentParams(claimed, execution)
 		deployOnlyRun := prepareParams.DeployOnly
 		aiRepairRun := isAIRepairRuntimePayload(runPayload)
+		reusedFullEnvNamespace := false
 		if aiRepairRun {
 			execution.Namespace = s.resolveAIRepairNamespace(execution.Namespace)
 		}
@@ -98,6 +99,7 @@ func (s *Service) launchPending(ctx context.Context) error {
 				} else if found {
 					prepareParams.Namespace = reusableNamespace.Namespace
 					execution.Namespace = reusableNamespace.Namespace
+					reusedFullEnvNamespace = true
 				}
 			}
 		}
@@ -121,6 +123,17 @@ func (s *Service) launchPending(ctx context.Context) error {
 				}
 			}
 			if err := s.launchPreparedRunWorkload(ctx, runningRun, execution, agentCtx, leaseSpec, runLaunchOptions{}); err != nil {
+				return err
+			}
+			continue
+		}
+
+		if reusedFullEnvNamespace && !deployOnlyRun {
+			if err := s.launchPreparedRunWorkload(ctx, runningRun, execution, agentCtx, namespaceLeaseSpec{
+				AgentKey:    leaseCtx.AgentKey,
+				IssueNumber: leaseCtx.IssueNumber,
+				TTL:         leaseTTL,
+			}, runLaunchOptions{}); err != nil {
 				return err
 			}
 			continue

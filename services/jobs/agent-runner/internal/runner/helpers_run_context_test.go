@@ -33,8 +33,8 @@ func TestRunnerWorkspaceDir(t *testing.T) {
 		}
 	})
 
-	t.Run("full-env isolates workspace by agent and branch", func(t *testing.T) {
-		want := filepath.Join("/workspace", ".codex-runner", "dev", "codex-issue-355")
+	t.Run("full-env uses temp workspace outside live repo tree", func(t *testing.T) {
+		want := filepath.Join("/tmp", "codex-runner", "dev", "codex-issue-355")
 		if got := runnerWorkspaceDir(runtimeModeFullEnv, "dev", "codex/issue-355"); got != want {
 			t.Fatalf("runnerWorkspaceDir(full-env) = %q, want %q", got, want)
 		}
@@ -48,8 +48,8 @@ func TestRunnerRepoDir(t *testing.T) {
 		}
 	})
 
-	t.Run("full-env uses isolated repo checkout", func(t *testing.T) {
-		want := filepath.Join("/workspace", ".codex-runner", "dev", "codex-issue-355", "repo")
+	t.Run("full-env uses live workspace repo prepared by runtime deploy", func(t *testing.T) {
+		want := "/workspace"
 		if got := runnerRepoDir(runtimeModeFullEnv, "dev", "codex/issue-355"); got != want {
 			t.Fatalf("runnerRepoDir(full-env) = %q, want %q", got, want)
 		}

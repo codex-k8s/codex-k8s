@@ -13,14 +13,15 @@ Prompt seed policy:
 
 ## Full-env repo cache
 
-В `full-env` live сервисы продолжают работать из общего repo-cache PVC в `/workspace`, но сам
-runner больше не делает `git checkout/reset/clean` в этом дереве. Для агентной сессии создаётся
-отдельный checkout в `/workspace/.codex-runner/<agent>/<branch>/repo`, и жёсткая очистка
-`git reset --hard && git clean -fdx` выполняется только там.
+В `full-env` live сервисы и `agent-runner` работают с одним и тем же repo-cache PVC в `/workspace`:
+branch/ref туда заранее доставляет runtime deploy (`repo-sync`) до запуска agent pod.
 
-Такой split не трогает уже запущенные hot-reload контейнеры (`Vite`, `CompileDaemon` и другие
-runtime-зависимости проекта), поэтому переключение ветки или повторный revise-run не ломает
-live repo, из которого работает dev-slot.
+После этого runner больше не делает `git fetch/checkout/reset/clean` по живому дереву. Он только
+использует уже подготовленный git worktree в `/workspace`, а свои временные файлы держит в
+`/tmp/codex-runner/<agent>/<branch>`, чтобы не триггерить hot-reload watcher-ы.
+
+Для `run:*:revise` при переиспользовании живого namespace worker повторно не запускает runtime
+prepare/repo-sync и просто стартует нового агента в существующем `/workspace`.
 
 ```text
 services/jobs/agent-runner/                          runtime исполнитель агентных запусков

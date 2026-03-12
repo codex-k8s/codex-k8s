@@ -801,11 +801,14 @@ func TestTickLaunchesReviseRunReusesNamespaceAndExtendsTTL(t *testing.T) {
 	if err := svc.Tick(context.Background()); err != nil {
 		t.Fatalf("Tick() error = %v", err)
 	}
-	if len(deployer.prepared) != 1 {
-		t.Fatalf("expected one runtime prepare call, got %d", len(deployer.prepared))
+	if len(deployer.prepared) != 0 {
+		t.Fatalf("expected reused revise namespace to skip runtime prepare, got %d calls", len(deployer.prepared))
 	}
-	if got, want := deployer.prepared[0].Namespace, "codex-k8s-dev-1"; got != want {
-		t.Fatalf("expected revise run to reuse namespace %q, got %q", want, got)
+	if len(launcher.launched) != 1 {
+		t.Fatalf("expected one launched job, got %d", len(launcher.launched))
+	}
+	if got, want := launcher.launched[0].Namespace, "codex-k8s-dev-1"; got != want {
+		t.Fatalf("expected launched namespace %q, got %q", want, got)
 	}
 	if len(events.inserted) < 3 {
 		t.Fatalf("expected namespace prepared + ttl extended + run started events, got %d", len(events.inserted))

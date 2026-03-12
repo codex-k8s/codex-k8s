@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -500,6 +501,18 @@ func (s *Service) restoreSessionSnapshot(ctx context.Context, sessionsDir string
 
 func (s *Service) prepareRepository(ctx context.Context, result runResult, state codexState) error {
 	repoURL := fmt.Sprintf("https://github.com/%s.git", s.cfg.RepositoryFullName)
+	if usesPreparedFullEnvRepository(s.cfg.RuntimeMode) {
+		if err := ensureExistingRepoDirCheckout(ctx, state.repoDir, repoURL); err != nil {
+			return err
+		}
+		_ = runCommandQuiet(ctx, state.repoDir, "git", "config", "user.name", s.cfg.AgentDisplayName)
+		_ = runCommandQuiet(ctx, state.repoDir, "git", "config", "user.email", s.cfg.GitBotMail)
+		if err := ensurePreparedFullEnvBranch(ctx, state.repoDir, result.targetBranch); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	if err := ensureRepoDirCheckout(ctx, state.repoDir, repoURL); err != nil {
 		return err
 	}
@@ -531,6 +544,56 @@ func (s *Service) prepareRepository(ctx context.Context, result runResult, state
 		return fmt.Errorf("git clean failed")
 	}
 
+	return nil
+}
+
+func ensureExistingRepoDirCheckout(ctx context.Context, repoDir string, repoURL string) error {
+	repoDir = strings.TrimSpace(repoDir)
+	repoURL = strings.TrimSpace(repoURL)
+	if repoDir == "" {
+		return fmt.Errorf("repo dir is required")
+	}
+	if repoURL == "" {
+		return fmt.Errorf("repo url is required")
+	}
+	if runCommandQuiet(ctx, repoDir, "git", "rev-parse", "--is-inside-work-tree") != nil {
+		return fmt.Errorf("full-env repository is missing prepared git work tree: %s", repoDir)
+	}
+	if err := runCommandQuiet(ctx, repoDir, "git", "remote", "set-url", "origin", repoURL); err == nil {
+		return nil
+	}
+	if err := runCommandQuiet(ctx, repoDir, "git", "remote", "add", "origin", repoURL); err == nil {
+		return nil
+	}
+	if err := runCommandQuiet(ctx, repoDir, "git", "remote", "remove", "origin"); err != nil {
+		return fmt.Errorf("remove stale git origin failed")
+	}
+	if err := runCommandQuiet(ctx, repoDir, "git", "remote", "add", "origin", repoURL); err != nil {
+		return fmt.Errorf("reconfigure git origin failed")
+	}
+	return nil
+}
+
+func ensurePreparedFullEnvBranch(ctx context.Context, repoDir string, targetBranch string) error {
+	targetBranch = strings.TrimSpace(targetBranch)
+	if targetBranch == "" {
+		return fmt.Errorf("target branch is required")
+	}
+
+	currentBranch, err := currentLocalBranch(ctx, repoDir)
+	if err == nil {
+		if currentBranch == targetBranch {
+			return nil
+		}
+		return fmt.Errorf("full-env repository branch mismatch: got %s want %s", currentBranch, targetBranch)
+	}
+
+	if !isDetachedHeadErr(err) {
+		return fmt.Errorf("resolve full-env repository branch: %w", err)
+	}
+	if runCommandQuiet(ctx, repoDir, "git", "checkout", "-B", targetBranch) != nil {
+		return fmt.Errorf("attach full-env repository branch failed")
+	}
 	return nil
 }
 
@@ -574,6 +637,25 @@ func ensureRepoDirCheckout(ctx context.Context, repoDir string, repoURL string) 
 		return fmt.Errorf("reconfigure git origin failed")
 	}
 	return nil
+}
+
+func currentLocalBranch(ctx context.Context, repoDir string) (string, error) {
+	output, err := runCommandCaptureCombinedOutput(ctx, repoDir, "git", "symbolic-ref", "--quiet", "--short", "HEAD")
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(output)), nil
+}
+
+func isDetachedHeadErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		return exitErr.ExitCode() == 1
+	}
+	return false
 }
 
 func cleanupDirectoryContents(path string) error {

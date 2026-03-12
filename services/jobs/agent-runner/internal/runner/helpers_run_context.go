@@ -19,8 +19,12 @@ func normalizeRuntimeMode(value string) string {
 	return runtimeModeCodeOnly
 }
 
+func usesPreparedFullEnvRepository(runtimeMode string) bool {
+	return normalizeRuntimeMode(runtimeMode) == runtimeModeFullEnv
+}
+
 func runnerWorkspaceDir(runtimeMode string, agentKey string, targetBranch string) string {
-	if normalizeRuntimeMode(runtimeMode) != runtimeModeFullEnv {
+	if !usesPreparedFullEnvRepository(runtimeMode) {
 		return "/workspace"
 	}
 	agentToken := sanitizePathComponent(agentKey)
@@ -31,14 +35,14 @@ func runnerWorkspaceDir(runtimeMode string, agentKey string, targetBranch string
 	if branchToken == "" {
 		branchToken = "branch"
 	}
-	return filepath.Join("/workspace", ".codex-runner", agentToken, branchToken)
+	return filepath.Join("/tmp", "codex-runner", agentToken, branchToken)
 }
 
 func runnerRepoDir(runtimeMode string, agentKey string, targetBranch string) string {
-	if normalizeRuntimeMode(runtimeMode) != runtimeModeFullEnv {
+	if !usesPreparedFullEnvRepository(runtimeMode) {
 		return filepath.Join("/workspace", "repo")
 	}
-	return filepath.Join(runnerWorkspaceDir(runtimeMode, agentKey, targetBranch), "repo")
+	return "/workspace"
 }
 
 func gitCleanArgs(runtimeMode string) []string {
