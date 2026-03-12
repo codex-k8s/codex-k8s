@@ -579,6 +579,109 @@ func TestIngestGitHubWebhook_ModeDiscussionRemovedCleansDiscussionContext(t *tes
 	}
 }
 
+func TestIngestGitHubWebhook_ModeDiscussionRemovalDeletesStaleErroredNamespace(t *testing.T) {
+	ctx := context.Background()
+	runs := &inMemoryRunRepo{
+		items: map[string]string{},
+		byRunID: map[string]agentrunrepo.Run{
+			"run-discussion-active": {
+				ID:            "run-discussion-active",
+				CorrelationID: "corr-discussion-active",
+				ProjectID:     "project-1",
+				Status:        "running",
+				RunPayload:    json.RawMessage(`{"trigger":{"label":"mode:discussion","kind":"dev"}}`),
+			},
+			"run-discussion-stale": {
+				ID:            "run-discussion-stale",
+				CorrelationID: "corr-discussion-stale",
+				ProjectID:     "project-1",
+				Status:        "error",
+				RunPayload:    json.RawMessage(`{"trigger":{"label":"mode:discussion","kind":"dev"}}`),
+			},
+		},
+		searchItems: []agentrunrepo.RunLookupItem{
+			{
+				RunID:              "run-discussion-active",
+				ProjectID:          "project-1",
+				RepositoryFullName: "codex-k8s/codex-k8s",
+				IssueNumber:        289,
+				TriggerKind:        string(webhookdomain.TriggerKindDev),
+				TriggerLabel:       webhookdomain.DefaultModeDiscussionLabel,
+				Status:             "running",
+			},
+			{
+				RunID:              "run-discussion-stale",
+				ProjectID:          "project-1",
+				RepositoryFullName: "codex-k8s/codex-k8s",
+				IssueNumber:        289,
+				TriggerKind:        string(webhookdomain.TriggerKindDev),
+				TriggerLabel:       webhookdomain.DefaultModeDiscussionLabel,
+				Status:             "error",
+			},
+		},
+	}
+	events := &inMemoryEventRepo{}
+	repos := &inMemoryRepoCfgRepo{
+		byExternalID: map[int64]repocfgrepo.FindResult{
+			42: {
+				ProjectID:        "project-1",
+				RepositoryID:     "repo-1",
+				ServicesYAMLPath: "services.yaml",
+				DefaultRef:       "main",
+			},
+		},
+	}
+	users := &inMemoryUserRepo{
+		byLogin: map[string]userrepo.User{
+			"member": {ID: "user-1", GitHubLogin: "member"},
+		},
+	}
+	members := &inMemoryProjectMemberRepo{
+		roles: map[string]string{"project-1|user-1": "read_write"},
+	}
+	runStatus := &inMemoryRunStatusService{}
+	svc := NewService(Config{
+		AgentRuns:  runs,
+		FlowEvents: events,
+		Repos:      repos,
+		Users:      users,
+		Members:    members,
+		RunStatus:  runStatus,
+	})
+
+	payload := json.RawMessage(`{
+		"action":"unlabeled",
+		"label":{"name":"mode:discussion"},
+		"issue":{"id":1001,"number":289,"title":"Discuss feature","html_url":"https://github.com/codex-k8s/codex-k8s/issues/289","state":"open","labels":[]},
+		"repository":{"id":42,"full_name":"codex-k8s/codex-k8s","name":"codex-k8s"},
+		"sender":{"id":10,"login":"member","type":"User"}
+	}`)
+	cmd := IngestCommand{
+		CorrelationID: "delivery-discussion-unlabeled-stale-1",
+		DeliveryID:    "delivery-discussion-unlabeled-stale-1",
+		EventType:     string(webhookdomain.GitHubEventIssues),
+		ReceivedAt:    time.Now().UTC(),
+		Payload:       payload,
+	}
+
+	got, err := svc.IngestGitHubWebhook(ctx, cmd)
+	if err != nil {
+		t.Fatalf("ingest failed: %v", err)
+	}
+	if got.RunID != "" {
+		t.Fatalf("expected no new run on mode:discussion removal, got %q", got.RunID)
+	}
+	if len(runs.canceledRunIDs) != 1 || runs.canceledRunIDs[0] != "run-discussion-active" {
+		t.Fatalf("expected only active discussion run to be canceled, got %#v", runs.canceledRunIDs)
+	}
+	if len(runStatus.deleteNamespaceCalls) != 2 {
+		t.Fatalf("expected namespace delete for active and stale discussion runs, got %#v", runStatus.deleteNamespaceCalls)
+	}
+	if runStatus.deleteNamespaceCalls[0].RunID != "run-discussion-active" || runStatus.deleteNamespaceCalls[1].RunID != "run-discussion-stale" {
+		t.Fatalf("unexpected discussion namespace delete order: %#v", runStatus.deleteNamespaceCalls)
+	}
+}
+
 func TestIngestGitHubWebhook_PushMain_CreatesDeployOnlyProductionRun(t *testing.T) {
 	ctx := context.Background()
 	runs := &inMemoryRunRepo{items: map[string]string{}}

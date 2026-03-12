@@ -155,7 +155,7 @@ func (s *Service) maybeCleanupRunNamespaces(ctx context.Context, cmd IngestComma
 	case eventType == string(webhookdomain.GitHubEventIssues) &&
 		(action == string(webhookdomain.GitHubActionClosed) || action == string(webhookdomain.GitHubActionDeleted)) &&
 		envelope.Issue.Number > 0:
-		if err := s.cleanupActiveDiscussionRunsByIssue(ctx, requestedByID, repositoryFullName, envelope.Issue.Number); err != nil {
+		if err := s.cleanupDiscussionRunsByIssue(ctx, requestedByID, repositoryFullName, envelope.Issue.Number); err != nil {
 			return err
 		}
 		_, cleanupErr = s.runStatus.CleanupNamespacesByIssue(ctx, runstatusdomain.CleanupByIssueParams{
@@ -167,7 +167,7 @@ func (s *Service) maybeCleanupRunNamespaces(ctx context.Context, cmd IngestComma
 		envelope.Issue.Number > 0 &&
 		((action == string(webhookdomain.GitHubActionUnlabeled) && s.triggerLabels.isModeDiscussionLabel(envelope.Label.Name)) ||
 			(action == string(webhookdomain.GitHubActionLabeled) && s.triggerLabels.isRunTriggerLabel(envelope.Label.Name))):
-		cleanupErr = s.cleanupActiveDiscussionRunsByIssue(ctx, requestedByID, repositoryFullName, envelope.Issue.Number)
+		cleanupErr = s.cleanupDiscussionRunsByIssue(ctx, requestedByID, repositoryFullName, envelope.Issue.Number)
 	case eventType == string(webhookdomain.GitHubEventPullRequest) && action == "closed" && envelope.PullRequest.Number > 0:
 		_, cleanupErr = s.runStatus.CleanupNamespacesByPullRequest(ctx, runstatusdomain.CleanupByPullRequestParams{
 			RepositoryFullName: repositoryFullName,
@@ -182,7 +182,7 @@ func (s *Service) maybeCleanupRunNamespaces(ctx context.Context, cmd IngestComma
 	return nil
 }
 
-func (s *Service) cleanupActiveDiscussionRunsByIssue(ctx context.Context, requestedByID string, repositoryFullName string, issueNumber int64) error {
+func (s *Service) cleanupDiscussionRunsByIssue(ctx context.Context, requestedByID string, repositoryFullName string, issueNumber int64) error {
 	if s.agentRuns == nil || strings.TrimSpace(repositoryFullName) == "" || issueNumber <= 0 {
 		return nil
 	}
@@ -204,18 +204,12 @@ func (s *Service) cleanupActiveDiscussionRunsByIssue(ctx context.Context, reques
 		if normalizeLabelToken(extractTriggerLabel(run.RunPayload)) != discussionLabel {
 			continue
 		}
+
 		switch rundomain.Status(strings.TrimSpace(run.Status)) {
 		case rundomain.StatusPending, rundomain.StatusRunning:
-		default:
-			continue
-		}
-
-		canceled, err := s.agentRuns.CancelActiveByID(ctx, run.ID)
-		if err != nil {
-			return fmt.Errorf("cancel active discussion run %s: %w", run.ID, err)
-		}
-		if !canceled {
-			continue
+			if _, err := s.agentRuns.CancelActiveByID(ctx, run.ID); err != nil {
+				return fmt.Errorf("cancel active discussion run %s: %w", run.ID, err)
+			}
 		}
 
 		if _, err := s.runStatus.DeleteRunNamespace(ctx, runstatusdomain.DeleteNamespaceParams{
