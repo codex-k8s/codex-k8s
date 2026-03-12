@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-12
 updated_at: 2026-03-12
-related_issues: [360, 378, 383, 385]
+related_issues: [360, 378, 383, 385, 387]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -55,3 +55,20 @@ approvals:
 - Для continuity создана follow-up issue `#385` (`run:arch`) без trigger-лейбла.
 - Попытка использовать Context7 для GitHub CLI manual снова завершилась ошибкой `Monthly quota exceeded`; для non-interactive GitHub flow использованы локальные `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: PRD stage уточняет product contract и delivery evidence, а в root-матрице синхронизирована только связь по issue/traceability governance.
+
+## Актуализация по Issue #385 (`run:arch`, 2026-03-12)
+- Подготовлен architecture package:
+  - `docs/delivery/epics/s10/epic-s10-day4-mcp-user-interactions-arch.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/README.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/architecture.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/c4_context.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/c4_container.md`;
+  - `docs/architecture/adr/ADR-0012-built-in-mcp-user-interactions-control-plane-owned-lifecycle.md`;
+  - `docs/architecture/alternatives/ALT-0004-built-in-mcp-user-interactions-lifecycle-boundaries.md`.
+- Зафиксированы:
+  - ownership split между `control-plane`, `worker`, `api-gateway` и future adapters;
+  - отдельный interaction-domain без reuse approval-specific semantics как source-of-truth;
+  - lifecycle `tool call -> dispatch -> callback -> resume` с platform-owned retry/idempotency/expiry/audit expectations.
+- Для continuity создана follow-up issue `#387` (`run:design`) без trigger-лейбла.
+- Попытка использовать Context7 для Mermaid/C4 documentation завершилась ошибкой `Monthly quota exceeded`; для пакета использованы существующие Mermaid/C4 conventions репозитория.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: architecture stage фиксирует service boundaries и handover в design, а не меняет канонический requirements baseline.

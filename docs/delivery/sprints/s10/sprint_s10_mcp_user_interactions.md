@@ -6,7 +6,7 @@ status: in-review
 owner_role: PM
 created_at: 2026-03-12
 updated_at: 2026-03-12
-related_issues: [360, 378, 383, 385]
+related_issues: [360, 378, 383, 385, 387]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -21,6 +21,7 @@ approvals:
 - Issue `#360` фиксирует intake baseline: MVP строится вокруг `user.notify` и `user.decision.request`, approval semantics не смешиваются с user-dialog semantics, а core interaction-domain остаётся channel-neutral.
 - Vision-пакет по Issue `#378` фиксирует mission, KPI/guardrails, persona outcomes и continuity issue `#383` для `run:prd`.
 - PRD-пакет по Issue `#383` фиксирует user stories, FR/AC/NFR, wave priorities, wait-state/correlation guardrails и создаёт architecture continuity issue `#385`; Telegram и другие channel adapters остаются отдельным последовательным потоком после проработки core platform contracts.
+- Architecture package по Issue `#385` закрепляет ownership split между `control-plane`, `worker`, `api-gateway` и future adapters, отделяет interaction-domain от approval flow и создаёт design continuity issue `#387`.
 
 ## Scope спринта
 ### In scope
@@ -45,7 +46,7 @@ approvals:
   - `vision` обязателен, потому что инициатива вводит новую user-facing capability и требует measurable KPI;
   - `arch` обязателен, потому что затрагиваются service boundaries, callback contracts, wait-state lifecycle, audit и adapter responsibilities.
 - Целевая continuity-цепочка:
-  `#360 (intake) -> #378 (vision) -> #383 (prd) -> #385 (arch) -> design -> plan -> dev -> qa -> release -> postdeploy -> ops`.
+  `#360 (intake) -> #378 (vision) -> #383 (prd) -> #385 (arch) -> #387 (design) -> plan -> dev -> qa -> release -> postdeploy -> ops`.
 
 ## План этапов и handover
 
@@ -54,8 +55,8 @@ approvals:
 | Intake (`#360`) | Problem/Brief/Scope/Constraints + intake AC | `pm` | Owner review intake-пакета и создана issue следующего этапа |
 | Vision (`#378`) | Mission, persona outcomes, KPI, MVP/Post-MVP границы | `pm` | Зафиксирован vision baseline и создана issue `#383` (`run:prd`) |
 | PRD (`#383`) | User stories, FR/AC/NFR, delivery evidence expectations | `pm` + `sa` | Подтверждён PRD package и создана issue `#385` (`run:arch`) |
-| Architecture (`#385`) | Service boundaries, ownership матрица, interaction lifecycle | `sa` | Подтверждены архитектурные границы и создана issue `run:design` |
-| Design | API/data/wait-state/adapter contracts и rollout notes | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue `run:plan` |
+| Architecture (`#385`) | Service boundaries, ownership матрица, interaction lifecycle | `sa` | Подтверждены архитектурные границы и создана issue `#387` (`run:design`) |
+| Design (`#387`) | API/data/wait-state/adapter contracts и rollout notes | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue `run:plan` |
 | Plan | Delivery waves, quality-gates, execution issues, DoR/DoD | `em` + `km` | Сформирован execution package и backlog отдельных implementation issues |
 
 ## Guardrails спринта
@@ -67,7 +68,14 @@ approvals:
 - Telegram остаётся отдельным follow-up stream после завершения Sprint S10 doc-stage цепочки.
 
 ## Handover
-- Текущий stage in-review: `run:prd` в Issue `#383`.
-- PRD-пакет: `docs/delivery/epics/s10/epic-s10-day3-mcp-user-interactions-prd.md`, `docs/delivery/epics/s10/prd-s10-day3-mcp-user-interactions.md`.
-- Следующий stage: `run:arch` в Issue `#385`.
-- Trigger-лейбл для Issue `#385` не ставится автоматически и остаётся owner-managed переходом после review PRD-пакета.
+- Текущий stage in-review: `run:arch` в Issue `#385`.
+- Architecture package:
+  - `docs/delivery/epics/s10/epic-s10-day4-mcp-user-interactions-arch.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/README.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/architecture.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/c4_context.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/c4_container.md`;
+  - `docs/architecture/adr/ADR-0012-built-in-mcp-user-interactions-control-plane-owned-lifecycle.md`;
+  - `docs/architecture/alternatives/ALT-0004-built-in-mcp-user-interactions-lifecycle-boundaries.md`.
+- Следующий stage: `run:design` в Issue `#387`.
+- Trigger-лейбл для Issue `#387` не ставится автоматически и остаётся owner-managed переходом после review architecture package.

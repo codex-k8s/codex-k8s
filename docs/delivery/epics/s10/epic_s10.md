@@ -6,7 +6,7 @@ status: in-review
 owner_role: PM
 created_at: 2026-03-12
 updated_at: 2026-03-12
-related_issues: [360, 378, 383, 385]
+related_issues: [360, 378, 383, 385, 387]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -21,14 +21,15 @@ approvals:
 - Day1 intake (`#360`) фиксирует problem statement, MVP scope, guardrails и continuity в `run:vision`.
 - Day2 vision (`#378`) фиксирует mission, persona outcomes, KPI/guardrails и handover в PRD issue `#383`.
 - Day3 PRD (`#383`) фиксирует user stories, FR/AC/NFR, wait-state/correlation guardrails и handover в architecture issue `#385`.
+- Day4 architecture (`#385`) фиксирует ownership split, interaction lifecycle и design continuity issue `#387`.
 - До `run:plan` Sprint S10 остаётся markdown-only контуром: implementation issues, кодовые правки и выбор конкретных library/runtime деталей откладываются до подтверждённых product и architecture decisions.
 
 ## Stage roadmap
 - Day 1 (Intake): `docs/delivery/epics/s10/epic-s10-day1-mcp-user-interactions-intake.md` (Issue `#360`).
 - Day 2 (Vision): `docs/delivery/epics/s10/epic-s10-day2-mcp-user-interactions-vision.md` (Issue `#378`).
 - Day 3 (PRD): `docs/delivery/epics/s10/epic-s10-day3-mcp-user-interactions-prd.md` + `docs/delivery/epics/s10/prd-s10-day3-mcp-user-interactions.md` (Issue `#383`); зафиксированы user stories, FR/AC/NFR, edge cases и expected evidence.
-- Day 4 (Architecture): continuity issue `#385`; должна закрепить boundaries между `control-plane`, `worker`, transport edges и future channel adapters.
-- Day 5 (Design): создаётся после architecture review; должна оформить implementation-ready API/data/wait-state contracts.
+- Day 4 (Architecture): `docs/delivery/epics/s10/epic-s10-day4-mcp-user-interactions-arch.md` + architecture package in `docs/architecture/initiatives/s10_mcp_user_interactions/` (Issue `#385`).
+- Day 5 (Design): continuity issue `#387`; должна оформить implementation-ready API/data/wait-state contracts.
 - Day 6 (Plan): создаётся после design review; должна сформировать execution waves, quality-gates и отдельные implementation issues.
 
 ## Candidate product streams
@@ -45,5 +46,6 @@ approvals:
 - До `run:plan` Sprint S10 не создаёт implementation issues и не добавляет новые зависимости в репозиторий.
 - Каждый stage создаёт следующую issue без trigger-лейбла; запуск следующего stage остаётся Owner-managed.
 - После PRD stage continuity issue `#385` становится единственной точкой входа в `run:arch` для этой инициативы.
+- После architecture stage continuity issue `#387` становится единственной точкой входа в `run:design` для этой инициативы.
 - `S10-E05` не считается blocking scope для core Sprint S10: Telegram и другие adapters стартуют только после фиксации channel-neutral platform contract.
 - Approval flow redesign не входит в Sprint S10 и не может использоваться как shortcut для user interaction scope.

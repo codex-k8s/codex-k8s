@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-12
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 363, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 363, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -279,8 +279,20 @@ approvals:
   - подтверждены product guardrails: interaction flow не смешивается с approval flow, `user.notify` остаётся non-blocking, wait-state разрешён только для `user.decision.request`, delivery/retry/idempotency/correlation/audit принадлежат platform domain;
   - deferred scope явно отделён от core MVP: Telegram/adapters, reminder policies, richer threads и voice/STT не блокируют Sprint S10 core baseline;
   - создана follow-up issue `#385` для stage `run:arch` без trigger-лейбла.
-- Day 4 (planned): architecture-пакет для built-in MCP user interactions (Issue `#385`).
-  - Цель: зафиксировать service boundaries, ownership matrix, callback/wait-state lifecycle и architectural alternatives без потери product invariants Day 3.
+- Day 4 (in-review): architecture-пакет для built-in MCP user interactions (Issue `#385`):
+  - `docs/delivery/epics/s10/epic-s10-day4-mcp-user-interactions-arch.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/README.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/architecture.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/c4_context.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/c4_container.md`;
+  - `docs/architecture/adr/ADR-0012-built-in-mcp-user-interactions-control-plane-owned-lifecycle.md`;
+  - `docs/architecture/alternatives/ALT-0004-built-in-mcp-user-interactions-lifecycle-boundaries.md`.
+- Результат Day 4 (факт):
+  - зафиксирован ownership split: `control-plane` владеет interaction aggregate, wait-state transitions и audit/correlation; `worker` закреплён за dispatch/retries/expiry; `api-gateway` остаётся thin-edge callback ingress;
+  - подтверждена архитектурная граница между interaction flow и approval/control flow: approval-specific semantics не становятся source-of-truth для обычных user interactions;
+  - создана follow-up issue `#387` для stage `run:design` без trigger-лейбла.
+- Day 5 (planned): design-пакет для built-in MCP user interactions (Issue `#387`).
+  - Цель: зафиксировать implementation-ready tool/callback contracts, data model, migration notes и rollout order без выхода в кодовую реализацию.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

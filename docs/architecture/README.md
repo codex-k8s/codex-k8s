@@ -5,8 +5,8 @@ title: "Architecture Documentation Index"
 status: in-review
 owner_role: SA
 created_at: 2026-03-11
-updated_at: 2026-03-11
-related_issues: [320]
+updated_at: 2026-03-12
+related_issues: [320, 385, 387]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -39,3 +39,4 @@ approvals:
 - Lifecycle agents/prompt templates: `docs/architecture/initiatives/agents_prompt_templates_lifecycle/README.md`
 - Sprint S7 MVP readiness package: `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/README.md`
 - Sprint S9 Mission Control Dashboard package: `docs/architecture/initiatives/s9_mission_control_dashboard/README.md`
+- Sprint S10 built-in MCP user interactions package: `docs/architecture/initiatives/s10_mcp_user_interactions/README.md`

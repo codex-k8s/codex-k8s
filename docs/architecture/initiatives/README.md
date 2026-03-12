@@ -5,8 +5,8 @@ title: "Architecture Initiatives Index"
 status: in-review
 owner_role: SA
 created_at: 2026-03-11
-updated_at: 2026-03-11
-related_issues: [320]
+updated_at: 2026-03-12
+related_issues: [320, 385, 387]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -24,3 +24,4 @@ approvals:
 - `docs/architecture/initiatives/agents_prompt_templates_lifecycle/README.md`
 - `docs/architecture/initiatives/s7_mvp_readiness_gap_closure/README.md`
 - `docs/architecture/initiatives/s9_mission_control_dashboard/README.md`
+- `docs/architecture/initiatives/s10_mcp_user_interactions/README.md`
