@@ -26,31 +26,16 @@ func TestGitCleanArgs(t *testing.T) {
 	})
 }
 
-func TestRunnerWorkspaceDir(t *testing.T) {
-	t.Run("code-only keeps default workspace root", func(t *testing.T) {
-		if got, want := runnerWorkspaceDir(runtimeModeCodeOnly, "dev", "codex/issue-355"), "/workspace"; got != want {
-			t.Fatalf("runnerWorkspaceDir(code-only) = %q, want %q", got, want)
-		}
-	})
-
-	t.Run("full-env uses temp workspace outside live repo tree", func(t *testing.T) {
-		want := filepath.Join("/tmp", "codex-runner", "dev", "codex-issue-355")
-		if got := runnerWorkspaceDir(runtimeModeFullEnv, "dev", "codex/issue-355"); got != want {
-			t.Fatalf("runnerWorkspaceDir(full-env) = %q, want %q", got, want)
-		}
-	})
-}
-
 func TestRunnerRepoDir(t *testing.T) {
 	t.Run("code-only keeps repo checkout under workspace", func(t *testing.T) {
-		if got, want := runnerRepoDir(runtimeModeCodeOnly, "dev", "codex/issue-355"), filepath.Join("/workspace", "repo"); got != want {
+		if got, want := runnerRepoDir(runtimeModeCodeOnly), filepath.Join("/workspace", "repo"); got != want {
 			t.Fatalf("runnerRepoDir(code-only) = %q, want %q", got, want)
 		}
 	})
 
 	t.Run("full-env uses live workspace repo prepared by runtime deploy", func(t *testing.T) {
 		want := "/workspace"
-		if got := runnerRepoDir(runtimeModeFullEnv, "dev", "codex/issue-355"); got != want {
+		if got := runnerRepoDir(runtimeModeFullEnv); got != want {
 			t.Fatalf("runnerRepoDir(full-env) = %q, want %q", got, want)
 		}
 	})

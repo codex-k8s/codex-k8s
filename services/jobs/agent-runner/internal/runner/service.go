@@ -29,22 +29,17 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		codexHomeDir = filepath.Join(homeDir, ".codex")
 	}
 	runtimeMode := normalizeRuntimeMode(s.cfg.RuntimeMode)
-	workspaceDir := runnerWorkspaceDir(runtimeMode, s.cfg.AgentKey, targetBranch)
-	repoDir := runnerRepoDir(runtimeMode, s.cfg.AgentKey, targetBranch)
+	repoDir := runnerRepoDir(runtimeMode)
 
 	state := codexState{
-		homeDir:      homeDir,
-		codexDir:     codexHomeDir,
-		sessionsDir:  filepath.Join(codexHomeDir, "sessions"),
-		workspaceDir: workspaceDir,
-		repoDir:      repoDir,
+		homeDir:     homeDir,
+		codexDir:    codexHomeDir,
+		sessionsDir: filepath.Join(codexHomeDir, "sessions"),
+		repoDir:     repoDir,
 	}
 
 	if mkErr := os.MkdirAll(state.sessionsDir, 0o755); mkErr != nil {
 		return fmt.Errorf("create sessions dir: %w", mkErr)
-	}
-	if mkErr := os.MkdirAll(state.workspaceDir, 0o755); mkErr != nil {
-		return fmt.Errorf("create workspace dir: %w", mkErr)
 	}
 	gitAuthDir := filepath.Join(os.TempDir(), "codex-k8s-agent-runner-auth")
 	if mkErr := os.MkdirAll(gitAuthDir, 0o755); mkErr != nil {

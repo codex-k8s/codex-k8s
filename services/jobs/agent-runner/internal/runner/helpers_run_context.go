@@ -23,22 +23,7 @@ func usesPreparedFullEnvRepository(runtimeMode string) bool {
 	return normalizeRuntimeMode(runtimeMode) == runtimeModeFullEnv
 }
 
-func runnerWorkspaceDir(runtimeMode string, agentKey string, targetBranch string) string {
-	if !usesPreparedFullEnvRepository(runtimeMode) {
-		return "/workspace"
-	}
-	agentToken := sanitizePathComponent(agentKey)
-	if agentToken == "" {
-		agentToken = "agent"
-	}
-	branchToken := sanitizePathComponent(targetBranch)
-	if branchToken == "" {
-		branchToken = "branch"
-	}
-	return filepath.Join("/tmp", "codex-runner", agentToken, branchToken)
-}
-
-func runnerRepoDir(runtimeMode string, agentKey string, targetBranch string) string {
+func runnerRepoDir(runtimeMode string) string {
 	if !usesPreparedFullEnvRepository(runtimeMode) {
 		return filepath.Join("/workspace", "repo")
 	}

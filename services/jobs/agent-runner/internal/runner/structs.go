@@ -132,11 +132,10 @@ type restoredSession struct {
 }
 
 type codexState struct {
-	homeDir      string
-	codexDir     string
-	sessionsDir  string
-	workspaceDir string
-	repoDir      string
+	homeDir     string
+	codexDir    string
+	sessionsDir string
+	repoDir     string
 }
 
 type codexReport struct {

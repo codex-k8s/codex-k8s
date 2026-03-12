@@ -16,9 +16,11 @@ Prompt seed policy:
 В `full-env` live сервисы и `agent-runner` работают с одним и тем же repo-cache PVC в `/workspace`:
 branch/ref туда заранее доставляет runtime deploy (`repo-sync`) до запуска agent pod.
 
-После этого runner больше не делает `git fetch/checkout/reset/clean` по живому дереву. Он только
-использует уже подготовленный git worktree в `/workspace`, а свои временные файлы держит в
-`/tmp/codex-runner/<agent>/<branch>`, чтобы не триггерить hot-reload watcher-ы.
+После этого runner больше не делает `git fetch/checkout/reset/clean` по живому дереву и не создаёт
+вторую рабочую директорию. Агент работает прямо в уже подготовленном git worktree `/workspace`, а
+из служебных файлов runner создаёт только короткоживущие объекты в `/tmp` (например, `git-askpass`
+скрипт для git auth и временный каталог для проверки `codex` auth), чтобы не триггерить
+hot-reload watcher-ы.
 
 Для `run:*:revise` при переиспользовании живого namespace worker повторно не запускает runtime
 prepare/repo-sync и просто стартует нового агента в существующем `/workspace`.

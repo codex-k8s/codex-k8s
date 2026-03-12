@@ -124,7 +124,7 @@ func (s *Service) ensureCodexAuthenticated(ctx context.Context, state codexState
 	}
 
 	if status.LoggedIn && (status.Mode == codexAuthModeChatGPT || status.Mode == codexAuthModeUnknown) {
-		if err := s.codexAuthPing(ctx, state); err == nil {
+		if err := s.codexAuthPing(ctx); err == nil {
 			return nil
 		}
 		// Logged in, but tokens may be stale. Force re-auth.
@@ -164,7 +164,7 @@ func (s *Service) ensureCodexAuthenticated(ctx context.Context, state codexState
 	}
 
 	// Verify auth with a minimal request to gpt-5.2.
-	if err := s.codexAuthPing(ctx, state); err != nil {
+	if err := s.codexAuthPing(ctx); err != nil {
 		return err
 	}
 
@@ -181,11 +181,12 @@ func (s *Service) ensureCodexAuthenticated(ctx context.Context, state codexState
 	return nil
 }
 
-func (s *Service) codexAuthPing(ctx context.Context, state codexState) error {
-	pingDir := filepath.Join(state.workspaceDir, "codex-auth-check")
-	if err := os.MkdirAll(pingDir, 0o755); err != nil {
+func (s *Service) codexAuthPing(ctx context.Context) error {
+	pingDir, err := os.MkdirTemp("", "codex-auth-check-"+sanitizePathComponent(s.cfg.RunID)+"-")
+	if err != nil {
 		return fmt.Errorf("create codex auth check dir: %w", err)
 	}
+	defer os.RemoveAll(pingDir)
 
 	checkCtx, cancel := context.WithTimeout(ctx, 75*time.Second)
 	defer cancel()
