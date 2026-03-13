@@ -91,3 +91,25 @@ approvals:
   - правило, что `#374` закрывает observability/rollout-readiness gate перед `run:qa`, а `#375` остаётся optional continuation и не блокирует core MVP rollout.
 - Попытка использовать Context7 для GitHub CLI manual завершилась ошибкой `Monthly quota exceeded`; неинтерактивный issue/PR flow дополнительно сверен локально по `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась, потому что plan-stage обновляет delivery governance и handover backlog, а не канонический product requirements baseline.
+
+## Актуализация по Issue #369 (`run:dev`, 2026-03-13)
+- Реализован foundation stream `S9-E01` в `services/internal/control-plane`:
+  - additive goose migration `20260313133000_day29_mission_control_foundation.sql` с таблицами `mission_control_entities`, `mission_control_relations`, `mission_control_timeline_entries`, `mission_control_commands` и индексами active-set / timeline / command lookup;
+  - доменные типы `internal/domain/types/{entity,enum,query,value}/mission_control.go` и repository contract `internal/domain/repository/missioncontrol/repository.go`;
+  - rollout guard + worker warmup entry contract в `internal/domain/missioncontrol/{rollout_guard.go,contract.go}`;
+  - PostgreSQL foundation repository `internal/repository/postgres/missioncontrol/**` с `projection_version` CAS update, relation replace, timeline upsert, command ledger access и warmup summary query.
+- Зафиксированы guardrails:
+  - core Mission Control path остаётся закрытым без `CODEXK8S_MISSION_CONTROL_ENABLED`;
+  - read-path требует `schema + domain + warmup verification`;
+  - realtime требует `read-path`;
+  - write-path и optional voice path не открываются до прохождения предыдущих gates.
+- Через Context7 подтверждён актуальный pgx v5 baseline для scan JSONB/arrays/timestamptz (`/jackc/pgx`), после чего repository foundation собран на `pgx.RowToStructByName`, `pgtype.*` и typed `json.RawMessage` payloads.
+- Проверки:
+  - `go test ./services/internal/control-plane/...`
+  - `go test ./services/internal/control-plane/internal/domain/missioncontrol ./services/internal/control-plane/internal/repository/postgres/missioncontrol ./services/internal/control-plane/cmd/cli/migrations`
+  - `go mod tidy`
+  - `make lint-go`
+  - `make dupl-go`
+  - `git diff --check`
+- `goose` dry-run/apply не выполнялись, потому что CLI отсутствует в runtime image; миграция проверялась через compile/test path и SQL self-check.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась, потому что `#369` реализует foundation schema/repository layer без изменения канонического product baseline.
