@@ -22,6 +22,9 @@ func (s *Service) Tick(ctx context.Context) error {
 	if err := s.reconcileRunning(ctx); err != nil {
 		return fmt.Errorf("reconcile running runs: %w", err)
 	}
+	if err := s.reconcileInteractions(ctx); err != nil {
+		return fmt.Errorf("reconcile interaction lifecycle: %w", err)
+	}
 	if err := s.launchPending(ctx); err != nil {
 		return fmt.Errorf("launch pending runs: %w", err)
 	}

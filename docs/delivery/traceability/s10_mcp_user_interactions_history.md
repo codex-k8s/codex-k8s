@@ -116,3 +116,22 @@ approvals:
 - Для residual `dupl-go` blockers вне scope создан follow-up issue `#402`.
 - Попытка использовать Context7 для актуальной документации/verification завершилась ошибкой `Monthly quota exceeded`; новых внешних зависимостей в issue `#391` не добавлялось.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: issue `#391` реализует approved foundation wave из execution package, не меняя продуктовый baseline.
+
+## Актуализация по Issue #392 (`run:dev`, 2026-03-13)
+- Реализован worker lifecycle package для stream `S10-E02` в `services/jobs/worker` и `services/internal/control-plane`:
+  - `worker` получил polling loop для expiry и outbound dispatch, configurable limits/timeouts/backoff/max-attempts, flow events `interaction.dispatch.attempted` / `interaction.dispatch.retry_scheduled` и transport client к новым `control-plane` RPC;
+  - `control-plane` получил worker-facing domain/repository API для claim/complete/expire interaction delivery attempts, включая reclaim stuck pending attempts, ledger update по `delivery_id`, terminal outcome classification и wait-context cleanup/resume payload publication только после terminal status;
+  - gRPC contract `proto/codexk8s/controlplane/v1/controlplane.proto` расширен RPC `ClaimNextInteractionDispatch`, `CompleteInteractionDispatch`, `ExpireNextInteraction`, после чего regenerated Go stubs синхронизированы для `control-plane`, `worker` и `agent-runner`;
+  - текущий dispatch adapter оставлен `noop`, потому что channel-specific delivery adapters не входят в core scope issue `#392`; user-facing MCP tools по-прежнему скрыты rollout gate и не открываются до волн `#393/#394`.
+- Rollout boundary сохранён:
+  - callback ingress / OpenAPI / typed HTTP DTO остаются в scope issue `#393`;
+  - deterministic runner resume path и prompt handoff остаются в scope issue `#394`;
+  - terminal outcome scheduling выполняется только после terminal request outcome, без переноса callback semantics в `worker`.
+- Выполнены проверки:
+  - `go test ./services/internal/control-plane/... ./services/jobs/worker/... ./services/jobs/agent-runner/...`
+  - `git diff --check`
+- Для verification использован Context7:
+  - `/grpc/grpc-go` для проверки актуального RPC/metadata usage pattern;
+  - `/jackc/pgx` для проверки transaction/query pattern при claim/complete/expiry update path.
+- Новых внешних зависимостей в issue `#392` не добавлялось.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: issue `#392` реализует approved worker lifecycle wave из execution package, не меняя продуктовый baseline.

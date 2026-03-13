@@ -23,6 +23,10 @@ import (
 var (
 	//go:embed sql/claim_next_pending_for_update.sql
 	queryClaimNextPendingForUpdate string
+	//go:embed sql/create_pending_resume_if_absent.sql
+	queryCreatePendingResumeIfAbsent string
+	//go:embed sql/get_run_id_by_correlation_id.sql
+	queryGetRunIDByCorrelationID string
 	//go:embed sql/upsert_project.sql
 	queryUpsertProject string
 	//go:embed sql/ensure_project_exists.sql
@@ -61,6 +65,37 @@ type Repository struct {
 // NewRepository constructs PostgreSQL run queue repository.
 func NewRepository(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
+}
+
+// CreatePendingResumeIfAbsent inserts one pending resume run derived from an existing source run.
+func (r *Repository) CreatePendingResumeIfAbsent(ctx context.Context, params domainrepo.CreatePendingResumeParams) (bool, error) {
+	sourceRunID := strings.TrimSpace(params.SourceRunID)
+	if sourceRunID == "" {
+		return false, fmt.Errorf("create pending resume run: source_run_id is required")
+	}
+	correlationID := strings.TrimSpace(params.CorrelationID)
+	if correlationID == "" {
+		return false, fmt.Errorf("create pending resume run: correlation_id is required")
+	}
+
+	runID := uuid.NewString()
+	var insertedRunID string
+	err := r.db.QueryRow(ctx, queryCreatePendingResumeIfAbsent, runID, sourceRunID, correlationID).Scan(&insertedRunID)
+	if err == nil {
+		return true, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return false, fmt.Errorf("insert pending resume run: %w", err)
+	}
+
+	var existingRunID string
+	if err := r.db.QueryRow(ctx, queryGetRunIDByCorrelationID, correlationID).Scan(&existingRunID); err == nil {
+		return false, nil
+	} else if !errors.Is(err, pgx.ErrNoRows) {
+		return false, fmt.Errorf("lookup existing pending resume run: %w", err)
+	}
+
+	return false, fmt.Errorf("source run %s not found for pending resume", sourceRunID)
 }
 
 // ClaimNextPending atomically claims one pending run and optionally leases a slot.

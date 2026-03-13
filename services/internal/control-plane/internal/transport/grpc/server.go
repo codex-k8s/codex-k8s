@@ -37,6 +37,9 @@ type mcpRunTokenService interface {
 	VerifyRunToken(ctx context.Context, rawToken string) (mcpdomain.SessionContext, error)
 	ListPendingApprovals(ctx context.Context, limit int) ([]mcpdomain.ApprovalListItem, error)
 	ResolveApproval(ctx context.Context, params mcpdomain.ResolveApprovalParams) (mcpdomain.ResolveApprovalResult, error)
+	ClaimNextInteractionDispatch(ctx context.Context, params mcpdomain.ClaimNextInteractionDispatchParams) (mcpdomain.InteractionDispatchClaim, bool, error)
+	CompleteInteractionDispatch(ctx context.Context, params mcpdomain.CompleteInteractionDispatchParams) (mcpdomain.CompleteInteractionDispatchResult, error)
+	ExpireNextDueInteraction(ctx context.Context) (mcpdomain.ExpireNextInteractionResult, bool, error)
 }
 
 type agentCallbackService interface {

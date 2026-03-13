@@ -57,6 +57,9 @@ const (
 	ControlPlaneService_IssueRunMCPToken_FullMethodName                     = "/codexk8s.controlplane.v1.ControlPlaneService/IssueRunMCPToken"
 	ControlPlaneService_PrepareRunEnvironment_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/PrepareRunEnvironment"
 	ControlPlaneService_EvaluateRuntimeReuse_FullMethodName                 = "/codexk8s.controlplane.v1.ControlPlaneService/EvaluateRuntimeReuse"
+	ControlPlaneService_ClaimNextInteractionDispatch_FullMethodName         = "/codexk8s.controlplane.v1.ControlPlaneService/ClaimNextInteractionDispatch"
+	ControlPlaneService_CompleteInteractionDispatch_FullMethodName          = "/codexk8s.controlplane.v1.ControlPlaneService/CompleteInteractionDispatch"
+	ControlPlaneService_ExpireNextInteraction_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/ExpireNextInteraction"
 	ControlPlaneService_ListRuntimeDeployTasks_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/ListRuntimeDeployTasks"
 	ControlPlaneService_GetRuntimeDeployTask_FullMethodName                 = "/codexk8s.controlplane.v1.ControlPlaneService/GetRuntimeDeployTask"
 	ControlPlaneService_CancelRuntimeDeployTask_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/CancelRuntimeDeployTask"
@@ -116,6 +119,9 @@ type ControlPlaneServiceClient interface {
 	IssueRunMCPToken(ctx context.Context, in *IssueRunMCPTokenRequest, opts ...grpc.CallOption) (*IssueRunMCPTokenResponse, error)
 	PrepareRunEnvironment(ctx context.Context, in *PrepareRunEnvironmentRequest, opts ...grpc.CallOption) (*PrepareRunEnvironmentResponse, error)
 	EvaluateRuntimeReuse(ctx context.Context, in *EvaluateRuntimeReuseRequest, opts ...grpc.CallOption) (*EvaluateRuntimeReuseResponse, error)
+	ClaimNextInteractionDispatch(ctx context.Context, in *ClaimNextInteractionDispatchRequest, opts ...grpc.CallOption) (*ClaimNextInteractionDispatchResponse, error)
+	CompleteInteractionDispatch(ctx context.Context, in *CompleteInteractionDispatchRequest, opts ...grpc.CallOption) (*CompleteInteractionDispatchResponse, error)
+	ExpireNextInteraction(ctx context.Context, in *ExpireNextInteractionRequest, opts ...grpc.CallOption) (*ExpireNextInteractionResponse, error)
 	ListRuntimeDeployTasks(ctx context.Context, in *ListRuntimeDeployTasksRequest, opts ...grpc.CallOption) (*ListRuntimeDeployTasksResponse, error)
 	GetRuntimeDeployTask(ctx context.Context, in *GetRuntimeDeployTaskRequest, opts ...grpc.CallOption) (*RuntimeDeployTask, error)
 	CancelRuntimeDeployTask(ctx context.Context, in *CancelRuntimeDeployTaskRequest, opts ...grpc.CallOption) (*RuntimeDeployTaskActionResponse, error)
@@ -511,6 +517,36 @@ func (c *controlPlaneServiceClient) EvaluateRuntimeReuse(ctx context.Context, in
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) ClaimNextInteractionDispatch(ctx context.Context, in *ClaimNextInteractionDispatchRequest, opts ...grpc.CallOption) (*ClaimNextInteractionDispatchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ClaimNextInteractionDispatchResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ClaimNextInteractionDispatch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) CompleteInteractionDispatch(ctx context.Context, in *CompleteInteractionDispatchRequest, opts ...grpc.CallOption) (*CompleteInteractionDispatchResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CompleteInteractionDispatchResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_CompleteInteractionDispatch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) ExpireNextInteraction(ctx context.Context, in *ExpireNextInteractionRequest, opts ...grpc.CallOption) (*ExpireNextInteractionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ExpireNextInteractionResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ExpireNextInteraction_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) ListRuntimeDeployTasks(ctx context.Context, in *ListRuntimeDeployTasksRequest, opts ...grpc.CallOption) (*ListRuntimeDeployTasksResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListRuntimeDeployTasksResponse)
@@ -694,6 +730,9 @@ type ControlPlaneServiceServer interface {
 	IssueRunMCPToken(context.Context, *IssueRunMCPTokenRequest) (*IssueRunMCPTokenResponse, error)
 	PrepareRunEnvironment(context.Context, *PrepareRunEnvironmentRequest) (*PrepareRunEnvironmentResponse, error)
 	EvaluateRuntimeReuse(context.Context, *EvaluateRuntimeReuseRequest) (*EvaluateRuntimeReuseResponse, error)
+	ClaimNextInteractionDispatch(context.Context, *ClaimNextInteractionDispatchRequest) (*ClaimNextInteractionDispatchResponse, error)
+	CompleteInteractionDispatch(context.Context, *CompleteInteractionDispatchRequest) (*CompleteInteractionDispatchResponse, error)
+	ExpireNextInteraction(context.Context, *ExpireNextInteractionRequest) (*ExpireNextInteractionResponse, error)
 	ListRuntimeDeployTasks(context.Context, *ListRuntimeDeployTasksRequest) (*ListRuntimeDeployTasksResponse, error)
 	GetRuntimeDeployTask(context.Context, *GetRuntimeDeployTaskRequest) (*RuntimeDeployTask, error)
 	CancelRuntimeDeployTask(context.Context, *CancelRuntimeDeployTaskRequest) (*RuntimeDeployTaskActionResponse, error)
@@ -829,6 +868,15 @@ func (UnimplementedControlPlaneServiceServer) PrepareRunEnvironment(context.Cont
 }
 func (UnimplementedControlPlaneServiceServer) EvaluateRuntimeReuse(context.Context, *EvaluateRuntimeReuseRequest) (*EvaluateRuntimeReuseResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EvaluateRuntimeReuse not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ClaimNextInteractionDispatch(context.Context, *ClaimNextInteractionDispatchRequest) (*ClaimNextInteractionDispatchResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClaimNextInteractionDispatch not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) CompleteInteractionDispatch(context.Context, *CompleteInteractionDispatchRequest) (*CompleteInteractionDispatchResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CompleteInteractionDispatch not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ExpireNextInteraction(context.Context, *ExpireNextInteractionRequest) (*ExpireNextInteractionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExpireNextInteraction not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) ListRuntimeDeployTasks(context.Context, *ListRuntimeDeployTasksRequest) (*ListRuntimeDeployTasksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRuntimeDeployTasks not implemented")
@@ -1559,6 +1607,60 @@ func _ControlPlaneService_EvaluateRuntimeReuse_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_ClaimNextInteractionDispatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClaimNextInteractionDispatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ClaimNextInteractionDispatch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ClaimNextInteractionDispatch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ClaimNextInteractionDispatch(ctx, req.(*ClaimNextInteractionDispatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_CompleteInteractionDispatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CompleteInteractionDispatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).CompleteInteractionDispatch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_CompleteInteractionDispatch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).CompleteInteractionDispatch(ctx, req.(*CompleteInteractionDispatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_ExpireNextInteraction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExpireNextInteractionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ExpireNextInteraction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ExpireNextInteraction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ExpireNextInteraction(ctx, req.(*ExpireNextInteractionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_ListRuntimeDeployTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListRuntimeDeployTasksRequest)
 	if err := dec(in); err != nil {
@@ -1965,6 +2067,18 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EvaluateRuntimeReuse",
 			Handler:    _ControlPlaneService_EvaluateRuntimeReuse_Handler,
+		},
+		{
+			MethodName: "ClaimNextInteractionDispatch",
+			Handler:    _ControlPlaneService_ClaimNextInteractionDispatch_Handler,
+		},
+		{
+			MethodName: "CompleteInteractionDispatch",
+			Handler:    _ControlPlaneService_CompleteInteractionDispatch_Handler,
+		},
+		{
+			MethodName: "ExpireNextInteraction",
+			Handler:    _ControlPlaneService_ExpireNextInteraction_Handler,
 		},
 		{
 			MethodName: "ListRuntimeDeployTasks",

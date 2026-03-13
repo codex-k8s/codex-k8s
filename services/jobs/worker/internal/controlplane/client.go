@@ -10,6 +10,7 @@ import (
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	workerdomain "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/worker"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // Client is a worker-side wrapper over control-plane gRPC.
@@ -115,6 +116,85 @@ func (c *Client) EvaluateRuntimeReuse(ctx context.Context, params workerdomain.E
 	}, nil
 }
 
+// ClaimNextInteractionDispatch reserves one due interaction delivery attempt.
+func (c *Client) ClaimNextInteractionDispatch(ctx context.Context, pendingAttemptTimeout time.Duration) (workerdomain.InteractionDispatchClaim, bool, error) {
+	resp, err := c.svc.ClaimNextInteractionDispatch(ctx, &controlplanev1.ClaimNextInteractionDispatchRequest{
+		PendingAttemptTimeoutSeconds: int32(maxInt64(0, int64(pendingAttemptTimeout.Seconds()))),
+	})
+	if err != nil {
+		return workerdomain.InteractionDispatchClaim{}, false, err
+	}
+	if !resp.GetFound() {
+		return workerdomain.InteractionDispatchClaim{}, false, nil
+	}
+
+	var responseDeadlineAt *time.Time
+	if resp.GetResponseDeadlineAt() != nil {
+		value := resp.GetResponseDeadlineAt().AsTime().UTC()
+		responseDeadlineAt = &value
+	}
+
+	return workerdomain.InteractionDispatchClaim{
+		CorrelationID:      strings.TrimSpace(resp.GetCorrelationId()),
+		InteractionID:      strings.TrimSpace(resp.GetInteractionId()),
+		RunID:              strings.TrimSpace(resp.GetRunId()),
+		InteractionKind:    strings.TrimSpace(resp.GetInteractionKind()),
+		RecipientProvider:  strings.TrimSpace(resp.GetRecipientProvider()),
+		RecipientRef:       strings.TrimSpace(resp.GetRecipientRef()),
+		ResponseDeadlineAt: responseDeadlineAt,
+		Attempt: workerdomain.InteractionDispatchAttempt{
+			ID:          resp.GetAttemptId(),
+			AttemptNo:   int(resp.GetAttemptNo()),
+			DeliveryID:  strings.TrimSpace(resp.GetDeliveryId()),
+			AdapterKind: strings.TrimSpace(resp.GetAdapterKind()),
+		},
+		RequestEnvelopeJSON: resp.GetRequestEnvelopeJson(),
+	}, true, nil
+}
+
+// CompleteInteractionDispatch persists one dispatch outcome.
+func (c *Client) CompleteInteractionDispatch(ctx context.Context, params workerdomain.CompleteInteractionDispatchParams) (workerdomain.CompleteInteractionDispatchResult, error) {
+	resp, err := c.svc.CompleteInteractionDispatch(ctx, &controlplanev1.CompleteInteractionDispatchRequest{
+		InteractionId:       strings.TrimSpace(params.InteractionID),
+		DeliveryId:          strings.TrimSpace(params.DeliveryID),
+		AdapterKind:         strings.TrimSpace(params.AdapterKind),
+		Status:              strings.TrimSpace(params.Status),
+		RequestEnvelopeJson: params.RequestEnvelopeJSON,
+		AckPayloadJson:      params.AckPayloadJSON,
+		AdapterDeliveryId:   optionalString(strings.TrimSpace(params.AdapterDeliveryID)),
+		Retryable:           params.Retryable,
+		LastErrorCode:       optionalString(strings.TrimSpace(params.LastErrorCode)),
+		NextRetryAt:         optionalTimestamp(params.NextRetryAt),
+		FinishedAt:          timestamppb.New(params.FinishedAt.UTC()),
+	})
+	if err != nil {
+		return workerdomain.CompleteInteractionDispatchResult{}, err
+	}
+	return workerdomain.CompleteInteractionDispatchResult{
+		InteractionID:       strings.TrimSpace(resp.GetInteractionId()),
+		RunID:               strings.TrimSpace(resp.GetRunId()),
+		InteractionState:    strings.TrimSpace(resp.GetInteractionState()),
+		ResumeRequired:      resp.GetResumeRequired(),
+		ResumeCorrelationID: strings.TrimSpace(resp.GetResumeCorrelationId()),
+	}, nil
+}
+
+// ExpireNextInteraction processes one due interaction expiry candidate.
+func (c *Client) ExpireNextInteraction(ctx context.Context) (workerdomain.ExpireNextInteractionResult, error) {
+	resp, err := c.svc.ExpireNextInteraction(ctx, &controlplanev1.ExpireNextInteractionRequest{})
+	if err != nil {
+		return workerdomain.ExpireNextInteractionResult{}, err
+	}
+	return workerdomain.ExpireNextInteractionResult{
+		Found:               resp.GetFound(),
+		InteractionID:       strings.TrimSpace(resp.GetInteractionId()),
+		RunID:               strings.TrimSpace(resp.GetRunId()),
+		InteractionState:    strings.TrimSpace(resp.GetInteractionState()),
+		ResumeRequired:      resp.GetResumeRequired(),
+		ResumeCorrelationID: strings.TrimSpace(resp.GetResumeCorrelationId()),
+	}, nil
+}
+
 // UpsertRunStatusComment updates one run status comment in issue thread.
 func (c *Client) UpsertRunStatusComment(ctx context.Context, params workerdomain.RunStatusCommentParams) (workerdomain.RunStatusCommentResult, error) {
 	resp, err := c.svc.UpsertRunStatusComment(ctx, &controlplanev1.UpsertRunStatusCommentRequest{
@@ -146,4 +226,18 @@ func optionalString(value string) *string {
 		return nil
 	}
 	return &value
+}
+
+func optionalTimestamp(value *time.Time) *timestamppb.Timestamp {
+	if value == nil || value.IsZero() {
+		return nil
+	}
+	return timestamppb.New(value.UTC())
+}
+
+func maxInt64(a int64, b int64) int64 {
+	if a > b {
+		return a
+	}
+	return b
 }

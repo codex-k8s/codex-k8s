@@ -199,15 +199,11 @@ func (s *Service) SubmitInteractionCallback(ctx context.Context, params SubmitIn
 	}
 
 	resumePayload := buildInteractionResumePayload(result.Interaction, result.ResponseRecord)
-	resumeRequired := result.ResumeRequired
+	resumeRequired := false
 	if resumePayload != nil {
-		waitCleared, err := s.clearInteractionWaitContext(ctx, session, result.Interaction.ID, result.ResumeRequired)
+		resumeRequired, err = s.finalizeInteractionResume(ctx, result.Interaction, result.ResponseRecord, result.ResumeRequired)
 		if err != nil {
 			return SubmitInteractionCallbackResult{}, err
-		}
-		if waitCleared {
-			resumeRequired = true
-			s.auditInteractionWaitResumed(ctx, session, result.Interaction.ID, string(resumePayload.RequestStatus))
 		}
 	}
 

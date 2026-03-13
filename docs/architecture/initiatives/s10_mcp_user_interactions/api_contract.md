@@ -208,6 +208,23 @@ approvals:
 - `resume_required`
 - `effective_response_id`
 
+### Worker interaction lifecycle responses
+- `CompleteInteractionDispatchResponse`
+  - `interaction_id`
+  - `interaction_state`
+  - `resume_required`
+  - `run_id`
+  - `resume_correlation_id`
+- `ExpireNextInteractionResponse`
+  - `found`
+  - `interaction_id`
+  - `interaction_state`
+  - `resume_required`
+  - `run_id`
+  - `resume_correlation_id`
+- Contract note:
+  - `resume_required=true` means terminal interaction outcome produced a deterministic resume request, and `worker` must perform idempotent enqueue using `run_id` + `resume_correlation_id`.
+
 ## Модель ошибок
 - Canonical codes:
   - `invalid_argument`
