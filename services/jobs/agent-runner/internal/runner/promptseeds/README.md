@@ -63,6 +63,12 @@
   в seed-файлах указываются только имена шаблонов (без жестко заданных repository-relative путей).
 - `services.yaml/spec.roleDocTemplates` и `services.yaml/spec.projectDocs` должны оставаться синхронными
   с `docs/delivery/development_process_requirements.md` (role-template matrix + doc IA).
+- `templates/prompt_blocks/issue_contract_*.tmpl` и `pr_contract_*_*.tmpl` должны оставаться синхронными
+  с разделом title/body contract в `docs/delivery/development_process_requirements.md`;
+  для role-bearing title optional-фрагмент `Sprint S<спринт> Day<день>` вставляется сразу после role token,
+  если sprint/day известны из текущего stage context.
+  Исключение допускается только для markdown-only trigger, когда prompt files менять нельзя:
+  тогда документационный PR обязан оставить явный follow-up issue на sync prompt contract blocks.
 - для документационных stage seed'ов (`intake|vision|prd|arch|design|plan|doc-audit|qa|release|postdeploy|ops|rethink` и их `*:revise`):
   - обязательно использовать блок "Шаблоны артефактов по роли" из prompt envelope;
   - нельзя хардкодить пути к шаблонам артефактов в seed.
