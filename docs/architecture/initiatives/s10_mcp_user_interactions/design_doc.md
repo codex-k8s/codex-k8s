@@ -185,7 +185,7 @@ sequenceDiagram
   - callback classification path индексируется по `interaction_id` и `adapter_event_id`;
   - expiry/retry scans остаются lease-aware background jobs в `worker`.
 - Безопасность:
-  - callback bearer token short-lived и scope-bound на конкретный interaction;
+  - callback bearer token scope-bound на конкретный interaction, живёт как минимум до response deadline и сохраняет post-deadline grace для deterministic duplicate/expired classification;
   - agent input не может выбрать произвольного получателя;
   - free-text response не дублируется в `flow_events` и не попадает в model-visible logs.
 - Наблюдаемость:

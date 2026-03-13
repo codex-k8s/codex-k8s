@@ -13,9 +13,6 @@ import (
 
 // Tick executes one reconciliation iteration.
 func (s *Service) Tick(ctx context.Context) error {
-	if err := s.cleanupExpiredNamespaces(ctx); err != nil {
-		return fmt.Errorf("cleanup expired namespaces: %w", err)
-	}
 	if err := s.releaseStaleRunningLeases(ctx); err != nil {
 		return fmt.Errorf("release stale running leases: %w", err)
 	}
@@ -24,6 +21,9 @@ func (s *Service) Tick(ctx context.Context) error {
 	}
 	if err := s.reconcileInteractions(ctx); err != nil {
 		return fmt.Errorf("reconcile interaction lifecycle: %w", err)
+	}
+	if err := s.cleanupExpiredNamespaces(ctx); err != nil {
+		return fmt.Errorf("cleanup expired namespaces: %w", err)
 	}
 	if err := s.launchPending(ctx); err != nil {
 		return fmt.Errorf("launch pending runs: %w", err)
@@ -49,6 +49,7 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 			}
 		}
 		s.keepRunSlotLeaseAlive(ctx, run)
+		s.keepRunNamespaceLeaseAlive(ctx, run)
 
 		execution := resolveRunExecutionContext(run.RunID, run.ProjectID, run.RunPayload, s.cfg.RunNamespacePrefix)
 		runtimePayload := parseRunRuntimePayload(run.RunPayload)

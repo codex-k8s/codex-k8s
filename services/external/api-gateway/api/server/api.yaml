@@ -109,6 +109,37 @@ paths:
         "500":
           $ref: "#/components/responses/Internal"
 
+  /api/v1/mcp/interactions/callback:
+    post:
+      summary: Apply one built-in MCP user interaction callback
+      operationId: mcpInteractionCallback
+      tags: [mcp-callbacks]
+      parameters:
+        - $ref: "#/components/parameters/MCPCallbackToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InteractionCallbackEnvelope"
+      responses:
+        "200":
+          description: Interaction callback classified and applied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InteractionCallbackOutcome"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/Internal"
+
   /api/v1/auth/github/login:
     get:
       summary: Start GitHub OAuth login
@@ -1197,6 +1228,7 @@ components:
       in: header
       name: X-Codex-MCP-Token
       required: false
+      description: "Callback bearer token. Authorization: Bearer ... is also accepted."
       schema:
         type: string
   responses:
@@ -1226,6 +1258,12 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
     Conflict:
       description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    TooManyRequests:
+      description: Rate limit exceeded
       content:
         application/json:
           schema:
@@ -1498,6 +1536,89 @@ components:
           type: string
           nullable: true
         actor_id:
+          type: string
+          nullable: true
+
+    InteractionCallbackEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - schema_version
+        - interaction_id
+        - adapter_event_id
+        - callback_kind
+        - occurred_at
+      properties:
+        schema_version:
+          type: string
+          enum: [v1]
+        interaction_id:
+          type: string
+        delivery_id:
+          type: string
+          nullable: true
+        adapter_event_id:
+          type: string
+        callback_kind:
+          type: string
+          enum: [delivery_receipt, decision_response]
+        occurred_at:
+          type: string
+          format: date-time
+        adapter_delivery_id:
+          type: string
+          nullable: true
+        delivery_status:
+          type: string
+          enum: [accepted, delivered, failed]
+          nullable: true
+        response:
+          $ref: "#/components/schemas/InteractionResponsePayload"
+        error:
+          $ref: "#/components/schemas/InteractionCallbackError"
+
+    InteractionResponsePayload:
+      type: object
+      additionalProperties: false
+      required: [response_kind]
+      properties:
+        response_kind:
+          type: string
+          enum: [option, free_text]
+        selected_option_id:
+          type: string
+          nullable: true
+        free_text:
+          type: string
+          nullable: true
+        responder_ref:
+          type: string
+          nullable: true
+
+    InteractionCallbackError:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+
+    InteractionCallbackOutcome:
+      type: object
+      additionalProperties: false
+      required: [accepted, classification, interaction_state, resume_required]
+      properties:
+        accepted:
+          type: boolean
+        classification:
+          type: string
+          enum: [applied, duplicate, stale, expired, invalid]
+        interaction_state:
+          type: string
+        resume_required:
+          type: boolean
+        message:
           type: string
           nullable: true
 

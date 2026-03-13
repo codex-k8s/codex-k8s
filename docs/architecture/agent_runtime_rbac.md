@@ -63,6 +63,7 @@ approvals:
   - TTL определяется по роли агента из `services.yaml/spec.webhookRuntime.namespaceTTLByRole`;
   - если роль не указана явно, применяется `services.yaml/spec.webhookRuntime.defaultNamespaceTTL` (по умолчанию `24h`);
   - при `run:<stage>:revise` worker переиспользует активный namespace текущей связки `(project, issue, agent_key)` и продлевает lease (`expires_at = now + role_ttl`).
+  - пока `full-env` run остаётся активным, worker keepalive-обновляет namespace lease на каждом reconcile tick; это удерживает candidate namespace во время долгих `waiting_mcp` пауз и других resume-сценариев до завершения run.
 - Для issue-triggered late delivery в `full-env` действует stage-aware routing:
   - `run:dev` создаёт новый candidate namespace или продолжает уже существующий candidate lineage текущей Issue/PR;
   - `run:qa` и `run:release` обязаны продолжать существующий candidate identity той же Issue/PR; fallback на default branch запрещён, при отсутствии lineage платформа публикует диагностический warning и ставит `need:input`;
