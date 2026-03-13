@@ -22,6 +22,9 @@ func TestMissionControlReadQueriesStayProjectScoped(t *testing.T) {
 	if !strings.Contains(queryGetCommandByID, "WHERE project_id = $1") {
 		t.Fatal("get_command_by_id query must scope lookups by project_id")
 	}
+	if !strings.Contains(queryGetCommandByBusinessIntent, "WHERE project_id = $1") {
+		t.Fatal("get_command_by_business_intent query must scope lookups by project_id")
+	}
 	if !strings.Contains(queryListTimelineEntries, "WHERE project_id = $1") {
 		t.Fatal("list_timeline_entries query must scope lookups by project_id")
 	}

@@ -5,7 +5,7 @@ title: "Sprint S9 Traceability History"
 status: in-review
 owner_role: KM
 created_at: 2026-03-12
-updated_at: 2026-03-12
+updated_at: 2026-03-13
 related_issues: [333, 335, 337, 340, 351, 363, 369, 370, 371, 372, 373, 374, 375]
 related_prs: []
 approvals:
@@ -113,3 +113,22 @@ approvals:
   - `git diff --check`
 - `goose` dry-run/apply не выполнялись, потому что CLI отсутствует в runtime image; миграция проверялась через compile/test path и SQL self-check.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась, потому что `#369` реализует foundation schema/repository layer без изменения канонического product baseline.
+
+## Актуализация по Issue #370 (`run:dev`, 2026-03-13)
+- Реализован domain stream `S9-E02` в `services/internal/control-plane`:
+  - добавлен Mission Control domain service `internal/domain/missioncontrol/service*.go` с typed use-cases для warmup summary, active-set/entity details read-path и command status polling;
+  - собран command admission/state machine с stale projection guard, degraded-policy guard, owner approval path, dedupe по `business_intent_key` и typed flow-event audit;
+  - расширен repository contract и PostgreSQL adapter `internal/repository/postgres/missioncontrol/**` lookup-ом по `business_intent_key` и typed mapping unique-constraint -> `DuplicateBusinessIntent`.
+- Зафиксированы guardrails:
+  - command submission остаётся закрытым, пока rollout capabilities не разрешают core command path;
+  - read-path по active-set/entity details/status заблокирован до snapshot readiness gate;
+  - duplicate command admission не создаёт вторую ledger-запись и возвращает typed existing-command handoff.
+- Через Context7 подтверждён актуальный pgx v5 path для `pgconn.PgError` и unique-violation detection (`/jackc/pgx`), после чего repository duplicate mapping завязан на code `23505` и constraint `uq_mission_control_commands_business_intent`.
+- Проверки:
+  - `go test ./services/internal/control-plane/internal/domain/missioncontrol ./services/internal/control-plane/internal/repository/postgres/missioncontrol`
+  - `go test ./services/internal/control-plane/...`
+  - `make lint-go`
+  - `make dupl-go`
+  - `git diff --check`
+- Runtime kubectl/log inspection и DB manual queries не выполнялись: scope issue ограничен domain/repository implementation, проверки закрыты unit/integration/lint path.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась, потому что `#370` реализует control-plane domain behavior без изменения канонического product baseline.

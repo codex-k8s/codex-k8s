@@ -122,3 +122,11 @@ const (
 	MissionControlApprovalStateDenied      MissionControlApprovalState = "denied"
 	MissionControlApprovalStateExpired     MissionControlApprovalState = "expired"
 )
+
+// MissionControlApprovalRequirement describes whether one command must pause for owner review.
+type MissionControlApprovalRequirement string
+
+const (
+	MissionControlApprovalRequirementNone        MissionControlApprovalRequirement = "none"
+	MissionControlApprovalRequirementOwnerReview MissionControlApprovalRequirement = "owner_review"
+)

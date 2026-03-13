@@ -13,6 +13,7 @@ import (
 	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/missioncontrol/dbmodel"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -40,6 +41,8 @@ var (
 	queryInsertCommand string
 	//go:embed sql/get_command_by_id.sql
 	queryGetCommandByID string
+	//go:embed sql/get_command_by_business_intent.sql
+	queryGetCommandByBusinessIntent string
 	//go:embed sql/list_commands.sql
 	queryListCommands string
 	//go:embed sql/update_command_status.sql
@@ -312,6 +315,9 @@ func (r *Repository) CreateCommand(ctx context.Context, params domainrepo.Create
 		timestamptzPtrOrNil(normalized.ReconciledAt),
 	)
 	if err != nil {
+		if duplicate := duplicateBusinessIntentError(err, normalized.ProjectID, normalized.BusinessIntentKey); duplicate != nil {
+			return domainrepo.Command{}, duplicate
+		}
 		return domainrepo.Command{}, fmt.Errorf("insert mission control command: %w", err)
 	}
 	row, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[dbmodel.CommandRow])
@@ -323,11 +329,26 @@ func (r *Repository) CreateCommand(ctx context.Context, params domainrepo.Create
 
 // GetCommandByID loads one command row scoped to one project.
 func (r *Repository) GetCommandByID(ctx context.Context, projectID string, commandID string) (domainrepo.Command, bool, error) {
-	rows, err := r.db.Query(ctx, queryGetCommandByID, strings.TrimSpace(projectID), strings.TrimSpace(commandID))
-	if err != nil {
-		return domainrepo.Command{}, false, fmt.Errorf("query mission control command by id: %w", err)
-	}
-	return collectOptionalCommand(rows, "collect mission control command by id")
+	return r.queryOptionalCommand(
+		ctx,
+		queryGetCommandByID,
+		strings.TrimSpace(projectID),
+		strings.TrimSpace(commandID),
+		"query mission control command by id",
+		"collect mission control command by id",
+	)
+}
+
+// GetCommandByBusinessIntent loads one command row scoped to one project/business intent key.
+func (r *Repository) GetCommandByBusinessIntent(ctx context.Context, projectID string, businessIntentKey string) (domainrepo.Command, bool, error) {
+	return r.queryOptionalCommand(
+		ctx,
+		queryGetCommandByBusinessIntent,
+		strings.TrimSpace(projectID),
+		strings.TrimSpace(businessIntentKey),
+		"query mission control command by business intent",
+		"collect mission control command by business intent",
+	)
 }
 
 // ListCommands returns command rows for one project.
@@ -394,6 +415,21 @@ func (r *Repository) UpdateCommandStatus(ctx context.Context, params domainrepo.
 		return domainrepo.Command{}, false, fmt.Errorf("collect mission control command status update: %w", err)
 	}
 	return fromCommandRow(row), true, nil
+}
+
+func (r *Repository) queryOptionalCommand(
+	ctx context.Context,
+	query string,
+	projectID string,
+	scopeValue string,
+	queryErrOp string,
+	collectErrOp string,
+) (domainrepo.Command, bool, error) {
+	rows, err := r.db.Query(ctx, query, projectID, scopeValue)
+	if err != nil {
+		return domainrepo.Command{}, false, fmt.Errorf("%s: %w", queryErrOp, err)
+	}
+	return collectOptionalCommand(rows, collectErrOp)
 }
 
 // GetWarmupSummary returns aggregate counts for worker warmup verification.
@@ -673,4 +709,18 @@ func enumStrings[T ~string](values []T) []string {
 		}
 	}
 	return out
+}
+
+func duplicateBusinessIntentError(err error, projectID string, businessIntentKey string) error {
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) {
+		return nil
+	}
+	if pgErr.Code != "23505" || pgErr.ConstraintName != "uq_mission_control_commands_business_intent" {
+		return nil
+	}
+	return domainrepo.DuplicateBusinessIntent{
+		ProjectID:         strings.TrimSpace(projectID),
+		BusinessIntentKey: strings.TrimSpace(businessIntentKey),
+	}
 }

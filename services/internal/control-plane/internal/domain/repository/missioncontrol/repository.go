@@ -17,6 +17,7 @@ type (
 	UpsertEntityParams        = querytypes.MissionControlEntityUpsertParams
 	UpdateEntityParams        = querytypes.MissionControlEntityProjectionUpdateParams
 	EntityListFilter          = querytypes.MissionControlEntityListFilter
+	RelationSeed              = querytypes.MissionControlRelationSeed
 	ReplaceRelationsParams    = querytypes.MissionControlRelationReplaceParams
 	UpsertTimelineEntryParams = querytypes.MissionControlTimelineEntryUpsertParams
 	TimelineListFilter        = querytypes.MissionControlTimelineListFilter
@@ -53,6 +54,8 @@ type Repository interface {
 	CreateCommand(ctx context.Context, params CreateCommandParams) (Command, error)
 	// GetCommandByID loads one command row by id scoped to one project.
 	GetCommandByID(ctx context.Context, projectID string, commandID string) (Command, bool, error)
+	// GetCommandByBusinessIntent loads one command row by semantic dedupe key.
+	GetCommandByBusinessIntent(ctx context.Context, projectID string, businessIntentKey string) (Command, bool, error)
 	// ListCommands returns command rows for one project with optional status filter.
 	ListCommands(ctx context.Context, filter CommandListFilter) ([]Command, error)
 	// UpdateCommandStatus persists one command status transition.

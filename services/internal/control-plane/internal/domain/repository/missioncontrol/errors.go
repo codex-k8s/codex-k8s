@@ -25,3 +25,17 @@ func (e ProjectionVersionConflict) Error() string {
 		e.ActualProjectionVersion,
 	)
 }
+
+// DuplicateBusinessIntent indicates that one semantic command already exists for the same project/business intent key.
+type DuplicateBusinessIntent struct {
+	ProjectID         string
+	BusinessIntentKey string
+}
+
+func (e DuplicateBusinessIntent) Error() string {
+	return fmt.Sprintf(
+		"mission control duplicate business intent for %s/%s",
+		e.ProjectID,
+		e.BusinessIntentKey,
+	)
+}
