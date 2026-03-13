@@ -338,6 +338,16 @@ export const ru = {
       waitState: "wait_state",
       status: "status",
       buildFailed: "Завершилось до передачи управления агенту",
+      events: {
+        workerHeartbeatMissed: "Worker перестал отправлять heartbeat",
+        workerHeartbeatMissedWithActor: "Worker перестал отправлять heartbeat · {actorId}",
+        staleLeaseDetected: "Обнаружен stale lease",
+        staleLeaseDetectedWithActor: "Обнаружен stale lease · {actorId}",
+        staleLeaseReleased: "Освобожден stale lease",
+        staleLeaseReleasedWithActor: "Освобожден stale lease · {actorId}",
+        leaseReclaimedAfterStale: "Lease восстановлен после stale lease",
+        leaseReclaimedAfterStaleWithActor: "Lease восстановлен после stale lease · {actorId}",
+      },
     },
   },
   logs: {

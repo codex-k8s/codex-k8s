@@ -338,6 +338,16 @@ export const en = {
       waitState: "wait_state",
       status: "status",
       buildFailed: "Finished before agent handoff",
+      events: {
+        workerHeartbeatMissed: "Worker heartbeat missed",
+        workerHeartbeatMissedWithActor: "Worker heartbeat missed · {actorId}",
+        staleLeaseDetected: "Stale lease detected",
+        staleLeaseDetectedWithActor: "Stale lease detected · {actorId}",
+        staleLeaseReleased: "Stale lease released",
+        staleLeaseReleasedWithActor: "Stale lease released · {actorId}",
+        leaseReclaimedAfterStale: "Lease reclaimed after stale lease",
+        leaseReclaimedAfterStaleWithActor: "Lease reclaimed after stale lease · {actorId}",
+      },
     },
   },
   logs: {

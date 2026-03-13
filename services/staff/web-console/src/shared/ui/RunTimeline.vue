@@ -96,7 +96,9 @@ function subtitleForStep(subtitleKind?: TimelinePhaseStep["subtitleKind"], subti
 }
 
 const phaseSteps = computed(() => buildRunTimelinePhases(props.run, props.events, props.locale));
-const statusEntries = computed(() => buildRunTimelineStatuses(props.events, props.locale));
+const statusEntries = computed(() =>
+  buildRunTimelineStatuses(props.events, props.locale, (key, params) => String(t(key, params ?? {}))),
+);
 
 function titleForItem(item: TimelineDisplayItem): string {
   if (item.kind === "agentStatus") {

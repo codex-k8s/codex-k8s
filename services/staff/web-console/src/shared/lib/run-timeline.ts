@@ -32,9 +32,32 @@ export type TimelineStatusEntry = {
 };
 
 type EventPayload = Record<string, unknown>;
+type TimelineStatusTranslator = (key: string, params?: Record<string, string>) => string;
+type RecoveryStatusMessage = {
+  key: string;
+  params?: Record<string, string>;
+};
 
 const runtimeModeFullEnv = "full-env";
 const runtimeModeCodeOnly = "code-only";
+const recoveryEventTranslations = {
+  "worker.instance.heartbeat.missed": {
+    withoutActor: "runs.timeline.events.workerHeartbeatMissed",
+    withActor: "runs.timeline.events.workerHeartbeatMissedWithActor",
+  },
+  "run.lease.detected_stale": {
+    withoutActor: "runs.timeline.events.staleLeaseDetected",
+    withActor: "runs.timeline.events.staleLeaseDetectedWithActor",
+  },
+  "run.lease.released": {
+    withoutActor: "runs.timeline.events.staleLeaseReleased",
+    withActor: "runs.timeline.events.staleLeaseReleasedWithActor",
+  },
+  "run.reclaimed_after_stale_lease": {
+    withoutActor: "runs.timeline.events.leaseReclaimedAfterStale",
+    withActor: "runs.timeline.events.leaseReclaimedAfterStaleWithActor",
+  },
+} as const;
 
 function parsePayload(raw: string): EventPayload | null {
   const value = String(raw || "").trim();
@@ -72,21 +95,17 @@ function findAuthResolvedAt(events: FlowEvent[]): string | null {
   return null;
 }
 
-function recoveryStatusText(eventType: string, payload: EventPayload | null): string | null {
+function recoveryStatusMessage(eventType: string, payload: EventPayload | null): RecoveryStatusMessage | null {
+  const translation = recoveryEventTranslations[eventType as keyof typeof recoveryEventTranslations];
+  if (!translation) return null;
+
   const workerId = typeof payload?.worker_id === "string" ? payload.worker_id.trim() : "";
   const ownerId = typeof payload?.previous_lease_owner === "string" ? payload.previous_lease_owner.trim() : "";
   const actorId = workerId || ownerId;
 
-  switch (eventType) {
-    case "worker.instance.heartbeat.missed":
-    case "run.lease.detected_stale":
-    case "run.lease.released":
-      return actorId ? `${eventType} · ${actorId}` : eventType;
-    case "run.reclaimed_after_stale_lease":
-      return actorId ? `${eventType} · ${actorId}` : eventType;
-    default:
-      return null;
-  }
+  return actorId
+    ? { key: translation.withActor, params: { actorId } }
+    : { key: translation.withoutActor };
 }
 
 function resolveRuntimeMode(events: FlowEvent[], run: Run | null): string {
@@ -200,7 +219,12 @@ export function buildRunTimelinePhases(run: Run | null, events: FlowEvent[], loc
   return steps;
 }
 
-export function buildRunTimelineStatuses(events: FlowEvent[], locale: string, referenceDate: Date = new Date()): TimelineStatusEntry[] {
+export function buildRunTimelineStatuses(
+  events: FlowEvent[],
+  locale: string,
+  translateStatus: TimelineStatusTranslator,
+  referenceDate: Date = new Date(),
+): TimelineStatusEntry[] {
   const entries: TimelineStatusEntry[] = [];
   for (const eventItem of events) {
     const payload = parsePayload(eventItem.payload_json || "");
@@ -209,7 +233,8 @@ export function buildRunTimelineStatuses(events: FlowEvent[], locale: string, re
     if (eventItem.event_type === "run.agent.status_reported") {
       statusText = typeof payload?.status_text === "string" ? payload.status_text.trim() : "";
     } else {
-      statusText = recoveryStatusText(eventItem.event_type, payload) || "";
+      const message = recoveryStatusMessage(eventItem.event_type, payload);
+      statusText = message ? translateStatus(message.key, message.params) : "";
     }
     if (!statusText) continue;
 
