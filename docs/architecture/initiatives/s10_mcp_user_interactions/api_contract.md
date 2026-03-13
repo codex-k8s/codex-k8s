@@ -20,7 +20,7 @@ approvals:
 
 ## TL;DR
 - Контрактный scope: built-in MCP tools `user.notify` / `user.decision.request`, worker -> adapter delivery envelope, adapter -> `api-gateway` callback family и internal gRPC bridge в `control-plane`.
-- Аутентификация: run-bound MCP bearer token для built-in tools; short-lived callback bearer token для adapter callbacks; internal gRPC auth между `api-gateway` и `control-plane`.
+- Аутентификация: run-bound MCP bearer token для built-in tools; interaction-scoped callback bearer token с deadline-aware lifetime и post-deadline grace для adapter callbacks; internal gRPC auth между `api-gateway` и `control-plane`.
 - Версионирование: callback transport на `/api/v1/...`; adapter delivery envelope versioned как `v1`.
 - Общий принцип: edge остаётся thin adapter; interaction semantics, replay classification и wait-state transitions определяются только в `control-plane`.
 
@@ -124,7 +124,7 @@ approvals:
 | `content` | `NotifyContent|DecisionContent` | yes | discriminated by `interaction_kind` |
 | `context_links` | `InteractionContextLinks` | yes | issue/pr/run deep-links |
 | `callback_url` | string | yes | platform callback endpoint |
-| `callback_bearer_token` | string | yes | short-lived callback auth |
+| `callback_bearer_token` | string | yes | interaction-scoped callback auth with post-deadline grace |
 | `expires_at` | RFC3339 timestamp | no | required for decision request |
 
 ### `NotifyContent`

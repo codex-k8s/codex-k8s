@@ -7,6 +7,7 @@ import (
 	"time"
 
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
+	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -55,6 +56,39 @@ func TestVerifyInteractionCallbackTokenRejectsSubjectMismatch(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "token subject mismatch") {
 		t.Fatalf("error = %q, want token subject mismatch", err)
+	}
+}
+
+func TestIssueInteractionCallbackTokenKeepsPostDeadlineGrace(t *testing.T) {
+	t.Parallel()
+
+	now := time.Date(2026, 3, 13, 18, 0, 0, 0, time.UTC)
+	deadline := now.Add(30 * time.Minute)
+	service := newTokenTestService("running")
+	service.now = func() time.Time { return now }
+
+	token, err := service.issueInteractionCallbackToken(
+		entitytypes.AgentRun{
+			ID:            "run-1",
+			CorrelationID: "corr-1",
+			ProjectID:     "project-1",
+		},
+		entitytypes.InteractionRequest{
+			ID:                 "interaction-1",
+			ResponseDeadlineAt: &deadline,
+		},
+	)
+	if err != nil {
+		t.Fatalf("issueInteractionCallbackToken returned error: %v", err)
+	}
+
+	session, err := service.parseRunToken(token)
+	if err != nil {
+		t.Fatalf("parseRunToken returned error: %v", err)
+	}
+	wantExpiry := deadline.Add(interactionCallbackTokenGraceTTL)
+	if !session.ExpiresAt.Equal(wantExpiry) {
+		t.Fatalf("expires_at = %s, want %s", session.ExpiresAt.Format(time.RFC3339), wantExpiry.Format(time.RFC3339))
 	}
 }
 

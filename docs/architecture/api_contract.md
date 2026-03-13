@@ -81,6 +81,7 @@ approvals:
 - Авторизация callback'ов: run-bound MCP bearer token в gRPC metadata (`authorization: Bearer ...`), проверка через `VerifyRunToken`.
 - Для `api-gateway -> control-plane` interaction ingress добавлен отдельный internal RPC `SubmitInteractionCallback`;
   callback bearer token также прокидывается в gRPC metadata и валидируется по `token subject == mcp-interaction-callback:<interaction_id>`,
+  токен живёт deadline-aware и сохраняет post-deadline grace для deterministic `duplicate|expired` classification,
   чтобы thin-edge не держал локальную interaction state/policy.
 - Эти RPC внутренние (service-to-service), не входят в public/staff OpenAPI контракт.
 

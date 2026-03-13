@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	interactionCallbackTokenTTL           = 15 * time.Minute
+	interactionCallbackTokenGraceTTL      = minTokenTTL
 	interactionCallbackTokenSubjectPrefix = "mcp-interaction-callback:"
 )
 
@@ -100,10 +100,10 @@ func (s *Service) parseRunToken(rawToken string) (SessionContext, error) {
 
 func (s *Service) issueInteractionCallbackToken(run entitytypes.AgentRun, interaction entitytypes.InteractionRequest) (string, error) {
 	now := s.now().UTC()
-	expiresAt := now.Add(interactionCallbackTokenTTL)
+	expiresAt := now.Add(interactionCallbackTokenGraceTTL)
 	if interaction.ResponseDeadlineAt != nil {
-		deadline := interaction.ResponseDeadlineAt.UTC()
-		if deadline.After(now) && deadline.Before(expiresAt) {
+		deadline := interaction.ResponseDeadlineAt.UTC().Add(interactionCallbackTokenGraceTTL)
+		if deadline.After(expiresAt) {
 			expiresAt = deadline
 		}
 	}
