@@ -584,6 +584,55 @@ message EvaluateRuntimeReuseResponse {
   string reason = 6;
 }
 
+message ClaimNextInteractionDispatchRequest {
+  int32 pending_attempt_timeout_seconds = 1;
+}
+
+message ClaimNextInteractionDispatchResponse {
+  bool found = 1;
+  string correlation_id = 2;
+  string interaction_id = 3;
+  string run_id = 4;
+  string interaction_kind = 5;
+  string recipient_provider = 6;
+  string recipient_ref = 7;
+  google.protobuf.Timestamp response_deadline_at = 8;
+  int64 attempt_id = 9;
+  int32 attempt_no = 10;
+  string delivery_id = 11;
+  string adapter_kind = 12;
+  bytes request_envelope_json = 13;
+}
+
+message CompleteInteractionDispatchRequest {
+  string interaction_id = 1;
+  string delivery_id = 2;
+  string adapter_kind = 3;
+  string status = 4;
+  bytes request_envelope_json = 5;
+  bytes ack_payload_json = 6;
+  optional string adapter_delivery_id = 7;
+  bool retryable = 8;
+  optional string last_error_code = 9;
+  google.protobuf.Timestamp next_retry_at = 10;
+  google.protobuf.Timestamp finished_at = 11;
+}
+
+message CompleteInteractionDispatchResponse {
+  string interaction_id = 1;
+  string interaction_state = 2;
+  bool resume_required = 3;
+}
+
+message ExpireNextInteractionRequest {}
+
+message ExpireNextInteractionResponse {
+  bool found = 1;
+  string interaction_id = 2;
+  string interaction_state = 3;
+  bool resume_required = 4;
+}
+
 message RuntimeDeployTaskLog {
   string stage = 1;
   string level = 2;
@@ -959,6 +1008,9 @@ service ControlPlaneService {
   rpc IssueRunMCPToken(IssueRunMCPTokenRequest) returns (IssueRunMCPTokenResponse);
   rpc PrepareRunEnvironment(PrepareRunEnvironmentRequest) returns (PrepareRunEnvironmentResponse);
   rpc EvaluateRuntimeReuse(EvaluateRuntimeReuseRequest) returns (EvaluateRuntimeReuseResponse);
+  rpc ClaimNextInteractionDispatch(ClaimNextInteractionDispatchRequest) returns (ClaimNextInteractionDispatchResponse);
+  rpc CompleteInteractionDispatch(CompleteInteractionDispatchRequest) returns (CompleteInteractionDispatchResponse);
+  rpc ExpireNextInteraction(ExpireNextInteractionRequest) returns (ExpireNextInteractionResponse);
   rpc ListRuntimeDeployTasks(ListRuntimeDeployTasksRequest) returns (ListRuntimeDeployTasksResponse);
   rpc GetRuntimeDeployTask(GetRuntimeDeployTaskRequest) returns (RuntimeDeployTask);
   rpc CancelRuntimeDeployTask(CancelRuntimeDeployTaskRequest) returns (RuntimeDeployTaskActionResponse);

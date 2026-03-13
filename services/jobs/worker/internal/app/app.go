@@ -216,6 +216,7 @@ func Run() error {
 		RuntimePreparer: controlPlane,
 		MCPTokenIssuer:  controlPlane,
 		RunStatus:       controlPlane,
+		Interactions:    controlPlane,
 		JobImageChecker: jobImageChecker,
 		Logger:          logger,
 	})

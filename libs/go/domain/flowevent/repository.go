@@ -104,12 +104,14 @@ const (
 )
 
 const (
-	EventTypeInteractionRequestCreated   EventType = "interaction.request.created"
-	EventTypeInteractionCallbackReceived EventType = "interaction.callback.received"
-	EventTypeInteractionResponseAccepted EventType = "interaction.response.accepted"
-	EventTypeInteractionResponseRejected EventType = "interaction.response.rejected"
-	EventTypeInteractionWaitEntered      EventType = "interaction.wait.entered"
-	EventTypeInteractionWaitResumed      EventType = "interaction.wait.resumed"
+	EventTypeInteractionRequestCreated         EventType = "interaction.request.created"
+	EventTypeInteractionDispatchAttempted      EventType = "interaction.dispatch.attempted"
+	EventTypeInteractionDispatchRetryScheduled EventType = "interaction.dispatch.retry_scheduled"
+	EventTypeInteractionCallbackReceived       EventType = "interaction.callback.received"
+	EventTypeInteractionResponseAccepted       EventType = "interaction.response.accepted"
+	EventTypeInteractionResponseRejected       EventType = "interaction.response.rejected"
+	EventTypeInteractionWaitEntered            EventType = "interaction.wait.entered"
+	EventTypeInteractionWaitResumed            EventType = "interaction.wait.resumed"
 )
 
 const (

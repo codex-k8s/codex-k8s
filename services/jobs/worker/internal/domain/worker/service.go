@@ -35,6 +35,18 @@ type Config struct {
 	RuntimePrepareRetryTimeout time.Duration
 	// RuntimePrepareRetryInterval defines delay between retryable runtime deploy attempts.
 	RuntimePrepareRetryInterval time.Duration
+	// InteractionDispatchLimit limits interaction delivery attempts handled per tick.
+	InteractionDispatchLimit int
+	// InteractionExpiryLimit limits interaction expiry mutations handled per tick.
+	InteractionExpiryLimit int
+	// InteractionPendingAttemptTimeout defines when one pending delivery attempt can be reclaimed after worker loss.
+	InteractionPendingAttemptTimeout time.Duration
+	// InteractionRetryBaseInterval defines the first retry backoff delay for transport failures.
+	InteractionRetryBaseInterval time.Duration
+	// InteractionRetryMaxInterval caps exponential dispatch backoff for interaction retries.
+	InteractionRetryMaxInterval time.Duration
+	// InteractionMaxAttempts caps total dispatch attempts before marking delivery exhausted.
+	InteractionMaxAttempts int
 
 	// ProjectLearningModeDefault is applied when the worker auto-creates projects from webhook payloads.
 	ProjectLearningModeDefault bool
@@ -124,6 +136,10 @@ type Dependencies struct {
 	MCPTokenIssuer MCPTokenIssuer
 	// RunStatus updates one run-bound issue status comment.
 	RunStatus RunStatusNotifier
+	// Interactions claims and completes built-in interaction delivery lifecycle through control-plane.
+	Interactions InteractionLifecycleClient
+	// InteractionDispatcher sends interaction envelopes to the current adapter implementation.
+	InteractionDispatcher InteractionDispatcher
 	// Logger records worker diagnostics.
 	Logger *slog.Logger
 	// JobImageChecker checks whether image references are available before launch.
@@ -132,18 +148,20 @@ type Dependencies struct {
 
 // Service orchestrates pending runs to Kubernetes Jobs and final statuses.
 type Service struct {
-	cfg       Config
-	runs      runqueuerepo.Repository
-	events    floweventrepo.Repository
-	feedback  learningfeedbackrepo.Repository
-	launcher  Launcher
-	deployer  RuntimeEnvironmentPreparer
-	mcpTokens MCPTokenIssuer
-	runStatus RunStatusNotifier
-	logger    *slog.Logger
-	labels    runAgentLabelCatalog
-	image     JobImageSelectionPolicy
-	now       func() time.Time
+	cfg          Config
+	runs         runqueuerepo.Repository
+	events       floweventrepo.Repository
+	feedback     learningfeedbackrepo.Repository
+	launcher     Launcher
+	deployer     RuntimeEnvironmentPreparer
+	mcpTokens    MCPTokenIssuer
+	runStatus    RunStatusNotifier
+	interactions InteractionLifecycleClient
+	dispatcher   InteractionDispatcher
+	logger       *slog.Logger
+	labels       runAgentLabelCatalog
+	image        JobImageSelectionPolicy
+	now          func() time.Time
 }
 
 // JobImageAvailabilityChecker checks run Job image existence.
@@ -187,6 +205,24 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	}
 	if cfg.RuntimePrepareRetryInterval <= 0 {
 		cfg.RuntimePrepareRetryInterval = 3 * time.Second
+	}
+	if cfg.InteractionDispatchLimit <= 0 {
+		cfg.InteractionDispatchLimit = 10
+	}
+	if cfg.InteractionExpiryLimit <= 0 {
+		cfg.InteractionExpiryLimit = 10
+	}
+	if cfg.InteractionPendingAttemptTimeout <= 0 {
+		cfg.InteractionPendingAttemptTimeout = 2 * time.Minute
+	}
+	if cfg.InteractionRetryBaseInterval <= 0 {
+		cfg.InteractionRetryBaseInterval = 30 * time.Second
+	}
+	if cfg.InteractionRetryMaxInterval <= 0 {
+		cfg.InteractionRetryMaxInterval = 15 * time.Minute
+	}
+	if cfg.InteractionMaxAttempts <= 0 {
+		cfg.InteractionMaxAttempts = 3
 	}
 	if cfg.WorkerID == "" {
 		cfg.WorkerID = defaultWorkerID
@@ -276,18 +312,26 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if deps.RunStatus == nil {
 		deps.RunStatus = noopRunStatusNotifier{}
 	}
+	if deps.Interactions == nil {
+		deps.Interactions = noopInteractionLifecycleClient{}
+	}
+	if deps.InteractionDispatcher == nil {
+		deps.InteractionDispatcher = noopInteractionDispatcher{}
+	}
 
 	return &Service{
-		cfg:       cfg,
-		runs:      deps.Runs,
-		events:    deps.Events,
-		feedback:  deps.Feedback,
-		launcher:  deps.Launcher,
-		deployer:  deps.RuntimePreparer,
-		mcpTokens: deps.MCPTokenIssuer,
-		runStatus: deps.RunStatus,
-		logger:    deps.Logger,
-		labels:    labelCatalog,
+		cfg:          cfg,
+		runs:         deps.Runs,
+		events:       deps.Events,
+		feedback:     deps.Feedback,
+		launcher:     deps.Launcher,
+		deployer:     deps.RuntimePreparer,
+		mcpTokens:    deps.MCPTokenIssuer,
+		runStatus:    deps.RunStatus,
+		interactions: deps.Interactions,
+		dispatcher:   deps.InteractionDispatcher,
+		logger:       deps.Logger,
+		labels:       labelCatalog,
 		image: JobImageSelectionPolicy{
 			Primary:  cfg.JobImage,
 			Fallback: cfg.JobImageFallback,

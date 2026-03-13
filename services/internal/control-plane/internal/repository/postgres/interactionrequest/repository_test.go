@@ -128,3 +128,82 @@ func TestClassifyCallbackMarksStaleForResolvedInteraction(t *testing.T) {
 		t.Fatal("expected stale callback to leave state unchanged")
 	}
 }
+
+func TestClassifyDispatchCompletionAcceptsDecisionRequest(t *testing.T) {
+	t.Parallel()
+
+	request := entitytypes.InteractionRequest{
+		InteractionKind: enumtypes.InteractionKindDecisionRequest,
+		State:           enumtypes.InteractionStatePendingDispatch,
+		ResolutionKind:  enumtypes.InteractionResolutionKindNone,
+	}
+
+	decision := classifyDispatchCompletion(request, enumtypes.InteractionDeliveryAttemptStatusAccepted)
+
+	if decision.nextState != enumtypes.InteractionStateOpen {
+		t.Fatalf("next state = %q, want %q", decision.nextState, enumtypes.InteractionStateOpen)
+	}
+	if !decision.stateChanged {
+		t.Fatal("expected accepted decision request to mutate aggregate state")
+	}
+	if decision.resumeRequired {
+		t.Fatal("did not expect resume to be required after accepted dispatch")
+	}
+}
+
+func TestClassifyDispatchCompletionExhaustsDecisionRequest(t *testing.T) {
+	t.Parallel()
+
+	request := entitytypes.InteractionRequest{
+		InteractionKind: enumtypes.InteractionKindDecisionRequest,
+		State:           enumtypes.InteractionStatePendingDispatch,
+		ResolutionKind:  enumtypes.InteractionResolutionKindNone,
+	}
+
+	decision := classifyDispatchCompletion(request, enumtypes.InteractionDeliveryAttemptStatusExhausted)
+
+	if decision.nextState != enumtypes.InteractionStateDeliveryExhausted {
+		t.Fatalf("next state = %q, want %q", decision.nextState, enumtypes.InteractionStateDeliveryExhausted)
+	}
+	if !decision.resumeRequired {
+		t.Fatal("expected delivery exhausted decision request to require resume")
+	}
+}
+
+func TestClassifyExpiryKeepsPendingDispatchAsDeliveryExhausted(t *testing.T) {
+	t.Parallel()
+
+	request := entitytypes.InteractionRequest{
+		InteractionKind: enumtypes.InteractionKindDecisionRequest,
+		State:           enumtypes.InteractionStatePendingDispatch,
+		ResolutionKind:  enumtypes.InteractionResolutionKindNone,
+	}
+
+	decision := classifyExpiry(request)
+
+	if decision.nextState != enumtypes.InteractionStateDeliveryExhausted {
+		t.Fatalf("next state = %q, want %q", decision.nextState, enumtypes.InteractionStateDeliveryExhausted)
+	}
+	if !decision.resumeRequired {
+		t.Fatal("expected pending dispatch expiry to require resume")
+	}
+}
+
+func TestClassifyExpiryMarksOpenDecisionExpired(t *testing.T) {
+	t.Parallel()
+
+	request := entitytypes.InteractionRequest{
+		InteractionKind: enumtypes.InteractionKindDecisionRequest,
+		State:           enumtypes.InteractionStateOpen,
+		ResolutionKind:  enumtypes.InteractionResolutionKindNone,
+	}
+
+	decision := classifyExpiry(request)
+
+	if decision.nextState != enumtypes.InteractionStateExpired {
+		t.Fatalf("next state = %q, want %q", decision.nextState, enumtypes.InteractionStateExpired)
+	}
+	if !decision.stateChanged {
+		t.Fatal("expected open decision interaction expiry to mutate state")
+	}
+}
