@@ -35,6 +35,7 @@ type webhookIngress interface {
 type mcpRunTokenService interface {
 	IssueRunToken(ctx context.Context, params mcpdomain.IssueRunTokenParams) (mcpdomain.IssuedToken, error)
 	VerifyRunToken(ctx context.Context, rawToken string) (mcpdomain.SessionContext, error)
+	VerifyInteractionCallbackToken(ctx context.Context, rawToken string, interactionID string) (mcpdomain.SessionContext, error)
 	ListPendingApprovals(ctx context.Context, limit int) ([]mcpdomain.ApprovalListItem, error)
 	ResolveApproval(ctx context.Context, params mcpdomain.ResolveApprovalParams) (mcpdomain.ResolveApprovalResult, error)
 	ClaimNextInteractionDispatch(ctx context.Context, params mcpdomain.ClaimNextInteractionDispatchParams) (mcpdomain.InteractionDispatchClaim, bool, error)
@@ -200,13 +201,8 @@ func (s *Server) authenticateInteractionCallbackToken(ctx context.Context, inter
 		return mcpdomain.SessionContext{}, status.Error(codes.Unauthenticated, "missing bearer token")
 	}
 
-	runSession, err := s.mcp.VerifyRunToken(ctx, rawToken)
+	runSession, err := s.mcp.VerifyInteractionCallbackToken(ctx, rawToken, interactionID)
 	if err != nil {
-		return mcpdomain.SessionContext{}, status.Error(codes.Unauthenticated, "invalid bearer token")
-	}
-
-	expectedSubject := "mcp-interaction-callback:" + strings.TrimSpace(interactionID)
-	if strings.TrimSpace(runSession.TokenSubject) != expectedSubject {
 		return mcpdomain.SessionContext{}, status.Error(codes.Unauthenticated, "invalid interaction callback token")
 	}
 

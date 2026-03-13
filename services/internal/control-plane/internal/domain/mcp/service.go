@@ -271,6 +271,26 @@ func (s *Service) IssueRunToken(ctx context.Context, params IssueRunTokenParams)
 
 // VerifyRunToken validates MCP bearer token and resolves bound session context.
 func (s *Service) VerifyRunToken(ctx context.Context, rawToken string) (SessionContext, error) {
+	return s.verifyRunToken(ctx, rawToken, verifyRunTokenOptions{requireActiveRun: true})
+}
+
+// VerifyInteractionCallbackToken validates callback bearer token without requiring an active run.
+func (s *Service) VerifyInteractionCallbackToken(ctx context.Context, rawToken string, interactionID string) (SessionContext, error) {
+	interactionID = strings.TrimSpace(interactionID)
+	if interactionID == "" {
+		return SessionContext{}, fmt.Errorf("interaction_id is required")
+	}
+	return s.verifyRunToken(ctx, rawToken, verifyRunTokenOptions{
+		expectedSubject: interactionCallbackTokenSubjectPrefix + interactionID,
+	})
+}
+
+type verifyRunTokenOptions struct {
+	requireActiveRun bool
+	expectedSubject  string
+}
+
+func (s *Service) verifyRunToken(ctx context.Context, rawToken string, opts verifyRunTokenOptions) (SessionContext, error) {
 	claims, err := s.parseRunToken(strings.TrimSpace(rawToken))
 	if err != nil {
 		return SessionContext{}, err
@@ -283,7 +303,7 @@ func (s *Service) VerifyRunToken(ctx context.Context, rawToken string) (SessionC
 	if !ok {
 		return SessionContext{}, fmt.Errorf("run not found")
 	}
-	if !isRunActive(run.Status) {
+	if opts.requireActiveRun && !isRunActive(run.Status) {
 		return SessionContext{}, fmt.Errorf("run status %q is not active", run.Status)
 	}
 	if run.CorrelationID != claims.CorrelationID {
@@ -291,6 +311,9 @@ func (s *Service) VerifyRunToken(ctx context.Context, rawToken string) (SessionC
 	}
 	if run.ProjectID != "" && claims.ProjectID != "" && run.ProjectID != claims.ProjectID {
 		return SessionContext{}, fmt.Errorf("project mismatch")
+	}
+	if expectedSubject := strings.TrimSpace(opts.expectedSubject); expectedSubject != "" && claims.TokenSubject != expectedSubject {
+		return SessionContext{}, fmt.Errorf("token subject mismatch")
 	}
 
 	return SessionContext{

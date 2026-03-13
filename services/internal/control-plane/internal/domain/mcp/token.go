@@ -9,7 +9,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-const interactionCallbackTokenTTL = 15 * time.Minute
+const (
+	interactionCallbackTokenTTL           = 15 * time.Minute
+	interactionCallbackTokenSubjectPrefix = "mcp-interaction-callback:"
+)
 
 type runTokenClaims struct {
 	RunID         string `json:"run_id"`
@@ -110,7 +113,7 @@ func (s *Service) issueInteractionCallbackToken(run entitytypes.AgentRun, intera
 		CorrelationID: strings.TrimSpace(run.CorrelationID),
 		ProjectID:     strings.TrimSpace(run.ProjectID),
 		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   "mcp-interaction-callback:" + strings.TrimSpace(interaction.ID),
+			Subject:   interactionCallbackTokenSubjectPrefix + strings.TrimSpace(interaction.ID),
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(expiresAt),

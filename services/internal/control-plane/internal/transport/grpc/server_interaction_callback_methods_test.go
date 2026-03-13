@@ -19,8 +19,8 @@ func TestSubmitInteractionCallback_RejectsTokenSubjectMismatch(t *testing.T) {
 
 	srv := &Server{
 		mcp: fakeMCPRunTokenService{
-			verifyRunToken: func(ctx context.Context, rawToken string) (mcpdomain.SessionContext, error) {
-				return mcpdomain.SessionContext{RunID: "run-1", TokenSubject: "run:run-1"}, nil
+			verifyInteractionCallbackToken: func(ctx context.Context, rawToken string, interactionID string) (mcpdomain.SessionContext, error) {
+				return mcpdomain.SessionContext{}, status.Error(codes.Unauthenticated, "subject mismatch")
 			},
 		},
 	}
@@ -56,13 +56,15 @@ func TestSubmitInteractionCallback_MapsAcceptedClassificationToApplied(t *testin
 
 	srv := &Server{
 		mcp: fakeMCPRunTokenService{
-			verifyRunToken: func(ctx context.Context, rawToken string) (mcpdomain.SessionContext, error) {
+			verifyInteractionCallbackToken: func(ctx context.Context, rawToken string, interactionID string) (mcpdomain.SessionContext, error) {
 				if rawToken != "token-1" {
 					t.Fatalf("unexpected token %q", rawToken)
 				}
+				if interactionID != "interaction-1" {
+					t.Fatalf("unexpected interactionID %q", interactionID)
+				}
 				return mcpdomain.SessionContext{
-					RunID:        "run-1",
-					TokenSubject: "mcp-interaction-callback:interaction-1",
+					RunID: "run-1",
 				}, nil
 			},
 			submitInteractionCallback: func(ctx context.Context, params mcpdomain.SubmitInteractionCallbackParams) (mcpdomain.SubmitInteractionCallbackResult, error) {
@@ -131,8 +133,9 @@ func TestSubmitInteractionCallback_MapsAcceptedClassificationToApplied(t *testin
 }
 
 type fakeMCPRunTokenService struct {
-	verifyRunToken            func(ctx context.Context, rawToken string) (mcpdomain.SessionContext, error)
-	submitInteractionCallback func(ctx context.Context, params mcpdomain.SubmitInteractionCallbackParams) (mcpdomain.SubmitInteractionCallbackResult, error)
+	verifyRunToken                 func(ctx context.Context, rawToken string) (mcpdomain.SessionContext, error)
+	verifyInteractionCallbackToken func(ctx context.Context, rawToken string, interactionID string) (mcpdomain.SessionContext, error)
+	submitInteractionCallback      func(ctx context.Context, params mcpdomain.SubmitInteractionCallbackParams) (mcpdomain.SubmitInteractionCallbackResult, error)
 }
 
 func (f fakeMCPRunTokenService) IssueRunToken(ctx context.Context, params mcpdomain.IssueRunTokenParams) (mcpdomain.IssuedToken, error) {
@@ -142,6 +145,13 @@ func (f fakeMCPRunTokenService) IssueRunToken(ctx context.Context, params mcpdom
 func (f fakeMCPRunTokenService) VerifyRunToken(ctx context.Context, rawToken string) (mcpdomain.SessionContext, error) {
 	if f.verifyRunToken != nil {
 		return f.verifyRunToken(ctx, rawToken)
+	}
+	return mcpdomain.SessionContext{}, nil
+}
+
+func (f fakeMCPRunTokenService) VerifyInteractionCallbackToken(ctx context.Context, rawToken string, interactionID string) (mcpdomain.SessionContext, error) {
+	if f.verifyInteractionCallbackToken != nil {
+		return f.verifyInteractionCallbackToken(ctx, rawToken, interactionID)
 	}
 	return mcpdomain.SessionContext{}, nil
 }
