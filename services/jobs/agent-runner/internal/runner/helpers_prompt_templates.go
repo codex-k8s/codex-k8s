@@ -113,6 +113,14 @@ func (s *Service) buildPrompt(taskBody string, result runResult, repoDir string)
 	runtimeBuildRef := strings.TrimSpace(s.cfg.RuntimeBuildRef)
 	runtimeAccessProfile := normalizePromptRuntimeAccessProfile(s.cfg.RuntimeAccessProfile)
 	isDiscussionMode := s.cfg.DiscussionMode
+	resumePromptBlock, err := buildInteractionResumePromptBlock(
+		s.cfg.PromptTemplateLocale,
+		s.cfg.InteractionResumePayload,
+		result.restoredSessionPath != "" || result.sessionID != "",
+	)
+	if err != nil {
+		return "", fmt.Errorf("build interaction resume prompt block: %w", err)
+	}
 	isReviseTrigger := !isDiscussionMode && webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(result.triggerKind))
 	roleProfileBlock, err := renderPromptRoleProfileBlock(s.cfg.AgentKey, s.cfg.PromptTemplateLocale)
 	if err != nil {
@@ -124,7 +132,7 @@ func (s *Service) buildPrompt(taskBody string, result runResult, repoDir string)
 	}
 	projectDocs, docsTotal, docsTrimmed := loadProjectDocsForPrompt(repoDir, s.cfg.AgentKey, result.triggerKind, runtimeMode, runtimeTargetEnv)
 	roleDocTemplates, roleTemplatesTotal, roleTemplatesTrimmed := loadRoleDocTemplatesForPrompt(repoDir, s.cfg.AgentKey, result.triggerKind, runtimeMode, runtimeTargetEnv)
-	return renderTemplate(templateNamePromptEnvelope, promptEnvelopeTemplateData{
+	prompt, err := renderTemplate(templateNamePromptEnvelope, promptEnvelopeTemplateData{
 		RepositoryFullName:           s.cfg.RepositoryFullName,
 		RunID:                        s.cfg.RunID,
 		IssueNumber:                  s.cfg.IssueNumber,
@@ -161,6 +169,13 @@ func (s *Service) buildPrompt(taskBody string, result runResult, repoDir string)
 		RoleDocTemplatesTrimmed:      roleTemplatesTrimmed,
 		TaskBody:                     taskBody,
 	})
+	if err != nil {
+		return "", err
+	}
+	if strings.TrimSpace(resumePromptBlock) == "" {
+		return prompt, nil
+	}
+	return resumePromptBlock + "\n\n" + prompt, nil
 }
 
 func normalizePromptRuntimeTargetEnv(value string) string {

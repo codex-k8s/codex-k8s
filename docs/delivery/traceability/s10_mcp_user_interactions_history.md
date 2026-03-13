@@ -156,3 +156,29 @@ approvals:
   - `/labstack/echo` для проверки актуального `RateLimiterWithConfig`, `IdentifierExtractor` и `DenyHandler` паттерна в Echo v5.
 - Новых внешних зависимостей в issue `#393` не добавлялось.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: issue `#393` реализует approved transport wave из execution package, не меняя продуктовый baseline.
+
+## Актуализация по Issue #394 (`run:dev`, 2026-03-13)
+- Реализован runner handoff package для stream `S10-E04` в `services/internal/control-plane`, `services/jobs/worker`, `libs/go/k8s/joblauncher` и `services/jobs/agent-runner`:
+  - `control-plane` при scheduling resume-run теперь сохраняет terminal `interaction_resume_payload` в persisted `agent_runs.run_payload`, сохраняя existing session snapshot path в `agent_sessions` как единственный resume-source для `codex exec resume`;
+  - `worker` извлекает этот typed payload из run payload и прокидывает его в env нового run job без локального recompute interaction semantics;
+  - `agent-runner` валидирует machine-readable payload, требует наличие restored Codex session/session_id и добавляет typed JSON block в начало prompt перед `codex exec resume`, чтобы модель получала deterministic terminal outcome без повторного adapter lookup;
+  - `joblauncher` синхронно пробрасывает новый env contract `CODEXK8S_INTERACTION_RESUME_PAYLOAD`, а `services/jobs/agent-runner/README.md` актуализирован под новый resume path.
+- Rollout boundary сохранён:
+  - interaction source-of-truth остаётся у `control-plane`; `worker` и `agent-runner` только потребляют persisted payload;
+  - channel-specific adapters и broader pause/resume engine refactor по-прежнему остаются вне scope issue `#394`.
+- Выполнены проверки:
+  - `go test ./services/internal/control-plane/internal/domain/mcp ./services/jobs/worker/internal/domain/worker ./services/jobs/agent-runner/internal/runner ./libs/go/k8s/joblauncher`
+  - `go test ./services/internal/control-plane/... ./services/jobs/worker/... ./services/jobs/agent-runner/...`
+  - `git diff --check`
+  - runtime diagnostics:
+    - `kubectl get pods,job -n codex-k8s-dev-1 -o wide`
+    - `kubectl get events -n codex-k8s-dev-1 --sort-by=.lastTimestamp | tail -n 20`
+    - `kubectl logs deploy/codex-k8s-control-plane -n codex-k8s-dev-1 --tail=40`
+    - `kubectl logs deploy/codex-k8s-worker -n codex-k8s-dev-1 --tail=40`
+- Runtime evidence:
+  - candidate namespace `codex-k8s-dev-1` содержит running pods `codex-k8s-control-plane`, `codex-k8s-worker`, `codex-k8s-web-console`, `codex-k8s`, текущий run job и `postgres-0`;
+  - recent events/logs показывают ожидаемые hot-reload restarts control-plane/worker и кратковременные probe/dial failures в момент локальной пересборки, но без новых resume-specific ошибок.
+- Для verification использован Context7:
+  - `/protocolbuffers/protobuf` для проверки additive contract discipline при расширении typed payload-handshake.
+- Новых внешних зависимостей в issue `#394` не добавлялось.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: issue `#394` реализует approved deterministic resume wave из execution package, не меняя продуктовый baseline.

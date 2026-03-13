@@ -253,6 +253,24 @@ func TestFinalizeInteractionResumeSchedulesPendingRun(t *testing.T) {
 	if !runs.lastCreatePending.LearningMode {
 		t.Fatal("expected learning mode to be preserved for resume run")
 	}
+	var pendingRunPayload map[string]json.RawMessage
+	if err := json.Unmarshal(runs.lastCreatePending.RunPayload, &pendingRunPayload); err != nil {
+		t.Fatalf("unmarshal pending run payload: %v", err)
+	}
+	resumePayloadRaw, ok := pendingRunPayload["interaction_resume_payload"]
+	if !ok {
+		t.Fatal("expected interaction_resume_payload in pending run payload")
+	}
+	var resumePayload valuetypes.InteractionResumePayload
+	if err := json.Unmarshal(resumePayloadRaw, &resumePayload); err != nil {
+		t.Fatalf("unmarshal interaction resume payload: %v", err)
+	}
+	if got, want := resumePayload.InteractionID, "interaction-1"; got != want {
+		t.Fatalf("resume payload interaction_id = %q, want %q", got, want)
+	}
+	if got, want := string(resumePayload.RequestStatus), string(enumtypes.InteractionRequestStatusDeliveryExhausted); got != want {
+		t.Fatalf("resume payload request_status = %q, want %q", got, want)
+	}
 	if runs.lastClearWaitContext.WaitTargetRef != "interaction-1" {
 		t.Fatalf("wait target ref = %q, want interaction-1", runs.lastClearWaitContext.WaitTargetRef)
 	}

@@ -8,6 +8,7 @@ import (
 
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
 )
 
 const interactionResumeCorrelationPrefix = "interaction-resume:"
@@ -38,7 +39,7 @@ func (s *Service) finalizeInteractionResume(
 		return false, err
 	}
 
-	scheduled, err := s.scheduleInteractionResume(ctx, run, interaction.ID)
+	scheduled, err := s.scheduleInteractionResume(ctx, run, interaction.ID, resumePayload)
 	if err != nil {
 		return false, err
 	}
@@ -74,8 +75,21 @@ func (s *Service) loadInteractionResumeRunContext(ctx context.Context, runID str
 	}, run, nil
 }
 
-func (s *Service) scheduleInteractionResume(ctx context.Context, run entitytypes.AgentRun, interactionID string) (bool, error) {
+func (s *Service) scheduleInteractionResume(
+	ctx context.Context,
+	run entitytypes.AgentRun,
+	interactionID string,
+	resumePayload *valuetypes.InteractionResumePayload,
+) (bool, error) {
+	if resumePayload == nil {
+		return false, fmt.Errorf("interaction resume payload is required")
+	}
+
 	runMeta, err := parseInteractionResumeRunPayload(run.RunPayload)
+	if err != nil {
+		return false, err
+	}
+	pendingRunPayload, err := buildInteractionResumePendingRunPayload(run.RunPayload, resumePayload)
 	if err != nil {
 		return false, err
 	}
@@ -94,7 +108,7 @@ func (s *Service) scheduleInteractionResume(ctx context.Context, run entitytypes
 		CorrelationID: buildInteractionResumeCorrelationID(interactionID),
 		ProjectID:     projectID,
 		AgentID:       agentID,
-		RunPayload:    append(json.RawMessage(nil), run.RunPayload...),
+		RunPayload:    pendingRunPayload,
 		LearningMode:  runMeta.LearningMode,
 	})
 	if err != nil {
@@ -114,6 +128,32 @@ func parseInteractionResumeRunPayload(raw json.RawMessage) (interactionResumeRun
 		return interactionResumeRunPayload{}, fmt.Errorf("decode run payload for interaction resume: %w", err)
 	}
 	return payload, nil
+}
+
+func buildInteractionResumePendingRunPayload(
+	raw json.RawMessage,
+	resumePayload *valuetypes.InteractionResumePayload,
+) (json.RawMessage, error) {
+	if resumePayload == nil {
+		return nil, fmt.Errorf("interaction resume payload is required")
+	}
+
+	var envelope map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &envelope); err != nil {
+		return nil, fmt.Errorf("decode run payload for interaction resume persistence: %w", err)
+	}
+
+	encodedResumePayload, err := json.Marshal(resumePayload)
+	if err != nil {
+		return nil, fmt.Errorf("marshal interaction resume payload: %w", err)
+	}
+	envelope["interaction_resume_payload"] = encodedResumePayload
+
+	encodedRunPayload, err := json.Marshal(envelope)
+	if err != nil {
+		return nil, fmt.Errorf("marshal run payload with interaction resume payload: %w", err)
+	}
+	return json.RawMessage(encodedRunPayload), nil
 }
 
 func buildInteractionResumeCorrelationID(interactionID string) string {

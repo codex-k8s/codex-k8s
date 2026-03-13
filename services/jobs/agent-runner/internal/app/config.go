@@ -28,6 +28,8 @@ type Config struct {
 	MCPBaseURL             string `env:"CODEXK8S_MCP_BASE_URL,required,notEmpty"`
 	MCPBearerToken         string `env:"CODEXK8S_MCP_BEARER_TOKEN,required,notEmpty"`
 
+	InteractionResumePayload string `env:"CODEXK8S_INTERACTION_RESUME_PAYLOAD"`
+
 	TriggerKind          string `env:"CODEXK8S_RUN_TRIGGER_KIND" envDefault:"dev"`
 	TriggerLabel         string `env:"CODEXK8S_RUN_TRIGGER_LABEL"`
 	DiscussionMode       bool   `env:"CODEXK8S_DISCUSSION_MODE" envDefault:"false"`
@@ -115,6 +117,7 @@ func LoadConfig() (Config, error) {
 	cfg.ControlPlaneGRPCTarget = strings.TrimSpace(cfg.ControlPlaneGRPCTarget)
 	cfg.MCPBaseURL = strings.TrimRight(strings.TrimSpace(cfg.MCPBaseURL), "/")
 	cfg.MCPBearerToken = strings.TrimSpace(cfg.MCPBearerToken)
+	cfg.InteractionResumePayload = strings.TrimSpace(cfg.InteractionResumePayload)
 	cfg.RepositoryFullName = strings.TrimSpace(cfg.RepositoryFullName)
 	cfg.AgentKey = strings.TrimSpace(cfg.AgentKey)
 	cfg.RunTargetBranch = strings.TrimSpace(cfg.RunTargetBranch)

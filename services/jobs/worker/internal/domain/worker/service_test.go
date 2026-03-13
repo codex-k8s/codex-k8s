@@ -98,6 +98,77 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 	}
 }
 
+func TestTickLaunchesPendingRunWithInteractionResumePayload(t *testing.T) {
+	t.Parallel()
+
+	runs := &fakeRunQueue{
+		claims: []runqueuerepo.ClaimedRun{
+			{
+				RunID:         "run-resume",
+				CorrelationID: "corr-resume",
+				ProjectID:     "proj-1",
+				RunPayload: json.RawMessage(`{
+					"repository":{"full_name":"codex-k8s/codex-k8s"},
+					"trigger":{"kind":"dev"},
+					"issue":{"number":394},
+					"agent":{"key":"dev","name":"AI Developer"},
+					"interaction_resume_payload":{
+						"interaction_id":"interaction-1",
+						"tool_name":"user.decision.request",
+						"request_status":"expired",
+						"response_kind":"none",
+						"resolved_at":"2026-03-13T16:05:00Z",
+						"resolution_reason":"expired"
+					}
+				}`),
+				SlotNo: 1,
+			},
+		},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{states: map[string]JobState{}}
+	deployer := &fakeRuntimePreparer{
+		result: PrepareRunEnvironmentResult{
+			Namespace: "codex-k8s-dev-resume",
+			TargetEnv: "ai",
+		},
+	}
+	mcpTokens := &fakeMCPTokenIssuer{token: "token-run-resume"}
+	runStatus := &fakeRunStatusNotifier{}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:               "worker-1",
+		ClaimLimit:             1,
+		RunningCheckLimit:      10,
+		SlotsPerProject:        2,
+		SlotLeaseTTL:           time.Minute,
+		ControlPlaneMCPBaseURL: "http://codex-k8s-control-plane.test.svc:8081/mcp",
+	}, Dependencies{
+		Runs:            runs,
+		Events:          events,
+		Launcher:        launcher,
+		RuntimePreparer: deployer,
+		MCPTokenIssuer:  mcpTokens,
+		RunStatus:       runStatus,
+		Logger:          logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 3, 13, 18, 0, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if len(launcher.launched) != 1 {
+		t.Fatalf("expected 1 launched job, got %d", len(launcher.launched))
+	}
+	got := launcher.launched[0].InteractionResumePayload
+	want := `{"interaction_id":"interaction-1","tool_name":"user.decision.request","request_status":"expired","response_kind":"none","resolved_at":"2026-03-13T16:05:00Z","resolution_reason":"expired"}`
+	if got != want {
+		t.Fatalf("InteractionResumePayload = %q, want %q", got, want)
+	}
+}
+
 func TestTickLaunchesCodeOnlyRunWorkload(t *testing.T) {
 	t.Parallel()
 
