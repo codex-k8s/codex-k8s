@@ -287,6 +287,10 @@ func (r *runstatusTestRunsRepository) SetWaitContext(context.Context, agentrunre
 	return false, nil
 }
 
+func (r *runstatusTestRunsRepository) ClearWaitContextIfMatches(context.Context, agentrunrepo.ClearWaitContextParams) (bool, error) {
+	return false, nil
+}
+
 type runstatusTestPlatformTokenRepository struct {
 	item entitytypes.PlatformGitHubTokens
 }

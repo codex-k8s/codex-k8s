@@ -8,9 +8,17 @@ import (
 
 // AgentRunSetWaitContextParams updates typed wait linkage stored in agent_runs.
 type AgentRunSetWaitContextParams struct {
-	RunID           string
-	WaitReason      enumtypes.AgentRunWaitReason
-	WaitTargetKind  enumtypes.AgentRunWaitTargetKind
-	WaitTargetRef   string
-	WaitDeadlineAt  *time.Time
+	RunID          string
+	WaitReason     enumtypes.AgentRunWaitReason
+	WaitTargetKind enumtypes.AgentRunWaitTargetKind
+	WaitTargetRef  string
+	WaitDeadlineAt *time.Time
+}
+
+// AgentRunClearWaitContextParams clears wait linkage only when current wait matches expected values.
+type AgentRunClearWaitContextParams struct {
+	RunID          string
+	WaitReason     enumtypes.AgentRunWaitReason
+	WaitTargetKind enumtypes.AgentRunWaitTargetKind
+	WaitTargetRef  string
 }

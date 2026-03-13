@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
+	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
+	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentsession"
 	interactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/interactionrequest"
 	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
 )
@@ -197,23 +199,65 @@ func (s *Service) SubmitInteractionCallback(ctx context.Context, params SubmitIn
 	}
 
 	resumePayload := buildInteractionResumePayload(result.Interaction, result.ResponseRecord)
-	if result.ResumeRequired {
-		if err := s.setRunWaitContext(ctx, session, waitStateNone, false, "", "", "", nil); err != nil {
+	resumeRequired := result.ResumeRequired
+	if resumePayload != nil {
+		waitCleared, err := s.clearInteractionWaitContext(ctx, session, result.Interaction.ID, result.ResumeRequired)
+		if err != nil {
 			return SubmitInteractionCallbackResult{}, err
 		}
-		requestStatus := ""
-		if resumePayload != nil {
-			requestStatus = string(resumePayload.RequestStatus)
+		if waitCleared {
+			resumeRequired = true
+			s.auditInteractionWaitResumed(ctx, session, result.Interaction.ID, string(resumePayload.RequestStatus))
 		}
-		s.auditInteractionWaitResumed(ctx, session, result.Interaction.ID, requestStatus)
 	}
 
 	return SubmitInteractionCallbackResult{
 		Accepted:            result.Classification == enumtypes.InteractionCallbackResultClassificationAccepted,
 		Classification:      result.Classification,
 		InteractionState:    string(result.Interaction.State),
-		ResumeRequired:      result.ResumeRequired,
+		ResumeRequired:      resumeRequired,
 		EffectiveResponseID: result.EffectiveResponseID,
 		ResumePayload:       resumePayload,
 	}, nil
+}
+
+func (s *Service) clearInteractionWaitContext(ctx context.Context, session SessionContext, interactionID string, requireCurrent bool) (bool, error) {
+	if strings.TrimSpace(session.RunID) == "" || s.runs == nil {
+		return false, nil
+	}
+
+	clearedRunWait, err := s.runs.ClearWaitContextIfMatches(ctx, agentrunrepo.ClearWaitContextParams{
+		RunID:          session.RunID,
+		WaitReason:     enumtypes.AgentRunWaitReasonInteractionReply,
+		WaitTargetKind: enumtypes.AgentRunWaitTargetKindInteractionRequest,
+		WaitTargetRef:  strings.TrimSpace(interactionID),
+	})
+	if err != nil {
+		return false, fmt.Errorf("clear interaction wait context: %w", err)
+	}
+	if !clearedRunWait {
+		if requireCurrent {
+			return false, fmt.Errorf("clear interaction wait context: run %s is not waiting for interaction %s", session.RunID, interactionID)
+		}
+		return false, nil
+	}
+
+	if s.sessions == nil {
+		return true, nil
+	}
+
+	updatedSession, err := s.sessions.SetWaitStateByRunID(ctx, agentsessionrepo.SetWaitStateParams{
+		RunID:                session.RunID,
+		WaitState:            string(waitStateNone),
+		TimeoutGuardDisabled: false,
+		LastHeartbeatAt:      nil,
+	})
+	if err != nil {
+		return false, fmt.Errorf("clear interaction wait state: %w", err)
+	}
+	if !updatedSession && requireCurrent {
+		return false, fmt.Errorf("clear interaction wait state: session for run %s not found", session.RunID)
+	}
+
+	return true, nil
 }

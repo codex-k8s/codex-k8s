@@ -1099,8 +1099,23 @@ func (s *Service) setRunWaitContext(
 		lastHeartbeatAt = &now
 	}
 
+	if s.runs != nil {
+		updated, err := s.runs.SetWaitContext(ctx, agentrunrepo.SetWaitContextParams{
+			RunID:          session.RunID,
+			WaitReason:     waitReason,
+			WaitTargetKind: waitTargetKind,
+			WaitTargetRef:  strings.TrimSpace(waitTargetRef),
+			WaitDeadlineAt: waitDeadlineAt,
+		})
+		if err != nil {
+			return fmt.Errorf("set run wait context: %w", err)
+		}
+		if !updated {
+			return fmt.Errorf("set run wait context: run %s not found", session.RunID)
+		}
+	}
 	if s.sessions != nil {
-		_, err := s.sessions.SetWaitStateByRunID(ctx, agentsessionrepo.SetWaitStateParams{
+		updated, err := s.sessions.SetWaitStateByRunID(ctx, agentsessionrepo.SetWaitStateParams{
 			RunID:                session.RunID,
 			WaitState:            string(state),
 			TimeoutGuardDisabled: timeoutGuardDisabled,
@@ -1109,16 +1124,8 @@ func (s *Service) setRunWaitContext(
 		if err != nil {
 			return fmt.Errorf("set run wait state: %w", err)
 		}
-	}
-	if s.runs != nil {
-		if _, err := s.runs.SetWaitContext(ctx, agentrunrepo.SetWaitContextParams{
-			RunID:          session.RunID,
-			WaitReason:     waitReason,
-			WaitTargetKind: waitTargetKind,
-			WaitTargetRef:  strings.TrimSpace(waitTargetRef),
-			WaitDeadlineAt: waitDeadlineAt,
-		}); err != nil {
-			return fmt.Errorf("set run wait context: %w", err)
+		if !updated {
+			return fmt.Errorf("set run wait state: session for run %s not found", session.RunID)
 		}
 	}
 

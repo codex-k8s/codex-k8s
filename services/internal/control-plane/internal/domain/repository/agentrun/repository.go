@@ -12,6 +12,7 @@ type CreateParams = query.AgentRunCreateParams
 type CreateResult = query.AgentRunCreateResult
 type RunLookupItem = query.AgentRunLookupItem
 type SetWaitContextParams = query.AgentRunSetWaitContextParams
+type ClearWaitContextParams = query.AgentRunClearWaitContextParams
 
 // Repository persists and queries agent run records.
 type Repository interface {
@@ -31,4 +32,6 @@ type Repository interface {
 	ListRunIDsByRepositoryPullRequest(ctx context.Context, repositoryFullName string, prNumber int64, limit int) ([]string, error)
 	// SetWaitContext updates typed wait linkage stored in agent_runs.
 	SetWaitContext(ctx context.Context, params SetWaitContextParams) (bool, error)
+	// ClearWaitContextIfMatches clears wait linkage only when current wait still points to the expected target.
+	ClearWaitContextIfMatches(ctx context.Context, params ClearWaitContextParams) (bool, error)
 }

@@ -42,6 +42,38 @@ func TestClassifyDecisionResponsePayloadRejectsUnknownOption(t *testing.T) {
 	}
 }
 
+func TestClassifyDecisionResponsePayloadAcceptsFreeTextWhenEnabled(t *testing.T) {
+	t.Parallel()
+
+	requestPayload := json.RawMessage(`{"allow_free_text":true,"options":[{"option_id":"approve"}]}`)
+	decision, ok := classifyDecisionResponsePayload(requestPayload, querytypes.InteractionCallbackApplyParams{
+		ResponseKind: enumtypes.InteractionResponseKindFreeText,
+		FreeText:     "ship it",
+	})
+	if !ok {
+		t.Fatal("expected payload validation success for allowed free text")
+	}
+	if decision.responseKind != enumtypes.InteractionResponseKindFreeText {
+		t.Fatalf("response kind = %q, want %q", decision.responseKind, enumtypes.InteractionResponseKindFreeText)
+	}
+	if decision.freeText != "ship it" {
+		t.Fatalf("free text = %q, want %q", decision.freeText, "ship it")
+	}
+}
+
+func TestClassifyDecisionResponsePayloadRejectsFreeTextWhenDisabled(t *testing.T) {
+	t.Parallel()
+
+	requestPayload := json.RawMessage(`{"allow_free_text":false,"options":[{"option_id":"approve"}]}`)
+	_, ok := classifyDecisionResponsePayload(requestPayload, querytypes.InteractionCallbackApplyParams{
+		ResponseKind: enumtypes.InteractionResponseKindFreeText,
+		FreeText:     "ship it",
+	})
+	if ok {
+		t.Fatal("expected payload validation failure when free text is disabled")
+	}
+}
+
 func TestClassifyCallbackMarksExpiredPastDeadline(t *testing.T) {
 	t.Parallel()
 

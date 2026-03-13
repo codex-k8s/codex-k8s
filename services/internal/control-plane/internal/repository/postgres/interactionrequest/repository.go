@@ -397,7 +397,8 @@ type decisionResponseValidation struct {
 }
 
 type decisionRequestPayload struct {
-	Options []struct {
+	AllowFreeText bool `json:"allow_free_text,omitempty"`
+	Options       []struct {
 		OptionID string `json:"option_id"`
 	} `json:"options"`
 }
@@ -423,6 +424,13 @@ func classifyDecisionResponsePayload(requestPayloadJSON []byte, params domainrep
 	case enumtypes.InteractionResponseKindFreeText:
 		freeText := strings.TrimSpace(params.FreeText)
 		if freeText == "" {
+			return decisionResponseValidation{}, false
+		}
+		var payload decisionRequestPayload
+		if err := json.Unmarshal(requestPayloadJSON, &payload); err != nil {
+			return decisionResponseValidation{}, false
+		}
+		if !payload.AllowFreeText {
 			return decisionResponseValidation{}, false
 		}
 		return decisionResponseValidation{responseKind: responseKind, freeText: freeText}, true

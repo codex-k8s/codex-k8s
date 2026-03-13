@@ -3213,6 +3213,10 @@ func (r *inMemoryRunRepo) SetWaitContext(context.Context, agentrunrepo.SetWaitCo
 	return false, nil
 }
 
+func (r *inMemoryRunRepo) ClearWaitContextIfMatches(context.Context, agentrunrepo.ClearWaitContextParams) (bool, error) {
+	return false, nil
+}
+
 type inMemoryRunStatusService struct {
 	issueCleanupCalls        int
 	pullRequestCleanupCalls  int

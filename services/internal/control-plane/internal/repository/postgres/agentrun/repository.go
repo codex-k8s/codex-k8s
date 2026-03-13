@@ -38,6 +38,8 @@ var (
 	queryReleaseSlotsByRunID string
 	//go:embed sql/set_wait_context.sql
 	querySetWaitContext string
+	//go:embed sql/clear_wait_context_if_matches.sql
+	queryClearWaitContextIfMatches string
 	//go:embed sql/upsert_run_agent_logs.sql
 	queryUpsertRunAgentLogs string
 	//go:embed sql/cleanup_run_agent_logs_finished_before.sql
@@ -247,6 +249,39 @@ func (r *Repository) SetWaitContext(ctx context.Context, params domainrepo.SetWa
 	)
 	if err != nil {
 		return false, fmt.Errorf("set run wait context: %w", err)
+	}
+	return res.RowsAffected() > 0, nil
+}
+
+// ClearWaitContextIfMatches clears wait linkage only when current wait still points to the expected target.
+func (r *Repository) ClearWaitContextIfMatches(ctx context.Context, params domainrepo.ClearWaitContextParams) (bool, error) {
+	runID := strings.TrimSpace(params.RunID)
+	if runID == "" {
+		return false, fmt.Errorf("run_id is required")
+	}
+	waitReason := strings.TrimSpace(string(params.WaitReason))
+	if waitReason == "" {
+		return false, fmt.Errorf("wait_reason is required")
+	}
+	waitTargetKind := strings.TrimSpace(string(params.WaitTargetKind))
+	if waitTargetKind == "" {
+		return false, fmt.Errorf("wait_target_kind is required")
+	}
+	waitTargetRef := strings.TrimSpace(params.WaitTargetRef)
+	if waitTargetRef == "" {
+		return false, fmt.Errorf("wait_target_ref is required")
+	}
+
+	res, err := r.db.Exec(
+		ctx,
+		queryClearWaitContextIfMatches,
+		runID,
+		waitReason,
+		waitTargetKind,
+		waitTargetRef,
+	)
+	if err != nil {
+		return false, fmt.Errorf("clear run wait context if matches: %w", err)
 	}
 	return res.RowsAffected() > 0, nil
 }
