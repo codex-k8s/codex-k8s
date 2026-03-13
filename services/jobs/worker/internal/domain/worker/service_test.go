@@ -983,19 +983,236 @@ func TestTickRunningFullEnvJobNotFound_RuntimePreparingKeepsRunRunning(t *testin
 	}
 }
 
+func TestTickReleasesStaleRunLeaseAndEmitsRecoveryEvents(t *testing.T) {
+	t.Parallel()
+
+	leaseUntil := time.Date(2026, 2, 20, 10, 0, 0, 0, time.UTC)
+	heartbeatAt := time.Date(2026, 2, 20, 9, 58, 0, 0, time.UTC)
+	expiresAt := time.Date(2026, 2, 20, 9, 59, 0, 0, time.UTC)
+
+	runs := &fakeRunQueue{
+		releasedStaleLeases: []runqueuerepo.ReleasedStaleLease{{
+			RunID:              "run-stale",
+			CorrelationID:      "corr-stale",
+			ProjectID:          "proj-stale",
+			PreviousLeaseOwner: "worker-old",
+			PreviousLeaseUntil: timePtr(leaseUntil),
+			WorkerHeartbeatAt:  timePtr(heartbeatAt),
+			WorkerExpiresAt:    timePtr(expiresAt),
+			WorkerStatus:       "stopped",
+		}},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{
+		states:         map[string]JobState{},
+		workerPodNames: []string{"worker-1", "worker-2"},
+	}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:             "worker-1",
+		WorkerPodNamespace:   "codex-k8s-prod",
+		ClaimLimit:           1,
+		RunningCheckLimit:    10,
+		StaleLeaseSweepLimit: 5,
+		SlotsPerProject:      2,
+		SlotLeaseTTL:         time.Minute,
+	}, Dependencies{
+		Runs:     runs,
+		Events:   events,
+		Launcher: launcher,
+		Logger:   logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 2, 20, 10, 1, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if runs.releaseStaleCalls != 1 {
+		t.Fatalf("expected one stale lease release sweep, got %d", runs.releaseStaleCalls)
+	}
+	if len(runs.releaseStaleParams) != 1 {
+		t.Fatalf("expected one stale lease release params entry, got %d", len(runs.releaseStaleParams))
+	}
+	if !runs.releaseStaleParams[0].ReleaseMissingOwners {
+		t.Fatal("expected mixed-version missing-owner release to be enabled after live worker lookup")
+	}
+	if got, want := strings.Join(runs.releaseStaleParams[0].ActiveWorkerIDs, ","), "worker-1,worker-2"; got != want {
+		t.Fatalf("expected active worker ids %q, got %q", want, got)
+	}
+	if got, want := strings.Join(launcher.workerPodListNamespaces, ","), "codex-k8s-prod"; got != want {
+		t.Fatalf("expected worker pod lookup namespace %q, got %q", want, got)
+	}
+	if len(events.inserted) != 3 {
+		t.Fatalf("expected 3 recovery events, got %d", len(events.inserted))
+	}
+	if events.inserted[0].EventType != floweventdomain.EventTypeWorkerInstanceHeartbeatMissed {
+		t.Fatalf("expected first event %q, got %q", floweventdomain.EventTypeWorkerInstanceHeartbeatMissed, events.inserted[0].EventType)
+	}
+	if events.inserted[1].EventType != floweventdomain.EventTypeRunLeaseDetectedStale {
+		t.Fatalf("expected second event %q, got %q", floweventdomain.EventTypeRunLeaseDetectedStale, events.inserted[1].EventType)
+	}
+	if events.inserted[2].EventType != floweventdomain.EventTypeRunLeaseReleased {
+		t.Fatalf("expected third event %q, got %q", floweventdomain.EventTypeRunLeaseReleased, events.inserted[2].EventType)
+	}
+}
+
+func TestTickStaleLeaseFallsBackToLeaseTTLWhenWorkerPodLookupFails(t *testing.T) {
+	t.Parallel()
+
+	runs := &fakeRunQueue{}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{
+		states:           map[string]JobState{},
+		workerPodListErr: context.DeadlineExceeded,
+	}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:             "worker-1",
+		WorkerPodNamespace:   "codex-k8s-prod",
+		ClaimLimit:           1,
+		RunningCheckLimit:    10,
+		StaleLeaseSweepLimit: 5,
+		SlotsPerProject:      2,
+		SlotLeaseTTL:         time.Minute,
+	}, Dependencies{
+		Runs:     runs,
+		Events:   events,
+		Launcher: launcher,
+		Logger:   logger,
+	})
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if runs.releaseStaleCalls != 1 {
+		t.Fatalf("expected one stale lease release sweep, got %d", runs.releaseStaleCalls)
+	}
+	if len(runs.releaseStaleParams) != 1 {
+		t.Fatalf("expected one stale lease release params entry, got %d", len(runs.releaseStaleParams))
+	}
+	if runs.releaseStaleParams[0].ReleaseMissingOwners {
+		t.Fatal("expected missing-owner release to stay disabled when worker pod lookup fails")
+	}
+	if len(runs.releaseStaleParams[0].ActiveWorkerIDs) != 0 {
+		t.Fatalf("expected no active worker ids on fallback, got %v", runs.releaseStaleParams[0].ActiveWorkerIDs)
+	}
+}
+
+func TestTickReclaimsRunAfterStaleLeaseAndLaunchesMissingWorkload(t *testing.T) {
+	t.Parallel()
+
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
+	runs := &fakeRunQueue{
+		releasedStaleLeases: []runqueuerepo.ReleasedStaleLease{{
+			RunID:              "run-stale",
+			CorrelationID:      "corr-stale",
+			ProjectID:          "550e8400-e29b-41d4-a716-446655440000",
+			PreviousLeaseOwner: "worker-old",
+			PreviousLeaseUntil: timePtr(time.Date(2026, 2, 20, 9, 59, 0, 0, time.UTC)),
+			WorkerHeartbeatAt:  timePtr(time.Date(2026, 2, 20, 9, 58, 0, 0, time.UTC)),
+			WorkerExpiresAt:    timePtr(time.Date(2026, 2, 20, 9, 59, 0, 0, time.UTC)),
+			WorkerStatus:       "stopped",
+		}},
+		running: []runqueuerepo.RunningRun{{
+			RunID:                    "run-stale",
+			CorrelationID:            "corr-stale",
+			ProjectID:                "550e8400-e29b-41d4-a716-446655440000",
+			SlotNo:                   1,
+			RunPayload:               payload,
+			StartedAt:                time.Date(2026, 2, 20, 9, 30, 0, 0, time.UTC),
+			ReclaimedAfterStaleLease: true,
+		}},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{states: map[string]JobState{"run-stale": JobStateNotFound}}
+	deployer := &fakeRuntimePreparer{
+		result: PrepareRunEnvironmentResult{
+			Namespace: "codex-k8s-dev-1",
+			TargetEnv: "ai",
+		},
+	}
+	mcpTokens := &fakeMCPTokenIssuer{token: "token-stale"}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:               "worker-1",
+		ClaimLimit:             1,
+		RunningCheckLimit:      10,
+		StaleLeaseSweepLimit:   5,
+		SlotsPerProject:        2,
+		SlotLeaseTTL:           time.Minute,
+		RunNamespacePrefix:     "codex-issue",
+		ControlPlaneMCPBaseURL: "http://codex-k8s-control-plane.test.svc:8081/mcp",
+	}, Dependencies{
+		Runs:            runs,
+		Events:          events,
+		Launcher:        launcher,
+		RuntimePreparer: deployer,
+		MCPTokenIssuer:  mcpTokens,
+		Logger:          logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 2, 20, 10, 0, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if len(launcher.launched) != 1 {
+		t.Fatalf("expected one relaunched workload, got %d", len(launcher.launched))
+	}
+	if got, want := launcher.launched[0].Namespace, "codex-k8s-dev-1"; got != want {
+		t.Fatalf("expected relaunched namespace %q, got %q", want, got)
+	}
+	if len(runs.finished) != 0 {
+		t.Fatalf("expected run to remain running after reclaim, got %d finished runs", len(runs.finished))
+	}
+
+	eventTypes := make([]floweventdomain.EventType, 0, len(events.inserted))
+	for _, event := range events.inserted {
+		eventTypes = append(eventTypes, event.EventType)
+	}
+
+	expected := []floweventdomain.EventType{
+		floweventdomain.EventTypeWorkerInstanceHeartbeatMissed,
+		floweventdomain.EventTypeRunLeaseDetectedStale,
+		floweventdomain.EventTypeRunLeaseReleased,
+		floweventdomain.EventTypeRunReclaimedAfterStaleLease,
+		floweventdomain.EventTypeRunNamespacePrepared,
+		floweventdomain.EventTypeRunNamespaceTTLScheduled,
+		floweventdomain.EventTypeRunProfileResolved,
+		floweventdomain.EventTypeRunStarted,
+	}
+	if len(eventTypes) != len(expected) {
+		t.Fatalf("unexpected events count: got %d want %d (%v)", len(eventTypes), len(expected), eventTypes)
+	}
+	for idx := range expected {
+		if eventTypes[idx] != expected[idx] {
+			t.Fatalf("unexpected event at index %d: got %q want %q", idx, eventTypes[idx], expected[idx])
+		}
+	}
+}
+
 type fakeRunQueue struct {
-	claims            []runqueuerepo.ClaimedRun
-	claimCalls        int
-	running           []runqueuerepo.RunningRun
-	claimRunningCalls int
-	claimRunning      []runqueuerepo.ClaimRunningParams
-	finished          []runqueuerepo.FinishParams
-	extended          []runqueuerepo.ExtendLeaseParams
-	claimErr          error
-	claimRunningErr   error
-	listErr           error
-	finishErr         error
-	extendErr         error
+	claims              []runqueuerepo.ClaimedRun
+	claimCalls          int
+	running             []runqueuerepo.RunningRun
+	claimRunningCalls   int
+	claimRunning        []runqueuerepo.ClaimRunningParams
+	releasedStaleLeases []runqueuerepo.ReleasedStaleLease
+	releaseStaleCalls   int
+	releaseStaleParams  []runqueuerepo.ReleaseStaleLeasesParams
+	finished            []runqueuerepo.FinishParams
+	extended            []runqueuerepo.ExtendLeaseParams
+	claimErr            error
+	claimRunningErr     error
+	releaseStaleErr     error
+	listErr             error
+	finishErr           error
+	extendErr           error
 }
 
 func (f *fakeRunQueue) ClaimNextPending(_ context.Context, _ runqueuerepo.ClaimParams) (runqueuerepo.ClaimedRun, bool, error) {
@@ -1026,6 +1243,15 @@ func (f *fakeRunQueue) ClaimRunning(_ context.Context, params runqueuerepo.Claim
 	return f.running, nil
 }
 
+func (f *fakeRunQueue) ReleaseStaleLeases(_ context.Context, params runqueuerepo.ReleaseStaleLeasesParams) ([]runqueuerepo.ReleasedStaleLease, error) {
+	if f.releaseStaleErr != nil {
+		return nil, f.releaseStaleErr
+	}
+	f.releaseStaleCalls++
+	f.releaseStaleParams = append(f.releaseStaleParams, params)
+	return f.releasedStaleLeases, nil
+}
+
 func (f *fakeRunQueue) ExtendLease(_ context.Context, params runqueuerepo.ExtendLeaseParams) (bool, error) {
 	return appendIfNoError(&f.extended, params, f.extendErr)
 }
@@ -1042,6 +1268,11 @@ func appendIfNoError[T any](dst *[]T, value T, err error) (bool, error) {
 	return true, nil
 }
 
+func timePtr(value time.Time) *time.Time {
+	result := value.UTC()
+	return &result
+}
+
 type fakeFlowEvents struct {
 	inserted []floweventrepo.InsertParams
 	err      error
@@ -1056,16 +1287,19 @@ func (f *fakeFlowEvents) Insert(_ context.Context, params floweventrepo.InsertPa
 }
 
 type fakeLauncher struct {
-	states           map[string]JobState
-	launched         []JobSpec
-	prepared         []NamespaceSpec
-	ensureResult     NamespaceEnsureResult
-	reusable         NamespaceReuseResult
-	reusableFound    bool
-	expiredCleanups  []NamespaceCleanupResult
-	cleanupSweepCall []NamespaceCleanupParams
-	launchErr        error
-	statusErr        error
+	states                  map[string]JobState
+	workerPodNames          []string
+	workerPodListErr        error
+	workerPodListNamespaces []string
+	launched                []JobSpec
+	prepared                []NamespaceSpec
+	ensureResult            NamespaceEnsureResult
+	reusable                NamespaceReuseResult
+	reusableFound           bool
+	expiredCleanups         []NamespaceCleanupResult
+	cleanupSweepCall        []NamespaceCleanupParams
+	launchErr               error
+	statusErr               error
 }
 
 type fakeMCPTokenIssuer struct {
@@ -1108,6 +1342,14 @@ func (f *fakeLauncher) JobRef(runID string, namespace string) JobRef {
 		namespace = "ns"
 	}
 	return JobRef{Namespace: namespace, Name: "job-" + runID}
+}
+
+func (f *fakeLauncher) ListWorkerPodNames(_ context.Context, namespace string) ([]string, error) {
+	f.workerPodListNamespaces = append(f.workerPodListNamespaces, namespace)
+	if f.workerPodListErr != nil {
+		return nil, f.workerPodListErr
+	}
+	return f.workerPodNames, nil
 }
 
 func (f *fakeLauncher) FindRunJobRefByRunID(_ context.Context, _ string) (JobRef, bool, error) {

@@ -19,7 +19,7 @@ approvals:
 # Data Model: codex-k8s
 
 ## TL;DR
-- Ключевые сущности: users, projects, system_settings, repositories, project_databases, agents, agent_runs, agent_sessions, token_usage, slots, runtime_deploy_tasks, flow_events, links, docs_meta, doc_chunks.
+- Ключевые сущности: users, projects, system_settings, repositories, project_databases, agents, agent_runs, worker_instances, agent_sessions, token_usage, slots, runtime_deploy_tasks, flow_events, links, docs_meta, doc_chunks.
 - Основные связи: user<->project (RBAC), project->repositories, project->project_databases, agent->agent_runs, issue/pr->doc links.
 - Риски миграций: ранний выбор индексов для webhook/event throughput и vector search.
 
@@ -204,10 +204,28 @@ approvals:
 | timeout_at | timestamptz | yes |  |  | hard timeout deadline |
 | timeout_paused | bool | no | false |  | true while paused on allowed waits |
 | wait_reason | text | yes |  |  | owner_review/mcp/none |
-| lease_owner | text | yes |  |  | worker instance currently owning running-run reconciliation |
+| lease_owner | text | yes |  |  | worker instance currently owning running-run reconciliation; during mixed-version rollout missing `worker_instances` row is cross-checked against live worker pods |
 | lease_until | timestamptz | yes |  |  | reconciliation lease expiration |
+| stale_reclaim_pending | bool | no | false |  | set when stale worker lease was released and next claim must emit recovery event |
 | started_at | timestamptz | yes |  |  | |
 | finished_at | timestamptz | yes |  |  | |
+
+### Entity: worker_instances
+- Назначение: liveness-модель worker pod/instance для быстрого recovery stale running leases.
+- Важные инварианты: один `worker_id` описывает одну активную worker-instance запись; heartbeat обновляет `expires_at`, graceful shutdown переводит `status=stopped`, а mixed-version rollout использует Kubernetes live worker pod set как fallback для owner без строки в `worker_instances`.
+- Поля:
+
+| Field | Type | Nullable | Default | Constraints | Notes |
+|---|---|---:|---|---|---|
+| worker_id | text | no |  | pk | logical worker instance id (обычно pod hostname/name) |
+| namespace | text | no | '' |  | worker pod namespace |
+| pod_name | text | no | '' |  | worker pod name for runtime diagnostics |
+| status | text | no | 'active' | check enum | active/stopped |
+| started_at | timestamptz | no | now() |  | worker process start time |
+| heartbeat_at | timestamptz | no | now() |  | latest successful heartbeat |
+| expires_at | timestamptz | no | now() | index | stale threshold for lease recovery |
+| created_at | timestamptz | no | now() |  | |
+| updated_at | timestamptz | no | now() |  | |
 
 ### Entity: agent_sessions
 - Назначение: детальная телеметрия и аудит выполнения агентной сессии.
@@ -412,6 +430,7 @@ approvals:
 - `projects` 1:N `repositories`
 - `projects` M:N `users` через `project_members`
 - `agents` 1:N `agent_runs`
+- `worker_instances` 1:N `agent_runs` по `agent_runs.lease_owner -> worker_instances.worker_id` (soft relation для liveness/recovery)
 - `projects` 1:N `agents` (только для project-scoped overrides/custom profiles, если они присутствуют)
 - `agent_runs` 1:1 `agent_sessions` (текущий baseline Day4 по `run_id unique`; может эволюционировать до 1:N при multi-session run)
 - `agent_sessions` 1:N `token_usage`
@@ -424,13 +443,13 @@ approvals:
 
 ## Логическое размещение по БД-контурам (MVP)
 - PostgreSQL cluster единый.
-- Core contour: `users`, `projects`, `project_members`, `system_settings`, `repositories`, `agents`, `agent_runs`, `slots`, `runtime_deploy_tasks`, `docs_meta`, `learning_feedback`.
+- Core contour: `users`, `projects`, `project_members`, `system_settings`, `repositories`, `agents`, `agent_runs`, `worker_instances`, `slots`, `runtime_deploy_tasks`, `docs_meta`, `learning_feedback`.
 - Audit/chunks contour: `agent_sessions`, `token_usage`, `flow_events`, `links`, `doc_chunks`, `mcp_action_requests`.
 - Связи между контурами — через устойчивые ключи (`correlation_id`, `doc_id`), без требования к cross-contour FK.
 
 ## Индексы и запросы (критичные)
 - Запрос: выбрать ожидающие webhook jobs по статусу/времени.
-- Индексы: `agent_runs(status, started_at)`, `agent_runs(status, lease_until, started_at)`, `flow_events(correlation_id, created_at)`.
+- Индексы: `agent_runs(status, started_at)`, `agent_runs(status, lease_until, started_at)`, `agent_runs(status, lease_owner, lease_until, started_at)`, `worker_instances(status, expires_at)`, `flow_events(correlation_id, created_at)`.
 - Запрос: аудит сессий и стоимости по run/agent/model.
 - Индексы: `agent_sessions(run_id, started_at)`, `token_usage(session_id, created_at)`.
 - Запрос: найти pending/failed MCP action requests.

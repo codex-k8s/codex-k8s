@@ -26,6 +26,8 @@ const (
 	aiRepairKeepaliveName     = "keepalive"
 	aiRepairComponentLabelVal = "ai-repair"
 	discussionComponentLabel  = "discussion"
+	workerAppName             = "codex-k8s"
+	workerComponentLabel      = "worker"
 	runRepoCacheVolumeName    = "repo-cache"
 	runRepoCacheClaimName     = "codex-k8s-repo-cache"
 	runRepoCacheMountPath     = "/workspace"
@@ -285,6 +287,32 @@ func (l *Launcher) JobRef(runID string, namespace string) JobRef {
 		Namespace: ns,
 		Name:      BuildRunJobName(runID),
 	}
+}
+
+// ListWorkerPodNames returns worker pod names currently visible in one namespace.
+func (l *Launcher) ListWorkerPodNames(ctx context.Context, namespace string) ([]string, error) {
+	targetNamespace := strings.TrimSpace(namespace)
+	if targetNamespace == "" {
+		targetNamespace = l.cfg.Namespace
+	}
+
+	pods, err := l.client.CoreV1().Pods(targetNamespace).List(ctx, metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("app.kubernetes.io/name=%s,app.kubernetes.io/component=%s", workerAppName, workerComponentLabel),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("list worker pods in namespace %s: %w", targetNamespace, err)
+	}
+
+	result := make([]string, 0, len(pods.Items))
+	for _, item := range pods.Items {
+		name := strings.TrimSpace(item.Name)
+		if name == "" {
+			continue
+		}
+		result = append(result, name)
+	}
+	sort.Strings(result)
+	return result, nil
 }
 
 // Launch creates Kubernetes Job or returns existing one when already present.
@@ -661,10 +689,9 @@ func (l *Launcher) FindRunJobRefByRunID(ctx context.Context, runID string) (JobR
 	}
 
 	sort.Slice(candidates, func(i, j int) bool {
-		if candidates[i].Namespace == candidates[j].Namespace {
-			return candidates[i].Name < candidates[j].Name
-		}
-		return candidates[i].Namespace < candidates[j].Namespace
+		left := candidates[i].Namespace + "/" + candidates[i].Name
+		right := candidates[j].Namespace + "/" + candidates[j].Name
+		return left < right
 	})
 
 	return candidates[0], true, nil

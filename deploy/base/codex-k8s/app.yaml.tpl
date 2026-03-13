@@ -782,10 +782,16 @@ spec:
                   optional: true
             - name: CODEXK8S_WORKER_POLL_INTERVAL
               value: '{{ envOr "CODEXK8S_WORKER_POLL_INTERVAL" "" }}'
+            - name: CODEXK8S_WORKER_HEARTBEAT_INTERVAL
+              value: '{{ envOr "CODEXK8S_WORKER_HEARTBEAT_INTERVAL" "" }}'
+            - name: CODEXK8S_WORKER_INSTANCE_TTL
+              value: '{{ envOr "CODEXK8S_WORKER_INSTANCE_TTL" "" }}'
             - name: CODEXK8S_WORKER_CLAIM_LIMIT
               value: '{{ envOr "CODEXK8S_WORKER_CLAIM_LIMIT" "" }}'
             - name: CODEXK8S_WORKER_RUNNING_CHECK_LIMIT
               value: '{{ envOr "CODEXK8S_WORKER_RUNNING_CHECK_LIMIT" "" }}'
+            - name: CODEXK8S_WORKER_STALE_LEASE_SWEEP_LIMIT
+              value: '{{ envOr "CODEXK8S_WORKER_STALE_LEASE_SWEEP_LIMIT" "" }}'
             - name: CODEXK8S_WORKER_SLOTS_PER_PROJECT
               value: '{{ envOr "CODEXK8S_WORKER_SLOTS_PER_PROJECT" "" }}'
             - name: CODEXK8S_WORKER_SLOT_LEASE_TTL
@@ -794,6 +800,14 @@ spec:
               value: '{{ envOr "CODEXK8S_WORKER_RUN_LEASE_TTL" "" }}'
             - name: CODEXK8S_WORKER_K8S_NAMESPACE
               value: '{{ envOr "CODEXK8S_WORKER_K8S_NAMESPACE" "" }}'
+            - name: CODEXK8S_WORKER_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: CODEXK8S_WORKER_POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
             - name: CODEXK8S_PRODUCTION_NAMESPACE
               value: '{{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}'
             - name: CODEXK8S_WORKER_JOB_IMAGE

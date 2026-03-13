@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -38,6 +39,8 @@ var (
 	queryMarkRunRunning string
 	//go:embed sql/claim_running.sql
 	queryClaimRunning string
+	//go:embed sql/release_stale_running_leases.sql
+	queryReleaseStaleRunningLeases string
 	//go:embed sql/list_running.sql
 	queryListRunning string
 	//go:embed sql/extend_slot_lease.sql
@@ -210,6 +213,50 @@ func (r *Repository) ClaimRunning(ctx context.Context, params domainrepo.ClaimRu
 	return items, nil
 }
 
+// ReleaseStaleLeases clears running-run leases owned by stale worker instances.
+func (r *Repository) ReleaseStaleLeases(ctx context.Context, params domainrepo.ReleaseStaleLeasesParams) ([]domainrepo.ReleasedStaleLease, error) {
+	limit := params.Limit
+	if limit <= 0 {
+		limit = 100
+	}
+
+	rows, err := r.db.Query(ctx, queryReleaseStaleRunningLeases, limit, params.ReleaseMissingOwners, params.ActiveWorkerIDs)
+	if err != nil {
+		return nil, fmt.Errorf("release stale running leases: %w", err)
+	}
+	defer rows.Close()
+
+	items := make([]domainrepo.ReleasedStaleLease, 0, limit)
+	for rows.Next() {
+		var (
+			item                  domainrepo.ReleasedStaleLease
+			previousLeaseUntilRaw pgtype.Timestamptz
+			workerHeartbeatAtRaw  pgtype.Timestamptz
+			workerExpiresAtRaw    pgtype.Timestamptz
+		)
+		if err := rows.Scan(
+			&item.RunID,
+			&item.CorrelationID,
+			&item.ProjectID,
+			&item.PreviousLeaseOwner,
+			&previousLeaseUntilRaw,
+			&workerHeartbeatAtRaw,
+			&workerExpiresAtRaw,
+			&item.WorkerStatus,
+		); err != nil {
+			return nil, fmt.Errorf("scan released stale running lease row: %w", err)
+		}
+		item.PreviousLeaseUntil = timestamptzPtr(previousLeaseUntilRaw)
+		item.WorkerHeartbeatAt = timestamptzPtr(workerHeartbeatAtRaw)
+		item.WorkerExpiresAt = timestamptzPtr(workerExpiresAtRaw)
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate released stale running leases: %w", err)
+	}
+	return items, nil
+}
+
 // ListRunning returns active runs for diagnostics/peer checks.
 func (r *Repository) ListRunning(ctx context.Context, limit int) ([]domainrepo.RunningRun, error) {
 	rows, err := r.db.Query(ctx, queryListRunning, limit)
@@ -290,26 +337,28 @@ func scanRunningRows(rows pgx.Rows, limit int) ([]domainrepo.RunningRun, error) 
 	result := make([]domainrepo.RunningRun, 0, limit)
 	for rows.Next() {
 		var (
-			runID         string
-			correlationID string
-			projectID     string
-			slotID        string
-			slotNo        int
-			learningMode  bool
-			runPayload    []byte
-			startedAt     pgtype.Timestamptz
+			runID                    string
+			correlationID            string
+			projectID                string
+			slotID                   string
+			slotNo                   int
+			learningMode             bool
+			runPayload               []byte
+			startedAt                pgtype.Timestamptz
+			reclaimedAfterStaleLease bool
 		)
-		if err := rows.Scan(&runID, &correlationID, &projectID, &slotID, &slotNo, &learningMode, &runPayload, &startedAt); err != nil {
+		if err := rows.Scan(&runID, &correlationID, &projectID, &slotID, &slotNo, &learningMode, &runPayload, &startedAt, &reclaimedAfterStaleLease); err != nil {
 			return nil, fmt.Errorf("scan running run row: %w", err)
 		}
 		item := domainrepo.RunningRun{
-			RunID:         runID,
-			CorrelationID: correlationID,
-			ProjectID:     projectID,
-			SlotID:        slotID,
-			SlotNo:        slotNo,
-			LearningMode:  learningMode,
-			RunPayload:    json.RawMessage(runPayload),
+			RunID:                    runID,
+			CorrelationID:            correlationID,
+			ProjectID:                projectID,
+			SlotID:                   slotID,
+			SlotNo:                   slotNo,
+			LearningMode:             learningMode,
+			RunPayload:               json.RawMessage(runPayload),
+			ReclaimedAfterStaleLease: reclaimedAfterStaleLease,
 		}
 		if startedAt.Valid {
 			item.StartedAt = startedAt.Time.UTC()
@@ -320,6 +369,14 @@ func scanRunningRows(rows pgx.Rows, limit int) ([]domainrepo.RunningRun, error) 
 		return nil, fmt.Errorf("iterate running runs: %w", err)
 	}
 	return result, nil
+}
+
+func timestamptzPtr(value pgtype.Timestamptz) *time.Time {
+	if !value.Valid {
+		return nil
+	}
+	result := value.Time.UTC()
+	return &result
 }
 
 // parseRunQueuePayload unmarshals only fields required by runqueue repository logic.

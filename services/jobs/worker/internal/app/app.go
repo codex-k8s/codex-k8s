@@ -19,6 +19,7 @@ import (
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/flowevent"
 	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/learningfeedback"
 	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/runqueue"
+	workerinstancerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/workerinstance"
 )
 
 // Run starts worker loop and blocks until termination signal.
@@ -36,6 +37,23 @@ func Run() error {
 	}
 	if pollInterval <= 0 {
 		return fmt.Errorf("CODEXK8S_WORKER_POLL_INTERVAL must be > 0")
+	}
+	workerHeartbeatInterval, err := time.ParseDuration(cfg.WorkerHeartbeatInterval)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_WORKER_HEARTBEAT_INTERVAL: %w", err)
+	}
+	if workerHeartbeatInterval <= 0 {
+		return fmt.Errorf("CODEXK8S_WORKER_HEARTBEAT_INTERVAL must be > 0")
+	}
+	workerInstanceTTL, err := time.ParseDuration(cfg.WorkerInstanceTTL)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_WORKER_INSTANCE_TTL: %w", err)
+	}
+	if workerInstanceTTL <= 0 {
+		return fmt.Errorf("CODEXK8S_WORKER_INSTANCE_TTL must be > 0")
+	}
+	if workerInstanceTTL <= workerHeartbeatInterval {
+		return fmt.Errorf("CODEXK8S_WORKER_INSTANCE_TTL must be greater than CODEXK8S_WORKER_HEARTBEAT_INTERVAL")
 	}
 
 	slotLeaseTTL, err := time.ParseDuration(cfg.SlotLeaseTTL)
@@ -117,6 +135,7 @@ func Run() error {
 	runs := runqueuerepo.NewRepository(db)
 	events := floweventrepo.NewRepository(db)
 	feedback := learningfeedbackrepo.NewRepository(db)
+	workerInstances := workerinstancerepo.NewRepository(db)
 	launcher, err := k8slauncher.NewAdapter(libslauncher.Config{
 		KubeconfigPath:           cfg.KubeconfigPath,
 		Namespace:                cfg.K8sNamespace,
@@ -145,6 +164,7 @@ func Run() error {
 		WorkerID:                    cfg.WorkerID,
 		ClaimLimit:                  cfg.ClaimLimit,
 		RunningCheckLimit:           cfg.RunningCheckLimit,
+		StaleLeaseSweepLimit:        cfg.StaleLeaseSweepLimit,
 		SlotsPerProject:             cfg.SlotsPerProject,
 		SlotLeaseTTL:                slotLeaseTTL,
 		RunLeaseTTL:                 runLeaseTTL,
@@ -170,6 +190,7 @@ func Run() error {
 		JobImage:                    cfg.JobImage,
 		JobImageFallback:            cfg.JobImageFallback,
 		KubernetesNamespace:         cfg.K8sNamespace,
+		WorkerPodNamespace:          cfg.WorkerPodNamespace,
 		AIRepairNamespace:           resolveAIRepairNamespace(cfg),
 		AIRepairServiceAccount:      cfg.AIRepairServiceAccount,
 		AIModelGPT54Label:           cfg.AIModelGPT54Label,
@@ -198,6 +219,30 @@ func Run() error {
 	ctx, stop := signal.NotifyContext(appCtx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
 	defer stop()
 
+	workerStartedAt := time.Now().UTC()
+	initialHeartbeatCtx, cancelInitialHeartbeat := context.WithTimeout(ctx, 5*time.Second)
+	if err := workerHeartbeat(initialHeartbeatCtx, workerInstances, workerHeartbeatParams{
+		WorkerID:  cfg.WorkerID,
+		Namespace: cfg.WorkerPodNamespace,
+		PodName:   cfg.WorkerPodName,
+		StartedAt: workerStartedAt,
+		TTL:       workerInstanceTTL,
+		Now:       workerStartedAt,
+	}); err != nil {
+		cancelInitialHeartbeat()
+		return fmt.Errorf("register worker heartbeat: %w", err)
+	}
+	cancelInitialHeartbeat()
+
+	go runWorkerHeartbeatLoop(ctx, logger, workerInstances, workerHeartbeatLoopParams{
+		WorkerID:  cfg.WorkerID,
+		Namespace: cfg.WorkerPodNamespace,
+		PodName:   cfg.WorkerPodName,
+		StartedAt: workerStartedAt,
+		Interval:  workerHeartbeatInterval,
+		TTL:       workerInstanceTTL,
+	})
+
 	logger.Info("worker started", "worker_id", cfg.WorkerID, "poll_interval", pollInterval.String())
 
 	if err := service.Tick(ctx); err != nil {
@@ -210,6 +255,11 @@ func Run() error {
 	for {
 		select {
 		case <-ctx.Done():
+			stopCtx, cancelStop := context.WithTimeout(context.Background(), 5*time.Second)
+			if err := markWorkerStopped(stopCtx, workerInstances, cfg.WorkerID, time.Now().UTC()); err != nil {
+				logger.Warn("mark worker stopped failed", "worker_id", cfg.WorkerID, "err", err)
+			}
+			cancelStop()
 			logger.Info("worker stopped")
 			return nil
 		case <-ticker.C:

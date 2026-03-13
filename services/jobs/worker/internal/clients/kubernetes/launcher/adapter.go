@@ -27,6 +27,10 @@ func (a *Adapter) JobRef(runID string, namespace string) worker.JobRef {
 	return a.impl.JobRef(runID, namespace)
 }
 
+func (a *Adapter) ListWorkerPodNames(ctx context.Context, namespace string) ([]string, error) {
+	return a.impl.ListWorkerPodNames(ctx, namespace)
+}
+
 func (a *Adapter) FindRunJobRefByRunID(ctx context.Context, runID string) (worker.JobRef, bool, error) {
 	ref, ok, err := a.impl.FindRunJobRefByRunID(ctx, runID)
 	if err != nil {

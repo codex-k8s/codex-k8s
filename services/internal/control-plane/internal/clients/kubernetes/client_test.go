@@ -15,7 +15,7 @@ func TestEnsureNamespace_FailsWhenNamespaceIsTerminating(t *testing.T) {
 	t.Parallel()
 
 	deletionTime := metav1.NewTime(time.Date(2026, 3, 12, 19, 39, 0, 0, time.UTC))
-	client := NewForClient(&rest.Config{Host: "https://example.invalid"}, fake.NewSimpleClientset(&corev1.Namespace{
+	client := NewForClient(&rest.Config{Host: "https://example.invalid"}, fake.NewClientset(&corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              "codex-k8s-dev-2",
 			DeletionTimestamp: &deletionTime,

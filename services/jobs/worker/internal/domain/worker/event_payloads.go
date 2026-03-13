@@ -99,6 +99,39 @@ type runFinishedEventExtra struct {
 	Reason runFailureReason
 }
 
+// workerHeartbeatMissedEventPayload defines payload shape for stale worker heartbeat events.
+type workerHeartbeatMissedEventPayload struct {
+	RunID              string `json:"run_id"`
+	ProjectID          string `json:"project_id"`
+	WorkerID           string `json:"worker_id"`
+	WorkerStatus       string `json:"worker_status,omitempty"`
+	WorkerHeartbeatAt  string `json:"worker_heartbeat_at,omitempty"`
+	WorkerExpiresAt    string `json:"worker_expires_at,omitempty"`
+	PreviousLeaseUntil string `json:"previous_lease_until,omitempty"`
+}
+
+// runLeaseStaleEventPayload defines payload shape for stale lease detection/release events.
+type runLeaseStaleEventPayload struct {
+	RunID              string `json:"run_id"`
+	ProjectID          string `json:"project_id"`
+	PreviousLeaseOwner string `json:"previous_lease_owner"`
+	PreviousLeaseUntil string `json:"previous_lease_until,omitempty"`
+	WorkerStatus       string `json:"worker_status,omitempty"`
+	WorkerHeartbeatAt  string `json:"worker_heartbeat_at,omitempty"`
+	WorkerExpiresAt    string `json:"worker_expires_at,omitempty"`
+}
+
+// runLeaseRecoveredEventPayload defines payload shape for reclaimed stale lease events.
+type runLeaseRecoveredEventPayload struct {
+	RunID          string `json:"run_id"`
+	ProjectID      string `json:"project_id"`
+	WorkerID       string `json:"worker_id"`
+	RuntimeMode    string `json:"runtime_mode,omitempty"`
+	Namespace      string `json:"namespace,omitempty"`
+	TriggerKind    string `json:"trigger_kind,omitempty"`
+	DiscussionMode bool   `json:"discussion_mode,omitempty"`
+}
+
 // namespaceLifecycleEventPayload defines payload shape for namespace lifecycle flow events.
 type namespaceLifecycleEventPayload struct {
 	RunID                   string                     `json:"run_id"`
@@ -148,6 +181,24 @@ func encodeRunJobImageResolvedEventPayload(payload runJobImageResolvedEventPaylo
 
 // encodeRunFinishedEventPayload serializes run finish payload with safe fallback JSON.
 func encodeRunFinishedEventPayload(payload runFinishedEventPayload) json.RawMessage {
+	bytes, err := json.Marshal(payload)
+	return marshalPayload(bytes, err)
+}
+
+// encodeWorkerHeartbeatMissedEventPayload serializes stale worker heartbeat payload with safe fallback JSON.
+func encodeWorkerHeartbeatMissedEventPayload(payload workerHeartbeatMissedEventPayload) json.RawMessage {
+	bytes, err := json.Marshal(payload)
+	return marshalPayload(bytes, err)
+}
+
+// encodeRunLeaseStaleEventPayload serializes stale lease payload with safe fallback JSON.
+func encodeRunLeaseStaleEventPayload(payload runLeaseStaleEventPayload) json.RawMessage {
+	bytes, err := json.Marshal(payload)
+	return marshalPayload(bytes, err)
+}
+
+// encodeRunLeaseRecoveredEventPayload serializes reclaimed stale lease payload with safe fallback JSON.
+func encodeRunLeaseRecoveredEventPayload(payload runLeaseRecoveredEventPayload) json.RawMessage {
 	bytes, err := json.Marshal(payload)
 	return marshalPayload(bytes, err)
 }

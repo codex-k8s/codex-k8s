@@ -72,6 +72,23 @@ function findAuthResolvedAt(events: FlowEvent[]): string | null {
   return null;
 }
 
+function recoveryStatusText(eventType: string, payload: EventPayload | null): string | null {
+  const workerId = typeof payload?.worker_id === "string" ? payload.worker_id.trim() : "";
+  const ownerId = typeof payload?.previous_lease_owner === "string" ? payload.previous_lease_owner.trim() : "";
+  const actorId = workerId || ownerId;
+
+  switch (eventType) {
+    case "worker.instance.heartbeat.missed":
+    case "run.lease.detected_stale":
+    case "run.lease.released":
+      return actorId ? `${eventType} · ${actorId}` : eventType;
+    case "run.reclaimed_after_stale_lease":
+      return actorId ? `${eventType} · ${actorId}` : eventType;
+    default:
+      return null;
+  }
+}
+
 function resolveRuntimeMode(events: FlowEvent[], run: Run | null): string {
   for (const eventItem of events) {
     const payload = parsePayload(eventItem.payload_json || "");
@@ -186,9 +203,14 @@ export function buildRunTimelinePhases(run: Run | null, events: FlowEvent[], loc
 export function buildRunTimelineStatuses(events: FlowEvent[], locale: string, referenceDate: Date = new Date()): TimelineStatusEntry[] {
   const entries: TimelineStatusEntry[] = [];
   for (const eventItem of events) {
-    if (eventItem.event_type !== "run.agent.status_reported") continue;
     const payload = parsePayload(eventItem.payload_json || "");
-    const statusText = typeof payload?.status_text === "string" ? payload.status_text.trim() : "";
+    let statusText = "";
+
+    if (eventItem.event_type === "run.agent.status_reported") {
+      statusText = typeof payload?.status_text === "string" ? payload.status_text.trim() : "";
+    } else {
+      statusText = recoveryStatusText(eventItem.event_type, payload) || "";
+    }
     if (!statusText) continue;
 
     const previous = entries[entries.length - 1];
