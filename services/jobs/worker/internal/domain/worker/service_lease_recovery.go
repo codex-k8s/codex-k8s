@@ -11,9 +11,19 @@ import (
 )
 
 func (s *Service) releaseStaleRunningLeases(ctx context.Context) error {
-	released, err := s.runs.ReleaseStaleLeases(ctx, runqueuerepo.ReleaseStaleLeasesParams{
+	params := runqueuerepo.ReleaseStaleLeasesParams{
 		Limit: s.cfg.StaleLeaseSweepLimit,
-	})
+	}
+
+	activeWorkerIDs, err := s.launcher.ListWorkerPodNames(ctx, s.cfg.WorkerPodNamespace)
+	if err != nil {
+		s.logger.Warn("list active worker pods failed; falling back to lease ttl for missing owners", "namespace", s.cfg.WorkerPodNamespace, "err", err)
+	} else {
+		params.ReleaseMissingOwners = true
+		params.ActiveWorkerIDs = activeWorkerIDs
+	}
+
+	released, err := s.runs.ReleaseStaleLeases(ctx, params)
 	if err != nil {
 		return fmt.Errorf("release stale running leases: %w", err)
 	}

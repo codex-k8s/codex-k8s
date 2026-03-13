@@ -28,8 +28,17 @@ WITH stale_candidates AS (
          OR (
                 wi.worker_id IS NULL
                 AND (
-                    r.lease_until IS NULL
-                    OR r.lease_until < NOW()
+                    (
+                        $2::boolean
+                        AND NOT (r.lease_owner = ANY(COALESCE($3::text[], ARRAY[]::text[])))
+                    )
+                    OR (
+                        NOT $2::boolean
+                        AND (
+                            r.lease_until IS NULL
+                            OR r.lease_until < NOW()
+                        )
+                    )
                 )
             )
       )

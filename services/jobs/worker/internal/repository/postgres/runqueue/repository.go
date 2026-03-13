@@ -220,7 +220,7 @@ func (r *Repository) ReleaseStaleLeases(ctx context.Context, params domainrepo.R
 		limit = 100
 	}
 
-	rows, err := r.db.Query(ctx, queryReleaseStaleRunningLeases, limit)
+	rows, err := r.db.Query(ctx, queryReleaseStaleRunningLeases, limit, params.ReleaseMissingOwners, params.ActiveWorkerIDs)
 	if err != nil {
 		return nil, fmt.Errorf("release stale running leases: %w", err)
 	}

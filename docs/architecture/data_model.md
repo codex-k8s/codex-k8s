@@ -204,7 +204,7 @@ approvals:
 | timeout_at | timestamptz | yes |  |  | hard timeout deadline |
 | timeout_paused | bool | no | false |  | true while paused on allowed waits |
 | wait_reason | text | yes |  |  | owner_review/mcp/none |
-| lease_owner | text | yes |  |  | worker instance currently owning running-run reconciliation |
+| lease_owner | text | yes |  |  | worker instance currently owning running-run reconciliation; during mixed-version rollout missing `worker_instances` row is cross-checked against live worker pods |
 | lease_until | timestamptz | yes |  |  | reconciliation lease expiration |
 | stale_reclaim_pending | bool | no | false |  | set when stale worker lease was released and next claim must emit recovery event |
 | started_at | timestamptz | yes |  |  | |
@@ -212,7 +212,7 @@ approvals:
 
 ### Entity: worker_instances
 - Назначение: liveness-модель worker pod/instance для быстрого recovery stale running leases.
-- Важные инварианты: один `worker_id` описывает одну активную worker-instance запись; heartbeat обновляет `expires_at`, а graceful shutdown переводит `status=stopped`.
+- Важные инварианты: один `worker_id` описывает одну активную worker-instance запись; heartbeat обновляет `expires_at`, graceful shutdown переводит `status=stopped`, а mixed-version rollout использует Kubernetes live worker pod set как fallback для owner без строки в `worker_instances`.
 - Поля:
 
 | Field | Type | Nullable | Default | Constraints | Notes |

@@ -190,6 +190,7 @@ func Run() error {
 		JobImage:                    cfg.JobImage,
 		JobImageFallback:            cfg.JobImageFallback,
 		KubernetesNamespace:         cfg.K8sNamespace,
+		WorkerPodNamespace:          cfg.WorkerPodNamespace,
 		AIRepairNamespace:           resolveAIRepairNamespace(cfg),
 		AIRepairServiceAccount:      cfg.AIRepairServiceAccount,
 		AIModelGPT54Label:           cfg.AIModelGPT54Label,

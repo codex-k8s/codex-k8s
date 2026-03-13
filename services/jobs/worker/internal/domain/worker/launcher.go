@@ -29,6 +29,8 @@ type JobSpec = libslauncher.JobSpec
 type Launcher interface {
 	// JobRef builds deterministic workload reference for run id.
 	JobRef(runID string, namespace string) JobRef
+	// ListWorkerPodNames returns worker pod names currently visible in the given namespace.
+	ListWorkerPodNames(ctx context.Context, namespace string) ([]string, error)
 	// FindRunJobRefByRunID resolves Kubernetes Job reference by run-id label across namespaces.
 	// Used when run job is created outside of the default full-env namespace strategy
 	// (for example, inside a persistent slot namespace).

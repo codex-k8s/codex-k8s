@@ -36,6 +36,11 @@ type RunQueueClaimRunningParams struct {
 type RunQueueReleaseStaleLeasesParams struct {
 	// Limit caps number of stale leases released in one sweep.
 	Limit int
+	// ReleaseMissingOwners enables immediate reclaim for leases whose owner has no worker_instances row
+	// when Kubernetes confirmed the live worker pod set for the current sweep.
+	ReleaseMissingOwners bool
+	// ActiveWorkerIDs contains worker ids currently backed by live Kubernetes worker pods.
+	ActiveWorkerIDs []string
 }
 
 // RunQueueClaimedRun represents a pending run promoted into running state.

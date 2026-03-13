@@ -1003,11 +1003,15 @@ func TestTickReleasesStaleRunLeaseAndEmitsRecoveryEvents(t *testing.T) {
 		}},
 	}
 	events := &fakeFlowEvents{}
-	launcher := &fakeLauncher{states: map[string]JobState{}}
+	launcher := &fakeLauncher{
+		states:         map[string]JobState{},
+		workerPodNames: []string{"worker-1", "worker-2"},
+	}
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
 
 	svc := NewService(Config{
 		WorkerID:             "worker-1",
+		WorkerPodNamespace:   "codex-k8s-prod",
 		ClaimLimit:           1,
 		RunningCheckLimit:    10,
 		StaleLeaseSweepLimit: 5,
@@ -1028,6 +1032,18 @@ func TestTickReleasesStaleRunLeaseAndEmitsRecoveryEvents(t *testing.T) {
 	if runs.releaseStaleCalls != 1 {
 		t.Fatalf("expected one stale lease release sweep, got %d", runs.releaseStaleCalls)
 	}
+	if len(runs.releaseStaleParams) != 1 {
+		t.Fatalf("expected one stale lease release params entry, got %d", len(runs.releaseStaleParams))
+	}
+	if !runs.releaseStaleParams[0].ReleaseMissingOwners {
+		t.Fatal("expected mixed-version missing-owner release to be enabled after live worker lookup")
+	}
+	if got, want := strings.Join(runs.releaseStaleParams[0].ActiveWorkerIDs, ","), "worker-1,worker-2"; got != want {
+		t.Fatalf("expected active worker ids %q, got %q", want, got)
+	}
+	if got, want := strings.Join(launcher.workerPodListNamespaces, ","), "codex-k8s-prod"; got != want {
+		t.Fatalf("expected worker pod lookup namespace %q, got %q", want, got)
+	}
 	if len(events.inserted) != 3 {
 		t.Fatalf("expected 3 recovery events, got %d", len(events.inserted))
 	}
@@ -1039,6 +1055,50 @@ func TestTickReleasesStaleRunLeaseAndEmitsRecoveryEvents(t *testing.T) {
 	}
 	if events.inserted[2].EventType != floweventdomain.EventTypeRunLeaseReleased {
 		t.Fatalf("expected third event %q, got %q", floweventdomain.EventTypeRunLeaseReleased, events.inserted[2].EventType)
+	}
+}
+
+func TestTickStaleLeaseFallsBackToLeaseTTLWhenWorkerPodLookupFails(t *testing.T) {
+	t.Parallel()
+
+	runs := &fakeRunQueue{}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{
+		states:           map[string]JobState{},
+		workerPodListErr: context.DeadlineExceeded,
+	}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:             "worker-1",
+		WorkerPodNamespace:   "codex-k8s-prod",
+		ClaimLimit:           1,
+		RunningCheckLimit:    10,
+		StaleLeaseSweepLimit: 5,
+		SlotsPerProject:      2,
+		SlotLeaseTTL:         time.Minute,
+	}, Dependencies{
+		Runs:     runs,
+		Events:   events,
+		Launcher: launcher,
+		Logger:   logger,
+	})
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+
+	if runs.releaseStaleCalls != 1 {
+		t.Fatalf("expected one stale lease release sweep, got %d", runs.releaseStaleCalls)
+	}
+	if len(runs.releaseStaleParams) != 1 {
+		t.Fatalf("expected one stale lease release params entry, got %d", len(runs.releaseStaleParams))
+	}
+	if runs.releaseStaleParams[0].ReleaseMissingOwners {
+		t.Fatal("expected missing-owner release to stay disabled when worker pod lookup fails")
+	}
+	if len(runs.releaseStaleParams[0].ActiveWorkerIDs) != 0 {
+		t.Fatalf("expected no active worker ids on fallback, got %v", runs.releaseStaleParams[0].ActiveWorkerIDs)
 	}
 }
 
@@ -1227,16 +1287,19 @@ func (f *fakeFlowEvents) Insert(_ context.Context, params floweventrepo.InsertPa
 }
 
 type fakeLauncher struct {
-	states           map[string]JobState
-	launched         []JobSpec
-	prepared         []NamespaceSpec
-	ensureResult     NamespaceEnsureResult
-	reusable         NamespaceReuseResult
-	reusableFound    bool
-	expiredCleanups  []NamespaceCleanupResult
-	cleanupSweepCall []NamespaceCleanupParams
-	launchErr        error
-	statusErr        error
+	states                  map[string]JobState
+	workerPodNames          []string
+	workerPodListErr        error
+	workerPodListNamespaces []string
+	launched                []JobSpec
+	prepared                []NamespaceSpec
+	ensureResult            NamespaceEnsureResult
+	reusable                NamespaceReuseResult
+	reusableFound           bool
+	expiredCleanups         []NamespaceCleanupResult
+	cleanupSweepCall        []NamespaceCleanupParams
+	launchErr               error
+	statusErr               error
 }
 
 type fakeMCPTokenIssuer struct {
@@ -1279,6 +1342,14 @@ func (f *fakeLauncher) JobRef(runID string, namespace string) JobRef {
 		namespace = "ns"
 	}
 	return JobRef{Namespace: namespace, Name: "job-" + runID}
+}
+
+func (f *fakeLauncher) ListWorkerPodNames(_ context.Context, namespace string) ([]string, error) {
+	f.workerPodListNamespaces = append(f.workerPodListNamespaces, namespace)
+	if f.workerPodListErr != nil {
+		return nil, f.workerPodListErr
+	}
+	return f.workerPodNames, nil
 }
 
 func (f *fakeLauncher) FindRunJobRefByRunID(_ context.Context, _ string) (JobRef, bool, error) {
