@@ -2,16 +2,18 @@
 doc_id: API-S12-GITHUB-RL-0001
 type: api-contract
 title: "GitHub API rate-limit resilience — API contract Sprint S12 Day 5"
-status: in-review
+status: approved
 owner_role: SA
 created_at: 2026-03-13
 updated_at: 2026-03-13
-related_issues: [366, 413, 416, 418, 420, 423]
+related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-13-issue-420-api-contract"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # API Contract: GitHub API rate-limit resilience
@@ -220,3 +222,7 @@ approvals:
   - guidance `wait at least one minute` and `exponential backoff` when `Retry-After` отсутствует;
   - avoidance of concurrency bursts.
 - Новые внешние библиотеки Day5 не выбирались.
+
+## Continuity after `run:plan`
+- Plan package Issue `#423` подтвердил этот контракт как baseline для execution waves `#426`, `#428`, `#429` и `#430`.
+- Ни одна implementation wave не должна менять typed DTO или превращать raw GitHub headers/logs в публичный контракт вне этого документа и будущего contract-first source-of-truth.

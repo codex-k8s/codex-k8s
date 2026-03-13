@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S12-D5-GITHUB-RATE-LIMIT
 type: epic
 title: "Epic S12 Day 5: Design для GitHub API rate-limit resilience и controlled wait contracts (Issue #420)"
-status: in-review
+status: completed
 owner_role: SA
 created_at: 2026-03-13
 updated_at: 2026-03-13
@@ -10,8 +10,10 @@ related_issues: [366, 413, 416, 418, 420, 423]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-13-issue-420-design-epic"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # Epic S12 Day 5: Design для GitHub API rate-limit resilience и controlled wait contracts (Issue #420)
@@ -19,7 +21,7 @@ approvals:
 ## TL;DR
 - Подготовлен Day5 design package Sprint S12: `design_doc`, `api_contract`, `data_model`, `migrations_policy`.
 - Зафиксированы отдельный coarse wait-state `waiting_backpressure`, typed signal handoff `agent-runner -> control-plane`, persisted wait/evidence model и finite auto-resume policy для primary/secondary GitHub limits.
-- Manual path остаётся typed visibility contract без dedicated operator write endpoint в первой волне MVP; follow-up issue `#423` создана для `run:plan`.
+- Manual path остаётся typed visibility contract без dedicated operator write endpoint в первой волне MVP; handover materialized в plan package `#423` и execution waves `#425..#431`.
 
 ## Priority
 - `P0`.

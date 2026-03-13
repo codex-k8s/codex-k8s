@@ -2,7 +2,7 @@
 doc_id: PRD-CK8S-S12-I416
 type: prd
 title: "GitHub API rate-limit resilience — PRD Sprint S12 Day 3"
-status: in-review
+status: completed
 owner_role: PM
 created_at: 2026-03-13
 updated_at: 2026-03-13
@@ -15,8 +15,10 @@ related_docsets:
   - docs/delivery/requirements_traceability.md
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-13-issue-416-prd"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # PRD: GitHub API rate-limit resilience

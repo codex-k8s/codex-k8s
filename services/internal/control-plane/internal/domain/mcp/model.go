@@ -106,6 +106,7 @@ type SessionContext struct {
 	ProjectID     string
 	Namespace     string
 	RuntimeMode   agentdomain.RuntimeMode
+	TokenSubject  string
 	ExpiresAt     time.Time
 }
 

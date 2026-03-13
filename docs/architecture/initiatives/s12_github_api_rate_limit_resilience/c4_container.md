@@ -2,16 +2,18 @@
 doc_id: ARC-C4N-S12-0001
 type: c4-container
 title: "Sprint S12 Day 4 — C4 Container overlay for GitHub API rate-limit resilience"
-status: in-review
+status: approved
 owner_role: SA
 created_at: 2026-03-13
 updated_at: 2026-03-13
-related_issues: [366, 413, 416, 418, 420]
+related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-13-issue-418-arch"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # C4 Container: Sprint S12 Day 4 GitHub API rate-limit resilience
@@ -67,6 +69,6 @@ Rel(web, gw, "Reads staff/private wait-state API", "HTTPS")
 - `api-gateway` и `web-console` не вычисляют countdown или provider classification самостоятельно.
 - `postgres` остаётся единственной точкой синхронизации для wait aggregate и resume evidence.
 
-## Handover note for `run:design`
-- Уточнить typed raw-evidence handoff от `agent-runner` в `control-plane`.
-- Зафиксировать persisted wait aggregate и finite auto-resume orchestration без размывания container ownership.
+## Continuity after `run:plan`
+- Typed raw-evidence handoff, persisted wait aggregate и finite auto-resume orchestration были детализированы на Day5 и разложены на execution waves `#425..#431` в Issue `#423`.
+- Container ownership из этой схемы остаётся обязательным guardrail для implementation streams и не может меняться локальными решениями внутри `worker`, `agent-runner`, `api-gateway` или `web-console`.

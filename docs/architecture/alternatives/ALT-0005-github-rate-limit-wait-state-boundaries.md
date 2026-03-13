@@ -2,16 +2,18 @@
 doc_id: ALT-0005
 type: alternatives
 title: "GitHub API rate-limit resilience — wait-state ownership and contour boundary trade-offs"
-status: in-review
+status: accepted
 owner_role: SA
 created_at: 2026-03-13
 updated_at: 2026-03-13
-related_issues: [366, 413, 416, 418, 420]
+related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-13-issue-418-arch"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # Alternatives & Trade-offs: GitHub API rate-limit resilience
@@ -103,5 +105,9 @@ approvals:
   - единый owner для controlled wait и более надёжный переход в `run:design`.
 
 ## Нужен апрув от Owner
-- [ ] Выбор варианта C.
-- [ ] Подтверждение компромисса: отдельный quota-orchestrator service не нужен до появления измеримых scale signals.
+- [x] Выбор варианта C.
+- [x] Подтверждение компромисса: отдельный quota-orchestrator service не нужен до появления измеримых scale signals.
+
+## Continuity after `run:plan`
+- Plan package Issue `#423` зафиксировал execution waves `#425..#431` поверх выбранного варианта C и не переоткрыл варианты A/B.
+- Любой deviation от этого ownership split теперь требует отдельного follow-up ADR, а не локальной корректировки implementation stream.

@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S12-D4-RATE-LIMIT
 type: epic
 title: "Epic S12 Day 4: Architecture для GitHub API rate-limit resilience и controlled wait ownership (Issues #418/#420)"
-status: in-review
+status: completed
 owner_role: SA
 created_at: 2026-03-13
 updated_at: 2026-03-13
@@ -10,8 +10,10 @@ related_issues: [366, 413, 416, 418, 420]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-13-issue-418-arch"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # Epic S12 Day 4: Architecture для GitHub API rate-limit resilience и controlled wait ownership (Issues #418/#420)

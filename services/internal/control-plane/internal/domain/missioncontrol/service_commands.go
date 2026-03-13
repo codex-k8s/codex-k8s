@@ -52,7 +52,12 @@ func (s *Service) SubmitCommand(ctx context.Context, params SubmitCommandParams)
 		return CommandAdmission{}, err
 	}
 
-	targetEntity, err := s.resolveCommandTarget(ctx, params.ProjectID, params.CommandKind, params.TargetEntityRef, params.ExpectedProjectionVersion)
+	targetRef, err := effectiveCommandTargetRef(params.CommandKind, params.TargetEntityRef, normalizedPayload)
+	if err != nil {
+		return CommandAdmission{}, err
+	}
+
+	targetEntity, err := s.resolveCommandTarget(ctx, params.ProjectID, params.CommandKind, targetRef, params.ExpectedProjectionVersion)
 	if err != nil {
 		return CommandAdmission{}, err
 	}
@@ -436,6 +441,9 @@ func (s *Service) validateRetryTarget(ctx context.Context, projectID string, pay
 	}
 	if !found {
 		return errs.NotFound{Msg: "mission control retry target command not found"}
+	}
+	if !retrySyncTargetStatusAllowed(target.Status) {
+		return errs.FailedPrecondition{Msg: "mission control retry target status is not retryable"}
 	}
 	if payload.RetrySync.ExpectedStatus != "" && target.Status != payload.RetrySync.ExpectedStatus {
 		return errs.FailedPrecondition{Msg: "mission control retry target status mismatch"}

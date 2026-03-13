@@ -101,6 +101,39 @@ export type McpApprovalCallbackRequest = {
     actor_id?: string | null;
 };
 
+export type InteractionCallbackEnvelope = {
+    schema_version: 'v1';
+    interaction_id: string;
+    delivery_id?: string | null;
+    adapter_event_id: string;
+    callback_kind: 'delivery_receipt' | 'decision_response';
+    occurred_at: string;
+    adapter_delivery_id?: string | null;
+    delivery_status?: 'accepted' | 'delivered' | 'failed';
+    response?: InteractionResponsePayload;
+    error?: InteractionCallbackError;
+};
+
+export type InteractionResponsePayload = {
+    response_kind: 'option' | 'free_text';
+    selected_option_id?: string | null;
+    free_text?: string | null;
+    responder_ref?: string | null;
+};
+
+export type InteractionCallbackError = {
+    code?: string;
+    message?: string;
+};
+
+export type InteractionCallbackOutcome = {
+    accepted: boolean;
+    classification: 'applied' | 'duplicate' | 'stale' | 'expired' | 'invalid';
+    interaction_state: string;
+    resume_required: boolean;
+    message?: string | null;
+};
+
 export type ResolveApprovalDecisionResponse = {
     id: number;
     correlation_id: string;
@@ -454,6 +487,9 @@ export type IncludeSnapshot = boolean;
 
 export type IncludeLogs = boolean;
 
+/**
+ * Callback bearer token. Authorization: Bearer ... is also accepted.
+ */
 export type McpCallbackToken = string;
 
 export type IngestGithubWebhookData = {
@@ -503,6 +539,9 @@ export type IngestGithubWebhookResponse = IngestGithubWebhookResponses[keyof Ing
 export type McpApproverCallbackData = {
     body: McpApprovalCallbackRequest;
     headers?: {
+        /**
+         * Callback bearer token. Authorization: Bearer ... is also accepted.
+         */
         'X-Codex-MCP-Token'?: string;
     };
     path?: never;
@@ -539,6 +578,9 @@ export type McpApproverCallbackResponse = McpApproverCallbackResponses[keyof Mcp
 export type McpExecutorCallbackData = {
     body: McpApprovalCallbackRequest;
     headers?: {
+        /**
+         * Callback bearer token. Authorization: Bearer ... is also accepted.
+         */
         'X-Codex-MCP-Token'?: string;
     };
     path?: never;
@@ -571,6 +613,53 @@ export type McpExecutorCallbackResponses = {
 };
 
 export type McpExecutorCallbackResponse = McpExecutorCallbackResponses[keyof McpExecutorCallbackResponses];
+
+export type McpInteractionCallbackData = {
+    body: InteractionCallbackEnvelope;
+    headers?: {
+        /**
+         * Callback bearer token. Authorization: Bearer ... is also accepted.
+         */
+        'X-Codex-MCP-Token'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/mcp/interactions/callback';
+};
+
+export type McpInteractionCallbackErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+    /**
+     * Rate limit exceeded
+     */
+    429: ErrorResponse;
+    /**
+     * Internal error
+     */
+    500: ErrorResponse;
+};
+
+export type McpInteractionCallbackError = McpInteractionCallbackErrors[keyof McpInteractionCallbackErrors];
+
+export type McpInteractionCallbackResponses = {
+    /**
+     * Interaction callback classified and applied
+     */
+    200: InteractionCallbackOutcome;
+};
+
+export type McpInteractionCallbackResponse = McpInteractionCallbackResponses[keyof McpInteractionCallbackResponses];
 
 export type LoginGithubData = {
     body?: never;

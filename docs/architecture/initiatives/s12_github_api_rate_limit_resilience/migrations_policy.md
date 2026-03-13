@@ -2,16 +2,18 @@
 doc_id: MIG-S12-GITHUB-RL-0001
 type: migrations-policy
 title: "GitHub API rate-limit resilience — Migrations policy Sprint S12 Day 5"
-status: in-review
+status: approved
 owner_role: SA
 created_at: 2026-03-13
 updated_at: 2026-03-13
-related_issues: [366, 413, 416, 418, 420, 423]
+related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-13-issue-420-migrations-policy"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # DB Migrations Policy: GitHub API rate-limit resilience
@@ -111,6 +113,10 @@ approvals:
   - audit evidence already written into `github_rate_limit_wait_evidence` and `flow_events`;
   - session snapshots prepared for deterministic agent resume;
   - semantic enum expansions already used by persisted rows.
+
+## Continuity after `run:plan`
+- Plan package Issue `#423` подтвердил этот rollout order как обязательный sequencing для waves `#425..#431`.
+- Ни одна implementation wave не может обойти порядок `migrations -> control-plane -> worker -> agent-runner -> api-gateway -> web-console` или снять gate `#431` перед `run:qa`.
 
 ## Проверки
 ### Pre-migration checks

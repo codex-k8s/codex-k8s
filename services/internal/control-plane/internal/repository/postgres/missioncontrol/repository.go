@@ -25,6 +25,8 @@ var (
 	queryUpdateEntityProjection string
 	//go:embed sql/get_entity_by_public_id.sql
 	queryGetEntityByPublicID string
+	//go:embed sql/get_entity_by_id.sql
+	queryGetEntityByID string
 	//go:embed sql/list_entities.sql
 	queryListEntities string
 	//go:embed sql/delete_relations_for_source.sql
@@ -153,6 +155,22 @@ func (r *Repository) GetEntityByPublicID(ctx context.Context, projectID string, 
 			return domainrepo.Entity{}, false, nil
 		}
 		return domainrepo.Entity{}, false, fmt.Errorf("collect mission control entity by public id: %w", err)
+	}
+	return fromEntityRow(row), true, nil
+}
+
+// GetEntityByID loads one entity by internal persistence id.
+func (r *Repository) GetEntityByID(ctx context.Context, projectID string, entityID int64) (domainrepo.Entity, bool, error) {
+	rows, err := r.db.Query(ctx, queryGetEntityByID, strings.TrimSpace(projectID), entityID)
+	if err != nil {
+		return domainrepo.Entity{}, false, fmt.Errorf("query mission control entity by id: %w", err)
+	}
+	row, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[dbmodel.EntityRow])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domainrepo.Entity{}, false, nil
+		}
+		return domainrepo.Entity{}, false, fmt.Errorf("collect mission control entity by id: %w", err)
 	}
 	return fromEntityRow(row), true, nil
 }

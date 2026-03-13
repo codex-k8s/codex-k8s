@@ -9,7 +9,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-const interactionCallbackTokenTTL = 15 * time.Minute
+const (
+	interactionCallbackTokenGraceTTL      = minTokenTTL
+	interactionCallbackTokenSubjectPrefix = "mcp-interaction-callback:"
+)
 
 type runTokenClaims struct {
 	RunID         string `json:"run_id"`
@@ -90,16 +93,17 @@ func (s *Service) parseRunToken(rawToken string) (SessionContext, error) {
 		ProjectID:     strings.TrimSpace(claims.ProjectID),
 		Namespace:     strings.TrimSpace(claims.Namespace),
 		RuntimeMode:   parseRuntimeMode(claims.RuntimeMode),
+		TokenSubject:  strings.TrimSpace(claims.Subject),
 		ExpiresAt:     expiresAt,
 	}, nil
 }
 
 func (s *Service) issueInteractionCallbackToken(run entitytypes.AgentRun, interaction entitytypes.InteractionRequest) (string, error) {
 	now := s.now().UTC()
-	expiresAt := now.Add(interactionCallbackTokenTTL)
+	expiresAt := now.Add(interactionCallbackTokenGraceTTL)
 	if interaction.ResponseDeadlineAt != nil {
-		deadline := interaction.ResponseDeadlineAt.UTC()
-		if deadline.After(now) && deadline.Before(expiresAt) {
+		deadline := interaction.ResponseDeadlineAt.UTC().Add(interactionCallbackTokenGraceTTL)
+		if deadline.After(expiresAt) {
 			expiresAt = deadline
 		}
 	}
@@ -109,7 +113,7 @@ func (s *Service) issueInteractionCallbackToken(run entitytypes.AgentRun, intera
 		CorrelationID: strings.TrimSpace(run.CorrelationID),
 		ProjectID:     strings.TrimSpace(run.ProjectID),
 		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   "mcp-interaction-callback:" + strings.TrimSpace(interaction.ID),
+			Subject:   interactionCallbackTokenSubjectPrefix + strings.TrimSpace(interaction.ID),
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(expiresAt),

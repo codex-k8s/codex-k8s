@@ -2,17 +2,19 @@
 doc_id: DSG-S12-GITHUB-RL-0001
 type: design-doc
 title: "GitHub API rate-limit resilience — Detailed Design Sprint S12 Day 5"
-status: in-review
+status: approved
 owner_role: SA
 created_at: 2026-03-13
 updated_at: 2026-03-13
-related_issues: [366, 413, 416, 418, 420, 423]
+related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
 related_prs: []
 related_adrs: ["ADR-0013"]
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-13-issue-420-design"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # Detailed Design: GitHub API rate-limit resilience
@@ -23,6 +25,7 @@ approvals:
 - Основные компоненты: `control-plane` владеет classification, wait aggregate и visibility; `worker` исполняет finite auto-resume sweeps; `agent-runner` передаёт raw evidence и получает deterministic resume payload; `api-gateway`/`web-console` читают typed projection.
 - Риски: drift между dominant wait и related waits, service-comment lag при platform contour saturation, runaway auto-resume loops и ложные promises по secondary limit.
 - План выката: `migrations -> control-plane -> worker -> agent-runner -> api-gateway -> web-console`.
+- Plan-stage Issue `#423` подтвердил этот design как source-of-truth и декомпозировал execution waves `#425..#431` без изменения контрактов.
 
 ## Цели / Не-цели
 ### Goals
@@ -322,8 +325,9 @@ sequenceDiagram
   - enum/check expansion for `agent_runs` and `agent_sessions`;
   - additive rollout of visibility DTO and worker sweep logic.
 
-## Acceptance criteria для handover в `run:plan`
+## Handover status after `run:plan`
 - [x] Подготовлен design package (`design_doc`, `api_contract`, `data_model`, `migrations_policy`).
 - [x] Зафиксированы typed contracts для signal handoff, wait projection, manual action guidance и resume payload.
 - [x] Определены persisted wait aggregate, evidence ledger, dominant wait election и finite auto-resume policy.
 - [x] Зафиксированы rollout/rollback constraints и follow-up issue `#423` для `run:plan`.
+- [x] Plan package завершил документный контур и зафиксировал execution waves `#425..#431` как единственный handover в `run:dev`.

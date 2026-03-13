@@ -43,9 +43,10 @@ approvals:
   - `secret.sync.k8s` (deterministic secret sync в Kubernetes);
   - `database.lifecycle` (`create/delete/describe`);
   - `owner.feedback.request` (options + custom answer).
-- Для внешних approver/executor адаптеров активированы callback endpoint'ы:
+- Для внешних approver/executor адаптеров и built-in user interactions активированы callback endpoint'ы:
   - `POST /api/v1/mcp/approver/callback`;
   - `POST /api/v1/mcp/executor/callback`.
+  - `POST /api/v1/mcp/interactions/callback`.
 - Базовые MCP label-инструменты:
   - `github_labels_list`;
   - `github_labels_add`;
@@ -78,6 +79,10 @@ approvals:
   - `GetLatestAgentSession` — latest session by `(repository_full_name, branch_name, agent_key)` вместе с version/checksum metadata;
   - `InsertRunFlowEvent` — append Day4 run events.
 - Авторизация callback'ов: run-bound MCP bearer token в gRPC metadata (`authorization: Bearer ...`), проверка через `VerifyRunToken`.
+- Для `api-gateway -> control-plane` interaction ingress добавлен отдельный internal RPC `SubmitInteractionCallback`;
+  callback bearer token также прокидывается в gRPC metadata и валидируется по `token subject == mcp-interaction-callback:<interaction_id>`,
+  токен живёт deadline-aware и сохраняет post-deadline grace для deterministic `duplicate|expired` classification,
+  чтобы thin-edge не держал локальную interaction state/policy.
 - Эти RPC внутренние (service-to-service), не входят в public/staff OpenAPI контракт.
 
 ## Состояние OpenAPI после S2 Day1
@@ -98,6 +103,7 @@ approvals:
 | Ingest GitHub webhook | POST | `/api/v1/webhooks/github` | webhook signature | idempotency по `X-GitHub-Delivery`, response status: `accepted|duplicate|ignored` |
 | MCP approver callback | POST | `/api/v1/mcp/approver/callback` | callback token | external approver decision (`approved|denied|expired|failed|applied`) |
 | MCP executor callback | POST | `/api/v1/mcp/executor/callback` | callback token | external executor decision (`approved|denied|expired|failed|applied`) |
+| MCP interaction callback | POST | `/api/v1/mcp/interactions/callback` | callback bearer token | built-in user interaction callback (`applied|duplicate|stale|expired|invalid`) |
 | Start GitHub OAuth | GET | `/api/v1/auth/github/login` | public | redirect |
 | Complete GitHub OAuth callback | GET | `/api/v1/auth/github/callback` | public | set auth cookie |
 | Logout | POST | `/api/v1/auth/logout` | staff JWT | clears auth cookies |
@@ -217,9 +223,12 @@ approvals:
   - сохранить resolver/escalation и ambiguity-stop в `control-plane`.
 
 ## MCP approver/executor contract behavior
-- Approver/executor интеграции подключаются по HTTP-контрактам через MCP-слой.
+- Approver/executor интеграции и built-in interaction adapters подключаются по HTTP-контрактам через MCP-слой.
 - Telegram (`github.com/codex-k8s/telegram-approver`, `github.com/codex-k8s/telegram-executor`) рассматривается как первый адаптер контракта, но не как единственный канал.
 - Контракт должен поддерживать async callbacks и единый `correlation_id` для аудита.
+- Для built-in interaction callbacks edge остаётся thin adapter:
+  `api-gateway` выполняет bearer auth, schema validation, per-interaction rate limit и typed gRPC bridge,
+  а `control-plane` один владеет replay/expired/invalid classification и wait-state/resume semantics.
 - Для control tools обязателен `approval_required` режим по policy matrix.
 - Для `run:self-improve` в MCP включены read-only diagnostic ручки:
   - `self_improve_runs_list` (page/limit, newest-first),

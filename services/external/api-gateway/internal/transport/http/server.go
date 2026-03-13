@@ -73,10 +73,12 @@ func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Clien
 
 	h := newWebhookHandler(cfg, cp)
 	mcpH := newMCPCallbackHandler(cfg, cp)
+	interactionCallbackH := newInteractionCallbackHandler(cp)
 	authH := newAuthHandler(auth, cfg.CookieSecure)
 	staffH := newStaffHandler(cp)
 
 	staffAuthMw := requireStaffAuth(auth, cp.ResolveStaffByEmail)
+	interactionCallbackRateLimitMw := newInteractionCallbackRateLimitMiddleware(cfg.MaxBodyBytes)
 
 	e.GET("/readyz", readyHandler)
 	e.GET("/healthz", liveHandler)
@@ -87,6 +89,7 @@ func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Clien
 	e.POST("/api/v1/webhooks/github", h.IngestGitHubWebhook)
 	e.POST("/api/v1/mcp/approver/callback", mcpH.CallbackApprover)
 	e.POST("/api/v1/mcp/executor/callback", mcpH.CallbackExecutor)
+	e.POST("/api/v1/mcp/interactions/callback", interactionCallbackH.Callback, interactionCallbackRateLimitMw)
 
 	e.GET("/api/v1/auth/github/login", authH.LoginGitHub)
 	e.GET("/api/v1/auth/github/callback", authH.CallbackGitHub)

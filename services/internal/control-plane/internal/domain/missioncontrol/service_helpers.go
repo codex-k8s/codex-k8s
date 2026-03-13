@@ -172,6 +172,31 @@ func normalizeEntityRef(ref *valuetypes.MissionControlEntityRef) *valuetypes.Mis
 	return &normalized
 }
 
+func effectiveCommandTargetRef(
+	commandKind enumtypes.MissionControlCommandKind,
+	targetRef *valuetypes.MissionControlEntityRef,
+	payload valuetypes.MissionControlCommandPayload,
+) (*valuetypes.MissionControlEntityRef, error) {
+	normalizedTarget := normalizeEntityRef(targetRef)
+	if commandKind != enumtypes.MissionControlCommandKindDiscussionFormalize {
+		return normalizedTarget, nil
+	}
+	if payload.DiscussionFormalize == nil {
+		return nil, errs.Validation{Field: "payload", Msg: "discussion.formalize payload is required"}
+	}
+	sourceRef := normalizeEntityRef(&payload.DiscussionFormalize.SourceEntityRef)
+	if sourceRef == nil {
+		return nil, errs.Validation{Field: "payload.source_entity_ref", Msg: "must contain kind and public id"}
+	}
+	if normalizedTarget == nil {
+		return sourceRef, nil
+	}
+	if normalizedTarget.EntityKind != sourceRef.EntityKind || normalizedTarget.EntityPublicID != sourceRef.EntityPublicID {
+		return nil, errs.Validation{Field: "target_entity_ref", Msg: "must match payload.source_entity_ref for discussion.formalize"}
+	}
+	return sourceRef, nil
+}
+
 func normalizeEntityRefs(refs []valuetypes.MissionControlEntityRef) []valuetypes.MissionControlEntityRef {
 	if len(refs) == 0 {
 		return nil
@@ -270,6 +295,10 @@ func encodeCommandResultPayload(payload valuetypes.MissionControlCommandResultPa
 
 func allowedWhenDegraded(kind enumtypes.MissionControlCommandKind) bool {
 	return kind == enumtypes.MissionControlCommandKindRetrySync
+}
+
+func retrySyncTargetStatusAllowed(status enumtypes.MissionControlCommandStatus) bool {
+	return status == enumtypes.MissionControlCommandStatusFailed
 }
 
 func commandRequiresExistingTarget(kind enumtypes.MissionControlCommandKind) bool {

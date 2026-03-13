@@ -13,6 +13,14 @@ type MissionControlEntityRef struct {
 	EntityPublicID string                             `json:"entity_public_id"`
 }
 
+// MissionControlRelationView exposes one relation via public entity refs only.
+type MissionControlRelationView struct {
+	RelationKind    enumtypes.MissionControlRelationKind       `json:"relation_kind"`
+	SourceKind      enumtypes.MissionControlRelationSourceKind `json:"source_kind"`
+	SourceEntityRef MissionControlEntityRef                    `json:"source_entity_ref"`
+	TargetEntityRef MissionControlEntityRef                    `json:"target_entity_ref"`
+}
+
 // MissionControlDiscussionCreatePayload captures typed input for discussion.create.
 type MissionControlDiscussionCreatePayload struct {
 	Title           string                   `json:"title"`
@@ -81,14 +89,14 @@ type MissionControlCommandResultPayload struct {
 
 // MissionControlActiveSet contains one read-model snapshot slice for future transport adapters.
 type MissionControlActiveSet struct {
-	Entities  []entitytypes.MissionControlEntity   `json:"entities"`
-	Relations []entitytypes.MissionControlRelation `json:"relations"`
+	Entities  []entitytypes.MissionControlEntity `json:"entities"`
+	Relations []MissionControlRelationView       `json:"relations"`
 }
 
 // MissionControlEntityDetails contains one entity details payload without transport concerns.
 type MissionControlEntityDetails struct {
 	Entity    entitytypes.MissionControlEntity          `json:"entity"`
-	Relations []entitytypes.MissionControlRelation      `json:"relations"`
+	Relations []MissionControlRelationView              `json:"relations"`
 	Timeline  []entitytypes.MissionControlTimelineEntry `json:"timeline"`
 }
 

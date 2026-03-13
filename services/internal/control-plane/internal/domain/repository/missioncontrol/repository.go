@@ -40,6 +40,8 @@ type Repository interface {
 	UpdateEntityProjection(ctx context.Context, params UpdateEntityParams) (Entity, error)
 	// GetEntityByPublicID loads one entity by public identity tuple.
 	GetEntityByPublicID(ctx context.Context, projectID string, entityKind enumtypes.MissionControlEntityKind, entityExternalKey string) (Entity, bool, error)
+	// GetEntityByID loads one entity by internal persistence id without leaking it outside the domain.
+	GetEntityByID(ctx context.Context, projectID string, entityID int64) (Entity, bool, error)
 	// ListEntities returns active-set rows for one project with optional filters.
 	ListEntities(ctx context.Context, filter EntityListFilter) ([]Entity, error)
 	// ReplaceRelationsForSource rewrites relation edges for one source entity.

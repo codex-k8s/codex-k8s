@@ -2,16 +2,18 @@
 doc_id: IDX-CK8S-ARCH-S12-0001
 type: initiative-index
 title: "Initiative Package: s12_github_api_rate_limit_resilience"
-status: in-review
+status: approved
 owner_role: SA
 created_at: 2026-03-13
 updated_at: 2026-03-13
-related_issues: [366, 413, 416, 418, 420, 423]
+related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-13-issue-420-design-package"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # s12_github_api_rate_limit_resilience
@@ -19,6 +21,7 @@ approvals:
 ## TL;DR
 - Пакет объединяет Day4 architecture и Day5 design артефакты Sprint S12 для GitHub API rate-limit resilience.
 - Внутри зафиксированы C4 overlays, ownership split для `control-plane` / `worker` / `agent-runner` / `api-gateway` / `web-console`, lifecycle `detect -> classify -> wait -> resume/manual action`, ADR/alternatives и implementation-ready contracts для wait-state, transport, data model и rollout.
+- Plan-stage в Issue `#423` завершил документный контур и декомпозировал execution waves `#425..#431`; этот пакет остаётся source-of-truth для всех implementation streams.
 
 ## Содержимое
 - `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/README.md`
@@ -41,3 +44,9 @@ approvals:
 - `docs/delivery/epics/s12/epic-s12-day5-github-api-rate-limit-design.md`
 - `docs/delivery/epics/s12/epic-s12-day3-github-api-rate-limit-prd.md`
 - `docs/delivery/epics/s12/prd-s12-day3-github-api-rate-limit-resilience.md`
+- `docs/delivery/epics/s12/epic-s12-day6-github-api-rate-limit-plan.md`
+
+## Continuity after `run:plan`
+- Документный контур `intake -> vision -> prd -> arch -> design -> plan` согласован и завершён.
+- Owner-managed execution waves `#425..#431` обязаны сохранять этот пакет как архитектурный baseline без drift между delivery и architecture слоями.
+- Обязательный sequencing для implementation handover: `#425 -> #426 -> #427 -> #428 -> #429 -> #430 -> #431`.

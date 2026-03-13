@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-13
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -334,7 +334,13 @@ approvals:
   - зафиксированы typed contracts для signal handoff, dominant/related wait visibility, persisted wait aggregate/evidence и rollout/rollback notes;
   - выбран отдельный coarse wait-state `waiting_backpressure`, finite auto-resume policy для primary/secondary limits и best-effort GitHub service-comment mirror;
   - создана follow-up issue `#423` для stage `run:plan` без trigger-лейбла.
-- Day 6 (planned): plan-пакет для GitHub API rate-limit resilience (Issue `#423`).
+- Day 6 (in-review): plan-пакет для GitHub API rate-limit resilience (`docs/delivery/epics/s12/epic-s12-day6-github-api-rate-limit-plan.md`, Issue `#423`).
+- Результат Day 6 (факт):
+  - execution backlog декомпозирован на issues `#425..#431` без trigger-лейблов, с wave-sequencing и owner-managed handover в `run:dev`;
+  - `#425` закреплён за schema foundation, `#426` за `control-plane` classification/projection, `#427` за worker auto-resume, `#428` за `agent-runner` handoff, `#429` за `api-gateway` transport, `#430` за `web-console` visibility, `#431` за observability/readiness gate;
+  - зафиксирован sequencing order `#425 -> #426 -> #427 -> #428 -> #429 -> #430 -> #431` и rollout `migrations -> control-plane -> worker -> agent-runner -> api-gateway -> web-console -> evidence gate`;
+  - документный контур `intake -> vision -> prd -> arch -> design -> plan` согласован и завершён, quality-gates/DoR/DoD/blockers/risks/owner decisions синхронизированы в delivery traceability, а predictive budgeting/multi-provider governance оставлены за пределами core Sprint S12 execution package;
+- Day 7+ (planned): `run:dev -> qa -> release -> postdeploy -> ops` по issues `#425..#431` с owner-managed wave launch и обязательным evidence gate `#431` перед `run:qa`.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

@@ -2,16 +2,18 @@
 doc_id: ARC-C4C-S12-0001
 type: c4-context
 title: "Sprint S12 Day 4 — C4 Context overlay for GitHub API rate-limit resilience"
-status: in-review
+status: approved
 owner_role: SA
 created_at: 2026-03-13
 updated_at: 2026-03-13
-related_issues: [366, 413, 416, 418, 420]
+related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-13-issue-418-arch"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # C4 Context: Sprint S12 Day 4 GitHub API rate-limit resilience
@@ -52,3 +54,7 @@ Rel(system, staff, "Publishes typed wait projections", "Staff/private API")
 - GitHub API: rate-limit headers/signals и affected operations.
 - Kubernetes: runtime для `agent-runner` и `worker`.
 - Staff UI/API: операторская и owner visibility surface, но не место для бизнес-решений.
+
+## Continuity after `run:plan`
+- Plan package Issue `#423` зафиксировал, что этот context overlay остаётся неизменным baseline для execution waves `#425..#431`.
+- Ни одна implementation wave не получает права превращать GitHub API, Kubernetes или Staff UI в source-of-truth для wait semantics: этот инвариант остаётся внутри platform domain.

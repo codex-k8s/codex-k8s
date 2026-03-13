@@ -1704,6 +1704,7 @@ type fakeLauncher struct {
 	workerPodNames          []string
 	workerPodListErr        error
 	workerPodListNamespaces []string
+	callLog                 []string
 	launched                []JobSpec
 	prepared                []NamespaceSpec
 	accessProfiles          []string
@@ -1789,6 +1790,7 @@ func (f *fakeLauncher) FindReusableNamespace(_ context.Context, _ NamespaceReuse
 }
 
 func (f *fakeLauncher) EnsureNamespace(_ context.Context, spec NamespaceSpec) (NamespaceEnsureResult, error) {
+	f.callLog = append(f.callLog, "ensure_namespace")
 	f.prepared = append(f.prepared, spec)
 	if f.ensureResult.LeaseExpiresAt.IsZero() && spec.LeaseExpiresAt.IsZero() {
 		f.ensureResult.LeaseExpiresAt = time.Now().UTC().Add(24 * time.Hour)
@@ -1808,6 +1810,7 @@ func (f *fakeLauncher) EnsureAccessProfile(_ context.Context, namespace string, 
 }
 
 func (f *fakeLauncher) CleanupExpiredNamespaces(_ context.Context, params NamespaceCleanupParams) ([]NamespaceCleanupResult, error) {
+	f.callLog = append(f.callLog, "cleanup_expired")
 	f.cleanupSweepCall = append(f.cleanupSweepCall, params)
 	if len(f.expiredCleanups) == 0 {
 		return nil, nil
@@ -1826,6 +1829,7 @@ func (f *fakeLauncher) Launch(_ context.Context, spec JobSpec) (JobRef, error) {
 }
 
 func (f *fakeLauncher) Status(_ context.Context, ref JobRef) (JobState, error) {
+	f.callLog = append(f.callLog, "status")
 	if f.statusErr != nil {
 		return "", f.statusErr
 	}

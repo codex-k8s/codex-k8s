@@ -637,6 +637,28 @@ message ExpireNextInteractionResponse {
   string resume_correlation_id = 6;
 }
 
+message SubmitInteractionCallbackRequest {
+  string interaction_id = 1;
+  optional string delivery_id = 2;
+  string adapter_event_id = 3;
+  string callback_kind = 4;
+  google.protobuf.Timestamp occurred_at = 5;
+  optional string delivery_status = 6;
+  optional string response_kind = 7;
+  optional string selected_option_id = 8;
+  optional string free_text = 9;
+  optional string responder_ref = 10;
+  bytes raw_payload_json = 11;
+}
+
+message SubmitInteractionCallbackResponse {
+  bool accepted = 1;
+  string classification = 2;
+  string interaction_state = 3;
+  bool resume_required = 4;
+  int64 effective_response_id = 5;
+}
+
 message RuntimeDeployTaskLog {
   string stage = 1;
   string level = 2;
@@ -1015,6 +1037,7 @@ service ControlPlaneService {
   rpc ClaimNextInteractionDispatch(ClaimNextInteractionDispatchRequest) returns (ClaimNextInteractionDispatchResponse);
   rpc CompleteInteractionDispatch(CompleteInteractionDispatchRequest) returns (CompleteInteractionDispatchResponse);
   rpc ExpireNextInteraction(ExpireNextInteractionRequest) returns (ExpireNextInteractionResponse);
+  rpc SubmitInteractionCallback(SubmitInteractionCallbackRequest) returns (SubmitInteractionCallbackResponse);
   rpc ListRuntimeDeployTasks(ListRuntimeDeployTasksRequest) returns (ListRuntimeDeployTasksResponse);
   rpc GetRuntimeDeployTask(GetRuntimeDeployTaskRequest) returns (RuntimeDeployTask);
   rpc CancelRuntimeDeployTask(CancelRuntimeDeployTaskRequest) returns (RuntimeDeployTaskActionResponse);

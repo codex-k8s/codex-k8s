@@ -131,6 +131,122 @@ func TestSubmitCommandBlocksOnStaleProjectionVersion(t *testing.T) {
 	}
 }
 
+func TestSubmitCommandFormalizeUsesPayloadSourceAsEffectiveTarget(t *testing.T) {
+	t.Parallel()
+
+	svc, repo, _, now := newTestService(t, valuetypes.MissionControlRolloutState{
+		CoreFeatureEnabled: true,
+		SchemaReady:        true,
+		DomainReady:        true,
+		WarmupVerified:     true,
+		ReadPathEnabled:    true,
+		WritePathEnabled:   true,
+	})
+	sourceDiscussion, err := repo.UpsertEntity(context.Background(), missioncontrolrepo.UpsertEntityParams{
+		ProjectID:         "proj-1",
+		EntityKind:        enumtypes.MissionControlEntityKindDiscussion,
+		EntityExternalKey: "DISC-1",
+		Title:             "Discussion",
+		ProjectionVersion: 5,
+		ProjectedAt:       now,
+	})
+	if err != nil {
+		t.Fatalf("seed entity: %v", err)
+	}
+
+	result, err := svc.SubmitCommand(context.Background(), SubmitCommandParams{
+		ProjectID:                 "proj-1",
+		ActorID:                   "owner",
+		CorrelationID:             "corr-formalize",
+		CommandKind:               enumtypes.MissionControlCommandKindDiscussionFormalize,
+		BusinessIntentKey:         "intent-formalize",
+		ExpectedProjectionVersion: 5,
+		Payload: valuetypes.MissionControlCommandPayload{
+			DiscussionFormalize: &valuetypes.MissionControlDiscussionFormalizePayload{
+				SourceEntityRef: valuetypes.MissionControlEntityRef{
+					EntityKind:     enumtypes.MissionControlEntityKindDiscussion,
+					EntityPublicID: "DISC-1",
+				},
+				FormalizedKind: "work_item",
+				Title:          "Task from discussion",
+			},
+		},
+		RequestedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("SubmitCommand() error = %v", err)
+	}
+	if got, want := result.TargetEntity.ID, sourceDiscussion.ID; got != want {
+		t.Fatalf("target entity id = %d, want %d", got, want)
+	}
+	if got, want := result.EntityRefs[0].EntityPublicID, "DISC-1"; got != want {
+		t.Fatalf("entity ref public id = %s, want %s", got, want)
+	}
+}
+
+func TestSubmitCommandRejectsFormalizeTargetMismatch(t *testing.T) {
+	t.Parallel()
+
+	svc, repo, _, now := newTestService(t, valuetypes.MissionControlRolloutState{
+		CoreFeatureEnabled: true,
+		SchemaReady:        true,
+		DomainReady:        true,
+		WarmupVerified:     true,
+		ReadPathEnabled:    true,
+		WritePathEnabled:   true,
+	})
+	_, err := repo.UpsertEntity(context.Background(), missioncontrolrepo.UpsertEntityParams{
+		ProjectID:         "proj-1",
+		EntityKind:        enumtypes.MissionControlEntityKindDiscussion,
+		EntityExternalKey: "DISC-1",
+		Title:             "Discussion",
+		ProjectionVersion: 5,
+		ProjectedAt:       now,
+	})
+	if err != nil {
+		t.Fatalf("seed source entity: %v", err)
+	}
+	_, err = repo.UpsertEntity(context.Background(), missioncontrolrepo.UpsertEntityParams{
+		ProjectID:         "proj-1",
+		EntityKind:        enumtypes.MissionControlEntityKindDiscussion,
+		EntityExternalKey: "DISC-2",
+		Title:             "Other discussion",
+		ProjectionVersion: 3,
+		ProjectedAt:       now,
+	})
+	if err != nil {
+		t.Fatalf("seed target entity: %v", err)
+	}
+
+	_, err = svc.SubmitCommand(context.Background(), SubmitCommandParams{
+		ProjectID:                 "proj-1",
+		ActorID:                   "owner",
+		CorrelationID:             "corr-formalize-mismatch",
+		CommandKind:               enumtypes.MissionControlCommandKindDiscussionFormalize,
+		TargetEntityRef:           &valuetypes.MissionControlEntityRef{EntityKind: enumtypes.MissionControlEntityKindDiscussion, EntityPublicID: "DISC-2"},
+		BusinessIntentKey:         "intent-formalize-mismatch",
+		ExpectedProjectionVersion: 5,
+		Payload: valuetypes.MissionControlCommandPayload{
+			DiscussionFormalize: &valuetypes.MissionControlDiscussionFormalizePayload{
+				SourceEntityRef: valuetypes.MissionControlEntityRef{
+					EntityKind:     enumtypes.MissionControlEntityKindDiscussion,
+					EntityPublicID: "DISC-1",
+				},
+				FormalizedKind: "work_item",
+				Title:          "Task from discussion",
+			},
+		},
+		RequestedAt: now,
+	})
+	var validation errs.Validation
+	if !errors.As(err, &validation) {
+		t.Fatalf("expected validation error, got %v", err)
+	}
+	if got, want := validation.Field, "target_entity_ref"; got != want {
+		t.Fatalf("validation field = %s, want %s", got, want)
+	}
+}
+
 func TestSubmitCommandDedupesBusinessIntent(t *testing.T) {
 	t.Parallel()
 
@@ -324,6 +440,52 @@ func TestApplyApprovalDecisionQueuesPendingCommand(t *testing.T) {
 	}
 }
 
+func TestSubmitCommandRetrySyncRejectsNonRetryableStatus(t *testing.T) {
+	t.Parallel()
+
+	svc, _, _, now := newTestService(t, valuetypes.MissionControlRolloutState{
+		CoreFeatureEnabled: true,
+		SchemaReady:        true,
+		DomainReady:        true,
+		WarmupVerified:     true,
+		ReadPathEnabled:    true,
+		WritePathEnabled:   true,
+	})
+
+	accepted, err := svc.SubmitCommand(context.Background(), SubmitCommandParams{
+		ProjectID:         "proj-1",
+		ActorID:           "owner",
+		CorrelationID:     "corr-source-command",
+		CommandKind:       enumtypes.MissionControlCommandKindDiscussionCreate,
+		BusinessIntentKey: "intent-source-command",
+		Payload: valuetypes.MissionControlCommandPayload{
+			DiscussionCreate: &valuetypes.MissionControlDiscussionCreatePayload{Title: "Source command"},
+		},
+		RequestedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("seed source command: %v", err)
+	}
+
+	_, err = svc.SubmitCommand(context.Background(), SubmitCommandParams{
+		ProjectID:         "proj-1",
+		ActorID:           "owner",
+		CorrelationID:     "corr-retry",
+		CommandKind:       enumtypes.MissionControlCommandKindRetrySync,
+		BusinessIntentKey: "intent-retry",
+		Payload: valuetypes.MissionControlCommandPayload{
+			RetrySync: &valuetypes.MissionControlRetrySyncPayload{
+				CommandID: accepted.Command.ID,
+			},
+		},
+		RequestedAt: now.Add(1 * time.Minute),
+	})
+	var precondition errs.FailedPrecondition
+	if !errors.As(err, &precondition) {
+		t.Fatalf("expected failed precondition, got %v", err)
+	}
+}
+
 func TestListActiveSetAndEntityDetails(t *testing.T) {
 	t.Parallel()
 
@@ -391,6 +553,12 @@ func TestListActiveSetAndEntityDetails(t *testing.T) {
 	if got, want := len(activeSet.Relations), 1; got != want {
 		t.Fatalf("relation count = %d, want %d", got, want)
 	}
+	if got, want := activeSet.Relations[0].SourceEntityRef.EntityPublicID, "DISC-1"; got != want {
+		t.Fatalf("active-set source public id = %s, want %s", got, want)
+	}
+	if got, want := activeSet.Relations[0].TargetEntityRef.EntityPublicID, "TASK-1"; got != want {
+		t.Fatalf("active-set target public id = %s, want %s", got, want)
+	}
 
 	details, err := svc.GetEntityDetails(context.Background(), EntityDetailsQuery{
 		ProjectID:      "proj-1",
@@ -405,6 +573,12 @@ func TestListActiveSetAndEntityDetails(t *testing.T) {
 	}
 	if got, want := len(details.Relations), 1; got != want {
 		t.Fatalf("details relation count = %d, want %d", got, want)
+	}
+	if got, want := details.Relations[0].SourceEntityRef.EntityPublicID, "DISC-1"; got != want {
+		t.Fatalf("details source public id = %s, want %s", got, want)
+	}
+	if got, want := details.Relations[0].TargetEntityRef.EntityPublicID, "TASK-1"; got != want {
+		t.Fatalf("details target public id = %s, want %s", got, want)
 	}
 	if got, want := len(details.Timeline), 1; got != want {
 		t.Fatalf("details timeline count = %d, want %d", got, want)
@@ -517,6 +691,16 @@ func (r *inMemoryRepository) UpdateEntityProjection(_ context.Context, params mi
 func (r *inMemoryRepository) GetEntityByPublicID(_ context.Context, projectID string, entityKind enumtypes.MissionControlEntityKind, entityExternalKey string) (Entity, bool, error) {
 	entity, found := r.entitiesByKey[entityKey(projectID, entityKind, entityExternalKey)]
 	return entity, found, nil
+}
+
+func (r *inMemoryRepository) GetEntityByID(_ context.Context, projectID string, entityID int64) (Entity, bool, error) {
+	projectID = strings.TrimSpace(projectID)
+	for _, entity := range r.entitiesByKey {
+		if entity.ProjectID == projectID && entity.ID == entityID {
+			return entity, true, nil
+		}
+	}
+	return Entity{}, false, nil
 }
 
 func (r *inMemoryRepository) ListEntities(_ context.Context, filter missioncontrolrepo.EntityListFilter) ([]Entity, error) {

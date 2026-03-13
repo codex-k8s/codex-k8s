@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S12-D3-RATE-LIMIT
 type: epic
 title: "Epic S12 Day 3: PRD для GitHub API rate-limit resilience и controlled wait contract (Issues #416/#418)"
-status: in-review
+status: completed
 owner_role: PM
 created_at: 2026-03-13
 updated_at: 2026-03-13
@@ -10,8 +10,10 @@ related_issues: [366, 413, 416, 418]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-13-issue-416-prd"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # Epic S12 Day 3: PRD для GitHub API rate-limit resilience и controlled wait contract (Issues #416/#418)
