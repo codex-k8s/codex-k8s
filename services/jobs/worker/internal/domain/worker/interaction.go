@@ -44,17 +44,21 @@ type CompleteInteractionDispatchParams struct {
 
 // CompleteInteractionDispatchResult returns aggregate state after dispatch completion.
 type CompleteInteractionDispatchResult struct {
-	InteractionID    string
-	InteractionState string
-	ResumeRequired   bool
+	InteractionID       string
+	RunID               string
+	InteractionState    string
+	ResumeRequired      bool
+	ResumeCorrelationID string
 }
 
 // ExpireNextInteractionResult describes one processed due-expiry interaction.
 type ExpireNextInteractionResult struct {
-	Found            bool
-	InteractionID    string
-	InteractionState string
-	ResumeRequired   bool
+	Found               bool
+	InteractionID       string
+	RunID               string
+	InteractionState    string
+	ResumeRequired      bool
+	ResumeCorrelationID string
 }
 
 // InteractionLifecycleClient exposes worker-side control-plane interaction lifecycle RPCs.

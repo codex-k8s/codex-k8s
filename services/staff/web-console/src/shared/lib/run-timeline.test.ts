@@ -3,6 +3,22 @@ import assert from "node:assert/strict";
 
 import { buildRunTimelinePhases, buildRunTimelineStatuses } from "./run-timeline.ts";
 
+const timelineTranslations = {
+  "runs.timeline.events.workerHeartbeatMissed": "Worker heartbeat missed",
+  "runs.timeline.events.workerHeartbeatMissedWithActor": "Worker heartbeat missed · {actorId}",
+  "runs.timeline.events.staleLeaseDetected": "Stale lease detected",
+  "runs.timeline.events.staleLeaseDetectedWithActor": "Stale lease detected · {actorId}",
+  "runs.timeline.events.staleLeaseReleased": "Stale lease released",
+  "runs.timeline.events.staleLeaseReleasedWithActor": "Stale lease released · {actorId}",
+  "runs.timeline.events.leaseReclaimedAfterStale": "Lease reclaimed after stale lease",
+  "runs.timeline.events.leaseReclaimedAfterStaleWithActor": "Lease reclaimed after stale lease · {actorId}",
+} as const;
+
+function translateTimelineStatus(key: string, params?: Record<string, string>): string {
+  const template = timelineTranslations[key as keyof typeof timelineTranslations] || key;
+  return template.replaceAll("{actorId}", params?.actorId ?? "");
+}
+
 test("buildRunTimelinePhases adds build-deploy, auth and ready steps for full-env runs", () => {
   const run = {
     created_at: "2026-03-12T10:00:00Z",
@@ -87,7 +103,12 @@ test("buildRunTimelineStatuses collapses adjacent duplicates and formats compact
     },
   ];
 
-  const entries = buildRunTimelineStatuses(events as never, "ru", new Date("2026-03-12T12:00:00Z"));
+  const entries = buildRunTimelineStatuses(
+    events as never,
+    "ru",
+    translateTimelineStatus,
+    new Date("2026-03-12T12:00:00Z"),
+  );
   assert.equal(entries.length, 2);
   assert.equal(entries[0]?.at, "2026-03-12T10:06:00Z");
   assert.equal(entries[0]?.repeatCount, 2);
@@ -119,14 +140,37 @@ test("buildRunTimelineStatuses includes stale lease recovery events in timeline"
     },
   ];
 
-  const entries = buildRunTimelineStatuses(events as never, "en", new Date("2026-03-12T12:00:00Z"));
+  const entries = buildRunTimelineStatuses(
+    events as never,
+    "en",
+    translateTimelineStatus,
+    new Date("2026-03-12T12:00:00Z"),
+  );
   assert.deepEqual(
     entries.map((item) => item.text),
     [
-      "run.reclaimed_after_stale_lease · worker-2",
-      "run.lease.released · worker-old",
-      "run.lease.detected_stale · worker-old",
-      "worker.instance.heartbeat.missed · worker-old",
+      "Lease reclaimed after stale lease · worker-2",
+      "Stale lease released · worker-old",
+      "Stale lease detected · worker-old",
+      "Worker heartbeat missed · worker-old",
     ],
   );
+});
+
+test("buildRunTimelineStatuses uses event translation without actor placeholder leakage", () => {
+  const events = [
+    {
+      event_type: "run.lease.detected_stale",
+      created_at: "2026-03-12T10:07:00Z",
+      payload_json: "{}",
+    },
+  ];
+
+  const entries = buildRunTimelineStatuses(
+    events as never,
+    "en",
+    translateTimelineStatus,
+    new Date("2026-03-12T12:00:00Z"),
+  );
+  assert.deepEqual(entries.map((item) => item.text), ["Stale lease detected"]);
 });

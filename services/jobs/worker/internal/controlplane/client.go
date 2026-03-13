@@ -171,9 +171,11 @@ func (c *Client) CompleteInteractionDispatch(ctx context.Context, params workerd
 		return workerdomain.CompleteInteractionDispatchResult{}, err
 	}
 	return workerdomain.CompleteInteractionDispatchResult{
-		InteractionID:    strings.TrimSpace(resp.GetInteractionId()),
-		InteractionState: strings.TrimSpace(resp.GetInteractionState()),
-		ResumeRequired:   resp.GetResumeRequired(),
+		InteractionID:       strings.TrimSpace(resp.GetInteractionId()),
+		RunID:               strings.TrimSpace(resp.GetRunId()),
+		InteractionState:    strings.TrimSpace(resp.GetInteractionState()),
+		ResumeRequired:      resp.GetResumeRequired(),
+		ResumeCorrelationID: strings.TrimSpace(resp.GetResumeCorrelationId()),
 	}, nil
 }
 
@@ -184,10 +186,12 @@ func (c *Client) ExpireNextInteraction(ctx context.Context) (workerdomain.Expire
 		return workerdomain.ExpireNextInteractionResult{}, err
 	}
 	return workerdomain.ExpireNextInteractionResult{
-		Found:            resp.GetFound(),
-		InteractionID:    strings.TrimSpace(resp.GetInteractionId()),
-		InteractionState: strings.TrimSpace(resp.GetInteractionState()),
-		ResumeRequired:   resp.GetResumeRequired(),
+		Found:               resp.GetFound(),
+		InteractionID:       strings.TrimSpace(resp.GetInteractionId()),
+		RunID:               strings.TrimSpace(resp.GetRunId()),
+		InteractionState:    strings.TrimSpace(resp.GetInteractionState()),
+		ResumeRequired:      resp.GetResumeRequired(),
+		ResumeCorrelationID: strings.TrimSpace(resp.GetResumeCorrelationId()),
 	}, nil
 }
 

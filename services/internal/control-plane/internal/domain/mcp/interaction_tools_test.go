@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"testing"
 	"time"
@@ -106,15 +107,31 @@ func TestClearInteractionWaitContextSkipsMissingDuplicateWait(t *testing.T) {
 type interactionTestRunsRepository struct {
 	setWaitContextUpdated   bool
 	clearWaitContextUpdated bool
+	createPendingCalls      int
+	createPendingResult     agentrunrepo.CreateResult
+	createPendingErr        error
 	lastSetWaitContext      agentrunrepo.SetWaitContextParams
 	lastClearWaitContext    agentrunrepo.ClearWaitContextParams
+	lastCreatePending       agentrunrepo.CreateParams
+	byID                    map[string]agentrunrepo.Run
 }
 
-func (r *interactionTestRunsRepository) CreatePendingIfAbsent(context.Context, agentrunrepo.CreateParams) (agentrunrepo.CreateResult, error) {
-	return agentrunrepo.CreateResult{}, nil
+func (r *interactionTestRunsRepository) CreatePendingIfAbsent(_ context.Context, params agentrunrepo.CreateParams) (agentrunrepo.CreateResult, error) {
+	r.createPendingCalls++
+	r.lastCreatePending = params
+	if r.createPendingErr != nil {
+		return agentrunrepo.CreateResult{}, r.createPendingErr
+	}
+	if strings.TrimSpace(r.createPendingResult.RunID) != "" {
+		return r.createPendingResult, nil
+	}
+	return agentrunrepo.CreateResult{RunID: "resume-run-1", Inserted: true}, nil
 }
 
-func (r *interactionTestRunsRepository) GetByID(context.Context, string) (agentrunrepo.Run, bool, error) {
+func (r *interactionTestRunsRepository) GetByID(_ context.Context, runID string) (agentrunrepo.Run, bool, error) {
+	if item, ok := r.byID[runID]; ok {
+		return item, true, nil
+	}
 	return agentrunrepo.Run{}, false, nil
 }
 
@@ -174,4 +191,171 @@ func (r *interactionTestSessionsRepository) GetLatestByRepositoryBranchAndAgent(
 
 func (r *interactionTestSessionsRepository) CleanupSessionPayloadsFinishedBefore(context.Context, time.Time) (int64, error) {
 	return 0, nil
+}
+
+func TestFinalizeInteractionResumeSchedulesPendingRun(t *testing.T) {
+	t.Parallel()
+
+	runs := &interactionTestRunsRepository{
+		clearWaitContextUpdated: true,
+		byID: map[string]agentrunrepo.Run{
+			"run-1": {
+				ID:            "run-1",
+				CorrelationID: "corr-1",
+				ProjectID:     "project-1",
+				RunPayload: json.RawMessage(`{
+					"project":{"id":"project-1"},
+					"agent":{"id":"agent-dev"},
+					"learning_mode":true
+				}`),
+			},
+		},
+	}
+	sessions := &interactionTestSessionsRepository{setWaitStateUpdated: true}
+	service := &Service{
+		cfg: Config{
+			TokenSigningKey: "test-signing-key",
+			TokenIssuer:     "codex-k8s/test",
+			PublicBaseURL:   "https://platform.codex-k8s.dev",
+		},
+		runs:     runs,
+		sessions: sessions,
+		now: func() time.Time {
+			return time.Date(2026, 3, 13, 16, 0, 0, 0, time.UTC)
+		},
+	}
+
+	scheduled, err := service.finalizeInteractionResume(context.Background(), entitytypes.InteractionRequest{
+		ID:              "interaction-1",
+		RunID:           "run-1",
+		InteractionKind: enumtypes.InteractionKindDecisionRequest,
+		State:           enumtypes.InteractionStateDeliveryExhausted,
+		UpdatedAt:       time.Date(2026, 3, 13, 16, 5, 0, 0, time.UTC),
+	}, nil, true)
+	if err != nil {
+		t.Fatalf("finalizeInteractionResume returned error: %v", err)
+	}
+	if !scheduled {
+		t.Fatal("expected interaction resume to be scheduled")
+	}
+	if runs.createPendingCalls != 1 {
+		t.Fatalf("create pending calls = %d, want 1", runs.createPendingCalls)
+	}
+	if got, want := runs.lastCreatePending.CorrelationID, buildInteractionResumeCorrelationID("interaction-1"); got != want {
+		t.Fatalf("correlation id = %q, want %q", got, want)
+	}
+	if got, want := runs.lastCreatePending.AgentID, "agent-dev"; got != want {
+		t.Fatalf("agent id = %q, want %q", got, want)
+	}
+	if got, want := runs.lastCreatePending.ProjectID, "project-1"; got != want {
+		t.Fatalf("project id = %q, want %q", got, want)
+	}
+	if !runs.lastCreatePending.LearningMode {
+		t.Fatal("expected learning mode to be preserved for resume run")
+	}
+	if runs.lastClearWaitContext.WaitTargetRef != "interaction-1" {
+		t.Fatalf("wait target ref = %q, want interaction-1", runs.lastClearWaitContext.WaitTargetRef)
+	}
+}
+
+func TestFinalizeInteractionResumeReschedulesAfterWaitWasAlreadyCleared(t *testing.T) {
+	t.Parallel()
+
+	runs := &interactionTestRunsRepository{
+		clearWaitContextUpdated: false,
+		byID: map[string]agentrunrepo.Run{
+			"run-1": {
+				ID:            "run-1",
+				CorrelationID: "corr-1",
+				RunPayload:    json.RawMessage(`{"agent":{"id":"agent-dev"}}`),
+			},
+		},
+	}
+	sessions := &interactionTestSessionsRepository{setWaitStateUpdated: true}
+	service := &Service{
+		cfg: Config{
+			TokenSigningKey: "test-signing-key",
+			TokenIssuer:     "codex-k8s/test",
+		},
+		runs:     runs,
+		sessions: sessions,
+		now:      time.Now,
+	}
+
+	scheduled, err := service.finalizeInteractionResume(context.Background(), entitytypes.InteractionRequest{
+		ID:              "interaction-1",
+		RunID:           "run-1",
+		InteractionKind: enumtypes.InteractionKindDecisionRequest,
+		State:           enumtypes.InteractionStateExpired,
+		UpdatedAt:       time.Date(2026, 3, 13, 16, 5, 0, 0, time.UTC),
+	}, nil, false)
+	if err != nil {
+		t.Fatalf("finalizeInteractionResume returned error: %v", err)
+	}
+	if !scheduled {
+		t.Fatal("expected interaction resume to remain scheduled when wait was already cleared")
+	}
+	if runs.createPendingCalls != 1 {
+		t.Fatalf("create pending calls = %d, want 1", runs.createPendingCalls)
+	}
+	if sessions.setWaitStateCalls != 0 {
+		t.Fatalf("session wait state calls = %d, want 0 when wait was already cleared", sessions.setWaitStateCalls)
+	}
+}
+
+func TestBuildInteractionDeliveryEnvelopeIncludesCallbackContractFields(t *testing.T) {
+	t.Parallel()
+
+	deadline := time.Date(2026, 3, 13, 17, 0, 0, 0, time.UTC)
+	service := &Service{
+		cfg: Config{
+			TokenSigningKey: "test-signing-key",
+			TokenIssuer:     "codex-k8s/test",
+			PublicBaseURL:   "https://platform.codex-k8s.dev",
+		},
+		now: func() time.Time {
+			return time.Date(2026, 3, 13, 16, 0, 0, 0, time.UTC)
+		},
+	}
+
+	raw, err := service.buildInteractionDeliveryEnvelope(entitytypes.AgentRun{
+		ID:            "run-1",
+		CorrelationID: "corr-1",
+		ProjectID:     "project-1",
+	}, entitytypes.InteractionRequest{
+		ID:                "interaction-1",
+		RunID:             "run-1",
+		InteractionKind:   enumtypes.InteractionKindDecisionRequest,
+		RecipientProvider: "github_login",
+		RecipientRef:      "ai-da-stas",
+		RequestPayloadJSON: json.RawMessage(`{
+			"question":"Ship it?",
+			"options":[{"option_id":"approve","label":"Approve"},{"option_id":"deny","label":"Deny"}]
+		}`),
+		ContextLinksJSON:   json.RawMessage(`{"run_id":"run-1"}`),
+		ResponseDeadlineAt: &deadline,
+	}, entitytypes.InteractionDeliveryAttempt{
+		DeliveryID: "delivery-1",
+	})
+	if err != nil {
+		t.Fatalf("buildInteractionDeliveryEnvelope returned error: %v", err)
+	}
+
+	var envelope interactionDeliveryEnvelope
+	if err := json.Unmarshal(raw, &envelope); err != nil {
+		t.Fatalf("unmarshal interaction delivery envelope: %v", err)
+	}
+
+	if got, want := envelope.Locale, interactionDeliveryLocaleDefault; got != want {
+		t.Fatalf("locale = %q, want %q", got, want)
+	}
+	if got, want := envelope.CallbackURL, "https://platform.codex-k8s.dev"+interactionCallbackPath; got != want {
+		t.Fatalf("callback url = %q, want %q", got, want)
+	}
+	if strings.TrimSpace(envelope.CallbackBearer) == "" {
+		t.Fatal("expected callback bearer token to be populated")
+	}
+	if got, want := envelope.ExpiresAt, deadline.UTC().Format(time.RFC3339Nano); got != want {
+		t.Fatalf("expires_at = %q, want %q", got, want)
+	}
 }

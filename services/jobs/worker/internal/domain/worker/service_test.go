@@ -1612,12 +1612,14 @@ type fakeRunQueue struct {
 	releasedStaleLeases []runqueuerepo.ReleasedStaleLease
 	releaseStaleCalls   int
 	releaseStaleParams  []runqueuerepo.ReleaseStaleLeasesParams
+	resumePending       []runqueuerepo.CreatePendingResumeParams
 	finished            []runqueuerepo.FinishParams
 	extended            []runqueuerepo.ExtendLeaseParams
 	claimErr            error
 	claimRunningErr     error
 	releaseStaleErr     error
 	listErr             error
+	resumePendingErr    error
 	finishErr           error
 	extendErr           error
 }
@@ -1657,6 +1659,10 @@ func (f *fakeRunQueue) ReleaseStaleLeases(_ context.Context, params runqueuerepo
 	f.releaseStaleCalls++
 	f.releaseStaleParams = append(f.releaseStaleParams, params)
 	return f.releasedStaleLeases, nil
+}
+
+func (f *fakeRunQueue) CreatePendingResumeIfAbsent(_ context.Context, params runqueuerepo.CreatePendingResumeParams) (bool, error) {
+	return appendIfNoError(&f.resumePending, params, f.resumePendingErr)
 }
 
 func (f *fakeRunQueue) ExtendLease(_ context.Context, params runqueuerepo.ExtendLeaseParams) (bool, error) {

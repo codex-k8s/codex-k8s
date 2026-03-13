@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-13
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263, 265, 281, 282, 320, 322, 327, 333, 335, 337, 340, 351, 360, 363, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 397]
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 281, 282, 320, 322, 327, 333, 335, 337, 340, 351, 360, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 397, 413, 416, 418]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -111,6 +111,7 @@ approvals:
 - Sprint S8: `docs/delivery/traceability/s8_go_refactoring_parallelization_history.md`
 - Sprint S9: `docs/delivery/traceability/s9_mission_control_dashboard_history.md`
 - Sprint S10: `docs/delivery/traceability/s10_mcp_user_interactions_history.md`
+- Sprint S12: `docs/delivery/traceability/s12_github_api_rate_limit_resilience_history.md`
 
 ## Правило хранения evidence
 - Root-матрица фиксирует только текущее покрытие требований и не хранит narrative execution-history.

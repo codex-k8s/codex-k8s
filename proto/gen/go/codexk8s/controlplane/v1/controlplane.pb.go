@@ -5865,12 +5865,14 @@ func (x *CompleteInteractionDispatchRequest) GetFinishedAt() *timestamppb.Timest
 }
 
 type CompleteInteractionDispatchResponse struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	InteractionId    string                 `protobuf:"bytes,1,opt,name=interaction_id,json=interactionId,proto3" json:"interaction_id,omitempty"`
-	InteractionState string                 `protobuf:"bytes,2,opt,name=interaction_state,json=interactionState,proto3" json:"interaction_state,omitempty"`
-	ResumeRequired   bool                   `protobuf:"varint,3,opt,name=resume_required,json=resumeRequired,proto3" json:"resume_required,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	InteractionId       string                 `protobuf:"bytes,1,opt,name=interaction_id,json=interactionId,proto3" json:"interaction_id,omitempty"`
+	InteractionState    string                 `protobuf:"bytes,2,opt,name=interaction_state,json=interactionState,proto3" json:"interaction_state,omitempty"`
+	ResumeRequired      bool                   `protobuf:"varint,3,opt,name=resume_required,json=resumeRequired,proto3" json:"resume_required,omitempty"`
+	RunId               string                 `protobuf:"bytes,4,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
+	ResumeCorrelationId string                 `protobuf:"bytes,5,opt,name=resume_correlation_id,json=resumeCorrelationId,proto3" json:"resume_correlation_id,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *CompleteInteractionDispatchResponse) Reset() {
@@ -5924,6 +5926,20 @@ func (x *CompleteInteractionDispatchResponse) GetResumeRequired() bool {
 	return false
 }
 
+func (x *CompleteInteractionDispatchResponse) GetRunId() string {
+	if x != nil {
+		return x.RunId
+	}
+	return ""
+}
+
+func (x *CompleteInteractionDispatchResponse) GetResumeCorrelationId() string {
+	if x != nil {
+		return x.ResumeCorrelationId
+	}
+	return ""
+}
+
 type ExpireNextInteractionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -5961,13 +5977,15 @@ func (*ExpireNextInteractionRequest) Descriptor() ([]byte, []int) {
 }
 
 type ExpireNextInteractionResponse struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	Found            bool                   `protobuf:"varint,1,opt,name=found,proto3" json:"found,omitempty"`
-	InteractionId    string                 `protobuf:"bytes,2,opt,name=interaction_id,json=interactionId,proto3" json:"interaction_id,omitempty"`
-	InteractionState string                 `protobuf:"bytes,3,opt,name=interaction_state,json=interactionState,proto3" json:"interaction_state,omitempty"`
-	ResumeRequired   bool                   `protobuf:"varint,4,opt,name=resume_required,json=resumeRequired,proto3" json:"resume_required,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Found               bool                   `protobuf:"varint,1,opt,name=found,proto3" json:"found,omitempty"`
+	InteractionId       string                 `protobuf:"bytes,2,opt,name=interaction_id,json=interactionId,proto3" json:"interaction_id,omitempty"`
+	InteractionState    string                 `protobuf:"bytes,3,opt,name=interaction_state,json=interactionState,proto3" json:"interaction_state,omitempty"`
+	ResumeRequired      bool                   `protobuf:"varint,4,opt,name=resume_required,json=resumeRequired,proto3" json:"resume_required,omitempty"`
+	RunId               string                 `protobuf:"bytes,5,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty"`
+	ResumeCorrelationId string                 `protobuf:"bytes,6,opt,name=resume_correlation_id,json=resumeCorrelationId,proto3" json:"resume_correlation_id,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *ExpireNextInteractionResponse) Reset() {
@@ -6026,6 +6044,20 @@ func (x *ExpireNextInteractionResponse) GetResumeRequired() bool {
 		return x.ResumeRequired
 	}
 	return false
+}
+
+func (x *ExpireNextInteractionResponse) GetRunId() string {
+	if x != nil {
+		return x.RunId
+	}
+	return ""
+}
+
+func (x *ExpireNextInteractionResponse) GetResumeCorrelationId() string {
+	if x != nil {
+		return x.ResumeCorrelationId
+	}
+	return ""
 }
 
 type RuntimeDeployTaskLog struct {
@@ -9704,17 +9736,21 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\vfinished_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"finishedAtB\x16\n" +
 	"\x14_adapter_delivery_idB\x12\n" +
-	"\x10_last_error_code\"\xa2\x01\n" +
+	"\x10_last_error_code\"\xed\x01\n" +
 	"#CompleteInteractionDispatchResponse\x12%\n" +
 	"\x0einteraction_id\x18\x01 \x01(\tR\rinteractionId\x12+\n" +
 	"\x11interaction_state\x18\x02 \x01(\tR\x10interactionState\x12'\n" +
-	"\x0fresume_required\x18\x03 \x01(\bR\x0eresumeRequired\"\x1e\n" +
-	"\x1cExpireNextInteractionRequest\"\xb2\x01\n" +
+	"\x0fresume_required\x18\x03 \x01(\bR\x0eresumeRequired\x12\x15\n" +
+	"\x06run_id\x18\x04 \x01(\tR\x05runId\x122\n" +
+	"\x15resume_correlation_id\x18\x05 \x01(\tR\x13resumeCorrelationId\"\x1e\n" +
+	"\x1cExpireNextInteractionRequest\"\xfd\x01\n" +
 	"\x1dExpireNextInteractionResponse\x12\x14\n" +
 	"\x05found\x18\x01 \x01(\bR\x05found\x12%\n" +
 	"\x0einteraction_id\x18\x02 \x01(\tR\rinteractionId\x12+\n" +
 	"\x11interaction_state\x18\x03 \x01(\tR\x10interactionState\x12'\n" +
-	"\x0fresume_required\x18\x04 \x01(\bR\x0eresumeRequired\"\x97\x01\n" +
+	"\x0fresume_required\x18\x04 \x01(\bR\x0eresumeRequired\x12\x15\n" +
+	"\x06run_id\x18\x05 \x01(\tR\x05runId\x122\n" +
+	"\x15resume_correlation_id\x18\x06 \x01(\tR\x13resumeCorrelationId\"\x97\x01\n" +
 	"\x14RuntimeDeployTaskLog\x12\x14\n" +
 	"\x05stage\x18\x01 \x01(\tR\x05stage\x12\x14\n" +
 	"\x05level\x18\x02 \x01(\tR\x05level\x12\x18\n" +

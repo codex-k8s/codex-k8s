@@ -60,6 +60,12 @@ func (s *Service) expireInteractions(ctx context.Context) error {
 		if !result.Found {
 			return nil
 		}
+		if result.ResumeRequired {
+			if err := s.scheduleInteractionResume(ctx, result.RunID, result.InteractionID, result.ResumeCorrelationID); err != nil {
+				return err
+			}
+			s.logger.Info("interaction resume scheduled after expiry", "interaction_id", result.InteractionID, "interaction_state", result.InteractionState, "run_id", result.RunID)
+		}
 	}
 	return nil
 }
@@ -84,7 +90,8 @@ func (s *Service) dispatchInteraction(ctx context.Context, claim InteractionDisp
 	ack, dispatchErr := s.dispatcher.Dispatch(ctx, claim)
 	completion := s.resolveInteractionDispatchCompletion(claim, ack, dispatchErr)
 
-	if _, err := s.interactions.CompleteInteractionDispatch(ctx, completion); err != nil {
+	result, err := s.interactions.CompleteInteractionDispatch(ctx, completion)
+	if err != nil {
 		return err
 	}
 	if err := s.insertInteractionDispatchAttemptedEvent(ctx, claim, completion); err != nil {
@@ -96,6 +103,12 @@ func (s *Service) dispatchInteraction(ctx context.Context, claim InteractionDisp
 
 	if dispatchErr != nil {
 		s.logger.Warn("interaction dispatch failed", "interaction_id", claim.InteractionID, "delivery_id", claim.Attempt.DeliveryID, "err", dispatchErr)
+	}
+	if result.ResumeRequired {
+		if err := s.scheduleInteractionResume(ctx, result.RunID, result.InteractionID, result.ResumeCorrelationID); err != nil {
+			return err
+		}
+		s.logger.Info("interaction resume scheduled after terminal dispatch outcome", "interaction_id", result.InteractionID, "interaction_state", result.InteractionState, "run_id", result.RunID)
 	}
 	return nil
 }

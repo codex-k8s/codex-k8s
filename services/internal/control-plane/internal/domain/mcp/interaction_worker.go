@@ -12,7 +12,11 @@ import (
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
-const interactionDeliveryEnvelopeSchemaVersion = "v1"
+const (
+	interactionDeliveryEnvelopeSchemaVersion = "v1"
+	interactionCallbackPath                  = "/api/v1/mcp/interactions/callback"
+	interactionDeliveryLocaleDefault         = "ru"
+)
 
 type interactionDeliveryEnvelope struct {
 	SchemaVersion     string                    `json:"schema_version"`
@@ -21,8 +25,11 @@ type interactionDeliveryEnvelope struct {
 	InteractionKind   enumtypes.InteractionKind `json:"interaction_kind"`
 	RecipientProvider string                    `json:"recipient_provider"`
 	RecipientRef      string                    `json:"recipient_ref"`
+	Locale            string                    `json:"locale,omitempty"`
 	ContextLinks      interactionContextLinks   `json:"context_links"`
 	Content           json.RawMessage           `json:"content"`
+	CallbackURL       string                    `json:"callback_url"`
+	CallbackBearer    string                    `json:"callback_bearer_token"`
 	ExpiresAt         string                    `json:"expires_at,omitempty"`
 }
 
@@ -51,7 +58,7 @@ func (s *Service) ClaimNextInteractionDispatch(ctx context.Context, params Claim
 		return InteractionDispatchClaim{}, false, fmt.Errorf("run not found for interaction dispatch claim")
 	}
 
-	envelopeJSON, err := buildInteractionDeliveryEnvelope(item.Interaction, item.Attempt)
+	envelopeJSON, err := s.buildInteractionDeliveryEnvelope(run, item.Interaction, item.Attempt)
 	if err != nil {
 		return InteractionDispatchClaim{}, false, err
 	}
@@ -64,7 +71,7 @@ func (s *Service) ClaimNextInteractionDispatch(ctx context.Context, params Claim
 	}, true, nil
 }
 
-// CompleteInteractionDispatch stores one dispatch outcome and finalizes wait context when dispatch becomes terminal.
+// CompleteInteractionDispatch stores one dispatch outcome and schedules resume when dispatch becomes terminal.
 func (s *Service) CompleteInteractionDispatch(ctx context.Context, params CompleteInteractionDispatchParams) (CompleteInteractionDispatchResult, error) {
 	if s.interactions == nil {
 		return CompleteInteractionDispatchResult{}, fmt.Errorf("interaction repository is not configured")
@@ -87,19 +94,21 @@ func (s *Service) CompleteInteractionDispatch(ctx context.Context, params Comple
 		return CompleteInteractionDispatchResult{}, err
 	}
 
-	resumeRequired, err := s.finalizeWorkerTerminalInteraction(ctx, result.Interaction, result.StateChanged)
+	resumeRequired, err := s.finalizeWorkerTerminalInteraction(ctx, result.Interaction, result.ResumeRequired)
 	if err != nil {
 		return CompleteInteractionDispatchResult{}, err
 	}
 
 	return CompleteInteractionDispatchResult{
-		InteractionID:    result.Interaction.ID,
-		InteractionState: result.Interaction.State,
-		ResumeRequired:   resumeRequired,
+		InteractionID:       result.Interaction.ID,
+		RunID:               result.Interaction.RunID,
+		InteractionState:    result.Interaction.State,
+		ResumeRequired:      resumeRequired,
+		ResumeCorrelationID: resolveInteractionResumeCorrelationID(result.Interaction, resumeRequired),
 	}, nil
 }
 
-// ExpireNextDueInteraction marks one deadline-expired decision interaction terminal.
+// ExpireNextDueInteraction marks one deadline-expired decision interaction terminal and schedules resume when needed.
 func (s *Service) ExpireNextDueInteraction(ctx context.Context) (ExpireNextInteractionResult, bool, error) {
 	if s.interactions == nil {
 		return ExpireNextInteractionResult{}, false, fmt.Errorf("interaction repository is not configured")
@@ -113,24 +122,31 @@ func (s *Service) ExpireNextDueInteraction(ctx context.Context) (ExpireNextInter
 		return ExpireNextInteractionResult{}, false, nil
 	}
 
-	resumeRequired, err := s.finalizeWorkerTerminalInteraction(ctx, result.Interaction, result.StateChanged)
+	resumeRequired, err := s.finalizeWorkerTerminalInteraction(ctx, result.Interaction, result.ResumeRequired)
 	if err != nil {
 		return ExpireNextInteractionResult{}, false, err
 	}
 
 	return ExpireNextInteractionResult{
-		InteractionID:    result.Interaction.ID,
-		InteractionState: result.Interaction.State,
-		ResumeRequired:   resumeRequired,
+		InteractionID:       result.Interaction.ID,
+		RunID:               result.Interaction.RunID,
+		InteractionState:    result.Interaction.State,
+		ResumeRequired:      resumeRequired,
+		ResumeCorrelationID: resolveInteractionResumeCorrelationID(result.Interaction, resumeRequired),
 	}, true, nil
 }
 
-func buildInteractionDeliveryEnvelope(request entitytypes.InteractionRequest, attempt entitytypes.InteractionDeliveryAttempt) (json.RawMessage, error) {
+func (s *Service) buildInteractionDeliveryEnvelope(run entitytypes.AgentRun, request entitytypes.InteractionRequest, attempt entitytypes.InteractionDeliveryAttempt) (json.RawMessage, error) {
 	var contextLinks interactionContextLinks
 	if len(request.ContextLinksJSON) > 0 {
 		if err := json.Unmarshal(request.ContextLinksJSON, &contextLinks); err != nil {
 			return nil, fmt.Errorf("unmarshal interaction context links: %w", err)
 		}
+	}
+
+	callbackToken, err := s.issueInteractionCallbackToken(run, request)
+	if err != nil {
+		return nil, fmt.Errorf("issue interaction callback token: %w", err)
 	}
 
 	envelope := interactionDeliveryEnvelope{
@@ -140,8 +156,11 @@ func buildInteractionDeliveryEnvelope(request entitytypes.InteractionRequest, at
 		InteractionKind:   request.InteractionKind,
 		RecipientProvider: request.RecipientProvider,
 		RecipientRef:      request.RecipientRef,
+		Locale:            interactionDeliveryLocaleDefault,
 		ContextLinks:      contextLinks,
 		Content:           jsonOrEmptyRawMessage(request.RequestPayloadJSON),
+		CallbackURL:       strings.TrimRight(strings.TrimSpace(s.cfg.PublicBaseURL), "/") + interactionCallbackPath,
+		CallbackBearer:    callbackToken,
 	}
 	if request.ResponseDeadlineAt != nil {
 		envelope.ExpiresAt = request.ResponseDeadlineAt.UTC().Format(time.RFC3339Nano)
@@ -149,48 +168,8 @@ func buildInteractionDeliveryEnvelope(request entitytypes.InteractionRequest, at
 	return marshalRawJSON(envelope), nil
 }
 
-func (s *Service) finalizeWorkerTerminalInteraction(ctx context.Context, interaction entitytypes.InteractionRequest, stateChanged bool) (bool, error) {
-	if !stateChanged {
-		return false, nil
-	}
-
-	resumePayload := buildInteractionResumePayload(interaction, nil)
-	if resumePayload == nil {
-		return false, nil
-	}
-
-	session, err := s.loadInteractionSessionContext(ctx, interaction.RunID)
-	if err != nil {
-		return false, err
-	}
-	waitCleared, err := s.clearInteractionWaitContext(ctx, session, interaction.ID, true)
-	if err != nil {
-		return false, err
-	}
-	if waitCleared {
-		s.auditInteractionWaitResumed(ctx, session, interaction.ID, string(resumePayload.RequestStatus))
-	}
-	return waitCleared, nil
-}
-
-func (s *Service) loadInteractionSessionContext(ctx context.Context, runID string) (SessionContext, error) {
-	if s.runs == nil {
-		return SessionContext{}, fmt.Errorf("run repository is not configured")
-	}
-
-	run, found, err := s.runs.GetByID(ctx, strings.TrimSpace(runID))
-	if err != nil {
-		return SessionContext{}, fmt.Errorf("load run for interaction lifecycle: %w", err)
-	}
-	if !found {
-		return SessionContext{}, fmt.Errorf("run not found for interaction lifecycle")
-	}
-
-	return SessionContext{
-		RunID:         run.ID,
-		CorrelationID: run.CorrelationID,
-		ProjectID:     run.ProjectID,
-	}, nil
+func (s *Service) finalizeWorkerTerminalInteraction(ctx context.Context, interaction entitytypes.InteractionRequest, requireCurrentWait bool) (bool, error) {
+	return s.finalizeInteractionResume(ctx, interaction, nil, requireCurrentWait)
 }
 
 func jsonOrEmptyRawMessage(raw json.RawMessage) json.RawMessage {
@@ -198,4 +177,11 @@ func jsonOrEmptyRawMessage(raw json.RawMessage) json.RawMessage {
 		return json.RawMessage(`{}`)
 	}
 	return raw
+}
+
+func resolveInteractionResumeCorrelationID(interaction entitytypes.InteractionRequest, resumeRequired bool) string {
+	if !resumeRequired {
+		return ""
+	}
+	return buildInteractionResumeCorrelationID(interaction.ID)
 }

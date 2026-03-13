@@ -15,6 +15,7 @@ func TestDispatchInteractionsSchedulesRetryableFailure(t *testing.T) {
 	t.Parallel()
 
 	events := &fakeFlowEvents{}
+	runs := &fakeRunQueue{}
 	interactions := &fakeInteractionLifecycleClient{
 		claims: []InteractionDispatchClaim{
 			{
@@ -47,6 +48,7 @@ func TestDispatchInteractionsSchedulesRetryableFailure(t *testing.T) {
 		InteractionMaxAttempts:           3,
 		InteractionPendingAttemptTimeout: time.Minute,
 	}, Dependencies{
+		Runs:                  runs,
 		Events:                events,
 		Interactions:          interactions,
 		InteractionDispatcher: dispatcher,
@@ -89,6 +91,7 @@ func TestDispatchInteractionsExhaustsWhenRetryBudgetIsUsed(t *testing.T) {
 	t.Parallel()
 
 	events := &fakeFlowEvents{}
+	runs := &fakeRunQueue{}
 	interactions := &fakeInteractionLifecycleClient{
 		claims: []InteractionDispatchClaim{
 			{
@@ -121,6 +124,7 @@ func TestDispatchInteractionsExhaustsWhenRetryBudgetIsUsed(t *testing.T) {
 		InteractionMaxAttempts:           3,
 		InteractionPendingAttemptTimeout: time.Minute,
 	}, Dependencies{
+		Runs:                  runs,
 		Events:                events,
 		Interactions:          interactions,
 		InteractionDispatcher: dispatcher,
@@ -146,18 +150,93 @@ func TestDispatchInteractionsExhaustsWhenRetryBudgetIsUsed(t *testing.T) {
 	}
 }
 
+func TestDispatchInteractionsSchedulesResumeAfterTerminalOutcome(t *testing.T) {
+	t.Parallel()
+
+	events := &fakeFlowEvents{}
+	runs := &fakeRunQueue{}
+	interactions := &fakeInteractionLifecycleClient{
+		claims: []InteractionDispatchClaim{
+			{
+				CorrelationID:   "corr-3",
+				InteractionID:   "interaction-3",
+				RunID:           "run-3",
+				InteractionKind: "decision_request",
+				Attempt: InteractionDispatchAttempt{
+					ID:         13,
+					AttemptNo:  2,
+					DeliveryID: "delivery-3",
+				},
+				RequestEnvelopeJSON: []byte(`{"delivery_id":"delivery-3"}`),
+			},
+		},
+		completeResult: CompleteInteractionDispatchResult{
+			InteractionID:       "interaction-3",
+			RunID:               "run-3",
+			InteractionState:    "delivery_exhausted",
+			ResumeRequired:      true,
+			ResumeCorrelationID: "interaction-resume:interaction-3",
+		},
+	}
+	dispatcher := fakeInteractionDispatcher{
+		ack: InteractionDispatchAck{
+			AdapterKind: "noop",
+			ErrorCode:   "transport_unavailable",
+		},
+		err: errors.New("final transport failure"),
+	}
+
+	svc := NewService(Config{
+		InteractionDispatchLimit:         1,
+		InteractionRetryBaseInterval:     30 * time.Second,
+		InteractionRetryMaxInterval:      5 * time.Minute,
+		InteractionMaxAttempts:           1,
+		InteractionPendingAttemptTimeout: time.Minute,
+	}, Dependencies{
+		Runs:                  runs,
+		Events:                events,
+		Interactions:          interactions,
+		InteractionDispatcher: dispatcher,
+		Logger:                slog.New(slog.NewJSONHandler(io.Discard, nil)),
+	})
+	svc.now = func() time.Time { return time.Date(2026, 3, 13, 12, 0, 0, 0, time.UTC) }
+
+	if err := svc.dispatchInteractions(context.Background()); err != nil {
+		t.Fatalf("dispatchInteractions returned error: %v", err)
+	}
+
+	if len(runs.resumePending) != 1 {
+		t.Fatalf("resume pending calls = %d, want 1", len(runs.resumePending))
+	}
+	if got, want := runs.resumePending[0].SourceRunID, "run-3"; got != want {
+		t.Fatalf("source run id = %q, want %q", got, want)
+	}
+	if got, want := runs.resumePending[0].CorrelationID, "interaction-resume:interaction-3"; got != want {
+		t.Fatalf("correlation id = %q, want %q", got, want)
+	}
+}
+
 func TestExpireInteractionsPollsUntilQueueIsEmpty(t *testing.T) {
 	t.Parallel()
 
+	runs := &fakeRunQueue{}
 	interactions := &fakeInteractionLifecycleClient{
 		expireResults: []ExpireNextInteractionResult{
-			{Found: true, InteractionID: "interaction-1", InteractionState: "expired", ResumeRequired: true},
+			{
+				Found:               true,
+				InteractionID:       "interaction-1",
+				RunID:               "run-1",
+				InteractionState:    "expired",
+				ResumeRequired:      true,
+				ResumeCorrelationID: "interaction-resume:interaction-1",
+			},
 		},
 	}
 
 	svc := NewService(Config{
 		InteractionExpiryLimit: 3,
 	}, Dependencies{
+		Runs:         runs,
 		Interactions: interactions,
 		Logger:       slog.New(slog.NewJSONHandler(io.Discard, nil)),
 	})
@@ -169,14 +248,24 @@ func TestExpireInteractionsPollsUntilQueueIsEmpty(t *testing.T) {
 	if interactions.expireCalls != 2 {
 		t.Fatalf("expire calls = %d, want 2 (one processed item + one empty poll)", interactions.expireCalls)
 	}
+	if len(runs.resumePending) != 1 {
+		t.Fatalf("resume pending calls = %d, want 1", len(runs.resumePending))
+	}
+	if got, want := runs.resumePending[0].SourceRunID, "run-1"; got != want {
+		t.Fatalf("source run id = %q, want %q", got, want)
+	}
+	if got, want := runs.resumePending[0].CorrelationID, "interaction-resume:interaction-1"; got != want {
+		t.Fatalf("correlation id = %q, want %q", got, want)
+	}
 }
 
 type fakeInteractionLifecycleClient struct {
-	claims        []InteractionDispatchClaim
-	claimCalls    int
-	completed     []CompleteInteractionDispatchParams
-	expireCalls   int
-	expireResults []ExpireNextInteractionResult
+	claims         []InteractionDispatchClaim
+	claimCalls     int
+	completed      []CompleteInteractionDispatchParams
+	completeResult CompleteInteractionDispatchResult
+	expireCalls    int
+	expireResults  []ExpireNextInteractionResult
 }
 
 func (f *fakeInteractionLifecycleClient) ClaimNextInteractionDispatch(_ context.Context, _ time.Duration) (InteractionDispatchClaim, bool, error) {
@@ -189,6 +278,9 @@ func (f *fakeInteractionLifecycleClient) ClaimNextInteractionDispatch(_ context.
 
 func (f *fakeInteractionLifecycleClient) CompleteInteractionDispatch(_ context.Context, params CompleteInteractionDispatchParams) (CompleteInteractionDispatchResult, error) {
 	f.completed = append(f.completed, params)
+	if f.completeResult.InteractionID != "" || f.completeResult.RunID != "" || f.completeResult.ResumeRequired || f.completeResult.ResumeCorrelationID != "" {
+		return f.completeResult, nil
+	}
 	return CompleteInteractionDispatchResult{
 		InteractionID:    params.InteractionID,
 		InteractionState: params.Status,

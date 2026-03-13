@@ -89,9 +89,11 @@ func (s *Server) CompleteInteractionDispatch(ctx context.Context, req *controlpl
 	}
 
 	return &controlplanev1.CompleteInteractionDispatchResponse{
-		InteractionId:    result.InteractionID,
-		InteractionState: string(result.InteractionState),
-		ResumeRequired:   result.ResumeRequired,
+		InteractionId:       result.InteractionID,
+		RunId:               result.RunID,
+		InteractionState:    string(result.InteractionState),
+		ResumeRequired:      result.ResumeRequired,
+		ResumeCorrelationId: result.ResumeCorrelationID,
 	}, nil
 }
 
@@ -108,10 +110,12 @@ func (s *Server) ExpireNextInteraction(ctx context.Context, req *controlplanev1.
 		return nil, toStatus(err)
 	}
 	return &controlplanev1.ExpireNextInteractionResponse{
-		Found:            found,
-		InteractionId:    result.InteractionID,
-		InteractionState: string(result.InteractionState),
-		ResumeRequired:   result.ResumeRequired,
+		Found:               found,
+		InteractionId:       result.InteractionID,
+		RunId:               result.RunID,
+		InteractionState:    string(result.InteractionState),
+		ResumeRequired:      result.ResumeRequired,
+		ResumeCorrelationId: result.ResumeCorrelationID,
 	}, nil
 }
 

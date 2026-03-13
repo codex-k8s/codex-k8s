@@ -622,6 +622,8 @@ message CompleteInteractionDispatchResponse {
   string interaction_id = 1;
   string interaction_state = 2;
   bool resume_required = 3;
+  string run_id = 4;
+  string resume_correlation_id = 5;
 }
 
 message ExpireNextInteractionRequest {}
@@ -631,6 +633,8 @@ message ExpireNextInteractionResponse {
   string interaction_id = 2;
   string interaction_state = 3;
   bool resume_required = 4;
+  string run_id = 5;
+  string resume_correlation_id = 6;
 }
 
 message RuntimeDeployTaskLog {

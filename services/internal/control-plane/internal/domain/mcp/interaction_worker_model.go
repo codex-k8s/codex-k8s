@@ -38,14 +38,18 @@ type CompleteInteractionDispatchParams struct {
 
 // CompleteInteractionDispatchResult describes aggregate state after attempt completion.
 type CompleteInteractionDispatchResult struct {
-	InteractionID    string
-	InteractionState enumtypes.InteractionState
-	ResumeRequired   bool
+	InteractionID       string
+	RunID               string
+	InteractionState    enumtypes.InteractionState
+	ResumeRequired      bool
+	ResumeCorrelationID string
 }
 
 // ExpireNextInteractionResult describes one processed due-expiry interaction.
 type ExpireNextInteractionResult struct {
-	InteractionID    string
-	InteractionState enumtypes.InteractionState
-	ResumeRequired   bool
+	InteractionID       string
+	RunID               string
+	InteractionState    enumtypes.InteractionState
+	ResumeRequired      bool
+	ResumeCorrelationID string
 }

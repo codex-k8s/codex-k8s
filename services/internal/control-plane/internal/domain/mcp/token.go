@@ -5,8 +5,11 @@ import (
 	"strings"
 	"time"
 
+	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 	"github.com/golang-jwt/jwt/v5"
 )
+
+const interactionCallbackTokenTTL = 15 * time.Minute
 
 type runTokenClaims struct {
 	RunID         string `json:"run_id"`
@@ -89,4 +92,27 @@ func (s *Service) parseRunToken(rawToken string) (SessionContext, error) {
 		RuntimeMode:   parseRuntimeMode(claims.RuntimeMode),
 		ExpiresAt:     expiresAt,
 	}, nil
+}
+
+func (s *Service) issueInteractionCallbackToken(run entitytypes.AgentRun, interaction entitytypes.InteractionRequest) (string, error) {
+	now := s.now().UTC()
+	expiresAt := now.Add(interactionCallbackTokenTTL)
+	if interaction.ResponseDeadlineAt != nil {
+		deadline := interaction.ResponseDeadlineAt.UTC()
+		if deadline.After(now) && deadline.Before(expiresAt) {
+			expiresAt = deadline
+		}
+	}
+
+	return s.signRunToken(runTokenClaims{
+		RunID:         strings.TrimSpace(run.ID),
+		CorrelationID: strings.TrimSpace(run.CorrelationID),
+		ProjectID:     strings.TrimSpace(run.ProjectID),
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   "mcp-interaction-callback:" + strings.TrimSpace(interaction.ID),
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+		},
+	})
 }

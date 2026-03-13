@@ -7,20 +7,23 @@ import (
 )
 
 type (
-	ClaimParams              = querytypes.RunQueueClaimParams
-	ClaimRunningParams       = querytypes.RunQueueClaimRunningParams
-	ReleaseStaleLeasesParams = querytypes.RunQueueReleaseStaleLeasesParams
-	ClaimedRun               = querytypes.RunQueueClaimedRun
-	RunningRun               = querytypes.RunQueueRunningRun
-	ReleasedStaleLease       = querytypes.RunQueueReleasedStaleLease
-	FinishParams             = querytypes.RunQueueFinishParams
-	ExtendLeaseParams        = querytypes.RunQueueExtendLeaseParams
+	ClaimParams               = querytypes.RunQueueClaimParams
+	ClaimRunningParams        = querytypes.RunQueueClaimRunningParams
+	CreatePendingResumeParams = querytypes.RunQueueCreatePendingResumeParams
+	ReleaseStaleLeasesParams  = querytypes.RunQueueReleaseStaleLeasesParams
+	ClaimedRun                = querytypes.RunQueueClaimedRun
+	RunningRun                = querytypes.RunQueueRunningRun
+	ReleasedStaleLease        = querytypes.RunQueueReleasedStaleLease
+	FinishParams              = querytypes.RunQueueFinishParams
+	ExtendLeaseParams         = querytypes.RunQueueExtendLeaseParams
 )
 
 // Repository provides queue-like operations over agent runs and slots.
 type Repository interface {
 	// ClaimNextPending atomically claims one pending run and leases a free slot when required by runtime profile.
 	ClaimNextPending(ctx context.Context, params ClaimParams) (ClaimedRun, bool, error)
+	// CreatePendingResumeIfAbsent inserts one pending resume run derived from an existing source run.
+	CreatePendingResumeIfAbsent(ctx context.Context, params CreatePendingResumeParams) (bool, error)
 	// ClaimRunning atomically leases running runs for one worker reconcile tick.
 	ClaimRunning(ctx context.Context, params ClaimRunningParams) ([]RunningRun, error)
 	// ReleaseStaleLeases clears running-run leases whose owner worker instance is stale.
