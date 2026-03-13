@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-13
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -318,11 +318,17 @@ approvals:
   - сформированы mission, north star, persona outcomes, KPI/guardrails и risk frame для owner/reviewer, operator и agent-path flows;
   - подтверждены MVP/Post-MVP границы: clarity, contour attribution, backpressure и safe resume входят в core wave, а notification/adapters и multi-provider governance остаются deferred;
   - создана follow-up issue `#416` для stage `run:prd` без trigger-лейбла.
-- Day 3 (planned): PRD-пакет для GitHub API rate-limit resilience (Issue `#416`).
-- Ожидаемый результат Day 3:
+- Day 3 (in-review): PRD-пакет для GitHub API rate-limit resilience (`docs/delivery/epics/s12/epic-s12-day3-github-api-rate-limit-prd.md`, `docs/delivery/epics/s12/prd-s12-day3-github-api-rate-limit-resilience.md`, Issue `#416`).
+- Результат Day 3 (факт):
   - user stories, FR/AC/NFR и edge cases для controlled wait-state, rate-limit transparency и resume semantics;
-  - продуктовый контракт для split `platform PAT` vs `agent bot-token`, provider-driven recovery hints и запрета infinite local retries;
-  - continuity issue для `run:arch` без trigger-лейбла.
+  - продуктовый контракт для split `platform PAT` vs `agent bot-token`, provider-driven recovery hints, hard-failure separation и запрета infinite local retries;
+  - проверочные evidence и wave priorities разделены между core MVP и deferred scope;
+  - создана continuity issue `#418` для `run:arch` без trigger-лейбла.
+- Day 4 (planned): architecture package для GitHub API rate-limit resilience (Issue `#418`).
+- Ожидаемый результат Day 4:
+  - service boundaries и ownership matrix для signal detection, wait-state orchestration, visibility surfaces и resume path;
+  - lifecycle controlled wait `detect -> classify -> wait -> resume/manual action`;
+  - alternatives/ADR backlog и continuity issue для `run:design`.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

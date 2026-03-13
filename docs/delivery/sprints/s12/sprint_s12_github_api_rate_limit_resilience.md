@@ -6,7 +6,7 @@ status: in-review
 owner_role: PM
 created_at: 2026-03-13
 updated_at: 2026-03-13
-related_issues: [366, 413, 416]
+related_issues: [366, 413, 416, 418]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -18,7 +18,7 @@ approvals:
 
 ## TL;DR
 - Цель спринта: убрать непрозрачные `403/429`-провалы при исчерпании GitHub API budget и заменить их на управляемый, audit-safe controlled wait-state для platform path и agent path.
-- Sprint S12 стартовал с intake-этапа в Issue `#366`; vision-пакет оформляется в Issue `#413`, а continuity в `run:prd` зафиксирована в Issue `#416`.
+- Sprint S12 стартовал с intake-этапа в Issue `#366`; vision-пакет оформлен в Issue `#413`, PRD-пакет оформлен в Issue `#416`, а continuity в `run:arch` зафиксирована в Issue `#418`.
 - Базовые ограничения спринта: сохраняется split `platform PAT` vs `agent bot-token`, GitHub остаётся текущим provider baseline, controlled wait не должен маскировать реальные auth/authz ошибки, а агент не должен уходить в бесконечные локальные retry-loop.
 
 ## Scope спринта
@@ -44,7 +44,7 @@ approvals:
   - `vision` обязателен, потому что инициатива меняет пользовательский опыт ожидания и операционную прозрачность;
   - `arch` обязателен, потому что затрагиваются service boundaries, persisted wait-state, MCP/runtime semantics, notifications и staff UX.
 - Целевая continuity-цепочка:
-  `#366 (intake) -> #413 (vision) -> #416 (prd) -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops`.
+  `#366 (intake) -> #413 (vision) -> #416 (prd) -> #418 (arch) -> design -> plan -> dev -> qa -> release -> postdeploy -> ops`.
 
 ## План этапов и handover
 
@@ -52,8 +52,8 @@ approvals:
 |---|---|---|---|
 | Intake (`#366`) | Problem/Brief/Scope/Constraints + intake AC | `pm` | Owner review intake-пакета и создана issue следующего этапа |
 | Vision (`#413`) | Mission, north star, persona outcomes, KPI/guardrails | `pm` | Зафиксирован vision baseline и создана issue `#416` для `run:prd` |
-| PRD (`#416`) | User stories, FR/AC/NFR и evidence expectations | `pm` + `sa` | Подтверждён PRD package и создана issue `run:arch` |
-| Architecture | Service boundaries, ownership matrix, wait-state lifecycle | `sa` | Подтверждены архитектурные границы и создана issue `run:design` |
+| PRD (`#416`) | User stories, FR/AC/NFR, edge cases и expected evidence | `pm` + `sa` | Подтверждён PRD package и создана issue `#418` для `run:arch` |
+| Architecture (`#418`) | Service boundaries, ownership matrix, wait-state lifecycle | `sa` | Подтверждены архитектурные границы и создана issue `run:design` |
 | Design | API/data/notification/runtime contracts и rollout notes | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue `run:plan` |
 | Plan | Delivery waves, execution issues, DoR/DoD, quality-gates | `em` + `km` | Сформирован execution package и отдельные implementation issues |
 
@@ -66,12 +66,12 @@ approvals:
 - До `run:plan` инициатива остаётся markdown-only контуром.
 
 ## Handover
-- Текущий stage в review: `run:vision` в Issue `#413`.
-- Следующий stage: `run:prd` в Issue `#416`.
-- На `run:prd` нельзя размывать vision-решения:
-  - controlled wait важнее ложного failed;
+- Текущий stage в review: `run:prd` в Issue `#416`.
+- Следующий stage: `run:arch` в Issue `#418`.
+- На `run:arch` нельзя размывать PRD-решения:
+  - controlled wait важнее ложного `failed`;
   - split `platform PAT` vs `agent bot-token` обязателен;
-  - owner/operator должен видеть причину ожидания, affected contour и ожидаемое восстановление;
-  - агент не должен brute-force ретраить GitHub локально;
-  - провайдерная неопределённость secondary limits требует typed recovery hints вместо fixed countdown promises;
-  - notification/adapters и multi-provider quota governance не блокируют core Sprint S12.
+  - owner/operator должен видеть причину ожидания, affected contour, recovery hint и следующий шаг;
+  - hard-failure path не может маскироваться под controlled wait;
+  - агент не должен brute-force ретраить GitHub локально после typed rate-limit detection;
+  - predictive budgeting, multi-provider governance и adapter-specific notifications не блокируют core Sprint S12.
