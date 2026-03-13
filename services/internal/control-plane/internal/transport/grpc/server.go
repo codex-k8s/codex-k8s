@@ -13,6 +13,8 @@ import (
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
+	missioncontroldomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/missioncontrol"
+	missioncontrolworkerdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/missioncontrolworker"
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
 	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
@@ -61,6 +63,12 @@ type runtimeDeployService interface {
 	RequestTaskAction(ctx context.Context, params runtimedeploydomain.TaskActionParams) (runtimedeploydomain.TaskActionResult, error)
 }
 
+type missionControlWorkerService interface {
+	ListWarmupProjects(ctx context.Context, limit int) ([]missioncontrolworkerdomain.WarmupProject, error)
+	RunWarmup(ctx context.Context, params missioncontrolworkerdomain.WarmupRequest) (missioncontrolworkerdomain.WarmupResult, error)
+	ListPendingCommands(ctx context.Context, limit int) ([]missioncontrolworkerdomain.PendingCommand, error)
+}
+
 type runtimeErrorRecorder interface {
 	RecordBestEffort(ctx context.Context, params querytypes.RuntimeErrorRecordParams)
 }
@@ -72,44 +80,50 @@ type codexAuthService interface {
 
 // Dependencies wires domain services and repositories into the gRPC transport.
 type Dependencies struct {
-	Webhook        webhookIngress
-	Staff          *staff.Service
-	AgentCallbacks agentCallbackService
-	RunStatus      runStatusService
-	RuntimeDeploy  runtimeDeployService
-	RuntimeErrors  runtimeErrorRecorder
-	MCP            mcpRunTokenService
-	CodexAuth      codexAuthService
-	Logger         *slog.Logger
+	Webhook              webhookIngress
+	Staff                *staff.Service
+	AgentCallbacks       agentCallbackService
+	MissionControl       missionControlWorkerService
+	MissionControlDomain missioncontroldomain.DomainService
+	RunStatus            runStatusService
+	RuntimeDeploy        runtimeDeployService
+	RuntimeErrors        runtimeErrorRecorder
+	MCP                  mcpRunTokenService
+	CodexAuth            codexAuthService
+	Logger               *slog.Logger
 }
 
 // Server implements ControlPlaneServiceServer.
 type Server struct {
 	controlplanev1.UnimplementedControlPlaneServiceServer
 
-	webhook        webhookIngress
-	staff          *staff.Service
-	agentCallbacks agentCallbackService
-	runStatus      runStatusService
-	runtimeDeploy  runtimeDeployService
-	runtimeErrors  runtimeErrorRecorder
-	mcp            mcpRunTokenService
-	codexAuth      codexAuthService
-	logger         *slog.Logger
+	webhook              webhookIngress
+	staff                *staff.Service
+	agentCallbacks       agentCallbackService
+	missionControl       missionControlWorkerService
+	missionControlDomain missioncontroldomain.DomainService
+	runStatus            runStatusService
+	runtimeDeploy        runtimeDeployService
+	runtimeErrors        runtimeErrorRecorder
+	mcp                  mcpRunTokenService
+	codexAuth            codexAuthService
+	logger               *slog.Logger
 }
 
 func NewServer(deps Dependencies) *Server {
-	return &Server{
-		webhook:        deps.Webhook,
-		staff:          deps.Staff,
-		agentCallbacks: deps.AgentCallbacks,
-		runStatus:      deps.RunStatus,
-		runtimeDeploy:  deps.RuntimeDeploy,
-		runtimeErrors:  deps.RuntimeErrors,
-		mcp:            deps.MCP,
-		codexAuth:      deps.CodexAuth,
-		logger:         deps.Logger,
-	}
+	server := &Server{}
+	server.webhook = deps.Webhook
+	server.staff = deps.Staff
+	server.agentCallbacks = deps.AgentCallbacks
+	server.missionControl = deps.MissionControl
+	server.missionControlDomain = deps.MissionControlDomain
+	server.runStatus = deps.RunStatus
+	server.runtimeDeploy = deps.RuntimeDeploy
+	server.runtimeErrors = deps.RuntimeErrors
+	server.mcp = deps.MCP
+	server.codexAuth = deps.CodexAuth
+	server.logger = deps.Logger
+	return server
 }
 
 func (s *Server) IngestGitHubWebhook(ctx context.Context, req *controlplanev1.IngestGitHubWebhookRequest) (*controlplanev1.IngestGitHubWebhookResponse, error) {

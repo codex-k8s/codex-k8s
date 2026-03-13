@@ -132,3 +132,26 @@ approvals:
   - `git diff --check`
 - Runtime kubectl/log inspection и DB manual queries не выполнялись: scope issue ограничен domain/repository implementation, проверки закрыты unit/integration/lint path.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась, потому что `#370` реализует control-plane domain behavior без изменения канонического product baseline.
+
+## Актуализация по Issue #371 (`run:dev`, 2026-03-13)
+- Реализован worker stream `S9-E03` для Mission Control Dashboard:
+  - `control-plane` теперь поднимает Mission Control domain service и worker-facing coordinator `internal/domain/missioncontrolworker/service.go`, а также rollout env-gates `CODEXK8S_MISSION_CONTROL_{ENABLED,VOICE_ENABLED,WARMUP_VERIFIED,READ_PATH_ENABLED,REALTIME_ENABLED,WRITE_PATH_ENABLED}`;
+  - добавлен internal gRPC surface в `proto/codexk8s/controlplane/v1/controlplane.proto` и `internal/transport/grpc/server_mission_control_worker_methods.go` для warmup-project scan, warmup execution, pending command listing и typed command status transitions `queued -> pending_sync -> reconciled|failed`;
+  - `worker` получил Mission Control reconcile loop `internal/domain/worker/mission_control.go` с warmup throttling, bounded retry window и provider-safe execution path для `stage.next_step.execute` через существующий `ExecuteNextStepAction` RPC;
+  - warmup/backfill строит coarse active-set projection из существующих `agent_runs` + `flow_events`, заполняя `mission_control_entities`, `mission_control_relations` и `mission_control_timeline_entries` без переноса schema/domain ownership в `worker`;
+  - command state machine усилена idempotent-переходами для duplicate queue/pending_sync/reconciled/failed delivery path, чтобы повторная worker/provider delivery не создавала дублей статусов и side effects.
+- Зафиксированы guardrails:
+  - `worker` исполняет только execution/retry contour и использует control-plane-owned typed mutations;
+  - фактический provider-safe path в этой волне ограничен `stage.next_step.execute`, а unsupported Mission Control command kinds переводятся в typed `failed`;
+  - открытие read-path/realtime/write-path по-прежнему остаётся rollout-gate через `CODEXK8S_MISSION_CONTROL_WARMUP_VERIFIED` и связанные env-переключатели после warmup evidence.
+- Через Context7 подтверждён актуальный gRPC Go baseline для unary RPC/status handling (`/grpc/grpc-go`), после чего worker/control-plane internal transport был собран на typed proto contracts без ad-hoc transport payloads.
+- Проверки:
+  - `make gen-proto-go`
+  - `go test ./services/internal/control-plane/internal/domain/missioncontrol/... ./services/internal/control-plane/internal/transport/grpc ./services/internal/control-plane/internal/app ./services/jobs/worker/internal/domain/worker ./services/jobs/worker/internal/controlplane ./services/jobs/worker/internal/app`
+  - `go test ./services/internal/control-plane/internal/domain/missioncontrolworker`
+  - `go mod tidy`
+  - `make lint-go`
+  - `make dupl-go`
+  - `git diff --check`
+- Runtime kubectl/log inspection и ручные DB queries не выполнялись: scope issue закрыт compile/unit/lint evidence и traceability sync без отдельного cluster-debug шага.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась, потому что `#371` реализует worker/backfill/reconcile execution path на уже согласованном design baseline.

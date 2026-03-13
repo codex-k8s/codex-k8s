@@ -195,6 +195,170 @@ func (c *Client) ExpireNextInteraction(ctx context.Context) (workerdomain.Expire
 	}, nil
 }
 
+// ListMissionControlWarmupProjects returns projects that require Mission Control backfill.
+func (c *Client) ListMissionControlWarmupProjects(ctx context.Context, limit int) ([]workerdomain.MissionControlWarmupProject, error) {
+	resp, err := c.svc.ListMissionControlWarmupProjects(ctx, &controlplanev1.ListMissionControlWarmupProjectsRequest{
+		Limit: int32(maxInt64(0, int64(limit))),
+	})
+	if err != nil {
+		return nil, err
+	}
+	items := make([]workerdomain.MissionControlWarmupProject, 0, len(resp.GetItems()))
+	for _, item := range resp.GetItems() {
+		items = append(items, workerdomain.MissionControlWarmupProject{
+			ProjectID:          strings.TrimSpace(item.GetProjectId()),
+			ProjectName:        strings.TrimSpace(item.GetProjectName()),
+			RepositoryFullName: strings.TrimSpace(item.GetRepositoryFullName()),
+		})
+	}
+	return items, nil
+}
+
+// RunMissionControlWarmup executes one Mission Control warmup/backfill cycle.
+func (c *Client) RunMissionControlWarmup(ctx context.Context, projectID string, requestedBy string, correlationID string, forceRebuild bool) (workerdomain.MissionControlWarmupResult, error) {
+	resp, err := c.svc.RunMissionControlWarmup(ctx, &controlplanev1.RunMissionControlWarmupRequest{
+		ProjectId:     strings.TrimSpace(projectID),
+		RequestedBy:   strings.TrimSpace(requestedBy),
+		CorrelationId: strings.TrimSpace(correlationID),
+		ForceRebuild:  forceRebuild,
+	})
+	if err != nil {
+		return workerdomain.MissionControlWarmupResult{}, err
+	}
+	return workerdomain.MissionControlWarmupResult{
+		ProjectID:            strings.TrimSpace(resp.GetProjectId()),
+		EntityCount:          resp.GetEntityCount(),
+		RelationCount:        resp.GetRelationCount(),
+		TimelineEntryCount:   resp.GetTimelineEntryCount(),
+		CommandCount:         resp.GetCommandCount(),
+		MaxProjectionVersion: resp.GetMaxProjectionVersion(),
+		BackfilledEntities:   int(resp.GetBackfilledEntities()),
+		BackfilledRelations:  int(resp.GetBackfilledRelations()),
+		BackfilledTimelines:  int(resp.GetBackfilledTimelines()),
+	}, nil
+}
+
+// ListMissionControlPendingCommands returns Mission Control commands ready for worker execution.
+func (c *Client) ListMissionControlPendingCommands(ctx context.Context, limit int) ([]workerdomain.MissionControlPendingCommand, error) {
+	resp, err := c.svc.ListMissionControlPendingCommands(ctx, &controlplanev1.ListMissionControlPendingCommandsRequest{
+		Limit: int32(maxInt64(0, int64(limit))),
+	})
+	if err != nil {
+		return nil, err
+	}
+	items := make([]workerdomain.MissionControlPendingCommand, 0, len(resp.GetItems()))
+	for _, item := range resp.GetItems() {
+		command := workerdomain.MissionControlPendingCommand{
+			ProjectID:            strings.TrimSpace(item.GetProjectId()),
+			CommandID:            strings.TrimSpace(item.GetCommandId()),
+			CommandKind:          strings.TrimSpace(item.GetCommandKind()),
+			EffectiveCommandKind: strings.TrimSpace(item.GetEffectiveCommandKind()),
+			Status:               strings.TrimSpace(item.GetStatus()),
+			CorrelationID:        strings.TrimSpace(item.GetCorrelationId()),
+			BusinessIntentKey:    strings.TrimSpace(item.GetBusinessIntentKey()),
+			RepositoryFullName:   strings.TrimSpace(item.GetRepositoryFullName()),
+			RetryTargetCommandID: strings.TrimSpace(item.GetRetryTargetCommandId()),
+			RequestedAt:          tsOrZero(item.GetRequestedAt()),
+			UpdatedAt:            tsOrZero(item.GetUpdatedAt()),
+		}
+		if item.GetStageNextStep() != nil {
+			command.StageNextStep = &workerdomain.MissionControlStageNextStepPayload{
+				ThreadKind:  strings.TrimSpace(item.GetStageNextStep().GetThreadKind()),
+				ThreadNo:    int(item.GetStageNextStep().GetThreadNumber()),
+				TargetLabel: strings.TrimSpace(item.GetStageNextStep().GetTargetLabel()),
+			}
+		}
+		items = append(items, command)
+	}
+	return items, nil
+}
+
+// QueueMissionControlCommand marks one Mission Control command as queued.
+func (c *Client) QueueMissionControlCommand(ctx context.Context, params workerdomain.MissionControlQueueCommandParams) (workerdomain.MissionControlCommandState, error) {
+	resp, err := c.svc.QueueMissionControlCommand(ctx, &controlplanev1.QueueMissionControlCommandRequest{
+		ProjectId:     strings.TrimSpace(params.ProjectID),
+		CommandId:     strings.TrimSpace(params.CommandID),
+		StatusMessage: optionalString(strings.TrimSpace(params.StatusMessage)),
+		UpdatedAt:     optionalTimestamp(timePointer(params.UpdatedAt)),
+	})
+	if err != nil {
+		return workerdomain.MissionControlCommandState{}, err
+	}
+	return missionControlCommandStateFromProto(resp), nil
+}
+
+// MarkMissionControlCommandPendingSync marks one Mission Control command as pending_sync.
+func (c *Client) MarkMissionControlCommandPendingSync(ctx context.Context, params workerdomain.MissionControlPendingSyncParams) (workerdomain.MissionControlCommandState, error) {
+	resp, err := c.svc.MarkMissionControlCommandPendingSync(ctx, &controlplanev1.MarkMissionControlCommandPendingSyncRequest{
+		ProjectId:           strings.TrimSpace(params.ProjectID),
+		CommandId:           strings.TrimSpace(params.CommandID),
+		ProviderDeliveryIds: params.ProviderDeliveryIDs,
+		StatusMessage:       optionalString(strings.TrimSpace(params.StatusMessage)),
+		UpdatedAt:           optionalTimestamp(timePointer(params.UpdatedAt)),
+	})
+	if err != nil {
+		return workerdomain.MissionControlCommandState{}, err
+	}
+	return missionControlCommandStateFromProto(resp), nil
+}
+
+// MarkMissionControlCommandReconciled marks one Mission Control command as reconciled.
+func (c *Client) MarkMissionControlCommandReconciled(ctx context.Context, params workerdomain.MissionControlReconciledParams) (workerdomain.MissionControlCommandState, error) {
+	resp, err := c.svc.MarkMissionControlCommandReconciled(ctx, &controlplanev1.MarkMissionControlCommandReconciledRequest{
+		ProjectId:           strings.TrimSpace(params.ProjectID),
+		CommandId:           strings.TrimSpace(params.CommandID),
+		ProviderDeliveryIds: params.ProviderDeliveryIDs,
+		StatusMessage:       optionalString(strings.TrimSpace(params.StatusMessage)),
+		UpdatedAt:           optionalTimestamp(timePointer(params.UpdatedAt)),
+		ReconciledAt:        optionalTimestamp(timePointer(params.ReconciledAt)),
+	})
+	if err != nil {
+		return workerdomain.MissionControlCommandState{}, err
+	}
+	return missionControlCommandStateFromProto(resp), nil
+}
+
+// MarkMissionControlCommandFailed marks one Mission Control command as failed.
+func (c *Client) MarkMissionControlCommandFailed(ctx context.Context, params workerdomain.MissionControlFailedParams) (workerdomain.MissionControlCommandState, error) {
+	resp, err := c.svc.MarkMissionControlCommandFailed(ctx, &controlplanev1.MarkMissionControlCommandFailedRequest{
+		ProjectId:           strings.TrimSpace(params.ProjectID),
+		CommandId:           strings.TrimSpace(params.CommandID),
+		FailureReason:       strings.TrimSpace(params.FailureReason),
+		ProviderDeliveryIds: params.ProviderDeliveryIDs,
+		StatusMessage:       optionalString(strings.TrimSpace(params.StatusMessage)),
+		UpdatedAt:           optionalTimestamp(timePointer(params.UpdatedAt)),
+	})
+	if err != nil {
+		return workerdomain.MissionControlCommandState{}, err
+	}
+	return missionControlCommandStateFromProto(resp), nil
+}
+
+// ExecuteNextStepAction applies one idempotent label transition on GitHub.
+func (c *Client) ExecuteNextStepAction(ctx context.Context, params workerdomain.NextStepExecuteParams) error {
+	req := &controlplanev1.NextStepActionRequest{
+		Principal: &controlplanev1.Principal{
+			UserId:          "system:mission-control-worker",
+			IsPlatformAdmin: true,
+		},
+		RepositoryFullName: strings.TrimSpace(params.RepositoryFullName),
+		TargetLabel:        strings.TrimSpace(params.TargetLabel),
+	}
+	switch strings.TrimSpace(strings.ToLower(params.ThreadKind)) {
+	case "pull_request", "pr":
+		req.ActionKind = "pull_request_label_add"
+		req.PullRequestNumber = optionalInt32(params.ThreadNo)
+	default:
+		req.ActionKind = "issue_stage_transition"
+		req.IssueNumber = optionalInt32(params.ThreadNo)
+	}
+	_, err := c.svc.ExecuteNextStepAction(ctx, req)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // UpsertRunStatusComment updates one run status comment in issue thread.
 func (c *Client) UpsertRunStatusComment(ctx context.Context, params workerdomain.RunStatusCommentParams) (workerdomain.RunStatusCommentResult, error) {
 	resp, err := c.svc.UpsertRunStatusComment(ctx, &controlplanev1.UpsertRunStatusCommentRequest{
@@ -233,6 +397,52 @@ func optionalTimestamp(value *time.Time) *timestamppb.Timestamp {
 		return nil
 	}
 	return timestamppb.New(value.UTC())
+}
+
+func optionalInt32(value int) *int32 {
+	if value <= 0 {
+		return nil
+	}
+	result := int32(value)
+	return &result
+}
+
+func timePointer(value time.Time) *time.Time {
+	if value.IsZero() {
+		return nil
+	}
+	resolved := value.UTC()
+	return &resolved
+}
+
+func tsOrZero(value *timestamppb.Timestamp) time.Time {
+	if value == nil {
+		return time.Time{}
+	}
+	return value.AsTime().UTC()
+}
+
+func missionControlCommandStateFromProto(resp *controlplanev1.MissionControlCommandState) workerdomain.MissionControlCommandState {
+	if resp == nil {
+		return workerdomain.MissionControlCommandState{}
+	}
+	var reconciledAt *time.Time
+	if resp.GetReconciledAt() != nil {
+		value := resp.GetReconciledAt().AsTime().UTC()
+		reconciledAt = &value
+	}
+	return workerdomain.MissionControlCommandState{
+		ProjectID:           strings.TrimSpace(resp.GetProjectId()),
+		CommandID:           strings.TrimSpace(resp.GetCommandId()),
+		CommandKind:         strings.TrimSpace(resp.GetCommandKind()),
+		Status:              strings.TrimSpace(resp.GetStatus()),
+		FailureReason:       strings.TrimSpace(resp.GetFailureReason()),
+		CorrelationID:       strings.TrimSpace(resp.GetCorrelationId()),
+		ProviderDeliveryIDs: resp.GetProviderDeliveryIds(),
+		StatusMessage:       strings.TrimSpace(resp.GetStatusMessage()),
+		UpdatedAt:           tsOrZero(resp.GetUpdatedAt()),
+		ReconciledAt:        reconciledAt,
+	}
 }
 
 func maxInt64(a int64, b int64) int64 {

@@ -47,6 +47,18 @@ type Config struct {
 	InteractionRetryMaxInterval time.Duration
 	// InteractionMaxAttempts caps total dispatch attempts before marking delivery exhausted.
 	InteractionMaxAttempts int
+	// MissionControlEnabled enables Mission Control warmup and command reconciliation loop.
+	MissionControlEnabled bool
+	// MissionControlWarmupInterval throttles per-project warmup execution.
+	MissionControlWarmupInterval time.Duration
+	// MissionControlWarmupProjectLimit limits warmup candidates inspected per tick.
+	MissionControlWarmupProjectLimit int
+	// MissionControlPendingCommandLimit limits Mission Control commands processed per tick.
+	MissionControlPendingCommandLimit int
+	// MissionControlRetryMaxAttempts bounds provider mutation retries per command.
+	MissionControlRetryMaxAttempts int
+	// MissionControlRetryBaseInterval defines the first retry delay for Mission Control provider mutations.
+	MissionControlRetryBaseInterval time.Duration
 
 	// ProjectLearningModeDefault is applied when the worker auto-creates projects from webhook payloads.
 	ProjectLearningModeDefault bool
@@ -138,6 +150,8 @@ type Dependencies struct {
 	RunStatus RunStatusNotifier
 	// Interactions claims and completes built-in interaction delivery lifecycle through control-plane.
 	Interactions InteractionLifecycleClient
+	// MissionControl coordinates Mission Control warmup and command execution through control-plane.
+	MissionControl MissionControlClient
 	// InteractionDispatcher sends interaction envelopes to the current adapter implementation.
 	InteractionDispatcher InteractionDispatcher
 	// Logger records worker diagnostics.
@@ -148,20 +162,22 @@ type Dependencies struct {
 
 // Service orchestrates pending runs to Kubernetes Jobs and final statuses.
 type Service struct {
-	cfg          Config
-	runs         runqueuerepo.Repository
-	events       floweventrepo.Repository
-	feedback     learningfeedbackrepo.Repository
-	launcher     Launcher
-	deployer     RuntimeEnvironmentPreparer
-	mcpTokens    MCPTokenIssuer
-	runStatus    RunStatusNotifier
-	interactions InteractionLifecycleClient
-	dispatcher   InteractionDispatcher
-	logger       *slog.Logger
-	labels       runAgentLabelCatalog
-	image        JobImageSelectionPolicy
-	now          func() time.Time
+	cfg                      Config
+	runs                     runqueuerepo.Repository
+	events                   floweventrepo.Repository
+	feedback                 learningfeedbackrepo.Repository
+	launcher                 Launcher
+	deployer                 RuntimeEnvironmentPreparer
+	mcpTokens                MCPTokenIssuer
+	runStatus                RunStatusNotifier
+	interactions             InteractionLifecycleClient
+	missionCtl               MissionControlClient
+	dispatcher               InteractionDispatcher
+	logger                   *slog.Logger
+	labels                   runAgentLabelCatalog
+	image                    JobImageSelectionPolicy
+	lastMissionControlWarmup map[string]time.Time
+	now                      func() time.Time
 }
 
 // JobImageAvailabilityChecker checks run Job image existence.
@@ -223,6 +239,21 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	}
 	if cfg.InteractionMaxAttempts <= 0 {
 		cfg.InteractionMaxAttempts = 3
+	}
+	if cfg.MissionControlWarmupInterval <= 0 {
+		cfg.MissionControlWarmupInterval = 15 * time.Minute
+	}
+	if cfg.MissionControlWarmupProjectLimit <= 0 {
+		cfg.MissionControlWarmupProjectLimit = 20
+	}
+	if cfg.MissionControlPendingCommandLimit <= 0 {
+		cfg.MissionControlPendingCommandLimit = 20
+	}
+	if cfg.MissionControlRetryMaxAttempts <= 0 {
+		cfg.MissionControlRetryMaxAttempts = 3
+	}
+	if cfg.MissionControlRetryBaseInterval <= 0 {
+		cfg.MissionControlRetryBaseInterval = 2 * time.Second
 	}
 	if cfg.WorkerID == "" {
 		cfg.WorkerID = defaultWorkerID
@@ -315,6 +346,9 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	if deps.Interactions == nil {
 		deps.Interactions = noopInteractionLifecycleClient{}
 	}
+	if deps.MissionControl == nil {
+		deps.MissionControl = noopMissionControlClient{}
+	}
 	if deps.InteractionDispatcher == nil {
 		deps.InteractionDispatcher = noopInteractionDispatcher{}
 	}
@@ -329,6 +363,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 		mcpTokens:    deps.MCPTokenIssuer,
 		runStatus:    deps.RunStatus,
 		interactions: deps.Interactions,
+		missionCtl:   deps.MissionControl,
 		dispatcher:   deps.InteractionDispatcher,
 		logger:       deps.Logger,
 		labels:       labelCatalog,
@@ -337,6 +372,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 			Fallback: cfg.JobImageFallback,
 			Checker:  deps.JobImageChecker,
 		},
-		now: time.Now,
+		lastMissionControlWarmup: make(map[string]time.Time),
+		now:                      time.Now,
 	}
 }

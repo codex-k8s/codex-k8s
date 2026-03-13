@@ -35,6 +35,18 @@ type Config struct {
 	RuntimePrepareRetryTimeout string `env:"CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_TIMEOUT" envDefault:"30m"`
 	// RuntimePrepareRetryInterval defines delay between retryable runtime deploy preparation attempts.
 	RuntimePrepareRetryInterval string `env:"CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_INTERVAL" envDefault:"3s"`
+	// MissionControlEnabled enables Mission Control warmup and command execution loop.
+	MissionControlEnabled bool `env:"CODEXK8S_MISSION_CONTROL_ENABLED" envDefault:"false"`
+	// MissionControlWarmupInterval throttles per-project Mission Control warmup execution.
+	MissionControlWarmupInterval string `env:"CODEXK8S_WORKER_MISSION_CONTROL_WARMUP_INTERVAL" envDefault:"15m"`
+	// MissionControlWarmupProjectLimit limits Mission Control warmup candidates per tick.
+	MissionControlWarmupProjectLimit int `env:"CODEXK8S_WORKER_MISSION_CONTROL_WARMUP_PROJECT_LIMIT" envDefault:"20"`
+	// MissionControlPendingCommandLimit limits Mission Control commands handled per tick.
+	MissionControlPendingCommandLimit int `env:"CODEXK8S_WORKER_MISSION_CONTROL_PENDING_COMMAND_LIMIT" envDefault:"20"`
+	// MissionControlRetryMaxAttempts bounds provider mutation retries per command.
+	MissionControlRetryMaxAttempts int `env:"CODEXK8S_WORKER_MISSION_CONTROL_RETRY_MAX_ATTEMPTS" envDefault:"3"`
+	// MissionControlRetryBaseInterval defines the first retry delay for Mission Control commands.
+	MissionControlRetryBaseInterval string `env:"CODEXK8S_WORKER_MISSION_CONTROL_RETRY_BASE_INTERVAL" envDefault:"2s"`
 	// ServicesConfigPath points to services.yaml for runtime policy (mode/namespace TTL).
 	ServicesConfigPath string `env:"CODEXK8S_SERVICES_CONFIG_PATH" envDefault:"services.yaml"`
 	// ServicesConfigEnv selects render environment for services.yaml policy.

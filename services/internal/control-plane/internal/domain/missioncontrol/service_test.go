@@ -2,6 +2,7 @@ package missioncontrol
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -247,6 +248,122 @@ func TestSubmitCommandRejectsFormalizeTargetMismatch(t *testing.T) {
 	}
 }
 
+func TestQueueCommandIsIdempotentAfterPendingSync(t *testing.T) {
+	t.Parallel()
+
+	svc, repo, _, now := newTestService(t, valuetypes.MissionControlRolloutState{
+		CoreFeatureEnabled: true,
+		SchemaReady:        true,
+		DomainReady:        true,
+		WarmupVerified:     true,
+		ReadPathEnabled:    true,
+		WritePathEnabled:   true,
+	})
+	command := seedCommandForTransitionTest(t, repo, "proj-1", now)
+	if _, err := svc.MarkCommandPendingSync(context.Background(), CommandSyncProgressParams{
+		ProjectID:           "proj-1",
+		CommandID:           command.ID,
+		ProviderDeliveryIDs: []string{"delivery-1"},
+		UpdatedAt:           now.Add(time.Minute),
+	}); err != nil {
+		t.Fatalf("MarkCommandPendingSync() error = %v", err)
+	}
+
+	got, err := svc.QueueCommand(context.Background(), CommandQueueParams{
+		ProjectID: "proj-1",
+		CommandID: command.ID,
+		UpdatedAt: now.Add(2 * time.Minute),
+	})
+	if err != nil {
+		t.Fatalf("QueueCommand() error = %v", err)
+	}
+	if got.Status != enumtypes.MissionControlCommandStatusPendingSync {
+		t.Fatalf("status = %s, want pending_sync", got.Status)
+	}
+}
+
+func TestMarkCommandReconciledIsIdempotentForDuplicateDelivery(t *testing.T) {
+	t.Parallel()
+
+	svc, repo, _, now := newTestService(t, valuetypes.MissionControlRolloutState{
+		CoreFeatureEnabled: true,
+		SchemaReady:        true,
+		DomainReady:        true,
+		WarmupVerified:     true,
+		ReadPathEnabled:    true,
+		WritePathEnabled:   true,
+	})
+	command := seedCommandForTransitionTest(t, repo, "proj-1", now)
+	if _, err := svc.MarkCommandPendingSync(context.Background(), CommandSyncProgressParams{
+		ProjectID:           "proj-1",
+		CommandID:           command.ID,
+		ProviderDeliveryIDs: []string{"delivery-1"},
+		UpdatedAt:           now.Add(time.Minute),
+	}); err != nil {
+		t.Fatalf("MarkCommandPendingSync() error = %v", err)
+	}
+	if _, err := svc.MarkCommandReconciled(context.Background(), CommandReconcileParams{
+		ProjectID:           "proj-1",
+		CommandID:           command.ID,
+		ProviderDeliveryIDs: []string{"delivery-1"},
+		UpdatedAt:           now.Add(2 * time.Minute),
+		ReconciledAt:        now.Add(2 * time.Minute),
+	}); err != nil {
+		t.Fatalf("MarkCommandReconciled() error = %v", err)
+	}
+
+	got, err := svc.MarkCommandReconciled(context.Background(), CommandReconcileParams{
+		ProjectID:           "proj-1",
+		CommandID:           command.ID,
+		ProviderDeliveryIDs: []string{"delivery-1"},
+		UpdatedAt:           now.Add(3 * time.Minute),
+		ReconciledAt:        now.Add(3 * time.Minute),
+	})
+	if err != nil {
+		t.Fatalf("duplicate MarkCommandReconciled() error = %v", err)
+	}
+	if got.Status != enumtypes.MissionControlCommandStatusReconciled {
+		t.Fatalf("status = %s, want reconciled", got.Status)
+	}
+}
+
+func TestMarkCommandFailedIsIdempotentForDuplicateDelivery(t *testing.T) {
+	t.Parallel()
+
+	svc, repo, _, now := newTestService(t, valuetypes.MissionControlRolloutState{
+		CoreFeatureEnabled: true,
+		SchemaReady:        true,
+		DomainReady:        true,
+		WarmupVerified:     true,
+		ReadPathEnabled:    true,
+		WritePathEnabled:   true,
+	})
+	command := seedCommandForTransitionTest(t, repo, "proj-1", now)
+	if _, err := svc.MarkCommandFailed(context.Background(), CommandFailureParams{
+		ProjectID:           "proj-1",
+		CommandID:           command.ID,
+		FailureReason:       enumtypes.MissionControlCommandFailureReasonProviderError,
+		ProviderDeliveryIDs: []string{"delivery-1"},
+		UpdatedAt:           now.Add(time.Minute),
+	}); err != nil {
+		t.Fatalf("MarkCommandFailed() error = %v", err)
+	}
+
+	got, err := svc.MarkCommandFailed(context.Background(), CommandFailureParams{
+		ProjectID:           "proj-1",
+		CommandID:           command.ID,
+		FailureReason:       enumtypes.MissionControlCommandFailureReasonProviderError,
+		ProviderDeliveryIDs: []string{"delivery-1"},
+		UpdatedAt:           now.Add(2 * time.Minute),
+	})
+	if err != nil {
+		t.Fatalf("duplicate MarkCommandFailed() error = %v", err)
+	}
+	if got.Status != enumtypes.MissionControlCommandStatusFailed {
+		t.Fatalf("status = %s, want failed", got.Status)
+	}
+}
+
 func TestSubmitCommandDedupesBusinessIntent(t *testing.T) {
 	t.Parallel()
 
@@ -365,14 +482,16 @@ func TestCommandLifecycleTransitions(t *testing.T) {
 		t.Fatal("reconciled_at must be set")
 	}
 
-	_, err = svc.QueueCommand(context.Background(), CommandQueueParams{
+	queuedAgain, err := svc.QueueCommand(context.Background(), CommandQueueParams{
 		ProjectID: "proj-1",
 		CommandID: admission.Command.ID,
 		UpdatedAt: now.Add(4 * time.Minute),
 	})
-	var precondition errs.FailedPrecondition
-	if !errors.As(err, &precondition) {
-		t.Fatalf("expected failed precondition on invalid transition, got %v", err)
+	if err != nil {
+		t.Fatalf("QueueCommand() after reconcile error = %v", err)
+	}
+	if got, want := queuedAgain.Status, enumtypes.MissionControlCommandStatusReconciled; got != want {
+		t.Fatalf("queue after reconcile status = %s, want %s", got, want)
 	}
 }
 
@@ -896,6 +1015,26 @@ func (r *inMemoryRepository) ListCommands(_ context.Context, filter missioncontr
 	return items, nil
 }
 
+func (r *inMemoryRepository) ListCommandsAll(_ context.Context, filter missioncontrolrepo.GlobalCommandListFilter) ([]Command, error) {
+	items := make([]Command, 0, len(r.commandsByID))
+	for _, command := range r.commandsByID {
+		if len(filter.Statuses) > 0 && !containsCommandStatus(filter.Statuses, command.Status) {
+			continue
+		}
+		items = append(items, command)
+	}
+	sort.Slice(items, func(i, j int) bool {
+		if !items[i].UpdatedAt.Equal(items[j].UpdatedAt) {
+			return items[i].UpdatedAt.After(items[j].UpdatedAt)
+		}
+		return items[i].ID > items[j].ID
+	})
+	if filter.Limit > 0 && len(items) > filter.Limit {
+		items = items[:filter.Limit]
+	}
+	return items, nil
+}
+
 func (r *inMemoryRepository) UpdateCommandStatus(_ context.Context, params missioncontrolrepo.UpdateCommandStatusParams) (Command, bool, error) {
 	command, found := r.commandsByID[strings.TrimSpace(params.CommandID)]
 	if !found || command.ProjectID != strings.TrimSpace(params.ProjectID) {
@@ -987,6 +1126,45 @@ func newTestService(t *testing.T, rolloutState valuetypes.MissionControlRolloutS
 	now := time.Date(2026, time.March, 13, 12, 0, 0, 0, time.UTC)
 	service.now = func() time.Time { return now }
 	return service, repo, events, now
+}
+
+func seedCommandForTransitionTest(t *testing.T, repo *inMemoryRepository, projectID string, now time.Time) Command {
+	t.Helper()
+
+	command, err := repo.CreateCommand(context.Background(), missioncontrolrepo.CreateCommandParams{
+		ProjectID:         projectID,
+		CommandKind:       enumtypes.MissionControlCommandKindStageNextStep,
+		ActorID:           "owner",
+		BusinessIntentKey: "intent-transition",
+		CorrelationID:     "corr-transition",
+		Status:            enumtypes.MissionControlCommandStatusAccepted,
+		ApprovalState:     enumtypes.MissionControlApprovalStateNotRequired,
+		PayloadJSON: mustMarshalPayload(t, valuetypes.MissionControlCommandPayload{
+			StageNextStep: &valuetypes.MissionControlStageNextStepExecutePayload{
+				ThreadKind:          "issue",
+				ThreadNumber:        371,
+				TargetLabel:         "run:qa",
+				ApprovalRequirement: enumtypes.MissionControlApprovalRequirementNone,
+			},
+		}),
+		ResultPayloadJSON: mustMarshalPayload(t, valuetypes.MissionControlCommandResultPayload{}),
+		RequestedAt:       now,
+		UpdatedAt:         now,
+	})
+	if err != nil {
+		t.Fatalf("CreateCommand() error = %v", err)
+	}
+	return command
+}
+
+func mustMarshalPayload(t *testing.T, value any) []byte {
+	t.Helper()
+
+	raw, err := json.Marshal(value)
+	if err != nil {
+		t.Fatalf("json.Marshal() error = %v", err)
+	}
+	return raw
 }
 
 func entityKey(projectID string, entityKind enumtypes.MissionControlEntityKind, entityExternalKey string) string {

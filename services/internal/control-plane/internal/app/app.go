@@ -29,10 +29,13 @@ import (
 	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
 	codexauthdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/codexauth"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
+	missioncontroldomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/missioncontrol"
+	missioncontrolworkerdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/missioncontrolworker"
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
 	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
 	runtimeerrordomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimeerror"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
+	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
 	agentrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agent"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentrun"
@@ -41,6 +44,7 @@ import (
 	interactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/interactionrequest"
 	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/learningfeedback"
 	mcpactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/mcpactionrequest"
+	missioncontrolrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/missioncontrol"
 	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/platformtoken"
 	projectrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/project"
 	projectdatabaserepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/projectdatabase"
@@ -95,6 +99,7 @@ func Run() error {
 	platformTokens := platformtokenrepo.NewRepository(pgxPool)
 	projectTokens := projecttokenrepo.NewRepository(pgxPool)
 	mcpActionRequests := mcpactionrequestrepo.NewRepository(pgxPool)
+	missionControlProjection := missioncontrolrepo.NewRepository(pgxPool)
 	interactionRequests := interactionrequestrepo.NewRepository(pgxPool)
 	projectDatabases := projectdatabaserepo.NewRepository(pgxPool)
 	runtimeDeployTasks := runtimedeploytaskrepo.NewRepository(pgxPool)
@@ -192,6 +197,42 @@ func Run() error {
 	})
 	if err != nil {
 		return fmt.Errorf("init runstatus domain service: %w", err)
+	}
+	missionControlService, err := missioncontroldomain.NewService(missioncontroldomain.Config{
+		RolloutState: valuetypes.MissionControlRolloutState{
+			CoreFeatureEnabled:  cfg.MissionControlEnabled,
+			VoiceFeatureEnabled: cfg.MissionControlVoiceEnabled,
+			SchemaReady:         cfg.MissionControlEnabled,
+			DomainReady:         cfg.MissionControlEnabled,
+			WarmupVerified:      cfg.MissionControlWarmupVerified,
+			ReadPathEnabled:     cfg.MissionControlReadPathEnabled,
+			RealtimeEnabled:     cfg.MissionControlRealtimeEnabled,
+			WritePathEnabled:    cfg.MissionControlWritePathEnabled,
+		},
+		DefaultTimelineLimit: 100,
+	}, missioncontroldomain.Dependencies{
+		Repository: missionControlProjection,
+		FlowEvents: flowEvents,
+	})
+	if err != nil {
+		return fmt.Errorf("init mission control domain service: %w", err)
+	}
+	missionControlWorkerService, err := missioncontrolworkerdomain.NewService(missioncontrolworkerdomain.Config{
+		ProjectLimit:        50,
+		RunLimit:            500,
+		TimelineEventLimit:  100,
+		StaleAfter:          24 * time.Hour,
+		DefaultTimelineText: "Platform event",
+	}, missioncontrolworkerdomain.Dependencies{
+		Projects:       projects,
+		Repositories:   repos,
+		AgentRuns:      agentRuns,
+		StaffRuns:      runs,
+		MissionControl: missionControlService,
+		Projection:     missionControlProjection,
+	})
+	if err != nil {
+		return fmt.Errorf("init mission control worker domain service: %w", err)
 	}
 	runtimeDeployRolloutTimeout, err := time.ParseDuration(cfg.RuntimeDeployRolloutTimeout)
 	if err != nil {
@@ -399,15 +440,17 @@ func Run() error {
 
 	grpcServer := grpc.NewServer()
 	controlplanev1.RegisterControlPlaneServiceServer(grpcServer, grpctransport.NewServer(grpctransport.Dependencies{
-		Webhook:        webhookService,
-		Staff:          staffService,
-		AgentCallbacks: agentCallbackService,
-		RunStatus:      runStatusService,
-		RuntimeDeploy:  runtimeDeployService,
-		RuntimeErrors:  runtimeErrorService,
-		MCP:            mcpService,
-		CodexAuth:      codexAuthService,
-		Logger:         logger,
+		Webhook:              webhookService,
+		Staff:                staffService,
+		AgentCallbacks:       agentCallbackService,
+		MissionControl:       missionControlWorkerService,
+		MissionControlDomain: missionControlService,
+		RunStatus:            runStatusService,
+		RuntimeDeploy:        runtimeDeployService,
+		RuntimeErrors:        runtimeErrorService,
+		MCP:                  mcpService,
+		CodexAuth:            codexAuthService,
+		Logger:               logger,
 	}))
 
 	mcpHandler := mcptransport.NewHandler(mcpService, logger)

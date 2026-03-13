@@ -166,6 +166,12 @@ type MissionControlCommandListFilter struct {
 	Limit     int
 }
 
+// MissionControlGlobalCommandListFilter defines one global command lookup filter for worker-owned execution.
+type MissionControlGlobalCommandListFilter struct {
+	Statuses []enumtypes.MissionControlCommandStatus
+	Limit    int
+}
+
 // MissionControlWarmupRequest defines the owner-owned entry-point contract for worker warmup/backfill.
 type MissionControlWarmupRequest struct {
 	ProjectID     string

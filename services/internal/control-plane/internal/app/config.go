@@ -120,6 +120,18 @@ type Config struct {
 	MCPTokenTTL string `env:"CODEXK8S_MCP_TOKEN_TTL" envDefault:"24h"`
 	// ControlPlaneMCPBaseURL is effective MCP endpoint included in prompt context and run env.
 	ControlPlaneMCPBaseURL string `env:"CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" envDefault:"http://codex-k8s-control-plane:8081/mcp"`
+	// MissionControlEnabled gates all Mission Control domain and worker-facing internal APIs.
+	MissionControlEnabled bool `env:"CODEXK8S_MISSION_CONTROL_ENABLED" envDefault:"false"`
+	// MissionControlVoiceEnabled gates optional Mission Control voice flows.
+	MissionControlVoiceEnabled bool `env:"CODEXK8S_MISSION_CONTROL_VOICE_ENABLED" envDefault:"false"`
+	// MissionControlWarmupVerified explicitly opens read/write gates after worker warmup evidence.
+	MissionControlWarmupVerified bool `env:"CODEXK8S_MISSION_CONTROL_WARMUP_VERIFIED" envDefault:"false"`
+	// MissionControlReadPathEnabled enables Mission Control read-side APIs once warmup is verified.
+	MissionControlReadPathEnabled bool `env:"CODEXK8S_MISSION_CONTROL_READ_PATH_ENABLED" envDefault:"false"`
+	// MissionControlRealtimeEnabled enables Mission Control realtime APIs.
+	MissionControlRealtimeEnabled bool `env:"CODEXK8S_MISSION_CONTROL_REALTIME_ENABLED" envDefault:"false"`
+	// MissionControlWritePathEnabled enables Mission Control write-side APIs.
+	MissionControlWritePathEnabled bool `env:"CODEXK8S_MISSION_CONTROL_WRITE_PATH_ENABLED" envDefault:"false"`
 	// RunHeavyFieldsRetentionDays controls retention for heavy JSON payload fields in run/task tables.
 	RunHeavyFieldsRetentionDays int `env:"CODEXK8S_RUN_HEAVY_FIELDS_RETENTION_DAYS" envDefault:"7"`
 	// RunAgentLogsRetentionDays is kept for legacy env compatibility as fallback retention source.

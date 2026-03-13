@@ -18,40 +18,56 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var (
-	//go:embed sql/upsert_entity.sql
-	queryUpsertEntity string
-	//go:embed sql/update_entity_projection.sql
-	queryUpdateEntityProjection string
-	//go:embed sql/get_entity_by_public_id.sql
-	queryGetEntityByPublicID string
-	//go:embed sql/get_entity_by_id.sql
-	queryGetEntityByID string
-	//go:embed sql/list_entities.sql
-	queryListEntities string
-	//go:embed sql/delete_relations_for_source.sql
-	queryDeleteRelationsForSource string
-	//go:embed sql/insert_relation.sql
-	queryInsertRelation string
-	//go:embed sql/list_relations_for_entity.sql
-	queryListRelationsForEntity string
-	//go:embed sql/upsert_timeline_entry.sql
-	queryUpsertTimelineEntry string
-	//go:embed sql/list_timeline_entries.sql
-	queryListTimelineEntries string
-	//go:embed sql/insert_command.sql
-	queryInsertCommand string
-	//go:embed sql/get_command_by_id.sql
-	queryGetCommandByID string
-	//go:embed sql/get_command_by_business_intent.sql
-	queryGetCommandByBusinessIntent string
-	//go:embed sql/list_commands.sql
-	queryListCommands string
-	//go:embed sql/update_command_status.sql
-	queryUpdateCommandStatus string
-	//go:embed sql/get_warmup_summary.sql
-	queryGetWarmupSummary string
-)
+//go:embed sql/upsert_entity.sql
+var queryUpsertEntity string
+
+//go:embed sql/update_entity_projection.sql
+var queryUpdateEntityProjection string
+
+//go:embed sql/get_entity_by_public_id.sql
+var queryGetEntityByPublicID string
+
+//go:embed sql/get_entity_by_id.sql
+var queryGetEntityByID string
+
+//go:embed sql/list_entities.sql
+var queryListEntities string
+
+//go:embed sql/delete_relations_for_source.sql
+var queryDeleteRelationsForSource string
+
+//go:embed sql/insert_relation.sql
+var queryInsertRelation string
+
+//go:embed sql/list_relations_for_entity.sql
+var queryListRelationsForEntity string
+
+//go:embed sql/upsert_timeline_entry.sql
+var queryUpsertTimelineEntry string
+
+//go:embed sql/list_timeline_entries.sql
+var queryListTimelineEntries string
+
+//go:embed sql/insert_command.sql
+var queryInsertCommand string
+
+//go:embed sql/get_command_by_id.sql
+var queryGetCommandByID string
+
+//go:embed sql/get_command_by_business_intent.sql
+var queryGetCommandByBusinessIntent string
+
+//go:embed sql/list_commands.sql
+var queryListCommands string
+
+//go:embed sql/list_commands_all.sql
+var queryListCommandsAll string
+
+//go:embed sql/update_command_status.sql
+var queryUpdateCommandStatus string
+
+//go:embed sql/get_warmup_summary.sql
+var queryGetWarmupSummary string
 
 // Repository persists Mission Control foundation state in PostgreSQL.
 type Repository struct {
@@ -307,6 +323,29 @@ func (r *Repository) ListTimelineEntries(ctx context.Context, filter domainrepo.
 	return out, nil
 }
 
+// ListCommandsAll returns mission control commands across projects for worker-owned execution scans.
+func (r *Repository) ListCommandsAll(ctx context.Context, filter domainrepo.GlobalCommandListFilter) ([]domainrepo.Command, error) {
+	normalized := normalizeGlobalCommandListFilter(filter)
+	rows, err := r.db.Query(
+		ctx,
+		queryListCommandsAll,
+		commandStatusesToStrings(normalized.Statuses),
+		normalized.Limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list mission control commands across projects: %w", err)
+	}
+	items, err := pgx.CollectRows(rows, pgx.RowToStructByName[dbmodel.CommandRow])
+	if err != nil {
+		return nil, fmt.Errorf("collect mission control commands across projects: %w", err)
+	}
+	out := make([]domainrepo.Command, 0, len(items))
+	for _, item := range items {
+		out = append(out, fromCommandRow(item))
+	}
+	return out, nil
+}
+
 // CreateCommand inserts one command-ledger row.
 func (r *Repository) CreateCommand(ctx context.Context, params domainrepo.CreateCommandParams) (domainrepo.Command, error) {
 	normalized := normalizeCommandCreateParams(params)
@@ -555,6 +594,12 @@ func normalizeCommandCreateParams(params domainrepo.CreateCommandParams) domainr
 func normalizeCommandListFilter(filter domainrepo.CommandListFilter) domainrepo.CommandListFilter {
 	normalized := filter
 	normalized.ProjectID = strings.TrimSpace(normalized.ProjectID)
+	normalized.Limit = normalizeLimit(normalized.Limit)
+	return normalized
+}
+
+func normalizeGlobalCommandListFilter(filter domainrepo.GlobalCommandListFilter) domainrepo.GlobalCommandListFilter {
+	normalized := filter
 	normalized.Limit = normalizeLimit(normalized.Limit)
 	return normalized
 }

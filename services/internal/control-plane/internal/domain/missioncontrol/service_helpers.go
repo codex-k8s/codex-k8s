@@ -501,3 +501,58 @@ func normalizeEventEntityRefs(target *missioncontrolrepo.Entity, refs []valuetyp
 func normalizeProviderDeliveryIDs(values []string) []string {
 	return normalizeStringSlice(values)
 }
+
+func commandAlreadyQueued(status enumtypes.MissionControlCommandStatus) bool {
+	return status == enumtypes.MissionControlCommandStatusQueued ||
+		status == enumtypes.MissionControlCommandStatusPendingSync ||
+		status == enumtypes.MissionControlCommandStatusReconciled
+}
+
+func duplicateDeliveryTransition(
+	command missioncontrolrepo.Command,
+	target enumtypes.MissionControlCommandStatus,
+	providerDeliveryIDs []string,
+	failureReason enumtypes.MissionControlCommandFailureReason,
+) bool {
+	switch target {
+	case enumtypes.MissionControlCommandStatusPendingSync, enumtypes.MissionControlCommandStatusReconciled:
+		if command.Status != target && !(target == enumtypes.MissionControlCommandStatusPendingSync && command.Status == enumtypes.MissionControlCommandStatusReconciled) {
+			return false
+		}
+		return commandContainsProviderDeliveries(command, providerDeliveryIDs)
+	case enumtypes.MissionControlCommandStatusFailed:
+		if command.Status != enumtypes.MissionControlCommandStatusFailed {
+			return false
+		}
+		if failureReason != "" && command.FailureReason != failureReason {
+			return false
+		}
+		return commandContainsProviderDeliveries(command, providerDeliveryIDs)
+	default:
+		return false
+	}
+}
+
+func commandContainsProviderDeliveries(command missioncontrolrepo.Command, providerDeliveryIDs []string) bool {
+	requested := normalizeProviderDeliveryIDs(providerDeliveryIDs)
+	if len(requested) == 0 {
+		return true
+	}
+	current, err := decodeCommandResultPayload(command.ResultPayloadJSON)
+	if err != nil {
+		return false
+	}
+	if len(current.ProviderDeliveryIDs) == 0 {
+		return false
+	}
+	currentSet := make(map[string]struct{}, len(current.ProviderDeliveryIDs))
+	for _, deliveryID := range current.ProviderDeliveryIDs {
+		currentSet[deliveryID] = struct{}{}
+	}
+	for _, deliveryID := range requested {
+		if _, ok := currentSet[deliveryID]; !ok {
+			return false
+		}
+	}
+	return true
+}

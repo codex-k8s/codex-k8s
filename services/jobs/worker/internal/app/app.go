@@ -91,6 +91,20 @@ func Run() error {
 	if runtimePrepareRetryInterval <= 0 {
 		return fmt.Errorf("CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_INTERVAL must be > 0")
 	}
+	missionControlWarmupInterval, err := time.ParseDuration(cfg.MissionControlWarmupInterval)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_WORKER_MISSION_CONTROL_WARMUP_INTERVAL: %w", err)
+	}
+	if missionControlWarmupInterval <= 0 {
+		return fmt.Errorf("CODEXK8S_WORKER_MISSION_CONTROL_WARMUP_INTERVAL must be > 0")
+	}
+	missionControlRetryBaseInterval, err := time.ParseDuration(cfg.MissionControlRetryBaseInterval)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_WORKER_MISSION_CONTROL_RETRY_BASE_INTERVAL: %w", err)
+	}
+	if missionControlRetryBaseInterval <= 0 {
+		return fmt.Errorf("CODEXK8S_WORKER_MISSION_CONTROL_RETRY_BASE_INTERVAL must be > 0")
+	}
 	jobImageCheckTimeout, err := time.ParseDuration(cfg.JobImageCheckTimeout)
 	if err != nil {
 		return fmt.Errorf("parse CODEXK8S_WORKER_JOB_IMAGE_CHECK_TIMEOUT: %w", err)
@@ -164,50 +178,56 @@ func Run() error {
 	}
 
 	service := worker.NewService(worker.Config{
-		WorkerID:                    cfg.WorkerID,
-		ClaimLimit:                  cfg.ClaimLimit,
-		RunningCheckLimit:           cfg.RunningCheckLimit,
-		StaleLeaseSweepLimit:        cfg.StaleLeaseSweepLimit,
-		SlotsPerProject:             cfg.SlotsPerProject,
-		SlotLeaseTTL:                slotLeaseTTL,
-		RunLeaseTTL:                 runLeaseTTL,
-		RuntimePrepareRetryTimeout:  runtimePrepareRetryTimeout,
-		RuntimePrepareRetryInterval: runtimePrepareRetryInterval,
-		ProjectLearningModeDefault:  learningDefault,
-		RunNamespacePrefix:          cfg.RunNamespacePrefix,
-		DefaultNamespaceTTL:         namespaceLeaseDefaultTTL,
-		NamespaceTTLByRole:          namespaceLeaseTTLByRole,
-		NamespaceLeaseSweepLimit:    cfg.NamespaceLeaseSweepLimit,
-		StateInReviewLabel:          cfg.StateInReviewLabel,
-		ControlPlaneGRPCTarget:      cfg.ControlPlaneGRPCTarget,
-		ControlPlaneMCPBaseURL:      cfg.ControlPlaneMCPBaseURL,
-		OpenAIAPIKey:                cfg.OpenAIAPIKey,
-		Context7APIKey:              cfg.Context7APIKey,
-		GitBotToken:                 cfg.GitBotToken,
-		GitBotUsername:              cfg.GitBotUsername,
-		GitBotMail:                  cfg.GitBotMail,
-		AgentDefaultModel:           cfg.AgentDefaultModel,
-		AgentDefaultReasoningEffort: cfg.AgentDefaultReasoningEffort,
-		AgentDefaultLocale:          cfg.AgentDefaultLocale,
-		AgentBaseBranch:             cfg.AgentBaseBranch,
-		JobImage:                    cfg.JobImage,
-		JobImageFallback:            cfg.JobImageFallback,
-		KubernetesNamespace:         cfg.K8sNamespace,
-		ProductionNamespace:         cfg.ProductionNamespace,
-		WorkerPodNamespace:          cfg.WorkerPodNamespace,
-		AIRepairNamespace:           resolveAIRepairNamespace(cfg),
-		AIRepairServiceAccount:      cfg.AIRepairServiceAccount,
-		AIModelGPT54Label:           cfg.AIModelGPT54Label,
-		AIModelGPT53CodexLabel:      cfg.AIModelGPT53CodexLabel,
-		AIModelGPT53CodexSparkLabel: cfg.AIModelGPT53CodexSparkLabel,
-		AIModelGPT52CodexLabel:      cfg.AIModelGPT52CodexLabel,
-		AIModelGPT52Label:           cfg.AIModelGPT52Label,
-		AIModelGPT51CodexMaxLabel:   cfg.AIModelGPT51CodexMaxLabel,
-		AIModelGPT51CodexMiniLabel:  cfg.AIModelGPT51CodexMiniLabel,
-		AIReasoningLowLabel:         cfg.AIReasoningLowLabel,
-		AIReasoningMediumLabel:      cfg.AIReasoningMediumLabel,
-		AIReasoningHighLabel:        cfg.AIReasoningHighLabel,
-		AIReasoningExtraHighLabel:   cfg.AIReasoningExtraHighLabel,
+		WorkerID:                          cfg.WorkerID,
+		ClaimLimit:                        cfg.ClaimLimit,
+		RunningCheckLimit:                 cfg.RunningCheckLimit,
+		StaleLeaseSweepLimit:              cfg.StaleLeaseSweepLimit,
+		SlotsPerProject:                   cfg.SlotsPerProject,
+		SlotLeaseTTL:                      slotLeaseTTL,
+		RunLeaseTTL:                       runLeaseTTL,
+		RuntimePrepareRetryTimeout:        runtimePrepareRetryTimeout,
+		RuntimePrepareRetryInterval:       runtimePrepareRetryInterval,
+		MissionControlEnabled:             cfg.MissionControlEnabled,
+		MissionControlWarmupInterval:      missionControlWarmupInterval,
+		MissionControlWarmupProjectLimit:  cfg.MissionControlWarmupProjectLimit,
+		MissionControlPendingCommandLimit: cfg.MissionControlPendingCommandLimit,
+		MissionControlRetryMaxAttempts:    cfg.MissionControlRetryMaxAttempts,
+		MissionControlRetryBaseInterval:   missionControlRetryBaseInterval,
+		ProjectLearningModeDefault:        learningDefault,
+		RunNamespacePrefix:                cfg.RunNamespacePrefix,
+		DefaultNamespaceTTL:               namespaceLeaseDefaultTTL,
+		NamespaceTTLByRole:                namespaceLeaseTTLByRole,
+		NamespaceLeaseSweepLimit:          cfg.NamespaceLeaseSweepLimit,
+		StateInReviewLabel:                cfg.StateInReviewLabel,
+		ControlPlaneGRPCTarget:            cfg.ControlPlaneGRPCTarget,
+		ControlPlaneMCPBaseURL:            cfg.ControlPlaneMCPBaseURL,
+		OpenAIAPIKey:                      cfg.OpenAIAPIKey,
+		Context7APIKey:                    cfg.Context7APIKey,
+		GitBotToken:                       cfg.GitBotToken,
+		GitBotUsername:                    cfg.GitBotUsername,
+		GitBotMail:                        cfg.GitBotMail,
+		AgentDefaultModel:                 cfg.AgentDefaultModel,
+		AgentDefaultReasoningEffort:       cfg.AgentDefaultReasoningEffort,
+		AgentDefaultLocale:                cfg.AgentDefaultLocale,
+		AgentBaseBranch:                   cfg.AgentBaseBranch,
+		JobImage:                          cfg.JobImage,
+		JobImageFallback:                  cfg.JobImageFallback,
+		KubernetesNamespace:               cfg.K8sNamespace,
+		ProductionNamespace:               cfg.ProductionNamespace,
+		WorkerPodNamespace:                cfg.WorkerPodNamespace,
+		AIRepairNamespace:                 resolveAIRepairNamespace(cfg),
+		AIRepairServiceAccount:            cfg.AIRepairServiceAccount,
+		AIModelGPT54Label:                 cfg.AIModelGPT54Label,
+		AIModelGPT53CodexLabel:            cfg.AIModelGPT53CodexLabel,
+		AIModelGPT53CodexSparkLabel:       cfg.AIModelGPT53CodexSparkLabel,
+		AIModelGPT52CodexLabel:            cfg.AIModelGPT52CodexLabel,
+		AIModelGPT52Label:                 cfg.AIModelGPT52Label,
+		AIModelGPT51CodexMaxLabel:         cfg.AIModelGPT51CodexMaxLabel,
+		AIModelGPT51CodexMiniLabel:        cfg.AIModelGPT51CodexMiniLabel,
+		AIReasoningLowLabel:               cfg.AIReasoningLowLabel,
+		AIReasoningMediumLabel:            cfg.AIReasoningMediumLabel,
+		AIReasoningHighLabel:              cfg.AIReasoningHighLabel,
+		AIReasoningExtraHighLabel:         cfg.AIReasoningExtraHighLabel,
 	}, worker.Dependencies{
 		Runs:            runs,
 		Events:          events,
@@ -217,6 +237,7 @@ func Run() error {
 		MCPTokenIssuer:  controlPlane,
 		RunStatus:       controlPlane,
 		Interactions:    controlPlane,
+		MissionControl:  controlPlane,
 		JobImageChecker: jobImageChecker,
 		Logger:          logger,
 	})

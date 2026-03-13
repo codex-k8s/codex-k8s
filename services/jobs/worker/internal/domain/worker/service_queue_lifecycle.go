@@ -22,6 +22,9 @@ func (s *Service) Tick(ctx context.Context) error {
 	if err := s.reconcileInteractions(ctx); err != nil {
 		return fmt.Errorf("reconcile interaction lifecycle: %w", err)
 	}
+	if err := s.reconcileMissionControl(ctx); err != nil {
+		return fmt.Errorf("reconcile mission control: %w", err)
+	}
 	if err := s.cleanupExpiredNamespaces(ctx); err != nil {
 		return fmt.Errorf("cleanup expired namespaces: %w", err)
 	}

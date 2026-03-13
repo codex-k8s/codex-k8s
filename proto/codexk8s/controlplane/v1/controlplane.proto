@@ -637,6 +637,114 @@ message ExpireNextInteractionResponse {
   string resume_correlation_id = 6;
 }
 
+message MissionControlWarmupProject {
+  string project_id = 1;
+  string project_name = 2;
+  string repository_full_name = 3;
+}
+
+message ListMissionControlWarmupProjectsRequest {
+  int32 limit = 1;
+}
+
+message ListMissionControlWarmupProjectsResponse {
+  repeated MissionControlWarmupProject items = 1;
+}
+
+message RunMissionControlWarmupRequest {
+  string project_id = 1;
+  string requested_by = 2;
+  string correlation_id = 3;
+  bool force_rebuild = 4;
+}
+
+message RunMissionControlWarmupResponse {
+  string project_id = 1;
+  int64 entity_count = 2;
+  int64 relation_count = 3;
+  int64 timeline_entry_count = 4;
+  int64 command_count = 5;
+  int64 max_projection_version = 6;
+  int32 backfilled_entities = 7;
+  int32 backfilled_relations = 8;
+  int32 backfilled_timelines = 9;
+}
+
+message MissionControlStageNextStepPayload {
+  string thread_kind = 1;
+  int32 thread_number = 2;
+  string target_label = 3;
+}
+
+message MissionControlPendingCommand {
+  string project_id = 1;
+  string command_id = 2;
+  string command_kind = 3;
+  string effective_command_kind = 4;
+  string status = 5;
+  string correlation_id = 6;
+  string business_intent_key = 7;
+  string repository_full_name = 8;
+  optional string retry_target_command_id = 9;
+  MissionControlStageNextStepPayload stage_next_step = 10;
+  google.protobuf.Timestamp requested_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+}
+
+message ListMissionControlPendingCommandsRequest {
+  int32 limit = 1;
+}
+
+message ListMissionControlPendingCommandsResponse {
+  repeated MissionControlPendingCommand items = 1;
+}
+
+message MissionControlCommandState {
+  string project_id = 1;
+  string command_id = 2;
+  string command_kind = 3;
+  string status = 4;
+  string failure_reason = 5;
+  string correlation_id = 6;
+  repeated string provider_delivery_ids = 7;
+  optional string status_message = 8;
+  google.protobuf.Timestamp updated_at = 9;
+  google.protobuf.Timestamp reconciled_at = 10;
+}
+
+message QueueMissionControlCommandRequest {
+  string project_id = 1;
+  string command_id = 2;
+  optional string status_message = 3;
+  google.protobuf.Timestamp updated_at = 4;
+}
+
+message MarkMissionControlCommandPendingSyncRequest {
+  string project_id = 1;
+  string command_id = 2;
+  repeated string provider_delivery_ids = 3;
+  optional string status_message = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+message MarkMissionControlCommandReconciledRequest {
+  string project_id = 1;
+  string command_id = 2;
+  repeated string provider_delivery_ids = 3;
+  optional string status_message = 4;
+  google.protobuf.Timestamp updated_at = 5;
+  google.protobuf.Timestamp reconciled_at = 6;
+}
+
+message MarkMissionControlCommandFailedRequest {
+  string project_id = 1;
+  string command_id = 2;
+  string failure_reason = 3;
+  repeated string provider_delivery_ids = 4;
+  optional string status_message = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
 message SubmitInteractionCallbackRequest {
   string interaction_id = 1;
   optional string delivery_id = 2;
@@ -1037,6 +1145,13 @@ service ControlPlaneService {
   rpc ClaimNextInteractionDispatch(ClaimNextInteractionDispatchRequest) returns (ClaimNextInteractionDispatchResponse);
   rpc CompleteInteractionDispatch(CompleteInteractionDispatchRequest) returns (CompleteInteractionDispatchResponse);
   rpc ExpireNextInteraction(ExpireNextInteractionRequest) returns (ExpireNextInteractionResponse);
+  rpc ListMissionControlWarmupProjects(ListMissionControlWarmupProjectsRequest) returns (ListMissionControlWarmupProjectsResponse);
+  rpc RunMissionControlWarmup(RunMissionControlWarmupRequest) returns (RunMissionControlWarmupResponse);
+  rpc ListMissionControlPendingCommands(ListMissionControlPendingCommandsRequest) returns (ListMissionControlPendingCommandsResponse);
+  rpc QueueMissionControlCommand(QueueMissionControlCommandRequest) returns (MissionControlCommandState);
+  rpc MarkMissionControlCommandPendingSync(MarkMissionControlCommandPendingSyncRequest) returns (MissionControlCommandState);
+  rpc MarkMissionControlCommandReconciled(MarkMissionControlCommandReconciledRequest) returns (MissionControlCommandState);
+  rpc MarkMissionControlCommandFailed(MarkMissionControlCommandFailedRequest) returns (MissionControlCommandState);
   rpc SubmitInteractionCallback(SubmitInteractionCallbackRequest) returns (SubmitInteractionCallbackResponse);
   rpc ListRuntimeDeployTasks(ListRuntimeDeployTasksRequest) returns (ListRuntimeDeployTasksResponse);
   rpc GetRuntimeDeployTask(GetRuntimeDeployTaskRequest) returns (RuntimeDeployTask);

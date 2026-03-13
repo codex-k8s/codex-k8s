@@ -60,6 +60,13 @@ const (
 	ControlPlaneService_ClaimNextInteractionDispatch_FullMethodName         = "/codexk8s.controlplane.v1.ControlPlaneService/ClaimNextInteractionDispatch"
 	ControlPlaneService_CompleteInteractionDispatch_FullMethodName          = "/codexk8s.controlplane.v1.ControlPlaneService/CompleteInteractionDispatch"
 	ControlPlaneService_ExpireNextInteraction_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/ExpireNextInteraction"
+	ControlPlaneService_ListMissionControlWarmupProjects_FullMethodName     = "/codexk8s.controlplane.v1.ControlPlaneService/ListMissionControlWarmupProjects"
+	ControlPlaneService_RunMissionControlWarmup_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/RunMissionControlWarmup"
+	ControlPlaneService_ListMissionControlPendingCommands_FullMethodName    = "/codexk8s.controlplane.v1.ControlPlaneService/ListMissionControlPendingCommands"
+	ControlPlaneService_QueueMissionControlCommand_FullMethodName           = "/codexk8s.controlplane.v1.ControlPlaneService/QueueMissionControlCommand"
+	ControlPlaneService_MarkMissionControlCommandPendingSync_FullMethodName = "/codexk8s.controlplane.v1.ControlPlaneService/MarkMissionControlCommandPendingSync"
+	ControlPlaneService_MarkMissionControlCommandReconciled_FullMethodName  = "/codexk8s.controlplane.v1.ControlPlaneService/MarkMissionControlCommandReconciled"
+	ControlPlaneService_MarkMissionControlCommandFailed_FullMethodName      = "/codexk8s.controlplane.v1.ControlPlaneService/MarkMissionControlCommandFailed"
 	ControlPlaneService_SubmitInteractionCallback_FullMethodName            = "/codexk8s.controlplane.v1.ControlPlaneService/SubmitInteractionCallback"
 	ControlPlaneService_ListRuntimeDeployTasks_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/ListRuntimeDeployTasks"
 	ControlPlaneService_GetRuntimeDeployTask_FullMethodName                 = "/codexk8s.controlplane.v1.ControlPlaneService/GetRuntimeDeployTask"
@@ -123,6 +130,13 @@ type ControlPlaneServiceClient interface {
 	ClaimNextInteractionDispatch(ctx context.Context, in *ClaimNextInteractionDispatchRequest, opts ...grpc.CallOption) (*ClaimNextInteractionDispatchResponse, error)
 	CompleteInteractionDispatch(ctx context.Context, in *CompleteInteractionDispatchRequest, opts ...grpc.CallOption) (*CompleteInteractionDispatchResponse, error)
 	ExpireNextInteraction(ctx context.Context, in *ExpireNextInteractionRequest, opts ...grpc.CallOption) (*ExpireNextInteractionResponse, error)
+	ListMissionControlWarmupProjects(ctx context.Context, in *ListMissionControlWarmupProjectsRequest, opts ...grpc.CallOption) (*ListMissionControlWarmupProjectsResponse, error)
+	RunMissionControlWarmup(ctx context.Context, in *RunMissionControlWarmupRequest, opts ...grpc.CallOption) (*RunMissionControlWarmupResponse, error)
+	ListMissionControlPendingCommands(ctx context.Context, in *ListMissionControlPendingCommandsRequest, opts ...grpc.CallOption) (*ListMissionControlPendingCommandsResponse, error)
+	QueueMissionControlCommand(ctx context.Context, in *QueueMissionControlCommandRequest, opts ...grpc.CallOption) (*MissionControlCommandState, error)
+	MarkMissionControlCommandPendingSync(ctx context.Context, in *MarkMissionControlCommandPendingSyncRequest, opts ...grpc.CallOption) (*MissionControlCommandState, error)
+	MarkMissionControlCommandReconciled(ctx context.Context, in *MarkMissionControlCommandReconciledRequest, opts ...grpc.CallOption) (*MissionControlCommandState, error)
+	MarkMissionControlCommandFailed(ctx context.Context, in *MarkMissionControlCommandFailedRequest, opts ...grpc.CallOption) (*MissionControlCommandState, error)
 	SubmitInteractionCallback(ctx context.Context, in *SubmitInteractionCallbackRequest, opts ...grpc.CallOption) (*SubmitInteractionCallbackResponse, error)
 	ListRuntimeDeployTasks(ctx context.Context, in *ListRuntimeDeployTasksRequest, opts ...grpc.CallOption) (*ListRuntimeDeployTasksResponse, error)
 	GetRuntimeDeployTask(ctx context.Context, in *GetRuntimeDeployTaskRequest, opts ...grpc.CallOption) (*RuntimeDeployTask, error)
@@ -549,6 +563,76 @@ func (c *controlPlaneServiceClient) ExpireNextInteraction(ctx context.Context, i
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) ListMissionControlWarmupProjects(ctx context.Context, in *ListMissionControlWarmupProjectsRequest, opts ...grpc.CallOption) (*ListMissionControlWarmupProjectsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMissionControlWarmupProjectsResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ListMissionControlWarmupProjects_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) RunMissionControlWarmup(ctx context.Context, in *RunMissionControlWarmupRequest, opts ...grpc.CallOption) (*RunMissionControlWarmupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RunMissionControlWarmupResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_RunMissionControlWarmup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) ListMissionControlPendingCommands(ctx context.Context, in *ListMissionControlPendingCommandsRequest, opts ...grpc.CallOption) (*ListMissionControlPendingCommandsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMissionControlPendingCommandsResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ListMissionControlPendingCommands_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) QueueMissionControlCommand(ctx context.Context, in *QueueMissionControlCommandRequest, opts ...grpc.CallOption) (*MissionControlCommandState, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MissionControlCommandState)
+	err := c.cc.Invoke(ctx, ControlPlaneService_QueueMissionControlCommand_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) MarkMissionControlCommandPendingSync(ctx context.Context, in *MarkMissionControlCommandPendingSyncRequest, opts ...grpc.CallOption) (*MissionControlCommandState, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MissionControlCommandState)
+	err := c.cc.Invoke(ctx, ControlPlaneService_MarkMissionControlCommandPendingSync_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) MarkMissionControlCommandReconciled(ctx context.Context, in *MarkMissionControlCommandReconciledRequest, opts ...grpc.CallOption) (*MissionControlCommandState, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MissionControlCommandState)
+	err := c.cc.Invoke(ctx, ControlPlaneService_MarkMissionControlCommandReconciled_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) MarkMissionControlCommandFailed(ctx context.Context, in *MarkMissionControlCommandFailedRequest, opts ...grpc.CallOption) (*MissionControlCommandState, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MissionControlCommandState)
+	err := c.cc.Invoke(ctx, ControlPlaneService_MarkMissionControlCommandFailed_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) SubmitInteractionCallback(ctx context.Context, in *SubmitInteractionCallbackRequest, opts ...grpc.CallOption) (*SubmitInteractionCallbackResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SubmitInteractionCallbackResponse)
@@ -745,6 +829,13 @@ type ControlPlaneServiceServer interface {
 	ClaimNextInteractionDispatch(context.Context, *ClaimNextInteractionDispatchRequest) (*ClaimNextInteractionDispatchResponse, error)
 	CompleteInteractionDispatch(context.Context, *CompleteInteractionDispatchRequest) (*CompleteInteractionDispatchResponse, error)
 	ExpireNextInteraction(context.Context, *ExpireNextInteractionRequest) (*ExpireNextInteractionResponse, error)
+	ListMissionControlWarmupProjects(context.Context, *ListMissionControlWarmupProjectsRequest) (*ListMissionControlWarmupProjectsResponse, error)
+	RunMissionControlWarmup(context.Context, *RunMissionControlWarmupRequest) (*RunMissionControlWarmupResponse, error)
+	ListMissionControlPendingCommands(context.Context, *ListMissionControlPendingCommandsRequest) (*ListMissionControlPendingCommandsResponse, error)
+	QueueMissionControlCommand(context.Context, *QueueMissionControlCommandRequest) (*MissionControlCommandState, error)
+	MarkMissionControlCommandPendingSync(context.Context, *MarkMissionControlCommandPendingSyncRequest) (*MissionControlCommandState, error)
+	MarkMissionControlCommandReconciled(context.Context, *MarkMissionControlCommandReconciledRequest) (*MissionControlCommandState, error)
+	MarkMissionControlCommandFailed(context.Context, *MarkMissionControlCommandFailedRequest) (*MissionControlCommandState, error)
 	SubmitInteractionCallback(context.Context, *SubmitInteractionCallbackRequest) (*SubmitInteractionCallbackResponse, error)
 	ListRuntimeDeployTasks(context.Context, *ListRuntimeDeployTasksRequest) (*ListRuntimeDeployTasksResponse, error)
 	GetRuntimeDeployTask(context.Context, *GetRuntimeDeployTaskRequest) (*RuntimeDeployTask, error)
@@ -890,6 +981,27 @@ func (UnimplementedControlPlaneServiceServer) CompleteInteractionDispatch(contex
 }
 func (UnimplementedControlPlaneServiceServer) ExpireNextInteraction(context.Context, *ExpireNextInteractionRequest) (*ExpireNextInteractionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExpireNextInteraction not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ListMissionControlWarmupProjects(context.Context, *ListMissionControlWarmupProjectsRequest) (*ListMissionControlWarmupProjectsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListMissionControlWarmupProjects not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) RunMissionControlWarmup(context.Context, *RunMissionControlWarmupRequest) (*RunMissionControlWarmupResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RunMissionControlWarmup not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ListMissionControlPendingCommands(context.Context, *ListMissionControlPendingCommandsRequest) (*ListMissionControlPendingCommandsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListMissionControlPendingCommands not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) QueueMissionControlCommand(context.Context, *QueueMissionControlCommandRequest) (*MissionControlCommandState, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueueMissionControlCommand not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) MarkMissionControlCommandPendingSync(context.Context, *MarkMissionControlCommandPendingSyncRequest) (*MissionControlCommandState, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MarkMissionControlCommandPendingSync not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) MarkMissionControlCommandReconciled(context.Context, *MarkMissionControlCommandReconciledRequest) (*MissionControlCommandState, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MarkMissionControlCommandReconciled not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) MarkMissionControlCommandFailed(context.Context, *MarkMissionControlCommandFailedRequest) (*MissionControlCommandState, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MarkMissionControlCommandFailed not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) SubmitInteractionCallback(context.Context, *SubmitInteractionCallbackRequest) (*SubmitInteractionCallbackResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitInteractionCallback not implemented")
@@ -1677,6 +1789,132 @@ func _ControlPlaneService_ExpireNextInteraction_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_ListMissionControlWarmupProjects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMissionControlWarmupProjectsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ListMissionControlWarmupProjects(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ListMissionControlWarmupProjects_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ListMissionControlWarmupProjects(ctx, req.(*ListMissionControlWarmupProjectsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_RunMissionControlWarmup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RunMissionControlWarmupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).RunMissionControlWarmup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_RunMissionControlWarmup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).RunMissionControlWarmup(ctx, req.(*RunMissionControlWarmupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_ListMissionControlPendingCommands_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMissionControlPendingCommandsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ListMissionControlPendingCommands(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ListMissionControlPendingCommands_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ListMissionControlPendingCommands(ctx, req.(*ListMissionControlPendingCommandsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_QueueMissionControlCommand_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueueMissionControlCommandRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).QueueMissionControlCommand(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_QueueMissionControlCommand_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).QueueMissionControlCommand(ctx, req.(*QueueMissionControlCommandRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_MarkMissionControlCommandPendingSync_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarkMissionControlCommandPendingSyncRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).MarkMissionControlCommandPendingSync(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_MarkMissionControlCommandPendingSync_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).MarkMissionControlCommandPendingSync(ctx, req.(*MarkMissionControlCommandPendingSyncRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_MarkMissionControlCommandReconciled_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarkMissionControlCommandReconciledRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).MarkMissionControlCommandReconciled(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_MarkMissionControlCommandReconciled_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).MarkMissionControlCommandReconciled(ctx, req.(*MarkMissionControlCommandReconciledRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_MarkMissionControlCommandFailed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarkMissionControlCommandFailedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).MarkMissionControlCommandFailed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_MarkMissionControlCommandFailed_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).MarkMissionControlCommandFailed(ctx, req.(*MarkMissionControlCommandFailedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_SubmitInteractionCallback_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SubmitInteractionCallbackRequest)
 	if err := dec(in); err != nil {
@@ -2113,6 +2351,34 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExpireNextInteraction",
 			Handler:    _ControlPlaneService_ExpireNextInteraction_Handler,
+		},
+		{
+			MethodName: "ListMissionControlWarmupProjects",
+			Handler:    _ControlPlaneService_ListMissionControlWarmupProjects_Handler,
+		},
+		{
+			MethodName: "RunMissionControlWarmup",
+			Handler:    _ControlPlaneService_RunMissionControlWarmup_Handler,
+		},
+		{
+			MethodName: "ListMissionControlPendingCommands",
+			Handler:    _ControlPlaneService_ListMissionControlPendingCommands_Handler,
+		},
+		{
+			MethodName: "QueueMissionControlCommand",
+			Handler:    _ControlPlaneService_QueueMissionControlCommand_Handler,
+		},
+		{
+			MethodName: "MarkMissionControlCommandPendingSync",
+			Handler:    _ControlPlaneService_MarkMissionControlCommandPendingSync_Handler,
+		},
+		{
+			MethodName: "MarkMissionControlCommandReconciled",
+			Handler:    _ControlPlaneService_MarkMissionControlCommandReconciled_Handler,
+		},
+		{
+			MethodName: "MarkMissionControlCommandFailed",
+			Handler:    _ControlPlaneService_MarkMissionControlCommandFailed_Handler,
 		},
 		{
 			MethodName: "SubmitInteractionCallback",

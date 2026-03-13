@@ -144,18 +144,49 @@ func (s *Service) SubmitCommand(ctx context.Context, params SubmitCommandParams)
 
 // QueueCommand transitions one accepted command into queued state.
 func (s *Service) QueueCommand(ctx context.Context, params CommandQueueParams) (Command, error) {
-	return s.transitionSimpleCommand(ctx, params.ProjectID, params.CommandID, enumtypes.MissionControlCommandStatusQueued, params.StatusMessage, params.UpdatedAt)
+	command, err := s.loadCommandForUpdate(ctx, params.ProjectID, params.CommandID)
+	if err != nil {
+		return Command{}, err
+	}
+	if commandAlreadyQueued(command.Status) {
+		return command, nil
+	}
+	return s.transitionCommand(ctx, command, enumtypes.MissionControlCommandStatusQueued, transitionOptions{
+		statusMessage: params.StatusMessage,
+		updatedAt:     params.UpdatedAt,
+	})
 }
 
 // MarkCommandPendingSync transitions one queued/accepted command into pending_sync.
 func (s *Service) MarkCommandPendingSync(ctx context.Context, params CommandSyncProgressParams) (Command, error) {
-	return s.transitionCommandWithDeliveries(ctx, params.ProjectID, params.CommandID, enumtypes.MissionControlCommandStatusPendingSync, params.StatusMessage, params.ProviderDeliveryIDs, params.UpdatedAt, transitionOptions{})
+	command, err := s.loadCommandForUpdate(ctx, params.ProjectID, params.CommandID)
+	if err != nil {
+		return Command{}, err
+	}
+	if duplicateDeliveryTransition(command, enumtypes.MissionControlCommandStatusPendingSync, params.ProviderDeliveryIDs, "") {
+		return command, nil
+	}
+	return s.transitionCommand(ctx, command, enumtypes.MissionControlCommandStatusPendingSync, transitionOptions{
+		statusMessage:       params.StatusMessage,
+		providerDeliveryIDs: params.ProviderDeliveryIDs,
+		updatedAt:           params.UpdatedAt,
+	})
 }
 
 // MarkCommandReconciled closes one command as successfully reconciled.
 func (s *Service) MarkCommandReconciled(ctx context.Context, params CommandReconcileParams) (Command, error) {
-	return s.transitionCommandWithDeliveries(ctx, params.ProjectID, params.CommandID, enumtypes.MissionControlCommandStatusReconciled, params.StatusMessage, params.ProviderDeliveryIDs, params.UpdatedAt, transitionOptions{
-		reconciledAt: params.ReconciledAt,
+	command, err := s.loadCommandForUpdate(ctx, params.ProjectID, params.CommandID)
+	if err != nil {
+		return Command{}, err
+	}
+	if duplicateDeliveryTransition(command, enumtypes.MissionControlCommandStatusReconciled, params.ProviderDeliveryIDs, "") {
+		return command, nil
+	}
+	return s.transitionCommand(ctx, command, enumtypes.MissionControlCommandStatusReconciled, transitionOptions{
+		statusMessage:       params.StatusMessage,
+		providerDeliveryIDs: params.ProviderDeliveryIDs,
+		updatedAt:           params.UpdatedAt,
+		reconciledAt:        params.ReconciledAt,
 	})
 }
 
@@ -369,26 +400,13 @@ func (s *Service) transitionSimpleCommand(
 	})
 }
 
-func (s *Service) transitionCommandWithDeliveries(
-	ctx context.Context,
-	projectID string,
-	commandID string,
-	target enumtypes.MissionControlCommandStatus,
-	statusMessage string,
-	providerDeliveryIDs []string,
-	updatedAt time.Time,
-	extra transitionOptions,
-) (Command, error) {
-	extra.statusMessage = statusMessage
-	extra.providerDeliveryIDs = providerDeliveryIDs
-	extra.updatedAt = updatedAt
-	return s.transitionCommandByID(ctx, projectID, commandID, target, extra)
-}
-
 func (s *Service) transitionFailedCommand(ctx context.Context, params CommandFailureParams) (Command, error) {
 	command, err := s.loadCommandForUpdate(ctx, params.ProjectID, params.CommandID)
 	if err != nil {
 		return Command{}, err
+	}
+	if duplicateDeliveryTransition(command, enumtypes.MissionControlCommandStatusFailed, params.ProviderDeliveryIDs, params.FailureReason) {
+		return command, nil
 	}
 	return s.transitionCommand(ctx, command, enumtypes.MissionControlCommandStatusFailed, transitionOptions{
 		failureReason:       params.FailureReason,
