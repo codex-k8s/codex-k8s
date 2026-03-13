@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-13
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -329,11 +329,12 @@ approvals:
   - architecture package зафиксировал ownership split для `control-plane`, `worker`, `agent-runner`, `api-gateway` и `web-console`, а также lifecycle `detect -> classify -> wait -> resume/manual action`;
   - `control-plane` выбран owner для classification, controlled wait aggregate, contour attribution и visibility contract, `worker` закреплён за finite auto-resume orchestration, а `agent-runner` переведён в handoff-only path без infinite local retries;
   - созданы initiative package `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/*`, `ADR-0013`, `ALT-0005` и follow-up issue `#420` для stage `run:design` без trigger-лейбла.
-- Day 5 (planned): design package для GitHub API rate-limit resilience (Issue `#420`).
-- Ожидаемый результат Day 5:
-  - typed contracts для signal handoff, visibility surfaces, persisted wait aggregate и rollout/rollback notes;
-  - implementation-ready design package `design_doc + api_contract + data_model + migrations_policy`;
-  - continuity issue для `run:plan`.
+- Day 5 (in-review): design package для GitHub API rate-limit resilience (`docs/delivery/epics/s12/epic-s12-day5-github-api-rate-limit-design.md`, Issue `#420`).
+- Результат Day 5 (факт):
+  - зафиксированы typed contracts для signal handoff, dominant/related wait visibility, persisted wait aggregate/evidence и rollout/rollback notes;
+  - выбран отдельный coarse wait-state `waiting_backpressure`, finite auto-resume policy для primary/secondary limits и best-effort GitHub service-comment mirror;
+  - создана follow-up issue `#423` для stage `run:plan` без trigger-лейбла.
+- Day 6 (planned): plan-пакет для GitHub API rate-limit resilience (Issue `#423`).
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

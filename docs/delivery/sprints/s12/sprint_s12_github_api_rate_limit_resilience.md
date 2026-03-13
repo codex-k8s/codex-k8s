@@ -6,7 +6,7 @@ status: in-review
 owner_role: PM
 created_at: 2026-03-13
 updated_at: 2026-03-13
-related_issues: [366, 413, 416, 418, 420]
+related_issues: [366, 413, 416, 418, 420, 423]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -18,7 +18,7 @@ approvals:
 
 ## TL;DR
 - Цель спринта: убрать непрозрачные `403/429`-провалы при исчерпании GitHub API budget и заменить их на управляемый, audit-safe controlled wait-state для platform path и agent path.
-- Sprint S12 стартовал с intake-этапа в Issue `#366`; vision-пакет оформлен в Issue `#413`, PRD-пакет оформлен в Issue `#416`, architecture continuity зафиксирована в Issue `#418`, а handover в `run:design` подготовлен в Issue `#420`.
+- Sprint S12 стартовал с intake-этапа в Issue `#366`; vision-пакет оформлен в Issue `#413`, PRD-пакет оформлен в Issue `#416`, architecture continuity зафиксирована в Issue `#418`, design package оформлен в Issue `#420`, а handover в `run:plan` подготовлен в Issue `#423`.
 - Базовые ограничения спринта: сохраняется split `platform PAT` vs `agent bot-token`, GitHub остаётся текущим provider baseline, controlled wait не должен маскировать реальные auth/authz ошибки, а агент не должен уходить в бесконечные локальные retry-loop.
 
 ## Scope спринта
@@ -44,7 +44,7 @@ approvals:
   - `vision` обязателен, потому что инициатива меняет пользовательский опыт ожидания и операционную прозрачность;
   - `arch` обязателен, потому что затрагиваются service boundaries, persisted wait-state, MCP/runtime semantics, notifications и staff UX.
 - Целевая continuity-цепочка:
-  `#366 (intake) -> #413 (vision) -> #416 (prd) -> #418 (arch) -> #420 (design) -> plan -> dev -> qa -> release -> postdeploy -> ops`.
+  `#366 (intake) -> #413 (vision) -> #416 (prd) -> #418 (arch) -> #420 (design) -> #423 (plan) -> dev -> qa -> release -> postdeploy -> ops`.
 
 ## План этапов и handover
 
@@ -54,8 +54,8 @@ approvals:
 | Vision (`#413`) | Mission, north star, persona outcomes, KPI/guardrails | `pm` | Зафиксирован vision baseline и создана issue `#416` для `run:prd` |
 | PRD (`#416`) | User stories, FR/AC/NFR, edge cases и expected evidence | `pm` + `sa` | Подтверждён PRD package и создана issue `#418` для `run:arch` |
 | Architecture (`#418`) | Service boundaries, ownership matrix, wait-state lifecycle | `sa` | Подтверждены архитектурные границы и создана issue `#420` для `run:design` |
-| Design (`#420`) | API/data/notification/runtime contracts и rollout notes | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue `run:plan` |
-| Plan | Delivery waves, execution issues, DoR/DoD, quality-gates | `em` + `km` | Сформирован execution package и отдельные implementation issues |
+| Design (`#420`) | API/data/notification/runtime contracts и rollout notes | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue `#423` для `run:plan` |
+| Plan (`#423`) | Delivery waves, execution issues, DoR/DoD, quality-gates | `em` + `km` | Сформирован execution package и отдельные implementation issues |
 
 ## Guardrails спринта
 - `platform PAT` и `agent bot-token` остаются разными operational contour; UI и audit должны показывать, какой именно контур упёрся в лимит.
@@ -66,13 +66,12 @@ approvals:
 - До `run:plan` инициатива остаётся markdown-only контуром.
 
 ## Handover
-- Текущий stage в review: `run:arch` в Issue `#418`.
-- Следующий stage: `run:design` в Issue `#420`.
-- На `run:design` нельзя размывать архитектурные решения Day4:
-  - controlled wait важнее ложного `failed`;
-  - split `platform PAT` vs `agent bot-token` обязателен;
-  - `control-plane` остаётся owner classification и visibility contract, а `worker` владеет finite auto-resume orchestration;
-  - owner/operator должен видеть причину ожидания, affected contour, recovery hint и следующий шаг;
-  - hard-failure path не может маскироваться под controlled wait;
-  - агент не должен brute-force ретраить GitHub локально после typed rate-limit detection;
+- Текущий stage в review: `run:design` в Issue `#420`.
+- Следующий stage: `run:plan` в Issue `#423`.
+- На `run:plan` нельзя терять Day5 design decisions:
+  - `waiting_backpressure` остаётся отдельным coarse wait-state для GitHub rate-limit;
+  - `control-plane` сохраняет ownership wait aggregate, visibility projection и dominant wait election;
+  - `worker` остаётся владельцем finite auto-resume sweeps и manual escalation;
+  - `agent-runner` работает только через typed signal handoff и deterministic resume payload;
+  - staff/private surfaces остаются каноничными, а GitHub service-comment остаётся best-effort mirror;
   - predictive budgeting, multi-provider governance и adapter-specific notifications не блокируют core Sprint S12.

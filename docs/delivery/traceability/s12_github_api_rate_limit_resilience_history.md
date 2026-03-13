@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-13
 updated_at: 2026-03-13
-related_issues: [366, 413, 416, 418, 420]
+related_issues: [366, 413, 416, 418, 420, 423]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -76,3 +76,22 @@ approvals:
   - официальные GitHub Docs `Rate limits for the REST API` и `Best practices for using the REST API` просмотрены 2026-03-13;
   - Context7 использован для `/websites/cli_github_manual` и `/mermaid-js/mermaid`.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: architecture stage закрепляет ownership и trade-offs, а не вводит новые канонические требования.
+
+## Актуализация по Issue #420 (`run:design`, 2026-03-13)
+- Подготовлен design package:
+  - `docs/delivery/epics/s12/epic-s12-day5-github-api-rate-limit-design.md`;
+  - `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/README.md`;
+  - `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/design_doc.md`;
+  - `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/api_contract.md`;
+  - `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/data_model.md`;
+  - `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/migrations_policy.md`.
+- Зафиксированы:
+  - новый coarse wait-state `waiting_backpressure` и business reason `github_rate_limit` без reuse `waiting_mcp`;
+  - persisted model `github_rate_limit_waits` + `github_rate_limit_wait_evidence`, dominant wait election и typed linkage через `agent_runs.wait_target_kind=github_rate_limit_wait`;
+  - internal callback contract `ReportGitHubRateLimitSignal`, finite auto-resume policy для primary/secondary limits и typed manual-action guidance без отдельного operator write endpoint;
+  - best-effort статус GitHub service-comment как mirror staff/private projection с отдельным retry path при platform contour saturation.
+- Для continuity создана follow-up issue `#423` (`run:plan`) без trigger-лейбла.
+- Внешний baseline дополнительно сверен:
+  - Context7 `/github/docs` использован для актуальной верификации primary/secondary rate-limit semantics, `Retry-After`, response headers и best-practice guidance по pacing/backoff;
+  - локально подтверждён non-interactive GitHub flow через `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: design stage переводит architecture package в implementation-ready contracts и rollout notes, а не добавляет новые канонические требования.
