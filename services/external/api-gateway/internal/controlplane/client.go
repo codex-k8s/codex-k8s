@@ -9,6 +9,7 @@ import (
 	"github.com/codex-k8s/codex-k8s/libs/go/grpcutil"
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -83,4 +84,22 @@ func (c *Client) IngestGitHubWebhook(ctx context.Context, correlationID string, 
 		return nil, err
 	}
 	return resp, nil
+}
+
+func (c *Client) SubmitInteractionCallback(
+	ctx context.Context,
+	callbackToken string,
+	req *controlplanev1.SubmitInteractionCallbackRequest,
+) (*controlplanev1.SubmitInteractionCallbackResponse, error) {
+	if req == nil {
+		return nil, fmt.Errorf("submit interaction callback request is required")
+	}
+
+	callbackToken = cast.TrimmedStringValue(&callbackToken)
+	if callbackToken == "" {
+		return nil, fmt.Errorf("interaction callback token is required")
+	}
+
+	authCtx := metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+callbackToken)
+	return c.svc.SubmitInteractionCallback(authCtx, req)
 }

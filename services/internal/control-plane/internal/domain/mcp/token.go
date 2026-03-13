@@ -90,6 +90,7 @@ func (s *Service) parseRunToken(rawToken string) (SessionContext, error) {
 		ProjectID:     strings.TrimSpace(claims.ProjectID),
 		Namespace:     strings.TrimSpace(claims.Namespace),
 		RuntimeMode:   parseRuntimeMode(claims.RuntimeMode),
+		TokenSubject:  strings.TrimSpace(claims.Subject),
 		ExpiresAt:     expiresAt,
 	}, nil
 }

@@ -299,6 +299,7 @@ func (s *Service) VerifyRunToken(ctx context.Context, rawToken string) (SessionC
 		ProjectID:     claims.ProjectID,
 		Namespace:     claims.Namespace,
 		RuntimeMode:   parseRuntimeMode(string(claims.RuntimeMode)),
+		TokenSubject:  claims.TokenSubject,
 		ExpiresAt:     claims.ExpiresAt,
 	}, nil
 }

@@ -60,6 +60,7 @@ const (
 	ControlPlaneService_ClaimNextInteractionDispatch_FullMethodName         = "/codexk8s.controlplane.v1.ControlPlaneService/ClaimNextInteractionDispatch"
 	ControlPlaneService_CompleteInteractionDispatch_FullMethodName          = "/codexk8s.controlplane.v1.ControlPlaneService/CompleteInteractionDispatch"
 	ControlPlaneService_ExpireNextInteraction_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/ExpireNextInteraction"
+	ControlPlaneService_SubmitInteractionCallback_FullMethodName            = "/codexk8s.controlplane.v1.ControlPlaneService/SubmitInteractionCallback"
 	ControlPlaneService_ListRuntimeDeployTasks_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/ListRuntimeDeployTasks"
 	ControlPlaneService_GetRuntimeDeployTask_FullMethodName                 = "/codexk8s.controlplane.v1.ControlPlaneService/GetRuntimeDeployTask"
 	ControlPlaneService_CancelRuntimeDeployTask_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/CancelRuntimeDeployTask"
@@ -122,6 +123,7 @@ type ControlPlaneServiceClient interface {
 	ClaimNextInteractionDispatch(ctx context.Context, in *ClaimNextInteractionDispatchRequest, opts ...grpc.CallOption) (*ClaimNextInteractionDispatchResponse, error)
 	CompleteInteractionDispatch(ctx context.Context, in *CompleteInteractionDispatchRequest, opts ...grpc.CallOption) (*CompleteInteractionDispatchResponse, error)
 	ExpireNextInteraction(ctx context.Context, in *ExpireNextInteractionRequest, opts ...grpc.CallOption) (*ExpireNextInteractionResponse, error)
+	SubmitInteractionCallback(ctx context.Context, in *SubmitInteractionCallbackRequest, opts ...grpc.CallOption) (*SubmitInteractionCallbackResponse, error)
 	ListRuntimeDeployTasks(ctx context.Context, in *ListRuntimeDeployTasksRequest, opts ...grpc.CallOption) (*ListRuntimeDeployTasksResponse, error)
 	GetRuntimeDeployTask(ctx context.Context, in *GetRuntimeDeployTaskRequest, opts ...grpc.CallOption) (*RuntimeDeployTask, error)
 	CancelRuntimeDeployTask(ctx context.Context, in *CancelRuntimeDeployTaskRequest, opts ...grpc.CallOption) (*RuntimeDeployTaskActionResponse, error)
@@ -547,6 +549,16 @@ func (c *controlPlaneServiceClient) ExpireNextInteraction(ctx context.Context, i
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) SubmitInteractionCallback(ctx context.Context, in *SubmitInteractionCallbackRequest, opts ...grpc.CallOption) (*SubmitInteractionCallbackResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubmitInteractionCallbackResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_SubmitInteractionCallback_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) ListRuntimeDeployTasks(ctx context.Context, in *ListRuntimeDeployTasksRequest, opts ...grpc.CallOption) (*ListRuntimeDeployTasksResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListRuntimeDeployTasksResponse)
@@ -733,6 +745,7 @@ type ControlPlaneServiceServer interface {
 	ClaimNextInteractionDispatch(context.Context, *ClaimNextInteractionDispatchRequest) (*ClaimNextInteractionDispatchResponse, error)
 	CompleteInteractionDispatch(context.Context, *CompleteInteractionDispatchRequest) (*CompleteInteractionDispatchResponse, error)
 	ExpireNextInteraction(context.Context, *ExpireNextInteractionRequest) (*ExpireNextInteractionResponse, error)
+	SubmitInteractionCallback(context.Context, *SubmitInteractionCallbackRequest) (*SubmitInteractionCallbackResponse, error)
 	ListRuntimeDeployTasks(context.Context, *ListRuntimeDeployTasksRequest) (*ListRuntimeDeployTasksResponse, error)
 	GetRuntimeDeployTask(context.Context, *GetRuntimeDeployTaskRequest) (*RuntimeDeployTask, error)
 	CancelRuntimeDeployTask(context.Context, *CancelRuntimeDeployTaskRequest) (*RuntimeDeployTaskActionResponse, error)
@@ -877,6 +890,9 @@ func (UnimplementedControlPlaneServiceServer) CompleteInteractionDispatch(contex
 }
 func (UnimplementedControlPlaneServiceServer) ExpireNextInteraction(context.Context, *ExpireNextInteractionRequest) (*ExpireNextInteractionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExpireNextInteraction not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) SubmitInteractionCallback(context.Context, *SubmitInteractionCallbackRequest) (*SubmitInteractionCallbackResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitInteractionCallback not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) ListRuntimeDeployTasks(context.Context, *ListRuntimeDeployTasksRequest) (*ListRuntimeDeployTasksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRuntimeDeployTasks not implemented")
@@ -1661,6 +1677,24 @@ func _ControlPlaneService_ExpireNextInteraction_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_SubmitInteractionCallback_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitInteractionCallbackRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).SubmitInteractionCallback(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_SubmitInteractionCallback_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).SubmitInteractionCallback(ctx, req.(*SubmitInteractionCallbackRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_ListRuntimeDeployTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListRuntimeDeployTasksRequest)
 	if err := dec(in); err != nil {
@@ -2079,6 +2113,10 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExpireNextInteraction",
 			Handler:    _ControlPlaneService_ExpireNextInteraction_Handler,
+		},
+		{
+			MethodName: "SubmitInteractionCallback",
+			Handler:    _ControlPlaneService_SubmitInteractionCallback_Handler,
 		},
 		{
 			MethodName: "ListRuntimeDeployTasks",

@@ -47,9 +47,42 @@ const (
 
 // Defines values for IngestGitHubWebhookResponseStatus.
 const (
-	Accepted  IngestGitHubWebhookResponseStatus = "accepted"
-	Duplicate IngestGitHubWebhookResponseStatus = "duplicate"
-	Ignored   IngestGitHubWebhookResponseStatus = "ignored"
+	IngestGitHubWebhookResponseStatusAccepted  IngestGitHubWebhookResponseStatus = "accepted"
+	IngestGitHubWebhookResponseStatusDuplicate IngestGitHubWebhookResponseStatus = "duplicate"
+	IngestGitHubWebhookResponseStatusIgnored   IngestGitHubWebhookResponseStatus = "ignored"
+)
+
+// Defines values for InteractionCallbackEnvelopeCallbackKind.
+const (
+	DecisionResponse InteractionCallbackEnvelopeCallbackKind = "decision_response"
+	DeliveryReceipt  InteractionCallbackEnvelopeCallbackKind = "delivery_receipt"
+)
+
+// Defines values for InteractionCallbackEnvelopeDeliveryStatus.
+const (
+	InteractionCallbackEnvelopeDeliveryStatusAccepted  InteractionCallbackEnvelopeDeliveryStatus = "accepted"
+	InteractionCallbackEnvelopeDeliveryStatusDelivered InteractionCallbackEnvelopeDeliveryStatus = "delivered"
+	InteractionCallbackEnvelopeDeliveryStatusFailed    InteractionCallbackEnvelopeDeliveryStatus = "failed"
+)
+
+// Defines values for InteractionCallbackEnvelopeSchemaVersion.
+const (
+	V1 InteractionCallbackEnvelopeSchemaVersion = "v1"
+)
+
+// Defines values for InteractionCallbackOutcomeClassification.
+const (
+	InteractionCallbackOutcomeClassificationApplied   InteractionCallbackOutcomeClassification = "applied"
+	InteractionCallbackOutcomeClassificationDuplicate InteractionCallbackOutcomeClassification = "duplicate"
+	InteractionCallbackOutcomeClassificationExpired   InteractionCallbackOutcomeClassification = "expired"
+	InteractionCallbackOutcomeClassificationInvalid   InteractionCallbackOutcomeClassification = "invalid"
+	InteractionCallbackOutcomeClassificationStale     InteractionCallbackOutcomeClassification = "stale"
+)
+
+// Defines values for InteractionResponsePayloadResponseKind.
+const (
+	FreeText InteractionResponsePayloadResponseKind = "free_text"
+	Option   InteractionResponsePayloadResponseKind = "option"
 )
 
 // Defines values for MCPApprovalCallbackRequestDecision.
@@ -180,11 +213,11 @@ const (
 
 // Defines values for RuntimeDeployTasksRealtimeParamsStatus.
 const (
-	Canceled  RuntimeDeployTasksRealtimeParamsStatus = "canceled"
-	Failed    RuntimeDeployTasksRealtimeParamsStatus = "failed"
-	Pending   RuntimeDeployTasksRealtimeParamsStatus = "pending"
-	Running   RuntimeDeployTasksRealtimeParamsStatus = "running"
-	Succeeded RuntimeDeployTasksRealtimeParamsStatus = "succeeded"
+	RuntimeDeployTasksRealtimeParamsStatusCanceled  RuntimeDeployTasksRealtimeParamsStatus = "canceled"
+	RuntimeDeployTasksRealtimeParamsStatusFailed    RuntimeDeployTasksRealtimeParamsStatus = "failed"
+	RuntimeDeployTasksRealtimeParamsStatusPending   RuntimeDeployTasksRealtimeParamsStatus = "pending"
+	RuntimeDeployTasksRealtimeParamsStatusRunning   RuntimeDeployTasksRealtimeParamsStatus = "running"
+	RuntimeDeployTasksRealtimeParamsStatusSucceeded RuntimeDeployTasksRealtimeParamsStatus = "succeeded"
 )
 
 // Defines values for ListRuntimeErrorsParamsState.
@@ -299,6 +332,58 @@ type IngestGitHubWebhookResponse struct {
 
 // IngestGitHubWebhookResponseStatus defines model for IngestGitHubWebhookResponse.Status.
 type IngestGitHubWebhookResponseStatus string
+
+// InteractionCallbackEnvelope defines model for InteractionCallbackEnvelope.
+type InteractionCallbackEnvelope struct {
+	AdapterDeliveryId *string                                    `json:"adapter_delivery_id"`
+	AdapterEventId    string                                     `json:"adapter_event_id"`
+	CallbackKind      InteractionCallbackEnvelopeCallbackKind    `json:"callback_kind"`
+	DeliveryId        *string                                    `json:"delivery_id"`
+	DeliveryStatus    *InteractionCallbackEnvelopeDeliveryStatus `json:"delivery_status"`
+	Error             *InteractionCallbackError                  `json:"error,omitempty"`
+	InteractionId     string                                     `json:"interaction_id"`
+	OccurredAt        time.Time                                  `json:"occurred_at"`
+	Response          *InteractionResponsePayload                `json:"response,omitempty"`
+	SchemaVersion     InteractionCallbackEnvelopeSchemaVersion   `json:"schema_version"`
+}
+
+// InteractionCallbackEnvelopeCallbackKind defines model for InteractionCallbackEnvelope.CallbackKind.
+type InteractionCallbackEnvelopeCallbackKind string
+
+// InteractionCallbackEnvelopeDeliveryStatus defines model for InteractionCallbackEnvelope.DeliveryStatus.
+type InteractionCallbackEnvelopeDeliveryStatus string
+
+// InteractionCallbackEnvelopeSchemaVersion defines model for InteractionCallbackEnvelope.SchemaVersion.
+type InteractionCallbackEnvelopeSchemaVersion string
+
+// InteractionCallbackError defines model for InteractionCallbackError.
+type InteractionCallbackError struct {
+	Code    *string `json:"code,omitempty"`
+	Message *string `json:"message,omitempty"`
+}
+
+// InteractionCallbackOutcome defines model for InteractionCallbackOutcome.
+type InteractionCallbackOutcome struct {
+	Accepted         bool                                     `json:"accepted"`
+	Classification   InteractionCallbackOutcomeClassification `json:"classification"`
+	InteractionState string                                   `json:"interaction_state"`
+	Message          *string                                  `json:"message"`
+	ResumeRequired   bool                                     `json:"resume_required"`
+}
+
+// InteractionCallbackOutcomeClassification defines model for InteractionCallbackOutcome.Classification.
+type InteractionCallbackOutcomeClassification string
+
+// InteractionResponsePayload defines model for InteractionResponsePayload.
+type InteractionResponsePayload struct {
+	FreeText         *string                                `json:"free_text"`
+	ResponderRef     *string                                `json:"responder_ref"`
+	ResponseKind     InteractionResponsePayloadResponseKind `json:"response_kind"`
+	SelectedOptionId *string                                `json:"selected_option_id"`
+}
+
+// InteractionResponsePayloadResponseKind defines model for InteractionResponsePayload.ResponseKind.
+type InteractionResponsePayloadResponseKind string
 
 // LearningFeedback defines model for LearningFeedback.
 type LearningFeedback struct {
@@ -798,6 +883,9 @@ type Internal = ErrorResponse
 // NotFound defines model for NotFound.
 type NotFound = ErrorResponse
 
+// TooManyRequests defines model for TooManyRequests.
+type TooManyRequests = ErrorResponse
+
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = ErrorResponse
 
@@ -809,11 +897,19 @@ type CallbackGithubParams struct {
 
 // McpApproverCallbackParams defines parameters for McpApproverCallback.
 type McpApproverCallbackParams struct {
+	// XCodexMCPToken Callback bearer token. Authorization: Bearer ... is also accepted.
 	XCodexMCPToken *MCPCallbackToken `json:"X-Codex-MCP-Token,omitempty"`
 }
 
 // McpExecutorCallbackParams defines parameters for McpExecutorCallback.
 type McpExecutorCallbackParams struct {
+	// XCodexMCPToken Callback bearer token. Authorization: Bearer ... is also accepted.
+	XCodexMCPToken *MCPCallbackToken `json:"X-Codex-MCP-Token,omitempty"`
+}
+
+// McpInteractionCallbackParams defines parameters for McpInteractionCallback.
+type McpInteractionCallbackParams struct {
+	// XCodexMCPToken Callback bearer token. Authorization: Bearer ... is also accepted.
 	XCodexMCPToken *MCPCallbackToken `json:"X-Codex-MCP-Token,omitempty"`
 }
 
@@ -932,6 +1028,9 @@ type McpApproverCallbackJSONRequestBody = MCPApprovalCallbackRequest
 
 // McpExecutorCallbackJSONRequestBody defines body for McpExecutorCallback for application/json ContentType.
 type McpExecutorCallbackJSONRequestBody = MCPApprovalCallbackRequest
+
+// McpInteractionCallbackJSONRequestBody defines body for McpInteractionCallback for application/json ContentType.
+type McpInteractionCallbackJSONRequestBody = InteractionCallbackEnvelope
 
 // ResolveApprovalDecisionJSONRequestBody defines body for ResolveApprovalDecision for application/json ContentType.
 type ResolveApprovalDecisionJSONRequestBody = ResolveApprovalDecisionRequest
@@ -1122,6 +1221,9 @@ type ServerInterface interface {
 	// Resolve one MCP approval request from external executor callback
 	// (POST /api/v1/mcp/executor/callback)
 	McpExecutorCallback(w http.ResponseWriter, r *http.Request, params McpExecutorCallbackParams)
+	// Apply one built-in MCP user interaction callback
+	// (POST /api/v1/mcp/interactions/callback)
+	McpInteractionCallback(w http.ResponseWriter, r *http.Request, params McpInteractionCallbackParams)
 	// List pending approval requests
 	// (GET /api/v1/staff/approvals)
 	ListPendingApprovals(w http.ResponseWriter, r *http.Request, params ListPendingApprovalsParams)
@@ -1415,6 +1517,46 @@ func (siw *ServerInterfaceWrapper) McpExecutorCallback(w http.ResponseWriter, r 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.McpExecutorCallback(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// McpInteractionCallback operation middleware
+func (siw *ServerInterfaceWrapper) McpInteractionCallback(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params McpInteractionCallbackParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Codex-MCP-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Codex-MCP-Token")]; found {
+		var XCodexMCPToken MCPCallbackToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Codex-MCP-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Codex-MCP-Token", valueList[0], &XCodexMCPToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Codex-MCP-Token", Err: err})
+			return
+		}
+
+		params.XCodexMCPToken = &XCodexMCPToken
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.McpInteractionCallback(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2842,6 +2984,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/auth/me", wrapper.GetMe)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/mcp/approver/callback", wrapper.McpApproverCallback)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/mcp/executor/callback", wrapper.McpExecutorCallback)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/mcp/interactions/callback", wrapper.McpInteractionCallback)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/approvals", wrapper.ListPendingApprovals)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/approvals/{approval_request_id}/decision", wrapper.ResolveApprovalDecision)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/docset/groups", wrapper.ListDocsetGroups)
@@ -2895,6 +3038,8 @@ type ForbiddenJSONResponse ErrorResponse
 type InternalJSONResponse ErrorResponse
 
 type NotFoundJSONResponse ErrorResponse
+
+type TooManyRequestsJSONResponse ErrorResponse
 
 type UnauthorizedJSONResponse ErrorResponse
 
@@ -3098,6 +3243,69 @@ func (response McpExecutorCallback401JSONResponse) VisitMcpExecutorCallbackRespo
 type McpExecutorCallback500JSONResponse struct{ InternalJSONResponse }
 
 func (response McpExecutorCallback500JSONResponse) VisitMcpExecutorCallbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type McpInteractionCallbackRequestObject struct {
+	Params McpInteractionCallbackParams
+	Body   *McpInteractionCallbackJSONRequestBody
+}
+
+type McpInteractionCallbackResponseObject interface {
+	VisitMcpInteractionCallbackResponse(w http.ResponseWriter) error
+}
+
+type McpInteractionCallback200JSONResponse InteractionCallbackOutcome
+
+func (response McpInteractionCallback200JSONResponse) VisitMcpInteractionCallbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type McpInteractionCallback400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response McpInteractionCallback400JSONResponse) VisitMcpInteractionCallbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type McpInteractionCallback401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response McpInteractionCallback401JSONResponse) VisitMcpInteractionCallbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type McpInteractionCallback404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response McpInteractionCallback404JSONResponse) VisitMcpInteractionCallbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type McpInteractionCallback429JSONResponse struct{ TooManyRequestsJSONResponse }
+
+func (response McpInteractionCallback429JSONResponse) VisitMcpInteractionCallbackResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(429)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type McpInteractionCallback500JSONResponse struct{ InternalJSONResponse }
+
+func (response McpInteractionCallback500JSONResponse) VisitMcpInteractionCallbackResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(500)
 
@@ -4895,6 +5103,9 @@ type StrictServerInterface interface {
 	// Resolve one MCP approval request from external executor callback
 	// (POST /api/v1/mcp/executor/callback)
 	McpExecutorCallback(ctx context.Context, request McpExecutorCallbackRequestObject) (McpExecutorCallbackResponseObject, error)
+	// Apply one built-in MCP user interaction callback
+	// (POST /api/v1/mcp/interactions/callback)
+	McpInteractionCallback(ctx context.Context, request McpInteractionCallbackRequestObject) (McpInteractionCallbackResponseObject, error)
 	// List pending approval requests
 	// (GET /api/v1/staff/approvals)
 	ListPendingApprovals(ctx context.Context, request ListPendingApprovalsRequestObject) (ListPendingApprovalsResponseObject, error)
@@ -5203,6 +5414,39 @@ func (sh *strictHandler) McpExecutorCallback(w http.ResponseWriter, r *http.Requ
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(McpExecutorCallbackResponseObject); ok {
 		if err := validResponse.VisitMcpExecutorCallbackResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// McpInteractionCallback operation middleware
+func (sh *strictHandler) McpInteractionCallback(w http.ResponseWriter, r *http.Request, params McpInteractionCallbackParams) {
+	var request McpInteractionCallbackRequestObject
+
+	request.Params = params
+
+	var body McpInteractionCallbackJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.McpInteractionCallback(ctx, request.(McpInteractionCallbackRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "McpInteractionCallback")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(McpInteractionCallbackResponseObject); ok {
+		if err := validResponse.VisitMcpInteractionCallbackResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

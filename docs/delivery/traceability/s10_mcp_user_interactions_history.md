@@ -135,3 +135,24 @@ approvals:
   - `/jackc/pgx` для проверки transaction/query pattern при claim/complete/expiry update path.
 - Новых внешних зависимостей в issue `#392` не добавлялось.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: issue `#392` реализует approved worker lifecycle wave из execution package, не меняя продуктовый baseline.
+
+## Актуализация по Issue #393 (`run:dev`, 2026-03-13)
+- Реализован transport package для stream `S10-E03` в `services/external/api-gateway` и `services/internal/control-plane`:
+  - OpenAPI source-of-truth расширен endpoint `POST /api/v1/mcp/interactions/callback`, typed DTO `InteractionCallbackEnvelope` / `InteractionCallbackOutcome` и regenerated codegen artifacts для Go/TS;
+  - `api-gateway` получил отдельный thin-edge handler, typed HTTP models/casters и route-level per-interaction rate limiting, где идентификатор лимита извлекается из `interaction_id`, а callback bearer token прокидывается в gRPC metadata без локального interaction state;
+  - `control-plane` gRPC contract расширен RPC `SubmitInteractionCallback`, transport auth теперь проверяет `token subject == mcp-interaction-callback:<interaction_id>`, а успешная domain classification `accepted` отображается наружу как transport classification `applied`;
+  - approval callback family `/api/v1/mcp/approver|executor/callback` сохранён как additive coexistence и не переиспользует interaction DTO/handlers.
+- Rollout boundary сохранён:
+  - callback endpoint остаётся thin-edge ingress и не реализует wait-state transitions, retry semantics или replay classification локально;
+  - channel-specific adapter UX и deterministic resume path по-прежнему находятся вне scope issue `#393` и остаются в waves `#394/#395`.
+- Выполнены проверки:
+  - `make gen-proto-go`
+  - `make gen-openapi`
+  - `go test ./services/internal/control-plane/... ./services/external/api-gateway/... ./services/jobs/worker/... ./services/jobs/agent-runner/...`
+  - `make lint-go`
+  - `make dupl-go`
+  - `git diff --check`
+- Для verification использован Context7:
+  - `/labstack/echo` для проверки актуального `RateLimiterWithConfig`, `IdentifierExtractor` и `DenyHandler` паттерна в Echo v5.
+- Новых внешних зависимостей в issue `#393` не добавлялось.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: issue `#393` реализует approved transport wave из execution package, не меняя продуктовый baseline.
