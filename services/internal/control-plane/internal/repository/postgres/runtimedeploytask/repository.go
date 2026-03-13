@@ -21,6 +21,8 @@ import (
 var (
 	//go:embed sql/get_by_run_id.sql
 	queryGetByRunID string
+	//go:embed sql/find_active_by_namespace.sql
+	queryFindActiveByNamespace string
 	//go:embed sql/select_by_run_id_for_update.sql
 	querySelectByRunIDForUpdate string
 	//go:embed sql/insert_pending.sql
@@ -120,17 +122,25 @@ func (r *Repository) UpsertDesired(ctx context.Context, params domainrepo.Upsert
 
 // GetByRunID returns one runtime deploy task by run id.
 func (r *Repository) GetByRunID(ctx context.Context, runID string) (domainrepo.Task, bool, error) {
-	runID = strings.TrimSpace(runID)
-	if runID == "" {
+	return r.getOptionalTask(ctx, queryGetByRunID, strings.TrimSpace(runID), "query runtime deploy task by run_id=%s")
+}
+
+// FindActiveByNamespace returns one pending/running task for namespace when present.
+func (r *Repository) FindActiveByNamespace(ctx context.Context, namespace string) (domainrepo.Task, bool, error) {
+	return r.getOptionalTask(ctx, queryFindActiveByNamespace, strings.TrimSpace(namespace), "query active runtime deploy task by namespace=%s")
+}
+
+func (r *Repository) getOptionalTask(ctx context.Context, query string, lookupValue string, errorFormat string) (domainrepo.Task, bool, error) {
+	if lookupValue == "" {
 		return domainrepo.Task{}, false, nil
 	}
-	row := r.db.QueryRow(ctx, queryGetByRunID, runID)
+	row := r.db.QueryRow(ctx, query, lookupValue)
 	task, err := scanTask(row)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return domainrepo.Task{}, false, nil
 		}
-		return domainrepo.Task{}, false, fmt.Errorf("query runtime deploy task by run_id=%s: %w", runID, err)
+		return domainrepo.Task{}, false, fmt.Errorf(errorFormat+": %w", lookupValue, err)
 	}
 	return task, true, nil
 }

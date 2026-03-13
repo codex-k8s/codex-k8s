@@ -65,6 +65,10 @@ func (f *fakePrepareRuntimeDeployTasksRepo) GetByRunID(_ context.Context, _ stri
 	return f.getTask, f.getTaskFound, nil
 }
 
+func (*fakePrepareRuntimeDeployTasksRepo) FindActiveByNamespace(_ context.Context, _ string) (runtimedeploytaskrepo.Task, bool, error) {
+	return runtimedeploytaskrepo.Task{}, false, nil
+}
+
 func (*fakePrepareRuntimeDeployTasksRepo) ClaimNext(_ context.Context, _ runtimedeploytaskrepo.ClaimParams) (runtimedeploytaskrepo.Task, bool, error) {
 	return runtimedeploytaskrepo.Task{}, false, nil
 }

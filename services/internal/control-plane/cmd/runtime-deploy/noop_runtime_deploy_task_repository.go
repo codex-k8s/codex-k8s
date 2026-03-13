@@ -20,6 +20,10 @@ func (noopRuntimeDeployTaskRepository) GetByRunID(_ context.Context, _ string) (
 	return runtimedeploytaskrepo.Task{}, false, fmt.Errorf("runtime deploy queue is not available in one-shot mode")
 }
 
+func (noopRuntimeDeployTaskRepository) FindActiveByNamespace(_ context.Context, _ string) (runtimedeploytaskrepo.Task, bool, error) {
+	return runtimedeploytaskrepo.Task{}, false, fmt.Errorf("runtime deploy queue is not available in one-shot mode")
+}
+
 func (noopRuntimeDeployTaskRepository) ClaimNext(_ context.Context, _ runtimedeploytaskrepo.ClaimParams) (runtimedeploytaskrepo.Task, bool, error) {
 	return runtimedeploytaskrepo.Task{}, false, fmt.Errorf("runtime deploy queue is not available in one-shot mode")
 }

@@ -56,6 +56,7 @@ const (
 	ControlPlaneService_SyncDocset_FullMethodName                           = "/codexk8s.controlplane.v1.ControlPlaneService/SyncDocset"
 	ControlPlaneService_IssueRunMCPToken_FullMethodName                     = "/codexk8s.controlplane.v1.ControlPlaneService/IssueRunMCPToken"
 	ControlPlaneService_PrepareRunEnvironment_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/PrepareRunEnvironment"
+	ControlPlaneService_EvaluateRuntimeReuse_FullMethodName                 = "/codexk8s.controlplane.v1.ControlPlaneService/EvaluateRuntimeReuse"
 	ControlPlaneService_ListRuntimeDeployTasks_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/ListRuntimeDeployTasks"
 	ControlPlaneService_GetRuntimeDeployTask_FullMethodName                 = "/codexk8s.controlplane.v1.ControlPlaneService/GetRuntimeDeployTask"
 	ControlPlaneService_CancelRuntimeDeployTask_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/CancelRuntimeDeployTask"
@@ -114,6 +115,7 @@ type ControlPlaneServiceClient interface {
 	SyncDocset(ctx context.Context, in *SyncDocsetRequest, opts ...grpc.CallOption) (*SyncDocsetResponse, error)
 	IssueRunMCPToken(ctx context.Context, in *IssueRunMCPTokenRequest, opts ...grpc.CallOption) (*IssueRunMCPTokenResponse, error)
 	PrepareRunEnvironment(ctx context.Context, in *PrepareRunEnvironmentRequest, opts ...grpc.CallOption) (*PrepareRunEnvironmentResponse, error)
+	EvaluateRuntimeReuse(ctx context.Context, in *EvaluateRuntimeReuseRequest, opts ...grpc.CallOption) (*EvaluateRuntimeReuseResponse, error)
 	ListRuntimeDeployTasks(ctx context.Context, in *ListRuntimeDeployTasksRequest, opts ...grpc.CallOption) (*ListRuntimeDeployTasksResponse, error)
 	GetRuntimeDeployTask(ctx context.Context, in *GetRuntimeDeployTaskRequest, opts ...grpc.CallOption) (*RuntimeDeployTask, error)
 	CancelRuntimeDeployTask(ctx context.Context, in *CancelRuntimeDeployTaskRequest, opts ...grpc.CallOption) (*RuntimeDeployTaskActionResponse, error)
@@ -499,6 +501,16 @@ func (c *controlPlaneServiceClient) PrepareRunEnvironment(ctx context.Context, i
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) EvaluateRuntimeReuse(ctx context.Context, in *EvaluateRuntimeReuseRequest, opts ...grpc.CallOption) (*EvaluateRuntimeReuseResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EvaluateRuntimeReuseResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_EvaluateRuntimeReuse_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) ListRuntimeDeployTasks(ctx context.Context, in *ListRuntimeDeployTasksRequest, opts ...grpc.CallOption) (*ListRuntimeDeployTasksResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListRuntimeDeployTasksResponse)
@@ -681,6 +693,7 @@ type ControlPlaneServiceServer interface {
 	SyncDocset(context.Context, *SyncDocsetRequest) (*SyncDocsetResponse, error)
 	IssueRunMCPToken(context.Context, *IssueRunMCPTokenRequest) (*IssueRunMCPTokenResponse, error)
 	PrepareRunEnvironment(context.Context, *PrepareRunEnvironmentRequest) (*PrepareRunEnvironmentResponse, error)
+	EvaluateRuntimeReuse(context.Context, *EvaluateRuntimeReuseRequest) (*EvaluateRuntimeReuseResponse, error)
 	ListRuntimeDeployTasks(context.Context, *ListRuntimeDeployTasksRequest) (*ListRuntimeDeployTasksResponse, error)
 	GetRuntimeDeployTask(context.Context, *GetRuntimeDeployTaskRequest) (*RuntimeDeployTask, error)
 	CancelRuntimeDeployTask(context.Context, *CancelRuntimeDeployTaskRequest) (*RuntimeDeployTaskActionResponse, error)
@@ -813,6 +826,9 @@ func (UnimplementedControlPlaneServiceServer) IssueRunMCPToken(context.Context, 
 }
 func (UnimplementedControlPlaneServiceServer) PrepareRunEnvironment(context.Context, *PrepareRunEnvironmentRequest) (*PrepareRunEnvironmentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PrepareRunEnvironment not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) EvaluateRuntimeReuse(context.Context, *EvaluateRuntimeReuseRequest) (*EvaluateRuntimeReuseResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EvaluateRuntimeReuse not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) ListRuntimeDeployTasks(context.Context, *ListRuntimeDeployTasksRequest) (*ListRuntimeDeployTasksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRuntimeDeployTasks not implemented")
@@ -1525,6 +1541,24 @@ func _ControlPlaneService_PrepareRunEnvironment_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_EvaluateRuntimeReuse_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EvaluateRuntimeReuseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).EvaluateRuntimeReuse(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_EvaluateRuntimeReuse_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).EvaluateRuntimeReuse(ctx, req.(*EvaluateRuntimeReuseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_ListRuntimeDeployTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListRuntimeDeployTasksRequest)
 	if err := dec(in); err != nil {
@@ -1927,6 +1961,10 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PrepareRunEnvironment",
 			Handler:    _ControlPlaneService_PrepareRunEnvironment_Handler,
+		},
+		{
+			MethodName: "EvaluateRuntimeReuse",
+			Handler:    _ControlPlaneService_EvaluateRuntimeReuse_Handler,
 		},
 		{
 			MethodName: "ListRuntimeDeployTasks",

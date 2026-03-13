@@ -51,6 +51,7 @@ type runStatusService interface {
 }
 
 type runtimeDeployService interface {
+	EvaluateRuntimeReuse(ctx context.Context, params runtimedeploydomain.EvaluateReuseParams) (runtimedeploydomain.EvaluateReuseResult, error)
 	PrepareRunEnvironment(ctx context.Context, params runtimedeploydomain.PrepareParams) (runtimedeploydomain.PrepareResult, error)
 	RequestTaskAction(ctx context.Context, params runtimedeploydomain.TaskActionParams) (runtimedeploydomain.TaskActionResult, error)
 }

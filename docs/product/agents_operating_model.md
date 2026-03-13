@@ -63,6 +63,9 @@ approvals:
 - В late delivery используются два access profile:
   - `candidate` для `run:dev`, `run:qa`, `run:release` до merge;
   - `production-readonly` для `run:postdeploy` и `run:ops` после merge.
+- Для `run:*:revise` worker сначала валидирует reusable namespace по persisted runtime fingerprint
+  и immutable `build_ref`; только при совпадении fingerprint fast-path пропускает runtime deploy/build,
+  иначе выполняется обычный redeploy в тот же namespace с продлением lease.
 - GitHub операции выполняются напрямую через `gh`/`git` с `CODEXK8S_GIT_BOT_TOKEN`.
 
 ### `code-only`

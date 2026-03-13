@@ -86,6 +86,35 @@ func (c *Client) PrepareRunEnvironment(ctx context.Context, params workerdomain.
 	}, nil
 }
 
+// EvaluateRuntimeReuse asks control-plane whether one reusable namespace can skip runtime deploy/build.
+func (c *Client) EvaluateRuntimeReuse(ctx context.Context, params workerdomain.EvaluateRuntimeReuseParams) (workerdomain.EvaluateRuntimeReuseResult, error) {
+	resp, err := c.svc.EvaluateRuntimeReuse(ctx, &controlplanev1.EvaluateRuntimeReuseRequest{
+		RunId:              strings.TrimSpace(params.RunID),
+		ProjectId:          strings.TrimSpace(params.ProjectID),
+		IssueNumber:        params.IssueNumber,
+		AgentKey:           strings.TrimSpace(params.AgentKey),
+		RuntimeMode:        strings.TrimSpace(params.RuntimeMode),
+		Namespace:          strings.TrimSpace(params.Namespace),
+		TargetEnv:          strings.TrimSpace(params.TargetEnv),
+		SlotNo:             int32(params.SlotNo),
+		RepositoryFullName: strings.TrimSpace(params.RepositoryFullName),
+		ServicesYamlPath:   strings.TrimSpace(params.ServicesYAMLPath),
+		BuildRef:           strings.TrimSpace(params.BuildRef),
+		DeployOnly:         params.DeployOnly,
+	})
+	if err != nil {
+		return workerdomain.EvaluateRuntimeReuseResult{}, err
+	}
+	return workerdomain.EvaluateRuntimeReuseResult{
+		Reusable:          resp.GetReusable(),
+		Namespace:         strings.TrimSpace(resp.GetNamespace()),
+		TargetEnv:         strings.TrimSpace(resp.GetTargetEnv()),
+		EffectiveBuildRef: strings.TrimSpace(resp.GetEffectiveBuildRef()),
+		FingerprintHash:   strings.TrimSpace(resp.GetFingerprintHash()),
+		Reason:            strings.TrimSpace(resp.GetReason()),
+	}, nil
+}
+
 // UpsertRunStatusComment updates one run status comment in issue thread.
 func (c *Client) UpsertRunStatusComment(ctx context.Context, params workerdomain.RunStatusCommentParams) (workerdomain.RunStatusCommentResult, error) {
 	resp, err := c.svc.UpsertRunStatusComment(ctx, &controlplanev1.UpsertRunStatusCommentRequest{

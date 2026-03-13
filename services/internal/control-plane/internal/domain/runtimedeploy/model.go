@@ -32,6 +32,40 @@ type PrepareResult struct {
 	TargetEnv string
 }
 
+// EvaluateReuseParams describes one reusable-namespace fast-path decision request.
+type EvaluateReuseParams struct {
+	RunID              string
+	ProjectID          string
+	IssueNumber        int64
+	AgentKey           string
+	RuntimeMode        string
+	Namespace          string
+	TargetEnv          string
+	SlotNo             int
+	RepositoryFullName string
+	ServicesYAMLPath   string
+	BuildRef           string
+	DeployOnly         bool
+}
+
+// EvaluateReuseResult describes whether one managed namespace can skip runtime deploy/build.
+type EvaluateReuseResult struct {
+	Reusable          bool
+	Namespace         string
+	TargetEnv         string
+	EffectiveBuildRef string
+	FingerprintHash   string
+	Reason            string
+}
+
+// RuntimeNamespaceState keeps managed namespace metadata required for fast-path reuse checks.
+type RuntimeNamespaceState struct {
+	Name        string
+	Labels      map[string]string
+	Annotations map[string]string
+	Terminating bool
+}
+
 // TaskAction identifies one operator-triggered runtime deploy control action.
 type TaskAction = querytypes.RuntimeDeployTaskAction
 
@@ -89,6 +123,8 @@ type Config struct {
 // KubernetesClient describes Kubernetes operations used by runtime deploy orchestration.
 type KubernetesClient interface {
 	EnsureNamespace(ctx context.Context, namespace string) error
+	GetManagedRunNamespace(ctx context.Context, namespace string) (RuntimeNamespaceState, bool, error)
+	UpsertNamespaceAnnotations(ctx context.Context, namespace string, annotations map[string]string) error
 	UpsertSecret(ctx context.Context, namespace string, secretName string, data map[string][]byte) error
 	UpsertTLSSecret(ctx context.Context, namespace string, secretName string, data map[string][]byte) error
 	UpsertConfigMap(ctx context.Context, namespace string, name string, data map[string]string) error

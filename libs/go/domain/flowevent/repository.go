@@ -36,22 +36,24 @@ const (
 )
 
 const (
-	EventTypeRunNamespacePrepared       EventType = "run.namespace.prepared"
-	EventTypeRunNamespaceTTLScheduled   EventType = "run.namespace.ttl_scheduled"
-	EventTypeRunNamespaceTTLExtended    EventType = "run.namespace.ttl_extended"
-	EventTypeRunNamespaceCleaned        EventType = "run.namespace.cleaned"
-	EventTypeRunNamespaceCleanupFailed  EventType = "run.namespace.cleanup_failed"
-	EventTypeRunNamespaceCleanupSkipped EventType = "run.namespace.cleanup_skipped"
+	EventTypeRunNamespacePrepared      EventType = "run.namespace.prepared"
+	EventTypeRunNamespaceReuseFastPath EventType = "run.namespace.reuse_fast_path"
+	EventTypeRunNamespaceReuseFallback EventType = "run.namespace.reuse_fallback_redeploy"
+	EventTypeRunNamespaceTTLScheduled  EventType = "run.namespace.ttl_scheduled"
+	EventTypeRunNamespaceTTLExtended   EventType = "run.namespace.ttl_extended"
 )
 
 const (
-	EventTypeRunStarted            EventType = "run.started"
-	EventTypeRunSucceeded          EventType = "run.succeeded"
-	EventTypeRunCanceled           EventType = "run.canceled"
-	EventTypeRunFailed             EventType = "run.failed"
-	EventTypeRunFailedJobNotFound  EventType = "run.failed.job_not_found"
-	EventTypeRunFailedLaunchError  EventType = "run.failed.launch_error"
-	EventTypeRunFailedPrecondition EventType = "run.failed.precondition"
+	EventTypeRunNamespaceCleaned        EventType = "run.namespace.cleaned"
+	EventTypeRunNamespaceCleanupFailed  EventType = "run.namespace.cleanup_failed"
+	EventTypeRunNamespaceCleanupSkipped EventType = "run.namespace.cleanup_skipped"
+	EventTypeRunStarted                 EventType = "run.started"
+	EventTypeRunSucceeded               EventType = "run.succeeded"
+	EventTypeRunCanceled                EventType = "run.canceled"
+	EventTypeRunFailed                  EventType = "run.failed"
+	EventTypeRunFailedJobNotFound       EventType = "run.failed.job_not_found"
+	EventTypeRunFailedLaunchError       EventType = "run.failed.launch_error"
+	EventTypeRunFailedPrecondition      EventType = "run.failed.precondition"
 )
 
 const (

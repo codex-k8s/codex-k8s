@@ -198,8 +198,8 @@ approvals:
   - по label `run:dev:revise` на Issue;
   - по webhook `pull_request_review` с `action=submitted` и `review.state=changes_requested`,
     если удаётся детерминированно определить stage по policy резолва.
-- Для `run:dev:revise`, запущенного по `pull_request_review`, runtime build ref берётся из `pull_request.head.ref`,
-  чтобы full-env собирался по коду ветки PR, а не по default branch.
+- Для `run:dev:revise`, запущенного по `pull_request_review`, runtime build ref резолвится к immutable SHA
+  из `pull_request.head`, чтобы full-env собирался по зафиксированному коммиту PR, а не по floating ref/default branch.
 - Для ручного pre-review поддержан PR trigger:
   - webhook `pull_request` с `action=labeled` и label `need:reviewer`;
   - создаётся reviewer-run в контексте текущего PR;
@@ -212,7 +212,11 @@ approvals:
     4. последний stage transition в `flow_events`;
   - при конфликте/неопределённости revise-run не создаётся, выставляется `need:input` и публикуется remediation service-message.
 - Для `run:dev:revise` при отсутствии связанного PR run отклоняется с `failed_precondition` и событием `run.revise.pr_not_found`.
-- Для `run:<stage>:revise` в `full-env` worker пытается переиспользовать активный namespace текущей связки `(project, issue, agent_key)` и продлить lease по TTL роли; если namespace отсутствует или уже в `Terminating`, создаётся новый.
+- Для `run:<stage>:revise` в `full-env` worker пытается переиспользовать активный namespace текущей связки `(project, issue, agent_key)` и продлить lease по TTL роли.
+- Fast-path reuse разрешён только если persisted runtime fingerprint совпадает с текущим immutable `build_ref`,
+  rendered manifest hash не изменился, namespace не `Terminating` и в нём нет активной `runtime_deploy_task`.
+- При любой инвалидации fast-path worker пишет audit evidence (`run.namespace.reuse_fast_path` / `run.namespace.reuse_fallback_redeploy`)
+  и запускает обычный runtime deploy в тот же namespace.
 - При постановке trigger-лейбла платформа сразу даёт обратную связь в issue:
   - ставит reaction `:eyes:` (если ещё нет);
   - публикует/обновляет единый статус-комментарий в фазе «планируется запуск агента»;

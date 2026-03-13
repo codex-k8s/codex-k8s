@@ -156,6 +156,19 @@ type namespaceLifecycleEventExtra struct {
 	NamespaceReused         bool
 }
 
+// runtimeReuseEventPayload defines payload shape for fast-path/fallback runtime reuse evidence.
+type runtimeReuseEventPayload struct {
+	RunID             string `json:"run_id"`
+	ProjectID         string `json:"project_id"`
+	Namespace         string `json:"namespace"`
+	IssueNumber       int64  `json:"issue_number,omitempty"`
+	AgentKey          string `json:"agent_key,omitempty"`
+	TriggerKind       string `json:"trigger_kind,omitempty"`
+	Reason            string `json:"reason,omitempty"`
+	EffectiveBuildRef string `json:"effective_build_ref,omitempty"`
+	FingerprintHash   string `json:"fingerprint_hash,omitempty"`
+}
+
 // payloadMarshalError is fallback payload shape used when JSON serialization unexpectedly fails.
 type payloadMarshalError struct {
 	Error string `json:"error"`
@@ -205,6 +218,12 @@ func encodeRunLeaseRecoveredEventPayload(payload runLeaseRecoveredEventPayload) 
 
 // encodeNamespaceLifecycleEventPayload serializes namespace lifecycle payload with safe fallback JSON.
 func encodeNamespaceLifecycleEventPayload(payload namespaceLifecycleEventPayload) json.RawMessage {
+	bytes, err := json.Marshal(payload)
+	return marshalPayload(bytes, err)
+}
+
+// encodeRuntimeReuseEventPayload serializes runtime reuse evidence payload with safe fallback JSON.
+func encodeRuntimeReuseEventPayload(payload runtimeReuseEventPayload) json.RawMessage {
 	bytes, err := json.Marshal(payload)
 	return marshalPayload(bytes, err)
 }

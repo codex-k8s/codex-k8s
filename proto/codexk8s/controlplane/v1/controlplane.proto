@@ -560,6 +560,30 @@ message PrepareRunEnvironmentResponse {
   string target_env = 4;
 }
 
+message EvaluateRuntimeReuseRequest {
+  string run_id = 1;
+  string project_id = 2;
+  int64 issue_number = 3;
+  string agent_key = 4;
+  string runtime_mode = 5;
+  string namespace = 6;
+  string target_env = 7;
+  int32 slot_no = 8;
+  string repository_full_name = 9;
+  string services_yaml_path = 10;
+  string build_ref = 11;
+  bool deploy_only = 12;
+}
+
+message EvaluateRuntimeReuseResponse {
+  bool reusable = 1;
+  string namespace = 2;
+  string target_env = 3;
+  string effective_build_ref = 4;
+  string fingerprint_hash = 5;
+  string reason = 6;
+}
+
 message RuntimeDeployTaskLog {
   string stage = 1;
   string level = 2;
@@ -934,6 +958,7 @@ service ControlPlaneService {
   rpc SyncDocset(SyncDocsetRequest) returns (SyncDocsetResponse);
   rpc IssueRunMCPToken(IssueRunMCPTokenRequest) returns (IssueRunMCPTokenResponse);
   rpc PrepareRunEnvironment(PrepareRunEnvironmentRequest) returns (PrepareRunEnvironmentResponse);
+  rpc EvaluateRuntimeReuse(EvaluateRuntimeReuseRequest) returns (EvaluateRuntimeReuseResponse);
   rpc ListRuntimeDeployTasks(ListRuntimeDeployTasksRequest) returns (ListRuntimeDeployTasksResponse);
   rpc GetRuntimeDeployTask(GetRuntimeDeployTaskRequest) returns (RuntimeDeployTask);
   rpc CancelRuntimeDeployTask(CancelRuntimeDeployTaskRequest) returns (RuntimeDeployTaskActionResponse);

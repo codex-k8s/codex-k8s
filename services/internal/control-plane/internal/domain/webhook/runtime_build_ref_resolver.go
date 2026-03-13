@@ -36,6 +36,44 @@ type rawRunPayloadRuntimeBuildRef struct {
 	AccessProfile string `json:"access_profile"`
 }
 
+func (s *Service) resolveRuntimeBuildRefForIssueTrigger(ctx context.Context, projectID string, envelope githubWebhookEnvelope, defaultRef string, runtimeMode agentdomain.RuntimeMode) string {
+	resolved := strings.TrimSpace(defaultRef)
+	if !strings.EqualFold(strings.TrimSpace(string(runtimeMode)), string(agentdomain.RuntimeModeFullEnv)) {
+		return resolved
+	}
+
+	normalizedProjectID := strings.TrimSpace(projectID)
+	repositoryFullName := strings.TrimSpace(envelope.Repository.FullName)
+	issueNumber := envelope.Issue.Number
+	if s.agentRuns != nil && normalizedProjectID != "" && repositoryFullName != "" && issueNumber > 0 {
+		items, err := s.agentRuns.SearchRecentByProjectIssueOrPullRequest(ctx, normalizedProjectID, repositoryFullName, issueNumber, 0, 50)
+		if err == nil {
+			for _, item := range items {
+				runID := strings.TrimSpace(item.RunID)
+				if runID == "" {
+					continue
+				}
+				runItem, found, runErr := s.agentRuns.GetByID(ctx, runID)
+				if runErr != nil || !found {
+					continue
+				}
+				if ref := extractPullRequestHeadBuildRefFromNormalizedRunPayload(runItem.RunPayload); ref != "" {
+					if resolvedSHA := s.resolveRepositoryRefToSHA(ctx, repositoryFullName, ref); resolvedSHA != "" {
+						return resolvedSHA
+					}
+					return ref
+				}
+			}
+		}
+	}
+	if ref := strings.TrimSpace(resolved); ref != "" {
+		if resolvedSHA := s.resolveRepositoryRefToSHA(ctx, repositoryFullName, ref); resolvedSHA != "" {
+			return resolvedSHA
+		}
+	}
+	return resolved
+}
+
 func extractPullRequestHeadBuildRefFromNormalizedRunPayload(runPayload json.RawMessage) string {
 	if len(runPayload) == 0 {
 		return ""

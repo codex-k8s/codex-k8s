@@ -84,8 +84,15 @@ webhookRuntime:
 ### Namespace identity и revise reuse
 - Ключ reuse: `(project, issue_number, agent_key)`.
 - На `run:*:revise`:
-  - если активный managed namespace существует и не `Terminating` -> reuse;
+  - worker сначала валидирует managed namespace по persisted runtime fingerprint;
+  - в fingerprint входят как минимум `project_id`, `issue_number`, `agent_key`, `runtime_mode`, `target_env`,
+    `repository_full_name`, `services_yaml_path`, immutable `build_ref`, `deploy_only` и hash rendered manifests;
+  - fast-path reuse разрешён только если fingerprint совпадает, namespace не `Terminating`
+    и в нём нет активной `runtime_deploy_task`;
+  - при положительной проверке build/apply path пропускается и reuse работает без нового runtime deploy task;
   - lease продлевается: `expires_at = now + role_ttl`;
+  - при любой инвалидации (`fingerprint_missing|fingerprint_mismatch|repo_snapshot_stale|namespace_terminating|active_runtime_deploy_task|...`)
+    worker фиксирует audit evidence и делает обычный runtime redeploy в тот же namespace;
   - если namespace отсутствует/неконсистентен -> создаётся новый namespace.
 
 ### Cleanup policy
@@ -122,6 +129,8 @@ webhookRuntime:
 
 ## Data/Audit изменения
 - `flow_events` (новые события):
+  - `run.namespace.reuse_fast_path`,
+  - `run.namespace.reuse_fallback_redeploy`,
   - `run.namespace.ttl_scheduled`,
   - `run.namespace.ttl_extended`,
   - `run.namespace.cleaned` (reason=`ttl_expired`).

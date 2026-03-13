@@ -87,6 +87,47 @@ func (s *Server) PrepareRunEnvironment(ctx context.Context, req *controlplanev1.
 	}, nil
 }
 
+func (s *Server) EvaluateRuntimeReuse(ctx context.Context, req *controlplanev1.EvaluateRuntimeReuseRequest) (*controlplanev1.EvaluateRuntimeReuseResponse, error) {
+	if s.runtimeDeploy == nil {
+		return nil, status.Error(codes.FailedPrecondition, "runtime deploy service is not configured")
+	}
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	runID := strings.TrimSpace(req.GetRunId())
+	if runID == "" {
+		return nil, status.Error(codes.InvalidArgument, "run_id is required")
+	}
+
+	evaluated, err := s.runtimeDeploy.EvaluateRuntimeReuse(ctx, runtimedeploydomain.EvaluateReuseParams{
+		RunID:              runID,
+		ProjectID:          strings.TrimSpace(req.GetProjectId()),
+		IssueNumber:        req.GetIssueNumber(),
+		AgentKey:           strings.TrimSpace(req.GetAgentKey()),
+		RuntimeMode:        strings.TrimSpace(req.GetRuntimeMode()),
+		Namespace:          strings.TrimSpace(req.GetNamespace()),
+		TargetEnv:          strings.TrimSpace(req.GetTargetEnv()),
+		SlotNo:             int(req.GetSlotNo()),
+		RepositoryFullName: strings.TrimSpace(req.GetRepositoryFullName()),
+		ServicesYAMLPath:   strings.TrimSpace(req.GetServicesYamlPath()),
+		BuildRef:           strings.TrimSpace(req.GetBuildRef()),
+		DeployOnly:         req.GetDeployOnly(),
+	})
+	if err != nil {
+		return nil, toStatus(err)
+	}
+
+	return &controlplanev1.EvaluateRuntimeReuseResponse{
+		Reusable:          evaluated.Reusable,
+		Namespace:         strings.TrimSpace(evaluated.Namespace),
+		TargetEnv:         strings.TrimSpace(evaluated.TargetEnv),
+		EffectiveBuildRef: strings.TrimSpace(evaluated.EffectiveBuildRef),
+		FingerprintHash:   strings.TrimSpace(evaluated.FingerprintHash),
+		Reason:            strings.TrimSpace(evaluated.Reason),
+	}, nil
+}
+
 func (s *Server) ListRuntimeDeployTasks(ctx context.Context, req *controlplanev1.ListRuntimeDeployTasksRequest) (*controlplanev1.ListRuntimeDeployTasksResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "request is required")

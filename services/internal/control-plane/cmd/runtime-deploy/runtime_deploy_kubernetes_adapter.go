@@ -16,6 +16,14 @@ func (a runtimeDeployKubernetesAdapter) EnsureNamespace(ctx context.Context, nam
 	return a.client.EnsureNamespace(ctx, namespace)
 }
 
+func (a runtimeDeployKubernetesAdapter) GetManagedRunNamespace(ctx context.Context, namespace string) (runtimedeploydomain.RuntimeNamespaceState, bool, error) {
+	return a.client.GetManagedRunNamespace(ctx, namespace)
+}
+
+func (a runtimeDeployKubernetesAdapter) UpsertNamespaceAnnotations(ctx context.Context, namespace string, annotations map[string]string) error {
+	return a.client.UpsertNamespaceAnnotations(ctx, namespace, annotations)
+}
+
 func (a runtimeDeployKubernetesAdapter) UpsertSecret(ctx context.Context, namespace string, secretName string, data map[string][]byte) error {
 	return a.client.UpsertSecret(ctx, namespace, secretName, data)
 }
@@ -61,14 +69,14 @@ func (a runtimeDeployKubernetesAdapter) ApplyManifest(ctx context.Context, manif
 	if err != nil {
 		return nil, err
 	}
-	out := make([]runtimedeploydomain.AppliedResourceRef, 0, len(refs))
-	for _, ref := range refs {
-		out = append(out, runtimedeploydomain.AppliedResourceRef{
-			APIVersion: ref.APIVersion,
-			Kind:       ref.Kind,
-			Namespace:  ref.Namespace,
-			Name:       ref.Name,
-		})
+	out := make([]runtimedeploydomain.AppliedResourceRef, len(refs))
+	for idx := range refs {
+		out[idx] = runtimedeploydomain.AppliedResourceRef{
+			APIVersion: refs[idx].APIVersion,
+			Kind:       refs[idx].Kind,
+			Namespace:  refs[idx].Namespace,
+			Name:       refs[idx].Name,
+		}
 	}
 	return out, nil
 }

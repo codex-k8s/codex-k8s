@@ -28,6 +28,8 @@ type Repository interface {
 	UpsertDesired(ctx context.Context, params UpsertDesiredParams) (Task, error)
 	// GetByRunID returns one runtime deploy task by run id.
 	GetByRunID(ctx context.Context, runID string) (Task, bool, error)
+	// FindActiveByNamespace returns one pending/running task for namespace when present.
+	FindActiveByNamespace(ctx context.Context, namespace string) (Task, bool, error)
 	// ClaimNext acquires one pending/expired-running task lease for reconciler processing.
 	ClaimNext(ctx context.Context, params ClaimParams) (Task, bool, error)
 	// MarkSucceeded sets terminal success state for one leased task.

@@ -22,8 +22,13 @@ branch/ref туда заранее доставляет runtime deploy (`repo-sy
 скрипт для git auth и временный каталог для проверки `codex` auth), чтобы не триггерить
 hot-reload watcher-ы.
 
-Для `run:*:revise` при переиспользовании живого namespace worker повторно не запускает runtime
-prepare/repo-sync и просто стартует нового агента в существующем `/workspace`.
+Для `run:*:revise` worker сначала проверяет reusable namespace через persisted runtime fingerprint
+(`build_ref` должен быть immutable SHA, fingerprint и rendered manifests должны совпадать, namespace не
+должен быть в `Terminating`, а в том же namespace не должно быть активной `runtime_deploy_task`).
+
+Только при положительной проверке worker пропускает runtime prepare/repo-sync и стартует нового агента
+в существующем `/workspace`. При любой инвалидации fast-path отключается, control-plane делает обычный
+runtime deploy/repo-sync в тот же namespace, после чего runner получает уже обновлённый `/workspace`.
 
 ```text
 services/jobs/agent-runner/                          runtime исполнитель агентных запусков

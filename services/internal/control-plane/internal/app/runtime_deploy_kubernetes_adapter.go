@@ -20,6 +20,14 @@ func (a runtimeDeployKubernetesAdapter) EnsureNamespace(ctx context.Context, nam
 	return a.client.EnsureNamespace(ctx, namespace)
 }
 
+func (a runtimeDeployKubernetesAdapter) GetManagedRunNamespace(ctx context.Context, namespace string) (runtimedeploydomain.RuntimeNamespaceState, bool, error) {
+	return a.client.GetManagedRunNamespace(ctx, namespace)
+}
+
+func (a runtimeDeployKubernetesAdapter) UpsertNamespaceAnnotations(ctx context.Context, namespace string, annotations map[string]string) error {
+	return a.client.UpsertNamespaceAnnotations(ctx, namespace, annotations)
+}
+
 func (a runtimeDeployKubernetesAdapter) UpsertSecret(ctx context.Context, namespace string, secretName string, data map[string][]byte) error {
 	return a.client.UpsertSecret(ctx, namespace, secretName, data)
 }

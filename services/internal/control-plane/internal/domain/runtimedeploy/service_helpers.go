@@ -4,6 +4,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
 )
 
 var (
@@ -63,6 +65,24 @@ func cloneStringMap(input map[string]string) map[string]string {
 		out[key] = value
 	}
 	return out
+}
+
+func applyEnvironmentDomainTemplate(templateVars map[string]string, stack *servicescfg.Stack, targetEnv string) {
+	if stack == nil {
+		return
+	}
+	envCfg, err := servicescfg.ResolveEnvironment(stack, targetEnv)
+	if err != nil {
+		return
+	}
+	host := strings.TrimSpace(envCfg.DomainTemplate)
+	if host == "" {
+		return
+	}
+	templateVars["CODEXK8S_PUBLIC_DOMAIN"] = host
+	if strings.EqualFold(targetEnv, "ai") || strings.TrimSpace(templateVars["CODEXK8S_PUBLIC_BASE_URL"]) == "" {
+		templateVars["CODEXK8S_PUBLIC_BASE_URL"] = "https://" + host
+	}
 }
 
 func resolveRuntimeBuildRef(candidates ...string) string {

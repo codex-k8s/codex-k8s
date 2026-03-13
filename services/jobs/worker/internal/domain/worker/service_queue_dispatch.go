@@ -82,32 +82,13 @@ func (s *Service) launchPending(ctx context.Context) error {
 			}
 			leaseTTL = s.resolveNamespaceTTL(leaseCtx.AgentKey)
 
-			if execution.RuntimeMode == agentdomain.RuntimeModeFullEnv &&
-				leaseCtx.IsRevise &&
-				prepareParams.Namespace == "" &&
-				leaseCtx.IssueNumber > 0 &&
-				leaseCtx.AgentKey != "" {
-				reusableNamespace, found, reuseErr := s.launcher.FindReusableNamespace(ctx, NamespaceReuseLookup{
-					ProjectID:   runningRun.ProjectID,
-					IssueNumber: leaseCtx.IssueNumber,
-					AgentKey:    leaseCtx.AgentKey,
-					Now:         s.now().UTC(),
-				})
-				if reuseErr != nil {
-					s.logger.Warn(
-						"resolve reusable namespace for revise run failed",
-						"run_id", runningRun.RunID,
-						"project_id", runningRun.ProjectID,
-						"issue_number", leaseCtx.IssueNumber,
-						"agent_key", leaseCtx.AgentKey,
-						"err", reuseErr,
-					)
-				} else if found {
-					prepareParams.Namespace = reusableNamespace.Namespace
-					execution.Namespace = reusableNamespace.Namespace
-					reusedFullEnvNamespace = true
-				}
+			reuseResolution, reuseErr := s.resolveRuntimeReuseForRevise(ctx, runningRun, execution, prepareParams, leaseCtx, triggerKind)
+			if reuseErr != nil {
+				return reuseErr
 			}
+			execution = reuseResolution.execution
+			prepareParams = reuseResolution.prepareParams
+			reusedFullEnvNamespace = reuseResolution.reusable
 		}
 
 		if aiRepairRun {

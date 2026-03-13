@@ -947,6 +947,13 @@ func TestTickLaunchesReviseRunReusesNamespaceAndExtendsTTL(t *testing.T) {
 	}
 	mcpTokens := &fakeMCPTokenIssuer{token: "token-run-revise"}
 	deployer := &fakeRuntimePreparer{
+		evaluateResult: EvaluateRuntimeReuseResult{
+			Reusable:          true,
+			Namespace:         "codex-k8s-dev-1",
+			TargetEnv:         "ai",
+			EffectiveBuildRef: "0123456789abcdef0123456789abcdef01234567",
+			FingerprintHash:   "fingerprint-1",
+		},
 		result: PrepareRunEnvironmentResult{
 			Namespace: "codex-k8s-dev-1",
 			TargetEnv: "ai",
@@ -974,6 +981,9 @@ func TestTickLaunchesReviseRunReusesNamespaceAndExtendsTTL(t *testing.T) {
 	if err := svc.Tick(context.Background()); err != nil {
 		t.Fatalf("Tick() error = %v", err)
 	}
+	if len(deployer.evaluated) != 1 {
+		t.Fatalf("expected one runtime reuse evaluation, got %d", len(deployer.evaluated))
+	}
 	if len(deployer.prepared) != 0 {
 		t.Fatalf("expected reused revise namespace to skip runtime prepare, got %d calls", len(deployer.prepared))
 	}
@@ -983,11 +993,158 @@ func TestTickLaunchesReviseRunReusesNamespaceAndExtendsTTL(t *testing.T) {
 	if got, want := launcher.launched[0].Namespace, "codex-k8s-dev-1"; got != want {
 		t.Fatalf("expected launched namespace %q, got %q", want, got)
 	}
-	if len(events.inserted) < 3 {
-		t.Fatalf("expected namespace prepared + ttl extended + run started events, got %d", len(events.inserted))
+	if len(events.inserted) < 5 {
+		t.Fatalf("expected reuse evidence + namespace prepared + ttl extended + run started events, got %d", len(events.inserted))
 	}
-	if events.inserted[1].EventType != floweventdomain.EventTypeRunNamespaceTTLExtended {
-		t.Fatalf("expected second event %q, got %q", floweventdomain.EventTypeRunNamespaceTTLExtended, events.inserted[1].EventType)
+	if events.inserted[0].EventType != floweventdomain.EventTypeRunNamespaceReuseFastPath {
+		t.Fatalf("expected first event %q, got %q", floweventdomain.EventTypeRunNamespaceReuseFastPath, events.inserted[0].EventType)
+	}
+	if events.inserted[2].EventType != floweventdomain.EventTypeRunNamespaceTTLExtended {
+		t.Fatalf("expected third event %q, got %q", floweventdomain.EventTypeRunNamespaceTTLExtended, events.inserted[2].EventType)
+	}
+}
+
+func TestTickLaunchesReviseRunFallsBackToRuntimeRedeployWhenReuseFingerprintIsMissing(t *testing.T) {
+	t.Parallel()
+
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev_revise"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
+	runs := &fakeRunQueue{
+		claims: []runqueuerepo.ClaimedRun{
+			{RunID: "run-revise-fallback", CorrelationID: "corr-revise-fallback", ProjectID: "550e8400-e29b-41d4-a716-446655440000", RunPayload: payload, SlotNo: 1},
+		},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{
+		states:        map[string]JobState{},
+		reusableFound: true,
+		reusable: NamespaceReuseResult{
+			Namespace: "codex-k8s-dev-1",
+			ExpiresAt: time.Date(2026, 2, 11, 15, 0, 0, 0, time.UTC),
+		},
+		ensureResult: NamespaceEnsureResult{Reused: true, LeaseExpiresAt: time.Date(2026, 2, 12, 10, 0, 0, 0, time.UTC)},
+	}
+	mcpTokens := &fakeMCPTokenIssuer{token: "token-run-revise"}
+	deployer := &fakeRuntimePreparer{
+		evaluateResult: EvaluateRuntimeReuseResult{
+			Reusable:          false,
+			Namespace:         "codex-k8s-dev-1",
+			TargetEnv:         "ai",
+			EffectiveBuildRef: "0123456789abcdef0123456789abcdef01234567",
+			Reason:            "fingerprint_missing",
+		},
+		result: PrepareRunEnvironmentResult{
+			Namespace: "codex-k8s-dev-1",
+			TargetEnv: "ai",
+		},
+	}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:           "worker-1",
+		ClaimLimit:         1,
+		RunningCheckLimit:  10,
+		SlotsPerProject:    2,
+		SlotLeaseTTL:       time.Minute,
+		RunNamespacePrefix: "codex-issue",
+	}, Dependencies{
+		Runs:            runs,
+		Events:          events,
+		Launcher:        launcher,
+		RuntimePreparer: deployer,
+		MCPTokenIssuer:  mcpTokens,
+		Logger:          logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 2, 11, 10, 0, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+	if len(deployer.evaluated) != 1 {
+		t.Fatalf("expected one runtime reuse evaluation, got %d", len(deployer.evaluated))
+	}
+	if len(deployer.prepared) != 1 {
+		t.Fatalf("expected one runtime prepare call after fallback, got %d", len(deployer.prepared))
+	}
+	if got, want := deployer.prepared[0].Namespace, "codex-k8s-dev-1"; got != want {
+		t.Fatalf("expected runtime prepare namespace %q, got %q", want, got)
+	}
+	if len(events.inserted) == 0 || events.inserted[0].EventType != floweventdomain.EventTypeRunNamespaceReuseFallback {
+		t.Fatalf("expected first event %q, got %#v", floweventdomain.EventTypeRunNamespaceReuseFallback, events.inserted)
+	}
+	if len(launcher.launched) != 1 {
+		t.Fatalf("expected one launched job after fallback redeploy, got %d", len(launcher.launched))
+	}
+	if got, want := launcher.launched[0].Namespace, "codex-k8s-dev-1"; got != want {
+		t.Fatalf("expected launched namespace %q after fallback, got %q", want, got)
+	}
+}
+
+func TestTickLaunchesReviseRunClearsStaleNamespaceWhenReuseVerdictRejectsCandidateNamespace(t *testing.T) {
+	t.Parallel()
+
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev_revise"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
+	runs := &fakeRunQueue{
+		claims: []runqueuerepo.ClaimedRun{
+			{RunID: "run-revise-namespace-reset", CorrelationID: "corr-revise-namespace-reset", ProjectID: "550e8400-e29b-41d4-a716-446655440000", RunPayload: payload, SlotNo: 1},
+		},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{
+		states:        map[string]JobState{},
+		reusableFound: true,
+		reusable: NamespaceReuseResult{
+			Namespace: "codex-k8s-dev-1",
+			ExpiresAt: time.Date(2026, 2, 11, 15, 0, 0, 0, time.UTC),
+		},
+		ensureResult: NamespaceEnsureResult{Reused: true, LeaseExpiresAt: time.Date(2026, 2, 12, 10, 0, 0, 0, time.UTC)},
+	}
+	mcpTokens := &fakeMCPTokenIssuer{token: "token-run-revise"}
+	deployer := &fakeRuntimePreparer{
+		evaluateResult: EvaluateRuntimeReuseResult{
+			Reusable:          false,
+			Namespace:         "codex-k8s-dev-1",
+			TargetEnv:         "ai",
+			EffectiveBuildRef: "0123456789abcdef0123456789abcdef01234567",
+			Reason:            runtimeReuseReasonNamespaceMismatch,
+		},
+		result: PrepareRunEnvironmentResult{
+			Namespace: "codex-issue-new-namespace",
+			TargetEnv: "ai",
+		},
+	}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:           "worker-1",
+		ClaimLimit:         1,
+		RunningCheckLimit:  10,
+		SlotsPerProject:    2,
+		SlotLeaseTTL:       time.Minute,
+		RunNamespacePrefix: "codex-issue",
+	}, Dependencies{
+		Runs:            runs,
+		Events:          events,
+		Launcher:        launcher,
+		RuntimePreparer: deployer,
+		MCPTokenIssuer:  mcpTokens,
+		Logger:          logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 2, 11, 10, 0, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+	if len(deployer.prepared) != 1 {
+		t.Fatalf("expected one runtime prepare call after fallback, got %d", len(deployer.prepared))
+	}
+	if got := deployer.prepared[0].Namespace; got != "" {
+		t.Fatalf("expected stale reusable namespace to be cleared before fallback prepare, got %q", got)
+	}
+	if len(launcher.launched) != 1 {
+		t.Fatalf("expected one launched job after namespace-reset fallback, got %d", len(launcher.launched))
+	}
+	if got, want := launcher.launched[0].Namespace, "codex-issue-new-namespace"; got != want {
+		t.Fatalf("expected launched namespace %q after fallback, got %q", want, got)
 	}
 }
 
@@ -1369,6 +1526,83 @@ func TestTickReclaimsRunAfterStaleLeaseAndLaunchesMissingWorkload(t *testing.T) 
 	}
 }
 
+func TestTickRunningFullEnvJobNotFound_ReviseReuseFastPathRelaunchesWithoutRuntimePrepare(t *testing.T) {
+	t.Parallel()
+
+	payload := json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"trigger":{"kind":"dev_revise"},"issue":{"number":74},"agent":{"key":"dev","name":"AI Developer"}}`)
+	runs := &fakeRunQueue{
+		running: []runqueuerepo.RunningRun{
+			{
+				RunID:         "run-reuse-recovery",
+				CorrelationID: "corr-reuse-recovery",
+				ProjectID:     "550e8400-e29b-41d4-a716-446655440000",
+				SlotNo:        1,
+				RunPayload:    payload,
+				StartedAt:     time.Date(2026, 2, 20, 0, 0, 0, 0, time.UTC),
+			},
+		},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{
+		states: map[string]JobState{
+			"run-reuse-recovery": JobStateNotFound,
+		},
+		reusableFound: true,
+		reusable: NamespaceReuseResult{
+			Namespace: "codex-k8s-dev-1",
+			ExpiresAt: time.Date(2026, 2, 20, 2, 0, 0, 0, time.UTC),
+		},
+		ensureResult: NamespaceEnsureResult{Reused: true, LeaseExpiresAt: time.Date(2026, 2, 21, 1, 0, 0, 0, time.UTC)},
+	}
+	deployer := &fakeRuntimePreparer{
+		evaluateResult: EvaluateRuntimeReuseResult{
+			Reusable:          true,
+			Namespace:         "codex-k8s-dev-1",
+			TargetEnv:         "ai",
+			EffectiveBuildRef: "0123456789abcdef0123456789abcdef01234567",
+			FingerprintHash:   "fingerprint-2",
+		},
+	}
+	mcpTokens := &fakeMCPTokenIssuer{token: "token-reuse-recovery"}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:                   "worker-1",
+		ClaimLimit:                 1,
+		RunningCheckLimit:          10,
+		SlotsPerProject:            2,
+		SlotLeaseTTL:               time.Minute,
+		RuntimePrepareRetryTimeout: 5 * time.Minute,
+	}, Dependencies{
+		Runs:            runs,
+		Events:          events,
+		Launcher:        launcher,
+		RuntimePreparer: deployer,
+		MCPTokenIssuer:  mcpTokens,
+		Logger:          logger,
+	})
+	svc.now = func() time.Time { return time.Date(2026, 2, 20, 1, 0, 0, 0, time.UTC) }
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+	if len(deployer.evaluated) != 1 {
+		t.Fatalf("expected one runtime reuse evaluation, got %d", len(deployer.evaluated))
+	}
+	if len(deployer.prepared) != 0 {
+		t.Fatalf("expected no runtime prepare calls during reuse recovery, got %d", len(deployer.prepared))
+	}
+	if len(launcher.launched) != 1 {
+		t.Fatalf("expected one relaunched job, got %d", len(launcher.launched))
+	}
+	if got, want := launcher.launched[0].Namespace, "codex-k8s-dev-1"; got != want {
+		t.Fatalf("expected relaunched namespace %q, got %q", want, got)
+	}
+	if len(events.inserted) == 0 || events.inserted[0].EventType != floweventdomain.EventTypeRunNamespaceReuseFastPath {
+		t.Fatalf("expected first event %q, got %#v", floweventdomain.EventTypeRunNamespaceReuseFastPath, events.inserted)
+	}
+}
+
 type fakeRunQueue struct {
 	claims              []runqueuerepo.ClaimedRun
 	claimCalls          int
@@ -1482,9 +1716,12 @@ type fakeMCPTokenIssuer struct {
 }
 
 type fakeRuntimePreparer struct {
-	prepared []PrepareRunEnvironmentParams
-	result   PrepareRunEnvironmentResult
-	err      error
+	evaluated      []EvaluateRuntimeReuseParams
+	evaluateResult EvaluateRuntimeReuseResult
+	evaluateErr    error
+	prepared       []PrepareRunEnvironmentParams
+	result         PrepareRunEnvironmentResult
+	err            error
 }
 
 type fakeRunStatusNotifier struct {
@@ -1494,6 +1731,14 @@ type fakeRunStatusNotifier struct {
 func (f *fakeRunStatusNotifier) UpsertRunStatusComment(_ context.Context, params RunStatusCommentParams) (RunStatusCommentResult, error) {
 	f.upserts = append(f.upserts, params)
 	return RunStatusCommentResult{CommentID: int64(len(f.upserts))}, nil
+}
+
+func (f *fakeRuntimePreparer) EvaluateRuntimeReuse(_ context.Context, params EvaluateRuntimeReuseParams) (EvaluateRuntimeReuseResult, error) {
+	if f.evaluateErr != nil {
+		return EvaluateRuntimeReuseResult{}, f.evaluateErr
+	}
+	f.evaluated = append(f.evaluated, params)
+	return f.evaluateResult, nil
 }
 
 func (f *fakeRuntimePreparer) PrepareRunEnvironment(_ context.Context, params PrepareRunEnvironmentParams) (PrepareRunEnvironmentResult, error) {
