@@ -5,6 +5,7 @@ type RunPayload struct {
 	DiscussionMode bool                   `json:"discussion_mode,omitempty"`
 	Project        RunPayloadProject      `json:"project"`
 	Repository     RunPayloadRepository   `json:"repository"`
+	Sender         RunPayloadActor        `json:"sender"`
 	Agent          *RunPayloadAgent       `json:"agent,omitempty"`
 	Issue          *RunPayloadIssue       `json:"issue,omitempty"`
 	PullRequest    *RunPayloadPullRequest `json:"pull_request,omitempty"`
@@ -25,6 +26,12 @@ type RunPayloadRepository struct {
 	Name     string `json:"name"`
 }
 
+// RunPayloadActor describes one GitHub actor embedded in run payload.
+type RunPayloadActor struct {
+	ID    int64  `json:"id,omitempty"`
+	Login string `json:"login,omitempty"`
+}
+
 // RunPayloadAgent is agent context section of run payload.
 type RunPayloadAgent struct {
 	ID   string `json:"id,omitempty"`
@@ -34,20 +41,22 @@ type RunPayloadAgent struct {
 
 // RunPayloadIssue is issue section of run payload.
 type RunPayloadIssue struct {
-	Number  int64  `json:"number"`
-	Title   string `json:"title"`
-	State   string `json:"state"`
-	HTMLURL string `json:"html_url"`
+	Number  int64           `json:"number"`
+	Title   string          `json:"title"`
+	State   string          `json:"state"`
+	HTMLURL string          `json:"html_url"`
+	User    RunPayloadActor `json:"user"`
 }
 
 // RunPayloadPullRequest is pull request section of run payload.
 type RunPayloadPullRequest struct {
-	Number  int64  `json:"number"`
-	Title   string `json:"title"`
-	State   string `json:"state"`
-	HTMLURL string `json:"html_url"`
-	HeadRef string `json:"head_ref,omitempty"`
-	BaseRef string `json:"base_ref,omitempty"`
+	Number  int64           `json:"number"`
+	Title   string          `json:"title"`
+	State   string          `json:"state"`
+	HTMLURL string          `json:"html_url"`
+	HeadRef string          `json:"head_ref,omitempty"`
+	BaseRef string          `json:"base_ref,omitempty"`
+	User    RunPayloadActor `json:"user"`
 }
 
 // RunPayloadTrigger is trigger section of run payload.

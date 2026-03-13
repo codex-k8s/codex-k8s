@@ -8,10 +8,12 @@ import (
 	"time"
 
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
+	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentsession"
 	mcpactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/mcpactionrequest"
 	projectdatabaserepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projectdatabase"
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
 )
 
 func (s *Service) MCPSecretSyncEnv(ctx context.Context, session SessionContext, input SecretSyncEnvInput) (SecretSyncEnvResult, error) {
@@ -741,7 +743,16 @@ func (s *Service) ensurePendingApprovalRequest(
 	if err != nil {
 		return entitytypes.MCPActionRequest{}, false, fmt.Errorf("create approval request: %w", err)
 	}
-	if err := s.setRunWaitState(ctx, runCtx.Session, waitStateMCP, true); err != nil {
+	if err := s.setRunWaitContext(
+		ctx,
+		runCtx.Session,
+		waitStateMCP,
+		true,
+		enumtypes.AgentRunWaitReasonApprovalPending,
+		enumtypes.AgentRunWaitTargetKindApprovalRequest,
+		fmt.Sprintf("%d", item.ID),
+		nil,
+	); err != nil {
 		return entitytypes.MCPActionRequest{}, false, err
 	}
 
@@ -1066,7 +1077,20 @@ func databaseActionName(action DatabaseLifecycleAction) string {
 }
 
 func (s *Service) setRunWaitState(ctx context.Context, session SessionContext, state waitState, timeoutGuardDisabled bool) error {
-	if strings.TrimSpace(session.RunID) == "" || s.sessions == nil {
+	return s.setRunWaitContext(ctx, session, state, timeoutGuardDisabled, "", "", "", nil)
+}
+
+func (s *Service) setRunWaitContext(
+	ctx context.Context,
+	session SessionContext,
+	state waitState,
+	timeoutGuardDisabled bool,
+	waitReason enumtypes.AgentRunWaitReason,
+	waitTargetKind enumtypes.AgentRunWaitTargetKind,
+	waitTargetRef string,
+	waitDeadlineAt *time.Time,
+) error {
+	if strings.TrimSpace(session.RunID) == "" {
 		return nil
 	}
 	var lastHeartbeatAt *time.Time
@@ -1075,14 +1099,27 @@ func (s *Service) setRunWaitState(ctx context.Context, session SessionContext, s
 		lastHeartbeatAt = &now
 	}
 
-	_, err := s.sessions.SetWaitStateByRunID(ctx, agentsessionrepo.SetWaitStateParams{
-		RunID:                session.RunID,
-		WaitState:            string(state),
-		TimeoutGuardDisabled: timeoutGuardDisabled,
-		LastHeartbeatAt:      lastHeartbeatAt,
-	})
-	if err != nil {
-		return fmt.Errorf("set run wait state: %w", err)
+	if s.sessions != nil {
+		_, err := s.sessions.SetWaitStateByRunID(ctx, agentsessionrepo.SetWaitStateParams{
+			RunID:                session.RunID,
+			WaitState:            string(state),
+			TimeoutGuardDisabled: timeoutGuardDisabled,
+			LastHeartbeatAt:      lastHeartbeatAt,
+		})
+		if err != nil {
+			return fmt.Errorf("set run wait state: %w", err)
+		}
+	}
+	if s.runs != nil {
+		if _, err := s.runs.SetWaitContext(ctx, agentrunrepo.SetWaitContextParams{
+			RunID:          session.RunID,
+			WaitReason:     waitReason,
+			WaitTargetKind: waitTargetKind,
+			WaitTargetRef:  strings.TrimSpace(waitTargetRef),
+			WaitDeadlineAt: waitDeadlineAt,
+		}); err != nil {
+			return fmt.Errorf("set run wait context: %w", err)
+		}
 	}
 
 	switch state {

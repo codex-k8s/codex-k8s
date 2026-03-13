@@ -11,6 +11,7 @@ type Run = entity.AgentRun
 type CreateParams = query.AgentRunCreateParams
 type CreateResult = query.AgentRunCreateResult
 type RunLookupItem = query.AgentRunLookupItem
+type SetWaitContextParams = query.AgentRunSetWaitContextParams
 
 // Repository persists and queries agent run records.
 type Repository interface {
@@ -28,4 +29,6 @@ type Repository interface {
 	ListRunIDsByRepositoryIssue(ctx context.Context, repositoryFullName string, issueNumber int64, limit int) ([]string, error)
 	// ListRunIDsByRepositoryPullRequest returns run ids for one repository/pull request pair.
 	ListRunIDsByRepositoryPullRequest(ctx context.Context, repositoryFullName string, prNumber int64, limit int) ([]string, error)
+	// SetWaitContext updates typed wait linkage stored in agent_runs.
+	SetWaitContext(ctx context.Context, params SetWaitContextParams) (bool, error)
 }

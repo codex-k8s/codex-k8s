@@ -36,6 +36,8 @@ var (
 	querySearchRecentByProjectIssueOrPullRequest string
 	//go:embed sql/release_slots_by_run_id.sql
 	queryReleaseSlotsByRunID string
+	//go:embed sql/set_wait_context.sql
+	querySetWaitContext string
 	//go:embed sql/upsert_run_agent_logs.sql
 	queryUpsertRunAgentLogs string
 	//go:embed sql/cleanup_run_agent_logs_finished_before.sql
@@ -227,6 +229,28 @@ func (r *Repository) ListRunIDsByRepositoryPullRequest(ctx context.Context, repo
 	return r.listRunIDsByRepositoryReference(ctx, queryListRunIDsByRepositoryPullRequest, repositoryFullName, prNumber, limit, "pr_number", "repository/pull request")
 }
 
+// SetWaitContext updates typed wait linkage stored in agent_runs.
+func (r *Repository) SetWaitContext(ctx context.Context, params domainrepo.SetWaitContextParams) (bool, error) {
+	runID := strings.TrimSpace(params.RunID)
+	if runID == "" {
+		return false, fmt.Errorf("run_id is required")
+	}
+
+	res, err := r.db.Exec(
+		ctx,
+		querySetWaitContext,
+		runID,
+		string(params.WaitReason),
+		string(params.WaitTargetKind),
+		strings.TrimSpace(params.WaitTargetRef),
+		timestamptzPtrOrNil(params.WaitDeadlineAt),
+	)
+	if err != nil {
+		return false, fmt.Errorf("set run wait context: %w", err)
+	}
+	return res.RowsAffected() > 0, nil
+}
+
 // UpsertRunAgentLogs stores latest agent execution logs for one run.
 func (r *Repository) UpsertRunAgentLogs(ctx context.Context, runID string, logs json.RawMessage) error {
 	trimmedRunID := strings.TrimSpace(runID)
@@ -279,4 +303,11 @@ func (r *Repository) listRunIDsByRepositoryReference(ctx context.Context, query 
 		return nil, fmt.Errorf("collect run ids by %s: %w", operationLabel, err)
 	}
 	return runIDs, nil
+}
+
+func timestamptzPtrOrNil(value *time.Time) any {
+	if value == nil || value.IsZero() {
+		return nil
+	}
+	return value.UTC()
 }

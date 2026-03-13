@@ -3209,6 +3209,10 @@ func (r *inMemoryRunRepo) ListRunIDsByRepositoryPullRequest(_ context.Context, _
 	return nil, nil
 }
 
+func (r *inMemoryRunRepo) SetWaitContext(context.Context, agentrunrepo.SetWaitContextParams) (bool, error) {
+	return false, nil
+}
+
 type inMemoryRunStatusService struct {
 	issueCleanupCalls        int
 	pullRequestCleanupCalls  int

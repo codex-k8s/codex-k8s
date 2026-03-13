@@ -93,15 +93,21 @@ const (
 	EventTypeMCPToolSucceeded       EventType = "mcp.tool.succeeded"
 	EventTypeMCPToolFailed          EventType = "mcp.tool.failed"
 	EventTypeMCPToolApprovalPending EventType = "mcp.tool.approval_pending"
+	EventTypeApprovalRequested      EventType = "approval.requested"
+	EventTypeApprovalApproved       EventType = "approval.approved"
+	EventTypeApprovalDenied         EventType = "approval.denied"
+	EventTypeApprovalExpired        EventType = "approval.expired"
+	EventTypeApprovalFailed         EventType = "approval.failed"
+	EventTypeApprovalApplied        EventType = "approval.applied"
 )
 
 const (
-	EventTypeApprovalRequested EventType = "approval.requested"
-	EventTypeApprovalApproved  EventType = "approval.approved"
-	EventTypeApprovalDenied    EventType = "approval.denied"
-	EventTypeApprovalExpired   EventType = "approval.expired"
-	EventTypeApprovalFailed    EventType = "approval.failed"
-	EventTypeApprovalApplied   EventType = "approval.applied"
+	EventTypeInteractionRequestCreated   EventType = "interaction.request.created"
+	EventTypeInteractionCallbackReceived EventType = "interaction.callback.received"
+	EventTypeInteractionResponseAccepted EventType = "interaction.response.accepted"
+	EventTypeInteractionResponseRejected EventType = "interaction.response.rejected"
+	EventTypeInteractionWaitEntered      EventType = "interaction.wait.entered"
+	EventTypeInteractionWaitResumed      EventType = "interaction.wait.resumed"
 )
 
 const (

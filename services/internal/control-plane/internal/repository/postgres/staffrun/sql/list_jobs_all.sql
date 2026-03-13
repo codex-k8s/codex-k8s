@@ -23,11 +23,14 @@ SELECT
     COALESCE(rt.job_namespace, '') AS job_namespace,
     COALESCE(rt.namespace, '') AS namespace,
     COALESCE(ws.wait_state, '') AS wait_state,
-    CASE
-        WHEN COALESCE(ws.wait_state, '') = 'mcp' THEN 'waiting_mcp'
-        WHEN COALESCE(ws.wait_state, '') = 'owner_review' THEN 'waiting_owner_review'
-        ELSE ''
-    END AS wait_reason,
+    COALESCE(
+        NULLIF(ar.wait_reason, ''),
+        CASE
+            WHEN COALESCE(ws.wait_state, '') = 'mcp' THEN 'approval_pending'
+            WHEN COALESCE(ws.wait_state, '') = 'owner_review' THEN 'owner_review'
+            ELSE ''
+        END
+    ) AS wait_reason,
     ws.wait_since,
     ws.last_heartbeat_at,
     COALESCE(pr.pr_url, '') AS pr_url,
