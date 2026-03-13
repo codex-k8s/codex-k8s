@@ -5,13 +5,15 @@ title: "Epic S10 Day 3: PRD для built-in MCP user interactions (Issues #383/#
 status: in-review
 owner_role: PM
 created_at: 2026-03-12
-updated_at: 2026-03-12
+updated_at: 2026-03-13
 related_issues: [360, 378, 383, 385]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-12-issue-383-prd"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # Epic S10 Day 3: PRD для built-in MCP user interactions (Issues #383/#385)

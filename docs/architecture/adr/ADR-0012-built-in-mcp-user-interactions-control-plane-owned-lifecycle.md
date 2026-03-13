@@ -5,15 +5,17 @@ title: "Built-in MCP user interactions: control-plane-owned lifecycle with worke
 status: accepted
 owner_role: SA
 created_at: 2026-03-12
-updated_at: 2026-03-12
+updated_at: 2026-03-13
 related_issues: [360, 378, 383, 385, 387]
 related_prs: []
 supersedes: []
 superseded_by: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-12-issue-385-arch"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # ADR-0012: Built-in MCP user interactions — control-plane-owned lifecycle with worker dispatch and thin-edge callbacks
