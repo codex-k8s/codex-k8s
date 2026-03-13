@@ -5,8 +5,8 @@ title: "codex-k8s — Prompt Templates Policy"
 status: active
 owner_role: SA
 created_at: 2026-02-11
-updated_at: 2026-03-09
-related_issues: [1, 19, 100, 247, 248, 249]
+updated_at: 2026-03-13
+related_issues: [1, 19, 100, 247, 248, 249, 397]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -42,6 +42,9 @@ approvals:
   - `services/jobs/agent-runner/internal/runner/templates/prompt_blocks/issue_contract_<locale>.tmpl`
 - PR/review/discussion contract blocks:
   - `services/jobs/agent-runner/internal/runner/templates/prompt_blocks/pr_contract_<kind>_<locale>.tmpl`
+- title/body contract blocks выше обязаны оставаться синхронными с
+  `docs/delivery/development_process_requirements.md`;
+  при markdown-only trigger допустим только явный follow-up issue на закрытие drift в prompt files.
 
 ## Каноническая seed-матрица
 
@@ -94,6 +97,8 @@ Seed-файл не отправляется агенту напрямую. Final
 - communication language текущего запуска;
 - требования по tests/docs/PR flow;
 - cadence progress-feedback через `run_status_report`.
+- если заголовок артефакта явно содержит роль агента, optional-фрагмент `Sprint S<спринт> Day<день>`
+  вставляется сразу после role token, но только когда sprint/day известны из stage context.
 
 ## Locale policy
 

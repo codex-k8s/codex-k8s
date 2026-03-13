@@ -5,8 +5,8 @@ title: "codex-k8s — Development and Documentation Process Requirements"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-03-12
-related_issues: [1, 112, 210, 212, 241, 243, 327]
+updated_at: 2026-03-13
+related_issues: [1, 112, 210, 212, 241, 243, 327, 397]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -85,19 +85,49 @@ approvals:
 
 Цель: заголовок и body должны сразу показывать stage, роль и тип результата.
 
+Канонический source-of-truth для agent-generated title/body contract:
+- `docs/delivery/development_process_requirements.md`
+- `services/jobs/agent-runner/internal/runner/templates/prompt_blocks/issue_contract_<locale>.tmpl`
+- `services/jobs/agent-runner/internal/runner/templates/prompt_blocks/pr_contract_<kind>_<locale>.tmpl`
+
+Базовое правило: delivery-документация и prompt contract blocks обновляются синхронно в одном PR.
+Исключение допускается только для markdown-only trigger, который не разрешает менять prompt files:
+в таком случае documentation PR обязан явно зафиксировать follow-up issue на синхронизацию prompt contract blocks.
+
 ### Заголовки
+
+#### Stage issue для kickoff/backlog
 
 | Тип | Формат | Пример |
 |---|---|---|
 | Stage issue (doc stages) | `S<спринт> Day<день>: <Stage> для <краткая цель>` | `S7 Day1: Intake для закрытия MVP readiness gaps` |
 | Stage issue (`run:dev`) | `S<спринт> Day<день>: Dev — <краткая реализация>` | `S6 Day7: Dev — lifecycle управления агентами и prompt templates` |
-| PR по stage-документации | `Issue #<номер>: <stage>-пакет <краткая цель>` | `Issue #212: intake-пакет Sprint S7 для закрытия MVP readiness gaps` |
-| PR по `run:dev` | `Issue #<номер>: <краткая реализация> (#<номер>)` | `Issue #199: реализация lifecycle управления агентами и шаблонами промптов (#199)` |
+
+#### Follow-up / handover Issue, который создаёт агент
+
+| Роль / сценарий | Формат | Пример |
+|---|---|---|
+| `dev` | `Dev follow-up[ Sprint S<спринт> Day<день>]: <краткий технический пробел или следующий шаг>` | `Dev follow-up Sprint S7 Day6: добавить шаблонный контракт оформления PR` |
+| `qa` | `QA gap[ Sprint S<спринт> Day<день>]: <краткий дефект, сценарий или пробел проверки>` | `QA gap Sprint S7 Day8: покрыть DNS-path smoke для новых ручек` |
+| `sre` | `SRE remediation[ Sprint S<спринт> Day<день>]: <краткая инфраструктурная проблема или действие>` | `SRE remediation Sprint S6 Day11: закрепить rollback шаг для runtime deploy` |
+| `reviewer` | `Review follow-up[ Sprint S<спринт> Day<день>]: <краткий риск или блокер>` | `Review follow-up Sprint S7 Day7: убрать дрейф между prompt contract и process doc` |
+| Другие роли (`pm`, `sa`, `em`, `km`) | `<agent_key>[ Sprint S<спринт> Day<день>]: <краткая цель, решение или пробел>` | `km Sprint S10 Day6: синхронизировать title-contract с prompt policy` |
+
+#### PR, который публикует агент
+
+| Роль / сценарий | Формат | Пример |
+|---|---|---|
+| doc-stage роли (`pm`, `sa`, `em`, `km`) | `Issue #<номер>: <stage>-package — <краткая цель пакета>` | `Issue #397: doc-audit-package — актуализировать contract заголовков` |
+| `run:dev` | `Issue #<номер>: <краткий технический результат> (#<номер>)` | `Issue #199: реализация lifecycle управления агентами и шаблонами промптов (#199)` |
+| `run:qa` | `Issue #<номер>: qa[ Sprint S<спринт> Day<день>] — <краткий итог проверки> (#<номер>)` | `Issue #201: qa Sprint S6 Day8 — regression GO по lifecycle agents/prompts (#201)` |
+| `run:ops` / `run:release` / `run:postdeploy` / `run:ai-repair` под ролью `sre` | `Issue #<номер>: sre[ Sprint S<спринт> Day<день>] — <краткий итог remediation> (#<номер>)` | `Issue #265: sre Sprint S6 Day11 — operational baseline и rollback readiness (#265)` |
 
 Обязательные правила для заголовков:
 - заголовок всегда одной строкой и без точки в конце;
 - сначала фиксируется предмет/результат, потом уточнение;
 - расплывчатые формулировки (`misc`, `update`, `fixes`, `wip`, `changes`) без предмета запрещены;
+- если заголовок явно содержит роль агента, то при наличии stage context сразу после role token добавляется фрагмент `Sprint S<спринт> Day<день>`;
+- если sprint/day для конкретного follow-up или PR не зафиксированы, этот фрагмент опускается целиком;
 - если артефакт связан с существующей задачей, заголовок обязан сохранять прямую связь с `Issue #<номер>`.
 
 ### Follow-up Issue body
@@ -117,10 +147,11 @@ approvals:
 Правила:
 - если раздел не применим, писать `Не требуется`;
 - в `Связанные артефакты` указывать issue/PR/doc/run/environment ссылки;
-- для follow-up issue роль должна быть видна уже из заголовка (`Dev follow-up`, `QA gap`, `SRE remediation`, `Review follow-up` или эквивалентная role-prefix форма).
+- для follow-up issue роль должна быть видна уже из заголовка (`Dev follow-up`, `QA gap`, `SRE remediation`, `Review follow-up` или `<agent_key>`);
+- при наличии sprint/day в role-bearing title сначала идёт role token, затем `Sprint S<спринт> Day<день>`, и только после этого `:` с предметом задачи.
 
 Пример follow-up Issue title:
-- `Dev follow-up: добавить шаблонный контракт оформления PR`
+- `km Sprint S10 Day6: синхронизировать title-contract с prompt policy`
 
 ### PR body: базовый контракт
 
