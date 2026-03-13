@@ -2,16 +2,18 @@
 doc_id: DM-S12-GITHUB-RL-0001
 type: data-model
 title: "GitHub API rate-limit resilience — Data model Sprint S12 Day 5"
-status: in-review
+status: approved
 owner_role: SA
 created_at: 2026-03-13
 updated_at: 2026-03-13
-related_issues: [366, 413, 416, 418, 420, 423]
+related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-13-issue-420-data-model"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # Data Model: GitHub API rate-limit resilience
@@ -185,6 +187,10 @@ approvals:
   - writes only through owner use-cases for resume sweeps and manual escalation.
 - `agent-runner`:
   - never writes wait rows directly; it only reports signals and persists session snapshots through existing callbacks.
+
+## Continuity after `run:plan`
+- Plan package Issue `#423` закрепил этот data model как baseline для waves `#425`, `#426`, `#427` и `#428`.
+- Execution streams не могут добавлять parallel source-of-truth для wait semantics вне `github_rate_limit_waits`, `github_rate_limit_wait_evidence` и зафиксированных расширений `agent_runs`/`agent_sessions`.
 
 ## Runtime impact / Migration impact
 - Runtime impact (`run:design`): absent, docs only.

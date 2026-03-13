@@ -6,14 +6,16 @@ status: accepted
 owner_role: SA
 created_at: 2026-03-13
 updated_at: 2026-03-13
-related_issues: [366, 413, 416, 418, 420]
+related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
 related_prs: []
 supersedes: []
 superseded_by: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-13-issue-418-arch"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # ADR-0013: GitHub API rate-limit resilience — control-plane-owned controlled wait with worker resume orchestration
@@ -139,6 +141,10 @@ approvals:
   - если на `run:design` выяснится, что finite auto-resume policy и aggregate ownership не удерживаются в `control-plane` без нарушения bounded-context integrity.
 - Как откатываем:
   - ADR переводится в `superseded`, а wait-state lifecycle выносится в отдельный orchestration service с теми же PRD guardrails.
+
+## Continuity after `run:plan`
+- Plan package Issue `#423` подтвердил это ADR как owner-baseline для execution waves `#425..#431`.
+- Ни одна wave не может перенести ownership classification/recovery semantics из `control-plane` в `worker`, `agent-runner`, `api-gateway` или `web-console`.
 
 ## Ссылки
 - PRD:

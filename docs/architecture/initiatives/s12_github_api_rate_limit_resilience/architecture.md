@@ -2,16 +2,18 @@
 doc_id: ARC-S12-0001
 type: architecture-design
 title: "Sprint S12 Day 4 — GitHub API rate-limit resilience architecture (Issue #418)"
-status: in-review
+status: approved
 owner_role: SA
 created_at: 2026-03-13
 updated_at: 2026-03-13
-related_issues: [366, 413, 416, 418, 420]
+related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-13-issue-418-arch"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # Sprint S12 Day 4 — GitHub API rate-limit resilience architecture (Issue #418)
@@ -20,6 +22,7 @@ approvals:
 - `control-plane` становится единственным владельцем domain classification, controlled wait aggregate, contour attribution, recovery hints и visibility contract для GitHub rate-limit resilience.
 - `worker` закрепляется за time-based orchestration: wait scheduling, eligibility sweeps, auto-resume attempts и escalation в manual-action-required path; `agent-runner` больше не может решать recoverable wait локальными retry-loop и обязан передавать raw evidence в platform domain.
 - `api-gateway` и `web-console` остаются thin visibility surfaces: они показывают typed wait projections, но не вычисляют countdown, classification или contour semantics самостоятельно.
+- Plan-stage в Issue `#423` подтвердил эти service boundaries и разложил реализацию на execution waves `#425..#431` без переноса ownership между слоями.
 
 ## Контекст и входные артефакты
 - Delivery-цепочка: `#366 (intake) -> #413 (vision) -> #416 (prd) -> #418 (arch)`.
@@ -211,11 +214,12 @@ sequenceDiagram
   - `/websites/cli_github_manual`.
 - Официальные GitHub Docs по rate limits и best practices просмотрены 2026-03-13 и использованы как внешний baseline для primary/secondary semantics.
 
-## Handover в `run:design`
-- Следующий этап: `run:design`.
-- Follow-up issue: `#420`.
-- На design-stage обязательно выпустить:
-  - `design_doc.md` с detailed lifecycle, finite auto-resume policy и manual-action path;
-  - `api_contract.md` с typed signal / visibility / callback DTO;
-  - `data_model.md` с wait aggregate, contour attribution и audit linkage;
-  - `migrations_policy.md` с rollout/rollback notes и observability requirements.
+## Continuity after `run:plan`
+- Day4 handover в `run:design` был завершён через Issue `#420`; Day5 design package и Day6 plan package не изменили зафиксированную ownership-модель.
+- Execution waves `#425..#431` обязаны сохранять:
+  - `#425` только schema/repository foundation;
+  - `#426` только domain classification/projection under `control-plane`;
+  - `#427` только worker orchestration поверх domain policy;
+  - `#428` только runner handoff/resume payload без local ownership drift;
+  - `#429` и `#430` только typed visibility surfaces;
+  - `#431` только observability/readiness evidence перед `run:qa`.

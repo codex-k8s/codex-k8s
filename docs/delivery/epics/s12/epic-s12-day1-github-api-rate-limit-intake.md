@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S12-D1-RATE-LIMIT
 type: epic
 title: "Epic S12 Day 1: Intake для GitHub API rate-limit resilience, wait-state UX и MCP backpressure (Issue #366)"
-status: in-review
+status: completed
 owner_role: PM
 created_at: 2026-03-13
 updated_at: 2026-03-13
@@ -10,8 +10,10 @@ related_issues: [366, 413]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-13-issue-366-intake"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # Epic S12 Day 1: Intake для GitHub API rate-limit resilience, wait-state UX и MCP backpressure (Issue #366)

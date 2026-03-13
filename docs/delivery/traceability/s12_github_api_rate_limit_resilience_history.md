@@ -2,16 +2,18 @@
 doc_id: TRH-CK8S-S12-0001
 type: traceability-history
 title: "Sprint S12 Traceability History"
-status: in-review
+status: completed
 owner_role: KM
 created_at: 2026-03-13
 updated_at: 2026-03-13
-related_issues: [366, 413, 416, 418, 420, 423]
+related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-13-traceability-s12-history"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # Sprint S12 Traceability History
@@ -95,3 +97,24 @@ approvals:
   - Context7 `/github/docs` использован для актуальной верификации primary/secondary rate-limit semantics, `Retry-After`, response headers и best-practice guidance по pacing/backoff;
   - локально подтверждён non-interactive GitHub flow через `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: design stage переводит architecture package в implementation-ready contracts и rollout notes, а не добавляет новые канонические требования.
+
+## Актуализация по Issue #423 (`run:plan`, 2026-03-13)
+- Подготовлен plan package:
+  - `docs/delivery/epics/s12/epic-s12-day6-github-api-rate-limit-plan.md`;
+  - `docs/delivery/sprints/s12/sprint_s12_github_api_rate_limit_resilience.md`;
+  - `docs/delivery/epics/s12/epic_s12.md`;
+  - `docs/delivery/delivery_plan.md`;
+  - `docs/delivery/issue_map.md`.
+- Зафиксированы:
+  - execution waves `#425..#431` по контурам schema foundation, `control-plane`, `worker`, `agent-runner`, `api-gateway`, `web-console` и observability/readiness gate;
+  - rollout order `migrations -> control-plane -> worker -> agent-runner -> api-gateway -> web-console`;
+  - quality gates, DoR/DoD, blockers, risks и owner decisions для handover в `run:dev`;
+  - обязательный gate `#431` перед handover в `run:qa`;
+  - frontmatter для sprint package, epic catalog, day6 plan epic и traceability history нормализован в завершённое состояние, чтобы document contour `intake -> vision -> prd -> arch -> design -> plan` не выглядел как продолжающийся implementation stage;
+  - канонический Day6 epic для Issue `#423` закреплён как `docs/delivery/epics/s12/epic-s12-day6-github-api-rate-limit-plan.md`; конкурирующий дубль `docs/delivery/epics/s12/epic-s12-day6-github-api-rate-limit-resilience-plan.md` удалён в revise-итерации, чтобы сохранить единый source of truth;
+  - факт, что документный контур `intake -> vision -> prd -> arch -> design -> plan` согласован и завершён, а дальнейший handover остаётся owner-managed.
+- Для continuity созданы follow-up issues `#425`, `#426`, `#427`, `#428`, `#429`, `#430`, `#431` без trigger-лейблов.
+- Внешний baseline дополнительно сверен:
+  - Context7 `/github/docs` использован для повторной проверки primary/secondary rate-limit semantics, `Retry-After`, guidance `wait at least one minute` и exponential backoff;
+  - локально подтверждён non-interactive GitHub flow через `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: plan stage декомпозирует delivery waves, evidence и quality gates, но не вводит новые канонические требования.
