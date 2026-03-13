@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-0012
 type: epic
 title: "Epic Catalog: Sprint S12 (GitHub API rate-limit resilience, wait-state UX and MCP backpressure)"
-status: in-progress
+status: completed
 owner_role: PM
 created_at: 2026-03-13
 updated_at: 2026-03-13

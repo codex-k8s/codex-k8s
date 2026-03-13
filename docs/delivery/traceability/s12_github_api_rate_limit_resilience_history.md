@@ -2,7 +2,7 @@
 doc_id: TRH-CK8S-S12-0001
 type: traceability-history
 title: "Sprint S12 Traceability History"
-status: in-progress
+status: completed
 owner_role: KM
 created_at: 2026-03-13
 updated_at: 2026-03-13
@@ -110,6 +110,7 @@ approvals:
   - rollout order `migrations -> control-plane -> worker -> agent-runner -> api-gateway -> web-console`;
   - quality gates, DoR/DoD, blockers, risks и owner decisions для handover в `run:dev`;
   - обязательный gate `#431` перед handover в `run:qa`;
+  - frontmatter для sprint package, epic catalog, day6 plan epic и traceability history нормализован в завершённое состояние, чтобы document contour `intake -> vision -> prd -> arch -> design -> plan` не выглядел как продолжающийся implementation stage;
   - канонический Day6 epic для Issue `#423` закреплён как `docs/delivery/epics/s12/epic-s12-day6-github-api-rate-limit-plan.md`; конкурирующий дубль `docs/delivery/epics/s12/epic-s12-day6-github-api-rate-limit-resilience-plan.md` удалён в revise-итерации, чтобы сохранить единый source of truth;
   - факт, что документный контур `intake -> vision -> prd -> arch -> design -> plan` согласован и завершён, а дальнейший handover остаётся owner-managed.
 - Для continuity созданы follow-up issues `#425`, `#426`, `#427`, `#428`, `#429`, `#430`, `#431` без trigger-лейблов.

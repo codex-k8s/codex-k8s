@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S12-D6-GITHUB-RATE-LIMIT
 type: epic
 title: "Epic S12 Day 6: Plan для GitHub API rate-limit resilience, execution waves и rollout gates (Issue #423)"
-status: in-review
+status: completed
 owner_role: EM
 created_at: 2026-03-13
 updated_at: 2026-03-13
