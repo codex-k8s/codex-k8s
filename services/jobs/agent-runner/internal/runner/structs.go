@@ -211,6 +211,7 @@ type codexConfigTemplateData struct {
 	ReasoningEffort string
 	MCPBaseURL      string
 	HasContext7     bool
+	Context7APIKey  string
 }
 
 type kubectlKubeconfigTemplateData struct {
