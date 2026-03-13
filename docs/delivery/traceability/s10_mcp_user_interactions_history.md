@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-12
 updated_at: 2026-03-13
-related_issues: [360, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395]
+related_issues: [360, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 402]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -100,3 +100,19 @@ approvals:
 - Для continuity созданы follow-up issues `#391`, `#392`, `#393`, `#394`, `#395` без trigger-лейблов.
 - Попытка использовать Context7 для GitHub CLI manual завершилась ошибкой `Monthly quota exceeded`; для non-interactive GitHub flow использованы локальные `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: plan stage фиксирует execution backlog, quality gates и handover в `run:dev`, а не меняет канонический requirements baseline.
+
+## Актуализация по Issue #391 (`run:dev`, 2026-03-13)
+- Реализован foundation package для stream `S10-E01` в `services/internal/control-plane`:
+  - миграция `20260313120000_day29_mcp_user_interactions_foundation.sql` добавила таблицы `interaction_requests`, `interaction_delivery_attempts`, `interaction_callback_events`, `interaction_response_records`, а также typed wait columns в `agent_runs` с backfill из legacy wait-state данных;
+  - доменные typed models/repositories добавлены для interaction aggregate, delivery attempts, callback evidence и resume payload;
+  - built-in MCP orchestration получила foundation для `user.notify` и `user.decision.request`, callback classification/resume helpers и audit events;
+  - staff run SQL projections переведены на `agent_runs.wait_reason` с fallback к coarse `agent_sessions.wait_state`, чтобы сохранить совместимость текущих wait filters до следующих волн.
+- Rollout boundary сохранён:
+  - новые tools зарегистрированы в MCP catalog/transport, но не добавлены в allow-list policy, поэтому остаются скрытыми до delivery waves `#392`, `#393`, `#394`;
+  - callback ingress / OpenAPI / gRPC transport на этой волне не открывались.
+- Выполнены проверки:
+  - `go test ./services/internal/control-plane/...`
+  - `git diff --check`
+- Для residual `dupl-go` blockers вне scope создан follow-up issue `#402`.
+- Попытка использовать Context7 для актуальной документации/verification завершилась ошибкой `Monthly quota exceeded`; новых внешних зависимостей в issue `#391` не добавлялось.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: issue `#391` реализует approved foundation wave из execution package, не меняя продуктовый baseline.

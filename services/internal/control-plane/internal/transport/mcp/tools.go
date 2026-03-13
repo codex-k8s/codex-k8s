@@ -24,6 +24,8 @@ func registerTools(server *sdkmcp.Server, service domainService) {
 	addTool(server, mcpdomain.ToolMCPSecretSyncEnv, "Sync one secret into Kubernetes namespace", service.MCPSecretSyncEnv)
 	addTool(server, mcpdomain.ToolMCPDatabaseLifecycle, "Create, drop or describe one environment database", service.MCPDatabaseLifecycle)
 	addTool(server, mcpdomain.ToolMCPOwnerFeedbackRequest, "Request owner feedback with predefined options", service.MCPOwnerFeedbackRequest)
+	addTool(server, mcpdomain.ToolMCPUserNotify, "Queue one built-in user notification interaction", service.MCPUserNotify)
+	addTool(server, mcpdomain.ToolMCPUserDecisionRequest, "Queue one built-in user decision request interaction", service.MCPUserDecisionRequest)
 	addTool(server, mcpdomain.ToolSelfImproveRunsList, "List project runs for self-improve diagnostics", service.SelfImproveRunsList)
 	addTool(server, mcpdomain.ToolSelfImproveRunLookup, "Find project runs by issue/pr references for self-improve diagnostics", service.SelfImproveRunLookup)
 	addTool(server, mcpdomain.ToolSelfImproveSessionGet, "Get codex-cli session JSON for one run with /tmp path metadata", service.SelfImproveSessionGet)

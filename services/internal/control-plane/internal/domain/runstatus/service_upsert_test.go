@@ -283,6 +283,14 @@ func (r *runstatusTestRunsRepository) ListRunIDsByRepositoryPullRequest(context.
 	return nil, nil
 }
 
+func (r *runstatusTestRunsRepository) SetWaitContext(context.Context, agentrunrepo.SetWaitContextParams) (bool, error) {
+	return false, nil
+}
+
+func (r *runstatusTestRunsRepository) ClearWaitContextIfMatches(context.Context, agentrunrepo.ClearWaitContextParams) (bool, error) {
+	return false, nil
+}
+
 type runstatusTestPlatformTokenRepository struct {
 	item entitytypes.PlatformGitHubTokens
 }

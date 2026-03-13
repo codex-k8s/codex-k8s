@@ -13,6 +13,7 @@ import (
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentsession"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
+	interactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/interactionrequest"
 	mcpactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/mcpactionrequest"
 	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/platformtoken"
 	projectdatabaserepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/projectdatabase"
@@ -85,6 +86,7 @@ type Service struct {
 	repos                        repocfgrepo.Repository
 	platform                     platformtokenrepo.Repository
 	actions                      mcpactionrequestrepo.Repository
+	interactions                 interactionrequestrepo.Repository
 	sessions                     agentsessionrepo.Repository
 	projectDatabases             projectdatabaserepo.Repository
 	tokenCrypt                   *tokencrypt.Service
@@ -104,6 +106,7 @@ type Dependencies struct {
 	Repos            repocfgrepo.Repository
 	Platform         platformtokenrepo.Repository
 	Actions          mcpactionrequestrepo.Repository
+	Interactions     interactionrequestrepo.Repository
 	Sessions         agentsessionrepo.Repository
 	ProjectDatabases projectdatabaserepo.Repository
 	TokenCrypt       *tokencrypt.Service
@@ -168,6 +171,9 @@ func NewService(cfg Config, deps Dependencies) (*Service, error) {
 	if deps.Actions == nil {
 		return nil, fmt.Errorf("mcp action requests repository is required")
 	}
+	if deps.Interactions == nil {
+		return nil, fmt.Errorf("interaction request repository is required")
+	}
 	if deps.Sessions == nil {
 		return nil, fmt.Errorf("agent sessions repository is required")
 	}
@@ -190,6 +196,7 @@ func NewService(cfg Config, deps Dependencies) (*Service, error) {
 		repos:                        deps.Repos,
 		platform:                     deps.Platform,
 		actions:                      deps.Actions,
+		interactions:                 deps.Interactions,
 		sessions:                     deps.Sessions,
 		projectDatabases:             deps.ProjectDatabases,
 		tokenCrypt:                   deps.TokenCrypt,

@@ -38,6 +38,7 @@ import (
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentrun"
 	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentsession"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/flowevent"
+	interactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/interactionrequest"
 	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/learningfeedback"
 	mcpactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/mcpactionrequest"
 	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/platformtoken"
@@ -94,6 +95,7 @@ func Run() error {
 	platformTokens := platformtokenrepo.NewRepository(pgxPool)
 	projectTokens := projecttokenrepo.NewRepository(pgxPool)
 	mcpActionRequests := mcpactionrequestrepo.NewRepository(pgxPool)
+	interactionRequests := interactionrequestrepo.NewRepository(pgxPool)
 	projectDatabases := projectdatabaserepo.NewRepository(pgxPool)
 	runtimeDeployTasks := runtimedeploytaskrepo.NewRepository(pgxPool)
 	runtimeErrors := runtimeerrorrepo.NewRepository(pgxPool)
@@ -162,6 +164,7 @@ func Run() error {
 		Repos:            repos,
 		Platform:         platformTokens,
 		Actions:          mcpActionRequests,
+		Interactions:     interactionRequests,
 		Sessions:         agentSessions,
 		ProjectDatabases: projectDatabases,
 		TokenCrypt:       tokenCrypto,
