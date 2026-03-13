@@ -13,9 +13,9 @@ PR formatting contract:
 {{- if eq .AgentKey "dev" }}
   - pattern: `Issue #{{ .IssueNumber }}: <short technical result> (#{{ .IssueNumber }})`
 {{- else if eq .AgentKey "qa" }}
-  - pattern: `Issue #{{ .IssueNumber }}: qa — <short verification result> (#{{ .IssueNumber }})`
+  - pattern: `Issue #{{ .IssueNumber }}: qa[ Sprint S<sprint> Day<day>] — <short verification result> (#{{ .IssueNumber }})`
 {{- else if eq .AgentKey "sre" }}
-  - pattern: `Issue #{{ .IssueNumber }}: sre — <short remediation result> (#{{ .IssueNumber }})`
+  - pattern: `Issue #{{ .IssueNumber }}: sre[ Sprint S<sprint> Day<day>] — <short remediation result> (#{{ .IssueNumber }})`
 {{- else }}
   - pattern: `Issue #{{ .IssueNumber }}: {{ .StageName }}-package — <short package goal>`
 {{- end }}

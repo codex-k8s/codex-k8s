@@ -319,3 +319,54 @@ func TestLauncher_FindRunJobRefByRunID_FallsBackToPod(t *testing.T) {
 		t.Fatalf("unexpected ref: got %+v want %+v", got, ref)
 	}
 }
+
+func TestLauncher_ListWorkerPodNames(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	client := fake.NewClientset(
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "worker-b",
+				Namespace: "codex-k8s-prod",
+				Labels: map[string]string{
+					"app.kubernetes.io/name":      workerAppName,
+					"app.kubernetes.io/component": workerComponentLabel,
+				},
+			},
+		},
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "worker-a",
+				Namespace: "codex-k8s-prod",
+				Labels: map[string]string{
+					"app.kubernetes.io/name":      workerAppName,
+					"app.kubernetes.io/component": workerComponentLabel,
+				},
+			},
+		},
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "unrelated",
+				Namespace: "codex-k8s-prod",
+				Labels: map[string]string{
+					"app.kubernetes.io/name":      workerAppName,
+					"app.kubernetes.io/component": "api-gateway",
+				},
+			},
+		},
+	)
+	l := NewForClient(Config{Namespace: "codex-k8s-prod"}, client)
+
+	got, err := l.ListWorkerPodNames(ctx, "codex-k8s-prod")
+	if err != nil {
+		t.Fatalf("ListWorkerPodNames returned error: %v", err)
+	}
+
+	if got, want := len(got), 2; got != want {
+		t.Fatalf("expected %d worker pods, got %d", want, got)
+	}
+	if got[0] != "worker-a" || got[1] != "worker-b" {
+		t.Fatalf("unexpected worker pod list: %v", got)
+	}
+}

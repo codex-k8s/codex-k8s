@@ -18,4 +18,7 @@ tool_timeout_sec = 180
 [mcp_servers.context7]
 command = "npx"
 args = ["-y", "@upstash/context7-mcp"]
+
+[mcp_servers.context7.env]
+CONTEXT7_API_KEY = "{{ .Context7APIKey }}"
 {{- end }}

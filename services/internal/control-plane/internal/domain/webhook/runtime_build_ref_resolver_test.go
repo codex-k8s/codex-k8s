@@ -3,6 +3,7 @@ package webhook
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
@@ -147,6 +148,62 @@ func TestResolveIssueTriggerRuntimeProfile_ReleaseWithoutCandidateReturnsWarning
 	}
 	if len(profile.SuggestedLabels) != 2 {
 		t.Fatalf("expected 2 suggested labels, got %d", len(profile.SuggestedLabels))
+	}
+}
+
+func TestResolveIssueTriggerRuntimeProfile_QAWithPullRequestLookupErrorReturnsWarning(t *testing.T) {
+	t.Parallel()
+
+	runs := &inMemoryRunRepo{
+		byRunID: map[string]agentrunrepo.Run{
+			"run-lookup-error": {
+				ID:         "run-lookup-error",
+				RunPayload: json.RawMessage(`{"runtime":{"namespace":"codex-issue-205"},"pull_request":{"head":{"ref":"feature/stale","sha":"stale-sha"}}}`),
+			},
+		},
+		searchItems: []agentrunrepo.RunLookupItem{
+			{
+				RunID:              "run-lookup-error",
+				ProjectID:          "project-1",
+				RepositoryFullName: "codex-k8s/codex-k8s",
+				IssueNumber:        205,
+				PullRequestNumber:  100,
+			},
+		},
+	}
+	svc := &Service{
+		agentRuns:   runs,
+		githubToken: "token",
+		githubMgmt: &inMemoryPushMainVersionBumpClient{
+			prHeadErr: errors.New("github unavailable"),
+		},
+		runStatus: &inMemoryRunStatusService{
+			runtimeStates: map[string]runstatusdomain.RuntimeState{
+				"run-lookup-error": {Namespace: "codex-issue-205"},
+			},
+		},
+	}
+
+	envelope := githubWebhookEnvelope{
+		Repository: githubRepositoryRecord{FullName: "codex-k8s/codex-k8s"},
+		Issue:      githubIssueRecord{Number: 205},
+	}
+	profile := svc.resolveIssueTriggerRuntimeProfile(
+		context.Background(),
+		"project-1",
+		envelope,
+		issueRunTrigger{Kind: webhookdomain.TriggerKindQA},
+		"main",
+		agentdomain.RuntimeModeFullEnv,
+	)
+	if got, want := profile.WarningReason, string(runstatusdomain.TriggerWarningReasonIssueTriggerCandidateNotFound); got != want {
+		t.Fatalf("warning reason = %q, want %q", got, want)
+	}
+	if profile.Namespace != "" {
+		t.Fatalf("expected empty namespace when PR head lookup fails, got %q", profile.Namespace)
+	}
+	if got, want := profile.BuildRef, "main"; got != want {
+		t.Fatalf("build ref = %q, want %q", got, want)
 	}
 }
 

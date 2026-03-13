@@ -5,13 +5,15 @@ title: "Epic S10 Day 2: Vision для built-in MCP user interactions (Issues #37
 status: in-review
 owner_role: PM
 created_at: 2026-03-12
-updated_at: 2026-03-12
+updated_at: 2026-03-13
 related_issues: [360, 378, 383]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-12-issue-378-vision"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # Epic S10 Day 2: Vision для built-in MCP user interactions (Issues #378/#383)

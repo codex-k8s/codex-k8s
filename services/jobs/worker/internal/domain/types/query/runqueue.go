@@ -32,6 +32,17 @@ type RunQueueClaimRunningParams struct {
 	Limit int
 }
 
+// RunQueueReleaseStaleLeasesParams describes one stale running-lease sweep.
+type RunQueueReleaseStaleLeasesParams struct {
+	// Limit caps number of stale leases released in one sweep.
+	Limit int
+	// ReleaseMissingOwners enables immediate reclaim for leases whose owner has no worker_instances row
+	// when Kubernetes confirmed the live worker pod set for the current sweep.
+	ReleaseMissingOwners bool
+	// ActiveWorkerIDs contains worker ids currently backed by live Kubernetes worker pods.
+	ActiveWorkerIDs []string
+}
+
 // RunQueueClaimedRun represents a pending run promoted into running state.
 type RunQueueClaimedRun struct {
 	// RunID is a unique run identifier.
@@ -68,6 +79,28 @@ type RunQueueRunningRun struct {
 	RunPayload json.RawMessage
 	// StartedAt is timestamp when run entered running state.
 	StartedAt time.Time
+	// ReclaimedAfterStaleLease indicates the run lease was previously released by stale-worker recovery.
+	ReclaimedAfterStaleLease bool
+}
+
+// RunQueueReleasedStaleLease describes one run lease released after stale-worker detection.
+type RunQueueReleasedStaleLease struct {
+	// RunID is a unique run identifier.
+	RunID string
+	// CorrelationID links run to webhook flow.
+	CorrelationID string
+	// ProjectID is an effective project scope.
+	ProjectID string
+	// PreviousLeaseOwner is a worker instance that lost liveness.
+	PreviousLeaseOwner string
+	// PreviousLeaseUntil is the last run lease deadline held by stale owner.
+	PreviousLeaseUntil *time.Time
+	// WorkerHeartbeatAt is the last recorded worker heartbeat when available.
+	WorkerHeartbeatAt *time.Time
+	// WorkerExpiresAt is the worker liveness deadline when available.
+	WorkerExpiresAt *time.Time
+	// WorkerStatus is the stale worker lifecycle state or "missing" fallback.
+	WorkerStatus string
 }
 
 // RunQueueFinishParams describes final run transition and slot release.

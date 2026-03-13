@@ -5,14 +5,16 @@ title: "Sprint S10 Day 5 — Detailed Design for built-in MCP user interactions 
 status: in-review
 owner_role: SA
 created_at: 2026-03-12
-updated_at: 2026-03-12
+updated_at: 2026-03-13
 related_issues: [360, 378, 383, 385, 387, 389]
 related_prs: []
 related_adrs: ["ADR-0012"]
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-12-issue-387-design"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # Detailed Design: Sprint S10 built-in MCP user interactions

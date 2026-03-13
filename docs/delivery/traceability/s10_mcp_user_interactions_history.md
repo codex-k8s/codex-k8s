@@ -5,8 +5,8 @@ title: "Sprint S10 Traceability History"
 status: in-review
 owner_role: KM
 created_at: 2026-03-12
-updated_at: 2026-03-12
-related_issues: [360, 378, 383, 385, 387, 389]
+updated_at: 2026-03-13
+related_issues: [360, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -88,3 +88,15 @@ approvals:
 - Для continuity создана follow-up issue `#389` (`run:plan`) без trigger-лейбла.
 - Попытка использовать Context7 для `kin-openapi` и `goose` завершилась ошибкой `Monthly quota exceeded`; новые внешние зависимости на этапе `run:design` не добавлялись.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: design stage конкретизирует API/data/runtime contracts и migration policy, но не меняет канонический product baseline.
+
+## Актуализация по Issue #389 (`run:plan`, 2026-03-13)
+- Подготовлен plan package:
+  - `docs/delivery/epics/s10/epic-s10-day6-mcp-user-interactions-plan.md`.
+- Зафиксированы:
+  - execution waves `#391..#395` для `control-plane` foundation, worker dispatch/retry/expiry, contract-first callback ingress, deterministic resume path в `agent-runner` и observability/evidence gate;
+  - sequencing `#391 -> #392 -> #393/#394 -> #395` с сохранением rollout order `migrations -> control-plane -> worker -> api-gateway` и отдельным resume gate;
+  - DoR/DoD, blockers/risks/owner decisions и запрет на auto-trigger labels для implementation issues;
+  - channel-specific adapters, Telegram, reminders и voice/STT оставлены вне core Sprint S10 execution package.
+- Для continuity созданы follow-up issues `#391`, `#392`, `#393`, `#394`, `#395` без trigger-лейблов.
+- Попытка использовать Context7 для GitHub CLI manual завершилась ошибкой `Monthly quota exceeded`; для non-interactive GitHub flow использованы локальные `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: plan stage фиксирует execution backlog, quality gates и handover в `run:dev`, а не меняет канонический requirements baseline.

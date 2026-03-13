@@ -13,10 +13,16 @@ type Config struct {
 	WorkerID string `env:"CODEXK8S_WORKER_ID"`
 	// PollInterval controls tick interval for run-loop.
 	PollInterval string `env:"CODEXK8S_WORKER_POLL_INTERVAL" envDefault:"5s"`
+	// WorkerHeartbeatInterval controls how often worker refreshes liveness heartbeat.
+	WorkerHeartbeatInterval string `env:"CODEXK8S_WORKER_HEARTBEAT_INTERVAL" envDefault:"15s"`
+	// WorkerInstanceTTL controls how long worker heartbeat stays valid for stale-lease recovery.
+	WorkerInstanceTTL string `env:"CODEXK8S_WORKER_INSTANCE_TTL" envDefault:"1m"`
 	// ClaimLimit controls how many pending runs worker claims per tick.
 	ClaimLimit int `env:"CODEXK8S_WORKER_CLAIM_LIMIT" envDefault:"10"`
 	// RunningCheckLimit controls how many running runs are reconciled per tick.
 	RunningCheckLimit int `env:"CODEXK8S_WORKER_RUNNING_CHECK_LIMIT" envDefault:"200"`
+	// StaleLeaseSweepLimit controls how many stale run leases worker can release per tick.
+	StaleLeaseSweepLimit int `env:"CODEXK8S_WORKER_STALE_LEASE_SWEEP_LIMIT" envDefault:"200"`
 	// SlotsPerProject defines initial slot pool size per project.
 	SlotsPerProject int `env:"CODEXK8S_WORKER_SLOTS_PER_PROJECT" envDefault:"2"`
 	// SlotLeaseTTL controls for how long slot is leased before expiration.
@@ -101,6 +107,10 @@ type Config struct {
 	KubeconfigPath string `env:"CODEXK8S_KUBECONFIG"`
 	// K8sNamespace is a namespace for worker-created Jobs.
 	K8sNamespace string `env:"CODEXK8S_WORKER_K8S_NAMESPACE" envDefault:"codex-k8s-prod"`
+	// WorkerPodName is current worker pod name used in liveness registry.
+	WorkerPodName string `env:"CODEXK8S_WORKER_POD_NAME"`
+	// WorkerPodNamespace is current worker pod namespace used in liveness registry.
+	WorkerPodNamespace string `env:"CODEXK8S_WORKER_POD_NAMESPACE"`
 	// ProductionNamespace is platform production namespace used by ai-repair pod runs.
 	ProductionNamespace string `env:"CODEXK8S_PRODUCTION_NAMESPACE" envDefault:"codex-k8s-prod"`
 	// JobImage is a container image used for spawned run Jobs.
@@ -167,6 +177,9 @@ func LoadConfig() (Config, error) {
 		} else {
 			cfg.WorkerID = hostname
 		}
+	}
+	if cfg.WorkerPodName == "" {
+		cfg.WorkerPodName = cfg.WorkerID
 	}
 
 	return cfg, nil

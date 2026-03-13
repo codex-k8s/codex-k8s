@@ -86,12 +86,14 @@ func (s *Service) renderTaskTemplate(templateKind string, repoDir string) (strin
 }
 
 func (s *Service) writeCodexConfig(codexDir string, model string, reasoningEffort string) error {
-	hasContext7 := strings.TrimSpace(os.Getenv(envContext7APIKey)) != ""
+	context7APIKey := strings.TrimSpace(os.Getenv(envContext7APIKey))
+	hasContext7 := context7APIKey != ""
 	content, err := renderTemplate(templateNameCodexConfig, codexConfigTemplateData{
 		Model:           strings.TrimSpace(model),
 		ReasoningEffort: strings.TrimSpace(reasoningEffort),
 		MCPBaseURL:      s.cfg.MCPBaseURL,
 		HasContext7:     hasContext7,
+		Context7APIKey:  context7APIKey,
 	})
 	if err != nil {
 		return err

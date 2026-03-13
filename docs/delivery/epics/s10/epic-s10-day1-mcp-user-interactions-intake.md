@@ -5,13 +5,15 @@ title: "Epic S10 Day 1: Intake для встроенных MCP-взаимоде�
 status: in-review
 owner_role: PM
 created_at: 2026-03-12
-updated_at: 2026-03-12
+updated_at: 2026-03-13
 related_issues: [360, 378]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-12-issue-360-intake"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-13
 ---
 
 # Epic S10 Day 1: Intake для встроенных MCP-взаимодействий с пользователем (Issue #360)

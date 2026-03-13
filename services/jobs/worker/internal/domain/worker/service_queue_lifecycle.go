@@ -16,6 +16,9 @@ func (s *Service) Tick(ctx context.Context) error {
 	if err := s.cleanupExpiredNamespaces(ctx); err != nil {
 		return fmt.Errorf("cleanup expired namespaces: %w", err)
 	}
+	if err := s.releaseStaleRunningLeases(ctx); err != nil {
+		return fmt.Errorf("release stale running leases: %w", err)
+	}
 	if err := s.reconcileRunning(ctx); err != nil {
 		return fmt.Errorf("reconcile running runs: %w", err)
 	}
@@ -37,6 +40,11 @@ func (s *Service) reconcileRunning(ctx context.Context) error {
 	}
 
 	for _, run := range running {
+		if run.ReclaimedAfterStaleLease {
+			if err := s.insertRunLeaseRecoveredEvent(ctx, run); err != nil {
+				return err
+			}
+		}
 		s.keepRunSlotLeaseAlive(ctx, run)
 
 		execution := resolveRunExecutionContext(run.RunID, run.ProjectID, run.RunPayload, s.cfg.RunNamespacePrefix)

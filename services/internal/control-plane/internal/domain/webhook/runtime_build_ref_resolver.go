@@ -226,15 +226,18 @@ func (s *Service) resolveCandidateRuntimeFromRunLookup(ctx context.Context, owne
 		return candidateRuntimeIdentity{}, identity.Namespace != "" && identity.BuildRef != ""
 	}
 	prHead, ok := s.resolvePullRequestHead(ctx, strings.TrimSpace(owner), strings.TrimSpace(repo), prNumber)
-	if ok {
-		if prHead.State != "" && !strings.EqualFold(prHead.State, "open") {
-			return candidateRuntimeIdentity{}, false
-		}
-		if strings.TrimSpace(prHead.HeadSHA) != "" {
-			identity.BuildRef = strings.TrimSpace(prHead.HeadSHA)
-		} else if strings.TrimSpace(prHead.HeadRef) != "" {
-			identity.BuildRef = strings.TrimSpace(prHead.HeadRef)
-		}
+	if !ok {
+		return candidateRuntimeIdentity{}, false
+	}
+	if prHead.State != "" && !strings.EqualFold(prHead.State, "open") {
+		return candidateRuntimeIdentity{}, false
+	}
+	if strings.TrimSpace(prHead.HeadSHA) != "" {
+		identity.BuildRef = strings.TrimSpace(prHead.HeadSHA)
+	} else if strings.TrimSpace(prHead.HeadRef) != "" {
+		identity.BuildRef = strings.TrimSpace(prHead.HeadRef)
+	} else {
+		return candidateRuntimeIdentity{}, false
 	}
 
 	return identity, identity.Namespace != "" && identity.BuildRef != ""

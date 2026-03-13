@@ -94,3 +94,39 @@ test("buildRunTimelineStatuses collapses adjacent duplicates and formats compact
   assert.equal(entries[0]?.timeLabel, "10:06");
   assert.equal(entries[1]?.timeLabel, "11 мар 16:00");
 });
+
+test("buildRunTimelineStatuses includes stale lease recovery events in timeline", () => {
+  const events = [
+    {
+      event_type: "run.reclaimed_after_stale_lease",
+      created_at: "2026-03-12T10:08:00Z",
+      payload_json: "{\"worker_id\":\"worker-2\"}",
+    },
+    {
+      event_type: "run.lease.released",
+      created_at: "2026-03-12T10:07:30Z",
+      payload_json: "{\"previous_lease_owner\":\"worker-old\"}",
+    },
+    {
+      event_type: "run.lease.detected_stale",
+      created_at: "2026-03-12T10:07:00Z",
+      payload_json: "{\"previous_lease_owner\":\"worker-old\"}",
+    },
+    {
+      event_type: "worker.instance.heartbeat.missed",
+      created_at: "2026-03-12T10:06:30Z",
+      payload_json: "{\"worker_id\":\"worker-old\"}",
+    },
+  ];
+
+  const entries = buildRunTimelineStatuses(events as never, "en", new Date("2026-03-12T12:00:00Z"));
+  assert.deepEqual(
+    entries.map((item) => item.text),
+    [
+      "run.reclaimed_after_stale_lease · worker-2",
+      "run.lease.released · worker-old",
+      "run.lease.detected_stale · worker-old",
+      "worker.instance.heartbeat.missed · worker-old",
+    ],
+  );
+});

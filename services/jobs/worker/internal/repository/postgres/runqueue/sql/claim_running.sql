@@ -1,6 +1,7 @@
 -- name: runqueue__claim_running :many
 WITH candidates AS (
-    SELECT r.id
+    SELECT r.id,
+           r.stale_reclaim_pending
     FROM agent_runs AS r
     WHERE r.status = 'running'
       AND r.project_id IS NOT NULL
@@ -18,10 +19,17 @@ claimed AS (
     UPDATE agent_runs AS r
     SET lease_owner = $1,
         lease_until = NOW() + ($2::text)::interval,
+        stale_reclaim_pending = FALSE,
         updated_at = NOW()
     FROM candidates AS c
     WHERE r.id = c.id
-    RETURNING r.id, r.correlation_id, r.project_id, r.learning_mode, r.run_payload, r.started_at
+    RETURNING r.id,
+              r.correlation_id,
+              r.project_id,
+              r.learning_mode,
+              r.run_payload,
+              r.started_at,
+              c.stale_reclaim_pending
 )
 SELECT c.id,
        c.correlation_id,
@@ -30,7 +38,8 @@ SELECT c.id,
        COALESCE(s.slot_no, 0) AS slot_no,
        c.learning_mode,
        c.run_payload,
-       c.started_at
+       c.started_at,
+       c.stale_reclaim_pending
 FROM claimed AS c
 LEFT JOIN slots AS s
   ON s.project_id = c.project_id

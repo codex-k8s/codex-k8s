@@ -2,15 +2,15 @@
 - Создавайте новый Issue только если нужен отдельный follow-up, gap, incident, remediation или handover-задача.
 - Заголовок:
 {{- if eq .AgentKey "dev" }}
-  - pattern: `Dev follow-up: <краткий технический пробел или следующий шаг>`
+  - pattern: `Dev follow-up[ Sprint S<спринт> Day<день>]: <краткий технический пробел или следующий шаг>`
 {{- else if eq .AgentKey "qa" }}
-  - pattern: `QA gap: <краткий дефект, сценарий или пробел проверки>`
+  - pattern: `QA gap[ Sprint S<спринт> Day<день>]: <краткий дефект, сценарий или пробел проверки>`
 {{- else if eq .AgentKey "sre" }}
-  - pattern: `SRE remediation: <краткая инфраструктурная проблема или действие>`
+  - pattern: `SRE remediation[ Sprint S<спринт> Day<день>]: <краткая инфраструктурная проблема или действие>`
 {{- else if eq .AgentKey "reviewer" }}
-  - pattern: `Review follow-up: <краткий риск или блокер>`
+  - pattern: `Review follow-up[ Sprint S<спринт> Day<день>]: <краткий риск или блокер>`
 {{- else }}
-  - pattern: `{{ .AgentKey }}: <краткая цель, решение или пробел>`
+  - pattern: `{{ .AgentKey }}[ Sprint S<спринт> Day<день>]: <краткая цель, решение или пробел>`
 {{- end }}
   - одна строка, без точки в конце;
   - сначала предмет/результат, потом уточнение;

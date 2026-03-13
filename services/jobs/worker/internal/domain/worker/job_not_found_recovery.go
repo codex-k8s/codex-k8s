@@ -23,6 +23,11 @@ func (s *Service) tryRecoverMissingRunJob(ctx context.Context, run runqueuerepo.
 	if prepareParams.DeployOnly {
 		return false, nil
 	}
+	runtimePayload := parseRunRuntimePayload(run.RunPayload)
+	runtimeAccessProfile := resolveRuntimeAccessProfile(runtimePayload)
+	if runtimeAccessProfile == agentdomain.RuntimeAccessProfileProductionReadOnly {
+		return s.recoverMissingProductionReadOnlyRunJob(ctx, run, execution, runtimeAccessProfile)
+	}
 
 	prepared, ready, err := s.prepareRuntimeEnvironmentPoll(ctx, prepareParams)
 	if err != nil {
@@ -79,6 +84,48 @@ func (s *Service) tryRecoverMissingRunJob(ctx context.Context, run runqueuerepo.
 		IssueNumber: leaseCtx.IssueNumber,
 		TTL:         leaseTTL,
 	}, runLaunchOptions{}); err != nil {
+		return true, err
+	}
+
+	return true, nil
+}
+
+func (s *Service) recoverMissingProductionReadOnlyRunJob(
+	ctx context.Context,
+	run runqueuerepo.RunningRun,
+	execution valuetypes.RunExecutionContext,
+	runtimeAccessProfile agentdomain.RuntimeAccessProfile,
+) (bool, error) {
+	launchExecution := execution
+	launchExecution.Namespace = s.resolveProductionReadonlyNamespace(launchExecution.Namespace)
+	if launchExecution.Namespace == "" {
+		return false, nil
+	}
+
+	agentCtx, err := resolveRunAgentContext(run.RunPayload, runAgentDefaults{
+		DefaultModel:           s.cfg.AgentDefaultModel,
+		DefaultReasoningEffort: s.cfg.AgentDefaultReasoningEffort,
+		DefaultLocale:          s.cfg.AgentDefaultLocale,
+		AllowGPT53:             true,
+		LabelCatalog:           s.labels,
+	})
+	if err != nil {
+		s.logger.Error("resolve run agent context failed", "run_id", run.RunID, "err", err)
+		if finishErr := s.failRunAfterAgentContextResolve(ctx, run, launchExecution, err); finishErr != nil {
+			return true, finishErr
+		}
+		return true, nil
+	}
+
+	s.logger.Info(
+		"recovering production-readonly run without job by relaunching in existing namespace",
+		"run_id", run.RunID,
+		"namespace", launchExecution.Namespace,
+	)
+	if err := s.launchPreparedRunWorkload(ctx, run, launchExecution, agentCtx, namespaceLeaseSpec{}, runLaunchOptions{
+		SkipNamespacePreparation: true,
+		RuntimeAccessProfile:     runtimeAccessProfile,
+	}); err != nil {
 		return true, err
 	}
 

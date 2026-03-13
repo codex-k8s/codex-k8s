@@ -3443,6 +3443,7 @@ type inMemoryPushMainVersionBumpClient struct {
 	filesByRef map[string][]byte
 	refToSHA   map[string]string
 	prHeads    map[string]GitHubPullRequestHeadDetails
+	prHeadErr  error
 
 	changedPaths []string
 	changedErr   error
@@ -3516,7 +3517,13 @@ func (c *inMemoryPushMainVersionBumpClient) ResolveRefToCommitSHA(_ context.Cont
 }
 
 func (c *inMemoryPushMainVersionBumpClient) GetPullRequestHead(_ context.Context, _ string, owner string, repo string, number int) (GitHubPullRequestHeadDetails, error) {
-	if c == nil || c.prHeads == nil {
+	if c == nil {
+		return GitHubPullRequestHeadDetails{}, nil
+	}
+	if c.prHeadErr != nil {
+		return GitHubPullRequestHeadDetails{}, c.prHeadErr
+	}
+	if c.prHeads == nil {
 		return GitHubPullRequestHeadDetails{}, nil
 	}
 	key := strings.TrimSpace(owner) + "/" + strings.TrimSpace(repo) + "#" + strconv.Itoa(number)
