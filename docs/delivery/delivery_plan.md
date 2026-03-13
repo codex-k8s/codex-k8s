@@ -324,11 +324,16 @@ approvals:
   - продуктовый контракт для split `platform PAT` vs `agent bot-token`, provider-driven recovery hints, hard-failure separation и запрета infinite local retries;
   - проверочные evidence и wave priorities разделены между core MVP и deferred scope;
   - создана continuity issue `#418` для `run:arch` без trigger-лейбла.
-- Day 4 (planned): architecture package для GitHub API rate-limit resilience (Issue `#418`).
-- Ожидаемый результат Day 4:
-  - service boundaries и ownership matrix для signal detection, wait-state orchestration, visibility surfaces и resume path;
-  - lifecycle controlled wait `detect -> classify -> wait -> resume/manual action`;
-  - alternatives/ADR backlog и continuity issue для `run:design`.
+- Day 4 (in-review): architecture package для GitHub API rate-limit resilience (`docs/delivery/epics/s12/epic-s12-day4-github-api-rate-limit-arch.md`, Issue `#418`).
+- Результат Day 4 (факт):
+  - architecture package зафиксировал ownership split для `control-plane`, `worker`, `agent-runner`, `api-gateway` и `web-console`, а также lifecycle `detect -> classify -> wait -> resume/manual action`;
+  - `control-plane` выбран owner для classification, controlled wait aggregate, contour attribution и visibility contract, `worker` закреплён за finite auto-resume orchestration, а `agent-runner` переведён в handoff-only path без infinite local retries;
+  - созданы initiative package `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/*`, `ADR-0013`, `ALT-0005` и follow-up issue `#420` для stage `run:design` без trigger-лейбла.
+- Day 5 (planned): design package для GitHub API rate-limit resilience (Issue `#420`).
+- Ожидаемый результат Day 5:
+  - typed contracts для signal handoff, visibility surfaces, persisted wait aggregate и rollout/rollback notes;
+  - implementation-ready design package `design_doc + api_contract + data_model + migrations_policy`;
+  - continuity issue для `run:plan`.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

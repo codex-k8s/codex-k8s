@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-13
 updated_at: 2026-03-13
-related_issues: [366, 413, 416, 418]
+related_issues: [366, 413, 416, 418, 420]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -56,3 +56,23 @@ approvals:
   - официальные GitHub Docs `Rate limits for the REST API` и `Best practices for using the REST API` просмотрены 2026-03-13;
   - non-interactive GitHub flow дополнительно подтверждён через Context7 (`/websites/cli_github_manual`) и локальные `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: PRD stage уточняет product contract и delivery evidence, а в root-матрице синхронизирована только traceability governance и historical package.
+
+## Актуализация по Issue #418 (`run:arch`, 2026-03-13)
+- Подготовлен architecture package:
+  - `docs/delivery/epics/s12/epic-s12-day4-github-api-rate-limit-arch.md`;
+  - `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/README.md`;
+  - `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/architecture.md`;
+  - `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/c4_context.md`;
+  - `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/c4_container.md`;
+  - `docs/architecture/adr/ADR-0013-github-rate-limit-controlled-wait-ownership.md`;
+  - `docs/architecture/alternatives/ALT-0005-github-rate-limit-wait-state-boundaries.md`.
+- Зафиксированы:
+  - `control-plane` как owner для classification, controlled wait aggregate, contour attribution, recovery hints и visibility contract;
+  - `worker` как owner для time-based wait scheduling, finite auto-resume attempts и escalation в manual-action-required;
+  - `agent-runner` как raw-evidence emitter с обязательным stop local retry после handoff;
+  - разделение `contour_kind` и `signal_origin`, чтобы сохранить PRD split `platform PAT` vs `agent bot-token` без дублирования доменной логики.
+- Для continuity создана follow-up issue `#420` (`run:design`) без trigger-лейбла.
+- Внешний baseline дополнительно сверен:
+  - официальные GitHub Docs `Rate limits for the REST API` и `Best practices for using the REST API` просмотрены 2026-03-13;
+  - Context7 использован для `/websites/cli_github_manual` и `/mermaid-js/mermaid`.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: architecture stage закрепляет ownership и trade-offs, а не вводит новые канонические требования.
