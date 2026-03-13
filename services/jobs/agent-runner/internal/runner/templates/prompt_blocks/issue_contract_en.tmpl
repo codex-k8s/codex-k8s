@@ -2,15 +2,15 @@ Follow-up Issue formatting contract:
 - Create a new Issue only when a separate follow-up, gap, incident, remediation, or handover task is required.
 - Title:
 {{- if eq .AgentKey "dev" }}
-  - pattern: `Dev follow-up: <short technical gap or next step>`
+  - pattern: `Dev follow-up[ Sprint S<sprint> Day<day>]: <short technical gap or next step>`
 {{- else if eq .AgentKey "qa" }}
-  - pattern: `QA gap: <short defect, scenario, or test gap>`
+  - pattern: `QA gap[ Sprint S<sprint> Day<day>]: <short defect, scenario, or test gap>`
 {{- else if eq .AgentKey "sre" }}
-  - pattern: `SRE remediation: <short infrastructure problem or action>`
+  - pattern: `SRE remediation[ Sprint S<sprint> Day<day>]: <short infrastructure problem or action>`
 {{- else if eq .AgentKey "reviewer" }}
-  - pattern: `Review follow-up: <short risk or blocker>`
+  - pattern: `Review follow-up[ Sprint S<sprint> Day<day>]: <short risk or blocker>`
 {{- else }}
-  - pattern: `{{ .AgentKey }}: <short goal, decision, or gap>`
+  - pattern: `{{ .AgentKey }}[ Sprint S<sprint> Day<day>]: <short goal, decision, or gap>`
 {{- end }}
   - one line, no trailing period;
   - state the subject/result first, then the qualifier;

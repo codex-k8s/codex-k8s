@@ -13,9 +13,9 @@
 {{- if eq .AgentKey "dev" }}
   - pattern: `Issue #{{ .IssueNumber }}: <краткий технический результат> (#{{ .IssueNumber }})`
 {{- else if eq .AgentKey "qa" }}
-  - pattern: `Issue #{{ .IssueNumber }}: qa — <краткий итог проверки> (#{{ .IssueNumber }})`
+  - pattern: `Issue #{{ .IssueNumber }}: qa[ Sprint S<спринт> Day<день>] — <краткий итог проверки> (#{{ .IssueNumber }})`
 {{- else if eq .AgentKey "sre" }}
-  - pattern: `Issue #{{ .IssueNumber }}: sre — <краткий итог remediation> (#{{ .IssueNumber }})`
+  - pattern: `Issue #{{ .IssueNumber }}: sre[ Sprint S<спринт> Day<день>] — <краткий итог remediation> (#{{ .IssueNumber }})`
 {{- else }}
   - pattern: `Issue #{{ .IssueNumber }}: {{ .StageName }}-package — <краткая цель пакета>`
 {{- end }}

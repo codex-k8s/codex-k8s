@@ -17,11 +17,70 @@ func TestRenderPromptArtifactContractBlocks_UsesFullIssueURLAndRoleSpecificSecti
 	if !strings.Contains(issueBlock, "Dev follow-up") {
 		t.Fatalf("issue contract must contain dev issue pattern, got: %q", issueBlock)
 	}
+	if !strings.Contains(issueBlock, "Dev follow-up[ Sprint S<спринт> Day<день>]") {
+		t.Fatalf("issue contract must describe optional sprint/day placement, got: %q", issueBlock)
+	}
 	if !strings.Contains(prBlock, "## Логи и runtime-диагностика") {
 		t.Fatalf("pr contract must contain dev-specific diagnostics section, got: %q", prBlock)
 	}
 	if !strings.Contains(prBlock, "Closes https://github.com/codex-k8s/codex-k8s/issues/253") {
 		t.Fatalf("pr contract must contain full issue URL closes directive, got: %q", prBlock)
+	}
+}
+
+func TestRenderPromptArtifactContractBlocks_WorkPatternsKeepOptionalSprintDayForRoleTitles(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name           string
+		agentKey       string
+		locale         string
+		triggerKind    string
+		expectedIssue  string
+		expectedPR     string
+	}{
+		{
+			name:          "qa en",
+			agentKey:      "qa",
+			locale:        promptLocaleEN,
+			triggerKind:   "qa",
+			expectedIssue: "QA gap[ Sprint S<sprint> Day<day>]",
+			expectedPR:    "Issue #246: qa[ Sprint S<sprint> Day<day>] — <short verification result> (#246)",
+		},
+		{
+			name:          "sre ru",
+			agentKey:      "sre",
+			locale:        promptLocaleRU,
+			triggerKind:   "ops",
+			expectedIssue: "SRE remediation[ Sprint S<спринт> Day<день>]",
+			expectedPR:    "Issue #246: sre[ Sprint S<спринт> Day<день>] — <краткий итог remediation> (#246)",
+		},
+		{
+			name:          "default ru",
+			agentKey:      "unknown",
+			locale:        promptLocaleRU,
+			triggerKind:   "plan",
+			expectedIssue: "default[ Sprint S<спринт> Day<день>]",
+			expectedPR:    "Issue #246: plan-package — <краткая цель пакета>",
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			issueBlock, prBlock, err := renderPromptArtifactContractBlocks("codex-k8s/codex-k8s", 246, tc.agentKey, tc.triggerKind, promptTemplateKindWork, tc.locale)
+			if err != nil {
+				t.Fatalf("renderPromptArtifactContractBlocks() error = %v", err)
+			}
+			if !strings.Contains(issueBlock, tc.expectedIssue) {
+				t.Fatalf("issue contract must contain optional sprint/day pattern %q, got: %q", tc.expectedIssue, issueBlock)
+			}
+			if !strings.Contains(prBlock, tc.expectedPR) {
+				t.Fatalf("pr contract must contain expected pattern %q, got: %q", tc.expectedPR, prBlock)
+			}
+		})
 	}
 }
 
