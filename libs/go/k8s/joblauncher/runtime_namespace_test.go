@@ -231,6 +231,41 @@ func TestLauncher_EnsureNamespace_RunRoleDoesNotGrantSecretsAccess(t *testing.T)
 	}
 }
 
+func TestLauncher_EnsureAccessProfile_ProductionReadOnlyForbidsExecPortForwardAndSecrets(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	client := fake.NewClientset()
+	launcher := NewForClient(Config{Namespace: "codex-k8s-prod"}, client)
+
+	serviceAccountName, err := launcher.EnsureAccessProfile(ctx, "codex-k8s-prod", agentdomain.RuntimeAccessProfileProductionReadOnly)
+	if err != nil {
+		t.Fatalf("EnsureAccessProfile() error = %v", err)
+	}
+	if got, want := serviceAccountName, launcher.cfg.RunReadOnlyServiceAccountName; got != want {
+		t.Fatalf("service account = %q, want %q", got, want)
+	}
+
+	role, err := client.RbacV1().Roles("codex-k8s-prod").Get(ctx, launcher.cfg.RunReadOnlyRoleName, metav1.GetOptions{})
+	if err != nil {
+		t.Fatalf("load readonly role failed: %v", err)
+	}
+
+	for _, rule := range role.Rules {
+		for _, verb := range rule.Verbs {
+			if verb != "get" && verb != "list" && verb != "watch" {
+				t.Fatalf("unexpected verb %q in readonly role", verb)
+			}
+		}
+		for _, resource := range rule.Resources {
+			switch resource {
+			case "pods/exec", "pods/portforward", "secrets", "secrets/*":
+				t.Fatalf("unexpected resource %q in readonly role", resource)
+			}
+		}
+	}
+}
+
 type leaseNamespaceParams struct {
 	projectLabel string
 	issueNumber  string

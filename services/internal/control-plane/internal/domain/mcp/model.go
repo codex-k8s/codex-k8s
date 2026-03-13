@@ -195,6 +195,10 @@ type PromptEnvironmentContext struct {
 // PromptRuntimeContext describes resolved runtime/deploy hints for current run.
 type PromptRuntimeContext struct {
 	TargetEnv       string                        `json:"target_env"`
+	BuildRef        string                        `json:"build_ref,omitempty"`
+	Namespace       string                        `json:"namespace,omitempty"`
+	AccessProfile   string                        `json:"access_profile,omitempty"`
+	Restrictions    []string                      `json:"restrictions,omitempty"`
 	ServicesYAML    string                        `json:"services_yaml"`
 	InventorySource string                        `json:"inventory_source,omitempty"`
 	Inventory       []PromptRuntimeServiceContext `json:"inventory,omitempty"`
@@ -679,8 +683,8 @@ type SelfImproveSessionGetInput struct {
 	RunID string `json:"run_id"`
 }
 
-// SelfImproveRunRef describes one run item in self-improve diagnostics.
-type SelfImproveRunRef struct {
+// SelfImproveRunIdentity describes self-improve run identity and linkage.
+type SelfImproveRunIdentity struct {
 	RunID              string `json:"run_id"`
 	CorrelationID      string `json:"correlation_id"`
 	ProjectID          string `json:"project_id,omitempty"`
@@ -692,10 +696,20 @@ type SelfImproveRunRef struct {
 	PullRequestURL     string `json:"pull_request_url,omitempty"`
 	TriggerKind        string `json:"trigger_kind,omitempty"`
 	TriggerLabel       string `json:"trigger_label,omitempty"`
-	Status             string `json:"status"`
-	CreatedAt          string `json:"created_at,omitempty"`
-	StartedAt          string `json:"started_at,omitempty"`
-	FinishedAt         string `json:"finished_at,omitempty"`
+}
+
+// SelfImproveRunTiming describes run timestamps in self-improve diagnostics.
+type SelfImproveRunTiming struct {
+	CreatedAt  string `json:"created_at,omitempty"`
+	StartedAt  string `json:"started_at,omitempty"`
+	FinishedAt string `json:"finished_at,omitempty"`
+}
+
+// SelfImproveRunRef describes one run item in self-improve diagnostics.
+type SelfImproveRunRef struct {
+	SelfImproveRunIdentity
+	Status string `json:"status"`
+	SelfImproveRunTiming
 }
 
 // SelfImproveRunsListResult is output for paginated run history.

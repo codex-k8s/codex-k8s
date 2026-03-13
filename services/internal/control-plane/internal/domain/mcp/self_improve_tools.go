@@ -241,19 +241,23 @@ func normalizeSelfImprovePage(value int) int {
 
 func selfImproveRunRefFromLookupItem(item agentrunrepo.RunLookupItem) SelfImproveRunRef {
 	result := SelfImproveRunRef{
-		RunID:              item.RunID,
-		CorrelationID:      item.CorrelationID,
-		ProjectID:          item.ProjectID,
-		RepositoryFullName: item.RepositoryFullName,
-		AgentKey:           item.AgentKey,
-		IssueNumber:        item.IssueNumber,
-		IssueURL:           item.IssueURL,
-		PullRequestNumber:  item.PullRequestNumber,
-		PullRequestURL:     item.PullRequestURL,
-		TriggerKind:        item.TriggerKind,
-		TriggerLabel:       item.TriggerLabel,
-		Status:             item.Status,
-		CreatedAt:          nowRFC3339Nano(item.CreatedAt),
+		SelfImproveRunIdentity: SelfImproveRunIdentity{
+			RunID:              item.RunID,
+			CorrelationID:      item.CorrelationID,
+			ProjectID:          item.ProjectID,
+			RepositoryFullName: item.RepositoryFullName,
+			AgentKey:           item.AgentKey,
+			IssueNumber:        item.IssueNumber,
+			IssueURL:           item.IssueURL,
+			PullRequestNumber:  item.PullRequestNumber,
+			PullRequestURL:     item.PullRequestURL,
+			TriggerKind:        item.TriggerKind,
+			TriggerLabel:       item.TriggerLabel,
+		},
+		Status: item.Status,
+		SelfImproveRunTiming: SelfImproveRunTiming{
+			CreatedAt: nowRFC3339Nano(item.CreatedAt),
+		},
 	}
 	if item.StartedAt != nil {
 		result.StartedAt = nowRFC3339Nano(*item.StartedAt)
@@ -266,11 +270,13 @@ func selfImproveRunRefFromLookupItem(item agentrunrepo.RunLookupItem) SelfImprov
 
 func selfImproveRunRefFromRunAndPayload(run agentrunrepo.Run, payload querytypes.RunPayload) SelfImproveRunRef {
 	result := SelfImproveRunRef{
-		RunID:              strings.TrimSpace(run.ID),
-		CorrelationID:      strings.TrimSpace(run.CorrelationID),
-		ProjectID:          strings.TrimSpace(run.ProjectID),
-		RepositoryFullName: strings.TrimSpace(payload.Repository.FullName),
-		Status:             strings.TrimSpace(run.Status),
+		SelfImproveRunIdentity: SelfImproveRunIdentity{
+			RunID:              strings.TrimSpace(run.ID),
+			CorrelationID:      strings.TrimSpace(run.CorrelationID),
+			ProjectID:          strings.TrimSpace(run.ProjectID),
+			RepositoryFullName: strings.TrimSpace(payload.Repository.FullName),
+		},
+		Status: strings.TrimSpace(run.Status),
 	}
 	if payload.Agent != nil {
 		result.AgentKey = strings.TrimSpace(payload.Agent.Key)

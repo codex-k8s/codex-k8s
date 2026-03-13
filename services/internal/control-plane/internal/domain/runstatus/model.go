@@ -239,6 +239,9 @@ type commentState struct {
 	JobName                  string `json:"job_name,omitempty"`
 	JobNamespace             string `json:"job_namespace,omitempty"`
 	RuntimeMode              string `json:"runtime_mode,omitempty"`
+	RuntimeTargetEnv         string `json:"runtime_target_env,omitempty"`
+	RuntimeBuildRef          string `json:"runtime_build_ref,omitempty"`
+	RuntimeAccessProfile     string `json:"runtime_access_profile,omitempty"`
 	Namespace                string `json:"namespace,omitempty"`
 	SlotURL                  string `json:"slot_url,omitempty"`
 	IssueURL                 string `json:"issue_url,omitempty"`

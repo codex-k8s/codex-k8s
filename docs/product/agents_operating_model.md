@@ -5,8 +5,8 @@ title: "codex-k8s — Agents Operating Model"
 status: active
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-03-09
-related_issues: [1, 19, 74, 175, 247, 248, 249]
+updated_at: 2026-03-13
+related_issues: [1, 19, 74, 175, 247, 248, 249, 341]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -42,21 +42,27 @@ approvals:
 | `em` | Engineering Manager | delivery plan/epics/DoR-DoD | `full-env` (read-only) | 1 |
 | `dev` | Software Engineer | реализация `run:dev`/`run:dev:revise`, код + тесты + docs update | `full-env` | 2 |
 | `reviewer` | Pre-review Engineer | замечания в PR и summary для Owner | `full-env` (read-mostly) | 2 |
-| `qa` | QA Lead | test strategy/plan/matrix/regression evidence | `full-env` | 2 |
-| `sre` | SRE / OPS | runbook/SLO/alerts/postdeploy/ops, emergency recovery (`run:ai-repair`) | `code-only` / special production pod | 1 |
+| `qa` | QA Lead | test strategy/plan/matrix/regression evidence | `full-env` (candidate before merge; `production-readonly` for `run:postdeploy`) | 2 |
+| `sre` | SRE / OPS | runbook/SLO/alerts/postdeploy/ops, emergency recovery (`run:ai-repair`) | mixed: `full-env` (`production-readonly` for `run:ops`), `code-only` / special production pod for `run:ai-repair` | 1 |
 | `km` | Knowledge Manager | traceability, docs governance, `run:self-improve` | `code-only` | 2 |
 
 Примечания:
 - `dev` остается единственной системной ролью, которая готовит production code changes и PR.
 - `reviewer` не изменяет репозиторий и не создает коммиты: его зона ответственности ограничена review feedback.
+- `dev -> qa -> release` продолжают один candidate runtime identity до merge; QA не должен проверять новый, несвязанный late-stage namespace.
+- `qa` на `run:postdeploy` и `sre` на `run:ops` работают в production namespace только с read-only доступом.
 - `sre` использует отдельный аварийный контур `run:ai-repair`, работающий рядом с production namespace.
 
 ## Execution modes
 
 ### `full-env`
-- Запуск выполняется в отдельном issue/run namespace рядом со стеком проекта.
+- Запуск выполняется либо в отдельном candidate issue/run namespace, либо в production namespace с профилем `production-readonly` для поздних delivery-stage.
 - Агент имеет доступ к логам, events, pod/deploy/service runtime и диагностике через `kubectl`.
 - Прямой доступ к `secrets` запрещен RBAC.
+- Для `run:*:revise` namespace переиспользуется и TTL lease продлевается.
+- В late delivery используются два access profile:
+  - `candidate` для `run:dev`, `run:qa`, `run:release` до merge;
+  - `production-readonly` для `run:postdeploy` и `run:ops` после merge.
 - Для `run:*:revise` worker сначала валидирует reusable namespace по persisted runtime fingerprint
   и immutable `build_ref`; только при совпадении fingerprint fast-path пропускает runtime deploy/build,
   иначе выполняется обычный redeploy в тот же namespace с продлением lease.

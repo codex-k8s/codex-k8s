@@ -29,6 +29,7 @@ type runPayloadInput struct {
 	RuntimeNamespace  string
 	RuntimeBuildRef   string
 	RuntimeDeployOnly bool
+	RuntimeAccess     agentdomain.RuntimeAccessProfile
 	DiscussionMode    bool
 }
 
@@ -95,12 +96,13 @@ func buildRunPayload(input runPayloadInput) (json.RawMessage, error) {
 			Name: input.Agent.Name,
 		},
 		Runtime: githubRunRuntimePayload{
-			Mode:       strings.TrimSpace(string(input.RuntimeMode)),
-			Source:     strings.TrimSpace(input.RuntimeSource),
-			TargetEnv:  strings.TrimSpace(input.RuntimeTargetEnv),
-			Namespace:  strings.TrimSpace(input.RuntimeNamespace),
-			BuildRef:   strings.TrimSpace(input.RuntimeBuildRef),
-			DeployOnly: input.RuntimeDeployOnly,
+			Mode:          strings.TrimSpace(string(input.RuntimeMode)),
+			Source:        strings.TrimSpace(input.RuntimeSource),
+			TargetEnv:     strings.TrimSpace(input.RuntimeTargetEnv),
+			Namespace:     strings.TrimSpace(input.RuntimeNamespace),
+			BuildRef:      strings.TrimSpace(input.RuntimeBuildRef),
+			DeployOnly:    input.RuntimeDeployOnly,
+			AccessProfile: strings.TrimSpace(string(input.RuntimeAccess)),
 		},
 	}
 

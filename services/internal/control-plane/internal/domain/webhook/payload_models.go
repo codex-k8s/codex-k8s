@@ -101,12 +101,13 @@ type githubRunProfileHints struct {
 }
 
 type githubRunRuntimePayload struct {
-	Mode       string `json:"mode"`
-	Source     string `json:"source,omitempty"`
-	TargetEnv  string `json:"target_env,omitempty"`
-	Namespace  string `json:"namespace,omitempty"`
-	BuildRef   string `json:"build_ref,omitempty"`
-	DeployOnly bool   `json:"deploy_only,omitempty"`
+	Mode          string `json:"mode"`
+	Source        string `json:"source,omitempty"`
+	TargetEnv     string `json:"target_env,omitempty"`
+	Namespace     string `json:"namespace,omitempty"`
+	BuildRef      string `json:"build_ref,omitempty"`
+	DeployOnly    bool   `json:"deploy_only,omitempty"`
+	AccessProfile string `json:"access_profile,omitempty"`
 }
 
 type githubFlowEventPayload struct {

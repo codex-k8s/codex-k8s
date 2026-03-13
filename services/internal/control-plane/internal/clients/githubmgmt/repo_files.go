@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	gh "github.com/google/go-github/v82/github"
+
+	webhookdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
 )
 
 func (c *Client) GetDefaultBranch(ctx context.Context, token string, owner string, repo string) (string, error) {
@@ -193,6 +195,28 @@ func (c *Client) ResolveRefToCommitSHA(ctx context.Context, token string, owner 
 		return "", fmt.Errorf("github branch %s has empty commit sha", normalizedRef)
 	}
 	return sha, nil
+}
+
+func (c *Client) GetPullRequestHead(ctx context.Context, token string, owner string, repo string, number int) (webhookdomain.GitHubPullRequestHeadDetails, error) {
+	client := c.clientWithToken(token)
+	owner = strings.TrimSpace(owner)
+	repo = strings.TrimSpace(repo)
+	if owner == "" || repo == "" {
+		return webhookdomain.GitHubPullRequestHeadDetails{}, fmt.Errorf("owner and repository are required")
+	}
+	if number <= 0 {
+		return webhookdomain.GitHubPullRequestHeadDetails{}, fmt.Errorf("pull request number must be positive")
+	}
+
+	pr, _, err := client.PullRequests.Get(ctx, owner, repo, number)
+	if err != nil {
+		return webhookdomain.GitHubPullRequestHeadDetails{}, fmt.Errorf("github get pull request %s/%s#%d: %w", owner, repo, number, err)
+	}
+	return webhookdomain.GitHubPullRequestHeadDetails{
+		State:   strings.TrimSpace(pr.GetState()),
+		HeadRef: strings.TrimSpace(pr.GetHead().GetRef()),
+		HeadSHA: strings.TrimSpace(pr.GetHead().GetSHA()),
+	}, nil
 }
 
 var errGitHubContentNeedsDownload = errors.New("github content needs download")

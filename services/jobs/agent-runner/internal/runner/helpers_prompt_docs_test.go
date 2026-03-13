@@ -34,7 +34,7 @@ spec:
 		t.Fatalf("write services.yaml: %v", err)
 	}
 
-	docs, total, trimmed := loadProjectDocsForPrompt(repoDir, "dev", "dev", runtimeModeFullEnv)
+	docs, total, trimmed := loadProjectDocsForPrompt(repoDir, "dev", "dev", runtimeModeFullEnv, "")
 	if trimmed {
 		t.Fatalf("trimmed=%v, want false", trimmed)
 	}
@@ -79,7 +79,7 @@ spec:
 		t.Fatalf("write services.yaml: %v", err)
 	}
 
-	docs, total, trimmed := loadProjectDocsForPrompt(repoDir, "dev", "dev", runtimeModeFullEnv)
+	docs, total, trimmed := loadProjectDocsForPrompt(repoDir, "dev", "dev", runtimeModeFullEnv, "")
 	if trimmed {
 		t.Fatalf("trimmed=%v, want false", trimmed)
 	}
@@ -97,19 +97,22 @@ spec:
 func TestResolvePromptDocsEnv(t *testing.T) {
 	t.Parallel()
 
-	if got, want := resolvePromptDocsEnv("dev", runtimeModeFullEnv), "ai"; got != want {
+	if got, want := resolvePromptDocsEnv("dev", runtimeModeFullEnv, ""), "ai"; got != want {
 		t.Fatalf("resolvePromptDocsEnv(dev, full-env)=%q, want %q", got, want)
 	}
-	if got, want := resolvePromptDocsEnv("qa_revise", runtimeModeFullEnv), "ai"; got != want {
+	if got, want := resolvePromptDocsEnv("qa_revise", runtimeModeFullEnv, ""), "ai"; got != want {
 		t.Fatalf("resolvePromptDocsEnv(qa_revise, full-env)=%q, want %q", got, want)
 	}
-	if got, want := resolvePromptDocsEnv("ops_revise", runtimeModeFullEnv), "ai"; got != want {
-		t.Fatalf("resolvePromptDocsEnv(ops_revise, full-env)=%q, want %q", got, want)
+	if got, want := resolvePromptDocsEnv("release", runtimeModeFullEnv, ""), "ai"; got != want {
+		t.Fatalf("resolvePromptDocsEnv(release, full-env)=%q, want %q", got, want)
 	}
-	if got, want := resolvePromptDocsEnv("plan", runtimeModeFullEnv), "production"; got != want {
+	if got, want := resolvePromptDocsEnv("ops_revise", runtimeModeFullEnv, "production"), "production"; got != want {
+		t.Fatalf("resolvePromptDocsEnv(ops_revise, full-env, production)=%q, want %q", got, want)
+	}
+	if got, want := resolvePromptDocsEnv("plan", runtimeModeFullEnv, ""), "production"; got != want {
 		t.Fatalf("resolvePromptDocsEnv(plan, full-env)=%q, want %q", got, want)
 	}
-	if got, want := resolvePromptDocsEnv("dev", runtimeModeCodeOnly), "production"; got != want {
+	if got, want := resolvePromptDocsEnv("dev", runtimeModeCodeOnly, ""), "production"; got != want {
 		t.Fatalf("resolvePromptDocsEnv(dev, code-only)=%q, want %q", got, want)
 	}
 }
@@ -145,7 +148,7 @@ spec:
 		t.Fatalf("write services.yaml: %v", err)
 	}
 
-	templates, total, trimmed := loadRoleDocTemplatesForPrompt(repoDir, "dev", "dev", runtimeModeFullEnv)
+	templates, total, trimmed := loadRoleDocTemplatesForPrompt(repoDir, "dev", "dev", runtimeModeFullEnv, "")
 	if trimmed {
 		t.Fatalf("trimmed=%v, want false", trimmed)
 	}
@@ -192,7 +195,7 @@ spec:
 		t.Fatalf("write services.yaml: %v", err)
 	}
 
-	templates, total, trimmed := loadRoleDocTemplatesForPrompt(repoDir, "dev", "dev", runtimeModeFullEnv)
+	templates, total, trimmed := loadRoleDocTemplatesForPrompt(repoDir, "dev", "dev", runtimeModeFullEnv, "")
 	if trimmed {
 		t.Fatalf("trimmed=%v, want false", trimmed)
 	}
@@ -219,7 +222,7 @@ func TestRepositoryServicesYAML_RoleDocTemplatesMatchGovernanceMatrix(t *testing
 	}
 
 	for role, want := range expected {
-		templates, total, trimmed := loadRoleDocTemplatesForPrompt(repoDir, role, role, runtimeModeFullEnv)
+		templates, total, trimmed := loadRoleDocTemplatesForPrompt(repoDir, role, role, runtimeModeFullEnv, "")
 		if trimmed {
 			t.Fatalf("role %q templates trimmed unexpectedly", role)
 		}
@@ -238,7 +241,7 @@ func TestRepositoryServicesYAML_RoleDocTemplatesMatchGovernanceMatrix(t *testing
 		}
 	}
 
-	reviewerTemplates, total, trimmed := loadRoleDocTemplatesForPrompt(repoDir, "reviewer", "reviewer", runtimeModeFullEnv)
+	reviewerTemplates, total, trimmed := loadRoleDocTemplatesForPrompt(repoDir, "reviewer", "reviewer", runtimeModeFullEnv, "")
 	if trimmed {
 		t.Fatalf("reviewer templates trimmed unexpectedly")
 	}
@@ -251,7 +254,7 @@ func TestRepositoryServicesYAML_ProjectDocsCoverDeliveryAndOpsRoles(t *testing.T
 	t.Parallel()
 
 	repoDir := findRepositoryRootForPromptTests(t)
-	docs, total, trimmed := loadProjectDocsForPrompt(repoDir, "dev", "dev", runtimeModeFullEnv)
+	docs, total, trimmed := loadProjectDocsForPrompt(repoDir, "dev", "dev", runtimeModeFullEnv, "")
 	if trimmed {
 		t.Fatalf("dev project docs trimmed unexpectedly")
 	}
@@ -269,7 +272,7 @@ func TestRepositoryServicesYAML_ProjectDocsCoverDeliveryAndOpsRoles(t *testing.T
 func assertPromptDocVisible(t *testing.T, repoDir string, role string, triggerKind string, wantPath string) {
 	t.Helper()
 
-	docs, _, _ := loadProjectDocsForPrompt(repoDir, role, triggerKind, runtimeModeFullEnv)
+	docs, _, _ := loadProjectDocsForPrompt(repoDir, role, triggerKind, runtimeModeFullEnv, "")
 	for _, doc := range docs {
 		if doc.Path == wantPath {
 			return

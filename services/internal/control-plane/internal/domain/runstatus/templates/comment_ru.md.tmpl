@@ -26,6 +26,20 @@
 {{- if .ShowRuntimeMode }}
 - Runtime mode: `{{ .RuntimeMode }}`
 {{- end }}
+{{- if .ShowRuntimeTargetEnv }}
+- Target env: `{{ .RuntimeTargetEnv }}`
+{{- end }}
+{{- if .ShowRuntimeBuildRef }}
+- Build ref: `{{ .RuntimeBuildRef }}`
+{{- end }}
+{{- if .ShowRuntimeAccess }}
+- Access profile: `{{ .RuntimeAccessProfile }}`
+{{- if eq .RuntimeAccessProfile "production-readonly" }}
+  - Ограничения: только чтение (`get/list/watch`, `pods/log`, events/status); `exec`, `port-forward`, mutations и `secrets` запрещены.
+{{- else if eq .RuntimeAccessProfile "candidate" }}
+  - Ограничения: сохраняйте continuity candidate namespace/build ref до merge.
+{{- end }}
+{{- end }}
 {{- if .ShowJobRef }}
 {{- if eq .WorkloadKind "pod" }}
 - Pod: `{{ .JobNamespace }}/{{ .JobName }}`

@@ -38,8 +38,8 @@ func (doc promptRoleDocTemplateData) promptDocPath() string {
 	return doc.Path
 }
 
-func loadProjectDocsForPrompt(repoDir string, roleKey string, triggerKind string, runtimeMode string) ([]promptProjectDocTemplateData, int, bool) {
-	stack, ok := loadPromptServicesStackForPrompt(repoDir, triggerKind, runtimeMode)
+func loadProjectDocsForPrompt(repoDir string, roleKey string, triggerKind string, runtimeMode string, runtimeTargetEnv string) ([]promptProjectDocTemplateData, int, bool) {
+	stack, ok := loadPromptServicesStackForPrompt(repoDir, triggerKind, runtimeMode, runtimeTargetEnv)
 	if !ok || len(stack.Spec.ProjectDocs) == 0 {
 		return nil, 0, false
 	}
@@ -72,8 +72,8 @@ func loadProjectDocsForPrompt(repoDir string, roleKey string, triggerKind string
 	return trimPromptDocItems(items, maxPromptDocs)
 }
 
-func loadRoleDocTemplatesForPrompt(repoDir string, roleKey string, triggerKind string, runtimeMode string) ([]promptRoleDocTemplateData, int, bool) {
-	stack, ok := loadPromptServicesStackForPrompt(repoDir, triggerKind, runtimeMode)
+func loadRoleDocTemplatesForPrompt(repoDir string, roleKey string, triggerKind string, runtimeMode string, runtimeTargetEnv string) ([]promptRoleDocTemplateData, int, bool) {
+	stack, ok := loadPromptServicesStackForPrompt(repoDir, triggerKind, runtimeMode, runtimeTargetEnv)
 	if !ok || len(stack.Spec.RoleDocTemplates) == 0 {
 		return nil, 0, false
 	}
@@ -115,14 +115,14 @@ func loadRoleDocTemplatesForPrompt(repoDir string, roleKey string, triggerKind s
 	return trimPromptDocItems(items, maxRoleDocTemplates)
 }
 
-func loadPromptServicesStackForPrompt(repoDir string, triggerKind string, runtimeMode string) (*servicescfg.Stack, bool) {
+func loadPromptServicesStackForPrompt(repoDir string, triggerKind string, runtimeMode string, runtimeTargetEnv string) (*servicescfg.Stack, bool) {
 	servicesPath := filepath.Join(strings.TrimSpace(repoDir), "services.yaml")
 	raw, err := os.ReadFile(servicesPath)
 	if err != nil {
 		return nil, false
 	}
 
-	env := resolvePromptDocsEnv(triggerKind, runtimeMode)
+	env := resolvePromptDocsEnv(triggerKind, runtimeMode, runtimeTargetEnv)
 	loadResult, err := servicescfg.LoadFromYAML(raw, servicescfg.LoadOptions{Env: env})
 	if err != nil || loadResult.Stack == nil {
 		return nil, false
@@ -130,7 +130,14 @@ func loadPromptServicesStackForPrompt(repoDir string, triggerKind string, runtim
 	return loadResult.Stack, true
 }
 
-func resolvePromptDocsEnv(triggerKind string, runtimeMode string) string {
+func resolvePromptDocsEnv(triggerKind string, runtimeMode string, runtimeTargetEnv string) string {
+	normalizedTargetEnv := strings.TrimSpace(strings.ToLower(runtimeTargetEnv))
+	if normalizedTargetEnv != "" {
+		switch normalizedTargetEnv {
+		case "ai", "production":
+			return normalizedTargetEnv
+		}
+	}
 	if strings.EqualFold(strings.TrimSpace(runtimeMode), runtimeModeFullEnv) {
 		normalizedTrigger := webhookdomain.NormalizeTriggerKind(triggerKind)
 		switch normalizedTrigger {
@@ -138,8 +145,8 @@ func resolvePromptDocsEnv(triggerKind string, runtimeMode string) string {
 			webhookdomain.TriggerKindDevRevise,
 			webhookdomain.TriggerKindQA,
 			webhookdomain.TriggerKindQARevise,
-			webhookdomain.TriggerKindOps,
-			webhookdomain.TriggerKindOpsRevise:
+			webhookdomain.TriggerKindRelease,
+			webhookdomain.TriggerKindReleaseRevise:
 			return "ai"
 		}
 	}

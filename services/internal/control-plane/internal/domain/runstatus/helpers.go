@@ -154,6 +154,15 @@ func mergeState(base commentState, update commentState) commentState {
 	if strings.TrimSpace(update.RuntimeMode) != "" {
 		base.RuntimeMode = strings.TrimSpace(update.RuntimeMode)
 	}
+	if strings.TrimSpace(update.RuntimeTargetEnv) != "" {
+		base.RuntimeTargetEnv = strings.TrimSpace(update.RuntimeTargetEnv)
+	}
+	if strings.TrimSpace(update.RuntimeBuildRef) != "" {
+		base.RuntimeBuildRef = strings.TrimSpace(update.RuntimeBuildRef)
+	}
+	if strings.TrimSpace(update.RuntimeAccessProfile) != "" {
+		base.RuntimeAccessProfile = strings.TrimSpace(update.RuntimeAccessProfile)
+	}
 	if strings.TrimSpace(update.Namespace) != "" {
 		base.Namespace = strings.TrimSpace(update.Namespace)
 	}

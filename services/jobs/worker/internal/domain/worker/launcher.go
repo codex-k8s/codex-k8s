@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 
+	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	libslauncher "github.com/codex-k8s/codex-k8s/libs/go/k8s/joblauncher"
 )
 
@@ -39,6 +40,8 @@ type Launcher interface {
 	FindReusableNamespace(ctx context.Context, lookup NamespaceReuseLookup) (NamespaceReuseResult, bool, error)
 	// EnsureNamespace prepares namespace baseline for full-env execution.
 	EnsureNamespace(ctx context.Context, spec NamespaceSpec) (NamespaceEnsureResult, error)
+	// EnsureAccessProfile prepares ServiceAccount/RBAC profile in an existing namespace.
+	EnsureAccessProfile(ctx context.Context, namespace string, profile agentdomain.RuntimeAccessProfile) (string, error)
 	// CleanupExpiredNamespaces removes managed namespaces with expired lease annotation.
 	CleanupExpiredNamespaces(ctx context.Context, params NamespaceCleanupParams) ([]NamespaceCleanupResult, error)
 	// Launch creates workload if needed and returns its reference.

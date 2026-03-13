@@ -57,15 +57,18 @@ type OpenAIConfig struct {
 
 // Config defines runtime parameters for one agent-runner job.
 type Config struct {
-	RunID              string
-	CorrelationID      string
-	ProjectID          string
-	RepositoryFullName string
-	AgentKey           string
-	IssueNumber        int64
-	RunTargetBranch    string
-	ExistingPRNumber   int
-	RuntimeMode        string
+	RunID                string
+	CorrelationID        string
+	ProjectID            string
+	RepositoryFullName   string
+	AgentKey             string
+	IssueNumber          int64
+	RunTargetBranch      string
+	ExistingPRNumber     int
+	RuntimeMode          string
+	RuntimeTargetEnv     string
+	RuntimeBuildRef      string
+	RuntimeAccessProfile string
 
 	PromptConfig
 
@@ -164,6 +167,10 @@ type promptEnvelopeTemplateData struct {
 	IssueNumber                  int64
 	AgentKey                     string
 	RuntimeMode                  string
+	RuntimeTargetEnv             string
+	RuntimeBuildRef              string
+	RuntimeAccessProfile         string
+	RuntimeRestrictions          []string
 	IsFullEnv                    bool
 	TargetBranch                 string
 	BaseBranch                   string

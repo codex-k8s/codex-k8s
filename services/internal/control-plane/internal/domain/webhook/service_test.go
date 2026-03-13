@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -3229,6 +3230,7 @@ type inMemoryRunStatusService struct {
 	needInputLabelCalls      []runstatusdomain.EnsureNeedInputLabelParams
 	ensureNeedInputLabelErr  error
 	statusCommentUpsertCalls []runstatusdomain.UpsertCommentParams
+	runtimeStates            map[string]runstatusdomain.RuntimeState
 }
 
 func (s *inMemoryRunStatusService) UpsertRunStatusComment(_ context.Context, params runstatusdomain.UpsertCommentParams) (runstatusdomain.UpsertCommentResult, error) {
@@ -3237,6 +3239,13 @@ func (s *inMemoryRunStatusService) UpsertRunStatusComment(_ context.Context, par
 		CommentID:  1,
 		CommentURL: "https://example.invalid/run-status",
 	}, nil
+}
+
+func (s *inMemoryRunStatusService) GetRunRuntimeState(_ context.Context, runID string) (runstatusdomain.RuntimeState, error) {
+	if s.runtimeStates == nil {
+		return runstatusdomain.RuntimeState{}, nil
+	}
+	return s.runtimeStates[strings.TrimSpace(runID)], nil
 }
 
 func (s *inMemoryRunStatusService) DeleteRunNamespace(_ context.Context, params runstatusdomain.DeleteNamespaceParams) (runstatusdomain.DeleteNamespaceResult, error) {
@@ -3441,6 +3450,8 @@ func (r *inMemoryProjectMemberRepo) GetLearningModeOverride(_ context.Context, _
 type inMemoryPushMainVersionBumpClient struct {
 	filesByRef map[string][]byte
 	refToSHA   map[string]string
+	prHeads    map[string]GitHubPullRequestHeadDetails
+	prHeadErr  error
 
 	changedPaths []string
 	changedErr   error
@@ -3511,4 +3522,21 @@ func (c *inMemoryPushMainVersionBumpClient) ResolveRefToCommitSHA(_ context.Cont
 		return strings.TrimSpace(value), nil
 	}
 	return strings.TrimSpace(ref), nil
+}
+
+func (c *inMemoryPushMainVersionBumpClient) GetPullRequestHead(_ context.Context, _ string, owner string, repo string, number int) (GitHubPullRequestHeadDetails, error) {
+	if c == nil {
+		return GitHubPullRequestHeadDetails{}, nil
+	}
+	if c.prHeadErr != nil {
+		return GitHubPullRequestHeadDetails{}, c.prHeadErr
+	}
+	if c.prHeads == nil {
+		return GitHubPullRequestHeadDetails{}, nil
+	}
+	key := strings.TrimSpace(owner) + "/" + strings.TrimSpace(repo) + "#" + strconv.Itoa(number)
+	if value, ok := c.prHeads[key]; ok {
+		return value, nil
+	}
+	return GitHubPullRequestHeadDetails{}, nil
 }

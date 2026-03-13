@@ -34,11 +34,12 @@ type RunRuntimeIssue struct {
 
 // RunRuntimeProfile captures runtime mode resolved upstream by webhook/control-plane.
 type RunRuntimeProfile struct {
-	Mode       string `json:"mode"`
-	TargetEnv  string `json:"target_env,omitempty"`
-	Namespace  string `json:"namespace,omitempty"`
-	BuildRef   string `json:"build_ref,omitempty"`
-	DeployOnly bool   `json:"deploy_only,omitempty"`
+	Mode          string `json:"mode"`
+	TargetEnv     string `json:"target_env,omitempty"`
+	Namespace     string `json:"namespace,omitempty"`
+	BuildRef      string `json:"build_ref,omitempty"`
+	DeployOnly    bool   `json:"deploy_only,omitempty"`
+	AccessProfile string `json:"access_profile,omitempty"`
 }
 
 // RepositoryPayload keeps repository fields required for project derivation.

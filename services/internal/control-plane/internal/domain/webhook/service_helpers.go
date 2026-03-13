@@ -603,7 +603,8 @@ func shouldEnsureNeedInputLabel(reason string) bool {
 	case string(runstatusdomain.TriggerWarningReasonPullRequestReviewMissingStageLabel),
 		string(runstatusdomain.TriggerWarningReasonPullRequestReviewStageLabelConflict),
 		string(runstatusdomain.TriggerWarningReasonPullRequestReviewStageNotResolved),
-		string(runstatusdomain.TriggerWarningReasonPullRequestReviewStageAmbiguous):
+		string(runstatusdomain.TriggerWarningReasonPullRequestReviewStageAmbiguous),
+		string(runstatusdomain.TriggerWarningReasonIssueTriggerCandidateNotFound):
 		return true
 	default:
 		return false
@@ -618,7 +619,8 @@ func isRunCreationWarningReason(reason string) bool {
 	if normalized == string(runstatusdomain.TriggerWarningReasonPullRequestReviewMissingStageLabel) ||
 		normalized == string(runstatusdomain.TriggerWarningReasonPullRequestReviewStageLabelConflict) ||
 		normalized == string(runstatusdomain.TriggerWarningReasonPullRequestReviewStageNotResolved) ||
-		normalized == string(runstatusdomain.TriggerWarningReasonPullRequestReviewStageAmbiguous) {
+		normalized == string(runstatusdomain.TriggerWarningReasonPullRequestReviewStageAmbiguous) ||
+		normalized == string(runstatusdomain.TriggerWarningReasonIssueTriggerCandidateNotFound) {
 		return true
 	}
 	if normalized == string(runstatusdomain.TriggerWarningReasonRepositoryNotBoundForIssueLabel) {

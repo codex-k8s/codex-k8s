@@ -8,6 +8,7 @@ import (
 	"io"
 	"reflect"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -160,13 +161,11 @@ func (c *Client) ListEvents(ctx context.Context, namespace string, limit int) ([
 		})
 	}
 
-	sort.Slice(out, func(i, j int) bool {
-		switch {
-		case out[i].Timestamp != out[j].Timestamp:
-			return out[i].Timestamp > out[j].Timestamp
-		default:
-			return strings.Compare(out[i].Object, out[j].Object) < 0
+	slices.SortFunc(out, func(left, right mcpdomain.KubernetesEvent) int {
+		if left.Timestamp != right.Timestamp {
+			return strings.Compare(right.Timestamp, left.Timestamp)
 		}
+		return strings.Compare(left.Object, right.Object)
 	})
 	return out, nil
 }

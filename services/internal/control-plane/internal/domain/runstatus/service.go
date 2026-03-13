@@ -119,6 +119,11 @@ func (s *Service) UpsertRunStatusComment(ctx context.Context, params UpsertComme
 		Deleted:                  params.Deleted,
 		AlreadyDeleted:           params.AlreadyDeleted,
 	}
+	if runCtx.payload.Runtime != nil {
+		currentState.RuntimeTargetEnv = strings.TrimSpace(runCtx.payload.Runtime.TargetEnv)
+		currentState.RuntimeBuildRef = strings.TrimSpace(runCtx.payload.Runtime.BuildRef)
+		currentState.RuntimeAccessProfile = strings.TrimSpace(runCtx.payload.Runtime.AccessProfile)
+	}
 	if runCtx.payload.Issue != nil {
 		currentState.IssueNumber = int(runCtx.payload.Issue.Number)
 		currentState.IssueURL = strings.TrimSpace(runCtx.payload.Issue.HTMLURL)

@@ -61,4 +61,5 @@ const (
 	TriggerWarningReasonPullRequestReviewStageNotResolved   TriggerWarningReasonCode = "pull_request_review_stage_not_resolved"
 	TriggerWarningReasonPullRequestReviewStageAmbiguous     TriggerWarningReasonCode = "pull_request_review_stage_ambiguous"
 	TriggerWarningReasonRepositoryNotBoundForIssueLabel     TriggerWarningReasonCode = "repository_not_bound_for_issue_label"
+	TriggerWarningReasonIssueTriggerCandidateNotFound       TriggerWarningReasonCode = "issue_trigger_candidate_not_found"
 )

@@ -31,6 +31,7 @@
 | S6 Day7 - Development | [#199 S6 Day7: Реализация lifecycle управления агентами и шаблонами промптов](https://github.com/codex-k8s/codex-k8s/issues/199) | [#202 S6 Day7: реализация lifecycle управления агентами и шаблонами промптов (#199)](https://github.com/codex-k8s/codex-k8s/pull/202) |
 
 По факту этапы выше были выполнены менее чем за сутки. Далее идут этапы `qa -> release -> postdeploy -> ops`: каждый запускается своим label на задаче, и каждый выполняется отдельным агентом со своей ролью и инструкциями.
+Для late-stage delivery действует единая runtime-семантика: `run:dev -> run:qa -> run:release` в `full-env` продолжают один candidate namespace/build lineage до merge, а `run:postdeploy -> run:ops` работают уже против production namespace с read-only RBAC.
 
 ### 🖼️ Текущий Вид Платформы
 > UI/UX на финальном этапе MVP будет дорабатываться и полироваться.
@@ -87,6 +88,11 @@
 
 Поддержанные stage:
 - `run:intake`, `run:vision`, `run:prd`, `run:arch`, `run:design`, `run:plan`, `run:dev`, `run:doc-audit`, `run:qa`, `run:release`, `run:postdeploy`, `run:ops`, `run:self-improve`, `run:rethink`.
+
+Late-stage routing:
+- `run:dev` создаёт candidate runtime или продолжает уже существующий candidate lineage той же Issue/PR.
+- `run:qa` и `run:release` используют только существующий candidate lineage; при его отсутствии платформа не делает silent fallback на default branch и запрашивает `need:input`.
+- `run:postdeploy` и `run:ops` таргетят `production` и получают `production-readonly` профиль без `exec`, `port-forward`, `secrets` и mutating операций.
 
 ### 3. Revise-запуски
 - Ручной revise: ставите `run:<stage>:revise` на Issue.

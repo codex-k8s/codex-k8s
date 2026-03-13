@@ -50,6 +50,7 @@ type pushMainDeployTarget struct {
 
 type runStatusService interface {
 	UpsertRunStatusComment(ctx context.Context, params runstatusdomain.UpsertCommentParams) (runstatusdomain.UpsertCommentResult, error)
+	GetRunRuntimeState(ctx context.Context, runID string) (runstatusdomain.RuntimeState, error)
 	DeleteRunNamespace(ctx context.Context, params runstatusdomain.DeleteNamespaceParams) (runstatusdomain.DeleteNamespaceResult, error)
 	CleanupNamespacesByIssue(ctx context.Context, params runstatusdomain.CleanupByIssueParams) (runstatusdomain.CleanupByIssueResult, error)
 	CleanupNamespacesByPullRequest(ctx context.Context, params runstatusdomain.CleanupByPullRequestParams) (runstatusdomain.CleanupByIssueResult, error)
@@ -67,6 +68,13 @@ type pushMainVersionBumpClient interface {
 	ListChangedFilesBetweenCommits(ctx context.Context, token string, owner string, repo string, beforeSHA string, afterSHA string) ([]string, error)
 	CommitFilesOnBranch(ctx context.Context, token string, owner string, repo string, branch string, baseSHA string, message string, files map[string][]byte) (string, error)
 	ResolveRefToCommitSHA(ctx context.Context, token string, owner string, repo string, ref string) (string, error)
+	GetPullRequestHead(ctx context.Context, token string, owner string, repo string, number int) (GitHubPullRequestHeadDetails, error)
+}
+
+type GitHubPullRequestHeadDetails struct {
+	State   string
+	HeadRef string
+	HeadSHA string
 }
 
 // Service ingests provider webhooks into idempotent run and flow-event records.
@@ -282,6 +290,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 	runtimeNamespace := pushTarget.Namespace
 	runtimeBuildRef := pushTarget.BuildRef
 	runtimeDeployOnly := true
+	runtimeAccessProfile := agentdomain.RuntimeAccessProfileCandidate
 
 	if hasIssueRunTrigger {
 		learningMode, err = s.resolveLearningMode(ctx, learningProjectID, envelope.Sender.Login)
@@ -303,6 +312,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		runtimeNamespace = ""
 		runtimeBuildRef = strings.TrimSpace(repositoryDefaultRef)
 		runtimeDeployOnly = false
+		runtimeAccessProfile = agentdomain.RuntimeAccessProfileCandidate
 		if trigger.DiscussionMode {
 			runtimeBuildRef = strings.TrimSpace(repositoryDefaultRef)
 		} else if trigger.Kind == webhookdomain.TriggerKindAIRepair {
@@ -320,7 +330,25 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 				runtimeBuildRef = prHeadRef
 			}
 		} else if strings.EqualFold(triggerSource, webhookdomain.TriggerSourceIssueLabel) {
-			runtimeBuildRef = s.resolveRuntimeBuildRefForIssueTrigger(ctx, payloadProjectID, envelope, runtimeBuildRef, runtimeMode)
+			routing := s.resolveIssueTriggerRuntimeProfile(ctx, payloadProjectID, envelope, trigger, runtimeBuildRef, runtimeMode)
+			if strings.TrimSpace(routing.WarningReason) != "" {
+				return s.recordIgnoredWebhook(ctx, effectiveCmd, envelope, ignoredWebhookParams{
+					Reason:          routing.WarningReason,
+					RunKind:         trigger.Kind,
+					HasBinding:      hasBinding,
+					SuggestedLabels: routing.SuggestedLabels,
+				})
+			}
+			if strings.TrimSpace(routing.TargetEnv) != "" {
+				runtimeTargetEnv = routing.TargetEnv
+			}
+			if strings.TrimSpace(routing.Namespace) != "" {
+				runtimeNamespace = routing.Namespace
+			}
+			if strings.TrimSpace(routing.BuildRef) != "" {
+				runtimeBuildRef = routing.BuildRef
+			}
+			runtimeAccessProfile = routing.AccessProfile
 		}
 	}
 
@@ -343,6 +371,7 @@ func (s *Service) IngestGitHubWebhook(ctx context.Context, cmd IngestCommand) (I
 		RuntimeNamespace:  runtimeNamespace,
 		RuntimeBuildRef:   runtimeBuildRef,
 		RuntimeDeployOnly: runtimeDeployOnly,
+		RuntimeAccess:     runtimeAccessProfile,
 		DiscussionMode:    hasIssueRunTrigger && trigger.DiscussionMode,
 	})
 	if err != nil {

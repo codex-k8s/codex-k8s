@@ -35,9 +35,15 @@ func (s *Service) launchPending(ctx context.Context) error {
 		prepareParams := buildPrepareRunEnvironmentParams(claimed, execution)
 		deployOnlyRun := prepareParams.DeployOnly
 		aiRepairRun := isAIRepairRuntimePayload(runPayload)
+		runtimeAccessProfile := resolveRuntimeAccessProfile(runPayload)
+		productionReadOnlyRun := execution.RuntimeMode == agentdomain.RuntimeModeFullEnv &&
+			runtimeAccessProfile == agentdomain.RuntimeAccessProfileProductionReadOnly &&
+			!deployOnlyRun
 		reusedFullEnvNamespace := false
 		if aiRepairRun {
 			execution.Namespace = s.resolveAIRepairNamespace(execution.Namespace)
+		} else if productionReadOnlyRun {
+			execution.Namespace = s.resolveProductionReadonlyNamespace(prepareParams.Namespace)
 		}
 
 		leaseCtx := resolveNamespaceLeaseContext(claimed.RunPayload)
@@ -109,6 +115,16 @@ func (s *Service) launchPending(ctx context.Context) error {
 			continue
 		}
 
+		if productionReadOnlyRun {
+			if err := s.launchPreparedRunWorkload(ctx, runningRun, execution, agentCtx, namespaceLeaseSpec{}, runLaunchOptions{
+				SkipNamespacePreparation: true,
+				RuntimeAccessProfile:     runtimeAccessProfile,
+			}); err != nil {
+				return err
+			}
+			continue
+		}
+
 		if reusedFullEnvNamespace && !deployOnlyRun {
 			if err := s.launchPreparedRunWorkload(ctx, runningRun, execution, agentCtx, namespaceLeaseSpec{
 				AgentKey:    leaseCtx.AgentKey,
@@ -173,4 +189,15 @@ func (s *Service) launchPending(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (s *Service) resolveProductionReadonlyNamespace(explicit string) string {
+	namespace := sanitizeDNSLabelValue(explicit)
+	if namespace != "" {
+		return namespace
+	}
+	if s.cfg.ProductionNamespace != "" {
+		return s.cfg.ProductionNamespace
+	}
+	return s.cfg.KubernetesNamespace
 }

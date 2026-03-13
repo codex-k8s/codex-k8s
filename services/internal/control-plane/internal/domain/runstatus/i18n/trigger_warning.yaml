@@ -44,6 +44,9 @@ locales:
       repository_not_bound_for_issue_label:
         reason: "репозиторий не привязан к проекту платформы."
         hint: "Привяжите репозиторий к проекту в staff console и повторите запуск."
+      issue_trigger_candidate_not_found:
+        reason: "для late-stage запуска не найден активный candidate PR/runtime текущей Issue."
+        hint: "Сначала восстановите candidate lineage через `run:dev` или `run:dev:revise`, затем повторите запуск."
     sender_prefix:
       reason: "инициатор события не имеет прав запускать trigger-лейблы."
       hint: "Проверьте роль пользователя (owner/admin/read_write) и доступ в проект."
@@ -96,6 +99,9 @@ locales:
       repository_not_bound_for_issue_label:
         reason: "repository is not bound to a platform project."
         hint: "Bind repository to a project in staff console and retry."
+      issue_trigger_candidate_not_found:
+        reason: "no active candidate PR/runtime was found for this issue-triggered late-stage run."
+        hint: "Restore candidate lineage via `run:dev` or `run:dev:revise` and retry."
     sender_prefix:
       reason: "event sender is not permitted to trigger run labels."
       hint: "Verify sender role (owner/admin/read_write) and project membership."

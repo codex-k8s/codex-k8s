@@ -5,8 +5,8 @@ title: "codex-k8s — Labels and Trigger Policy"
 status: active
 owner_role: PM
 created_at: 2026-02-11
-updated_at: 2026-03-09
-related_issues: [1, 19, 74, 90, 95, 154, 155, 175, 212]
+updated_at: 2026-03-13
+related_issues: [1, 19, 74, 90, 95, 154, 155, 175, 212, 341]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -24,6 +24,7 @@ approvals:
 - `state:*`, диагностические labels и большинство `need:*` labels не запускают деплой/исполнение и могут ставиться автоматически по политике.
 - Исключение: `need:reviewer` на PR (webhook `pull_request:labeled`) запускает pre-review ран роли `reviewer`.
 - Для review->revise цикла реализован гибридный resolver stage/profile и stage-aware сервисные сообщения (Issue #95, ADR-0006).
+- Late delivery labels больше не используют silent fallback: `run:qa`/`run:release` требуют существующий candidate lineage, а `run:postdeploy`/`run:ops` работают в production с read-only профилем.
 
 ## Source of truth
 - `docs/product/stage_process_model.md`
@@ -139,6 +140,13 @@ approvals:
 - Для `full-env` namespace сохраняется по role-based TTL из `services.yaml` (default `24h`).
 - Для `run:<stage>:revise` lease namespace продлевается (`expires_at = now + role_ttl`).
 - Отдельный diagnostic label для manual-retention не используется.
+
+### Late-stage runtime routing (`issues:labeled`, `full-env`)
+- `run:dev` может продолжить уже существующий candidate lineage текущей Issue/PR; если lineage не найден, candidate runtime инициализируется от default ref репозитория.
+- `run:qa`, `run:qa:revise`, `run:release`, `run:release:revise` резолвят runtime только из существующего candidate lineage той же Issue/PR и открытого PR head.
+- Если для issue-triggered `run:qa*`/`run:release*` не найден candidate namespace или build ref, trigger не делает fallback на default branch: ран игнорируется с warning reason `issue_trigger_candidate_not_found`, публикуется remediation и ставится `need:input`; в качестве рекомендуемых переходов используются `run:dev` или `run:dev:revise`.
+- `run:postdeploy`, `run:postdeploy:revise`, `run:ops`, `run:ops:revise` резолвят `target_env=production`, используют production namespace платформы, build ref из SHA default branch и access profile `production-readonly`.
+- Review-driven revise через `pull_request_review` сохраняет приоритет `pull_request.head.sha/ref` и не переключает revise-run на default branch без PR lineage.
 
 
 ### Service (`state:*`, `need:*`)

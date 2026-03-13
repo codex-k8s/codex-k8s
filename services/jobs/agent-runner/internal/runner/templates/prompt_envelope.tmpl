@@ -10,6 +10,15 @@
 - Триггер-лейбл: {{ .TriggerLabel }}
 - Лейбл ожидания ревью: {{ .StateInReviewLabel }}
 - Режим рантайма: {{ .RuntimeMode }}
+{{- if .RuntimeTargetEnv }}
+- Effective target env: {{ .RuntimeTargetEnv }}
+{{- end }}
+{{- if .RuntimeBuildRef }}
+- Effective build ref: {{ .RuntimeBuildRef }}
+{{- end }}
+{{- if .RuntimeAccessProfile }}
+- Runtime access profile: {{ .RuntimeAccessProfile }}
+{{- end }}
 {{- if .HasExistingPR }}
 - Текущий PR: #{{ .ExistingPRNumber }}
 {{- end }}
@@ -45,8 +54,19 @@
 - Вы запущены в headless-режиме внутри выделенного Kubernetes pod (без интерактивного TTY).
 {{- if .IsFullEnv }}
 - Текущий профиль: `full-env`; в вашем namespace поднят полный рабочий стек (сервисы, БД, кеши и служебные компоненты).
+{{- if eq .RuntimeAccessProfile "production-readonly" }}
+- Runtime RBAC: production read-only; разрешены только `get/list/watch`, `pods/log`, events и чтение status workload-ресурсов.
+- Запрещены `pods/exec`, `pods/port-forward`, любые mutations и доступ к `secrets`.
+{{- else }}
 - В namespace разрешены почти все операции Kubernetes (create/update/patch/delete/get/list/watch/exec/logs/port-forward) для namespaced ресурсов.
 - Исключение: чтение и запись `secrets` запрещены политикой RBAC.
+{{- end }}
+{{- if .RuntimeRestrictions }}
+- Ограничения профиля:
+{{- range .RuntimeRestrictions }}
+  - {{ . }}
+{{- end }}
+{{- end }}
 {{- else }}
 - Текущий профиль: `code-only`; полный стек сервисов/БД/кешей в namespace не гарантирован.
 {{- end }}
@@ -154,6 +174,15 @@ Environment context:
 - Trigger label: {{ .TriggerLabel }}
 - Review-wait label: {{ .StateInReviewLabel }}
 - Runtime mode: {{ .RuntimeMode }}
+{{- if .RuntimeTargetEnv }}
+- Effective target env: {{ .RuntimeTargetEnv }}
+{{- end }}
+{{- if .RuntimeBuildRef }}
+- Effective build ref: {{ .RuntimeBuildRef }}
+{{- end }}
+{{- if .RuntimeAccessProfile }}
+- Runtime access profile: {{ .RuntimeAccessProfile }}
+{{- end }}
 {{- if .HasExistingPR }}
 - Existing PR: #{{ .ExistingPRNumber }}
 {{- end }}
@@ -189,8 +218,19 @@ Execution context:
 - You are running headless inside a dedicated Kubernetes pod (no interactive TTY).
 {{- if .IsFullEnv }}
 - Current profile: `full-env`; your namespace contains the full working stack (services, databases, caches, support components).
+{{- if eq .RuntimeAccessProfile "production-readonly" }}
+- Runtime RBAC: production read-only; only `get/list/watch`, `pods/log`, events, and workload status reads are allowed.
+- `pods/exec`, `pods/port-forward`, all mutations, and `secrets` access are forbidden.
+{{- else }}
 - Namespace RBAC allows nearly all operations (create/update/patch/delete/get/list/watch/exec/logs/port-forward) for namespaced resources.
 - Exception: reading/writing `secrets` is forbidden by RBAC policy.
+{{- end }}
+{{- if .RuntimeRestrictions }}
+- Profile restrictions:
+{{- range .RuntimeRestrictions }}
+  - {{ . }}
+{{- end }}
+{{- end }}
 {{- else }}
 - Current profile: `code-only`; a full services/databases/caches stack is not guaranteed in the namespace.
 {{- end }}

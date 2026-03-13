@@ -52,14 +52,8 @@ func (l *Launcher) EnsureNamespace(ctx context.Context, spec NamespaceSpec) (Nam
 	if spec.RuntimeMode != agentdomain.RuntimeModeFullEnv {
 		return ensureResult, nil
 	}
-	if err := l.ensureRunServiceAccount(ctx, namespace); err != nil {
-		return NamespaceEnsureResult{}, fmt.Errorf("ensure serviceaccount in namespace %s: %w", namespace, err)
-	}
-	if err := l.ensureRunRole(ctx, namespace); err != nil {
-		return NamespaceEnsureResult{}, fmt.Errorf("ensure role in namespace %s: %w", namespace, err)
-	}
-	if err := l.ensureRunRoleBinding(ctx, namespace); err != nil {
-		return NamespaceEnsureResult{}, fmt.Errorf("ensure rolebinding in namespace %s: %w", namespace, err)
+	if _, err := l.EnsureAccessProfile(ctx, namespace, spec.AccessProfile); err != nil {
+		return NamespaceEnsureResult{}, fmt.Errorf("ensure access profile in namespace %s: %w", namespace, err)
 	}
 	if err := l.ensureResourceQuota(ctx, namespace); err != nil {
 		return NamespaceEnsureResult{}, fmt.Errorf("ensure resource quota in namespace %s: %w", namespace, err)
@@ -232,6 +226,52 @@ func (l *Launcher) CleanupExpiredNamespaces(ctx context.Context, params Namespac
 	return cleaned, nil
 }
 
+type accessProfileSpec struct {
+	ServiceAccountName string
+	RoleName           string
+	RoleBindingName    string
+	Rules              []rbacv1.PolicyRule
+}
+
+// EnsureAccessProfile prepares ServiceAccount + Role + RoleBinding for one runtime access profile.
+func (l *Launcher) EnsureAccessProfile(ctx context.Context, namespace string, profile agentdomain.RuntimeAccessProfile) (string, error) {
+	namespace = strings.TrimSpace(namespace)
+	if namespace == "" {
+		return "", fmt.Errorf("namespace is required")
+	}
+
+	spec := l.resolveAccessProfileSpec(profile)
+	if err := l.ensureServiceAccount(ctx, namespace, spec.ServiceAccountName); err != nil {
+		return "", fmt.Errorf("ensure serviceaccount %s: %w", spec.ServiceAccountName, err)
+	}
+	if err := l.ensureRole(ctx, namespace, spec.RoleName, spec.Rules); err != nil {
+		return "", fmt.Errorf("ensure role %s: %w", spec.RoleName, err)
+	}
+	if err := l.ensureRoleBinding(ctx, namespace, spec.RoleBindingName, spec.RoleName, spec.ServiceAccountName); err != nil {
+		return "", fmt.Errorf("ensure rolebinding %s: %w", spec.RoleBindingName, err)
+	}
+	return spec.ServiceAccountName, nil
+}
+
+func (l *Launcher) resolveAccessProfileSpec(profile agentdomain.RuntimeAccessProfile) accessProfileSpec {
+	switch agentdomain.ParseRuntimeAccessProfile(string(profile)) {
+	case agentdomain.RuntimeAccessProfileProductionReadOnly:
+		return accessProfileSpec{
+			ServiceAccountName: l.cfg.RunReadOnlyServiceAccountName,
+			RoleName:           l.cfg.RunReadOnlyRoleName,
+			RoleBindingName:    l.cfg.RunReadOnlyRoleBindingName,
+			Rules:              productionReadOnlyRoleRules(),
+		}
+	default:
+		return accessProfileSpec{
+			ServiceAccountName: l.cfg.RunServiceAccountName,
+			RoleName:           l.cfg.RunRoleName,
+			RoleBindingName:    l.cfg.RunRoleBindingName,
+			Rules:              candidateRoleRules(),
+		}
+	}
+}
+
 // ensureNamespaceObject upserts namespace metadata required for managed runtime namespaces.
 func (l *Launcher) ensureNamespaceObject(ctx context.Context, spec NamespaceSpec) (NamespaceEnsureResult, error) {
 	namespace := strings.TrimSpace(spec.Namespace)
@@ -342,9 +382,7 @@ func parseNamespaceLeaseExpiresAt(annotations map[string]string) (time.Time, boo
 	return parsed.UTC(), true
 }
 
-// ensureRunServiceAccount ensures ServiceAccount exists for in-namespace run access.
-func (l *Launcher) ensureRunServiceAccount(ctx context.Context, namespace string) error {
-	name := l.cfg.RunServiceAccountName
+func (l *Launcher) ensureServiceAccount(ctx context.Context, namespace string, name string) error {
 	existing, err := l.client.CoreV1().ServiceAccounts(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -375,10 +413,91 @@ func (l *Launcher) ensureRunServiceAccount(ctx context.Context, namespace string
 	return nil
 }
 
-// ensureRunRole ensures broad full-env namespace permissions except direct secrets access.
-func (l *Launcher) ensureRunRole(ctx context.Context, namespace string) error {
-	name := l.cfg.RunRoleName
-	expectedRules := []rbacv1.PolicyRule{
+func (l *Launcher) ensureRole(ctx context.Context, namespace string, name string, expectedRules []rbacv1.PolicyRule) error {
+	existing, err := l.client.RbacV1().Roles(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return fmt.Errorf("get role %s: %w", name, err)
+		}
+		_, createErr := l.client.RbacV1().Roles(namespace).Create(ctx, &rbacv1.Role{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+				Labels: map[string]string{
+					runNamespaceManagedByLabel: runNamespaceManagedByValue,
+				},
+			},
+			Rules: expectedRules,
+		}, metav1.CreateOptions{})
+		if createErr != nil && !apierrors.IsAlreadyExists(createErr) {
+			return fmt.Errorf("create role %s: %w", name, createErr)
+		}
+		return nil
+	}
+
+	if existing.Labels == nil {
+		existing.Labels = map[string]string{}
+	}
+	existing.Labels[runNamespaceManagedByLabel] = runNamespaceManagedByValue
+	existing.Rules = expectedRules
+
+	_, err = l.client.RbacV1().Roles(namespace).Update(ctx, existing, metav1.UpdateOptions{})
+	if err != nil {
+		return fmt.Errorf("update role %s: %w", name, err)
+	}
+	return nil
+}
+
+func (l *Launcher) ensureRoleBinding(ctx context.Context, namespace string, name string, roleName string, serviceAccountName string) error {
+	expectedSubjects := []rbacv1.Subject{
+		{
+			Kind:      rbacv1.ServiceAccountKind,
+			Name:      serviceAccountName,
+			Namespace: namespace,
+		},
+	}
+	expectedRoleRef := rbacv1.RoleRef{
+		APIGroup: rbacv1.GroupName,
+		Kind:     "Role",
+		Name:     roleName,
+	}
+
+	existing, err := l.client.RbacV1().RoleBindings(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return fmt.Errorf("get rolebinding %s: %w", name, err)
+		}
+		_, createErr := l.client.RbacV1().RoleBindings(namespace).Create(ctx, &rbacv1.RoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+				Labels: map[string]string{
+					runNamespaceManagedByLabel: runNamespaceManagedByValue,
+				},
+			},
+			RoleRef:  expectedRoleRef,
+			Subjects: expectedSubjects,
+		}, metav1.CreateOptions{})
+		if createErr != nil && !apierrors.IsAlreadyExists(createErr) {
+			return fmt.Errorf("create rolebinding %s: %w", name, createErr)
+		}
+		return nil
+	}
+
+	if existing.Labels == nil {
+		existing.Labels = map[string]string{}
+	}
+	existing.Labels[runNamespaceManagedByLabel] = runNamespaceManagedByValue
+	existing.RoleRef = expectedRoleRef
+	existing.Subjects = expectedSubjects
+
+	_, err = l.client.RbacV1().RoleBindings(namespace).Update(ctx, existing, metav1.UpdateOptions{})
+	if err != nil {
+		return fmt.Errorf("update rolebinding %s: %w", name, err)
+	}
+	return nil
+}
+
+func candidateRoleRules() []rbacv1.PolicyRule {
+	return []rbacv1.PolicyRule{
 		{
 			APIGroups: []string{""},
 			Resources: []string{
@@ -426,89 +545,57 @@ func (l *Launcher) ensureRunRole(ctx context.Context, namespace string) error {
 			Verbs:     []string{"*"},
 		},
 	}
-
-	existing, err := l.client.RbacV1().Roles(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("get role %s: %w", name, err)
-		}
-		_, createErr := l.client.RbacV1().Roles(namespace).Create(ctx, &rbacv1.Role{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: name,
-				Labels: map[string]string{
-					runNamespaceManagedByLabel: runNamespaceManagedByValue,
-				},
-			},
-			Rules: expectedRules,
-		}, metav1.CreateOptions{})
-		if createErr != nil && !apierrors.IsAlreadyExists(createErr) {
-			return fmt.Errorf("create role %s: %w", name, createErr)
-		}
-		return nil
-	}
-
-	if existing.Labels == nil {
-		existing.Labels = map[string]string{}
-	}
-	existing.Labels[runNamespaceManagedByLabel] = runNamespaceManagedByValue
-	existing.Rules = expectedRules
-
-	_, err = l.client.RbacV1().Roles(namespace).Update(ctx, existing, metav1.UpdateOptions{})
-	if err != nil {
-		return fmt.Errorf("update role %s: %w", name, err)
-	}
-	return nil
 }
 
-// ensureRunRoleBinding binds runtime ServiceAccount to the managed Role.
-func (l *Launcher) ensureRunRoleBinding(ctx context.Context, namespace string) error {
-	name := l.cfg.RunRoleBindingName
-	expectedSubjects := []rbacv1.Subject{
+func productionReadOnlyRoleRules() []rbacv1.PolicyRule {
+	return []rbacv1.PolicyRule{
 		{
-			Kind:      rbacv1.ServiceAccountKind,
-			Name:      l.cfg.RunServiceAccountName,
-			Namespace: namespace,
+			APIGroups: []string{""},
+			Resources: []string{
+				"configmaps",
+				"endpoints",
+				"events",
+				"limitranges",
+				"persistentvolumeclaims",
+				"pods",
+				"replicationcontrollers",
+				"resourcequotas",
+				"serviceaccounts",
+				"services",
+			},
+			Verbs: []string{"get", "list", "watch"},
+		},
+		{
+			APIGroups: []string{""},
+			Resources: []string{"pods/log"},
+			Verbs:     []string{"get"},
+		},
+		{
+			APIGroups: []string{"events.k8s.io"},
+			Resources: []string{"events"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+		{
+			APIGroups: []string{"apps"},
+			Resources: []string{"daemonsets", "deployments", "replicasets", "statefulsets"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+		{
+			APIGroups: []string{"batch"},
+			Resources: []string{"cronjobs", "jobs"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+		{
+			APIGroups: []string{"autoscaling"},
+			Resources: []string{"horizontalpodautoscalers"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+		{
+			APIGroups: []string{"networking.k8s.io"},
+			Resources: []string{"ingresses", "networkpolicies"},
+			Verbs:     []string{"get", "list", "watch"},
 		},
 	}
-	expectedRoleRef := rbacv1.RoleRef{
-		APIGroup: rbacv1.GroupName,
-		Kind:     "Role",
-		Name:     l.cfg.RunRoleName,
-	}
-
-	existing, err := l.client.RbacV1().RoleBindings(namespace).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("get rolebinding %s: %w", name, err)
-		}
-		_, createErr := l.client.RbacV1().RoleBindings(namespace).Create(ctx, &rbacv1.RoleBinding{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: name,
-				Labels: map[string]string{
-					runNamespaceManagedByLabel: runNamespaceManagedByValue,
-				},
-			},
-			RoleRef:  expectedRoleRef,
-			Subjects: expectedSubjects,
-		}, metav1.CreateOptions{})
-		if createErr != nil && !apierrors.IsAlreadyExists(createErr) {
-			return fmt.Errorf("create rolebinding %s: %w", name, createErr)
-		}
-		return nil
-	}
-
-	if existing.Labels == nil {
-		existing.Labels = map[string]string{}
-	}
-	existing.Labels[runNamespaceManagedByLabel] = runNamespaceManagedByValue
-	existing.RoleRef = expectedRoleRef
-	existing.Subjects = expectedSubjects
-
-	_, err = l.client.RbacV1().RoleBindings(namespace).Update(ctx, existing, metav1.UpdateOptions{})
-	if err != nil {
-		return fmt.Errorf("update rolebinding %s: %w", name, err)
-	}
-	return nil
 }
 
 // ensureResourceQuota limits aggregate namespace resource consumption per run namespace.

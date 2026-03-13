@@ -117,6 +117,15 @@ func (s *Service) buildPromptRuntimeContext(runCtx resolvedRunContext, roleKey s
 			RepositoryRoot: strings.TrimSpace(s.cfg.RepositoryRoot),
 		},
 	}
+	if runCtx.Payload.Runtime != nil {
+		result.BuildRef = strings.TrimSpace(runCtx.Payload.Runtime.BuildRef)
+		result.Namespace = strings.TrimSpace(runCtx.Payload.Runtime.Namespace)
+		result.AccessProfile = strings.TrimSpace(runCtx.Payload.Runtime.AccessProfile)
+		result.Restrictions = promptRuntimeRestrictions(result.AccessProfile)
+	}
+	if result.Namespace == "" {
+		result.Namespace = strings.TrimSpace(runCtx.Session.Namespace)
+	}
 
 	configPath, err := s.resolvePromptServicesConfigPath(runCtx, servicesPath)
 	if err != nil {
@@ -145,13 +154,19 @@ func resolvePromptTargetEnv(runCtx resolvedRunContext, fallback string) string {
 	if fallback == "" {
 		fallback = "production"
 	}
+	if runCtx.Payload.Runtime != nil {
+		targetEnv := strings.TrimSpace(strings.ToLower(runCtx.Payload.Runtime.TargetEnv))
+		if targetEnv == "ai" || targetEnv == "production" {
+			return targetEnv
+		}
+	}
 
 	triggerKind := ""
 	if runCtx.Payload.Trigger != nil {
 		triggerKind = strings.ToLower(strings.TrimSpace(runCtx.Payload.Trigger.Kind))
 	}
 	switch triggerKind {
-	case "dev", "debug", "qa":
+	case "dev", "debug", "qa", "release":
 		return "ai"
 	}
 
@@ -163,6 +178,22 @@ func resolvePromptTargetEnv(runCtx resolvedRunContext, fallback string) string {
 	}
 
 	return fallback
+}
+
+func promptRuntimeRestrictions(accessProfile string) []string {
+	switch strings.TrimSpace(strings.ToLower(accessProfile)) {
+	case string(agentdomain.RuntimeAccessProfileProductionReadOnly):
+		return []string{
+			"get/list/watch + pods/log + events/status only",
+			"pods/exec, port-forward, mutations, and secrets access are forbidden",
+		}
+	case string(agentdomain.RuntimeAccessProfileCandidate):
+		return []string{
+			"candidate namespace/build ref must stay aligned with the linked issue/PR until merge",
+		}
+	default:
+		return nil
+	}
 }
 
 func buildPromptRuntimeInventory(stack *servicescfg.Stack) []PromptRuntimeServiceContext {

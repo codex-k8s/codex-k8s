@@ -5,8 +5,8 @@ title: "codex-k8s — Agent Runtime and RBAC Model"
 status: active
 owner_role: SA
 created_at: 2026-02-11
-updated_at: 2026-02-20
-related_issues: [1, 19, 74]
+updated_at: 2026-03-13
+related_issues: [1, 19, 74, 341]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -23,12 +23,14 @@ approvals:
 - Права назначаются по роли агента и окружению запуска.
 - Для `full-env` обязательно изолированное namespace-исполнение; agent pod получает прямой `kubectl` доступ в свой namespace, кроме `secrets`.
 - Для `full-env` run-namespace сохраняется по role-based TTL из `services.yaml` (default `24h`); для `*:revise` lease продлевается от текущего времени.
+- `run:dev -> run:qa -> run:release` в `full-env` продолжают один candidate runtime identity (`namespace + build_ref`) до merge.
+- `run:postdeploy -> run:ops` работают с `target_env=production` и профилем `production-readonly` в production namespace.
 - Привилегированные операции с секретами/БД выполняются через MCP control tools с approval policy, а не прямым `kubectl`/SQL доступом.
 
 ## Режимы исполнения
 
 ### `full-env`
-- Агент запускается в отдельном run/issue namespace.
+- Агент запускается либо в отдельном candidate run/issue namespace, либо в production namespace с профилем `production-readonly`.
 - Доступны логи, events, сервисы, метрики; write в Kubernetes ограничен ролью и policy.
 - Используется для ролей, где решение зависит от состояния окружения.
 
@@ -61,6 +63,10 @@ approvals:
   - TTL определяется по роли агента из `services.yaml/spec.webhookRuntime.namespaceTTLByRole`;
   - если роль не указана явно, применяется `services.yaml/spec.webhookRuntime.defaultNamespaceTTL` (по умолчанию `24h`);
   - при `run:<stage>:revise` worker переиспользует активный namespace текущей связки `(project, issue, agent_key)` и продлевает lease (`expires_at = now + role_ttl`).
+- Для issue-triggered late delivery в `full-env` действует stage-aware routing:
+  - `run:dev` создаёт новый candidate namespace или продолжает уже существующий candidate lineage текущей Issue/PR;
+  - `run:qa` и `run:release` обязаны продолжать существующий candidate identity той же Issue/PR; fallback на default branch запрещён, при отсутствии lineage платформа публикует диагностический warning и ставит `need:input`;
+  - `run:postdeploy` и `run:ops` не используют candidate namespace, а запускаются в production namespace платформы и читают production runtime с профилем `production-readonly`.
 - Отдельный debug-label для manual-retention не используется.
 - В Kubernetes нет встроенного TTL-контроллера для namespace; cleanup реализуется worker-sweep по lease-метаданным (аннотация/БД) managed namespace'ов.
 
@@ -77,6 +83,9 @@ approvals:
 
 ## Права `full-env` в рамках namespace
 
+### Профиль `candidate`
+
+- Используется для `run:dev`, `run:qa`, `run:release` и их revise-контуров до merge.
 - Разрешено:
   - читать логи/события/метрики;
   - выполнять диагностический `exec` в pod'ы namespace;
@@ -85,6 +94,21 @@ approvals:
 - Запрещено:
   - прямое чтение/запись `secrets`;
   - выход за пределы своего namespace и cluster-scope операции.
+
+### Профиль `production-readonly`
+
+- Используется для `run:postdeploy` и `run:ops` после merge.
+- Разрешено:
+  - `get/list/watch` для namespaced baseline-ресурсов: `pods`, `services`, `endpoints`, `configmaps`, `persistentvolumeclaims`, `resourcequotas`, `limitranges`, `serviceaccounts`, `replicationcontrollers`;
+  - `get` для `pods/log`;
+  - `get/list/watch` для `events` и `events.k8s.io/events`;
+  - `get/list/watch` для workload/controller ресурсов: `deployments`, `daemonsets`, `replicasets`, `statefulsets`, `jobs`, `cronjobs`, `horizontalpodautoscalers`, `ingresses`, `networkpolicies`.
+- Явно запрещено:
+  - `create/update/patch/delete` и любые другие mutating verbs;
+  - `pods/exec`, `pods/attach`, `pods/portforward`;
+  - прямой доступ к `secrets`;
+  - выход за пределы своего namespace и cluster-scope операции.
+
 - MCP в MVP baseline используется для label-операций и control tools (`secret sync`, `database lifecycle`, `owner feedback`) с approval/audit контуром.
 
 Эволюция policy (Day6+):

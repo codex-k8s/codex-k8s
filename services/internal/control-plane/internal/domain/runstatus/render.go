@@ -38,6 +38,9 @@ type commentTemplateContext struct {
 	TriggerKindDisplay       string
 	WorkloadKind             string
 	RuntimeMode              string
+	RuntimeTargetEnv         string
+	RuntimeBuildRef          string
+	RuntimeAccessProfile     string
 	JobName                  string
 	JobNamespace             string
 	Namespace                string
@@ -57,6 +60,9 @@ type commentTemplateContext struct {
 
 	ShowTriggerKind        bool
 	ShowRuntimeMode        bool
+	ShowRuntimeTargetEnv   bool
+	ShowRuntimeBuildRef    bool
+	ShowRuntimeAccess      bool
 	ShowJobRef             bool
 	ShowNamespace          bool
 	ShowSlotURL            bool
@@ -106,6 +112,9 @@ func renderCommentBody(state commentState, managementURL string, nextStepActions
 func buildCommentTemplateContext(state commentState, managementURL string, marker string, nextStepActions []nextStepCommentAction, recentStatuses []recentAgentStatus) commentTemplateContext {
 	trimmedTriggerKind := strings.TrimSpace(state.TriggerKind)
 	trimmedRuntimeMode := strings.TrimSpace(state.RuntimeMode)
+	trimmedRuntimeTargetEnv := strings.TrimSpace(state.RuntimeTargetEnv)
+	trimmedRuntimeBuildRef := strings.TrimSpace(state.RuntimeBuildRef)
+	trimmedRuntimeAccessProfile := strings.TrimSpace(state.RuntimeAccessProfile)
 	trimmedJobName := strings.TrimSpace(state.JobName)
 	trimmedJobNamespace := strings.TrimSpace(state.JobNamespace)
 	trimmedNamespace := strings.TrimSpace(state.Namespace)
@@ -140,6 +149,9 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 		TriggerKindDisplay:       resolveTriggerKindDisplay(trimmedTriggerKind, state.TriggerLabel, state.DiscussionMode),
 		WorkloadKind:             resolveWorkloadKind(trimmedTriggerKind, state.TriggerLabel, state.DiscussionMode),
 		RuntimeMode:              trimmedRuntimeMode,
+		RuntimeTargetEnv:         trimmedRuntimeTargetEnv,
+		RuntimeBuildRef:          trimmedRuntimeBuildRef,
+		RuntimeAccessProfile:     trimmedRuntimeAccessProfile,
 		JobName:                  trimmedJobName,
 		JobNamespace:             trimmedJobNamespace,
 		Namespace:                trimmedNamespace,
@@ -157,6 +169,9 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 		StateMarker:              marker,
 		ShowTriggerKind:          resolveTriggerKindDisplay(trimmedTriggerKind, state.TriggerLabel, state.DiscussionMode) != "",
 		ShowRuntimeMode:          trimmedRuntimeMode != "",
+		ShowRuntimeTargetEnv:     trimmedRuntimeTargetEnv != "",
+		ShowRuntimeBuildRef:      trimmedRuntimeBuildRef != "",
+		ShowRuntimeAccess:        trimmedRuntimeAccessProfile != "",
 		ShowJobRef:               trimmedJobName != "" && trimmedJobNamespace != "",
 		ShowNamespace:            trimmedNamespace != "",
 		ShowSlotURL:              trimmedSlotURL != "",

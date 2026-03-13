@@ -137,6 +137,12 @@ type Config struct {
 	RunRoleName string `env:"CODEXK8S_WORKER_RUN_ROLE_NAME" envDefault:"codex-runner"`
 	// RunRoleBindingName is RBAC role binding name for full-env run jobs.
 	RunRoleBindingName string `env:"CODEXK8S_WORKER_RUN_ROLE_BINDING_NAME" envDefault:"codex-runner"`
+	// RunReadOnlyServiceAccountName is service account for production read-only run jobs.
+	RunReadOnlyServiceAccountName string `env:"CODEXK8S_WORKER_RUN_READONLY_SERVICE_ACCOUNT" envDefault:"codex-runner-readonly"`
+	// RunReadOnlyRoleName is read-only RBAC role name for production read-only run jobs.
+	RunReadOnlyRoleName string `env:"CODEXK8S_WORKER_RUN_READONLY_ROLE_NAME" envDefault:"codex-runner-readonly"`
+	// RunReadOnlyRoleBindingName is read-only RBAC role binding name for production read-only run jobs.
+	RunReadOnlyRoleBindingName string `env:"CODEXK8S_WORKER_RUN_READONLY_ROLE_BINDING_NAME" envDefault:"codex-runner-readonly"`
 	// RunResourceQuotaName is ResourceQuota name in runtime namespaces.
 	RunResourceQuotaName string `env:"CODEXK8S_WORKER_RUN_RESOURCE_QUOTA_NAME" envDefault:"codex-run-quota"`
 	// RunLimitRangeName is LimitRange name in runtime namespaces.

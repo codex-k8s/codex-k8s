@@ -109,6 +109,9 @@ func (s *Service) writeCodexConfig(codexDir string, model string, reasoningEffor
 func (s *Service) buildPrompt(taskBody string, result runResult, repoDir string) (string, error) {
 	hasContext7 := strings.TrimSpace(os.Getenv(envContext7APIKey)) != ""
 	runtimeMode := normalizeRuntimeMode(s.cfg.RuntimeMode)
+	runtimeTargetEnv := normalizePromptRuntimeTargetEnv(s.cfg.RuntimeTargetEnv)
+	runtimeBuildRef := strings.TrimSpace(s.cfg.RuntimeBuildRef)
+	runtimeAccessProfile := normalizePromptRuntimeAccessProfile(s.cfg.RuntimeAccessProfile)
 	isDiscussionMode := s.cfg.DiscussionMode
 	isReviseTrigger := !isDiscussionMode && webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(result.triggerKind))
 	roleProfileBlock, err := renderPromptRoleProfileBlock(s.cfg.AgentKey, s.cfg.PromptTemplateLocale)
@@ -119,14 +122,18 @@ func (s *Service) buildPrompt(taskBody string, result runResult, repoDir string)
 	if err != nil {
 		return "", fmt.Errorf("render prompt artifact contracts: %w", err)
 	}
-	projectDocs, docsTotal, docsTrimmed := loadProjectDocsForPrompt(repoDir, s.cfg.AgentKey, result.triggerKind, runtimeMode)
-	roleDocTemplates, roleTemplatesTotal, roleTemplatesTrimmed := loadRoleDocTemplatesForPrompt(repoDir, s.cfg.AgentKey, result.triggerKind, runtimeMode)
+	projectDocs, docsTotal, docsTrimmed := loadProjectDocsForPrompt(repoDir, s.cfg.AgentKey, result.triggerKind, runtimeMode, runtimeTargetEnv)
+	roleDocTemplates, roleTemplatesTotal, roleTemplatesTrimmed := loadRoleDocTemplatesForPrompt(repoDir, s.cfg.AgentKey, result.triggerKind, runtimeMode, runtimeTargetEnv)
 	return renderTemplate(templateNamePromptEnvelope, promptEnvelopeTemplateData{
 		RepositoryFullName:           s.cfg.RepositoryFullName,
 		RunID:                        s.cfg.RunID,
 		IssueNumber:                  s.cfg.IssueNumber,
 		AgentKey:                     s.cfg.AgentKey,
 		RuntimeMode:                  runtimeMode,
+		RuntimeTargetEnv:             runtimeTargetEnv,
+		RuntimeBuildRef:              runtimeBuildRef,
+		RuntimeAccessProfile:         runtimeAccessProfile,
+		RuntimeRestrictions:          promptRuntimeRestrictions(runtimeAccessProfile, normalizePromptLocale(s.cfg.PromptTemplateLocale)),
 		IsFullEnv:                    runtimeMode == runtimeModeFullEnv,
 		TargetBranch:                 result.targetBranch,
 		BaseBranch:                   s.cfg.AgentBaseBranch,
@@ -154,4 +161,55 @@ func (s *Service) buildPrompt(taskBody string, result runResult, repoDir string)
 		RoleDocTemplatesTrimmed:      roleTemplatesTrimmed,
 		TaskBody:                     taskBody,
 	})
+}
+
+func normalizePromptRuntimeTargetEnv(value string) string {
+	normalized := strings.TrimSpace(strings.ToLower(value))
+	switch normalized {
+	case "ai", "production":
+		return normalized
+	default:
+		return ""
+	}
+}
+
+func normalizePromptRuntimeAccessProfile(value string) string {
+	normalized := strings.TrimSpace(strings.ToLower(value))
+	switch normalized {
+	case "candidate", "production-readonly":
+		return normalized
+	default:
+		return ""
+	}
+}
+
+func promptRuntimeRestrictions(accessProfile string, locale string) []string {
+	switch normalizePromptRuntimeAccessProfile(accessProfile) {
+	case "production-readonly":
+		if locale == promptLocaleRU {
+			return []string{
+				"доступ только на чтение: `get/list/watch` + `pods/log` + events/status;",
+				"`pods/exec`, `pods/port-forward`, mutations и доступ к `secrets` запрещены;",
+				"работайте против production namespace и не пытайтесь менять runtime-ресурсы.",
+			}
+		}
+		return []string{
+			"read-only only: `get/list/watch` + `pods/log` + events/status;",
+			"`pods/exec`, `pods/port-forward`, mutations, and `secrets` access are forbidden;",
+			"operate against the production namespace and do not mutate runtime resources.",
+		}
+	case "candidate":
+		if locale == promptLocaleRU {
+			return []string{
+				"работайте в candidate environment этой Issue/PR и сохраняйте continuity до merge;",
+				"если нужно обновить candidate, используйте тот же namespace/build ref, который пришёл в runtime context.",
+			}
+		}
+		return []string{
+			"operate in the candidate environment for this issue/PR and preserve continuity until merge;",
+			"when candidate refresh is needed, keep using the namespace/build ref from runtime context.",
+		}
+	default:
+		return nil
+	}
 }

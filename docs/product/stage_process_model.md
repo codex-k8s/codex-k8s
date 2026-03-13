@@ -5,8 +5,8 @@ title: "codex-k8s — Stage Process Model"
 status: active
 owner_role: EM
 created_at: 2026-02-11
-updated_at: 2026-03-09
-related_issues: [1, 19, 90, 95, 154, 155, 175, 212]
+updated_at: 2026-03-13
+related_issues: [1, 19, 90, 95, 154, 155, 175, 212, 341]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -22,6 +22,7 @@ approvals:
 - Целевая модель: `intake -> vision -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops`.
 - Для каждого этапа есть `run:*` и `run:*:revise` петля.
 - Переход между этапами требует формального подтверждения артефактов и фиксируется в audit.
+- Late delivery stages используют stage-aware runtime semantics: `dev -> qa -> release` продолжают candidate environment до merge, а `postdeploy -> ops` переключаются на production read-only runtime.
 - Дополнительный служебный цикл `run:self-improve` работает поверх stage-контура и улучшает docs/prompts/tools по итогам запусков.
 - Операционная видимость стадий/апрувов/логов предоставляется через staff web-console (разделы `Operations` и `Approvals`).
 
@@ -89,6 +90,14 @@ approvals:
 - допустимы только forward-переходы профилей: `quick-fix -> feature -> new-service`; обратный переход требует явного owner-решения;
 - пропуск этапа возможен только при наличии правила в профиле или через явное owner-решение с записью в аудит;
 - при ambiguity по профилю выставляется `need:input`, запуск следующего stage блокируется.
+
+## Late delivery runtime semantics
+
+- `run:dev` в `full-env` создаёт candidate runtime для текущей Issue/PR или продолжает уже существующий candidate lineage, если он найден.
+- `run:qa` и `run:release` продолжают тот же candidate runtime identity (`namespace + build_ref`) до release decision / merge.
+- Для issue-triggered `run:qa` и `run:release` наличие candidate PR/head lineage обязательно; при отсутствии lineage платформа не делает fallback на default branch, а публикует диагностику и выставляет `need:input`.
+- `run:postdeploy` и `run:ops` после merge таргетят `target_env=production`, передают production namespace в runtime payload и используют access profile `production-readonly`.
+- Service-comment, prompt context и runtime metadata обязаны явно показывать effective `target_env`, `build_ref` и access profile поздних delivery-стадий.
 
 ## Вход/выход этапа
 

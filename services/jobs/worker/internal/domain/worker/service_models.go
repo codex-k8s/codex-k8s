@@ -3,6 +3,7 @@ package worker
 import (
 	"time"
 
+	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	rundomain "github.com/codex-k8s/codex-k8s/libs/go/domain/run"
 	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/repository/runqueue"
@@ -38,5 +39,7 @@ type namespaceLeaseSpec struct {
 }
 
 type runLaunchOptions struct {
-	ServiceAccountName string
+	ServiceAccountName       string
+	SkipNamespacePreparation bool
+	RuntimeAccessProfile     agentdomain.RuntimeAccessProfile
 }

@@ -68,9 +68,12 @@ type RunPayloadTrigger struct {
 
 // RunPayloadRuntime is execution profile section of run payload.
 type RunPayloadRuntime struct {
-	Mode       string `json:"mode"`
-	Source     string `json:"source,omitempty"`
-	TargetEnv  string `json:"target_env,omitempty"`
-	Namespace  string `json:"namespace,omitempty"`
-	PublicHost string `json:"public_host,omitempty"`
+	Mode          string `json:"mode"`
+	Source        string `json:"source,omitempty"`
+	TargetEnv     string `json:"target_env,omitempty"`
+	Namespace     string `json:"namespace,omitempty"`
+	BuildRef      string `json:"build_ref,omitempty"`
+	DeployOnly    bool   `json:"deploy_only,omitempty"`
+	AccessProfile string `json:"access_profile,omitempty"`
+	PublicHost    string `json:"public_host,omitempty"`
 }

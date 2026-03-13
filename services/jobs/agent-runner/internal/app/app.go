@@ -43,15 +43,18 @@ func Run() error {
 	defer func() { _ = cp.Close() }()
 
 	runnerService := runner.NewService(runner.Config{
-		RunID:              cfg.RunID,
-		CorrelationID:      cfg.CorrelationID,
-		ProjectID:          cfg.ProjectID,
-		RepositoryFullName: cfg.RepositoryFullName,
-		AgentKey:           cfg.AgentKey,
-		IssueNumber:        cfg.IssueNumber,
-		RunTargetBranch:    cfg.RunTargetBranch,
-		ExistingPRNumber:   cfg.ExistingPRNumber,
-		RuntimeMode:        cfg.RuntimeMode,
+		RunID:                cfg.RunID,
+		CorrelationID:        cfg.CorrelationID,
+		ProjectID:            cfg.ProjectID,
+		RepositoryFullName:   cfg.RepositoryFullName,
+		AgentKey:             cfg.AgentKey,
+		IssueNumber:          cfg.IssueNumber,
+		RunTargetBranch:      cfg.RunTargetBranch,
+		ExistingPRNumber:     cfg.ExistingPRNumber,
+		RuntimeMode:          cfg.RuntimeMode,
+		RuntimeTargetEnv:     cfg.RuntimeTargetEnv,
+		RuntimeBuildRef:      cfg.RuntimeBuildRef,
+		RuntimeAccessProfile: cfg.RuntimeAccessProfile,
 		PromptConfig: runner.PromptConfig{
 			TriggerKind:          cfg.TriggerKind,
 			TriggerLabel:         cfg.TriggerLabel,

@@ -73,6 +73,12 @@ type JobSpec struct {
 	RuntimeMode agentdomain.RuntimeMode
 	// Namespace is preferred namespace for this run.
 	Namespace string
+	// RuntimeTargetEnv is effective runtime target environment (ai/production).
+	RuntimeTargetEnv string
+	// RuntimeBuildRef is effective source ref/sha used for runtime execution.
+	RuntimeBuildRef string
+	// RuntimeAccessProfile is effective Kubernetes access profile for the run pod.
+	RuntimeAccessProfile agentdomain.RuntimeAccessProfile
 	// ControlPlaneGRPCTarget is control-plane gRPC endpoint for run callbacks.
 	ControlPlaneGRPCTarget string
 	// MCPBaseURL is control-plane MCP StreamableHTTP endpoint for run pod.
@@ -141,6 +147,8 @@ type NamespaceSpec struct {
 	RuntimeMode agentdomain.RuntimeMode
 	// Namespace is target namespace name.
 	Namespace string
+	// AccessProfile defines Kubernetes access policy prepared for full-env runs.
+	AccessProfile agentdomain.RuntimeAccessProfile
 	// LeaseTTL keeps role-based namespace retention duration.
 	LeaseTTL time.Duration
 	// LeaseExpiresAt pins effective lease expiration timestamp when already resolved by caller.
@@ -204,6 +212,12 @@ type Config struct {
 	RunRoleName string
 	// RunRoleBindingName defines RBAC role binding name for full-env run jobs.
 	RunRoleBindingName string
+	// RunReadOnlyServiceAccountName defines service account for production read-only run jobs.
+	RunReadOnlyServiceAccountName string
+	// RunReadOnlyRoleName defines read-only RBAC role name for production read-only run jobs.
+	RunReadOnlyRoleName string
+	// RunReadOnlyRoleBindingName defines read-only RBAC role binding name for production read-only run jobs.
+	RunReadOnlyRoleBindingName string
 	// RunResourceQuotaName defines resource quota object name in runtime namespaces.
 	RunResourceQuotaName string
 	// RunLimitRangeName defines limit range object name in runtime namespaces.
@@ -260,6 +274,15 @@ func NewForClient(cfg Config, client kubernetes.Interface) *Launcher {
 	}
 	if cfg.RunRoleBindingName == "" {
 		cfg.RunRoleBindingName = "codex-runner"
+	}
+	if cfg.RunReadOnlyServiceAccountName == "" {
+		cfg.RunReadOnlyServiceAccountName = "codex-runner-readonly"
+	}
+	if cfg.RunReadOnlyRoleName == "" {
+		cfg.RunReadOnlyRoleName = "codex-runner-readonly"
+	}
+	if cfg.RunReadOnlyRoleBindingName == "" {
+		cfg.RunReadOnlyRoleBindingName = "codex-runner-readonly"
 	}
 	if cfg.RunResourceQuotaName == "" {
 		cfg.RunResourceQuotaName = "codex-run-quota"
@@ -471,6 +494,9 @@ func buildRunContainerEnv(spec JobSpec) []corev1.EnvVar {
 		{Name: "CODEXK8S_PROJECT_ID", Value: spec.ProjectID},
 		{Name: "CODEXK8S_SLOT_NO", Value: fmt.Sprintf("%d", spec.SlotNo)},
 		{Name: "CODEXK8S_RUNTIME_MODE", Value: string(spec.RuntimeMode)},
+		{Name: "CODEXK8S_RUNTIME_TARGET_ENV", Value: strings.TrimSpace(spec.RuntimeTargetEnv)},
+		{Name: "CODEXK8S_RUNTIME_BUILD_REF", Value: strings.TrimSpace(spec.RuntimeBuildRef)},
+		{Name: "CODEXK8S_RUNTIME_ACCESS_PROFILE", Value: strings.TrimSpace(string(spec.RuntimeAccessProfile))},
 		{Name: "CODEXK8S_CONTROL_PLANE_GRPC_TARGET", Value: strings.TrimSpace(spec.ControlPlaneGRPCTarget)},
 		{Name: "CODEXK8S_MCP_BASE_URL", Value: strings.TrimSpace(spec.MCPBaseURL)},
 		{Name: "CODEXK8S_MCP_BEARER_TOKEN", Value: strings.TrimSpace(spec.MCPBearerToken)},

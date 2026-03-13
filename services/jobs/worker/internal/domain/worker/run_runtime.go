@@ -93,6 +93,13 @@ func resolveRuntimeNamespace(payload querytypes.RunRuntimePayload) string {
 	return namespace
 }
 
+func resolveRuntimeAccessProfile(payload querytypes.RunRuntimePayload) agentdomain.RuntimeAccessProfile {
+	if payload.Runtime == nil {
+		return agentdomain.RuntimeAccessProfileCandidate
+	}
+	return agentdomain.ParseRuntimeAccessProfile(payload.Runtime.AccessProfile)
+}
+
 // buildRunNamespace composes deterministic DNS-safe namespace name for full-env runs.
 func buildRunNamespace(prefix string, projectID string, runID string, issueNumber int64) string {
 	basePrefix := sanitizeDNSLabelValue(prefix)

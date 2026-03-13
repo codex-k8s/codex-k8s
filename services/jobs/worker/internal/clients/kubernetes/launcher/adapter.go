@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	libslauncher "github.com/codex-k8s/codex-k8s/libs/go/k8s/joblauncher"
 	"github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/worker"
 )
@@ -50,6 +51,10 @@ func (a *Adapter) FindReusableNamespace(ctx context.Context, lookup worker.Names
 // EnsureNamespace prepares namespace baseline for full-env run.
 func (a *Adapter) EnsureNamespace(ctx context.Context, spec worker.NamespaceSpec) (worker.NamespaceEnsureResult, error) {
 	return a.impl.EnsureNamespace(ctx, spec)
+}
+
+func (a *Adapter) EnsureAccessProfile(ctx context.Context, namespace string, profile agentdomain.RuntimeAccessProfile) (string, error) {
+	return a.impl.EnsureAccessProfile(ctx, namespace, profile)
 }
 
 func (a *Adapter) CleanupExpiredNamespaces(ctx context.Context, params worker.NamespaceCleanupParams) ([]worker.NamespaceCleanupResult, error) {

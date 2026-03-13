@@ -14,6 +14,18 @@ import (
 )
 
 func (s *Service) launchPreparedRunWorkload(ctx context.Context, run runqueuerepo.RunningRun, execution valuetypes.RunExecutionContext, agentCtx runAgentContext, lease namespaceLeaseSpec, options runLaunchOptions) error {
+	runtimePayload := parseRunRuntimePayload(run.RunPayload)
+	runtimeTargetEnv := ""
+	runtimeBuildRef := ""
+	runtimeAccessProfile := options.RuntimeAccessProfile
+	if runtimePayload.Runtime != nil {
+		runtimeTargetEnv = strings.TrimSpace(runtimePayload.Runtime.TargetEnv)
+		runtimeBuildRef = strings.TrimSpace(runtimePayload.Runtime.BuildRef)
+		if runtimeAccessProfile == "" {
+			runtimeAccessProfile = resolveRuntimeAccessProfile(runtimePayload)
+		}
+	}
+
 	namespaceSpec := NamespaceSpec{
 		RunID:         run.RunID,
 		ProjectID:     run.ProjectID,
@@ -22,9 +34,10 @@ func (s *Service) launchPreparedRunWorkload(ctx context.Context, run runqueuerep
 		CorrelationID: run.CorrelationID,
 		RuntimeMode:   execution.RuntimeMode,
 		Namespace:     execution.Namespace,
+		AccessProfile: runtimeAccessProfile,
 	}
 
-	if shouldManageRunNamespace(execution, agentCtx) {
+	if shouldManageRunNamespace(execution, agentCtx) && !options.SkipNamespacePreparation {
 		ttl := lease.TTL
 		if ttl <= 0 {
 			ttl = s.cfg.DefaultNamespaceTTL
@@ -78,6 +91,25 @@ func (s *Service) launchPreparedRunWorkload(ctx context.Context, run runqueuerep
 			},
 		}); err != nil {
 			return fmt.Errorf("insert %s event: %w", namespaceTTLEventType, err)
+		}
+	}
+	if options.SkipNamespacePreparation && execution.RuntimeMode == agentdomain.RuntimeModeFullEnv && runtimeAccessProfile != "" {
+		serviceAccountName, err := s.launcher.EnsureAccessProfile(ctx, execution.Namespace, runtimeAccessProfile)
+		if err != nil {
+			s.logger.Error(
+				"prepare run access profile failed",
+				"run_id", run.RunID,
+				"namespace", execution.Namespace,
+				"access_profile", runtimeAccessProfile,
+				"err", err,
+			)
+			if finishErr := s.finishLaunchFailedRun(ctx, run, execution, err, runFailureReasonNamespacePrepareFailed); finishErr != nil {
+				return fmt.Errorf("mark run failed after access profile prepare error: %w", finishErr)
+			}
+			return nil
+		}
+		if strings.TrimSpace(options.ServiceAccountName) == "" {
+			options.ServiceAccountName = serviceAccountName
 		}
 	}
 
@@ -168,6 +200,9 @@ func (s *Service) launchPreparedRunWorkload(ctx context.Context, run runqueuerep
 		JobImage:               jobImage.SelectedImage,
 		RuntimeMode:            execution.RuntimeMode,
 		Namespace:              execution.Namespace,
+		RuntimeTargetEnv:       runtimeTargetEnv,
+		RuntimeBuildRef:        runtimeBuildRef,
+		RuntimeAccessProfile:   runtimeAccessProfile,
 		ControlPlaneGRPCTarget: s.cfg.ControlPlaneGRPCTarget,
 		MCPBaseURL:             s.cfg.ControlPlaneMCPBaseURL,
 		MCPBearerToken:         issuedMCPToken.Token,
