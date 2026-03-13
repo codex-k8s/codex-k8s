@@ -5,8 +5,8 @@ title: "Sprint S10: Built-in MCP user interactions and channel-neutral adapter c
 status: in-review
 owner_role: PM
 created_at: 2026-03-12
-updated_at: 2026-03-12
-related_issues: [360, 378, 383, 385, 387, 389]
+updated_at: 2026-03-13
+related_issues: [360, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -23,6 +23,7 @@ approvals:
 - PRD-пакет по Issue `#383` фиксирует user stories, FR/AC/NFR, wave priorities, wait-state/correlation guardrails и создаёт architecture continuity issue `#385`; Telegram и другие channel adapters остаются отдельным последовательным потоком после проработки core platform contracts.
 - Architecture package по Issue `#385` закрепляет ownership split между `control-plane`, `worker`, `api-gateway` и future adapters, отделяет interaction-domain от approval flow и создаёт design continuity issue `#387`.
 - Design package по Issue `#387` фиксирует typed tool/callback contracts, interaction aggregate, wait-state taxonomy, deterministic resume payload и migration policy, после чего создаёт plan continuity issue `#389`.
+- Plan package по Issue `#389` декомпозирует execution backlog на issues `#391..#395`, фиксирует wave-sequencing, DoR/DoD и quality gates для перехода в `run:dev`.
 
 ## Scope спринта
 ### In scope
@@ -34,6 +35,7 @@ approvals:
   - channel-neutral outbound/inbound contracts для будущих adapter integrations;
   - wait-state, correlation, retry, idempotency и audit guardrails.
 - Создание последовательных follow-up issue без автоматической постановки `run:*`-лейблов.
+- Формирование execution backlog `run:dev` по сервисным границам `control-plane`, `worker`, `api-gateway`, `agent-runner` и observability.
 
 ### Out of scope
 - Кодовая реализация до завершения и утверждения `run:plan`.
@@ -47,7 +49,7 @@ approvals:
   - `vision` обязателен, потому что инициатива вводит новую user-facing capability и требует measurable KPI;
   - `arch` обязателен, потому что затрагиваются service boundaries, callback contracts, wait-state lifecycle, audit и adapter responsibilities.
 - Целевая continuity-цепочка:
-  `#360 (intake) -> #378 (vision) -> #383 (prd) -> #385 (arch) -> #387 (design) -> #389 (plan) -> dev -> qa -> release -> postdeploy -> ops`.
+  `#360 (intake) -> #378 (vision) -> #383 (prd) -> #385 (arch) -> #387 (design) -> #389 (plan) -> #391/#392/#393/#394/#395 (dev waves) -> qa -> release -> postdeploy -> ops`.
 
 ## План этапов и handover
 
@@ -58,7 +60,7 @@ approvals:
 | PRD (`#383`) | User stories, FR/AC/NFR, delivery evidence expectations | `pm` + `sa` | Подтверждён PRD package и создана issue `#385` (`run:arch`) |
 | Architecture (`#385`) | Service boundaries, ownership матрица, interaction lifecycle | `sa` | Подтверждены архитектурные границы и создана issue `#387` (`run:design`) |
 | Design (`#387`) | API/data/wait-state/adapter contracts и rollout notes | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue `#389` для `run:plan` |
-| Plan (`#389`) | Delivery waves, quality-gates, execution issues, DoR/DoD | `em` + `km` | Сформирован execution package и backlog отдельных implementation issues |
+| Plan (`#389`) | Delivery waves, quality-gates, execution issues, DoR/DoD | `em` + `km` | Сформирован execution package `#391..#395` и owner-managed handover в `run:dev` |
 
 ## Guardrails спринта
 - Инициатива расширяет существующий built-in MCP server `codex_k8s`; новый runtime server block не вводится.
@@ -69,7 +71,7 @@ approvals:
 - Telegram остаётся отдельным follow-up stream после завершения Sprint S10 doc-stage цепочки.
 
 ## Handover
-- Текущий stage in-review: `run:design` в Issue `#387`.
+- Текущий stage in-review: `run:plan` в Issue `#389`.
 - Design package:
   - `docs/delivery/epics/s10/epic-s10-day5-mcp-user-interactions-design.md`;
   - `docs/architecture/initiatives/s10_mcp_user_interactions/README.md`;
@@ -77,5 +79,8 @@ approvals:
   - `docs/architecture/initiatives/s10_mcp_user_interactions/api_contract.md`;
   - `docs/architecture/initiatives/s10_mcp_user_interactions/data_model.md`;
   - `docs/architecture/initiatives/s10_mcp_user_interactions/migrations_policy.md`.
-- Следующий stage: `run:plan` в Issue `#389`.
-- Trigger-лейбл для Issue `#389` не ставится автоматически и остаётся owner-managed переходом после review design package.
+- Plan package:
+  - `docs/delivery/epics/s10/epic-s10-day6-mcp-user-interactions-plan.md`;
+  - execution issues `#391`, `#392`, `#393`, `#394`, `#395`.
+- Следующий stage: `run:dev` по waves `#391 -> #392 -> #393/#394 -> #395`.
+- Trigger-лейблы для execution issues не ставятся автоматически и остаются owner-managed переходом после review plan package.

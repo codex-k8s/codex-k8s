@@ -5,8 +5,8 @@ title: "codex-k8s — Delivery Plan"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-03-12
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 363, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387]
+updated_at: 2026-03-13
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 363, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -291,8 +291,19 @@ approvals:
   - зафиксирован ownership split: `control-plane` владеет interaction aggregate, wait-state transitions и audit/correlation; `worker` закреплён за dispatch/retries/expiry; `api-gateway` остаётся thin-edge callback ingress;
   - подтверждена архитектурная граница между interaction flow и approval/control flow: approval-specific semantics не становятся source-of-truth для обычных user interactions;
   - создана follow-up issue `#387` для stage `run:design` без trigger-лейбла.
-- Day 5 (planned): design-пакет для built-in MCP user interactions (Issue `#387`).
-  - Цель: зафиксировать implementation-ready tool/callback contracts, data model, migration notes и rollout order без выхода в кодовую реализацию.
+- Day 5 (in-review): design-пакет для built-in MCP user interactions (Issue `#387`).
+- Результат Day 5 (факт):
+  - зафиксированы typed contracts для `user.notify`, `user.decision.request`, outbound adapter envelope, inbound callback family и deterministic resume payload;
+  - выбрана отдельная persisted interaction-domain модель: aggregate, delivery attempts, callback evidence, response records и wait linkage к `agent_runs`/`agent_sessions`;
+  - подтверждён rollout order `migrations -> control-plane -> worker -> api-gateway` и additive coexistence с approval callback family;
+  - создана follow-up issue `#389` для stage `run:plan` без trigger-лейбла.
+- Day 6 (in-review): plan-пакет для built-in MCP user interactions (`docs/delivery/epics/s10/epic-s10-day6-mcp-user-interactions-plan.md`, Issue `#389`).
+- Результат Day 6 (факт):
+  - execution backlog декомпозирован на issues `#391..#395` с wave-sequencing и owner-managed handover в `run:dev`;
+  - `#391` закреплён за `control-plane` foundation, `#392` за worker dispatch/retry/expiry, `#393` за contract-first callback ingress, `#394` за deterministic resume path, `#395` за observability/evidence gate;
+  - replay/idempotency/resume correctness зафиксированы как обязательный gate перед `run:qa`, а channel-specific adapters оставлены вне core Sprint S10 execution package;
+  - quality-gates, DoR/DoD, blockers/risks/owner decisions синхронизированы в delivery traceability.
+- Day 7+ (planned): `run:dev -> qa -> release -> postdeploy -> ops` по issues `#391..#395` с owner-managed wave launch.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
