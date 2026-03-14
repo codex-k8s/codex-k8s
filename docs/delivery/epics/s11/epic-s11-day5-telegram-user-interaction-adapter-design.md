@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S11-D5-TELEGRAM-ADAPTER
 type: epic
 title: "Epic S11 Day 5: Design для Telegram-адаптера взаимодействия с пользователем (Issues #454/#456)"
-status: in-review
+status: completed
 owner_role: SA
 created_at: 2026-03-14
 updated_at: 2026-03-14
@@ -10,8 +10,10 @@ related_issues: [361, 444, 447, 448, 452, 454, 456]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-14-issue-454-design-epic"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-14
 ---
 
 # Epic S11 Day 5: Design для Telegram-адаптера взаимодействия с пользователем (Issues #454/#456)

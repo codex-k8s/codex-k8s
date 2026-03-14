@@ -2,16 +2,18 @@
 doc_id: IDX-CK8S-ARCH-S11-0001
 type: initiative-index
 title: "Initiative Package: s11_telegram_user_interaction_adapter"
-status: in-review
+status: approved
 owner_role: SA
 created_at: 2026-03-14
 updated_at: 2026-03-14
-related_issues: [361, 444, 447, 448, 452, 454, 456]
+related_issues: [361, 444, 447, 448, 452, 454, 456, 458]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-14-issue-454-design"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-14
 ---
 
 # s11_telegram_user_interaction_adapter
@@ -19,7 +21,7 @@ approvals:
 ## TL;DR
 - Пакет объединяет Day4 architecture и Day5 design артефакты Sprint S11 для Telegram-адаптера взаимодействия с пользователем как первого внешнего channel-specific stream поверх typed interaction contract Sprint S10.
 - Внутри зафиксированы C4 overlays, ownership split между `control-plane`, `worker`, `api-gateway` и внешним Telegram adapter contour, а также implementation-ready transport/data/runtime contracts по callback handles, provider refs, operator visibility и rollout constraints.
-- Follow-up issue `#456` переводит инициативу в `run:plan`, где дизайн должен быть разложен на execution waves без пересмотра Day4-Day5 boundaries.
+- Plan-stage Issue `#456` разложил инициативу на execution waves и зафиксировал issue `#458` как единственный owner-managed handover в `run:dev` без пересмотра Day4-Day5 boundaries.
 
 ## Содержимое
 - `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/README.md`
@@ -46,7 +48,8 @@ approvals:
 - `docs/delivery/epics/s11/epic-s11-day3-telegram-user-interaction-adapter-prd.md`
 - `docs/delivery/epics/s11/prd-s11-day3-telegram-user-interaction-adapter.md`
 
-## Continuity after `run:design`
-- Документный контур `intake -> vision -> prd -> arch -> design` для Sprint S11 согласован и зафиксирован.
-- Owner-managed следующий этап: Issue `#456` для `run:plan` без trigger-лейбла.
-- В plan-stage обязательно сохранить issue-цепочку `plan -> dev` без разрывов и не переоткрывать Day4-Day5 boundaries без отдельного ADR.
+## Continuity after `run:plan`
+- Документный контур `intake -> vision -> prd -> arch -> design -> plan` для Sprint S11 согласован и завершён.
+- Plan-stage Issue `#456` сохранил Day4-Day5 boundaries без пересмотра и зафиксировал execution waves `S11-E01 -> S11-E02 -> S11-E03 -> S11-E04 -> S11-E05 -> S11-E06`.
+- Owner-managed следующий этап: Issue `#458` для `run:dev` без trigger-лейбла.
+- Реализация обязана сохранять issue-цепочку `#361 -> #447 -> #448 -> #452 -> #454 -> #456 -> #458`; переоткрытие Day4-Day5 boundaries требует отдельного ADR/owner decision.

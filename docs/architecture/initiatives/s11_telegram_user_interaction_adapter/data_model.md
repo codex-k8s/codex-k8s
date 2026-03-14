@@ -2,16 +2,18 @@
 doc_id: DM-S11-CK8S-0001
 type: data-model
 title: "Sprint S11 Day 5 — Data model for Telegram user interaction adapter (Issue #454)"
-status: in-review
+status: approved
 owner_role: SA
 created_at: 2026-03-14
 updated_at: 2026-03-14
-related_issues: [361, 444, 447, 448, 452, 454, 456]
+related_issues: [361, 444, 447, 448, 452, 454, 456, 458]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-14-issue-454-data-model"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-14
 ---
 
 # Data Model: Sprint S11 Telegram user interaction adapter
@@ -191,11 +193,11 @@ approvals:
 - See `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/migrations_policy.md`.
 - S11 migrations must run only after S10 interaction foundation migrations are available.
 
-## Открытые вопросы
-- Нужно ли materialize operator visibility as a dedicated read-model table later, если `interaction_requests.operator_state` станет bottleneck для staff UI?
-- Нужно ли разносить notify receipts and decision callbacks по разным partial indexes already in first implementation wave?
+## Вопросы, закрытые в `run:plan`
+- Operator visibility остаётся в additive extension текущей модели; отдельный read-model table не включён в core wave и допускается только как follow-up после evidence из `S11-E06`.
+- Дополнительное разнесение notify receipts и decision callbacks по специализированным partial indexes не стало prerequisite первой implementation wave; execution anchor `#458` стартует с additive schema foundation из `S11-E01`.
 
-## Апрув
-- request_id: owner-2026-03-14-issue-454-data-model
-- Решение: pending
-- Комментарий: Ожидается review Telegram extension schema, operator visibility fields и handle-hash persistence.
+## Handover status after `run:plan`
+- [x] Data model согласован как baseline для `interaction_channel_bindings`, `interaction_callback_handles` и operator visibility extensions.
+- [x] `S11-E01` закреплён как единственная schema foundation wave без parallel source-of-truth для Telegram semantics.
+- [x] Handle-hash persistence и additive ownership `control-plane` сохранены без drift в shared schema.

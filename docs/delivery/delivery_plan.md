@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-14
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -339,8 +339,13 @@ approvals:
   - выбрана additive data-model extension поверх Sprint S10 interaction foundation с `interaction_channel_bindings`, `interaction_callback_handles` и operator visibility state;
   - закреплён rollout order `S10 prerequisite -> migrations -> control-plane -> worker -> api-gateway -> Telegram adapter contour` и continuation policy `edit -> follow-up -> manual fallback`;
   - создана follow-up issue `#456` для stage `run:plan` без trigger-лейбла.
-- Day 6 (planned): plan package для Telegram-адаптера (Issue `#456`).
-  - Цель: разложить execution waves, quality gates, DoR/DoD и continuity handover в `run:dev`.
+- Day 6 (in-review): plan package для Telegram-адаптера (`docs/delivery/epics/s11/epic-s11-day6-telegram-user-interaction-adapter-plan.md`, Issue `#456`).
+- Результат Day 6 (факт):
+  - execution package декомпозирован на waves `S11-E01..S11-E06` по schema foundation, domain/use-case, worker continuation, thin-edge bridge, Telegram adapter contour и observability/evidence gate;
+  - создана follow-up issue `#458` как единый execution anchor для `run:dev` с явным continuity-требованием сохранить цепочку `#361 -> #447 -> #448 -> #452 -> #454 -> #456 -> #458` без разрывов;
+  - зафиксированы quality-gates, DoR/DoD, blockers, risks и owner decisions для rollout order `migrations -> control-plane -> worker -> api-gateway -> Telegram adapter contour -> observability/evidence gate`;
+  - сохранены platform-owned semantics, separation from approval flow и dependency gate на Sprint S10 interaction foundation.
+- Day 7+ (planned): `run:dev -> qa -> release -> postdeploy -> ops` через issue `#458` с owner-managed wave launch внутри execution anchor.
 
 ### Sprint S12: GitHub API rate-limit resilience
 - Day 1 (in-review): intake-пакет для GitHub API rate-limit resilience (`docs/delivery/epics/s12/epic-s12-day1-github-api-rate-limit-intake.md`, Issue `#366`).

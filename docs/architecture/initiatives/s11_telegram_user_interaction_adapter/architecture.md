@@ -2,16 +2,18 @@
 doc_id: ARC-S11-0001
 type: architecture-design
 title: "Sprint S11 Day 4 — Telegram user interaction adapter architecture (Issue #452)"
-status: in-review
+status: approved
 owner_role: SA
 created_at: 2026-03-14
 updated_at: 2026-03-14
-related_issues: [361, 444, 447, 448, 452, 454]
+related_issues: [361, 444, 447, 448, 452, 454, 456, 458]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-14-issue-452-arch"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-14
 ---
 
 # Sprint S11 Day 4 — Telegram user interaction adapter architecture (Issue #452)

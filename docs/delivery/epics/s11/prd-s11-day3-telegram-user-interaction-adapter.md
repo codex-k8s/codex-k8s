@@ -2,7 +2,7 @@
 doc_id: PRD-CK8S-S11-I448
 type: prd
 title: "Telegram-адаптер взаимодействия с пользователем — PRD Sprint S11 Day 3"
-status: in-review
+status: completed
 owner_role: PM
 created_at: 2026-03-14
 updated_at: 2026-03-14
@@ -15,8 +15,10 @@ related_docsets:
   - docs/delivery/requirements_traceability.md
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-14-issue-448-prd"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-14
 ---
 
 # PRD: Telegram-адаптер взаимодействия с пользователем

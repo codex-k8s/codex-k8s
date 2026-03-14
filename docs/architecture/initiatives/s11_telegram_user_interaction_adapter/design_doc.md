@@ -2,17 +2,19 @@
 doc_id: DSG-S11-CK8S-0001
 type: design-doc
 title: "Sprint S11 Day 5 — Detailed Design for Telegram user interaction adapter (Issue #454)"
-status: in-review
+status: approved
 owner_role: SA
 created_at: 2026-03-14
 updated_at: 2026-03-14
-related_issues: [361, 444, 447, 448, 452, 454, 456]
+related_issues: [361, 444, 447, 448, 452, 454, 456, 458]
 related_prs: []
 related_adrs: ["ADR-0014"]
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-14-issue-454-design"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-14
 ---
 
 # Detailed Design: Sprint S11 Telegram user interaction adapter
@@ -331,12 +333,13 @@ sequenceDiagram
 - Synchronous edit or follow-up inside callback ingress:
   - rejected because it couples semantic resolution to provider UX side effects and increases duplicate-write risk.
 
-## Открытые вопросы для `run:plan`
-1. Нужен ли отдельный execution stream для notify-only rollout before decision path, или это останется feature-flagged within one delivery wave?
-2. Какие acceptance evidence и operator dashboards обязательны до включения free-text fallback в `run:dev`?
-3. Нужно ли выделять Telegram adapter contour в отдельный deployable сразу в первой implementation wave или достаточно сохранить это как integration boundary с owner-managed rollout?
+## Вопросы, закрытые в `run:plan`
+1. Notify-only rollout сохранён как допустимый feature-gated substep внутри owner-managed waves `#458`, но не вынесен в отдельный execution anchor.
+2. Обязательные acceptance evidence и operator visibility для free-text fallback зафиксированы в `S11-E06` как observability/fallback gate перед `run:qa`.
+3. Telegram adapter contour сохранён как integration boundary внутри wave `S11-E05`; отдельный deployable не стал обязательным prerequisite первой implementation wave.
 
-## Апрув
-- request_id: owner-2026-03-14-issue-454-design
-- Решение: pending
-- Комментарий: Ожидается review typed transport/data/runtime contracts и rollout constraints перед `run:plan`.
+## Handover status after `run:plan`
+- [x] Design package согласован как source-of-truth для `run:dev`.
+- [x] Plan package Issue `#456` разложил execution waves `S11-E01..S11-E06` и закрепил issue `#458` как единственный execution anchor.
+- [x] Day4-Day5 boundaries не переоткрываются без отдельного ADR/owner decision.
+- [x] Rollout guardrails сохранены: `migrations -> control-plane -> worker -> api-gateway -> Telegram adapter contour -> observability/evidence gate`.

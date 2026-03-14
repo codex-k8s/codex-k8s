@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S11-D1-TELEGRAM-ADAPTER
 type: epic
 title: "Epic S11 Day 1: Intake для Telegram-адаптера взаимодействия с пользователем (Issue #361)"
-status: in-review
+status: completed
 owner_role: PM
 created_at: 2026-03-14
 updated_at: 2026-03-14
@@ -10,8 +10,10 @@ related_issues: [361, 444]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-14-issue-361-intake"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-14
 ---
 
 # Epic S11 Day 1: Intake для Telegram-адаптера взаимодействия с пользователем (Issue #361)

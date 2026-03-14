@@ -2,7 +2,7 @@
 doc_id: EPC-CK8S-S11-D3-TELEGRAM-ADAPTER
 type: epic
 title: "Epic S11 Day 3: PRD для Telegram-адаптера взаимодействия с пользователем (Issues #448/#452)"
-status: in-review
+status: completed
 owner_role: PM
 created_at: 2026-03-14
 updated_at: 2026-03-14
@@ -10,8 +10,10 @@ related_issues: [361, 444, 447, 448, 452]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-14-issue-448-prd"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-14
 ---
 
 # Epic S11 Day 3: PRD для Telegram-адаптера взаимодействия с пользователем (Issues #448/#452)

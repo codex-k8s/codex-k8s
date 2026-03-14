@@ -2,16 +2,18 @@
 doc_id: API-S11-CK8S-0001
 type: api-contract
 title: "Sprint S11 Day 5 — API contract for Telegram user interaction adapter (Issue #454)"
-status: in-review
+status: approved
 owner_role: SA
 created_at: 2026-03-14
 updated_at: 2026-03-14
-related_issues: [361, 444, 447, 448, 452, 454, 456]
+related_issues: [361, 444, 447, 448, 452, 454, 456, 458]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-14-issue-454-api-contract"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-14
 ---
 
 # API Contract: Sprint S11 Telegram user interaction adapter
@@ -287,11 +289,11 @@ approvals:
   - `telegram.callback.classification`
   - `telegram.continuation.execute`
 
-## Открытые вопросы
-- Нужно ли в первой execution wave включать notify delivery receipts или достаточно `decision_request` callback family plus transport failures?
-- Нужен ли отдельный HTTP endpoint для adapter health/bootstrap (`setWebhook`/diagnostics) или это останется вне core platform contract?
+## Вопросы, закрытые в `run:plan`
+- Notify delivery receipts не вынесены в отдельный execution gate: core wave sequencing оставляет обязательными callback family и transport-failure evidence внутри `S11-E03`/`S11-E05`.
+- Отдельный HTTP endpoint для adapter health/bootstrap (`setWebhook`/diagnostics) остаётся вне core platform contract Sprint S11 и не входит в обязательный scope issue `#458`.
 
-## Апрув
-- request_id: owner-2026-03-14-issue-454-api-contract
-- Решение: pending
-- Комментарий: Ожидается review adapter transport contract, callback auth lifetime и continuation semantics.
+## Handover status after `run:plan`
+- [x] API contract согласован как baseline для thin-edge `api-gateway` bridge и Telegram adapter contour.
+- [x] Waves `S11-E04` и `S11-E05` сохраняют границу `typed transport only` vs `provider-specific webhook/auth`.
+- [x] Callback auth lifetime, continuation semantics и typed callback family зафиксированы без Telegram-first drift.

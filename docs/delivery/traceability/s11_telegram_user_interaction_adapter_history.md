@@ -2,16 +2,18 @@
 doc_id: TRH-CK8S-S11-0001
 type: traceability-history
 title: "Sprint S11 Traceability History"
-status: in-review
+status: completed
 owner_role: KM
 created_at: 2026-03-14
 updated_at: 2026-03-14
-related_issues: [361, 444, 447, 448, 452, 454, 456]
+related_issues: [361, 444, 447, 448, 452, 454, 456, 458]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-14-traceability-s11-history"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-14
 ---
 
 # Sprint S11 Traceability History
@@ -91,3 +93,19 @@ approvals:
 - Official Telegram Bot API docs, просмотренные 2026-03-14, использованы для фиксации design constraints: webhook vs `getUpdates` exclusivity, updates retention up to 24h, `setWebhook.secret_token`, mandatory `answerCallbackQuery` and `callback_data` limit `1-64 bytes`.
 - Создана follow-up issue `#456` для stage `run:plan`; в её body повторено continuity-требование продолжить цепочку `plan -> dev` без разрывов.
 - Root FR/NFR matrix обновлена точечно: coverage FR-039 расширено Day5 design package Sprint S11, при этом канонический requirements baseline в `docs/product/requirements_machine_driven.md` не менялся.
+
+## Актуализация по Issue #456 (`run:plan`, 2026-03-14)
+- Plan stage выполнен в Issue `#456`; подготовлены:
+  - `docs/delivery/epics/s11/epic-s11-day6-telegram-user-interaction-adapter-plan.md`;
+  - обновления `docs/delivery/sprints/s11/sprint_s11_telegram_user_interaction_adapter.md`;
+  - обновления `docs/delivery/epics/s11/epic_s11.md`;
+  - updates в `docs/delivery/delivery_plan.md`, `docs/delivery/issue_map.md`, `docs/delivery/requirements_traceability.md`.
+- Plan package зафиксировал:
+  - execution waves `S11-E01..S11-E06` по schema foundation, `control-plane` domain/use-case, `worker` continuation, thin-edge `api-gateway`, Telegram adapter contour и observability/evidence gate;
+  - rollout order `migrations -> control-plane -> worker -> api-gateway -> Telegram adapter contour -> observability/evidence gate`;
+  - quality-gates, DoR/DoD, blockers, risks и owner decisions для owner-managed handover в `run:dev`;
+  - обязательное continuity-требование сохранить issue-цепочку `#361 -> #447 -> #448 -> #452 -> #454 -> #456 -> #458` без разрывов.
+- Через Context7 по `/websites/cli_github` сверены актуальные GitHub CLI команды для неинтерактивного PR/issue flow; локально дополнительно проверены `gh issue create/edit --help` и `gh pr create/edit/view --help`.
+- Создана follow-up issue `#458` для stage `run:dev`; в её body повторено continuity-требование и зафиксирован единый execution anchor Sprint S11.
+- Root FR/NFR matrix обновлена точечно: coverage FR-039 расширено Day6 plan package Sprint S11; канонический requirements baseline в `docs/product/requirements_machine_driven.md` не менялся.
+- Документный контур Sprint S11 завершён на этапе `run:plan`; следующий owner-managed operational stage остаётся привязанным только к issue `#458`.

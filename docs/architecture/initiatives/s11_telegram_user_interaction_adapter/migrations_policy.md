@@ -2,16 +2,18 @@
 doc_id: MIG-S11-CK8S-0001
 type: migrations-policy
 title: "Sprint S11 Day 5 — Migrations policy for Telegram user interaction adapter (Issue #454)"
-status: in-review
+status: approved
 owner_role: SA
 created_at: 2026-03-14
 updated_at: 2026-03-14
-related_issues: [361, 444, 447, 448, 452, 454, 456]
+related_issues: [361, 444, 447, 448, 452, 454, 456, 458]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-14-issue-454-migrations-policy"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-14
 ---
 
 # DB Migrations Policy: Sprint S11 Telegram user interaction adapter
@@ -155,7 +157,8 @@ approvals:
 - If edit continuation is unstable, keep decision callbacks enabled and downgrade continuation policy to `follow_up_only`.
 - If follow-up delivery also degrades, surface `manual_fallback_required` instead of silently retrying forever.
 
-## Апрув
-- request_id: owner-2026-03-14-issue-454-migrations-policy
-- Решение: pending
-- Комментарий: Ожидается review additive migration sequence, S10 prerequisite gate и rollback constraints.
+## Continuity after `run:plan`
+- [x] Plan package Issue `#456` подтвердил rollout order `migrations -> control-plane -> worker -> api-gateway -> Telegram adapter contour -> observability/evidence gate`.
+- [x] S10 interaction foundation остаётся hard prerequisite для execution anchor `#458`.
+- [x] Notify-first enablement, `follow_up_only` downgrade и manual fallback сохраняются как допустимые operational toggles, а не как отдельные schema branches.
+- [x] Additive migration path остаётся единственным baseline; parallel DB owner или destructive rollback не допускаются.
