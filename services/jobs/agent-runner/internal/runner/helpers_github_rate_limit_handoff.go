@@ -54,14 +54,26 @@ type githubRateLimitWaitAcceptedError struct {
 	WaitReason      string
 	NextStepKind    string
 	ResumeNotBefore *time.Time
+	PersistErr      error
 }
 
 func (e githubRateLimitWaitAcceptedError) Error() string {
 	message := fmt.Sprintf("github rate-limit handoff accepted: wait_id=%s state=%s reason=%s next_step=%s", e.WaitID, e.WaitState, e.WaitReason, e.NextStepKind)
 	if e.ResumeNotBefore == nil || e.ResumeNotBefore.IsZero() {
+		if e.PersistErr == nil {
+			return message
+		}
+		return fmt.Sprintf("%s waiting_snapshot_persist_err=%v", message, e.PersistErr)
+	}
+	message = fmt.Sprintf("%s resume_not_before=%s", message, e.ResumeNotBefore.UTC().Format(time.RFC3339))
+	if e.PersistErr == nil {
 		return message
 	}
-	return fmt.Sprintf("%s resume_not_before=%s", message, e.ResumeNotBefore.UTC().Format(time.RFC3339))
+	return fmt.Sprintf("%s waiting_snapshot_persist_err=%v", message, e.PersistErr)
+}
+
+func (e githubRateLimitWaitAcceptedError) Unwrap() error {
+	return e.PersistErr
 }
 
 type githubRateLimitSignalCandidate struct {
@@ -132,17 +144,26 @@ func (s *Service) tryHandoffGitHubRateLimit(
 		trimCapturedOutput(formatCodexExecFailureOutput(output, stderr), maxCapturedCommandOutput),
 		s.sensitiveValues(),
 	)
-	if _, err := s.persistSessionSnapshot(ctx, result, state, runStartedAt, runStatusWaitingBackpressure, nil); err != nil {
-		return fmt.Errorf("persist waiting_backpressure session snapshot after github rate-limit handoff: %w", err)
-	}
-
-	return githubRateLimitWaitAcceptedError{
+	waitAcceptedErr := githubRateLimitWaitAcceptedError{
 		WaitID:          strings.TrimSpace(report.WaitID),
 		WaitState:       strings.TrimSpace(report.WaitState),
 		WaitReason:      strings.TrimSpace(report.WaitReason),
 		NextStepKind:    strings.TrimSpace(report.NextStepKind),
 		ResumeNotBefore: report.ResumeNotBefore,
 	}
+	if _, err := s.persistSessionSnapshot(ctx, result, state, runStartedAt, runStatusWaitingBackpressure, nil); err != nil {
+		s.logger.Warn(
+			"github rate-limit handoff accepted but waiting snapshot persist failed; keeping accepted wait path to avoid terminal failed overwrite",
+			"run_id", s.cfg.RunID,
+			"wait_id", waitAcceptedErr.WaitID,
+			"wait_state", waitAcceptedErr.WaitState,
+			"err", err,
+		)
+		waitAcceptedErr.PersistErr = fmt.Errorf("persist waiting_backpressure session snapshot after github rate-limit handoff: %w", err)
+		return waitAcceptedErr
+	}
+
+	return waitAcceptedErr
 }
 
 func detectGitHubRateLimitSignal(output []byte, stderr string, execErr error) (githubRateLimitSignalCandidate, bool) {

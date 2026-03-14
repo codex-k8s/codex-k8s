@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -109,6 +110,64 @@ func TestRunCodexExecWithAuthRecovery_GitHubRateLimitAcceptedPersistsWaitingSnap
 	}
 }
 
+func TestRunCodexExecWithAuthRecovery_GitHubRateLimitAcceptedWhenWaitingSnapshotPersistFails(t *testing.T) {
+	t.Setenv("PATH", buildFakeGitHubRateLimitCodexPath(t))
+
+	sessionsDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(sessionsDir, "session.json"), []byte(`{"session_id":"sess-rate-limit","cwd":"/workspace"}`), 0o600); err != nil {
+		t.Fatalf("write fake session file: %v", err)
+	}
+
+	controlPlane := &fakeGitHubRateLimitControlPlane{
+		reportResult: cpclient.ReportGitHubRateLimitSignalResult{
+			WaitID:       "wait-2",
+			WaitState:    runStatusWaitingBackpressure,
+			WaitReason:   githubRateLimitWaitReason,
+			NextStepKind: "auto_resume_scheduled",
+			RunnerAction: sharedgithubratelimit.RunnerActionPersistSessionAndExitWait,
+		},
+		failPersistAt: 2,
+	}
+	service := NewService(Config{
+		RunID:              "run-428",
+		CorrelationID:      "corr-428",
+		RepositoryFullName: "codex-k8s/codex-k8s",
+		AgentKey:           "dev",
+	}, controlPlane, nil)
+
+	result := runResult{targetBranch: "codex/issue-428", triggerKind: "dev", templateKind: promptTemplateKindWork}
+	_, err := service.runCodexExecWithAuthRecovery(
+		context.Background(),
+		codexState{repoDir: t.TempDir(), sessionsDir: sessionsDir},
+		&result,
+		time.Date(2026, time.March, 14, 17, 0, 0, 0, time.UTC),
+		codexExecParams{RepoDir: t.TempDir(), Prompt: "prompt"},
+	)
+	if err == nil {
+		t.Fatal("expected github rate-limit wait handoff error")
+	}
+	if !isGitHubRateLimitWaitAccepted(err) {
+		t.Fatalf("expected github rate-limit wait acceptance, got %v", err)
+	}
+
+	var waitErr githubRateLimitWaitAcceptedError
+	if !errors.As(err, &waitErr) {
+		t.Fatalf("expected githubRateLimitWaitAcceptedError, got %T", err)
+	}
+	if waitErr.PersistErr == nil {
+		t.Fatal("expected persist error to be attached to wait acceptance")
+	}
+	if !strings.Contains(waitErr.PersistErr.Error(), "waiting_backpressure") {
+		t.Fatalf("persist error = %v, want waiting_backpressure context", waitErr.PersistErr)
+	}
+	if got, want := controlPlane.persistedStatuses, []string{runStatusRunning, runStatusWaitingBackpressure}; !equalStringSlices(got, want) {
+		t.Fatalf("persisted statuses = %v, want %v", got, want)
+	}
+	if got := result.snapshotVersion; got != 1 {
+		t.Fatalf("snapshot_version = %d, want 1 after failed waiting snapshot persist", got)
+	}
+}
+
 type assertGitHubRateLimitExecError struct{}
 
 func (assertGitHubRateLimitExecError) Error() string {
@@ -119,10 +178,14 @@ type fakeGitHubRateLimitControlPlane struct {
 	persistedStatuses []string
 	reportParams      cpclient.ReportGitHubRateLimitSignalParams
 	reportResult      cpclient.ReportGitHubRateLimitSignalResult
+	failPersistAt     int
 }
 
 func (f *fakeGitHubRateLimitControlPlane) UpsertAgentSession(_ context.Context, params cpclient.AgentSessionUpsertParams) (cpclient.AgentSessionUpsertResult, error) {
 	f.persistedStatuses = append(f.persistedStatuses, params.Runtime.Status)
+	if f.failPersistAt > 0 && len(f.persistedStatuses) == f.failPersistAt {
+		return cpclient.AgentSessionUpsertResult{}, errors.New("synthetic persist failure")
+	}
 	return cpclient.AgentSessionUpsertResult{
 		SnapshotVersion:  int64(len(f.persistedStatuses)),
 		SnapshotChecksum: "checksum",
