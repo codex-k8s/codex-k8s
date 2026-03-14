@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-14
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -385,6 +385,18 @@ approvals:
 - Day 7+ (planned): `run:dev -> qa -> release -> postdeploy -> ops` по issues `#425..#431` с owner-managed wave launch и обязательным evidence gate `#431` перед `run:qa`.
   - Wave 1 / Issue `#425` переведён в `in-review`: добавлены schema foundation tables `github_rate_limit_waits` / `github_rate_limit_wait_evidence`, enum/check expansion для `agent_runs` / `agent_sessions`, postgres repository foundation и rollout guards для последующих волн.
   - Wave 2 / Issue `#426` переведён в `in-review`: `control-plane` получил canonical `GitHubRateLimitSignal` classification, typed wait projection/comment context, evidence append и deterministic agent resume payload builder для дальнейших волн `#427` / `#428` / `#429`.
+
+### Sprint S13: Quality governance system for agent-scale delivery (Issue #469)
+- Day 1 (in-review): intake-пакет для `Quality Governance System` (`docs/delivery/epics/s13/epic-s13-day1-quality-governance-intake.md`, Issue `#469`).
+- Результат Day 1 (факт):
+  - зафиксирован отдельный governance stream для качества агентной поставки, а не локальный reviewer/process tweak;
+  - сформирован draft quality stack: quality metrics baseline, risk tiers `low / medium / high / critical`, список high/critical changes, evidence taxonomy, verification minimum и review contract;
+  - зафиксирована draft-связка `risk tier -> mandatory stages/gates -> required evidence`;
+  - оформлена зависимость на downstream runtime/UI stream Sprint `S14` (`#470`): release safety, observability contract и quality cockpit не должны стартовать implementation-first без решений S13;
+  - continuity rule закреплён как обязательный до `run:dev`: каждый doc-stage создаёт следующую follow-up issue без trigger-лейбла.
+- Day 2 (planned): vision issue `#471`.
+  - Цель: mission statement, quality north star, persona outcomes, success metrics и guardrails для `Quality Governance System`.
+  - Ожидаемый результат: vision package + новая issue для `run:prd` без trigger-лейбла.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
