@@ -49,6 +49,7 @@ func (s *Service) finalizeInteractionResume(
 	}
 	if waitCleared {
 		s.auditInteractionWaitResumed(ctx, session, interaction.ID, string(resumePayload.RequestStatus))
+		observeInteractionResume(interaction, resumePayload)
 	}
 
 	return scheduled, nil

@@ -5,8 +5,8 @@ title: "Production Runbook (MVP)"
 status: active
 owner_role: SRE
 created_at: 2026-02-09
-updated_at: 2026-03-11
-related_issues: [1, 256]
+updated_at: 2026-03-14
+related_issues: [1, 256, 395]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -103,6 +103,42 @@ kubectl -n "$ns" get events --sort-by=.lastTimestamp | tail -n 80
 Примечание:
 - Ingress/TLS/browser smoke остаются отдельной проверкой для production;
 - для acceptance новых/изменённых HTTP-ручек первичным evidence считается именно service DNS path из runtime namespace.
+
+## MCP interaction observability smoke (S10-E05)
+
+Использовать для candidate/prod contour после rollout built-in MCP user interactions.
+
+Минимальный evidence bundle:
+- namespace и service DNS/FQDN;
+- `/metrics` excerpt для `control-plane` и `api-gateway`;
+- хотя бы один callback probe с ожидаемым `401`/`400`, чтобы подтвердить, что edge-метрики инкрементируются даже на rejected ingress;
+- логи `control-plane` и `worker` после rollout без repeated crash/restart pattern.
+
+Команды:
+
+```bash
+ns="<runtime-namespace>"
+control_plane_fqdn="codex-k8s-control-plane.${ns}.svc.cluster.local"
+api_fqdn="codex-k8s.${ns}.svc.cluster.local"
+
+curl -fsS "http://${control_plane_fqdn}:8081/metrics" | grep 'codexk8s_interaction' || true
+curl -fsS "http://${api_fqdn}/metrics" | grep 'codexk8s_interaction_callback_' || true
+
+curl -sS -o /tmp/interaction-callback.out -D /tmp/interaction-callback.headers -w '%{http_code}\n' \
+  -H 'Content-Type: application/json' \
+  -X POST "http://${api_fqdn}/api/v1/mcp/interactions/callback" \
+  --data '{"interaction_id":"smoke-probe","callback_kind":"decision_response"}'
+
+curl -fsS "http://${api_fqdn}/metrics" | grep 'codexk8s_interaction_callback_' || true
+kubectl -n "$ns" logs deploy/codex-k8s-control-plane --tail=120
+kubectl -n "$ns" logs deploy/codex-k8s-worker --tail=120
+```
+
+Интерпретация:
+- `control-plane` должен отдавать `/metrics` без 5xx и без `promhttp_metric_handler_errors_total` роста по interaction collector path;
+- `api-gateway` после probe должен показать `codexk8s_interaction_callback_requests_total{callback_kind="unknown",classification="error"}` и histogram `codexk8s_interaction_callback_duration_seconds`;
+- отсутствие interaction-specific samples в `control-plane` допустимо до первого реального tool/callback traffic, но endpoint и collector registration должны оставаться стабильными;
+- repeated restart loops, repeated collector errors или невозможность прочитать `/metrics` считаются rollout blocker до `run:qa`.
 
 ## Postdeploy checklist (S6 continuity)
 

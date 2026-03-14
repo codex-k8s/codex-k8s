@@ -74,6 +74,7 @@ func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Clien
 	h := newWebhookHandler(cfg, cp)
 	mcpH := newMCPCallbackHandler(cfg, cp)
 	interactionCallbackH := newInteractionCallbackHandler(cp)
+	interactionCallbackH.logger = logger
 	authH := newAuthHandler(auth, cfg.CookieSecure)
 	staffH := newStaffHandler(cp)
 

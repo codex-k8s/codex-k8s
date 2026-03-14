@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 
@@ -37,6 +38,7 @@ import (
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
 	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
+	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/observability"
 	agentrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agent"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentrun"
 	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentsession"
@@ -104,6 +106,7 @@ func Run() error {
 	projectDatabases := projectdatabaserepo.NewRepository(pgxPool)
 	runtimeDeployTasks := runtimedeploytaskrepo.NewRepository(pgxPool)
 	runtimeErrors := runtimeerrorrepo.NewRepository(pgxPool)
+	prometheus.MustRegister(observability.NewInteractionCollector(interactionRequests, logger))
 
 	tokenCrypto, err := tokencrypt.NewService(cfg.TokenEncryptionKey)
 	if err != nil {

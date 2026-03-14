@@ -6,7 +6,7 @@ status: in-review
 owner_role: SA
 created_at: 2026-03-12
 updated_at: 2026-03-14
-related_issues: [360, 378, 383, 385, 387, 389]
+related_issues: [360, 378, 383, 385, 387, 389, 395, 437]
 related_prs: []
 related_adrs: ["ADR-0012"]
 approvals:
@@ -199,19 +199,24 @@ sequenceDiagram
 
 ## Наблюдаемость (Observability)
 - Логи:
-  - `interaction.request.created`
-  - `interaction.dispatch.attempted`
-  - `interaction.dispatch.retry_scheduled`
-  - `interaction.callback.received`
-  - `interaction.response.accepted`
-  - `interaction.response.rejected`
-  - `interaction.wait.entered`
-  - `interaction.wait.resumed`
+  - `interaction callback handled` в `api-gateway` с полями `interaction_id`, `delivery_id`, `adapter_event_id`, `callback_kind`, `classification`, `interaction_state`, `resume_required`;
+  - `interaction dispatch completed` в `worker` с полями terminal/non-terminal outcome, retry decision и `resume_required`;
+  - `interaction expiry processed` в `worker` с полями `interaction_id`, `request_status`, `run_id`, `resume_required`;
+  - existing control-plane audit/flow events `interaction.request.created`, `interaction.callback.received`, `interaction.response.accepted|rejected`, `interaction.wait.entered`, `interaction.wait.resumed` остаются каноническим source-of-truth для lifecycle evidence.
 - Метрики:
-  - `interaction_requests_total{tool_name,state}`
-  - `interaction_callback_total{callback_kind,classification}`
-  - `interaction_dispatch_attempt_total{adapter,status}`
-  - `interaction_resume_total{request_status}`
+  - runtime counters/histograms в `control-plane`:
+    - `codexk8s_interaction_requests_created_total{tool_name,interaction_kind}`;
+    - `codexk8s_interaction_resume_total{interaction_kind,request_status}`;
+    - `codexk8s_interaction_decision_turnaround_seconds{request_status}`;
+  - persisted collector metrics в `control-plane`:
+    - `codexk8s_interaction_requests_state{interaction_kind,state}`;
+    - `codexk8s_interaction_pending_dispatch_backlog{interaction_kind,queue_kind}`;
+    - `codexk8s_interaction_wait_deadline_overdue{interaction_kind}`;
+    - `codexk8s_interaction_callback_events_total{callback_kind,classification}`;
+    - `codexk8s_interaction_dispatch_attempts_total{interaction_kind,adapter_kind,status}`;
+  - edge ingress metrics в `api-gateway`:
+    - `codexk8s_interaction_callback_requests_total{callback_kind,classification}`;
+    - `codexk8s_interaction_callback_duration_seconds{callback_kind,classification}`.
 - Трейсы:
   - `agent-runner -> control-plane -> postgres`
   - `worker -> adapter`
@@ -222,9 +227,9 @@ sequenceDiagram
   - decision turnaround latency;
   - delivery retry backlog.
 - Алерты:
-  - рост `classification=duplicate|stale` выше baseline;
-  - open decision interactions с `wait_deadline_at < now()` без terminal outcome;
-  - repeated `delivery_exhausted` на одном adapter provider.
+  - рост `codexk8s_interaction_callback_events_total{classification="duplicate|stale"}` выше baseline;
+  - `codexk8s_interaction_wait_deadline_overdue > 0` дольше agreed grace window;
+  - repeated `codexk8s_interaction_dispatch_attempts_total{status="failed"}` или рост retry backlog на одном adapter provider.
 
 ## Тестирование
 - Юнит:

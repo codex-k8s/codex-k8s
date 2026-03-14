@@ -55,6 +55,7 @@ func (s *Service) MCPUserNotify(ctx context.Context, session SessionContext, inp
 
 	s.auditInteractionRequestCreated(ctx, runCtx.Session, item, tool.Name)
 	s.auditToolSucceeded(ctx, runCtx.Session, tool)
+	observeInteractionRequestCreated(item, tool.Name)
 
 	return UserNotifyResult{
 		Status:        interactionToolStatusAccepted,
@@ -134,6 +135,7 @@ func (s *Service) MCPUserDecisionRequest(ctx context.Context, session SessionCon
 	s.auditInteractionRequestCreated(ctx, runCtx.Session, item, tool.Name)
 	s.auditInteractionWaitEntered(ctx, runCtx.Session, item.ID, expiresAt.Format(time.RFC3339Nano))
 	s.auditToolSucceeded(ctx, runCtx.Session, tool)
+	observeInteractionRequestCreated(item, tool.Name)
 
 	return UserDecisionRequestResult{
 		Status:        interactionToolStatusPendingUserResponse,

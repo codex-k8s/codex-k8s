@@ -207,3 +207,36 @@ approvals:
   - в логах `control-plane` зафиксирован ожидаемый transient compile failure во время hot-reload до regeneration нового proto-stub, после чего сервис перезапустился штатно;
   - в логах `worker` зафиксирован кратковременный `dial tcp ...:9090: connect: connection refused` во время restart окна `control-plane`, после чего worker восстановился без новых resume-specific ошибок.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: issue `#437` ужесточает transport/runtime handoff и payload limits внутри approved Sprint S10 scope, не меняя продуктовый baseline.
+
+## Актуализация по Issue #395 (`run:dev`, 2026-03-14)
+- Реализован observability/readiness package для stream `S10-E05` в `services/internal/control-plane`, `services/external/api-gateway`, `services/jobs/worker` и `docs/ops`:
+  - `control-plane` получил runtime counters/histogram для created/resume/decision turnaround и persisted custom collector поверх БД snapshot path, который публикует state/backlog/overdue/callback evidence/dispatch attempts метрики без переноса SQL в transport edge;
+  - `api-gateway` получил callback ingress metrics `codexk8s_interaction_callback_requests_total` и `codexk8s_interaction_callback_duration_seconds`, а также structured success log `interaction callback handled` без утечки free-text payload в логи;
+  - `worker` lifecycle logs расширены сообщениями `interaction dispatch completed` и `interaction expiry processed`, чтобы rollout/rollback диагностика отделяла retryable outcome, terminal status и resume requirement;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/design_doc.md`, `docs/ops/production_runbook.md`, `docs/delivery/traceability/s10_mcp_user_interactions_history.md` и `docs/delivery/issue_map.md` синхронизированы под точные metric/log names, runtime smoke и readiness gate.
+- Rollout/readiness discipline сохранены:
+  - version bumps подготовлены для `api-gateway`, `control-plane` и `worker`, чтобы candidate/prod сборка не пропустила новые образы;
+  - interaction flow остаётся additive и не меняет approval-specific bounded context или rollout order `control-plane -> worker -> api-gateway`.
+- Выполнены проверки:
+  - `go test ./services/internal/control-plane/...`
+  - `go test ./services/external/api-gateway/...`
+  - `go test ./services/jobs/worker/...`
+  - `make lint-go`
+  - `make dupl-go`
+  - `git diff --check`
+  - runtime diagnostics:
+    - `kubectl -n codex-k8s-dev-6 get pods,deploy,job -o wide`
+    - `kubectl -n codex-k8s-dev-6 logs deploy/codex-k8s-control-plane --tail=120`
+    - `kubectl -n codex-k8s-dev-6 logs deploy/codex-k8s-worker --tail=120`
+    - `curl -fsS http://codex-k8s-control-plane.codex-k8s-dev-6.svc.cluster.local:8081/metrics`
+    - `curl -sS -H 'Content-Type: application/json' -X POST http://codex-k8s.codex-k8s-dev-6.svc.cluster.local/api/v1/mcp/interactions/callback --data '{"interaction_id":"demo","callback_kind":"decision_response"}'`
+    - `curl -fsS http://codex-k8s.codex-k8s-dev-6.svc.cluster.local/metrics | grep 'codexk8s_interaction_callback_'`
+- Runtime evidence:
+  - candidate namespace `codex-k8s-dev-6` содержит running deployments `codex-k8s-control-plane`, `codex-k8s-worker`, `codex-k8s`, `codex-k8s-web-console`, migration job `Complete` и активный run job;
+  - `control-plane` и `api-gateway` `/metrics` доступны по service DNS внутри namespace;
+  - synthetic callback probe без токена ожидаемо вернул `401`, после чего `api-gateway` `/metrics` показал `codexk8s_interaction_callback_requests_total{callback_kind="unknown",classification="error"} 1` и соответствующий histogram sample;
+  - recent `control-plane`/`worker` logs содержат только ожидаемые hot-reload restarts во время локальной пересборки, без новых interaction-specific panic/crash evidence.
+- Для verification использован Context7:
+  - `/prometheus/client_golang` для проверки актуального паттерна custom collector и `CounterVec` / `HistogramVec`.
+- Новых внешних зависимостей в issue `#395` не добавлялось.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: issue `#395` закрывает observability/readiness wave и evidence gate из execution package, не меняя продуктовый baseline.

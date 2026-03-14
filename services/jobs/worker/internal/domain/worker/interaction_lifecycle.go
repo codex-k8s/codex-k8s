@@ -60,6 +60,13 @@ func (s *Service) expireInteractions(ctx context.Context) error {
 		if !result.Found {
 			return nil
 		}
+		s.logger.Info(
+			"interaction expiry processed",
+			"interaction_id", result.InteractionID,
+			"interaction_state", result.InteractionState,
+			"run_id", result.RunID,
+			"resume_required", result.ResumeRequired,
+		)
 		if result.ResumeRequired {
 			if err := s.scheduleInteractionResume(ctx, result.RunID, result.InteractionID, result.ResumeCorrelationID); err != nil {
 				return err
@@ -100,6 +107,19 @@ func (s *Service) dispatchInteraction(ctx context.Context, claim InteractionDisp
 	if err := s.insertInteractionRetryScheduledEvent(ctx, claim, completion); err != nil {
 		return err
 	}
+	s.logger.Info(
+		"interaction dispatch completed",
+		"interaction_id", claim.InteractionID,
+		"run_id", claim.RunID,
+		"attempt_no", claim.Attempt.AttemptNo,
+		"delivery_id", claim.Attempt.DeliveryID,
+		"adapter_kind", completion.AdapterKind,
+		"status", completion.Status,
+		"retryable", completion.Retryable,
+		"next_retry_at", completion.NextRetryAt,
+		"interaction_state", result.InteractionState,
+		"resume_required", result.ResumeRequired,
+	)
 
 	if dispatchErr != nil {
 		s.logger.Warn("interaction dispatch failed", "interaction_id", claim.InteractionID, "delivery_id", claim.Attempt.DeliveryID, "err", dispatchErr)
