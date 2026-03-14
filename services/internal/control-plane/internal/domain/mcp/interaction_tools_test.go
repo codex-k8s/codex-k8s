@@ -416,6 +416,57 @@ func TestBuildInteractionDeliveryEnvelopeIncludesCallbackContractFields(t *testi
 	}
 }
 
+func TestBuildInteractionDeliveryEnvelopePrefersInternalCallbackBaseURL(t *testing.T) {
+	t.Parallel()
+
+	deadline := time.Date(2026, 3, 13, 17, 0, 0, 0, time.UTC)
+	service := &Service{
+		cfg: Config{
+			TokenSigningKey:            "test-signing-key",
+			TokenIssuer:                "codex-k8s/test",
+			PublicBaseURL:              "https://platform.codex-k8s.dev",
+			InteractionCallbackBaseURL: "http://codex-k8s",
+		},
+		interactions: &interactionTestRepository{},
+		now: func() time.Time {
+			return time.Date(2026, 3, 13, 16, 0, 0, 0, time.UTC)
+		},
+	}
+
+	raw, err := service.buildInteractionDeliveryEnvelope(context.Background(), interactionDeliveryEnvelopeParams{
+		Run: entitytypes.AgentRun{ID: "run-1"},
+		Request: entitytypes.InteractionRequest{
+			ID:                "interaction-1",
+			RunID:             "run-1",
+			ChannelFamily:     enumtypes.InteractionChannelFamilyTelegram,
+			InteractionKind:   enumtypes.InteractionKindDecisionRequest,
+			RecipientProvider: interactionRecipientProviderTelegram,
+			RecipientRef:      interactionRecipientRoutingByGitHub + "ai-da-stas",
+			RequestPayloadJSON: json.RawMessage(`{
+				"question":"Ship it?",
+				"options":[{"option_id":"approve","label":"Approve"}]
+			}`),
+			ContextLinksJSON:   json.RawMessage(`{"run_id":"run-1"}`),
+			ResponseDeadlineAt: &deadline,
+		},
+		Attempt: entitytypes.InteractionDeliveryAttempt{DeliveryID: "delivery-1"},
+	})
+	if err != nil {
+		t.Fatalf("buildInteractionDeliveryEnvelope returned error: %v", err)
+	}
+
+	var envelope interactionDeliveryEnvelope
+	if err := json.Unmarshal(raw, &envelope); err != nil {
+		t.Fatalf("unmarshal interaction delivery envelope: %v", err)
+	}
+	if envelope.CallbackEndpoint == nil {
+		t.Fatal("expected callback endpoint to be populated")
+	}
+	if got, want := envelope.CallbackEndpoint.URL, "http://codex-k8s"+interactionCallbackPath; got != want {
+		t.Fatalf("callback url = %q, want %q", got, want)
+	}
+}
+
 func TestBuildInteractionDeliveryEnvelopeIncludesContinuationContractFields(t *testing.T) {
 	t.Parallel()
 

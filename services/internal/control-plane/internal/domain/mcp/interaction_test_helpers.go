@@ -30,14 +30,14 @@ func (r *interactionTestRepository) FindOpenDecisionByRunID(context.Context, str
 func (r *interactionTestRepository) EnsureChannelBinding(_ context.Context, params interactionrequestrepo.EnsureChannelBindingParams) (interactionrequestrepo.ChannelBinding, error) {
 	r.ensureBindingParams = params
 	return entitytypes.InteractionChannelBinding{
-		ID:                 11,
-		InteractionID:      params.InteractionID,
-		AdapterKind:        params.AdapterKind,
-		RecipientRef:       params.RecipientRef,
-		EditCapability:     enumtypes.InteractionEditCapabilityEditable,
-		ContinuationState:  enumtypes.InteractionContinuationStatePendingPrimaryDelivery,
-		CreatedAt:          time.Date(2026, time.March, 13, 16, 0, 0, 0, time.UTC),
-		UpdatedAt:          time.Date(2026, time.March, 13, 16, 0, 0, 0, time.UTC),
+		ID:                11,
+		InteractionID:     params.InteractionID,
+		AdapterKind:       params.AdapterKind,
+		RecipientRef:      params.RecipientRef,
+		EditCapability:    enumtypes.InteractionEditCapabilityEditable,
+		ContinuationState: enumtypes.InteractionContinuationStatePendingPrimaryDelivery,
+		CreatedAt:         time.Date(2026, time.March, 13, 16, 0, 0, 0, time.UTC),
+		UpdatedAt:         time.Date(2026, time.March, 13, 16, 0, 0, 0, time.UTC),
 	}, nil
 }
 

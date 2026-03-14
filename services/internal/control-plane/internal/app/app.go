@@ -163,6 +163,7 @@ func Run() error {
 	mcpService, err := mcpdomain.NewService(mcpdomain.Config{
 		TokenSigningKey:              mcpSigningKey,
 		PublicBaseURL:                cfg.PublicBaseURL,
+		InteractionCallbackBaseURL:   cfg.InteractionCallbackBaseURL,
 		InternalMCPBaseURL:           cfg.ControlPlaneMCPBaseURL,
 		RepositoryRoot:               cfg.RepositoryRoot,
 		ServicesConfigEnv:            cfg.ServicesConfigEnv,

@@ -1,0 +1,283 @@
+openapi: 3.0.3
+info:
+  title: Telegram Interaction Adapter API
+  version: 0.1.0
+paths:
+  /v1/telegram/interaction-deliveries:
+    post:
+      summary: Accept one Telegram interaction delivery envelope from worker
+      operationId: postTelegramInteractionDelivery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelegramInteractionDeliveryEnvelope'
+      responses:
+        '200':
+          description: Delivery accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelegramInteractionDeliveryResponse'
+        '400':
+          description: Invalid delivery request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelegramInteractionDeliveryResponse'
+        '401':
+          description: Missing or invalid adapter bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelegramInteractionDeliveryResponse'
+        '422':
+          description: Non-retryable delivery rejection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelegramInteractionDeliveryResponse'
+        '429':
+          description: Retryable provider throttling
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelegramInteractionDeliveryResponse'
+        '503':
+          description: Retryable adapter or provider failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelegramInteractionDeliveryResponse'
+  /api/v1/telegram/interactions/webhook:
+    post:
+      summary: Receive one raw Telegram webhook update
+      operationId: postTelegramInteractionWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelegramWebhookUpdate'
+      responses:
+        '204':
+          description: Update processed or ignored
+        '400':
+          description: Invalid Telegram webhook payload
+        '401':
+          description: Invalid Telegram webhook secret token
+        '503':
+          description: Temporary Telegram adapter failure
+components:
+  schemas:
+    TelegramInteractionDeliveryEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - schema_version
+        - delivery_id
+        - delivery_role
+        - interaction_id
+        - interaction_kind
+        - recipient_provider
+        - recipient_ref
+        - context_links
+        - continuation_policy
+      properties:
+        schema_version:
+          type: string
+          enum: [telegram-interaction-v1]
+        delivery_id:
+          type: string
+          format: uuid
+        delivery_role:
+          type: string
+          enum: [primary_dispatch, message_edit, follow_up_notify]
+        interaction_id:
+          type: string
+          format: uuid
+        interaction_kind:
+          type: string
+          enum: [notify, decision_request]
+        recipient_provider:
+          type: string
+        recipient_ref:
+          type: string
+        locale:
+          type: string
+        context_links:
+          $ref: '#/components/schemas/InteractionContextLinks'
+        content:
+          $ref: '#/components/schemas/TelegramInteractionContent'
+        callback_endpoint:
+          $ref: '#/components/schemas/TelegramCallbackEndpoint'
+        provider_message_ref:
+          $ref: '#/components/schemas/TelegramProviderMessageRef'
+        continuation:
+          $ref: '#/components/schemas/TelegramInteractionContinuation'
+        continuation_policy:
+          $ref: '#/components/schemas/TelegramContinuationPolicy'
+        delivery_deadline_at:
+          type: string
+          format: date-time
+    InteractionContextLinks:
+      type: object
+      additionalProperties: false
+      required: [run_id]
+      properties:
+        run_id:
+          type: string
+        run_url:
+          type: string
+        issue_url:
+          type: string
+        pull_request_url:
+          type: string
+        repository_full_name:
+          type: string
+    TelegramInteractionContent:
+      type: object
+      additionalProperties: false
+      properties:
+        notification_kind:
+          type: string
+          enum: [completion, next_step, status_update, warning]
+        summary:
+          type: string
+        details_markdown:
+          type: string
+        action_label:
+          type: string
+        action_url:
+          type: string
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/TelegramDecisionOption'
+        allow_free_text:
+          type: boolean
+        free_text_placeholder:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+        reply_instruction:
+          type: string
+    TelegramDecisionOption:
+      type: object
+      additionalProperties: false
+      required: [option_id, label, callback_handle]
+      properties:
+        option_id:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+        callback_handle:
+          type: string
+    TelegramCallbackEndpoint:
+      type: object
+      additionalProperties: false
+      required: [url, bearer_token, token_expires_at, handles]
+      properties:
+        url:
+          type: string
+        bearer_token:
+          type: string
+        token_expires_at:
+          type: string
+          format: date-time
+        handles:
+          type: array
+          items:
+            $ref: '#/components/schemas/TelegramCallbackHandle'
+    TelegramCallbackHandle:
+      type: object
+      additionalProperties: false
+      required: [handle, handle_kind, expires_at]
+      properties:
+        handle:
+          type: string
+        handle_kind:
+          type: string
+          enum: [option, free_text_session]
+        button_label:
+          type: string
+        option_id:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    TelegramProviderMessageRef:
+      type: object
+      additionalProperties: false
+      properties:
+        chat_ref:
+          type: string
+        message_id:
+          type: string
+        inline_message_id:
+          type: string
+        sent_at:
+          type: string
+          format: date-time
+    TelegramInteractionContinuation:
+      type: object
+      additionalProperties: false
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [edit_message, send_follow_up]
+        reason:
+          type: string
+          enum: [applied_response, edit_failed, expired_wait, operator_fallback]
+        resolution_kind:
+          type: string
+          enum: [delivery_only, option_selected, free_text_submitted]
+        resolved_at:
+          type: string
+          format: date-time
+    TelegramContinuationPolicy:
+      type: object
+      additionalProperties: false
+      required:
+        - preferred_mode
+        - disable_keyboard_on_resolution
+        - send_follow_up_on_edit_failure
+        - manual_fallback_on_follow_up_failure
+      properties:
+        preferred_mode:
+          type: string
+          enum: [edit_in_place_first, follow_up_only]
+        disable_keyboard_on_resolution:
+          type: boolean
+        send_follow_up_on_edit_failure:
+          type: boolean
+        manual_fallback_on_follow_up_failure:
+          type: boolean
+    TelegramInteractionDeliveryResponse:
+      type: object
+      additionalProperties: false
+      required: [accepted, retryable]
+      properties:
+        accepted:
+          type: boolean
+        adapter_delivery_id:
+          type: string
+        provider_message_ref:
+          $ref: '#/components/schemas/TelegramProviderMessageRef'
+        edit_capability:
+          type: string
+          enum: [unknown, keyboard_only, follow_up_only]
+        retryable:
+          type: boolean
+        message:
+          type: string
+    TelegramWebhookUpdate:
+      type: object
+      additionalProperties: true

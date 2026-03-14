@@ -86,6 +86,11 @@ spec:
         - libs/vue
         - libs/go
         - proto
+    telegram-interaction-adapter:
+      value: "0.1.0"
+      bumpOn:
+        - services/external/telegram-interaction-adapter
+        - libs/go
     control-plane:
       value: "0.1.134"
       bumpOn:
@@ -123,9 +128,9 @@ spec:
     oauth2-proxy:
       value: "v7.6.0"
     golang-alpine:
-      value: "1.25.6-alpine"
+      value: "1.25.8-alpine"
     golang-bookworm:
-      value: "1.25.6-bookworm"
+      value: "1.25.8-bookworm"
     golang-codegen:
       value: "1.24-bookworm"
     node-alpine:
@@ -252,6 +257,12 @@ spec:
       tagTemplate: '{{ index .Versions "api-gateway" }}'
       dockerfile: services/external/api-gateway/Dockerfile
       context: .
+    telegram-interaction-adapter:
+      type: build
+      repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/telegram-interaction-adapter" }}'
+      tagTemplate: '{{ index .Versions "telegram-interaction-adapter" }}'
+      dockerfile: services/external/telegram-interaction-adapter/Dockerfile
+      context: .
     control-plane:
       type: build
       repository: '{{ envOr "CODEXK8S_INTERNAL_REGISTRY_HOST" "127.0.0.1:5000" }}/{{ envOr "CODEXK8S_CONTROL_PLANE_INTERNAL_IMAGE_REPOSITORY" "codex-k8s/control-plane" }}'
@@ -344,6 +355,14 @@ spec:
       when: '{{ eq (envOr "CODEXK8S_OAUTH2_PROXY_ENABLED" "true") "true" }}'
       manifests:
         - path: deploy/base/oauth2-proxy/oauth2-proxy.yaml.tpl
+    - name: telegram-interaction-adapter
+      use:
+        - hot-reload-defaults
+      deployGroup: edge
+      dependsOn:
+        - codex-k8s-app
+      manifests:
+        - path: deploy/base/telegram-interaction-adapter/telegram-interaction-adapter.yaml.tpl
     - name: web-console
       use:
         - hot-reload-defaults

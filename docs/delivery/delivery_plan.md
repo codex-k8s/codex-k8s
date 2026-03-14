@@ -349,6 +349,7 @@ approvals:
   - `control-plane` получил additive schema foundation, callback handle/binding persistence, operator projections и typed Telegram delivery envelope;
   - `worker` получил HTTP bridge к внешнему Telegram adapter contour, transport-aware retry/fallback metadata и callback token propagation;
   - `api-gateway`/gRPC contracts и generated artifacts синхронно обновлены под normalized callback family `delivery_receipt|option_selected|free_text_received|transport_failure`;
+  - follow-up issue `#473` закрывает оставшийся runtime gap: in-repo `telegram-interaction-adapter` materializes raw webhook/auth, callback acknowledgement, Bot API mediation и deploy wiring вместо внешнего placeholder bridge;
   - dev-итерация закрыта сервисными тестами/codegen и готова к handover `run:qa -> release -> postdeploy -> ops` после review.
 
 ### Sprint S12: GitHub API rate-limit resilience

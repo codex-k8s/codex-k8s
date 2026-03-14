@@ -45,12 +45,12 @@ fmt-go:
 gen-openapi-go:
 	@svc="$${SVC:-services/external/api-gateway}"; \
 	spec="$$svc/api/server/api.yaml"; \
-	cfg="tools/codegen/openapi/api-gateway.oapi-codegen.yaml"; \
+	cfg="tools/codegen/openapi/$$(basename "$$svc").oapi-codegen.yaml"; \
 	out="$$svc/internal/transport/http/generated/openapi.gen.go"; \
-	if [ "$$svc" != "services/external/api-gateway" ]; then \
-		echo "gen-openapi-go: unsupported SVC=$$svc (currently only services/external/api-gateway)"; \
-		exit 1; \
-	fi; \
+	case "$$svc" in \
+		services/external/api-gateway|services/external/telegram-interaction-adapter) ;; \
+		*) echo "gen-openapi-go: unsupported SVC=$$svc"; exit 1 ;; \
+	esac; \
 	test -f "$$spec"; \
 	test -f "$$cfg"; \
 	mkdir -p "$$(dirname "$$out")"; \
@@ -64,7 +64,10 @@ gen-openapi-ts:
 	fi; \
 	npm --prefix "$$app" run gen:openapi
 
-gen-openapi: gen-openapi-go gen-openapi-ts
+gen-openapi:
+	@$(MAKE) gen-openapi-go SVC=services/external/api-gateway
+	@$(MAKE) gen-openapi-go SVC=services/external/telegram-interaction-adapter
+	@$(MAKE) gen-openapi-ts
 
 gen-proto-go:
 	@protoc -I proto \

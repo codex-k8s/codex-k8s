@@ -6,7 +6,7 @@ status: completed
 owner_role: KM
 created_at: 2026-03-14
 updated_at: 2026-03-14
-related_issues: [361, 444, 447, 448, 452, 454, 456, 458]
+related_issues: [361, 444, 447, 448, 452, 454, 456, 458, 473]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -127,3 +127,21 @@ approvals:
   - `git diff --check`;
   - `go test ./services/internal/control-plane/... ./services/jobs/worker/... ./services/external/api-gateway/...`.
 - Sprint S11 переведён в in-review handover после dev-итерации; следующий operational step остаётся `run:qa` после review текущего PR.
+
+## Актуализация по Issue #473 (`run:dev`, 2026-03-14)
+- Follow-up dev stage выполнен в Issue `#473`; materialized missing in-repo Telegram adapter contour, который в Issue `#458` оставался внешним configurable bridge.
+- Реализованы code/runtime changes в:
+  - `services/external/telegram-interaction-adapter` для raw Telegram webhook intake, `X-Telegram-Bot-Api-Secret-Token` verification, callback query acknowledgement, telego-based Bot API mediation, encrypted adapter-local session state и contract-first HTTP transport;
+  - `services/internal/control-plane` для runtime secret generation (`CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET`, bearer token, internal callback base URL) и adapter-facing callback URL override;
+  - `deploy/base/**`, `services.yaml`, `Makefile` и codegen-check wiring для deployable image/service/PVC/ingress/network-policy/codegen coverage.
+- Follow-up package зафиксировал:
+  - в candidate baseline raw webhook path больше не зависит от внешнего неопределённого contour: Telegram webhook ingress routed directly to `codex-k8s-telegram-interaction-adapter`, а normalized callbacks идут в `api-gateway` по internal callback URL;
+  - generated webhook secret теперь сохраняется в runtime secrets как base64url string длиной `43` символа, что укладывается в требование `42..64`;
+  - encrypted adapter state устраняет plaintext leakage raw free-text handle при сохранении restart continuity для decision/free-text flows.
+- Проверки follow-up итерации:
+  - `make gen-openapi-go SVC=services/external/api-gateway`;
+  - `make gen-openapi-go SVC=services/external/telegram-interaction-adapter`;
+  - `npm --prefix services/staff/web-console ci && make gen-openapi`;
+  - `git diff --check`;
+  - `go test ./services/internal/control-plane/... ./services/jobs/worker/... ./services/external/api-gateway/... ./services/external/telegram-interaction-adapter/...`;
+  - `kubectl -n codex-k8s-dev-2 get deploy,svc,pvc | rg 'telegram|NAME'` для фиксации текущего candidate runtime baseline перед rollout PR.
