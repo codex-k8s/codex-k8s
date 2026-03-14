@@ -33,6 +33,36 @@ func TestMigrationVersionsAreUnique(t *testing.T) {
 	}
 }
 
+func TestSQLMigrationsDeclareGooseDirectives(t *testing.T) {
+	entries, err := os.ReadDir(".")
+	if err != nil {
+		t.Fatalf("read migrations dir: %v", err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if filepath.Ext(name) != ".sql" {
+			continue
+		}
+
+		content, err := os.ReadFile(name)
+		if err != nil {
+			t.Fatalf("read migration %s: %v", name, err)
+		}
+
+		text := string(content)
+		if !strings.Contains(text, "-- +goose Up") {
+			t.Fatalf("migration %s must declare -- +goose Up", name)
+		}
+		if !strings.Contains(text, "-- +goose Down") {
+			t.Fatalf("migration %s must declare -- +goose Down", name)
+		}
+	}
+}
+
 func TestMissionControlFoundationMigrationKeepsTenantScopedForeignKeys(t *testing.T) {
 	content, err := os.ReadFile("20260313133000_day29_mission_control_foundation.sql")
 	if err != nil {
@@ -62,8 +92,8 @@ func TestMissionControlCommandLeaseMigrationAddsClaimColumns(t *testing.T) {
 	}
 
 	required := []string{
-		"ADD COLUMN lease_owner TEXT",
-		"ADD COLUMN lease_until TIMESTAMPTZ",
+		"ADD COLUMN IF NOT EXISTS lease_owner TEXT",
+		"ADD COLUMN IF NOT EXISTS lease_until TIMESTAMPTZ",
 		"idx_mission_control_commands_claimable",
 		"WHERE status IN ('accepted', 'queued')",
 	}
