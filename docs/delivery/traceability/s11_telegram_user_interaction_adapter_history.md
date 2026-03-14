@@ -30,11 +30,11 @@ approvals:
   - deferred scope для voice/STT, reminders, richer conversation threads и дополнительных каналов.
 - Проверяемый readiness gate выражен явно: `#444` может получать `run:vision` только пока Sprint S10 сохраняет closed-plan baseline `#389` и design package `#387` как source-of-truth для typed interaction contract.
 - Через Context7 по `/mymmrac/telego` и `go list -m -json github.com/mymmrac/telego@latest` подтверждено, что `v1.7.0` покрывает webhook mode, inline keyboards и callback query handling; библиотека внесена в `docs/design-guidelines/common/external_dependencies_catalog.md` как planned baseline, а не как source of truth продукта.
-- Создана continuity issue `#444` для stage `run:vision` с тем же prerequisite.
+- Создана continuity issue `#444` для stage `run:vision` с тем же prerequisite; после переноса active vision anchor в Issue `#447` эта issue 2026-03-14 закрыта как `state:superseded` historical handover artifact.
 - Root FR/NFR matrix обновлена точечно: Sprint S11 добавлен в coverage FR-039 и в historical package index; канонический requirements baseline при intake stage не менялся.
 
 ## Актуализация по Issue #447 (`run:vision`, 2026-03-14)
-- Active vision stage выполнен в Issue `#447`; initial continuity issue `#444` сохранена как historical intake handover artifact и больше не используется как текущий stage anchor.
+- Active vision stage выполнен в Issue `#447`; initial continuity issue `#444` сохранена только как historical intake handover artifact, 2026-03-14 закрыта как `state:superseded` и больше не используется как текущий stage anchor.
 - Vision package зафиксировал:
   - mission и north star для Telegram-адаптера как первого реального user-facing channel path поверх platform interaction contract;
   - persona outcomes для end user, owner/product lead и platform operator;

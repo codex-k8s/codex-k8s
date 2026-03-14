@@ -19,7 +19,7 @@ approvals:
 ## TL;DR
 - Sprint S11 открывает отдельную product initiative вокруг Telegram как первого внешнего канала поверх нового platform interaction contract.
 - Day1 intake (`#361`) фиксирует проблему, MVP scope, sequencing guardrails и continuity в `run:vision`.
-- Day2 vision выполняется в issue `#447`: mission, north star, persona outcomes, KPI/guardrails и MVP/Post-MVP границы уже зафиксированы, а issue `#444` остаётся historical handover от intake-stage.
+- Day2 vision выполняется в issue `#447`: mission, north star, persona outcomes, KPI/guardrails и MVP/Post-MVP границы уже зафиксированы, а issue `#444` сохранена только как historical handover от intake-stage и 2026-03-14 закрыта как `state:superseded`.
 - Создана follow-up issue `#448` для stage `run:prd` без trigger-лейбла; следующий этап должен формализовать user stories, FR/AC/NFR, expected evidence и сохранить continuity-цепочку до `run:dev`.
 - До `run:plan` Sprint S11 остаётся markdown-only контуром: код, runtime topology и library/runtime binding decisions начинаются только после owner review последующих stage-пакетов.
 

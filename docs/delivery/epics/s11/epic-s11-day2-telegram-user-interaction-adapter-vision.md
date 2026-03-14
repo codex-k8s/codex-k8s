@@ -20,7 +20,7 @@ approvals:
 - Для Issue `#447` сформирован vision-package: mission, north star, persona outcomes, KPI/guardrails, MVP/Post-MVP границы и risk frame для Telegram-адаптера как первого внешнего channel-specific stream.
 - Telegram зафиксирован как первый реальный user-facing adapter path поверх platform-owned interaction contract Sprint S10, а не как источник core semantics или shortcut вокруг approval flow.
 - Проверяемый sequencing gate сохранён явно: active vision stage в `#447` может двигаться дальше только пока Sprint S10 держит closed-plan baseline `#389` и design package `#387` как effective typed interaction contract.
-- Initial continuity issue `#444` остаётся intake-generated handover artifact; следующий активный stage вынесен в follow-up issue `#448` для `run:prd` без trigger-лейбла.
+- Initial continuity issue `#444` остаётся intake-generated handover artifact только в исторической трассировке; после переноса active stage в `#447` она 2026-03-14 закрыта как `state:superseded`, а следующий активный stage вынесен в follow-up issue `#448` для `run:prd` без trigger-лейбла.
 
 ## Priority
 - `P0`.
@@ -78,7 +78,7 @@ approvals:
 
 ### Dependency and sequencing gate
 - Active vision stage в Issue `#447` допустим только пока Issue `#389` остаётся `closed` и продолжает использовать design package Issue `#387` как effective typed interaction contract baseline.
-- Initial continuity issue `#444` сохраняется как исторический intake handover, но не считается источником текущего stage status.
+- Initial continuity issue `#444` сохраняется как исторический intake handover, но не считается источником текущего stage status и 2026-03-14 закрыта как `state:superseded`.
 - Если Sprint S10 baseline будет reopened или superseded, Sprint S11 не должен двигаться в `run:prd` без явного обновления prerequisite.
 
 ## Success metrics
@@ -133,7 +133,7 @@ approvals:
 - Следующий stage: `run:prd`.
 - Follow-up issue: `#448`.
 - Trigger-лейбл `run:prd` на issue `#448` ставит Owner.
-- Initial continuity issue `#444` остаётся historical handover artifact от intake-stage и не заменяет active stage issue `#447`.
+- Initial continuity issue `#444` остаётся только historical handover artifact от intake-stage, 2026-03-14 закрыта как `state:superseded` и не заменяет active stage issue `#447`.
 - Обязательное continuity-требование для `#448`:
   - в конце PRD stage агент обязан создать issue для `run:arch`;
   - в body этой issue должно быть явно повторено требование продолжить цепочку `arch -> design -> plan -> dev` без разрывов.

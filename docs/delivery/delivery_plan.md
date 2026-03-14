@@ -318,7 +318,7 @@ approvals:
 - Результат Day 2 (факт):
   - зафиксированы mission, north star, persona outcomes и product principles для Telegram-канала как первого реального user-facing adapter path;
   - KPI/success metrics и guardrails оформлены для turnaround, fallback, delivery success, callback safety и purity platform semantics;
-  - initial continuity issue `#444` сохранена как historical handover artifact от intake-stage, а active vision stage ведётся в Issue `#447`;
+  - initial continuity issue `#444` сохранена только как historical handover artifact от intake-stage, 2026-03-14 закрыта как `state:superseded`, а active vision stage ведётся в Issue `#447`;
   - подтверждён и повторно зафиксирован sequencing gate: `#447` может двигаться дальше только пока `#389` остаётся closed и сохраняет `#387` как effective typed interaction contract baseline;
   - создана follow-up issue `#448` для stage `run:prd` без trigger-лейбла и с continuity-требованием продолжить цепочку до `run:dev`.
 

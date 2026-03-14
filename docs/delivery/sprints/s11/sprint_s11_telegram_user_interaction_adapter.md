@@ -21,7 +21,7 @@ approvals:
 - Issue `#361` фиксирует intake baseline: Telegram рассматривается как первый реальный внешний канал доставки/ответа пользователя, но не может стартовать параллельно core stream из Issue `#360`.
 - Через Context7 по `/mymmrac/telego` и `go list -m -json github.com/mymmrac/telego@latest` подтверждено, что `github.com/mymmrac/telego v1.7.0` покрывает webhook mode, inline keyboards и callback query handling; библиотека внесена в каталог зависимостей как planned baseline, но не заменяет product/domain contract.
 - Intake-пакет ограничивает MVP scope Telegram-канала сценариями `user.notify`, `user.decision.request`, inline callbacks и optional free-text reply, а voice/STT, advanced reminders и richer conversation flows оставляет за пределами core wave.
-- Active Day2 vision stage выполняется в Issue `#447`, initial continuity issue `#444` сохраняется как исторический handover от intake, а follow-up issue `#448` подготовлена для `run:prd`.
+- Active Day2 vision stage выполняется в Issue `#447`, initial continuity issue `#444` 2026-03-14 закрыта как `state:superseded` historical handover после переноса active anchor, а follow-up issue `#448` подготовлена для `run:prd`.
 
 ## Scope спринта
 ### In scope
@@ -82,7 +82,7 @@ approvals:
   - `docs/delivery/epics/s11/epic_s11.md`;
   - `docs/delivery/epics/s11/epic-s11-day1-telegram-user-interaction-adapter-intake.md`.
 - `docs/delivery/epics/s11/epic-s11-day2-telegram-user-interaction-adapter-vision.md`.
-- Initial continuity issue `#444` остаётся historical handover artifact от intake-stage; active vision stage выполняется в Issue `#447`.
+- Initial continuity issue `#444` сохранена только как historical handover artifact от intake-stage и 2026-03-14 закрыта как `state:superseded`; active vision stage выполняется в Issue `#447`.
 - Следующий stage: `run:prd` в Issue `#448`.
 - Проверяемый prerequisite для Issue `#447`: закрытая Issue `#389` с актуальным S10 design package Issue `#387` как baseline typed interaction contract.
 - На `2026-03-14` prerequisite уже выполнен и не требует дополнительного parallel launch относительно Sprint S10.
