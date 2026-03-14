@@ -9,8 +9,10 @@ import (
 	"time"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
+	"github.com/codex-k8s/codex-k8s/libs/go/mcp/userinteraction"
 	domainrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/interactionrequest"
 	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
+	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/interactionrequest/dbmodel"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -50,6 +52,8 @@ var (
 	//go:embed sql/update_request_state.sql
 	queryUpdateRequestState string
 )
+
+const interactionResumeToolName = "user.decision.request"
 
 // Repository persists interaction aggregate and callback evidence in PostgreSQL.
 type Repository struct {
@@ -709,7 +713,7 @@ func classifyCallback(request domainrepo.Request, params domainrepo.ApplyCallbac
 		return decision
 	}
 
-	responseDecision, valid := classifyDecisionResponsePayload(request.RequestPayloadJSON, params)
+	responseDecision, valid := classifyDecisionResponsePayload(request, params)
 	if valid {
 		decision.responseKind = responseDecision.responseKind
 		decision.selectedOptionID = responseDecision.selectedOptionID
@@ -770,7 +774,7 @@ type decisionRequestPayload struct {
 	} `json:"options"`
 }
 
-func classifyDecisionResponsePayload(requestPayloadJSON []byte, params domainrepo.ApplyCallbackParams) (decisionResponseValidation, bool) {
+func classifyDecisionResponsePayload(request domainrepo.Request, params domainrepo.ApplyCallbackParams) (decisionResponseValidation, bool) {
 	responseKind := enumtypes.InteractionResponseKind(strings.ToLower(strings.TrimSpace(string(params.ResponseKind))))
 	switch responseKind {
 	case enumtypes.InteractionResponseKindOption:
@@ -779,7 +783,7 @@ func classifyDecisionResponsePayload(requestPayloadJSON []byte, params domainrep
 			return decisionResponseValidation{}, false
 		}
 		var payload decisionRequestPayload
-		if err := json.Unmarshal(requestPayloadJSON, &payload); err != nil {
+		if err := json.Unmarshal(request.RequestPayloadJSON, &payload); err != nil {
 			return decisionResponseValidation{}, false
 		}
 		for _, option := range payload.Options {
@@ -793,11 +797,27 @@ func classifyDecisionResponsePayload(requestPayloadJSON []byte, params domainrep
 		if freeText == "" {
 			return decisionResponseValidation{}, false
 		}
+		if len([]byte(freeText)) > userinteraction.DecisionResponseFreeTextMaxBytes {
+			return decisionResponseValidation{}, false
+		}
 		var payload decisionRequestPayload
-		if err := json.Unmarshal(requestPayloadJSON, &payload); err != nil {
+		if err := json.Unmarshal(request.RequestPayloadJSON, &payload); err != nil {
 			return decisionResponseValidation{}, false
 		}
 		if !payload.AllowFreeText {
+			return decisionResponseValidation{}, false
+		}
+		candidate := valuetypes.InteractionResumePayload{
+			InteractionID:    request.ID,
+			ToolName:         interactionResumeToolName,
+			RequestStatus:    enumtypes.InteractionRequestStatusAnswered,
+			ResponseKind:     enumtypes.InteractionResponseKindFreeText,
+			FreeText:         freeText,
+			ResolvedAt:       params.OccurredAt.UTC().Format(time.RFC3339Nano),
+			ResolutionReason: string(enumtypes.InteractionCallbackResultClassificationAccepted),
+		}
+		encodedCandidate, err := json.Marshal(candidate)
+		if err != nil || len(encodedCandidate) > userinteraction.ResumePayloadMaxBytes {
 			return decisionResponseValidation{}, false
 		}
 		return decisionResponseValidation{responseKind: responseKind, freeText: freeText}, true

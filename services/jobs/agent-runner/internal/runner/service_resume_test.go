@@ -50,6 +50,25 @@ func TestRestoreLatestSession_AllowsInteractionResumeWithoutPR(t *testing.T) {
 	}
 }
 
+func TestLoadInteractionResumePayload_FetchesCurrentRunPayload(t *testing.T) {
+	t.Parallel()
+
+	service := NewService(Config{RunID: "run-resume"}, &fakeSessionRestoreControlPlane{
+		resumePayload: cpclient.RunInteractionResumePayload{
+			Payload: json.RawMessage(`{"interaction_id":"interaction-1","tool_name":"user.decision.request"}`),
+		},
+		resumeFound: true,
+	}, nil)
+
+	payload, err := service.loadInteractionResumePayload(context.Background())
+	if err != nil {
+		t.Fatalf("loadInteractionResumePayload() error = %v", err)
+	}
+	if got, want := payload, `{"interaction_id":"interaction-1","tool_name":"user.decision.request"}`; got != want {
+		t.Fatalf("payload = %q, want %q", got, want)
+	}
+}
+
 func TestRestoreLatestSession_WithoutPRAndWithoutInteractionResumeMarksPRNotFound(t *testing.T) {
 	t.Parallel()
 
@@ -79,9 +98,12 @@ func TestRestoreLatestSession_WithoutPRAndWithoutInteractionResumeMarksPRNotFoun
 }
 
 type fakeSessionRestoreControlPlane struct {
-	snapshot cpclient.AgentSessionSnapshot
-	found    bool
-	err      error
+	snapshot      cpclient.AgentSessionSnapshot
+	found         bool
+	err           error
+	resumePayload cpclient.RunInteractionResumePayload
+	resumeFound   bool
+	resumeErr     error
 }
 
 func (f *fakeSessionRestoreControlPlane) UpsertAgentSession(context.Context, cpclient.AgentSessionUpsertParams) (cpclient.AgentSessionUpsertResult, error) {
@@ -93,6 +115,13 @@ func (f *fakeSessionRestoreControlPlane) GetLatestAgentSession(context.Context, 
 		return cpclient.AgentSessionSnapshot{}, false, f.err
 	}
 	return f.snapshot, f.found, nil
+}
+
+func (f *fakeSessionRestoreControlPlane) GetRunInteractionResumePayload(context.Context) (cpclient.RunInteractionResumePayload, bool, error) {
+	if f.resumeErr != nil {
+		return cpclient.RunInteractionResumePayload{}, false, f.resumeErr
+	}
+	return f.resumePayload, f.resumeFound, nil
 }
 
 func (f *fakeSessionRestoreControlPlane) LookupRunPullRequest(context.Context, cpclient.RunPullRequestLookupParams) (cpclient.RunPullRequestLookupResult, bool, error) {

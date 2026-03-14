@@ -1591,6 +1591,8 @@ components:
         free_text:
           type: string
           nullable: true
+          description: >
+            User free-text answer. Contract limit: at most 8192 UTF-8 bytes; larger payloads are classified as invalid and do not resume the run.
         responder_ref:
           type: string
           nullable: true

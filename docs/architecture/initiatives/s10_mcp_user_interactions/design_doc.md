@@ -5,7 +5,7 @@ title: "Sprint S10 Day 5 — Detailed Design for built-in MCP user interactions 
 status: in-review
 owner_role: SA
 created_at: 2026-03-12
-updated_at: 2026-03-13
+updated_at: 2026-03-14
 related_issues: [360, 378, 383, 385, 387, 389]
 related_prs: []
 related_adrs: ["ADR-0012"]
@@ -113,8 +113,12 @@ approvals:
 }
 ```
 
-- `worker` возобновляет run только после фиксации terminal interaction outcome и сохраняет этот payload как единственный source для resume prompt.
-- `agent-runner` добавляет typed JSON block в начало resume prompt перед `codex exec resume`, чтобы модель получила детерминированный machine-readable outcome без повторного запроса к adapter.
+- `worker` возобновляет run только после фиксации terminal interaction outcome; payload остаётся persisted в `control-plane` и не пробрасывается в Pod env/spec как carrier.
+- `agent-runner` перед resume делает run-bound gRPC lookup этого payload у `control-plane`, после чего добавляет typed JSON block в начало prompt перед `codex exec resume`, чтобы модель получила детерминированный machine-readable outcome без повторного запроса к adapter.
+- Размер handoff контракта ограничен:
+  - `response.free_text` принимается только до `8192` UTF-8 байт;
+  - сериализованный `interaction_resume_payload` должен помещаться в `12288` байт.
+- Если free-text или итоговый resume payload превышает этот лимит, callback классифицируется как `invalid`, resume не ставится, а run остаётся ждать валидный ответ либо expiry.
 
 ## API/Контракты
 - Детальный contract delta: `docs/architecture/initiatives/s10_mcp_user_interactions/api_contract.md`.
@@ -187,7 +191,8 @@ sequenceDiagram
 - Безопасность:
   - callback bearer token scope-bound на конкретный interaction, живёт как минимум до response deadline и сохраняет post-deadline grace для deterministic duplicate/expired classification;
   - agent input не может выбрать произвольного получателя;
-  - free-text response не дублируется в `flow_events` и не попадает в model-visible logs.
+  - free-text response не дублируется в `flow_events` и не попадает в model-visible logs;
+  - terminal `interaction_resume_payload` не раскрывается через Pod/Job spec, потому что runner забирает его из `control-plane` по run-bound bearer auth уже после старта pod.
 - Наблюдаемость:
   - interaction lifecycle публикует отдельные flow events и metrics;
   - duplicate/stale callbacks видны как audit evidence, а не silent no-op.

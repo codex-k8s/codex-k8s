@@ -5,7 +5,7 @@ title: "Sprint S10 Day 5 — API contract deltas for built-in MCP user interacti
 status: in-review
 owner_role: SA
 created_at: 2026-03-12
-updated_at: 2026-03-13
+updated_at: 2026-03-14
 related_issues: [360, 378, 383, 385, 387, 389]
 related_prs: []
 approvals:
@@ -174,7 +174,7 @@ approvals:
 |---|---|---|---|
 | `response_kind` | `option|free_text` | yes | |
 | `selected_option_id` | string | no | required for `option` |
-| `free_text` | string | no | required for `free_text` |
+| `free_text` | string | no | required for `free_text`; max `8192` UTF-8 bytes |
 | `responder_ref` | string | no | opaque adapter user ref |
 
 ### Callback response DTO `InteractionCallbackOutcome`
@@ -185,6 +185,9 @@ approvals:
 | `interaction_state` | string | current aggregate state after processing |
 | `resume_required` | bool | true when run resume was scheduled |
 | `message` | string | optional diagnostic |
+
+Дополнительное правило callback-контракта:
+- если `response.free_text` превышает `8192` UTF-8 байт или итоговый serialized `interaction_resume_payload` не помещается в `12288` байт, callback возвращается с `classification=invalid`, `accepted=false`, без постановки resume-run.
 
 ## Internal gRPC bridge
 ### `SubmitInteractionCallbackRequest`
@@ -207,6 +210,16 @@ approvals:
 - `interaction_state`
 - `resume_required`
 - `effective_response_id`
+
+### `GetRunInteractionResumePayloadRequest`
+- empty request body; effective run scope определяется bearer token
+
+### `GetRunInteractionResumePayloadResponse`
+- `found`
+- `payload_json`
+- Используется только `agent-runner` после старта pod:
+  - payload читается из persisted `agent_runs.run_payload` через run-bound bearer auth;
+  - plain env/file carrier для `interaction_resume_payload` не используется.
 
 ### Worker interaction lifecycle responses
 - `CompleteInteractionDispatchResponse`

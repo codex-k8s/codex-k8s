@@ -5,8 +5,8 @@ title: "Sprint S10 Traceability History"
 status: in-review
 owner_role: KM
 created_at: 2026-03-12
-updated_at: 2026-03-13
-related_issues: [360, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 402]
+updated_at: 2026-03-14
+related_issues: [360, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 402, 437]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -182,3 +182,28 @@ approvals:
   - `/protocolbuffers/protobuf` для проверки additive contract discipline при расширении typed payload-handshake.
 - Новых внешних зависимостей в issue `#394` не добавлялось.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: issue `#394` реализует approved deterministic resume wave из execution package, не меняя продуктовый baseline.
+
+## Актуализация по Issue #437 (`run:dev`, 2026-03-14)
+- Реализован hardening follow-up для resume handoff поверх stream `S10-E04`:
+  - `worker` и `joblauncher` больше не используют `CODEXK8S_INTERACTION_RESUME_PAYLOAD` и не записывают interaction outcome в Pod env/spec;
+  - `control-plane` получил run-scoped gRPC lookup `GetRunInteractionResumePayload`, а `agent-runner` забирает persisted payload уже после старта pod через bearer-аутентифицированный runtime call;
+  - callback classification и resume scheduling теперь явно ограничены size-контрактом: `response.free_text <= 8192` UTF-8 bytes, serialized `interaction_resume_payload <= 12288` bytes, overflow классифицируется как `invalid` без постановки resume-run;
+  - docs и contract-first артефакты синхронизированы для нового secure carrier path и size guardrails.
+- Rollout boundary сохранён:
+  - source-of-truth по interaction outcome остаётся в `control-plane`, а `agent-runner` получает только persisted run-scoped projection;
+  - новые внешние зависимости не добавлялись; verification для proto contract discipline выполнен через Context7 `/protocolbuffers/protobuf`.
+- Выполнены проверки:
+  - `make gen-openapi`
+  - `go test ./services/internal/control-plane/... ./services/jobs/agent-runner/... ./services/jobs/worker/... ./libs/go/k8s/joblauncher`
+  - `make lint-go`
+  - `git diff --check`
+  - runtime diagnostics:
+    - `kubectl config view --minify -o jsonpath='{..namespace}'`
+    - `kubectl -n codex-k8s-dev-1 get pods,deploy,job -o wide`
+    - `kubectl -n codex-k8s-dev-1 logs deploy/codex-k8s-control-plane --tail=60`
+    - `kubectl -n codex-k8s-dev-1 logs deploy/codex-k8s-worker --tail=60`
+- Runtime evidence:
+  - candidate namespace `codex-k8s-dev-1` содержит ready deployments `codex-k8s-control-plane`, `codex-k8s-worker`, `codex-k8s`, `codex-k8s-web-console`, running run job и healthy `postgres-0`;
+  - в логах `control-plane` зафиксирован ожидаемый transient compile failure во время hot-reload до regeneration нового proto-stub, после чего сервис перезапустился штатно;
+  - в логах `worker` зафиксирован кратковременный `dial tcp ...:9090: connect: connection refused` во время restart окна `control-plane`, после чего worker восстановился без новых resume-specific ошибок.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: issue `#437` ужесточает transport/runtime handoff и payload limits внутри approved Sprint S10 scope, не меняя продуктовый baseline.

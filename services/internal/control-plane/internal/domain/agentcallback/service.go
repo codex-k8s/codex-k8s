@@ -11,6 +11,7 @@ import (
 	"github.com/codex-k8s/codex-k8s/libs/go/crypto/tokencrypt"
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	repoprovider "github.com/codex-k8s/codex-k8s/libs/go/repo/provider"
+	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	agentrunlogrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrunlog"
 	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentsession"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
@@ -63,9 +64,14 @@ type Service struct {
 	sessions   agentsessionrepo.Repository
 	flowEvents floweventrepo.Repository
 	runLogs    agentrunlogrepo.Repository
+	runs       runReader
 	repos      repocfgrepo.Repository
 	tokenCrypt *tokencrypt.Service
 	providers  map[string]repoprovider.RepositoryProvider
+}
+
+type runReader interface {
+	GetByID(ctx context.Context, runID string) (agentrunrepo.Run, bool, error)
 }
 
 // NewService constructs callback domain service.
@@ -73,6 +79,7 @@ func NewService(
 	sessions agentsessionrepo.Repository,
 	flowEvents floweventrepo.Repository,
 	runLogs agentrunlogrepo.Repository,
+	runs runReader,
 	repos repocfgrepo.Repository,
 	tokenCrypt *tokencrypt.Service,
 	providers map[repoprovider.Provider]repoprovider.RepositoryProvider,
@@ -89,6 +96,7 @@ func NewService(
 		sessions:   sessions,
 		flowEvents: flowEvents,
 		runLogs:    runLogs,
+		runs:       runs,
 		repos:      repos,
 		tokenCrypt: tokenCrypt,
 		providers:  normalizedProviders,
@@ -123,6 +131,23 @@ func (s *Service) GetLatestAgentSession(ctx context.Context, query GetLatestAgen
 		strings.TrimSpace(query.BranchName),
 		strings.TrimSpace(query.AgentKey),
 	)
+}
+
+// GetRunInteractionResumePayload returns deterministic interaction resume payload for one authenticated run.
+func (s *Service) GetRunInteractionResumePayload(ctx context.Context, runID string) (json.RawMessage, bool, error) {
+	if s == nil || s.runs == nil {
+		return nil, false, errors.New("agent run repository is not configured")
+	}
+
+	run, found, err := s.runs.GetByID(ctx, strings.TrimSpace(runID))
+	if err != nil {
+		return nil, false, fmt.Errorf("load run for interaction resume payload: %w", err)
+	}
+	if !found {
+		return nil, false, nil
+	}
+
+	return extractInteractionResumePayload(run.RunPayload)
 }
 
 // InsertRunFlowEvent persists one run-bound callback event.

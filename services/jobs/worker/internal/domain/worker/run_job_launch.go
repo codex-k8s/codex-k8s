@@ -18,14 +18,6 @@ func (s *Service) launchPreparedRunWorkload(ctx context.Context, run runqueuerep
 	runtimeTargetEnv := ""
 	runtimeBuildRef := ""
 	runtimeAccessProfile := options.RuntimeAccessProfile
-	interactionResumePayloadJSON, err := extractInteractionResumePayloadJSON(run.RunPayload)
-	if err != nil {
-		s.logger.Error("extract interaction resume payload failed", "run_id", run.RunID, "err", err)
-		if finishErr := s.finishLaunchFailedRun(ctx, run, execution, err, runFailureReasonPreconditionFailed); finishErr != nil {
-			return fmt.Errorf("mark run failed after interaction resume payload error: %w", finishErr)
-		}
-		return nil
-	}
 	if runtimePayload.Runtime != nil {
 		runtimeTargetEnv = strings.TrimSpace(runtimePayload.Runtime.TargetEnv)
 		runtimeBuildRef = strings.TrimSpace(runtimePayload.Runtime.BuildRef)
@@ -201,42 +193,41 @@ func (s *Service) launchPreparedRunWorkload(ctx context.Context, run runqueuerep
 	}
 
 	ref, err := s.launcher.Launch(ctx, JobSpec{
-		RunID:                    run.RunID,
-		CorrelationID:            run.CorrelationID,
-		ProjectID:                run.ProjectID,
-		SlotNo:                   run.SlotNo,
-		JobImage:                 jobImage.SelectedImage,
-		RuntimeMode:              execution.RuntimeMode,
-		Namespace:                execution.Namespace,
-		RuntimeTargetEnv:         runtimeTargetEnv,
-		RuntimeBuildRef:          runtimeBuildRef,
-		RuntimeAccessProfile:     runtimeAccessProfile,
-		ControlPlaneGRPCTarget:   s.cfg.ControlPlaneGRPCTarget,
-		MCPBaseURL:               s.cfg.ControlPlaneMCPBaseURL,
-		MCPBearerToken:           issuedMCPToken.Token,
-		RepositoryFullName:       agentCtx.RepositoryFullName,
-		IssueNumber:              agentCtx.IssueNumber,
-		InteractionResumePayload: interactionResumePayloadJSON,
-		TriggerKind:              agentCtx.TriggerKind,
-		TriggerLabel:             agentCtx.TriggerLabel,
-		DiscussionMode:           agentCtx.DiscussionMode,
-		TargetBranch:             targetBranch,
-		ExistingPRNumber:         agentCtx.ExistingPRNumber,
-		AgentKey:                 agentCtx.AgentKey,
-		AgentModel:               agentCtx.Model,
-		AgentReasoningEffort:     agentCtx.ReasoningEffort,
-		PromptTemplateKind:       agentCtx.PromptTemplateKind,
-		PromptTemplateSource:     agentCtx.PromptTemplateSource,
-		PromptTemplateLocale:     agentCtx.PromptTemplateLocale,
-		StateInReviewLabel:       s.cfg.StateInReviewLabel,
-		BaseBranch:               s.cfg.AgentBaseBranch,
-		OpenAIAPIKey:             s.cfg.OpenAIAPIKey,
-		Context7APIKey:           s.cfg.Context7APIKey,
-		GitBotToken:              s.cfg.GitBotToken,
-		AgentDisplayName:         agentCtx.AgentDisplayName,
-		GitBotUsername:           s.cfg.GitBotUsername,
-		GitBotMail:               s.cfg.GitBotMail,
-		ServiceAccountName:       strings.TrimSpace(options.ServiceAccountName),
+		RunID:                  run.RunID,
+		CorrelationID:          run.CorrelationID,
+		ProjectID:              run.ProjectID,
+		SlotNo:                 run.SlotNo,
+		JobImage:               jobImage.SelectedImage,
+		RuntimeMode:            execution.RuntimeMode,
+		Namespace:              execution.Namespace,
+		RuntimeTargetEnv:       runtimeTargetEnv,
+		RuntimeBuildRef:        runtimeBuildRef,
+		RuntimeAccessProfile:   runtimeAccessProfile,
+		ControlPlaneGRPCTarget: s.cfg.ControlPlaneGRPCTarget,
+		MCPBaseURL:             s.cfg.ControlPlaneMCPBaseURL,
+		MCPBearerToken:         issuedMCPToken.Token,
+		RepositoryFullName:     agentCtx.RepositoryFullName,
+		IssueNumber:            agentCtx.IssueNumber,
+		TriggerKind:            agentCtx.TriggerKind,
+		TriggerLabel:           agentCtx.TriggerLabel,
+		DiscussionMode:         agentCtx.DiscussionMode,
+		TargetBranch:           targetBranch,
+		ExistingPRNumber:       agentCtx.ExistingPRNumber,
+		AgentKey:               agentCtx.AgentKey,
+		AgentModel:             agentCtx.Model,
+		AgentReasoningEffort:   agentCtx.ReasoningEffort,
+		PromptTemplateKind:     agentCtx.PromptTemplateKind,
+		PromptTemplateSource:   agentCtx.PromptTemplateSource,
+		PromptTemplateLocale:   agentCtx.PromptTemplateLocale,
+		StateInReviewLabel:     s.cfg.StateInReviewLabel,
+		BaseBranch:             s.cfg.AgentBaseBranch,
+		OpenAIAPIKey:           s.cfg.OpenAIAPIKey,
+		Context7APIKey:         s.cfg.Context7APIKey,
+		GitBotToken:            s.cfg.GitBotToken,
+		AgentDisplayName:       agentCtx.AgentDisplayName,
+		GitBotUsername:         s.cfg.GitBotUsername,
+		GitBotMail:             s.cfg.GitBotMail,
+		ServiceAccountName:     strings.TrimSpace(options.ServiceAccountName),
 	})
 	if err != nil {
 		s.logger.Error("launch run job failed", "run_id", run.RunID, "err", err)

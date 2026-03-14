@@ -89,8 +89,6 @@ type JobSpec struct {
 	RepositoryFullName string
 	// IssueNumber is issue number for deterministic branch policy.
 	IssueNumber int64
-	// InteractionResumePayload is the persisted terminal interaction outcome injected into resume runs.
-	InteractionResumePayload string
 	// TriggerKind defines run stage source (`run:*` catalog, e.g. `dev`, `vision`, `plan_revise`).
 	TriggerKind string
 	// TriggerLabel is original label that created this run.
@@ -504,7 +502,6 @@ func buildRunContainerEnv(spec JobSpec) []corev1.EnvVar {
 		{Name: "CODEXK8S_MCP_BEARER_TOKEN", Value: strings.TrimSpace(spec.MCPBearerToken)},
 		{Name: "CODEXK8S_REPOSITORY_FULL_NAME", Value: strings.TrimSpace(spec.RepositoryFullName)},
 		{Name: "CODEXK8S_ISSUE_NUMBER", Value: fmt.Sprintf("%d", spec.IssueNumber)},
-		{Name: "CODEXK8S_INTERACTION_RESUME_PAYLOAD", Value: strings.TrimSpace(spec.InteractionResumePayload)},
 		{Name: "CODEXK8S_RUN_TRIGGER_KIND", Value: strings.TrimSpace(spec.TriggerKind)},
 		{Name: "CODEXK8S_RUN_TRIGGER_LABEL", Value: strings.TrimSpace(spec.TriggerLabel)},
 		{Name: "CODEXK8S_DISCUSSION_MODE", Value: fmt.Sprintf("%t", spec.DiscussionMode)},

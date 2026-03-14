@@ -6,6 +6,8 @@ import (
 	"io"
 	"strings"
 	"time"
+
+	"github.com/codex-k8s/codex-k8s/libs/go/mcp/userinteraction"
 )
 
 const (
@@ -69,6 +71,9 @@ func parseInteractionResumePayload(rawPayload string) (interactionResumePayload,
 	trimmed := strings.TrimSpace(rawPayload)
 	if trimmed == "" {
 		return interactionResumePayload{}, fmt.Errorf("interaction resume payload is empty")
+	}
+	if len([]byte(trimmed)) > userinteraction.ResumePayloadMaxBytes {
+		return interactionResumePayload{}, fmt.Errorf("interaction resume payload exceeds %d bytes", userinteraction.ResumePayloadMaxBytes)
 	}
 
 	var payload interactionResumePayload

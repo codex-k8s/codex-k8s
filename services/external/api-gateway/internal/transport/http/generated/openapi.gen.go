@@ -376,6 +376,7 @@ type InteractionCallbackOutcomeClassification string
 
 // InteractionResponsePayload defines model for InteractionResponsePayload.
 type InteractionResponsePayload struct {
+	// FreeText User free-text answer. Contract limit: at most 8192 UTF-8 bytes; larger payloads are classified as invalid and do not resume the run.
 	FreeText         *string                                `json:"free_text"`
 	ResponderRef     *string                                `json:"responder_ref"`
 	ResponseKind     InteractionResponsePayloadResponseKind `json:"response_kind"`

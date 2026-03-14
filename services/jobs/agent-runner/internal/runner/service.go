@@ -104,6 +104,12 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		s.logger.Warn("emit run.agent.started failed", "err", err)
 	}
 
+	interactionResumePayload, err := s.loadInteractionResumePayload(ctx)
+	if err != nil {
+		return err
+	}
+	s.cfg.InteractionResumePayload = interactionResumePayload
+
 	if shouldRestoreLatestSession(triggerKind, s.cfg.DiscussionMode, s.cfg.InteractionResumePayload) {
 		restored, restoreErr := s.restoreLatestSession(ctx, result.targetBranch, state.sessionsDir)
 		if restoreErr != nil {
@@ -336,6 +342,21 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	finalized = true
 	s.logger.Info("agent-runner completed", "branch", result.targetBranch, "pr_number", result.prNumber)
 	return nil
+}
+
+func (s *Service) loadInteractionResumePayload(ctx context.Context) (string, error) {
+	if s.cp == nil {
+		return "", fmt.Errorf("control-plane callbacks are not configured")
+	}
+
+	payload, found, err := s.cp.GetRunInteractionResumePayload(ctx)
+	if err != nil {
+		return "", fmt.Errorf("load interaction resume payload: %w", err)
+	}
+	if !found || len(payload.Payload) == 0 {
+		return "", nil
+	}
+	return strings.TrimSpace(string(payload.Payload)), nil
 }
 
 func (s *Service) runCodexExecWithAuthRecovery(ctx context.Context, state codexState, params codexExecParams) ([]byte, error) {

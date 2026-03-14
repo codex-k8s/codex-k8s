@@ -6,7 +6,7 @@ Prompt seed policy:
 - task-body шаблон берётся из встроенного каталога `services/jobs/agent-runner/internal/runner/promptseeds/*.md` (embed) по связке `agent_key + trigger_kind + template_kind + locale`;
 - role profile и контракты оформления follow-up Issue / PR / review / discussion рендерятся из
   `services/jobs/agent-runner/internal/runner/templates/prompt_blocks/*.tmpl`;
-- deterministic resume path для built-in user interactions читает persisted `interaction_resume_payload` из контекста запуска и добавляет typed JSON block в начало resume prompt перед `codex exec resume`;
+- deterministic resume path для built-in user interactions читает persisted `interaction_resume_payload` через run-bound gRPC lookup в `control-plane` и добавляет typed JSON block в начало resume prompt перед `codex exec resume`;
 - поддержаны role-aware шаблоны:
   - `<stage>-<agent_key>-<kind>_<locale>.md` / `<stage>-<agent_key>-<kind>.md`;
   - `role-<agent_key>-<kind>_<locale>.md` / `role-<agent_key>-<kind>.md`;

@@ -103,6 +103,11 @@ type AgentSessionSnapshot struct {
 	UpdatedAt         time.Time
 }
 
+// RunInteractionResumePayload is deterministic interaction outcome fetched for the current run.
+type RunInteractionResumePayload struct {
+	Payload json.RawMessage
+}
+
 // LatestAgentSessionQuery describes latest-session lookup identity.
 type LatestAgentSessionQuery struct {
 	RepositoryFullName string
@@ -252,6 +257,24 @@ func (c *Client) GetLatestAgentSession(ctx context.Context, query LatestAgentSes
 		UpdatedAt:         timestampOrZero(snapshot.GetUpdatedAt()),
 	}
 	return result, true, nil
+}
+
+// GetRunInteractionResumePayload loads deterministic interaction resume payload for the authenticated run.
+func (c *Client) GetRunInteractionResumePayload(ctx context.Context) (RunInteractionResumePayload, bool, error) {
+	resp, err := c.svc.GetRunInteractionResumePayload(c.withAuth(ctx), &controlplanev1.GetRunInteractionResumePayloadRequest{})
+	if err != nil {
+		return RunInteractionResumePayload{}, false, fmt.Errorf("get run interaction resume payload: %w", err)
+	}
+	if !resp.GetFound() {
+		return RunInteractionResumePayload{}, false, nil
+	}
+	payload := resp.GetPayloadJson()
+	if len(payload) == 0 {
+		return RunInteractionResumePayload{}, false, nil
+	}
+	return RunInteractionResumePayload{
+		Payload: append(json.RawMessage(nil), payload...),
+	}, true, nil
 }
 
 // InsertRunFlowEvent persists one run-bound flow event.
