@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CallbackGithubData, CallbackGithubErrors, CancelRuntimeDeployTaskData, CancelRuntimeDeployTaskErrors, CancelRuntimeDeployTaskResponses, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteProjectData, DeleteProjectErrors, DeleteProjectMemberData, DeleteProjectMemberErrors, DeleteProjectMemberResponses, DeleteProjectRepositoryData, DeleteProjectRepositoryErrors, DeleteProjectRepositoryResponses, DeleteProjectResponses, DeleteRunNamespaceData, DeleteRunNamespaceErrors, DeleteRunNamespaceResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, ExecuteNextStepActionData, ExecuteNextStepActionErrors, ExecuteNextStepActionResponses, GetMeData, GetMeErrors, GetMeResponses, GetProjectData, GetProjectErrors, GetProjectGitHubTokensData, GetProjectGitHubTokensErrors, GetProjectGitHubTokensResponses, GetProjectResponses, GetRunData, GetRunErrors, GetRunLogsData, GetRunLogsErrors, GetRunLogsResponses, GetRunResponses, GetRuntimeDeployTaskData, GetRuntimeDeployTaskErrors, GetRuntimeDeployTaskResponses, ImportDocsetData, ImportDocsetErrors, ImportDocsetResponses, IngestGithubWebhookData, IngestGithubWebhookErrors, IngestGithubWebhookResponses, ListDocsetGroupsData, ListDocsetGroupsErrors, ListDocsetGroupsResponses, ListPendingApprovalsData, ListPendingApprovalsErrors, ListPendingApprovalsResponses, ListProjectMembersData, ListProjectMembersErrors, ListProjectMembersResponses, ListProjectRepositoriesData, ListProjectRepositoriesErrors, ListProjectRepositoriesResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRunEventsData, ListRunEventsErrors, ListRunEventsResponses, ListRunLearningFeedbackData, ListRunLearningFeedbackErrors, ListRunLearningFeedbackResponses, ListRuntimeErrorsData, ListRuntimeErrorsErrors, ListRuntimeErrorsResponses, ListRunWaitsData, ListRunWaitsErrors, ListRunWaitsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginGithubData, LoginGithubErrors, LogoutData, LogoutErrors, LogoutResponses, MarkRuntimeErrorViewedData, MarkRuntimeErrorViewedErrors, MarkRuntimeErrorViewedResponses, McpApproverCallbackData, McpApproverCallbackErrors, McpApproverCallbackResponses, McpExecutorCallbackData, McpExecutorCallbackErrors, McpExecutorCallbackResponses, McpInteractionCallbackData, McpInteractionCallbackErrors, McpInteractionCallbackResponses, PreviewNextStepActionData, PreviewNextStepActionErrors, PreviewNextStepActionResponses, ResolveApprovalDecisionData, ResolveApprovalDecisionErrors, ResolveApprovalDecisionResponses, RunRealtimeData, RunRealtimeErrors, RunRealtimeResponses, RunRepositoryPreflightData, RunRepositoryPreflightErrors, RunRepositoryPreflightResponses, RunsRealtimeData, RunsRealtimeErrors, RunsRealtimeResponses, RuntimeDeployTasksRealtimeData, RuntimeDeployTasksRealtimeErrors, RuntimeDeployTasksRealtimeResponses, SetProjectMemberLearningModeOverrideData, SetProjectMemberLearningModeOverrideErrors, SetProjectMemberLearningModeOverrideResponses, StopRuntimeDeployTaskData, StopRuntimeDeployTaskErrors, StopRuntimeDeployTaskResponses, SyncDocsetData, SyncDocsetErrors, SyncDocsetResponses, UpsertProjectData, UpsertProjectErrors, UpsertProjectGitHubTokensData, UpsertProjectGitHubTokensErrors, UpsertProjectGitHubTokensResponses, UpsertProjectMemberData, UpsertProjectMemberErrors, UpsertProjectMemberResponses, UpsertProjectRepositoryData, UpsertProjectRepositoryErrors, UpsertProjectRepositoryResponses, UpsertProjectResponses, UpsertRepositoryBotParamsData, UpsertRepositoryBotParamsErrors, UpsertRepositoryBotParamsResponses } from './types.gen';
+import type { CallbackGithubData, CallbackGithubErrors, CancelRuntimeDeployTaskData, CancelRuntimeDeployTaskErrors, CancelRuntimeDeployTaskResponses, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteProjectData, DeleteProjectErrors, DeleteProjectMemberData, DeleteProjectMemberErrors, DeleteProjectMemberResponses, DeleteProjectRepositoryData, DeleteProjectRepositoryErrors, DeleteProjectRepositoryResponses, DeleteProjectResponses, DeleteRunNamespaceData, DeleteRunNamespaceErrors, DeleteRunNamespaceResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, ExecuteNextStepActionData, ExecuteNextStepActionErrors, ExecuteNextStepActionResponses, GetMeData, GetMeErrors, GetMeResponses, GetMissionControlCommandData, GetMissionControlCommandErrors, GetMissionControlCommandResponses, GetMissionControlDashboardData, GetMissionControlDashboardErrors, GetMissionControlDashboardResponses, GetMissionControlEntityData, GetMissionControlEntityErrors, GetMissionControlEntityResponses, GetProjectData, GetProjectErrors, GetProjectGitHubTokensData, GetProjectGitHubTokensErrors, GetProjectGitHubTokensResponses, GetProjectResponses, GetRunData, GetRunErrors, GetRunLogsData, GetRunLogsErrors, GetRunLogsResponses, GetRunResponses, GetRuntimeDeployTaskData, GetRuntimeDeployTaskErrors, GetRuntimeDeployTaskResponses, ImportDocsetData, ImportDocsetErrors, ImportDocsetResponses, IngestGithubWebhookData, IngestGithubWebhookErrors, IngestGithubWebhookResponses, ListDocsetGroupsData, ListDocsetGroupsErrors, ListDocsetGroupsResponses, ListMissionControlTimelineData, ListMissionControlTimelineErrors, ListMissionControlTimelineResponses, ListPendingApprovalsData, ListPendingApprovalsErrors, ListPendingApprovalsResponses, ListProjectMembersData, ListProjectMembersErrors, ListProjectMembersResponses, ListProjectRepositoriesData, ListProjectRepositoriesErrors, ListProjectRepositoriesResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRunEventsData, ListRunEventsErrors, ListRunEventsResponses, ListRunLearningFeedbackData, ListRunLearningFeedbackErrors, ListRunLearningFeedbackResponses, ListRuntimeErrorsData, ListRuntimeErrorsErrors, ListRuntimeErrorsResponses, ListRunWaitsData, ListRunWaitsErrors, ListRunWaitsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginGithubData, LoginGithubErrors, LogoutData, LogoutErrors, LogoutResponses, MarkRuntimeErrorViewedData, MarkRuntimeErrorViewedErrors, MarkRuntimeErrorViewedResponses, McpApproverCallbackData, McpApproverCallbackErrors, McpApproverCallbackResponses, McpExecutorCallbackData, McpExecutorCallbackErrors, McpExecutorCallbackResponses, McpInteractionCallbackData, McpInteractionCallbackErrors, McpInteractionCallbackResponses, MissionControlRealtimeData, MissionControlRealtimeErrors, MissionControlRealtimeResponses, PreviewNextStepActionData, PreviewNextStepActionErrors, PreviewNextStepActionResponses, ResolveApprovalDecisionData, ResolveApprovalDecisionErrors, ResolveApprovalDecisionResponses, RunRealtimeData, RunRealtimeErrors, RunRealtimeResponses, RunRepositoryPreflightData, RunRepositoryPreflightErrors, RunRepositoryPreflightResponses, RunsRealtimeData, RunsRealtimeErrors, RunsRealtimeResponses, RuntimeDeployTasksRealtimeData, RuntimeDeployTasksRealtimeErrors, RuntimeDeployTasksRealtimeResponses, SetProjectMemberLearningModeOverrideData, SetProjectMemberLearningModeOverrideErrors, SetProjectMemberLearningModeOverrideResponses, StopRuntimeDeployTaskData, StopRuntimeDeployTaskErrors, StopRuntimeDeployTaskResponses, SubmitMissionControlCommandData, SubmitMissionControlCommandErrors, SubmitMissionControlCommandResponses, SyncDocsetData, SyncDocsetErrors, SyncDocsetResponses, UpsertProjectData, UpsertProjectErrors, UpsertProjectGitHubTokensData, UpsertProjectGitHubTokensErrors, UpsertProjectGitHubTokensResponses, UpsertProjectMemberData, UpsertProjectMemberErrors, UpsertProjectMemberResponses, UpsertProjectRepositoryData, UpsertProjectRepositoryErrors, UpsertProjectRepositoryResponses, UpsertProjectResponses, UpsertRepositoryBotParamsData, UpsertRepositoryBotParamsErrors, UpsertRepositoryBotParamsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -468,3 +468,57 @@ export const syncDocset = <ThrowOnError extends boolean = false>(options: Option
         ...options.headers
     }
 });
+
+/**
+ * Get Mission Control dashboard snapshot
+ */
+export const getMissionControlDashboard = <ThrowOnError extends boolean = false>(options?: Options<GetMissionControlDashboardData, ThrowOnError>) => (options?.client ?? client).get<GetMissionControlDashboardResponses, GetMissionControlDashboardErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/mission-control/dashboard',
+    ...options
+});
+
+/**
+ * Get Mission Control entity details
+ */
+export const getMissionControlEntity = <ThrowOnError extends boolean = false>(options: Options<GetMissionControlEntityData, ThrowOnError>) => (options.client ?? client).get<GetMissionControlEntityResponses, GetMissionControlEntityErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/mission-control/entities/{entity_kind}/{entity_public_id}',
+    ...options
+});
+
+/**
+ * List Mission Control entity timeline
+ */
+export const listMissionControlTimeline = <ThrowOnError extends boolean = false>(options: Options<ListMissionControlTimelineData, ThrowOnError>) => (options.client ?? client).get<ListMissionControlTimelineResponses, ListMissionControlTimelineErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/mission-control/entities/{entity_kind}/{entity_public_id}/timeline',
+    ...options
+});
+
+/**
+ * Submit Mission Control command
+ */
+export const submitMissionControlCommand = <ThrowOnError extends boolean = false>(options: Options<SubmitMissionControlCommandData, ThrowOnError>) => (options.client ?? client).post<SubmitMissionControlCommandResponses, SubmitMissionControlCommandErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/mission-control/commands',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Mission Control command status
+ */
+export const getMissionControlCommand = <ThrowOnError extends boolean = false>(options: Options<GetMissionControlCommandData, ThrowOnError>) => (options.client ?? client).get<GetMissionControlCommandResponses, GetMissionControlCommandErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/mission-control/commands/{command_id}',
+    ...options
+});
+
+/**
+ * Open Mission Control realtime stream (WebSocket upgrade)
+ */
+export const missionControlRealtime = <ThrowOnError extends boolean = false>(options: Options<MissionControlRealtimeData, ThrowOnError>) => (options.client ?? client).get<MissionControlRealtimeResponses, MissionControlRealtimeErrors, ThrowOnError>({ url: '/api/v1/staff/mission-control/realtime', ...options });

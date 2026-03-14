@@ -387,6 +387,331 @@ export type SyncDocsetResponse = {
     files_drift: number;
 };
 
+export type MissionControlDashboardSummary = {
+    total_entities: number;
+    working_count: number;
+    waiting_count: number;
+    blocked_count: number;
+    review_count: number;
+    recent_critical_updates_count: number;
+};
+
+export type MissionControlProviderReference = {
+    provider: 'github' | 'platform';
+    external_id: string;
+    url?: string | null;
+};
+
+export type MissionControlPrimaryActor = {
+    actor_type: string;
+    actor_id: string;
+    display_name: string;
+};
+
+export type MissionControlEntityRef = {
+    entity_kind: 'work_item' | 'discussion' | 'pull_request' | 'agent';
+    entity_public_id: string;
+};
+
+export type MissionControlEntityCard = {
+    entity_kind: 'work_item' | 'discussion' | 'pull_request' | 'agent';
+    entity_public_id: string;
+    title: string;
+    state: 'working' | 'waiting' | 'blocked' | 'review' | 'recent_critical_updates';
+    sync_status: 'synced' | 'pending_sync' | 'failed' | 'degraded';
+    provider_reference: MissionControlProviderReference;
+    primary_actor?: MissionControlPrimaryActor;
+    relation_count: number;
+    last_timeline_at?: string | null;
+    badges: Array<'blocked' | 'owner_review' | 'waiting_mcp' | 'realtime_stale' | 'voice_candidate'>;
+    projection_version: number;
+};
+
+export type MissionControlRelation = {
+    relation_kind: 'linked_to' | 'blocks' | 'blocked_by' | 'formalized_from' | 'owned_by' | 'assigned_to' | 'tracked_by_command';
+    source_kind: 'platform' | 'provider' | 'command' | 'voice_candidate';
+    source_entity_kind: 'work_item' | 'discussion' | 'pull_request' | 'agent';
+    source_entity_public_id: string;
+    target_entity_kind: 'work_item' | 'discussion' | 'pull_request' | 'agent';
+    target_entity_public_id: string;
+    direction: 'outbound' | 'inbound' | 'bidirectional';
+};
+
+export type MissionControlTimelineEntry = {
+    entry_id: string;
+    entity_kind: 'work_item' | 'discussion' | 'pull_request' | 'agent';
+    entity_public_id: string;
+    source_kind: 'provider' | 'platform' | 'command' | 'voice_candidate';
+    source_ref: string;
+    occurred_at: string;
+    summary: string;
+    body_markdown?: string | null;
+    command_id?: string | null;
+    provider_url?: string | null;
+    is_read_only: boolean;
+};
+
+export type MissionControlAllowedAction = {
+    action_kind: 'discussion.create' | 'work_item.create' | 'discussion.formalize' | 'stage.next_step.execute' | 'command.retry_sync';
+    presentation: 'primary' | 'secondary' | 'danger' | 'link';
+    allowed_when_degraded: boolean;
+    approval_requirement: 'none' | 'owner_review';
+    blocked_reason?: string | null;
+};
+
+export type MissionControlProviderDeepLink = {
+    action_kind: 'provider.open_issue' | 'provider.open_pr' | 'provider.review' | 'provider.merge' | 'provider.reply_comment';
+    url: string;
+    reason: 'provider_policy' | 'not_in_mvp_inline_scope' | 'requires_human_review' | 'unsafe_when_degraded';
+};
+
+export type WorkItemDetailsPayload = {
+    repository_full_name?: string;
+    issue_number: number;
+    issue_url?: string | null;
+    last_run_id?: string | null;
+    last_status?: string | null;
+    trigger_kind?: string | null;
+    work_item_type?: string | null;
+    stage_label?: string | null;
+    labels?: Array<string>;
+    owner?: string | null;
+    assignees?: Array<string>;
+    last_provider_sync_at?: string | null;
+};
+
+export type DiscussionDetailsPayload = {
+    discussion_kind: string;
+    status?: string | null;
+    author?: string | null;
+    participant_count?: number;
+    latest_comment_excerpt?: string | null;
+    formalization_target?: string | null;
+};
+
+export type PullRequestDetailsPayload = {
+    repository_full_name?: string;
+    pull_request_number: number;
+    pull_request_url?: string | null;
+    last_run_id?: string | null;
+    last_status?: string | null;
+    branch_head?: string | null;
+    branch_base?: string | null;
+    merge_state?: string | null;
+    review_decision?: string | null;
+    checks_summary?: string | null;
+    linked_issue_refs?: Array<string>;
+};
+
+export type AgentDetailsPayload = {
+    agent_key: string;
+    run_status?: string | null;
+    runtime_mode?: string | null;
+    waiting_reason?: string | null;
+    active_run_id?: string | null;
+    last_heartbeat_at?: string | null;
+    last_run_repository?: string | null;
+};
+
+export type MissionControlEntityDetailsPayload = WorkItemDetailsPayload | DiscussionDetailsPayload | PullRequestDetailsPayload | AgentDetailsPayload;
+
+export type MissionControlEntityDetails = {
+    entity: MissionControlEntityCard;
+    detail_payload: MissionControlEntityDetailsPayload;
+    relations: Array<MissionControlRelation>;
+    timeline_preview: Array<MissionControlTimelineEntry>;
+    allowed_actions: Array<MissionControlAllowedAction>;
+    provider_deep_links: Array<MissionControlProviderDeepLink>;
+};
+
+export type MissionControlDashboardSnapshot = {
+    snapshot_id: string;
+    view_mode: 'board' | 'list';
+    freshness_status: 'fresh' | 'stale' | 'degraded';
+    generated_at: string;
+    stale_after: string;
+    realtime_resume_token: string;
+    summary: MissionControlDashboardSummary;
+    entities: Array<MissionControlEntityCard>;
+    relations: Array<MissionControlRelation>;
+    next_page_cursor?: string | null;
+};
+
+export type MissionControlCommandApproval = {
+    approval_state: 'not_required' | 'pending' | 'approved' | 'denied' | 'expired';
+    approval_request_id?: string | null;
+    requested_at?: string | null;
+    decided_at?: string | null;
+    approver_actor_id?: string | null;
+};
+
+export type DiscussionCreatePayload = {
+    title: string;
+    body_markdown?: string | null;
+    parent_entity_kind?: 'work_item' | 'discussion' | 'pull_request' | 'agent';
+    parent_entity_public_id?: string | null;
+};
+
+export type WorkItemCreatePayload = {
+    title: string;
+    body_markdown?: string | null;
+    initial_labels?: Array<string>;
+    related_entity_refs?: Array<MissionControlEntityRef>;
+};
+
+export type DiscussionFormalizePayload = {
+    source_entity_kind: 'work_item' | 'discussion' | 'pull_request' | 'agent';
+    source_entity_public_id: string;
+    formalized_kind: string;
+    title: string;
+    body_markdown?: string | null;
+};
+
+export type MissionControlStageNextStepPayload = {
+    thread_kind: string;
+    thread_number: number;
+    target_label: string;
+    removed_labels?: Array<string>;
+    display_variant?: string | null;
+    approval_requirement?: 'none' | 'owner_review';
+};
+
+export type RetrySyncPayload = {
+    command_id: string;
+    retry_reason?: string | null;
+    expected_status?: 'accepted' | 'pending_approval' | 'queued' | 'pending_sync' | 'reconciled' | 'failed' | 'blocked' | 'cancelled';
+};
+
+export type MissionControlDiscussionCreateCommandRequest = {
+    command_kind: 'discussion.create';
+    project_id: string;
+    target_entity_kind?: 'work_item' | 'discussion' | 'pull_request' | 'agent';
+    target_entity_public_id?: string | null;
+    business_intent_key: string;
+    expected_projection_version?: number;
+    payload: DiscussionCreatePayload;
+};
+
+export type MissionControlWorkItemCreateCommandRequest = {
+    command_kind: 'work_item.create';
+    project_id: string;
+    target_entity_kind?: 'work_item' | 'discussion' | 'pull_request' | 'agent';
+    target_entity_public_id?: string | null;
+    business_intent_key: string;
+    expected_projection_version?: number;
+    payload: WorkItemCreatePayload;
+};
+
+export type MissionControlDiscussionFormalizeCommandRequest = {
+    command_kind: 'discussion.formalize';
+    project_id: string;
+    target_entity_kind?: 'work_item' | 'discussion' | 'pull_request' | 'agent';
+    target_entity_public_id?: string | null;
+    business_intent_key: string;
+    expected_projection_version?: number;
+    payload: DiscussionFormalizePayload;
+};
+
+export type MissionControlStageNextStepCommandRequest = {
+    command_kind: 'stage.next_step.execute';
+    project_id: string;
+    target_entity_kind?: 'work_item' | 'discussion' | 'pull_request' | 'agent';
+    target_entity_public_id?: string | null;
+    business_intent_key: string;
+    expected_projection_version?: number;
+    payload: MissionControlStageNextStepPayload;
+};
+
+export type MissionControlRetrySyncCommandRequest = {
+    command_kind: 'command.retry_sync';
+    project_id: string;
+    target_entity_kind?: 'work_item' | 'discussion' | 'pull_request' | 'agent';
+    target_entity_public_id?: string | null;
+    business_intent_key: string;
+    expected_projection_version?: number;
+    payload: RetrySyncPayload;
+};
+
+export type MissionControlCommandRequest = MissionControlDiscussionCreateCommandRequest | MissionControlWorkItemCreateCommandRequest | MissionControlDiscussionFormalizeCommandRequest | MissionControlStageNextStepCommandRequest | MissionControlRetrySyncCommandRequest;
+
+export type MissionControlCommandState = {
+    command_id: string;
+    command_kind: 'discussion.create' | 'work_item.create' | 'discussion.formalize' | 'stage.next_step.execute' | 'command.retry_sync';
+    status: 'accepted' | 'pending_approval' | 'queued' | 'pending_sync' | 'reconciled' | 'failed' | 'blocked' | 'cancelled';
+    failure_reason?: 'provider_error' | 'policy_denied' | 'projection_stale' | 'duplicate_intent' | 'timeout' | 'approval_denied' | 'approval_expired' | 'unknown';
+    correlation_id: string;
+    status_message?: string | null;
+    updated_at: string;
+    reconciled_at?: string | null;
+    business_intent_key: string;
+    entity_refs: Array<MissionControlEntityRef>;
+    provider_delivery_ids: Array<string>;
+    approval?: MissionControlCommandApproval;
+    blocking_reason?: string | null;
+};
+
+export type MissionControlConnectedRealtimePayload = {
+    snapshot_freshness_status: 'fresh' | 'stale' | 'degraded';
+    server_cursor: string;
+};
+
+export type MissionControlDeltaRealtimePayload = {
+    delta_entities: Array<MissionControlEntityCard>;
+    delta_relations: Array<MissionControlRelation>;
+    delta_timeline_entries: Array<MissionControlTimelineEntry>;
+    changed_command_ids: Array<string>;
+};
+
+export type MissionControlInvalidateRealtimePayload = {
+    reason: string;
+    refresh_scope: string;
+    affected_entity_refs: Array<MissionControlEntityRef>;
+};
+
+export type MissionControlStaleRealtimePayload = {
+    reason: string;
+    stale_since: string;
+    suggested_refresh: string;
+};
+
+export type MissionControlDegradedRealtimePayload = {
+    reason: string;
+    fallback_mode: string;
+    affected_capabilities: Array<string>;
+};
+
+export type MissionControlResyncRequiredRealtimePayload = {
+    reason: string;
+    required_snapshot_id: string;
+    dropped_event_count: number;
+};
+
+export type MissionControlHeartbeatRealtimePayload = {
+    server_time: string;
+    snapshot_id: string;
+};
+
+export type MissionControlErrorRealtimePayload = {
+    code: string;
+    message: string;
+    retryable: boolean;
+};
+
+export type MissionControlRealtimePayload = MissionControlConnectedRealtimePayload | MissionControlDeltaRealtimePayload | MissionControlInvalidateRealtimePayload | MissionControlStaleRealtimePayload | MissionControlDegradedRealtimePayload | MissionControlResyncRequiredRealtimePayload | MissionControlHeartbeatRealtimePayload | MissionControlErrorRealtimePayload;
+
+export type MissionControlRealtimeEnvelope = {
+    event_kind: 'connected' | 'delta' | 'invalidate' | 'stale' | 'degraded' | 'resync_required' | 'heartbeat' | 'error';
+    snapshot_id: string;
+    resume_token: string;
+    occurred_at: string;
+    payload: MissionControlRealtimePayload;
+};
+
+export type MissionControlTimelineItemsResponse = {
+    items: Array<MissionControlTimelineEntry>;
+    next_cursor?: string | null;
+};
+
 export type ProjectItemsResponse = {
     items: Array<Project>;
 };
@@ -495,6 +820,29 @@ export type IncludeLogs = boolean;
  * Callback bearer token. Authorization: Bearer ... is also accepted.
  */
 export type McpCallbackToken = string;
+
+export type MissionControlViewMode = 'board' | 'list';
+
+export type MissionControlActiveFilter = 'working' | 'waiting' | 'blocked' | 'review' | 'recent_critical_updates' | 'all_active';
+
+export type MissionControlSearch = string;
+
+export type MissionControlCursor = string;
+
+export type MissionControlResumeToken = string;
+
+export type MissionControlCorrelationId = string;
+
+export type MissionControlIdempotencyKey = string;
+
+export type MissionControlEntityKind = 'work_item' | 'discussion' | 'pull_request' | 'agent';
+
+/**
+ * URL-encoded public entity identifier.
+ */
+export type MissionControlEntityPublicId = string;
+
+export type MissionControlCommandId = string;
 
 export type IngestGithubWebhookData = {
     body: {
@@ -2139,3 +2487,270 @@ export type SyncDocsetResponses = {
 };
 
 export type SyncDocsetResponse2 = SyncDocsetResponses[keyof SyncDocsetResponses];
+
+export type GetMissionControlDashboardData = {
+    body?: never;
+    path?: never;
+    query?: {
+        view_mode?: 'board' | 'list';
+        active_filter?: 'working' | 'waiting' | 'blocked' | 'review' | 'recent_critical_updates' | 'all_active';
+        search?: string;
+        cursor?: string;
+        limit?: number;
+    };
+    url: '/api/v1/staff/mission-control/dashboard';
+};
+
+export type GetMissionControlDashboardErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+};
+
+export type GetMissionControlDashboardError = GetMissionControlDashboardErrors[keyof GetMissionControlDashboardErrors];
+
+export type GetMissionControlDashboardResponses = {
+    /**
+     * Mission Control dashboard snapshot
+     */
+    200: MissionControlDashboardSnapshot;
+};
+
+export type GetMissionControlDashboardResponse = GetMissionControlDashboardResponses[keyof GetMissionControlDashboardResponses];
+
+export type GetMissionControlEntityData = {
+    body?: never;
+    path: {
+        entity_kind: 'work_item' | 'discussion' | 'pull_request' | 'agent';
+        /**
+         * URL-encoded public entity identifier.
+         */
+        entity_public_id: string;
+    };
+    query?: {
+        limit?: number;
+    };
+    url: '/api/v1/staff/mission-control/entities/{entity_kind}/{entity_public_id}';
+};
+
+export type GetMissionControlEntityErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+};
+
+export type GetMissionControlEntityError = GetMissionControlEntityErrors[keyof GetMissionControlEntityErrors];
+
+export type GetMissionControlEntityResponses = {
+    /**
+     * Mission Control entity details
+     */
+    200: MissionControlEntityDetails;
+};
+
+export type GetMissionControlEntityResponse = GetMissionControlEntityResponses[keyof GetMissionControlEntityResponses];
+
+export type ListMissionControlTimelineData = {
+    body?: never;
+    path: {
+        entity_kind: 'work_item' | 'discussion' | 'pull_request' | 'agent';
+        /**
+         * URL-encoded public entity identifier.
+         */
+        entity_public_id: string;
+    };
+    query?: {
+        cursor?: string;
+        limit?: number;
+    };
+    url: '/api/v1/staff/mission-control/entities/{entity_kind}/{entity_public_id}/timeline';
+};
+
+export type ListMissionControlTimelineErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+};
+
+export type ListMissionControlTimelineError = ListMissionControlTimelineErrors[keyof ListMissionControlTimelineErrors];
+
+export type ListMissionControlTimelineResponses = {
+    /**
+     * Mission Control timeline page
+     */
+    200: MissionControlTimelineItemsResponse;
+};
+
+export type ListMissionControlTimelineResponse = ListMissionControlTimelineResponses[keyof ListMissionControlTimelineResponses];
+
+export type SubmitMissionControlCommandData = {
+    body: MissionControlCommandRequest;
+    headers: {
+        'Idempotency-Key': string;
+        'X-Correlation-ID'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/staff/mission-control/commands';
+};
+
+export type SubmitMissionControlCommandErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+    /**
+     * Rate limit exceeded
+     */
+    429: ErrorResponse;
+};
+
+export type SubmitMissionControlCommandError = SubmitMissionControlCommandErrors[keyof SubmitMissionControlCommandErrors];
+
+export type SubmitMissionControlCommandResponses = {
+    /**
+     * Mission Control command accepted
+     */
+    200: MissionControlCommandState;
+};
+
+export type SubmitMissionControlCommandResponse = SubmitMissionControlCommandResponses[keyof SubmitMissionControlCommandResponses];
+
+export type GetMissionControlCommandData = {
+    body?: never;
+    path: {
+        command_id: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/mission-control/commands/{command_id}';
+};
+
+export type GetMissionControlCommandErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+};
+
+export type GetMissionControlCommandError = GetMissionControlCommandErrors[keyof GetMissionControlCommandErrors];
+
+export type GetMissionControlCommandResponses = {
+    /**
+     * Mission Control command status
+     */
+    200: MissionControlCommandState;
+};
+
+export type GetMissionControlCommandResponse = GetMissionControlCommandResponses[keyof GetMissionControlCommandResponses];
+
+export type MissionControlRealtimeData = {
+    body?: never;
+    path?: never;
+    query: {
+        resume_token: string;
+    };
+    url: '/api/v1/staff/mission-control/realtime';
+};
+
+export type MissionControlRealtimeErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+};
+
+export type MissionControlRealtimeError = MissionControlRealtimeErrors[keyof MissionControlRealtimeErrors];
+
+export type MissionControlRealtimeResponses = {
+    /**
+     * Mission Control realtime stream endpoint (expects WebSocket upgrade)
+     */
+    200: unknown;
+};

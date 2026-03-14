@@ -212,23 +212,7 @@ func (s *Server) commandStateToProto(ctx context.Context, command missioncontrol
 	if err != nil {
 		return nil, toStatus(err)
 	}
-	resp := &controlplanev1.MissionControlCommandState{
-		ProjectId:           strings.TrimSpace(command.ProjectID),
-		CommandId:           strings.TrimSpace(command.ID),
-		CommandKind:         strings.TrimSpace(string(command.CommandKind)),
-		Status:              strings.TrimSpace(string(command.Status)),
-		FailureReason:       strings.TrimSpace(string(command.FailureReason)),
-		CorrelationId:       strings.TrimSpace(command.CorrelationID),
-		ProviderDeliveryIds: statusView.ProviderDeliveryIDs,
-		UpdatedAt:           timestamppb.New(command.UpdatedAt.UTC()),
-	}
-	if strings.TrimSpace(statusView.StatusMessage) != "" {
-		resp.StatusMessage = stringPtrOrNil(strings.TrimSpace(statusView.StatusMessage))
-	}
-	if command.ReconciledAt != nil {
-		resp.ReconciledAt = timestamppb.New(command.ReconciledAt.UTC())
-	}
-	return resp, nil
+	return missionControlCommandStatusViewToProto(statusView), nil
 }
 
 func trimStringSlice(values []string) []string {

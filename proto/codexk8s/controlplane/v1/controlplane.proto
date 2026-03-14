@@ -671,10 +671,198 @@ message RunMissionControlWarmupResponse {
   int32 backfilled_timelines = 9;
 }
 
+message MissionControlEntityRef {
+  string entity_kind = 1;
+  string entity_public_id = 2;
+}
+
+message MissionControlProviderReference {
+  string provider = 1;
+  string external_id = 2;
+  string url = 3;
+}
+
+message MissionControlPrimaryActor {
+  string actor_type = 1;
+  string actor_id = 2;
+  string display_name = 3;
+}
+
+message MissionControlEntityCard {
+  string entity_kind = 1;
+  string entity_public_id = 2;
+  string title = 3;
+  string state = 4;
+  string sync_status = 5;
+  MissionControlProviderReference provider_reference = 6;
+  MissionControlPrimaryActor primary_actor = 7;
+  int32 relation_count = 8;
+  google.protobuf.Timestamp last_timeline_at = 9;
+  repeated string badges = 10;
+  int64 projection_version = 11;
+}
+
+message MissionControlRelation {
+  string relation_kind = 1;
+  string source_kind = 2;
+  string source_entity_kind = 3;
+  string source_entity_public_id = 4;
+  string target_entity_kind = 5;
+  string target_entity_public_id = 6;
+  string direction = 7;
+}
+
+message MissionControlTimelineEntry {
+  string entry_id = 1;
+  string entity_kind = 2;
+  string entity_public_id = 3;
+  string source_kind = 4;
+  string source_ref = 5;
+  google.protobuf.Timestamp occurred_at = 6;
+  string summary = 7;
+  optional string body_markdown = 8;
+  optional string command_id = 9;
+  optional string provider_url = 10;
+  bool is_read_only = 11;
+}
+
+message MissionControlAllowedAction {
+  string action_kind = 1;
+  string presentation = 2;
+  bool allowed_when_degraded = 3;
+  string approval_requirement = 4;
+  optional string blocked_reason = 5;
+}
+
+message MissionControlProviderDeepLink {
+  string action_kind = 1;
+  string url = 2;
+  string reason = 3;
+}
+
+message MissionControlWorkItemDetailsPayload {
+  string repository_full_name = 1;
+  int64 issue_number = 2;
+  optional string issue_url = 3;
+  optional string last_run_id = 4;
+  optional string last_status = 5;
+  optional string trigger_kind = 6;
+  optional string work_item_type = 7;
+  optional string stage_label = 8;
+  repeated string labels = 9;
+  optional string owner = 10;
+  repeated string assignees = 11;
+  google.protobuf.Timestamp last_provider_sync_at = 12;
+}
+
+message MissionControlDiscussionDetailsPayload {
+  optional string discussion_kind = 1;
+  optional string status = 2;
+  optional string author = 3;
+  int32 participant_count = 4;
+  optional string latest_comment_excerpt = 5;
+  optional string formalization_target = 6;
+}
+
+message MissionControlPullRequestDetailsPayload {
+  string repository_full_name = 1;
+  int64 pull_request_number = 2;
+  optional string pull_request_url = 3;
+  optional string last_run_id = 4;
+  optional string last_status = 5;
+  optional string branch_head = 6;
+  optional string branch_base = 7;
+  optional string merge_state = 8;
+  optional string review_decision = 9;
+  optional string checks_summary = 10;
+  repeated string linked_issue_refs = 11;
+}
+
+message MissionControlAgentDetailsPayload {
+  string agent_key = 1;
+  optional string run_status = 2;
+  optional string runtime_mode = 3;
+  optional string waiting_reason = 4;
+  optional string active_run_id = 5;
+  google.protobuf.Timestamp last_heartbeat_at = 6;
+  optional string last_run_repository = 7;
+}
+
+message MissionControlEntityDetails {
+  MissionControlEntityCard entity = 1;
+  repeated MissionControlRelation relations = 2;
+  repeated MissionControlTimelineEntry timeline_preview = 3;
+  repeated MissionControlAllowedAction allowed_actions = 4;
+  repeated MissionControlProviderDeepLink provider_deep_links = 5;
+  oneof detail_payload {
+    MissionControlWorkItemDetailsPayload work_item = 6;
+    MissionControlDiscussionDetailsPayload discussion = 7;
+    MissionControlPullRequestDetailsPayload pull_request = 8;
+    MissionControlAgentDetailsPayload agent = 9;
+  }
+}
+
+message MissionControlSnapshotSummary {
+  int32 total_entities = 1;
+  int32 working_count = 2;
+  int32 waiting_count = 3;
+  int32 blocked_count = 4;
+  int32 review_count = 5;
+  int32 recent_critical_updates_count = 6;
+}
+
+message MissionControlDashboardSnapshot {
+  string snapshot_id = 1;
+  string view_mode = 2;
+  string freshness_status = 3;
+  google.protobuf.Timestamp generated_at = 4;
+  google.protobuf.Timestamp stale_after = 5;
+  MissionControlSnapshotSummary summary = 6;
+  repeated MissionControlEntityCard entities = 7;
+  repeated MissionControlRelation relations = 8;
+  optional string next_page_cursor = 9;
+}
+
+message GetMissionControlSnapshotRequest {
+  Principal principal = 1;
+  optional string view_mode = 2;
+  optional string active_filter = 3;
+  optional string search = 4;
+  optional string cursor = 5;
+  int32 limit = 6;
+}
+
+message GetMissionControlSnapshotResponse {
+  MissionControlDashboardSnapshot snapshot = 1;
+}
+
+message GetMissionControlEntityRequest {
+  Principal principal = 1;
+  string entity_kind = 2;
+  string entity_public_id = 3;
+  int32 timeline_limit = 4;
+}
+
+message ListMissionControlTimelineRequest {
+  Principal principal = 1;
+  string entity_kind = 2;
+  string entity_public_id = 3;
+  optional string cursor = 4;
+  int32 limit = 5;
+}
+
+message ListMissionControlTimelineResponse {
+  repeated MissionControlTimelineEntry items = 1;
+  optional string next_cursor = 2;
+}
+
 message MissionControlStageNextStepPayload {
   string thread_kind = 1;
   int32 thread_number = 2;
   string target_label = 3;
+  repeated string removed_labels = 4;
+  optional string display_variant = 5;
+  optional string approval_requirement = 6;
 }
 
 message MissionControlPendingCommand {
@@ -713,6 +901,70 @@ message MissionControlCommandState {
   optional string status_message = 8;
   google.protobuf.Timestamp updated_at = 9;
   google.protobuf.Timestamp reconciled_at = 10;
+  string business_intent_key = 11;
+  repeated MissionControlEntityRef entity_refs = 12;
+  MissionControlCommandApproval approval = 13;
+  optional string blocking_reason = 14;
+}
+
+message MissionControlCommandApproval {
+  string approval_state = 1;
+  optional string approval_request_id = 2;
+  google.protobuf.Timestamp requested_at = 3;
+  google.protobuf.Timestamp decided_at = 4;
+  optional string approver_actor_id = 5;
+}
+
+message MissionControlDiscussionCreatePayload {
+  string title = 1;
+  optional string body_markdown = 2;
+  optional string parent_entity_kind = 3;
+  optional string parent_entity_public_id = 4;
+}
+
+message MissionControlWorkItemCreatePayload {
+  string title = 1;
+  optional string body_markdown = 2;
+  repeated string initial_labels = 3;
+  repeated MissionControlEntityRef related_entity_refs = 4;
+}
+
+message MissionControlDiscussionFormalizePayload {
+  string source_entity_kind = 1;
+  string source_entity_public_id = 2;
+  string formalized_kind = 3;
+  string title = 4;
+  optional string body_markdown = 5;
+}
+
+message MissionControlRetrySyncPayload {
+  string command_id = 1;
+  optional string retry_reason = 2;
+  optional string expected_status = 3;
+}
+
+message SubmitMissionControlCommandRequest {
+  Principal principal = 1;
+  string project_id = 2;
+  string command_kind = 3;
+  optional string target_entity_kind = 4;
+  optional string target_entity_public_id = 5;
+  string business_intent_key = 6;
+  int64 expected_projection_version = 7;
+  string correlation_id = 8;
+  google.protobuf.Timestamp requested_at = 9;
+  oneof payload {
+    MissionControlDiscussionCreatePayload discussion_create = 10;
+    MissionControlWorkItemCreatePayload work_item_create = 11;
+    MissionControlDiscussionFormalizePayload discussion_formalize = 12;
+    MissionControlStageNextStepPayload stage_next_step = 13;
+    MissionControlRetrySyncPayload retry_sync = 14;
+  }
+}
+
+message GetMissionControlCommandRequest {
+  Principal principal = 1;
+  string command_id = 2;
 }
 
 message QueueMissionControlCommandRequest {
@@ -1155,8 +1407,13 @@ service ControlPlaneService {
   rpc ClaimNextInteractionDispatch(ClaimNextInteractionDispatchRequest) returns (ClaimNextInteractionDispatchResponse);
   rpc CompleteInteractionDispatch(CompleteInteractionDispatchRequest) returns (CompleteInteractionDispatchResponse);
   rpc ExpireNextInteraction(ExpireNextInteractionRequest) returns (ExpireNextInteractionResponse);
+  rpc GetMissionControlSnapshot(GetMissionControlSnapshotRequest) returns (GetMissionControlSnapshotResponse);
+  rpc GetMissionControlEntity(GetMissionControlEntityRequest) returns (MissionControlEntityDetails);
+  rpc ListMissionControlTimeline(ListMissionControlTimelineRequest) returns (ListMissionControlTimelineResponse);
   rpc ListMissionControlWarmupProjects(ListMissionControlWarmupProjectsRequest) returns (ListMissionControlWarmupProjectsResponse);
   rpc RunMissionControlWarmup(RunMissionControlWarmupRequest) returns (RunMissionControlWarmupResponse);
+  rpc SubmitMissionControlCommand(SubmitMissionControlCommandRequest) returns (MissionControlCommandState);
+  rpc GetMissionControlCommand(GetMissionControlCommandRequest) returns (MissionControlCommandState);
   rpc ClaimMissionControlPendingCommands(ClaimMissionControlPendingCommandsRequest) returns (ClaimMissionControlPendingCommandsResponse);
   rpc QueueMissionControlCommand(QueueMissionControlCommandRequest) returns (MissionControlCommandState);
   rpc MarkMissionControlCommandPendingSync(MarkMissionControlCommandPendingSyncRequest) returns (MissionControlCommandState);

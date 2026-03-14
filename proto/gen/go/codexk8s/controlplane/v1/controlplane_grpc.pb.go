@@ -60,8 +60,13 @@ const (
 	ControlPlaneService_ClaimNextInteractionDispatch_FullMethodName         = "/codexk8s.controlplane.v1.ControlPlaneService/ClaimNextInteractionDispatch"
 	ControlPlaneService_CompleteInteractionDispatch_FullMethodName          = "/codexk8s.controlplane.v1.ControlPlaneService/CompleteInteractionDispatch"
 	ControlPlaneService_ExpireNextInteraction_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/ExpireNextInteraction"
+	ControlPlaneService_GetMissionControlSnapshot_FullMethodName            = "/codexk8s.controlplane.v1.ControlPlaneService/GetMissionControlSnapshot"
+	ControlPlaneService_GetMissionControlEntity_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/GetMissionControlEntity"
+	ControlPlaneService_ListMissionControlTimeline_FullMethodName           = "/codexk8s.controlplane.v1.ControlPlaneService/ListMissionControlTimeline"
 	ControlPlaneService_ListMissionControlWarmupProjects_FullMethodName     = "/codexk8s.controlplane.v1.ControlPlaneService/ListMissionControlWarmupProjects"
 	ControlPlaneService_RunMissionControlWarmup_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/RunMissionControlWarmup"
+	ControlPlaneService_SubmitMissionControlCommand_FullMethodName          = "/codexk8s.controlplane.v1.ControlPlaneService/SubmitMissionControlCommand"
+	ControlPlaneService_GetMissionControlCommand_FullMethodName             = "/codexk8s.controlplane.v1.ControlPlaneService/GetMissionControlCommand"
 	ControlPlaneService_ClaimMissionControlPendingCommands_FullMethodName   = "/codexk8s.controlplane.v1.ControlPlaneService/ClaimMissionControlPendingCommands"
 	ControlPlaneService_QueueMissionControlCommand_FullMethodName           = "/codexk8s.controlplane.v1.ControlPlaneService/QueueMissionControlCommand"
 	ControlPlaneService_MarkMissionControlCommandPendingSync_FullMethodName = "/codexk8s.controlplane.v1.ControlPlaneService/MarkMissionControlCommandPendingSync"
@@ -131,8 +136,13 @@ type ControlPlaneServiceClient interface {
 	ClaimNextInteractionDispatch(ctx context.Context, in *ClaimNextInteractionDispatchRequest, opts ...grpc.CallOption) (*ClaimNextInteractionDispatchResponse, error)
 	CompleteInteractionDispatch(ctx context.Context, in *CompleteInteractionDispatchRequest, opts ...grpc.CallOption) (*CompleteInteractionDispatchResponse, error)
 	ExpireNextInteraction(ctx context.Context, in *ExpireNextInteractionRequest, opts ...grpc.CallOption) (*ExpireNextInteractionResponse, error)
+	GetMissionControlSnapshot(ctx context.Context, in *GetMissionControlSnapshotRequest, opts ...grpc.CallOption) (*GetMissionControlSnapshotResponse, error)
+	GetMissionControlEntity(ctx context.Context, in *GetMissionControlEntityRequest, opts ...grpc.CallOption) (*MissionControlEntityDetails, error)
+	ListMissionControlTimeline(ctx context.Context, in *ListMissionControlTimelineRequest, opts ...grpc.CallOption) (*ListMissionControlTimelineResponse, error)
 	ListMissionControlWarmupProjects(ctx context.Context, in *ListMissionControlWarmupProjectsRequest, opts ...grpc.CallOption) (*ListMissionControlWarmupProjectsResponse, error)
 	RunMissionControlWarmup(ctx context.Context, in *RunMissionControlWarmupRequest, opts ...grpc.CallOption) (*RunMissionControlWarmupResponse, error)
+	SubmitMissionControlCommand(ctx context.Context, in *SubmitMissionControlCommandRequest, opts ...grpc.CallOption) (*MissionControlCommandState, error)
+	GetMissionControlCommand(ctx context.Context, in *GetMissionControlCommandRequest, opts ...grpc.CallOption) (*MissionControlCommandState, error)
 	ClaimMissionControlPendingCommands(ctx context.Context, in *ClaimMissionControlPendingCommandsRequest, opts ...grpc.CallOption) (*ClaimMissionControlPendingCommandsResponse, error)
 	QueueMissionControlCommand(ctx context.Context, in *QueueMissionControlCommandRequest, opts ...grpc.CallOption) (*MissionControlCommandState, error)
 	MarkMissionControlCommandPendingSync(ctx context.Context, in *MarkMissionControlCommandPendingSyncRequest, opts ...grpc.CallOption) (*MissionControlCommandState, error)
@@ -565,6 +575,36 @@ func (c *controlPlaneServiceClient) ExpireNextInteraction(ctx context.Context, i
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) GetMissionControlSnapshot(ctx context.Context, in *GetMissionControlSnapshotRequest, opts ...grpc.CallOption) (*GetMissionControlSnapshotResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMissionControlSnapshotResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_GetMissionControlSnapshot_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) GetMissionControlEntity(ctx context.Context, in *GetMissionControlEntityRequest, opts ...grpc.CallOption) (*MissionControlEntityDetails, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MissionControlEntityDetails)
+	err := c.cc.Invoke(ctx, ControlPlaneService_GetMissionControlEntity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) ListMissionControlTimeline(ctx context.Context, in *ListMissionControlTimelineRequest, opts ...grpc.CallOption) (*ListMissionControlTimelineResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMissionControlTimelineResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ListMissionControlTimeline_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) ListMissionControlWarmupProjects(ctx context.Context, in *ListMissionControlWarmupProjectsRequest, opts ...grpc.CallOption) (*ListMissionControlWarmupProjectsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListMissionControlWarmupProjectsResponse)
@@ -579,6 +619,26 @@ func (c *controlPlaneServiceClient) RunMissionControlWarmup(ctx context.Context,
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RunMissionControlWarmupResponse)
 	err := c.cc.Invoke(ctx, ControlPlaneService_RunMissionControlWarmup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) SubmitMissionControlCommand(ctx context.Context, in *SubmitMissionControlCommandRequest, opts ...grpc.CallOption) (*MissionControlCommandState, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MissionControlCommandState)
+	err := c.cc.Invoke(ctx, ControlPlaneService_SubmitMissionControlCommand_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) GetMissionControlCommand(ctx context.Context, in *GetMissionControlCommandRequest, opts ...grpc.CallOption) (*MissionControlCommandState, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MissionControlCommandState)
+	err := c.cc.Invoke(ctx, ControlPlaneService_GetMissionControlCommand_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -841,8 +901,13 @@ type ControlPlaneServiceServer interface {
 	ClaimNextInteractionDispatch(context.Context, *ClaimNextInteractionDispatchRequest) (*ClaimNextInteractionDispatchResponse, error)
 	CompleteInteractionDispatch(context.Context, *CompleteInteractionDispatchRequest) (*CompleteInteractionDispatchResponse, error)
 	ExpireNextInteraction(context.Context, *ExpireNextInteractionRequest) (*ExpireNextInteractionResponse, error)
+	GetMissionControlSnapshot(context.Context, *GetMissionControlSnapshotRequest) (*GetMissionControlSnapshotResponse, error)
+	GetMissionControlEntity(context.Context, *GetMissionControlEntityRequest) (*MissionControlEntityDetails, error)
+	ListMissionControlTimeline(context.Context, *ListMissionControlTimelineRequest) (*ListMissionControlTimelineResponse, error)
 	ListMissionControlWarmupProjects(context.Context, *ListMissionControlWarmupProjectsRequest) (*ListMissionControlWarmupProjectsResponse, error)
 	RunMissionControlWarmup(context.Context, *RunMissionControlWarmupRequest) (*RunMissionControlWarmupResponse, error)
+	SubmitMissionControlCommand(context.Context, *SubmitMissionControlCommandRequest) (*MissionControlCommandState, error)
+	GetMissionControlCommand(context.Context, *GetMissionControlCommandRequest) (*MissionControlCommandState, error)
 	ClaimMissionControlPendingCommands(context.Context, *ClaimMissionControlPendingCommandsRequest) (*ClaimMissionControlPendingCommandsResponse, error)
 	QueueMissionControlCommand(context.Context, *QueueMissionControlCommandRequest) (*MissionControlCommandState, error)
 	MarkMissionControlCommandPendingSync(context.Context, *MarkMissionControlCommandPendingSyncRequest) (*MissionControlCommandState, error)
@@ -995,11 +1060,26 @@ func (UnimplementedControlPlaneServiceServer) CompleteInteractionDispatch(contex
 func (UnimplementedControlPlaneServiceServer) ExpireNextInteraction(context.Context, *ExpireNextInteractionRequest) (*ExpireNextInteractionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExpireNextInteraction not implemented")
 }
+func (UnimplementedControlPlaneServiceServer) GetMissionControlSnapshot(context.Context, *GetMissionControlSnapshotRequest) (*GetMissionControlSnapshotResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMissionControlSnapshot not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) GetMissionControlEntity(context.Context, *GetMissionControlEntityRequest) (*MissionControlEntityDetails, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMissionControlEntity not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ListMissionControlTimeline(context.Context, *ListMissionControlTimelineRequest) (*ListMissionControlTimelineResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListMissionControlTimeline not implemented")
+}
 func (UnimplementedControlPlaneServiceServer) ListMissionControlWarmupProjects(context.Context, *ListMissionControlWarmupProjectsRequest) (*ListMissionControlWarmupProjectsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListMissionControlWarmupProjects not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) RunMissionControlWarmup(context.Context, *RunMissionControlWarmupRequest) (*RunMissionControlWarmupResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunMissionControlWarmup not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) SubmitMissionControlCommand(context.Context, *SubmitMissionControlCommandRequest) (*MissionControlCommandState, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitMissionControlCommand not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) GetMissionControlCommand(context.Context, *GetMissionControlCommandRequest) (*MissionControlCommandState, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMissionControlCommand not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) ClaimMissionControlPendingCommands(context.Context, *ClaimMissionControlPendingCommandsRequest) (*ClaimMissionControlPendingCommandsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClaimMissionControlPendingCommands not implemented")
@@ -1805,6 +1885,60 @@ func _ControlPlaneService_ExpireNextInteraction_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_GetMissionControlSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMissionControlSnapshotRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).GetMissionControlSnapshot(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_GetMissionControlSnapshot_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).GetMissionControlSnapshot(ctx, req.(*GetMissionControlSnapshotRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_GetMissionControlEntity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMissionControlEntityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).GetMissionControlEntity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_GetMissionControlEntity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).GetMissionControlEntity(ctx, req.(*GetMissionControlEntityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_ListMissionControlTimeline_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMissionControlTimelineRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ListMissionControlTimeline(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ListMissionControlTimeline_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ListMissionControlTimeline(ctx, req.(*ListMissionControlTimelineRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_ListMissionControlWarmupProjects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListMissionControlWarmupProjectsRequest)
 	if err := dec(in); err != nil {
@@ -1837,6 +1971,42 @@ func _ControlPlaneService_RunMissionControlWarmup_Handler(srv interface{}, ctx c
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ControlPlaneServiceServer).RunMissionControlWarmup(ctx, req.(*RunMissionControlWarmupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_SubmitMissionControlCommand_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitMissionControlCommandRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).SubmitMissionControlCommand(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_SubmitMissionControlCommand_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).SubmitMissionControlCommand(ctx, req.(*SubmitMissionControlCommandRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_GetMissionControlCommand_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMissionControlCommandRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).GetMissionControlCommand(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_GetMissionControlCommand_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).GetMissionControlCommand(ctx, req.(*GetMissionControlCommandRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2387,12 +2557,32 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ControlPlaneService_ExpireNextInteraction_Handler,
 		},
 		{
+			MethodName: "GetMissionControlSnapshot",
+			Handler:    _ControlPlaneService_GetMissionControlSnapshot_Handler,
+		},
+		{
+			MethodName: "GetMissionControlEntity",
+			Handler:    _ControlPlaneService_GetMissionControlEntity_Handler,
+		},
+		{
+			MethodName: "ListMissionControlTimeline",
+			Handler:    _ControlPlaneService_ListMissionControlTimeline_Handler,
+		},
+		{
 			MethodName: "ListMissionControlWarmupProjects",
 			Handler:    _ControlPlaneService_ListMissionControlWarmupProjects_Handler,
 		},
 		{
 			MethodName: "RunMissionControlWarmup",
 			Handler:    _ControlPlaneService_RunMissionControlWarmup_Handler,
+		},
+		{
+			MethodName: "SubmitMissionControlCommand",
+			Handler:    _ControlPlaneService_SubmitMissionControlCommand_Handler,
+		},
+		{
+			MethodName: "GetMissionControlCommand",
+			Handler:    _ControlPlaneService_GetMissionControlCommand_Handler,
 		},
 		{
 			MethodName: "ClaimMissionControlPendingCommands",

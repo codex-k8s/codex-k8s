@@ -119,6 +119,12 @@ func NewServer(initCtx context.Context, cfg ServerConfig, cp *controlplane.Clien
 	// Revisit runtime-errors endpoints usage and decide whether to keep, repurpose, or remove them.
 	staffGroup.GET("/runtime-errors", staffH.ListRuntimeErrors)
 	staffGroup.POST("/runtime-errors/:runtime_error_id/viewed", staffH.MarkRuntimeErrorViewed)
+	staffGroup.GET("/mission-control/dashboard", staffH.GetMissionControlDashboard)
+	staffGroup.GET("/mission-control/entities/:entity_kind/:entity_public_id", staffH.GetMissionControlEntity)
+	staffGroup.GET("/mission-control/entities/:entity_kind/:entity_public_id/timeline", staffH.ListMissionControlTimeline)
+	staffGroup.POST("/mission-control/commands", staffH.SubmitMissionControlCommand)
+	staffGroup.GET("/mission-control/commands/:command_id", staffH.GetMissionControlCommand)
+	staffGroup.GET("/mission-control/realtime", staffH.MissionControlRealtime)
 	staffGroup.GET("/users", staffH.ListUsers)
 	staffGroup.POST("/users", staffH.CreateUser)
 	staffGroup.DELETE("/users/:user_id", staffH.DeleteUser)
