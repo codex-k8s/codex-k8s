@@ -54,7 +54,7 @@ components:
         properties:
           type:
             type: string
-            enum: [snapshot, run, events, logs, error]
+            enum: [snapshot, run, events, logs, wait_entered, wait_updated, wait_resolved, wait_manual_action_required, error]
           sent_at:
             type: string
             format: date-time
@@ -68,6 +68,12 @@ components:
               $ref: "#/components/schemas/FlowEvent"
           logs:
             $ref: "#/components/schemas/RunLogs"
+          wait_projection:
+            $ref: "#/components/schemas/RunWaitProjection"
+          wait_resolution:
+            $ref: "#/components/schemas/RunWaitResolution"
+          wait_manual_action:
+            $ref: "#/components/schemas/RunWaitManualActionEvent"
     RunsRealtimeMessage:
       payload:
         type: object
@@ -153,6 +159,133 @@ components:
           type: string
         wait_reason:
           type: string
+        wait_projection:
+          $ref: "#/components/schemas/RunWaitProjection"
+    RunWaitProjection:
+      type: object
+      additionalProperties: false
+      required: [wait_state, wait_reason, dominant_wait, related_waits, comment_mirror_state]
+      properties:
+        wait_state:
+          type: string
+        wait_reason:
+          type: string
+        dominant_wait:
+          $ref: "#/components/schemas/GitHubRateLimitWaitItem"
+        related_waits:
+          type: array
+          items:
+            $ref: "#/components/schemas/GitHubRateLimitWaitItem"
+        comment_mirror_state:
+          type: string
+          enum: [synced, pending_retry, not_attempted]
+    GitHubRateLimitWaitItem:
+      type: object
+      additionalProperties: false
+      required:
+        - wait_id
+        - contour_kind
+        - limit_kind
+        - operation_class
+        - state
+        - confidence
+        - entered_at
+        - attempts_used
+        - max_attempts
+        - recovery_hint
+      properties:
+        wait_id:
+          type: string
+        contour_kind:
+          type: string
+          enum: [platform_pat, agent_bot_token]
+        limit_kind:
+          type: string
+          enum: [primary, secondary]
+        operation_class:
+          type: string
+          enum: [run_status_comment, issue_label_transition, repository_provider_call, agent_github_call]
+        state:
+          type: string
+          enum: [open, auto_resume_scheduled, auto_resume_in_progress, resolved, manual_action_required, cancelled]
+        confidence:
+          type: string
+          enum: [deterministic, conservative, provider_uncertain]
+        entered_at:
+          type: string
+          format: date-time
+        resume_not_before:
+          type: string
+          format: date-time
+        attempts_used:
+          type: integer
+          format: int32
+        max_attempts:
+          type: integer
+          format: int32
+        recovery_hint:
+          $ref: "#/components/schemas/GitHubRateLimitRecoveryHint"
+        manual_action:
+          $ref: "#/components/schemas/GitHubRateLimitManualAction"
+    GitHubRateLimitRecoveryHint:
+      type: object
+      additionalProperties: false
+      required: [hint_kind, source_headers, details_markdown]
+      properties:
+        hint_kind:
+          type: string
+          enum: [rate_limit_reset, retry_after, exponential_backoff, manual_only]
+        resume_not_before:
+          type: string
+          format: date-time
+        source_headers:
+          type: string
+          enum: [reset_at, retry_after, provider_uncertain]
+        details_markdown:
+          type: string
+    GitHubRateLimitManualAction:
+      type: object
+      additionalProperties: false
+      required: [kind, summary, details_markdown]
+      properties:
+        kind:
+          type: string
+          enum: [requeue_platform_operation, resume_agent_session, retry_after_operator_review]
+        summary:
+          type: string
+        details_markdown:
+          type: string
+        suggested_not_before:
+          type: string
+          format: date-time
+    RunWaitResolution:
+      type: object
+      additionalProperties: false
+      required: [wait_id, contour_kind, resolution_kind, resolved_at]
+      properties:
+        wait_id:
+          type: string
+        contour_kind:
+          type: string
+          enum: [platform_pat, agent_bot_token]
+        resolution_kind:
+          type: string
+          enum: [auto_resumed, manually_resolved, cancelled]
+        resolved_at:
+          type: string
+          format: date-time
+    RunWaitManualActionEvent:
+      type: object
+      additionalProperties: false
+      required: [wait_id, manual_action, updated_at]
+      properties:
+        wait_id:
+          type: string
+        manual_action:
+          $ref: "#/components/schemas/GitHubRateLimitManualAction"
+        updated_at:
+          type: string
+          format: date-time
     FlowEvent:
       type: object
       additionalProperties: false

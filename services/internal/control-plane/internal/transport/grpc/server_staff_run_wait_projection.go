@@ -2,18 +2,20 @@ package grpc
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"strings"
 
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	githubratelimitdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/githubratelimit"
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
 	runWaitStateBackpressure = "waiting_backpressure"
 	runWaitReasonGitHubLimit = "github_rate_limit"
+	runWaitProjectionSource  = "control-plane.staff.wait_projection"
 )
 
 func (s *Server) runToProtoWithWaitProjection(ctx context.Context, run entitytypes.StaffRun) (*controlplanev1.Run, error) {
@@ -24,7 +26,8 @@ func (s *Server) runToProtoWithWaitProjection(ctx context.Context, run entitytyp
 
 	projection, found, err := s.githubRateLimit.GetRunProjection(ctx, strings.TrimSpace(run.ID))
 	if err != nil {
-		return nil, fmt.Errorf("load github rate-limit wait projection: %w", err)
+		s.recordRunWaitProjectionReadFailure(ctx, run, err)
+		return out, nil
 	}
 	if !found {
 		return out, nil
@@ -45,6 +48,47 @@ func shouldAttachGitHubRateLimitProjection(run entitytypes.StaffRun) bool {
 		return true
 	}
 	return strings.EqualFold(status, runWaitStateBackpressure)
+}
+
+func (s *Server) recordRunWaitProjectionReadFailure(ctx context.Context, run entitytypes.StaffRun, readErr error) {
+	if readErr == nil {
+		return
+	}
+
+	message := "Failed to load GitHub rate-limit wait projection; returning base run payload"
+	if s.logger != nil {
+		s.logger.Warn(
+			"load github rate-limit wait projection failed; returning base run payload",
+			"run_id", strings.TrimSpace(run.ID),
+			"correlation_id", strings.TrimSpace(run.CorrelationID),
+			"status", strings.TrimSpace(run.Status),
+			"wait_state", strings.TrimSpace(run.WaitState),
+			"wait_reason", strings.TrimSpace(run.WaitReason),
+			"err", readErr,
+		)
+	}
+	if s.runtimeErrors == nil {
+		return
+	}
+
+	details, _ := json.Marshal(map[string]string{
+		"channel":     "staff_run_wait_projection",
+		"error":       strings.TrimSpace(readErr.Error()),
+		"status":      strings.TrimSpace(run.Status),
+		"wait_state":  strings.TrimSpace(run.WaitState),
+		"wait_reason": strings.TrimSpace(run.WaitReason),
+	})
+	s.runtimeErrors.RecordBestEffort(ctx, querytypes.RuntimeErrorRecordParams{
+		Source:        runWaitProjectionSource,
+		Level:         "warning",
+		Message:       message,
+		DetailsJSON:   details,
+		CorrelationID: strings.TrimSpace(run.CorrelationID),
+		RunID:         strings.TrimSpace(run.ID),
+		ProjectID:     strings.TrimSpace(run.ProjectID),
+		Namespace:     strings.TrimSpace(run.Namespace),
+		JobName:       strings.TrimSpace(run.JobName),
+	})
 }
 
 func waitProjectionToProto(item githubratelimitdomain.WaitProjection) *controlplanev1.RunWaitProjection {

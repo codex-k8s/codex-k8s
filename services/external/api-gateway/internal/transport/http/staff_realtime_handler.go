@@ -325,25 +325,83 @@ func buildRunWaitRealtimeMessages(previous runRealtimeSnapshot, current runRealt
 
 	switch {
 	case prevProjection == nil && nextProjection != nil:
-		if nextProjection.DominantWait.ManualAction != nil {
-			return []models.RunRealtimeMessage{runRealtimeWaitManualActionRequiredMessage(nextProjection.DominantWait.WaitID, *nextProjection.DominantWait.ManualAction, latestFlowEventCreatedAt(current.Events))}
-		}
-		return []models.RunRealtimeMessage{runRealtimeWaitEnteredMessage(*nextProjection)}
+		return buildRunWaitLifecycleMessages(nil, nextProjection, current.Events)
 	case prevProjection != nil && nextProjection == nil:
 		return []models.RunRealtimeMessage{runRealtimeWaitResolvedMessage(buildRunWaitResolution(*prevProjection, current.Events))}
 	default:
 		if !runWaitProjectionChanged(prevProjection, nextProjection) {
 			return nil
 		}
-		if nextProjection.DominantWait.ManualAction != nil && (prevProjection.DominantWait.ManualAction == nil || prevProjection.DominantWait.ManualAction.Kind != nextProjection.DominantWait.ManualAction.Kind) {
-			return []models.RunRealtimeMessage{runRealtimeWaitManualActionRequiredMessage(nextProjection.DominantWait.WaitID, *nextProjection.DominantWait.ManualAction, latestFlowEventCreatedAt(current.Events))}
+		if dominantWaitChanged(prevProjection, nextProjection) {
+			messages := []models.RunRealtimeMessage{
+				runRealtimeWaitResolvedMessage(buildRunWaitResolution(*prevProjection, current.Events)),
+			}
+			return append(messages, buildRunWaitLifecycleMessages(prevProjection, nextProjection, current.Events)...)
 		}
-		return []models.RunRealtimeMessage{runRealtimeWaitUpdatedMessage(*nextProjection)}
+		return buildRunWaitLifecycleMessages(prevProjection, nextProjection, current.Events)
 	}
 }
 
 func runWaitProjectionChanged(left *models.RunWaitProjection, right *models.RunWaitProjection) bool {
 	return marshalRealtimeFingerprint(left) != marshalRealtimeFingerprint(right)
+}
+
+func buildRunWaitLifecycleMessages(previous *models.RunWaitProjection, current *models.RunWaitProjection, events []models.FlowEvent) []models.RunRealtimeMessage {
+	if current == nil {
+		return nil
+	}
+	if current.DominantWait.ManualAction != nil && shouldEmitWaitManualAction(previous, current) {
+		return []models.RunRealtimeMessage{
+			runRealtimeWaitManualActionRequiredMessage(
+				current.DominantWait.WaitID,
+				*current.DominantWait.ManualAction,
+				latestFlowEventCreatedAt(events),
+			),
+		}
+	}
+	if previous == nil || !waitProjectionContainsWaitID(previous, current.DominantWait.WaitID) {
+		return []models.RunRealtimeMessage{runRealtimeWaitEnteredMessage(*current)}
+	}
+	return []models.RunRealtimeMessage{runRealtimeWaitUpdatedMessage(*current)}
+}
+
+func shouldEmitWaitManualAction(previous *models.RunWaitProjection, current *models.RunWaitProjection) bool {
+	if current == nil || current.DominantWait.ManualAction == nil {
+		return false
+	}
+	if previous == nil {
+		return true
+	}
+	if dominantWaitChanged(previous, current) {
+		return true
+	}
+	if previous.DominantWait.ManualAction == nil {
+		return true
+	}
+	return strings.TrimSpace(previous.DominantWait.ManualAction.Kind) != strings.TrimSpace(current.DominantWait.ManualAction.Kind)
+}
+
+func dominantWaitChanged(previous *models.RunWaitProjection, current *models.RunWaitProjection) bool {
+	if previous == nil || current == nil {
+		return previous != current
+	}
+	return strings.TrimSpace(previous.DominantWait.WaitID) != strings.TrimSpace(current.DominantWait.WaitID)
+}
+
+func waitProjectionContainsWaitID(projection *models.RunWaitProjection, waitID string) bool {
+	waitID = strings.TrimSpace(waitID)
+	if projection == nil || waitID == "" {
+		return false
+	}
+	if strings.TrimSpace(projection.DominantWait.WaitID) == waitID {
+		return true
+	}
+	for _, related := range projection.RelatedWaits {
+		if strings.TrimSpace(related.WaitID) == waitID {
+			return true
+		}
+	}
+	return false
 }
 
 func latestFlowEventCreatedAt(events []models.FlowEvent) string {
@@ -364,6 +422,10 @@ func buildRunWaitResolution(previous models.RunWaitProjection, events []models.F
 		ResolutionKind: defaultWaitResolutionKind,
 		ResolvedAt:     time.Now().UTC().Format(time.RFC3339Nano),
 	}
+	previousWaitID := strings.TrimSpace(previous.DominantWait.WaitID)
+	var fallback runWaitResolvedEventPayload
+	var fallbackResolvedAt string
+	var hasFallback bool
 	for _, item := range events {
 		if !strings.EqualFold(strings.TrimSpace(item.EventType), runWaitResumedFlowEventType) {
 			continue
@@ -372,24 +434,48 @@ func buildRunWaitResolution(previous models.RunWaitProjection, events []models.F
 		if err := json.Unmarshal([]byte(item.PayloadJSON), &payload); err != nil {
 			continue
 		}
-		if waitID := strings.TrimSpace(payload.WaitID); waitID != "" {
-			resolution.WaitID = waitID
+		waitID := strings.TrimSpace(payload.WaitID)
+		if waitID == "" {
+			waitID = resolution.WaitID
 		}
-		if contourKind := strings.TrimSpace(payload.ContourKind); contourKind != "" {
-			resolution.ContourKind = contourKind
+		resolvedAt := strings.TrimSpace(item.CreatedAt)
+		if previousWaitID != "" && waitID != previousWaitID {
+			if !hasFallback {
+				payload.WaitID = waitID
+				fallback = payload
+				fallbackResolvedAt = resolvedAt
+				hasFallback = true
+			}
+			continue
 		}
-		if resolutionKind := strings.TrimSpace(payload.ResolutionKind); resolutionKind != "" {
-			resolution.ResolutionKind = resolutionKind
-		}
-		if resolvedAt := strings.TrimSpace(item.CreatedAt); resolvedAt != "" {
-			resolution.ResolvedAt = resolvedAt
-		}
+		applyRunWaitResolutionPayload(&resolution, payload, resolvedAt)
 		return resolution
+	}
+	if hasFallback {
+		applyRunWaitResolutionPayload(&resolution, fallback, fallbackResolvedAt)
 	}
 	if strings.TrimSpace(resolution.ContourKind) == "" {
 		resolution.ContourKind = defaultWaitContourKind
 	}
 	return resolution
+}
+
+func applyRunWaitResolutionPayload(resolution *models.RunWaitResolution, payload runWaitResolvedEventPayload, resolvedAt string) {
+	if resolution == nil {
+		return
+	}
+	if waitID := strings.TrimSpace(payload.WaitID); waitID != "" {
+		resolution.WaitID = waitID
+	}
+	if contourKind := strings.TrimSpace(payload.ContourKind); contourKind != "" {
+		resolution.ContourKind = contourKind
+	}
+	if resolutionKind := strings.TrimSpace(payload.ResolutionKind); resolutionKind != "" {
+		resolution.ResolutionKind = resolutionKind
+	}
+	if resolvedAt = strings.TrimSpace(resolvedAt); resolvedAt != "" {
+		resolution.ResolvedAt = resolvedAt
+	}
 }
 
 func runRealtimeWaitEnteredMessage(waitProjection models.RunWaitProjection) models.RunRealtimeMessage {
