@@ -68,6 +68,13 @@ spec:
             # Dedicated path so we can route websocket directly to Vite service (bypassing auth proxy).
             - name: VITE_HMR_PATH
               value: "/__vite_ws"
+{{ if eq (envOr "CODEXK8S_HOT_RELOAD" "") "true" }}
+            # Shared repo PVC makes fs.watch exhaust file descriptors; polling keeps Vite stable in slots.
+            - name: VITE_WATCH_USE_POLLING
+              value: "true"
+            - name: VITE_WATCH_INTERVAL
+              value: "1000"
+{{ end }}
           readinessProbe:
             httpGet:
               path: /
