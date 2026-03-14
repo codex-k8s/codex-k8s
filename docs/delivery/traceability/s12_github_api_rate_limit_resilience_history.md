@@ -204,3 +204,25 @@ approvals:
 - Внешний baseline дополнительно сверен:
   - Context7 `/github/docs` повторно использован как source of truth для primary/secondary rate-limit semantics, приоритета `Retry-After`, fallback к `x-ratelimit-reset` и запрета на локальный retry ownership после handoff.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: Issue `#428` закрывает runner handoff/resume wave и не добавляет новых продуктовых требований.
+
+## Актуализация по Issue #429 (`run:dev`, 2026-03-14)
+- Реализован transport stream `S12-E05`:
+  - `services/external/api-gateway/api/server/api.yaml`;
+  - `services/external/api-gateway/internal/transport/http/{models/staff.go,models/realtime.go,casters/controlplane.go,staff_realtime_handler.go}`;
+  - `services/internal/control-plane/internal/transport/grpc/{server.go,server_staff_methods.go,server_staff_run_wait_projection.go}`;
+  - `proto/codexk8s/controlplane/v1/controlplane.proto`.
+- Зафиксированы:
+  - contract-first расширение staff visibility contracts: `Run.wait_projection` и typed модели `dominant_wait` / `related_waits`, recovery hint и manual action guidance;
+  - additive realtime envelope в `api-gateway`: `wait_entered`, `wait_updated`, `wait_resolved`, `wait_manual_action_required` без доменных решений inside handlers;
+  - `control-plane` gRPC transport публикует persisted wait projection в `Run` через domain-owned `GetRunProjection`, сохраняя ownership classification/recovery logic в `control-plane` domain слое;
+  - синхронно обновлены generated artifacts `proto` + OpenAPI (`Go` и `TS` codegen) для handover в wave `#430`.
+- Проверки:
+  - `make gen-proto-go SVC=services/internal/control-plane`
+  - `make gen-openapi`
+  - `go test ./services/internal/control-plane/internal/transport/grpc`
+  - `go test ./services/external/api-gateway/internal/transport/http`
+  - `npm --prefix services/staff/web-console run build`
+  - `git diff --check`
+- Внешний baseline дополнительно сверен:
+  - Context7 `/github/docs` был использован в предшествующих S12 waves как source of truth для rate-limit semantics; Wave `#429` не добавляет новых provider assumptions и реализует только transport exposure уже утверждённых typed contracts.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: Issue `#429` закрывает transport visibility wave и не добавляет новых продуктовых требований.

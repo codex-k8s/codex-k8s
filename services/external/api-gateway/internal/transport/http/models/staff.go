@@ -8,31 +8,82 @@ type Project struct {
 }
 
 type Run struct {
-	ID              string  `json:"id"`
-	CorrelationID   string  `json:"correlation_id"`
-	ProjectID       *string `json:"project_id"`
-	ProjectSlug     string  `json:"project_slug"`
-	ProjectName     string  `json:"project_name"`
-	IssueNumber     *int32  `json:"issue_number"`
-	IssueURL        *string `json:"issue_url"`
-	PRNumber        *int32  `json:"pr_number"`
-	PRURL           *string `json:"pr_url"`
-	TriggerKind     *string `json:"trigger_kind"`
-	TriggerLabel    *string `json:"trigger_label"`
-	AgentKey        *string `json:"agent_key"`
-	JobName         *string `json:"job_name"`
-	JobNamespace    *string `json:"job_namespace"`
-	Namespace       *string `json:"namespace"`
-	JobExists       bool    `json:"job_exists"`
-	NamespaceExists bool    `json:"namespace_exists"`
-	WaitState       *string `json:"wait_state"`
-	WaitReason      *string `json:"wait_reason"`
-	WaitSince       *string `json:"wait_since"`
-	LastHeartbeatAt *string `json:"last_heartbeat_at"`
-	Status          string  `json:"status"`
-	CreatedAt       string  `json:"created_at"`
-	StartedAt       *string `json:"started_at"`
-	FinishedAt      *string `json:"finished_at"`
+	ID              string             `json:"id"`
+	CorrelationID   string             `json:"correlation_id"`
+	ProjectID       *string            `json:"project_id"`
+	ProjectSlug     string             `json:"project_slug"`
+	ProjectName     string             `json:"project_name"`
+	IssueNumber     *int32             `json:"issue_number"`
+	IssueURL        *string            `json:"issue_url"`
+	PRNumber        *int32             `json:"pr_number"`
+	PRURL           *string            `json:"pr_url"`
+	TriggerKind     *string            `json:"trigger_kind"`
+	TriggerLabel    *string            `json:"trigger_label"`
+	AgentKey        *string            `json:"agent_key"`
+	JobName         *string            `json:"job_name"`
+	JobNamespace    *string            `json:"job_namespace"`
+	Namespace       *string            `json:"namespace"`
+	JobExists       bool               `json:"job_exists"`
+	NamespaceExists bool               `json:"namespace_exists"`
+	WaitState       *string            `json:"wait_state"`
+	WaitReason      *string            `json:"wait_reason"`
+	WaitSince       *string            `json:"wait_since"`
+	LastHeartbeatAt *string            `json:"last_heartbeat_at"`
+	Status          string             `json:"status"`
+	CreatedAt       string             `json:"created_at"`
+	StartedAt       *string            `json:"started_at"`
+	FinishedAt      *string            `json:"finished_at"`
+	WaitProjection  *RunWaitProjection `json:"wait_projection,omitempty"`
+}
+
+type RunWaitProjection struct {
+	WaitState          string                    `json:"wait_state"`
+	WaitReason         string                    `json:"wait_reason"`
+	DominantWait       GitHubRateLimitWaitItem   `json:"dominant_wait"`
+	RelatedWaits       []GitHubRateLimitWaitItem `json:"related_waits"`
+	CommentMirrorState string                    `json:"comment_mirror_state"`
+}
+
+type GitHubRateLimitWaitItem struct {
+	WaitID          string                       `json:"wait_id"`
+	ContourKind     string                       `json:"contour_kind"`
+	LimitKind       string                       `json:"limit_kind"`
+	OperationClass  string                       `json:"operation_class"`
+	State           string                       `json:"state"`
+	Confidence      string                       `json:"confidence"`
+	EnteredAt       string                       `json:"entered_at"`
+	ResumeNotBefore *string                      `json:"resume_not_before,omitempty"`
+	AttemptsUsed    int32                        `json:"attempts_used"`
+	MaxAttempts     int32                        `json:"max_attempts"`
+	RecoveryHint    GitHubRateLimitRecoveryHint  `json:"recovery_hint"`
+	ManualAction    *GitHubRateLimitManualAction `json:"manual_action,omitempty"`
+}
+
+type GitHubRateLimitRecoveryHint struct {
+	HintKind        string  `json:"hint_kind"`
+	ResumeNotBefore *string `json:"resume_not_before,omitempty"`
+	SourceHeaders   string  `json:"source_headers"`
+	DetailsMarkdown string  `json:"details_markdown"`
+}
+
+type GitHubRateLimitManualAction struct {
+	Kind               string  `json:"kind"`
+	Summary            string  `json:"summary"`
+	DetailsMarkdown    string  `json:"details_markdown"`
+	SuggestedNotBefore *string `json:"suggested_not_before,omitempty"`
+}
+
+type RunWaitResolution struct {
+	WaitID         string `json:"wait_id"`
+	ContourKind    string `json:"contour_kind"`
+	ResolutionKind string `json:"resolution_kind"`
+	ResolvedAt     string `json:"resolved_at"`
+}
+
+type RunWaitManualActionEvent struct {
+	WaitID       string                      `json:"wait_id"`
+	ManualAction GitHubRateLimitManualAction `json:"manual_action"`
+	UpdatedAt    string                      `json:"updated_at"`
 }
 
 type RunLogs struct {

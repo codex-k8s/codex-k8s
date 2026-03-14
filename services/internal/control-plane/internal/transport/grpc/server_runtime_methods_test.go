@@ -344,3 +344,7 @@ func (f fakeRuntimeGitHubRateLimitService) ReportSignal(ctx context.Context, par
 func (f fakeRuntimeGitHubRateLimitService) ProcessNextAutoResume(context.Context, githubratelimitdomain.ProcessNextAutoResumeParams) (githubratelimitdomain.ProcessNextAutoResumeResult, error) {
 	return githubratelimitdomain.ProcessNextAutoResumeResult{}, nil
 }
+
+func (f fakeRuntimeGitHubRateLimitService) GetRunProjection(context.Context, string) (githubratelimitdomain.WaitProjection, bool, error) {
+	return githubratelimitdomain.WaitProjection{}, false, nil
+}

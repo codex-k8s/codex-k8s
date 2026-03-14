@@ -196,7 +196,11 @@ export const listRunEvents = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * Open realtime run stream (WebSocket upgrade)
  */
-export const runRealtime = <ThrowOnError extends boolean = false>(options: Options<RunRealtimeData, ThrowOnError>) => (options.client ?? client).get<RunRealtimeResponses, RunRealtimeErrors, ThrowOnError>({ url: '/api/v1/staff/runs/{run_id}/realtime', ...options });
+export const runRealtime = <ThrowOnError extends boolean = false>(options: Options<RunRealtimeData, ThrowOnError>) => (options.client ?? client).get<RunRealtimeResponses, RunRealtimeErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/runs/{run_id}/realtime',
+    ...options
+});
 
 /**
  * Get run logs snapshot with tail lines

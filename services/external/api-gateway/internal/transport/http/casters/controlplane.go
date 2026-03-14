@@ -57,6 +57,68 @@ func Run(item *controlplanev1.Run) models.Run {
 		CreatedAt:       cast.TimestampRFC3339Nano(item.GetCreatedAt()),
 		StartedAt:       cast.OptionalTimestampRFC3339Nano(item.GetStartedAt()),
 		FinishedAt:      cast.OptionalTimestampRFC3339Nano(item.GetFinishedAt()),
+		WaitProjection:  runWaitProjection(item.GetWaitProjection()),
+	}
+}
+
+func runWaitProjection(item *controlplanev1.RunWaitProjection) *models.RunWaitProjection {
+	if item == nil {
+		return nil
+	}
+	out := &models.RunWaitProjection{
+		WaitState:          item.GetWaitState(),
+		WaitReason:         item.GetWaitReason(),
+		DominantWait:       gitHubRateLimitWaitItem(item.GetDominantWait()),
+		RelatedWaits:       make([]models.GitHubRateLimitWaitItem, 0, len(item.GetRelatedWaits())),
+		CommentMirrorState: item.GetCommentMirrorState(),
+	}
+	for _, related := range item.GetRelatedWaits() {
+		out.RelatedWaits = append(out.RelatedWaits, gitHubRateLimitWaitItem(related))
+	}
+	return out
+}
+
+func gitHubRateLimitWaitItem(item *controlplanev1.GitHubRateLimitWaitItem) models.GitHubRateLimitWaitItem {
+	if item == nil {
+		return models.GitHubRateLimitWaitItem{}
+	}
+	return models.GitHubRateLimitWaitItem{
+		WaitID:          item.GetWaitId(),
+		ContourKind:     item.GetContourKind(),
+		LimitKind:       item.GetLimitKind(),
+		OperationClass:  item.GetOperationClass(),
+		State:           item.GetState(),
+		Confidence:      item.GetConfidence(),
+		EnteredAt:       cast.TimestampRFC3339Nano(item.GetEnteredAt()),
+		ResumeNotBefore: cast.OptionalTimestampRFC3339Nano(item.GetResumeNotBefore()),
+		AttemptsUsed:    item.GetAttemptsUsed(),
+		MaxAttempts:     item.GetMaxAttempts(),
+		RecoveryHint:    gitHubRateLimitRecoveryHint(item.GetRecoveryHint()),
+		ManualAction:    gitHubRateLimitManualAction(item.GetManualAction()),
+	}
+}
+
+func gitHubRateLimitRecoveryHint(item *controlplanev1.GitHubRateLimitRecoveryHint) models.GitHubRateLimitRecoveryHint {
+	if item == nil {
+		return models.GitHubRateLimitRecoveryHint{}
+	}
+	return models.GitHubRateLimitRecoveryHint{
+		HintKind:        item.GetHintKind(),
+		ResumeNotBefore: cast.OptionalTimestampRFC3339Nano(item.GetResumeNotBefore()),
+		SourceHeaders:   item.GetSourceHeaders(),
+		DetailsMarkdown: item.GetDetailsMarkdown(),
+	}
+}
+
+func gitHubRateLimitManualAction(item *controlplanev1.GitHubRateLimitManualAction) *models.GitHubRateLimitManualAction {
+	if item == nil {
+		return nil
+	}
+	return &models.GitHubRateLimitManualAction{
+		Kind:               item.GetKind(),
+		Summary:            item.GetSummary(),
+		DetailsMarkdown:    item.GetDetailsMarkdown(),
+		SuggestedNotBefore: cast.OptionalTimestampRFC3339Nano(item.GetSuggestedNotBefore()),
 	}
 }
 

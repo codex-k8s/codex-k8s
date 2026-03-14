@@ -87,7 +87,11 @@ func (s *Server) ListRuns(ctx context.Context, req *controlplanev1.ListRunsReque
 	}
 	out := make([]*controlplanev1.Run, 0, len(items))
 	for _, r := range items {
-		out = append(out, runToProto(r))
+		protoRun, mapErr := s.runToProtoWithWaitProjection(ctx, r)
+		if mapErr != nil {
+			return nil, toStatus(mapErr)
+		}
+		out = append(out, protoRun)
 	}
 	return &controlplanev1.ListRunsResponse{
 		Items:      out,
@@ -117,7 +121,11 @@ func (s *Server) ListRunWaits(ctx context.Context, req *controlplanev1.ListRunWa
 	}
 	out := make([]*controlplanev1.Run, 0, len(items))
 	for _, item := range items {
-		out = append(out, runToProto(item))
+		protoRun, mapErr := s.runToProtoWithWaitProjection(ctx, item)
+		if mapErr != nil {
+			return nil, toStatus(mapErr)
+		}
+		out = append(out, protoRun)
 	}
 	return &controlplanev1.ListRunWaitsResponse{Items: out}, nil
 }
@@ -131,7 +139,11 @@ func (s *Server) GetRun(ctx context.Context, req *controlplanev1.GetRunRequest) 
 	if err != nil {
 		return nil, toStatus(err)
 	}
-	return runToProto(r), nil
+	protoRun, mapErr := s.runToProtoWithWaitProjection(ctx, r)
+	if mapErr != nil {
+		return nil, toStatus(mapErr)
+	}
+	return protoRun, nil
 }
 
 func (s *Server) GetRunLogs(ctx context.Context, req *controlplanev1.GetRunLogsRequest) (*controlplanev1.RunLogs, error) {

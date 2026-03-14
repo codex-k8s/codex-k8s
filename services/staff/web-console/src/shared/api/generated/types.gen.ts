@@ -70,6 +70,69 @@ export type Run = {
     created_at: string;
     started_at?: string | null;
     finished_at?: string | null;
+    wait_projection?: RunWaitProjection;
+};
+
+export type RunWaitProjection = {
+    wait_state: string;
+    wait_reason: string;
+    dominant_wait: GitHubRateLimitWaitItem;
+    related_waits: Array<GitHubRateLimitWaitItem>;
+    comment_mirror_state: 'synced' | 'pending_retry' | 'not_attempted';
+};
+
+export type GitHubRateLimitWaitItem = {
+    wait_id: string;
+    contour_kind: 'platform_pat' | 'agent_bot_token';
+    limit_kind: 'primary' | 'secondary';
+    operation_class: 'run_status_comment' | 'issue_label_transition' | 'repository_provider_call' | 'agent_github_call';
+    state: 'open' | 'auto_resume_scheduled' | 'auto_resume_in_progress' | 'resolved' | 'manual_action_required' | 'cancelled';
+    confidence: 'deterministic' | 'conservative' | 'provider_uncertain';
+    entered_at: string;
+    resume_not_before?: string | null;
+    attempts_used: number;
+    max_attempts: number;
+    recovery_hint: GitHubRateLimitRecoveryHint;
+    manual_action?: GitHubRateLimitManualAction;
+};
+
+export type GitHubRateLimitRecoveryHint = {
+    hint_kind: 'rate_limit_reset' | 'retry_after' | 'exponential_backoff' | 'manual_only';
+    resume_not_before?: string | null;
+    source_headers: 'reset_at' | 'retry_after' | 'provider_uncertain';
+    details_markdown: string;
+};
+
+export type GitHubRateLimitManualAction = {
+    kind: 'requeue_platform_operation' | 'resume_agent_session' | 'retry_after_operator_review';
+    summary: string;
+    details_markdown: string;
+    suggested_not_before?: string | null;
+};
+
+export type RunWaitResolution = {
+    wait_id: string;
+    contour_kind: 'platform_pat' | 'agent_bot_token';
+    resolution_kind: 'auto_resumed' | 'manually_resolved' | 'cancelled';
+    resolved_at: string;
+};
+
+export type RunWaitManualActionEvent = {
+    wait_id: string;
+    manual_action: GitHubRateLimitManualAction;
+    updated_at: string;
+};
+
+export type RunRealtimeMessage = {
+    type: 'snapshot' | 'run' | 'events' | 'logs' | 'wait_entered' | 'wait_updated' | 'wait_resolved' | 'wait_manual_action_required' | 'error';
+    run?: Run;
+    events?: Array<FlowEvent>;
+    logs?: RunLogs;
+    wait_projection?: RunWaitProjection;
+    wait_resolution?: RunWaitResolution;
+    wait_manual_action?: RunWaitManualActionEvent;
+    message?: string | null;
+    sent_at: string;
 };
 
 export type ApprovalRequest = {
@@ -1523,8 +1586,10 @@ export type RunRealtimeResponses = {
     /**
      * Realtime stream endpoint (expects WebSocket upgrade)
      */
-    200: unknown;
+    200: RunRealtimeMessage;
 };
+
+export type RunRealtimeResponse = RunRealtimeResponses[keyof RunRealtimeResponses];
 
 export type GetRunLogsData = {
     body?: never;

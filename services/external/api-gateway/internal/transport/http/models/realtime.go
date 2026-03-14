@@ -4,21 +4,28 @@ package models
 type RunRealtimeMessageType string
 
 const (
-	RunRealtimeMessageTypeSnapshot RunRealtimeMessageType = "snapshot"
-	RunRealtimeMessageTypeRun      RunRealtimeMessageType = "run"
-	RunRealtimeMessageTypeEvents   RunRealtimeMessageType = "events"
-	RunRealtimeMessageTypeLogs     RunRealtimeMessageType = "logs"
-	RunRealtimeMessageTypeError    RunRealtimeMessageType = "error"
+	RunRealtimeMessageTypeSnapshot                 RunRealtimeMessageType = "snapshot"
+	RunRealtimeMessageTypeRun                      RunRealtimeMessageType = "run"
+	RunRealtimeMessageTypeEvents                   RunRealtimeMessageType = "events"
+	RunRealtimeMessageTypeLogs                     RunRealtimeMessageType = "logs"
+	RunRealtimeMessageTypeWaitEntered              RunRealtimeMessageType = "wait_entered"
+	RunRealtimeMessageTypeWaitUpdated              RunRealtimeMessageType = "wait_updated"
+	RunRealtimeMessageTypeWaitResolved             RunRealtimeMessageType = "wait_resolved"
+	RunRealtimeMessageTypeWaitManualActionRequired RunRealtimeMessageType = "wait_manual_action_required"
+	RunRealtimeMessageTypeError                    RunRealtimeMessageType = "error"
 )
 
 // RunRealtimeMessage is a typed websocket message for staff run realtime updates.
 type RunRealtimeMessage struct {
-	Type    RunRealtimeMessageType `json:"type"`
-	Run     *Run                   `json:"run,omitempty"`
-	Events  []FlowEvent            `json:"events,omitempty"`
-	Logs    *RunLogs               `json:"logs,omitempty"`
-	Message *string                `json:"message,omitempty"`
-	SentAt  string                 `json:"sent_at"`
+	Type             RunRealtimeMessageType    `json:"type"`
+	Run              *Run                      `json:"run,omitempty"`
+	Events           []FlowEvent               `json:"events,omitempty"`
+	Logs             *RunLogs                  `json:"logs,omitempty"`
+	WaitProjection   *RunWaitProjection        `json:"wait_projection,omitempty"`
+	WaitResolution   *RunWaitResolution        `json:"wait_resolution,omitempty"`
+	WaitManualAction *RunWaitManualActionEvent `json:"wait_manual_action,omitempty"`
+	Message          *string                   `json:"message,omitempty"`
+	SentAt           string                    `json:"sent_at"`
 }
 
 // ListRealtimeMessageType is one envelope discriminator for paginated staff list streams.

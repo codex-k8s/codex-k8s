@@ -76,6 +76,7 @@ type missionControlWorkerService interface {
 type githubRateLimitService interface {
 	ReportSignal(ctx context.Context, params githubratelimitdomain.ReportSignalParams) (githubratelimitdomain.ReportSignalResult, error)
 	ProcessNextAutoResume(ctx context.Context, params githubratelimitdomain.ProcessNextAutoResumeParams) (githubratelimitdomain.ProcessNextAutoResumeResult, error)
+	GetRunProjection(ctx context.Context, runID string) (githubratelimitdomain.WaitProjection, bool, error)
 }
 
 type runtimeErrorRecorder interface {

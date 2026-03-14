@@ -25,6 +25,9 @@ const (
 	realtimePongTimeout           = 60 * time.Second
 	realtimeUpdateInterval        = 2 * time.Second
 	realtimePingInterval          = 25 * time.Second
+	runWaitResumedFlowEventType   = "run.wait.resumed"
+	defaultWaitResolutionKind     = "auto_resumed"
+	defaultWaitContourKind        = "agent_bot_token"
 )
 
 var staffRealtimeUpgrader = websocket.Upgrader{
@@ -44,6 +47,12 @@ type runRealtimeFingerprint struct {
 	run    string
 	events string
 	logs   string
+}
+
+type runWaitResolvedEventPayload struct {
+	WaitID         string `json:"wait_id"`
+	ContourKind    string `json:"contour_kind"`
+	ResolutionKind string `json:"resolution_kind"`
 }
 
 func allowStaffRealtimeOrigin(r *http.Request) bool {
@@ -146,6 +155,7 @@ func (h *staffHandler) streamRunRealtime(c *echo.Context, principal *controlplan
 	}
 
 	fingerprint := buildRunRealtimeFingerprint(initialSnapshot)
+	currentSnapshot := initialSnapshot
 
 	updateTicker := time.NewTicker(realtimeUpdateInterval)
 	defer updateTicker.Stop()
@@ -174,6 +184,12 @@ func (h *staffHandler) streamRunRealtime(c *echo.Context, principal *controlplan
 			}
 
 			nextFingerprint := buildRunRealtimeFingerprint(nextSnapshot)
+			waitMessages := buildRunWaitRealtimeMessages(currentSnapshot, nextSnapshot)
+			for _, waitMessage := range waitMessages {
+				if writeErr := writeRealtimeJSONMessage(conn, waitMessage); writeErr != nil {
+					return nil
+				}
+			}
 			if nextFingerprint.run != fingerprint.run {
 				if writeErr := writeRealtimeJSONMessage(conn, runRealtimeRunMessage(nextSnapshot.Run)); writeErr != nil {
 					return nil
@@ -191,6 +207,7 @@ func (h *staffHandler) streamRunRealtime(c *echo.Context, principal *controlplan
 			}
 
 			fingerprint = nextFingerprint
+			currentSnapshot = nextSnapshot
 		}
 	}
 }
@@ -295,6 +312,118 @@ func runRealtimeLogsMessage(logs models.RunLogs) models.RunRealtimeMessage {
 	return models.RunRealtimeMessage{
 		Type:   models.RunRealtimeMessageTypeLogs,
 		Logs:   &logs,
+		SentAt: time.Now().UTC().Format(time.RFC3339Nano),
+	}
+}
+
+func buildRunWaitRealtimeMessages(previous runRealtimeSnapshot, current runRealtimeSnapshot) []models.RunRealtimeMessage {
+	prevProjection := previous.Run.WaitProjection
+	nextProjection := current.Run.WaitProjection
+	if prevProjection == nil && nextProjection == nil {
+		return nil
+	}
+
+	switch {
+	case prevProjection == nil && nextProjection != nil:
+		if nextProjection.DominantWait.ManualAction != nil {
+			return []models.RunRealtimeMessage{runRealtimeWaitManualActionRequiredMessage(nextProjection.DominantWait.WaitID, *nextProjection.DominantWait.ManualAction, latestFlowEventCreatedAt(current.Events))}
+		}
+		return []models.RunRealtimeMessage{runRealtimeWaitEnteredMessage(*nextProjection)}
+	case prevProjection != nil && nextProjection == nil:
+		return []models.RunRealtimeMessage{runRealtimeWaitResolvedMessage(buildRunWaitResolution(*prevProjection, current.Events))}
+	default:
+		if !runWaitProjectionChanged(prevProjection, nextProjection) {
+			return nil
+		}
+		if nextProjection.DominantWait.ManualAction != nil && (prevProjection.DominantWait.ManualAction == nil || prevProjection.DominantWait.ManualAction.Kind != nextProjection.DominantWait.ManualAction.Kind) {
+			return []models.RunRealtimeMessage{runRealtimeWaitManualActionRequiredMessage(nextProjection.DominantWait.WaitID, *nextProjection.DominantWait.ManualAction, latestFlowEventCreatedAt(current.Events))}
+		}
+		return []models.RunRealtimeMessage{runRealtimeWaitUpdatedMessage(*nextProjection)}
+	}
+}
+
+func runWaitProjectionChanged(left *models.RunWaitProjection, right *models.RunWaitProjection) bool {
+	return marshalRealtimeFingerprint(left) != marshalRealtimeFingerprint(right)
+}
+
+func latestFlowEventCreatedAt(events []models.FlowEvent) string {
+	if len(events) == 0 {
+		return time.Now().UTC().Format(time.RFC3339Nano)
+	}
+	createdAt := strings.TrimSpace(events[0].CreatedAt)
+	if createdAt == "" {
+		return time.Now().UTC().Format(time.RFC3339Nano)
+	}
+	return createdAt
+}
+
+func buildRunWaitResolution(previous models.RunWaitProjection, events []models.FlowEvent) models.RunWaitResolution {
+	resolution := models.RunWaitResolution{
+		WaitID:         previous.DominantWait.WaitID,
+		ContourKind:    previous.DominantWait.ContourKind,
+		ResolutionKind: defaultWaitResolutionKind,
+		ResolvedAt:     time.Now().UTC().Format(time.RFC3339Nano),
+	}
+	for _, item := range events {
+		if !strings.EqualFold(strings.TrimSpace(item.EventType), runWaitResumedFlowEventType) {
+			continue
+		}
+		var payload runWaitResolvedEventPayload
+		if err := json.Unmarshal([]byte(item.PayloadJSON), &payload); err != nil {
+			continue
+		}
+		if waitID := strings.TrimSpace(payload.WaitID); waitID != "" {
+			resolution.WaitID = waitID
+		}
+		if contourKind := strings.TrimSpace(payload.ContourKind); contourKind != "" {
+			resolution.ContourKind = contourKind
+		}
+		if resolutionKind := strings.TrimSpace(payload.ResolutionKind); resolutionKind != "" {
+			resolution.ResolutionKind = resolutionKind
+		}
+		if resolvedAt := strings.TrimSpace(item.CreatedAt); resolvedAt != "" {
+			resolution.ResolvedAt = resolvedAt
+		}
+		return resolution
+	}
+	if strings.TrimSpace(resolution.ContourKind) == "" {
+		resolution.ContourKind = defaultWaitContourKind
+	}
+	return resolution
+}
+
+func runRealtimeWaitEnteredMessage(waitProjection models.RunWaitProjection) models.RunRealtimeMessage {
+	return models.RunRealtimeMessage{
+		Type:           models.RunRealtimeMessageTypeWaitEntered,
+		WaitProjection: &waitProjection,
+		SentAt:         time.Now().UTC().Format(time.RFC3339Nano),
+	}
+}
+
+func runRealtimeWaitUpdatedMessage(waitProjection models.RunWaitProjection) models.RunRealtimeMessage {
+	return models.RunRealtimeMessage{
+		Type:           models.RunRealtimeMessageTypeWaitUpdated,
+		WaitProjection: &waitProjection,
+		SentAt:         time.Now().UTC().Format(time.RFC3339Nano),
+	}
+}
+
+func runRealtimeWaitResolvedMessage(resolution models.RunWaitResolution) models.RunRealtimeMessage {
+	return models.RunRealtimeMessage{
+		Type:           models.RunRealtimeMessageTypeWaitResolved,
+		WaitResolution: &resolution,
+		SentAt:         time.Now().UTC().Format(time.RFC3339Nano),
+	}
+}
+
+func runRealtimeWaitManualActionRequiredMessage(waitID string, manualAction models.GitHubRateLimitManualAction, updatedAt string) models.RunRealtimeMessage {
+	return models.RunRealtimeMessage{
+		Type: models.RunRealtimeMessageTypeWaitManualActionRequired,
+		WaitManualAction: &models.RunWaitManualActionEvent{
+			WaitID:       strings.TrimSpace(waitID),
+			ManualAction: manualAction,
+			UpdatedAt:    strings.TrimSpace(updatedAt),
+		},
 		SentAt: time.Now().UTC().Format(time.RFC3339Nano),
 	}
 }

@@ -55,6 +55,65 @@ const (
 	ErrorResponseCodeUnavailable        ErrorResponseCode = "unavailable"
 )
 
+// Defines values for GitHubRateLimitManualActionKind.
+const (
+	RequeuePlatformOperation GitHubRateLimitManualActionKind = "requeue_platform_operation"
+	ResumeAgentSession       GitHubRateLimitManualActionKind = "resume_agent_session"
+	RetryAfterOperatorReview GitHubRateLimitManualActionKind = "retry_after_operator_review"
+)
+
+// Defines values for GitHubRateLimitRecoveryHintHintKind.
+const (
+	GitHubRateLimitRecoveryHintHintKindExponentialBackoff GitHubRateLimitRecoveryHintHintKind = "exponential_backoff"
+	GitHubRateLimitRecoveryHintHintKindManualOnly         GitHubRateLimitRecoveryHintHintKind = "manual_only"
+	GitHubRateLimitRecoveryHintHintKindRateLimitReset     GitHubRateLimitRecoveryHintHintKind = "rate_limit_reset"
+	GitHubRateLimitRecoveryHintHintKindRetryAfter         GitHubRateLimitRecoveryHintHintKind = "retry_after"
+)
+
+// Defines values for GitHubRateLimitRecoveryHintSourceHeaders.
+const (
+	GitHubRateLimitRecoveryHintSourceHeadersProviderUncertain GitHubRateLimitRecoveryHintSourceHeaders = "provider_uncertain"
+	GitHubRateLimitRecoveryHintSourceHeadersResetAt           GitHubRateLimitRecoveryHintSourceHeaders = "reset_at"
+	GitHubRateLimitRecoveryHintSourceHeadersRetryAfter        GitHubRateLimitRecoveryHintSourceHeaders = "retry_after"
+)
+
+// Defines values for GitHubRateLimitWaitItemConfidence.
+const (
+	Conservative      GitHubRateLimitWaitItemConfidence = "conservative"
+	Deterministic     GitHubRateLimitWaitItemConfidence = "deterministic"
+	ProviderUncertain GitHubRateLimitWaitItemConfidence = "provider_uncertain"
+)
+
+// Defines values for GitHubRateLimitWaitItemContourKind.
+const (
+	GitHubRateLimitWaitItemContourKindAgentBotToken GitHubRateLimitWaitItemContourKind = "agent_bot_token"
+	GitHubRateLimitWaitItemContourKindPlatformPat   GitHubRateLimitWaitItemContourKind = "platform_pat"
+)
+
+// Defines values for GitHubRateLimitWaitItemLimitKind.
+const (
+	GitHubRateLimitWaitItemLimitKindPrimary   GitHubRateLimitWaitItemLimitKind = "primary"
+	GitHubRateLimitWaitItemLimitKindSecondary GitHubRateLimitWaitItemLimitKind = "secondary"
+)
+
+// Defines values for GitHubRateLimitWaitItemOperationClass.
+const (
+	AgentGithubCall        GitHubRateLimitWaitItemOperationClass = "agent_github_call"
+	IssueLabelTransition   GitHubRateLimitWaitItemOperationClass = "issue_label_transition"
+	RepositoryProviderCall GitHubRateLimitWaitItemOperationClass = "repository_provider_call"
+	RunStatusComment       GitHubRateLimitWaitItemOperationClass = "run_status_comment"
+)
+
+// Defines values for GitHubRateLimitWaitItemState.
+const (
+	GitHubRateLimitWaitItemStateAutoResumeInProgress GitHubRateLimitWaitItemState = "auto_resume_in_progress"
+	GitHubRateLimitWaitItemStateAutoResumeScheduled  GitHubRateLimitWaitItemState = "auto_resume_scheduled"
+	GitHubRateLimitWaitItemStateCancelled            GitHubRateLimitWaitItemState = "cancelled"
+	GitHubRateLimitWaitItemStateManualActionRequired GitHubRateLimitWaitItemState = "manual_action_required"
+	GitHubRateLimitWaitItemStateOpen                 GitHubRateLimitWaitItemState = "open"
+	GitHubRateLimitWaitItemStateResolved             GitHubRateLimitWaitItemState = "resolved"
+)
+
 // Defines values for ImportDocsetRequestLocale.
 const (
 	ImportDocsetRequestLocaleEn ImportDocsetRequestLocale = "en"
@@ -131,10 +190,10 @@ const (
 
 // Defines values for MissionControlAllowedActionPresentation.
 const (
-	Danger    MissionControlAllowedActionPresentation = "danger"
-	Link      MissionControlAllowedActionPresentation = "link"
-	Primary   MissionControlAllowedActionPresentation = "primary"
-	Secondary MissionControlAllowedActionPresentation = "secondary"
+	MissionControlAllowedActionPresentationDanger    MissionControlAllowedActionPresentation = "danger"
+	MissionControlAllowedActionPresentationLink      MissionControlAllowedActionPresentation = "link"
+	MissionControlAllowedActionPresentationPrimary   MissionControlAllowedActionPresentation = "primary"
+	MissionControlAllowedActionPresentationSecondary MissionControlAllowedActionPresentation = "secondary"
 )
 
 // Defines values for MissionControlCommandApprovalApprovalState.
@@ -450,6 +509,39 @@ const (
 	RetrySyncPayloadExpectedStatusReconciled      RetrySyncPayloadExpectedStatus = "reconciled"
 )
 
+// Defines values for RunRealtimeMessageType.
+const (
+	RunRealtimeMessageTypeError                    RunRealtimeMessageType = "error"
+	RunRealtimeMessageTypeEvents                   RunRealtimeMessageType = "events"
+	RunRealtimeMessageTypeLogs                     RunRealtimeMessageType = "logs"
+	RunRealtimeMessageTypeRun                      RunRealtimeMessageType = "run"
+	RunRealtimeMessageTypeSnapshot                 RunRealtimeMessageType = "snapshot"
+	RunRealtimeMessageTypeWaitEntered              RunRealtimeMessageType = "wait_entered"
+	RunRealtimeMessageTypeWaitManualActionRequired RunRealtimeMessageType = "wait_manual_action_required"
+	RunRealtimeMessageTypeWaitResolved             RunRealtimeMessageType = "wait_resolved"
+	RunRealtimeMessageTypeWaitUpdated              RunRealtimeMessageType = "wait_updated"
+)
+
+// Defines values for RunWaitProjectionCommentMirrorState.
+const (
+	NotAttempted RunWaitProjectionCommentMirrorState = "not_attempted"
+	PendingRetry RunWaitProjectionCommentMirrorState = "pending_retry"
+	Synced       RunWaitProjectionCommentMirrorState = "synced"
+)
+
+// Defines values for RunWaitResolutionContourKind.
+const (
+	RunWaitResolutionContourKindAgentBotToken RunWaitResolutionContourKind = "agent_bot_token"
+	RunWaitResolutionContourKindPlatformPat   RunWaitResolutionContourKind = "platform_pat"
+)
+
+// Defines values for RunWaitResolutionResolutionKind.
+const (
+	AutoResumed      RunWaitResolutionResolutionKind = "auto_resumed"
+	Cancelled        RunWaitResolutionResolutionKind = "cancelled"
+	ManuallyResolved RunWaitResolutionResolutionKind = "manually_resolved"
+)
+
 // Defines values for RuntimeDeployTaskStatus.
 const (
 	RuntimeDeployTaskStatusCanceled  RuntimeDeployTaskStatus = "canceled"
@@ -592,11 +684,11 @@ const (
 
 // Defines values for RuntimeDeployTasksRealtimeParamsStatus.
 const (
-	RuntimeDeployTasksRealtimeParamsStatusCanceled  RuntimeDeployTasksRealtimeParamsStatus = "canceled"
-	RuntimeDeployTasksRealtimeParamsStatusFailed    RuntimeDeployTasksRealtimeParamsStatus = "failed"
-	RuntimeDeployTasksRealtimeParamsStatusPending   RuntimeDeployTasksRealtimeParamsStatus = "pending"
-	RuntimeDeployTasksRealtimeParamsStatusRunning   RuntimeDeployTasksRealtimeParamsStatus = "running"
-	RuntimeDeployTasksRealtimeParamsStatusSucceeded RuntimeDeployTasksRealtimeParamsStatus = "succeeded"
+	Canceled  RuntimeDeployTasksRealtimeParamsStatus = "canceled"
+	Failed    RuntimeDeployTasksRealtimeParamsStatus = "failed"
+	Pending   RuntimeDeployTasksRealtimeParamsStatus = "pending"
+	Running   RuntimeDeployTasksRealtimeParamsStatus = "running"
+	Succeeded RuntimeDeployTasksRealtimeParamsStatus = "succeeded"
 )
 
 // Defines values for ListRuntimeErrorsParamsState.
@@ -608,9 +700,9 @@ const (
 
 // Defines values for ListRuntimeErrorsParamsLevel.
 const (
-	Critical ListRuntimeErrorsParamsLevel = "critical"
-	Error    ListRuntimeErrorsParamsLevel = "error"
-	Warning  ListRuntimeErrorsParamsLevel = "warning"
+	ListRuntimeErrorsParamsLevelCritical ListRuntimeErrorsParamsLevel = "critical"
+	ListRuntimeErrorsParamsLevelError    ListRuntimeErrorsParamsLevel = "error"
+	ListRuntimeErrorsParamsLevelWarning  ListRuntimeErrorsParamsLevel = "warning"
 )
 
 // AgentDetailsPayload defines model for AgentDetailsPayload.
@@ -724,6 +816,62 @@ type FlowEvent struct {
 type FlowEventItemsResponse struct {
 	Items []FlowEvent `json:"items"`
 }
+
+// GitHubRateLimitManualAction defines model for GitHubRateLimitManualAction.
+type GitHubRateLimitManualAction struct {
+	DetailsMarkdown    string                          `json:"details_markdown"`
+	Kind               GitHubRateLimitManualActionKind `json:"kind"`
+	SuggestedNotBefore *time.Time                      `json:"suggested_not_before"`
+	Summary            string                          `json:"summary"`
+}
+
+// GitHubRateLimitManualActionKind defines model for GitHubRateLimitManualAction.Kind.
+type GitHubRateLimitManualActionKind string
+
+// GitHubRateLimitRecoveryHint defines model for GitHubRateLimitRecoveryHint.
+type GitHubRateLimitRecoveryHint struct {
+	DetailsMarkdown string                                   `json:"details_markdown"`
+	HintKind        GitHubRateLimitRecoveryHintHintKind      `json:"hint_kind"`
+	ResumeNotBefore *time.Time                               `json:"resume_not_before"`
+	SourceHeaders   GitHubRateLimitRecoveryHintSourceHeaders `json:"source_headers"`
+}
+
+// GitHubRateLimitRecoveryHintHintKind defines model for GitHubRateLimitRecoveryHint.HintKind.
+type GitHubRateLimitRecoveryHintHintKind string
+
+// GitHubRateLimitRecoveryHintSourceHeaders defines model for GitHubRateLimitRecoveryHint.SourceHeaders.
+type GitHubRateLimitRecoveryHintSourceHeaders string
+
+// GitHubRateLimitWaitItem defines model for GitHubRateLimitWaitItem.
+type GitHubRateLimitWaitItem struct {
+	AttemptsUsed    int32                                 `json:"attempts_used"`
+	Confidence      GitHubRateLimitWaitItemConfidence     `json:"confidence"`
+	ContourKind     GitHubRateLimitWaitItemContourKind    `json:"contour_kind"`
+	EnteredAt       time.Time                             `json:"entered_at"`
+	LimitKind       GitHubRateLimitWaitItemLimitKind      `json:"limit_kind"`
+	ManualAction    *GitHubRateLimitManualAction          `json:"manual_action,omitempty"`
+	MaxAttempts     int32                                 `json:"max_attempts"`
+	OperationClass  GitHubRateLimitWaitItemOperationClass `json:"operation_class"`
+	RecoveryHint    GitHubRateLimitRecoveryHint           `json:"recovery_hint"`
+	ResumeNotBefore *time.Time                            `json:"resume_not_before"`
+	State           GitHubRateLimitWaitItemState          `json:"state"`
+	WaitId          string                                `json:"wait_id"`
+}
+
+// GitHubRateLimitWaitItemConfidence defines model for GitHubRateLimitWaitItem.Confidence.
+type GitHubRateLimitWaitItemConfidence string
+
+// GitHubRateLimitWaitItemContourKind defines model for GitHubRateLimitWaitItem.ContourKind.
+type GitHubRateLimitWaitItemContourKind string
+
+// GitHubRateLimitWaitItemLimitKind defines model for GitHubRateLimitWaitItem.LimitKind.
+type GitHubRateLimitWaitItemLimitKind string
+
+// GitHubRateLimitWaitItemOperationClass defines model for GitHubRateLimitWaitItem.OperationClass.
+type GitHubRateLimitWaitItemOperationClass string
+
+// GitHubRateLimitWaitItemState defines model for GitHubRateLimitWaitItem.State.
+type GitHubRateLimitWaitItemState string
 
 // ImportDocsetRequest defines model for ImportDocsetRequest.
 type ImportDocsetRequest struct {
@@ -1398,31 +1546,32 @@ type RetrySyncPayloadExpectedStatus string
 
 // Run defines model for Run.
 type Run struct {
-	AgentKey        *string    `json:"agent_key"`
-	CorrelationId   string     `json:"correlation_id"`
-	CreatedAt       time.Time  `json:"created_at"`
-	FinishedAt      *time.Time `json:"finished_at"`
-	Id              string     `json:"id"`
-	IssueNumber     *int32     `json:"issue_number"`
-	IssueUrl        *string    `json:"issue_url"`
-	JobExists       *bool      `json:"job_exists,omitempty"`
-	JobName         *string    `json:"job_name"`
-	JobNamespace    *string    `json:"job_namespace"`
-	LastHeartbeatAt *time.Time `json:"last_heartbeat_at"`
-	Namespace       *string    `json:"namespace"`
-	NamespaceExists *bool      `json:"namespace_exists,omitempty"`
-	PrNumber        *int32     `json:"pr_number"`
-	PrUrl           *string    `json:"pr_url"`
-	ProjectId       *string    `json:"project_id"`
-	ProjectName     string     `json:"project_name"`
-	ProjectSlug     string     `json:"project_slug"`
-	StartedAt       *time.Time `json:"started_at"`
-	Status          string     `json:"status"`
-	TriggerKind     *string    `json:"trigger_kind"`
-	TriggerLabel    *string    `json:"trigger_label"`
-	WaitReason      *string    `json:"wait_reason"`
-	WaitSince       *time.Time `json:"wait_since"`
-	WaitState       *string    `json:"wait_state"`
+	AgentKey        *string            `json:"agent_key"`
+	CorrelationId   string             `json:"correlation_id"`
+	CreatedAt       time.Time          `json:"created_at"`
+	FinishedAt      *time.Time         `json:"finished_at"`
+	Id              string             `json:"id"`
+	IssueNumber     *int32             `json:"issue_number"`
+	IssueUrl        *string            `json:"issue_url"`
+	JobExists       *bool              `json:"job_exists,omitempty"`
+	JobName         *string            `json:"job_name"`
+	JobNamespace    *string            `json:"job_namespace"`
+	LastHeartbeatAt *time.Time         `json:"last_heartbeat_at"`
+	Namespace       *string            `json:"namespace"`
+	NamespaceExists *bool              `json:"namespace_exists,omitempty"`
+	PrNumber        *int32             `json:"pr_number"`
+	PrUrl           *string            `json:"pr_url"`
+	ProjectId       *string            `json:"project_id"`
+	ProjectName     string             `json:"project_name"`
+	ProjectSlug     string             `json:"project_slug"`
+	StartedAt       *time.Time         `json:"started_at"`
+	Status          string             `json:"status"`
+	TriggerKind     *string            `json:"trigger_kind"`
+	TriggerLabel    *string            `json:"trigger_label"`
+	WaitProjection  *RunWaitProjection `json:"wait_projection,omitempty"`
+	WaitReason      *string            `json:"wait_reason"`
+	WaitSince       *time.Time         `json:"wait_since"`
+	WaitState       *string            `json:"wait_state"`
 }
 
 // RunItemsResponse defines model for RunItemsResponse.
@@ -1448,6 +1597,22 @@ type RunNamespaceCleanupResponse struct {
 	RunId          string  `json:"run_id"`
 }
 
+// RunRealtimeMessage defines model for RunRealtimeMessage.
+type RunRealtimeMessage struct {
+	Events           *[]FlowEvent              `json:"events,omitempty"`
+	Logs             *RunLogs                  `json:"logs,omitempty"`
+	Message          *string                   `json:"message"`
+	Run              *Run                      `json:"run,omitempty"`
+	SentAt           time.Time                 `json:"sent_at"`
+	Type             RunRealtimeMessageType    `json:"type"`
+	WaitManualAction *RunWaitManualActionEvent `json:"wait_manual_action,omitempty"`
+	WaitProjection   *RunWaitProjection        `json:"wait_projection,omitempty"`
+	WaitResolution   *RunWaitResolution        `json:"wait_resolution,omitempty"`
+}
+
+// RunRealtimeMessageType defines model for RunRealtimeMessage.Type.
+type RunRealtimeMessageType string
+
 // RunRepositoryPreflightResponse defines model for RunRepositoryPreflightResponse.
 type RunRepositoryPreflightResponse struct {
 	Checks       []PreflightCheckResult `json:"checks"`
@@ -1456,6 +1621,39 @@ type RunRepositoryPreflightResponse struct {
 	RepositoryId string                 `json:"repository_id"`
 	Status       string                 `json:"status"`
 }
+
+// RunWaitManualActionEvent defines model for RunWaitManualActionEvent.
+type RunWaitManualActionEvent struct {
+	ManualAction GitHubRateLimitManualAction `json:"manual_action"`
+	UpdatedAt    time.Time                   `json:"updated_at"`
+	WaitId       string                      `json:"wait_id"`
+}
+
+// RunWaitProjection defines model for RunWaitProjection.
+type RunWaitProjection struct {
+	CommentMirrorState RunWaitProjectionCommentMirrorState `json:"comment_mirror_state"`
+	DominantWait       GitHubRateLimitWaitItem             `json:"dominant_wait"`
+	RelatedWaits       []GitHubRateLimitWaitItem           `json:"related_waits"`
+	WaitReason         string                              `json:"wait_reason"`
+	WaitState          string                              `json:"wait_state"`
+}
+
+// RunWaitProjectionCommentMirrorState defines model for RunWaitProjection.CommentMirrorState.
+type RunWaitProjectionCommentMirrorState string
+
+// RunWaitResolution defines model for RunWaitResolution.
+type RunWaitResolution struct {
+	ContourKind    RunWaitResolutionContourKind    `json:"contour_kind"`
+	ResolutionKind RunWaitResolutionResolutionKind `json:"resolution_kind"`
+	ResolvedAt     time.Time                       `json:"resolved_at"`
+	WaitId         string                          `json:"wait_id"`
+}
+
+// RunWaitResolutionContourKind defines model for RunWaitResolution.ContourKind.
+type RunWaitResolutionContourKind string
+
+// RunWaitResolutionResolutionKind defines model for RunWaitResolution.ResolutionKind.
+type RunWaitResolutionResolutionKind string
 
 // RuntimeDeployTask defines model for RuntimeDeployTask.
 type RuntimeDeployTask struct {
@@ -6649,12 +6847,13 @@ type RunRealtimeResponseObject interface {
 	VisitRunRealtimeResponse(w http.ResponseWriter) error
 }
 
-type RunRealtime200Response struct {
-}
+type RunRealtime200JSONResponse RunRealtimeMessage
 
-func (response RunRealtime200Response) VisitRunRealtimeResponse(w http.ResponseWriter) error {
+func (response RunRealtime200JSONResponse) VisitRunRealtimeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-	return nil
+
+	return json.NewEncoder(w).Encode(response)
 }
 
 type RunRealtime400JSONResponse struct{ BadRequestJSONResponse }

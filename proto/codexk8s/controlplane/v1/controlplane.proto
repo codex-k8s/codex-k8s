@@ -109,6 +109,44 @@ message Run {
   optional string agent_key = 23;
   google.protobuf.Timestamp wait_since = 24;
   google.protobuf.Timestamp last_heartbeat_at = 25;
+  RunWaitProjection wait_projection = 26;
+}
+
+message RunWaitProjection {
+  string wait_state = 1;
+  string wait_reason = 2;
+  GitHubRateLimitWaitItem dominant_wait = 3;
+  repeated GitHubRateLimitWaitItem related_waits = 4;
+  string comment_mirror_state = 5;
+}
+
+message GitHubRateLimitWaitItem {
+  string wait_id = 1;
+  string contour_kind = 2;
+  string limit_kind = 3;
+  string operation_class = 4;
+  string state = 5;
+  string confidence = 6;
+  google.protobuf.Timestamp entered_at = 7;
+  google.protobuf.Timestamp resume_not_before = 8;
+  int32 attempts_used = 9;
+  int32 max_attempts = 10;
+  GitHubRateLimitRecoveryHint recovery_hint = 11;
+  GitHubRateLimitManualAction manual_action = 12;
+}
+
+message GitHubRateLimitRecoveryHint {
+  string hint_kind = 1;
+  google.protobuf.Timestamp resume_not_before = 2;
+  string source_headers = 3;
+  string details_markdown = 4;
+}
+
+message GitHubRateLimitManualAction {
+  string kind = 1;
+  string summary = 2;
+  string details_markdown = 3;
+  google.protobuf.Timestamp suggested_not_before = 4;
 }
 
 message ApprovalRequest {
