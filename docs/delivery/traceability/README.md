@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-12
 updated_at: 2026-03-14
-related_issues: [325, 327, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 413, 416, 418, 444]
+related_issues: [325, 327, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 413, 416, 418, 444, 447, 448]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -31,7 +31,7 @@ approvals:
 | `docs/delivery/traceability/s8_go_refactoring_parallelization_history.md` | Sprint S8 | История go-refactor/onboarding/doc-governance потоков, включая doc-audit decomposition issue `#327` |
 | `docs/delivery/traceability/s9_mission_control_dashboard_history.md` | Sprint S9 | История intake/vision/prd/arch/design/plan решений по Mission Control Dashboard, включая execution backlog `#369..#375` и split core vs conditional voice contour |
 | `docs/delivery/traceability/s10_mcp_user_interactions_history.md` | Sprint S10 | История intake, vision, PRD и architecture baseline по built-in MCP user interactions, включая continuity issues `#385` (`run:arch`) и `#387` (`run:design`) |
-| `docs/delivery/traceability/s11_telegram_user_interaction_adapter_history.md` | Sprint S11 | История intake baseline по Telegram-адаптеру как первому внешнему channel path, включая sequencing constraint относительно Sprint S10 и continuity issue `#444` (`run:vision`) |
+| `docs/delivery/traceability/s11_telegram_user_interaction_adapter_history.md` | Sprint S11 | История intake и vision baseline по Telegram-адаптеру как первому внешнему channel path, включая historical handover issue `#444`, active vision stage `#447` и continuity issue `#448` для `run:prd` |
 | `docs/delivery/traceability/s12_github_api_rate_limit_resilience_history.md` | Sprint S12 | История intake/vision/PRD решений по GitHub API rate-limit resilience, включая continuity issues `#416` (`run:prd`) и `#418` (`run:arch`) |
 
 ## Правила обновления

@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-14
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -310,10 +310,17 @@ approvals:
 - Результат Day 1 (факт):
   - Telegram зафиксирован как отдельный последовательный stream после platform-core initiative Sprint S10, а не как параллельная или заменяющая её ветка;
   - MVP scope ограничен сценариями `user.notify`, `user.decision.request`, inline callbacks и optional free-text reply;
-  - проверяемый readiness gate выражен явно: `#444` может стартовать только пока S10 plan issue `#389` остаётся closed и сохраняет design package `#387` как baseline typed interaction contract;
+  - проверяемый readiness gate выражен явно: active vision stage должен выполняться только пока S10 plan issue `#389` остаётся closed и сохраняет design package `#387` как baseline typed interaction contract;
   - reference repositories `telegram-approver` / `telegram-executor` и planned baseline `github.com/mymmrac/telego v1.7.0` признаны ориентиром, но не source-of-truth для service boundaries и product contract;
   - сохранены неподвижные ограничения: typed platform contract, separation from approval flow, deferred scope для voice/STT, reminders и richer conversations;
   - создана follow-up issue `#444` для stage `run:vision` без trigger-лейбла.
+- Day 2 (in-review): vision-package для Telegram-адаптера как первого внешнего channel-specific stream (`docs/delivery/epics/s11/epic-s11-day2-telegram-user-interaction-adapter-vision.md`, Issue `#447`).
+- Результат Day 2 (факт):
+  - зафиксированы mission, north star, persona outcomes и product principles для Telegram-канала как первого реального user-facing adapter path;
+  - KPI/success metrics и guardrails оформлены для turnaround, fallback, delivery success, callback safety и purity platform semantics;
+  - initial continuity issue `#444` сохранена как historical handover artifact от intake-stage, а active vision stage ведётся в Issue `#447`;
+  - подтверждён и повторно зафиксирован sequencing gate: `#447` может двигаться дальше только пока `#389` остаётся closed и сохраняет `#387` как effective typed interaction contract baseline;
+  - создана follow-up issue `#448` для stage `run:prd` без trigger-лейбла и с continuity-требованием продолжить цепочку до `run:dev`.
 
 ### Sprint S12: GitHub API rate-limit resilience
 - Day 1 (in-review): intake-пакет для GitHub API rate-limit resilience (`docs/delivery/epics/s12/epic-s12-day1-github-api-rate-limit-intake.md`, Issue `#366`).

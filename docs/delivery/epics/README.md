@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-24
 updated_at: 2026-03-14
-related_issues: [112, 154, 184, 185, 187, 189, 195, 197, 199, 201, 212, 218, 220, 222, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263, 265, 281, 282, 320, 327, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 444]
+related_issues: [112, 154, 184, 185, 187, 189, 195, 197, 199, 201, 212, 218, 220, 222, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263, 265, 281, 282, 320, 327, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 444, 447, 448]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -37,7 +37,7 @@ approvals:
 | `docs/delivery/epics/s8/` | Day1 plan + Day2/Day3 onboarding эпики + Day4 documentation IA execution/result (`docs/index.md`, domain `README.md`, migration-map, repo-local refs remediation) + каталог Sprint S8 (Go refactoring + repository onboarding automation) + execution backlog `S8-E01..S8-E09` | `docs/delivery/epics/s8/epic_s8.md` |
 | `docs/delivery/epics/s9/` | Day1 intake + Day2 vision + Day3 PRD package (`epic + prd`) + Day4 architecture package (`epic + C4 overlays + ADR/alternatives`) + Day5 design package (`epic + design_doc/api_contract/data_model/migrations_policy`) + Day6 plan package (`epic-s9-day6-mission-control-dashboard-plan.md`) с execution issues `#369..#375` для Mission Control Dashboard и каталога Sprint S9 (control-plane UX, active-set dashboard, discussion-first flow, realtime/provider reconciliation) | `docs/delivery/epics/s9/epic_s9.md` |
 | `docs/delivery/epics/s10/` | Day1 intake + Day2 vision + Day3 PRD package (`epic + prd`) + Day4 architecture package (`epic + C4 overlays + ADR/alternatives`) + Day5 design package + Day6 plan package (`epic-s10-day6-mcp-user-interactions-plan.md`) по built-in MCP user interactions; execution backlog разложен на issues `#391..#395` для `control-plane`, `worker`, `api-gateway`, `agent-runner` и observability | `docs/delivery/epics/s10/epic_s10.md` |
-| `docs/delivery/epics/s11/` | Day1 intake для Telegram-адаптера как первого внешнего channel path + каталог Sprint S11; continuity issue `#444` создана для `run:vision`, а следующие day-эпики оформляются последовательно после owner review | `docs/delivery/epics/s11/epic_s11.md` |
+| `docs/delivery/epics/s11/` | Day1 intake + Day2 vision для Telegram-адаптера как первого внешнего channel path + каталог Sprint S11; active vision stage идёт в issue `#447`, continuity issue `#444` сохранена как historical handover, а issue `#448` создана для `run:prd` | `docs/delivery/epics/s11/epic_s11.md` |
 | `docs/delivery/epics/s12/` | Day1 intake + Day2 vision + Day3 PRD package (`epic + prd`) для GitHub API rate-limit resilience; continuity после PRD переведена в architecture issue `#418`, а следующие day-эпики создаются последовательно после owner review | `docs/delivery/epics/s12/epic_s12.md` |
 
 ## Проверка консистентности
