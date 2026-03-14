@@ -95,7 +95,7 @@ spec:
         - libs/go
         - proto
     worker:
-      value: "0.1.72"
+      value: "0.1.73"
       bumpOn:
         - services/jobs/worker
         - libs/go
