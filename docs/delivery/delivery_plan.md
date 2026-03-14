@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-14
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -399,9 +399,15 @@ approvals:
   - зафиксирована draft-связка `risk tier -> mandatory stages/gates -> required evidence`;
   - оформлена зависимость на downstream runtime/UI stream Sprint `S14` (`#470`): release safety, observability contract и quality cockpit не должны стартовать implementation-first без решений S13;
   - continuity rule закреплён как обязательный до `run:dev`: каждый doc-stage создаёт следующую follow-up issue без trigger-лейбла.
-- Day 2 (planned): vision issue `#471`.
-  - Цель: mission statement, quality north star, persona outcomes, success metrics и guardrails для `Quality Governance System`.
-  - Ожидаемый результат: vision package + новая issue для `run:prd` без trigger-лейбла.
+- Day 2 (in-review): vision-пакет для `Quality Governance System` (`docs/delivery/epics/s13/epic-s13-day2-quality-governance-vision.md`, Issue `#471`).
+- Результат Day 2 (факт):
+  - `Quality Governance System` закреплена как proportional governance capability: quality north star, persona outcomes, KPI/guardrails и product principles определены для owner/reviewer, delivery roles и platform operator;
+  - сохранён sequencing gate `Sprint S13 governance baseline -> Sprint S14 runtime/UI stream` (`#470`) без implementation-first drift;
+  - зафиксированы non-negotiables для следующих stage: explicit risk tier, separate constructs `evidence completeness / verification minimum / review-waiver discipline`, proportional governance и запрет silent waivers для `high/critical`;
+  - создана follow-up issue `#476` для stage `run:prd` без trigger-лейбла.
+- Day 3 (planned): PRD issue `#476`.
+  - Цель: user stories, FR/AC/NFR, edge cases и expected evidence для `Quality Governance System`.
+  - Ожидаемый результат: PRD package + новая issue для `run:arch` без trigger-лейбла.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

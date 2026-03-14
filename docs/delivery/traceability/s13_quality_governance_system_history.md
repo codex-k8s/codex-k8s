@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-14
 updated_at: 2026-03-14
-related_issues: [469, 471]
+related_issues: [469, 471, 476]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -35,3 +35,16 @@ approvals:
 - Создана follow-up issue `#471` для stage `run:vision` без trigger-лейбла.
 - Через Context7 повторно подтверждён актуальный non-interactive GitHub CLI flow для continuity issue / PR automation (`/websites/cli_github_manual`).
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: intake stage формализует problem/scope/handover и historical delta, а не добавляет новые канонические требования.
+
+## Актуализация по Issue #471 (`run:vision`, 2026-03-14)
+- Подготовлен vision package:
+  - `docs/delivery/epics/s13/epic-s13-day2-quality-governance-vision.md`.
+- Зафиксированы:
+  - mission и quality north star для `Quality Governance System` как proportional change governance capability;
+  - persona outcomes для owner/reviewer, delivery roles и platform operator;
+  - success metrics и guardrails для evidence completeness, risk accuracy, lead-time proportionality, low-risk overhead и governance-gap prevention;
+  - явный sequencing gate `Sprint S13 governance baseline -> Sprint S14 runtime/UI stream` без reopening implementation-first;
+  - обязательные continuity decisions: explicit risk tier, separate constructs `evidence completeness / verification minimum / review-waiver discipline`, proportional governance и запрет silent waivers для `high/critical`.
+- Создана follow-up issue `#476` для stage `run:prd` без trigger-лейбла.
+- Для GitHub automation повторно подтверждён актуальный non-interactive CLI flow через Context7 (`/websites/cli_github_manual`) и локальный `gh issue create --help`.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась, потому что vision stage фиксирует product framing, KPI/guardrails и continuity, а не изменяет канонический requirements baseline.
