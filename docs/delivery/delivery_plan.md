@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-14
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -333,7 +333,14 @@ approvals:
   - raw Telegram webhooks, secret-token verification и callback query acknowledgement оставлены во внешнем Telegram adapter contour, а `api-gateway` сохранён как thin callback bridge для normalized adapter callbacks;
   - callback payload direction зафиксирован как opaque/server-side lookup strategy, а message edit vs follow-up notify — как async platform-owned fallback policy под контролем `worker`;
   - подготовлены ADR-0014 и ALT-0006, а также follow-up issue `#454` для stage `run:design` без trigger-лейбла с continuity-требованием сохранить цепочку `design -> plan -> dev`.
-- Day 5 (planned): design package для Telegram-адаптера (`docs/architecture/initiatives/s11_telegram_user_interaction_adapter/{design_doc.md,api_contract.md,data_model.md,migrations_policy.md}`, Issue `#454`).
+- Day 5 (in-review): design package для Telegram-адаптера (`docs/delivery/epics/s11/epic-s11-day5-telegram-user-interaction-adapter-design.md`, `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/{design_doc.md,api_contract.md,data_model.md,migrations_policy.md}`, Issue `#454`).
+- Результат Day 5 (факт):
+  - зафиксированы implementation-ready contracts для Telegram delivery/callback path, opaque callback handles и callback token grace;
+  - выбрана additive data-model extension поверх Sprint S10 interaction foundation с `interaction_channel_bindings`, `interaction_callback_handles` и operator visibility state;
+  - закреплён rollout order `S10 prerequisite -> migrations -> control-plane -> worker -> api-gateway -> Telegram adapter contour` и continuation policy `edit -> follow-up -> manual fallback`;
+  - создана follow-up issue `#456` для stage `run:plan` без trigger-лейбла.
+- Day 6 (planned): plan package для Telegram-адаптера (Issue `#456`).
+  - Цель: разложить execution waves, quality gates, DoR/DoD и continuity handover в `run:dev`.
 
 ### Sprint S12: GitHub API rate-limit resilience
 - Day 1 (in-review): intake-пакет для GitHub API rate-limit resilience (`docs/delivery/epics/s12/epic-s12-day1-github-api-rate-limit-intake.md`, Issue `#366`).
