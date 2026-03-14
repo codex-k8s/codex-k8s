@@ -28,6 +28,10 @@
 make gen-openapi-go SVC=services/<zone>/<service>
 ```
 
+Текущий backend-coverage в репозитории:
+- `services/external/api-gateway`
+- `services/external/telegram-interaction-adapter`
+
 Обязательный make-блок:
 - `gen-openapi-go` — генерация Go transport-артефактов;
 - `gen-openapi-ts` — генерация TS-клиента для frontend;

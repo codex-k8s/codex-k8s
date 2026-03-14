@@ -1,4 +1,4 @@
-ARG GOLANG_IMAGE=127.0.0.1:5000/codex-k8s/mirror/golang:1.25.6-bookworm
+ARG GOLANG_IMAGE=127.0.0.1:5000/codex-k8s/mirror/golang:1.25.8-bookworm
 ARG NODE_IMAGE=127.0.0.1:5000/codex-k8s/mirror/node:22-bookworm
 
 FROM ${GOLANG_IMAGE} AS go-builder

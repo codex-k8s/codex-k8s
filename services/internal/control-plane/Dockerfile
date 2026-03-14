@@ -1,4 +1,4 @@
-ARG GOLANG_IMAGE=127.0.0.1:5000/codex-k8s/mirror/golang:1.25.6-alpine
+ARG GOLANG_IMAGE=127.0.0.1:5000/codex-k8s/mirror/golang:1.25.8-alpine
 
 FROM ${GOLANG_IMAGE} AS builder
 

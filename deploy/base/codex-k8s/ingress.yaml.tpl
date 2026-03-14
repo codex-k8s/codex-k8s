@@ -44,3 +44,26 @@ spec:
                 port:
                   number: 4180
 {{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: codex-k8s-telegram-webhook
+  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - {{ $host }}
+      secretName: {{ $tlsSecret }}
+  rules:
+    - host: {{ $host }}
+      http:
+        paths:
+          - path: /api/v1/telegram/interactions/webhook
+            pathType: Exact
+            backend:
+              service:
+                name: codex-k8s-telegram-interaction-adapter
+                port:
+                  number: 8080

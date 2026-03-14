@@ -58,6 +58,24 @@ spec:
           port: 9090
         - protocol: TCP
           port: 8081
+    # Allow platform pods to call api-gateway over the in-cluster service port.
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: codex-k8s
+              app.kubernetes.io/component: api-gateway
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow worker to dispatch Telegram envelopes and allow adapter callbacks to reach api-gateway.
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: codex-k8s
+              app.kubernetes.io/component: telegram-interaction-adapter
+      ports:
+        - protocol: TCP
+          port: 8080
     # Allow platform pods to query the internal registry (staff: Registry Images).
     - to:
         - podSelector:

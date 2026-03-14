@@ -57,4 +57,5 @@ spec:
 
               git diff --exit-code -- \
                 services/external/api-gateway/internal/transport/http/generated/openapi.gen.go \
+                services/external/telegram-interaction-adapter/internal/transport/http/generated/openapi.gen.go \
                 services/staff/web-console/src/shared/api/generated

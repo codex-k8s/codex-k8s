@@ -22,6 +22,8 @@ type Config struct {
 
 	// PublicBaseURL is used to build default webhook URL when CODEXK8S_GITHUB_WEBHOOK_URL is empty.
 	PublicBaseURL string `env:"CODEXK8S_PUBLIC_BASE_URL,required,notEmpty"`
+	// InteractionCallbackBaseURL overrides adapter-facing callback base URL for in-cluster contours.
+	InteractionCallbackBaseURL string `env:"CODEXK8S_INTERACTION_CALLBACK_BASE_URL"`
 	// ProductionDomain is canonical production host used in run status links.
 	ProductionDomain string `env:"CODEXK8S_PRODUCTION_DOMAIN"`
 	// AIDomain is base domain for full-env AI slots (<namespace>.<ai_domain>).

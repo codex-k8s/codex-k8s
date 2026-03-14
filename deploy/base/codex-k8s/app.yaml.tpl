@@ -525,6 +525,12 @@ spec:
                 secretKeyRef:
                   name: codex-k8s-runtime
                   key: CODEXK8S_PUBLIC_BASE_URL
+            - name: CODEXK8S_INTERACTION_CALLBACK_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_INTERACTION_CALLBACK_BASE_URL
+                  optional: true
             - name: CODEXK8S_GITHUB_OAUTH_CLIENT_ID
               valueFrom:
                 secretKeyRef:
@@ -765,6 +771,24 @@ spec:
               value: '{{ envOr "CODEXK8S_CONTROL_PLANE_GRPC_TARGET" "" }}'
             - name: CODEXK8S_CONTROL_PLANE_MCP_BASE_URL
               value: '{{ envOr "CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" "" }}'
+            - name: CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BASE_URL
+                  optional: true
+            - name: CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN
+                  optional: true
+            - name: CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT
+                  optional: true
             - name: CODEXK8S_OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:

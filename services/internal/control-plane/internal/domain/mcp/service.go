@@ -37,6 +37,7 @@ type Config struct {
 	TokenIssuer                  string
 	ServerName                   string
 	PublicBaseURL                string
+	InteractionCallbackBaseURL   string
 	InternalMCPBaseURL           string
 	RepositoryRoot               string
 	ServicesConfigEnv            string

@@ -105,6 +105,13 @@ type interactionDeliveryEnvelopeParams struct {
 	Binding *entitytypes.InteractionChannelBinding
 }
 
+func (s *Service) interactionCallbackBaseURL() string {
+	if value := strings.TrimRight(strings.TrimSpace(s.cfg.InteractionCallbackBaseURL), "/"); value != "" {
+		return value
+	}
+	return strings.TrimRight(strings.TrimSpace(s.cfg.PublicBaseURL), "/")
+}
+
 func (s *Service) buildInteractionDeliveryEnvelope(ctx context.Context, params interactionDeliveryEnvelopeParams) (json.RawMessage, error) {
 	request := params.Request
 	attempt := params.Attempt
@@ -147,7 +154,7 @@ func (s *Service) buildInteractionDeliveryEnvelope(ctx context.Context, params i
 		}
 
 		callbackEndpoint := &interactionCallbackEndpoint{
-			URL:            strings.TrimRight(strings.TrimSpace(s.cfg.PublicBaseURL), "/") + interactionCallbackPath,
+			URL:            s.interactionCallbackBaseURL() + interactionCallbackPath,
 			BearerToken:    callbackToken.Token,
 			TokenExpiresAt: callbackToken.ExpiresAt.UTC().Format(time.RFC3339Nano),
 			Handles:        []interactionCallbackHandle{},
