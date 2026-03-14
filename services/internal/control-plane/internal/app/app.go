@@ -106,7 +106,6 @@ func Run() error {
 	projectDatabases := projectdatabaserepo.NewRepository(pgxPool)
 	runtimeDeployTasks := runtimedeploytaskrepo.NewRepository(pgxPool)
 	runtimeErrors := runtimeerrorrepo.NewRepository(pgxPool)
-	prometheus.MustRegister(observability.NewInteractionCollector(interactionRequests, logger))
 
 	tokenCrypto, err := tokencrypt.NewService(cfg.TokenEncryptionKey)
 	if err != nil {
@@ -441,6 +440,12 @@ func Run() error {
 	); err != nil {
 		return fmt.Errorf("start runtime deploy reconciler loop: %w", err)
 	}
+
+	interactionCollector := observability.NewInteractionCollector(interactionRequests, logger)
+	if err := registerOrReplaceCollector(prometheus.DefaultRegisterer, interactionCollector); err != nil {
+		return fmt.Errorf("register interaction collector: %w", err)
+	}
+	defer prometheus.DefaultRegisterer.Unregister(interactionCollector)
 
 	grpcServer := grpc.NewServer()
 	controlplanev1.RegisterControlPlaneServiceServer(grpcServer, grpctransport.NewServer(grpctransport.Dependencies{
