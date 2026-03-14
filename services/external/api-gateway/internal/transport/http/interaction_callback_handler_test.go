@@ -74,17 +74,15 @@ func TestInteractionCallbackHandlerForwardsTypedRequest(t *testing.T) {
 
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/mcp/interactions/callback", strings.NewReader(`{
-		"schema_version":"v1",
+		"schema_version":"telegram-interaction-v1",
 		"interaction_id":"interaction-1",
 		"delivery_id":"delivery-1",
 		"adapter_event_id":"event-1",
-		"callback_kind":"decision_response",
+		"callback_kind":"option_selected",
 		"occurred_at":"2026-03-13T15:04:05Z",
-		"response":{
-			"response_kind":"option",
-			"selected_option_id":"approve",
-			"responder_ref":"user-42"
-		}
+		"callback_handle":"handle-1",
+		"responder_ref":"user-42",
+		"provider_message_ref":{"message_id":"42"}
 	}`))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	req.Header.Set(echo.HeaderAuthorization, "Bearer callback-token-1")
@@ -115,6 +113,9 @@ func TestInteractionCallbackHandlerForwardsTypedRequest(t *testing.T) {
 	}
 	if !resp.ResumeRequired {
 		t.Fatal("resume_required = false, want true")
+	}
+	if resp.ContinuationAction != "edit_message" {
+		t.Fatalf("continuation_action = %q, want edit_message", resp.ContinuationAction)
 	}
 }
 
@@ -183,23 +184,24 @@ func (s *testInteractionCallbackServer) SubmitInteractionCallback(
 	if req.GetAdapterEventId() != "event-1" {
 		s.t.Fatalf("adapter_event_id = %q, want event-1", req.GetAdapterEventId())
 	}
-	if req.GetCallbackKind() != "decision_response" {
-		s.t.Fatalf("callback_kind = %q, want decision_response", req.GetCallbackKind())
+	if req.GetCallbackKind() != "option_selected" {
+		s.t.Fatalf("callback_kind = %q, want option_selected", req.GetCallbackKind())
 	}
-	if req.GetResponseKind() != "option" {
-		s.t.Fatalf("response_kind = %q, want option", req.GetResponseKind())
-	}
-	if req.GetSelectedOptionId() != "approve" {
-		s.t.Fatalf("selected_option_id = %q, want approve", req.GetSelectedOptionId())
+	if req.GetCallbackHandle() != "handle-1" {
+		s.t.Fatalf("callback_handle = %q, want handle-1", req.GetCallbackHandle())
 	}
 	if req.GetResponderRef() != "user-42" {
 		s.t.Fatalf("responder_ref = %q, want user-42", req.GetResponderRef())
 	}
+	if got, want := string(req.GetProviderMessageRefJson()), `{"message_id":"42"}`; got != want {
+		s.t.Fatalf("provider_message_ref_json = %q, want %q", got, want)
+	}
 
 	return &controlplanev1.SubmitInteractionCallbackResponse{
-		Accepted:         true,
-		Classification:   "applied",
-		InteractionState: "resolved",
-		ResumeRequired:   true,
+		Accepted:           true,
+		Classification:     "applied",
+		InteractionState:   "resolved",
+		ResumeRequired:     true,
+		ContinuationAction: "edit_message",
 	}, nil
 }

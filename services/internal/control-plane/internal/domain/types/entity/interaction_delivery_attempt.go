@@ -9,18 +9,22 @@ import (
 
 // InteractionDeliveryAttempt stores one outbound dispatch attempt snapshot.
 type InteractionDeliveryAttempt struct {
-	ID                  int64
-	InteractionID       string
-	AttemptNo           int
-	DeliveryID          string
-	AdapterKind         string
-	Status              enumtypes.InteractionDeliveryAttemptStatus
-	RequestEnvelopeJSON json.RawMessage
-	AckPayloadJSON      json.RawMessage
-	AdapterDeliveryID   string
-	Retryable           bool
-	NextRetryAt         *time.Time
-	LastErrorCode       string
-	StartedAt           time.Time
-	FinishedAt          *time.Time
+	ID                     int64
+	InteractionID          string
+	ChannelBindingID       int64
+	AttemptNo              int
+	DeliveryID             string
+	AdapterKind            string
+	DeliveryRole           enumtypes.InteractionDeliveryRole
+	Status                 enumtypes.InteractionDeliveryAttemptStatus
+	RequestEnvelopeJSON    json.RawMessage
+	AckPayloadJSON         json.RawMessage
+	AdapterDeliveryID      string
+	ProviderMessageRefJSON json.RawMessage
+	Retryable              bool
+	NextRetryAt            *time.Time
+	LastErrorCode          string
+	ContinuationReason     string
+	StartedAt              time.Time
+	FinishedAt             *time.Time
 }

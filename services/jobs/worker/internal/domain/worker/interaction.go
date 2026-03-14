@@ -29,17 +29,21 @@ type InteractionDispatchAttempt struct {
 
 // CompleteInteractionDispatchParams describes one dispatch completion callback to control-plane.
 type CompleteInteractionDispatchParams struct {
-	InteractionID       string
-	DeliveryID          string
-	AdapterKind         string
-	Status              string
-	RequestEnvelopeJSON json.RawMessage
-	AckPayloadJSON      json.RawMessage
-	AdapterDeliveryID   string
-	Retryable           bool
-	NextRetryAt         *time.Time
-	LastErrorCode       string
-	FinishedAt          time.Time
+	InteractionID          string
+	DeliveryID             string
+	AdapterKind            string
+	Status                 string
+	RequestEnvelopeJSON    json.RawMessage
+	AckPayloadJSON         json.RawMessage
+	AdapterDeliveryID      string
+	ProviderMessageRefJSON json.RawMessage
+	EditCapability         string
+	Retryable              bool
+	NextRetryAt            *time.Time
+	LastErrorCode          string
+	CallbackTokenKeyID     string
+	CallbackTokenExpiresAt *time.Time
+	FinishedAt             time.Time
 }
 
 // CompleteInteractionDispatchResult returns aggregate state after dispatch completion.
@@ -70,11 +74,15 @@ type InteractionLifecycleClient interface {
 
 // InteractionDispatchAck is adapter transport feedback used to classify one attempt.
 type InteractionDispatchAck struct {
-	AdapterKind       string
-	AdapterDeliveryID string
-	AckPayloadJSON    json.RawMessage
-	Retryable         bool
-	ErrorCode         string
+	AdapterKind            string
+	AdapterDeliveryID      string
+	AckPayloadJSON         json.RawMessage
+	ProviderMessageRefJSON json.RawMessage
+	EditCapability         string
+	Retryable              bool
+	ErrorCode              string
+	CallbackTokenKeyID     string
+	CallbackTokenExpiresAt *time.Time
 }
 
 // InteractionDispatcher sends interaction envelopes to one external adapter family.

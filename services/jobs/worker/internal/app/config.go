@@ -71,6 +71,12 @@ type Config struct {
 	// ControlPlaneMCPBaseURL is optional MCP HTTP endpoint passed into spawned run pods.
 	// When empty, worker derives it from ControlPlaneGRPCTarget.
 	ControlPlaneMCPBaseURL string `env:"CODEXK8S_CONTROL_PLANE_MCP_BASE_URL"`
+	// TelegramInteractionAdapterBaseURL points to the external Telegram adapter contour ingress.
+	TelegramInteractionAdapterBaseURL string `env:"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BASE_URL"`
+	// TelegramInteractionAdapterBearerToken is optional adapter credential used by worker delivery requests.
+	TelegramInteractionAdapterBearerToken string `env:"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN"`
+	// TelegramInteractionAdapterTimeout bounds one worker -> adapter HTTP exchange.
+	TelegramInteractionAdapterTimeout string `env:"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT" envDefault:"10s"`
 	// OpenAIAPIKey is injected into run pods for codex login.
 	OpenAIAPIKey string `env:"CODEXK8S_OPENAI_API_KEY"`
 	// Context7APIKey enables Context7 documentation calls from run pods when set.

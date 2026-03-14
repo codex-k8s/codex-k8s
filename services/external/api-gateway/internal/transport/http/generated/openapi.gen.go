@@ -70,8 +70,10 @@ const (
 
 // Defines values for InteractionCallbackEnvelopeCallbackKind.
 const (
-	DecisionResponse InteractionCallbackEnvelopeCallbackKind = "decision_response"
 	DeliveryReceipt  InteractionCallbackEnvelopeCallbackKind = "delivery_receipt"
+	FreeTextReceived InteractionCallbackEnvelopeCallbackKind = "free_text_received"
+	OptionSelected   InteractionCallbackEnvelopeCallbackKind = "option_selected"
+	TransportFailure InteractionCallbackEnvelopeCallbackKind = "transport_failure"
 )
 
 // Defines values for InteractionCallbackEnvelopeDeliveryStatus.
@@ -83,7 +85,7 @@ const (
 
 // Defines values for InteractionCallbackEnvelopeSchemaVersion.
 const (
-	V1 InteractionCallbackEnvelopeSchemaVersion = "v1"
+	TelegramInteractionV1 InteractionCallbackEnvelopeSchemaVersion = "telegram-interaction-v1"
 )
 
 // Defines values for InteractionCallbackOutcomeClassification.
@@ -95,10 +97,12 @@ const (
 	InteractionCallbackOutcomeClassificationStale     InteractionCallbackOutcomeClassification = "stale"
 )
 
-// Defines values for InteractionResponsePayloadResponseKind.
+// Defines values for InteractionCallbackOutcomeContinuationAction.
 const (
-	FreeText InteractionResponsePayloadResponseKind = "free_text"
-	Option   InteractionResponsePayloadResponseKind = "option"
+	InteractionCallbackOutcomeContinuationActionEditMessage    InteractionCallbackOutcomeContinuationAction = "edit_message"
+	InteractionCallbackOutcomeContinuationActionManualFallback InteractionCallbackOutcomeContinuationAction = "manual_fallback"
+	InteractionCallbackOutcomeContinuationActionNone           InteractionCallbackOutcomeContinuationAction = "none"
+	InteractionCallbackOutcomeContinuationActionSendFollowUp   InteractionCallbackOutcomeContinuationAction = "send_follow_up"
 )
 
 // Defines values for MCPApprovalCallbackRequestDecision.
@@ -588,11 +592,11 @@ const (
 
 // Defines values for RuntimeDeployTasksRealtimeParamsStatus.
 const (
-	Canceled  RuntimeDeployTasksRealtimeParamsStatus = "canceled"
-	Failed    RuntimeDeployTasksRealtimeParamsStatus = "failed"
-	Pending   RuntimeDeployTasksRealtimeParamsStatus = "pending"
-	Running   RuntimeDeployTasksRealtimeParamsStatus = "running"
-	Succeeded RuntimeDeployTasksRealtimeParamsStatus = "succeeded"
+	RuntimeDeployTasksRealtimeParamsStatusCanceled  RuntimeDeployTasksRealtimeParamsStatus = "canceled"
+	RuntimeDeployTasksRealtimeParamsStatusFailed    RuntimeDeployTasksRealtimeParamsStatus = "failed"
+	RuntimeDeployTasksRealtimeParamsStatusPending   RuntimeDeployTasksRealtimeParamsStatus = "pending"
+	RuntimeDeployTasksRealtimeParamsStatusRunning   RuntimeDeployTasksRealtimeParamsStatus = "running"
+	RuntimeDeployTasksRealtimeParamsStatusSucceeded RuntimeDeployTasksRealtimeParamsStatus = "succeeded"
 )
 
 // Defines values for ListRuntimeErrorsParamsState.
@@ -754,16 +758,22 @@ type IngestGitHubWebhookResponseStatus string
 
 // InteractionCallbackEnvelope defines model for InteractionCallbackEnvelope.
 type InteractionCallbackEnvelope struct {
-	AdapterDeliveryId *string                                    `json:"adapter_delivery_id"`
-	AdapterEventId    string                                     `json:"adapter_event_id"`
-	CallbackKind      InteractionCallbackEnvelopeCallbackKind    `json:"callback_kind"`
-	DeliveryId        *string                                    `json:"delivery_id"`
-	DeliveryStatus    *InteractionCallbackEnvelopeDeliveryStatus `json:"delivery_status"`
-	Error             *InteractionCallbackError                  `json:"error,omitempty"`
-	InteractionId     string                                     `json:"interaction_id"`
-	OccurredAt        time.Time                                  `json:"occurred_at"`
-	Response          *InteractionResponsePayload                `json:"response,omitempty"`
-	SchemaVersion     InteractionCallbackEnvelopeSchemaVersion   `json:"schema_version"`
+	AdapterEventId string                                     `json:"adapter_event_id"`
+	CallbackHandle *string                                    `json:"callback_handle"`
+	CallbackKind   InteractionCallbackEnvelopeCallbackKind    `json:"callback_kind"`
+	DeliveryId     *string                                    `json:"delivery_id"`
+	DeliveryStatus *InteractionCallbackEnvelopeDeliveryStatus `json:"delivery_status"`
+	Error          *InteractionCallbackError                  `json:"error,omitempty"`
+
+	// FreeText User free-text answer. Contract limit: at most 8192 UTF-8 bytes; larger payloads are classified as invalid and do not resume the run.
+	FreeText                *string                                  `json:"free_text"`
+	InteractionId           string                                   `json:"interaction_id"`
+	OccurredAt              time.Time                                `json:"occurred_at"`
+	ProviderCallbackQueryId *string                                  `json:"provider_callback_query_id"`
+	ProviderMessageRef      *InteractionProviderMessageRef           `json:"provider_message_ref,omitempty"`
+	ProviderUpdateId        *string                                  `json:"provider_update_id"`
+	ResponderRef            *string                                  `json:"responder_ref"`
+	SchemaVersion           InteractionCallbackEnvelopeSchemaVersion `json:"schema_version"`
 }
 
 // InteractionCallbackEnvelopeCallbackKind defines model for InteractionCallbackEnvelope.CallbackKind.
@@ -777,33 +787,34 @@ type InteractionCallbackEnvelopeSchemaVersion string
 
 // InteractionCallbackError defines model for InteractionCallbackError.
 type InteractionCallbackError struct {
-	Code    *string `json:"code,omitempty"`
-	Message *string `json:"message,omitempty"`
+	Code      string  `json:"code"`
+	Message   *string `json:"message,omitempty"`
+	Retryable bool    `json:"retryable"`
 }
 
 // InteractionCallbackOutcome defines model for InteractionCallbackOutcome.
 type InteractionCallbackOutcome struct {
-	Accepted         bool                                     `json:"accepted"`
-	Classification   InteractionCallbackOutcomeClassification `json:"classification"`
-	InteractionState string                                   `json:"interaction_state"`
-	Message          *string                                  `json:"message"`
-	ResumeRequired   bool                                     `json:"resume_required"`
+	Accepted           bool                                          `json:"accepted"`
+	Classification     InteractionCallbackOutcomeClassification      `json:"classification"`
+	ContinuationAction *InteractionCallbackOutcomeContinuationAction `json:"continuation_action"`
+	InteractionState   string                                        `json:"interaction_state"`
+	Message            *string                                       `json:"message"`
+	ResumeRequired     bool                                          `json:"resume_required"`
 }
 
 // InteractionCallbackOutcomeClassification defines model for InteractionCallbackOutcome.Classification.
 type InteractionCallbackOutcomeClassification string
 
-// InteractionResponsePayload defines model for InteractionResponsePayload.
-type InteractionResponsePayload struct {
-	// FreeText User free-text answer. Contract limit: at most 8192 UTF-8 bytes; larger payloads are classified as invalid and do not resume the run.
-	FreeText         *string                                `json:"free_text"`
-	ResponderRef     *string                                `json:"responder_ref"`
-	ResponseKind     InteractionResponsePayloadResponseKind `json:"response_kind"`
-	SelectedOptionId *string                                `json:"selected_option_id"`
-}
+// InteractionCallbackOutcomeContinuationAction defines model for InteractionCallbackOutcome.ContinuationAction.
+type InteractionCallbackOutcomeContinuationAction string
 
-// InteractionResponsePayloadResponseKind defines model for InteractionResponsePayload.ResponseKind.
-type InteractionResponsePayloadResponseKind string
+// InteractionProviderMessageRef defines model for InteractionProviderMessageRef.
+type InteractionProviderMessageRef struct {
+	ChatRef         *string    `json:"chat_ref"`
+	InlineMessageId *string    `json:"inline_message_id"`
+	MessageId       *string    `json:"message_id"`
+	SentAt          *time.Time `json:"sent_at"`
+}
 
 // LearningFeedback defines model for LearningFeedback.
 type LearningFeedback struct {

@@ -109,3 +109,21 @@ approvals:
 - Создана follow-up issue `#458` для stage `run:dev`; в её body повторено continuity-требование и зафиксирован единый execution anchor Sprint S11.
 - Root FR/NFR matrix обновлена точечно: coverage FR-039 расширено Day6 plan package Sprint S11; канонический requirements baseline в `docs/product/requirements_machine_driven.md` не менялся.
 - Документный контур Sprint S11 завершён на этапе `run:plan`; следующий owner-managed operational stage остаётся привязанным только к issue `#458`.
+
+## Актуализация по Issue #458 (`run:dev`, 2026-03-14)
+- Dev stage выполнен в Issue `#458`; реализованы code/runtime changes в:
+  - `services/internal/control-plane` для additive schema foundation `interaction_channel_bindings` / `interaction_callback_handles`, operator projections, Telegram callback classification и typed delivery envelope;
+  - `services/jobs/worker` для HTTP bridge к внешнему Telegram adapter contour, provider message ref/edit-capability persistence и callback-token propagation;
+  - `services/external/api-gateway` + `proto/codexk8s/controlplane/v1/controlplane.proto` для contract-first callback DTO/gRPC bridge и regenerated artifacts.
+- Dev package зафиксировал:
+  - normalized callback family `delivery_receipt|option_selected|free_text_received|transport_failure` без возврата к ad-hoc `decision_response`;
+  - platform-owned resolution semantics в `control-plane`, включая duplicate/stale/expired/invalid classification, continuation action selection и operator visibility fields;
+  - внешний Telegram contour как configurable runtime bridge: проверка `kubectl -n codex-k8s-dev-3 get svc,deploy` показала, что в candidate namespace отсутствует отдельный Telegram сервис, поэтому runtime baseline закреплён как external adapter path, а не in-cluster ownership drift;
+  - синхронный codegen/transport update для OpenAPI/proto и worker/api-gateway/control-plane без разрыва continuity цепочки `#361 -> #447 -> #448 -> #452 -> #454 -> #456 -> #458`.
+- Проверки dev-итерации:
+  - `make gen-proto-go`;
+  - `make gen-openapi`;
+  - `gofmt -w $(git diff --name-only -- '*.go')`;
+  - `git diff --check`;
+  - `go test ./services/internal/control-plane/... ./services/jobs/worker/... ./services/external/api-gateway/...`.
+- Sprint S11 переведён в in-review handover после dev-итерации; следующий operational step остаётся `run:qa` после review текущего PR.

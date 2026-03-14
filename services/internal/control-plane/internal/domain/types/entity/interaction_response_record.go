@@ -10,7 +10,9 @@ import (
 type InteractionResponseRecord struct {
 	ID               int64
 	InteractionID    string
+	ChannelBindingID int64
 	CallbackEventID  int64
+	HandleKind       enumtypes.InteractionCallbackHandleKind
 	ResponseKind     enumtypes.InteractionResponseKind
 	SelectedOptionID string
 	FreeText         string

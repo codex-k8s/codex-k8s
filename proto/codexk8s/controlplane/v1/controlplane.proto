@@ -617,6 +617,9 @@ message CompleteInteractionDispatchRequest {
   optional string last_error_code = 9;
   google.protobuf.Timestamp next_retry_at = 10;
   google.protobuf.Timestamp finished_at = 11;
+  bytes provider_message_ref_json = 12;
+  optional string edit_capability = 13;
+  google.protobuf.Timestamp callback_token_expires_at = 14;
 }
 
 message CompleteInteractionDispatchResponse {
@@ -1022,12 +1025,16 @@ message SubmitInteractionCallbackRequest {
   string adapter_event_id = 3;
   string callback_kind = 4;
   google.protobuf.Timestamp occurred_at = 5;
-  optional string delivery_status = 6;
-  optional string response_kind = 7;
-  optional string selected_option_id = 8;
-  optional string free_text = 9;
-  optional string responder_ref = 10;
-  bytes raw_payload_json = 11;
+  optional string callback_handle = 6;
+  optional string free_text = 7;
+  optional string responder_ref = 8;
+  bytes provider_message_ref_json = 9;
+  optional string provider_update_id = 10;
+  optional string provider_callback_query_id = 11;
+  optional string delivery_status = 12;
+  optional string transport_error_code = 13;
+  bool transport_retryable = 14;
+  bytes raw_payload_json = 15;
 }
 
 message SubmitInteractionCallbackResponse {
@@ -1035,7 +1042,8 @@ message SubmitInteractionCallbackResponse {
   string classification = 2;
   string interaction_state = 3;
   bool resume_required = 4;
-  int64 effective_response_id = 5;
+  string continuation_action = 5;
+  int64 effective_response_id = 6;
 }
 
 message RuntimeDeployTaskLog {

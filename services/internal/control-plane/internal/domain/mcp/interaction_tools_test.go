@@ -325,35 +325,42 @@ func TestBuildInteractionDeliveryEnvelopeIncludesCallbackContractFields(t *testi
 	t.Parallel()
 
 	deadline := time.Date(2026, 3, 13, 17, 0, 0, 0, time.UTC)
+	interactions := &interactionTestRepository{}
 	service := &Service{
 		cfg: Config{
 			TokenSigningKey: "test-signing-key",
 			TokenIssuer:     "codex-k8s/test",
 			PublicBaseURL:   "https://platform.codex-k8s.dev",
 		},
+		interactions: interactions,
 		now: func() time.Time {
 			return time.Date(2026, 3, 13, 16, 0, 0, 0, time.UTC)
 		},
 	}
 
-	raw, err := service.buildInteractionDeliveryEnvelope(entitytypes.AgentRun{
-		ID:            "run-1",
-		CorrelationID: "corr-1",
-		ProjectID:     "project-1",
-	}, entitytypes.InteractionRequest{
-		ID:                "interaction-1",
-		RunID:             "run-1",
-		InteractionKind:   enumtypes.InteractionKindDecisionRequest,
-		RecipientProvider: "github_login",
-		RecipientRef:      "ai-da-stas",
-		RequestPayloadJSON: json.RawMessage(`{
-			"question":"Ship it?",
-			"options":[{"option_id":"approve","label":"Approve"},{"option_id":"deny","label":"Deny"}]
-		}`),
-		ContextLinksJSON:   json.RawMessage(`{"run_id":"run-1"}`),
-		ResponseDeadlineAt: &deadline,
-	}, entitytypes.InteractionDeliveryAttempt{
-		DeliveryID: "delivery-1",
+	raw, err := service.buildInteractionDeliveryEnvelope(context.Background(), interactionDeliveryEnvelopeParams{
+		Run: entitytypes.AgentRun{
+			ID:            "run-1",
+			CorrelationID: "corr-1",
+			ProjectID:     "project-1",
+		},
+		Request: entitytypes.InteractionRequest{
+			ID:                "interaction-1",
+			RunID:             "run-1",
+			ChannelFamily:     enumtypes.InteractionChannelFamilyTelegram,
+			InteractionKind:   enumtypes.InteractionKindDecisionRequest,
+			RecipientProvider: interactionRecipientProviderTelegram,
+			RecipientRef:      interactionRecipientRoutingByGitHub + "ai-da-stas",
+			RequestPayloadJSON: json.RawMessage(`{
+				"question":"Ship it?",
+				"options":[{"option_id":"approve","label":"Approve"},{"option_id":"deny","label":"Deny"}]
+			}`),
+			ContextLinksJSON:   json.RawMessage(`{"run_id":"run-1"}`),
+			ResponseDeadlineAt: &deadline,
+		},
+		Attempt: entitytypes.InteractionDeliveryAttempt{
+			DeliveryID: "delivery-1",
+		},
 	})
 	if err != nil {
 		t.Fatalf("buildInteractionDeliveryEnvelope returned error: %v", err)
@@ -364,16 +371,112 @@ func TestBuildInteractionDeliveryEnvelopeIncludesCallbackContractFields(t *testi
 		t.Fatalf("unmarshal interaction delivery envelope: %v", err)
 	}
 
+	if got, want := envelope.SchemaVersion, interactionDeliveryEnvelopeSchemaVersion; got != want {
+		t.Fatalf("schema_version = %q, want %q", got, want)
+	}
 	if got, want := envelope.Locale, interactionDeliveryLocaleDefault; got != want {
 		t.Fatalf("locale = %q, want %q", got, want)
 	}
-	if got, want := envelope.CallbackURL, "https://platform.codex-k8s.dev"+interactionCallbackPath; got != want {
+	if envelope.CallbackEndpoint == nil {
+		t.Fatal("expected callback endpoint to be populated")
+	}
+	if got, want := envelope.CallbackEndpoint.URL, "https://platform.codex-k8s.dev"+interactionCallbackPath; got != want {
 		t.Fatalf("callback url = %q, want %q", got, want)
 	}
-	if strings.TrimSpace(envelope.CallbackBearer) == "" {
+	if strings.TrimSpace(envelope.CallbackEndpoint.BearerToken) == "" {
 		t.Fatal("expected callback bearer token to be populated")
 	}
-	if got, want := envelope.ExpiresAt, deadline.UTC().Format(time.RFC3339Nano); got != want {
-		t.Fatalf("expires_at = %q, want %q", got, want)
+	if got, want := envelope.CallbackEndpoint.TokenExpiresAt, deadline.Add(interactionCallbackTokenGraceTTL).UTC().Format(time.RFC3339Nano); got != want {
+		t.Fatalf("token_expires_at = %q, want %q", got, want)
+	}
+	if got, want := envelope.DeliveryDeadlineAt, deadline.UTC().Format(time.RFC3339Nano); got != want {
+		t.Fatalf("delivery_deadline_at = %q, want %q", got, want)
+	}
+	if len(envelope.CallbackEndpoint.Handles) != 2 {
+		t.Fatalf("callback handles = %d, want 2", len(envelope.CallbackEndpoint.Handles))
+	}
+	if interactions.ensureBindingParams.AdapterKind != interactionRecipientProviderTelegram {
+		t.Fatalf("binding adapter kind = %q, want %q", interactions.ensureBindingParams.AdapterKind, interactionRecipientProviderTelegram)
+	}
+	if len(interactions.upsertHandleParams.Items) != 2 {
+		t.Fatalf("upserted handle items = %d, want 2", len(interactions.upsertHandleParams.Items))
+	}
+
+	var content interactionDecisionContent
+	if err := json.Unmarshal(envelope.Content, &content); err != nil {
+		t.Fatalf("unmarshal decision content: %v", err)
+	}
+	if len(content.Options) != 2 {
+		t.Fatalf("decision options = %d, want 2", len(content.Options))
+	}
+	for idx, option := range content.Options {
+		if strings.TrimSpace(option.CallbackHandle) == "" {
+			t.Fatalf("option %d callback handle is empty", idx)
+		}
+	}
+}
+
+func TestBuildInteractionDeliveryEnvelopeIncludesContinuationContractFields(t *testing.T) {
+	t.Parallel()
+
+	service := &Service{
+		cfg: Config{
+			PublicBaseURL: "https://platform.codex-k8s.dev",
+		},
+		now: time.Now,
+	}
+
+	raw, err := service.buildInteractionDeliveryEnvelope(context.Background(), interactionDeliveryEnvelopeParams{
+		Request: entitytypes.InteractionRequest{
+			ID:                "interaction-1",
+			RunID:             "run-1",
+			ChannelFamily:     enumtypes.InteractionChannelFamilyTelegram,
+			InteractionKind:   enumtypes.InteractionKindDecisionRequest,
+			State:             enumtypes.InteractionStateResolved,
+			ResolutionKind:    enumtypes.InteractionResolutionKindOptionSelected,
+			RecipientProvider: interactionRecipientProviderTelegram,
+			RecipientRef:      interactionRecipientRoutingByGitHub + "ai-da-stas",
+			ContextLinksJSON:  json.RawMessage(`{"run_id":"run-1"}`),
+			UpdatedAt:         time.Date(2026, 3, 13, 16, 5, 0, 0, time.UTC),
+		},
+		Attempt: entitytypes.InteractionDeliveryAttempt{
+			DeliveryID:         "delivery-2",
+			DeliveryRole:       enumtypes.InteractionDeliveryRoleMessageEdit,
+			ContinuationReason: "applied_response",
+		},
+		Binding: &entitytypes.InteractionChannelBinding{
+			ID:                     11,
+			ProviderMessageRefJSON: json.RawMessage(`{"message_id":"42"}`),
+		},
+	})
+	if err != nil {
+		t.Fatalf("buildInteractionDeliveryEnvelope returned error: %v", err)
+	}
+
+	var envelope interactionDeliveryEnvelope
+	if err := json.Unmarshal(raw, &envelope); err != nil {
+		t.Fatalf("unmarshal interaction delivery envelope: %v", err)
+	}
+
+	if envelope.CallbackEndpoint != nil {
+		t.Fatal("did not expect callback endpoint for continuation envelope")
+	}
+	if envelope.Content != nil {
+		t.Fatalf("did not expect primary content in continuation envelope: %s", string(envelope.Content))
+	}
+	if got, want := envelope.DeliveryRole, enumtypes.InteractionDeliveryRoleMessageEdit; got != want {
+		t.Fatalf("delivery_role = %q, want %q", got, want)
+	}
+	if envelope.Continuation == nil {
+		t.Fatal("expected continuation payload")
+	}
+	if got, want := envelope.Continuation.Action, enumtypes.InteractionContinuationActionEditMessage; got != want {
+		t.Fatalf("continuation action = %q, want %q", got, want)
+	}
+	if got, want := envelope.Continuation.ResolutionKind, enumtypes.InteractionResolutionKindOptionSelected; got != want {
+		t.Fatalf("resolution kind = %q, want %q", got, want)
+	}
+	if got, want := string(envelope.ProviderMessageRef), `{"message_id":"42"}`; got != want {
+		t.Fatalf("provider_message_ref = %q, want %q", got, want)
 	}
 }

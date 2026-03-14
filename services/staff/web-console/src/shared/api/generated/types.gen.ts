@@ -102,31 +102,36 @@ export type McpApprovalCallbackRequest = {
 };
 
 export type InteractionCallbackEnvelope = {
-    schema_version: 'v1';
+    schema_version: 'telegram-interaction-v1';
     interaction_id: string;
     delivery_id?: string | null;
     adapter_event_id: string;
-    callback_kind: 'delivery_receipt' | 'decision_response';
+    callback_kind: 'delivery_receipt' | 'option_selected' | 'free_text_received' | 'transport_failure';
     occurred_at: string;
-    adapter_delivery_id?: string | null;
-    delivery_status?: 'accepted' | 'delivered' | 'failed';
-    response?: InteractionResponsePayload;
-    error?: InteractionCallbackError;
-};
-
-export type InteractionResponsePayload = {
-    response_kind: 'option' | 'free_text';
-    selected_option_id?: string | null;
+    callback_handle?: string | null;
     /**
      * User free-text answer. Contract limit: at most 8192 UTF-8 bytes; larger payloads are classified as invalid and do not resume the run.
      *
      */
     free_text?: string | null;
     responder_ref?: string | null;
+    provider_message_ref?: InteractionProviderMessageRef;
+    provider_update_id?: string | null;
+    provider_callback_query_id?: string | null;
+    delivery_status?: 'accepted' | 'delivered' | 'failed';
+    error?: InteractionCallbackError;
+};
+
+export type InteractionProviderMessageRef = {
+    chat_ref?: string | null;
+    message_id?: string | null;
+    inline_message_id?: string | null;
+    sent_at?: string | null;
 };
 
 export type InteractionCallbackError = {
-    code?: string;
+    code: string;
+    retryable: boolean;
     message?: string;
 };
 
@@ -135,6 +140,7 @@ export type InteractionCallbackOutcome = {
     classification: 'applied' | 'duplicate' | 'stale' | 'expired' | 'invalid';
     interaction_state: string;
     resume_required: boolean;
+    continuation_action?: 'none' | 'edit_message' | 'send_follow_up' | 'manual_fallback';
     message?: string | null;
 };
 

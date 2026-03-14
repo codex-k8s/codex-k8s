@@ -35,23 +35,23 @@ func (s *Server) SubmitInteractionCallback(ctx context.Context, req *controlplan
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	responseKind, err := parseInteractionResponseKind(req.GetResponseKind())
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
 
 	result, err := s.mcp.SubmitInteractionCallback(ctx, mcpdomain.SubmitInteractionCallbackParams{
-		InteractionID:    interactionID,
-		DeliveryID:       strings.TrimSpace(req.GetDeliveryId()),
-		AdapterEventID:   strings.TrimSpace(req.GetAdapterEventId()),
-		CallbackKind:     callbackKind,
-		OccurredAt:       tsToTime(req.GetOccurredAt()),
-		DeliveryStatus:   strings.TrimSpace(req.GetDeliveryStatus()),
-		ResponseKind:     responseKind,
-		SelectedOptionID: strings.TrimSpace(req.GetSelectedOptionId()),
-		FreeText:         strings.TrimSpace(req.GetFreeText()),
-		ResponderRef:     strings.TrimSpace(req.GetResponderRef()),
-		RawPayloadJSON:   req.GetRawPayloadJson(),
+		InteractionID:           interactionID,
+		DeliveryID:              strings.TrimSpace(req.GetDeliveryId()),
+		AdapterEventID:          strings.TrimSpace(req.GetAdapterEventId()),
+		CallbackKind:            callbackKind,
+		OccurredAt:              tsToTime(req.GetOccurredAt()),
+		CallbackHandle:          strings.TrimSpace(req.GetCallbackHandle()),
+		FreeText:                strings.TrimSpace(req.GetFreeText()),
+		ResponderRef:            strings.TrimSpace(req.GetResponderRef()),
+		ProviderMessageRefJSON:  req.GetProviderMessageRefJson(),
+		ProviderUpdateID:        strings.TrimSpace(req.GetProviderUpdateId()),
+		ProviderCallbackQueryID: strings.TrimSpace(req.GetProviderCallbackQueryId()),
+		DeliveryStatus:          strings.TrimSpace(req.GetDeliveryStatus()),
+		TransportErrorCode:      strings.TrimSpace(req.GetTransportErrorCode()),
+		TransportRetryable:      req.GetTransportRetryable(),
+		RawPayloadJSON:          req.GetRawPayloadJson(),
 	})
 	if err != nil {
 		return nil, toStatus(err)
@@ -62,6 +62,7 @@ func (s *Server) SubmitInteractionCallback(ctx context.Context, req *controlplan
 		Classification:      transportInteractionCallbackClassification(result.Classification),
 		InteractionState:    strings.TrimSpace(result.InteractionState),
 		ResumeRequired:      result.ResumeRequired,
+		ContinuationAction:  strings.TrimSpace(string(result.ContinuationAction)),
 		EffectiveResponseId: result.EffectiveResponseID,
 	}, nil
 }
@@ -69,22 +70,13 @@ func (s *Server) SubmitInteractionCallback(ctx context.Context, req *controlplan
 func parseInteractionCallbackKind(value string) (enumtypes.InteractionCallbackKind, error) {
 	callbackKind := enumtypes.InteractionCallbackKind(strings.ToLower(strings.TrimSpace(value)))
 	switch callbackKind {
-	case enumtypes.InteractionCallbackKindDeliveryReceipt, enumtypes.InteractionCallbackKindDecisionResponse:
+	case enumtypes.InteractionCallbackKindDeliveryReceipt,
+		enumtypes.InteractionCallbackKindOptionSelected,
+		enumtypes.InteractionCallbackKindFreeTextReceived,
+		enumtypes.InteractionCallbackKindTransportFailure:
 		return callbackKind, nil
 	default:
-		return "", fmt.Errorf("callback_kind must be delivery_receipt|decision_response")
-	}
-}
-
-func parseInteractionResponseKind(value string) (enumtypes.InteractionResponseKind, error) {
-	responseKind := enumtypes.InteractionResponseKind(strings.ToLower(strings.TrimSpace(value)))
-	switch responseKind {
-	case "":
-		return "", nil
-	case enumtypes.InteractionResponseKindOption, enumtypes.InteractionResponseKindFreeText:
-		return responseKind, nil
-	default:
-		return "", fmt.Errorf("response_kind must be option|free_text")
+		return "", fmt.Errorf("callback_kind must be delivery_receipt|option_selected|free_text_received|transport_failure")
 	}
 }
 

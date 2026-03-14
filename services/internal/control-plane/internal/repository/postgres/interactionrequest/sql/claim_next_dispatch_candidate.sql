@@ -4,6 +4,7 @@ SELECT
     ir.project_id::text AS project_id,
     ir.run_id::text AS run_id,
     ir.interaction_kind,
+    ir.channel_family,
     ir.state,
     ir.resolution_kind,
     ir.recipient_provider,
@@ -12,6 +13,10 @@ SELECT
     ir.context_links_json,
     ir.response_deadline_at,
     ir.effective_response_id,
+    ir.active_channel_binding_id,
+    ir.operator_state,
+    ir.operator_signal_code,
+    ir.operator_signal_at,
     ir.last_delivery_attempt_no,
     ir.created_at,
     ir.updated_at

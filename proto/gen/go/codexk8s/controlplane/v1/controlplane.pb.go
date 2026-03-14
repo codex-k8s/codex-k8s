@@ -5742,20 +5742,23 @@ func (x *ClaimNextInteractionDispatchResponse) GetRequestEnvelopeJson() []byte {
 }
 
 type CompleteInteractionDispatchRequest struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	InteractionId       string                 `protobuf:"bytes,1,opt,name=interaction_id,json=interactionId,proto3" json:"interaction_id,omitempty"`
-	DeliveryId          string                 `protobuf:"bytes,2,opt,name=delivery_id,json=deliveryId,proto3" json:"delivery_id,omitempty"`
-	AdapterKind         string                 `protobuf:"bytes,3,opt,name=adapter_kind,json=adapterKind,proto3" json:"adapter_kind,omitempty"`
-	Status              string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
-	RequestEnvelopeJson []byte                 `protobuf:"bytes,5,opt,name=request_envelope_json,json=requestEnvelopeJson,proto3" json:"request_envelope_json,omitempty"`
-	AckPayloadJson      []byte                 `protobuf:"bytes,6,opt,name=ack_payload_json,json=ackPayloadJson,proto3" json:"ack_payload_json,omitempty"`
-	AdapterDeliveryId   *string                `protobuf:"bytes,7,opt,name=adapter_delivery_id,json=adapterDeliveryId,proto3,oneof" json:"adapter_delivery_id,omitempty"`
-	Retryable           bool                   `protobuf:"varint,8,opt,name=retryable,proto3" json:"retryable,omitempty"`
-	LastErrorCode       *string                `protobuf:"bytes,9,opt,name=last_error_code,json=lastErrorCode,proto3,oneof" json:"last_error_code,omitempty"`
-	NextRetryAt         *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=next_retry_at,json=nextRetryAt,proto3" json:"next_retry_at,omitempty"`
-	FinishedAt          *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=finished_at,json=finishedAt,proto3" json:"finished_at,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	InteractionId          string                 `protobuf:"bytes,1,opt,name=interaction_id,json=interactionId,proto3" json:"interaction_id,omitempty"`
+	DeliveryId             string                 `protobuf:"bytes,2,opt,name=delivery_id,json=deliveryId,proto3" json:"delivery_id,omitempty"`
+	AdapterKind            string                 `protobuf:"bytes,3,opt,name=adapter_kind,json=adapterKind,proto3" json:"adapter_kind,omitempty"`
+	Status                 string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	RequestEnvelopeJson    []byte                 `protobuf:"bytes,5,opt,name=request_envelope_json,json=requestEnvelopeJson,proto3" json:"request_envelope_json,omitempty"`
+	AckPayloadJson         []byte                 `protobuf:"bytes,6,opt,name=ack_payload_json,json=ackPayloadJson,proto3" json:"ack_payload_json,omitempty"`
+	AdapterDeliveryId      *string                `protobuf:"bytes,7,opt,name=adapter_delivery_id,json=adapterDeliveryId,proto3,oneof" json:"adapter_delivery_id,omitempty"`
+	Retryable              bool                   `protobuf:"varint,8,opt,name=retryable,proto3" json:"retryable,omitempty"`
+	LastErrorCode          *string                `protobuf:"bytes,9,opt,name=last_error_code,json=lastErrorCode,proto3,oneof" json:"last_error_code,omitempty"`
+	NextRetryAt            *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=next_retry_at,json=nextRetryAt,proto3" json:"next_retry_at,omitempty"`
+	FinishedAt             *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=finished_at,json=finishedAt,proto3" json:"finished_at,omitempty"`
+	ProviderMessageRefJson []byte                 `protobuf:"bytes,12,opt,name=provider_message_ref_json,json=providerMessageRefJson,proto3" json:"provider_message_ref_json,omitempty"`
+	EditCapability         *string                `protobuf:"bytes,13,opt,name=edit_capability,json=editCapability,proto3,oneof" json:"edit_capability,omitempty"`
+	CallbackTokenExpiresAt *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=callback_token_expires_at,json=callbackTokenExpiresAt,proto3" json:"callback_token_expires_at,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CompleteInteractionDispatchRequest) Reset() {
@@ -5861,6 +5864,27 @@ func (x *CompleteInteractionDispatchRequest) GetNextRetryAt() *timestamppb.Times
 func (x *CompleteInteractionDispatchRequest) GetFinishedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.FinishedAt
+	}
+	return nil
+}
+
+func (x *CompleteInteractionDispatchRequest) GetProviderMessageRefJson() []byte {
+	if x != nil {
+		return x.ProviderMessageRefJson
+	}
+	return nil
+}
+
+func (x *CompleteInteractionDispatchRequest) GetEditCapability() string {
+	if x != nil && x.EditCapability != nil {
+		return *x.EditCapability
+	}
+	return ""
+}
+
+func (x *CompleteInteractionDispatchRequest) GetCallbackTokenExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CallbackTokenExpiresAt
 	}
 	return nil
 }
@@ -9674,20 +9698,24 @@ func (x *MarkMissionControlCommandFailedRequest) GetUpdatedAt() *timestamppb.Tim
 }
 
 type SubmitInteractionCallbackRequest struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	InteractionId    string                 `protobuf:"bytes,1,opt,name=interaction_id,json=interactionId,proto3" json:"interaction_id,omitempty"`
-	DeliveryId       *string                `protobuf:"bytes,2,opt,name=delivery_id,json=deliveryId,proto3,oneof" json:"delivery_id,omitempty"`
-	AdapterEventId   string                 `protobuf:"bytes,3,opt,name=adapter_event_id,json=adapterEventId,proto3" json:"adapter_event_id,omitempty"`
-	CallbackKind     string                 `protobuf:"bytes,4,opt,name=callback_kind,json=callbackKind,proto3" json:"callback_kind,omitempty"`
-	OccurredAt       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=occurred_at,json=occurredAt,proto3" json:"occurred_at,omitempty"`
-	DeliveryStatus   *string                `protobuf:"bytes,6,opt,name=delivery_status,json=deliveryStatus,proto3,oneof" json:"delivery_status,omitempty"`
-	ResponseKind     *string                `protobuf:"bytes,7,opt,name=response_kind,json=responseKind,proto3,oneof" json:"response_kind,omitempty"`
-	SelectedOptionId *string                `protobuf:"bytes,8,opt,name=selected_option_id,json=selectedOptionId,proto3,oneof" json:"selected_option_id,omitempty"`
-	FreeText         *string                `protobuf:"bytes,9,opt,name=free_text,json=freeText,proto3,oneof" json:"free_text,omitempty"`
-	ResponderRef     *string                `protobuf:"bytes,10,opt,name=responder_ref,json=responderRef,proto3,oneof" json:"responder_ref,omitempty"`
-	RawPayloadJson   []byte                 `protobuf:"bytes,11,opt,name=raw_payload_json,json=rawPayloadJson,proto3" json:"raw_payload_json,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"open.v1"`
+	InteractionId           string                 `protobuf:"bytes,1,opt,name=interaction_id,json=interactionId,proto3" json:"interaction_id,omitempty"`
+	DeliveryId              *string                `protobuf:"bytes,2,opt,name=delivery_id,json=deliveryId,proto3,oneof" json:"delivery_id,omitempty"`
+	AdapterEventId          string                 `protobuf:"bytes,3,opt,name=adapter_event_id,json=adapterEventId,proto3" json:"adapter_event_id,omitempty"`
+	CallbackKind            string                 `protobuf:"bytes,4,opt,name=callback_kind,json=callbackKind,proto3" json:"callback_kind,omitempty"`
+	OccurredAt              *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=occurred_at,json=occurredAt,proto3" json:"occurred_at,omitempty"`
+	CallbackHandle          *string                `protobuf:"bytes,6,opt,name=callback_handle,json=callbackHandle,proto3,oneof" json:"callback_handle,omitempty"`
+	FreeText                *string                `protobuf:"bytes,7,opt,name=free_text,json=freeText,proto3,oneof" json:"free_text,omitempty"`
+	ResponderRef            *string                `protobuf:"bytes,8,opt,name=responder_ref,json=responderRef,proto3,oneof" json:"responder_ref,omitempty"`
+	ProviderMessageRefJson  []byte                 `protobuf:"bytes,9,opt,name=provider_message_ref_json,json=providerMessageRefJson,proto3" json:"provider_message_ref_json,omitempty"`
+	ProviderUpdateId        *string                `protobuf:"bytes,10,opt,name=provider_update_id,json=providerUpdateId,proto3,oneof" json:"provider_update_id,omitempty"`
+	ProviderCallbackQueryId *string                `protobuf:"bytes,11,opt,name=provider_callback_query_id,json=providerCallbackQueryId,proto3,oneof" json:"provider_callback_query_id,omitempty"`
+	DeliveryStatus          *string                `protobuf:"bytes,12,opt,name=delivery_status,json=deliveryStatus,proto3,oneof" json:"delivery_status,omitempty"`
+	TransportErrorCode      *string                `protobuf:"bytes,13,opt,name=transport_error_code,json=transportErrorCode,proto3,oneof" json:"transport_error_code,omitempty"`
+	TransportRetryable      bool                   `protobuf:"varint,14,opt,name=transport_retryable,json=transportRetryable,proto3" json:"transport_retryable,omitempty"`
+	RawPayloadJson          []byte                 `protobuf:"bytes,15,opt,name=raw_payload_json,json=rawPayloadJson,proto3" json:"raw_payload_json,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *SubmitInteractionCallbackRequest) Reset() {
@@ -9755,23 +9783,9 @@ func (x *SubmitInteractionCallbackRequest) GetOccurredAt() *timestamppb.Timestam
 	return nil
 }
 
-func (x *SubmitInteractionCallbackRequest) GetDeliveryStatus() string {
-	if x != nil && x.DeliveryStatus != nil {
-		return *x.DeliveryStatus
-	}
-	return ""
-}
-
-func (x *SubmitInteractionCallbackRequest) GetResponseKind() string {
-	if x != nil && x.ResponseKind != nil {
-		return *x.ResponseKind
-	}
-	return ""
-}
-
-func (x *SubmitInteractionCallbackRequest) GetSelectedOptionId() string {
-	if x != nil && x.SelectedOptionId != nil {
-		return *x.SelectedOptionId
+func (x *SubmitInteractionCallbackRequest) GetCallbackHandle() string {
+	if x != nil && x.CallbackHandle != nil {
+		return *x.CallbackHandle
 	}
 	return ""
 }
@@ -9790,6 +9804,48 @@ func (x *SubmitInteractionCallbackRequest) GetResponderRef() string {
 	return ""
 }
 
+func (x *SubmitInteractionCallbackRequest) GetProviderMessageRefJson() []byte {
+	if x != nil {
+		return x.ProviderMessageRefJson
+	}
+	return nil
+}
+
+func (x *SubmitInteractionCallbackRequest) GetProviderUpdateId() string {
+	if x != nil && x.ProviderUpdateId != nil {
+		return *x.ProviderUpdateId
+	}
+	return ""
+}
+
+func (x *SubmitInteractionCallbackRequest) GetProviderCallbackQueryId() string {
+	if x != nil && x.ProviderCallbackQueryId != nil {
+		return *x.ProviderCallbackQueryId
+	}
+	return ""
+}
+
+func (x *SubmitInteractionCallbackRequest) GetDeliveryStatus() string {
+	if x != nil && x.DeliveryStatus != nil {
+		return *x.DeliveryStatus
+	}
+	return ""
+}
+
+func (x *SubmitInteractionCallbackRequest) GetTransportErrorCode() string {
+	if x != nil && x.TransportErrorCode != nil {
+		return *x.TransportErrorCode
+	}
+	return ""
+}
+
+func (x *SubmitInteractionCallbackRequest) GetTransportRetryable() bool {
+	if x != nil {
+		return x.TransportRetryable
+	}
+	return false
+}
+
 func (x *SubmitInteractionCallbackRequest) GetRawPayloadJson() []byte {
 	if x != nil {
 		return x.RawPayloadJson
@@ -9803,7 +9859,8 @@ type SubmitInteractionCallbackResponse struct {
 	Classification      string                 `protobuf:"bytes,2,opt,name=classification,proto3" json:"classification,omitempty"`
 	InteractionState    string                 `protobuf:"bytes,3,opt,name=interaction_state,json=interactionState,proto3" json:"interaction_state,omitempty"`
 	ResumeRequired      bool                   `protobuf:"varint,4,opt,name=resume_required,json=resumeRequired,proto3" json:"resume_required,omitempty"`
-	EffectiveResponseId int64                  `protobuf:"varint,5,opt,name=effective_response_id,json=effectiveResponseId,proto3" json:"effective_response_id,omitempty"`
+	ContinuationAction  string                 `protobuf:"bytes,5,opt,name=continuation_action,json=continuationAction,proto3" json:"continuation_action,omitempty"`
+	EffectiveResponseId int64                  `protobuf:"varint,6,opt,name=effective_response_id,json=effectiveResponseId,proto3" json:"effective_response_id,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -9864,6 +9921,13 @@ func (x *SubmitInteractionCallbackResponse) GetResumeRequired() bool {
 		return x.ResumeRequired
 	}
 	return false
+}
+
+func (x *SubmitInteractionCallbackResponse) GetContinuationAction() string {
+	if x != nil {
+		return x.ContinuationAction
+	}
+	return ""
 }
 
 func (x *SubmitInteractionCallbackResponse) GetEffectiveResponseId() int64 {
@@ -13620,7 +13684,7 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\vdelivery_id\x18\v \x01(\tR\n" +
 	"deliveryId\x12!\n" +
 	"\fadapter_kind\x18\f \x01(\tR\vadapterKind\x122\n" +
-	"\x15request_envelope_json\x18\r \x01(\fR\x13requestEnvelopeJson\"\xae\x04\n" +
+	"\x15request_envelope_json\x18\r \x01(\fR\x13requestEnvelopeJson\"\x82\x06\n" +
 	"\"CompleteInteractionDispatchRequest\x12%\n" +
 	"\x0einteraction_id\x18\x01 \x01(\tR\rinteractionId\x12\x1f\n" +
 	"\vdelivery_id\x18\x02 \x01(\tR\n" +
@@ -13635,9 +13699,13 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\rnext_retry_at\x18\n" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\vnextRetryAt\x12;\n" +
 	"\vfinished_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"finishedAtB\x16\n" +
+	"finishedAt\x129\n" +
+	"\x19provider_message_ref_json\x18\f \x01(\fR\x16providerMessageRefJson\x12,\n" +
+	"\x0fedit_capability\x18\r \x01(\tH\x02R\x0eeditCapability\x88\x01\x01\x12U\n" +
+	"\x19callback_token_expires_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\x16callbackTokenExpiresAtB\x16\n" +
 	"\x14_adapter_delivery_idB\x12\n" +
-	"\x10_last_error_code\"\xed\x01\n" +
+	"\x10_last_error_codeB\x12\n" +
+	"\x10_edit_capability\"\xed\x01\n" +
 	"#CompleteInteractionDispatchResponse\x12%\n" +
 	"\x0einteraction_id\x18\x01 \x01(\tR\rinteractionId\x12+\n" +
 	"\x11interaction_state\x18\x02 \x01(\tR\x10interactionState\x12'\n" +
@@ -14063,7 +14131,7 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\x0estatus_message\x18\x05 \x01(\tH\x00R\rstatusMessage\x88\x01\x01\x129\n" +
 	"\n" +
 	"updated_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAtB\x11\n" +
-	"\x0f_status_message\"\xe9\x04\n" +
+	"\x0f_status_message\"\x8c\a\n" +
 	" SubmitInteractionCallbackRequest\x12%\n" +
 	"\x0einteraction_id\x18\x01 \x01(\tR\rinteractionId\x12$\n" +
 	"\vdelivery_id\x18\x02 \x01(\tH\x00R\n" +
@@ -14072,26 +14140,33 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\rcallback_kind\x18\x04 \x01(\tR\fcallbackKind\x12;\n" +
 	"\voccurred_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"occurredAt\x12,\n" +
-	"\x0fdelivery_status\x18\x06 \x01(\tH\x01R\x0edeliveryStatus\x88\x01\x01\x12(\n" +
-	"\rresponse_kind\x18\a \x01(\tH\x02R\fresponseKind\x88\x01\x01\x121\n" +
-	"\x12selected_option_id\x18\b \x01(\tH\x03R\x10selectedOptionId\x88\x01\x01\x12 \n" +
-	"\tfree_text\x18\t \x01(\tH\x04R\bfreeText\x88\x01\x01\x12(\n" +
-	"\rresponder_ref\x18\n" +
-	" \x01(\tH\x05R\fresponderRef\x88\x01\x01\x12(\n" +
-	"\x10raw_payload_json\x18\v \x01(\fR\x0erawPayloadJsonB\x0e\n" +
+	"\x0fcallback_handle\x18\x06 \x01(\tH\x01R\x0ecallbackHandle\x88\x01\x01\x12 \n" +
+	"\tfree_text\x18\a \x01(\tH\x02R\bfreeText\x88\x01\x01\x12(\n" +
+	"\rresponder_ref\x18\b \x01(\tH\x03R\fresponderRef\x88\x01\x01\x129\n" +
+	"\x19provider_message_ref_json\x18\t \x01(\fR\x16providerMessageRefJson\x121\n" +
+	"\x12provider_update_id\x18\n" +
+	" \x01(\tH\x04R\x10providerUpdateId\x88\x01\x01\x12@\n" +
+	"\x1aprovider_callback_query_id\x18\v \x01(\tH\x05R\x17providerCallbackQueryId\x88\x01\x01\x12,\n" +
+	"\x0fdelivery_status\x18\f \x01(\tH\x06R\x0edeliveryStatus\x88\x01\x01\x125\n" +
+	"\x14transport_error_code\x18\r \x01(\tH\aR\x12transportErrorCode\x88\x01\x01\x12/\n" +
+	"\x13transport_retryable\x18\x0e \x01(\bR\x12transportRetryable\x12(\n" +
+	"\x10raw_payload_json\x18\x0f \x01(\fR\x0erawPayloadJsonB\x0e\n" +
 	"\f_delivery_idB\x12\n" +
-	"\x10_delivery_statusB\x10\n" +
-	"\x0e_response_kindB\x15\n" +
-	"\x13_selected_option_idB\f\n" +
+	"\x10_callback_handleB\f\n" +
 	"\n" +
 	"_free_textB\x10\n" +
-	"\x0e_responder_ref\"\xf1\x01\n" +
+	"\x0e_responder_refB\x15\n" +
+	"\x13_provider_update_idB\x1d\n" +
+	"\x1b_provider_callback_query_idB\x12\n" +
+	"\x10_delivery_statusB\x17\n" +
+	"\x15_transport_error_code\"\xa2\x02\n" +
 	"!SubmitInteractionCallbackResponse\x12\x1a\n" +
 	"\baccepted\x18\x01 \x01(\bR\baccepted\x12&\n" +
 	"\x0eclassification\x18\x02 \x01(\tR\x0eclassification\x12+\n" +
 	"\x11interaction_state\x18\x03 \x01(\tR\x10interactionState\x12'\n" +
-	"\x0fresume_required\x18\x04 \x01(\bR\x0eresumeRequired\x122\n" +
-	"\x15effective_response_id\x18\x05 \x01(\x03R\x13effectiveResponseId\"\x97\x01\n" +
+	"\x0fresume_required\x18\x04 \x01(\bR\x0eresumeRequired\x12/\n" +
+	"\x13continuation_action\x18\x05 \x01(\tR\x12continuationAction\x122\n" +
+	"\x15effective_response_id\x18\x06 \x01(\x03R\x13effectiveResponseId\"\x97\x01\n" +
 	"\x14RuntimeDeployTaskLog\x12\x14\n" +
 	"\x05stage\x18\x01 \x01(\tR\x05stage\x12\x14\n" +
 	"\x05level\x18\x02 \x01(\tR\x05level\x12\x18\n" +
@@ -14815,243 +14890,244 @@ var file_codexk8s_controlplane_v1_controlplane_proto_depIdxs = []int32{
 	167, // 65: codexk8s.controlplane.v1.ClaimNextInteractionDispatchResponse.response_deadline_at:type_name -> google.protobuf.Timestamp
 	167, // 66: codexk8s.controlplane.v1.CompleteInteractionDispatchRequest.next_retry_at:type_name -> google.protobuf.Timestamp
 	167, // 67: codexk8s.controlplane.v1.CompleteInteractionDispatchRequest.finished_at:type_name -> google.protobuf.Timestamp
-	167, // 68: codexk8s.controlplane.v1.ProcessNextGitHubRateLimitWaitResponse.resume_not_before:type_name -> google.protobuf.Timestamp
-	85,  // 69: codexk8s.controlplane.v1.ListMissionControlWarmupProjectsResponse.items:type_name -> codexk8s.controlplane.v1.MissionControlWarmupProject
-	91,  // 70: codexk8s.controlplane.v1.MissionControlEntityCard.provider_reference:type_name -> codexk8s.controlplane.v1.MissionControlProviderReference
-	92,  // 71: codexk8s.controlplane.v1.MissionControlEntityCard.primary_actor:type_name -> codexk8s.controlplane.v1.MissionControlPrimaryActor
-	167, // 72: codexk8s.controlplane.v1.MissionControlEntityCard.last_timeline_at:type_name -> google.protobuf.Timestamp
-	167, // 73: codexk8s.controlplane.v1.MissionControlTimelineEntry.occurred_at:type_name -> google.protobuf.Timestamp
-	167, // 74: codexk8s.controlplane.v1.MissionControlWorkItemDetailsPayload.last_provider_sync_at:type_name -> google.protobuf.Timestamp
-	167, // 75: codexk8s.controlplane.v1.MissionControlAgentDetailsPayload.last_heartbeat_at:type_name -> google.protobuf.Timestamp
-	93,  // 76: codexk8s.controlplane.v1.MissionControlEntityDetails.entity:type_name -> codexk8s.controlplane.v1.MissionControlEntityCard
-	94,  // 77: codexk8s.controlplane.v1.MissionControlEntityDetails.relations:type_name -> codexk8s.controlplane.v1.MissionControlRelation
-	95,  // 78: codexk8s.controlplane.v1.MissionControlEntityDetails.timeline_preview:type_name -> codexk8s.controlplane.v1.MissionControlTimelineEntry
-	96,  // 79: codexk8s.controlplane.v1.MissionControlEntityDetails.allowed_actions:type_name -> codexk8s.controlplane.v1.MissionControlAllowedAction
-	97,  // 80: codexk8s.controlplane.v1.MissionControlEntityDetails.provider_deep_links:type_name -> codexk8s.controlplane.v1.MissionControlProviderDeepLink
-	98,  // 81: codexk8s.controlplane.v1.MissionControlEntityDetails.work_item:type_name -> codexk8s.controlplane.v1.MissionControlWorkItemDetailsPayload
-	99,  // 82: codexk8s.controlplane.v1.MissionControlEntityDetails.discussion:type_name -> codexk8s.controlplane.v1.MissionControlDiscussionDetailsPayload
-	100, // 83: codexk8s.controlplane.v1.MissionControlEntityDetails.pull_request:type_name -> codexk8s.controlplane.v1.MissionControlPullRequestDetailsPayload
-	101, // 84: codexk8s.controlplane.v1.MissionControlEntityDetails.agent:type_name -> codexk8s.controlplane.v1.MissionControlAgentDetailsPayload
-	167, // 85: codexk8s.controlplane.v1.MissionControlDashboardSnapshot.generated_at:type_name -> google.protobuf.Timestamp
-	167, // 86: codexk8s.controlplane.v1.MissionControlDashboardSnapshot.stale_after:type_name -> google.protobuf.Timestamp
-	103, // 87: codexk8s.controlplane.v1.MissionControlDashboardSnapshot.summary:type_name -> codexk8s.controlplane.v1.MissionControlSnapshotSummary
-	93,  // 88: codexk8s.controlplane.v1.MissionControlDashboardSnapshot.entities:type_name -> codexk8s.controlplane.v1.MissionControlEntityCard
-	94,  // 89: codexk8s.controlplane.v1.MissionControlDashboardSnapshot.relations:type_name -> codexk8s.controlplane.v1.MissionControlRelation
-	0,   // 90: codexk8s.controlplane.v1.GetMissionControlSnapshotRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	104, // 91: codexk8s.controlplane.v1.GetMissionControlSnapshotResponse.snapshot:type_name -> codexk8s.controlplane.v1.MissionControlDashboardSnapshot
-	0,   // 92: codexk8s.controlplane.v1.GetMissionControlEntityRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	0,   // 93: codexk8s.controlplane.v1.ListMissionControlTimelineRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	95,  // 94: codexk8s.controlplane.v1.ListMissionControlTimelineResponse.items:type_name -> codexk8s.controlplane.v1.MissionControlTimelineEntry
-	110, // 95: codexk8s.controlplane.v1.MissionControlPendingCommand.stage_next_step:type_name -> codexk8s.controlplane.v1.MissionControlStageNextStepPayload
-	167, // 96: codexk8s.controlplane.v1.MissionControlPendingCommand.requested_at:type_name -> google.protobuf.Timestamp
-	167, // 97: codexk8s.controlplane.v1.MissionControlPendingCommand.updated_at:type_name -> google.protobuf.Timestamp
-	170, // 98: codexk8s.controlplane.v1.ClaimMissionControlPendingCommandsRequest.lease_ttl:type_name -> google.protobuf.Duration
-	111, // 99: codexk8s.controlplane.v1.ClaimMissionControlPendingCommandsResponse.items:type_name -> codexk8s.controlplane.v1.MissionControlPendingCommand
-	167, // 100: codexk8s.controlplane.v1.MissionControlCommandState.updated_at:type_name -> google.protobuf.Timestamp
-	167, // 101: codexk8s.controlplane.v1.MissionControlCommandState.reconciled_at:type_name -> google.protobuf.Timestamp
-	90,  // 102: codexk8s.controlplane.v1.MissionControlCommandState.entity_refs:type_name -> codexk8s.controlplane.v1.MissionControlEntityRef
-	115, // 103: codexk8s.controlplane.v1.MissionControlCommandState.approval:type_name -> codexk8s.controlplane.v1.MissionControlCommandApproval
-	167, // 104: codexk8s.controlplane.v1.MissionControlCommandApproval.requested_at:type_name -> google.protobuf.Timestamp
-	167, // 105: codexk8s.controlplane.v1.MissionControlCommandApproval.decided_at:type_name -> google.protobuf.Timestamp
-	90,  // 106: codexk8s.controlplane.v1.MissionControlWorkItemCreatePayload.related_entity_refs:type_name -> codexk8s.controlplane.v1.MissionControlEntityRef
-	0,   // 107: codexk8s.controlplane.v1.SubmitMissionControlCommandRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	167, // 108: codexk8s.controlplane.v1.SubmitMissionControlCommandRequest.requested_at:type_name -> google.protobuf.Timestamp
-	116, // 109: codexk8s.controlplane.v1.SubmitMissionControlCommandRequest.discussion_create:type_name -> codexk8s.controlplane.v1.MissionControlDiscussionCreatePayload
-	117, // 110: codexk8s.controlplane.v1.SubmitMissionControlCommandRequest.work_item_create:type_name -> codexk8s.controlplane.v1.MissionControlWorkItemCreatePayload
-	118, // 111: codexk8s.controlplane.v1.SubmitMissionControlCommandRequest.discussion_formalize:type_name -> codexk8s.controlplane.v1.MissionControlDiscussionFormalizePayload
-	110, // 112: codexk8s.controlplane.v1.SubmitMissionControlCommandRequest.stage_next_step:type_name -> codexk8s.controlplane.v1.MissionControlStageNextStepPayload
-	119, // 113: codexk8s.controlplane.v1.SubmitMissionControlCommandRequest.retry_sync:type_name -> codexk8s.controlplane.v1.MissionControlRetrySyncPayload
-	0,   // 114: codexk8s.controlplane.v1.GetMissionControlCommandRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	167, // 115: codexk8s.controlplane.v1.QueueMissionControlCommandRequest.updated_at:type_name -> google.protobuf.Timestamp
-	167, // 116: codexk8s.controlplane.v1.MarkMissionControlCommandPendingSyncRequest.updated_at:type_name -> google.protobuf.Timestamp
-	167, // 117: codexk8s.controlplane.v1.MarkMissionControlCommandReconciledRequest.updated_at:type_name -> google.protobuf.Timestamp
-	167, // 118: codexk8s.controlplane.v1.MarkMissionControlCommandReconciledRequest.reconciled_at:type_name -> google.protobuf.Timestamp
-	167, // 119: codexk8s.controlplane.v1.MarkMissionControlCommandFailedRequest.updated_at:type_name -> google.protobuf.Timestamp
-	167, // 120: codexk8s.controlplane.v1.SubmitInteractionCallbackRequest.occurred_at:type_name -> google.protobuf.Timestamp
-	167, // 121: codexk8s.controlplane.v1.RuntimeDeployTaskLog.created_at:type_name -> google.protobuf.Timestamp
-	167, // 122: codexk8s.controlplane.v1.RuntimeDeployTask.lease_until:type_name -> google.protobuf.Timestamp
-	167, // 123: codexk8s.controlplane.v1.RuntimeDeployTask.cancel_requested_at:type_name -> google.protobuf.Timestamp
-	167, // 124: codexk8s.controlplane.v1.RuntimeDeployTask.stop_requested_at:type_name -> google.protobuf.Timestamp
-	167, // 125: codexk8s.controlplane.v1.RuntimeDeployTask.created_at:type_name -> google.protobuf.Timestamp
-	167, // 126: codexk8s.controlplane.v1.RuntimeDeployTask.updated_at:type_name -> google.protobuf.Timestamp
-	167, // 127: codexk8s.controlplane.v1.RuntimeDeployTask.started_at:type_name -> google.protobuf.Timestamp
-	167, // 128: codexk8s.controlplane.v1.RuntimeDeployTask.finished_at:type_name -> google.protobuf.Timestamp
-	128, // 129: codexk8s.controlplane.v1.RuntimeDeployTask.logs:type_name -> codexk8s.controlplane.v1.RuntimeDeployTaskLog
-	0,   // 130: codexk8s.controlplane.v1.ListRuntimeDeployTasksRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	129, // 131: codexk8s.controlplane.v1.ListRuntimeDeployTasksResponse.items:type_name -> codexk8s.controlplane.v1.RuntimeDeployTask
-	0,   // 132: codexk8s.controlplane.v1.GetRuntimeDeployTaskRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	0,   // 133: codexk8s.controlplane.v1.CancelRuntimeDeployTaskRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	0,   // 134: codexk8s.controlplane.v1.StopRuntimeDeployTaskRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	167, // 135: codexk8s.controlplane.v1.RuntimeError.viewed_at:type_name -> google.protobuf.Timestamp
-	167, // 136: codexk8s.controlplane.v1.RuntimeError.created_at:type_name -> google.protobuf.Timestamp
-	0,   // 137: codexk8s.controlplane.v1.ListRuntimeErrorsRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	136, // 138: codexk8s.controlplane.v1.ListRuntimeErrorsResponse.items:type_name -> codexk8s.controlplane.v1.RuntimeError
-	0,   // 139: codexk8s.controlplane.v1.MarkRuntimeErrorViewedRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	167, // 140: codexk8s.controlplane.v1.RegistryImageTag.created_at:type_name -> google.protobuf.Timestamp
-	140, // 141: codexk8s.controlplane.v1.RegistryImageRepository.tags:type_name -> codexk8s.controlplane.v1.RegistryImageTag
-	0,   // 142: codexk8s.controlplane.v1.ListRegistryImagesRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	141, // 143: codexk8s.controlplane.v1.ListRegistryImagesResponse.items:type_name -> codexk8s.controlplane.v1.RegistryImageRepository
-	0,   // 144: codexk8s.controlplane.v1.DeleteRegistryImageTagRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	0,   // 145: codexk8s.controlplane.v1.CleanupRegistryImagesRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	145, // 146: codexk8s.controlplane.v1.CleanupRegistryImagesResponse.deleted:type_name -> codexk8s.controlplane.v1.RegistryImageDeleteResult
-	145, // 147: codexk8s.controlplane.v1.CleanupRegistryImagesResponse.skipped:type_name -> codexk8s.controlplane.v1.RegistryImageDeleteResult
-	168, // 148: codexk8s.controlplane.v1.UpsertAgentSessionRequest.issue_number:type_name -> google.protobuf.Int32Value
-	168, // 149: codexk8s.controlplane.v1.UpsertAgentSessionRequest.pr_number:type_name -> google.protobuf.Int32Value
-	167, // 150: codexk8s.controlplane.v1.UpsertAgentSessionRequest.started_at:type_name -> google.protobuf.Timestamp
-	167, // 151: codexk8s.controlplane.v1.UpsertAgentSessionRequest.finished_at:type_name -> google.protobuf.Timestamp
-	168, // 152: codexk8s.controlplane.v1.AgentSessionSnapshot.issue_number:type_name -> google.protobuf.Int32Value
-	168, // 153: codexk8s.controlplane.v1.AgentSessionSnapshot.pr_number:type_name -> google.protobuf.Int32Value
-	167, // 154: codexk8s.controlplane.v1.AgentSessionSnapshot.started_at:type_name -> google.protobuf.Timestamp
-	167, // 155: codexk8s.controlplane.v1.AgentSessionSnapshot.finished_at:type_name -> google.protobuf.Timestamp
-	167, // 156: codexk8s.controlplane.v1.AgentSessionSnapshot.created_at:type_name -> google.protobuf.Timestamp
-	167, // 157: codexk8s.controlplane.v1.AgentSessionSnapshot.updated_at:type_name -> google.protobuf.Timestamp
-	167, // 158: codexk8s.controlplane.v1.AgentSessionSnapshot.snapshot_updated_at:type_name -> google.protobuf.Timestamp
-	150, // 159: codexk8s.controlplane.v1.GetLatestAgentSessionResponse.session:type_name -> codexk8s.controlplane.v1.AgentSessionSnapshot
-	168, // 160: codexk8s.controlplane.v1.LookupRunPullRequestRequest.pr_number:type_name -> google.protobuf.Int32Value
-	0,   // 161: codexk8s.controlplane.v1.DeleteRunNamespaceRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
-	1,   // 162: codexk8s.controlplane.v1.ControlPlaneService.IngestGitHubWebhook:input_type -> codexk8s.controlplane.v1.IngestGitHubWebhookRequest
-	3,   // 163: codexk8s.controlplane.v1.ControlPlaneService.ResolveStaffByEmail:input_type -> codexk8s.controlplane.v1.ResolveStaffByEmailRequest
-	5,   // 164: codexk8s.controlplane.v1.ControlPlaneService.AuthorizeOAuthUser:input_type -> codexk8s.controlplane.v1.AuthorizeOAuthUserRequest
-	8,   // 165: codexk8s.controlplane.v1.ControlPlaneService.ListProjects:input_type -> codexk8s.controlplane.v1.ListProjectsRequest
-	10,  // 166: codexk8s.controlplane.v1.ControlPlaneService.UpsertProject:input_type -> codexk8s.controlplane.v1.UpsertProjectRequest
-	11,  // 167: codexk8s.controlplane.v1.ControlPlaneService.GetProject:input_type -> codexk8s.controlplane.v1.GetProjectRequest
-	12,  // 168: codexk8s.controlplane.v1.ControlPlaneService.DeleteProject:input_type -> codexk8s.controlplane.v1.DeleteProjectRequest
-	19,  // 169: codexk8s.controlplane.v1.ControlPlaneService.ListRuns:input_type -> codexk8s.controlplane.v1.ListRunsRequest
-	23,  // 170: codexk8s.controlplane.v1.ControlPlaneService.ListRunWaits:input_type -> codexk8s.controlplane.v1.ListRunWaitsRequest
-	25,  // 171: codexk8s.controlplane.v1.ControlPlaneService.GetRun:input_type -> codexk8s.controlplane.v1.GetRunRequest
-	26,  // 172: codexk8s.controlplane.v1.ControlPlaneService.GetRunLogs:input_type -> codexk8s.controlplane.v1.GetRunLogsRequest
-	15,  // 173: codexk8s.controlplane.v1.ControlPlaneService.ListPendingApprovals:input_type -> codexk8s.controlplane.v1.ListPendingApprovalsRequest
-	17,  // 174: codexk8s.controlplane.v1.ControlPlaneService.ResolveApprovalDecision:input_type -> codexk8s.controlplane.v1.ResolveApprovalDecisionRequest
-	29,  // 175: codexk8s.controlplane.v1.ControlPlaneService.ListRunEvents:input_type -> codexk8s.controlplane.v1.ListRunEventsRequest
-	32,  // 176: codexk8s.controlplane.v1.ControlPlaneService.ListRunLearningFeedback:input_type -> codexk8s.controlplane.v1.ListRunLearningFeedbackRequest
-	35,  // 177: codexk8s.controlplane.v1.ControlPlaneService.ListUsers:input_type -> codexk8s.controlplane.v1.ListUsersRequest
-	37,  // 178: codexk8s.controlplane.v1.ControlPlaneService.CreateUser:input_type -> codexk8s.controlplane.v1.CreateUserRequest
-	38,  // 179: codexk8s.controlplane.v1.ControlPlaneService.DeleteUser:input_type -> codexk8s.controlplane.v1.DeleteUserRequest
-	40,  // 180: codexk8s.controlplane.v1.ControlPlaneService.ListProjectMembers:input_type -> codexk8s.controlplane.v1.ListProjectMembersRequest
-	42,  // 181: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectMember:input_type -> codexk8s.controlplane.v1.UpsertProjectMemberRequest
-	43,  // 182: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectMember:input_type -> codexk8s.controlplane.v1.DeleteProjectMemberRequest
-	44,  // 183: codexk8s.controlplane.v1.ControlPlaneService.SetProjectMemberLearningModeOverride:input_type -> codexk8s.controlplane.v1.SetProjectMemberLearningModeOverrideRequest
-	46,  // 184: codexk8s.controlplane.v1.ControlPlaneService.ListProjectRepositories:input_type -> codexk8s.controlplane.v1.ListProjectRepositoriesRequest
-	48,  // 185: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectRepository:input_type -> codexk8s.controlplane.v1.UpsertProjectRepositoryRequest
-	49,  // 186: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectRepository:input_type -> codexk8s.controlplane.v1.DeleteProjectRepositoryRequest
-	50,  // 187: codexk8s.controlplane.v1.ControlPlaneService.UpsertRepositoryBotParams:input_type -> codexk8s.controlplane.v1.UpsertRepositoryBotParamsRequest
-	51,  // 188: codexk8s.controlplane.v1.ControlPlaneService.RunRepositoryPreflight:input_type -> codexk8s.controlplane.v1.RunRepositoryPreflightRequest
-	55,  // 189: codexk8s.controlplane.v1.ControlPlaneService.GetProjectGitHubTokens:input_type -> codexk8s.controlplane.v1.GetProjectGitHubTokensRequest
-	56,  // 190: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectGitHubTokens:input_type -> codexk8s.controlplane.v1.UpsertProjectGitHubTokensRequest
-	57,  // 191: codexk8s.controlplane.v1.ControlPlaneService.PreviewNextStepAction:input_type -> codexk8s.controlplane.v1.NextStepActionRequest
-	57,  // 192: codexk8s.controlplane.v1.ControlPlaneService.ExecuteNextStepAction:input_type -> codexk8s.controlplane.v1.NextStepActionRequest
-	65,  // 193: codexk8s.controlplane.v1.ControlPlaneService.ListDocsetGroups:input_type -> codexk8s.controlplane.v1.ListDocsetGroupsRequest
-	67,  // 194: codexk8s.controlplane.v1.ControlPlaneService.ImportDocset:input_type -> codexk8s.controlplane.v1.ImportDocsetRequest
-	69,  // 195: codexk8s.controlplane.v1.ControlPlaneService.SyncDocset:input_type -> codexk8s.controlplane.v1.SyncDocsetRequest
-	71,  // 196: codexk8s.controlplane.v1.ControlPlaneService.IssueRunMCPToken:input_type -> codexk8s.controlplane.v1.IssueRunMCPTokenRequest
-	73,  // 197: codexk8s.controlplane.v1.ControlPlaneService.PrepareRunEnvironment:input_type -> codexk8s.controlplane.v1.PrepareRunEnvironmentRequest
-	75,  // 198: codexk8s.controlplane.v1.ControlPlaneService.EvaluateRuntimeReuse:input_type -> codexk8s.controlplane.v1.EvaluateRuntimeReuseRequest
-	77,  // 199: codexk8s.controlplane.v1.ControlPlaneService.ClaimNextInteractionDispatch:input_type -> codexk8s.controlplane.v1.ClaimNextInteractionDispatchRequest
-	79,  // 200: codexk8s.controlplane.v1.ControlPlaneService.CompleteInteractionDispatch:input_type -> codexk8s.controlplane.v1.CompleteInteractionDispatchRequest
-	81,  // 201: codexk8s.controlplane.v1.ControlPlaneService.ExpireNextInteraction:input_type -> codexk8s.controlplane.v1.ExpireNextInteractionRequest
-	83,  // 202: codexk8s.controlplane.v1.ControlPlaneService.ProcessNextGitHubRateLimitWait:input_type -> codexk8s.controlplane.v1.ProcessNextGitHubRateLimitWaitRequest
-	105, // 203: codexk8s.controlplane.v1.ControlPlaneService.GetMissionControlSnapshot:input_type -> codexk8s.controlplane.v1.GetMissionControlSnapshotRequest
-	107, // 204: codexk8s.controlplane.v1.ControlPlaneService.GetMissionControlEntity:input_type -> codexk8s.controlplane.v1.GetMissionControlEntityRequest
-	108, // 205: codexk8s.controlplane.v1.ControlPlaneService.ListMissionControlTimeline:input_type -> codexk8s.controlplane.v1.ListMissionControlTimelineRequest
-	86,  // 206: codexk8s.controlplane.v1.ControlPlaneService.ListMissionControlWarmupProjects:input_type -> codexk8s.controlplane.v1.ListMissionControlWarmupProjectsRequest
-	88,  // 207: codexk8s.controlplane.v1.ControlPlaneService.RunMissionControlWarmup:input_type -> codexk8s.controlplane.v1.RunMissionControlWarmupRequest
-	120, // 208: codexk8s.controlplane.v1.ControlPlaneService.SubmitMissionControlCommand:input_type -> codexk8s.controlplane.v1.SubmitMissionControlCommandRequest
-	121, // 209: codexk8s.controlplane.v1.ControlPlaneService.GetMissionControlCommand:input_type -> codexk8s.controlplane.v1.GetMissionControlCommandRequest
-	112, // 210: codexk8s.controlplane.v1.ControlPlaneService.ClaimMissionControlPendingCommands:input_type -> codexk8s.controlplane.v1.ClaimMissionControlPendingCommandsRequest
-	122, // 211: codexk8s.controlplane.v1.ControlPlaneService.QueueMissionControlCommand:input_type -> codexk8s.controlplane.v1.QueueMissionControlCommandRequest
-	123, // 212: codexk8s.controlplane.v1.ControlPlaneService.MarkMissionControlCommandPendingSync:input_type -> codexk8s.controlplane.v1.MarkMissionControlCommandPendingSyncRequest
-	124, // 213: codexk8s.controlplane.v1.ControlPlaneService.MarkMissionControlCommandReconciled:input_type -> codexk8s.controlplane.v1.MarkMissionControlCommandReconciledRequest
-	125, // 214: codexk8s.controlplane.v1.ControlPlaneService.MarkMissionControlCommandFailed:input_type -> codexk8s.controlplane.v1.MarkMissionControlCommandFailedRequest
-	126, // 215: codexk8s.controlplane.v1.ControlPlaneService.SubmitInteractionCallback:input_type -> codexk8s.controlplane.v1.SubmitInteractionCallbackRequest
-	130, // 216: codexk8s.controlplane.v1.ControlPlaneService.ListRuntimeDeployTasks:input_type -> codexk8s.controlplane.v1.ListRuntimeDeployTasksRequest
-	132, // 217: codexk8s.controlplane.v1.ControlPlaneService.GetRuntimeDeployTask:input_type -> codexk8s.controlplane.v1.GetRuntimeDeployTaskRequest
-	133, // 218: codexk8s.controlplane.v1.ControlPlaneService.CancelRuntimeDeployTask:input_type -> codexk8s.controlplane.v1.CancelRuntimeDeployTaskRequest
-	134, // 219: codexk8s.controlplane.v1.ControlPlaneService.StopRuntimeDeployTask:input_type -> codexk8s.controlplane.v1.StopRuntimeDeployTaskRequest
-	137, // 220: codexk8s.controlplane.v1.ControlPlaneService.ListRuntimeErrors:input_type -> codexk8s.controlplane.v1.ListRuntimeErrorsRequest
-	139, // 221: codexk8s.controlplane.v1.ControlPlaneService.MarkRuntimeErrorViewed:input_type -> codexk8s.controlplane.v1.MarkRuntimeErrorViewedRequest
-	148, // 222: codexk8s.controlplane.v1.ControlPlaneService.UpsertAgentSession:input_type -> codexk8s.controlplane.v1.UpsertAgentSessionRequest
-	151, // 223: codexk8s.controlplane.v1.ControlPlaneService.GetLatestAgentSession:input_type -> codexk8s.controlplane.v1.GetLatestAgentSessionRequest
-	153, // 224: codexk8s.controlplane.v1.ControlPlaneService.GetRunInteractionResumePayload:input_type -> codexk8s.controlplane.v1.GetRunInteractionResumePayloadRequest
-	155, // 225: codexk8s.controlplane.v1.ControlPlaneService.LookupRunPullRequest:input_type -> codexk8s.controlplane.v1.LookupRunPullRequestRequest
-	157, // 226: codexk8s.controlplane.v1.ControlPlaneService.InsertRunFlowEvent:input_type -> codexk8s.controlplane.v1.InsertRunFlowEventRequest
-	159, // 227: codexk8s.controlplane.v1.ControlPlaneService.UpsertRunStatusComment:input_type -> codexk8s.controlplane.v1.UpsertRunStatusCommentRequest
-	161, // 228: codexk8s.controlplane.v1.ControlPlaneService.GetCodexAuth:input_type -> codexk8s.controlplane.v1.GetCodexAuthRequest
-	163, // 229: codexk8s.controlplane.v1.ControlPlaneService.UpsertCodexAuth:input_type -> codexk8s.controlplane.v1.UpsertCodexAuthRequest
-	165, // 230: codexk8s.controlplane.v1.ControlPlaneService.DeleteRunNamespace:input_type -> codexk8s.controlplane.v1.DeleteRunNamespaceRequest
-	2,   // 231: codexk8s.controlplane.v1.ControlPlaneService.IngestGitHubWebhook:output_type -> codexk8s.controlplane.v1.IngestGitHubWebhookResponse
-	4,   // 232: codexk8s.controlplane.v1.ControlPlaneService.ResolveStaffByEmail:output_type -> codexk8s.controlplane.v1.ResolveStaffByEmailResponse
-	6,   // 233: codexk8s.controlplane.v1.ControlPlaneService.AuthorizeOAuthUser:output_type -> codexk8s.controlplane.v1.AuthorizeOAuthUserResponse
-	9,   // 234: codexk8s.controlplane.v1.ControlPlaneService.ListProjects:output_type -> codexk8s.controlplane.v1.ListProjectsResponse
-	7,   // 235: codexk8s.controlplane.v1.ControlPlaneService.UpsertProject:output_type -> codexk8s.controlplane.v1.Project
-	7,   // 236: codexk8s.controlplane.v1.ControlPlaneService.GetProject:output_type -> codexk8s.controlplane.v1.Project
-	171, // 237: codexk8s.controlplane.v1.ControlPlaneService.DeleteProject:output_type -> google.protobuf.Empty
-	20,  // 238: codexk8s.controlplane.v1.ControlPlaneService.ListRuns:output_type -> codexk8s.controlplane.v1.ListRunsResponse
-	24,  // 239: codexk8s.controlplane.v1.ControlPlaneService.ListRunWaits:output_type -> codexk8s.controlplane.v1.ListRunWaitsResponse
-	13,  // 240: codexk8s.controlplane.v1.ControlPlaneService.GetRun:output_type -> codexk8s.controlplane.v1.Run
-	27,  // 241: codexk8s.controlplane.v1.ControlPlaneService.GetRunLogs:output_type -> codexk8s.controlplane.v1.RunLogs
-	16,  // 242: codexk8s.controlplane.v1.ControlPlaneService.ListPendingApprovals:output_type -> codexk8s.controlplane.v1.ListPendingApprovalsResponse
-	18,  // 243: codexk8s.controlplane.v1.ControlPlaneService.ResolveApprovalDecision:output_type -> codexk8s.controlplane.v1.ResolveApprovalDecisionResponse
-	30,  // 244: codexk8s.controlplane.v1.ControlPlaneService.ListRunEvents:output_type -> codexk8s.controlplane.v1.ListRunEventsResponse
-	33,  // 245: codexk8s.controlplane.v1.ControlPlaneService.ListRunLearningFeedback:output_type -> codexk8s.controlplane.v1.ListRunLearningFeedbackResponse
-	36,  // 246: codexk8s.controlplane.v1.ControlPlaneService.ListUsers:output_type -> codexk8s.controlplane.v1.ListUsersResponse
-	34,  // 247: codexk8s.controlplane.v1.ControlPlaneService.CreateUser:output_type -> codexk8s.controlplane.v1.User
-	171, // 248: codexk8s.controlplane.v1.ControlPlaneService.DeleteUser:output_type -> google.protobuf.Empty
-	41,  // 249: codexk8s.controlplane.v1.ControlPlaneService.ListProjectMembers:output_type -> codexk8s.controlplane.v1.ListProjectMembersResponse
-	171, // 250: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectMember:output_type -> google.protobuf.Empty
-	171, // 251: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectMember:output_type -> google.protobuf.Empty
-	171, // 252: codexk8s.controlplane.v1.ControlPlaneService.SetProjectMemberLearningModeOverride:output_type -> google.protobuf.Empty
-	47,  // 253: codexk8s.controlplane.v1.ControlPlaneService.ListProjectRepositories:output_type -> codexk8s.controlplane.v1.ListProjectRepositoriesResponse
-	45,  // 254: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectRepository:output_type -> codexk8s.controlplane.v1.RepositoryBinding
-	171, // 255: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectRepository:output_type -> google.protobuf.Empty
-	171, // 256: codexk8s.controlplane.v1.ControlPlaneService.UpsertRepositoryBotParams:output_type -> google.protobuf.Empty
-	53,  // 257: codexk8s.controlplane.v1.ControlPlaneService.RunRepositoryPreflight:output_type -> codexk8s.controlplane.v1.RunRepositoryPreflightResponse
-	54,  // 258: codexk8s.controlplane.v1.ControlPlaneService.GetProjectGitHubTokens:output_type -> codexk8s.controlplane.v1.ProjectGitHubTokens
-	171, // 259: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectGitHubTokens:output_type -> google.protobuf.Empty
-	58,  // 260: codexk8s.controlplane.v1.ControlPlaneService.PreviewNextStepAction:output_type -> codexk8s.controlplane.v1.NextStepActionResponse
-	58,  // 261: codexk8s.controlplane.v1.ControlPlaneService.ExecuteNextStepAction:output_type -> codexk8s.controlplane.v1.NextStepActionResponse
-	66,  // 262: codexk8s.controlplane.v1.ControlPlaneService.ListDocsetGroups:output_type -> codexk8s.controlplane.v1.ListDocsetGroupsResponse
-	68,  // 263: codexk8s.controlplane.v1.ControlPlaneService.ImportDocset:output_type -> codexk8s.controlplane.v1.ImportDocsetResponse
-	70,  // 264: codexk8s.controlplane.v1.ControlPlaneService.SyncDocset:output_type -> codexk8s.controlplane.v1.SyncDocsetResponse
-	72,  // 265: codexk8s.controlplane.v1.ControlPlaneService.IssueRunMCPToken:output_type -> codexk8s.controlplane.v1.IssueRunMCPTokenResponse
-	74,  // 266: codexk8s.controlplane.v1.ControlPlaneService.PrepareRunEnvironment:output_type -> codexk8s.controlplane.v1.PrepareRunEnvironmentResponse
-	76,  // 267: codexk8s.controlplane.v1.ControlPlaneService.EvaluateRuntimeReuse:output_type -> codexk8s.controlplane.v1.EvaluateRuntimeReuseResponse
-	78,  // 268: codexk8s.controlplane.v1.ControlPlaneService.ClaimNextInteractionDispatch:output_type -> codexk8s.controlplane.v1.ClaimNextInteractionDispatchResponse
-	80,  // 269: codexk8s.controlplane.v1.ControlPlaneService.CompleteInteractionDispatch:output_type -> codexk8s.controlplane.v1.CompleteInteractionDispatchResponse
-	82,  // 270: codexk8s.controlplane.v1.ControlPlaneService.ExpireNextInteraction:output_type -> codexk8s.controlplane.v1.ExpireNextInteractionResponse
-	84,  // 271: codexk8s.controlplane.v1.ControlPlaneService.ProcessNextGitHubRateLimitWait:output_type -> codexk8s.controlplane.v1.ProcessNextGitHubRateLimitWaitResponse
-	106, // 272: codexk8s.controlplane.v1.ControlPlaneService.GetMissionControlSnapshot:output_type -> codexk8s.controlplane.v1.GetMissionControlSnapshotResponse
-	102, // 273: codexk8s.controlplane.v1.ControlPlaneService.GetMissionControlEntity:output_type -> codexk8s.controlplane.v1.MissionControlEntityDetails
-	109, // 274: codexk8s.controlplane.v1.ControlPlaneService.ListMissionControlTimeline:output_type -> codexk8s.controlplane.v1.ListMissionControlTimelineResponse
-	87,  // 275: codexk8s.controlplane.v1.ControlPlaneService.ListMissionControlWarmupProjects:output_type -> codexk8s.controlplane.v1.ListMissionControlWarmupProjectsResponse
-	89,  // 276: codexk8s.controlplane.v1.ControlPlaneService.RunMissionControlWarmup:output_type -> codexk8s.controlplane.v1.RunMissionControlWarmupResponse
-	114, // 277: codexk8s.controlplane.v1.ControlPlaneService.SubmitMissionControlCommand:output_type -> codexk8s.controlplane.v1.MissionControlCommandState
-	114, // 278: codexk8s.controlplane.v1.ControlPlaneService.GetMissionControlCommand:output_type -> codexk8s.controlplane.v1.MissionControlCommandState
-	113, // 279: codexk8s.controlplane.v1.ControlPlaneService.ClaimMissionControlPendingCommands:output_type -> codexk8s.controlplane.v1.ClaimMissionControlPendingCommandsResponse
-	114, // 280: codexk8s.controlplane.v1.ControlPlaneService.QueueMissionControlCommand:output_type -> codexk8s.controlplane.v1.MissionControlCommandState
-	114, // 281: codexk8s.controlplane.v1.ControlPlaneService.MarkMissionControlCommandPendingSync:output_type -> codexk8s.controlplane.v1.MissionControlCommandState
-	114, // 282: codexk8s.controlplane.v1.ControlPlaneService.MarkMissionControlCommandReconciled:output_type -> codexk8s.controlplane.v1.MissionControlCommandState
-	114, // 283: codexk8s.controlplane.v1.ControlPlaneService.MarkMissionControlCommandFailed:output_type -> codexk8s.controlplane.v1.MissionControlCommandState
-	127, // 284: codexk8s.controlplane.v1.ControlPlaneService.SubmitInteractionCallback:output_type -> codexk8s.controlplane.v1.SubmitInteractionCallbackResponse
-	131, // 285: codexk8s.controlplane.v1.ControlPlaneService.ListRuntimeDeployTasks:output_type -> codexk8s.controlplane.v1.ListRuntimeDeployTasksResponse
-	129, // 286: codexk8s.controlplane.v1.ControlPlaneService.GetRuntimeDeployTask:output_type -> codexk8s.controlplane.v1.RuntimeDeployTask
-	135, // 287: codexk8s.controlplane.v1.ControlPlaneService.CancelRuntimeDeployTask:output_type -> codexk8s.controlplane.v1.RuntimeDeployTaskActionResponse
-	135, // 288: codexk8s.controlplane.v1.ControlPlaneService.StopRuntimeDeployTask:output_type -> codexk8s.controlplane.v1.RuntimeDeployTaskActionResponse
-	138, // 289: codexk8s.controlplane.v1.ControlPlaneService.ListRuntimeErrors:output_type -> codexk8s.controlplane.v1.ListRuntimeErrorsResponse
-	136, // 290: codexk8s.controlplane.v1.ControlPlaneService.MarkRuntimeErrorViewed:output_type -> codexk8s.controlplane.v1.RuntimeError
-	149, // 291: codexk8s.controlplane.v1.ControlPlaneService.UpsertAgentSession:output_type -> codexk8s.controlplane.v1.UpsertAgentSessionResponse
-	152, // 292: codexk8s.controlplane.v1.ControlPlaneService.GetLatestAgentSession:output_type -> codexk8s.controlplane.v1.GetLatestAgentSessionResponse
-	154, // 293: codexk8s.controlplane.v1.ControlPlaneService.GetRunInteractionResumePayload:output_type -> codexk8s.controlplane.v1.GetRunInteractionResumePayloadResponse
-	156, // 294: codexk8s.controlplane.v1.ControlPlaneService.LookupRunPullRequest:output_type -> codexk8s.controlplane.v1.LookupRunPullRequestResponse
-	158, // 295: codexk8s.controlplane.v1.ControlPlaneService.InsertRunFlowEvent:output_type -> codexk8s.controlplane.v1.InsertRunFlowEventResponse
-	160, // 296: codexk8s.controlplane.v1.ControlPlaneService.UpsertRunStatusComment:output_type -> codexk8s.controlplane.v1.UpsertRunStatusCommentResponse
-	162, // 297: codexk8s.controlplane.v1.ControlPlaneService.GetCodexAuth:output_type -> codexk8s.controlplane.v1.GetCodexAuthResponse
-	164, // 298: codexk8s.controlplane.v1.ControlPlaneService.UpsertCodexAuth:output_type -> codexk8s.controlplane.v1.UpsertCodexAuthResponse
-	166, // 299: codexk8s.controlplane.v1.ControlPlaneService.DeleteRunNamespace:output_type -> codexk8s.controlplane.v1.DeleteRunNamespaceResponse
-	231, // [231:300] is the sub-list for method output_type
-	162, // [162:231] is the sub-list for method input_type
-	162, // [162:162] is the sub-list for extension type_name
-	162, // [162:162] is the sub-list for extension extendee
-	0,   // [0:162] is the sub-list for field type_name
+	167, // 68: codexk8s.controlplane.v1.CompleteInteractionDispatchRequest.callback_token_expires_at:type_name -> google.protobuf.Timestamp
+	167, // 69: codexk8s.controlplane.v1.ProcessNextGitHubRateLimitWaitResponse.resume_not_before:type_name -> google.protobuf.Timestamp
+	85,  // 70: codexk8s.controlplane.v1.ListMissionControlWarmupProjectsResponse.items:type_name -> codexk8s.controlplane.v1.MissionControlWarmupProject
+	91,  // 71: codexk8s.controlplane.v1.MissionControlEntityCard.provider_reference:type_name -> codexk8s.controlplane.v1.MissionControlProviderReference
+	92,  // 72: codexk8s.controlplane.v1.MissionControlEntityCard.primary_actor:type_name -> codexk8s.controlplane.v1.MissionControlPrimaryActor
+	167, // 73: codexk8s.controlplane.v1.MissionControlEntityCard.last_timeline_at:type_name -> google.protobuf.Timestamp
+	167, // 74: codexk8s.controlplane.v1.MissionControlTimelineEntry.occurred_at:type_name -> google.protobuf.Timestamp
+	167, // 75: codexk8s.controlplane.v1.MissionControlWorkItemDetailsPayload.last_provider_sync_at:type_name -> google.protobuf.Timestamp
+	167, // 76: codexk8s.controlplane.v1.MissionControlAgentDetailsPayload.last_heartbeat_at:type_name -> google.protobuf.Timestamp
+	93,  // 77: codexk8s.controlplane.v1.MissionControlEntityDetails.entity:type_name -> codexk8s.controlplane.v1.MissionControlEntityCard
+	94,  // 78: codexk8s.controlplane.v1.MissionControlEntityDetails.relations:type_name -> codexk8s.controlplane.v1.MissionControlRelation
+	95,  // 79: codexk8s.controlplane.v1.MissionControlEntityDetails.timeline_preview:type_name -> codexk8s.controlplane.v1.MissionControlTimelineEntry
+	96,  // 80: codexk8s.controlplane.v1.MissionControlEntityDetails.allowed_actions:type_name -> codexk8s.controlplane.v1.MissionControlAllowedAction
+	97,  // 81: codexk8s.controlplane.v1.MissionControlEntityDetails.provider_deep_links:type_name -> codexk8s.controlplane.v1.MissionControlProviderDeepLink
+	98,  // 82: codexk8s.controlplane.v1.MissionControlEntityDetails.work_item:type_name -> codexk8s.controlplane.v1.MissionControlWorkItemDetailsPayload
+	99,  // 83: codexk8s.controlplane.v1.MissionControlEntityDetails.discussion:type_name -> codexk8s.controlplane.v1.MissionControlDiscussionDetailsPayload
+	100, // 84: codexk8s.controlplane.v1.MissionControlEntityDetails.pull_request:type_name -> codexk8s.controlplane.v1.MissionControlPullRequestDetailsPayload
+	101, // 85: codexk8s.controlplane.v1.MissionControlEntityDetails.agent:type_name -> codexk8s.controlplane.v1.MissionControlAgentDetailsPayload
+	167, // 86: codexk8s.controlplane.v1.MissionControlDashboardSnapshot.generated_at:type_name -> google.protobuf.Timestamp
+	167, // 87: codexk8s.controlplane.v1.MissionControlDashboardSnapshot.stale_after:type_name -> google.protobuf.Timestamp
+	103, // 88: codexk8s.controlplane.v1.MissionControlDashboardSnapshot.summary:type_name -> codexk8s.controlplane.v1.MissionControlSnapshotSummary
+	93,  // 89: codexk8s.controlplane.v1.MissionControlDashboardSnapshot.entities:type_name -> codexk8s.controlplane.v1.MissionControlEntityCard
+	94,  // 90: codexk8s.controlplane.v1.MissionControlDashboardSnapshot.relations:type_name -> codexk8s.controlplane.v1.MissionControlRelation
+	0,   // 91: codexk8s.controlplane.v1.GetMissionControlSnapshotRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
+	104, // 92: codexk8s.controlplane.v1.GetMissionControlSnapshotResponse.snapshot:type_name -> codexk8s.controlplane.v1.MissionControlDashboardSnapshot
+	0,   // 93: codexk8s.controlplane.v1.GetMissionControlEntityRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
+	0,   // 94: codexk8s.controlplane.v1.ListMissionControlTimelineRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
+	95,  // 95: codexk8s.controlplane.v1.ListMissionControlTimelineResponse.items:type_name -> codexk8s.controlplane.v1.MissionControlTimelineEntry
+	110, // 96: codexk8s.controlplane.v1.MissionControlPendingCommand.stage_next_step:type_name -> codexk8s.controlplane.v1.MissionControlStageNextStepPayload
+	167, // 97: codexk8s.controlplane.v1.MissionControlPendingCommand.requested_at:type_name -> google.protobuf.Timestamp
+	167, // 98: codexk8s.controlplane.v1.MissionControlPendingCommand.updated_at:type_name -> google.protobuf.Timestamp
+	170, // 99: codexk8s.controlplane.v1.ClaimMissionControlPendingCommandsRequest.lease_ttl:type_name -> google.protobuf.Duration
+	111, // 100: codexk8s.controlplane.v1.ClaimMissionControlPendingCommandsResponse.items:type_name -> codexk8s.controlplane.v1.MissionControlPendingCommand
+	167, // 101: codexk8s.controlplane.v1.MissionControlCommandState.updated_at:type_name -> google.protobuf.Timestamp
+	167, // 102: codexk8s.controlplane.v1.MissionControlCommandState.reconciled_at:type_name -> google.protobuf.Timestamp
+	90,  // 103: codexk8s.controlplane.v1.MissionControlCommandState.entity_refs:type_name -> codexk8s.controlplane.v1.MissionControlEntityRef
+	115, // 104: codexk8s.controlplane.v1.MissionControlCommandState.approval:type_name -> codexk8s.controlplane.v1.MissionControlCommandApproval
+	167, // 105: codexk8s.controlplane.v1.MissionControlCommandApproval.requested_at:type_name -> google.protobuf.Timestamp
+	167, // 106: codexk8s.controlplane.v1.MissionControlCommandApproval.decided_at:type_name -> google.protobuf.Timestamp
+	90,  // 107: codexk8s.controlplane.v1.MissionControlWorkItemCreatePayload.related_entity_refs:type_name -> codexk8s.controlplane.v1.MissionControlEntityRef
+	0,   // 108: codexk8s.controlplane.v1.SubmitMissionControlCommandRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
+	167, // 109: codexk8s.controlplane.v1.SubmitMissionControlCommandRequest.requested_at:type_name -> google.protobuf.Timestamp
+	116, // 110: codexk8s.controlplane.v1.SubmitMissionControlCommandRequest.discussion_create:type_name -> codexk8s.controlplane.v1.MissionControlDiscussionCreatePayload
+	117, // 111: codexk8s.controlplane.v1.SubmitMissionControlCommandRequest.work_item_create:type_name -> codexk8s.controlplane.v1.MissionControlWorkItemCreatePayload
+	118, // 112: codexk8s.controlplane.v1.SubmitMissionControlCommandRequest.discussion_formalize:type_name -> codexk8s.controlplane.v1.MissionControlDiscussionFormalizePayload
+	110, // 113: codexk8s.controlplane.v1.SubmitMissionControlCommandRequest.stage_next_step:type_name -> codexk8s.controlplane.v1.MissionControlStageNextStepPayload
+	119, // 114: codexk8s.controlplane.v1.SubmitMissionControlCommandRequest.retry_sync:type_name -> codexk8s.controlplane.v1.MissionControlRetrySyncPayload
+	0,   // 115: codexk8s.controlplane.v1.GetMissionControlCommandRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
+	167, // 116: codexk8s.controlplane.v1.QueueMissionControlCommandRequest.updated_at:type_name -> google.protobuf.Timestamp
+	167, // 117: codexk8s.controlplane.v1.MarkMissionControlCommandPendingSyncRequest.updated_at:type_name -> google.protobuf.Timestamp
+	167, // 118: codexk8s.controlplane.v1.MarkMissionControlCommandReconciledRequest.updated_at:type_name -> google.protobuf.Timestamp
+	167, // 119: codexk8s.controlplane.v1.MarkMissionControlCommandReconciledRequest.reconciled_at:type_name -> google.protobuf.Timestamp
+	167, // 120: codexk8s.controlplane.v1.MarkMissionControlCommandFailedRequest.updated_at:type_name -> google.protobuf.Timestamp
+	167, // 121: codexk8s.controlplane.v1.SubmitInteractionCallbackRequest.occurred_at:type_name -> google.protobuf.Timestamp
+	167, // 122: codexk8s.controlplane.v1.RuntimeDeployTaskLog.created_at:type_name -> google.protobuf.Timestamp
+	167, // 123: codexk8s.controlplane.v1.RuntimeDeployTask.lease_until:type_name -> google.protobuf.Timestamp
+	167, // 124: codexk8s.controlplane.v1.RuntimeDeployTask.cancel_requested_at:type_name -> google.protobuf.Timestamp
+	167, // 125: codexk8s.controlplane.v1.RuntimeDeployTask.stop_requested_at:type_name -> google.protobuf.Timestamp
+	167, // 126: codexk8s.controlplane.v1.RuntimeDeployTask.created_at:type_name -> google.protobuf.Timestamp
+	167, // 127: codexk8s.controlplane.v1.RuntimeDeployTask.updated_at:type_name -> google.protobuf.Timestamp
+	167, // 128: codexk8s.controlplane.v1.RuntimeDeployTask.started_at:type_name -> google.protobuf.Timestamp
+	167, // 129: codexk8s.controlplane.v1.RuntimeDeployTask.finished_at:type_name -> google.protobuf.Timestamp
+	128, // 130: codexk8s.controlplane.v1.RuntimeDeployTask.logs:type_name -> codexk8s.controlplane.v1.RuntimeDeployTaskLog
+	0,   // 131: codexk8s.controlplane.v1.ListRuntimeDeployTasksRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
+	129, // 132: codexk8s.controlplane.v1.ListRuntimeDeployTasksResponse.items:type_name -> codexk8s.controlplane.v1.RuntimeDeployTask
+	0,   // 133: codexk8s.controlplane.v1.GetRuntimeDeployTaskRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
+	0,   // 134: codexk8s.controlplane.v1.CancelRuntimeDeployTaskRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
+	0,   // 135: codexk8s.controlplane.v1.StopRuntimeDeployTaskRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
+	167, // 136: codexk8s.controlplane.v1.RuntimeError.viewed_at:type_name -> google.protobuf.Timestamp
+	167, // 137: codexk8s.controlplane.v1.RuntimeError.created_at:type_name -> google.protobuf.Timestamp
+	0,   // 138: codexk8s.controlplane.v1.ListRuntimeErrorsRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
+	136, // 139: codexk8s.controlplane.v1.ListRuntimeErrorsResponse.items:type_name -> codexk8s.controlplane.v1.RuntimeError
+	0,   // 140: codexk8s.controlplane.v1.MarkRuntimeErrorViewedRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
+	167, // 141: codexk8s.controlplane.v1.RegistryImageTag.created_at:type_name -> google.protobuf.Timestamp
+	140, // 142: codexk8s.controlplane.v1.RegistryImageRepository.tags:type_name -> codexk8s.controlplane.v1.RegistryImageTag
+	0,   // 143: codexk8s.controlplane.v1.ListRegistryImagesRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
+	141, // 144: codexk8s.controlplane.v1.ListRegistryImagesResponse.items:type_name -> codexk8s.controlplane.v1.RegistryImageRepository
+	0,   // 145: codexk8s.controlplane.v1.DeleteRegistryImageTagRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
+	0,   // 146: codexk8s.controlplane.v1.CleanupRegistryImagesRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
+	145, // 147: codexk8s.controlplane.v1.CleanupRegistryImagesResponse.deleted:type_name -> codexk8s.controlplane.v1.RegistryImageDeleteResult
+	145, // 148: codexk8s.controlplane.v1.CleanupRegistryImagesResponse.skipped:type_name -> codexk8s.controlplane.v1.RegistryImageDeleteResult
+	168, // 149: codexk8s.controlplane.v1.UpsertAgentSessionRequest.issue_number:type_name -> google.protobuf.Int32Value
+	168, // 150: codexk8s.controlplane.v1.UpsertAgentSessionRequest.pr_number:type_name -> google.protobuf.Int32Value
+	167, // 151: codexk8s.controlplane.v1.UpsertAgentSessionRequest.started_at:type_name -> google.protobuf.Timestamp
+	167, // 152: codexk8s.controlplane.v1.UpsertAgentSessionRequest.finished_at:type_name -> google.protobuf.Timestamp
+	168, // 153: codexk8s.controlplane.v1.AgentSessionSnapshot.issue_number:type_name -> google.protobuf.Int32Value
+	168, // 154: codexk8s.controlplane.v1.AgentSessionSnapshot.pr_number:type_name -> google.protobuf.Int32Value
+	167, // 155: codexk8s.controlplane.v1.AgentSessionSnapshot.started_at:type_name -> google.protobuf.Timestamp
+	167, // 156: codexk8s.controlplane.v1.AgentSessionSnapshot.finished_at:type_name -> google.protobuf.Timestamp
+	167, // 157: codexk8s.controlplane.v1.AgentSessionSnapshot.created_at:type_name -> google.protobuf.Timestamp
+	167, // 158: codexk8s.controlplane.v1.AgentSessionSnapshot.updated_at:type_name -> google.protobuf.Timestamp
+	167, // 159: codexk8s.controlplane.v1.AgentSessionSnapshot.snapshot_updated_at:type_name -> google.protobuf.Timestamp
+	150, // 160: codexk8s.controlplane.v1.GetLatestAgentSessionResponse.session:type_name -> codexk8s.controlplane.v1.AgentSessionSnapshot
+	168, // 161: codexk8s.controlplane.v1.LookupRunPullRequestRequest.pr_number:type_name -> google.protobuf.Int32Value
+	0,   // 162: codexk8s.controlplane.v1.DeleteRunNamespaceRequest.principal:type_name -> codexk8s.controlplane.v1.Principal
+	1,   // 163: codexk8s.controlplane.v1.ControlPlaneService.IngestGitHubWebhook:input_type -> codexk8s.controlplane.v1.IngestGitHubWebhookRequest
+	3,   // 164: codexk8s.controlplane.v1.ControlPlaneService.ResolveStaffByEmail:input_type -> codexk8s.controlplane.v1.ResolveStaffByEmailRequest
+	5,   // 165: codexk8s.controlplane.v1.ControlPlaneService.AuthorizeOAuthUser:input_type -> codexk8s.controlplane.v1.AuthorizeOAuthUserRequest
+	8,   // 166: codexk8s.controlplane.v1.ControlPlaneService.ListProjects:input_type -> codexk8s.controlplane.v1.ListProjectsRequest
+	10,  // 167: codexk8s.controlplane.v1.ControlPlaneService.UpsertProject:input_type -> codexk8s.controlplane.v1.UpsertProjectRequest
+	11,  // 168: codexk8s.controlplane.v1.ControlPlaneService.GetProject:input_type -> codexk8s.controlplane.v1.GetProjectRequest
+	12,  // 169: codexk8s.controlplane.v1.ControlPlaneService.DeleteProject:input_type -> codexk8s.controlplane.v1.DeleteProjectRequest
+	19,  // 170: codexk8s.controlplane.v1.ControlPlaneService.ListRuns:input_type -> codexk8s.controlplane.v1.ListRunsRequest
+	23,  // 171: codexk8s.controlplane.v1.ControlPlaneService.ListRunWaits:input_type -> codexk8s.controlplane.v1.ListRunWaitsRequest
+	25,  // 172: codexk8s.controlplane.v1.ControlPlaneService.GetRun:input_type -> codexk8s.controlplane.v1.GetRunRequest
+	26,  // 173: codexk8s.controlplane.v1.ControlPlaneService.GetRunLogs:input_type -> codexk8s.controlplane.v1.GetRunLogsRequest
+	15,  // 174: codexk8s.controlplane.v1.ControlPlaneService.ListPendingApprovals:input_type -> codexk8s.controlplane.v1.ListPendingApprovalsRequest
+	17,  // 175: codexk8s.controlplane.v1.ControlPlaneService.ResolveApprovalDecision:input_type -> codexk8s.controlplane.v1.ResolveApprovalDecisionRequest
+	29,  // 176: codexk8s.controlplane.v1.ControlPlaneService.ListRunEvents:input_type -> codexk8s.controlplane.v1.ListRunEventsRequest
+	32,  // 177: codexk8s.controlplane.v1.ControlPlaneService.ListRunLearningFeedback:input_type -> codexk8s.controlplane.v1.ListRunLearningFeedbackRequest
+	35,  // 178: codexk8s.controlplane.v1.ControlPlaneService.ListUsers:input_type -> codexk8s.controlplane.v1.ListUsersRequest
+	37,  // 179: codexk8s.controlplane.v1.ControlPlaneService.CreateUser:input_type -> codexk8s.controlplane.v1.CreateUserRequest
+	38,  // 180: codexk8s.controlplane.v1.ControlPlaneService.DeleteUser:input_type -> codexk8s.controlplane.v1.DeleteUserRequest
+	40,  // 181: codexk8s.controlplane.v1.ControlPlaneService.ListProjectMembers:input_type -> codexk8s.controlplane.v1.ListProjectMembersRequest
+	42,  // 182: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectMember:input_type -> codexk8s.controlplane.v1.UpsertProjectMemberRequest
+	43,  // 183: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectMember:input_type -> codexk8s.controlplane.v1.DeleteProjectMemberRequest
+	44,  // 184: codexk8s.controlplane.v1.ControlPlaneService.SetProjectMemberLearningModeOverride:input_type -> codexk8s.controlplane.v1.SetProjectMemberLearningModeOverrideRequest
+	46,  // 185: codexk8s.controlplane.v1.ControlPlaneService.ListProjectRepositories:input_type -> codexk8s.controlplane.v1.ListProjectRepositoriesRequest
+	48,  // 186: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectRepository:input_type -> codexk8s.controlplane.v1.UpsertProjectRepositoryRequest
+	49,  // 187: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectRepository:input_type -> codexk8s.controlplane.v1.DeleteProjectRepositoryRequest
+	50,  // 188: codexk8s.controlplane.v1.ControlPlaneService.UpsertRepositoryBotParams:input_type -> codexk8s.controlplane.v1.UpsertRepositoryBotParamsRequest
+	51,  // 189: codexk8s.controlplane.v1.ControlPlaneService.RunRepositoryPreflight:input_type -> codexk8s.controlplane.v1.RunRepositoryPreflightRequest
+	55,  // 190: codexk8s.controlplane.v1.ControlPlaneService.GetProjectGitHubTokens:input_type -> codexk8s.controlplane.v1.GetProjectGitHubTokensRequest
+	56,  // 191: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectGitHubTokens:input_type -> codexk8s.controlplane.v1.UpsertProjectGitHubTokensRequest
+	57,  // 192: codexk8s.controlplane.v1.ControlPlaneService.PreviewNextStepAction:input_type -> codexk8s.controlplane.v1.NextStepActionRequest
+	57,  // 193: codexk8s.controlplane.v1.ControlPlaneService.ExecuteNextStepAction:input_type -> codexk8s.controlplane.v1.NextStepActionRequest
+	65,  // 194: codexk8s.controlplane.v1.ControlPlaneService.ListDocsetGroups:input_type -> codexk8s.controlplane.v1.ListDocsetGroupsRequest
+	67,  // 195: codexk8s.controlplane.v1.ControlPlaneService.ImportDocset:input_type -> codexk8s.controlplane.v1.ImportDocsetRequest
+	69,  // 196: codexk8s.controlplane.v1.ControlPlaneService.SyncDocset:input_type -> codexk8s.controlplane.v1.SyncDocsetRequest
+	71,  // 197: codexk8s.controlplane.v1.ControlPlaneService.IssueRunMCPToken:input_type -> codexk8s.controlplane.v1.IssueRunMCPTokenRequest
+	73,  // 198: codexk8s.controlplane.v1.ControlPlaneService.PrepareRunEnvironment:input_type -> codexk8s.controlplane.v1.PrepareRunEnvironmentRequest
+	75,  // 199: codexk8s.controlplane.v1.ControlPlaneService.EvaluateRuntimeReuse:input_type -> codexk8s.controlplane.v1.EvaluateRuntimeReuseRequest
+	77,  // 200: codexk8s.controlplane.v1.ControlPlaneService.ClaimNextInteractionDispatch:input_type -> codexk8s.controlplane.v1.ClaimNextInteractionDispatchRequest
+	79,  // 201: codexk8s.controlplane.v1.ControlPlaneService.CompleteInteractionDispatch:input_type -> codexk8s.controlplane.v1.CompleteInteractionDispatchRequest
+	81,  // 202: codexk8s.controlplane.v1.ControlPlaneService.ExpireNextInteraction:input_type -> codexk8s.controlplane.v1.ExpireNextInteractionRequest
+	83,  // 203: codexk8s.controlplane.v1.ControlPlaneService.ProcessNextGitHubRateLimitWait:input_type -> codexk8s.controlplane.v1.ProcessNextGitHubRateLimitWaitRequest
+	105, // 204: codexk8s.controlplane.v1.ControlPlaneService.GetMissionControlSnapshot:input_type -> codexk8s.controlplane.v1.GetMissionControlSnapshotRequest
+	107, // 205: codexk8s.controlplane.v1.ControlPlaneService.GetMissionControlEntity:input_type -> codexk8s.controlplane.v1.GetMissionControlEntityRequest
+	108, // 206: codexk8s.controlplane.v1.ControlPlaneService.ListMissionControlTimeline:input_type -> codexk8s.controlplane.v1.ListMissionControlTimelineRequest
+	86,  // 207: codexk8s.controlplane.v1.ControlPlaneService.ListMissionControlWarmupProjects:input_type -> codexk8s.controlplane.v1.ListMissionControlWarmupProjectsRequest
+	88,  // 208: codexk8s.controlplane.v1.ControlPlaneService.RunMissionControlWarmup:input_type -> codexk8s.controlplane.v1.RunMissionControlWarmupRequest
+	120, // 209: codexk8s.controlplane.v1.ControlPlaneService.SubmitMissionControlCommand:input_type -> codexk8s.controlplane.v1.SubmitMissionControlCommandRequest
+	121, // 210: codexk8s.controlplane.v1.ControlPlaneService.GetMissionControlCommand:input_type -> codexk8s.controlplane.v1.GetMissionControlCommandRequest
+	112, // 211: codexk8s.controlplane.v1.ControlPlaneService.ClaimMissionControlPendingCommands:input_type -> codexk8s.controlplane.v1.ClaimMissionControlPendingCommandsRequest
+	122, // 212: codexk8s.controlplane.v1.ControlPlaneService.QueueMissionControlCommand:input_type -> codexk8s.controlplane.v1.QueueMissionControlCommandRequest
+	123, // 213: codexk8s.controlplane.v1.ControlPlaneService.MarkMissionControlCommandPendingSync:input_type -> codexk8s.controlplane.v1.MarkMissionControlCommandPendingSyncRequest
+	124, // 214: codexk8s.controlplane.v1.ControlPlaneService.MarkMissionControlCommandReconciled:input_type -> codexk8s.controlplane.v1.MarkMissionControlCommandReconciledRequest
+	125, // 215: codexk8s.controlplane.v1.ControlPlaneService.MarkMissionControlCommandFailed:input_type -> codexk8s.controlplane.v1.MarkMissionControlCommandFailedRequest
+	126, // 216: codexk8s.controlplane.v1.ControlPlaneService.SubmitInteractionCallback:input_type -> codexk8s.controlplane.v1.SubmitInteractionCallbackRequest
+	130, // 217: codexk8s.controlplane.v1.ControlPlaneService.ListRuntimeDeployTasks:input_type -> codexk8s.controlplane.v1.ListRuntimeDeployTasksRequest
+	132, // 218: codexk8s.controlplane.v1.ControlPlaneService.GetRuntimeDeployTask:input_type -> codexk8s.controlplane.v1.GetRuntimeDeployTaskRequest
+	133, // 219: codexk8s.controlplane.v1.ControlPlaneService.CancelRuntimeDeployTask:input_type -> codexk8s.controlplane.v1.CancelRuntimeDeployTaskRequest
+	134, // 220: codexk8s.controlplane.v1.ControlPlaneService.StopRuntimeDeployTask:input_type -> codexk8s.controlplane.v1.StopRuntimeDeployTaskRequest
+	137, // 221: codexk8s.controlplane.v1.ControlPlaneService.ListRuntimeErrors:input_type -> codexk8s.controlplane.v1.ListRuntimeErrorsRequest
+	139, // 222: codexk8s.controlplane.v1.ControlPlaneService.MarkRuntimeErrorViewed:input_type -> codexk8s.controlplane.v1.MarkRuntimeErrorViewedRequest
+	148, // 223: codexk8s.controlplane.v1.ControlPlaneService.UpsertAgentSession:input_type -> codexk8s.controlplane.v1.UpsertAgentSessionRequest
+	151, // 224: codexk8s.controlplane.v1.ControlPlaneService.GetLatestAgentSession:input_type -> codexk8s.controlplane.v1.GetLatestAgentSessionRequest
+	153, // 225: codexk8s.controlplane.v1.ControlPlaneService.GetRunInteractionResumePayload:input_type -> codexk8s.controlplane.v1.GetRunInteractionResumePayloadRequest
+	155, // 226: codexk8s.controlplane.v1.ControlPlaneService.LookupRunPullRequest:input_type -> codexk8s.controlplane.v1.LookupRunPullRequestRequest
+	157, // 227: codexk8s.controlplane.v1.ControlPlaneService.InsertRunFlowEvent:input_type -> codexk8s.controlplane.v1.InsertRunFlowEventRequest
+	159, // 228: codexk8s.controlplane.v1.ControlPlaneService.UpsertRunStatusComment:input_type -> codexk8s.controlplane.v1.UpsertRunStatusCommentRequest
+	161, // 229: codexk8s.controlplane.v1.ControlPlaneService.GetCodexAuth:input_type -> codexk8s.controlplane.v1.GetCodexAuthRequest
+	163, // 230: codexk8s.controlplane.v1.ControlPlaneService.UpsertCodexAuth:input_type -> codexk8s.controlplane.v1.UpsertCodexAuthRequest
+	165, // 231: codexk8s.controlplane.v1.ControlPlaneService.DeleteRunNamespace:input_type -> codexk8s.controlplane.v1.DeleteRunNamespaceRequest
+	2,   // 232: codexk8s.controlplane.v1.ControlPlaneService.IngestGitHubWebhook:output_type -> codexk8s.controlplane.v1.IngestGitHubWebhookResponse
+	4,   // 233: codexk8s.controlplane.v1.ControlPlaneService.ResolveStaffByEmail:output_type -> codexk8s.controlplane.v1.ResolveStaffByEmailResponse
+	6,   // 234: codexk8s.controlplane.v1.ControlPlaneService.AuthorizeOAuthUser:output_type -> codexk8s.controlplane.v1.AuthorizeOAuthUserResponse
+	9,   // 235: codexk8s.controlplane.v1.ControlPlaneService.ListProjects:output_type -> codexk8s.controlplane.v1.ListProjectsResponse
+	7,   // 236: codexk8s.controlplane.v1.ControlPlaneService.UpsertProject:output_type -> codexk8s.controlplane.v1.Project
+	7,   // 237: codexk8s.controlplane.v1.ControlPlaneService.GetProject:output_type -> codexk8s.controlplane.v1.Project
+	171, // 238: codexk8s.controlplane.v1.ControlPlaneService.DeleteProject:output_type -> google.protobuf.Empty
+	20,  // 239: codexk8s.controlplane.v1.ControlPlaneService.ListRuns:output_type -> codexk8s.controlplane.v1.ListRunsResponse
+	24,  // 240: codexk8s.controlplane.v1.ControlPlaneService.ListRunWaits:output_type -> codexk8s.controlplane.v1.ListRunWaitsResponse
+	13,  // 241: codexk8s.controlplane.v1.ControlPlaneService.GetRun:output_type -> codexk8s.controlplane.v1.Run
+	27,  // 242: codexk8s.controlplane.v1.ControlPlaneService.GetRunLogs:output_type -> codexk8s.controlplane.v1.RunLogs
+	16,  // 243: codexk8s.controlplane.v1.ControlPlaneService.ListPendingApprovals:output_type -> codexk8s.controlplane.v1.ListPendingApprovalsResponse
+	18,  // 244: codexk8s.controlplane.v1.ControlPlaneService.ResolveApprovalDecision:output_type -> codexk8s.controlplane.v1.ResolveApprovalDecisionResponse
+	30,  // 245: codexk8s.controlplane.v1.ControlPlaneService.ListRunEvents:output_type -> codexk8s.controlplane.v1.ListRunEventsResponse
+	33,  // 246: codexk8s.controlplane.v1.ControlPlaneService.ListRunLearningFeedback:output_type -> codexk8s.controlplane.v1.ListRunLearningFeedbackResponse
+	36,  // 247: codexk8s.controlplane.v1.ControlPlaneService.ListUsers:output_type -> codexk8s.controlplane.v1.ListUsersResponse
+	34,  // 248: codexk8s.controlplane.v1.ControlPlaneService.CreateUser:output_type -> codexk8s.controlplane.v1.User
+	171, // 249: codexk8s.controlplane.v1.ControlPlaneService.DeleteUser:output_type -> google.protobuf.Empty
+	41,  // 250: codexk8s.controlplane.v1.ControlPlaneService.ListProjectMembers:output_type -> codexk8s.controlplane.v1.ListProjectMembersResponse
+	171, // 251: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectMember:output_type -> google.protobuf.Empty
+	171, // 252: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectMember:output_type -> google.protobuf.Empty
+	171, // 253: codexk8s.controlplane.v1.ControlPlaneService.SetProjectMemberLearningModeOverride:output_type -> google.protobuf.Empty
+	47,  // 254: codexk8s.controlplane.v1.ControlPlaneService.ListProjectRepositories:output_type -> codexk8s.controlplane.v1.ListProjectRepositoriesResponse
+	45,  // 255: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectRepository:output_type -> codexk8s.controlplane.v1.RepositoryBinding
+	171, // 256: codexk8s.controlplane.v1.ControlPlaneService.DeleteProjectRepository:output_type -> google.protobuf.Empty
+	171, // 257: codexk8s.controlplane.v1.ControlPlaneService.UpsertRepositoryBotParams:output_type -> google.protobuf.Empty
+	53,  // 258: codexk8s.controlplane.v1.ControlPlaneService.RunRepositoryPreflight:output_type -> codexk8s.controlplane.v1.RunRepositoryPreflightResponse
+	54,  // 259: codexk8s.controlplane.v1.ControlPlaneService.GetProjectGitHubTokens:output_type -> codexk8s.controlplane.v1.ProjectGitHubTokens
+	171, // 260: codexk8s.controlplane.v1.ControlPlaneService.UpsertProjectGitHubTokens:output_type -> google.protobuf.Empty
+	58,  // 261: codexk8s.controlplane.v1.ControlPlaneService.PreviewNextStepAction:output_type -> codexk8s.controlplane.v1.NextStepActionResponse
+	58,  // 262: codexk8s.controlplane.v1.ControlPlaneService.ExecuteNextStepAction:output_type -> codexk8s.controlplane.v1.NextStepActionResponse
+	66,  // 263: codexk8s.controlplane.v1.ControlPlaneService.ListDocsetGroups:output_type -> codexk8s.controlplane.v1.ListDocsetGroupsResponse
+	68,  // 264: codexk8s.controlplane.v1.ControlPlaneService.ImportDocset:output_type -> codexk8s.controlplane.v1.ImportDocsetResponse
+	70,  // 265: codexk8s.controlplane.v1.ControlPlaneService.SyncDocset:output_type -> codexk8s.controlplane.v1.SyncDocsetResponse
+	72,  // 266: codexk8s.controlplane.v1.ControlPlaneService.IssueRunMCPToken:output_type -> codexk8s.controlplane.v1.IssueRunMCPTokenResponse
+	74,  // 267: codexk8s.controlplane.v1.ControlPlaneService.PrepareRunEnvironment:output_type -> codexk8s.controlplane.v1.PrepareRunEnvironmentResponse
+	76,  // 268: codexk8s.controlplane.v1.ControlPlaneService.EvaluateRuntimeReuse:output_type -> codexk8s.controlplane.v1.EvaluateRuntimeReuseResponse
+	78,  // 269: codexk8s.controlplane.v1.ControlPlaneService.ClaimNextInteractionDispatch:output_type -> codexk8s.controlplane.v1.ClaimNextInteractionDispatchResponse
+	80,  // 270: codexk8s.controlplane.v1.ControlPlaneService.CompleteInteractionDispatch:output_type -> codexk8s.controlplane.v1.CompleteInteractionDispatchResponse
+	82,  // 271: codexk8s.controlplane.v1.ControlPlaneService.ExpireNextInteraction:output_type -> codexk8s.controlplane.v1.ExpireNextInteractionResponse
+	84,  // 272: codexk8s.controlplane.v1.ControlPlaneService.ProcessNextGitHubRateLimitWait:output_type -> codexk8s.controlplane.v1.ProcessNextGitHubRateLimitWaitResponse
+	106, // 273: codexk8s.controlplane.v1.ControlPlaneService.GetMissionControlSnapshot:output_type -> codexk8s.controlplane.v1.GetMissionControlSnapshotResponse
+	102, // 274: codexk8s.controlplane.v1.ControlPlaneService.GetMissionControlEntity:output_type -> codexk8s.controlplane.v1.MissionControlEntityDetails
+	109, // 275: codexk8s.controlplane.v1.ControlPlaneService.ListMissionControlTimeline:output_type -> codexk8s.controlplane.v1.ListMissionControlTimelineResponse
+	87,  // 276: codexk8s.controlplane.v1.ControlPlaneService.ListMissionControlWarmupProjects:output_type -> codexk8s.controlplane.v1.ListMissionControlWarmupProjectsResponse
+	89,  // 277: codexk8s.controlplane.v1.ControlPlaneService.RunMissionControlWarmup:output_type -> codexk8s.controlplane.v1.RunMissionControlWarmupResponse
+	114, // 278: codexk8s.controlplane.v1.ControlPlaneService.SubmitMissionControlCommand:output_type -> codexk8s.controlplane.v1.MissionControlCommandState
+	114, // 279: codexk8s.controlplane.v1.ControlPlaneService.GetMissionControlCommand:output_type -> codexk8s.controlplane.v1.MissionControlCommandState
+	113, // 280: codexk8s.controlplane.v1.ControlPlaneService.ClaimMissionControlPendingCommands:output_type -> codexk8s.controlplane.v1.ClaimMissionControlPendingCommandsResponse
+	114, // 281: codexk8s.controlplane.v1.ControlPlaneService.QueueMissionControlCommand:output_type -> codexk8s.controlplane.v1.MissionControlCommandState
+	114, // 282: codexk8s.controlplane.v1.ControlPlaneService.MarkMissionControlCommandPendingSync:output_type -> codexk8s.controlplane.v1.MissionControlCommandState
+	114, // 283: codexk8s.controlplane.v1.ControlPlaneService.MarkMissionControlCommandReconciled:output_type -> codexk8s.controlplane.v1.MissionControlCommandState
+	114, // 284: codexk8s.controlplane.v1.ControlPlaneService.MarkMissionControlCommandFailed:output_type -> codexk8s.controlplane.v1.MissionControlCommandState
+	127, // 285: codexk8s.controlplane.v1.ControlPlaneService.SubmitInteractionCallback:output_type -> codexk8s.controlplane.v1.SubmitInteractionCallbackResponse
+	131, // 286: codexk8s.controlplane.v1.ControlPlaneService.ListRuntimeDeployTasks:output_type -> codexk8s.controlplane.v1.ListRuntimeDeployTasksResponse
+	129, // 287: codexk8s.controlplane.v1.ControlPlaneService.GetRuntimeDeployTask:output_type -> codexk8s.controlplane.v1.RuntimeDeployTask
+	135, // 288: codexk8s.controlplane.v1.ControlPlaneService.CancelRuntimeDeployTask:output_type -> codexk8s.controlplane.v1.RuntimeDeployTaskActionResponse
+	135, // 289: codexk8s.controlplane.v1.ControlPlaneService.StopRuntimeDeployTask:output_type -> codexk8s.controlplane.v1.RuntimeDeployTaskActionResponse
+	138, // 290: codexk8s.controlplane.v1.ControlPlaneService.ListRuntimeErrors:output_type -> codexk8s.controlplane.v1.ListRuntimeErrorsResponse
+	136, // 291: codexk8s.controlplane.v1.ControlPlaneService.MarkRuntimeErrorViewed:output_type -> codexk8s.controlplane.v1.RuntimeError
+	149, // 292: codexk8s.controlplane.v1.ControlPlaneService.UpsertAgentSession:output_type -> codexk8s.controlplane.v1.UpsertAgentSessionResponse
+	152, // 293: codexk8s.controlplane.v1.ControlPlaneService.GetLatestAgentSession:output_type -> codexk8s.controlplane.v1.GetLatestAgentSessionResponse
+	154, // 294: codexk8s.controlplane.v1.ControlPlaneService.GetRunInteractionResumePayload:output_type -> codexk8s.controlplane.v1.GetRunInteractionResumePayloadResponse
+	156, // 295: codexk8s.controlplane.v1.ControlPlaneService.LookupRunPullRequest:output_type -> codexk8s.controlplane.v1.LookupRunPullRequestResponse
+	158, // 296: codexk8s.controlplane.v1.ControlPlaneService.InsertRunFlowEvent:output_type -> codexk8s.controlplane.v1.InsertRunFlowEventResponse
+	160, // 297: codexk8s.controlplane.v1.ControlPlaneService.UpsertRunStatusComment:output_type -> codexk8s.controlplane.v1.UpsertRunStatusCommentResponse
+	162, // 298: codexk8s.controlplane.v1.ControlPlaneService.GetCodexAuth:output_type -> codexk8s.controlplane.v1.GetCodexAuthResponse
+	164, // 299: codexk8s.controlplane.v1.ControlPlaneService.UpsertCodexAuth:output_type -> codexk8s.controlplane.v1.UpsertCodexAuthResponse
+	166, // 300: codexk8s.controlplane.v1.ControlPlaneService.DeleteRunNamespace:output_type -> codexk8s.controlplane.v1.DeleteRunNamespaceResponse
+	232, // [232:301] is the sub-list for method output_type
+	163, // [163:232] is the sub-list for method input_type
+	163, // [163:163] is the sub-list for extension type_name
+	163, // [163:163] is the sub-list for extension extendee
+	0,   // [0:163] is the sub-list for field type_name
 }
 
 func init() { file_codexk8s_controlplane_v1_controlplane_proto_init() }

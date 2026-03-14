@@ -216,6 +216,55 @@ func TestDispatchInteractionsSchedulesResumeAfterTerminalOutcome(t *testing.T) {
 	}
 }
 
+func TestDispatchInteractionsMarksTypedFailureWhenAdapterIsUnavailable(t *testing.T) {
+	t.Parallel()
+
+	interactions := &fakeInteractionLifecycleClient{
+		claims: []InteractionDispatchClaim{
+			{
+				InteractionID:   "interaction-4",
+				InteractionKind: "decision_request",
+				Attempt: InteractionDispatchAttempt{
+					AttemptNo:  1,
+					DeliveryID: "delivery-4",
+				},
+				RequestEnvelopeJSON: []byte(`{"delivery_id":"delivery-4"}`),
+			},
+		},
+	}
+
+	svc := NewService(Config{
+		InteractionDispatchLimit:         1,
+		InteractionRetryBaseInterval:     30 * time.Second,
+		InteractionRetryMaxInterval:      5 * time.Minute,
+		InteractionMaxAttempts:           3,
+		InteractionPendingAttemptTimeout: time.Minute,
+	}, Dependencies{
+		Interactions:          interactions,
+		InteractionDispatcher: NewUnavailableInteractionDispatcher("telegram", telegramInteractionErrorAdapterNotConfigured, "telegram interaction adapter base URL is not configured"),
+		Logger:                slog.New(slog.NewJSONHandler(io.Discard, nil)),
+	})
+	svc.now = func() time.Time { return time.Date(2026, 3, 13, 12, 0, 0, 0, time.UTC) }
+
+	if err := svc.dispatchInteractions(context.Background()); err != nil {
+		t.Fatalf("dispatchInteractions returned error: %v", err)
+	}
+
+	if len(interactions.completed) != 1 {
+		t.Fatalf("completed attempts = %d, want 1", len(interactions.completed))
+	}
+	completed := interactions.completed[0]
+	if got, want := completed.Status, interactionAttemptStatusExhausted; got != want {
+		t.Fatalf("status = %q, want %q", got, want)
+	}
+	if got, want := completed.LastErrorCode, telegramInteractionErrorAdapterNotConfigured; got != want {
+		t.Fatalf("last_error_code = %q, want %q", got, want)
+	}
+	if completed.NextRetryAt != nil {
+		t.Fatal("did not expect retry scheduling for unavailable adapter configuration")
+	}
+}
+
 func TestExpireInteractionsPollsUntilQueueIsEmpty(t *testing.T) {
 	t.Parallel()
 

@@ -2,6 +2,7 @@ package interactionrequest
 
 import (
 	"context"
+	"crypto/sha256"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -25,8 +26,22 @@ var (
 	queryGetByID string
 	//go:embed sql/find_open_decision_by_run_id.sql
 	queryFindOpenDecisionByRunID string
+	//go:embed sql/ensure_channel_binding.sql
+	queryEnsureChannelBinding string
+	//go:embed sql/upsert_callback_handle.sql
+	queryUpsertCallbackHandle string
+	//go:embed sql/list_callback_handles_by_binding.sql
+	queryListCallbackHandlesByBinding string
+	//go:embed sql/get_callback_handle_by_hash_for_update.sql
+	queryGetCallbackHandleByHashForUpdate string
+	//go:embed sql/mark_callback_handle_used.sql
+	queryMarkCallbackHandleUsed string
+	//go:embed sql/get_channel_binding_by_id_for_update.sql
+	queryGetChannelBindingByIDForUpdate string
 	//go:embed sql/claim_next_dispatch_candidate.sql
 	queryClaimNextDispatchCandidate string
+	//go:embed sql/claim_next_continuation_candidate.sql
+	queryClaimNextContinuationCandidate string
 	//go:embed sql/select_for_update.sql
 	querySelectForUpdate string
 	//go:embed sql/select_latest_attempt_for_update.sql
@@ -51,6 +66,14 @@ var (
 	queryInsertResponseRecord string
 	//go:embed sql/update_request_state.sql
 	queryUpdateRequestState string
+	//go:embed sql/update_dispatch_binding.sql
+	queryUpdateDispatchBinding string
+	//go:embed sql/update_request_projection.sql
+	queryUpdateRequestProjection string
+	//go:embed sql/update_channel_binding_projection.sql
+	queryUpdateChannelBindingProjection string
+	//go:embed sql/update_channel_binding_continuation.sql
+	queryUpdateChannelBindingContinuation string
 )
 
 const interactionResumeToolName = "user.decision.request"
@@ -77,6 +100,7 @@ func (r *Repository) Create(ctx context.Context, params domainrepo.CreateParams)
 		strings.TrimSpace(params.ProjectID),
 		strings.TrimSpace(params.RunID),
 		string(params.InteractionKind),
+		string(params.ChannelFamily),
 		string(params.State),
 		string(params.ResolutionKind),
 		strings.TrimSpace(params.RecipientProvider),
@@ -103,6 +127,59 @@ func (r *Repository) FindOpenDecisionByRunID(ctx context.Context, runID string) 
 	return r.lookupRequest(ctx, queryFindOpenDecisionByRunID, strings.TrimSpace(runID), "open decision interaction by run id")
 }
 
+// EnsureChannelBinding returns or creates one active Telegram binding for the interaction.
+func (r *Repository) EnsureChannelBinding(ctx context.Context, params domainrepo.EnsureChannelBindingParams) (domainrepo.ChannelBinding, error) {
+	row := r.db.QueryRow(
+		ctx,
+		queryEnsureChannelBinding,
+		strings.TrimSpace(params.InteractionID),
+		strings.TrimSpace(params.AdapterKind),
+		strings.TrimSpace(params.RecipientRef),
+		nullableText(params.CallbackTokenKeyID),
+		timestamptzPtrOrNil(params.CallbackTokenExpiresAt),
+	)
+
+	item, err := scanChannelBindingRow(row)
+	if err != nil {
+		return domainrepo.ChannelBinding{}, fmt.Errorf("ensure interaction channel binding: %w", err)
+	}
+	return item, nil
+}
+
+// UpsertCallbackHandles inserts missing callback handle hashes for the active binding.
+func (r *Repository) UpsertCallbackHandles(ctx context.Context, params domainrepo.UpsertCallbackHandlesParams) ([]domainrepo.CallbackHandle, error) {
+	for _, item := range params.Items {
+		if _, err := r.db.Exec(
+			ctx,
+			queryUpsertCallbackHandle,
+			strings.TrimSpace(params.InteractionID),
+			params.ChannelBindingID,
+			item.HandleHash,
+			string(item.HandleKind),
+			nullableText(item.OptionID),
+			item.ResponseDeadlineAt.UTC(),
+			item.GraceExpiresAt.UTC(),
+		); err != nil {
+			return nil, fmt.Errorf("upsert interaction callback handle: %w", err)
+		}
+	}
+
+	rows, err := r.db.Query(ctx, queryListCallbackHandlesByBinding, params.ChannelBindingID)
+	if err != nil {
+		return nil, fmt.Errorf("query interaction callback handles by binding: %w", err)
+	}
+	items, err := pgx.CollectRows(rows, pgx.RowToStructByName[dbmodel.CallbackHandleRow])
+	if err != nil {
+		return nil, fmt.Errorf("collect interaction callback handles by binding: %w", err)
+	}
+
+	out := make([]domainrepo.CallbackHandle, 0, len(items))
+	for _, item := range items {
+		out = append(out, callbackHandleFromDBModel(item))
+	}
+	return out, nil
+}
+
 // ClaimNextDispatch reserves or reclaims one due dispatch attempt for worker execution.
 func (r *Repository) ClaimNextDispatch(ctx context.Context, params domainrepo.ClaimDispatchParams) (domainrepo.DispatchClaim, bool, error) {
 	now := timeOrNow(params.Now)
@@ -120,7 +197,7 @@ func (r *Repository) ClaimNextDispatch(ctx context.Context, params domainrepo.Cl
 		_ = tx.Rollback(ctx)
 	}()
 
-	request, found, err := r.lookupRequestTx(ctx, tx, queryClaimNextDispatchCandidate, now, staleBefore)
+	request, binding, found, err := r.lookupNextDispatchCandidateTx(ctx, tx, now, staleBefore)
 	if err != nil {
 		return domainrepo.DispatchClaim{}, false, err
 	}
@@ -128,22 +205,35 @@ func (r *Repository) ClaimNextDispatch(ctx context.Context, params domainrepo.Cl
 		return domainrepo.DispatchClaim{}, false, nil
 	}
 
-	var attempt domainrepo.DeliveryAttempt
 	latestAttempt, latestFound, err := r.getLatestAttemptForUpdate(ctx, tx, request.ID)
 	if err != nil {
 		return domainrepo.DispatchClaim{}, false, err
 	}
-	if latestFound && latestAttempt.Status == enumtypes.InteractionDeliveryAttemptStatusPending {
+	deliveryRole, continuationReason := resolveClaimedDeliveryAttempt(binding, latestAttempt, latestFound)
+
+	var attempt domainrepo.DeliveryAttempt
+	if latestFound && latestAttempt.Status == enumtypes.InteractionDeliveryAttemptStatusPending && latestAttempt.DeliveryRole == deliveryRole {
 		attempt, err = r.touchAttemptStartedAt(ctx, tx, latestAttempt.DeliveryID, now)
 		if err != nil {
 			return domainrepo.DispatchClaim{}, false, err
 		}
 	} else {
+		channelBindingID := request.ActiveChannelBindingID
+		providerMessageRefJSON := json.RawMessage(`{}`)
+		if binding != nil {
+			channelBindingID = binding.ID
+			providerMessageRefJSON = binding.ProviderMessageRefJSON
+		}
 		attempt, err = r.createDeliveryAttemptTx(ctx, tx, request, domainrepo.CreateDeliveryAttemptParams{
-			AdapterKind:         request.RecipientProvider,
-			RequestEnvelopeJSON: json.RawMessage(`{}`),
-			Status:              enumtypes.InteractionDeliveryAttemptStatusPending,
-			StartedAt:           now,
+			ChannelBindingID:       channelBindingID,
+			AdapterKind:            request.RecipientProvider,
+			DeliveryRole:           deliveryRole,
+			RequestEnvelopeJSON:    json.RawMessage(`{}`),
+			AckPayloadJSON:         json.RawMessage(`{}`),
+			ProviderMessageRefJSON: providerMessageRefJSON,
+			ContinuationReason:     continuationReason,
+			Status:                 enumtypes.InteractionDeliveryAttemptStatusPending,
+			StartedAt:              now,
 		})
 		if err != nil {
 			return domainrepo.DispatchClaim{}, false, err
@@ -157,7 +247,66 @@ func (r *Repository) ClaimNextDispatch(ctx context.Context, params domainrepo.Cl
 	return domainrepo.DispatchClaim{
 		Interaction: request,
 		Attempt:     attempt,
+		Binding:     binding,
 	}, true, nil
+}
+
+func (r *Repository) lookupNextDispatchCandidateTx(ctx context.Context, tx pgx.Tx, now time.Time, staleBefore time.Time) (domainrepo.Request, *domainrepo.ChannelBinding, bool, error) {
+	request, found, err := r.lookupRequestTx(ctx, tx, queryClaimNextDispatchCandidate, now, staleBefore)
+	if err != nil {
+		return domainrepo.Request{}, nil, false, err
+	}
+	if found {
+		return request, nil, true, nil
+	}
+
+	request, found, err = r.lookupRequestTx(ctx, tx, queryClaimNextContinuationCandidate, now, staleBefore)
+	if err != nil {
+		return domainrepo.Request{}, nil, false, err
+	}
+	if !found || request.ActiveChannelBindingID == 0 {
+		return domainrepo.Request{}, nil, false, nil
+	}
+
+	binding, found, err := r.getChannelBindingByIDForUpdate(ctx, tx, request.ActiveChannelBindingID)
+	if err != nil {
+		return domainrepo.Request{}, nil, false, err
+	}
+	if !found {
+		return domainrepo.Request{}, nil, false, nil
+	}
+
+	return request, &binding, true, nil
+}
+
+func resolveClaimedDeliveryAttempt(binding *domainrepo.ChannelBinding, latestAttempt domainrepo.DeliveryAttempt, latestFound bool) (enumtypes.InteractionDeliveryRole, string) {
+	if binding == nil {
+		return enumtypes.InteractionDeliveryRolePrimaryDispatch, ""
+	}
+
+	switch binding.ContinuationState {
+	case enumtypes.InteractionContinuationStateReadyForEdit:
+		if bindingSupportsMessageEdit(*binding) {
+			return enumtypes.InteractionDeliveryRoleMessageEdit, "applied_response"
+		}
+		return enumtypes.InteractionDeliveryRoleFollowUpNotify, "applied_response"
+	case enumtypes.InteractionContinuationStateFollowUpRequired:
+		if latestFound && latestAttempt.DeliveryRole == enumtypes.InteractionDeliveryRoleMessageEdit {
+			return enumtypes.InteractionDeliveryRoleFollowUpNotify, "edit_failed"
+		}
+		return enumtypes.InteractionDeliveryRoleFollowUpNotify, "applied_response"
+	default:
+		return enumtypes.InteractionDeliveryRolePrimaryDispatch, ""
+	}
+}
+
+func bindingSupportsMessageEdit(binding domainrepo.ChannelBinding) bool {
+	switch binding.EditCapability {
+	case enumtypes.InteractionEditCapabilityEditable, enumtypes.InteractionEditCapabilityKeyboardOnly:
+		return len(jsonOrEmptyObject(binding.ProviderMessageRefJSON)) != 0 && string(jsonOrEmptyObject(binding.ProviderMessageRefJSON)) != "{}"
+	default:
+		return false
+	}
 }
 
 // CompleteDispatch persists one dispatch attempt outcome and applies terminal mutation when needed.
@@ -203,11 +352,42 @@ func (r *Repository) CompleteDispatch(ctx context.Context, params domainrepo.Com
 	if err != nil {
 		return domainrepo.CompleteDispatchResult{}, err
 	}
-
-	decision := classifyDispatchCompletion(request, updatedAttempt.Status)
+	bindingIDForDispatch := updatedAttempt.ChannelBindingID
+	if bindingIDForDispatch == 0 {
+		bindingIDForDispatch = request.ActiveChannelBindingID
+	}
 	updatedRequest := request
-	if decision.stateChanged {
-		updatedRequest, err = r.updateRequestState(ctx, tx, request.ID, decision.nextState, decision.nextResolutionKind, nil)
+	resumeRequired := false
+
+	var binding *domainrepo.ChannelBinding
+	if bindingIDForDispatch > 0 {
+		item, found, err := r.getChannelBindingByIDForUpdate(ctx, tx, bindingIDForDispatch)
+		if err != nil {
+			return domainrepo.CompleteDispatchResult{}, err
+		}
+		if found {
+			binding = &item
+		}
+	}
+
+	switch updatedAttempt.DeliveryRole {
+	case enumtypes.InteractionDeliveryRolePrimaryDispatch:
+		if updatedAttempt.Status == enumtypes.InteractionDeliveryAttemptStatusAccepted && binding != nil {
+			if _, err := r.updateDispatchBindingTx(ctx, tx, bindingIDForDispatch, params.ProviderMessageRefJSON, params.EditCapability, params.CallbackTokenExpiresAt); err != nil {
+				return domainrepo.CompleteDispatchResult{}, err
+			}
+		}
+
+		decision := classifyDispatchCompletion(request, updatedAttempt.Status)
+		if decision.stateChanged {
+			updatedRequest, err = r.updateRequestState(ctx, tx, request.ID, decision.nextState, decision.nextResolutionKind, nil)
+			if err != nil {
+				return domainrepo.CompleteDispatchResult{}, err
+			}
+		}
+		resumeRequired = decision.resumeRequired
+	default:
+		updatedRequest, err = r.applyContinuationDispatchOutcomeTx(ctx, tx, request, binding, updatedAttempt, params.ProviderMessageRefJSON, params.FinishedAt)
 		if err != nil {
 			return domainrepo.CompleteDispatchResult{}, err
 		}
@@ -220,9 +400,54 @@ func (r *Repository) CompleteDispatch(ctx context.Context, params domainrepo.Com
 	return domainrepo.CompleteDispatchResult{
 		Interaction:    updatedRequest,
 		Attempt:        updatedAttempt,
-		StateChanged:   decision.stateChanged,
-		ResumeRequired: decision.resumeRequired,
+		StateChanged:   updatedRequest.State != request.State || updatedRequest.ResolutionKind != request.ResolutionKind,
+		ResumeRequired: resumeRequired,
 	}, nil
+}
+
+// UpdateDispatchBinding stores adapter ack data after accepted primary delivery.
+func (r *Repository) UpdateDispatchBinding(ctx context.Context, params domainrepo.UpdateDispatchBindingParams) (domainrepo.ChannelBinding, error) {
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return domainrepo.ChannelBinding{}, fmt.Errorf("begin update interaction dispatch binding tx: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	attempt, found, err := r.getAttemptByDeliveryIDForUpdate(ctx, tx, params.DeliveryID)
+	if err != nil {
+		return domainrepo.ChannelBinding{}, err
+	}
+	if !found {
+		return domainrepo.ChannelBinding{}, errs.NotFound{Msg: "delivery_id: not found"}
+	}
+	if strings.TrimSpace(attempt.InteractionID) != strings.TrimSpace(params.InteractionID) {
+		return domainrepo.ChannelBinding{}, fmt.Errorf("interaction delivery attempt does not belong to request")
+	}
+	bindingID := attempt.ChannelBindingID
+	if bindingID == 0 {
+		request, found, err := r.getRequestForUpdate(ctx, tx, params.InteractionID)
+		if err != nil {
+			return domainrepo.ChannelBinding{}, err
+		}
+		if !found {
+			return domainrepo.ChannelBinding{}, errs.NotFound{Msg: "interaction_id: not found"}
+		}
+		bindingID = request.ActiveChannelBindingID
+	}
+	if bindingID == 0 {
+		return domainrepo.ChannelBinding{}, fmt.Errorf("interaction delivery attempt has no channel binding")
+	}
+
+	binding, err := r.updateDispatchBindingTx(ctx, tx, bindingID, params.ProviderMessageRefJSON, params.EditCapability, params.CallbackTokenExpiresAt)
+	if err != nil {
+		return domainrepo.ChannelBinding{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return domainrepo.ChannelBinding{}, fmt.Errorf("commit update interaction dispatch binding tx: %w", err)
+	}
+	return binding, nil
 }
 
 // ExpireNextDue marks one deadline-expired decision interaction terminal.
@@ -391,21 +616,52 @@ func (r *Repository) ApplyCallback(ctx context.Context, params domainrepo.ApplyC
 		return domainrepo.ApplyCallbackResult{
 			Interaction:    request,
 			CallbackEvent:  existingEvent,
+			Accepted:       false,
 			Classification: enumtypes.InteractionCallbackResultClassificationDuplicate,
 		}, nil
 	}
 
-	decision := classifyCallback(request, params, now)
+	var binding *domainrepo.ChannelBinding
+	if request.ActiveChannelBindingID > 0 {
+		item, found, err := r.getChannelBindingByIDForUpdate(ctx, tx, request.ActiveChannelBindingID)
+		if err != nil {
+			return domainrepo.ApplyCallbackResult{}, err
+		}
+		if found {
+			binding = &item
+		}
+	}
+
+	var handle *domainrepo.CallbackHandle
+	var handleHash []byte
+	if callbackHandle := strings.TrimSpace(params.CallbackHandle); callbackHandle != "" {
+		sum := sha256.Sum256([]byte(callbackHandle))
+		handleHash = sum[:]
+		item, found, err := r.getCallbackHandleByHashForUpdate(ctx, tx, handleHash)
+		if err != nil {
+			return domainrepo.ApplyCallbackResult{}, err
+		}
+		if found {
+			handle = &item
+		}
+	}
+
+	decision := classifyCallback(request, binding, handle, handleHash, params, now)
 	callbackEventRows, err := tx.Query(
 		ctx,
 		queryInsertCallbackEvent,
 		request.ID,
+		nullableInt64Value(decision.bindingID),
 		nullableUUID(params.DeliveryID),
 		strings.TrimSpace(params.AdapterEventID),
 		string(params.CallbackKind),
 		string(decision.persistedClassification),
+		nullableBytes(decision.handleHash),
 		jsonOrEmptyObject(params.NormalizedPayloadJSON),
 		jsonOrEmptyObject(params.RawPayloadJSON),
+		jsonOrEmptyObject(params.ProviderMessageRefJSON),
+		nullableText(params.ProviderUpdateID),
+		nullableText(params.ProviderCallbackQueryID),
 		now,
 		now,
 	)
@@ -417,6 +673,11 @@ func (r *Repository) ApplyCallback(ctx context.Context, params domainrepo.ApplyC
 		return domainrepo.ApplyCallbackResult{}, fmt.Errorf("collect interaction callback event: %w", err)
 	}
 	callbackEvent := callbackEventFromDBModel(callbackEventRow)
+	if decision.markHandleUsed && handle != nil {
+		if _, err := r.markCallbackHandleUsed(ctx, tx, handle.ID, callbackEvent.ID, now); err != nil {
+			return domainrepo.ApplyCallbackResult{}, err
+		}
+	}
 
 	var responseRecord *domainrepo.ResponseRecord
 	if decision.storeResponseRecord {
@@ -424,7 +685,9 @@ func (r *Repository) ApplyCallback(ctx context.Context, params domainrepo.ApplyC
 			ctx,
 			queryInsertResponseRecord,
 			request.ID,
+			nullableInt64Value(decision.bindingID),
 			callbackEvent.ID,
+			string(decision.handleKind),
 			string(decision.responseKind),
 			nullableText(decision.selectedOptionID),
 			nullableText(decision.freeText),
@@ -461,17 +724,39 @@ func (r *Repository) ApplyCallback(ctx context.Context, params domainrepo.ApplyC
 		}
 		updatedRequest = item
 	}
+	if decision.updateRequestProjection {
+		updatedRequest, err = r.updateRequestProjectionTx(ctx, tx, request.ID, decision.operatorState, decision.operatorSignalCode, timePtr(now))
+		if err != nil {
+			return domainrepo.ApplyCallbackResult{}, err
+		}
+	}
+
+	var updatedBinding *domainrepo.ChannelBinding
+	if binding != nil {
+		updatedBinding = binding
+		if decision.updateBindingProjection {
+			item, err := r.updateChannelBindingProjectionTx(ctx, tx, binding.ID, decision.continuationState, decision.operatorSignalCode, timePtr(now))
+			if err != nil {
+				return domainrepo.ApplyCallbackResult{}, err
+			}
+			updatedBinding = &item
+		}
+	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return domainrepo.ApplyCallbackResult{}, fmt.Errorf("commit interaction callback tx: %w", err)
 	}
 
 	result := domainrepo.ApplyCallbackResult{
-		Interaction:    updatedRequest,
-		CallbackEvent:  callbackEvent,
-		ResponseRecord: responseRecord,
-		Classification: decision.resultClassification,
-		ResumeRequired: decision.resumeRequired,
+		Interaction:        updatedRequest,
+		Binding:            updatedBinding,
+		CallbackEvent:      callbackEvent,
+		ResponseRecord:     responseRecord,
+		Accepted:           decision.accepted,
+		Classification:     decision.resultClassification,
+		ContinuationAction: decision.continuationAction,
+		OperatorSignalCode: decision.operatorSignalCode,
+		ResumeRequired:     decision.resumeRequired,
 	}
 	if responseRecord != nil {
 		result.EffectiveResponseID = responseRecord.ID
@@ -528,21 +813,49 @@ func (r *Repository) getCallbackEventByKey(ctx context.Context, tx pgx.Tx, inter
 	)
 }
 
+func (r *Repository) getChannelBindingByIDForUpdate(ctx context.Context, tx pgx.Tx, bindingID int64) (domainrepo.ChannelBinding, bool, error) {
+	return queryOptionalModelByName(
+		ctx,
+		tx,
+		queryGetChannelBindingByIDForUpdate,
+		"query interaction channel binding by id",
+		"collect interaction channel binding by id",
+		channelBindingFromDBModel,
+		bindingID,
+	)
+}
+
+func (r *Repository) getCallbackHandleByHashForUpdate(ctx context.Context, tx pgx.Tx, handleHash []byte) (domainrepo.CallbackHandle, bool, error) {
+	return queryOptionalModelByName(
+		ctx,
+		tx,
+		queryGetCallbackHandleByHashForUpdate,
+		"query interaction callback handle by hash",
+		"collect interaction callback handle by hash",
+		callbackHandleFromDBModel,
+		handleHash,
+	)
+}
+
 func (r *Repository) createDeliveryAttemptTx(ctx context.Context, tx pgx.Tx, request domainrepo.Request, params domainrepo.CreateDeliveryAttemptParams) (domainrepo.DeliveryAttempt, error) {
 	nextAttemptNo := request.LastDeliveryAttemptNo + 1
 	row := tx.QueryRow(
 		ctx,
 		queryCreateDeliveryAttempt,
 		request.ID,
+		nullableInt64Value(params.ChannelBindingID),
 		nextAttemptNo,
 		strings.TrimSpace(params.AdapterKind),
+		string(params.DeliveryRole),
 		string(params.Status),
 		jsonOrEmptyObject(params.RequestEnvelopeJSON),
 		jsonOrEmptyObject(params.AckPayloadJSON),
 		nullableText(params.AdapterDeliveryID),
+		jsonOrEmptyObject(params.ProviderMessageRefJSON),
 		params.Retryable,
 		timestamptzPtrOrNil(params.NextRetryAt),
 		nullableText(params.LastErrorCode),
+		nullableText(params.ContinuationReason),
 		timeOrNow(params.StartedAt),
 		timestamptzPtrOrNil(params.FinishedAt),
 	)
@@ -576,6 +889,7 @@ func (r *Repository) updateAttempt(ctx context.Context, tx pgx.Tx, params domain
 		jsonOrEmptyObject(params.RequestEnvelopeJSON),
 		jsonOrEmptyObject(params.AckPayloadJSON),
 		nullableText(params.AdapterDeliveryID),
+		jsonOrEmptyObject(params.ProviderMessageRefJSON),
 		params.Retryable,
 		timestamptzPtrOrNil(params.NextRetryAt),
 		nullableText(params.LastErrorCode),
@@ -604,17 +918,140 @@ func (r *Repository) updateRequestState(ctx context.Context, tx pgx.Tx, interact
 	return item, nil
 }
 
+func (r *Repository) updateRequestProjectionTx(ctx context.Context, tx pgx.Tx, interactionID string, operatorState enumtypes.InteractionOperatorState, signalCode enumtypes.InteractionOperatorSignalCode, signalAt *time.Time) (domainrepo.Request, error) {
+	row := tx.QueryRow(
+		ctx,
+		queryUpdateRequestProjection,
+		strings.TrimSpace(interactionID),
+		string(operatorState),
+		nullableText(string(signalCode)),
+		timestamptzPtrOrNil(signalAt),
+	)
+	item, err := scanRequestRow(row)
+	if err != nil {
+		return domainrepo.Request{}, fmt.Errorf("update interaction request projection: %w", err)
+	}
+	return item, nil
+}
+
+func (r *Repository) updateChannelBindingProjectionTx(ctx context.Context, tx pgx.Tx, bindingID int64, continuationState enumtypes.InteractionContinuationState, signalCode enumtypes.InteractionOperatorSignalCode, signalAt *time.Time) (domainrepo.ChannelBinding, error) {
+	row := tx.QueryRow(
+		ctx,
+		queryUpdateChannelBindingProjection,
+		bindingID,
+		string(continuationState),
+		nullableText(string(signalCode)),
+		timestamptzPtrOrNil(signalAt),
+	)
+	item, err := scanChannelBindingRow(row)
+	if err != nil {
+		return domainrepo.ChannelBinding{}, fmt.Errorf("update interaction channel binding projection: %w", err)
+	}
+	return item, nil
+}
+
+func (r *Repository) updateDispatchBindingTx(ctx context.Context, tx pgx.Tx, bindingID int64, providerMessageRefJSON json.RawMessage, editCapability enumtypes.InteractionEditCapability, tokenExpiresAt *time.Time) (domainrepo.ChannelBinding, error) {
+	row := tx.QueryRow(
+		ctx,
+		queryUpdateDispatchBinding,
+		bindingID,
+		jsonOrEmptyObject(providerMessageRefJSON),
+		string(editCapability),
+		timestamptzPtrOrNil(tokenExpiresAt),
+	)
+	item, err := scanChannelBindingRow(row)
+	if err != nil {
+		return domainrepo.ChannelBinding{}, fmt.Errorf("update interaction dispatch binding: %w", err)
+	}
+	return item, nil
+}
+
+func (r *Repository) updateContinuationBindingTx(ctx context.Context, tx pgx.Tx, bindingID int64, providerMessageRefJSON json.RawMessage, continuationState enumtypes.InteractionContinuationState, signalCode enumtypes.InteractionOperatorSignalCode, signalAt *time.Time) (domainrepo.ChannelBinding, error) {
+	row := tx.QueryRow(
+		ctx,
+		queryUpdateChannelBindingContinuation,
+		bindingID,
+		jsonOrEmptyObject(providerMessageRefJSON),
+		string(continuationState),
+		nullableText(string(signalCode)),
+		timestamptzPtrOrNil(signalAt),
+	)
+	item, err := scanChannelBindingRow(row)
+	if err != nil {
+		return domainrepo.ChannelBinding{}, fmt.Errorf("update interaction continuation binding: %w", err)
+	}
+	return item, nil
+}
+
+func (r *Repository) applyContinuationDispatchOutcomeTx(ctx context.Context, tx pgx.Tx, request domainrepo.Request, binding *domainrepo.ChannelBinding, attempt domainrepo.DeliveryAttempt, providerMessageRefJSON json.RawMessage, finishedAt time.Time) (domainrepo.Request, error) {
+	if binding == nil {
+		return request, nil
+	}
+
+	decision := classifyContinuationDispatchCompletion(*binding, attempt)
+	if decision.updateRequestProjection {
+		updatedRequest, err := r.updateRequestProjectionTx(ctx, tx, request.ID, decision.operatorState, decision.operatorSignalCode, timePtr(timeOrNow(finishedAt)))
+		if err != nil {
+			return domainrepo.Request{}, err
+		}
+		request = updatedRequest
+	}
+	if decision.updateBinding {
+		refJSON := json.RawMessage(`{}`)
+		if attempt.Status == enumtypes.InteractionDeliveryAttemptStatusAccepted {
+			refJSON = providerMessageRefJSON
+		}
+		if _, err := r.updateContinuationBindingTx(ctx, tx, binding.ID, refJSON, decision.continuationState, decision.operatorSignalCode, timePtr(timeOrNow(finishedAt))); err != nil {
+			return domainrepo.Request{}, err
+		}
+	}
+	return request, nil
+}
+
+func (r *Repository) markCallbackHandleUsed(ctx context.Context, tx pgx.Tx, handleID int64, callbackEventID int64, usedAt time.Time) (domainrepo.CallbackHandle, error) {
+	row := tx.QueryRow(ctx, queryMarkCallbackHandleUsed, handleID, callbackEventID, usedAt.UTC())
+	var item dbmodel.CallbackHandleRow
+	if err := row.Scan(
+		&item.ID,
+		&item.InteractionID,
+		&item.ChannelBindingID,
+		&item.HandleHash,
+		&item.HandleKind,
+		&item.OptionID,
+		&item.State,
+		&item.ResponseDeadlineAt,
+		&item.GraceExpiresAt,
+		&item.UsedCallbackEventID,
+		&item.UsedAt,
+		&item.CreatedAt,
+	); err != nil {
+		return domainrepo.CallbackHandle{}, fmt.Errorf("mark interaction callback handle used: %w", err)
+	}
+	return callbackHandleFromDBModel(item), nil
+}
+
 type callbackDecision struct {
 	persistedClassification enumtypes.InteractionCallbackRecordClassification
 	resultClassification    enumtypes.InteractionCallbackResultClassification
 	nextState               enumtypes.InteractionState
 	nextResolutionKind      enumtypes.InteractionResolutionKind
+	accepted                bool
+	bindingID               int64
+	handleHash              []byte
+	handleKind              enumtypes.InteractionCallbackHandleKind
 	responseKind            enumtypes.InteractionResponseKind
 	selectedOptionID        string
 	freeText                string
 	storeResponseRecord     bool
 	effectiveResponse       bool
+	markHandleUsed          bool
 	stateChanged            bool
+	updateRequestProjection bool
+	updateBindingProjection bool
+	operatorState           enumtypes.InteractionOperatorState
+	operatorSignalCode      enumtypes.InteractionOperatorSignalCode
+	continuationState       enumtypes.InteractionContinuationState
+	continuationAction      enumtypes.InteractionContinuationAction
 	resumeRequired          bool
 }
 
@@ -623,6 +1060,14 @@ type dispatchCompletionDecision struct {
 	nextResolutionKind enumtypes.InteractionResolutionKind
 	stateChanged       bool
 	resumeRequired     bool
+}
+
+type continuationCompletionDecision struct {
+	continuationState       enumtypes.InteractionContinuationState
+	updateBinding           bool
+	operatorState           enumtypes.InteractionOperatorState
+	operatorSignalCode      enumtypes.InteractionOperatorSignalCode
+	updateRequestProjection bool
 }
 
 func classifyDispatchCompletion(request domainrepo.Request, attemptStatus enumtypes.InteractionDeliveryAttemptStatus) dispatchCompletionDecision {
@@ -650,6 +1095,43 @@ func classifyDispatchCompletion(request domainrepo.Request, attemptStatus enumty
 		decision.nextResolutionKind = enumtypes.InteractionResolutionKindNone
 		decision.stateChanged = decision.nextState != request.State || decision.nextResolutionKind != request.ResolutionKind
 		decision.resumeRequired = request.InteractionKind == enumtypes.InteractionKindDecisionRequest
+	}
+
+	return decision
+}
+
+func classifyContinuationDispatchCompletion(binding domainrepo.ChannelBinding, attempt domainrepo.DeliveryAttempt) continuationCompletionDecision {
+	decision := continuationCompletionDecision{
+		continuationState: binding.ContinuationState,
+	}
+
+	switch attempt.DeliveryRole {
+	case enumtypes.InteractionDeliveryRoleMessageEdit:
+		switch attempt.Status {
+		case enumtypes.InteractionDeliveryAttemptStatusAccepted:
+			decision.continuationState = enumtypes.InteractionContinuationStateClosed
+			decision.updateBinding = true
+		case enumtypes.InteractionDeliveryAttemptStatusExhausted:
+			decision.continuationState = enumtypes.InteractionContinuationStateFollowUpRequired
+			decision.updateBinding = true
+		}
+	case enumtypes.InteractionDeliveryRoleFollowUpNotify:
+		switch attempt.Status {
+		case enumtypes.InteractionDeliveryAttemptStatusAccepted:
+			decision.continuationState = enumtypes.InteractionContinuationStateClosed
+			decision.updateBinding = true
+			if strings.TrimSpace(attempt.ContinuationReason) == "edit_failed" {
+				decision.updateRequestProjection = true
+				decision.operatorState = enumtypes.InteractionOperatorStateResolved
+				decision.operatorSignalCode = enumtypes.InteractionOperatorSignalCodeEditFallbackSent
+			}
+		case enumtypes.InteractionDeliveryAttemptStatusExhausted:
+			decision.continuationState = enumtypes.InteractionContinuationStateManualFallbackRequired
+			decision.updateBinding = true
+			decision.updateRequestProjection = true
+			decision.operatorState = enumtypes.InteractionOperatorStateManualFallbackRequired
+			decision.operatorSignalCode = enumtypes.InteractionOperatorSignalCodeFollowUpFailed
+		}
 	}
 
 	return decision
@@ -683,12 +1165,17 @@ func classifyExpiry(request domainrepo.Request) expiryDecision {
 	return decision
 }
 
-func classifyCallback(request domainrepo.Request, params domainrepo.ApplyCallbackParams, now time.Time) callbackDecision {
+func classifyCallback(request domainrepo.Request, binding *domainrepo.ChannelBinding, handle *domainrepo.CallbackHandle, handleHash []byte, params domainrepo.ApplyCallbackParams, now time.Time) callbackDecision {
 	decision := callbackDecision{
 		persistedClassification: enumtypes.InteractionCallbackRecordClassificationApplied,
 		resultClassification:    enumtypes.InteractionCallbackResultClassificationAccepted,
+		accepted:                true,
+		bindingID:               bindingID(binding),
+		handleHash:              handleHash,
 		nextState:               request.State,
 		nextResolutionKind:      request.ResolutionKind,
+		operatorState:           request.OperatorState,
+		continuationAction:      enumtypes.InteractionContinuationActionNone,
 	}
 
 	switch params.CallbackKind {
@@ -697,61 +1184,95 @@ func classifyCallback(request domainrepo.Request, params domainrepo.ApplyCallbac
 		case "accepted", "delivered", "failed":
 			return decision
 		default:
-			decision.persistedClassification = enumtypes.InteractionCallbackRecordClassificationInvalid
-			decision.resultClassification = enumtypes.InteractionCallbackResultClassificationInvalid
+			return invalidCallbackDecision(request, decision, false)
+		}
+	case enumtypes.InteractionCallbackKindTransportFailure:
+		if binding == nil {
+			return invalidCallbackDecision(request, decision, false)
+		}
+		if params.TransportRetryable {
 			return decision
 		}
-	case enumtypes.InteractionCallbackKindDecisionResponse:
+		decision.updateRequestProjection = true
+		decision.updateBindingProjection = true
+		decision.operatorState = enumtypes.InteractionOperatorStateManualFallbackRequired
+		decision.operatorSignalCode = enumtypes.InteractionOperatorSignalCodeDeliveryRetryExhausted
+		decision.continuationState = enumtypes.InteractionContinuationStateManualFallbackRequired
+		decision.continuationAction = enumtypes.InteractionContinuationActionManualFallback
+		return decision
+	case enumtypes.InteractionCallbackKindOptionSelected, enumtypes.InteractionCallbackKindFreeTextReceived:
 		if request.InteractionKind != enumtypes.InteractionKindDecisionRequest {
-			decision.persistedClassification = enumtypes.InteractionCallbackRecordClassificationInvalid
-			decision.resultClassification = enumtypes.InteractionCallbackResultClassificationInvalid
-			return decision
+			return invalidCallbackDecision(request, decision, false)
 		}
 	default:
-		decision.persistedClassification = enumtypes.InteractionCallbackRecordClassificationInvalid
-		decision.resultClassification = enumtypes.InteractionCallbackResultClassificationInvalid
-		return decision
-	}
-
-	responseDecision, valid := classifyDecisionResponsePayload(request, params)
-	if valid {
-		decision.responseKind = responseDecision.responseKind
-		decision.selectedOptionID = responseDecision.selectedOptionID
-		decision.freeText = responseDecision.freeText
-		decision.storeResponseRecord = true
+		return invalidCallbackDecision(request, decision, false)
 	}
 
 	switch request.State {
 	case enumtypes.InteractionStateResolved, enumtypes.InteractionStateCancelled, enumtypes.InteractionStateDeliveryExhausted:
 		decision.persistedClassification = enumtypes.InteractionCallbackRecordClassificationStale
 		decision.resultClassification = enumtypes.InteractionCallbackResultClassificationStale
+		decision.accepted = false
 		return decision
 	case enumtypes.InteractionStateExpired:
 		decision.persistedClassification = enumtypes.InteractionCallbackRecordClassificationExpired
 		decision.resultClassification = enumtypes.InteractionCallbackResultClassificationExpired
+		decision.accepted = false
 		return decision
 	}
 
+	if binding == nil || handle == nil || handle.ChannelBindingID == 0 || handle.ChannelBindingID != binding.ID || strings.TrimSpace(handle.InteractionID) != strings.TrimSpace(request.ID) {
+		return invalidCallbackDecision(request, decision, true)
+	}
+	decision.bindingID = handle.ChannelBindingID
+	decision.handleKind = handle.HandleKind
+
+	if handle.GraceExpiresAt.Before(now) {
+		return invalidCallbackDecision(request, decision, true)
+	}
 	if request.ResponseDeadlineAt != nil && now.After(request.ResponseDeadlineAt.UTC()) {
 		decision.persistedClassification = enumtypes.InteractionCallbackRecordClassificationExpired
 		decision.resultClassification = enumtypes.InteractionCallbackResultClassificationExpired
+		decision.accepted = false
 		decision.nextState = enumtypes.InteractionStateExpired
 		decision.nextResolutionKind = enumtypes.InteractionResolutionKindNone
 		decision.stateChanged = request.State != enumtypes.InteractionStateExpired
+		decision.updateRequestProjection = true
+		decision.updateBindingProjection = true
+		decision.operatorState = enumtypes.InteractionOperatorStateWatch
+		decision.operatorSignalCode = enumtypes.InteractionOperatorSignalCodeExpiredWait
+		decision.continuationState = enumtypes.InteractionContinuationStateClosed
 		decision.resumeRequired = true
 		return decision
 	}
-
-	if !valid {
-		decision.persistedClassification = enumtypes.InteractionCallbackRecordClassificationInvalid
-		decision.resultClassification = enumtypes.InteractionCallbackResultClassificationInvalid
+	if now.After(handle.ResponseDeadlineAt.UTC()) || handle.State == enumtypes.InteractionCallbackHandleStateExpired {
+		return expiredCallbackDecision(request, decision)
+	}
+	if handle.State == enumtypes.InteractionCallbackHandleStateUsed || handle.UsedCallbackEventID != 0 {
+		decision.persistedClassification = enumtypes.InteractionCallbackRecordClassificationDuplicate
+		decision.resultClassification = enumtypes.InteractionCallbackResultClassificationDuplicate
+		decision.accepted = false
 		return decision
 	}
+
+	responseDecision, valid := classifyDecisionResponsePayload(request, handle, params)
+	if !valid {
+		return invalidCallbackDecision(request, decision, true)
+	}
+	decision.responseKind = responseDecision.responseKind
+	decision.selectedOptionID = responseDecision.selectedOptionID
+	decision.freeText = responseDecision.freeText
+	decision.storeResponseRecord = true
+	decision.effectiveResponse = true
+	decision.markHandleUsed = true
+	decision.updateRequestProjection = true
+	decision.updateBindingProjection = true
+	decision.operatorState = enumtypes.InteractionOperatorStateResolved
+	decision.continuationAction, decision.continuationState = continuationForBinding(binding)
 
 	decision.nextState = enumtypes.InteractionStateResolved
 	decision.stateChanged = request.State != enumtypes.InteractionStateResolved || request.ResolutionKind == enumtypes.InteractionResolutionKindNone
 	decision.resumeRequired = true
-	decision.effectiveResponse = true
 	switch decision.responseKind {
 	case enumtypes.InteractionResponseKindOption:
 		decision.nextResolutionKind = enumtypes.InteractionResolutionKindOptionSelected
@@ -803,28 +1324,24 @@ func fitsInteractionResumePayloadLimit(
 	return len(encodedCandidate) <= userinteraction.ResumePayloadMaxBytes
 }
 
-func classifyDecisionResponsePayload(request domainrepo.Request, params domainrepo.ApplyCallbackParams) (decisionResponseValidation, bool) {
-	responseKind := enumtypes.InteractionResponseKind(strings.ToLower(strings.TrimSpace(string(params.ResponseKind))))
-	switch responseKind {
-	case enumtypes.InteractionResponseKindOption:
-		optionID := strings.TrimSpace(params.SelectedOptionID)
+func classifyDecisionResponsePayload(request domainrepo.Request, handle *domainrepo.CallbackHandle, params domainrepo.ApplyCallbackParams) (decisionResponseValidation, bool) {
+	switch params.CallbackKind {
+	case enumtypes.InteractionCallbackKindOptionSelected:
+		if handle == nil || handle.HandleKind != enumtypes.InteractionCallbackHandleKindOption {
+			return decisionResponseValidation{}, false
+		}
+		optionID := strings.TrimSpace(handle.OptionID)
 		if optionID == "" {
 			return decisionResponseValidation{}, false
 		}
-		var payload decisionRequestPayload
-		if err := json.Unmarshal(request.RequestPayloadJSON, &payload); err != nil {
+		if !fitsInteractionResumePayloadLimit(request.ID, enumtypes.InteractionResponseKindOption, optionID, "", params.OccurredAt) {
 			return decisionResponseValidation{}, false
 		}
-		for _, option := range payload.Options {
-			if strings.TrimSpace(option.OptionID) == optionID {
-				if !fitsInteractionResumePayloadLimit(request.ID, responseKind, optionID, "", params.OccurredAt) {
-					return decisionResponseValidation{}, false
-				}
-				return decisionResponseValidation{responseKind: responseKind, selectedOptionID: optionID}, true
-			}
+		return decisionResponseValidation{responseKind: enumtypes.InteractionResponseKindOption, selectedOptionID: optionID}, true
+	case enumtypes.InteractionCallbackKindFreeTextReceived:
+		if handle == nil || handle.HandleKind != enumtypes.InteractionCallbackHandleKindFreeTextSession {
+			return decisionResponseValidation{}, false
 		}
-		return decisionResponseValidation{}, false
-	case enumtypes.InteractionResponseKindFreeText:
 		freeText := strings.TrimSpace(params.FreeText)
 		if freeText == "" {
 			return decisionResponseValidation{}, false
@@ -839,13 +1356,65 @@ func classifyDecisionResponsePayload(request domainrepo.Request, params domainre
 		if !payload.AllowFreeText {
 			return decisionResponseValidation{}, false
 		}
-		if !fitsInteractionResumePayloadLimit(request.ID, responseKind, "", freeText, params.OccurredAt) {
+		if !fitsInteractionResumePayloadLimit(request.ID, enumtypes.InteractionResponseKindFreeText, "", freeText, params.OccurredAt) {
 			return decisionResponseValidation{}, false
 		}
-		return decisionResponseValidation{responseKind: responseKind, freeText: freeText}, true
+		return decisionResponseValidation{responseKind: enumtypes.InteractionResponseKindFreeText, freeText: freeText}, true
 	default:
 		return decisionResponseValidation{}, false
 	}
+}
+
+func invalidCallbackDecision(request domainrepo.Request, decision callbackDecision, signalInvalidPayload bool) callbackDecision {
+	decision.persistedClassification = enumtypes.InteractionCallbackRecordClassificationInvalid
+	decision.resultClassification = enumtypes.InteractionCallbackResultClassificationInvalid
+	decision.accepted = false
+	if signalInvalidPayload {
+		decision.updateRequestProjection = true
+		decision.operatorState = enumtypes.InteractionOperatorStateWatch
+		decision.operatorSignalCode = enumtypes.InteractionOperatorSignalCodeInvalidCallbackPayload
+		if decision.bindingID != 0 {
+			decision.updateBindingProjection = true
+			decision.continuationState = enumtypes.InteractionContinuationStateManualFallbackRequired
+		}
+	}
+	_ = request
+	return decision
+}
+
+func expiredCallbackDecision(request domainrepo.Request, decision callbackDecision) callbackDecision {
+	decision.persistedClassification = enumtypes.InteractionCallbackRecordClassificationExpired
+	decision.resultClassification = enumtypes.InteractionCallbackResultClassificationExpired
+	decision.accepted = false
+	decision.nextState = enumtypes.InteractionStateExpired
+	decision.nextResolutionKind = enumtypes.InteractionResolutionKindNone
+	decision.stateChanged = request.State != enumtypes.InteractionStateExpired
+	decision.resumeRequired = true
+	decision.updateRequestProjection = true
+	decision.updateBindingProjection = decision.bindingID != 0
+	decision.operatorState = enumtypes.InteractionOperatorStateWatch
+	decision.operatorSignalCode = enumtypes.InteractionOperatorSignalCodeExpiredWait
+	decision.continuationState = enumtypes.InteractionContinuationStateClosed
+	return decision
+}
+
+func continuationForBinding(binding *domainrepo.ChannelBinding) (enumtypes.InteractionContinuationAction, enumtypes.InteractionContinuationState) {
+	if binding == nil {
+		return enumtypes.InteractionContinuationActionNone, enumtypes.InteractionContinuationStateClosed
+	}
+	switch binding.EditCapability {
+	case enumtypes.InteractionEditCapabilityEditable, enumtypes.InteractionEditCapabilityKeyboardOnly:
+		return enumtypes.InteractionContinuationActionEditMessage, enumtypes.InteractionContinuationStateReadyForEdit
+	default:
+		return enumtypes.InteractionContinuationActionSendFollowUp, enumtypes.InteractionContinuationStateFollowUpRequired
+	}
+}
+
+func bindingID(binding *domainrepo.ChannelBinding) int64 {
+	if binding == nil {
+		return 0
+	}
+	return binding.ID
 }
 
 func queryOptionalStructByName[T any](ctx context.Context, querier rowQuerier, query string, queryMessage string, collectMessage string, args ...any) (T, bool, error) {
@@ -886,6 +1455,7 @@ func scanRequestRow(row pgx.Row) (domainrepo.Request, error) {
 		&item.ProjectID,
 		&item.RunID,
 		&item.InteractionKind,
+		&item.ChannelFamily,
 		&item.State,
 		&item.ResolutionKind,
 		&item.RecipientProvider,
@@ -894,6 +1464,10 @@ func scanRequestRow(row pgx.Row) (domainrepo.Request, error) {
 		&item.ContextLinksJSON,
 		&item.ResponseDeadlineAt,
 		&item.EffectiveResponseID,
+		&item.ActiveChannelBindingID,
+		&item.OperatorState,
+		&item.OperatorSignalCode,
+		&item.OperatorSignalAt,
 		&item.LastDeliveryAttemptNo,
 		&item.CreatedAt,
 		&item.UpdatedAt,
@@ -904,21 +1478,49 @@ func scanRequestRow(row pgx.Row) (domainrepo.Request, error) {
 	return requestFromDBModel(item), nil
 }
 
+func scanChannelBindingRow(row pgx.Row) (domainrepo.ChannelBinding, error) {
+	var item dbmodel.ChannelBindingRow
+	err := row.Scan(
+		&item.ID,
+		&item.InteractionID,
+		&item.AdapterKind,
+		&item.RecipientRef,
+		&item.ProviderChatRef,
+		&item.ProviderMessageRefJSON,
+		&item.CallbackTokenKeyID,
+		&item.CallbackTokenExpiresAt,
+		&item.EditCapability,
+		&item.ContinuationState,
+		&item.LastOperatorSignalCode,
+		&item.LastOperatorSignalAt,
+		&item.CreatedAt,
+		&item.UpdatedAt,
+	)
+	if err != nil {
+		return domainrepo.ChannelBinding{}, err
+	}
+	return channelBindingFromDBModel(item), nil
+}
+
 func scanDeliveryAttemptRow(row pgx.Row) (domainrepo.DeliveryAttempt, error) {
 	var item dbmodel.DeliveryAttemptRow
 	err := row.Scan(
 		&item.ID,
 		&item.InteractionID,
+		&item.ChannelBindingID,
 		&item.AttemptNo,
 		&item.DeliveryID,
 		&item.AdapterKind,
+		&item.DeliveryRole,
 		&item.Status,
 		&item.RequestEnvelopeJSON,
 		&item.AckPayloadJSON,
 		&item.AdapterDeliveryID,
+		&item.ProviderMessageRefJSON,
 		&item.Retryable,
 		&item.NextRetryAt,
 		&item.LastErrorCode,
+		&item.ContinuationReason,
 		&item.StartedAt,
 		&item.FinishedAt,
 	)
@@ -934,6 +1536,20 @@ func nullableUUID(value string) any {
 		return nil
 	}
 	return trimmed
+}
+
+func nullableInt64Value(value int64) any {
+	if value == 0 {
+		return nil
+	}
+	return value
+}
+
+func nullableBytes(value []byte) any {
+	if len(value) == 0 {
+		return nil
+	}
+	return value
 }
 
 func nullableText(value string) any {

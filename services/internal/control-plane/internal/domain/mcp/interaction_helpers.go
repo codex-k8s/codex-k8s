@@ -14,11 +14,15 @@ import (
 )
 
 const (
-	interactionRecipientProviderGitHubLogin = "github_login"
-	userNotifySummaryMaxChars               = 200
-	userDecisionQuestionMaxChars            = 500
-	userDecisionOptionsMin                  = 2
-	userDecisionOptionsMax                  = 5
+	interactionRecipientProviderTelegram = "telegram"
+	interactionRecipientRoutingByGitHub  = "github_login:"
+	userNotifySummaryMaxChars            = 200
+	userDecisionQuestionMaxChars         = 500
+	userDecisionOptionLabelMaxChars      = 64
+	userDecisionResponseTTLMinSeconds    = 60
+	userDecisionResponseTTLMaxSeconds    = 86400
+	userDecisionOptionsMin               = 2
+	userDecisionOptionsMax               = 5
 )
 
 type interactionContextLinks struct {
@@ -30,16 +34,20 @@ type interactionContextLinks struct {
 }
 
 type interactionCallbackPayload struct {
-	InteractionID    string                           `json:"interaction_id"`
-	DeliveryID       string                           `json:"delivery_id,omitempty"`
-	AdapterEventID   string                           `json:"adapter_event_id"`
-	CallbackKind     enumtypes.InteractionCallbackKind `json:"callback_kind"`
-	OccurredAt       string                           `json:"occurred_at"`
-	DeliveryStatus   string                           `json:"delivery_status,omitempty"`
-	ResponseKind     enumtypes.InteractionResponseKind `json:"response_kind,omitempty"`
-	SelectedOptionID string                           `json:"selected_option_id,omitempty"`
-	FreeText         string                           `json:"free_text,omitempty"`
-	ResponderRef     string                           `json:"responder_ref,omitempty"`
+	InteractionID           string                            `json:"interaction_id"`
+	DeliveryID              string                            `json:"delivery_id,omitempty"`
+	AdapterEventID          string                            `json:"adapter_event_id"`
+	CallbackKind            enumtypes.InteractionCallbackKind `json:"callback_kind"`
+	OccurredAt              string                            `json:"occurred_at"`
+	CallbackHandle          string                            `json:"callback_handle,omitempty"`
+	DeliveryStatus          string                            `json:"delivery_status,omitempty"`
+	FreeText                string                            `json:"free_text,omitempty"`
+	ResponderRef            string                            `json:"responder_ref,omitempty"`
+	ProviderMessageRefJSON  json.RawMessage                   `json:"provider_message_ref_json,omitempty"`
+	ProviderUpdateID        string                            `json:"provider_update_id,omitempty"`
+	ProviderCallbackQueryID string                            `json:"provider_callback_query_id,omitempty"`
+	TransportErrorCode      string                            `json:"transport_error_code,omitempty"`
+	TransportRetryable      bool                              `json:"transport_retryable,omitempty"`
 }
 
 func normalizeUserNotifyInput(input UserNotifyInput) (UserNotifyInput, error) {
@@ -99,6 +107,9 @@ func normalizeUserDecisionRequestInput(input UserDecisionRequestInput) (UserDeci
 		if option.Label == "" {
 			return UserDecisionRequestInput{}, errs.Validation{Field: fmt.Sprintf("options[%d].label", idx), Msg: "must not be empty"}
 		}
+		if len([]rune(option.Label)) > userDecisionOptionLabelMaxChars {
+			return UserDecisionRequestInput{}, errs.Validation{Field: fmt.Sprintf("options[%d].label", idx), Msg: "must be at most 64 characters"}
+		}
 		if _, exists := seenOptionIDs[option.OptionID]; exists {
 			return UserDecisionRequestInput{}, errs.Validation{Field: "options", Msg: "duplicate option_id is not allowed"}
 		}
@@ -112,8 +123,8 @@ func normalizeUserDecisionRequestInput(input UserDecisionRequestInput) (UserDeci
 	if !input.AllowFreeText && input.FreeTextPlaceholder != "" {
 		return UserDecisionRequestInput{}, errs.Validation{Field: "free_text_placeholder", Msg: "requires allow_free_text=true"}
 	}
-	if input.ResponseTTLSeconds <= 0 {
-		return UserDecisionRequestInput{}, errs.Validation{Field: "response_ttl_seconds", Msg: "must be positive"}
+	if input.ResponseTTLSeconds < userDecisionResponseTTLMinSeconds || input.ResponseTTLSeconds > userDecisionResponseTTLMaxSeconds {
+		return UserDecisionRequestInput{}, errs.Validation{Field: "response_ttl_seconds", Msg: "must be between 60 and 86400 seconds"}
 	}
 
 	return input, nil
@@ -122,16 +133,16 @@ func normalizeUserDecisionRequestInput(input UserDecisionRequestInput) (UserDeci
 func resolveInteractionRecipient(runCtx resolvedRunContext) (string, string, error) {
 	if runCtx.Payload.Issue != nil {
 		if login := strings.TrimSpace(runCtx.Payload.Issue.User.Login); login != "" {
-			return interactionRecipientProviderGitHubLogin, login, nil
+			return interactionRecipientProviderTelegram, interactionRecipientRoutingByGitHub + login, nil
 		}
 	}
 	if runCtx.Payload.PullRequest != nil {
 		if login := strings.TrimSpace(runCtx.Payload.PullRequest.User.Login); login != "" {
-			return interactionRecipientProviderGitHubLogin, login, nil
+			return interactionRecipientProviderTelegram, interactionRecipientRoutingByGitHub + login, nil
 		}
 	}
 	if login := strings.TrimSpace(runCtx.Payload.Sender.Login); login != "" {
-		return interactionRecipientProviderGitHubLogin, login, nil
+		return interactionRecipientProviderTelegram, interactionRecipientRoutingByGitHub + login, nil
 	}
 	return "", "", errs.FailedPrecondition{Msg: "run context does not expose a resolvable recipient"}
 }
@@ -155,16 +166,20 @@ func buildInteractionContextLinks(runCtx resolvedRunContext, publicBaseURL strin
 
 func buildInteractionCallbackNormalizedPayload(params SubmitInteractionCallbackParams) json.RawMessage {
 	return marshalRawJSON(interactionCallbackPayload{
-		InteractionID:    strings.TrimSpace(params.InteractionID),
-		DeliveryID:       strings.TrimSpace(params.DeliveryID),
-		AdapterEventID:   strings.TrimSpace(params.AdapterEventID),
-		CallbackKind:     params.CallbackKind,
-		OccurredAt:       params.OccurredAt.UTC().Format(time.RFC3339Nano),
-		DeliveryStatus:   strings.TrimSpace(params.DeliveryStatus),
-		ResponseKind:     params.ResponseKind,
-		SelectedOptionID: strings.TrimSpace(params.SelectedOptionID),
-		FreeText:         strings.TrimSpace(params.FreeText),
-		ResponderRef:     strings.TrimSpace(params.ResponderRef),
+		InteractionID:           strings.TrimSpace(params.InteractionID),
+		DeliveryID:              strings.TrimSpace(params.DeliveryID),
+		AdapterEventID:          strings.TrimSpace(params.AdapterEventID),
+		CallbackKind:            params.CallbackKind,
+		OccurredAt:              params.OccurredAt.UTC().Format(time.RFC3339Nano),
+		CallbackHandle:          strings.TrimSpace(params.CallbackHandle),
+		DeliveryStatus:          strings.TrimSpace(params.DeliveryStatus),
+		FreeText:                strings.TrimSpace(params.FreeText),
+		ResponderRef:            strings.TrimSpace(params.ResponderRef),
+		ProviderMessageRefJSON:  params.ProviderMessageRefJSON,
+		ProviderUpdateID:        strings.TrimSpace(params.ProviderUpdateID),
+		ProviderCallbackQueryID: strings.TrimSpace(params.ProviderCallbackQueryID),
+		TransportErrorCode:      strings.TrimSpace(params.TransportErrorCode),
+		TransportRetryable:      params.TransportRetryable,
 	})
 }
 
