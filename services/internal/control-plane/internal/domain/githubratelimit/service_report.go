@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
+	"github.com/codex-k8s/codex-k8s/libs/go/errs"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
 	waitrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/githubratelimitwait"
@@ -47,6 +48,9 @@ func (s *Service) ReportSignal(ctx context.Context, params ReportSignalParams) (
 	if existingBySignal, found, err := s.waits.GetBySignalID(ctx, signal.SignalID); err != nil {
 		return ReportSignalResult{}, fmt.Errorf("lookup github rate-limit wait by signal id: %w", err)
 	} else if found {
+		if err := validateDuplicateSignalContext(trimmedRunID, signal, existingBySignal); err != nil {
+			return ReportSignalResult{}, err
+		}
 		return s.buildExistingSignalResult(ctx, trimmedRunID, existingBySignal)
 	}
 
@@ -157,6 +161,40 @@ func (s *Service) buildExistingSignalResult(ctx context.Context, runID string, w
 		Projection:           projection,
 		CommentRenderContext: commentRenderContext,
 	}, nil
+}
+
+func validateDuplicateSignalContext(runID string, signal Signal, wait Wait) error {
+	if strings.TrimSpace(wait.RunID) != runID {
+		return errs.Conflict{
+			Msg: fmt.Sprintf(
+				"stale github rate-limit duplicate signal %q belongs to run %q instead of %q",
+				signal.SignalID,
+				strings.TrimSpace(wait.RunID),
+				runID,
+			),
+		}
+	}
+	if wait.ContourKind != signal.ContourKind {
+		return errs.Conflict{
+			Msg: fmt.Sprintf(
+				"stale github rate-limit duplicate signal %q belongs to contour %q instead of %q",
+				signal.SignalID,
+				wait.ContourKind,
+				signal.ContourKind,
+			),
+		}
+	}
+	if wait.OperationClass != signal.OperationClass {
+		return errs.Conflict{
+			Msg: fmt.Sprintf(
+				"stale github rate-limit duplicate signal %q belongs to operation_class %q instead of %q",
+				signal.SignalID,
+				wait.OperationClass,
+				signal.OperationClass,
+			),
+		}
+	}
+	return nil
 }
 
 func (s *Service) upsertWait(ctx context.Context, run agentrunrepo.Run, signal Signal, classification Classification, existing Wait, correlationID string) (Wait, error) {

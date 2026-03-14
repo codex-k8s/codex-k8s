@@ -3,6 +3,7 @@ package githubratelimit
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
+	"github.com/codex-k8s/codex-k8s/libs/go/errs"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
@@ -278,6 +280,67 @@ func TestReportSignalDuplicateSignalReturnsExistingWait(t *testing.T) {
 	}
 }
 
+func TestReportSignalDuplicateSignalRejectsStaleContext(t *testing.T) {
+	t.Parallel()
+
+	now := time.Date(2026, time.March, 14, 15, 5, 0, 0, time.UTC)
+	existingWait := Wait{
+		ID:                    "wait-stale-dup",
+		ProjectID:             "project-1",
+		RunID:                 "run-other",
+		ContourKind:           enumtypes.GitHubRateLimitContourKindPlatformPAT,
+		SignalOrigin:          enumtypes.GitHubRateLimitSignalOriginControlPlane,
+		OperationClass:        enumtypes.GitHubRateLimitOperationClassIssueLabelTransition,
+		State:                 enumtypes.GitHubRateLimitWaitStateAutoResumeScheduled,
+		LimitKind:             enumtypes.GitHubRateLimitLimitKindSecondary,
+		Confidence:            enumtypes.GitHubRateLimitConfidenceConservative,
+		RecoveryHintKind:      enumtypes.GitHubRateLimitRecoveryHintKindRetryAfter,
+		SignalID:              "signal-stale-dup",
+		CorrelationID:         "corr-stale",
+		ResumeActionKind:      enumtypes.GitHubRateLimitResumeActionKindPlatformCallReplay,
+		MaxAutoResumeAttempts: 2,
+		ResumeNotBefore:       ptrTime(now.Add(30 * time.Second)),
+		FirstDetectedAt:       now.Add(-2 * time.Minute),
+		LastSignalAt:          now.Add(-30 * time.Second),
+		CreatedAt:             now.Add(-2 * time.Minute),
+		UpdatedAt:             now.Add(-30 * time.Second),
+		DominantForRun:        true,
+	}
+
+	runs := fakeRunReader{
+		items: map[string]agentrunrepo.Run{
+			"run-5": {ID: "run-5", ProjectID: "project-1", CorrelationID: "corr-5", Status: runStatusWaitingBackpressure},
+		},
+	}
+	waits := newFakeWaitRepository(now)
+	waits.waits[existingWait.ID] = existingWait
+	service := newTestService(t, valuetypes.GitHubRateLimitRolloutState{
+		CoreFeatureEnabled: true,
+		SchemaReady:        true,
+		DomainReady:        true,
+	}, waits, runs, &fakeFlowEventRecorder{}, now)
+
+	_, err := service.ReportSignal(context.Background(), ReportSignalParams{
+		RunID: "run-5",
+		Signal: Signal{
+			SignalID:           "signal-stale-dup",
+			ContourKind:        enumtypes.GitHubRateLimitContourKindPlatformPAT,
+			SignalOrigin:       enumtypes.GitHubRateLimitSignalOriginControlPlane,
+			OperationClass:     enumtypes.GitHubRateLimitOperationClassIssueLabelTransition,
+			ProviderStatusCode: 429,
+			OccurredAt:         now,
+		},
+	})
+	if err == nil {
+		t.Fatal("expected stale duplicate conflict error")
+	}
+
+	var conflictErr errs.Conflict
+	if !errors.As(err, &conflictErr) {
+		t.Fatalf("expected errs.Conflict, got %T (%v)", err, err)
+	}
+}
+
 func TestBuildRunProjectionFromWaitsPrefersManualDominantAndBuildsRelatedWaits(t *testing.T) {
 	t.Parallel()
 
@@ -332,6 +395,38 @@ func TestBuildRunProjectionFromWaitsPrefersManualDominantAndBuildsRelatedWaits(t
 	}
 	if projection.DominantWait.ManualAction == nil {
 		t.Fatal("expected manual action on dominant wait")
+	}
+}
+
+func TestBuildRunProjectionFromWaitsDefaultsCommentMirrorToNotAttempted(t *testing.T) {
+	t.Parallel()
+
+	now := time.Date(2026, time.March, 14, 16, 5, 0, 0, time.UTC)
+	wait := Wait{
+		ID:                     "wait-no-mirror",
+		ContourKind:            enumtypes.GitHubRateLimitContourKindAgentBotToken,
+		OperationClass:         enumtypes.GitHubRateLimitOperationClassAgentGitHubCall,
+		State:                  enumtypes.GitHubRateLimitWaitStateAutoResumeScheduled,
+		LimitKind:              enumtypes.GitHubRateLimitLimitKindSecondary,
+		Confidence:             enumtypes.GitHubRateLimitConfidenceConservative,
+		RecoveryHintKind:       enumtypes.GitHubRateLimitRecoveryHintKindRetryAfter,
+		ResumeActionKind:       enumtypes.GitHubRateLimitResumeActionKindAgentSessionResume,
+		AutoResumeAttemptsUsed: 1,
+		MaxAutoResumeAttempts:  2,
+		ResumeNotBefore:        ptrTime(now.Add(time.Minute)),
+		FirstDetectedAt:        now.Add(-2 * time.Minute),
+		UpdatedAt:              now.Add(-30 * time.Second),
+	}
+
+	projection, found, err := BuildRunProjectionFromWaits([]Wait{wait})
+	if err != nil {
+		t.Fatalf("BuildRunProjectionFromWaits() error = %v", err)
+	}
+	if !found {
+		t.Fatal("expected projection to be present")
+	}
+	if got, want := projection.CommentMirrorState, enumtypes.GitHubRateLimitCommentMirrorStateNotAttempted; got != want {
+		t.Fatalf("comment mirror state = %q, want %q", got, want)
 	}
 }
 

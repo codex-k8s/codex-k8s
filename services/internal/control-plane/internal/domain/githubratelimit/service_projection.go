@@ -244,7 +244,7 @@ func deriveCommentMirrorState(openWaits []Wait) enumtypes.GitHubRateLimitComment
 			return enumtypes.GitHubRateLimitCommentMirrorStatePendingRetry
 		}
 	}
-	return enumtypes.GitHubRateLimitCommentMirrorStateSynced
+	return enumtypes.GitHubRateLimitCommentMirrorStateNotAttempted
 }
 
 func selectDominantProjectionWait(openWaits []Wait) (Wait, bool) {
