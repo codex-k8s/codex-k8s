@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-14
 updated_at: 2026-03-14
-related_issues: [361, 444, 447, 448, 452]
+related_issues: [361, 444, 447, 448, 452, 454]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -54,3 +54,22 @@ approvals:
 - Дополнительно сверены официальные Telegram Bot API constraints для callback/webhook semantics: callback query требует `answerCallbackQuery`, webhook и polling взаимоисключающи, updates хранятся до 24 часов; эти факты зафиксированы как product-level expectations без premature implementation lock-in.
 - Создана follow-up issue `#452` для stage `run:arch`; в её body повторено continuity-требование продолжить цепочку `arch -> design -> plan -> dev` без разрывов.
 - Root FR/NFR matrix обновлена точечно: coverage FR-039 расширено документами Day2/Day3 Sprint S11, при этом канонический requirements baseline в `docs/product/requirements_machine_driven.md` не менялся.
+
+## Актуализация по Issue #452 (`run:arch`, 2026-03-14)
+- Architecture stage выполнен в Issue `#452`; подготовлены:
+  - `docs/delivery/epics/s11/epic-s11-day4-telegram-user-interaction-adapter-arch.md`;
+  - `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/README.md`;
+  - `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/architecture.md`;
+  - `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/c4_context.md`;
+  - `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/c4_container.md`;
+  - `docs/architecture/adr/ADR-0014-telegram-user-interaction-adapter-platform-owned-lifecycle.md`;
+  - `docs/architecture/alternatives/ALT-0006-telegram-user-interaction-adapter-boundaries.md`.
+- Architecture package зафиксировал:
+  - `control-plane` как owner interaction semantics, correlation, replay/expiry classification, wait-state transitions и operator-visible outcomes;
+  - `worker` как owner outbound delivery, retries, expiry scans и post-callback `edit -> follow-up notify` continuation;
+  - `api-gateway` как thin ingress только для normalized adapter callbacks с platform-issued auth;
+  - внешний Telegram adapter contour как owner raw webhook/auth, Bot API coupling и callback query acknowledgement.
+- Через Context7 по `/mymmrac/telego` и `/websites/core_telegram_bots_api` повторно подтверждён внешний baseline для webhook mode, secret token, inline callbacks и callback acknowledgement; official Telegram Bot API docs просмотрены 2026-03-14 и использованы как source для webhook/auth/callback guardrails.
+- Callback payload direction закреплён как opaque/server-side lookup strategy, а Telegram-specific UX decision `edit-in-place -> follow-up notify` перенесён в async platform-owned side effect path без Telegram-first semantic payload model.
+- Создана follow-up issue `#454` для stage `run:design`; в её body повторено continuity-требование продолжить цепочку `design -> plan -> dev` без разрывов.
+- Root FR/NFR matrix обновлена точечно: coverage FR-039 расширено Day4 architecture package Sprint S11, при этом канонический requirements baseline в `docs/product/requirements_machine_driven.md` не менялся.

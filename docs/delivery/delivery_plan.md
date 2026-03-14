@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-14
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -327,6 +327,13 @@ approvals:
   - product guardrails дополнены callback acknowledgement, duplicate/replay/expired handling, webhook authenticity expectations и fallback clarity без transport-first lock-in;
   - через Context7 по `/mymmrac/telego` и `go list -m -json github.com/mymmrac/telego@latest` на `2026-03-14` подтверждён latest stable baseline `v1.7.0`, а официальные Telegram Bot API facts (callback acknowledgement, webhook/polling exclusivity, update retention) зафиксированы как product-level constraints;
   - создана follow-up issue `#452` для stage `run:arch` без trigger-лейбла и с повторным continuity-требованием продолжить цепочку до `run:dev`.
+- Day 4 (in-review): architecture package для Telegram-адаптера как первого внешнего channel-specific stream (`docs/delivery/epics/s11/epic-s11-day4-telegram-user-interaction-adapter-arch.md`, `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/{README.md,architecture.md,c4_context.md,c4_container.md}`, Issue `#452`).
+- Результат Day 4 (факт):
+  - `control-plane` закреплён как owner interaction semantics, correlation, replay/expiry classification и operator-visible outcome; `worker` закреплён за delivery/retry/expiry и post-callback edit/follow-up continuation;
+  - raw Telegram webhooks, secret-token verification и callback query acknowledgement оставлены во внешнем Telegram adapter contour, а `api-gateway` сохранён как thin callback bridge для normalized adapter callbacks;
+  - callback payload direction зафиксирован как opaque/server-side lookup strategy, а message edit vs follow-up notify — как async platform-owned fallback policy под контролем `worker`;
+  - подготовлены ADR-0014 и ALT-0006, а также follow-up issue `#454` для stage `run:design` без trigger-лейбла с continuity-требованием сохранить цепочку `design -> plan -> dev`.
+- Day 5 (planned): design package для Telegram-адаптера (`docs/architecture/initiatives/s11_telegram_user_interaction_adapter/{design_doc.md,api_contract.md,data_model.md,migrations_policy.md}`, Issue `#454`).
 
 ### Sprint S12: GitHub API rate-limit resilience
 - Day 1 (in-review): intake-пакет для GitHub API rate-limit resilience (`docs/delivery/epics/s12/epic-s12-day1-github-api-rate-limit-intake.md`, Issue `#366`).
