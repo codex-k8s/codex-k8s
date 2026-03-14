@@ -6,7 +6,7 @@ status: in-review
 owner_role: PM
 created_at: 2026-03-14
 updated_at: 2026-03-14
-related_issues: [469, 471]
+related_issues: [469, 471, 476]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -19,8 +19,9 @@ approvals:
 ## TL;DR
 - Sprint S13 открывает отдельную cross-cutting инициативу `Quality Governance System`: качество агентной поставки должно определяться измеримыми свойствами изменения и обязательным evidence, а не субъективной «внимательностью ревью».
 - Intake stage в Issue `#469` зафиксировал baseline quality stack: draft quality metrics, risk tiers `low / medium / high / critical`, список high/critical changes, evidence taxonomy, verification minimum и review contract.
+- Vision stage в Issue `#471` зафиксировал mission, quality north star, persona outcomes, KPI/guardrails и proportional governance baseline для owner/reviewer, delivery roles и platform operator.
 - Sprint S13 не выбирает implementation-first решения по rollout controller, cockpit UI или runtime automation: этот runtime/UI слой выделен в отдельный Sprint S14 (Issue `#470`) и должен наследовать governance-baseline, а не переоткрывать его.
-- Для continuity создана follow-up issue `#471` на stage `run:vision`; trigger-лейбл следующего этапа остаётся owner-managed.
+- После vision создана follow-up issue `#476` на stage `run:prd`; trigger-лейбл следующего этапа остаётся owner-managed.
 - На `2026-03-14` через Context7 (`/websites/cli_github_manual`) повторно подтверждён актуальный non-interactive GitHub CLI flow для `gh issue create`, `gh pr create` и `gh pr edit`, чтобы continuity issue и PR-flow не расходились с текущим automation-путём.
 
 ## Scope спринта
@@ -49,7 +50,7 @@ approvals:
   - сокращённые траектории нельзя считать безопасными до фиксации proportional risk policy;
   - `vision` и `arch` обязательны, потому что Sprint S13 становится source-of-truth для downstream release-safety и quality-surface streams.
 - Целевая continuity-цепочка:
-  `#469 (intake) -> #471 (vision) -> prd -> arch -> design -> plan -> dev`.
+  `#469 (intake) -> #471 (vision) -> #476 (prd) -> arch -> design -> plan -> dev`.
 
 ## Governance baseline, зафиксированный на intake
 
@@ -106,8 +107,8 @@ approvals:
 | Stage | Основной артефакт | Целевая роль | Правило выхода |
 |---|---|---|---|
 | Intake (`#469`) | Problem/Brief/Scope/Constraints + intake AC | `pm` | Owner review intake-пакета и создана issue следующего этапа |
-| Vision (`#471`) | Mission, quality north star, persona outcomes, success metrics, guardrails | `pm` | Зафиксирован vision baseline и создана issue для `run:prd` |
-| PRD (`TBD`) | User stories, FR/AC/NFR, risk/evidence scenarios и expected verification minimum | `pm` + `sa` | Подтверждён PRD package и создана issue для `run:arch` |
+| Vision (`#471`) | Mission, quality north star, persona outcomes, success metrics, guardrails | `pm` | Зафиксирован vision baseline и создана issue `#476` для `run:prd` |
+| PRD (`#476`) | User stories, FR/AC/NFR, risk/evidence scenarios и expected verification minimum | `pm` + `sa` | Подтверждён PRD package и создана issue для `run:arch` |
 | Architecture (`TBD`) | Ownership matrix, service/rule boundaries, governance data surfaces | `sa` | Подтверждены архитектурные границы и создана issue для `run:design` |
 | Design (`TBD`) | Typed contracts для quality signals, evidence package и stage-gate orchestration | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue для `run:plan` |
 | Plan (`TBD`) | Delivery waves, quality-gates, execution decomposition, DoR/DoD | `em` + `km` | Сформирован execution package и создана issue для owner-managed `run:dev` |
@@ -120,16 +121,20 @@ approvals:
 - Каждый doc-stage до `run:dev` обязан выпускать следующую follow-up issue без trigger-лейбла; `run:plan` создаёт handover issue для `run:dev`, а trigger запускает Owner отдельно.
 
 ## Handover
-- Day1 intake package:
+- Day1/Day2 package:
   - `docs/delivery/sprints/s13/sprint_s13_quality_governance_system.md`;
   - `docs/delivery/epics/s13/epic_s13.md`;
   - `docs/delivery/epics/s13/epic-s13-day1-quality-governance-intake.md`;
+  - `docs/delivery/epics/s13/epic-s13-day2-quality-governance-vision.md`;
   - `docs/delivery/traceability/s13_quality_governance_system_history.md`.
-- Следующий stage: `run:vision` в Issue `#471`.
+- Следующий stage: `run:prd` в Issue `#476`.
 - Sprint S14 (Issue `#470`) остаётся downstream инициативой и не должен стартовать implementation-first без решений S13 по risk/evidence/verification baseline.
-- На `run:vision` нельзя потерять следующие решения intake:
-  - quality north star должен описывать свойства change delivery;
+- На `run:prd` нельзя потерять следующие решения intake + vision:
+  - quality north star должен описывать свойства change delivery и safe throughput, а не «внимательность ревью»;
+  - explicit risk tier обязателен для каждого change package;
   - risk tiers `low / medium / high / critical` остаются обязательным baseline;
-  - список high/critical changes считается source input для дальнейшей proportional governance;
-  - evidence taxonomy, verification minimum и review contract остаются отдельными product constructs, а не «деталями QA»;
+  - список high/critical changes считается source input для дальнейшей proportional governance, а не исчерпывающим final classifier;
+  - evidence taxonomy, verification minimum и review contract остаются отдельными product constructs, а не «деталями QA» или только `reviewer` stage;
+  - proportional governance обязательна: low-risk changes нельзя автоматически обременять overhead уровня `high/critical`;
+  - high/critical changes не допускают silent waivers и implicit gates;
   - каждый следующий doc-stage должен создавать следующую follow-up issue без trigger-лейбла.
