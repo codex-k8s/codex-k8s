@@ -5,8 +5,8 @@ title: "Sprint Index (normalized structure)"
 status: active
 owner_role: EM
 created_at: 2026-02-24
-updated_at: 2026-03-13
-related_issues: [112, 154, 184, 185, 187, 189, 195, 197, 199, 201, 212, 218, 220, 222, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263, 265, 281, 282, 320, 327, 333, 335, 337, 340, 351, 360, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418]
+updated_at: 2026-03-14
+related_issues: [112, 154, 184, 185, 187, 189, 195, 197, 199, 201, 212, 218, 220, 222, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 216, 262, 263, 265, 281, 282, 320, 327, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 444]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -37,6 +37,7 @@ approvals:
 | S8 | `docs/delivery/sprints/s8/sprint_s8_go_refactoring_parallelization.md` | `docs/delivery/epics/s8/epic_s8.md` | in-progress | Параллельный Go-refactor stream расширен onboarding-потоками; Day4 по `#320` уже внедрил `docs/index.md`, domain `README.md`, migration-map и remediation issue refs. |
 | S9 | `docs/delivery/sprints/s9/sprint_s9_mission_control_dashboard_control_plane.md` | `docs/delivery/epics/s9/epic_s9.md` | in-review | Новый product stream для Mission Control Dashboard: Day1..Day5 сформировали product/arch/design baseline (`#333/#335/#337/#340/#351`), а Day6 plan (`#363`) создал execution package и handover issues `#369..#375` с waves для foundation, backend, transport, UI, observability и conditional voice contour. |
 | S10 | `docs/delivery/sprints/s10/sprint_s10_mcp_user_interactions.md` | `docs/delivery/epics/s10/epic_s10.md` | in-review | Новый product stream для built-in MCP user interactions: Day1 intake (`#360`), Day2 vision (`#378`), Day3 PRD (`#383`), Day4 architecture (`#385`), Day5 design (`#387`) и Day6 plan (`#389`) сформировали execution package; созданы implementation issues `#391..#395` для owner-managed `run:dev` waves. |
+| S11 | `docs/delivery/sprints/s11/sprint_s11_telegram_user_interaction_adapter.md` | `docs/delivery/epics/s11/epic_s11.md` | in-review | Новый последовательный stream для Telegram-адаптера как первого внешнего channel path: Day1 intake (`#361`) зафиксировал зависимость от core Sprint S10, проверяемый gate `#389 closed -> #387 baseline`, MVP scope notify/decision/callback/free-text и planned baseline `telego v1.7.0`; handover issue `#444` остаётся owner-managed точкой входа в `run:vision`. |
 | S12 | `docs/delivery/sprints/s12/sprint_s12_github_api_rate_limit_resilience.md` | `docs/delivery/epics/s12/epic_s12.md` | in-review | Новый cross-cutting stream для GitHub API rate-limit resilience: Day1 intake (`#366`) зафиксировал controlled wait-state, Day2 vision (`#413`) оформил mission/KPI/guardrails, Day3 PRD (`#416`) закрепил product contract и создал continuity issue `#418` для `run:arch`. |
 
 ## Правила структуры

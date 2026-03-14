@@ -37,6 +37,12 @@
 | `google.golang.org/genproto/googleapis/rpc` | `v0.0.0-20251029180050-ab9386a59fda` | gRPC error details | типизированные `errdetails` для conflict/status metadata во внутренних gRPC callback-ах |
 | `github.com/modelcontextprotocol/go-sdk` | `v1.3.0` | MCP transport | встроенный StreamableHTTP MCP transport/auth/resource/tool runtime для `control-plane` |
 
+## Backend (Go) — planned baselines
+
+| Dependency | Version | Scope | Why |
+|---|---|---|---|
+| `github.com/mymmrac/telego` | `v1.7.0` | Sprint S11 Telegram adapter (`planned`, ещё не добавлен в `go.mod`) | pragmatic Telegram Bot API SDK baseline для webhook mode, inline keyboards и callback queries; каталогизирован заранее по policy, а финальное code adoption остаётся за последующими `run:prd`/`run:arch`/`run:design` и implementation PR |
+
 ## Frontend (Vue/TS) — in use
 
 | Dependency | Status | Scope | Why |
