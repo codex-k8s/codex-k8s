@@ -21,7 +21,7 @@ approvals:
 - Intake фиксирует, что Telegram не должен стартовать параллельно core interaction stream: сначала стабилизируется platform contract, затем поверх него строится channel-specific adapter path.
 - MVP Telegram-потока ограничен сценариями `user.notify`, `user.decision.request`, inline callbacks и optional free-text reply, а voice/STT, reminders и richer conversation flows выносятся из core wave.
 - Через Context7 по `/mymmrac/telego` и `go list -m -json github.com/mymmrac/telego@latest` подтверждено, что `github.com/mymmrac/telego v1.7.0` покрывает webhook mode, inline keyboards и callback query handling; библиотека зафиксирована в каталоге зависимостей как planned baseline для следующей стадии, но не product contract.
-- Continuity issue `#444` подготовлена для stage `run:vision` с явным S10 readiness gate.
+- Continuity issue `#444` была подготовлена для stage `run:vision` с явным S10 readiness gate; после переноса active vision anchor в Issue `#447` она 2026-03-14 закрыта как `state:superseded` historical handover artifact.
 
 ## Контекст
 - Issue `#334` зафиксировала двухшаговую последовательность: сначала platform-side interaction-domain в core платформы, затем отдельный channel integrator для Telegram.
@@ -71,7 +71,7 @@ approvals:
 - Приём callback-ответов по кнопкам.
 - Optional free-text reply как fallback/дополнение к кнопкам.
 - Базовая webhook/callback security, idempotency, correlation и operability рамка для Telegram adapter.
-- Handover в `run:vision` через continuity issue `#444`.
+- Handover в `run:vision` из intake был выполнен через continuity issue `#444`; после переноса active vision anchor в Issue `#447` эта issue 2026-03-14 закрыта как `state:superseded`.
 
 ### Out of scope для core wave
 - Voice input и STT.
@@ -130,7 +130,7 @@ approvals:
 
 ## Stage Handover Instructions
 - Следующий этап: `run:vision`.
-- Созданная issue следующего этапа: `#444`.
+- Созданная issue следующего этапа: `#444` (historical handover artifact; 2026-03-14 закрыта как `state:superseded` после переноса active vision anchor в `#447`).
 - Проверяемый prerequisite для `#444`: Issue `#389` закрыта и остаётся актуальным S10 handover в `run:dev`, а design package Issue `#387` остаётся source-of-truth для typed interaction contract.
 - На `2026-03-14` prerequisite выполнен: `#387` closed, `#389` closed.
 - На stage `run:vision` обязательно сохранить и не размыть следующие решения intake:

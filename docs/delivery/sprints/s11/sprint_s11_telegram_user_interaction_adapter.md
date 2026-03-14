@@ -6,7 +6,7 @@ status: in-review
 owner_role: PM
 created_at: 2026-03-14
 updated_at: 2026-03-14
-related_issues: [361, 444]
+related_issues: [361, 444, 447, 448]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -21,7 +21,7 @@ approvals:
 - Issue `#361` фиксирует intake baseline: Telegram рассматривается как первый реальный внешний канал доставки/ответа пользователя, но не может стартовать параллельно core stream из Issue `#360`.
 - Через Context7 по `/mymmrac/telego` и `go list -m -json github.com/mymmrac/telego@latest` подтверждено, что `github.com/mymmrac/telego v1.7.0` покрывает webhook mode, inline keyboards и callback query handling; библиотека внесена в каталог зависимостей как planned baseline, но не заменяет product/domain contract.
 - Intake-пакет ограничивает MVP scope Telegram-канала сценариями `user.notify`, `user.decision.request`, inline callbacks и optional free-text reply, а voice/STT, advanced reminders и richer conversation flows оставляет за пределами core wave.
-- Handover в следующий stage подготовлен через follow-up issue `#444` для `run:vision`, причём запуск разрешён только после проверяемого S10 readiness gate.
+- Active Day2 vision stage выполняется в Issue `#447`, initial continuity issue `#444` 2026-03-14 закрыта как `state:superseded` historical handover после переноса active anchor, а follow-up issue `#448` подготовлена для `run:prd`.
 
 ## Scope спринта
 ### In scope
@@ -46,10 +46,10 @@ approvals:
   - `vision` обязателен, потому что появляется первый channel-specific user-facing experience с отдельными KPI и UX guardrails;
   - `arch` обязателен, потому что scope почти наверняка затрагивает новый adapter contour, callback ingress, security/correlation discipline и операционные границы.
 - Целевая continuity-цепочка:
-  `#361 (intake) -> #444 (vision) -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops`.
+  `#361 (intake) -> #447 (vision) -> #448 (prd) -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops`.
 
 ## Readiness gate от Sprint S10
-- `run:vision` для Issue `#444` разрешён только после того, как Issue `#389` остаётся закрытой и продолжает ссылаться на design package Issue `#387` как на effective baseline typed interaction contract.
+- Active `run:vision` stage в Issue `#447` разрешён только после того, как Issue `#389` остаётся закрытой и продолжает ссылаться на design package Issue `#387` как на effective baseline typed interaction contract.
 - Проверяемый S10 baseline:
   - `docs/architecture/initiatives/s10_mcp_user_interactions/design_doc.md`;
   - `docs/architecture/initiatives/s10_mcp_user_interactions/api_contract.md`;
@@ -62,30 +62,32 @@ approvals:
 | Stage | Основной артефакт | Целевая роль | Правило выхода |
 |---|---|---|---|
 | Intake (`#361`) | Problem/Brief/Scope/Constraints + intake AC | `pm` | Owner review intake-пакета и создана issue следующего этапа |
-| Vision (`#444`) | Mission, persona outcomes, KPI/guardrails, MVP/Post-MVP границы | `pm` | Зафиксирован vision baseline и создана continuity issue для `run:prd` |
-| PRD | User stories, FR/AC/NFR, evidence expectations и Telegram-specific edge cases | `pm` + `sa` | Подтверждён PRD package и создана issue для `run:arch` |
+| Vision (`#447`) | Mission, persona outcomes, KPI/guardrails, MVP/Post-MVP границы | `pm` | Зафиксирован vision baseline и создана continuity issue `#448` для `run:prd` |
+| PRD (`#448`) | User stories, FR/AC/NFR, evidence expectations и Telegram-specific edge cases | `pm` + `sa` | Подтверждён PRD package и создана issue для `run:arch` |
 | Architecture | Service boundaries, adapter ownership, callback security/correlation lifecycle | `sa` | Подтверждены архитектурные границы и создана issue для `run:design` |
 | Design | API/data/webhook/runtime contracts и rollout notes | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue для `run:plan` |
 | Plan | Delivery waves, quality-gates, execution issues, DoR/DoD | `em` + `km` | Сформирован execution package и owner-managed handover в `run:dev` |
 
 ## Guardrails спринта
-- Sprint S11 остаётся строго последовательным относительно Sprint S10: Telegram не может задавать core semantics для interaction-domain, а `#444` не должна получать `run:vision`, если prerequisite из Issue `#389`/`#387` перестаёт быть истинным.
+- Sprint S11 остаётся строго последовательным относительно Sprint S10: Telegram не может задавать core semantics для interaction-domain, а active stage `#447` не должен двигаться дальше, если prerequisite из Issue `#389`/`#387` перестаёт быть истинным.
 - Telegram adapter должен использовать typed platform interaction contract, а не копировать 1-в-1 поведение reference repositories.
 - Базовый MVP ограничен `notify -> decision request -> callback/free-text`; richer conversation UX и voice/STT остаются follow-up scope.
 - Inline buttons, callback handling и webhook path считаются обязательным baseline, но они не должны приводить к смешению callback transport и platform-owned domain semantics.
 - Channel-specific UX может оптимизировать delivery experience, но не должен ломать audit trail, correlation discipline и wait-state policy, зафиксированные на platform side.
 
 ## Handover
-- Текущий stage in-review: `run:intake` в Issue `#361`.
-- Intake package:
+- Текущий stage in-review: `run:vision` в Issue `#447`.
+- Vision package:
   - `docs/delivery/sprints/s11/sprint_s11_telegram_user_interaction_adapter.md`;
   - `docs/delivery/epics/s11/epic_s11.md`;
   - `docs/delivery/epics/s11/epic-s11-day1-telegram-user-interaction-adapter-intake.md`.
-- Следующий stage: `run:vision` в Issue `#444`.
-- Проверяемый prerequisite для Issue `#444`: закрытая Issue `#389` с актуальным S10 design package Issue `#387` как baseline typed interaction contract.
+- `docs/delivery/epics/s11/epic-s11-day2-telegram-user-interaction-adapter-vision.md`.
+- Initial continuity issue `#444` сохранена только как historical handover artifact от intake-stage и 2026-03-14 закрыта как `state:superseded`; active vision stage выполняется в Issue `#447`.
+- Следующий stage: `run:prd` в Issue `#448`.
+- Проверяемый prerequisite для Issue `#447`: закрытая Issue `#389` с актуальным S10 design package Issue `#387` как baseline typed interaction contract.
 - На `2026-03-14` prerequisite уже выполнен и не требует дополнительного parallel launch относительно Sprint S10.
 - Входные артефакты от platform-core stream:
   - `docs/delivery/sprints/s10/sprint_s10_mcp_user_interactions.md`;
   - `docs/delivery/epics/s10/epic-s10-day6-mcp-user-interactions-plan.md`;
   - `docs/architecture/initiatives/s10_mcp_user_interactions/README.md`.
-- Trigger-лейбл для Issue `#444` не ставится автоматически и остаётся owner-managed переходом после review intake package.
+- Trigger-лейбл для Issue `#448` не ставится автоматически и остаётся owner-managed переходом после review vision package.
