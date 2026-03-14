@@ -73,30 +73,6 @@ type PendingCommand struct {
 	UpdatedAt            time.Time
 }
 
-type workItemCardPayload struct {
-	RepositoryFullName string `json:"repository_full_name"`
-	IssueNumber        int64  `json:"issue_number"`
-	IssueURL           string `json:"issue_url,omitempty"`
-	LastRunID          string `json:"last_run_id,omitempty"`
-	LastStatus         string `json:"last_status,omitempty"`
-	TriggerKind        string `json:"trigger_kind,omitempty"`
-}
-
-type pullRequestCardPayload struct {
-	RepositoryFullName string `json:"repository_full_name"`
-	PullRequestNumber  int64  `json:"pull_request_number"`
-	PullRequestURL     string `json:"pull_request_url,omitempty"`
-	LastRunID          string `json:"last_run_id,omitempty"`
-	LastStatus         string `json:"last_status,omitempty"`
-}
-
-type agentCardPayload struct {
-	AgentKey    string `json:"agent_key"`
-	LastRunID   string `json:"last_run_id,omitempty"`
-	LastStatus  string `json:"last_status,omitempty"`
-	LastRunRepo string `json:"last_run_repository,omitempty"`
-}
-
 type timelinePayload struct {
 	RunID          string          `json:"run_id,omitempty"`
 	CorrelationID  string          `json:"correlation_id"`

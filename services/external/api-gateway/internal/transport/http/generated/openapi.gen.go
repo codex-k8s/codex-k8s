@@ -19,9 +19,25 @@ import (
 
 // Defines values for ApprovalRequestApprovalMode.
 const (
-	Delegated ApprovalRequestApprovalMode = "delegated"
-	None      ApprovalRequestApprovalMode = "none"
-	Owner     ApprovalRequestApprovalMode = "owner"
+	ApprovalRequestApprovalModeDelegated ApprovalRequestApprovalMode = "delegated"
+	ApprovalRequestApprovalModeNone      ApprovalRequestApprovalMode = "none"
+	ApprovalRequestApprovalModeOwner     ApprovalRequestApprovalMode = "owner"
+)
+
+// Defines values for DiscussionCreatePayloadParentEntityKind.
+const (
+	DiscussionCreatePayloadParentEntityKindAgent       DiscussionCreatePayloadParentEntityKind = "agent"
+	DiscussionCreatePayloadParentEntityKindDiscussion  DiscussionCreatePayloadParentEntityKind = "discussion"
+	DiscussionCreatePayloadParentEntityKindPullRequest DiscussionCreatePayloadParentEntityKind = "pull_request"
+	DiscussionCreatePayloadParentEntityKindWorkItem    DiscussionCreatePayloadParentEntityKind = "work_item"
+)
+
+// Defines values for DiscussionFormalizePayloadSourceEntityKind.
+const (
+	DiscussionFormalizePayloadSourceEntityKindAgent       DiscussionFormalizePayloadSourceEntityKind = "agent"
+	DiscussionFormalizePayloadSourceEntityKindDiscussion  DiscussionFormalizePayloadSourceEntityKind = "discussion"
+	DiscussionFormalizePayloadSourceEntityKindPullRequest DiscussionFormalizePayloadSourceEntityKind = "pull_request"
+	DiscussionFormalizePayloadSourceEntityKindWorkItem    DiscussionFormalizePayloadSourceEntityKind = "work_item"
 )
 
 // Defines values for ErrorResponseCode.
@@ -94,6 +110,297 @@ const (
 	MCPApprovalCallbackRequestDecisionFailed   MCPApprovalCallbackRequestDecision = "failed"
 )
 
+// Defines values for MissionControlAllowedActionActionKind.
+const (
+	MissionControlAllowedActionActionKindCommandRetrySync     MissionControlAllowedActionActionKind = "command.retry_sync"
+	MissionControlAllowedActionActionKindDiscussionCreate     MissionControlAllowedActionActionKind = "discussion.create"
+	MissionControlAllowedActionActionKindDiscussionFormalize  MissionControlAllowedActionActionKind = "discussion.formalize"
+	MissionControlAllowedActionActionKindStageNextStepExecute MissionControlAllowedActionActionKind = "stage.next_step.execute"
+	MissionControlAllowedActionActionKindWorkItemCreate       MissionControlAllowedActionActionKind = "work_item.create"
+)
+
+// Defines values for MissionControlAllowedActionApprovalRequirement.
+const (
+	MissionControlAllowedActionApprovalRequirementNone        MissionControlAllowedActionApprovalRequirement = "none"
+	MissionControlAllowedActionApprovalRequirementOwnerReview MissionControlAllowedActionApprovalRequirement = "owner_review"
+)
+
+// Defines values for MissionControlAllowedActionPresentation.
+const (
+	Danger    MissionControlAllowedActionPresentation = "danger"
+	Link      MissionControlAllowedActionPresentation = "link"
+	Primary   MissionControlAllowedActionPresentation = "primary"
+	Secondary MissionControlAllowedActionPresentation = "secondary"
+)
+
+// Defines values for MissionControlCommandApprovalApprovalState.
+const (
+	MissionControlCommandApprovalApprovalStateApproved    MissionControlCommandApprovalApprovalState = "approved"
+	MissionControlCommandApprovalApprovalStateDenied      MissionControlCommandApprovalApprovalState = "denied"
+	MissionControlCommandApprovalApprovalStateExpired     MissionControlCommandApprovalApprovalState = "expired"
+	MissionControlCommandApprovalApprovalStateNotRequired MissionControlCommandApprovalApprovalState = "not_required"
+	MissionControlCommandApprovalApprovalStatePending     MissionControlCommandApprovalApprovalState = "pending"
+)
+
+// Defines values for MissionControlCommandStateCommandKind.
+const (
+	MissionControlCommandStateCommandKindCommandRetrySync     MissionControlCommandStateCommandKind = "command.retry_sync"
+	MissionControlCommandStateCommandKindDiscussionCreate     MissionControlCommandStateCommandKind = "discussion.create"
+	MissionControlCommandStateCommandKindDiscussionFormalize  MissionControlCommandStateCommandKind = "discussion.formalize"
+	MissionControlCommandStateCommandKindStageNextStepExecute MissionControlCommandStateCommandKind = "stage.next_step.execute"
+	MissionControlCommandStateCommandKindWorkItemCreate       MissionControlCommandStateCommandKind = "work_item.create"
+)
+
+// Defines values for MissionControlCommandStateFailureReason.
+const (
+	ApprovalDenied  MissionControlCommandStateFailureReason = "approval_denied"
+	ApprovalExpired MissionControlCommandStateFailureReason = "approval_expired"
+	DuplicateIntent MissionControlCommandStateFailureReason = "duplicate_intent"
+	PolicyDenied    MissionControlCommandStateFailureReason = "policy_denied"
+	ProjectionStale MissionControlCommandStateFailureReason = "projection_stale"
+	ProviderError   MissionControlCommandStateFailureReason = "provider_error"
+	Timeout         MissionControlCommandStateFailureReason = "timeout"
+	Unknown         MissionControlCommandStateFailureReason = "unknown"
+)
+
+// Defines values for MissionControlCommandStateStatus.
+const (
+	MissionControlCommandStateStatusAccepted        MissionControlCommandStateStatus = "accepted"
+	MissionControlCommandStateStatusBlocked         MissionControlCommandStateStatus = "blocked"
+	MissionControlCommandStateStatusCancelled       MissionControlCommandStateStatus = "cancelled"
+	MissionControlCommandStateStatusFailed          MissionControlCommandStateStatus = "failed"
+	MissionControlCommandStateStatusPendingApproval MissionControlCommandStateStatus = "pending_approval"
+	MissionControlCommandStateStatusPendingSync     MissionControlCommandStateStatus = "pending_sync"
+	MissionControlCommandStateStatusQueued          MissionControlCommandStateStatus = "queued"
+	MissionControlCommandStateStatusReconciled      MissionControlCommandStateStatus = "reconciled"
+)
+
+// Defines values for MissionControlConnectedRealtimePayloadSnapshotFreshnessStatus.
+const (
+	MissionControlConnectedRealtimePayloadSnapshotFreshnessStatusDegraded MissionControlConnectedRealtimePayloadSnapshotFreshnessStatus = "degraded"
+	MissionControlConnectedRealtimePayloadSnapshotFreshnessStatusFresh    MissionControlConnectedRealtimePayloadSnapshotFreshnessStatus = "fresh"
+	MissionControlConnectedRealtimePayloadSnapshotFreshnessStatusStale    MissionControlConnectedRealtimePayloadSnapshotFreshnessStatus = "stale"
+)
+
+// Defines values for MissionControlDashboardSnapshotFreshnessStatus.
+const (
+	MissionControlDashboardSnapshotFreshnessStatusDegraded MissionControlDashboardSnapshotFreshnessStatus = "degraded"
+	MissionControlDashboardSnapshotFreshnessStatusFresh    MissionControlDashboardSnapshotFreshnessStatus = "fresh"
+	MissionControlDashboardSnapshotFreshnessStatusStale    MissionControlDashboardSnapshotFreshnessStatus = "stale"
+)
+
+// Defines values for MissionControlDashboardSnapshotViewMode.
+const (
+	MissionControlDashboardSnapshotViewModeBoard MissionControlDashboardSnapshotViewMode = "board"
+	MissionControlDashboardSnapshotViewModeList  MissionControlDashboardSnapshotViewMode = "list"
+)
+
+// Defines values for MissionControlDiscussionCreateCommandRequestCommandKind.
+const (
+	DiscussionCreate MissionControlDiscussionCreateCommandRequestCommandKind = "discussion.create"
+)
+
+// Defines values for MissionControlDiscussionCreateCommandRequestTargetEntityKind.
+const (
+	MissionControlDiscussionCreateCommandRequestTargetEntityKindAgent       MissionControlDiscussionCreateCommandRequestTargetEntityKind = "agent"
+	MissionControlDiscussionCreateCommandRequestTargetEntityKindDiscussion  MissionControlDiscussionCreateCommandRequestTargetEntityKind = "discussion"
+	MissionControlDiscussionCreateCommandRequestTargetEntityKindPullRequest MissionControlDiscussionCreateCommandRequestTargetEntityKind = "pull_request"
+	MissionControlDiscussionCreateCommandRequestTargetEntityKindWorkItem    MissionControlDiscussionCreateCommandRequestTargetEntityKind = "work_item"
+)
+
+// Defines values for MissionControlDiscussionFormalizeCommandRequestCommandKind.
+const (
+	DiscussionFormalize MissionControlDiscussionFormalizeCommandRequestCommandKind = "discussion.formalize"
+)
+
+// Defines values for MissionControlDiscussionFormalizeCommandRequestTargetEntityKind.
+const (
+	MissionControlDiscussionFormalizeCommandRequestTargetEntityKindAgent       MissionControlDiscussionFormalizeCommandRequestTargetEntityKind = "agent"
+	MissionControlDiscussionFormalizeCommandRequestTargetEntityKindDiscussion  MissionControlDiscussionFormalizeCommandRequestTargetEntityKind = "discussion"
+	MissionControlDiscussionFormalizeCommandRequestTargetEntityKindPullRequest MissionControlDiscussionFormalizeCommandRequestTargetEntityKind = "pull_request"
+	MissionControlDiscussionFormalizeCommandRequestTargetEntityKindWorkItem    MissionControlDiscussionFormalizeCommandRequestTargetEntityKind = "work_item"
+)
+
+// Defines values for MissionControlEntityCardBadges.
+const (
+	MissionControlEntityCardBadgesBlocked        MissionControlEntityCardBadges = "blocked"
+	MissionControlEntityCardBadgesOwnerReview    MissionControlEntityCardBadges = "owner_review"
+	MissionControlEntityCardBadgesRealtimeStale  MissionControlEntityCardBadges = "realtime_stale"
+	MissionControlEntityCardBadgesVoiceCandidate MissionControlEntityCardBadges = "voice_candidate"
+	MissionControlEntityCardBadgesWaitingMcp     MissionControlEntityCardBadges = "waiting_mcp"
+)
+
+// Defines values for MissionControlEntityCardEntityKind.
+const (
+	MissionControlEntityCardEntityKindAgent       MissionControlEntityCardEntityKind = "agent"
+	MissionControlEntityCardEntityKindDiscussion  MissionControlEntityCardEntityKind = "discussion"
+	MissionControlEntityCardEntityKindPullRequest MissionControlEntityCardEntityKind = "pull_request"
+	MissionControlEntityCardEntityKindWorkItem    MissionControlEntityCardEntityKind = "work_item"
+)
+
+// Defines values for MissionControlEntityCardState.
+const (
+	MissionControlEntityCardStateBlocked               MissionControlEntityCardState = "blocked"
+	MissionControlEntityCardStateRecentCriticalUpdates MissionControlEntityCardState = "recent_critical_updates"
+	MissionControlEntityCardStateReview                MissionControlEntityCardState = "review"
+	MissionControlEntityCardStateWaiting               MissionControlEntityCardState = "waiting"
+	MissionControlEntityCardStateWorking               MissionControlEntityCardState = "working"
+)
+
+// Defines values for MissionControlEntityCardSyncStatus.
+const (
+	MissionControlEntityCardSyncStatusDegraded    MissionControlEntityCardSyncStatus = "degraded"
+	MissionControlEntityCardSyncStatusFailed      MissionControlEntityCardSyncStatus = "failed"
+	MissionControlEntityCardSyncStatusPendingSync MissionControlEntityCardSyncStatus = "pending_sync"
+	MissionControlEntityCardSyncStatusSynced      MissionControlEntityCardSyncStatus = "synced"
+)
+
+// Defines values for MissionControlEntityRefEntityKind.
+const (
+	MissionControlEntityRefEntityKindAgent       MissionControlEntityRefEntityKind = "agent"
+	MissionControlEntityRefEntityKindDiscussion  MissionControlEntityRefEntityKind = "discussion"
+	MissionControlEntityRefEntityKindPullRequest MissionControlEntityRefEntityKind = "pull_request"
+	MissionControlEntityRefEntityKindWorkItem    MissionControlEntityRefEntityKind = "work_item"
+)
+
+// Defines values for MissionControlProviderDeepLinkActionKind.
+const (
+	ProviderMerge        MissionControlProviderDeepLinkActionKind = "provider.merge"
+	ProviderOpenIssue    MissionControlProviderDeepLinkActionKind = "provider.open_issue"
+	ProviderOpenPr       MissionControlProviderDeepLinkActionKind = "provider.open_pr"
+	ProviderReplyComment MissionControlProviderDeepLinkActionKind = "provider.reply_comment"
+	ProviderReview       MissionControlProviderDeepLinkActionKind = "provider.review"
+)
+
+// Defines values for MissionControlProviderDeepLinkReason.
+const (
+	NotInMvpInlineScope MissionControlProviderDeepLinkReason = "not_in_mvp_inline_scope"
+	ProviderPolicy      MissionControlProviderDeepLinkReason = "provider_policy"
+	RequiresHumanReview MissionControlProviderDeepLinkReason = "requires_human_review"
+	UnsafeWhenDegraded  MissionControlProviderDeepLinkReason = "unsafe_when_degraded"
+)
+
+// Defines values for MissionControlProviderReferenceProvider.
+const (
+	MissionControlProviderReferenceProviderGithub   MissionControlProviderReferenceProvider = "github"
+	MissionControlProviderReferenceProviderPlatform MissionControlProviderReferenceProvider = "platform"
+)
+
+// Defines values for MissionControlRealtimeEnvelopeEventKind.
+const (
+	MissionControlRealtimeEnvelopeEventKindConnected      MissionControlRealtimeEnvelopeEventKind = "connected"
+	MissionControlRealtimeEnvelopeEventKindDegraded       MissionControlRealtimeEnvelopeEventKind = "degraded"
+	MissionControlRealtimeEnvelopeEventKindDelta          MissionControlRealtimeEnvelopeEventKind = "delta"
+	MissionControlRealtimeEnvelopeEventKindError          MissionControlRealtimeEnvelopeEventKind = "error"
+	MissionControlRealtimeEnvelopeEventKindHeartbeat      MissionControlRealtimeEnvelopeEventKind = "heartbeat"
+	MissionControlRealtimeEnvelopeEventKindInvalidate     MissionControlRealtimeEnvelopeEventKind = "invalidate"
+	MissionControlRealtimeEnvelopeEventKindResyncRequired MissionControlRealtimeEnvelopeEventKind = "resync_required"
+	MissionControlRealtimeEnvelopeEventKindStale          MissionControlRealtimeEnvelopeEventKind = "stale"
+)
+
+// Defines values for MissionControlRelationDirection.
+const (
+	Bidirectional MissionControlRelationDirection = "bidirectional"
+	Inbound       MissionControlRelationDirection = "inbound"
+	Outbound      MissionControlRelationDirection = "outbound"
+)
+
+// Defines values for MissionControlRelationRelationKind.
+const (
+	AssignedTo       MissionControlRelationRelationKind = "assigned_to"
+	BlockedBy        MissionControlRelationRelationKind = "blocked_by"
+	Blocks           MissionControlRelationRelationKind = "blocks"
+	FormalizedFrom   MissionControlRelationRelationKind = "formalized_from"
+	LinkedTo         MissionControlRelationRelationKind = "linked_to"
+	OwnedBy          MissionControlRelationRelationKind = "owned_by"
+	TrackedByCommand MissionControlRelationRelationKind = "tracked_by_command"
+)
+
+// Defines values for MissionControlRelationSourceEntityKind.
+const (
+	MissionControlRelationSourceEntityKindAgent       MissionControlRelationSourceEntityKind = "agent"
+	MissionControlRelationSourceEntityKindDiscussion  MissionControlRelationSourceEntityKind = "discussion"
+	MissionControlRelationSourceEntityKindPullRequest MissionControlRelationSourceEntityKind = "pull_request"
+	MissionControlRelationSourceEntityKindWorkItem    MissionControlRelationSourceEntityKind = "work_item"
+)
+
+// Defines values for MissionControlRelationSourceKind.
+const (
+	MissionControlRelationSourceKindCommand        MissionControlRelationSourceKind = "command"
+	MissionControlRelationSourceKindPlatform       MissionControlRelationSourceKind = "platform"
+	MissionControlRelationSourceKindProvider       MissionControlRelationSourceKind = "provider"
+	MissionControlRelationSourceKindVoiceCandidate MissionControlRelationSourceKind = "voice_candidate"
+)
+
+// Defines values for MissionControlRelationTargetEntityKind.
+const (
+	MissionControlRelationTargetEntityKindAgent       MissionControlRelationTargetEntityKind = "agent"
+	MissionControlRelationTargetEntityKindDiscussion  MissionControlRelationTargetEntityKind = "discussion"
+	MissionControlRelationTargetEntityKindPullRequest MissionControlRelationTargetEntityKind = "pull_request"
+	MissionControlRelationTargetEntityKindWorkItem    MissionControlRelationTargetEntityKind = "work_item"
+)
+
+// Defines values for MissionControlRetrySyncCommandRequestCommandKind.
+const (
+	CommandRetrySync MissionControlRetrySyncCommandRequestCommandKind = "command.retry_sync"
+)
+
+// Defines values for MissionControlRetrySyncCommandRequestTargetEntityKind.
+const (
+	MissionControlRetrySyncCommandRequestTargetEntityKindAgent       MissionControlRetrySyncCommandRequestTargetEntityKind = "agent"
+	MissionControlRetrySyncCommandRequestTargetEntityKindDiscussion  MissionControlRetrySyncCommandRequestTargetEntityKind = "discussion"
+	MissionControlRetrySyncCommandRequestTargetEntityKindPullRequest MissionControlRetrySyncCommandRequestTargetEntityKind = "pull_request"
+	MissionControlRetrySyncCommandRequestTargetEntityKindWorkItem    MissionControlRetrySyncCommandRequestTargetEntityKind = "work_item"
+)
+
+// Defines values for MissionControlStageNextStepCommandRequestCommandKind.
+const (
+	StageNextStepExecute MissionControlStageNextStepCommandRequestCommandKind = "stage.next_step.execute"
+)
+
+// Defines values for MissionControlStageNextStepCommandRequestTargetEntityKind.
+const (
+	MissionControlStageNextStepCommandRequestTargetEntityKindAgent       MissionControlStageNextStepCommandRequestTargetEntityKind = "agent"
+	MissionControlStageNextStepCommandRequestTargetEntityKindDiscussion  MissionControlStageNextStepCommandRequestTargetEntityKind = "discussion"
+	MissionControlStageNextStepCommandRequestTargetEntityKindPullRequest MissionControlStageNextStepCommandRequestTargetEntityKind = "pull_request"
+	MissionControlStageNextStepCommandRequestTargetEntityKindWorkItem    MissionControlStageNextStepCommandRequestTargetEntityKind = "work_item"
+)
+
+// Defines values for MissionControlStageNextStepPayloadApprovalRequirement.
+const (
+	None        MissionControlStageNextStepPayloadApprovalRequirement = "none"
+	OwnerReview MissionControlStageNextStepPayloadApprovalRequirement = "owner_review"
+)
+
+// Defines values for MissionControlTimelineEntryEntityKind.
+const (
+	MissionControlTimelineEntryEntityKindAgent       MissionControlTimelineEntryEntityKind = "agent"
+	MissionControlTimelineEntryEntityKindDiscussion  MissionControlTimelineEntryEntityKind = "discussion"
+	MissionControlTimelineEntryEntityKindPullRequest MissionControlTimelineEntryEntityKind = "pull_request"
+	MissionControlTimelineEntryEntityKindWorkItem    MissionControlTimelineEntryEntityKind = "work_item"
+)
+
+// Defines values for MissionControlTimelineEntrySourceKind.
+const (
+	Command        MissionControlTimelineEntrySourceKind = "command"
+	Platform       MissionControlTimelineEntrySourceKind = "platform"
+	Provider       MissionControlTimelineEntrySourceKind = "provider"
+	VoiceCandidate MissionControlTimelineEntrySourceKind = "voice_candidate"
+)
+
+// Defines values for MissionControlWorkItemCreateCommandRequestCommandKind.
+const (
+	WorkItemCreate MissionControlWorkItemCreateCommandRequestCommandKind = "work_item.create"
+)
+
+// Defines values for MissionControlWorkItemCreateCommandRequestTargetEntityKind.
+const (
+	MissionControlWorkItemCreateCommandRequestTargetEntityKindAgent       MissionControlWorkItemCreateCommandRequestTargetEntityKind = "agent"
+	MissionControlWorkItemCreateCommandRequestTargetEntityKindDiscussion  MissionControlWorkItemCreateCommandRequestTargetEntityKind = "discussion"
+	MissionControlWorkItemCreateCommandRequestTargetEntityKindPullRequest MissionControlWorkItemCreateCommandRequestTargetEntityKind = "pull_request"
+	MissionControlWorkItemCreateCommandRequestTargetEntityKindWorkItem    MissionControlWorkItemCreateCommandRequestTargetEntityKind = "work_item"
+)
+
 // Defines values for ProjectMemberRole.
 const (
 	ProjectMemberRoleAdmin     ProjectMemberRole = "admin"
@@ -125,6 +432,18 @@ const (
 	ResolveApprovalDecisionResponseApprovalStateExpired   ResolveApprovalDecisionResponseApprovalState = "expired"
 	ResolveApprovalDecisionResponseApprovalStateFailed    ResolveApprovalDecisionResponseApprovalState = "failed"
 	ResolveApprovalDecisionResponseApprovalStateRequested ResolveApprovalDecisionResponseApprovalState = "requested"
+)
+
+// Defines values for RetrySyncPayloadExpectedStatus.
+const (
+	RetrySyncPayloadExpectedStatusAccepted        RetrySyncPayloadExpectedStatus = "accepted"
+	RetrySyncPayloadExpectedStatusBlocked         RetrySyncPayloadExpectedStatus = "blocked"
+	RetrySyncPayloadExpectedStatusCancelled       RetrySyncPayloadExpectedStatus = "cancelled"
+	RetrySyncPayloadExpectedStatusFailed          RetrySyncPayloadExpectedStatus = "failed"
+	RetrySyncPayloadExpectedStatusPendingApproval RetrySyncPayloadExpectedStatus = "pending_approval"
+	RetrySyncPayloadExpectedStatusPendingSync     RetrySyncPayloadExpectedStatus = "pending_sync"
+	RetrySyncPayloadExpectedStatusQueued          RetrySyncPayloadExpectedStatus = "queued"
+	RetrySyncPayloadExpectedStatusReconciled      RetrySyncPayloadExpectedStatus = "reconciled"
 )
 
 // Defines values for RuntimeDeployTaskStatus.
@@ -205,19 +524,75 @@ const (
 	UpsertProjectRepositoryRequestRoleService      UpsertProjectRepositoryRequestRole = "service"
 )
 
+// Defines values for MissionControlActiveFilter.
+const (
+	MissionControlActiveFilterAllActive             MissionControlActiveFilter = "all_active"
+	MissionControlActiveFilterBlocked               MissionControlActiveFilter = "blocked"
+	MissionControlActiveFilterRecentCriticalUpdates MissionControlActiveFilter = "recent_critical_updates"
+	MissionControlActiveFilterReview                MissionControlActiveFilter = "review"
+	MissionControlActiveFilterWaiting               MissionControlActiveFilter = "waiting"
+	MissionControlActiveFilterWorking               MissionControlActiveFilter = "working"
+)
+
+// Defines values for MissionControlEntityKind.
+const (
+	MissionControlEntityKindAgent       MissionControlEntityKind = "agent"
+	MissionControlEntityKindDiscussion  MissionControlEntityKind = "discussion"
+	MissionControlEntityKindPullRequest MissionControlEntityKind = "pull_request"
+	MissionControlEntityKindWorkItem    MissionControlEntityKind = "work_item"
+)
+
+// Defines values for MissionControlViewMode.
+const (
+	MissionControlViewModeBoard MissionControlViewMode = "board"
+	MissionControlViewModeList  MissionControlViewMode = "list"
+)
+
 // Defines values for ListDocsetGroupsParamsLocale.
 const (
 	ListDocsetGroupsParamsLocaleEn ListDocsetGroupsParamsLocale = "en"
 	ListDocsetGroupsParamsLocaleRu ListDocsetGroupsParamsLocale = "ru"
 )
 
+// Defines values for GetMissionControlDashboardParamsViewMode.
+const (
+	Board GetMissionControlDashboardParamsViewMode = "board"
+	List  GetMissionControlDashboardParamsViewMode = "list"
+)
+
+// Defines values for GetMissionControlDashboardParamsActiveFilter.
+const (
+	GetMissionControlDashboardParamsActiveFilterAllActive             GetMissionControlDashboardParamsActiveFilter = "all_active"
+	GetMissionControlDashboardParamsActiveFilterBlocked               GetMissionControlDashboardParamsActiveFilter = "blocked"
+	GetMissionControlDashboardParamsActiveFilterRecentCriticalUpdates GetMissionControlDashboardParamsActiveFilter = "recent_critical_updates"
+	GetMissionControlDashboardParamsActiveFilterReview                GetMissionControlDashboardParamsActiveFilter = "review"
+	GetMissionControlDashboardParamsActiveFilterWaiting               GetMissionControlDashboardParamsActiveFilter = "waiting"
+	GetMissionControlDashboardParamsActiveFilterWorking               GetMissionControlDashboardParamsActiveFilter = "working"
+)
+
+// Defines values for GetMissionControlEntityParamsEntityKind.
+const (
+	GetMissionControlEntityParamsEntityKindAgent       GetMissionControlEntityParamsEntityKind = "agent"
+	GetMissionControlEntityParamsEntityKindDiscussion  GetMissionControlEntityParamsEntityKind = "discussion"
+	GetMissionControlEntityParamsEntityKindPullRequest GetMissionControlEntityParamsEntityKind = "pull_request"
+	GetMissionControlEntityParamsEntityKindWorkItem    GetMissionControlEntityParamsEntityKind = "work_item"
+)
+
+// Defines values for ListMissionControlTimelineParamsEntityKind.
+const (
+	Agent       ListMissionControlTimelineParamsEntityKind = "agent"
+	Discussion  ListMissionControlTimelineParamsEntityKind = "discussion"
+	PullRequest ListMissionControlTimelineParamsEntityKind = "pull_request"
+	WorkItem    ListMissionControlTimelineParamsEntityKind = "work_item"
+)
+
 // Defines values for RuntimeDeployTasksRealtimeParamsStatus.
 const (
-	RuntimeDeployTasksRealtimeParamsStatusCanceled  RuntimeDeployTasksRealtimeParamsStatus = "canceled"
-	RuntimeDeployTasksRealtimeParamsStatusFailed    RuntimeDeployTasksRealtimeParamsStatus = "failed"
-	RuntimeDeployTasksRealtimeParamsStatusPending   RuntimeDeployTasksRealtimeParamsStatus = "pending"
-	RuntimeDeployTasksRealtimeParamsStatusRunning   RuntimeDeployTasksRealtimeParamsStatus = "running"
-	RuntimeDeployTasksRealtimeParamsStatusSucceeded RuntimeDeployTasksRealtimeParamsStatus = "succeeded"
+	Canceled  RuntimeDeployTasksRealtimeParamsStatus = "canceled"
+	Failed    RuntimeDeployTasksRealtimeParamsStatus = "failed"
+	Pending   RuntimeDeployTasksRealtimeParamsStatus = "pending"
+	Running   RuntimeDeployTasksRealtimeParamsStatus = "running"
+	Succeeded RuntimeDeployTasksRealtimeParamsStatus = "succeeded"
 )
 
 // Defines values for ListRuntimeErrorsParamsState.
@@ -233,6 +608,17 @@ const (
 	Error    ListRuntimeErrorsParamsLevel = "error"
 	Warning  ListRuntimeErrorsParamsLevel = "warning"
 )
+
+// AgentDetailsPayload defines model for AgentDetailsPayload.
+type AgentDetailsPayload struct {
+	ActiveRunId       *string    `json:"active_run_id"`
+	AgentKey          string     `json:"agent_key"`
+	LastHeartbeatAt   *time.Time `json:"last_heartbeat_at"`
+	LastRunRepository *string    `json:"last_run_repository"`
+	RunStatus         *string    `json:"run_status"`
+	RuntimeMode       *string    `json:"runtime_mode"`
+	WaitingReason     *string    `json:"waiting_reason"`
+}
 
 // ApprovalRequest defines model for ApprovalRequest.
 type ApprovalRequest struct {
@@ -265,6 +651,39 @@ type CreateUserRequest struct {
 	Email           openapi_types.Email `json:"email"`
 	IsPlatformAdmin bool                `json:"is_platform_admin"`
 }
+
+// DiscussionCreatePayload defines model for DiscussionCreatePayload.
+type DiscussionCreatePayload struct {
+	BodyMarkdown         *string                                  `json:"body_markdown"`
+	ParentEntityKind     *DiscussionCreatePayloadParentEntityKind `json:"parent_entity_kind"`
+	ParentEntityPublicId *string                                  `json:"parent_entity_public_id"`
+	Title                string                                   `json:"title"`
+}
+
+// DiscussionCreatePayloadParentEntityKind defines model for DiscussionCreatePayload.ParentEntityKind.
+type DiscussionCreatePayloadParentEntityKind string
+
+// DiscussionDetailsPayload defines model for DiscussionDetailsPayload.
+type DiscussionDetailsPayload struct {
+	Author               *string `json:"author"`
+	DiscussionKind       string  `json:"discussion_kind"`
+	FormalizationTarget  *string `json:"formalization_target"`
+	LatestCommentExcerpt *string `json:"latest_comment_excerpt"`
+	ParticipantCount     *int32  `json:"participant_count,omitempty"`
+	Status               *string `json:"status"`
+}
+
+// DiscussionFormalizePayload defines model for DiscussionFormalizePayload.
+type DiscussionFormalizePayload struct {
+	BodyMarkdown         *string                                    `json:"body_markdown"`
+	FormalizedKind       string                                     `json:"formalized_kind"`
+	SourceEntityKind     DiscussionFormalizePayloadSourceEntityKind `json:"source_entity_kind"`
+	SourceEntityPublicId string                                     `json:"source_entity_public_id"`
+	Title                string                                     `json:"title"`
+}
+
+// DiscussionFormalizePayloadSourceEntityKind defines model for DiscussionFormalizePayload.SourceEntityKind.
+type DiscussionFormalizePayloadSourceEntityKind string
 
 // DocsetGroup defines model for DocsetGroup.
 type DocsetGroup struct {
@@ -429,6 +848,404 @@ type MeUser struct {
 	IsPlatformOwner bool   `json:"is_platform_owner"`
 }
 
+// MissionControlAllowedAction defines model for MissionControlAllowedAction.
+type MissionControlAllowedAction struct {
+	ActionKind          MissionControlAllowedActionActionKind          `json:"action_kind"`
+	AllowedWhenDegraded bool                                           `json:"allowed_when_degraded"`
+	ApprovalRequirement MissionControlAllowedActionApprovalRequirement `json:"approval_requirement"`
+	BlockedReason       *string                                        `json:"blocked_reason"`
+	Presentation        MissionControlAllowedActionPresentation        `json:"presentation"`
+}
+
+// MissionControlAllowedActionActionKind defines model for MissionControlAllowedAction.ActionKind.
+type MissionControlAllowedActionActionKind string
+
+// MissionControlAllowedActionApprovalRequirement defines model for MissionControlAllowedAction.ApprovalRequirement.
+type MissionControlAllowedActionApprovalRequirement string
+
+// MissionControlAllowedActionPresentation defines model for MissionControlAllowedAction.Presentation.
+type MissionControlAllowedActionPresentation string
+
+// MissionControlCommandApproval defines model for MissionControlCommandApproval.
+type MissionControlCommandApproval struct {
+	ApprovalRequestId *string                                    `json:"approval_request_id"`
+	ApprovalState     MissionControlCommandApprovalApprovalState `json:"approval_state"`
+	ApproverActorId   *string                                    `json:"approver_actor_id"`
+	DecidedAt         *time.Time                                 `json:"decided_at"`
+	RequestedAt       *time.Time                                 `json:"requested_at"`
+}
+
+// MissionControlCommandApprovalApprovalState defines model for MissionControlCommandApproval.ApprovalState.
+type MissionControlCommandApprovalApprovalState string
+
+// MissionControlCommandRequest defines model for MissionControlCommandRequest.
+type MissionControlCommandRequest struct {
+	union json.RawMessage
+}
+
+// MissionControlCommandState defines model for MissionControlCommandState.
+type MissionControlCommandState struct {
+	Approval            *MissionControlCommandApproval           `json:"approval,omitempty"`
+	BlockingReason      *string                                  `json:"blocking_reason"`
+	BusinessIntentKey   string                                   `json:"business_intent_key"`
+	CommandId           string                                   `json:"command_id"`
+	CommandKind         MissionControlCommandStateCommandKind    `json:"command_kind"`
+	CorrelationId       string                                   `json:"correlation_id"`
+	EntityRefs          []MissionControlEntityRef                `json:"entity_refs"`
+	FailureReason       *MissionControlCommandStateFailureReason `json:"failure_reason"`
+	ProviderDeliveryIds []string                                 `json:"provider_delivery_ids"`
+	ReconciledAt        *time.Time                               `json:"reconciled_at"`
+	Status              MissionControlCommandStateStatus         `json:"status"`
+	StatusMessage       *string                                  `json:"status_message"`
+	UpdatedAt           time.Time                                `json:"updated_at"`
+}
+
+// MissionControlCommandStateCommandKind defines model for MissionControlCommandState.CommandKind.
+type MissionControlCommandStateCommandKind string
+
+// MissionControlCommandStateFailureReason defines model for MissionControlCommandState.FailureReason.
+type MissionControlCommandStateFailureReason string
+
+// MissionControlCommandStateStatus defines model for MissionControlCommandState.Status.
+type MissionControlCommandStateStatus string
+
+// MissionControlConnectedRealtimePayload defines model for MissionControlConnectedRealtimePayload.
+type MissionControlConnectedRealtimePayload struct {
+	ServerCursor            string                                                        `json:"server_cursor"`
+	SnapshotFreshnessStatus MissionControlConnectedRealtimePayloadSnapshotFreshnessStatus `json:"snapshot_freshness_status"`
+}
+
+// MissionControlConnectedRealtimePayloadSnapshotFreshnessStatus defines model for MissionControlConnectedRealtimePayload.SnapshotFreshnessStatus.
+type MissionControlConnectedRealtimePayloadSnapshotFreshnessStatus string
+
+// MissionControlDashboardSnapshot defines model for MissionControlDashboardSnapshot.
+type MissionControlDashboardSnapshot struct {
+	Entities            []MissionControlEntityCard                     `json:"entities"`
+	FreshnessStatus     MissionControlDashboardSnapshotFreshnessStatus `json:"freshness_status"`
+	GeneratedAt         time.Time                                      `json:"generated_at"`
+	NextPageCursor      *string                                        `json:"next_page_cursor"`
+	RealtimeResumeToken string                                         `json:"realtime_resume_token"`
+	Relations           []MissionControlRelation                       `json:"relations"`
+	SnapshotId          string                                         `json:"snapshot_id"`
+	StaleAfter          time.Time                                      `json:"stale_after"`
+	Summary             MissionControlDashboardSummary                 `json:"summary"`
+	ViewMode            MissionControlDashboardSnapshotViewMode        `json:"view_mode"`
+}
+
+// MissionControlDashboardSnapshotFreshnessStatus defines model for MissionControlDashboardSnapshot.FreshnessStatus.
+type MissionControlDashboardSnapshotFreshnessStatus string
+
+// MissionControlDashboardSnapshotViewMode defines model for MissionControlDashboardSnapshot.ViewMode.
+type MissionControlDashboardSnapshotViewMode string
+
+// MissionControlDashboardSummary defines model for MissionControlDashboardSummary.
+type MissionControlDashboardSummary struct {
+	BlockedCount               int32 `json:"blocked_count"`
+	RecentCriticalUpdatesCount int32 `json:"recent_critical_updates_count"`
+	ReviewCount                int32 `json:"review_count"`
+	TotalEntities              int32 `json:"total_entities"`
+	WaitingCount               int32 `json:"waiting_count"`
+	WorkingCount               int32 `json:"working_count"`
+}
+
+// MissionControlDegradedRealtimePayload defines model for MissionControlDegradedRealtimePayload.
+type MissionControlDegradedRealtimePayload struct {
+	AffectedCapabilities []string `json:"affected_capabilities"`
+	FallbackMode         string   `json:"fallback_mode"`
+	Reason               string   `json:"reason"`
+}
+
+// MissionControlDeltaRealtimePayload defines model for MissionControlDeltaRealtimePayload.
+type MissionControlDeltaRealtimePayload struct {
+	ChangedCommandIds    []string                      `json:"changed_command_ids"`
+	DeltaEntities        []MissionControlEntityCard    `json:"delta_entities"`
+	DeltaRelations       []MissionControlRelation      `json:"delta_relations"`
+	DeltaTimelineEntries []MissionControlTimelineEntry `json:"delta_timeline_entries"`
+}
+
+// MissionControlDiscussionCreateCommandRequest defines model for MissionControlDiscussionCreateCommandRequest.
+type MissionControlDiscussionCreateCommandRequest struct {
+	BusinessIntentKey         string                                                        `json:"business_intent_key"`
+	CommandKind               MissionControlDiscussionCreateCommandRequestCommandKind       `json:"command_kind"`
+	ExpectedProjectionVersion *int64                                                        `json:"expected_projection_version,omitempty"`
+	Payload                   DiscussionCreatePayload                                       `json:"payload"`
+	ProjectId                 string                                                        `json:"project_id"`
+	TargetEntityKind          *MissionControlDiscussionCreateCommandRequestTargetEntityKind `json:"target_entity_kind"`
+	TargetEntityPublicId      *string                                                       `json:"target_entity_public_id"`
+}
+
+// MissionControlDiscussionCreateCommandRequestCommandKind defines model for MissionControlDiscussionCreateCommandRequest.CommandKind.
+type MissionControlDiscussionCreateCommandRequestCommandKind string
+
+// MissionControlDiscussionCreateCommandRequestTargetEntityKind defines model for MissionControlDiscussionCreateCommandRequest.TargetEntityKind.
+type MissionControlDiscussionCreateCommandRequestTargetEntityKind string
+
+// MissionControlDiscussionFormalizeCommandRequest defines model for MissionControlDiscussionFormalizeCommandRequest.
+type MissionControlDiscussionFormalizeCommandRequest struct {
+	BusinessIntentKey         string                                                           `json:"business_intent_key"`
+	CommandKind               MissionControlDiscussionFormalizeCommandRequestCommandKind       `json:"command_kind"`
+	ExpectedProjectionVersion *int64                                                           `json:"expected_projection_version,omitempty"`
+	Payload                   DiscussionFormalizePayload                                       `json:"payload"`
+	ProjectId                 string                                                           `json:"project_id"`
+	TargetEntityKind          *MissionControlDiscussionFormalizeCommandRequestTargetEntityKind `json:"target_entity_kind"`
+	TargetEntityPublicId      *string                                                          `json:"target_entity_public_id"`
+}
+
+// MissionControlDiscussionFormalizeCommandRequestCommandKind defines model for MissionControlDiscussionFormalizeCommandRequest.CommandKind.
+type MissionControlDiscussionFormalizeCommandRequestCommandKind string
+
+// MissionControlDiscussionFormalizeCommandRequestTargetEntityKind defines model for MissionControlDiscussionFormalizeCommandRequest.TargetEntityKind.
+type MissionControlDiscussionFormalizeCommandRequestTargetEntityKind string
+
+// MissionControlEntityCard defines model for MissionControlEntityCard.
+type MissionControlEntityCard struct {
+	Badges            []MissionControlEntityCardBadges   `json:"badges"`
+	EntityKind        MissionControlEntityCardEntityKind `json:"entity_kind"`
+	EntityPublicId    string                             `json:"entity_public_id"`
+	LastTimelineAt    *time.Time                         `json:"last_timeline_at"`
+	PrimaryActor      *MissionControlPrimaryActor        `json:"primary_actor,omitempty"`
+	ProjectionVersion int64                              `json:"projection_version"`
+	ProviderReference MissionControlProviderReference    `json:"provider_reference"`
+	RelationCount     int32                              `json:"relation_count"`
+	State             MissionControlEntityCardState      `json:"state"`
+	SyncStatus        MissionControlEntityCardSyncStatus `json:"sync_status"`
+	Title             string                             `json:"title"`
+}
+
+// MissionControlEntityCardBadges defines model for MissionControlEntityCard.Badges.
+type MissionControlEntityCardBadges string
+
+// MissionControlEntityCardEntityKind defines model for MissionControlEntityCard.EntityKind.
+type MissionControlEntityCardEntityKind string
+
+// MissionControlEntityCardState defines model for MissionControlEntityCard.State.
+type MissionControlEntityCardState string
+
+// MissionControlEntityCardSyncStatus defines model for MissionControlEntityCard.SyncStatus.
+type MissionControlEntityCardSyncStatus string
+
+// MissionControlEntityDetails defines model for MissionControlEntityDetails.
+type MissionControlEntityDetails struct {
+	AllowedActions    []MissionControlAllowedAction      `json:"allowed_actions"`
+	DetailPayload     MissionControlEntityDetailsPayload `json:"detail_payload"`
+	Entity            MissionControlEntityCard           `json:"entity"`
+	ProviderDeepLinks []MissionControlProviderDeepLink   `json:"provider_deep_links"`
+	Relations         []MissionControlRelation           `json:"relations"`
+	TimelinePreview   []MissionControlTimelineEntry      `json:"timeline_preview"`
+}
+
+// MissionControlEntityDetailsPayload defines model for MissionControlEntityDetailsPayload.
+type MissionControlEntityDetailsPayload struct {
+	union json.RawMessage
+}
+
+// MissionControlEntityRef defines model for MissionControlEntityRef.
+type MissionControlEntityRef struct {
+	EntityKind     MissionControlEntityRefEntityKind `json:"entity_kind"`
+	EntityPublicId string                            `json:"entity_public_id"`
+}
+
+// MissionControlEntityRefEntityKind defines model for MissionControlEntityRef.EntityKind.
+type MissionControlEntityRefEntityKind string
+
+// MissionControlErrorRealtimePayload defines model for MissionControlErrorRealtimePayload.
+type MissionControlErrorRealtimePayload struct {
+	Code      string `json:"code"`
+	Message   string `json:"message"`
+	Retryable bool   `json:"retryable"`
+}
+
+// MissionControlHeartbeatRealtimePayload defines model for MissionControlHeartbeatRealtimePayload.
+type MissionControlHeartbeatRealtimePayload struct {
+	ServerTime time.Time `json:"server_time"`
+	SnapshotId string    `json:"snapshot_id"`
+}
+
+// MissionControlInvalidateRealtimePayload defines model for MissionControlInvalidateRealtimePayload.
+type MissionControlInvalidateRealtimePayload struct {
+	AffectedEntityRefs []MissionControlEntityRef `json:"affected_entity_refs"`
+	Reason             string                    `json:"reason"`
+	RefreshScope       string                    `json:"refresh_scope"`
+}
+
+// MissionControlPrimaryActor defines model for MissionControlPrimaryActor.
+type MissionControlPrimaryActor struct {
+	ActorId     string `json:"actor_id"`
+	ActorType   string `json:"actor_type"`
+	DisplayName string `json:"display_name"`
+}
+
+// MissionControlProviderDeepLink defines model for MissionControlProviderDeepLink.
+type MissionControlProviderDeepLink struct {
+	ActionKind MissionControlProviderDeepLinkActionKind `json:"action_kind"`
+	Reason     MissionControlProviderDeepLinkReason     `json:"reason"`
+	Url        string                                   `json:"url"`
+}
+
+// MissionControlProviderDeepLinkActionKind defines model for MissionControlProviderDeepLink.ActionKind.
+type MissionControlProviderDeepLinkActionKind string
+
+// MissionControlProviderDeepLinkReason defines model for MissionControlProviderDeepLink.Reason.
+type MissionControlProviderDeepLinkReason string
+
+// MissionControlProviderReference defines model for MissionControlProviderReference.
+type MissionControlProviderReference struct {
+	ExternalId string                                  `json:"external_id"`
+	Provider   MissionControlProviderReferenceProvider `json:"provider"`
+	Url        *string                                 `json:"url"`
+}
+
+// MissionControlProviderReferenceProvider defines model for MissionControlProviderReference.Provider.
+type MissionControlProviderReferenceProvider string
+
+// MissionControlRealtimeEnvelope defines model for MissionControlRealtimeEnvelope.
+type MissionControlRealtimeEnvelope struct {
+	EventKind   MissionControlRealtimeEnvelopeEventKind `json:"event_kind"`
+	OccurredAt  time.Time                               `json:"occurred_at"`
+	Payload     MissionControlRealtimePayload           `json:"payload"`
+	ResumeToken string                                  `json:"resume_token"`
+	SnapshotId  string                                  `json:"snapshot_id"`
+}
+
+// MissionControlRealtimeEnvelopeEventKind defines model for MissionControlRealtimeEnvelope.EventKind.
+type MissionControlRealtimeEnvelopeEventKind string
+
+// MissionControlRealtimePayload defines model for MissionControlRealtimePayload.
+type MissionControlRealtimePayload struct {
+	union json.RawMessage
+}
+
+// MissionControlRelation defines model for MissionControlRelation.
+type MissionControlRelation struct {
+	Direction            MissionControlRelationDirection        `json:"direction"`
+	RelationKind         MissionControlRelationRelationKind     `json:"relation_kind"`
+	SourceEntityKind     MissionControlRelationSourceEntityKind `json:"source_entity_kind"`
+	SourceEntityPublicId string                                 `json:"source_entity_public_id"`
+	SourceKind           MissionControlRelationSourceKind       `json:"source_kind"`
+	TargetEntityKind     MissionControlRelationTargetEntityKind `json:"target_entity_kind"`
+	TargetEntityPublicId string                                 `json:"target_entity_public_id"`
+}
+
+// MissionControlRelationDirection defines model for MissionControlRelation.Direction.
+type MissionControlRelationDirection string
+
+// MissionControlRelationRelationKind defines model for MissionControlRelation.RelationKind.
+type MissionControlRelationRelationKind string
+
+// MissionControlRelationSourceEntityKind defines model for MissionControlRelation.SourceEntityKind.
+type MissionControlRelationSourceEntityKind string
+
+// MissionControlRelationSourceKind defines model for MissionControlRelation.SourceKind.
+type MissionControlRelationSourceKind string
+
+// MissionControlRelationTargetEntityKind defines model for MissionControlRelation.TargetEntityKind.
+type MissionControlRelationTargetEntityKind string
+
+// MissionControlResyncRequiredRealtimePayload defines model for MissionControlResyncRequiredRealtimePayload.
+type MissionControlResyncRequiredRealtimePayload struct {
+	DroppedEventCount  int32  `json:"dropped_event_count"`
+	Reason             string `json:"reason"`
+	RequiredSnapshotId string `json:"required_snapshot_id"`
+}
+
+// MissionControlRetrySyncCommandRequest defines model for MissionControlRetrySyncCommandRequest.
+type MissionControlRetrySyncCommandRequest struct {
+	BusinessIntentKey         string                                                 `json:"business_intent_key"`
+	CommandKind               MissionControlRetrySyncCommandRequestCommandKind       `json:"command_kind"`
+	ExpectedProjectionVersion *int64                                                 `json:"expected_projection_version,omitempty"`
+	Payload                   RetrySyncPayload                                       `json:"payload"`
+	ProjectId                 string                                                 `json:"project_id"`
+	TargetEntityKind          *MissionControlRetrySyncCommandRequestTargetEntityKind `json:"target_entity_kind"`
+	TargetEntityPublicId      *string                                                `json:"target_entity_public_id"`
+}
+
+// MissionControlRetrySyncCommandRequestCommandKind defines model for MissionControlRetrySyncCommandRequest.CommandKind.
+type MissionControlRetrySyncCommandRequestCommandKind string
+
+// MissionControlRetrySyncCommandRequestTargetEntityKind defines model for MissionControlRetrySyncCommandRequest.TargetEntityKind.
+type MissionControlRetrySyncCommandRequestTargetEntityKind string
+
+// MissionControlStageNextStepCommandRequest defines model for MissionControlStageNextStepCommandRequest.
+type MissionControlStageNextStepCommandRequest struct {
+	BusinessIntentKey         string                                                     `json:"business_intent_key"`
+	CommandKind               MissionControlStageNextStepCommandRequestCommandKind       `json:"command_kind"`
+	ExpectedProjectionVersion *int64                                                     `json:"expected_projection_version,omitempty"`
+	Payload                   MissionControlStageNextStepPayload                         `json:"payload"`
+	ProjectId                 string                                                     `json:"project_id"`
+	TargetEntityKind          *MissionControlStageNextStepCommandRequestTargetEntityKind `json:"target_entity_kind"`
+	TargetEntityPublicId      *string                                                    `json:"target_entity_public_id"`
+}
+
+// MissionControlStageNextStepCommandRequestCommandKind defines model for MissionControlStageNextStepCommandRequest.CommandKind.
+type MissionControlStageNextStepCommandRequestCommandKind string
+
+// MissionControlStageNextStepCommandRequestTargetEntityKind defines model for MissionControlStageNextStepCommandRequest.TargetEntityKind.
+type MissionControlStageNextStepCommandRequestTargetEntityKind string
+
+// MissionControlStageNextStepPayload defines model for MissionControlStageNextStepPayload.
+type MissionControlStageNextStepPayload struct {
+	ApprovalRequirement *MissionControlStageNextStepPayloadApprovalRequirement `json:"approval_requirement"`
+	DisplayVariant      *string                                                `json:"display_variant"`
+	RemovedLabels       *[]string                                              `json:"removed_labels,omitempty"`
+	TargetLabel         string                                                 `json:"target_label"`
+	ThreadKind          string                                                 `json:"thread_kind"`
+	ThreadNumber        int32                                                  `json:"thread_number"`
+}
+
+// MissionControlStageNextStepPayloadApprovalRequirement defines model for MissionControlStageNextStepPayload.ApprovalRequirement.
+type MissionControlStageNextStepPayloadApprovalRequirement string
+
+// MissionControlStaleRealtimePayload defines model for MissionControlStaleRealtimePayload.
+type MissionControlStaleRealtimePayload struct {
+	Reason           string    `json:"reason"`
+	StaleSince       time.Time `json:"stale_since"`
+	SuggestedRefresh string    `json:"suggested_refresh"`
+}
+
+// MissionControlTimelineEntry defines model for MissionControlTimelineEntry.
+type MissionControlTimelineEntry struct {
+	BodyMarkdown   *string                               `json:"body_markdown"`
+	CommandId      *string                               `json:"command_id"`
+	EntityKind     MissionControlTimelineEntryEntityKind `json:"entity_kind"`
+	EntityPublicId string                                `json:"entity_public_id"`
+	EntryId        string                                `json:"entry_id"`
+	IsReadOnly     bool                                  `json:"is_read_only"`
+	OccurredAt     time.Time                             `json:"occurred_at"`
+	ProviderUrl    *string                               `json:"provider_url"`
+	SourceKind     MissionControlTimelineEntrySourceKind `json:"source_kind"`
+	SourceRef      string                                `json:"source_ref"`
+	Summary        string                                `json:"summary"`
+}
+
+// MissionControlTimelineEntryEntityKind defines model for MissionControlTimelineEntry.EntityKind.
+type MissionControlTimelineEntryEntityKind string
+
+// MissionControlTimelineEntrySourceKind defines model for MissionControlTimelineEntry.SourceKind.
+type MissionControlTimelineEntrySourceKind string
+
+// MissionControlTimelineItemsResponse defines model for MissionControlTimelineItemsResponse.
+type MissionControlTimelineItemsResponse struct {
+	Items      []MissionControlTimelineEntry `json:"items"`
+	NextCursor *string                       `json:"next_cursor"`
+}
+
+// MissionControlWorkItemCreateCommandRequest defines model for MissionControlWorkItemCreateCommandRequest.
+type MissionControlWorkItemCreateCommandRequest struct {
+	BusinessIntentKey         string                                                      `json:"business_intent_key"`
+	CommandKind               MissionControlWorkItemCreateCommandRequestCommandKind       `json:"command_kind"`
+	ExpectedProjectionVersion *int64                                                      `json:"expected_projection_version,omitempty"`
+	Payload                   WorkItemCreatePayload                                       `json:"payload"`
+	ProjectId                 string                                                      `json:"project_id"`
+	TargetEntityKind          *MissionControlWorkItemCreateCommandRequestTargetEntityKind `json:"target_entity_kind"`
+	TargetEntityPublicId      *string                                                     `json:"target_entity_public_id"`
+}
+
+// MissionControlWorkItemCreateCommandRequestCommandKind defines model for MissionControlWorkItemCreateCommandRequest.CommandKind.
+type MissionControlWorkItemCreateCommandRequestCommandKind string
+
+// MissionControlWorkItemCreateCommandRequestTargetEntityKind defines model for MissionControlWorkItemCreateCommandRequest.TargetEntityKind.
+type MissionControlWorkItemCreateCommandRequestTargetEntityKind string
+
 // NextStepActionRequest defines model for NextStepActionRequest.
 type NextStepActionRequest struct {
 	ActionKind         string `json:"action_kind"`
@@ -495,6 +1312,21 @@ type ProjectMemberItemsResponse struct {
 	Items []ProjectMember `json:"items"`
 }
 
+// PullRequestDetailsPayload defines model for PullRequestDetailsPayload.
+type PullRequestDetailsPayload struct {
+	BranchBase         *string   `json:"branch_base"`
+	BranchHead         *string   `json:"branch_head"`
+	ChecksSummary      *string   `json:"checks_summary"`
+	LastRunId          *string   `json:"last_run_id"`
+	LastStatus         *string   `json:"last_status"`
+	LinkedIssueRefs    *[]string `json:"linked_issue_refs,omitempty"`
+	MergeState         *string   `json:"merge_state"`
+	PullRequestNumber  int64     `json:"pull_request_number"`
+	PullRequestUrl     *string   `json:"pull_request_url"`
+	RepositoryFullName *string   `json:"repository_full_name,omitempty"`
+	ReviewDecision     *string   `json:"review_decision"`
+}
+
 // RepositoryBinding defines model for RepositoryBinding.
 type RepositoryBinding struct {
 	Alias              string                `json:"alias"`
@@ -542,6 +1374,16 @@ type ResolveApprovalDecisionResponse struct {
 
 // ResolveApprovalDecisionResponseApprovalState defines model for ResolveApprovalDecisionResponse.ApprovalState.
 type ResolveApprovalDecisionResponseApprovalState string
+
+// RetrySyncPayload defines model for RetrySyncPayload.
+type RetrySyncPayload struct {
+	CommandId      string                          `json:"command_id"`
+	ExpectedStatus *RetrySyncPayloadExpectedStatus `json:"expected_status"`
+	RetryReason    *string                         `json:"retry_reason"`
+}
+
+// RetrySyncPayloadExpectedStatus defines model for RetrySyncPayload.ExpectedStatus.
+type RetrySyncPayloadExpectedStatus string
 
 // Run defines model for Run.
 type Run struct {
@@ -818,6 +1660,30 @@ type UserItemsResponse struct {
 	Items []User `json:"items"`
 }
 
+// WorkItemCreatePayload defines model for WorkItemCreatePayload.
+type WorkItemCreatePayload struct {
+	BodyMarkdown      *string                    `json:"body_markdown"`
+	InitialLabels     *[]string                  `json:"initial_labels,omitempty"`
+	RelatedEntityRefs *[]MissionControlEntityRef `json:"related_entity_refs,omitempty"`
+	Title             string                     `json:"title"`
+}
+
+// WorkItemDetailsPayload defines model for WorkItemDetailsPayload.
+type WorkItemDetailsPayload struct {
+	Assignees          *[]string  `json:"assignees,omitempty"`
+	IssueNumber        int64      `json:"issue_number"`
+	IssueUrl           *string    `json:"issue_url"`
+	Labels             *[]string  `json:"labels,omitempty"`
+	LastProviderSyncAt *time.Time `json:"last_provider_sync_at"`
+	LastRunId          *string    `json:"last_run_id"`
+	LastStatus         *string    `json:"last_status"`
+	Owner              *string    `json:"owner"`
+	RepositoryFullName *string    `json:"repository_full_name,omitempty"`
+	StageLabel         *string    `json:"stage_label"`
+	TriggerKind        *string    `json:"trigger_kind"`
+	WorkItemType       *string    `json:"work_item_type"`
+}
+
 // AgentKeyFilter defines model for AgentKeyFilter.
 type AgentKeyFilter = string
 
@@ -838,6 +1704,36 @@ type Limit = int
 
 // MCPCallbackToken defines model for MCPCallbackToken.
 type MCPCallbackToken = string
+
+// MissionControlActiveFilter defines model for MissionControlActiveFilter.
+type MissionControlActiveFilter string
+
+// MissionControlCommandID defines model for MissionControlCommandID.
+type MissionControlCommandID = string
+
+// MissionControlCorrelationID defines model for MissionControlCorrelationID.
+type MissionControlCorrelationID = string
+
+// MissionControlCursor defines model for MissionControlCursor.
+type MissionControlCursor = string
+
+// MissionControlEntityKind defines model for MissionControlEntityKind.
+type MissionControlEntityKind string
+
+// MissionControlEntityPublicID defines model for MissionControlEntityPublicID.
+type MissionControlEntityPublicID = string
+
+// MissionControlIdempotencyKey defines model for MissionControlIdempotencyKey.
+type MissionControlIdempotencyKey = string
+
+// MissionControlResumeToken defines model for MissionControlResumeToken.
+type MissionControlResumeToken = string
+
+// MissionControlSearch defines model for MissionControlSearch.
+type MissionControlSearch = string
+
+// MissionControlViewMode defines model for MissionControlViewMode.
+type MissionControlViewMode string
 
 // Page defines model for Page.
 type Page = int
@@ -927,6 +1823,49 @@ type ListDocsetGroupsParams struct {
 
 // ListDocsetGroupsParamsLocale defines parameters for ListDocsetGroups.
 type ListDocsetGroupsParamsLocale string
+
+// SubmitMissionControlCommandParams defines parameters for SubmitMissionControlCommand.
+type SubmitMissionControlCommandParams struct {
+	IdempotencyKey MissionControlIdempotencyKey `json:"Idempotency-Key"`
+	XCorrelationID *MissionControlCorrelationID `json:"X-Correlation-ID,omitempty"`
+}
+
+// GetMissionControlDashboardParams defines parameters for GetMissionControlDashboard.
+type GetMissionControlDashboardParams struct {
+	ViewMode     *GetMissionControlDashboardParamsViewMode     `form:"view_mode,omitempty" json:"view_mode,omitempty"`
+	ActiveFilter *GetMissionControlDashboardParamsActiveFilter `form:"active_filter,omitempty" json:"active_filter,omitempty"`
+	Search       *MissionControlSearch                         `form:"search,omitempty" json:"search,omitempty"`
+	Cursor       *MissionControlCursor                         `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit        *Limit                                        `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// GetMissionControlDashboardParamsViewMode defines parameters for GetMissionControlDashboard.
+type GetMissionControlDashboardParamsViewMode string
+
+// GetMissionControlDashboardParamsActiveFilter defines parameters for GetMissionControlDashboard.
+type GetMissionControlDashboardParamsActiveFilter string
+
+// GetMissionControlEntityParams defines parameters for GetMissionControlEntity.
+type GetMissionControlEntityParams struct {
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// GetMissionControlEntityParamsEntityKind defines parameters for GetMissionControlEntity.
+type GetMissionControlEntityParamsEntityKind string
+
+// ListMissionControlTimelineParams defines parameters for ListMissionControlTimeline.
+type ListMissionControlTimelineParams struct {
+	Cursor *MissionControlCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit  *Limit                `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListMissionControlTimelineParamsEntityKind defines parameters for ListMissionControlTimeline.
+type ListMissionControlTimelineParamsEntityKind string
+
+// MissionControlRealtimeParams defines parameters for MissionControlRealtime.
+type MissionControlRealtimeParams struct {
+	ResumeToken MissionControlResumeToken `form:"resume_token" json:"resume_token"`
+}
 
 // ListProjectsParams defines parameters for ListProjects.
 type ListProjectsParams struct {
@@ -1042,6 +1981,9 @@ type ExecuteNextStepActionJSONRequestBody = NextStepActionRequest
 // PreviewNextStepActionJSONRequestBody defines body for PreviewNextStepAction for application/json ContentType.
 type PreviewNextStepActionJSONRequestBody = NextStepActionRequest
 
+// SubmitMissionControlCommandJSONRequestBody defines body for SubmitMissionControlCommand for application/json ContentType.
+type SubmitMissionControlCommandJSONRequestBody = MissionControlCommandRequest
+
 // UpsertProjectJSONRequestBody defines body for UpsertProject for application/json ContentType.
 type UpsertProjectJSONRequestBody = UpsertProjectRequest
 
@@ -1077,6 +2019,478 @@ type CreateUserJSONRequestBody = CreateUserRequest
 
 // IngestGithubWebhookJSONRequestBody defines body for IngestGithubWebhook for application/json ContentType.
 type IngestGithubWebhookJSONRequestBody IngestGithubWebhookJSONBody
+
+// AsMissionControlDiscussionCreateCommandRequest returns the union data inside the MissionControlCommandRequest as a MissionControlDiscussionCreateCommandRequest
+func (t MissionControlCommandRequest) AsMissionControlDiscussionCreateCommandRequest() (MissionControlDiscussionCreateCommandRequest, error) {
+	var body MissionControlDiscussionCreateCommandRequest
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMissionControlDiscussionCreateCommandRequest overwrites any union data inside the MissionControlCommandRequest as the provided MissionControlDiscussionCreateCommandRequest
+func (t *MissionControlCommandRequest) FromMissionControlDiscussionCreateCommandRequest(v MissionControlDiscussionCreateCommandRequest) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMissionControlDiscussionCreateCommandRequest performs a merge with any union data inside the MissionControlCommandRequest, using the provided MissionControlDiscussionCreateCommandRequest
+func (t *MissionControlCommandRequest) MergeMissionControlDiscussionCreateCommandRequest(v MissionControlDiscussionCreateCommandRequest) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMissionControlWorkItemCreateCommandRequest returns the union data inside the MissionControlCommandRequest as a MissionControlWorkItemCreateCommandRequest
+func (t MissionControlCommandRequest) AsMissionControlWorkItemCreateCommandRequest() (MissionControlWorkItemCreateCommandRequest, error) {
+	var body MissionControlWorkItemCreateCommandRequest
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMissionControlWorkItemCreateCommandRequest overwrites any union data inside the MissionControlCommandRequest as the provided MissionControlWorkItemCreateCommandRequest
+func (t *MissionControlCommandRequest) FromMissionControlWorkItemCreateCommandRequest(v MissionControlWorkItemCreateCommandRequest) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMissionControlWorkItemCreateCommandRequest performs a merge with any union data inside the MissionControlCommandRequest, using the provided MissionControlWorkItemCreateCommandRequest
+func (t *MissionControlCommandRequest) MergeMissionControlWorkItemCreateCommandRequest(v MissionControlWorkItemCreateCommandRequest) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMissionControlDiscussionFormalizeCommandRequest returns the union data inside the MissionControlCommandRequest as a MissionControlDiscussionFormalizeCommandRequest
+func (t MissionControlCommandRequest) AsMissionControlDiscussionFormalizeCommandRequest() (MissionControlDiscussionFormalizeCommandRequest, error) {
+	var body MissionControlDiscussionFormalizeCommandRequest
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMissionControlDiscussionFormalizeCommandRequest overwrites any union data inside the MissionControlCommandRequest as the provided MissionControlDiscussionFormalizeCommandRequest
+func (t *MissionControlCommandRequest) FromMissionControlDiscussionFormalizeCommandRequest(v MissionControlDiscussionFormalizeCommandRequest) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMissionControlDiscussionFormalizeCommandRequest performs a merge with any union data inside the MissionControlCommandRequest, using the provided MissionControlDiscussionFormalizeCommandRequest
+func (t *MissionControlCommandRequest) MergeMissionControlDiscussionFormalizeCommandRequest(v MissionControlDiscussionFormalizeCommandRequest) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMissionControlStageNextStepCommandRequest returns the union data inside the MissionControlCommandRequest as a MissionControlStageNextStepCommandRequest
+func (t MissionControlCommandRequest) AsMissionControlStageNextStepCommandRequest() (MissionControlStageNextStepCommandRequest, error) {
+	var body MissionControlStageNextStepCommandRequest
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMissionControlStageNextStepCommandRequest overwrites any union data inside the MissionControlCommandRequest as the provided MissionControlStageNextStepCommandRequest
+func (t *MissionControlCommandRequest) FromMissionControlStageNextStepCommandRequest(v MissionControlStageNextStepCommandRequest) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMissionControlStageNextStepCommandRequest performs a merge with any union data inside the MissionControlCommandRequest, using the provided MissionControlStageNextStepCommandRequest
+func (t *MissionControlCommandRequest) MergeMissionControlStageNextStepCommandRequest(v MissionControlStageNextStepCommandRequest) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMissionControlRetrySyncCommandRequest returns the union data inside the MissionControlCommandRequest as a MissionControlRetrySyncCommandRequest
+func (t MissionControlCommandRequest) AsMissionControlRetrySyncCommandRequest() (MissionControlRetrySyncCommandRequest, error) {
+	var body MissionControlRetrySyncCommandRequest
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMissionControlRetrySyncCommandRequest overwrites any union data inside the MissionControlCommandRequest as the provided MissionControlRetrySyncCommandRequest
+func (t *MissionControlCommandRequest) FromMissionControlRetrySyncCommandRequest(v MissionControlRetrySyncCommandRequest) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMissionControlRetrySyncCommandRequest performs a merge with any union data inside the MissionControlCommandRequest, using the provided MissionControlRetrySyncCommandRequest
+func (t *MissionControlCommandRequest) MergeMissionControlRetrySyncCommandRequest(v MissionControlRetrySyncCommandRequest) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t MissionControlCommandRequest) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *MissionControlCommandRequest) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsWorkItemDetailsPayload returns the union data inside the MissionControlEntityDetailsPayload as a WorkItemDetailsPayload
+func (t MissionControlEntityDetailsPayload) AsWorkItemDetailsPayload() (WorkItemDetailsPayload, error) {
+	var body WorkItemDetailsPayload
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWorkItemDetailsPayload overwrites any union data inside the MissionControlEntityDetailsPayload as the provided WorkItemDetailsPayload
+func (t *MissionControlEntityDetailsPayload) FromWorkItemDetailsPayload(v WorkItemDetailsPayload) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWorkItemDetailsPayload performs a merge with any union data inside the MissionControlEntityDetailsPayload, using the provided WorkItemDetailsPayload
+func (t *MissionControlEntityDetailsPayload) MergeWorkItemDetailsPayload(v WorkItemDetailsPayload) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsDiscussionDetailsPayload returns the union data inside the MissionControlEntityDetailsPayload as a DiscussionDetailsPayload
+func (t MissionControlEntityDetailsPayload) AsDiscussionDetailsPayload() (DiscussionDetailsPayload, error) {
+	var body DiscussionDetailsPayload
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDiscussionDetailsPayload overwrites any union data inside the MissionControlEntityDetailsPayload as the provided DiscussionDetailsPayload
+func (t *MissionControlEntityDetailsPayload) FromDiscussionDetailsPayload(v DiscussionDetailsPayload) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDiscussionDetailsPayload performs a merge with any union data inside the MissionControlEntityDetailsPayload, using the provided DiscussionDetailsPayload
+func (t *MissionControlEntityDetailsPayload) MergeDiscussionDetailsPayload(v DiscussionDetailsPayload) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPullRequestDetailsPayload returns the union data inside the MissionControlEntityDetailsPayload as a PullRequestDetailsPayload
+func (t MissionControlEntityDetailsPayload) AsPullRequestDetailsPayload() (PullRequestDetailsPayload, error) {
+	var body PullRequestDetailsPayload
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPullRequestDetailsPayload overwrites any union data inside the MissionControlEntityDetailsPayload as the provided PullRequestDetailsPayload
+func (t *MissionControlEntityDetailsPayload) FromPullRequestDetailsPayload(v PullRequestDetailsPayload) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePullRequestDetailsPayload performs a merge with any union data inside the MissionControlEntityDetailsPayload, using the provided PullRequestDetailsPayload
+func (t *MissionControlEntityDetailsPayload) MergePullRequestDetailsPayload(v PullRequestDetailsPayload) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsAgentDetailsPayload returns the union data inside the MissionControlEntityDetailsPayload as a AgentDetailsPayload
+func (t MissionControlEntityDetailsPayload) AsAgentDetailsPayload() (AgentDetailsPayload, error) {
+	var body AgentDetailsPayload
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromAgentDetailsPayload overwrites any union data inside the MissionControlEntityDetailsPayload as the provided AgentDetailsPayload
+func (t *MissionControlEntityDetailsPayload) FromAgentDetailsPayload(v AgentDetailsPayload) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeAgentDetailsPayload performs a merge with any union data inside the MissionControlEntityDetailsPayload, using the provided AgentDetailsPayload
+func (t *MissionControlEntityDetailsPayload) MergeAgentDetailsPayload(v AgentDetailsPayload) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t MissionControlEntityDetailsPayload) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *MissionControlEntityDetailsPayload) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsMissionControlConnectedRealtimePayload returns the union data inside the MissionControlRealtimePayload as a MissionControlConnectedRealtimePayload
+func (t MissionControlRealtimePayload) AsMissionControlConnectedRealtimePayload() (MissionControlConnectedRealtimePayload, error) {
+	var body MissionControlConnectedRealtimePayload
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMissionControlConnectedRealtimePayload overwrites any union data inside the MissionControlRealtimePayload as the provided MissionControlConnectedRealtimePayload
+func (t *MissionControlRealtimePayload) FromMissionControlConnectedRealtimePayload(v MissionControlConnectedRealtimePayload) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMissionControlConnectedRealtimePayload performs a merge with any union data inside the MissionControlRealtimePayload, using the provided MissionControlConnectedRealtimePayload
+func (t *MissionControlRealtimePayload) MergeMissionControlConnectedRealtimePayload(v MissionControlConnectedRealtimePayload) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMissionControlDeltaRealtimePayload returns the union data inside the MissionControlRealtimePayload as a MissionControlDeltaRealtimePayload
+func (t MissionControlRealtimePayload) AsMissionControlDeltaRealtimePayload() (MissionControlDeltaRealtimePayload, error) {
+	var body MissionControlDeltaRealtimePayload
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMissionControlDeltaRealtimePayload overwrites any union data inside the MissionControlRealtimePayload as the provided MissionControlDeltaRealtimePayload
+func (t *MissionControlRealtimePayload) FromMissionControlDeltaRealtimePayload(v MissionControlDeltaRealtimePayload) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMissionControlDeltaRealtimePayload performs a merge with any union data inside the MissionControlRealtimePayload, using the provided MissionControlDeltaRealtimePayload
+func (t *MissionControlRealtimePayload) MergeMissionControlDeltaRealtimePayload(v MissionControlDeltaRealtimePayload) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMissionControlInvalidateRealtimePayload returns the union data inside the MissionControlRealtimePayload as a MissionControlInvalidateRealtimePayload
+func (t MissionControlRealtimePayload) AsMissionControlInvalidateRealtimePayload() (MissionControlInvalidateRealtimePayload, error) {
+	var body MissionControlInvalidateRealtimePayload
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMissionControlInvalidateRealtimePayload overwrites any union data inside the MissionControlRealtimePayload as the provided MissionControlInvalidateRealtimePayload
+func (t *MissionControlRealtimePayload) FromMissionControlInvalidateRealtimePayload(v MissionControlInvalidateRealtimePayload) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMissionControlInvalidateRealtimePayload performs a merge with any union data inside the MissionControlRealtimePayload, using the provided MissionControlInvalidateRealtimePayload
+func (t *MissionControlRealtimePayload) MergeMissionControlInvalidateRealtimePayload(v MissionControlInvalidateRealtimePayload) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMissionControlStaleRealtimePayload returns the union data inside the MissionControlRealtimePayload as a MissionControlStaleRealtimePayload
+func (t MissionControlRealtimePayload) AsMissionControlStaleRealtimePayload() (MissionControlStaleRealtimePayload, error) {
+	var body MissionControlStaleRealtimePayload
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMissionControlStaleRealtimePayload overwrites any union data inside the MissionControlRealtimePayload as the provided MissionControlStaleRealtimePayload
+func (t *MissionControlRealtimePayload) FromMissionControlStaleRealtimePayload(v MissionControlStaleRealtimePayload) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMissionControlStaleRealtimePayload performs a merge with any union data inside the MissionControlRealtimePayload, using the provided MissionControlStaleRealtimePayload
+func (t *MissionControlRealtimePayload) MergeMissionControlStaleRealtimePayload(v MissionControlStaleRealtimePayload) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMissionControlDegradedRealtimePayload returns the union data inside the MissionControlRealtimePayload as a MissionControlDegradedRealtimePayload
+func (t MissionControlRealtimePayload) AsMissionControlDegradedRealtimePayload() (MissionControlDegradedRealtimePayload, error) {
+	var body MissionControlDegradedRealtimePayload
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMissionControlDegradedRealtimePayload overwrites any union data inside the MissionControlRealtimePayload as the provided MissionControlDegradedRealtimePayload
+func (t *MissionControlRealtimePayload) FromMissionControlDegradedRealtimePayload(v MissionControlDegradedRealtimePayload) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMissionControlDegradedRealtimePayload performs a merge with any union data inside the MissionControlRealtimePayload, using the provided MissionControlDegradedRealtimePayload
+func (t *MissionControlRealtimePayload) MergeMissionControlDegradedRealtimePayload(v MissionControlDegradedRealtimePayload) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMissionControlResyncRequiredRealtimePayload returns the union data inside the MissionControlRealtimePayload as a MissionControlResyncRequiredRealtimePayload
+func (t MissionControlRealtimePayload) AsMissionControlResyncRequiredRealtimePayload() (MissionControlResyncRequiredRealtimePayload, error) {
+	var body MissionControlResyncRequiredRealtimePayload
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMissionControlResyncRequiredRealtimePayload overwrites any union data inside the MissionControlRealtimePayload as the provided MissionControlResyncRequiredRealtimePayload
+func (t *MissionControlRealtimePayload) FromMissionControlResyncRequiredRealtimePayload(v MissionControlResyncRequiredRealtimePayload) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMissionControlResyncRequiredRealtimePayload performs a merge with any union data inside the MissionControlRealtimePayload, using the provided MissionControlResyncRequiredRealtimePayload
+func (t *MissionControlRealtimePayload) MergeMissionControlResyncRequiredRealtimePayload(v MissionControlResyncRequiredRealtimePayload) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMissionControlHeartbeatRealtimePayload returns the union data inside the MissionControlRealtimePayload as a MissionControlHeartbeatRealtimePayload
+func (t MissionControlRealtimePayload) AsMissionControlHeartbeatRealtimePayload() (MissionControlHeartbeatRealtimePayload, error) {
+	var body MissionControlHeartbeatRealtimePayload
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMissionControlHeartbeatRealtimePayload overwrites any union data inside the MissionControlRealtimePayload as the provided MissionControlHeartbeatRealtimePayload
+func (t *MissionControlRealtimePayload) FromMissionControlHeartbeatRealtimePayload(v MissionControlHeartbeatRealtimePayload) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMissionControlHeartbeatRealtimePayload performs a merge with any union data inside the MissionControlRealtimePayload, using the provided MissionControlHeartbeatRealtimePayload
+func (t *MissionControlRealtimePayload) MergeMissionControlHeartbeatRealtimePayload(v MissionControlHeartbeatRealtimePayload) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMissionControlErrorRealtimePayload returns the union data inside the MissionControlRealtimePayload as a MissionControlErrorRealtimePayload
+func (t MissionControlRealtimePayload) AsMissionControlErrorRealtimePayload() (MissionControlErrorRealtimePayload, error) {
+	var body MissionControlErrorRealtimePayload
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMissionControlErrorRealtimePayload overwrites any union data inside the MissionControlRealtimePayload as the provided MissionControlErrorRealtimePayload
+func (t *MissionControlRealtimePayload) FromMissionControlErrorRealtimePayload(v MissionControlErrorRealtimePayload) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMissionControlErrorRealtimePayload performs a merge with any union data inside the MissionControlRealtimePayload, using the provided MissionControlErrorRealtimePayload
+func (t *MissionControlRealtimePayload) MergeMissionControlErrorRealtimePayload(v MissionControlErrorRealtimePayload) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t MissionControlRealtimePayload) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *MissionControlRealtimePayload) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
 
 // AsUpsertProjectMemberRequest0 returns the union data inside the UpsertProjectMemberRequest as a UpsertProjectMemberRequest0
 func (t UpsertProjectMemberRequest) AsUpsertProjectMemberRequest0() (UpsertProjectMemberRequest0, error) {
@@ -1240,6 +2654,24 @@ type ServerInterface interface {
 	// Preview one GitHub next-step action
 	// (POST /api/v1/staff/github/next-step-actions/preview)
 	PreviewNextStepAction(w http.ResponseWriter, r *http.Request)
+	// Submit Mission Control command
+	// (POST /api/v1/staff/mission-control/commands)
+	SubmitMissionControlCommand(w http.ResponseWriter, r *http.Request, params SubmitMissionControlCommandParams)
+	// Get Mission Control command status
+	// (GET /api/v1/staff/mission-control/commands/{command_id})
+	GetMissionControlCommand(w http.ResponseWriter, r *http.Request, commandId MissionControlCommandID)
+	// Get Mission Control dashboard snapshot
+	// (GET /api/v1/staff/mission-control/dashboard)
+	GetMissionControlDashboard(w http.ResponseWriter, r *http.Request, params GetMissionControlDashboardParams)
+	// Get Mission Control entity details
+	// (GET /api/v1/staff/mission-control/entities/{entity_kind}/{entity_public_id})
+	GetMissionControlEntity(w http.ResponseWriter, r *http.Request, entityKind GetMissionControlEntityParamsEntityKind, entityPublicId MissionControlEntityPublicID, params GetMissionControlEntityParams)
+	// List Mission Control entity timeline
+	// (GET /api/v1/staff/mission-control/entities/{entity_kind}/{entity_public_id}/timeline)
+	ListMissionControlTimeline(w http.ResponseWriter, r *http.Request, entityKind ListMissionControlTimelineParamsEntityKind, entityPublicId MissionControlEntityPublicID, params ListMissionControlTimelineParams)
+	// Open Mission Control realtime stream (WebSocket upgrade)
+	// (GET /api/v1/staff/mission-control/realtime)
+	MissionControlRealtime(w http.ResponseWriter, r *http.Request, params MissionControlRealtimeParams)
 	// List projects
 	// (GET /api/v1/staff/projects)
 	ListProjects(w http.ResponseWriter, r *http.Request, params ListProjectsParams)
@@ -1673,6 +3105,285 @@ func (siw *ServerInterfaceWrapper) PreviewNextStepAction(w http.ResponseWriter, 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PreviewNextStepAction(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SubmitMissionControlCommand operation middleware
+func (siw *ServerInterfaceWrapper) SubmitMissionControlCommand(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SubmitMissionControlCommandParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey MissionControlIdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	// ------------- Optional header parameter "X-Correlation-ID" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Correlation-ID")]; found {
+		var XCorrelationID MissionControlCorrelationID
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Correlation-ID", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Correlation-ID", valueList[0], &XCorrelationID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Correlation-ID", Err: err})
+			return
+		}
+
+		params.XCorrelationID = &XCorrelationID
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SubmitMissionControlCommand(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetMissionControlCommand operation middleware
+func (siw *ServerInterfaceWrapper) GetMissionControlCommand(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "command_id" -------------
+	var commandId MissionControlCommandID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "command_id", r.PathValue("command_id"), &commandId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "command_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMissionControlCommand(w, r, commandId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetMissionControlDashboard operation middleware
+func (siw *ServerInterfaceWrapper) GetMissionControlDashboard(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetMissionControlDashboardParams
+
+	// ------------- Optional query parameter "view_mode" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "view_mode", r.URL.Query(), &params.ViewMode)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "view_mode", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "active_filter" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "active_filter", r.URL.Query(), &params.ActiveFilter)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "active_filter", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "search" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "search", r.URL.Query(), &params.Search)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "search", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cursor", r.URL.Query(), &params.Cursor)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMissionControlDashboard(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetMissionControlEntity operation middleware
+func (siw *ServerInterfaceWrapper) GetMissionControlEntity(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "entity_kind" -------------
+	var entityKind GetMissionControlEntityParamsEntityKind
+
+	err = runtime.BindStyledParameterWithOptions("simple", "entity_kind", r.PathValue("entity_kind"), &entityKind, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "entity_kind", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "entity_public_id" -------------
+	var entityPublicId MissionControlEntityPublicID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "entity_public_id", r.PathValue("entity_public_id"), &entityPublicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "entity_public_id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetMissionControlEntityParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMissionControlEntity(w, r, entityKind, entityPublicId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListMissionControlTimeline operation middleware
+func (siw *ServerInterfaceWrapper) ListMissionControlTimeline(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "entity_kind" -------------
+	var entityKind ListMissionControlTimelineParamsEntityKind
+
+	err = runtime.BindStyledParameterWithOptions("simple", "entity_kind", r.PathValue("entity_kind"), &entityKind, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "entity_kind", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "entity_public_id" -------------
+	var entityPublicId MissionControlEntityPublicID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "entity_public_id", r.PathValue("entity_public_id"), &entityPublicId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "entity_public_id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListMissionControlTimelineParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cursor", r.URL.Query(), &params.Cursor)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMissionControlTimeline(w, r, entityKind, entityPublicId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MissionControlRealtime operation middleware
+func (siw *ServerInterfaceWrapper) MissionControlRealtime(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params MissionControlRealtimeParams
+
+	// ------------- Required query parameter "resume_token" -------------
+
+	if paramValue := r.URL.Query().Get("resume_token"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "resume_token"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "resume_token", r.URL.Query(), &params.ResumeToken)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "resume_token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MissionControlRealtime(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2991,6 +4702,12 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/docset/groups", wrapper.ListDocsetGroups)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/github/next-step-actions/execute", wrapper.ExecuteNextStepAction)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/github/next-step-actions/preview", wrapper.PreviewNextStepAction)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/mission-control/commands", wrapper.SubmitMissionControlCommand)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/mission-control/commands/{command_id}", wrapper.GetMissionControlCommand)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/mission-control/dashboard", wrapper.GetMissionControlDashboard)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/mission-control/entities/{entity_kind}/{entity_public_id}", wrapper.GetMissionControlEntity)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/mission-control/entities/{entity_kind}/{entity_public_id}/timeline", wrapper.ListMissionControlTimeline)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/mission-control/realtime", wrapper.MissionControlRealtime)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/projects", wrapper.ListProjects)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/projects", wrapper.UpsertProject)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/staff/projects/{project_id}", wrapper.DeleteProject)
@@ -3539,6 +5256,364 @@ type PreviewNextStepAction403JSONResponse struct{ ForbiddenJSONResponse }
 func (response PreviewNextStepAction403JSONResponse) VisitPreviewNextStepActionResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SubmitMissionControlCommandRequestObject struct {
+	Params SubmitMissionControlCommandParams
+	Body   *SubmitMissionControlCommandJSONRequestBody
+}
+
+type SubmitMissionControlCommandResponseObject interface {
+	VisitSubmitMissionControlCommandResponse(w http.ResponseWriter) error
+}
+
+type SubmitMissionControlCommand200JSONResponse MissionControlCommandState
+
+func (response SubmitMissionControlCommand200JSONResponse) VisitSubmitMissionControlCommandResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SubmitMissionControlCommand400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response SubmitMissionControlCommand400JSONResponse) VisitSubmitMissionControlCommandResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SubmitMissionControlCommand401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response SubmitMissionControlCommand401JSONResponse) VisitSubmitMissionControlCommandResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SubmitMissionControlCommand403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response SubmitMissionControlCommand403JSONResponse) VisitSubmitMissionControlCommandResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SubmitMissionControlCommand404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response SubmitMissionControlCommand404JSONResponse) VisitSubmitMissionControlCommandResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SubmitMissionControlCommand409JSONResponse struct{ ConflictJSONResponse }
+
+func (response SubmitMissionControlCommand409JSONResponse) VisitSubmitMissionControlCommandResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SubmitMissionControlCommand429JSONResponse struct{ TooManyRequestsJSONResponse }
+
+func (response SubmitMissionControlCommand429JSONResponse) VisitSubmitMissionControlCommandResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(429)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMissionControlCommandRequestObject struct {
+	CommandId MissionControlCommandID `json:"command_id"`
+}
+
+type GetMissionControlCommandResponseObject interface {
+	VisitGetMissionControlCommandResponse(w http.ResponseWriter) error
+}
+
+type GetMissionControlCommand200JSONResponse MissionControlCommandState
+
+func (response GetMissionControlCommand200JSONResponse) VisitGetMissionControlCommandResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMissionControlCommand400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetMissionControlCommand400JSONResponse) VisitGetMissionControlCommandResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMissionControlCommand401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetMissionControlCommand401JSONResponse) VisitGetMissionControlCommandResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMissionControlCommand403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetMissionControlCommand403JSONResponse) VisitGetMissionControlCommandResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMissionControlCommand404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetMissionControlCommand404JSONResponse) VisitGetMissionControlCommandResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMissionControlDashboardRequestObject struct {
+	Params GetMissionControlDashboardParams
+}
+
+type GetMissionControlDashboardResponseObject interface {
+	VisitGetMissionControlDashboardResponse(w http.ResponseWriter) error
+}
+
+type GetMissionControlDashboard200JSONResponse MissionControlDashboardSnapshot
+
+func (response GetMissionControlDashboard200JSONResponse) VisitGetMissionControlDashboardResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMissionControlDashboard400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetMissionControlDashboard400JSONResponse) VisitGetMissionControlDashboardResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMissionControlDashboard401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetMissionControlDashboard401JSONResponse) VisitGetMissionControlDashboardResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMissionControlDashboard403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetMissionControlDashboard403JSONResponse) VisitGetMissionControlDashboardResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMissionControlDashboard409JSONResponse struct{ ConflictJSONResponse }
+
+func (response GetMissionControlDashboard409JSONResponse) VisitGetMissionControlDashboardResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMissionControlEntityRequestObject struct {
+	EntityKind     GetMissionControlEntityParamsEntityKind `json:"entity_kind"`
+	EntityPublicId MissionControlEntityPublicID            `json:"entity_public_id"`
+	Params         GetMissionControlEntityParams
+}
+
+type GetMissionControlEntityResponseObject interface {
+	VisitGetMissionControlEntityResponse(w http.ResponseWriter) error
+}
+
+type GetMissionControlEntity200JSONResponse MissionControlEntityDetails
+
+func (response GetMissionControlEntity200JSONResponse) VisitGetMissionControlEntityResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMissionControlEntity400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetMissionControlEntity400JSONResponse) VisitGetMissionControlEntityResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMissionControlEntity401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetMissionControlEntity401JSONResponse) VisitGetMissionControlEntityResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMissionControlEntity403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetMissionControlEntity403JSONResponse) VisitGetMissionControlEntityResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMissionControlEntity404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetMissionControlEntity404JSONResponse) VisitGetMissionControlEntityResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMissionControlEntity409JSONResponse struct{ ConflictJSONResponse }
+
+func (response GetMissionControlEntity409JSONResponse) VisitGetMissionControlEntityResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListMissionControlTimelineRequestObject struct {
+	EntityKind     ListMissionControlTimelineParamsEntityKind `json:"entity_kind"`
+	EntityPublicId MissionControlEntityPublicID               `json:"entity_public_id"`
+	Params         ListMissionControlTimelineParams
+}
+
+type ListMissionControlTimelineResponseObject interface {
+	VisitListMissionControlTimelineResponse(w http.ResponseWriter) error
+}
+
+type ListMissionControlTimeline200JSONResponse MissionControlTimelineItemsResponse
+
+func (response ListMissionControlTimeline200JSONResponse) VisitListMissionControlTimelineResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListMissionControlTimeline400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ListMissionControlTimeline400JSONResponse) VisitListMissionControlTimelineResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListMissionControlTimeline401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListMissionControlTimeline401JSONResponse) VisitListMissionControlTimelineResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListMissionControlTimeline403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListMissionControlTimeline403JSONResponse) VisitListMissionControlTimelineResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListMissionControlTimeline404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ListMissionControlTimeline404JSONResponse) VisitListMissionControlTimelineResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListMissionControlTimeline409JSONResponse struct{ ConflictJSONResponse }
+
+func (response ListMissionControlTimeline409JSONResponse) VisitListMissionControlTimelineResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type MissionControlRealtimeRequestObject struct {
+	Params MissionControlRealtimeParams
+}
+
+type MissionControlRealtimeResponseObject interface {
+	VisitMissionControlRealtimeResponse(w http.ResponseWriter) error
+}
+
+type MissionControlRealtime200Response struct {
+}
+
+func (response MissionControlRealtime200Response) VisitMissionControlRealtimeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type MissionControlRealtime400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response MissionControlRealtime400JSONResponse) VisitMissionControlRealtimeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type MissionControlRealtime401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response MissionControlRealtime401JSONResponse) VisitMissionControlRealtimeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type MissionControlRealtime403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response MissionControlRealtime403JSONResponse) VisitMissionControlRealtimeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type MissionControlRealtime409JSONResponse struct{ ConflictJSONResponse }
+
+func (response MissionControlRealtime409JSONResponse) VisitMissionControlRealtimeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -5122,6 +7197,24 @@ type StrictServerInterface interface {
 	// Preview one GitHub next-step action
 	// (POST /api/v1/staff/github/next-step-actions/preview)
 	PreviewNextStepAction(ctx context.Context, request PreviewNextStepActionRequestObject) (PreviewNextStepActionResponseObject, error)
+	// Submit Mission Control command
+	// (POST /api/v1/staff/mission-control/commands)
+	SubmitMissionControlCommand(ctx context.Context, request SubmitMissionControlCommandRequestObject) (SubmitMissionControlCommandResponseObject, error)
+	// Get Mission Control command status
+	// (GET /api/v1/staff/mission-control/commands/{command_id})
+	GetMissionControlCommand(ctx context.Context, request GetMissionControlCommandRequestObject) (GetMissionControlCommandResponseObject, error)
+	// Get Mission Control dashboard snapshot
+	// (GET /api/v1/staff/mission-control/dashboard)
+	GetMissionControlDashboard(ctx context.Context, request GetMissionControlDashboardRequestObject) (GetMissionControlDashboardResponseObject, error)
+	// Get Mission Control entity details
+	// (GET /api/v1/staff/mission-control/entities/{entity_kind}/{entity_public_id})
+	GetMissionControlEntity(ctx context.Context, request GetMissionControlEntityRequestObject) (GetMissionControlEntityResponseObject, error)
+	// List Mission Control entity timeline
+	// (GET /api/v1/staff/mission-control/entities/{entity_kind}/{entity_public_id}/timeline)
+	ListMissionControlTimeline(ctx context.Context, request ListMissionControlTimelineRequestObject) (ListMissionControlTimelineResponseObject, error)
+	// Open Mission Control realtime stream (WebSocket upgrade)
+	// (GET /api/v1/staff/mission-control/realtime)
+	MissionControlRealtime(ctx context.Context, request MissionControlRealtimeRequestObject) (MissionControlRealtimeResponseObject, error)
 	// List projects
 	// (GET /api/v1/staff/projects)
 	ListProjects(ctx context.Context, request ListProjectsRequestObject) (ListProjectsResponseObject, error)
@@ -5595,6 +7688,173 @@ func (sh *strictHandler) PreviewNextStepAction(w http.ResponseWriter, r *http.Re
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PreviewNextStepActionResponseObject); ok {
 		if err := validResponse.VisitPreviewNextStepActionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SubmitMissionControlCommand operation middleware
+func (sh *strictHandler) SubmitMissionControlCommand(w http.ResponseWriter, r *http.Request, params SubmitMissionControlCommandParams) {
+	var request SubmitMissionControlCommandRequestObject
+
+	request.Params = params
+
+	var body SubmitMissionControlCommandJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SubmitMissionControlCommand(ctx, request.(SubmitMissionControlCommandRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SubmitMissionControlCommand")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SubmitMissionControlCommandResponseObject); ok {
+		if err := validResponse.VisitSubmitMissionControlCommandResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMissionControlCommand operation middleware
+func (sh *strictHandler) GetMissionControlCommand(w http.ResponseWriter, r *http.Request, commandId MissionControlCommandID) {
+	var request GetMissionControlCommandRequestObject
+
+	request.CommandId = commandId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetMissionControlCommand(ctx, request.(GetMissionControlCommandRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMissionControlCommand")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMissionControlCommandResponseObject); ok {
+		if err := validResponse.VisitGetMissionControlCommandResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMissionControlDashboard operation middleware
+func (sh *strictHandler) GetMissionControlDashboard(w http.ResponseWriter, r *http.Request, params GetMissionControlDashboardParams) {
+	var request GetMissionControlDashboardRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetMissionControlDashboard(ctx, request.(GetMissionControlDashboardRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMissionControlDashboard")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMissionControlDashboardResponseObject); ok {
+		if err := validResponse.VisitGetMissionControlDashboardResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMissionControlEntity operation middleware
+func (sh *strictHandler) GetMissionControlEntity(w http.ResponseWriter, r *http.Request, entityKind GetMissionControlEntityParamsEntityKind, entityPublicId MissionControlEntityPublicID, params GetMissionControlEntityParams) {
+	var request GetMissionControlEntityRequestObject
+
+	request.EntityKind = entityKind
+	request.EntityPublicId = entityPublicId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetMissionControlEntity(ctx, request.(GetMissionControlEntityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMissionControlEntity")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMissionControlEntityResponseObject); ok {
+		if err := validResponse.VisitGetMissionControlEntityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListMissionControlTimeline operation middleware
+func (sh *strictHandler) ListMissionControlTimeline(w http.ResponseWriter, r *http.Request, entityKind ListMissionControlTimelineParamsEntityKind, entityPublicId MissionControlEntityPublicID, params ListMissionControlTimelineParams) {
+	var request ListMissionControlTimelineRequestObject
+
+	request.EntityKind = entityKind
+	request.EntityPublicId = entityPublicId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListMissionControlTimeline(ctx, request.(ListMissionControlTimelineRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListMissionControlTimeline")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListMissionControlTimelineResponseObject); ok {
+		if err := validResponse.VisitListMissionControlTimelineResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MissionControlRealtime operation middleware
+func (sh *strictHandler) MissionControlRealtime(w http.ResponseWriter, r *http.Request, params MissionControlRealtimeParams) {
+	var request MissionControlRealtimeRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MissionControlRealtime(ctx, request.(MissionControlRealtimeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MissionControlRealtime")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MissionControlRealtimeResponseObject); ok {
+		if err := validResponse.VisitMissionControlRealtimeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

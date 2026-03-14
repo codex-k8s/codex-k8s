@@ -379,11 +379,24 @@ func (s *Service) collectProjectionSeeds(
 ) error {
 	projectedAt := safeProjectionTime(run.CreatedAt, s.now)
 	staleAfter := projectedAt.Add(s.cfg.StaleAfter)
+	runContext, err := s.loadProjectionRunContext(ctx, run.RunID)
+	if err != nil {
+		return err
+	}
 
 	agentKey := strings.TrimSpace(run.AgentKey)
 	agentEntityKey := ""
 	if agentKey != "" {
 		agentEntityKey = agentEntityProjectionKey(agentKey)
+		agentPayload := valuetypes.MissionControlAgentProjectionPayload{
+			AgentKey:          agentKey,
+			LastRunID:         run.RunID,
+			LastStatus:        run.Status,
+			RuntimeMode:       runContext.RuntimeMode,
+			WaitingReason:     runContext.WaitReason,
+			LastHeartbeatAt:   cloneProjectionTime(runContext.LastHeartbeatAt),
+			LastRunRepository: repositoryFullName,
+		}
 		seedProjection(entitySeeds, agentEntityKey, projectionSeed{
 			projectID:         project.ID,
 			entityKind:        enumtypes.MissionControlEntityKindAgent,
@@ -393,8 +406,8 @@ func (s *Service) collectProjectionSeeds(
 			activeState:       enumtypes.MissionControlActiveStateWorking,
 			syncStatus:        enumtypes.MissionControlSyncStatusSynced,
 			projectionVersion: projectedAt.UnixMilli(),
-			cardPayloadJSON:   mustMarshal(agentCardPayload{AgentKey: agentKey, LastRunID: run.RunID, LastStatus: run.Status, LastRunRepo: repositoryFullName}),
-			detailPayloadJSON: mustMarshal(agentCardPayload{AgentKey: agentKey, LastRunID: run.RunID, LastStatus: run.Status, LastRunRepo: repositoryFullName}),
+			cardPayloadJSON:   mustMarshal(agentPayload),
+			detailPayloadJSON: mustMarshal(agentPayload),
 			projectedAt:       projectedAt,
 			staleAfter:        &staleAfter,
 		})
@@ -407,32 +420,35 @@ func (s *Service) collectProjectionSeeds(
 		if issueURL == "" {
 			issueURL = githubIssueURL(repositoryFullName, run.IssueNumber)
 		}
+		workItemPayload := valuetypes.MissionControlWorkItemProjectionPayload{
+			RepositoryFullName: repositoryFullName,
+			IssueNumber:        run.IssueNumber,
+			IssueURL:           issueURL,
+			LastRunID:          run.RunID,
+			LastStatus:         run.Status,
+			TriggerKind:        run.TriggerKind,
+			WorkItemType:       "issue",
+			StageLabel:         runContext.StageLabel,
+			Labels:             append([]string(nil), runContext.IssueLabels...),
+			Owner:              runContext.IssueOwner,
+			LastProviderSyncAt: timePointer(projectedAt),
+		}
+		workItemTitle := strings.TrimSpace(runContext.IssueTitle)
+		if workItemTitle == "" {
+			workItemTitle = fmt.Sprintf("Issue #%d", run.IssueNumber)
+		}
 		seedProjection(entitySeeds, workItemEntityKey, projectionSeed{
 			projectID:         project.ID,
 			entityKind:        enumtypes.MissionControlEntityKindWorkItem,
 			entityExternalKey: workItemEntityKey,
 			providerKind:      enumtypes.MissionControlProviderKindGitHub,
 			providerURL:       issueURL,
-			title:             fmt.Sprintf("Issue #%d", run.IssueNumber),
+			title:             workItemTitle,
 			activeState:       warmupActiveState(run.Status, false, run.PullRequestNumber > 0),
 			syncStatus:        enumtypes.MissionControlSyncStatusSynced,
 			projectionVersion: projectedAt.UnixMilli(),
-			cardPayloadJSON: mustMarshal(workItemCardPayload{
-				RepositoryFullName: repositoryFullName,
-				IssueNumber:        run.IssueNumber,
-				IssueURL:           issueURL,
-				LastRunID:          run.RunID,
-				LastStatus:         run.Status,
-				TriggerKind:        run.TriggerKind,
-			}),
-			detailPayloadJSON: mustMarshal(workItemCardPayload{
-				RepositoryFullName: repositoryFullName,
-				IssueNumber:        run.IssueNumber,
-				IssueURL:           issueURL,
-				LastRunID:          run.RunID,
-				LastStatus:         run.Status,
-				TriggerKind:        run.TriggerKind,
-			}),
+			cardPayloadJSON:   mustMarshal(workItemPayload),
+			detailPayloadJSON: mustMarshal(workItemPayload),
 			providerUpdatedAt: timePointer(projectedAt),
 			projectedAt:       projectedAt,
 			staleAfter:        &staleAfter,
@@ -453,30 +469,34 @@ func (s *Service) collectProjectionSeeds(
 		if pullRequestURL == "" {
 			pullRequestURL = githubPullRequestURL(repositoryFullName, run.PullRequestNumber)
 		}
+		pullRequestPayload := valuetypes.MissionControlPullRequestProjectionPayload{
+			RepositoryFullName: repositoryFullName,
+			PullRequestNumber:  run.PullRequestNumber,
+			PullRequestURL:     pullRequestURL,
+			LastRunID:          run.RunID,
+			LastStatus:         run.Status,
+			BranchHead:         runContext.PullRequestHead,
+			BranchBase:         runContext.PullRequestBase,
+		}
+		if workItemEntityKey != "" {
+			pullRequestPayload.LinkedIssueRefs = []string{workItemEntityKey}
+		}
+		pullRequestTitle := strings.TrimSpace(runContext.PullRequestTitle)
+		if pullRequestTitle == "" {
+			pullRequestTitle = fmt.Sprintf("PR #%d", run.PullRequestNumber)
+		}
 		seedProjection(entitySeeds, pullRequestEntityKey, projectionSeed{
 			projectID:         project.ID,
 			entityKind:        enumtypes.MissionControlEntityKindPullRequest,
 			entityExternalKey: pullRequestEntityKey,
 			providerKind:      enumtypes.MissionControlProviderKindGitHub,
 			providerURL:       pullRequestURL,
-			title:             fmt.Sprintf("PR #%d", run.PullRequestNumber),
+			title:             pullRequestTitle,
 			activeState:       warmupActiveState(run.Status, true, false),
 			syncStatus:        enumtypes.MissionControlSyncStatusSynced,
 			projectionVersion: projectedAt.UnixMilli(),
-			cardPayloadJSON: mustMarshal(pullRequestCardPayload{
-				RepositoryFullName: repositoryFullName,
-				PullRequestNumber:  run.PullRequestNumber,
-				PullRequestURL:     pullRequestURL,
-				LastRunID:          run.RunID,
-				LastStatus:         run.Status,
-			}),
-			detailPayloadJSON: mustMarshal(pullRequestCardPayload{
-				RepositoryFullName: repositoryFullName,
-				PullRequestNumber:  run.PullRequestNumber,
-				PullRequestURL:     pullRequestURL,
-				LastRunID:          run.RunID,
-				LastStatus:         run.Status,
-			}),
+			cardPayloadJSON:   mustMarshal(pullRequestPayload),
+			detailPayloadJSON: mustMarshal(pullRequestPayload),
 			providerUpdatedAt: timePointer(projectedAt),
 			projectedAt:       projectedAt,
 			staleAfter:        &staleAfter,

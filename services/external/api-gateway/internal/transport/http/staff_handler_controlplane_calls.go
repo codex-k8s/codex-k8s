@@ -162,6 +162,43 @@ func buildListProjectRepositoriesRequest(principal *controlplanev1.Principal, ar
 	return &controlplanev1.ListProjectRepositoriesRequest{Principal: principal, ProjectId: arg.id, Limit: arg.limit}
 }
 
+func buildGetMissionControlDashboardRequest(principal *controlplanev1.Principal, arg missionControlDashboardArg) *controlplanev1.GetMissionControlSnapshotRequest {
+	return &controlplanev1.GetMissionControlSnapshotRequest{
+		Principal:    principal,
+		ViewMode:     optionalStringPtr(arg.viewMode),
+		ActiveFilter: optionalStringPtr(arg.activeFilter),
+		Search:       optionalStringPtr(arg.search),
+		Cursor:       optionalStringPtr(arg.cursor),
+		Limit:        arg.limit,
+	}
+}
+
+func buildGetMissionControlEntityRequest(principal *controlplanev1.Principal, arg missionControlEntityArg) *controlplanev1.GetMissionControlEntityRequest {
+	return &controlplanev1.GetMissionControlEntityRequest{
+		Principal:      principal,
+		EntityKind:     strings.TrimSpace(arg.entityKind),
+		EntityPublicId: strings.TrimSpace(arg.entityPublicID),
+		TimelineLimit:  arg.timelineLimit,
+	}
+}
+
+func buildListMissionControlTimelineRequest(principal *controlplanev1.Principal, arg missionControlTimelineArg) *controlplanev1.ListMissionControlTimelineRequest {
+	return &controlplanev1.ListMissionControlTimelineRequest{
+		Principal:      principal,
+		EntityKind:     strings.TrimSpace(arg.entityKind),
+		EntityPublicId: strings.TrimSpace(arg.entityPublicID),
+		Cursor:         optionalStringPtr(arg.cursor),
+		Limit:          arg.limit,
+	}
+}
+
+func buildGetMissionControlCommandRequest(principal *controlplanev1.Principal, commandID string) *controlplanev1.GetMissionControlCommandRequest {
+	return &controlplanev1.GetMissionControlCommandRequest{
+		Principal: principal,
+		CommandId: strings.TrimSpace(commandID),
+	}
+}
+
 func (h *staffHandler) listProjectsCall(ctx context.Context, principal *controlplanev1.Principal, limit int32) (*controlplanev1.ListProjectsResponse, error) {
 	return callUnaryWithArg(ctx, principal, limit, buildListProjectsRequest, h.cp.Service().ListProjects)
 }
@@ -267,6 +304,22 @@ func (h *staffHandler) listProjectRepositoriesCall(ctx context.Context, principa
 	req := buildListProjectRepositoriesRequest(principal, idLimitArg{id: id, limit: limit})
 	svc := h.cp.Service()
 	return svc.ListProjectRepositories(ctx, req)
+}
+
+func (h *staffHandler) getMissionControlDashboardCall(ctx context.Context, principal *controlplanev1.Principal, arg missionControlDashboardArg) (*controlplanev1.GetMissionControlSnapshotResponse, error) {
+	return callUnaryWithArg(ctx, principal, arg, buildGetMissionControlDashboardRequest, h.cp.Service().GetMissionControlSnapshot)
+}
+
+func (h *staffHandler) getMissionControlEntityCall(ctx context.Context, principal *controlplanev1.Principal, arg missionControlEntityArg) (*controlplanev1.MissionControlEntityDetails, error) {
+	return callUnaryWithArg(ctx, principal, arg, buildGetMissionControlEntityRequest, h.cp.Service().GetMissionControlEntity)
+}
+
+func (h *staffHandler) listMissionControlTimelineCall(ctx context.Context, principal *controlplanev1.Principal, arg missionControlTimelineArg) (*controlplanev1.ListMissionControlTimelineResponse, error) {
+	return callUnaryWithArg(ctx, principal, arg, buildListMissionControlTimelineRequest, h.cp.Service().ListMissionControlTimeline)
+}
+
+func (h *staffHandler) getMissionControlCommandCall(ctx context.Context, principal *controlplanev1.Principal, commandID string) (*controlplanev1.MissionControlCommandState, error) {
+	return callUnaryWithArg(ctx, principal, commandID, buildGetMissionControlCommandRequest, h.cp.Service().GetMissionControlCommand)
 }
 
 func (h *staffHandler) deleteProject(ctx context.Context, principal *controlplanev1.Principal, id string) error {

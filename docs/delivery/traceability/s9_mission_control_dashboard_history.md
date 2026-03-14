@@ -155,3 +155,22 @@ approvals:
   - `git diff --check`
 - Runtime kubectl/log inspection и ручные DB queries не выполнялись: scope issue закрыт compile/unit/lint evidence и traceability sync без отдельного cluster-debug шага.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась, потому что `#371` реализует worker/backfill/reconcile execution path на уже согласованном design baseline.
+
+## Актуализация по Issue #372 (`run:dev`, 2026-03-14)
+- Реализован core thin-edge transport stream `S9-E04` для Mission Control Dashboard:
+  - расширен internal gRPC contract `proto/codexk8s/controlplane/v1/controlplane.proto` и `services/internal/control-plane/internal/transport/grpc/server_mission_control_staff_methods.go` для snapshot, entity details, timeline, command submit/status без переноса domain policy в `api-gateway`;
+  - `services/external/api-gateway/api/server/api.yaml` и codegen-артефакты синхронизированы только по core Mission Control paths: dashboard, entity details/timeline, command submit/status и realtime attach;
+  - `api-gateway` получил typed HTTP handlers, DTO/casters и realtime transport envelope для `connected`, `invalidate`, `stale`, `degraded`, `resync_required`, `heartbeat`, `error` с opaque `resume_token`, correlation/idempotency headers и gRPC passthrough в `control-plane`;
+  - web-console codegen обновлён в `services/staff/web-console/src/shared/api/generated/**`, чтобы frontend видел тот же contract-first surface без ручных DTO.
+- Зафиксированы guardrails:
+  - `api-gateway` остаётся thin-edge: snapshot/details/timeline/command handlers выполняют только auth, validation, header handling, DTO mapping и transport-level error propagation;
+  - realtime transport не вводит provider write-path и при drift/freshness degradation переводит UI в explicit refresh/fallback semantics через typed envelope;
+  - voice-specific routes `/voice-candidates*`, их OpenAPI/codegen и transport DTO намеренно оставлены вне scope `#372` и остаются отдельным conditional stream `#375`.
+- Через Context7 подтверждены актуальные `oapi-codegen`/`kin-openapi` guardrails для `oneOf`-union codegen и OpenAPI request/response validation, после чего Mission Control HTTP contract собран без `map[string]any` и с явными union DTO.
+- Проверки:
+  - `make gen-proto-go`
+  - `make gen-openapi-go`
+  - `make gen-openapi-ts`
+  - `go test ./services/external/api-gateway/internal/transport/http/... ./services/internal/control-plane/internal/transport/grpc/...`
+- Runtime kubectl/log inspection и ручные DB queries не выполнялись: scope issue закрыт contract/codegen/test evidence без отдельного cluster-debug шага.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась, потому что `#372` реализует transport/codegen слой на уже утверждённом design package и не меняет канонический product baseline.
