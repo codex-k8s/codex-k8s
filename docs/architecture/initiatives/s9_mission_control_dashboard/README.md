@@ -19,6 +19,7 @@ approvals:
 ## TL;DR
 - Пакет объединяет Day4 architecture и Day5 design артефакты Sprint S9 для Mission Control Dashboard.
 - Внутри зафиксированы C4 overlays, архитектурная декомпозиция, ADR/alternatives и implementation-ready design package по API/data/realtime/rollout contracts.
+- `docs/architecture/initiatives/s9_mission_control_dashboard/observability_readiness.md` сохранён только как исторический superseded-артефакт: 2026-03-14 Owner вывел `S9-E06` / Issue `#374` из активного execution backlog и не принял код из PR `#463`.
 
 ## Содержимое
 - `docs/architecture/initiatives/s9_mission_control_dashboard/c4_context.md`
@@ -28,6 +29,7 @@ approvals:
 - `docs/architecture/initiatives/s9_mission_control_dashboard/api_contract.md`
 - `docs/architecture/initiatives/s9_mission_control_dashboard/data_model.md`
 - `docs/architecture/initiatives/s9_mission_control_dashboard/migrations_policy.md`
+- `docs/architecture/initiatives/s9_mission_control_dashboard/observability_readiness.md` (`status: superseded`, historical note for rejected `S9-E06`)
 
 ## Связанные source-of-truth документы
 - `docs/architecture/c4_context.md`

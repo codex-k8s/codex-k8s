@@ -5,7 +5,7 @@ title: "Mission Control Dashboard — Detailed Design Sprint S9 Day 5"
 status: in-review
 owner_role: SA
 created_at: 2026-03-12
-updated_at: 2026-03-12
+updated_at: 2026-03-14
 related_issues: [333, 335, 337, 340, 351, 363]
 related_prs: []
 related_adrs: ["ADR-0011"]

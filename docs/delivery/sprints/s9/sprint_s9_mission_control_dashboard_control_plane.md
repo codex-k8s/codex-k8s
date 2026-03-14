@@ -5,7 +5,7 @@ title: "Sprint S9: Mission Control Dashboard and console control plane (Issue #3
 status: in-review
 owner_role: PM
 created_at: 2026-03-12
-updated_at: 2026-03-12
+updated_at: 2026-03-14
 related_issues: [333, 335, 337, 340, 351, 363, 369, 370, 371, 372, 373, 374, 375]
 related_prs: []
 approvals:
@@ -64,7 +64,7 @@ approvals:
 | Wave 2 | `#370` | `control-plane` domain owner для active-set projection и command lifecycle |
 | Wave 3 | `#371`, `#372` | `#371` владеет warmup/backfill execution и reconcile/retry path, `#372` владеет только core thin-edge transport/realtime contracts |
 | Wave 4 | `#373` | Dashboard shell, board/list toggle и side panel UX на typed contracts |
-| Wave 5 | `#374` | Observability, rollout-readiness и evidence gate перед `run:qa` |
+| Wave 5 | `#374` | Superseded 2026-03-14: отдельная observability/readiness wave не входит в активный Sprint S9 backlog |
 | Wave 6 | `#375` | Conditional voice contour; запускается только отдельным owner decision |
 
 ## Guardrails спринта
@@ -73,8 +73,10 @@ approvals:
 - GitHub остаётся каноническим provider'ом MVP; GitLab допускается только как future-compatible continuation через provider abstraction.
 - Voice intake рассматривается как условная последующая волна: не блокирует core dashboard wave, пока не подтверждены ROI, AI policy и operational readiness.
 - Voice-specific OpenAPI/codegen не входят в core transport wave и активируются только через conditional issue `#375`.
+- Owner revision 2026-03-14 вывел `#374` из active implementation chain; issue сохранена только как historical superseded artifact.
 
 ## Handover
 - Текущий stage в review: `run:plan` в Issue `#363`.
-- Следующий operational stage: owner-managed `run:dev` по implementation issues `#369..#374`.
+- Следующий operational stage: owner-managed `run:dev` по implementation issues `#369..#373`.
+- `#374` не считается активным handover issue после owner revision 2026-03-14.
 - Conditional continuation: issue `#375` запускается только после подтверждения core Mission Control wave.

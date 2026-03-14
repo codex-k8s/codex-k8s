@@ -254,11 +254,11 @@ approvals:
 - Day 6 (in-review): plan-пакет для Mission Control Dashboard (`docs/delivery/epics/s9/epic-s9-day6-mission-control-dashboard-plan.md`, Issue `#363`).
 - Результат Day 6 (факт):
   - execution backlog декомпозирован на issues `#369..#375` с wave-sequencing и owner-managed handover в `run:dev`;
-  - foundation/backend/transport/UI/observability разнесены по отдельным implementation streams, чтобы не смешивать schema, domain, worker warmup execution, edge и UX scope;
+  - foundation/backend/transport/UI/observability были разнесены по отдельным implementation streams, чтобы не смешивать schema, domain, worker warmup execution, edge и UX scope;
   - `#371` закреплён как owner warmup/backfill execution gate, а `#372` ограничен core transport paths без voice-specific OpenAPI/codegen;
-  - `#374` зафиксирован как обязательный evidence gate перед `run:qa`, а `#375` сохранён как conditional voice continuation без блокировки core MVP;
+  - owner revision 2026-03-14 перевёл `#374` / `S9-E06` в superseded historical artifact: отдельная observability/readiness wave и PR `#463` не входят в active Sprint S9 backlog; `#375` по-прежнему остаётся conditional voice continuation;
   - quality-gates, DoR/DoD, blockers/risks/owner decisions синхронизированы в delivery traceability.
-- Day 7+ (planned): `run:dev -> qa -> release -> postdeploy -> ops` по issues `#369..#374`; issue `#375` запускается только отдельным owner decision после core waves.
+- Day 7+ (planned): `run:dev -> qa -> release -> postdeploy -> ops` по active issues `#369..#373`; issue `#374` сохранена только как superseded history item, issue `#375` запускается отдельным owner decision после core waves.
 
 ### Sprint S10: Built-in MCP user interactions
 - Day 1 (in-review): intake-пакет для built-in MCP user interactions (`docs/delivery/epics/s10/epic-s10-day1-mcp-user-interactions-intake.md`, Issue `#360`).
