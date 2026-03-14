@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"strings"
+	"time"
 
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	missioncontroldomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/missioncontrol"
@@ -71,15 +72,24 @@ func (s *Server) RunMissionControlWarmup(ctx context.Context, req *controlplanev
 	}, nil
 }
 
-func (s *Server) ListMissionControlPendingCommands(ctx context.Context, req *controlplanev1.ListMissionControlPendingCommandsRequest) (*controlplanev1.ListMissionControlPendingCommandsResponse, error) {
+func (s *Server) ClaimMissionControlPendingCommands(ctx context.Context, req *controlplanev1.ClaimMissionControlPendingCommandsRequest) (*controlplanev1.ClaimMissionControlPendingCommandsResponse, error) {
 	if s.missionControl == nil {
 		return nil, status.Error(codes.FailedPrecondition, "mission control worker service is not configured")
 	}
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "request is required")
 	}
+	leaseTTL := time.Duration(0)
+	if req.GetLeaseTtl() != nil {
+		leaseTTL = req.GetLeaseTtl().AsDuration()
+	}
 
-	items, err := s.missionControl.ListPendingCommands(ctx, clampLimit(req.GetLimit(), 100))
+	items, err := s.missionControl.ClaimPendingCommands(
+		ctx,
+		strings.TrimSpace(req.GetWorkerId()),
+		leaseTTL,
+		clampLimit(req.GetLimit(), 100),
+	)
 	if err != nil {
 		return nil, toStatus(err)
 	}
@@ -110,7 +120,7 @@ func (s *Server) ListMissionControlPendingCommands(ctx context.Context, req *con
 		}
 		out = append(out, protoItem)
 	}
-	return &controlplanev1.ListMissionControlPendingCommandsResponse{Items: out}, nil
+	return &controlplanev1.ClaimMissionControlPendingCommandsResponse{Items: out}, nil
 }
 
 func (s *Server) QueueMissionControlCommand(ctx context.Context, req *controlplanev1.QueueMissionControlCommandRequest) (*controlplanev1.MissionControlCommandState, error) {

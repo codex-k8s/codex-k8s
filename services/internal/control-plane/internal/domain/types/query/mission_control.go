@@ -121,6 +121,14 @@ type MissionControlCommandApprovalStatePatch struct {
 	Value enumtypes.MissionControlApprovalState
 }
 
+// MissionControlCommandClaimParams defines one global worker claim request over pending commands.
+type MissionControlCommandClaimParams struct {
+	WorkerID string
+	LeaseTTL time.Duration
+	Statuses []enumtypes.MissionControlCommandStatus
+	Limit    int
+}
+
 // MissionControlCommandCreateParams defines one command-ledger insert.
 type MissionControlCommandCreateParams struct {
 	ProjectID           string
@@ -155,6 +163,8 @@ type MissionControlCommandStatusUpdateParams struct {
 	ApprovalDecidedAtPatch   MissionControlOptionalTimePatch
 	ResultPayloadPatch       MissionControlOptionalJSONPatch
 	ProviderDeliveriesPatch  MissionControlOptionalJSONPatch
+	LeaseOwnerPatch          MissionControlOptionalStringPatch
+	LeaseUntilPatch          MissionControlOptionalTimePatch
 	UpdatedAt                time.Time
 	ReconciledAtPatch        MissionControlOptionalTimePatch
 }

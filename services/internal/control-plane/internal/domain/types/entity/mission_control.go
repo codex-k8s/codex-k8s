@@ -76,6 +76,8 @@ type MissionControlCommand struct {
 	PayloadJSON         json.RawMessage
 	ResultPayloadJSON   json.RawMessage
 	ProviderDeliveries  json.RawMessage
+	LeaseOwner          string
+	LeaseUntil          *time.Time
 	RequestedAt         time.Time
 	UpdatedAt           time.Time
 	ReconciledAt        *time.Time

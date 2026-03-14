@@ -23,7 +23,7 @@ func (s *Service) Tick(ctx context.Context) error {
 		return fmt.Errorf("reconcile interaction lifecycle: %w", err)
 	}
 	if err := s.reconcileMissionControl(ctx); err != nil {
-		return fmt.Errorf("reconcile mission control: %w", err)
+		s.logger.Error("reconcile mission control failed", "worker_id", s.cfg.WorkerID, "err", err)
 	}
 	if err := s.cleanupExpiredNamespaces(ctx); err != nil {
 		return fmt.Errorf("cleanup expired namespaces: %w", err)

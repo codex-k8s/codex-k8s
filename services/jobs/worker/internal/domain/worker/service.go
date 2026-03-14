@@ -55,6 +55,8 @@ type Config struct {
 	MissionControlWarmupProjectLimit int
 	// MissionControlPendingCommandLimit limits Mission Control commands processed per tick.
 	MissionControlPendingCommandLimit int
+	// MissionControlClaimTTL bounds how long one worker owns a Mission Control command execution lease.
+	MissionControlClaimTTL time.Duration
 	// MissionControlRetryMaxAttempts bounds provider mutation retries per command.
 	MissionControlRetryMaxAttempts int
 	// MissionControlRetryBaseInterval defines the first retry delay for Mission Control provider mutations.
@@ -248,6 +250,9 @@ func NewService(cfg Config, deps Dependencies) *Service {
 	}
 	if cfg.MissionControlPendingCommandLimit <= 0 {
 		cfg.MissionControlPendingCommandLimit = 20
+	}
+	if cfg.MissionControlClaimTTL <= 0 {
+		cfg.MissionControlClaimTTL = 2 * time.Minute
 	}
 	if cfg.MissionControlRetryMaxAttempts <= 0 {
 		cfg.MissionControlRetryMaxAttempts = 3

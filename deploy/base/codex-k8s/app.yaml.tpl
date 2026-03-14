@@ -341,6 +341,18 @@ spec:
                   name: codex-k8s-runtime
                   key: CODEXK8S_MCP_TOKEN_TTL
                   optional: true
+            - name: CODEXK8S_MISSION_CONTROL_ENABLED
+              value: '{{ envOr "CODEXK8S_MISSION_CONTROL_ENABLED" "" }}'
+            - name: CODEXK8S_MISSION_CONTROL_VOICE_ENABLED
+              value: '{{ envOr "CODEXK8S_MISSION_CONTROL_VOICE_ENABLED" "" }}'
+            - name: CODEXK8S_MISSION_CONTROL_WARMUP_VERIFIED
+              value: '{{ envOr "CODEXK8S_MISSION_CONTROL_WARMUP_VERIFIED" "" }}'
+            - name: CODEXK8S_MISSION_CONTROL_READ_PATH_ENABLED
+              value: '{{ envOr "CODEXK8S_MISSION_CONTROL_READ_PATH_ENABLED" "" }}'
+            - name: CODEXK8S_MISSION_CONTROL_REALTIME_ENABLED
+              value: '{{ envOr "CODEXK8S_MISSION_CONTROL_REALTIME_ENABLED" "" }}'
+            - name: CODEXK8S_MISSION_CONTROL_WRITE_PATH_ENABLED
+              value: '{{ envOr "CODEXK8S_MISSION_CONTROL_WRITE_PATH_ENABLED" "" }}'
             - name: CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS
               valueFrom:
                 secretKeyRef:
@@ -798,6 +810,20 @@ spec:
               value: '{{ envOr "CODEXK8S_WORKER_SLOT_LEASE_TTL" "" }}'
             - name: CODEXK8S_WORKER_RUN_LEASE_TTL
               value: '{{ envOr "CODEXK8S_WORKER_RUN_LEASE_TTL" "" }}'
+            - name: CODEXK8S_MISSION_CONTROL_ENABLED
+              value: '{{ envOr "CODEXK8S_MISSION_CONTROL_ENABLED" "" }}'
+            - name: CODEXK8S_WORKER_MISSION_CONTROL_WARMUP_INTERVAL
+              value: '{{ envOr "CODEXK8S_WORKER_MISSION_CONTROL_WARMUP_INTERVAL" "" }}'
+            - name: CODEXK8S_WORKER_MISSION_CONTROL_WARMUP_PROJECT_LIMIT
+              value: '{{ envOr "CODEXK8S_WORKER_MISSION_CONTROL_WARMUP_PROJECT_LIMIT" "" }}'
+            - name: CODEXK8S_WORKER_MISSION_CONTROL_PENDING_COMMAND_LIMIT
+              value: '{{ envOr "CODEXK8S_WORKER_MISSION_CONTROL_PENDING_COMMAND_LIMIT" "" }}'
+            - name: CODEXK8S_WORKER_MISSION_CONTROL_CLAIM_TTL
+              value: '{{ envOr "CODEXK8S_WORKER_MISSION_CONTROL_CLAIM_TTL" "" }}'
+            - name: CODEXK8S_WORKER_MISSION_CONTROL_RETRY_MAX_ATTEMPTS
+              value: '{{ envOr "CODEXK8S_WORKER_MISSION_CONTROL_RETRY_MAX_ATTEMPTS" "" }}'
+            - name: CODEXK8S_WORKER_MISSION_CONTROL_RETRY_BASE_INTERVAL
+              value: '{{ envOr "CODEXK8S_WORKER_MISSION_CONTROL_RETRY_BASE_INTERVAL" "" }}'
             - name: CODEXK8S_WORKER_K8S_NAMESPACE
               value: '{{ envOr "CODEXK8S_WORKER_K8S_NAMESPACE" "" }}'
             - name: CODEXK8S_WORKER_POD_NAME

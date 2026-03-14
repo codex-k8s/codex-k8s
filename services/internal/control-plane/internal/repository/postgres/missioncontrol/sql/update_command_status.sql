@@ -9,8 +9,10 @@ SET
     approval_decided_at = CASE WHEN $12::boolean THEN $13::timestamptz ELSE approval_decided_at END,
     result_payload = CASE WHEN $14::boolean THEN $15::jsonb ELSE result_payload END,
     provider_delivery_ids = CASE WHEN $16::boolean THEN $17::jsonb ELSE provider_delivery_ids END,
-    updated_at = COALESCE($18::timestamptz, NOW()),
-    reconciled_at = CASE WHEN $19::boolean THEN $20::timestamptz ELSE reconciled_at END
+    lease_owner = CASE WHEN $18::boolean THEN $19::text ELSE lease_owner END,
+    lease_until = CASE WHEN $20::boolean THEN $21::timestamptz ELSE lease_until END,
+    updated_at = COALESCE($22::timestamptz, NOW()),
+    reconciled_at = CASE WHEN $23::boolean THEN $24::timestamptz ELSE reconciled_at END
 WHERE project_id = $1
   AND id = $2
 RETURNING
@@ -30,6 +32,8 @@ RETURNING
     payload AS payload_json,
     result_payload AS result_payload_json,
     provider_delivery_ids AS provider_deliveries_json,
+    lease_owner,
+    lease_until,
     requested_at,
     updated_at,
     reconciled_at;

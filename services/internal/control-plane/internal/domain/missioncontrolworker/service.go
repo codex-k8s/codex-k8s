@@ -260,13 +260,19 @@ func (s *Service) RunWarmup(ctx context.Context, params WarmupRequest) (WarmupRe
 	}, nil
 }
 
-// ListPendingCommands returns accepted/queued commands that worker may execute.
-func (s *Service) ListPendingCommands(ctx context.Context, limit int) ([]PendingCommand, error) {
+// ClaimPendingCommands atomically leases accepted/queued commands for one worker instance.
+func (s *Service) ClaimPendingCommands(ctx context.Context, workerID string, leaseTTL time.Duration, limit int) ([]PendingCommand, error) {
+	workerID = strings.TrimSpace(workerID)
+	if workerID == "" {
+		return nil, errs.Validation{Field: "worker_id", Msg: "is required"}
+	}
 	commandLimit := limit
 	if commandLimit <= 0 {
 		commandLimit = s.cfg.RunLimit
 	}
-	commands, err := s.projection.ListCommandsAll(ctx, missioncontrolrepo.GlobalCommandListFilter{
+	commands, err := s.projection.ClaimCommandsAll(ctx, missioncontrolrepo.ClaimCommandParams{
+		WorkerID: workerID,
+		LeaseTTL: leaseTTL,
 		Statuses: []enumtypes.MissionControlCommandStatus{
 			enumtypes.MissionControlCommandStatusAccepted,
 			enumtypes.MissionControlCommandStatusQueued,

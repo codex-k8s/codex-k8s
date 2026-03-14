@@ -1035,6 +1035,40 @@ func (r *inMemoryRepository) ListCommandsAll(_ context.Context, filter missionco
 	return items, nil
 }
 
+func (r *inMemoryRepository) ClaimCommandsAll(_ context.Context, params missioncontrolrepo.ClaimCommandParams) ([]Command, error) {
+	now := time.Now().UTC()
+	items := make([]Command, 0, len(r.commandsByID))
+	for _, command := range r.commandsByID {
+		if len(params.Statuses) > 0 && !containsCommandStatus(params.Statuses, command.Status) {
+			continue
+		}
+		if command.LeaseUntil != nil && command.LeaseUntil.After(now) {
+			continue
+		}
+		items = append(items, command)
+	}
+	sort.Slice(items, func(i, j int) bool {
+		if !items[i].UpdatedAt.Equal(items[j].UpdatedAt) {
+			return items[i].UpdatedAt.After(items[j].UpdatedAt)
+		}
+		return items[i].ID > items[j].ID
+	})
+	if params.Limit > 0 && len(items) > params.Limit {
+		items = items[:params.Limit]
+	}
+	claimed := make([]Command, 0, len(items))
+	for _, command := range items {
+		command.LeaseOwner = strings.TrimSpace(params.WorkerID)
+		if params.LeaseTTL > 0 {
+			leaseUntil := now.Add(params.LeaseTTL)
+			command.LeaseUntil = &leaseUntil
+		}
+		r.commandsByID[command.ID] = command
+		claimed = append(claimed, command)
+	}
+	return claimed, nil
+}
+
 func (r *inMemoryRepository) UpdateCommandStatus(_ context.Context, params missioncontrolrepo.UpdateCommandStatusParams) (Command, bool, error) {
 	command, found := r.commandsByID[strings.TrimSpace(params.CommandID)]
 	if !found || command.ProjectID != strings.TrimSpace(params.ProjectID) {
@@ -1061,6 +1095,12 @@ func (r *inMemoryRepository) UpdateCommandStatus(_ context.Context, params missi
 	}
 	if params.ProviderDeliveriesPatch.Set {
 		command.ProviderDeliveries = cloneBytes(params.ProviderDeliveriesPatch.Value)
+	}
+	if params.LeaseOwnerPatch.Set {
+		command.LeaseOwner = params.LeaseOwnerPatch.Value
+	}
+	if params.LeaseUntilPatch.Set {
+		command.LeaseUntil = params.LeaseUntilPatch.Value
 	}
 	command.UpdatedAt = nowOr(params.UpdatedAt)
 	if params.ReconciledAtPatch.Set {

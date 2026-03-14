@@ -5,6 +5,7 @@ package codexk8s.controlplane.v1;
 option go_package = "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1;controlplanev1";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 
@@ -691,11 +692,13 @@ message MissionControlPendingCommand {
   google.protobuf.Timestamp updated_at = 12;
 }
 
-message ListMissionControlPendingCommandsRequest {
+message ClaimMissionControlPendingCommandsRequest {
   int32 limit = 1;
+  string worker_id = 2;
+  google.protobuf.Duration lease_ttl = 3;
 }
 
-message ListMissionControlPendingCommandsResponse {
+message ClaimMissionControlPendingCommandsResponse {
   repeated MissionControlPendingCommand items = 1;
 }
 
@@ -1147,7 +1150,7 @@ service ControlPlaneService {
   rpc ExpireNextInteraction(ExpireNextInteractionRequest) returns (ExpireNextInteractionResponse);
   rpc ListMissionControlWarmupProjects(ListMissionControlWarmupProjectsRequest) returns (ListMissionControlWarmupProjectsResponse);
   rpc RunMissionControlWarmup(RunMissionControlWarmupRequest) returns (RunMissionControlWarmupResponse);
-  rpc ListMissionControlPendingCommands(ListMissionControlPendingCommandsRequest) returns (ListMissionControlPendingCommandsResponse);
+  rpc ClaimMissionControlPendingCommands(ClaimMissionControlPendingCommandsRequest) returns (ClaimMissionControlPendingCommandsResponse);
   rpc QueueMissionControlCommand(QueueMissionControlCommandRequest) returns (MissionControlCommandState);
   rpc MarkMissionControlCommandPendingSync(MarkMissionControlCommandPendingSyncRequest) returns (MissionControlCommandState);
   rpc MarkMissionControlCommandReconciled(MarkMissionControlCommandReconciledRequest) returns (MissionControlCommandState);

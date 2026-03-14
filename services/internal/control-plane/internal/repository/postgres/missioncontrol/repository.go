@@ -63,6 +63,9 @@ var queryListCommands string
 //go:embed sql/list_commands_all.sql
 var queryListCommandsAll string
 
+//go:embed sql/claim_commands_all.sql
+var queryClaimCommandsAll string
+
 //go:embed sql/update_command_status.sql
 var queryUpdateCommandStatus string
 
@@ -346,6 +349,31 @@ func (r *Repository) ListCommandsAll(ctx context.Context, filter domainrepo.Glob
 	return out, nil
 }
 
+// ClaimCommandsAll atomically leases mission control commands across projects for worker execution.
+func (r *Repository) ClaimCommandsAll(ctx context.Context, params domainrepo.ClaimCommandParams) ([]domainrepo.Command, error) {
+	normalized := normalizeCommandClaimParams(params)
+	rows, err := r.db.Query(
+		ctx,
+		queryClaimCommandsAll,
+		commandStatusesToStrings(normalized.Statuses),
+		normalized.Limit,
+		normalized.WorkerID,
+		maxInt64(1, int64(normalized.LeaseTTL/time.Second)),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("claim mission control commands across projects: %w", err)
+	}
+	items, err := pgx.CollectRows(rows, pgx.RowToStructByName[dbmodel.CommandRow])
+	if err != nil {
+		return nil, fmt.Errorf("collect claimed mission control commands: %w", err)
+	}
+	out := make([]domainrepo.Command, 0, len(items))
+	for _, item := range items {
+		out = append(out, fromCommandRow(item))
+	}
+	return out, nil
+}
+
 // CreateCommand inserts one command-ledger row.
 func (r *Repository) CreateCommand(ctx context.Context, params domainrepo.CreateCommandParams) (domainrepo.Command, error) {
 	normalized := normalizeCommandCreateParams(params)
@@ -436,6 +464,8 @@ func (r *Repository) UpdateCommandStatus(ctx context.Context, params domainrepo.
 	approvalDecidedAtSet, approvalDecidedAtValue := timestamptzPatchArg(normalized.ApprovalDecidedAtPatch)
 	resultPayloadSet, resultPayloadValue := jsonPatchArg(normalized.ResultPayloadPatch, jsonOrEmptyObject)
 	providerDeliveriesSet, providerDeliveriesValue := jsonPatchArg(normalized.ProviderDeliveriesPatch, jsonOrEmptyArray)
+	leaseOwnerSet, leaseOwnerValue := stringPatchArg(normalized.LeaseOwnerPatch)
+	leaseUntilSet, leaseUntilValue := timestamptzPatchArg(normalized.LeaseUntilPatch)
 	reconciledAtSet, reconciledAtValue := timestamptzPatchArg(normalized.ReconciledAtPatch)
 	rows, err := r.db.Query(
 		ctx,
@@ -457,6 +487,10 @@ func (r *Repository) UpdateCommandStatus(ctx context.Context, params domainrepo.
 		resultPayloadValue,
 		providerDeliveriesSet,
 		providerDeliveriesValue,
+		leaseOwnerSet,
+		leaseOwnerValue,
+		leaseUntilSet,
+		leaseUntilValue,
 		timestamptzOrNil(normalized.UpdatedAt),
 		reconciledAtSet,
 		reconciledAtValue,
@@ -604,13 +638,25 @@ func normalizeGlobalCommandListFilter(filter domainrepo.GlobalCommandListFilter)
 	return normalized
 }
 
+func normalizeCommandClaimParams(params domainrepo.ClaimCommandParams) domainrepo.ClaimCommandParams {
+	normalized := params
+	normalized.WorkerID = strings.TrimSpace(normalized.WorkerID)
+	if normalized.LeaseTTL <= 0 {
+		normalized.LeaseTTL = time.Minute
+	}
+	normalized.Limit = normalizeLimit(normalized.Limit)
+	return normalized
+}
+
 func normalizeCommandStatusUpdateParams(params domainrepo.UpdateCommandStatusParams) domainrepo.UpdateCommandStatusParams {
 	normalized := params
 	normalized.ProjectID = strings.TrimSpace(normalized.ProjectID)
 	normalized.CommandID = strings.TrimSpace(normalized.CommandID)
 	normalized.ApprovalRequestIDPatch = normalizeStringPatch(normalized.ApprovalRequestIDPatch)
+	normalized.LeaseOwnerPatch = normalizeStringPatch(normalized.LeaseOwnerPatch)
 	normalized.ApprovalRequestedAtPatch = normalizeTimePatch(normalized.ApprovalRequestedAtPatch)
 	normalized.ApprovalDecidedAtPatch = normalizeTimePatch(normalized.ApprovalDecidedAtPatch)
+	normalized.LeaseUntilPatch = normalizeTimePatch(normalized.LeaseUntilPatch)
 	normalized.ReconciledAtPatch = normalizeTimePatch(normalized.ReconciledAtPatch)
 	if normalized.ApprovalStatePatch.Set && normalized.ApprovalStatePatch.Value == "" {
 		normalized.ApprovalStatePatch.Value = enumtypes.MissionControlApprovalStateNotRequired
@@ -650,6 +696,13 @@ func uuidStringPatchArg(patch domainrepo.OptionalStringPatch) (bool, any) {
 		return false, nil
 	}
 	return true, nullableUUID(patch.Value)
+}
+
+func stringPatchArg(patch domainrepo.OptionalStringPatch) (bool, any) {
+	if !patch.Set {
+		return false, nil
+	}
+	return true, nullableText(patch.Value)
 }
 
 func approvalStatePatchArg(patch domainrepo.CommandApprovalStatePatch) (bool, any) {
@@ -762,6 +815,13 @@ func normalizeLimit(limit int) int {
 		return 1000
 	}
 	return limit
+}
+
+func maxInt64(left int64, right int64) int64 {
+	if left > right {
+		return left
+	}
+	return right
 }
 
 func enumStrings[T ~string](values []T) []string {

@@ -331,6 +331,16 @@ func (s *Service) transitionCommand(ctx context.Context, current Command, target
 			Value: deliveryJSON,
 		}
 	}
+	if target != enumtypes.MissionControlCommandStatusQueued {
+		updateParams.LeaseOwnerPatch = missioncontrolrepo.OptionalStringPatch{
+			Set:   true,
+			Value: "",
+		}
+		updateParams.LeaseUntilPatch = missioncontrolrepo.OptionalTimePatch{
+			Set:   true,
+			Value: nil,
+		}
+	}
 	if opts.approvalState != "" {
 		updateParams.ApprovalStatePatch = missioncontrolrepo.CommandApprovalStatePatch{
 			Set:   true,

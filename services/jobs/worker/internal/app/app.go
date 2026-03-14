@@ -98,6 +98,13 @@ func Run() error {
 	if missionControlWarmupInterval <= 0 {
 		return fmt.Errorf("CODEXK8S_WORKER_MISSION_CONTROL_WARMUP_INTERVAL must be > 0")
 	}
+	missionControlClaimTTL, err := time.ParseDuration(cfg.MissionControlClaimTTL)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_WORKER_MISSION_CONTROL_CLAIM_TTL: %w", err)
+	}
+	if missionControlClaimTTL <= 0 {
+		return fmt.Errorf("CODEXK8S_WORKER_MISSION_CONTROL_CLAIM_TTL must be > 0")
+	}
 	missionControlRetryBaseInterval, err := time.ParseDuration(cfg.MissionControlRetryBaseInterval)
 	if err != nil {
 		return fmt.Errorf("parse CODEXK8S_WORKER_MISSION_CONTROL_RETRY_BASE_INTERVAL: %w", err)
@@ -191,6 +198,7 @@ func Run() error {
 		MissionControlWarmupInterval:      missionControlWarmupInterval,
 		MissionControlWarmupProjectLimit:  cfg.MissionControlWarmupProjectLimit,
 		MissionControlPendingCommandLimit: cfg.MissionControlPendingCommandLimit,
+		MissionControlClaimTTL:            missionControlClaimTTL,
 		MissionControlRetryMaxAttempts:    cfg.MissionControlRetryMaxAttempts,
 		MissionControlRetryBaseInterval:   missionControlRetryBaseInterval,
 		ProjectLearningModeDefault:        learningDefault,

@@ -16,6 +16,8 @@ SELECT
     payload AS payload_json,
     result_payload AS result_payload_json,
     provider_delivery_ids AS provider_deliveries_json,
+    lease_owner,
+    lease_until,
     requested_at,
     updated_at,
     reconciled_at

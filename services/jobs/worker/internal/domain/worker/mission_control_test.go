@@ -173,6 +173,7 @@ func TestReconcileMissionControlWarmupUsesThrottle(t *testing.T) {
 type fakeMissionControlClient struct {
 	warmupProjects   []MissionControlWarmupProject
 	pendingCommands  []MissionControlPendingCommand
+	claimErr         error
 	executeErrors    []error
 	queueCalls       []MissionControlQueueCommandParams
 	pendingSyncCalls []MissionControlPendingSyncParams
@@ -206,7 +207,10 @@ func (f *fakeMissionControlClient) RunMissionControlWarmup(_ context.Context, pr
 	return MissionControlWarmupResult{ProjectID: projectID, EntityCount: 3}, nil
 }
 
-func (f *fakeMissionControlClient) ListMissionControlPendingCommands(_ context.Context, _ int) ([]MissionControlPendingCommand, error) {
+func (f *fakeMissionControlClient) ClaimMissionControlPendingCommands(_ context.Context, _ string, _ time.Duration, _ int) ([]MissionControlPendingCommand, error) {
+	if f.claimErr != nil {
+		return nil, f.claimErr
+	}
 	return append([]MissionControlPendingCommand(nil), f.pendingCommands...), nil
 }
 

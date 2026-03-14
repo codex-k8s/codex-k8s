@@ -43,6 +43,8 @@ type Config struct {
 	MissionControlWarmupProjectLimit int `env:"CODEXK8S_WORKER_MISSION_CONTROL_WARMUP_PROJECT_LIMIT" envDefault:"20"`
 	// MissionControlPendingCommandLimit limits Mission Control commands handled per tick.
 	MissionControlPendingCommandLimit int `env:"CODEXK8S_WORKER_MISSION_CONTROL_PENDING_COMMAND_LIMIT" envDefault:"20"`
+	// MissionControlClaimTTL defines how long one worker holds a Mission Control command lease.
+	MissionControlClaimTTL string `env:"CODEXK8S_WORKER_MISSION_CONTROL_CLAIM_TTL" envDefault:"2m"`
 	// MissionControlRetryMaxAttempts bounds provider mutation retries per command.
 	MissionControlRetryMaxAttempts int `env:"CODEXK8S_WORKER_MISSION_CONTROL_RETRY_MAX_ATTEMPTS" envDefault:"3"`
 	// MissionControlRetryBaseInterval defines the first retry delay for Mission Control commands.

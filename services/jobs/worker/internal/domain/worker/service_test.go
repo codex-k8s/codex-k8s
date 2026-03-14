@@ -225,6 +225,49 @@ func TestTickLaunchesCodeOnlyRunWorkload(t *testing.T) {
 	}
 }
 
+func TestTickMissionControlErrorDoesNotBlockPendingRuns(t *testing.T) {
+	t.Parallel()
+
+	runs := &fakeRunQueue{
+		claims: []runqueuerepo.ClaimedRun{
+			{
+				RunID:         "run-mc-isolation",
+				CorrelationID: "corr-mc-isolation",
+				ProjectID:     "proj-1",
+				RunPayload:    json.RawMessage(`{"repository":{"full_name":"codex-k8s/codex-k8s"},"issue":{"number":123},"agent":{"key":"dev","name":"AI Developer"}}`),
+				SlotNo:        1,
+			},
+		},
+	}
+	events := &fakeFlowEvents{}
+	launcher := &fakeLauncher{states: map[string]JobState{}}
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	svc := NewService(Config{
+		WorkerID:               "worker-1",
+		ClaimLimit:             1,
+		RunningCheckLimit:      10,
+		SlotsPerProject:        2,
+		SlotLeaseTTL:           time.Minute,
+		MissionControlEnabled:  true,
+		RunNamespacePrefix:     "codex-issue",
+		ControlPlaneGRPCTarget: "codex-k8s-control-plane:9090",
+	}, Dependencies{
+		Runs:           runs,
+		Events:         events,
+		Launcher:       launcher,
+		MissionControl: &fakeMissionControlClient{claimErr: status.Error(codes.Unavailable, "mission control unavailable")},
+		Logger:         logger,
+	})
+
+	if err := svc.Tick(context.Background()); err != nil {
+		t.Fatalf("Tick() error = %v", err)
+	}
+	if len(launcher.launched) != 1 {
+		t.Fatalf("expected 1 launched job despite mission control error, got %d", len(launcher.launched))
+	}
+}
+
 func TestTickLaunchesAIRepairCodeOnlyRunAsPodWorkload(t *testing.T) {
 	t.Parallel()
 

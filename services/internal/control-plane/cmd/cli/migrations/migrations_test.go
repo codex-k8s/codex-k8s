@@ -54,3 +54,23 @@ func TestMissionControlFoundationMigrationKeepsTenantScopedForeignKeys(t *testin
 		}
 	}
 }
+
+func TestMissionControlCommandLeaseMigrationAddsClaimColumns(t *testing.T) {
+	content, err := os.ReadFile("20260314090000_day29_mission_control_command_leases.sql")
+	if err != nil {
+		t.Fatalf("read mission control command lease migration: %v", err)
+	}
+
+	required := []string{
+		"ADD COLUMN lease_owner TEXT",
+		"ADD COLUMN lease_until TIMESTAMPTZ",
+		"idx_mission_control_commands_claimable",
+		"WHERE status IN ('accepted', 'queued')",
+	}
+	text := string(content)
+	for _, item := range required {
+		if !strings.Contains(text, item) {
+			t.Fatalf("mission control command lease migration must contain %q", item)
+		}
+	}
+}

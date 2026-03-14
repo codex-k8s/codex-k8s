@@ -26,6 +26,7 @@ type (
 	OptionalJSONPatch         = querytypes.MissionControlOptionalJSONPatch
 	CommandFailureReasonPatch = querytypes.MissionControlCommandFailureReasonPatch
 	CommandApprovalStatePatch = querytypes.MissionControlCommandApprovalStatePatch
+	ClaimCommandParams        = querytypes.MissionControlCommandClaimParams
 	CreateCommandParams       = querytypes.MissionControlCommandCreateParams
 	UpdateCommandStatusParams = querytypes.MissionControlCommandStatusUpdateParams
 	CommandListFilter         = querytypes.MissionControlCommandListFilter
@@ -63,6 +64,8 @@ type Repository interface {
 	ListCommands(ctx context.Context, filter CommandListFilter) ([]Command, error)
 	// ListCommandsAll returns command rows across projects for worker-owned execution scans.
 	ListCommandsAll(ctx context.Context, filter GlobalCommandListFilter) ([]Command, error)
+	// ClaimCommandsAll atomically leases accepted/queued commands for one worker instance.
+	ClaimCommandsAll(ctx context.Context, params ClaimCommandParams) ([]Command, error)
 	// UpdateCommandStatus persists one command status transition.
 	UpdateCommandStatus(ctx context.Context, params UpdateCommandStatusParams) (Command, bool, error)
 	// GetWarmupSummary returns aggregate counts used by worker warmup verification.

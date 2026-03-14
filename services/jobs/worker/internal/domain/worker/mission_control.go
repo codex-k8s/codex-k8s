@@ -121,7 +121,7 @@ type NextStepExecuteParams struct {
 type MissionControlClient interface {
 	ListMissionControlWarmupProjects(ctx context.Context, limit int) ([]MissionControlWarmupProject, error)
 	RunMissionControlWarmup(ctx context.Context, projectID string, requestedBy string, correlationID string, forceRebuild bool) (MissionControlWarmupResult, error)
-	ListMissionControlPendingCommands(ctx context.Context, limit int) ([]MissionControlPendingCommand, error)
+	ClaimMissionControlPendingCommands(ctx context.Context, workerID string, leaseTTL time.Duration, limit int) ([]MissionControlPendingCommand, error)
 	QueueMissionControlCommand(ctx context.Context, params MissionControlQueueCommandParams) (MissionControlCommandState, error)
 	MarkMissionControlCommandPendingSync(ctx context.Context, params MissionControlPendingSyncParams) (MissionControlCommandState, error)
 	MarkMissionControlCommandReconciled(ctx context.Context, params MissionControlReconciledParams) (MissionControlCommandState, error)
@@ -163,7 +163,12 @@ func (s *Service) reconcileMissionControlWarmups(ctx context.Context) error {
 }
 
 func (s *Service) reconcileMissionControlCommands(ctx context.Context) error {
-	commands, err := s.missionCtl.ListMissionControlPendingCommands(ctx, s.cfg.MissionControlPendingCommandLimit)
+	commands, err := s.missionCtl.ClaimMissionControlPendingCommands(
+		ctx,
+		s.cfg.WorkerID,
+		s.cfg.MissionControlClaimTTL,
+		s.cfg.MissionControlPendingCommandLimit,
+	)
 	if err != nil {
 		return err
 	}

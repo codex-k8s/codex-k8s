@@ -116,6 +116,13 @@ func fromCommandRow(row dbmodel.CommandRow) domainrepo.Command {
 		value := row.ApprovalDecidedAt.Time
 		item.ApprovalDecidedAt = &value
 	}
+	if row.LeaseOwner.Valid {
+		item.LeaseOwner = row.LeaseOwner.String
+	}
+	if row.LeaseUntil.Valid {
+		value := row.LeaseUntil.Time
+		item.LeaseUntil = &value
+	}
 	if row.ReconciledAt.Valid {
 		value := row.ReconciledAt.Time
 		item.ReconciledAt = &value

@@ -10,6 +10,7 @@ import (
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	workerdomain "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/worker"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -238,10 +239,12 @@ func (c *Client) RunMissionControlWarmup(ctx context.Context, projectID string, 
 	}, nil
 }
 
-// ListMissionControlPendingCommands returns Mission Control commands ready for worker execution.
-func (c *Client) ListMissionControlPendingCommands(ctx context.Context, limit int) ([]workerdomain.MissionControlPendingCommand, error) {
-	resp, err := c.svc.ListMissionControlPendingCommands(ctx, &controlplanev1.ListMissionControlPendingCommandsRequest{
-		Limit: int32(maxInt64(0, int64(limit))),
+// ClaimMissionControlPendingCommands returns Mission Control commands leased for this worker.
+func (c *Client) ClaimMissionControlPendingCommands(ctx context.Context, workerID string, leaseTTL time.Duration, limit int) ([]workerdomain.MissionControlPendingCommand, error) {
+	resp, err := c.svc.ClaimMissionControlPendingCommands(ctx, &controlplanev1.ClaimMissionControlPendingCommandsRequest{
+		Limit:    int32(maxInt64(0, int64(limit))),
+		WorkerId: strings.TrimSpace(workerID),
+		LeaseTtl: durationpb.New(leaseTTL),
 	})
 	if err != nil {
 		return nil, err

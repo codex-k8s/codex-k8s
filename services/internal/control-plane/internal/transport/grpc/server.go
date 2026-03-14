@@ -66,7 +66,7 @@ type runtimeDeployService interface {
 type missionControlWorkerService interface {
 	ListWarmupProjects(ctx context.Context, limit int) ([]missioncontrolworkerdomain.WarmupProject, error)
 	RunWarmup(ctx context.Context, params missioncontrolworkerdomain.WarmupRequest) (missioncontrolworkerdomain.WarmupResult, error)
-	ListPendingCommands(ctx context.Context, limit int) ([]missioncontrolworkerdomain.PendingCommand, error)
+	ClaimPendingCommands(ctx context.Context, workerID string, leaseTTL time.Duration, limit int) ([]missioncontrolworkerdomain.PendingCommand, error)
 }
 
 type runtimeErrorRecorder interface {

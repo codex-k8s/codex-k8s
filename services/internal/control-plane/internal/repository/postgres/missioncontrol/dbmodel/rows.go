@@ -75,6 +75,8 @@ type CommandRow struct {
 	PayloadJSON         []byte             `db:"payload_json"`
 	ResultPayloadJSON   []byte             `db:"result_payload_json"`
 	ProviderDeliveries  []byte             `db:"provider_deliveries_json"`
+	LeaseOwner          pgtype.Text        `db:"lease_owner"`
+	LeaseUntil          pgtype.Timestamptz `db:"lease_until"`
 	RequestedAt         time.Time          `db:"requested_at"`
 	UpdatedAt           time.Time          `db:"updated_at"`
 	ReconciledAt        pgtype.Timestamptz `db:"reconciled_at"`

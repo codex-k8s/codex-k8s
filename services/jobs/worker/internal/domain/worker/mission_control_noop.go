@@ -1,6 +1,9 @@
 package worker
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 type noopMissionControlClient struct{}
 
@@ -12,7 +15,7 @@ func (noopMissionControlClient) RunMissionControlWarmup(context.Context, string,
 	return MissionControlWarmupResult{}, nil
 }
 
-func (noopMissionControlClient) ListMissionControlPendingCommands(context.Context, int) ([]MissionControlPendingCommand, error) {
+func (noopMissionControlClient) ClaimMissionControlPendingCommands(context.Context, string, time.Duration, int) ([]MissionControlPendingCommand, error) {
 	return nil, nil
 }
 

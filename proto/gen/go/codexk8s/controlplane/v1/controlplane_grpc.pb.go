@@ -62,7 +62,7 @@ const (
 	ControlPlaneService_ExpireNextInteraction_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/ExpireNextInteraction"
 	ControlPlaneService_ListMissionControlWarmupProjects_FullMethodName     = "/codexk8s.controlplane.v1.ControlPlaneService/ListMissionControlWarmupProjects"
 	ControlPlaneService_RunMissionControlWarmup_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/RunMissionControlWarmup"
-	ControlPlaneService_ListMissionControlPendingCommands_FullMethodName    = "/codexk8s.controlplane.v1.ControlPlaneService/ListMissionControlPendingCommands"
+	ControlPlaneService_ClaimMissionControlPendingCommands_FullMethodName   = "/codexk8s.controlplane.v1.ControlPlaneService/ClaimMissionControlPendingCommands"
 	ControlPlaneService_QueueMissionControlCommand_FullMethodName           = "/codexk8s.controlplane.v1.ControlPlaneService/QueueMissionControlCommand"
 	ControlPlaneService_MarkMissionControlCommandPendingSync_FullMethodName = "/codexk8s.controlplane.v1.ControlPlaneService/MarkMissionControlCommandPendingSync"
 	ControlPlaneService_MarkMissionControlCommandReconciled_FullMethodName  = "/codexk8s.controlplane.v1.ControlPlaneService/MarkMissionControlCommandReconciled"
@@ -132,7 +132,7 @@ type ControlPlaneServiceClient interface {
 	ExpireNextInteraction(ctx context.Context, in *ExpireNextInteractionRequest, opts ...grpc.CallOption) (*ExpireNextInteractionResponse, error)
 	ListMissionControlWarmupProjects(ctx context.Context, in *ListMissionControlWarmupProjectsRequest, opts ...grpc.CallOption) (*ListMissionControlWarmupProjectsResponse, error)
 	RunMissionControlWarmup(ctx context.Context, in *RunMissionControlWarmupRequest, opts ...grpc.CallOption) (*RunMissionControlWarmupResponse, error)
-	ListMissionControlPendingCommands(ctx context.Context, in *ListMissionControlPendingCommandsRequest, opts ...grpc.CallOption) (*ListMissionControlPendingCommandsResponse, error)
+	ClaimMissionControlPendingCommands(ctx context.Context, in *ClaimMissionControlPendingCommandsRequest, opts ...grpc.CallOption) (*ClaimMissionControlPendingCommandsResponse, error)
 	QueueMissionControlCommand(ctx context.Context, in *QueueMissionControlCommandRequest, opts ...grpc.CallOption) (*MissionControlCommandState, error)
 	MarkMissionControlCommandPendingSync(ctx context.Context, in *MarkMissionControlCommandPendingSyncRequest, opts ...grpc.CallOption) (*MissionControlCommandState, error)
 	MarkMissionControlCommandReconciled(ctx context.Context, in *MarkMissionControlCommandReconciledRequest, opts ...grpc.CallOption) (*MissionControlCommandState, error)
@@ -583,10 +583,10 @@ func (c *controlPlaneServiceClient) RunMissionControlWarmup(ctx context.Context,
 	return out, nil
 }
 
-func (c *controlPlaneServiceClient) ListMissionControlPendingCommands(ctx context.Context, in *ListMissionControlPendingCommandsRequest, opts ...grpc.CallOption) (*ListMissionControlPendingCommandsResponse, error) {
+func (c *controlPlaneServiceClient) ClaimMissionControlPendingCommands(ctx context.Context, in *ClaimMissionControlPendingCommandsRequest, opts ...grpc.CallOption) (*ClaimMissionControlPendingCommandsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListMissionControlPendingCommandsResponse)
-	err := c.cc.Invoke(ctx, ControlPlaneService_ListMissionControlPendingCommands_FullMethodName, in, out, cOpts...)
+	out := new(ClaimMissionControlPendingCommandsResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ClaimMissionControlPendingCommands_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -831,7 +831,7 @@ type ControlPlaneServiceServer interface {
 	ExpireNextInteraction(context.Context, *ExpireNextInteractionRequest) (*ExpireNextInteractionResponse, error)
 	ListMissionControlWarmupProjects(context.Context, *ListMissionControlWarmupProjectsRequest) (*ListMissionControlWarmupProjectsResponse, error)
 	RunMissionControlWarmup(context.Context, *RunMissionControlWarmupRequest) (*RunMissionControlWarmupResponse, error)
-	ListMissionControlPendingCommands(context.Context, *ListMissionControlPendingCommandsRequest) (*ListMissionControlPendingCommandsResponse, error)
+	ClaimMissionControlPendingCommands(context.Context, *ClaimMissionControlPendingCommandsRequest) (*ClaimMissionControlPendingCommandsResponse, error)
 	QueueMissionControlCommand(context.Context, *QueueMissionControlCommandRequest) (*MissionControlCommandState, error)
 	MarkMissionControlCommandPendingSync(context.Context, *MarkMissionControlCommandPendingSyncRequest) (*MissionControlCommandState, error)
 	MarkMissionControlCommandReconciled(context.Context, *MarkMissionControlCommandReconciledRequest) (*MissionControlCommandState, error)
@@ -988,8 +988,8 @@ func (UnimplementedControlPlaneServiceServer) ListMissionControlWarmupProjects(c
 func (UnimplementedControlPlaneServiceServer) RunMissionControlWarmup(context.Context, *RunMissionControlWarmupRequest) (*RunMissionControlWarmupResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunMissionControlWarmup not implemented")
 }
-func (UnimplementedControlPlaneServiceServer) ListMissionControlPendingCommands(context.Context, *ListMissionControlPendingCommandsRequest) (*ListMissionControlPendingCommandsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListMissionControlPendingCommands not implemented")
+func (UnimplementedControlPlaneServiceServer) ClaimMissionControlPendingCommands(context.Context, *ClaimMissionControlPendingCommandsRequest) (*ClaimMissionControlPendingCommandsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClaimMissionControlPendingCommands not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) QueueMissionControlCommand(context.Context, *QueueMissionControlCommandRequest) (*MissionControlCommandState, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueueMissionControlCommand not implemented")
@@ -1825,20 +1825,20 @@ func _ControlPlaneService_RunMissionControlWarmup_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ControlPlaneService_ListMissionControlPendingCommands_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListMissionControlPendingCommandsRequest)
+func _ControlPlaneService_ClaimMissionControlPendingCommands_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClaimMissionControlPendingCommandsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ControlPlaneServiceServer).ListMissionControlPendingCommands(ctx, in)
+		return srv.(ControlPlaneServiceServer).ClaimMissionControlPendingCommands(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ControlPlaneService_ListMissionControlPendingCommands_FullMethodName,
+		FullMethod: ControlPlaneService_ClaimMissionControlPendingCommands_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ControlPlaneServiceServer).ListMissionControlPendingCommands(ctx, req.(*ListMissionControlPendingCommandsRequest))
+		return srv.(ControlPlaneServiceServer).ClaimMissionControlPendingCommands(ctx, req.(*ClaimMissionControlPendingCommandsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2361,8 +2361,8 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ControlPlaneService_RunMissionControlWarmup_Handler,
 		},
 		{
-			MethodName: "ListMissionControlPendingCommands",
-			Handler:    _ControlPlaneService_ListMissionControlPendingCommands_Handler,
+			MethodName: "ClaimMissionControlPendingCommands",
+			Handler:    _ControlPlaneService_ClaimMissionControlPendingCommands_Handler,
 		},
 		{
 			MethodName: "QueueMissionControlCommand",
