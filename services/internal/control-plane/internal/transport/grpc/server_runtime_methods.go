@@ -446,6 +446,33 @@ func (s *Server) GetLatestAgentSession(ctx context.Context, req *controlplanev1.
 	}, nil
 }
 
+func (s *Server) GetRunInteractionResumePayload(ctx context.Context, req *controlplanev1.GetRunInteractionResumePayloadRequest) (*controlplanev1.GetRunInteractionResumePayloadResponse, error) {
+	if s.agentCallbacks == nil {
+		return nil, status.Error(codes.FailedPrecondition, "agent callback service is not configured")
+	}
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+
+	runSession, err := s.authenticateRunToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	payload, found, err := s.agentCallbacks.GetRunInteractionResumePayload(ctx, runSession.RunID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to load interaction resume payload")
+	}
+	if !found {
+		return &controlplanev1.GetRunInteractionResumePayloadResponse{Found: false}, nil
+	}
+
+	return &controlplanev1.GetRunInteractionResumePayloadResponse{
+		Found:       true,
+		PayloadJson: payload,
+	}, nil
+}
+
 func (s *Server) LookupRunPullRequest(ctx context.Context, req *controlplanev1.LookupRunPullRequestRequest) (*controlplanev1.LookupRunPullRequestResponse, error) {
 	if s.agentCallbacks == nil {
 		return nil, status.Error(codes.FailedPrecondition, "agent callback service is not configured")

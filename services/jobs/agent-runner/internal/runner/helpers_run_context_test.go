@@ -66,3 +66,17 @@ func TestShouldRestoreLatestSession(t *testing.T) {
 		}
 	})
 }
+
+func TestIsInteractionResumeRun(t *testing.T) {
+	t.Run("returns true for interaction resume correlation prefix", func(t *testing.T) {
+		if !isInteractionResumeRun("interaction-resume:interaction-1") {
+			t.Fatal("expected interaction resume correlation id to be detected")
+		}
+	})
+
+	t.Run("returns false for regular correlation id", func(t *testing.T) {
+		if isInteractionResumeRun("corr-1") {
+			t.Fatal("expected regular correlation id to skip interaction resume detection")
+		}
+	})
+}

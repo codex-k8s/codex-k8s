@@ -117,6 +117,10 @@ export type InteractionCallbackEnvelope = {
 export type InteractionResponsePayload = {
     response_kind: 'option' | 'free_text';
     selected_option_id?: string | null;
+    /**
+     * User free-text answer. Contract limit: at most 8192 UTF-8 bytes; larger payloads are classified as invalid and do not resume the run.
+     *
+     */
     free_text?: string | null;
     responder_ref?: string | null;
 };

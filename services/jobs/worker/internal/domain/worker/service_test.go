@@ -98,7 +98,7 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 	}
 }
 
-func TestTickLaunchesPendingRunWithInteractionResumePayload(t *testing.T) {
+func TestTickLaunchesPendingRunWithPersistedInteractionResumePayload(t *testing.T) {
 	t.Parallel()
 
 	runs := &fakeRunQueue{
@@ -162,10 +162,8 @@ func TestTickLaunchesPendingRunWithInteractionResumePayload(t *testing.T) {
 	if len(launcher.launched) != 1 {
 		t.Fatalf("expected 1 launched job, got %d", len(launcher.launched))
 	}
-	got := launcher.launched[0].InteractionResumePayload
-	want := `{"interaction_id":"interaction-1","tool_name":"user.decision.request","request_status":"expired","response_kind":"none","resolved_at":"2026-03-13T16:05:00Z","resolution_reason":"expired"}`
-	if got != want {
-		t.Fatalf("InteractionResumePayload = %q, want %q", got, want)
+	if got, want := launcher.launched[0].RunID, "run-resume"; got != want {
+		t.Fatalf("RunID = %q, want %q", got, want)
 	}
 }
 

@@ -76,6 +76,7 @@ const (
 	ControlPlaneService_MarkRuntimeErrorViewed_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/MarkRuntimeErrorViewed"
 	ControlPlaneService_UpsertAgentSession_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertAgentSession"
 	ControlPlaneService_GetLatestAgentSession_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/GetLatestAgentSession"
+	ControlPlaneService_GetRunInteractionResumePayload_FullMethodName       = "/codexk8s.controlplane.v1.ControlPlaneService/GetRunInteractionResumePayload"
 	ControlPlaneService_LookupRunPullRequest_FullMethodName                 = "/codexk8s.controlplane.v1.ControlPlaneService/LookupRunPullRequest"
 	ControlPlaneService_InsertRunFlowEvent_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/InsertRunFlowEvent"
 	ControlPlaneService_UpsertRunStatusComment_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertRunStatusComment"
@@ -147,6 +148,7 @@ type ControlPlaneServiceClient interface {
 	// Used by agent-runner for run-bound session persistence and event callbacks.
 	UpsertAgentSession(ctx context.Context, in *UpsertAgentSessionRequest, opts ...grpc.CallOption) (*UpsertAgentSessionResponse, error)
 	GetLatestAgentSession(ctx context.Context, in *GetLatestAgentSessionRequest, opts ...grpc.CallOption) (*GetLatestAgentSessionResponse, error)
+	GetRunInteractionResumePayload(ctx context.Context, in *GetRunInteractionResumePayloadRequest, opts ...grpc.CallOption) (*GetRunInteractionResumePayloadResponse, error)
 	LookupRunPullRequest(ctx context.Context, in *LookupRunPullRequestRequest, opts ...grpc.CallOption) (*LookupRunPullRequestResponse, error)
 	InsertRunFlowEvent(ctx context.Context, in *InsertRunFlowEventRequest, opts ...grpc.CallOption) (*InsertRunFlowEventResponse, error)
 	UpsertRunStatusComment(ctx context.Context, in *UpsertRunStatusCommentRequest, opts ...grpc.CallOption) (*UpsertRunStatusCommentResponse, error)
@@ -723,6 +725,16 @@ func (c *controlPlaneServiceClient) GetLatestAgentSession(ctx context.Context, i
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) GetRunInteractionResumePayload(ctx context.Context, in *GetRunInteractionResumePayloadRequest, opts ...grpc.CallOption) (*GetRunInteractionResumePayloadResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRunInteractionResumePayloadResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_GetRunInteractionResumePayload_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) LookupRunPullRequest(ctx context.Context, in *LookupRunPullRequestRequest, opts ...grpc.CallOption) (*LookupRunPullRequestResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(LookupRunPullRequestResponse)
@@ -846,6 +858,7 @@ type ControlPlaneServiceServer interface {
 	// Used by agent-runner for run-bound session persistence and event callbacks.
 	UpsertAgentSession(context.Context, *UpsertAgentSessionRequest) (*UpsertAgentSessionResponse, error)
 	GetLatestAgentSession(context.Context, *GetLatestAgentSessionRequest) (*GetLatestAgentSessionResponse, error)
+	GetRunInteractionResumePayload(context.Context, *GetRunInteractionResumePayloadRequest) (*GetRunInteractionResumePayloadResponse, error)
 	LookupRunPullRequest(context.Context, *LookupRunPullRequestRequest) (*LookupRunPullRequestResponse, error)
 	InsertRunFlowEvent(context.Context, *InsertRunFlowEventRequest) (*InsertRunFlowEventResponse, error)
 	UpsertRunStatusComment(context.Context, *UpsertRunStatusCommentRequest) (*UpsertRunStatusCommentResponse, error)
@@ -1029,6 +1042,9 @@ func (UnimplementedControlPlaneServiceServer) UpsertAgentSession(context.Context
 }
 func (UnimplementedControlPlaneServiceServer) GetLatestAgentSession(context.Context, *GetLatestAgentSessionRequest) (*GetLatestAgentSessionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestAgentSession not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) GetRunInteractionResumePayload(context.Context, *GetRunInteractionResumePayloadRequest) (*GetRunInteractionResumePayloadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRunInteractionResumePayload not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) LookupRunPullRequest(context.Context, *LookupRunPullRequestRequest) (*LookupRunPullRequestResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LookupRunPullRequest not implemented")
@@ -2077,6 +2093,24 @@ func _ControlPlaneService_GetLatestAgentSession_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_GetRunInteractionResumePayload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRunInteractionResumePayloadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).GetRunInteractionResumePayload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_GetRunInteractionResumePayload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).GetRunInteractionResumePayload(ctx, req.(*GetRunInteractionResumePayloadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_LookupRunPullRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LookupRunPullRequestRequest)
 	if err := dec(in); err != nil {
@@ -2415,6 +2449,10 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetLatestAgentSession",
 			Handler:    _ControlPlaneService_GetLatestAgentSession_Handler,
+		},
+		{
+			MethodName: "GetRunInteractionResumePayload",
+			Handler:    _ControlPlaneService_GetRunInteractionResumePayload_Handler,
 		},
 		{
 			MethodName: "LookupRunPullRequest",

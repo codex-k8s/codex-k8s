@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
+	"github.com/codex-k8s/codex-k8s/libs/go/mcp/userinteraction"
 )
 
 func normalizeTriggerKind(value string) string {
@@ -14,6 +15,10 @@ func normalizeTriggerKind(value string) string {
 
 func hasInteractionResumePayload(rawPayload string) bool {
 	return strings.TrimSpace(rawPayload) != ""
+}
+
+func isInteractionResumeRun(correlationID string) bool {
+	return strings.HasPrefix(strings.TrimSpace(correlationID), userinteraction.ResumeCorrelationPrefix)
 }
 
 func shouldRestoreLatestSession(triggerKind string, discussionMode bool, interactionResumePayload string) bool {

@@ -87,6 +87,7 @@ type Config struct {
 type ControlPlaneCallbacks interface {
 	UpsertAgentSession(ctx context.Context, params cpclient.AgentSessionUpsertParams) (cpclient.AgentSessionUpsertResult, error)
 	GetLatestAgentSession(ctx context.Context, query cpclient.LatestAgentSessionQuery) (cpclient.AgentSessionSnapshot, bool, error)
+	GetRunInteractionResumePayload(ctx context.Context) (cpclient.RunInteractionResumePayload, bool, error)
 	LookupRunPullRequest(ctx context.Context, params cpclient.RunPullRequestLookupParams) (cpclient.RunPullRequestLookupResult, bool, error)
 	InsertRunFlowEvent(ctx context.Context, runID string, eventType floweventdomain.EventType, payload json.RawMessage) error
 	GetCodexAuth(ctx context.Context) ([]byte, bool, error)

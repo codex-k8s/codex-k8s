@@ -6,12 +6,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/codex-k8s/codex-k8s/libs/go/mcp/userinteraction"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
 )
-
-const interactionResumeCorrelationPrefix = "interaction-resume:"
 
 type interactionResumeRunPayload struct {
 	Project struct {
@@ -147,7 +146,10 @@ func buildInteractionResumePendingRunPayload(
 	if err != nil {
 		return nil, fmt.Errorf("marshal interaction resume payload: %w", err)
 	}
-	envelope["interaction_resume_payload"] = encodedResumePayload
+	if len(encodedResumePayload) > userinteraction.ResumePayloadMaxBytes {
+		return nil, fmt.Errorf("interaction resume payload exceeds %d bytes", userinteraction.ResumePayloadMaxBytes)
+	}
+	envelope[userinteraction.ResumePayloadRunPayloadFieldName] = encodedResumePayload
 
 	encodedRunPayload, err := json.Marshal(envelope)
 	if err != nil {
@@ -157,5 +159,5 @@ func buildInteractionResumePendingRunPayload(
 }
 
 func buildInteractionResumeCorrelationID(interactionID string) string {
-	return interactionResumeCorrelationPrefix + strings.TrimSpace(interactionID)
+	return userinteraction.ResumeCorrelationPrefix + strings.TrimSpace(interactionID)
 }

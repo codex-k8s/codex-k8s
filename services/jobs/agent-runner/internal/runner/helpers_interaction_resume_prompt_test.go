@@ -1,8 +1,11 @@
 package runner
 
 import (
+	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/codex-k8s/codex-k8s/libs/go/mcp/userinteraction"
 )
 
 func TestBuildInteractionResumePromptBlock_ValidatesResumeContext(t *testing.T) {
@@ -55,5 +58,22 @@ func TestBuildPrompt_PrependsInteractionResumePromptBlock(t *testing.T) {
 	}
 	if !strings.Contains(prompt, "не задавайте пользователю тот же вопрос повторно") {
 		t.Fatalf("prompt must instruct deterministic resume behavior, got: %q", prompt)
+	}
+}
+
+func TestParseInteractionResumePayload_RejectsOversizedPayload(t *testing.T) {
+	t.Parallel()
+
+	rawPayload := fmt.Sprintf(
+		`{"interaction_id":"interaction-1","tool_name":"user.decision.request","request_status":"answered","response_kind":"free_text","free_text":"%s","resolved_at":"2026-03-13T16:05:00Z","resolution_reason":"accepted"}`,
+		strings.Repeat("a", userinteraction.ResumePayloadMaxBytes),
+	)
+
+	_, err := parseInteractionResumePayload(rawPayload)
+	if err == nil {
+		t.Fatal("expected oversized interaction resume payload error")
+	}
+	if !strings.Contains(err.Error(), "exceeds") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

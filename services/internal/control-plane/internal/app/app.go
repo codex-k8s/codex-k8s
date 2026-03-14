@@ -413,6 +413,7 @@ func Run() error {
 		agentSessions,
 		flowEvents,
 		agentRuns,
+		agentRuns,
 		repos,
 		tokenCrypto,
 		map[repoprovider.Provider]repoprovider.RepositoryProvider{

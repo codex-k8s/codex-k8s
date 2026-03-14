@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -49,6 +50,7 @@ type mcpRunTokenService interface {
 type agentCallbackService interface {
 	UpsertAgentSession(ctx context.Context, params agentcallbackdomain.UpsertAgentSessionParams) (agentcallbackdomain.UpsertAgentSessionResult, error)
 	GetLatestAgentSession(ctx context.Context, query agentcallbackdomain.GetLatestAgentSessionQuery) (agentcallbackdomain.Session, bool, error)
+	GetRunInteractionResumePayload(ctx context.Context, runID string) (json.RawMessage, bool, error)
 	LookupPullRequest(ctx context.Context, query agentcallbackdomain.LookupPullRequestQuery) (agentcallbackdomain.PullRequestLookupResult, bool, error)
 	InsertRunFlowEvent(ctx context.Context, params agentcallbackdomain.InsertRunFlowEventParams) error
 }

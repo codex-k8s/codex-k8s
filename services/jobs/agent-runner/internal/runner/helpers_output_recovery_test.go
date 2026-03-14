@@ -112,6 +112,10 @@ func (f *fakeOutputRecoveryControlPlane) GetLatestAgentSession(context.Context, 
 	return cpclient.AgentSessionSnapshot{}, false, nil
 }
 
+func (f *fakeOutputRecoveryControlPlane) GetRunInteractionResumePayload(context.Context) (cpclient.RunInteractionResumePayload, bool, error) {
+	return cpclient.RunInteractionResumePayload{}, false, nil
+}
+
 func (f *fakeOutputRecoveryControlPlane) LookupRunPullRequest(_ context.Context, params cpclient.RunPullRequestLookupParams) (cpclient.RunPullRequestLookupResult, bool, error) {
 	f.lookupParams = append(f.lookupParams, params)
 	return f.lookupResult, f.lookupFound, f.lookupErr

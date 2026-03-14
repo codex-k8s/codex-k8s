@@ -245,7 +245,7 @@ func TestLauncher_Launch_FullEnvMountsRepoCachePVC(t *testing.T) {
 	}
 }
 
-func TestLauncher_Launch_IncludesInteractionResumePayloadEnv(t *testing.T) {
+func TestLauncher_Launch_DoesNotExposeInteractionResumePayloadEnv(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -253,12 +253,11 @@ func TestLauncher_Launch_IncludesInteractionResumePayloadEnv(t *testing.T) {
 	l := NewForClient(Config{Namespace: "ns", Image: "busybox:1.36"}, client)
 
 	spec := JobSpec{
-		RunID:                    "run-resume-env",
-		CorrelationID:            "corr-resume-env",
-		ProjectID:                "project-1",
-		Namespace:                "codex-k8s-dev-resume",
-		RuntimeMode:              "full-env",
-		InteractionResumePayload: `{"interaction_id":"interaction-1"}`,
+		RunID:         "run-resume-env",
+		CorrelationID: "corr-resume-env",
+		ProjectID:     "project-1",
+		Namespace:     "codex-k8s-dev-resume",
+		RuntimeMode:   "full-env",
 	}
 
 	ref, err := l.Launch(ctx, spec)
@@ -272,18 +271,10 @@ func TestLauncher_Launch_IncludesInteractionResumePayloadEnv(t *testing.T) {
 	}
 
 	env := job.Spec.Template.Spec.Containers[0].Env
-	found := false
 	for _, item := range env {
-		if item.Name != "CODEXK8S_INTERACTION_RESUME_PAYLOAD" {
-			continue
+		if item.Name == "CODEXK8S_INTERACTION_RESUME_PAYLOAD" {
+			t.Fatal("did not expect CODEXK8S_INTERACTION_RESUME_PAYLOAD env var")
 		}
-		found = true
-		if got, want := item.Value, spec.InteractionResumePayload; got != want {
-			t.Fatalf("expected interaction resume payload env %q, got %q", want, got)
-		}
-	}
-	if !found {
-		t.Fatal("expected CODEXK8S_INTERACTION_RESUME_PAYLOAD env var")
 	}
 }
 

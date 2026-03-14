@@ -2,9 +2,11 @@ package interactionrequest
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/codex-k8s/codex-k8s/libs/go/mcp/userinteraction"
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
@@ -13,8 +15,8 @@ import (
 func TestClassifyDecisionResponsePayloadAcceptsKnownOption(t *testing.T) {
 	t.Parallel()
 
-	requestPayload := json.RawMessage(`{"options":[{"option_id":"approve"},{"option_id":"reject"}]}`)
-	decision, ok := classifyDecisionResponsePayload(requestPayload, querytypes.InteractionCallbackApplyParams{
+	request := entitytypes.InteractionRequest{RequestPayloadJSON: json.RawMessage(`{"options":[{"option_id":"approve"},{"option_id":"reject"}]}`)}
+	decision, ok := classifyDecisionResponsePayload(request, querytypes.InteractionCallbackApplyParams{
 		ResponseKind:     enumtypes.InteractionResponseKindOption,
 		SelectedOptionID: "approve",
 	})
@@ -32,8 +34,8 @@ func TestClassifyDecisionResponsePayloadAcceptsKnownOption(t *testing.T) {
 func TestClassifyDecisionResponsePayloadRejectsUnknownOption(t *testing.T) {
 	t.Parallel()
 
-	requestPayload := json.RawMessage(`{"options":[{"option_id":"approve"}]}`)
-	_, ok := classifyDecisionResponsePayload(requestPayload, querytypes.InteractionCallbackApplyParams{
+	request := entitytypes.InteractionRequest{RequestPayloadJSON: json.RawMessage(`{"options":[{"option_id":"approve"}]}`)}
+	_, ok := classifyDecisionResponsePayload(request, querytypes.InteractionCallbackApplyParams{
 		ResponseKind:     enumtypes.InteractionResponseKindOption,
 		SelectedOptionID: "reject",
 	})
@@ -45,10 +47,14 @@ func TestClassifyDecisionResponsePayloadRejectsUnknownOption(t *testing.T) {
 func TestClassifyDecisionResponsePayloadAcceptsFreeTextWhenEnabled(t *testing.T) {
 	t.Parallel()
 
-	requestPayload := json.RawMessage(`{"allow_free_text":true,"options":[{"option_id":"approve"}]}`)
-	decision, ok := classifyDecisionResponsePayload(requestPayload, querytypes.InteractionCallbackApplyParams{
+	request := entitytypes.InteractionRequest{
+		ID:                 "interaction-1",
+		RequestPayloadJSON: json.RawMessage(`{"allow_free_text":true,"options":[{"option_id":"approve"}]}`),
+	}
+	decision, ok := classifyDecisionResponsePayload(request, querytypes.InteractionCallbackApplyParams{
 		ResponseKind: enumtypes.InteractionResponseKindFreeText,
 		FreeText:     "ship it",
+		OccurredAt:   time.Date(2026, time.March, 13, 16, 5, 0, 0, time.UTC),
 	})
 	if !ok {
 		t.Fatal("expected payload validation success for allowed free text")
@@ -64,13 +70,48 @@ func TestClassifyDecisionResponsePayloadAcceptsFreeTextWhenEnabled(t *testing.T)
 func TestClassifyDecisionResponsePayloadRejectsFreeTextWhenDisabled(t *testing.T) {
 	t.Parallel()
 
-	requestPayload := json.RawMessage(`{"allow_free_text":false,"options":[{"option_id":"approve"}]}`)
-	_, ok := classifyDecisionResponsePayload(requestPayload, querytypes.InteractionCallbackApplyParams{
+	request := entitytypes.InteractionRequest{RequestPayloadJSON: json.RawMessage(`{"allow_free_text":false,"options":[{"option_id":"approve"}]}`)}
+	_, ok := classifyDecisionResponsePayload(request, querytypes.InteractionCallbackApplyParams{
 		ResponseKind: enumtypes.InteractionResponseKindFreeText,
 		FreeText:     "ship it",
 	})
 	if ok {
 		t.Fatal("expected payload validation failure when free text is disabled")
+	}
+}
+
+func TestClassifyDecisionResponsePayloadRejectsOversizedFreeText(t *testing.T) {
+	t.Parallel()
+
+	request := entitytypes.InteractionRequest{
+		ID:                 "interaction-1",
+		RequestPayloadJSON: json.RawMessage(`{"allow_free_text":true,"options":[{"option_id":"approve"}]}`),
+	}
+	_, ok := classifyDecisionResponsePayload(request, querytypes.InteractionCallbackApplyParams{
+		ResponseKind: enumtypes.InteractionResponseKindFreeText,
+		FreeText:     strings.Repeat("a", userinteraction.DecisionResponseFreeTextMaxBytes+1),
+		OccurredAt:   time.Date(2026, time.March, 13, 16, 5, 0, 0, time.UTC),
+	})
+	if ok {
+		t.Fatal("expected payload validation failure for oversized free text")
+	}
+}
+
+func TestClassifyDecisionResponsePayloadRejectsOversizedOption(t *testing.T) {
+	t.Parallel()
+
+	oversizedOptionID := strings.Repeat("a", userinteraction.ResumePayloadMaxBytes)
+	request := entitytypes.InteractionRequest{
+		ID:                 "interaction-1",
+		RequestPayloadJSON: json.RawMessage(`{"options":[{"option_id":"` + oversizedOptionID + `"}]}`),
+	}
+	_, ok := classifyDecisionResponsePayload(request, querytypes.InteractionCallbackApplyParams{
+		ResponseKind:     enumtypes.InteractionResponseKindOption,
+		SelectedOptionID: oversizedOptionID,
+		OccurredAt:       time.Date(2026, time.March, 13, 16, 5, 0, 0, time.UTC),
+	})
+	if ok {
+		t.Fatal("expected payload validation failure for oversized option response")
 	}
 }
 
