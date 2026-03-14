@@ -16,7 +16,7 @@ INSERT INTO mission_control_entities (
     stale_after,
     sync_status
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, GREATEST($8, 1), $9, $10, $11, $12, COALESCE($13, NOW()), $14, $15)
+VALUES ($1, $2, $3, $4, $5, $6, $7, GREATEST($8::bigint, 1::bigint), $9, $10, $11, $12, COALESCE($13, NOW()), $14, $15)
 ON CONFLICT (project_id, entity_kind, entity_external_key) DO UPDATE
 SET
     provider_kind = EXCLUDED.provider_kind,
