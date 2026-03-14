@@ -967,6 +967,12 @@ spec:
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /health/livez
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
           livenessProbe:
             httpGet:
               path: /health/livez
