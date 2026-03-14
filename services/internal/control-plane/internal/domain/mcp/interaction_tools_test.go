@@ -338,25 +338,29 @@ func TestBuildInteractionDeliveryEnvelopeIncludesCallbackContractFields(t *testi
 		},
 	}
 
-	raw, err := service.buildInteractionDeliveryEnvelope(context.Background(), entitytypes.AgentRun{
-		ID:            "run-1",
-		CorrelationID: "corr-1",
-		ProjectID:     "project-1",
-	}, entitytypes.InteractionRequest{
-		ID:                "interaction-1",
-		RunID:             "run-1",
-		ChannelFamily:     enumtypes.InteractionChannelFamilyTelegram,
-		InteractionKind:   enumtypes.InteractionKindDecisionRequest,
-		RecipientProvider: interactionRecipientProviderTelegram,
-		RecipientRef:      interactionRecipientRoutingByGitHub + "ai-da-stas",
-		RequestPayloadJSON: json.RawMessage(`{
-			"question":"Ship it?",
-			"options":[{"option_id":"approve","label":"Approve"},{"option_id":"deny","label":"Deny"}]
-		}`),
-		ContextLinksJSON:   json.RawMessage(`{"run_id":"run-1"}`),
-		ResponseDeadlineAt: &deadline,
-	}, entitytypes.InteractionDeliveryAttempt{
-		DeliveryID: "delivery-1",
+	raw, err := service.buildInteractionDeliveryEnvelope(context.Background(), interactionDeliveryEnvelopeParams{
+		Run: entitytypes.AgentRun{
+			ID:            "run-1",
+			CorrelationID: "corr-1",
+			ProjectID:     "project-1",
+		},
+		Request: entitytypes.InteractionRequest{
+			ID:                "interaction-1",
+			RunID:             "run-1",
+			ChannelFamily:     enumtypes.InteractionChannelFamilyTelegram,
+			InteractionKind:   enumtypes.InteractionKindDecisionRequest,
+			RecipientProvider: interactionRecipientProviderTelegram,
+			RecipientRef:      interactionRecipientRoutingByGitHub + "ai-da-stas",
+			RequestPayloadJSON: json.RawMessage(`{
+				"question":"Ship it?",
+				"options":[{"option_id":"approve","label":"Approve"},{"option_id":"deny","label":"Deny"}]
+			}`),
+			ContextLinksJSON:   json.RawMessage(`{"run_id":"run-1"}`),
+			ResponseDeadlineAt: &deadline,
+		},
+		Attempt: entitytypes.InteractionDeliveryAttempt{
+			DeliveryID: "delivery-1",
+		},
 	})
 	if err != nil {
 		t.Fatalf("buildInteractionDeliveryEnvelope returned error: %v", err)
@@ -409,5 +413,70 @@ func TestBuildInteractionDeliveryEnvelopeIncludesCallbackContractFields(t *testi
 		if strings.TrimSpace(option.CallbackHandle) == "" {
 			t.Fatalf("option %d callback handle is empty", idx)
 		}
+	}
+}
+
+func TestBuildInteractionDeliveryEnvelopeIncludesContinuationContractFields(t *testing.T) {
+	t.Parallel()
+
+	service := &Service{
+		cfg: Config{
+			PublicBaseURL: "https://platform.codex-k8s.dev",
+		},
+		now: time.Now,
+	}
+
+	raw, err := service.buildInteractionDeliveryEnvelope(context.Background(), interactionDeliveryEnvelopeParams{
+		Request: entitytypes.InteractionRequest{
+			ID:                "interaction-1",
+			RunID:             "run-1",
+			ChannelFamily:     enumtypes.InteractionChannelFamilyTelegram,
+			InteractionKind:   enumtypes.InteractionKindDecisionRequest,
+			State:             enumtypes.InteractionStateResolved,
+			ResolutionKind:    enumtypes.InteractionResolutionKindOptionSelected,
+			RecipientProvider: interactionRecipientProviderTelegram,
+			RecipientRef:      interactionRecipientRoutingByGitHub + "ai-da-stas",
+			ContextLinksJSON:  json.RawMessage(`{"run_id":"run-1"}`),
+			UpdatedAt:         time.Date(2026, 3, 13, 16, 5, 0, 0, time.UTC),
+		},
+		Attempt: entitytypes.InteractionDeliveryAttempt{
+			DeliveryID:         "delivery-2",
+			DeliveryRole:       enumtypes.InteractionDeliveryRoleMessageEdit,
+			ContinuationReason: "applied_response",
+		},
+		Binding: &entitytypes.InteractionChannelBinding{
+			ID:                     11,
+			ProviderMessageRefJSON: json.RawMessage(`{"message_id":"42"}`),
+		},
+	})
+	if err != nil {
+		t.Fatalf("buildInteractionDeliveryEnvelope returned error: %v", err)
+	}
+
+	var envelope interactionDeliveryEnvelope
+	if err := json.Unmarshal(raw, &envelope); err != nil {
+		t.Fatalf("unmarshal interaction delivery envelope: %v", err)
+	}
+
+	if envelope.CallbackEndpoint != nil {
+		t.Fatal("did not expect callback endpoint for continuation envelope")
+	}
+	if envelope.Content != nil {
+		t.Fatalf("did not expect primary content in continuation envelope: %s", string(envelope.Content))
+	}
+	if got, want := envelope.DeliveryRole, enumtypes.InteractionDeliveryRoleMessageEdit; got != want {
+		t.Fatalf("delivery_role = %q, want %q", got, want)
+	}
+	if envelope.Continuation == nil {
+		t.Fatal("expected continuation payload")
+	}
+	if got, want := envelope.Continuation.Action, enumtypes.InteractionContinuationActionEditMessage; got != want {
+		t.Fatalf("continuation action = %q, want %q", got, want)
+	}
+	if got, want := envelope.Continuation.ResolutionKind, enumtypes.InteractionResolutionKindOptionSelected; got != want {
+		t.Fatalf("resolution kind = %q, want %q", got, want)
+	}
+	if got, want := string(envelope.ProviderMessageRef), `{"message_id":"42"}`; got != want {
+		t.Fatalf("provider_message_ref = %q, want %q", got, want)
 	}
 }

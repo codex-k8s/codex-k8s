@@ -34,7 +34,12 @@ func (s *Service) ClaimNextInteractionDispatch(ctx context.Context, params Claim
 		return InteractionDispatchClaim{}, false, fmt.Errorf("run not found for interaction dispatch claim")
 	}
 
-	envelopeJSON, err := s.buildInteractionDeliveryEnvelope(ctx, run, item.Interaction, item.Attempt)
+	envelopeJSON, err := s.buildInteractionDeliveryEnvelope(ctx, interactionDeliveryEnvelopeParams{
+		Run:     run,
+		Request: item.Interaction,
+		Attempt: item.Attempt,
+		Binding: item.Binding,
+	})
 	if err != nil {
 		return InteractionDispatchClaim{}, false, err
 	}

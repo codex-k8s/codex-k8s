@@ -202,6 +202,13 @@ func Run() error {
 		if err != nil {
 			return fmt.Errorf("create telegram interaction dispatcher: %w", err)
 		}
+	} else {
+		logger.Warn("telegram interaction adapter is not configured; dispatch attempts will fail with typed non-retryable outcome")
+		interactionDispatcher = worker.NewUnavailableInteractionDispatcher(
+			"telegram",
+			worker.TelegramInteractionErrorAdapterNotConfigured(),
+			"telegram interaction adapter base URL is not configured",
+		)
 	}
 
 	service := worker.NewService(worker.Config{

@@ -17,26 +17,29 @@ import (
 )
 
 const (
-	interactionDeliveryEnvelopeSchemaVersion          = "telegram-interaction-v1"
-	interactionCallbackPath                           = "/api/v1/mcp/interactions/callback"
-	interactionDeliveryLocaleDefault                  = "ru"
-	interactionContinuationPreferredModeEditInPlace   = "edit_in_place_first"
-	interactionCallbackHandlePrefix                   = "tgh1_"
-	interactionFreeTextReplyInstruction               = "Если ни один вариант не подходит, ответьте сообщением в этот чат."
-	interactionCallbackHandleRandomBytes        int   = 20
+	interactionDeliveryEnvelopeSchemaVersion            = "telegram-interaction-v1"
+	interactionCallbackPath                             = "/api/v1/mcp/interactions/callback"
+	interactionDeliveryLocaleDefault                    = "ru"
+	interactionContinuationPreferredModeEditInPlace     = "edit_in_place_first"
+	interactionCallbackHandlePrefix                     = "tgh1_"
+	interactionFreeTextReplyInstruction                 = "Если ни один вариант не подходит, ответьте сообщением в этот чат."
+	interactionCallbackHandleRandomBytes            int = 20
 )
 
 type interactionDeliveryEnvelope struct {
 	SchemaVersion      string                            `json:"schema_version"`
 	DeliveryID         string                            `json:"delivery_id"`
+	DeliveryRole       enumtypes.InteractionDeliveryRole `json:"delivery_role"`
 	InteractionID      string                            `json:"interaction_id"`
 	InteractionKind    enumtypes.InteractionKind         `json:"interaction_kind"`
 	RecipientProvider  string                            `json:"recipient_provider"`
 	RecipientRef       string                            `json:"recipient_ref"`
 	Locale             string                            `json:"locale,omitempty"`
 	ContextLinks       interactionContextLinks           `json:"context_links"`
-	Content            json.RawMessage                   `json:"content"`
+	Content            json.RawMessage                   `json:"content,omitempty"`
 	CallbackEndpoint   *interactionCallbackEndpoint      `json:"callback_endpoint,omitempty"`
+	ProviderMessageRef json.RawMessage                   `json:"provider_message_ref,omitempty"`
+	Continuation       *interactionDeliveryContinuation  `json:"continuation,omitempty"`
 	ContinuationPolicy interactionContinuationPolicy     `json:"continuation_policy"`
 	DeliveryDeadlineAt string                            `json:"delivery_deadline_at,omitempty"`
 }
@@ -49,18 +52,25 @@ type interactionCallbackEndpoint struct {
 }
 
 type interactionCallbackHandle struct {
-	Handle      string                                      `json:"handle"`
-	HandleKind  enumtypes.InteractionCallbackHandleKind     `json:"handle_kind"`
-	ButtonLabel string                                      `json:"button_label,omitempty"`
-	OptionID    string                                      `json:"option_id,omitempty"`
-	ExpiresAt   string                                      `json:"expires_at"`
+	Handle      string                                  `json:"handle"`
+	HandleKind  enumtypes.InteractionCallbackHandleKind `json:"handle_kind"`
+	ButtonLabel string                                  `json:"button_label,omitempty"`
+	OptionID    string                                  `json:"option_id,omitempty"`
+	ExpiresAt   string                                  `json:"expires_at"`
 }
 
 type interactionContinuationPolicy struct {
-	PreferredMode                 string `json:"preferred_mode"`
-	DisableKeyboardOnResolution   bool   `json:"disable_keyboard_on_resolution"`
-	SendFollowUpOnEditFailure     bool   `json:"send_follow_up_on_edit_failure"`
-	ManualFallbackOnFollowUpFailure bool `json:"manual_fallback_on_follow_up_failure"`
+	PreferredMode                   string `json:"preferred_mode"`
+	DisableKeyboardOnResolution     bool   `json:"disable_keyboard_on_resolution"`
+	SendFollowUpOnEditFailure       bool   `json:"send_follow_up_on_edit_failure"`
+	ManualFallbackOnFollowUpFailure bool   `json:"manual_fallback_on_follow_up_failure"`
+}
+
+type interactionDeliveryContinuation struct {
+	Action         enumtypes.InteractionContinuationAction `json:"action"`
+	Reason         string                                  `json:"reason,omitempty"`
+	ResolutionKind enumtypes.InteractionResolutionKind     `json:"resolution_kind,omitempty"`
+	ResolvedAt     string                                  `json:"resolved_at,omitempty"`
 }
 
 type interactionNotifyContent struct {
@@ -88,12 +98,17 @@ type interactionDecisionOption struct {
 	CallbackHandle string `json:"callback_handle"`
 }
 
-func (s *Service) buildInteractionDeliveryEnvelope(
-	ctx context.Context,
-	run entitytypes.AgentRun,
-	request entitytypes.InteractionRequest,
-	attempt entitytypes.InteractionDeliveryAttempt,
-) (json.RawMessage, error) {
+type interactionDeliveryEnvelopeParams struct {
+	Run     entitytypes.AgentRun
+	Request entitytypes.InteractionRequest
+	Attempt entitytypes.InteractionDeliveryAttempt
+	Binding *entitytypes.InteractionChannelBinding
+}
+
+func (s *Service) buildInteractionDeliveryEnvelope(ctx context.Context, params interactionDeliveryEnvelopeParams) (json.RawMessage, error) {
+	request := params.Request
+	attempt := params.Attempt
+
 	var contextLinks interactionContextLinks
 	if len(request.ContextLinksJSON) > 0 {
 		if err := json.Unmarshal(request.ContextLinksJSON, &contextLinks); err != nil {
@@ -101,50 +116,60 @@ func (s *Service) buildInteractionDeliveryEnvelope(
 		}
 	}
 
-	callbackToken, err := s.issueInteractionCallbackToken(run, request, attempt.DeliveryID)
-	if err != nil {
-		return nil, fmt.Errorf("issue interaction callback token: %w", err)
-	}
-	callbackTokenExpiresAt := callbackToken.ExpiresAt
-	binding, err := s.interactions.EnsureChannelBinding(ctx, interactionrequestrepo.EnsureChannelBindingParams{
-		InteractionID:          request.ID,
-		AdapterKind:            interactionRecipientProviderTelegram,
-		RecipientRef:           request.RecipientRef,
-		CallbackTokenKeyID:     callbackToken.KeyID,
-		CallbackTokenExpiresAt: &callbackTokenExpiresAt,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("ensure interaction channel binding: %w", err)
-	}
-
-	callbackEndpoint := &interactionCallbackEndpoint{
-		URL:            strings.TrimRight(strings.TrimSpace(s.cfg.PublicBaseURL), "/") + interactionCallbackPath,
-		BearerToken:    callbackToken.Token,
-		TokenExpiresAt: callbackToken.ExpiresAt.UTC().Format(time.RFC3339Nano),
-		Handles:        []interactionCallbackHandle{},
-	}
-
-	content, err := s.buildInteractionDeliveryContent(ctx, request, binding, callbackEndpoint)
-	if err != nil {
-		return nil, err
-	}
-
 	envelope := interactionDeliveryEnvelope{
 		SchemaVersion:      interactionDeliveryEnvelopeSchemaVersion,
 		DeliveryID:         attempt.DeliveryID,
+		DeliveryRole:       resolveInteractionDeliveryRole(attempt.DeliveryRole),
 		InteractionID:      request.ID,
 		InteractionKind:    request.InteractionKind,
 		RecipientProvider:  request.RecipientProvider,
 		RecipientRef:       request.RecipientRef,
 		Locale:             interactionDeliveryLocaleDefault,
 		ContextLinks:       contextLinks,
-		Content:            content,
-		CallbackEndpoint:   callbackEndpoint,
 		ContinuationPolicy: defaultInteractionContinuationPolicy(),
 	}
-	if request.ResponseDeadlineAt != nil {
-		envelope.DeliveryDeadlineAt = request.ResponseDeadlineAt.UTC().Format(time.RFC3339Nano)
+	switch envelope.DeliveryRole {
+	case enumtypes.InteractionDeliveryRolePrimaryDispatch:
+		callbackToken, err := s.issueInteractionCallbackToken(params.Run, request, attempt.DeliveryID)
+		if err != nil {
+			return nil, fmt.Errorf("issue interaction callback token: %w", err)
+		}
+		callbackTokenExpiresAt := callbackToken.ExpiresAt
+		binding, err := s.interactions.EnsureChannelBinding(ctx, interactionrequestrepo.EnsureChannelBindingParams{
+			InteractionID:          request.ID,
+			AdapterKind:            interactionRecipientProviderTelegram,
+			RecipientRef:           request.RecipientRef,
+			CallbackTokenKeyID:     callbackToken.KeyID,
+			CallbackTokenExpiresAt: &callbackTokenExpiresAt,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("ensure interaction channel binding: %w", err)
+		}
+
+		callbackEndpoint := &interactionCallbackEndpoint{
+			URL:            strings.TrimRight(strings.TrimSpace(s.cfg.PublicBaseURL), "/") + interactionCallbackPath,
+			BearerToken:    callbackToken.Token,
+			TokenExpiresAt: callbackToken.ExpiresAt.UTC().Format(time.RFC3339Nano),
+			Handles:        []interactionCallbackHandle{},
+		}
+
+		content, err := s.buildInteractionDeliveryContent(ctx, request, binding, callbackEndpoint)
+		if err != nil {
+			return nil, err
+		}
+		envelope.Content = content
+		envelope.CallbackEndpoint = callbackEndpoint
+		if request.ResponseDeadlineAt != nil {
+			envelope.DeliveryDeadlineAt = request.ResponseDeadlineAt.UTC().Format(time.RFC3339Nano)
+		}
+	default:
+		if params.Binding == nil {
+			return nil, fmt.Errorf("interaction continuation requires active channel binding")
+		}
+		envelope.ProviderMessageRef = normalizeInteractionProviderMessageRef(params.Binding.ProviderMessageRefJSON)
+		envelope.Continuation = buildInteractionContinuation(request, attempt)
 	}
+
 	return marshalRawJSON(envelope), nil
 }
 
@@ -301,4 +326,41 @@ func defaultInteractionContinuationPolicy() interactionContinuationPolicy {
 		SendFollowUpOnEditFailure:       true,
 		ManualFallbackOnFollowUpFailure: true,
 	}
+}
+
+func resolveInteractionDeliveryRole(role enumtypes.InteractionDeliveryRole) enumtypes.InteractionDeliveryRole {
+	if role == "" {
+		return enumtypes.InteractionDeliveryRolePrimaryDispatch
+	}
+	return role
+}
+
+func buildInteractionContinuation(request entitytypes.InteractionRequest, attempt entitytypes.InteractionDeliveryAttempt) *interactionDeliveryContinuation {
+	action := enumtypes.InteractionContinuationActionSendFollowUp
+	if resolveInteractionDeliveryRole(attempt.DeliveryRole) == enumtypes.InteractionDeliveryRoleMessageEdit {
+		action = enumtypes.InteractionContinuationActionEditMessage
+	}
+
+	continuation := &interactionDeliveryContinuation{
+		Action: action,
+		Reason: strings.TrimSpace(attempt.ContinuationReason),
+	}
+	if request.ResolutionKind != enumtypes.InteractionResolutionKindNone {
+		continuation.ResolutionKind = request.ResolutionKind
+	}
+	switch request.State {
+	case enumtypes.InteractionStateResolved, enumtypes.InteractionStateExpired, enumtypes.InteractionStateDeliveryExhausted:
+		continuation.ResolvedAt = request.UpdatedAt.UTC().Format(time.RFC3339Nano)
+	}
+	return continuation
+}
+
+func normalizeInteractionProviderMessageRef(raw json.RawMessage) json.RawMessage {
+	if len(raw) == 0 || !json.Valid(raw) {
+		return nil
+	}
+	if strings.TrimSpace(string(raw)) == "{}" {
+		return nil
+	}
+	return raw
 }

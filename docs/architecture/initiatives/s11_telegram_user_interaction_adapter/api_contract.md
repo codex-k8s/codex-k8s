@@ -59,16 +59,19 @@ approvals:
 |---|---|---|---|
 | `schema_version` | string | yes | `telegram-interaction-v1` |
 | `delivery_id` | uuid | yes | dispatch idempotency key |
+| `delivery_role` | `primary_dispatch|message_edit|follow_up_notify` | yes | distinguishes initial send from async continuation |
 | `interaction_id` | uuid | yes | platform interaction aggregate |
 | `interaction_kind` | `notify|decision_request` | yes | |
 | `recipient_provider` | string | yes | always `telegram` in Sprint S11 |
 | `recipient_ref` | string | yes | opaque platform routing ref, not raw agent input |
 | `locale` | string | no | best-effort rendering hint |
-| `content` | `TelegramNotifyContent|TelegramDecisionContent` | yes | closed variant by `interaction_kind` |
+| `content` | `TelegramNotifyContent|TelegramDecisionContent` | no | required only for `delivery_role=primary_dispatch` |
 | `context_links` | `InteractionContextLinks` | yes | issue/pr/run deep-links |
-| `callback_endpoint` | `TelegramCallbackEndpoint` | no | required for `decision_request`; optional for notify receipts |
+| `callback_endpoint` | `TelegramCallbackEndpoint` | no | primary dispatch only; required for `decision_request` |
+| `provider_message_ref` | `TelegramProviderMessageRef` | no | current provider message context for `message_edit` / follow-up correlation |
+| `continuation` | `TelegramInteractionContinuation` | no | required for `delivery_role=message_edit|follow_up_notify` |
 | `continuation_policy` | `TelegramContinuationPolicy` | yes | edit vs follow-up rules |
-| `delivery_deadline_at` | RFC3339 timestamp | no | decision requests only |
+| `delivery_deadline_at` | RFC3339 timestamp | no | primary decision requests only |
 
 ### `TelegramCallbackEndpoint`
 | Field | Type | Required | Notes |
@@ -94,6 +97,14 @@ approvals:
 | `disable_keyboard_on_resolution` | bool | yes | default `true` |
 | `send_follow_up_on_edit_failure` | bool | yes | default `true` |
 | `manual_fallback_on_follow_up_failure` | bool | yes | default `true` |
+
+### `TelegramInteractionContinuation`
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `action` | `edit_message|send_follow_up` | yes | concrete async continuation selected by platform |
+| `reason` | `applied_response|edit_failed|expired_wait|operator_fallback` | no | persisted continuation reason |
+| `resolution_kind` | `delivery_only|option_selected|free_text_submitted` | no | semantic outcome already accepted by `control-plane` |
+| `resolved_at` | RFC3339 timestamp | no | terminal semantic resolution time |
 
 ### `TelegramNotifyContent`
 | Field | Type | Notes |
@@ -216,12 +227,10 @@ approvals:
 - `edit_capability`
 - `callback_token_expires_at`
 
-### `ScheduleInteractionContinuationRequest`
-- `interaction_id`
-- `continuation_action`
-- `delivery_binding_id`
-- `classification`
-- `operator_signal_code`
+### Continuation dispatch scheduling
+- continuation attempts reuse the same worker claim loop as primary delivery;
+- `ClaimNextInteractionDispatch` may return a non-primary `delivery_role` inside `request_envelope_json`;
+- no отдельный `ScheduleInteractionContinuationRequest` RPC не используется в runtime-контуре этой реализации.
 
 ### `GetRunInteractionResumePayloadResponse`
 - `found`

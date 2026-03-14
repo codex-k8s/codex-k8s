@@ -309,3 +309,64 @@ func TestClassifyExpiryMarksOpenDecisionExpired(t *testing.T) {
 		t.Fatal("expected open decision interaction expiry to mutate state")
 	}
 }
+
+func TestResolveClaimedDeliveryAttemptFallsBackToFollowUpWithoutProviderMessageRef(t *testing.T) {
+	t.Parallel()
+
+	role, reason := resolveClaimedDeliveryAttempt(&entitytypes.InteractionChannelBinding{
+		ContinuationState: enumtypes.InteractionContinuationStateReadyForEdit,
+		EditCapability:    enumtypes.InteractionEditCapabilityEditable,
+	}, entitytypes.InteractionDeliveryAttempt{}, false)
+
+	if got, want := role, enumtypes.InteractionDeliveryRoleFollowUpNotify; got != want {
+		t.Fatalf("delivery role = %q, want %q", got, want)
+	}
+	if got, want := reason, "applied_response"; got != want {
+		t.Fatalf("continuation reason = %q, want %q", got, want)
+	}
+}
+
+func TestClassifyContinuationDispatchCompletionSchedulesFollowUpAfterEditFailure(t *testing.T) {
+	t.Parallel()
+
+	decision := classifyContinuationDispatchCompletion(entitytypes.InteractionChannelBinding{
+		ContinuationState: enumtypes.InteractionContinuationStateReadyForEdit,
+	}, entitytypes.InteractionDeliveryAttempt{
+		DeliveryRole: enumtypes.InteractionDeliveryRoleMessageEdit,
+		Status:       enumtypes.InteractionDeliveryAttemptStatusExhausted,
+	})
+
+	if !decision.updateBinding {
+		t.Fatal("expected binding projection update")
+	}
+	if got, want := decision.continuationState, enumtypes.InteractionContinuationStateFollowUpRequired; got != want {
+		t.Fatalf("continuation_state = %q, want %q", got, want)
+	}
+	if decision.updateRequestProjection {
+		t.Fatal("did not expect request projection update while scheduling follow-up")
+	}
+}
+
+func TestClassifyContinuationDispatchCompletionMarksManualFallbackAfterFollowUpFailure(t *testing.T) {
+	t.Parallel()
+
+	decision := classifyContinuationDispatchCompletion(entitytypes.InteractionChannelBinding{
+		ContinuationState: enumtypes.InteractionContinuationStateFollowUpRequired,
+	}, entitytypes.InteractionDeliveryAttempt{
+		DeliveryRole: enumtypes.InteractionDeliveryRoleFollowUpNotify,
+		Status:       enumtypes.InteractionDeliveryAttemptStatusExhausted,
+	})
+
+	if got, want := decision.continuationState, enumtypes.InteractionContinuationStateManualFallbackRequired; got != want {
+		t.Fatalf("continuation_state = %q, want %q", got, want)
+	}
+	if !decision.updateRequestProjection {
+		t.Fatal("expected request projection update for follow-up failure")
+	}
+	if got, want := decision.operatorState, enumtypes.InteractionOperatorStateManualFallbackRequired; got != want {
+		t.Fatalf("operator_state = %q, want %q", got, want)
+	}
+	if got, want := decision.operatorSignalCode, enumtypes.InteractionOperatorSignalCodeFollowUpFailed; got != want {
+		t.Fatalf("operator_signal_code = %q, want %q", got, want)
+	}
+}

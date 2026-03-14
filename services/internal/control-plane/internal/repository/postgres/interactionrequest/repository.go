@@ -40,6 +40,8 @@ var (
 	queryGetChannelBindingByIDForUpdate string
 	//go:embed sql/claim_next_dispatch_candidate.sql
 	queryClaimNextDispatchCandidate string
+	//go:embed sql/claim_next_continuation_candidate.sql
+	queryClaimNextContinuationCandidate string
 	//go:embed sql/select_for_update.sql
 	querySelectForUpdate string
 	//go:embed sql/select_latest_attempt_for_update.sql
@@ -70,6 +72,8 @@ var (
 	queryUpdateRequestProjection string
 	//go:embed sql/update_channel_binding_projection.sql
 	queryUpdateChannelBindingProjection string
+	//go:embed sql/update_channel_binding_continuation.sql
+	queryUpdateChannelBindingContinuation string
 )
 
 const interactionResumeToolName = "user.decision.request"
@@ -135,26 +139,11 @@ func (r *Repository) EnsureChannelBinding(ctx context.Context, params domainrepo
 		timestamptzPtrOrNil(params.CallbackTokenExpiresAt),
 	)
 
-	var item dbmodel.ChannelBindingRow
-	if err := row.Scan(
-		&item.ID,
-		&item.InteractionID,
-		&item.AdapterKind,
-		&item.RecipientRef,
-		&item.ProviderChatRef,
-		&item.ProviderMessageRefJSON,
-		&item.CallbackTokenKeyID,
-		&item.CallbackTokenExpiresAt,
-		&item.EditCapability,
-		&item.ContinuationState,
-		&item.LastOperatorSignalCode,
-		&item.LastOperatorSignalAt,
-		&item.CreatedAt,
-		&item.UpdatedAt,
-	); err != nil {
+	item, err := scanChannelBindingRow(row)
+	if err != nil {
 		return domainrepo.ChannelBinding{}, fmt.Errorf("ensure interaction channel binding: %w", err)
 	}
-	return channelBindingFromDBModel(item), nil
+	return item, nil
 }
 
 // UpsertCallbackHandles inserts missing callback handle hashes for the active binding.
@@ -208,7 +197,7 @@ func (r *Repository) ClaimNextDispatch(ctx context.Context, params domainrepo.Cl
 		_ = tx.Rollback(ctx)
 	}()
 
-	request, found, err := r.lookupRequestTx(ctx, tx, queryClaimNextDispatchCandidate, now, staleBefore)
+	request, binding, found, err := r.lookupNextDispatchCandidateTx(ctx, tx, now, staleBefore)
 	if err != nil {
 		return domainrepo.DispatchClaim{}, false, err
 	}
@@ -216,24 +205,33 @@ func (r *Repository) ClaimNextDispatch(ctx context.Context, params domainrepo.Cl
 		return domainrepo.DispatchClaim{}, false, nil
 	}
 
-	var attempt domainrepo.DeliveryAttempt
 	latestAttempt, latestFound, err := r.getLatestAttemptForUpdate(ctx, tx, request.ID)
 	if err != nil {
 		return domainrepo.DispatchClaim{}, false, err
 	}
-	if latestFound && latestAttempt.Status == enumtypes.InteractionDeliveryAttemptStatusPending {
+	deliveryRole, continuationReason := resolveClaimedDeliveryAttempt(binding, latestAttempt, latestFound)
+
+	var attempt domainrepo.DeliveryAttempt
+	if latestFound && latestAttempt.Status == enumtypes.InteractionDeliveryAttemptStatusPending && latestAttempt.DeliveryRole == deliveryRole {
 		attempt, err = r.touchAttemptStartedAt(ctx, tx, latestAttempt.DeliveryID, now)
 		if err != nil {
 			return domainrepo.DispatchClaim{}, false, err
 		}
 	} else {
+		channelBindingID := request.ActiveChannelBindingID
+		providerMessageRefJSON := json.RawMessage(`{}`)
+		if binding != nil {
+			channelBindingID = binding.ID
+			providerMessageRefJSON = binding.ProviderMessageRefJSON
+		}
 		attempt, err = r.createDeliveryAttemptTx(ctx, tx, request, domainrepo.CreateDeliveryAttemptParams{
-			ChannelBindingID:       request.ActiveChannelBindingID,
+			ChannelBindingID:       channelBindingID,
 			AdapterKind:            request.RecipientProvider,
-			DeliveryRole:           enumtypes.InteractionDeliveryRolePrimaryDispatch,
+			DeliveryRole:           deliveryRole,
 			RequestEnvelopeJSON:    json.RawMessage(`{}`),
 			AckPayloadJSON:         json.RawMessage(`{}`),
-			ProviderMessageRefJSON: json.RawMessage(`{}`),
+			ProviderMessageRefJSON: providerMessageRefJSON,
+			ContinuationReason:     continuationReason,
 			Status:                 enumtypes.InteractionDeliveryAttemptStatusPending,
 			StartedAt:              now,
 		})
@@ -249,7 +247,66 @@ func (r *Repository) ClaimNextDispatch(ctx context.Context, params domainrepo.Cl
 	return domainrepo.DispatchClaim{
 		Interaction: request,
 		Attempt:     attempt,
+		Binding:     binding,
 	}, true, nil
+}
+
+func (r *Repository) lookupNextDispatchCandidateTx(ctx context.Context, tx pgx.Tx, now time.Time, staleBefore time.Time) (domainrepo.Request, *domainrepo.ChannelBinding, bool, error) {
+	request, found, err := r.lookupRequestTx(ctx, tx, queryClaimNextDispatchCandidate, now, staleBefore)
+	if err != nil {
+		return domainrepo.Request{}, nil, false, err
+	}
+	if found {
+		return request, nil, true, nil
+	}
+
+	request, found, err = r.lookupRequestTx(ctx, tx, queryClaimNextContinuationCandidate, now, staleBefore)
+	if err != nil {
+		return domainrepo.Request{}, nil, false, err
+	}
+	if !found || request.ActiveChannelBindingID == 0 {
+		return domainrepo.Request{}, nil, false, nil
+	}
+
+	binding, found, err := r.getChannelBindingByIDForUpdate(ctx, tx, request.ActiveChannelBindingID)
+	if err != nil {
+		return domainrepo.Request{}, nil, false, err
+	}
+	if !found {
+		return domainrepo.Request{}, nil, false, nil
+	}
+
+	return request, &binding, true, nil
+}
+
+func resolveClaimedDeliveryAttempt(binding *domainrepo.ChannelBinding, latestAttempt domainrepo.DeliveryAttempt, latestFound bool) (enumtypes.InteractionDeliveryRole, string) {
+	if binding == nil {
+		return enumtypes.InteractionDeliveryRolePrimaryDispatch, ""
+	}
+
+	switch binding.ContinuationState {
+	case enumtypes.InteractionContinuationStateReadyForEdit:
+		if bindingSupportsMessageEdit(*binding) {
+			return enumtypes.InteractionDeliveryRoleMessageEdit, "applied_response"
+		}
+		return enumtypes.InteractionDeliveryRoleFollowUpNotify, "applied_response"
+	case enumtypes.InteractionContinuationStateFollowUpRequired:
+		if latestFound && latestAttempt.DeliveryRole == enumtypes.InteractionDeliveryRoleMessageEdit {
+			return enumtypes.InteractionDeliveryRoleFollowUpNotify, "edit_failed"
+		}
+		return enumtypes.InteractionDeliveryRoleFollowUpNotify, "applied_response"
+	default:
+		return enumtypes.InteractionDeliveryRolePrimaryDispatch, ""
+	}
+}
+
+func bindingSupportsMessageEdit(binding domainrepo.ChannelBinding) bool {
+	switch binding.EditCapability {
+	case enumtypes.InteractionEditCapabilityEditable, enumtypes.InteractionEditCapabilityKeyboardOnly:
+		return len(jsonOrEmptyObject(binding.ProviderMessageRefJSON)) != 0 && string(jsonOrEmptyObject(binding.ProviderMessageRefJSON)) != "{}"
+	default:
+		return false
+	}
 }
 
 // CompleteDispatch persists one dispatch attempt outcome and applies terminal mutation when needed.
@@ -299,16 +356,38 @@ func (r *Repository) CompleteDispatch(ctx context.Context, params domainrepo.Com
 	if bindingIDForDispatch == 0 {
 		bindingIDForDispatch = request.ActiveChannelBindingID
 	}
-	if updatedAttempt.Status == enumtypes.InteractionDeliveryAttemptStatusAccepted && bindingIDForDispatch > 0 {
-		if _, err := r.updateDispatchBindingTx(ctx, tx, bindingIDForDispatch, params.ProviderMessageRefJSON, params.EditCapability, params.CallbackTokenExpiresAt); err != nil {
+	updatedRequest := request
+	resumeRequired := false
+
+	var binding *domainrepo.ChannelBinding
+	if bindingIDForDispatch > 0 {
+		item, found, err := r.getChannelBindingByIDForUpdate(ctx, tx, bindingIDForDispatch)
+		if err != nil {
 			return domainrepo.CompleteDispatchResult{}, err
+		}
+		if found {
+			binding = &item
 		}
 	}
 
-	decision := classifyDispatchCompletion(request, updatedAttempt.Status)
-	updatedRequest := request
-	if decision.stateChanged {
-		updatedRequest, err = r.updateRequestState(ctx, tx, request.ID, decision.nextState, decision.nextResolutionKind, nil)
+	switch updatedAttempt.DeliveryRole {
+	case enumtypes.InteractionDeliveryRolePrimaryDispatch:
+		if updatedAttempt.Status == enumtypes.InteractionDeliveryAttemptStatusAccepted && binding != nil {
+			if _, err := r.updateDispatchBindingTx(ctx, tx, bindingIDForDispatch, params.ProviderMessageRefJSON, params.EditCapability, params.CallbackTokenExpiresAt); err != nil {
+				return domainrepo.CompleteDispatchResult{}, err
+			}
+		}
+
+		decision := classifyDispatchCompletion(request, updatedAttempt.Status)
+		if decision.stateChanged {
+			updatedRequest, err = r.updateRequestState(ctx, tx, request.ID, decision.nextState, decision.nextResolutionKind, nil)
+			if err != nil {
+				return domainrepo.CompleteDispatchResult{}, err
+			}
+		}
+		resumeRequired = decision.resumeRequired
+	default:
+		updatedRequest, err = r.applyContinuationDispatchOutcomeTx(ctx, tx, request, binding, updatedAttempt, params.ProviderMessageRefJSON, params.FinishedAt)
 		if err != nil {
 			return domainrepo.CompleteDispatchResult{}, err
 		}
@@ -321,8 +400,8 @@ func (r *Repository) CompleteDispatch(ctx context.Context, params domainrepo.Com
 	return domainrepo.CompleteDispatchResult{
 		Interaction:    updatedRequest,
 		Attempt:        updatedAttempt,
-		StateChanged:   decision.stateChanged,
-		ResumeRequired: decision.resumeRequired,
+		StateChanged:   updatedRequest.State != request.State || updatedRequest.ResolutionKind != request.ResolutionKind,
+		ResumeRequired: resumeRequired,
 	}, nil
 }
 
@@ -864,26 +943,11 @@ func (r *Repository) updateChannelBindingProjectionTx(ctx context.Context, tx pg
 		nullableText(string(signalCode)),
 		timestamptzPtrOrNil(signalAt),
 	)
-	var item dbmodel.ChannelBindingRow
-	if err := row.Scan(
-		&item.ID,
-		&item.InteractionID,
-		&item.AdapterKind,
-		&item.RecipientRef,
-		&item.ProviderChatRef,
-		&item.ProviderMessageRefJSON,
-		&item.CallbackTokenKeyID,
-		&item.CallbackTokenExpiresAt,
-		&item.EditCapability,
-		&item.ContinuationState,
-		&item.LastOperatorSignalCode,
-		&item.LastOperatorSignalAt,
-		&item.CreatedAt,
-		&item.UpdatedAt,
-	); err != nil {
+	item, err := scanChannelBindingRow(row)
+	if err != nil {
 		return domainrepo.ChannelBinding{}, fmt.Errorf("update interaction channel binding projection: %w", err)
 	}
-	return channelBindingFromDBModel(item), nil
+	return item, nil
 }
 
 func (r *Repository) updateDispatchBindingTx(ctx context.Context, tx pgx.Tx, bindingID int64, providerMessageRefJSON json.RawMessage, editCapability enumtypes.InteractionEditCapability, tokenExpiresAt *time.Time) (domainrepo.ChannelBinding, error) {
@@ -895,26 +959,53 @@ func (r *Repository) updateDispatchBindingTx(ctx context.Context, tx pgx.Tx, bin
 		string(editCapability),
 		timestamptzPtrOrNil(tokenExpiresAt),
 	)
-	var item dbmodel.ChannelBindingRow
-	if err := row.Scan(
-		&item.ID,
-		&item.InteractionID,
-		&item.AdapterKind,
-		&item.RecipientRef,
-		&item.ProviderChatRef,
-		&item.ProviderMessageRefJSON,
-		&item.CallbackTokenKeyID,
-		&item.CallbackTokenExpiresAt,
-		&item.EditCapability,
-		&item.ContinuationState,
-		&item.LastOperatorSignalCode,
-		&item.LastOperatorSignalAt,
-		&item.CreatedAt,
-		&item.UpdatedAt,
-	); err != nil {
+	item, err := scanChannelBindingRow(row)
+	if err != nil {
 		return domainrepo.ChannelBinding{}, fmt.Errorf("update interaction dispatch binding: %w", err)
 	}
-	return channelBindingFromDBModel(item), nil
+	return item, nil
+}
+
+func (r *Repository) updateContinuationBindingTx(ctx context.Context, tx pgx.Tx, bindingID int64, providerMessageRefJSON json.RawMessage, continuationState enumtypes.InteractionContinuationState, signalCode enumtypes.InteractionOperatorSignalCode, signalAt *time.Time) (domainrepo.ChannelBinding, error) {
+	row := tx.QueryRow(
+		ctx,
+		queryUpdateChannelBindingContinuation,
+		bindingID,
+		jsonOrEmptyObject(providerMessageRefJSON),
+		string(continuationState),
+		nullableText(string(signalCode)),
+		timestamptzPtrOrNil(signalAt),
+	)
+	item, err := scanChannelBindingRow(row)
+	if err != nil {
+		return domainrepo.ChannelBinding{}, fmt.Errorf("update interaction continuation binding: %w", err)
+	}
+	return item, nil
+}
+
+func (r *Repository) applyContinuationDispatchOutcomeTx(ctx context.Context, tx pgx.Tx, request domainrepo.Request, binding *domainrepo.ChannelBinding, attempt domainrepo.DeliveryAttempt, providerMessageRefJSON json.RawMessage, finishedAt time.Time) (domainrepo.Request, error) {
+	if binding == nil {
+		return request, nil
+	}
+
+	decision := classifyContinuationDispatchCompletion(*binding, attempt)
+	if decision.updateRequestProjection {
+		updatedRequest, err := r.updateRequestProjectionTx(ctx, tx, request.ID, decision.operatorState, decision.operatorSignalCode, timePtr(timeOrNow(finishedAt)))
+		if err != nil {
+			return domainrepo.Request{}, err
+		}
+		request = updatedRequest
+	}
+	if decision.updateBinding {
+		refJSON := json.RawMessage(`{}`)
+		if attempt.Status == enumtypes.InteractionDeliveryAttemptStatusAccepted {
+			refJSON = providerMessageRefJSON
+		}
+		if _, err := r.updateContinuationBindingTx(ctx, tx, binding.ID, refJSON, decision.continuationState, decision.operatorSignalCode, timePtr(timeOrNow(finishedAt))); err != nil {
+			return domainrepo.Request{}, err
+		}
+	}
+	return request, nil
 }
 
 func (r *Repository) markCallbackHandleUsed(ctx context.Context, tx pgx.Tx, handleID int64, callbackEventID int64, usedAt time.Time) (domainrepo.CallbackHandle, error) {
@@ -971,6 +1062,14 @@ type dispatchCompletionDecision struct {
 	resumeRequired     bool
 }
 
+type continuationCompletionDecision struct {
+	continuationState       enumtypes.InteractionContinuationState
+	updateBinding           bool
+	operatorState           enumtypes.InteractionOperatorState
+	operatorSignalCode      enumtypes.InteractionOperatorSignalCode
+	updateRequestProjection bool
+}
+
 func classifyDispatchCompletion(request domainrepo.Request, attemptStatus enumtypes.InteractionDeliveryAttemptStatus) dispatchCompletionDecision {
 	decision := dispatchCompletionDecision{
 		nextState:          request.State,
@@ -996,6 +1095,43 @@ func classifyDispatchCompletion(request domainrepo.Request, attemptStatus enumty
 		decision.nextResolutionKind = enumtypes.InteractionResolutionKindNone
 		decision.stateChanged = decision.nextState != request.State || decision.nextResolutionKind != request.ResolutionKind
 		decision.resumeRequired = request.InteractionKind == enumtypes.InteractionKindDecisionRequest
+	}
+
+	return decision
+}
+
+func classifyContinuationDispatchCompletion(binding domainrepo.ChannelBinding, attempt domainrepo.DeliveryAttempt) continuationCompletionDecision {
+	decision := continuationCompletionDecision{
+		continuationState: binding.ContinuationState,
+	}
+
+	switch attempt.DeliveryRole {
+	case enumtypes.InteractionDeliveryRoleMessageEdit:
+		switch attempt.Status {
+		case enumtypes.InteractionDeliveryAttemptStatusAccepted:
+			decision.continuationState = enumtypes.InteractionContinuationStateClosed
+			decision.updateBinding = true
+		case enumtypes.InteractionDeliveryAttemptStatusExhausted:
+			decision.continuationState = enumtypes.InteractionContinuationStateFollowUpRequired
+			decision.updateBinding = true
+		}
+	case enumtypes.InteractionDeliveryRoleFollowUpNotify:
+		switch attempt.Status {
+		case enumtypes.InteractionDeliveryAttemptStatusAccepted:
+			decision.continuationState = enumtypes.InteractionContinuationStateClosed
+			decision.updateBinding = true
+			if strings.TrimSpace(attempt.ContinuationReason) == "edit_failed" {
+				decision.updateRequestProjection = true
+				decision.operatorState = enumtypes.InteractionOperatorStateResolved
+				decision.operatorSignalCode = enumtypes.InteractionOperatorSignalCodeEditFallbackSent
+			}
+		case enumtypes.InteractionDeliveryAttemptStatusExhausted:
+			decision.continuationState = enumtypes.InteractionContinuationStateManualFallbackRequired
+			decision.updateBinding = true
+			decision.updateRequestProjection = true
+			decision.operatorState = enumtypes.InteractionOperatorStateManualFallbackRequired
+			decision.operatorSignalCode = enumtypes.InteractionOperatorSignalCodeFollowUpFailed
+		}
 	}
 
 	return decision
@@ -1340,6 +1476,30 @@ func scanRequestRow(row pgx.Row) (domainrepo.Request, error) {
 		return domainrepo.Request{}, err
 	}
 	return requestFromDBModel(item), nil
+}
+
+func scanChannelBindingRow(row pgx.Row) (domainrepo.ChannelBinding, error) {
+	var item dbmodel.ChannelBindingRow
+	err := row.Scan(
+		&item.ID,
+		&item.InteractionID,
+		&item.AdapterKind,
+		&item.RecipientRef,
+		&item.ProviderChatRef,
+		&item.ProviderMessageRefJSON,
+		&item.CallbackTokenKeyID,
+		&item.CallbackTokenExpiresAt,
+		&item.EditCapability,
+		&item.ContinuationState,
+		&item.LastOperatorSignalCode,
+		&item.LastOperatorSignalAt,
+		&item.CreatedAt,
+		&item.UpdatedAt,
+	)
+	if err != nil {
+		return domainrepo.ChannelBinding{}, err
+	}
+	return channelBindingFromDBModel(item), nil
 }
 
 func scanDeliveryAttemptRow(row pgx.Row) (domainrepo.DeliveryAttempt, error) {

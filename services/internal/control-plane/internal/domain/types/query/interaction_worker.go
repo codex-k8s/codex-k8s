@@ -18,6 +18,7 @@ type InteractionDispatchClaimParams struct {
 type InteractionDispatchClaim struct {
 	Interaction entitytypes.InteractionRequest
 	Attempt     entitytypes.InteractionDeliveryAttempt
+	Binding     *entitytypes.InteractionChannelBinding
 }
 
 // InteractionDispatchCompleteParams describes one persisted dispatch attempt outcome.
