@@ -341,6 +341,7 @@ approvals:
   - зафиксирован sequencing order `#425 -> #426 -> #427 -> #428 -> #429 -> #430 -> #431` и rollout `migrations -> control-plane -> worker -> agent-runner -> api-gateway -> web-console -> evidence gate`;
   - документный контур `intake -> vision -> prd -> arch -> design -> plan` согласован и завершён, quality-gates/DoR/DoD/blockers/risks/owner decisions синхронизированы в delivery traceability, а predictive budgeting/multi-provider governance оставлены за пределами core Sprint S12 execution package;
 - Day 7+ (planned): `run:dev -> qa -> release -> postdeploy -> ops` по issues `#425..#431` с owner-managed wave launch и обязательным evidence gate `#431` перед `run:qa`.
+  - Wave 1 / Issue `#425` переведён в `in-review`: добавлены schema foundation tables `github_rate_limit_waits` / `github_rate_limit_wait_evidence`, enum/check expansion для `agent_runs` / `agent_sessions`, postgres repository foundation и rollout guards для последующих волн.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

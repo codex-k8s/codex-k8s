@@ -5,7 +5,7 @@ title: "Sprint S12 Traceability History"
 status: completed
 owner_role: KM
 created_at: 2026-03-13
-updated_at: 2026-03-13
+updated_at: 2026-03-14
 related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
 related_prs: []
 approvals:
@@ -118,3 +118,23 @@ approvals:
   - Context7 `/github/docs` использован для повторной проверки primary/secondary rate-limit semantics, `Retry-After`, guidance `wait at least one minute` и exponential backoff;
   - локально подтверждён non-interactive GitHub flow через `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: plan stage декомпозирует delivery waves, evidence и quality gates, но не вводит новые канонические требования.
+
+## Актуализация по Issue #425 (`run:dev`, 2026-03-14)
+- Реализован foundation stream `S12-E01`:
+  - `services/internal/control-plane/cmd/cli/migrations/20260314110000_day30_github_rate_limit_wait_foundation.sql`;
+  - доменные enum/value/entity/query типы и rollout guard в `services/internal/control-plane/internal/domain/{githubratelimit,repository/githubratelimitwait,types/...}`;
+  - PostgreSQL repository foundation в `services/internal/control-plane/internal/repository/postgres/githubratelimitwait/*`.
+- Зафиксированы:
+  - additive schema для `github_rate_limit_waits` и `github_rate_limit_wait_evidence`, partial unique индексы для open wait per contour и dominant wait per run, а также enum/check expansion для `agent_runs.status`, `agent_runs.wait_reason`, `agent_runs.wait_target_kind` и `agent_sessions.wait_state`;
+  - transactional `RefreshRunProjection`, который выбирает dominant wait и синхронизирует typed linkage в `agent_runs` / `agent_sessions`, не перетирая чужой wait-context вне `github_rate_limit`;
+  - отдельные rollout guards `schema -> domain -> worker -> runner -> transport -> ui`, чтобы последующие волны `#426..#430` не обходили sequencing из Day5/Day6 package;
+  - unit coverage для dominant wait election и rollout guard logic, плюс migration guard test на обязательные DDL/index/enum expansion элементы.
+- Проверки:
+  - `go test ./services/internal/control-plane/internal/domain/githubratelimit ./services/internal/control-plane/internal/repository/postgres/githubratelimitwait ./services/internal/control-plane/cmd/cli/migrations`
+  - `go test ./services/internal/control-plane/...`
+  - `make lint-go`
+  - `make dupl-go`
+  - `git diff --check`
+- Внешний baseline дополнительно сверен:
+  - Context7 `/jackc/pgx` использован для перепроверки idiomatic transaction + row-locking patterns (`BeginTx`, safe `defer Rollback`, `CollectRows`) перед реализацией repository refresh path.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: Issue `#425` закрывает foundation implementation wave и не вводит новых продуктовых требований.

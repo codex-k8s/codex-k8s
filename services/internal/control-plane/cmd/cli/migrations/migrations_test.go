@@ -104,3 +104,28 @@ func TestMissionControlCommandLeaseMigrationAddsClaimColumns(t *testing.T) {
 		}
 	}
 }
+
+func TestGitHubRateLimitFoundationMigrationContainsRequiredGuards(t *testing.T) {
+	content, err := os.ReadFile("20260314110000_day30_github_rate_limit_wait_foundation.sql")
+	if err != nil {
+		t.Fatalf("read github rate-limit foundation migration: %v", err)
+	}
+
+	required := []string{
+		"CREATE TABLE IF NOT EXISTS github_rate_limit_waits",
+		"CREATE TABLE IF NOT EXISTS github_rate_limit_wait_evidence",
+		"CREATE UNIQUE INDEX IF NOT EXISTS uq_github_rate_limit_waits_open_run_contour",
+		"CREATE UNIQUE INDEX IF NOT EXISTS uq_github_rate_limit_waits_open_dominant_per_run",
+		"CREATE INDEX IF NOT EXISTS idx_github_rate_limit_waits_resume_queue",
+		"waiting_backpressure",
+		"github_rate_limit",
+		"github_rate_limit_wait",
+		"backpressure",
+	}
+	text := string(content)
+	for _, item := range required {
+		if !strings.Contains(text, item) {
+			t.Fatalf("github rate-limit foundation migration must contain %q", item)
+		}
+	}
+}

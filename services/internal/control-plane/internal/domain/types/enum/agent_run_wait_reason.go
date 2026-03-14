@@ -4,7 +4,8 @@ package enum
 type AgentRunWaitReason string
 
 const (
-	AgentRunWaitReasonOwnerReview        AgentRunWaitReason = "owner_review"
-	AgentRunWaitReasonApprovalPending    AgentRunWaitReason = "approval_pending"
-	AgentRunWaitReasonInteractionReply   AgentRunWaitReason = "interaction_response"
+	AgentRunWaitReasonOwnerReview      AgentRunWaitReason = "owner_review"
+	AgentRunWaitReasonApprovalPending  AgentRunWaitReason = "approval_pending"
+	AgentRunWaitReasonInteractionReply AgentRunWaitReason = "interaction_response"
+	AgentRunWaitReasonGitHubRateLimit  AgentRunWaitReason = "github_rate_limit"
 )

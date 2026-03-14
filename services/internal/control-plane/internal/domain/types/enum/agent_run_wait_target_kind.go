@@ -4,6 +4,7 @@ package enum
 type AgentRunWaitTargetKind string
 
 const (
-	AgentRunWaitTargetKindApprovalRequest    AgentRunWaitTargetKind = "approval_request"
-	AgentRunWaitTargetKindInteractionRequest AgentRunWaitTargetKind = "interaction_request"
+	AgentRunWaitTargetKindApprovalRequest     AgentRunWaitTargetKind = "approval_request"
+	AgentRunWaitTargetKindInteractionRequest  AgentRunWaitTargetKind = "interaction_request"
+	AgentRunWaitTargetKindGitHubRateLimitWait AgentRunWaitTargetKind = "github_rate_limit_wait"
 )
