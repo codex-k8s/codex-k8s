@@ -5,8 +5,8 @@ title: "Requirements Traceability Matrix"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-03-13
-related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 281, 282, 320, 322, 327, 333, 335, 337, 340, 351, 360, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 397, 413, 416, 418]
+updated_at: 2026-03-14
+related_issues: [1, 19, 74, 90, 100, 112, 154, 155, 159, 165, 170, 171, 175, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 281, 282, 320, 322, 327, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 397, 413, 416, 418, 444]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -64,7 +64,7 @@ approvals:
 | FR-036 | Сохранение/возобновление codex-cli session JSON | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/architecture/agent_runtime_rbac.md`, `docs/delivery/epics/s2/epic-s2-day4-agent-job-and-pr-flow.md` | covered |
 | FR-037 | `agent` как реестр системных профилей, без settings UI в MVP | `docs/product/requirements_machine_driven.md`, `docs/architecture/data_model.md`, `docs/product/agents_operating_model.md` | covered |
 | FR-038 | Contract-first OpenAPI + backend/frontend codegen | `docs/product/requirements_machine_driven.md`, `docs/architecture/api_contract.md`, `docs/delivery/sprints/s2/sprint_s2_dogfooding.md`, `docs/delivery/epics/s2/epic-s2-day1-migrations-and-schema-ownership.md` | covered |
-| FR-039 | Универсальные HTTP-контракты approver/executor через MCP | `docs/product/requirements_machine_driven.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/c4_context.md`, `docs/delivery/epics/s2/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md` | covered |
+| FR-039 | Универсальные HTTP-контракты approver/executor через MCP | `docs/product/requirements_machine_driven.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/architecture/c4_context.md`, `docs/delivery/epics/s2/epic-s2-day3.5-mcp-github-k8s-and-prompt-context.md`, `docs/delivery/sprints/s11/sprint_s11_telegram_user_interaction_adapter.md`, `docs/delivery/epics/s11/epic_s11.md`, `docs/delivery/epics/s11/epic-s11-day1-telegram-user-interaction-adapter-intake.md` | covered |
 | FR-040 | Staff UI runtime debug: jobs/logs/wait queue | `docs/product/requirements_machine_driven.md`, `docs/architecture/api_contract.md`, `docs/delivery/epics/s3/epic-s3-day2-staff-runtime-debug-console.md` | covered |
 | FR-041 | MCP control tools: secret sync + db lifecycle + owner feedback | `docs/product/requirements_machine_driven.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/delivery/epics/s2/epic-s2-day6-approval-and-audit-hardening.md`, `docs/delivery/epics/s3/epic-s3-day3-mcp-deterministic-secret-sync.md`, `docs/delivery/epics/s3/epic-s3-day4-mcp-database-lifecycle.md`, `docs/delivery/epics/s3/epic-s3-day5-feedback-and-approver-interfaces.md` | covered |
 | FR-042 | Approval matrix для MCP control tools | `docs/product/requirements_machine_driven.md`, `docs/product/labels_and_trigger_policy.md`, `docs/architecture/mcp_approval_and_audit_flow.md`, `docs/delivery/epics/s2/epic-s2-day6-approval-and-audit-hardening.md` | covered |
@@ -111,6 +111,7 @@ approvals:
 - Sprint S8: `docs/delivery/traceability/s8_go_refactoring_parallelization_history.md`
 - Sprint S9: `docs/delivery/traceability/s9_mission_control_dashboard_history.md`
 - Sprint S10: `docs/delivery/traceability/s10_mcp_user_interactions_history.md`
+- Sprint S11: `docs/delivery/traceability/s11_telegram_user_interaction_adapter_history.md`
 - Sprint S12: `docs/delivery/traceability/s12_github_api_rate_limit_resilience_history.md`
 
 ## Правило хранения evidence
