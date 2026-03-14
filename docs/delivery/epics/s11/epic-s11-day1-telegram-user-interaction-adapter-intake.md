@@ -20,8 +20,8 @@ approvals:
 - После platform-side intake в Issue `#360` Telegram выделяется в отдельный Sprint S11 как первый реальный внешний канал взаимодействия с пользователем.
 - Intake фиксирует, что Telegram не должен стартовать параллельно core interaction stream: сначала стабилизируется platform contract, затем поверх него строится channel-specific adapter path.
 - MVP Telegram-потока ограничен сценариями `user.notify`, `user.decision.request`, inline callbacks и optional free-text reply, а voice/STT, reminders и richer conversation flows выносятся из core wave.
-- Через Context7 по `/mymmrac/telego` подтверждено, что reference SDK покрывает webhook mode, inline keyboards и callback query handling; это достаточный pragmatic baseline для следующей стадии, но не product contract.
-- Continuity issue `#444` подготовлена для stage `run:vision`.
+- Через Context7 по `/mymmrac/telego` и `go list -m -json github.com/mymmrac/telego@latest` подтверждено, что `github.com/mymmrac/telego v1.7.0` покрывает webhook mode, inline keyboards и callback query handling; библиотека зафиксирована в каталоге зависимостей как planned baseline для следующей стадии, но не product contract.
+- Continuity issue `#444` подготовлена для stage `run:vision` с явным S10 readiness gate.
 
 ## Контекст
 - Issue `#334` зафиксировала двухшаговую последовательность: сначала platform-side interaction-domain в core платформы, затем отдельный channel integrator для Telegram.
@@ -31,7 +31,8 @@ approvals:
   - separation from approval flow;
   - Telegram как отдельный последовательный follow-up stream.
 - Reference repositories `telegram-approver` и `telegram-executor` полезны как UX/stack ориентир, но не могут считаться source of truth для границ `codex-k8s`.
-- Проверка через Context7 на 2026-03-14 подтвердила, что `telego` поддерживает webhook ingestion, inline buttons и callback queries, поэтому библиотека подходит как pragmatic reference baseline для дальнейшей проработки.
+- Проверка через Context7 на `2026-03-14` подтвердила, что `telego` поддерживает webhook ingestion, inline buttons и callback queries, поэтому библиотека подходит как pragmatic reference baseline для дальнейшей проработки.
+- На `2026-03-14` prerequisite для следующего stage уже проверяем: Issue `#387` и Issue `#389` закрыты, а значит S10 design/plan package уже зафиксировал typed interaction contract для Telegram follow-up stream.
 
 ## Рекомендованный launch profile
 - Базовый launch profile: `new-service`.
@@ -81,6 +82,7 @@ approvals:
 
 ## Constraints
 - Telegram stream может стартовать только как follow-up после platform-core stream Sprint S10 и должен сохранять зависимость от typed interaction contract.
+- Проверяемый gate для `#444`: Issue `#389` остаётся закрытой и продолжает ссылаться на design package Issue `#387` как на effective S10 baseline по typed interaction contract.
 - Approval flow и user interaction flow остаются раздельными доменами даже в Telegram UX.
 - Контракты должны оставаться typed и adapter-friendly; Telegram-specific transport не должен становиться source of truth для platform semantics.
 - Dispatch, retries, idempotency, audit и correlation остаются responsibility platform domain; Telegram adapter потребляет и материализует эти semantics.
@@ -106,7 +108,7 @@ approvals:
 - [x] Подтверждено, что Telegram идёт после Sprint S10 core stream и не смешивается с ним.
 - [x] Явно определён MVP baseline: notify, decision request, inline callbacks, optional free-text, базовая webhook/callback рамка.
 - [x] Зафиксированы обязательные границы: typed platform contract, separation from approval flow, deferred scope для voice/STT и richer conversations.
-- [x] Reference repositories и `telego` отмечены как baseline, но без требования копировать реализацию 1-в-1.
+- [x] Reference repositories и `telego` отмечены как baseline, но без требования копировать реализацию 1-в-1; planned dependency baseline каталогизирован отдельно от product contract.
 - [x] Подготовлена continuity issue `#444` для stage `run:vision`.
 
 ## Декомпозиция по этапам (до plan)
@@ -123,12 +125,14 @@ approvals:
 - Риск: Telegram-first решения начнут диктовать platform-core semantics и приведут к лишнему coupling.
 - Риск: scope расползётся в voice/STT и advanced conversation flows раньше фиксации базовой ценности канала.
 - Риск: прямое копирование reference repositories принесёт в `codex-k8s` чужие service boundaries и governance assumptions.
-- Допущение: Sprint S10 доведёт typed interaction contract до уровня, достаточного для channel-specific vision/PRD.
+- Допущение: closed-plan baseline Sprint S10 (`#389`) продолжит ссылаться на design package `#387` и не будет переоткрыт/суперседирован без явной новой continuity-точки для Telegram stream.
 - Допущение: webhook + inline callbacks + optional free-text достаточно, чтобы доказать ценность первого внешнего канала без richer conversational scope.
 
 ## Stage Handover Instructions
 - Следующий этап: `run:vision`.
 - Созданная issue следующего этапа: `#444`.
+- Проверяемый prerequisite для `#444`: Issue `#389` закрыта и остаётся актуальным S10 handover в `run:dev`, а design package Issue `#387` остаётся source-of-truth для typed interaction contract.
+- На `2026-03-14` prerequisite выполнен: `#387` closed, `#389` closed.
 - На stage `run:vision` обязательно сохранить и не размыть следующие решения intake:
   - Telegram остаётся зависимым stream после Sprint S10 core contracts;
   - MVP ограничен notify/decision/callback/free-text path;

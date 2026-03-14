@@ -19,9 +19,9 @@ approvals:
 ## TL;DR
 - Sprint S11 открывает отдельный последовательный product stream для Telegram-адаптера поверх platform-side interaction contract, который формируется в Sprint S10.
 - Issue `#361` фиксирует intake baseline: Telegram рассматривается как первый реальный внешний канал доставки/ответа пользователя, но не может стартовать параллельно core stream из Issue `#360`.
-- Через Context7 по `/mymmrac/telego` подтверждено, что выбранный reference SDK покрывает webhook mode, inline keyboards и callback query handling; это годится как pragmatic library baseline, но не заменяет product/domain contract.
+- Через Context7 по `/mymmrac/telego` и `go list -m -json github.com/mymmrac/telego@latest` подтверждено, что `github.com/mymmrac/telego v1.7.0` покрывает webhook mode, inline keyboards и callback query handling; библиотека внесена в каталог зависимостей как planned baseline, но не заменяет product/domain contract.
 - Intake-пакет ограничивает MVP scope Telegram-канала сценариями `user.notify`, `user.decision.request`, inline callbacks и optional free-text reply, а voice/STT, advanced reminders и richer conversation flows оставляет за пределами core wave.
-- Handover в следующий stage подготовлен через follow-up issue `#444` для `run:vision`.
+- Handover в следующий stage подготовлен через follow-up issue `#444` для `run:vision`, причём запуск разрешён только после проверяемого S10 readiness gate.
 
 ## Scope спринта
 ### In scope
@@ -48,6 +48,15 @@ approvals:
 - Целевая continuity-цепочка:
   `#361 (intake) -> #444 (vision) -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops`.
 
+## Readiness gate от Sprint S10
+- `run:vision` для Issue `#444` разрешён только после того, как Issue `#389` остаётся закрытой и продолжает ссылаться на design package Issue `#387` как на effective baseline typed interaction contract.
+- Проверяемый S10 baseline:
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/design_doc.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/api_contract.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/data_model.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/migrations_policy.md`.
+- По состоянию на `2026-03-14` prerequisite выполнен: Issue `#387` закрыта, Issue `#389` закрыта.
+
 ## План этапов и handover
 
 | Stage | Основной артефакт | Целевая роль | Правило выхода |
@@ -60,7 +69,7 @@ approvals:
 | Plan | Delivery waves, quality-gates, execution issues, DoR/DoD | `em` + `km` | Сформирован execution package и owner-managed handover в `run:dev` |
 
 ## Guardrails спринта
-- Sprint S11 остаётся строго последовательным относительно Sprint S10: Telegram не может задавать core semantics для interaction-domain.
+- Sprint S11 остаётся строго последовательным относительно Sprint S10: Telegram не может задавать core semantics для interaction-domain, а `#444` не должна получать `run:vision`, если prerequisite из Issue `#389`/`#387` перестаёт быть истинным.
 - Telegram adapter должен использовать typed platform interaction contract, а не копировать 1-в-1 поведение reference repositories.
 - Базовый MVP ограничен `notify -> decision request -> callback/free-text`; richer conversation UX и voice/STT остаются follow-up scope.
 - Inline buttons, callback handling и webhook path считаются обязательным baseline, но они не должны приводить к смешению callback transport и platform-owned domain semantics.
@@ -73,7 +82,10 @@ approvals:
   - `docs/delivery/epics/s11/epic_s11.md`;
   - `docs/delivery/epics/s11/epic-s11-day1-telegram-user-interaction-adapter-intake.md`.
 - Следующий stage: `run:vision` в Issue `#444`.
+- Проверяемый prerequisite для Issue `#444`: закрытая Issue `#389` с актуальным S10 design package Issue `#387` как baseline typed interaction contract.
+- На `2026-03-14` prerequisite уже выполнен и не требует дополнительного parallel launch относительно Sprint S10.
 - Входные артефакты от platform-core stream:
   - `docs/delivery/sprints/s10/sprint_s10_mcp_user_interactions.md`;
-  - `docs/delivery/epics/s10/epic-s10-day1-mcp-user-interactions-intake.md`.
+  - `docs/delivery/epics/s10/epic-s10-day6-mcp-user-interactions-plan.md`;
+  - `docs/architecture/initiatives/s10_mcp_user_interactions/README.md`.
 - Trigger-лейбл для Issue `#444` не ставится автоматически и остаётся owner-managed переходом после review intake package.

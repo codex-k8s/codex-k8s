@@ -310,7 +310,8 @@ approvals:
 - Результат Day 1 (факт):
   - Telegram зафиксирован как отдельный последовательный stream после platform-core initiative Sprint S10, а не как параллельная или заменяющая её ветка;
   - MVP scope ограничен сценариями `user.notify`, `user.decision.request`, inline callbacks и optional free-text reply;
-  - reference repositories `telegram-approver` / `telegram-executor` и Context7 baseline по `/mymmrac/telego` признаны ориентиром, но не source-of-truth для service boundaries и product contract;
+  - проверяемый readiness gate выражен явно: `#444` может стартовать только пока S10 plan issue `#389` остаётся closed и сохраняет design package `#387` как baseline typed interaction contract;
+  - reference repositories `telegram-approver` / `telegram-executor` и planned baseline `github.com/mymmrac/telego v1.7.0` признаны ориентиром, но не source-of-truth для service boundaries и product contract;
   - сохранены неподвижные ограничения: typed platform contract, separation from approval flow, deferred scope для voice/STT, reminders и richer conversations;
   - создана follow-up issue `#444` для stage `run:vision` без trigger-лейбла.
 

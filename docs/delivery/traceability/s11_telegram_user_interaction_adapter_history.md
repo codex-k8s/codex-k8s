@@ -28,6 +28,7 @@ approvals:
   - обязательная зависимость от typed platform interaction contract из Issue `#360`;
   - separation from approval flow и запрет на Telegram-first влияние на core semantics;
   - deferred scope для voice/STT, reminders, richer conversation threads и дополнительных каналов.
-- Через Context7 по `/mymmrac/telego` подтверждено, что reference SDK покрывает webhook mode, inline keyboards и callback query handling; это зафиксировано как pragmatic baseline, а не как source of truth продукта.
-- Создана continuity issue `#444` для stage `run:vision`.
+- Проверяемый readiness gate выражен явно: `#444` может получать `run:vision` только пока Sprint S10 сохраняет closed-plan baseline `#389` и design package `#387` как source-of-truth для typed interaction contract.
+- Через Context7 по `/mymmrac/telego` и `go list -m -json github.com/mymmrac/telego@latest` подтверждено, что `v1.7.0` покрывает webhook mode, inline keyboards и callback query handling; библиотека внесена в `docs/design-guidelines/common/external_dependencies_catalog.md` как planned baseline, а не как source of truth продукта.
+- Создана continuity issue `#444` для stage `run:vision` с тем же prerequisite.
 - Root FR/NFR matrix обновлена точечно: Sprint S11 добавлен в coverage FR-039 и в historical package index; канонический requirements baseline при intake stage не менялся.
