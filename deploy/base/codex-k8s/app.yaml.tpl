@@ -349,10 +349,6 @@ spec:
               value: '{{ envOr "CODEXK8S_MISSION_CONTROL_VOICE_ENABLED" "" }}'
             - name: CODEXK8S_MISSION_CONTROL_WARMUP_VERIFIED
               value: '{{ envOr "CODEXK8S_MISSION_CONTROL_WARMUP_VERIFIED" "" }}'
-            - name: CODEXK8S_MISSION_CONTROL_READ_PATH_ENABLED
-              value: '{{ envOr "CODEXK8S_MISSION_CONTROL_READ_PATH_ENABLED" "" }}'
-            - name: CODEXK8S_MISSION_CONTROL_REALTIME_ENABLED
-              value: '{{ envOr "CODEXK8S_MISSION_CONTROL_REALTIME_ENABLED" "" }}'
             - name: CODEXK8S_MISSION_CONTROL_WRITE_PATH_ENABLED
               value: '{{ envOr "CODEXK8S_MISSION_CONTROL_WRITE_PATH_ENABLED" "" }}'
             - name: CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS

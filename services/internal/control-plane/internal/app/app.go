@@ -208,11 +208,9 @@ func Run() error {
 		RolloutState: valuetypes.MissionControlRolloutState{
 			CoreFeatureEnabled:  cfg.MissionControlEnabled,
 			VoiceFeatureEnabled: cfg.MissionControlVoiceEnabled,
-			SchemaReady:         cfg.MissionControlEnabled,
-			DomainReady:         cfg.MissionControlEnabled,
+			SchemaReady:         true,
+			DomainReady:         true,
 			WarmupVerified:      cfg.MissionControlWarmupVerified,
-			ReadPathEnabled:     cfg.MissionControlReadPathEnabled,
-			RealtimeEnabled:     cfg.MissionControlRealtimeEnabled,
 			WritePathEnabled:    cfg.MissionControlWritePathEnabled,
 		},
 		DefaultTimelineLimit: 100,

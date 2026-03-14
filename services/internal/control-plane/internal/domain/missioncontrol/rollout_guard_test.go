@@ -14,8 +14,6 @@ func TestResolveRolloutCapabilities_FullyEnabledCore(t *testing.T) {
 		SchemaReady:         true,
 		DomainReady:         true,
 		WarmupVerified:      true,
-		ReadPathEnabled:     true,
-		RealtimeEnabled:     true,
 		WritePathEnabled:    true,
 		VoiceFeatureEnabled: true,
 	})
@@ -39,17 +37,21 @@ func TestResolveRolloutCapabilities_AllDisabledByDefault(t *testing.T) {
 	}
 }
 
-func TestValidateRolloutState_ReadPathRequiresWarmup(t *testing.T) {
+func TestResolveRolloutCapabilities_ReadPathAlwaysAvailableWithSchemaAndDomain(t *testing.T) {
 	t.Parallel()
 
-	err := ValidateRolloutState(valuetypes.MissionControlRolloutState{
-		CoreFeatureEnabled: true,
-		SchemaReady:        true,
-		DomainReady:        true,
-		ReadPathEnabled:    true,
+	caps, err := ResolveRolloutCapabilities(valuetypes.MissionControlRolloutState{
+		SchemaReady: true,
+		DomainReady: true,
 	})
-	if err == nil {
-		t.Fatal("expected read-path validation error, got nil")
+	if err != nil {
+		t.Fatalf("ResolveRolloutCapabilities() error = %v", err)
+	}
+	if !caps.CanServeSnapshot || !caps.CanOpenRealtime {
+		t.Fatalf("expected read/realtime path to be available, got %+v", caps)
+	}
+	if caps.CanRunWarmup || caps.CanSubmitCoreCommand || caps.CanUseVoicePath {
+		t.Fatalf("expected write-side capabilities to stay disabled, got %+v", caps)
 	}
 }
 
@@ -61,10 +63,23 @@ func TestValidateRolloutState_VoiceRequiresWritePath(t *testing.T) {
 		SchemaReady:         true,
 		DomainReady:         true,
 		WarmupVerified:      true,
-		ReadPathEnabled:     true,
 		VoiceFeatureEnabled: true,
 	})
 	if err == nil {
 		t.Fatal("expected voice-path validation error, got nil")
+	}
+}
+
+func TestValidateRolloutState_WritePathRequiresWarmupVerification(t *testing.T) {
+	t.Parallel()
+
+	err := ValidateRolloutState(valuetypes.MissionControlRolloutState{
+		CoreFeatureEnabled: true,
+		SchemaReady:        true,
+		DomainReady:        true,
+		WritePathEnabled:   true,
+	})
+	if err == nil {
+		t.Fatal("expected write-path validation error, got nil")
 	}
 }

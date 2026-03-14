@@ -1,6 +1,6 @@
 package value
 
-// MissionControlCoreFeatureFlagEnv gates all core Mission Control paths.
+// MissionControlCoreFeatureFlagEnv gates worker warmup and core write-side Mission Control flows.
 const MissionControlCoreFeatureFlagEnv = "CODEXK8S_MISSION_CONTROL_ENABLED"
 
 // MissionControlVoiceFeatureFlagEnv gates optional voice-only Mission Control paths.
@@ -23,8 +23,6 @@ type MissionControlRolloutState struct {
 	SchemaReady         bool
 	DomainReady         bool
 	WarmupVerified      bool
-	ReadPathEnabled     bool
-	RealtimeEnabled     bool
 	WritePathEnabled    bool
 }
 

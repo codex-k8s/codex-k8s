@@ -126,12 +126,8 @@ type Config struct {
 	GitHubRateLimitWaitEnabled bool `env:"CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED" envDefault:"false"`
 	// MissionControlVoiceEnabled gates optional Mission Control voice flows.
 	MissionControlVoiceEnabled bool `env:"CODEXK8S_MISSION_CONTROL_VOICE_ENABLED" envDefault:"false"`
-	// MissionControlWarmupVerified explicitly opens read/write gates after worker warmup evidence.
+	// MissionControlWarmupVerified opens write-side Mission Control flows after worker warmup evidence.
 	MissionControlWarmupVerified bool `env:"CODEXK8S_MISSION_CONTROL_WARMUP_VERIFIED" envDefault:"false"`
-	// MissionControlReadPathEnabled enables Mission Control read-side APIs once warmup is verified.
-	MissionControlReadPathEnabled bool `env:"CODEXK8S_MISSION_CONTROL_READ_PATH_ENABLED" envDefault:"false"`
-	// MissionControlRealtimeEnabled enables Mission Control realtime APIs.
-	MissionControlRealtimeEnabled bool `env:"CODEXK8S_MISSION_CONTROL_REALTIME_ENABLED" envDefault:"false"`
 	// MissionControlWritePathEnabled enables Mission Control write-side APIs.
 	MissionControlWritePathEnabled bool `env:"CODEXK8S_MISSION_CONTROL_WRITE_PATH_ENABLED" envDefault:"false"`
 	// RunHeavyFieldsRetentionDays controls retention for heavy JSON payload fields in run/task tables.

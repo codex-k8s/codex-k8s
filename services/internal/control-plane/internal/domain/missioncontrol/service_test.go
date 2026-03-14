@@ -25,7 +25,6 @@ func TestSubmitCommandPendingApprovalForStageNextStep(t *testing.T) {
 		SchemaReady:        true,
 		DomainReady:        true,
 		WarmupVerified:     true,
-		ReadPathEnabled:    true,
 		WritePathEnabled:   true,
 	})
 	_, err := repo.UpsertEntity(context.Background(), missioncontrolrepo.UpsertEntityParams{
@@ -86,7 +85,6 @@ func TestSubmitCommandBlocksOnStaleProjectionVersion(t *testing.T) {
 		SchemaReady:        true,
 		DomainReady:        true,
 		WarmupVerified:     true,
-		ReadPathEnabled:    true,
 		WritePathEnabled:   true,
 	})
 	_, err := repo.UpsertEntity(context.Background(), missioncontrolrepo.UpsertEntityParams{
@@ -140,7 +138,6 @@ func TestSubmitCommandFormalizeUsesPayloadSourceAsEffectiveTarget(t *testing.T) 
 		SchemaReady:        true,
 		DomainReady:        true,
 		WarmupVerified:     true,
-		ReadPathEnabled:    true,
 		WritePathEnabled:   true,
 	})
 	sourceDiscussion, err := repo.UpsertEntity(context.Background(), missioncontrolrepo.UpsertEntityParams{
@@ -193,7 +190,6 @@ func TestSubmitCommandRejectsFormalizeTargetMismatch(t *testing.T) {
 		SchemaReady:        true,
 		DomainReady:        true,
 		WarmupVerified:     true,
-		ReadPathEnabled:    true,
 		WritePathEnabled:   true,
 	})
 	_, err := repo.UpsertEntity(context.Background(), missioncontrolrepo.UpsertEntityParams{
@@ -256,7 +252,6 @@ func TestQueueCommandIsIdempotentAfterPendingSync(t *testing.T) {
 		SchemaReady:        true,
 		DomainReady:        true,
 		WarmupVerified:     true,
-		ReadPathEnabled:    true,
 		WritePathEnabled:   true,
 	})
 	command := seedCommandForTransitionTest(t, repo, "proj-1", now)
@@ -290,7 +285,6 @@ func TestMarkCommandReconciledIsIdempotentForDuplicateDelivery(t *testing.T) {
 		SchemaReady:        true,
 		DomainReady:        true,
 		WarmupVerified:     true,
-		ReadPathEnabled:    true,
 		WritePathEnabled:   true,
 	})
 	command := seedCommandForTransitionTest(t, repo, "proj-1", now)
@@ -335,7 +329,6 @@ func TestMarkCommandFailedIsIdempotentForDuplicateDelivery(t *testing.T) {
 		SchemaReady:        true,
 		DomainReady:        true,
 		WarmupVerified:     true,
-		ReadPathEnabled:    true,
 		WritePathEnabled:   true,
 	})
 	command := seedCommandForTransitionTest(t, repo, "proj-1", now)
@@ -372,7 +365,6 @@ func TestSubmitCommandDedupesBusinessIntent(t *testing.T) {
 		SchemaReady:        true,
 		DomainReady:        true,
 		WarmupVerified:     true,
-		ReadPathEnabled:    true,
 		WritePathEnabled:   true,
 	})
 
@@ -419,7 +411,6 @@ func TestCommandLifecycleTransitions(t *testing.T) {
 		SchemaReady:        true,
 		DomainReady:        true,
 		WarmupVerified:     true,
-		ReadPathEnabled:    true,
 		WritePathEnabled:   true,
 	})
 
@@ -503,7 +494,6 @@ func TestApplyApprovalDecisionQueuesPendingCommand(t *testing.T) {
 		SchemaReady:        true,
 		DomainReady:        true,
 		WarmupVerified:     true,
-		ReadPathEnabled:    true,
 		WritePathEnabled:   true,
 	})
 	_, err := repo.UpsertEntity(context.Background(), missioncontrolrepo.UpsertEntityParams{
@@ -567,7 +557,6 @@ func TestSubmitCommandRetrySyncRejectsNonRetryableStatus(t *testing.T) {
 		SchemaReady:        true,
 		DomainReady:        true,
 		WarmupVerified:     true,
-		ReadPathEnabled:    true,
 		WritePathEnabled:   true,
 	})
 
@@ -613,7 +602,6 @@ func TestListActiveSetAndEntityDetails(t *testing.T) {
 		SchemaReady:        true,
 		DomainReady:        true,
 		WarmupVerified:     true,
-		ReadPathEnabled:    true,
 		WritePathEnabled:   true,
 	})
 	discussion, err := repo.UpsertEntity(context.Background(), missioncontrolrepo.UpsertEntityParams{
@@ -704,19 +692,17 @@ func TestListActiveSetAndEntityDetails(t *testing.T) {
 	}
 }
 
-func TestReadPathGuardBlocksProjectionQueries(t *testing.T) {
+func TestReadPathQueriesStayAvailableWithoutWriteSideFlags(t *testing.T) {
 	t.Parallel()
 
 	svc, _, _, _ := newTestService(t, valuetypes.MissionControlRolloutState{
-		CoreFeatureEnabled: true,
-		SchemaReady:        true,
-		DomainReady:        true,
+		SchemaReady: true,
+		DomainReady: true,
 	})
 
 	_, err := svc.ListActiveSet(context.Background(), ActiveSetQuery{ProjectID: "proj-1"})
-	var precondition errs.FailedPrecondition
-	if !errors.As(err, &precondition) {
-		t.Fatalf("expected FailedPrecondition, got %v", err)
+	if err != nil {
+		t.Fatalf("ListActiveSet() error = %v", err)
 	}
 }
 
@@ -1266,7 +1252,6 @@ func TestGetCommandStatusDecodesResultPayload(t *testing.T) {
 		SchemaReady:        true,
 		DomainReady:        true,
 		WarmupVerified:     true,
-		ReadPathEnabled:    true,
 		WritePathEnabled:   true,
 	})
 	admission, err := svc.SubmitCommand(context.Background(), SubmitCommandParams{

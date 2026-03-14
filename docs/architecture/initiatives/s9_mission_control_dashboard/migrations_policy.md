@@ -52,16 +52,13 @@ approvals:
    - запустить rebuild job под owner-логикой `control-plane` / execution `worker`;
    - собрать initial active set из issue/PR/discussion/run/provider state;
    - materialize timeline projection and relation graph.
-4. Enable read path:
-   - открыть snapshot/details HTTP + gRPC endpoints;
-   - realtime stream остаётся gated until warmup verification succeeds.
-5. Enable realtime path:
-   - открыть WebSocket stream and delta publishing;
-   - начать публиковать `stale`/`degraded` events.
-6. Enable core inline commands:
+4. Read path is available by default after schema/domain rollout:
+   - snapshot/details HTTP + gRPC endpoints открываются вместе с доставкой схемы и доменного сервиса;
+   - realtime stream открывается вместе с read path, без отдельных operator env-gates.
+5. Enable core inline commands:
    - включить `discussion.create`, `work_item.create`, `discussion.formalize`, `stage.next_step.execute`, `command.retry_sync`.
    - `stage.next_step.execute` сначала включается только с path `pending_approval -> queued`, без bypass approval state.
-7. Enable optional voice path:
+6. Enable optional voice path:
    - только после отдельной owner decision и `CODEXK8S_MISSION_CONTROL_VOICE_ENABLED=true`.
 
 ## Как выполняются миграции при деплое

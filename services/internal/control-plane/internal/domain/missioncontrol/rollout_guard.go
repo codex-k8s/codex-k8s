@@ -12,10 +12,10 @@ func ResolveRolloutCapabilities(state valuetypes.MissionControlRolloutState) (va
 		return valuetypes.MissionControlRolloutCapabilities{}, err
 	}
 
-	canWarmup := state.CoreFeatureEnabled && state.SchemaReady && state.DomainReady
-	canSnapshot := canWarmup && state.WarmupVerified && state.ReadPathEnabled
-	canRealtime := canSnapshot && state.RealtimeEnabled
-	canWrite := canSnapshot && state.WritePathEnabled
+	canSnapshot := state.SchemaReady && state.DomainReady
+	canRealtime := canSnapshot
+	canWarmup := state.CoreFeatureEnabled && canSnapshot
+	canWrite := canWarmup && state.WarmupVerified && state.WritePathEnabled
 
 	return valuetypes.MissionControlRolloutCapabilities{
 		CanRunWarmup:         canWarmup,
@@ -28,26 +28,20 @@ func ResolveRolloutCapabilities(state valuetypes.MissionControlRolloutState) (va
 
 // ValidateRolloutState ensures Mission Control gates follow the documented rollout order.
 func ValidateRolloutState(state valuetypes.MissionControlRolloutState) error {
-	if !state.CoreFeatureEnabled {
-		if state.VoiceFeatureEnabled || state.SchemaReady || state.DomainReady || state.WarmupVerified || state.ReadPathEnabled || state.RealtimeEnabled || state.WritePathEnabled {
-			return fmt.Errorf("mission control rollout: core feature flag disabled but rollout state is partially enabled")
-		}
-		return nil
-	}
 	if state.DomainReady && !state.SchemaReady {
 		return fmt.Errorf("mission control rollout: domain readiness requires schema readiness")
 	}
 	if state.WarmupVerified && (!state.SchemaReady || !state.DomainReady) {
 		return fmt.Errorf("mission control rollout: warmup verification requires schema and domain readiness")
 	}
-	if state.ReadPathEnabled && !state.WarmupVerified {
-		return fmt.Errorf("mission control rollout: read-path enablement requires warmup verification")
+	if state.WarmupVerified && !state.CoreFeatureEnabled {
+		return fmt.Errorf("mission control rollout: warmup verification requires core feature enablement")
 	}
-	if state.RealtimeEnabled && !state.ReadPathEnabled {
-		return fmt.Errorf("mission control rollout: realtime enablement requires read-path enablement")
+	if state.WritePathEnabled && !state.CoreFeatureEnabled {
+		return fmt.Errorf("mission control rollout: write-path enablement requires core feature enablement")
 	}
-	if state.WritePathEnabled && !state.ReadPathEnabled {
-		return fmt.Errorf("mission control rollout: write-path enablement requires read-path enablement")
+	if state.WritePathEnabled && !state.WarmupVerified {
+		return fmt.Errorf("mission control rollout: write-path enablement requires warmup verification")
 	}
 	if state.VoiceFeatureEnabled && !state.WritePathEnabled {
 		return fmt.Errorf("mission control rollout: voice feature requires core write-path enablement")

@@ -135,7 +135,7 @@ approvals:
 
 ## Актуализация по Issue #371 (`run:dev`, 2026-03-13)
 - Реализован worker stream `S9-E03` для Mission Control Dashboard:
-  - `control-plane` теперь поднимает Mission Control domain service и worker-facing coordinator `internal/domain/missioncontrolworker/service.go`, а также rollout env-gates `CODEXK8S_MISSION_CONTROL_{ENABLED,VOICE_ENABLED,WARMUP_VERIFIED,READ_PATH_ENABLED,REALTIME_ENABLED,WRITE_PATH_ENABLED}`;
+  - `control-plane` теперь поднимает Mission Control domain service и worker-facing coordinator `internal/domain/missioncontrolworker/service.go`; read/realtime path больше не требуют отдельных rollout env-gates и доступны после schema/domain rollout, а env-переключатели остаются только для worker warmup/write/voice path (`CODEXK8S_MISSION_CONTROL_{ENABLED,VOICE_ENABLED,WARMUP_VERIFIED,WRITE_PATH_ENABLED}`);
   - добавлен internal gRPC surface в `proto/codexk8s/controlplane/v1/controlplane.proto` и `internal/transport/grpc/server_mission_control_worker_methods.go` для warmup-project scan, warmup execution, pending command listing и typed command status transitions `queued -> pending_sync -> reconciled|failed`;
   - `worker` получил Mission Control reconcile loop `internal/domain/worker/mission_control.go` с warmup throttling, bounded retry window и provider-safe execution path для `stage.next_step.execute` через существующий `ExecuteNextStepAction` RPC;
   - warmup/backfill строит coarse active-set projection из существующих `agent_runs` + `flow_events`, заполняя `mission_control_entities`, `mission_control_relations` и `mission_control_timeline_entries` без переноса schema/domain ownership в `worker`;
@@ -143,7 +143,7 @@ approvals:
 - Зафиксированы guardrails:
   - `worker` исполняет только execution/retry contour и использует control-plane-owned typed mutations;
   - фактический provider-safe path в этой волне ограничен `stage.next_step.execute`, а unsupported Mission Control command kinds переводятся в typed `failed`;
-  - открытие read-path/realtime/write-path по-прежнему остаётся rollout-gate через `CODEXK8S_MISSION_CONTROL_WARMUP_VERIFIED` и связанные env-переключатели после warmup evidence.
+  - read-path/realtime больше не закрываются env-переключателями; operator-controlled gate сохраняется только для write-path после warmup evidence.
 - Через Context7 подтверждён актуальный gRPC Go baseline для unary RPC/status handling (`/grpc/grpc-go`), после чего worker/control-plane internal transport был собран на typed proto contracts без ad-hoc transport payloads.
 - Проверки:
   - `make gen-proto-go`
