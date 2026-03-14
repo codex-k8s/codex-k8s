@@ -6,7 +6,9 @@ import "time"
 type ResponseRecordRow struct {
 	ID               int64     `db:"id"`
 	InteractionID    string    `db:"interaction_id"`
+	ChannelBindingID int64     `db:"channel_binding_id"`
 	CallbackEventID  int64     `db:"callback_event_id"`
+	HandleKind       string    `db:"handle_kind"`
 	ResponseKind     string    `db:"response_kind"`
 	SelectedOptionID string    `db:"selected_option_id"`
 	FreeText         string    `db:"free_text"`

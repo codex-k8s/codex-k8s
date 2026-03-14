@@ -23,17 +23,21 @@ type InteractionDispatchClaim struct {
 
 // CompleteInteractionDispatchParams describes one persisted dispatch outcome from worker.
 type CompleteInteractionDispatchParams struct {
-	InteractionID       string
-	DeliveryID          string
-	AdapterKind         string
-	Status              enumtypes.InteractionDeliveryAttemptStatus
-	RequestEnvelopeJSON json.RawMessage
-	AckPayloadJSON      json.RawMessage
-	AdapterDeliveryID   string
-	Retryable           bool
-	NextRetryAt         *time.Time
-	LastErrorCode       string
-	FinishedAt          time.Time
+	InteractionID          string
+	DeliveryID             string
+	AdapterKind            string
+	Status                 enumtypes.InteractionDeliveryAttemptStatus
+	RequestEnvelopeJSON    json.RawMessage
+	AckPayloadJSON         json.RawMessage
+	AdapterDeliveryID      string
+	ProviderMessageRefJSON json.RawMessage
+	EditCapability         enumtypes.InteractionEditCapability
+	Retryable              bool
+	NextRetryAt            *time.Time
+	LastErrorCode          string
+	CallbackTokenKeyID     string
+	CallbackTokenExpiresAt *time.Time
+	FinishedAt             time.Time
 }
 
 // CompleteInteractionDispatchResult describes aggregate state after attempt completion.

@@ -30,7 +30,7 @@ func TestVerifyInteractionCallbackTokenAllowsInactiveRun(t *testing.T) {
 	t.Parallel()
 
 	service := newTokenTestService("completed")
-	token := mustSignTokenTestRunToken(t, service, interactionCallbackTokenSubjectPrefix+"interaction-1")
+	token := mustSignInteractionCallbackTestToken(t, service, "interaction-1")
 
 	session, err := service.VerifyInteractionCallbackToken(context.Background(), token, "interaction-1")
 	if err != nil {
@@ -48,7 +48,7 @@ func TestVerifyInteractionCallbackTokenRejectsSubjectMismatch(t *testing.T) {
 	t.Parallel()
 
 	service := newTokenTestService("completed")
-	token := mustSignTokenTestRunToken(t, service, interactionCallbackTokenSubjectPrefix+"interaction-1")
+	token := mustSignInteractionCallbackTestToken(t, service, "interaction-1")
 
 	_, err := service.VerifyInteractionCallbackToken(context.Background(), token, "interaction-2")
 	if err == nil {
@@ -67,7 +67,7 @@ func TestIssueInteractionCallbackTokenKeepsPostDeadlineGrace(t *testing.T) {
 	service := newTokenTestService("running")
 	service.now = func() time.Time { return now }
 
-	token, err := service.issueInteractionCallbackToken(
+	issued, err := service.issueInteractionCallbackToken(
 		entitytypes.AgentRun{
 			ID:            "run-1",
 			CorrelationID: "corr-1",
@@ -77,12 +77,16 @@ func TestIssueInteractionCallbackTokenKeepsPostDeadlineGrace(t *testing.T) {
 			ID:                 "interaction-1",
 			ResponseDeadlineAt: &deadline,
 		},
+		"delivery-1",
 	)
 	if err != nil {
 		t.Fatalf("issueInteractionCallbackToken returned error: %v", err)
 	}
+	if issued.KeyID != "codex-k8s/test" {
+		t.Fatalf("key_id = %q, want codex-k8s/test", issued.KeyID)
+	}
 
-	session, err := service.parseRunToken(token)
+	session, err := service.parseRunToken(issued.Token)
 	if err != nil {
 		t.Fatalf("parseRunToken returned error: %v", err)
 	}
@@ -122,6 +126,31 @@ func mustSignTokenTestRunToken(t *testing.T, service *Service, subject string) s
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    service.cfg.TokenIssuer,
 			Subject:   strings.TrimSpace(subject),
+			IssuedAt:  jwt.NewNumericDate(issuedAt),
+			NotBefore: jwt.NewNumericDate(issuedAt),
+			ExpiresAt: jwt.NewNumericDate(issuedAt.Add(5 * time.Minute)),
+		},
+	})
+	if err != nil {
+		t.Fatalf("signRunToken returned error: %v", err)
+	}
+	return token
+}
+
+func mustSignInteractionCallbackTestToken(t *testing.T, service *Service, interactionID string) string {
+	t.Helper()
+
+	issuedAt := time.Now().UTC().Add(-1 * time.Minute)
+	token, err := service.signRunToken(runTokenClaims{
+		RunID:         "run-1",
+		CorrelationID: "corr-1",
+		ProjectID:     "project-1",
+		Scope:         interactionCallbackTokenScope,
+		InteractionID: strings.TrimSpace(interactionID),
+		AdapterKind:   interactionCallbackTokenAdapterKind,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    service.cfg.TokenIssuer,
+			Subject:   interactionCallbackTokenSubjectPrefix + strings.TrimSpace(interactionID),
 			IssuedAt:  jwt.NewNumericDate(issuedAt),
 			NotBefore: jwt.NewNumericDate(issuedAt),
 			ExpiresAt: jwt.NewNumericDate(issuedAt.Add(5 * time.Minute)),

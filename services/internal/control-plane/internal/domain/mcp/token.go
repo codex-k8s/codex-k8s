@@ -12,6 +12,8 @@ import (
 const (
 	interactionCallbackTokenGraceTTL      = minTokenTTL
 	interactionCallbackTokenSubjectPrefix = "mcp-interaction-callback:"
+	interactionCallbackTokenScope         = "interaction_callback"
+	interactionCallbackTokenAdapterKind   = "telegram"
 )
 
 type runTokenClaims struct {
@@ -20,7 +22,17 @@ type runTokenClaims struct {
 	ProjectID     string `json:"project_id,omitempty"`
 	Namespace     string `json:"namespace,omitempty"`
 	RuntimeMode   string `json:"runtime_mode"`
+	Scope         string `json:"scope,omitempty"`
+	InteractionID string `json:"interaction_id,omitempty"`
+	DeliveryID    string `json:"delivery_id,omitempty"`
+	AdapterKind   string `json:"adapter_kind,omitempty"`
 	jwt.RegisteredClaims
+}
+
+type interactionCallbackToken struct {
+	Token     string
+	KeyID     string
+	ExpiresAt time.Time
 }
 
 func (s *Service) signRunToken(payload runTokenClaims) (string, error) {
@@ -38,6 +50,10 @@ func (s *Service) signRunToken(payload runTokenClaims) (string, error) {
 		ProjectID:        strings.TrimSpace(payload.ProjectID),
 		Namespace:        strings.TrimSpace(payload.Namespace),
 		RuntimeMode:      string(parseRuntimeMode(payload.RuntimeMode)),
+		Scope:            strings.TrimSpace(payload.Scope),
+		InteractionID:    strings.TrimSpace(payload.InteractionID),
+		DeliveryID:       strings.TrimSpace(payload.DeliveryID),
+		AdapterKind:      strings.TrimSpace(payload.AdapterKind),
 		RegisteredClaims: claimsRegistered,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -98,7 +114,7 @@ func (s *Service) parseRunToken(rawToken string) (SessionContext, error) {
 	}, nil
 }
 
-func (s *Service) issueInteractionCallbackToken(run entitytypes.AgentRun, interaction entitytypes.InteractionRequest) (string, error) {
+func (s *Service) issueInteractionCallbackToken(run entitytypes.AgentRun, interaction entitytypes.InteractionRequest, deliveryID string) (interactionCallbackToken, error) {
 	now := s.now().UTC()
 	expiresAt := now.Add(interactionCallbackTokenGraceTTL)
 	if interaction.ResponseDeadlineAt != nil {
@@ -108,10 +124,14 @@ func (s *Service) issueInteractionCallbackToken(run entitytypes.AgentRun, intera
 		}
 	}
 
-	return s.signRunToken(runTokenClaims{
+	token, err := s.signRunToken(runTokenClaims{
 		RunID:         strings.TrimSpace(run.ID),
 		CorrelationID: strings.TrimSpace(run.CorrelationID),
 		ProjectID:     strings.TrimSpace(run.ProjectID),
+		Scope:         interactionCallbackTokenScope,
+		InteractionID: strings.TrimSpace(interaction.ID),
+		DeliveryID:    strings.TrimSpace(deliveryID),
+		AdapterKind:   interactionCallbackTokenAdapterKind,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   interactionCallbackTokenSubjectPrefix + strings.TrimSpace(interaction.ID),
 			IssuedAt:  jwt.NewNumericDate(now),
@@ -119,4 +139,20 @@ func (s *Service) issueInteractionCallbackToken(run entitytypes.AgentRun, intera
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 		},
 	})
+	if err != nil {
+		return interactionCallbackToken{}, err
+	}
+	return interactionCallbackToken{
+		Token:     token,
+		KeyID:     s.interactionCallbackTokenKeyID(),
+		ExpiresAt: expiresAt,
+	}, nil
+}
+
+func (s *Service) interactionCallbackTokenKeyID() string {
+	keyID := strings.TrimSpace(s.cfg.TokenIssuer)
+	if keyID == "" {
+		return defaultTokenIssuer
+	}
+	return keyID
 }

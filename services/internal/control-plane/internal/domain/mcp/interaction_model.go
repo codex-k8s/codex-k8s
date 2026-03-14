@@ -79,6 +79,7 @@ type SubmitInteractionCallbackResult struct {
 	Classification      enumtypes.InteractionCallbackResultClassification `json:"classification"`
 	InteractionState    string                                            `json:"interaction_state"`
 	ResumeRequired      bool                                              `json:"resume_required"`
+	ContinuationAction  enumtypes.InteractionContinuationAction           `json:"continuation_action"`
 	EffectiveResponseID int64                                             `json:"effective_response_id,omitempty"`
 	ResumePayload       *valuetypes.InteractionResumePayload              `json:"resume_payload,omitempty"`
 }

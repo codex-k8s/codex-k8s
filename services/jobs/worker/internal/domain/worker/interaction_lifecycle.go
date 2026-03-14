@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
@@ -153,13 +154,17 @@ func (s *Service) dispatchInteraction(ctx context.Context, claim InteractionDisp
 func (s *Service) resolveInteractionDispatchCompletion(claim InteractionDispatchClaim, ack InteractionDispatchAck, dispatchErr error) CompleteInteractionDispatchParams {
 	now := s.now().UTC()
 	params := CompleteInteractionDispatchParams{
-		InteractionID:       claim.InteractionID,
-		DeliveryID:          claim.Attempt.DeliveryID,
-		AdapterKind:         resolveInteractionAdapterKind(claim, ack),
-		RequestEnvelopeJSON: claim.RequestEnvelopeJSON,
-		AckPayloadJSON:      resolveInteractionAckPayload(ack, dispatchErr),
-		AdapterDeliveryID:   ack.AdapterDeliveryID,
-		FinishedAt:          now,
+		InteractionID:          claim.InteractionID,
+		DeliveryID:             claim.Attempt.DeliveryID,
+		AdapterKind:            resolveInteractionAdapterKind(claim, ack),
+		RequestEnvelopeJSON:    claim.RequestEnvelopeJSON,
+		AckPayloadJSON:         resolveInteractionAckPayload(ack, dispatchErr),
+		AdapterDeliveryID:      ack.AdapterDeliveryID,
+		ProviderMessageRefJSON: ack.ProviderMessageRefJSON,
+		EditCapability:         strings.TrimSpace(ack.EditCapability),
+		CallbackTokenKeyID:     strings.TrimSpace(ack.CallbackTokenKeyID),
+		CallbackTokenExpiresAt: ack.CallbackTokenExpiresAt,
+		FinishedAt:             now,
 	}
 
 	if dispatchErr == nil {

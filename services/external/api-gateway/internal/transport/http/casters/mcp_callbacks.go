@@ -12,13 +12,12 @@ import (
 )
 
 const (
-	interactionCallbackSchemaVersion = "v1"
+	interactionCallbackSchemaVersion = "telegram-interaction-v1"
 
 	interactionCallbackKindDeliveryReceipt  = "delivery_receipt"
-	interactionCallbackKindDecisionResponse = "decision_response"
-
-	interactionResponseKindOption   = "option"
-	interactionResponseKindFreeText = "free_text"
+	interactionCallbackKindOptionSelected   = "option_selected"
+	interactionCallbackKindFreeTextReceived = "free_text_received"
+	interactionCallbackKindTransportFailure = "transport_failure"
 
 	interactionDeliveryStatusAccepted  = "accepted"
 	interactionDeliveryStatusDelivered = "delivered"
@@ -36,20 +35,29 @@ func InteractionCallbackRequest(item models.InteractionCallbackEnvelope) (*contr
 		return nil, err
 	}
 
-	req := &controlplanev1.SubmitInteractionCallbackRequest{
-		InteractionId:  normalized.InteractionID,
-		DeliveryId:     optionalString(normalized.DeliveryID),
-		AdapterEventId: normalized.AdapterEventID,
-		CallbackKind:   normalized.CallbackKind,
-		OccurredAt:     timestamppb.New(occurredAt),
-		DeliveryStatus: optionalString(normalized.DeliveryStatus),
-		RawPayloadJson: rawPayloadJSON,
+	providerMessageRefJSON, err := marshalInteractionProviderMessageRef(normalized.ProviderMessageRef)
+	if err != nil {
+		return nil, err
 	}
-	if normalized.Response != nil {
-		req.ResponseKind = optionalString(normalized.Response.ResponseKind)
-		req.SelectedOptionId = optionalString(normalized.Response.SelectedOptionID)
-		req.FreeText = optionalString(normalized.Response.FreeText)
-		req.ResponderRef = optionalString(normalized.Response.ResponderRef)
+
+	req := &controlplanev1.SubmitInteractionCallbackRequest{
+		InteractionId:           normalized.InteractionID,
+		DeliveryId:              optionalString(normalized.DeliveryID),
+		AdapterEventId:          normalized.AdapterEventID,
+		CallbackKind:            normalized.CallbackKind,
+		OccurredAt:              timestamppb.New(occurredAt),
+		CallbackHandle:          optionalString(normalized.CallbackHandle),
+		FreeText:                optionalString(normalized.FreeText),
+		ResponderRef:            optionalString(normalized.ResponderRef),
+		ProviderMessageRefJson:  providerMessageRefJSON,
+		ProviderUpdateId:        optionalString(normalized.ProviderUpdateID),
+		ProviderCallbackQueryId: optionalString(normalized.ProviderCallbackQueryID),
+		DeliveryStatus:          optionalString(normalized.DeliveryStatus),
+		RawPayloadJson:          rawPayloadJSON,
+	}
+	if normalized.Error != nil {
+		req.TransportErrorCode = optionalString(normalized.Error.Code)
+		req.TransportRetryable = normalized.Error.Retryable
 	}
 
 	return req, nil
@@ -61,17 +69,18 @@ func InteractionCallbackOutcome(item *controlplanev1.SubmitInteractionCallbackRe
 	}
 
 	return models.InteractionCallbackOutcome{
-		Accepted:         item.GetAccepted(),
-		Classification:   strings.TrimSpace(item.GetClassification()),
-		InteractionState: strings.TrimSpace(item.GetInteractionState()),
-		ResumeRequired:   item.GetResumeRequired(),
+		Accepted:           item.GetAccepted(),
+		Classification:     strings.TrimSpace(item.GetClassification()),
+		InteractionState:   strings.TrimSpace(item.GetInteractionState()),
+		ResumeRequired:     item.GetResumeRequired(),
+		ContinuationAction: strings.TrimSpace(item.GetContinuationAction()),
 	}
 }
 
 func normalizeInteractionCallbackEnvelope(item models.InteractionCallbackEnvelope) (models.InteractionCallbackEnvelope, time.Time, error) {
 	item.SchemaVersion = strings.TrimSpace(item.SchemaVersion)
 	if item.SchemaVersion != interactionCallbackSchemaVersion {
-		return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "schema_version", Msg: "must be v1"}
+		return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "schema_version", Msg: "must be telegram-interaction-v1"}
 	}
 
 	item.InteractionID = strings.TrimSpace(item.InteractionID)
@@ -87,9 +96,12 @@ func normalizeInteractionCallbackEnvelope(item models.InteractionCallbackEnvelop
 
 	item.CallbackKind = strings.ToLower(strings.TrimSpace(item.CallbackKind))
 	switch item.CallbackKind {
-	case interactionCallbackKindDeliveryReceipt, interactionCallbackKindDecisionResponse:
+	case interactionCallbackKindDeliveryReceipt,
+		interactionCallbackKindOptionSelected,
+		interactionCallbackKindFreeTextReceived,
+		interactionCallbackKindTransportFailure:
 	default:
-		return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "callback_kind", Msg: "must be delivery_receipt or decision_response"}
+		return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "callback_kind", Msg: "must be delivery_receipt, option_selected, free_text_received, or transport_failure"}
 	}
 
 	item.OccurredAt = strings.TrimSpace(item.OccurredAt)
@@ -99,13 +111,34 @@ func normalizeInteractionCallbackEnvelope(item models.InteractionCallbackEnvelop
 	}
 	occurredAt = occurredAt.UTC()
 
-	item.AdapterDeliveryID = strings.TrimSpace(item.AdapterDeliveryID)
+	item.CallbackHandle = strings.TrimSpace(item.CallbackHandle)
+	item.FreeText = strings.TrimSpace(item.FreeText)
+	item.ResponderRef = strings.TrimSpace(item.ResponderRef)
+	item.ProviderUpdateID = strings.TrimSpace(item.ProviderUpdateID)
+	item.ProviderCallbackQueryID = strings.TrimSpace(item.ProviderCallbackQueryID)
 	item.DeliveryStatus = strings.ToLower(strings.TrimSpace(item.DeliveryStatus))
+
+	normalizedProviderMessageRef, err := normalizeInteractionProviderMessageRef(item.ProviderMessageRef)
+	if err != nil {
+		return models.InteractionCallbackEnvelope{}, time.Time{}, err
+	}
+	item.ProviderMessageRef = normalizedProviderMessageRef
+
+	if item.Error != nil {
+		item.Error.Code = strings.TrimSpace(item.Error.Code)
+		item.Error.Message = strings.TrimSpace(item.Error.Message)
+	}
 
 	switch item.CallbackKind {
 	case interactionCallbackKindDeliveryReceipt:
-		if item.Response != nil {
-			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "response", Msg: "must be omitted for delivery_receipt"}
+		if item.CallbackHandle != "" {
+			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "callback_handle", Msg: "must be omitted for delivery_receipt"}
+		}
+		if item.FreeText != "" {
+			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "free_text", Msg: "must be omitted for delivery_receipt"}
+		}
+		if item.Error != nil {
+			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "error", Msg: "must be omitted for delivery_receipt"}
 		}
 		switch item.DeliveryStatus {
 		case interactionDeliveryStatusAccepted, interactionDeliveryStatusDelivered, interactionDeliveryStatusFailed:
@@ -114,44 +147,83 @@ func normalizeInteractionCallbackEnvelope(item models.InteractionCallbackEnvelop
 		default:
 			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "delivery_status", Msg: "must be accepted, delivered, or failed"}
 		}
-	case interactionCallbackKindDecisionResponse:
+	case interactionCallbackKindOptionSelected:
+		if item.CallbackHandle == "" {
+			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "callback_handle", Msg: "is required for option_selected"}
+		}
+		if item.FreeText != "" {
+			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "free_text", Msg: "must be omitted for option_selected"}
+		}
 		if item.DeliveryStatus != "" {
-			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "delivery_status", Msg: "must be omitted for decision_response"}
+			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "delivery_status", Msg: "must be omitted for option_selected"}
 		}
-		if item.Response == nil {
-			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "response", Msg: "is required for decision_response"}
+		if item.Error != nil {
+			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "error", Msg: "must be omitted for option_selected"}
 		}
-		normalizedResponse := *item.Response
-		normalizedResponse.ResponseKind = strings.ToLower(strings.TrimSpace(normalizedResponse.ResponseKind))
-		normalizedResponse.SelectedOptionID = strings.TrimSpace(normalizedResponse.SelectedOptionID)
-		normalizedResponse.FreeText = strings.TrimSpace(normalizedResponse.FreeText)
-		normalizedResponse.ResponderRef = strings.TrimSpace(normalizedResponse.ResponderRef)
-
-		switch normalizedResponse.ResponseKind {
-		case interactionResponseKindOption:
-			if normalizedResponse.SelectedOptionID == "" {
-				return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "response.selected_option_id", Msg: "is required for option response"}
-			}
-		case interactionResponseKindFreeText:
-			if normalizedResponse.FreeText == "" {
-				return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "response.free_text", Msg: "is required for free_text response"}
-			}
-		default:
-			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "response.response_kind", Msg: "must be option or free_text"}
+	case interactionCallbackKindFreeTextReceived:
+		if item.CallbackHandle == "" {
+			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "callback_handle", Msg: "is required for free_text_received"}
 		}
-
-		item.Response = &normalizedResponse
-	}
-
-	if item.Error != nil {
-		normalizedError := *item.Error
-		normalizedError.Code = strings.TrimSpace(normalizedError.Code)
-		normalizedError.Message = strings.TrimSpace(normalizedError.Message)
-		item.Error = &normalizedError
+		if item.FreeText == "" {
+			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "free_text", Msg: "is required for free_text_received"}
+		}
+		if item.DeliveryStatus != "" {
+			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "delivery_status", Msg: "must be omitted for free_text_received"}
+		}
+		if item.Error != nil {
+			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "error", Msg: "must be omitted for free_text_received"}
+		}
+	case interactionCallbackKindTransportFailure:
+		if item.CallbackHandle != "" {
+			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "callback_handle", Msg: "must be omitted for transport_failure"}
+		}
+		if item.FreeText != "" {
+			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "free_text", Msg: "must be omitted for transport_failure"}
+		}
+		if item.DeliveryStatus != "" {
+			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "delivery_status", Msg: "must be omitted for transport_failure"}
+		}
+		if item.Error == nil {
+			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "error", Msg: "is required for transport_failure"}
+		}
+		if item.Error.Code == "" {
+			return models.InteractionCallbackEnvelope{}, time.Time{}, errs.Validation{Field: "error.code", Msg: "is required for transport_failure"}
+		}
 	}
 
 	item.OccurredAt = occurredAt.Format(time.RFC3339Nano)
 	return item, occurredAt, nil
+}
+
+func normalizeInteractionProviderMessageRef(item *models.InteractionProviderMessageRef) (*models.InteractionProviderMessageRef, error) {
+	if item == nil {
+		return nil, nil
+	}
+
+	normalized := *item
+	normalized.ChatRef = strings.TrimSpace(normalized.ChatRef)
+	normalized.MessageID = strings.TrimSpace(normalized.MessageID)
+	normalized.InlineMessageID = strings.TrimSpace(normalized.InlineMessageID)
+	normalized.SentAt = strings.TrimSpace(normalized.SentAt)
+
+	if normalized.SentAt != "" {
+		sentAt, err := time.Parse(time.RFC3339Nano, normalized.SentAt)
+		if err != nil {
+			return nil, errs.Validation{Field: "provider_message_ref.sent_at", Msg: "must be a valid RFC3339 timestamp"}
+		}
+		normalized.SentAt = sentAt.UTC().Format(time.RFC3339Nano)
+	}
+	if normalized.ChatRef == "" && normalized.MessageID == "" && normalized.InlineMessageID == "" && normalized.SentAt == "" {
+		return nil, nil
+	}
+	return &normalized, nil
+}
+
+func marshalInteractionProviderMessageRef(item *models.InteractionProviderMessageRef) ([]byte, error) {
+	if item == nil {
+		return nil, nil
+	}
+	return json.Marshal(item)
 }
 
 func optionalString(value string) *string {

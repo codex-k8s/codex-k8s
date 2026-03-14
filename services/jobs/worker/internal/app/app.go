@@ -121,6 +121,13 @@ func Run() error {
 	if jobImageCheckTimeout <= 0 {
 		return fmt.Errorf("CODEXK8S_WORKER_JOB_IMAGE_CHECK_TIMEOUT must be > 0")
 	}
+	telegramInteractionAdapterTimeout, err := time.ParseDuration(cfg.TelegramInteractionAdapterTimeout)
+	if err != nil {
+		return fmt.Errorf("parse CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT: %w", err)
+	}
+	if telegramInteractionAdapterTimeout <= 0 {
+		return fmt.Errorf("CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT must be > 0")
+	}
 
 	learningDefault := false
 	if strings.TrimSpace(cfg.LearningModeDefault) != "" {
@@ -185,6 +192,17 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("create worker job image checker: %w", err)
 	}
+	var interactionDispatcher worker.InteractionDispatcher
+	if strings.TrimSpace(cfg.TelegramInteractionAdapterBaseURL) != "" {
+		interactionDispatcher, err = worker.NewTelegramInteractionDispatcher(worker.TelegramInteractionDispatcherConfig{
+			BaseURL:     cfg.TelegramInteractionAdapterBaseURL,
+			BearerToken: cfg.TelegramInteractionAdapterBearerToken,
+			Timeout:     telegramInteractionAdapterTimeout,
+		})
+		if err != nil {
+			return fmt.Errorf("create telegram interaction dispatcher: %w", err)
+		}
+	}
 
 	service := worker.NewService(worker.Config{
 		WorkerID:                          cfg.WorkerID,
@@ -239,17 +257,18 @@ func Run() error {
 		AIReasoningHighLabel:              cfg.AIReasoningHighLabel,
 		AIReasoningExtraHighLabel:         cfg.AIReasoningExtraHighLabel,
 	}, worker.Dependencies{
-		Runs:            runs,
-		Events:          events,
-		Feedback:        feedback,
-		Launcher:        launcher,
-		RuntimePreparer: controlPlane,
-		MCPTokenIssuer:  controlPlane,
-		RunStatus:       controlPlane,
-		Interactions:    controlPlane,
-		MissionControl:  controlPlane,
-		JobImageChecker: jobImageChecker,
-		Logger:          logger,
+		Runs:                  runs,
+		Events:                events,
+		Feedback:              feedback,
+		Launcher:              launcher,
+		RuntimePreparer:       controlPlane,
+		MCPTokenIssuer:        controlPlane,
+		RunStatus:             controlPlane,
+		Interactions:          controlPlane,
+		MissionControl:        controlPlane,
+		InteractionDispatcher: interactionDispatcher,
+		JobImageChecker:       jobImageChecker,
+		Logger:                logger,
 	})
 
 	ctx, stop := signal.NotifyContext(appCtx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)

@@ -29,7 +29,7 @@ func TestSubmitInteractionCallback_RejectsTokenSubjectMismatch(t *testing.T) {
 	_, err := srv.SubmitInteractionCallback(ctx, &controlplanev1.SubmitInteractionCallbackRequest{
 		InteractionId:  "interaction-1",
 		OccurredAt:     timestamppb.New(time.Now().UTC()),
-		CallbackKind:   string(enumtypes.InteractionCallbackKindDecisionResponse),
+		CallbackKind:   string(enumtypes.InteractionCallbackKindOptionSelected),
 		AdapterEventId: "event-1",
 	})
 	if err == nil {
@@ -74,6 +74,7 @@ func TestSubmitInteractionCallback_MapsAcceptedClassificationToApplied(t *testin
 					Classification:      enumtypes.InteractionCallbackResultClassificationAccepted,
 					InteractionState:    "resolved",
 					ResumeRequired:      true,
+					ContinuationAction:  enumtypes.InteractionContinuationActionEditMessage,
 					EffectiveResponseID: 55,
 				}, nil
 			},
@@ -82,15 +83,15 @@ func TestSubmitInteractionCallback_MapsAcceptedClassificationToApplied(t *testin
 
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer token-1"))
 	resp, err := srv.SubmitInteractionCallback(ctx, &controlplanev1.SubmitInteractionCallbackRequest{
-		InteractionId:    "interaction-1",
-		DeliveryId:       stringPtr("delivery-1"),
-		AdapterEventId:   "event-1",
-		CallbackKind:     string(enumtypes.InteractionCallbackKindDecisionResponse),
-		OccurredAt:       timestamppb.New(occurredAt),
-		ResponseKind:     stringPtr("option"),
-		SelectedOptionId: stringPtr("approve"),
-		ResponderRef:     stringPtr("user-42"),
-		RawPayloadJson:   []byte(`{"interaction_id":"interaction-1"}`),
+		InteractionId:          "interaction-1",
+		DeliveryId:             stringPtr("delivery-1"),
+		AdapterEventId:         "event-1",
+		CallbackKind:           string(enumtypes.InteractionCallbackKindOptionSelected),
+		OccurredAt:             timestamppb.New(occurredAt),
+		CallbackHandle:         stringPtr("handle-1"),
+		ResponderRef:           stringPtr("user-42"),
+		ProviderMessageRefJson: []byte(`{"message_id":"42"}`),
+		RawPayloadJson:         []byte(`{"interaction_id":"interaction-1"}`),
 	})
 	if err != nil {
 		t.Fatalf("SubmitInteractionCallback returned error: %v", err)
@@ -105,6 +106,9 @@ func TestSubmitInteractionCallback_MapsAcceptedClassificationToApplied(t *testin
 	if !resp.GetResumeRequired() {
 		t.Fatal("resume_required = false, want true")
 	}
+	if resp.GetContinuationAction() != string(enumtypes.InteractionContinuationActionEditMessage) {
+		t.Fatalf("continuation_action = %q, want %q", resp.GetContinuationAction(), enumtypes.InteractionContinuationActionEditMessage)
+	}
 	if resp.GetEffectiveResponseId() != 55 {
 		t.Fatalf("effective_response_id = %d, want 55", resp.GetEffectiveResponseId())
 	}
@@ -118,14 +122,14 @@ func TestSubmitInteractionCallback_MapsAcceptedClassificationToApplied(t *testin
 	if gotParams.AdapterEventID != "event-1" {
 		t.Fatalf("adapter_event_id = %q, want event-1", gotParams.AdapterEventID)
 	}
-	if gotParams.ResponseKind != enumtypes.InteractionResponseKindOption {
-		t.Fatalf("response_kind = %q, want option", gotParams.ResponseKind)
-	}
-	if gotParams.SelectedOptionID != "approve" {
-		t.Fatalf("selected_option_id = %q, want approve", gotParams.SelectedOptionID)
+	if gotParams.CallbackHandle != "handle-1" {
+		t.Fatalf("callback_handle = %q, want handle-1", gotParams.CallbackHandle)
 	}
 	if gotParams.ResponderRef != "user-42" {
 		t.Fatalf("responder_ref = %q, want user-42", gotParams.ResponderRef)
+	}
+	if got, want := string(gotParams.ProviderMessageRefJSON), `{"message_id":"42"}`; got != want {
+		t.Fatalf("provider_message_ref_json = %q, want %q", got, want)
 	}
 	if !gotParams.OccurredAt.Equal(occurredAt) {
 		t.Fatalf("occurred_at = %s, want %s", gotParams.OccurredAt, occurredAt)

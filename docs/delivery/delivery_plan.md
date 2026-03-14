@@ -345,7 +345,11 @@ approvals:
   - создана follow-up issue `#458` как единый execution anchor для `run:dev` с явным continuity-требованием сохранить цепочку `#361 -> #447 -> #448 -> #452 -> #454 -> #456 -> #458` без разрывов;
   - зафиксированы quality-gates, DoR/DoD, blockers, risks и owner decisions для rollout order `migrations -> control-plane -> worker -> api-gateway -> Telegram adapter contour -> observability/evidence gate`;
   - сохранены platform-owned semantics, separation from approval flow и dependency gate на Sprint S10 interaction foundation.
-- Day 7+ (planned): `run:dev -> qa -> release -> postdeploy -> ops` через issue `#458` с owner-managed wave launch внутри execution anchor.
+- Day 7+ (in-review): `run:dev` выполнен в issue `#458` и перевёл Sprint S11 из doc-only baseline в implementation path:
+  - `control-plane` получил additive schema foundation, callback handle/binding persistence, operator projections и typed Telegram delivery envelope;
+  - `worker` получил HTTP bridge к внешнему Telegram adapter contour, transport-aware retry/fallback metadata и callback token propagation;
+  - `api-gateway`/gRPC contracts и generated artifacts синхронно обновлены под normalized callback family `delivery_receipt|option_selected|free_text_received|transport_failure`;
+  - dev-итерация закрыта сервисными тестами/codegen и готова к handover `run:qa -> release -> postdeploy -> ops` после review.
 
 ### Sprint S12: GitHub API rate-limit resilience
 - Day 1 (in-review): intake-пакет для GitHub API rate-limit resilience (`docs/delivery/epics/s12/epic-s12-day1-github-api-rate-limit-intake.md`, Issue `#366`).

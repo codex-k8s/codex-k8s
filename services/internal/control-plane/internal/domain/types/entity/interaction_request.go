@@ -9,19 +9,24 @@ import (
 
 // InteractionRequest stores canonical user interaction aggregate.
 type InteractionRequest struct {
-	ID                    string
-	ProjectID             string
-	RunID                 string
-	InteractionKind       enumtypes.InteractionKind
-	State                 enumtypes.InteractionState
-	ResolutionKind        enumtypes.InteractionResolutionKind
-	RecipientProvider     string
-	RecipientRef          string
-	RequestPayloadJSON    json.RawMessage
-	ContextLinksJSON      json.RawMessage
-	ResponseDeadlineAt    *time.Time
-	EffectiveResponseID   int64
-	LastDeliveryAttemptNo int
-	CreatedAt             time.Time
-	UpdatedAt             time.Time
+	ID                     string
+	ProjectID              string
+	RunID                  string
+	InteractionKind        enumtypes.InteractionKind
+	ChannelFamily          enumtypes.InteractionChannelFamily
+	State                  enumtypes.InteractionState
+	ResolutionKind         enumtypes.InteractionResolutionKind
+	RecipientProvider      string
+	RecipientRef           string
+	RequestPayloadJSON     json.RawMessage
+	ContextLinksJSON       json.RawMessage
+	ResponseDeadlineAt     *time.Time
+	EffectiveResponseID    int64
+	ActiveChannelBindingID int64
+	OperatorState          enumtypes.InteractionOperatorState
+	OperatorSignalCode     enumtypes.InteractionOperatorSignalCode
+	OperatorSignalAt       *time.Time
+	LastDeliveryAttemptNo  int
+	CreatedAt              time.Time
+	UpdatedAt              time.Time
 }

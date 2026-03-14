@@ -1773,7 +1773,7 @@ components:
       properties:
         schema_version:
           type: string
-          enum: [v1]
+          enum: [telegram-interaction-v1]
         interaction_id:
           type: string
         delivery_id:
@@ -1783,31 +1783,11 @@ components:
           type: string
         callback_kind:
           type: string
-          enum: [delivery_receipt, decision_response]
+          enum: [delivery_receipt, option_selected, free_text_received, transport_failure]
         occurred_at:
           type: string
           format: date-time
-        adapter_delivery_id:
-          type: string
-          nullable: true
-        delivery_status:
-          type: string
-          enum: [accepted, delivered, failed]
-          nullable: true
-        response:
-          $ref: "#/components/schemas/InteractionResponsePayload"
-        error:
-          $ref: "#/components/schemas/InteractionCallbackError"
-
-    InteractionResponsePayload:
-      type: object
-      additionalProperties: false
-      required: [response_kind]
-      properties:
-        response_kind:
-          type: string
-          enum: [option, free_text]
-        selected_option_id:
+        callback_handle:
           type: string
           nullable: true
         free_text:
@@ -1818,13 +1798,48 @@ components:
         responder_ref:
           type: string
           nullable: true
+        provider_message_ref:
+          $ref: "#/components/schemas/InteractionProviderMessageRef"
+        provider_update_id:
+          type: string
+          nullable: true
+        provider_callback_query_id:
+          type: string
+          nullable: true
+        delivery_status:
+          type: string
+          enum: [accepted, delivered, failed]
+          nullable: true
+        error:
+          $ref: "#/components/schemas/InteractionCallbackError"
+
+    InteractionProviderMessageRef:
+      type: object
+      additionalProperties: false
+      properties:
+        chat_ref:
+          type: string
+          nullable: true
+        message_id:
+          type: string
+          nullable: true
+        inline_message_id:
+          type: string
+          nullable: true
+        sent_at:
+          type: string
+          format: date-time
+          nullable: true
 
     InteractionCallbackError:
       type: object
       additionalProperties: false
+      required: [code, retryable]
       properties:
         code:
           type: string
+        retryable:
+          type: boolean
         message:
           type: string
 
@@ -1842,6 +1857,10 @@ components:
           type: string
         resume_required:
           type: boolean
+        continuation_action:
+          type: string
+          enum: [none, edit_message, send_follow_up, manual_fallback]
+          nullable: true
         message:
           type: string
           nullable: true

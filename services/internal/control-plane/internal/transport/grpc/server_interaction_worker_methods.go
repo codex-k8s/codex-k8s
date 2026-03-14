@@ -72,17 +72,20 @@ func (s *Server) CompleteInteractionDispatch(ctx context.Context, req *controlpl
 	}
 
 	result, err := s.mcp.CompleteInteractionDispatch(ctx, mcpdomain.CompleteInteractionDispatchParams{
-		InteractionID:       strings.TrimSpace(req.GetInteractionId()),
-		DeliveryID:          strings.TrimSpace(req.GetDeliveryId()),
-		AdapterKind:         strings.TrimSpace(req.GetAdapterKind()),
-		Status:              attemptStatus,
-		RequestEnvelopeJSON: req.GetRequestEnvelopeJson(),
-		AckPayloadJSON:      req.GetAckPayloadJson(),
-		AdapterDeliveryID:   strings.TrimSpace(req.GetAdapterDeliveryId()),
-		Retryable:           req.GetRetryable(),
-		NextRetryAt:         optionalTime(req.GetNextRetryAt()),
-		LastErrorCode:       strings.TrimSpace(req.GetLastErrorCode()),
-		FinishedAt:          tsToTime(req.GetFinishedAt()),
+		InteractionID:          strings.TrimSpace(req.GetInteractionId()),
+		DeliveryID:             strings.TrimSpace(req.GetDeliveryId()),
+		AdapterKind:            strings.TrimSpace(req.GetAdapterKind()),
+		Status:                 attemptStatus,
+		RequestEnvelopeJSON:    req.GetRequestEnvelopeJson(),
+		AckPayloadJSON:         req.GetAckPayloadJson(),
+		AdapterDeliveryID:      strings.TrimSpace(req.GetAdapterDeliveryId()),
+		ProviderMessageRefJSON: req.GetProviderMessageRefJson(),
+		EditCapability:         parseInteractionEditCapability(req.GetEditCapability()),
+		Retryable:              req.GetRetryable(),
+		NextRetryAt:            optionalTime(req.GetNextRetryAt()),
+		LastErrorCode:          strings.TrimSpace(req.GetLastErrorCode()),
+		CallbackTokenExpiresAt: optionalTime(req.GetCallbackTokenExpiresAt()),
+		FinishedAt:             tsToTime(req.GetFinishedAt()),
 	})
 	if err != nil {
 		return nil, toStatus(err)
@@ -128,5 +131,17 @@ func parseInteractionAttemptStatus(value string) (enumtypes.InteractionDeliveryA
 		return statusValue, nil
 	default:
 		return "", fmt.Errorf("status must be accepted|failed|exhausted")
+	}
+}
+
+func parseInteractionEditCapability(value string) enumtypes.InteractionEditCapability {
+	editCapability := enumtypes.InteractionEditCapability(strings.ToLower(strings.TrimSpace(value)))
+	switch editCapability {
+	case enumtypes.InteractionEditCapabilityEditable,
+		enumtypes.InteractionEditCapabilityKeyboardOnly,
+		enumtypes.InteractionEditCapabilityFollowUpOnly:
+		return editCapability
+	default:
+		return enumtypes.InteractionEditCapabilityUnknown
 	}
 }

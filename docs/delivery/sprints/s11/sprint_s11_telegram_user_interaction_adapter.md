@@ -72,6 +72,7 @@ approvals:
 | Architecture (`#452`) | Service boundaries, adapter ownership, callback security/correlation lifecycle | `sa` | Подтверждены архитектурные границы и создана issue `#454` для `run:design` |
 | Design (`#454`) | API/data/webhook/runtime contracts и rollout notes | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue `#456` для `run:plan` |
 | Plan (`#456`) | Delivery waves, quality-gates, execution anchor, DoR/DoD | `em` + `km` | Сформирован execution package и создана issue `#458` для owner-managed handover в `run:dev` |
+| Dev (`#458`) | Additive schema/domain/runtime implementation, transport/codegen sync, external Telegram bridge | `dev` | Выполнена dev-итерация, подготовлен PR и Sprint S11 переведён в handover `run:qa` после review |
 
 ## Guardrails спринта
 - Sprint S11 остаётся строго последовательным относительно Sprint S10: Telegram не может задавать core semantics для interaction-domain, а active PRD stage `#448` и follow-up architecture stage `#452` не должны двигаться дальше, если prerequisite из Issue `#389`/`#387` перестаёт быть истинным.
@@ -93,7 +94,7 @@ approvals:
   - `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/data_model.md`;
   - `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/migrations_policy.md`.
 - Initial continuity issue `#444` сохранена только как historical handover artifact от intake-stage и 2026-03-14 закрыта как `state:superseded`; vision stage был выполнен в Issue `#447`.
-- Следующий stage: `run:dev` в Issue `#458`.
+- Stage `run:dev` выполнен в Issue `#458`: `control-plane`, `worker` и `api-gateway` переведены на typed Telegram delivery/callback path, generated artifacts синхронизированы, а candidate runtime подтвердил внешний configurable adapter contour.
 - Проверяемый prerequisite для Issue `#456`: закрытая Issue `#389` с актуальным S10 design package Issue `#387` как baseline typed interaction contract.
 - На `2026-03-14` prerequisite уже выполнен и не требует дополнительного parallel launch относительно Sprint S10.
 - Входные артефакты от platform-core stream:

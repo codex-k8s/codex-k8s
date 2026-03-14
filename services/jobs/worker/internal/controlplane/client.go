@@ -156,17 +156,20 @@ func (c *Client) ClaimNextInteractionDispatch(ctx context.Context, pendingAttemp
 // CompleteInteractionDispatch persists one dispatch outcome.
 func (c *Client) CompleteInteractionDispatch(ctx context.Context, params workerdomain.CompleteInteractionDispatchParams) (workerdomain.CompleteInteractionDispatchResult, error) {
 	resp, err := c.svc.CompleteInteractionDispatch(ctx, &controlplanev1.CompleteInteractionDispatchRequest{
-		InteractionId:       strings.TrimSpace(params.InteractionID),
-		DeliveryId:          strings.TrimSpace(params.DeliveryID),
-		AdapterKind:         strings.TrimSpace(params.AdapterKind),
-		Status:              strings.TrimSpace(params.Status),
-		RequestEnvelopeJson: params.RequestEnvelopeJSON,
-		AckPayloadJson:      params.AckPayloadJSON,
-		AdapterDeliveryId:   optionalString(strings.TrimSpace(params.AdapterDeliveryID)),
-		Retryable:           params.Retryable,
-		LastErrorCode:       optionalString(strings.TrimSpace(params.LastErrorCode)),
-		NextRetryAt:         optionalTimestamp(params.NextRetryAt),
-		FinishedAt:          timestamppb.New(params.FinishedAt.UTC()),
+		InteractionId:          strings.TrimSpace(params.InteractionID),
+		DeliveryId:             strings.TrimSpace(params.DeliveryID),
+		AdapterKind:            strings.TrimSpace(params.AdapterKind),
+		Status:                 strings.TrimSpace(params.Status),
+		RequestEnvelopeJson:    params.RequestEnvelopeJSON,
+		AckPayloadJson:         params.AckPayloadJSON,
+		AdapterDeliveryId:      optionalString(strings.TrimSpace(params.AdapterDeliveryID)),
+		ProviderMessageRefJson: params.ProviderMessageRefJSON,
+		EditCapability:         optionalString(strings.TrimSpace(params.EditCapability)),
+		Retryable:              params.Retryable,
+		LastErrorCode:          optionalString(strings.TrimSpace(params.LastErrorCode)),
+		NextRetryAt:            optionalTimestamp(params.NextRetryAt),
+		CallbackTokenExpiresAt: optionalTimestamp(params.CallbackTokenExpiresAt),
+		FinishedAt:             timestamppb.New(params.FinishedAt.UTC()),
 	})
 	if err != nil {
 		return workerdomain.CompleteInteractionDispatchResult{}, err

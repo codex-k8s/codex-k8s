@@ -41,6 +41,7 @@ func (s *Service) MCPUserNotify(ctx context.Context, session SessionContext, inp
 		ProjectID:          strings.TrimSpace(runCtx.Session.ProjectID),
 		RunID:              strings.TrimSpace(runCtx.Session.RunID),
 		InteractionKind:    enumtypes.InteractionKindNotify,
+		ChannelFamily:      enumtypes.InteractionChannelFamilyTelegram,
 		State:              enumtypes.InteractionStatePendingDispatch,
 		ResolutionKind:     enumtypes.InteractionResolutionKindNone,
 		RecipientProvider:  recipientProvider,
@@ -106,6 +107,7 @@ func (s *Service) MCPUserDecisionRequest(ctx context.Context, session SessionCon
 		ProjectID:          strings.TrimSpace(runCtx.Session.ProjectID),
 		RunID:              strings.TrimSpace(runCtx.Session.RunID),
 		InteractionKind:    enumtypes.InteractionKindDecisionRequest,
+		ChannelFamily:      enumtypes.InteractionChannelFamilyTelegram,
 		State:              enumtypes.InteractionStatePendingDispatch,
 		ResolutionKind:     enumtypes.InteractionResolutionKindNone,
 		RecipientProvider:  recipientProvider,
@@ -156,9 +158,12 @@ func (s *Service) SubmitInteractionCallback(ctx context.Context, params SubmitIn
 	normalized.DeliveryID = strings.TrimSpace(normalized.DeliveryID)
 	normalized.AdapterEventID = strings.TrimSpace(normalized.AdapterEventID)
 	normalized.DeliveryStatus = strings.TrimSpace(normalized.DeliveryStatus)
-	normalized.SelectedOptionID = strings.TrimSpace(normalized.SelectedOptionID)
+	normalized.CallbackHandle = strings.TrimSpace(normalized.CallbackHandle)
 	normalized.FreeText = strings.TrimSpace(normalized.FreeText)
 	normalized.ResponderRef = strings.TrimSpace(normalized.ResponderRef)
+	normalized.ProviderUpdateID = strings.TrimSpace(normalized.ProviderUpdateID)
+	normalized.ProviderCallbackQueryID = strings.TrimSpace(normalized.ProviderCallbackQueryID)
+	normalized.TransportErrorCode = strings.TrimSpace(normalized.TransportErrorCode)
 	if normalized.InteractionID == "" {
 		return SubmitInteractionCallbackResult{}, errs.Validation{Field: "interaction_id", Msg: "is required"}
 	}
@@ -210,10 +215,11 @@ func (s *Service) SubmitInteractionCallback(ctx context.Context, params SubmitIn
 	}
 
 	return SubmitInteractionCallbackResult{
-		Accepted:            result.Classification == enumtypes.InteractionCallbackResultClassificationAccepted,
+		Accepted:            result.Accepted,
 		Classification:      result.Classification,
 		InteractionState:    string(result.Interaction.State),
 		ResumeRequired:      resumeRequired,
+		ContinuationAction:  result.ContinuationAction,
 		EffectiveResponseID: result.EffectiveResponseID,
 		ResumePayload:       resumePayload,
 	}, nil

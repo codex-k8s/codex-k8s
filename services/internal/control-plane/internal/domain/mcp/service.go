@@ -281,49 +281,73 @@ func (s *Service) VerifyInteractionCallbackToken(ctx context.Context, rawToken s
 		return SessionContext{}, fmt.Errorf("interaction_id is required")
 	}
 	return s.verifyRunToken(ctx, rawToken, verifyRunTokenOptions{
-		expectedSubject: interactionCallbackTokenSubjectPrefix + interactionID,
+		expectedSubject:     interactionCallbackTokenSubjectPrefix + interactionID,
+		expectedTokenScope:  interactionCallbackTokenScope,
+		expectedInteraction: interactionID,
 	})
 }
 
 type verifyRunTokenOptions struct {
-	requireActiveRun bool
-	expectedSubject  string
+	requireActiveRun    bool
+	expectedSubject     string
+	expectedTokenScope  string
+	expectedInteraction string
 }
 
 func (s *Service) verifyRunToken(ctx context.Context, rawToken string, opts verifyRunTokenOptions) (SessionContext, error) {
-	claims, err := s.parseRunToken(strings.TrimSpace(rawToken))
+	parsed, err := jwt.ParseWithClaims(strings.TrimSpace(rawToken), &runTokenClaims{}, func(token *jwt.Token) (any, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected token signing method")
+		}
+		return []byte(s.cfg.TokenSigningKey), nil
+	}, jwt.WithIssuer(s.cfg.TokenIssuer), jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Name}))
+	if err != nil {
+		return SessionContext{}, fmt.Errorf("parse token: %w", err)
+	}
+	claims, ok := parsed.Claims.(*runTokenClaims)
+	if !ok || !parsed.Valid {
+		return SessionContext{}, fmt.Errorf("token is invalid")
+	}
+
+	session, err := s.parseRunToken(strings.TrimSpace(rawToken))
 	if err != nil {
 		return SessionContext{}, err
 	}
 
-	run, ok, err := s.runs.GetByID(ctx, claims.RunID)
+	run, found, err := s.runs.GetByID(ctx, session.RunID)
 	if err != nil {
 		return SessionContext{}, fmt.Errorf("get run for token verify: %w", err)
 	}
-	if !ok {
+	if !found {
 		return SessionContext{}, fmt.Errorf("run not found")
 	}
 	if opts.requireActiveRun && !isRunActive(run.Status) {
 		return SessionContext{}, fmt.Errorf("run status %q is not active", run.Status)
 	}
-	if run.CorrelationID != claims.CorrelationID {
+	if run.CorrelationID != session.CorrelationID {
 		return SessionContext{}, fmt.Errorf("correlation mismatch")
 	}
-	if run.ProjectID != "" && claims.ProjectID != "" && run.ProjectID != claims.ProjectID {
+	if run.ProjectID != "" && session.ProjectID != "" && run.ProjectID != session.ProjectID {
 		return SessionContext{}, fmt.Errorf("project mismatch")
 	}
-	if expectedSubject := strings.TrimSpace(opts.expectedSubject); expectedSubject != "" && claims.TokenSubject != expectedSubject {
+	if expectedSubject := strings.TrimSpace(opts.expectedSubject); expectedSubject != "" && session.TokenSubject != expectedSubject {
 		return SessionContext{}, fmt.Errorf("token subject mismatch")
+	}
+	if expectedScope := strings.TrimSpace(opts.expectedTokenScope); expectedScope != "" && strings.TrimSpace(claims.Scope) != expectedScope {
+		return SessionContext{}, fmt.Errorf("token scope mismatch")
+	}
+	if expectedInteraction := strings.TrimSpace(opts.expectedInteraction); expectedInteraction != "" && strings.TrimSpace(claims.InteractionID) != expectedInteraction {
+		return SessionContext{}, fmt.Errorf("interaction mismatch")
 	}
 
 	return SessionContext{
-		RunID:         claims.RunID,
-		CorrelationID: claims.CorrelationID,
-		ProjectID:     claims.ProjectID,
-		Namespace:     claims.Namespace,
-		RuntimeMode:   parseRuntimeMode(string(claims.RuntimeMode)),
-		TokenSubject:  claims.TokenSubject,
-		ExpiresAt:     claims.ExpiresAt,
+		RunID:         session.RunID,
+		CorrelationID: session.CorrelationID,
+		ProjectID:     session.ProjectID,
+		Namespace:     session.Namespace,
+		RuntimeMode:   session.RuntimeMode,
+		TokenSubject:  session.TokenSubject,
+		ExpiresAt:     session.ExpiresAt,
 	}, nil
 }
 
