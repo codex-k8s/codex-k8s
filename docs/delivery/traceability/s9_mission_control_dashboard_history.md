@@ -88,7 +88,7 @@ approvals:
   - execution streams `S9-E01..S9-E07` с явным split `schema foundation -> domain -> worker warmup/reconcile -> core transport -> UI -> observability -> conditional voice transport`;
   - handover issues `#369..#375` без trigger-лейблов и с owner-managed wave sequencing;
   - правило, что `#371` владеет фактическим warmup/backfill execution gate, `#372` ограничен core transport paths, а voice-specific OpenAPI/codegen вынесены в `#375`;
-  - правило, что `#374` закрывает observability/rollout-readiness gate перед `run:qa`, а `#375` остаётся optional continuation и не блокирует core MVP rollout.
+  - первоначальное правило, что `#374` закрывает observability/rollout-readiness gate перед `run:qa`, а `#375` остаётся optional continuation и не блокирует core MVP rollout.
 - Попытка использовать Context7 для GitHub CLI manual завершилась ошибкой `Monthly quota exceeded`; неинтерактивный issue/PR flow дополнительно сверен локально по `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась, потому что plan-stage обновляет delivery governance и handover backlog, а не канонический product requirements baseline.
 
@@ -191,3 +191,25 @@ approvals:
   - `node --test --experimental-strip-types --experimental-specifier-resolution=node services/staff/web-console/src/features/mission-control/lib.test.ts services/staff/web-console/src/shared/lib/*.test.ts`
   - `git diff --check`
 - Runtime kubectl/log inspection и ручные API/DB queries не выполнялись: scope issue закрыт frontend build/unit evidence и traceability sync без отдельного cluster-debug шага.
+
+## Актуализация по Issue #374 / PR #463 (`run:qa:revise`, 2026-03-14)
+- Исходный `run:dev` для `#374` подготовил PR `#463` как отдельный observability/readiness stream `S9-E06`, но owner review 2026-03-14 решил не брать этот функционал в активный Sprint S9 scope.
+- По итогам `run:qa:revise`:
+  - `#374` переведена в historical superseded artifact и больше не считается обязательным gate перед `run:qa`;
+  - active Mission Control execution contour Sprint S9 сужен до `#369..#373`, а `#375` остаётся conditional continuation;
+  - `docs/architecture/initiatives/s9_mission_control_dashboard/observability_readiness.md` сохранён только как superseded-note, а `design_doc.md`, `api_contract.md`, `migrations_policy.md`, `docs/ops/production_runbook.md` и `docs/design-guidelines/common/external_dependencies_catalog.md` очищены от неутверждённого `S9-E06` scope.
+- Ограничение текущей итерации:
+  - `run:qa:revise` по policy разрешает только markdown-изменения;
+  - поэтому removal non-markdown diff из PR `#463` остаётся обязательным отдельным шагом для следующего `run:dev:revise` до merge.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась, потому что это reprioritization delivery backlog, а не изменение канонического product baseline.
+
+## Актуализация по Issue #374 / PR #463 (`run:dev:revise`, 2026-03-14)
+- По итогам `run:dev:revise` удалён весь non-markdown diff из PR `#463`, который относился к отклонённой реализации `S9-E06`.
+- Ветку возвращены к `origin/main` для:
+  - `go.mod`;
+  - Mission Control observability-кода в `services/external/api-gateway/internal/transport/http/**`;
+  - Mission Control observability-кода в `services/internal/control-plane/internal/{app,domain/missioncontrol,transport/grpc}/**`;
+  - Mission Control observability-логов в `services/jobs/worker/internal/domain/worker/mission_control.go`.
+- После этого PR `#463` содержит только markdown-артефакты, фиксирующие owner decision о снятии `#374` из planned scope.
+- Проверки текущей итерации: `git diff --name-status origin/main...HEAD`, `git diff --check`, `git rev-list --left-right --count HEAD...origin/main`, `git merge-tree $(git merge-base HEAD origin/main) HEAD origin/main`.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась, потому что это cleanup отклонённого implementation scope, а не изменение продуктового baseline.
