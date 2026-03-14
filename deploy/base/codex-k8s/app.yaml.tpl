@@ -343,12 +343,6 @@ spec:
                   optional: true
             - name: CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED
               value: '{{ envOr "CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED" "" }}'
-            - name: CODEXK8S_MISSION_CONTROL_VOICE_ENABLED
-              value: '{{ envOr "CODEXK8S_MISSION_CONTROL_VOICE_ENABLED" "" }}'
-            - name: CODEXK8S_MISSION_CONTROL_WARMUP_VERIFIED
-              value: '{{ envOr "CODEXK8S_MISSION_CONTROL_WARMUP_VERIFIED" "" }}'
-            - name: CODEXK8S_MISSION_CONTROL_WRITE_PATH_ENABLED
-              value: '{{ envOr "CODEXK8S_MISSION_CONTROL_WRITE_PATH_ENABLED" "" }}'
             - name: CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS
               valueFrom:
                 secretKeyRef:

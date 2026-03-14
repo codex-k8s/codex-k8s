@@ -134,7 +134,7 @@ approvals:
 
 ## Актуализация по Issue #371 (`run:dev`, 2026-03-13)
 - Реализован worker stream `S9-E03` для Mission Control Dashboard:
-  - `control-plane` теперь поднимает Mission Control domain service и worker-facing coordinator `internal/domain/missioncontrolworker/service.go`; read/realtime path больше не требуют отдельных rollout env-gates и доступны после schema/domain rollout, а env-переключатели остаются только для worker warmup/write/voice path (`CODEXK8S_MISSION_CONTROL_{ENABLED,VOICE_ENABLED,WARMUP_VERIFIED,WRITE_PATH_ENABLED}`);
+  - `control-plane` теперь поднимает Mission Control domain service и worker-facing coordinator `internal/domain/missioncontrolworker/service.go`; Mission Control path больше не требует отдельных rollout env-gates и доступен после schema/domain rollout;
   - добавлен internal gRPC surface в `proto/codexk8s/controlplane/v1/controlplane.proto` и `internal/transport/grpc/server_mission_control_worker_methods.go` для warmup-project scan, warmup execution, pending command listing и typed command status transitions `queued -> pending_sync -> reconciled|failed`;
   - `worker` получил Mission Control reconcile loop `internal/domain/worker/mission_control.go` с warmup throttling, bounded retry window и provider-safe execution path для `stage.next_step.execute` через существующий `ExecuteNextStepAction` RPC;
   - warmup/backfill строит coarse active-set projection из существующих `agent_runs` + `flow_events`, заполняя `mission_control_entities`, `mission_control_relations` и `mission_control_timeline_entries` без переноса schema/domain ownership в `worker`;

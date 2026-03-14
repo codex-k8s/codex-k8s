@@ -58,8 +58,8 @@ approvals:
 5. Enable core inline commands:
    - включить `discussion.create`, `work_item.create`, `discussion.formalize`, `stage.next_step.execute`, `command.retry_sync`.
    - `stage.next_step.execute` сначала включается только с path `pending_approval -> queued`, без bypass approval state.
-6. Enable optional voice path:
-   - только после отдельной owner decision и `CODEXK8S_MISSION_CONTROL_VOICE_ENABLED=true`.
+6. Optional voice path ships together with the rest of Mission Control:
+   - отдельный rollout env-gate не требуется.
 
 ## Как выполняются миграции при деплое
 - Production deploy order remains mandatory:
@@ -97,8 +97,8 @@ approvals:
   - pending approval records and denied/expired approval audit are retained even if command execution stays disabled
   - command/timeline ledger remains preserved for audit and replay diagnosis
 - Voice rollback:
-  - disable `CODEXK8S_MISSION_CONTROL_VOICE_ENABLED`
-  - keep `voice_candidates` data for audit, no destructive delete
+  - отдельный env-gate больше не отключается
+  - `voice_candidates` data сохраняются для аудита, без destructive delete
 
 ## Что нельзя безопасно откатить
 - Provider side effects already applied by accepted inline commands.
@@ -108,10 +108,7 @@ approvals:
 ## Проверки
 ### Pre-migration checks
 - absence of conflicting entity identity keys
-- availability of feature flags:
-  - `CODEXK8S_MISSION_CONTROL_WARMUP_VERIFIED`
-  - `CODEXK8S_MISSION_CONTROL_WRITE_PATH_ENABLED`
-  - `CODEXK8S_MISSION_CONTROL_VOICE_ENABLED`
+- additional operator feature flags are not required for Mission Control path availability
 - provider credentials and webhook ingestion baseline healthy
 
 ### Post-migration verification

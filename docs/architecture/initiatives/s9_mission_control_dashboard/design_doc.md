@@ -306,13 +306,10 @@ sequenceDiagram
   3. Worker jobs for backfill, provider sync and reconcile retry.
   4. API gateway OpenAPI handlers + realtime endpoint.
   5. Web-console page/state integration.
-- Feature flags:
-  - `CODEXK8S_MISSION_CONTROL_WARMUP_VERIFIED`
-  - `CODEXK8S_MISSION_CONTROL_WRITE_PATH_ENABLED`
-  - `CODEXK8S_MISSION_CONTROL_VOICE_ENABLED`
+- Additional runtime feature flags are not required for Mission Control path availability.
 - Rollout discipline:
-  - read-side остаётся always-on при готовой схеме и доменном сервисе;
-  - write-path разрешается только после projection warmup verification.
+  - read/write/voice paths становятся доступны вместе с доменным сервисом и готовой схемой;
+  - warmup остаётся runtime responsibility worker reconciliation, а не operator env-gate.
 
 ## План отката (Rollback)
 - Триггеры:
@@ -321,10 +318,9 @@ sequenceDiagram
   - repeated degraded state without recovery;
   - provider mutation incidents on inline write path.
 - Шаги:
-  1. выключить `CODEXK8S_MISSION_CONTROL_WRITE_PATH_ENABLED` или вернуть read-only mode;
+  1. вернуть read-only behavior изменением кода или route policy, а не env-флагом;
   2. отключить realtime stream route при необходимости и оставить explicit refresh snapshot path;
-  3. отключить `CODEXK8S_MISSION_CONTROL_VOICE_ENABLED`, не трогая core dashboard read path;
-  4. сохранить projection/timeline/command tables для postmortem и replay-safe retry.
+  3. сохранить projection/timeline/command tables для postmortem и replay-safe retry.
 - Проверка успеха:
   - snapshot и entity details доступны в read-only режиме;
   - новые provider mutations остановлены;

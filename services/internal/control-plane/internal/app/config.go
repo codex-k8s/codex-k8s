@@ -122,12 +122,6 @@ type Config struct {
 	ControlPlaneMCPBaseURL string `env:"CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" envDefault:"http://codex-k8s-control-plane:8081/mcp"`
 	// GitHubRateLimitWaitEnabled gates GitHub rate-limit wait persistence and worker sweep ownership.
 	GitHubRateLimitWaitEnabled bool `env:"CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED" envDefault:"false"`
-	// MissionControlVoiceEnabled gates optional Mission Control voice flows.
-	MissionControlVoiceEnabled bool `env:"CODEXK8S_MISSION_CONTROL_VOICE_ENABLED" envDefault:"false"`
-	// MissionControlWarmupVerified opens write-side Mission Control flows after worker warmup evidence.
-	MissionControlWarmupVerified bool `env:"CODEXK8S_MISSION_CONTROL_WARMUP_VERIFIED" envDefault:"false"`
-	// MissionControlWritePathEnabled enables Mission Control write-side APIs.
-	MissionControlWritePathEnabled bool `env:"CODEXK8S_MISSION_CONTROL_WRITE_PATH_ENABLED" envDefault:"false"`
 	// RunHeavyFieldsRetentionDays controls retention for heavy JSON payload fields in run/task tables.
 	RunHeavyFieldsRetentionDays int `env:"CODEXK8S_RUN_HEAVY_FIELDS_RETENTION_DAYS" envDefault:"7"`
 	// RunAgentLogsRetentionDays is kept for legacy env compatibility as fallback retention source.

@@ -1,8 +1,5 @@
 package value
 
-// MissionControlVoiceFeatureFlagEnv gates optional voice-only Mission Control paths.
-const MissionControlVoiceFeatureFlagEnv = "CODEXK8S_MISSION_CONTROL_VOICE_ENABLED"
-
 // MissionControlWarmupSummary captures aggregate verification evidence for warmup/backfill.
 type MissionControlWarmupSummary struct {
 	ProjectID            string
@@ -15,11 +12,8 @@ type MissionControlWarmupSummary struct {
 
 // MissionControlRolloutState captures rollout readiness and enablement gates.
 type MissionControlRolloutState struct {
-	VoiceFeatureEnabled bool
-	SchemaReady         bool
-	DomainReady         bool
-	WarmupVerified      bool
-	WritePathEnabled    bool
+	SchemaReady bool
+	DomainReady bool
 }
 
 // MissionControlRolloutCapabilities describes what the current rollout state permits.

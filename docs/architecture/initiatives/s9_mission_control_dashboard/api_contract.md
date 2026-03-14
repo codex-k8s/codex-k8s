@@ -39,7 +39,7 @@ approvals:
 | Submit command | POST | `/api/v1/staff/mission-control/commands` | staff JWT | `Idempotency-Key` | Admits typed command and returns command acknowledgement |
 | Get command status | GET | `/api/v1/staff/mission-control/commands/{command_id}` | staff JWT | n/a | Poll/read fallback when realtime unavailable |
 | Connect realtime stream | GET | `/api/v1/staff/mission-control/realtime` | staff JWT | n/a | WebSocket upgrade; requires `resume_token` from latest snapshot |
-| Create voice candidate | POST | `/api/v1/staff/mission-control/voice-candidates` | staff JWT + policy | `Idempotency-Key` | Optional; only when `CODEXK8S_MISSION_CONTROL_VOICE_ENABLED=true` |
+| Create voice candidate | POST | `/api/v1/staff/mission-control/voice-candidates` | staff JWT + policy | `Idempotency-Key` | Optional voice contour, available together with the rest of Mission Control paths |
 | Promote voice candidate | POST | `/api/v1/staff/mission-control/voice-candidates/{candidate_id}/promote` | staff JWT + policy | `Idempotency-Key` | Creates linked discussion/task or command |
 | Reject voice candidate | POST | `/api/v1/staff/mission-control/voice-candidates/{candidate_id}/reject` | staff JWT + policy | `Idempotency-Key` | Marks candidate as rejected, no provider mutation |
 

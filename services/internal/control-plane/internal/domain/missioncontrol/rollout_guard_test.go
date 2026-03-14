@@ -6,15 +6,12 @@ import (
 	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
 )
 
-func TestResolveRolloutCapabilities_FullyEnabledCore(t *testing.T) {
+func TestResolveRolloutCapabilities_FullyEnabledWithSchemaAndDomain(t *testing.T) {
 	t.Parallel()
 
 	caps, err := ResolveRolloutCapabilities(valuetypes.MissionControlRolloutState{
-		SchemaReady:         true,
-		DomainReady:         true,
-		WarmupVerified:      true,
-		WritePathEnabled:    true,
-		VoiceFeatureEnabled: true,
+		SchemaReady: true,
+		DomainReady: true,
 	})
 	if err != nil {
 		t.Fatalf("ResolveRolloutCapabilities() error = %v", err)
@@ -36,7 +33,7 @@ func TestResolveRolloutCapabilities_AllDisabledByDefault(t *testing.T) {
 	}
 }
 
-func TestResolveRolloutCapabilities_ReadPathAndWarmupAvailableWithSchemaAndDomain(t *testing.T) {
+func TestResolveRolloutCapabilities_AllCapabilitiesAvailableWithSchemaAndDomain(t *testing.T) {
 	t.Parallel()
 
 	caps, err := ResolveRolloutCapabilities(valuetypes.MissionControlRolloutState{
@@ -52,34 +49,30 @@ func TestResolveRolloutCapabilities_ReadPathAndWarmupAvailableWithSchemaAndDomai
 	if !caps.CanRunWarmup {
 		t.Fatalf("expected warmup path to be available, got %+v", caps)
 	}
-	if caps.CanSubmitCoreCommand || caps.CanUseVoicePath {
-		t.Fatalf("expected write-side capabilities to stay disabled, got %+v", caps)
+	if !caps.CanSubmitCoreCommand || !caps.CanUseVoicePath {
+		t.Fatalf("expected command and voice capabilities to be available, got %+v", caps)
 	}
 }
 
-func TestValidateRolloutState_VoiceRequiresWritePath(t *testing.T) {
+func TestValidateRolloutState_AllowsSchemaAndDomain(t *testing.T) {
 	t.Parallel()
 
 	err := ValidateRolloutState(valuetypes.MissionControlRolloutState{
-		SchemaReady:         true,
-		DomainReady:         true,
-		WarmupVerified:      true,
-		VoiceFeatureEnabled: true,
+		SchemaReady: true,
+		DomainReady: true,
 	})
-	if err == nil {
-		t.Fatal("expected voice-path validation error, got nil")
+	if err != nil {
+		t.Fatalf("ValidateRolloutState() error = %v", err)
 	}
 }
 
-func TestValidateRolloutState_WritePathRequiresWarmupVerification(t *testing.T) {
+func TestValidateRolloutState_DomainRequiresSchema(t *testing.T) {
 	t.Parallel()
 
 	err := ValidateRolloutState(valuetypes.MissionControlRolloutState{
-		SchemaReady:      true,
-		DomainReady:      true,
-		WritePathEnabled: true,
+		DomainReady: true,
 	})
 	if err == nil {
-		t.Fatal("expected write-path validation error, got nil")
+		t.Fatal("expected schema validation error, got nil")
 	}
 }
