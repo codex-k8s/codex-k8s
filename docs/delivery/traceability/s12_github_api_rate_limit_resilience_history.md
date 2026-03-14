@@ -182,3 +182,25 @@ approvals:
 - Внешний baseline дополнительно сверен:
   - Context7 `/github/docs` повторно использован как source of truth для приоритета `Retry-After`, fallback к `x-ratelimit-reset`, ожидания не меньше минуты и bounded backoff при secondary limit.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: Issue `#427` закрывает worker orchestration wave и не добавляет новых продуктовых требований.
+
+## Актуализация по Issue #428 (`run:dev`, 2026-03-14)
+- Реализован runner stream `S12-E04`:
+  - `services/jobs/agent-runner/internal/runner/{service.go,helpers_github_rate_limit_handoff.go,helpers_github_rate_limit_resume_prompt.go,helpers_prompt_templates.go}`;
+  - `services/jobs/agent-runner/internal/controlplane/client.go`;
+  - `services/internal/control-plane/internal/domain/agentcallback/{interaction_resume_payload.go,service.go}`;
+  - `services/internal/control-plane/internal/transport/grpc/{server.go,server_github_rate_limit_runtime_methods.go}`;
+  - `proto/codexk8s/controlplane/v1/controlplane.proto`.
+- Зафиксированы:
+  - `agent-runner` теперь детектирует GitHub rate-limit по stderr/stdout, сохраняет coarse session snapshots `running -> waiting_backpressure`, передаёт typed `ReportGitHubRateLimitSignal` и прекращает local retry-loop после подтверждённого handoff;
+  - `control-plane` получил run-bound runtime RPC для runner path: `ReportGitHubRateLimitSignal` маппит hard-failure в `failed_precondition`, а `GetRunGitHubRateLimitResumePayload` отдаёт компактный deterministic JSON из persisted `run_payload`;
+  - requeued runner resume path распознаёт correlation prefix `github-rate-limit-resume:*`, требует persisted `github_rate_limit_resume_payload`, восстанавливает последнюю codex session без PR-precondition и prepend'ит typed wait outcome в resume prompt вместо повторного derive semantics из stderr/headers;
+  - rollout wiring синхронизирован: `RunnerReady` теперь следует `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED`, proto/go codegen обновлён, unit coverage добавлена для handoff detection, resume payload parsing и runtime gRPC callbacks.
+- Проверки:
+  - `make gen-proto-go`
+  - `go test ./services/jobs/agent-runner/internal/runner ./services/jobs/agent-runner/internal/controlplane`
+  - `go test ./services/internal/control-plane/internal/domain/agentcallback ./services/internal/control-plane/internal/transport/grpc`
+  - `go test ./services/internal/control-plane/internal/app ./services/internal/control-plane/internal/domain/githubratelimit`
+  - `go test ./services/jobs/agent-runner/internal/app`
+- Внешний baseline дополнительно сверен:
+  - Context7 `/github/docs` повторно использован как source of truth для primary/secondary rate-limit semantics, приоритета `Retry-After`, fallback к `x-ratelimit-reset` и запрета на локальный retry ownership после handoff.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: Issue `#428` закрывает runner handoff/resume wave и не добавляет новых продуктовых требований.

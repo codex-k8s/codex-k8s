@@ -5,20 +5,39 @@ import (
 	"encoding/json"
 	"fmt"
 
+	sharedgithubratelimit "github.com/codex-k8s/codex-k8s/libs/go/domain/githubratelimit"
 	"github.com/codex-k8s/codex-k8s/libs/go/mcp/userinteraction"
 )
 
 func extractInteractionResumePayload(runPayload json.RawMessage) (json.RawMessage, bool, error) {
+	return extractRunPayloadJSONField(
+		runPayload,
+		userinteraction.ResumePayloadRunPayloadFieldName,
+		userinteraction.ResumePayloadMaxBytes,
+		"interaction resume payload",
+	)
+}
+
+func extractGitHubRateLimitResumePayload(runPayload json.RawMessage) (json.RawMessage, bool, error) {
+	return extractRunPayloadJSONField(
+		runPayload,
+		sharedgithubratelimit.ResumePayloadRunPayloadFieldName,
+		sharedgithubratelimit.ResumePayloadMaxBytes,
+		"github rate-limit resume payload",
+	)
+}
+
+func extractRunPayloadJSONField(runPayload json.RawMessage, fieldName string, maxBytes int, payloadLabel string) (json.RawMessage, bool, error) {
 	if len(runPayload) == 0 {
 		return nil, false, nil
 	}
 
 	var envelope map[string]json.RawMessage
 	if err := json.Unmarshal(runPayload, &envelope); err != nil {
-		return nil, false, fmt.Errorf("decode run payload for interaction resume payload: %w", err)
+		return nil, false, fmt.Errorf("decode run payload for %s: %w", payloadLabel, err)
 	}
 
-	raw, found := envelope[userinteraction.ResumePayloadRunPayloadFieldName]
+	raw, found := envelope[fieldName]
 	if !found {
 		return nil, false, nil
 	}
@@ -28,18 +47,18 @@ func extractInteractionResumePayload(runPayload json.RawMessage) (json.RawMessag
 		return nil, false, nil
 	}
 	if !json.Valid(trimmed) {
-		return nil, false, fmt.Errorf("interaction resume payload is not valid JSON")
+		return nil, false, fmt.Errorf("%s is not valid JSON", payloadLabel)
 	}
-	if len(trimmed) > userinteraction.ResumePayloadMaxBytes {
-		return nil, false, fmt.Errorf("interaction resume payload exceeds %d bytes", userinteraction.ResumePayloadMaxBytes)
+	if len(trimmed) > maxBytes {
+		return nil, false, fmt.Errorf("%s exceeds %d bytes", payloadLabel, maxBytes)
 	}
 
 	var compact bytes.Buffer
 	if err := json.Compact(&compact, trimmed); err != nil {
-		return nil, false, fmt.Errorf("compact interaction resume payload: %w", err)
+		return nil, false, fmt.Errorf("compact %s: %w", payloadLabel, err)
 	}
-	if compact.Len() > userinteraction.ResumePayloadMaxBytes {
-		return nil, false, fmt.Errorf("interaction resume payload exceeds %d bytes", userinteraction.ResumePayloadMaxBytes)
+	if compact.Len() > maxBytes {
+		return nil, false, fmt.Errorf("%s exceeds %d bytes", payloadLabel, maxBytes)
 	}
 	return append(json.RawMessage(nil), compact.Bytes()...), true, nil
 }

@@ -43,25 +43,31 @@ func TestRunnerRepoDir(t *testing.T) {
 
 func TestShouldRestoreLatestSession(t *testing.T) {
 	t.Run("returns true for revise trigger", func(t *testing.T) {
-		if !shouldRestoreLatestSession("dev_revise", false, "") {
+		if !shouldRestoreLatestSession("dev_revise", false, "", "") {
 			t.Fatal("expected revise trigger to require latest session restore")
 		}
 	})
 
 	t.Run("returns true for discussion mode", func(t *testing.T) {
-		if !shouldRestoreLatestSession("dev", true, "") {
+		if !shouldRestoreLatestSession("dev", true, "", "") {
 			t.Fatal("expected discussion mode to require latest session restore")
 		}
 	})
 
 	t.Run("returns true for interaction resume payload", func(t *testing.T) {
-		if !shouldRestoreLatestSession("dev", false, `{"interaction_id":"interaction-1"}`) {
+		if !shouldRestoreLatestSession("dev", false, `{"interaction_id":"interaction-1"}`, "") {
 			t.Fatal("expected interaction resume payload to require latest session restore")
 		}
 	})
 
+	t.Run("returns true for github rate-limit resume payload", func(t *testing.T) {
+		if !shouldRestoreLatestSession("dev", false, "", `{"wait_id":"wait-1"}`) {
+			t.Fatal("expected github rate-limit resume payload to require latest session restore")
+		}
+	})
+
 	t.Run("returns false for plain work run", func(t *testing.T) {
-		if shouldRestoreLatestSession("dev", false, "") {
+		if shouldRestoreLatestSession("dev", false, "", "") {
 			t.Fatal("expected plain work run to skip latest session restore")
 		}
 	})
@@ -77,6 +83,20 @@ func TestIsInteractionResumeRun(t *testing.T) {
 	t.Run("returns false for regular correlation id", func(t *testing.T) {
 		if isInteractionResumeRun("corr-1") {
 			t.Fatal("expected regular correlation id to skip interaction resume detection")
+		}
+	})
+}
+
+func TestIsGitHubRateLimitResumeRun(t *testing.T) {
+	t.Run("returns true for github rate-limit resume correlation prefix", func(t *testing.T) {
+		if !isGitHubRateLimitResumeRun("github-rate-limit-resume:wait-1") {
+			t.Fatal("expected github rate-limit resume correlation id to be detected")
+		}
+	})
+
+	t.Run("returns false for regular correlation id", func(t *testing.T) {
+		if isGitHubRateLimitResumeRun("corr-1") {
+			t.Fatal("expected regular correlation id to skip github rate-limit resume detection")
 		}
 	})
 }

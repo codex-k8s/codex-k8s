@@ -59,6 +59,57 @@ func TestService_GetRunInteractionResumePayload_UsesRunRepository(t *testing.T) 
 	}
 }
 
+func TestExtractGitHubRateLimitResumePayload_ReturnsCompactedPayload(t *testing.T) {
+	t.Parallel()
+
+	raw := json.RawMessage(`{
+		"github_rate_limit_resume_payload": {
+			"wait_id": "wait-1",
+			"wait_reason": "github_rate_limit"
+		}
+	}`)
+
+	payload, found, err := extractGitHubRateLimitResumePayload(raw)
+	if err != nil {
+		t.Fatalf("extractGitHubRateLimitResumePayload() error = %v", err)
+	}
+	if !found {
+		t.Fatal("expected github rate-limit resume payload to be found")
+	}
+	if got, want := string(payload), `{"wait_id":"wait-1","wait_reason":"github_rate_limit"}`; got != want {
+		t.Fatalf("payload = %q, want %q", got, want)
+	}
+}
+
+func TestService_GetRunGitHubRateLimitResumePayload_UsesRunRepository(t *testing.T) {
+	t.Parallel()
+
+	service := &Service{
+		runs: fakeInteractionResumeRunRepository{
+			run: entitytypes.AgentRun{
+				ID: "run-1",
+				RunPayload: json.RawMessage(`{
+					"github_rate_limit_resume_payload": {
+						"wait_id": "wait-1"
+					}
+				}`),
+			},
+			found: true,
+		},
+	}
+
+	payload, found, err := service.GetRunGitHubRateLimitResumePayload(context.Background(), "run-1")
+	if err != nil {
+		t.Fatalf("GetRunGitHubRateLimitResumePayload() error = %v", err)
+	}
+	if !found {
+		t.Fatal("expected found=true")
+	}
+	if got, want := string(payload), `{"wait_id":"wait-1"}`; got != want {
+		t.Fatalf("payload = %q, want %q", got, want)
+	}
+}
+
 type fakeInteractionResumeRunRepository struct {
 	run   entitytypes.AgentRun
 	found bool

@@ -52,6 +52,7 @@ type agentCallbackService interface {
 	UpsertAgentSession(ctx context.Context, params agentcallbackdomain.UpsertAgentSessionParams) (agentcallbackdomain.UpsertAgentSessionResult, error)
 	GetLatestAgentSession(ctx context.Context, query agentcallbackdomain.GetLatestAgentSessionQuery) (agentcallbackdomain.Session, bool, error)
 	GetRunInteractionResumePayload(ctx context.Context, runID string) (json.RawMessage, bool, error)
+	GetRunGitHubRateLimitResumePayload(ctx context.Context, runID string) (json.RawMessage, bool, error)
 	LookupPullRequest(ctx context.Context, query agentcallbackdomain.LookupPullRequestQuery) (agentcallbackdomain.PullRequestLookupResult, bool, error)
 	InsertRunFlowEvent(ctx context.Context, params agentcallbackdomain.InsertRunFlowEventParams) error
 }
@@ -72,7 +73,8 @@ type missionControlWorkerService interface {
 	ClaimPendingCommands(ctx context.Context, workerID string, leaseTTL time.Duration, limit int) ([]missioncontrolworkerdomain.PendingCommand, error)
 }
 
-type githubRateLimitWorkerService interface {
+type githubRateLimitService interface {
+	ReportSignal(ctx context.Context, params githubratelimitdomain.ReportSignalParams) (githubratelimitdomain.ReportSignalResult, error)
 	ProcessNextAutoResume(ctx context.Context, params githubratelimitdomain.ProcessNextAutoResumeParams) (githubratelimitdomain.ProcessNextAutoResumeResult, error)
 }
 
@@ -90,7 +92,7 @@ type Dependencies struct {
 	Webhook              webhookIngress
 	Staff                *staff.Service
 	AgentCallbacks       agentCallbackService
-	GitHubRateLimit      githubRateLimitWorkerService
+	GitHubRateLimit      githubRateLimitService
 	MissionControl       missionControlWorkerService
 	MissionControlDomain missioncontroldomain.DomainService
 	RunStatus            runStatusService
@@ -108,7 +110,7 @@ type Server struct {
 	webhook              webhookIngress
 	staff                *staff.Service
 	agentCallbacks       agentCallbackService
-	githubRateLimit      githubRateLimitWorkerService
+	githubRateLimit      githubRateLimitService
 	missionControl       missionControlWorkerService
 	missionControlDomain missioncontroldomain.DomainService
 	runStatus            runStatusService

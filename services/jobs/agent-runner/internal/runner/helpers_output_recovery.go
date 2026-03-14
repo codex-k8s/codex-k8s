@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	cpclient "github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/controlplane"
 )
@@ -16,7 +17,7 @@ type outputRepairPromptTemplateData struct {
 	ExistingPRNumber int
 }
 
-func (s *Service) resolveCodexReport(ctx context.Context, state codexState, result *runResult, outputSchemaFile string, codexOutput []byte, requiresPRFlow bool) (codexReport, []byte, error) {
+func (s *Service) resolveCodexReport(ctx context.Context, state codexState, result *runResult, runStartedAt time.Time, outputSchemaFile string, codexOutput []byte, requiresPRFlow bool) (codexReport, []byte, error) {
 	report, _, parseErr := parseCodexReportOutput(codexOutput)
 	if parseErr == nil {
 		report = enrichCodexReportWithLocalState(report, *result)
@@ -34,7 +35,7 @@ func (s *Service) resolveCodexReport(ctx context.Context, state codexState, resu
 		return report, nil, nil
 	}
 
-	repairOutput, repairErr := s.repairCodexStructuredOutput(ctx, state, *result, outputSchemaFile, report, requiresPRFlow)
+	repairOutput, repairErr := s.repairCodexStructuredOutput(ctx, state, result, runStartedAt, outputSchemaFile, report, requiresPRFlow)
 	if repairErr != nil {
 		if parseErr != nil {
 			return codexReport{}, nil, fmt.Errorf("parse codex structured output: %w", parseErr)
@@ -165,7 +166,7 @@ func (s *Service) lookupRunPullRequest(ctx context.Context, prNumber int, headBr
 	}, true, nil
 }
 
-func (s *Service) repairCodexStructuredOutput(ctx context.Context, state codexState, result runResult, outputSchemaFile string, report codexReport, requiresPRFlow bool) ([]byte, error) {
+func (s *Service) repairCodexStructuredOutput(ctx context.Context, state codexState, result *runResult, runStartedAt time.Time, outputSchemaFile string, report codexReport, requiresPRFlow bool) ([]byte, error) {
 	repairPrompt, err := renderTemplate(templateNamePromptOutputRepair, outputRepairPromptTemplateData{
 		PromptLocale:     normalizePromptLocale(s.cfg.PromptTemplateLocale),
 		MissingFields:    missingCriticalCodexReportFields(report, requiresPRFlow),
@@ -176,7 +177,7 @@ func (s *Service) repairCodexStructuredOutput(ctx context.Context, state codexSt
 		return nil, fmt.Errorf("render output repair prompt: %w", err)
 	}
 
-	repairOutput, err := s.runCodexExecWithAuthRecovery(ctx, state, codexExecParams{
+	repairOutput, err := s.runCodexExecWithAuthRecovery(ctx, state, result, runStartedAt, codexExecParams{
 		RepoDir:          state.repoDir,
 		Resume:           result.restoredSessionPath != "" || result.sessionID != "" || result.sessionFilePath != "",
 		ResumeSessionID:  result.sessionID,

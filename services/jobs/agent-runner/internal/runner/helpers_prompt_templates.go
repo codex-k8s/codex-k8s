@@ -113,13 +113,21 @@ func (s *Service) buildPrompt(taskBody string, result runResult, repoDir string)
 	runtimeBuildRef := strings.TrimSpace(s.cfg.RuntimeBuildRef)
 	runtimeAccessProfile := normalizePromptRuntimeAccessProfile(s.cfg.RuntimeAccessProfile)
 	isDiscussionMode := s.cfg.DiscussionMode
-	resumePromptBlock, err := buildInteractionResumePromptBlock(
+	interactionResumePromptBlock, err := buildInteractionResumePromptBlock(
 		s.cfg.PromptTemplateLocale,
 		s.cfg.InteractionResumePayload,
 		result.restoredSessionPath != "" || result.sessionID != "",
 	)
 	if err != nil {
 		return "", fmt.Errorf("build interaction resume prompt block: %w", err)
+	}
+	githubRateLimitResumePromptBlock, err := buildGitHubRateLimitResumePromptBlock(
+		s.cfg.PromptTemplateLocale,
+		s.cfg.GitHubRateLimitResumePayload,
+		result.restoredSessionPath != "" || result.sessionID != "",
+	)
+	if err != nil {
+		return "", fmt.Errorf("build github rate-limit resume prompt block: %w", err)
 	}
 	isReviseTrigger := !isDiscussionMode && webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(result.triggerKind))
 	roleProfileBlock, err := renderPromptRoleProfileBlock(s.cfg.AgentKey, s.cfg.PromptTemplateLocale)
@@ -172,10 +180,17 @@ func (s *Service) buildPrompt(taskBody string, result runResult, repoDir string)
 	if err != nil {
 		return "", err
 	}
-	if strings.TrimSpace(resumePromptBlock) == "" {
+	resumeBlocks := make([]string, 0, 2)
+	if strings.TrimSpace(interactionResumePromptBlock) != "" {
+		resumeBlocks = append(resumeBlocks, interactionResumePromptBlock)
+	}
+	if strings.TrimSpace(githubRateLimitResumePromptBlock) != "" {
+		resumeBlocks = append(resumeBlocks, githubRateLimitResumePromptBlock)
+	}
+	if len(resumeBlocks) == 0 {
 		return prompt, nil
 	}
-	return resumePromptBlock + "\n\n" + prompt, nil
+	return strings.Join(append(resumeBlocks, prompt), "\n\n"), nil
 }
 
 func normalizePromptRuntimeTargetEnv(value string) string {

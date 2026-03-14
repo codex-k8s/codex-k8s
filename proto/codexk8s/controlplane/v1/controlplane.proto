@@ -657,6 +657,42 @@ message ProcessNextGitHubRateLimitWaitResponse {
   string requeued_correlation_id = 9;
 }
 
+message GitHubRateLimitHeaders {
+  optional int32 rate_limit_limit = 1;
+  optional int32 rate_limit_remaining = 2;
+  optional int32 rate_limit_used = 3;
+  google.protobuf.Timestamp rate_limit_reset_at = 4;
+  optional string rate_limit_resource = 5;
+  optional int32 retry_after_seconds = 6;
+  optional string github_request_id = 7;
+  optional string documentation_url = 8;
+}
+
+message ReportGitHubRateLimitSignalRequest {
+  string run_id = 1;
+  string signal_id = 2;
+  string correlation_id = 3;
+  string contour_kind = 4;
+  string signal_origin = 5;
+  string operation_class = 6;
+  int32 provider_status_code = 7;
+  google.protobuf.Timestamp occurred_at = 8;
+  optional string request_fingerprint = 9;
+  optional string stderr_excerpt = 10;
+  optional string message_excerpt = 11;
+  GitHubRateLimitHeaders github_headers = 12;
+  optional int64 session_snapshot_version = 13;
+}
+
+message ReportGitHubRateLimitSignalResponse {
+  string wait_id = 1;
+  string wait_state = 2;
+  string wait_reason = 3;
+  string next_step_kind = 4;
+  string runner_action = 5;
+  google.protobuf.Timestamp resume_not_before = 6;
+}
+
 message MissionControlWarmupProject {
   string project_id = 1;
   string project_name = 2;
@@ -1298,6 +1334,13 @@ message GetRunInteractionResumePayloadResponse {
   bytes payload_json = 2;
 }
 
+message GetRunGitHubRateLimitResumePayloadRequest {}
+
+message GetRunGitHubRateLimitResumePayloadResponse {
+  bool found = 1;
+  bytes payload_json = 2;
+}
+
 message LookupRunPullRequestRequest {
   optional string project_id = 1;
   string repository_full_name = 2;
@@ -1432,6 +1475,7 @@ service ControlPlaneService {
   rpc CompleteInteractionDispatch(CompleteInteractionDispatchRequest) returns (CompleteInteractionDispatchResponse);
   rpc ExpireNextInteraction(ExpireNextInteractionRequest) returns (ExpireNextInteractionResponse);
   rpc ProcessNextGitHubRateLimitWait(ProcessNextGitHubRateLimitWaitRequest) returns (ProcessNextGitHubRateLimitWaitResponse);
+  rpc ReportGitHubRateLimitSignal(ReportGitHubRateLimitSignalRequest) returns (ReportGitHubRateLimitSignalResponse);
   rpc GetMissionControlSnapshot(GetMissionControlSnapshotRequest) returns (GetMissionControlSnapshotResponse);
   rpc GetMissionControlEntity(GetMissionControlEntityRequest) returns (MissionControlEntityDetails);
   rpc ListMissionControlTimeline(ListMissionControlTimelineRequest) returns (ListMissionControlTimelineResponse);
@@ -1456,6 +1500,7 @@ service ControlPlaneService {
   rpc UpsertAgentSession(UpsertAgentSessionRequest) returns (UpsertAgentSessionResponse);
   rpc GetLatestAgentSession(GetLatestAgentSessionRequest) returns (GetLatestAgentSessionResponse);
   rpc GetRunInteractionResumePayload(GetRunInteractionResumePayloadRequest) returns (GetRunInteractionResumePayloadResponse);
+  rpc GetRunGitHubRateLimitResumePayload(GetRunGitHubRateLimitResumePayloadRequest) returns (GetRunGitHubRateLimitResumePayloadResponse);
   rpc LookupRunPullRequest(LookupRunPullRequestRequest) returns (LookupRunPullRequestResponse);
   rpc InsertRunFlowEvent(InsertRunFlowEventRequest) returns (InsertRunFlowEventResponse);
   rpc UpsertRunStatusComment(UpsertRunStatusCommentRequest) returns (UpsertRunStatusCommentResponse);

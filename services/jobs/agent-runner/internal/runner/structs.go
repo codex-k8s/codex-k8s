@@ -57,19 +57,20 @@ type OpenAIConfig struct {
 
 // Config defines runtime parameters for one agent-runner job.
 type Config struct {
-	RunID                    string
-	CorrelationID            string
-	ProjectID                string
-	RepositoryFullName       string
-	AgentKey                 string
-	IssueNumber              int64
-	RunTargetBranch          string
-	ExistingPRNumber         int
-	RuntimeMode              string
-	RuntimeTargetEnv         string
-	RuntimeBuildRef          string
-	RuntimeAccessProfile     string
-	InteractionResumePayload string
+	RunID                        string
+	CorrelationID                string
+	ProjectID                    string
+	RepositoryFullName           string
+	AgentKey                     string
+	IssueNumber                  int64
+	RunTargetBranch              string
+	ExistingPRNumber             int
+	RuntimeMode                  string
+	RuntimeTargetEnv             string
+	RuntimeBuildRef              string
+	RuntimeAccessProfile         string
+	InteractionResumePayload     string
+	GitHubRateLimitResumePayload string
 
 	PromptConfig
 
@@ -88,6 +89,8 @@ type ControlPlaneCallbacks interface {
 	UpsertAgentSession(ctx context.Context, params cpclient.AgentSessionUpsertParams) (cpclient.AgentSessionUpsertResult, error)
 	GetLatestAgentSession(ctx context.Context, query cpclient.LatestAgentSessionQuery) (cpclient.AgentSessionSnapshot, bool, error)
 	GetRunInteractionResumePayload(ctx context.Context) (cpclient.RunInteractionResumePayload, bool, error)
+	GetRunGitHubRateLimitResumePayload(ctx context.Context) (cpclient.RunGitHubRateLimitResumePayload, bool, error)
+	ReportGitHubRateLimitSignal(ctx context.Context, params cpclient.ReportGitHubRateLimitSignalParams) (cpclient.ReportGitHubRateLimitSignalResult, error)
 	LookupRunPullRequest(ctx context.Context, params cpclient.RunPullRequestLookupParams) (cpclient.RunPullRequestLookupResult, bool, error)
 	InsertRunFlowEvent(ctx context.Context, runID string, eventType floweventdomain.EventType, payload json.RawMessage) error
 	GetCodexAuth(ctx context.Context) ([]byte, bool, error)

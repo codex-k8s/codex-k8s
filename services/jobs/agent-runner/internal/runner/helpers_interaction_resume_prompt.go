@@ -1,10 +1,7 @@
 package runner
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"strings"
 	"time"
 
 	"github.com/codex-k8s/codex-k8s/libs/go/mcp/userinteraction"
@@ -33,76 +30,40 @@ type interactionResumePayload struct {
 }
 
 func buildInteractionResumePromptBlock(locale string, rawPayload string, resume bool) (string, error) {
-	if strings.TrimSpace(rawPayload) == "" {
-		return "", nil
-	}
-	if !resume {
-		return "", fmt.Errorf("interaction resume payload requires restored codex session")
-	}
-
-	payload, err := parseInteractionResumePayload(rawPayload)
-	if err != nil {
-		return "", err
-	}
-
-	prettyPayload, err := json.MarshalIndent(payload, "", "  ")
-	if err != nil {
-		return "", fmt.Errorf("marshal interaction resume payload: %w", err)
-	}
-
-	if normalizePromptLocale(locale) == promptLocaleRU {
-		return strings.TrimSpace(fmt.Sprintf(
-			"Детерминированный resume context:\n"+
-				"Ниже machine-readable terminal outcome предыдущего user interaction. Используйте этот JSON как authoritative source для продолжения сессии, не делайте повторный lookup у adapter и не задавайте пользователю тот же вопрос повторно.\n\n"+
-				"```json\n%s\n```",
-			prettyPayload,
-		)), nil
-	}
-
-	return strings.TrimSpace(fmt.Sprintf(
-		"Deterministic resume context:\n"+
-			"Below is the machine-readable terminal outcome of the previous user interaction. Treat this JSON as the authoritative source for continuation, do not re-query the adapter, and do not ask the same question again.\n\n"+
-			"```json\n%s\n```",
-		prettyPayload,
-	)), nil
+	return buildDeterministicResumePromptBlock(
+		locale,
+		rawPayload,
+		resume,
+		"interaction resume payload requires restored codex session",
+		parseInteractionResumePayload,
+		"Детерминированный resume context:",
+		"Ниже machine-readable terminal outcome предыдущего user interaction. Используйте этот JSON как authoritative source для продолжения сессии, не делайте повторный lookup у adapter и не задавайте пользователю тот же вопрос повторно.",
+		"Deterministic resume context:",
+		"Below is the machine-readable terminal outcome of the previous user interaction. Treat this JSON as the authoritative source for continuation, do not re-query the adapter, and do not ask the same question again.",
+	)
 }
 
 func parseInteractionResumePayload(rawPayload string) (interactionResumePayload, error) {
-	trimmed := strings.TrimSpace(rawPayload)
-	if trimmed == "" {
-		return interactionResumePayload{}, fmt.Errorf("interaction resume payload is empty")
-	}
-	if len([]byte(trimmed)) > userinteraction.ResumePayloadMaxBytes {
-		return interactionResumePayload{}, fmt.Errorf("interaction resume payload exceeds %d bytes", userinteraction.ResumePayloadMaxBytes)
-	}
-
-	var payload interactionResumePayload
-	decoder := json.NewDecoder(strings.NewReader(trimmed))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&payload); err != nil {
-		return interactionResumePayload{}, fmt.Errorf("decode interaction resume payload: %w", err)
-	}
-	var trailing any
-	if err := decoder.Decode(&trailing); err != io.EOF {
-		return interactionResumePayload{}, fmt.Errorf("interaction resume payload contains trailing data")
-	}
-	payload = normalizeInteractionResumePayload(payload)
-
-	if err := validateInteractionResumePayload(payload); err != nil {
-		return interactionResumePayload{}, err
-	}
-	return payload, nil
+	return parseDeterministicResumePayload(
+		rawPayload,
+		userinteraction.ResumePayloadMaxBytes,
+		"interaction resume payload",
+		normalizeInteractionResumePayload,
+		validateInteractionResumePayload,
+	)
 }
 
 func normalizeInteractionResumePayload(payload interactionResumePayload) interactionResumePayload {
-	payload.InteractionID = strings.TrimSpace(payload.InteractionID)
-	payload.ToolName = strings.TrimSpace(payload.ToolName)
-	payload.RequestStatus = strings.TrimSpace(payload.RequestStatus)
-	payload.ResponseKind = strings.TrimSpace(payload.ResponseKind)
-	payload.SelectedOptionID = strings.TrimSpace(payload.SelectedOptionID)
-	payload.FreeText = strings.TrimSpace(payload.FreeText)
-	payload.ResolvedAt = strings.TrimSpace(payload.ResolvedAt)
-	payload.ResolutionReason = strings.TrimSpace(payload.ResolutionReason)
+	trimStringFields(
+		&payload.InteractionID,
+		&payload.ToolName,
+		&payload.RequestStatus,
+		&payload.ResponseKind,
+		&payload.SelectedOptionID,
+		&payload.FreeText,
+		&payload.ResolvedAt,
+		&payload.ResolutionReason,
+	)
 	return payload
 }
 

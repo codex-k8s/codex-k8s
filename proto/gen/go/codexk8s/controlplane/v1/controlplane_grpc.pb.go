@@ -61,6 +61,7 @@ const (
 	ControlPlaneService_CompleteInteractionDispatch_FullMethodName          = "/codexk8s.controlplane.v1.ControlPlaneService/CompleteInteractionDispatch"
 	ControlPlaneService_ExpireNextInteraction_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/ExpireNextInteraction"
 	ControlPlaneService_ProcessNextGitHubRateLimitWait_FullMethodName       = "/codexk8s.controlplane.v1.ControlPlaneService/ProcessNextGitHubRateLimitWait"
+	ControlPlaneService_ReportGitHubRateLimitSignal_FullMethodName          = "/codexk8s.controlplane.v1.ControlPlaneService/ReportGitHubRateLimitSignal"
 	ControlPlaneService_GetMissionControlSnapshot_FullMethodName            = "/codexk8s.controlplane.v1.ControlPlaneService/GetMissionControlSnapshot"
 	ControlPlaneService_GetMissionControlEntity_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/GetMissionControlEntity"
 	ControlPlaneService_ListMissionControlTimeline_FullMethodName           = "/codexk8s.controlplane.v1.ControlPlaneService/ListMissionControlTimeline"
@@ -83,6 +84,7 @@ const (
 	ControlPlaneService_UpsertAgentSession_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertAgentSession"
 	ControlPlaneService_GetLatestAgentSession_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/GetLatestAgentSession"
 	ControlPlaneService_GetRunInteractionResumePayload_FullMethodName       = "/codexk8s.controlplane.v1.ControlPlaneService/GetRunInteractionResumePayload"
+	ControlPlaneService_GetRunGitHubRateLimitResumePayload_FullMethodName   = "/codexk8s.controlplane.v1.ControlPlaneService/GetRunGitHubRateLimitResumePayload"
 	ControlPlaneService_LookupRunPullRequest_FullMethodName                 = "/codexk8s.controlplane.v1.ControlPlaneService/LookupRunPullRequest"
 	ControlPlaneService_InsertRunFlowEvent_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/InsertRunFlowEvent"
 	ControlPlaneService_UpsertRunStatusComment_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertRunStatusComment"
@@ -138,6 +140,7 @@ type ControlPlaneServiceClient interface {
 	CompleteInteractionDispatch(ctx context.Context, in *CompleteInteractionDispatchRequest, opts ...grpc.CallOption) (*CompleteInteractionDispatchResponse, error)
 	ExpireNextInteraction(ctx context.Context, in *ExpireNextInteractionRequest, opts ...grpc.CallOption) (*ExpireNextInteractionResponse, error)
 	ProcessNextGitHubRateLimitWait(ctx context.Context, in *ProcessNextGitHubRateLimitWaitRequest, opts ...grpc.CallOption) (*ProcessNextGitHubRateLimitWaitResponse, error)
+	ReportGitHubRateLimitSignal(ctx context.Context, in *ReportGitHubRateLimitSignalRequest, opts ...grpc.CallOption) (*ReportGitHubRateLimitSignalResponse, error)
 	GetMissionControlSnapshot(ctx context.Context, in *GetMissionControlSnapshotRequest, opts ...grpc.CallOption) (*GetMissionControlSnapshotResponse, error)
 	GetMissionControlEntity(ctx context.Context, in *GetMissionControlEntityRequest, opts ...grpc.CallOption) (*MissionControlEntityDetails, error)
 	ListMissionControlTimeline(ctx context.Context, in *ListMissionControlTimelineRequest, opts ...grpc.CallOption) (*ListMissionControlTimelineResponse, error)
@@ -161,6 +164,7 @@ type ControlPlaneServiceClient interface {
 	UpsertAgentSession(ctx context.Context, in *UpsertAgentSessionRequest, opts ...grpc.CallOption) (*UpsertAgentSessionResponse, error)
 	GetLatestAgentSession(ctx context.Context, in *GetLatestAgentSessionRequest, opts ...grpc.CallOption) (*GetLatestAgentSessionResponse, error)
 	GetRunInteractionResumePayload(ctx context.Context, in *GetRunInteractionResumePayloadRequest, opts ...grpc.CallOption) (*GetRunInteractionResumePayloadResponse, error)
+	GetRunGitHubRateLimitResumePayload(ctx context.Context, in *GetRunGitHubRateLimitResumePayloadRequest, opts ...grpc.CallOption) (*GetRunGitHubRateLimitResumePayloadResponse, error)
 	LookupRunPullRequest(ctx context.Context, in *LookupRunPullRequestRequest, opts ...grpc.CallOption) (*LookupRunPullRequestResponse, error)
 	InsertRunFlowEvent(ctx context.Context, in *InsertRunFlowEventRequest, opts ...grpc.CallOption) (*InsertRunFlowEventResponse, error)
 	UpsertRunStatusComment(ctx context.Context, in *UpsertRunStatusCommentRequest, opts ...grpc.CallOption) (*UpsertRunStatusCommentResponse, error)
@@ -587,6 +591,16 @@ func (c *controlPlaneServiceClient) ProcessNextGitHubRateLimitWait(ctx context.C
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) ReportGitHubRateLimitSignal(ctx context.Context, in *ReportGitHubRateLimitSignalRequest, opts ...grpc.CallOption) (*ReportGitHubRateLimitSignalResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReportGitHubRateLimitSignalResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ReportGitHubRateLimitSignal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) GetMissionControlSnapshot(ctx context.Context, in *GetMissionControlSnapshotRequest, opts ...grpc.CallOption) (*GetMissionControlSnapshotResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetMissionControlSnapshotResponse)
@@ -807,6 +821,16 @@ func (c *controlPlaneServiceClient) GetRunInteractionResumePayload(ctx context.C
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) GetRunGitHubRateLimitResumePayload(ctx context.Context, in *GetRunGitHubRateLimitResumePayloadRequest, opts ...grpc.CallOption) (*GetRunGitHubRateLimitResumePayloadResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRunGitHubRateLimitResumePayloadResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_GetRunGitHubRateLimitResumePayload_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) LookupRunPullRequest(ctx context.Context, in *LookupRunPullRequestRequest, opts ...grpc.CallOption) (*LookupRunPullRequestResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(LookupRunPullRequestResponse)
@@ -914,6 +938,7 @@ type ControlPlaneServiceServer interface {
 	CompleteInteractionDispatch(context.Context, *CompleteInteractionDispatchRequest) (*CompleteInteractionDispatchResponse, error)
 	ExpireNextInteraction(context.Context, *ExpireNextInteractionRequest) (*ExpireNextInteractionResponse, error)
 	ProcessNextGitHubRateLimitWait(context.Context, *ProcessNextGitHubRateLimitWaitRequest) (*ProcessNextGitHubRateLimitWaitResponse, error)
+	ReportGitHubRateLimitSignal(context.Context, *ReportGitHubRateLimitSignalRequest) (*ReportGitHubRateLimitSignalResponse, error)
 	GetMissionControlSnapshot(context.Context, *GetMissionControlSnapshotRequest) (*GetMissionControlSnapshotResponse, error)
 	GetMissionControlEntity(context.Context, *GetMissionControlEntityRequest) (*MissionControlEntityDetails, error)
 	ListMissionControlTimeline(context.Context, *ListMissionControlTimelineRequest) (*ListMissionControlTimelineResponse, error)
@@ -937,6 +962,7 @@ type ControlPlaneServiceServer interface {
 	UpsertAgentSession(context.Context, *UpsertAgentSessionRequest) (*UpsertAgentSessionResponse, error)
 	GetLatestAgentSession(context.Context, *GetLatestAgentSessionRequest) (*GetLatestAgentSessionResponse, error)
 	GetRunInteractionResumePayload(context.Context, *GetRunInteractionResumePayloadRequest) (*GetRunInteractionResumePayloadResponse, error)
+	GetRunGitHubRateLimitResumePayload(context.Context, *GetRunGitHubRateLimitResumePayloadRequest) (*GetRunGitHubRateLimitResumePayloadResponse, error)
 	LookupRunPullRequest(context.Context, *LookupRunPullRequestRequest) (*LookupRunPullRequestResponse, error)
 	InsertRunFlowEvent(context.Context, *InsertRunFlowEventRequest) (*InsertRunFlowEventResponse, error)
 	UpsertRunStatusComment(context.Context, *UpsertRunStatusCommentRequest) (*UpsertRunStatusCommentResponse, error)
@@ -1076,6 +1102,9 @@ func (UnimplementedControlPlaneServiceServer) ExpireNextInteraction(context.Cont
 func (UnimplementedControlPlaneServiceServer) ProcessNextGitHubRateLimitWait(context.Context, *ProcessNextGitHubRateLimitWaitRequest) (*ProcessNextGitHubRateLimitWaitResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessNextGitHubRateLimitWait not implemented")
 }
+func (UnimplementedControlPlaneServiceServer) ReportGitHubRateLimitSignal(context.Context, *ReportGitHubRateLimitSignalRequest) (*ReportGitHubRateLimitSignalResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportGitHubRateLimitSignal not implemented")
+}
 func (UnimplementedControlPlaneServiceServer) GetMissionControlSnapshot(context.Context, *GetMissionControlSnapshotRequest) (*GetMissionControlSnapshotResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMissionControlSnapshot not implemented")
 }
@@ -1141,6 +1170,9 @@ func (UnimplementedControlPlaneServiceServer) GetLatestAgentSession(context.Cont
 }
 func (UnimplementedControlPlaneServiceServer) GetRunInteractionResumePayload(context.Context, *GetRunInteractionResumePayloadRequest) (*GetRunInteractionResumePayloadResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRunInteractionResumePayload not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) GetRunGitHubRateLimitResumePayload(context.Context, *GetRunGitHubRateLimitResumePayloadRequest) (*GetRunGitHubRateLimitResumePayloadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRunGitHubRateLimitResumePayload not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) LookupRunPullRequest(context.Context, *LookupRunPullRequestRequest) (*LookupRunPullRequestResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LookupRunPullRequest not implemented")
@@ -1919,6 +1951,24 @@ func _ControlPlaneService_ProcessNextGitHubRateLimitWait_Handler(srv interface{}
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_ReportGitHubRateLimitSignal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportGitHubRateLimitSignalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ReportGitHubRateLimitSignal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ReportGitHubRateLimitSignal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ReportGitHubRateLimitSignal(ctx, req.(*ReportGitHubRateLimitSignalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_GetMissionControlSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetMissionControlSnapshotRequest)
 	if err := dec(in); err != nil {
@@ -2315,6 +2365,24 @@ func _ControlPlaneService_GetRunInteractionResumePayload_Handler(srv interface{}
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_GetRunGitHubRateLimitResumePayload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRunGitHubRateLimitResumePayloadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).GetRunGitHubRateLimitResumePayload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_GetRunGitHubRateLimitResumePayload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).GetRunGitHubRateLimitResumePayload(ctx, req.(*GetRunGitHubRateLimitResumePayloadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_LookupRunPullRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LookupRunPullRequestRequest)
 	if err := dec(in); err != nil {
@@ -2595,6 +2663,10 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ControlPlaneService_ProcessNextGitHubRateLimitWait_Handler,
 		},
 		{
+			MethodName: "ReportGitHubRateLimitSignal",
+			Handler:    _ControlPlaneService_ReportGitHubRateLimitSignal_Handler,
+		},
+		{
 			MethodName: "GetMissionControlSnapshot",
 			Handler:    _ControlPlaneService_GetMissionControlSnapshot_Handler,
 		},
@@ -2681,6 +2753,10 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRunInteractionResumePayload",
 			Handler:    _ControlPlaneService_GetRunInteractionResumePayload_Handler,
+		},
+		{
+			MethodName: "GetRunGitHubRateLimitResumePayload",
+			Handler:    _ControlPlaneService_GetRunGitHubRateLimitResumePayload_Handler,
 		},
 		{
 			MethodName: "LookupRunPullRequest",

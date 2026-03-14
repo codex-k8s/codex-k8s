@@ -5,7 +5,7 @@ title: "GitHub API rate-limit resilience — API contract Sprint S12 Day 5"
 status: approved
 owner_role: SA
 created_at: 2026-03-13
-updated_at: 2026-03-13
+updated_at: 2026-03-14
 related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
 related_prs: []
 approvals:
@@ -35,6 +35,7 @@ approvals:
 | Operation | Method/Kind | Path/Name | Auth | Idempotency | Notes |
 |---|---|---|---|---|---|
 | Report agent-side rate-limit signal | gRPC | `ReportGitHubRateLimitSignal` | run-bound bearer | `signal_id` | `agent-runner -> control-plane`; runner stops local retries after success |
+| Read deterministic runner resume payload | gRPC | `GetRunGitHubRateLimitResumePayload` | run-bound bearer | n/a | runner fetches platform-owned resume JSON before `codex exec resume` |
 | Read run details with wait projection | HTTP GET | `/api/v1/staff/runs/{run_id}` | staff JWT | n/a | existing route extended with `wait_projection` |
 | List active waits | HTTP GET | `/api/v1/staff/runs/waits` | staff JWT | n/a | existing route extended with contour and wait policy fields |
 | Stream run realtime wait updates | WebSocket | `/api/v1/staff/runs/{run_id}/realtime` | staff JWT | n/a | existing route adds `wait_entered|wait_updated|wait_resolved|wait_manual_action_required` envelopes |
@@ -79,6 +80,16 @@ approvals:
 | `next_step_kind` | `auto_resume_scheduled|manual_action_required` | current resolution path |
 | `runner_action` | `persist_session_and_exit_wait` | runner must stop local retries |
 | `resume_not_before` | RFC3339 timestamp | set for deterministic/conservative waits only |
+
+### `GetRunGitHubRateLimitResumePayloadRequest`
+- Empty message.
+- `run_id` is derived from the authenticated run-bound bearer and is not accepted from transport input.
+
+### `GetRunGitHubRateLimitResumePayloadResponse`
+| Field | Type | Notes |
+|---|---|---|
+| `found` | bool | `false` when current run does not carry persisted GitHub resume payload |
+| `payload_json` | bytes | compact deterministic JSON block described in design doc; runner prepends it to resume prompt |
 
 ## Staff/private visibility contract
 ### `RunWaitProjection`

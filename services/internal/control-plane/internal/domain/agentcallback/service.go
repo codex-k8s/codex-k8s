@@ -135,19 +135,33 @@ func (s *Service) GetLatestAgentSession(ctx context.Context, query GetLatestAgen
 
 // GetRunInteractionResumePayload returns deterministic interaction resume payload for one authenticated run.
 func (s *Service) GetRunInteractionResumePayload(ctx context.Context, runID string) (json.RawMessage, bool, error) {
+	return s.getRunPayloadField(ctx, runID, "interaction resume payload", extractInteractionResumePayload)
+}
+
+// GetRunGitHubRateLimitResumePayload returns deterministic GitHub rate-limit resume payload for one authenticated run.
+func (s *Service) GetRunGitHubRateLimitResumePayload(ctx context.Context, runID string) (json.RawMessage, bool, error) {
+	return s.getRunPayloadField(ctx, runID, "github rate-limit resume payload", extractGitHubRateLimitResumePayload)
+}
+
+func (s *Service) getRunPayloadField(
+	ctx context.Context,
+	runID string,
+	payloadLabel string,
+	extract func(json.RawMessage) (json.RawMessage, bool, error),
+) (json.RawMessage, bool, error) {
 	if s == nil || s.runs == nil {
 		return nil, false, errors.New("agent run repository is not configured")
 	}
 
 	run, found, err := s.runs.GetByID(ctx, strings.TrimSpace(runID))
 	if err != nil {
-		return nil, false, fmt.Errorf("load run for interaction resume payload: %w", err)
+		return nil, false, fmt.Errorf("load run for %s: %w", payloadLabel, err)
 	}
 	if !found {
 		return nil, false, nil
 	}
 
-	return extractInteractionResumePayload(run.RunPayload)
+	return extract(run.RunPayload)
 }
 
 // InsertRunFlowEvent persists one run-bound callback event.

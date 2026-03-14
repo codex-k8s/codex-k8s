@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	cpclient "github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/controlplane"
@@ -39,7 +40,7 @@ func TestResolveCodexReport_RecoversPRMetadataFromControlPlane(t *testing.T) {
 		sessionID:        "sess-1",
 	}
 
-	report, repairedOutput, err := service.resolveCodexReport(context.Background(), state, &result, filepath.Join(t.TempDir(), "schema.json"), []byte(`{"status":"ok","summary":["done"]}`), true)
+	report, repairedOutput, err := service.resolveCodexReport(context.Background(), state, &result, time.Now().UTC(), filepath.Join(t.TempDir(), "schema.json"), []byte(`{"status":"ok","summary":["done"]}`), true)
 	if err != nil {
 		t.Fatalf("resolveCodexReport() error = %v", err)
 	}
@@ -78,7 +79,7 @@ func TestResolveCodexReport_RepairsStructuredOutputWhenRequiredFieldsMissing(t *
 		sessionID:        "sess-1",
 	}
 
-	report, repairedOutput, err := service.resolveCodexReport(context.Background(), state, &result, filepath.Join(t.TempDir(), "schema.json"), []byte(`{"status":"ok","summary":["done"]}`), true)
+	report, repairedOutput, err := service.resolveCodexReport(context.Background(), state, &result, time.Now().UTC(), filepath.Join(t.TempDir(), "schema.json"), []byte(`{"status":"ok","summary":["done"]}`), true)
 	if err != nil {
 		t.Fatalf("resolveCodexReport() error = %v", err)
 	}
@@ -114,6 +115,14 @@ func (f *fakeOutputRecoveryControlPlane) GetLatestAgentSession(context.Context, 
 
 func (f *fakeOutputRecoveryControlPlane) GetRunInteractionResumePayload(context.Context) (cpclient.RunInteractionResumePayload, bool, error) {
 	return cpclient.RunInteractionResumePayload{}, false, nil
+}
+
+func (f *fakeOutputRecoveryControlPlane) GetRunGitHubRateLimitResumePayload(context.Context) (cpclient.RunGitHubRateLimitResumePayload, bool, error) {
+	return cpclient.RunGitHubRateLimitResumePayload{}, false, nil
+}
+
+func (f *fakeOutputRecoveryControlPlane) ReportGitHubRateLimitSignal(context.Context, cpclient.ReportGitHubRateLimitSignalParams) (cpclient.ReportGitHubRateLimitSignalResult, error) {
+	return cpclient.ReportGitHubRateLimitSignalResult{}, nil
 }
 
 func (f *fakeOutputRecoveryControlPlane) LookupRunPullRequest(_ context.Context, params cpclient.RunPullRequestLookupParams) (cpclient.RunPullRequestLookupResult, bool, error) {

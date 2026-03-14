@@ -7,6 +7,7 @@ Prompt seed policy:
 - role profile и контракты оформления follow-up Issue / PR / review / discussion рендерятся из
   `services/jobs/agent-runner/internal/runner/templates/prompt_blocks/*.tmpl`;
 - deterministic resume path для built-in user interactions читает persisted `interaction_resume_payload` через run-bound gRPC lookup в `control-plane` и добавляет typed JSON block в начало resume prompt перед `codex exec resume`;
+- GitHub rate-limit handoff path отправляет typed `ReportGitHubRateLimitSignal`, сохраняет coarse session snapshots со статусами `running -> waiting_backpressure`, прекращает local retry-loop и для resume читает persisted `github_rate_limit_resume_payload` через run-bound gRPC lookup вместо повторного derive semantics из stderr/headers;
 - поддержаны role-aware шаблоны:
   - `<stage>-<agent_key>-<kind>_<locale>.md` / `<stage>-<agent_key>-<kind>.md`;
   - `role-<agent_key>-<kind>_<locale>.md` / `role-<agent_key>-<kind>.md`;

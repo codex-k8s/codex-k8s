@@ -400,7 +400,7 @@ func Run() error {
 			SchemaReady:        cfg.GitHubRateLimitWaitEnabled,
 			DomainReady:        cfg.GitHubRateLimitWaitEnabled,
 			WorkerReady:        cfg.GitHubRateLimitWaitEnabled,
-			RunnerReady:        false,
+			RunnerReady:        cfg.GitHubRateLimitWaitEnabled,
 		},
 	}, githubratelimitdomain.Dependencies{
 		Runs:           agentRuns,

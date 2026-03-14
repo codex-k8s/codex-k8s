@@ -95,7 +95,7 @@ func (s *Service) runDiscussionLoop(ctx context.Context, state codexState, resul
 			}
 		}
 
-		codexOutput, err := s.runCodexExecWithAuthRecovery(ctx, state, codexExecParams{
+		codexOutput, err := s.runCodexExecWithAuthRecovery(ctx, state, result, runStartedAt, codexExecParams{
 			RepoDir:          state.repoDir,
 			Resume:           resume,
 			ResumeSessionID:  result.sessionID,

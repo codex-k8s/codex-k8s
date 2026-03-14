@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	sharedgithubratelimit "github.com/codex-k8s/codex-k8s/libs/go/domain/githubratelimit"
 	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 	"github.com/codex-k8s/codex-k8s/libs/go/mcp/userinteraction"
 )
@@ -17,12 +18,20 @@ func hasInteractionResumePayload(rawPayload string) bool {
 	return strings.TrimSpace(rawPayload) != ""
 }
 
+func hasGitHubRateLimitResumePayload(rawPayload string) bool {
+	return strings.TrimSpace(rawPayload) != ""
+}
+
 func isInteractionResumeRun(correlationID string) bool {
 	return strings.HasPrefix(strings.TrimSpace(correlationID), userinteraction.ResumeCorrelationPrefix)
 }
 
-func shouldRestoreLatestSession(triggerKind string, discussionMode bool, interactionResumePayload string) bool {
-	if discussionMode || hasInteractionResumePayload(interactionResumePayload) {
+func isGitHubRateLimitResumeRun(correlationID string) bool {
+	return strings.HasPrefix(strings.TrimSpace(correlationID), sharedgithubratelimit.ResumeCorrelationPrefix)
+}
+
+func shouldRestoreLatestSession(triggerKind string, discussionMode bool, interactionResumePayload string, githubRateLimitResumePayload string) bool {
+	if discussionMode || hasInteractionResumePayload(interactionResumePayload) || hasGitHubRateLimitResumePayload(githubRateLimitResumePayload) {
 		return true
 	}
 	return webhookdomain.IsReviseTriggerKind(webhookdomain.NormalizeTriggerKind(triggerKind))

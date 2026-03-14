@@ -105,6 +105,42 @@ func TestResolveInteractionResumePayload_RequiresPersistedPayloadForResumeRun(t 
 	}
 }
 
+func TestResolveGitHubRateLimitResumePayload_FetchesCurrentRunPayload(t *testing.T) {
+	t.Parallel()
+
+	service := NewService(Config{
+		RunID:         "run-resume",
+		CorrelationID: "github-rate-limit-resume:wait-1",
+	}, &fakeSessionRestoreControlPlane{
+		githubResumePayload: cpclient.RunGitHubRateLimitResumePayload{
+			Payload: json.RawMessage(`{"wait_id":"wait-1","wait_reason":"github_rate_limit","contour_kind":"agent_bot_token","limit_kind":"secondary","resolution_kind":"auto_resumed","recovered_at":"2026-03-14T17:00:00Z","attempt_no":2,"affected_operation_class":"agent_github_call","guidance":"reuse the restored snapshot"}`),
+		},
+		githubResumeFound: true,
+	}, nil)
+
+	payload, err := service.resolveGitHubRateLimitResumePayload(context.Background())
+	if err != nil {
+		t.Fatalf("resolveGitHubRateLimitResumePayload() error = %v", err)
+	}
+	if got, want := payload, `{"wait_id":"wait-1","wait_reason":"github_rate_limit","contour_kind":"agent_bot_token","limit_kind":"secondary","resolution_kind":"auto_resumed","recovered_at":"2026-03-14T17:00:00Z","attempt_no":2,"affected_operation_class":"agent_github_call","guidance":"reuse the restored snapshot"}`; got != want {
+		t.Fatalf("payload = %q, want %q", got, want)
+	}
+}
+
+func TestResolveGitHubRateLimitResumePayload_RequiresPersistedPayloadForResumeRun(t *testing.T) {
+	t.Parallel()
+
+	service := NewService(Config{
+		RunID:         "run-resume",
+		CorrelationID: "github-rate-limit-resume:wait-1",
+	}, &fakeSessionRestoreControlPlane{}, nil)
+
+	_, err := service.resolveGitHubRateLimitResumePayload(context.Background())
+	if err == nil {
+		t.Fatal("expected missing persisted github rate-limit resume payload to fail resume run")
+	}
+}
+
 func TestRestoreLatestSession_WithoutPRAndWithoutInteractionResumeMarksPRNotFound(t *testing.T) {
 	t.Parallel()
 
@@ -133,13 +169,45 @@ func TestRestoreLatestSession_WithoutPRAndWithoutInteractionResumeMarksPRNotFoun
 	}
 }
 
+func TestRestoreLatestSession_AllowsGitHubRateLimitResumeWithoutPR(t *testing.T) {
+	t.Parallel()
+
+	service := NewService(Config{
+		RunID:                        "run-github-resume",
+		RepositoryFullName:           "codex-k8s/codex-k8s",
+		AgentKey:                     "dev",
+		GitHubRateLimitResumePayload: `{"wait_id":"wait-1"}`,
+	}, &fakeSessionRestoreControlPlane{
+		snapshot: cpclient.AgentSessionSnapshot{
+			RunID:            "run-source",
+			SessionID:        "sess-rate-limit",
+			CodexSessionJSON: json.RawMessage(`{"session_id":"sess-rate-limit","cwd":"/workspace"}`),
+		},
+		found: true,
+	}, nil)
+
+	restored, err := service.restoreLatestSession(context.Background(), "codex/issue-394", t.TempDir())
+	if err != nil {
+		t.Fatalf("restoreLatestSession() error = %v", err)
+	}
+	if restored.prNotFound {
+		t.Fatal("expected github rate-limit resume flow to proceed without PR precondition failure")
+	}
+	if got, want := restored.sessionID, "sess-rate-limit"; got != want {
+		t.Fatalf("sessionID = %q, want %q", got, want)
+	}
+}
+
 type fakeSessionRestoreControlPlane struct {
-	snapshot      cpclient.AgentSessionSnapshot
-	found         bool
-	err           error
-	resumePayload cpclient.RunInteractionResumePayload
-	resumeFound   bool
-	resumeErr     error
+	snapshot            cpclient.AgentSessionSnapshot
+	found               bool
+	err                 error
+	resumePayload       cpclient.RunInteractionResumePayload
+	resumeFound         bool
+	resumeErr           error
+	githubResumePayload cpclient.RunGitHubRateLimitResumePayload
+	githubResumeFound   bool
+	githubResumeErr     error
 }
 
 type assertResumeLookupShouldNotRunError struct{}
@@ -164,6 +232,17 @@ func (f *fakeSessionRestoreControlPlane) GetRunInteractionResumePayload(context.
 		return cpclient.RunInteractionResumePayload{}, false, f.resumeErr
 	}
 	return f.resumePayload, f.resumeFound, nil
+}
+
+func (f *fakeSessionRestoreControlPlane) GetRunGitHubRateLimitResumePayload(context.Context) (cpclient.RunGitHubRateLimitResumePayload, bool, error) {
+	if f.githubResumeErr != nil {
+		return cpclient.RunGitHubRateLimitResumePayload{}, false, f.githubResumeErr
+	}
+	return f.githubResumePayload, f.githubResumeFound, nil
+}
+
+func (f *fakeSessionRestoreControlPlane) ReportGitHubRateLimitSignal(context.Context, cpclient.ReportGitHubRateLimitSignalParams) (cpclient.ReportGitHubRateLimitSignalResult, error) {
+	return cpclient.ReportGitHubRateLimitSignalResult{}, nil
 }
 
 func (f *fakeSessionRestoreControlPlane) LookupRunPullRequest(context.Context, cpclient.RunPullRequestLookupParams) (cpclient.RunPullRequestLookupResult, bool, error) {

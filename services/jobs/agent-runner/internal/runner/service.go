@@ -80,6 +80,9 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		if errors.As(err, &exitErr) && exitErr.ExitCode == 42 {
 			return
 		}
+		if isGitHubRateLimitWaitAccepted(err) {
+			return
+		}
 		finishedAt := time.Now().UTC()
 		persisted, persistErr := s.persistSessionSnapshot(ctx, &result, state, runStartedAt, runStatusFailed, &finishedAt)
 		if persistErr != nil {
@@ -109,8 +112,13 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		return err
 	}
 	s.cfg.InteractionResumePayload = interactionResumePayload
+	githubRateLimitResumePayload, err := s.resolveGitHubRateLimitResumePayload(ctx)
+	if err != nil {
+		return err
+	}
+	s.cfg.GitHubRateLimitResumePayload = githubRateLimitResumePayload
 
-	if shouldRestoreLatestSession(triggerKind, s.cfg.DiscussionMode, s.cfg.InteractionResumePayload) {
+	if shouldRestoreLatestSession(triggerKind, s.cfg.DiscussionMode, s.cfg.InteractionResumePayload, s.cfg.GitHubRateLimitResumePayload) {
 		restored, restoreErr := s.restoreLatestSession(ctx, result.targetBranch, state.sessionsDir)
 		if restoreErr != nil {
 			return ExitError{ExitCode: 5, Err: fmt.Errorf("restore latest session: %w", restoreErr)}
@@ -181,6 +189,10 @@ func (s *Service) Run(ctx context.Context) (err error) {
 	}
 	if s.cfg.DiscussionMode {
 		if err := s.runDiscussionLoop(ctx, state, &result, runStartedAt, outputSchemaFile, sensitiveValues); err != nil {
+			if isGitHubRateLimitWaitAccepted(err) {
+				s.logger.Info("agent-runner entered github rate-limit wait", "run_id", s.cfg.RunID, "branch", result.targetBranch)
+				return nil
+			}
 			return err
 		}
 		finalized = true
@@ -203,7 +215,7 @@ func (s *Service) Run(ctx context.Context) (err error) {
 			s.logger.Warn("emit run.agent.resume.used failed", "err", err)
 		}
 	}
-	codexOutput, err = s.runCodexExecWithAuthRecovery(ctx, state, codexExecParams{
+	codexOutput, err = s.runCodexExecWithAuthRecovery(ctx, state, &result, runStartedAt, codexExecParams{
 		RepoDir:          state.repoDir,
 		Resume:           result.restoredSessionPath != "" || result.sessionID != "",
 		ResumeSessionID:  result.sessionID,
@@ -211,6 +223,10 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		Prompt:           prompt,
 	})
 	if err != nil {
+		if isGitHubRateLimitWaitAccepted(err) {
+			s.logger.Info("agent-runner entered github rate-limit wait", "run_id", s.cfg.RunID, "branch", result.targetBranch)
+			return nil
+		}
 		return fmt.Errorf("codex exec failed: %w", err)
 	}
 	result.codexExecOutput = redactSensitiveOutput(trimCapturedOutput(string(codexOutput), maxCapturedCommandOutput), sensitiveValues)
@@ -222,8 +238,12 @@ func (s *Service) Run(ctx context.Context) (err error) {
 		result.sessionID = extractSessionIDFromFile(result.sessionFilePath)
 	}
 
-	report, repairedOutput, err := s.resolveCodexReport(ctx, state, &result, outputSchemaFile, codexOutput, requiresPRFlow)
+	report, repairedOutput, err := s.resolveCodexReport(ctx, state, &result, runStartedAt, outputSchemaFile, codexOutput, requiresPRFlow)
 	if err != nil {
+		if isGitHubRateLimitWaitAccepted(err) {
+			s.logger.Info("agent-runner entered github rate-limit wait", "run_id", s.cfg.RunID, "branch", result.targetBranch)
+			return nil
+		}
 		return err
 	}
 	if len(repairedOutput) > 0 {
@@ -345,42 +365,81 @@ func (s *Service) Run(ctx context.Context) (err error) {
 }
 
 func (s *Service) resolveInteractionResumePayload(ctx context.Context) (string, error) {
-	if !isInteractionResumeRun(s.cfg.CorrelationID) {
+	return s.resolveResumePayload(ctx, "interaction resume payload", isInteractionResumeRun, hasInteractionResumePayload, s.loadInteractionResumePayload)
+}
+
+func (s *Service) resolveGitHubRateLimitResumePayload(ctx context.Context) (string, error) {
+	return s.resolveResumePayload(ctx, "github rate-limit resume payload", isGitHubRateLimitResumeRun, hasGitHubRateLimitResumePayload, s.loadGitHubRateLimitResumePayload)
+}
+
+func (s *Service) resolveResumePayload(
+	ctx context.Context,
+	payloadLabel string,
+	isResumeRun func(string) bool,
+	hasPayload func(string) bool,
+	load func(context.Context) (string, error),
+) (string, error) {
+	if !isResumeRun(s.cfg.CorrelationID) {
 		return "", nil
 	}
 
-	payload, err := s.loadInteractionResumePayload(ctx)
+	payload, err := load(ctx)
 	if err != nil {
 		return "", err
 	}
-	if !hasInteractionResumePayload(payload) {
-		return "", fmt.Errorf("interaction resume payload is required for correlation %q", strings.TrimSpace(s.cfg.CorrelationID))
+	if !hasPayload(payload) {
+		return "", fmt.Errorf("%s is required for correlation %q", payloadLabel, strings.TrimSpace(s.cfg.CorrelationID))
 	}
 	return payload, nil
 }
 
 func (s *Service) loadInteractionResumePayload(ctx context.Context) (string, error) {
+	return s.loadRunScopedPayload(ctx, "interaction resume payload", s.getInteractionResumePayloadBytes)
+}
+
+func (s *Service) loadGitHubRateLimitResumePayload(ctx context.Context) (string, error) {
+	return s.loadRunScopedPayload(ctx, "github rate-limit resume payload", s.getGitHubRateLimitResumePayloadBytes)
+}
+
+func (s *Service) loadRunScopedPayload(
+	ctx context.Context,
+	payloadLabel string,
+	load func(context.Context) ([]byte, bool, error),
+) (string, error) {
 	if s.cp == nil {
 		return "", fmt.Errorf("control-plane callbacks are not configured")
 	}
 
-	payload, found, err := s.cp.GetRunInteractionResumePayload(ctx)
+	payload, found, err := load(ctx)
 	if err != nil {
-		return "", fmt.Errorf("load interaction resume payload: %w", err)
+		return "", fmt.Errorf("load %s: %w", payloadLabel, err)
 	}
-	if !found || len(payload.Payload) == 0 {
+	if !found || len(payload) == 0 {
 		return "", nil
 	}
-	return strings.TrimSpace(string(payload.Payload)), nil
+	return strings.TrimSpace(string(payload)), nil
 }
 
-func (s *Service) runCodexExecWithAuthRecovery(ctx context.Context, state codexState, params codexExecParams) ([]byte, error) {
+func (s *Service) getInteractionResumePayloadBytes(ctx context.Context) ([]byte, bool, error) {
+	payload, found, err := s.cp.GetRunInteractionResumePayload(ctx)
+	return payload.Payload, found, err
+}
+
+func (s *Service) getGitHubRateLimitResumePayloadBytes(ctx context.Context) ([]byte, bool, error) {
+	payload, found, err := s.cp.GetRunGitHubRateLimitResumePayload(ctx)
+	return payload.Payload, found, err
+}
+
+func (s *Service) runCodexExecWithAuthRecovery(ctx context.Context, state codexState, result *runResult, runStartedAt time.Time, params codexExecParams) ([]byte, error) {
 	output, stderr, err := runCodexExec(ctx, params)
 	if err == nil {
 		return output, nil
 	}
+	if handoffErr := s.tryHandoffGitHubRateLimit(ctx, state, result, runStartedAt, output, stderr, err); handoffErr != nil {
+		return nil, handoffErr
+	}
 	if !isCodexAuthenticationError(err.Error(), string(output), stderr) {
-		return nil, err
+		return nil, codexExecFailure{Output: output, Stderr: stderr, Err: err}
 	}
 
 	s.logger.Warn("codex exec returned auth error; retrying after device auth", "run_id", s.cfg.RunID)
@@ -388,9 +447,12 @@ func (s *Service) runCodexExecWithAuthRecovery(ctx context.Context, state codexS
 		return nil, fmt.Errorf("recover codex auth: %w", authErr)
 	}
 
-	output, _, err = runCodexExec(ctx, params)
+	output, stderr, err = runCodexExec(ctx, params)
 	if err != nil {
-		return nil, err
+		if handoffErr := s.tryHandoffGitHubRateLimit(ctx, state, result, runStartedAt, output, stderr, err); handoffErr != nil {
+			return nil, handoffErr
+		}
+		return nil, codexExecFailure{Output: output, Stderr: stderr, Err: err}
 	}
 	return output, nil
 }
@@ -473,7 +535,9 @@ func (s *Service) restoreLatestSession(ctx context.Context, branch string, sessi
 		return restoredSession{}, nil
 	}
 
-	allowsSessionRestoreWithoutPR := s.cfg.DiscussionMode || hasInteractionResumePayload(s.cfg.InteractionResumePayload)
+	allowsSessionRestoreWithoutPR := s.cfg.DiscussionMode ||
+		hasInteractionResumePayload(s.cfg.InteractionResumePayload) ||
+		hasGitHubRateLimitResumePayload(s.cfg.GitHubRateLimitResumePayload)
 	if snapshot.PRNumber <= 0 {
 		if allowsSessionRestoreWithoutPR {
 			result := restoredSession{}

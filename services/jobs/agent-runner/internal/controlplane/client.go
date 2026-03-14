@@ -108,6 +108,50 @@ type RunInteractionResumePayload struct {
 	Payload json.RawMessage
 }
 
+// GitHubRateLimitHeaders is a sanitized snapshot of provider headers attached to one runner-side signal.
+type GitHubRateLimitHeaders struct {
+	RateLimitLimit     *int
+	RateLimitRemaining *int
+	RateLimitUsed      *int
+	RateLimitResetAt   *time.Time
+	RateLimitResource  string
+	RetryAfterSeconds  *int
+	GitHubRequestID    string
+	DocumentationURL   string
+}
+
+// ReportGitHubRateLimitSignalParams carries one runner-side GitHub rate-limit signal into control-plane.
+type ReportGitHubRateLimitSignalParams struct {
+	RunID                  string
+	SignalID               string
+	CorrelationID          string
+	ContourKind            string
+	SignalOrigin           string
+	OperationClass         string
+	ProviderStatusCode     int
+	OccurredAt             time.Time
+	RequestFingerprint     string
+	StderrExcerpt          string
+	MessageExcerpt         string
+	Headers                GitHubRateLimitHeaders
+	SessionSnapshotVersion *int64
+}
+
+// ReportGitHubRateLimitSignalResult returns canonical wait info accepted by control-plane.
+type ReportGitHubRateLimitSignalResult struct {
+	WaitID          string
+	WaitState       string
+	WaitReason      string
+	NextStepKind    string
+	RunnerAction    string
+	ResumeNotBefore *time.Time
+}
+
+// RunGitHubRateLimitResumePayload is the deterministic GitHub rate-limit payload fetched for the current run.
+type RunGitHubRateLimitResumePayload struct {
+	Payload json.RawMessage
+}
+
 // LatestAgentSessionQuery describes latest-session lookup identity.
 type LatestAgentSessionQuery struct {
 	RepositoryFullName string
@@ -129,6 +173,11 @@ type UpsertRunStatusCommentParams struct {
 	RunStatus                string
 	CodexAuthVerificationURL string
 	CodexAuthUserCode        string
+}
+
+type runPayloadResponse interface {
+	GetFound() bool
+	GetPayloadJson() []byte
 }
 
 // RunPullRequestLookupParams describes PR metadata lookup scoped to one authenticated run.
@@ -261,20 +310,56 @@ func (c *Client) GetLatestAgentSession(ctx context.Context, query LatestAgentSes
 
 // GetRunInteractionResumePayload loads deterministic interaction resume payload for the authenticated run.
 func (c *Client) GetRunInteractionResumePayload(ctx context.Context) (RunInteractionResumePayload, bool, error) {
-	resp, err := c.svc.GetRunInteractionResumePayload(c.withAuth(ctx), &controlplanev1.GetRunInteractionResumePayloadRequest{})
+	return loadRunPayload(ctx, "run interaction resume payload", c.getRunInteractionResumePayload, func(payload json.RawMessage) RunInteractionResumePayload {
+		return RunInteractionResumePayload{Payload: payload}
+	})
+}
+
+// GetRunGitHubRateLimitResumePayload loads deterministic GitHub rate-limit resume payload for the authenticated run.
+func (c *Client) GetRunGitHubRateLimitResumePayload(ctx context.Context) (RunGitHubRateLimitResumePayload, bool, error) {
+	return loadRunPayload(ctx, "github rate-limit resume payload", c.getRunGitHubRateLimitResumePayload, func(payload json.RawMessage) RunGitHubRateLimitResumePayload {
+		return RunGitHubRateLimitResumePayload{Payload: payload}
+	})
+}
+
+// ReportGitHubRateLimitSignal hands off one agent-runner GitHub rate-limit signal to control-plane.
+func (c *Client) ReportGitHubRateLimitSignal(ctx context.Context, params ReportGitHubRateLimitSignalParams) (ReportGitHubRateLimitSignalResult, error) {
+	request := &controlplanev1.ReportGitHubRateLimitSignalRequest{
+		RunId:              strings.TrimSpace(params.RunID),
+		SignalId:           strings.TrimSpace(params.SignalID),
+		CorrelationId:      strings.TrimSpace(params.CorrelationID),
+		ContourKind:        strings.TrimSpace(params.ContourKind),
+		SignalOrigin:       strings.TrimSpace(params.SignalOrigin),
+		OperationClass:     strings.TrimSpace(params.OperationClass),
+		ProviderStatusCode: int32(params.ProviderStatusCode),
+		OccurredAt:         timestamppb.New(params.OccurredAt.UTC()),
+		RequestFingerprint: optionalString(strings.TrimSpace(params.RequestFingerprint)),
+		StderrExcerpt:      optionalString(strings.TrimSpace(params.StderrExcerpt)),
+		MessageExcerpt:     optionalString(strings.TrimSpace(params.MessageExcerpt)),
+		GithubHeaders:      githubRateLimitHeadersToProto(params.Headers),
+	}
+	if params.SessionSnapshotVersion != nil {
+		value := *params.SessionSnapshotVersion
+		request.SessionSnapshotVersion = &value
+	}
+
+	resp, err := c.svc.ReportGitHubRateLimitSignal(c.withAuth(ctx), request)
 	if err != nil {
-		return RunInteractionResumePayload{}, false, fmt.Errorf("get run interaction resume payload: %w", err)
+		return ReportGitHubRateLimitSignalResult{}, fmt.Errorf("report github rate-limit signal: %w", err)
 	}
-	if !resp.GetFound() {
-		return RunInteractionResumePayload{}, false, nil
+
+	result := ReportGitHubRateLimitSignalResult{
+		WaitID:       strings.TrimSpace(resp.GetWaitId()),
+		WaitState:    strings.TrimSpace(resp.GetWaitState()),
+		WaitReason:   strings.TrimSpace(resp.GetWaitReason()),
+		NextStepKind: strings.TrimSpace(resp.GetNextStepKind()),
+		RunnerAction: strings.TrimSpace(resp.GetRunnerAction()),
 	}
-	payload := resp.GetPayloadJson()
-	if len(payload) == 0 {
-		return RunInteractionResumePayload{}, false, nil
+	if ts := resp.GetResumeNotBefore(); ts != nil && ts.IsValid() {
+		resumeNotBefore := ts.AsTime().UTC()
+		result.ResumeNotBefore = &resumeNotBefore
 	}
-	return RunInteractionResumePayload{
-		Payload: append(json.RawMessage(nil), payload...),
-	}, true, nil
+	return result, nil
 }
 
 // InsertRunFlowEvent persists one run-bound flow event.
@@ -386,6 +471,47 @@ func optionalBytes(value json.RawMessage) []byte {
 	return []byte(value)
 }
 
+func getRunScopedPayload(
+	ctx context.Context,
+	payloadLabel string,
+	load func(context.Context) (runPayloadResponse, error),
+) (json.RawMessage, bool, error) {
+	resp, err := load(ctx)
+	if err != nil {
+		return nil, false, fmt.Errorf("get %s: %w", payloadLabel, err)
+	}
+	if !resp.GetFound() {
+		return nil, false, nil
+	}
+	payload := resp.GetPayloadJson()
+	if len(payload) == 0 {
+		return nil, false, nil
+	}
+	return append(json.RawMessage(nil), payload...), true, nil
+}
+
+func loadRunPayload[T any](
+	ctx context.Context,
+	payloadLabel string,
+	load func(context.Context) (runPayloadResponse, error),
+	wrap func(json.RawMessage) T,
+) (T, bool, error) {
+	payload, found, err := getRunScopedPayload(ctx, payloadLabel, load)
+	if err != nil {
+		var zero T
+		return zero, false, err
+	}
+	return wrap(payload), found, nil
+}
+
+func (c *Client) getRunInteractionResumePayload(ctx context.Context) (runPayloadResponse, error) {
+	return c.svc.GetRunInteractionResumePayload(c.withAuth(ctx), &controlplanev1.GetRunInteractionResumePayloadRequest{})
+}
+
+func (c *Client) getRunGitHubRateLimitResumePayload(ctx context.Context) (runPayloadResponse, error) {
+	return c.svc.GetRunGitHubRateLimitResumePayload(c.withAuth(ctx), &controlplanev1.GetRunGitHubRateLimitResumePayloadRequest{})
+}
+
 func intToOptional(value *int) *wrapperspb.Int32Value {
 	if value == nil || *value <= 0 {
 		return nil
@@ -413,6 +539,30 @@ func optionalTimestamp(value *time.Time) *timestamppb.Timestamp {
 		return nil
 	}
 	return timestamppb.New(value.UTC())
+}
+
+func githubRateLimitHeadersToProto(headers GitHubRateLimitHeaders) *controlplanev1.GitHubRateLimitHeaders {
+	item := &controlplanev1.GitHubRateLimitHeaders{
+		RateLimitLimit:     int32Ptr(headers.RateLimitLimit),
+		RateLimitRemaining: int32Ptr(headers.RateLimitRemaining),
+		RateLimitUsed:      int32Ptr(headers.RateLimitUsed),
+		RateLimitResource:  optionalString(strings.TrimSpace(headers.RateLimitResource)),
+		RetryAfterSeconds:  int32Ptr(headers.RetryAfterSeconds),
+		GithubRequestId:    optionalString(strings.TrimSpace(headers.GitHubRequestID)),
+		DocumentationUrl:   optionalString(strings.TrimSpace(headers.DocumentationURL)),
+	}
+	if headers.RateLimitResetAt != nil {
+		item.RateLimitResetAt = timestamppb.New(headers.RateLimitResetAt.UTC())
+	}
+	return item
+}
+
+func int32Ptr(value *int) *int32 {
+	if value == nil {
+		return nil
+	}
+	converted := int32(*value)
+	return &converted
 }
 
 func timestampOrZero(value *timestamppb.Timestamp) time.Time {

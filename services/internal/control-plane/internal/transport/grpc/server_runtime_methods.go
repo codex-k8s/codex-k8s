@@ -447,30 +447,68 @@ func (s *Server) GetLatestAgentSession(ctx context.Context, req *controlplanev1.
 }
 
 func (s *Server) GetRunInteractionResumePayload(ctx context.Context, req *controlplanev1.GetRunInteractionResumePayloadRequest) (*controlplanev1.GetRunInteractionResumePayloadResponse, error) {
+	return executeRunScopedPayloadSpec(ctx, req, s.loadRunScopedPayload, interactionResumePayloadSpec(s))
+}
+
+func buildRunScopedPayloadResponse[T any](payload json.RawMessage, found bool, err error, build func(bool, json.RawMessage) T) (T, error) {
+	if err != nil {
+		var zero T
+		return zero, err
+	}
+	return build(found, payload), nil
+}
+
+type runScopedPayloadSpec[T any] struct {
+	label string
+	load  func(context.Context, string) (json.RawMessage, bool, error)
+	build func(bool, json.RawMessage) T
+}
+
+func executeRunScopedPayloadSpec[T any](
+	ctx context.Context,
+	req any,
+	loadRunScoped func(context.Context, any, string, func(context.Context, string) (json.RawMessage, bool, error)) (json.RawMessage, bool, error),
+	spec runScopedPayloadSpec[T],
+) (T, error) {
+	payload, found, err := loadRunScoped(ctx, req, spec.label, spec.load)
+	return buildRunScopedPayloadResponse(payload, found, err, spec.build)
+}
+
+func interactionResumePayloadSpec(s *Server) runScopedPayloadSpec[*controlplanev1.GetRunInteractionResumePayloadResponse] {
+	return runScopedPayloadSpec[*controlplanev1.GetRunInteractionResumePayloadResponse]{
+		label: "interaction resume payload",
+		load:  s.agentCallbacks.GetRunInteractionResumePayload,
+		build: interactionResumePayloadResponseBuilder,
+	}
+}
+
+var interactionResumePayloadResponseBuilder = func(found bool, payload json.RawMessage) *controlplanev1.GetRunInteractionResumePayloadResponse {
+	return &controlplanev1.GetRunInteractionResumePayloadResponse{Found: found, PayloadJson: payload}
+}
+
+func (s *Server) loadRunScopedPayload(
+	ctx context.Context,
+	req any,
+	payloadLabel string,
+	load func(context.Context, string) (json.RawMessage, bool, error),
+) (json.RawMessage, bool, error) {
 	if s.agentCallbacks == nil {
-		return nil, status.Error(codes.FailedPrecondition, "agent callback service is not configured")
+		return nil, false, status.Error(codes.FailedPrecondition, "agent callback service is not configured")
 	}
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "request is required")
+		return nil, false, status.Error(codes.InvalidArgument, "request is required")
 	}
 
 	runSession, err := s.authenticateRunToken(ctx)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	payload, found, err := s.agentCallbacks.GetRunInteractionResumePayload(ctx, runSession.RunID)
+	payload, found, err := load(ctx, runSession.RunID)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to load interaction resume payload")
+		return nil, false, status.Errorf(codes.Internal, "failed to load %s", payloadLabel)
 	}
-	if !found {
-		return &controlplanev1.GetRunInteractionResumePayloadResponse{Found: false}, nil
-	}
-
-	return &controlplanev1.GetRunInteractionResumePayloadResponse{
-		Found:       true,
-		PayloadJson: payload,
-	}, nil
+	return payload, found, nil
 }
 
 func (s *Server) LookupRunPullRequest(ctx context.Context, req *controlplanev1.LookupRunPullRequestRequest) (*controlplanev1.LookupRunPullRequestResponse, error) {

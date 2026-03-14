@@ -5,7 +5,7 @@ title: "GitHub API rate-limit resilience — Detailed Design Sprint S12 Day 5"
 status: approved
 owner_role: SA
 created_at: 2026-03-13
-updated_at: 2026-03-13
+updated_at: 2026-03-14
 related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
 related_prs: []
 related_adrs: ["ADR-0013"]
@@ -202,6 +202,7 @@ sequenceDiagram
 ```
 
 - `agent-runner` prepends this JSON block to the resume prompt before invoking `codex exec resume`.
+- Worker persists the payload into `agent_runs.run_payload`, and requeued `agent-runner` fetches it only through dedicated run-bound callback `GetRunGitHubRateLimitResumePayload`.
 - Payload is the only machine-readable source for resume context; runner must not re-derive semantics from stale stderr or GitHub headers.
 
 ## Visibility surfaces
@@ -226,7 +227,7 @@ sequenceDiagram
 - Day5 decision:
   - no new public endpoint;
   - existing run/wait visibility routes are extended with typed wait projection;
-  - new internal callback RPC `ReportGitHubRateLimitSignal` is added for `agent-runner`.
+  - new internal callback RPCs `ReportGitHubRateLimitSignal` and `GetRunGitHubRateLimitResumePayload` are added for `agent-runner`.
 
 ## Модель данных и миграции
 - Детализация entities/indexes: `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/data_model.md`
