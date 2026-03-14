@@ -6,7 +6,7 @@ status: in-review
 owner_role: PM
 created_at: 2026-03-14
 updated_at: 2026-03-14
-related_issues: [361, 444, 447, 448, 452, 454]
+related_issues: [361, 444, 447, 448, 452, 454, 456]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -22,6 +22,7 @@ approvals:
 - Day2 vision выполнен в issue `#447`: mission, north star, persona outcomes, KPI/guardrails и MVP/Post-MVP границы зафиксированы, а issue `#444` сохранена только как historical handover от intake-stage и 2026-03-14 закрыта как `state:superseded`.
 - Day3 PRD выполнен в issue `#448`: подготовлены user stories, FR/AC/NFR, expected evidence, callback/webhook guardrails и continuity issue `#452` для `run:arch`.
 - Day4 architecture выполнен в issue `#452`: выпущен architecture package с C4 overlays, ADR/alternatives, ownership split и follow-up issue `#454` для `run:design`.
+- Day5 design выполнен в issue `#454`: выпущен implementation-ready package `design_doc/api_contract/data_model/migrations_policy` и follow-up issue `#456` для `run:plan`.
 - До `run:plan` Sprint S11 остаётся markdown-only контуром: код, runtime topology и library/runtime binding decisions начинаются только после owner review последующих stage-пакетов.
 
 ## Stage roadmap
@@ -29,8 +30,8 @@ approvals:
 - Day 2 (Vision): `docs/delivery/epics/s11/epic-s11-day2-telegram-user-interaction-adapter-vision.md` (Issue `#447`); stage зафиксировал prerequisite `#389 closed` + `#387` как typed contract baseline.
 - Day 3 (PRD): `docs/delivery/epics/s11/epic-s11-day3-telegram-user-interaction-adapter-prd.md` + `docs/delivery/epics/s11/prd-s11-day3-telegram-user-interaction-adapter.md` (Issue `#448`).
 - Day 4 (Architecture): `docs/delivery/epics/s11/epic-s11-day4-telegram-user-interaction-adapter-arch.md` + `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/{README.md,architecture.md,c4_context.md,c4_container.md}` (Issue `#452`).
-- Day 5 (Design): follow-up issue `#454`; stage фиксирует implementation-ready API/data/runtime contracts.
-- Day 6 (Plan): continuity issue создаётся на завершении `run:design`; stage формирует execution package, sequencing-waves и owner-managed handover в `run:dev`.
+- Day 5 (Design): `docs/delivery/epics/s11/epic-s11-day5-telegram-user-interaction-adapter-design.md` + `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/{README.md,design_doc.md,api_contract.md,data_model.md,migrations_policy.md}` (Issue `#454`).
+- Day 6 (Plan): follow-up issue `#456`; stage формирует execution package, sequencing-waves и owner-managed handover в `run:dev`.
 
 ## Delivery-governance правила
 - Sprint S11 не стартует параллельно с незафиксированным platform-core contract из Sprint S10; Telegram остаётся зависимым stream, а не заменой core initiative.

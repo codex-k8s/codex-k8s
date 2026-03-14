@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-14
 updated_at: 2026-03-14
-related_issues: [361, 444, 447, 448, 452, 454]
+related_issues: [361, 444, 447, 448, 452, 454, 456]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -73,3 +73,21 @@ approvals:
 - Callback payload direction закреплён как opaque/server-side lookup strategy, а Telegram-specific UX decision `edit-in-place -> follow-up notify` перенесён в async platform-owned side effect path без Telegram-first semantic payload model.
 - Создана follow-up issue `#454` для stage `run:design`; в её body повторено continuity-требование продолжить цепочку `design -> plan -> dev` без разрывов.
 - Root FR/NFR matrix обновлена точечно: coverage FR-039 расширено Day4 architecture package Sprint S11, при этом канонический requirements baseline в `docs/product/requirements_machine_driven.md` не менялся.
+
+## Актуализация по Issue #454 (`run:design`, 2026-03-14)
+- Design stage выполнен в Issue `#454`; подготовлены:
+  - `docs/delivery/epics/s11/epic-s11-day5-telegram-user-interaction-adapter-design.md`;
+  - `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/design_doc.md`;
+  - `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/api_contract.md`;
+  - `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/data_model.md`;
+  - `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/migrations_policy.md`.
+- Design package зафиксировал:
+  - opaque callback handle strategy c persisted `sha256` hashes, max handle size `<= 48` ASCII chars and strict separation from semantic option ids;
+  - interaction-scoped callback bearer token with lifetime `response_deadline_at + 24h grace`, чтобы duplicate/stale/expired callbacks классифицировались детерминированно;
+  - additive data-model extension for `interaction_channel_bindings`, `interaction_callback_handles`, Telegram evidence fields and operator visibility state without нового schema owner;
+  - async continuation policy `edit_in_place_first -> follow_up_notify -> manual_fallback_required` under `worker` ownership, while immediate `answerCallbackQuery` stays inside adapter contour;
+  - rollout dependency gate on Sprint S10 interaction foundation and rollout order `S10 prerequisite -> migrations -> control-plane -> worker -> api-gateway -> Telegram adapter contour`.
+- Через Context7 по `/mymmrac/telego` и `go list -m -json github.com/mymmrac/telego@latest` повторно подтверждён SDK baseline `v1.7.0`.
+- Official Telegram Bot API docs, просмотренные 2026-03-14, использованы для фиксации design constraints: webhook vs `getUpdates` exclusivity, updates retention up to 24h, `setWebhook.secret_token`, mandatory `answerCallbackQuery` and `callback_data` limit `1-64 bytes`.
+- Создана follow-up issue `#456` для stage `run:plan`; в её body повторено continuity-требование продолжить цепочку `plan -> dev` без разрывов.
+- Root FR/NFR matrix обновлена точечно: coverage FR-039 расширено Day5 design package Sprint S11, при этом канонический requirements baseline в `docs/product/requirements_machine_driven.md` не менялся.
