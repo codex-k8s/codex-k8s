@@ -251,9 +251,9 @@ kubectl get ns -o json | grep -E 'codexk8s.io/(managed-by|namespace-purpose|runt
 - Расписание по умолчанию: каждые `15` минут (`*/15 * * * *`, `Etc/UTC`).
 - Cleanup работает только для managed runtime namespace с guardrails:
   - labels `codex-k8s.dev/managed-by=codex-k8s-worker` и `codex-k8s.dev/namespace-purpose=run`;
-  - platform prefix `codex-issue*`;
+  - allowlist platform runtime namespace names: `codex-issue*` и slot namespaces `codex-k8s-dev-*`;
   - в БД нет non-terminal run для `codex-k8s.dev/run-id`;
-  - в namespace нет active `pod/job/deployment/statefulset/daemonset/replicaset`.
+  - в namespace нет active `pod/job/cronjob/deployment/statefulset/daemonset/replicaset`.
 - Аудит причин пишется в worker logs и `flow_events` (`run.namespace.cleaned`, `run.namespace.cleanup_skipped`, `run.namespace.cleanup_failed`).
 - In-band cleanup в worker tick остаётся как best-effort backstop; для полного отключения нужно выключить и tick, и CronJob.
 

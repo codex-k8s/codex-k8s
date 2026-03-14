@@ -192,6 +192,8 @@ type ManagedNamespaceState struct {
 
 // ManagedNamespaceListParams configures managed namespace listing for cleanup reconciliation.
 type ManagedNamespaceListParams struct {
+	// NamespacePrefix is the primary run namespace prefix configured for issue-scoped runtimes.
+	// Cleanup also keeps known platform slot namespace prefixes in scope as an additional guardrail.
 	NamespacePrefix string
 }
 
@@ -199,6 +201,7 @@ type ManagedNamespaceListParams struct {
 type NamespaceWorkloadState struct {
 	ActivePods         []string
 	ActiveJobs         []string
+	ActiveCronJobs     []string
 	ActiveDeployments  []string
 	ActiveStatefulSets []string
 	ActiveDaemonSets   []string
@@ -209,6 +212,7 @@ type NamespaceWorkloadState struct {
 func (s NamespaceWorkloadState) HasActiveWorkloads() bool {
 	return len(s.ActivePods) > 0 ||
 		len(s.ActiveJobs) > 0 ||
+		len(s.ActiveCronJobs) > 0 ||
 		len(s.ActiveDeployments) > 0 ||
 		len(s.ActiveStatefulSets) > 0 ||
 		len(s.ActiveDaemonSets) > 0 ||
@@ -217,9 +221,10 @@ func (s NamespaceWorkloadState) HasActiveWorkloads() bool {
 
 // Details returns deterministic workload diagnostics for logs and audit payloads.
 func (s NamespaceWorkloadState) Details() []string {
-	details := make([]string, 0, 6)
+	details := make([]string, 0, 7)
 	details = appendWorkloadDetails(details, "pods", s.ActivePods)
 	details = appendWorkloadDetails(details, "jobs", s.ActiveJobs)
+	details = appendWorkloadDetails(details, "cronjobs", s.ActiveCronJobs)
 	details = appendWorkloadDetails(details, "deployments", s.ActiveDeployments)
 	details = appendWorkloadDetails(details, "statefulsets", s.ActiveStatefulSets)
 	details = appendWorkloadDetails(details, "daemonsets", s.ActiveDaemonSets)

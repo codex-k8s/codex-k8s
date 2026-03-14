@@ -3,6 +3,7 @@ package joblauncher
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -33,6 +34,8 @@ const (
 
 	runNamespaceManagedByValue = "codex-k8s-worker"
 	runNamespacePurposeValue   = "run"
+
+	runNamespaceCleanupSlotPrefix = "codex-k8s-dev-"
 )
 
 // EnsureNamespace prepares baseline runtime resources for managed run execution.
@@ -151,6 +154,7 @@ func (l *Launcher) FindReusableNamespace(ctx context.Context, lookup NamespaceRe
 }
 
 // ListManagedRunNamespaces returns worker-managed runtime namespaces with deterministic ordering.
+// Cleanup keeps the configured issue-run prefix and known platform slot prefixes in scope.
 func (l *Launcher) ListManagedRunNamespaces(ctx context.Context, params ManagedNamespaceListParams) ([]ManagedNamespaceState, error) {
 	prefix := strings.TrimSpace(params.NamespacePrefix)
 	if prefix != "" {
@@ -184,7 +188,7 @@ func (l *Launcher) ListManagedRunNamespaces(ctx context.Context, params ManagedN
 		if item.DeletionTimestamp != nil {
 			continue
 		}
-		if prefix != "" && !strings.HasPrefix(namespace, prefix) {
+		if !managedRunNamespaceMatchesCleanupScope(namespace, prefix) {
 			continue
 		}
 		runtimeModeRaw := strings.TrimSpace(item.Labels[runNamespaceRuntimeModeLabel])
@@ -223,6 +227,10 @@ func (l *Launcher) InspectNamespaceWorkloads(ctx context.Context, namespace stri
 	if err != nil {
 		return NamespaceWorkloadState{}, fmt.Errorf("list jobs in namespace %s: %w", targetNamespace, err)
 	}
+	cronJobs, err := l.client.BatchV1().CronJobs(targetNamespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return NamespaceWorkloadState{}, fmt.Errorf("list cronjobs in namespace %s: %w", targetNamespace, err)
+	}
 	deployments, err := l.client.AppsV1().Deployments(targetNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return NamespaceWorkloadState{}, fmt.Errorf("list deployments in namespace %s: %w", targetNamespace, err)
@@ -243,10 +251,11 @@ func (l *Launcher) InspectNamespaceWorkloads(ctx context.Context, namespace stri
 	return NamespaceWorkloadState{
 		ActivePods:         activePodNames(pods.Items),
 		ActiveJobs:         activeJobNames(jobs.Items),
-		ActiveDeployments:  activeDeploymentNames(deployments.Items),
-		ActiveStatefulSets: activeStatefulSetNames(statefulSets.Items),
+		ActiveCronJobs:     activeCronJobNames(cronJobs.Items),
+		ActiveDeployments:  activeReplicatedWorkloadNames(deployments.Items),
+		ActiveStatefulSets: activeReplicatedWorkloadNames(statefulSets.Items),
 		ActiveDaemonSets:   activeDaemonSetNames(daemonSets.Items),
-		ActiveReplicaSets:  activeReplicaSetNames(replicaSets.Items),
+		ActiveReplicaSets:  activeReplicatedWorkloadNames(replicaSets.Items),
 	}, nil
 }
 
@@ -456,6 +465,17 @@ func parseNamespaceLeaseTTL(annotations map[string]string) time.Duration {
 	return parsed
 }
 
+func managedRunNamespaceMatchesCleanupScope(namespace string, configuredPrefix string) bool {
+	targetNamespace := strings.TrimSpace(namespace)
+	if targetNamespace == "" {
+		return false
+	}
+	if configuredPrefix == "" {
+		return true
+	}
+	return strings.HasPrefix(targetNamespace, configuredPrefix) || strings.HasPrefix(targetNamespace, runNamespaceCleanupSlotPrefix)
+}
+
 func activePodNames(items []corev1.Pod) []string {
 	names := make([]string, 0, len(items))
 	for _, item := range items {
@@ -487,36 +507,17 @@ func activeJobNames(items []batchv1.Job) []string {
 	return names
 }
 
-func activeDeploymentNames(items []appsv1.Deployment) []string {
+func activeCronJobNames(items []batchv1.CronJob) []string {
 	names := make([]string, 0, len(items))
 	for _, item := range items {
 		if item.DeletionTimestamp != nil {
 			continue
 		}
-		desired := int32(1)
-		if item.Spec.Replicas != nil {
-			desired = *item.Spec.Replicas
-		}
-		if desired <= 0 && item.Status.Replicas == 0 && item.Status.ReadyReplicas == 0 {
+		if len(item.Status.Active) > 0 {
+			names = append(names, strings.TrimSpace(item.Name))
 			continue
 		}
-		names = append(names, strings.TrimSpace(item.Name))
-	}
-	sort.Strings(names)
-	return names
-}
-
-func activeStatefulSetNames(items []appsv1.StatefulSet) []string {
-	names := make([]string, 0, len(items))
-	for _, item := range items {
-		if item.DeletionTimestamp != nil {
-			continue
-		}
-		desired := int32(1)
-		if item.Spec.Replicas != nil {
-			desired = *item.Spec.Replicas
-		}
-		if desired <= 0 && item.Status.Replicas == 0 && item.Status.ReadyReplicas == 0 {
+		if item.Spec.Suspend != nil && *item.Spec.Suspend {
 			continue
 		}
 		names = append(names, strings.TrimSpace(item.Name))
@@ -542,23 +543,59 @@ func activeDaemonSetNames(items []appsv1.DaemonSet) []string {
 	return names
 }
 
-func activeReplicaSetNames(items []appsv1.ReplicaSet) []string {
+func activeReplicatedWorkloadNames[T any](items []T) []string {
 	names := make([]string, 0, len(items))
 	for _, item := range items {
-		if item.DeletionTimestamp != nil {
+		name, deletionTimestamp, specReplicas, statusReplicas, readyReplicas, ok := replicatedWorkloadStatus(reflect.ValueOf(item))
+		if !ok || deletionTimestamp != nil {
 			continue
 		}
 		desired := int32(1)
-		if item.Spec.Replicas != nil {
-			desired = *item.Spec.Replicas
+		if specReplicas != nil {
+			desired = *specReplicas
 		}
-		if desired <= 0 && item.Status.Replicas == 0 && item.Status.ReadyReplicas == 0 {
+		if desired <= 0 && statusReplicas == 0 && readyReplicas == 0 {
 			continue
 		}
-		names = append(names, strings.TrimSpace(item.Name))
+		names = append(names, strings.TrimSpace(name))
 	}
 	sort.Strings(names)
 	return names
+}
+
+func replicatedWorkloadStatus(value reflect.Value) (string, *metav1.Time, *int32, int32, int32, bool) {
+	if !value.IsValid() {
+		return "", nil, nil, 0, 0, false
+	}
+	objectMeta := value.FieldByName("ObjectMeta")
+	spec := value.FieldByName("Spec")
+	status := value.FieldByName("Status")
+	if !objectMeta.IsValid() || !spec.IsValid() || !status.IsValid() {
+		return "", nil, nil, 0, 0, false
+	}
+
+	nameField := objectMeta.FieldByName("Name")
+	deletionTimestampField := objectMeta.FieldByName("DeletionTimestamp")
+	specReplicasField := spec.FieldByName("Replicas")
+	statusReplicasField := status.FieldByName("Replicas")
+	readyReplicasField := status.FieldByName("ReadyReplicas")
+	if !nameField.IsValid() || !deletionTimestampField.IsValid() || !specReplicasField.IsValid() || !statusReplicasField.IsValid() || !readyReplicasField.IsValid() {
+		return "", nil, nil, 0, 0, false
+	}
+
+	var deletionTimestamp *metav1.Time
+	if !deletionTimestampField.IsNil() {
+		value := deletionTimestampField.Interface().(*metav1.Time)
+		deletionTimestamp = value
+	}
+
+	var specReplicas *int32
+	if !specReplicasField.IsNil() {
+		value := int32(specReplicasField.Elem().Int())
+		specReplicas = &value
+	}
+
+	return nameField.String(), deletionTimestamp, specReplicas, int32(statusReplicasField.Int()), int32(readyReplicasField.Int()), true
 }
 
 func jobIsTerminal(item batchv1.Job) bool {

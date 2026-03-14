@@ -106,22 +106,16 @@ func (s *Service) runNamespaceCleanupSweep(ctx context.Context, source namespace
 		workloads, err := s.launcher.InspectNamespaceWorkloads(ctx, candidate.State.Namespace)
 		if err != nil {
 			failedCount++
-			s.logger.Error(
+			s.logNamespaceCleanupFailure(
+				ctx,
+				source,
+				candidate,
+				execution,
+				namespaceCleanupReasonInspectFailed,
+				leaseDetails,
 				"inspect namespace workloads for cleanup failed",
-				"source", source,
-				"namespace", candidate.State.Namespace,
-				"run_id", runID,
-				"err", err,
+				err,
 			)
-			s.insertNamespaceCleanupEventBestEffort(ctx, namespaceCleanupEventArgs{
-				candidate: candidate,
-				execution: execution,
-				eventType: floweventdomain.EventTypeRunNamespaceCleanupFailed,
-				reason:    namespaceCleanupReasonInspectFailed,
-				source:    source,
-				details:   leaseDetails,
-				err:       err,
-			})
 			continue
 		}
 
@@ -143,22 +137,16 @@ func (s *Service) runNamespaceCleanupSweep(ctx context.Context, source namespace
 		deleted, err := s.launcher.DeleteManagedNamespace(ctx, candidate.State.Namespace)
 		if err != nil {
 			failedCount++
-			s.logger.Error(
+			s.logNamespaceCleanupFailure(
+				ctx,
+				source,
+				candidate,
+				execution,
+				namespaceCleanupReasonDeleteFailed,
+				leaseDetails,
 				"delete expired run namespace failed",
-				"source", source,
-				"namespace", candidate.State.Namespace,
-				"run_id", runID,
-				"err", err,
+				err,
 			)
-			s.insertNamespaceCleanupEventBestEffort(ctx, namespaceCleanupEventArgs{
-				candidate: candidate,
-				execution: execution,
-				eventType: floweventdomain.EventTypeRunNamespaceCleanupFailed,
-				reason:    namespaceCleanupReasonDeleteFailed,
-				source:    source,
-				details:   leaseDetails,
-				err:       err,
-			})
 			continue
 		}
 		if !deleted {
@@ -334,6 +322,34 @@ func (s *Service) logNamespaceCleanupSkip(source namespaceCleanupSource, candida
 		"reason", reason,
 		"details", details,
 	)
+}
+
+func (s *Service) logNamespaceCleanupFailure(
+	ctx context.Context,
+	source namespaceCleanupSource,
+	candidate expiredManagedNamespace,
+	execution valuetypes.RunExecutionContext,
+	reason namespaceCleanupSkipReason,
+	details []string,
+	message string,
+	err error,
+) {
+	s.logger.Error(
+		message,
+		"source", source,
+		"namespace", candidate.State.Namespace,
+		"run_id", candidate.State.RunID,
+		"err", err,
+	)
+	s.insertNamespaceCleanupEventBestEffort(ctx, namespaceCleanupEventArgs{
+		candidate: candidate,
+		execution: execution,
+		eventType: floweventdomain.EventTypeRunNamespaceCleanupFailed,
+		reason:    reason,
+		source:    source,
+		details:   details,
+		err:       err,
+	})
 }
 
 func minInt(left int, right int) int {

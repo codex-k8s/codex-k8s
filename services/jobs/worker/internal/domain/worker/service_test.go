@@ -1337,9 +1337,17 @@ func TestTickCleanupExpiredNamespaces_SkipsActiveRunsAndWorkloads(t *testing.T) 
 				LeaseTTL:       24 * time.Hour,
 				LeaseExpiresAt: time.Date(2026, 2, 11, 9, 0, 0, 0, time.UTC),
 			},
+			{
+				Namespace:      "codex-k8s-dev-1",
+				RunID:          "run-cron",
+				RuntimeMode:    agentdomain.RuntimeModeFullEnv,
+				LeaseTTL:       24 * time.Hour,
+				LeaseExpiresAt: time.Date(2026, 2, 11, 8, 0, 0, 0, time.UTC),
+			},
 		},
 		workloadStates: map[string]NamespaceWorkloadState{
 			"codex-issue-proj-i74-pods": {ActivePods: []string{"discussion-pod"}},
+			"codex-k8s-dev-1":           {ActiveCronJobs: []string{"daily-sync"}},
 		},
 	}
 	runStatus := &fakeRunStatusNotifier{}
@@ -1367,14 +1375,17 @@ func TestTickCleanupExpiredNamespaces_SkipsActiveRunsAndWorkloads(t *testing.T) 
 	if len(launcher.deletedNamespaces) != 0 {
 		t.Fatalf("expected no deleted namespaces, got %v", launcher.deletedNamespaces)
 	}
-	if len(events.inserted) != 2 {
-		t.Fatalf("expected two cleanup skip events, got %d", len(events.inserted))
+	if len(events.inserted) != 3 {
+		t.Fatalf("expected three cleanup skip events, got %d", len(events.inserted))
 	}
 	if got, want := events.inserted[0].EventType, floweventdomain.EventTypeRunNamespaceCleanupSkipped; got != want {
 		t.Fatalf("first event type = %q, want %q", got, want)
 	}
 	if got, want := events.inserted[1].EventType, floweventdomain.EventTypeRunNamespaceCleanupSkipped; got != want {
 		t.Fatalf("second event type = %q, want %q", got, want)
+	}
+	if got, want := events.inserted[2].EventType, floweventdomain.EventTypeRunNamespaceCleanupSkipped; got != want {
+		t.Fatalf("third event type = %q, want %q", got, want)
 	}
 }
 

@@ -122,7 +122,7 @@ func TestLauncher_FindReusableNamespace_ReturnsLatestActiveLease(t *testing.T) {
 	}
 }
 
-func TestLauncher_ListManagedRunNamespaces_FiltersByPrefixAndCapturesLeaseMetadata(t *testing.T) {
+func TestLauncher_ListManagedRunNamespaces_KeepsKnownSlotNamespacesInCleanupScope(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -130,6 +130,10 @@ func TestLauncher_ListManagedRunNamespaces_FiltersByPrefixAndCapturesLeaseMetada
 		newLeaseNamespace("codex-issue-expired", leaseNamespaceParams{
 			runID:     "run-expired",
 			expiresAt: time.Date(2026, 2, 21, 9, 0, 0, 0, time.UTC),
+		}),
+		newLeaseNamespace("codex-k8s-dev-1", leaseNamespaceParams{
+			runID:     "run-slot",
+			expiresAt: time.Date(2026, 2, 21, 8, 0, 0, 0, time.UTC),
 		}),
 		newLeaseNamespace("other-prefix-expired", leaseNamespaceParams{
 			runID:     "run-active",
@@ -142,11 +146,11 @@ func TestLauncher_ListManagedRunNamespaces_FiltersByPrefixAndCapturesLeaseMetada
 	if err != nil {
 		t.Fatalf("ListManagedRunNamespaces() error = %v", err)
 	}
-	if len(items) != 1 {
-		t.Fatalf("expected one managed namespace, got %d", len(items))
+	if len(items) != 2 {
+		t.Fatalf("expected two managed namespaces in cleanup scope, got %d", len(items))
 	}
-	if got, want := items[0].Namespace, "codex-issue-expired"; got != want {
-		t.Fatalf("unexpected managed namespace: got %q want %q", got, want)
+	if got, want := []string{items[0].Namespace, items[1].Namespace}, []string{"codex-issue-expired", "codex-k8s-dev-1"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("unexpected managed namespaces: got %v want %v", got, want)
 	}
 	if got, want := items[0].RunID, "run-expired"; got != want {
 		t.Fatalf("unexpected managed run id: got %q want %q", got, want)
@@ -186,6 +190,13 @@ func TestLauncher_InspectNamespaceWorkloads_DetectsActiveResources(t *testing.T)
 				Status: corev1.ConditionTrue,
 			}}},
 		},
+		&batchv1.CronJob{
+			ObjectMeta: metav1.ObjectMeta{Name: "scheduled-cron", Namespace: namespace},
+		},
+		&batchv1.CronJob{
+			ObjectMeta: metav1.ObjectMeta{Name: "suspended-cron", Namespace: namespace},
+			Spec:       batchv1.CronJobSpec{Suspend: boolPtr(true)},
+		},
 		&appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{Name: "live-deploy", Namespace: namespace},
 			Spec:       appsv1.DeploymentSpec{Replicas: int32Ptr(1)},
@@ -206,6 +217,9 @@ func TestLauncher_InspectNamespaceWorkloads_DetectsActiveResources(t *testing.T)
 	}
 	if got, want := workloads.ActiveJobs, []string{"active-job"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("active jobs = %v, want %v", got, want)
+	}
+	if got, want := workloads.ActiveCronJobs, []string{"scheduled-cron"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("active cronjobs = %v, want %v", got, want)
 	}
 	if got, want := workloads.ActiveDeployments, []string{"live-deploy"}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("active deployments = %v, want %v", got, want)
@@ -371,5 +385,9 @@ func newLeaseNamespace(name string, params leaseNamespaceParams) *corev1.Namespa
 }
 
 func int32Ptr(value int32) *int32 {
+	return &value
+}
+
+func boolPtr(value bool) *bool {
 	return &value
 }

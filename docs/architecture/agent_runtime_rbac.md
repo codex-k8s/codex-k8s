@@ -72,7 +72,7 @@ approvals:
 - В Kubernetes нет встроенного TTL-контроллера для namespace; cleanup реализуется безопасным sweeper-контуром:
   - in-band sweep в worker reconcile tick;
   - production `CronJob` `codex-k8s-worker-namespace-cleanup` как out-of-band backstop;
-  - удаление допускается только для managed namespace'ов с ownership-label, ожидаемым prefix и без non-terminal run / active workload.
+  - удаление допускается только для managed namespace'ов с ownership-label, allowlist platform runtime namespace names (issue-run prefix + slot namespaces `codex-k8s-dev-*`) и без non-terminal run / active workload.
 
 Целевой baseline реализации (S2 Day3 + Issue #74):
 - Worker создаёт namespace idempotent, применяет `ServiceAccount + Role + RoleBinding + ResourceQuota + LimitRange`.
@@ -84,7 +84,7 @@ approvals:
   - `run.namespace.cleanup_failed`,
   - `run.namespace.cleanup_skipped`.
 - Runtime metadata namespace/job унифицированы через labels/annotations с префиксом `codex-k8s.dev/*`.
-- Cleanup удаляет только managed namespaces с `codex-k8s.dev/managed-by=codex-k8s-worker` и `codex-k8s.dev/namespace-purpose=run`, prefix `codex-issue*`, terminal run state в БД и без active workload в namespace.
+- Cleanup удаляет только managed namespaces с `codex-k8s.dev/managed-by=codex-k8s-worker` и `codex-k8s.dev/namespace-purpose=run`, namespace name из allowlist platform runtime scopes (`codex-issue*` и slot namespaces `codex-k8s-dev-*`), terminal run state в БД и без active workload в namespace, включая unsuspended `CronJob`.
 
 ## Права `full-env` в рамках namespace
 

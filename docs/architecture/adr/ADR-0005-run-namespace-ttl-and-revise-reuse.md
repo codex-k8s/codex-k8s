@@ -101,7 +101,7 @@ webhookRuntime:
   - in-band sweep в worker reconcile tick;
   - отдельный production `CronJob` `codex-k8s-worker-namespace-cleanup` как backstop при сбоях/простоях worker;
   - отбор по `codex-k8s.dev/namespace-purpose=run`;
-  - guardrails: ownership-label + platform prefix + отсутствие non-terminal run в БД + отсутствие active workload в namespace;
+  - guardrails: ownership-label + allowlist platform runtime namespace names (issue-run prefix + slot namespaces `codex-k8s-dev-*`) + отсутствие non-terminal run в БД + отсутствие active workload в namespace, включая unsuspended `CronJob`;
   - удаление по достижении lease expiry;
   - write-audit на каждое действие.
 
