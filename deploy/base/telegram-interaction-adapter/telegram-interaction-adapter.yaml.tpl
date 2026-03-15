@@ -57,7 +57,7 @@ spec:
                   name: codex-k8s-runtime
                   key: CODEXK8S_PUBLIC_BASE_URL
             - name: CODEXK8S_CONTROL_PLANE_GRPC_TARGET
-              value: '{{ envOr "CODEXK8S_CONTROL_PLANE_GRPC_TARGET" "" }}'
+              value: '{{ envOr "CODEXK8S_CONTROL_PLANE_GRPC_TARGET" "codex-k8s-control-plane:9090" }}'
             - name: CODEXK8S_OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:

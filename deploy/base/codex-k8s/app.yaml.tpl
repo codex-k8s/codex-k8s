@@ -60,7 +60,7 @@ spec:
             - name: CODEXK8S_HTTP_ADDR
               value: ":8080"
             - name: CODEXK8S_CONTROL_PLANE_GRPC_TARGET
-              value: '{{ envOr "CODEXK8S_CONTROL_PLANE_GRPC_TARGET" "" }}'
+              value: '{{ envOr "CODEXK8S_CONTROL_PLANE_GRPC_TARGET" "codex-k8s-control-plane:9090" }}'
             - name: CODEXK8S_VITE_DEV_UPSTREAM
               valueFrom:
                 secretKeyRef:
@@ -356,7 +356,7 @@ spec:
                   key: CODEXK8S_RUN_HEAVY_FIELDS_RETENTION_DAYS
                   optional: true
             - name: CODEXK8S_CONTROL_PLANE_MCP_BASE_URL
-              value: '{{ envOr "CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" "" }}'
+              value: '{{ envOr "CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" "http://codex-k8s-control-plane:8081/mcp" }}'
             - name: CODEXK8S_LEARNING_MODE_DEFAULT
               valueFrom:
                 secretKeyRef:
@@ -763,9 +763,9 @@ spec:
                   name: codex-k8s-postgres
                   key: CODEXK8S_POSTGRES_PASSWORD
             - name: CODEXK8S_CONTROL_PLANE_GRPC_TARGET
-              value: '{{ envOr "CODEXK8S_CONTROL_PLANE_GRPC_TARGET" "" }}'
+              value: '{{ envOr "CODEXK8S_CONTROL_PLANE_GRPC_TARGET" "codex-k8s-control-plane:9090" }}'
             - name: CODEXK8S_CONTROL_PLANE_MCP_BASE_URL
-              value: '{{ envOr "CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" "" }}'
+              value: '{{ envOr "CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" "http://codex-k8s-control-plane:8081/mcp" }}'
             - name: CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BASE_URL
               valueFrom:
                 secretKeyRef:
@@ -1071,7 +1071,7 @@ spec:
                       name: codex-k8s-postgres
                       key: CODEXK8S_POSTGRES_PASSWORD
                 - name: CODEXK8S_CONTROL_PLANE_GRPC_TARGET
-                  value: '{{ envOr "CODEXK8S_CONTROL_PLANE_GRPC_TARGET" "" }}'
+                  value: '{{ envOr "CODEXK8S_CONTROL_PLANE_GRPC_TARGET" "codex-k8s-control-plane:9090" }}'
                 - name: CODEXK8S_WORKER_K8S_NAMESPACE
                   value: '{{ envOr "CODEXK8S_WORKER_K8S_NAMESPACE" "" }}'
                 - name: CODEXK8S_PRODUCTION_NAMESPACE

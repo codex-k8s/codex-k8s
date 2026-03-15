@@ -3,7 +3,10 @@ package runtimedeploy
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/codex-k8s/codex-k8s/libs/go/manifesttpl"
 )
 
 func TestDefaultWorkerReplicas(t *testing.T) {
@@ -107,6 +110,48 @@ func TestBuildTemplateVars_DoesNotInventNamespaceLocalControlPlaneEndpoints(t *t
 	}
 	if got := vars["CODEXK8S_CONTROL_PLANE_MCP_BASE_URL"]; got != "" {
 		t.Fatalf("mcp base url = %q, want empty value", got)
+	}
+}
+
+func TestRenderAppTemplate_UsesLocalControlPlaneDefaultsWhenVarsMissing(t *testing.T) {
+	t.Setenv("CODEXK8S_CONTROL_PLANE_GRPC_TARGET", "")
+	t.Setenv("CODEXK8S_CONTROL_PLANE_MCP_BASE_URL", "")
+
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "..", "deploy", "base", "codex-k8s", "app.yaml.tpl"))
+	if err != nil {
+		t.Fatalf("read app template: %v", err)
+	}
+
+	rendered, err := manifesttpl.Render("app", raw, (&Service{}).buildTemplateVars(PrepareParams{TargetEnv: "ai"}, "codex-issue-503"))
+	if err != nil {
+		t.Fatalf("render app template: %v", err)
+	}
+
+	output := string(rendered)
+	if !strings.Contains(output, "value: 'codex-k8s-control-plane:9090'") {
+		t.Fatalf("rendered app template does not contain local grpc target default:\n%s", output)
+	}
+	if !strings.Contains(output, "value: 'http://codex-k8s-control-plane:8081/mcp'") {
+		t.Fatalf("rendered app template does not contain local mcp base url default:\n%s", output)
+	}
+}
+
+func TestRenderTelegramAdapterTemplate_UsesLocalControlPlaneDefaultWhenVarsMissing(t *testing.T) {
+	t.Setenv("CODEXK8S_CONTROL_PLANE_GRPC_TARGET", "")
+
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "..", "deploy", "base", "telegram-interaction-adapter", "telegram-interaction-adapter.yaml.tpl"))
+	if err != nil {
+		t.Fatalf("read telegram adapter template: %v", err)
+	}
+
+	rendered, err := manifesttpl.Render("telegram-adapter", raw, (&Service{}).buildTemplateVars(PrepareParams{TargetEnv: "ai"}, "codex-issue-503"))
+	if err != nil {
+		t.Fatalf("render telegram adapter template: %v", err)
+	}
+
+	output := string(rendered)
+	if !strings.Contains(output, "value: 'codex-k8s-control-plane:9090'") {
+		t.Fatalf("rendered telegram adapter template does not contain local grpc target default:\n%s", output)
 	}
 }
 
