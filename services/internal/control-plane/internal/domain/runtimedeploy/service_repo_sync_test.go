@@ -109,3 +109,35 @@ func TestShouldSyncRepoSnapshotToRuntimeNamespace(t *testing.T) {
 		})
 	}
 }
+
+func TestRepoSnapshotPath_UsesBuildRefScopedSnapshotForAIEnv(t *testing.T) {
+	t.Parallel()
+
+	svc := &Service{
+		cfg: Config{
+			RepositoryRoot: "/repo-cache",
+		},
+	}
+
+	got := svc.repoSnapshotPath("ai", "codex-k8s", "codex-k8s", "3e7c26a0470fbab877607df5f82f5874a8119b5f")
+	want := "/repo-cache/github/codex-k8s/codex-k8s/3e7c26a0470fbab877607df5f82f5874a8119b5f"
+	if got != want {
+		t.Fatalf("repoSnapshotPath(ai) = %q, want %q", got, want)
+	}
+}
+
+func TestRepoSnapshotPath_FallsBackToMainWhenBuildRefIsEmpty(t *testing.T) {
+	t.Parallel()
+
+	svc := &Service{
+		cfg: Config{
+			RepositoryRoot: "/repo-cache",
+		},
+	}
+
+	got := svc.repoSnapshotPath("ai", "codex-k8s", "codex-k8s", "")
+	want := "/repo-cache/github/codex-k8s/codex-k8s/main"
+	if got != want {
+		t.Fatalf("repoSnapshotPath(empty build ref) = %q, want %q", got, want)
+	}
+}
