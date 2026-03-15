@@ -69,7 +69,7 @@ func TestEvaluateRuntimeReuse_ReturnsFingerprintMismatchWhenRenderedManifestsDri
 		t.Fatalf("persistRuntimeFingerprint() error = %v", err)
 	}
 
-	manifestPath := filepath.Join(svc.cfg.RepositoryRoot, "deploy", "base", "app.yaml")
+	manifestPath := filepath.Join(svc.repoSnapshotPath(params.TargetEnv, "codex-k8s", "codex-k8s", params.BuildRef), "deploy", "base", "app.yaml")
 	if err := os.WriteFile(manifestPath, []byte(`apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -206,9 +206,10 @@ func TestBuildRuntimeFingerprint_EnrichesMissingScopeFromRunPayload(t *testing.T
 func newRuntimeReuseTestService(t *testing.T) (*Service, EvaluateReuseParams, *fakeRuntimeReuseKubernetesClient) {
 	t.Helper()
 
-	repoRoot := t.TempDir()
+	repoRoot := filepath.Join(t.TempDir(), "repo-cache")
 	commitSHA := "0123456789abcdef0123456789abcdef01234567"
-	mustWriteRuntimeReuseTestRepo(t, repoRoot, commitSHA)
+	snapshotRoot := filepath.Join(repoRoot, "github", "codex-k8s", "codex-k8s", commitSHA)
+	mustWriteRuntimeReuseTestRepo(t, snapshotRoot, commitSHA)
 
 	namespace := "codex-k8s-dev-1"
 	k8s := &fakeRuntimeReuseKubernetesClient{

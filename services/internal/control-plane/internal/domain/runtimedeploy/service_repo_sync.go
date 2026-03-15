@@ -142,9 +142,6 @@ func (s *Service) repoSnapshotPath(targetEnv string, owner string, name string, 
 	if cacheRoot == "" {
 		return ""
 	}
-	if isAIEnv(targetEnv) {
-		return cacheRoot
-	}
 	refToken := sanitizeNameToken(buildRef, 120)
 	if refToken == "" {
 		refToken = "main"
