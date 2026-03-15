@@ -5,8 +5,8 @@ title: "Sprint S16 Traceability History"
 status: in-review
 owner_role: KM
 created_at: 2026-03-15
-updated_at: 2026-03-15
-related_issues: [480, 490, 492, 496]
+updated_at: 2026-03-16
+related_issues: [480, 490, 492, 496, 510]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -35,5 +35,21 @@ approvals:
   - typed metadata contract, platform-generated watermarks и platform-canonical launch params;
   - continuity rule: каждый stage до `run:dev` включительно обязан завершаться `PR + linked follow-up issue`.
 - Создана continuity issue `#496` для stage `run:vision` без trigger-лейбла.
-- Через Context7 повторно подтверждён актуальный non-interactive GitHub CLI flow для continuity issue / PR automation (`/websites/cli_github_manual`); локально перепроверены `gh issue create --help`, `gh pr create --help` и `gh pr edit --help`.
+- Локально перепроверены `gh issue create --help`, `gh pr create --help` и `gh pr edit --help` для non-interactive continuity issue / PR flow.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: intake stage формализует problem/scope/handover и historical delta, а не добавляет новые канонические требования.
+
+## Актуализация по Issue #496 (`run:vision`, 2026-03-15)
+- Подготовлен vision package:
+  - `docs/delivery/epics/s16/epic-s16-day2-mission-control-graph-workspace-vision.md`;
+  - обновлены `docs/delivery/sprints/s16/sprint_s16_mission_control_graph_workspace.md`, `docs/delivery/epics/s16/epic_s16.md`, `docs/delivery/delivery_plan.md` и `docs/delivery/issue_map.md`.
+- Зафиксированы:
+  - Mission Control как primary multi-root graph workspace/control plane для continuity `discussion/work_item -> run -> pull_request/follow-up issue -> next run`;
+  - mission, north star, persona outcomes, KPI/guardrails и wave boundaries без reopening Day1 baseline;
+  - non-negotiable baseline по issue `#480`: persisted provider mirror и coverage contract `all open Issues/PR + bounded recent closed history`;
+  - exact Wave 1 filters `open_only`, `assigned_to_me_or_unassigned`, `active-state presets`, secondary/dimmed semantics только для graph integrity и Wave 1 nodes `discussion`, `work_item`, `run`, `pull_request`;
+  - typed metadata/watermark contract, platform-canonical launch params и continuity rule `PR + linked follow-up issue`;
+  - service-boundary guardrail для следующего stage: `control-plane` остаётся owner graph truth, continuity state и launch surfaces, а `worker` ограничен background/reconcile execution для foundation inventory и lifecycle tasks;
+  - later-wave boundary: voice/STT, dashboard orchestrator agent и отдельная `agent` node taxonomy не блокируют core Wave 1.
+- Через `gh issue create` создана follow-up issue `#510` для stage `run:prd`; в её body сохранено continuity-требование продолжить цепочку `arch -> design -> plan -> dev` после PRD.
+- Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue create --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась: vision stage уточнил product baseline и handover, но не добавлял новые канонические FR/NFR в `docs/product/requirements_machine_driven.md`.
