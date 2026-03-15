@@ -5,7 +5,7 @@ title: "Sprint S12 Traceability History"
 status: completed
 owner_role: KM
 created_at: 2026-03-13
-updated_at: 2026-03-14
+updated_at: 2026-03-15
 related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
 related_prs: []
 approvals:
@@ -245,3 +245,23 @@ approvals:
 - Внешний baseline дополнительно сверен:
   - Context7 `/vuetifyjs/vuetify` использован для проверки slot/custom-cell patterns `VDataTable` перед обновлением wait queue layout; provider semantics и contract ownership по-прежнему берутся из уже утверждённых S12 design/API docs.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: Issue `#430` закрывает frontend visibility wave и не добавляет новых продуктовых требований.
+
+## Актуализация по Issue #431 (`run:doc-audit`, 2026-03-15)
+- Подготовлен readiness bundle:
+  - `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/observability_readiness.md`;
+  - обновлены `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/README.md`, `docs/delivery/delivery_plan.md`, `docs/delivery/issue_map.md`.
+- Зафиксированы:
+  - canonical readiness gate перед `run:qa`: rollout order `migrations -> control-plane -> worker -> agent-runner -> api-gateway -> web-console -> evidence gate`, typed evidence surfaces (`flow_events`, `github_rate_limit_wait_evidence`, `Run.wait_projection`, realtime wait envelopes, runner/worker logs) и rollback notes собраны в одном source-of-truth;
+  - candidate runtime фактами подтверждён namespace `codex-k8s-dev-1`: основные deployments готовы, `codex-k8s-migrate`/kaniko/repo-sync jobs завершены, а текущий agent run job активен в том же rollout lineage;
+  - в текущем candidate rollout feature gate остаётся default-disabled: `kubectl get deploy ... env` показал пустые `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED` и `CODEXK8S_WORKER_GITHUB_RATE_LIMIT_SWEEP_LIMIT`, а defaults в `services/internal/control-plane/internal/app/config.go` и `services/jobs/worker/internal/app/config.go` оставляют live wait-path неактивным без явного owner rollout decision;
+  - по последним 120 строкам `control-plane` логов live GitHub rate-limit events не обнаружены, поэтому readiness bundle явно отделяет документированный runtime baseline от ещё не выполненного synthetic/live smoke.
+- Проверки:
+  - `kubectl config view --minify -o jsonpath='{..namespace}'`
+  - `kubectl get deploy,pods,job -n codex-k8s-dev-1 -o wide`
+  - `kubectl logs -n codex-k8s-dev-1 deploy/codex-k8s-control-plane --tail=120 | rg 'github rate-limit|wait.entered|wait.resumed|manual_action_required|waiting_backpressure'`
+  - `kubectl get deploy -n codex-k8s-dev-1 codex-k8s-control-plane -o jsonpath='{range .spec.template.spec.containers[0].env[*]}{.name}={.value}{"\n"}{end}' | rg '^CODEXK8S_GITHUB_RATE_LIMIT'`
+  - `kubectl get deploy -n codex-k8s-dev-1 codex-k8s-worker -o jsonpath='{range .spec.template.spec.containers[0].env[*]}{.name}={.value}{"\n"}{end}' | rg '^CODEXK8S_GITHUB_RATE_LIMIT|^CODEXK8S_WORKER_GITHUB_RATE_LIMIT'`
+  - `git diff --check`
+- Внешний baseline дополнительно сверен:
+  - Context7 `/github/docs` использован для повторной проверки guidance по primary/secondary rate limits, `Retry-After`, `x-ratelimit-reset` и bounded retry discipline, чтобы readiness-пакет не расходился с provider semantics.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: Issue `#431` синхронизирует readiness evidence и traceability, но не вводит новые канонические требования.

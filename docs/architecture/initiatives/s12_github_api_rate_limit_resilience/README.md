@@ -5,7 +5,7 @@ title: "Initiative Package: s12_github_api_rate_limit_resilience"
 status: approved
 owner_role: SA
 created_at: 2026-03-13
-updated_at: 2026-03-13
+updated_at: 2026-03-15
 related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
 related_prs: []
 approvals:
@@ -22,6 +22,7 @@ approvals:
 - Пакет объединяет Day4 architecture и Day5 design артефакты Sprint S12 для GitHub API rate-limit resilience.
 - Внутри зафиксированы C4 overlays, ownership split для `control-plane` / `worker` / `agent-runner` / `api-gateway` / `web-console`, lifecycle `detect -> classify -> wait -> resume/manual action`, ADR/alternatives и implementation-ready contracts для wait-state, transport, data model и rollout.
 - Plan-stage в Issue `#423` завершил документный контур и декомпозировал execution waves `#425..#431`; этот пакет остаётся source-of-truth для всех implementation streams.
+- Для wave `#431` пакет дополнен readiness bundle `observability_readiness.md`, который фиксирует rollout order, candidate checks и ограничения текущего observability baseline перед `run:qa`.
 
 ## Содержимое
 - `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/README.md`
@@ -32,6 +33,7 @@ approvals:
 - `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/api_contract.md`
 - `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/data_model.md`
 - `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/migrations_policy.md`
+- `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/observability_readiness.md`
 
 ## Связанные source-of-truth документы
 - `docs/architecture/api_contract.md`
