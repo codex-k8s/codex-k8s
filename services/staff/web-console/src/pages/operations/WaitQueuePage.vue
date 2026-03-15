@@ -194,7 +194,7 @@ const headers = [
   { title: t("table.fields.run"), key: "run", sortable: false, width: 170, align: "center" },
   { title: t("table.fields.dominant_wait"), key: "dominant_wait", sortable: false, width: 270, align: "center" },
   { title: t("table.fields.next_step"), key: "next_step", sortable: false, width: 260, align: "center" },
-  { title: t("table.fields.wait_since"), key: "wait_since", width: 180, align: "center" },
+  { title: t("table.fields.wait_since"), key: "wait_since", value: "waitSince", width: 180, align: "center" },
   { title: "", key: "actions", sortable: false, width: 72, align: "end" },
 ] as const;
 

@@ -124,6 +124,20 @@ test("parseRunRealtimeMessage accepts wait update envelopes and presenters build
   assert.equal(entry.manualActionLabelKey, "runs.waits.manualActions.resumeAgentSession");
 });
 
+test("parseRunRealtimeMessage ignores malformed wait projection envelopes instead of crashing wait presenters", () => {
+  const message = parseRunRealtimeMessage(
+    JSON.stringify({
+      type: "wait_updated",
+      sent_at: "2026-03-14T19:05:00Z",
+      wait_projection: {},
+    }),
+  );
+
+  assert.ok(message);
+  assert.equal(message.wait_projection, undefined);
+  assert.equal(buildRunWaitRealtimeEntryView(message), null);
+});
+
 test("buildRunWaitRealtimeEntryView maps wait resolution envelopes", () => {
   const message = parseRunRealtimeMessage(
     JSON.stringify({
