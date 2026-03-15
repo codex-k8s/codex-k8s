@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-14
 updated_at: 2026-03-15
-related_issues: [469, 471, 476, 484]
+related_issues: [469, 471, 476, 484, 494]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -63,3 +63,22 @@ approvals:
 - Создана follow-up issue `#484` для stage `run:arch` без trigger-лейбла.
 - Для GitHub continuity и PR-flow повторно подтверждён актуальный non-interactive CLI flow через Context7 (`/websites/cli_github_manual`) и локальные `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: PRD stage уточнил initiative-specific contract и historical delta; в root-матрице синхронизирован только related-issues index.
+
+## Актуализация по Issue #484 (`run:arch`, 2026-03-15)
+- Подготовлен architecture package:
+  - `docs/architecture/initiatives/s13_quality_governance_system/README.md`;
+  - `docs/architecture/initiatives/s13_quality_governance_system/architecture.md`;
+  - `docs/architecture/initiatives/s13_quality_governance_system/c4_context.md`;
+  - `docs/architecture/initiatives/s13_quality_governance_system/c4_container.md`;
+  - `docs/architecture/adr/ADR-0015-quality-governance-control-plane-owned-change-governance-aggregate.md`;
+  - `docs/architecture/alternatives/ALT-0007-quality-governance-boundaries.md`;
+  - `docs/delivery/epics/s13/epic-s13-day4-quality-governance-arch.md`.
+- Зафиксированы:
+  - `control-plane` как owner canonical change-governance aggregate, publication gate, waiver/residual-risk decisions и typed decision surface;
+  - `worker` как owner asynchronous sweeps, governance-gap reconciliation и late reclassification под policy `control-plane`;
+  - `agent-runner` как source emitter draft/evidence/verification signals без права владеть canonical semantics;
+  - publication discipline `internal working draft -> semantic wave map -> published waves` как domain lifecycle, а не UI/process convention;
+  - boundary `Sprint S13 governance baseline -> Sprint S14 runtime/UI stream` без reopening policy baseline.
+- Создана follow-up issue `#494` для stage `run:design` без trigger-лейбла.
+- Для GitHub continuity повторно подтверждён актуальный non-interactive CLI flow через Context7 (`/websites/cli_github_manual`) и локальные `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: architecture stage закрепил ownership и lifecycle baseline, а не вводил новые root requirements.

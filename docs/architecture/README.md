@@ -6,7 +6,7 @@ status: in-review
 owner_role: SA
 created_at: 2026-03-11
 updated_at: 2026-03-13
-related_issues: [320, 385, 387, 418, 420, 452, 454]
+related_issues: [320, 385, 387, 418, 420, 452, 454, 484, 494]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -42,3 +42,4 @@ approvals:
 - Sprint S10 built-in MCP user interactions package: `docs/architecture/initiatives/s10_mcp_user_interactions/README.md`
 - Sprint S11 Telegram user interaction adapter package: `docs/architecture/initiatives/s11_telegram_user_interaction_adapter/README.md`
 - Sprint S12 GitHub API rate-limit resilience package: `docs/architecture/initiatives/s12_github_api_rate_limit_resilience/README.md`
+- Sprint S13 Quality Governance System package: `docs/architecture/initiatives/s13_quality_governance_system/README.md`
