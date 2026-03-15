@@ -1,0 +1,24 @@
+{{ define "callback_ack_received" }}✅ Ответ принят{{ end }}
+{{ define "callback_ack_unavailable" }}⚠️ Этот запрос уже недоступен{{ end }}
+{{ define "free_text_received" }}✅ Ответ получен{{ end }}
+{{ define "free_text_unavailable" }}⚠️ Не удалось связать сообщение с активным запросом{{ end }}
+{{ define "free_text_failed" }}⚠️ Не удалось передать ответ. Попробуйте позже.{{ end }}
+{{ define "voice_disabled" }}🎙️ Голосовая расшифровка выключена. Отправьте текстовый ответ.{{ end }}
+{{ define "transcription_failed" }}🎙️ Не удалось распознать голосовой ответ. Попробуйте еще раз или отправьте текст.{{ end }}
+{{ define "notify_message" }}{{ .Summary }}{{ if .DetailsMarkdown }}
+
+{{ .DetailsMarkdown }}{{ end }}{{ template "message_links" .Links }}{{ end }}
+{{ define "decision_message" }}🧠 {{ .Question }}{{ if .DetailsMarkdown }}
+
+{{ .DetailsMarkdown }}{{ end }}{{ if .ReplyInstruction }}
+
+✍️ {{ .ReplyInstruction }}{{ end }}{{ template "message_links" .Links }}{{ end }}
+{{ define "follow_up_applied_response" }}✅ Ответ принят.{{ if .RunURL }} Run: {{ .RunURL }}{{ end }}{{ end }}
+{{ define "follow_up_edit_failed" }}✅ Ответ принят. Исходное сообщение обновить не удалось, поэтому подтверждение отправлено отдельно.{{ if .RunURL }} Run: {{ .RunURL }}{{ end }}{{ end }}
+{{ define "follow_up_expired_wait" }}⌛ Срок ответа истек.{{ if .RunURL }} Run: {{ .RunURL }}{{ end }}{{ end }}
+{{ define "follow_up_operator_fallback" }}⚠️ Нужна ручная помощь оператора.{{ if .IssueURL }} Issue: {{ .IssueURL }}{{ else if .RunURL }} Run: {{ .RunURL }}{{ end }}{{ end }}
+{{ define "message_links" }}{{ if .RunURL }}
+
+🏃 Run: {{ .RunURL }}{{ end }}{{ if .IssueURL }}
+🐞 Issue: {{ .IssueURL }}{{ end }}{{ if .PullRequestURL }}
+🔀 PR: {{ .PullRequestURL }}{{ end }}{{ end }}

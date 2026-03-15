@@ -17,6 +17,7 @@ require (
 	github.com/modelcontextprotocol/go-sdk v1.3.0
 	github.com/mymmrac/telego v1.7.0
 	github.com/oapi-codegen/runtime v1.1.2
+	github.com/openai/openai-go/v3 v3.28.0
 	github.com/prometheus/client_golang v1.23.2
 	golang.org/x/oauth2 v0.32.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251029180050-ab9386a59fda
@@ -69,6 +70,10 @@ require (
 	github.com/prometheus/common v0.66.1 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
+	github.com/tidwall/gjson v1.18.0 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.1 // indirect
+	github.com/tidwall/sjson v1.2.5 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.69.0 // indirect

@@ -136,6 +136,58 @@ func TestSubmitInteractionCallback_MapsAcceptedClassificationToApplied(t *testin
 	}
 }
 
+func TestSubmitAdapterInteractionCallback_AllowsCallbackHandleWithoutInteractionID(t *testing.T) {
+	t.Parallel()
+
+	occurredAt := time.Date(2026, time.March, 15, 9, 30, 0, 0, time.UTC)
+	var gotParams mcpdomain.SubmitInteractionCallbackParams
+
+	srv := &Server{
+		mcp: fakeMCPRunTokenService{
+			submitInteractionCallback: func(ctx context.Context, params mcpdomain.SubmitInteractionCallbackParams) (mcpdomain.SubmitInteractionCallbackResult, error) {
+				gotParams = params
+				return mcpdomain.SubmitInteractionCallbackResult{
+					Accepted:           false,
+					Classification:     enumtypes.InteractionCallbackResultClassificationInvalid,
+					ContinuationAction: enumtypes.InteractionContinuationActionNone,
+				}, nil
+			},
+		},
+	}
+
+	resp, err := srv.SubmitAdapterInteractionCallback(context.Background(), &controlplanev1.SubmitInteractionCallbackRequest{
+		AdapterEventId:         "event-voice-1",
+		CallbackKind:           string(enumtypes.InteractionCallbackKindFreeTextReceived),
+		OccurredAt:             timestamppb.New(occurredAt),
+		FreeText:               stringPtr("transcribed voice"),
+		ResponderRef:           stringPtr("telegram_user:42"),
+		ProviderMessageRefJson: []byte(`{"chat_ref":"101","message_id":"55"}`),
+		ProviderUpdateId:       stringPtr("777"),
+	})
+	if err != nil {
+		t.Fatalf("SubmitAdapterInteractionCallback returned error: %v", err)
+	}
+
+	if resp.GetClassification() != "invalid" {
+		t.Fatalf("classification = %q, want invalid", resp.GetClassification())
+	}
+	if gotParams.InteractionID != "" {
+		t.Fatalf("interaction_id = %q, want empty", gotParams.InteractionID)
+	}
+	if gotParams.FreeText != "transcribed voice" {
+		t.Fatalf("free_text = %q, want transcribed voice", gotParams.FreeText)
+	}
+	if gotParams.ResponderRef != "telegram_user:42" {
+		t.Fatalf("responder_ref = %q, want telegram_user:42", gotParams.ResponderRef)
+	}
+	if got, want := string(gotParams.ProviderMessageRefJSON), `{"chat_ref":"101","message_id":"55"}`; got != want {
+		t.Fatalf("provider_message_ref_json = %q, want %q", got, want)
+	}
+	if !gotParams.OccurredAt.Equal(occurredAt) {
+		t.Fatalf("occurred_at = %s, want %s", gotParams.OccurredAt, occurredAt)
+	}
+}
+
 type fakeMCPRunTokenService struct {
 	verifyRunToken                 func(ctx context.Context, rawToken string) (mcpdomain.SessionContext, error)
 	verifyInteractionCallbackToken func(ctx context.Context, rawToken string, interactionID string) (mcpdomain.SessionContext, error)

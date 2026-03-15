@@ -14,12 +14,14 @@ services/external/telegram-interaction-adapter/         deployable Telegram adap
 │       └── main.go                                     composition root запуска сервиса
 └── internal/
     ├── app/                                            конфиг и bootstrap
-    ├── service/                                        Telegram transport/rendering/session state без platform semantics
+    ├── controlplane/                                   internal gRPC client для platform-owned callback/state path
+    ├── service/                                        Telegram transport/rendering/voice STT без platform semantics
     └── transport/http/                                 HTTP handlers/casters и health/metrics
 ```
 
 Границы ответственности:
 - принимает `worker -> adapter` delivery envelope `telegram-interaction-v1`;
-- вызывает Telegram Bot API, сохраняет локальное encrypted session state для callback handles/tokens;
+- вызывает Telegram Bot API, принимает raw webhook и нормализует text/voice replies;
+- конвертирует voice replies через `ffmpeg` и OpenAI STT перед отправкой platform-owned callback;
 - принимает raw Telegram webhook, проверяет `X-Telegram-Bot-Api-Secret-Token`, делает `answerCallbackQuery`;
-- пересылает только normalized callback envelope в `api-gateway`, не владея platform semantics или БД платформы.
+- пересылает normalized callback envelope напрямую в `control-plane` по internal gRPC, не владея platform semantics или БД платформы.

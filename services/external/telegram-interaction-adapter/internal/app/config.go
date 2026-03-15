@@ -12,15 +12,19 @@ type Config struct {
 
 	PublicBaseURL string `env:"CODEXK8S_PUBLIC_BASE_URL"`
 
+	ControlPlaneGRPCTarget string `env:"CODEXK8S_CONTROL_PLANE_GRPC_TARGET,required,notEmpty"`
+
+	OpenAIAPIKey string `env:"CODEXK8S_OPENAI_API_KEY"`
+
 	TelegramBotToken string `env:"CODEXK8S_TELEGRAM_BOT_TOKEN"`
 	TelegramChatID   string `env:"CODEXK8S_TELEGRAM_CHAT_ID"`
 
 	TelegramRecipientBindingsJSON string `env:"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_RECIPIENT_BINDINGS_JSON"`
 	TelegramDeliveryBearerToken   string `env:"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN"`
 	TelegramWebhookSecret         string `env:"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET"`
-	TelegramStatePath             string `env:"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_STATE_PATH" envDefault:"/var/lib/codex-k8s-telegram-interaction-adapter/state.json"`
 	TelegramHTTPTimeout           string `env:"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_HTTP_TIMEOUT" envDefault:"10s"`
-	CallbackHTTPTimeout           string `env:"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_CALLBACK_HTTP_TIMEOUT" envDefault:"10s"`
+	TelegramSTTModel              string `env:"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_STT_MODEL" envDefault:"gpt-4o-mini-transcribe"`
+	TelegramSTTTimeout            string `env:"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_STT_TIMEOUT" envDefault:"30s"`
 }
 
 // LoadConfig parses and validates environment configuration.

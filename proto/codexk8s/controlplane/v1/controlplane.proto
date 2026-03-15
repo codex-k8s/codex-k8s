@@ -1527,6 +1527,7 @@ service ControlPlaneService {
   rpc MarkMissionControlCommandReconciled(MarkMissionControlCommandReconciledRequest) returns (MissionControlCommandState);
   rpc MarkMissionControlCommandFailed(MarkMissionControlCommandFailedRequest) returns (MissionControlCommandState);
   rpc SubmitInteractionCallback(SubmitInteractionCallbackRequest) returns (SubmitInteractionCallbackResponse);
+  rpc SubmitAdapterInteractionCallback(SubmitInteractionCallbackRequest) returns (SubmitInteractionCallbackResponse);
   rpc ListRuntimeDeployTasks(ListRuntimeDeployTasksRequest) returns (ListRuntimeDeployTasksResponse);
   rpc GetRuntimeDeployTask(GetRuntimeDeployTaskRequest) returns (RuntimeDeployTask);
   rpc CancelRuntimeDeployTask(CancelRuntimeDeployTaskRequest) returns (RuntimeDeployTaskActionResponse);

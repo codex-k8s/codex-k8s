@@ -38,6 +38,10 @@ var (
 	queryMarkCallbackHandleUsed string
 	//go:embed sql/get_channel_binding_by_id_for_update.sql
 	queryGetChannelBindingByIDForUpdate string
+	//go:embed sql/get_channel_binding_by_provider_message_for_update.sql
+	queryGetChannelBindingByProviderMessageForUpdate string
+	//go:embed sql/list_open_channel_bindings_by_provider_chat_for_update.sql
+	queryListOpenChannelBindingsByProviderChatForUpdate string
 	//go:embed sql/claim_next_dispatch_candidate.sql
 	queryClaimNextDispatchCandidate string
 	//go:embed sql/claim_next_continuation_candidate.sql
@@ -85,6 +89,19 @@ type Repository struct {
 
 type rowQuerier interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+}
+
+type providerMessageRefLookup struct {
+	ChatRef   string `json:"chat_ref"`
+	MessageID string `json:"message_id"`
+}
+
+type resolvedCallbackContext struct {
+	request    domainrepo.Request
+	found      bool
+	binding    *domainrepo.ChannelBinding
+	handle     *domainrepo.CallbackHandle
+	handleHash []byte
 }
 
 // NewRepository constructs PostgreSQL interaction repository.
@@ -164,20 +181,7 @@ func (r *Repository) UpsertCallbackHandles(ctx context.Context, params domainrep
 		}
 	}
 
-	rows, err := r.db.Query(ctx, queryListCallbackHandlesByBinding, params.ChannelBindingID)
-	if err != nil {
-		return nil, fmt.Errorf("query interaction callback handles by binding: %w", err)
-	}
-	items, err := pgx.CollectRows(rows, pgx.RowToStructByName[dbmodel.CallbackHandleRow])
-	if err != nil {
-		return nil, fmt.Errorf("collect interaction callback handles by binding: %w", err)
-	}
-
-	out := make([]domainrepo.CallbackHandle, 0, len(items))
-	for _, item := range items {
-		out = append(out, callbackHandleFromDBModel(item))
-	}
-	return out, nil
+	return r.listCallbackHandlesByBindingTx(ctx, r.db, params.ChannelBindingID)
 }
 
 // ClaimNextDispatch reserves or reclaims one due dispatch attempt for worker execution.
@@ -597,14 +601,21 @@ func (r *Repository) ApplyCallback(ctx context.Context, params domainrepo.ApplyC
 		_ = tx.Rollback(ctx)
 	}()
 
-	request, found, err := r.getRequestForUpdate(ctx, tx, params.InteractionID)
+	resolved, err := r.resolveCallbackContextTx(ctx, tx, params)
 	if err != nil {
 		return domainrepo.ApplyCallbackResult{}, err
 	}
-	if !found {
-		return domainrepo.ApplyCallbackResult{}, errs.NotFound{Msg: "interaction_id: not found"}
+	if !resolved.found {
+		if err := tx.Commit(ctx); err != nil {
+			return domainrepo.ApplyCallbackResult{}, fmt.Errorf("commit unmatched interaction callback tx: %w", err)
+		}
+		return domainrepo.ApplyCallbackResult{
+			Accepted:       false,
+			Classification: enumtypes.InteractionCallbackResultClassificationInvalid,
+		}, nil
 	}
 
+	request := resolved.request
 	existingEvent, found, err := r.getCallbackEventByKey(ctx, tx, request.ID, params.AdapterEventID)
 	if err != nil {
 		return domainrepo.ApplyCallbackResult{}, err
@@ -621,32 +632,7 @@ func (r *Repository) ApplyCallback(ctx context.Context, params domainrepo.ApplyC
 		}, nil
 	}
 
-	var binding *domainrepo.ChannelBinding
-	if request.ActiveChannelBindingID > 0 {
-		item, found, err := r.getChannelBindingByIDForUpdate(ctx, tx, request.ActiveChannelBindingID)
-		if err != nil {
-			return domainrepo.ApplyCallbackResult{}, err
-		}
-		if found {
-			binding = &item
-		}
-	}
-
-	var handle *domainrepo.CallbackHandle
-	var handleHash []byte
-	if callbackHandle := strings.TrimSpace(params.CallbackHandle); callbackHandle != "" {
-		sum := sha256.Sum256([]byte(callbackHandle))
-		handleHash = sum[:]
-		item, found, err := r.getCallbackHandleByHashForUpdate(ctx, tx, handleHash)
-		if err != nil {
-			return domainrepo.ApplyCallbackResult{}, err
-		}
-		if found {
-			handle = &item
-		}
-	}
-
-	decision := classifyCallback(request, binding, handle, handleHash, params, now)
+	decision := classifyCallback(request, resolved.binding, resolved.handle, resolved.handleHash, params, now)
 	callbackEventRows, err := tx.Query(
 		ctx,
 		queryInsertCallbackEvent,
@@ -673,8 +659,8 @@ func (r *Repository) ApplyCallback(ctx context.Context, params domainrepo.ApplyC
 		return domainrepo.ApplyCallbackResult{}, fmt.Errorf("collect interaction callback event: %w", err)
 	}
 	callbackEvent := callbackEventFromDBModel(callbackEventRow)
-	if decision.markHandleUsed && handle != nil {
-		if _, err := r.markCallbackHandleUsed(ctx, tx, handle.ID, callbackEvent.ID, now); err != nil {
+	if decision.markHandleUsed && resolved.handle != nil {
+		if _, err := r.markCallbackHandleUsed(ctx, tx, resolved.handle.ID, callbackEvent.ID, now); err != nil {
 			return domainrepo.ApplyCallbackResult{}, err
 		}
 	}
@@ -732,10 +718,10 @@ func (r *Repository) ApplyCallback(ctx context.Context, params domainrepo.ApplyC
 	}
 
 	var updatedBinding *domainrepo.ChannelBinding
-	if binding != nil {
-		updatedBinding = binding
+	if resolved.binding != nil {
+		updatedBinding = resolved.binding
 		if decision.updateBindingProjection {
-			item, err := r.updateChannelBindingProjectionTx(ctx, tx, binding.ID, decision.continuationState, decision.operatorSignalCode, timePtr(now))
+			item, err := r.updateChannelBindingProjectionTx(ctx, tx, resolved.binding.ID, decision.continuationState, decision.operatorSignalCode, timePtr(now))
 			if err != nil {
 				return domainrepo.ApplyCallbackResult{}, err
 			}
@@ -814,13 +800,12 @@ func (r *Repository) getCallbackEventByKey(ctx context.Context, tx pgx.Tx, inter
 }
 
 func (r *Repository) getChannelBindingByIDForUpdate(ctx context.Context, tx pgx.Tx, bindingID int64) (domainrepo.ChannelBinding, bool, error) {
-	return queryOptionalModelByName(
+	return r.queryChannelBinding(
 		ctx,
 		tx,
 		queryGetChannelBindingByIDForUpdate,
 		"query interaction channel binding by id",
 		"collect interaction channel binding by id",
-		channelBindingFromDBModel,
 		bindingID,
 	)
 }
@@ -835,6 +820,164 @@ func (r *Repository) getCallbackHandleByHashForUpdate(ctx context.Context, tx pg
 		callbackHandleFromDBModel,
 		handleHash,
 	)
+}
+
+func (r *Repository) getChannelBindingByProviderMessageForUpdate(ctx context.Context, tx pgx.Tx, chatRef string, messageID string) (domainrepo.ChannelBinding, bool, error) {
+	return r.queryChannelBinding(
+		ctx,
+		tx,
+		queryGetChannelBindingByProviderMessageForUpdate,
+		"query interaction channel binding by provider message",
+		"collect interaction channel binding by provider message",
+		strings.TrimSpace(chatRef),
+		strings.TrimSpace(messageID),
+	)
+}
+
+func (r *Repository) listOpenChannelBindingsByProviderChatForUpdate(ctx context.Context, tx pgx.Tx, chatRef string) ([]domainrepo.ChannelBinding, error) {
+	return queryModelsByName(
+		ctx,
+		tx,
+		queryListOpenChannelBindingsByProviderChatForUpdate,
+		"query open interaction channel bindings by provider chat",
+		"collect open interaction channel bindings by provider chat",
+		channelBindingFromDBModel,
+		strings.TrimSpace(chatRef),
+	)
+}
+
+func (r *Repository) listCallbackHandlesByBindingTx(ctx context.Context, querier rowQuerier, bindingID int64) ([]domainrepo.CallbackHandle, error) {
+	return queryModelsByName(
+		ctx,
+		querier,
+		queryListCallbackHandlesByBinding,
+		"query interaction callback handles by binding",
+		"collect interaction callback handles by binding",
+		callbackHandleFromDBModel,
+		bindingID,
+	)
+}
+
+func (r *Repository) queryChannelBinding(ctx context.Context, querier rowQuerier, query string, queryMessage string, collectMessage string, args ...any) (domainrepo.ChannelBinding, bool, error) {
+	return queryOptionalModelByName(
+		ctx,
+		querier,
+		query,
+		queryMessage,
+		collectMessage,
+		channelBindingFromDBModel,
+		args...,
+	)
+}
+
+func (r *Repository) resolveCallbackContextTx(ctx context.Context, tx pgx.Tx, params domainrepo.ApplyCallbackParams) (resolvedCallbackContext, error) {
+	var resolved resolvedCallbackContext
+
+	interactionID := strings.TrimSpace(params.InteractionID)
+	if callbackHandle := strings.TrimSpace(params.CallbackHandle); callbackHandle != "" {
+		sum := sha256.Sum256([]byte(callbackHandle))
+		handleHash := sum[:]
+		handle, found, err := r.getCallbackHandleByHashForUpdate(ctx, tx, handleHash)
+		if err != nil {
+			return resolvedCallbackContext{}, err
+		}
+		if found {
+			resolved.handle = &handle
+			resolved.handleHash = handleHash
+			if interactionID == "" {
+				interactionID = strings.TrimSpace(handle.InteractionID)
+			}
+		}
+	}
+
+	if interactionID == "" {
+		binding, found, err := r.resolveBindingByProviderMessageRefTx(ctx, tx, params.ProviderMessageRefJSON)
+		if err != nil {
+			return resolvedCallbackContext{}, err
+		}
+		if found {
+			resolved.binding = &binding
+			interactionID = strings.TrimSpace(binding.InteractionID)
+		}
+	}
+
+	if interactionID == "" {
+		return resolved, nil
+	}
+
+	request, found, err := r.getRequestForUpdate(ctx, tx, interactionID)
+	if err != nil {
+		return resolvedCallbackContext{}, err
+	}
+	if !found {
+		return resolvedCallbackContext{}, errs.NotFound{Msg: "interaction_id: not found"}
+	}
+	resolved.request = request
+	resolved.found = true
+
+	if resolved.binding == nil && request.ActiveChannelBindingID > 0 {
+		binding, found, err := r.getChannelBindingByIDForUpdate(ctx, tx, request.ActiveChannelBindingID)
+		if err != nil {
+			return resolvedCallbackContext{}, err
+		}
+		if found {
+			resolved.binding = &binding
+		}
+	}
+
+	if resolved.binding == nil && resolved.handle != nil && resolved.handle.ChannelBindingID > 0 {
+		binding, found, err := r.getChannelBindingByIDForUpdate(ctx, tx, resolved.handle.ChannelBindingID)
+		if err != nil {
+			return resolvedCallbackContext{}, err
+		}
+		if found {
+			resolved.binding = &binding
+		}
+	}
+
+	if resolved.handle == nil && params.CallbackKind == enumtypes.InteractionCallbackKindFreeTextReceived && resolved.binding != nil {
+		handles, err := r.listCallbackHandlesByBindingTx(ctx, tx, resolved.binding.ID)
+		if err != nil {
+			return resolvedCallbackContext{}, err
+		}
+		for i := range handles {
+			handle := handles[i]
+			if handle.HandleKind == enumtypes.InteractionCallbackHandleKindFreeTextSession {
+				resolved.handle = &handle
+				resolved.handleHash = handle.HandleHash
+				break
+			}
+		}
+	}
+
+	return resolved, nil
+}
+
+func (r *Repository) resolveBindingByProviderMessageRefTx(ctx context.Context, tx pgx.Tx, raw json.RawMessage) (domainrepo.ChannelBinding, bool, error) {
+	ref := providerMessageRefLookup{}
+	if len(strings.TrimSpace(string(raw))) == 0 || string(jsonOrEmptyObject(raw)) == "{}" {
+		return domainrepo.ChannelBinding{}, false, nil
+	}
+	if err := json.Unmarshal(raw, &ref); err != nil {
+		return domainrepo.ChannelBinding{}, false, nil
+	}
+
+	chatRef := strings.TrimSpace(ref.ChatRef)
+	if chatRef == "" {
+		return domainrepo.ChannelBinding{}, false, nil
+	}
+	if messageID := strings.TrimSpace(ref.MessageID); messageID != "" {
+		return r.getChannelBindingByProviderMessageForUpdate(ctx, tx, chatRef, messageID)
+	}
+
+	items, err := r.listOpenChannelBindingsByProviderChatForUpdate(ctx, tx, chatRef)
+	if err != nil {
+		return domainrepo.ChannelBinding{}, false, err
+	}
+	if len(items) != 1 {
+		return domainrepo.ChannelBinding{}, false, nil
+	}
+	return items[0], true, nil
 }
 
 func (r *Repository) createDeliveryAttemptTx(ctx context.Context, tx pgx.Tx, request domainrepo.Request, params domainrepo.CreateDeliveryAttemptParams) (domainrepo.DeliveryAttempt, error) {
@@ -1446,6 +1589,23 @@ func queryOptionalModelByName[Row any, Model any](ctx context.Context, querier r
 		return zero, false, nil
 	}
 	return caster(item), true, nil
+}
+
+func queryModelsByName[Row any, Model any](ctx context.Context, querier rowQuerier, query string, queryMessage string, collectMessage string, caster func(Row) Model, args ...any) ([]Model, error) {
+	rows, err := querier.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", queryMessage, err)
+	}
+	items, err := pgx.CollectRows(rows, pgx.RowToStructByName[Row])
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", collectMessage, err)
+	}
+
+	out := make([]Model, 0, len(items))
+	for _, item := range items {
+		out = append(out, caster(item))
+	}
+	return out, nil
 }
 
 func scanRequestRow(row pgx.Row) (domainrepo.Request, error) {

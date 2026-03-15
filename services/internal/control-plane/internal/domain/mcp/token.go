@@ -74,7 +74,7 @@ func (s *Service) parseRunToken(rawToken string) (SessionContext, error) {
 			return nil, fmt.Errorf("unexpected token signing method")
 		}
 		return []byte(s.cfg.TokenSigningKey), nil
-	}, jwt.WithIssuer(s.cfg.TokenIssuer), jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Name}))
+	}, jwt.WithIssuer(s.cfg.TokenIssuer), jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Name}), jwt.WithTimeFunc(s.now))
 	if err != nil {
 		return SessionContext{}, fmt.Errorf("parse token: %w", err)
 	}

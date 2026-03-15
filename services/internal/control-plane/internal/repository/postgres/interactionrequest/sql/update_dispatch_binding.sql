@@ -1,6 +1,7 @@
 -- name: interactionrequest__update_dispatch_binding :one
 UPDATE interaction_channel_bindings
 SET
+    provider_chat_ref = COALESCE(NULLIF($2::jsonb->>'chat_ref', ''), provider_chat_ref),
     provider_message_ref_json = $2::jsonb,
     edit_capability = $3,
     callback_token_expires_at = COALESCE($4, callback_token_expires_at),

@@ -1,12 +1,10 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -24,24 +22,26 @@ type Config struct {
 	PublicBaseURL  string
 	WebhookSecret  string
 	DeliveryToken  string
-	SessionStore   SessionStore
 	Recipients     *RecipientResolver
 	Bot            BotClient
-	CallbackClient *http.Client
+	CallbackSink   CallbackSink
+	AudioConverter AudioConverter
+	SpeechToText   SpeechToText
 	Logger         *slog.Logger
 }
 
 // Service owns Telegram transport logic and callback forwarding.
 type Service struct {
-	publicBaseURL string
-	webhookSecret string
-	deliveryToken string
-	sessions      SessionStore
-	recipients    *RecipientResolver
-	bot           BotClient
-	callbacks     *http.Client
-	messages      *messageRenderer
-	logger        *slog.Logger
+	publicBaseURL  string
+	webhookSecret  string
+	deliveryToken  string
+	recipients     *RecipientResolver
+	bot            BotClient
+	callbacks      CallbackSink
+	audioConverter AudioConverter
+	speechToText   SpeechToText
+	messages       *messageRenderer
+	logger         *slog.Logger
 }
 
 // New builds the adapter service.
@@ -50,14 +50,8 @@ func New(cfg Config) (*Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	if cfg.CallbackClient == nil {
-		cfg.CallbackClient = &http.Client{Timeout: 10 * time.Second}
-	}
 	if cfg.Logger == nil {
 		cfg.Logger = slog.Default()
-	}
-	if cfg.SessionStore == nil {
-		return nil, fmt.Errorf("session store is required")
 	}
 	if cfg.Recipients == nil {
 		return nil, fmt.Errorf("recipient resolver is required")
@@ -65,17 +59,21 @@ func New(cfg Config) (*Service, error) {
 	if cfg.Bot == nil {
 		return nil, fmt.Errorf("telegram bot client is required")
 	}
+	if cfg.CallbackSink == nil {
+		return nil, fmt.Errorf("callback sink is required")
+	}
 
 	return &Service{
-		publicBaseURL: strings.TrimRight(strings.TrimSpace(cfg.PublicBaseURL), "/"),
-		webhookSecret: strings.TrimSpace(cfg.WebhookSecret),
-		deliveryToken: strings.TrimSpace(cfg.DeliveryToken),
-		sessions:      cfg.SessionStore,
-		recipients:    cfg.Recipients,
-		bot:           cfg.Bot,
-		callbacks:     cfg.CallbackClient,
-		messages:      renderer,
-		logger:        cfg.Logger,
+		publicBaseURL:  strings.TrimRight(strings.TrimSpace(cfg.PublicBaseURL), "/"),
+		webhookSecret:  strings.TrimSpace(cfg.WebhookSecret),
+		deliveryToken:  strings.TrimSpace(cfg.DeliveryToken),
+		recipients:     cfg.Recipients,
+		bot:            cfg.Bot,
+		callbacks:      cfg.CallbackSink,
+		audioConverter: cfg.AudioConverter,
+		speechToText:   cfg.SpeechToText,
+		messages:       renderer,
+		logger:         cfg.Logger,
 	}, nil
 }
 
@@ -102,9 +100,6 @@ func (s *Service) SyncWebhook(ctx context.Context) error {
 
 // Deliver handles one worker -> adapter delivery request.
 func (s *Service) Deliver(ctx context.Context, envelope DeliveryEnvelope) (DeliveryResponse, error) {
-	if err := s.sessions.CleanupExpired(time.Now().UTC()); err != nil {
-		s.logger.Warn("cleanup adapter sessions failed", "err", err)
-	}
 	if !s.bot.Ready() {
 		recordDispatchAttempt(envelope.DeliveryRole, metricStatusFailed)
 		return DeliveryResponse{}, &DeliveryError{
@@ -151,7 +146,7 @@ func (s *Service) deliverPrimary(ctx context.Context, envelope DeliveryEnvelope)
 		}
 	}
 
-	text, inlineOptions, actionLabel, actionURL, err := buildPrimaryMessage(envelope)
+	text, inlineOptions, actionLabel, actionURL, err := s.buildPrimaryMessage(envelope)
 	if err != nil {
 		recordDispatchAttempt(envelope.DeliveryRole, metricStatusRejected)
 		return DeliveryResponse{}, &DeliveryError{
@@ -176,36 +171,18 @@ func (s *Service) deliverPrimary(ctx context.Context, envelope DeliveryEnvelope)
 		return DeliveryResponse{}, classifyTelegramDeliveryError(err)
 	}
 
-	providerRef := normalizeTelegramProviderMessageRef(sent.ChatID, sent.MessageID, sent.SentAt)
-	response := DeliveryResponse{
+	recordDispatchAttempt(envelope.DeliveryRole, metricStatusAccepted)
+	return DeliveryResponse{
 		Accepted:           true,
 		AdapterDeliveryID:  buildAdapterDeliveryID(envelope.DeliveryRole, sent.MessageID),
-		ProviderMessageRef: providerRef,
+		ProviderMessageRef: normalizeTelegramProviderMessageRef(sent.ChatID, sent.MessageID, sent.SentAt),
 		EditCapability:     resolveEditCapability(envelope),
 		Retryable:          false,
-	}
-
-	if envelope.InteractionKind == InteractionKindDecisionRequest && envelope.CallbackEndpoint != nil {
-		session := buildSessionRecord(envelope, sent, providerRef)
-		if err := s.sessions.Upsert(session); err != nil {
-			recordDispatchAttempt(envelope.DeliveryRole, metricStatusFailed)
-			return DeliveryResponse{}, &DeliveryError{
-				StatusCode: http.StatusServiceUnavailable,
-				Response: DeliveryResponse{
-					Accepted:  false,
-					Retryable: true,
-					Message:   fmt.Sprintf("persist adapter session: %v", err),
-				},
-			}
-		}
-	}
-
-	recordDispatchAttempt(envelope.DeliveryRole, metricStatusAccepted)
-	return response, nil
+	}, nil
 }
 
 func (s *Service) deliverMessageEdit(ctx context.Context, envelope DeliveryEnvelope) (DeliveryResponse, error) {
-	messageRef, err := s.resolveProviderMessageRef(envelope)
+	messageRef, err := resolveProviderMessageRef(envelope.ProviderMessageRef)
 	if err != nil {
 		recordDispatchAttempt(envelope.DeliveryRole, metricStatusRejected)
 		recordContinuationAttempt(ContinuationActionEditMessage, metricStatusRejected)
@@ -254,7 +231,7 @@ func (s *Service) deliverMessageEdit(ctx context.Context, envelope DeliveryEnvel
 }
 
 func (s *Service) deliverFollowUp(ctx context.Context, envelope DeliveryEnvelope) (DeliveryResponse, error) {
-	chatID, err := s.resolveFollowUpChatID(envelope)
+	chatID, err := resolveFollowUpChatID(envelope.ProviderMessageRef)
 	if err != nil {
 		recordDispatchAttempt(envelope.DeliveryRole, metricStatusRejected)
 		recordContinuationAttempt(ContinuationActionSendFollowUp, metricStatusRejected)
@@ -304,10 +281,6 @@ func (s *Service) deliverFollowUp(ctx context.Context, envelope DeliveryEnvelope
 
 // HandleWebhook processes one raw Telegram update.
 func (s *Service) HandleWebhook(ctx context.Context, raw []byte) error {
-	if err := s.sessions.CleanupExpired(time.Now().UTC()); err != nil {
-		s.logger.Warn("cleanup adapter sessions failed", "err", err)
-	}
-
 	var update telego.Update
 	if err := json.Unmarshal(raw, &update); err != nil {
 		return fmt.Errorf("unmarshal telegram update: %w", err)
@@ -329,6 +302,7 @@ func (s *Service) handleCallbackQuery(ctx context.Context, update telego.Update)
 		return nil
 	}
 
+	locale := telegramLocale(&query.From)
 	chatID := int64(0)
 	if query.Message != nil {
 		chatID = query.Message.GetChat().ID
@@ -337,45 +311,47 @@ func (s *Service) handleCallbackQuery(ctx context.Context, update telego.Update)
 		recordCallbackEvent(CallbackKindOptionSelected, metricStatusIgnored)
 		return s.bot.AnswerCallbackQuery(ctx, AnswerCallbackQueryRequest{
 			QueryID: query.ID,
-			Text:    s.messages.Render("ru", "callback_ack_unavailable", nil),
+			Text:    s.messages.Render(locale, "callback_ack_unavailable", nil),
 		})
 	}
 
 	handle := strings.TrimSpace(query.Data)
-	session, found := s.sessions.GetByHandle(handle)
-	if !found {
+	if handle == "" {
 		recordCallbackEvent(CallbackKindOptionSelected, metricStatusIgnored)
 		return s.bot.AnswerCallbackQuery(ctx, AnswerCallbackQueryRequest{
 			QueryID: query.ID,
-			Text:    s.messages.Render("ru", "callback_ack_unavailable", nil),
+			Text:    s.messages.Render(locale, "callback_ack_unavailable", nil),
 		})
 	}
 
 	if err := s.bot.AnswerCallbackQuery(ctx, AnswerCallbackQueryRequest{
 		QueryID: query.ID,
-		Text:    s.messages.Render(session.Locale, "callback_ack_received", nil),
+		Text:    s.messages.Render(locale, "callback_ack_received", nil),
 	}); err != nil {
-		s.logger.Warn("answer telegram callback query failed", "interaction_id", session.InteractionID, "err", err)
+		s.logger.Warn("answer telegram callback query failed", "provider_callback_query_id", query.ID, "err", err)
 	}
 
-	envelope := CallbackEnvelope{
+	var providerMessageRef *ProviderMessageRef
+	if query.Message != nil {
+		providerMessageRef = providerMessageRefFromMaybeInaccessibleMessage(query.Message)
+	}
+
+	outcome, err := s.forwardCallback(ctx, CallbackEnvelope{
 		SchemaVersion:           SchemaVersionTelegramInteractionV1,
-		InteractionID:           session.InteractionID,
-		DeliveryID:              session.DeliveryID,
 		AdapterEventID:          "callback:" + strings.TrimSpace(query.ID),
 		CallbackKind:            CallbackKindOptionSelected,
 		OccurredAt:              time.Now().UTC().Format(time.RFC3339Nano),
 		CallbackHandle:          handle,
 		ResponderRef:            buildResponderRef(&query.From),
-		ProviderMessageRef:      &session.ProviderMessageRef,
+		ProviderMessageRef:      providerMessageRef,
 		ProviderUpdateID:        strconv.Itoa(update.UpdateID),
 		ProviderCallbackQueryID: strings.TrimSpace(query.ID),
-	}
-	outcome, err := s.forwardCallback(ctx, session, envelope)
+	})
 	if err != nil {
 		recordCallbackEvent(CallbackKindOptionSelected, metricStatusFailed)
 		return err
 	}
+
 	recordCallbackEvent(CallbackKindOptionSelected, outcome.Classification)
 	return nil
 }
@@ -390,50 +366,31 @@ func (s *Service) handleMessage(ctx context.Context, update telego.Update) error
 		return nil
 	}
 
-	freeText := strings.TrimSpace(message.Text)
+	locale := telegramLocale(message.From)
+	freeText, err := s.resolveMessageText(ctx, message, locale)
+	if err != nil {
+		recordCallbackEvent(CallbackKindFreeTextReceived, metricStatusFailed)
+		return err
+	}
 	if freeText == "" {
 		return nil
 	}
 
-	var (
-		session SessionRecord
-		found   bool
-	)
-	if message.ReplyToMessage != nil {
-		session, found = s.sessions.GetByReply(message.Chat.ID, strconv.Itoa(message.ReplyToMessage.MessageID))
-	}
-	if !found {
-		session, found = s.sessions.GetSingleOpenByChat(message.Chat.ID)
-	}
-	if !found || strings.TrimSpace(session.FreeTextHandle) == "" {
-		recordCallbackEvent(CallbackKindFreeTextReceived, metricStatusIgnored)
-		_, _ = s.bot.SendMessage(ctx, SendMessageRequest{
-			ChatID: message.Chat.ID,
-			Text:   s.messages.Render("ru", "free_text_unavailable", nil),
-		})
-		return nil
-	}
-
-	envelope := CallbackEnvelope{
+	outcome, err := s.forwardCallback(ctx, CallbackEnvelope{
 		SchemaVersion:      SchemaVersionTelegramInteractionV1,
-		InteractionID:      session.InteractionID,
-		DeliveryID:         session.DeliveryID,
 		AdapterEventID:     "message:" + strconv.Itoa(update.UpdateID),
 		CallbackKind:       CallbackKindFreeTextReceived,
 		OccurredAt:         time.Now().UTC().Format(time.RFC3339Nano),
-		CallbackHandle:     session.FreeTextHandle,
 		FreeText:           freeText,
 		ResponderRef:       buildResponderRef(message.From),
-		ProviderMessageRef: &session.ProviderMessageRef,
+		ProviderMessageRef: providerMessageRefForReply(message),
 		ProviderUpdateID:   strconv.Itoa(update.UpdateID),
-	}
-
-	outcome, err := s.forwardCallback(ctx, session, envelope)
+	})
 	if err != nil {
 		recordCallbackEvent(CallbackKindFreeTextReceived, metricStatusFailed)
 		_, _ = s.bot.SendMessage(ctx, SendMessageRequest{
 			ChatID: message.Chat.ID,
-			Text:   s.messages.Render(session.Locale, "free_text_failed", nil),
+			Text:   s.messages.Render(locale, "free_text_failed", nil),
 		})
 		return err
 	}
@@ -445,139 +402,128 @@ func (s *Service) handleMessage(ctx context.Context, update telego.Update) error
 	}
 	_, _ = s.bot.SendMessage(ctx, SendMessageRequest{
 		ChatID: message.Chat.ID,
-		Text:   s.messages.Render(session.Locale, confirmationKey, nil),
+		Text:   s.messages.Render(locale, confirmationKey, nil),
 	})
 	recordCallbackEvent(CallbackKindFreeTextReceived, outcome.Classification)
 	return nil
 }
 
-func (s *Service) forwardCallback(ctx context.Context, session SessionRecord, envelope CallbackEnvelope) (CallbackOutcome, error) {
-	payload, err := json.Marshal(envelope)
-	if err != nil {
-		return CallbackOutcome{}, fmt.Errorf("marshal callback envelope: %w", err)
+func (s *Service) resolveMessageText(ctx context.Context, message *telego.Message, locale string) (string, error) {
+	if message == nil {
+		return "", nil
+	}
+	if freeText := strings.TrimSpace(message.Text); freeText != "" {
+		return freeText, nil
+	}
+	if message.Voice == nil {
+		return "", nil
+	}
+	if s.speechToText == nil || s.audioConverter == nil {
+		_, _ = s.bot.SendMessage(ctx, SendMessageRequest{
+			ChatID: message.Chat.ID,
+			Text:   s.messages.Render(locale, "voice_disabled", nil),
+		})
+		return "", nil
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, session.CallbackURL, bytes.NewReader(payload))
+	file, err := s.bot.DownloadFile(ctx, message.Voice.FileID)
 	if err != nil {
-		return CallbackOutcome{}, fmt.Errorf("create callback request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	if strings.TrimSpace(session.CallbackBearerToken) != "" {
-		req.Header.Set("Authorization", "Bearer "+strings.TrimSpace(session.CallbackBearerToken))
+		_, _ = s.bot.SendMessage(ctx, SendMessageRequest{
+			ChatID: message.Chat.ID,
+			Text:   s.messages.Render(locale, "transcription_failed", nil),
+		})
+		return "", fmt.Errorf("download telegram voice file: %w", err)
 	}
 
-	resp, err := s.callbacks.Do(req)
+	normalized, err := s.audioConverter.Convert(ctx, AudioPayload(file))
 	if err != nil {
-		return CallbackOutcome{}, fmt.Errorf("post callback envelope: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return CallbackOutcome{}, fmt.Errorf("read callback response: %w", err)
-	}
-	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		return CallbackOutcome{}, fmt.Errorf("callback endpoint returned status %d", resp.StatusCode)
+		_, _ = s.bot.SendMessage(ctx, SendMessageRequest{
+			ChatID: message.Chat.ID,
+			Text:   s.messages.Render(locale, "transcription_failed", nil),
+		})
+		return "", fmt.Errorf("normalize telegram voice file: %w", err)
 	}
 
-	var outcome CallbackOutcome
-	if len(body) != 0 {
-		if err := json.Unmarshal(body, &outcome); err != nil {
-			return CallbackOutcome{}, fmt.Errorf("decode callback outcome: %w", err)
-		}
+	transcript, err := s.speechToText.Transcribe(ctx, normalized, telegramSTTLanguage(locale))
+	if err != nil {
+		_, _ = s.bot.SendMessage(ctx, SendMessageRequest{
+			ChatID: message.Chat.ID,
+			Text:   s.messages.Render(locale, "transcription_failed", nil),
+		})
+		return "", fmt.Errorf("transcribe telegram voice file: %w", err)
+	}
+	return strings.TrimSpace(transcript), nil
+}
+
+func (s *Service) forwardCallback(ctx context.Context, envelope CallbackEnvelope) (CallbackOutcome, error) {
+	outcome, err := s.callbacks.Submit(ctx, envelope)
+	if err != nil {
+		return CallbackOutcome{}, fmt.Errorf("submit adapter callback: %w", err)
 	}
 	s.logger.Info(
 		"telegram callback forwarded",
-		"interaction_id", session.InteractionID,
-		"delivery_id", session.DeliveryID,
+		"interaction_id", envelope.InteractionID,
+		"delivery_id", envelope.DeliveryID,
 		"classification", outcome.Classification,
 		"resume_required", outcome.ResumeRequired,
 	)
 	return outcome, nil
 }
 
-func buildPrimaryMessage(envelope DeliveryEnvelope) (string, []InlineOption, string, string, error) {
+func (s *Service) buildPrimaryMessage(envelope DeliveryEnvelope) (string, []InlineOption, string, string, error) {
 	switch envelope.InteractionKind {
 	case InteractionKindNotify:
 		if strings.TrimSpace(envelope.Content.Summary) == "" {
 			return "", nil, "", "", fmt.Errorf("notify content summary is required")
 		}
-		return joinNonEmptyParts(
-			envelope.Content.Summary,
-			envelope.Content.DetailsMarkdown,
-			envelope.ContextLinks.RunURL,
-			envelope.ContextLinks.IssueURL,
-			envelope.ContextLinks.PullRequestURL,
-		), nil, envelope.Content.ActionLabel, envelope.Content.ActionURL, nil
+		text := s.messages.Render(envelope.Locale, "notify_message", notifyMessageData{
+			Summary:         strings.TrimSpace(envelope.Content.Summary),
+			DetailsMarkdown: strings.TrimSpace(envelope.Content.DetailsMarkdown),
+			Links:           messageLinksFromEnvelope(envelope),
+		})
+		return text, nil, decorateActionLabel(strings.TrimSpace(envelope.Content.ActionLabel)), envelope.Content.ActionURL, nil
 	case InteractionKindDecisionRequest:
 		if strings.TrimSpace(envelope.Content.Question) == "" {
 			return "", nil, "", "", fmt.Errorf("decision content question is required")
 		}
 		options := make([]InlineOption, 0, len(envelope.Content.Options))
-		for _, option := range envelope.Content.Options {
+		for idx, option := range envelope.Content.Options {
 			if strings.TrimSpace(option.Label) == "" || strings.TrimSpace(option.CallbackHandle) == "" {
 				return "", nil, "", "", fmt.Errorf("decision options require label and callback_handle")
 			}
 			options = append(options, InlineOption{
-				Label:        option.Label,
+				Label:        decorateOptionLabel(option, idx),
 				CallbackData: option.CallbackHandle,
 			})
 		}
-		return joinNonEmptyParts(
-			envelope.Content.Question,
-			envelope.Content.DetailsMarkdown,
-			envelope.Content.ReplyInstruction,
-			envelope.ContextLinks.RunURL,
-			envelope.ContextLinks.IssueURL,
-			envelope.ContextLinks.PullRequestURL,
-		), options, "", "", nil
+		text := s.messages.Render(envelope.Locale, "decision_message", decisionMessageData{
+			Question:         strings.TrimSpace(envelope.Content.Question),
+			DetailsMarkdown:  strings.TrimSpace(envelope.Content.DetailsMarkdown),
+			ReplyInstruction: strings.TrimSpace(envelope.Content.ReplyInstruction),
+			Links:            messageLinksFromEnvelope(envelope),
+		})
+		return text, options, "", "", nil
 	default:
 		return "", nil, "", "", fmt.Errorf("unsupported interaction_kind %q", envelope.InteractionKind)
 	}
 }
 
-func buildSessionRecord(envelope DeliveryEnvelope, sent SentMessage, providerRef *ProviderMessageRef) SessionRecord {
-	record := SessionRecord{
-		InteractionID:       envelope.InteractionID,
-		DeliveryID:          envelope.DeliveryID,
-		RecipientRef:        envelope.RecipientRef,
-		Locale:              envelope.Locale,
-		CallbackURL:         envelope.CallbackEndpoint.URL,
-		CallbackBearerToken: envelope.CallbackEndpoint.BearerToken,
-		ChatID:              sent.ChatID,
-		PrimaryMessageID:    strconv.Itoa(sent.MessageID),
-		ProviderMessageRef:  *providerRef,
-		OptionHandleHashes:  map[string]time.Time{},
-		ExpiresAt:           sent.SentAt.UTC(),
+func messageLinksFromEnvelope(envelope DeliveryEnvelope) messageLinks {
+	return messageLinks{
+		RunURL:         strings.TrimSpace(envelope.ContextLinks.RunURL),
+		IssueURL:       strings.TrimSpace(envelope.ContextLinks.IssueURL),
+		PullRequestURL: strings.TrimSpace(envelope.ContextLinks.PullRequestURL),
 	}
-	for _, handle := range envelope.CallbackEndpoint.Handles {
-		switch strings.TrimSpace(handle.HandleKind) {
-		case HandleKindOption:
-			record.OptionHandleHashes[hashInteractionHandle(handle.Handle)] = handle.ExpiresAt.UTC()
-			if handle.ExpiresAt.After(record.ExpiresAt) {
-				record.ExpiresAt = handle.ExpiresAt.UTC()
-			}
-		case HandleKindFreeTextSession:
-			record.FreeTextHandle = handle.Handle
-			record.FreeTextHandleHash = hashInteractionHandle(handle.Handle)
-			expiresAt := handle.ExpiresAt.UTC()
-			record.FreeTextExpiresAt = &expiresAt
-			if handle.ExpiresAt.After(record.ExpiresAt) {
-				record.ExpiresAt = handle.ExpiresAt.UTC()
-			}
-		}
-	}
-	return record
 }
 
-func (s *Service) resolveProviderMessageRef(envelope DeliveryEnvelope) (*ProviderMessageRef, error) {
-	if envelope.ProviderMessageRef != nil && strings.TrimSpace(envelope.ProviderMessageRef.MessageID) != "" && strings.TrimSpace(envelope.ProviderMessageRef.ChatRef) != "" {
-		return envelope.ProviderMessageRef, nil
+func resolveProviderMessageRef(ref *ProviderMessageRef) (*ProviderMessageRef, error) {
+	if ref == nil {
+		return nil, fmt.Errorf("provider_message_ref is required for continuation")
 	}
-	if session, found := s.sessions.GetByInteractionID(envelope.InteractionID); found {
-		return &session.ProviderMessageRef, nil
+	if strings.TrimSpace(ref.ChatRef) == "" || strings.TrimSpace(ref.MessageID) == "" {
+		return nil, fmt.Errorf("provider_message_ref.chat_ref and provider_message_ref.message_id are required for continuation")
 	}
-	return nil, fmt.Errorf("provider_message_ref is required for continuation")
+	return ref, nil
 }
 
 func providerMessageIdentity(ref ProviderMessageRef) (int64, int, error) {
@@ -592,14 +538,11 @@ func providerMessageIdentity(ref ProviderMessageRef) (int64, int, error) {
 	return chatID, messageID, nil
 }
 
-func (s *Service) resolveFollowUpChatID(envelope DeliveryEnvelope) (int64, error) {
-	if envelope.ProviderMessageRef != nil && strings.TrimSpace(envelope.ProviderMessageRef.ChatRef) != "" {
-		return strconv.ParseInt(strings.TrimSpace(envelope.ProviderMessageRef.ChatRef), 10, 64)
+func resolveFollowUpChatID(ref *ProviderMessageRef) (int64, error) {
+	if ref == nil || strings.TrimSpace(ref.ChatRef) == "" {
+		return 0, fmt.Errorf("continuation provider chat_ref is required")
 	}
-	if session, found := s.sessions.GetByInteractionID(envelope.InteractionID); found {
-		return session.ChatID, nil
-	}
-	return 0, fmt.Errorf("continuation provider chat_ref is required")
+	return strconv.ParseInt(strings.TrimSpace(ref.ChatRef), 10, 64)
 }
 
 func resolveEditCapability(envelope DeliveryEnvelope) string {
@@ -620,14 +563,88 @@ func buildResponderRef(user *telego.User) string {
 	return "telegram_user:" + strconv.FormatInt(user.ID, 10)
 }
 
-func joinNonEmptyParts(parts ...string) string {
-	nonEmpty := make([]string, 0, len(parts))
-	for _, part := range parts {
-		if trimmed := strings.TrimSpace(part); trimmed != "" {
-			nonEmpty = append(nonEmpty, trimmed)
-		}
+func providerMessageRefFromTelegramMessage(message *telego.Message) *ProviderMessageRef {
+	if message == nil {
+		return nil
 	}
-	return strings.Join(nonEmpty, "\n\n")
+	return &ProviderMessageRef{
+		ChatRef:   strconv.FormatInt(message.Chat.ID, 10),
+		MessageID: strconv.Itoa(message.MessageID),
+	}
+}
+
+func providerMessageRefFromMaybeInaccessibleMessage(message telego.MaybeInaccessibleMessage) *ProviderMessageRef {
+	if message == nil {
+		return nil
+	}
+	return &ProviderMessageRef{
+		ChatRef:   strconv.FormatInt(message.GetChat().ID, 10),
+		MessageID: strconv.Itoa(message.GetMessageID()),
+	}
+}
+
+func providerMessageRefForReply(message *telego.Message) *ProviderMessageRef {
+	if message == nil {
+		return nil
+	}
+	if message.ReplyToMessage != nil {
+		return providerMessageRefFromTelegramMessage(message.ReplyToMessage)
+	}
+	return &ProviderMessageRef{ChatRef: strconv.FormatInt(message.Chat.ID, 10)}
+}
+
+func telegramLocale(user *telego.User) string {
+	if user == nil {
+		return "ru"
+	}
+	locale := strings.TrimSpace(user.LanguageCode)
+	if locale == "" {
+		return "ru"
+	}
+	return locale
+}
+
+func telegramSTTLanguage(locale string) string {
+	if strings.HasPrefix(strings.ToLower(strings.TrimSpace(locale)), "ru") {
+		return "ru"
+	}
+	return "en"
+}
+
+func decorateActionLabel(label string) string {
+	label = strings.TrimSpace(label)
+	if label == "" {
+		return ""
+	}
+	if strings.ContainsAny(label, "✅❌🔗🟢🟡🔵🟣🟠⚪️⚫️") {
+		return label
+	}
+	return "🔗 " + label
+}
+
+func decorateOptionLabel(option DecisionOption, index int) string {
+	label := strings.TrimSpace(option.Label)
+	if label == "" {
+		return ""
+	}
+	if strings.ContainsAny(label, "✅❌🟢🟡🔵🟣🟠⚪️⚫️❓⏳") {
+		return label
+	}
+
+	token := strings.ToLower(strings.TrimSpace(option.OptionID + " " + option.Label))
+	switch {
+	case strings.Contains(token, "approve"), strings.Contains(token, "accept"), strings.Contains(token, "yes"), strings.Contains(token, "ok"), strings.Contains(token, "merge"), strings.Contains(token, "confirm"), strings.Contains(token, "да"), strings.Contains(token, "подтверд"), strings.Contains(token, "одобр"):
+		return "✅ " + label
+	case strings.Contains(token, "reject"), strings.Contains(token, "deny"), strings.Contains(token, "no"), strings.Contains(token, "cancel"), strings.Contains(token, "decline"), strings.Contains(token, "нет"), strings.Contains(token, "отклон"), strings.Contains(token, "отмен"):
+		return "❌ " + label
+	case strings.Contains(token, "later"), strings.Contains(token, "wait"), strings.Contains(token, "позже"), strings.Contains(token, "потом"):
+		return "⏳ " + label
+	case strings.Contains(token, "question"), strings.Contains(token, "help"), strings.Contains(token, "info"), strings.Contains(token, "справ"), strings.Contains(token, "вопрос"):
+		return "❓ " + label
+	default:
+		prefixes := []string{"🟢", "🟡", "🔵", "🟣", "🟠", "⚪️", "⚫️"}
+		return prefixes[index%len(prefixes)] + " " + label
+	}
 }
 
 func followUpTemplateKey(envelope DeliveryEnvelope) string {

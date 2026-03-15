@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
+	controlplaneclient "github.com/codex-k8s/codex-k8s/services/external/telegram-interaction-adapter/internal/controlplane"
 	"github.com/codex-k8s/codex-k8s/services/external/telegram-interaction-adapter/internal/service"
 	httptransport "github.com/codex-k8s/codex-k8s/services/external/telegram-interaction-adapter/internal/transport/http"
 )
@@ -31,22 +32,20 @@ func Run() error {
 	if telegramHTTPTimeout <= 0 {
 		return fmt.Errorf("CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_HTTP_TIMEOUT must be > 0")
 	}
-	callbackHTTPTimeout, err := time.ParseDuration(cfg.CallbackHTTPTimeout)
+
+	sttTimeout, err := time.ParseDuration(cfg.TelegramSTTTimeout)
 	if err != nil {
-		return fmt.Errorf("parse CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_CALLBACK_HTTP_TIMEOUT: %w", err)
+		return fmt.Errorf("parse CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_STT_TIMEOUT: %w", err)
 	}
-	if callbackHTTPTimeout <= 0 {
-		return fmt.Errorf("CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_CALLBACK_HTTP_TIMEOUT must be > 0")
+	if sttTimeout <= 0 {
+		return fmt.Errorf("CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_STT_TIMEOUT must be > 0")
 	}
 
-	sessionStore, err := service.NewFileSessionStore(
-		cfg.TelegramStatePath,
-		cfg.TelegramWebhookSecret+":"+cfg.TelegramDeliveryBearerToken,
-		logger,
-	)
+	controlPlaneClient, err := controlplaneclient.Dial(appCtx, cfg.ControlPlaneGRPCTarget)
 	if err != nil {
-		return fmt.Errorf("init telegram adapter session store: %w", err)
+		return fmt.Errorf("dial control-plane grpc: %w", err)
 	}
+	defer func() { _ = controlPlaneClient.Close() }()
 
 	recipientResolver, err := service.NewRecipientResolver(cfg.TelegramChatID, cfg.TelegramRecipientBindingsJSON)
 	if err != nil {
@@ -62,14 +61,22 @@ func Run() error {
 		return fmt.Errorf("init telegram bot client: %w", err)
 	}
 
+	var speechToText service.SpeechToText
+	var audioConverter service.AudioConverter
+	if strings.TrimSpace(cfg.OpenAIAPIKey) != "" {
+		speechToText = service.NewOpenAISpeechToText(cfg.OpenAIAPIKey, cfg.TelegramSTTModel, sttTimeout, logger)
+		audioConverter = service.FFmpegAudioConverter{}
+	}
+
 	adapterService, err := service.New(service.Config{
 		PublicBaseURL:  cfg.PublicBaseURL,
 		WebhookSecret:  cfg.TelegramWebhookSecret,
-		SessionStore:   sessionStore,
+		DeliveryToken:  cfg.TelegramDeliveryBearerToken,
 		Recipients:     recipientResolver,
 		Bot:            botClient,
-		CallbackClient: &http.Client{Timeout: callbackHTTPTimeout},
-		DeliveryToken:  cfg.TelegramDeliveryBearerToken,
+		CallbackSink:   service.NewControlPlaneCallbackSink(controlPlaneClient),
+		AudioConverter: audioConverter,
+		SpeechToText:   speechToText,
 		Logger:         logger,
 	})
 	if err != nil {
@@ -112,7 +119,7 @@ func waitForServerLifecycle(ctx context.Context, appCtx context.Context, logger 
 		}
 		return nil
 	case err := <-serverErr:
-		if err != nil && err != http.ErrServerClosed {
+		if err != nil {
 			return fmt.Errorf("%s server failed: %w", component, err)
 		}
 		return nil

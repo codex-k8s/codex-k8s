@@ -1,6 +1,10 @@
 -- name: interactionrequest__update_channel_binding_continuation :one
 UPDATE interaction_channel_bindings
 SET
+    provider_chat_ref = CASE
+        WHEN $2::jsonb = '{}'::jsonb THEN provider_chat_ref
+        ELSE COALESCE(NULLIF($2::jsonb->>'chat_ref', ''), provider_chat_ref)
+    END,
     provider_message_ref_json = CASE
         WHEN $2::jsonb = '{}'::jsonb THEN provider_message_ref_json
         ELSE $2::jsonb

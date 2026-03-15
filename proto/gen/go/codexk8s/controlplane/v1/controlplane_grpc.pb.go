@@ -75,6 +75,7 @@ const (
 	ControlPlaneService_MarkMissionControlCommandReconciled_FullMethodName  = "/codexk8s.controlplane.v1.ControlPlaneService/MarkMissionControlCommandReconciled"
 	ControlPlaneService_MarkMissionControlCommandFailed_FullMethodName      = "/codexk8s.controlplane.v1.ControlPlaneService/MarkMissionControlCommandFailed"
 	ControlPlaneService_SubmitInteractionCallback_FullMethodName            = "/codexk8s.controlplane.v1.ControlPlaneService/SubmitInteractionCallback"
+	ControlPlaneService_SubmitAdapterInteractionCallback_FullMethodName     = "/codexk8s.controlplane.v1.ControlPlaneService/SubmitAdapterInteractionCallback"
 	ControlPlaneService_ListRuntimeDeployTasks_FullMethodName               = "/codexk8s.controlplane.v1.ControlPlaneService/ListRuntimeDeployTasks"
 	ControlPlaneService_GetRuntimeDeployTask_FullMethodName                 = "/codexk8s.controlplane.v1.ControlPlaneService/GetRuntimeDeployTask"
 	ControlPlaneService_CancelRuntimeDeployTask_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/CancelRuntimeDeployTask"
@@ -154,6 +155,7 @@ type ControlPlaneServiceClient interface {
 	MarkMissionControlCommandReconciled(ctx context.Context, in *MarkMissionControlCommandReconciledRequest, opts ...grpc.CallOption) (*MissionControlCommandState, error)
 	MarkMissionControlCommandFailed(ctx context.Context, in *MarkMissionControlCommandFailedRequest, opts ...grpc.CallOption) (*MissionControlCommandState, error)
 	SubmitInteractionCallback(ctx context.Context, in *SubmitInteractionCallbackRequest, opts ...grpc.CallOption) (*SubmitInteractionCallbackResponse, error)
+	SubmitAdapterInteractionCallback(ctx context.Context, in *SubmitInteractionCallbackRequest, opts ...grpc.CallOption) (*SubmitInteractionCallbackResponse, error)
 	ListRuntimeDeployTasks(ctx context.Context, in *ListRuntimeDeployTasksRequest, opts ...grpc.CallOption) (*ListRuntimeDeployTasksResponse, error)
 	GetRuntimeDeployTask(ctx context.Context, in *GetRuntimeDeployTaskRequest, opts ...grpc.CallOption) (*RuntimeDeployTask, error)
 	CancelRuntimeDeployTask(ctx context.Context, in *CancelRuntimeDeployTaskRequest, opts ...grpc.CallOption) (*RuntimeDeployTaskActionResponse, error)
@@ -731,6 +733,16 @@ func (c *controlPlaneServiceClient) SubmitInteractionCallback(ctx context.Contex
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) SubmitAdapterInteractionCallback(ctx context.Context, in *SubmitInteractionCallbackRequest, opts ...grpc.CallOption) (*SubmitInteractionCallbackResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubmitInteractionCallbackResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_SubmitAdapterInteractionCallback_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) ListRuntimeDeployTasks(ctx context.Context, in *ListRuntimeDeployTasksRequest, opts ...grpc.CallOption) (*ListRuntimeDeployTasksResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListRuntimeDeployTasksResponse)
@@ -952,6 +964,7 @@ type ControlPlaneServiceServer interface {
 	MarkMissionControlCommandReconciled(context.Context, *MarkMissionControlCommandReconciledRequest) (*MissionControlCommandState, error)
 	MarkMissionControlCommandFailed(context.Context, *MarkMissionControlCommandFailedRequest) (*MissionControlCommandState, error)
 	SubmitInteractionCallback(context.Context, *SubmitInteractionCallbackRequest) (*SubmitInteractionCallbackResponse, error)
+	SubmitAdapterInteractionCallback(context.Context, *SubmitInteractionCallbackRequest) (*SubmitInteractionCallbackResponse, error)
 	ListRuntimeDeployTasks(context.Context, *ListRuntimeDeployTasksRequest) (*ListRuntimeDeployTasksResponse, error)
 	GetRuntimeDeployTask(context.Context, *GetRuntimeDeployTaskRequest) (*RuntimeDeployTask, error)
 	CancelRuntimeDeployTask(context.Context, *CancelRuntimeDeployTaskRequest) (*RuntimeDeployTaskActionResponse, error)
@@ -1143,6 +1156,9 @@ func (UnimplementedControlPlaneServiceServer) MarkMissionControlCommandFailed(co
 }
 func (UnimplementedControlPlaneServiceServer) SubmitInteractionCallback(context.Context, *SubmitInteractionCallbackRequest) (*SubmitInteractionCallbackResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitInteractionCallback not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) SubmitAdapterInteractionCallback(context.Context, *SubmitInteractionCallbackRequest) (*SubmitInteractionCallbackResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitAdapterInteractionCallback not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) ListRuntimeDeployTasks(context.Context, *ListRuntimeDeployTasksRequest) (*ListRuntimeDeployTasksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRuntimeDeployTasks not implemented")
@@ -2203,6 +2219,24 @@ func _ControlPlaneService_SubmitInteractionCallback_Handler(srv interface{}, ctx
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_SubmitAdapterInteractionCallback_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitInteractionCallbackRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).SubmitAdapterInteractionCallback(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_SubmitAdapterInteractionCallback_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).SubmitAdapterInteractionCallback(ctx, req.(*SubmitInteractionCallbackRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_ListRuntimeDeployTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListRuntimeDeployTasksRequest)
 	if err := dec(in); err != nil {
@@ -2717,6 +2751,10 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SubmitInteractionCallback",
 			Handler:    _ControlPlaneService_SubmitInteractionCallback_Handler,
+		},
+		{
+			MethodName: "SubmitAdapterInteractionCallback",
+			Handler:    _ControlPlaneService_SubmitAdapterInteractionCallback_Handler,
 		},
 		{
 			MethodName: "ListRuntimeDeployTasks",

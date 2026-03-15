@@ -164,9 +164,6 @@ func (s *Service) SubmitInteractionCallback(ctx context.Context, params SubmitIn
 	normalized.ProviderUpdateID = strings.TrimSpace(normalized.ProviderUpdateID)
 	normalized.ProviderCallbackQueryID = strings.TrimSpace(normalized.ProviderCallbackQueryID)
 	normalized.TransportErrorCode = strings.TrimSpace(normalized.TransportErrorCode)
-	if normalized.InteractionID == "" {
-		return SubmitInteractionCallbackResult{}, errs.Validation{Field: "interaction_id", Msg: "is required"}
-	}
 	if normalized.AdapterEventID == "" {
 		return SubmitInteractionCallbackResult{}, errs.Validation{Field: "adapter_event_id", Msg: "is required"}
 	}
@@ -183,6 +180,14 @@ func (s *Service) SubmitInteractionCallback(ctx context.Context, params SubmitIn
 	result, err := s.interactions.ApplyCallback(ctx, normalized)
 	if err != nil {
 		return SubmitInteractionCallbackResult{}, err
+	}
+	if strings.TrimSpace(result.Interaction.ID) == "" {
+		return SubmitInteractionCallbackResult{
+			Accepted:           result.Accepted,
+			Classification:     result.Classification,
+			ResumeRequired:     false,
+			ContinuationAction: result.ContinuationAction,
+		}, nil
 	}
 
 	run, found, err := s.runs.GetByID(ctx, result.Interaction.RunID)

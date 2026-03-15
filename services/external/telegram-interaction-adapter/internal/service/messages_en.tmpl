@@ -1,0 +1,24 @@
+{{ define "callback_ack_received" }}✅ Response received{{ end }}
+{{ define "callback_ack_unavailable" }}⚠️ This request is no longer available{{ end }}
+{{ define "free_text_received" }}✅ Response received{{ end }}
+{{ define "free_text_unavailable" }}⚠️ Could not match this message to an active request{{ end }}
+{{ define "free_text_failed" }}⚠️ Could not forward this response. Please try again later.{{ end }}
+{{ define "voice_disabled" }}🎙️ Voice transcription is disabled. Please send a text response.{{ end }}
+{{ define "transcription_failed" }}🎙️ Could not transcribe the voice response. Please try again or send text.{{ end }}
+{{ define "notify_message" }}{{ .Summary }}{{ if .DetailsMarkdown }}
+
+{{ .DetailsMarkdown }}{{ end }}{{ template "message_links" .Links }}{{ end }}
+{{ define "decision_message" }}🧠 {{ .Question }}{{ if .DetailsMarkdown }}
+
+{{ .DetailsMarkdown }}{{ end }}{{ if .ReplyInstruction }}
+
+✍️ {{ .ReplyInstruction }}{{ end }}{{ template "message_links" .Links }}{{ end }}
+{{ define "follow_up_applied_response" }}✅ Response accepted.{{ if .RunURL }} Run: {{ .RunURL }}{{ end }}{{ end }}
+{{ define "follow_up_edit_failed" }}✅ Response accepted. The original message could not be updated, so this confirmation was sent separately.{{ if .RunURL }} Run: {{ .RunURL }}{{ end }}{{ end }}
+{{ define "follow_up_expired_wait" }}⌛ The response window has expired.{{ if .RunURL }} Run: {{ .RunURL }}{{ end }}{{ end }}
+{{ define "follow_up_operator_fallback" }}⚠️ Manual operator attention is required.{{ if .IssueURL }} Issue: {{ .IssueURL }}{{ else if .RunURL }} Run: {{ .RunURL }}{{ end }}{{ end }}
+{{ define "message_links" }}{{ if .RunURL }}
+
+🏃 Run: {{ .RunURL }}{{ end }}{{ if .IssueURL }}
+🐞 Issue: {{ .IssueURL }}{{ end }}{{ if .PullRequestURL }}
+🔀 PR: {{ .PullRequestURL }}{{ end }}{{ end }}

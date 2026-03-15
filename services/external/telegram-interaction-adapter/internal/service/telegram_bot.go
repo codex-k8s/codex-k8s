@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -18,6 +20,7 @@ type BotClient interface {
 	SendMessage(context.Context, SendMessageRequest) (SentMessage, error)
 	EditMessageKeyboard(context.Context, EditMessageKeyboardRequest) error
 	AnswerCallbackQuery(context.Context, AnswerCallbackQueryRequest) error
+	DownloadFile(context.Context, string) (DownloadedFile, error)
 	SetWebhook(context.Context, SetWebhookRequest) error
 }
 
@@ -50,6 +53,13 @@ type SentMessage struct {
 	SentAt    time.Time
 }
 
+// DownloadedFile stores one Telegram file downloaded by file_id.
+type DownloadedFile struct {
+	Content     []byte
+	ContentType string
+	FileName    string
+}
+
 // EditMessageKeyboardRequest removes or replaces inline keyboard for one message.
 type EditMessageKeyboardRequest struct {
 	ChatID    int64
@@ -69,8 +79,9 @@ type SetWebhookRequest struct {
 }
 
 type telegramBotClient struct {
-	bot    *telego.Bot
-	logger *slog.Logger
+	bot            *telego.Bot
+	logger         *slog.Logger
+	downloadClient *http.Client
 }
 
 // NewTelegramBotClient builds the default telego-backed Bot API client.
@@ -89,8 +100,9 @@ func NewTelegramBotClient(cfg TelegramBotClientConfig) (BotClient, error) {
 		return nil, fmt.Errorf("create telego bot: %w", err)
 	}
 	return &telegramBotClient{
-		bot:    bot,
-		logger: cfg.Logger,
+		bot:            bot,
+		logger:         cfg.Logger,
+		downloadClient: &http.Client{Timeout: timeout},
 	}, nil
 }
 
@@ -160,6 +172,54 @@ func (c *telegramBotClient) AnswerCallbackQuery(ctx context.Context, req AnswerC
 		CallbackQueryID: req.QueryID,
 		Text:            req.Text,
 	})
+}
+
+func (c *telegramBotClient) DownloadFile(ctx context.Context, fileID string) (DownloadedFile, error) {
+	if c.bot == nil {
+		return DownloadedFile{}, fmt.Errorf("telegram bot token is not configured")
+	}
+	fileID = strings.TrimSpace(fileID)
+	if fileID == "" {
+		return DownloadedFile{}, fmt.Errorf("telegram file id is required")
+	}
+
+	file, err := c.bot.GetFile(ctx, &telego.GetFileParams{FileID: fileID})
+	if err != nil {
+		return DownloadedFile{}, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.bot.FileDownloadURL(file.FilePath), nil)
+	if err != nil {
+		return DownloadedFile{}, fmt.Errorf("create telegram file download request: %w", err)
+	}
+
+	client := c.downloadClient
+	if client == nil {
+		client = http.DefaultClient
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return DownloadedFile{}, fmt.Errorf("download telegram file: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return DownloadedFile{}, fmt.Errorf("download telegram file returned status %d", resp.StatusCode)
+	}
+
+	content, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return DownloadedFile{}, fmt.Errorf("read telegram file response: %w", err)
+	}
+
+	fileName := path.Base(strings.TrimSpace(file.FilePath))
+	if fileName == "." || fileName == "/" {
+		fileName = ""
+	}
+	return DownloadedFile{
+		Content:     content,
+		ContentType: strings.TrimSpace(resp.Header.Get("Content-Type")),
+		FileName:    fileName,
+	}, nil
 }
 
 func (c *telegramBotClient) SetWebhook(ctx context.Context, req SetWebhookRequest) error {

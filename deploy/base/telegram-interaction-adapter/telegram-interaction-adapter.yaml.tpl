@@ -1,18 +1,4 @@
 apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: codex-k8s-telegram-interaction-adapter-state
-  namespace: {{ envOr "CODEXK8S_PRODUCTION_NAMESPACE" "" }}
-  labels:
-    app.kubernetes.io/name: codex-k8s
-    app.kubernetes.io/component: telegram-interaction-adapter
-spec:
-  accessModes: ["ReadWriteOnce"]
-  resources:
-    requests:
-      storage: {{ envOr "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_STATE_STORAGE_SIZE" "1Gi" }}
----
-apiVersion: v1
 kind: Service
 metadata:
   name: codex-k8s-telegram-interaction-adapter
@@ -38,9 +24,13 @@ metadata:
     app.kubernetes.io/name: codex-k8s
     app.kubernetes.io/component: telegram-interaction-adapter
 spec:
-  replicas: {{ envOr "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_REPLICAS" "1" }}
+  replicas: {{ envOr "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_REPLICAS" "2" }}
+  minReadySeconds: 5
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: codex-k8s
@@ -66,6 +56,14 @@ spec:
                 secretKeyRef:
                   name: codex-k8s-runtime
                   key: CODEXK8S_PUBLIC_BASE_URL
+            - name: CODEXK8S_CONTROL_PLANE_GRPC_TARGET
+              value: '{{ envOr "CODEXK8S_CONTROL_PLANE_GRPC_TARGET" "" }}'
+            - name: CODEXK8S_OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: codex-k8s-runtime
+                  key: CODEXK8S_OPENAI_API_KEY
+                  optional: true
             - name: CODEXK8S_TELEGRAM_BOT_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -94,15 +92,12 @@ spec:
                 secretKeyRef:
                   name: codex-k8s-runtime
                   key: CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET
-            - name: CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_STATE_PATH
-              value: "/var/lib/codex-k8s-telegram-interaction-adapter/state.json"
             - name: CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_HTTP_TIMEOUT
               value: '{{ envOr "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_HTTP_TIMEOUT" "10s" }}'
-            - name: CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_CALLBACK_HTTP_TIMEOUT
-              value: '{{ envOr "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_CALLBACK_HTTP_TIMEOUT" "10s" }}'
-          volumeMounts:
-            - name: state
-              mountPath: /var/lib/codex-k8s-telegram-interaction-adapter
+            - name: CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_STT_MODEL
+              value: '{{ envOr "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_STT_MODEL" "gpt-4o-mini-transcribe" }}'
+            - name: CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_STT_TIMEOUT
+              value: '{{ envOr "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_STT_TIMEOUT" "30s" }}'
           readinessProbe:
             httpGet:
               path: /readyz
@@ -121,7 +116,3 @@ spec:
               port: http
             initialDelaySeconds: 15
             periodSeconds: 20
-      volumes:
-        - name: state
-          persistentVolumeClaim:
-            claimName: codex-k8s-telegram-interaction-adapter-state
