@@ -69,6 +69,9 @@ func TestRenderTaskTemplate_DevSeedsRequireRunStatusReport(t *testing.T) {
 			if !strings.Contains(normalizedBody, "user.decision.request") {
 				t.Fatalf("rendered template must mention user.decision.request, got: %q", body)
 			}
+			if !strings.Contains(normalizedBody, "user.notify") {
+				t.Fatalf("rendered template must mention user.notify, got: %q", body)
+			}
 			if !strings.Contains(normalizedBody, "3-4") {
 				t.Fatalf("rendered template must mention 3-4 cadence, got: %q", body)
 			}
@@ -100,5 +103,11 @@ func TestRenderTaskTemplate_DiscussionRequiresCommentRefresh(t *testing.T) {
 	}
 	if !strings.Contains(body, "не оставляйте без ответа") {
 		t.Fatalf("discussion prompt must require answering all new human comments, got: %q", body)
+	}
+	if !strings.Contains(body, "user.notify") {
+		t.Fatalf("discussion prompt must mention user.notify, got: %q", body)
+	}
+	if !strings.Contains(body, "user.decision.request") {
+		t.Fatalf("discussion prompt must mention user.decision.request, got: %q", body)
 	}
 }

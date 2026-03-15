@@ -30,8 +30,37 @@ func TestAllowedToolsForRunContext(t *testing.T) {
 			},
 		},
 		{
+			name:        "discussion gets labels and user interactions",
+			triggerKind: "discussion",
+			agentKey:    "dev",
+			wantAllowedTools: []ToolName{
+				ToolGitHubLabelsAdd,
+				ToolGitHubLabelsList,
+				ToolGitHubLabelsRemove,
+				ToolGitHubLabelsTransition,
+				ToolRunStatusReport,
+				ToolMCPUserDecisionRequest,
+				ToolMCPUserNotify,
+			},
+		},
+		{
 			name:        "self-improve gets labels and diagnostics",
 			triggerKind: "self_improve",
+			agentKey:    "km",
+			wantAllowedTools: []ToolName{
+				ToolGitHubLabelsAdd,
+				ToolGitHubLabelsList,
+				ToolGitHubLabelsRemove,
+				ToolGitHubLabelsTransition,
+				ToolRunStatusReport,
+				ToolSelfImproveRunLookup,
+				ToolSelfImproveRunsList,
+				ToolSelfImproveSessionGet,
+			},
+		},
+		{
+			name:        "self-improve revise keeps diagnostics without user interactions",
+			triggerKind: "self_improve_revise",
 			agentKey:    "km",
 			wantAllowedTools: []ToolName{
 				ToolGitHubLabelsAdd,

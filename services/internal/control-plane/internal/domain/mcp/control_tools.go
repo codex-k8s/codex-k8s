@@ -1115,7 +1115,9 @@ func (s *Service) setRunWaitContext(
 		}
 	}
 	if s.sessions != nil {
-		updated, err := s.sessions.SetWaitStateByRunID(ctx, agentsessionrepo.SetWaitStateParams{
+		// Agent session snapshots are persisted asynchronously by agent-runner, so
+		// wait-state transitions must not fail before the first snapshot exists.
+		_, err := s.sessions.SetWaitStateByRunID(ctx, agentsessionrepo.SetWaitStateParams{
 			RunID:                session.RunID,
 			WaitState:            string(state),
 			TimeoutGuardDisabled: timeoutGuardDisabled,
@@ -1123,9 +1125,6 @@ func (s *Service) setRunWaitContext(
 		})
 		if err != nil {
 			return fmt.Errorf("set run wait state: %w", err)
-		}
-		if !updated {
-			return fmt.Errorf("set run wait state: session for run %s not found", session.RunID)
 		}
 	}
 

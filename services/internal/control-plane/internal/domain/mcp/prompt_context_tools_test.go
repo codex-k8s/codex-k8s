@@ -198,6 +198,54 @@ func TestBuildPromptRoleContext_DefaultAndKnownRole(t *testing.T) {
 func TestPromptContextIncludesBuiltInUserInteractionToolsForDevRun(t *testing.T) {
 	t.Parallel()
 
+	result, err := promptContextForTrigger(t, "dev")
+	if err != nil {
+		t.Fatalf("PromptContext() error = %v", err)
+	}
+
+	if !promptContextHasTool(result.Context.MCP.Tools, ToolMCPUserNotify) {
+		t.Fatalf("prompt context tools do not include %q", ToolMCPUserNotify)
+	}
+	if !promptContextHasTool(result.Context.MCP.Tools, ToolMCPUserDecisionRequest) {
+		t.Fatalf("prompt context tools do not include %q", ToolMCPUserDecisionRequest)
+	}
+}
+
+func TestPromptContextIncludesBuiltInUserInteractionToolsForDiscussionRun(t *testing.T) {
+	t.Parallel()
+
+	result, err := promptContextForTrigger(t, "discussion")
+	if err != nil {
+		t.Fatalf("PromptContext() error = %v", err)
+	}
+
+	if !promptContextHasTool(result.Context.MCP.Tools, ToolMCPUserNotify) {
+		t.Fatalf("prompt context tools do not include %q", ToolMCPUserNotify)
+	}
+	if !promptContextHasTool(result.Context.MCP.Tools, ToolMCPUserDecisionRequest) {
+		t.Fatalf("prompt context tools do not include %q", ToolMCPUserDecisionRequest)
+	}
+}
+
+func TestPromptContextExcludesBuiltInUserInteractionToolsForSelfImproveRun(t *testing.T) {
+	t.Parallel()
+
+	result, err := promptContextForTrigger(t, "self_improve")
+	if err != nil {
+		t.Fatalf("PromptContext() error = %v", err)
+	}
+
+	if promptContextHasTool(result.Context.MCP.Tools, ToolMCPUserNotify) {
+		t.Fatalf("prompt context tools unexpectedly include %q", ToolMCPUserNotify)
+	}
+	if promptContextHasTool(result.Context.MCP.Tools, ToolMCPUserDecisionRequest) {
+		t.Fatalf("prompt context tools unexpectedly include %q", ToolMCPUserDecisionRequest)
+	}
+}
+
+func promptContextForTrigger(t *testing.T, triggerKind string) (PromptContextResult, error) {
+	t.Helper()
+
 	runPayload, err := json.Marshal(querytypes.RunPayload{
 		Project: querytypes.RunPayloadProject{
 			ID:           "project-1",
@@ -210,7 +258,7 @@ func TestPromptContextIncludesBuiltInUserInteractionToolsForDevRun(t *testing.T)
 			Key: "dev",
 		},
 		Trigger: &querytypes.RunPayloadTrigger{
-			Kind: "dev",
+			Kind: triggerKind,
 		},
 	})
 	if err != nil {
@@ -246,22 +294,12 @@ func TestPromptContextIncludesBuiltInUserInteractionToolsForDevRun(t *testing.T)
 		now:         time.Now,
 	}
 
-	result, err := service.PromptContext(context.Background(), SessionContext{
+	return service.PromptContext(context.Background(), SessionContext{
 		RunID:         "run-1",
 		CorrelationID: "corr-1",
 		ProjectID:     "project-1",
 		RuntimeMode:   agentdomain.RuntimeModeFullEnv,
 	})
-	if err != nil {
-		t.Fatalf("PromptContext() error = %v", err)
-	}
-
-	if !promptContextHasTool(result.Context.MCP.Tools, ToolMCPUserNotify) {
-		t.Fatalf("prompt context tools do not include %q", ToolMCPUserNotify)
-	}
-	if !promptContextHasTool(result.Context.MCP.Tools, ToolMCPUserDecisionRequest) {
-		t.Fatalf("prompt context tools do not include %q", ToolMCPUserDecisionRequest)
-	}
 }
 
 func promptContextHasTool(tools []ToolCapability, name ToolName) bool {

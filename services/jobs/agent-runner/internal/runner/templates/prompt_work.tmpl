@@ -18,8 +18,9 @@
 - не останавливайтесь на частичной реализации;
 - используйте `gh` для работы с issue/PR/review/comments;
 - используйте `kubectl` для runtime-дебага в `full-env`;
-- MCP используйте для обратной связи статуса, лейблов и встроенных user interactions: `run_status_report`, `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`, `user.decision.request`.
+- MCP используйте для обратной связи статуса, лейблов и встроенных user interactions: `run_status_report`, `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`, `user.notify`, `user.decision.request`.
 - публикуйте `run_status_report` регулярно: минимум после каждых 3-4 вызовов инструментов, сразу после смены фазы и перед долгими операциями/сетевыми запросами/сборкой/ожиданием.
+- если в `mcp.tools` доступен `user.notify`, используйте его для коротких пользовательских уведомлений и next-step сигналов без перевода run в wait-state.
 - если в `mcp.tools` доступен `user.decision.request`, используйте его для запросов выбора/подтверждения у пользователя вместо самодельных комментариев.
 - не используйте `list_mcp_resources` для проверки MCP-доступов; ориентируйтесь на `mcp.tools` в контексте и `tools/list`.
 {{- else }}
@@ -42,8 +43,9 @@ Mandatory rules:
 - do not stop at partial implementation;
 - use `gh` for issue/PR/review/comment operations;
 - use `kubectl` for runtime debugging in `full-env`;
-- use MCP for status feedback, labels, and built-in user interactions: `run_status_report`, `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`, `user.decision.request`.
+- use MCP for status feedback, labels, and built-in user interactions: `run_status_report`, `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`, `user.notify`, `user.decision.request`.
 - publish `run_status_report` regularly: at least after every 3-4 tool calls, immediately after each phase change, and before long-running actions/network operations/builds/waits.
+- if `user.notify` is available in `mcp.tools`, use it for short user-visible notifications and next-step signals without moving the run into a wait-state.
 - if `user.decision.request` is available in `mcp.tools`, use it for user choice/confirmation requests instead of improvised comments.
 - do not use `list_mcp_resources` to check MCP availability; rely on prompt `mcp.tools` context and `tools/list`.
 {{- end }}

@@ -8,6 +8,7 @@
 3. После этого прочитайте только релевантные документы и код.
 4. Сформируйте точный ответ по вопросу пользователя или предложите следующий исполнимый шаг.
 5. Если по ходу обсуждения нужен результат для пользователя, опубликуйте его комментарием под Issue через `gh issue comment`.
+6. Если в `mcp.tools` доступны built-in user interactions, используйте `user.notify` для коротких уведомлений без wait-state и `user.decision.request` для явного выбора/подтверждения, когда обсуждение реально упирается в решение пользователя.
 
 Правила discussion-режима:
 - не редактируйте репозиторий;
@@ -17,6 +18,7 @@
 - перед КАЖДЫМ ответом через `gh` повторно читайте текущее состояние Issue и все комментарии;
 - не оставляйте без ответа ни один новый человеческий комментарий, появившийся после предыдущего ответа агента;
 - если за время анализа накопилось несколько новых комментариев, ответьте на все в одном осмысленном сообщении;
+- если используете `user.notify` или `user.decision.request`, всё равно публикуйте основной публичный результат обсуждения через `gh issue comment`;
 - после публикации комментария ещё раз проверьте через `gh`, не появился ли новый человеческий комментарий, требующий продолжения диалога;
 - фокус: анализ, объяснение, план, риски, критерии готовности, рекомендации по следующему шагу.
 {{- else }}
@@ -29,6 +31,7 @@ Execution order:
 3. Read only the relevant code and documents.
 4. Produce a precise answer for the user or the next executable step.
 5. When the user needs a visible result, publish it as an Issue comment via `gh issue comment`.
+6. If built-in user interactions are available in `mcp.tools`, use `user.notify` for short notifications without a wait-state and `user.decision.request` for explicit choice/confirmation when the discussion truly needs a user decision.
 
 Discussion-mode rules:
 - do not modify repository files;
@@ -38,6 +41,7 @@ Discussion-mode rules:
 - before EVERY reply, re-read the current Issue state and all comments via `gh`;
 - do not leave any new human comment unanswered after the previous agent reply;
 - if several new human comments accumulated, address all of them in one coherent reply;
+- if you use `user.notify` or `user.decision.request`, still publish the main visible discussion result via `gh issue comment`;
 - after publishing a reply, check again via `gh` whether a new human comment appeared and requires another continuation step;
 - focus on analysis, explanation, plan, risks, acceptance criteria, and the next recommended step.
 {{- end }}

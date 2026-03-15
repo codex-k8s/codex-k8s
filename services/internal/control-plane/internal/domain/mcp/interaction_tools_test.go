@@ -46,6 +46,38 @@ func TestSetRunWaitContextFailsWhenRunWasNotUpdated(t *testing.T) {
 	}
 }
 
+func TestSetRunWaitContextAllowsMissingSessionSnapshot(t *testing.T) {
+	t.Parallel()
+
+	runs := &interactionTestRunsRepository{setWaitContextUpdated: true}
+	sessions := &interactionTestSessionsRepository{setWaitStateUpdated: false}
+	service := &Service{
+		runs:     runs,
+		sessions: sessions,
+		now:      time.Now,
+	}
+
+	err := service.setRunWaitContext(
+		context.Background(),
+		SessionContext{RunID: "run-1"},
+		waitStateMCP,
+		true,
+		enumtypes.AgentRunWaitReasonInteractionReply,
+		enumtypes.AgentRunWaitTargetKindInteractionRequest,
+		"interaction-1",
+		nil,
+	)
+	if err != nil {
+		t.Fatalf("setRunWaitContext() error = %v", err)
+	}
+	if sessions.setWaitStateCalls != 1 {
+		t.Fatalf("session wait state calls = %d, want 1", sessions.setWaitStateCalls)
+	}
+	if sessions.lastSetWaitState.WaitState != string(waitStateMCP) {
+		t.Fatalf("session wait state = %q, want %q", sessions.lastSetWaitState.WaitState, waitStateMCP)
+	}
+}
+
 func TestClearInteractionWaitContextClearsMatchingRunWait(t *testing.T) {
 	t.Parallel()
 
