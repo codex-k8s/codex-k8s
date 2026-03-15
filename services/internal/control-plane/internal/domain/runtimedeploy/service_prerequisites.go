@@ -14,7 +14,22 @@ import (
 	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
 )
 
-const defaultLetsEncryptDirectoryURL = "https://acme-v02.api.letsencrypt.org/directory"
+const (
+	defaultLetsEncryptDirectoryURL           = "https://acme-v02.api.letsencrypt.org/directory"
+	defaultTelegramInteractionAdapterBaseURL = "http://codex-k8s-telegram-interaction-adapter:8080"
+	defaultTelegramInteractionAdapterTimeout = "10s"
+	telegramInteractionAdapterSecretBytes    = 32
+)
+
+type telegramRuntimeSecretValues struct {
+	BaseURL               string
+	BearerToken           string
+	WebhookSecret         string
+	Timeout               string
+	BotToken              string
+	ChatID                string
+	RecipientBindingsJSON string
+}
 
 func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoot string, namespace string, vars map[string]string, stack *servicescfg.Stack, runID string) error {
 	targetNamespace := strings.TrimSpace(namespace)
@@ -151,18 +166,6 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoo
 	if err != nil {
 		return fmt.Errorf("resolve CODEXK8S_GITHUB_WEBHOOK_SECRET: %w", err)
 	}
-	telegramInteractionAdapterWebhookSecret, err := valueOrExistingOrSharedOrGenerated(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET", func() (string, error) {
-		return randomBase64URL(32)
-	})
-	if err != nil {
-		return fmt.Errorf("resolve CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET: %w", err)
-	}
-	telegramInteractionAdapterBearerToken, err := valueOrExistingOrSharedOrGenerated(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN", func() (string, error) {
-		return randomBase64URL(32)
-	})
-	if err != nil {
-		return fmt.Errorf("resolve CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN: %w", err)
-	}
 	jwtSigningKey, err := valueOrExistingOrSharedOrGenerated(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_JWT_SIGNING_KEY", func() (string, error) {
 		return randomHex(32)
 	})
@@ -173,6 +176,10 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoo
 	letsEncryptEmailFallback := strings.TrimSpace(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_BOOTSTRAP_OWNER_EMAIL", ""))
 	letsEncryptEmail := strings.TrimSpace(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_LETSENCRYPT_EMAIL", letsEncryptEmailFallback))
 	letsEncryptServer := strings.TrimSpace(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_LETSENCRYPT_SERVER", defaultLetsEncryptDirectoryURL))
+	telegramRuntime, err := resolveTelegramRuntimeSecretValues(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime)
+	if err != nil {
+		return err
+	}
 
 	// TLS preparation runs in the same reconcile cycle; keep resolved values in template vars.
 	vars["CODEXK8S_LETSENCRYPT_EMAIL"] = letsEncryptEmail
@@ -213,6 +220,13 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoo
 		"CODEXK8S_GIT_BOT_TOKEN":                                        []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_GIT_BOT_TOKEN", "")),
 		"CODEXK8S_GIT_BOT_USERNAME":                                     []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_GIT_BOT_USERNAME", "codex-bot")),
 		"CODEXK8S_GIT_BOT_MAIL":                                         []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_GIT_BOT_MAIL", "codex-bot@codex-k8s.local")),
+		"CODEXK8S_TELEGRAM_BOT_TOKEN":                                   []byte(telegramRuntime.BotToken),
+		"CODEXK8S_TELEGRAM_CHAT_ID":                                     []byte(telegramRuntime.ChatID),
+		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BASE_URL":                []byte(telegramRuntime.BaseURL),
+		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN":            []byte(telegramRuntime.BearerToken),
+		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET":          []byte(telegramRuntime.WebhookSecret),
+		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT":                 []byte(telegramRuntime.Timeout),
+		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_RECIPIENT_BINDINGS_JSON": []byte(telegramRuntime.RecipientBindingsJSON),
 		"CODEXK8S_CONTEXT7_API_KEY":                                     []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_CONTEXT7_API_KEY", "")),
 		"CODEXK8S_APP_SECRET_KEY":                                       []byte(appSecretKey),
 		"CODEXK8S_TOKEN_ENCRYPTION_KEY":                                 []byte(tokenEncryptionKey),
@@ -223,13 +237,6 @@ func (s *Service) ensureCodexK8sPrerequisites(ctx context.Context, repositoryRoo
 		"CODEXK8S_GITHUB_WEBHOOK_SECRET":                                []byte(githubWebhookSecret),
 		"CODEXK8S_GITHUB_WEBHOOK_URL":                                   []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_WEBHOOK_URL", "")),
 		"CODEXK8S_GITHUB_WEBHOOK_EVENTS":                                []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_GITHUB_WEBHOOK_EVENTS", "push,pull_request,issues,issue_comment,pull_request_review,pull_request_review_comment")),
-		"CODEXK8S_TELEGRAM_BOT_TOKEN":                                   []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_TELEGRAM_BOT_TOKEN", "")),
-		"CODEXK8S_TELEGRAM_CHAT_ID":                                     []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_TELEGRAM_CHAT_ID", "")),
-		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_RECIPIENT_BINDINGS_JSON": []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_RECIPIENT_BINDINGS_JSON", "")),
-		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET":          []byte(telegramInteractionAdapterWebhookSecret),
-		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN":            []byte(telegramInteractionAdapterBearerToken),
-		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BASE_URL":                []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BASE_URL", "http://codex-k8s-telegram-interaction-adapter:8080")),
-		"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT":                 []byte(valueOrExistingOrShared(secretResolver, targetEnv, vars, existingRuntime, sharedRuntime, "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT", "10s")),
 		"CODEXK8S_PRODUCTION_DOMAIN":                                    []byte(valueOr(vars, "CODEXK8S_PRODUCTION_DOMAIN", "")),
 		"CODEXK8S_AI_DOMAIN":                                            []byte(valueOr(vars, "CODEXK8S_AI_DOMAIN", "")),
 		"CODEXK8S_PUBLIC_BASE_URL":                                      []byte(valueOr(vars, "CODEXK8S_PUBLIC_BASE_URL", "https://example.invalid")),
@@ -438,6 +445,44 @@ func valueOrExistingOrSharedOrGenerated(resolver servicescfg.SecretResolver, env
 		return value, nil
 	}
 	return generate()
+}
+
+func resolveTelegramRuntimeSecretValues(resolver servicescfg.SecretResolver, envName string, values map[string]string, existing map[string][]byte, shared map[string][]byte) (telegramRuntimeSecretValues, error) {
+	bearerToken, err := valueOrExistingOrSharedOrGenerated(resolver, envName, values, existing, shared, "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN", func() (string, error) {
+		return randomBase64URL(telegramInteractionAdapterSecretBytes)
+	})
+	if err != nil {
+		return telegramRuntimeSecretValues{}, fmt.Errorf("resolve CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BEARER_TOKEN: %w", err)
+	}
+	webhookSecret, err := valueOrExistingOrSharedOrGenerated(resolver, envName, values, existing, shared, "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET", func() (string, error) {
+		return randomBase64URL(telegramInteractionAdapterSecretBytes)
+	})
+	if err != nil {
+		return telegramRuntimeSecretValues{}, fmt.Errorf("resolve CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_WEBHOOK_SECRET: %w", err)
+	}
+
+	botToken := strings.TrimSpace(valueOrExistingOrShared(resolver, envName, values, existing, shared, "CODEXK8S_TELEGRAM_BOT_TOKEN", ""))
+	chatID := strings.TrimSpace(valueOrExistingOrShared(resolver, envName, values, existing, shared, "CODEXK8S_TELEGRAM_CHAT_ID", ""))
+	recipientBindingsJSON := strings.TrimSpace(valueOrExistingOrShared(resolver, envName, values, existing, shared, "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_RECIPIENT_BINDINGS_JSON", ""))
+	baseURL := strings.TrimSpace(valueOrExistingOrShared(resolver, envName, values, existing, shared, "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BASE_URL", ""))
+	if baseURL == "" && (botToken != "" || recipientBindingsJSON != "") {
+		baseURL = defaultTelegramInteractionAdapterBaseURL
+	}
+
+	timeout := strings.TrimSpace(valueOrExistingOrShared(resolver, envName, values, existing, shared, "CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_TIMEOUT", defaultTelegramInteractionAdapterTimeout))
+	if timeout == "" {
+		timeout = defaultTelegramInteractionAdapterTimeout
+	}
+
+	return telegramRuntimeSecretValues{
+		BaseURL:               baseURL,
+		BearerToken:           bearerToken,
+		WebhookSecret:         webhookSecret,
+		Timeout:               timeout,
+		BotToken:              botToken,
+		ChatID:                chatID,
+		RecipientBindingsJSON: recipientBindingsJSON,
+	}, nil
 }
 
 func valueForEnvironment(resolver servicescfg.SecretResolver, envName string, values map[string]string, key string) (string, string, bool) {
