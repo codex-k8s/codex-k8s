@@ -5,8 +5,8 @@ title: "codex-k8s — Delivery Plan"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-03-14
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476]
+updated_at: 2026-03-15
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 484]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -409,9 +409,16 @@ approvals:
   - сохранён sequencing gate `Sprint S13 governance baseline -> Sprint S14 runtime/UI stream` (`#470`) без implementation-first drift;
   - зафиксированы non-negotiables для следующих stage: explicit risk tier, separate constructs `evidence completeness / verification minimum / review-waiver discipline`, proportional governance и запрет silent waivers для `high/critical`;
   - создана follow-up issue `#476` для stage `run:prd` без trigger-лейбла.
-- Day 3 (planned): PRD issue `#476`.
-  - Цель: user stories, FR/AC/NFR, edge cases и expected evidence для `Quality Governance System`.
-  - Ожидаемый результат: PRD package + новая issue для `run:arch` без trigger-лейбла.
+- Day 3 (in-review): PRD-пакет для `Quality Governance System` (`docs/delivery/epics/s13/epic-s13-day3-quality-governance-prd.md`, `docs/delivery/epics/s13/prd-s13-day3-quality-governance-system.md`, Issue `#476`).
+- Результат Day 3 (факт):
+  - user stories, FR/AC/NFR и edge cases зафиксированы для explicit risk tiering, mandatory evidence package, verification minimum, review/waiver discipline и governance-gap feedback loop;
+  - product contract закрепил proportional low-risk path, запрет silent waivers для `high/critical`, role-specific decision surfaces и boundary `Sprint S13 governance baseline -> Sprint S14 runtime/UI stream`;
+  - publication policy закрепила путь `internal working draft -> semantic wave map -> published waves`; raw draft не считается review/merge artifact;
+  - expected evidence и wave priorities разделены между core governance baseline и deferred runtime/UI automation scope, а large PR допустим только для behaviour-neutral mechanical bounded-scope changes;
+  - создана continuity issue `#484` для `run:arch` без trigger-лейбла.
+- Day 4 (planned): architecture issue `#484`.
+  - Цель: ownership matrix, governance data surfaces, lifecycle state model и boundary decisions для `Quality Governance System`.
+  - Ожидаемый результат: architecture package + новая issue для `run:design` без trigger-лейбла.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
