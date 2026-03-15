@@ -25,7 +25,7 @@ approvals:
 - Что строим: risk-based product contract для качества agent-scale delivery, где каждый change получает explicit risk tier, обязательный evidence package, verification minimum и понятный review/waiver path.
 - Для кого: owner/reviewer, delivery roles (`pm/em/sa/dev/qa/sre/km`) и platform operator.
 - Почему: сейчас quality expectations легко расползаются между review comments, локальными привычками и implementation-first исключениями без единого decision surface.
-- MVP: explicit tiering `low / medium / high / critical`, tier-aware evidence completeness, verification minimum, review/waiver discipline, proportional stage-gates и governance-gap feedback loop.
+- MVP: explicit tiering `low / medium / high / critical`, tier-aware evidence completeness, verification minimum, review/waiver discipline, proportional stage-gates, governance-gap feedback loop и publication policy `internal working draft -> semantic wave map -> published waves`.
 - Критерии успеха: change-governance decisions становятся воспроизводимыми и proportional, а Sprint S14 наследует этот contract вместо повторного выбора risk/evidence policy.
 
 ## Проблема и цель
@@ -33,12 +33,14 @@ approvals:
   - качество агентной поставки пока легко сводится к субъективному «насколько внимательно посмотрели», а не к воспроизводимым свойствам изменения и его evidence;
   - без единого contract для risk tier, evidence completeness, verification minimum и review/waiver discipline owner/reviewer, delivery roles и operator принимают решения на разных основаниях;
   - low-risk changes рискуют утонуть в governance overhead уровня `high/critical`, а high/critical changes могут пройти с implicit assumptions и missing evidence;
+  - не нормирован bridge между внутренним поиском решения и тем, что вообще допустимо публиковать в review/merge поток: raw working draft, semantic decomposition и критерии допустимого PR смешиваются;
   - без явного product baseline downstream runtime/UI stream Sprint S14 (`#470`) быстро начнёт решать policy implementation-first и откроет повторный спор о самих правилах.
 - Цели:
   - зафиксировать core-MVP contract для explicit risk tiering, mandatory evidence package, verification minimum, review/waiver discipline и proportional stage-gates;
   - описать пользовательские сценарии, FR/AC/NFR и edge cases до architecture/design этапов;
+  - явно отделить hidden internal working draft от review-ready артефакта и определить publication path только через semantic waves;
   - сохранить границу `Sprint S13 governance baseline -> Sprint S14 runtime/UI stream`;
-  - подготовить architecture handover с явными invariants для canonical governance state, residual-risk framing и operator visibility.
+  - подготовить architecture handover с явными invariants для canonical governance state, residual-risk framing, semantic decomposition и operator visibility.
 - Почему сейчас:
   - Sprint S13 уже закрепил initiative baseline на intake и vision этапах;
   - без PRD stage архитектура будет спорить о сервисных границах и surfaces без общего продукта;
@@ -52,6 +54,10 @@ approvals:
 - `D-476-05`: Launch profile и minimum stage-gates определяются сочетанием risk tier и change characteristics, а не локальной интуицией исполнителя.
 - `D-476-06`: Postdeploy/remediation feedback обязан подсвечивать governance gaps, если risk tier, evidence completeness или review discipline оказались неверными.
 - `D-476-07`: Sprint S13 задаёт governance baseline; Sprint S14 (`#470`) реализует runtime/UI surfaces поверх него и не переоткрывает policy baseline implementation-first.
+- `D-476-08`: `Internal working draft` допустим только как скрытый внутренний артефакт поиска решения и никогда не считается merge-candidate, review artifact или published change package.
+- `D-476-09`: Перед публикацией change обязан пройти путь `internal working draft -> semantic wave map -> published waves`; первой опубликованной единицей является semantic wave, а не raw draft.
+- `D-476-10`: Большой PR допустим только для behaviour-neutral mechanical changes в одном bounded scope (`move/rename/split/codegen/format/refactor-only`) при наличии mechanical verification и отсутствии смешения с business-behavior change.
+- `D-476-11`: Качество PR оценивается по semantic intent и independent verifiability, а не по LOC; маленький diff не считается автоматически хорошим, если он смешивает разные классы изменений.
 
 ## Scope boundaries
 ### In scope
@@ -71,6 +77,10 @@ approvals:
   - что можно waiver'ить и в каком виде;
   - что запрещено скрывать для `high/critical`.
 - Proportional stage-gates и launch-profile expectations по tier.
+- Draft-to-wave publication discipline:
+  - `internal working draft` остаётся hidden exploration artifact;
+  - перед review/change publication обязателен semantic wave map;
+  - published unit должен иметь один основной semantic intent и отдельную verification surface.
 - Governance-gap feedback loop: как postdeploy/remediation результаты возвращаются в quality contract.
 
 ### Out of scope
@@ -98,24 +108,41 @@ approvals:
 | `S13-US-04` | Как owner/reviewer, я хочу explicit waiver/residual-risk path, чтобы gaps не превращались в silent assumptions | Wave 2 | `P0` |
 | `S13-US-05` | Как delivery role, я хочу proportional governance для `low` changes, чтобы не тратить время на избыточные gates без явной причины | Wave 2 | `P0` |
 | `S13-US-06` | Как platform operator, я хочу видеть governance-gap feedback из postdeploy/remediation, чтобы policy можно было усиливать на основе фактов | Wave 2 | `P0` |
-| `S13-US-07` | Как downstream runtime/UI stream, я хочу получить стабильный policy baseline, чтобы строить surfaces и automation без переоткрытия risk/evidence contract | Wave 3 | `P1` |
+| `S13-US-07` | Как delivery role, я хочу иметь право на hidden internal working draft, но публиковать наружу только semantic waves, чтобы внутренний поиск решения не становился merge-candidate по умолчанию | Wave 1 | `P0` |
+| `S13-US-08` | Как owner/reviewer, я хочу видеть, когда большой PR допустим как mechanical bundle, а когда даже маленький diff обязан быть разложен по semantic intent, чтобы оценка качества не сводилась к LOC | Wave 2 | `P0` |
+| `S13-US-09` | Как downstream runtime/UI stream, я хочу получить стабильный policy baseline, чтобы строить surfaces и automation без переоткрытия risk/evidence contract | Wave 3 | `P1` |
 
 ### Wave sequencing
 - Wave 1 (`core contract`, `P0`):
   - explicit risk tier;
   - mandatory evidence package;
   - verification minimum;
-  - tier-aware completeness rules.
+  - tier-aware completeness rules;
+  - `internal working draft` как non-mergeable hidden artifact;
+  - обязательный переход к semantic wave map перед публикацией.
 - Wave 2 (`decision discipline`, `P0`):
   - waiver/residual-risk path;
   - proportional low-risk path;
   - governance-gap feedback loop;
-  - role-specific decision surfaces.
+  - role-specific decision surfaces;
+  - критерии допустимости large mechanical PR;
+  - запрет считать small-but-semantically-mixed diff автоматически хорошим.
 - Wave 3 (`deferred automation`, `P1`):
   - runtime/UI automation;
   - quality cockpit;
   - service-specific tuning;
   - advanced operator workflows.
+
+### Draft-to-wave publication policy
+- `Internal working draft`:
+  - может существовать как локальный черновик, используемый для поиска решения, прототипирования или end-to-end проверки гипотезы;
+  - не публикуется в review/merge поток и не служит baseline для owner decision.
+- `Semantic wave map`:
+  - обязателен перед первой внешней публикацией change package;
+  - раскладывает draft на последовательность reviewable units с одним semantic intent на волну.
+- `Published waves`:
+  - каждая wave должна быть independently reviewable и иметь свой verification surface;
+  - bundle допускается только если wave behaviour-neutral, bounded-scope и mechanical по природе.
 
 ## Functional Requirements
 
@@ -134,6 +161,10 @@ approvals:
 | `FR-476-11` | Owner/reviewer, delivery roles и operator surfaces должны использовать один и тот же canonical vocabulary change governance, а не role-local трактовки. |
 | `FR-476-12` | Sprint S13 должен оставаться source-of-truth для policy baseline; Sprint S14 (`#470`) реализует runtime/UI surfaces, не изменяя core contract без отдельного product цикла. |
 | `FR-476-13` | Для core governance flows должны быть определены expected product evidence и telemetry, достаточные для acceptance walkthrough и architecture handover. |
+| `FR-476-14` | `Internal working draft` не может считаться review-ready или merge-ready артефактом; он всегда остаётся hidden internal artifact. |
+| `FR-476-15` | Перед первой публикацией change должен быть разложен в `semantic wave map`; наружу публикуются только semantic waves с явным intent и verification surface. |
+| `FR-476-16` | Large PR допустим только когда change behaviour-neutral, mechanical и bounded-scope; допустимые классы изменений должны быть явно перечислены и отдельно верифицируемы. |
+| `FR-476-17` | Размер diff не является самостоятельным quality signal: semantically mixed change package обязан быть разложен, даже если он мал по LOC. |
 
 ## Acceptance Criteria (Given/When/Then)
 
@@ -191,6 +222,30 @@ approvals:
 - Then Sprint S14 наследует PRD contract из Sprint S13 и не переопределяет его implementation-first.
 - Expected evidence: handover package и deferred-scope decision record.
 
+### `AC-476-10` Internal working draft is never published as review artifact
+- Given delivery role собрал локальный working draft для поиска решения,
+- When change готовится к первой внешней публикации,
+- Then raw draft не становится review/merge package и должен быть преобразован в semantic waves.
+- Expected evidence: negative path `working draft exists / raw draft not published`.
+
+### `AC-476-11` Semantic wave map before publication
+- Given найден рабочий end-to-end путь,
+- When change переходит из внутреннего черновика в review stream,
+- Then существует semantic wave map, который разбивает draft на последовательность independently reviewable waves.
+- Expected evidence: walkthrough `working draft -> semantic wave map -> wave 1..N`.
+
+### `AC-476-12` Large mechanical PR is explicitly constrained
+- Given change публикуется большим bundle,
+- When owner/reviewer оценивает допустимость такого bundle,
+- Then bundle должен быть behaviour-neutral, bounded-scope, mechanical по природе и иметь mechanical verification.
+- Expected evidence: admissibility matrix `large mechanical bundle -> allowed classes / required verification`.
+
+### `AC-476-13` Small semantically mixed diff still fails publication quality
+- Given diff мал по LOC,
+- When он смешивает несколько semantic classes изменения,
+- Then такой package не считается автоматически хорошим и требует decomposition или явного policy exception.
+- Expected evidence: negative scenario `small diff / mixed intent / decomposition required`.
+
 ## Edge cases и non-happy paths
 
 | ID | Сценарий | Ожидаемое поведение | Evidence |
@@ -202,6 +257,9 @@ approvals:
 | `EC-476-05` | Waiver запрашивается для `critical` change перед release gate | Waiver остаётся explicit и сопровождается residual risk; silent acceptance запрещён | critical-waiver scenario |
 | `EC-476-06` | Postdeploy incident показывает, что tier был занижен | Governance-gap feedback фиксирует late reclassification и возвращает его в policy loop | postdeploy-gap scenario |
 | `EC-476-07` | Sprint S14 пытается добавить runtime/UI gate, которого нет в baseline | Новый gate не становится source-of-truth без отдельного product цикла | downstream-boundary scenario |
+| `EC-476-08` | Агент собрал рабочий end-to-end draft, который меняет migration + domain logic + transport + UI | Draft остаётся внутренним; наружу публикуется только semantic wave map с последовательной декомпозицией | draft-to-wave scenario |
+| `EC-476-09` | Большой diff состоит только из move/rename/codegen/format/refactor-only в одном bounded scope | Bundle допустим как один PR, если поведение не меняется и есть mechanical verification | large-mechanical scenario |
+| `EC-476-10` | Diff небольшой, но одновременно меняет migration, logic и transport/UI | Size не спасает package: требуется semantic decomposition или explicit exception | small-mixed scenario |
 
 ## Non-Goals
 - Выбор конкретных service boundaries, storage schema и transport contracts в рамках PRD.
@@ -233,6 +291,9 @@ approvals:
   - `governance_gate_entered`
   - `governance_gate_exited`
   - `governance_gap_detected`
+  - `semantic_wave_map_created`
+  - `semantic_wave_published`
+  - `raw_working_draft_rejected_for_publication`
 - Метрики:
   - `NSM-471-01` Quality-governed delivery rate
   - `GOV-471-01` Evidence completeness rate
@@ -242,7 +303,8 @@ approvals:
   - `REL-471-01` Governance gap escape rate
 - Expected evidence:
   - acceptance walkthrough по `low`, `medium`, `high`, `critical` governance paths;
-  - negative matrix по silent waivers, over-governance и late reclassification;
+  - walkthrough `internal working draft -> semantic wave map -> published waves`;
+  - negative matrix по silent waivers, over-governance, late reclassification и small-but-semantically-mixed diffs;
   - explicit trace о том, что Sprint S14 не переопределяет policy baseline Sprint S13.
 
 ## Риски и допущения
@@ -260,6 +322,7 @@ approvals:
 - Где проходит ownership boundary для canonical change-governance aggregate, evidence-state lifecycle и residual-risk decisions?
 - Какие сервисы публикуют canonical governance state и какие surfaces только отображают его без policy ownership?
 - Как разложить proportional stage-gate enforcement и launch-profile mapping, не дублируя policy в нескольких местах?
+- Где живут canonical `semantic wave map` и publication-status signals: в change aggregate, audit trail или отдельном planning surface?
 - Как downstream runtime/UI stream Sprint S14 должен наследовать contract, не становясь источником правды по policy semantics?
 
 ## Handover в `run:arch`
@@ -269,10 +332,15 @@ approvals:
   - separate constructs `evidence completeness / verification minimum / review-waiver discipline`;
   - proportional low-risk path;
   - запрет silent waivers для `high/critical`;
+  - `internal working draft` как hidden non-mergeable artifact;
+  - publication path `internal working draft -> semantic wave map -> published waves`;
+  - критерий `large PR allowed only for behaviour-neutral mechanical bounded-scope changes`;
+  - правило `PR quality judged by semantic intent and independent verifiability, not LOC`;
   - governance-gap feedback loop;
   - boundary `Sprint S13 governance baseline -> Sprint S14 runtime/UI stream`.
 - Архитектурный этап обязан определить:
   - service boundaries и ownership matrix;
   - lifecycle governance state и audit path;
+  - ownership/publication surfaces для `semantic wave map` и draft/publication status;
   - visibility responsibilities для owner/reviewer/operator;
   - список ADR/alternatives и issue для `run:design`.

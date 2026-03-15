@@ -411,7 +411,8 @@ approvals:
 - Результат Day 3 (факт):
   - user stories, FR/AC/NFR и edge cases зафиксированы для explicit risk tiering, mandatory evidence package, verification minimum, review/waiver discipline и governance-gap feedback loop;
   - product contract закрепил proportional low-risk path, запрет silent waivers для `high/critical`, role-specific decision surfaces и boundary `Sprint S13 governance baseline -> Sprint S14 runtime/UI stream`;
-  - expected evidence и wave priorities разделены между core governance baseline и deferred runtime/UI automation scope;
+  - publication policy закрепила путь `internal working draft -> semantic wave map -> published waves`; raw draft не считается review/merge artifact;
+  - expected evidence и wave priorities разделены между core governance baseline и deferred runtime/UI automation scope, а large PR допустим только для behaviour-neutral mechanical bounded-scope changes;
   - создана continuity issue `#484` для `run:arch` без trigger-лейбла.
 - Day 4 (planned): architecture issue `#484`.
   - Цель: ownership matrix, governance data surfaces, lifecycle state model и boundary decisions для `Quality Governance System`.

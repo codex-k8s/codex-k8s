@@ -56,6 +56,8 @@ approvals:
 - Зафиксированы:
   - explicit risk tiering, mandatory evidence package, verification minimum и review/waiver discipline как отдельные product constructs;
   - proportional low-risk path, запрет silent waivers для `high/critical` и governance-gap feedback loop;
+  - publication policy `internal working draft -> semantic wave map -> published waves`, где raw draft никогда не становится merge/review artifact;
+  - правило: large PR допустим только для behaviour-neutral mechanical bounded-scope changes, а small-but-semantically-mixed diff не считается автоматически качественным;
   - wave priorities между core governance baseline и deferred runtime/UI automation stream Sprint S14 (`#470`);
   - handover в stage `run:arch` с обязательным сохранением boundary `Sprint S13 -> Sprint S14`.
 - Создана follow-up issue `#484` для stage `run:arch` без trigger-лейбла.
