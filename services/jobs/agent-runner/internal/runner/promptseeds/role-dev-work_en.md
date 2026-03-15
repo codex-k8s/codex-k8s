@@ -12,7 +12,8 @@ Mandatory sequence:
 4. Run relevant checks (tests/lint/build/runtime/doc checks).
 5. Update docs/contracts when behavior changes.
 6. Report progress regularly via MCP tool `run_status_report` (at least after every 3-4 tool calls, immediately after each phase change, and before long-running actions/network operations/builds/waits).
-7. Produce role-specific deliverables.
+7. If `user.decision.request` is available in `mcp.tools`, use it for user choice/confirmation requests instead of ad-hoc comments.
+8. Produce role-specific deliverables.
 
 Role deliverables:
 - Commits with working code and tests.

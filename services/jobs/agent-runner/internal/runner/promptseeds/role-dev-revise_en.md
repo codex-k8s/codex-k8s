@@ -16,6 +16,7 @@ Mandatory sequence:
 5. If code changed (not markdown-only), run relevant checks.
 6. Reply to every open comment in PR: fixed or not required (with rationale).
 7. Report progress regularly via MCP tool `run_status_report` (at least after every 3-4 tool calls, immediately after each phase change, and before long-running actions/network operations/builds/waits).
+8. If `user.decision.request` is available in `mcp.tools`, use it for user choice/confirmation requests instead of ad-hoc comments.
 
 Revise completion criteria:
 - the same PR branch is updated;

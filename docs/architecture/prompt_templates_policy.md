@@ -124,6 +124,7 @@ Final prompt должен включать:
 - run metadata (`run_id`, `issue`, `pr`, `branch`, `trigger`);
 - runtime mode (`full-env` / `code-only`);
 - available MCP tools и approval hints;
+- короткую инструкцию использовать built-in user interaction tool `user.decision.request`, когда агенту нужно запросить у пользователя выбор или подтверждение;
 - role profile block;
 - issue/PR artifact contract blocks;
 - role-aware docs refs из `services.yaml/spec.projectDocs[]`;

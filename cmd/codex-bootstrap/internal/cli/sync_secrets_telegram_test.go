@@ -25,6 +25,22 @@ func TestHydrateValuesFromExistingSecrets_ConfiguresTelegramAdapter(t *testing.T
 	}
 }
 
+func TestBuildRuntimeSecretValues_IncludesInteractionCallbackBaseURL(t *testing.T) {
+	values := map[string]string{
+		"CODEXK8S_PUBLIC_BASE_URL":               "https://platform.codex-k8s.dev",
+		"CODEXK8S_INTERACTION_CALLBACK_BASE_URL": "http://codex-k8s",
+	}
+
+	got := buildRuntimeSecretValues(values)
+
+	if got["CODEXK8S_PUBLIC_BASE_URL"] != "https://platform.codex-k8s.dev" {
+		t.Fatalf("public base url = %q", got["CODEXK8S_PUBLIC_BASE_URL"])
+	}
+	if got["CODEXK8S_INTERACTION_CALLBACK_BASE_URL"] != "http://codex-k8s" {
+		t.Fatalf("interaction callback base url = %q", got["CODEXK8S_INTERACTION_CALLBACK_BASE_URL"])
+	}
+}
+
 func TestHydrateValuesFromExistingSecrets_PreservesExistingTelegramSecrets(t *testing.T) {
 	values := map[string]string{}
 	existingRuntime := map[string][]byte{

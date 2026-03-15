@@ -86,11 +86,12 @@
 - MCP для оперативного фидбека и лейблов также доступен: `run_status_report`, `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`.
 - Каталог `/tmp/codex-sessions` подготовлен заранее; перед записью создавайте подкаталог конкретного run (`mkdir -p ...`).
 {{- else }}
-- MCP используйте только для обратной связи статуса и лейблов: `run_status_report`, `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`.
+- MCP используйте для обратной связи статуса, лейблов и встроенных user interactions: `run_status_report`, `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`, `user.decision.request`.
 {{- end }}
 
 Обязательные правила:
 - Не используйте MCP для PR/comments/веток: эти операции выполняются через `gh`.
+- Если в `mcp.tools` доступен `user.decision.request`, используйте его для запросов выбора/подтверждения у пользователя вместо самодельных комментариев или ad-hoc протоколов.
 - Не используйте `list_mcp_resources` для проверки доступности MCP-инструментов: это нерелевантный источник для run-scoped tool access.
 - Доступность MCP-инструментов определяйте только по каталогу MCP в контексте (`mcp.tools`) и/или через `tools/list`/прямой `tools/call`.
 - Регулярно публикуйте текущий прогресс через `run_status_report`: минимум один вызов после каждых 3-4 вызовов любых других инструментов, сразу после смены фазы, а также перед долгими операциями/сетевыми запросами/сборкой/ожиданием.
@@ -250,11 +251,12 @@ Tools and access:
 - MCP status-feedback and labels tools remain available: `run_status_report`, `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`.
 - `/tmp/codex-sessions` is pre-created; create per-run subdirectories before writing extracted session files (`mkdir -p ...`).
 {{- else }}
-- Use MCP only for status feedback and labels: `run_status_report`, `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`.
+- Use MCP for status feedback, labels, and built-in user interactions: `run_status_report`, `github_labels_list`, `github_labels_add`, `github_labels_remove`, `github_labels_transition`, `user.decision.request`.
 {{- end }}
 
 Mandatory rules:
 - Do not use MCP for PR/comments/branch operations; use `gh` for those.
+- If `user.decision.request` is available in `mcp.tools`, use it for user choice/confirmation requests instead of ad-hoc comments or improvised protocols.
 - Do not use `list_mcp_resources` to validate MCP tool availability: it is not a valid source for run-scoped tool access.
 - Determine MCP tool availability only from prompt context (`mcp.tools`) and/or via `tools/list` and direct `tools/call`.
 - Regularly report current progress via `run_status_report`: at least once after every 3-4 calls to other tools, immediately after each phase change, and before long-running actions/network operations/builds/waits.
