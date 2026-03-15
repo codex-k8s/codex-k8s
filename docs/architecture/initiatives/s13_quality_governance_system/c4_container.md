@@ -26,13 +26,13 @@ C4Container
 title Sprint S13 Day4 - Quality Governance System container overlay
 
 Person(owner, "Owner / reviewer", "Ждёт прозрачный governance state и следующий шаг")
-Person(operator, "Platform operator", "Диагностирует gaps, readiness и late reclassification")
+Person(operator, "Platform operator", "Диагностирует gaps, readiness и outcomes policy-aware re-evaluation")
 System_Ext(github, "GitHub", "Issues, PRs, reviews, labels and publication signals")
 
 System_Boundary(b0, "codex-k8s") {
   Container(runner, "Agent Runner / agent pod", "Codex CLI job", "Emits draft/evidence signals, semantic wave hints and verification outputs; never owns governance policy")
   Container(cp, "Control Plane", "Go", "Owns canonical governance aggregate, publication gate, risk/evidence/verification/waiver decisions and typed projections")
-  Container(worker, "Worker", "Go", "Runs asynchronous sweeps, late reclassification, gap reconciliation and stale-gate escalation")
+  Container(worker, "Worker", "Go", "Runs asynchronous sweeps, feedback ingestion, stale-gate escalation and submits reconciliation findings for policy-aware re-evaluation")
   Container(gw, "API Gateway", "Go HTTP", "Thin-edge ingress for GitHub/staff requests and future typed decision commands")
   Container(web, "Web Console", "Vue 3", "Displays typed governance projections and future structured decision surfaces")
   ContainerDb(db, "PostgreSQL", "Postgres + JSONB + pgvector", "Persisted governance aggregate, wave lineage, audit evidence and reconciliation state")
@@ -44,8 +44,8 @@ Rel(runner, cp, "Reports draft/evidence/verification signals", "Internal callbac
 Rel(github, gw, "Sends review, label and publication webhooks", "HTTPS")
 Rel(gw, cp, "Routes typed ingress without policy logic", "gRPC")
 Rel(cp, db, "Reads/Writes governance aggregate, projections and audit state")
-Rel(worker, db, "Reads/Writes reconciliation, sweeps and feedback state")
-Rel(worker, cp, "Requests policy-aware re-evaluation and escalations", "gRPC")
+Rel(worker, db, "Reads/Writes reconciliation queues, sweep snapshots and feedback evidence")
+Rel(worker, cp, "Submits reconciliation findings and requests policy-aware re-evaluation / escalation", "gRPC")
 Rel(web, gw, "Reads staff/private projections and future command APIs", "HTTPS")
 Rel(cp, github, "Updates linked service messages / label-aware status", "HTTPS")
 ```
@@ -56,7 +56,7 @@ Rel(cp, github, "Updates linked service messages / label-aware status", "HTTPS")
 |---|---|
 | `agent-runner` | Видит локальный run context и передаёт draft/evidence/verification signals без ownership policy semantics |
 | `control-plane` | Единственный owner canonical governance aggregate, publication gate, waiver/residual-risk decisions и typed visibility contract |
-| `worker` | Выполняет sweeps, stale detection, postdeploy feedback rollups и late reclassification под policy `control-plane` |
+| `worker` | Выполняет sweeps, stale detection и postdeploy feedback rollups, пишет только reconciliation/evidence state и передаёт findings в `control-plane` для late reclassification / gap closure |
 | `api-gateway` | Отдаёт thin-edge ingress/transport surface для GitHub webhook и staff/private команд |
 | `web-console` | Показывает typed projections и operator-facing next-step guidance без локальной бизнес-логики |
 | `postgres` | Единая persisted coordination layer между pod для governance state, wave lineage и audit evidence |

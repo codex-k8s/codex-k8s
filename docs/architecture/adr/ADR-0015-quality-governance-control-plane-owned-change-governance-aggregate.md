@@ -2,7 +2,7 @@
 doc_id: ADR-0015
 type: adr
 title: "Quality Governance System: control-plane-owned change-governance aggregate with worker reconciliation"
-status: accepted
+status: proposed
 owner_role: SA
 created_at: 2026-03-15
 updated_at: 2026-03-15
@@ -20,7 +20,7 @@ approvals:
 
 ## TL;DR
 - Контекст: Sprint S13 PRD требует единый product contract для explicit risk tier, separate evidence/verification/waiver constructs, hidden `internal working draft`, semantic-wave publication discipline и downstream boundary `Sprint S13 -> Sprint S14`.
-- Решение: выбираем `control-plane` как единственного владельца canonical change-governance aggregate и publication gate; `worker` исполняет asynchronous sweeps/reclassification, а `agent-runner` и UI surfaces только поставляют signals/commands поверх typed contracts.
+- Решение: выбираем `control-plane` как единственного владельца canonical change-governance aggregate и publication gate; `worker` исполняет asynchronous sweeps, фиксирует reconciliation evidence/tasks и запрашивает policy-aware re-evaluation, а late reclassification / gap closure остаются в `control-plane`.
 - Последствия: появляется один domain owner для policy semantics и audit, но design-stage обязан отдельно зафиксировать transport/data contracts, rollout/backfill notes и operator surfaces.
 
 ## Контекст
@@ -82,7 +82,7 @@ approvals:
 - Эксплуатация:
   - ещё один cross-service consistency path без доказанной необходимости.
 
-### Вариант C (выбран): `control-plane` owns aggregate, `worker` owns asynchronous reconciliation, thin surfaces consume typed projections
+### Вариант C (выбран): `control-plane` owns aggregate, `worker` executes asynchronous reconciliation, thin surfaces consume typed projections
 - Плюсы:
   - сохраняет текущие service boundaries платформы;
   - даёт единый owner для risk/evidence/waiver/publication semantics;
@@ -98,12 +98,12 @@ approvals:
   - предсказуемая при условии typed contracts и audit-safe reconciliation.
 
 ## Решение
-Мы выбираем: **вариант C — `control-plane` owns canonical governance aggregate, `worker` owns asynchronous reconciliation, thin surfaces consume typed projections**.
+Мы выбираем: **вариант C — `control-plane` owns canonical governance aggregate, `worker` executes asynchronous reconciliation and feeds policy-aware re-evaluation, thin surfaces consume typed projections**.
 
 ## Обоснование (Rationale)
 - Вариант C лучше всего соответствует текущим архитектурным границам платформы:
   - `control-plane` уже владеет run/session lifecycle, policy, label transitions и audit;
-  - `worker` естественно подходит для sweeps, gap reconciliation и late reclassification;
+  - `worker` естественно подходит для sweeps, feedback ingestion и escalation requests, но late reclassification / gap closure остаются внутри `control-plane`;
   - `agent-runner` не должен становиться domain owner только потому, что первым увидел draft/evidence.
 - Решение сохраняет PRD guardrails без premature service split и делает boundary `Sprint S13 -> Sprint S14` проверяемой: runtime/UI stream будет обязан потреблять typed surfaces, а не придумывать новую policy semantics.
 - Thin-edge для `api-gateway` и `web-console` остаётся доказуемым: они читают/передают typed projections и commands, но не вычисляют governance state самостоятельно.
@@ -113,7 +113,7 @@ approvals:
 ### Позитивные
 - Появляется единый owner canonical governance semantics и audit trail.
 - Publication gate `working draft -> semantic waves -> published waves` можно проектировать как один domain lifecycle.
-- Asynchronous feedback и late reclassification получают свой owner без переноса policy logic в UI или agent pod.
+- Asynchronous feedback и reconciliation findings получают своего исполнителя без переноса policy logic в UI или agent pod; canonical late reclassification остаётся в `control-plane`.
 
 ### Негативные / компромиссы
 - `control-plane` получает больше доменной логики вокруг change governance.

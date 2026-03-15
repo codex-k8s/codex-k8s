@@ -63,7 +63,7 @@ approvals:
 ## Вариант C: Control-plane-owned aggregate + worker reconciliation (recommended)
 - Описание:
   - `control-plane` владеет canonical governance semantics, publication gate и projections;
-  - `worker` исполняет asynchronous sweeps/reclassification;
+  - `worker` исполняет asynchronous sweeps, пишет reconciliation/evidence state и запрашивает policy-aware re-evaluation, а late reclassification / gap closure фиксирует `control-plane`;
   - `api-gateway`, `web-console`, `agent-runner` работают как typed adapters.
 - Плюсы:
   - сохраняет текущие service boundaries;

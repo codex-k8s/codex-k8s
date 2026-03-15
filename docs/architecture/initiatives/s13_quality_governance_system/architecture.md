@@ -18,7 +18,7 @@ approvals:
 
 ## TL;DR
 - `control-plane` становится единственным владельцем canonical change-governance aggregate: risk classification, evidence completeness, verification minimum, publication eligibility, waiver/residual-risk decisions и release-ready projection живут в одном доменном контуре.
-- `worker` закрепляется за asynchronous governance reconciliation: freshness sweeps, overdue-gate escalation, postdeploy feedback ingestion и late reclassification идут только под policy `control-plane`; `agent-runner` передаёт draft/evidence signals, но не решает policy semantics локально.
+- `worker` закрепляется за asynchronous governance reconciliation: freshness sweeps, overdue-gate escalation и postdeploy feedback ingestion идут только под policy `control-plane`; сам `worker` пишет лишь reconciliation/evidence state и запрашивает policy-aware re-evaluation, а late reclassification и gap closure фиксирует `control-plane`.
 - `api-gateway` и `web-console` остаются thin visibility/interaction surfaces, а Sprint S14 (`#470`) получает право строить runtime/UI automation только поверх typed projections и commands следующего stage, не переоткрывая policy baseline.
 
 ## Контекст и входные артефакты
@@ -68,7 +68,7 @@ approvals:
 | Evidence completeness и verification minimum evaluation | `control-plane` | Separate constructs нельзя разносить по UI, runner и background jobs без split-brain |
 | Hidden working draft, semantic wave map и published-wave status | `control-plane` | Только домен может гарантировать, что raw draft не утекает в review-ready surface |
 | Waiver, residual risk и release-ready decision surface | `control-plane` | Нужен единый audit trail и запрет silent waivers для `high/critical` |
-| Asynchronous freshness sweeps, overdue-gate escalation и governance-gap reconciliation | `worker` под policy `control-plane` | Это background lifecycle с idempotent re-evaluation и multi-pod consistency |
+| Asynchronous freshness sweeps, overdue-gate escalation и governance-gap reconciliation | `worker` под policy `control-plane` | `worker` исполняет background lifecycle и пишет только reconciliation/evidence state; canonical re-evaluation, late reclassification и gap closure остаются у домена `control-plane` |
 | GitHub webhook/review ingress и staff/private transport | `api-gateway` | Edge остаётся thin normalization/auth/routing boundary без policy calculation |
 | Draft/evidence emission из run execution | `agent-runner` как source emitter, `control-plane` как source-of-truth | Агент видит локальный контекст, но не владеет canonical semantics |
 | Visibility surfaces и operator/owner interactions | `api-gateway` + `web-console` на typed projections `control-plane` | UI не должен вычислять classification, completeness или waiver rules самостоятельно |
@@ -99,7 +99,10 @@ sequenceDiagram
     GW->>CP: Route decision intent
     CP->>DB: Update waiver, release readiness and residual risk
     CP->>WK: Enqueue freshness sweep / feedback reconciliation
-    WK->>DB: Record escalation, reclassification or gap closure
+    WK->>DB: Persist sweep result and feedback evidence
+    WK->>CP: Request policy-aware re-evaluation / escalation
+    CP->>DB: Update reclassification, gap closure and readiness outcome
+    CP-->>UI: Refresh typed projection
     Operator->>UI: Inspect gaps, readiness and postdeploy feedback
 ```
 
@@ -113,7 +116,7 @@ sequenceDiagram
 | `evidence_evaluated` | `control-plane` | Completeness и verification status разделены; gaps видимы и не скрыты за summary |
 | `review_decided` | `control-plane` + human actors | Waiver explicit, residual risk stated, для `high/critical` отсутствуют silent decisions |
 | `release_ready_recorded` | `control-plane` | Stage-gate outcome и следующий шаг выражены typed projection, а не narrative-only comment |
-| `feedback_reconciled` | `worker` + `control-plane` | Postdeploy/remediation feedback может поднять late reclassification или governance gap без переписывания истории |
+| `feedback_reconciled` | `worker` + `control-plane` | `worker` фиксирует feedback/evidence и инициирует re-evaluation, а `control-plane` записывает late reclassification или governance-gap outcome без переписывания истории |
 
 ## Service Boundaries And Ownership Matrix
 
@@ -122,7 +125,7 @@ sequenceDiagram
 | Canonical change-governance aggregate | `control-plane` | PostgreSQL | Один aggregate владеет tier, evidence/verification/waiver status, publication state, release readiness и feedback linkage | Typed aggregate model, status vocabulary, audit linkage rules |
 | Publication path `working draft -> semantic waves -> published waves` | `control-plane` | `agent-runner`, GitHub provider adapters | `agent-runner` может отправлять draft/evidence signals, но raw draft не получает publication status вне домена | Publication state machine, wave lineage contract, admissibility rules |
 | Review/waiver/residual-risk decisions | `control-plane` | `api-gateway`, `web-console` | Human decision surfaces строятся на typed commands/projections; UI и GitHub comments не становятся source-of-truth | Decision command DTO, waiver/residual-risk projection, error map |
-| Asynchronous governance reconciliation | `worker` | `control-plane` | Worker делает sweeps, stale detection, feedback rollups и escalation, но не изобретает policy semantics локально | Reconciliation jobs, cadence, escalation thresholds, replay rules |
+| Asynchronous governance reconciliation | `worker` | `control-plane` | Worker делает sweeps, stale detection, feedback rollups и escalation, пишет только reconciliation/evidence state и запрашивает policy-aware re-evaluation у `control-plane`; canonical reclassification/gap closure не живут в worker-path | Reconciliation jobs, cadence, escalation thresholds, replay rules |
 | GitHub/staff ingress | `api-gateway` | `control-plane` | Edge только валидирует, нормализует и маршрутизирует review/label/action events в домен | Webhook/interaction envelope, authz rules, thin-edge mapping |
 | Owner/reviewer/operator visibility | `control-plane` | `api-gateway`, `web-console` | Все surfaces читают один typed projection и не вычисляют completeness, proportional path или publication admissibility самостоятельно | Projection DTO, list/detail/realtime fields, service-comment wording rules |
 | Agent-sourced evidence handoff | `control-plane` | `agent-runner` | Runner передаёт draft/evidence/verification hints и прекращает локальное policy reasoning; canonical interpretation остаётся у домена | Handoff contract, allowed raw evidence set, no-local-policy rule |
@@ -139,7 +142,7 @@ sequenceDiagram
 - Новый сервис на Day4 добавил бы второй owner для governance semantics до того, как зафиксированы typed contracts и migration policy.
 - Текущий split уже покрывает PRD:
   - `control-plane` владеет policy semantics и decision surface;
-  - `worker` владеет asynchronous orchestration;
+  - `worker` владеет asynchronous orchestration и reconciliation inputs, но не canonical aggregate decisions;
   - `api-gateway` и `web-console` остаются thin adapters;
   - `agent-runner` остаётся evidence emitter, но не policy owner.
 - Если после plan/dev появятся scale-сигналы, aggregate можно вынести позже в отдельный service boundary без изменения зафиксированного product contract.

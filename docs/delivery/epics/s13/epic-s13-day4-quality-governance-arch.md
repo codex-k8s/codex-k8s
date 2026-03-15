@@ -42,7 +42,7 @@ approvals:
 
 ## Ключевые решения Stage
 - `control-plane` остаётся единственным owner canonical change-governance aggregate, publication gate, risk/evidence/verification/waiver semantics и typed decision surface.
-- `worker` закреплён за asynchronous reconciliation: freshness sweeps, stale-gate escalation, postdeploy feedback rollups и late reclassification; `agent-runner` не может быть owner policy semantics и остаётся signal emitter.
+- `worker` закреплён за asynchronous reconciliation: freshness sweeps, stale-gate escalation и postdeploy feedback rollups; он пишет только reconciliation/evidence state и подаёт findings на late reclassification / gap closure через `control-plane`, а `agent-runner` не может быть owner policy semantics и остаётся signal emitter.
 - `api-gateway` и `web-console` остаются thin transport/visibility surfaces и не вычисляют risk tier, evidence completeness, waiver rules или publication admissibility самостоятельно.
 - Day4 закрепляет publication discipline `internal working draft -> semantic wave map -> published waves` и downstream rule: Sprint S14 (`#470`) наследует typed surfaces, но не переоткрывает policy baseline.
 
