@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-15
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 484]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 496]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -420,6 +420,17 @@ approvals:
 - Day 4 (planned): architecture issue `#484`.
   - Цель: ownership matrix, governance data surfaces, lifecycle state model и boundary decisions для `Quality Governance System`.
   - Ожидаемый результат: architecture package + новая issue для `run:design` без trigger-лейбла.
+
+### Sprint S16: Mission Control graph workspace and continuity control plane (Issue #492)
+- Day 1 (in-review): intake-пакет для полного redesign Mission Control (`docs/delivery/epics/s16/epic-s16-day1-mission-control-graph-workspace-intake.md`, Issue `#492`).
+- Результат Day 1 (факт):
+  - Mission Control зафиксирован как новый graph workspace/control plane, а не как incremental refresh Sprint S9 dashboard;
+  - issue `#480` поглощена как mandatory foundation layer для persisted GitHub inventory mirror, bounded reconcile, coverage contract `all open Issues/PR + bounded recent closed history` и future hybrid warmup/lazy repair;
+  - hybrid truth matrix, filtered multi-root workspace с точными Wave 1 filters `open_only`, `assigned_to_me_or_unassigned`, active-state presets, left-to-right graph baseline и Wave 1 nodes `discussion/work_item/run/pull_request` закреплены как intake baseline;
+  - typed metadata/watermark contract, platform-canonical launch params и continuity rule `PR + linked follow-up issue` через `run:dev` закреплены как обязательный product contract;
+  - создана continuity issue `#496` для stage `run:vision` без trigger-лейбла.
+- Day 2 (planned): vision issue `#496`.
+  - Цель: зафиксировать mission, north star, persona outcomes, KPI/guardrails и wave framing для нового graph workspace без reopening Day1 decisions.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
