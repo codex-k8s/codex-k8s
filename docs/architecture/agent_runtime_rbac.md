@@ -68,6 +68,7 @@ approvals:
   - `run:dev` создаёт новый candidate namespace или продолжает уже существующий candidate lineage текущей Issue/PR;
   - `run:qa` и `run:release` обязаны продолжать существующий candidate identity той же Issue/PR; fallback на default branch запрещён, при отсутствии lineage платформа публикует диагностический warning и ставит `need:input`;
   - `run:postdeploy` и `run:ops` не используют candidate namespace, а запускаются в production namespace платформы и читают production runtime с профилем `production-readonly`.
+  - run pods получают platform-scoped `CODEXK8S_CONTROL_PLANE_GRPC_TARGET` и `CODEXK8S_CONTROL_PLANE_MCP_BASE_URL`; candidate namespace не должен silently переписывать эти endpoint'ы на namespace-local `control-plane`.
 - Отдельный debug-label для manual-retention не используется.
 - В Kubernetes нет встроенного TTL-контроллера для namespace; cleanup реализуется безопасным sweeper-контуром:
   - in-band sweep в worker reconcile tick;
@@ -114,7 +115,7 @@ approvals:
   - прямой доступ к `secrets`;
   - выход за пределы своего namespace и cluster-scope операции.
 
-- MCP в MVP baseline используется для label-операций и control tools (`secret sync`, `database lifecycle`, `owner feedback`) с approval/audit контуром.
+- MCP в MVP baseline используется для label-операций, built-in user interactions (`user.notify`, `user.decision.request`) и control tools (`secret sync`, `database lifecycle`, `owner feedback`) с approval/audit контуром.
 
 Эволюция policy (Day6+):
 - effective MCP права вычисляются по связке `agent_key + run label`;
@@ -135,6 +136,7 @@ approvals:
 - Agent pod получает минимально необходимые runtime-секреты на время run:
   - `CODEXK8S_OPENAI_API_KEY` для codex auth;
   - `CODEXK8S_GIT_BOT_TOKEN` для git transport path.
+- Agent pod получает platform-scoped control-plane endpoints из env; отсутствие явного `CODEXK8S_CONTROL_PLANE_GRPC_TARGET`/`CODEXK8S_CONTROL_PLANE_MCP_BASE_URL` считается misconfiguration и не должно маскироваться namespace-local fallback'ом.
 - Для `full-env` pod формируется `KUBECONFIG` из namespaced ServiceAccount.
 - Прямой доступ агента к Kubernetes `secrets` запрещён RBAC (read/write).
 - Создание/обновление секретов с генерацией значений и approver-политикой выполняется через MCP control tools.

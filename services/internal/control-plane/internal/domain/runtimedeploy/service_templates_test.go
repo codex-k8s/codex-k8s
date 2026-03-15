@@ -82,6 +82,34 @@ func TestBuildTemplateVars_ProductionPreservesKanikoCleanupValue(t *testing.T) {
 	}
 }
 
+func TestBuildTemplateVars_PreservesExplicitPlatformControlPlaneEndpoints(t *testing.T) {
+	t.Setenv("CODEXK8S_CONTROL_PLANE_GRPC_TARGET", "codex-k8s-control-plane.codex-k8s-prod.svc.cluster.local:9090")
+	t.Setenv("CODEXK8S_CONTROL_PLANE_MCP_BASE_URL", "http://codex-k8s-control-plane.codex-k8s-prod.svc.cluster.local:8081/mcp")
+
+	svc := &Service{}
+	vars := svc.buildTemplateVars(PrepareParams{TargetEnv: "ai"}, "codex-issue-503")
+	if got, want := vars["CODEXK8S_CONTROL_PLANE_GRPC_TARGET"], "codex-k8s-control-plane.codex-k8s-prod.svc.cluster.local:9090"; got != want {
+		t.Fatalf("grpc target = %q, want %q", got, want)
+	}
+	if got, want := vars["CODEXK8S_CONTROL_PLANE_MCP_BASE_URL"], "http://codex-k8s-control-plane.codex-k8s-prod.svc.cluster.local:8081/mcp"; got != want {
+		t.Fatalf("mcp base url = %q, want %q", got, want)
+	}
+}
+
+func TestBuildTemplateVars_DoesNotInventNamespaceLocalControlPlaneEndpoints(t *testing.T) {
+	t.Setenv("CODEXK8S_CONTROL_PLANE_GRPC_TARGET", "")
+	t.Setenv("CODEXK8S_CONTROL_PLANE_MCP_BASE_URL", "")
+
+	svc := &Service{}
+	vars := svc.buildTemplateVars(PrepareParams{TargetEnv: "ai"}, "codex-issue-503")
+	if got := vars["CODEXK8S_CONTROL_PLANE_GRPC_TARGET"]; got != "" {
+		t.Fatalf("grpc target = %q, want empty value", got)
+	}
+	if got := vars["CODEXK8S_CONTROL_PLANE_MCP_BASE_URL"]; got != "" {
+		t.Fatalf("mcp base url = %q, want empty value", got)
+	}
+}
+
 func TestResolveServicesConfigPath_PrefersRepoSnapshotWhenConfigPathIsAbsolute(t *testing.T) {
 	t.Parallel()
 

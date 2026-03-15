@@ -23,9 +23,9 @@ func TestResolveControlPlaneMCPBaseURL(t *testing.T) {
 			want:       "http://codex-k8s-control-plane.codex-k8s-prod.svc.cluster.local:8081/mcp",
 		},
 		{
-			name:       "falls back to default when grpc target is empty",
+			name:       "returns empty when grpc target is empty",
 			grpcTarget: "",
-			want:       defaultControlPlaneMCPBaseURL,
+			want:       "",
 		},
 	}
 

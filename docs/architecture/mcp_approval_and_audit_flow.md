@@ -19,7 +19,7 @@ approvals:
 # MCP Approval and Audit Flow
 
 ## TL;DR
-- MCP в MVP baseline используется для GitHub label-операций, progress-feedback (`run_status_report`), built-in user interactions (`user.decision.request`), self-improve diagnostics tools и control tools (secret sync, database lifecycle, owner feedback).
+- MCP в MVP baseline используется для GitHub label-операций, progress-feedback (`run_status_report`), built-in user interactions (`user.notify`, `user.decision.request`), self-improve diagnostics tools и control tools (secret sync, database lifecycle, owner feedback).
 - GitHub issue/PR/comments и Kubernetes runtime-операции выполняются агентом напрямую через `gh`/`kubectl`.
 - Approval gate в MCP управляется policy matrix: для label-инструментов возможен `approval:none`, для privileged control tools — `approval:required`.
 - Все действия логируются в единый audit-контур (`flow_events`, `agent_sessions`, `links`, `token_usage`).
@@ -36,8 +36,9 @@ approvals:
 - Для MCP label-инструментов (`github_labels_list|add|remove|transition`) используется `approval:none`.
 - Для MCP progress-feedback инструмента (`run_status_report`) используется `approval:none`;
   входной `status` ограничен 100 символами для компактного статуса.
-- Для built-in user interaction инструмента (`user.decision.request`) используется `approval:none`;
-  он создаёт типизированный interaction request и должен использоваться агентом для запросов выбора/подтверждения у пользователя вместо ad-hoc комментариев.
+- Для built-in user interaction инструментов (`user.notify`, `user.decision.request`) используется `approval:none`;
+  `user.notify` остаётся non-blocking notification path, а `user.decision.request` создаёт типизированный interaction request и должен использоваться агентом для запросов выбора/подтверждения у пользователя вместо ad-hoc комментариев.
+- В effective run-scoped catalog оба user-facing инструмента доступны для stage-run, кроме `run:self-improve*`; self-improve сохраняет только diagnostic MCP scope.
 - Для self-improve read-инструментов (`self_improve_runs_list`, `self_improve_run_lookup`, `self_improve_session_get`) используется `approval:none`.
 - Label transitions всё равно проходят через control-plane MCP, чтобы сохранять единый audit-контур.
 - Для control tools (`secret.sync.k8s`, `database.lifecycle`, `owner.feedback.request`) включается approver gate по policy.

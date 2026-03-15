@@ -189,7 +189,8 @@ approvals:
 ## Оркестрационный flow для `run:dev` / `run:dev:revise`
 
 - Для каждого запуска MCP выдает только run-scoped список ручек:
-  - для `run:dev`/`run:dev:revise` baseline = только label-ручки;
+  - для всех stage-run, кроме `run:self-improve*`, baseline = label/status ручки + built-in user interactions (`user.notify`, `user.decision.request`);
+  - для `run:self-improve`/`run:self-improve:revise` baseline остаётся label/status + self-improve diagnostics без user-facing interaction tools;
   - недоступные ручки скрываются из `tools/list` и блокируются на `tools/call`.
 - На issue одновременно допускается только один активный trigger label из группы `run:*`.
 - `run:dev` используется для первичного запуска цикла разработки и создания PR.

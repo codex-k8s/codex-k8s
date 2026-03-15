@@ -15,6 +15,10 @@ var (
 		ToolGitHubLabelsTransition,
 		ToolRunStatusReport,
 	}
+	userInteractionTools = []ToolName{
+		ToolMCPUserNotify,
+		ToolMCPUserDecisionRequest,
+	}
 	selfImproveDiagnosticTools = []ToolName{
 		ToolSelfImproveRunsList,
 		ToolSelfImproveRunLookup,
@@ -51,7 +55,7 @@ func (s *Service) IsToolAllowed(ctx context.Context, session SessionContext, too
 }
 
 func (s *Service) allowedToolsForRunContext(runCtx resolvedRunContext) []ToolCapability {
-	allowedNames := make(map[ToolName]struct{}, len(baseLabelTools)+len(selfImproveDiagnosticTools)+len(controlPlaneControlTools))
+	allowedNames := make(map[ToolName]struct{}, len(baseLabelTools)+len(userInteractionTools)+len(selfImproveDiagnosticTools)+len(controlPlaneControlTools))
 	addAllowedToolNames(allowedNames, baseLabelTools...)
 
 	triggerKind := webhookdomain.TriggerKindDev
@@ -61,6 +65,10 @@ func (s *Service) allowedToolsForRunContext(runCtx resolvedRunContext) []ToolCap
 	agentKey := ""
 	if runCtx.Payload.Agent != nil {
 		agentKey = strings.ToLower(strings.TrimSpace(runCtx.Payload.Agent.Key))
+	}
+
+	if triggerKind != webhookdomain.TriggerKindSelfImprove && triggerKind != webhookdomain.TriggerKindSelfImproveRevise {
+		addAllowedToolNames(allowedNames, userInteractionTools...)
 	}
 
 	switch triggerKind {

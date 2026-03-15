@@ -1,12 +1,17 @@
 package mcp
 
 import (
+	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 	"github.com/codex-k8s/codex-k8s/libs/go/servicescfg"
+	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
+	repocfgrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/repocfg"
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
@@ -188,4 +193,178 @@ func TestBuildPromptRoleContext_DefaultAndKnownRole(t *testing.T) {
 	if len(unknown.Capabilities) != 1 {
 		t.Fatalf("unknown role capabilities len=%d, want 1", len(unknown.Capabilities))
 	}
+}
+
+func TestPromptContextIncludesBuiltInUserInteractionToolsForDevRun(t *testing.T) {
+	t.Parallel()
+
+	runPayload, err := json.Marshal(querytypes.RunPayload{
+		Project: querytypes.RunPayloadProject{
+			ID:           "project-1",
+			RepositoryID: "repo-1",
+		},
+		Repository: querytypes.RunPayloadRepository{
+			FullName: "codex-k8s/codex-k8s",
+		},
+		Agent: &querytypes.RunPayloadAgent{
+			Key: "dev",
+		},
+		Trigger: &querytypes.RunPayloadTrigger{
+			Kind: "dev",
+		},
+	})
+	if err != nil {
+		t.Fatalf("marshal run payload: %v", err)
+	}
+
+	service := &Service{
+		cfg: Config{
+			ServerName:         "codex-k8s-control-plane-mcp",
+			InternalMCPBaseURL: "http://platform-control-plane.example/mcp",
+			RepositoryRoot:     t.TempDir(),
+		},
+		runs: &promptContextTestRunsRepository{
+			run: agentrunrepo.Run{
+				ID:            "run-1",
+				CorrelationID: "corr-1",
+				ProjectID:     "project-1",
+				Status:        "running",
+				RunPayload:    runPayload,
+			},
+		},
+		repos: &promptContextTestReposRepository{
+			repository: repocfgrepo.RepositoryBinding{
+				ID:               "repo-1",
+				ProjectID:        "project-1",
+				Provider:         "github",
+				Owner:            "codex-k8s",
+				Name:             "codex-k8s",
+				ServicesYAMLPath: "services.yaml",
+			},
+		},
+		toolCatalog: DefaultToolCatalog(),
+		now:         time.Now,
+	}
+
+	result, err := service.PromptContext(context.Background(), SessionContext{
+		RunID:         "run-1",
+		CorrelationID: "corr-1",
+		ProjectID:     "project-1",
+		RuntimeMode:   agentdomain.RuntimeModeFullEnv,
+	})
+	if err != nil {
+		t.Fatalf("PromptContext() error = %v", err)
+	}
+
+	if !promptContextHasTool(result.Context.MCP.Tools, ToolMCPUserNotify) {
+		t.Fatalf("prompt context tools do not include %q", ToolMCPUserNotify)
+	}
+	if !promptContextHasTool(result.Context.MCP.Tools, ToolMCPUserDecisionRequest) {
+		t.Fatalf("prompt context tools do not include %q", ToolMCPUserDecisionRequest)
+	}
+}
+
+func promptContextHasTool(tools []ToolCapability, name ToolName) bool {
+	for _, tool := range tools {
+		if tool.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+type promptContextTestRunsRepository struct {
+	run agentrunrepo.Run
+}
+
+func (r *promptContextTestRunsRepository) CreatePendingIfAbsent(context.Context, agentrunrepo.CreateParams) (agentrunrepo.CreateResult, error) {
+	return agentrunrepo.CreateResult{}, nil
+}
+
+func (r *promptContextTestRunsRepository) GetByID(context.Context, string) (agentrunrepo.Run, bool, error) {
+	return r.run, true, nil
+}
+
+func (r *promptContextTestRunsRepository) CancelActiveByID(context.Context, string) (bool, error) {
+	return false, nil
+}
+
+func (r *promptContextTestRunsRepository) ListRecentByProject(context.Context, string, string, int, int) ([]agentrunrepo.RunLookupItem, error) {
+	return nil, nil
+}
+
+func (r *promptContextTestRunsRepository) SearchRecentByProjectIssueOrPullRequest(context.Context, string, string, int64, int64, int) ([]agentrunrepo.RunLookupItem, error) {
+	return nil, nil
+}
+
+func (r *promptContextTestRunsRepository) ListRunIDsByRepositoryIssue(context.Context, string, int64, int) ([]string, error) {
+	return nil, nil
+}
+
+func (r *promptContextTestRunsRepository) ListRunIDsByRepositoryPullRequest(context.Context, string, int64, int) ([]string, error) {
+	return nil, nil
+}
+
+func (r *promptContextTestRunsRepository) SetWaitContext(context.Context, agentrunrepo.SetWaitContextParams) (bool, error) {
+	return false, nil
+}
+
+func (r *promptContextTestRunsRepository) ClearWaitContextIfMatches(context.Context, agentrunrepo.ClearWaitContextParams) (bool, error) {
+	return false, nil
+}
+
+type promptContextTestReposRepository struct {
+	repository repocfgrepo.RepositoryBinding
+}
+
+func (r *promptContextTestReposRepository) ListForProject(context.Context, string, int) ([]repocfgrepo.RepositoryBinding, error) {
+	return nil, nil
+}
+
+func (r *promptContextTestReposRepository) GetByID(context.Context, string) (repocfgrepo.RepositoryBinding, bool, error) {
+	return r.repository, true, nil
+}
+
+func (r *promptContextTestReposRepository) Upsert(context.Context, repocfgrepo.UpsertParams) (repocfgrepo.RepositoryBinding, error) {
+	return repocfgrepo.RepositoryBinding{}, nil
+}
+
+func (r *promptContextTestReposRepository) Delete(context.Context, string, string) error {
+	return nil
+}
+
+func (r *promptContextTestReposRepository) FindByProviderExternalID(context.Context, string, int64) (repocfgrepo.FindResult, bool, error) {
+	return repocfgrepo.FindResult{}, false, nil
+}
+
+func (r *promptContextTestReposRepository) FindByProviderOwnerName(context.Context, string, string, string) (repocfgrepo.FindResult, bool, error) {
+	return repocfgrepo.FindResult{}, false, nil
+}
+
+func (r *promptContextTestReposRepository) GetTokenEncrypted(context.Context, string) ([]byte, bool, error) {
+	return nil, false, nil
+}
+
+func (r *promptContextTestReposRepository) GetBotTokenEncrypted(context.Context, string) ([]byte, bool, error) {
+	return nil, false, nil
+}
+
+func (r *promptContextTestReposRepository) UpsertBotParams(context.Context, repocfgrepo.RepositoryBotParamsUpsertParams) error {
+	return nil
+}
+
+func (r *promptContextTestReposRepository) UpsertPreflightReport(context.Context, repocfgrepo.RepositoryPreflightReportUpsertParams) error {
+	return nil
+}
+
+func (r *promptContextTestReposRepository) AcquirePreflightLock(context.Context, repocfgrepo.RepositoryPreflightLockAcquireParams) (string, bool, error) {
+	return "", false, nil
+}
+
+func (r *promptContextTestReposRepository) ReleasePreflightLock(context.Context, string, string) error {
+	return nil
+}
+
+func (r *promptContextTestReposRepository) SetTokenEncryptedForAll(context.Context, []byte) (int64, error) {
+	return 0, nil
 }

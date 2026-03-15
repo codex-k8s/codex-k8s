@@ -1,7 +1,6 @@
 package runtimedeploy
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -93,12 +92,6 @@ func (s *Service) buildTemplateVars(params PrepareParams, namespace string) map[
 	if targetNamespace != "" {
 		vars["CODEXK8S_PRODUCTION_NAMESPACE"] = targetNamespace
 		vars["CODEXK8S_WORKER_K8S_NAMESPACE"] = targetNamespace
-		if strings.TrimSpace(vars["CODEXK8S_CONTROL_PLANE_GRPC_TARGET"]) == "" {
-			vars["CODEXK8S_CONTROL_PLANE_GRPC_TARGET"] = fmt.Sprintf("codex-k8s-control-plane.%s.svc.cluster.local:9090", targetNamespace)
-		}
-		if strings.TrimSpace(vars["CODEXK8S_CONTROL_PLANE_MCP_BASE_URL"]) == "" {
-			vars["CODEXK8S_CONTROL_PLANE_MCP_BASE_URL"] = fmt.Sprintf("http://codex-k8s-control-plane.%s.svc.cluster.local:8081/mcp", targetNamespace)
-		}
 	}
 
 	publicDomain := resolvePublicDomain(targetEnv, targetNamespace, vars)

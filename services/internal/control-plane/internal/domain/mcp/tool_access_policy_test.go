@@ -16,7 +16,7 @@ func TestAllowedToolsForRunContext(t *testing.T) {
 		wantAllowedTools []ToolName
 	}{
 		{
-			name:        "dev gets labels only",
+			name:        "dev gets labels and user interactions",
 			triggerKind: "dev",
 			agentKey:    "dev",
 			wantAllowedTools: []ToolName{
@@ -25,6 +25,8 @@ func TestAllowedToolsForRunContext(t *testing.T) {
 				ToolGitHubLabelsRemove,
 				ToolGitHubLabelsTransition,
 				ToolRunStatusReport,
+				ToolMCPUserDecisionRequest,
+				ToolMCPUserNotify,
 			},
 		},
 		{
@@ -43,7 +45,7 @@ func TestAllowedToolsForRunContext(t *testing.T) {
 			},
 		},
 		{
-			name:        "ops sre gets labels and control tools",
+			name:        "ops sre gets labels, user interactions and control tools",
 			triggerKind: "ops",
 			agentKey:    "sre",
 			wantAllowedTools: []ToolName{
@@ -55,10 +57,12 @@ func TestAllowedToolsForRunContext(t *testing.T) {
 				ToolMCPOwnerFeedbackRequest,
 				ToolRunStatusReport,
 				ToolMCPSecretSyncEnv,
+				ToolMCPUserDecisionRequest,
+				ToolMCPUserNotify,
 			},
 		},
 		{
-			name:        "ops qa gets labels only",
+			name:        "ops qa gets labels and user interactions",
 			triggerKind: "ops",
 			agentKey:    "qa",
 			wantAllowedTools: []ToolName{
@@ -67,10 +71,12 @@ func TestAllowedToolsForRunContext(t *testing.T) {
 				ToolGitHubLabelsRemove,
 				ToolGitHubLabelsTransition,
 				ToolRunStatusReport,
+				ToolMCPUserDecisionRequest,
+				ToolMCPUserNotify,
 			},
 		},
 		{
-			name:        "ai-repair sre gets labels and control tools",
+			name:        "ai-repair sre gets labels, user interactions and control tools",
 			triggerKind: "ai_repair",
 			agentKey:    "sre",
 			wantAllowedTools: []ToolName{
@@ -82,6 +88,8 @@ func TestAllowedToolsForRunContext(t *testing.T) {
 				ToolMCPOwnerFeedbackRequest,
 				ToolRunStatusReport,
 				ToolMCPSecretSyncEnv,
+				ToolMCPUserDecisionRequest,
+				ToolMCPUserNotify,
 			},
 		},
 	}

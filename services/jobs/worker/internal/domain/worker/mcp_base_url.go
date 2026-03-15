@@ -7,9 +7,8 @@ import (
 )
 
 const (
-	defaultControlPlaneMCPBaseURL = "http://codex-k8s-control-plane:8081/mcp"
-	controlPlaneMCPHTTPPort       = "8081"
-	controlPlaneMCPPath           = "/mcp"
+	controlPlaneMCPHTTPPort = "8081"
+	controlPlaneMCPPath     = "/mcp"
 )
 
 func resolveControlPlaneMCPBaseURL(explicitURL string, grpcTarget string) string {
@@ -19,7 +18,7 @@ func resolveControlPlaneMCPBaseURL(explicitURL string, grpcTarget string) string
 
 	host := strings.TrimSpace(grpcTarget)
 	if host == "" {
-		return defaultControlPlaneMCPBaseURL
+		return ""
 	}
 
 	if parsedHost, _, err := net.SplitHostPort(host); err == nil {
@@ -27,7 +26,7 @@ func resolveControlPlaneMCPBaseURL(explicitURL string, grpcTarget string) string
 	}
 	host = strings.Trim(strings.TrimSpace(host), "[]")
 	if host == "" {
-		return defaultControlPlaneMCPBaseURL
+		return ""
 	}
 
 	return fmt.Sprintf("http://%s:%s%s", host, controlPlaneMCPHTTPPort, controlPlaneMCPPath)
