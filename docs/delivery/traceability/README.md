@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-12
 updated_at: 2026-03-15
-related_issues: [325, 327, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 413, 416, 418, 444, 447, 448, 452, 454, 456, 469, 471, 476, 484]
+related_issues: [325, 327, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 413, 416, 418, 444, 447, 448, 452, 454, 456, 469, 471, 476, 480, 484, 490, 492, 496]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -34,6 +34,7 @@ approvals:
 | `docs/delivery/traceability/s11_telegram_user_interaction_adapter_history.md` | Sprint S11 | История intake, vision, PRD, architecture и design baseline по Telegram-адаптеру как первому внешнему channel path, включая historical handover issue `#444`, design issue `#454` и continuity issue `#456` для `run:plan` |
 | `docs/delivery/traceability/s12_github_api_rate_limit_resilience_history.md` | Sprint S12 | История intake/vision/PRD решений по GitHub API rate-limit resilience, включая continuity issues `#416` (`run:prd`) и `#418` (`run:arch`) |
 | `docs/delivery/traceability/s13_quality_governance_system_history.md` | Sprint S13 | История intake, vision и PRD baseline по `Quality Governance System`, включая draft quality stack, vision package `#471`, PRD package `#476`, continuity issue `#484` для `run:arch` и зависимость от downstream runtime/UI stream `#470` |
+| `docs/delivery/traceability/s16_mission_control_graph_workspace_history.md` | Sprint S16 | История intake baseline по полному redesign Mission Control: absorption of issue `#480`, owner request `#490`, hybrid truth matrix, multi-root graph baseline, continuity rule и issue `#496` для `run:vision` |
 
 ## Правила обновления
 - В `docs/delivery/issue_map.md` обновляется только текущая каноническая карта связей, bundle refs и статус issue/PR.
