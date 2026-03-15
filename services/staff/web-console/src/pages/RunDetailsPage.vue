@@ -149,7 +149,193 @@
       </VCol>
 
       <VCol cols="12" md="5">
-        <RunTimeline :run="details.run" :events="details.events" :locale="locale" />
+        <VCard v-if="waitProjection" variant="outlined">
+          <VCardTitle class="text-subtitle-1 d-flex align-center justify-space-between ga-2 flex-wrap">
+            <span>{{ t("pages.runDetails.waitProjectionTitle") }}</span>
+            <div class="d-flex flex-wrap ga-2">
+              <VChip size="small" variant="tonal" color="warning">
+                {{ t(waitProjection.waitStateLabelKey) }}
+              </VChip>
+              <VChip size="small" variant="tonal" color="secondary">
+                {{ t(waitProjection.waitReasonLabelKey) }}
+              </VChip>
+              <VChip size="small" variant="outlined" :color="waitProjection.commentMirror.color">
+                {{ t(waitProjection.commentMirror.labelKey) }}
+              </VChip>
+            </div>
+          </VCardTitle>
+          <VCardText class="d-flex flex-column ga-4">
+            <section class="run-wait-card__section">
+              <div class="text-subtitle-2 font-weight-bold">{{ t("pages.runDetails.dominantWaitTitle") }}</div>
+              <div class="d-flex flex-wrap ga-1 mt-2">
+                <VChip size="x-small" variant="tonal" :color="waitProjection.dominantWait.contourColor">
+                  {{ t(waitProjection.dominantWait.contourLabelKey) }}
+                </VChip>
+                <VChip size="x-small" variant="tonal" :color="waitProjection.dominantWait.limitColor">
+                  {{ t(waitProjection.dominantWait.limitLabelKey) }}
+                </VChip>
+                <VChip size="x-small" variant="outlined" :color="waitProjection.dominantWait.stateColor">
+                  {{ t(waitProjection.dominantWait.stateLabelKey) }}
+                </VChip>
+                <VChip size="x-small" variant="outlined" :color="waitProjection.dominantWait.confidenceColor">
+                  {{ t(waitProjection.dominantWait.confidenceLabelKey) }}
+                </VChip>
+              </div>
+
+              <div class="run-wait-card__grid mt-3">
+                <div class="run-wait-card__meta">
+                  <div class="run-wait-card__label">{{ t("pages.runDetails.waitId") }}</div>
+                  <div class="mono">{{ waitProjection.dominantWait.waitId }}</div>
+                </div>
+                <div class="run-wait-card__meta">
+                  <div class="run-wait-card__label">{{ t("table.fields.operation_class") }}</div>
+                  <div>{{ t(waitProjection.dominantWait.operationLabelKey) }}</div>
+                </div>
+                <div class="run-wait-card__meta">
+                  <div class="run-wait-card__label">{{ t("pages.runDetails.waitEnteredAt") }}</div>
+                  <div>{{ formatDateTime(waitProjection.dominantWait.enteredAt, locale) }}</div>
+                </div>
+                <div class="run-wait-card__meta">
+                  <div class="run-wait-card__label">{{ t("table.fields.attempts") }}</div>
+                  <div>{{ waitProjection.dominantWait.attemptsUsed }}/{{ waitProjection.dominantWait.maxAttempts }}</div>
+                </div>
+                <div class="run-wait-card__meta">
+                  <div class="run-wait-card__label">{{ t("pages.runDetails.recoveryHintSource") }}</div>
+                  <div>{{ t(waitProjection.dominantWait.recoveryHint.sourceLabelKey) }}</div>
+                </div>
+                <div class="run-wait-card__meta">
+                  <div class="run-wait-card__label">{{ t(nextStepForWait(waitProjection.dominantWait).scheduledAtLabelKey || "pages.runDetails.resumeNotBefore") }}</div>
+                  <div>{{ formatDateTime(nextStepForWait(waitProjection.dominantWait).scheduledAt, locale) }}</div>
+                </div>
+              </div>
+
+              <div class="d-flex flex-wrap ga-2 mt-3">
+                <VChip size="small" variant="tonal" :color="waitProjection.dominantWait.recoveryHint.kindColor">
+                  {{ t(waitProjection.dominantWait.recoveryHint.kindLabelKey) }}
+                </VChip>
+                <VChip
+                  v-if="waitProjection.dominantWait.manualAction"
+                  size="small"
+                  variant="tonal"
+                  color="error"
+                >
+                  {{ t(waitProjection.dominantWait.manualAction.kindLabelKey) }}
+                </VChip>
+              </div>
+
+              <div class="run-wait-card__details mt-3">
+                {{ nextStepForWait(waitProjection.dominantWait).detailsMarkdown }}
+              </div>
+
+              <VAlert v-if="waitProjection.dominantWait.manualAction" type="warning" variant="tonal" class="mt-3">
+                <div class="font-weight-medium">{{ waitProjection.dominantWait.manualAction.summary }}</div>
+                <div class="run-wait-card__details mt-2">
+                  {{ waitProjection.dominantWait.manualAction.detailsMarkdown }}
+                </div>
+              </VAlert>
+            </section>
+
+            <section v-if="waitProjection.relatedWaits.length" class="run-wait-card__section">
+              <div class="text-subtitle-2 font-weight-bold">{{ t("pages.runDetails.relatedWaitsTitle") }}</div>
+              <div class="d-flex flex-column ga-3 mt-3">
+                <VSheet
+                  v-for="related in waitProjection.relatedWaits"
+                  :key="related.waitId"
+                  rounded="lg"
+                  border
+                  class="run-wait-card__related"
+                >
+                  <div class="d-flex align-center justify-space-between ga-2 flex-wrap">
+                    <div class="d-flex flex-wrap ga-1">
+                      <VChip size="x-small" variant="tonal" :color="related.contourColor">
+                        {{ t(related.contourLabelKey) }}
+                      </VChip>
+                      <VChip size="x-small" variant="tonal" :color="related.limitColor">
+                        {{ t(related.limitLabelKey) }}
+                      </VChip>
+                      <VChip size="x-small" variant="outlined" :color="related.stateColor">
+                        {{ t(related.stateLabelKey) }}
+                      </VChip>
+                    </div>
+                    <span class="text-caption text-medium-emphasis">
+                      {{ formatCompactDateTime(related.enteredAt, locale) }}
+                    </span>
+                  </div>
+                  <div class="text-body-2 mt-2">{{ t(related.operationLabelKey) }}</div>
+                  <div class="text-caption text-medium-emphasis mt-1">{{ t(related.confidenceLabelKey) }}</div>
+                  <div class="run-wait-card__details mt-2">
+                    {{ nextStepForWait(related).summary }}
+                  </div>
+                </VSheet>
+              </div>
+            </section>
+          </VCardText>
+        </VCard>
+
+        <VAlert
+          v-else-if="details.run?.wait_state === 'waiting_backpressure'"
+          type="info"
+          variant="tonal"
+        >
+          {{ t("pages.runDetails.waitProjectionPending") }}
+        </VAlert>
+
+        <VCard v-if="showWaitDiagnostics" class="mt-4" variant="outlined">
+          <VCardTitle class="text-subtitle-1">{{ t("pages.runDetails.realtimeWaitActivity") }}</VCardTitle>
+          <VCardText>
+            <div v-if="waitRealtimeEntries.length" class="run-wait-feed">
+              <VSheet
+                v-for="entry in waitRealtimeEntries"
+                :key="entry.id"
+                rounded="lg"
+                border
+                class="run-wait-feed__entry"
+              >
+                <div class="d-flex align-center justify-space-between ga-3 flex-wrap">
+                  <div class="d-flex align-center ga-3">
+                    <VAvatar :color="entry.color" variant="tonal" size="32">
+                      <VIcon :icon="entry.icon" size="16" />
+                    </VAvatar>
+                    <div>
+                      <div class="font-weight-medium">{{ t(entry.labelKey) }}</div>
+                      <div class="text-caption text-medium-emphasis mono">{{ entry.waitId }}</div>
+                    </div>
+                  </div>
+                  <span class="text-caption text-medium-emphasis">
+                    {{ formatCompactDateTime(entry.occurredAt, locale) }}
+                  </span>
+                </div>
+
+                <div class="d-flex flex-wrap ga-1 mt-3">
+                  <VChip v-if="entry.contourLabelKey" size="x-small" variant="tonal">
+                    {{ t(entry.contourLabelKey) }}
+                  </VChip>
+                  <VChip v-if="entry.limitLabelKey" size="x-small" variant="tonal">
+                    {{ t(entry.limitLabelKey) }}
+                  </VChip>
+                  <VChip v-if="entry.resolutionLabelKey" size="x-small" variant="tonal" :color="entry.color">
+                    {{ t(entry.resolutionLabelKey) }}
+                  </VChip>
+                  <VChip v-if="entry.manualActionLabelKey" size="x-small" variant="tonal" color="error">
+                    {{ t(entry.manualActionLabelKey) }}
+                  </VChip>
+                </div>
+
+                <div v-if="entry.manualActionSummary" class="text-body-2 mt-2">
+                  {{ entry.manualActionSummary }}
+                </div>
+                <div v-if="entry.detailsMarkdown" class="run-wait-card__details mt-2">
+                  {{ entry.detailsMarkdown }}
+                </div>
+              </VSheet>
+            </div>
+            <VAlert v-else type="info" variant="tonal">
+              {{ t("pages.runDetails.realtimeWaitEmpty") }}
+            </VAlert>
+          </VCardText>
+        </VCard>
+
+        <RunTimeline :run="details.run" :events="details.events" :locale="locale" :class="{ 'mt-4': showWaitDiagnostics }" />
       </VCol>
     </VRow>
   </div>
@@ -221,10 +407,12 @@ import CopyChip from "../shared/ui/CopyChip.vue";
 import AdaptiveBtn from "../shared/ui/AdaptiveBtn.vue";
 import BackBtn from "../shared/ui/BackBtn.vue";
 import RunTimeline from "../shared/ui/RunTimeline.vue";
-import { formatDateTime } from "../shared/lib/datetime";
+import { formatCompactDateTime, formatDateTime } from "../shared/lib/datetime";
 import { colorForRunStatus } from "../shared/lib/chips";
 import { subscribeRunRealtime, type RunRealtimeState } from "../features/runs/realtime";
 import { useRunDetailsStore } from "../features/runs/store";
+import { buildRunWaitNextStepView, buildRunWaitProjectionView, buildRunWaitRealtimeEntryView } from "../features/runs/wait-presenters";
+import type { RunWaitItemView, RunWaitNextStepView, RunWaitRealtimeEntryView } from "../features/runs/types";
 import { useSnackbarStore } from "../shared/ui/feedback/snackbar-store";
 
 const props = defineProps<{ runId: string }>();
@@ -256,6 +444,15 @@ const realtimeChipLabelKey = computed(() => {
   if (realtimeState.value === "reconnecting") return "pages.runDetails.realtimeReconnecting";
   return "pages.runDetails.realtimeConnecting";
 });
+const waitProjection = computed(() => buildRunWaitProjectionView(details.run?.wait_projection));
+const waitRealtimeEntries = computed(() =>
+  details.waitRealtimeMessages
+    .map(buildRunWaitRealtimeEntryView)
+    .filter((entry): entry is RunWaitRealtimeEntryView => entry !== null),
+);
+const showWaitDiagnostics = computed(
+  () => Boolean(waitProjection.value || details.run?.wait_state === "waiting_backpressure" || waitRealtimeEntries.value.length),
+);
 
 const codexAuthRequiredEvent = computed(() => details.events.find((e) => e.event_type === "run.codex.auth.required") || null);
 const codexAuthPayload = computed(() => {
@@ -294,6 +491,10 @@ function prettyJSON(raw: string): string {
   } catch {
     return value;
   }
+}
+
+function nextStepForWait(item: RunWaitItemView): RunWaitNextStepView {
+  return buildRunWaitNextStepView(item);
 }
 
 function parseJSONMaybe(raw: string): unknown {
@@ -416,5 +617,46 @@ watch(
   max-height: 520px;
   font-size: 12px;
   opacity: 0.95;
+}
+
+.run-wait-card__section + .run-wait-card__section {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  padding-top: 16px;
+}
+
+.run-wait-card__grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.run-wait-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.run-wait-card__label {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.62);
+}
+
+.run-wait-card__details {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.run-wait-card__related {
+  padding: 12px;
+}
+
+.run-wait-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.run-wait-feed__entry {
+  padding: 12px;
 }
 </style>

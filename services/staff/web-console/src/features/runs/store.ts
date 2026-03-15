@@ -20,6 +20,7 @@ import type {
   RunLogs,
   RunNamespaceCleanupResponse,
 } from "./types";
+import { isRunWaitRealtimeMessage } from "./wait-presenters";
 
 const errorAutoHideMs = 5000;
 function sortEventsNewest(items: FlowEvent[]): FlowEvent[] {
@@ -130,6 +131,7 @@ export const useRunDetailsStore = defineStore("runDetails", {
     logs: null as RunLogs | null,
     snapshotLoaded: false,
     snapshotLoading: false,
+    waitRealtimeMessages: [] as RunRealtimeMessage[],
     deletingNamespace: false,
     deleteNamespaceError: null as ApiError | null,
     namespaceDeleteResult: null as RunNamespaceCleanupResponse | null,
@@ -166,12 +168,14 @@ export const useRunDetailsStore = defineStore("runDetails", {
         this.eventsPayloadLoaded = true;
         this.logs = logs;
         this.snapshotLoaded = false;
+        this.waitRealtimeMessages = [];
       } catch (e) {
         this.run = null;
         this.events = [];
         this.eventsPayloadLoaded = false;
         this.logs = null;
         this.snapshotLoaded = false;
+        this.waitRealtimeMessages = [];
         this.error = normalizeApiError(e);
         this.scheduleErrorHide("error", "errorTimerId");
       } finally {
@@ -234,6 +238,9 @@ export const useRunDetailsStore = defineStore("runDetails", {
       }
       if (message.logs) {
         this.logs = message.logs;
+      }
+      if (isRunWaitRealtimeMessage(message)) {
+        this.waitRealtimeMessages = [message, ...this.waitRealtimeMessages].slice(0, 12);
       }
     },
 

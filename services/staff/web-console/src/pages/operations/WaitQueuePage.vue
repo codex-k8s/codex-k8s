@@ -44,7 +44,7 @@
         <VDataTable
           v-model:page="tablePage"
           :headers="headers"
-          :items="runs.waitQueue"
+          :items="waitRows"
           :loading="runs.waitsLoading"
           :items-per-page="itemsPerPage"
           density="comfortable"
@@ -60,17 +60,85 @@
 
           <template #item.project="{ item }">
             <RouterLink
-              v-if="item.project_id"
+              v-if="item.projectId"
               class="text-primary font-weight-bold text-decoration-none"
-              :to="{ name: 'project-details', params: { projectId: item.project_id } }"
+              :to="{ name: 'project-details', params: { projectId: item.projectId } }"
             >
-              {{ item.project_name || item.project_slug || item.project_id }}
+              {{ item.projectLabel }}
             </RouterLink>
-            <span v-else class="text-medium-emphasis">-</span>
+            <span v-else class="font-weight-bold">{{ item.projectLabel }}</span>
+            <div class="text-caption text-medium-emphasis mono mt-1">{{ item.runId }}</div>
+          </template>
+
+          <template #item.run="{ item }">
+            <div class="d-flex flex-column ga-1">
+              <span class="font-weight-medium mono">{{ item.triggerKind || "-" }}</span>
+              <span class="text-body-2 text-medium-emphasis mono">{{ item.agentKey || "-" }}</span>
+              <span class="text-caption text-medium-emphasis mono">{{ item.waitState || "-" }}</span>
+            </div>
+          </template>
+
+          <template #item.dominant_wait="{ item }">
+            <div v-if="item.projection" class="d-flex flex-column ga-2">
+              <div class="d-flex flex-wrap ga-1">
+                <VChip size="x-small" variant="tonal" :color="item.projection.dominantWait.contourColor">
+                  {{ t(item.projection.dominantWait.contourLabelKey) }}
+                </VChip>
+                <VChip size="x-small" variant="tonal" :color="item.projection.dominantWait.limitColor">
+                  {{ t(item.projection.dominantWait.limitLabelKey) }}
+                </VChip>
+                <VChip size="x-small" variant="outlined" :color="item.projection.dominantWait.stateColor">
+                  {{ t(item.projection.dominantWait.stateLabelKey) }}
+                </VChip>
+                <VChip size="x-small" variant="outlined" :color="item.projection.commentMirror.color">
+                  {{ t(item.projection.commentMirror.labelKey) }}
+                </VChip>
+              </div>
+              <div class="text-body-2">{{ t(item.projection.dominantWait.operationLabelKey) }}</div>
+              <div class="text-caption text-medium-emphasis">
+                {{ t(item.projection.dominantWait.confidenceLabelKey) }}
+              </div>
+              <div v-if="item.projection.relatedWaits.length" class="d-flex flex-wrap ga-1">
+                <VChip
+                  v-for="related in item.projection.relatedWaits"
+                  :key="related.waitId"
+                  size="x-small"
+                  variant="outlined"
+                  :color="related.contourColor"
+                >
+                  {{ t(related.contourLabelKey) }}
+                </VChip>
+              </div>
+            </div>
+            <div v-else class="d-flex flex-column ga-1">
+              <span class="text-body-2 mono">{{ item.waitState || "-" }}</span>
+              <span class="text-caption text-medium-emphasis mono">{{ item.waitReason || "-" }}</span>
+            </div>
+          </template>
+
+          <template #item.next_step="{ item }">
+            <div v-if="item.projection" class="d-flex flex-column ga-2">
+              <VChip size="small" variant="tonal" :color="nextStepForRow(item)?.color">
+                {{ t(nextStepForRow(item)?.labelKey || "runs.waits.hints.manualOnly") }}
+              </VChip>
+              <div class="text-body-2 wait-queue__details">
+                {{ nextStepForRow(item)?.summary }}
+              </div>
+              <div v-if="nextStepForRow(item)?.scheduledAt" class="text-caption text-medium-emphasis">
+                {{ t(nextStepForRow(item)?.scheduledAtLabelKey || "pages.runDetails.resumeNotBefore") }}:
+                {{ formatDateTime(nextStepForRow(item)?.scheduledAt, locale) }}
+              </div>
+            </div>
+            <div v-else class="text-body-2 text-medium-emphasis">
+              {{ t("pages.waitQueue.genericWait") }}
+            </div>
           </template>
 
           <template #item.wait_since="{ item }">
-            <span class="text-medium-emphasis">{{ formatDateTime(item.wait_since, locale) }}</span>
+            <div class="d-flex flex-column ga-1">
+              <span class="font-weight-medium">{{ formatDateTime(item.waitSince, locale) }}</span>
+              <span class="text-caption text-medium-emphasis">{{ formatDurationSince(item.waitSince, locale) }}</span>
+            </div>
           </template>
 
           <template #item.actions="{ item }">
@@ -81,7 +149,7 @@
                   size="small"
                   variant="text"
                   icon="mdi-open-in-new"
-                  :to="{ name: 'run-details', params: { runId: item.id } }"
+                  :to="{ name: 'run-details', params: { runId: item.runId } }"
                 />
               </template>
             </VTooltip>
@@ -100,32 +168,43 @@
 
 <script setup lang="ts">
 // TODO(#19): Добавить SLA/heartbeat индикацию и перейти на общий DataTable wrapper (table settings + row actions menu).
-import { onMounted, watch } from "vue";
+import { computed, onMounted, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { useI18n } from "vue-i18n";
 
 import PageHeader from "../../shared/ui/PageHeader.vue";
 import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
-import { formatDateTime } from "../../shared/lib/datetime";
+import { formatDateTime, formatDurationSince } from "../../shared/lib/datetime";
 import { colorForRunStatus } from "../../shared/lib/chips";
 import { createProgressiveTableState } from "../../shared/lib/progressive-table";
 import { useRunsStore } from "../../features/runs/store";
+import { buildRunWaitNextStepView, buildRunWaitQueueRow } from "../../features/runs/wait-presenters";
+import type { RunWaitNextStepView, RunWaitQueueRowView } from "../../features/runs/types";
 
 const runs = useRunsStore();
 const { t, locale } = useI18n({ useScope: "global" });
 const itemsPerPage = 10;
 const paging = createProgressiveTableState({ itemsPerPage });
 const tablePage = paging.page;
+const waitRows = computed(() => runs.waitQueue.map(buildRunWaitQueueRow));
 
 const headers = [
   { title: t("table.fields.status"), key: "status", width: 140, align: "center" },
   { title: t("table.fields.project"), key: "project", sortable: false, width: 220, align: "center" },
-  { title: t("table.fields.trigger_kind"), key: "trigger_kind", width: 160, align: "center" },
-  { title: t("table.fields.agent_key"), key: "agent_key", width: 160, align: "center" },
-  { title: t("table.fields.wait_state"), key: "wait_state", width: 160, align: "center" },
+  { title: t("table.fields.run"), key: "run", sortable: false, width: 170, align: "center" },
+  { title: t("table.fields.dominant_wait"), key: "dominant_wait", sortable: false, width: 270, align: "center" },
+  { title: t("table.fields.next_step"), key: "next_step", sortable: false, width: 260, align: "center" },
   { title: t("table.fields.wait_since"), key: "wait_since", width: 180, align: "center" },
   { title: "", key: "actions", sortable: false, width: 72, align: "end" },
 ] as const;
+
+function nextStepForRow(row: RunWaitQueueRowView): RunWaitNextStepView | null {
+  if (!row.projection) {
+    return null;
+  }
+
+  return buildRunWaitNextStepView(row.projection.dominantWait);
+}
 
 function reset(): void {
   runs.waitsFilters.triggerKind = "";
@@ -161,3 +240,13 @@ watch(
 
 onMounted(() => void refreshWaits());
 </script>
+
+<style scoped>
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.wait-queue__details {
+  white-space: pre-line;
+}
+</style>

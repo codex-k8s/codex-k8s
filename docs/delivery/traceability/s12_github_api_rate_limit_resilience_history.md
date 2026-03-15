@@ -226,3 +226,22 @@ approvals:
 - Внешний baseline дополнительно сверен:
   - Context7 `/github/docs` был использован в предшествующих S12 waves как source of truth для rate-limit semantics; Wave `#429` не добавляет новых provider assumptions и реализует только transport exposure уже утверждённых typed contracts.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: Issue `#429` закрывает transport visibility wave и не добавляет новых продуктовых требований.
+
+## Актуализация по Issue #430 (`run:dev`, 2026-03-15)
+- Реализован frontend stream `S12-E06`:
+  - `services/staff/web-console/src/features/runs/{types.ts,realtime.ts,store.ts,wait-presenters.ts}`;
+  - `services/staff/web-console/src/pages/{RunDetailsPage.vue,operations/WaitQueuePage.vue}`;
+  - `services/staff/web-console/src/shared/lib/run-waits.test.ts`;
+  - `services/staff/web-console/src/i18n/messages/{ru.ts,en.ts}`.
+- Зафиксированы:
+  - wait queue теперь рендерит typed dominant wait, related waits, contour attribution, comment-mirror state и next-step guidance из `Run.wait_projection`, сохраняя fallback для legacy wait surfaces без projection;
+  - run details получили отдельную wait visibility card с dominant/related waits, recovery hint source, attempts budget и manual-action guidance, построенную только из typed DTO без parse raw logs/service-comment;
+  - realtime stream `wait_entered|wait_updated|wait_resolved|wait_manual_action_required` теперь отображается в staff UI как отдельная activity feed, а frontend store хранит последние wait envelopes без переноса domain classification из `control-plane`;
+  - unit coverage добавлена для wait projection presenters и realtime envelope parsing/builders, чтобы handover в `run:qa` имел machine-checked evidence по UI-мэппингу typed contracts.
+- Проверки:
+  - `npm --prefix services/staff/web-console run test:unit`
+  - `npm --prefix services/staff/web-console run build`
+  - `git diff --check`
+- Внешний baseline дополнительно сверен:
+  - Context7 `/vuetifyjs/vuetify` использован для проверки slot/custom-cell patterns `VDataTable` перед обновлением wait queue layout; provider semantics и contract ownership по-прежнему берутся из уже утверждённых S12 design/API docs.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: Issue `#430` закрывает frontend visibility wave и не добавляет новых продуктовых требований.
