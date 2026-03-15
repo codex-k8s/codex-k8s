@@ -5,8 +5,8 @@ title: "Sprint S13 Traceability History"
 status: in-review
 owner_role: KM
 created_at: 2026-03-14
-updated_at: 2026-03-14
-related_issues: [469, 471, 476]
+updated_at: 2026-03-15
+related_issues: [469, 471, 476, 484]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -48,3 +48,16 @@ approvals:
 - Создана follow-up issue `#476` для stage `run:prd` без trigger-лейбла.
 - Для GitHub automation повторно подтверждён актуальный non-interactive CLI flow через Context7 (`/websites/cli_github_manual`) и локальный `gh issue create --help`.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась, потому что vision stage фиксирует product framing, KPI/guardrails и continuity, а не изменяет канонический requirements baseline.
+
+## Актуализация по Issue #476 (`run:prd`, 2026-03-15)
+- Подготовлен PRD package:
+  - `docs/delivery/epics/s13/epic-s13-day3-quality-governance-prd.md`;
+  - `docs/delivery/epics/s13/prd-s13-day3-quality-governance-system.md`.
+- Зафиксированы:
+  - explicit risk tiering, mandatory evidence package, verification minimum и review/waiver discipline как отдельные product constructs;
+  - proportional low-risk path, запрет silent waivers для `high/critical` и governance-gap feedback loop;
+  - wave priorities между core governance baseline и deferred runtime/UI automation stream Sprint S14 (`#470`);
+  - handover в stage `run:arch` с обязательным сохранением boundary `Sprint S13 -> Sprint S14`.
+- Создана follow-up issue `#484` для stage `run:arch` без trigger-лейбла.
+- Для GitHub continuity и PR-flow повторно подтверждён актуальный non-interactive CLI flow через Context7 (`/websites/cli_github_manual`) и локальные `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: PRD stage уточнил initiative-specific contract и historical delta; в root-матрице синхронизирован только related-issues index.
