@@ -23,6 +23,23 @@ type runNamespaceDeleteByStaffPayload struct {
 	RequestedByID      string `json:"requested_by_id,omitempty"`
 }
 
+// runCanceledPayload is stored in flow_events for run-level cancellation requests.
+type runCanceledPayload struct {
+	RunID                        string `json:"run_id"`
+	PreviousStatus               string `json:"previous_status"`
+	CurrentStatus                string `json:"current_status"`
+	AlreadyTerminal              bool   `json:"already_terminal"`
+	RuntimeDeployCancelRequested bool   `json:"runtime_deploy_cancel_requested"`
+	JobStopped                   bool   `json:"job_stopped"`
+	CanceledGitHubWaits          int    `json:"canceled_github_waits"`
+	RunStatusCommentID           int64  `json:"run_status_comment_id,omitempty"`
+	RunStatusURL                 string `json:"run_status_url,omitempty"`
+	RequestedByType              string `json:"requested_by_type"`
+	RequestedByID                string `json:"requested_by_id,omitempty"`
+	RequestedByEmail             string `json:"requested_by_email,omitempty"`
+	RequestedByGitHub            string `json:"requested_by_github_login,omitempty"`
+}
+
 // triggerLabelConflictCommentPayload is stored in flow_events for conflict diagnostics.
 type triggerLabelConflictCommentPayload struct {
 	RepositoryFullName string   `json:"repository_full_name"`

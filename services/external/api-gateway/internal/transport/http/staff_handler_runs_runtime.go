@@ -49,6 +49,23 @@ func (h *staffHandler) GetRun(c *echo.Context) error {
 	return getByPathResp(c, "run_id", h.getRunCall, casters.Run)
 }
 
+func (h *staffHandler) CancelRun(c *echo.Context) error {
+	return withPrincipalAndResolved(c, resolvePath("run_id"), func(principal *controlplanev1.Principal, runID string) error {
+		var req models.RunActionRequest
+		if err := bindBodyOptional(c, &req); err != nil {
+			return err
+		}
+		resp, err := h.cancelRunCall(c.Request().Context(), principal, runActionArg{
+			runID: strings.TrimSpace(runID),
+			body:  req,
+		})
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, casters.RunAction(resp))
+	})
+}
+
 func (h *staffHandler) GetRunLogs(c *echo.Context) error {
 	return withPrincipalAndResolvedJSON(c, resolveRunLogsArg(200), h.getRunLogsCall, casters.RunLogs)
 }

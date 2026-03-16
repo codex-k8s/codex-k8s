@@ -37,6 +37,22 @@ export type RunNamespaceCleanupResponse = {
     comment_url?: string | null;
 };
 
+export type RunActionRequest = {
+    reason?: string | null;
+};
+
+export type RunActionResponse = {
+    run_id: string;
+    action: 'cancel';
+    previous_status: 'pending' | 'running' | 'waiting_backpressure' | 'succeeded' | 'failed' | 'canceled';
+    current_status: 'pending' | 'running' | 'waiting_backpressure' | 'succeeded' | 'failed' | 'canceled';
+    already_terminal: boolean;
+    runtime_deploy_cancel_requested: boolean;
+    job_stopped: boolean;
+    canceled_github_waits: number;
+    comment_url?: string | null;
+};
+
 export type Project = {
     id: string;
     slug: string;
@@ -1684,6 +1700,49 @@ export type GetRunResponses = {
 };
 
 export type GetRunResponse = GetRunResponses[keyof GetRunResponses];
+
+export type CancelRunData = {
+    body?: RunActionRequest;
+    path: {
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/runs/{run_id}/cancel';
+};
+
+export type CancelRunErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+    /**
+     * Conflict
+     */
+    409: ErrorResponse;
+};
+
+export type CancelRunError = CancelRunErrors[keyof CancelRunErrors];
+
+export type CancelRunResponses = {
+    /**
+     * Run cancel result
+     */
+    200: RunActionResponse;
+};
+
+export type CancelRunResponse = CancelRunResponses[keyof CancelRunResponses];
 
 export type DeleteRunNamespaceData = {
     body?: never;

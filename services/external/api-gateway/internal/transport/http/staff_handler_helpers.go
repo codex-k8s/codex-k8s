@@ -68,6 +68,13 @@ func bindBody(c *echo.Context, target interface{}) error {
 	return nil
 }
 
+func bindBodyOptional(c *echo.Context, target interface{}) error {
+	if c.Request().ContentLength == 0 {
+		return nil
+	}
+	return bindBody(c, target)
+}
+
 func resolvePath(param string) func(c *echo.Context) (string, error) {
 	return func(c *echo.Context) (string, error) {
 		return requirePathParam(c, param)

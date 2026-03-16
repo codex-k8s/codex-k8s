@@ -37,13 +37,14 @@ func (s *Service) finalizeInteractionResume(
 	if err != nil {
 		return false, err
 	}
+	sourceRunTerminal := isTerminalInteractionResumeSourceRun(run.Status)
 
 	scheduled, err := s.scheduleInteractionResume(ctx, run, interaction.ID, resumePayload)
 	if err != nil {
 		return false, err
 	}
 
-	waitCleared, err := s.clearInteractionWaitContext(ctx, session, interaction.ID, requireCurrentWait)
+	waitCleared, err := s.clearInteractionWaitContext(ctx, session, interaction.ID, requireCurrentWait && !sourceRunTerminal)
 	if err != nil {
 		return false, err
 	}
@@ -85,6 +86,9 @@ func (s *Service) scheduleInteractionResume(
 ) (bool, error) {
 	if resumePayload == nil {
 		return false, fmt.Errorf("interaction resume payload is required")
+	}
+	if isTerminalInteractionResumeSourceRun(run.Status) {
+		return false, nil
 	}
 
 	runMeta, err := parseInteractionResumeRunPayload(run.RunPayload)
@@ -163,4 +167,13 @@ func buildInteractionResumePendingRunPayload(
 
 func buildInteractionResumeCorrelationID(interactionID string) string {
 	return userinteraction.ResumeCorrelationPrefix + strings.TrimSpace(interactionID)
+}
+
+func isTerminalInteractionResumeSourceRun(status string) bool {
+	switch strings.TrimSpace(status) {
+	case "succeeded", "failed", "canceled":
+		return true
+	default:
+		return false
+	}
 }

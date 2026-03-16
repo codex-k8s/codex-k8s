@@ -8,9 +8,12 @@ import (
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	nextstepdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/nextstep"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
+	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentsession"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
+	githubratelimitwaitrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/githubratelimitwait"
 	platformtokenrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/platformtoken"
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/staffrun"
+	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
 
@@ -128,6 +131,28 @@ type DeleteNamespaceResult struct {
 	CommentURL     string
 }
 
+// CancelRunParams describes one run cancellation request.
+type CancelRunParams struct {
+	RunID             string
+	Reason            string
+	RequestedByType   RequestedByType
+	RequestedByID     string
+	RequestedByEmail  string
+	RequestedByGitHub string
+}
+
+// CancelRunResult describes run cancellation outcome.
+type CancelRunResult struct {
+	RunID                        string
+	PreviousStatus               string
+	CurrentStatus                string
+	AlreadyTerminal              bool
+	RuntimeDeployCancelRequested bool
+	JobStopped                   bool
+	CanceledGitHubWaits          int
+	CommentURL                   string
+}
+
 // RuntimeState describes current run runtime artifacts from status comment and Kubernetes.
 type RuntimeState struct {
 	HasStatusComment bool
@@ -175,7 +200,12 @@ type KubernetesClient interface {
 	DeleteManagedRunNamespace(ctx context.Context, namespace string) (bool, error)
 	NamespaceExists(ctx context.Context, namespace string) (bool, error)
 	JobExists(ctx context.Context, namespace string, jobName string) (bool, error)
+	DeleteJobIfExists(ctx context.Context, namespace string, jobName string) error
 	FindManagedRunNamespaceByRunID(ctx context.Context, runID string) (string, bool, error)
+}
+
+type runtimeDeployController interface {
+	RequestTaskAction(ctx context.Context, params runtimedeploydomain.TaskActionParams) (runtimedeploydomain.TaskActionResult, error)
 }
 
 // GitHubClient provides issue comment operations for runstatus service.
@@ -193,26 +223,32 @@ type GitHubClient interface {
 
 // Dependencies wires required adapters for runstatus service.
 type Dependencies struct {
-	Runs       agentrunrepo.Repository
-	Platform   platformtokenrepo.Repository
-	TokenCrypt *tokencrypt.Service
-	GitHub     GitHubClient
-	Kubernetes KubernetesClient
-	FlowEvents floweventrepo.Repository
-	StaffRuns  staffrunrepo.Repository
+	Runs                 agentrunrepo.Repository
+	Sessions             agentsessionrepo.Repository
+	Platform             platformtokenrepo.Repository
+	TokenCrypt           *tokencrypt.Service
+	GitHub               GitHubClient
+	Kubernetes           KubernetesClient
+	FlowEvents           floweventrepo.Repository
+	StaffRuns            staffrunrepo.Repository
+	GitHubRateLimitWaits githubratelimitwaitrepo.Repository
+	RuntimeDeploy        runtimeDeployController
 }
 
 // Service maintains one run status message in issue comments and handles forced namespace cleanup.
 type Service struct {
 	cfg Config
 
-	runs       agentrunrepo.Repository
-	platform   platformtokenrepo.Repository
-	tokenCrypt *tokencrypt.Service
-	github     GitHubClient
-	kubernetes KubernetesClient
-	flowEvents floweventrepo.Repository
-	staffRuns  staffrunrepo.Repository
+	runs                 agentrunrepo.Repository
+	sessions             agentsessionrepo.Repository
+	platform             platformtokenrepo.Repository
+	tokenCrypt           *tokencrypt.Service
+	github               GitHubClient
+	kubernetes           KubernetesClient
+	flowEvents           floweventrepo.Repository
+	staffRuns            staffrunrepo.Repository
+	githubRateLimitWaits githubratelimitwaitrepo.Repository
+	runtimeDeploy        runtimeDeployController
 }
 
 type runContext struct {

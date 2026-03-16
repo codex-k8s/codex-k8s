@@ -115,6 +115,8 @@
 {{- if .ShowFinished }}
 {{- if .IsRunSucceeded }}
 - 👌 Run finished successfully
+{{- else if .IsRunCanceled }}
+- ⛔ Run canceled
 {{- else if .IsRunFailed }}
 - ⚠️ Run finished with errors
 {{- else }}

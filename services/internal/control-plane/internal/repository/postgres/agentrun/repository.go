@@ -114,7 +114,8 @@ func (r *Repository) GetByID(ctx context.Context, runID string) (domainrepo.Run,
 	return runFromDBModel(row), true, nil
 }
 
-// CancelActiveByID marks one pending/running run as canceled and releases its slot lease when present.
+// CancelActiveByID marks one pending/running/waiting_backpressure run as canceled,
+// clears wait linkage, and releases its slot lease when present.
 func (r *Repository) CancelActiveByID(ctx context.Context, runID string) (bool, error) {
 	trimmedRunID := strings.TrimSpace(runID)
 	if trimmedRunID == "" {

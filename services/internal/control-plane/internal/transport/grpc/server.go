@@ -565,6 +565,20 @@ func runtimeDeployTaskActionToProto(item runtimedeploydomain.TaskActionResult) *
 	}
 }
 
+func runActionToProto(item staff.RunCancelResult) *controlplanev1.RunActionResponse {
+	return &controlplanev1.RunActionResponse{
+		RunId:                        item.RunID,
+		Action:                       string(runtimedeploydomain.TaskActionCancel),
+		PreviousStatus:               item.PreviousStatus,
+		CurrentStatus:                item.CurrentStatus,
+		AlreadyTerminal:              item.AlreadyTerminal,
+		RuntimeDeployCancelRequested: item.RuntimeDeployCancelRequested,
+		JobStopped:                   item.JobStopped,
+		CanceledGithubWaits:          int32(item.CanceledGitHubWaits),
+		CommentUrl:                   stringPtrOrNil(item.CommentURL),
+	}
+}
+
 func runtimeDeployLogsToProto(items []entitytypes.RuntimeDeployTaskLogEntry) []*controlplanev1.RuntimeDeployTaskLog {
 	if len(items) == 0 {
 		return []*controlplanev1.RuntimeDeployTaskLog{}

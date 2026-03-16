@@ -56,14 +56,17 @@ func NewService(cfg Config, deps Dependencies) (*Service, error) {
 	}
 
 	return &Service{
-		cfg:        cfg,
-		runs:       deps.Runs,
-		platform:   deps.Platform,
-		tokenCrypt: deps.TokenCrypt,
-		github:     deps.GitHub,
-		kubernetes: deps.Kubernetes,
-		flowEvents: deps.FlowEvents,
-		staffRuns:  deps.StaffRuns,
+		cfg:                  cfg,
+		runs:                 deps.Runs,
+		sessions:             deps.Sessions,
+		platform:             deps.Platform,
+		tokenCrypt:           deps.TokenCrypt,
+		github:               deps.GitHub,
+		kubernetes:           deps.Kubernetes,
+		flowEvents:           deps.FlowEvents,
+		staffRuns:            deps.StaffRuns,
+		githubRateLimitWaits: deps.GitHubRateLimitWaits,
+		runtimeDeploy:        deps.RuntimeDeploy,
 	}, nil
 }
 
@@ -588,12 +591,8 @@ func (s *Service) GetRunRuntimeState(ctx context.Context, runID string) (Runtime
 	if result.JobNamespace == "" {
 		result.JobNamespace = result.Namespace
 	}
-	if result.JobName != "" && result.JobNamespace != "" {
-		exists, err := s.kubernetes.JobExists(ctx, result.JobNamespace, result.JobName)
-		if err != nil {
-			return RuntimeState{}, fmt.Errorf("check job exists %s/%s: %w", result.JobNamespace, result.JobName, err)
-		}
-		result.JobExists = exists
+	if err := s.populateRuntimeJobState(ctx, &result); err != nil {
+		return RuntimeState{}, err
 	}
 
 	return result, nil
@@ -760,6 +759,18 @@ func (s *Service) lookupRunStatusCommentByID(ctx context.Context, runCtx runCont
 	}
 
 	return comment, state, true, nil
+}
+
+func (s *Service) populateRuntimeJobState(ctx context.Context, state *RuntimeState) error {
+	if state == nil || strings.TrimSpace(state.JobName) == "" || strings.TrimSpace(state.JobNamespace) == "" {
+		return nil
+	}
+	exists, err := s.kubernetes.JobExists(ctx, state.JobNamespace, state.JobName)
+	if err != nil {
+		return fmt.Errorf("check job exists %s/%s: %w", state.JobNamespace, state.JobName, err)
+	}
+	state.JobExists = exists
+	return nil
 }
 
 func sleepWithContext(ctx context.Context, delay time.Duration) error {

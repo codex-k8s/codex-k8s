@@ -15,6 +15,7 @@ const (
 )
 
 type runNamespaceService interface {
+	CancelRun(ctx context.Context, params runstatusdomain.CancelRunParams) (runstatusdomain.CancelRunResult, error)
 	DeleteRunNamespace(ctx context.Context, params runstatusdomain.DeleteNamespaceParams) (runstatusdomain.DeleteNamespaceResult, error)
 	GetRunRuntimeState(ctx context.Context, runID string) (runstatusdomain.RuntimeState, error)
 }
@@ -26,6 +27,18 @@ type RunNamespaceDeleteResult struct {
 	Deleted        bool
 	AlreadyDeleted bool
 	CommentURL     string
+}
+
+// RunCancelResult describes one run-level cancel action outcome.
+type RunCancelResult struct {
+	RunID                        string
+	PreviousStatus               string
+	CurrentStatus                string
+	AlreadyTerminal              bool
+	RuntimeDeployCancelRequested bool
+	JobStopped                   bool
+	CanceledGitHubWaits          int
+	CommentURL                   string
 }
 
 // DeleteRunNamespace removes one run namespace by run id (staff-only, write access required).

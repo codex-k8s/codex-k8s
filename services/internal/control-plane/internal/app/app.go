@@ -191,24 +191,6 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("init mcp domain service: %w", err)
 	}
-	runStatusService, err := runstatusdomain.NewService(runstatusdomain.Config{
-		PublicBaseURL:    cfg.PublicBaseURL,
-		DefaultLocale:    "ru",
-		AIDomain:         cfg.AIDomain,
-		ProductionDomain: cfg.ProductionDomain,
-		NextStepLabels:   buildNextStepLabels(cfg),
-	}, runstatusdomain.Dependencies{
-		Runs:       agentRuns,
-		Platform:   platformTokens,
-		TokenCrypt: tokenCrypto,
-		GitHub:     githubMCPClient,
-		Kubernetes: k8sClient,
-		FlowEvents: flowEvents,
-		StaffRuns:  runs,
-	})
-	if err != nil {
-		return fmt.Errorf("init runstatus domain service: %w", err)
-	}
 	systemSettingsService, err := systemsettingsdomain.NewService(systemSettingsRepo)
 	if err != nil {
 		return fmt.Errorf("init system settings domain service: %w", err)
@@ -326,6 +308,27 @@ func Run() error {
 	})
 	if err != nil {
 		return fmt.Errorf("init runtime deploy domain service: %w", err)
+	}
+	runStatusService, err := runstatusdomain.NewService(runstatusdomain.Config{
+		PublicBaseURL:    cfg.PublicBaseURL,
+		DefaultLocale:    "ru",
+		AIDomain:         cfg.AIDomain,
+		ProductionDomain: cfg.ProductionDomain,
+		NextStepLabels:   buildNextStepLabels(cfg),
+	}, runstatusdomain.Dependencies{
+		Runs:                 agentRuns,
+		Sessions:             agentSessions,
+		Platform:             platformTokens,
+		TokenCrypt:           tokenCrypto,
+		GitHub:               githubMCPClient,
+		Kubernetes:           k8sClient,
+		FlowEvents:           flowEvents,
+		StaffRuns:            runs,
+		GitHubRateLimitWaits: githubRateLimitWaits,
+		RuntimeDeploy:        runtimeDeployService,
+	})
+	if err != nil {
+		return fmt.Errorf("init runstatus domain service: %w", err)
 	}
 
 	learningDefault, err := cfg.LearningModeDefaultBool()

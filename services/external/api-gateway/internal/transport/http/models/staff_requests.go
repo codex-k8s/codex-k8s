@@ -48,6 +48,11 @@ type UpdateSystemSettingBooleanRequest struct {
 	BooleanValue bool `json:"boolean_value"`
 }
 
+// RunActionRequest is a typed payload for run-level control actions.
+type RunActionRequest struct {
+	Reason string `json:"reason"`
+}
+
 // RuntimeDeployTaskActionRequest is a typed payload for cancel/stop control actions.
 type RuntimeDeployTaskActionRequest struct {
 	Reason string `json:"reason"`

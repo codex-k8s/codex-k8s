@@ -1,4 +1,5 @@
 import {
+  cancelRun as cancelRunRequest,
   deleteRunNamespace as deleteRunNamespaceRequest,
   getRun as getRunRequest,
   getRunLogs as getRunLogsRequest,
@@ -13,6 +14,7 @@ import type {
   FlowEvent,
   ResolveApprovalDecisionResponse,
   Run,
+  RunActionResponse,
   RunLogs,
   RunNamespaceCleanupResponse,
 } from "./types";
@@ -43,6 +45,17 @@ export async function listRunWaits(filters: RunWaitFilters = {}, limit = 20): Pr
 
 export async function getRun(runId: string): Promise<Run> {
   const resp = await getRunRequest({ path: { run_id: runId }, throwOnError: true });
+  return resp.data;
+}
+
+export async function cancelRun(runId: string, reason = ""): Promise<RunActionResponse> {
+  const resp = await cancelRunRequest({
+    path: { run_id: runId },
+    body: {
+      reason: reason.trim() === "" ? undefined : reason,
+    },
+    throwOnError: true,
+  });
   return resp.data;
 }
 

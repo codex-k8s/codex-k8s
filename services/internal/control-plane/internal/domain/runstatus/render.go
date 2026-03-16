@@ -85,6 +85,7 @@ type commentTemplateContext struct {
 	ReadyReached                bool
 
 	IsRunSucceeded bool
+	IsRunCanceled  bool
 	IsRunFailed    bool
 	Deleted        bool
 	AlreadyDeleted bool
@@ -194,6 +195,7 @@ func buildCommentTemplateContext(state commentState, managementURL string, marke
 		AuthResolvedReached:          hasAuthRequested && phaseLevel >= phaseOrder(PhaseAuthResolved),
 		ReadyReached:                 phaseLevel >= phaseOrder(PhaseReady),
 		IsRunSucceeded:               normalizedRunStatus == runStatusSucceeded,
+		IsRunCanceled:                normalizedRunStatus == runStatusCanceled,
 		IsRunFailed:                  normalizedRunStatus == runStatusFailed,
 		Deleted:                      state.Deleted,
 		AlreadyDeleted:               state.AlreadyDeleted,

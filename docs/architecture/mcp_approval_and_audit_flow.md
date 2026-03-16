@@ -5,8 +5,8 @@ title: "codex-k8s — MCP Approval and Audit Flow"
 status: active
 owner_role: SA
 created_at: 2026-02-11
-updated_at: 2026-02-21
-related_issues: [1, 19, 90, 95]
+updated_at: 2026-03-16
+related_issues: [1, 19, 90, 95, 514]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -156,6 +156,7 @@ approvals:
 - `run.agent.ready`
 - `run.agent.status_reported`
 - `run.finished`
+- `run.canceled`
 - `run.wait.paused`
 - `run.wait.resumed`
 - `run.review.changes_requested.received`

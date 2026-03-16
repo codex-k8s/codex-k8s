@@ -240,6 +240,24 @@ message GetRunLogsRequest {
   int32 tail_lines = 3;
 }
 
+message CancelRunRequest {
+  Principal principal = 1;
+  string run_id = 2;
+  optional string reason = 3;
+}
+
+message RunActionResponse {
+  string run_id = 1;
+  string action = 2;
+  string previous_status = 3;
+  string current_status = 4;
+  bool already_terminal = 5;
+  bool runtime_deploy_cancel_requested = 6;
+  bool job_stopped = 7;
+  int32 canceled_github_waits = 8;
+  optional string comment_url = 9;
+}
+
 message RunLogs {
   string run_id = 1;
   string status = 2;
@@ -1516,6 +1534,7 @@ service ControlPlaneService {
   rpc ListRuns(ListRunsRequest) returns (ListRunsResponse);
   rpc ListRunWaits(ListRunWaitsRequest) returns (ListRunWaitsResponse);
   rpc GetRun(GetRunRequest) returns (Run);
+  rpc CancelRun(CancelRunRequest) returns (RunActionResponse);
   rpc GetRunLogs(GetRunLogsRequest) returns (RunLogs);
   rpc ListPendingApprovals(ListPendingApprovalsRequest) returns (ListPendingApprovalsResponse);
   rpc ResolveApprovalDecision(ResolveApprovalDecisionRequest) returns (ResolveApprovalDecisionResponse);

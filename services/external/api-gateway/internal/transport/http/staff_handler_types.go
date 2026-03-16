@@ -30,6 +30,12 @@ type runLogsArg struct {
 	includeSnapshot bool
 }
 
+// runActionArg keeps path+body input for run-level action endpoints.
+type runActionArg struct {
+	runID string
+	body  models.RunActionRequest
+}
+
 // runListPageArg keeps query input for one runs list page.
 type runListPageArg struct {
 	page     int32

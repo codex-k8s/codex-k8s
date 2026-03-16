@@ -5,8 +5,8 @@ title: "codex-k8s — API Contract Overview"
 status: active
 owner_role: SA
 created_at: 2026-02-06
-updated_at: 2026-03-15
-related_issues: [1, 19, 100, 154, 155, 175, 247, 248, 249, 274, 500]
+updated_at: 2026-03-16
+related_issues: [1, 19, 100, 154, 155, 175, 247, 248, 249, 274, 500, 514]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -114,6 +114,7 @@ approvals:
 | Delete project | DELETE | `/api/v1/staff/projects/{project_id}` | staff JWT + admin | hard delete |
 | List runs | GET | `/api/v1/staff/runs` | staff JWT | run list |
 | Get run | GET | `/api/v1/staff/runs/{run_id}` | staff JWT | run details |
+| Cancel run | POST | `/api/v1/staff/runs/{run_id}/cancel` | staff JWT + project write access | idempotent run-level cancel; stops active runtime artifacts, clears wait/resume linkage and writes `run.canceled` flow event |
 | List run events | GET | `/api/v1/staff/runs/{run_id}/events` | staff JWT | flow events |
 | Run realtime stream | GET | `/api/v1/staff/runs/{run_id}/realtime` | staff JWT | WebSocket upgrade; server sends `snapshot|run|events|logs|error` envelopes |
 | List pending approvals | GET | `/api/v1/staff/approvals` | staff JWT | MCP approval queue for privileged actions |
@@ -143,6 +144,7 @@ approvals:
 
 Примечание:
 - маршруты staff runtime debug (`/runs/{run_id}/logs*`, `/runs/waits`) относятся к MVP target и вводятся в Sprint S3.
+- `POST /api/v1/staff/runs/{run_id}/cancel` закрывает run-level остановку end-to-end: control-plane переводит run в terminal `canceled`, останавливает активный runtime path и гасит поздние auto-resume/interaction continuation path идемпотентно.
 - Product/runtime switches, которые должны применяться без правки deployment env, публикуются через typed staff/private contract `system-settings`; source of truth для effective values находится в `control-plane` и PostgreSQL, а не в runtime manifests.
 - будущие маршруты сверх MVP (`docs search/edit`, advanced policy management UI и т.д.) вводятся отдельными эпиками post-MVP.
 - маршруты `composition*` и `/docs/sources` относятся к design backlog по Issue #100 и реализуются отдельным `run:dev` циклом.

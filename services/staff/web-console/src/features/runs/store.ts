@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 
 import { normalizeApiError, type ApiError } from "../../shared/api/errors";
 import {
+  cancelRun,
   deleteRunNamespace,
   getRun,
   getRunLogs,
@@ -16,6 +17,7 @@ import type {
   FlowEvent,
   ResolveApprovalDecisionResponse,
   Run,
+  RunActionResponse,
   RunRealtimeMessage,
   RunLogs,
   RunNamespaceCleanupResponse,
@@ -132,21 +134,28 @@ export const useRunDetailsStore = defineStore("runDetails", {
     snapshotLoaded: false,
     snapshotLoading: false,
     waitRealtimeMessages: [] as RunRealtimeMessage[],
+    cancelingRun: false,
+    cancelRunError: null as ApiError | null,
+    runCancelResult: null as RunActionResponse | null,
     deletingNamespace: false,
     deleteNamespaceError: null as ApiError | null,
     namespaceDeleteResult: null as RunNamespaceCleanupResponse | null,
     errorTimerId: null as number | null,
+    cancelRunErrorTimerId: null as number | null,
     deleteNamespaceErrorTimerId: null as number | null,
   }),
   actions: {
-    clearErrorTimer(timerField: "errorTimerId" | "deleteNamespaceErrorTimerId"): void {
+    clearErrorTimer(timerField: "errorTimerId" | "cancelRunErrorTimerId" | "deleteNamespaceErrorTimerId"): void {
       const timerId = this[timerField];
       if (timerId !== null) {
         window.clearTimeout(timerId);
         this[timerField] = null;
       }
     },
-    scheduleErrorHide(errorField: "error" | "deleteNamespaceError", timerField: "errorTimerId" | "deleteNamespaceErrorTimerId"): void {
+    scheduleErrorHide(
+      errorField: "error" | "cancelRunError" | "deleteNamespaceError",
+      timerField: "errorTimerId" | "cancelRunErrorTimerId" | "deleteNamespaceErrorTimerId",
+    ): void {
       this.clearErrorTimer(timerField);
       this[timerField] = window.setTimeout(() => {
         this[errorField] = null;
@@ -241,6 +250,21 @@ export const useRunDetailsStore = defineStore("runDetails", {
       }
       if (isRunWaitRealtimeMessage(message)) {
         this.waitRealtimeMessages = [message, ...this.waitRealtimeMessages].slice(0, 12);
+      }
+    },
+
+    async cancel(runId: string, reason = ""): Promise<void> {
+      this.cancelingRun = true;
+      this.cancelRunError = null;
+      this.runCancelResult = null;
+      try {
+        this.runCancelResult = await cancelRun(runId, reason);
+        await this.load(runId);
+      } catch (e) {
+        this.cancelRunError = normalizeApiError(e);
+        this.scheduleErrorHide("cancelRunError", "cancelRunErrorTimerId");
+      } finally {
+        this.cancelingRun = false;
       }
     },
 

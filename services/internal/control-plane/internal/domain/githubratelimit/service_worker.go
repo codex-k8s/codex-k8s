@@ -75,6 +75,16 @@ func (s *Service) ProcessNextAutoResume(ctx context.Context, params ProcessNextA
 		return ProcessNextAutoResumeResult{}, fmt.Errorf("append github rate-limit resume-attempt evidence: %w", err)
 	}
 
+	cancelledWait, cancelled, err := s.cancelAutoResumeForTerminalRun(ctx, wait, now)
+	if err != nil {
+		return ProcessNextAutoResumeResult{}, err
+	}
+	if cancelled {
+		result.Wait = cancelledWait
+		result.ResolutionKind = enumtypes.GitHubRateLimitResolutionKindCancelled
+		return result, nil
+	}
+
 	resumePayloadJSON, requeuedCorrelationID, attemptErr := s.executeAutoResume(ctx, wait, now)
 	if attemptErr != nil {
 		wait, err = s.handleAutoResumeFailure(ctx, wait, workerID, now, attemptErr)
@@ -98,6 +108,71 @@ func (s *Service) ProcessNextAutoResume(ctx context.Context, params ProcessNextA
 	result.ResolutionKind = enumtypes.GitHubRateLimitResolutionKindAutoResumed
 	result.RequeuedCorrelationID = requeuedCorrelationID
 	return result, nil
+}
+
+func (s *Service) cancelAutoResumeForTerminalRun(ctx context.Context, wait Wait, now time.Time) (Wait, bool, error) {
+	run, found, err := s.runs.GetByID(ctx, wait.RunID)
+	if err != nil {
+		return Wait{}, false, fmt.Errorf("load run for github rate-limit auto-resume: %w", err)
+	}
+	if !found || !isTerminalRunStatus(run.Status) {
+		return Wait{}, false, nil
+	}
+
+	resolvedAt := now.UTC()
+	wait, found, err = s.waits.Update(ctx, querytypes.GitHubRateLimitWaitUpdateParams{
+		ID:                     wait.ID,
+		SignalOrigin:           enumtypes.GitHubRateLimitSignalOriginWorker,
+		OperationClass:         wait.OperationClass,
+		State:                  enumtypes.GitHubRateLimitWaitStateCancelled,
+		LimitKind:              wait.LimitKind,
+		Confidence:             wait.Confidence,
+		RecoveryHintKind:       wait.RecoveryHintKind,
+		SignalID:               wait.SignalID,
+		RequestFingerprint:     wait.RequestFingerprint,
+		CorrelationID:          wait.CorrelationID,
+		ResumeActionKind:       wait.ResumeActionKind,
+		ResumePayloadJSON:      wait.ResumePayloadJSON,
+		ManualActionKind:       "",
+		AutoResumeAttemptsUsed: wait.AutoResumeAttemptsUsed,
+		MaxAutoResumeAttempts:  wait.MaxAutoResumeAttempts,
+		ResumeNotBefore:        wait.ResumeNotBefore,
+		LastResumeAttemptAt:    &resolvedAt,
+		LastSignalAt:           resolvedAt,
+		ResolvedAt:             &resolvedAt,
+	})
+	if err != nil {
+		return Wait{}, false, fmt.Errorf("cancel github rate-limit wait for terminal run: %w", err)
+	}
+	if !found {
+		return Wait{}, false, fmt.Errorf("wait %s not found while cancelling auto-resume for terminal run", wait.ID)
+	}
+
+	if err := s.appendResolvedEvidence(ctx, wait, resolvedAt, enumtypes.GitHubRateLimitResolutionKindCancelled, ""); err != nil {
+		return Wait{}, false, fmt.Errorf("append github rate-limit cancel evidence: %w", err)
+	}
+
+	refreshResult, err := s.waits.RefreshRunProjection(ctx, wait.RunID)
+	if err != nil {
+		return Wait{}, false, fmt.Errorf("refresh github rate-limit projection after cancel: %w", err)
+	}
+
+	commentMirrorState := enumtypes.GitHubRateLimitCommentMirrorStateNotAttempted
+	if projection, projectionFound, projectionErr := s.GetRunProjection(ctx, wait.RunID); projectionErr == nil && projectionFound {
+		commentMirrorState = projection.CommentMirrorState
+	}
+
+	s.insertRunWaitResolvedFlowEvent(
+		ctx,
+		wait.CorrelationID,
+		wait,
+		enumtypes.GitHubRateLimitResolutionKindCancelled,
+		wait.AutoResumeAttemptsUsed,
+		"",
+		commentMirrorState,
+		refreshResult,
+	)
+	return wait, true, nil
 }
 
 func (s *Service) assertWorkerSweepAllowed() error {
@@ -235,19 +310,7 @@ func (s *Service) resolveAutoResumeSuccess(
 		return Wait{}, fmt.Errorf("wait %s not found while resolving github rate-limit auto-resume", wait.ID)
 	}
 
-	if _, err := s.waits.AppendEvidence(ctx, querytypes.GitHubRateLimitWaitEvidenceCreateParams{
-		WaitID:       wait.ID,
-		EventKind:    enumtypes.GitHubRateLimitEvidenceEventResolved,
-		SignalID:     wait.SignalID,
-		SignalOrigin: enumtypes.GitHubRateLimitSignalOriginWorker,
-		PayloadJSON: marshalJSONPayload(waitResolvedEvidencePayload{
-			WaitID:                wait.ID,
-			AttemptNo:             wait.AutoResumeAttemptsUsed,
-			ResolutionKind:        enumtypes.GitHubRateLimitResolutionKindAutoResumed,
-			RequeuedCorrelationID: requeuedCorrelationID,
-		}),
-		ObservedAt: resolvedAt,
-	}); err != nil {
+	if err := s.appendResolvedEvidence(ctx, wait, resolvedAt, enumtypes.GitHubRateLimitResolutionKindAutoResumed, requeuedCorrelationID); err != nil {
 		return Wait{}, fmt.Errorf("append github rate-limit resolved evidence: %w", err)
 	}
 
@@ -263,6 +326,29 @@ func (s *Service) resolveAutoResumeSuccess(
 
 	s.insertRunWaitResolvedFlowEvent(ctx, wait.CorrelationID, wait, enumtypes.GitHubRateLimitResolutionKindAutoResumed, wait.AutoResumeAttemptsUsed, requeuedCorrelationID, commentMirrorState, refreshResult)
 	return wait, nil
+}
+
+func (s *Service) appendResolvedEvidence(
+	ctx context.Context,
+	wait Wait,
+	observedAt time.Time,
+	resolutionKind enumtypes.GitHubRateLimitResolutionKind,
+	requeuedCorrelationID string,
+) error {
+	_, err := s.waits.AppendEvidence(ctx, querytypes.GitHubRateLimitWaitEvidenceCreateParams{
+		WaitID:       wait.ID,
+		EventKind:    enumtypes.GitHubRateLimitEvidenceEventResolved,
+		SignalID:     wait.SignalID,
+		SignalOrigin: enumtypes.GitHubRateLimitSignalOriginWorker,
+		PayloadJSON: marshalJSONPayload(waitResolvedEvidencePayload{
+			WaitID:                wait.ID,
+			AttemptNo:             wait.AutoResumeAttemptsUsed,
+			ResolutionKind:        resolutionKind,
+			RequeuedCorrelationID: requeuedCorrelationID,
+		}),
+		ObservedAt: observedAt,
+	})
+	return err
 }
 
 func (s *Service) handleAutoResumeFailure(
