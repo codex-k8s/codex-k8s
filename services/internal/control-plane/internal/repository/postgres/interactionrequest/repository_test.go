@@ -2,6 +2,7 @@ package interactionrequest
 
 import (
 	"encoding/json"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -38,6 +39,34 @@ func TestClassifyDecisionResponsePayloadAcceptsKnownOption(t *testing.T) {
 	if decision.selectedOptionID != "approve" {
 		t.Fatalf("selected option id = %q, want approve", decision.selectedOptionID)
 	}
+}
+
+func TestCreateDeliveryAttemptSQLHasMatchingTargetColumnsAndValues(t *testing.T) {
+	t.Parallel()
+
+	re := regexp.MustCompile(`(?is)INSERT\s+INTO\s+interaction_delivery_attempts\s*\((.*?)\)\s*VALUES\s*\((.*?)\)`)
+	matches := re.FindStringSubmatch(queryCreateDeliveryAttempt)
+	if len(matches) != 3 {
+		t.Fatalf("expected INSERT ... VALUES structure in create_delivery_attempt.sql")
+	}
+
+	columnCount := countCommaSeparatedSQLItems(matches[1])
+	valueCount := countCommaSeparatedSQLItems(matches[2])
+	if columnCount != valueCount {
+		t.Fatalf("target columns count = %d, values count = %d", columnCount, valueCount)
+	}
+}
+
+func countCommaSeparatedSQLItems(source string) int {
+	items := strings.Split(source, ",")
+	count := 0
+	for _, item := range items {
+		if strings.TrimSpace(item) == "" {
+			continue
+		}
+		count++
+	}
+	return count
 }
 
 func TestClassifyDecisionResponsePayloadRejectsUnknownOption(t *testing.T) {

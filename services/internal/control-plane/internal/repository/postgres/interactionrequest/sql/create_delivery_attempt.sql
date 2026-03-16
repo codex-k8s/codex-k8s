@@ -17,7 +17,7 @@ INSERT INTO interaction_delivery_attempts (
     started_at,
     finished_at
 )
-VALUES ($1::uuid, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9, $10::jsonb, $11, $12, $13, $14, $15)
+VALUES ($1::uuid, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9, $10::jsonb, $11, $12, $13, $14, $15, $16)
 RETURNING
     id,
     interaction_id::text AS interaction_id,
