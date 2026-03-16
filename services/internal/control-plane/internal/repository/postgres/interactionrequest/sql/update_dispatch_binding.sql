@@ -5,10 +5,7 @@ SET
     provider_message_ref_json = $2::jsonb,
     edit_capability = $3,
     callback_token_expires_at = COALESCE($4, callback_token_expires_at),
-    continuation_state = CASE
-        WHEN $3 = 'follow_up_only' THEN 'follow_up_required'
-        ELSE 'ready_for_edit'
-    END,
+    continuation_state = 'pending_primary_delivery',
     updated_at = NOW()
 WHERE id = $1
 RETURNING

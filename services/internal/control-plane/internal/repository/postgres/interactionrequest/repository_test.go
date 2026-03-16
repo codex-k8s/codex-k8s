@@ -57,6 +57,17 @@ func TestCreateDeliveryAttemptSQLHasMatchingTargetColumnsAndValues(t *testing.T)
 	}
 }
 
+func TestUpdateDispatchBindingSQLKeepsContinuationPendingUntilCallbackApplied(t *testing.T) {
+	t.Parallel()
+
+	if !strings.Contains(queryUpdateDispatchBinding, "continuation_state = 'pending_primary_delivery'") {
+		t.Fatalf("update_dispatch_binding.sql must keep continuation_state pending_primary_delivery after primary dispatch")
+	}
+	if strings.Contains(queryUpdateDispatchBinding, "'ready_for_edit'") || strings.Contains(queryUpdateDispatchBinding, "'follow_up_required'") {
+		t.Fatalf("update_dispatch_binding.sql must not arm continuation before callback evidence is applied")
+	}
+}
+
 func countCommaSeparatedSQLItems(source string) int {
 	items := strings.Split(source, ",")
 	count := 0
