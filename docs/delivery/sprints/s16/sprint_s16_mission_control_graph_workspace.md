@@ -1,12 +1,12 @@
 ---
 doc_id: SPR-CK8S-0016
 type: sprint-plan
-title: "Sprint S16: Mission Control graph workspace and continuity control plane (Issue #492)"
+title: "Sprint S16: Mission Control graph workspace and continuity control plane (Issues #492/#516/#519)"
 status: in-review
 owner_role: PM
 created_at: 2026-03-15
 updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516]
+related_issues: [480, 490, 492, 496, 510, 516, 519]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -14,11 +14,11 @@ approvals:
   request_id: "owner-2026-03-15-issue-492-intake"
 ---
 
-# Sprint S16: Mission Control graph workspace and continuity control plane (Issue #492)
+# Sprint S16: Mission Control graph workspace and continuity control plane (Issues #492/#516/#519)
 
 ## TL;DR
 - Цель спринта: перепроектировать Mission Control в primary graph workspace/control plane, где Owner может вести несколько инициатив, видеть lineage `discussion/work_item -> run -> PR/follow-up issue -> next run` и управлять следующими шагами без возврата к board/list-only модели.
-- Sprint S16 прошёл Day1 intake в Issue `#492`, Day2 vision в Issue `#496` и Day3 PRD в Issue `#510`; по итогам PRD создана follow-up issue `#516` для `run:arch`.
+- Sprint S16 прошёл Day1 intake в Issue `#492`, Day2 vision в Issue `#496`, Day3 PRD в Issue `#510` и Day4 architecture в Issue `#516`; по итогам architecture создана follow-up issue `#519` для `run:design`.
 - Foundation issue `#480` поглощена как обязательный нижний слой: persisted GitHub inventory mirror и bounded reconcile становятся частью продукта, но не заменяют новый workspace.
 - Базовые ограничения спринта: hybrid truth matrix, filtered multi-root workspace с точными Wave 1 filters `open_only`, `assigned_to_me_or_unassigned` и active-state presets, foundation coverage contract `all open Issues/PR + bounded recent closed history`, Wave 1 nodes `discussion/work_item/run/pull_request`, typed metadata/watermarks, platform-canonical launch params, platform-safe inline actions, continuity rule `PR + follow-up issue` и non-blocking voice later-wave.
 
@@ -48,7 +48,7 @@ approvals:
   - нужны обязательные `vision`, `arch` и `design`, чтобы зафиксировать product truth matrix и ownership boundaries до implementation;
   - сокращённые траектории не удержат continuity contract и cross-service impact.
 - Целевая continuity-цепочка:
-  `#492 (intake) -> #496 (vision) -> #510 (prd) -> #516 (arch) -> design -> plan -> dev -> qa -> release -> postdeploy -> ops`.
+  `#492 (intake) -> #496 (vision) -> #510 (prd) -> #516 (arch) -> #519 (design) -> plan -> dev -> qa -> release -> postdeploy -> ops`.
 
 ## Intake baseline, зафиксированный на Day 1
 
@@ -107,8 +107,8 @@ approvals:
 | Intake (`#492`) | Problem/Brief/Scope/Constraints + intake AC | `pm` | Owner review intake-пакета и создана issue следующего этапа |
 | Vision (`#496`) | Mission, north star, persona outcomes, KPI/guardrails, wave framing | `pm` | Зафиксирован vision baseline и создана issue для `run:prd` |
 | PRD (`#510`) | User stories, FR/AC/NFR, scenario matrix, expected evidence | `pm` + `sa` | Подтверждён PRD package и создана issue `#516` для `run:arch` |
-| Architecture (`#516`) | Ownership matrix, graph truth model, provider mirror/service boundaries | `sa` | Подтверждены сервисные границы и создана issue для `run:design` |
-| Design (`TBD`) | Typed API/data/UI contracts, metadata/watermark design, rollout notes | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue для `run:plan` |
+| Architecture (`#516`) | Ownership matrix, graph truth model, provider mirror/service boundaries | `sa` | Подтверждены сервисные границы и создана issue `#519` для `run:design` |
+| Design (`#519`) | Typed API/data/UI contracts, metadata/watermark design, rollout notes | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue для `run:plan` |
 | Plan (`TBD`) | Delivery waves, execution decomposition, DoR/DoD, quality-gates | `em` + `km` | Сформирован execution package и owner-managed handover в `run:dev` |
 
 ## Guardrails спринта
@@ -119,9 +119,9 @@ approvals:
 - Voice/orchestrator path не имеет права блокировать core Wave 1.
 
 ## Handover
-- Текущий stage в review: `run:prd` в Issue `#510`.
-- Следующий stage: `run:arch` в Issue `#516`.
-- На `run:arch` нельзя потерять следующие решения Day1/Day2/Day3:
+- Текущий stage в review: `run:arch` в Issue `#516`.
+- Следующий stage: `run:design` в Issue `#519`.
+- На `run:design` нельзя потерять следующие решения Day1/Day2/Day3/Day4:
   - Sprint S16 = полный redesign Mission Control в primary multi-root graph workspace/control plane;
   - `#480` = mandatory foundation stream с coverage contract `all open Issues/PR + bounded recent closed history`;
   - multi-root filtered workspace = default baseline;
@@ -136,4 +136,5 @@ approvals:
   - voice/STT, dashboard orchestrator agent, отдельная `agent` node taxonomy, full-history/archive и richer provider enrichment остаются later-wave scope;
   - stage continuity до `run:dev` = `PR + linked follow-up issue`;
   - `control-plane` остаётся owner graph truth, continuity state и launch surfaces, а `worker` ограничен background/reconcile execution для provider mirror и lifecycle tasks;
-  - architecture stage обязан в конце создать follow-up issue для `run:design` без trigger-лейбла и сохранить continuity `design -> plan -> dev`.
+  - architecture stage зафиксировал hybrid truth lifecycle `provider mirror -> graph truth -> workspace projection`, typed watermarks и continuity gaps как доменный контур `control-plane`;
+  - design stage обязан в конце создать follow-up issue для `run:plan` без trigger-лейбла и сохранить continuity `plan -> dev`.

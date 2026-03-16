@@ -6,7 +6,7 @@ status: in-review
 owner_role: PM
 created_at: 2026-03-15
 updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516]
+related_issues: [480, 490, 492, 496, 510, 516, 519]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -22,14 +22,15 @@ approvals:
 - Day2 vision (`#496`) зафиксировал mission, north star, persona outcomes, KPI/guardrails и wave boundaries для primary multi-root graph workspace/control plane, не переоткрывая intake baseline.
 - Issue `#480` не исчезает, а становится обязательным foundation layer внутри S16: persisted GitHub inventory mirror и bounded reconcile с coverage contract `all open Issues/PR + bounded recent closed history` должны питать новый workspace.
 - Day3 PRD (`#510`) зафиксировал user stories, FR/AC/NFR, scenario matrix, expected evidence и boundary core Wave 1 vs deferred contours; создана follow-up issue `#516` для `run:arch`.
+- Day4 Architecture (`#516`) зафиксировал ownership split, hybrid truth lifecycle `provider mirror -> graph truth -> workspace projection`, continuity gaps и bounded provider foundation; создана follow-up issue `#519` для `run:design`.
 - До `run:plan` Sprint S16 остаётся markdown-only и не создаёт implementation issues.
 
 ## Stage roadmap
 - Day 1 (Intake): `docs/delivery/epics/s16/epic-s16-day1-mission-control-graph-workspace-intake.md` (Issue `#492`).
 - Day 2 (Vision): `docs/delivery/epics/s16/epic-s16-day2-mission-control-graph-workspace-vision.md` (Issue `#496`).
 - Day 3 (PRD): `docs/delivery/epics/s16/epic-s16-day3-mission-control-graph-workspace-prd.md` + `docs/delivery/epics/s16/prd-s16-day3-mission-control-graph-workspace.md` (Issue `#510`); user stories, FR/AC/NFR, scenario matrix и expected evidence уже зафиксированы для graph workspace, continuity graph и foundation inventory.
-- Day 4 (Architecture): Issue `#516`; ожидается formal ownership split, где `control-plane` владеет graph truth, continuity state и launch surfaces, а `worker` ограничен background/reconcile execution для provider mirror freshness, enrichment jobs и lifecycle tasks.
-- Day 5 (Design): `TBD`; ожидается implementation-ready design package по typed metadata, graph surfaces, transport/data contracts и rollout notes.
+- Day 4 (Architecture): `docs/delivery/epics/s16/epic-s16-day4-mission-control-graph-workspace-arch.md` + architecture package in `docs/architecture/initiatives/s16_mission_control_graph_workspace/` (Issue `#516`); зафиксированы `control-plane`-owned graph truth, bounded `worker` inventory foundation, hybrid truth lifecycle и continuity-gap ownership.
+- Day 5 (Design): Issue `#519`; ожидается implementation-ready design package по typed metadata, graph surfaces, transport/data contracts и rollout notes.
 - Day 6 (Plan): `TBD`; ожидается execution package с delivery waves, quality-gates и owner-managed handover в `run:dev`.
 
 ## Delivery-governance rules

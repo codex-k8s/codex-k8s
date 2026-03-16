@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-15
 updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516]
+related_issues: [480, 490, 492, 496, 510, 516, 519]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -67,3 +67,23 @@ approvals:
 - Через `gh issue create` создана follow-up issue `#516` для stage `run:arch`; в её body сохранено continuity-требование продолжить цепочку `arch -> design -> plan -> dev`.
 - Выполнены markdown-only проверки: traceability sync и `git diff --check`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась: PRD package формализует stage-specific contract Sprint S16 и handover в architecture, но не меняет repo-wide baseline `docs/product/requirements_machine_driven.md`.
+
+## Актуализация по Issue #516 (`run:arch`, 2026-03-16)
+- Подготовлен architecture package:
+  - `docs/architecture/initiatives/s16_mission_control_graph_workspace/README.md`;
+  - `docs/architecture/initiatives/s16_mission_control_graph_workspace/architecture.md`;
+  - `docs/architecture/initiatives/s16_mission_control_graph_workspace/c4_context.md`;
+  - `docs/architecture/initiatives/s16_mission_control_graph_workspace/c4_container.md`;
+  - `docs/architecture/adr/ADR-0016-mission-control-graph-workspace-hybrid-truth-and-continuity-ownership.md`;
+  - `docs/architecture/alternatives/ALT-0008-mission-control-graph-workspace-hybrid-truth-boundaries.md`;
+  - `docs/delivery/epics/s16/epic-s16-day4-mission-control-graph-workspace-arch.md`.
+- Зафиксированы:
+  - `control-plane` как canonical owner graph truth, continuity state, typed metadata/watermarks, launch surfaces и hybrid truth merge policy;
+  - `worker` как owner bounded provider inventory freshness, recent-closed-history backfill, enrichment/reconcile execution и lifecycle tasks без ownership graph semantics;
+  - явный hybrid truth lifecycle `provider mirror -> graph truth -> workspace projection`;
+  - persisted continuity gaps и rule `PR + linked follow-up issue` как domain constructs, а не только traceability convention;
+  - сохранение locked baselines: issue `#480`, exact Wave 1 filters `open_only`, `assigned_to_me_or_unassigned`, `active-state presets`, secondary/dimmed semantics только для graph integrity, nodes `discussion`, `work_item`, `run`, `pull_request`, typed metadata/watermarks и platform-canonical launch params;
+  - deferred boundary для voice/STT, dashboard orchestrator agent, отдельной `agent` taxonomy, full-history/archive и richer provider enrichment.
+- Через `gh issue create` создана follow-up issue `#519` для stage `run:design`; в её body сохранено continuity-требование продолжить цепочку `design -> plan -> dev`.
+- Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась: architecture package формализует ownership boundaries и handover в design, но не меняет repo-wide baseline `docs/product/requirements_machine_driven.md`.
