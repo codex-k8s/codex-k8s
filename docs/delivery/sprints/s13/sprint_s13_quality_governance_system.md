@@ -6,12 +6,14 @@ status: in-review
 owner_role: PM
 created_at: 2026-03-14
 updated_at: 2026-03-16
-related_issues: [469, 471, 476, 484, 494, 512]
+related_issues: [469, 471, 476, 484, 494, 512, 521, 522, 523, 524, 525]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-16-issue-494-design"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-16
 ---
 
 # Sprint S13: Quality governance system для agent-scale delivery (Issue #469)
@@ -23,6 +25,7 @@ approvals:
 - PRD stage в Issue `#476` перевёл vision baseline в user stories, FR/AC/NFR, edge cases, expected evidence и explicit contract для risk/evidence/waiver decisions; создана follow-up issue `#484` для `run:arch`.
 - Architecture stage в Issue `#484` закрепил control-plane-owned canonical governance aggregate, worker-owned asynchronous reconciliation, publication discipline `internal working draft -> semantic wave map -> published waves`, C4 overlays, ADR и alternatives; создана follow-up issue `#494` для `run:design`.
 - Design stage в Issue `#494` выпустил typed design package: hidden draft discipline, semantic wave map, evidence/verification/waiver/release/gap projections, bounded historical backfill policy и rollout order `migrations -> control-plane -> worker -> api-gateway -> web-console`; создана follow-up issue `#512` для `run:plan`.
+- Plan stage в Issue `#512` выпустил execution package `S13-E01..S13-E05`, создал handover issues `#521..#525` и закрепил sequencing `foundation -> worker feedback/backfill -> transport/mirror -> web-console -> readiness gate` для owner-managed `run:dev`.
 - Sprint S13 не выбирает implementation-first решения по rollout controller, cockpit UI или runtime automation: этот runtime/UI слой выделен в отдельный Sprint S14 (Issue `#470`) и должен наследовать governance-baseline, а не переоткрывать его.
 - После PRD создана follow-up issue `#484` на stage `run:arch`; trigger-лейбл следующего этапа остаётся owner-managed.
 - На `2026-03-15` через Context7 (`/websites/cli_github_manual`) повторно подтверждён актуальный non-interactive GitHub CLI flow для `gh issue create`, `gh pr create` и `gh pr edit`, чтобы continuity issue и PR-flow не расходились с текущим automation-путём.
@@ -114,7 +117,7 @@ approvals:
 | PRD (`#476`) | User stories, FR/AC/NFR, risk/evidence scenarios, expected evidence и proportional stage-gate contract | `pm` + `sa` | Подтверждён PRD package и создана issue `#484` для `run:arch` |
 | Architecture (`#484`) | Ownership matrix, service/rule boundaries, governance data surfaces | `sa` | Подтверждены архитектурные границы и создана issue `#494` для `run:design` |
 | Design (`#494`) | Typed contracts для quality signals, wave publication, evidence/verification/waiver/release/gap orchestration | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue `#512` для `run:plan` |
-| Plan (`#512`) | Delivery waves, quality-gates, execution decomposition, DoR/DoD | `em` + `km` | Сформирован execution package и создана issue для owner-managed `run:dev` |
+| Plan (`#512`) | Delivery waves, quality-gates, execution decomposition, DoR/DoD | `em` + `km` | Сформирован execution package и созданы issues `#521..#525` для owner-managed `run:dev` |
 
 ## Guardrails спринта
 - Качество определяется как свойства изменения и поставки, а не как требование «читать код дольше».
@@ -124,7 +127,7 @@ approvals:
 - Каждый doc-stage до `run:dev` обязан выпускать следующую follow-up issue без trigger-лейбла; `run:plan` создаёт handover issue для `run:dev`, а trigger запускает Owner отдельно.
 
 ## Handover
-- Day1/Day5 package:
+- Day1/Day6 package:
   - `docs/delivery/sprints/s13/sprint_s13_quality_governance_system.md`;
   - `docs/delivery/epics/s13/epic_s13.md`;
   - `docs/delivery/epics/s13/epic-s13-day1-quality-governance-intake.md`;
@@ -132,6 +135,7 @@ approvals:
   - `docs/delivery/epics/s13/epic-s13-day3-quality-governance-prd.md`;
   - `docs/delivery/epics/s13/epic-s13-day4-quality-governance-arch.md`;
   - `docs/delivery/epics/s13/epic-s13-day5-quality-governance-design.md`;
+  - `docs/delivery/epics/s13/epic-s13-day6-quality-governance-plan.md`;
   - `docs/delivery/epics/s13/prd-s13-day3-quality-governance-system.md`;
   - `docs/architecture/initiatives/s13_quality_governance_system/README.md`;
   - `docs/architecture/initiatives/s13_quality_governance_system/design_doc.md`;
@@ -139,9 +143,15 @@ approvals:
   - `docs/architecture/initiatives/s13_quality_governance_system/data_model.md`;
   - `docs/architecture/initiatives/s13_quality_governance_system/migrations_policy.md`;
   - `docs/delivery/traceability/s13_quality_governance_system_history.md`.
-- Следующий stage: `run:plan` в Issue `#512`.
+- Следующий stage: `run:dev` через owner-managed issues `#521..#525`.
+- Execution backlog:
+  - `#521` (`S13-E01`) — foundation aggregate, hidden draft ingress и package projections.
+  - `#522` (`S13-E02`) — worker feedback, bounded backfill и late reclassification.
+  - `#523` (`S13-E03`) — staff transport surfaces и GitHub status mirror.
+  - `#524` (`S13-E04`) — `web-console` queue, package detail и gap visibility.
+  - `#525` (`S13-E05`) — observability, rollout gate и readiness evidence.
 - Sprint S14 (Issue `#470`) остаётся downstream инициативой и не должен стартовать implementation-first без решений S13 по risk/evidence/verification baseline.
-- На `run:plan` нельзя потерять следующие решения intake + vision + PRD + architecture + design:
+- На `run:dev` нельзя потерять следующие решения intake + vision + PRD + architecture + design + plan:
   - quality north star должен описывать свойства change delivery и safe throughput, а не «внимательность ревью»;
   - explicit risk tier обязателен для каждого change package;
   - risk tiers `low / medium / high / critical` остаются обязательным baseline;
@@ -154,5 +164,9 @@ approvals:
   - hidden `internal working draft` остаётся internal-only и не становится publishable review artifact;
   - `semantic wave map` остаётся первой publishable единицей и обязательным bridge наружу;
   - bounded historical backfill не фабрикует hidden drafts, waivers или release decisions;
+  - sequencing `#521 -> #522 -> #523 -> #524 -> #525` обязателен; массовый параллельный старт execution backlog не допускается;
+  - `api-gateway` остаётся thin-edge adapter, а GitHub mirror — read-only projection без decision semantics;
+  - `web-console` остаётся projection-driven surface и не дублирует policy logic локально;
+  - `#525` остаётся обязательным readiness gate перед handover в `run:qa`;
   - Sprint S14 (`#470`) наследует baseline S13 и не становится источником правды по policy semantics;
   - каждый следующий doc-stage должен создавать следующую follow-up issue без trigger-лейбла.

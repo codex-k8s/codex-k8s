@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-16
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 510, 516, 519, 496, 494, 500]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 500, 510, 512, 516, 519, 521, 522, 523, 524, 525]
 
 related_prs: []
 approvals:
@@ -418,9 +418,27 @@ approvals:
   - publication policy закрепила путь `internal working draft -> semantic wave map -> published waves`; raw draft не считается review/merge artifact;
   - expected evidence и wave priorities разделены между core governance baseline и deferred runtime/UI automation scope, а large PR допустим только для behaviour-neutral mechanical bounded-scope changes;
   - создана continuity issue `#484` для `run:arch` без trigger-лейбла.
-- Day 4 (planned): architecture issue `#484`.
-  - Цель: ownership matrix, governance data surfaces, lifecycle state model и boundary decisions для `Quality Governance System`.
-  - Ожидаемый результат: architecture package + новая issue для `run:design` без trigger-лейбла.
+- Day 4 (in-review): architecture package для `Quality Governance System` (`docs/delivery/epics/s13/epic-s13-day4-quality-governance-arch.md`, Issue `#484`).
+- Результат Day 4 (факт):
+  - `control-plane` закреплён как owner canonical aggregate, publication gate, decision surface и projection refresh path;
+  - `worker` закреплён как owner asynchronous reconciliation и governance-gap sweeps под policy `control-plane`;
+  - publication path `internal working draft -> semantic wave map -> published waves` переведён из product baseline в architecture baseline;
+  - создана continuity issue `#494` для `run:design` без trigger-лейбла.
+- Day 5 (in-review): design package для `Quality Governance System` (`docs/delivery/epics/s13/epic-s13-day5-quality-governance-design.md`, Issue `#494`).
+- Результат Day 5 (факт):
+  - зафиксированы typed contracts для hidden draft handoff, semantic wave map, evidence blocks, decision ledger, governance feedback и projection families;
+  - bounded historical backfill сохранён как отдельный execution concern без фабрикации hidden drafts, waivers или release decisions;
+  - rollout order `migrations -> control-plane -> worker -> api-gateway -> web-console` закреплён как обязательный baseline для `run:dev`;
+  - создана continuity issue `#512` для `run:plan` без trigger-лейбла.
+- Day 6 (in-review): plan package для `Quality Governance System` (`docs/delivery/epics/s13/epic-s13-day6-quality-governance-plan.md`, Issue `#512`).
+- Результат Day 6 (факт):
+  - execution package разложен на issues `#521..#525` с sequencing `foundation -> worker feedback/backfill -> transport/mirror -> web-console -> readiness gate`;
+  - зафиксированы quality-gates, DoR/DoD и owner-managed launch policy: `run:dev` triggers ставятся только по wave-sequencing;
+  - сохранены non-negotiables Sprint S13: hidden draft internal-only, `semantic wave map` mandatory, no silent waivers for `high/critical`, `worker` without canonical semantics;
+  - boundary `Sprint S13 -> Sprint S14` удержан: runtime/UI invention остаётся вне Day6 execution package.
+- Day 7 (planned): owner-managed `run:dev` execution waves через issues `#521..#525`.
+  - Цель: поэтапно реализовать foundation, worker lifecycle, transport/mirror, UI visibility и readiness evidence без нарушения design guardrails.
+  - Ожидаемый результат: PR-потоки по waves с обязательным traceability sync и переходом в `state:in-review`.
 
 ### Sprint S16: Mission Control graph workspace and continuity control plane (Issue #492)
 - Day 1 (in-review): intake-пакет для полного redesign Mission Control (`docs/delivery/epics/s16/epic-s16-day1-mission-control-graph-workspace-intake.md`, Issue `#492`).
@@ -442,15 +460,9 @@ approvals:
   - user stories, FR/AC/NFR, scenario matrix и expected evidence зафиксированы для fullscreen graph workspace, filtered multi-root continuity, inventory-backed foundation, typed metadata/watermarks, platform-canonical launch params и platform-safe inline actions;
   - explicit continuity contract сохранён: stage through `run:dev` считается complete только при наличии `PR + linked follow-up issue`, а later-wave contours voice/STT, dashboard orchestrator agent, отдельная `agent` node taxonomy, full-history/archive и richer provider enrichment не блокируют core Wave 1;
   - создана continuity issue `#516` для stage `run:arch` без trigger-лейбла.
-- Day 4 (in-review): architecture package для Mission Control graph workspace (`docs/delivery/epics/s16/epic-s16-day4-mission-control-graph-workspace-arch.md`, `docs/architecture/initiatives/s16_mission_control_graph_workspace/{README.md,architecture.md,c4_context.md,c4_container.md}`, Issue `#516`).
-- Результат Day 4 (факт):
-  - `control-plane` закреплён как owner canonical graph truth, continuity gaps, typed metadata/watermarks и platform-canonical launch surfaces;
-  - `worker` закреплён за bounded provider inventory mirror, recent-closed-history backfill, enrichment/reconcile execution и lifecycle tasks без ownership graph semantics;
-  - hybrid truth lifecycle `provider mirror -> graph truth -> workspace projection` зафиксирован как обязательный baseline, а `api-gateway`/`web-console` сохранены thin-edge surfaces;
-  - созданы `ADR-0016`, `ALT-0008` и follow-up issue `#519` для stage `run:design` без trigger-лейбла.
-- Day 5 (planned): design issue `#519`.
-  - Цель: typed graph snapshot/detail/launch contracts, canonical data model и rollout/backfill/rollback notes.
-  - Ожидаемый результат: design package `design_doc + api_contract + data_model + migrations_policy` и новая issue для `run:plan` без trigger-лейбла.
+- Day 4 (planned): architecture issue `#516`.
+  - Цель: ownership matrix, hybrid truth merge model, persisted graph truth boundaries и service decisions для `control-plane` / `worker` / `api-gateway` / `web-console`.
+  - Ожидаемый результат: architecture package + новая issue для `run:design` без trigger-лейбла.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

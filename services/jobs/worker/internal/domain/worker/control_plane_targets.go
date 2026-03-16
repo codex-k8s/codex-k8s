@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net"
 	"strings"
-
-	agentdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/agent"
 )
 
 const (
@@ -14,11 +12,7 @@ const (
 	controlPlaneGRPCPort    = "9090"
 )
 
-func resolveRunControlPlaneGRPCTarget(runtimeMode agentdomain.RuntimeMode, productionNamespace string, fallbackTarget string) string {
-	if runtimeMode != agentdomain.RuntimeModeFullEnv {
-		return strings.TrimSpace(fallbackTarget)
-	}
-
+func resolveRunControlPlaneGRPCTarget(productionNamespace string, fallbackTarget string) string {
 	namespace := strings.TrimSpace(productionNamespace)
 	if namespace == "" {
 		return strings.TrimSpace(fallbackTarget)

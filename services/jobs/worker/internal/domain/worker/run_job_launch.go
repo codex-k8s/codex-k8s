@@ -203,7 +203,7 @@ func (s *Service) launchPreparedRunWorkload(ctx context.Context, run runqueuerep
 		RuntimeTargetEnv:       runtimeTargetEnv,
 		RuntimeBuildRef:        runtimeBuildRef,
 		RuntimeAccessProfile:   runtimeAccessProfile,
-		ControlPlaneGRPCTarget: resolveRunControlPlaneGRPCTarget(execution.RuntimeMode, s.cfg.ProductionNamespace, s.cfg.ControlPlaneGRPCTarget),
+		ControlPlaneGRPCTarget: resolveRunControlPlaneGRPCTarget(s.cfg.ProductionNamespace, s.cfg.ControlPlaneGRPCTarget),
 		MCPBaseURL:             s.cfg.ControlPlaneMCPBaseURL,
 		MCPBearerToken:         issuedMCPToken.Token,
 		RepositoryFullName:     agentCtx.RepositoryFullName,

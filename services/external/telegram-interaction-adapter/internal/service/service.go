@@ -17,6 +17,8 @@ import (
 
 const telegramWebhookPath = "/api/v1/telegram/interactions/webhook"
 
+var errTelegramVoiceHandledNoRetry = errors.New("telegram voice webhook handled without retry")
+
 // Config wires runtime dependencies for adapter service.
 type Config struct {
 	PublicBaseURL  string
@@ -369,6 +371,10 @@ func (s *Service) handleMessage(ctx context.Context, update telego.Update) error
 	locale := telegramLocale(message.From)
 	freeText, err := s.resolveMessageText(ctx, message, locale)
 	if err != nil {
+		if errors.Is(err, errTelegramVoiceHandledNoRetry) {
+			recordCallbackEvent(CallbackKindFreeTextReceived, metricStatusFailed)
+			return nil
+		}
 		recordCallbackEvent(CallbackKindFreeTextReceived, metricStatusFailed)
 		return err
 	}
@@ -428,31 +434,34 @@ func (s *Service) resolveMessageText(ctx context.Context, message *telego.Messag
 
 	file, err := s.bot.DownloadFile(ctx, message.Voice.FileID)
 	if err != nil {
-		_, _ = s.bot.SendMessage(ctx, SendMessageRequest{
-			ChatID: message.Chat.ID,
-			Text:   s.messages.Render(locale, "transcription_failed", nil),
-		})
-		return "", fmt.Errorf("download telegram voice file: %w", err)
+		s.sendBestEffortChatMessage(ctx, message.Chat.ID, s.messages.Render(locale, "transcription_failed", nil))
+		return "", errTelegramVoiceHandledNoRetry
 	}
 
 	normalized, err := s.audioConverter.Convert(ctx, AudioPayload(file))
 	if err != nil {
-		_, _ = s.bot.SendMessage(ctx, SendMessageRequest{
-			ChatID: message.Chat.ID,
-			Text:   s.messages.Render(locale, "transcription_failed", nil),
-		})
-		return "", fmt.Errorf("normalize telegram voice file: %w", err)
+		s.sendBestEffortChatMessage(ctx, message.Chat.ID, s.messages.Render(locale, "transcription_failed", nil))
+		return "", errTelegramVoiceHandledNoRetry
 	}
 
 	transcript, err := s.speechToText.Transcribe(ctx, normalized, telegramSTTLanguage(locale))
 	if err != nil {
-		_, _ = s.bot.SendMessage(ctx, SendMessageRequest{
-			ChatID: message.Chat.ID,
-			Text:   s.messages.Render(locale, "transcription_failed", nil),
-		})
-		return "", fmt.Errorf("transcribe telegram voice file: %w", err)
+		s.sendBestEffortChatMessage(ctx, message.Chat.ID, s.messages.Render(locale, "transcription_failed", nil))
+		return "", errTelegramVoiceHandledNoRetry
 	}
 	return strings.TrimSpace(transcript), nil
+}
+
+func (s *Service) sendBestEffortChatMessage(ctx context.Context, chatID int64, text string) {
+	if strings.TrimSpace(text) == "" {
+		return
+	}
+	if _, err := s.bot.SendMessage(ctx, SendMessageRequest{
+		ChatID: chatID,
+		Text:   text,
+	}); err != nil {
+		s.logger.Warn("best-effort telegram message failed", "chat_id", chatID, "err", err)
+	}
 }
 
 func (s *Service) forwardCallback(ctx context.Context, envelope CallbackEnvelope) (CallbackOutcome, error) {

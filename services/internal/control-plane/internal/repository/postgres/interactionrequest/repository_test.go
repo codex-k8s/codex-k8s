@@ -2,6 +2,7 @@ package interactionrequest
 
 import (
 	"encoding/json"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -38,6 +39,45 @@ func TestClassifyDecisionResponsePayloadAcceptsKnownOption(t *testing.T) {
 	if decision.selectedOptionID != "approve" {
 		t.Fatalf("selected option id = %q, want approve", decision.selectedOptionID)
 	}
+}
+
+func TestCreateDeliveryAttemptSQLHasMatchingTargetColumnsAndValues(t *testing.T) {
+	t.Parallel()
+
+	re := regexp.MustCompile(`(?is)INSERT\s+INTO\s+interaction_delivery_attempts\s*\((.*?)\)\s*VALUES\s*\((.*?)\)`)
+	matches := re.FindStringSubmatch(queryCreateDeliveryAttempt)
+	if len(matches) != 3 {
+		t.Fatalf("expected INSERT ... VALUES structure in create_delivery_attempt.sql")
+	}
+
+	columnCount := countCommaSeparatedSQLItems(matches[1])
+	valueCount := countCommaSeparatedSQLItems(matches[2])
+	if columnCount != valueCount {
+		t.Fatalf("target columns count = %d, values count = %d", columnCount, valueCount)
+	}
+}
+
+func TestUpdateDispatchBindingSQLKeepsContinuationPendingUntilCallbackApplied(t *testing.T) {
+	t.Parallel()
+
+	if !strings.Contains(queryUpdateDispatchBinding, "continuation_state = 'pending_primary_delivery'") {
+		t.Fatalf("update_dispatch_binding.sql must keep continuation_state pending_primary_delivery after primary dispatch")
+	}
+	if strings.Contains(queryUpdateDispatchBinding, "'ready_for_edit'") || strings.Contains(queryUpdateDispatchBinding, "'follow_up_required'") {
+		t.Fatalf("update_dispatch_binding.sql must not arm continuation before callback evidence is applied")
+	}
+}
+
+func countCommaSeparatedSQLItems(source string) int {
+	items := strings.Split(source, ",")
+	count := 0
+	for _, item := range items {
+		if strings.TrimSpace(item) == "" {
+			continue
+		}
+		count++
+	}
+	return count
 }
 
 func TestClassifyDecisionResponsePayloadRejectsUnknownOption(t *testing.T) {

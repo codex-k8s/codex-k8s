@@ -33,25 +33,22 @@ System(system, "codex-k8s Mission Control graph workspace slice", "Primary multi
 
 System_Ext(github, "GitHub", "Issues, pull requests, comments, reviews, labels, webhooks")
 System_Ext(k8s, "Kubernetes", "Runtime substrate for agent and background execution")
-System_Ext(staff, "Staff UI", "Graph canvas, toolbar and drawer surfaces")
 
 Rel(owner, system, "Uses", "HTTPS UI")
 Rel(operator, system, "Uses", "HTTPS UI")
 Rel(discussion, system, "Uses", "HTTPS UI")
 Rel(system, github, "Reads provider state / routes provider-safe deep links and sync", "HTTPS / webhooks")
 Rel(system, k8s, "Runs agent and reconciliation workloads", "Kubernetes API")
-Rel(system, staff, "Publishes typed graph projection and next-step surfaces", "Staff/private API")
 ```
 
 ## Пояснения
 - GitHub остаётся источником provider facts и human review/merge semantics, но не становится canonical owner graph relations и continuity completeness.
 - Kubernetes обеспечивает runtime для `agent-runner` и `worker`, но не хранит graph truth.
-- Staff UI остаётся visibility surface над typed projections `control-plane`, а не отдельным graph backend.
+- `web-console` остаётся внутренним container-level visibility surface `codex-k8s`, поэтому не моделируется как внешняя система на уровне C4Context.
 
 ## Внешние зависимости
 - GitHub: issue/pr/comment/review state, labels, provider-native collaboration и webhook echoes.
 - Kubernetes: runtime для `agent-runner` и `worker`.
-- Staff UI/API: отображает multi-root graph workspace и next-step surfaces, но не вычисляет domain semantics.
 
 ## Continuity after `run:arch`
 - Issue `#519` (`run:design`) должен сохранить этот context overlay как baseline для typed transport/data contracts.
