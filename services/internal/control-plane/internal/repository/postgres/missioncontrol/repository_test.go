@@ -31,6 +31,12 @@ func TestMissionControlReadQueriesStayProjectScoped(t *testing.T) {
 	if !strings.Contains(queryListTimelineEntries, "WHERE project_id = $1") {
 		t.Fatal("list_timeline_entries query must scope lookups by project_id")
 	}
+	if !strings.Contains(queryListContinuityGaps, "WHERE project_id = $1::uuid") {
+		t.Fatal("list_continuity_gaps query must scope lookups by project_id")
+	}
+	if !strings.Contains(queryListLatestWorkspaceWatermarks, "WHERE project_id = $1::uuid") {
+		t.Fatal("list_latest_workspace_watermarks query must scope lookups by project_id")
+	}
 }
 
 func TestUpdateCommandStatusQueryUsesPatchSemantics(t *testing.T) {
@@ -84,5 +90,16 @@ func TestEntityProjectionQueriesPersistContinuityAndCoverage(t *testing.T) {
 		if !strings.Contains(queryUpdateEntityProjection, item) {
 			t.Fatalf("update_entity_projection query must persist %s", item)
 		}
+	}
+}
+
+func TestWorkspaceReadQueriesKeepLatestProjectionSemantics(t *testing.T) {
+	t.Parallel()
+
+	if !strings.Contains(queryListLatestWorkspaceWatermarks, "ROW_NUMBER() OVER") {
+		t.Fatal("list_latest_workspace_watermarks query must select latest row per watermark kind")
+	}
+	if !strings.Contains(queryListContinuityGaps, "subject_entity_id = ANY") {
+		t.Fatal("list_continuity_gaps query must support subject filters")
 	}
 }

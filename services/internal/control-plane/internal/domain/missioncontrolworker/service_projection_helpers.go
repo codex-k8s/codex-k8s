@@ -2,7 +2,6 @@ package missioncontrolworker
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
@@ -28,8 +27,8 @@ func updateSeedLastTimelineAt(seeds map[string]projectionSeed, key string, occur
 	if !ok || occurredAt.IsZero() {
 		return
 	}
-	if seed.lastTimelineAt == nil || occurredAt.After(*seed.lastTimelineAt) {
-		seed.lastTimelineAt = timePointer(occurredAt)
+	if seed.LastTimelineAt == nil || occurredAt.After(*seed.LastTimelineAt) {
+		seed.LastTimelineAt = timePointer(occurredAt)
 		seeds[key] = seed
 	}
 }
@@ -117,33 +116,6 @@ func isSucceededRunStatus(status string) bool {
 	return strings.EqualFold(strings.TrimSpace(status), "succeeded")
 }
 
-func continuityGapCompositeKey(subjectEntityKey string, gapKind enumtypes.MissionControlGapKind) string {
-	return strings.TrimSpace(subjectEntityKey) + "::" + string(gapKind)
-}
-
-func seedContinuityGap(seeds map[string]continuityGapSeed, key string, candidate continuityGapSeed) {
-	current, found := seeds[key]
-	if !found || candidate.detectedAt.After(current.detectedAt) {
-		seeds[key] = candidate
-	}
-}
-
-func sortedGapKeys(seeds map[string]continuityGapSeed) []string {
-	keys := make([]string, 0, len(seeds))
-	for key := range seeds {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
-func gapDetectedAt(run agentrunrepo.RunLookupItem, fallback time.Time) time.Time {
-	if run.FinishedAt != nil && !run.FinishedAt.IsZero() {
-		return run.FinishedAt.UTC()
-	}
-	return fallback
-}
-
 func trackRunLineage(
 	lineageState map[string]string,
 	repositoryFullName string,
@@ -199,25 +171,25 @@ func buildWorkspaceWatermarks(
 	)
 
 	for _, seed := range entitySeeds {
-		switch seed.coverageClass {
+		switch seed.CoverageClass {
 		case enumtypes.MissionControlCoverageClassOpenPrimary:
 			primaryOpenCount++
 		case enumtypes.MissionControlCoverageClassRecentClosedContext:
 			recentClosedCount++
-			recentClosedStart = earlierTimePtr(recentClosedStart, seed.projectedAt)
-			recentClosedEnd = laterTimePtr(recentClosedEnd, seed.projectedAt)
+			recentClosedStart = earlierTimePtr(recentClosedStart, seed.ProjectedAt)
+			recentClosedEnd = laterTimePtr(recentClosedEnd, seed.ProjectedAt)
 		}
-		if seed.entityKind == enumtypes.MissionControlEntityKindRun {
+		if seed.EntityKind == enumtypes.MissionControlEntityKindRun {
 			runEntityCount++
 		}
-		if seed.entityKind == enumtypes.MissionControlEntityKindAgent {
+		if seed.EntityKind == enumtypes.MissionControlEntityKindAgent {
 			legacyAgentCount++
 		}
-		if seed.providerKind != enumtypes.MissionControlProviderKindGitHub {
+		if seed.ProviderKind != enumtypes.MissionControlProviderKindGitHub {
 			continue
 		}
 		providerEntityCount++
-		if seed.staleAfter != nil && seed.staleAfter.Before(observedAt) {
+		if seed.StaleAfter != nil && seed.StaleAfter.Before(observedAt) {
 			staleProviderCount++
 		}
 		providerWindowStart = earlierTimePtr(providerWindowStart, projectionTimestamp(seed))
@@ -341,10 +313,10 @@ func buildWorkspaceWatermarks(
 }
 
 func projectionTimestamp(seed projectionSeed) time.Time {
-	if seed.providerUpdatedAt != nil && !seed.providerUpdatedAt.IsZero() {
-		return seed.providerUpdatedAt.UTC()
+	if seed.ProviderUpdatedAt != nil && !seed.ProviderUpdatedAt.IsZero() {
+		return seed.ProviderUpdatedAt.UTC()
 	}
-	return seed.projectedAt.UTC()
+	return seed.ProjectedAt.UTC()
 }
 
 func earlierTimePtr(current *time.Time, candidate time.Time) *time.Time {

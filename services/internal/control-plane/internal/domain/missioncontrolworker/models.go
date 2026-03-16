@@ -81,25 +81,7 @@ type timelinePayload struct {
 	RepositoryFull string          `json:"repository_full_name,omitempty"`
 }
 
-type projectionSeed struct {
-	projectID         string
-	entityKind        enumtypes.MissionControlEntityKind
-	entityExternalKey string
-	providerKind      enumtypes.MissionControlProviderKind
-	providerURL       string
-	title             string
-	activeState       enumtypes.MissionControlActiveState
-	syncStatus        enumtypes.MissionControlSyncStatus
-	continuityStatus  enumtypes.MissionControlContinuityStatus
-	coverageClass     enumtypes.MissionControlCoverageClass
-	projectionVersion int64
-	cardPayloadJSON   json.RawMessage
-	detailPayloadJSON json.RawMessage
-	lastTimelineAt    *time.Time
-	providerUpdatedAt *time.Time
-	projectedAt       time.Time
-	staleAfter        *time.Time
-}
+type projectionSeed = missioncontrolrepo.UpsertEntityParams
 
 type relationSeed struct {
 	sourceEntityKey string
@@ -118,14 +100,10 @@ type timelineSeed struct {
 }
 
 type continuityGapSeed struct {
-	subjectEntityKey   string
-	gapKind            enumtypes.MissionControlGapKind
-	severity           enumtypes.MissionControlGapSeverity
-	expectedEntityKind enumtypes.MissionControlEntityKind
-	expectedStageLabel string
-	resolutionHint     string
-	payloadJSON        json.RawMessage
-	detectedAt         time.Time
+	subjectEntityKey string
+	gapKind          enumtypes.MissionControlGapKind
+	severity         enumtypes.MissionControlGapSeverity
+	detectedAt       time.Time
 }
 
 type workspaceWatermarkSeed struct {

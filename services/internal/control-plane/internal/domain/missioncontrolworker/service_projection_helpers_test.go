@@ -90,24 +90,24 @@ func TestBuildWorkspaceWatermarksReflectsShadowCoverageAndOpenGaps(t *testing.T)
 	recentClosedAt := observedAt.Add(-3 * time.Hour)
 	entitySeeds := map[string]projectionSeed{
 		"issue-1": {
-			entityKind:    enumtypes.MissionControlEntityKindWorkItem,
-			providerKind:  enumtypes.MissionControlProviderKindGitHub,
-			coverageClass: enumtypes.MissionControlCoverageClassOpenPrimary,
-			projectedAt:   observedAt.Add(-time.Hour),
-			staleAfter:    &staleAfter,
+			EntityKind:    enumtypes.MissionControlEntityKindWorkItem,
+			ProviderKind:  enumtypes.MissionControlProviderKindGitHub,
+			CoverageClass: enumtypes.MissionControlCoverageClassOpenPrimary,
+			ProjectedAt:   observedAt.Add(-time.Hour),
+			StaleAfter:    &staleAfter,
 		},
 		"run-1": {
-			entityKind:    enumtypes.MissionControlEntityKindRun,
-			providerKind:  enumtypes.MissionControlProviderKindPlatform,
-			coverageClass: enumtypes.MissionControlCoverageClassOpenPrimary,
-			projectedAt:   observedAt.Add(-time.Hour),
+			EntityKind:    enumtypes.MissionControlEntityKindRun,
+			ProviderKind:  enumtypes.MissionControlProviderKindPlatform,
+			CoverageClass: enumtypes.MissionControlCoverageClassOpenPrimary,
+			ProjectedAt:   observedAt.Add(-time.Hour),
 		},
 		"pr-1": {
-			entityKind:    enumtypes.MissionControlEntityKindPullRequest,
-			providerKind:  enumtypes.MissionControlProviderKindGitHub,
-			coverageClass: enumtypes.MissionControlCoverageClassRecentClosedContext,
-			projectedAt:   recentClosedAt,
-			staleAfter:    &staleAfter,
+			EntityKind:    enumtypes.MissionControlEntityKindPullRequest,
+			ProviderKind:  enumtypes.MissionControlProviderKindGitHub,
+			CoverageClass: enumtypes.MissionControlCoverageClassRecentClosedContext,
+			ProjectedAt:   recentClosedAt,
+			StaleAfter:    &staleAfter,
 		},
 	}
 	gapSeeds := map[string]continuityGapSeed{

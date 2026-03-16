@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	floweventdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/flowevent"
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
@@ -28,6 +29,9 @@ const (
 	eventTypeMissionControlCommandFailed      floweventdomain.EventType = "mission_control.command.failed"
 	eventTypeMissionControlCommandBlocked     floweventdomain.EventType = "mission_control.command.blocked"
 	eventTypeMissionControlCommandCancelled   floweventdomain.EventType = "mission_control.command.cancelled"
+	eventTypeMissionControlWorkspaceRefreshed floweventdomain.EventType = "mission_control.workspace.refreshed"
+	eventTypeMissionControlPreviewGenerated   floweventdomain.EventType = "mission_control.workspace.preview_generated"
+	eventTypeMissionControlPreviewBlocked     floweventdomain.EventType = "mission_control.workspace.preview_blocked"
 )
 
 type warmupEventPayload struct {
@@ -78,6 +82,34 @@ type commandEventPayload struct {
 	BusinessIntentKey string                                       `json:"business_intent_key"`
 	CorrelationID     string                                       `json:"correlation_id"`
 	EntityRefs        []valuetypes.MissionControlEntityRef         `json:"entity_refs,omitempty"`
+}
+
+type workspaceProjectionEventPayload struct {
+	ProjectID                    string    `json:"project_id"`
+	EntityCount                  int       `json:"entity_count"`
+	RootCount                    int       `json:"root_count"`
+	NodeCount                    int       `json:"node_count"`
+	OpenGapCount                 int       `json:"open_gap_count"`
+	BlockingGapCount             int       `json:"blocking_gap_count"`
+	WarningGapCount              int       `json:"warning_gap_count"`
+	MissingPullRequestGapCount   int       `json:"missing_pull_request_gap_count"`
+	MissingFollowUpIssueGapCount int       `json:"missing_follow_up_issue_gap_count"`
+	WatermarkCount               int       `json:"watermark_count"`
+	ReadyForReconcile            bool      `json:"ready_for_reconcile"`
+	GatingReason                 string    `json:"gating_reason,omitempty"`
+	ObservedAt                   time.Time `json:"observed_at"`
+}
+
+type workspacePreviewEventPayload struct {
+	ProjectID       string                             `json:"project_id"`
+	NodeRef         valuetypes.MissionControlEntityRef `json:"node_ref"`
+	ThreadKind      string                             `json:"thread_kind"`
+	ThreadNumber    int                                `json:"thread_number"`
+	TargetLabel     string                             `json:"target_label"`
+	PreviewID       string                             `json:"preview_id"`
+	BlockingReason  string                             `json:"blocking_reason,omitempty"`
+	ResolvedGapIDs  []int64                            `json:"resolved_gap_ids,omitempty"`
+	RemainingGapIDs []int64                            `json:"remaining_gap_ids,omitempty"`
 }
 
 func (s *Service) capabilities() (valuetypes.MissionControlRolloutCapabilities, error) {

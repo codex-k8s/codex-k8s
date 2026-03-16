@@ -155,10 +155,9 @@ func (s *Service) RunWarmup(ctx context.Context, params WarmupRequest) (WarmupRe
 	entitySeeds := make(map[string]projectionSeed)
 	relationSeeds := make(map[string]relationSeed)
 	timelineSeeds := make(map[string]timelineSeed)
-	gapSeeds := make(map[string]continuityGapSeed)
 	lineageState := make(map[string]string)
 	for _, run := range runs {
-		if err := s.collectProjectionSeeds(ctx, project, repositoryFullName, run, entitySeeds, relationSeeds, timelineSeeds, gapSeeds, lineageState); err != nil {
+		if err := s.collectProjectionSeeds(ctx, project, repositoryFullName, run, entitySeeds, relationSeeds, timelineSeeds, lineageState); err != nil {
 			return WarmupResult{}, err
 		}
 	}
@@ -167,25 +166,7 @@ func (s *Service) RunWarmup(ctx context.Context, params WarmupRequest) (WarmupRe
 	entityKeys := sortedProjectionKeys(entitySeeds)
 	for _, entityKey := range entityKeys {
 		seed := entitySeeds[entityKey]
-		entity, upsertErr := s.missionControl.UpsertEntity(ctx, missioncontrol.UpsertEntityParams{
-			ProjectID:         seed.projectID,
-			EntityKind:        seed.entityKind,
-			EntityExternalKey: seed.entityExternalKey,
-			ProviderKind:      seed.providerKind,
-			ProviderURL:       seed.providerURL,
-			Title:             seed.title,
-			ActiveState:       seed.activeState,
-			SyncStatus:        seed.syncStatus,
-			ContinuityStatus:  seed.continuityStatus,
-			CoverageClass:     seed.coverageClass,
-			ProjectionVersion: seed.projectionVersion,
-			CardPayloadJSON:   seed.cardPayloadJSON,
-			DetailPayloadJSON: seed.detailPayloadJSON,
-			LastTimelineAt:    seed.lastTimelineAt,
-			ProviderUpdatedAt: seed.providerUpdatedAt,
-			ProjectedAt:       seed.projectedAt,
-			StaleAfter:        seed.staleAfter,
-		}, params.CorrelationID)
+		entity, upsertErr := s.missionControl.UpsertEntity(ctx, missioncontrol.UpsertEntityParams(seed), params.CorrelationID)
 		if upsertErr != nil {
 			return WarmupResult{}, upsertErr
 		}
@@ -243,46 +224,12 @@ func (s *Service) RunWarmup(ctx context.Context, params WarmupRequest) (WarmupRe
 		timelineCount++
 	}
 
-	syncedGaps := make([]missioncontrolrepo.ContinuityGapSeed, 0, len(gapSeeds))
-	for _, gapKey := range sortedGapKeys(gapSeeds) {
-		seed := gapSeeds[gapKey]
-		subjectEntityID, ok := entityIDs[seed.subjectEntityKey]
-		if !ok {
-			continue
-		}
-		syncedGaps = append(syncedGaps, missioncontrolrepo.ContinuityGapSeed{
-			SubjectEntityID:    subjectEntityID,
-			GapKind:            seed.gapKind,
-			Severity:           seed.severity,
-			ExpectedEntityKind: seed.expectedEntityKind,
-			ExpectedStageLabel: seed.expectedStageLabel,
-			ResolutionHint:     seed.resolutionHint,
-			PayloadJSON:        seed.payloadJSON,
-			DetectedAt:         seed.detectedAt,
-		})
-	}
-	if err := s.projection.SyncContinuityGaps(ctx, missioncontrolrepo.SyncContinuityGapsParams{
-		ProjectID:   projectID,
-		ResolvedAt:  s.now(),
-		DesiredOpen: syncedGaps,
+	if _, err := s.missionControl.RefreshWorkspaceProjection(ctx, missioncontrol.WorkspaceRefreshParams{
+		ProjectID:     projectID,
+		CorrelationID: params.CorrelationID,
+		ObservedAt:    s.now(),
 	}); err != nil {
 		return WarmupResult{}, err
-	}
-
-	watermarks := buildWorkspaceWatermarks(projectID, entitySeeds, gapSeeds, s.now())
-	for _, watermark := range watermarks {
-		if _, err := s.projection.CreateWorkspaceWatermark(ctx, missioncontrolrepo.CreateWorkspaceWatermarkParams{
-			ProjectID:       projectID,
-			WatermarkKind:   watermark.watermarkKind,
-			Status:          watermark.status,
-			Summary:         watermark.summary,
-			WindowStartedAt: watermark.windowStartedAt,
-			WindowEndedAt:   watermark.windowEndedAt,
-			ObservedAt:      s.now(),
-			PayloadJSON:     watermark.payloadJSON,
-		}); err != nil {
-			return WarmupResult{}, err
-		}
 	}
 
 	requestedBy := strings.TrimSpace(params.RequestedBy)
@@ -423,7 +370,6 @@ func (s *Service) collectProjectionSeeds(
 	entitySeeds map[string]projectionSeed,
 	relationSeeds map[string]relationSeed,
 	timelineSeeds map[string]timelineSeed,
-	gapSeeds map[string]continuityGapSeed,
 	lineageState map[string]string,
 ) error {
 	projectedAt := safeProjectionTime(run.CreatedAt, s.now)
@@ -478,23 +424,23 @@ func (s *Service) collectProjectionSeeds(
 			workItemTitle = fmt.Sprintf("Issue #%d", run.IssueNumber)
 		}
 		seedProjection(entitySeeds, workItemEntityKey, projectionSeed{
-			projectID:         project.ID,
-			entityKind:        enumtypes.MissionControlEntityKindWorkItem,
-			entityExternalKey: workItemEntityKey,
-			providerKind:      enumtypes.MissionControlProviderKindGitHub,
-			providerURL:       issueURL,
-			title:             workItemTitle,
-			activeState:       warmupActiveState(run.Status, false, run.PullRequestNumber > 0),
-			syncStatus:        enumtypes.MissionControlSyncStatusSynced,
-			continuityStatus:  workItemContinuity,
-			coverageClass:     workItemCoverage,
-			projectionVersion: projectedAt.UnixMilli(),
-			cardPayloadJSON:   mustMarshal(workItemPayload),
-			detailPayloadJSON: mustMarshal(workItemPayload),
-			lastTimelineAt:    lastTimelineAt,
-			providerUpdatedAt: timePointer(projectedAt),
-			projectedAt:       projectedAt,
-			staleAfter:        &staleAfter,
+			ProjectID:         project.ID,
+			EntityKind:        enumtypes.MissionControlEntityKindWorkItem,
+			EntityExternalKey: workItemEntityKey,
+			ProviderKind:      enumtypes.MissionControlProviderKindGitHub,
+			ProviderURL:       issueURL,
+			Title:             workItemTitle,
+			ActiveState:       warmupActiveState(run.Status, false, run.PullRequestNumber > 0),
+			SyncStatus:        enumtypes.MissionControlSyncStatusSynced,
+			ContinuityStatus:  workItemContinuity,
+			CoverageClass:     workItemCoverage,
+			ProjectionVersion: projectedAt.UnixMilli(),
+			CardPayloadJSON:   mustMarshal(workItemPayload),
+			DetailPayloadJSON: mustMarshal(workItemPayload),
+			LastTimelineAt:    lastTimelineAt,
+			ProviderUpdatedAt: timePointer(projectedAt),
+			ProjectedAt:       projectedAt,
+			StaleAfter:        &staleAfter,
 		})
 		if runEntityKey != "" {
 			relationSeeds[relationCompositeKey(workItemEntityKey, runEntityKey, enumtypes.MissionControlRelationKindSpawnedRun)] = relationSeed{
@@ -523,21 +469,21 @@ func (s *Service) collectProjectionSeeds(
 			LastProviderSyncAt: timePointer(projectedAt),
 		}
 		seedProjection(entitySeeds, runEntityKey, projectionSeed{
-			projectID:         project.ID,
-			entityKind:        enumtypes.MissionControlEntityKindRun,
-			entityExternalKey: runEntityKey,
-			providerKind:      enumtypes.MissionControlProviderKindPlatform,
-			title:             runDisplayTitle(run.RunID),
-			activeState:       warmupActiveState(run.Status, pullRequestEntityKey != "", false),
-			syncStatus:        enumtypes.MissionControlSyncStatusSynced,
-			continuityStatus:  runContinuity,
-			coverageClass:     runCoverage,
-			projectionVersion: projectedAt.UnixMilli(),
-			cardPayloadJSON:   mustMarshal(runPayload),
-			detailPayloadJSON: mustMarshal(runPayload),
-			lastTimelineAt:    lastTimelineAt,
-			projectedAt:       projectedAt,
-			staleAfter:        &staleAfter,
+			ProjectID:         project.ID,
+			EntityKind:        enumtypes.MissionControlEntityKindRun,
+			EntityExternalKey: runEntityKey,
+			ProviderKind:      enumtypes.MissionControlProviderKindPlatform,
+			Title:             runDisplayTitle(run.RunID),
+			ActiveState:       warmupActiveState(run.Status, pullRequestEntityKey != "", false),
+			SyncStatus:        enumtypes.MissionControlSyncStatusSynced,
+			ContinuityStatus:  runContinuity,
+			CoverageClass:     runCoverage,
+			ProjectionVersion: projectedAt.UnixMilli(),
+			CardPayloadJSON:   mustMarshal(runPayload),
+			DetailPayloadJSON: mustMarshal(runPayload),
+			LastTimelineAt:    lastTimelineAt,
+			ProjectedAt:       projectedAt,
+			StaleAfter:        &staleAfter,
 		})
 		if nextRunEntityKey != "" {
 			relationSeeds[relationCompositeKey(runEntityKey, nextRunEntityKey, enumtypes.MissionControlRelationKindContinuesWith)] = relationSeed{
@@ -570,23 +516,23 @@ func (s *Service) collectProjectionSeeds(
 			pullRequestTitle = fmt.Sprintf("PR #%d", run.PullRequestNumber)
 		}
 		seedProjection(entitySeeds, pullRequestEntityKey, projectionSeed{
-			projectID:         project.ID,
-			entityKind:        enumtypes.MissionControlEntityKindPullRequest,
-			entityExternalKey: pullRequestEntityKey,
-			providerKind:      enumtypes.MissionControlProviderKindGitHub,
-			providerURL:       pullRequestURL,
-			title:             pullRequestTitle,
-			activeState:       warmupActiveState(run.Status, true, false),
-			syncStatus:        enumtypes.MissionControlSyncStatusSynced,
-			continuityStatus:  pullRequestContinuity,
-			coverageClass:     pullRequestCoverage,
-			projectionVersion: projectedAt.UnixMilli(),
-			cardPayloadJSON:   mustMarshal(pullRequestPayload),
-			detailPayloadJSON: mustMarshal(pullRequestPayload),
-			lastTimelineAt:    lastTimelineAt,
-			providerUpdatedAt: timePointer(projectedAt),
-			projectedAt:       projectedAt,
-			staleAfter:        &staleAfter,
+			ProjectID:         project.ID,
+			EntityKind:        enumtypes.MissionControlEntityKindPullRequest,
+			EntityExternalKey: pullRequestEntityKey,
+			ProviderKind:      enumtypes.MissionControlProviderKindGitHub,
+			ProviderURL:       pullRequestURL,
+			Title:             pullRequestTitle,
+			ActiveState:       warmupActiveState(run.Status, true, false),
+			SyncStatus:        enumtypes.MissionControlSyncStatusSynced,
+			ContinuityStatus:  pullRequestContinuity,
+			CoverageClass:     pullRequestCoverage,
+			ProjectionVersion: projectedAt.UnixMilli(),
+			CardPayloadJSON:   mustMarshal(pullRequestPayload),
+			DetailPayloadJSON: mustMarshal(pullRequestPayload),
+			LastTimelineAt:    lastTimelineAt,
+			ProviderUpdatedAt: timePointer(projectedAt),
+			ProjectedAt:       projectedAt,
+			StaleAfter:        &staleAfter,
 		})
 		if runEntityKey != "" {
 			relationSeeds[relationCompositeKey(runEntityKey, pullRequestEntityKey, enumtypes.MissionControlRelationKindProducedPullRequest)] = relationSeed{
@@ -602,23 +548,6 @@ func (s *Service) collectProjectionSeeds(
 				relationKind:    enumtypes.MissionControlRelationKindRelatedTo,
 			}
 		}
-	}
-
-	if nextRunEntityKey == "" && runContinuity == enumtypes.MissionControlContinuityStatusMissingPullRequest {
-		seedContinuityGap(gapSeeds, continuityGapCompositeKey(runEntityKey, enumtypes.MissionControlGapKindMissingPullRequest), continuityGapSeed{
-			subjectEntityKey:   runEntityKey,
-			gapKind:            enumtypes.MissionControlGapKindMissingPullRequest,
-			severity:           enumtypes.MissionControlGapSeverityBlocking,
-			expectedEntityKind: enumtypes.MissionControlEntityKindPullRequest,
-			resolutionHint:     "Подготовить pull request как обязательный stage artifact перед следующим переходом.",
-			payloadJSON: mustMarshal(valuetypes.MissionControlMissingPullRequestGapPayload{
-				RepositoryFullName: repositoryFullName,
-				IssueRef:           workItemEntityKey,
-				RunID:              strings.TrimSpace(run.RunID),
-				StageLabel:         strings.TrimSpace(runContext.StageLabel),
-			}),
-			detectedAt: gapDetectedAt(run, projectedAt),
-		})
 	}
 
 	eventEntityKeys := relatedProjectionKeys(workItemEntityKey, runEntityKey, pullRequestEntityKey)
@@ -720,7 +649,7 @@ func selectRepositoryBinding(bindings []repocfgrepo.RepositoryBinding) (repocfgr
 
 func seedProjection(seeds map[string]projectionSeed, key string, candidate projectionSeed) {
 	current, found := seeds[key]
-	if !found || candidate.projectionVersion >= current.projectionVersion {
+	if !found || candidate.ProjectionVersion >= current.ProjectionVersion {
 		seeds[key] = candidate
 	}
 }
@@ -764,10 +693,6 @@ func workItemProjectionKey(repositoryFullName string, issueNumber int64) string 
 
 func pullRequestProjectionKey(repositoryFullName string, pullRequestNumber int64) string {
 	return strings.TrimSpace(repositoryFullName) + "/pull/" + fmt.Sprintf("%d", pullRequestNumber)
-}
-
-func agentEntityProjectionKey(agentKey string) string {
-	return "agent/" + strings.TrimSpace(agentKey)
 }
 
 func buildTimelineEntryExternalKey(entityKey string, event staffrunrepo.FlowEvent) string {
@@ -817,10 +742,6 @@ func warmupActiveState(status string, hasPullRequest bool, linkedPullRequest boo
 		}
 		return enumtypes.MissionControlActiveStateWaiting
 	}
-}
-
-func agentDisplayTitle(agentKey string) string {
-	return "Agent " + strings.TrimSpace(agentKey)
 }
 
 func githubIssueURL(repositoryFullName string, issueNumber int64) string {

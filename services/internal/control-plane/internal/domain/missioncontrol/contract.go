@@ -9,29 +9,35 @@ import (
 )
 
 type (
-	WarmupRequest             = querytypes.MissionControlWarmupRequest
-	WarmupSummary             = valuetypes.MissionControlWarmupSummary
-	ActiveSetQuery            = querytypes.MissionControlActiveSetQuery
-	EntityDetailsQuery        = querytypes.MissionControlEntityDetailsQuery
-	SubmitCommandParams       = querytypes.MissionControlSubmitCommandParams
-	ApprovalDecisionParams    = querytypes.MissionControlApprovalDecisionParams
-	CommandQueueParams        = querytypes.MissionControlCommandQueueParams
-	CommandSyncProgressParams = querytypes.MissionControlCommandSyncProgressParams
-	CommandReconcileParams    = querytypes.MissionControlCommandReconcileParams
-	CommandFailureParams      = querytypes.MissionControlCommandFailureParams
-	CommandCancelParams       = querytypes.MissionControlCommandCancelParams
-	UpsertEntityParams        = missioncontrolrepo.UpsertEntityParams
-	UpdateEntityParams        = missioncontrolrepo.UpdateEntityParams
-	ReplaceRelationsParams    = missioncontrolrepo.ReplaceRelationsParams
-	UpsertTimelineEntryParams = missioncontrolrepo.UpsertTimelineEntryParams
-	Entity                    = missioncontrolrepo.Entity
-	Relation                  = missioncontrolrepo.Relation
-	TimelineEntry             = missioncontrolrepo.TimelineEntry
-	Command                   = missioncontrolrepo.Command
-	ActiveSet                 = valuetypes.MissionControlActiveSet
-	EntityDetails             = valuetypes.MissionControlEntityDetails
-	CommandAdmission          = valuetypes.MissionControlCommandAdmission
-	CommandStatusView         = valuetypes.MissionControlCommandStatusView
+	WarmupRequest              = querytypes.MissionControlWarmupRequest
+	WarmupSummary              = valuetypes.MissionControlWarmupSummary
+	ActiveSetQuery             = querytypes.MissionControlActiveSetQuery
+	EntityDetailsQuery         = querytypes.MissionControlEntityDetailsQuery
+	WorkspaceRefreshParams     = querytypes.MissionControlWorkspaceRefreshParams
+	WorkspaceQuery             = querytypes.MissionControlWorkspaceQuery
+	LaunchPreviewParams        = querytypes.MissionControlLaunchPreviewParams
+	SubmitCommandParams        = querytypes.MissionControlSubmitCommandParams
+	ApprovalDecisionParams     = querytypes.MissionControlApprovalDecisionParams
+	CommandQueueParams         = querytypes.MissionControlCommandQueueParams
+	CommandSyncProgressParams  = querytypes.MissionControlCommandSyncProgressParams
+	CommandReconcileParams     = querytypes.MissionControlCommandReconcileParams
+	CommandFailureParams       = querytypes.MissionControlCommandFailureParams
+	CommandCancelParams        = querytypes.MissionControlCommandCancelParams
+	UpsertEntityParams         = missioncontrolrepo.UpsertEntityParams
+	UpdateEntityParams         = missioncontrolrepo.UpdateEntityParams
+	ReplaceRelationsParams     = missioncontrolrepo.ReplaceRelationsParams
+	UpsertTimelineEntryParams  = missioncontrolrepo.UpsertTimelineEntryParams
+	Entity                     = missioncontrolrepo.Entity
+	Relation                   = missioncontrolrepo.Relation
+	TimelineEntry              = missioncontrolrepo.TimelineEntry
+	Command                    = missioncontrolrepo.Command
+	ActiveSet                  = valuetypes.MissionControlActiveSet
+	EntityDetails              = valuetypes.MissionControlEntityDetails
+	WorkspaceProjectionSummary = valuetypes.MissionControlWorkspaceProjectionSummary
+	WorkspaceSnapshot          = valuetypes.MissionControlWorkspaceSnapshot
+	LaunchPreview              = valuetypes.MissionControlLaunchPreview
+	CommandAdmission           = valuetypes.MissionControlCommandAdmission
+	CommandStatusView          = valuetypes.MissionControlCommandStatusView
 )
 
 // WarmupExecutor defines the owner-controlled warmup/backfill entry-point that worker wave #371 must execute.
@@ -42,6 +48,9 @@ type WarmupExecutor interface {
 // DomainService defines Mission Control owner-owned use-cases consumed by future worker and transport waves.
 type DomainService interface {
 	WarmupExecutor
+	RefreshWorkspaceProjection(ctx context.Context, params WorkspaceRefreshParams) (WorkspaceProjectionSummary, error)
+	GetWorkspace(ctx context.Context, params WorkspaceQuery) (WorkspaceSnapshot, error)
+	PreviewLaunch(ctx context.Context, params LaunchPreviewParams) (LaunchPreview, error)
 	ListActiveSet(ctx context.Context, params ActiveSetQuery) (ActiveSet, error)
 	GetEntityDetails(ctx context.Context, params EntityDetailsQuery) (EntityDetails, error)
 	UpsertEntity(ctx context.Context, params UpsertEntityParams, correlationID string) (Entity, error)

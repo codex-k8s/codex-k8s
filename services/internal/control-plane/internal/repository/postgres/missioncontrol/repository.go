@@ -48,6 +48,9 @@ var queryUpsertTimelineEntry string
 //go:embed sql/list_timeline_entries.sql
 var queryListTimelineEntries string
 
+//go:embed sql/list_continuity_gaps.sql
+var queryListContinuityGaps string
+
 //go:embed sql/select_open_continuity_gaps.sql
 var querySelectOpenContinuityGaps string
 
@@ -62,6 +65,9 @@ var queryResolveContinuityGap string
 
 //go:embed sql/insert_workspace_watermark.sql
 var queryInsertWorkspaceWatermark string
+
+//go:embed sql/list_latest_workspace_watermarks.sql
+var queryListLatestWorkspaceWatermarks string
 
 //go:embed sql/insert_command.sql
 var queryInsertCommand string
@@ -345,6 +351,30 @@ func (r *Repository) ListTimelineEntries(ctx context.Context, filter domainrepo.
 	return out, nil
 }
 
+// ListContinuityGaps returns continuity gaps scoped to one project.
+func (r *Repository) ListContinuityGaps(ctx context.Context, filter domainrepo.ContinuityGapListFilter) ([]domainrepo.ContinuityGap, error) {
+	normalized := normalizeContinuityGapListFilter(filter)
+	rows, err := r.db.Query(
+		ctx,
+		queryListContinuityGaps,
+		normalized.ProjectID,
+		normalized.SubjectEntityIDs,
+		gapStatusesToStrings(normalized.Statuses),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list mission control continuity gaps: %w", err)
+	}
+	items, err := pgx.CollectRows(rows, pgx.RowToStructByName[dbmodel.ContinuityGapRow])
+	if err != nil {
+		return nil, fmt.Errorf("collect mission control continuity gaps: %w", err)
+	}
+	out := make([]domainrepo.ContinuityGap, 0, len(items))
+	for _, item := range items {
+		out = append(out, fromContinuityGapRow(item))
+	}
+	return out, nil
+}
+
 // SyncContinuityGaps reconciles open continuity gaps for one project.
 func (r *Repository) SyncContinuityGaps(ctx context.Context, params domainrepo.SyncContinuityGapsParams) error {
 	normalized := normalizeContinuityGapSyncParams(params)
@@ -452,6 +482,15 @@ func (r *Repository) CreateWorkspaceWatermark(ctx context.Context, params domain
 		return domainrepo.WorkspaceWatermark{}, fmt.Errorf("collect mission control workspace watermark: %w", err)
 	}
 	return fromWorkspaceWatermarkRow(row), nil
+}
+
+// ListLatestWorkspaceWatermarks returns the newest effective watermark for each kind.
+func (r *Repository) ListLatestWorkspaceWatermarks(ctx context.Context, projectID string) ([]domainrepo.WorkspaceWatermark, error) {
+	rows, err := r.db.Query(ctx, queryListLatestWorkspaceWatermarks, strings.TrimSpace(projectID))
+	if err != nil {
+		return nil, fmt.Errorf("list latest mission control workspace watermarks: %w", err)
+	}
+	return collectWorkspaceWatermarkRows(rows, "collect latest mission control workspace watermarks")
 }
 
 // ListCommandsAll returns mission control commands across projects for worker-owned execution scans.
@@ -743,6 +782,12 @@ func normalizeTimelineListFilter(filter domainrepo.TimelineListFilter) domainrep
 	return normalized
 }
 
+func normalizeContinuityGapListFilter(filter domainrepo.ContinuityGapListFilter) domainrepo.ContinuityGapListFilter {
+	normalized := filter
+	normalized.ProjectID = strings.TrimSpace(normalized.ProjectID)
+	return normalized
+}
+
 func normalizeContinuityGapSyncParams(params domainrepo.SyncContinuityGapsParams) domainrepo.SyncContinuityGapsParams {
 	normalized := params
 	normalized.ProjectID = strings.TrimSpace(normalized.ProjectID)
@@ -978,6 +1023,10 @@ func commandStatusesToStrings(values []enumtypes.MissionControlCommandStatus) []
 	return enumStrings(values)
 }
 
+func gapStatusesToStrings(values []enumtypes.MissionControlGapStatus) []string {
+	return enumStrings(values)
+}
+
 func collectOptionalCommand(rows pgx.Rows, op string) (domainrepo.Command, bool, error) {
 	row, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[dbmodel.CommandRow])
 	if err != nil {
@@ -987,6 +1036,34 @@ func collectOptionalCommand(rows pgx.Rows, op string) (domainrepo.Command, bool,
 		return domainrepo.Command{}, false, fmt.Errorf("%s: %w", op, err)
 	}
 	return fromCommandRow(row), true, nil
+}
+
+func collectWorkspaceWatermarkRows(rows pgx.Rows, op string) ([]domainrepo.WorkspaceWatermark, error) {
+	defer rows.Close()
+
+	out := make([]domainrepo.WorkspaceWatermark, 0, 4)
+	for rows.Next() {
+		var row dbmodel.WorkspaceWatermarkRow
+		if err := rows.Scan(
+			&row.ID,
+			&row.ProjectID,
+			&row.WatermarkKind,
+			&row.Status,
+			&row.Summary,
+			&row.WindowStartedAt,
+			&row.WindowEndedAt,
+			&row.ObservedAt,
+			&row.PayloadJSON,
+			&row.CreatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+		out = append(out, fromWorkspaceWatermarkRow(row))
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	return out, nil
 }
 
 func normalizeLimit(limit int) int {

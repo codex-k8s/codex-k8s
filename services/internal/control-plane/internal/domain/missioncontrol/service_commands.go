@@ -74,6 +74,28 @@ func (s *Service) SubmitCommand(ctx context.Context, params SubmitCommandParams)
 			return CommandAdmission{}, err
 		}
 	}
+	if params.CommandKind == enumtypes.MissionControlCommandKindStageNextStep && targetEntity != nil && normalizedPayload.StageNextStep != nil {
+		graph, graphErr := s.loadWorkspaceGraph(ctx, params.ProjectID)
+		if graphErr != nil {
+			return CommandAdmission{}, graphErr
+		}
+		preview, previewErr := s.previewLaunchAgainstEntity(ctx, graph, *targetEntity, LaunchPreviewParams{
+			ProjectID:                 params.ProjectID,
+			NodeKind:                  targetEntity.EntityKind,
+			NodePublicID:              targetEntity.EntityExternalKey,
+			ThreadKind:                normalizedPayload.StageNextStep.ThreadKind,
+			ThreadNumber:              normalizedPayload.StageNextStep.ThreadNumber,
+			TargetLabel:               normalizedPayload.StageNextStep.TargetLabel,
+			RemovedLabels:             normalizedPayload.StageNextStep.RemovedLabels,
+			ExpectedProjectionVersion: params.ExpectedProjectionVersion,
+		})
+		if previewErr != nil {
+			return CommandAdmission{}, previewErr
+		}
+		if strings.TrimSpace(preview.BlockingReason) != "" {
+			return s.createBlockedCommand(ctx, params, normalizedPayload, targetEntity, entityRefs, enumtypes.MissionControlCommandFailureReasonPolicyDenied, requestedAt)
+		}
+	}
 
 	status := enumtypes.MissionControlCommandStatusAccepted
 	approvalState := enumtypes.MissionControlApprovalStateNotRequired

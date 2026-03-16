@@ -23,6 +23,7 @@ type (
 	ReplaceRelationsParams         = querytypes.MissionControlRelationReplaceParams
 	UpsertTimelineEntryParams      = querytypes.MissionControlTimelineEntryUpsertParams
 	TimelineListFilter             = querytypes.MissionControlTimelineListFilter
+	ContinuityGapListFilter        = querytypes.MissionControlContinuityGapListFilter
 	SyncContinuityGapsParams       = querytypes.MissionControlContinuityGapSyncParams
 	ContinuityGapSeed              = querytypes.MissionControlContinuityGapSeed
 	CreateWorkspaceWatermarkParams = querytypes.MissionControlWorkspaceWatermarkCreateParams
@@ -59,10 +60,14 @@ type Repository interface {
 	UpsertTimelineEntry(ctx context.Context, params UpsertTimelineEntryParams) (TimelineEntry, error)
 	// ListTimelineEntries returns timeline entries for one entity ordered newest first.
 	ListTimelineEntries(ctx context.Context, filter TimelineListFilter) ([]TimelineEntry, error)
+	// ListContinuityGaps returns continuity gaps scoped to one project and optional subjects/statuses.
+	ListContinuityGaps(ctx context.Context, filter ContinuityGapListFilter) ([]ContinuityGap, error)
 	// SyncContinuityGaps reconciles open continuity gaps for one project against the desired seed set.
 	SyncContinuityGaps(ctx context.Context, params SyncContinuityGapsParams) error
 	// CreateWorkspaceWatermark appends one typed workspace watermark snapshot.
 	CreateWorkspaceWatermark(ctx context.Context, params CreateWorkspaceWatermarkParams) (WorkspaceWatermark, error)
+	// ListLatestWorkspaceWatermarks returns the newest effective workspace watermark for each kind.
+	ListLatestWorkspaceWatermarks(ctx context.Context, projectID string) ([]WorkspaceWatermark, error)
 	// CreateCommand inserts one command-ledger row.
 	CreateCommand(ctx context.Context, params CreateCommandParams) (Command, error)
 	// GetCommandByID loads one command row by id scoped to one project.

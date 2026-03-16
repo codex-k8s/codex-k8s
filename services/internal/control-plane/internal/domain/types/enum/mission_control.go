@@ -206,3 +206,23 @@ const (
 	MissionControlWorkspaceWatermarkStatusDegraded   MissionControlWorkspaceWatermarkStatus = "degraded"
 	MissionControlWorkspaceWatermarkStatusOutOfScope MissionControlWorkspaceWatermarkStatus = "out_of_scope"
 )
+
+// MissionControlWorkspaceStatePreset identifies one fixed workspace active-state preset.
+type MissionControlWorkspaceStatePreset string
+
+const (
+	MissionControlWorkspaceStatePresetWorking               MissionControlWorkspaceStatePreset = "working"
+	MissionControlWorkspaceStatePresetWaiting               MissionControlWorkspaceStatePreset = "waiting"
+	MissionControlWorkspaceStatePresetBlocked               MissionControlWorkspaceStatePreset = "blocked"
+	MissionControlWorkspaceStatePresetReview                MissionControlWorkspaceStatePreset = "review"
+	MissionControlWorkspaceStatePresetRecentCriticalUpdates MissionControlWorkspaceStatePreset = "recent_critical_updates"
+	MissionControlWorkspaceStatePresetAllActive             MissionControlWorkspaceStatePreset = "all_active"
+)
+
+// MissionControlWorkspaceVisibilityTier identifies how one node/edge is rendered in workspace projection.
+type MissionControlWorkspaceVisibilityTier string
+
+const (
+	MissionControlWorkspaceVisibilityTierPrimary         MissionControlWorkspaceVisibilityTier = "primary"
+	MissionControlWorkspaceVisibilityTierSecondaryDimmed MissionControlWorkspaceVisibilityTier = "secondary_dimmed"
+)

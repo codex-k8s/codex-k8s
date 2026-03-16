@@ -237,6 +237,18 @@ func (s stubMissionControlDomain) RunWarmup(context.Context, missioncontroldomai
 	return missioncontroldomain.WarmupSummary{}, nil
 }
 
+func (stubMissionControlDomain) RefreshWorkspaceProjection(context.Context, missioncontroldomain.WorkspaceRefreshParams) (missioncontroldomain.WorkspaceProjectionSummary, error) {
+	return missioncontroldomain.WorkspaceProjectionSummary{}, nil
+}
+
+func (stubMissionControlDomain) GetWorkspace(context.Context, missioncontroldomain.WorkspaceQuery) (missioncontroldomain.WorkspaceSnapshot, error) {
+	return missioncontroldomain.WorkspaceSnapshot{}, nil
+}
+
+func (stubMissionControlDomain) PreviewLaunch(context.Context, missioncontroldomain.LaunchPreviewParams) (missioncontroldomain.LaunchPreview, error) {
+	return missioncontroldomain.LaunchPreview{}, nil
+}
+
 func (s stubMissionControlDomain) ListActiveSet(context.Context, missioncontroldomain.ActiveSetQuery) (missioncontroldomain.ActiveSet, error) {
 	return s.activeSet, nil
 }
