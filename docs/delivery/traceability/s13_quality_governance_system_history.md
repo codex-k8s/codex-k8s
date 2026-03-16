@@ -10,8 +10,10 @@ related_issues: [469, 471, 476, 484, 494, 512, 521, 522, 523, 524, 525]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-14-traceability-s13-history"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-16
 ---
 
 # Sprint S13 Traceability History
@@ -117,6 +119,7 @@ approvals:
   - boundary `Sprint S13 -> Sprint S14` сохранён: runtime/UI invention не включён в execution package Day6.
 - Созданы follow-up issues `#521`, `#522`, `#523`, `#524`, `#525` для stage `run:dev` без trigger-лейблов.
 - Для GitHub continuity повторно подтверждён non-interactive CLI flow локальными `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; через `gh issue create` оформлены handover issues `#521..#525`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope.
+- Owner review по PR `#527` подтвердил, что Day6 plan package и handover backlog `#521..#525` согласованы; это отражено в approval-frontmatter Sprint S13, epic catalog и day6-эпика.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: plan stage зафиксировал execution decomposition и historical delta; в root-матрице синхронизирован related-issues index.
 
 ## Актуализация по PR #497 revise-итерации (`run:arch:revise`, 2026-03-16)

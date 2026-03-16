@@ -10,8 +10,10 @@ related_issues: [469, 471, 476, 484, 494, 512, 521, 522, 523, 524, 525]
 related_prs: []
 approvals:
   required: ["Owner"]
-  status: pending
+  status: approved
   request_id: "owner-2026-03-16-issue-512-plan-epic"
+  approved_by: "ai-da-stas"
+  approved_at: 2026-03-16
 ---
 
 # Epic S13 Day 6: Plan для Quality Governance System, execution waves и rollout gates (Issue #512)
