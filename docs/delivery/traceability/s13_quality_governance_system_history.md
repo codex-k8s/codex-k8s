@@ -5,8 +5,8 @@ title: "Sprint S13 Traceability History"
 status: in-review
 owner_role: KM
 created_at: 2026-03-14
-updated_at: 2026-03-15
-related_issues: [469, 471, 476, 484]
+updated_at: 2026-03-16
+related_issues: [469, 471, 476, 484, 494]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -63,3 +63,32 @@ approvals:
 - Создана follow-up issue `#484` для stage `run:arch` без trigger-лейбла.
 - Для GitHub continuity и PR-flow повторно подтверждён актуальный non-interactive CLI flow через Context7 (`/websites/cli_github_manual`) и локальные `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: PRD stage уточнил initiative-specific contract и historical delta; в root-матрице синхронизирован только related-issues index.
+
+## Актуализация по Issue #484 (`run:arch`, 2026-03-15)
+- Подготовлен architecture package:
+  - `docs/architecture/initiatives/s13_quality_governance_system/README.md`;
+  - `docs/architecture/initiatives/s13_quality_governance_system/architecture.md`;
+  - `docs/architecture/initiatives/s13_quality_governance_system/c4_context.md`;
+  - `docs/architecture/initiatives/s13_quality_governance_system/c4_container.md`;
+  - `docs/architecture/adr/ADR-0015-quality-governance-control-plane-owned-change-governance-aggregate.md`;
+  - `docs/architecture/alternatives/ALT-0007-quality-governance-boundaries.md`;
+  - `docs/delivery/epics/s13/epic-s13-day4-quality-governance-arch.md`.
+- Зафиксированы:
+  - `control-plane` как owner canonical change-governance aggregate, publication gate, waiver/residual-risk decisions и typed decision surface;
+  - `worker` как owner asynchronous sweeps, governance-gap reconciliation и late reclassification под policy `control-plane`;
+  - `agent-runner` как source emitter draft/evidence/verification signals без права владеть canonical semantics;
+  - publication discipline `internal working draft -> semantic wave map -> published waves` как domain lifecycle, а не UI/process convention;
+  - boundary `Sprint S13 governance baseline -> Sprint S14 runtime/UI stream` без reopening policy baseline.
+- Создана follow-up issue `#494` для stage `run:design` без trigger-лейбла.
+- Для GitHub continuity повторно подтверждён актуальный non-interactive CLI flow через Context7 (`/websites/cli_github_manual`) и локальные `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: architecture stage закрепил ownership и lifecycle baseline, а не вводил новые root requirements.
+
+## Актуализация по PR #497 revise-итерации (`run:arch:revise`, 2026-03-16)
+- Повторно синхронизирован локальный worktree с фактическим head PR `e4d6a28c`, потому что локальная ветка `codex/issue-484` в runtime сначала указывала на `main`, а не на удалённую PR-ветку.
+- Повторно проверены все review remarks и текущее состояние mergeability относительно `origin/main`.
+- Подтверждено, что на `2026-03-16 08:01:40 UTC` конфликтов слияния с `main` нет:
+  - `gh pr view 497 --json mergeable,mergeStateStatus,headRefOid` вернул `mergeable=MERGEABLE`, `mergeStateStatus=BLOCKED`, `headRefOid=e4d6a28cacbe2c2bbc7b5941e9c8f7c32555d954`;
+  - `BASE=$(git merge-base HEAD origin/main) && git merge-tree "$BASE" HEAD origin/main` не дал conflict markers;
+  - `git log --oneline --left-right origin/main...HEAD` показал только два PR-коммита (`77498b7d`, `e4d6a28c`) без дополнительных коммитов `main`, создающих conflict-path.
+- Подтверждено, что inline review threads остаются закрытыми: `gh api graphql ... pullRequest.reviewThreads(first:100)` показывает только `isResolved=true`.
+- Источник-артефакты Sprint S13 по существу не менялись: revise-итерация добавила только traceability-фиксацию проверки mergeability, обновление PR body и явный ответ в PR на owner review с просьбой повторно проверить review state.
