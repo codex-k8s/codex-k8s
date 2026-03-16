@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-15
 updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516, 519, 537]
+related_issues: [480, 490, 492, 496, 510, 516, 519, 537, 542, 543, 544, 545, 546, 547]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -105,3 +105,22 @@ approvals:
 - Через `gh issue create` создана follow-up issue `#537` для stage `run:plan`; в её body сохранено continuity-требование продолжить цепочку `plan -> dev`.
 - Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась: design package детализирует existing Sprint S16 baseline и handover в plan, но не меняет repo-wide baseline `docs/product/requirements_machine_driven.md`.
+
+## Актуализация по Issue #537 (`run:plan`, 2026-03-16)
+- Подготовлен plan package:
+  - `docs/delivery/epics/s16/epic-s16-day6-mission-control-graph-workspace-plan.md`;
+  - `docs/delivery/sprints/s16/sprint_s16_mission_control_graph_workspace.md`;
+  - `docs/delivery/epics/s16/epic_s16.md`;
+  - `docs/delivery/delivery_plan.md`;
+  - `docs/delivery/issue_map.md`;
+  - `docs/delivery/sprints/README.md`;
+  - `docs/delivery/epics/README.md`.
+- Зафиксированы:
+  - execution package `S16-E01..S16-E06` с waves `schema/backfill foundation -> control-plane graph truth -> worker reconcile/freshness -> transport/preview -> web-console graph workspace -> readiness gate`;
+  - owner-managed handover issues `#542`, `#543`, `#544`, `#545`, `#546`, `#547` без trigger-лейблов для перехода в `run:dev`;
+  - явные DoR/DoD, quality-gates и rollout constraints `migrations -> control-plane -> worker -> api-gateway -> web-console -> readiness gate`;
+  - сохранение design guardrails: issue `#480` остаётся foundation layer, exact Wave 1 filters/nodes не меняются, secondary/dimmed semantics работают только для graph integrity, launch preview остаётся read-only поверх existing command ledger, новый deployable сервис не появляется;
+  - boundary относительно Sprint S9 удержан: dashboard-first model не возвращается, voice/STT, отдельная `agent` taxonomy и richer provider enrichment не входят в core execution package Day6.
+- Созданы follow-up issues `#542`, `#543`, `#544`, `#545`, `#546`, `#547` для stage `run:dev` без trigger-лейблов.
+- Для GitHub continuity повторно подтверждён non-interactive CLI flow локальными `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; через `gh issue create` оформлены handover issues `#542..#547`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: plan stage зафиксировал execution decomposition и historical delta; в root-матрице синхронизирован related-issues index.

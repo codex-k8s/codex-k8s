@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-16
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 500, 510, 512, 516, 519, 521, 522, 523, 524, 525, 537]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 500, 510, 512, 516, 519, 521, 522, 523, 524, 525, 537, 542, 543, 544, 545, 546, 547]
 
 related_prs: []
 approvals:
@@ -473,8 +473,15 @@ approvals:
   - persisted continuity gaps и workspace watermarks оформлены как отдельные domain constructs `control-plane`, а `run` node закреплён как Wave 1 canvas kind вместо `agent`;
   - rollout path зафиксирован как `expand schema -> shadow backfill -> read switch -> preview exposure -> cleanup last`, сохранив order `migrations -> control-plane -> worker -> api-gateway -> web-console`;
   - через `gh issue create` создана continuity issue `#537` для stage `run:plan` без trigger-лейбла.
-- Day 6 (planned): plan package для Mission Control graph workspace (Issue `#537`).
-  - Цель: разложить Day5 baseline на execution waves, DoR/DoD и quality gates без reopening product/architecture решений.
+- Day 6 (in-review): plan package для Mission Control graph workspace (`docs/delivery/epics/s16/epic-s16-day6-mission-control-graph-workspace-plan.md`, Issue `#537`).
+- Результат Day 6 (факт):
+  - execution package разложен на issues `#542..#547` с sequencing `schema/backfill foundation -> control-plane graph truth -> worker reconcile/freshness -> transport/preview -> web-console graph workspace -> readiness gate`;
+  - зафиксированы quality-gates, DoR/DoD и owner-managed launch policy: `run:dev` triggers ставятся только по wave-sequencing;
+  - сохранены non-negotiables Sprint S16: issue `#480`, exact Wave 1 filters/nodes, secondary/dimmed only for graph integrity, read-only launch preview и запрет на новый deployable сервис;
+  - удержан boundary относительно Sprint S9: dashboard-first model не возвращается, voice/STT и richer provider enrichment остаются вне Day6 execution package.
+- Day 7 (planned): owner-managed `run:dev` execution waves через issues `#542..#547`.
+  - Цель: поэтапно реализовать foundation, graph truth, reconcile, transport, UI visibility и readiness evidence без нарушения design guardrails.
+  - Ожидаемый результат: PR-потоки по waves с обязательным traceability sync и переходом в `state:in-review`.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
