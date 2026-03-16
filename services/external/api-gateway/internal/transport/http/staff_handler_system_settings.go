@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	sharedsystemsettings "github.com/codex-k8s/codex-k8s/libs/go/systemsettings"
 	"github.com/labstack/echo/v5"
 
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
@@ -59,7 +60,7 @@ func (h *staffHandler) SystemSettingsRealtime(c *echo.Context) error {
 				if err != nil {
 					return nil, err
 				}
-				return casters.SystemSettings(resp.GetItems()), nil
+				return filterRealtimeSystemSettings(casters.SystemSettings(resp.GetItems())), nil
 			},
 			func(items []models.SystemSetting) any {
 				return models.SystemSettingsRealtimeMessage{
@@ -93,3 +94,14 @@ func resolveSystemSettingUpdateArg(c *echo.Context) (systemSettingUpdateArg, err
 }
 
 type systemSettingCall func(context.Context, *controlplanev1.Principal, string) (*controlplanev1.SystemSetting, error)
+
+func filterRealtimeSystemSettings(items []models.SystemSetting) []models.SystemSetting {
+	out := make([]models.SystemSetting, 0, len(items))
+	for _, item := range items {
+		if !sharedsystemsettings.IsVisibleOnSurface(item.Visibility, sharedsystemsettings.ExposureSurfaceRealtime) {
+			continue
+		}
+		out = append(out, item)
+	}
+	return out
+}

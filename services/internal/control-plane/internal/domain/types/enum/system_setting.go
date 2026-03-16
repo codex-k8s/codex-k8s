@@ -36,9 +36,9 @@ const (
 type SystemSettingVisibility string
 
 const (
-	SystemSettingVisibilityStaffVisible      SystemSettingVisibility = "staff_visible"
-	SystemSettingVisibilityInternalOnly      SystemSettingVisibility = "internal_only"
-	SystemSettingVisibilitySecretForbiddenWS SystemSettingVisibility = "secret_forbidden_in_ws"
+	SystemSettingVisibilityStaffVisible      SystemSettingVisibility = sharedsystemsettings.VisibilityStaffVisible
+	SystemSettingVisibilityInternalOnly      SystemSettingVisibility = sharedsystemsettings.VisibilityInternalOnly
+	SystemSettingVisibilitySecretForbiddenWS SystemSettingVisibility = sharedsystemsettings.VisibilitySecretForbiddenWS
 )
 
 // SystemSettingSource describes who currently owns the effective value.

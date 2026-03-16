@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/codex-k8s/codex-k8s/libs/go/errs"
+	sharedsystemsettings "github.com/codex-k8s/codex-k8s/libs/go/systemsettings"
 	systemsettingrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/systemsetting"
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
 	enumtypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/enum"
@@ -26,12 +28,19 @@ type Service struct {
 
 // NewService constructs the system settings domain service.
 func NewService(repo systemsettingrepo.Repository) (*Service, error) {
+	return newService(repo, defaultCatalog())
+}
+
+func newService(repo systemsettingrepo.Repository, catalog map[enumtypes.SystemSettingKey]valuetypes.SystemSettingCatalogEntry) (*Service, error) {
 	if repo == nil {
 		return nil, fmt.Errorf("system settings repository is required")
 	}
+	if len(catalog) == 0 {
+		return nil, fmt.Errorf("system settings catalog is required")
+	}
 	return &Service{
 		repo:    repo,
-		catalog: defaultCatalog(),
+		catalog: catalog,
 		records: make(map[enumtypes.SystemSettingKey]entitytypes.SystemSettingRecord),
 	}, nil
 }
@@ -56,7 +65,7 @@ func (s *Service) List() []entitytypes.SystemSetting {
 
 	out := make([]entitytypes.SystemSetting, 0, len(keys))
 	for _, key := range keys {
-		item, ok := s.getSetting(key)
+		item, ok := s.getSettingForSurface(key, sharedsystemsettings.ExposureSurfaceStaff)
 		if ok {
 			out = append(out, item)
 		}
@@ -65,13 +74,16 @@ func (s *Service) List() []entitytypes.SystemSetting {
 }
 
 // Get returns one staff-visible setting by key.
-func (s *Service) Get(key string) (entitytypes.SystemSetting, bool, error) {
-	parsed, err := s.requireCatalogKey(key)
+func (s *Service) Get(key string) (entitytypes.SystemSetting, error) {
+	parsed, err := s.requireCatalogEntry(key)
 	if err != nil {
-		return entitytypes.SystemSetting{}, false, err
+		return entitytypes.SystemSetting{}, err
 	}
-	item, ok := s.getSetting(parsed)
-	return item, ok, nil
+	item, ok := s.getSettingForSurface(parsed.Key, sharedsystemsettings.ExposureSurfaceStaff)
+	if !ok {
+		return entitytypes.SystemSetting{}, notFoundError(key)
+	}
+	return item, nil
 }
 
 // UpdateBoolean persists a boolean setting value and updates the local cache immediately.
@@ -116,7 +128,10 @@ func (s *Service) Reset(ctx context.Context, key string, actorUserID string, act
 
 // GitHubRateLimitWaitEnabled returns current effective rollout toggle.
 func (s *Service) GitHubRateLimitWaitEnabled() bool {
-	item, ok := s.getSetting(enumtypes.SystemSettingKeyGitHubRateLimitWaitEnabled)
+	item, ok := s.getSettingForSurface(
+		enumtypes.SystemSettingKeyGitHubRateLimitWaitEnabled,
+		sharedsystemsettings.ExposureSurfaceStaff,
+	)
 	if !ok {
 		return false
 	}
@@ -157,25 +172,32 @@ func (s *Service) requireCatalogEntry(key string) (valuetypes.SystemSettingCatal
 	}
 	entry, ok := s.catalog[parsed]
 	if !ok {
-		return valuetypes.SystemSettingCatalogEntry{}, fmt.Errorf("system setting %q is not configured in catalog", key)
+		return valuetypes.SystemSettingCatalogEntry{}, notFoundError(key)
 	}
 	return entry, nil
 }
 
 func (s *Service) requireCatalogKey(key string) (enumtypes.SystemSettingKey, error) {
-	parsed := enumtypes.SystemSettingKey(strings.TrimSpace(key))
+	trimmed := strings.TrimSpace(key)
+	parsed := enumtypes.SystemSettingKey(trimmed)
 	if parsed == "" {
-		return "", fmt.Errorf("system setting key is required")
+		return "", errs.Validation{Field: "setting_key", Msg: "is required"}
 	}
 	if _, ok := s.catalog[parsed]; !ok {
-		return "", fmt.Errorf("system setting %q is not configured in catalog", key)
+		return "", notFoundError(trimmed)
 	}
 	return parsed, nil
 }
 
-func (s *Service) getSetting(key enumtypes.SystemSettingKey) (entitytypes.SystemSetting, bool) {
+func (s *Service) getSettingForSurface(
+	key enumtypes.SystemSettingKey,
+	surface sharedsystemsettings.ExposureSurface,
+) (entitytypes.SystemSetting, bool) {
 	entry, ok := s.catalog[key]
 	if !ok {
+		return entitytypes.SystemSetting{}, false
+	}
+	if !sharedsystemsettings.IsVisibleOnSurface(string(entry.Visibility), surface) {
 		return entitytypes.SystemSetting{}, false
 	}
 
@@ -236,4 +258,8 @@ func (s *Service) upsertCache(item entitytypes.SystemSettingRecord) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.records[item.Key] = item
+}
+
+func notFoundError(key string) error {
+	return errs.NotFound{Msg: fmt.Sprintf("system setting %q not found", strings.TrimSpace(key))}
 }

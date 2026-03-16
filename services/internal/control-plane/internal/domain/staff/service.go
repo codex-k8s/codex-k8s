@@ -91,7 +91,7 @@ type runtimeDeployController interface {
 
 type systemSettingsService interface {
 	List() []entitytypes.SystemSetting
-	Get(key string) (entitytypes.SystemSetting, bool, error)
+	Get(key string) (entitytypes.SystemSetting, error)
 	UpdateBoolean(ctx context.Context, params querytypes.SystemSettingBooleanWriteParams) (entitytypes.SystemSetting, error)
 	Reset(ctx context.Context, key string, actorUserID string, actorEmail string) (entitytypes.SystemSetting, error)
 }

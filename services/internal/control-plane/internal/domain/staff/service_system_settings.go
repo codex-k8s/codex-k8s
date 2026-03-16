@@ -27,14 +27,7 @@ func (s *Service) GetSystemSetting(_ context.Context, principal Principal, key s
 		return entitytypes.SystemSetting{}, errs.FailedPrecondition{Msg: "system settings service is not configured"}
 	}
 
-	item, ok, err := s.systemSettings.Get(key)
-	if err != nil {
-		return entitytypes.SystemSetting{}, err
-	}
-	if !ok {
-		return entitytypes.SystemSetting{}, errs.Validation{Field: "setting_key", Msg: "not found"}
-	}
-	return item, nil
+	return s.systemSettings.Get(key)
 }
 
 func (s *Service) UpdateSystemSettingBoolean(ctx context.Context, principal Principal, key string, value bool) (entitytypes.SystemSetting, error) {
