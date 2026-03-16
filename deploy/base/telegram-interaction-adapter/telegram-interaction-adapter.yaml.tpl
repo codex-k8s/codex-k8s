@@ -51,6 +51,8 @@ spec:
           env:
             - name: CODEXK8S_HTTP_ADDR
               value: ":8080"
+            - name: CODEXK8S_ENV
+              value: '{{ envOr "CODEXK8S_ENV" "production" }}'
             - name: CODEXK8S_PUBLIC_BASE_URL
               valueFrom:
                 secretKeyRef:

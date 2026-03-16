@@ -83,8 +83,10 @@ func Run() error {
 		return fmt.Errorf("init telegram adapter service: %w", err)
 	}
 
-	if err := adapterService.SyncWebhook(appCtx); err != nil {
-		logger.Warn("telegram webhook sync failed", "err", err)
+	if telegramWebhookSyncEnabled(cfg.Environment) {
+		if err := adapterService.SyncWebhook(appCtx); err != nil {
+			logger.Warn("telegram webhook sync failed", "err", err)
+		}
 	}
 
 	server, err := httptransport.NewServer(httptransport.ServerConfig{
@@ -106,6 +108,10 @@ func Run() error {
 	}()
 
 	return waitForServerLifecycle(ctx, appCtx, logger, serverErr, "telegram-interaction-adapter", server.Shutdown)
+}
+
+func telegramWebhookSyncEnabled(environment string) bool {
+	return !strings.EqualFold(strings.TrimSpace(environment), "ai")
 }
 
 func waitForServerLifecycle(ctx context.Context, appCtx context.Context, logger *slog.Logger, serverErr <-chan error, component string, shutdown func(context.Context) error) error {

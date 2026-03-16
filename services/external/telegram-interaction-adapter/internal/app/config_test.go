@@ -4,6 +4,7 @@ import "testing"
 
 func TestLoadConfigDefaults(t *testing.T) {
 	t.Setenv("CODEXK8S_HTTP_ADDR", "")
+	t.Setenv("CODEXK8S_ENV", "")
 	t.Setenv("CODEXK8S_CONTROL_PLANE_GRPC_TARGET", "codex-k8s-control-plane:9090")
 	t.Setenv("CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_HTTP_TIMEOUT", "")
 	t.Setenv("CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_STT_MODEL", "")
@@ -16,6 +17,9 @@ func TestLoadConfigDefaults(t *testing.T) {
 	if cfg.HTTPAddr != ":8080" {
 		t.Fatalf("HTTPAddr = %q, want :8080", cfg.HTTPAddr)
 	}
+	if cfg.Environment != "production" {
+		t.Fatalf("Environment = %q, want production", cfg.Environment)
+	}
 	if cfg.ControlPlaneGRPCTarget != "codex-k8s-control-plane:9090" {
 		t.Fatalf("ControlPlaneGRPCTarget = %q", cfg.ControlPlaneGRPCTarget)
 	}
@@ -27,5 +31,19 @@ func TestLoadConfigDefaults(t *testing.T) {
 	}
 	if cfg.TelegramSTTTimeout != "30s" {
 		t.Fatalf("TelegramSTTTimeout = %q, want 30s", cfg.TelegramSTTTimeout)
+	}
+}
+
+func TestTelegramWebhookSyncEnabled(t *testing.T) {
+	t.Parallel()
+
+	if !telegramWebhookSyncEnabled("production") {
+		t.Fatal("production environment must own telegram webhook sync")
+	}
+	if telegramWebhookSyncEnabled("ai") {
+		t.Fatal("ai environment must not own telegram webhook sync")
+	}
+	if !telegramWebhookSyncEnabled("") {
+		t.Fatal("empty environment should keep production-compatible behavior")
 	}
 }

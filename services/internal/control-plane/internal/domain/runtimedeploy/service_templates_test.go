@@ -153,6 +153,45 @@ func TestRenderTelegramAdapterTemplate_UsesLocalControlPlaneDefaultWhenVarsMissi
 	if !strings.Contains(output, "value: 'codex-k8s-control-plane:9090'") {
 		t.Fatalf("rendered telegram adapter template does not contain local grpc target default:\n%s", output)
 	}
+	if !strings.Contains(output, "name: CODEXK8S_ENV") {
+		t.Fatalf("rendered telegram adapter template does not contain CODEXK8S_ENV:\n%s", output)
+	}
+}
+
+func TestRenderIngressTemplate_OmitsTelegramWebhookIngressForAI(t *testing.T) {
+	t.Setenv("CODEXK8S_CONTROL_PLANE_GRPC_TARGET", "")
+
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "..", "deploy", "base", "codex-k8s", "ingress.yaml.tpl"))
+	if err != nil {
+		t.Fatalf("read ingress template: %v", err)
+	}
+
+	rendered, err := manifesttpl.Render("ingress", raw, (&Service{}).buildTemplateVars(PrepareParams{TargetEnv: "ai"}, "codex-issue-503"))
+	if err != nil {
+		t.Fatalf("render ingress template: %v", err)
+	}
+
+	output := string(rendered)
+	if strings.Contains(output, "name: codex-k8s-telegram-webhook") {
+		t.Fatalf("rendered ai ingress must not contain telegram webhook ingress:\n%s", output)
+	}
+}
+
+func TestRenderIngressTemplate_ContainsTelegramWebhookIngressForProduction(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "..", "deploy", "base", "codex-k8s", "ingress.yaml.tpl"))
+	if err != nil {
+		t.Fatalf("read ingress template: %v", err)
+	}
+
+	rendered, err := manifesttpl.Render("ingress", raw, (&Service{}).buildTemplateVars(PrepareParams{TargetEnv: "production"}, "codex-k8s-prod"))
+	if err != nil {
+		t.Fatalf("render ingress template: %v", err)
+	}
+
+	output := string(rendered)
+	if !strings.Contains(output, "name: codex-k8s-telegram-webhook") {
+		t.Fatalf("rendered production ingress must contain telegram webhook ingress:\n%s", output)
+	}
 }
 
 func TestResolveServicesConfigPath_PrefersRepoSnapshotWhenConfigPathIsAbsolute(t *testing.T) {

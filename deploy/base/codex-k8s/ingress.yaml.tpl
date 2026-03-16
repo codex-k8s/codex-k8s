@@ -45,6 +45,7 @@ spec:
                   number: 4180
 {{- end }}
 ---
+{{- if not $isAI }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -67,3 +68,4 @@ spec:
                 name: codex-k8s-telegram-interaction-adapter
                 port:
                   number: 8080
+{{- end }}

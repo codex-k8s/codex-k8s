@@ -10,6 +10,8 @@ import (
 type Config struct {
 	HTTPAddr string `env:"CODEXK8S_HTTP_ADDR" envDefault:":8080"`
 
+	Environment string `env:"CODEXK8S_ENV" envDefault:"production"`
+
 	PublicBaseURL string `env:"CODEXK8S_PUBLIC_BASE_URL"`
 
 	ControlPlaneGRPCTarget string `env:"CODEXK8S_CONTROL_PLANE_GRPC_TARGET,required,notEmpty"`
