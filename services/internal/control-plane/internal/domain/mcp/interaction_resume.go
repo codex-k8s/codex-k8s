@@ -37,13 +37,14 @@ func (s *Service) finalizeInteractionResume(
 	if err != nil {
 		return false, err
 	}
+	sourceRunTerminal := isTerminalInteractionResumeSourceRun(run.Status)
 
 	scheduled, err := s.scheduleInteractionResume(ctx, run, interaction.ID, resumePayload)
 	if err != nil {
 		return false, err
 	}
 
-	waitCleared, err := s.clearInteractionWaitContext(ctx, session, interaction.ID, requireCurrentWait)
+	waitCleared, err := s.clearInteractionWaitContext(ctx, session, interaction.ID, requireCurrentWait && !sourceRunTerminal)
 	if err != nil {
 		return false, err
 	}
