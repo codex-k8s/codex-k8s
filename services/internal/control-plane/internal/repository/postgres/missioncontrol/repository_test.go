@@ -59,6 +59,7 @@ func TestWarmupSummaryQueryCountsAllFoundationTables(t *testing.T) {
 		"mission_control_relations",
 		"mission_control_timeline_entries",
 		"mission_control_commands",
+		"project_id = $1::uuid",
 	}
 	for _, item := range required {
 		if !strings.Contains(queryGetWarmupSummary, item) {
