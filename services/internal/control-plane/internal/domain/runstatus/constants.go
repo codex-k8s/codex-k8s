@@ -37,6 +37,7 @@ const (
 
 const (
 	runStatusSucceeded = "succeeded"
+	runStatusCanceled  = "canceled"
 	runStatusFailed    = "failed"
 )
 

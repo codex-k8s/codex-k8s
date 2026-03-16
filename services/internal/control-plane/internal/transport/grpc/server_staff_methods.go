@@ -146,6 +146,21 @@ func (s *Server) GetRun(ctx context.Context, req *controlplanev1.GetRunRequest) 
 	return protoRun, nil
 }
 
+func (s *Server) CancelRun(ctx context.Context, req *controlplanev1.CancelRunRequest) (*controlplanev1.RunActionResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "request is required")
+	}
+	p, err := requirePrincipal(req.GetPrincipal())
+	if err != nil {
+		return nil, err
+	}
+	result, err := s.staff.CancelRun(ctx, p, strings.TrimSpace(req.GetRunId()), strings.TrimSpace(req.GetReason()))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return runActionToProto(result), nil
+}
+
 func (s *Server) GetRunLogs(ctx context.Context, req *controlplanev1.GetRunLogsRequest) (*controlplanev1.RunLogs, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "request is required")

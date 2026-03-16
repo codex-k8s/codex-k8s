@@ -115,6 +115,8 @@
 {{- if .ShowFinished }}
 {{- if .IsRunSucceeded }}
 - 👌 Задача завершена успешно
+{{- else if .IsRunCanceled }}
+- ⛔ Задача отменена
 {{- else if .IsRunFailed }}
 - ⚠️ Задача завершена с ошибкой
 {{- else }}

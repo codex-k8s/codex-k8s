@@ -138,6 +138,18 @@ type RuntimeDeployTaskActionResponse struct {
 	AlreadyTerminal bool   `json:"already_terminal"`
 }
 
+type RunActionResponse struct {
+	RunID                        string  `json:"run_id"`
+	Action                       string  `json:"action"`
+	PreviousStatus               string  `json:"previous_status"`
+	CurrentStatus                string  `json:"current_status"`
+	AlreadyTerminal              bool    `json:"already_terminal"`
+	RuntimeDeployCancelRequested bool    `json:"runtime_deploy_cancel_requested"`
+	JobStopped                   bool    `json:"job_stopped"`
+	CanceledGitHubWaits          int32   `json:"canceled_github_waits"`
+	CommentURL                   *string `json:"comment_url"`
+}
+
 type RuntimeDeployTask struct {
 	RunID                string                 `json:"run_id"`
 	RuntimeMode          string                 `json:"runtime_mode"`

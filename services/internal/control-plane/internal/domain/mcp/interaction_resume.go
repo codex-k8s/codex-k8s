@@ -86,6 +86,9 @@ func (s *Service) scheduleInteractionResume(
 	if resumePayload == nil {
 		return false, fmt.Errorf("interaction resume payload is required")
 	}
+	if isTerminalInteractionResumeSourceRun(run.Status) {
+		return false, nil
+	}
 
 	runMeta, err := parseInteractionResumeRunPayload(run.RunPayload)
 	if err != nil {
@@ -163,4 +166,13 @@ func buildInteractionResumePendingRunPayload(
 
 func buildInteractionResumeCorrelationID(interactionID string) string {
 	return userinteraction.ResumeCorrelationPrefix + strings.TrimSpace(interactionID)
+}
+
+func isTerminalInteractionResumeSourceRun(status string) bool {
+	switch strings.TrimSpace(status) {
+	case "succeeded", "failed", "canceled":
+		return true
+	default:
+		return false
+	}
 }

@@ -496,6 +496,37 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /api/v1/staff/runs/{run_id}/cancel:
+    post:
+      summary: Cancel run and stop active runtime artifacts
+      operationId: cancelRun
+      tags: [staff-runs]
+      parameters:
+        - $ref: "#/components/parameters/RunID"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunActionRequest"
+      responses:
+        "200":
+          description: Run cancel result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunActionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
   /api/v1/staff/runs/{run_id}/namespace:
     delete:
       summary: Force delete run namespace
@@ -1687,6 +1718,51 @@ components:
           type: boolean
         already_deleted:
           type: boolean
+        comment_url:
+          type: string
+          nullable: true
+
+    RunActionRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        reason:
+          type: string
+          nullable: true
+
+    RunActionResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - run_id
+        - action
+        - previous_status
+        - current_status
+        - already_terminal
+        - runtime_deploy_cancel_requested
+        - job_stopped
+        - canceled_github_waits
+      properties:
+        run_id:
+          type: string
+        action:
+          type: string
+          enum: [cancel]
+        previous_status:
+          type: string
+          enum: [pending, running, waiting_backpressure, succeeded, failed, canceled]
+        current_status:
+          type: string
+          enum: [pending, running, waiting_backpressure, succeeded, failed, canceled]
+        already_terminal:
+          type: boolean
+        runtime_deploy_cancel_requested:
+          type: boolean
+        job_stopped:
+          type: boolean
+        canceled_github_waits:
+          type: integer
+          format: int32
         comment_url:
           type: string
           nullable: true

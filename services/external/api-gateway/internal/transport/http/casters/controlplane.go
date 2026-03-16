@@ -588,6 +588,23 @@ func RuntimeDeployTaskAction(item *controlplanev1.RuntimeDeployTaskActionRespons
 	}
 }
 
+func RunAction(item *controlplanev1.RunActionResponse) models.RunActionResponse {
+	if item == nil {
+		return models.RunActionResponse{}
+	}
+	return models.RunActionResponse{
+		RunID:                        item.GetRunId(),
+		Action:                       item.GetAction(),
+		PreviousStatus:               item.GetPreviousStatus(),
+		CurrentStatus:                item.GetCurrentStatus(),
+		AlreadyTerminal:              item.GetAlreadyTerminal(),
+		RuntimeDeployCancelRequested: item.GetRuntimeDeployCancelRequested(),
+		JobStopped:                   item.GetJobStopped(),
+		CanceledGitHubWaits:          item.GetCanceledGithubWaits(),
+		CommentURL:                   cast.OptionalTrimmedString(item.CommentUrl),
+	}
+}
+
 func RuntimeError(item *controlplanev1.RuntimeError) models.RuntimeError {
 	out := models.RuntimeError{}
 	if item == nil {

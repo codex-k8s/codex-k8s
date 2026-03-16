@@ -353,6 +353,52 @@ func TestFinalizeInteractionResumeReschedulesAfterWaitWasAlreadyCleared(t *testi
 	}
 }
 
+func TestFinalizeInteractionResumeSkipsTerminalSourceRun(t *testing.T) {
+	t.Parallel()
+
+	runs := &interactionTestRunsRepository{
+		clearWaitContextUpdated: true,
+		byID: map[string]agentrunrepo.Run{
+			"run-1": {
+				ID:            "run-1",
+				CorrelationID: "corr-1",
+				Status:        "canceled",
+				RunPayload:    json.RawMessage(`{"agent":{"id":"agent-dev"}}`),
+			},
+		},
+	}
+	sessions := &interactionTestSessionsRepository{setWaitStateUpdated: true}
+	service := &Service{
+		cfg: Config{
+			TokenSigningKey: "test-signing-key",
+			TokenIssuer:     "codex-k8s/test",
+		},
+		runs:     runs,
+		sessions: sessions,
+		now:      time.Now,
+	}
+
+	scheduled, err := service.finalizeInteractionResume(context.Background(), entitytypes.InteractionRequest{
+		ID:              "interaction-1",
+		RunID:           "run-1",
+		InteractionKind: enumtypes.InteractionKindDecisionRequest,
+		State:           enumtypes.InteractionStateResolved,
+		UpdatedAt:       time.Date(2026, 3, 13, 16, 5, 0, 0, time.UTC),
+	}, nil, true)
+	if err != nil {
+		t.Fatalf("finalizeInteractionResume returned error: %v", err)
+	}
+	if scheduled {
+		t.Fatal("expected interaction resume to be skipped for terminal source run")
+	}
+	if runs.createPendingCalls != 0 {
+		t.Fatalf("create pending calls = %d, want 0", runs.createPendingCalls)
+	}
+	if sessions.setWaitStateCalls != 1 {
+		t.Fatalf("session wait state calls = %d, want 1", sessions.setWaitStateCalls)
+	}
+}
+
 func TestBuildInteractionDeliveryEnvelopeIncludesCallbackContractFields(t *testing.T) {
 	t.Parallel()
 

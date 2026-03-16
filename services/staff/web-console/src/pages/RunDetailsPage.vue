@@ -15,6 +15,15 @@
         <CopyChip v-if="details.run?.namespace" :label="t('pages.runDetails.namespace')" :value="details.run.namespace" icon="mdi-kubernetes" />
 
         <AdaptiveBtn
+          v-if="canCancelRun"
+          color="warning"
+          variant="tonal"
+          icon="mdi-stop-circle-outline"
+          :label="t('pages.runDetails.cancelRun')"
+          :loading="details.cancelingRun"
+          @click="confirmCancelRunOpen = true"
+        />
+        <AdaptiveBtn
           v-if="canDeleteNamespace"
           color="error"
           variant="tonal"
@@ -29,8 +38,27 @@
     <VAlert v-if="details.error" type="error" variant="tonal" class="mt-4">
       {{ t(details.error.messageKey) }}
     </VAlert>
+    <VAlert v-if="details.cancelRunError" type="error" variant="tonal" class="mt-4">
+      {{ t(details.cancelRunError.messageKey) }}
+    </VAlert>
     <VAlert v-if="details.deleteNamespaceError" type="error" variant="tonal" class="mt-4">
       {{ t(details.deleteNamespaceError.messageKey) }}
+    </VAlert>
+    <VAlert v-if="details.runCancelResult" type="success" variant="tonal" class="mt-4">
+      <div class="text-body-2">
+        <span class="mono">{{ details.runCancelResult.previous_status }}</span>
+        →
+        <span class="mono">{{ details.runCancelResult.current_status }}</span>
+        ·
+        {{
+          details.runCancelResult.already_terminal
+            ? t("pages.runDetails.runAlreadyTerminal")
+            : t("pages.runDetails.runCanceled")
+        }}
+      </div>
+      <div v-if="details.runCancelResult.canceled_github_waits" class="text-caption mt-1">
+        {{ t("pages.runDetails.runCanceledWaits", { count: details.runCancelResult.canceled_github_waits }) }}
+      </div>
     </VAlert>
     <VAlert v-if="details.namespaceDeleteResult" type="success" variant="tonal" class="mt-4">
       <div class="text-body-2">
@@ -341,6 +369,16 @@
   </div>
 
   <ConfirmDialog
+    v-model="confirmCancelRunOpen"
+    :title="t('pages.runDetails.cancelRun')"
+    :message="t('pages.runDetails.cancelRunConfirm')"
+    :confirm-text="t('pages.runDetails.cancelRun')"
+    :cancel-text="t('common.cancel')"
+    danger
+    @confirm="doCancelRun"
+  />
+
+  <ConfirmDialog
     v-model="confirmDeleteNamespaceOpen"
     :title="t('pages.runDetails.deleteNamespace')"
     :message="t('pages.runDetails.deleteNamespaceConfirm')"
@@ -422,7 +460,12 @@ const details = useRunDetailsStore();
 const router = useRouter();
 const snackbar = useSnackbarStore();
 
+const confirmCancelRunOpen = ref(false);
 const confirmDeleteNamespaceOpen = ref(false);
+const canCancelRun = computed(() => {
+  const status = String(details.run?.status || "").trim();
+  return status !== "" && !["succeeded", "failed", "canceled"].includes(status);
+});
 const canDeleteNamespace = computed(() => Boolean(details.run?.namespace));
 
 type CodexAuthRequiredPayload = { verification_url: string; user_code: string };
@@ -527,6 +570,13 @@ async function doDeleteNamespace() {
   await details.deleteNamespace(props.runId);
   if (!details.deleteNamespaceError) {
     snackbar.success(t("common.saved"));
+  }
+}
+
+async function doCancelRun() {
+  await details.cancel(props.runId);
+  if (!details.cancelRunError) {
+    snackbar.success(t("pages.runDetails.cancelRun"));
   }
 }
 

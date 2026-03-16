@@ -365,6 +365,10 @@ func (runstatusTestKubernetesClient) JobExists(context.Context, string, string) 
 	return false, nil
 }
 
+func (runstatusTestKubernetesClient) DeleteJobIfExists(context.Context, string, string) error {
+	return nil
+}
+
 func (runstatusTestKubernetesClient) FindManagedRunNamespaceByRunID(context.Context, string) (string, bool, error) {
 	return "", false, nil
 }

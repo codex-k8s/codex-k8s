@@ -509,6 +509,31 @@ const (
 	RetrySyncPayloadExpectedStatusReconciled      RetrySyncPayloadExpectedStatus = "reconciled"
 )
 
+// Defines values for RunActionResponseAction.
+const (
+	RunActionResponseActionCancel RunActionResponseAction = "cancel"
+)
+
+// Defines values for RunActionResponseCurrentStatus.
+const (
+	RunActionResponseCurrentStatusCanceled            RunActionResponseCurrentStatus = "canceled"
+	RunActionResponseCurrentStatusFailed              RunActionResponseCurrentStatus = "failed"
+	RunActionResponseCurrentStatusPending             RunActionResponseCurrentStatus = "pending"
+	RunActionResponseCurrentStatusRunning             RunActionResponseCurrentStatus = "running"
+	RunActionResponseCurrentStatusSucceeded           RunActionResponseCurrentStatus = "succeeded"
+	RunActionResponseCurrentStatusWaitingBackpressure RunActionResponseCurrentStatus = "waiting_backpressure"
+)
+
+// Defines values for RunActionResponsePreviousStatus.
+const (
+	RunActionResponsePreviousStatusCanceled            RunActionResponsePreviousStatus = "canceled"
+	RunActionResponsePreviousStatusFailed              RunActionResponsePreviousStatus = "failed"
+	RunActionResponsePreviousStatusPending             RunActionResponsePreviousStatus = "pending"
+	RunActionResponsePreviousStatusRunning             RunActionResponsePreviousStatus = "running"
+	RunActionResponsePreviousStatusSucceeded           RunActionResponsePreviousStatus = "succeeded"
+	RunActionResponsePreviousStatusWaitingBackpressure RunActionResponsePreviousStatus = "waiting_backpressure"
+)
+
 // Defines values for RunRealtimeMessageType.
 const (
 	RunRealtimeMessageTypeError                    RunRealtimeMessageType = "error"
@@ -560,8 +585,8 @@ const (
 
 // Defines values for RuntimeDeployTaskActionResponseAction.
 const (
-	Cancel RuntimeDeployTaskActionResponseAction = "cancel"
-	Stop   RuntimeDeployTaskActionResponseAction = "stop"
+	RuntimeDeployTaskActionResponseActionCancel RuntimeDeployTaskActionResponseAction = "cancel"
+	RuntimeDeployTaskActionResponseActionStop   RuntimeDeployTaskActionResponseAction = "stop"
 )
 
 // Defines values for RuntimeDeployTaskActionResponseCurrentStatus.
@@ -1574,6 +1599,33 @@ type Run struct {
 	WaitState       *string            `json:"wait_state"`
 }
 
+// RunActionRequest defines model for RunActionRequest.
+type RunActionRequest struct {
+	Reason *string `json:"reason"`
+}
+
+// RunActionResponse defines model for RunActionResponse.
+type RunActionResponse struct {
+	Action                       RunActionResponseAction         `json:"action"`
+	AlreadyTerminal              bool                            `json:"already_terminal"`
+	CanceledGithubWaits          int32                           `json:"canceled_github_waits"`
+	CommentUrl                   *string                         `json:"comment_url"`
+	CurrentStatus                RunActionResponseCurrentStatus  `json:"current_status"`
+	JobStopped                   bool                            `json:"job_stopped"`
+	PreviousStatus               RunActionResponsePreviousStatus `json:"previous_status"`
+	RunId                        string                          `json:"run_id"`
+	RuntimeDeployCancelRequested bool                            `json:"runtime_deploy_cancel_requested"`
+}
+
+// RunActionResponseAction defines model for RunActionResponse.Action.
+type RunActionResponseAction string
+
+// RunActionResponseCurrentStatus defines model for RunActionResponse.CurrentStatus.
+type RunActionResponseCurrentStatus string
+
+// RunActionResponsePreviousStatus defines model for RunActionResponse.PreviousStatus.
+type RunActionResponsePreviousStatus string
+
 // RunItemsResponse defines model for RunItemsResponse.
 type RunItemsResponse struct {
 	Items []Run `json:"items"`
@@ -2245,6 +2297,9 @@ type UpsertProjectRepositoryJSONRequestBody = UpsertProjectRepositoryRequest
 
 // UpsertRepositoryBotParamsJSONRequestBody defines body for UpsertRepositoryBotParams for application/json ContentType.
 type UpsertRepositoryBotParamsJSONRequestBody = UpsertRepositoryBotParamsRequest
+
+// CancelRunJSONRequestBody defines body for CancelRun for application/json ContentType.
+type CancelRunJSONRequestBody = RunActionRequest
 
 // CancelRuntimeDeployTaskJSONRequestBody defines body for CancelRuntimeDeployTask for application/json ContentType.
 type CancelRuntimeDeployTaskJSONRequestBody = RuntimeDeployTaskActionRequest
@@ -2973,6 +3028,9 @@ type ServerInterface interface {
 	// Get run by id
 	// (GET /api/v1/staff/runs/{run_id})
 	GetRun(w http.ResponseWriter, r *http.Request, runId RunID)
+	// Cancel run and stop active runtime artifacts
+	// (POST /api/v1/staff/runs/{run_id}/cancel)
+	CancelRun(w http.ResponseWriter, r *http.Request, runId RunID)
 	// List run flow events
 	// (GET /api/v1/staff/runs/{run_id}/events)
 	ListRunEvents(w http.ResponseWriter, r *http.Request, runId RunID, params ListRunEventsParams)
@@ -4251,6 +4309,31 @@ func (siw *ServerInterfaceWrapper) GetRun(w http.ResponseWriter, r *http.Request
 	handler.ServeHTTP(w, r)
 }
 
+// CancelRun operation middleware
+func (siw *ServerInterfaceWrapper) CancelRun(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "run_id" -------------
+	var runId RunID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "run_id", r.PathValue("run_id"), &runId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "run_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CancelRun(w, r, runId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListRunEvents operation middleware
 func (siw *ServerInterfaceWrapper) ListRunEvents(w http.ResponseWriter, r *http.Request) {
 
@@ -5087,6 +5170,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/realtime", wrapper.RunsRealtime)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/waits", wrapper.ListRunWaits)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}", wrapper.GetRun)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/runs/{run_id}/cancel", wrapper.CancelRun)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}/events", wrapper.ListRunEvents)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}/learning-feedback", wrapper.ListRunLearningFeedback)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runs/{run_id}/logs", wrapper.GetRunLogs)
@@ -6832,6 +6916,69 @@ func (response GetRun404JSONResponse) VisitGetRunResponse(w http.ResponseWriter)
 	return json.NewEncoder(w).Encode(response)
 }
 
+type CancelRunRequestObject struct {
+	RunId RunID `json:"run_id"`
+	Body  *CancelRunJSONRequestBody
+}
+
+type CancelRunResponseObject interface {
+	VisitCancelRunResponse(w http.ResponseWriter) error
+}
+
+type CancelRun200JSONResponse RunActionResponse
+
+func (response CancelRun200JSONResponse) VisitCancelRunResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CancelRun400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response CancelRun400JSONResponse) VisitCancelRunResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CancelRun401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response CancelRun401JSONResponse) VisitCancelRunResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CancelRun403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response CancelRun403JSONResponse) VisitCancelRunResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CancelRun404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response CancelRun404JSONResponse) VisitCancelRunResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CancelRun409JSONResponse struct{ ConflictJSONResponse }
+
+func (response CancelRun409JSONResponse) VisitCancelRunResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListRunEventsRequestObject struct {
 	RunId  RunID `json:"run_id"`
 	Params ListRunEventsParams
@@ -7867,6 +8014,9 @@ type StrictServerInterface interface {
 	// Get run by id
 	// (GET /api/v1/staff/runs/{run_id})
 	GetRun(ctx context.Context, request GetRunRequestObject) (GetRunResponseObject, error)
+	// Cancel run and stop active runtime artifacts
+	// (POST /api/v1/staff/runs/{run_id}/cancel)
+	CancelRun(ctx context.Context, request CancelRunRequestObject) (CancelRunResponseObject, error)
 	// List run flow events
 	// (GET /api/v1/staff/runs/{run_id}/events)
 	ListRunEvents(ctx context.Context, request ListRunEventsRequestObject) (ListRunEventsResponseObject, error)
@@ -9043,6 +9193,39 @@ func (sh *strictHandler) GetRun(w http.ResponseWriter, r *http.Request, runId Ru
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetRunResponseObject); ok {
 		if err := validResponse.VisitGetRunResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CancelRun operation middleware
+func (sh *strictHandler) CancelRun(w http.ResponseWriter, r *http.Request, runId RunID) {
+	var request CancelRunRequestObject
+
+	request.RunId = runId
+
+	var body CancelRunJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CancelRun(ctx, request.(CancelRunRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CancelRun")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CancelRunResponseObject); ok {
+		if err := validResponse.VisitCancelRunResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -93,6 +93,14 @@ func buildGetRunLogsRequest(principal *controlplanev1.Principal, arg runLogsArg)
 	}
 }
 
+func buildCancelRunRequest(principal *controlplanev1.Principal, arg runActionArg) *controlplanev1.CancelRunRequest {
+	return &controlplanev1.CancelRunRequest{
+		Principal: principal,
+		RunId:     strings.TrimSpace(arg.runID),
+		Reason:    optionalStringPtr(arg.body.Reason),
+	}
+}
+
 type approvalDecisionArg struct {
 	approvalRequestID int64
 	body              models.ResolveApprovalDecisionRequest
@@ -271,6 +279,10 @@ func (h *staffHandler) listPendingApprovalsCall(ctx context.Context, principal *
 
 func (h *staffHandler) getRunCall(ctx context.Context, principal *controlplanev1.Principal, id string) (*controlplanev1.Run, error) {
 	return callUnaryWithArg(ctx, principal, id, buildGetRunRequest, h.cp.Service().GetRun)
+}
+
+func (h *staffHandler) cancelRunCall(ctx context.Context, principal *controlplanev1.Principal, arg runActionArg) (*controlplanev1.RunActionResponse, error) {
+	return callUnaryWithArg(ctx, principal, arg, buildCancelRunRequest, h.cp.Service().CancelRun)
 }
 
 func (h *staffHandler) getRunLogsCall(ctx context.Context, principal *controlplanev1.Principal, arg runLogsArg) (*controlplanev1.RunLogs, error) {
