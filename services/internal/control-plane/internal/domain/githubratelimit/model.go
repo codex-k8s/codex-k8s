@@ -45,6 +45,7 @@ type Dependencies struct {
 	FlowEvents     floweventrepo.Repository
 	RunStatusRetry runStatusCommentRetrier
 	PlatformReplay platformCallReplayer
+	RolloutState   rolloutStateProvider
 }
 
 // ReportSignalParams carries one canonical provider signal into control-plane.
@@ -91,14 +92,14 @@ type ProcessNextAutoResumeResult struct {
 
 // Service implements canonical GitHub rate-limit domain ownership under control-plane.
 type Service struct {
-	cfg          Config
-	runs         runRepository
-	waits        waitrepo.Repository
-	flowEvents   floweventrepo.Repository
-	runStatus    runStatusCommentRetrier
-	platform     platformCallReplayer
-	capabilities valuetypes.GitHubRateLimitRolloutCapabilities
-	now          func() time.Time
+	cfg        Config
+	runs       runRepository
+	waits      waitrepo.Repository
+	flowEvents floweventrepo.Repository
+	runStatus  runStatusCommentRetrier
+	platform   platformCallReplayer
+	rollout    rolloutStateProvider
+	now        func() time.Time
 }
 
 type runRepository interface {
@@ -112,6 +113,10 @@ type runStatusCommentRetrier interface {
 
 type platformCallReplayer interface {
 	ReplayGitHubRateLimitPlatformCall(ctx context.Context, payload valuetypes.GitHubRateLimitPlatformCallReplayPayload) error
+}
+
+type rolloutStateProvider interface {
+	CurrentGitHubRateLimitRolloutState() valuetypes.GitHubRateLimitRolloutState
 }
 
 type waitSignalEvidencePayload struct {

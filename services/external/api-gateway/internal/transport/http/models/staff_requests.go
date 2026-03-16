@@ -44,6 +44,10 @@ type ResolveApprovalDecisionRequest struct {
 	Reason   string `json:"reason"`
 }
 
+type UpdateSystemSettingBooleanRequest struct {
+	BooleanValue bool `json:"boolean_value"`
+}
+
 // RuntimeDeployTaskActionRequest is a typed payload for cancel/stop control actions.
 type RuntimeDeployTaskActionRequest struct {
 	Reason string `json:"reason"`

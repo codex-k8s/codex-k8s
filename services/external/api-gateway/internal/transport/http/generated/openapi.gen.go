@@ -1800,6 +1800,32 @@ type SyncDocsetResponse struct {
 	RepositoryFullName string `json:"repository_full_name"`
 }
 
+// SystemSetting defines model for SystemSetting.
+type SystemSetting struct {
+	BooleanValue        bool       `json:"boolean_value"`
+	DefaultBooleanValue bool       `json:"default_boolean_value"`
+	Key                 string     `json:"key"`
+	ReloadSemantics     string     `json:"reload_semantics"`
+	Section             string     `json:"section"`
+	Source              string     `json:"source"`
+	UpdatedAt           *time.Time `json:"updated_at"`
+	UpdatedByEmail      *string    `json:"updated_by_email"`
+	UpdatedByUserId     *string    `json:"updated_by_user_id"`
+	ValueKind           string     `json:"value_kind"`
+	Version             int64      `json:"version"`
+	Visibility          string     `json:"visibility"`
+}
+
+// SystemSettingItemsResponse defines model for SystemSettingItemsResponse.
+type SystemSettingItemsResponse struct {
+	Items []SystemSetting `json:"items"`
+}
+
+// UpdateSystemSettingBooleanRequest defines model for UpdateSystemSettingBooleanRequest.
+type UpdateSystemSettingBooleanRequest struct {
+	BooleanValue bool `json:"boolean_value"`
+}
+
 // UpsertProjectGitHubTokensRequest defines model for UpsertProjectGitHubTokensRequest.
 type UpsertProjectGitHubTokensRequest struct {
 	BotEmail      *string `json:"bot_email"`
@@ -1961,6 +1987,9 @@ type RunStatusFilter = string
 
 // RuntimeErrorID defines model for RuntimeErrorID.
 type RuntimeErrorID = string
+
+// SettingKey defines model for SettingKey.
+type SettingKey = string
 
 // TailLines defines model for TailLines.
 type TailLines = int
@@ -2222,6 +2251,9 @@ type CancelRuntimeDeployTaskJSONRequestBody = RuntimeDeployTaskActionRequest
 
 // StopRuntimeDeployTaskJSONRequestBody defines body for StopRuntimeDeployTask for application/json ContentType.
 type StopRuntimeDeployTaskJSONRequestBody = RuntimeDeployTaskActionRequest
+
+// UpdateSystemSettingBooleanJSONRequestBody defines body for UpdateSystemSettingBoolean for application/json ContentType.
+type UpdateSystemSettingBooleanJSONRequestBody = UpdateSystemSettingBooleanRequest
 
 // CreateUserJSONRequestBody defines body for CreateUser for application/json ContentType.
 type CreateUserJSONRequestBody = CreateUserRequest
@@ -2974,6 +3006,21 @@ type ServerInterface interface {
 	// Mark runtime error as viewed
 	// (POST /api/v1/staff/runtime-errors/{runtime_error_id}/viewed)
 	MarkRuntimeErrorViewed(w http.ResponseWriter, r *http.Request, runtimeErrorId RuntimeErrorID)
+	// List platform system settings
+	// (GET /api/v1/staff/system-settings)
+	ListSystemSettings(w http.ResponseWriter, r *http.Request)
+	// Open system settings realtime stream (WebSocket upgrade)
+	// (GET /api/v1/staff/system-settings/realtime)
+	SystemSettingsRealtime(w http.ResponseWriter, r *http.Request)
+	// Get platform system setting by key
+	// (GET /api/v1/staff/system-settings/{setting_key})
+	GetSystemSetting(w http.ResponseWriter, r *http.Request, settingKey SettingKey)
+	// Update boolean platform system setting
+	// (PUT /api/v1/staff/system-settings/{setting_key})
+	UpdateSystemSettingBoolean(w http.ResponseWriter, r *http.Request, settingKey SettingKey)
+	// Reset platform system setting to catalog default
+	// (POST /api/v1/staff/system-settings/{setting_key}/reset)
+	ResetSystemSetting(w http.ResponseWriter, r *http.Request, settingKey SettingKey)
 	// List users
 	// (GET /api/v1/staff/users)
 	ListUsers(w http.ResponseWriter, r *http.Request, params ListUsersParams)
@@ -4623,6 +4670,109 @@ func (siw *ServerInterfaceWrapper) MarkRuntimeErrorViewed(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// ListSystemSettings operation middleware
+func (siw *ServerInterfaceWrapper) ListSystemSettings(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListSystemSettings(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SystemSettingsRealtime operation middleware
+func (siw *ServerInterfaceWrapper) SystemSettingsRealtime(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SystemSettingsRealtime(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetSystemSetting operation middleware
+func (siw *ServerInterfaceWrapper) GetSystemSetting(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "setting_key" -------------
+	var settingKey SettingKey
+
+	err = runtime.BindStyledParameterWithOptions("simple", "setting_key", r.PathValue("setting_key"), &settingKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "setting_key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSystemSetting(w, r, settingKey)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateSystemSettingBoolean operation middleware
+func (siw *ServerInterfaceWrapper) UpdateSystemSettingBoolean(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "setting_key" -------------
+	var settingKey SettingKey
+
+	err = runtime.BindStyledParameterWithOptions("simple", "setting_key", r.PathValue("setting_key"), &settingKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "setting_key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateSystemSettingBoolean(w, r, settingKey)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ResetSystemSetting operation middleware
+func (siw *ServerInterfaceWrapper) ResetSystemSetting(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "setting_key" -------------
+	var settingKey SettingKey
+
+	err = runtime.BindStyledParameterWithOptions("simple", "setting_key", r.PathValue("setting_key"), &settingKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "setting_key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ResetSystemSetting(w, r, settingKey)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListUsers operation middleware
 func (siw *ServerInterfaceWrapper) ListUsers(w http.ResponseWriter, r *http.Request) {
 
@@ -4948,6 +5098,11 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/runtime-deploy/tasks/{run_id}/stop", wrapper.StopRuntimeDeployTask)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/runtime-errors", wrapper.ListRuntimeErrors)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/runtime-errors/{runtime_error_id}/viewed", wrapper.MarkRuntimeErrorViewed)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/system-settings", wrapper.ListSystemSettings)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/system-settings/realtime", wrapper.SystemSettingsRealtime)
+	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/system-settings/{setting_key}", wrapper.GetSystemSetting)
+	m.HandleFunc("PUT "+options.BaseURL+"/api/v1/staff/system-settings/{setting_key}", wrapper.UpdateSystemSettingBoolean)
+	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/system-settings/{setting_key}/reset", wrapper.ResetSystemSetting)
 	m.HandleFunc("GET "+options.BaseURL+"/api/v1/staff/users", wrapper.ListUsers)
 	m.HandleFunc("POST "+options.BaseURL+"/api/v1/staff/users", wrapper.CreateUser)
 	m.HandleFunc("DELETE "+options.BaseURL+"/api/v1/staff/users/{user_id}", wrapper.DeleteUser)
@@ -7193,6 +7348,233 @@ func (response MarkRuntimeErrorViewed404JSONResponse) VisitMarkRuntimeErrorViewe
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ListSystemSettingsRequestObject struct {
+}
+
+type ListSystemSettingsResponseObject interface {
+	VisitListSystemSettingsResponse(w http.ResponseWriter) error
+}
+
+type ListSystemSettings200JSONResponse SystemSettingItemsResponse
+
+func (response ListSystemSettings200JSONResponse) VisitListSystemSettingsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListSystemSettings401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListSystemSettings401JSONResponse) VisitListSystemSettingsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListSystemSettings403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ListSystemSettings403JSONResponse) VisitListSystemSettingsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SystemSettingsRealtimeRequestObject struct {
+}
+
+type SystemSettingsRealtimeResponseObject interface {
+	VisitSystemSettingsRealtimeResponse(w http.ResponseWriter) error
+}
+
+type SystemSettingsRealtime200Response struct {
+}
+
+func (response SystemSettingsRealtime200Response) VisitSystemSettingsRealtimeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type SystemSettingsRealtime401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response SystemSettingsRealtime401JSONResponse) VisitSystemSettingsRealtimeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SystemSettingsRealtime403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response SystemSettingsRealtime403JSONResponse) VisitSystemSettingsRealtimeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetSystemSettingRequestObject struct {
+	SettingKey SettingKey `json:"setting_key"`
+}
+
+type GetSystemSettingResponseObject interface {
+	VisitGetSystemSettingResponse(w http.ResponseWriter) error
+}
+
+type GetSystemSetting200JSONResponse SystemSetting
+
+func (response GetSystemSetting200JSONResponse) VisitGetSystemSettingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetSystemSetting400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response GetSystemSetting400JSONResponse) VisitGetSystemSettingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetSystemSetting401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetSystemSetting401JSONResponse) VisitGetSystemSettingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetSystemSetting403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetSystemSetting403JSONResponse) VisitGetSystemSettingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetSystemSetting404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetSystemSetting404JSONResponse) VisitGetSystemSettingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateSystemSettingBooleanRequestObject struct {
+	SettingKey SettingKey `json:"setting_key"`
+	Body       *UpdateSystemSettingBooleanJSONRequestBody
+}
+
+type UpdateSystemSettingBooleanResponseObject interface {
+	VisitUpdateSystemSettingBooleanResponse(w http.ResponseWriter) error
+}
+
+type UpdateSystemSettingBoolean200JSONResponse SystemSetting
+
+func (response UpdateSystemSettingBoolean200JSONResponse) VisitUpdateSystemSettingBooleanResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateSystemSettingBoolean400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response UpdateSystemSettingBoolean400JSONResponse) VisitUpdateSystemSettingBooleanResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateSystemSettingBoolean401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UpdateSystemSettingBoolean401JSONResponse) VisitUpdateSystemSettingBooleanResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateSystemSettingBoolean403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UpdateSystemSettingBoolean403JSONResponse) VisitUpdateSystemSettingBooleanResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateSystemSettingBoolean404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UpdateSystemSettingBoolean404JSONResponse) VisitUpdateSystemSettingBooleanResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ResetSystemSettingRequestObject struct {
+	SettingKey SettingKey `json:"setting_key"`
+}
+
+type ResetSystemSettingResponseObject interface {
+	VisitResetSystemSettingResponse(w http.ResponseWriter) error
+}
+
+type ResetSystemSetting200JSONResponse SystemSetting
+
+func (response ResetSystemSetting200JSONResponse) VisitResetSystemSettingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ResetSystemSetting400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response ResetSystemSetting400JSONResponse) VisitResetSystemSettingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ResetSystemSetting401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ResetSystemSetting401JSONResponse) VisitResetSystemSettingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ResetSystemSetting403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response ResetSystemSetting403JSONResponse) VisitResetSystemSettingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ResetSystemSetting404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response ResetSystemSetting404JSONResponse) VisitResetSystemSettingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListUsersRequestObject struct {
 	Params ListUsersParams
 }
@@ -7518,6 +7900,21 @@ type StrictServerInterface interface {
 	// Mark runtime error as viewed
 	// (POST /api/v1/staff/runtime-errors/{runtime_error_id}/viewed)
 	MarkRuntimeErrorViewed(ctx context.Context, request MarkRuntimeErrorViewedRequestObject) (MarkRuntimeErrorViewedResponseObject, error)
+	// List platform system settings
+	// (GET /api/v1/staff/system-settings)
+	ListSystemSettings(ctx context.Context, request ListSystemSettingsRequestObject) (ListSystemSettingsResponseObject, error)
+	// Open system settings realtime stream (WebSocket upgrade)
+	// (GET /api/v1/staff/system-settings/realtime)
+	SystemSettingsRealtime(ctx context.Context, request SystemSettingsRealtimeRequestObject) (SystemSettingsRealtimeResponseObject, error)
+	// Get platform system setting by key
+	// (GET /api/v1/staff/system-settings/{setting_key})
+	GetSystemSetting(ctx context.Context, request GetSystemSettingRequestObject) (GetSystemSettingResponseObject, error)
+	// Update boolean platform system setting
+	// (PUT /api/v1/staff/system-settings/{setting_key})
+	UpdateSystemSettingBoolean(ctx context.Context, request UpdateSystemSettingBooleanRequestObject) (UpdateSystemSettingBooleanResponseObject, error)
+	// Reset platform system setting to catalog default
+	// (POST /api/v1/staff/system-settings/{setting_key}/reset)
+	ResetSystemSetting(ctx context.Context, request ResetSystemSettingRequestObject) (ResetSystemSettingResponseObject, error)
 	// List users
 	// (GET /api/v1/staff/users)
 	ListUsers(ctx context.Context, request ListUsersRequestObject) (ListUsersResponseObject, error)
@@ -8950,6 +9347,139 @@ func (sh *strictHandler) MarkRuntimeErrorViewed(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(MarkRuntimeErrorViewedResponseObject); ok {
 		if err := validResponse.VisitMarkRuntimeErrorViewedResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListSystemSettings operation middleware
+func (sh *strictHandler) ListSystemSettings(w http.ResponseWriter, r *http.Request) {
+	var request ListSystemSettingsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListSystemSettings(ctx, request.(ListSystemSettingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListSystemSettings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListSystemSettingsResponseObject); ok {
+		if err := validResponse.VisitListSystemSettingsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SystemSettingsRealtime operation middleware
+func (sh *strictHandler) SystemSettingsRealtime(w http.ResponseWriter, r *http.Request) {
+	var request SystemSettingsRealtimeRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SystemSettingsRealtime(ctx, request.(SystemSettingsRealtimeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SystemSettingsRealtime")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SystemSettingsRealtimeResponseObject); ok {
+		if err := validResponse.VisitSystemSettingsRealtimeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSystemSetting operation middleware
+func (sh *strictHandler) GetSystemSetting(w http.ResponseWriter, r *http.Request, settingKey SettingKey) {
+	var request GetSystemSettingRequestObject
+
+	request.SettingKey = settingKey
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetSystemSetting(ctx, request.(GetSystemSettingRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSystemSetting")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSystemSettingResponseObject); ok {
+		if err := validResponse.VisitGetSystemSettingResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateSystemSettingBoolean operation middleware
+func (sh *strictHandler) UpdateSystemSettingBoolean(w http.ResponseWriter, r *http.Request, settingKey SettingKey) {
+	var request UpdateSystemSettingBooleanRequestObject
+
+	request.SettingKey = settingKey
+
+	var body UpdateSystemSettingBooleanJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateSystemSettingBoolean(ctx, request.(UpdateSystemSettingBooleanRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateSystemSettingBoolean")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateSystemSettingBooleanResponseObject); ok {
+		if err := validResponse.VisitUpdateSystemSettingBooleanResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ResetSystemSetting operation middleware
+func (sh *strictHandler) ResetSystemSetting(w http.ResponseWriter, r *http.Request, settingKey SettingKey) {
+	var request ResetSystemSettingRequestObject
+
+	request.SettingKey = settingKey
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ResetSystemSetting(ctx, request.(ResetSystemSettingRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ResetSystemSetting")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ResetSystemSettingResponseObject); ok {
+		if err := validResponse.VisitResetSystemSettingResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

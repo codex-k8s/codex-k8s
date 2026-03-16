@@ -101,7 +101,11 @@ func (s *Service) ProcessNextAutoResume(ctx context.Context, params ProcessNextA
 }
 
 func (s *Service) assertWorkerSweepAllowed() error {
-	if !s.capabilities.CanRunWorkerSweep {
+	caps, err := s.capabilities()
+	if err != nil {
+		return err
+	}
+	if !caps.CanRunWorkerSweep {
 		return fmt.Errorf("github rate-limit worker sweep requires worker rollout readiness")
 	}
 	return nil

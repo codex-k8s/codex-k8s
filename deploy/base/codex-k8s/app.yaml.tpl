@@ -341,8 +341,6 @@ spec:
                   name: codex-k8s-runtime
                   key: CODEXK8S_MCP_TOKEN_TTL
                   optional: true
-            - name: CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED
-              value: '{{ envOr "CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED" "" }}'
             - name: CODEXK8S_RUN_AGENT_LOGS_RETENTION_DAYS
               valueFrom:
                 secretKeyRef:
@@ -832,8 +830,6 @@ spec:
               value: '{{ envOr "CODEXK8S_WORKER_SLOT_LEASE_TTL" "" }}'
             - name: CODEXK8S_WORKER_RUN_LEASE_TTL
               value: '{{ envOr "CODEXK8S_WORKER_RUN_LEASE_TTL" "" }}'
-            - name: CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED
-              value: '{{ envOr "CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED" "" }}'
             - name: CODEXK8S_WORKER_GITHUB_RATE_LIMIT_SWEEP_LIMIT
               value: '{{ envOr "CODEXK8S_WORKER_GITHUB_RATE_LIMIT_SWEEP_LIMIT" "" }}'
             - name: CODEXK8S_WORKER_MISSION_CONTROL_WARMUP_INTERVAL

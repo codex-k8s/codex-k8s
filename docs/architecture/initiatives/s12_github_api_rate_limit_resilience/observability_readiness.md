@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-15
 updated_at: 2026-03-15
-related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
+related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 500]
 related_prs: []
 related_adrs: ["ADR-0013"]
 approvals:
@@ -20,7 +20,7 @@ approvals:
 ## TL;DR
 - Wave `S12-E07` формализует readiness gate перед `run:qa`: rollout order, typed evidence surfaces, candidate runtime checks и rollback discipline собраны в один handover-артефакт.
 - В текущем candidate namespace `codex-k8s-dev-1` подтверждены готовые deploy/job resources для rollout order `migrations -> control-plane -> worker -> agent-runner -> api-gateway -> web-console`.
-- Live GitHub rate-limit path в этом doc-audit run не воспроизводился: в candidate deployment переменная `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED` присутствует, но остаётся пустой, а defaults в коде оставляют feature gate выключенным.
+- Live GitHub rate-limit path в этом doc-audit run не воспроизводился: исторический baseline Issue `#431` фиксировал disabled rollout через пустой env-gate; Issue `#500` позже перенёс source of truth в DB-backed platform setting `github_rate_limit_wait_enabled` и убрал deploy env wiring.
 
 ## Scope
 
@@ -54,11 +54,7 @@ approvals:
   - kaniko build jobs и `repo-sync` завершены;
   - agent run job для текущего doc-audit остаётся активным.
 - `kubectl logs -n codex-k8s-dev-1 deploy/codex-k8s-control-plane --tail=120 | rg 'github rate-limit|wait.entered|wait.resumed|manual_action_required|waiting_backpressure'` не вернул совпадений в пределах последних 120 строк.
-- `kubectl get deploy -n codex-k8s-dev-1 codex-k8s-control-plane -o jsonpath='{range .spec.template.spec.containers[0].env[*]}{.name}={.value}{"\n"}{end}' | rg '^CODEXK8S_GITHUB_RATE_LIMIT'` показал `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED=`; default в `services/internal/control-plane/internal/app/config.go` остаётся `false`.
-- `kubectl get deploy -n codex-k8s-dev-1 codex-k8s-worker -o jsonpath='{range .spec.template.spec.containers[0].env[*]}{.name}={.value}{"\n"}{end}' | rg '^CODEXK8S_GITHUB_RATE_LIMIT|^CODEXK8S_WORKER_GITHUB_RATE_LIMIT'` показал:
-  - `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED=`
-  - `CODEXK8S_WORKER_GITHUB_RATE_LIMIT_SWEEP_LIMIT=`
-  Default'ы в `services/jobs/worker/internal/app/config.go`: feature gate `false`, sweep limit `20`.
+- Исторический baseline Issue `#431` по env-переменным сохраняется как evidence для doc-audit run; после Issue `#500` этот check больше не является current source of truth, потому что effective gate хранится в `system_settings.github_rate_limit_wait_enabled`, а `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED` удалён из bootstrap/deploy wiring.
 
 ## Runtime Diagnostics
 
@@ -160,11 +156,11 @@ ORDER BY started_at DESC;
   - wait queue и run details рендерят dominant/related waits и manual guidance из typed DTO.
 - Перед `run:qa`:
   - есть синхронизированная traceability;
-  - принято owner-решение по включению feature gate для live smoke или явному сохранению gate в disabled-mode.
+  - принято owner-решение по включению platform setting `github_rate_limit_wait_enabled` для live smoke или явному сохранению disabled-mode.
 
 ## Rollback / Mitigation
 - First stop:
-  - не включать `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED`, пока rollout order и read surfaces не подтверждены.
+  - не включать `system_settings.github_rate_limit_wait_enabled`, пока rollout order и read surfaces не подтверждены.
 - Rollback order:
   1. `web-console`
   2. `api-gateway`
@@ -174,7 +170,7 @@ ORDER BY started_at DESC;
 - Schema policy:
   - additive DDL из `#425` не откатывается destructive-операциями; исправления только forward-fix.
 - Feature gate:
-  - при runtime drift достаточно вернуть `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED=false`, сохранив read compatibility и исторический evidence trail.
+  - при runtime drift достаточно вернуть `system_settings.github_rate_limit_wait_enabled=false`, сохранив read compatibility и исторический evidence trail.
 
 ## Acceptance Evidence Before `run:qa`
 - [x] Rollout order `migrations -> control-plane -> worker -> agent-runner -> api-gateway -> web-console -> evidence gate` собран в одном source-of-truth документе.

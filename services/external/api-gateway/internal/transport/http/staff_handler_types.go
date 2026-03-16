@@ -36,6 +36,11 @@ type runListPageArg struct {
 	pageSize int32
 }
 
+type systemSettingUpdateArg struct {
+	key  string
+	body models.UpdateSystemSettingBooleanRequest
+}
+
 // runEventsArg keeps path+query input for run events endpoint.
 type runEventsArg struct {
 	runID          string

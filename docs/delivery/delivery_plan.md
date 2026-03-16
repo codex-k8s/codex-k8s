@@ -5,8 +5,9 @@ title: "codex-k8s — Delivery Plan"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-03-15
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 496, 494]
+updated_at: 2026-03-16
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 274, 216, 262, 263, 265, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 510, 496, 494, 500]
+
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -429,8 +430,15 @@ approvals:
   - hybrid truth matrix, filtered multi-root workspace с точными Wave 1 filters `open_only`, `assigned_to_me_or_unassigned`, active-state presets, left-to-right graph baseline и Wave 1 nodes `discussion/work_item/run/pull_request` закреплены как intake baseline;
   - typed metadata/watermark contract, platform-canonical launch params и continuity rule `PR + linked follow-up issue` через `run:dev` закреплены как обязательный product contract;
   - создана continuity issue `#496` для stage `run:vision` без trigger-лейбла.
-- Day 2 (planned): vision issue `#496`.
-  - Цель: зафиксировать mission, north star, persona outcomes, KPI/guardrails и wave framing для нового graph workspace без reopening Day1 decisions.
+- Day 2 (in-review): vision-пакет для Mission Control graph workspace (`docs/delivery/epics/s16/epic-s16-day2-mission-control-graph-workspace-vision.md`, Issue `#496`).
+- Результат Day 2 (факт):
+  - Mission Control закреплён как primary multi-root graph workspace/control plane для continuity `discussion/work_item -> run -> pull_request/follow-up issue -> next run`, а не как board/list-first refresh;
+  - mission, north star, persona outcomes, KPI/guardrails и wave boundaries определены без reopening Day1 baseline;
+  - inventory foundation из `#480`, exact Wave 1 filters `open_only`, `assigned_to_me_or_unassigned`, `active-state presets`, secondary/dimmed semantics только для graph integrity, Wave 1 nodes `discussion/work_item/run/pull_request`, typed metadata/watermarks, platform-canonical launch params и continuity rule `PR + follow-up issue` повторно зафиксированы как non-negotiable;
+  - voice/STT, dashboard orchestrator agent и отдельная `agent` node taxonomy оставлены в later-wave scope и не блокируют core Wave 1;
+  - создана follow-up issue `#510` для stage `run:prd` без trigger-лейбла.
+- Day 3 (planned): PRD issue `#510`.
+  - Цель: формализовать user stories, FR/AC/NFR, scenario matrix и expected evidence для graph workspace, hybrid truth matrix, inventory foundation и continuity control plane.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

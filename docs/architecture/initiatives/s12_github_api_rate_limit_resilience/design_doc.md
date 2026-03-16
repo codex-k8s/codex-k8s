@@ -5,8 +5,8 @@ title: "GitHub API rate-limit resilience — Detailed Design Sprint S12 Day 5"
 status: approved
 owner_role: SA
 created_at: 2026-03-13
-updated_at: 2026-03-14
-related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
+updated_at: 2026-03-15
+related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 500]
 related_prs: []
 related_adrs: ["ADR-0013"]
 approvals:
@@ -298,12 +298,12 @@ sequenceDiagram
   5. `api-gateway` DTO/casters + staff wait queue projection.
   6. `web-console` UI surfaces for dominant/related waits.
 - Feature-gate recommendation:
-  - `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED`
-  - `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_UI_ENABLED`
+  - platform setting `github_rate_limit_wait_enabled` для live creation/sweep path;
+  - transport/UI visibility следует typed contracts и deploy order, без отдельного env-only gate в текущем implementation baseline.
 
 ## План отката (Rollback)
 - Before agent-runner cutover:
-  - disable `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED`;
+  - reset/disable platform setting `github_rate_limit_wait_enabled`;
   - keep new tables read-only;
   - existing hard-failure behavior remains available.
 - After agent-runner cutover:

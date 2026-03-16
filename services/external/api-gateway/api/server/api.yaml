@@ -372,6 +372,109 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /api/v1/staff/system-settings:
+    get:
+      summary: List platform system settings
+      operationId: listSystemSettings
+      tags: [staff-system-settings]
+      responses:
+        "200":
+          description: Platform system settings list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemSettingItemsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/staff/system-settings/realtime:
+    get:
+      summary: Open system settings realtime stream (WebSocket upgrade)
+      operationId: systemSettingsRealtime
+      tags: [staff-system-settings]
+      responses:
+        "200":
+          description: System settings realtime stream endpoint (expects WebSocket upgrade)
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/staff/system-settings/{setting_key}:
+    get:
+      summary: Get platform system setting by key
+      operationId: getSystemSetting
+      tags: [staff-system-settings]
+      parameters:
+        - $ref: "#/components/parameters/SettingKey"
+      responses:
+        "200":
+          description: Platform system setting
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemSetting"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      summary: Update boolean platform system setting
+      operationId: updateSystemSettingBoolean
+      tags: [staff-system-settings]
+      parameters:
+        - $ref: "#/components/parameters/SettingKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSystemSettingBooleanRequest"
+      responses:
+        "200":
+          description: Updated platform system setting
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemSetting"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/staff/system-settings/{setting_key}/reset:
+    post:
+      summary: Reset platform system setting to catalog default
+      operationId: resetSystemSetting
+      tags: [staff-system-settings]
+      parameters:
+        - $ref: "#/components/parameters/SettingKey"
+      responses:
+        "200":
+          description: Reset platform system setting
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemSetting"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /api/v1/staff/runs/{run_id}:
     get:
       summary: Get run by id
@@ -1303,6 +1406,12 @@ components:
       schema:
         type: integer
         format: int64
+    SettingKey:
+      in: path
+      name: setting_key
+      required: true
+      schema:
+        type: string
     Page:
       in: query
       name: page
@@ -1595,6 +1704,50 @@ components:
           type: string
         role:
           type: string
+
+    SystemSetting:
+      type: object
+      additionalProperties: false
+      required:
+        - key
+        - section
+        - value_kind
+        - reload_semantics
+        - visibility
+        - boolean_value
+        - default_boolean_value
+        - source
+        - version
+      properties:
+        key:
+          type: string
+        section:
+          type: string
+        value_kind:
+          type: string
+        reload_semantics:
+          type: string
+        visibility:
+          type: string
+        boolean_value:
+          type: boolean
+        default_boolean_value:
+          type: boolean
+        source:
+          type: string
+        version:
+          type: integer
+          format: int64
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_by_user_id:
+          type: string
+          nullable: true
+        updated_by_email:
+          type: string
+          nullable: true
 
     Run:
       type: object
@@ -1918,6 +2071,14 @@ components:
         reason:
           type: string
           nullable: true
+
+    UpdateSystemSettingBooleanRequest:
+      type: object
+      additionalProperties: false
+      required: [boolean_value]
+      properties:
+        boolean_value:
+          type: boolean
 
     MCPApprovalCallbackRequest:
       type: object
@@ -3532,6 +3693,16 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Project"
+
+    SystemSettingItemsResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SystemSetting"
 
     RunItemsResponse:
       type: object

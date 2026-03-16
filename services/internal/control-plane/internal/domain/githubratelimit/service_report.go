@@ -363,13 +363,17 @@ func (s *Service) insertRunWaitFlowEvent(ctx context.Context, correlationID stri
 }
 
 func (s *Service) assertSignalWriteAllowed(origin enumtypes.GitHubRateLimitSignalOrigin) error {
+	caps, err := s.capabilities()
+	if err != nil {
+		return err
+	}
 	switch origin {
 	case enumtypes.GitHubRateLimitSignalOriginAgentRunner:
-		if !s.capabilities.CanAcceptSignals {
+		if !caps.CanAcceptSignals {
 			return fmt.Errorf("github rate-limit agent-runner signals require runner rollout readiness")
 		}
 	default:
-		if !s.capabilities.CanPersistWaits {
+		if !caps.CanPersistWaits {
 			return fmt.Errorf("github rate-limit persistence requires core feature flag and domain rollout readiness")
 		}
 	}
@@ -377,7 +381,11 @@ func (s *Service) assertSignalWriteAllowed(origin enumtypes.GitHubRateLimitSigna
 }
 
 func (s *Service) assertReadAllowed() error {
-	if !s.capabilities.CanPersistWaits {
+	caps, err := s.capabilities()
+	if err != nil {
+		return err
+	}
+	if !caps.CanPersistWaits {
 		return fmt.Errorf("github rate-limit read path requires core feature flag and domain rollout readiness")
 	}
 	return nil

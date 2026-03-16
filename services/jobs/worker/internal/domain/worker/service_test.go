@@ -51,6 +51,7 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 		RunningCheckLimit:      10,
 		SlotsPerProject:        2,
 		SlotLeaseTTL:           time.Minute,
+		ProductionNamespace:    "codex-k8s-prod",
 		ControlPlaneMCPBaseURL: "http://codex-k8s-control-plane.test.svc:8081/mcp",
 	}, Dependencies{
 		Runs:            runs,
@@ -72,6 +73,9 @@ func TestTickLaunchesPendingRun(t *testing.T) {
 	}
 	if launcher.launched[0].MCPBaseURL != "http://codex-k8s-control-plane.test.svc:8081/mcp" {
 		t.Fatalf("expected mcp base url to be propagated, got %q", launcher.launched[0].MCPBaseURL)
+	}
+	if launcher.launched[0].ControlPlaneGRPCTarget != "codex-k8s-control-plane.codex-k8s-prod.svc.cluster.local:9090" {
+		t.Fatalf("expected production gRPC target, got %q", launcher.launched[0].ControlPlaneGRPCTarget)
 	}
 	if launcher.launched[0].MCPBearerToken != "token-run-1" {
 		t.Fatalf("expected mcp token to be propagated, got %q", launcher.launched[0].MCPBearerToken)

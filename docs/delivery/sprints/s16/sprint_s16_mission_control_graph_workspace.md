@@ -5,8 +5,8 @@ title: "Sprint S16: Mission Control graph workspace and continuity control plane
 status: in-review
 owner_role: PM
 created_at: 2026-03-15
-updated_at: 2026-03-15
-related_issues: [480, 490, 492, 496]
+updated_at: 2026-03-16
+related_issues: [480, 490, 492, 496, 510]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -18,9 +18,9 @@ approvals:
 
 ## TL;DR
 - Цель спринта: перепроектировать Mission Control в primary graph workspace/control plane, где Owner может вести несколько инициатив, видеть lineage `discussion/work_item -> run -> PR/follow-up issue -> next run` и управлять следующими шагами без возврата к board/list-only модели.
-- Sprint S16 стартовал intake-этапом в Issue `#492`; continuity issue `#496` создана для `run:vision`.
+- Sprint S16 прошёл Day1 intake в Issue `#492` и Day2 vision в Issue `#496`; по итогам vision создана follow-up issue `#510` для `run:prd`.
 - Foundation issue `#480` поглощена как обязательный нижний слой: persisted GitHub inventory mirror и bounded reconcile становятся частью продукта, но не заменяют новый workspace.
-- Базовые ограничения спринта: hybrid truth matrix, filtered multi-root workspace с точными Wave 1 filters `open_only`, `assigned_to_me_or_unassigned` и active-state presets, foundation coverage contract `all open Issues/PR + bounded recent closed history`, Wave 1 nodes `discussion/work_item/run/pull_request`, typed metadata/watermarks, platform-canonical launch params и non-blocking voice later-wave.
+- Базовые ограничения спринта: hybrid truth matrix, filtered multi-root workspace с точными Wave 1 filters `open_only`, `assigned_to_me_or_unassigned` и active-state presets, foundation coverage contract `all open Issues/PR + bounded recent closed history`, Wave 1 nodes `discussion/work_item/run/pull_request`, typed metadata/watermarks, platform-canonical launch params, continuity rule `PR + follow-up issue` и non-blocking voice later-wave.
 
 ## Scope спринта
 ### In scope
@@ -48,7 +48,7 @@ approvals:
   - нужны обязательные `vision`, `arch` и `design`, чтобы зафиксировать product truth matrix и ownership boundaries до implementation;
   - сокращённые траектории не удержат continuity contract и cross-service impact.
 - Целевая continuity-цепочка:
-  `#492 (intake) -> #496 (vision) -> prd -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops`.
+  `#492 (intake) -> #496 (vision) -> #510 (prd) -> arch -> design -> plan -> dev -> qa -> release -> postdeploy -> ops`.
 
 ## Intake baseline, зафиксированный на Day 1
 
@@ -78,13 +78,35 @@ approvals:
 - Inventory-backed provider mirror из `#480` входит в core foundation с coverage contract `all open Issues/PR + bounded recent closed history`, но сам по себе не считается финальным продуктовым результатом.
 - Voice/STT и dashboard orchestrator agent остаются later-wave path.
 
+## Vision baseline, зафиксированный на Day 2
+
+### Mission and outcomes
+- Mission Control подтверждён как primary multi-root graph workspace/control plane, а не как board/list refresh Sprint S9.
+- Workspace должен помогать пользователю быстро понять continuity по нескольким инициативам сразу: от discussion/work item до run, PR и follow-up issue.
+- Граница между core Wave 1 и later waves зафиксирована явно: core ценность достигается без отдельной `agent` node taxonomy и без voice/STT path.
+
+### Personas and product guardrails
+- Owner / product lead должен видеть situational awareness по нескольким инициативам и запускать следующий безопасный шаг без ручного GitHub label hunting.
+- Delivery operator / engineer / manager должен получать единый control plane для run context, launch params и downstream artifacts.
+- Discussion-driven workflow остаётся first-class, но не становится единственным входом: stage-issue можно создавать и связывать напрямую.
+- Human review, merge и provider-native collaboration остаются в GitHub UI; dashboard не подменяет provider semantics.
+
+### Success framing
+- Vision зафиксировал измеримую рамку успеха:
+  - graph workspace adoption;
+  - next-step clarity;
+  - inventory-backed coverage;
+  - hybrid truth merge correctness;
+  - continuity completeness по правилу `PR + follow-up issue`.
+- Follow-up issue `#510` должна превратить эту рамку в user stories, FR/AC/NFR и expected evidence для `run:prd`.
+
 ## План этапов и handover
 
 | Stage | Основной артефакт | Целевая роль | Правило выхода |
 |---|---|---|---|
 | Intake (`#492`) | Problem/Brief/Scope/Constraints + intake AC | `pm` | Owner review intake-пакета и создана issue следующего этапа |
 | Vision (`#496`) | Mission, north star, persona outcomes, KPI/guardrails, wave framing | `pm` | Зафиксирован vision baseline и создана issue для `run:prd` |
-| PRD (`TBD`) | User stories, FR/AC/NFR, scenario matrix, expected evidence | `pm` + `sa` | Подтверждён PRD package и создана issue для `run:arch` |
+| PRD (`#510`) | User stories, FR/AC/NFR, scenario matrix, expected evidence | `pm` + `sa` | Подтверждён PRD package и создана issue для `run:arch` |
 | Architecture (`TBD`) | Ownership matrix, graph truth model, provider mirror/service boundaries | `sa` | Подтверждены сервисные границы и создана issue для `run:design` |
 | Design (`TBD`) | Typed API/data/UI contracts, metadata/watermark design, rollout notes | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue для `run:plan` |
 | Plan (`TBD`) | Delivery waves, execution decomposition, DoR/DoD, quality-gates | `em` + `km` | Сформирован execution package и owner-managed handover в `run:dev` |
@@ -97,15 +119,19 @@ approvals:
 - Voice/orchestrator path не имеет права блокировать core Wave 1.
 
 ## Handover
-- Текущий stage в review: `run:intake` в Issue `#492`.
-- Следующий stage: `run:vision` в Issue `#496`.
-- На `run:vision` нельзя потерять следующие решения Day1:
-  - Sprint S16 = полный redesign Mission Control;
-  - `#480` = mandatory foundation stream;
-  - coverage contract `#480` = `all open Issues/PR + bounded recent closed history`;
+- Текущий stage в review: `run:vision` в Issue `#496`.
+- Следующий stage: `run:prd` в Issue `#510`.
+- На `run:prd` нельзя потерять следующие решения Day1/Day2:
+  - Sprint S16 = полный redesign Mission Control в primary multi-root graph workspace/control plane;
+  - `#480` = mandatory foundation stream с coverage contract `all open Issues/PR + bounded recent closed history`;
   - multi-root filtered workspace = default baseline;
   - Wave 1 filters = `open_only`, `assigned_to_me_or_unassigned`, active-state presets;
   - secondary/dimmed handling используется только для graph integrity;
-  - Wave 1 nodes = `discussion/work_item/run/pull_request`;
+  - Wave 1 nodes = `discussion/work_item/run/pull_request`, без отдельной `agent` node taxonomy;
+  - hybrid truth matrix остаётся typed и explicit;
   - typed metadata, platform-generated watermarks и platform-canonical launch params обязательны;
-  - stage continuity до `run:dev` = `PR + linked follow-up issue`.
+  - human review/merge/provider-native collaboration остаются в GitHub UI;
+  - voice/STT и dashboard orchestrator agent остаются later-wave scope;
+  - stage continuity до `run:dev` = `PR + linked follow-up issue`;
+  - `control-plane` остаётся owner graph truth, continuity state и launch surfaces, а `worker` ограничен background/reconcile execution для provider mirror и lifecycle tasks;
+  - PRD stage обязан в конце создать follow-up issue для `run:arch` без trigger-лейбла.

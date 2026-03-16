@@ -35,6 +35,10 @@ const (
 	ControlPlaneService_ResolveApprovalDecision_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/ResolveApprovalDecision"
 	ControlPlaneService_ListRunEvents_FullMethodName                        = "/codexk8s.controlplane.v1.ControlPlaneService/ListRunEvents"
 	ControlPlaneService_ListRunLearningFeedback_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/ListRunLearningFeedback"
+	ControlPlaneService_ListSystemSettings_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/ListSystemSettings"
+	ControlPlaneService_GetSystemSetting_FullMethodName                     = "/codexk8s.controlplane.v1.ControlPlaneService/GetSystemSetting"
+	ControlPlaneService_UpdateSystemSettingBoolean_FullMethodName           = "/codexk8s.controlplane.v1.ControlPlaneService/UpdateSystemSettingBoolean"
+	ControlPlaneService_ResetSystemSetting_FullMethodName                   = "/codexk8s.controlplane.v1.ControlPlaneService/ResetSystemSetting"
 	ControlPlaneService_ListUsers_FullMethodName                            = "/codexk8s.controlplane.v1.ControlPlaneService/ListUsers"
 	ControlPlaneService_CreateUser_FullMethodName                           = "/codexk8s.controlplane.v1.ControlPlaneService/CreateUser"
 	ControlPlaneService_DeleteUser_FullMethodName                           = "/codexk8s.controlplane.v1.ControlPlaneService/DeleteUser"
@@ -115,6 +119,10 @@ type ControlPlaneServiceClient interface {
 	ResolveApprovalDecision(ctx context.Context, in *ResolveApprovalDecisionRequest, opts ...grpc.CallOption) (*ResolveApprovalDecisionResponse, error)
 	ListRunEvents(ctx context.Context, in *ListRunEventsRequest, opts ...grpc.CallOption) (*ListRunEventsResponse, error)
 	ListRunLearningFeedback(ctx context.Context, in *ListRunLearningFeedbackRequest, opts ...grpc.CallOption) (*ListRunLearningFeedbackResponse, error)
+	ListSystemSettings(ctx context.Context, in *ListSystemSettingsRequest, opts ...grpc.CallOption) (*ListSystemSettingsResponse, error)
+	GetSystemSetting(ctx context.Context, in *GetSystemSettingRequest, opts ...grpc.CallOption) (*SystemSetting, error)
+	UpdateSystemSettingBoolean(ctx context.Context, in *UpdateSystemSettingBooleanRequest, opts ...grpc.CallOption) (*SystemSetting, error)
+	ResetSystemSetting(ctx context.Context, in *ResetSystemSettingRequest, opts ...grpc.CallOption) (*SystemSetting, error)
 	ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error)
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*User, error)
 	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -327,6 +335,46 @@ func (c *controlPlaneServiceClient) ListRunLearningFeedback(ctx context.Context,
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListRunLearningFeedbackResponse)
 	err := c.cc.Invoke(ctx, ControlPlaneService_ListRunLearningFeedback_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) ListSystemSettings(ctx context.Context, in *ListSystemSettingsRequest, opts ...grpc.CallOption) (*ListSystemSettingsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListSystemSettingsResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ListSystemSettings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) GetSystemSetting(ctx context.Context, in *GetSystemSettingRequest, opts ...grpc.CallOption) (*SystemSetting, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SystemSetting)
+	err := c.cc.Invoke(ctx, ControlPlaneService_GetSystemSetting_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) UpdateSystemSettingBoolean(ctx context.Context, in *UpdateSystemSettingBooleanRequest, opts ...grpc.CallOption) (*SystemSetting, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SystemSetting)
+	err := c.cc.Invoke(ctx, ControlPlaneService_UpdateSystemSettingBoolean_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) ResetSystemSetting(ctx context.Context, in *ResetSystemSettingRequest, opts ...grpc.CallOption) (*SystemSetting, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SystemSetting)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ResetSystemSetting_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -924,6 +972,10 @@ type ControlPlaneServiceServer interface {
 	ResolveApprovalDecision(context.Context, *ResolveApprovalDecisionRequest) (*ResolveApprovalDecisionResponse, error)
 	ListRunEvents(context.Context, *ListRunEventsRequest) (*ListRunEventsResponse, error)
 	ListRunLearningFeedback(context.Context, *ListRunLearningFeedbackRequest) (*ListRunLearningFeedbackResponse, error)
+	ListSystemSettings(context.Context, *ListSystemSettingsRequest) (*ListSystemSettingsResponse, error)
+	GetSystemSetting(context.Context, *GetSystemSettingRequest) (*SystemSetting, error)
+	UpdateSystemSettingBoolean(context.Context, *UpdateSystemSettingBooleanRequest) (*SystemSetting, error)
+	ResetSystemSetting(context.Context, *ResetSystemSettingRequest) (*SystemSetting, error)
 	ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error)
 	CreateUser(context.Context, *CreateUserRequest) (*User, error)
 	DeleteUser(context.Context, *DeleteUserRequest) (*emptypb.Empty, error)
@@ -1036,6 +1088,18 @@ func (UnimplementedControlPlaneServiceServer) ListRunEvents(context.Context, *Li
 }
 func (UnimplementedControlPlaneServiceServer) ListRunLearningFeedback(context.Context, *ListRunLearningFeedbackRequest) (*ListRunLearningFeedbackResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRunLearningFeedback not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ListSystemSettings(context.Context, *ListSystemSettingsRequest) (*ListSystemSettingsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListSystemSettings not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) GetSystemSetting(context.Context, *GetSystemSettingRequest) (*SystemSetting, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSystemSetting not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) UpdateSystemSettingBoolean(context.Context, *UpdateSystemSettingBooleanRequest) (*SystemSetting, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateSystemSettingBoolean not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ResetSystemSetting(context.Context, *ResetSystemSettingRequest) (*SystemSetting, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResetSystemSetting not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListUsers not implemented")
@@ -1495,6 +1559,78 @@ func _ControlPlaneService_ListRunLearningFeedback_Handler(srv interface{}, ctx c
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ControlPlaneServiceServer).ListRunLearningFeedback(ctx, req.(*ListRunLearningFeedbackRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_ListSystemSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSystemSettingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ListSystemSettings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ListSystemSettings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ListSystemSettings(ctx, req.(*ListSystemSettingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_GetSystemSetting_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSystemSettingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).GetSystemSetting(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_GetSystemSetting_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).GetSystemSetting(ctx, req.(*GetSystemSettingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_UpdateSystemSettingBoolean_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateSystemSettingBooleanRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).UpdateSystemSettingBoolean(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_UpdateSystemSettingBoolean_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).UpdateSystemSettingBoolean(ctx, req.(*UpdateSystemSettingBooleanRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_ResetSystemSetting_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetSystemSettingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ResetSystemSetting(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ResetSystemSetting_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ResetSystemSetting(ctx, req.(*ResetSystemSettingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2591,6 +2727,22 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListRunLearningFeedback",
 			Handler:    _ControlPlaneService_ListRunLearningFeedback_Handler,
+		},
+		{
+			MethodName: "ListSystemSettings",
+			Handler:    _ControlPlaneService_ListSystemSettings_Handler,
+		},
+		{
+			MethodName: "GetSystemSetting",
+			Handler:    _ControlPlaneService_GetSystemSetting_Handler,
+		},
+		{
+			MethodName: "UpdateSystemSettingBoolean",
+			Handler:    _ControlPlaneService_UpdateSystemSettingBoolean_Handler,
+		},
+		{
+			MethodName: "ResetSystemSetting",
+			Handler:    _ControlPlaneService_ResetSystemSetting_Handler,
 		},
 		{
 			MethodName: "ListUsers",

@@ -17,6 +17,7 @@ import (
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/user"
 	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
 )
 
@@ -58,6 +59,7 @@ type Service struct {
 	githubMgmt     githubManagementClient
 	runStatus      runNamespaceService
 	runtimeDeploy  runtimeDeployController
+	systemSettings systemSettingsService
 }
 
 type platformTokensRepository interface {
@@ -87,6 +89,13 @@ type runtimeDeployController interface {
 	RequestTaskAction(ctx context.Context, params runtimedeploydomain.TaskActionParams) (runtimedeploydomain.TaskActionResult, error)
 }
 
+type systemSettingsService interface {
+	List() []entitytypes.SystemSetting
+	Get(key string) (entitytypes.SystemSetting, error)
+	UpdateBoolean(ctx context.Context, params querytypes.SystemSettingBooleanWriteParams) (entitytypes.SystemSetting, error)
+	Reset(ctx context.Context, key string, actorUserID string, actorEmail string) (entitytypes.SystemSetting, error)
+}
+
 // Dependencies defines external collaborators required by staff service.
 type Dependencies struct {
 	Users          userrepo.Repository
@@ -105,6 +114,7 @@ type Dependencies struct {
 	GitHubMgmt     githubManagementClient
 	RunStatus      runNamespaceService
 	RuntimeDeploy  runtimeDeployController
+	SystemSettings systemSettingsService
 }
 
 // NewService constructs staff service.
@@ -127,5 +137,6 @@ func NewService(cfg Config, deps Dependencies) *Service {
 		githubMgmt:     deps.GitHubMgmt,
 		runStatus:      deps.RunStatus,
 		runtimeDeploy:  deps.RuntimeDeploy,
+		systemSettings: deps.SystemSettings,
 	}
 }

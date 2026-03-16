@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CallbackGithubData, CallbackGithubErrors, CancelRuntimeDeployTaskData, CancelRuntimeDeployTaskErrors, CancelRuntimeDeployTaskResponses, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteProjectData, DeleteProjectErrors, DeleteProjectMemberData, DeleteProjectMemberErrors, DeleteProjectMemberResponses, DeleteProjectRepositoryData, DeleteProjectRepositoryErrors, DeleteProjectRepositoryResponses, DeleteProjectResponses, DeleteRunNamespaceData, DeleteRunNamespaceErrors, DeleteRunNamespaceResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, ExecuteNextStepActionData, ExecuteNextStepActionErrors, ExecuteNextStepActionResponses, GetMeData, GetMeErrors, GetMeResponses, GetMissionControlCommandData, GetMissionControlCommandErrors, GetMissionControlCommandResponses, GetMissionControlDashboardData, GetMissionControlDashboardErrors, GetMissionControlDashboardResponses, GetMissionControlEntityData, GetMissionControlEntityErrors, GetMissionControlEntityResponses, GetProjectData, GetProjectErrors, GetProjectGitHubTokensData, GetProjectGitHubTokensErrors, GetProjectGitHubTokensResponses, GetProjectResponses, GetRunData, GetRunErrors, GetRunLogsData, GetRunLogsErrors, GetRunLogsResponses, GetRunResponses, GetRuntimeDeployTaskData, GetRuntimeDeployTaskErrors, GetRuntimeDeployTaskResponses, ImportDocsetData, ImportDocsetErrors, ImportDocsetResponses, IngestGithubWebhookData, IngestGithubWebhookErrors, IngestGithubWebhookResponses, ListDocsetGroupsData, ListDocsetGroupsErrors, ListDocsetGroupsResponses, ListMissionControlTimelineData, ListMissionControlTimelineErrors, ListMissionControlTimelineResponses, ListPendingApprovalsData, ListPendingApprovalsErrors, ListPendingApprovalsResponses, ListProjectMembersData, ListProjectMembersErrors, ListProjectMembersResponses, ListProjectRepositoriesData, ListProjectRepositoriesErrors, ListProjectRepositoriesResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRunEventsData, ListRunEventsErrors, ListRunEventsResponses, ListRunLearningFeedbackData, ListRunLearningFeedbackErrors, ListRunLearningFeedbackResponses, ListRuntimeErrorsData, ListRuntimeErrorsErrors, ListRuntimeErrorsResponses, ListRunWaitsData, ListRunWaitsErrors, ListRunWaitsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginGithubData, LoginGithubErrors, LogoutData, LogoutErrors, LogoutResponses, MarkRuntimeErrorViewedData, MarkRuntimeErrorViewedErrors, MarkRuntimeErrorViewedResponses, McpApproverCallbackData, McpApproverCallbackErrors, McpApproverCallbackResponses, McpExecutorCallbackData, McpExecutorCallbackErrors, McpExecutorCallbackResponses, McpInteractionCallbackData, McpInteractionCallbackErrors, McpInteractionCallbackResponses, MissionControlRealtimeData, MissionControlRealtimeErrors, MissionControlRealtimeResponses, PreviewNextStepActionData, PreviewNextStepActionErrors, PreviewNextStepActionResponses, ResolveApprovalDecisionData, ResolveApprovalDecisionErrors, ResolveApprovalDecisionResponses, RunRealtimeData, RunRealtimeErrors, RunRealtimeResponses, RunRepositoryPreflightData, RunRepositoryPreflightErrors, RunRepositoryPreflightResponses, RunsRealtimeData, RunsRealtimeErrors, RunsRealtimeResponses, RuntimeDeployTasksRealtimeData, RuntimeDeployTasksRealtimeErrors, RuntimeDeployTasksRealtimeResponses, SetProjectMemberLearningModeOverrideData, SetProjectMemberLearningModeOverrideErrors, SetProjectMemberLearningModeOverrideResponses, StopRuntimeDeployTaskData, StopRuntimeDeployTaskErrors, StopRuntimeDeployTaskResponses, SubmitMissionControlCommandData, SubmitMissionControlCommandErrors, SubmitMissionControlCommandResponses, SyncDocsetData, SyncDocsetErrors, SyncDocsetResponses, UpsertProjectData, UpsertProjectErrors, UpsertProjectGitHubTokensData, UpsertProjectGitHubTokensErrors, UpsertProjectGitHubTokensResponses, UpsertProjectMemberData, UpsertProjectMemberErrors, UpsertProjectMemberResponses, UpsertProjectRepositoryData, UpsertProjectRepositoryErrors, UpsertProjectRepositoryResponses, UpsertProjectResponses, UpsertRepositoryBotParamsData, UpsertRepositoryBotParamsErrors, UpsertRepositoryBotParamsResponses } from './types.gen';
+import type { CallbackGithubData, CallbackGithubErrors, CancelRuntimeDeployTaskData, CancelRuntimeDeployTaskErrors, CancelRuntimeDeployTaskResponses, CreateUserData, CreateUserErrors, CreateUserResponses, DeleteProjectData, DeleteProjectErrors, DeleteProjectMemberData, DeleteProjectMemberErrors, DeleteProjectMemberResponses, DeleteProjectRepositoryData, DeleteProjectRepositoryErrors, DeleteProjectRepositoryResponses, DeleteProjectResponses, DeleteRunNamespaceData, DeleteRunNamespaceErrors, DeleteRunNamespaceResponses, DeleteUserData, DeleteUserErrors, DeleteUserResponses, ExecuteNextStepActionData, ExecuteNextStepActionErrors, ExecuteNextStepActionResponses, GetMeData, GetMeErrors, GetMeResponses, GetMissionControlCommandData, GetMissionControlCommandErrors, GetMissionControlCommandResponses, GetMissionControlDashboardData, GetMissionControlDashboardErrors, GetMissionControlDashboardResponses, GetMissionControlEntityData, GetMissionControlEntityErrors, GetMissionControlEntityResponses, GetProjectData, GetProjectErrors, GetProjectGitHubTokensData, GetProjectGitHubTokensErrors, GetProjectGitHubTokensResponses, GetProjectResponses, GetRunData, GetRunErrors, GetRunLogsData, GetRunLogsErrors, GetRunLogsResponses, GetRunResponses, GetRuntimeDeployTaskData, GetRuntimeDeployTaskErrors, GetRuntimeDeployTaskResponses, GetSystemSettingData, GetSystemSettingErrors, GetSystemSettingResponses, ImportDocsetData, ImportDocsetErrors, ImportDocsetResponses, IngestGithubWebhookData, IngestGithubWebhookErrors, IngestGithubWebhookResponses, ListDocsetGroupsData, ListDocsetGroupsErrors, ListDocsetGroupsResponses, ListMissionControlTimelineData, ListMissionControlTimelineErrors, ListMissionControlTimelineResponses, ListPendingApprovalsData, ListPendingApprovalsErrors, ListPendingApprovalsResponses, ListProjectMembersData, ListProjectMembersErrors, ListProjectMembersResponses, ListProjectRepositoriesData, ListProjectRepositoriesErrors, ListProjectRepositoriesResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListRunEventsData, ListRunEventsErrors, ListRunEventsResponses, ListRunLearningFeedbackData, ListRunLearningFeedbackErrors, ListRunLearningFeedbackResponses, ListRuntimeErrorsData, ListRuntimeErrorsErrors, ListRuntimeErrorsResponses, ListRunWaitsData, ListRunWaitsErrors, ListRunWaitsResponses, ListSystemSettingsData, ListSystemSettingsErrors, ListSystemSettingsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, LoginGithubData, LoginGithubErrors, LogoutData, LogoutErrors, LogoutResponses, MarkRuntimeErrorViewedData, MarkRuntimeErrorViewedErrors, MarkRuntimeErrorViewedResponses, McpApproverCallbackData, McpApproverCallbackErrors, McpApproverCallbackResponses, McpExecutorCallbackData, McpExecutorCallbackErrors, McpExecutorCallbackResponses, McpInteractionCallbackData, McpInteractionCallbackErrors, McpInteractionCallbackResponses, MissionControlRealtimeData, MissionControlRealtimeErrors, MissionControlRealtimeResponses, PreviewNextStepActionData, PreviewNextStepActionErrors, PreviewNextStepActionResponses, ResetSystemSettingData, ResetSystemSettingErrors, ResetSystemSettingResponses, ResolveApprovalDecisionData, ResolveApprovalDecisionErrors, ResolveApprovalDecisionResponses, RunRealtimeData, RunRealtimeErrors, RunRealtimeResponses, RunRepositoryPreflightData, RunRepositoryPreflightErrors, RunRepositoryPreflightResponses, RunsRealtimeData, RunsRealtimeErrors, RunsRealtimeResponses, RuntimeDeployTasksRealtimeData, RuntimeDeployTasksRealtimeErrors, RuntimeDeployTasksRealtimeResponses, SetProjectMemberLearningModeOverrideData, SetProjectMemberLearningModeOverrideErrors, SetProjectMemberLearningModeOverrideResponses, StopRuntimeDeployTaskData, StopRuntimeDeployTaskErrors, StopRuntimeDeployTaskResponses, SubmitMissionControlCommandData, SubmitMissionControlCommandErrors, SubmitMissionControlCommandResponses, SyncDocsetData, SyncDocsetErrors, SyncDocsetResponses, SystemSettingsRealtimeData, SystemSettingsRealtimeErrors, SystemSettingsRealtimeResponses, UpdateSystemSettingBooleanData, UpdateSystemSettingBooleanErrors, UpdateSystemSettingBooleanResponses, UpsertProjectData, UpsertProjectErrors, UpsertProjectGitHubTokensData, UpsertProjectGitHubTokensErrors, UpsertProjectGitHubTokensResponses, UpsertProjectMemberData, UpsertProjectMemberErrors, UpsertProjectMemberResponses, UpsertProjectRepositoryData, UpsertProjectRepositoryErrors, UpsertProjectRepositoryResponses, UpsertProjectResponses, UpsertRepositoryBotParamsData, UpsertRepositoryBotParamsErrors, UpsertRepositoryBotParamsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -164,6 +164,51 @@ export const resolveApprovalDecision = <ThrowOnError extends boolean = false>(op
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * List platform system settings
+ */
+export const listSystemSettings = <ThrowOnError extends boolean = false>(options?: Options<ListSystemSettingsData, ThrowOnError>) => (options?.client ?? client).get<ListSystemSettingsResponses, ListSystemSettingsErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/system-settings',
+    ...options
+});
+
+/**
+ * Open system settings realtime stream (WebSocket upgrade)
+ */
+export const systemSettingsRealtime = <ThrowOnError extends boolean = false>(options?: Options<SystemSettingsRealtimeData, ThrowOnError>) => (options?.client ?? client).get<SystemSettingsRealtimeResponses, SystemSettingsRealtimeErrors, ThrowOnError>({ url: '/api/v1/staff/system-settings/realtime', ...options });
+
+/**
+ * Get platform system setting by key
+ */
+export const getSystemSetting = <ThrowOnError extends boolean = false>(options: Options<GetSystemSettingData, ThrowOnError>) => (options.client ?? client).get<GetSystemSettingResponses, GetSystemSettingErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/system-settings/{setting_key}',
+    ...options
+});
+
+/**
+ * Update boolean platform system setting
+ */
+export const updateSystemSettingBoolean = <ThrowOnError extends boolean = false>(options: Options<UpdateSystemSettingBooleanData, ThrowOnError>) => (options.client ?? client).put<UpdateSystemSettingBooleanResponses, UpdateSystemSettingBooleanErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/system-settings/{setting_key}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Reset platform system setting to catalog default
+ */
+export const resetSystemSetting = <ThrowOnError extends boolean = false>(options: Options<ResetSystemSettingData, ThrowOnError>) => (options.client ?? client).post<ResetSystemSettingResponses, ResetSystemSettingErrors, ThrowOnError>({
+    responseType: 'json',
+    url: '/api/v1/staff/system-settings/{setting_key}/reset',
+    ...options
 });
 
 /**

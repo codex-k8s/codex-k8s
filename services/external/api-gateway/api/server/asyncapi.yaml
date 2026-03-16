@@ -24,6 +24,11 @@ channels:
       summary: Staff UI realtime stream for paginated runtime deploy tasks list (WebSocket message envelope)
       message:
         $ref: "#/components/messages/RuntimeDeployTasksRealtimeMessage"
+  ws.staff.system-settings.realtime:
+    subscribe:
+      summary: Staff UI realtime stream for platform system settings (WebSocket message envelope)
+      message:
+        $ref: "#/components/messages/SystemSettingsRealtimeMessage"
 components:
   messages:
     FlowEvent:
@@ -112,6 +117,23 @@ components:
               $ref: "#/components/schemas/RuntimeDeployTaskListItem"
           pagination:
             $ref: "#/components/schemas/Pagination"
+    SystemSettingsRealtimeMessage:
+      payload:
+        type: object
+        required: [type, sent_at]
+        properties:
+          type:
+            type: string
+            enum: [snapshot, error]
+          sent_at:
+            type: string
+            format: date-time
+          message:
+            type: string
+          items:
+            type: array
+            items:
+              $ref: "#/components/schemas/SystemSetting"
   schemas:
     Pagination:
       type: object
@@ -127,6 +149,46 @@ components:
         total_count:
           type: integer
           minimum: 0
+    SystemSetting:
+      type: object
+      additionalProperties: false
+      required:
+        - key
+        - section
+        - value_kind
+        - reload_semantics
+        - visibility
+        - boolean_value
+        - default_boolean_value
+        - source
+        - version
+      properties:
+        key:
+          type: string
+        section:
+          type: string
+        value_kind:
+          type: string
+        reload_semantics:
+          type: string
+        visibility:
+          type: string
+        boolean_value:
+          type: boolean
+        default_boolean_value:
+          type: boolean
+        source:
+          type: string
+        version:
+          type: integer
+          format: int64
+        updated_at:
+          type: string
+          format: date-time
+        updated_by_user_id:
+          type: string
+        updated_by_email:
+          type: string
     Run:
       type: object
       additionalProperties: false

@@ -14,12 +14,15 @@ import (
 
 	libslauncher "github.com/codex-k8s/codex-k8s/libs/go/k8s/joblauncher"
 	"github.com/codex-k8s/codex-k8s/libs/go/postgres"
+	sharedsystemsettings "github.com/codex-k8s/codex-k8s/libs/go/systemsettings"
 	k8slauncher "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/clients/kubernetes/launcher"
 	"github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/controlplane"
+	systemsettingsdomain "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/systemsettings"
 	"github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/domain/worker"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/flowevent"
 	learningfeedbackrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/learningfeedback"
 	runqueuerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/runqueue"
+	systemsettingrepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/systemsetting"
 	workerinstancerepo "github.com/codex-k8s/codex-k8s/services/jobs/worker/internal/repository/postgres/workerinstance"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -140,6 +143,8 @@ func Run() error {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	namespaceLeaseDefaultTTL, namespaceLeaseTTLByRole := loadWebhookRuntimeNamespaceTTLPolicy(cfg, logger)
+	ctx, stop := signal.NotifyContext(appCtx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
+	defer stop()
 
 	dialCtx, cancelDial := context.WithTimeout(appCtx, 30*time.Second)
 	defer cancelDial()
@@ -149,14 +154,15 @@ func Run() error {
 	}
 	defer func() { _ = controlPlane.Close() }()
 
-	db, err := postgres.OpenPGXPool(appCtx, postgres.OpenParams{
+	dbOpenParams := postgres.OpenParams{
 		Host:     cfg.DBHost,
 		Port:     cfg.DBPort,
 		DBName:   cfg.DBName,
 		User:     cfg.DBUser,
 		Password: cfg.DBPassword,
 		SSLMode:  cfg.DBSSLMode,
-	})
+	}
+	db, err := postgres.OpenPGXPool(appCtx, dbOpenParams)
 	if err != nil {
 		return err
 	}
@@ -165,7 +171,23 @@ func Run() error {
 	runs := runqueuerepo.NewRepository(db)
 	events := floweventrepo.NewRepository(db)
 	feedback := learningfeedbackrepo.NewRepository(db)
+	workerSystemSettingsRepo := systemsettingrepo.NewRepository(db)
 	workerInstances := workerinstancerepo.NewRepository(db)
+	workerSystemSettings, err := systemsettingsdomain.NewService(workerSystemSettingsRepo)
+	if err != nil {
+		return fmt.Errorf("init worker system settings service: %w", err)
+	}
+	if err := sharedsystemsettings.StartReloadLoop(
+		ctx,
+		sharedsystemsettings.ReloadLoopConfig{
+			DSN:         postgres.BuildDSN(dbOpenParams),
+			ListenQuery: systemsettingrepo.ListenQuery(),
+		},
+		logger,
+		workerSystemSettings.RefreshCache,
+	); err != nil {
+		return fmt.Errorf("start worker system settings reload loop: %w", err)
+	}
 	launcher, err := k8slauncher.NewAdapter(libslauncher.Config{
 		KubeconfigPath:                cfg.KubeconfigPath,
 		Namespace:                     cfg.K8sNamespace,
@@ -221,7 +243,6 @@ func Run() error {
 		RunLeaseTTL:                       runLeaseTTL,
 		RuntimePrepareRetryTimeout:        runtimePrepareRetryTimeout,
 		RuntimePrepareRetryInterval:       runtimePrepareRetryInterval,
-		GitHubRateLimitWaitEnabled:        cfg.GitHubRateLimitWaitEnabled,
 		GitHubRateLimitSweepLimit:         cfg.GitHubRateLimitSweepLimit,
 		MissionControlWarmupInterval:      missionControlWarmupInterval,
 		MissionControlWarmupProjectLimit:  cfg.MissionControlWarmupProjectLimit,
@@ -279,6 +300,7 @@ func Run() error {
 		InteractionDispatcher: interactionDispatcher,
 		JobImageChecker:       jobImageChecker,
 		Logger:                logger,
+		SystemSettings:        workerSystemSettings,
 	})
 
 	if resolveWorkerMode(cfg.Mode) == workerModeNamespaceCleanupOnce {
@@ -286,9 +308,6 @@ func Run() error {
 		defer cancelCleanup()
 		return service.RunNamespaceCleanupOnce(cleanupCtx)
 	}
-
-	ctx, stop := signal.NotifyContext(appCtx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGHUP)
-	defer stop()
 
 	workerStartedAt := time.Now().UTC()
 	initialHeartbeatCtx, cancelInitialHeartbeat := context.WithTimeout(ctx, 5*time.Second)

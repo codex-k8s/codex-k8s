@@ -41,6 +41,13 @@
 - Абстракции вводить только если они уменьшают сложность.
 - Transport тонкий; домен без “магии”; инфраструктура — единый способ подключения/конфигурации.
 
+## Runtime configuration
+
+Правила:
+- Product/runtime switches, которые должны меняться на лету или аудититься как platform state, живут в typed platform settings catalog и хранятся в БД.
+- Для таких переключателей обязательно фиксировать reload semantics, visibility и source-of-truth; env-only feature gates для product behavior не добавляются.
+- Env остаётся только для bootstrap, secrets и infrastructure/runtime параметров, которые нужны до доступа к БД или не должны редактироваться через staff UI.
+
 ## Clean Architecture
 
 Правила слоёв:
