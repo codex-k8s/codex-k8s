@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-15
 updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516, 519]
+related_issues: [480, 490, 492, 496, 510, 516, 519, 537]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -87,3 +87,21 @@ approvals:
 - Через `gh issue create` создана follow-up issue `#519` для stage `run:design`; в её body сохранено continuity-требование продолжить цепочку `design -> plan -> dev`.
 - Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась: architecture package формализует ownership boundaries и handover в design, но не меняет repo-wide baseline `docs/product/requirements_machine_driven.md`.
+
+## Актуализация по Issue #519 (`run:design`, 2026-03-16)
+- Подготовлен design package:
+  - `docs/architecture/initiatives/s16_mission_control_graph_workspace/design_doc.md`;
+  - `docs/architecture/initiatives/s16_mission_control_graph_workspace/api_contract.md`;
+  - `docs/architecture/initiatives/s16_mission_control_graph_workspace/data_model.md`;
+  - `docs/architecture/initiatives/s16_mission_control_graph_workspace/migrations_policy.md`;
+  - `docs/delivery/epics/s16/epic-s16-day5-mission-control-graph-workspace-design.md`.
+- Зафиксированы:
+  - graph-first interaction model поверх Day4 ownership split без нового deployable сервиса;
+  - typed transport baseline `workspace -> node details -> activity -> launch preview -> existing command ledger`, где Sprint S9 dashboard contract переводится в superseded state без отдельного parallel namespace;
+  - reuse existing Mission Control command path для `stage.next_step.execute`, а preview выносится в явный read-only contract с continuity effect;
+  - persisted continuity gaps и workspace watermarks как отдельные domain constructs `control-plane`;
+  - run nodes как обязательный Wave 1 canvas kind вместо `agent` nodes, которые остаются только migration residue до cleanup;
+  - rollout path `expand schema -> shadow backfill -> read switch -> preview exposure -> cleanup last`, сохранив order `migrations -> control-plane -> worker -> api-gateway -> web-console`.
+- Через `gh issue create` создана follow-up issue `#537` для stage `run:plan`; в её body сохранено continuity-требование продолжить цепочку `plan -> dev`.
+- Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась: design package детализирует existing Sprint S16 baseline и handover в plan, но не меняет repo-wide baseline `docs/product/requirements_machine_driven.md`.

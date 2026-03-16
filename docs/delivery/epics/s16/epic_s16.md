@@ -6,7 +6,7 @@ status: in-review
 owner_role: PM
 created_at: 2026-03-15
 updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516, 519]
+related_issues: [480, 490, 492, 496, 510, 516, 519, 537]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -23,6 +23,7 @@ approvals:
 - Issue `#480` не исчезает, а становится обязательным foundation layer внутри S16: persisted GitHub inventory mirror и bounded reconcile с coverage contract `all open Issues/PR + bounded recent closed history` должны питать новый workspace.
 - Day3 PRD (`#510`) зафиксировал user stories, FR/AC/NFR, scenario matrix, expected evidence и boundary core Wave 1 vs deferred contours; создана follow-up issue `#516` для `run:arch`.
 - Day4 Architecture (`#516`) зафиксировал ownership split, hybrid truth lifecycle `provider mirror -> graph truth -> workspace projection`, continuity gaps и bounded provider foundation; создана follow-up issue `#519` для `run:design`.
+- Day5 Design (`#519`) зафиксировал graph-first interaction model, typed transport/data contracts, persisted continuity gaps/workspace watermarks и rollout path без нового сервиса; создана continuity issue `#537` для `run:plan`.
 - До `run:plan` Sprint S16 остаётся markdown-only и не создаёт implementation issues.
 
 ## Stage roadmap
@@ -30,8 +31,8 @@ approvals:
 - Day 2 (Vision): `docs/delivery/epics/s16/epic-s16-day2-mission-control-graph-workspace-vision.md` (Issue `#496`).
 - Day 3 (PRD): `docs/delivery/epics/s16/epic-s16-day3-mission-control-graph-workspace-prd.md` + `docs/delivery/epics/s16/prd-s16-day3-mission-control-graph-workspace.md` (Issue `#510`); user stories, FR/AC/NFR, scenario matrix и expected evidence уже зафиксированы для graph workspace, continuity graph и foundation inventory.
 - Day 4 (Architecture): `docs/delivery/epics/s16/epic-s16-day4-mission-control-graph-workspace-arch.md` + architecture package in `docs/architecture/initiatives/s16_mission_control_graph_workspace/` (Issue `#516`); зафиксированы `control-plane`-owned graph truth, bounded `worker` inventory foundation, hybrid truth lifecycle и continuity-gap ownership.
-- Day 5 (Design): Issue `#519`; ожидается implementation-ready design package по typed metadata, graph surfaces, transport/data contracts и rollout notes.
-- Day 6 (Plan): `TBD`; ожидается execution package с delivery waves, quality-gates и owner-managed handover в `run:dev`.
+- Day 5 (Design): `docs/delivery/epics/s16/epic-s16-day5-mission-control-graph-workspace-design.md` + `docs/architecture/initiatives/s16_mission_control_graph_workspace/{design_doc.md,api_contract.md,data_model.md,migrations_policy.md}` (Issue `#519`); зафиксированы graph-first UX, typed snapshot/node/preview contracts, continuity-gap storage и rollout notes.
+- Day 6 (Plan): Issue `#537`; ожидается execution package с delivery waves, quality-gates и owner-managed handover в `run:dev`.
 
 ## Delivery-governance rules
 - Sprint S16 стартует только полным doc-stage контуром `intake -> vision -> prd -> arch -> design -> plan`.

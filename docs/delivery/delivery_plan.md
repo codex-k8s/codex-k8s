@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-16
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 500, 510, 512, 516, 519, 521, 522, 523, 524, 525]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 500, 510, 512, 516, 519, 521, 522, 523, 524, 525, 537]
 
 related_prs: []
 approvals:
@@ -460,9 +460,21 @@ approvals:
   - user stories, FR/AC/NFR, scenario matrix и expected evidence зафиксированы для fullscreen graph workspace, filtered multi-root continuity, inventory-backed foundation, typed metadata/watermarks, platform-canonical launch params и platform-safe inline actions;
   - explicit continuity contract сохранён: stage through `run:dev` считается complete только при наличии `PR + linked follow-up issue`, а later-wave contours voice/STT, dashboard orchestrator agent, отдельная `agent` node taxonomy, full-history/archive и richer provider enrichment не блокируют core Wave 1;
   - создана continuity issue `#516` для stage `run:arch` без trigger-лейбла.
-- Day 4 (planned): architecture issue `#516`.
-  - Цель: ownership matrix, hybrid truth merge model, persisted graph truth boundaries и service decisions для `control-plane` / `worker` / `api-gateway` / `web-console`.
-  - Ожидаемый результат: architecture package + новая issue для `run:design` без trigger-лейбла.
+- Day 4 (in-review): architecture issue `#516` (`docs/delivery/epics/s16/epic-s16-day4-mission-control-graph-workspace-arch.md`, `docs/architecture/initiatives/s16_mission_control_graph_workspace/{README.md,architecture.md,c4_context.md,c4_container.md}`, `docs/architecture/adr/ADR-0016-mission-control-graph-workspace-hybrid-truth-and-continuity-ownership.md`, `docs/architecture/alternatives/ALT-0008-mission-control-graph-workspace-hybrid-truth-boundaries.md`).
+- Результат Day 4 (факт):
+  - `control-plane` закреплён как owner canonical graph truth, continuity state, typed metadata/watermarks и launch surfaces;
+  - `worker` закреплён за bounded provider inventory freshness, recent-closed-history backfill и reconcile execution без ownership graph semantics;
+  - hybrid truth lifecycle `provider mirror -> graph truth -> workspace projection` и boundary `thin-edge UI/API` сохранены без reopening Sprint S16 baseline;
+  - создана continuity issue `#519` для stage `run:design` без trigger-лейбла.
+- Day 5 (in-review): design package для Mission Control graph workspace (`docs/delivery/epics/s16/epic-s16-day5-mission-control-graph-workspace-design.md`, `docs/architecture/initiatives/s16_mission_control_graph_workspace/{design_doc.md,api_contract.md,data_model.md,migrations_policy.md}`, Issue `#519`).
+- Результат Day 5 (факт):
+  - зафиксирован graph-first interaction model поверх existing Mission Control bounded context без отдельного сервиса и без второго command path;
+  - typed transport baseline определён как `workspace -> node details -> activity -> launch preview -> existing command ledger`, а Sprint S9 dashboard contract переводится в superseded state без отдельного long-lived namespace;
+  - persisted continuity gaps и workspace watermarks оформлены как отдельные domain constructs `control-plane`, а `run` node закреплён как Wave 1 canvas kind вместо `agent`;
+  - rollout path зафиксирован как `expand schema -> shadow backfill -> read switch -> preview exposure -> cleanup last`, сохранив order `migrations -> control-plane -> worker -> api-gateway -> web-console`;
+  - через `gh issue create` создана continuity issue `#537` для stage `run:plan` без trigger-лейбла.
+- Day 6 (planned): plan package для Mission Control graph workspace (Issue `#537`).
+  - Цель: разложить Day5 baseline на execution waves, DoR/DoD и quality gates без reopening product/architecture решений.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
