@@ -23,9 +23,9 @@ func TestTickReconcilesGitHubRateLimitWaitsBeforeMissionControl(t *testing.T) {
 	}
 
 	svc := NewService(Config{
-		WorkerID:                   "worker-1",
-		GitHubRateLimitWaitEnabled: true,
-		GitHubRateLimitSweepLimit:  5,
+		WorkerID:                           "worker-1",
+		GitHubRateLimitWaitEnabledFallback: true,
+		GitHubRateLimitSweepLimit:          5,
 	}, Dependencies{
 		Runs:             &fakeRunQueue{},
 		Events:           &fakeFlowEvents{},

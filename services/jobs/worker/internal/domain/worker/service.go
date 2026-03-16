@@ -47,8 +47,8 @@ type Config struct {
 	InteractionRetryMaxInterval time.Duration
 	// InteractionMaxAttempts caps total dispatch attempts before marking delivery exhausted.
 	InteractionMaxAttempts int
-	// GitHubRateLimitWaitEnabled enables worker sweeps for persisted GitHub rate-limit waits.
-	GitHubRateLimitWaitEnabled bool
+	// GitHubRateLimitWaitEnabledFallback is used only when runtime system settings are not wired.
+	GitHubRateLimitWaitEnabledFallback bool
 	// GitHubRateLimitSweepLimit limits how many due waits worker can reconcile per tick.
 	GitHubRateLimitSweepLimit int
 	// MissionControlWarmupInterval throttles per-project warmup execution.
@@ -166,6 +166,8 @@ type Dependencies struct {
 	Logger *slog.Logger
 	// JobImageChecker checks whether image references are available before launch.
 	JobImageChecker JobImageAvailabilityChecker
+	// SystemSettings exposes hot-reloaded runtime feature switches.
+	SystemSettings runtimeSystemSettings
 }
 
 // Service orchestrates pending runs to Kubernetes Jobs and final statuses.
@@ -185,6 +187,7 @@ type Service struct {
 	logger                   *slog.Logger
 	labels                   runAgentLabelCatalog
 	image                    JobImageSelectionPolicy
+	systemSettings           runtimeSystemSettings
 	lastMissionControlWarmup map[string]time.Time
 	now                      func() time.Time
 }
@@ -200,6 +203,10 @@ type JobImageSelectionPolicy struct {
 	Primary  string
 	Fallback string
 	Checker  JobImageAvailabilityChecker
+}
+
+type runtimeSystemSettings interface {
+	GitHubRateLimitWaitEnabled() bool
 }
 
 // NewService creates worker orchestrator instance.
@@ -391,6 +398,7 @@ func NewService(cfg Config, deps Dependencies) *Service {
 			Fallback: cfg.JobImageFallback,
 			Checker:  deps.JobImageChecker,
 		},
+		systemSettings:           deps.SystemSettings,
 		lastMissionControlWarmup: make(map[string]time.Time),
 		now:                      time.Now,
 	}

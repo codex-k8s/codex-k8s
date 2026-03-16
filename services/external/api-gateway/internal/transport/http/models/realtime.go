@@ -55,3 +55,11 @@ type RuntimeDeployTasksRealtimeMessage struct {
 	Message    *string                     `json:"message,omitempty"`
 	SentAt     string                      `json:"sent_at"`
 }
+
+// SystemSettingsRealtimeMessage is a typed websocket message for platform settings updates.
+type SystemSettingsRealtimeMessage struct {
+	Type    ListRealtimeMessageType `json:"type"`
+	Items   []SystemSetting         `json:"items,omitempty"`
+	Message *string                 `json:"message,omitempty"`
+	SentAt  string                  `json:"sent_at"`
+}

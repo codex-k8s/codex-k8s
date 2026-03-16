@@ -5,8 +5,8 @@ title: "codex-k8s — API Contract Overview"
 status: active
 owner_role: SA
 created_at: 2026-02-06
-updated_at: 2026-03-09
-related_issues: [1, 19, 100, 154, 155, 175, 247, 248, 249, 274]
+updated_at: 2026-03-15
+related_issues: [1, 19, 100, 154, 155, 175, 247, 248, 249, 274, 500]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -118,6 +118,11 @@ approvals:
 | Run realtime stream | GET | `/api/v1/staff/runs/{run_id}/realtime` | staff JWT | WebSocket upgrade; server sends `snapshot|run|events|logs|error` envelopes |
 | List pending approvals | GET | `/api/v1/staff/approvals` | staff JWT | MCP approval queue for privileged actions |
 | Resolve approval decision | POST | `/api/v1/staff/approvals/{approval_request_id}/decision` | staff JWT | approve/deny/expire/fail action request |
+| List system settings | GET | `/api/v1/staff/system-settings` | staff JWT + admin | typed platform settings catalog with effective values |
+| Get system setting | GET | `/api/v1/staff/system-settings/{setting_key}` | staff JWT + admin | one typed platform setting |
+| Update boolean system setting | PUT | `/api/v1/staff/system-settings/{setting_key}` | staff JWT + admin | update persisted runtime switch value |
+| Reset system setting to default | POST | `/api/v1/staff/system-settings/{setting_key}/reset` | staff JWT + admin | restore catalog default and bump version |
+| System settings realtime stream | GET | `/api/v1/staff/system-settings/realtime` | staff JWT + admin | WebSocket snapshots for staff configuration UI |
 | List run learning feedback | GET | `/api/v1/staff/runs/{run_id}/learning-feedback` | staff JWT | educational feedback |
 | Stream run logs | GET | `/api/v1/staff/runs/{run_id}/logs/stream` | staff JWT | live tail (SSE/WebSocket) |
 | List run log snapshots | GET | `/api/v1/staff/runs/{run_id}/logs` | staff JWT | historical logs |
@@ -138,6 +143,7 @@ approvals:
 
 Примечание:
 - маршруты staff runtime debug (`/runs/{run_id}/logs*`, `/runs/waits`) относятся к MVP target и вводятся в Sprint S3.
+- Product/runtime switches, которые должны применяться без правки deployment env, публикуются через typed staff/private contract `system-settings`; source of truth для effective values находится в `control-plane` и PostgreSQL, а не в runtime manifests.
 - будущие маршруты сверх MVP (`docs search/edit`, advanced policy management UI и т.д.) вводятся отдельными эпиками post-MVP.
 - маршруты `composition*` и `/docs/sources` относятся к design backlog по Issue #100 и реализуются отдельным `run:dev` циклом.
 

@@ -6,7 +6,7 @@ status: completed
 owner_role: KM
 created_at: 2026-03-13
 updated_at: 2026-03-15
-related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
+related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 500]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -265,3 +265,31 @@ approvals:
 - Внешний baseline дополнительно сверен:
   - Context7 `/github/docs` использован для повторной проверки guidance по primary/secondary rate limits, `Retry-After`, `x-ratelimit-reset` и bounded retry discipline, чтобы readiness-пакет не расходился с provider semantics.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: Issue `#431` синхронизирует readiness evidence и traceability, но не вводит новые канонические требования.
+
+## Актуализация по Issue #500 (`run:dev`, 2026-03-15)
+- Реализован platform settings stream для live runtime switches:
+  - `services/internal/control-plane/cmd/cli/migrations/20260315120000_day31_system_settings_foundation.sql`;
+  - `services/internal/control-plane/internal/domain/{repository/systemsetting,systemsettings,staff/service_system_settings.go}`;
+  - `services/internal/control-plane/internal/repository/postgres/systemsetting`;
+  - `services/internal/control-plane/internal/transport/grpc/server_staff_system_settings.go`;
+  - `services/jobs/worker/internal/domain/systemsettings/service.go`;
+  - `services/jobs/worker/internal/repository/postgres/systemsetting`;
+  - `libs/go/systemsettings/systemsettings.go`;
+  - `services/external/api-gateway/api/server/{api.yaml,asyncapi.yaml}`;
+  - `services/external/api-gateway/internal/transport/http/{casters/system_settings.go,staff_handler_system_settings.go}`;
+  - `services/staff/web-console/src/pages/configuration/SystemSettingsPage.vue`.
+- Зафиксированы:
+  - `system_settings` и `system_setting_changes` стали реальным control-plane owned contour с durable versioning, audit trail и seeded catalog entry `github_rate_limit_wait_enabled=false`;
+  - `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED` удалён из `control-plane`/`worker` app config и production/bootstrap wiring; effective rollout state GitHub rate-limit wait path теперь читается из DB-backed platform setting с hot-reload через PostgreSQL `LISTEN/NOTIFY` и reconnect-safe reload from durable tables;
+  - staff/private contract-first surface добавлен end-to-end: новые gRPC/OpenAPI/AsyncAPI контракты, typed API/client codegen, staff admin routes `list/get/update/reset/realtime` и рабочая `System settings` page вместо scaffold;
+  - policy для future work синхронизирована в common design guidelines: product/runtime switches, которые должны меняться на лету, больше не вводятся как env-only flags и должны жить в typed platform settings catalog.
+- Проверки:
+  - `make gen-proto-go`
+  - `make gen-openapi`
+  - `go test ./services/internal/control-plane/internal/domain/systemsettings ./services/internal/control-plane/internal/repository/postgres/systemsetting ./services/internal/control-plane/internal/domain/staff ./services/internal/control-plane/internal/domain/githubratelimit ./services/internal/control-plane/internal/app`
+  - `go test ./services/jobs/worker/internal/domain/systemsettings ./services/jobs/worker/internal/repository/postgres/systemsetting ./services/jobs/worker/internal/domain/worker ./services/jobs/worker/internal/app`
+  - `go test ./services/internal/control-plane/internal/transport/grpc ./services/external/api-gateway/internal/transport/http ./services/external/api-gateway/internal/controlplane`
+  - `go test ./services/internal/control-plane/internal/... ./services/external/api-gateway/internal/... ./services/jobs/worker/internal/...`
+  - `npm --prefix services/staff/web-console run build`
+  - `git diff --check`
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` уточнена по существу для `FR-008`: current-state traceability теперь явно закрепляет typed platform settings catalog и DB-backed runtime switches как канонический способ управления live product behavior.

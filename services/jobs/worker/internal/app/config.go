@@ -39,8 +39,6 @@ type Config struct {
 	RuntimePrepareRetryTimeout string `env:"CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_TIMEOUT" envDefault:"30m"`
 	// RuntimePrepareRetryInterval defines delay between retryable runtime deploy preparation attempts.
 	RuntimePrepareRetryInterval string `env:"CODEXK8S_WORKER_RUNTIME_PREPARE_RETRY_INTERVAL" envDefault:"3s"`
-	// GitHubRateLimitWaitEnabled enables worker sweeps for persisted GitHub rate-limit waits.
-	GitHubRateLimitWaitEnabled bool `env:"CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED" envDefault:"false"`
 	// GitHubRateLimitSweepLimit limits how many due GitHub rate-limit waits worker processes per tick.
 	GitHubRateLimitSweepLimit int `env:"CODEXK8S_WORKER_GITHUB_RATE_LIMIT_SWEEP_LIMIT" envDefault:"20"`
 	// MissionControlWarmupInterval throttles per-project Mission Control warmup execution.

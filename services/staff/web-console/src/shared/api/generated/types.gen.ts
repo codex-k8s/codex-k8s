@@ -44,6 +44,21 @@ export type Project = {
     role: string;
 };
 
+export type SystemSetting = {
+    key: string;
+    section: string;
+    value_kind: string;
+    reload_semantics: string;
+    visibility: string;
+    boolean_value: boolean;
+    default_boolean_value: boolean;
+    source: string;
+    version: number;
+    updated_at?: string | null;
+    updated_by_user_id?: string | null;
+    updated_by_email?: string | null;
+};
+
 export type Run = {
     id: string;
     correlation_id: string;
@@ -155,6 +170,10 @@ export type ApprovalRequest = {
 export type ResolveApprovalDecisionRequest = {
     decision: 'approved' | 'denied' | 'expired' | 'failed';
     reason?: string | null;
+};
+
+export type UpdateSystemSettingBooleanRequest = {
+    boolean_value: boolean;
 };
 
 export type McpApprovalCallbackRequest = {
@@ -785,6 +804,10 @@ export type ProjectItemsResponse = {
     items: Array<Project>;
 };
 
+export type SystemSettingItemsResponse = {
+    items: Array<SystemSetting>;
+};
+
 export type RunItemsResponse = {
     items: Array<Run>;
 };
@@ -860,6 +883,8 @@ export type RunId = string;
 export type RuntimeErrorId = string;
 
 export type ApprovalRequestId = number;
+
+export type SettingKey = string;
 
 export type Page = number;
 
@@ -1451,6 +1476,179 @@ export type ResolveApprovalDecisionResponses = {
 };
 
 export type ResolveApprovalDecisionResponse2 = ResolveApprovalDecisionResponses[keyof ResolveApprovalDecisionResponses];
+
+export type ListSystemSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/staff/system-settings';
+};
+
+export type ListSystemSettingsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type ListSystemSettingsError = ListSystemSettingsErrors[keyof ListSystemSettingsErrors];
+
+export type ListSystemSettingsResponses = {
+    /**
+     * Platform system settings list
+     */
+    200: SystemSettingItemsResponse;
+};
+
+export type ListSystemSettingsResponse = ListSystemSettingsResponses[keyof ListSystemSettingsResponses];
+
+export type SystemSettingsRealtimeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/staff/system-settings/realtime';
+};
+
+export type SystemSettingsRealtimeErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+};
+
+export type SystemSettingsRealtimeError = SystemSettingsRealtimeErrors[keyof SystemSettingsRealtimeErrors];
+
+export type SystemSettingsRealtimeResponses = {
+    /**
+     * System settings realtime stream endpoint (expects WebSocket upgrade)
+     */
+    200: unknown;
+};
+
+export type GetSystemSettingData = {
+    body?: never;
+    path: {
+        setting_key: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/system-settings/{setting_key}';
+};
+
+export type GetSystemSettingErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+};
+
+export type GetSystemSettingError = GetSystemSettingErrors[keyof GetSystemSettingErrors];
+
+export type GetSystemSettingResponses = {
+    /**
+     * Platform system setting
+     */
+    200: SystemSetting;
+};
+
+export type GetSystemSettingResponse = GetSystemSettingResponses[keyof GetSystemSettingResponses];
+
+export type UpdateSystemSettingBooleanData = {
+    body: UpdateSystemSettingBooleanRequest;
+    path: {
+        setting_key: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/system-settings/{setting_key}';
+};
+
+export type UpdateSystemSettingBooleanErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+};
+
+export type UpdateSystemSettingBooleanError = UpdateSystemSettingBooleanErrors[keyof UpdateSystemSettingBooleanErrors];
+
+export type UpdateSystemSettingBooleanResponses = {
+    /**
+     * Updated platform system setting
+     */
+    200: SystemSetting;
+};
+
+export type UpdateSystemSettingBooleanResponse = UpdateSystemSettingBooleanResponses[keyof UpdateSystemSettingBooleanResponses];
+
+export type ResetSystemSettingData = {
+    body?: never;
+    path: {
+        setting_key: string;
+    };
+    query?: never;
+    url: '/api/v1/staff/system-settings/{setting_key}/reset';
+};
+
+export type ResetSystemSettingErrors = {
+    /**
+     * Invalid request
+     */
+    400: ErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: ErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: ErrorResponse;
+    /**
+     * Not found
+     */
+    404: ErrorResponse;
+};
+
+export type ResetSystemSettingError = ResetSystemSettingErrors[keyof ResetSystemSettingErrors];
+
+export type ResetSystemSettingResponses = {
+    /**
+     * Reset platform system setting
+     */
+    200: SystemSetting;
+};
+
+export type ResetSystemSettingResponse = ResetSystemSettingResponses[keyof ResetSystemSettingResponses];
 
 export type GetRunData = {
     body?: never;

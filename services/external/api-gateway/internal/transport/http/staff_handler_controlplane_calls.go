@@ -24,6 +24,32 @@ func buildListProjectsRequest(principal *controlplanev1.Principal, limit int32) 
 	return &controlplanev1.ListProjectsRequest{Principal: principal, Limit: limit}
 }
 
+func buildListSystemSettingsRequest(principal *controlplanev1.Principal, _ struct{}) *controlplanev1.ListSystemSettingsRequest {
+	return &controlplanev1.ListSystemSettingsRequest{Principal: principal}
+}
+
+func buildGetSystemSettingRequest(principal *controlplanev1.Principal, key string) *controlplanev1.GetSystemSettingRequest {
+	return &controlplanev1.GetSystemSettingRequest{
+		Principal:  principal,
+		SettingKey: strings.TrimSpace(key),
+	}
+}
+
+func buildUpdateSystemSettingBooleanRequest(principal *controlplanev1.Principal, arg systemSettingUpdateArg) *controlplanev1.UpdateSystemSettingBooleanRequest {
+	return &controlplanev1.UpdateSystemSettingBooleanRequest{
+		Principal:    principal,
+		SettingKey:   strings.TrimSpace(arg.key),
+		BooleanValue: arg.body.BooleanValue,
+	}
+}
+
+func buildResetSystemSettingRequest(principal *controlplanev1.Principal, key string) *controlplanev1.ResetSystemSettingRequest {
+	return &controlplanev1.ResetSystemSettingRequest{
+		Principal:  principal,
+		SettingKey: strings.TrimSpace(key),
+	}
+}
+
 func buildGetProjectRequest(principal *controlplanev1.Principal, id string) *controlplanev1.GetProjectRequest {
 	return &controlplanev1.GetProjectRequest{Principal: principal, ProjectId: id}
 }
@@ -201,6 +227,22 @@ func buildGetMissionControlCommandRequest(principal *controlplanev1.Principal, c
 
 func (h *staffHandler) listProjectsCall(ctx context.Context, principal *controlplanev1.Principal, limit int32) (*controlplanev1.ListProjectsResponse, error) {
 	return callUnaryWithArg(ctx, principal, limit, buildListProjectsRequest, h.cp.Service().ListProjects)
+}
+
+func (h *staffHandler) listSystemSettingsCall(ctx context.Context, principal *controlplanev1.Principal) (*controlplanev1.ListSystemSettingsResponse, error) {
+	return callUnaryWithArg(ctx, principal, struct{}{}, buildListSystemSettingsRequest, h.cp.Service().ListSystemSettings)
+}
+
+func (h *staffHandler) getSystemSettingCall(ctx context.Context, principal *controlplanev1.Principal, key string) (*controlplanev1.SystemSetting, error) {
+	return callUnaryWithArg(ctx, principal, key, buildGetSystemSettingRequest, h.cp.Service().GetSystemSetting)
+}
+
+func (h *staffHandler) updateSystemSettingBooleanCall(ctx context.Context, principal *controlplanev1.Principal, arg systemSettingUpdateArg) (*controlplanev1.SystemSetting, error) {
+	return callUnaryWithArg(ctx, principal, arg, buildUpdateSystemSettingBooleanRequest, h.cp.Service().UpdateSystemSettingBoolean)
+}
+
+func (h *staffHandler) resetSystemSettingCall(ctx context.Context, principal *controlplanev1.Principal, key string) (*controlplanev1.SystemSetting, error) {
+	return callUnaryWithArg(ctx, principal, key, buildResetSystemSettingRequest, h.cp.Service().ResetSystemSetting)
 }
 
 func (h *staffHandler) getProjectCall(ctx context.Context, principal *controlplanev1.Principal, id string) (*controlplanev1.Project, error) {

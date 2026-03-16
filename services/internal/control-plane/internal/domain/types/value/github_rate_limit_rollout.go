@@ -1,10 +1,9 @@
 package value
 
-// GitHubRateLimitCoreFeatureFlagEnv gates persisted rate-limit wait creation and worker orchestration.
-const GitHubRateLimitCoreFeatureFlagEnv = "CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED"
+import sharedsystemsettings "github.com/codex-k8s/codex-k8s/libs/go/systemsettings"
 
-// GitHubRateLimitUIFeatureFlagEnv gates transport and UI exposure of wait projections.
-const GitHubRateLimitUIFeatureFlagEnv = "CODEXK8S_GITHUB_RATE_LIMIT_WAIT_UI_ENABLED"
+// GitHubRateLimitCoreSettingKey gates persisted rate-limit wait creation and worker orchestration.
+const GitHubRateLimitCoreSettingKey = sharedsystemsettings.GitHubRateLimitWaitEnabledKey
 
 // GitHubRateLimitRolloutState captures rollout sequencing for the S12 capability.
 type GitHubRateLimitRolloutState struct {

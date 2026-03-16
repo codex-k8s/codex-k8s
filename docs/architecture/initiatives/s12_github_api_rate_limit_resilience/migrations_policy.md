@@ -5,8 +5,8 @@ title: "GitHub API rate-limit resilience — Migrations policy Sprint S12 Day 5"
 status: approved
 owner_role: SA
 created_at: 2026-03-13
-updated_at: 2026-03-13
-related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
+updated_at: 2026-03-15
+related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 500]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -56,7 +56,7 @@ approvals:
    - resume sweep index on `(state, resume_not_before)`;
    - evidence ordering index by `wait_id`.
 3. Enable `control-plane` domain path:
-   - classification, persistence, dominant wait election and read projection under `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED=false` for read compatibility tests first;
+   - classification, persistence, dominant wait election and read projection under `system_settings.github_rate_limit_wait_enabled=false` for read compatibility tests first;
    - then enable creation of live waits.
 4. Enable `worker` sweeps:
    - resume scheduling and manual escalation for newly created waits;
@@ -67,7 +67,7 @@ approvals:
    - resume payload handoff for `agent_session_resume`.
 6. Enable edge/UI visibility:
    - `api-gateway` DTO/casters;
-   - `web-console` dominant/related wait surfaces under `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_UI_ENABLED=true`.
+   - `web-console` dominant/related wait surfaces through typed contracts after backend rollout completes.
 
 ## Как выполняются миграции при деплое
 - Production deploy order remains mandatory:
@@ -93,15 +93,14 @@ approvals:
 - If any pilot wait is created during phased rollout, it must remain readable even when UI flag is off.
 
 ## Политика feature flags
-- `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED`
+- `system_settings.github_rate_limit_wait_enabled`
   - controls live creation and sweep execution of rate-limit waits.
-- `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_UI_ENABLED`
-  - controls staff/private exposure in edge/frontend.
-- Visibility flag must never be enabled before domain flag.
+- Staff/private visibility is no longer controlled отдельным env-only gate:
+  - transport/UI rollout следует deploy order и typed DTO compatibility.
 
 ## Политика rollback
 - Safe rollback before `agent-runner` handoff:
-  - disable `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED`;
+  - disable `system_settings.github_rate_limit_wait_enabled`;
   - keep tables and indexes in place;
   - do not create new waits;
   - existing hard-failure behavior remains effective.

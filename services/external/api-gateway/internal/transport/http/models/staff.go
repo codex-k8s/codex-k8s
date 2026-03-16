@@ -7,6 +7,21 @@ type Project struct {
 	Role string `json:"role"`
 }
 
+type SystemSetting struct {
+	Key                 string  `json:"key"`
+	Section             string  `json:"section"`
+	ValueKind           string  `json:"value_kind"`
+	ReloadSemantics     string  `json:"reload_semantics"`
+	Visibility          string  `json:"visibility"`
+	BooleanValue        bool    `json:"boolean_value"`
+	DefaultBooleanValue bool    `json:"default_boolean_value"`
+	Source              string  `json:"source"`
+	Version             int64   `json:"version"`
+	UpdatedAt           *string `json:"updated_at"`
+	UpdatedByUserID     *string `json:"updated_by_user_id"`
+	UpdatedByEmail      *string `json:"updated_by_email"`
+}
+
 type Run struct {
 	ID              string             `json:"id"`
 	CorrelationID   string             `json:"correlation_id"`

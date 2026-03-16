@@ -55,6 +55,8 @@
 - Состояние long-running процессов, слотов, агентных запусков и блокировок хранится в PostgreSQL.
 - Данные, требующие гибкой структуры, хранятся в `JSONB`; векторный поиск использует `pgvector`.
 - Секреты платформы читаются из env; repo-токены хранятся шифрованно.
+- Новые product/runtime switches, которые должны управляться на лету, не введены как env-only flags:
+  они оформлены через typed platform settings catalog с явными reload semantics и audit trail.
 
 ## Профильные чек-листы
 - Если PR затрагивает Go: выполнен `docs/design-guidelines/go/check_list.md`.

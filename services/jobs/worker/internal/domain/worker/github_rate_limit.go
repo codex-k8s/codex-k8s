@@ -24,7 +24,7 @@ type GitHubRateLimitWaitProcessor interface {
 }
 
 func (s *Service) reconcileGitHubRateLimitWaits(ctx context.Context) error {
-	if !s.cfg.GitHubRateLimitWaitEnabled {
+	if !s.githubRateLimitWaitEnabled() {
 		return nil
 	}
 
@@ -50,4 +50,14 @@ func (s *Service) reconcileGitHubRateLimitWaits(ctx context.Context) error {
 		)
 	}
 	return nil
+}
+
+func (s *Service) githubRateLimitWaitEnabled() bool {
+	if s == nil {
+		return false
+	}
+	if s.systemSettings != nil {
+		return s.systemSettings.GitHubRateLimitWaitEnabled()
+	}
+	return s.cfg.GitHubRateLimitWaitEnabledFallback
 }

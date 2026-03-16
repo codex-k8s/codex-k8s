@@ -265,6 +265,45 @@ message ListRunEventsResponse {
   repeated FlowEvent items = 1;
 }
 
+message SystemSetting {
+  string key = 1;
+  string section = 2;
+  string value_kind = 3;
+  string reload_semantics = 4;
+  string visibility = 5;
+  bool boolean_value = 6;
+  bool default_boolean_value = 7;
+  string source = 8;
+  int64 version = 9;
+  google.protobuf.Timestamp updated_at = 10;
+  optional string updated_by_user_id = 11;
+  optional string updated_by_email = 12;
+}
+
+message ListSystemSettingsRequest {
+  Principal principal = 1;
+}
+
+message ListSystemSettingsResponse {
+  repeated SystemSetting items = 1;
+}
+
+message GetSystemSettingRequest {
+  Principal principal = 1;
+  string setting_key = 2;
+}
+
+message UpdateSystemSettingBooleanRequest {
+  Principal principal = 1;
+  string setting_key = 2;
+  bool boolean_value = 3;
+}
+
+message ResetSystemSettingRequest {
+  Principal principal = 1;
+  string setting_key = 2;
+}
+
 message LearningFeedback {
   int64 id = 1;
   string run_id = 2;
@@ -1482,6 +1521,10 @@ service ControlPlaneService {
   rpc ResolveApprovalDecision(ResolveApprovalDecisionRequest) returns (ResolveApprovalDecisionResponse);
   rpc ListRunEvents(ListRunEventsRequest) returns (ListRunEventsResponse);
   rpc ListRunLearningFeedback(ListRunLearningFeedbackRequest) returns (ListRunLearningFeedbackResponse);
+  rpc ListSystemSettings(ListSystemSettingsRequest) returns (ListSystemSettingsResponse);
+  rpc GetSystemSetting(GetSystemSettingRequest) returns (SystemSetting);
+  rpc UpdateSystemSettingBoolean(UpdateSystemSettingBooleanRequest) returns (SystemSetting);
+  rpc ResetSystemSetting(ResetSystemSettingRequest) returns (SystemSetting);
 
   rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
   rpc CreateUser(CreateUserRequest) returns (User);

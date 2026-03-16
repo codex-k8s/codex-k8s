@@ -5,8 +5,8 @@ title: "codex-k8s — Data Model"
 status: active
 owner_role: SA
 created_at: 2026-02-06
-updated_at: 2026-03-09
-related_issues: [1, 19, 100, 247, 248, 249]
+updated_at: 2026-03-15
+related_issues: [1, 19, 100, 247, 248, 249, 500]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -19,7 +19,7 @@ approvals:
 # Data Model: codex-k8s
 
 ## TL;DR
-- Ключевые сущности: users, projects, system_settings, repositories, project_databases, agents, agent_runs, worker_instances, agent_sessions, token_usage, slots, runtime_deploy_tasks, flow_events, links, docs_meta, doc_chunks.
+- Ключевые сущности: users, projects, system_settings, system_setting_changes, repositories, project_databases, agents, agent_runs, worker_instances, agent_sessions, token_usage, slots, runtime_deploy_tasks, flow_events, links, docs_meta, doc_chunks.
 - Основные связи: user<->project (RBAC), project->repositories, project->project_databases, agent->agent_runs, issue/pr->doc links.
 - Риски миграций: ранний выбор индексов для webhook/event throughput и vector search.
 
@@ -63,14 +63,44 @@ approvals:
 
 ### Entity: system_settings
 - Назначение: глобальные настройки платформы.
-- Важные инварианты: ключ уникален.
+- Важные инварианты:
+  - ключ уникален и берётся из typed platform settings catalog;
+  - `version` монотонно растёт при каждом изменении effective value;
+  - `value_json` хранит typed persisted snapshot, а не произвольный settings blob.
 - Поля:
 
 | Field | Type | Nullable | Default | Constraints | Notes |
 |---|---|---:|---|---|---|
-| key | text | no |  | pk | |
-| value | jsonb | no | '{}'::jsonb |  | generic platform settings payload |
-| updated_at | timestamptz | no | now() |  | |
+| key | text | no |  | pk | typed setting key |
+| value_kind | text | no |  | check(boolean) | typed value contract |
+| value_json | jsonb | no |  |  | persisted effective value |
+| source | text | no |  | check(default/staff) | current owner of value |
+| version | bigint | no |  | check(>0) | durable monotonic version |
+| updated_by_user_id | uuid | yes |  | fk -> users | nullable for seeded/default values |
+| updated_by_email | text | yes |  |  | actor snapshot for audit/UI |
+| updated_at | timestamptz | no | now() |  | last durable update time |
+
+### Entity: system_setting_changes
+- Назначение: durable audit/versioning ledger для platform settings.
+- Важные инварианты:
+  - `(setting_key, version)` уникальны;
+  - `previous_value_json` nullable только для seed baseline;
+  - change log остаётся durable source для reconnect/catch-up, `LISTEN/NOTIFY` используется только как wake-up signal.
+- Поля:
+
+| Field | Type | Nullable | Default | Constraints | Notes |
+|---|---|---:|---|---|---|
+| id | bigserial | no |  | pk | |
+| setting_key | text | no |  | fk -> system_settings.key | |
+| value_kind | text | no |  | check(boolean) | |
+| value_json | jsonb | no |  |  | value after change |
+| previous_value_json | jsonb | yes |  |  | nullable for initial seed |
+| source | text | no |  | check(default/staff) | |
+| version | bigint | no |  | check(>0), unique(setting_key, version) | |
+| change_kind | text | no |  | check(seeded/updated/reset) | |
+| actor_user_id | uuid | yes |  | fk -> users | |
+| actor_email | text | yes |  |  | |
+| created_at | timestamptz | no | now() |  | |
 
 ### Entity: repositories
 - Назначение: подключённые репозитории проектов.
@@ -427,6 +457,7 @@ approvals:
 
 ## Связи
 - `system_settings` хранит глобальные platform-wide настройки
+- `system_settings` 1:N `system_setting_changes`
 - `projects` 1:N `repositories`
 - `projects` M:N `users` через `project_members`
 - `agents` 1:N `agent_runs`
@@ -443,7 +474,7 @@ approvals:
 
 ## Логическое размещение по БД-контурам (MVP)
 - PostgreSQL cluster единый.
-- Core contour: `users`, `projects`, `project_members`, `system_settings`, `repositories`, `agents`, `agent_runs`, `worker_instances`, `slots`, `runtime_deploy_tasks`, `docs_meta`, `learning_feedback`.
+- Core contour: `users`, `projects`, `project_members`, `system_settings`, `system_setting_changes`, `repositories`, `agents`, `agent_runs`, `worker_instances`, `slots`, `runtime_deploy_tasks`, `docs_meta`, `learning_feedback`.
 - Audit/chunks contour: `agent_sessions`, `token_usage`, `flow_events`, `links`, `doc_chunks`, `mcp_action_requests`.
 - Связи между контурами — через устойчивые ключи (`correlation_id`, `doc_id`), без требования к cross-contour FK.
 

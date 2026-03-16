@@ -5,8 +5,8 @@ title: "GitHub API rate-limit resilience — API contract Sprint S12 Day 5"
 status: approved
 owner_role: SA
 created_at: 2026-03-13
-updated_at: 2026-03-14
-related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431]
+updated_at: 2026-03-15
+related_issues: [366, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 500]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -210,7 +210,7 @@ approvals:
 - Day5 rollout still keeps additive discipline:
   - existing run detail / wait queue routes are extended, not replaced;
   - worker and runner must be deployed only after `control-plane` understands new wait projection;
-  - UI may temporarily ignore `wait_projection` until `CODEXK8S_GITHUB_RATE_LIMIT_WAIT_UI_ENABLED=true`.
+  - UI may temporarily ignore `wait_projection` until edge/frontend rollout completes against the typed contracts.
 
 ## Наблюдаемость
 - Logs:

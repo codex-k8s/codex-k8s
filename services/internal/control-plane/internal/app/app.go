@@ -22,6 +22,7 @@ import (
 	"github.com/codex-k8s/codex-k8s/libs/go/registry"
 	repoprovider "github.com/codex-k8s/codex-k8s/libs/go/repo/provider"
 	githubprovider "github.com/codex-k8s/codex-k8s/libs/go/repo/provider/github"
+	sharedsystemsettings "github.com/codex-k8s/codex-k8s/libs/go/systemsettings"
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	githubclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/github"
 	githubmgmtclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/githubmgmt"
@@ -37,6 +38,7 @@ import (
 	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
 	runtimeerrordomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimeerror"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
+	systemsettingsdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/systemsettings"
 	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/webhook"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/observability"
@@ -58,6 +60,7 @@ import (
 	runtimedeploytaskrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/runtimedeploytask"
 	runtimeerrorrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/runtimeerror"
 	staffrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/staffrun"
+	systemsettingrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/systemsetting"
 	userrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/user"
 	grpctransport "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/grpc"
 	mcptransport "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/transport/mcp"
@@ -76,14 +79,15 @@ func Run() error {
 	defer stop()
 
 	// DB readiness is handled by initContainer in deployment; control-plane starts fail-fast.
-	pgxPool, err := postgres.OpenPGXPool(runCtx, postgres.OpenParams{
+	dbOpenParams := postgres.OpenParams{
 		Host:     cfg.DBHost,
 		Port:     cfg.DBPort,
 		DBName:   cfg.DBName,
 		User:     cfg.DBUser,
 		Password: cfg.DBPassword,
 		SSLMode:  cfg.DBSSLMode,
-	})
+	}
+	pgxPool, err := postgres.OpenPGXPool(runCtx, dbOpenParams)
 	if err != nil {
 		return fmt.Errorf("open postgres pgx pool: %w", err)
 	}
@@ -109,6 +113,7 @@ func Run() error {
 	projectDatabases := projectdatabaserepo.NewRepository(pgxPool)
 	runtimeDeployTasks := runtimedeploytaskrepo.NewRepository(pgxPool)
 	runtimeErrors := runtimeerrorrepo.NewRepository(pgxPool)
+	systemSettingsRepo := systemsettingrepo.NewRepository(pgxPool)
 
 	tokenCrypto, err := tokencrypt.NewService(cfg.TokenEncryptionKey)
 	if err != nil {
@@ -203,6 +208,21 @@ func Run() error {
 	})
 	if err != nil {
 		return fmt.Errorf("init runstatus domain service: %w", err)
+	}
+	systemSettingsService, err := systemsettingsdomain.NewService(systemSettingsRepo)
+	if err != nil {
+		return fmt.Errorf("init system settings domain service: %w", err)
+	}
+	if err := sharedsystemsettings.StartReloadLoop(
+		runCtx,
+		sharedsystemsettings.ReloadLoopConfig{
+			DSN:         postgres.BuildDSN(dbOpenParams),
+			ListenQuery: systemsettingrepo.ListenQuery(),
+		},
+		logger,
+		systemSettingsService.RefreshCache,
+	); err != nil {
+		return fmt.Errorf("start system settings reload loop: %w", err)
 	}
 	var githubRateLimitService *githubratelimitdomain.Service
 	missionControlService, err := missioncontroldomain.NewService(missioncontroldomain.Config{
@@ -390,21 +410,17 @@ func Run() error {
 		GitHubMgmt:     githubMgmtClient,
 		RunStatus:      runStatusService,
 		RuntimeDeploy:  runtimeDeployService,
+		SystemSettings: systemSettingsService,
 	})
 	githubRateLimitService, err = githubratelimitdomain.NewService(githubratelimitdomain.Config{
-		RolloutState: valuetypes.GitHubRateLimitRolloutState{
-			CoreFeatureEnabled: cfg.GitHubRateLimitWaitEnabled,
-			SchemaReady:        cfg.GitHubRateLimitWaitEnabled,
-			DomainReady:        cfg.GitHubRateLimitWaitEnabled,
-			WorkerReady:        cfg.GitHubRateLimitWaitEnabled,
-			RunnerReady:        cfg.GitHubRateLimitWaitEnabled,
-		},
+		RolloutState: valuetypes.GitHubRateLimitRolloutState{},
 	}, githubratelimitdomain.Dependencies{
 		Runs:           agentRuns,
 		Waits:          githubRateLimitWaits,
 		FlowEvents:     flowEvents,
 		RunStatusRetry: runStatusService,
 		PlatformReplay: staffService,
+		RolloutState:   systemSettingsService,
 	})
 	if err != nil {
 		return fmt.Errorf("init github rate-limit domain service with platform replay: %w", err)

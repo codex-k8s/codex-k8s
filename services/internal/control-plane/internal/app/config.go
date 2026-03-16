@@ -122,8 +122,6 @@ type Config struct {
 	MCPTokenTTL string `env:"CODEXK8S_MCP_TOKEN_TTL" envDefault:"24h"`
 	// ControlPlaneMCPBaseURL is effective MCP endpoint included in prompt context and run env.
 	ControlPlaneMCPBaseURL string `env:"CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" envDefault:"http://codex-k8s-control-plane:8081/mcp"`
-	// GitHubRateLimitWaitEnabled gates GitHub rate-limit wait persistence and worker sweep ownership.
-	GitHubRateLimitWaitEnabled bool `env:"CODEXK8S_GITHUB_RATE_LIMIT_WAIT_ENABLED" envDefault:"false"`
 	// RunHeavyFieldsRetentionDays controls retention for heavy JSON payload fields in run/task tables.
 	RunHeavyFieldsRetentionDays int `env:"CODEXK8S_RUN_HEAVY_FIELDS_RETENTION_DAYS" envDefault:"7"`
 	// RunAgentLogsRetentionDays is kept for legacy env compatibility as fallback retention source.
