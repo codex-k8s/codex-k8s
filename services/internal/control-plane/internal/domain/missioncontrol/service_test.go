@@ -671,14 +671,17 @@ func TestReadPathQueriesStayAvailableWithoutWriteSideFlags(t *testing.T) {
 }
 
 type inMemoryRepository struct {
-	nextEntityID   int64
-	nextRelationID int64
-	nextTimelineID int64
-	nextCommandID  int64
+	nextEntityID    int64
+	nextRelationID  int64
+	nextTimelineID  int64
+	nextCommandID   int64
+	nextWatermarkID int64
 
 	entitiesByKey          map[string]Entity
 	relationsByID          map[int64]Relation
 	timelineByCompositeKey map[string]TimelineEntry
+	continuityGapsByKey    map[string]missioncontrolrepo.ContinuityGap
+	workspaceWatermarks    []missioncontrolrepo.WorkspaceWatermark
 	commandsByID           map[string]Command
 	commandIDByIntent      map[string]string
 }
@@ -688,6 +691,7 @@ func newInMemoryRepository() *inMemoryRepository {
 		entitiesByKey:          make(map[string]Entity),
 		relationsByID:          make(map[int64]Relation),
 		timelineByCompositeKey: make(map[string]TimelineEntry),
+		continuityGapsByKey:    make(map[string]missioncontrolrepo.ContinuityGap),
 		commandsByID:           make(map[string]Command),
 		commandIDByIntent:      make(map[string]string),
 	}
@@ -711,6 +715,8 @@ func (r *inMemoryRepository) UpsertEntity(_ context.Context, params missioncontr
 	existing.Title = strings.TrimSpace(params.Title)
 	existing.ActiveState = params.ActiveState
 	existing.SyncStatus = params.SyncStatus
+	existing.ContinuityStatus = params.ContinuityStatus
+	existing.CoverageClass = params.CoverageClass
 	existing.ProjectionVersion = params.ProjectionVersion
 	if existing.ProjectionVersion <= 0 {
 		existing.ProjectionVersion = 1
@@ -745,6 +751,8 @@ func (r *inMemoryRepository) UpdateEntityProjection(_ context.Context, params mi
 	existing.Title = strings.TrimSpace(params.Title)
 	existing.ActiveState = params.ActiveState
 	existing.SyncStatus = params.SyncStatus
+	existing.ContinuityStatus = params.ContinuityStatus
+	existing.CoverageClass = params.CoverageClass
 	existing.CardPayloadJSON = params.CardPayloadJSON
 	existing.DetailPayloadJSON = params.DetailPayloadJSON
 	existing.LastTimelineAt = params.LastTimelineAt
@@ -887,6 +895,70 @@ func (r *inMemoryRepository) ListTimelineEntries(_ context.Context, filter missi
 		items = items[:filter.Limit]
 	}
 	return items, nil
+}
+
+func (r *inMemoryRepository) SyncContinuityGaps(_ context.Context, params missioncontrolrepo.SyncContinuityGapsParams) error {
+	projectID := strings.TrimSpace(params.ProjectID)
+	desired := make(map[string]missioncontrolrepo.ContinuityGap, len(params.DesiredOpen))
+	for _, seed := range params.DesiredOpen {
+		key := continuityGapKey(projectID, seed.SubjectEntityID, seed.GapKind)
+		current, found := r.continuityGapsByKey[key]
+		if !found {
+			current = missioncontrolrepo.ContinuityGap{
+				ID:              int64(len(r.continuityGapsByKey) + len(desired) + 1),
+				ProjectID:       projectID,
+				SubjectEntityID: seed.SubjectEntityID,
+			}
+		}
+		current.GapKind = seed.GapKind
+		current.Severity = seed.Severity
+		current.Status = enumtypes.MissionControlGapStatusOpen
+		current.ExpectedEntityKind = seed.ExpectedEntityKind
+		current.ExpectedStageLabel = seed.ExpectedStageLabel
+		current.ResolutionHint = seed.ResolutionHint
+		current.PayloadJSON = cloneBytes(seed.PayloadJSON)
+		current.DetectedAt = nowOr(seed.DetectedAt)
+		current.ResolvedAt = nil
+		current.UpdatedAt = nowOr(seed.DetectedAt)
+		desired[key] = current
+	}
+	for key, gap := range r.continuityGapsByKey {
+		if gap.ProjectID != projectID {
+			continue
+		}
+		if _, ok := desired[key]; ok {
+			continue
+		}
+		if gap.Status == enumtypes.MissionControlGapStatusOpen {
+			gap.Status = enumtypes.MissionControlGapStatusResolved
+			resolvedAt := nowOr(params.ResolvedAt)
+			gap.ResolvedAt = &resolvedAt
+			gap.UpdatedAt = resolvedAt
+			r.continuityGapsByKey[key] = gap
+		}
+	}
+	for key, gap := range desired {
+		r.continuityGapsByKey[key] = gap
+	}
+	return nil
+}
+
+func (r *inMemoryRepository) CreateWorkspaceWatermark(_ context.Context, params missioncontrolrepo.CreateWorkspaceWatermarkParams) (missioncontrolrepo.WorkspaceWatermark, error) {
+	r.nextWatermarkID++
+	watermark := missioncontrolrepo.WorkspaceWatermark{
+		ID:              r.nextWatermarkID,
+		ProjectID:       strings.TrimSpace(params.ProjectID),
+		WatermarkKind:   params.WatermarkKind,
+		Status:          params.Status,
+		Summary:         strings.TrimSpace(params.Summary),
+		WindowStartedAt: params.WindowStartedAt,
+		WindowEndedAt:   params.WindowEndedAt,
+		ObservedAt:      nowOr(params.ObservedAt),
+		PayloadJSON:     cloneBytes(params.PayloadJSON),
+		CreatedAt:       nowOr(params.ObservedAt),
+	}
+	r.workspaceWatermarks = append(r.workspaceWatermarks, watermark)
+	return watermark, nil
 }
 
 func (r *inMemoryRepository) CreateCommand(_ context.Context, params missioncontrolrepo.CreateCommandParams) (Command, error) {
@@ -1071,6 +1143,12 @@ func (r *inMemoryRepository) GetWarmupSummary(_ context.Context, projectID strin
 		if entity.ProjectionVersion > summary.MaxProjectionVersion {
 			summary.MaxProjectionVersion = entity.ProjectionVersion
 		}
+		if entity.EntityKind == enumtypes.MissionControlEntityKindRun {
+			summary.RunEntityCount++
+		}
+		if entity.EntityKind == enumtypes.MissionControlEntityKindAgent {
+			summary.LegacyAgentCount++
+		}
 	}
 	for _, relation := range r.relationsByID {
 		if relation.ProjectID == projectID {
@@ -1085,6 +1163,29 @@ func (r *inMemoryRepository) GetWarmupSummary(_ context.Context, projectID strin
 	for _, command := range r.commandsByID {
 		if command.ProjectID == projectID {
 			summary.CommandCount++
+		}
+	}
+	for _, gap := range r.continuityGapsByKey {
+		if gap.ProjectID != projectID {
+			continue
+		}
+		summary.ContinuityGapCount++
+		if gap.Status == enumtypes.MissionControlGapStatusOpen {
+			summary.OpenContinuityGapCount++
+		}
+		if gap.Severity == enumtypes.MissionControlGapSeverityBlocking {
+			summary.BlockingGapCount++
+		}
+		switch gap.GapKind {
+		case enumtypes.MissionControlGapKindMissingPullRequest:
+			summary.MissingPullRequestGapCount++
+		case enumtypes.MissionControlGapKindMissingFollowUpIssue:
+			summary.MissingFollowUpIssueGapCount++
+		}
+	}
+	for _, watermark := range r.workspaceWatermarks {
+		if watermark.ProjectID == projectID {
+			summary.WatermarkCount++
 		}
 	}
 	return summary, nil
@@ -1163,6 +1264,10 @@ func entityKey(projectID string, entityKind enumtypes.MissionControlEntityKind, 
 
 func commandIntentKey(projectID string, businessIntentKey string) string {
 	return strings.TrimSpace(projectID) + "/" + strings.TrimSpace(businessIntentKey)
+}
+
+func continuityGapKey(projectID string, subjectEntityID int64, gapKind enumtypes.MissionControlGapKind) string {
+	return fmt.Sprintf("%s/%d/%s", strings.TrimSpace(projectID), subjectEntityID, string(gapKind))
 }
 
 func cloneBytes(value []byte) []byte {

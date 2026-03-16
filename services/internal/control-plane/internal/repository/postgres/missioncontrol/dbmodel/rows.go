@@ -17,6 +17,8 @@ type EntityRow struct {
 	Title             string             `db:"title"`
 	ActiveState       string             `db:"active_state"`
 	SyncStatus        string             `db:"sync_status"`
+	ContinuityStatus  string             `db:"continuity_status"`
+	CoverageClass     string             `db:"coverage_class"`
 	ProjectionVersion int64              `db:"projection_version"`
 	CardPayloadJSON   []byte             `db:"card_payload_json"`
 	DetailPayloadJSON []byte             `db:"detail_payload_json"`
@@ -57,6 +59,38 @@ type TimelineEntryRow struct {
 	CreatedAt        time.Time   `db:"created_at"`
 }
 
+// ContinuityGapRow mirrors one mission_control_continuity_gaps row.
+type ContinuityGapRow struct {
+	ID                 int64              `db:"id"`
+	ProjectID          string             `db:"project_id"`
+	SubjectEntityID    int64              `db:"subject_entity_id"`
+	GapKind            string             `db:"gap_kind"`
+	Severity           string             `db:"severity"`
+	Status             string             `db:"status"`
+	ExpectedEntityKind pgtype.Text        `db:"expected_entity_kind"`
+	ExpectedStageLabel pgtype.Text        `db:"expected_stage_label"`
+	ResolutionEntityID pgtype.Int8        `db:"resolution_entity_id"`
+	ResolutionHint     pgtype.Text        `db:"resolution_hint"`
+	PayloadJSON        []byte             `db:"payload_json"`
+	DetectedAt         time.Time          `db:"detected_at"`
+	ResolvedAt         pgtype.Timestamptz `db:"resolved_at"`
+	UpdatedAt          time.Time          `db:"updated_at"`
+}
+
+// WorkspaceWatermarkRow mirrors one mission_control_workspace_watermarks row.
+type WorkspaceWatermarkRow struct {
+	ID              int64              `db:"id"`
+	ProjectID       string             `db:"project_id"`
+	WatermarkKind   string             `db:"watermark_kind"`
+	Status          string             `db:"status"`
+	Summary         string             `db:"summary"`
+	WindowStartedAt pgtype.Timestamptz `db:"window_started_at"`
+	WindowEndedAt   pgtype.Timestamptz `db:"window_ended_at"`
+	ObservedAt      time.Time          `db:"observed_at"`
+	PayloadJSON     []byte             `db:"payload_json"`
+	CreatedAt       time.Time          `db:"created_at"`
+}
+
 // CommandRow mirrors one mission_control_commands row.
 type CommandRow struct {
 	ID                  string             `db:"id"`
@@ -84,10 +118,18 @@ type CommandRow struct {
 
 // WarmupSummaryRow mirrors aggregate mission-control warmup summary values.
 type WarmupSummaryRow struct {
-	ProjectID            string `db:"project_id"`
-	EntityCount          int64  `db:"entity_count"`
-	RelationCount        int64  `db:"relation_count"`
-	TimelineEntryCount   int64  `db:"timeline_entry_count"`
-	CommandCount         int64  `db:"command_count"`
-	MaxProjectionVersion int64  `db:"max_projection_version"`
+	ProjectID                    string `db:"project_id"`
+	EntityCount                  int64  `db:"entity_count"`
+	RelationCount                int64  `db:"relation_count"`
+	TimelineEntryCount           int64  `db:"timeline_entry_count"`
+	CommandCount                 int64  `db:"command_count"`
+	MaxProjectionVersion         int64  `db:"max_projection_version"`
+	RunEntityCount               int64  `db:"run_entity_count"`
+	LegacyAgentCount             int64  `db:"legacy_agent_count"`
+	ContinuityGapCount           int64  `db:"continuity_gap_count"`
+	OpenContinuityGapCount       int64  `db:"open_continuity_gap_count"`
+	BlockingGapCount             int64  `db:"blocking_gap_count"`
+	MissingPullRequestGapCount   int64  `db:"missing_pull_request_gap_count"`
+	MissingFollowUpIssueGapCount int64  `db:"missing_follow_up_issue_gap_count"`
+	WatermarkCount               int64  `db:"watermark_count"`
 }

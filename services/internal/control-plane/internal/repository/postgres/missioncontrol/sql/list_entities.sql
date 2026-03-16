@@ -9,6 +9,8 @@ SELECT
     title,
     active_state,
     sync_status,
+    continuity_status,
+    coverage_class,
     projection_version,
     card_payload AS card_payload_json,
     detail_payload AS detail_payload_json,

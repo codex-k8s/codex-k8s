@@ -48,6 +48,21 @@ var queryUpsertTimelineEntry string
 //go:embed sql/list_timeline_entries.sql
 var queryListTimelineEntries string
 
+//go:embed sql/select_open_continuity_gaps.sql
+var querySelectOpenContinuityGaps string
+
+//go:embed sql/insert_continuity_gap.sql
+var queryInsertContinuityGap string
+
+//go:embed sql/update_continuity_gap.sql
+var queryUpdateContinuityGap string
+
+//go:embed sql/resolve_continuity_gap.sql
+var queryResolveContinuityGap string
+
+//go:embed sql/insert_workspace_watermark.sql
+var queryInsertWorkspaceWatermark string
+
 //go:embed sql/insert_command.sql
 var queryInsertCommand string
 
@@ -103,6 +118,8 @@ func (r *Repository) UpsertEntity(ctx context.Context, params domainrepo.UpsertE
 		timestamptzOrNil(normalized.ProjectedAt),
 		timestamptzPtrOrNil(normalized.StaleAfter),
 		string(normalized.SyncStatus),
+		string(normalized.ContinuityStatus),
+		string(normalized.CoverageClass),
 	)
 	if err != nil {
 		return domainrepo.Entity{}, fmt.Errorf("upsert mission control entity: %w", err)
@@ -127,6 +144,8 @@ func (r *Repository) UpdateEntityProjection(ctx context.Context, params domainre
 		normalized.Title,
 		string(normalized.ActiveState),
 		string(normalized.SyncStatus),
+		string(normalized.ContinuityStatus),
+		string(normalized.CoverageClass),
 		jsonOrEmptyObject(normalized.CardPayloadJSON),
 		jsonOrEmptyObject(normalized.DetailPayloadJSON),
 		timestamptzPtrOrNil(normalized.LastTimelineAt),
@@ -324,6 +343,115 @@ func (r *Repository) ListTimelineEntries(ctx context.Context, filter domainrepo.
 		out = append(out, fromTimelineEntryRow(item))
 	}
 	return out, nil
+}
+
+// SyncContinuityGaps reconciles open continuity gaps for one project.
+func (r *Repository) SyncContinuityGaps(ctx context.Context, params domainrepo.SyncContinuityGapsParams) error {
+	normalized := normalizeContinuityGapSyncParams(params)
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin mission control continuity-gap sync: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	rows, err := tx.Query(ctx, querySelectOpenContinuityGaps, normalized.ProjectID)
+	if err != nil {
+		return fmt.Errorf("query open mission control continuity gaps: %w", err)
+	}
+	currentRows, err := pgx.CollectRows(rows, pgx.RowToStructByName[dbmodel.ContinuityGapRow])
+	if err != nil {
+		return fmt.Errorf("collect open mission control continuity gaps: %w", err)
+	}
+
+	existingByKey := make(map[string]domainrepo.ContinuityGap, len(currentRows))
+	for _, row := range currentRows {
+		item := fromContinuityGapRow(row)
+		existingByKey[continuityGapKey(item.SubjectEntityID, item.GapKind)] = item
+	}
+
+	desiredByKey := make(map[string]domainrepo.ContinuityGapSeed, len(normalized.DesiredOpen))
+	for _, seed := range normalized.DesiredOpen {
+		desiredByKey[continuityGapKey(seed.SubjectEntityID, seed.GapKind)] = seed
+	}
+
+	for key, existing := range existingByKey {
+		if _, ok := desiredByKey[key]; ok {
+			continue
+		}
+		if _, err := tx.Exec(ctx, queryResolveContinuityGap, normalized.ProjectID, existing.ID, timestamptzOrNil(normalized.ResolvedAt)); err != nil {
+			return fmt.Errorf("resolve mission control continuity gap %d: %w", existing.ID, err)
+		}
+	}
+
+	for key, seed := range desiredByKey {
+		now := timestamptzOrNil(seed.DetectedAt)
+		if existing, ok := existingByKey[key]; ok {
+			if _, err := tx.Exec(
+				ctx,
+				queryUpdateContinuityGap,
+				normalized.ProjectID,
+				existing.ID,
+				string(seed.Severity),
+				nullableEntityKind(seed.ExpectedEntityKind),
+				nullableText(seed.ExpectedStageLabel),
+				nullableText(seed.ResolutionHint),
+				jsonOrEmptyObject(seed.PayloadJSON),
+				now,
+				now,
+			); err != nil {
+				return fmt.Errorf("update mission control continuity gap %d: %w", existing.ID, err)
+			}
+			continue
+		}
+		if _, err := tx.Exec(
+			ctx,
+			queryInsertContinuityGap,
+			normalized.ProjectID,
+			seed.SubjectEntityID,
+			string(seed.GapKind),
+			string(seed.Severity),
+			nullableEntityKind(seed.ExpectedEntityKind),
+			nullableText(seed.ExpectedStageLabel),
+			nullableText(seed.ResolutionHint),
+			jsonOrEmptyObject(seed.PayloadJSON),
+			now,
+			now,
+		); err != nil {
+			return fmt.Errorf("insert mission control continuity gap: %w", err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit mission control continuity-gap sync: %w", err)
+	}
+	return nil
+}
+
+// CreateWorkspaceWatermark appends one workspace watermark snapshot.
+func (r *Repository) CreateWorkspaceWatermark(ctx context.Context, params domainrepo.CreateWorkspaceWatermarkParams) (domainrepo.WorkspaceWatermark, error) {
+	normalized := normalizeWorkspaceWatermarkCreateParams(params)
+	rows, err := r.db.Query(
+		ctx,
+		queryInsertWorkspaceWatermark,
+		normalized.ProjectID,
+		string(normalized.WatermarkKind),
+		string(normalized.Status),
+		normalized.Summary,
+		timestamptzPtrOrNil(normalized.WindowStartedAt),
+		timestamptzPtrOrNil(normalized.WindowEndedAt),
+		timestamptzOrNil(normalized.ObservedAt),
+		jsonOrEmptyObject(normalized.PayloadJSON),
+	)
+	if err != nil {
+		return domainrepo.WorkspaceWatermark{}, fmt.Errorf("insert mission control workspace watermark: %w", err)
+	}
+	row, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[dbmodel.WorkspaceWatermarkRow])
+	if err != nil {
+		return domainrepo.WorkspaceWatermark{}, fmt.Errorf("collect mission control workspace watermark: %w", err)
+	}
+	return fromWorkspaceWatermarkRow(row), nil
 }
 
 // ListCommandsAll returns mission control commands across projects for worker-owned execution scans.
@@ -551,6 +679,12 @@ func normalizeEntityUpsertParams(params domainrepo.UpsertEntityParams) domainrep
 	if normalized.SyncStatus == "" {
 		normalized.SyncStatus = enumtypes.MissionControlSyncStatusSynced
 	}
+	if normalized.ContinuityStatus == "" {
+		normalized.ContinuityStatus = enumtypes.MissionControlContinuityStatusComplete
+	}
+	if normalized.CoverageClass == "" {
+		normalized.CoverageClass = enumtypes.MissionControlCoverageClassOpenPrimary
+	}
 	if normalized.ProjectionVersion <= 0 {
 		normalized.ProjectionVersion = 1
 	}
@@ -568,6 +702,12 @@ func normalizeEntityUpdateParams(params domainrepo.UpdateEntityParams) domainrep
 	normalized.Title = strings.TrimSpace(normalized.Title)
 	if normalized.SyncStatus == "" {
 		normalized.SyncStatus = enumtypes.MissionControlSyncStatusSynced
+	}
+	if normalized.ContinuityStatus == "" {
+		normalized.ContinuityStatus = enumtypes.MissionControlContinuityStatusComplete
+	}
+	if normalized.CoverageClass == "" {
+		normalized.CoverageClass = enumtypes.MissionControlCoverageClassOpenPrimary
 	}
 	if normalized.ProjectedAt.IsZero() {
 		normalized.ProjectedAt = time.Now().UTC()
@@ -600,6 +740,36 @@ func normalizeTimelineListFilter(filter domainrepo.TimelineListFilter) domainrep
 	normalized := filter
 	normalized.ProjectID = strings.TrimSpace(normalized.ProjectID)
 	normalized.Limit = normalizeLimit(normalized.Limit)
+	return normalized
+}
+
+func normalizeContinuityGapSyncParams(params domainrepo.SyncContinuityGapsParams) domainrepo.SyncContinuityGapsParams {
+	normalized := params
+	normalized.ProjectID = strings.TrimSpace(normalized.ProjectID)
+	if normalized.ResolvedAt.IsZero() {
+		normalized.ResolvedAt = time.Now().UTC()
+	}
+	for idx := range normalized.DesiredOpen {
+		item := &normalized.DesiredOpen[idx]
+		item.ExpectedStageLabel = strings.TrimSpace(item.ExpectedStageLabel)
+		item.ResolutionHint = strings.TrimSpace(item.ResolutionHint)
+		if item.Severity == "" {
+			item.Severity = enumtypes.MissionControlGapSeverityWarning
+		}
+		if item.DetectedAt.IsZero() {
+			item.DetectedAt = normalized.ResolvedAt
+		}
+	}
+	return normalized
+}
+
+func normalizeWorkspaceWatermarkCreateParams(params domainrepo.CreateWorkspaceWatermarkParams) domainrepo.CreateWorkspaceWatermarkParams {
+	normalized := params
+	normalized.ProjectID = strings.TrimSpace(normalized.ProjectID)
+	normalized.Summary = strings.TrimSpace(normalized.Summary)
+	if normalized.ObservedAt.IsZero() {
+		normalized.ObservedAt = time.Now().UTC()
+	}
 	return normalized
 }
 
@@ -726,8 +896,20 @@ func jsonPatchArg(patch domainrepo.OptionalJSONPatch, normalize func([]byte) []b
 	return true, normalize(patch.Value)
 }
 
+func continuityGapKey(subjectEntityID int64, gapKind enumtypes.MissionControlGapKind) string {
+	return fmt.Sprintf("%d:%s", subjectEntityID, strings.TrimSpace(string(gapKind)))
+}
+
 func nullableText(value string) any {
 	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return nil
+	}
+	return trimmed
+}
+
+func nullableEntityKind(value enumtypes.MissionControlEntityKind) any {
+	trimmed := strings.TrimSpace(string(value))
 	if trimmed == "" {
 		return nil
 	}

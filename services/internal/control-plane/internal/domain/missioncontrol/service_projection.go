@@ -16,14 +16,22 @@ func (s *Service) RunWarmup(ctx context.Context, params WarmupRequest) (WarmupSu
 		return WarmupSummary{}, err
 	}
 	s.insertFlowEvent(ctx, params.CorrelationID, eventTypeMissionControlWarmupRequested, warmupEventPayload{
-		ProjectID:            summary.ProjectID,
-		RequestedBy:          params.RequestedBy,
-		CorrelationID:        params.CorrelationID,
-		EntityCount:          summary.EntityCount,
-		RelationCount:        summary.RelationCount,
-		TimelineEntryCount:   summary.TimelineEntryCount,
-		CommandCount:         summary.CommandCount,
-		MaxProjectionVersion: summary.MaxProjectionVersion,
+		ProjectID:                    summary.ProjectID,
+		RequestedBy:                  params.RequestedBy,
+		CorrelationID:                params.CorrelationID,
+		EntityCount:                  summary.EntityCount,
+		RelationCount:                summary.RelationCount,
+		TimelineEntryCount:           summary.TimelineEntryCount,
+		CommandCount:                 summary.CommandCount,
+		MaxProjectionVersion:         summary.MaxProjectionVersion,
+		RunEntityCount:               summary.RunEntityCount,
+		LegacyAgentCount:             summary.LegacyAgentCount,
+		ContinuityGapCount:           summary.ContinuityGapCount,
+		OpenContinuityGapCount:       summary.OpenContinuityGapCount,
+		BlockingGapCount:             summary.BlockingGapCount,
+		MissingPullRequestGapCount:   summary.MissingPullRequestGapCount,
+		MissingFollowUpIssueGapCount: summary.MissingFollowUpIssueGapCount,
+		WatermarkCount:               summary.WatermarkCount,
 	})
 	return summary, nil
 }

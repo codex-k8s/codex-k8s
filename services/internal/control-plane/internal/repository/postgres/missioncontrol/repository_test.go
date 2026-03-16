@@ -11,7 +11,7 @@ func TestUpdateEntityProjectionQueryGuardsProjectionVersion(t *testing.T) {
 	if !strings.Contains(queryUpdateEntityProjection, "projection_version = mission_control_entities.projection_version + 1") {
 		t.Fatal("update_entity_projection query must increment projection_version")
 	}
-	if !strings.Contains(queryUpdateEntityProjection, "AND projection_version = $14") {
+	if !strings.Contains(queryUpdateEntityProjection, "AND projection_version = $16") {
 		t.Fatal("update_entity_projection query must enforce expected projection_version")
 	}
 }
@@ -58,12 +58,31 @@ func TestWarmupSummaryQueryCountsAllFoundationTables(t *testing.T) {
 		"mission_control_entities",
 		"mission_control_relations",
 		"mission_control_timeline_entries",
+		"mission_control_continuity_gaps",
+		"mission_control_workspace_watermarks",
 		"mission_control_commands",
 		"project_id = $1::uuid",
 	}
 	for _, item := range required {
 		if !strings.Contains(queryGetWarmupSummary, item) {
 			t.Fatalf("warmup summary query must reference %s", item)
+		}
+	}
+}
+
+func TestEntityProjectionQueriesPersistContinuityAndCoverage(t *testing.T) {
+	t.Parallel()
+
+	required := []string{
+		"continuity_status",
+		"coverage_class",
+	}
+	for _, item := range required {
+		if !strings.Contains(queryUpsertEntity, item) {
+			t.Fatalf("upsert_entity query must persist %s", item)
+		}
+		if !strings.Contains(queryUpdateEntityProjection, item) {
+			t.Fatalf("update_entity_projection query must persist %s", item)
 		}
 	}
 }

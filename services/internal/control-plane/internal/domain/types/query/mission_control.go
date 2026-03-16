@@ -17,6 +17,8 @@ type MissionControlEntityUpsertParams struct {
 	Title             string
 	ActiveState       enumtypes.MissionControlActiveState
 	SyncStatus        enumtypes.MissionControlSyncStatus
+	ContinuityStatus  enumtypes.MissionControlContinuityStatus
+	CoverageClass     enumtypes.MissionControlCoverageClass
 	ProjectionVersion int64
 	CardPayloadJSON   json.RawMessage
 	DetailPayloadJSON json.RawMessage
@@ -36,6 +38,8 @@ type MissionControlEntityProjectionUpdateParams struct {
 	Title                     string
 	ActiveState               enumtypes.MissionControlActiveState
 	SyncStatus                enumtypes.MissionControlSyncStatus
+	ContinuityStatus          enumtypes.MissionControlContinuityStatus
+	CoverageClass             enumtypes.MissionControlCoverageClass
 	CardPayloadJSON           json.RawMessage
 	DetailPayloadJSON         json.RawMessage
 	LastTimelineAt            *time.Time
@@ -86,6 +90,37 @@ type MissionControlTimelineListFilter struct {
 	ProjectID string
 	EntityID  int64
 	Limit     int
+}
+
+// MissionControlContinuityGapSeed defines one desired open continuity gap.
+type MissionControlContinuityGapSeed struct {
+	SubjectEntityID    int64
+	GapKind            enumtypes.MissionControlGapKind
+	Severity           enumtypes.MissionControlGapSeverity
+	ExpectedEntityKind enumtypes.MissionControlEntityKind
+	ExpectedStageLabel string
+	ResolutionHint     string
+	PayloadJSON        json.RawMessage
+	DetectedAt         time.Time
+}
+
+// MissionControlContinuityGapSyncParams defines one project-level open-gap synchronization.
+type MissionControlContinuityGapSyncParams struct {
+	ProjectID   string
+	ResolvedAt  time.Time
+	DesiredOpen []MissionControlContinuityGapSeed
+}
+
+// MissionControlWorkspaceWatermarkCreateParams defines one append-only watermark insert.
+type MissionControlWorkspaceWatermarkCreateParams struct {
+	ProjectID       string
+	WatermarkKind   enumtypes.MissionControlWorkspaceWatermarkKind
+	Status          enumtypes.MissionControlWorkspaceWatermarkStatus
+	Summary         string
+	WindowStartedAt *time.Time
+	WindowEndedAt   *time.Time
+	ObservedAt      time.Time
+	PayloadJSON     json.RawMessage
 }
 
 // MissionControlOptionalStringPatch defines one optional string patch field.

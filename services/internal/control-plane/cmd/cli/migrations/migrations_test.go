@@ -105,6 +105,33 @@ func TestMissionControlCommandLeaseMigrationAddsClaimColumns(t *testing.T) {
 	}
 }
 
+func TestMissionControlGraphFoundationMigrationContainsWaveOneSchema(t *testing.T) {
+	content, err := os.ReadFile("20260316103000_day32_mission_control_graph_foundation.sql")
+	if err != nil {
+		t.Fatalf("read mission control graph foundation migration: %v", err)
+	}
+
+	required := []string{
+		"ADD COLUMN IF NOT EXISTS continuity_status TEXT NOT NULL DEFAULT 'complete'",
+		"ADD COLUMN IF NOT EXISTS coverage_class TEXT NOT NULL DEFAULT 'open_primary'",
+		"'run'",
+		"'spawned_run'",
+		"'produced_pull_request'",
+		"CREATE TABLE IF NOT EXISTS mission_control_continuity_gaps",
+		"CREATE TABLE IF NOT EXISTS mission_control_workspace_watermarks",
+		"uq_mission_control_continuity_gaps_open_subject_kind",
+		"idx_mission_control_workspace_watermarks_latest",
+		"entity_kind = 'agent'",
+		"active_state = 'archived'",
+	}
+	text := string(content)
+	for _, item := range required {
+		if !strings.Contains(text, item) {
+			t.Fatalf("mission control graph foundation migration must contain %q", item)
+		}
+	}
+}
+
 func TestGitHubRateLimitFoundationMigrationContainsRequiredGuards(t *testing.T) {
 	content, err := os.ReadFile("20260314110000_day30_github_rate_limit_wait_foundation.sql")
 	if err != nil {

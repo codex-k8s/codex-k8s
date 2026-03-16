@@ -18,6 +18,8 @@ type MissionControlEntity struct {
 	Title             string
 	ActiveState       enumtypes.MissionControlActiveState
 	SyncStatus        enumtypes.MissionControlSyncStatus
+	ContinuityStatus  enumtypes.MissionControlContinuityStatus
+	CoverageClass     enumtypes.MissionControlCoverageClass
 	ProjectionVersion int64
 	CardPayloadJSON   json.RawMessage
 	DetailPayloadJSON json.RawMessage
@@ -27,6 +29,38 @@ type MissionControlEntity struct {
 	StaleAfter        *time.Time
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
+}
+
+// MissionControlContinuityGap stores one persisted continuity gap for graph lineage.
+type MissionControlContinuityGap struct {
+	ID                 int64
+	ProjectID          string
+	SubjectEntityID    int64
+	GapKind            enumtypes.MissionControlGapKind
+	Severity           enumtypes.MissionControlGapSeverity
+	Status             enumtypes.MissionControlGapStatus
+	ExpectedEntityKind enumtypes.MissionControlEntityKind
+	ExpectedStageLabel string
+	ResolutionEntityID *int64
+	ResolutionHint     string
+	PayloadJSON        json.RawMessage
+	DetectedAt         time.Time
+	ResolvedAt         *time.Time
+	UpdatedAt          time.Time
+}
+
+// MissionControlWorkspaceWatermark stores one append-only workspace watermark snapshot.
+type MissionControlWorkspaceWatermark struct {
+	ID              int64
+	ProjectID       string
+	WatermarkKind   enumtypes.MissionControlWorkspaceWatermarkKind
+	Status          enumtypes.MissionControlWorkspaceWatermarkStatus
+	Summary         string
+	WindowStartedAt *time.Time
+	WindowEndedAt   *time.Time
+	ObservedAt      time.Time
+	PayloadJSON     json.RawMessage
+	CreatedAt       time.Time
 }
 
 // MissionControlRelation stores one typed graph edge between projection entities.

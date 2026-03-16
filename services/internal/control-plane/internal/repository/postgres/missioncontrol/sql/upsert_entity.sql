@@ -14,9 +14,29 @@ INSERT INTO mission_control_entities (
     provider_updated_at,
     projected_at,
     stale_after,
-    sync_status
+    sync_status,
+    continuity_status,
+    coverage_class
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, GREATEST($8::bigint, 1::bigint), $9, $10, $11, $12, COALESCE($13, NOW()), $14, $15)
+VALUES (
+    $1,
+    $2,
+    $3,
+    $4,
+    $5,
+    $6,
+    $7,
+    GREATEST($8::bigint, 1::bigint),
+    $9,
+    $10,
+    $11,
+    $12,
+    COALESCE($13, NOW()),
+    $14,
+    $15,
+    $16,
+    $17
+)
 ON CONFLICT (project_id, entity_kind, entity_external_key) DO UPDATE
 SET
     provider_kind = EXCLUDED.provider_kind,
@@ -24,6 +44,8 @@ SET
     title = EXCLUDED.title,
     active_state = EXCLUDED.active_state,
     sync_status = EXCLUDED.sync_status,
+    continuity_status = EXCLUDED.continuity_status,
+    coverage_class = EXCLUDED.coverage_class,
     projection_version = GREATEST(mission_control_entities.projection_version, EXCLUDED.projection_version),
     card_payload = EXCLUDED.card_payload,
     detail_payload = EXCLUDED.detail_payload,
@@ -42,6 +64,8 @@ RETURNING
     title,
     active_state,
     sync_status,
+    continuity_status,
+    coverage_class,
     projection_version,
     card_payload AS card_payload_json,
     detail_payload AS detail_payload_json,

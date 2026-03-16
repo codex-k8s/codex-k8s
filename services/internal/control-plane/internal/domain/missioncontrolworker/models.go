@@ -90,9 +90,12 @@ type projectionSeed struct {
 	title             string
 	activeState       enumtypes.MissionControlActiveState
 	syncStatus        enumtypes.MissionControlSyncStatus
+	continuityStatus  enumtypes.MissionControlContinuityStatus
+	coverageClass     enumtypes.MissionControlCoverageClass
 	projectionVersion int64
 	cardPayloadJSON   json.RawMessage
 	detailPayloadJSON json.RawMessage
+	lastTimelineAt    *time.Time
 	providerUpdatedAt *time.Time
 	projectedAt       time.Time
 	staleAfter        *time.Time
@@ -112,4 +115,24 @@ type timelineSeed struct {
 	occurredAt        time.Time
 	providerURL       string
 	repositoryFullRef string
+}
+
+type continuityGapSeed struct {
+	subjectEntityKey   string
+	gapKind            enumtypes.MissionControlGapKind
+	severity           enumtypes.MissionControlGapSeverity
+	expectedEntityKind enumtypes.MissionControlEntityKind
+	expectedStageLabel string
+	resolutionHint     string
+	payloadJSON        json.RawMessage
+	detectedAt         time.Time
+}
+
+type workspaceWatermarkSeed struct {
+	watermarkKind   enumtypes.MissionControlWorkspaceWatermarkKind
+	status          enumtypes.MissionControlWorkspaceWatermarkStatus
+	summary         string
+	windowStartedAt *time.Time
+	windowEndedAt   *time.Time
+	payloadJSON     json.RawMessage
 }

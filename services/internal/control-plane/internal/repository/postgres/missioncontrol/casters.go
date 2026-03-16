@@ -19,6 +19,8 @@ func fromEntityRow(row dbmodel.EntityRow) domainrepo.Entity {
 		Title:             row.Title,
 		ActiveState:       enumtypes.MissionControlActiveState(row.ActiveState),
 		SyncStatus:        enumtypes.MissionControlSyncStatus(row.SyncStatus),
+		ContinuityStatus:  enumtypes.MissionControlContinuityStatus(row.ContinuityStatus),
+		CoverageClass:     enumtypes.MissionControlCoverageClass(row.CoverageClass),
 		ProjectionVersion: row.ProjectionVersion,
 		CardPayloadJSON:   json.RawMessage(row.CardPayloadJSON),
 		DetailPayloadJSON: json.RawMessage(row.DetailPayloadJSON),
@@ -82,6 +84,58 @@ func fromTimelineEntryRow(row dbmodel.TimelineEntryRow) domainrepo.TimelineEntry
 	return item
 }
 
+func fromContinuityGapRow(row dbmodel.ContinuityGapRow) domainrepo.ContinuityGap {
+	item := domainrepo.ContinuityGap{
+		ID:              row.ID,
+		ProjectID:       row.ProjectID,
+		SubjectEntityID: row.SubjectEntityID,
+		GapKind:         enumtypes.MissionControlGapKind(row.GapKind),
+		Severity:        enumtypes.MissionControlGapSeverity(row.Severity),
+		Status:          enumtypes.MissionControlGapStatus(row.Status),
+		ResolutionHint:  row.ResolutionHint.String,
+		PayloadJSON:     json.RawMessage(row.PayloadJSON),
+		DetectedAt:      row.DetectedAt,
+		UpdatedAt:       row.UpdatedAt,
+	}
+	if row.ExpectedEntityKind.Valid {
+		item.ExpectedEntityKind = enumtypes.MissionControlEntityKind(row.ExpectedEntityKind.String)
+	}
+	if row.ExpectedStageLabel.Valid {
+		item.ExpectedStageLabel = row.ExpectedStageLabel.String
+	}
+	if row.ResolutionEntityID.Valid {
+		value := row.ResolutionEntityID.Int64
+		item.ResolutionEntityID = &value
+	}
+	if row.ResolvedAt.Valid {
+		value := row.ResolvedAt.Time
+		item.ResolvedAt = &value
+	}
+	return item
+}
+
+func fromWorkspaceWatermarkRow(row dbmodel.WorkspaceWatermarkRow) domainrepo.WorkspaceWatermark {
+	item := domainrepo.WorkspaceWatermark{
+		ID:            row.ID,
+		ProjectID:     row.ProjectID,
+		WatermarkKind: enumtypes.MissionControlWorkspaceWatermarkKind(row.WatermarkKind),
+		Status:        enumtypes.MissionControlWorkspaceWatermarkStatus(row.Status),
+		Summary:       row.Summary,
+		ObservedAt:    row.ObservedAt,
+		PayloadJSON:   json.RawMessage(row.PayloadJSON),
+		CreatedAt:     row.CreatedAt,
+	}
+	if row.WindowStartedAt.Valid {
+		value := row.WindowStartedAt.Time
+		item.WindowStartedAt = &value
+	}
+	if row.WindowEndedAt.Valid {
+		value := row.WindowEndedAt.Time
+		item.WindowEndedAt = &value
+	}
+	return item
+}
+
 func fromCommandRow(row dbmodel.CommandRow) domainrepo.Command {
 	item := domainrepo.Command{
 		ID:                 row.ID,
@@ -132,11 +186,19 @@ func fromCommandRow(row dbmodel.CommandRow) domainrepo.Command {
 
 func fromWarmupSummaryRow(row dbmodel.WarmupSummaryRow) valuetypes.MissionControlWarmupSummary {
 	return valuetypes.MissionControlWarmupSummary{
-		ProjectID:            row.ProjectID,
-		EntityCount:          row.EntityCount,
-		RelationCount:        row.RelationCount,
-		TimelineEntryCount:   row.TimelineEntryCount,
-		CommandCount:         row.CommandCount,
-		MaxProjectionVersion: row.MaxProjectionVersion,
+		ProjectID:                    row.ProjectID,
+		EntityCount:                  row.EntityCount,
+		RelationCount:                row.RelationCount,
+		TimelineEntryCount:           row.TimelineEntryCount,
+		CommandCount:                 row.CommandCount,
+		MaxProjectionVersion:         row.MaxProjectionVersion,
+		RunEntityCount:               row.RunEntityCount,
+		LegacyAgentCount:             row.LegacyAgentCount,
+		ContinuityGapCount:           row.ContinuityGapCount,
+		OpenContinuityGapCount:       row.OpenContinuityGapCount,
+		BlockingGapCount:             row.BlockingGapCount,
+		MissingPullRequestGapCount:   row.MissingPullRequestGapCount,
+		MissingFollowUpIssueGapCount: row.MissingFollowUpIssueGapCount,
+		WatermarkCount:               row.WatermarkCount,
 	}
 }

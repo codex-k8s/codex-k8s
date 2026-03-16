@@ -10,28 +10,33 @@ import (
 )
 
 type (
-	Entity                    = entitytypes.MissionControlEntity
-	Relation                  = entitytypes.MissionControlRelation
-	TimelineEntry             = entitytypes.MissionControlTimelineEntry
-	Command                   = entitytypes.MissionControlCommand
-	UpsertEntityParams        = querytypes.MissionControlEntityUpsertParams
-	UpdateEntityParams        = querytypes.MissionControlEntityProjectionUpdateParams
-	EntityListFilter          = querytypes.MissionControlEntityListFilter
-	RelationSeed              = querytypes.MissionControlRelationSeed
-	ReplaceRelationsParams    = querytypes.MissionControlRelationReplaceParams
-	UpsertTimelineEntryParams = querytypes.MissionControlTimelineEntryUpsertParams
-	TimelineListFilter        = querytypes.MissionControlTimelineListFilter
-	OptionalStringPatch       = querytypes.MissionControlOptionalStringPatch
-	OptionalTimePatch         = querytypes.MissionControlOptionalTimePatch
-	OptionalJSONPatch         = querytypes.MissionControlOptionalJSONPatch
-	CommandFailureReasonPatch = querytypes.MissionControlCommandFailureReasonPatch
-	CommandApprovalStatePatch = querytypes.MissionControlCommandApprovalStatePatch
-	ClaimCommandParams        = querytypes.MissionControlCommandClaimParams
-	CreateCommandParams       = querytypes.MissionControlCommandCreateParams
-	UpdateCommandStatusParams = querytypes.MissionControlCommandStatusUpdateParams
-	CommandListFilter         = querytypes.MissionControlCommandListFilter
-	GlobalCommandListFilter   = querytypes.MissionControlGlobalCommandListFilter
-	WarmupSummary             = valuetypes.MissionControlWarmupSummary
+	Entity                         = entitytypes.MissionControlEntity
+	ContinuityGap                  = entitytypes.MissionControlContinuityGap
+	WorkspaceWatermark             = entitytypes.MissionControlWorkspaceWatermark
+	Relation                       = entitytypes.MissionControlRelation
+	TimelineEntry                  = entitytypes.MissionControlTimelineEntry
+	Command                        = entitytypes.MissionControlCommand
+	UpsertEntityParams             = querytypes.MissionControlEntityUpsertParams
+	UpdateEntityParams             = querytypes.MissionControlEntityProjectionUpdateParams
+	EntityListFilter               = querytypes.MissionControlEntityListFilter
+	RelationSeed                   = querytypes.MissionControlRelationSeed
+	ReplaceRelationsParams         = querytypes.MissionControlRelationReplaceParams
+	UpsertTimelineEntryParams      = querytypes.MissionControlTimelineEntryUpsertParams
+	TimelineListFilter             = querytypes.MissionControlTimelineListFilter
+	SyncContinuityGapsParams       = querytypes.MissionControlContinuityGapSyncParams
+	ContinuityGapSeed              = querytypes.MissionControlContinuityGapSeed
+	CreateWorkspaceWatermarkParams = querytypes.MissionControlWorkspaceWatermarkCreateParams
+	OptionalStringPatch            = querytypes.MissionControlOptionalStringPatch
+	OptionalTimePatch              = querytypes.MissionControlOptionalTimePatch
+	OptionalJSONPatch              = querytypes.MissionControlOptionalJSONPatch
+	CommandFailureReasonPatch      = querytypes.MissionControlCommandFailureReasonPatch
+	CommandApprovalStatePatch      = querytypes.MissionControlCommandApprovalStatePatch
+	ClaimCommandParams             = querytypes.MissionControlCommandClaimParams
+	CreateCommandParams            = querytypes.MissionControlCommandCreateParams
+	UpdateCommandStatusParams      = querytypes.MissionControlCommandStatusUpdateParams
+	CommandListFilter              = querytypes.MissionControlCommandListFilter
+	GlobalCommandListFilter        = querytypes.MissionControlGlobalCommandListFilter
+	WarmupSummary                  = valuetypes.MissionControlWarmupSummary
 )
 
 // Repository persists Mission Control projection foundation under control-plane ownership.
@@ -54,6 +59,10 @@ type Repository interface {
 	UpsertTimelineEntry(ctx context.Context, params UpsertTimelineEntryParams) (TimelineEntry, error)
 	// ListTimelineEntries returns timeline entries for one entity ordered newest first.
 	ListTimelineEntries(ctx context.Context, filter TimelineListFilter) ([]TimelineEntry, error)
+	// SyncContinuityGaps reconciles open continuity gaps for one project against the desired seed set.
+	SyncContinuityGaps(ctx context.Context, params SyncContinuityGapsParams) error
+	// CreateWorkspaceWatermark appends one typed workspace watermark snapshot.
+	CreateWorkspaceWatermark(ctx context.Context, params CreateWorkspaceWatermarkParams) (WorkspaceWatermark, error)
 	// CreateCommand inserts one command-ledger row.
 	CreateCommand(ctx context.Context, params CreateCommandParams) (Command, error)
 	// GetCommandByID loads one command row by id scoped to one project.

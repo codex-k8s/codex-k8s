@@ -6,6 +6,7 @@ type MissionControlEntityKind string
 const (
 	MissionControlEntityKindWorkItem    MissionControlEntityKind = "work_item"
 	MissionControlEntityKindDiscussion  MissionControlEntityKind = "discussion"
+	MissionControlEntityKindRun         MissionControlEntityKind = "run"
 	MissionControlEntityKindPullRequest MissionControlEntityKind = "pull_request"
 	MissionControlEntityKindAgent       MissionControlEntityKind = "agent"
 )
@@ -40,17 +41,42 @@ const (
 	MissionControlSyncStatusDegraded    MissionControlSyncStatus = "degraded"
 )
 
+// MissionControlContinuityStatus captures the persisted completeness summary for one entity.
+type MissionControlContinuityStatus string
+
+const (
+	MissionControlContinuityStatusComplete             MissionControlContinuityStatus = "complete"
+	MissionControlContinuityStatusMissingRun           MissionControlContinuityStatus = "missing_run"
+	MissionControlContinuityStatusMissingPullRequest   MissionControlContinuityStatus = "missing_pull_request"
+	MissionControlContinuityStatusMissingFollowUpIssue MissionControlContinuityStatus = "missing_follow_up_issue"
+	MissionControlContinuityStatusStaleProvider        MissionControlContinuityStatus = "stale_provider"
+	MissionControlContinuityStatusOutOfScope           MissionControlContinuityStatus = "out_of_scope"
+)
+
+// MissionControlCoverageClass captures whether the entity belongs to open-primary scope or bounded closed context.
+type MissionControlCoverageClass string
+
+const (
+	MissionControlCoverageClassOpenPrimary         MissionControlCoverageClass = "open_primary"
+	MissionControlCoverageClassRecentClosedContext MissionControlCoverageClass = "recent_closed_context"
+	MissionControlCoverageClassOutOfScope          MissionControlCoverageClass = "out_of_scope"
+)
+
 // MissionControlRelationKind describes one typed graph edge.
 type MissionControlRelationKind string
 
 const (
-	MissionControlRelationKindLinkedTo       MissionControlRelationKind = "linked_to"
-	MissionControlRelationKindBlocks         MissionControlRelationKind = "blocks"
-	MissionControlRelationKindBlockedBy      MissionControlRelationKind = "blocked_by"
-	MissionControlRelationKindFormalizedFrom MissionControlRelationKind = "formalized_from"
-	MissionControlRelationKindOwnedBy        MissionControlRelationKind = "owned_by"
-	MissionControlRelationKindAssignedTo     MissionControlRelationKind = "assigned_to"
-	MissionControlRelationKindTrackedBy      MissionControlRelationKind = "tracked_by_command"
+	MissionControlRelationKindLinkedTo            MissionControlRelationKind = "linked_to"
+	MissionControlRelationKindBlocks              MissionControlRelationKind = "blocks"
+	MissionControlRelationKindBlockedBy           MissionControlRelationKind = "blocked_by"
+	MissionControlRelationKindFormalizedFrom      MissionControlRelationKind = "formalized_from"
+	MissionControlRelationKindSpawnedRun          MissionControlRelationKind = "spawned_run"
+	MissionControlRelationKindProducedPullRequest MissionControlRelationKind = "produced_pull_request"
+	MissionControlRelationKindContinuesWith       MissionControlRelationKind = "continues_with"
+	MissionControlRelationKindRelatedTo           MissionControlRelationKind = "related_to"
+	MissionControlRelationKindOwnedBy             MissionControlRelationKind = "owned_by"
+	MissionControlRelationKindAssignedTo          MissionControlRelationKind = "assigned_to"
+	MissionControlRelationKindTrackedBy           MissionControlRelationKind = "tracked_by_command"
 )
 
 // MissionControlRelationSourceKind describes where one relation originated.
@@ -129,4 +155,54 @@ type MissionControlApprovalRequirement string
 const (
 	MissionControlApprovalRequirementNone        MissionControlApprovalRequirement = "none"
 	MissionControlApprovalRequirementOwnerReview MissionControlApprovalRequirement = "owner_review"
+)
+
+// MissionControlGapKind identifies one persisted continuity-gap category.
+type MissionControlGapKind string
+
+const (
+	MissionControlGapKindMissingRun           MissionControlGapKind = "missing_run"
+	MissionControlGapKindMissingPullRequest   MissionControlGapKind = "missing_pull_request"
+	MissionControlGapKindMissingFollowUpIssue MissionControlGapKind = "missing_follow_up_issue"
+	MissionControlGapKindProviderOutOfScope   MissionControlGapKind = "provider_out_of_scope"
+	MissionControlGapKindProviderStale        MissionControlGapKind = "provider_stale"
+	MissionControlGapKindOrphanNode           MissionControlGapKind = "orphan_node"
+)
+
+// MissionControlGapSeverity identifies the urgency of one continuity gap.
+type MissionControlGapSeverity string
+
+const (
+	MissionControlGapSeverityBlocking MissionControlGapSeverity = "blocking"
+	MissionControlGapSeverityWarning  MissionControlGapSeverity = "warning"
+	MissionControlGapSeverityInfo     MissionControlGapSeverity = "info"
+)
+
+// MissionControlGapStatus captures whether a continuity gap is still open.
+type MissionControlGapStatus string
+
+const (
+	MissionControlGapStatusOpen     MissionControlGapStatus = "open"
+	MissionControlGapStatusResolved MissionControlGapStatus = "resolved"
+	MissionControlGapStatusDeferred MissionControlGapStatus = "deferred"
+)
+
+// MissionControlWorkspaceWatermarkKind identifies one persisted workspace watermark lane.
+type MissionControlWorkspaceWatermarkKind string
+
+const (
+	MissionControlWorkspaceWatermarkKindProviderFreshness MissionControlWorkspaceWatermarkKind = "provider_freshness"
+	MissionControlWorkspaceWatermarkKindProviderCoverage  MissionControlWorkspaceWatermarkKind = "provider_coverage"
+	MissionControlWorkspaceWatermarkKindGraphProjection   MissionControlWorkspaceWatermarkKind = "graph_projection"
+	MissionControlWorkspaceWatermarkKindLaunchPolicy      MissionControlWorkspaceWatermarkKind = "launch_policy"
+)
+
+// MissionControlWorkspaceWatermarkStatus captures the effective health of one watermark.
+type MissionControlWorkspaceWatermarkStatus string
+
+const (
+	MissionControlWorkspaceWatermarkStatusFresh      MissionControlWorkspaceWatermarkStatus = "fresh"
+	MissionControlWorkspaceWatermarkStatusStale      MissionControlWorkspaceWatermarkStatus = "stale"
+	MissionControlWorkspaceWatermarkStatusDegraded   MissionControlWorkspaceWatermarkStatus = "degraded"
+	MissionControlWorkspaceWatermarkStatusOutOfScope MissionControlWorkspaceWatermarkStatus = "out_of_scope"
 )
