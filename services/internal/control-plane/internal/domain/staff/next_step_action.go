@@ -6,15 +6,10 @@ import (
 	"slices"
 	"strings"
 
-	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
 	repoprovider "github.com/codex-k8s/codex-k8s/libs/go/repo/provider"
 	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 )
-
-var knownNextStepPRLabels = map[string]struct{}{
-	webhookdomain.DefaultNeedReviewerLabel: {},
-}
 
 // PreviewNextStepAction returns label diff preview without mutating GitHub state.
 func (s *Service) PreviewNextStepAction(ctx context.Context, principal Principal, params querytypes.NextStepActionParams) (querytypes.NextStepActionResult, error) {
@@ -149,7 +144,7 @@ func (s *Service) previewOrExecutePullRequestLabelAdd(ctx context.Context, botTo
 	if pullRequestNumber <= 0 {
 		return querytypes.NextStepActionResult{}, errs.Validation{Field: "pull_request_number", Msg: "must be positive"}
 	}
-	if _, ok := knownNextStepPRLabels[targetLabel]; !ok {
+	if !s.cfg.NextStepLabels.IsKnownPullRequestLabel(targetLabel) {
 		return querytypes.NextStepActionResult{}, errs.Validation{Field: "target_label", Msg: "must be a known pull-request label"}
 	}
 

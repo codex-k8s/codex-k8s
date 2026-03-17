@@ -140,8 +140,8 @@ func (s *Service) previewLaunchAgainstEntity(
 	if params.ExpectedProjectionVersion > 0 && entity.ProjectionVersion != params.ExpectedProjectionVersion {
 		return LaunchPreview{}, errs.FailedPrecondition{Msg: "mission control preview projection is stale"}
 	}
-	if !nextstepLabelKnown(targetLabel) {
-		return LaunchPreview{}, errs.Validation{Field: "target_label", Msg: "must be a known stage label"}
+	if !nextstepLabelKnown(threadKind, targetLabel) {
+		return LaunchPreview{}, errs.Validation{Field: "target_label", Msg: "must be a known next-step label for this thread kind"}
 	}
 
 	relevantGapIDs := previewRelevantGapIDs(graph, entity.ID)
@@ -153,7 +153,7 @@ func (s *Service) previewLaunchAgainstEntity(
 			continue
 		}
 		if gap.GapKind == enumtypes.MissionControlGapKindMissingFollowUpIssue &&
-			previewResolvesFollowUpGap(entity, params.ThreadKind, params.ThreadNumber) {
+			previewResolvesFollowUpGap(graph, gap, params.ThreadKind, params.ThreadNumber, targetLabel, params.RemovedLabels) {
 			resolvedGapIDs = append(resolvedGapIDs, gap.ID)
 			continue
 		}
@@ -170,7 +170,7 @@ func (s *Service) previewLaunchAgainstEntity(
 	}
 
 	preview := LaunchPreview{
-		ApprovalRequirement: enumtypes.MissionControlApprovalRequirementNone,
+		ApprovalRequirement: StageNextStepApprovalRequirement(entity),
 		LabelDiff: valuetypes.MissionControlLaunchPreviewLabelDiff{
 			RemovedLabels: normalizeStringSlice(params.RemovedLabels),
 			AddedLabels:   []string{targetLabel},
@@ -289,12 +289,36 @@ func openGapByID(graph workspaceGraph, gapID int64) missioncontrolrepo.Continuit
 	return missioncontrolrepo.ContinuityGap{}
 }
 
-func previewResolvesFollowUpGap(entity Entity, threadKind string, threadNumber int) bool {
+func previewResolvesFollowUpGap(
+	graph workspaceGraph,
+	gap missioncontrolrepo.ContinuityGap,
+	threadKind string,
+	threadNumber int,
+	targetLabel string,
+	removedLabels []string,
+) bool {
 	if !strings.EqualFold(strings.TrimSpace(threadKind), "issue") || threadNumber <= 0 {
 		return false
 	}
-	sourceIssueNo := currentIssueNumber(entity)
-	return sourceIssueNo > 0 && sourceIssueNo != int64(threadNumber)
+	subjectEntity, ok := graph.entityByID[gap.SubjectEntityID]
+	if !ok || subjectEntity.EntityKind != enumtypes.MissionControlEntityKindPullRequest {
+		return false
+	}
+	targetRef := guessedThreadEntityRef(subjectEntity, threadKind, threadNumber)
+	if targetRef == nil || targetRef.EntityKind != enumtypes.MissionControlEntityKindWorkItem {
+		return false
+	}
+	targetEntity, ok := entityByPublicRef(graph, targetRef.EntityKind, targetRef.EntityPublicID)
+	if !ok {
+		return false
+	}
+	if targetEntity.EntityExternalKey == pullRequestSourceIssueRef(graph, subjectEntity) {
+		return false
+	}
+	if !pullRequestReferencesIssue(graph, subjectEntity, targetEntity.EntityExternalKey) {
+		return false
+	}
+	return workItemMatchesStageAfterLabelChange(targetEntity, removedLabels, targetLabel, gap.ExpectedStageLabel)
 }
 
 func currentIssueNumber(entity Entity) int64 {
@@ -354,13 +378,13 @@ func previewFinalLabels(current []string, removed []string, targetLabel string) 
 		}
 		final = append(final, label)
 	}
-	if !slices.Contains(final, targetLabel) {
+	if targetLabel != "" && !slices.Contains(final, targetLabel) {
 		final = append(final, targetLabel)
 	}
 	slices.Sort(final)
 	return final
 }
 
-func nextstepLabelKnown(label string) bool {
-	return nextstepdomain.DefaultLabels().IsKnownStageLabel(label)
+func nextstepLabelKnown(threadKind string, label string) bool {
+	return nextstepdomain.DefaultLabels().IsKnownLabelForThreadKind(threadKind, label)
 }

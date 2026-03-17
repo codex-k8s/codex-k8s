@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
 	"time"
 
+	webhookdomain "github.com/codex-k8s/codex-k8s/libs/go/domain/webhook"
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/flowevent"
 	missioncontrolrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/missioncontrol"
@@ -49,7 +51,7 @@ func TestSubmitCommandPendingApprovalForStageNextStep(t *testing.T) {
 				ThreadKind:          "issue",
 				ThreadNumber:        370,
 				TargetLabel:         "run:qa",
-				ApprovalRequirement: enumtypes.MissionControlApprovalRequirementOwnerReview,
+				ApprovalRequirement: enumtypes.MissionControlApprovalRequirementNone,
 			},
 		},
 		RequestedAt: now,
@@ -65,6 +67,14 @@ func TestSubmitCommandPendingApprovalForStageNextStep(t *testing.T) {
 	}
 	if result.Command.ApprovalRequestID == "" {
 		t.Fatal("approval request id must be generated")
+	}
+	stored := repo.commandsByID[result.Command.ID]
+	var payload valuetypes.MissionControlCommandPayload
+	if err := json.Unmarshal(stored.PayloadJSON, &payload); err != nil {
+		t.Fatalf("json.Unmarshal() payload error = %v", err)
+	}
+	if got, want := payload.StageNextStep.ApprovalRequirement, enumtypes.MissionControlApprovalRequirementOwnerReview; got != want {
+		t.Fatalf("stored approval requirement = %s, want %s", got, want)
 	}
 	if len(result.EntityRefs) != 1 || result.EntityRefs[0].EntityPublicID != "DISC-1" {
 		t.Fatalf("unexpected entity refs: %+v", result.EntityRefs)
@@ -798,6 +808,56 @@ func seedWorkspaceProjectionGraph(
 	return workItemEntity, runEntity, pullRequestEntity
 }
 
+func seedLinkedFollowUpIssue(
+	t *testing.T,
+	repo *inMemoryRepository,
+	now time.Time,
+	pullRequestEntity Entity,
+	issueNumber int64,
+	stageLabel string,
+	labels []string,
+) Entity {
+	t.Helper()
+
+	issueRef := fmt.Sprintf("repo#%d", issueNumber)
+	payload := mustMarshalPayload(t, valuetypes.MissionControlWorkItemProjectionPayload{
+		RepositoryFullName: "repo",
+		IssueNumber:        issueNumber,
+		StageLabel:         stageLabel,
+		Labels:             labels,
+	})
+	entity, err := repo.UpsertEntity(context.Background(), missioncontrolrepo.UpsertEntityParams{
+		ProjectID:         "proj-1",
+		EntityKind:        enumtypes.MissionControlEntityKindWorkItem,
+		EntityExternalKey: issueRef,
+		ProviderKind:      enumtypes.MissionControlProviderKindGitHub,
+		Title:             fmt.Sprintf("Issue %d", issueNumber),
+		ActiveState:       enumtypes.MissionControlActiveStateWorking,
+		SyncStatus:        enumtypes.MissionControlSyncStatusSynced,
+		CoverageClass:     enumtypes.MissionControlCoverageClassOpenPrimary,
+		ProjectionVersion: 20 + issueNumber,
+		CardPayloadJSON:   payload,
+		DetailPayloadJSON: payload,
+		ProjectedAt:       now.Add(3 * time.Minute),
+		StaleAfter:        timePointerForTest(now.Add(24 * time.Hour)),
+	})
+	if err != nil {
+		t.Fatalf("seed linked follow-up issue: %v", err)
+	}
+	if err := repo.ReplaceRelationsForSource(context.Background(), missioncontrolrepo.ReplaceRelationsParams{
+		ProjectID:      "proj-1",
+		SourceEntityID: entity.ID,
+		Relations: []missioncontrolrepo.RelationSeed{{
+			TargetEntityID: pullRequestEntity.ID,
+			RelationKind:   enumtypes.MissionControlRelationKindRelatedTo,
+			SourceKind:     enumtypes.MissionControlRelationSourceKindPlatform,
+		}},
+	}); err != nil {
+		t.Fatalf("seed linked follow-up relation: %v", err)
+	}
+	return entity
+}
+
 func timePointerForTest(value time.Time) *time.Time {
 	if value.IsZero() {
 		return nil
@@ -912,7 +972,7 @@ func TestGetWorkspaceIncludesSecondaryRecentClosedContext(t *testing.T) {
 	}
 }
 
-func TestPreviewLaunchResolvesFollowUpGapWithoutCreatingCommands(t *testing.T) {
+func TestPreviewLaunchKeepsMissingFollowUpGapForUnlinkedIssue(t *testing.T) {
 	t.Parallel()
 
 	svc, repo, _, now := newTestService(t, valuetypes.MissionControlRolloutState{
@@ -920,6 +980,86 @@ func TestPreviewLaunchResolvesFollowUpGapWithoutCreatingCommands(t *testing.T) {
 		DomainReady: true,
 	})
 	_, _, pullRequestEntity := seedWorkspaceProjectionGraph(t, repo, now, workspaceGraphSeedOptions{})
+	if _, err := svc.RefreshWorkspaceProjection(context.Background(), WorkspaceRefreshParams{
+		ProjectID:  "proj-1",
+		ObservedAt: now,
+	}); err != nil {
+		t.Fatalf("RefreshWorkspaceProjection() error = %v", err)
+	}
+
+	preview, err := svc.PreviewLaunch(context.Background(), LaunchPreviewParams{
+		ProjectID:                 "proj-1",
+		NodeKind:                  enumtypes.MissionControlEntityKindPullRequest,
+		NodePublicID:              pullRequestEntity.EntityExternalKey,
+		ThreadKind:                "issue",
+		ThreadNumber:              543,
+		TargetLabel:               "run:plan",
+		ExpectedProjectionVersion: pullRequestEntity.ProjectionVersion,
+	})
+	if err != nil {
+		t.Fatalf("PreviewLaunch() error = %v", err)
+	}
+	if got, want := preview.BlockingReason, string(enumtypes.MissionControlGapKindMissingFollowUpIssue); got != want {
+		t.Fatalf("blocking reason = %q, want %q", got, want)
+	}
+	if got, want := preview.ApprovalRequirement, enumtypes.MissionControlApprovalRequirementOwnerReview; got != want {
+		t.Fatalf("approval requirement = %s, want %s", got, want)
+	}
+	if got, want := len(preview.ContinuityEffect.ResolvedGapIDs), 0; got != want {
+		t.Fatalf("resolved gap count = %d, want %d", got, want)
+	}
+	if got, want := len(preview.ContinuityEffect.RemainingGapIDs), 1; got != want {
+		t.Fatalf("remaining gap count = %d, want %d", got, want)
+	}
+	if got, want := len(repo.commandsByID), 0; got != want {
+		t.Fatalf("preview must stay read-only, commands count = %d, want %d", got, want)
+	}
+}
+
+func TestPreviewLaunchAllowsNeedReviewerForPullRequestThread(t *testing.T) {
+	t.Parallel()
+
+	svc, repo, _, now := newTestService(t, valuetypes.MissionControlRolloutState{
+		SchemaReady: true,
+		DomainReady: true,
+	})
+	_, _, pullRequestEntity := seedWorkspaceProjectionGraph(t, repo, now, workspaceGraphSeedOptions{})
+	if _, err := svc.RefreshWorkspaceProjection(context.Background(), WorkspaceRefreshParams{
+		ProjectID:  "proj-1",
+		ObservedAt: now,
+	}); err != nil {
+		t.Fatalf("RefreshWorkspaceProjection() error = %v", err)
+	}
+
+	preview, err := svc.PreviewLaunch(context.Background(), LaunchPreviewParams{
+		ProjectID:                 "proj-1",
+		NodeKind:                  enumtypes.MissionControlEntityKindPullRequest,
+		NodePublicID:              pullRequestEntity.EntityExternalKey,
+		ThreadKind:                "pull_request",
+		ThreadNumber:              18,
+		TargetLabel:               webhookdomain.DefaultNeedReviewerLabel,
+		ExpectedProjectionVersion: pullRequestEntity.ProjectionVersion,
+	})
+	if err != nil {
+		t.Fatalf("PreviewLaunch() error = %v", err)
+	}
+	if got, want := preview.ApprovalRequirement, enumtypes.MissionControlApprovalRequirementOwnerReview; got != want {
+		t.Fatalf("approval requirement = %s, want %s", got, want)
+	}
+	if got, want := preview.LabelDiff.AddedLabels, []string{webhookdomain.DefaultNeedReviewerLabel}; !slices.Equal(got, want) {
+		t.Fatalf("added labels = %v, want %v", got, want)
+	}
+}
+
+func TestPreviewLaunchResolvesLinkedFollowUpIssueWhenExpectedStageWillBeApplied(t *testing.T) {
+	t.Parallel()
+
+	svc, repo, _, now := newTestService(t, valuetypes.MissionControlRolloutState{
+		SchemaReady: true,
+		DomainReady: true,
+	})
+	_, _, pullRequestEntity := seedWorkspaceProjectionGraph(t, repo, now, workspaceGraphSeedOptions{})
+	seedLinkedFollowUpIssue(t, repo, now, pullRequestEntity, 543, "", nil)
 	if _, err := svc.RefreshWorkspaceProjection(context.Background(), WorkspaceRefreshParams{
 		ProjectID:  "proj-1",
 		ObservedAt: now,
@@ -948,8 +1088,62 @@ func TestPreviewLaunchResolvesFollowUpGapWithoutCreatingCommands(t *testing.T) {
 	if got, want := len(preview.ContinuityEffect.RemainingGapIDs), 0; got != want {
 		t.Fatalf("remaining gap count = %d, want %d", got, want)
 	}
-	if got, want := len(repo.commandsByID), 0; got != want {
-		t.Fatalf("preview must stay read-only, commands count = %d, want %d", got, want)
+}
+
+func TestRefreshWorkspaceProjectionRequiresExpectedStageLabelForFollowUpIssue(t *testing.T) {
+	t.Parallel()
+
+	svc, repo, _, now := newTestService(t, valuetypes.MissionControlRolloutState{
+		SchemaReady: true,
+		DomainReady: true,
+	})
+	_, _, pullRequestEntity := seedWorkspaceProjectionGraph(t, repo, now, workspaceGraphSeedOptions{})
+	followUpIssue := seedLinkedFollowUpIssue(t, repo, now, pullRequestEntity, 543, "", nil)
+
+	summary, err := svc.RefreshWorkspaceProjection(context.Background(), WorkspaceRefreshParams{
+		ProjectID:  "proj-1",
+		ObservedAt: now,
+	})
+	if err != nil {
+		t.Fatalf("RefreshWorkspaceProjection() error = %v", err)
+	}
+	if got, want := summary.MissingFollowUpIssueGapCount, 1; got != want {
+		t.Fatalf("missing follow-up gap count = %d, want %d", got, want)
+	}
+
+	updatedPayload := mustMarshalPayload(t, valuetypes.MissionControlWorkItemProjectionPayload{
+		RepositoryFullName: "repo",
+		IssueNumber:        543,
+		StageLabel:         "run:plan",
+		Labels:             []string{"run:plan"},
+	})
+	if _, err := repo.UpsertEntity(context.Background(), missioncontrolrepo.UpsertEntityParams{
+		ProjectID:         "proj-1",
+		EntityKind:        enumtypes.MissionControlEntityKindWorkItem,
+		EntityExternalKey: followUpIssue.EntityExternalKey,
+		ProviderKind:      enumtypes.MissionControlProviderKindGitHub,
+		Title:             "Issue 543",
+		ActiveState:       enumtypes.MissionControlActiveStateWorking,
+		SyncStatus:        enumtypes.MissionControlSyncStatusSynced,
+		CoverageClass:     enumtypes.MissionControlCoverageClassOpenPrimary,
+		ProjectionVersion: followUpIssue.ProjectionVersion + 1,
+		CardPayloadJSON:   updatedPayload,
+		DetailPayloadJSON: updatedPayload,
+		ProjectedAt:       now.Add(4 * time.Minute),
+		StaleAfter:        timePointerForTest(now.Add(24 * time.Hour)),
+	}); err != nil {
+		t.Fatalf("update linked follow-up issue: %v", err)
+	}
+
+	summary, err = svc.RefreshWorkspaceProjection(context.Background(), WorkspaceRefreshParams{
+		ProjectID:  "proj-1",
+		ObservedAt: now.Add(5 * time.Minute),
+	})
+	if err != nil {
+		t.Fatalf("RefreshWorkspaceProjection() second error = %v", err)
+	}
+	if got, want := summary.MissingFollowUpIssueGapCount, 0; got != want {
+		t.Fatalf("missing follow-up gap count after stage match = %d, want %d", got, want)
 	}
 }
 

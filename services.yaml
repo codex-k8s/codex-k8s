@@ -92,7 +92,7 @@ spec:
         - services/external/telegram-interaction-adapter
         - libs/go
     control-plane:
-      value: "0.1.150"
+      value: "0.1.151"
       bumpOn:
         - services/internal/control-plane
         - deploy/base/kaniko

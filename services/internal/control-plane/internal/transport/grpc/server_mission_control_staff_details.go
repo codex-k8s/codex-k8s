@@ -122,18 +122,19 @@ func missionControlAllowedActions(entity missioncontroldomain.Entity) []*control
 	if entity.SyncStatus == enumtypes.MissionControlSyncStatusDegraded || entity.SyncStatus == enumtypes.MissionControlSyncStatusFailed {
 		blockedReason = missionControlActionBlockedReasonDegraded
 	}
+	stageNextStepApproval := string(missioncontroldomain.StageNextStepApprovalRequirement(entity))
 
 	out := make([]*controlplanev1.MissionControlAllowedAction, 0, 4)
 	switch entity.EntityKind {
 	case enumtypes.MissionControlEntityKindWorkItem:
 		out = append(out, missionControlAllowedAction("discussion.create", "secondary", false, "none", blockedReason))
-		out = append(out, missionControlAllowedAction("stage.next_step.execute", "primary", false, "owner_review", blockedReason))
+		out = append(out, missionControlAllowedAction("stage.next_step.execute", "primary", false, stageNextStepApproval, blockedReason))
 	case enumtypes.MissionControlEntityKindDiscussion:
 		out = append(out, missionControlAllowedAction("work_item.create", "primary", false, "none", blockedReason))
 		out = append(out, missionControlAllowedAction("discussion.formalize", "secondary", false, "none", blockedReason))
-		out = append(out, missionControlAllowedAction("stage.next_step.execute", "secondary", false, "owner_review", blockedReason))
+		out = append(out, missionControlAllowedAction("stage.next_step.execute", "secondary", false, stageNextStepApproval, blockedReason))
 	case enumtypes.MissionControlEntityKindPullRequest:
-		out = append(out, missionControlAllowedAction("stage.next_step.execute", "primary", false, "owner_review", blockedReason))
+		out = append(out, missionControlAllowedAction("stage.next_step.execute", "primary", false, stageNextStepApproval, blockedReason))
 	}
 	if entity.SyncStatus == enumtypes.MissionControlSyncStatusDegraded || entity.SyncStatus == enumtypes.MissionControlSyncStatusFailed {
 		out = append(out, missionControlAllowedAction("command.retry_sync", "secondary", true, "none", ""))

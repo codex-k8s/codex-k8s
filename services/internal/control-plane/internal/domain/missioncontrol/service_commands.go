@@ -92,6 +92,7 @@ func (s *Service) SubmitCommand(ctx context.Context, params SubmitCommandParams)
 		if previewErr != nil {
 			return CommandAdmission{}, previewErr
 		}
+		normalizedPayload.StageNextStep.ApprovalRequirement = preview.ApprovalRequirement
 		if strings.TrimSpace(preview.BlockingReason) != "" {
 			return s.createBlockedCommand(ctx, params, normalizedPayload, targetEntity, entityRefs, enumtypes.MissionControlCommandFailureReasonPolicyDenied, requestedAt)
 		}

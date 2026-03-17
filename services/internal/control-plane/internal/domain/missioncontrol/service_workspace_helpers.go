@@ -729,29 +729,125 @@ func hasRelationKind(relations []Relation, kind enumtypes.MissionControlRelation
 
 func runHasLinkedFollowUpIssue(graph workspaceGraph, runEntity Entity, pullRequests []Entity) bool {
 	sourceIssueRef := runIssueRef(runEntity)
+	expectedStageLabel := nextStageLabelForRun(runEntity)
+	if strings.TrimSpace(expectedStageLabel) == "" {
+		return false
+	}
 	for _, pullRequest := range pullRequests {
-		payload, ok := decodePullRequestPayload(pullRequest)
-		if ok {
-			for _, issueRef := range payload.LinkedIssueRefs {
-				if issueRef != "" && issueRef != sourceIssueRef {
-					return true
-				}
-			}
-		}
-		for _, relation := range graph.incoming[pullRequest.ID] {
-			if relation.RelationKind != enumtypes.MissionControlRelationKindRelatedTo {
-				continue
-			}
-			relatedEntity, ok := graph.entityByID[relation.SourceEntityID]
-			if !ok || relatedEntity.EntityKind != enumtypes.MissionControlEntityKindWorkItem {
-				continue
-			}
-			if relatedEntity.EntityExternalKey != sourceIssueRef {
-				return true
-			}
+		if pullRequestHasLinkedFollowUpIssue(graph, pullRequest, sourceIssueRef, expectedStageLabel) {
+			return true
 		}
 	}
 	return false
+}
+
+func pullRequestHasLinkedFollowUpIssue(graph workspaceGraph, pullRequest Entity, sourceIssueRef string, expectedStageLabel string) bool {
+	for _, issueRef := range pullRequestLinkedIssueRefs(graph, pullRequest) {
+		if issueRef == "" || issueRef == sourceIssueRef {
+			continue
+		}
+		if workItemMatchesStage(graph, issueRef, expectedStageLabel) {
+			return true
+		}
+	}
+	return false
+}
+
+func pullRequestLinkedIssueRefs(graph workspaceGraph, pullRequest Entity) []string {
+	refs := make([]string, 0, 4)
+	if payload, ok := decodePullRequestPayload(pullRequest); ok {
+		refs = append(refs, payload.LinkedIssueRefs...)
+	}
+	for _, relation := range graph.incoming[pullRequest.ID] {
+		if relation.RelationKind != enumtypes.MissionControlRelationKindRelatedTo {
+			continue
+		}
+		relatedEntity, ok := graph.entityByID[relation.SourceEntityID]
+		if !ok || relatedEntity.EntityKind != enumtypes.MissionControlEntityKindWorkItem {
+			continue
+		}
+		refs = append(refs, relatedEntity.EntityExternalKey)
+	}
+	return normalizeStringSlice(refs)
+}
+
+func pullRequestSourceIssueRef(graph workspaceGraph, pullRequest Entity) string {
+	for _, relation := range graph.incoming[pullRequest.ID] {
+		if relation.RelationKind != enumtypes.MissionControlRelationKindProducedPullRequest {
+			continue
+		}
+		runEntity, ok := graph.entityByID[relation.SourceEntityID]
+		if !ok {
+			continue
+		}
+		if issueRef := runIssueRef(runEntity); issueRef != "" {
+			return issueRef
+		}
+	}
+	return ""
+}
+
+func pullRequestReferencesIssue(graph workspaceGraph, pullRequest Entity, issueRef string) bool {
+	normalized := strings.TrimSpace(issueRef)
+	if normalized == "" {
+		return false
+	}
+	for _, ref := range pullRequestLinkedIssueRefs(graph, pullRequest) {
+		if ref == normalized {
+			return true
+		}
+	}
+	return false
+}
+
+func workItemMatchesStage(graph workspaceGraph, issueRef string, expectedStageLabel string) bool {
+	issueRef = strings.TrimSpace(issueRef)
+	if issueRef == "" {
+		return false
+	}
+	entity, ok := entityByPublicRef(graph, enumtypes.MissionControlEntityKindWorkItem, issueRef)
+	if !ok {
+		return false
+	}
+	return workItemMatchesStageAfterLabelChange(entity, nil, "", expectedStageLabel)
+}
+
+func workItemMatchesStageAfterLabelChange(entity Entity, removedLabels []string, targetLabel string, expectedStageLabel string) bool {
+	expected := strings.ToLower(strings.TrimSpace(expectedStageLabel))
+	if expected == "" {
+		return true
+	}
+	finalLabels := previewFinalLabels(workItemEffectiveLabels(entity), removedLabels, targetLabel)
+	for _, label := range finalLabels {
+		if strings.EqualFold(strings.TrimSpace(label), expected) {
+			return true
+		}
+	}
+	return false
+}
+
+func workItemEffectiveLabels(entity Entity) []string {
+	payload, ok := decodeWorkItemPayload(entity)
+	if !ok {
+		return nil
+	}
+	labels := append([]string(nil), payload.Labels...)
+	if stageLabel := strings.TrimSpace(payload.StageLabel); stageLabel != "" {
+		labels = append(labels, stageLabel)
+	}
+	return normalizeStringSlice(labels)
+}
+
+// StageNextStepApprovalRequirement returns the approval policy for one stage.next_step.execute action.
+func StageNextStepApprovalRequirement(entity Entity) enumtypes.MissionControlApprovalRequirement {
+	switch entity.EntityKind {
+	case enumtypes.MissionControlEntityKindWorkItem,
+		enumtypes.MissionControlEntityKindDiscussion,
+		enumtypes.MissionControlEntityKindPullRequest:
+		return enumtypes.MissionControlApprovalRequirementOwnerReview
+	default:
+		return enumtypes.MissionControlApprovalRequirementNone
+	}
 }
 
 func runStageRequiresFollowUp(entity Entity) bool {
