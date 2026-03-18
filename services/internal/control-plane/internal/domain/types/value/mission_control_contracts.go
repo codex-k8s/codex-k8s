@@ -13,6 +13,13 @@ type MissionControlEntityRef struct {
 	EntityPublicID string                             `json:"entity_public_id"`
 }
 
+// MissionControlProviderReferenceView exposes the provider-facing identifier for one node.
+type MissionControlProviderReferenceView struct {
+	Provider   enumtypes.MissionControlProviderKind `json:"provider"`
+	ExternalID string                               `json:"external_id"`
+	URL        string                               `json:"url,omitempty"`
+}
+
 // MissionControlRelationView exposes one relation via public entity refs only.
 type MissionControlRelationView struct {
 	RelationKind    enumtypes.MissionControlRelationKind       `json:"relation_kind"`
@@ -95,9 +102,15 @@ type MissionControlActiveSet struct {
 
 // MissionControlEntityDetails contains one entity details payload without transport concerns.
 type MissionControlEntityDetails struct {
-	Entity    entitytypes.MissionControlEntity          `json:"entity"`
-	Relations []MissionControlRelationView              `json:"relations"`
-	Timeline  []entitytypes.MissionControlTimelineEntry `json:"timeline"`
+	Entity         entitytypes.MissionControlEntity               `json:"entity"`
+	Relations      []MissionControlRelationView                   `json:"relations"`
+	Timeline       []entitytypes.MissionControlTimelineEntry      `json:"timeline"`
+	Node           MissionControlWorkspaceNode                    `json:"node"`
+	AdjacentNodes  []MissionControlWorkspaceNode                  `json:"adjacent_nodes,omitempty"`
+	AdjacentEdges  []MissionControlWorkspaceEdge                  `json:"adjacent_edges,omitempty"`
+	ContinuityGaps []MissionControlContinuityGapView              `json:"continuity_gaps,omitempty"`
+	NodeWatermarks []entitytypes.MissionControlWorkspaceWatermark `json:"node_watermarks,omitempty"`
+	LaunchSurfaces []MissionControlLaunchSurface                  `json:"launch_surfaces,omitempty"`
 }
 
 // MissionControlCommandAdmission describes the immediate result of command admission.

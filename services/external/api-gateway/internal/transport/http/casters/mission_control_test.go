@@ -72,6 +72,164 @@ func TestMissionControlCommandRequest_DiscussionCreatePayload(t *testing.T) {
 	}
 }
 
+func TestMissionControlWorkspaceSnapshot_CastsWorkspacePayload(t *testing.T) {
+	t.Parallel()
+
+	nextCursor := "cursor-2"
+	snapshot := MissionControlWorkspaceSnapshot(&controlplanev1.MissionControlWorkspaceSnapshot{
+		SnapshotId:  "snapshot-1",
+		ViewMode:    "graph",
+		GeneratedAt: timestamppb.New(time.Unix(600, 0).UTC()),
+		EffectiveFilters: &controlplanev1.MissionControlWorkspaceFilters{
+			OpenScope:       "open_only",
+			AssignmentScope: "assigned_to_me_or_unassigned",
+			StatePreset:     "working",
+		},
+		Summary: &controlplanev1.MissionControlWorkspaceSummary{
+			RootCount:        1,
+			NodeCount:        2,
+			BlockingGapCount: 1,
+		},
+		WorkspaceWatermarks: []*controlplanev1.MissionControlWorkspaceWatermark{{
+			WatermarkKind: "provider_freshness",
+			Status:        "stale",
+			Summary:       "provider lag",
+			ObservedAt:    timestamppb.New(time.Unix(601, 0).UTC()),
+		}},
+		RootGroups: []*controlplanev1.MissionControlRootGroup{{
+			RootNodeKind:     "work_item",
+			RootNodePublicId: "issue-42",
+			RootTitle:        "Issue #42",
+			NodeRefs: []*controlplanev1.MissionControlNodeRef{{
+				NodeKind:     "work_item",
+				NodePublicId: "issue-42",
+			}},
+			HasBlockingGap: true,
+		}},
+		Nodes: []*controlplanev1.MissionControlNode{{
+			NodeKind:          "work_item",
+			NodePublicId:      "issue-42",
+			Title:             "Issue #42",
+			VisibilityTier:    "primary",
+			ActiveState:       "working",
+			ContinuityStatus:  "missing_run",
+			CoverageClass:     "open_primary",
+			RootNodePublicId:  "issue-42",
+			ColumnIndex:       1,
+			HasBlockingGap:    true,
+			Badges:            []string{"continuity_gap"},
+			ProjectionVersion: 7,
+		}},
+		Edges: []*controlplanev1.MissionControlEdge{{
+			EdgeKind:           "formalized_from",
+			SourceNodeKind:     "discussion",
+			SourceNodePublicId: "discussion-7",
+			TargetNodeKind:     "work_item",
+			TargetNodePublicId: "issue-42",
+			VisibilityTier:     "primary",
+			SourceOfTruth:      "platform",
+			IsPrimaryPath:      true,
+		}},
+		NextRootCursor: &nextCursor,
+	}, "resume-1")
+
+	if got, want := snapshot.ResumeToken, "resume-1"; got != want {
+		t.Fatalf("resume token = %q, want %q", got, want)
+	}
+	if got, want := snapshot.ViewMode, generated.MissionControlWorkspaceSnapshotViewModeGraph; got != want {
+		t.Fatalf("view mode = %q, want %q", got, want)
+	}
+	if got, want := len(snapshot.Nodes), 1; got != want {
+		t.Fatalf("nodes len = %d, want %d", got, want)
+	}
+	if got, want := snapshot.Nodes[0].ContinuityStatus, generated.MissionControlNodeContinuityStatusMissingRun; got != want {
+		t.Fatalf("continuity status = %q, want %q", got, want)
+	}
+	if got, want := len(snapshot.Edges), 1; got != want {
+		t.Fatalf("edges len = %d, want %d", got, want)
+	}
+	if got, want := snapshot.NextRootCursor, &nextCursor; got == nil || *got != *want {
+		t.Fatalf("next_root_cursor = %v, want %v", got, want)
+	}
+}
+
+func TestMissionControlNodeDetails_CastsRunPayload(t *testing.T) {
+	t.Parallel()
+
+	details, err := MissionControlNodeDetails(&controlplanev1.MissionControlNodeDetails{
+		Node: &controlplanev1.MissionControlNode{
+			NodeKind:          "run",
+			NodePublicId:      "run-1",
+			Title:             "Run #1",
+			VisibilityTier:    "primary",
+			ActiveState:       "working",
+			ContinuityStatus:  "complete",
+			CoverageClass:     "open_primary",
+			RootNodePublicId:  "issue-42",
+			ProjectionVersion: 9,
+		},
+		DetailPayload: &controlplanev1.MissionControlNodeDetails_Run{
+			Run: &controlplanev1.MissionControlRunNodeDetails{
+				RunId:              "run-1",
+				AgentKey:           "dev",
+				RunStatus:          "running",
+				RuntimeMode:        "full-env",
+				TriggerLabel:       "run:dev",
+				BuildRef:           "main",
+				CandidateNamespace: "candidate-545",
+				LinkedPullRequestRefs: []*controlplanev1.MissionControlNodeRef{{
+					NodeKind:     "pull_request",
+					NodePublicId: "pr-1",
+				}},
+			},
+		},
+		ActivityPreview: []*controlplanev1.MissionControlActivityEntry{{
+			EntryId:      "entry-1",
+			NodeKind:     "run",
+			NodePublicId: "run-1",
+			SourceKind:   "platform",
+			SourceRef:    "run:1",
+			OccurredAt:   timestamppb.New(time.Unix(700, 0).UTC()),
+			Summary:      "Run started",
+		}},
+		LaunchSurfaces: []*controlplanev1.MissionControlLaunchSurface{{
+			ActionKind:          "preview_next_stage",
+			Presentation:        "primary",
+			ApprovalRequirement: "owner_review",
+			CommandTemplate: &controlplanev1.MissionControlStageNextStepTemplate{
+				ThreadKind:          "pull_request",
+				ThreadNumber:        42,
+				TargetLabel:         "state:ready",
+				RemovedLabels:       []string{"state:in-progress"},
+				ApprovalRequirement: "owner_review",
+			},
+		}},
+	})
+	if err != nil {
+		t.Fatalf("MissionControlNodeDetails() error = %v", err)
+	}
+
+	payload, err := details.DetailPayload.AsMissionControlRunNodeDetails()
+	if err != nil {
+		t.Fatalf("AsMissionControlRunNodeDetails() error = %v", err)
+	}
+	if got, want := payload.RunId, "run-1"; got != want {
+		t.Fatalf("run_id = %q, want %q", got, want)
+	}
+	if got, want := len(payload.LinkedPullRequestRefs), 1; got != want {
+		t.Fatalf("linked_pull_request_refs len = %d, want %d", got, want)
+	}
+	if got, want := len(details.ActivityPreview), 1; got != want {
+		t.Fatalf("activity_preview len = %d, want %d", got, want)
+	}
+	if got, want := len(details.LaunchSurfaces), 1; got != want {
+		t.Fatalf("launch_surfaces len = %d, want %d", got, want)
+	}
+	if got, want := details.LaunchSurfaces[0].ActionKind, generated.PreviewNextStage; got != want {
+		t.Fatalf("action kind = %q, want %q", got, want)
+	}
+}
+
 func TestMissionControlEntityDetails_CastsDiscussionPayload(t *testing.T) {
 	t.Parallel()
 

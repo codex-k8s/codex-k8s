@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc"
 
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
+	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/generated"
 	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/models"
 )
 
@@ -196,34 +197,47 @@ func buildListProjectRepositoriesRequest(principal *controlplanev1.Principal, ar
 	return &controlplanev1.ListProjectRepositoriesRequest{Principal: principal, ProjectId: arg.id, Limit: arg.limit}
 }
 
-func buildGetMissionControlDashboardRequest(principal *controlplanev1.Principal, arg missionControlDashboardArg) *controlplanev1.GetMissionControlSnapshotRequest {
-	return &controlplanev1.GetMissionControlSnapshotRequest{
+func buildGetMissionControlWorkspaceRequest(principal *controlplanev1.Principal, arg missionControlWorkspaceArg) *controlplanev1.GetMissionControlWorkspaceRequest {
+	return &controlplanev1.GetMissionControlWorkspaceRequest{
+		Principal:   principal,
+		ViewMode:    optionalStringPtr(arg.viewMode),
+		StatePreset: optionalStringPtr(arg.statePreset),
+		Search:      optionalStringPtr(arg.search),
+		Cursor:      optionalStringPtr(arg.cursor),
+		RootLimit:   arg.rootLimit,
+	}
+}
+
+func buildGetMissionControlNodeRequest(principal *controlplanev1.Principal, arg missionControlNodeArg) *controlplanev1.GetMissionControlNodeRequest {
+	return &controlplanev1.GetMissionControlNodeRequest{
 		Principal:    principal,
-		ViewMode:     optionalStringPtr(arg.viewMode),
-		ActiveFilter: optionalStringPtr(arg.activeFilter),
-		Search:       optionalStringPtr(arg.search),
+		NodeKind:     strings.TrimSpace(arg.nodeKind),
+		NodePublicId: strings.TrimSpace(arg.nodePublicID),
+	}
+}
+
+func buildListMissionControlNodeActivityRequest(principal *controlplanev1.Principal, arg missionControlActivityArg) *controlplanev1.ListMissionControlNodeActivityRequest {
+	return &controlplanev1.ListMissionControlNodeActivityRequest{
+		Principal:    principal,
+		NodeKind:     strings.TrimSpace(arg.nodeKind),
+		NodePublicId: strings.TrimSpace(arg.nodePublicID),
 		Cursor:       optionalStringPtr(arg.cursor),
 		Limit:        arg.limit,
 	}
 }
 
-func buildGetMissionControlEntityRequest(principal *controlplanev1.Principal, arg missionControlEntityArg) *controlplanev1.GetMissionControlEntityRequest {
-	return &controlplanev1.GetMissionControlEntityRequest{
-		Principal:      principal,
-		EntityKind:     strings.TrimSpace(arg.entityKind),
-		EntityPublicId: strings.TrimSpace(arg.entityPublicID),
-		TimelineLimit:  arg.timelineLimit,
+func buildPreviewMissionControlLaunchRequest(principal *controlplanev1.Principal, req generated.PreviewMissionControlLaunchJSONRequestBody) *controlplanev1.PreviewMissionControlLaunchRequest {
+	request := &controlplanev1.PreviewMissionControlLaunchRequest{
+		Principal:                 principal,
+		NodeKind:                  string(req.NodeKind),
+		NodePublicId:              req.NodePublicId,
+		ThreadKind:                string(req.ThreadKind),
+		ThreadNumber:              req.ThreadNumber,
+		TargetLabel:               req.TargetLabel,
+		RemovedLabels:             derefStringSlice(req.RemovedLabels),
+		ExpectedProjectionVersion: derefInt64(req.ExpectedProjectionVersion),
 	}
-}
-
-func buildListMissionControlTimelineRequest(principal *controlplanev1.Principal, arg missionControlTimelineArg) *controlplanev1.ListMissionControlTimelineRequest {
-	return &controlplanev1.ListMissionControlTimelineRequest{
-		Principal:      principal,
-		EntityKind:     strings.TrimSpace(arg.entityKind),
-		EntityPublicId: strings.TrimSpace(arg.entityPublicID),
-		Cursor:         optionalStringPtr(arg.cursor),
-		Limit:          arg.limit,
-	}
+	return request
 }
 
 func buildGetMissionControlCommandRequest(principal *controlplanev1.Principal, commandID string) *controlplanev1.GetMissionControlCommandRequest {
@@ -360,16 +374,20 @@ func (h *staffHandler) listProjectRepositoriesCall(ctx context.Context, principa
 	return svc.ListProjectRepositories(ctx, req)
 }
 
-func (h *staffHandler) getMissionControlDashboardCall(ctx context.Context, principal *controlplanev1.Principal, arg missionControlDashboardArg) (*controlplanev1.GetMissionControlSnapshotResponse, error) {
-	return callUnaryWithArg(ctx, principal, arg, buildGetMissionControlDashboardRequest, h.cp.Service().GetMissionControlSnapshot)
+func (h *staffHandler) getMissionControlWorkspaceCall(ctx context.Context, principal *controlplanev1.Principal, arg missionControlWorkspaceArg) (*controlplanev1.GetMissionControlWorkspaceResponse, error) {
+	return callUnaryWithArg(ctx, principal, arg, buildGetMissionControlWorkspaceRequest, h.cp.Service().GetMissionControlWorkspace)
 }
 
-func (h *staffHandler) getMissionControlEntityCall(ctx context.Context, principal *controlplanev1.Principal, arg missionControlEntityArg) (*controlplanev1.MissionControlEntityDetails, error) {
-	return callUnaryWithArg(ctx, principal, arg, buildGetMissionControlEntityRequest, h.cp.Service().GetMissionControlEntity)
+func (h *staffHandler) getMissionControlNodeCall(ctx context.Context, principal *controlplanev1.Principal, arg missionControlNodeArg) (*controlplanev1.MissionControlNodeDetails, error) {
+	return callUnaryWithArg(ctx, principal, arg, buildGetMissionControlNodeRequest, h.cp.Service().GetMissionControlNode)
 }
 
-func (h *staffHandler) listMissionControlTimelineCall(ctx context.Context, principal *controlplanev1.Principal, arg missionControlTimelineArg) (*controlplanev1.ListMissionControlTimelineResponse, error) {
-	return callUnaryWithArg(ctx, principal, arg, buildListMissionControlTimelineRequest, h.cp.Service().ListMissionControlTimeline)
+func (h *staffHandler) listMissionControlNodeActivityCall(ctx context.Context, principal *controlplanev1.Principal, arg missionControlActivityArg) (*controlplanev1.ListMissionControlNodeActivityResponse, error) {
+	return callUnaryWithArg(ctx, principal, arg, buildListMissionControlNodeActivityRequest, h.cp.Service().ListMissionControlNodeActivity)
+}
+
+func (h *staffHandler) previewMissionControlLaunchCall(ctx context.Context, principal *controlplanev1.Principal, req generated.PreviewMissionControlLaunchJSONRequestBody) (*controlplanev1.MissionControlLaunchPreview, error) {
+	return callUnaryWithArg(ctx, principal, req, buildPreviewMissionControlLaunchRequest, h.cp.Service().PreviewMissionControlLaunch)
 }
 
 func (h *staffHandler) getMissionControlCommandCall(ctx context.Context, principal *controlplanev1.Principal, commandID string) (*controlplanev1.MissionControlCommandState, error) {
@@ -404,4 +422,18 @@ func optionalStringPtr(value string) *string {
 		return nil
 	}
 	return &value
+}
+
+func derefStringSlice(value *[]string) []string {
+	if value == nil || len(*value) == 0 {
+		return nil
+	}
+	return append([]string(nil), (*value)...)
+}
+
+func derefInt64(value *int64) int64 {
+	if value == nil {
+		return 0
+	}
+	return *value
 }

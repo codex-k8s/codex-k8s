@@ -1022,6 +1022,257 @@ message ListMissionControlTimelineResponse {
   optional string next_cursor = 2;
 }
 
+message MissionControlNodeRef {
+  string node_kind = 1;
+  string node_public_id = 2;
+}
+
+message MissionControlWorkspaceFilters {
+  string open_scope = 1;
+  string assignment_scope = 2;
+  string state_preset = 3;
+  optional string search = 4;
+}
+
+message MissionControlWorkspaceSummary {
+  int32 root_count = 1;
+  int32 node_count = 2;
+  int32 blocking_gap_count = 3;
+  int32 warning_gap_count = 4;
+  int32 recent_closed_context_count = 5;
+}
+
+message MissionControlWorkspaceWatermark {
+  string watermark_kind = 1;
+  string status = 2;
+  string summary = 3;
+  google.protobuf.Timestamp observed_at = 4;
+  google.protobuf.Timestamp window_started_at = 5;
+  google.protobuf.Timestamp window_ended_at = 6;
+}
+
+message MissionControlRootGroup {
+  string root_node_kind = 1;
+  string root_node_public_id = 2;
+  string root_title = 3;
+  repeated MissionControlNodeRef node_refs = 4;
+  bool has_blocking_gap = 5;
+  google.protobuf.Timestamp latest_activity_at = 6;
+}
+
+message MissionControlNode {
+  string node_kind = 1;
+  string node_public_id = 2;
+  string title = 3;
+  string visibility_tier = 4;
+  string active_state = 5;
+  string continuity_status = 6;
+  string coverage_class = 7;
+  MissionControlProviderReference provider_reference = 8;
+  string root_node_public_id = 9;
+  int32 column_index = 10;
+  google.protobuf.Timestamp last_activity_at = 11;
+  bool has_blocking_gap = 12;
+  repeated string badges = 13;
+  int64 projection_version = 14;
+}
+
+message MissionControlEdge {
+  string edge_kind = 1;
+  string source_node_kind = 2;
+  string source_node_public_id = 3;
+  string target_node_kind = 4;
+  string target_node_public_id = 5;
+  string visibility_tier = 6;
+  string source_of_truth = 7;
+  bool is_primary_path = 8;
+}
+
+message MissionControlWorkspaceSnapshot {
+  string snapshot_id = 1;
+  string view_mode = 2;
+  google.protobuf.Timestamp generated_at = 3;
+  MissionControlWorkspaceFilters effective_filters = 4;
+  MissionControlWorkspaceSummary summary = 5;
+  repeated MissionControlWorkspaceWatermark workspace_watermarks = 6;
+  repeated MissionControlRootGroup root_groups = 7;
+  repeated MissionControlNode nodes = 8;
+  repeated MissionControlEdge edges = 9;
+  optional string next_root_cursor = 10;
+}
+
+message GetMissionControlWorkspaceRequest {
+  Principal principal = 1;
+  optional string view_mode = 2;
+  optional string state_preset = 3;
+  optional string search = 4;
+  optional string cursor = 5;
+  int32 root_limit = 6;
+}
+
+message GetMissionControlWorkspaceResponse {
+  MissionControlWorkspaceSnapshot snapshot = 1;
+}
+
+message MissionControlContinuityGap {
+  int64 gap_id = 1;
+  string gap_kind = 2;
+  string severity = 3;
+  string status = 4;
+  string subject_node_kind = 5;
+  string subject_node_public_id = 6;
+  optional string expected_node_kind = 7;
+  optional string expected_stage_label = 8;
+  google.protobuf.Timestamp detected_at = 9;
+  google.protobuf.Timestamp resolved_at = 10;
+  optional string resolution_hint = 11;
+}
+
+message MissionControlStageNextStepTemplate {
+  string thread_kind = 1;
+  int32 thread_number = 2;
+  string target_label = 3;
+  repeated string removed_labels = 4;
+  optional string display_variant = 5;
+  string approval_requirement = 6;
+  repeated int64 expected_gap_ids = 7;
+}
+
+message MissionControlLaunchSurface {
+  string action_kind = 1;
+  string presentation = 2;
+  string approval_requirement = 3;
+  optional string blocked_reason = 4;
+  MissionControlStageNextStepTemplate command_template = 5;
+}
+
+message MissionControlDiscussionNodeDetails {
+  string discussion_kind = 1;
+  string status = 2;
+  string author = 3;
+  int32 participant_count = 4;
+  string latest_comment_excerpt = 5;
+  repeated MissionControlNodeRef formalization_target_refs = 6;
+}
+
+message MissionControlWorkItemNodeDetails {
+  string repository_full_name = 1;
+  int64 issue_number = 2;
+  string stage_label = 3;
+  repeated string labels = 4;
+  repeated string assignees = 5;
+  repeated MissionControlNodeRef linked_run_refs = 6;
+  repeated MissionControlNodeRef linked_follow_up_refs = 7;
+  google.protobuf.Timestamp last_provider_sync_at = 8;
+}
+
+message MissionControlRunNodeDetails {
+  string run_id = 1;
+  string agent_key = 2;
+  string run_status = 3;
+  string runtime_mode = 4;
+  string trigger_label = 5;
+  string build_ref = 6;
+  string candidate_namespace = 7;
+  google.protobuf.Timestamp started_at = 8;
+  google.protobuf.Timestamp finished_at = 9;
+  repeated MissionControlNodeRef linked_pull_request_refs = 10;
+  repeated MissionControlNodeRef produced_issue_refs = 11;
+}
+
+message MissionControlPullRequestNodeDetails {
+  string repository_full_name = 1;
+  int64 pull_request_number = 2;
+  string branch_head = 3;
+  string branch_base = 4;
+  string merge_state = 5;
+  string review_decision = 6;
+  string checks_summary = 7;
+  repeated MissionControlNodeRef linked_issue_refs = 8;
+  MissionControlNodeRef linked_run_ref = 9;
+}
+
+message MissionControlActivityEntry {
+  string entry_id = 1;
+  string node_kind = 2;
+  string node_public_id = 3;
+  string source_kind = 4;
+  string source_ref = 5;
+  google.protobuf.Timestamp occurred_at = 6;
+  string summary = 7;
+  optional string body_markdown = 8;
+  optional string provider_url = 9;
+  bool is_read_only = 10;
+}
+
+message MissionControlNodeDetails {
+  MissionControlNode node = 1;
+  repeated MissionControlNode adjacent_nodes = 2;
+  repeated MissionControlEdge adjacent_edges = 3;
+  repeated MissionControlContinuityGap continuity_gaps = 4;
+  repeated MissionControlWorkspaceWatermark node_watermarks = 5;
+  repeated MissionControlActivityEntry activity_preview = 6;
+  repeated MissionControlLaunchSurface launch_surfaces = 7;
+  repeated MissionControlProviderDeepLink provider_deep_links = 8;
+  oneof detail_payload {
+    MissionControlDiscussionNodeDetails discussion = 9;
+    MissionControlWorkItemNodeDetails work_item = 10;
+    MissionControlRunNodeDetails run = 11;
+    MissionControlPullRequestNodeDetails pull_request = 12;
+  }
+}
+
+message GetMissionControlNodeRequest {
+  Principal principal = 1;
+  string node_kind = 2;
+  string node_public_id = 3;
+}
+
+message ListMissionControlNodeActivityRequest {
+  Principal principal = 1;
+  string node_kind = 2;
+  string node_public_id = 3;
+  optional string cursor = 4;
+  int32 limit = 5;
+}
+
+message ListMissionControlNodeActivityResponse {
+  repeated MissionControlActivityEntry items = 1;
+  optional string next_cursor = 2;
+}
+
+message PreviewMissionControlLaunchRequest {
+  Principal principal = 1;
+  string node_kind = 2;
+  string node_public_id = 3;
+  string thread_kind = 4;
+  int32 thread_number = 5;
+  string target_label = 6;
+  repeated string removed_labels = 7;
+  int64 expected_projection_version = 8;
+}
+
+message MissionControlLaunchPreviewLabelDiff {
+  repeated string removed_labels = 1;
+  repeated string added_labels = 2;
+  repeated string final_labels = 3;
+}
+
+message MissionControlLaunchPreviewContinuityEffect {
+  repeated int64 resolved_gap_ids = 1;
+  repeated int64 remaining_gap_ids = 2;
+  repeated MissionControlNodeRef resulting_node_refs = 3;
+  repeated string provider_redirects = 4;
+}
+
+message MissionControlLaunchPreview {
+  string preview_id = 1;
+  string approval_requirement = 2;
+  MissionControlLaunchPreviewLabelDiff label_diff = 3;
+  MissionControlLaunchPreviewContinuityEffect continuity_effect = 4;
+  optional string blocking_reason = 5;
+}
+
 message MissionControlStageNextStepPayload {
   string thread_kind = 1;
   int32 thread_number = 2;
@@ -1592,6 +1843,10 @@ service ControlPlaneService {
   rpc ExpireNextInteraction(ExpireNextInteractionRequest) returns (ExpireNextInteractionResponse);
   rpc ProcessNextGitHubRateLimitWait(ProcessNextGitHubRateLimitWaitRequest) returns (ProcessNextGitHubRateLimitWaitResponse);
   rpc ReportGitHubRateLimitSignal(ReportGitHubRateLimitSignalRequest) returns (ReportGitHubRateLimitSignalResponse);
+  rpc GetMissionControlWorkspace(GetMissionControlWorkspaceRequest) returns (GetMissionControlWorkspaceResponse);
+  rpc GetMissionControlNode(GetMissionControlNodeRequest) returns (MissionControlNodeDetails);
+  rpc ListMissionControlNodeActivity(ListMissionControlNodeActivityRequest) returns (ListMissionControlNodeActivityResponse);
+  rpc PreviewMissionControlLaunch(PreviewMissionControlLaunchRequest) returns (MissionControlLaunchPreview);
   rpc GetMissionControlSnapshot(GetMissionControlSnapshotRequest) returns (GetMissionControlSnapshotResponse);
   rpc GetMissionControlEntity(GetMissionControlEntityRequest) returns (MissionControlEntityDetails);
   rpc ListMissionControlTimeline(ListMissionControlTimelineRequest) returns (ListMissionControlTimelineResponse);

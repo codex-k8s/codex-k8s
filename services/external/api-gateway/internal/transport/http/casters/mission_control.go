@@ -62,6 +62,89 @@ func MissionControlTimelineItems(
 	}
 }
 
+func MissionControlWorkspaceSnapshot(
+	item *controlplanev1.MissionControlWorkspaceSnapshot,
+	resumeToken string,
+) generated.MissionControlWorkspaceSnapshot {
+	if item == nil {
+		return generated.MissionControlWorkspaceSnapshot{}
+	}
+
+	out := generated.MissionControlWorkspaceSnapshot{
+		SnapshotId:          item.GetSnapshotId(),
+		ViewMode:            generated.MissionControlWorkspaceSnapshotViewMode(item.GetViewMode()),
+		GeneratedAt:         item.GetGeneratedAt().AsTime().UTC(),
+		EffectiveFilters:    missionControlWorkspaceFilters(item.GetEffectiveFilters()),
+		Summary:             missionControlWorkspaceSummary(item.GetSummary()),
+		WorkspaceWatermarks: missionControlWorkspaceWatermarks(item.GetWorkspaceWatermarks()),
+		RootGroups:          missionControlRootGroups(item.GetRootGroups()),
+		Nodes:               missionControlNodes(item.GetNodes()),
+		Edges:               missionControlEdges(item.GetEdges()),
+		ResumeToken:         strings.TrimSpace(resumeToken),
+		NextRootCursor:      cast.OptionalTrimmedString(item.NextRootCursor),
+	}
+	return out
+}
+
+func MissionControlNodeDetails(item *controlplanev1.MissionControlNodeDetails) (generated.MissionControlNodeDetails, error) {
+	if item == nil {
+		return generated.MissionControlNodeDetails{}, nil
+	}
+
+	detailPayload, err := missionControlNodeDetailsPayload(item)
+	if err != nil {
+		return generated.MissionControlNodeDetails{}, err
+	}
+
+	return generated.MissionControlNodeDetails{
+		Node:              missionControlNode(item.GetNode()),
+		AdjacentNodes:     missionControlNodes(item.GetAdjacentNodes()),
+		AdjacentEdges:     missionControlEdges(item.GetAdjacentEdges()),
+		ContinuityGaps:    missionControlContinuityGaps(item.GetContinuityGaps()),
+		DetailPayload:     detailPayload,
+		ActivityPreview:   missionControlActivityEntries(item.GetActivityPreview()),
+		LaunchSurfaces:    missionControlLaunchSurfaces(item.GetLaunchSurfaces()),
+		NodeWatermarks:    missionControlWorkspaceWatermarks(item.GetNodeWatermarks()),
+		ProviderDeepLinks: missionControlProviderDeepLinks(item.GetProviderDeepLinks()),
+	}, nil
+}
+
+func MissionControlNodeActivityItems(
+	items []*controlplanev1.MissionControlActivityEntry,
+	nextCursor *string,
+) generated.MissionControlNodeActivityItemsResponse {
+	return generated.MissionControlNodeActivityItemsResponse{
+		Items:      missionControlActivityEntries(items),
+		NextCursor: cast.OptionalTrimmedString(nextCursor),
+	}
+}
+
+func MissionControlLaunchPreview(item *controlplanev1.MissionControlLaunchPreview) generated.MissionControlLaunchPreview {
+	if item == nil {
+		return generated.MissionControlLaunchPreview{}
+	}
+
+	out := generated.MissionControlLaunchPreview{
+		PreviewId:           item.GetPreviewId(),
+		ApprovalRequirement: generated.MissionControlLaunchPreviewApprovalRequirement(item.GetApprovalRequirement()),
+		LabelDiff: generated.MissionControlLaunchPreviewLabelDiff{
+			AddedLabels:   requiredStringSlice(item.GetLabelDiff().GetAddedLabels()),
+			RemovedLabels: requiredStringSlice(item.GetLabelDiff().GetRemovedLabels()),
+			FinalLabels:   requiredStringSlice(item.GetLabelDiff().GetFinalLabels()),
+		},
+		ContinuityEffect: generated.MissionControlLaunchPreviewContinuityEffect{
+			ResolvedGapIds:    append([]int64{}, item.GetContinuityEffect().GetResolvedGapIds()...),
+			RemainingGapIds:   append([]int64{}, item.GetContinuityEffect().GetRemainingGapIds()...),
+			ResultingNodeRefs: missionControlNodeRefs(item.GetContinuityEffect().GetResultingNodeRefs()),
+			ProviderRedirects: requiredStringSlice(item.GetContinuityEffect().GetProviderRedirects()),
+		},
+	}
+	if blockedReason := strings.TrimSpace(item.GetBlockingReason()); blockedReason != "" {
+		out.BlockingReason = &blockedReason
+	}
+	return out
+}
+
 func MissionControlCommandState(item *controlplanev1.MissionControlCommandState) generated.MissionControlCommandState {
 	if item == nil {
 		return generated.MissionControlCommandState{}
@@ -271,13 +354,7 @@ func missionControlPrimaryActor(item *controlplanev1.MissionControlPrimaryActor)
 }
 
 func missionControlEntityCardBadges(items []string) []generated.MissionControlEntityCardBadges {
-	out := make([]generated.MissionControlEntityCardBadges, 0, len(items))
-	for _, item := range items {
-		if trimmed := strings.TrimSpace(item); trimmed != "" {
-			out = append(out, generated.MissionControlEntityCardBadges(trimmed))
-		}
-	}
-	return out
+	return typedTrimmedStrings[generated.MissionControlEntityCardBadges](items)
 }
 
 func missionControlRelations(items []*controlplanev1.MissionControlRelation) []generated.MissionControlRelation {
@@ -354,6 +431,294 @@ func missionControlProviderDeepLinks(items []*controlplanev1.MissionControlProvi
 	return out
 }
 
+func missionControlWorkspaceFilters(item *controlplanev1.MissionControlWorkspaceFilters) generated.MissionControlWorkspaceFilters {
+	if item == nil {
+		return generated.MissionControlWorkspaceFilters{}
+	}
+	return generated.MissionControlWorkspaceFilters{
+		OpenScope:       generated.MissionControlWorkspaceFiltersOpenScope(item.GetOpenScope()),
+		AssignmentScope: generated.MissionControlWorkspaceFiltersAssignmentScope(item.GetAssignmentScope()),
+		StatePreset:     generated.MissionControlWorkspaceFiltersStatePreset(item.GetStatePreset()),
+		Search:          cast.OptionalTrimmedString(item.Search),
+	}
+}
+
+func missionControlWorkspaceSummary(item *controlplanev1.MissionControlWorkspaceSummary) generated.MissionControlWorkspaceSummary {
+	summary := generated.MissionControlWorkspaceSummary{}
+	if item == nil {
+		return summary
+	}
+	summary.RootCount = item.GetRootCount()
+	summary.NodeCount = item.GetNodeCount()
+	summary.BlockingGapCount = item.GetBlockingGapCount()
+	summary.WarningGapCount = item.GetWarningGapCount()
+	summary.RecentClosedContextCount = item.GetRecentClosedContextCount()
+	return summary
+}
+
+func missionControlWorkspaceWatermarks(items []*controlplanev1.MissionControlWorkspaceWatermark) []generated.MissionControlWorkspaceWatermark {
+	out := make([]generated.MissionControlWorkspaceWatermark, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		out = append(out, generated.MissionControlWorkspaceWatermark{
+			WatermarkKind:   generated.MissionControlWorkspaceWatermarkWatermarkKind(item.GetWatermarkKind()),
+			Status:          generated.MissionControlWorkspaceWatermarkStatus(item.GetStatus()),
+			Summary:         item.GetSummary(),
+			ObservedAt:      item.GetObservedAt().AsTime().UTC(),
+			WindowStartedAt: protoTimestampPtr(item.GetWindowStartedAt()),
+			WindowEndedAt:   protoTimestampPtr(item.GetWindowEndedAt()),
+		})
+	}
+	return out
+}
+
+func missionControlRootGroups(items []*controlplanev1.MissionControlRootGroup) []generated.MissionControlRootGroup {
+	out := make([]generated.MissionControlRootGroup, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		out = append(out, generated.MissionControlRootGroup{
+			RootNodeKind:     generated.MissionControlRootGroupRootNodeKind(item.GetRootNodeKind()),
+			RootNodePublicId: item.GetRootNodePublicId(),
+			RootTitle:        item.GetRootTitle(),
+			LatestActivityAt: protoTimestampPtr(item.GetLatestActivityAt()),
+			HasBlockingGap:   item.GetHasBlockingGap(),
+			NodeRefs:         missionControlNodeRefs(item.GetNodeRefs()),
+		})
+	}
+	return out
+}
+
+func missionControlNodes(items []*controlplanev1.MissionControlNode) []generated.MissionControlNode {
+	out := make([]generated.MissionControlNode, 0, len(items))
+	for _, item := range items {
+		out = append(out, missionControlNode(item))
+	}
+	return out
+}
+
+func missionControlNode(item *controlplanev1.MissionControlNode) generated.MissionControlNode {
+	if item == nil {
+		return generated.MissionControlNode{}
+	}
+	return generated.MissionControlNode{
+		NodeKind:          generated.MissionControlNodeNodeKind(item.GetNodeKind()),
+		NodePublicId:      item.GetNodePublicId(),
+		Title:             item.GetTitle(),
+		VisibilityTier:    generated.MissionControlNodeVisibilityTier(item.GetVisibilityTier()),
+		ActiveState:       generated.MissionControlNodeActiveState(item.GetActiveState()),
+		ContinuityStatus:  generated.MissionControlNodeContinuityStatus(item.GetContinuityStatus()),
+		CoverageClass:     generated.MissionControlNodeCoverageClass(item.GetCoverageClass()),
+		RootNodePublicId:  item.GetRootNodePublicId(),
+		ColumnIndex:       item.GetColumnIndex(),
+		LastActivityAt:    protoTimestampPtr(item.GetLastActivityAt()),
+		HasBlockingGap:    item.GetHasBlockingGap(),
+		ProviderReference: missionControlProviderReferencePtr(item.GetProviderReference()),
+		Badges:            missionControlNodeBadges(item.GetBadges()),
+		ProjectionVersion: item.GetProjectionVersion(),
+	}
+}
+
+func missionControlProviderReferencePtr(item *controlplanev1.MissionControlProviderReference) *generated.MissionControlProviderReference {
+	if item == nil {
+		return nil
+	}
+	out := missionControlProviderReference(item)
+	return &out
+}
+
+func missionControlNodeBadges(items []string) []generated.MissionControlNodeBadges {
+	return typedTrimmedStrings[generated.MissionControlNodeBadges](items)
+}
+
+func missionControlEdges(items []*controlplanev1.MissionControlEdge) []generated.MissionControlEdge {
+	out := make([]generated.MissionControlEdge, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		out = append(out, generated.MissionControlEdge{
+			EdgeKind:           generated.MissionControlEdgeEdgeKind(item.GetEdgeKind()),
+			SourceNodeKind:     generated.MissionControlEdgeSourceNodeKind(item.GetSourceNodeKind()),
+			SourceNodePublicId: item.GetSourceNodePublicId(),
+			TargetNodeKind:     generated.MissionControlEdgeTargetNodeKind(item.GetTargetNodeKind()),
+			TargetNodePublicId: item.GetTargetNodePublicId(),
+			VisibilityTier:     generated.MissionControlEdgeVisibilityTier(item.GetVisibilityTier()),
+			SourceOfTruth:      generated.MissionControlEdgeSourceOfTruth(item.GetSourceOfTruth()),
+			IsPrimaryPath:      item.GetIsPrimaryPath(),
+		})
+	}
+	return out
+}
+
+func missionControlContinuityGaps(items []*controlplanev1.MissionControlContinuityGap) []generated.MissionControlContinuityGap {
+	out := make([]generated.MissionControlContinuityGap, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		gap := generated.MissionControlContinuityGap{
+			GapId:               item.GetGapId(),
+			GapKind:             generated.MissionControlContinuityGapGapKind(item.GetGapKind()),
+			Severity:            generated.MissionControlContinuityGapSeverity(item.GetSeverity()),
+			Status:              generated.MissionControlContinuityGapStatus(item.GetStatus()),
+			SubjectNodeKind:     generated.MissionControlContinuityGapSubjectNodeKind(item.GetSubjectNodeKind()),
+			SubjectNodePublicId: item.GetSubjectNodePublicId(),
+			DetectedAt:          item.GetDetectedAt().AsTime().UTC(),
+			ExpectedStageLabel:  cast.OptionalTrimmedString(item.ExpectedStageLabel),
+			ResolutionHint:      cast.OptionalTrimmedString(item.ResolutionHint),
+			ResolvedAt:          protoTimestampPtr(item.GetResolvedAt()),
+		}
+		if expectedNodeKind := strings.TrimSpace(item.GetExpectedNodeKind()); expectedNodeKind != "" {
+			value := generated.MissionControlContinuityGapExpectedNodeKind(expectedNodeKind)
+			gap.ExpectedNodeKind = &value
+		}
+		out = append(out, gap)
+	}
+	return out
+}
+
+func missionControlLaunchSurfaces(items []*controlplanev1.MissionControlLaunchSurface) []generated.MissionControlLaunchSurface {
+	out := make([]generated.MissionControlLaunchSurface, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		surface := generated.MissionControlLaunchSurface{
+			ActionKind:          generated.MissionControlLaunchSurfaceActionKind(item.GetActionKind()),
+			Presentation:        generated.MissionControlLaunchSurfacePresentation(item.GetPresentation()),
+			ApprovalRequirement: generated.MissionControlLaunchSurfaceApprovalRequirement(item.GetApprovalRequirement()),
+			BlockedReason:       cast.OptionalTrimmedString(item.BlockedReason),
+		}
+		if template := missionControlStageNextStepTemplate(item.GetCommandTemplate()); template != nil {
+			surface.CommandTemplate = template
+		}
+		out = append(out, surface)
+	}
+	return out
+}
+
+func missionControlStageNextStepTemplate(item *controlplanev1.MissionControlStageNextStepTemplate) *generated.MissionControlStageNextStepTemplate {
+	if item == nil {
+		return nil
+	}
+	return &generated.MissionControlStageNextStepTemplate{
+		ThreadKind:          generated.MissionControlStageNextStepTemplateThreadKind(item.GetThreadKind()),
+		ThreadNumber:        item.GetThreadNumber(),
+		TargetLabel:         item.GetTargetLabel(),
+		RemovedLabels:       requiredStringSlice(item.GetRemovedLabels()),
+		DisplayVariant:      cast.OptionalTrimmedString(item.DisplayVariant),
+		ApprovalRequirement: generated.MissionControlStageNextStepTemplateApprovalRequirement(item.GetApprovalRequirement()),
+		ExpectedGapIds:      append([]int64{}, item.GetExpectedGapIds()...),
+	}
+}
+
+func missionControlActivityEntries(items []*controlplanev1.MissionControlActivityEntry) []generated.MissionControlActivityEntry {
+	out := make([]generated.MissionControlActivityEntry, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		out = append(out, generated.MissionControlActivityEntry{
+			EntryId:      item.GetEntryId(),
+			NodeKind:     generated.MissionControlActivityEntryNodeKind(item.GetNodeKind()),
+			NodePublicId: item.GetNodePublicId(),
+			SourceKind:   generated.MissionControlActivityEntrySourceKind(item.GetSourceKind()),
+			SourceRef:    item.GetSourceRef(),
+			OccurredAt:   item.GetOccurredAt().AsTime().UTC(),
+			Summary:      item.GetSummary(),
+			BodyMarkdown: cast.OptionalTrimmedString(item.BodyMarkdown),
+			ProviderUrl:  cast.OptionalTrimmedString(item.ProviderUrl),
+			IsReadOnly:   item.GetIsReadOnly(),
+		})
+	}
+	return out
+}
+
+func missionControlNodeRefs(items []*controlplanev1.MissionControlNodeRef) []generated.MissionControlNodeRef {
+	return mapNonNil(items, func(item *controlplanev1.MissionControlNodeRef) (generated.MissionControlNodeRef, bool) {
+		if item == nil {
+			return generated.MissionControlNodeRef{}, false
+		}
+		return generated.MissionControlNodeRef{
+			NodeKind:     generated.MissionControlNodeRefNodeKind(item.GetNodeKind()),
+			NodePublicId: item.GetNodePublicId(),
+		}, true
+	})
+}
+
+func missionControlNodeDetailsPayload(item *controlplanev1.MissionControlNodeDetails) (generated.MissionControlNodeDetailsPayload, error) {
+	var out generated.MissionControlNodeDetailsPayload
+	switch {
+	case item.GetDiscussion() != nil:
+		err := out.FromMissionControlDiscussionNodeDetails(generated.MissionControlDiscussionNodeDetails{
+			DiscussionKind:          item.GetDiscussion().GetDiscussionKind(),
+			Status:                  item.GetDiscussion().GetStatus(),
+			Author:                  item.GetDiscussion().GetAuthor(),
+			ParticipantCount:        item.GetDiscussion().GetParticipantCount(),
+			LatestCommentExcerpt:    item.GetDiscussion().GetLatestCommentExcerpt(),
+			FormalizationTargetRefs: missionControlNodeRefs(item.GetDiscussion().GetFormalizationTargetRefs()),
+		})
+		return out, err
+	case item.GetWorkItem() != nil:
+		err := out.FromMissionControlWorkItemNodeDetails(generated.MissionControlWorkItemNodeDetails{
+			RepositoryFullName: item.GetWorkItem().GetRepositoryFullName(),
+			IssueNumber:        item.GetWorkItem().GetIssueNumber(),
+			StageLabel:         item.GetWorkItem().GetStageLabel(),
+			Labels:             requiredStringSlice(item.GetWorkItem().GetLabels()),
+			Assignees:          requiredStringSlice(item.GetWorkItem().GetAssignees()),
+			LastProviderSyncAt: protoTimestampPtr(item.GetWorkItem().GetLastProviderSyncAt()),
+			LinkedRunRefs:      missionControlNodeRefs(item.GetWorkItem().GetLinkedRunRefs()),
+			LinkedFollowUpRefs: missionControlNodeRefs(item.GetWorkItem().GetLinkedFollowUpRefs()),
+		})
+		return out, err
+	case item.GetRun() != nil:
+		err := out.FromMissionControlRunNodeDetails(generated.MissionControlRunNodeDetails{
+			RunId:                 item.GetRun().GetRunId(),
+			AgentKey:              item.GetRun().GetAgentKey(),
+			RunStatus:             item.GetRun().GetRunStatus(),
+			RuntimeMode:           item.GetRun().GetRuntimeMode(),
+			TriggerLabel:          item.GetRun().GetTriggerLabel(),
+			BuildRef:              item.GetRun().GetBuildRef(),
+			CandidateNamespace:    item.GetRun().GetCandidateNamespace(),
+			StartedAt:             protoTimestampPtr(item.GetRun().GetStartedAt()),
+			FinishedAt:            protoTimestampPtr(item.GetRun().GetFinishedAt()),
+			LinkedPullRequestRefs: missionControlNodeRefs(item.GetRun().GetLinkedPullRequestRefs()),
+			ProducedIssueRefs:     missionControlNodeRefs(item.GetRun().GetProducedIssueRefs()),
+		})
+		return out, err
+	case item.GetPullRequest() != nil:
+		err := out.FromMissionControlPullRequestNodeDetails(generated.MissionControlPullRequestNodeDetails{
+			RepositoryFullName: item.GetPullRequest().GetRepositoryFullName(),
+			PullRequestNumber:  item.GetPullRequest().GetPullRequestNumber(),
+			BranchHead:         item.GetPullRequest().GetBranchHead(),
+			BranchBase:         item.GetPullRequest().GetBranchBase(),
+			MergeState:         item.GetPullRequest().GetMergeState(),
+			ReviewDecision:     item.GetPullRequest().GetReviewDecision(),
+			ChecksSummary:      item.GetPullRequest().GetChecksSummary(),
+			LinkedIssueRefs:    missionControlNodeRefs(item.GetPullRequest().GetLinkedIssueRefs()),
+			LinkedRunRef:       missionControlNodeRefPtr(item.GetPullRequest().GetLinkedRunRef()),
+		})
+		return out, err
+	default:
+		return generated.MissionControlNodeDetailsPayload{}, fmt.Errorf("mission control node detail payload variant is missing")
+	}
+}
+
+func missionControlNodeRefPtr(item *controlplanev1.MissionControlNodeRef) *generated.MissionControlNodeRef {
+	if item == nil {
+		return nil
+	}
+	out := generated.MissionControlNodeRef{
+		NodeKind:     generated.MissionControlNodeRefNodeKind(item.GetNodeKind()),
+		NodePublicId: item.GetNodePublicId(),
+	}
+	return &out
+}
+
 func missionControlEntityDetailsPayload(item *controlplanev1.MissionControlEntityDetails) (generated.MissionControlEntityDetailsPayload, error) {
 	var out generated.MissionControlEntityDetailsPayload
 	switch {
@@ -428,17 +793,16 @@ func missionControlCommandApproval(item *controlplanev1.MissionControlCommandApp
 }
 
 func missionControlEntityRefs(items []*controlplanev1.MissionControlEntityRef) []generated.MissionControlEntityRef {
-	out := make([]generated.MissionControlEntityRef, 0, len(items))
-	for _, item := range items {
+	refs := mapNonNil(items, func(item *controlplanev1.MissionControlEntityRef) (generated.MissionControlEntityRef, bool) {
 		if item == nil {
-			continue
+			return generated.MissionControlEntityRef{}, false
 		}
-		out = append(out, generated.MissionControlEntityRef{
-			EntityKind:     generated.MissionControlEntityRefEntityKind(item.GetEntityKind()),
-			EntityPublicId: item.GetEntityPublicId(),
-		})
-	}
-	return out
+		ref := generated.MissionControlEntityRef{}
+		ref.EntityKind = generated.MissionControlEntityRefEntityKind(item.GetEntityKind())
+		ref.EntityPublicId = item.GetEntityPublicId()
+		return ref, true
+	})
+	return refs
 }
 
 func trimStringSlice(items []string) []string {
@@ -494,6 +858,27 @@ func protoTimestampPtr(value *timestamppb.Timestamp) *time.Time {
 		return nil
 	}
 	return timestampPtr(value.AsTime())
+}
+
+func typedTrimmedStrings[T ~string](items []string) []T {
+	out := make([]T, 0, len(items))
+	for _, item := range items {
+		if trimmed := strings.TrimSpace(item); trimmed != "" {
+			out = append(out, T(trimmed))
+		}
+	}
+	return out
+}
+
+func mapNonNil[T any, R any](items []T, mapFn func(T) (R, bool)) []R {
+	out := make([]R, 0, len(items))
+	for _, item := range items {
+		mapped, ok := mapFn(item)
+		if ok {
+			out = append(out, mapped)
+		}
+	}
+	return out
 }
 
 func newMissionControlCommandRequestBase[T ~string](
