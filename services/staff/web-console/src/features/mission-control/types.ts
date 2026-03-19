@@ -1,46 +1,58 @@
 import type {
-  MissionControlActiveFilter,
-  MissionControlAllowedAction,
-  MissionControlDashboardSnapshot,
-  MissionControlEntityCard,
-  MissionControlEntityDetails,
-  MissionControlEntityKind,
-  MissionControlEntityPublicId,
-  MissionControlEntityRef,
+  MissionControlActivityEntry,
+  MissionControlContinuityGap,
+  MissionControlEdge,
+  MissionControlLaunchPreview,
+  MissionControlLaunchSurface,
+  MissionControlNode,
+  MissionControlNodeActivityItemsResponse,
+  MissionControlNodeDetails,
+  MissionControlNodeKind,
+  MissionControlNodeRef,
   MissionControlProviderDeepLink,
-  MissionControlRelation,
-  MissionControlTimelineEntry,
-  MissionControlViewMode,
+  MissionControlRootGroup,
+  MissionControlStageNextStepTemplate,
+  MissionControlWorkspaceSnapshot,
+  MissionControlWorkspaceStatePreset,
+  MissionControlWorkspaceViewMode,
+  MissionControlWorkspaceWatermark,
 } from "../../shared/api/generated";
 import type { RealtimeConnectionState } from "../../shared/ws/realtime-client";
 
 export type {
-  MissionControlActiveFilter,
-  MissionControlAllowedAction,
-  MissionControlDashboardSnapshot,
-  MissionControlEntityCard,
-  MissionControlEntityDetails,
-  MissionControlEntityKind,
-  MissionControlEntityPublicId,
-  MissionControlEntityRef,
+  MissionControlActivityEntry,
+  MissionControlContinuityGap,
+  MissionControlEdge,
+  MissionControlLaunchPreview,
+  MissionControlLaunchSurface,
+  MissionControlNode,
+  MissionControlNodeActivityItemsResponse,
+  MissionControlNodeDetails,
+  MissionControlNodeKind,
+  MissionControlNodeRef,
   MissionControlProviderDeepLink,
-  MissionControlRelation,
-  MissionControlTimelineEntry,
-  MissionControlViewMode,
+  MissionControlRootGroup,
+  MissionControlStageNextStepTemplate,
+  MissionControlWorkspaceSnapshot,
+  MissionControlWorkspaceStatePreset,
+  MissionControlWorkspaceViewMode,
+  MissionControlWorkspaceWatermark,
 } from "../../shared/api/generated";
 
 export type MissionControlRouteState = {
-  viewMode: MissionControlViewMode;
-  activeFilter: MissionControlActiveFilter;
+  viewMode: MissionControlWorkspaceViewMode;
+  statePreset: MissionControlWorkspaceStatePreset;
   search: string;
-  entityKind: MissionControlEntityKind | "";
-  entityPublicId: MissionControlEntityPublicId | "";
+  nodeKind: MissionControlNodeKind | "";
+  nodePublicId: string;
 };
 
-export type MissionControlEntityState = MissionControlEntityCard["state"];
-export type MissionControlFreshnessStatus = MissionControlDashboardSnapshot["freshness_status"] | "";
+export type MissionControlSelectedNodeRef = {
+  node_kind: MissionControlNodeKind;
+  node_public_id: string;
+};
 
-export type MissionControlBoardGroups = Record<MissionControlEntityState, MissionControlEntityCard[]>;
+export type MissionControlWorkspaceFreshnessStatus = "fresh" | "stale" | "degraded" | "";
 
 export type MissionControlRealtimeState = Exclude<RealtimeConnectionState, "closed">;
 
@@ -51,7 +63,7 @@ export type MissionControlRealtimeEvent =
       resume_token: string;
       occurred_at: string;
       payload: {
-        snapshot_freshness_status: MissionControlDashboardSnapshot["freshness_status"];
+        snapshot_freshness_status: Exclude<MissionControlWorkspaceFreshnessStatus, "">;
         server_cursor: string;
       };
     }
@@ -61,10 +73,8 @@ export type MissionControlRealtimeEvent =
       resume_token: string;
       occurred_at: string;
       payload: {
-        delta_entities: MissionControlEntityCard[];
-        delta_relations: MissionControlRelation[];
-        delta_timeline_entries: MissionControlTimelineEntry[];
         changed_command_ids: string[];
+        impact_count: number;
       };
     }
   | {
@@ -75,7 +85,7 @@ export type MissionControlRealtimeEvent =
       payload: {
         reason: string;
         refresh_scope: string;
-        affected_entity_refs: MissionControlEntityRef[];
+        affected_count: number;
       };
     }
   | {
@@ -138,6 +148,7 @@ export type MissionControlRealtimeNotice =
       kind: "invalidate";
       reason: string;
       refreshScope: string;
+      affectedCount: number;
       occurredAt: string;
     }
   | {
@@ -176,13 +187,7 @@ export type MissionControlInfoRow = {
   href?: string;
 };
 
-export type MissionControlActionPresentation = {
-  color: string;
-  icon: string;
-};
-
-export type MissionControlDeepLinkPresentation = {
-  color: string;
-  icon: string;
-  labelKey: string;
+export type MissionControlRelatedNodesSection = {
+  titleKey: string;
+  refs: MissionControlNodeRef[];
 };

@@ -3,161 +3,169 @@ import assert from "node:assert/strict";
 
 import {
   buildMissionControlRouteQuery,
-  groupMissionControlEntitiesByState,
-  missionControlEntityKey,
+  missionControlGraphColumns,
+  missionControlNodeKey,
   normalizeMissionControlRouteQuery,
   parseMissionControlRealtimeEnvelope,
-  resolveMissionControlEffectiveViewMode,
+  workspaceFreshnessStatus,
 } from "./lib.ts";
 
-test("normalizeMissionControlRouteQuery applies defaults and accepts valid entity deep-link", () => {
+test("normalizeMissionControlRouteQuery applies graph defaults and accepts node deep-link", () => {
   const state = normalizeMissionControlRouteQuery({
     view: "list",
     filter: "blocked",
     q: "review",
-    entity_kind: "pull_request",
-    entity_id: "codex-k8s/codex-k8s/pull/1",
+    node_kind: "pull_request",
+    node_id: "codex-k8s/codex-k8s/pull/1",
   });
 
   assert.deepEqual(state, {
     viewMode: "list",
-    activeFilter: "blocked",
+    statePreset: "blocked",
     search: "review",
-    entityKind: "pull_request",
-    entityPublicId: "codex-k8s/codex-k8s/pull/1",
+    nodeKind: "pull_request",
+    nodePublicId: "codex-k8s/codex-k8s/pull/1",
+  });
+});
+
+test("normalizeMissionControlRouteQuery upgrades legacy board and agent links", () => {
+  const state = normalizeMissionControlRouteQuery({
+    view: "board",
+    entity_kind: "agent",
+    entity_id: "run-1",
+  });
+
+  assert.deepEqual(state, {
+    viewMode: "graph",
+    statePreset: "all_active",
+    search: "",
+    nodeKind: "run",
+    nodePublicId: "run-1",
   });
 });
 
 test("buildMissionControlRouteQuery omits default values", () => {
   const query = buildMissionControlRouteQuery({
-    viewMode: "board",
-    activeFilter: "all_active",
+    viewMode: "graph",
+    statePreset: "all_active",
     search: "",
-    entityKind: "",
-    entityPublicId: "",
+    nodeKind: "",
+    nodePublicId: "",
   });
 
   assert.deepEqual(query, {
     view: undefined,
     filter: undefined,
     q: undefined,
-    entity_kind: undefined,
-    entity_id: undefined,
+    node_kind: undefined,
+    node_id: undefined,
   });
 });
 
-test("groupMissionControlEntitiesByState keeps all entity buckets stable", () => {
-  const groups = groupMissionControlEntitiesByState([
-    {
-      entity_kind: "work_item",
-      entity_public_id: "issue-1",
-      title: "Issue 1",
-      state: "blocked",
-      sync_status: "failed",
-      provider_reference: { provider: "github", external_id: "repo#1" },
-      relation_count: 1,
-      badges: [],
-      projection_version: 1,
-    },
-    {
-      entity_kind: "agent",
-      entity_public_id: "agent/dev",
-      title: "Dev",
-      state: "working",
-      sync_status: "synced",
-      provider_reference: { provider: "platform", external_id: "agent/dev" },
-      relation_count: 0,
-      badges: ["waiting_mcp"],
-      projection_version: 2,
-    },
-  ]);
-
-  assert.equal(groups.blocked.length, 1);
-  assert.equal(groups.working.length, 1);
-  assert.equal(groups.review.length, 0);
-  assert.equal(missionControlEntityKey({ entity_kind: "agent", entity_public_id: "agent/dev" }), "agent:agent/dev");
-});
-
-test("resolveMissionControlEffectiveViewMode forces list while degraded", () => {
-  assert.equal(resolveMissionControlEffectiveViewMode("board", "degraded"), "list");
-  assert.equal(resolveMissionControlEffectiveViewMode("board", "fresh"), "board");
-});
-
-test("parseMissionControlRealtimeEnvelope validates degraded payload", () => {
-  const parsed = parseMissionControlRealtimeEnvelope(
-    JSON.stringify({
-      event_kind: "degraded",
-      snapshot_id: "snapshot-1",
-      resume_token: "resume-1",
-      occurred_at: "2026-03-14T10:00:00Z",
-      payload: {
-        reason: "snapshot_degraded",
-        fallback_mode: "explicit_refresh",
-        affected_capabilities: ["realtime_delta"],
-      },
-    }),
+test("missionControlGraphColumns groups nodes by root and column order", () => {
+  const columns = missionControlGraphColumns(
+    "issue-1",
+    new Map([
+      [
+        missionControlNodeKey({ node_kind: "work_item", node_public_id: "issue-1" }),
+        {
+          node_kind: "work_item",
+          node_public_id: "issue-1",
+          title: "Issue 1",
+          visibility_tier: "primary",
+          active_state: "working",
+          continuity_status: "complete",
+          coverage_class: "open_primary",
+          root_node_public_id: "issue-1",
+          column_index: 0,
+          has_blocking_gap: false,
+          badges: [],
+          projection_version: 1,
+        },
+      ],
+      [
+        missionControlNodeKey({ node_kind: "run", node_public_id: "run-1" }),
+        {
+          node_kind: "run",
+          node_public_id: "run-1",
+          title: "Run 1",
+          visibility_tier: "secondary_dimmed",
+          active_state: "waiting",
+          continuity_status: "missing_pull_request",
+          coverage_class: "recent_closed_context",
+          root_node_public_id: "issue-1",
+          column_index: 1,
+          has_blocking_gap: true,
+          badges: ["continuity_gap"],
+          projection_version: 2,
+        },
+      ],
+    ]),
   );
 
-  assert.deepEqual(parsed, {
-    event_kind: "degraded",
-    snapshot_id: "snapshot-1",
-    resume_token: "resume-1",
-    occurred_at: "2026-03-14T10:00:00Z",
-    payload: {
-      reason: "snapshot_degraded",
-      fallback_mode: "explicit_refresh",
-      affected_capabilities: ["realtime_delta"],
-    },
-  });
+  assert.equal(columns.length, 2);
+  assert.equal(columns[0]?.columnIndex, 0);
+  assert.equal(columns[1]?.columnIndex, 1);
+  assert.equal(columns[1]?.nodes[0]?.node_public_id, "run-1");
 });
 
-test("parseMissionControlRealtimeEnvelope validates delta payload", () => {
+test("workspaceFreshnessStatus prefers degraded over stale", () => {
+  assert.equal(
+    workspaceFreshnessStatus({
+      snapshot_id: "snapshot-1",
+      view_mode: "graph",
+      generated_at: "2026-03-19T12:00:00Z",
+      resume_token: "resume-1",
+      effective_filters: {
+        open_scope: "open_only",
+        assignment_scope: "assigned_to_me_or_unassigned",
+        state_preset: "all_active",
+      },
+      summary: {
+        root_count: 1,
+        node_count: 1,
+        blocking_gap_count: 0,
+        warning_gap_count: 0,
+        recent_closed_context_count: 0,
+        working_count: 1,
+        waiting_count: 0,
+        blocked_count: 0,
+        review_count: 0,
+        recent_critical_updates_count: 0,
+      },
+      workspace_watermarks: [
+        {
+          watermark_kind: "provider_freshness",
+          status: "stale",
+          summary: "provider lag",
+          observed_at: "2026-03-19T11:59:00Z",
+        },
+        {
+          watermark_kind: "graph_projection",
+          status: "degraded",
+          summary: "projection rebuild lag",
+          observed_at: "2026-03-19T12:00:00Z",
+        },
+      ],
+      root_groups: [],
+      nodes: [],
+      edges: [],
+    }),
+    "degraded",
+  );
+});
+
+test("parseMissionControlRealtimeEnvelope accepts legacy delta payload", () => {
   const parsed = parseMissionControlRealtimeEnvelope(
     JSON.stringify({
       event_kind: "delta",
       snapshot_id: "snapshot-2",
       resume_token: "resume-2",
-      occurred_at: "2026-03-14T11:00:00Z",
+      occurred_at: "2026-03-19T11:00:00Z",
       payload: {
-        delta_entities: [
-          {
-            entity_kind: "work_item",
-            entity_public_id: "issue-2",
-            title: "Issue 2",
-            state: "working",
-            sync_status: "synced",
-            provider_reference: {
-              provider: "github",
-              external_id: "repo#2",
-            },
-            relation_count: 2,
-            badges: ["owner_review", "unknown_badge"],
-            projection_version: 4,
-          },
-        ],
-        delta_relations: [
-          {
-            relation_kind: "linked_to",
-            source_kind: "provider",
-            source_entity_kind: "work_item",
-            source_entity_public_id: "issue-2",
-            target_entity_kind: "pull_request",
-            target_entity_public_id: "repo/pull/2",
-            direction: "outbound",
-          },
-        ],
-        delta_timeline_entries: [
-          {
-            entry_id: "timeline-2",
-            entity_kind: "work_item",
-            entity_public_id: "issue-2",
-            source_kind: "provider",
-            source_ref: "comment-2",
-            occurred_at: "2026-03-14T11:00:00Z",
-            summary: "Updated status",
-            is_read_only: true,
-          },
-        ],
+        delta_entities: [{ entity_public_id: "issue-2" }],
+        delta_relations: [{ relation_kind: "linked_to" }],
+        delta_timeline_entries: [{ entry_id: "timeline-2" }],
         changed_command_ids: ["command-2"],
       },
     }),
@@ -167,54 +175,39 @@ test("parseMissionControlRealtimeEnvelope validates delta payload", () => {
     event_kind: "delta",
     snapshot_id: "snapshot-2",
     resume_token: "resume-2",
-    occurred_at: "2026-03-14T11:00:00Z",
+    occurred_at: "2026-03-19T11:00:00Z",
     payload: {
-      delta_entities: [
-        {
-          entity_kind: "work_item",
-          entity_public_id: "issue-2",
-          title: "Issue 2",
-          state: "working",
-          sync_status: "synced",
-          provider_reference: {
-            provider: "github",
-            external_id: "repo#2",
-            url: undefined,
-          },
-          primary_actor: undefined,
-          relation_count: 2,
-          last_timeline_at: undefined,
-          badges: ["owner_review"],
-          projection_version: 4,
-        },
-      ],
-      delta_relations: [
-        {
-          relation_kind: "linked_to",
-          source_kind: "provider",
-          source_entity_kind: "work_item",
-          source_entity_public_id: "issue-2",
-          target_entity_kind: "pull_request",
-          target_entity_public_id: "repo/pull/2",
-          direction: "outbound",
-        },
-      ],
-      delta_timeline_entries: [
-        {
-          entry_id: "timeline-2",
-          entity_kind: "work_item",
-          entity_public_id: "issue-2",
-          source_kind: "provider",
-          source_ref: "comment-2",
-          occurred_at: "2026-03-14T11:00:00Z",
-          summary: "Updated status",
-          body_markdown: undefined,
-          command_id: undefined,
-          provider_url: undefined,
-          is_read_only: true,
-        },
-      ],
       changed_command_ids: ["command-2"],
+      impact_count: 3,
+    },
+  });
+});
+
+test("parseMissionControlRealtimeEnvelope accepts workspace delta payload", () => {
+  const parsed = parseMissionControlRealtimeEnvelope(
+    JSON.stringify({
+      event_kind: "delta",
+      snapshot_id: "snapshot-3",
+      resume_token: "resume-3",
+      occurred_at: "2026-03-19T12:00:00Z",
+      payload: {
+        delta_nodes: [{ node_public_id: "run-3" }],
+        delta_edges: [{ edge_kind: "spawned_run" }],
+        delta_gaps: [{ gap_id: 10 }],
+        delta_workspace_watermarks: [{ watermark_kind: "provider_freshness" }],
+        changed_command_ids: [],
+      },
+    }),
+  );
+
+  assert.deepEqual(parsed, {
+    event_kind: "delta",
+    snapshot_id: "snapshot-3",
+    resume_token: "resume-3",
+    occurred_at: "2026-03-19T12:00:00Z",
+    payload: {
+      changed_command_ids: [],
+      impact_count: 4,
     },
   });
 });
@@ -226,7 +219,7 @@ test("parseMissionControlRealtimeEnvelope rejects invalid payload", () => {
         event_kind: "connected",
         snapshot_id: "snapshot-1",
         resume_token: "resume-1",
-        occurred_at: "2026-03-14T10:00:00Z",
+        occurred_at: "2026-03-19T10:00:00Z",
         payload: {
           snapshot_freshness_status: "broken",
           server_cursor: "cursor-1",

@@ -23,7 +23,7 @@
         </template>
 
         <VCardTitle class="mission-side-panel__title">
-          {{ details.entity.title }}
+          {{ details.node.title }}
         </VCardTitle>
         <VCardSubtitle class="mission-side-panel__subtitle">
           {{ t(kindLabelKey) }}
@@ -39,11 +39,11 @@
           <VChip size="small" variant="tonal" :color="stateColor">
             {{ t(stateLabelKey) }}
           </VChip>
-          <VChip size="small" variant="tonal" :color="syncColor">
-            {{ t(syncLabelKey) }}
+          <VChip size="small" variant="tonal" :color="continuityColor">
+            {{ t(continuityLabelKey) }}
           </VChip>
-          <VChip v-if="details.entity.primary_actor?.display_name" size="small" variant="tonal">
-            {{ details.entity.primary_actor.display_name }}
+          <VChip size="small" variant="tonal" :color="visibilityColor">
+            {{ t(visibilityLabelKey) }}
           </VChip>
         </div>
 
@@ -63,86 +63,157 @@
                 {{ row.value }}
               </a>
               <div v-else class="mission-side-panel__value" :class="{ mono: row.mono }">
-                {{ row.value }}
+                {{ formatCellValue(row.value) }}
               </div>
             </div>
 
-            <div v-if="workItemLabels.length" class="mission-side-panel__row">
+            <div v-if="isDiscussionPayload(details.detail_payload) && details.detail_payload.latest_comment_excerpt" class="mission-side-panel__row">
+              <div class="mission-side-panel__label">{{ t("pages.missionControl.sidePanel.latestComment") }}</div>
+              <div class="mission-side-panel__value">
+                {{ details.detail_payload.latest_comment_excerpt }}
+              </div>
+            </div>
+
+            <div v-if="isWorkItemPayload(details.detail_payload) && details.detail_payload.labels.length" class="mission-side-panel__row">
               <div class="mission-side-panel__label">{{ t("pages.missionControl.sidePanel.labels") }}</div>
               <div class="d-flex flex-wrap ga-2">
-                <VChip v-for="label in workItemLabels" :key="label" size="x-small" variant="outlined">
+                <VChip v-for="label in details.detail_payload.labels" :key="label" size="x-small" variant="outlined">
                   {{ label }}
                 </VChip>
               </div>
             </div>
 
-            <div v-if="workItemAssignees.length" class="mission-side-panel__row">
+            <div v-if="isWorkItemPayload(details.detail_payload) && details.detail_payload.assignees.length" class="mission-side-panel__row">
               <div class="mission-side-panel__label">{{ t("pages.missionControl.sidePanel.assignees") }}</div>
               <div class="d-flex flex-wrap ga-2">
-                <VChip v-for="assignee in workItemAssignees" :key="assignee" size="x-small" variant="outlined">
+                <VChip v-for="assignee in details.detail_payload.assignees" :key="assignee" size="x-small" variant="outlined">
                   {{ assignee }}
                 </VChip>
-              </div>
-            </div>
-
-            <div v-if="pullRequestLinkedIssues.length" class="mission-side-panel__row">
-              <div class="mission-side-panel__label">{{ t("pages.missionControl.sidePanel.linkedIssues") }}</div>
-              <div class="d-flex flex-wrap ga-2">
-                <VChip v-for="ref in pullRequestLinkedIssues" :key="ref" size="x-small" variant="outlined">
-                  {{ ref }}
-                </VChip>
-              </div>
-            </div>
-
-            <div v-if="discussionLatestComment" class="mission-side-panel__row">
-              <div class="mission-side-panel__label">{{ t("pages.missionControl.sidePanel.latestComment") }}</div>
-              <div class="mission-side-panel__value">
-                {{ discussionLatestComment }}
               </div>
             </div>
           </VCardText>
         </VCard>
 
         <VCard class="mission-side-panel__section" color="surface" variant="tonal">
-          <VCardTitle class="text-subtitle-2">{{ t("pages.missionControl.sidePanel.relations") }}</VCardTitle>
+          <VCardTitle class="text-subtitle-2">{{ t("pages.missionControl.sidePanel.continuity") }}</VCardTitle>
           <VCardText>
-            <div v-if="details.relations.length" class="d-flex flex-wrap ga-2">
-              <VChip
-                v-for="relation in details.relations"
-                :key="relation.relation_kind + relation.source_entity_public_id + relation.target_entity_public_id"
-                size="small"
-                variant="outlined"
-                class="mission-side-panel__relation"
-                @click="$emit('selectRelation', relation)"
+            <div v-if="details.continuity_gaps.length" class="mission-side-panel__gaps">
+              <VSheet
+                v-for="gap in details.continuity_gaps"
+                :key="gap.gap_id"
+                class="mission-side-panel__gap"
+                rounded="xl"
+                border
               >
-                {{ relation.relation_kind }} · {{ relation.source_entity_public_id === details.entity.entity_public_id ? relation.target_entity_public_id : relation.source_entity_public_id }}
+                <div class="d-flex align-start ga-3">
+                  <VAvatar :color="missionControlGapSeverityColor(gap.severity)" size="34" variant="tonal">
+                    <VIcon icon="mdi-alert-circle-outline" size="18" />
+                  </VAvatar>
+                  <div class="flex-grow-1">
+                    <div class="font-weight-medium">{{ t(missionControlGapKindLabelKey(gap.gap_kind)) }}</div>
+                    <div class="text-body-2 text-medium-emphasis mt-1">
+                      {{ t(missionControlGapSeverityLabelKey(gap.severity)) }} · {{ gap.status }}
+                    </div>
+                    <div v-if="gap.resolution_hint" class="text-body-2 mt-2">
+                      {{ gap.resolution_hint }}
+                    </div>
+                    <div class="text-caption text-medium-emphasis mt-2 mono">
+                      {{ formatCompactDateTime(gap.detected_at, locale) }}
+                    </div>
+                  </div>
+                </div>
+              </VSheet>
+            </div>
+            <div v-else class="text-medium-emphasis">
+              {{ t("pages.missionControl.sidePanel.noContinuityGaps") }}
+            </div>
+          </VCardText>
+        </VCard>
+
+        <VCard class="mission-side-panel__section" color="surface" variant="tonal">
+          <VCardTitle class="text-subtitle-2">{{ t("pages.missionControl.sidePanel.watermarks") }}</VCardTitle>
+          <VCardText>
+            <div v-if="details.node_watermarks.length" class="d-flex flex-wrap ga-2">
+              <VChip
+                v-for="watermark in details.node_watermarks"
+                :key="watermark.watermark_kind + ':' + watermark.observed_at"
+                size="small"
+                variant="tonal"
+                :color="missionControlWatermarkColor(watermark.status)"
+              >
+                {{ t(missionControlWatermarkLabelKey(watermark.watermark_kind)) }} · {{ watermark.summary }}
               </VChip>
             </div>
             <div v-else class="text-medium-emphasis">
-              {{ t("pages.missionControl.sidePanel.noRelations") }}
+              {{ t("pages.missionControl.sidePanel.noWatermarks") }}
+            </div>
+          </VCardText>
+        </VCard>
+
+        <VCard class="mission-side-panel__section" color="surface" variant="tonal">
+          <VCardTitle class="text-subtitle-2">{{ t("pages.missionControl.sidePanel.linkedArtifacts") }}</VCardTitle>
+          <VCardText class="mission-side-panel__linked">
+            <template v-if="relatedSections.length || adjacentRefs.length">
+              <div
+                v-for="section in relatedSections"
+                :key="section.titleKey"
+                class="mission-side-panel__linked-section"
+              >
+                <div class="mission-side-panel__label">{{ t(section.titleKey) }}</div>
+                <div class="d-flex flex-wrap ga-2">
+                  <VChip
+                    v-for="ref in section.refs"
+                    :key="ref.node_kind + ':' + ref.node_public_id"
+                    size="small"
+                    variant="outlined"
+                    @click="$emit('selectNode', ref)"
+                  >
+                    {{ t(missionControlNodeKindLabelKey(ref.node_kind)) }} · {{ ref.node_public_id }}
+                  </VChip>
+                </div>
+              </div>
+
+              <div v-if="adjacentRefs.length" class="mission-side-panel__linked-section">
+                <div class="mission-side-panel__label">{{ t("pages.missionControl.sidePanel.adjacentNodes") }}</div>
+                <div class="d-flex flex-wrap ga-2">
+                  <VChip
+                    v-for="ref in adjacentRefs"
+                    :key="ref.node_kind + ':' + ref.node_public_id"
+                    size="small"
+                    variant="outlined"
+                    @click="$emit('selectNode', ref)"
+                  >
+                    {{ t(missionControlNodeKindLabelKey(ref.node_kind)) }} · {{ ref.node_public_id }}
+                  </VChip>
+                </div>
+              </div>
+            </template>
+
+            <div v-else class="text-medium-emphasis">
+              {{ t("pages.missionControl.sidePanel.noLinkedArtifacts") }}
             </div>
           </VCardText>
         </VCard>
 
         <VCard class="mission-side-panel__section" color="surface" variant="tonal">
           <VCardTitle class="text-subtitle-2 d-flex align-center justify-space-between ga-2">
-            <span>{{ t("pages.missionControl.sidePanel.timeline") }}</span>
-            <VProgressCircular v-if="timelineLoading" indeterminate size="18" width="2" />
+            <span>{{ t("pages.missionControl.sidePanel.activity") }}</span>
+            <VProgressCircular v-if="activityLoading" indeterminate size="18" width="2" />
           </VCardTitle>
           <VCardText>
-            <VAlert v-if="timelineError" type="error" variant="tonal" class="mb-4">
-              {{ t(timelineError.messageKey) }}
+            <VAlert v-if="activityError" type="error" variant="tonal" class="mb-4">
+              {{ t(activityError.messageKey) }}
             </VAlert>
-            <div v-if="timeline.length" class="mission-side-panel__timeline">
-              <div v-for="entry in timeline" :key="entry.entry_id" class="mission-side-panel__timeline-entry">
-                <div class="mission-side-panel__timeline-head">
+            <div v-if="activity.length" class="mission-side-panel__activity">
+              <div v-for="entry in activity" :key="entry.entry_id" class="mission-side-panel__activity-entry">
+                <div class="mission-side-panel__activity-head">
                   <VChip size="x-small" variant="tonal">
                     {{ entry.source_kind }}
                   </VChip>
                   <span class="mono text-medium-emphasis">{{ formatCompactDateTime(entry.occurred_at, locale) }}</span>
                 </div>
-                <div class="mission-side-panel__timeline-summary">{{ entry.summary }}</div>
-                <div v-if="entry.body_markdown" class="mission-side-panel__timeline-body">
+                <div class="mission-side-panel__activity-summary">{{ entry.summary }}</div>
+                <div v-if="entry.body_markdown" class="mission-side-panel__activity-body">
                   {{ entry.body_markdown }}
                 </div>
                 <a
@@ -157,76 +228,84 @@
               </div>
             </div>
             <div v-else class="text-medium-emphasis">
-              {{ t("pages.missionControl.sidePanel.noTimeline") }}
+              {{ t("pages.missionControl.sidePanel.noActivity") }}
             </div>
-            <div v-if="hasMoreTimeline" class="mt-4">
+            <div v-if="hasMoreActivity" class="mt-4">
               <AdaptiveBtn
                 variant="text"
                 icon="mdi-chevron-down"
-                :label="t('pages.missionControl.sidePanel.loadMoreTimeline')"
-                :loading="timelineLoading"
-                @click="$emit('loadMoreTimeline')"
+                :label="t('pages.missionControl.sidePanel.loadMoreActivity')"
+                :loading="activityLoading"
+                @click="$emit('loadMoreActivity')"
               />
             </div>
           </VCardText>
         </VCard>
 
         <VCard class="mission-side-panel__section" color="surface" variant="tonal">
-          <VCardTitle class="text-subtitle-2">{{ t("pages.missionControl.sidePanel.allowedActions") }}</VCardTitle>
+          <VCardTitle class="text-subtitle-2">{{ t("pages.missionControl.sidePanel.launchSurfaces") }}</VCardTitle>
           <VCardText class="mission-side-panel__actions">
-            <div v-if="details.allowed_actions.length" class="d-flex flex-column ga-3">
+            <div v-if="details.launch_surfaces.length" class="d-flex flex-column ga-3">
               <VSheet
-                v-for="action in details.allowed_actions"
-                :key="action.action_kind"
+                v-for="surface in details.launch_surfaces"
+                :key="surface.action_kind"
                 class="mission-side-panel__action"
                 rounded="xl"
                 border
               >
                 <div class="d-flex align-start ga-3">
-                  <VAvatar :color="actionPresentation(action.action_kind).color" variant="tonal" size="36">
-                    <VIcon :icon="actionPresentation(action.action_kind).icon" size="18" />
+                  <VAvatar color="primary" variant="tonal" size="36">
+                    <VIcon :icon="missionControlLaunchSurfaceIcon(surface.action_kind)" size="18" />
                   </VAvatar>
                   <div class="flex-grow-1">
-                    <div class="font-weight-medium">{{ t(missionControlActionLabelKey(action.action_kind)) }}</div>
+                    <div class="font-weight-medium">{{ t(missionControlLaunchSurfaceLabelKey(surface.action_kind)) }}</div>
                     <div class="text-body-2 text-medium-emphasis mt-1">
                       {{
-                        action.approval_requirement === "owner_review"
+                        surface.approval_requirement === "owner_review"
                           ? t("pages.missionControl.sidePanel.ownerReviewRequired")
                           : t("pages.missionControl.sidePanel.noApprovalRequired")
                       }}
                     </div>
-                    <div v-if="action.blocked_reason" class="text-body-2 text-error mt-2">
-                      {{ action.blocked_reason }}
+                    <div v-if="surface.blocked_reason" class="text-body-2 text-error mt-2">
+                      {{ surface.blocked_reason }}
                     </div>
+                    <AdaptiveBtn
+                      v-if="surface.action_kind === 'preview_next_stage' && surface.command_template"
+                      class="mt-3"
+                      variant="tonal"
+                      icon="mdi-rocket-launch-outline"
+                      :label="t('pages.missionControl.preview.open')"
+                      @click="$emit('openPreview', surface)"
+                    />
                   </div>
                 </div>
               </VSheet>
             </div>
             <div v-else class="text-medium-emphasis">
-              {{ t("pages.missionControl.sidePanel.noActions") }}
+              {{ t("pages.missionControl.sidePanel.noLaunchSurfaces") }}
             </div>
           </VCardText>
         </VCard>
 
         <VCard class="mission-side-panel__section" color="surface" variant="tonal">
-          <VCardTitle class="text-subtitle-2">{{ t("pages.missionControl.sidePanel.deepLinks") }}</VCardTitle>
+          <VCardTitle class="text-subtitle-2">{{ t("pages.missionControl.sidePanel.providerLinks") }}</VCardTitle>
           <VCardText>
             <div v-if="details.provider_deep_links.length" class="d-flex flex-wrap ga-2">
               <VBtn
                 v-for="link in details.provider_deep_links"
                 :key="link.action_kind + ':' + link.url"
-                :color="deepLinkPresentation(link.action_kind).color"
+                color="primary"
                 variant="tonal"
                 :href="link.url"
                 target="_blank"
                 rel="noreferrer"
-                :prepend-icon="deepLinkPresentation(link.action_kind).icon"
+                :prepend-icon="missionControlProviderDeepLinkIcon(link.action_kind)"
               >
-                {{ t(deepLinkPresentation(link.action_kind).labelKey) }}
+                {{ t(missionControlProviderDeepLinkLabelKey(link.action_kind)) }}
               </VBtn>
             </div>
             <div v-else class="text-medium-emphasis">
-              {{ t("pages.missionControl.sidePanel.noDeepLinks") }}
+              {{ t("pages.missionControl.sidePanel.noProviderLinks") }}
             </div>
           </VCardText>
         </VCard>
@@ -247,67 +326,102 @@ import { useI18n } from "vue-i18n";
 
 import { formatCompactDateTime } from "../../shared/lib/datetime";
 import AdaptiveBtn from "../../shared/ui/AdaptiveBtn.vue";
-import { buildMissionControlInfoRows, missionControlActionLabelKey, missionControlActionPresentation, missionControlDeepLinkPresentation, missionControlDiscussionLatestComment, missionControlEntityKindLabelKey, missionControlPullRequestLinkedIssues, missionControlStateColor, missionControlStateLabelKey, missionControlSyncStatusColor, missionControlSyncStatusLabelKey, missionControlWorkItemAssignees, missionControlWorkItemLabels } from "./presenters";
 import type { ApiError } from "../../shared/api/errors";
-import type { MissionControlEntityDetails, MissionControlRelation, MissionControlTimelineEntry } from "./types";
+import {
+  buildMissionControlInfoRows,
+  isDiscussionPayload,
+  isWorkItemPayload,
+  missionControlAdjacentNodeRefs,
+  missionControlContinuityColor,
+  missionControlContinuityStatusLabelKey,
+  missionControlGapKindLabelKey,
+  missionControlGapSeverityColor,
+  missionControlGapSeverityLabelKey,
+  missionControlLaunchSurfaceIcon,
+  missionControlLaunchSurfaceLabelKey,
+  missionControlNodeKindLabelKey,
+  missionControlProviderDeepLinkIcon,
+  missionControlProviderDeepLinkLabelKey,
+  missionControlRelatedNodeSections,
+  missionControlStateColor,
+  missionControlStateLabelKey,
+  missionControlVisibilityColor,
+  missionControlVisibilityLabelKey,
+  missionControlWatermarkColor,
+  missionControlWatermarkLabelKey,
+} from "./presenters";
+import type {
+  MissionControlActivityEntry,
+  MissionControlLaunchSurface,
+  MissionControlNodeDetails,
+  MissionControlNodeRef,
+} from "./types";
 
 const props = defineProps<{
-  details: MissionControlEntityDetails | null;
+  details: MissionControlNodeDetails | null;
   loading: boolean;
   error: ApiError | null;
-  timeline: MissionControlTimelineEntry[];
-  timelineError: ApiError | null;
-  timelineLoading: boolean;
-  hasMoreTimeline: boolean;
+  activity: MissionControlActivityEntry[];
+  activityError: ApiError | null;
+  activityLoading: boolean;
+  hasMoreActivity: boolean;
   locale: string;
 }>();
 
 defineEmits<{
   close: [];
-  selectRelation: [relation: MissionControlRelation];
-  loadMoreTimeline: [];
+  selectNode: [ref: MissionControlNodeRef];
+  loadMoreActivity: [];
+  openPreview: [surface: MissionControlLaunchSurface];
 }>();
 
 const { t } = useI18n({ useScope: "global" });
 
 const panelIcon = computed(() => {
-  switch (props.details?.entity.entity_kind) {
-    case "work_item":
-      return "mdi-briefcase-outline";
+  switch (props.details?.node.node_kind) {
     case "discussion":
       return "mdi-message-text-outline";
+    case "work_item":
+      return "mdi-briefcase-outline";
+    case "run":
+      return "mdi-robot-outline";
     case "pull_request":
       return "mdi-source-pull";
-    case "agent":
-      return "mdi-robot-outline";
     default:
       return "mdi-radar";
   }
 });
 
-const kindLabelKey = computed(() => (props.details ? missionControlEntityKindLabelKey(props.details.entity.entity_kind) : ""));
-const stateLabelKey = computed(() => (props.details ? missionControlStateLabelKey(props.details.entity.state) : ""));
-const syncLabelKey = computed(() => (props.details ? missionControlSyncStatusLabelKey(props.details.entity.sync_status) : ""));
-const stateColor = computed(() => (props.details ? missionControlStateColor(props.details.entity.state) : "secondary"));
-const syncColor = computed(() => (props.details ? missionControlSyncStatusColor(props.details.entity.sync_status) : "secondary"));
+const kindLabelKey = computed(() => (props.details ? missionControlNodeKindLabelKey(props.details.node.node_kind) : ""));
+const stateLabelKey = computed(() => (props.details ? missionControlStateLabelKey(props.details.node.active_state) : ""));
+const continuityLabelKey = computed(() =>
+  props.details ? missionControlContinuityStatusLabelKey(props.details.node.continuity_status) : "",
+);
+const visibilityLabelKey = computed(() =>
+  props.details ? missionControlVisibilityLabelKey(props.details.node.visibility_tier) : "",
+);
+const stateColor = computed(() => (props.details ? missionControlStateColor(props.details.node.active_state) : "secondary"));
+const continuityColor = computed(() =>
+  props.details ? missionControlContinuityColor(props.details.node.continuity_status) : "secondary",
+);
+const visibilityColor = computed(() =>
+  props.details ? missionControlVisibilityColor(props.details.node.visibility_tier) : "secondary",
+);
 const infoRows = computed(() => (props.details ? buildMissionControlInfoRows(props.details) : []));
-const workItemLabels = computed(() => (props.details ? missionControlWorkItemLabels(props.details) : []));
-const workItemAssignees = computed(() => (props.details ? missionControlWorkItemAssignees(props.details) : []));
-const pullRequestLinkedIssues = computed(() => (props.details ? missionControlPullRequestLinkedIssues(props.details) : []));
-const discussionLatestComment = computed(() => (props.details ? missionControlDiscussionLatestComment(props.details) : ""));
+const relatedSections = computed(() => (props.details ? missionControlRelatedNodeSections(props.details) : []));
+const adjacentRefs = computed(() => (props.details ? missionControlAdjacentNodeRefs(props.details) : []));
 
-function actionPresentation(actionKind: string) {
-  return missionControlActionPresentation(actionKind);
-}
-
-function deepLinkPresentation(actionKind: string) {
-  return missionControlDeepLinkPresentation(actionKind);
+function formatCellValue(value: string): string {
+  if (/^\d{4}-\d{2}-\d{2}T/.test(value)) {
+    return formatCompactDateTime(value, props.locale);
+  }
+  return value;
 }
 </script>
 
 <style scoped>
 .mission-side-panel {
-  border-radius: 28px;
+  border-radius: 30px;
   overflow: hidden;
 }
 
@@ -327,7 +441,7 @@ function deepLinkPresentation(actionKind: string) {
 }
 
 .mission-side-panel__section {
-  border-radius: 22px;
+  border-radius: 24px;
 }
 
 .mission-side-panel__rows {
@@ -336,7 +450,8 @@ function deepLinkPresentation(actionKind: string) {
   gap: 12px;
 }
 
-.mission-side-panel__row {
+.mission-side-panel__row,
+.mission-side-panel__linked-section {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -355,53 +470,48 @@ function deepLinkPresentation(actionKind: string) {
 }
 
 .mission-side-panel__value--link {
-  color: rgb(25, 118, 210);
+  color: rgb(8, 145, 178);
   text-decoration: none;
 }
 
-.mission-side-panel__relation {
-  cursor: pointer;
-}
-
-.mission-side-panel__timeline {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.mission-side-panel__timeline-entry {
-  border-left: 2px solid rgba(25, 118, 210, 0.16);
-  padding-left: 12px;
-}
-
-.mission-side-panel__timeline-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.mission-side-panel__timeline-summary {
-  font-weight: 600;
-  color: rgb(15, 23, 42);
-}
-
-.mission-side-panel__timeline-body {
-  margin-top: 6px;
-  color: rgba(15, 23, 42, 0.72);
-  white-space: pre-wrap;
-}
-
+.mission-side-panel__linked,
 .mission-side-panel__actions {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.mission-side-panel__action {
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.72);
+.mission-side-panel__gaps,
+.mission-side-panel__activity {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mission-side-panel__gap,
+.mission-side-panel__action,
+.mission-side-panel__activity-entry {
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.mission-side-panel__activity-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.mission-side-panel__activity-summary {
+  margin-top: 10px;
+  font-weight: 600;
+  color: rgb(15, 23, 42);
+}
+
+.mission-side-panel__activity-body {
+  margin-top: 8px;
+  color: rgba(15, 23, 42, 0.74);
+  white-space: pre-wrap;
 }
 
 .mono {

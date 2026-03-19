@@ -5,8 +5,8 @@ title: "Initiative Package: s16_mission_control_graph_workspace"
 status: in-review
 owner_role: SA
 created_at: 2026-03-16
-updated_at: 2026-03-16
-related_issues: [480, 490, 492, 496, 510, 516, 519, 537]
+updated_at: 2026-03-19
+related_issues: [480, 490, 492, 496, 510, 516, 519, 537, 546, 547]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -30,6 +30,7 @@ approvals:
 - `docs/architecture/initiatives/s16_mission_control_graph_workspace/api_contract.md`
 - `docs/architecture/initiatives/s16_mission_control_graph_workspace/data_model.md`
 - `docs/architecture/initiatives/s16_mission_control_graph_workspace/migrations_policy.md`
+- `docs/architecture/initiatives/s16_mission_control_graph_workspace/ui_smoke_criteria.md`
 
 ## Связанные source-of-truth документы
 - `docs/architecture/adr/ADR-0016-mission-control-graph-workspace-hybrid-truth-and-continuity-ownership.md`
@@ -41,6 +42,7 @@ approvals:
 - `docs/delivery/sprints/s16/sprint_s16_mission_control_graph_workspace.md`
 - `docs/delivery/traceability/s16_mission_control_graph_workspace_history.md`
 - `docs/architecture/initiatives/s9_mission_control_dashboard/README.md`
+- `docs/architecture/initiatives/s16_mission_control_graph_workspace/ui_smoke_criteria.md`
 
 ## Continuity after `run:design`
 - Документный контур `intake -> vision -> prd -> arch -> design` согласован и доведён до review-ready design package.
@@ -51,3 +53,4 @@ approvals:
   - эволюционный rollout path `schema/backfill -> control-plane -> worker -> api-gateway -> web-console`;
   - inventory foundation issue `#480`, exact Wave 1 filters `open_only`, `assigned_to_me_or_unassigned`, `active-state presets`, secondary/dimmed semantics только для graph integrity, nodes `discussion/work_item/run/pull_request`, platform-canonical launch params и continuity rule `PR + linked follow-up issue`.
 - Sprint S16 Day6 остаётся downstream `run:plan` stage и может наследовать только зафиксированные transport/data/migration contracts Day5.
+- Wave `S16-E05` добавляет UI-level smoke criteria в `ui_smoke_criteria.md`, чтобы readiness gate `#547` проверял graph workspace, continuity visibility и read-only preview по одинаковому evidence contract.
