@@ -465,6 +465,9 @@ func (s *Service) collectProjectionSeeds(
 			PullRequestRef:     pullRequestEntityKey,
 			BranchHead:         strings.TrimSpace(runContext.PullRequestHead),
 			BranchBase:         strings.TrimSpace(runContext.PullRequestBase),
+			CandidateNamespace: strings.TrimSpace(runContext.CandidateNamespace),
+			StartedAt:          cloneProjectionTime(runContext.StartedAt),
+			FinishedAt:         cloneProjectionTime(runContext.FinishedAt),
 			LastHeartbeatAt:    cloneProjectionTime(runContext.LastHeartbeatAt),
 			LastProviderSyncAt: timePointer(projectedAt),
 		}

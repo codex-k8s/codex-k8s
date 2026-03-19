@@ -548,6 +548,18 @@ func buildWorkspaceSnapshot(
 		if node.CoverageClass == enumtypes.MissionControlCoverageClassRecentClosedContext {
 			summary.RecentClosedContextCount++
 		}
+		switch node.ActiveState {
+		case enumtypes.MissionControlActiveStateWorking:
+			summary.WorkingCount++
+		case enumtypes.MissionControlActiveStateWaiting:
+			summary.WaitingCount++
+		case enumtypes.MissionControlActiveStateBlocked:
+			summary.BlockedCount++
+		case enumtypes.MissionControlActiveStateReview:
+			summary.ReviewCount++
+		case enumtypes.MissionControlActiveStateRecentCriticalUpdates:
+			summary.RecentCriticalUpdatesCount++
+		}
 	}
 	for _, gap := range graph.openGaps {
 		if !idInSet(includedIDs, gap.SubjectEntityID) {

@@ -432,12 +432,17 @@ func buildMissionControlWorkspaceSnapshotID(
 	builder.WriteString(query.search)
 	builder.WriteString("|")
 	if summary != nil {
-		builder.WriteString(fmt.Sprintf("%d:%d:%d:%d:%d|",
+		builder.WriteString(fmt.Sprintf("%d:%d:%d:%d:%d:%d:%d:%d:%d:%d|",
 			summary.GetRootCount(),
 			summary.GetNodeCount(),
 			summary.GetBlockingGapCount(),
 			summary.GetWarningGapCount(),
 			summary.GetRecentClosedContextCount(),
+			summary.GetWorkingCount(),
+			summary.GetWaitingCount(),
+			summary.GetBlockedCount(),
+			summary.GetReviewCount(),
+			summary.GetRecentCriticalUpdatesCount(),
 		))
 	}
 	for _, root := range rootGroups {
@@ -482,6 +487,11 @@ func missionControlWorkspaceSummary(projectSnapshots []missionControlWorkspacePr
 		summary.BlockingGapCount += int32(item.snapshot.Summary.BlockingGapCount)
 		summary.WarningGapCount += int32(item.snapshot.Summary.WarningGapCount)
 		summary.RecentClosedContextCount += int32(item.snapshot.Summary.RecentClosedContextCount)
+		summary.WorkingCount += int32(item.snapshot.Summary.WorkingCount)
+		summary.WaitingCount += int32(item.snapshot.Summary.WaitingCount)
+		summary.BlockedCount += int32(item.snapshot.Summary.BlockedCount)
+		summary.ReviewCount += int32(item.snapshot.Summary.ReviewCount)
+		summary.RecentCriticalUpdatesCount += int32(item.snapshot.Summary.RecentCriticalUpdatesCount)
 	}
 	return summary
 }
@@ -667,10 +677,13 @@ func missionControlApplyNodeDetailPayload(out *controlplanev1.MissionControlNode
 			RuntimeMode:        strings.TrimSpace(payload.RuntimeMode),
 			TriggerLabel:       strings.TrimSpace(payload.TriggerLabel),
 			BuildRef:           strings.TrimSpace(payload.BranchHead),
-			CandidateNamespace: strings.TrimSpace(payload.IssueRef),
+			CandidateNamespace: strings.TrimSpace(payload.CandidateNamespace),
 		}
-		if payload.LastHeartbeatAt != nil {
-			nodeDetails.StartedAt = timestamppb.New(payload.LastHeartbeatAt.UTC())
+		if payload.StartedAt != nil {
+			nodeDetails.StartedAt = timestamppb.New(payload.StartedAt.UTC())
+		}
+		if payload.FinishedAt != nil {
+			nodeDetails.FinishedAt = timestamppb.New(payload.FinishedAt.UTC())
 		}
 		if linkedPR := strings.TrimSpace(payload.PullRequestRef); linkedPR != "" {
 			nodeDetails.LinkedPullRequestRefs = append(nodeDetails.LinkedPullRequestRefs, &controlplanev1.MissionControlNodeRef{

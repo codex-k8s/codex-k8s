@@ -338,16 +338,16 @@ function workspaceStaleAfter(snapshot: MissionControlWorkspaceSnapshotDto): stri
   return latest;
 }
 
-function dashboardSummaryFromEntities(
-  entities: MissionControlEntityCard[],
+function legacyDashboardSummaryFromWorkspace(
+  snapshot: MissionControlWorkspaceSnapshotDto,
 ): MissionControlDashboardSnapshot["summary"] {
   return {
-    total_entities: entities.length,
-    working_count: entities.filter((item) => item.state === "working").length,
-    waiting_count: entities.filter((item) => item.state === "waiting").length,
-    blocked_count: entities.filter((item) => item.state === "blocked").length,
-    review_count: entities.filter((item) => item.state === "review").length,
-    recent_critical_updates_count: entities.filter((item) => item.state === "recent_critical_updates").length,
+    total_entities: snapshot.summary.node_count,
+    working_count: snapshot.summary.working_count,
+    waiting_count: snapshot.summary.waiting_count,
+    blocked_count: snapshot.summary.blocked_count,
+    review_count: snapshot.summary.review_count,
+    recent_critical_updates_count: snapshot.summary.recent_critical_updates_count,
   };
 }
 
@@ -365,7 +365,7 @@ function legacyDashboardSnapshotFromWorkspace(
     generated_at: snapshot.generated_at,
     stale_after: workspaceStaleAfter(snapshot),
     realtime_resume_token: snapshot.resume_token,
-    summary: dashboardSummaryFromEntities(entities),
+    summary: legacyDashboardSummaryFromWorkspace(snapshot),
     entities,
     relations,
     next_page_cursor: snapshot.next_root_cursor ?? undefined,

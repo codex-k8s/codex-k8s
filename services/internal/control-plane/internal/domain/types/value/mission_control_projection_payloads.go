@@ -57,6 +57,9 @@ type MissionControlRunProjectionPayload struct {
 	PullRequestRef     string     `json:"pull_request_ref,omitempty"`
 	BranchHead         string     `json:"branch_head,omitempty"`
 	BranchBase         string     `json:"branch_base,omitempty"`
+	CandidateNamespace string     `json:"candidate_namespace,omitempty"`
+	StartedAt          *time.Time `json:"started_at,omitempty"`
+	FinishedAt         *time.Time `json:"finished_at,omitempty"`
 	LastHeartbeatAt    *time.Time `json:"last_heartbeat_at,omitempty"`
 	LastProviderSyncAt *time.Time `json:"last_provider_sync_at,omitempty"`
 }

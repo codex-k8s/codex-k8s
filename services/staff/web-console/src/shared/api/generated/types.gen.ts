@@ -509,6 +509,11 @@ export type MissionControlWorkspaceSummary = {
     blocking_gap_count: number;
     warning_gap_count: number;
     recent_closed_context_count: number;
+    working_count: number;
+    waiting_count: number;
+    blocked_count: number;
+    review_count: number;
+    recent_critical_updates_count: number;
 };
 
 export type MissionControlWorkspaceWatermark = {

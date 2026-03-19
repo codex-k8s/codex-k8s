@@ -47,7 +47,7 @@ type missionControlResumeTokenPayload struct {
 }
 
 func resolveMissionControlWorkspaceArg(c *echo.Context) (missionControlWorkspaceArg, error) {
-	limit, err := parseLimit(c, missionControlDefaultLimit)
+	limit, err := parsePositiveIntQuery(c, "root_limit", missionControlDefaultLimit, 1000)
 	if err != nil {
 		return missionControlWorkspaceArg{}, err
 	}

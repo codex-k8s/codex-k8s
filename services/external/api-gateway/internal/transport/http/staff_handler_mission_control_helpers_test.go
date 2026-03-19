@@ -1,6 +1,12 @@
 package http
 
-import "testing"
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/labstack/echo/v5"
+)
 
 func TestMissionControlResumeToken_RoundTrip(t *testing.T) {
 	t.Parallel()
@@ -47,5 +53,28 @@ func TestMissionControlWorkspaceArgFromResumeToken_DefaultsLimit(t *testing.T) {
 	}
 	if arg.viewMode != "list" || arg.statePreset != "blocked" || arg.search != "sync" {
 		t.Fatalf("expected scope fields to be preserved, got %+v", arg)
+	}
+}
+
+func TestResolveMissionControlWorkspaceArg_UsesRootLimitQueryParam(t *testing.T) {
+	t.Parallel()
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/staff/mission-control/workspace?root_limit=17&view_mode=graph&state_preset=working", nil)
+	rec := httptest.NewRecorder()
+	ctx := e.NewContext(req, rec)
+
+	arg, err := resolveMissionControlWorkspaceArg(ctx)
+	if err != nil {
+		t.Fatalf("resolveMissionControlWorkspaceArg() error = %v", err)
+	}
+	if got, want := arg.rootLimit, int32(17); got != want {
+		t.Fatalf("rootLimit = %d, want %d", got, want)
+	}
+	if got, want := arg.viewMode, "graph"; got != want {
+		t.Fatalf("viewMode = %q, want %q", got, want)
+	}
+	if got, want := arg.statePreset, "working"; got != want {
+		t.Fatalf("statePreset = %q, want %q", got, want)
 	}
 }

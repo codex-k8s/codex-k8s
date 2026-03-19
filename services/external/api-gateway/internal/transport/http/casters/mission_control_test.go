@@ -86,9 +86,14 @@ func TestMissionControlWorkspaceSnapshot_CastsWorkspacePayload(t *testing.T) {
 			StatePreset:     "working",
 		},
 		Summary: &controlplanev1.MissionControlWorkspaceSummary{
-			RootCount:        1,
-			NodeCount:        2,
-			BlockingGapCount: 1,
+			RootCount:                  1,
+			NodeCount:                  2,
+			BlockingGapCount:           1,
+			WorkingCount:               1,
+			WaitingCount:               1,
+			BlockedCount:               0,
+			ReviewCount:                0,
+			RecentCriticalUpdatesCount: 0,
 		},
 		WorkspaceWatermarks: []*controlplanev1.MissionControlWorkspaceWatermark{{
 			WatermarkKind: "provider_freshness",
@@ -150,6 +155,9 @@ func TestMissionControlWorkspaceSnapshot_CastsWorkspacePayload(t *testing.T) {
 	}
 	if got, want := snapshot.NextRootCursor, &nextCursor; got == nil || *got != *want {
 		t.Fatalf("next_root_cursor = %v, want %v", got, want)
+	}
+	if got, want := snapshot.Summary.WorkingCount, int32(1); got != want {
+		t.Fatalf("working_count = %d, want %d", got, want)
 	}
 }
 

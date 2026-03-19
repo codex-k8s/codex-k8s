@@ -2036,11 +2036,16 @@ type MissionControlWorkspaceSnapshotViewMode string
 
 // MissionControlWorkspaceSummary defines model for MissionControlWorkspaceSummary.
 type MissionControlWorkspaceSummary struct {
-	BlockingGapCount         int32 `json:"blocking_gap_count"`
-	NodeCount                int32 `json:"node_count"`
-	RecentClosedContextCount int32 `json:"recent_closed_context_count"`
-	RootCount                int32 `json:"root_count"`
-	WarningGapCount          int32 `json:"warning_gap_count"`
+	BlockedCount               int32 `json:"blocked_count"`
+	BlockingGapCount           int32 `json:"blocking_gap_count"`
+	NodeCount                  int32 `json:"node_count"`
+	RecentClosedContextCount   int32 `json:"recent_closed_context_count"`
+	RecentCriticalUpdatesCount int32 `json:"recent_critical_updates_count"`
+	ReviewCount                int32 `json:"review_count"`
+	RootCount                  int32 `json:"root_count"`
+	WaitingCount               int32 `json:"waiting_count"`
+	WarningGapCount            int32 `json:"warning_gap_count"`
+	WorkingCount               int32 `json:"working_count"`
 }
 
 // MissionControlWorkspaceWatermark defines model for MissionControlWorkspaceWatermark.

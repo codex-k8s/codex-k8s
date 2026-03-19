@@ -1040,6 +1040,11 @@ message MissionControlWorkspaceSummary {
   int32 blocking_gap_count = 3;
   int32 warning_gap_count = 4;
   int32 recent_closed_context_count = 5;
+  int32 working_count = 6;
+  int32 waiting_count = 7;
+  int32 blocked_count = 8;
+  int32 review_count = 9;
+  int32 recent_critical_updates_count = 10;
 }
 
 message MissionControlWorkspaceWatermark {

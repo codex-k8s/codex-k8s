@@ -453,6 +453,11 @@ func missionControlWorkspaceSummary(item *controlplanev1.MissionControlWorkspace
 	summary.BlockingGapCount = item.GetBlockingGapCount()
 	summary.WarningGapCount = item.GetWarningGapCount()
 	summary.RecentClosedContextCount = item.GetRecentClosedContextCount()
+	summary.WorkingCount = item.GetWorkingCount()
+	summary.WaitingCount = item.GetWaitingCount()
+	summary.BlockedCount = item.GetBlockedCount()
+	summary.ReviewCount = item.GetReviewCount()
+	summary.RecentCriticalUpdatesCount = item.GetRecentCriticalUpdatesCount()
 	return summary
 }
 

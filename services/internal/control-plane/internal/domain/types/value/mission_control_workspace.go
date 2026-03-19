@@ -26,12 +26,17 @@ type MissionControlWorkspaceProjectionSummary struct {
 
 // MissionControlWorkspaceSummary captures aggregate counters for one snapshot.
 type MissionControlWorkspaceSummary struct {
-	RootCount                int `json:"root_count"`
-	NodeCount                int `json:"node_count"`
-	BlockingGapCount         int `json:"blocking_gap_count"`
-	WarningGapCount          int `json:"warning_gap_count"`
-	RecentClosedContextCount int `json:"recent_closed_context_count"`
-	SecondaryDimmedNodeCount int `json:"secondary_dimmed_node_count"`
+	RootCount                  int `json:"root_count"`
+	NodeCount                  int `json:"node_count"`
+	BlockingGapCount           int `json:"blocking_gap_count"`
+	WarningGapCount            int `json:"warning_gap_count"`
+	RecentClosedContextCount   int `json:"recent_closed_context_count"`
+	WorkingCount               int `json:"working_count"`
+	WaitingCount               int `json:"waiting_count"`
+	BlockedCount               int `json:"blocked_count"`
+	ReviewCount                int `json:"review_count"`
+	RecentCriticalUpdatesCount int `json:"recent_critical_updates_count"`
+	SecondaryDimmedNodeCount   int `json:"secondary_dimmed_node_count"`
 }
 
 // MissionControlWorkspaceRootGroup groups graph nodes under one workspace root.

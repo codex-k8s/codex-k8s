@@ -2975,7 +2975,19 @@ components:
     MissionControlWorkspaceSummary:
       type: object
       additionalProperties: false
-      required: [root_count, node_count, blocking_gap_count, warning_gap_count, recent_closed_context_count]
+      required:
+        [
+          root_count,
+          node_count,
+          blocking_gap_count,
+          warning_gap_count,
+          recent_closed_context_count,
+          working_count,
+          waiting_count,
+          blocked_count,
+          review_count,
+          recent_critical_updates_count,
+        ]
       properties:
         root_count:
           type: integer
@@ -2990,6 +3002,21 @@ components:
           type: integer
           format: int32
         recent_closed_context_count:
+          type: integer
+          format: int32
+        working_count:
+          type: integer
+          format: int32
+        waiting_count:
+          type: integer
+          format: int32
+        blocked_count:
+          type: integer
+          format: int32
+        review_count:
+          type: integer
+          format: int32
+        recent_critical_updates_count:
           type: integer
           format: int32
 

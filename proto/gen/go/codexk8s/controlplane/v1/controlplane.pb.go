@@ -9788,14 +9788,19 @@ func (x *MissionControlWorkspaceFilters) GetSearch() string {
 }
 
 type MissionControlWorkspaceSummary struct {
-	state                    protoimpl.MessageState `protogen:"open.v1"`
-	RootCount                int32                  `protobuf:"varint,1,opt,name=root_count,json=rootCount,proto3" json:"root_count,omitempty"`
-	NodeCount                int32                  `protobuf:"varint,2,opt,name=node_count,json=nodeCount,proto3" json:"node_count,omitempty"`
-	BlockingGapCount         int32                  `protobuf:"varint,3,opt,name=blocking_gap_count,json=blockingGapCount,proto3" json:"blocking_gap_count,omitempty"`
-	WarningGapCount          int32                  `protobuf:"varint,4,opt,name=warning_gap_count,json=warningGapCount,proto3" json:"warning_gap_count,omitempty"`
-	RecentClosedContextCount int32                  `protobuf:"varint,5,opt,name=recent_closed_context_count,json=recentClosedContextCount,proto3" json:"recent_closed_context_count,omitempty"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"open.v1"`
+	RootCount                  int32                  `protobuf:"varint,1,opt,name=root_count,json=rootCount,proto3" json:"root_count,omitempty"`
+	NodeCount                  int32                  `protobuf:"varint,2,opt,name=node_count,json=nodeCount,proto3" json:"node_count,omitempty"`
+	BlockingGapCount           int32                  `protobuf:"varint,3,opt,name=blocking_gap_count,json=blockingGapCount,proto3" json:"blocking_gap_count,omitempty"`
+	WarningGapCount            int32                  `protobuf:"varint,4,opt,name=warning_gap_count,json=warningGapCount,proto3" json:"warning_gap_count,omitempty"`
+	RecentClosedContextCount   int32                  `protobuf:"varint,5,opt,name=recent_closed_context_count,json=recentClosedContextCount,proto3" json:"recent_closed_context_count,omitempty"`
+	WorkingCount               int32                  `protobuf:"varint,6,opt,name=working_count,json=workingCount,proto3" json:"working_count,omitempty"`
+	WaitingCount               int32                  `protobuf:"varint,7,opt,name=waiting_count,json=waitingCount,proto3" json:"waiting_count,omitempty"`
+	BlockedCount               int32                  `protobuf:"varint,8,opt,name=blocked_count,json=blockedCount,proto3" json:"blocked_count,omitempty"`
+	ReviewCount                int32                  `protobuf:"varint,9,opt,name=review_count,json=reviewCount,proto3" json:"review_count,omitempty"`
+	RecentCriticalUpdatesCount int32                  `protobuf:"varint,10,opt,name=recent_critical_updates_count,json=recentCriticalUpdatesCount,proto3" json:"recent_critical_updates_count,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *MissionControlWorkspaceSummary) Reset() {
@@ -9859,6 +9864,41 @@ func (x *MissionControlWorkspaceSummary) GetWarningGapCount() int32 {
 func (x *MissionControlWorkspaceSummary) GetRecentClosedContextCount() int32 {
 	if x != nil {
 		return x.RecentClosedContextCount
+	}
+	return 0
+}
+
+func (x *MissionControlWorkspaceSummary) GetWorkingCount() int32 {
+	if x != nil {
+		return x.WorkingCount
+	}
+	return 0
+}
+
+func (x *MissionControlWorkspaceSummary) GetWaitingCount() int32 {
+	if x != nil {
+		return x.WaitingCount
+	}
+	return 0
+}
+
+func (x *MissionControlWorkspaceSummary) GetBlockedCount() int32 {
+	if x != nil {
+		return x.BlockedCount
+	}
+	return 0
+}
+
+func (x *MissionControlWorkspaceSummary) GetReviewCount() int32 {
+	if x != nil {
+		return x.ReviewCount
+	}
+	return 0
+}
+
+func (x *MissionControlWorkspaceSummary) GetRecentCriticalUpdatesCount() int32 {
+	if x != nil {
+		return x.RecentCriticalUpdatesCount
 	}
 	return 0
 }
@@ -17932,7 +17972,7 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"\x10assignment_scope\x18\x02 \x01(\tR\x0fassignmentScope\x12!\n" +
 	"\fstate_preset\x18\x03 \x01(\tR\vstatePreset\x12\x1b\n" +
 	"\x06search\x18\x04 \x01(\tH\x00R\x06search\x88\x01\x01B\t\n" +
-	"\a_search\"\xf7\x01\n" +
+	"\a_search\"\xcc\x03\n" +
 	"\x1eMissionControlWorkspaceSummary\x12\x1d\n" +
 	"\n" +
 	"root_count\x18\x01 \x01(\x05R\trootCount\x12\x1d\n" +
@@ -17940,7 +17980,13 @@ const file_codexk8s_controlplane_v1_controlplane_proto_rawDesc = "" +
 	"node_count\x18\x02 \x01(\x05R\tnodeCount\x12,\n" +
 	"\x12blocking_gap_count\x18\x03 \x01(\x05R\x10blockingGapCount\x12*\n" +
 	"\x11warning_gap_count\x18\x04 \x01(\x05R\x0fwarningGapCount\x12=\n" +
-	"\x1brecent_closed_context_count\x18\x05 \x01(\x05R\x18recentClosedContextCount\"\xc4\x02\n" +
+	"\x1brecent_closed_context_count\x18\x05 \x01(\x05R\x18recentClosedContextCount\x12#\n" +
+	"\rworking_count\x18\x06 \x01(\x05R\fworkingCount\x12#\n" +
+	"\rwaiting_count\x18\a \x01(\x05R\fwaitingCount\x12#\n" +
+	"\rblocked_count\x18\b \x01(\x05R\fblockedCount\x12!\n" +
+	"\freview_count\x18\t \x01(\x05R\vreviewCount\x12A\n" +
+	"\x1drecent_critical_updates_count\x18\n" +
+	" \x01(\x05R\x1arecentCriticalUpdatesCount\"\xc4\x02\n" +
 	" MissionControlWorkspaceWatermark\x12%\n" +
 	"\x0ewatermark_kind\x18\x01 \x01(\tR\rwatermarkKind\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12\x18\n" +
