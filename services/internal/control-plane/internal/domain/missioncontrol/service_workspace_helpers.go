@@ -438,10 +438,12 @@ func buildWorkspaceSnapshot(
 			ActiveState:       entity.ActiveState,
 			ContinuityStatus:  effectiveContinuity[entityID],
 			CoverageClass:     entity.CoverageClass,
+			ProviderReference: workspaceProviderReference(entity),
 			RootNodePublicID:  rootEntity.EntityExternalKey,
 			ColumnIndex:       workspaceColumnIndex(entity.EntityKind),
 			LastActivityAt:    entityLastActivity(entity),
 			HasBlockingGap:    continuityStatusBlocking(effectiveContinuity[entityID]),
+			Badges:            workspaceNodeBadges(entity, effectiveContinuity[entityID]),
 			ProjectionVersion: entity.ProjectionVersion,
 		}
 		nodes = append(nodes, node)
@@ -481,33 +483,10 @@ func buildWorkspaceSnapshot(
 			if idInSet(primaryIDs, relation.SourceEntityID) && idInSet(primaryIDs, relation.TargetEntityID) {
 				visibility = enumtypes.MissionControlWorkspaceVisibilityTierPrimary
 			}
-			edges = append(edges, valuetypes.MissionControlWorkspaceEdge{
-				RelationKind: relation.RelationKind,
-				SourceNodeRef: valuetypes.MissionControlEntityRef{
-					EntityKind:     sourceEntity.EntityKind,
-					EntityPublicID: sourceEntity.EntityExternalKey,
-				},
-				TargetNodeRef: valuetypes.MissionControlEntityRef{
-					EntityKind:     targetEntity.EntityKind,
-					EntityPublicID: targetEntity.EntityExternalKey,
-				},
-				VisibilityTier: visibility,
-				SourceOfTruth:  relation.SourceKind,
-				IsPrimaryPath:  relationIsPrimaryPath(relation.RelationKind),
-			})
+			edges = append(edges, workspaceEdgeForRelation(sourceEntity, targetEntity, relation, visibility))
 		}
 	}
-	sort.Slice(edges, func(i, j int) bool {
-		left := edges[i]
-		right := edges[j]
-		if left.SourceNodeRef.EntityPublicID != right.SourceNodeRef.EntityPublicID {
-			return left.SourceNodeRef.EntityPublicID < right.SourceNodeRef.EntityPublicID
-		}
-		if left.TargetNodeRef.EntityPublicID != right.TargetNodeRef.EntityPublicID {
-			return left.TargetNodeRef.EntityPublicID < right.TargetNodeRef.EntityPublicID
-		}
-		return left.RelationKind < right.RelationKind
-	})
+	sortWorkspaceEdges(edges)
 
 	rootList := make([]valuetypes.MissionControlWorkspaceRootGroup, 0, len(rootGroups))
 	for _, rootID := range rootIDs {
@@ -568,6 +547,18 @@ func buildWorkspaceSnapshot(
 		}
 		if node.CoverageClass == enumtypes.MissionControlCoverageClassRecentClosedContext {
 			summary.RecentClosedContextCount++
+		}
+		switch node.ActiveState {
+		case enumtypes.MissionControlActiveStateWorking:
+			summary.WorkingCount++
+		case enumtypes.MissionControlActiveStateWaiting:
+			summary.WaitingCount++
+		case enumtypes.MissionControlActiveStateBlocked:
+			summary.BlockedCount++
+		case enumtypes.MissionControlActiveStateReview:
+			summary.ReviewCount++
+		case enumtypes.MissionControlActiveStateRecentCriticalUpdates:
+			summary.RecentCriticalUpdatesCount++
 		}
 	}
 	for _, gap := range graph.openGaps {
@@ -1101,6 +1092,42 @@ func relationIsPrimaryPath(kind enumtypes.MissionControlRelationKind) bool {
 	default:
 		return false
 	}
+}
+
+func workspaceEdgeForRelation(
+	sourceEntity Entity,
+	targetEntity Entity,
+	relation Relation,
+	visibility enumtypes.MissionControlWorkspaceVisibilityTier,
+) valuetypes.MissionControlWorkspaceEdge {
+	return valuetypes.MissionControlWorkspaceEdge{
+		RelationKind: relation.RelationKind,
+		SourceNodeRef: valuetypes.MissionControlEntityRef{
+			EntityKind:     sourceEntity.EntityKind,
+			EntityPublicID: sourceEntity.EntityExternalKey,
+		},
+		TargetNodeRef: valuetypes.MissionControlEntityRef{
+			EntityKind:     targetEntity.EntityKind,
+			EntityPublicID: targetEntity.EntityExternalKey,
+		},
+		VisibilityTier: visibility,
+		SourceOfTruth:  relation.SourceKind,
+		IsPrimaryPath:  relationIsPrimaryPath(relation.RelationKind),
+	}
+}
+
+func sortWorkspaceEdges(edges []valuetypes.MissionControlWorkspaceEdge) {
+	sort.Slice(edges, func(i, j int) bool {
+		left := edges[i]
+		right := edges[j]
+		if left.SourceNodeRef.EntityPublicID != right.SourceNodeRef.EntityPublicID {
+			return left.SourceNodeRef.EntityPublicID < right.SourceNodeRef.EntityPublicID
+		}
+		if left.TargetNodeRef.EntityPublicID != right.TargetNodeRef.EntityPublicID {
+			return left.TargetNodeRef.EntityPublicID < right.TargetNodeRef.EntityPublicID
+		}
+		return left.RelationKind < right.RelationKind
+	})
 }
 
 func workspaceColumnIndex(kind enumtypes.MissionControlEntityKind) int32 {

@@ -67,6 +67,10 @@ const (
 	ControlPlaneService_ExpireNextInteraction_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/ExpireNextInteraction"
 	ControlPlaneService_ProcessNextGitHubRateLimitWait_FullMethodName       = "/codexk8s.controlplane.v1.ControlPlaneService/ProcessNextGitHubRateLimitWait"
 	ControlPlaneService_ReportGitHubRateLimitSignal_FullMethodName          = "/codexk8s.controlplane.v1.ControlPlaneService/ReportGitHubRateLimitSignal"
+	ControlPlaneService_GetMissionControlWorkspace_FullMethodName           = "/codexk8s.controlplane.v1.ControlPlaneService/GetMissionControlWorkspace"
+	ControlPlaneService_GetMissionControlNode_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/GetMissionControlNode"
+	ControlPlaneService_ListMissionControlNodeActivity_FullMethodName       = "/codexk8s.controlplane.v1.ControlPlaneService/ListMissionControlNodeActivity"
+	ControlPlaneService_PreviewMissionControlLaunch_FullMethodName          = "/codexk8s.controlplane.v1.ControlPlaneService/PreviewMissionControlLaunch"
 	ControlPlaneService_GetMissionControlSnapshot_FullMethodName            = "/codexk8s.controlplane.v1.ControlPlaneService/GetMissionControlSnapshot"
 	ControlPlaneService_GetMissionControlEntity_FullMethodName              = "/codexk8s.controlplane.v1.ControlPlaneService/GetMissionControlEntity"
 	ControlPlaneService_ListMissionControlTimeline_FullMethodName           = "/codexk8s.controlplane.v1.ControlPlaneService/ListMissionControlTimeline"
@@ -152,6 +156,10 @@ type ControlPlaneServiceClient interface {
 	ExpireNextInteraction(ctx context.Context, in *ExpireNextInteractionRequest, opts ...grpc.CallOption) (*ExpireNextInteractionResponse, error)
 	ProcessNextGitHubRateLimitWait(ctx context.Context, in *ProcessNextGitHubRateLimitWaitRequest, opts ...grpc.CallOption) (*ProcessNextGitHubRateLimitWaitResponse, error)
 	ReportGitHubRateLimitSignal(ctx context.Context, in *ReportGitHubRateLimitSignalRequest, opts ...grpc.CallOption) (*ReportGitHubRateLimitSignalResponse, error)
+	GetMissionControlWorkspace(ctx context.Context, in *GetMissionControlWorkspaceRequest, opts ...grpc.CallOption) (*GetMissionControlWorkspaceResponse, error)
+	GetMissionControlNode(ctx context.Context, in *GetMissionControlNodeRequest, opts ...grpc.CallOption) (*MissionControlNodeDetails, error)
+	ListMissionControlNodeActivity(ctx context.Context, in *ListMissionControlNodeActivityRequest, opts ...grpc.CallOption) (*ListMissionControlNodeActivityResponse, error)
+	PreviewMissionControlLaunch(ctx context.Context, in *PreviewMissionControlLaunchRequest, opts ...grpc.CallOption) (*MissionControlLaunchPreview, error)
 	GetMissionControlSnapshot(ctx context.Context, in *GetMissionControlSnapshotRequest, opts ...grpc.CallOption) (*GetMissionControlSnapshotResponse, error)
 	GetMissionControlEntity(ctx context.Context, in *GetMissionControlEntityRequest, opts ...grpc.CallOption) (*MissionControlEntityDetails, error)
 	ListMissionControlTimeline(ctx context.Context, in *ListMissionControlTimelineRequest, opts ...grpc.CallOption) (*ListMissionControlTimelineResponse, error)
@@ -663,6 +671,46 @@ func (c *controlPlaneServiceClient) ReportGitHubRateLimitSignal(ctx context.Cont
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) GetMissionControlWorkspace(ctx context.Context, in *GetMissionControlWorkspaceRequest, opts ...grpc.CallOption) (*GetMissionControlWorkspaceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMissionControlWorkspaceResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_GetMissionControlWorkspace_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) GetMissionControlNode(ctx context.Context, in *GetMissionControlNodeRequest, opts ...grpc.CallOption) (*MissionControlNodeDetails, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MissionControlNodeDetails)
+	err := c.cc.Invoke(ctx, ControlPlaneService_GetMissionControlNode_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) ListMissionControlNodeActivity(ctx context.Context, in *ListMissionControlNodeActivityRequest, opts ...grpc.CallOption) (*ListMissionControlNodeActivityResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMissionControlNodeActivityResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ListMissionControlNodeActivity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) PreviewMissionControlLaunch(ctx context.Context, in *PreviewMissionControlLaunchRequest, opts ...grpc.CallOption) (*MissionControlLaunchPreview, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MissionControlLaunchPreview)
+	err := c.cc.Invoke(ctx, ControlPlaneService_PreviewMissionControlLaunch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) GetMissionControlSnapshot(ctx context.Context, in *GetMissionControlSnapshotRequest, opts ...grpc.CallOption) (*GetMissionControlSnapshotResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetMissionControlSnapshotResponse)
@@ -1016,6 +1064,10 @@ type ControlPlaneServiceServer interface {
 	ExpireNextInteraction(context.Context, *ExpireNextInteractionRequest) (*ExpireNextInteractionResponse, error)
 	ProcessNextGitHubRateLimitWait(context.Context, *ProcessNextGitHubRateLimitWaitRequest) (*ProcessNextGitHubRateLimitWaitResponse, error)
 	ReportGitHubRateLimitSignal(context.Context, *ReportGitHubRateLimitSignalRequest) (*ReportGitHubRateLimitSignalResponse, error)
+	GetMissionControlWorkspace(context.Context, *GetMissionControlWorkspaceRequest) (*GetMissionControlWorkspaceResponse, error)
+	GetMissionControlNode(context.Context, *GetMissionControlNodeRequest) (*MissionControlNodeDetails, error)
+	ListMissionControlNodeActivity(context.Context, *ListMissionControlNodeActivityRequest) (*ListMissionControlNodeActivityResponse, error)
+	PreviewMissionControlLaunch(context.Context, *PreviewMissionControlLaunchRequest) (*MissionControlLaunchPreview, error)
 	GetMissionControlSnapshot(context.Context, *GetMissionControlSnapshotRequest) (*GetMissionControlSnapshotResponse, error)
 	GetMissionControlEntity(context.Context, *GetMissionControlEntityRequest) (*MissionControlEntityDetails, error)
 	ListMissionControlTimeline(context.Context, *ListMissionControlTimelineRequest) (*ListMissionControlTimelineResponse, error)
@@ -1197,6 +1249,18 @@ func (UnimplementedControlPlaneServiceServer) ProcessNextGitHubRateLimitWait(con
 }
 func (UnimplementedControlPlaneServiceServer) ReportGitHubRateLimitSignal(context.Context, *ReportGitHubRateLimitSignalRequest) (*ReportGitHubRateLimitSignalResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportGitHubRateLimitSignal not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) GetMissionControlWorkspace(context.Context, *GetMissionControlWorkspaceRequest) (*GetMissionControlWorkspaceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMissionControlWorkspace not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) GetMissionControlNode(context.Context, *GetMissionControlNodeRequest) (*MissionControlNodeDetails, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMissionControlNode not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ListMissionControlNodeActivity(context.Context, *ListMissionControlNodeActivityRequest) (*ListMissionControlNodeActivityResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListMissionControlNodeActivity not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) PreviewMissionControlLaunch(context.Context, *PreviewMissionControlLaunchRequest) (*MissionControlLaunchPreview, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PreviewMissionControlLaunch not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) GetMissionControlSnapshot(context.Context, *GetMissionControlSnapshotRequest) (*GetMissionControlSnapshotResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMissionControlSnapshot not implemented")
@@ -2155,6 +2219,78 @@ func _ControlPlaneService_ReportGitHubRateLimitSignal_Handler(srv interface{}, c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_GetMissionControlWorkspace_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMissionControlWorkspaceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).GetMissionControlWorkspace(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_GetMissionControlWorkspace_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).GetMissionControlWorkspace(ctx, req.(*GetMissionControlWorkspaceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_GetMissionControlNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMissionControlNodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).GetMissionControlNode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_GetMissionControlNode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).GetMissionControlNode(ctx, req.(*GetMissionControlNodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_ListMissionControlNodeActivity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMissionControlNodeActivityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ListMissionControlNodeActivity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ListMissionControlNodeActivity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ListMissionControlNodeActivity(ctx, req.(*ListMissionControlNodeActivityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_PreviewMissionControlLaunch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PreviewMissionControlLaunchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).PreviewMissionControlLaunch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_PreviewMissionControlLaunch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).PreviewMissionControlLaunch(ctx, req.(*PreviewMissionControlLaunchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_GetMissionControlSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetMissionControlSnapshotRequest)
 	if err := dec(in); err != nil {
@@ -2889,6 +3025,22 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportGitHubRateLimitSignal",
 			Handler:    _ControlPlaneService_ReportGitHubRateLimitSignal_Handler,
+		},
+		{
+			MethodName: "GetMissionControlWorkspace",
+			Handler:    _ControlPlaneService_GetMissionControlWorkspace_Handler,
+		},
+		{
+			MethodName: "GetMissionControlNode",
+			Handler:    _ControlPlaneService_GetMissionControlNode_Handler,
+		},
+		{
+			MethodName: "ListMissionControlNodeActivity",
+			Handler:    _ControlPlaneService_ListMissionControlNodeActivity_Handler,
+		},
+		{
+			MethodName: "PreviewMissionControlLaunch",
+			Handler:    _ControlPlaneService_PreviewMissionControlLaunch_Handler,
 		},
 		{
 			MethodName: "GetMissionControlSnapshot",

@@ -8,21 +8,24 @@ import (
 )
 
 type projectionRunContext struct {
-	TriggerLabel      string
-	RuntimeMode       string
-	WaitReason        string
-	LastHeartbeatAt   *time.Time
-	IssueTitle        string
-	IssueState        string
-	IssueOwner        string
-	IssueLabels       []string
-	PullRequestTitle  string
-	PullRequestState  string
-	PullRequestAuthor string
-	PullRequestLabels []string
-	PullRequestHead   string
-	PullRequestBase   string
-	StageLabel        string
+	CandidateNamespace string
+	TriggerLabel       string
+	RuntimeMode        string
+	WaitReason         string
+	LastHeartbeatAt    *time.Time
+	StartedAt          *time.Time
+	FinishedAt         *time.Time
+	IssueTitle         string
+	IssueState         string
+	IssueOwner         string
+	IssueLabels        []string
+	PullRequestTitle   string
+	PullRequestState   string
+	PullRequestAuthor  string
+	PullRequestLabels  []string
+	PullRequestHead    string
+	PullRequestBase    string
+	StageLabel         string
 }
 
 type projectionStoredRunPayload struct {
@@ -108,8 +111,11 @@ func (s *Service) loadProjectionRunContext(ctx context.Context, runID string) (p
 		return projectionRunContext{}, err
 	}
 	if found {
+		out.CandidateNamespace = strings.TrimSpace(staffRun.Namespace)
 		out.WaitReason = strings.TrimSpace(staffRun.WaitReason)
 		out.LastHeartbeatAt = cloneProjectionTime(staffRun.LastHeartbeatAt)
+		out.StartedAt = cloneProjectionTime(staffRun.StartedAt)
+		out.FinishedAt = cloneProjectionTime(staffRun.FinishedAt)
 	}
 
 	out.StageLabel = resolveProjectionStageLabel(out.IssueLabels, out.PullRequestLabels, out.TriggerLabel)

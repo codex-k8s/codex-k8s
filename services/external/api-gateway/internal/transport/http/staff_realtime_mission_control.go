@@ -51,9 +51,9 @@ func (h *staffHandler) streamMissionControlRealtime(
 		}
 	}()
 
-	arg := missionControlDashboardArgFromResumeToken(token)
+	arg := missionControlWorkspaceArgFromResumeToken(token)
 	fetchCtx, cancelFetch := context.WithTimeout(c.Request().Context(), realtimeFetchTimeout)
-	currentSnapshot, currentResumeToken, err := h.fetchMissionControlDashboardSnapshot(fetchCtx, principal, arg)
+	currentSnapshot, currentResumeToken, err := h.fetchMissionControlWorkspaceSnapshot(fetchCtx, principal, arg)
 	cancelFetch()
 	if err != nil {
 		_ = h.writeMissionControlRealtimeEnvelope(
@@ -75,12 +75,16 @@ func (h *staffHandler) streamMissionControlRealtime(
 
 	if err := h.writeMissionControlRealtimeEnvelope(
 		conn,
-		missionControlConnectedRealtimeEnvelope(currentSnapshot.GetSnapshotId(), currentResumeToken, currentSnapshot.GetFreshnessStatus()),
+		missionControlConnectedRealtimeEnvelope(
+			currentSnapshot.GetSnapshotId(),
+			currentResumeToken,
+			missionControlWorkspaceFreshnessStatus(currentSnapshot),
+		),
 	); err != nil {
 		return nil
 	}
 
-	currentFreshness := missionControlFreshnessStatus(currentSnapshot.GetFreshnessStatus())
+	currentFreshness := missionControlFreshnessStatus(missionControlWorkspaceFreshnessStatus(currentSnapshot))
 
 	updateTicker := time.NewTicker(realtimeUpdateInterval)
 	defer updateTicker.Stop()
@@ -107,7 +111,7 @@ func (h *staffHandler) streamMissionControlRealtime(
 			}
 		case <-updateTicker.C:
 			nextFetchCtx, nextCancel := context.WithTimeout(c.Request().Context(), realtimeFetchTimeout)
-			nextSnapshot, nextResumeToken, fetchErr := h.fetchMissionControlDashboardSnapshot(nextFetchCtx, principal, arg)
+			nextSnapshot, nextResumeToken, fetchErr := h.fetchMissionControlWorkspaceSnapshot(nextFetchCtx, principal, arg)
 			nextCancel()
 			if fetchErr != nil {
 				_ = h.writeMissionControlRealtimeEnvelope(
@@ -120,17 +124,17 @@ func (h *staffHandler) streamMissionControlRealtime(
 			if nextSnapshot.GetSnapshotId() != currentSnapshot.GetSnapshotId() {
 				if err := h.writeMissionControlRealtimeEnvelope(
 					conn,
-					missionControlInvalidateRealtimeEnvelope(nextSnapshot, nextResumeToken, "snapshot_changed", "dashboard_snapshot"),
+					missionControlInvalidateRealtimeEnvelope(nextSnapshot, nextResumeToken, "snapshot_changed", "workspace_snapshot"),
 				); err != nil {
 					return nil
 				}
 				currentSnapshot = nextSnapshot
 				currentResumeToken = nextResumeToken
-				currentFreshness = missionControlFreshnessStatus(nextSnapshot.GetFreshnessStatus())
+				currentFreshness = missionControlFreshnessStatus(missionControlWorkspaceFreshnessStatus(nextSnapshot))
 				continue
 			}
 
-			nextFreshness := missionControlFreshnessStatus(nextSnapshot.GetFreshnessStatus())
+			nextFreshness := missionControlFreshnessStatus(missionControlWorkspaceFreshnessStatus(nextSnapshot))
 			if nextFreshness == currentFreshness {
 				continue
 			}
@@ -139,7 +143,7 @@ func (h *staffHandler) streamMissionControlRealtime(
 			case missionControlRealtimeStale:
 				if err := h.writeMissionControlRealtimeEnvelope(
 					conn,
-					missionControlStaleRealtimeEnvelope(nextSnapshot, nextResumeToken, "snapshot_stale", "refresh_dashboard"),
+					missionControlStaleRealtimeEnvelope(nextSnapshot, nextResumeToken, "snapshot_stale", "refresh_workspace"),
 				); err != nil {
 					return nil
 				}
@@ -153,7 +157,7 @@ func (h *staffHandler) streamMissionControlRealtime(
 			case missionControlRealtimeFresh:
 				if err := h.writeMissionControlRealtimeEnvelope(
 					conn,
-					missionControlInvalidateRealtimeEnvelope(nextSnapshot, nextResumeToken, "freshness_recovered", "dashboard_snapshot"),
+					missionControlInvalidateRealtimeEnvelope(nextSnapshot, nextResumeToken, "freshness_recovered", "workspace_snapshot"),
 				); err != nil {
 					return nil
 				}
@@ -196,7 +200,7 @@ func missionControlConnectedRealtimeEnvelope(
 }
 
 func missionControlInvalidateRealtimeEnvelope(
-	snapshot *controlplanev1.MissionControlDashboardSnapshot,
+	snapshot *controlplanev1.MissionControlWorkspaceSnapshot,
 	resumeToken string,
 	reason string,
 	refreshScope string,
@@ -216,7 +220,7 @@ func missionControlInvalidateRealtimeEnvelope(
 }
 
 func missionControlStaleRealtimeEnvelope(
-	snapshot *controlplanev1.MissionControlDashboardSnapshot,
+	snapshot *controlplanev1.MissionControlWorkspaceSnapshot,
 	resumeToken string,
 	reason string,
 	suggestedRefresh string,
@@ -236,7 +240,7 @@ func missionControlStaleRealtimeEnvelope(
 }
 
 func missionControlDegradedRealtimeEnvelope(
-	snapshot *controlplanev1.MissionControlDashboardSnapshot,
+	snapshot *controlplanev1.MissionControlWorkspaceSnapshot,
 	resumeToken string,
 	reason string,
 	fallbackMode string,
@@ -344,16 +348,21 @@ func missionControlRealtimeEnvelope(
 	}
 }
 
-func missionControlRealtimeEntityRefs(snapshot *controlplanev1.MissionControlDashboardSnapshot) []generated.MissionControlEntityRef {
-	entities := snapshot.GetEntities()
-	out := make([]generated.MissionControlEntityRef, 0, len(entities))
-	for _, entity := range entities {
-		if entity == nil {
+func missionControlRealtimeEntityRefs(snapshot *controlplanev1.MissionControlWorkspaceSnapshot) []generated.MissionControlEntityRef {
+	nodes := snapshot.GetNodes()
+	out := make([]generated.MissionControlEntityRef, 0, len(nodes))
+	for _, node := range nodes {
+		if node == nil {
+			continue
+		}
+		switch node.GetNodeKind() {
+		case "discussion", "pull_request", "work_item":
+		default:
 			continue
 		}
 		out = append(out, generated.MissionControlEntityRef{
-			EntityKind:     generated.MissionControlEntityRefEntityKind(entity.GetEntityKind()),
-			EntityPublicId: entity.GetEntityPublicId(),
+			EntityKind:     generated.MissionControlEntityRefEntityKind(node.GetNodeKind()),
+			EntityPublicId: node.GetNodePublicId(),
 		})
 	}
 	return out
@@ -368,9 +377,53 @@ func missionControlFreshnessStatus(value string) string {
 	}
 }
 
-func missionControlStaleSince(snapshot *controlplanev1.MissionControlDashboardSnapshot) time.Time {
-	if snapshot != nil && snapshot.GetStaleAfter() != nil {
-		return snapshot.GetStaleAfter().AsTime().UTC()
+func missionControlWorkspaceFreshnessStatus(snapshot *controlplanev1.MissionControlWorkspaceSnapshot) string {
+	if snapshot == nil {
+		return missionControlRealtimeFresh
+	}
+
+	status := missionControlRealtimeFresh
+	for _, watermark := range snapshot.GetWorkspaceWatermarks() {
+		if watermark == nil {
+			continue
+		}
+		switch watermark.GetStatus() {
+		case missionControlRealtimeDegraded:
+			return missionControlRealtimeDegraded
+		case missionControlRealtimeStale:
+			status = missionControlRealtimeStale
+		}
+	}
+	return status
+}
+
+func missionControlStaleSince(snapshot *controlplanev1.MissionControlWorkspaceSnapshot) time.Time {
+	if snapshot == nil {
+		return time.Now().UTC()
+	}
+
+	latest := time.Time{}
+	for _, watermark := range snapshot.GetWorkspaceWatermarks() {
+		if watermark == nil {
+			continue
+		}
+		status := watermark.GetStatus()
+		if status != missionControlRealtimeStale && status != missionControlRealtimeDegraded {
+			continue
+		}
+
+		candidate := time.Time{}
+		if watermark.GetWindowEndedAt() != nil {
+			candidate = watermark.GetWindowEndedAt().AsTime().UTC()
+		} else if watermark.GetObservedAt() != nil {
+			candidate = watermark.GetObservedAt().AsTime().UTC()
+		}
+		if candidate.After(latest) {
+			latest = candidate
+		}
+	}
+	if !latest.IsZero() {
+		return latest
 	}
 	return time.Now().UTC()
 }

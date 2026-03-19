@@ -26,12 +26,17 @@ type MissionControlWorkspaceProjectionSummary struct {
 
 // MissionControlWorkspaceSummary captures aggregate counters for one snapshot.
 type MissionControlWorkspaceSummary struct {
-	RootCount                int `json:"root_count"`
-	NodeCount                int `json:"node_count"`
-	BlockingGapCount         int `json:"blocking_gap_count"`
-	WarningGapCount          int `json:"warning_gap_count"`
-	RecentClosedContextCount int `json:"recent_closed_context_count"`
-	SecondaryDimmedNodeCount int `json:"secondary_dimmed_node_count"`
+	RootCount                  int `json:"root_count"`
+	NodeCount                  int `json:"node_count"`
+	BlockingGapCount           int `json:"blocking_gap_count"`
+	WarningGapCount            int `json:"warning_gap_count"`
+	RecentClosedContextCount   int `json:"recent_closed_context_count"`
+	WorkingCount               int `json:"working_count"`
+	WaitingCount               int `json:"waiting_count"`
+	BlockedCount               int `json:"blocked_count"`
+	ReviewCount                int `json:"review_count"`
+	RecentCriticalUpdatesCount int `json:"recent_critical_updates_count"`
+	SecondaryDimmedNodeCount   int `json:"secondary_dimmed_node_count"`
 }
 
 // MissionControlWorkspaceRootGroup groups graph nodes under one workspace root.
@@ -51,10 +56,12 @@ type MissionControlWorkspaceNode struct {
 	ActiveState       enumtypes.MissionControlActiveState             `json:"active_state"`
 	ContinuityStatus  enumtypes.MissionControlContinuityStatus        `json:"continuity_status"`
 	CoverageClass     enumtypes.MissionControlCoverageClass           `json:"coverage_class"`
+	ProviderReference *MissionControlProviderReferenceView            `json:"provider_reference,omitempty"`
 	RootNodePublicID  string                                          `json:"root_node_public_id"`
 	ColumnIndex       int32                                           `json:"column_index"`
 	LastActivityAt    *time.Time                                      `json:"last_activity_at,omitempty"`
 	HasBlockingGap    bool                                            `json:"has_blocking_gap"`
+	Badges            []string                                        `json:"badges,omitempty"`
 	ProjectionVersion int64                                           `json:"projection_version"`
 }
 
@@ -99,4 +106,38 @@ type MissionControlLaunchPreview struct {
 	LabelDiff           MissionControlLaunchPreviewLabelDiff        `json:"label_diff"`
 	ContinuityEffect    MissionControlLaunchPreviewContinuityEffect `json:"continuity_effect"`
 	BlockingReason      string                                      `json:"blocking_reason,omitempty"`
+}
+
+// MissionControlContinuityGapView exposes one typed continuity gap with public node refs.
+type MissionControlContinuityGapView struct {
+	GapID              int64                               `json:"gap_id"`
+	GapKind            enumtypes.MissionControlGapKind     `json:"gap_kind"`
+	Severity           enumtypes.MissionControlGapSeverity `json:"severity"`
+	Status             enumtypes.MissionControlGapStatus   `json:"status"`
+	SubjectNodeRef     MissionControlEntityRef             `json:"subject_node_ref"`
+	ExpectedNodeKind   enumtypes.MissionControlEntityKind  `json:"expected_node_kind"`
+	ExpectedStageLabel string                              `json:"expected_stage_label,omitempty"`
+	DetectedAt         time.Time                           `json:"detected_at"`
+	ResolvedAt         *time.Time                          `json:"resolved_at,omitempty"`
+	ResolutionHint     string                              `json:"resolution_hint,omitempty"`
+}
+
+// MissionControlStageNextStepTemplate exposes one read-only command template for preview_next_stage.
+type MissionControlStageNextStepTemplate struct {
+	ThreadKind          string                                      `json:"thread_kind"`
+	ThreadNumber        int                                         `json:"thread_number"`
+	TargetLabel         string                                      `json:"target_label"`
+	RemovedLabels       []string                                    `json:"removed_labels,omitempty"`
+	DisplayVariant      string                                      `json:"display_variant,omitempty"`
+	ApprovalRequirement enumtypes.MissionControlApprovalRequirement `json:"approval_requirement"`
+	ExpectedGapIDs      []int64                                     `json:"expected_gap_ids,omitempty"`
+}
+
+// MissionControlLaunchSurface exposes one launch/inspect affordance for workspace nodes.
+type MissionControlLaunchSurface struct {
+	ActionKind          string                                      `json:"action_kind"`
+	Presentation        string                                      `json:"presentation"`
+	ApprovalRequirement enumtypes.MissionControlApprovalRequirement `json:"approval_requirement"`
+	BlockedReason       string                                      `json:"blocked_reason,omitempty"`
+	CommandTemplate     *MissionControlStageNextStepTemplate        `json:"command_template,omitempty"`
 }

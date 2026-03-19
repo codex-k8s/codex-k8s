@@ -15,37 +15,52 @@ import (
 	"github.com/codex-k8s/codex-k8s/services/external/api-gateway/internal/transport/http/generated"
 )
 
-func (h *staffHandler) GetMissionControlDashboard(c *echo.Context) error {
-	return withPrincipalAndResolved(c, resolveMissionControlDashboardArg, func(principal *controlplanev1.Principal, arg missionControlDashboardArg) error {
-		snapshot, resumeToken, err := h.fetchMissionControlDashboardSnapshot(c.Request().Context(), principal, arg)
+func (h *staffHandler) GetMissionControlWorkspace(c *echo.Context) error {
+	return withPrincipalAndResolved(c, resolveMissionControlWorkspaceArg, func(principal *controlplanev1.Principal, arg missionControlWorkspaceArg) error {
+		snapshot, resumeToken, err := h.fetchMissionControlWorkspaceSnapshot(c.Request().Context(), principal, arg)
 		if err != nil {
 			return err
 		}
-		return c.JSON(http.StatusOK, casters.MissionControlDashboardSnapshot(snapshot, resumeToken))
+		return c.JSON(http.StatusOK, casters.MissionControlWorkspaceSnapshot(snapshot, resumeToken))
 	})
 }
 
-func (h *staffHandler) GetMissionControlEntity(c *echo.Context) error {
-	return withPrincipalAndResolved(c, resolveMissionControlEntityArg, func(principal *controlplanev1.Principal, arg missionControlEntityArg) error {
-		item, err := h.getMissionControlEntityCall(c.Request().Context(), principal, arg)
+func (h *staffHandler) GetMissionControlNode(c *echo.Context) error {
+	return withPrincipalAndResolved(c, resolveMissionControlNodeArg, func(principal *controlplanev1.Principal, arg missionControlNodeArg) error {
+		item, err := h.getMissionControlNodeCall(c.Request().Context(), principal, arg)
 		if err != nil {
 			return err
 		}
-		response, err := casters.MissionControlEntityDetails(item)
+		response, err := casters.MissionControlNodeDetails(item)
 		if err != nil {
-			return fmt.Errorf("cast mission control entity details: %w", err)
+			return fmt.Errorf("cast mission control node details: %w", err)
 		}
 		return c.JSON(http.StatusOK, response)
 	})
 }
 
-func (h *staffHandler) ListMissionControlTimeline(c *echo.Context) error {
-	return withPrincipalAndResolved(c, resolveMissionControlTimelineArg, func(principal *controlplanev1.Principal, arg missionControlTimelineArg) error {
-		resp, err := h.listMissionControlTimelineCall(c.Request().Context(), principal, arg)
+func (h *staffHandler) ListMissionControlNodeActivity(c *echo.Context) error {
+	return withPrincipalAndResolved(c, resolveMissionControlActivityArg, func(principal *controlplanev1.Principal, arg missionControlActivityArg) error {
+		resp, err := h.listMissionControlNodeActivityCall(c.Request().Context(), principal, arg)
 		if err != nil {
 			return err
 		}
-		return c.JSON(http.StatusOK, casters.MissionControlTimelineItems(resp.GetItems(), resp.NextCursor))
+		return c.JSON(http.StatusOK, casters.MissionControlNodeActivityItems(resp.GetItems(), resp.NextCursor))
+	})
+}
+
+func (h *staffHandler) PreviewMissionControlLaunch(c *echo.Context) error {
+	return withPrincipal(c, func(principal *controlplanev1.Principal) error {
+		var body generated.PreviewMissionControlLaunchJSONRequestBody
+		if err := bindBody(c, &body); err != nil {
+			return err
+		}
+
+		item, err := h.previewMissionControlLaunchCall(c.Request().Context(), principal, body)
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, casters.MissionControlLaunchPreview(item))
 	})
 }
 
@@ -91,17 +106,17 @@ func (h *staffHandler) GetMissionControlCommand(c *echo.Context) error {
 	return getByPathResp(c, "command_id", h.getMissionControlCommandCall, casters.MissionControlCommandState)
 }
 
-func (h *staffHandler) fetchMissionControlDashboardSnapshot(
+func (h *staffHandler) fetchMissionControlWorkspaceSnapshot(
 	ctx context.Context,
 	principal *controlplanev1.Principal,
-	arg missionControlDashboardArg,
-) (*controlplanev1.MissionControlDashboardSnapshot, string, error) {
-	resp, err := h.getMissionControlDashboardCall(ctx, principal, arg)
+	arg missionControlWorkspaceArg,
+) (*controlplanev1.MissionControlWorkspaceSnapshot, string, error) {
+	resp, err := h.getMissionControlWorkspaceCall(ctx, principal, arg)
 	if err != nil {
 		return nil, "", err
 	}
 	if resp == nil || resp.GetSnapshot() == nil {
-		return nil, "", fmt.Errorf("mission control snapshot is missing")
+		return nil, "", fmt.Errorf("mission control workspace snapshot is missing")
 	}
 
 	resumeToken, err := encodeMissionControlResumeToken(newMissionControlResumeTokenPayload(arg, resp.GetSnapshot().GetSnapshotId()))

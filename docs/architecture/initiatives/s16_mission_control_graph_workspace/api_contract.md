@@ -87,6 +87,11 @@ approvals:
   - `blocking_gap_count`
   - `warning_gap_count`
   - `recent_closed_context_count`
+  - `working_count`
+  - `waiting_count`
+  - `blocked_count`
+  - `review_count`
+  - `recent_critical_updates_count`
 - `workspace_watermarks[]` (`MissionControlWorkspaceWatermark`)
 - `root_groups[]` (`MissionControlRootGroup`)
 - `nodes[]` (`MissionControlNode`)

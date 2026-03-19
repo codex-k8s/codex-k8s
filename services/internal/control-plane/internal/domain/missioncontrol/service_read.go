@@ -53,6 +53,10 @@ func (s *Service) GetEntityDetails(ctx context.Context, params EntityDetailsQuer
 	if err := s.ensureReadAllowed(); err != nil {
 		return EntityDetails{}, err
 	}
+	graph, err := s.loadWorkspaceGraph(ctx, params.ProjectID)
+	if err != nil {
+		return EntityDetails{}, err
+	}
 	entity, found, err := s.repository.GetEntityByPublicID(ctx, params.ProjectID, params.EntityKind, params.EntityPublicID)
 	if err != nil {
 		return EntityDetails{}, err
@@ -79,11 +83,13 @@ func (s *Service) GetEntityDetails(ctx context.Context, params EntityDetailsQuer
 		return EntityDetails{}, err
 	}
 
-	return EntityDetails{
+	details := EntityDetails{
 		Entity:    entity,
 		Relations: relationViews,
 		Timeline:  timeline,
-	}, nil
+	}
+	s.enrichEntityDetailsWithWorkspaceContext(&details, graph)
+	return details, nil
 }
 
 func (s *Service) buildRelationViews(

@@ -1252,24 +1252,24 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/v1/staff/mission-control/dashboard:
+  /api/v1/staff/mission-control/workspace:
     get:
-      summary: Get Mission Control dashboard snapshot
-      operationId: getMissionControlDashboard
+      summary: Get Mission Control workspace snapshot
+      operationId: getMissionControlWorkspace
       tags: [staff-mission-control]
       parameters:
-        - $ref: "#/components/parameters/MissionControlViewMode"
-        - $ref: "#/components/parameters/MissionControlActiveFilter"
+        - $ref: "#/components/parameters/MissionControlWorkspaceViewMode"
+        - $ref: "#/components/parameters/MissionControlWorkspaceStatePreset"
         - $ref: "#/components/parameters/MissionControlSearch"
         - $ref: "#/components/parameters/MissionControlCursor"
-        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/MissionControlRootLimit"
       responses:
         "200":
-          description: Mission Control dashboard snapshot
+          description: Mission Control workspace snapshot
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MissionControlDashboardSnapshot"
+                $ref: "#/components/schemas/MissionControlWorkspaceSnapshot"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1279,22 +1279,21 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
-  /api/v1/staff/mission-control/entities/{entity_kind}/{entity_public_id}:
+  /api/v1/staff/mission-control/nodes/{node_kind}/{node_public_id}:
     get:
-      summary: Get Mission Control entity details
-      operationId: getMissionControlEntity
+      summary: Get Mission Control node details
+      operationId: getMissionControlNode
       tags: [staff-mission-control]
       parameters:
-        - $ref: "#/components/parameters/MissionControlEntityKind"
-        - $ref: "#/components/parameters/MissionControlEntityPublicID"
-        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/MissionControlNodeKind"
+        - $ref: "#/components/parameters/MissionControlNodePublicID"
       responses:
         "200":
-          description: Mission Control entity details
+          description: Mission Control node details
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MissionControlEntityDetails"
+                $ref: "#/components/schemas/MissionControlNodeDetails"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1306,23 +1305,52 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
-  /api/v1/staff/mission-control/entities/{entity_kind}/{entity_public_id}/timeline:
+  /api/v1/staff/mission-control/nodes/{node_kind}/{node_public_id}/activity:
     get:
-      summary: List Mission Control entity timeline
-      operationId: listMissionControlTimeline
+      summary: List Mission Control node activity
+      operationId: listMissionControlNodeActivity
       tags: [staff-mission-control]
       parameters:
-        - $ref: "#/components/parameters/MissionControlEntityKind"
-        - $ref: "#/components/parameters/MissionControlEntityPublicID"
+        - $ref: "#/components/parameters/MissionControlNodeKind"
+        - $ref: "#/components/parameters/MissionControlNodePublicID"
         - $ref: "#/components/parameters/MissionControlCursor"
         - $ref: "#/components/parameters/Limit"
       responses:
         "200":
-          description: Mission Control timeline page
+          description: Mission Control node activity page
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MissionControlTimelineItemsResponse"
+                $ref: "#/components/schemas/MissionControlNodeActivityItemsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/v1/staff/mission-control/launch-preview:
+    post:
+      summary: Preview Mission Control launch
+      operationId: previewMissionControlLaunch
+      tags: [staff-mission-control]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MissionControlLaunchPreviewRequest"
+      responses:
+        "200":
+          description: Mission Control launch preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MissionControlLaunchPreview"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1547,6 +1575,20 @@ components:
       schema:
         type: string
         enum: [working, waiting, blocked, review, recent_critical_updates, all_active]
+    MissionControlWorkspaceViewMode:
+      in: query
+      name: view_mode
+      required: false
+      schema:
+        type: string
+        enum: [graph, list]
+    MissionControlWorkspaceStatePreset:
+      in: query
+      name: state_preset
+      required: false
+      schema:
+        type: string
+        enum: [working, waiting, blocked, review, recent_critical_updates, all_active]
     MissionControlSearch:
       in: query
       name: search
@@ -1559,6 +1601,14 @@ components:
       required: false
       schema:
         type: string
+    MissionControlRootLimit:
+      in: query
+      name: root_limit
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 500
     MissionControlResumeToken:
       in: query
       name: resume_token
@@ -1589,6 +1639,20 @@ components:
       name: entity_public_id
       required: true
       description: URL-encoded public entity identifier.
+      schema:
+        type: string
+    MissionControlNodeKind:
+      in: path
+      name: node_kind
+      required: true
+      schema:
+        type: string
+        enum: [discussion, work_item, run, pull_request]
+    MissionControlNodePublicID:
+      in: path
+      name: node_public_id
+      required: true
+      description: URL-encoded public node identifier.
       schema:
         type: string
     MissionControlCommandID:
@@ -2878,6 +2942,687 @@ components:
           type: integer
         files_drift:
           type: integer
+
+    MissionControlNodeRef:
+      type: object
+      additionalProperties: false
+      required: [node_kind, node_public_id]
+      properties:
+        node_kind:
+          type: string
+          enum: [discussion, work_item, run, pull_request]
+        node_public_id:
+          type: string
+
+    MissionControlWorkspaceFilters:
+      type: object
+      additionalProperties: false
+      required: [open_scope, assignment_scope, state_preset]
+      properties:
+        open_scope:
+          type: string
+          enum: [open_only]
+        assignment_scope:
+          type: string
+          enum: [assigned_to_me_or_unassigned]
+        state_preset:
+          type: string
+          enum: [working, waiting, blocked, review, recent_critical_updates, all_active]
+        search:
+          type: string
+          nullable: true
+
+    MissionControlWorkspaceSummary:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          root_count,
+          node_count,
+          blocking_gap_count,
+          warning_gap_count,
+          recent_closed_context_count,
+          working_count,
+          waiting_count,
+          blocked_count,
+          review_count,
+          recent_critical_updates_count,
+        ]
+      properties:
+        root_count:
+          type: integer
+          format: int32
+        node_count:
+          type: integer
+          format: int32
+        blocking_gap_count:
+          type: integer
+          format: int32
+        warning_gap_count:
+          type: integer
+          format: int32
+        recent_closed_context_count:
+          type: integer
+          format: int32
+        working_count:
+          type: integer
+          format: int32
+        waiting_count:
+          type: integer
+          format: int32
+        blocked_count:
+          type: integer
+          format: int32
+        review_count:
+          type: integer
+          format: int32
+        recent_critical_updates_count:
+          type: integer
+          format: int32
+
+    MissionControlWorkspaceWatermark:
+      type: object
+      additionalProperties: false
+      required: [watermark_kind, status, summary, observed_at]
+      properties:
+        watermark_kind:
+          type: string
+          enum: [provider_freshness, provider_coverage, graph_projection, launch_policy]
+        status:
+          type: string
+          enum: [fresh, stale, degraded, out_of_scope]
+        summary:
+          type: string
+        observed_at:
+          type: string
+          format: date-time
+        window_started_at:
+          type: string
+          format: date-time
+          nullable: true
+        window_ended_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    MissionControlRootGroup:
+      type: object
+      additionalProperties: false
+      required: [root_node_kind, root_node_public_id, root_title, node_refs, has_blocking_gap]
+      properties:
+        root_node_kind:
+          type: string
+          enum: [discussion, work_item, run, pull_request]
+        root_node_public_id:
+          type: string
+        root_title:
+          type: string
+        node_refs:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlNodeRef"
+        has_blocking_gap:
+          type: boolean
+        latest_activity_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    MissionControlNode:
+      type: object
+      additionalProperties: false
+      required:
+        - node_kind
+        - node_public_id
+        - title
+        - visibility_tier
+        - active_state
+        - continuity_status
+        - coverage_class
+        - root_node_public_id
+        - column_index
+        - has_blocking_gap
+        - badges
+        - projection_version
+      properties:
+        node_kind:
+          type: string
+          enum: [discussion, work_item, run, pull_request]
+        node_public_id:
+          type: string
+        title:
+          type: string
+        visibility_tier:
+          type: string
+          enum: [primary, secondary_dimmed]
+        active_state:
+          type: string
+          enum: [working, waiting, blocked, review, recent_critical_updates, archived]
+        continuity_status:
+          type: string
+          enum: [complete, missing_run, missing_pull_request, missing_follow_up_issue, stale_provider, out_of_scope]
+        coverage_class:
+          type: string
+          enum: [open_primary, recent_closed_context, out_of_scope]
+        provider_reference:
+          $ref: "#/components/schemas/MissionControlProviderReference"
+        root_node_public_id:
+          type: string
+        column_index:
+          type: integer
+          format: int32
+        last_activity_at:
+          type: string
+          format: date-time
+          nullable: true
+        has_blocking_gap:
+          type: boolean
+        badges:
+          type: array
+          items:
+            type: string
+            enum: [continuity_gap, provider_stale, recent_closed_context, waiting_mcp, review_required]
+        projection_version:
+          type: integer
+          format: int64
+
+    MissionControlEdge:
+      type: object
+      additionalProperties: false
+      required:
+        - edge_kind
+        - source_node_kind
+        - source_node_public_id
+        - target_node_kind
+        - target_node_public_id
+        - visibility_tier
+        - source_of_truth
+        - is_primary_path
+      properties:
+        edge_kind:
+          type: string
+          enum: [formalized_from, spawned_run, produced_pull_request, continues_with, blocked_by, related_to, tracked_by_command]
+        source_node_kind:
+          type: string
+          enum: [discussion, work_item, run, pull_request]
+        source_node_public_id:
+          type: string
+        target_node_kind:
+          type: string
+          enum: [discussion, work_item, run, pull_request]
+        target_node_public_id:
+          type: string
+        visibility_tier:
+          type: string
+          enum: [primary, secondary_dimmed]
+        source_of_truth:
+          type: string
+          enum: [platform, provider, command]
+        is_primary_path:
+          type: boolean
+
+    MissionControlContinuityGap:
+      type: object
+      additionalProperties: false
+      required:
+        - gap_id
+        - gap_kind
+        - severity
+        - status
+        - subject_node_kind
+        - subject_node_public_id
+        - detected_at
+      properties:
+        gap_id:
+          type: integer
+          format: int64
+        gap_kind:
+          type: string
+          enum: [missing_run, missing_pull_request, missing_follow_up_issue, provider_out_of_scope, provider_stale, orphan_node]
+        severity:
+          type: string
+          enum: [blocking, warning, info]
+        status:
+          type: string
+          enum: [open, resolved, deferred]
+        subject_node_kind:
+          type: string
+          enum: [discussion, work_item, run, pull_request]
+        subject_node_public_id:
+          type: string
+        expected_node_kind:
+          type: string
+          enum: [discussion, work_item, run, pull_request]
+          nullable: true
+        expected_stage_label:
+          type: string
+          nullable: true
+        detected_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+        resolution_hint:
+          type: string
+          nullable: true
+
+    MissionControlStageNextStepTemplate:
+      type: object
+      additionalProperties: false
+      required: [thread_kind, thread_number, target_label, removed_labels, approval_requirement, expected_gap_ids]
+      properties:
+        thread_kind:
+          type: string
+          enum: [issue, pull_request]
+        thread_number:
+          type: integer
+          format: int32
+        target_label:
+          type: string
+        removed_labels:
+          type: array
+          items:
+            type: string
+        display_variant:
+          type: string
+          nullable: true
+        approval_requirement:
+          type: string
+          enum: [none, owner_review]
+        expected_gap_ids:
+          type: array
+          items:
+            type: integer
+            format: int64
+
+    MissionControlLaunchSurface:
+      type: object
+      additionalProperties: false
+      required: [action_kind, presentation, approval_requirement]
+      properties:
+        action_kind:
+          type: string
+          enum: [preview_next_stage, open_linked_pull_request, open_linked_follow_up_issue, open_provider_context, inspect_run_context]
+        presentation:
+          type: string
+          enum: [primary, secondary, link]
+        approval_requirement:
+          type: string
+          enum: [none, owner_review]
+        blocked_reason:
+          type: string
+          nullable: true
+        command_template:
+          $ref: "#/components/schemas/MissionControlStageNextStepTemplate"
+
+    MissionControlDiscussionNodeDetails:
+      type: object
+      additionalProperties: false
+      required: [discussion_kind, status, author, participant_count, latest_comment_excerpt, formalization_target_refs]
+      properties:
+        discussion_kind:
+          type: string
+        status:
+          type: string
+        author:
+          type: string
+        participant_count:
+          type: integer
+          format: int32
+        latest_comment_excerpt:
+          type: string
+        formalization_target_refs:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlNodeRef"
+
+    MissionControlWorkItemNodeDetails:
+      type: object
+      additionalProperties: false
+      required: [repository_full_name, issue_number, stage_label, labels, assignees, linked_run_refs, linked_follow_up_refs]
+      properties:
+        repository_full_name:
+          type: string
+        issue_number:
+          type: integer
+          format: int64
+        stage_label:
+          type: string
+        labels:
+          type: array
+          items:
+            type: string
+        assignees:
+          type: array
+          items:
+            type: string
+        linked_run_refs:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlNodeRef"
+        linked_follow_up_refs:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlNodeRef"
+        last_provider_sync_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    MissionControlRunNodeDetails:
+      type: object
+      additionalProperties: false
+      required:
+        - run_id
+        - agent_key
+        - run_status
+        - runtime_mode
+        - trigger_label
+        - build_ref
+        - candidate_namespace
+        - linked_pull_request_refs
+        - produced_issue_refs
+      properties:
+        run_id:
+          type: string
+        agent_key:
+          type: string
+        run_status:
+          type: string
+        runtime_mode:
+          type: string
+        trigger_label:
+          type: string
+        build_ref:
+          type: string
+        candidate_namespace:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        finished_at:
+          type: string
+          format: date-time
+          nullable: true
+        linked_pull_request_refs:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlNodeRef"
+        produced_issue_refs:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlNodeRef"
+
+    MissionControlPullRequestNodeDetails:
+      type: object
+      additionalProperties: false
+      required:
+        - repository_full_name
+        - pull_request_number
+        - branch_head
+        - branch_base
+        - merge_state
+        - review_decision
+        - checks_summary
+        - linked_issue_refs
+      properties:
+        repository_full_name:
+          type: string
+        pull_request_number:
+          type: integer
+          format: int64
+        branch_head:
+          type: string
+        branch_base:
+          type: string
+        merge_state:
+          type: string
+        review_decision:
+          type: string
+        checks_summary:
+          type: string
+        linked_issue_refs:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlNodeRef"
+        linked_run_ref:
+          $ref: "#/components/schemas/MissionControlNodeRef"
+
+    MissionControlNodeDetailsPayload:
+      oneOf:
+        - $ref: "#/components/schemas/MissionControlDiscussionNodeDetails"
+        - $ref: "#/components/schemas/MissionControlWorkItemNodeDetails"
+        - $ref: "#/components/schemas/MissionControlRunNodeDetails"
+        - $ref: "#/components/schemas/MissionControlPullRequestNodeDetails"
+
+    MissionControlActivityEntry:
+      type: object
+      additionalProperties: false
+      required: [entry_id, node_kind, node_public_id, source_kind, source_ref, occurred_at, summary, is_read_only]
+      properties:
+        entry_id:
+          type: string
+        node_kind:
+          type: string
+          enum: [discussion, work_item, run, pull_request]
+        node_public_id:
+          type: string
+        source_kind:
+          type: string
+          enum: [provider, platform, command]
+        source_ref:
+          type: string
+        occurred_at:
+          type: string
+          format: date-time
+        summary:
+          type: string
+        body_markdown:
+          type: string
+          nullable: true
+        provider_url:
+          type: string
+          nullable: true
+        is_read_only:
+          type: boolean
+
+    MissionControlNodeDetails:
+      type: object
+      additionalProperties: false
+      required:
+        - node
+        - detail_payload
+        - adjacent_nodes
+        - adjacent_edges
+        - continuity_gaps
+        - node_watermarks
+        - activity_preview
+        - launch_surfaces
+        - provider_deep_links
+      properties:
+        node:
+          $ref: "#/components/schemas/MissionControlNode"
+        detail_payload:
+          $ref: "#/components/schemas/MissionControlNodeDetailsPayload"
+        adjacent_nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlNode"
+        adjacent_edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlEdge"
+        continuity_gaps:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlContinuityGap"
+        node_watermarks:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlWorkspaceWatermark"
+        activity_preview:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlActivityEntry"
+        launch_surfaces:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlLaunchSurface"
+        provider_deep_links:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlProviderDeepLink"
+
+    MissionControlWorkspaceSnapshot:
+      type: object
+      additionalProperties: false
+      required:
+        - snapshot_id
+        - view_mode
+        - generated_at
+        - resume_token
+        - effective_filters
+        - summary
+        - workspace_watermarks
+        - root_groups
+        - nodes
+        - edges
+      properties:
+        snapshot_id:
+          type: string
+        view_mode:
+          type: string
+          enum: [graph, list]
+        generated_at:
+          type: string
+          format: date-time
+        resume_token:
+          type: string
+        effective_filters:
+          $ref: "#/components/schemas/MissionControlWorkspaceFilters"
+        summary:
+          $ref: "#/components/schemas/MissionControlWorkspaceSummary"
+        workspace_watermarks:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlWorkspaceWatermark"
+        root_groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlRootGroup"
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlNode"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlEdge"
+        next_root_cursor:
+          type: string
+          nullable: true
+
+    MissionControlNodeActivityItemsResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlActivityEntry"
+        next_cursor:
+          type: string
+          nullable: true
+
+    MissionControlLaunchPreviewRequest:
+      type: object
+      additionalProperties: false
+      required: [node_kind, node_public_id, thread_kind, thread_number, target_label]
+      properties:
+        node_kind:
+          type: string
+          enum: [discussion, work_item, run, pull_request]
+        node_public_id:
+          type: string
+        thread_kind:
+          type: string
+          enum: [issue, pull_request]
+        thread_number:
+          type: integer
+          format: int32
+        target_label:
+          type: string
+        removed_labels:
+          type: array
+          items:
+            type: string
+        expected_projection_version:
+          type: integer
+          format: int64
+
+    MissionControlLaunchPreviewLabelDiff:
+      type: object
+      additionalProperties: false
+      required: [removed_labels, added_labels, final_labels]
+      properties:
+        removed_labels:
+          type: array
+          items:
+            type: string
+        added_labels:
+          type: array
+          items:
+            type: string
+        final_labels:
+          type: array
+          items:
+            type: string
+
+    MissionControlLaunchPreviewContinuityEffect:
+      type: object
+      additionalProperties: false
+      required: [resolved_gap_ids, remaining_gap_ids, resulting_node_refs, provider_redirects]
+      properties:
+        resolved_gap_ids:
+          type: array
+          items:
+            type: integer
+            format: int64
+        remaining_gap_ids:
+          type: array
+          items:
+            type: integer
+            format: int64
+        resulting_node_refs:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionControlNodeRef"
+        provider_redirects:
+          type: array
+          items:
+            type: string
+
+    MissionControlLaunchPreview:
+      type: object
+      additionalProperties: false
+      required: [preview_id, approval_requirement, label_diff, continuity_effect]
+      properties:
+        preview_id:
+          type: string
+        approval_requirement:
+          type: string
+          enum: [none, owner_review]
+        label_diff:
+          $ref: "#/components/schemas/MissionControlLaunchPreviewLabelDiff"
+        continuity_effect:
+          $ref: "#/components/schemas/MissionControlLaunchPreviewContinuityEffect"
+        blocking_reason:
+          type: string
+          nullable: true
 
     MissionControlDashboardSummary:
       type: object
