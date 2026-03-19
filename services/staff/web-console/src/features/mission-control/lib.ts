@@ -1,33 +1,33 @@
 import type { LocationQuery, LocationQueryRaw } from "vue-router";
 
 import type {
-  MissionControlBoardGroups,
-  MissionControlEntityCard,
-  MissionControlEntityKind,
-  MissionControlEntityRef,
-  MissionControlRelation,
+  MissionControlActivityEntry,
+  MissionControlEdge,
+  MissionControlNode,
+  MissionControlNodeKind,
   MissionControlRealtimeEvent,
   MissionControlRouteState,
-  MissionControlTimelineEntry,
+  MissionControlSelectedNodeRef,
+  MissionControlWorkspaceFreshnessStatus,
+  MissionControlWorkspaceSnapshot,
+  MissionControlWorkspaceWatermark,
 } from "./types";
 
-export const missionControlDefaultViewMode = "board";
-export const missionControlDefaultActiveFilter = "all_active";
+export const missionControlDefaultViewMode = "graph";
+export const missionControlDefaultStatePreset = "all_active";
 
-const missionControlStates = ["working", "waiting", "blocked", "review", "recent_critical_updates"] as const;
-const missionControlViewModes = ["board", "list"] as const;
-const missionControlActiveFilters = ["working", "waiting", "blocked", "review", "recent_critical_updates", "all_active"] as const;
-const missionControlEntityKinds = ["work_item", "discussion", "pull_request", "agent"] as const;
+const missionControlViewModes = ["graph", "list"] as const;
+const missionControlStatePresets = ["working", "waiting", "blocked", "review", "recent_critical_updates", "all_active"] as const;
+const missionControlNodeKinds = ["discussion", "work_item", "run", "pull_request"] as const;
 const missionControlRealtimeKinds = ["connected", "delta", "invalidate", "stale", "degraded", "resync_required", "heartbeat", "error"] as const;
-const missionControlSyncStatuses = ["synced", "pending_sync", "failed", "degraded"] as const;
-const missionControlProviderKinds = ["github", "platform"] as const;
-const missionControlRelationKinds = ["linked_to", "blocks", "blocked_by", "formalized_from", "owned_by", "assigned_to", "tracked_by_command"] as const;
-const missionControlRelationSourceKinds = ["platform", "provider", "command", "voice_candidate"] as const;
-const missionControlRelationDirections = ["outbound", "inbound", "bidirectional"] as const;
-const missionControlTimelineSourceKinds = ["provider", "platform", "command", "voice_candidate"] as const;
-const missionControlBadges = ["blocked", "owner_review", "waiting_mcp", "realtime_stale", "voice_candidate"] as const;
 
 type JsonRecord = Record<string, unknown>;
+
+export type MissionControlGraphColumn = {
+  columnIndex: number;
+  nodeKinds: MissionControlNodeKind[];
+  nodes: MissionControlNode[];
+};
 
 function isJsonRecord(value: unknown): value is JsonRecord {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -37,32 +37,12 @@ function isString(value: unknown): value is string {
   return typeof value === "string";
 }
 
-function isNumber(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value);
-}
-
-function isBoolean(value: unknown): value is boolean {
-  return typeof value === "boolean";
-}
-
-function asTrimmedString(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === "string");
 }
 
-function isMissionControlViewMode(value: string): value is MissionControlRouteState["viewMode"] {
-  return (missionControlViewModes as readonly string[]).includes(value);
-}
-
-function isMissionControlActiveFilter(value: string): value is MissionControlRouteState["activeFilter"] {
-  return (missionControlActiveFilters as readonly string[]).includes(value);
-}
-
-export function isMissionControlEntityKind(value: string): value is MissionControlEntityKind {
-  return (missionControlEntityKinds as readonly string[]).includes(value);
+function asTrimmedString(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
 }
 
 function asQueryString(value: LocationQuery[string]): string {
@@ -73,253 +53,177 @@ function asQueryString(value: LocationQuery[string]): string {
   return "";
 }
 
+function isMissionControlViewMode(value: string): value is MissionControlRouteState["viewMode"] {
+  return (missionControlViewModes as readonly string[]).includes(value);
+}
+
+function isMissionControlStatePreset(value: string): value is MissionControlRouteState["statePreset"] {
+  return (missionControlStatePresets as readonly string[]).includes(value);
+}
+
+export function isMissionControlNodeKind(value: string): value is MissionControlNodeKind {
+  return (missionControlNodeKinds as readonly string[]).includes(value);
+}
+
+function nodeKindFromLegacyEntityKind(value: string): MissionControlNodeKind | "" {
+  if (value === "agent") return "run";
+  return isMissionControlNodeKind(value) ? value : "";
+}
+
 export function normalizeMissionControlRouteQuery(query: LocationQuery): MissionControlRouteState {
   const viewMode = asQueryString(query.view);
-  const activeFilter = asQueryString(query.filter);
+  const statePreset = asQueryString(query.filter);
   const search = asQueryString(query.q);
-  const entityKind = asQueryString(query.entity_kind);
-  const entityPublicId = asQueryString(query.entity_id);
+
+  const rawNodeKind = asQueryString(query.node_kind) || asQueryString(query.entity_kind);
+  const rawNodePublicId = asQueryString(query.node_id) || asQueryString(query.entity_id);
+  const nodeKind = nodeKindFromLegacyEntityKind(rawNodeKind);
 
   return {
-    viewMode: isMissionControlViewMode(viewMode) ? viewMode : missionControlDefaultViewMode,
-    activeFilter: isMissionControlActiveFilter(activeFilter) ? activeFilter : missionControlDefaultActiveFilter,
+    viewMode: isMissionControlViewMode(viewMode) ? viewMode : viewMode === "board" ? "graph" : missionControlDefaultViewMode,
+    statePreset: isMissionControlStatePreset(statePreset) ? statePreset : missionControlDefaultStatePreset,
     search,
-    entityKind: isMissionControlEntityKind(entityKind) ? entityKind : "",
-    entityPublicId: isMissionControlEntityKind(entityKind) && entityPublicId !== "" ? entityPublicId : "",
+    nodeKind,
+    nodePublicId: nodeKind && rawNodePublicId !== "" ? rawNodePublicId : "",
   };
 }
 
 export function buildMissionControlRouteQuery(state: MissionControlRouteState): LocationQueryRaw {
   return {
     view: state.viewMode !== missionControlDefaultViewMode ? state.viewMode : undefined,
-    filter: state.activeFilter !== missionControlDefaultActiveFilter ? state.activeFilter : undefined,
+    filter: state.statePreset !== missionControlDefaultStatePreset ? state.statePreset : undefined,
     q: state.search.trim() !== "" ? state.search.trim() : undefined,
-    entity_kind: state.entityKind || undefined,
-    entity_id: state.entityPublicId || undefined,
+    node_kind: state.nodeKind || undefined,
+    node_id: state.nodePublicId || undefined,
+  };
+}
+
+export function patchMissionControlRouteState(
+  current: MissionControlRouteState,
+  patch: Partial<MissionControlRouteState>,
+): MissionControlRouteState {
+  return {
+    ...current,
+    ...patch,
   };
 }
 
 export function missionControlRouteStateEquals(left: MissionControlRouteState, right: MissionControlRouteState): boolean {
   return (
     left.viewMode === right.viewMode &&
-    left.activeFilter === right.activeFilter &&
+    left.statePreset === right.statePreset &&
     left.search === right.search &&
-    left.entityKind === right.entityKind &&
-    left.entityPublicId === right.entityPublicId
+    left.nodeKind === right.nodeKind &&
+    left.nodePublicId === right.nodePublicId
   );
 }
 
-export function missionControlEntityKey(entity: MissionControlEntityRef): string {
-  return `${entity.entity_kind}:${entity.entity_public_id}`;
+export function missionControlNodeKey(node: Pick<MissionControlNode, "node_kind" | "node_public_id">): string {
+  return `${node.node_kind}:${node.node_public_id}`;
 }
 
-export function missionControlRelationKey(relation: {
-  relation_kind: string;
-  source_kind: string;
-  source_entity_kind: string;
-  source_entity_public_id: string;
-  target_entity_kind: string;
-  target_entity_public_id: string;
-  direction: string;
-}): string {
+export function missionControlSelectedNodeKey(node: MissionControlSelectedNodeRef): string {
+  return missionControlNodeKey(node);
+}
+
+export function missionControlEdgeKey(edge: MissionControlEdge): string {
   return [
-    relation.relation_kind,
-    relation.source_kind,
-    relation.source_entity_kind,
-    relation.source_entity_public_id,
-    relation.target_entity_kind,
-    relation.target_entity_public_id,
-    relation.direction,
+    edge.edge_kind,
+    edge.source_node_kind,
+    edge.source_node_public_id,
+    edge.target_node_kind,
+    edge.target_node_public_id,
+    edge.source_of_truth,
+    edge.visibility_tier,
+    edge.is_primary_path ? "primary" : "secondary",
   ].join(":");
 }
 
-export function groupMissionControlEntitiesByState(entities: MissionControlEntityCard[]): MissionControlBoardGroups {
-  return missionControlStates.reduce<MissionControlBoardGroups>(
-    (acc, state) => {
-      acc[state] = entities.filter((entity) => entity.state === state);
-      return acc;
-    },
-    {
-      working: [],
-      waiting: [],
-      blocked: [],
-      review: [],
-      recent_critical_updates: [],
-    },
-  );
+export function missionControlWatermarkKey(watermark: MissionControlWorkspaceWatermark): string {
+  return watermark.watermark_kind;
 }
 
-export function resolveMissionControlEffectiveViewMode(
-  preferredViewMode: MissionControlRouteState["viewMode"],
-  freshnessStatus: "fresh" | "stale" | "degraded" | "",
-): MissionControlRouteState["viewMode"] {
-  if (freshnessStatus === "degraded") {
-    return "list";
+export function workspaceFreshnessStatus(snapshot: MissionControlWorkspaceSnapshot | null): MissionControlWorkspaceFreshnessStatus {
+  if (!snapshot) return "";
+
+  let status: MissionControlWorkspaceFreshnessStatus = "fresh";
+  for (const watermark of snapshot.workspace_watermarks) {
+    if (watermark.status === "degraded") {
+      return "degraded";
+    }
+    if (watermark.status === "stale") {
+      status = "stale";
+    }
   }
-  return preferredViewMode;
+  return status;
 }
 
-function parseEntityRef(value: unknown): MissionControlEntityRef | null {
-  if (!isJsonRecord(value)) return null;
-  const entityKind = asTrimmedString(value.entity_kind);
-  const entityPublicId = asTrimmedString(value.entity_public_id);
-  if (!isMissionControlEntityKind(entityKind) || entityPublicId === "") {
-    return null;
+export function missionControlGraphColumns(
+  rootNodePublicId: string,
+  nodesByKey: Map<string, MissionControlNode>,
+): MissionControlGraphColumn[] {
+  const columns = new Map<number, MissionControlNode[]>();
+
+  for (const node of nodesByKey.values()) {
+    if (node.root_node_public_id !== rootNodePublicId) {
+      continue;
+    }
+    const bucket = columns.get(node.column_index);
+    if (bucket) {
+      bucket.push(node);
+      continue;
+    }
+    columns.set(node.column_index, [node]);
   }
-  return {
-    entity_kind: entityKind,
-    entity_public_id: entityPublicId,
-  };
+
+  return Array.from(columns.entries())
+    .sort((left, right) => left[0] - right[0])
+    .map(([columnIndex, items]) => {
+      const nodes = [...items].sort((left, right) => {
+        if (left.visibility_tier !== right.visibility_tier) {
+          return left.visibility_tier === "primary" ? -1 : 1;
+        }
+        if (left.has_blocking_gap !== right.has_blocking_gap) {
+          return left.has_blocking_gap ? -1 : 1;
+        }
+        return left.title.localeCompare(right.title);
+      });
+
+      return {
+        columnIndex,
+        nodeKinds: Array.from(new Set(nodes.map((node) => node.node_kind))),
+        nodes,
+      };
+    });
 }
 
-function parseProviderReference(value: unknown): MissionControlEntityCard["provider_reference"] | null {
-  if (!isJsonRecord(value)) return null;
-  const provider = asTrimmedString(value.provider);
-  const externalID = asTrimmedString(value.external_id);
-  const url = asTrimmedString(value.url);
-  if (!(missionControlProviderKinds as readonly string[]).includes(provider) || externalID === "") {
-    return null;
-  }
-  return {
-    provider: provider as MissionControlEntityCard["provider_reference"]["provider"],
-    external_id: externalID,
-    url: url === "" ? undefined : url,
-  };
+export function missionControlColumnKindKey(column: MissionControlGraphColumn): string {
+  return column.nodeKinds.join(":");
 }
 
-function parsePrimaryActor(value: unknown): MissionControlEntityCard["primary_actor"] | undefined {
-  if (!isJsonRecord(value)) return undefined;
-  const actorType = asTrimmedString(value.actor_type);
-  const actorID = asTrimmedString(value.actor_id);
-  const displayName = asTrimmedString(value.display_name);
-  if (actorType === "" || actorID === "" || displayName === "") {
-    return undefined;
-  }
-  return {
-    actor_type: actorType,
-    actor_id: actorID,
-    display_name: displayName,
-  };
+function parseLegacyImpactCount(payload: JsonRecord): number {
+  const deltaEntities = Array.isArray(payload.delta_entities) ? payload.delta_entities.length : 0;
+  const deltaRelations = Array.isArray(payload.delta_relations) ? payload.delta_relations.length : 0;
+  const deltaTimelineEntries = Array.isArray(payload.delta_timeline_entries) ? payload.delta_timeline_entries.length : 0;
+  return deltaEntities + deltaRelations + deltaTimelineEntries;
 }
 
-function parseMissionControlEntityCard(value: unknown): MissionControlEntityCard | null {
-  if (!isJsonRecord(value)) return null;
-  const entityKind = asTrimmedString(value.entity_kind);
-  const entityPublicID = asTrimmedString(value.entity_public_id);
-  const title = asTrimmedString(value.title);
-  const state = asTrimmedString(value.state);
-  const syncStatus = asTrimmedString(value.sync_status);
-  const providerReference = parseProviderReference(value.provider_reference);
-  const relationCount = value.relation_count;
-  const projectionVersion = value.projection_version;
-  const badges = isStringArray(value.badges)
-    ? value.badges.filter((badge) => (missionControlBadges as readonly string[]).includes(badge))
-    : [];
-
-  if (
-    !isMissionControlEntityKind(entityKind) ||
-    entityPublicID === "" ||
-    title === "" ||
-    !(missionControlStates as readonly string[]).includes(state) ||
-    !(missionControlSyncStatuses as readonly string[]).includes(syncStatus) ||
-    providerReference === null ||
-    !isNumber(relationCount) ||
-    !isNumber(projectionVersion)
-  ) {
-    return null;
-  }
-
-  const lastTimelineAt = asTrimmedString(value.last_timeline_at);
-  const primaryActor = parsePrimaryActor(value.primary_actor);
-
-  return {
-    entity_kind: entityKind,
-    entity_public_id: entityPublicID,
-    title,
-    state: state as MissionControlEntityCard["state"],
-    sync_status: syncStatus as MissionControlEntityCard["sync_status"],
-    provider_reference: providerReference,
-    primary_actor: primaryActor,
-    relation_count: relationCount,
-    last_timeline_at: lastTimelineAt === "" ? undefined : lastTimelineAt,
-    badges: badges as MissionControlEntityCard["badges"],
-    projection_version: projectionVersion,
-  };
+function parseWorkspaceImpactCount(payload: JsonRecord): number {
+  const deltaNodes = Array.isArray(payload.delta_nodes) ? payload.delta_nodes.length : 0;
+  const deltaEdges = Array.isArray(payload.delta_edges) ? payload.delta_edges.length : 0;
+  const deltaGaps = Array.isArray(payload.delta_gaps) ? payload.delta_gaps.length : 0;
+  const deltaWatermarks = Array.isArray(payload.delta_workspace_watermarks) ? payload.delta_workspace_watermarks.length : 0;
+  return deltaNodes + deltaEdges + deltaGaps + deltaWatermarks;
 }
 
-function parseMissionControlRelation(value: unknown): MissionControlRelation | null {
-  if (!isJsonRecord(value)) return null;
-  const relationKind = asTrimmedString(value.relation_kind);
-  const sourceKind = asTrimmedString(value.source_kind);
-  const sourceEntityKind = asTrimmedString(value.source_entity_kind);
-  const sourceEntityPublicID = asTrimmedString(value.source_entity_public_id);
-  const targetEntityKind = asTrimmedString(value.target_entity_kind);
-  const targetEntityPublicID = asTrimmedString(value.target_entity_public_id);
-  const direction = asTrimmedString(value.direction);
-
-  if (
-    !(missionControlRelationKinds as readonly string[]).includes(relationKind) ||
-    !(missionControlRelationSourceKinds as readonly string[]).includes(sourceKind) ||
-    !isMissionControlEntityKind(sourceEntityKind) ||
-    sourceEntityPublicID === "" ||
-    !isMissionControlEntityKind(targetEntityKind) ||
-    targetEntityPublicID === "" ||
-    !(missionControlRelationDirections as readonly string[]).includes(direction)
-  ) {
-    return null;
+function parseAffectedCount(payload: JsonRecord): number {
+  if (Array.isArray(payload.affected_node_refs)) {
+    return payload.affected_node_refs.length;
   }
-
-  return {
-    relation_kind: relationKind as MissionControlRelation["relation_kind"],
-    source_kind: sourceKind as MissionControlRelation["source_kind"],
-    source_entity_kind: sourceEntityKind,
-    source_entity_public_id: sourceEntityPublicID,
-    target_entity_kind: targetEntityKind,
-    target_entity_public_id: targetEntityPublicID,
-    direction: direction as MissionControlRelation["direction"],
-  };
-}
-
-function parseMissionControlTimelineEntry(value: unknown): MissionControlTimelineEntry | null {
-  if (!isJsonRecord(value)) return null;
-  const entryID = asTrimmedString(value.entry_id);
-  const entityKind = asTrimmedString(value.entity_kind);
-  const entityPublicID = asTrimmedString(value.entity_public_id);
-  const sourceKind = asTrimmedString(value.source_kind);
-  const sourceRef = asTrimmedString(value.source_ref);
-  const occurredAt = asTrimmedString(value.occurred_at);
-  const summary = asTrimmedString(value.summary);
-
-  if (
-    entryID === "" ||
-    !isMissionControlEntityKind(entityKind) ||
-    entityPublicID === "" ||
-    !(missionControlTimelineSourceKinds as readonly string[]).includes(sourceKind) ||
-    sourceRef === "" ||
-    occurredAt === "" ||
-    summary === "" ||
-    !isBoolean(value.is_read_only)
-  ) {
-    return null;
+  if (Array.isArray(payload.affected_entity_refs)) {
+    return payload.affected_entity_refs.length;
   }
-
-  const bodyMarkdown = asTrimmedString(value.body_markdown);
-  const commandID = asTrimmedString(value.command_id);
-  const providerURL = asTrimmedString(value.provider_url);
-
-  return {
-    entry_id: entryID,
-    entity_kind: entityKind,
-    entity_public_id: entityPublicID,
-    source_kind: sourceKind as MissionControlTimelineEntry["source_kind"],
-    source_ref: sourceRef,
-    occurred_at: occurredAt,
-    summary,
-    body_markdown: bodyMarkdown === "" ? undefined : bodyMarkdown,
-    command_id: commandID === "" ? undefined : commandID,
-    provider_url: providerURL === "" ? undefined : providerURL,
-    is_read_only: value.is_read_only,
-  };
+  return 0;
 }
 
 export function parseMissionControlRealtimeEnvelope(raw: string): MissionControlRealtimeEvent | null {
@@ -339,11 +243,11 @@ export function parseMissionControlRealtimeEnvelope(raw: string): MissionControl
     return null;
   }
 
-  const snapshotID = asTrimmedString(parsed.snapshot_id);
+  const snapshotId = asTrimmedString(parsed.snapshot_id);
   const resumeToken = asTrimmedString(parsed.resume_token);
   const occurredAt = asTrimmedString(parsed.occurred_at);
   const payload = parsed.payload;
-  if (snapshotID === "" || occurredAt === "" || !isJsonRecord(payload)) {
+  if (snapshotId === "" || occurredAt === "" || !isJsonRecord(payload)) {
     return null;
   }
 
@@ -356,7 +260,7 @@ export function parseMissionControlRealtimeEnvelope(raw: string): MissionControl
       }
       return {
         event_kind: "connected",
-        snapshot_id: snapshotID,
+        snapshot_id: snapshotId,
         resume_token: resumeToken,
         occurred_at: occurredAt,
         payload: {
@@ -366,55 +270,38 @@ export function parseMissionControlRealtimeEnvelope(raw: string): MissionControl
       };
     }
     case "delta": {
-      const deltaEntities = Array.isArray(payload.delta_entities)
-        ? payload.delta_entities
-            .map(parseMissionControlEntityCard)
-            .filter((item): item is MissionControlEntityCard => item !== null)
-        : null;
-      const deltaRelations = Array.isArray(payload.delta_relations)
-        ? payload.delta_relations
-            .map(parseMissionControlRelation)
-            .filter((item): item is MissionControlRelation => item !== null)
-        : null;
-      const deltaTimelineEntries = Array.isArray(payload.delta_timeline_entries)
-        ? payload.delta_timeline_entries
-            .map(parseMissionControlTimelineEntry)
-            .filter((item): item is MissionControlTimelineEntry => item !== null)
-        : null;
-      if (deltaEntities === null || deltaRelations === null || deltaTimelineEntries === null || !isStringArray(payload.changed_command_ids)) {
+      const changedCommandIds = isStringArray(payload.changed_command_ids) ? payload.changed_command_ids : null;
+      if (changedCommandIds === null) {
         return null;
       }
+
       return {
         event_kind: "delta",
-        snapshot_id: snapshotID,
+        snapshot_id: snapshotId,
         resume_token: resumeToken,
         occurred_at: occurredAt,
         payload: {
-          delta_entities: deltaEntities,
-          delta_relations: deltaRelations,
-          delta_timeline_entries: deltaTimelineEntries,
-          changed_command_ids: payload.changed_command_ids,
+          changed_command_ids: changedCommandIds,
+          impact_count: parseLegacyImpactCount(payload) + parseWorkspaceImpactCount(payload),
         },
       };
     }
     case "invalidate": {
       const reason = asTrimmedString(payload.reason);
       const refreshScope = asTrimmedString(payload.refresh_scope);
-      const refs = Array.isArray(payload.affected_entity_refs)
-        ? payload.affected_entity_refs.map(parseEntityRef).filter((item): item is MissionControlEntityRef => item !== null)
-        : [];
       if (reason === "" || refreshScope === "") {
         return null;
       }
+
       return {
         event_kind: "invalidate",
-        snapshot_id: snapshotID,
+        snapshot_id: snapshotId,
         resume_token: resumeToken,
         occurred_at: occurredAt,
         payload: {
           reason,
           refresh_scope: refreshScope,
-          affected_entity_refs: refs,
+          affected_count: parseAffectedCount(payload),
         },
       };
     }
@@ -425,9 +312,10 @@ export function parseMissionControlRealtimeEnvelope(raw: string): MissionControl
       if (reason === "" || staleSince === "" || suggestedRefresh === "") {
         return null;
       }
+
       return {
         event_kind: "stale",
-        snapshot_id: snapshotID,
+        snapshot_id: snapshotId,
         resume_token: resumeToken,
         occurred_at: occurredAt,
         payload: {
@@ -440,13 +328,14 @@ export function parseMissionControlRealtimeEnvelope(raw: string): MissionControl
     case "degraded": {
       const reason = asTrimmedString(payload.reason);
       const fallbackMode = asTrimmedString(payload.fallback_mode);
-      const affectedCapabilities = isStringArray(payload.affected_capabilities) ? [...payload.affected_capabilities] : [];
+      const affectedCapabilities = isStringArray(payload.affected_capabilities) ? payload.affected_capabilities : [];
       if (reason === "" || fallbackMode === "") {
         return null;
       }
+
       return {
         event_kind: "degraded",
-        snapshot_id: snapshotID,
+        snapshot_id: snapshotId,
         resume_token: resumeToken,
         occurred_at: occurredAt,
         payload: {
@@ -458,50 +347,53 @@ export function parseMissionControlRealtimeEnvelope(raw: string): MissionControl
     }
     case "resync_required": {
       const reason = asTrimmedString(payload.reason);
-      const requiredSnapshotID = asTrimmedString(payload.required_snapshot_id);
+      const requiredSnapshotId = asTrimmedString(payload.required_snapshot_id);
       const droppedEventCount = Number(payload.dropped_event_count);
-      if (reason === "" || requiredSnapshotID === "" || !Number.isFinite(droppedEventCount)) {
+      if (reason === "" || requiredSnapshotId === "" || !Number.isFinite(droppedEventCount)) {
         return null;
       }
+
       return {
         event_kind: "resync_required",
-        snapshot_id: snapshotID,
+        snapshot_id: snapshotId,
         resume_token: resumeToken,
         occurred_at: occurredAt,
         payload: {
           reason,
-          required_snapshot_id: requiredSnapshotID,
+          required_snapshot_id: requiredSnapshotId,
           dropped_event_count: Math.max(0, Math.trunc(droppedEventCount)),
         },
       };
     }
     case "heartbeat": {
       const serverTime = asTrimmedString(payload.server_time);
-      const heartbeatSnapshotID = asTrimmedString(payload.snapshot_id);
-      if (serverTime === "" || heartbeatSnapshotID === "") {
+      const heartbeatSnapshotId = asTrimmedString(payload.snapshot_id);
+      if (serverTime === "" || heartbeatSnapshotId === "") {
         return null;
       }
+
       return {
         event_kind: "heartbeat",
-        snapshot_id: snapshotID,
+        snapshot_id: snapshotId,
         resume_token: resumeToken,
         occurred_at: occurredAt,
         payload: {
           server_time: serverTime,
-          snapshot_id: heartbeatSnapshotID,
+          snapshot_id: heartbeatSnapshotId,
         },
       };
     }
     case "error": {
       const code = asTrimmedString(payload.code);
-      const message = isString(payload.message) ? payload.message : "";
+      const message = asTrimmedString(payload.message);
       const retryable = payload.retryable;
       if (code === "" || message === "" || typeof retryable !== "boolean") {
         return null;
       }
+
       return {
         event_kind: "error",
-        snapshot_id: snapshotID,
+        snapshot_id: snapshotId,
         resume_token: resumeToken,
         occurred_at: occurredAt,
         payload: {
@@ -514,4 +406,13 @@ export function parseMissionControlRealtimeEnvelope(raw: string): MissionControl
     default:
       return null;
   }
+}
+
+export function sortMissionControlActivity(items: MissionControlActivityEntry[]): MissionControlActivityEntry[] {
+  return [...items].sort((left, right) => {
+    if (left.occurred_at === right.occurred_at) {
+      return left.entry_id < right.entry_id ? 1 : -1;
+    }
+    return left.occurred_at < right.occurred_at ? 1 : -1;
+  });
 }

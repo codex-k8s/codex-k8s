@@ -1,94 +1,46 @@
 import type {
-  MissionControlActionPresentation,
-  MissionControlDeepLinkPresentation,
-  MissionControlEntityCard,
-  MissionControlEntityDetails,
-  MissionControlEntityKind,
+  MissionControlContinuityGap,
   MissionControlInfoRow,
+  MissionControlLaunchSurface,
+  MissionControlNode,
+  MissionControlNodeDetails,
+  MissionControlNodeKind,
+  MissionControlNodeRef,
+  MissionControlProviderDeepLink,
+  MissionControlRelatedNodesSection,
+  MissionControlWorkspaceWatermark,
 } from "./types";
 
-type WorkItemLikePayload = {
-  issue_number: number;
-  repository_full_name?: string;
-  issue_url?: string | null;
-  last_run_id?: string | null;
-  last_status?: string | null;
-  trigger_kind?: string | null;
-  work_item_type?: string | null;
-  stage_label?: string | null;
-  labels?: string[];
-  owner?: string | null;
-  assignees?: string[];
-  last_provider_sync_at?: string | null;
-};
+type DiscussionPayload = Extract<MissionControlNodeDetails["detail_payload"], { discussion_kind: string }>;
+type WorkItemPayload = Extract<MissionControlNodeDetails["detail_payload"], { issue_number: number }>;
+type RunPayload = Extract<MissionControlNodeDetails["detail_payload"], { run_id: string }>;
+type PullRequestPayload = Extract<MissionControlNodeDetails["detail_payload"], { pull_request_number: number }>;
 
-type DiscussionLikePayload = {
-  discussion_kind: string;
-  status?: string | null;
-  author?: string | null;
-  participant_count?: number;
-  latest_comment_excerpt?: string | null;
-  formalization_target?: string | null;
-};
-
-type PullRequestLikePayload = {
-  pull_request_number: number;
-  repository_full_name?: string;
-  pull_request_url?: string | null;
-  last_run_id?: string | null;
-  last_status?: string | null;
-  branch_head?: string | null;
-  branch_base?: string | null;
-  merge_state?: string | null;
-  review_decision?: string | null;
-  checks_summary?: string | null;
-  linked_issue_refs?: string[];
-};
-
-type AgentLikePayload = {
-  agent_key: string;
-  run_status?: string | null;
-  runtime_mode?: string | null;
-  waiting_reason?: string | null;
-  active_run_id?: string | null;
-  last_heartbeat_at?: string | null;
-  last_run_repository?: string | null;
-};
-
-function isWorkItemPayload(payload: MissionControlEntityDetails["detail_payload"]): payload is WorkItemLikePayload {
-  return "issue_number" in payload;
-}
-
-function isDiscussionPayload(payload: MissionControlEntityDetails["detail_payload"]): payload is DiscussionLikePayload {
+export function isDiscussionPayload(payload: MissionControlNodeDetails["detail_payload"]): payload is DiscussionPayload {
   return "discussion_kind" in payload;
 }
 
-function isPullRequestPayload(payload: MissionControlEntityDetails["detail_payload"]): payload is PullRequestLikePayload {
+export function isWorkItemPayload(payload: MissionControlNodeDetails["detail_payload"]): payload is WorkItemPayload {
+  return "issue_number" in payload;
+}
+
+export function isRunPayload(payload: MissionControlNodeDetails["detail_payload"]): payload is RunPayload {
+  return "run_id" in payload;
+}
+
+export function isPullRequestPayload(payload: MissionControlNodeDetails["detail_payload"]): payload is PullRequestPayload {
   return "pull_request_number" in payload;
 }
 
-function isAgentPayload(payload: MissionControlEntityDetails["detail_payload"]): payload is AgentLikePayload {
-  return "agent_key" in payload;
+export function missionControlNodeKindLabelKey(kind: MissionControlNodeKind): string {
+  return `pages.missionControl.nodeKinds.${kind}`;
 }
 
-export function missionControlEntityKindLabelKey(kind: MissionControlEntityKind): string {
-  switch (kind) {
-    case "work_item":
-      return "pages.missionControl.entityKinds.work_item";
-    case "discussion":
-      return "pages.missionControl.entityKinds.discussion";
-    case "pull_request":
-      return "pages.missionControl.entityKinds.pull_request";
-    case "agent":
-      return "pages.missionControl.entityKinds.agent";
-  }
-}
-
-export function missionControlStateLabelKey(state: MissionControlEntityCard["state"]): string {
+export function missionControlStateLabelKey(state: MissionControlNode["active_state"]): string {
   return `pages.missionControl.states.${state}`;
 }
 
-export function missionControlStateColor(state: MissionControlEntityCard["state"]): string {
+export function missionControlStateColor(state: MissionControlNode["active_state"]): string {
   switch (state) {
     case "working":
       return "info";
@@ -100,149 +52,237 @@ export function missionControlStateColor(state: MissionControlEntityCard["state"
       return "success";
     case "recent_critical_updates":
       return "secondary";
+    case "archived":
+      return "default";
   }
 }
 
-export function missionControlSyncStatusLabelKey(status: MissionControlEntityCard["sync_status"]): string {
-  return `pages.missionControl.sync.${status}`;
+export function missionControlVisibilityLabelKey(visibility: MissionControlNode["visibility_tier"]): string {
+  return `pages.missionControl.visibility.${visibility}`;
 }
 
-export function missionControlSyncStatusColor(status: MissionControlEntityCard["sync_status"]): string {
+export function missionControlVisibilityColor(visibility: MissionControlNode["visibility_tier"]): string {
+  return visibility === "primary" ? "primary" : "secondary";
+}
+
+export function missionControlContinuityStatusLabelKey(status: MissionControlNode["continuity_status"]): string {
+  return `pages.missionControl.continuity.${status}`;
+}
+
+export function missionControlContinuityColor(status: MissionControlNode["continuity_status"]): string {
   switch (status) {
-    case "synced":
+    case "complete":
       return "success";
-    case "pending_sync":
+    case "stale_provider":
       return "warning";
-    case "failed":
+    case "out_of_scope":
+      return "secondary";
+    default:
       return "error";
+  }
+}
+
+export function missionControlCoverageClassLabelKey(coverageClass: MissionControlNode["coverage_class"]): string {
+  return `pages.missionControl.coverage.${coverageClass}`;
+}
+
+export function missionControlBadgeLabelKey(badge: MissionControlNode["badges"][number]): string {
+  return `pages.missionControl.badges.${badge}`;
+}
+
+export function missionControlWatermarkLabelKey(kind: MissionControlWorkspaceWatermark["watermark_kind"]): string {
+  return `pages.missionControl.watermarks.${kind}`;
+}
+
+export function missionControlWatermarkColor(status: MissionControlWorkspaceWatermark["status"]): string {
+  switch (status) {
+    case "fresh":
+      return "success";
+    case "stale":
+      return "warning";
     case "degraded":
+      return "error";
+    case "out_of_scope":
       return "secondary";
   }
 }
 
-export function missionControlBadgeLabelKey(badge: MissionControlEntityCard["badges"][number]): string {
-  return `pages.missionControl.badges.${badge}`;
+export function missionControlGapSeverityLabelKey(severity: MissionControlContinuityGap["severity"]): string {
+  return `pages.missionControl.gapSeverity.${severity}`;
 }
 
-export function missionControlActionLabelKey(actionKind: string): string {
-  return `pages.missionControl.actions.${actionKind}`;
-}
-
-export function missionControlActionPresentation(actionKind: string): MissionControlActionPresentation {
-  switch (actionKind) {
-    case "stage.next_step.execute":
-      return { color: "primary", icon: "mdi-rocket-launch-outline" };
-    case "discussion.create":
-      return { color: "info", icon: "mdi-comment-plus-outline" };
-    case "work_item.create":
-      return { color: "success", icon: "mdi-briefcase-plus-outline" };
-    case "discussion.formalize":
-      return { color: "secondary", icon: "mdi-file-document-edit-outline" };
-    case "command.retry_sync":
-      return { color: "warning", icon: "mdi-refresh" };
-    default:
-      return { color: "secondary", icon: "mdi-dots-horizontal" };
+export function missionControlGapSeverityColor(severity: MissionControlContinuityGap["severity"]): string {
+  switch (severity) {
+    case "blocking":
+      return "error";
+    case "warning":
+      return "warning";
+    case "info":
+      return "info";
   }
 }
 
-export function missionControlDeepLinkPresentation(actionKind: string): MissionControlDeepLinkPresentation {
+export function missionControlGapKindLabelKey(kind: MissionControlContinuityGap["gap_kind"]): string {
+  return `pages.missionControl.gapKinds.${kind}`;
+}
+
+export function missionControlLaunchSurfaceLabelKey(actionKind: MissionControlLaunchSurface["action_kind"]): string {
+  return `pages.missionControl.launchSurfaces.${actionKind}`;
+}
+
+export function missionControlLaunchSurfaceIcon(actionKind: MissionControlLaunchSurface["action_kind"]): string {
   switch (actionKind) {
+    case "preview_next_stage":
+      return "mdi-rocket-launch-outline";
+    case "open_linked_pull_request":
+      return "mdi-source-pull";
+    case "open_linked_follow_up_issue":
+      return "mdi-source-branch";
+    case "open_provider_context":
+      return "mdi-open-in-new";
+    case "inspect_run_context":
+      return "mdi-radar";
+  }
+}
+
+export function missionControlProviderDeepLinkLabelKey(actionKind: MissionControlProviderDeepLink["action_kind"]): string {
+  return `pages.missionControl.providerLinks.${actionKind}`;
+}
+
+export function missionControlProviderDeepLinkIcon(actionKind: MissionControlProviderDeepLink["action_kind"]): string {
+  switch (actionKind) {
+    case "provider.open_issue":
+      return "mdi-link-variant";
     case "provider.open_pr":
-      return { color: "success", icon: "mdi-source-pull", labelKey: "pages.missionControl.deepLinks.provider.open_pr" };
+      return "mdi-source-pull";
     case "provider.review":
-      return { color: "warning", icon: "mdi-comment-check-outline", labelKey: "pages.missionControl.deepLinks.provider.review" };
+      return "mdi-comment-check-outline";
     case "provider.merge":
-      return { color: "warning", icon: "mdi-source-merge", labelKey: "pages.missionControl.deepLinks.provider.merge" };
+      return "mdi-source-merge";
     case "provider.reply_comment":
-      return { color: "info", icon: "mdi-comment-edit-outline", labelKey: "pages.missionControl.deepLinks.provider.reply_comment" };
-    default:
-      return { color: "primary", icon: "mdi-open-in-new", labelKey: "pages.missionControl.deepLinks.provider.open_issue" };
+      return "mdi-comment-edit-outline";
   }
 }
 
 function pushInfoRow(
   rows: MissionControlInfoRow[],
   labelKey: string,
-  value: string | null | undefined,
+  value: string | number | null | undefined,
   options: { mono?: boolean; href?: string } = {},
 ): void {
-  const trimmed = String(value || "").trim();
-  if (trimmed === "") return;
+  const text = String(value ?? "").trim();
+  if (text === "") return;
+
   rows.push({
     labelKey,
-    value: trimmed,
+    value: text,
     mono: options.mono,
     href: options.href,
   });
 }
 
-export function buildMissionControlInfoRows(details: MissionControlEntityDetails): MissionControlInfoRow[] {
+export function buildMissionControlInfoRows(details: MissionControlNodeDetails): MissionControlInfoRow[] {
   const rows: MissionControlInfoRow[] = [];
-  const payload = details.detail_payload;
 
-  if (isWorkItemPayload(payload)) {
-    pushInfoRow(rows, "pages.missionControl.sidePanel.repository", payload.repository_full_name, { mono: true });
-    pushInfoRow(rows, "pages.missionControl.sidePanel.issueNumber", `#${payload.issue_number}`, {
-      mono: true,
-      href: payload.issue_url || undefined,
-    });
-    pushInfoRow(rows, "pages.missionControl.sidePanel.stageLabel", payload.stage_label, { mono: true });
-    pushInfoRow(rows, "pages.missionControl.sidePanel.workItemType", payload.work_item_type);
-    pushInfoRow(rows, "pages.missionControl.sidePanel.owner", payload.owner);
-    pushInfoRow(rows, "pages.missionControl.sidePanel.triggerKind", payload.trigger_kind, { mono: true });
-    pushInfoRow(rows, "pages.missionControl.sidePanel.lastRun", payload.last_run_id, { mono: true });
-    pushInfoRow(rows, "pages.missionControl.sidePanel.lastStatus", payload.last_status);
-  }
+  pushInfoRow(rows, "pages.missionControl.sidePanel.nodeId", details.node.node_public_id, { mono: true });
+  pushInfoRow(rows, "pages.missionControl.sidePanel.rootId", details.node.root_node_public_id, { mono: true });
+  pushInfoRow(rows, "pages.missionControl.sidePanel.projectionVersion", details.node.projection_version, { mono: true });
+  pushInfoRow(rows, "pages.missionControl.sidePanel.providerRef", details.node.provider_reference?.external_id, { mono: true });
+  pushInfoRow(rows, "pages.missionControl.sidePanel.lastActivity", details.node.last_activity_at, { mono: true });
+
+  const payload = details.detail_payload;
 
   if (isDiscussionPayload(payload)) {
     pushInfoRow(rows, "pages.missionControl.sidePanel.discussionKind", payload.discussion_kind);
     pushInfoRow(rows, "pages.missionControl.sidePanel.status", payload.status);
     pushInfoRow(rows, "pages.missionControl.sidePanel.author", payload.author);
-    if (typeof payload.participant_count === "number") {
-      pushInfoRow(rows, "pages.missionControl.sidePanel.participants", String(payload.participant_count));
-    }
-    pushInfoRow(rows, "pages.missionControl.sidePanel.formalizationTarget", payload.formalization_target);
+    pushInfoRow(rows, "pages.missionControl.sidePanel.participants", payload.participant_count);
+  }
+
+  if (isWorkItemPayload(payload)) {
+    pushInfoRow(rows, "pages.missionControl.sidePanel.repository", payload.repository_full_name, { mono: true });
+    pushInfoRow(rows, "pages.missionControl.sidePanel.issueNumber", `#${payload.issue_number}`, { mono: true });
+    pushInfoRow(rows, "pages.missionControl.sidePanel.stageLabel", payload.stage_label, { mono: true });
+    pushInfoRow(rows, "pages.missionControl.sidePanel.lastProviderSync", payload.last_provider_sync_at, { mono: true });
+  }
+
+  if (isRunPayload(payload)) {
+    pushInfoRow(rows, "pages.missionControl.sidePanel.runId", payload.run_id, { mono: true });
+    pushInfoRow(rows, "pages.missionControl.sidePanel.agentKey", payload.agent_key, { mono: true });
+    pushInfoRow(rows, "pages.missionControl.sidePanel.runStatus", payload.run_status);
+    pushInfoRow(rows, "pages.missionControl.sidePanel.runtimeMode", payload.runtime_mode, { mono: true });
+    pushInfoRow(rows, "pages.missionControl.sidePanel.triggerLabel", payload.trigger_label, { mono: true });
+    pushInfoRow(rows, "pages.missionControl.sidePanel.buildRef", payload.build_ref, { mono: true });
+    pushInfoRow(rows, "pages.missionControl.sidePanel.candidateNamespace", payload.candidate_namespace, { mono: true });
+    pushInfoRow(rows, "pages.missionControl.sidePanel.startedAt", payload.started_at, { mono: true });
+    pushInfoRow(rows, "pages.missionControl.sidePanel.finishedAt", payload.finished_at, { mono: true });
   }
 
   if (isPullRequestPayload(payload)) {
     pushInfoRow(rows, "pages.missionControl.sidePanel.repository", payload.repository_full_name, { mono: true });
     pushInfoRow(rows, "pages.missionControl.sidePanel.pullRequestNumber", `#${payload.pull_request_number}`, {
       mono: true,
-      href: payload.pull_request_url || undefined,
     });
     pushInfoRow(rows, "pages.missionControl.sidePanel.branchHead", payload.branch_head, { mono: true });
     pushInfoRow(rows, "pages.missionControl.sidePanel.branchBase", payload.branch_base, { mono: true });
     pushInfoRow(rows, "pages.missionControl.sidePanel.mergeState", payload.merge_state);
     pushInfoRow(rows, "pages.missionControl.sidePanel.reviewDecision", payload.review_decision);
     pushInfoRow(rows, "pages.missionControl.sidePanel.checksSummary", payload.checks_summary);
-    pushInfoRow(rows, "pages.missionControl.sidePanel.lastRun", payload.last_run_id, { mono: true });
-    pushInfoRow(rows, "pages.missionControl.sidePanel.lastStatus", payload.last_status);
-  }
-
-  if (isAgentPayload(payload)) {
-    pushInfoRow(rows, "pages.missionControl.sidePanel.agentKey", payload.agent_key, { mono: true });
-    pushInfoRow(rows, "pages.missionControl.sidePanel.runtimeMode", payload.runtime_mode, { mono: true });
-    pushInfoRow(rows, "pages.missionControl.sidePanel.runStatus", payload.run_status);
-    pushInfoRow(rows, "pages.missionControl.sidePanel.waitingReason", payload.waiting_reason);
-    pushInfoRow(rows, "pages.missionControl.sidePanel.lastRun", payload.active_run_id, { mono: true });
-    pushInfoRow(rows, "pages.missionControl.sidePanel.lastRepository", payload.last_run_repository, { mono: true });
   }
 
   return rows;
 }
 
-export function missionControlWorkItemLabels(details: MissionControlEntityDetails): string[] {
-  return isWorkItemPayload(details.detail_payload) ? details.detail_payload.labels ?? [] : [];
+export function missionControlRelatedNodeSections(details: MissionControlNodeDetails): MissionControlRelatedNodesSection[] {
+  const payload = details.detail_payload;
+  const sections: MissionControlRelatedNodesSection[] = [];
+
+  if (isDiscussionPayload(payload)) {
+    sections.push({
+      titleKey: "pages.missionControl.relatedSections.formalizations",
+      refs: payload.formalization_target_refs,
+    });
+  }
+
+  if (isWorkItemPayload(payload)) {
+    sections.push({
+      titleKey: "pages.missionControl.relatedSections.linkedRuns",
+      refs: payload.linked_run_refs,
+    });
+    sections.push({
+      titleKey: "pages.missionControl.relatedSections.followUpIssues",
+      refs: payload.linked_follow_up_refs,
+    });
+  }
+
+  if (isRunPayload(payload)) {
+    sections.push({
+      titleKey: "pages.missionControl.relatedSections.linkedPullRequests",
+      refs: payload.linked_pull_request_refs,
+    });
+    sections.push({
+      titleKey: "pages.missionControl.relatedSections.producedIssues",
+      refs: payload.produced_issue_refs,
+    });
+  }
+
+  if (isPullRequestPayload(payload)) {
+    sections.push({
+      titleKey: "pages.missionControl.relatedSections.linkedIssues",
+      refs: payload.linked_issue_refs,
+    });
+    sections.push({
+      titleKey: "pages.missionControl.relatedSections.linkedRuns",
+      refs: payload.linked_run_ref ? [payload.linked_run_ref] : [],
+    });
+  }
+
+  return sections.filter((section) => section.refs.length > 0);
 }
 
-export function missionControlWorkItemAssignees(details: MissionControlEntityDetails): string[] {
-  return isWorkItemPayload(details.detail_payload) ? details.detail_payload.assignees ?? [] : [];
-}
-
-export function missionControlPullRequestLinkedIssues(details: MissionControlEntityDetails): string[] {
-  return isPullRequestPayload(details.detail_payload) ? details.detail_payload.linked_issue_refs ?? [] : [];
-}
-
-export function missionControlDiscussionLatestComment(details: MissionControlEntityDetails): string {
-  return isDiscussionPayload(details.detail_payload) ? String(details.detail_payload.latest_comment_excerpt || "") : "";
+export function missionControlAdjacentNodeRefs(details: MissionControlNodeDetails): MissionControlNodeRef[] {
+  return details.adjacent_nodes.map((node) => ({
+    node_kind: node.node_kind,
+    node_public_id: node.node_public_id,
+  }));
 }
