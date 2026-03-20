@@ -5,8 +5,8 @@ title: "codex-k8s — Delivery Plan"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-03-16
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 500, 510, 512, 516, 519, 521, 522, 523, 524, 525, 537, 542, 543, 544, 545, 546, 547]
+updated_at: 2026-03-20
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 500, 510, 512, 516, 519, 521, 522, 523, 524, 525, 537, 541, 542, 543, 544, 545, 546, 547, 554]
 
 related_prs: []
 approvals:
@@ -482,6 +482,19 @@ approvals:
 - Day 7 (planned): owner-managed `run:dev` execution waves через issues `#542..#547`.
   - Цель: поэтапно реализовать foundation, graph truth, reconcile, transport, UI visibility и readiness evidence без нарушения design guardrails.
   - Ожидаемый результат: PR-потоки по waves с обязательным traceability sync и переходом в `state:in-review`.
+
+### Sprint S17: Unified long-lived user interaction waits and owner feedback inbox (Issue #541)
+- Day 1 (in-review): intake package для unified owner feedback loop (`docs/delivery/epics/s17/epic-s17-day1-unified-user-interaction-waits-and-owner-feedback-inbox-intake.md`, Issue `#541`).
+- Результат Day 1 (факт):
+  - зафиксирован отдельный cross-cutting product stream вокруг long-lived human-wait contract, а не локальный Telegram/runtime bugfix;
+  - сравнение execution models закрепило recommended baseline: same live pod / same `codex` session как happy-path, snapshot-resume только как recovery fallback;
+  - long human-wait target `>=24h`, lifecycle `created -> delivery pending -> delivery accepted -> waiting -> response -> continuation`, Telegram pending inbox и staff-console fallback закреплены как intake baseline;
+  - persisted text/voice binding и deterministic continuation после inline/text/voice reply включены в core Wave 1;
+  - `run:self-improve` явно выведен из human-wait contract;
+  - создана continuity issue `#554` для stage `run:vision` без trigger-лейбла.
+- Day 2 (planned): vision package для owner feedback loop (Issue `#554`).
+  - Цель: зафиксировать mission, north star, persona outcomes, KPI/guardrails и wave boundaries без reopening Day1 baseline.
+  - Ожидаемый результат: follow-up issue для `run:prd` и locked product guardrails для same-session continuity, 24h wait и dual-channel inbox.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
