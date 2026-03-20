@@ -147,6 +147,91 @@ type ReportGitHubRateLimitSignalResult struct {
 	ResumeNotBefore *time.Time
 }
 
+type ChangeGovernanceScopeHint struct {
+	ContextKey  string
+	SurfaceKind string
+}
+
+type ChangeGovernanceVerificationTarget struct {
+	TargetKind string
+	TargetRef  string
+}
+
+type ChangeGovernanceWaveDraft struct {
+	WaveKey             string
+	PublishOrder        int
+	DominantIntent      string
+	BoundedScopeKind    string
+	Summary             string
+	VerificationTargets []ChangeGovernanceVerificationTarget
+}
+
+type ChangeGovernanceArtifactLinkSeed struct {
+	ArtifactKind string
+	ArtifactRef  string
+	RelationKind string
+	DisplayLabel string
+}
+
+type ReportChangeGovernanceDraftSignalParams struct {
+	RunID                string
+	SignalID             string
+	CorrelationID        string
+	ProjectID            string
+	RepositoryFullName   string
+	IssueNumber          int
+	PRNumber             *int
+	BranchName           string
+	DraftRef             string
+	DraftKind            string
+	ChangeScopeHints     []ChangeGovernanceScopeHint
+	CandidateRiskDrivers []string
+	DraftChecksum        string
+	OccurredAt           time.Time
+}
+
+type ReportChangeGovernanceDraftSignalResult struct {
+	PackageID    string
+	DraftState   string
+	NextStepKind string
+}
+
+type PublishChangeGovernanceWaveMapParams struct {
+	RunID         string
+	PackageID     string
+	WaveMapID     string
+	CorrelationID string
+	Waves         []ChangeGovernanceWaveDraft
+	PublishedAt   time.Time
+}
+
+type PublishChangeGovernanceWaveMapResult struct {
+	PackageID         string
+	PublicationState  string
+	ProjectionVersion int64
+}
+
+type UpsertChangeGovernanceEvidenceSignalParams struct {
+	RunID                 string
+	PackageID             string
+	SignalID              string
+	CorrelationID         string
+	ScopeKind             string
+	ScopeRef              string
+	BlockKind             string
+	ArtifactLinks         []ChangeGovernanceArtifactLinkSeed
+	VerificationStateHint string
+	RequiredByTier        bool
+	OccurredAt            time.Time
+}
+
+type UpsertChangeGovernanceEvidenceSignalResult struct {
+	PackageID                 string
+	EvidenceCompletenessState string
+	VerificationMinimumState  string
+	ProjectionVersion         int64
+}
+
 // RunGitHubRateLimitResumePayload is the deterministic GitHub rate-limit payload fetched for the current run.
 type RunGitHubRateLimitResumePayload struct {
 	Payload json.RawMessage
@@ -362,6 +447,83 @@ func (c *Client) ReportGitHubRateLimitSignal(ctx context.Context, params ReportG
 	return result, nil
 }
 
+func (c *Client) ReportChangeGovernanceDraftSignal(ctx context.Context, params ReportChangeGovernanceDraftSignalParams) (ReportChangeGovernanceDraftSignalResult, error) {
+	request := &controlplanev1.ReportChangeGovernanceDraftSignalRequest{
+		RunId:                strings.TrimSpace(params.RunID),
+		SignalId:             strings.TrimSpace(params.SignalID),
+		CorrelationId:        strings.TrimSpace(params.CorrelationID),
+		ProjectId:            strings.TrimSpace(params.ProjectID),
+		RepositoryFullName:   strings.TrimSpace(params.RepositoryFullName),
+		IssueNumber:          int32(params.IssueNumber),
+		PrNumber:             intToOptional(params.PRNumber),
+		BranchName:           strings.TrimSpace(params.BranchName),
+		DraftRef:             strings.TrimSpace(params.DraftRef),
+		DraftKind:            strings.TrimSpace(params.DraftKind),
+		ChangeScopeHints:     mapChangeGovernanceProtoPairs(params.ChangeScopeHints, changeGovernanceScopeHintContextKey, changeGovernanceScopeHintSurfaceKind, buildChangeGovernanceScopeHintProto),
+		CandidateRiskDrivers: normalizeStrings(params.CandidateRiskDrivers),
+		DraftChecksum:        optionalString(strings.TrimSpace(params.DraftChecksum)),
+		OccurredAt:           timestamppb.New(params.OccurredAt.UTC()),
+	}
+
+	resp, err := c.svc.ReportChangeGovernanceDraftSignal(c.withAuth(ctx), request)
+	if err != nil {
+		return ReportChangeGovernanceDraftSignalResult{}, fmt.Errorf("report change governance draft signal: %w", err)
+	}
+	return ReportChangeGovernanceDraftSignalResult{
+		PackageID:    strings.TrimSpace(resp.GetPackageId()),
+		DraftState:   strings.TrimSpace(resp.GetDraftState()),
+		NextStepKind: strings.TrimSpace(resp.GetNextStepKind()),
+	}, nil
+}
+
+func (c *Client) PublishChangeGovernanceWaveMap(ctx context.Context, params PublishChangeGovernanceWaveMapParams) (PublishChangeGovernanceWaveMapResult, error) {
+	request := &controlplanev1.PublishChangeGovernanceWaveMapRequest{
+		RunId:         strings.TrimSpace(params.RunID),
+		PackageId:     strings.TrimSpace(params.PackageID),
+		WaveMapId:     strings.TrimSpace(params.WaveMapID),
+		CorrelationId: strings.TrimSpace(params.CorrelationID),
+		Waves:         changeGovernanceWavesToProto(params.Waves),
+		PublishedAt:   timestamppb.New(params.PublishedAt.UTC()),
+	}
+
+	resp, err := c.svc.PublishChangeGovernanceWaveMap(c.withAuth(ctx), request)
+	if err != nil {
+		return PublishChangeGovernanceWaveMapResult{}, fmt.Errorf("publish change governance wave map: %w", err)
+	}
+	return PublishChangeGovernanceWaveMapResult{
+		PackageID:         strings.TrimSpace(resp.GetPackageId()),
+		PublicationState:  strings.TrimSpace(resp.GetPublicationState()),
+		ProjectionVersion: resp.GetProjectionVersion(),
+	}, nil
+}
+
+func (c *Client) UpsertChangeGovernanceEvidenceSignal(ctx context.Context, params UpsertChangeGovernanceEvidenceSignalParams) (UpsertChangeGovernanceEvidenceSignalResult, error) {
+	request := &controlplanev1.UpsertChangeGovernanceEvidenceSignalRequest{
+		RunId:                 strings.TrimSpace(params.RunID),
+		PackageId:             strings.TrimSpace(params.PackageID),
+		SignalId:              strings.TrimSpace(params.SignalID),
+		CorrelationId:         strings.TrimSpace(params.CorrelationID),
+		ScopeKind:             strings.TrimSpace(params.ScopeKind),
+		ScopeRef:              strings.TrimSpace(params.ScopeRef),
+		BlockKind:             strings.TrimSpace(params.BlockKind),
+		ArtifactLinks:         changeGovernanceArtifactLinksToProto(params.ArtifactLinks),
+		VerificationStateHint: strings.TrimSpace(params.VerificationStateHint),
+		RequiredByTier:        params.RequiredByTier,
+		OccurredAt:            timestamppb.New(params.OccurredAt.UTC()),
+	}
+
+	resp, err := c.svc.UpsertChangeGovernanceEvidenceSignal(c.withAuth(ctx), request)
+	if err != nil {
+		return UpsertChangeGovernanceEvidenceSignalResult{}, fmt.Errorf("upsert change governance evidence signal: %w", err)
+	}
+	return UpsertChangeGovernanceEvidenceSignalResult{
+		PackageID:                 strings.TrimSpace(resp.GetPackageId()),
+		EvidenceCompletenessState: strings.TrimSpace(resp.GetEvidenceCompletenessState()),
+		VerificationMinimumState:  strings.TrimSpace(resp.GetVerificationMinimumState()),
+		ProjectionVersion:         resp.GetProjectionVersion(),
+	}, nil
+}
+
 // InsertRunFlowEvent persists one run-bound flow event.
 func (c *Client) InsertRunFlowEvent(ctx context.Context, runID string, eventType flowevent.EventType, payload json.RawMessage) error {
 	if len(payload) == 0 {
@@ -525,6 +687,102 @@ func intPtr(value int) *int {
 	}
 	result := value
 	return &result
+}
+
+func mapChangeGovernanceProtoItems[Input any, Output any](items []Input, build func(Input) (Output, bool)) []Output {
+	result := make([]Output, 0, len(items))
+	for _, item := range items {
+		mapped, ok := build(item)
+		if !ok {
+			continue
+		}
+		result = append(result, mapped)
+	}
+	return result
+}
+
+func mapChangeGovernanceProtoPairs[Input any, Output any](
+	items []Input,
+	firstValue func(Input) string,
+	secondValue func(Input) string,
+	build func(string, string) Output,
+) []Output {
+	return mapChangeGovernanceProtoItems(items, func(item Input) (Output, bool) {
+		first := strings.TrimSpace(firstValue(item))
+		second := strings.TrimSpace(secondValue(item))
+		if first == "" && second == "" {
+			var zero Output
+			return zero, false
+		}
+		return build(first, second), true
+	})
+}
+
+func changeGovernanceScopeHintContextKey(item ChangeGovernanceScopeHint) string {
+	return item.ContextKey
+}
+
+func changeGovernanceScopeHintSurfaceKind(item ChangeGovernanceScopeHint) string {
+	return item.SurfaceKind
+}
+
+func changeGovernanceVerificationTargetKind(item ChangeGovernanceVerificationTarget) string {
+	return item.TargetKind
+}
+
+func changeGovernanceVerificationTargetRef(item ChangeGovernanceVerificationTarget) string {
+	return item.TargetRef
+}
+
+func buildChangeGovernanceScopeHintProto(contextKey string, surfaceKind string) *controlplanev1.ChangeGovernanceScopeHint {
+	return &controlplanev1.ChangeGovernanceScopeHint{ContextKey: contextKey, SurfaceKind: surfaceKind}
+}
+
+func buildChangeGovernanceVerificationTargetProto(targetKind string, targetRef string) *controlplanev1.ChangeGovernanceVerificationTarget {
+	return &controlplanev1.ChangeGovernanceVerificationTarget{TargetKind: targetKind, TargetRef: targetRef}
+}
+
+func changeGovernanceWavesToProto(items []ChangeGovernanceWaveDraft) []*controlplanev1.ChangeGovernanceWaveDraft {
+	result := make([]*controlplanev1.ChangeGovernanceWaveDraft, 0, len(items))
+	for _, item := range items {
+		result = append(result, &controlplanev1.ChangeGovernanceWaveDraft{
+			WaveKey:             strings.TrimSpace(item.WaveKey),
+			PublishOrder:        int32(item.PublishOrder),
+			DominantIntent:      strings.TrimSpace(item.DominantIntent),
+			BoundedScopeKind:    strings.TrimSpace(item.BoundedScopeKind),
+			Summary:             strings.TrimSpace(item.Summary),
+			VerificationTargets: mapChangeGovernanceProtoPairs(item.VerificationTargets, changeGovernanceVerificationTargetKind, changeGovernanceVerificationTargetRef, buildChangeGovernanceVerificationTargetProto),
+		})
+	}
+	return result
+}
+
+func changeGovernanceArtifactLinksToProto(items []ChangeGovernanceArtifactLinkSeed) []*controlplanev1.ChangeGovernanceArtifactLinkSeed {
+	result := make([]*controlplanev1.ChangeGovernanceArtifactLinkSeed, 0, len(items))
+	for _, item := range items {
+		if strings.TrimSpace(item.ArtifactRef) == "" {
+			continue
+		}
+		result = append(result, &controlplanev1.ChangeGovernanceArtifactLinkSeed{
+			ArtifactKind: strings.TrimSpace(item.ArtifactKind),
+			ArtifactRef:  strings.TrimSpace(item.ArtifactRef),
+			RelationKind: strings.TrimSpace(item.RelationKind),
+			DisplayLabel: strings.TrimSpace(item.DisplayLabel),
+		})
+	}
+	return result
+}
+
+func normalizeStrings(items []string) []string {
+	result := make([]string, 0, len(items))
+	for _, item := range items {
+		value := strings.TrimSpace(item)
+		if value == "" {
+			continue
+		}
+		result = append(result, value)
+	}
+	return result
 }
 
 func optionalToInt(value *wrapperspb.Int32Value) int {

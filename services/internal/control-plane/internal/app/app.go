@@ -29,6 +29,7 @@ import (
 	kubernetesclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/kubernetes"
 	postgresadminclient "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/clients/postgresadmin"
 	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
+	changegovernancedomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/changegovernance"
 	codexauthdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/codexauth"
 	githubratelimitdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/githubratelimit"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
@@ -45,6 +46,7 @@ import (
 	agentrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agent"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentrun"
 	agentsessionrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/agentsession"
+	changegovernancerepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/changegovernance"
 	floweventrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/flowevent"
 	githubratelimitwaitrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/githubratelimitwait"
 	interactionrequestrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/repository/postgres/interactionrequest"
@@ -114,6 +116,7 @@ func Run() error {
 	runtimeDeployTasks := runtimedeploytaskrepo.NewRepository(pgxPool)
 	runtimeErrors := runtimeerrorrepo.NewRepository(pgxPool)
 	systemSettingsRepo := systemsettingrepo.NewRepository(pgxPool)
+	changeGovernanceProjection := changegovernancerepo.NewRepository(pgxPool)
 
 	tokenCrypto, err := tokencrypt.NewService(cfg.TokenEncryptionKey)
 	if err != nil {
@@ -207,6 +210,19 @@ func Run() error {
 		return fmt.Errorf("start system settings reload loop: %w", err)
 	}
 	var githubRateLimitService *githubratelimitdomain.Service
+	changeGovernanceService, err := changegovernancedomain.NewService(changegovernancedomain.Config{
+		RolloutState: valuetypes.ChangeGovernanceRolloutState{
+			CoreFeatureEnabled: cfg.QualityGovernanceEnabled,
+			SchemaReady:        cfg.QualityGovernanceEnabled,
+			DomainReady:        cfg.QualityGovernanceEnabled,
+			RunnerReady:        cfg.QualityGovernanceEnabled,
+		},
+	}, changegovernancedomain.Dependencies{
+		Repository: changeGovernanceProjection,
+	})
+	if err != nil {
+		return fmt.Errorf("init change governance domain service: %w", err)
+	}
 	missionControlService, err := missioncontroldomain.NewService(missioncontroldomain.Config{
 		RolloutState: valuetypes.MissionControlRolloutState{
 			SchemaReady: true,
@@ -489,6 +505,7 @@ func Run() error {
 		Webhook:              webhookService,
 		Staff:                staffService,
 		AgentCallbacks:       agentCallbackService,
+		ChangeGovernance:     changeGovernanceService,
 		GitHubRateLimit:      githubRateLimitService,
 		MissionControl:       missionControlWorkerService,
 		MissionControlDomain: missionControlService,

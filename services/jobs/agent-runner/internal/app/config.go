@@ -11,18 +11,19 @@ import (
 
 // Config defines environment-backed runtime settings for agent-runner job.
 type Config struct {
-	RunID                string `env:"CODEXK8S_RUN_ID,required,notEmpty"`
-	CorrelationID        string `env:"CODEXK8S_CORRELATION_ID,required,notEmpty"`
-	ProjectID            string `env:"CODEXK8S_PROJECT_ID"`
-	RepositoryFullName   string `env:"CODEXK8S_REPOSITORY_FULL_NAME,required,notEmpty"`
-	AgentKey             string `env:"CODEXK8S_AGENT_KEY,required,notEmpty"`
-	IssueNumber          int64  `env:"CODEXK8S_ISSUE_NUMBER"`
-	RunTargetBranch      string `env:"CODEXK8S_RUN_TARGET_BRANCH"`
-	ExistingPRNumber     int    `env:"CODEXK8S_EXISTING_PR_NUMBER"`
-	RuntimeMode          string `env:"CODEXK8S_RUNTIME_MODE" envDefault:"code-only"`
-	RuntimeTargetEnv     string `env:"CODEXK8S_RUNTIME_TARGET_ENV"`
-	RuntimeBuildRef      string `env:"CODEXK8S_RUNTIME_BUILD_REF"`
-	RuntimeAccessProfile string `env:"CODEXK8S_RUNTIME_ACCESS_PROFILE"`
+	RunID                    string `env:"CODEXK8S_RUN_ID,required,notEmpty"`
+	CorrelationID            string `env:"CODEXK8S_CORRELATION_ID,required,notEmpty"`
+	ProjectID                string `env:"CODEXK8S_PROJECT_ID"`
+	RepositoryFullName       string `env:"CODEXK8S_REPOSITORY_FULL_NAME,required,notEmpty"`
+	AgentKey                 string `env:"CODEXK8S_AGENT_KEY,required,notEmpty"`
+	IssueNumber              int64  `env:"CODEXK8S_ISSUE_NUMBER"`
+	RunTargetBranch          string `env:"CODEXK8S_RUN_TARGET_BRANCH"`
+	ExistingPRNumber         int    `env:"CODEXK8S_EXISTING_PR_NUMBER"`
+	RuntimeMode              string `env:"CODEXK8S_RUNTIME_MODE" envDefault:"code-only"`
+	RuntimeTargetEnv         string `env:"CODEXK8S_RUNTIME_TARGET_ENV"`
+	RuntimeBuildRef          string `env:"CODEXK8S_RUNTIME_BUILD_REF"`
+	RuntimeAccessProfile     string `env:"CODEXK8S_RUNTIME_ACCESS_PROFILE"`
+	QualityGovernanceEnabled bool   `env:"CODEXK8S_QUALITY_GOVERNANCE_ENABLED" envDefault:"false"`
 
 	ControlPlaneGRPCTarget string `env:"CODEXK8S_CONTROL_PLANE_GRPC_TARGET,required,notEmpty"`
 	MCPBaseURL             string `env:"CODEXK8S_MCP_BASE_URL,required,notEmpty"`

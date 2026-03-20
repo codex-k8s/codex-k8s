@@ -67,6 +67,8 @@ type Config struct {
 	// ControlPlaneMCPBaseURL is optional MCP HTTP endpoint passed into spawned run pods.
 	// When empty, worker derives it from ControlPlaneGRPCTarget.
 	ControlPlaneMCPBaseURL string `env:"CODEXK8S_CONTROL_PLANE_MCP_BASE_URL"`
+	// QualityGovernanceEnabled passes change-governance runtime callbacks into run pods.
+	QualityGovernanceEnabled bool `env:"CODEXK8S_QUALITY_GOVERNANCE_ENABLED" envDefault:"false"`
 	// TelegramInteractionAdapterBaseURL points to the external Telegram adapter contour ingress.
 	TelegramInteractionAdapterBaseURL string `env:"CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BASE_URL"`
 	// TelegramInteractionAdapterBearerToken is optional adapter credential used by worker delivery requests.

@@ -83,6 +83,8 @@ type Config struct {
 	ControlPlaneGRPCTarget string
 	// ControlPlaneMCPBaseURL is MCP endpoint passed to run job environment.
 	ControlPlaneMCPBaseURL string
+	// QualityGovernanceEnabled passes change-governance runtime callbacks into run pods.
+	QualityGovernanceEnabled bool
 	// OpenAIAPIKey is injected into run pods for codex login.
 	OpenAIAPIKey string
 	// Context7APIKey enables Context7 documentation calls from run pods when set.

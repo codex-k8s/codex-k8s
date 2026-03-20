@@ -244,6 +244,8 @@ spec:
               value: ":9090"
             - name: CODEXK8S_CONTROL_PLANE_HTTP_ADDR
               value: ":8081"
+            - name: CODEXK8S_QUALITY_GOVERNANCE_ENABLED
+              value: '{{ envOr "CODEXK8S_QUALITY_GOVERNANCE_ENABLED" "false" }}'
             - name: CODEXK8S_DB_HOST
               value: postgres
             - name: CODEXK8S_DB_PORT
@@ -764,6 +766,8 @@ spec:
               value: '{{ envOr "CODEXK8S_CONTROL_PLANE_GRPC_TARGET" "codex-k8s-control-plane:9090" }}'
             - name: CODEXK8S_CONTROL_PLANE_MCP_BASE_URL
               value: '{{ envOr "CODEXK8S_CONTROL_PLANE_MCP_BASE_URL" "http://codex-k8s-control-plane:8081/mcp" }}'
+            - name: CODEXK8S_QUALITY_GOVERNANCE_ENABLED
+              value: '{{ envOr "CODEXK8S_QUALITY_GOVERNANCE_ENABLED" "false" }}'
             - name: CODEXK8S_TELEGRAM_INTERACTION_ADAPTER_BASE_URL
               valueFrom:
                 secretKeyRef:

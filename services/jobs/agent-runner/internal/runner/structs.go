@@ -71,6 +71,7 @@ type Config struct {
 	RuntimeAccessProfile         string
 	InteractionResumePayload     string
 	GitHubRateLimitResumePayload string
+	QualityGovernanceEnabled     bool
 
 	PromptConfig
 
@@ -91,6 +92,9 @@ type ControlPlaneCallbacks interface {
 	GetRunInteractionResumePayload(ctx context.Context) (cpclient.RunInteractionResumePayload, bool, error)
 	GetRunGitHubRateLimitResumePayload(ctx context.Context) (cpclient.RunGitHubRateLimitResumePayload, bool, error)
 	ReportGitHubRateLimitSignal(ctx context.Context, params cpclient.ReportGitHubRateLimitSignalParams) (cpclient.ReportGitHubRateLimitSignalResult, error)
+	ReportChangeGovernanceDraftSignal(ctx context.Context, params cpclient.ReportChangeGovernanceDraftSignalParams) (cpclient.ReportChangeGovernanceDraftSignalResult, error)
+	PublishChangeGovernanceWaveMap(ctx context.Context, params cpclient.PublishChangeGovernanceWaveMapParams) (cpclient.PublishChangeGovernanceWaveMapResult, error)
+	UpsertChangeGovernanceEvidenceSignal(ctx context.Context, params cpclient.UpsertChangeGovernanceEvidenceSignalParams) (cpclient.UpsertChangeGovernanceEvidenceSignalResult, error)
 	LookupRunPullRequest(ctx context.Context, params cpclient.RunPullRequestLookupParams) (cpclient.RunPullRequestLookupResult, bool, error)
 	InsertRunFlowEvent(ctx context.Context, runID string, eventType floweventdomain.EventType, payload json.RawMessage) error
 	GetCodexAuth(ctx context.Context) ([]byte, bool, error)

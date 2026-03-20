@@ -112,6 +112,8 @@ type Config struct {
 	GitBotToken string `env:"CODEXK8S_GIT_BOT_TOKEN"`
 	// GitBotUsername is GitHub login used to filter bot-authored issue comments from webhook triggers.
 	GitBotUsername string `env:"CODEXK8S_GIT_BOT_USERNAME" envDefault:"codex-bot"`
+	// QualityGovernanceEnabled gates live change-governance foundation writes and runner signals.
+	QualityGovernanceEnabled bool `env:"CODEXK8S_QUALITY_GOVERNANCE_ENABLED" envDefault:"false"`
 
 	// TokenEncryptionKey is used to encrypt/decrypt repository tokens stored in DB.
 	TokenEncryptionKey string `env:"CODEXK8S_TOKEN_ENCRYPTION_KEY,required,notEmpty"`
