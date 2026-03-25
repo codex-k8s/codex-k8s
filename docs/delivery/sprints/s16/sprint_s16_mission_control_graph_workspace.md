@@ -20,7 +20,7 @@ approvals:
 - 2026-03-25 issue `#561` перевела Sprint S16 в historical superseded baseline по owner decision из discussion `#480`.
 - Day1-Day6 и handover `#542..#547` сохраняются как historical evidence и больше не являются текущим source of truth для Mission Control UX, data model и sequencing.
 - Актуальный reset path: `#561` (`run:rethink`) -> `#562` (frontend-first sprint на fake data) -> `#563` (backend rebuild после owner approval UX).
-- Новый baseline after rethink: fullscreen свободный canvas, node taxonomy `Issue/PR/Run`, repo-seed prompts + deterministic `workflow-policy block`, `stale/freshness` только как доказанный lag provider mirror/reconcile path.
+- Новый baseline after rethink: fullscreen свободный canvas, node taxonomy `Issue/PR/Run`, workflow editor/policy как часть нового UX-направления, repo-seed prompts + deterministic `workflow-policy block`, `stale/freshness` только как доказанный lag provider mirror/reconcile path.
 
 ## Статус после rethink
 - Больше не считать source of truth:
@@ -39,6 +39,8 @@ approvals:
   - `#522` и `#523` можно продолжать независимо;
   - `#524` и `#525` не стартовать до approval `#562`;
   - `#470` продолжать только в части `release safety`, `observability contract` и stop/rollback criteria без фиксации финального cockpit UI.
+- Дополнительный reset guardrail:
+  - workflow editor не выпадает из нового baseline: он должен проектироваться вместе с canvas UX и policy авто-ревью/follow-up propagation, но без превращения в DB prompt editor.
 
 ## Scope спринта
 ### In scope

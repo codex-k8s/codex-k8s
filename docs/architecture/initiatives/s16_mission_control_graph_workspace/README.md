@@ -44,6 +44,8 @@ approvals:
 - `docs/architecture/initiatives/s9_mission_control_dashboard/README.md`
 - `docs/architecture/initiatives/s16_mission_control_graph_workspace/ui_smoke_criteria.md`
 
+ADR-0016 и ALT-0008 также переведены в historical superseded state: они остаются evidence отклонённого S16 architecture baseline и не должны использоваться как текущий кандидат для backend sprint `#563`.
+
 ## Historical continuity before rethink
 - Документный контур `intake -> vision -> prd -> arch -> design` согласован и доведён до review-ready design package.
 - Day5 зафиксировал:

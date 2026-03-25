@@ -453,6 +453,7 @@ approvals:
   - fullscreen свободный canvas без lane/column shell;
   - минимальная node taxonomy Wave 1: `Issue`, `PR`, `Run`;
   - frontend-first sprint на fake data для утверждения canvas, density и interaction model;
+  - workflow editor и workflow policy остаются частью нового Mission Control направления: на frontend-first этапе они утверждаются как UX/interaction contour на fake data, а backend implementation выносится в отдельный follow-up sprint;
   - repo-seed prompts остаются каноничными; вместо DB prompt editor допускается только deterministic generated `workflow-policy block`;
   - backend rebuild выделяется в отдельный sprint после owner approval нового UX.
 - Новый sequencing для Mission Control:

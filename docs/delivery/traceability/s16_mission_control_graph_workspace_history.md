@@ -31,6 +31,7 @@ approvals:
   - fullscreen свободный canvas без lane/column shell и без обязательной root-group модели;
   - минимальная node taxonomy Wave 1: `Issue`, `PR`, `Run`;
   - frontend-first sprint `#562` на fake data для утверждения UX;
+  - workflow editor и workflow policy остаются частью нового направления, но сначала проходят frontend-first UX-валидацию на fake data;
   - backend rebuild вынесен в отдельный sprint `#563` после owner approval UX;
   - repo-seed prompt policy остаётся каноничной, а workflow behavior допускается только через deterministic generated `workflow-policy block`;
   - `stale/freshness` теперь означает только доказанный lag provider mirror/reconcile path.
