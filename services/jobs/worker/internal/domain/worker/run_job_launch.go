@@ -206,7 +206,7 @@ func (s *Service) launchPreparedRunWorkload(ctx context.Context, run runqueuerep
 		ControlPlaneGRPCTarget:   resolveRunControlPlaneGRPCTarget(s.cfg.ProductionNamespace, s.cfg.ControlPlaneGRPCTarget),
 		MCPBaseURL:               s.cfg.ControlPlaneMCPBaseURL,
 		MCPBearerToken:           issuedMCPToken.Token,
-		QualityGovernanceEnabled: s.cfg.QualityGovernanceEnabled,
+		QualityGovernanceEnabled: s.qualityGovernanceEnabled(),
 		RepositoryFullName:       agentCtx.RepositoryFullName,
 		IssueNumber:              agentCtx.IssueNumber,
 		TriggerKind:              agentCtx.TriggerKind,

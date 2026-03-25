@@ -59,7 +59,7 @@ approvals:
    - feedback severity/state indexes;
    - wave order uniqueness.
 3. Enable `control-plane` domain path:
-   - aggregation, hidden-draft recording, wave publication, decision ledger and projection refresh under `CODEXK8S_QUALITY_GOVERNANCE_ENABLED=false` first for compatibility checks;
+   - aggregation, hidden-draft recording, wave publication, decision ledger and projection refresh stay disabled while system setting `quality_governance_enabled=false`;
    - then enable live write path.
 4. Enable `worker` sweeps and bounded backfill:
    - stale-gap detection;
@@ -67,7 +67,7 @@ approvals:
    - bounded historical package seeding for active/open lineages only.
 5. Enable edge/UI surfaces:
    - `api-gateway` DTO/casters and staff/private routes;
-   - `web-console` queue/detail/gap views under `CODEXK8S_QUALITY_GOVERNANCE_UI_ENABLED=true`.
+   - `web-console` queue/detail/gap views under typed platform setting `quality_governance_ui_enabled=true`.
 6. Enable GitHub mirror if required:
    - comment mirror only after package projections are stable;
    - mirror remains optional and non-blocking.
@@ -99,14 +99,15 @@ approvals:
 - Monitoring:
   - track counts of `backfill_created_packages_total`, `backfill_gap_seeded_total`, `backfill_failed_total`.
 
-## Политика feature flags
-- `CODEXK8S_QUALITY_GOVERNANCE_ENABLED`
-  - controls live domain writes and projection refresh.
-- `CODEXK8S_QUALITY_GOVERNANCE_FEEDBACK_ENABLED`
-  - controls worker sweeps, late feedback ingestion and bounded backfill jobs.
-- `CODEXK8S_QUALITY_GOVERNANCE_UI_ENABLED`
+## Политика runtime settings
+- `quality_governance_enabled`
+  - typed platform setting в staff UI `/configuration/system-settings`;
+  - controls live domain writes, hidden-draft ingestion, wave publication and projection refresh.
+- future feedback/backfill toggle
+  - должен добавляться в тот же typed platform settings catalog, когда stream `#522` подключит worker feedback/backfill.
+- `quality_governance_ui_enabled`
   - controls staff/private route exposure and frontend rendering.
-- `CODEXK8S_QUALITY_GOVERNANCE_COMMENT_MIRROR_ENABLED`
+- `quality_governance_comment_mirror_enabled`
   - controls GitHub service-comment mirror only.
 - Ordering:
   - UI/comment flags must never be enabled before domain flag;
@@ -114,7 +115,7 @@ approvals:
 
 ## Политика rollback
 - Safe rollback before feedback/UI enable:
-  - disable `CODEXK8S_QUALITY_GOVERNANCE_ENABLED`;
+  - disable `quality_governance_enabled` через staff UI `/configuration/system-settings`;
   - keep new schema/tables in place;
   - stop new package creation while leaving stored state readable.
 - Limited rollback after decision recording:
@@ -139,10 +140,10 @@ approvals:
 - Wave map publication transitions package from `hidden_draft` to `wave_map_defined|waves_published` deterministically.
 - `high/critical` package without waiver cannot pass release-readiness transition.
 - Worker backfill creates only evidence-backed packages and surfaces gaps instead of inventing history.
-- UI routes stay dark until `CODEXK8S_QUALITY_GOVERNANCE_UI_ENABLED=true`.
+- UI routes stay dark until `quality_governance_ui_enabled=true`.
 
 ## Operational notes
-- If feedback/backfill jobs are noisy, disable `CODEXK8S_QUALITY_GOVERNANCE_FEEDBACK_ENABLED` and keep package detail read-only.
+- If feedback/backfill jobs are noisy, disable `quality_governance_feedback_enabled` and keep package detail read-only.
 - If comment mirror lags or fails, canonical owner/reviewer/operator surfaces stay in staff/private API; rollout is not blocked.
 - If UI rollout lags, domain state may remain enabled with UI disabled.
 

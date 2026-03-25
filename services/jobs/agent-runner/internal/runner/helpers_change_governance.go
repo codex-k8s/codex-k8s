@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"slices"
@@ -9,6 +10,8 @@ import (
 	"time"
 
 	cpclient "github.com/codex-k8s/codex-k8s/services/jobs/agent-runner/internal/controlplane"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -123,6 +126,9 @@ func (s *Service) reportChangeGovernanceSignals(ctx context.Context, repoDir str
 		OccurredAt:           time.Now().UTC(),
 	})
 	if err != nil {
+		if changeGovernanceSignalTemporarilyDisabled(err) {
+			return nil
+		}
 		return fmt.Errorf("report change governance draft signal: %w", err)
 	}
 
@@ -135,6 +141,9 @@ func (s *Service) reportChangeGovernanceSignals(ctx context.Context, repoDir str
 		PublishedAt:   time.Now().UTC(),
 	})
 	if err != nil {
+		if changeGovernanceSignalTemporarilyDisabled(err) {
+			return nil
+		}
 		return fmt.Errorf("publish change governance wave map: %w", err)
 	}
 	if err := s.upsertChangeGovernanceEvidenceSignals(ctx, waveResult.PackageID, waves, result); err != nil {
@@ -159,6 +168,9 @@ func (s *Service) upsertChangeGovernanceEvidenceSignals(ctx context.Context, pac
 		OccurredAt:            time.Now().UTC(),
 	})
 	if err != nil {
+		if changeGovernanceSignalTemporarilyDisabled(err) {
+			return nil
+		}
 		return fmt.Errorf("upsert change governance package evidence signal: %w", err)
 	}
 
@@ -178,10 +190,24 @@ func (s *Service) upsertChangeGovernanceEvidenceSignals(ctx context.Context, pac
 			OccurredAt:            time.Now().UTC(),
 		})
 		if err != nil {
+			if changeGovernanceSignalTemporarilyDisabled(err) {
+				return nil
+			}
 			return fmt.Errorf("upsert change governance wave evidence signal for %s: %w", wave.WaveKey, err)
 		}
 	}
 	return nil
+}
+
+func changeGovernanceSignalTemporarilyDisabled(err error) bool {
+	if err == nil {
+		return false
+	}
+	var grpcStatus interface{ GRPCStatus() *status.Status }
+	if !errors.As(err, &grpcStatus) {
+		return false
+	}
+	return status.Code(err) == codes.FailedPrecondition
 }
 
 func deriveChangeGovernanceScopeHints(changedPaths []string) []cpclient.ChangeGovernanceScopeHint {

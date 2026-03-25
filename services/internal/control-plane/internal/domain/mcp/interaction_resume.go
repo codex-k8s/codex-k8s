@@ -9,6 +9,7 @@ import (
 	"github.com/codex-k8s/codex-k8s/libs/go/mcp/userinteraction"
 	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	entitytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/entity"
+	querytypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/query"
 	valuetypes "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/types/value"
 )
 
@@ -125,15 +126,7 @@ func (s *Service) scheduleInteractionResume(
 }
 
 func parseInteractionResumeRunPayload(raw json.RawMessage) (interactionResumeRunPayload, error) {
-	if len(raw) == 0 {
-		return interactionResumeRunPayload{}, fmt.Errorf("run payload is empty")
-	}
-
-	var payload interactionResumeRunPayload
-	if err := json.Unmarshal(raw, &payload); err != nil {
-		return interactionResumeRunPayload{}, fmt.Errorf("decode run payload for interaction resume: %w", err)
-	}
-	return payload, nil
+	return querytypes.DecodeRunPayloadInto[interactionResumeRunPayload](raw, "decode run payload for interaction resume")
 }
 
 func buildInteractionResumePendingRunPayload(

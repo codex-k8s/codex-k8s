@@ -15,4 +15,10 @@ SELECT
     updated_at
 FROM change_governance_waves
 WHERE package_id = $1::uuid
-ORDER BY publish_order ASC, wave_key ASC;
+ORDER BY
+    CASE WHEN publication_state = 'superseded' THEN 1 ELSE 0 END ASC,
+    CASE
+        WHEN publish_order < 0 THEN -publish_order
+        ELSE publish_order
+    END ASC,
+    wave_key ASC;

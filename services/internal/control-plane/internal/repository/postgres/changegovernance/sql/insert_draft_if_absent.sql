@@ -1,4 +1,16 @@
 -- name: changegovernance__insert_draft_if_absent :one
+WITH existing_signal AS (
+    SELECT 1
+    FROM change_governance_internal_drafts
+    WHERE signal_id = $3
+),
+cleared_latest AS (
+    UPDATE change_governance_internal_drafts
+    SET is_latest = false
+    WHERE package_id = $1::uuid
+      AND is_latest = true
+      AND NOT EXISTS (SELECT 1 FROM existing_signal)
+)
 INSERT INTO change_governance_internal_drafts (
     package_id,
     run_id,
@@ -10,7 +22,7 @@ INSERT INTO change_governance_internal_drafts (
     is_latest,
     occurred_at
 )
-VALUES (
+SELECT
     $1::uuid,
     $2::uuid,
     $3,
@@ -20,8 +32,7 @@ VALUES (
     $7::jsonb,
     true,
     COALESCE($8::timestamptz, NOW())
-)
-ON CONFLICT (signal_id) DO NOTHING
+WHERE NOT EXISTS (SELECT 1 FROM existing_signal)
 RETURNING
     id::text AS id,
     package_id::text AS package_id,

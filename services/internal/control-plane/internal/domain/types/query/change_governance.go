@@ -56,16 +56,18 @@ type ChangeGovernanceDraftSignalParams struct {
 
 // ChangeGovernanceWaveMapParams captures wave-map publication input.
 type ChangeGovernanceWaveMapParams struct {
-	PackageID     string
-	WaveMapID     string
-	CorrelationID string
-	Waves         []ChangeGovernanceWaveDraft
-	PublishedAt   time.Time
+	PackageID         string
+	ExpectedProjectID string
+	WaveMapID         string
+	CorrelationID     string
+	Waves             []ChangeGovernanceWaveDraft
+	PublishedAt       time.Time
 }
 
 // ChangeGovernanceEvidenceSignalParams captures one evidence upsert signal.
 type ChangeGovernanceEvidenceSignalParams struct {
 	PackageID             string
+	ExpectedProjectID     string
 	SignalID              string
 	CorrelationID         string
 	ScopeKind             enumtypes.ChangeGovernanceEvidenceScopeKind

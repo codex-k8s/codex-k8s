@@ -18,6 +18,7 @@ type Service struct {
 
 	mu                         sync.RWMutex
 	githubRateLimitWaitEnabled bool
+	qualityGovernanceEnabled   bool
 }
 
 func NewService(repo repository) (*Service, error) {
@@ -28,16 +29,25 @@ func NewService(repo repository) (*Service, error) {
 }
 
 func (s *Service) RefreshCache(ctx context.Context) error {
-	value, found, err := s.repo.GetBoolean(ctx, sharedsystemsettings.GitHubRateLimitWaitEnabledKey)
+	githubRateLimitWaitEnabled, found, err := s.repo.GetBoolean(ctx, sharedsystemsettings.GitHubRateLimitWaitEnabledKey)
+	if err != nil {
+		return err
+	}
+	qualityGovernanceEnabled, foundQualityGovernance, err := s.repo.GetBoolean(ctx, sharedsystemsettings.QualityGovernanceEnabledKey)
 	if err != nil {
 		return err
 	}
 
 	s.mu.Lock()
 	if found {
-		s.githubRateLimitWaitEnabled = value
+		s.githubRateLimitWaitEnabled = githubRateLimitWaitEnabled
 	} else {
 		s.githubRateLimitWaitEnabled = false
+	}
+	if foundQualityGovernance {
+		s.qualityGovernanceEnabled = qualityGovernanceEnabled
+	} else {
+		s.qualityGovernanceEnabled = false
 	}
 	s.mu.Unlock()
 	return nil
@@ -47,4 +57,10 @@ func (s *Service) GitHubRateLimitWaitEnabled() bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.githubRateLimitWaitEnabled
+}
+
+func (s *Service) QualityGovernanceEnabled() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.qualityGovernanceEnabled
 }

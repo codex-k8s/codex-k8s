@@ -255,11 +255,9 @@ sequenceDiagram
   3. `worker`
   4. `api-gateway`
   5. `web-console`
-- Feature flags:
-  - `CODEXK8S_QUALITY_GOVERNANCE_ENABLED`
-  - `CODEXK8S_QUALITY_GOVERNANCE_FEEDBACK_ENABLED`
-  - `CODEXK8S_QUALITY_GOVERNANCE_UI_ENABLED`
-  - `CODEXK8S_QUALITY_GOVERNANCE_COMMENT_MIRROR_ENABLED`
+- Runtime settings:
+  - foundation path включается через typed platform setting `quality_governance_enabled` в staff UI `/configuration/system-settings`;
+  - downstream feedback/UI/comment-mirror toggles должны добавляться в тот же typed platform settings catalog, а не как env-only switches.
 - Rollout notes:
   - domain flag goes live before worker/UI flags;
   - UI may lag safely while projections accumulate in DB;
@@ -267,7 +265,7 @@ sequenceDiagram
 
 ## План отката (Rollback)
 - Safe rollback before worker/UI enable:
-  - disable `CODEXK8S_QUALITY_GOVERNANCE_ENABLED`;
+  - disable `quality_governance_enabled` через staff UI `/configuration/system-settings`;
   - keep additive schema in place;
   - stop creating new packages while leaving stored evidence/audit readable.
 - Limited rollback after live decisions:

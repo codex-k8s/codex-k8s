@@ -991,6 +991,7 @@ export const en = {
       },
       sections: {
         github_rate_limit: "GitHub rate limit",
+        quality_governance: "Quality governance",
       },
       sources: {
         default: "Catalog default",
@@ -1010,6 +1011,10 @@ export const en = {
         github_rate_limit_wait_enabled: {
           title: "GitHub rate-limit wait recovery",
           description: "Controls the persisted wait contour, worker sweep, and deterministic replay/resume path for GitHub rate-limit resilience.",
+        },
+        quality_governance_enabled: {
+          title: "Quality governance foundation",
+          description: "Enables the canonical change-governance aggregate, hidden draft ingress, semantic wave publication, and projection refresh for new runs and live callbacks.",
         },
       },
     },

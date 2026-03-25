@@ -18,6 +18,7 @@ import (
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	missioncontroldomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/missioncontrol"
 	missioncontrolworkerdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/missioncontrolworker"
+	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
 	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
@@ -84,6 +85,10 @@ type changeGovernanceService interface {
 	changegovernancedomain.DomainService
 }
 
+type runReader interface {
+	GetByID(ctx context.Context, runID string) (agentrunrepo.Run, bool, error)
+}
+
 type runtimeErrorRecorder interface {
 	RecordBestEffort(ctx context.Context, params querytypes.RuntimeErrorRecordParams)
 }
@@ -103,6 +108,7 @@ type Dependencies struct {
 	MissionControl       missionControlWorkerService
 	MissionControlDomain missioncontroldomain.DomainService
 	RunStatus            runStatusService
+	Runs                 runReader
 	RuntimeDeploy        runtimeDeployService
 	RuntimeErrors        runtimeErrorRecorder
 	MCP                  mcpRunTokenService
@@ -122,6 +128,7 @@ type Server struct {
 	missionControl       missionControlWorkerService
 	missionControlDomain missioncontroldomain.DomainService
 	runStatus            runStatusService
+	runs                 runReader
 	runtimeDeploy        runtimeDeployService
 	runtimeErrors        runtimeErrorRecorder
 	mcp                  mcpRunTokenService
@@ -139,6 +146,7 @@ func NewServer(deps Dependencies) *Server {
 	server.missionControl = deps.MissionControl
 	server.missionControlDomain = deps.MissionControlDomain
 	server.runStatus = deps.RunStatus
+	server.runs = deps.Runs
 	server.runtimeDeploy = deps.RuntimeDeploy
 	server.runtimeErrors = deps.RuntimeErrors
 	server.mcp = deps.MCP

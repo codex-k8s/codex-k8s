@@ -259,7 +259,6 @@ func Run() error {
 		StateInReviewLabel:                cfg.StateInReviewLabel,
 		ControlPlaneGRPCTarget:            cfg.ControlPlaneGRPCTarget,
 		ControlPlaneMCPBaseURL:            cfg.ControlPlaneMCPBaseURL,
-		QualityGovernanceEnabled:          cfg.QualityGovernanceEnabled,
 		OpenAIAPIKey:                      cfg.OpenAIAPIKey,
 		Context7APIKey:                    cfg.Context7APIKey,
 		GitBotToken:                       cfg.GitBotToken,

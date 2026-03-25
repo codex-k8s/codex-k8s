@@ -210,15 +210,9 @@ func Run() error {
 		return fmt.Errorf("start system settings reload loop: %w", err)
 	}
 	var githubRateLimitService *githubratelimitdomain.Service
-	changeGovernanceService, err := changegovernancedomain.NewService(changegovernancedomain.Config{
-		RolloutState: valuetypes.ChangeGovernanceRolloutState{
-			CoreFeatureEnabled: cfg.QualityGovernanceEnabled,
-			SchemaReady:        cfg.QualityGovernanceEnabled,
-			DomainReady:        cfg.QualityGovernanceEnabled,
-			RunnerReady:        cfg.QualityGovernanceEnabled,
-		},
-	}, changegovernancedomain.Dependencies{
-		Repository: changeGovernanceProjection,
+	changeGovernanceService, err := changegovernancedomain.NewService(changegovernancedomain.Config{}, changegovernancedomain.Dependencies{
+		Repository:   changeGovernanceProjection,
+		RolloutState: systemSettingsService,
 	})
 	if err != nil {
 		return fmt.Errorf("init change governance domain service: %w", err)
@@ -510,6 +504,7 @@ func Run() error {
 		MissionControl:       missionControlWorkerService,
 		MissionControlDomain: missionControlService,
 		RunStatus:            runStatusService,
+		Runs:                 agentRuns,
 		RuntimeDeploy:        runtimeDeployService,
 		RuntimeErrors:        runtimeErrorService,
 		MCP:                  mcpService,

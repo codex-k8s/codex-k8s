@@ -43,11 +43,14 @@ var queryInsertDraftIfAbsent string
 //go:embed sql/get_draft_by_signal_id.sql
 var queryGetDraftBySignalID string
 
-//go:embed sql/clear_latest_drafts.sql
-var queryClearLatestDrafts string
-
 //go:embed sql/upsert_wave.sql
 var queryUpsertWave string
+
+//go:embed sql/stage_wave_publish_orders.sql
+var queryStageWavePublishOrders string
+
+//go:embed sql/supersede_missing_waves.sql
+var querySupersedeMissingWaves string
 
 //go:embed sql/get_wave_by_package_and_key.sql
 var queryGetWaveByPackageAndKey string
@@ -60,6 +63,9 @@ var queryInsertEvidenceBlock string
 
 //go:embed sql/update_evidence_block.sql
 var queryUpdateEvidenceBlock string
+
+//go:embed sql/update_wave_summary.sql
+var queryUpdateWaveSummary string
 
 //go:embed sql/upsert_artifact_link.sql
 var queryUpsertArtifactLink string
@@ -133,10 +139,6 @@ func (r *Repository) RecordDraftSignal(ctx context.Context, params querytypes.Ch
 		if err != nil {
 			return domainrepo.Aggregate{}, false, err
 		}
-	} else {
-		if err := r.clearLatestDrafts(ctx, tx, pkg.ID, draft.ID); err != nil {
-			return domainrepo.Aggregate{}, false, err
-		}
 	}
 
 	if err := r.upsertPrimaryArtifactLinks(ctx, tx, pkg.ID, params.RepositoryFullName, params.IssueNumber, params.PRNumber, params.RunID, draft.DraftRef); err != nil {
@@ -188,6 +190,9 @@ func (r *Repository) PublishWaveMap(ctx context.Context, params querytypes.Chang
 	if !found {
 		return domainrepo.Aggregate{}, errs.NotFound{Msg: fmt.Sprintf("change governance package %q not found", params.PackageID)}
 	}
+	if strings.TrimSpace(params.ExpectedProjectID) != "" && pkg.ProjectID != strings.TrimSpace(params.ExpectedProjectID) {
+		return domainrepo.Aggregate{}, errs.Forbidden{Msg: "change governance package is outside authenticated project scope"}
+	}
 
 	sortedWaves := append([]querytypes.ChangeGovernanceWaveDraft(nil), params.Waves...)
 	slices.SortFunc(sortedWaves, func(left querytypes.ChangeGovernanceWaveDraft, right querytypes.ChangeGovernanceWaveDraft) int {
@@ -200,10 +205,21 @@ func (r *Repository) PublishWaveMap(ctx context.Context, params querytypes.Chang
 			return strings.Compare(left.WaveKey, right.WaveKey)
 		}
 	})
+	if err := r.stageWavePublishOrders(ctx, tx, pkg.ID); err != nil {
+		return domainrepo.Aggregate{}, err
+	}
+	activeWaveKeys := make([]string, 0, len(sortedWaves))
 	for _, wave := range sortedWaves {
+		activeWaveKeys = append(activeWaveKeys, strings.TrimSpace(wave.WaveKey))
 		if _, err := r.upsertWave(ctx, tx, pkg.ID, wave); err != nil {
 			return domainrepo.Aggregate{}, err
 		}
+	}
+	if err := r.supersedeMissingWaves(ctx, tx, pkg.ID, activeWaveKeys); err != nil {
+		return domainrepo.Aggregate{}, err
+	}
+	if err := r.refreshWaveSummaries(ctx, tx, pkg.ID); err != nil {
+		return domainrepo.Aggregate{}, err
 	}
 
 	aggregate, err := r.buildAggregate(ctx, tx, pkg.ID)
@@ -250,6 +266,9 @@ func (r *Repository) UpsertEvidenceSignal(ctx context.Context, params querytypes
 	if !found {
 		return domainrepo.Aggregate{}, errs.NotFound{Msg: fmt.Sprintf("change governance package %q not found", params.PackageID)}
 	}
+	if strings.TrimSpace(params.ExpectedProjectID) != "" && pkg.ProjectID != strings.TrimSpace(params.ExpectedProjectID) {
+		return domainrepo.Aggregate{}, errs.Forbidden{Msg: "change governance package is outside authenticated project scope"}
+	}
 
 	var waveID string
 	if params.ScopeKind == enumtypes.ChangeGovernanceEvidenceScopeKindWave {
@@ -267,6 +286,9 @@ func (r *Repository) UpsertEvidenceSignal(ctx context.Context, params querytypes
 		return domainrepo.Aggregate{}, err
 	}
 	if err := r.upsertArtifactLinks(ctx, tx, pkg.ID, params.ArtifactLinks); err != nil {
+		return domainrepo.Aggregate{}, err
+	}
+	if err := r.refreshWaveSummaries(ctx, tx, pkg.ID); err != nil {
 		return domainrepo.Aggregate{}, err
 	}
 
@@ -478,9 +500,16 @@ func (r *Repository) getDraftBySignalID(ctx context.Context, tx pgx.Tx, signalID
 	return fromDraftRow(row), nil
 }
 
-func (r *Repository) clearLatestDrafts(ctx context.Context, tx pgx.Tx, packageID string, keepDraftID string) error {
-	if _, err := tx.Exec(ctx, queryClearLatestDrafts, strings.TrimSpace(packageID), strings.TrimSpace(keepDraftID)); err != nil {
-		return fmt.Errorf("clear latest change-governance drafts: %w", err)
+func (r *Repository) stageWavePublishOrders(ctx context.Context, tx pgx.Tx, packageID string) error {
+	if _, err := tx.Exec(ctx, queryStageWavePublishOrders, strings.TrimSpace(packageID)); err != nil {
+		return fmt.Errorf("stage change-governance wave publish orders: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) supersedeMissingWaves(ctx context.Context, tx pgx.Tx, packageID string, activeWaveKeys []string) error {
+	if _, err := tx.Exec(ctx, querySupersedeMissingWaves, strings.TrimSpace(packageID), activeWaveKeys); err != nil {
+		return fmt.Errorf("supersede missing change-governance waves: %w", err)
 	}
 	return nil
 }
@@ -580,6 +609,34 @@ func (r *Repository) getEvidenceBlockByScope(ctx context.Context, tx pgx.Tx, pac
 		return domainrepo.EvidenceBlock{}, false, fmt.Errorf("collect change-governance evidence block by scope: %w", err)
 	}
 	return fromEvidenceBlockRow(row), true, nil
+}
+
+func (r *Repository) refreshWaveSummaries(ctx context.Context, tx pgx.Tx, packageID string) error {
+	waves, err := r.listWaves(ctx, tx, packageID)
+	if err != nil {
+		return err
+	}
+	if len(waves) == 0 {
+		return nil
+	}
+	evidenceBlocks, err := r.listEvidenceBlocks(ctx, tx, packageID)
+	if err != nil {
+		return err
+	}
+	summaries := deriveWaveSummaryStates(waves, evidenceBlocks)
+	for _, wave := range waves {
+		summary := summaries[wave.ID]
+		if _, err := tx.Exec(
+			ctx,
+			queryUpdateWaveSummary,
+			strings.TrimSpace(wave.ID),
+			string(summary.EvidenceCompletenessState),
+			string(summary.VerificationMinimumState),
+		); err != nil {
+			return fmt.Errorf("update change-governance wave summary: %w", err)
+		}
+	}
+	return nil
 }
 
 func (r *Repository) upsertPrimaryArtifactLinks(ctx context.Context, tx pgx.Tx, packageID string, repositoryFullName string, issueNumber int, prNumber *int, runID string, draftRef string) error {
@@ -1015,6 +1072,8 @@ type derivedPackageState struct {
 }
 
 func derivePackageState(aggregate domainrepo.Aggregate, correlationID string, prNumber *int) derivedPackageState {
+	activeWaveItems := activeWaves(aggregate.Waves)
+	activeEvidenceBlocks := filterEvidenceBlocksForActiveWaves(aggregate.Waves, aggregate.EvidenceBlocks)
 	derived := derivedPackageState{
 		PRNumber:                  prNumber,
 		RiskTier:                  aggregate.Package.RiskTier,
@@ -1028,11 +1087,11 @@ func derivePackageState(aggregate domainrepo.Aggregate, correlationID string, pr
 		LatestCorrelationID:       strings.TrimSpace(correlationID),
 	}
 
-	if len(aggregate.Waves) == 0 {
+	if len(activeWaveItems) == 0 {
 		derived.BundleAdmissibility = enumtypes.ChangeGovernanceBundleAdmissibilityRequiresDecomposition
 		derived.PublicationState = enumtypes.ChangeGovernancePublicationStateHiddenDraft
 	} else {
-		derived.BundleAdmissibility = deriveBundleAdmissibility(aggregate.Waves)
+		derived.BundleAdmissibility = deriveBundleAdmissibility(activeWaveItems)
 		if derived.BundleAdmissibility == enumtypes.ChangeGovernanceBundleAdmissibilityRequiresDecomposition {
 			derived.PublicationState = enumtypes.ChangeGovernancePublicationStateWaveMapDefined
 		} else {
@@ -1040,8 +1099,8 @@ func derivePackageState(aggregate domainrepo.Aggregate, correlationID string, pr
 		}
 	}
 
-	derived.EvidenceCompletenessState = deriveEvidenceCompletenessState(aggregate.EvidenceBlocks)
-	derived.VerificationMinimumState = deriveVerificationMinimumState(aggregate.EvidenceBlocks)
+	derived.EvidenceCompletenessState = deriveEvidenceCompletenessState(activeEvidenceBlocks)
+	derived.VerificationMinimumState = deriveVerificationMinimumState(activeEvidenceBlocks)
 	derived.GovernanceFeedbackState = deriveFeedbackState(aggregate.FeedbackRecords)
 	return derived
 }

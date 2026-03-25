@@ -35,6 +35,12 @@ func (s *Server) ReportChangeGovernanceDraftSignal(
 	if runID != strings.TrimSpace(runSession.RunID) {
 		return nil, status.Error(codes.PermissionDenied, "run_id does not match authenticated run token")
 	}
+	if err := s.validateChangeGovernanceRunContext(runSession, req.GetProjectId()); err != nil {
+		return nil, toStatus(err)
+	}
+	if err := s.validateChangeGovernanceRunLineage(ctx, runID, req.GetRepositoryFullName(), int(req.GetIssueNumber()), intPtrFromInt32Value(req.GetPrNumber())); err != nil {
+		return nil, toStatus(err)
+	}
 	if req.GetOccurredAt() == nil || !req.GetOccurredAt().IsValid() {
 		return nil, status.Error(codes.InvalidArgument, "occurred_at is required")
 	}
@@ -43,7 +49,7 @@ func (s *Server) ReportChangeGovernanceDraftSignal(
 		RunID:                runID,
 		SignalID:             strings.TrimSpace(req.GetSignalId()),
 		CorrelationID:        strings.TrimSpace(req.GetCorrelationId()),
-		ProjectID:            strings.TrimSpace(req.GetProjectId()),
+		ProjectID:            strings.TrimSpace(runSession.ProjectID),
 		RepositoryFullName:   strings.TrimSpace(req.GetRepositoryFullName()),
 		IssueNumber:          int(req.GetIssueNumber()),
 		PRNumber:             intPtrFromInt32Value(req.GetPrNumber()),
@@ -89,16 +95,20 @@ func (s *Server) PublishChangeGovernanceWaveMap(
 	if runID != strings.TrimSpace(runSession.RunID) {
 		return nil, status.Error(codes.PermissionDenied, "run_id does not match authenticated run token")
 	}
+	if err := s.validateChangeGovernanceRunContext(runSession, ""); err != nil {
+		return nil, toStatus(err)
+	}
 	if req.GetPublishedAt() == nil || !req.GetPublishedAt().IsValid() {
 		return nil, status.Error(codes.InvalidArgument, "published_at is required")
 	}
 
 	result, err := s.changeGovernance.PublishWaveMap(ctx, querytypes.ChangeGovernanceWaveMapParams{
-		PackageID:     strings.TrimSpace(req.GetPackageId()),
-		WaveMapID:     strings.TrimSpace(req.GetWaveMapId()),
-		CorrelationID: strings.TrimSpace(req.GetCorrelationId()),
-		Waves:         changeGovernanceWavesFromProto(req.GetWaves()),
-		PublishedAt:   req.GetPublishedAt().AsTime().UTC(),
+		PackageID:         strings.TrimSpace(req.GetPackageId()),
+		ExpectedProjectID: strings.TrimSpace(runSession.ProjectID),
+		WaveMapID:         strings.TrimSpace(req.GetWaveMapId()),
+		CorrelationID:     strings.TrimSpace(req.GetCorrelationId()),
+		Waves:             changeGovernanceWavesFromProto(req.GetWaves()),
+		PublishedAt:       req.GetPublishedAt().AsTime().UTC(),
 	})
 	if err != nil {
 		return nil, toStatus(err)
@@ -134,12 +144,16 @@ func (s *Server) UpsertChangeGovernanceEvidenceSignal(
 	if runID != strings.TrimSpace(runSession.RunID) {
 		return nil, status.Error(codes.PermissionDenied, "run_id does not match authenticated run token")
 	}
+	if err := s.validateChangeGovernanceRunContext(runSession, ""); err != nil {
+		return nil, toStatus(err)
+	}
 	if req.GetOccurredAt() == nil || !req.GetOccurredAt().IsValid() {
 		return nil, status.Error(codes.InvalidArgument, "occurred_at is required")
 	}
 
 	result, err := s.changeGovernance.UpsertEvidenceSignal(ctx, querytypes.ChangeGovernanceEvidenceSignalParams{
 		PackageID:             strings.TrimSpace(req.GetPackageId()),
+		ExpectedProjectID:     strings.TrimSpace(runSession.ProjectID),
 		SignalID:              strings.TrimSpace(req.GetSignalId()),
 		CorrelationID:         strings.TrimSpace(req.GetCorrelationId()),
 		ScopeKind:             enumtypes.ChangeGovernanceEvidenceScopeKind(strings.TrimSpace(req.GetScopeKind())),

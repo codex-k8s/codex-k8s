@@ -151,6 +151,9 @@ func validateWaveMapParams(params querytypes.ChangeGovernanceWaveMapParams) erro
 	if strings.TrimSpace(params.PackageID) == "" {
 		return errs.Validation{Field: "package_id", Msg: "is required"}
 	}
+	if strings.TrimSpace(params.ExpectedProjectID) == "" {
+		return errs.Validation{Field: "expected_project_id", Msg: "is required"}
+	}
 	if strings.TrimSpace(params.WaveMapID) == "" {
 		return errs.Validation{Field: "wave_map_id", Msg: "is required"}
 	}
@@ -195,6 +198,9 @@ func validateWaveMapParams(params querytypes.ChangeGovernanceWaveMapParams) erro
 func validateEvidenceSignalParams(params querytypes.ChangeGovernanceEvidenceSignalParams) error {
 	if strings.TrimSpace(params.PackageID) == "" {
 		return errs.Validation{Field: "package_id", Msg: "is required"}
+	}
+	if strings.TrimSpace(params.ExpectedProjectID) == "" {
+		return errs.Validation{Field: "expected_project_id", Msg: "is required"}
 	}
 	if strings.TrimSpace(params.SignalID) == "" {
 		return errs.Validation{Field: "signal_id", Msg: "is required"}
