@@ -5,8 +5,8 @@ title: "Sprint S17 Traceability History"
 status: in-review
 owner_role: KM
 created_at: 2026-03-20
-updated_at: 2026-03-20
-related_issues: [360, 361, 458, 473, 532, 540, 541, 554]
+updated_at: 2026-03-25
+related_issues: [360, 361, 458, 473, 532, 540, 541, 554, 557]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -37,3 +37,16 @@ approvals:
 - Через `gh issue create` создана continuity issue `#554` для stage `run:vision`.
 - Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope и использует issue-driven production evidence.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: intake stage фиксирует problem/scope/handover и historical delta, а не добавляет новые канонические требования в `docs/product/requirements_machine_driven.md`.
+
+## Актуализация по Issue #554 (`run:vision`, 2026-03-25)
+- Подготовлен vision package:
+  - `docs/delivery/epics/s17/epic-s17-day2-unified-user-interaction-waits-and-owner-feedback-inbox-vision.md`;
+  - обновлены `docs/delivery/sprints/s17/sprint_s17_unified_user_interaction_waits_and_owner_feedback_inbox.md` и `docs/delivery/epics/s17/epic_s17.md`.
+- Зафиксированы:
+  - unified owner feedback loop как platform capability, где owner отвечает в Telegram или staff-console, а агент продолжает ту же задачу без GitHub-comment detour и без channel drift;
+  - mission, north star, persona outcomes, KPI/guardrails и wave boundaries для owner/product lead path, same-session runtime path и staff/operator fallback path;
+  - locked baseline Day1: same live pod / same `codex` session как primary happy-path, snapshot-resume только как recovery fallback, long human-wait target `>=24h`, delivery-before-wait lifecycle, Telegram pending inbox, staff-console fallback, deterministic text/voice binding и `run:self-improve` exclusion;
+  - additional channels, reminders/escalations, attachments, multi-party routing, richer conversation UX и detached resume-run как равноправный happy-path выведены в later-wave scope.
+- Через `gh issue create` создана follow-up issue `#557` для stage `run:prd` с continuity-требованием сохранить цепочку `prd -> arch -> design -> plan -> dev`.
+- Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue view 554 --json number,title,body,url`, `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope и не требовал runtime-debug.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: vision stage добавляет product framing, guardrails и historical delta, не создавая новых канонических FR/NFR.
