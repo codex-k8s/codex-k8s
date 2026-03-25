@@ -20,6 +20,7 @@ approvals:
 - Для Issue `#554` сформирован vision-package: mission, north star, persona outcomes, KPI/guardrails, wave boundaries и product principles для Sprint S17.
 - Unified owner feedback loop зафиксирован как platform capability: owner отвечает в Telegram или staff-console, видит pending request и получает предсказуемое продолжение той же задачи без GitHub-comment detour и channel drift.
 - Day1 baseline из Issue `#541` сохранён без reopening: same live pod / same `codex` session остаётся primary happy-path, snapshot-resume используется только как recovery fallback, long human-wait target `>=24h`, delivery-before-wait lifecycle, Telegram pending inbox, staff-console fallback, deterministic text/voice binding и `run:self-improve` exclusion остаются обязательными.
+- Для built-in interaction tools внутри existing MCP server `codex_k8s` happy-path трактуется как реальное live ожидание ответа tool в той же session: effective timeout/TTL должен быть максимальным и не короче owner wait window, а resume с подложенным tool result остаётся только recovery/degradation path.
 - Создана follow-up issue `#557` для stage `run:prd` без trigger-лейбла; PRD должен формализовать user stories, FR/AC/NFR, scenario matrix и expected evidence без разрыва цепочки `prd -> arch -> design -> plan -> dev`.
 
 ## Priority
@@ -32,7 +33,7 @@ approvals:
 
 ### Цели и ожидаемые результаты
 1. Превратить текущие built-in interaction tools и существующий Telegram path в единый owner feedback loop с понятным inbox и lifecycle `delivery -> wait -> response -> continuation`.
-2. Закрепить same-session continuation как primary happy-path: live pod / live `codex` session ждут пользователя, а snapshot-resume остаётся только failure-recovery механизмом.
+2. Закрепить same-session continuation как primary happy-path: live pod / live `codex` session и долгоживущий вызов built-in `codex_k8s` interaction tool ждут пользователя, а snapshot-resume остаётся только failure-recovery механизмом.
 3. Дать owner и operator явную прозрачность pending / overdue / expired / manual-fallback состояний, чтобы ожидание пользователя не выглядело как “run завис” или “агент пропал”.
 4. Сохранить channel-neutral persisted backend contract: Telegram и staff-console работают как разные UX-поверхности одного и того же platform-owned wait/response state.
 
@@ -54,6 +55,7 @@ approvals:
 - Sprint S17 наследует channel-neutral interaction baseline Sprint S10 и первый внешний Telegram path Sprint S11, но не переопределяет их product semantics; инициатива объединяет их в long-lived wait/continuation contract.
 - Same live pod / same `codex` session остаётся primary happy-path; detached resume-run не возвращается как равноправный default UX без нового owner-решения.
 - Persisted session snapshot используется только как recovery fallback при потере live runtime, а не как основной путь продолжения.
+- Existing built-in MCP server `codex_k8s` остаётся core точкой для owner-facing interaction tools; на happy-path effective timeout/TTL этого MCP path должен быть максимальным и не ниже long human-wait target, чтобы агент ждал реальный ответ tool, а не заменял ожидание synthetic resume-потоком.
 - Delivery acceptance и waiting for user response остаются разными lifecycle состояниями; “сообщение отправлено” не означает “пользователь уже ответил”.
 - Telegram inbox и staff-console fallback обязаны работать поверх одного persisted backend contract; канал не может стать owner of semantics.
 - Text reply, inline callback и voice reply должны связываться с исходным request детерминированно и не создавать ambiguous continuation path.
@@ -71,6 +73,7 @@ approvals:
   - lifecycle `created -> delivery pending -> delivery accepted -> waiting -> response -> continuation`;
   - same-session continuation как primary path;
   - snapshot-resume как recovery fallback;
+  - max timeout/TTL для built-in `codex_k8s` MCP wait path не ниже owner wait window, чтобы tool-call оставался живым до ответа пользователя;
   - visibility по overdue / expired / manual-fallback состояниям.
 - Dual-channel semantics:
   - Telegram как первый внешний response path;
@@ -105,6 +108,7 @@ approvals:
 | `REL-554-01` | Same-session continuation rate | Доля валидных ответов пользователя, которые продолжают исходный run в той же live session без перехода в recovery fallback | run/session audit + continuation classification | `>= 80%` |
 | `UX-554-01` | Owner inbox visibility rate | Доля pending requests, доступных owner через Telegram и/или staff-console с достаточным контекстом для ответа без GitHub detour | inbox projection audit + UX sample review | `>= 99%` |
 | `REL-554-02` | Deterministic reply binding correctness | Доля text/voice/callback replies, сопоставленных с исходным request без duplicate logical response и без ambiguous continuation | callback audit + incident review | `>= 99.5%` |
+| `REL-554-03` | Live MCP wait coverage | Доля response-required сценариев, где effective timeout/TTL built-in `codex_k8s` MCP path не короче owner wait window и happy-path не требует synthetic resume с подложенным tool result | runtime config audit + run/session evidence | `100%` |
 | `OPS-554-01` | Overdue/manual-fallback transparency | Доля overdue / expired / manual-fallback сценариев, где owner/operator видят явный статус и причину, а не “тихий зависший run” | lifecycle audit + operator review | `100%` |
 
 ### Guardrails (ранние сигналы)
@@ -114,6 +118,7 @@ approvals:
 - `GR-554-04`: если `REL-554-02 < 99%`, следующие stage обязаны приоритизировать response binding/correlation semantics выше richer conversation affordances.
 - `GR-554-05`: если `OPS-554-01 < 100%`, overdue / manual-fallback path нельзя оставлять только в operator logs; visibility обязана стать blocking requirement.
 - `GR-554-06`: если core AC начинают требовать дополнительные каналы, advanced reminders, attachments, multi-party routing или detached resume-run как равноправный happy-path, stage переводится в `need:input` до нового owner-решения.
+- `GR-554-07`: если `REL-554-03 < 100%` или effective timeout/TTL built-in `codex_k8s` MCP path остаётся короче long human-wait budget, следующий stage обязан сначала закрыть timeout/TTL baseline, а не нормализовать detached resume как happy-path.
 
 ## Risks and Product Assumptions
 | Тип | ID | Описание | Митигирующее действие | Статус |
@@ -122,6 +127,7 @@ approvals:
 | risk | `RSK-554-02` | 24h same-session expectation может привести к скрытым runtime/cost компромиссам и неявному возврату detached resume как default path | Сохранить same-session как product baseline, а recovery fallback как отдельный деградационный path с прозрачной диагностикой | open |
 | risk | `RSK-554-03` | Staff-console fallback может стать вторичным каналом без parity visibility и потерять operational usefulness | Зафиксировать inbox visibility и overdue/manual-fallback transparency как guardrails | open |
 | risk | `RSK-554-04` | Voice/text replies могут давать ambiguous binding и нарушать deterministic continuation | Тащить deterministic reply binding как blocking contract в PRD/architecture/design | open |
+| risk | `RSK-554-05` | Короткий timeout/TTL built-in `codex_k8s` MCP path может разрушить same-session happy-path и вынудить platform симулировать continuation через resume с подложенным tool result | Зафиксировать max MCP timeout/TTL как blocking baseline уже на `run:prd` и не принимать recovery resume как happy-path substitute | open |
 | assumption | `ASM-554-01` | Existing built-in interaction tools и Telegram channel можно объединить в единый owner feedback contract без reopening core interaction semantics Sprint S10 | Проверить FR/AC/NFR и lifecycle contract на `run:prd` | accepted |
 | assumption | `ASM-554-02` | Основная пользовательская ценность достигается через предсказуемое ожидание и continuation, а не через richer conversation UX | Подтвердить user stories и success metrics на `run:prd` | accepted |
 | assumption | `ASM-554-03` | Live-session happy-path сможет покрыть большинство pilot-сценариев, а snapshot-resume останется исключительным recovery path | Проверить expected evidence и NFR baseline на `run:prd` / `run:arch` | accepted |
@@ -130,6 +136,7 @@ approvals:
 - [x] Mission, north star и persona outcomes сформулированы для owner/product lead, same-session runtime path и staff/operator fallback path.
 - [x] KPI/success metrics и guardrails определены как измеримые product/operational сигналы.
 - [x] Locked Day1 baseline сохранён явно: same live pod / same `codex` session как primary happy-path, snapshot-resume только как recovery fallback, long human-wait target `>=24h`, delivery-before-wait lifecycle, Telegram pending inbox, staff-console fallback, deterministic text/voice binding и `run:self-improve` exclusion.
+- [x] Happy-path явно требует max timeout/TTL для built-in `codex_k8s` MCP wait path не ниже owner wait window; synthetic resume с подложенным tool result не нормализован как основной UX.
 - [x] Core MVP и later-wave scope разделены явно; дополнительные каналы, reminders/escalations, attachments, multi-party routing, richer conversation UX и detached resume-run как равноправный happy-path не входят в blocking scope.
 - [x] Создана отдельная issue следующего этапа `run:prd` (`#557`) без trigger-лейбла.
 
@@ -138,6 +145,7 @@ approvals:
 - [x] KPI/success metrics и guardrails зафиксированы для delivery-before-wait consistency, response turnaround, same-session continuation, inbox visibility, deterministic reply binding и overdue/manual-fallback transparency.
 - [x] Персоны, MVP/Post-MVP границы, риски и assumptions описаны без reopening Day1 baseline и без перехода в implementation details.
 - [x] Явно сохранены как обязательный baseline: same-session happy-path, snapshot-resume recovery-only fallback, `>=24h` wait target, delivery-before-wait lifecycle, Telegram pending inbox + staff-console fallback, deterministic text/voice binding и `run:self-improve` exclusion.
+- [x] Зафиксировано, что для built-in `codex_k8s` MCP path happy-path требует максимальный timeout/TTL не ниже owner wait window; resume с подложенным tool result остаётся только recovery/degradation path.
 - [x] Подготовлен handover в `run:prd` и создана follow-up issue `#557` без trigger-лейбла.
 
 ## Handover в следующий этап
@@ -150,6 +158,7 @@ approvals:
 - На `run:prd` нельзя потерять следующие решения vision:
   - unified owner feedback loop остаётся platform capability поверх channel-neutral interaction baseline Sprint S10 и Telegram path Sprint S11;
   - same live pod / same `codex` session остаётся primary happy-path;
+  - built-in `codex_k8s` MCP wait path обязан использовать максимальный timeout/TTL не ниже long human-wait target, чтобы happy-path был реальным live wait, а не hidden resume substitute;
   - snapshot-resume остаётся recovery-only fallback;
   - long human-wait target `>=24h` и lifecycle `created -> delivery pending -> delivery accepted -> waiting -> response -> continuation` обязательны;
   - Telegram pending inbox и staff-console fallback остаются dual-channel поверх одного persisted backend contract;

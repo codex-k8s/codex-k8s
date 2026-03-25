@@ -497,10 +497,11 @@ approvals:
   - unified owner feedback loop закреплён как platform capability: owner отвечает в Telegram или staff-console, видит pending request и получает детерминированное продолжение той же задачи без GitHub-comment detour;
   - mission, north star, persona outcomes, KPI/guardrails и wave boundaries определены для owner/product lead path, same-session runtime path и staff/operator fallback path;
   - повторно зафиксирован locked baseline: same live pod / same `codex` session как primary happy-path, snapshot-resume как recovery-only fallback, long human-wait target `>=24h`, delivery-before-wait lifecycle, Telegram pending inbox, staff-console fallback, deterministic text/voice binding и `run:self-improve` exclusion;
+  - отдельно закреплён product guardrail: built-in `codex_k8s` MCP wait path обязан иметь максимальный timeout/TTL не ниже owner wait window, чтобы happy-path оставался реальным live wait, а synthetic resume с подложенным tool result не нормализовался как основная модель;
   - дополнительные каналы, reminders/escalations, attachments, multi-party routing, richer conversation UX и detached resume-run как равноправный happy-path оставлены в later-wave scope и не блокируют core MVP;
   - создана follow-up issue `#557` для stage `run:prd` без trigger-лейбла.
 - Day 3 (planned): PRD package для owner feedback loop (Issue `#557`).
-  - Цель: формализовать user stories, FR/AC/NFR, scenario matrix и expected evidence для same-session continuity, dual-channel inbox и lifecycle transparency.
+  - Цель: формализовать user stories, FR/AC/NFR, scenario matrix и expected evidence для same-session continuity, dual-channel inbox, lifecycle transparency и max timeout/TTL baseline built-in `codex_k8s` MCP wait path.
   - Ожидаемый результат: follow-up issue для `run:arch` и continuity-требование сохранить цепочку `arch -> design -> plan -> dev` без разрывов.
 
 ### Daily delivery contract (обязательный)
