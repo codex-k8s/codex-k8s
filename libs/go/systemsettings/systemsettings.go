@@ -13,6 +13,7 @@ import (
 const (
 	ChangeChannel                 = "codex_system_settings"
 	GitHubRateLimitWaitEnabledKey = "github_rate_limit_wait_enabled"
+	QualityGovernanceEnabledKey   = "quality_governance_enabled"
 	defaultReloadTimeout          = 5 * time.Second
 	defaultReconnectDelay         = 2 * time.Second
 )

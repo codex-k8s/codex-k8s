@@ -788,6 +788,91 @@ message ReportGitHubRateLimitSignalResponse {
   google.protobuf.Timestamp resume_not_before = 6;
 }
 
+message ChangeGovernanceScopeHint {
+  string context_key = 1;
+  string surface_kind = 2;
+}
+
+message ChangeGovernanceVerificationTarget {
+  string target_kind = 1;
+  string target_ref = 2;
+}
+
+message ChangeGovernanceWaveDraft {
+  string wave_key = 1;
+  int32 publish_order = 2;
+  string dominant_intent = 3;
+  string bounded_scope_kind = 4;
+  string summary = 5;
+  repeated ChangeGovernanceVerificationTarget verification_targets = 6;
+}
+
+message ChangeGovernanceArtifactLinkSeed {
+  string artifact_kind = 1;
+  string artifact_ref = 2;
+  string relation_kind = 3;
+  string display_label = 4;
+}
+
+message ReportChangeGovernanceDraftSignalRequest {
+  string run_id = 1;
+  string signal_id = 2;
+  string correlation_id = 3;
+  string project_id = 4;
+  string repository_full_name = 5;
+  int32 issue_number = 6;
+  google.protobuf.Int32Value pr_number = 7;
+  string branch_name = 8;
+  string draft_ref = 9;
+  string draft_kind = 10;
+  repeated ChangeGovernanceScopeHint change_scope_hints = 11;
+  repeated string candidate_risk_drivers = 12;
+  optional string draft_checksum = 13;
+  google.protobuf.Timestamp occurred_at = 14;
+}
+
+message ReportChangeGovernanceDraftSignalResponse {
+  string package_id = 1;
+  string draft_state = 2;
+  string next_step_kind = 3;
+}
+
+message PublishChangeGovernanceWaveMapRequest {
+  string run_id = 1;
+  string package_id = 2;
+  string wave_map_id = 3;
+  string correlation_id = 4;
+  repeated ChangeGovernanceWaveDraft waves = 5;
+  google.protobuf.Timestamp published_at = 6;
+}
+
+message PublishChangeGovernanceWaveMapResponse {
+  string package_id = 1;
+  string publication_state = 2;
+  int64 projection_version = 3;
+}
+
+message UpsertChangeGovernanceEvidenceSignalRequest {
+  string run_id = 1;
+  string package_id = 2;
+  string signal_id = 3;
+  string correlation_id = 4;
+  string scope_kind = 5;
+  string scope_ref = 6;
+  string block_kind = 7;
+  repeated ChangeGovernanceArtifactLinkSeed artifact_links = 8;
+  string verification_state_hint = 9;
+  bool required_by_tier = 10;
+  google.protobuf.Timestamp occurred_at = 11;
+}
+
+message UpsertChangeGovernanceEvidenceSignalResponse {
+  string package_id = 1;
+  string evidence_completeness_state = 2;
+  string verification_minimum_state = 3;
+  int64 projection_version = 4;
+}
+
 message MissionControlWarmupProject {
   string project_id = 1;
   string project_name = 2;
@@ -1848,6 +1933,9 @@ service ControlPlaneService {
   rpc ExpireNextInteraction(ExpireNextInteractionRequest) returns (ExpireNextInteractionResponse);
   rpc ProcessNextGitHubRateLimitWait(ProcessNextGitHubRateLimitWaitRequest) returns (ProcessNextGitHubRateLimitWaitResponse);
   rpc ReportGitHubRateLimitSignal(ReportGitHubRateLimitSignalRequest) returns (ReportGitHubRateLimitSignalResponse);
+  rpc ReportChangeGovernanceDraftSignal(ReportChangeGovernanceDraftSignalRequest) returns (ReportChangeGovernanceDraftSignalResponse);
+  rpc PublishChangeGovernanceWaveMap(PublishChangeGovernanceWaveMapRequest) returns (PublishChangeGovernanceWaveMapResponse);
+  rpc UpsertChangeGovernanceEvidenceSignal(UpsertChangeGovernanceEvidenceSignalRequest) returns (UpsertChangeGovernanceEvidenceSignalResponse);
   rpc GetMissionControlWorkspace(GetMissionControlWorkspaceRequest) returns (GetMissionControlWorkspaceResponse);
   rpc GetMissionControlNode(GetMissionControlNodeRequest) returns (MissionControlNodeDetails);
   rpc ListMissionControlNodeActivity(ListMissionControlNodeActivityRequest) returns (ListMissionControlNodeActivityResponse);

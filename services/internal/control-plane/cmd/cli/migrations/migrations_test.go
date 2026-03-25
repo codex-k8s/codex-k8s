@@ -160,3 +160,34 @@ func TestGitHubRateLimitFoundationMigrationContainsRequiredGuards(t *testing.T) 
 		}
 	}
 }
+
+func TestQualityGovernanceFoundationMigrationContainsRequiredSchema(t *testing.T) {
+	content, err := os.ReadFile("20260320103000_day36_quality_governance_foundation.sql")
+	if err != nil {
+		t.Fatalf("read quality governance foundation migration: %v", err)
+	}
+
+	required := []string{
+		"CREATE TABLE IF NOT EXISTS change_governance_packages",
+		"CREATE TABLE IF NOT EXISTS change_governance_internal_drafts",
+		"CREATE TABLE IF NOT EXISTS change_governance_waves",
+		"CREATE TABLE IF NOT EXISTS change_governance_evidence_blocks",
+		"CREATE TABLE IF NOT EXISTS change_governance_decision_records",
+		"CREATE TABLE IF NOT EXISTS change_governance_feedback_records",
+		"CREATE TABLE IF NOT EXISTS change_governance_projection_snapshots",
+		"CREATE TABLE IF NOT EXISTS change_governance_artifact_links",
+		"active_projection_version BIGINT NOT NULL DEFAULT 0",
+		"uq_change_governance_internal_drafts_latest",
+		"uq_change_governance_projection_snapshots_current",
+		"uq_change_governance_evidence_blocks_scope_kind",
+		"uq_change_governance_artifact_links_primary_issue",
+		"chk_change_governance_packages_high_risk_requires_waiver",
+		"chk_change_governance_waves_mechanical_scope",
+	}
+	text := string(content)
+	for _, item := range required {
+		if !strings.Contains(text, item) {
+			t.Fatalf("quality governance foundation migration must contain %q", item)
+		}
+	}
+}

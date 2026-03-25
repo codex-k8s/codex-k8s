@@ -119,6 +119,12 @@ const (
 	EventTypeRunWaitResumed EventType = "run.wait.resumed"
 )
 
+const (
+	EventTypeQualityGovernancePackageUpserted     EventType = "quality_governance.package.upserted"
+	EventTypeQualityGovernanceWaveMapPublished    EventType = "quality_governance.wave_map.published"
+	EventTypeQualityGovernanceProjectionRefreshed EventType = "quality_governance.projection.refreshed"
+)
+
 // InsertParams defines a single flow event record.
 type InsertParams struct {
 	CorrelationID string

@@ -128,14 +128,12 @@ func (s *Service) Reset(ctx context.Context, key string, actorUserID string, act
 
 // GitHubRateLimitWaitEnabled returns current effective rollout toggle.
 func (s *Service) GitHubRateLimitWaitEnabled() bool {
-	item, ok := s.getSettingForSurface(
-		enumtypes.SystemSettingKeyGitHubRateLimitWaitEnabled,
-		sharedsystemsettings.ExposureSurfaceStaff,
-	)
-	if !ok {
-		return false
-	}
-	return item.BooleanValue
+	return s.booleanSetting(enumtypes.SystemSettingKeyGitHubRateLimitWaitEnabled)
+}
+
+// QualityGovernanceEnabled returns current effective foundation rollout toggle.
+func (s *Service) QualityGovernanceEnabled() bool {
+	return s.booleanSetting(enumtypes.SystemSettingKeyQualityGovernanceEnabled)
 }
 
 // CurrentGitHubRateLimitRolloutState maps the typed setting into existing rollout guard shape.
@@ -152,6 +150,17 @@ func (s *Service) CurrentGitHubRateLimitRolloutState() valuetypes.GitHubRateLimi
 	}
 }
 
+// CurrentChangeGovernanceRolloutState maps the typed setting into rollout-guard state.
+func (s *Service) CurrentChangeGovernanceRolloutState() valuetypes.ChangeGovernanceRolloutState {
+	enabled := s.QualityGovernanceEnabled()
+	return valuetypes.ChangeGovernanceRolloutState{
+		CoreFeatureEnabled: enabled,
+		SchemaReady:        enabled,
+		DomainReady:        enabled,
+		RunnerReady:        enabled,
+	}
+}
+
 func defaultCatalog() map[enumtypes.SystemSettingKey]valuetypes.SystemSettingCatalogEntry {
 	return map[enumtypes.SystemSettingKey]valuetypes.SystemSettingCatalogEntry{
 		enumtypes.SystemSettingKeyGitHubRateLimitWaitEnabled: {
@@ -162,7 +171,23 @@ func defaultCatalog() map[enumtypes.SystemSettingKey]valuetypes.SystemSettingCat
 			Visibility:          enumtypes.SystemSettingVisibilityStaffVisible,
 			DefaultBooleanValue: false,
 		},
+		enumtypes.SystemSettingKeyQualityGovernanceEnabled: {
+			Key:                 enumtypes.SystemSettingKeyQualityGovernanceEnabled,
+			Section:             enumtypes.SystemSettingSectionQualityGovernance,
+			ValueKind:           enumtypes.SystemSettingValueKindBoolean,
+			ReloadSemantics:     enumtypes.SystemSettingReloadSemanticsHotReload,
+			Visibility:          enumtypes.SystemSettingVisibilityStaffVisible,
+			DefaultBooleanValue: false,
+		},
 	}
+}
+
+func (s *Service) booleanSetting(key enumtypes.SystemSettingKey) bool {
+	item, ok := s.getSettingForSurface(key, sharedsystemsettings.ExposureSurfaceStaff)
+	if !ok {
+		return false
+	}
+	return item.BooleanValue
 }
 
 func (s *Service) requireCatalogEntry(key string) (valuetypes.SystemSettingCatalogEntry, error) {

@@ -7,13 +7,15 @@ type SystemSettingKey string
 
 const (
 	SystemSettingKeyGitHubRateLimitWaitEnabled SystemSettingKey = sharedsystemsettings.GitHubRateLimitWaitEnabledKey
+	SystemSettingKeyQualityGovernanceEnabled   SystemSettingKey = sharedsystemsettings.QualityGovernanceEnabledKey
 )
 
 // SystemSettingSection groups settings by operational area.
 type SystemSettingSection string
 
 const (
-	SystemSettingSectionGitHubRateLimit SystemSettingSection = "github_rate_limit"
+	SystemSettingSectionGitHubRateLimit   SystemSettingSection = "github_rate_limit"
+	SystemSettingSectionQualityGovernance SystemSettingSection = "quality_governance"
 )
 
 // SystemSettingValueKind describes the typed contract for one setting value.

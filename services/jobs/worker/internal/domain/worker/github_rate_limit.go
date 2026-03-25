@@ -61,3 +61,10 @@ func (s *Service) githubRateLimitWaitEnabled() bool {
 	}
 	return s.cfg.GitHubRateLimitWaitEnabledFallback
 }
+
+func (s *Service) qualityGovernanceEnabled() bool {
+	if s == nil || s.systemSettings == nil {
+		return false
+	}
+	return s.systemSettings.QualityGovernanceEnabled()
+}

@@ -13,10 +13,12 @@ import (
 	"github.com/codex-k8s/codex-k8s/libs/go/errs"
 	controlplanev1 "github.com/codex-k8s/codex-k8s/proto/gen/go/codexk8s/controlplane/v1"
 	agentcallbackdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/agentcallback"
+	changegovernancedomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/changegovernance"
 	githubratelimitdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/githubratelimit"
 	mcpdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/mcp"
 	missioncontroldomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/missioncontrol"
 	missioncontrolworkerdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/missioncontrolworker"
+	agentrunrepo "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/repository/agentrun"
 	runstatusdomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runstatus"
 	runtimedeploydomain "github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/runtimedeploy"
 	"github.com/codex-k8s/codex-k8s/services/internal/control-plane/internal/domain/staff"
@@ -79,6 +81,14 @@ type githubRateLimitService interface {
 	GetRunProjection(ctx context.Context, runID string) (githubratelimitdomain.WaitProjection, bool, error)
 }
 
+type changeGovernanceService interface {
+	changegovernancedomain.DomainService
+}
+
+type runReader interface {
+	GetByID(ctx context.Context, runID string) (agentrunrepo.Run, bool, error)
+}
+
 type runtimeErrorRecorder interface {
 	RecordBestEffort(ctx context.Context, params querytypes.RuntimeErrorRecordParams)
 }
@@ -93,10 +103,12 @@ type Dependencies struct {
 	Webhook              webhookIngress
 	Staff                *staff.Service
 	AgentCallbacks       agentCallbackService
+	ChangeGovernance     changeGovernanceService
 	GitHubRateLimit      githubRateLimitService
 	MissionControl       missionControlWorkerService
 	MissionControlDomain missioncontroldomain.DomainService
 	RunStatus            runStatusService
+	Runs                 runReader
 	RuntimeDeploy        runtimeDeployService
 	RuntimeErrors        runtimeErrorRecorder
 	MCP                  mcpRunTokenService
@@ -111,10 +123,12 @@ type Server struct {
 	webhook              webhookIngress
 	staff                *staff.Service
 	agentCallbacks       agentCallbackService
+	changeGovernance     changeGovernanceService
 	githubRateLimit      githubRateLimitService
 	missionControl       missionControlWorkerService
 	missionControlDomain missioncontroldomain.DomainService
 	runStatus            runStatusService
+	runs                 runReader
 	runtimeDeploy        runtimeDeployService
 	runtimeErrors        runtimeErrorRecorder
 	mcp                  mcpRunTokenService
@@ -127,10 +141,12 @@ func NewServer(deps Dependencies) *Server {
 	server.webhook = deps.Webhook
 	server.staff = deps.Staff
 	server.agentCallbacks = deps.AgentCallbacks
+	server.changeGovernance = deps.ChangeGovernance
 	server.githubRateLimit = deps.GitHubRateLimit
 	server.missionControl = deps.MissionControl
 	server.missionControlDomain = deps.MissionControlDomain
 	server.runStatus = deps.RunStatus
+	server.runs = deps.Runs
 	server.runtimeDeploy = deps.RuntimeDeploy
 	server.runtimeErrors = deps.RuntimeErrors
 	server.mcp = deps.MCP

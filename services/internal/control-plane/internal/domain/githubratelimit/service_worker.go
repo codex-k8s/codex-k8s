@@ -537,16 +537,7 @@ func executeGitHubRateLimitReplay[T any](
 }
 
 func parseGitHubRateLimitResumeRunPayload(raw json.RawMessage) (githubRateLimitResumeRunPayload, error) {
-	trimmed := bytes.TrimSpace(raw)
-	if len(trimmed) == 0 {
-		return githubRateLimitResumeRunPayload{}, fmt.Errorf("run payload is empty")
-	}
-
-	var payload githubRateLimitResumeRunPayload
-	if err := json.Unmarshal(trimmed, &payload); err != nil {
-		return githubRateLimitResumeRunPayload{}, fmt.Errorf("decode run payload for github rate-limit resume: %w", err)
-	}
-	return payload, nil
+	return querytypes.DecodeRunPayloadInto[githubRateLimitResumeRunPayload](bytes.TrimSpace(raw), "decode run payload for github rate-limit resume")
 }
 
 func buildGitHubRateLimitResumePendingRunPayload(raw json.RawMessage, resumePayload json.RawMessage) (json.RawMessage, error) {

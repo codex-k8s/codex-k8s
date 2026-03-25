@@ -67,6 +67,9 @@ const (
 	ControlPlaneService_ExpireNextInteraction_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/ExpireNextInteraction"
 	ControlPlaneService_ProcessNextGitHubRateLimitWait_FullMethodName       = "/codexk8s.controlplane.v1.ControlPlaneService/ProcessNextGitHubRateLimitWait"
 	ControlPlaneService_ReportGitHubRateLimitSignal_FullMethodName          = "/codexk8s.controlplane.v1.ControlPlaneService/ReportGitHubRateLimitSignal"
+	ControlPlaneService_ReportChangeGovernanceDraftSignal_FullMethodName    = "/codexk8s.controlplane.v1.ControlPlaneService/ReportChangeGovernanceDraftSignal"
+	ControlPlaneService_PublishChangeGovernanceWaveMap_FullMethodName       = "/codexk8s.controlplane.v1.ControlPlaneService/PublishChangeGovernanceWaveMap"
+	ControlPlaneService_UpsertChangeGovernanceEvidenceSignal_FullMethodName = "/codexk8s.controlplane.v1.ControlPlaneService/UpsertChangeGovernanceEvidenceSignal"
 	ControlPlaneService_GetMissionControlWorkspace_FullMethodName           = "/codexk8s.controlplane.v1.ControlPlaneService/GetMissionControlWorkspace"
 	ControlPlaneService_GetMissionControlNode_FullMethodName                = "/codexk8s.controlplane.v1.ControlPlaneService/GetMissionControlNode"
 	ControlPlaneService_ListMissionControlNodeActivity_FullMethodName       = "/codexk8s.controlplane.v1.ControlPlaneService/ListMissionControlNodeActivity"
@@ -156,6 +159,9 @@ type ControlPlaneServiceClient interface {
 	ExpireNextInteraction(ctx context.Context, in *ExpireNextInteractionRequest, opts ...grpc.CallOption) (*ExpireNextInteractionResponse, error)
 	ProcessNextGitHubRateLimitWait(ctx context.Context, in *ProcessNextGitHubRateLimitWaitRequest, opts ...grpc.CallOption) (*ProcessNextGitHubRateLimitWaitResponse, error)
 	ReportGitHubRateLimitSignal(ctx context.Context, in *ReportGitHubRateLimitSignalRequest, opts ...grpc.CallOption) (*ReportGitHubRateLimitSignalResponse, error)
+	ReportChangeGovernanceDraftSignal(ctx context.Context, in *ReportChangeGovernanceDraftSignalRequest, opts ...grpc.CallOption) (*ReportChangeGovernanceDraftSignalResponse, error)
+	PublishChangeGovernanceWaveMap(ctx context.Context, in *PublishChangeGovernanceWaveMapRequest, opts ...grpc.CallOption) (*PublishChangeGovernanceWaveMapResponse, error)
+	UpsertChangeGovernanceEvidenceSignal(ctx context.Context, in *UpsertChangeGovernanceEvidenceSignalRequest, opts ...grpc.CallOption) (*UpsertChangeGovernanceEvidenceSignalResponse, error)
 	GetMissionControlWorkspace(ctx context.Context, in *GetMissionControlWorkspaceRequest, opts ...grpc.CallOption) (*GetMissionControlWorkspaceResponse, error)
 	GetMissionControlNode(ctx context.Context, in *GetMissionControlNodeRequest, opts ...grpc.CallOption) (*MissionControlNodeDetails, error)
 	ListMissionControlNodeActivity(ctx context.Context, in *ListMissionControlNodeActivityRequest, opts ...grpc.CallOption) (*ListMissionControlNodeActivityResponse, error)
@@ -671,6 +677,36 @@ func (c *controlPlaneServiceClient) ReportGitHubRateLimitSignal(ctx context.Cont
 	return out, nil
 }
 
+func (c *controlPlaneServiceClient) ReportChangeGovernanceDraftSignal(ctx context.Context, in *ReportChangeGovernanceDraftSignalRequest, opts ...grpc.CallOption) (*ReportChangeGovernanceDraftSignalResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReportChangeGovernanceDraftSignalResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_ReportChangeGovernanceDraftSignal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) PublishChangeGovernanceWaveMap(ctx context.Context, in *PublishChangeGovernanceWaveMapRequest, opts ...grpc.CallOption) (*PublishChangeGovernanceWaveMapResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PublishChangeGovernanceWaveMapResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_PublishChangeGovernanceWaveMap_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *controlPlaneServiceClient) UpsertChangeGovernanceEvidenceSignal(ctx context.Context, in *UpsertChangeGovernanceEvidenceSignalRequest, opts ...grpc.CallOption) (*UpsertChangeGovernanceEvidenceSignalResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpsertChangeGovernanceEvidenceSignalResponse)
+	err := c.cc.Invoke(ctx, ControlPlaneService_UpsertChangeGovernanceEvidenceSignal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *controlPlaneServiceClient) GetMissionControlWorkspace(ctx context.Context, in *GetMissionControlWorkspaceRequest, opts ...grpc.CallOption) (*GetMissionControlWorkspaceResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetMissionControlWorkspaceResponse)
@@ -1064,6 +1100,9 @@ type ControlPlaneServiceServer interface {
 	ExpireNextInteraction(context.Context, *ExpireNextInteractionRequest) (*ExpireNextInteractionResponse, error)
 	ProcessNextGitHubRateLimitWait(context.Context, *ProcessNextGitHubRateLimitWaitRequest) (*ProcessNextGitHubRateLimitWaitResponse, error)
 	ReportGitHubRateLimitSignal(context.Context, *ReportGitHubRateLimitSignalRequest) (*ReportGitHubRateLimitSignalResponse, error)
+	ReportChangeGovernanceDraftSignal(context.Context, *ReportChangeGovernanceDraftSignalRequest) (*ReportChangeGovernanceDraftSignalResponse, error)
+	PublishChangeGovernanceWaveMap(context.Context, *PublishChangeGovernanceWaveMapRequest) (*PublishChangeGovernanceWaveMapResponse, error)
+	UpsertChangeGovernanceEvidenceSignal(context.Context, *UpsertChangeGovernanceEvidenceSignalRequest) (*UpsertChangeGovernanceEvidenceSignalResponse, error)
 	GetMissionControlWorkspace(context.Context, *GetMissionControlWorkspaceRequest) (*GetMissionControlWorkspaceResponse, error)
 	GetMissionControlNode(context.Context, *GetMissionControlNodeRequest) (*MissionControlNodeDetails, error)
 	ListMissionControlNodeActivity(context.Context, *ListMissionControlNodeActivityRequest) (*ListMissionControlNodeActivityResponse, error)
@@ -1249,6 +1288,15 @@ func (UnimplementedControlPlaneServiceServer) ProcessNextGitHubRateLimitWait(con
 }
 func (UnimplementedControlPlaneServiceServer) ReportGitHubRateLimitSignal(context.Context, *ReportGitHubRateLimitSignalRequest) (*ReportGitHubRateLimitSignalResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportGitHubRateLimitSignal not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) ReportChangeGovernanceDraftSignal(context.Context, *ReportChangeGovernanceDraftSignalRequest) (*ReportChangeGovernanceDraftSignalResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportChangeGovernanceDraftSignal not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) PublishChangeGovernanceWaveMap(context.Context, *PublishChangeGovernanceWaveMapRequest) (*PublishChangeGovernanceWaveMapResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PublishChangeGovernanceWaveMap not implemented")
+}
+func (UnimplementedControlPlaneServiceServer) UpsertChangeGovernanceEvidenceSignal(context.Context, *UpsertChangeGovernanceEvidenceSignalRequest) (*UpsertChangeGovernanceEvidenceSignalResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpsertChangeGovernanceEvidenceSignal not implemented")
 }
 func (UnimplementedControlPlaneServiceServer) GetMissionControlWorkspace(context.Context, *GetMissionControlWorkspaceRequest) (*GetMissionControlWorkspaceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMissionControlWorkspace not implemented")
@@ -2219,6 +2267,60 @@ func _ControlPlaneService_ReportGitHubRateLimitSignal_Handler(srv interface{}, c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ControlPlaneService_ReportChangeGovernanceDraftSignal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportChangeGovernanceDraftSignalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).ReportChangeGovernanceDraftSignal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_ReportChangeGovernanceDraftSignal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).ReportChangeGovernanceDraftSignal(ctx, req.(*ReportChangeGovernanceDraftSignalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_PublishChangeGovernanceWaveMap_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PublishChangeGovernanceWaveMapRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).PublishChangeGovernanceWaveMap(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_PublishChangeGovernanceWaveMap_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).PublishChangeGovernanceWaveMap(ctx, req.(*PublishChangeGovernanceWaveMapRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ControlPlaneService_UpsertChangeGovernanceEvidenceSignal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertChangeGovernanceEvidenceSignalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ControlPlaneServiceServer).UpsertChangeGovernanceEvidenceSignal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ControlPlaneService_UpsertChangeGovernanceEvidenceSignal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ControlPlaneServiceServer).UpsertChangeGovernanceEvidenceSignal(ctx, req.(*UpsertChangeGovernanceEvidenceSignalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ControlPlaneService_GetMissionControlWorkspace_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetMissionControlWorkspaceRequest)
 	if err := dec(in); err != nil {
@@ -3025,6 +3127,18 @@ var ControlPlaneService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportGitHubRateLimitSignal",
 			Handler:    _ControlPlaneService_ReportGitHubRateLimitSignal_Handler,
+		},
+		{
+			MethodName: "ReportChangeGovernanceDraftSignal",
+			Handler:    _ControlPlaneService_ReportChangeGovernanceDraftSignal_Handler,
+		},
+		{
+			MethodName: "PublishChangeGovernanceWaveMap",
+			Handler:    _ControlPlaneService_PublishChangeGovernanceWaveMap_Handler,
+		},
+		{
+			MethodName: "UpsertChangeGovernanceEvidenceSignal",
+			Handler:    _ControlPlaneService_UpsertChangeGovernanceEvidenceSignal_Handler,
 		},
 		{
 			MethodName: "GetMissionControlWorkspace",

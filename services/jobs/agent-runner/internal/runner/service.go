@@ -324,6 +324,11 @@ func (s *Service) Run(ctx context.Context) (err error) {
 			s.logger.Warn("emit run.toolchain.gap_detected failed", "err", err)
 		}
 	}
+	if requiresPRFlow {
+		if err := s.reportChangeGovernanceSignals(ctx, state.repoDir, baselineHead, &result); err != nil {
+			return err
+		}
+	}
 
 	finishedAt := time.Now().UTC()
 	persisted, err := s.persistSessionSnapshot(ctx, &result, state, runStartedAt, runStatusSucceeded, &finishedAt)

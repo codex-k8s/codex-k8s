@@ -208,6 +208,7 @@ type JobImageSelectionPolicy struct {
 
 type runtimeSystemSettings interface {
 	GitHubRateLimitWaitEnabled() bool
+	QualityGovernanceEnabled() bool
 }
 
 // NewService creates worker orchestrator instance.

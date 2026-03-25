@@ -991,6 +991,7 @@ export const ru = {
       },
       sections: {
         github_rate_limit: "GitHub rate limit",
+        quality_governance: "Quality governance",
       },
       sources: {
         default: "Значение каталога",
@@ -1010,6 +1011,10 @@ export const ru = {
         github_rate_limit_wait_enabled: {
           title: "GitHub rate-limit wait recovery",
           description: "Управляет persisted wait-контуром, worker sweep и deterministic replay/resume для GitHub rate-limit resilience.",
+        },
+        quality_governance_enabled: {
+          title: "Quality governance foundation",
+          description: "Включает canonical change-governance aggregate, hidden draft ingress, semantic wave publication и projection refresh для новых запусков и live callbacks.",
         },
       },
     },

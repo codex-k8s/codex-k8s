@@ -23,6 +23,8 @@ type Config struct {
 	RuntimeTargetEnv     string `env:"CODEXK8S_RUNTIME_TARGET_ENV"`
 	RuntimeBuildRef      string `env:"CODEXK8S_RUNTIME_BUILD_REF"`
 	RuntimeAccessProfile string `env:"CODEXK8S_RUNTIME_ACCESS_PROFILE"`
+	// QualityGovernanceEnabled is a worker-injected snapshot of the current runtime system setting.
+	QualityGovernanceEnabled bool `env:"CODEXK8S_QUALITY_GOVERNANCE_ENABLED" envDefault:"false"`
 
 	ControlPlaneGRPCTarget string `env:"CODEXK8S_CONTROL_PLANE_GRPC_TARGET,required,notEmpty"`
 	MCPBaseURL             string `env:"CODEXK8S_MCP_BASE_URL,required,notEmpty"`
