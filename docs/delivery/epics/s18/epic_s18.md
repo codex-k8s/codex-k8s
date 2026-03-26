@@ -6,7 +6,7 @@ status: in-review
 owner_role: PM
 created_at: 2026-03-26
 updated_at: 2026-03-26
-related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565]
+related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565, 567]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -19,13 +19,14 @@ approvals:
 ## TL;DR
 - Sprint S18 открывает отдельный Mission Control reset-stream после doc-reset `#561`: сначала owner утверждает frontend-first UX на fake data, затем отдельной задачей запускается backend rebuild `#563`.
 - Day1 intake (`#562`) зафиксировал новый baseline: fullscreen свободный canvas, node taxonomy `Issue` / `PR` / `Run`, compact nodes, explicit relations, side panel/drawer, toolbar/controls и workflow editor UX без live GitHub mutation path.
+- Day2 vision (`#565`) закрепил mission, north star, persona outcomes, KPI/guardrails и wave boundaries для canvas-first UX и создал issue `#567` для `run:prd`.
 - Prompt policy не переоткрывается: repo-seed prompts остаются source of truth, а workflow behavior допускается только через deterministic generated `workflow-policy block`.
 - До `run:dev` Sprint S18 остаётся stage-driven frontend-first инициативой; на `run:dev` целевой результат ограничен isolated fake-data prototype в `web-console`.
 
 ## Stage roadmap
 - Day 1 (Intake): `docs/delivery/epics/s18/epic-s18-day1-mission-control-frontend-first-canvas-intake.md` (Issue `#562`); stage сформулировал problem statement, reset baseline, scope/guardrails и создал issue `#565` для `run:vision`.
-- Day 2 (Vision): Issue `#565`; должна зафиксировать mission, north star, persona outcomes, KPI/guardrails и wave boundaries для нового canvas-first UX без reopening Day1 baseline.
-- Day 3 (PRD): создаётся последовательно после vision и должна формализовать user stories, FR/AC/NFR, scenario matrix и expected evidence для fake-data prototype.
+- Day 2 (Vision): `docs/delivery/epics/s18/epic-s18-day2-mission-control-frontend-first-canvas-vision.md` (Issue `#565`); stage зафиксировал mission, north star, persona outcomes, KPI/guardrails и wave boundaries без reopening Day1 baseline и создал issue `#567` для `run:prd`.
+- Day 3 (PRD): Issue `#567`; должна формализовать user stories, FR/AC/NFR, scenario matrix и expected evidence для fake-data prototype.
 - Day 4 (Architecture): создаётся последовательно после PRD и должна определить boundaries isolated prototype, future backend handover и cleanup старых S16 assumptions.
 - Day 5 (Design): создаётся последовательно после architecture и должна выпустить implementation-ready UI/interaction/design package для fake-data prototype.
 - Day 6 (Plan): создаётся последовательно после design и должна разложить execution package, feedback loops, DoR/DoD и owner-managed handover в `run:dev`.

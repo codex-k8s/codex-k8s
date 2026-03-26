@@ -6,7 +6,7 @@ status: in-review
 owner_role: PM
 created_at: 2026-03-26
 updated_at: 2026-03-26
-related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565]
+related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565, 567]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -19,9 +19,10 @@ approvals:
 ## TL;DR
 - Цель спринта: сначала утвердить новый Mission Control UX как isolated `web-console` prototype на fake data, и только потом запускать backend rebuild в issue `#563`.
 - Intake stage в issue `#562` зафиксировал controlled reset после doc-reset `#561`: fullscreen свободный canvas, минимальная taxonomy `Issue` / `PR` / `Run`, compact nodes, side panel/drawer, toolbar/controls и workflow editor UX как часть frontend-first контура.
+- Vision stage в issue `#565` закрепил mission, north star, persona outcomes, KPI/guardrails и wave boundaries для canvas-first UX без reopening Day1 baseline.
 - Sprint S18 намеренно не продолжает старый S16 baseline `lane/column` и не пытается “подкрасить” отклонённый graph shell.
 - Prompt policy не меняется: repo-seed prompts остаются каноничными, workflow logic допускается только как deterministic generated `workflow-policy block`, без DB prompt editor.
-- Continuity issue `#565` создана для stage `run:vision`; backend follow-up `#563` остаётся отдельной задачей после owner approval результата Sprint S18.
+- Continuity issue `#567` создана для stage `run:prd`; backend follow-up `#563` остаётся отдельной задачей после owner approval результата Sprint S18.
 
 ## Scope спринта
 ### In scope
@@ -51,15 +52,15 @@ approvals:
   - frontend-first scope не отменяет того, что без `vision`, `arch` и `design` UX снова начнёт подчиняться старой data/model semantics;
   - нужен отдельный owner-reviewed baseline до старта backend rebuild и до разблокировки зависимых UI/release потоков.
 - Целевая continuity-цепочка:
-  `#562 (intake) -> #565 (vision) -> PRD issue -> architecture issue -> design issue -> plan issue -> dev prototype`.
+  `#562 (intake) -> #565 (vision) -> #567 (prd) -> architecture issue -> design issue -> plan issue -> dev prototype`.
 
 ## План этапов и handover
 
 | Stage | Основной артефакт | Целевая роль | Правило выхода |
 |---|---|---|---|
 | Intake (`#562`) | Problem/Brief/Scope/Constraints + intake AC | `pm` | Зафиксирован frontend-first baseline и создана issue `#565` для `run:vision` |
-| Vision (`#565`) | Mission, north star, persona outcomes, KPI/guardrails, wave boundaries | `pm` | Подтверждён vision baseline и создана issue для `run:prd` |
-| PRD (TBD) | User stories, FR/AC/NFR, scenario matrix и expected evidence | `pm` + `sa` | Зафиксирован product contract и создана issue для `run:arch` |
+| Vision (`#565`) | Mission, north star, persona outcomes, KPI/guardrails, wave boundaries | `pm` | Подтверждён vision baseline и создана issue `#567` для `run:prd` |
+| PRD (`#567`) | User stories, FR/AC/NFR, scenario matrix и expected evidence | `pm` + `sa` | Зафиксирован product contract и создана issue для `run:arch` |
 | Architecture (TBD) | Prototype isolation, ownership split, future handover в backend rebuild | `sa` | Подтверждены архитектурные границы и создана issue для `run:design` |
 | Design (TBD) | UI/data/interaction/design package для fake-data prototype | `sa` + `qa` | Подготовлен implementation-ready design package и создана issue для `run:plan` |
 | Plan (TBD) | Delivery waves, feedback loops, DoR/DoD, owner-managed `run:dev` handover | `em` + `km` | Сформирован execution package для isolated prototype |
@@ -78,20 +79,22 @@ approvals:
   - `#470` нельзя использовать для фиксации финального cockpit UI до завершения Sprint S18.
 
 ## Handover
-- Текущий stage in-review: `run:intake` в issue `#562`.
-- Intake package:
+- Текущий stage in-review: `run:vision` в issue `#565`.
+- Актуальный package:
   - `docs/delivery/sprints/s18/sprint_s18_mission_control_frontend_first_canvas_fake_data.md`;
   - `docs/delivery/epics/s18/epic_s18.md`;
   - `docs/delivery/epics/s18/epic-s18-day1-mission-control-frontend-first-canvas-intake.md`;
+  - `docs/delivery/epics/s18/epic-s18-day2-mission-control-frontend-first-canvas-vision.md`;
   - `docs/delivery/traceability/s18_mission_control_frontend_first_canvas_history.md`.
-- Следующий stage: `run:vision` через issue `#565`.
-- До завершения следующего stage нельзя потерять следующие Day1 decisions:
+- Следующий stage: `run:prd` через issue `#567`.
+- До завершения следующего stage нельзя потерять следующие Day1/Day2 decisions:
   - сначала утверждается UX baseline на fake data, потом backend rebuild;
   - fullscreen свободный canvas без lane/column shell;
   - Wave 1 taxonomy `Issue`, `PR`, `Run`;
   - compact nodes, explicit relations, side panel/drawer и toolbar/controls обязательны;
   - workflow editor UX входит в scope Sprint S18, но работает только на fake data и с platform-safe actions;
+  - north star инициативы = owner-ready canvas walkthrough для 2-3 инициатив без возврата к lane/column shell;
   - `run:dev` внутри этого спринта ограничен isolated `web-console` prototype;
   - repo-seed prompts остаются каноничными, free-form DB prompt storage не вводится;
   - после `run:dev` обязательная late-stage цепочка внутри этой инициативы не запускается автоматически.
-- Trigger-лейбл для issue `#565` не ставится автоматически и остаётся owner-managed переходом после review intake package.
+- Trigger-лейбл для issue `#567` не ставится автоматически и остаётся owner-managed переходом после review vision package.

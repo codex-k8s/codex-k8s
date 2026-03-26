@@ -6,7 +6,7 @@ status: in-review
 owner_role: KM
 created_at: 2026-03-26
 updated_at: 2026-03-26
-related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565]
+related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565, 567]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -36,3 +36,18 @@ approvals:
 - Через `gh issue create` создана continuity issue `#565` для stage `run:vision`.
 - Выполнены markdown-only проверки: traceability sync, локальная проверка `gh issue view 562 --json number,title,body,url`, `gh issue view 565 --json number,title,body,url`, `git diff --check`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope и не требовал runtime-debug.
 - Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: intake stage фиксирует problem/scope/handover и historical delta, а не добавляет новые канонические требования в `docs/product/requirements_machine_driven.md`.
+
+## Актуализация по Issue #565 (`run:vision`, 2026-03-26)
+- Подготовлен vision package:
+  - `docs/delivery/epics/s18/epic-s18-day2-mission-control-frontend-first-canvas-vision.md`;
+  - обновлены `docs/delivery/sprints/s18/sprint_s18_mission_control_frontend_first_canvas_fake_data.md` и `docs/delivery/epics/s18/epic_s18.md`.
+- Зафиксированы:
+  - Mission Control как owner-approved canvas-first workspace на fake data, где сначала утверждается UX свободного canvas для 2-3 инициатив, а backend rebuild `#563` стартует только после этого;
+  - mission, north star, persona outcomes, KPI/guardrails и wave boundaries для frontend-first Sprint S18;
+  - locked baseline Day1: fullscreen свободный canvas, taxonomy `Issue` / `PR` / `Run`, compact nodes, explicit relations, side panel/drawer, toolbar/controls и workflow editor UX на fake data;
+  - дополнительный vision guardrail: workflow editor допускается только как policy-shaping UX с deterministic generated `workflow-policy block`, но не как prompt editor и не как live provider mutation path;
+  - product boundary `run:dev`: только isolated `web-console` prototype на fake data без обязательного автоматического перехода в `qa/release/postdeploy/ops`;
+  - wave boundary по смежным инициативам: `#524` / `#525` остаются заблокированными до owner approval Sprint S18, а `#563` остаётся отдельным backend follow-up.
+- Через `gh issue create` создана follow-up issue `#567` для stage `run:prd` с continuity-требованием сохранить цепочку `prd -> arch -> design -> plan -> dev`.
+- Выполнены markdown-only проверки: traceability sync, `git diff --check`, локальная проверка `gh issue view 565 --json number,title,body,url`, `gh issue view 567 --json number,title,body,url`, `gh issue create --help`, `gh pr create --help`, `gh pr edit --help`; kubectl/logs/БД-запросы не выполнялись, потому что stage ограничен documentation-only scope и не требовал runtime-debug.
+- Root FR/NFR matrix в `docs/delivery/requirements_traceability.md` не менялась по существу: vision stage добавляет product framing, guardrails и historical delta, не создавая новых канонических FR/NFR.

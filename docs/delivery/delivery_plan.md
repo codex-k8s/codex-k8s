@@ -6,7 +6,7 @@ status: active
 owner_role: EM
 created_at: 2026-02-06
 updated_at: 2026-03-26
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 500, 510, 512, 516, 519, 521, 522, 523, 524, 525, 537, 541, 542, 543, 544, 545, 546, 547, 554, 557, 559, 561, 562, 563, 565]
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 500, 510, 512, 516, 519, 521, 522, 523, 524, 525, 537, 541, 542, 543, 544, 545, 546, 547, 554, 557, 559, 561, 562, 563, 565, 567]
 
 related_prs: []
 approvals:
@@ -502,6 +502,14 @@ approvals:
   - prompt policy удержана без drift: repo-seed prompts остаются source of truth, DB prompt editor не вводится, workflow behavior допускается только как deterministic generated `workflow-policy block`;
   - sequencing из rethink `#561` сохранён: `#522` и `#523` можно двигать отдельно, `#524` и `#525` остаются заблокированными до owner approval Sprint S18;
   - создана continuity issue `#565` для stage `run:vision` без trigger-лейбла.
+- Day 2 (in-review): vision package для frontend-first Mission Control canvas UX (`docs/delivery/epics/s18/epic-s18-day2-mission-control-frontend-first-canvas-vision.md`, Issue `#565`).
+- Результат Day 2 (факт):
+  - Mission Control закреплён как owner-approved canvas-first workspace на fake data для 2-3 инициатив одновременно, а не как incremental polish старого S16 shell;
+  - зафиксированы mission, north star, persona outcomes, KPI/guardrails и wave boundaries для Sprint S18;
+  - подтверждён locked baseline: fullscreen canvas, taxonomy `Issue` / `PR` / `Run`, compact nodes, explicit relations, side panel/drawer, toolbar/controls и workflow editor UX на fake data;
+  - дополнительно закреплён vision guardrail: workflow editor остаётся policy-shaping UX с deterministic generated `workflow-policy block`, но не становится prompt editor или live provider mutation path;
+  - сохранён product boundary: `run:dev` в рамках Sprint S18 ограничен isolated `web-console` prototype и не запускает обязательный `qa/release/postdeploy/ops` flow;
+  - создана follow-up issue `#567` для stage `run:prd` без trigger-лейбла и с continuity-требованием сохранить цепочку `prd -> arch -> design -> plan -> dev`.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.
