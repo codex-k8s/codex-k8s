@@ -5,8 +5,8 @@ title: "Delivery Traceability History Index"
 status: in-review
 owner_role: KM
 created_at: 2026-03-12
-updated_at: 2026-03-25
-related_issues: [325, 327, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 413, 416, 418, 444, 447, 448, 452, 454, 456, 469, 471, 476, 480, 484, 490, 492, 494, 496, 510, 541, 554, 557, 559]
+updated_at: 2026-03-26
+related_issues: [325, 327, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 413, 416, 418, 444, 447, 448, 452, 454, 456, 469, 471, 476, 480, 484, 490, 492, 494, 496, 510, 541, 554, 557, 559, 562, 565]
 related_prs: []
 approvals:
   required: ["Owner"]
@@ -36,6 +36,7 @@ approvals:
 | `docs/delivery/traceability/s13_quality_governance_system_history.md` | Sprint S13 | История intake, vision, PRD и architecture baseline по `Quality Governance System`, включая draft quality stack, vision package `#471`, PRD package `#476`, architecture issue `#484`, follow-up issue `#494` для `run:design` и зависимость от downstream runtime/UI stream `#470` |
 | `docs/delivery/traceability/s16_mission_control_graph_workspace_history.md` | Sprint S16 | История intake/vision/PRD/architecture/design baseline по полному redesign Mission Control: absorption of issue `#480`, owner request `#490`, hybrid truth matrix, graph-first workspace, continuity rule, packages `#496/#510/#516/#519` и handover issue `#537` после Day5 в `run:plan` |
 | `docs/delivery/traceability/s17_unified_user_interaction_waits_and_owner_feedback_inbox_history.md` | Sprint S17 | История intake, vision и PRD baseline по unified long-lived human wait contract, same-session continuation, 24h wait policy, Telegram pending inbox, staff-console fallback, issue `#557` для `run:prd` и follow-up issue `#559` для `run:arch` |
+| `docs/delivery/traceability/s18_mission_control_frontend_first_canvas_history.md` | Sprint S18 | История intake baseline по frontend-first Mission Control reset: separate fake-data UX sprint, fullscreen canvas, taxonomy `Issue/PR/Run`, workflow editor UX, isolated `web-console` prototype scope и continuity issue `#565` для `run:vision` |
 
 ## Правила обновления
 - В `docs/delivery/issue_map.md` обновляется только текущая каноническая карта связей, bundle refs и статус issue/PR.

@@ -5,8 +5,8 @@ title: "codex-k8s — Delivery Plan"
 status: active
 owner_role: EM
 created_at: 2026-02-06
-updated_at: 2026-03-25
-related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 500, 510, 512, 516, 519, 521, 522, 523, 524, 525, 537, 541, 542, 543, 544, 545, 546, 547, 554, 557, 559, 561, 562, 563]
+updated_at: 2026-03-26
+related_issues: [1, 19, 74, 100, 106, 112, 154, 155, 170, 171, 184, 185, 187, 189, 195, 197, 199, 201, 210, 212, 216, 218, 220, 222, 223, 225, 226, 227, 228, 229, 230, 238, 241, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 262, 263, 265, 274, 281, 282, 320, 333, 335, 337, 340, 351, 360, 361, 363, 366, 369, 370, 371, 372, 373, 374, 375, 378, 383, 385, 387, 389, 391, 392, 393, 394, 395, 413, 416, 418, 420, 423, 425, 426, 427, 428, 429, 430, 431, 444, 447, 448, 452, 454, 456, 458, 469, 471, 476, 480, 484, 490, 492, 494, 496, 500, 510, 512, 516, 519, 521, 522, 523, 524, 525, 537, 541, 542, 543, 544, 545, 546, 547, 554, 557, 559, 561, 562, 563, 565]
 
 related_prs: []
 approvals:
@@ -491,6 +491,17 @@ approvals:
 - Day 4 (planned): architecture package для owner feedback loop (Issue `#559`).
   - Цель: зафиксировать service boundaries, ownership split, lifetime policy и persisted state truth для unified owner feedback loop.
   - Ожидаемый результат: follow-up issue для `run:design` и continuity-требование сохранить цепочку `design -> plan -> dev` без разрывов.
+
+### Sprint S18: Frontend-first Mission Control canvas UX on fake data (Issue #562)
+- Day 1 (in-review): intake package для frontend-first Mission Control reset (`docs/delivery/epics/s18/epic-s18-day1-mission-control-frontend-first-canvas-intake.md`, Issue `#562`).
+- Результат Day 1 (факт):
+  - Sprint S18 зафиксирован как отдельный frontend-first flow после doc-reset `#561`: сначала owner утверждает UX на fake data, затем отдельным issue `#563` запускается backend rebuild;
+  - выбран recommended sequencing: frontend-first fake-data sprint вместо incremental polish старого S16 shell или backend-first rebuild;
+  - зафиксирован новый Wave 1 UX baseline: fullscreen свободный canvas, минимальная taxonomy `Issue` / `PR` / `Run`, compact nodes, explicit relations, side panel/drawer, toolbar/controls и workflow editor UX на fake data;
+  - подтверждён product guardrail: `run:dev` в рамках Sprint S18 ограничен isolated `web-console` prototype и не открывает обязательный автоматический `qa/release/postdeploy/ops` path;
+  - prompt policy удержана без drift: repo-seed prompts остаются source of truth, DB prompt editor не вводится, workflow behavior допускается только как deterministic generated `workflow-policy block`;
+  - sequencing из rethink `#561` сохранён: `#522` и `#523` можно двигать отдельно, `#524` и `#525` остаются заблокированными до owner approval Sprint S18;
+  - создана continuity issue `#565` для stage `run:vision` без trigger-лейбла.
 
 ### Daily delivery contract (обязательный)
 - Каждый день задачи дня влиты в `main`.

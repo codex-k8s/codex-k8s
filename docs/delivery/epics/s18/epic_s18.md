@@ -1,0 +1,50 @@
+---
+doc_id: EPC-CK8S-0018
+type: epic
+title: "Epic Catalog: Sprint S18 (Frontend-first Mission Control canvas UX on fake data)"
+status: in-review
+owner_role: PM
+created_at: 2026-03-26
+updated_at: 2026-03-26
+related_issues: [470, 480, 522, 523, 524, 525, 561, 562, 563, 565]
+related_prs: []
+approvals:
+  required: ["Owner"]
+  status: pending
+  request_id: "owner-2026-03-26-issue-562-intake"
+---
+
+# Epic Catalog: Sprint S18 (Frontend-first Mission Control canvas UX on fake data)
+
+## TL;DR
+- Sprint S18 открывает отдельный Mission Control reset-stream после doc-reset `#561`: сначала owner утверждает frontend-first UX на fake data, затем отдельной задачей запускается backend rebuild `#563`.
+- Day1 intake (`#562`) зафиксировал новый baseline: fullscreen свободный canvas, node taxonomy `Issue` / `PR` / `Run`, compact nodes, explicit relations, side panel/drawer, toolbar/controls и workflow editor UX без live GitHub mutation path.
+- Prompt policy не переоткрывается: repo-seed prompts остаются source of truth, а workflow behavior допускается только через deterministic generated `workflow-policy block`.
+- До `run:dev` Sprint S18 остаётся stage-driven frontend-first инициативой; на `run:dev` целевой результат ограничен isolated fake-data prototype в `web-console`.
+
+## Stage roadmap
+- Day 1 (Intake): `docs/delivery/epics/s18/epic-s18-day1-mission-control-frontend-first-canvas-intake.md` (Issue `#562`); stage сформулировал problem statement, reset baseline, scope/guardrails и создал issue `#565` для `run:vision`.
+- Day 2 (Vision): Issue `#565`; должна зафиксировать mission, north star, persona outcomes, KPI/guardrails и wave boundaries для нового canvas-first UX без reopening Day1 baseline.
+- Day 3 (PRD): создаётся последовательно после vision и должна формализовать user stories, FR/AC/NFR, scenario matrix и expected evidence для fake-data prototype.
+- Day 4 (Architecture): создаётся последовательно после PRD и должна определить boundaries isolated prototype, future backend handover и cleanup старых S16 assumptions.
+- Day 5 (Design): создаётся последовательно после architecture и должна выпустить implementation-ready UI/interaction/design package для fake-data prototype.
+- Day 6 (Plan): создаётся последовательно после design и должна разложить execution package, feedback loops, DoR/DoD и owner-managed handover в `run:dev`.
+- Day 7 (Development): owner-managed `run:dev` должен реализовать isolated `web-console` prototype на fake data и завершить именно frontend-first инициативу без обязательного auto-continue в late stages.
+
+## Delivery-governance правила
+- Sprint S18 идёт полной цепочкой `intake -> vision -> prd -> arch -> design -> plan -> dev`.
+- Каждый doc-stage обязан создавать следующую follow-up issue без trigger-лейбла; запуск следующего stage остаётся owner-managed.
+- До `run:dev` Sprint S18 остаётся markdown-only контуром и не создаёт code/runtime diff вне документации.
+- Day1 baseline обязателен для всех следующих stage:
+  - UX сначала утверждается на fake data, backend rebuild идёт потом в issue `#563`;
+  - fullscreen свободный canvas без lane/column shell и без обязательной nested root-group модели;
+  - Wave 1 taxonomy `Issue`, `PR`, `Run`;
+  - compact nodes, explicit node-to-node relations, side panel/drawer и toolbar/controls обязательны;
+  - workflow editor UX работает только на fake data и не становится live mutation path;
+  - repo-seed prompts остаются source of truth, free-form DB prompt editor не вводится;
+  - `run:dev` ограничен isolated fake-data prototype в `web-console`;
+  - автоматическое продолжение в `run:qa -> run:release -> run:postdeploy -> run:ops` внутри этого спринта не требуется.
+- Sequencing из rethink `#561` остаётся актуальным:
+  - `#522` и `#523` можно продолжать независимо;
+  - `#524` и `#525` остаются заблокированными до owner approval результата Sprint S18;
+  - `#470` может двигаться только без фиксации финального cockpit UI.
